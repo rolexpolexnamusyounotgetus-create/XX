@@ -243,3 +243,138 @@ def fighter_rates(S, L, p, k=None):
         R["eO"][:, t] = eO
     R["distMin"], R["standMin"], R["topMin"], R["botMin"], R["grMin"] = distMin, standMin, topMin, botMin, grMin
     return R
+
+
+# ------------------------------------------------------------------ data
+class Data:
+    """Directed fight-side rows (X attacks Y) for every UFC fight with round stats, in date order, plus the
+    backtest snapshots mapped onto them."""
+
+    def __init__(self, p, priors_window=5, verbose=True):
+        t0 = time.time()
+        log = {}
+        fights, _ = B.parse_fights(log)
+        people = B.build_people(fights, log)
+        B.build_vectors(fights, log)
+        self.p = p
+        self.people = people
+        bt = json.load(open(os.path.join(OUT, "backtest.json")))
+        self.bt = bt
+        assert bt["meta"]["keys"] == KEYS, "backtest keys differ from build_db.KEYS"
+        snap = fights[-1].date
+        self.snapshot = snap
+        # walk-forward division priors per year: fights in [Jan 1 of Y - window, Jan 1 of Y). The backtest's
+        # own priors_asof for 2019+; the same rule for older years (used only as baselines of training rows).
+        pri = {}
+        y0 = min(f.date.year for f in fights if f.stats)
+        for y in range(max(y0, 1997), snap.year + 1):
+            if str(y) in bt["priors_asof"]:
+                pri[y] = bt["priors_asof"][str(y)]
+            else:
+                pri[y] = B.build_priors(fights, dt.date(y - priors_window, 1, 1), dt.date(y, 1, 1))
+        self.live_priors = json.load(open(os.path.join(OUT, "priors.json")))["priors"]
+        self.priors_by_key = {}
+        for y, groups in pri.items():
+            for g, P in groups.items():
+                self.priors_by_key[(y, g)] = P
+        for g, P in self.live_priors.items():
+            self.priors_by_key[("live", g)] = P
+        ymin = min(pri)
+
+        # persons -> integer ids; a person's division history for the catch-weight prior division
+        pid = {}
+        hist = defaultdict(list)
+        bt_by_id = {e["id"]: e for e in bt["fights"]}
+        rows = []                       # (day, X, Y, fid, side, prior_key, vector)
+        for f in fights:
+            a, b = f.persons
+            if a == b:
+                continue
+            homes = (B.mode_recent(hist[a], f.day) if hist[a] else None,
+                     B.mode_recent(hist[b], f.day) if hist[b] else None)
+            if f.stats and not (a.startswith("amb:") or b.startswith("amb:")):
+                yr = max(ymin, f.date.year)
+                e = bt_by_id.get(f.fid)
+                if e is not None:
+                    g = e.get("prior_division") or e["division"]
+                elif f.division in B.NON_DIV:
+                    hs = [h for h in homes if B.LBS.get(h)]
+                    g = max(hs, key=lambda d: B.LBS[d]) if hs else "ALL"
+                else:
+                    g = f.division
+                if (yr, g) not in self.priors_by_key:
+                    g = "ALL"
+                for s in (0, 1):
+                    X, Y = f.persons[s], f.persons[1 - s]
+                    for q in (X, Y):
+                        if q not in pid:
+                            pid[q] = len(pid)
+                    rows.append((f.day, pid[X], pid[Y], f.fid, s, (yr, g), f.stats["v"][s]))
+            hist[a].append((f.day, f.division))
+            hist[b].append((f.day, f.division))
+        rows.sort(key=lambda r: (r[0], r[3], r[4]))
+        self.pid = pid
+        self.pslug = {}
+        for q, i in pid.items():
+            self.pslug[i] = people[q].get("slug") if q in people else q
+        self.NP = len(pid)
+        self.day = np.array([r[0] for r in rows], dtype=float)
+        self.X = np.array([r[1] for r in rows], dtype=int)
+        self.Y = np.array([r[2] for r in rows], dtype=int)
+        self.fid = [r[3] for r in rows]
+        self.side = np.array([r[4] for r in rows], dtype=int)
+        self.V = np.array([r[6] for r in rows], dtype=float)
+        self.keys = [r[5] for r in rows]
+        self.L = LTable(self.keys, self.priors_by_key, p)
+        self.nrow = len(rows)
+        self.row_of = {(r[3], r[4]): i for i, r in enumerate(rows)}
+
+        # backtest entries that have stats (both rows present); test rows in entry order
+        ent = []
+        for e in bt["fights"]:
+            if (e["id"], 0) in self.row_of and (e["id"], 1) in self.row_of:
+                ent.append(e)
+        self.entries = ent
+        self.n_bt_all = len(bt["fights"])
+        # side arrays (2 per entry: A then B); the row where that side attacks
+        self.s_row = np.array([self.row_of[(e["id"], s)] for e in ent for s in (0, 1)], dtype=int)
+        self.s_day = self.day[self.s_row]
+        self.s_person = self.X[self.s_row]
+        self.s_opp = self.Y[self.s_row]
+        self.s_S = np.array([e[t]["S"] for e in ent for t in ("A", "B")], dtype=float)
+        # check the person mapping against the backtest slugs
+        bad = sum(1 for i, e in enumerate(ent) for s, t in enumerate("AB")
+                  if self.pslug.get(self.s_person[2 * i + s]) != e[t]["slug"])
+        self.s_date = np.array([e["date"] for e in ent for _ in (0, 1)])
+        self.s_tune = (self.s_date >= TUNE[0]) & (self.s_date <= TUNE[1])
+        self.s_test = self.s_date >= TEST_FROM
+        self.s_key = [self.keys[r] for r in self.s_row]
+        self.sL = LTable(self.s_key, self.priors_by_key, p)
+        # prediction dates: unique backtest dates (fits use rows strictly before)
+        self.dates = np.unique(self.s_day)
+        self.cut = np.searchsorted(self.day, self.dates, side="left")
+        self.s_date_idx = np.searchsorted(self.dates, self.s_day)
+        if verbose:
+            print("rows %d (fights with stats %d), persons %d, backtest entries with stats %d of %d, "
+                  "slug mismatches %d, prediction dates %d, %.1f s"
+                  % (self.nrow, self.nrow // 2, self.NP, len(ent), self.n_bt_all, bad, len(self.dates),
+                     time.time() - t0))
+
+    # decayed sums S for each backtest side at half-life hl, from rows strictly before the fight
+    def side_sums(self, hl, people=None, days=None):
+        people = self.s_person if people is None else people
+        days = self.s_day if days is None else days
+        by_p = defaultdict(list)
+        for i in range(self.nrow):
+            by_p[self.X[i]].append(i)
+        out = np.zeros((len(people), NK))
+        lam = math.log(2) / hl
+        for j, (q, T) in enumerate(zip(people, days)):
+            ii = by_p.get(q)
+            if not ii:
+                continue
+            ii = np.array(ii)
+            ii = ii[self.day[ii] < T]
+            if len(ii):
+                out[j] = np.exp(-lam * (T - self.day[ii])) @ self.V[ii]
+        return out

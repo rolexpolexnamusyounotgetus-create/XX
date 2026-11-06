@@ -489,8 +489,8 @@
     });
     this.bones = bones; this.bi = base.boneIndex; this.restWorld = world;
     this.group.add(bones[0]);
-    this.skeleton = new T.Skeleton(bones);
     this.group.updateMatrixWorld(true);
+    this.skeleton = new T.Skeleton(bones);
     // 6. masks (facial hair, damage zones, kick zones, scalp) and decals per MakeHuman vertex
     var masks = this.computeMasks(P, J);
     // 7. materials and meshes
@@ -706,14 +706,12 @@
           "  }\n" +
           "}")
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.34, uSweat) + 0.12 * clamp(vMask.x * uBeard, 0.0, 1.0);")
-        .replace("#include <clearcoat_normal_fragment_begin>", "#include <clearcoat_normal_fragment_begin>\nmaterial.clearcoat = uSweat * 0.55 * (0.7 + 0.3 * vMask2.z);")
         .replace("#include <lights_physical_pars_fragment>", T.ShaderChunk.lights_physical_pars_fragment
           .replace("vec3 irradiance = dotNL * directLight.color;", "vec3 irradiance = dotNL * directLight.color;\n\tfloat rawNL = dot( geometry.normal, directLight.direction );\n\tvec3 irradianceW = clamp( ( vec3( rawNL ) + vec3( 0.36, 0.16, 0.11 ) ) / vec3( 1.36, 1.16, 1.11 ), 0.0, 1.0 ) * directLight.color;\n\t#ifndef PHYSICALLY_CORRECT_LIGHTS\n\t\tirradianceW *= PI;\n\t#endif")
           .replace("reflectedLight.directDiffuse += ( 1.0 - clearcoatDHR ) * irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );", "reflectedLight.directDiffuse += ( 1.0 - clearcoatDHR ) * irradianceW * BRDF_Diffuse_Lambert( material.diffuseColor );")
           .replace("reflectedLight.directDiffuse += irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );", "reflectedLight.directDiffuse += irradianceW * BRDF_Diffuse_Lambert( material.diffuseColor );"));
     };
     mat.customProgramCacheKey = function () { return "fight-skin-v1"; };
-    mat.defines = { CLEARCOAT: "" };
     return mat;
   };
 
@@ -1213,6 +1211,7 @@
     U.uDam.value.set(this.damHead[0], this.damHead[1]);
     U.uLeg.value.set(this.damLeg[0], this.damLeg[1]);
     U.uSweat.value = this.sweat;
+    if (this.skinMat) this.skinMat.clearcoat = this.sweat * 0.5;
     U.uFlush.value = clamp01(this.sweat * 0.8 + (this.damHead[0] + this.damHead[1]) * 0.3);
   };
 
@@ -1321,7 +1320,6 @@
         var j = C.bones.indexOf(nm); if (j < 0) continue;
         this.clipQuat(ic, t, j, _q2); _q4.copy(this.clipQuat(ic, 0, j, new Q())).invert(); _q2.multiply(_q4);
         _q2.premultiply(qy).multiply(qyi);
-        new Q().slerp(_q2, this.idleW * IDLE_MASK[nm]);
         var dq = new Q().slerp(_q2, this.idleW * IDLE_MASK[nm]);
         W[bi[nm]].premultiply(dq);
       }

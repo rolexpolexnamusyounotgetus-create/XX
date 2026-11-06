@@ -3,7 +3,7 @@
   "name": "Michael Chandler",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Last fought Jun 14, 2026, when Mauricio Ruffy knocked him down twice and stopped him with ground punches at 4:29 of round 1 at UFC Freedom 250 in Washington, DC. That was his fourth straight loss, after Dustin Poirier (2022), Charles Oliveira (2024) and Paddy Pimblett (2025), and he is 2-6 in the UFC (fighters.json). He is 40. This pass could not confirm whether he has retired, is ranked or has a fight booked (web search was unavailable), so 'active' is an unverified default.",
+    "summary": "Last fought Jun 14, 2026, when Mauricio Ruffy knocked him down twice and stopped him with ground punches at 4:29 of round 1 at UFC Freedom 250 in Washington, DC. That was his fourth straight loss, after Dustin Poirier (2022), Charles Oliveira (2024) and Paddy Pimblett (2025), and he is 2-6 in the UFC (fighters.json). He is 40. Neither the research pass nor the Nov 6, 2026 fact-check could confirm on the web whether he has retired, is ranked or has a fight booked, and no other project file reports a retirement or booking, so 'active' is an unverified default.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -54,7 +54,8 @@
     "tattoos": "none confirmed",
     "kit": "unknown",
     "sources": [
-      "data/derived/fighters.json (height, reach)"
+      "data/derived/fighters.json (height, reach)",
+      "skin: unverified recall of widely published fight photos; not checked against a dated photo (web access unavailable in the research pass and the fact-check)"
     ]
   },
   "engine_notes": [
