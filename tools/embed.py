@@ -1098,6 +1098,71 @@ def eval_winner(T, verbose=True):
     return res, preds
 
 
+def eval_ml_stack(T, verbose=True):
+    """Incremental value over the ML agent's winner model (data/derived/ml.json, when present): mirrored
+    no-intercept logistic stacks fit on its 2019-2023 out-of-fold rows, scored on 2024-2025. Only ids that are
+    in backtest_dev.json are read, so no 2026 fight is touched even though ml.json lists them."""
+    path = os.path.join(DER, "ml.json")
+    if not os.path.exists(path):
+        return None
+    ml = json.load(open(path))["fights"]
+    dev_ids = {e["id"] for e in json.load(open(BACKTEST_DEV))["fights"]}
+    rowof = {fid: i for i, fid in enumerate(T["id"])}
+    keep = [fid for fid in ml if fid in dev_ids and fid in rowof and ml[fid].get("y") is not None]
+    ii = np.array([rowof[f] for f in keep])
+    y = np.array([float(ml[f]["y"]) for f in keep])
+    yrs = T["year"][ii]
+    tr, va = yrs <= 2023, (yrs >= 2024) & (yrs <= 2025)
+    lg = lambda p: np.log(np.clip(p, 1e-6, 1 - 1e-6) / (1 - np.clip(p, 1e-6, 1 - 1e-6)))
+    Xe, en = winner_features(T, "emb")
+    Xe = np.nan_to_num(Xe[ii])
+    emb_cols = [j for j, n_ in enumerate(en) if n_.startswith("demb_") or n_.startswith("emb_")]
+    out = {"n_train_oof": int(tr.sum()), "n_valid": int(va.sum()), "models": {}, "deltas": {}}
+    preds = {}
+    for base in ("ml", "ml_iso", "stack"):
+        if any(base not in ml[f] for f in keep):
+            continue
+        zb = lg(np.array([ml[f][base] for f in keep]))[:, None]
+        preds[base + "_raw"] = 1 / (1 + np.exp(-zb[:, 0]))
+        f0, c0 = fit_lr(zb[tr], y[tr], 1e4)
+        preds[base + "_recal"] = f0(zb)
+        f1, c1 = fit_lr(np.hstack([zb, T["s_win"][ii][:, None]])[tr], y[tr], 1e4)
+        preds[base + "+emb_head"] = f1(np.hstack([zb, T["s_win"][ii][:, None]]))
+        Xf = np.hstack([zb, Xe[:, emb_cols]])
+        best = None
+        for C in (0.003, 0.01, 0.03, 0.1, 0.3):          # C by leave-one-year-out inside 2019-2023
+            ll = []
+            for vy in range(2019, 2024):
+                a, b = tr & (yrs != vy), tr & (yrs == vy)
+                f, _ = fit_lr(Xf[a], y[a], C)
+                ll.append(logloss(f(Xf[b]), y[b]))
+            m = float(np.mean(np.concatenate(ll)))
+            if best is None or m < best[1]:
+                best = (C, m)
+        f2, c2 = fit_lr(Xf[tr], y[tr], best[0])
+        preds[base + "+emb_all"] = f2(Xf)
+        out["models"][base + "+emb_head"] = {"coef": [round(float(c), 4) for c in c1]}
+        out["models"][base + "+emb_all"] = {"C": best[0], "loyo_logloss_2019_2023": round(best[1], 5)}
+        for a_, b_ in (("+emb_head", "_recal"), ("+emb_all", "_recal"), ("_recal", "_raw")):
+            d = logloss(preds[base + a_][va], y[va]) - logloss(preds[base + b_][va], y[va])
+            mu, lo, hi = boot_ci(d)
+            out["deltas"]["%s%s - %s%s" % (base, a_, base, b_)] = {"mean": round(mu, 5),
+                                                                    "ci95": [round(lo, 5), round(hi, 5)]}
+    for k, p in preds.items():
+        cal, ece = calib_table(p[va], y[va])
+        out["models"].setdefault(k, {}).update({"valid_logloss": round(float(logloss(p[va], y[va]).mean()), 5),
+                                                "valid_acc": round(float(np.mean((p[va] > 0.5) == (y[va] == 1))), 4),
+                                                "valid_ece": ece})
+    if verbose:
+        for k, v in out["models"].items():
+            if "valid_logloss" in v:
+                print("  ml-stack %-16s valid logloss %.4f acc %.3f ece %.3f" % (k, v["valid_logloss"], v["valid_acc"],
+                                                                             v["valid_ece"]))
+        for k, v in out["deltas"].items():
+            print("  delta %-34s %+.4f [%+.4f, %+.4f]" % (k, v["mean"], v["ci95"][0], v["ci95"][1]))
+    return out
+
+
 # ------------------------------------------------------------------------------------------------ downstream: stat lines
 # stat -> (attacker feature, defender "allowed" feature, prior per fighter-minute or None)
 STAT_LOG5 = {"sig_att": ("satt", "osatt"), "sig_lnd": ("slpm", "sapm"), "h_lnd": ("h_lpm", "oh_lpm"),
@@ -1679,6 +1744,7 @@ def main():
     print("downstream table: %d fights (%d train <= 2023, %d validation 2024-25)" % (
         len(T["id"]), int((T["year"] <= 2023).sum()), int((T["year"] >= 2024).sum())), flush=True)
     win_res, win_preds = eval_winner(T)
+    win_res["ml_stack"] = eval_ml_stack(T)
     stat_res = eval_stats(T)
     write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, time.time() - t0, args.cache)
 
