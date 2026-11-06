@@ -415,3 +415,103 @@ def build_features(T, PR, sh=None):
         return pd.DataFrame(D, index=T.index)
 
     return direction(SA, SB), direction(SB, SA), SA, SB
+
+
+# ============================================================== 3. outcome space and metrics
+R5 = 5
+NC_ = 4 * R5 + 3                     # cells: XKO r1..5, XSUB r1..5, YKO r1..5, YSUB r1..5, XDEC, YDEC, DRAW
+I_XKO, I_XSUB, I_YKO, I_YSUB = 0, R5, 2 * R5, 3 * R5
+I_XDEC, I_YDEC, I_DRAW = 4 * R5, 4 * R5 + 1, 4 * R5 + 2
+C6 = ["XKO", "XSUB", "XDEC", "YDEC", "YSUB", "YKO"]
+
+
+def outcome_cells(T):
+    """Observed cell (orientation X = A) per fight; -1 when excluded (DQ / NC / unknown)."""
+    y = np.full(len(T), -1)
+    for i, (cls, w, r, R) in enumerate(zip(T["cls"], T["winner"], T["rnd"], T["rounds"])):
+        if cls == "DRAW":
+            y[i] = I_DRAW
+        elif cls == "DEC":
+            y[i] = I_XDEC if w == "A" else I_YDEC
+        elif cls in ("KO", "SUB"):
+            r = int(min(max(r, 1), R5))
+            base = {("A", "KO"): I_XKO, ("A", "SUB"): I_XSUB, ("B", "KO"): I_YKO, ("B", "SUB"): I_YSUB}[(w, cls)]
+            y[i] = base + r - 1
+    return y
+
+
+def mirror_cells(P):
+    """Swap the roles of X and Y in a joint array (n x NC_)."""
+    Q = np.empty_like(P)
+    Q[:, I_XKO:I_XKO + R5], Q[:, I_YKO:I_YKO + R5] = P[:, I_YKO:I_YKO + R5], P[:, I_XKO:I_XKO + R5]
+    Q[:, I_XSUB:I_XSUB + R5], Q[:, I_YSUB:I_YSUB + R5] = P[:, I_YSUB:I_YSUB + R5], P[:, I_XSUB:I_XSUB + R5]
+    Q[:, I_XDEC], Q[:, I_YDEC], Q[:, I_DRAW] = P[:, I_YDEC], P[:, I_XDEC], P[:, I_DRAW]
+    return Q
+
+
+def marginals(P):
+    """Named marginals of a joint (orientation X = A)."""
+    xko, xsub = P[:, I_XKO:I_XKO + R5], P[:, I_XSUB:I_XSUB + R5]
+    yko, ysub = P[:, I_YKO:I_YKO + R5], P[:, I_YSUB:I_YSUB + R5]
+    M = {"XKO": xko.sum(1), "XSUB": xsub.sum(1), "XDEC": P[:, I_XDEC], "DRAW": P[:, I_DRAW],
+         "YDEC": P[:, I_YDEC], "YSUB": ysub.sum(1), "YKO": yko.sum(1)}
+    M["KO"] = M["XKO"] + M["YKO"]
+    M["SUB"] = M["XSUB"] + M["YSUB"]
+    M["DEC"] = M["XDEC"] + M["YDEC"] + M["DRAW"]
+    M["FIN"] = M["KO"] + M["SUB"]
+    M["ko_r"] = xko + yko
+    M["sub_r"] = xsub + ysub
+    M["fin_r"] = M["ko_r"] + M["sub_r"]
+    M["pA"] = M["XKO"] + M["XSUB"] + M["XDEC"]
+    M["pB"] = M["YKO"] + M["YSUB"] + M["YDEC"]
+    return M
+
+
+EPS = 1e-9
+
+
+def per_fight_losses(P, y, T):
+    """Per-fight negative log likelihoods for every scored target (nan where a target does not apply)."""
+    P = np.clip(P, EPS, None)
+    P = P / P.sum(1, keepdims=True)
+    M = marginals(P)
+    n = len(y)
+    ok = y >= 0
+    L = {}
+    L["joint"] = np.where(ok, -np.log(P[np.arange(n), np.maximum(y, 0)]), np.nan)
+    is_ko = ((y >= I_XKO) & (y < I_XKO + R5)) | ((y >= I_YKO) & (y < I_YKO + R5))
+    is_sub = ((y >= I_XSUB) & (y < I_XSUB + R5)) | ((y >= I_YSUB) & (y < I_YSUB + R5))
+    is_dec = (y == I_XDEC) | (y == I_YDEC) | (y == I_DRAW)
+    p_obs3 = np.where(is_ko, M["KO"], np.where(is_sub, M["SUB"], M["DEC"]))
+    L["method3"] = np.where(ok, -np.log(p_obs3), np.nan)
+    L["finish"] = np.where(ok, -np.log(np.where(is_dec, M["DEC"], M["FIN"])), np.nan)
+    b7 = np.select([(y >= I_XKO) & (y < I_XKO + R5), (y >= I_XSUB) & (y < I_XSUB + R5), y == I_XDEC, y == I_DRAW,
+                    y == I_YDEC, (y >= I_YSUB) & (y < I_YSUB + R5), (y >= I_YKO) & (y < I_YKO + R5)],
+                   [M["XKO"], M["XSUB"], M["XDEC"], M["DRAW"], M["YDEC"], M["YSUB"], M["YKO"]], 1.0)
+    L["bin7"] = np.where(ok, -np.log(b7), np.nan)
+    # unsided method x round (KO r, SUB r, decision incl. draw)
+    rr = np.where(is_ko | is_sub, (y % R5), 0)
+    p_mr = np.where(is_ko, M["ko_r"][np.arange(n), rr], np.where(is_sub, M["sub_r"][np.arange(n), rr], M["DEC"]))
+    L["method_round"] = np.where(ok, -np.log(p_mr), np.nan)
+    # finishing round given a finish (3- or 5-round)
+    fin = ok & (is_ko | is_sub)
+    p_r = M["fin_r"][np.arange(n), rr] / M["FIN"]
+    L["round_given_fin"] = np.where(fin, -np.log(p_r), np.nan)
+    # method given a finish (KO vs SUB)
+    L["ko_vs_sub"] = np.where(fin, -np.log(np.where(is_ko, M["KO"], M["SUB"]) / M["FIN"]), np.nan)
+    # winner, decisive fights only (draws / NC excluded), draw mass removed
+    dec_ok = ok & (y != I_DRAW)
+    a_won = ((y >= I_XKO) & (y < I_XSUB + R5)) | (y == I_XDEC)
+    pa = M["pA"] / (M["pA"] + M["pB"])
+    L["winner"] = np.where(dec_ok, -np.log(np.where(a_won, pa, 1 - pa)), np.nan)
+    L["winner_brier"] = np.where(dec_ok, (pa - a_won) ** 2, np.nan)
+    L["winner_acc"] = np.where(dec_ok, ((pa > 0.5) == a_won) * 1.0 + (pa == 0.5) * 0.5, np.nan)
+    # Brier for the 3-class method
+    o3 = np.stack([is_ko, is_sub, is_dec], 1).astype(float)
+    p3 = np.stack([M["KO"], M["SUB"], M["DEC"]], 1)
+    L["method3_brier"] = np.where(ok, ((p3 - o3) ** 2).sum(1), np.nan)
+    return L
+
+
+def summarize_losses(L):
+    return {k: float(np.nanmean(v)) for k, v in L.items()}

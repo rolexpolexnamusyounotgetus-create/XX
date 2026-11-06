@@ -30,9 +30,9 @@
   var AX = 1.3, AZ = 1.0, SQN = 4.2;         // the bowl is a squircle, longer along X
 
   var QUALITY = {
-    high: { dpr: 2, shadow: 2048, bloom: 1, aa: "smaa", rows3d: 20, upper: 1, spots: 8, aniso: 8, mat: 2048, post: true },
-    medium: { dpr: 1.5, shadow: 2048, bloom: 0.5, aa: "fxaa", rows3d: 10, upper: 0.7, spots: 8, aniso: 4, mat: 2048, post: true },
-    low: { dpr: 1.5, shadow: 1024, bloom: 0, aa: "msaa", rows3d: 4, upper: 0.45, spots: 4, aniso: 2, mat: 1024, post: false }
+    high: { dpr: 2, shadow: 2048, bloom: 1, aa: "smaa", rows3d: 12, floor3d: 8, upper: 1, spots: 8, aniso: 8, mat: 2048, post: true },
+    medium: { dpr: 1.5, shadow: 2048, bloom: 0.5, aa: "fxaa", rows3d: 6, floor3d: 8, upper: 0.7, spots: 8, aniso: 4, mat: 2048, post: true },
+    low: { dpr: 1.5, shadow: 1024, bloom: 0, aa: "msaa", rows3d: 1, floor3d: 5, upper: 0.45, spots: 4, aniso: 2, mat: 1024, post: false }
   };
 
   /* ------------------------------------------------------------ small helpers */
@@ -648,13 +648,13 @@
         var basic = function (col, mult, side) { return new T.MeshBasicMaterial({ color: new T.Color(col).multiplyScalar(mult), side: side || T.FrontSide }); };
         es.add(new T.Mesh(new T.SphereGeometry(60, 24, 12), basic(0x0a0e17, 1, T.BackSide)));
         var ring = new T.Mesh(new T.CylinderGeometry(24, 24, 12, 48, 1, true), basic(0x2b2723, 0.55, T.BackSide)); ring.position.y = 2; es.add(ring);
-        var floor = new T.Mesh(new T.CircleGeometry(4.6, 8), basic(0xe2e5ea, 1.25)); floor.rotation.x = -PI / 2; floor.position.y = -1.25; es.add(floor);
+        var floor = new T.Mesh(new T.CircleGeometry(4.6, 8), basic(0xe2e5ea, 0.9)); floor.rotation.x = -PI / 2; floor.position.y = -1.25; es.add(floor);
         var deck = new T.Mesh(new T.RingGeometry(4.6, 9, 8), basic(0x101216, 1)); deck.rotation.x = -PI / 2; deck.position.y = -1.27; es.add(deck);
         for (var k = 0; k < 8; k++) {
-          var a = (k + 1) * PI / 4, p = new T.Mesh(new T.PlaneGeometry(3.6, 0.8), basic(0xfff3e4, 18));
+          var a = (k + 1) * PI / 4, p = new T.Mesh(new T.PlaneGeometry(3.6, 0.8), basic(0xfff3e4, 9));
           p.position.set(Math.cos(a) * 5.4, 8.2, Math.sin(a) * 5.4); p.lookAt(0, -1.2, 0); es.add(p);
         }
-        var key = new T.Mesh(new T.CircleGeometry(1.3, 24), basic(0xffffff, 26)); key.position.y = 11.4; key.rotation.x = PI / 2; es.add(key);
+        var key = new T.Mesh(new T.CircleGeometry(1.3, 24), basic(0xffffff, 14)); key.position.y = 11.4; key.rotation.x = PI / 2; es.add(key);
         var led = new T.Mesh(new T.CylinderGeometry(5.9, 5.9, 0.6, 32, 1, true), basic(0x4060b0, 0.6, T.BackSide)); led.position.y = -1.6; es.add(led);
         [-1, 1].forEach(function (s) { var sc = new T.Mesh(new T.PlaneGeometry(14, 8), basic(0x90a6d8, 1.4)); sc.position.set(s * 40, 18, 0); sc.lookAt(0, 1, 0); es.add(sc); });
         tex = pm.fromScene(es, 0.035, 0.1, 100).texture;
@@ -706,7 +706,7 @@
     this.cssW = Math.max(1, canvas.clientWidth || canvas.width || 300); this.cssH = Math.max(1, canvas.clientHeight || canvas.height || 150);
     this.contacts = []; for (var ci = 0; ci < 16; ci++) this.contacts.push(new T.Vector4(0, 0, 0, 0));
     this.lowPts = [];
-    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 0.42 }, uScale: { value: 600 }, uPhones: { value: 0.05 } };
+    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 0.42 }, uScale: { value: 600 }, uPhones: { value: 0.03 } };
 
     this.env = buildEnvironment(renderer, opts.env === "room");
     if (this.env) scene.environment = this.env;
@@ -730,7 +730,7 @@
     var Q = A.Q;
     A.own(new T.HemisphereLight(0x33435e, 0x060709, 0.22));
     // overhead key: one shadow-casting spot straight above the canvas, its frustum fitted to the octagon
-    var key = A.key = new T.SpotLight(0xfff5ea, 430, 0, 0.5, 0.55, 2);
+    var key = A.key = new T.SpotLight(0xfff5ea, 560, 0, 0.5, 0.55, 2);
     key.position.set(0.25, 12.6, 0.45); key.target.position.set(0, 0, 0);
     key.castShadow = true;
     key.shadow.mapSize.set(Q.shadow, Q.shadow);
@@ -743,7 +743,7 @@
     var n = Q.spots, step = 8 / n;
     for (var i = 0; i < n; i++) {
       var a = (i * step + 1) * PI / 4, px = Math.cos(a) * TRUSS_APO, pz = Math.sin(a) * TRUSS_APO;
-      var sp = new T.SpotLight(0xfff1e2, 58 * step, 0, 0.52, 0.85, 2);
+      var sp = new T.SpotLight(0xfff1e2, 42 * step, 0, 0.52, 0.85, 2);
       sp.position.set(px, TRUSS_Y - 0.4, pz); sp.target.position.set(-Math.cos(a) * 1.4, 0.6, -Math.sin(a) * 1.4);
       A.own(sp); A.own(sp.target); A.ring.push(sp);
     }
@@ -959,7 +959,7 @@
     // fixtures: cans hanging under the truss, each aimed at the canvas, with a hot lens and a light shaft
     var fx = [], lens = [], shafts = [], housing = new T.MeshStandardMaterial({ color: 0x1a1b1e, roughness: 0.5, metalness: 0.5 });
     var lensMat = new T.MeshBasicMaterial({ color: new T.Color(1.0, 0.95, 0.88).multiplyScalar(7), toneMapped: false, fog: false });
-    var shaftMat = new T.ShaderMaterial({ uniforms: { uColor: { value: new T.Color(1.0, 0.94, 0.86) }, uIntensity: { value: 0.022 }, uTime: A.U.uTime, uLen: { value: 1 } }, vertexShader: SHAFT_VS, fragmentShader: SHAFT_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide });
+    var shaftMat = new T.ShaderMaterial({ uniforms: { uColor: { value: new T.Color(1.0, 0.94, 0.86) }, uIntensity: { value: 0.012 }, uTime: A.U.uTime, uLen: { value: 1 } }, vertexShader: SHAFT_VS, fragmentShader: SHAFT_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide });
     A.shaftMat = shaftMat;
     for (k = 0; k < 8; k++) {
       var amk = (k + 1) * PI / 4, tx = -Math.sin(amk), tz = Math.cos(amk);
@@ -977,7 +977,7 @@
         lens.push({ g: lg, m: mat4.clone() });
         if (j !== 0 || k % 2 === 0) {
           var L = base.distanceTo(aim) * 0.82;
-          var cone = new T.CylinderGeometry(0.11, 0.11 + L * 0.22, L, 20, 1, true); cone.translate(0, -L / 2, 0);
+          var cone = new T.CylinderGeometry(0.1, 0.1 + L * 0.15, L, 20, 1, true); cone.translate(0, -L / 2, 0);
           var sm = new T.Mesh(cone, shaftMat.clone());
           sm.material.uniforms.uLen.value = L; sm.material.uniforms.uTime = A.U.uTime;
           sm.position.copy(base); sm.quaternion.copy(qq); sm.renderOrder = 3; sm.userData.arena = true;
@@ -1024,7 +1024,7 @@
   /* ---- venue: floor, cage-side tables, officials, seating bowl, crowd, screens ---- */
   function buildVenue(A) {
     var Q = A.Q, r = rng(7);
-    var floor = new T.Mesh(new T.PlaneGeometry(220, 220), new T.MeshStandardMaterial({ color: 0x08090b, roughness: 0.55, metalness: 0, envMapIntensity: 0.05 }));
+    var floor = new T.Mesh(new T.PlaneGeometry(220, 220), new T.MeshStandardMaterial({ color: 0x0f1013, roughness: 0.5, metalness: 0, envMapIntensity: 0.05 }));
     floor.rotation.x = -PI / 2; floor.position.y = FLOOR_Y; floor.receiveShadow = false; A.own(floor);
     var crowdMat = A.crowdMat = new T.ShaderMaterial({
       uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, {}]), vertexShader: CROWD_VS, fragmentShader: CROWD_FS, fog: true
@@ -1074,17 +1074,9 @@
     var fg = new T.BufferGeometry(); fg.setAttribute("position", new T.Float32BufferAttribute(fpos, 3)); fg.setAttribute("uv", new T.Float32BufferAttribute(fuv, 2)); fg.setIndex(fidx);
     var fm = new T.Mesh(fg, A.ledMat); fm.material.side = T.DoubleSide; A.own(fm);
 
-    // camera operators on the apron
-    [[2.6, 0x15161a], [6.0, 0x1a1c20]].forEach(function (c) {
-      var a = c[0], x = Math.cos(a) * (RAPO - 0.35), z = Math.sin(a) * (RAPO - 0.35);
-      near.add(x, 0, z, Math.atan2(-x, -z), r, { shirt: c[1], pants: 0x101114, stand: -1, excite: 0 });
-      var camBody = new T.Mesh(new T.BoxGeometry(0.2, 0.22, 0.42), bezel);
-      camBody.position.set(x * 0.985, 1.62, z * 0.985); camBody.rotation.y = Math.atan2(-x, -z); A.own(camBody);
-    });
-
     // seating bowl rows: floor seats, lower bowl, ribbon board, upper bowl
     var rows = [], i;
-    for (i = 0; i < 8; i++) rows.push({ r: 9.2 + i * 0.95, y: FLOOR_Y + i * 0.07, sec: "floor" });
+    for (i = 0; i < 8; i++) rows.push({ r: 9.2 + i * 0.95, y: FLOOR_Y + i * 0.07, sec: "floor", i: i });
     var R0 = 16.4, Y0 = FLOOR_Y + 1.5;
     for (i = 0; i < 20; i++) rows.push({ r: R0 + 0.45 + i * 0.86, y: Y0 + i * 0.43, sec: "lower", i: i, tread: [R0 + i * 0.86, 0.86, Y0 + i * 0.43, 0.43] });
     var R1 = R0 + 20 * 0.86 + 1.3, Y1 = Y0 + 20 * 0.43 + 2.6;
@@ -1097,7 +1089,7 @@
     }
     rows.forEach(function (row, ri) {
       var N = 1440, prev = sq(0, row.r, [0, 0]), acc = 0, next = 0.28, sp = 0.56;
-      var as3d = row.sec === "floor" || (row.sec === "lower" && row.i < Q.rows3d);
+      var as3d = (row.sec === "floor" && row.i < Q.floor3d) || (row.sec === "lower" && row.i < Q.rows3d);
       var occ = row.sec === "floor" ? 0.97 : (row.sec === "lower" ? 0.93 : 0.86);
       for (var j = 1; j <= N; j++) {
         var a = j / N * TAU, p = sq(a, row.r, [0, 0]), dl = Math.hypot(p[0] - prev[0], p[1] - prev[1]);
@@ -1107,7 +1099,7 @@
           next += sp;
           if (inAisle(Math.atan2(z / AZ, x / AX), row.r, row.sec === "floor") || r() > occ) continue;
           if (as3d) near.add(x, row.y, z, Math.atan2(-x, -z), r);
-          else if (r() < Q.upper || row.sec === "lower") {
+          else if (r() < Q.upper || row.sec !== "upper") {
             var col = new T.Color(wpick(SHIRTS, r)).convertSRGBToLinear(), sk = new T.Color(wpick(SKINS, r)).convertSRGBToLinear();
             far.push(x, row.y + 0.95 + r() * 0.08, z); farCol.push(col.r, col.g, col.b); farSkin.push(sk.r, sk.g, sk.b); farPar.push(r(), 0.78 + r() * 0.1);
             heads.push(x, row.y + 1.15, z);
@@ -1365,7 +1357,7 @@
     // crowd mood from the show's phase, plus bursts on big moments
     var ph = show && show.phase, tE = 0.2, tS = 0.08, tP = 0.05;
     if (ph === "intro") { tE = 0.42; tS = 0.45; tP = 0.3; }
-    else if (ph === "live") { tE = show.state === "ground" ? 0.15 : 0.22; tS = 0.07; tP = 0.04; }
+    else if (ph === "live") { tE = show.state === "ground" ? 0.15 : 0.22; tS = 0.07; tP = 0.02; }
     else if (ph === "break") { tE = 0.12; tS = 0.05; tP = 0.07; }
     else if (ph === "finish" || ph === "result") { tE = 0.95; tS = 0.95; tP = 0.55; }
     else if (ph === "decision") { tE = 0.55; tS = 0.8; tP = 0.38; }

@@ -3,24 +3,121 @@
   "fighters": {
     "alexander-volkanovski": {
       "appearance": {
-        "skin": "#d9a383",
-        "hair": "#231710",
-        "beard": true,
+        "build": "compact and heavily muscled for his height: 5 ft 6 in with a 71 in reach (ufcstats), thick neck and shoulders; a former rugby league front-rower",
+        "hair": "shaved head (he has shaved it since 2021)",
+        "hair_color": "#2a1d14",
+        "facial_hair": "short dark beard, trimmed close",
+        "beard_color": "#2a1d14",
+        "eyes": "brown",
+        "skin": "light-medium",
+        "tattoos": "a large dark tattoo sleeve on the right forearm (photo, 2021); he has also described a dragon piece on a shoulder (side not stated, so not drawn)",
+        "tattoo_marks": [
+          {
+            "at": "right forearm",
+            "shape": "sleeve"
+          }
+        ],
+        "face": {
+          "browDepth": 0.45,
+          "noseLength": 0.25,
+          "noseHump": 0.35,
+          "noseDepth": 0.2,
+          "jaw": 0.25,
+          "chinProminence": 0.2,
+          "cheekVolume": -0.3,
+          "headWidth": -0.08,
+          "eyeSize": -0.12
+        },
+        "face_note": "detail sliders set by eye from the reference photos in assets/reference/alexander-volkanovski (heavy brow, long straight nose with a slight hump, lean cheeks, strong jaw); not derived from ancestry",
+        "kit": "corner colour fight shorts (UFC fight kit by Venum); black 4 oz UFC gloves",
         "shorts": "#2563c9",
         "trim": "#e9eef5",
-        "glove": "#16181c"
+        "band": "#15171b",
+        "glove": "#16181c",
+        "sources": [
+          "https://www.sportskeeda.com/mma/news-when-alexander-volkanovski-go-bald-exploring-the-great-shaved-head-dwayne-the-rock-johnson-reacted",
+          "https://www.essentiallysports.com/ufc-mma-news-no-one-remembers-when-we-had-hair-brother-wwe-legend-dwayne-johnson-sends-alexander-volkanovski-a-message-ahead-of-ufc-266",
+          "https://www.1news.co.nz/2019/03/26/ex-league-front-rower-turned-ufc-star-alexander-volkanovski-turns-to-auckland-gym-for-biggest-fight-of-his-career",
+          "https://www.essentiallysports.com/ufc-mma-news-alexander-volkanovski-tattoo-wifes-gift-to-ufc-star-turned-into-biggest-regret-of-his-life",
+          "https://www.ufc.com/news/ufc-and-venum-announce-long-term-extension-exclusive-global-outfitting-and-apparel-partnership",
+          "http://ufcstats.com (height and reach via data/derived/fighters.json)",
+          "assets/reference/alexander-volkanovski/commons_2021_appearance.jpg (Wikimedia Commons; shaved head, short beard, right-forearm sleeve)",
+          "assets/reference/alexander-volkanovski/commons_ufc232_2018.jpg (Wikimedia Commons; face, eye colour)"
+        ],
+        "confidence": "high for the shaved head, build and corner kit; medium for the beard length on fight night and eye colour (photos); low for tattoo detail"
       }
     },
     "justin-gaethje": {
       "appearance": {
-        "skin": "#d59a7c",
-        "hair": "#6b4a33",
-        "beard": false,
+        "build": "thick, heavily muscled lightweight: 5 ft 11 in with a 70 in reach (ufcstats); former NCAA Division I wrestler",
+        "hair": "short light-brown hair, short on the sides",
+        "hair_color": "#6b4a33",
+        "facial_hair": "short reddish-brown beard (he shaved it off in January 2024 and has worn it again since)",
+        "beard_color": "#7d4a2c",
+        "eyes": "blue",
+        "skin": "light",
+        "tattoos": "his surname in capitals across the upper back; a cross on the right shoulder or upper arm; rib pieces (a 'Bad Boy' eyes emblem and 'Death Before Dishonor' wording) that are not drawn because their placement is not described precisely",
+        "tattoo_marks": [
+          {
+            "at": "upper back",
+            "text": "GAETHJE"
+          },
+          {
+            "at": "right shoulder",
+            "shape": "cross"
+          }
+        ],
+        "face": {
+          "headWidth": 0.22,
+          "jaw": 0.35,
+          "faceFat": 0.2,
+          "noseWidth": 0.35,
+          "noseBridge": 0.3,
+          "nostrils": 0.2,
+          "eyeSize": -0.18,
+          "browDepth": 0.2,
+          "chinWidth": 0.25,
+          "cheekVolume": 0.12
+        },
+        "face_note": "detail sliders set by eye from the reference photos in assets/reference/justin-gaethje (broad face and jaw, wide flattened nose, small deep-set eyes); not derived from ancestry",
+        "kit": "corner colour fight shorts (UFC fight kit by Venum); black 4 oz UFC gloves",
         "shorts": "#c9312f",
         "trim": "#111111",
-        "glove": "#16181c"
+        "band": "#15171b",
+        "glove": "#16181c",
+        "sources": [
+          "https://www.sportskeeda.com/mma/justin-gaethje-tattoo",
+          "https://www.essentiallysports.com/ufc-mma-news-justin-gaethjes-tattoos-and-meaning-behind-ufc-stars-peculiar-inks",
+          "https://bloodyelbow.com/2025/02/28/justin-gaethje-profile-height-tattoos-ufc-record-losses",
+          "https://www.essentiallysports.com/ufc-mma-news-paddy-pimblett-mocks-conor-mcgregor-and-justin-gaethje-for-stupid-tattoos-decision/",
+          "https://sportskeeda.com/mma/news-former-ufc-vet-shares-hilarious-reaction-justin-gaethje-s-recent-beardless-look",
+          "https://www.ufc.com/news/ufc-and-venum-announce-long-term-extension-exclusive-global-outfitting-and-apparel-partnership",
+          "http://ufcstats.com (height and reach via data/derived/fighters.json)",
+          "assets/reference/justin-gaethje/ref-espn-headshot.png (face, beard colour, eye colour)",
+          "assets/reference/justin-gaethje/ref-getty-ufc324-belt-2026-01-24.jpg (build, hair, beard at UFC 324)"
+        ],
+        "confidence": "high for build, hair and the back lettering; medium for beard and eye colour (photos); medium for the shoulder cross (sources disagree between shoulder and upper arm)"
       }
     }
   },
-  "manual": {}
+  "manual": {},
+  "referee": {
+    "appearance": {
+      "role": "referee",
+      "note": "a generic referee; no specific official is depicted",
+      "height_in": 71,
+      "age": 48,
+      "build": "average",
+      "skin": "light",
+      "hair": "short",
+      "hair_color": "#5d5853",
+      "facial_hair": "clean-shaven",
+      "shirt": "#121316",
+      "pants": "#2b2e34",
+      "gloves": "#15161a",
+      "sources": [
+        "assets/reference/justin-gaethje/ref-getty-ufc324-belt-2026-01-24.jpg (UFC referees wear a black shirt, dark trousers and black latex gloves)"
+      ]
+    }
+  }
 }
