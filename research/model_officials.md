@@ -17,15 +17,24 @@ simulator to sample from) and this report. Fold pickles and logs are under `out/
   - decision winner log loss: 0.3387 vs 0.3414, -0.0027 [-0.0083, +0.0022] (not significant)
 
   Named-judge effects alone (same model without them): split -0.0020 [-0.0040, -0.0001], 7-class -0.0020
-  [-0.0045, +0.0004], winner +0.0003 [-0.0009, +0.0017]. Knowing the panel moves the predicted decision winner by
+  [-0.0045, +0.0004], winner +0.0003 [-0.0009, +0.0017]. **Verification correction:** against the same published
+  parameters with every judge effect set to 0, the named effects make the decision winner worse on all three folds
+  (2024-25 +0.0019 [+0.0003, +0.0036]; 2022-23 +0.0036 [+0.0006, +0.0075]; 2019-23 +0.0015 [+0.0003, +0.0029]) and
+  never improve the 7-class loss (2024-25 -0.0003 [-0.0032, +0.0029]); only the 2024-25 split loss improves (-0.0026
+  [-0.0051, -0.0001]). The engine default is now named judges off (`knobs.named_judges`); the -0.0125 headline is
+  the home term plus the closeness shape, and the zero-effect model keeps it (-0.0122 [-0.0200, -0.0053]). On the
+  tuning windows the officials terms do not help (2022-23 7-class -0.0024 [-0.0119, +0.0061]; 2019-23 +0.0043
+  [-0.0025, +0.0110]); see the verification log at the end. Knowing the panel moves the predicted decision winner by
   a median 0.2 points (90th percentile 1.0, max 6.2) and flips it in 0.6% of decisions; it moves P(split or
   majority) by a median 0.5 points (90th percentile 1.6). The home term moves the winner by up to 17.7 points.
   **The round stats decide who wins a decision; the officials shape how it is scored.** The largest single
   officials effect is home country abroad.
-- **Home abroad is real.** Given the round stats, the fighter from the event country gets +0.73 (SE 0.09) latent
-  units at events outside the USA, worth 2.5 landed head strikes per round at 2025 weights: an even round goes
-  60.7% to the home fighter. At US events the American gets -0.16 (SE 0.07): 47.7% of even rounds. Home terms
-  alone improve held-out 7-class log loss by -0.0105 [-0.0182, -0.0039].
+- **Home abroad is real.** Given the round stats, the fighter from the event country gets +0.73 (SE 0.09; an
+  event-clustered sandwich SE from the independent re-fit is about 0.12) latent units at events outside the USA,
+  worth 2.5 landed head strikes per round at 2025 weights: an even round goes 60.7% to the home fighter. At US
+  events the American gets -0.16 (SE 0.07): 47.7% of even rounds; h_USA changed sign between fits (+0.07 fit before
+  2019), so treat it as unstable. Home terms alone improve held-out 7-class log loss by -0.0105 [-0.0182, -0.0039]
+  on 2024-25; the gain is smaller and not significant on 2022-23 and absent on 2019-23 (verification log).
 - **Judges share most of their noise.** 57% of a round's latent score variance is common to the panel
   (sigma_u = 2.08 vs the logistic own noise, sd 1.81). Treating judges as independent predicts 37% split or majority
   decisions (20% observed) and costs 0.14 in 7-class log loss.
@@ -37,7 +46,8 @@ simulator to sample from) and this report. Fold pickles and logs are under `out/
   volume 7.4%, knockdown 12.5%, grappling 9.8%, 10-8 odds 20%. Most power-friendly (30+ cards since 2022): Sal
   D'Amato (1,090 cards; knockdown weight x1.15, sd 0.08; power index +0.63, sd 0.39). Least: Adalaide Byrd (259;
   -0.51, sd 0.34) and Chris Lee (673; knockdown weight x0.83, sd 0.10; -0.44, sd 0.28). Highest 10-8 propensity:
-  Douglas Crosby (odds x1.44, log-sd 0.13).
+  Douglas Crosby (odds x1.44, log-sd 0.13). These are descriptive: used for prediction they make the held-out
+  decision winner worse (verification log), so the engine uses them only when the `named_judges` knob is on.
 - **Against the engine's current judging rule** (src/params3.js, recalibrated on 2019-2023 rounds), on the same
   2024-25 fights with the same stats: level on the decision winner (+0.0065 [-0.0042, +0.0168]; 2022-23 +0.0011
   [-0.0166, +0.0173]) and on the 7-class outcome (+0.0058 [-0.0097, +0.0204]), better on round scores (5-outcome
@@ -167,7 +177,11 @@ Exact-card log-likelihood per fight on the tuning folds (higher is better), ever
 The primary fold (two-year horizon, which is how the tables will be used with yearly refits) picks named judges
 with half the empirical-Bayes sd (tau x 0.5): tau = n 0.075, v 0.074, p 0.125, g 0.098, c 0.201. On the five-year
 fold neither judges nor home help: judge effects estimated before 2019 carry little into 2019-2023, when most of
-the panel was new or rarely seen before. Wider judge spreads (x2) lose on every fold.
+the panel was new or rarely seen before. Wider judge spreads (x2) lose on every fold. (Verification: the original
+selection code left the league judge without home out of the candidate list, so the home term was never put to the
+tuning folds; it is a candidate now and the pick is unchanged. The card log-likelihood gain of named judges on the
+primary fold is +0.0026 [-0.0081, +0.0135] over league + home, and on decision metrics they lose on both tuning
+folds, see the verification log.)
 
 ### 3.2 Structure: shared-noise shape (league + home, no named judges)
 
@@ -398,7 +412,7 @@ core0 = exp(-0.1235*t)*V + exp(0.5820*t)*K + exp(0.0035*t)*G
 s     = 2.0814 * exp(0.0373*|core0|)                 # shared-noise sd (kappa = -0.0373)
 u     = s * N(0,1)                                    # one draw per round, shared by the three judges
                                                       # (+ one fight-level N(0, sv^2) draw if knob sv > 0)
-for each judge j with effects (n, v, p, g, c):
+for each judge j with effects (n, v, p, g, c)            # default (named_judges off): n = v = p = g = c = 0
   core_j = exp(v - 0.1235*t)*V + exp(p + 0.5820*t)*K + exp(g + 0.0035*t)*G + h*home
   if U < 0.00115: the card is 10-10 for this round
   else A wins iff exp(n + shift) * (core_j + u) + logit(U') > 0      # shift = knob panel_sharpness_shift, default 0
@@ -428,16 +442,20 @@ real ones (other components) for these probabilities to carry over.
 
 ### 5.3 Sampling officials
 
-- Assigned officials: look up `engine.judges[key]` (MMA Decisions judge id, columns `judge_cols`; posterior sds in
-  `judges_sd`) and `engine.referees_eb[name]`. Use the posterior means; to propagate uncertainty, draw each judge's
-  effects once per simulated fight from N(mean, sd^2).
+- Default (`engine.named_judges_default` = false, verification log): every judge is the league judge, effects 0,
+  for named and unknown officials alike. This is the configuration that validated best on decision outcomes.
+- Assigned officials, only with the `named_judges` knob on (scenario use): look up `engine.judges[key]` (MMA
+  Decisions judge id, columns `judge_cols`; posterior sds in `judges_sd`) and `engine.referees_eb[name]` (dq column:
+  use 1.0, see the referee note). Use the posterior means; to propagate uncertainty, draw each judge's effects once
+  per simulated fight from N(mean, sd^2).
 - Unknown officials: take the event region (`region_of(location)`: Nevada, USA (other states), Canada, Brazil,
   Latin America, UK and Ireland, Europe, Middle East, Asia, Australia and NZ), draw three distinct judges from
   `engine.judge_pools[region]` by share (2022-2025 cards), and a referee from `engine.referee_pools[region]`.
   `_other` (a judge not in the table) and unknown names: draw (n, v, p, g, c) from N(0, tau^2) with tau = (0.0752,
   0.0740, 0.1250, 0.0978, 0.2014).
-- Judging taste spread then comes from the judge effects, which replaces the engine's lognormal `tasteSd` 0.2
-  (the data say about 0.07-0.12 per weight after shrinkage).
+- With the knob on, judging taste spread comes from the judge effects, which replaces the engine's lognormal
+  `tasteSd` 0.2 (the data say about 0.07-0.12 per weight after shrinkage). With the default (knob off) set `tasteSd`
+  to 0: the shared and own noise of the published fit already carry the panel's disagreement.
 
 ### 5.4 Expected effect on the engine's checks
 

@@ -47,6 +47,21 @@ const nb = E.neighbours("alexander-volkanovski", 5);
 assert.ok(nb.length === 5 && nb.every(x => x[0] !== "alexander-volkanovski"), "neighbours");
 for (let i = 1; i < nb.length; i++) assert.ok(nb[i][1] >= nb[i - 1][1], "neighbours sorted");
 
+// stat-line blend recipe: Python outputs on 12 real 2024-25 validation rows (mlrates side + embedding eta)
+let nb2 = 0;
+for (const c of model.blend_check || []) {
+  const r = E.blendMLRates(c.ml, c.eta);
+  for (const k of Object.keys(c.out)) close(r[k], c.out[k], "blend." + k);
+  nb2++;
+}
+assert.ok(nb2 >= 10, "expected the blend check block");
+// style neighbours match the Python twin (order and cosine)
+for (const sl of Object.keys(model.nn_style_check || {})) {
+  const want = model.nn_style_check[sl], got = E.styleNeighbours(sl, want.length);
+  want.forEach((w, i) => { assert.strictEqual(got[i][0], w[0], sl + " style neighbour " + i); close(got[i][1], w[1], "cos"); });
+}
+assert.ok(Object.keys(model.nn_style_check || {}).length === 2, "style neighbour checks");
+
 const vg = E.matchup("alexander-volkanovski", "justin-gaethje", { division: "Lightweight", rounds: 5 });
 console.log("embed.js: %d check matchups reproduce the Python outputs (max rel. error on rates %s)", n,
             maxRel.toExponential(1));
@@ -54,4 +69,7 @@ console.log("Volkanovski vs Gaethje (embedding head only): P(Volkanovski) = %s; 
             + "takedowns landed %s vs %s", vg.pA.toFixed(3), vg.ratesA.sig_lnd.toFixed(2), vg.ratesB.sig_lnd.toFixed(2),
             vg.ratesA.td_lnd.toFixed(3), vg.ratesB.td_lnd.toFixed(3));
 console.log("nearest to Volkanovski: " + nb.map(x => x[0] + " (" + x[1].toFixed(2) + ")").join(", "));
+console.log("blendMLRates: %d validation rows reproduce the Python recipe", nb2);
+for (const sl of ["alexander-volkanovski", "justin-gaethje"])
+  console.log("style twins of " + sl + ": " + E.styleNeighbours(sl, 5).map(x => x[0] + " (" + x[1].toFixed(2) + ")").join(", "));
 console.log("OK");

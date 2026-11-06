@@ -583,8 +583,10 @@
       L.hair = null; L.hairMode = "paint"; L.scalpCh = horseshoe || reced ? 3 : 4; L.scalp = 0.2;
     } else if ((top != null && top <= 1.3) || (top == null && /buzz|induction|clipper|very short|crew cut/.test(txt))) {
       L.hair = null; L.hairMode = "shell"; L.hairLen = Math.max(0.25, top || 0.6); L.scalpCh = reced ? 2 : (horseshoe ? 3 : (fade ? 1 : 0)); L.scalp = 0.9;
-    } else if (top != null && top <= 6.5 && /fade|taper|crop|crew|short|high and tight|buzz|textured|spiky|tapered/.test(txt) && !/long|ponytail|bun|braid|afro|curly mop|shoulder/.test(txt)) {
-      L.hair = null; L.hairMode = "shell"; L.hairLen = Math.min(top, 3.4); L.scalpCh = reced ? 2 : (fade ? 1 : 0); L.scalp = 0.9;
+    } else if (top != null && top <= 2.2 && /fade|taper|crop|crew|short|high and tight|buzz|textured|spiky|tapered/.test(txt) && !/long|ponytail|bun|braid|afro|curly mop|shoulder/.test(txt)) {
+      L.hair = null; L.hairMode = "shell"; L.hairLen = top; L.scalpCh = reced ? 2 : (fade ? 1 : 0); L.scalp = 0.9;
+    } else if (top != null && top <= 6.5 && /fade|taper|crop|crew|short|high and tight|textured|spiky|tapered/.test(txt) && !/long|ponytail|bun|braid|afro|curly mop|shoulder/.test(txt)) {
+      L.hair = /slick|swept back|combed back/.test(txt) ? "hair-short04" : "hair-short02"; L.hairMode = "mesh"; L.scalpCh = fade ? 1 : (reced ? 2 : 0); L.scalp = 0.85;
     } else if (L.hair) { L.scalpCh = reced ? 2 : 0; L.scalp = 0.55; }
     else if (!L.hair && L.scalp > 0.5) { L.hairMode = "shell"; L.hairLen = 0.5; L.scalpCh = 0; }
     else if (!L.hair) { L.scalpCh = 4; }
@@ -629,7 +631,7 @@
       // ratio in linear light; stored as an sRGB hex because the material converts tints to linear
       var t = new T.Color(tone).convertSRGBToLinear(), sw = new T.Color(L.skin.swatch).convertSRGBToLinear();
       var tc = new T.Color(Math.min(1, t.r / sw.r), Math.min(1, t.g / sw.g), Math.min(1, t.b / sw.b));
-      tc.lerp(new T.Color(1, 1, 1), 0.3);             // photos carry arena and flash casts: go 70% of the way
+      tc.lerp(new T.Color(1, 1, 1), 0.15);            // photos carry arena and flash casts: go 85% of the way
       L.tint = "#" + tc.convertLinearToSRGB().getHexString();
     }
     if (!(app.tattoo_marks && app.tattoo_marks.length) && Array.isArray(LK.tattoos)) {
@@ -943,7 +945,7 @@
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
       uMaskOn: { value: maskOn ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
       uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 3 ? chan(looks.scalpCh) : new T.Vector4() }, uScalpCh2: { value: looks.scalpCh >= 3 ? chan(looks.scalpCh - 3) : new T.Vector4() },
-      uBeardCh: { value: chan(looks.beardCh || 0) }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.55 : 0 }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
+      uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.55 : 0 }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
     };
     mat.onBeforeCompile = function (sh) {
       for (var k in U) sh.uniforms[k] = U[k];
@@ -961,7 +963,7 @@
           "  float hair = mix(0.5, vn(su * 1400.0), hatt); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
           "  float mB = vMask.x, mS = vMask2.x;\n" +
           "  if (uMaskOn > 0.5) {\n" +
-          "    mB = dot(texture2D(uMaskB, su), uBeardCh) * clamp(vMask.x * 2.2, 0.0, 1.0);\n" +
+          "    vec4 bm = texture2D(uMaskB, su); mB = max(dot(bm, uBeardCh), bm.b * uBeardCh.a) * clamp(vMask.x * 2.2, 0.0, 1.0);\n" +
           "    vec2 hu = (su - vec2(0.6, 0.03)) / vec2(0.3, 0.84);\n" +
           "    float inH = step(0.0, hu.x) * step(hu.x, 1.0) * step(0.0, hu.y) * step(hu.y, 1.0);\n" +
           "    vec2 hc = clamp(hu, 0.0, 1.0); mS = (dot(texture2D(uMaskH, hc), uScalpCh) + dot(texture2D(uMaskH2, hc), uScalpCh2)) * inH;\n" +
@@ -1430,7 +1432,12 @@
     if (looks.beardShellLen > 0 && X.maskBeard && looks.beard > 0.3) {
       var pb = texPixels(X.maskBeard), covB = new Float32Array(n);
       var lmB = this.vMaskBeard;
-      for (i = 0; i < n; i++) { if (this.boneW(i, HEADB) < 0.5) continue; covB[i] = sampleMask(pb, uv[i * 2], uv[i * 2 + 1], looks.beardCh) * (lmB ? clamp01(lmB[i] * 2.2) : 1); }
+      for (i = 0; i < n; i++) {
+        if (this.boneW(i, HEADB) < 0.5) continue;
+        var bv = sampleMask(pb, uv[i * 2], uv[i * 2 + 1], looks.beardCh);
+        if (looks.beardCh !== 2 && looks.moustache !== false) bv = Math.max(bv, sampleMask(pb, uv[i * 2], uv[i * 2 + 1], 2));
+        covB[i] = bv * (lmB ? clamp01(lmB[i] * 2.2) : 1);
+      }
       var lb = looks.beardShellLen;
       this.addStrandShell("beard", covB, { len: function () { return lb * 0.7; }, layers: lb > 0.012 ? 7 : (lb > 0.005 ? 5 : 3), color: looks.beardColor, density: looks.beardDensity,
         dir: function (i, out) { return out.set(0, -0.45, 0.08); }, freq: 1250, thick: lb > 0.012 ? 0.62 : 0.55, gain: 1.8 });

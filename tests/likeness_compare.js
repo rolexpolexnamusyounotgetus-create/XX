@@ -11,6 +11,8 @@
 //     --yaw <deg>           fine yaw offset for the render; --size <px> tile size (default 560)
 //     --out <dir>           output folder (default out/likeness/)
 //     --likeness 0          render without the likeness sheet (base data-derived face), for A/B checks
+//     --morphs '{"head/head-scale-horiz-incr":0.3}'   try target values on top of the sheet (not saved)
+//     --tag <name>          suffix for the output file names (keep several tries side by side)
 //
 // The sheet may list photos to compare: data/likeness/<slug>.json "compare": [{ "photo": "file",
 // "view": "front", "side": -1, "box": [x0,y0,x1,y1] }, ...]; with no --photo those are used.
@@ -67,7 +69,7 @@ function pngSize(buf) { return buf.readUInt32BE(16) + "x" + buf.readUInt32BE(20)
   const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--no-sandbox"] });
   const page = await browser.newPage({ viewport: { width: SIZE, height: SIZE }, deviceScaleFactor: 1 });
   page.on("pageerror", e => console.error("page error:", e.message));
-  const lk = opt("likeness", "1") === "0" ? "&likeness=0" : "";
+  const lk = (opt("likeness", "1") === "0" ? "&likeness=0" : "") + (opt("morphs") ? "&morphs=" + encodeURIComponent(opt("morphs")) : "");
   await page.goto(`http://127.0.0.1:${port}/tests/dev_avatar.html?w=${SIZE}&h=${SIZE}&slugs=${slug}${lk}`, { timeout: 300000 });
   const ok = await page.evaluate(() => window.DEV.ready);
   if (!ok) { console.error("avatar did not build"); process.exit(2); }
@@ -119,7 +121,7 @@ function pngSize(buf) { return buf.readUInt32BE(16) + "x" + buf.readUInt32BE(20)
       x.fillStyle = "#e6e6e6"; x.font = "13px sans-serif"; x.fillText(label, 8, S + 14); x.fillStyle = "#9aa"; x.fillText(note, 8, S + 29);
       return c.toDataURL("image/png");
     }, [photoTile && photoTile.url, renderUrl, SIZE, `${slug} - ${view}${view !== "front" ? (side > 0 ? " (his left)" : " (his right)") : ""} - photo | avatar (neutral studio light)`, note || "no paired photo for this view", BOX]);
-    const file = path.join(OUT, `${slug}_${view}.png`);
+    const file = path.join(OUT, `${slug}_${view}${opt("tag") ? "_" + opt("tag") : ""}.png`);
     const buf = Buffer.from(out.split(",")[1], "base64"); fs.writeFileSync(file, buf);
     written.push(file + " (" + pngSize(buf) + ")");
   }

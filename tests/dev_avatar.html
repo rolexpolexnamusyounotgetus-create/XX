@@ -26,6 +26,8 @@ SLUGS.forEach(function (s) {
   var sc = getJSON("../data/scouting/" + s + ".json"); if (sc && sc.appearance) db.scouting[s] = sc.appearance; if (sc && sc.style) { db.style = db.style || {}; db.style[s] = sc.style; }
   if (Q.get("likeness") !== "0") { var lk = getJSON("../data/likeness/" + s + ".json"); if (lk) db.likeness[s] = lk; }
 });
+// &morphs={"head/head-scale-horiz-incr":0.3,...} adds or replaces likeness targets for the first slug (likeness iteration)
+if (Q.get("morphs") && db.likeness[SLUGS[0]]) { try { var mo = JSON.parse(Q.get("morphs")), lk0 = db.likeness[SLUGS[0]]; lk0.morphs = Object.assign({}, lk0.morphs || {}, mo); } catch (e) { console.warn("bad morphs param", e); } }
 var APP = SLUGS.map(function (s) { return FightAvatar.appearanceFor(s, db); });
 if (APP.length === 1) APP.push(Object.assign({}, APP[0]));   // one slug (likeness tool): same fighter in both corners
 var REF = Object.assign({}, FightAvatar.REFEREE, (overrides.referee || {}).appearance || {});
@@ -169,9 +171,9 @@ DEV.studio = function (on) {
     DEV._hidden = [];
     sc.children.forEach(function (o) { if (!keep[o.uuid] && o.visible) { o.visible = false; DEV._hidden.push(o); } });
     var L = DEV._studio = new THREE.Group();
-    L.add(new THREE.HemisphereLight(0xdfe6ef, 0x5a5048, 0.55));
-    var key = new THREE.DirectionalLight(0xfff4ea, 1.55); key.position.set(1.2, 2.2, 2.4); L.add(key); L.add(key.target);
-    var fill = new THREE.DirectionalLight(0xe8eefc, 0.55); fill.position.set(-2, 1.4, 1.6); L.add(fill);
+    L.add(new THREE.HemisphereLight(0xe6ebf2, 0x6a625a, 1.0));
+    var key = new THREE.DirectionalLight(0xfffaf4, 2.6); key.position.set(1.2, 2.2, 2.4); L.add(key); L.add(key.target);
+    var fill = new THREE.DirectionalLight(0xeef2fc, 1.1); fill.position.set(-2, 1.4, 1.6); L.add(fill);
     var rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(0, 2.2, -2.5); L.add(rim);
     sc.add(L); DEV._bg = sc.background; sc.background = new THREE.Color(0x6b6f75); DEV._fog = sc.fog; sc.fog = null;
     DEV._env = sc.environment;

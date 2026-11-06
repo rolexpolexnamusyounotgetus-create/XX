@@ -2356,6 +2356,80 @@ def py_style_neighbours(M, slug, k):
     return [[a, b] for a, b in res[:k]]
 
 
+def leak_check(D, cache, hp, verbose=True):
+    """Empirical look-ahead test on the 2024-2025 snapshots (uncalibrated chunk-2 walk, quarter loadings of the
+    fight): score each directed row of fight f with the attacker's pre-fight embedding (the one exported for f)
+    and with his embedding at his next fight g (which has seen f). If the exported snapshots had seen f, the two
+    would score alike; an honest walk-forward scores clearly worse before the fight than after it. Also checks
+    that the exposure behind every 2024-25 snapshot equals the decayed count of strictly earlier stat fights."""
+    w = _load(_pk(cache, "walk_2.pkl"))
+    snaps = w["fight"]
+    lo, hi = VALID[0].toordinal(), VALID[1].toordinal()
+    nxt = {}           # (fighter, fight day) -> vector at his next recorded fight
+    by_f = defaultdict(list)
+    for fid, v in snaps.items():
+        j = D.fid_idx.get(fid)
+        if j is None:
+            continue
+        for x, e in ((int(D.f_a[j]), v[1]), (int(D.f_b[j]), v[2])):
+            by_f[x].append((int(D.f_day[j]), e))
+    for x, l in by_f.items():
+        l.sort(key=lambda r: r[0])
+        for (d0, _), (d1, e1) in zip(l, l[1:]):
+            if d1 > d0:
+                nxt[(x, d0)] = e1
+    K = w["final"]["A"].shape[1]
+    dev = {"ctx": np.zeros(NT), "pre": np.zeros(NT), "post": np.zeros(NT)}
+    n_rows, bad_expo, n_expo = 0, 0, 0
+    for r in range(len(D.r_fight)):
+        day = int(D.r_day[r])
+        if not (lo <= day < hi):
+            continue
+        fid = D.f_id[D.r_fight[r]]
+        v = snaps.get(fid)
+        if v is None:
+            continue
+        j = D.fid_idx[fid]
+        x, y_ = int(D.r_x[r]), int(D.r_y[r])
+        side = int(D.r_side[r])
+        ex, ey = (v[1], v[2]) if side == 0 else (v[2], v[1])
+        # exposure check: decayed count of strictly earlier stat fights at the fight day
+        want = float((np.exp(-math.log(2) / hp["hl"] * (day - D.r_day)) * ((D.r_x == x) & (D.r_day < day))).sum())
+        got = float(v[3] if side == 0 else v[4])
+        n_expo += 1
+        bad_expo += abs(want - got) > 1e-6
+        post = nxt.get((x, day))
+        if post is None:
+            continue
+        P = w["quarters"][int(v[0])]["P"]
+        Z = ctx_rows([int(D.r_div[r])], [float(D.r_era[r])], [float(D.r_five[r])], D.NDIV)[0]
+        ctx = P["C"] @ Z
+        dfn = P["V"] @ ey[K:]
+        e_pre = ctx + P["W"] @ ex[:K] + dfn
+        e_post = ctx + P["W"] @ post[:K] + dfn
+        for t in range(NT):
+            yv, nv = D.Y[r, t], D.E[r, t]
+            if nv <= 0:
+                continue
+            b = bool(IS_BIN[t])
+            for key, e in (("ctx", ctx[t] + dfn[t]), ("pre", e_pre[t]), ("post", e_post[t])):
+                dev[key][t] += float(_dev1(np.array([yv]), np.array([nv]), np.array([e]), b)[0])
+        n_rows += 1
+    rel_pre = dev["pre"] / dev["ctx"]
+    rel_post = dev["post"] / dev["ctx"]
+    out = {"n_rows": n_rows, "mean_rel_dev_pre": round(float(rel_pre.mean()), 4),
+           "mean_rel_dev_post": round(float(rel_post.mean()), 4),
+           "note": "relative to the defender-only predictor (attacker vector zero); pre = exported snapshot, post = "
+                   "the attacker's vector at his next fight (has seen this fight)",
+           "per_task_pre": {TN[t]: round(float(rel_pre[t]), 4) for t in range(NT)},
+           "per_task_post": {TN[t]: round(float(rel_post[t]), 4) for t in range(NT)},
+           "exposure_rows_checked": n_expo, "exposure_mismatches": int(bad_expo)}
+    if verbose:
+        print("  leak check: %d directed rows; mean rel. deviance vs attacker-zero: pre %.4f, post %.4f; exposure "
+              "mismatches %d / %d" % (n_rows, rel_pre.mean(), rel_post.mean(), bad_expo, n_expo), flush=True)
+    return out
+
+
 def stage_extras(D, hp, cache, verbose=True):
     st = _load(_pk(cache, "eval_state.pkl"))
     T, win_preds, fin = st["T"], st["win_preds"], st["walk_final"]
@@ -2363,6 +2437,7 @@ def stage_extras(D, hp, cache, verbose=True):
     wseg = eval_winner_segments(T, win_preds, verbose)
     blend = eval_mlrates_blend(T, D, verbose)
     nn2 = neighbours_v2(D, fin, hp)
+    leak = leak_check(D, cache, hp, verbose)
     if verbose:
         for sl in ("alexander-volkanovski", "justin-gaethje"):
             for key in ("profile_distance", "style_cosine_quality_out", "attempts_cosine", "profile_distance_145_170"):
@@ -2372,6 +2447,7 @@ def stage_extras(D, hp, cache, verbose=True):
     M = json.load(open(OUT_MODEL))
     J["validation"]["integration"] = integ
     J["validation"]["winner_segments"] = wseg
+    J["validation"]["leak_check"] = leak
     checks = blend.pop("_check_rows")
     J["validation"]["stats"]["mlrates_blend"] = blend
     style_model = nn2.pop("_style_model")

@@ -23,6 +23,8 @@
      r.etaA/etaB   the raw task linear predictors (model.tasks order)
      E.embedding(slug)       {o, d, expo} (expo = decayed fight count behind it; 0 = no UFC data -> zeros)
      E.neighbours(slug, k)   nearest roster fighters by distance between predicted-stat profiles (model.nn_Q)
+     E.styleNeighbours(slug, k)  style twins: cosine on the offense attempt profile (model.nn_style)
+     E.blendMLRates(mlSide, etaSide)  the validated stat-line recipe: MLRates side + embedding eta -> rates
      E.winLogit(ea, eb), E.eta(ex, ey, division, opts), E.rates(eta)   low-level pieces
 
    UMD: module.exports in Node, self.FightEmbed in a browser or Web Worker. */
@@ -157,8 +159,60 @@
       return out.slice(0, k);
     }
 
+    /** Style twins: cosine on the standardised offense attempt profile (W[tasks] . o / so over m.nn_style.tasks:
+        strike volume by position and target, non-sig. strikes, takedown attempts, control, sub attempts), i.e. what
+        a fighter tries to do, not how well it works. Roster fighters with expo >= nn_min_expo. */
+    function styleNeighbours(slug, k) {
+      k = k || 10;
+      var S = m.nn_style, me = m.roster[slug];
+      if (!S || !me) return [];
+      var rows = S.tasks.map(function (t) { return ti[t]; });
+      function prof(e) {
+        var p = new Array(rows.length);
+        for (var r = 0; r < rows.length; r++) p[r] = dot(m.W[rows[r]], e, 0, K) / S.so[r];
+        return p;
+      }
+      function norm(p) { var q = 0; for (var i = 0; i < p.length; i++) q += p[i] * p[i]; return Math.sqrt(q) + 1e-12; }
+      var pm = prof(me[0]), nm = norm(pm), out = [];
+      for (var s in m.roster) {
+        if (s === slug || m.roster[s][1] < m.nn_min_expo) continue;
+        var p = prof(m.roster[s][0]), c = 0;
+        for (var i = 0; i < p.length; i++) c += p[i] * pm[i];
+        out.push([s, c / (norm(p) * nm)]);
+      }
+      out.sort(function (x, y) { return y[1] - x[1] || (x[0] < y[0] ? -1 : (x[0] > y[0] ? 1 : 0)); });
+      return out.slice(0, k);
+    }
+
+    /** Stat-line integration recipe (model.mlrates_blend): combine one side of an MLRates prediction (object keyed
+        by mlrates target: d_att ... per minute, acc_* probabilities, ctrl seconds / min, kd_h P(KD) per landed head
+        strike) with the embedding's task predictors for the same attacker vs defender (etaA from matchup()):
+            link(rate) = b0 + b1 * link(mlrates rate) + b2 * eta[task]
+        which = "targets" (default, every target; validated) or "targets_cv_selected". Missing targets pass
+        through unchanged. Returns a new object in mlrates units. */
+    function blendMLRates(mlSide, etaSide, which) {
+      var B = m.mlrates_blend && m.mlrates_blend[which || "targets"], out = {};
+      for (var key in mlSide) out[key] = mlSide[key];
+      if (!B) return out;
+      for (var tn in B) {
+        if (mlSide[tn] == null) continue;
+        var r = B[tn], x = +mlSide[tn], z, p;
+        if (tn === "ctrl") z = Math.log(Math.max(x / 60, 1e-6));
+        else if (tn === "kd_h") z = Math.log(Math.min(Math.max(x, 1e-6), 1 - 1e-6));
+        else if (r.link === "logit") { p = Math.min(Math.max(x, 1e-6), 1 - 1e-6); z = Math.log(p / (1 - p)); }
+        else z = Math.log(Math.max(x, 1e-9));
+        var e = r.b[0] + r.b[1] * z + r.b[2] * etaSide[ti[r.task]];
+        if (r.link === "logit") out[tn] = sig(e);
+        else if (tn === "ctrl") out[tn] = 60 * Math.exp(e);
+        else if (tn === "kd_h") out[tn] = Math.min(Math.exp(e), 0.5);
+        else out[tn] = Math.exp(e);
+      }
+      return out;
+    }
+
     return { model: m, K: K, tasks: m.tasks, axes: m.axes, eta: eta, rates: rates, winLogit: winLogit,
-             embedding: embedding, matchup: matchup, neighbours: neighbours, vec: vec };
+             embedding: embedding, matchup: matchup, neighbours: neighbours, styleNeighbours: styleNeighbours,
+             blendMLRates: blendMLRates, vec: vec };
   }
 
   return { load: load, sig: sig };
