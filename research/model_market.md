@@ -639,3 +639,107 @@ python3 -I tools/market.py tables                             # the tables in se
 
 Credit: odds data from BestFightOdds.com; nlbair/ufc-data (Bair 2026, CC BY 4.0); Ultimate UFC Dataset (mdabbert,
 CC BY 4.0); fight results from ufcstats.com via the project's backtest.
+
+## Verification log
+
+Adversarial review, Friday, November 6, 2026 (afternoon), replacing the verifier that the usage limit cut off. I
+assumed the headline was inflated until shown otherwise and re-ran it with fresh code
+(`/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/mkt_review/verify.py`, about 6 s).
+That code reads only `data/derived/backtest_dev.json` (fights before 2026-01-01), the raw extracts and market.json.
+It never reads 2026 results. The vault export was compared with the old 2026 rows for equality only; no outcome was
+read.
+
+**Fixed: the vault was scored (major).** `TEST` was `('2024-01-01', '2099-12-31')` on `backtest.json`, so every test
+number, table 4.1-4.17 and the Kalshi check scored the 373 vault fights of 2026. That breaks the hidden-data protocol.
+The fix in `tools/market.py`:
+- `TEST` now ends 2025-12-31, and `period_of` labels 2026+ as `vault`.
+- Vault rows carry no result, never enter a score, and are written to `market_vault.json` in the vault directory
+  (`--vault-dir`, the same default as tools/make_vault.py).
+- market.json's per-fight table now holds the 2,855 development fights only.
+- Scored market-rating predictions come from a filter run that stops at 2025-12-31.
+- The live `ratings` snapshot still runs over all fights, and its meta says it is for live use only.
+
+After the rebuild, all 2,855 development rows and the ratings are identical to the first build, and the 373 vault
+rows equal the old 2026 rows. Downstream inputs (ml.py, moe.py, methodround.py, ratings.py) are therefore unchanged
+for 2019-2025. Only their 2026 lookups now come back empty, as the protocol wants.
+
+What the fix changed in the 2024-2025 benchmarks:
+
+| Benchmark | First build (2024-2026) | Corrected (2024-2025) |
+|---|---|---|
+| Fights scored | 1,212 | 843 |
+| Close, multiplicative no-vig | 0.5912 | 0.5875 |
+| Close, power no-vig | 0.5899 | 0.5854 |
+| Opening line | 0.6126 | 0.6094 |
+| Market rating | 0.6336 | 0.6258 |
+| Market rating + offsets | 0.6221 | 0.6148 |
+| Elo | 0.6800 | 0.6770 |
+| Six-way method | 1.4762 | 1.4770 |
+| Goes to decision | 0.6464 | 0.6516 |
+| Round of finish | 1.1600 | 1.1384 |
+
+**Fixed: over-claims in section 1.**
+- Item 3 presented favourites' +1% to +2% as a return. Each band is within about 1.5 standard errors of zero.
+- On 2024-2025 the power close keeps slope 1.11 (se 0.09); before, the text implied the bias was fully removed.
+- Item 4: on 2024-2025 close + market rating beats the multiplicative close (-0.0036 [-0.0066, -0.0004]). Against the
+  tune-chosen power close it gains only -0.0018 [-0.0036, +0.0000], and it is the best of 17 variants, so it is a
+  lead. The report now says so.
+- Item 8 claimed soft-label scoring was "like 10-20 times as many fights". It measures distance from the market. On
+  test, the open beats the adjusted rating by 0.017 against the close but by only 0.005 on outcomes (not
+  significant). The claim is now worded as a screen.
+- Smaller edits: a duplicated matching sentence; a note that the matching counts cover all 3,237 fights (matching is
+  outcome-blind); "age replicates" is now "keeps its sign".
+
+**Re-derived independently (all pass).**
+- *Orientation.* I rebuilt 2,045 per-book consensus closes from `bfo_event_lines.csv`, with my own name matching
+  for the corner order. None differs from market.json by more than 0.01. nlbair's first fighter is the backtest's A
+  in every row. Its range midpoint correlates 0.994 with the close. The 9 sign disagreements are all explained:
+  in-play ranges (Allen-Yusuff, Blanchfield-Fiorot), nlbair's reversed Kelleher-Croom, and wide stale ranges. In each
+  case the chosen close agrees with the open.
+- *Headline.* Fresh code reproduces every tune and 2024-2025 figure in tables 4.2-4.4 to 4 decimals. Scoring with the
+  corners swapped gives identical numbers for every model.
+- *Symmetry.* No fitted model has an intercept. The favourite intercept is fit in favourite orientation, which is
+  symmetric. Code read.
+- *Leakage probes.*
+  1. A book's deviation from the other books, regressed on the outcome residual, gives slope 0.09 on tune and 0.51 on
+     test. Leaked results would push it far above 1.
+  2. The consensus close against an independent single-book close (the Ultimate UFC Dataset, matched by my own
+     code) is within ±0.004 log loss in every year from 2019 to 2025. In-play prices would give the consensus an edge
+     it does not have.
+  3. 2,845 BFO matchups are dated within 0 to +1 day of the fight. Three are not (Gautier-Valentin -7 days,
+     Dalby-Salikhov +7 days after a reschedule, Oliveira-Dariush on a "potential fights" page), and 5 are undated.
+     Two spot checks match published pre-fight lines: Oliveira-Dariush closes at Dariush -140, against -145 to -154 in
+     the press ([Action Network](https://www.actionnetwork.com/mma/ufc-289-odds-picks-predictions-charles-oliveira-vs-beneil-dariush-betting-preview-june-10),
+     [theScore](https://thescore.com/mma/news/2660883)). Pereira-Adesanya 2 closes at Adesanya -139 / Pereira +119,
+     against DraftKings -140/+120 ([Action Network](https://www.actionnetwork.com/mma/ufc-287-odds-picks-predictions-alex-pereira-vs-israel-adesanya-betting-preview-april-9)).
+  4. No matchup serves two fights.
+- *Market rating.* I re-implemented it from the equations in 5.4, with the stream cut at 2025-12-31. It reproduces all
+  2,855 stored predictions within 0.0001 (4-decimal rounding). So each prediction uses only earlier fights, and no
+  2026 data. No fighter appears twice on one date. The parameters and offsets are fit on tune (code read).
+- *Pre-fight features.* Age is taken at the fight date. The home division comes from earlier fights only (build_db
+  `mode_recent`). Elo is pre-fight, and K was chosen on 2019-2023 (elo_report.json). Height, reach and stance are
+  current snapshot values, a minor static look-ahead.
+- *Props.*
+  - The A side's three method prices sum to the A moneyline (correlation 0.995), so the orientation is right.
+  - `p_dec` correlates 0.997 with the method decision share and 0.999 with the round props' decision cell, so yes
+    and no are not swapped.
+  - The base rates come from `priors_asof[year]`, which uses fights before January 1 of that year.
+  - Method6, goes-to-decision and round log losses all reproduce.
+- *No-contests and draws.* The 55 non-decisive development fights have rows but never enter winner scores. Draws
+  count as decisions for goes-to-decision. DQs and no-contests are left out of round of finish.
+- *Extra intervals from my bootstrap (2,000-4,000 event resamples).* Close + rating minus power close: -0.0018
+  [-0.0036, +0.0000]. Open + rating minus open: -0.0096 [-0.0149, -0.0043]. Adjusted rating minus open: +0.0054
+  [-0.0082, +0.0200].
+
+**Open, not fixed here.**
+- The repo's `backtest.json` and `data/raw/odds/bfo_event_lines.csv` still hold 2026 results and 2026 exchange prices
+  recorded after the fights. The vault is sealed only by convention.
+- The Kalshi finding was made on vault fights and is not re-verified.
+- The 0.20 spread and 0.15 book cut-offs were chosen after looking at every year, 2026 included. They are applied
+  without outcomes; their effect is about 0.001.
+- Six closes come from BFO's undated pages. They may be stale, though both spot checks matched.
+- Tools that scored market.json's 2026 rows quote 2024-2026 numbers until they are rerun. Example: ml.py's "2024+"
+  comparison with the close.
+
+Reproduce: `python3 -I tools/market.py build --props` (about 30 s), then `python3 -I tools/market.py tables`, then
+`python3 -I <scratchpad>/mkt_review/verify.py /home/user/XX`.

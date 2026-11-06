@@ -678,8 +678,9 @@
   function statObj(st, i) { var o = {}; for (var k = 0; k < NS; k++) o[STK[k]] = st[i * NS + k]; o.ctrl = +o.ctrl.toFixed(1); o.dmg = +o.dmg.toFixed(2); return o; }
 
   // ------------------------------------------------------------------ judges (one round)
-  // Each judge j scores z_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared + individual noise (logits; A
-  // minus B differentials), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
+  // Each judge j scores z_j = mu_j + individual noise, mu_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared
+  // (logits; A minus B differentials; individual sd = indSd x exp(-indClose x |mu_j|): judges split on rounds that look
+  // close to the whole panel), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
   // striking = head * dHead + body * dBody + leg * dLeg landed; grappling = td * dTD + ctrlMin * dCtrl / 60 + sub * dSubAtt;
   // damage = kd * dKD + hurt * dHurt + judgePower * head * dPow (engine-only: hurts and power beyond the strike count).
   // The round goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd * min(2, winner's KD edge). The shared and individual
@@ -690,9 +691,10 @@
     var dStr = J.head * dHL + J.body * dBL + J.leg * dLL;
     var dGr = J.td * dTd + J.ctrlMin * dCtrl / 60 + J.sub * dSub;
     var dDm = J.kd * dKd + J.hurt * dHu + jp * J.head * dPow;
-    var shared = J.sharedSd * rng.normal(), n108 = 0, kc = J.t108kd || 0;
+    var shared = J.sharedSd * rng.normal(), n108 = 0, kc = J.t108kd || 0, gc = J.indClose || 0;
     for (var j = 0; j < 3; j++) {
-      var z = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared + J.indSd * rng.normal();
+      var mu = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared;
+      var z = mu + J.indSd * (gc > 0 ? Math.exp(-gc * (mu < 0 ? -mu : mu)) : 1) * rng.normal();
       var aw = z > 0, mg = aw ? z : -z, kdE = aw ? dKd : -dKd;
       var big = mg > J.t108 - kc * (kdE <= 0 ? 0 : (kdE >= 2 ? 2 : kdE));
       var scA = aw ? 10 : (big ? 8 : 9), scB = aw ? (big ? 8 : 9) : 10;

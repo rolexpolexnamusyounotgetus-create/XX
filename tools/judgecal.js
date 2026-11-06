@@ -76,17 +76,18 @@ for (let k = 0; k < NG; k++) { const s = -8 + 16 * k / (NG - 1); GS.push(s); GW.
 const gw = GW.reduce((a, b) => a + b, 0); for (let k = 0; k < NG; k++) GW[k] /= gw;
 
 // ------------------------------------------------------------------ likelihood
-// th = [log sharedSd, log indSd, log t108kd, log t108 early, log t108 late]
+// th = [log sharedSd, log indSd, log indClose, t108kd (linear), log t108 early, log t108 late]
+// individual sd = indSd x exp(-indClose x |x + s|): judges disagree mostly on rounds that look close to the whole panel
 function negLL(th, sub) {
-  const ss = Math.exp(th[0]), si = Math.exp(th[1]), kc = Math.exp(th[2]), tE = Math.exp(th[3]), tL = Math.exp(th[4]);
+  const ss = Math.exp(th[0]), si = Math.exp(th[1]), gam = Math.exp(th[2]), kc = th[3], tE = Math.exp(th[4]), tL = Math.exp(th[5]);
   let nll = 0;
   for (const r of sub || rounds) {
     const t0 = r.late ? tL : tE;
     const TA = Math.max(0.05, t0 - kc * Math.min(2, Math.max(0, r.d.kd))), TB = Math.max(0.05, t0 - kc * Math.min(2, Math.max(0, -r.d.kd)));
     let L = 0;
     for (let k = 0; k < NG; k++) {
-      const mu = r.x + ss * GS[k];
-      const p0 = Phi(-mu / si), pA8 = 1 - Phi((TA - mu) / si), pB8 = Phi((-TB - mu) / si);
+      const mu = r.x + ss * GS[k], sd = si * Math.exp(-gam * Math.abs(mu));
+      const p0 = Phi(-mu / sd), pA8 = 1 - Phi((TA - mu) / sd), pB8 = Phi((-TB - mu) / sd);
       const pA9 = Math.max(1e-300, 1 - p0 - pA8), pB9 = Math.max(1e-300, p0 - pB8);
       let pr = GW[k];
       for (const q of r.o) pr *= q.w > 0 ? (q.wide ? Math.max(1e-300, pA8) : pA9) : (q.wide ? Math.max(1e-300, pB8) : pB9);
@@ -138,16 +139,35 @@ function hessianSE(f, x) {
 }
 
 const t0 = Date.now();
-const th0 = [Math.log(1.0), Math.log(1.2), Math.log(1.5), Math.log(5), Math.log(5.5)];
-let fit = nelderMead(negLL, th0, [0.3, 0.3, 0.3, 0.2, 0.2], 600);
-fit = nelderMead(negLL, fit.x, [0.08, 0.08, 0.1, 0.05, 0.05], 600);
+const th0 = [Math.log(1.5), Math.log(1.3), Math.log(0.1), 0, Math.log(6.5), Math.log(7.3)];
+let fit = nelderMead(negLL, th0, [0.3, 0.3, 0.8, 0.5, 0.2, 0.2], 800);
+fit = nelderMead(negLL, fit.x, [0.08, 0.08, 0.3, 0.2, 0.05, 0.05], 800);
 const se = hessianSE(negLL, fit.x);
-const ex = fit.x.map(Math.exp);
-const est = { sharedSd: ex[0], indSd: ex[1], t108kd: ex[2], t108_2019_2020: ex[3], t108_2021_2023: ex[4] };
-const seLog = { sharedSd: se[0], indSd: se[1], t108kd: se[2], t108_2019_2020: se[3], t108_2021_2023: se[4] };
-console.log(`ML fit (${((Date.now() - t0) / 1000).toFixed(1)} s): nll ${fit.f.toFixed(1)} over ${rounds.length} rounds`);
-for (const k in est) console.log(`  ${k.padEnd(16)} ${est[k].toFixed(4)}  (se on log scale ${seLog[k].toFixed(3)})`);
-console.log(`  total judge sd ${Math.hypot(est.sharedSd, est.indSd).toFixed(3)} (a logistic with these weights would imply ~1.70)`);
+const est = { sharedSd: Math.exp(fit.x[0]), indSd: Math.exp(fit.x[1]), indClose: Math.exp(fit.x[2]), t108kd: fit.x[3],
+  t108_2019_2020: Math.exp(fit.x[4]), t108_2021_2023: Math.exp(fit.x[5]) };
+const seLog = { sharedSd: se[0], indSd: se[1], indClose: se[2], t108kd: se[3], t108_2019_2020: se[4], t108_2021_2023: se[5] };
+// reference: homoscedastic fit (indClose = 0), for the record
+const fit0 = nelderMead((t) => negLL([t[0], t[1], -30, t[2], t[3], t[4]]), [fit.x[0], fit.x[1], fit.x[3], fit.x[4], fit.x[5]], [0.1, 0.1, 0.3, 0.05, 0.05], 600);
+console.log(`ML fit (${((Date.now() - t0) / 1000).toFixed(1)} s): nll ${fit.f.toFixed(1)} over ${rounds.length} rounds (homoscedastic: ${fit0.f.toFixed(1)}, ` +
+  `sharedSd ${Math.exp(fit0.x[0]).toFixed(3)}, indSd ${Math.exp(fit0.x[1]).toFixed(3)})`);
+for (const k in est) console.log(`  ${k.padEnd(16)} ${est[k].toFixed(4)}  (se ${k === "t108kd" ? "" : "on log scale "}${seLog[k].toFixed(3)})`);
+
+// within-judge persistence: when the same judge dissents twice in a fight, same direction or not (tastes would make it
+// the same direction more often than not)
+let pSame = 0, pOpp = 0, pOther = 0;
+{
+  const byF = new Map();
+  for (const r of rounds) { if (!byF.has(r.fid)) byF.set(r.fid, []); byF.get(r.fid).push(r); }
+  for (const rs of byF.values()) {
+    const dis = [];
+    for (const r of rs) { if (r.nA === 1 || r.nA === 2) { const maj = r.nA >= 2 ? 1 : -1; r.o.forEach((q, j) => { if (q.w !== maj) dis.push([j, q.w]); }); } }
+    for (let a = 0; a < dis.length; a++) for (let b = a + 1; b < dis.length; b++) {
+      if (dis[a][0] !== dis[b][0]) pOther++; else if (dis[a][1] === dis[b][1]) pSame++; else pOpp++;
+    }
+  }
+}
+console.log(`  dissent pairs in a fight: same judge same direction ${pSame}, same judge opposite ${pOpp}, different judges ${pOther} ` +
+  `(independence: same judge 1/3 of pairs, half of them each way) -> no fight-level judge taste`);
 
 // ------------------------------------------------------------------ checks with the engine's judgeRound (tastes on)
 function dataStats(rs) {
@@ -223,7 +243,7 @@ function simulateJudges(Jp, rs, nSims, seed, tasteOn) {
   const nd = ud + sd + md;
   return { rounds: dataStats(out), dec: { fights: decCards.length / nSims, UD: ud / nd, SD: sd / nd, MD: md / nd, drawShare: dr / decCards.length } };
 }
-const Jfit = Object.assign({}, J0, { sharedSd: est.sharedSd, indSd: est.indSd, t108kd: est.t108kd, t108: est.t108_2021_2023 });
+const Jfit = Object.assign({}, J0, { sharedSd: est.sharedSd, indSd: est.indSd, indClose: est.indClose, t108kd: est.t108kd, t108: est.t108_2021_2023 });
 const JfitEarly = Object.assign({}, Jfit, { t108: est.t108_2019_2020 });
 const lateFights = new Map([...fights].filter(([, rs]) => rs[0].late)), earlyFights = new Map([...fights].filter(([, rs]) => !rs[0].late));
 const simLateT = simulateJudges(Jfit, lateFights, SIMS, 11, true), simEarlyT = simulateJudges(JfitEarly, earlyFights, SIMS, 12, true);
@@ -284,12 +304,13 @@ const sharedEngine = Math.sqrt(Math.max(0.5 * est.sharedSd ** 2, est.sharedSd **
 console.log(`\nengine-only damage terms in ${nr} simulated league-average rounds: sd ${Math.sqrt(varH).toFixed(3)}, beta on x ${beta.toFixed(3)}, ` +
   `residual var ${resid.toFixed(3)} -> engine sharedSd ${sharedEngine.toFixed(3)} (data ${est.sharedSd.toFixed(3)})`);
 
+const tasteNote = { sameJudgeSameDir: pSame, sameJudgeOpposite: pOpp, differentJudges: pOther };
 const result = {
   meta: { tool: "tools/judgecal.js", built: new Date().toISOString(), data: "data/derived/judgerounds_rows.json, 2019-01-01..2023-12-31 rows only",
     rounds: rounds.length, fights: fights.size, complete_decisions: fullFights.size, weights: { head: J0.head, body: J0.body, leg: J0.leg, kd: J0.kd, td: J0.td, ctrlMin: J0.ctrlMin, sub: J0.sub },
-    model: "z_j = x + s + e_j; s ~ N(0, sharedSd^2) per round, e_j ~ N(0, indSd^2); 10-8 when |z_j| > t108 - t108kd x min(2, winner KD edge)" },
-  fit: { estimates: est, se_log: seLog, nll: fit.f },
-  engine: { sharedSd: +sharedEngine.toFixed(4), indSd: +est.indSd.toFixed(4), t108: +est.t108_2021_2023.toFixed(4), t108kd: +est.t108kd.toFixed(4),
+    model: "z_j = x + s + e_j; s ~ N(0, sharedSd^2) per round, e_j ~ N(0, (indSd exp(-indClose |x + s|))^2); 10-8 when |z_j| > t108 - t108kd x min(2, winner KD edge)" },
+  fit: { estimates: est, se: seLog, nll: fit.f, homoscedastic: { nll: fit0.f, sharedSd: Math.exp(fit0.x[0]), indSd: Math.exp(fit0.x[1]) }, dissentPersistence: tasteNote },
+  engine: { sharedSd: +sharedEngine.toFixed(4), indSd: +est.indSd.toFixed(4), indClose: +est.indClose.toFixed(4), t108: +est.t108_2021_2023.toFixed(4), t108kd: +est.t108kd.toFixed(4),
     note: "t108 = the 2021-2023 threshold (latest train era); sharedSd reduced by the residual variance of the engine-only hurt / power terms",
     damageTerms: { rounds: nr, sd: Math.sqrt(varH), betaOnX: beta, residualVar: resid } },
   checks: { data: { all: dataAll, late: dataLate, decisions: dataDec }, model: { all: simAll, late: simLateT, lateNoTaste: simLate0 } }
@@ -300,7 +321,7 @@ console.log("wrote data/derived/judgecal.json");
 if (WRITE) {
   const pf = path.join(ROOT, "src/params3.js");
   let src = fs.readFileSync(pf, "utf8");
-  const vals = { sharedSd: result.engine.sharedSd, indSd: result.engine.indSd, t108: result.engine.t108, t108kd: result.engine.t108kd };
+  const vals = { sharedSd: result.engine.sharedSd, indSd: result.engine.indSd, indClose: result.engine.indClose, t108: result.engine.t108, t108kd: result.engine.t108kd };
   for (const [k, v] of Object.entries(vals)) {
     const re = new RegExp("^(\\s*)" + k + ":\\s*[-0-9.eE]+(,?)(\\s*//\\s*\\[judgecal\\])", "m");
     if (!re.test(src)) throw new Error("judgecal: could not find [judgecal] entry " + k);

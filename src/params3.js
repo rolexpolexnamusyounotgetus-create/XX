@@ -202,8 +202,9 @@
       hurt: 0.8,                              // per hurt/wobble scored (engine-only event, not in ufcstats: about 1/3 of a knockdown; judgment call)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
       sharedSd: 1.0,                          // [judgecal] sd of the round noise shared by the three judges (logits)
-      indSd: 1.0,                             // [judgecal] sd of each judge's own noise (logits)
-      tasteSd: 0.2,                           // lognormal sd of each judge's fight-level taste for striking / grappling / damage (literature 12.5: 0.15-0.25)
+      indSd: 1.0,                             // [judgecal] sd of each judge's own noise (logits) on an even-looking round
+      indClose: 0.1,                          // [judgecal] individual sd x exp(-indClose x |panel mean|): judges disagree mostly on close rounds
+      tasteSd: 0,                             // lognormal sd of each judge's fight-level taste for striking / grappling / damage; 0 in v4: a judge who dissents twice in a fight does so in either direction equally often (judgecal: no fight-level taste; v3 0.2 from literature 12.5)
       t108: 6.0,                              // [judgecal] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge)
       t108kd: 1.5                             // [judgecal] 10-8 threshold reduction per knockdown of edge
     },

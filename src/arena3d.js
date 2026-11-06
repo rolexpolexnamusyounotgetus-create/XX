@@ -30,9 +30,9 @@
   var AX = 1.3, AZ = 1.0, SQN = 4.2;         // the bowl is a squircle, longer along X
 
   var QUALITY = {
-    high: { dpr: 2, shadow: 2048, bloom: 1, aa: "smaa", rows3d: 12, floor3d: 8, upper: 1, spots: 8, aniso: 8, mat: 2048, post: true },
-    medium: { dpr: 1.5, shadow: 2048, bloom: 0.5, aa: "fxaa", rows3d: 6, floor3d: 8, upper: 0.7, spots: 8, aniso: 4, mat: 2048, post: true },
-    low: { dpr: 1.5, shadow: 1024, bloom: 0, aa: "msaa", rows3d: 1, floor3d: 5, upper: 0.45, spots: 4, aniso: 2, mat: 1024, post: false }
+    high: { dpr: 2, shadow: 2048, bloom: 1, aa: "smaa", rows3d: 12, floor3d: 8, upper: 1, spots: 8, aniso: 8, mat: 2048, post: true, haze: 1 },
+    medium: { dpr: 1.5, shadow: 2048, bloom: 0.5, aa: "fxaa", rows3d: 6, floor3d: 8, upper: 0.7, spots: 8, aniso: 4, mat: 2048, post: true, haze: 1 },
+    low: { dpr: 1.5, shadow: 1024, bloom: 0, aa: "msaa", rows3d: 1, floor3d: 5, upper: 0.45, spots: 4, aniso: 2, mat: 1024, post: false, haze: 0 }
   };
 
   /* ------------------------------------------------------------ small helpers */
@@ -101,6 +101,33 @@
     return { g: new T.BoxGeometry(w, h, d), m: new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion().setFromAxisAngle(_up, ry || 0), new T.Vector3(1, 1, 1)) };
   }
   function spaced(s) { return s.split("").join(" "); }
+
+  /* ------------------------------------------------------------ embedded assets (window.FightAssets) */
+  // Photo textures and the environment map arrive as data: URIs (dev pages: URLs via tests/fightassets_shim.js).
+  // Every one is optional: the procedural versions stay in place until (and unless) the image decodes.
+  function assetUrl(name) { var A = root.FightAssets; return A && A[name] ? A[name] : null; }
+  function loadImage(name) {
+    return new Promise(function (res, rej) {
+      var u = assetUrl(name);
+      if (!u || !root.Image) { rej(new Error("FightArena: no asset " + name)); return; }
+      var img = new root.Image();
+      img.onload = function () { res(img); };
+      img.onerror = function () { rej(new Error("FightArena: could not decode " + name)); };
+      img.src = u;
+    });
+  }
+  function imageTex(img, srgb, aniso, repeat) {
+    var t = new T.Texture(img);
+    t.encoding = srgb ? T.sRGBEncoding : T.LinearEncoding;
+    if (repeat) t.wrapS = t.wrapT = T.RepeatWrapping;
+    t.anisotropy = aniso || 1; t.needsUpdate = true;
+    return t;
+  }
+  function pixels(img, n) {
+    var c = makeCanvas(n || img.width, n || img.height), ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return ctx.getImageData(0, 0, c.width, c.height);
+  }
 
   /* ------------------------------------------------------------ GPU tier */
   function probeGPU() {
@@ -405,40 +432,64 @@
   }
 
   /* ------------------------------------------------------------ shaders */
+  // the last colour pass: linear -> sRGB (half-float pipeline), grade, broadcast lens (vignette, chromatic
+  // aberration that comes up on replays, slight halation tint), film grain and a dither
   var FinishShader = {
-    uniforms: { tDiffuse: { value: null }, uLinear: { value: 1 }, uVig: { value: 1.0 }, uTime: { value: 0 }, uRes: { value: new T.Vector2(1, 1) }, uSat: { value: 1.06 }, uContrast: { value: 1.05 }, uLift: { value: 0.006 } },
+    uniforms: {
+      tDiffuse: { value: null }, uLinear: { value: 1 }, uVig: { value: 1.0 }, uTime: { value: 0 }, uRes: { value: new T.Vector2(1, 1) },
+      uSat: { value: 1.06 }, uContrast: { value: 1.05 }, uLift: { value: 0.006 }, uGrain: { value: 0.022 }, uCA: { value: 0.0 }, uReplay: { value: 0.0 }, uKick: { value: 0.0 }
+    },
     vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
     fragmentShader: [
-      "uniform sampler2D tDiffuse; uniform float uLinear, uVig, uTime, uSat, uContrast, uLift; uniform vec2 uRes; varying vec2 vUv;",
+      "uniform sampler2D tDiffuse; uniform float uLinear, uVig, uTime, uSat, uContrast, uLift, uGrain, uCA, uReplay, uKick; uniform vec2 uRes; varying vec2 vUv;",
       "float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }",
+      "vec3 toSRGB(vec3 c) { c = max(c, vec3(0.0)); vec3 hi = 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055; return mix(c * 12.92, hi, step(vec3(0.0031308), c)); }",
       "void main() {",
+      "  vec2 q = vUv - 0.5;",
       "  vec3 col = texture2D(tDiffuse, vUv).rgb;",
-      "  if (uLinear > 0.5) { col = max(col, vec3(0.0)); vec3 hi = 1.055 * pow(col, vec3(1.0 / 2.4)) - 0.055; col = mix(col * 12.92, hi, step(vec3(0.0031308), col)); }",
+      "  if (uCA > 0.001) {",
+      "    vec2 d = q * dot(q, q) * uCA * 0.045;",
+      "    col.r = texture2D(tDiffuse, vUv - d).r;",
+      "    col.b = texture2D(tDiffuse, vUv + d).b;",
+      "  }",
+      "  if (uLinear > 0.5) col = toSRGB(col);",
       "  float l = dot(col, vec3(0.2126, 0.7152, 0.0722));",
-      "  col = mix(vec3(l), col, uSat);",
-      "  col = (col - 0.5) * uContrast + 0.5 + uLift;",
-      "  vec2 q = vUv - 0.5; q.x *= uRes.x / uRes.y;",
-      "  float v = smoothstep(1.05, 0.28, length(q) * uVig);",
+      "  col = mix(vec3(l), col, uSat * (1.0 - 0.28 * uReplay));",
+      "  col = (col - 0.5) * (uContrast + 0.06 * uReplay) + 0.5 + uLift;",
+      "  col *= 1.0 + uKick;",
+      "  col = mix(col, col * vec3(0.96, 1.0, 1.06), uReplay);",
+      "  vec2 qa = q; qa.x *= uRes.x / uRes.y;",
+      "  float v = smoothstep(1.05, 0.28, length(qa) * (uVig + 0.18 * uReplay));",
       "  col *= mix(0.6, 1.0, v);",
-      "  col += (hash(vUv * uRes + fract(uTime) * 61.0) + hash(vUv * uRes * 1.37 - fract(uTime) * 17.0) - 1.0) / 255.0;",
+      "  float g = hash(vUv * uRes + fract(uTime * 7.31) * 113.0) + hash(vUv * uRes * 1.37 - fract(uTime * 3.17) * 71.0) - 1.0;",
+      "  col += g * uGrain * (1.0 - 0.6 * clamp(l, 0.0, 1.0));",
+      "  col += (hash(vUv * uRes + fract(uTime) * 61.0) - 0.5) / 255.0;",
       "  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);",
       "}"
     ].join("\n")
   };
 
+  // The near crowd: one instanced figure, seated or standing (a morph), arms that pump with the excitement,
+  // heads that follow the action, and a reaction that ripples out from the cage on big moments.
+  //   aPar = (phase, stand threshold, excitability, scale); aVar = (long sleeves, width, head-turn, lean)
+  //   uPulse = (time of the big moment, x, z, strength)
   var CROWD_VS = [
-    "uniform float uTime, uExcite, uStand, uWave, uHouse, uSpill;",
-    "attribute vec3 aStand; attribute vec3 aStandN; attribute float aPart; attribute float aArm;",
-    "attribute vec4 aOff; attribute vec4 aPar; attribute vec3 aC0; attribute vec3 aC1; attribute vec3 aC2; attribute vec3 aC3;",
+    "uniform float uTime, uExcite, uStand, uWave, uHouse, uSpill; uniform vec4 uPulse; uniform vec3 uFocus;",
+    "attribute vec3 aStand; attribute vec3 aStandN; attribute float aPart; attribute float aArm; attribute float aHd;",
+    "attribute vec4 aOff; attribute vec4 aPar; attribute vec4 aVar; attribute vec3 aC0; attribute vec3 aC1; attribute vec3 aC2; attribute vec3 aC3;",
     "varying vec3 vCol;",
     "#include <fog_pars_vertex>",
     "vec3 rotX(vec3 p, float a) { float c = cos(a), s = sin(a); return vec3(p.x, p.y * c - p.z * s, p.y * s + p.z * c); }",
+    "vec3 rotY(vec3 p, float a) { float c = cos(a), s = sin(a); return vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c); }",
     "vec3 rotZ(vec3 p, float a) { float c = cos(a), s = sin(a); return vec3(p.x * c - p.y * s, p.x * s + p.y * c, p.z); }",
     "void main() {",
     "  float ph = aPar.x, sr = aPar.y, ex = aPar.z;",
     "  float e = clamp(uExcite * ex, 0.0, 1.0);",
     "  float wv = uWave * ex * smoothstep(0.55, 0.95, sin(aOff.w * 2.0 - uTime * 2.6 + ph * 0.6));",
-    "  float st = smoothstep(sr - 0.07, sr + 0.07, uStand * (0.55 + 0.45 * ex) + wv * 0.6);",
+    // reaction to a big moment: starts at the cage side nearest the action and runs back through the rows
+    "  float tt = uTime - uPulse.x - length(aOff.xz - uPulse.yz) * 0.045 - fract(ph * 17.3) * 0.32;",
+    "  float rx = tt > 0.0 ? uPulse.w * smoothstep(0.0, 0.28, tt) * exp(-tt / 2.6) * (0.55 + 0.6 * ex) : 0.0;",
+    "  float st = smoothstep(sr - 0.07, sr + 0.07, uStand * (0.55 + 0.45 * ex) + wv * 0.6 + rx * 0.9);",
     "  vec3 p = mix(position, aStand, st);",
     "  vec3 n = normalize(mix(normal, aStandN, st));",
     "  if (aArm > 0.5) {",
@@ -446,21 +497,32 @@
     "    vec3 piv = vec3(side * 0.23, mix(1.0, 1.4, st), 0.0);",
     "    float pump = 0.5 + 0.5 * sin(uTime * (5.5 + 3.0 * fract(ph * 7.31)) + ph * 6.2831 + side * 0.9);",
     "    float lift = clamp(e * 1.7 - 0.3 - fract(ph * 3.71) * 0.55, 0.0, 1.0);",
-    "    lift = max(lift * (side > 0.0 || fract(ph * 5.3) > 0.35 ? 1.0 : 0.4), wv);",
+    "    lift = max(lift * (side > 0.0 || fract(ph * 5.3) > 0.35 ? 1.0 : 0.4), max(wv, clamp(rx * 1.4 - fract(ph * 2.9) * 0.3, 0.0, 1.0)));",
     "    float ang = lift * (2.45 + 0.5 * pump);",
     "    vec3 q = rotX(p - piv, -ang); q = rotZ(q, -side * 0.38 * lift);",
     "    p = piv + q; n = rotZ(rotX(n, -ang), -side * 0.38 * lift);",
     "  }",
-    "  p.y += (st * 0.06 + 0.012) * e * abs(sin(uTime * 5.2 + ph * 6.2831));",
-    "  p *= aPar.w;",
     "  float cy = cos(aOff.w), sy = sin(aOff.w);",
+    // heads follow the fight: yaw toward the focus, in the figure's own frame
+    "  if (aHd > 0.5) {",
+    "    vec3 d = uFocus - aOff.xyz;",
+    "    float lx = cy * d.x - sy * d.z, lz = sy * d.x + cy * d.z;",
+    "    float hy = clamp(atan(lx, max(lz, 0.2)), -0.95, 0.95) * aVar.z;",
+    "    vec3 hp = vec3(0.0, mix(1.07, 1.465, st), 0.0);",
+    "    p = hp + rotY(p - hp, hy); n = rotY(n, hy);",
+    "  }",
+    "  p.z += aVar.w * (1.0 - st) * 0.06 * smoothstep(0.6, 1.2, p.y);",   // some lean in toward the cage
+    "  p.y += (st * 0.06 + 0.012) * e * abs(sin(uTime * 5.2 + ph * 6.2831)) + rx * 0.09 * abs(sin(uTime * 7.0 + ph * 6.2831));",
+    "  p.x *= aVar.y;",
+    "  p *= aPar.w;",
     "  vec3 wp = vec3(cy * p.x + sy * p.z, p.y, -sy * p.x + cy * p.z) + aOff.xyz;",
     "  vec3 wn = vec3(cy * n.x + sy * n.z, n.y, -sy * n.x + cy * n.z);",
-    "  vec3 toC = vec3(0.0, 7.0, 0.0) - wp; float d = length(toC);",
-    "  float lam = max(dot(wn, toC / d), 0.0) * 0.85 + 0.15;",
-    "  float spill = uSpill / (1.0 + d * d * d * 0.00195);",
+    "  vec3 toC = vec3(0.0, 7.0, 0.0) - wp; float d2 = length(toC);",
+    "  float lam = max(dot(wn, toC / d2), 0.0) * 0.85 + 0.15;",
+    "  float spill = uSpill / (1.0 + d2 * d2 * d2 * 0.00195);",
     "  float top = (0.55 + 0.45 * max(wn.y, 0.0)) * uHouse;",
-    "  vec3 col = aPart < 0.5 ? aC0 : (aPart < 1.5 ? aC2 : (aPart < 2.5 ? aC1 : aC3));",
+    "  vec3 skin = aArm > 0.5 && aVar.x > 0.5 ? mix(aC2, aC0, 0.85) : aC2;",   // long sleeves
+    "  vec3 col = aPart < 0.5 ? aC0 : (aPart < 1.5 ? skin : (aPart < 2.5 ? aC1 : aC3));",
     "  vCol = col * (top + lam * spill) * (0.82 + 0.36 * fract(ph * 13.13));",
     "  vec4 mvPosition = viewMatrix * vec4(wp, 1.0);",
     "  gl_Position = projectionMatrix * mvPosition;",
@@ -479,16 +541,19 @@
     "}"
   ].join("\n");
 
-  // the far crowd as point sprites shaped like heads and shoulders
+  // the far crowd as point sprites shaped like heads and shoulders; arms go up on big moments
   var FAR_VS = [
-    "uniform float uTime, uExcite, uScale, uHouse, uSpill;",
+    "uniform float uTime, uExcite, uScale, uHouse, uSpill; uniform vec4 uPulse;",
     "attribute vec3 aC0; attribute vec3 aC2; attribute vec2 aPar;",
-    "varying vec3 vShirt; varying vec3 vSkin;",
+    "varying vec3 vShirt; varying vec3 vSkin; varying float vArms;",
     "#include <fog_pars_vertex>",
     "void main() {",
     "  vec3 p = position;",
     "  float e = clamp(uExcite, 0.0, 1.0);",
-    "  p.y += e * 0.07 * abs(sin(uTime * 5.0 + aPar.x * 6.2831)) + e * 0.25 * step(0.6, fract(aPar.x * 9.7));",
+    "  float tt = uTime - uPulse.x - length(p.xz - uPulse.yz) * 0.045 - fract(aPar.x * 17.3) * 0.4;",
+    "  float rx = tt > 0.0 ? uPulse.w * smoothstep(0.0, 0.3, tt) * exp(-tt / 2.6) : 0.0;",
+    "  p.y += e * 0.07 * abs(sin(uTime * 5.0 + aPar.x * 6.2831)) + e * 0.25 * step(0.6, fract(aPar.x * 9.7)) + rx * (0.3 + 0.1 * abs(sin(uTime * 6.5 + aPar.x * 6.2831)));",
+    "  vArms = clamp(max(e * 1.6 - 0.7, rx * 1.5) - fract(aPar.x * 5.71) * 0.5, 0.0, 1.0);",
     "  vec4 mvPosition = viewMatrix * vec4(p, 1.0);",
     "  gl_PointSize = clamp(uScale * aPar.y / -mvPosition.z, 1.0, 64.0);",
     "  gl_Position = projectionMatrix * mvPosition;",
@@ -500,18 +565,67 @@
     "}"
   ].join("\n");
   var FAR_FS = [
-    "varying vec3 vShirt; varying vec3 vSkin;",
+    "varying vec3 vShirt; varying vec3 vSkin; varying float vArms;",
     "#include <common>",
     "#include <fog_pars_fragment>",
     "void main() {",
     "  vec2 q = gl_PointCoord - vec2(0.5);",
     "  float head = length((q - vec2(0.0, -0.22)) * vec2(1.0, 0.9)) - 0.17;",
     "  float body = length((q - vec2(0.0, 0.34)) * vec2(0.85, 1.25)) - 0.36;",
-    "  if (min(head, body) > 0.0) discard;",
-    "  gl_FragColor = vec4(head < body ? vSkin : vShirt, 1.0);",
+    "  vec2 aq = vec2(abs(q.x) - 0.3, q.y + 0.12 + 0.22 * (1.0 - vArms));",
+    "  float arm = vArms > 0.05 ? max(abs(aq.x) - 0.055, abs(aq.y) - 0.22 * vArms) : 1.0;",
+    "  if (min(min(head, body), arm) > 0.0) discard;",
+    "  gl_FragColor = vec4(head < body && head < arm ? vSkin : (arm < body ? mix(vSkin, vShirt, 0.5) : vShirt), 1.0);",
     "  #include <tonemapping_fragment>",
     "  #include <encodings_fragment>",
     "  #include <fog_fragment>",
+    "}"
+  ].join("\n");
+
+  // walkout haze: big soft camera-facing sheets that drift in the light above and around the cage
+  var HAZE_VS = [
+    "attribute vec4 aHz; attribute vec2 aHr;",
+    "uniform float uTime, uHaze;",
+    "varying vec2 vUv; varying float vA;",
+    "void main() {",
+    "  vec3 c = aHz.xyz;",
+    "  c.x += sin(uTime * 0.05 + aHr.x * 6.2831) * 0.7; c.z += cos(uTime * 0.043 + aHr.x * 4.0) * 0.7; c.y += sin(uTime * 0.07 + aHr.x * 9.0) * 0.25;",
+    "  vec4 mv = viewMatrix * vec4(c, 1.0);",
+    "  float ang = aHr.x * 6.2831 + uTime * aHr.y;",
+    "  vec2 q = vec2(position.x * cos(ang) - position.y * sin(ang), position.x * sin(ang) + position.y * cos(ang));",
+    "  mv.xy += q * aHz.w;",
+    "  vUv = position.xy + 0.5;",
+    "  float d = -mv.z;",
+    "  vA = uHaze * smoothstep(2.0, 6.0, d) * (1.0 - smoothstep(45.0, 80.0, d)) * (0.55 + 0.45 * smoothstep(1.5, 9.0, c.y));",
+    "  gl_Position = projectionMatrix * mv;",
+    "}"
+  ].join("\n");
+  var HAZE_FS = [
+    "uniform sampler2D uTex; uniform vec3 uColor; uniform float uTime;",
+    "varying vec2 vUv; varying float vA;",
+    "void main() {",
+    "  float n = texture2D(uTex, vUv).r * (0.75 + 0.25 * texture2D(uTex, vUv * 0.7 + vec2(uTime * 0.004, 0.0)).g);",
+    "  gl_FragColor = vec4(uColor * n * vA, 1.0);",
+    "}"
+  ].join("\n");
+
+  // the environment map's sky: the log-encoded Poly Haven equirect, decoded, with the source venue's floor and
+  // seats dimmed and desaturated so only its dome, lamps and spots light the fighters
+  var ENV_LOG_K = 16, ENV_LOG_L = Math.log(1 + 512 * 16) / Math.LN2;
+  var ENVSKY_VS = "varying vec3 vDir; void main() { vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }";
+  var ENVSKY_FS = [
+    "uniform sampler2D uMap; uniform float uGain, uL, uK, uYaw;",
+    "varying vec3 vDir;",
+    "void main() {",
+    "  vec3 d = normalize(vDir);",
+    "  float u = atan(d.z, d.x) * 0.15915494 + 0.5 + uYaw;",
+    "  float v = acos(clamp(d.y, -1.0, 1.0)) * 0.31830989;",
+    "  vec3 c = (exp2(texture2D(uMap, vec2(u, 1.0 - v)).rgb * uL) - 1.0) / uK;",
+    "  float up = smoothstep(-0.04, 0.38, d.y);",
+    "  float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));",
+    "  c = mix(vec3(lum), c, mix(0.3, 1.0, up));",
+    "  c *= mix(0.07, 1.0, up);",
+    "  gl_FragColor = vec4(c * uGain, 1.0);",
     "}"
   ].join("\n");
 
@@ -564,7 +678,7 @@
   /* ------------------------------------------------------------ crowd figure geometry */
   // A seated figure and the same figure standing (a morph target), built from boxes. Faces +Z, feet at y = 0.
   function personGeometry() {
-    var P = [], S = [], N = [], SN = [], PART = [], ARM = [], IDX = [];
+    var P = [], S = [], N = [], SN = [], PART = [], ARM = [], HD = [], IDX = [];
     var m1 = new T.Matrix4(), m2 = new T.Matrix4(), n1 = new T.Matrix3(), n2 = new T.Matrix3(), v = new T.Vector3(), q = new T.Quaternion(), e = new T.Euler();
     // add a primitive in its seated and standing placement; seat/stand = [x, y, z, rotX], sc = scale
     function part(g, partId, arm, seat, stand, opt) {
@@ -584,7 +698,7 @@
         v.set(x, y, z).applyMatrix4(m2); S.push(v.x, v.y, v.z);
         v.set(nor.getX(i), nor.getY(i), nor.getZ(i)).applyMatrix3(n1).normalize(); N.push(v.x, v.y, v.z);
         v.set(nor.getX(i), nor.getY(i), nor.getZ(i)).applyMatrix3(n2).normalize(); SN.push(v.x, v.y, v.z);
-        PART.push(partId); ARM.push(arm);
+        PART.push(partId); ARM.push(arm); HD.push(opt.hd ? 1 : 0);
       }
       var n = idx ? idx.length : pos.count;
       for (i = 0; i < n; i += 3) {
@@ -602,8 +716,8 @@
     });
     part(box(0.3, 0.53, 0.21), 0, 0, [0, 0.79, -0.02, -0.06], [0, 1.18, 0.0], { taper: 1.25, waist: 0.95, noBottom: true });  // torso, broad shoulders
     part(box(0.07, 0.07, 0.07), 1, 0, [0, 1.07, -0.005, -0.04], [0, 1.465, 0.0], { noBottom: true });                       // neck
-    part(ico, 1, 0, [0, 1.155, 0.005, -0.04], [0, 1.55, 0.005], { scale: [0.088, 0.112, 0.1] });                             // head
-    part(ico, 3, 0, [0, 1.19, -0.012, -0.04], [0, 1.585, -0.01], { scale: [0.094, 0.085, 0.104], keep: function (x, y, z) { return y > -0.2 || z < -0.3; } });   // hair or cap
+    part(ico, 1, 0, [0, 1.155, 0.005, -0.04], [0, 1.55, 0.005], { scale: [0.088, 0.112, 0.1], hd: true });                             // head
+    part(ico, 3, 0, [0, 1.19, -0.012, -0.04], [0, 1.585, -0.01], { scale: [0.094, 0.085, 0.104], hd: true, keep: function (x, y, z) { return y > -0.2 || z < -0.3; } });   // hair or cap
     var g = new T.InstancedBufferGeometry();
     g.setIndex(IDX);
     g.setAttribute("position", new T.Float32BufferAttribute(P, 3));
@@ -612,24 +726,36 @@
     g.setAttribute("aStandN", new T.Float32BufferAttribute(SN, 3));
     g.setAttribute("aPart", new T.Float32BufferAttribute(PART, 1));
     g.setAttribute("aArm", new T.Float32BufferAttribute(ARM, 1));
+    g.setAttribute("aHd", new T.Float32BufferAttribute(HD, 1));
     return g;
   }
 
-  var SHIRTS = [[0x141519, 30], [0x2a2d33, 12], [0x1b2846, 10], [0xd6d8db, 9], [0x777b83, 8], [0x8b1d21, 7], [0x1e4c9c, 6], [0x474c31, 4], [0x581a23, 4], [0x9a8263, 3], [0x1d583a, 3], [0xb39528, 2], [0xb06478, 2]];
+  var SHIRTS = [[0x141519, 30], [0x2a2d33, 12], [0x1b2846, 10], [0xd6d8db, 9], [0x777b83, 8], [0x8b1d21, 7], [0x1e4c9c, 6], [0x474c31, 4], [0x581a23, 4], [0x9a8263, 3], [0x1d583a, 3], [0xb39528, 2], [0xb06478, 2],
+    [0xe8e4da, 3], [0x3d2a1e, 3], [0x5a6f8c, 3], [0xc75b1a, 1], [0x6b3f7a, 1], [0xc9b48a, 2], [0x0f2a2a, 2]];
+  var BLUE_FAN = [[0x1d4fa8, 6], [0x2a6bd6, 3], [0xe9edf2, 2], [0x0d1f45, 3]], RED_FAN = [[0xb4202a, 6], [0xd8343a, 3], [0x141519, 2], [0x5e0b10, 3]];
   var PANTS = [[0x1c2333, 40], [0x111215, 30], [0x6a5f4b, 12], [0x45484e, 18]];
   var SKINS = [[0xe6c2a6, 14], [0xd8a283, 22], [0xc58e69, 20], [0xa86d4b, 16], [0x8a5538, 12], [0x5f3b28, 10], [0x3f291d, 6]];
   var HAIRS = [[0x121010, 34], [0x2a1c13, 26], [0x4c3422, 14], [0x9f7f4e, 7], [0x77736d, 9], [0, 10]];
   function wpick(list, r) { var tot = 0, i; for (i = 0; i < list.length; i++) tot += list[i][1]; var x = r() * tot; for (i = 0; i < list.length; i++) { x -= list[i][1]; if (x <= 0) return list[i][0]; } return list[0][0]; }
 
-  function CrowdBuilder() { this.off = []; this.par = []; this.c0 = []; this.c1 = []; this.c2 = []; this.c3 = []; this.heads = []; }
+  function CrowdBuilder() { this.off = []; this.par = []; this.vr = []; this.c0 = []; this.c1 = []; this.c2 = []; this.c3 = []; this.heads = []; }
+  // fans near a corner lean toward its colours
+  function fanShirt(x, z, r) {
+    var a = Math.atan2(z, x), db = Math.abs(Math.atan2(Math.sin(a - PI), Math.cos(a - PI))), dr = Math.abs(a);
+    if (db < 0.7 && r() < 0.32) return wpick(BLUE_FAN, r);
+    if (dr < 0.7 && r() < 0.32) return wpick(RED_FAN, r);
+    return wpick(SHIRTS, r);
+  }
   CrowdBuilder.prototype.add = function (x, y, z, yaw, r, o) {
     o = o || {};
     var col = new T.Color();
-    var shirt = o.shirt != null ? o.shirt : wpick(SHIRTS, r), skin = wpick(SKINS, r), pants = o.pants != null ? o.pants : wpick(PANTS, r), hair = wpick(HAIRS, r);
+    var shirt = o.shirt != null ? o.shirt : fanShirt(x, z, r), skin = wpick(SKINS, r), pants = o.pants != null ? o.pants : wpick(PANTS, r), hair = wpick(HAIRS, r);
     if (hair === 0) hair = r() < 0.5 ? skin : (r() < 0.6 ? 0x16171a : shirt);   // bald or a cap
     var sc = o.scale || (0.93 + r() * 0.13);
     this.off.push(x, y, z, yaw);
     this.par.push(r(), o.stand != null ? o.stand : (0.08 + r() * 0.92), o.excite != null ? o.excite : (0.45 + r() * 0.75), sc);
+    // long sleeves, width, how much the head follows the fight, lean toward the cage
+    this.vr.push(o.sleeve != null ? o.sleeve : (r() < 0.38 ? 1 : 0), 0.88 + r() * 0.26, o.look != null ? o.look : 0.45 + r() * 0.55, r() < 0.3 ? 0.5 + r() * 0.5 : 0);
     col.setHex(shirt).convertSRGBToLinear(); this.c0.push(col.r, col.g, col.b);
     col.setHex(pants).convertSRGBToLinear(); this.c1.push(col.r, col.g, col.b);
     col.setHex(skin).convertSRGBToLinear(); this.c2.push(col.r, col.g, col.b);
@@ -643,6 +769,7 @@
     for (var k in base.attributes) g.attributes[k] = base.attributes[k];
     g.setAttribute("aOff", new T.InstancedBufferAttribute(new Float32Array(this.off), 4));
     g.setAttribute("aPar", new T.InstancedBufferAttribute(new Float32Array(this.par), 4));
+    g.setAttribute("aVar", new T.InstancedBufferAttribute(new Float32Array(this.vr), 4));
     g.setAttribute("aC0", new T.InstancedBufferAttribute(new Float32Array(this.c0), 3));
     g.setAttribute("aC1", new T.InstancedBufferAttribute(new Float32Array(this.c1), 3));
     g.setAttribute("aC2", new T.InstancedBufferAttribute(new Float32Array(this.c2), 3));
@@ -653,29 +780,41 @@
   };
 
   /* ------------------------------------------------------------ image-based lighting */
-  function buildEnvironment(renderer, useRoom) {
+  // A small scene of what a fighter would see from the centre of the cage (the bright canvas below, the truss
+  // fixtures and the key above, the LED skirt), prefiltered by PMREM. With `sky` (the decoded Poly Haven arena
+  // equirect) the dark backdrop becomes a real venue dome, so skin, gloves and vinyl pick up varied, believable
+  // reflections; the bowl's own materials keep tiny envMapIntensity values, so the stands stay dark.
+  var ENV = { gain: 0.42, yaw: 0.12, fixtures: 0.8 };
+  function buildEnvironment(renderer, useRoom, sky) {
     if (!T.PMREMGenerator) return null;
-    var pm = new T.PMREMGenerator(renderer), tex = null;
+    var pm = new T.PMREMGenerator(renderer), tex = null, es = new T.Scene(), disposables = [];
+    function keep(o) { if (o.geometry) disposables.push(o.geometry); if (o.material) disposables.push(o.material); return o; }
     try {
       if (useRoom && T.RoomEnvironment) tex = pm.fromScene(new T.RoomEnvironment(), 0.04).texture;
       else {
-        var es = new T.Scene();
         var basic = function (col, mult, side) { return new T.MeshBasicMaterial({ color: new T.Color(col).multiplyScalar(mult), side: side || T.FrontSide }); };
-        es.add(new T.Mesh(new T.SphereGeometry(60, 24, 12), basic(0x0a0e17, 1, T.BackSide)));
-        var ring = new T.Mesh(new T.CylinderGeometry(24, 24, 12, 48, 1, true), basic(0x2b2723, 0.55, T.BackSide)); ring.position.y = 2; es.add(ring);
-        var floor = new T.Mesh(new T.CircleGeometry(4.6, 8), basic(0xe2e5ea, 0.9)); floor.rotation.x = -PI / 2; floor.position.y = -1.25; es.add(floor);
-        var deck = new T.Mesh(new T.RingGeometry(4.6, 9, 8), basic(0x101216, 1)); deck.rotation.x = -PI / 2; deck.position.y = -1.27; es.add(deck);
+        var fx = sky ? ENV.fixtures : 1;
+        if (sky) {
+          var skyMat = new T.ShaderMaterial({ uniforms: { uMap: { value: sky }, uGain: { value: ENV.gain }, uL: { value: ENV_LOG_L }, uK: { value: ENV_LOG_K }, uYaw: { value: ENV.yaw } }, vertexShader: ENVSKY_VS, fragmentShader: ENVSKY_FS, side: T.BackSide, depthWrite: false });
+          es.add(keep(new T.Mesh(new T.SphereGeometry(60, 48, 24), skyMat)));
+        } else {
+          es.add(keep(new T.Mesh(new T.SphereGeometry(60, 24, 12), basic(0x0a0e17, 1, T.BackSide))));
+          var ring = keep(new T.Mesh(new T.CylinderGeometry(24, 24, 12, 48, 1, true), basic(0x2b2723, 0.55, T.BackSide))); ring.position.y = 2; es.add(ring);
+        }
+        var floor = keep(new T.Mesh(new T.CircleGeometry(4.6, 8), basic(0xe2e5ea, 0.9))); floor.rotation.x = -PI / 2; floor.position.y = -1.25; es.add(floor);
+        var deck = keep(new T.Mesh(new T.RingGeometry(4.6, 9, 8), basic(0x101216, 1))); deck.rotation.x = -PI / 2; deck.position.y = -1.27; es.add(deck);
         for (var k = 0; k < 8; k++) {
-          var a = (k + 1) * PI / 4, p = new T.Mesh(new T.PlaneGeometry(3.6, 0.8), basic(0xfff3e4, 9));
+          var a = (k + 1) * PI / 4, p = keep(new T.Mesh(new T.PlaneGeometry(3.6, 0.8), basic(0xfff3e4, 9 * fx)));
           p.position.set(Math.cos(a) * 5.4, 8.2, Math.sin(a) * 5.4); p.lookAt(0, -1.2, 0); es.add(p);
         }
-        var key = new T.Mesh(new T.CircleGeometry(1.3, 24), basic(0xffffff, 14)); key.position.y = 11.4; key.rotation.x = PI / 2; es.add(key);
-        var led = new T.Mesh(new T.CylinderGeometry(5.9, 5.9, 0.6, 32, 1, true), basic(0x4060b0, 0.6, T.BackSide)); led.position.y = -1.6; es.add(led);
-        [-1, 1].forEach(function (s) { var sc = new T.Mesh(new T.PlaneGeometry(14, 8), basic(0x90a6d8, 1.4)); sc.position.set(s * 40, 18, 0); sc.lookAt(0, 1, 0); es.add(sc); });
+        var key = keep(new T.Mesh(new T.CircleGeometry(1.3, 24), basic(0xffffff, 14 * fx))); key.position.y = 11.4; key.rotation.x = PI / 2; es.add(key);
+        var led = keep(new T.Mesh(new T.CylinderGeometry(5.9, 5.9, 0.6, 32, 1, true), basic(0x4060b0, 0.6, T.BackSide))); led.position.y = -1.6; es.add(led);
+        [-1, 1].forEach(function (s) { var sc = keep(new T.Mesh(new T.PlaneGeometry(14, 8), basic(0x90a6d8, 1.4))); sc.position.set(s * 40, 18, 0); sc.lookAt(0, 1, 0); es.add(sc); });
         tex = pm.fromScene(es, 0.035, 0.1, 100).texture;
       }
     } catch (e) { tex = null; }
     pm.dispose();
+    disposables.forEach(function (d) { d.dispose(); });
     return tex;
   }
 
@@ -721,10 +860,13 @@
     this.cssW = Math.max(1, canvas.clientWidth || canvas.width || 300); this.cssH = Math.max(1, canvas.clientHeight || canvas.height || 150);
     this.contacts = []; for (var ci = 0; ci < 16; ci++) this.contacts.push(new T.Vector4(0, 0, 0, 0));
     this.lowPts = [];
-    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 1.0 }, uScale: { value: 600 }, uPhones: { value: 0.03 }, uFarHouse: { value: 0.045 } };
+    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 1.0 }, uScale: { value: 600 }, uPhones: { value: 0.03 }, uFarHouse: { value: 0.045 },
+      uPulse: { value: new T.Vector4(-99, 0, 0, 0) }, uFocus: { value: new T.Vector3(0, 1.2, 0) }, uHaze: { value: 0 }, uShaft: { value: 0.012 } };
+    this.fx = { haze: 0, ca: 0, kick: 0, storm: 0, press: 0, replay: false };
 
     this.env = buildEnvironment(renderer, opts.env === "room");
     if (this.env) scene.environment = this.env;
+    this.envState = this.env ? "procedural" : "none";
 
     this.own = function (o) { o.userData.arena = true; scene.add(o); return o; };
 
@@ -738,7 +880,30 @@
     buildFx(this);
     this.setupPost();
     this.quality = tier;
+    if (opts.env !== "room" && opts.hdri !== false) this.loadEnv();
+    this.loadSurfaces();
   }
+
+  // swap the procedural environment for the venue HDRI once its image decodes (and keep the old one if not)
+  Arena.prototype.loadEnv = function () {
+    var self = this;
+    if (!this.env || !assetUrl("arena-env-circus.jpg")) return;
+    this.envState = "loading";
+    loadImage("arena-env-circus.jpg").then(function (img) {
+      var t = new T.Texture(img);
+      t.encoding = T.LinearEncoding; t.generateMipmaps = false; t.minFilter = T.LinearFilter; t.magFilter = T.LinearFilter;
+      t.wrapS = T.RepeatWrapping; t.needsUpdate = true;
+      var env = buildEnvironment(self.renderer, false, t);
+      t.dispose();
+      if (!env) { self.envState = "procedural"; return; }
+      var old = self.env;
+      self.env = env; self.scene.environment = env; self.envState = "hdri";
+      if (old && old.dispose) old.dispose();
+    }).catch(function (e) {
+      self.envState = "procedural";
+      if (root.console) console.warn("[arena] environment map unavailable, keeping the procedural one", e && e.message);
+    });
+  };
 
   /* ---- lights ---- */
   function buildLights(A) {

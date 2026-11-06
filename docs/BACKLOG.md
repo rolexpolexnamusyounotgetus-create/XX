@@ -107,11 +107,12 @@ Findings from verified research that the next engine versions must use. Each lin
   [1, .65, .405, .29, .29] and does NOT rise with damage; KD-to-finish ~0.52 declining by round. Engine v3
   gaps: round-to-round output corr 0.19 vs 0.53 real, fight-level output sd 0.25 vs 0.50, KO rate in 5-round
   R3-5 0.10 vs 0.04-0.07. Exact parameter recipe E1-E11 in the report. -> v6.
-- Market (tools/market.py, data/derived/market.json, research/model_market.md; verifier cut off): closing
-  line for 3,228/3,237 backtest fights; benchmarks on 2024+: close (power no-vig) 0.5899, open 0.6126, market
-  rating 0.6336, Elo 0.6800; method6 1.4762; p_dec 0.6464; round 1.1600. Walk-forward Kalman "market rating"
-  works as a no-line prior. Soft-label scoring against the close is 3-4.6x less noisy for development.
-  Volk-Gaethje: market rating 63.5% Volk vs ~37% openers.
+- Market (tools/market.py, data/derived/market.json, research/model_market.md; VERIFIED after a fix, Nov 6 pm):
+  the first build scored 2024-2026 (vault included); now dev-only, 2026 rows exported to the vault dir. Closing
+  line for 2,855/2,864 dev fights; benchmarks on 2024-2025 (843 fights): close (power no-vig) 0.5854, open 0.6094,
+  market rating 0.6258 (+offsets 0.6148), Elo 0.6770; method6 1.4770; p_dec 0.6516; round 1.1384. Walk-forward
+  Kalman "market rating" works as a no-line prior. Soft-label scoring against the close is 3-4.6x less noisy but
+  rewards closeness to the market: a screen only. Volk-Gaethje: market rating 63.5% Volk vs ~37% openers.
 - ML benchmark (tools/ml.py; verifier cut off): logistic 0.6156 on 2024+ (66.6% accuracy) vs Elo 0.6799;
   ties the open line, 0.023 behind the close; stack Elo+ML+market rating 0.6071. Engine v3 adds nothing to the
   stack. Gap to the close concentrated in newcomers (0.051 log loss when a fighter has 1-2 UFC fights).

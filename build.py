@@ -90,6 +90,227 @@ def scouting_json():
     return text.replace("</", "<\\/")
 
 
+# ------------------------------------------------------------------ model blocks (derived at build time)
+# Each returns a JSON-serialisable object, or None when its source is missing (the page then shows the
+# model as unavailable). Only what the browser evaluators read is kept, so the page stays small.
+
+def load_json(rel):
+    path = os.path.join(ROOT, rel)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except ValueError as e:
+        print("warning: " + rel + " is not valid JSON (" + str(e) + ")", file=sys.stderr)
+        return None
+
+
+def moe_block():
+    d = load_json("data/derived/moe_page.json")
+    if d is None:
+        print("warning: data/derived/moe_page.json is missing; the page falls back to the simulator", file=sys.stderr)
+    return d
+
+
+def mlrates_block():
+    return load_json("data/derived/mlrates.json")
+
+
+def methodround_block():
+    d = load_json("data/derived/methodround.json")
+    if not d or "js_model" not in d:
+        return None
+    jm = dict(d["js_model"])
+    jm.pop("source", None)          # the evaluator's own source text; the page inlines tools/methodround_model.js
+    return jm
+
+
+def mlpage_block():
+    d = load_json("data/derived/ml.json")
+    if not d or "page_model" not in d or "roster" not in d:
+        return None
+    pm = d["page_model"]
+    terms = pm["winner"]["terms"]
+    keys = set()
+    for t in terms:
+        for k in ("key", "u", "v"):
+            if t.get(k):
+                keys.add(t[k])
+    keys |= {"southpaw", "orthodox", "switch", "elo", "elo_sig", "years_ufc", "_dob", "_last_fight", "_prev_lbs",
+             "_lbs_fought", "mr_mu", "mr_sd"}
+    keys = sorted(keys)
+    roster = {}
+    for slug, v in d["roster"].items():
+        roster[slug] = [v.get(k) for k in keys]
+    return {"snapshot": pm.get("snapshot"), "winner": {"terms": terms, "platt_slope": pm["winner"].get("platt_slope", 1)},
+            "stack": pm.get("stack"), "test_vectors": pm.get("test_vectors"), "keys": keys, "roster": roster}
+
+
+def market_block():
+    d = load_json("data/derived/market.json")
+    if not d or "ratings" not in d:
+        return None
+    return {"built": (d.get("meta") or {}).get("built"),
+            "ratings": {s: [r[0], r[1]] for s, r in d["ratings"].items() if isinstance(r, list) and len(r) >= 2}}
+
+
+def g(o, *path):
+    for p in path:
+        if not isinstance(o, dict) or p not in o:
+            return None
+        o = o[p]
+    return o
+
+
+def bench_block():
+    """Verified research numbers for the backtest panel, read from the model reports (never typed in)."""
+    out = {}
+    moe = load_json("data/derived/moe.json")
+    if moe and "report" in moe:
+        r = moe["report"]
+        page = ["market", "mkt_rating", "ml", "feat_lr", "engine", "elo_sig", "elo"]
+        out["singles"] = {k: {"ll": g(v, "valid", "log_loss"), "n": g(v, "valid", "n"), "acc": g(v, "valid", "accuracy")}
+                          for k, v in r.get("singles", {}).items() if k in page}
+        a = r.get("audit", {})
+        out["line"] = {"moe": g(a, "line_present_same_fights", "moe_static"), "market": g(a, "line_present_same_fights", "market"),
+                       "diff": g(a, "line_present_same_fights", "moe_static_minus_market"),
+                       "n": g(a, "line_present_same_fights", "n"),
+                       "cv_2021_2023": g(a, "line_present_cv_2021_2023", "moe_minus_market"),
+                       "pooled_2021_2025": g(a, "line_present_pooled_2021_2025", "moe_minus_market"),
+                       "pooled_n": g(a, "line_present_pooled_2021_2025", "n")}
+        nm = g(r, "sets", "page", "regimes", "nomarket")
+        if nm:
+            pats = g(nm, "methods", nm.get("chosen"), "patterns") or {}
+            full = pats.get("mkt_rating+engine+ml+feat_lr+elo_sig+elo")
+            if full:
+                out["noline"] = {"ll": g(full, "static", "log_loss"), "n": g(full, "static", "n"), "ci": full.get("ci_static"),
+                                 "vs_best": full.get("vs_best_single_static")}
+        out["noline_cv"] = g(a, "no_line_cv_2021_2023")
+        out["calibration"] = {k: v for k, v in (r.get("calibration_valid") or {}).items() if k in ("moe_market", "moe_nomarket", "market")}
+        out["by_year"] = r.get("by_year")
+    ml = load_json("data/derived/ml.json")
+    t = g(ml, "results", "eval", "test_2024_plus")
+    mk = load_json("data/derived/market.json")
+    e = g(mk, "eval")
+    rows = []
+    def row(label, o, key):
+        if o and o.get("log_loss") is not None:
+            rows.append({"label": label, "key": key, "ll": o["log_loss"], "acc": o.get("accuracy"), "n": o.get("n")})
+    row("Market, closing line (no-vig)", g(e, "devig", "test", "power"), "close")
+    row("Market, opening line", g(e, "headline", "test", "open"), "open")
+    row("ML logistic (tools/ml.py)", g(t, "lr"), "ml")
+    row("Market rating (from past closing lines)", g(e, "market_rating", "test", "market_rating"), "mkt_rating")
+    row("Strike-share Elo", g(t, "elo_sig"), "elo_sig")
+    row("Elo", g(t, "elo"), "elo")
+    out["since2024"] = rows
+    me = load_json("data/derived/mlrates_eval.json")
+    if me:
+        out["sim"] = {"val_plain": g(me, "sim_val", "plain"), "val_ml": g(me, "sim_val", "ml"),
+                      "pooled": g(me, "sim_pooled_2019_2025"), "nsim": g(me, "sim_val", "nsim"), "n": g(me, "sim_val", "n_decisive")}
+        for k in ("val_plain", "val_ml"):
+            if out["sim"][k]:
+                out["sim"][k] = {kk: out["sim"][k].get(kk) for kk in ("winner_log_loss", "brier", "accuracy", "outcome7_log_loss")}
+    return out
+
+
+def versions_block():
+    return load_json("data/derived/version_history.json")
+
+
+def forward_block():
+    """Upcoming cards, the latest odds snapshot, committed ledger files and results (data/predictions/)."""
+    base = "data/predictions"
+    cards = load_json(base + "/cards_upcoming.json")
+    if not cards:
+        return None
+    d = os.path.join(ROOT, base)
+    names = sorted(os.listdir(d)) if os.path.isdir(d) else []
+    snaps = [n for n in names if n.startswith("odds_snapshot_") and n.endswith(".json")]
+    odds = {}
+    snap_meta = None
+    if snaps:
+        o = load_json(base + "/" + snaps[-1]) or {}
+        snap_meta = {"file": snaps[-1], "utc": g(o, "meta", "snapshot_utc")}
+        for b in o.get("bouts") or []:
+            c = b.get("consensus") or {}
+            m = b.get("market") or {}
+            odds[b.get("bout_id")] = {"p": c.get("p_consensus"), "n": c.get("n_books"),
+                                      "oa": m.get("odds_a"), "ob": m.get("odds_b"),
+                                      "a": g(b, "A", "slug"), "an": g(b, "A", "name")}
+    ledger = {}
+    for n in names:
+        if len(n) > 11 and n[:4].isdigit() and n[4] == "-" and n.endswith(".json"):
+            f = load_json(base + "/" + n) or {}
+            for b in f.get("bouts") or []:
+                ledger[b.get("bout_id")] = {"p_a": b.get("p_a"), "file": n, "model": g(f, "model", "version")}
+    res = {}
+    rj = load_json(base + "/results.json")
+    for r in (rj or {}).get("results") or []:
+        res[r.get("bout_id")] = {k: r.get(k) for k in ("outcome", "winner", "method", "round", "time", "closing_odds")}
+
+    def slugify(s):
+        import re
+        import unicodedata
+        s = unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode().lower()
+        return re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+
+    events = []
+    for ev in cards.get("events") or []:
+        bouts = []
+        for b in ev.get("bouts") or []:
+            a, bb = b.get("a") or {}, b.get("b") or {}
+            bid = ev["date"] + ":" + (a.get("slug") or slugify(a.get("name"))) + "__" + (bb.get("slug") or slugify(bb.get("name")))
+            ob = odds.get(bid)
+            mk = None
+            if ob and ob.get("p") is not None:
+                p = ob["p"]
+                # the snapshot is oriented like the card; flip if its A is the card's B
+                if ob.get("a") and a.get("slug") and ob["a"] != a.get("slug"):
+                    p = 1 - p
+                mk = {"p": p, "n": ob.get("n"), "oa": ob.get("oa"), "ob": ob.get("ob")}
+            bouts.append({"id": bid, "order": b.get("order"), "seg": b.get("segment"), "wc": b.get("weight_class"),
+                          "rounds": b.get("rounds"), "title": bool(b.get("title")), "status": b.get("status"),
+                          "a": {"name": a.get("name"), "slug": a.get("slug")}, "b": {"name": bb.get("name"), "slug": bb.get("slug")},
+                          "mkt": mk, "ledger": ledger.get(bid), "result": res.get(bid)})
+        events.append({"name": ev.get("name"), "date": ev.get("date"), "loc": ev.get("location"),
+                       "status": ev.get("event_status"), "bouts": bouts})
+    return {"as_of": cards.get("as_of"), "odds": snap_meta, "n_ledger": len(ledger), "n_results": len(res), "events": events}
+
+
+DERIVED = {
+    "/*__MOE_JSON__*/": moe_block,
+    "/*__MLRATES_JSON__*/": mlrates_block,
+    "/*__MR_JSON__*/": methodround_block,
+    "/*__MLPAGE_JSON__*/": mlpage_block,
+    "/*__MKT_JSON__*/": market_block,
+    "/*__BENCH_JSON__*/": bench_block,
+    "/*__VERSIONS_JSON__*/": versions_block,
+    "/*__FORWARD_JSON__*/": forward_block,
+}
+
+
+def no_nan(o):
+    """NaN / Infinity are not JSON; the browser's JSON.parse would reject the whole block."""
+    if isinstance(o, float):
+        return o if o == o and o not in (float("inf"), float("-inf")) else None
+    if isinstance(o, dict):
+        return {k: no_nan(v) for k, v in o.items()}
+    if isinstance(o, list):
+        return [no_nan(v) for v in o]
+    return o
+
+
+def derived_json(fn):
+    try:
+        data = no_nan(fn())
+    except Exception as e:  # a broken report must not break the page build
+        print("warning: " + fn.__name__ + " failed (" + repr(e) + "); building without it", file=sys.stderr)
+        data = None
+    text = json.dumps(data, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+    return text.replace("</", "<\\/")
+
+
 def assets_js():
     out = {}
     if os.path.isdir(ASSETS_DIR):
@@ -122,6 +343,10 @@ def main():
         if page.count(marker) != 1:
             raise SystemExit("placeholder " + marker + " must appear exactly once in page.src.html")
         page = page.replace(marker, safe_json(rel))
+
+    for marker, fn in DERIVED.items():
+        if page.count(marker) == 1:
+            page = page.replace(marker, derived_json(fn))
 
     if page.count(SCOUTING_MARKER) == 1:
         page = page.replace(SCOUTING_MARKER, scouting_json())
