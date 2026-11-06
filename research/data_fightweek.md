@@ -19,7 +19,36 @@ modest sample; **low** = an approximation that could be off for individual fight
 
 ## Findings
 
-__FINDINGS__
+1. **Coverage (high).** 603 of 603 events matched to their Wikipedia article; 7,156 bouts. Weight misses:
+   __MISS__ fighter-bouts (__MISSLBS__ with a size; median 2.5 lb, mean 2.7, max 12; 73 of 4 lb or more),
+   rising from 8-15 a year in 2012-2014 to 25-37 a year since 2019. Late replacements: __REPL__ sides (one in
+   about 17% of bouts), days of notice known for __REPLD__ (median 19 days, quartiles 10 / 34; 120 within a
+   week, 145 in 8-14 days); opponent changes: __OPP__ sides. Catchweight: 418 bouts (76 booked as
+   catchweight, the rest after a miss). Nationality for __NATCOV__ of fighter-sides (__NATP__ of __NATN__
+   fighters). No crowd: 728 bouts (COVID closed doors); Apex: 1,499; venues at 1,000 m or higher: 297
+   bouts in 8 cities (Mexico City 2,240 m the highest).
+2. **Late replacements underperform (high).** Beyond Elo and debut, the side that stepped in: -0.30
+   log-odds [-0.44, -0.16] (about -7.5 points at even odds); within 14 days' notice -0.63 [-0.92, -0.34].
+   Replicates in 2024-2025 (-0.46 [-0.83, -0.10]).
+3. **Weight missers underperform (medium).** -0.30 [-0.55, -0.05] in training (won 42.8% vs 50.1%
+   expected; 4 lb+ misses 35.8%); 2024-2025 too small to confirm (-0.08, n = 56).
+4. **Home crowd matters outside the USA only (high).** +0.46 [+0.32, +0.60] with a full arena outside the
+   USA, replicated on 2024-2025 (+0.46 [+0.10, +0.81]); Brazil home side 67.7% vs 52.4% expected
+   (2012-2019). Inside the USA the "home" American has drifted to 39.7% vs 50.6% expected since 2020: an
+   Elo problem with international signings (Americans everywhere: -0.40 in 2024-2025), not a crowd effect.
+5. **No signal** from time-zone shift, travel distance, venue altitude (alone or x Elo), no crowd x Elo or
+   catchweight x Elo; altitude adaptation has too few cases (46) to test.
+6. **Value for prediction (medium).** Elo + debut + missed + replacement + 14-day + home outside the USA:
+   validation log loss __INTL__ vs __BASE__ (dLL __INTL_D__); on a stronger base with an experience control,
+   __RINTL__ vs __BASE2__. Modest but consistent; the home split was chosen with sight of the validation
+   breakdown (see the caveats).
+
+## Coverage by year
+
+Counts are fighter-sides except bouts, catchweight, no crowd, Apex and >= 1000 m (bouts). "with days" =
+replacements whose days of notice could be dated; "home sides" = fighter fought in his primary country.
+
+__TABLE_COVERAGE__
 
 ## The record
 
@@ -177,12 +206,116 @@ script; the sentences quoted below are from the cached articles).
 
 ## Walk-forward check: do these features predict results beyond Elo?
 
-__EVAL__
+**Setup.** Decisive UFC fights (no draws, no contests) 2012-01-01..2025-12-31 with both fighters
+resolved; train 2012-2023 (__NTRAIN__ fights), validate 2024-2025 (__NVAL__). 2026 is never touched. Elo is
+tools/build_db.py's walk-forward rating (K 44, boost 1.5 for a fighter's first 5 UFC fights, chosen on
+2019-2023), entered as the Elo logit (Ra - Rb) x ln(10)/400. Every feature is an A minus B difference
+(missed weight = 1 if A missed, -1 if B missed), the logistic has no intercept and is fit on mirrored data
+(each fight in both orientations), so the A/B ordering bias (A wins 56%) cannot leak in. Standard errors
+are for the unique fights (the mirrored Hessian doubled). The base model is Elo + debut (first UFC fight).
+Each feature is added alone (table 1), then in a few small models (table 2). "val dLL" is the change in
+mean validation log loss against the base (negative = better), with a paired bootstrap 95% CI (2,000
+resamples). "val refit" re-estimates the coefficient on 2024-2025 alone as a replication check; it is not
+used to pick anything.
+
+Effects in probability terms: at even odds, b log-odds moves the win probability by about b/4
+(b = -0.30 is about -7.5 points; +0.46 is about +11 points).
+
+**Table 1. One feature at a time (log-odds per unit of the A - B difference).**
+
+__TABLE_SINGLE__
+
+**Table 2. Models (validation 2024-2025).** `base2` adds log(1 + prior UFC fights) as a control:
+experienced fighters underperform their Elo (age and decline), which by itself cuts validation log loss
+from __BASE__ to __BASE2__. The fight-week features keep their size on top of it.
+
+__TABLE_MODELS__
+
+**What holds up.**
+
+- **Late replacements lose more than their rating says (high).** In training, the side that stepped in won
+  39.5% of the time against an Elo expectation of 47.8% (n = 916); with 14 days' notice or less, 30.6%
+  vs 46.6% (n = 229). Controlling Elo and debut: -0.30 log-odds [-0.44, -0.16]; the 14-day part adds
+  another -0.45 on top of the general -0.21 (table 2). It replicates in 2024-2025 (refit -0.46 [-0.83,
+  -0.10], n = 135) and improves validation log loss on its own (-0.0029, CI just touching 0). `opp_change`
+  is the mirror image (the opponent who kept his slot), so it carries the same information.
+- **Missing weight costs about 0.27-0.30 log-odds (medium).** Missers won 42.8% vs 50.1% expected (n = 250);
+  misses of 4 lb or more 35.8% (n = 53). The size of the miss (per lb) adds little beyond the flag. In
+  2024-2025 the refit is -0.08 with a wide CI (n = 56): direction holds, size uncertain.
+- **Home crowd outside the USA is a large, stable edge (high).** With a full arena outside the USA, the home
+  fighter gets +0.46 log-odds [+0.32, +0.60] in training and +0.46 [+0.10, +0.81] when refit on 2024-2025
+  alone. Brazil is the strongest case (home side 67.7% vs 52.4% expected, n = 297, 2012-2019; 63.4%, n = 41,
+  since 2020); other non-US countries 57.4% (2012-2019) and 67.0% (2020-2025) against about 51% expected.
+- **"Home" inside the USA is not a home effect (medium).** US venues with one American: 53.0% vs 50.1%
+  expected in 2012-2019, but 39.7% vs 50.6% in 2020-2025. The same drift shows for Americans anywhere
+  (`usa_national`: -0.08 in training, -0.40 [-0.60, -0.21] refit on 2024-2025, and it improves
+  validation log loss by -0.0027 [-0.0043, -0.0011]). The likely cause is the rating, not the crowd:
+  international signings arrive stronger than a 1500 Elo debut implies, and since 2020 more of them come
+  through the regional circuits of Russia, Brazil, Georgia and Central Asia. This belongs in the rating
+  model (a nationality or regional-record prior), not in a fight-week home bonus.
+- **No home edge without a crowd (medium).** Home x (no crowd or Apex) is -0.19 [-0.38, -0.01]. Almost all
+  of those fights are Americans at the Apex or Jacksonville, so this mixes the missing crowd with the US
+  drift above; the closed-door cards abroad (Fight Island 2020, Brasilia March 2020) had too few local
+  fighters for a clean test. Treat the home bonus as zero when there is no crowd.
+
+**What does not show up (all CIs span zero).** Time-zone shift (+0.04 per 6 hours [-0.04, +0.12]);
+altitude for camp- or birth-place-adapted fighters at venues of 1,000 m or more (46 training fights,
++0.10 [-0.49, +0.69]: too few to say); Elo x altitude, Elo x no crowd, Elo x catchweight. Elo x "any
+replacement in the bout" is +0.47 [+0.03, +0.92] in training (the favorite wins more often when the
+card was reshuffled) but not significant in the multi-feature model.
+
+**Best candidate.** Elo + debut + missed + replacement + replacement within 14 days + home (full crowd,
+outside the USA): validation log loss __INTL__ vs __BASE__ (dLL __INTL_D__); on top of base2: __RINTL__ vs
+__BASE2__ (dLL __RINTL_D__). The US / non-US split was chosen after the period and country breakdown
+(which includes 2024-2025) showed the reversal, so its validation gain is optimistic; the training data
+alone gives the same split (outside the USA +0.46, z 6.5; inside 0.01, z 0.2). A model that includes the
+plain home flag instead does worse than the base on 2024-2025 (+0.0012), because of the US drift.
 
 ## Caveats
 
-__CAVEATS__
+- **Wikipedia is the only source for weigh-ins and bout changes.** Recall is near complete for misses
+  since 2015 in the audit; 2012-2014 articles are terser and probably under-report small misses. A miss
+  that Wikipedia does not mention reads `missed = false`. Bout changes that the article tells without
+  naming the newcomer in the booking paragraph are missed (UFC 189). Days of notice exist for 53% of
+  replacements and are approximate: "late May" is the 25th, a bare month the 15th, fight week 4 days; in
+  a chain of replacements the date can be the first withdrawal (an upper bound). The article text is
+  today's revision; edits after the event could in principle add colour to upsets, but the facts used
+  (who was booked, who replaced whom, scale weights) are pre-fight facts.
+- **Nationality is a 2026 snapshot** of slow-moving facts (country for sport, Sherdog flag). Dual nationals
+  get one primary country (Wikidata country for sport first); `home_any` and `countries` keep the rest.
+  __NATCOV__ of 2012-2026 sides have a nationality; the rest (mostly one- or two-fight fighters without a
+  Wikidata item or a resolvable Sherdog page) read `home = null`, which the evaluation treats as not home.
+- **Home point for travel is rough (low).** Sherdog lists today's camp, sometimes a short training camp
+  rather than the fighter's base (Volkanovski shows City Kickboxing, Auckland, though he lives in
+  Wollongong); camp locations are a hand table of 77 gyms; otherwise birthplace or the country's reference
+  city (USA = Chicago). Time-zone shift and travel distance carried no signal here, possibly because of
+  this noise.
+- **Altitude is the venue city's elevation** (GeoNames through Open-Meteo), not the arena's; altitude
+  adaptation is the camp or birthplace elevation (>= 1,000 m), known for __ELEVN__ sides; only 46 training
+  fights pair an adapted and a non-adapted fighter at altitude, far too few to test.
+- **Crowd** comes from Wikipedia's infobox attendance; Apex cards after 2021 are `full` with `apex = true`
+  (small invited audiences), so use the Apex flag for the small venue.
+- **Evaluation**: one Elo specification; the 14-day threshold and the US split were chosen by looking at the
+  data (the US split after seeing the 2024-2025 reversal); bootstrap CIs on 1,026 validation fights are
+  wide. The coefficients are for "beyond Elo + debut", so they partly absorb what Elo misses about the same
+  fighters (a replacement is often a newcomer with a thin record; the experience control in base2 leaves
+  the replacement effect at -0.20 / -0.44).
 
 ## For the engine and the backlog
 
-__BACKLOG__
+- **Replacement penalty (v4+, high):** a fighter who steps in late: -0.20 log-odds, and -0.45 more with 14
+  days' notice or less (total about -0.65, roughly -15 points at even odds); his opponent is the mirror.
+  Use `fightweek.json` `replacement` / `short_notice` for historical fights; for an upcoming card the
+  same fields are known before the weigh-ins. In the engine this maps naturally to a fight-night form
+  draw (output and cardio) for the replacement rather than a flat probability shift.
+- **Weight miss (v4+, medium):** -0.27 log-odds for the fighter who misses (larger misses, 4 lb+, look
+  worse); known about 30 hours before the fight. Keep it as a labelled knob in the engine (stamina hit).
+- **Home crowd (v4+, high outside the USA):** +0.45 log-odds for the local fighter with a full arena outside
+  the USA (Brazil strongest); zero at the Apex, behind closed doors and inside the USA.
+- **Rating model (not fight-week, for the Elo/priors owner):** two drifts showed up as side results:
+  experienced fighters underperform Elo (log prior UFC fights -0.23 per unit, val log loss 0.6773 ->
+  0.6641), and Americans underperform Elo since 2020 (-0.40 in 2024-2025). Both deserve a proper test in
+  the main model (age, regional-record priors for international signings).
+- **No engine knob needed** for time-zone shift, travel distance or venue altitude on current evidence;
+  keep the fields for interaction tests (cardio x altitude for 5-round fights at Mexico City / Salt Lake
+  City / Denver) once a stamina model exists.

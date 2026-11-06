@@ -469,7 +469,7 @@ PROMO_ALIASES = [
     (r"^(lfa|legacy fighting alliance)\b", "LFA"),
     (r"^(rfa|resurrection fighting alliance)\b", "RFA"),
     (r"^(lfc|legacy fc|legacy fighting championship)\b", "Legacy FC"),
-    (r"^(cwfc|cage warriors)", "Cage Warriors"),
+    (r"^(cwfc|cage warriors)|^cw\b.*cage warriors", "Cage Warriors"),
     (r"^m-1", "M-1"),
     (r"^(aca|acb|absolute championship)", "ACA"),
     (r"^ksw\b", "KSW"),
@@ -914,6 +914,25 @@ def build(args):
 TEST_FROM = dt.date(2024, 1, 1)
 CV_YEARS = [2019, 2020, 2021, 2022, 2023]
 LN10_400 = math.log(10) / 400.0
+
+
+class ClusterBoot:
+    """Bootstrap that resamples whole clusters (here: fight dates, i.e. cards) with replacement."""
+
+    def __init__(self, groups, B=2000, seed=0):
+        import numpy as np
+        g = np.asarray([str(x) for x in groups])
+        u, inv = np.unique(g, return_inverse=True)
+        self.inv, self.G = inv, len(u)
+        rng = np.random.default_rng(seed)
+        S = rng.integers(0, self.G, size=(B, self.G))
+        self.W = np.vstack([np.bincount(S[b], minlength=self.G) for b in range(B)]).astype(float)
+        self.cnt = np.bincount(inv, minlength=self.G).astype(float)
+
+    def means(self, v):
+        import numpy as np
+        sums = np.bincount(self.inv, weights=np.asarray(v, float), minlength=self.G)
+        return (self.W @ sums) / (self.W @ self.cnt)
 
 
 def ll(p, y):
@@ -1530,10 +1549,8 @@ def evaluate(args):
     yt = test["y"].to_numpy()
 
     # ---------------- bootstrap CIs
-    rng = np.random.default_rng(20261106)
     B_ = 100 if args.quick else 2000
-    nT = len(yt)
-    idxs = rng.integers(0, nT, size=(B_, nT))
+    cb = ClusterBoot(test["date"].tolist(), B_, 20261106)
 
     def boot(p):
         p = np.clip(p, 1e-6, 1 - 1e-6)
@@ -1542,7 +1559,7 @@ def evaluate(args):
         ac = ((p > 0.5) == (yt > 0.5)).astype(float)
         out = {}
         for k, v in (("log_loss", lls), ("brier", br), ("accuracy", ac)):
-            bs = v[idxs].mean(axis=1)
+            bs = cb.means(v)
             out[k] = [float(v.mean()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))]
         return out, lls
 
@@ -1556,7 +1573,7 @@ def evaluate(args):
             if k == ref:
                 continue
             dlt = lls_by[k] - lls_by[ref]
-            bs = dlt[idxs].mean(axis=1)
+            bs = cb.means(dlt)
             deltas["%s - %s" % (k, ref)] = [float(dlt.mean()), float(np.percentile(bs, 2.5)),
                                            float(np.percentile(bs, 97.5)), float((bs < 0).mean())]
     # subgroups
@@ -1639,15 +1656,14 @@ def evaluate(args):
         mp[nm] = DiffModel(b["base"], b["pre"], C=b["C"], tau=b["tau"]).fit(tv_m).predict(te_m)
     mp["base+pre (no market)"] = m_bp.predict(te_m)
     mp["base (no market)"] = m_base.predict(te_m)
-    rngm = np.random.default_rng(11)
-    idm = rngm.integers(0, len(ytm), size=(B_, len(ytm)))
+    cbm = ClusterBoot(te_m["date"].tolist(), B_, 11)
     lmk = {}
     for nm, p in mp.items():
         p = np.clip(p, 1e-6, 1 - 1e-6)
         lmk[nm] = -(ytm * np.log(p) + (1 - ytm) * np.log(1 - p))
     market["test"] = {}
     for nm, v in lmk.items():
-        bs = v[idm].mean(axis=1)
+        bs = cbm.means(v)
         market["test"][nm] = {"log_loss": round(float(v.mean()), 4),
                               "ci95": [round(float(np.percentile(bs, 2.5)), 4), round(float(np.percentile(bs, 97.5)), 4)],
                               "accuracy": round(float(np.mean((mp[nm] > 0.5) == (ytm > 0.5))), 4)}
@@ -1655,12 +1671,12 @@ def evaluate(args):
         if nm == "market_close":
             continue
         dlt = lmk[nm] - lmk["market_close"]
-        bs = dlt[idm].mean(axis=1)
+        bs = cbm.means(dlt)
         market["test"][nm]["delta_vs_market [mean, lo, hi, P(<0)]"] = [
             round(float(dlt.mean()), 4), round(float(np.percentile(bs, 2.5)), 4),
             round(float(np.percentile(bs, 97.5)), 4), round(float((bs < 0).mean()), 3)]
     dlt = lmk["mkt+pre_core"] - lmk["mkt_cal"]
-    bs = dlt[idm].mean(axis=1)
+    bs = cbm.means(dlt)
     market["test"]["delta mkt+pre_core - mkt_cal"] = [round(float(dlt.mean()), 4),
                                                        round(float(np.percentile(bs, 2.5)), 4),
                                                        round(float(np.percentile(bs, 97.5)), 4),
@@ -1789,8 +1805,7 @@ def method_eval(df_all, train_from):
     def mll(P, yy):
         return float(-np.mean(np.log(np.clip(P[np.arange(len(yy)), yy], 1e-9, 1))))
     res["test_ll_base_rate"] = mll(np.tile(base_rate, (te.sum(), 1)), yt)
-    rng = np.random.default_rng(7)
-    idx = rng.integers(0, te.sum(), size=(2000, te.sum()))
+    cbx = ClusterBoot(d.loc[te, "date"].tolist(), 2000, 7)
     P = {}
     for nm, wp in (("ufc_only", False), ("ufc+pre", True)):
         best = None
@@ -1810,7 +1825,7 @@ def method_eval(df_all, train_from):
         m = LogisticRegression(C=best[1], max_iter=3000).fit(X(d[tr], wp), y[tr])
         P[nm] = m.predict_proba(X(d[te], wp))
         lv = -np.log(np.clip(P[nm][np.arange(len(yt)), yt], 1e-9, 1))
-        bs = lv[idx].mean(axis=1)
+        bs = cbx.means(lv)
         res[nm] = {"cv_ll": round(best[0], 4), "C": best[1], "test_ll": round(float(lv.mean()), 4),
                    "ci95": [round(float(np.percentile(bs, 2.5)), 4), round(float(np.percentile(bs, 97.5)), 4)]}
         if wp:
@@ -1819,7 +1834,7 @@ def method_eval(df_all, train_from):
     l0 = -np.log(np.clip(P["ufc_only"][np.arange(len(yt)), yt], 1e-9, 1))
     l1 = -np.log(np.clip(P["ufc+pre"][np.arange(len(yt)), yt], 1e-9, 1))
     dl = l1 - l0
-    bs = dl[idx].mean(axis=1)
+    bs = cbx.means(dl)
     res["delta_ll (ufc+pre - ufc_only)"] = [round(float(dl.mean()), 4), round(float(np.percentile(bs, 2.5)), 4),
                                             round(float(np.percentile(bs, 97.5)), 4), round(float((bs < 0).mean()), 3)]
     # finish vs decision (binary) calibration of the + pre model
@@ -1880,8 +1895,7 @@ def side_finish_eval(df_all, args):
 
     out = {"n_train_sides": int(tr.sum()), "n_test_sides": int(te.sum()),
            "sides_resolved_test": int(S.loc[te, "res"].sum())}
-    rng = np.random.default_rng(5)
-    idx = rng.integers(0, te.sum(), size=(2000 if not args.quick else 100, te.sum()))
+    cbs = ClusterBoot(S.loc[te, "date"].tolist(), 2000 if not args.quick else 100, 5)
     for target in ("ko_win", "sub_win", "ko_loss"):
         y = S[target].to_numpy()
         res = {"train_rate": round(float(y[tr].mean()), 4), "test_rate": round(float(y[te].mean()), 4)}
@@ -1909,7 +1923,7 @@ def side_finish_eval(df_all, args):
         lv0 = -(y[te] * np.log(P["ufc_only"]) + (1 - y[te]) * np.log(1 - P["ufc_only"]))
         lv1 = -(y[te] * np.log(P["ufc+pre"]) + (1 - y[te]) * np.log(1 - P["ufc+pre"]))
         dl = lv1 - lv0
-        bs = dl[idx].mean(axis=1)
+        bs = cbs.means(dl)
         res["delta_ll [mean, lo, hi, P(<0)]"] = [round(float(dl.mean()), 5), round(float(np.percentile(bs, 2.5)), 5),
                                                  round(float(np.percentile(bs, 97.5)), 5), round(float((bs < 0).mean()), 3)]
         # calibration of the pre-UFC signal: test-side rate by tercile of the own pre-UFC rate (resolved sides)

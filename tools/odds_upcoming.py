@@ -1709,6 +1709,7 @@ METHODS_DOC = {
 def cmd_snapshot(a):
     now = dt.datetime.now(dt.timezone.utc)
     stamp = a.replay or now.strftime('%Y%m%d-%H%M')
+    orig_meta = None
     if a.replay:
         # snapshot time = when the replayed capture started (earliest cached response of that stamp)
         cached = glob.glob(os.path.join(CACHE_ROOT, '*', a.replay, '*.gz'))
@@ -1716,14 +1717,16 @@ def cmd_snapshot(a):
             raise SystemExit(f'no cached pages under data/raw/web_cache/*/{a.replay}/')
         now = dt.datetime.fromtimestamp(min(os.path.getmtime(x) for x in cached), dt.timezone.utc)
         orig = os.path.join(PRED_DIR, f'odds_snapshot_{a.replay}.json')
-        if os.path.exists(orig):   # keep the original capture's start time, so a replay is exact
+        if os.path.exists(orig):   # keep the original capture's start time and window, so a replay is exact
             try:
                 with open(orig) as fh:
-                    now = _iso(json.load(fh)['meta']['snapshot_utc']) or now
+                    orig_meta = json.load(fh)['meta']
+                now = _iso(orig_meta['snapshot_utc']) or now
             except (OSError, ValueError, KeyError):
-                pass
-    since = dt.date.fromisoformat(a.since) if a.since else (now.date() - dt.timedelta(days=1))
-    until = dt.date.fromisoformat(a.until) if a.until else (now.date() + dt.timedelta(days=45))
+                orig_meta = None
+    win = (orig_meta or {}).get('window') or [None, None]
+    since = dt.date.fromisoformat(a.since or win[0]) if (a.since or win[0]) else (now.date() - dt.timedelta(days=1))
+    until = dt.date.fromisoformat(a.until or win[1]) if (a.until or win[1]) else (now.date() + dt.timedelta(days=45))
     F = Fetcher(stamp, replay=bool(a.replay), delay=a.delay)
     sources = {}
     src_bouts = []
@@ -1827,6 +1830,14 @@ def cmd_snapshot(a):
         'unmatched_source_bouts': unmatched,
         'warnings': warnings,
     }
+    if orig_meta:   # a rebuild describes the same capture: keep its live request counts and timings
+        snap['meta']['rebuilt_from_cache_utc'] = zstr(dt.datetime.now(dt.timezone.utc))
+        snap['meta']['n_requests'] = orig_meta.get('n_requests', snap['meta']['n_requests'])
+        for k, v in (orig_meta.get('sources') or {}).items():
+            if k in sources:
+                for f in ('n_requests', 'seconds'):
+                    if f in v:
+                        sources[k][f] = v[f]
     p = new_snapshot_path(stamp)
     with open(p, 'x') as fh:        # 'x': never overwrite an earlier snapshot
         dump_compact(snap, fh)

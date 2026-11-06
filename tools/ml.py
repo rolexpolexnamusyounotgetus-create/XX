@@ -817,7 +817,7 @@ def ci(arr, lo=2.5, hi=97.5):
 
 
 # ====================================================================== models
-def fit_lr(X, y, lam, sw=None):
+def fit_lr(X, y, lam, sw=None, nonneg=False):
     """L2 logistic regression without intercept (antisymmetric features => corner-symmetric model).
     Loss = weighted mean log loss + lam/2 ||w||^2 on standardised columns."""
     from scipy.optimize import minimize
@@ -829,7 +829,8 @@ def fit_lr(X, y, lam, sw=None):
         z = X @ w
         p = 1 / (1 + np.exp(-z))
         return np.sum(sw * (np.logaddexp(0, z) - y * z)) + 0.5 * lam * w @ w, X.T @ (sw * (p - y)) + lam * w
-    r = minimize(f, np.zeros(d), jac=True, method="L-BFGS-B", options={"maxiter": 3000})
+    r = minimize(f, np.full(d, 0.1 if nonneg else 0.0), jac=True, method="L-BFGS-B",
+                 bounds=[(0.0, None)] * d if nonneg else None, options={"maxiter": 3000})
     return r.x
 
 
@@ -1329,9 +1330,9 @@ def tree_fit_pred(kind, best, G0, G1, y, tr, te):
 
 
 # ====================================================================== stacking
-def stack_fit(Z, y, lam=1e-3):
+def stack_fit(Z, y, lam=1e-3, nonneg=False):
     """No-intercept logistic on logit inputs (corner-symmetric). Returns weights."""
-    return fit_lr(np.asarray(Z, float), np.asarray(y, float), lam)
+    return fit_lr(np.asarray(Z, float), np.asarray(y, float), lam, nonneg=nonneg)
 
 
 def to_logit(p):
@@ -1490,25 +1491,41 @@ def main():
         "annual_refit": round(log_loss(P["lr"][oof_bt], y[oof_bt]), 5),
         "frozen_at_2018": round(log_loss(p18[oof_bt[te19]], y[oof_bt]), 5)}
 
-    # ---------------------------------------------------------- ML blend + recalibration (fit on OOF 2019-2023)
-    Zo = np.column_stack([to_logit(P[k][oof_bt]) for k in ("lr", "lgb", "xgb")])
-    w_ml = stack_fit(Zo, y[oof_bt])
-    R["tuning"]["ml_blend_weights"] = dict(zip(("lr", "lgb", "xgb"), [round(float(v), 4) for v in w_ml]))
-    # leave-one-year-out estimate of the blend inside 2019-2023
+    R["_P"] = P
+    R["_ctx"] = dict(df=df, X=X, y=y, dec=dec, evm=evm, years=years, G0=G0, G1=G1, cols=cols, specs=specs,
+                     oof_bt=oof_bt, test_bt=test_bt, oof=oof.to_numpy(), test=test.to_numpy(),
+                     lr_best=lr_best, lgb_best=lgb_best, xgb_best=xgb_best, lr_final=lr_final,
+                     lgb_final=lgb_final, xgb_final=xgb_final, bt_by_id=bt_by_id,
+                     roster_feats=roster_feats, margin_tun=margin_tun, tmeta=tmeta, args=args, T0=T0)
+    pickle.dump(R, open(os.path.join(CACHE_DIR, "stage1.pkl"), "wb"))
+    stage_two(R)
+
+
+def blend_and_calibrate(R):
+    """ML blend (non-negative logit weights on LR / LightGBM / XGBoost, fit on OOF 2019-2023) and Platt / isotonic
+    recalibration of each model, also fit on OOF 2019-2023. Runs at the start of stage two, so --stage2 redoes it."""
+    C, P = R["_ctx"], R["_P"]
+    df, y, years, oof_bt = C["df"], C["y"], C["years"], C["oof_bt"]
+    test = C["test"]
+    parts = ("lr", "lgb", "xgb")
+    Zo = np.column_stack([to_logit(P[k][oof_bt]) for k in parts])
+    w_ml = stack_fit(Zo, y[oof_bt], nonneg=True)
+    w_free = stack_fit(Zo, y[oof_bt])
+    R["tuning"]["ml_blend_weights"] = dict(zip(parts, [round(float(v), 4) for v in w_ml]))
+    R["tuning"]["ml_blend_weights_unconstrained"] = dict(zip(parts, [round(float(v), 4) for v in w_free]))
     loyo = np.full(len(df), np.nan)
     for Y in OOF_YEARS:
         trm = oof_bt & (years != Y)
         tem = oof_bt & (years == Y)
-        w = stack_fit(np.column_stack([to_logit(P[k][trm]) for k in ("lr", "lgb", "xgb")]), y[trm])
-        loyo[tem] = 1 / (1 + np.exp(-np.column_stack([to_logit(P[k][tem]) for k in ("lr", "lgb", "xgb")]) @ w))
-    allp = np.column_stack([to_logit(P[k]) for k in ("lr", "lgb", "xgb")])
+        w = stack_fit(np.column_stack([to_logit(P[k][trm]) for k in parts]), y[trm], nonneg=True)
+        loyo[tem] = 1 / (1 + np.exp(-np.column_stack([to_logit(P[k][tem]) for k in parts]) @ w))
+    allp = np.column_stack([to_logit(P[k]) for k in parts])
     P["ml"] = 1 / (1 + np.exp(-(np.nan_to_num(allp) @ w_ml)))
     P["ml"][np.isnan(P["lr"])] = np.nan
     R["tuning"]["ml_blend_loyo_2019_2023"] = round(log_loss(loyo[oof_bt], y[oof_bt]), 5)
-    for k in ("lr_refit", "lgb_refit", "xgb_refit"):
-        pass
     allr = np.column_stack([to_logit(P[k]) for k in ("lr_refit", "lgb_refit", "xgb_refit")])
-    P["ml_refit"] = np.where(test.to_numpy(), 1 / (1 + np.exp(-(np.nan_to_num(allr) @ w_ml))), np.nan)
+    P["ml_refit"] = np.where(test, 1 / (1 + np.exp(-(np.nan_to_num(allr) @ w_ml))), np.nan)
+    C["w_ml"] = w_ml
     # Platt (slope only: corner-symmetric) and symmetric isotonic, fit on OOF
     from sklearn.isotonic import IsotonicRegression
     calib = {}
@@ -1516,27 +1533,20 @@ def main():
         zk = to_logit(P[k][oof_bt])[:, None]
         a = float(stack_fit(zk, y[oof_bt], lam=0.0)[0])
         pp = P[k][oof_bt]
-        iso = IsotonicRegression(y_min=0.01, y_max=0.99, out_of_bounds="clip").fit(np.r_[pp, 1 - pp], np.r_[y[oof_bt], 1 - y[oof_bt]])
+        iso = IsotonicRegression(y_min=0.01, y_max=0.99, out_of_bounds="clip").fit(
+            np.r_[pp, 1 - pp], np.r_[y[oof_bt], 1 - y[oof_bt]])
         calib[k] = {"platt_slope": round(a, 4)}
-        P[k + "_platt"] = 1 / (1 + np.exp(-a * to_logit(np.nan_to_num(P[k], nan=0.5))))
-        P[k + "_iso"] = iso.predict(np.nan_to_num(P[k], nan=0.5))
+        base = np.nan_to_num(P[k], nan=0.5)
+        P[k + "_platt"] = 1 / (1 + np.exp(-a * to_logit(base)))
         # symmetrise isotonic output exactly: average f(p) and 1 - f(1-p)
-        P[k + "_iso"] = 0.5 * (P[k + "_iso"] + 1 - iso.predict(1 - np.nan_to_num(P[k], nan=0.5)))
+        P[k + "_iso"] = 0.5 * (iso.predict(base) + 1 - iso.predict(1 - base))
         if k == "ml":
             calib[k]["isotonic_knots"] = [[round(float(a_), 4), round(float(b_), 4)]
                                           for a_, b_ in zip(iso.X_thresholds_, iso.y_thresholds_)]
     R["tuning"]["recalibration"] = calib
-    log("blend weights %s; LOYO blend %.5f; Platt slopes %s" % (R["tuning"]["ml_blend_weights"],
-                                                                 R["tuning"]["ml_blend_loyo_2019_2023"],
-                                                                 {k: v["platt_slope"] for k, v in calib.items()}))
-    R["_P"] = P
-    R["_ctx"] = dict(df=df, X=X, y=y, dec=dec, evm=evm, years=years, G0=G0, G1=G1, cols=cols, specs=specs,
-                     oof_bt=oof_bt, test_bt=test_bt, oof=oof.to_numpy(), test=test.to_numpy(),
-                     lr_best=lr_best, lgb_best=lgb_best, xgb_best=xgb_best, lr_final=lr_final,
-                     lgb_final=lgb_final, xgb_final=xgb_final, w_ml=w_ml, bt_by_id=bt_by_id,
-                     roster_feats=roster_feats, margin_tun=margin_tun, tmeta=tmeta, args=args, T0=T0)
-    pickle.dump(R, open(os.path.join(CACHE_DIR, "stage1.pkl"), "wb"))
-    stage_two(R)
+    log("blend weights %s (unconstrained %s); LOYO blend %.5f; Platt slopes %s"
+        % (R["tuning"]["ml_blend_weights"], R["tuning"]["ml_blend_weights_unconstrained"],
+           R["tuning"]["ml_blend_loyo_2019_2023"], {k: v["platt_slope"] for k, v in calib.items()}))
 
 
 # ====================================================================== stage two: 7-bin, stacking, evaluation, export
@@ -2384,6 +2394,7 @@ def write_outputs(R):
 
 
 def stage_two(R):
+    blend_and_calibrate(R)
     stacking(R)
     seven(R)
     evaluate(R)

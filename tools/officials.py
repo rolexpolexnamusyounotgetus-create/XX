@@ -69,6 +69,9 @@ OUT = ROOT / "data" / "derived" / "officials.json"
 WIKIDATA = RAW / "wikidata_mma_people.csv"
 WIKIDATA_ALT = RAW / "wikidata_mma_altlabels.csv"
 SINCE = "2001-01-01"
+VAULT_FROM = pd.Timestamp("2026-01-01")   # hidden-data protocol (docs/BACKLOG.md): never fit or score 2026 fights
+JUDGEROUNDS = ROOT / "data" / "derived" / "judgerounds.json"
+JR_CLEAN = {"agree", "agree_partial_panel", "totals_agree_names_differ"}
 
 FEATS = ["head_l", "body_l", "leg_l", "kd", "td_l", "ctrl_min", "sub", "rev"]
 GROUP = {"head_l": 0, "body_l": 0, "leg_l": 0, "kd": 1, "td_l": 2, "ctrl_min": 2, "sub": 2, "rev": 2}
@@ -230,8 +233,85 @@ def fetch_wikidata():
     log("wrote", WIKIDATA)
 
 
+def outcome_code(a, b):
+    m = a - b
+    return 4 if m >= 2 else 3 if m == 1 else 2 if m == 0 else 1 if m == -1 else 0
+
+
+def load_judgerounds():
+    """Round-by-round judges' scores (tools/judgerounds.py, from MMA Decisions via two GitHub datasets) and a
+    map from ufcstats judge-name keys to MMA Decisions judge ids."""
+    if not JUDGEROUNDS.exists():
+        return {}, {}, {}
+    d = json.loads(JUDGEROUNDS.read_text())
+    namemap, best = {}, {}
+    for jid, j in d["judges"].items():
+        for nm, c in (j.get("ufcstats_names") or {}).items():
+            k = judge_key(nm)
+            if c > best.get(k, 0):
+                best[k] = c
+                namemap[k] = "m" + str(jid)
+        k = judge_key(j["name"])
+        if k not in namemap:
+            namemap[k] = "m" + str(jid)
+    names = {"m" + str(jid): j["name"] for jid, j in d["judges"].items()}
+    return d["fights"], namemap, names
+
+
+def merge_rounds(r, jr, namemap):
+    """Replace or complete a decision's DETAILS cards with observed round scores where available.
+    Cards become (key, name, A_total, B_total, codes or None); r['dfix'] = deductions known (or None)."""
+    R = r["R"]
+    det = [(namemap.get(k, "u:" + k) if k != "unknown" else "unknown", nm, a, b, None) for (k, nm, a, b) in r["cards"]]
+    r["src"], r["dfix"], r["ded_known"] = "totals", None, None
+    if jr is None or not jr.get("complete") or jr["validation"]["ufc"] not in JR_CLEAN:
+        r["cards"] = det
+        return r
+    obs = []
+    dA = dB = 0
+    for j in jr["judges"]:
+        rr = j.get("raw") or j["rounds"]
+        if len(rr) != R:
+            r["cards"] = det
+            return r
+        if j.get("raw"):
+            dA = max(dA, sum(x[0] for x in j["raw"]) - j["total"][0])
+            dB = max(dB, sum(x[1] for x in j["raw"]) - j["total"][1])
+        key = "m" + str(j["id"]) if j.get("id") is not None else "unknown"
+        obs.append((key, j["name"], j["total"][0], j["total"][1], np.array([outcome_code(a, b) for a, b in rr], np.int8)))
+    rest = list(det)
+    for o in obs:          # drop the DETAILS card each observed judge corresponds to (name first, then totals)
+        hit = None
+        for i, c in enumerate(rest):
+            if c[0] == o[0]:
+                hit = i
+                break
+        if hit is None:
+            for i, c in enumerate(rest):
+                if (c[2], c[3]) == (o[2], o[3]) or (r["winner"] == -1 and (c[3], c[2]) == (o[2], o[3])):
+                    hit = i
+                    break
+        if hit is not None:
+            rest.pop(hit)
+    cards = obs + rest[: max(0, 3 - len(obs))]
+    if len(cards) != 3:
+        r["cards"] = det
+        return r
+    r["cards"] = cards
+    r["src"] = "rounds" if len(obs) == 3 else "partial"
+    if jr.get("raw_known"):
+        r["dfix"] = (dA, dB)
+        r["ded_known"] = (dA, dB)
+    else:
+        r["dfix"] = (0, 0)      # D-only fights: published round scores taken as the verdicts
+    return r
+
+
 def build_data():
     F, S, notes, data_max = br.load_data(RAW, SINCE)
+    F = F[F.DATE < VAULT_FROM].copy()
+    S = S[S.fid.isin(set(F.fid))].copy()
+    data_max = F.DATE.max()
     E = br._load(RAW / "ufc_event_details.csv")
     loc = dict(zip(E.EVENT, E.LOCATION))
     F["location"] = F.EVENT.map(loc)
@@ -252,6 +332,7 @@ def build_data():
             & F.fmt.isin([br.FMT3, br.FMT5]) & (F.end_round == F.sched) & F.has_stats].copy()
     rows, drop = [], Counter()
     Dg = {fid: g.droplevel(0).sort_index() for fid, g in D.groupby(level=0)}
+    JRf, namemap, jnames = load_judgerounds()
     for f in dec.itertuples():
         cards, ded, bad = parse_cards_full(f.det, f.n0, f.n1)
         if bad:
@@ -273,12 +354,29 @@ def build_data():
                 oc.append((judge_key(nm) if nm != "unknown" else "unknown", nm, lo, hi))
             else:
                 oc.append((judge_key(nm) if nm != "unknown" else "unknown", nm, lo, hi))   # draw: unordered
-        rows.append({"fid": f.fid, "date": f.DATE, "year": int(f.year), "R": R, "n0": f.n0, "n1": f.n1,
-                     "winner": int(f.winner), "cat": f.cat, "cards": oc, "ded": ded, "region": f.region,
-                     "country": f.country, "referee": f.referee, "division": f.division, "title": bool(f.title),
-                     "X": X[FEATS].to_numpy(float), "Xall": X})
-    log(f"decisions kept {len(rows)}; dropped {dict(drop)}")
+        r = {"fid": f.fid, "date": f.DATE, "year": int(f.year), "R": R, "n0": f.n0, "n1": f.n1,
+             "winner": int(f.winner), "cat": f.cat, "cards": oc, "ded": ded, "region": f.region,
+             "country": f.country, "referee": f.referee, "division": f.division, "title": bool(f.title),
+             "X": X[FEATS].to_numpy(float), "Xall": X}
+        rows.append(merge_rounds(r, JRf.get(str(f.fid).rsplit("/", 1)[-1]), namemap))
+    for r in rows:
+        if r["src"] == "totals" and r["ded"] is not None:
+            r["dfix"] = (r["ded"][0], r["ded"][1])
+    global JUDGE_NAMES
+    JUDGE_NAMES = jnames
+    log(f"decisions kept {len(rows)} (before {VAULT_FROM.date()}); dropped {dict(drop)}; card sources "
+        f"{dict(Counter(r['src'] for r in rows))}")
     return F, S, D, rows, notes, data_max
+
+
+JUDGE_NAMES = {}
+
+
+def card_n108(card, R):
+    """10-8 (or wider) rounds on a card: observed rounds when known, else implied by the total (upper bound)."""
+    if card[4] is not None:
+        return int(np.isin(card[4], [0, 4]).sum())
+    return max(0, 19 * R - card[2] - card[3])
 
 
 # ================================================================================================
@@ -319,21 +417,26 @@ def card_patterns(R, a, b, dA, dB, draw):
 
 def fight_triples(r, cap=100000, prune=2000):
     """Joint (card1, card2, card3) round-outcome patterns consistent with a fight's three cards.
-    Returns (codes [n, R] of o1*25+o2*5+o3, dopt [n]) or None. Deduction options are tried in stages:
-    none/one point per side first; two points and 10-10 rounds only when nothing else fits."""
+    A card with observed round scores contributes its one pattern; a totals-only card every pattern with
+    those totals. Returns (codes [n, R] of o1*25+o2*5+o3, dopt [n]) or None. Unknown deductions are
+    latent options tried in stages: none/one point per side first; two points and 10-10 rounds only when
+    nothing else fits. Known deductions (DETAILS or MMA Decisions raw scores) are fixed (code 6)."""
     R, draw = r["R"], r["winner"] == -1
-    if r["ded"] is not None:
-        stages = [([(r["ded"][0], r["ded"][1])], False), ([(r["ded"][0], r["ded"][1])], True)]
-        recorded = True
+    fixed = r.get("dfix")
+    if fixed is not None:
+        stages = [([tuple(fixed)], False), ([tuple(fixed)], True)]
     else:
         stages = [(DED_OPTS[:3], False), (DED_OPTS, False), (DED_OPTS[:3], True), (DED_OPTS, True)]
-        recorded = False
     for opts, allow in stages:
         P, idx = patterns(R, allow)
         codes, dcode, n = [], [], 0
         for (dA, dB) in opts:
             ps = []
-            for (_, _, a, b) in r["cards"]:
+            for card in r["cards"]:
+                a, b, obs = card[2], card[3], card[4]
+                if obs is not None:
+                    ps.append(np.asarray(obs, np.int32)[None, :])
+                    continue
                 out = []
                 for (x, y) in ([(a, b), (b, a)] if (draw and a != b) else [(a, b)]):
                     v = idx.get((x + dA, y + dB))
@@ -342,19 +445,18 @@ def fight_triples(r, cap=100000, prune=2000):
                 if not out:
                     ps = None
                     break
-                ps.append(np.unique(np.concatenate(out)))
+                ps.append(P[np.unique(np.concatenate(out))].astype(np.int32))
             if ps is None:
                 continue
             n += len(ps[0]) * len(ps[1]) * len(ps[2])
             if n > cap:
                 return None
-            P1, P2, P3 = (P[q].astype(np.int32) for q in ps)
+            P1, P2, P3 = ps
             c = (P1[:, None, None, :] * 25 + P2[None, :, None, :] * 5 + P3[None, None, :, :]).reshape(-1, R)
             codes.append(c)
-            dcode.append(np.full(len(c), 6 if recorded else DED_OPTS.index((dA, dB)), np.int8))
+            dcode.append(np.full(len(c), 6 if fixed is not None else DED_OPTS.index((dA, dB)), np.int8))
         if codes:
             if n > prune and len(codes) > 1 and dcode[0][0] == 0:
-                # heavy fight: the no-deduction branch is feasible; drop the rare deduction branches
                 return codes[0], dcode[0]
             return np.vstack(codes), np.concatenate(dcode)
     return None
@@ -1001,21 +1103,32 @@ def judge_table(fit, rows, display, ndraw=1000, seed=3):
     league108 = float(judge_p108(th, zero, dom, yidx))
     # empirical stats per judge
     emp = defaultdict(lambda: {"cards": 0, "rounds": 0, "i108": 0, "dissent": 0, "years": [], "regions": Counter(),
-                               "recent": 0, "absdev": [], "names": Counter()})
+                               "recent": 0, "absdev": [], "names": Counter(), "rd_n": 0, "rd_dis": 0,
+                               "obs_rounds": 0, "obs108": 0})
     for r in rows:
         R = r["R"]
         cards = r["cards"]
-        margins = []
-        for (k, nm, a, b) in cards:
-            margins.append(a - b)
-        for i, (k, nm, a, b) in enumerate(cards):
+        margins = [c[2] - c[3] for c in cards]
+        allobs = all(c[4] is not None for c in cards)
+        for i, card in enumerate(cards):
+            k, nm, a, b = card[0], card[1], card[2], card[3]
             if k == "unknown":
                 continue
             e = emp[k]
             e["cards"] += 1
             e["rounds"] += R
             e["names"][nm] += 1
-            e["i108"] += max(0, 19 * R - a - b)
+            e["i108"] += card_n108(card, R)
+            if card[4] is not None:
+                e["obs_rounds"] += R
+                e["obs108"] += int(np.isin(card[4], [0, 4]).sum())
+            if allobs:
+                # round-level dissent: the other two agree on a winner and this judge does not
+                w = [np.sign(np.asarray(c[4], int) - 2) for c in cards]
+                oth = [w[q] for q in range(3) if q != i]
+                agree = (oth[0] == oth[1]) & (oth[0] != 0)
+                e["rd_n"] += int(agree.sum())
+                e["rd_dis"] += int((agree & (w[i] != oth[0])).sum())
             e["years"].append(r["year"])
             e["regions"][r["region"]] += 1
             if r["year"] >= 2022:
@@ -1040,7 +1153,7 @@ def judge_table(fit, rows, display, ndraw=1000, seed=3):
             lj = np.log(pj / (1 - pj)) - lg
             idx[nm_] = {"p": pm, "logit_vs_league": float(math.log(pm / (1 - pm)) - lg), "sd": float(lj.std())}
         p108 = float(judge_p108(th, m, dom, yidx))
-        out.append({"key": k, "name": e["names"].most_common(1)[0][0] if e["names"] else display.get(k, k),
+        out.append({"key": k, "name": JUDGE_NAMES.get(k) or (e["names"].most_common(1)[0][0] if e["names"] else k),
                     "cards": e["cards"], "cards_2022_on": e["recent"],
                     "years": [int(min(e["years"])), int(max(e["years"]))] if e["years"] else None,
                     "regions": dict(e["regions"].most_common(4)),
@@ -1050,6 +1163,10 @@ def judge_table(fit, rows, display, ndraw=1000, seed=3):
                     "close_striking": idx["close_striking"],
                     "p108_dominant": p108, "p108_league": league108,
                     "emp_dissent_rate": e["dissent"] / e["cards"] if e["cards"] else None,
+                    "emp_round_dissent_rate": e["rd_dis"] / e["rd_n"] if e["rd_n"] else None,
+                    "emp_round_dissent_n": e["rd_n"],
+                    "emp_obs108_per_round": e["obs108"] / e["obs_rounds"] if e["obs_rounds"] else None,
+                    "obs_rounds": e["obs_rounds"],
                     "emp_implied108_per_round": e["i108"] / e["rounds"] if e["rounds"] else None,
                     "emp_mean_abs_dev_from_others": float(np.mean(e["absdev"])) if e["absdev"] else None})
     return out, league, league108
@@ -1062,7 +1179,8 @@ def region_pools(rows, jt, since=2022):
     for r in rows:
         if r["year"] < since:
             continue
-        for (k, nm, a, b) in r["cards"]:
+        for c in r["cards"]:
+            k = c[0]
             if k != "unknown":
                 pools[r["region"]][k if k in known else "_other"] += 1
     out = {}
@@ -1448,7 +1566,7 @@ def metrics_block(ev, rows_by_fid):
     m = decision_metrics(ev["probs"], rows)
     m["card_ll"] = float(np.mean(ev["card_ll"]))
     # 10-8: predicted vs observed share of cards with an implied 10-8 (or deduction)
-    obs108 = np.array([[max(0, 19 * r["R"] - a - b) > 0 for (_, _, a, b) in r["cards"]] for r in rows])
+    obs108 = np.array([[card_n108(c, r["R"]) > 0 for c in r["cards"]] for r in rows])
     m["pred_card108_rate"] = float(ev["any108"].mean())
     m["obs_card108_rate"] = float(obs108.mean())
     return m
@@ -1561,8 +1679,8 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
     reg108 = defaultdict(lambda: [0, 0])
     for r in rows:
         if r["year"] >= 2022:
-            for (_, _, a, b) in r["cards"]:
-                reg108[r["region"]][0] += max(0, 19 * r["R"] - a - b)
+            for c in r["cards"]:
+                reg108[r["region"]][0] += card_n108(c, r["R"])
                 reg108[r["region"]][1] += r["R"]
     for reg in regsum:
         n8, nr = reg108[reg]

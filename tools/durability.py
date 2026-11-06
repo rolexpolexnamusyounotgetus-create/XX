@@ -1244,25 +1244,59 @@ def matchup(r_live, spec, roster, ref, a_slug, b_slug, division, level_now, five
     return out
 
 
-def backtest_multipliers(X, r_pre, ref):
-    lin_d, lin_a, lin_ctx, _, _ = split_lin(r_pre, X, ref)
-    w = r_pre["walk"]
-    p = np.exp(r_pre["lin"] + r_pre["lv"]) * w["chin"] * w["pow"]
+def backtest_multipliers(X, r_pre, ref, spec=None, strict_years=range(2019, 2024), verbose=True):
+    """Walk-forward chin / power and KD probability for every backtest entry.
+
+    Strict walk-forward (verification fix): an entry in year Y <= 2023 uses coefficients fit on 2008 .. Y-1 only
+    (expanding window refit each year), so nothing about the fight or later fights enters its numbers. 2024+
+    entries use the pre-2024 fit (2008-2023), as in the held-out test. The first version used the 2008-2023 fit
+    for every entry, which is in-sample for 2019-2023."""
     bt = json.load(open(os.path.join(ROOT, "data", "derived", "backtest.json")))
     ids = {e["id"] for e in bt["fights"]}
+    fits = {}
+    if spec is not None:
+        for Y in strict_years:
+            fm = window(X, FIT_FROM, "%d-12-31" % (Y - 1))
+            fits[Y] = fit_kd(X, final_cols(spec, X), fm, spec)
+            if verbose:
+                print("  backtest refit through %d-12-31" % (Y - 1))
+    parts = {}
+    for key, r in list(fits.items()) + [("pre2024", r_pre)]:
+        lin_d, lin_a, _, _, _ = split_lin(r, X, ref)
+        w = r["walk"]
+        parts[key] = (lin_d, lin_a, w["chin"], w["pow"], np.exp(r["lin"] + r["lv"]) * w["chin"] * w["pow"], r["mu"])
     out = {}
     fid = X.fid.to_numpy()
     sd = X.side_def.to_numpy()
+    yr = X.year.to_numpy()
     for i in np.where(np.isin(fid, list(ids)))[0]:
-        e = out.setdefault(fid[i], {"A": {}, "B": {}, "p": {}})
+        key = int(yr[i]) if int(yr[i]) in fits else "pre2024"
+        lin_d, lin_a, chin, powm, p, _ = parts[key]
+        e = out.setdefault(fid[i], {"A": {}, "B": {}, "p": {},
+                                    "fit_through": "%d-12-31" % (key - 1) if key != "pre2024" else "2023-12-31"})
         d = sd[i]
         a = "A" if d == "B" else "B"
-        e[d]["chin_re"] = round(float(w["chin"][i]), 4)
+        e[d]["chin_re"] = round(float(chin[i]), 4)
         e[d]["chin_cov"] = round(float(math.exp(lin_d[i])), 4)
-        e[a]["pow_re"] = round(float(w["pow"][i]), 4)
+        e[a]["pow_re"] = round(float(powm[i]), 4)
         e[a]["pow_cov"] = round(float(math.exp(lin_a[i])), 4)
         e["p"][a] = round(float(p[i]), 6)          # KD per standing head strike landed by a
-    return out
+    # how much the in-sample (2008-2023) coefficients flattered 2019-2023 relative to the strict refits
+    leak = {}
+    if fits:
+        m = window(X, "2019-01-01", "2023-12-31")
+        mu_s = r_pre["mu"].copy()
+        for Y in fits:
+            mY = (X.year.to_numpy() == Y)
+            mu_s[mY] = parts[Y][5][mY]
+        y = r_pre["y"]
+        d_in = pois_dev(y, r_pre["mu"])
+        d_st = pois_dev(y, mu_s)
+        fd = fight_diff(X, m, d_st[m], d_in[m])
+        leak = {"dev_2019_2023_insample_coefs": round(float(d_in[m].sum()), 2),
+                "dev_2019_2023_strict_refits": round(float(d_st[m].sum()), 2),
+                "difference": round(fd["total"], 2), "se": round(fd["se_total"], 2)}
+    return out, leak, parts
 
 
 def kd_level_series(X):
@@ -1329,16 +1363,45 @@ def main():
     for r in ladder_rows:
         print("  %-58s dev %.1f  vs M0L %+.1f (se %.1f)  KD obs %d exp %.1f" % (
             r["model"], r["dev_test"], r["vs_M0L"]["total"], r["vs_M0L"]["se_total"], r["kd_obs"], r["kd_exp"]))
-    pw = pairwise(X, res, tm, [("F", "V3"), ("F", "E3"), ("F", "M3"), ("E3", "V3"), ("F+move", "F"), ("F+lbs", "F"),
-                              ("F+body", "F"), ("C30", "M1"), ("M2", "C30"), ("Ffull", "F"), ("Fnokd", "F")])
-    coefs = {k: coef_table(res[k], X, groups) for k in ("F", "F+move", "F+lbs", "F+body", "M3", "C30", "Ffull", "Fnokd")}
-    slopes = {"defender": age_slopes(res["F"], "d", spec["knots"]), "attacker": age_slopes(res["F"], "a", spec["knots"])}
+    pw = pairwise(X, res, tm, [("F", "M0L"), ("E3", "M0L"), ("F", "V3"), ("F", "E3"), ("F", "M3"), ("E3", "V3"),
+                              ("M3", "M1"), ("F36", "F"), ("F36", "V3"), ("F36", "E3"), ("F+move", "F"), ("F+lbs", "F"),
+                              ("F+body", "F"), ("C30", "M1"), ("M2", "C30")])
+    for r in pw:
+        print("  %-7s vs %-4s %+.1f (fight SE %.1f, fighter SE %.1f)  half-year rescaled %+.1f (fighter SE %.1f)" % (
+            r["model"], r["vs"], r["dev_diff"], r["se"], r["se_fighter"], r.get("dev_diff_halfyear_rescaled", float("nan")),
+            r.get("se_fighter_rescaled", float("nan"))))
+    coefs = {k: coef_table(res[k], X, groups) for k in ("F", "F+move", "F+lbs", "F+body", "M3", "C30", "F36")}
+    has_aage = "a_age_c" in res["F"]["cols"]
+    slopes = {"defender": age_slopes(res["F"], "d", spec["knots"]),
+              "attacker": age_slopes(res["F" if has_aage else "F36"], "a", spec["knots"]),
+              "attacker_from": "F" if has_aage else "F36 (attacker age is not in the final model)"}
     slopes_m2 = {"defender": age_slopes(res["M2"], "d", spec["knots"]), "attacker": age_slopes(res["M2"], "a", spec["knots"])}
-    slopes_m3 = {"defender": age_slopes(res["M3"], "d", spec["knots"]), "attacker": age_slopes(res["M3"], "a", spec["knots"])}
-    eb_cal = {"train": ebslope(X, res["F"], fm), "test": ebslope(X, res["F"], tm),
-              "test_Ffull": ebslope(X, res["Ffull"], tm), "test_Fnokd": ebslope(X, res["Fnokd"], tm)}
+    slopes_m3 = {"defender": age_slopes(res["M3"], "d", spec["knots"]),
+                 "attacker": age_slopes(res["M3" if has_aage else "M36"], "a", spec["knots"])}
+    eb_cal = {"train": ebslope(X, res["F"], fm), "test": ebslope(X, res["F"], tm), "test_F36": ebslope(X, res["F36"], tm),
+              "test_E3": ebslope(X, res["E3"], tm)}
     od = overdispersion(X, res["F"], fm, spec)
     cal = calib_all(X, res, tm)
+
+    # chin exponent: estimated on 2019-2023 (fit 2008-2018), applied unchanged to the 2024+ test
+    if tune_diag.get("eb_slopes_2019_2023"):
+        val_sl = tune_diag["eb_slopes_2019_2023"]
+    else:
+        rv = fit_kd(X, final_cols(spec, X), window(X, *TUNE_FIT), spec)
+        val_sl = ebslope(X, rv, window(X, *TUNE_EVAL))
+    bc = float(val_sl["chin_slope"])
+    rF = res["F"]
+    base_F = np.exp(rF["lin"] + np.log(np.where(rF["E"] > 0, rF["E"], 1)) + rF["lv"] + rF["xo"])
+    mu_e = base_F * rF["walk"]["chin"] ** bc * rF["walk"]["pow"]
+    mu_e *= rF["mu"][fm].sum() / mu_e[fm].sum()          # same 2008-2023 total as F
+    d_e = pois_dev(rF["y"], mu_e) - pois_dev(rF["y"], rF["mu"])
+    fd_e = fight_diff(X, tm, d_e[tm], 0 * d_e[tm])
+    chin_exp = {"chin_exponent_2019_2023": round(bc, 4), "se": val_sl["chin_se"],
+                "power_slope_2019_2023": val_sl["pow_slope"], "power_se": val_sl["pow_se"],
+                "test_dev_gain": round(fd_e["total"], 2), "test_se_fight": round(fd_e["se_total"], 2),
+                "test_se_fighter": round(se_fighter(X, tm, d_e), 2),
+                "renorm_factor": round(float(rF["mu"][fm].sum() / (base_F * rF["walk"]["chin"] ** bc * rF["walk"]["pow"])[fm].sum()), 4)}
+    print("  chin exponent:", chin_exp)
 
     print("within-fighter, claims, size checks ...")
     if "d_age_h30" not in X.columns:
@@ -1368,7 +1431,13 @@ def main():
     print("live fit on everything and roster multipliers ...")
     r_live = fit_kd(X, final_cols(spec, X), all08, spec, final_state=True)
     coef_live = coef_table(r_live, X, groups)
-    slopes_live = {"defender": age_slopes(r_live, "d", spec["knots"]), "attacker": age_slopes(r_live, "a", spec["knots"])}
+    slopes_live = {"defender": age_slopes(r_live, "d", spec["knots"])}
+    if "a_age_c" in r_live["cols"]:
+        slopes_live["attacker"] = age_slopes(r_live, "a", spec["knots"])
+    # the analyst's original 36-parameter model refit on everything, kept for reference (power aging, layoff, ...)
+    r_live36 = fit_kd(X, final_cols(ANALYST_SPEC, X), all08, ANALYST_SPEC)
+    coef_live36 = coef_table(r_live36, X, groups)
+    slopes_live["attacker_F36_reference"] = age_slopes(r_live36, "a", spec["knots"])
     r_live_move = fit_kd(X, final_cols(spec, X) + blocks(spec, X)["move"], all08, spec)
     coef_live_move = coef_table(r_live_move, X, groups)
     wf["all_2008_on_age"] = within_fighter(X, r_live, all08, zc)
@@ -1386,6 +1455,7 @@ def main():
     wl = r_live["walk"]
     rec = window(X, TEST_FROM)
     Ew = X.E.to_numpy(float)
+    Ew_all = np.nan_to_num(Ew)
     norm_chin = float(np.sum(Ew[rec] * np.exp(lin_d[rec]) * wl["chin"][rec]) / Ew[rec].sum())
     norm_pow = float(np.sum(Ew[rec] * np.exp(lin_a[rec]) * wl["pow"][rec]) / Ew[rec].sum())
     norm_joint = float(np.sum(Ew[rec] * np.exp(lin_d[rec] + lin_a[rec]) * wl["chin"][rec] * wl["pow"][rec]) / Ew[rec].sum())
@@ -1399,7 +1469,20 @@ def main():
     for lv_name, lv_val in (("trailing_730", level_now), ("trailing_365", level_365)):
         ko_mu[lv_name] = ko_matchup(kl, spec, roster, state, people, snap_date, fjson, "alexander-volkanovski",
                                     "justin-gaethje", "Lightweight", lv_val)
-    bt_mult = backtest_multipliers(X, res["F"], ref)
+    print("strict walk-forward backtest multipliers ...")
+    bt_mult, bt_leak, bt_parts = backtest_multipliers(X, res["F"], ref, spec)
+    print("  2019-2023 in-sample vs strict refits:", bt_leak)
+    # normalizations for the backtest (each 2019-2023 row with its own strict fit) and with the chin exponent
+    bt_rows = window(X, "2019-01-01", "2023-12-31")
+    nb_c = nb_p = den = 0.0
+    for Y in range(2019, 2024):
+        mY = bt_rows & (X.year.to_numpy() == Y)
+        ld, la, ch, pw_, _, _ = bt_parts[Y]
+        nb_c += float(np.sum(Ew_all[mY] * np.exp(ld[mY]) * ch[mY]))
+        nb_p += float(np.sum(Ew_all[mY] * np.exp(la[mY]) * pw_[mY]))
+        den += float(Ew_all[mY].sum())
+    norm_chin_bt, norm_pow_bt = nb_c / den, nb_p / den
+    norm_chin_exp = float(np.sum(Ew[rec] * np.exp(lin_d[rec]) * wl["chin"][rec] ** bc) / Ew[rec].sum())
     series = kd_level_series(X)
 
     names_live = ["const"] + r_live["cols"]
@@ -1409,7 +1492,8 @@ def main():
             "snapshot": snap_date.isoformat(), "spec": spec, "fit_from": FIT_FROM, "tune_fit": TUNE_FIT,
             "tune_eval": TUNE_EVAL, "test_from": TEST_FROM, "info": info,
             "model": "KD_ad ~ Poisson(E_ad p_ad); log p_ad = log L730(t) + const + division + 5-round + title + f(defender) "
-                     "+ g(attacker) + log u_d + log v_a; E = standing head strikes landed by a (midpoint of the ufcstats "
+                     "[+ g(attacker) if attacker blocks survive tuning] + log u_d + log v_a; covariate blocks in spec.blocks; "
+                     "E = standing head strikes landed by a (midpoint of the ufcstats "
                      "bounds); u, v = Gamma(alpha, alpha) fighter chin / power effects with walk-forward posterior means "
                      "(alpha + KD) / (alpha + expected KD) over earlier fights",
             "exposure": "standing head landed = (max(HEAD - GROUND, 0) + min(HEAD, DISTANCE + CLINCH)) / 2 per fight",
@@ -1418,6 +1502,7 @@ def main():
         "tuning_grid": grid, "tuning_diagnostics": tune_diag,
         "ladder_test": ladder_rows, "pairwise_test": pw,
         "coef_pre2024": coefs, "coef_live": coef_live, "coef_live_with_move": coef_live_move,
+        "coef_live_analyst_F36": coef_live36,
         "age_slopes_pre2024": slopes, "age_slopes_live": slopes_live,
         "age_slopes_no_fighter_effects": {"M2_age_only": slopes_m2, "M3_covariates": slopes_m3},
         "fighter_effect_calibration_slopes": eb_cal,
@@ -1432,7 +1517,14 @@ def main():
             "ref_lin": round(float(sum(b * ref.get(n, 0.0) for n, b in zip(names_live, r_live["b"]) if n.startswith(("d_", "a_")))), 5),
             "norm_chin": round(norm_chin, 4), "norm_pow": round(norm_pow, 4), "norm_joint": round(norm_joint, 4),
             "alpha_chin": spec["alpha_c"], "alpha_pow": spec["alpha_p"],
+            "chin_exponent": round(bc, 4), "norm_chin_with_exponent": round(norm_chin_exp, 4),
+            "norm_chin_backtest_2019_2023": round(norm_chin_bt, 4), "norm_pow_backtest_2019_2023": round(norm_pow_bt, 4),
+            "norm_note": "norm_* are 2024+ exposure-weighted means of the live C_d and P_a (live use); the backtest should use "
+                         "norm_*_backtest_2019_2023 (strict refits) so that no 2024+ data enters the tuning-period engine",
         },
+        "verification": {"chin_exponent": chin_exp, "backtest_insample_vs_strict_2019_2023": bt_leak,
+                         "selection_rule": "backward one-SE elimination of optional blocks on 2019-2023 (fit 2008-2018)",
+                         "optional_blocks": {k: blocks(spec, X)[k] for k in OPT_ORDER}},
         "kd_level_series": series,
         "matchup_volkanovski_gaethje": mu_live,
         "matchup_volkanovski_gaethje_ko_per_fight": ko_mu,

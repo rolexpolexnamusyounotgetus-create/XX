@@ -493,10 +493,29 @@ def cname(c):
     return c if isinstance(c, str) else c[0] + "*" + c[1]
 
 
+def _fight_boot(per_row, fi_rows, boots_idx, ufi):
+    """fight-level bootstrap of a sum of per-row contributions (both sides of a fight move together)"""
+    per_f = np.bincount(np.searchsorted(ufi, fi_rows), weights=per_row, minlength=len(ufi))
+    bs = per_f[boots_idx].sum(1)
+    return [float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))]
+
+
+def _loyo_oof(D, m, X, y, n, off, tr, yr):
+    """per-row leave-one-year-out (2019-2023) out-of-fold deviance of design X; zero outside `tr`"""
+    nn = lambda mask: None if n is None else n[mask]
+    d = np.zeros(len(D))
+    for Y in range(2019, 2024):
+        a, v = tr & (yr != Y), tr & (yr == Y)
+        b, _, _ = fit_glm(X[a], y[a], m["fam"], off[a], nn(a))
+        d[v] = glm_dev(X[v], b, y[v], m["fam"], off[v], nn(v))
+    return d
+
+
 def rate_tests(D, n_boot=1000, seed=SEED, z_screen=3.0):
-    """Fit every rate spec on 2019-2023 sides, test each candidate: tune z (quasi-likelihood), leave-one-
-    year-out CV deviance change inside 2019-2023, held-out 2024+ deviance change with a fight-level
-    bootstrap CI, and a test-only refit z (diagnostic, never used for selection)."""
+    """Fit every rate spec on 2019-2023 sides and test each candidate. Every selection quantity uses 2019-2023
+    only: the fight-clustered Wald z, the leave-one-year-out (LOYO) CV deviance change and its fight-bootstrap
+    CI. The 2024+ deviance change (fight-bootstrap CI) and the test-only refit z are reported, never used to select.
+    (Verification fix: the first version gave verdicts, tiers and block switches from the 2024+ CIs.)"""
     specs = rate_specs(D)
     fi = D.fi.to_numpy()
     tune = D.tune.to_numpy()
@@ -504,13 +523,7 @@ def rate_tests(D, n_boot=1000, seed=SEED, z_screen=3.0):
     rng = np.random.default_rng(seed)
     out = {}
     for name, m in specs.items():
-        y = D[m["y"]].to_numpy(float)
-        n = D[m["n"]].to_numpy(float) if m.get("n") else None
-        off = m["off"](D) if callable(m["off"]) else (np.zeros(len(D)) if m["off"] is None else m["off"])
-        off = np.asarray(off, float)
-        ok = np.isfinite(off) & np.isfinite(y)
-        if n is not None:
-            ok &= n > 0
+        y, n, off, ok = _spec_data(D, m)
         tr, te = tune & ok, (~tune) & ok
         nn = lambda mask: None if n is None else n[mask]
         Xb = np.column_stack([np.ones(len(D))] + [_col(D, c) for c in m["base"]])
@@ -518,20 +531,15 @@ def rate_tests(D, n_boot=1000, seed=SEED, z_screen=3.0):
         dev0 = glm_dev(Xb[te], b0, y[te], m["fam"], off[te], nn(te))
         bn, _, _ = fit_glm(Xb[tr][:, :1], y[tr], m["fam"], off[tr], nn(tr))
         devn = glm_dev(Xb[te][:, :1], bn, y[te], m["fam"], off[te], nn(te))
-        # leave-one-year-out CV deviance of the baseline inside the tuning years
-        def loyo(X):
-            tot = 0.0
-            for Y in range(2019, 2024):
-                a, v = tr & (yr != Y), tr & (yr == Y)
-                b, _, _ = fit_glm(X[a], y[a], m["fam"], off[a], nn(a))
-                tot += glm_dev(X[v], b, y[v], m["fam"], off[v], nn(v)).sum()
-            return tot
-        cv0 = loyo(Xb)
+        oof0 = _loyo_oof(D, m, Xb, y, n, off, tr, yr)
         ufi = np.unique(fi[te])
-        boots = [rng.integers(0, len(ufi), len(ufi)) for _ in range(n_boot)]
+        boots = rng.integers(0, len(ufi), (n_boot, len(ufi)))
+        ufi_t = np.unique(fi[tr])
+        boots_t = rng.integers(0, len(ufi_t), (n_boot, len(ufi_t)))
+        covc0 = glm_cluster_cov(Xb[tr], y[tr], m["fam"], b0, off[tr], nn(tr), fi[tr])
         res = {"desc": m["desc"], "family": m["fam"], "n_tune": int(tr.sum()), "n_test": int(te.sum()),
                "base_terms": [cname(c) for c in m["base"]],
-               "base_coef": [float(v) for v in b0], "base_se": [float(v) for v in np.sqrt(np.diag(cov0) * disp0)],
+               "base_coef": [float(v) for v in b0], "base_se": [float(v) for v in np.sqrt(np.diag(covc0))],
                "dispersion": disp0, "test_dev_null": float(devn.sum()), "test_dev_base": float(dev0.sum()),
                "candidates": []}
         for c in m["cand"]:
@@ -539,24 +547,31 @@ def rate_tests(D, n_boot=1000, seed=SEED, z_screen=3.0):
             s = x[tr].std() or 1.0
             X = np.column_stack([Xb, x / s])
             b, cov, disp = fit_glm(X[tr], y[tr], m["fam"], off[tr], nn(tr))
-            z = b[-1] / math.sqrt(cov[-1, -1] * disp)
-            cv = loyo(X) - cv0
+            covc = glm_cluster_cov(X[tr], y[tr], m["fam"], b, off[tr], nn(tr), fi[tr])
+            z = b[-1] / math.sqrt(covc[-1, -1])
+            zq = b[-1] / math.sqrt(cov[-1, -1] * disp)
+            dcv = _loyo_oof(D, m, X, y, n, off, tr, yr) - oof0
+            cv = float(dcv[tr].sum())
+            cv_ci = _fight_boot(dcv[tr], fi[tr], boots_t, ufi_t)
             dd = glm_dev(X[te], b, y[te], m["fam"], off[te], nn(te)) - dev0
-            per_f = np.bincount(np.searchsorted(ufi, fi[te]), weights=dd, minlength=len(ufi))
-            bs = np.array([per_f[bi].sum() for bi in boots])
+            t_ci = _fight_boot(dd, fi[te], boots, ufi)
             bt_, covt, dispt = fit_glm(X[te], y[te], m["fam"], off[te], nn(te))
-            zt = bt_[-1] / math.sqrt(covt[-1, -1] * dispt)
+            covtc = glm_cluster_cov(X[te], y[te], m["fam"], bt_, off[te], nn(te), fi[te])
+            zt = bt_[-1] / math.sqrt(covtc[-1, -1])
             passed_screen = abs(z) >= z_screen and cv < 0
             res["candidates"].append({
                 "term": cname(c), "sd": float(s), "coef_per_sd": float(b[-1]), "coef_raw": float(b[-1] / s),
-                "se_per_sd": float(math.sqrt(cov[-1, -1] * disp)), "z_tune": float(z), "cv_dev_change": float(cv),
-                "test_dev_change": float(dd.sum()), "test_dev_ci": [float(np.percentile(bs, 2.5)),
-                                                                     float(np.percentile(bs, 97.5))],
+                "se_per_sd": float(math.sqrt(covc[-1, -1])), "z_tune": float(z), "z_tune_quasi": float(zq),
+                "cv_dev_change": cv, "cv_dev_ci": cv_ci,
+                "test_dev_change": float(dd.sum()), "test_dev_ci": t_ci,
                 "test_dev_change_pct": float(dd.sum() / dev0.sum() * 100), "z_test_only": float(zt),
                 "screen": bool(passed_screen),
-                "verdict": ("survives" if passed_screen and np.percentile(bs, 97.5) < 0 else
-                            "supported" if passed_screen and dd.sum() < 0 and np.sign(zt) == np.sign(z) else
-                            "fails held-out" if passed_screen else "not screened in"),
+                # selection verdict: 2019-2023 evidence only
+                "verdict": ("cv-confirmed" if passed_screen and cv_ci[1] < 0 else
+                            "screened" if passed_screen else "not screened in"),
+                # what 2024+ then showed (descriptive; never feeds back into selection)
+                "heldout": ("holds" if t_ci[1] < 0 else "same sign" if dd.sum() < 0 and np.sign(zt) == np.sign(z)
+                            else "fails"),
             })
         out[name] = res
     return out
@@ -1135,18 +1150,16 @@ def _term_from_name(t):
     return tuple(t.split("*")) if "*" in t else t
 
 
-# Judgment additions (tier 3), stated openly: the defender's kick share on takedown attempts missed the tune
-# screen (z 2.4 < 3) but its 2024+ change has a CI below zero, and the total-control model's kick_y term
-# survives; a decomposition (takedowns landed per standing minute +, takedown accuracy 0, control without a
-# takedown 0) puts that control effect on takedown attempts. Without this term the engine would lose the
-# kicker-gets-taken-down effect the total-control model confirms.
-JUDGMENT_TERMS = {"td_att": ["kick_y"]}
+# Verification fix: the first version added a "judgment" term (kick_y on td_att) because its 2024+ CI was below
+# zero although it missed the tune screen. That is selection on the test period; there are no judgment terms now.
+JUDGMENT_TERMS = {}
 
 
 def recommend_sets(D, rate_res):
-    """Per rate model: start from held-out survivors, then add held-out-supported matchup terms in order of
-    tune z, keeping each only if it lowers the 2019-2023 leave-one-year-out CV deviance given the terms
-    already in (this resolves collinear pairs such as reach vs height on tune data alone)."""
+    """Per rate model, 2019-2023 data only: take the screened matchup terms (CV-confirmed first, then by
+    |fight-clustered z|) and keep each only if it lowers the leave-one-year-out CV deviance given the terms
+    already in (this resolves collinear pairs such as open vs southpaw-vs-orthodox). Tier 1 = CV-confirmed
+    alone (LOYO fight-bootstrap CI below zero), tier 2 = screened alone and kept by the forward step."""
     specs = rate_specs(D)
     tune = D.tune.to_numpy()
     yr = D.date.str[:4].astype(int).to_numpy()
@@ -1156,8 +1169,8 @@ def recommend_sets(D, rate_res):
         y, n, off, ok = _spec_data(D, m)
         tr = tune & ok
         nn = lambda mask: None if n is None else n[mask]
-        cands = [c for c in res["candidates"] if c["verdict"] in ("survives", "supported") and is_matchup(c["term"])]
-        cands.sort(key=lambda c: (c["verdict"] != "survives", -abs(c["z_tune"])))
+        cands = [c for c in res["candidates"] if c["verdict"] in ("cv-confirmed", "screened") and is_matchup(c["term"])]
+        cands.sort(key=lambda c: (c["verdict"] != "cv-confirmed", -abs(c["z_tune"])))
 
         def cvdev(terms):
             cols = [np.ones(len(D))] + [_col(D, c) for c in m["base"]]
@@ -1173,26 +1186,34 @@ def recommend_sets(D, rate_res):
             return tot
         chosen, tier, cur = [], {}, cvdev([])
         for c in cands:
-            if c["verdict"] == "survives":
-                chosen.append(c["term"])
-                tier[c["term"]] = 1
-                cur = cvdev(chosen)
-                continue
             d = cvdev(chosen + [c["term"]])
             if d < cur:
                 chosen.append(c["term"])
-                tier[c["term"]] = 2
+                tier[c["term"]] = 1 if c["verdict"] == "cv-confirmed" else 2
                 cur = d
         if chosen:
             sets[name] = {"terms": chosen, "tier": tier}
     return sets
 
 
+def _raw_base(D, term):
+    """the raw log-ratio / log-odds feature behind a z-scored base term (for the engine's a = b = 1 composition)"""
+    sign = -1.0 if term.startswith("neg_") else 1.0
+    t = term[4:] if term.startswith("neg_") else term
+    col = ("x_" if t.startswith("zx_") else "y_") + t[3:]
+    return sign * D[col].astype(float).fillna(0.0).to_numpy(), t[3:]
+
+
 def joint_rate_eval(D, sets, sd_feat, n_boot=1000, seed=SEED):
-    """joint fit of each model's recommended terms on 2019-2023; held-out deviance change vs the base"""
+    """Joint fit of each model's selected terms on 2019-2023. Tune-only evidence: LOYO CV deviance change with a
+    fight-bootstrap CI (this decides whether the block is on) and fight-clustered z. Then the 2024+ deviance change,
+    scored once. Also: the main effects in raw feature units (the implied engine exponents a, b) and the modifier
+    coefficients refit with the main effects fixed at the engine's default a = b = 1 (offset), because the
+    modifiers are not orthogonal to the main-effect strengths (verification log)."""
     specs = rate_specs(D)
     tune = D.tune.to_numpy()
     fi = D.fi.to_numpy()
+    yr = D.date.str[:4].astype(int).to_numpy()
     rng = np.random.default_rng(seed)
     out = {}
     for name, st in sets.items():
@@ -1212,27 +1233,46 @@ def joint_rate_eval(D, sets, sd_feat, n_boot=1000, seed=SEED):
             cols.append(x / s)
         X = np.column_stack(cols)
         b, cov, disp = fit_glm(X[tr], y[tr], m["fam"], off[tr], nn(tr))
+        covc = glm_cluster_cov(X[tr], y[tr], m["fam"], b, off[tr], nn(tr), fi[tr])
         dev = glm_dev(X[te], b, y[te], m["fam"], off[te], nn(te))
         dd = dev - dev0
         ufi = np.unique(fi[te])
-        per_f = np.bincount(np.searchsorted(ufi, fi[te]), weights=dd, minlength=len(ufi))
-        bs = np.array([per_f[rng.integers(0, len(ufi), len(ufi))].sum() for _ in range(n_boot)])
+        t_ci = _fight_boot(dd, fi[te], rng.integers(0, len(ufi), (n_boot, len(ufi))), ufi)
+        dcv = _loyo_oof(D, m, X, y, n, off, tr, yr) - _loyo_oof(D, m, Xb, y, n, off, tr, yr)
+        ufi_t = np.unique(fi[tr])
+        cv_ci = _fight_boot(dcv[tr], fi[tr], rng.integers(0, len(ufi_t), (n_boot, len(ufi_t))), ufi_t)
         kb = len(m["base"]) + 1
+        # engine composition: main effects fixed at a = b = 1 on the raw features, modifiers refit
+        raw = [_raw_base(D, c) for c in m["base"]]
+        off1 = off + sum(r for r, _ in raw)
+        X1 = np.column_stack([np.ones(len(D))] + cols[kb:])
+        b1, _, _ = fit_glm(X1[tr], y[tr], m["fam"], off1[tr], nn(tr))
+        cov1 = glm_cluster_cov(X1[tr], y[tr], m["fam"], b1, off1[tr], nn(tr), fi[tr])
+        dev1b, _, _ = fit_glm(X1[tr][:, :1], y[tr], m["fam"], off1[tr], nn(tr))
+        dd1 = (glm_dev(X1[te], b1, y[te], m["fam"], off1[te], nn(te))
+               - glm_dev(X1[te][:, :1], dev1b, y[te], m["fam"], off1[te], nn(te)))
         terms = []
         for j, t in enumerate(st["terms"]):
             coef_sd = float(b[kb + j])
             terms.append({"term": t, "tier": st["tier"][t], "coef_per_term_sd": coef_sd,
                           "term_sd": float(scales[j]), "coef_per_unit": coef_sd / scales[j],
-                          "z_tune": float(b[kb + j] / math.sqrt(cov[kb + j, kb + j] * disp)),
-                          "mult_at_plus1sd": float(math.exp(coef_sd))})
+                          "z_tune": float(b[kb + j] / math.sqrt(covc[kb + j, kb + j])),
+                          "mult_at_plus1sd": float(math.exp(coef_sd)),
+                          "coef_per_unit_ab1": float(b1[1 + j] / scales[j]),
+                          "z_tune_ab1": float(b1[1 + j] / math.sqrt(cov1[1 + j, 1 + j]))})
         shift = X[:, kb:] @ b[kb:]                     # the modifier part of the linear predictor
         q = np.percentile(shift[~tune], [5, 25, 50, 75, 95])
         out[name] = {"desc": m["desc"], "family": m["fam"], "base_terms": [cname(c) for c in m["base"]],
-                     "base_coef_joint": [float(v) for v in b[:kb]], "terms": terms,
+                     "base_coef_joint": [float(v) for v in b[:kb]],
+                     # implied exponents: coefficient on the raw (unstandardised) log-ratio feature
+                     "base_exponent_raw": {cname(c): float(b[1 + i] / sd_feat[r[1]]) for i, (c, r) in enumerate(zip(m["base"], raw))},
+                     "terms": terms,
                      "shift_pct_2024": {"p5": float(q[0]), "p25": float(q[1]), "p50": float(q[2]), "p75": float(q[3]),
                                         "p95": float(q[4]), "abs_median": float(np.median(np.abs(shift[~tune])))},
+                     "cv_dev_change": float(dcv[tr].sum()), "cv_dev_ci": cv_ci,
+                     "on_by_tune_cv": bool(cv_ci[1] < 0),
                      "test_dev_change": float(dd.sum()), "test_dev_change_pct": float(dd.sum() / dev0.sum() * 100),
-                     "test_dev_ci": [float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))]}
+                     "test_dev_ci": t_ci, "test_dev_change_ab1": float(dd1.sum())}
     return out
 
 
@@ -1525,8 +1565,9 @@ def main():
     tier1 = {k: v for k, v in tier1.items() if v["terms"]}
     joint_all = joint_rate_eval(D, sets, sd, n_boot=args.boot)
     joint_rule = joint_rate_eval(D, {k: v for k, v in sets_rule.items() if k in JUDGMENT_TERMS}, sd, n_boot=args.boot)
-    # a rate block is on by default only if its joint held-out deviance CI excludes zero
-    joint = {k: v for k, v in joint_all.items() if v["test_dev_ci"][1] < 0}
+    # a rate block is on by default only if its joint 2019-2023 LOYO CV deviance change has a fight-bootstrap CI
+    # below zero (tune-only; the first version switched blocks on from their 2024+ CI)
+    joint = {k: v for k, v in joint_all.items() if v["on_by_tune_cv"]}
     optional = {k: v for k, v in joint_all.items() if k not in joint}
     joint1 = joint_rate_eval(D, tier1, sd, n_boot=args.boot)
     # the clean variant: every matchup term that passed the tune-only screen, no held-out confirmation
@@ -1596,6 +1637,10 @@ def main():
                  "shrinkage": {"K_MIN": K_MIN, "K_ATT": K_ATT, "K_TD": K_TD, "K_HEAD": K_HEAD, "K_CTRLTD": K_CTRLTD},
                  "shrinkage_tuning": shrink_log,
                  "style_dims": STYLE_DIMS, "main_dims": BASE_WIN, "bootstrap": args.boot,
+                 "rate_selection_rule": "2019-2023 only: screen |fight-clustered z| >= 3 and LOYO CV deviance "
+                                        "improves; tier 1 = LOYO fight-bootstrap CI below zero; forward addition "
+                                        "by LOYO CV; block on if its joint LOYO CV CI is below zero. 2024+ scored "
+                                        "once, never used to select (revised in verification).",
                  "notes": "features are log rate ratios or log-odds differences vs the division prior of the fight "
                           "year (backtest: priors_asof; live roster: fighters.json priors); z = (feature - mu) / sd "
                           "with mu, sd from 2019-2023 backtest sides. Winner models are antisymmetric with no "

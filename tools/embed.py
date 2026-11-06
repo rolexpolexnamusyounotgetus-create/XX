@@ -1171,6 +1171,13 @@ def eval_stats(T, verbose=True):
         out = {}
         preds = {}
         preds["emb_direct"] = emb_direct_rate(T, R, stat) * m
+        # two-term log-linear blend an engine can apply: log rate = b0 + b1 log(log5 rate) + b2 log(embedding rate)
+        Xb = np.c_[stat_design(T, R, stat, "glm_base")[:, 0], np.log(emb_direct_rate(T, R, stat) + 1e-6)]
+        gb = PoissonRegressor(alpha=0.0, max_iter=1000)
+        gb.fit(Xb[tr], rate[tr], sample_weight=m[tr])
+        preds["blend"] = gb.predict(Xb) * m
+        out["blend_coef"] = {"b0": round(float(gb.intercept_), 4), "b_log5": round(float(gb.coef_[0]), 4),
+                             "b_emb": round(float(gb.coef_[1]), 4)}
         for kind in ("glm_base", "glm_emb", "gbm_base", "gbm_emb"):
             X = stat_design(T, R, stat, kind)
             if kind.startswith("glm"):
@@ -1204,9 +1211,9 @@ def eval_stats(T, verbose=True):
                        "rel_change": round(mu / tot, 4), "ci95": [round(lo / tot, 4), round(hi / tot, 4)]}
         res["stats"][stat] = out
         if verbose:
-            print("  stat %-8s rel dev vs glm_base: gbm_base %.4f | emb_direct %.4f glm_emb %.4f gbm_emb %.4f | "
-                  "best emb vs best base %+.2f%% [%+.2f, %+.2f]" % (
-                      stat, out["gbm_base"]["rel"], out["emb_direct"]["rel"], out["glm_emb"]["rel"],
+            print("  stat %-8s rel dev vs glm_base: gbm_base %.4f | emb_direct %.4f blend %.4f glm_emb %.4f gbm_emb %.4f"
+                  " | best emb vs best base %+.2f%% [%+.2f, %+.2f]" % (
+                      stat, out["gbm_base"]["rel"], out["emb_direct"]["rel"], out["blend"]["rel"], out["glm_emb"]["rel"],
                       out["gbm_emb"]["rel"], 100 * out["gain"]["rel_change"], 100 * out["gain"]["ci95"][0],
                       100 * out["gain"]["ci95"][1]))
     res["mean_rel"] = {k: round(float(v.sum() / len(STATS)), 4) for k, v in all_dev.items()}
@@ -1413,7 +1420,7 @@ def py_eval_compact(m, ea, eb, division, era, five):
             "ratesA": rA, "ratesB": rB}
 
 
-def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs):
+def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs, cache):
     fin = walk["final"]
     P, A, Dm = fin["P"], fin["A"], fin["D"]
     K = A.shape[1]
@@ -1517,8 +1524,7 @@ def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs)
             print("  %s %-60s %s | high: %s" % (a["axis"], a["label"][:60], a["loadings"][:4], ", ".join(a["high"][:5])))
     for sl, l in nn.items():
         print("  neighbours of %s: %s" % (sl, ", ".join("%s (%.2f)" % (x, d) for x, d in l)))
-    _save({"T": T, "win_preds": win_preds, "walk_final": fin}, os.path.join(os.environ.get("TMPDIR", "/tmp"),
-                                                                         "embed_cache", "eval_state.pkl"))
+    _save({"T": T, "win_preds": win_preds, "walk_final": fin}, _pk(cache, "eval_state.pkl"))
 
 
 # ------------------------------------------------------------------------------------------------ driver
@@ -1646,7 +1652,7 @@ def main():
         len(T["id"]), int((T["year"] <= 2023).sum()), int((T["year"] >= 2024).sum())), flush=True)
     win_res, win_preds = eval_winner(T)
     stat_res = eval_stats(T)
-    write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, time.time() - t0)
+    write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, time.time() - t0, args.cache)
 
 
 if __name__ == "__main__":

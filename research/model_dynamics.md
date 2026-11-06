@@ -20,7 +20,7 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
 
 - **Within a fight, output does not decay with damage or with work done.** Distance strike attempts per minute
   of non-control time do not move with head strikes absorbed in earlier rounds: +0.1% per 10 (SE 0.6%). Own
-  earlier output costs at most a few percent: -4.5% per 100 attempts thrown (SE 2.4%). The league pace curve
+  earlier output costs at most a few percent: -4.5% per 100 attempts thrown (SE 2.4%, jackknife 3.0%). The league pace curve
   rises by round and stays the main dynamic. Structural round multipliers for distance output are
   [1, 1.15, 1.26] (3 rounds) and [1, 1.22, 1.23, 1.31, 1.37] (5 rounds).
 - **Fixed-effects fits get the fatigue question backwards.** Within-fight fixed effects say each 100 attempts thrown
@@ -42,8 +42,8 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
   output (+0.0% SE 1.1%, -0.8% SE 0.9%) or takedown attempts (+1.6% SE 4.8%). Accuracy dips slightly after a
   round the judges gave away: -0.04 logit (SE 0.016), about 1 point. Down two rounds entering the final round,
   fighters throw 4.7% less (SE 1.6%), not more.
-- **Knockdown momentum.** The scorer eases off next round: output -8.8% (SE 3.0%), accuracy -0.058 logit,
-  takedown attempts -12%. The man who was dropped does not slow: output +6% (SE 3%), takedown attempts +12%. Once
+- **Knockdown momentum.** The scorer eases off next round: output -8.8% (SE 3.0%, jackknife 3.5%), accuracy -0.058 logit,
+  takedown attempts -12%. The man who was dropped does not slow: output +6% (SE 3%, jackknife 1.8%), takedown attempts +12%. Once
   per-fight frailty is in, his knockdown risk in the next round is x1.15 (95% CI 0.83-1.60). Without frailty it
   looks like x2.0, but that is selection.
 - **Finish hazard vs accumulated damage: per-strike risk does not rise.** Knockdowns per landed standing head
@@ -128,10 +128,12 @@ the simulated counts and refit:
 
 | True effect of A100 | Dynamic RE estimate | Within-fight fixed effects |
 |---|---|---|
-| 0 | -0.010, -0.019, -0.049 (exploration runs); final run in `simulation_check` | -0.44, -0.40, -0.42 |
-| -0.15 | -0.188, -0.115 | -0.69, -0.60 |
+| 0 | +0.016, -0.005 (final run); -0.010, -0.019, -0.049 (exploration runs) | -0.42, -0.40 (final); -0.44, -0.40, -0.42 |
+| -0.15 | -0.164, -0.125 (final); -0.188, -0.115 (exploration) | -0.61, -0.60 (final); -0.69, -0.60 |
 
-On real data the fixed-effects estimate is -0.424. That is exactly the artifact.
+On real data the fixed-effects estimate is -0.424. That is exactly the artifact. Across all seven null and
+effect replicates, dynamic RE is within about ±0.04 of the truth. The replicate spread (about 0.03) is wider than
+the sandwich SE (about 0.015), so for lagged own-output terms use the jackknife SE or double the sandwich SE.
 
 ## 2. Output and accuracy vs in-fight state (part 1)
 
@@ -155,34 +157,39 @@ probability that the round ends by KO/TKO or submission.
 
 ### 2.2 State effects (train 2019-2023; log scale for rates, logit for accuracy)
 
-Estimate (cluster-robust SE). `out` = log sig attempts per round-minute (11,878 fighter-rounds, 2,402 fights).
-`dist` = log distance attempts per non-control minute (9,964). `acc` = empirical-logit sig accuracy (11,468).
-`TD` = takedown attempts per minute (frailty Poisson, log rate). Jackknife SEs for `out` and `dist`:
-`state_models.*.gamma.*.se_jack` in the JSON (see section 9).
+Estimates with SEs. For `out` and `dist` each cell shows the cluster-robust SE, then the 10-group jackknife SE.
+`acc` and `TD` show the cluster-robust SE only.
 
-| Covariate | out | dist | acc | TD attempts |
+| Model | Outcome | Train size |
+|---|---|---|
+| `out` | log sig attempts per round-minute | 11,878 fighter-rounds, 2,402 fights |
+| `dist` | log distance attempts per non-control minute | 9,964 |
+| `acc` | empirical-logit sig accuracy | 11,468 |
+| `TD` | takedown attempts per minute (frailty Poisson, log rate) | |
+
+| Covariate | out (SE; jk) | dist (SE; jk) | acc | TD attempts |
 |---|---|---|---|---|
-| D10 (per 10 head absorbed) | -0.017 (0.009) | +0.001 (0.006) | -0.010 (0.007) | -0.037 (0.022) |
-| K_lag | +0.062 (0.029) | +0.033 (0.016) | -0.025 (0.025) | +0.111 (0.063) |
-| K_early | +0.002 (0.049) | -0.012 (0.021) | -0.053 (0.033) | +0.109 (0.073) |
-| A100 (own output, per 100) | +0.111 (0.040) | -0.045 (0.024) | +0.046 (0.035) | -0.056 (0.095) |
-| oA100 (opponent output) | +0.149 (0.039) | -0.057 (0.025) | +0.078 (0.032) | +0.173 (0.097) |
-| octrl_m (min controlled) | -0.005 (0.008) | -0.013 (0.005) | +0.002 (0.006) | **-0.104 (0.016)** |
-| ctrl_m (min in control) | -0.021 (0.008) | -0.034 (0.005) | +0.028 (0.006) | +0.048 (0.012) |
-| otdl | -0.014 (0.011) | -0.002 (0.006) | +0.008 (0.007) | -0.020 (0.022) |
-| tdl | -0.017 (0.010) | -0.009 (0.006) | +0.004 (0.009) | -0.063 (0.013) |
-| H10 (per 10 head landed) | -0.023 (0.009) | -0.001 (0.005) | -0.001 (0.007) | -0.004 (0.020) |
-| Ks_lag | **-0.088 (0.030)** | -0.043 (0.019) | -0.058 (0.024) | -0.129 (0.069) |
-| Ks_early | -0.030 (0.041) | -0.024 (0.022) | -0.025 (0.035) | +0.091 (0.077) |
-| lost | -0.008 (0.009) | -0.014 (0.007) | -0.018 (0.013) | -0.020 (0.033) |
-| behind2_final | -0.047 (0.016) | -0.006 (0.012) | -0.027 (0.021) | -0.005 (0.048) |
-| partial | +0.164 (0.019) | +0.047 (0.012) | +0.162 (0.013) | +0.092 (0.029) |
+| D10 (per 10 head absorbed) | -0.017 (0.009; 0.012) | +0.001 (0.006; 0.004) | -0.010 (0.007) | -0.037 (0.022) |
+| K_lag | +0.062 (0.029; 0.018) | +0.033 (0.016; 0.022) | -0.025 (0.025) | +0.111 (0.063) |
+| K_early | +0.002 (0.049; 0.043) | -0.012 (0.021; 0.033) | -0.053 (0.033) | +0.109 (0.073) |
+| A100 (own output, per 100) | +0.111 (0.040; 0.054) | -0.045 (0.024; 0.030) | +0.046 (0.035) | -0.056 (0.095) |
+| oA100 (opponent output) | +0.149 (0.039; 0.045) | -0.057 (0.025; 0.018) | +0.078 (0.032) | +0.173 (0.097) |
+| octrl_m (min controlled) | -0.005 (0.008; 0.005) | -0.013 (0.005; 0.005) | +0.002 (0.006) | **-0.104 (0.016)** |
+| ctrl_m (min in control) | -0.021 (0.008; 0.007) | -0.034 (0.005; 0.005) | +0.028 (0.006) | +0.048 (0.012) |
+| otdl | -0.014 (0.011; 0.013) | -0.002 (0.006; 0.007) | +0.008 (0.007) | -0.020 (0.022) |
+| tdl | -0.017 (0.010; 0.009) | -0.009 (0.006; 0.006) | +0.004 (0.009) | -0.063 (0.013) |
+| H10 (per 10 head landed) | -0.023 (0.009; 0.009) | -0.001 (0.005; 0.005) | -0.001 (0.007) | -0.004 (0.020) |
+| Ks_lag | **-0.088 (0.030; 0.035)** | -0.043 (0.019; 0.011) | -0.058 (0.024) | -0.129 (0.069) |
+| Ks_early | -0.030 (0.041; 0.013) | -0.024 (0.022; 0.025) | -0.025 (0.035) | +0.091 (0.077) |
+| lost | -0.008 (0.009; 0.010) | -0.014 (0.007; 0.006) | -0.018 (0.013) | -0.020 (0.033) |
+| behind2_final | -0.047 (0.016; 0.014) | -0.006 (0.012; 0.016) | -0.027 (0.021) | -0.005 (0.048) |
+| partial | +0.164 (0.019; 0.014) | +0.047 (0.012; 0.009) | +0.162 (0.013) | +0.092 (0.029) |
 
 Reading:
 
-- **Damage.** Head strikes absorbed cut sig output per round-minute slightly (-1.7% per 10). They do not cut output
-  per minute of standing time (+0.1%). Damage works through position, as damaged fighters spend more time
-  controlled, not through rate.
+- **Damage.** Head strikes absorbed cut sig output per round-minute slightly: -1.7% per 10, z = 1.4 on the
+  jackknife SE. They do not cut output per minute of standing time (+0.1%). Whatever effect exists works through
+  position, as damaged fighters spend more time controlled, not through rate.
 - **Knockdowns absorbed** raise the next round's output and takedown attempts. Knockdowns scored lower the
   scorer's.
 - **Fatigue proxies.** Own earlier output costs at most -4.5% per 100 attempts at distance. On all sig attempts it

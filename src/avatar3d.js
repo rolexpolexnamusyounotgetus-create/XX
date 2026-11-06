@@ -292,6 +292,7 @@
   function known(s) { s = lower(s); return s && s.indexOf("unknown") !== 0; }
   function pickColor(text, fallback) {
     var t = lower(text), best = null, bl = 0;
+    if (/^#[0-9a-f]{6}$/.test(t)) return t;
     for (var k in HAIR_COL) if (t.indexOf(k) >= 0 && k.length > bl) { best = HAIR_COL[k]; bl = k.length; }
     return best || fallback;
   }
@@ -404,7 +405,7 @@
     else if (/goatee|chin beard/.test(fhT)) { L.beard = 0.85; L.chinOnly = true; }
     if (cfg.female) L.beard = 0;
     L.beardColor = pickColor(app.beard_color || app.facial_hair, L.hairColor);
-    if (/ginger|red|auburn/.test(fhT)) L.beardColor = pickColor(fhT, L.beardColor);
+    if (!app.beard_color && /ginger|red|auburn/.test(fhT)) L.beardColor = pickColor(fhT.replace(/reddish-brown|reddish brown/, "auburn"), L.beardColor);
     var tone = toneFrom(app.skin), fam = (TONE[tone] || TONE["light-medium"])[0];
     L.tint = app.skin_tint || (TONE[tone] || TONE["light-medium"])[1];
     var ageKey = cfg.years < 27 ? "young" : (cfg.years < 52 ? "middleage" : "old");
