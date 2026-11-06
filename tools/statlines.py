@@ -457,6 +457,26 @@ class Dist:
             return np.where(y == 0, np.log(p["pi"] + (1 - p["pi"]) * np.exp(f)), np.log1p(-p["pi"]) + f)
         return zibeta_logmass(y, p["pi"], p["m"], p["phi"], p["cap"])
 
+    def cdf_grid(self, J):
+        """P(Y <= j) for j = 0..J (rows x (J + 1)); NB / Poisson by the cumulative log-pmf recurrence (fast)."""
+        p = self.p
+        j = np.arange(J)[None, :]
+        if self.kind in ("nb", "zinb", "pois"):
+            mu = np.maximum(p["mu"], 1e-12)[:, None]
+            if self.kind == "pois":
+                lp0 = -mu
+                term = np.log(mu) - np.log(j + 1.0)
+            else:
+                k = p["k"][:, None]
+                lp0 = k * (np.log(k) - np.log(k + mu))
+                term = np.log(j + k) - np.log(j + 1.0) + (np.log(mu) - np.log(k + mu))
+            lpmf = np.concatenate([lp0, lp0 + np.cumsum(term, 1)], 1)
+            F = np.minimum(np.cumsum(np.exp(lpmf), 1), 1.0)
+            if self.kind == "zinb":
+                F = p["pi"][:, None] + (1 - p["pi"][:, None]) * F
+            return F
+        return self.cdf(np.arange(J + 1)[None, :].repeat(len(p["pi"]), 0))
+
     def cdf(self, j):
         """P(Y <= j) (rows x grid when j is 2-D)."""
         p = {k: (v[:, None] if np.ndim(j) == 2 else v) for k, v in self.p.items()}
@@ -508,7 +528,7 @@ def score_rows(st, y, dist, rng, chunk=400):
         b = min(n, a + chunk)
         sub = Dist(dist.kind, **{k: x[a:b] for k, x in dist.p.items()})
         g = np.arange(J + 1)[None, :].repeat(b - a, 0)
-        F = sub.cdf(g)
+        F = sub.cdf_grid(J)
         yy = y[a:b]
         ind = (g >= yy[:, None]).astype(float)
         crps[a:b] = ((F - ind) ** 2).sum(1)
@@ -996,7 +1016,7 @@ def mixture_scores(st, model, T, rows, y, rng, chunk=60):
             J = grid_max(st, d) if d.kind != "zibeta" else int(60 * 5 * R + 2)
             J = min(J, 4000)
             g = np.arange(J + 1)[None, :]
-            F = (d.cdf(np.repeat(g, m * P, 0)) * w[:, None]).reshape(m, P, J + 1).sum(1)
+            F = (d.cdf_grid(J) * w[:, None]).reshape(m, P, J + 1).sum(1)
             F = np.minimum(F, 1.0)
             yi = y[pp].astype(int)
             ind = (g >= y[pp][:, None]).astype(float)
@@ -1086,7 +1106,7 @@ def median_of(d):
     for a in range(0, n, 300):
         b = min(n, a + 300)
         sub = Dist(d.kind, **{k: x[a:b] for k, x in d.p.items()})
-        F = sub.cdf(np.arange(J + 1)[None, :].repeat(b - a, 0))
+        F = sub.cdf_grid(J)
         med[a:b] = (F >= 0.5).argmax(1)
     return med
 
@@ -1259,6 +1279,42 @@ def winner_logits(T, rows_fight_sides, mean_fn):
     return {f: DOM_SCALE * (v[0] - v[1]) for f, v in by.items() if np.isfinite(v[0]) and np.isfinite(v[1])}
 
 
+# ====================================================================== corner symmetry (swap test)
+def swap_test(T, J=None, n_model=150):
+    """Data level: every fight's two rows are exact mirrors (attacker inputs <-> defender inputs, win logit negated,
+    same length / rounds). Model level (J = exported tables): the mirrored input of side 0 gives exactly side 1's
+    distribution for every stat. No corner input exists anywhere, so both must hold exactly."""
+    pos = {}
+    for i, (f, s) in enumerate(zip(T["fid"], T["side"])):
+        pos.setdefault(f, [None, None])[s] = i
+    bad = 0
+    pairs = [v for v in pos.values() if v[0] is not None and v[1] is not None]
+    for a, b in pairs:
+        ok = (np.array_equal(T["ML"][a], T["MLo"][b]) and np.array_equal(T["MLo"][a], T["ML"][b])
+              and np.array_equal(np.nan_to_num(T["ETA"][a]), np.nan_to_num(T["ETAo"][b]))
+              and np.array_equal(T["OPP"][a], T["OPPo"][b]) and T["WINL"][a] == -T["WINL"][b]
+              and T["t"][a] == T["t"][b] and T["rounds"][a] == T["rounds"][b] and T["has_emb"][a] == T["has_emb"][b])
+        bad += not ok
+    res = {"pairs": len(pairs), "data_mismatch": bad}
+    if J is not None:
+        Jm = dict(J, _ti=T["TI"])
+        worst = 0.0
+        for a, b in pairs[:: max(1, len(pairs) // n_model)][:n_model]:
+            ia = row_input(T, a)
+            mir = {"ml": ia["mlo"], "mlo": ia["ml"], "eta": ia["etao"], "etao": ia["eta"], "has_emb": ia["has_emb"],
+                   "win_logit": -ia["win_logit"], "opp": ia["oppo"], "oppo": ia["opp"], "rounds": ia["rounds"]}
+            ib = row_input(T, b)
+            for st in STATS:
+                _, p1 = py_eval(Jm, mir, st, float(T["t"][a]))
+                _, p2 = py_eval(Jm, ib, st, float(T["t"][b]))
+                worst = max(worst, max(abs(p1[k] - p2[k]) for k in p1))
+        res["model_max_abs_diff"] = worst
+        assert worst == 0.0, "model swap test failed: %g" % worst
+    assert bad == 0, "data swap test failed on %d fights" % bad
+    log("swap test: %s" % res)
+    return res
+
+
 # ====================================================================== stage: cvfit (CV-year evaluation, OOF, engine)
 def stage_cvfit(args):
     T = load_table()
@@ -1267,7 +1323,7 @@ def stage_cvfit(args):
     ch = chosen_js(cv)
     rng = np.random.default_rng(SEED + 1)
     E = load_engine(os.path.join(CACHE, "engine_v4.json"))
-    R = {"choice_js": ch, "choice_all": cv["choice"], "years": {}, "pooled": {}, "engine": {}}
+    R = {"choice_js": ch, "choice_all": cv["choice"], "engine": {}, "swap_test": swap_test(T)}
     store, wl = {}, {}
     nb_base = {st: "nb_base" for st in STATS}
     allrows, allev = [], {}
@@ -1457,7 +1513,7 @@ def export_set(Fd, models, fit_label):
     blend = {}
     for t in MLT:
         b = Fd.B[t]
-        blend[t] = {"emb": None if b["emb"] is None else [r5(x) for x in b["emb"]], "noemb": [r5(x) for x in b["noemb"]],
+        blend[t] = {"emb": None if b["emb"] is None else [float(x) for x in b["emb"]], "noemb": [float(x) for x in b["noemb"]],
                     "task": EMB_TASK[t]}
     st_out = {}
     for st, m in models.items():
@@ -1643,6 +1699,7 @@ def stage_final(args):
     mp = fit_set(T, Fdp, np.flatnonzero(trp), ch)
     J_prod = export_set(Fdp, mp, "2019-01-01..2025-12-31")
     R["export_check_prod"] = check_export(T, J_prod, mp, smp)
+    R["swap_test"] = swap_test(T, J_dev)
     write_exports(T, cv, ch, J_dev, J_prod, R, ev, rte, wl_oof, wlv)
     json.dump(R, open(os.path.join(CACHE, "final_eval.json"), "w"), indent=1, default=float)
     open(lock, "w").write("final ran %s UTC" % dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
