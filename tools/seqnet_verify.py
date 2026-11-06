@@ -10,6 +10,7 @@ ufcstats CSVs. It reads the builder's caches (out/seqnet_cache/data.pkl, walk.pk
                                                          # missingness subsets, 7-bin vs methodround S, seed curve
     nice -n 5 python3 tools/seqnet_verify.py gate       # own stack gate (forward-chained 2021-2023, 0.0005 rule) and
                                                          # looser stackers (signed weights, free intercept)
+    nice -n 5 python3 tools/seqnet_verify.py claims     # HP-grid gaps vs seed noise, best epochs, raw stat-head deviance
     nice -n 5 python3 tools/seqnet_verify.py repro      # retrain one walk refit (2023, seed 101) and compare logits
     nice -n 5 python3 tools/seqnet_verify.py all
 
@@ -36,7 +37,7 @@ SEL = 0.0005
 def save(stage, obj):
     R = json.load(open(OUT)) if os.path.exists(OUT) else {}
     R[stage] = obj
-    R["_meta"] = {"tool": "tools/seqnet_verify.py", "updated": dt.datetime.utcnow().isoformat() + "Z"}
+    R["_meta"] = {"tool": "tools/seqnet_verify.py", "updated": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat() + "Z"}
     json.dump(R, open(OUT, "w"), indent=1, default=float)
 
 
@@ -399,6 +400,112 @@ def stage_gate():
     save("gate", out)
 
 
+# ====================================================================== claims
+def stage_claims():
+    """The report's side claims: HP-grid differences against seed noise (paired, per fight), best-epoch ranges and how
+    fast validation loss rises after the best epoch, and the raw stat-head deviance vs mlrates (own deviance)."""
+    out = {}
+    d = pickle.load(open(os.path.join(CACHE, "data.pkl"), "rb"))
+    ex = d["ex"]
+    pos = {e["fid"]: i for i, e in enumerate(ex)}
+    yw = np.array([1.0 if e["winner"] == "A" else (0.0 if e["winner"] == "B" else np.nan) for e in ex])
+    ok = np.array([(not e["amb"]) and min(e["sides"][0]["n"], e["sides"][1]["n"]) >= 1 for e in ex]) & ~np.isnan(yw)
+    year = np.array([e["year"] for e in ex])
+    evn = np.array([e["event"] for e in ex])
+    H = json.load(open(os.path.join(CACHE, "hpcv.json")))["runs"]
+
+    def fold_losses(nm, seeds=(11, 12)):
+        L, G = [], []
+        for Y in (2016, 2017, 2018):
+            rs = [H["%s|%d|%d" % (nm, Y, s)] for s in seeds]
+            jj = np.array([pos[f] for f in rs[0]["fid"]])
+            z = np.mean([np.array(r["z"]) for r in rs], 0)
+            m = ok[jj] & (year[jj] == Y)
+            L.append(nll(sg(z[m]), yw[jj][m]))
+            G.append(evn[jj][m])
+        return np.concatenate(L), np.concatenate(G)
+    lb, g = fold_losses("base")
+    hp = {}
+    for nm in ("from2010", "long_hist", "side_elo", "winner_only", "slow", "slow_reg", "small", "transformer"):
+        la, _ = fold_losses(nm)
+        hp[nm + " - base"] = boot(la - lb, g)
+    # seed noise: one seed against the other, same config (the size of a pure-noise "config difference")
+    noise = {}
+    for nm in ("base", "from2010", "winner_only"):
+        l1, _ = fold_losses(nm, (11,))
+        l2, _ = fold_losses(nm, (12,))
+        noise[nm + ": seed 11 - seed 12 (single seeds)"] = boot(l1 - l2, g)
+    out["hpcv_paired"] = hp
+    out["hpcv_seed_noise"] = noise
+    # best epochs and the rise after the best epoch (validation log loss at best + 3 minus best)
+    ep = {}
+    for nm in sorted({k.split("|")[0] for k in H}):
+        bests, rise = [], []
+        for k, r in H.items():
+            if k.split("|")[0] != nm:
+                continue
+            c = r["curve"]
+            b = int(np.argmin(c))
+            bests.append(b + 1)
+            if b + 3 < len(c):
+                rise.append(c[b + 3] - c[b])
+        ep[nm] = {"best_epochs": sorted(bests), "median_rise_3_epochs_after_best": round(float(np.median(rise)), 4)
+                  if rise else None}
+    out["hpcv_epochs"] = ep
+    # raw stat head vs mlrates OOF, 2019-2023 (own deviance; seqnet etas averaged from walk.pkl)
+    W = pickle.load(open(os.path.join(CACHE, "walk.pkl"), "rb"))
+    n = len(ex)
+    EA, EB = np.full((n, 18), np.nan), np.full((n, 18), np.nan)
+    for Y in range(2019, 2024):
+        runs = [r for (YY, s), r in W["full"].items() if YY == Y]
+        pid = runs[0]["pidx"]
+        t = year[pid] == Y
+        EA[pid[t]] = np.mean([r["pred"]["ea"][t] for r in runs], 0)
+        EB[pid[t]] = np.mean([r["pred"]["eb"][t] for r in runs], 0)
+    mo = json.load(open(os.path.join(ROOT, "data", "derived", "mlrates_oof.json")))["fights"]
+    rel, keep = [], []
+    rows = []
+    for i, e in enumerate(ex):
+        if not (2019 <= e["year"] <= 2023) or e["amb"] or min(e["sides"][0]["n"], e["sides"][1]["n"]) < 1:
+            continue
+        if e.get("sy") is None or e["fid"] not in mo or np.isnan(EA[i]).any():
+            continue
+        for s in (0, 1):
+            if e["sn"][s].sum() <= 0:
+                continue
+            rows.append((i, s, np.asarray(mo[e["fid"]]["A" if s == 0 else "B"], float)))
+    per_t = {}
+    for t in range(18):
+        dsq, dml = 0.0, 0.0
+        for i, s, v in rows:
+            yv, nv = float(ex[i]["sy"][s][t]), float(ex[i]["sn"][s][t])
+            if nv <= 0:
+                continue
+            eta = (EA if s == 0 else EB)[i, t]
+            if t < 10:
+                for mu, acc in ((nv * np.exp(eta), "sq"), (nv * max(v[t], 1e-9), "ml")):
+                    dv = 2 * ((yv * np.log(yv / mu) if yv > 0 else 0.0) - (yv - mu))
+                    if acc == "sq":
+                        dsq += dv
+                    else:
+                        dml += dv
+            else:
+                ph = yv / nv
+                for p, acc in ((sg(eta), "sq"), (min(max(v[t], 1e-6), 1 - 1e-6), "ml")):
+                    p = min(max(p, 1e-9), 1 - 1e-9)
+                    dv = 2 * ((yv * np.log(ph / p) if yv > 0 else 0.0) +
+                              ((nv - yv) * np.log((1 - ph) / (1 - p)) if nv - yv > 0 else 0.0))
+                    if acc == "sq":
+                        dsq += dv
+                    else:
+                        dml += dv
+        per_t[str(t)] = round((dsq - dml) / dml, 4)
+    out["stats_raw_2019_2023"] = {"directed_rows": len(rows), "per_target_rel": per_t,
+                                  "mean_rel": round(float(np.mean(list(per_t.values()))), 4)}
+    print(json.dumps(out, indent=1)[:5000], flush=True)
+    save("claims", out)
+
+
 # ====================================================================== repro
 def stage_repro():
     sys.path.insert(0, os.path.join(ROOT, "tools"))
@@ -418,6 +525,7 @@ def stage_repro():
 
 if __name__ == "__main__":
     st = sys.argv[1] if len(sys.argv) > 1 else "all"
-    for name, fn in (("protocol", stage_protocol), ("score", stage_score), ("gate", stage_gate), ("repro", stage_repro)):
+    for name, fn in (("protocol", stage_protocol), ("score", stage_score), ("gate", stage_gate),
+                     ("claims", stage_claims), ("repro", stage_repro)):
         if st in (name, "all"):
             fn()

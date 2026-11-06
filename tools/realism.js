@@ -147,6 +147,11 @@ function workerMain() {
   const { enginePath, paramsPath, priors, fights } = workerData;
   const E = require(enginePath);
   require(paramsPath);
+  // engine v5 (merge step 3): leak-free durability records + train NORM (tools/durrec.js) and walk-forward SOS pairs
+  // (tools/sosrec.js; leave-one-year-out coefficients before 2024) for every backtest fight; without them durability falls
+  // back to the live fit (2008..2026-10) and SOS runs neutral. Both are no-ops for engines without those components.
+  const DR = require(path.join(__dirname, "durrec.js"))(E, path.join(__dirname, ".."));
+  const SR = require(path.join(__dirname, "sosrec.js"))(E, path.join(__dirname, ".."));
   const caches = new Map();
   const isDec = (f) => f.method === "UD" || f.method === "SD" || f.method === "MD" || f.method === "DRAW";
   function build(f, swap, tree, useMl) {
@@ -155,7 +160,11 @@ function workerMain() {
     if (tree) o.params = tree;
     if (useMl && f.ml) o.ml = swap ? { A: f.ml.B, B: f.ml.A } : { A: f.ml.A, B: f.ml.B };
     else if (useMl === false) o.ml = false;
-    return E.matchup(A, B, o);
+    if (DR.on(o.params)) DR.apply(o, f.id, !!swap);
+    if (SR.on(o.params)) SR.apply(o, f, !!swap);
+    const m = E.matchup(A, B, o);
+    DR.assertApplied(m, f.id, tree); SR.assertApplied(m, f.id, tree);
+    return m;
   }
   parentPort.on("message", (msg) => {
     if (msg.type !== "run") return;

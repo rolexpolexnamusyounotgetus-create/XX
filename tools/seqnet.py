@@ -879,8 +879,8 @@ FULL_SEEDS = [101, 102, 103, 104, 105, 106, 107, 108]
 
 
 def chosen_cfg():
-    """The configuration chosen by the hyperparameter CV (lowest 2016-2018 CV log loss), frozen in
-    out/seqnet_cache/chosen.json the first time the walk runs."""
+    """The configuration chosen by the hyperparameter CV (2016-2018 CV log loss with ml2's 0.0005 rule against the
+    base config), frozen in out/seqnet_cache/chosen.json the first time the walk runs."""
     path = os.path.join(CACHE, "chosen.json")
     if os.path.exists(path):
         return json.load(open(path))
@@ -1024,8 +1024,11 @@ def stage_swaptest(args):
 
 # ====================================================================== evaluation helpers
 SEL_MIN = 0.0005
-EMBED_STATE = os.environ.get("SEQNET_EMBED_STATE", "/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/"
-                             "scratchpad/embed_cache/eval_state.pkl")
+# tools/embed.py writes eval_state.pkl into its --cache directory (default $TMPDIR/embed_cache). The published run read
+# a session scratch copy; point SEQNET_EMBED_STATE at your embed cache to reproduce the "+emb" stat-line recipes
+# (verification fix: the default used to be that session-only path, so the recipes vanished silently elsewhere).
+EMBED_STATE = os.environ.get("SEQNET_EMBED_STATE", os.path.join(os.environ.get("TMPDIR") or "/tmp", "embed_cache",
+                                                                "eval_state.pkl"))
 
 
 def M2():
@@ -1210,6 +1213,8 @@ def mlrates_eta(A, ii, ss):
 def embed_eta(A, ii, ss):
     """The embedding task predictor (tools/embed.py walk, cached eval_state) per directed row; nan if missing."""
     if not os.path.exists(EMBED_STATE):
+        log("WARNING: no embed state at %s (set SEQNET_EMBED_STATE); the +emb stat-line recipes are skipped and the "
+            "row set changes" % EMBED_STATE)
         return None
     import embed as EM
     T = pickle.load(open(EMBED_STATE, "rb"))["T"]

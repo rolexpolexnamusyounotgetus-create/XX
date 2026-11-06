@@ -56,11 +56,19 @@ function compile(src, file) {
 const E0 = compile(STRIPPED, ENGINE);
 check("stripped engine differs from the hooked one only by the hook", SRC !== STRIPPED && SRC.split("\n").length - STRIPPED.split("\n").length <= 20,
   (SRC.split("\n").length - STRIPPED.split("\n").length) + " lines removed");
-try {
-  const baseSrc = cp.execSync("git show a08e00c:src/engine3.js", { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-  check("stripped engine == engine3.js at the component's base (a08e00c, v4 snapshot of " + BASE_COMMIT + "'s main)", baseSrc === STRIPPED);
-} catch (e) {
-  console.log("SKIP  base-commit source comparison (git object not available)");
+{
+  // v5 merge step 3: the component was merged onto the step-2 engine (tests/fixtures/engine3_pre_styles_sos.js, commit 8317287)
+  // and the officials / realism_sens components followed it. The styles_sos-merged engine before them
+  // (tests/fixtures/engine3_pre_officials.js) with its [styles_sos] lines stripped must be the step-2 engine byte for byte,
+  // i.e. the merge added only the tagged hook lines. (The component's own base was a08e00c, a v4 snapshot of 853ce32's main.)
+  const fx = (f) => path.join(ROOT, "tests/fixtures", f);
+  if (fs.existsSync(fx("engine3_pre_styles_sos.js")) && fs.existsSync(fx("engine3_pre_officials.js"))) {
+    const pre = fs.readFileSync(fx("engine3_pre_styles_sos.js"), "utf8"), merged = fs.readFileSync(fx("engine3_pre_officials.js"), "utf8");
+    check("merged engine with the [styles_sos] lines stripped == the step-2 engine (tests/fixtures/engine3_pre_styles_sos.js)",
+      merged !== pre && stripComponent(merged) === pre);
+    check("the current engine carries the same [styles_sos] lines as the merge", SRC.split("\n").filter((l) => l.indexOf("[styles_sos]") >= 0).join("\n") ===
+      merged.split("\n").filter((l) => l.indexOf("[styles_sos]") >= 0).join("\n"));
+  } else console.log("SKIP  merge-base source comparison (fixtures not present)");
 }
 
 // ------------------------------------------------------------------ fixture profiles
@@ -142,11 +150,13 @@ check("flag off: tables, traced fights and summaries identical to the engine wit
 {
   // components: false at the top level and an engine without params.components behave the same way
   const f = FIX.fights[7], A = sideProf(f.A, "A"), B = sideProf(f.B, "B");
-  const m0 = E0.matchup(A, B, base), m1 = E.matchup(A, B, Object.assign({}, base, { params: { components: false } }));
-  check("params.components = false is also the plain engine", tablesEqual(m0, m1) === null &&
+  // v5: components = false switches every v5 component off (v401, durability, dynamics, ...), so the plain engine gets the same
+  // override; the hook must treat it as off
+  const m0 = E0.matchup(A, B, Object.assign({}, base, { params: { components: false } })), m1 = E.matchup(A, B, Object.assign({}, base, { params: { components: false } }));
+  check("params.components = false is also the plain engine", tablesEqual(m0, m1) === null && !m1.stylesSOS &&
     JSON.stringify(E0.summarize(m0, 200, 3)) === JSON.stringify(E.summarize(m1, 200, 3)));
   const m2 = E.matchup(A, B, Object.assign({}, base, { params: { components: { styles_sos: { styles: false, sos: false } } } }));
-  check("both sub-flags off changes no table", tablesEqual(m0, m2) === null);
+  check("both sub-flags off changes no table", tablesEqual(E0.matchup(A, B, base), m2) === null);
 }
 check("default params: component on in this branch (strength of schedule on, style blocks off)",
   !!(FP.components && FP.components.styles_sos && FP.components.styles_sos.sos && FP.components.styles_sos.styles === false));

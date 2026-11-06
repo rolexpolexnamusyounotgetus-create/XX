@@ -137,7 +137,7 @@
  },
  "_meta": {
   "tool": "tools/seqnet_verify.py",
-  "updated": "2026-11-06T23:09:36.683302Z"
+  "updated": "2026-11-06T23:11:42.867355Z"
  },
  "score": {
   "oof_2019_2023": {
@@ -673,5 +673,213 @@
   "n_train_ref": 5672,
   "max_abs_logit_diff": 0.0,
   "mean_abs_logit_diff": 0.0
+ },
+ "claims": {
+  "hpcv_paired": {
+   "from2010 - base": [
+    -0.00066,
+    [
+     -0.00532,
+     0.00425
+    ]
+   ],
+   "long_hist - base": [
+    -0.00024,
+    [
+     -0.0037,
+     0.00309
+    ]
+   ],
+   "side_elo - base": [
+    0.00088,
+    [
+     -0.00201,
+     0.00394
+    ]
+   ],
+   "winner_only - base": [
+    0.00141,
+    [
+     -0.00274,
+     0.00544
+    ]
+   ],
+   "slow - base": [
+    0.00154,
+    [
+     -0.00152,
+     0.00471
+    ]
+   ],
+   "slow_reg - base": [
+    0.0019,
+    [
+     -0.00198,
+     0.00572
+    ]
+   ],
+   "small - base": [
+    0.00224,
+    [
+     -0.0029,
+     0.00722
+    ]
+   ],
+   "transformer - base": [
+    0.00766,
+    [
+     -0.00043,
+     0.01559
+    ]
+   ]
+  },
+  "hpcv_seed_noise": {
+   "base: seed 11 - seed 12 (single seeds)": [
+    0.00108,
+    [
+     -0.0063,
+     0.00905
+    ]
+   ],
+   "from2010: seed 11 - seed 12 (single seeds)": [
+    0.00348,
+    [
+     -0.00364,
+     0.0107
+    ]
+   ],
+   "winner_only: seed 11 - seed 12 (single seeds)": [
+    -0.00077,
+    [
+     -0.00784,
+     0.0062
+    ]
+   ]
+  },
+  "hpcv_epochs": {
+   "base": {
+    "best_epochs": [
+     2,
+     3,
+     3,
+     4,
+     5,
+     6
+    ],
+    "median_rise_3_epochs_after_best": 0.004
+   },
+   "from2010": {
+    "best_epochs": [
+     3,
+     4,
+     4,
+     5,
+     5,
+     6
+    ],
+    "median_rise_3_epochs_after_best": 0.0141
+   },
+   "long_hist": {
+    "best_epochs": [
+     2,
+     4,
+     5,
+     5,
+     6,
+     6
+    ],
+    "median_rise_3_epochs_after_best": 0.0115
+   },
+   "side_elo": {
+    "best_epochs": [
+     2,
+     3,
+     3,
+     4,
+     5,
+     6
+    ],
+    "median_rise_3_epochs_after_best": 0.0083
+   },
+   "slow": {
+    "best_epochs": [
+     5,
+     6,
+     6,
+     8,
+     9,
+     10
+    ],
+    "median_rise_3_epochs_after_best": 0.0051
+   },
+   "slow_reg": {
+    "best_epochs": [
+     5,
+     6,
+     6,
+     10,
+     11,
+     22
+    ],
+    "median_rise_3_epochs_after_best": 0.0048
+   },
+   "small": {
+    "best_epochs": [
+     5,
+     6,
+     6,
+     6,
+     6,
+     6
+    ],
+    "median_rise_3_epochs_after_best": 0.006
+   },
+   "transformer": {
+    "best_epochs": [
+     3,
+     4,
+     4,
+     4,
+     10,
+     11
+    ],
+    "median_rise_3_epochs_after_best": 0.0222
+   },
+   "winner_only": {
+    "best_epochs": [
+     2,
+     2,
+     3,
+     3,
+     6,
+     7
+    ],
+    "median_rise_3_epochs_after_best": 0.0157
+   }
+  },
+  "stats_raw_2019_2023": {
+   "directed_rows": 3998,
+   "per_target_rel": {
+    "0": 0.2902,
+    "1": 0.1624,
+    "2": 0.0498,
+    "3": 0.2385,
+    "4": 0.2835,
+    "5": 0.4203,
+    "6": 0.4169,
+    "7": 0.1164,
+    "8": 0.0847,
+    "9": 0.2562,
+    "10": 0.1012,
+    "11": 0.0671,
+    "12": 0.0679,
+    "13": 0.1631,
+    "14": 0.0416,
+    "15": 0.0279,
+    "16": 0.0382,
+    "17": 0.0486
+   },
+   "mean_rel": 0.1597
+  }
  }
 }
