@@ -1637,8 +1637,8 @@
         if (!val) anyTrain = true;
         if (val && val.n_decisive) nDec = val.n_decisive;
         var bl = v.blend || {}, wl = bl.market && bl.market.engine_weight, wn = bl.nomarket && bl.nomarket.engine_weight;
-        var lab = verLabel(v.version) || v.version, what = VERSION_WHAT[lab];
-        return { cells: [lab + (val ? "" : " *") + (lab === onPage ? " (this page)" : "") + (what ? ": " + what : ""), pct(est(M, "acc"), 1), fx(est(M, "winLL"), 4), fx(est(M, "bin7"), 4),
+        var lab = verLabel(v.version) || v.version, what = VERSION_WHAT[lab], rej = !!(v.decision && v.decision.kept === false);
+        return { cells: [lab + (val ? "" : " *") + (lab === onPage ? " (this page)" : "") + (rej ? " (rejected)" : "") + (what ? ": " + what : ""), pct(est(M, "acc"), 1), fx(est(M, "winLL"), 4), fx(est(M, "bin7"), 4),
           (wl == null ? "–" : pct(wl, 0)) + " / " + (wn == null ? "–" : pct(wn, 0))] };
       });
       d.appendChild(table(["Version", "Picks right", "Winner log loss", "Winner and method log loss", "Weight in the blend, with / without a line"], vr));
@@ -2266,6 +2266,7 @@
     onClock: function (r, t) {
       hudSync(r, t);
       setClock(clockOf(t));
+      if (camHold && (r > 0 || t > 4)) { camHold = false; if (camChoice === "auto" && show && show.cam) show.cam.mode = "auto"; }
     },
     onPhase: function (p, r) {
       if (p === "intro") {
@@ -2349,7 +2350,7 @@
     } catch (e) {
       show = new TextShow(hooks); textMode = true; $("noGl").hidden = false; $("camLabel").hidden = true;
     }
-    $("poster").hidden = true;
+    if (textMode) $("poster").hidden = true;
     sizeStage();
     if (window.ResizeObserver) new ResizeObserver(sizeStage).observe(stage); else window.addEventListener("resize", sizeStage);
     if ("IntersectionObserver" in window) new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }, { threshold: 0.05 }).observe(stage);
@@ -2391,9 +2392,11 @@
   function newFight() {
     clearTimeout(autoNext);
     if (!show || !cur.m) return;
-    var sd = newSeed(), f;
-    try { f = E.simulate(cur.m, E.makeRng(sd), true); } catch (e) { addPbp(0, null, "The engine couldn't play this fight: " + e.message, "big"); return; }
+    var sd, f;
+    try { var pk = pickFight(); sd = pk.seed; f = E.simulate(cur.m, E.makeRng(sd), true); }
+    catch (e) { addPbp(0, null, "The simulator couldn't play this fight: " + e.message, "big"); return; }
     script = buildScript(f, sd);
+    if (show && !textMode && show.cam && camChoice === "auto") { show.cam.mode = "broadcast"; camHold = true; }   // open on the wide shot
     resetHud(f, script);
     try { show.load(script); } catch (e) {
       // a show that can't take this script: fall back to the play-by-play
@@ -2402,6 +2405,25 @@
     }
     if (window.VGSim) window.VGSim.show = show;
   }
+  /* The cage plays one simulated fight, but its winner follows the headline odds: draw the winner from the headline
+     (blue, draw, red), then try seeds until the simulator's fight has that winner, up to 40 tries. The search runs
+     without the event trace (the same seed replays the identical fight with it), so 40 tries cost a few milliseconds. */
+  var CAGE_TRIES = 40, lastPick = null;
+  function pickFight() {
+    var H0 = BL && BL.head, seed = newSeed();
+    if (!H0 || !isFinite(H0.pA) || !isFinite(H0.pB)) { lastPick = { seed: seed, want: null, tries: 1 }; return lastPick; }
+    var u = newSeed() / 4294967296, pD = H0.pD || 0, want = u < H0.pA ? "A" : (u < H0.pA + pD ? "D" : "B"), s = seed, i;
+    for (i = 0; i < CAGE_TRIES; i++) {
+      s = i ? newSeed() : seed;
+      if (E.simulate(cur.m, E.makeRng(s), false).winner === want) { lastPick = { seed: s, want: want, tries: i + 1, hit: true }; return lastPick; }
+    }
+    lastPick = { seed: s, want: want, tries: CAGE_TRIES, hit: false };
+    return lastPick;
+  }
+  // camera: the viewer's choice; Auto opens each fight on the wide shot, then hands back to the auto director
+  var camChoice = "auto", camHold = false;
+  var CAM_NAMES = { Broadcast: "Wide", "Cage-side": "Cage", Overhead: "High", Free: "Free", Replay: "Replay", "Close-up": "Close-up", Center: "Center" };
+  function camText(label) { var n = CAM_NAMES[label] || label || ""; return camChoice === "auto" ? "Auto · " + n : n; }
   function sizeStage() {
     if (textMode || !show) return;
     var r = stage.getBoundingClientRect();
@@ -2412,9 +2434,18 @@
     var dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016; last = now;
     if (show && visible && !document.hidden) {
       try { show.frame(dt); } catch (e) { if (!textMode) { show = new TextShow(hooks); textMode = true; $("noGl").hidden = false; $("camLabel").hidden = true; if (script) show.load(script); } }
-      if (!textMode && show.cam && show.cam.label !== lastLabel) { lastLabel = show.cam.label; $("camLabel").textContent = lastLabel; }
+      if (!textMode && show.cam && show.cam.label + camChoice !== lastLabel) { lastLabel = show.cam.label + camChoice; $("camLabel").textContent = camText(show.cam.label); }
     }
+    posterCheck();
     requestAnimationFrame(loop);
+  }
+  // the poster ("Building the fighters...") stays up until both skinned fighters are in, or 12 s at most
+  var posterT0 = 0;
+  function posterCheck() {
+    var po = $("poster"); if (!po || po.hidden) return;
+    if (!posterT0) posterT0 = performance.now();
+    var ready = textMode || !show || show.avatarsOn === false || !show.A || (show.A.avatar && show.B.avatar);
+    if (ready || performance.now() - posterT0 > 12000) po.hidden = true;
   }
 
   /* ================================================================ wiring */
@@ -2472,6 +2503,7 @@
     Array.prototype.forEach.call($("camSeg").children, function (b) {
       b.addEventListener("click", function () {
         if (textMode || !show || !show.cam) return;
+        camChoice = b.dataset.cam; camHold = false; lastLabel = "";
         show.cam.mode = b.dataset.cam;
         canvas.classList.toggle("free", show.cam.mode === "free");
         Array.prototype.forEach.call($("camSeg").children, function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });

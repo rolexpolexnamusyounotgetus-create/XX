@@ -1497,10 +1497,10 @@
       ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(0, 0, rad, 0, TAU); ctx.fill(); ctx.restore();
     }
     ctx.globalCompositeOperation = "lighter";
-    blob(1, 1, hc * 0.62, 0.16, 0.05, "190,210,255");      // bloom
-    blob(1, 0.035, hc, 0.75, 0.22, "220,232,255");         // streak across
-    blob(0.035, 1, hc * 0.62, 0.5, 0.12, "220,232,255");   // streak up and down
-    blob(1, 1, hc * 0.17, 1, 0.9, "255,255,255");          // the tube itself
+    blob(1, 1, hc * 0.7, 0.24, 0.07, "190,210,255");       // bloom
+    blob(1, 0.04, hc, 0.8, 0.25, "220,232,255");           // streak across
+    blob(0.04, 1, hc * 0.62, 0.55, 0.14, "220,232,255");   // streak up and down
+    blob(1, 1, hc * 0.22, 1, 0.92, "255,255,255");         // the tube itself
     var spark = canvasTex(sc, true, 1);
     A.flashes = new T.Points(fg, new T.PointsMaterial({ size: 1.05, map: spark, vertexColors: true, transparent: true, depthWrite: false, blending: T.AdditiveBlending, sizeAttenuation: true, toneMapped: false, fog: false }));
     A.flashes.frustumCulled = false;

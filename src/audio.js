@@ -17,7 +17,18 @@
  * generic referee calls. Strikes are panned and attenuated from the broadcast camera.
  *
  * Without WebAudio (or without the audio assets) every call is a silent no-op.
- * Sound credits and licences: assets/LICENSES.md (arena audio pack).
+ *
+ * Sound credits (full table with sources in assets/LICENSES.md; all clips cut, mixed and re-encoded for this page):
+ *   Crowd bed, chant swell and rising roar: "Crowd Cheering Sounds" by Gregor Quendel (gregorquendel.com), CC BY 4.0,
+ *     https://opengameart.org/content/free-crowd-cheering-sounds
+ *   Bells, and parts of the knockdown pop and the boos: BBC Sound Effects, (c) BBC, used under the BBC RemArc licence
+ *     (personal, educational or research use only), https://sound-effects.bbcrewind.co.uk
+ *   Referee "stop": Piper TTS voice en_US ryan (rhasspy), trained on the RyanSpeech corpus, CC BY-NC-SA 4.0
+ *   Referee "fight" and "go": Kenney voiceover packs, CC0. Clapper: rubberduck, CC0. Extra hit layers: Iwan Gabovitch
+ *     (qubodup) and independent.nu, CC0.
+ *   Impacts, whooshes, blocks, takedowns, fence and walkout boom: Sonniss #GameAudioGDC bundles 2015-2026 (Gamemaster
+ *     Audio, The Chris Alan, PMSFX, Shapeforms, 344 Audio, Red Libraries, Borg Sound, Robert Cordova, Mechanical Wave,
+ *     Airborne Sound, SoundBits, Soundholder, Sonic Bat, 2496SoundEffects), royalty-free, no attribution required.
  */
 (function (root) {
   "use strict";
@@ -41,6 +52,10 @@
   var HEAD = ["head1", "head2"], HEAD_LIGHT = ["head3", "head1"], BODY = ["body1", "body2", "body3"], KBODY = ["kickBody1", "kickBody2"], KLEG = ["kickLeg1", "kickLeg2"], WHOOSH = ["whoosh1", "whoosh2", "whoosh3"];
   var KICKS = { calf: 1, inside: 1, bodykick: 1, headkick: 1, knee: 1, kneehead: 1, spinback: 1, wheel: 1, flyknee: 1 };
   var LIGHT = { jab: 1, short: 1, shortbody: 1, gnp: 1, upelbow: 1 };
+  // how hard each technique lands when the beat carries no power of its own (the show's beats do not)
+  var MOVE_POWER = { jab: 0.35, short: 0.4, shortbody: 0.45, gnp: 0.45, upelbow: 0.4, cross: 0.6, hook: 0.65, overhand: 0.75, upper: 0.62,
+    bodyhook: 0.62, bodystraight: 0.55, elbow: 0.62, spinfist: 0.62, calf: 0.62, inside: 0.5, bodykick: 0.75, headkick: 0.9, knee: 0.7,
+    kneehead: 0.8, spinback: 0.8, wheel: 0.9, flyknee: 0.85 };
   var BED_LOOP = 20.0, BED_SKIP = 1105 / 44100;   // the bed is exactly 20 s; LAME priming if a decoder keeps it
   var MAX_VOICES = 28;
 
@@ -177,8 +192,9 @@
 
   /* ------------------------------------------------------------ the fight's sounds */
   function strikeSound(b) {
-    var sp = spatial(fighter(other(b.who)) || fighter(b.who)), power = clamp(b.power == null ? 0.5 : b.power, 0, 1);
-    var mv = b.move || "jab", kick = !!KICKS[mv], tgt = b.tgt != null ? b.tgt : (/body|shortbody/.test(mv) ? 1 : (mv === "calf" || mv === "inside" ? 2 : 0));
+    var mv = b.move || "jab", sp = spatial(fighter(other(b.who)) || fighter(b.who));
+    var power = clamp(b.power != null ? b.power : (MOVE_POWER[mv] != null ? MOVE_POWER[mv] : 0.5) + (b.hurt ? 0.15 : 0), 0, 1);
+    var kick = !!KICKS[mv], tgt = b.tgt != null ? b.tgt : (/body|shortbody/.test(mv) ? 1 : (mv === "calf" || mv === "inside" ? 2 : 0));
     var fast = S.show && S.show.speed >= 10;
     if (!b.landed) {
       if (fast && S.rng() < 0.6) return;                                       // at 10x and 30x most misses go quiet
