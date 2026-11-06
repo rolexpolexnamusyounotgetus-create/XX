@@ -180,10 +180,12 @@ No validation (2024-2025) number is computed in these steps; the Measure stage t
       both corner orders with OOF rates + durability records.
     - Each flag changes fights. Both on keep the matchup keys and the trace format.
     - Out-of-range arPhi is clipped.
-  - `node tests/test_engine3.js` (N 20,000): __E3__.
+  - `node tests/test_engine3.js` (N 20,000): 81 passed, 0 failed. Before the tolerance change: 80 / 1, the Heavyweight KO share.
   - `node tests/test_director3.js 300`: OK, and `NO_ML=1 ... 100`: OK.
   - `node tests/test_mlrates.js`: 47 OK. `node tests/test_v401.js`: 15 passed.
-  - `node tests/test_durability.js`: 34 OK. `node tests/test_dynamics.js`: 23 passed. `node tests/test_mlcal.js`: __MLCAL__.
+  - `node tests/test_durability.js`: 34 OK. `node tests/test_dynamics.js`: 23 passed. `node tests/test_mlcal.js`: 33 passed.
+    - On the first try test_mlcal failed. The interrupted run's tools/mlcal.js required durrec.js next to the worker file,
+      which is a temp-dir snapshot. Fixed: the pool passes the repo's durrec path and root.
 - **For the Calibrate stage.**
   - Run ONE joint knockdown level pass: kdCal or kdLevel3/5, never both as free scales. This check says the current pair is
     already within noise on train.
@@ -191,8 +193,11 @@ No validation (2024-2025) number is computed in these steps; the Measure stage t
   - Re-check the 5-round between-round doctor/corner stoppages, a base-engine issue. Consider `durability.caution5`, null by
     default, against the 5-round R1 KO excess.
   - blend_anchor's method x round cells must be rebuilt with dynamics on.
-  - Page copy quoting engine numbers is refreshed only after the levels are final. On v4.0.0, dynamics alone moved Volk vs
-    Gaethje from 69.3% to 63.9%.
+  - Page copy quoting engine numbers is refreshed only after the levels are final.
+    - Volk vs Gaethje, 5 x 5 title, learned rates, live durability roster, 20,000 fights: Volk wins 68.8% at step 1, 68.5%
+      with durability, 62.8% with dynamics and 62.4% with both.
+    - Finish rate 37.5% -> 47.9%; KD per 15 0.174 -> 0.257.
+    - The verifier's v4.0.0 figures for dynamics alone were 69.3% -> 63.9%.
   - Nothing from 2024-25 was scored, and no 2026 fight was read.
 
 ## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored

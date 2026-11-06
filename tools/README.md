@@ -342,3 +342,24 @@ fights and seeds (so an ablation measures structure at equal level), knockdowns 
 format, and the data's knockdown conversion (0.512). `dynamics_check_train.py` runs `tools/dynamics.py`'s
 `engine_check(..., real_period="train")` (output / accuracy dynamic-RE decomposition, knockdown frailty and round profile,
 round targets, round correlations, the skip-round knockdown-momentum contrast) against real 2019-2023 rounds only.
+
+v5 merge step 2 (durability + dynamics on together):
+
+```
+python3 tools/v5_joint_levels.py run.json report.json   # joint KD / finish level check of a 4-config dynamics_bt run (s1, dur, dyn, both)
+```
+
+`tools/v5_joint_levels.py` compares knockdowns per 15 minutes, per fight and per 100 head strikes, knockdowns per 100 standing
+head strikes by round, conversion per knockdown, and finish shares and hazards by round (3 and 5 rounds) with the 2019-2023
+actuals, using event-cluster bootstrap CIs. It refuses any fight dated 2024 or later. The step-2 tables are in
+data/derived/v5_joint_levels_step2.json.
+
+`tools/durrec.js` is the shared helper that gives backtest tools leak-free durability inputs. With
+`params.components.durability` on, each backtest matchup gets its durability.json walk-forward record (`opts.dur`) plus
+the train-only NORM. It throws rather than fall back to the live fit:
+`const DR = require("./durrec.js")(E, ROOT); DR.apply(opts, f.id, swap); DR.assertApplied(m, f.id, opts.params)`.
+These tools use it: dynamics_bt.js, dynamics_calibrate.js, mlcal.js, moe_engine_bt.js and v4_levels.js. tools/evalv.js keeps
+its own verified copy.
+
+League-average pairs have no fight id. They run durability in relative mode (`params.durability.level: null`), as
+tests/test_engine3.js simAvg, v401_kocomp.js and judgecal.js do.
