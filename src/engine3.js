@@ -72,6 +72,8 @@
   // params carry the dyn block; off reproduces the engine before the component bit for bit
   function dynOn(p) { return !!(p && p.components && p.components.dynamics && p.dyn); }
   function getML() { return MLR0 || (root && root.MLRates) || null; }
+  var SS0 = null; if (typeof require === "function") { try { SS0 = require("./styles_sos.js"); } catch (e) { SS0 = null; } }  // [styles_sos]
+  function getSS() { return SS0 || (root && root.StylesSOS) || null; }  // [styles_sos]
 
   function mergeParams(base, over) {
     var out = {}, k, k2;
@@ -293,6 +295,7 @@
       } else if (r >= 1) { rho[r] = 1 + 0.5 * (rho[r - 1] - 1); }
     }
     R.rho = rho; R.rhoW = rw;
+    if (p.components && p.components.styles_sos && (prof.oppadj || prof.slug)) { var SSr = getSS(); if (SSr && SSr.oppadjR) SSr.oppadjR(R, prof, p); }  // [styles_sos]
     var cs = 0, cn = 0, lastR = Math.max(2, nR || 3);
     for (r = 1; r < Math.min(5, lastR); r++) { cs += rho[r]; cn++; }
     R.cardio = cn ? cs / cn : 1;
@@ -1628,5 +1631,17 @@
     // v5: the parameter set a matchup runs on (base params + components flags + opts.params overrides), and the v401 sub-flags
     resolveParams: function (over, base) { return resolveParams(base || getParams(), over); }, v401Flags: v401Flags
   };
+  // [styles_sos] begin: component hook (src/styles_sos.js: style rate modifiers, strength of schedule). It runs after
+  // the matchup tables are final (base or learned rates) and only when params.components.styles_sos is truthy; with the
+  // flag off the engine is the engine without these lines (tests/test_styles_sos.js strips them and compares).
+  function matchupStylesSOS(profA, profB, opts) {
+    var m = matchup(profA, profB, opts);
+    var c = m.p && m.p.components, on = !!(c && c.styles_sos), SS = on ? getSS() : null;
+    if (SS) SS.apply(m, resolve(profA), resolve(profB), opts || {}, KEYS);
+    else if (on) m.stylesSOS = { missing: true };   // flag on but src/styles_sos.js not loaded: tables unchanged, flagged
+    return m;
+  }
+  api.matchup = matchupStylesSOS;
+  // [styles_sos] end
   return api;
 });

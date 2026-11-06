@@ -363,3 +363,18 @@ its own verified copy.
 
 League-average pairs have no fight id. They run durability in relative mode (`params.durability.level: null`), as
 tests/test_engine3.js simAvg, v401_kocomp.js and judgecal.js do.
+
+## styles_sos engine component (sub-flags: styles, strength of schedule)
+
+- `tools/sos_wf.py build [--rows rows.json]`: walk-forward opponent quality for every backtest fight (fights before
+  2026-01-01 only; `--until ... --production --roster` for the release table) -> `data/derived/sos_wf.json`.
+- `tools/styles_sos_offsets.js <priors_asof.json> <out.json>`: per-side predicted rates for 2019-2023 fights (learned
+  out-of-fold rates and the plain engine's static expectation), the offsets of the fits below.
+- `tools/sos_wf.py fit <rows.json> <offsets.json>`: Poisson / binomial fits of the strength-of-schedule coefficients on
+  2019-2023 with leave-one-year-out CV; writes `meta.coef` and `meta.coef_loyo` into `data/derived/sos_wf.json`.
+- `tools/styles_sos_ratecheck.py <priors_asof.json> <rows.json> <offsets.json>`: rate-level check of the section-9 style
+  blocks on top of the learned and the base rates (2019-2023).
+- `tools/styles_sos_ablate.js <priors_asof.json> <out.json> [--sims N --part i --parts n --ml oof|off --configs ...]`:
+  train-only engine ablation (both corner orders, common random numbers); `tools/styles_sos_score.py <out.json> <parts...>`
+  scores it (winner log loss, soft CE vs the close, 7-bin, method, stat-line deviance, base rates; event-cluster bootstrap).
+

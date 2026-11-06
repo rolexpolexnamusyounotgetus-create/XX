@@ -44,7 +44,32 @@
       // values: durability below)
       durability: true,
       // v5 merge step 2: fight dynamics, research/model_dynamics.md E1-E11 (block `dyn` below; dyn.stkoHurtGate stays off)
-      dynamics: true
+      dynamics: true,
+      // v5 merge step 3: src/styles_sos.js, applied after the matchup tables are final (knobs: stylesSOS below). styles: style
+      // rate modifiers (research/model_styles.md section 9); sos: walk-forward strength of schedule (tools/sos_wf.py,
+      // data/derived/sos_wf.json); newcomer: pre-UFC newcomer priors, not implemented, ignored. false switches all off.
+      // Verified defaults: sos on with sosSource "wf" (train soft CE vs the close -0.0010 [-0.0018, -0.0001], verifier -0.0012
+      // [-0.0019, -0.0005]; stat lines -0.48%); styles off (on the learned-rate path the blocks double-count what the
+      // stat-line model carries: soft CE +0.0011 / +0.0005, control deviance +1.00%; on base tables they add nothing on top of
+      // sos and lean worse on method); newcomer off. sos is a no-op until a caller passes opts.sos (backtest harnesses:
+      // sos_wf.fights[id], A/B swapped with the corners) or loads a roster table (StylesSOS.loadSOS, release builds only).
+      styles_sos: { styles: false, sos: true, newcomer: false }
+    },
+
+    // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
+    stylesSOS: {
+      styleScale: 1,     // the styleMatchups knob of section 9 item 4: scales every style shift s, 0..1.5 (opts.styleMatchups overrides)
+      styleSet: "ab1",   // "ab1": coefficients refit with a = b = 1 (the engine's composition), terms with |z| < 2 dropped; "fit": free-exponent set
+      styleMinZ: 2,      // a = b = 1 terms with |tune z| below this are left out (section 9 item 2; verification log)
+      styleCenter: true, // terms enter minus their 2019-2023 mean (only open stance is not mean 0), keeping the calibrated league level
+      // section-9 blocks per path ("all" = dist_att, td_att, ctrl_per_td, gnp_att; [] = none). Learned rates (v4/v5 path): none,
+      // the stat-line model already carries these effects (2019-2023 rate check: slopes 0.1-0.3 on s, fixed shifts worsen
+      // deviance; engine ablation: soft CE vs the close +0.0011 [+0.0001, +0.0022]). Base tables: all four (section 9 as written).
+      styleBlocks: { ml: [], base: "all" },
+      sosScale: 1,       // scales every strength-of-schedule shift (coefficients and prior strengths: src/styles_sos.js SOS_COEF / SOS_K)
+      sosSource: "wf"    // "wf": this component's walk-forward schedule table (tools/sos_wf.py, opts.sos / prof.sos); "oppadj": the
+                         // verified factors of tools/oppadj.py (prof.oppadj or StylesSOS.loadOppadj; research/model_oppadj.md).
+                         // Never stack the two (verdict: oppadj gives better stat lines, -0.8 to -3.3%, at +0.0011 soft CE).
     },
 
     // ---------------- fight dynamics (component "dynamics"; research/model_dynamics.md section 8, data/derived/dynamics.json) ----------------

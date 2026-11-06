@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS = {
     # engine v4: the learned stat-line adapter travels in the engine script, so the tally Web Worker built from this
     # script's text has MLRates too (the page posts the model JSON to the worker; FightEngine.loadMLRates)
-    "/*__ENGINE__*/": ["src/params3.js", "src/ml/mlrates.js", "src/engine3.js"],
+    "/*__ENGINE__*/": ["src/params3.js", "src/ml/mlrates.js", "src/styles_sos.js", "src/engine3.js"],
     "/*__RIG__*/": ["src/rig3d.js"],
     "/*__AVATAR__*/": ["src/avatar3d.js"],
     "/*__ARENA__*/": ["src/arena3d.js"],

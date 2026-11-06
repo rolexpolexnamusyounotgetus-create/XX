@@ -305,7 +305,8 @@ check("same seed, same fight", strip(E.simulate(mVG, E.makeRng(42), false)) === 
 {
   // browser / blob Web Worker: the page's engine script (params3.js + src/ml/mlrates.js + engine3.js) runs with no module
   // system; without a model it reproduces Node, and loadMLRates() inside it reproduces Node's learned-rate matchup
-  const src = fs.readFileSync(PARAMS_SRC, "utf8") + "\n" + fs.readFileSync(ML_SRC, "utf8") + "\n" + fs.readFileSync(ENGINE_SRC, "utf8");
+  const src = fs.readFileSync(PARAMS_SRC, "utf8") + "\n" + fs.readFileSync(ML_SRC, "utf8") + "\n" +
+    fs.readFileSync(path.join(path.dirname(ENGINE_SRC), "styles_sos.js"), "utf8") + "\n" + fs.readFileSync(ENGINE_SRC, "utf8");
   const ctx = { console, Math, Date, JSON, Float64Array, Int8Array, Object, Array, isFinite, Number, String, Error };
   ctx.self = ctx; vm.createContext(ctx); vm.runInContext(src, ctx);
   const W = ctx.FightEngine;

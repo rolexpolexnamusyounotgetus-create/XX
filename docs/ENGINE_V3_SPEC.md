@@ -343,3 +343,28 @@ tests/test_dynamics.js, tests/test_v5_step2.js). `matchup()` adds `m.dyn` (null 
 - Both components scale knockdowns: durability through `durability.kdCal`, dynamics through `dyn.kdLevel3/5`. They are
   one level, set in one joint pass (v5 Calibrate stage); never re-match them separately.
 
+
+## Component: styles_sos (src/styles_sos.js; flag `params.components.styles_sos`)
+
+Runs once at the end of `FightEngine.matchup()`, after the rate tables are final (base tables, or the learned
+stat-line rates of v4), only when the flag is truthy; `false` reproduces the engine without it bit-for-bit
+(tests/test_styles_sos.js strips the `[styles_sos]` hook lines and compares tables, traced fights and summaries).
+Sub-flags `{ styles, sos, newcomer }`; knobs in `params.stylesSOS`. Records its work on `m.stylesSOS`.
+
+- **styles** (roadmap v7): research/model_styles.md section 9 rate modifiers. Per attacker X vs defender Y,
+  `s = sum c_k t_k` from the defender's style z-scores (styles.py `Side.features` on the profile's sums and the
+  matchup prior `m.P`), length advantage and open stance. `dist_att`: `m.dRate x e^s`; `td_att`: `m.tdD/tdCC/tdCU x e^s`
+  (after the occupancy fit); `ctrl_per_td`: the bottom man's `upPos/swPos / e^s`; `gnp_att`: `m.gPos/gRate x e^s`.
+  Coefficient set `styleSet` ("ab1" default, "fit"), knob `styleScale` (or `opts.styleMatchups`, 0..1.5), per-path
+  block list `styleBlocks: {ml: [...], base: [...]}`.
+- **sos**: one-step walk-forward strength of schedule (tools/sos_wf.py, data/derived/sos_wf.json). Inputs `opts.sos =
+  {A, B}` (then only it: a side it lacks is neutral), `prof.sos`, or `StylesSOS.loadSOS(table)` by slug, the table only
+  for bouts dated after its `meta.roster_asof` (a backtest that omits `opts.sos` runs neutral, never on later fights):
+  per stat `[q, w]` of what his opponents allowed (`a`) and produced (`o`). Backtest harnesses pass
+  `opts.sos = sos_wf.fights[id]` with A/B swapped together with the corners. Multiplier `exp(beta_a (bias_a(X) - c_a) + beta_o (bias_o(Y) - c_o))`, `bias = q w / (w + k)`, on
+  `m.dRate`, distance `m.accO`, `m.tdD/tdCC/tdCU`, `m.tdO/tdOC`, `m.kd`; coefficients per path (learned rates / base).
+  `sosSource: "oppadj"` uses the verified tools/oppadj.py factors instead (`prof.oppadj`; base tables via engine R in
+  `fighterRates`, learned rates via `(F_off,X F_def,Y)^beta` on the final tables).
+- **newcomer**: accepted and ignored (pre-UFC priors not implemented).
+- Defaults: sub-flag `styles` off, `sos` on with source "wf". With `styles` switched on, the style blocks default to none
+  on the learned-rate path and all four on the base tables.
