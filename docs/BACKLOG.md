@@ -264,6 +264,14 @@ Findings from verified research that the next engine versions must use. Each lin
 - realism_sens: VERIFIED (~20:00 UTC): INCLUDE as capability: FightEngine.sensitivity (tornado data, CRN),
   tools/realism.js, the mlrates cache fix. The division/format factor layer stays OFF (no train gain).
 - dynamics: builder relaunched after the usage cap (use the corrected recipe).
+- ratings (VERIFIED ~20:55 UTC, research/model_ratings.md; two tiny defects fixed, four write-up claims corrected):
+  round-level WHR is the best single system on 2024-25, 0.6170 [0.6015, 0.6332] (Elo 0.6769); stack (WHR rounds +
+  Glicko-2 + dims) 0.6112; ratings_plus 0.6043 (keep OFF the page: negative weights on correlated Elo logits).
+  Still 0.016-0.030 behind the close; close + WHR logit beats the close by 0.0031 [0.0006, 0.0058]. ML v2 already
+  uses four of these systems. Simulator skill input: WHR-rounds mean/sd as overall skill, dims as opponent-adjusted
+  rates; no second age term. Every rating system is UNDERCONFIDENT on 2024-25 (calibration slope ~1.05 -> 1.28-1.47;
+  the close only 1.03 -> 1.11): a property of the period, not a leak. No tempering yet; recheck on the vault audit
+  and the forward ledger before adopting one.
 - preufc (VERIFIED 7:55 pm UTC; both gains reproduce with independent code, no leak; plan with the pooled
   2019-2025 numbers, about 60% of the 2024-25 headline): seeded Elo for newcomers 0.6792 -> 0.6526 on 2024-25 newcomer bouts
   (-0.0266 [-0.0404, -0.0147]); UFC-stat logistic + pre-UFC block -0.0122 [-0.0204, -0.0042]; adds nothing on
