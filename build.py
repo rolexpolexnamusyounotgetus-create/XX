@@ -206,6 +206,8 @@ def bench_block():
     row("Strike-share Elo", g(t, "elo_sig"), "elo_sig")
     row("Elo", g(t, "elo"), "elo")
     out["since2024"] = rows
+    pt = g(mk, "meta", "periods", "test")
+    out["since_periods"] = {"market": "..".join(pt) if isinstance(pt, list) else pt, "ml": g(ml, "meta", "eval_sets", "test")}
     me = load_json("data/derived/mlrates_eval.json")
     if me:
         out["sim"] = {"val_plain": g(me, "sim_val", "plain"), "val_ml": g(me, "sim_val", "ml"),

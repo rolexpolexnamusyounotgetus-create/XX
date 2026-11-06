@@ -486,8 +486,8 @@ table.data tr.grp td { font-weight: 700; color: var(--ink); padding-top: 12px; b
 .fw-bar { display: grid; gap: 4px; min-width: 0; }
 .fw-track { position: relative; height: 8px; display: flex; gap: 2px; }
 .fw-track i { display: block; height: 100%; border-radius: 4px; }
-.fw-track i.A { background: var(--blue); } .fw-track i.B { background: var(--red); }
-.fw-track u { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.fw-track i.fav { background: var(--ink-2); } .fw-track i.dog { background: var(--line-2); }
+.fw-track u { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; background: var(--gold); border-radius: 2px; box-shadow: 0 0 0 2px var(--surface); }
 .fw-nums { display: flex; justify-content: space-between; gap: 8px; font: 600 12px/1.2 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .fw-res { font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
 .fw-res b { color: var(--ink); }
@@ -717,7 +717,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
   <div class="duo">
     <section class="panel" aria-labelledby="tally-h">
       <div class="sechead">
-        <div><span class="eyebrow">The forecast</span><h2 id="tally-h">Who wins, and how</h2></div>
+        <div><span class="eyebrow">Odds and finish</span><h2 id="tally-h">Who wins, and how</h2></div>
         <div class="sh-act">
           <label class="tog2" title="Feed the learned stat-line model into the simulator's rates"><input type="checkbox" id="mlTog" checked> ML stat lines</label>
           <button type="button" class="btn ghost" id="btnRun">Run again</button>

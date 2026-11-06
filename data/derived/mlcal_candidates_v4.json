@@ -1,0 +1,1726 @@
+{
+ "meta": {
+  "tool": "tools/mlcal.py + tools/mlcal.js",
+  "created": "2026-11-06T14:54:46+00:00",
+  "engine": "src/engine3.js",
+  "engineVersion": "4.0.0",
+  "engineHash": "e5244b4f638d",
+  "params": "src/params3.js",
+  "paramsVersion": "4.0.0-selfcal-pre2024",
+  "paramsHash": "a645a020280a",
+  "spec": "tools/mlcal_spec_engine4.json",
+  "dims": [
+   {
+    "name": "strikeScale",
+    "kind": "value",
+    "paths": [
+     "strikeScale"
+    ],
+    "value": 1.094,
+    "lo": 0.9116666666666667,
+    "hi": 1.3128,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "accScale",
+    "kind": "value",
+    "paths": [
+     "accScale"
+    ],
+    "value": 0.9539,
+    "lo": 0.76312,
+    "hi": 1.192375,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "kdScale",
+    "kind": "value",
+    "paths": [
+     "kdScale"
+    ],
+    "value": 1.236,
+    "lo": 0.8828571428571429,
+    "hi": 1.7304,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "koAll",
+    "kind": "mult",
+    "paths": [
+     "kdInstant",
+     "kdRefStop",
+     "stko",
+     "gnpTko"
+    ],
+    "value": 1,
+    "lo": 0.7,
+    "hi": 1.4,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "tdScale",
+    "kind": "value",
+    "paths": [
+     "tdScale"
+    ],
+    "value": 1.018,
+    "lo": 0.7830769230769231,
+    "hi": 1.3234000000000001,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "tdOddsScale",
+    "kind": "value",
+    "paths": [
+     "tdOddsScale"
+    ],
+    "value": 0.9018,
+    "lo": 0.6936923076923077,
+    "hi": 1.1723400000000002,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "ctrlScale",
+    "kind": "value",
+    "paths": [
+     "ctrlScale"
+    ],
+    "value": 1.004,
+    "lo": 0.7723076923076923,
+    "hi": 1.3052000000000001,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "subAttScale",
+    "kind": "value",
+    "paths": [
+     "subAttScale"
+    ],
+    "value": 1.085,
+    "lo": 0.8346153846153845,
+    "hi": 1.4105,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "subConvScale",
+    "kind": "value",
+    "paths": [
+     "subConvScale"
+    ],
+    "value": 1.488,
+    "lo": 1.062857142857143,
+    "hi": 2.0831999999999997,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "caution5",
+    "kind": "value",
+    "paths": [
+     "caution5"
+    ],
+    "value": 0.6258,
+    "lo": 0.4,
+    "hi": 1,
+    "log": true,
+    "int": false
+   },
+   {
+    "name": "mlWeight",
+    "kind": "value",
+    "paths": [
+     "mlWeight"
+    ],
+    "value": 1,
+    "lo": 0.3,
+    "hi": 1,
+    "log": false,
+    "int": false
+   }
+  ],
+  "objective": {
+   "wWin": 1,
+   "wBins": 0.5,
+   "wBase": 1,
+   "wStat": 0,
+   "brWeight": 0.003,
+   "binPrior": 1,
+   "winPrior": 0.5,
+   "pClip": 0.005
+  },
+  "hook": "tools/mlcal_hooks/ml_oof_v4.js",
+  "fixed": null,
+  "warnings": [],
+  "budget": {
+   "trials": 20,
+   "cma_evals": 16,
+   "cma_pop": 8,
+   "n_fights": 1300,
+   "rungs": [
+    10,
+    20,
+    40
+   ],
+   "eta": 2,
+   "confirm_fights": 672,
+   "confirm_sims": 40,
+   "val_sims_per_order": 80,
+   "workers": 2,
+   "seed": 20261106,
+   "sample_seed": 1
+  },
+  "cpu_seconds": {
+   "tuning": 224.9,
+   "total": 243.5
+  },
+  "wall_seconds": 960.0,
+  "protocol": "train 2019-2023 (tuning window + disjoint confirmation window), validation 2024-01-01..2025-12-31 scored once per parameter set (ledger data/derived/mlcal_val_ledger.json), no 2026 fight loaded; winner log loss is corner-symmetric (fixed-hash corner swap in tuning, both orders in validation)",
+  "how_to_use": "node tools/mlcal.js export --cand data/derived/mlcal_candidates.json --rank 1 --out <file.js> writes a full params file; the owner of src/params3.js copies the overrides in after review"
+ },
+ "baseline": {
+  "x": {
+   "strikeScale": 1.094,
+   "accScale": 0.9539,
+   "kdScale": 1.236,
+   "koAll": 1,
+   "tdScale": 1.018,
+   "tdOddsScale": 0.9018,
+   "ctrlScale": 1.004,
+   "subAttScale": 1.085,
+   "subConvScale": 1.488,
+   "caution5": 0.6258,
+   "mlWeight": 1
+  },
+  "overrides": {},
+  "hook": {},
+  "train": {
+   "rungs": {
+    "10": 1.68528,
+    "20": 1.60394,
+    "40": 1.5596
+   },
+   "top": {
+    "objective": 1.5596024360183853,
+    "winLL": 0.6738070001350585,
+    "binLL": 1.7366025408477683,
+    "basePen": 0.01749416545944266,
+    "brier": 0.2400370196787622,
+    "accuracy": 0.5909090909090909,
+    "ece": 0.023203316136810467,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.59007692307692,
+    "sigDiffCorr": 0.411348966053816
+   }
+  },
+  "confirm": {
+   "objective": 1.5573001067151346,
+   "winLL": 0.6768578399755208,
+   "binLL": 1.7408417275525654,
+   "basePen": 0.010021402963331271,
+   "brier": 0.24101297269502872,
+   "accuracy": 0.5804511278195489,
+   "ece": 0.026756737058405942,
+   "simsPerFight": 40,
+   "nFailed": 0,
+   "sigLndMAE": 26.125204613095214,
+   "sigDiffCorr": 0.33440785076339435
+  },
+  "val": null
+ },
+ "candidates": [
+  {
+   "rank": 1,
+   "source": "cma",
+   "id": "cma1_3",
+   "x": {
+    "strikeScale": 1.14172,
+    "accScale": 0.893042,
+    "kdScale": 1.16323,
+    "koAll": 0.896602,
+    "tdScale": 1.30662,
+    "tdOddsScale": 0.729516,
+    "ctrlScale": 1.04245,
+    "subAttScale": 1.08941,
+    "subConvScale": 1.98472,
+    "caution5": 0.621444,
+    "mlWeight": 0.757139
+   },
+   "overrides": {
+    "mlWeight": 0.757139,
+    "ctrlScale": 1.04245,
+    "strikeScale": 1.14172,
+    "accScale": 0.893042,
+    "kdScale": 1.16323,
+    "kdInstant": 0.354068,
+    "kdRefStop": 0.181293,
+    "stko": 0.0367248,
+    "gnpTko": 0.0309597,
+    "caution5": 0.621444,
+    "tdScale": 1.30662,
+    "tdOddsScale": 0.729516,
+    "subAttScale": 1.08941,
+    "subConvScale": 1.98472
+   },
+   "hook": {},
+   "train": {
+    "rungs": {
+     "10": 1.72405,
+     "20": 1.62901,
+     "40": 1.56668
+    },
+    "top": {
+     "objective": 1.5666841217794119,
+     "winLL": 0.675287668108086,
+     "binLL": 1.750310031916614,
+     "basePen": 0.016241437713018572,
+     "brier": 0.24076417579114137,
+     "accuracy": 0.5909090909090909,
+     "ece": 0.017945750264057883,
+     "simsPerFight": 40,
+     "nFailed": 0,
+     "sigLndMAE": 26.78990384615389,
+     "sigDiffCorr": 0.3644727468709804
+    }
+   },
+   "confirm": {
+    "objective": 1.5551304752853374,
+    "winLL": 0.6752609771839948,
+    "binLL": 1.7242812552464055,
+    "basePen": 0.01772887047813974,
+    "brier": 0.2410616730525795,
+    "accuracy": 0.5819548872180451,
+    "ece": 0.020222589776504707,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 25.72859002976191,
+    "sigDiffCorr": 0.3467394532657919
+   },
+   "val": null
+  },
+  {
+   "rank": 2,
+   "source": "tpe",
+   "id": "tpe12",
+   "x": {
+    "strikeScale": 1.11111,
+    "accScale": 1.0133,
+    "kdScale": 1.42724,
+    "koAll": 0.851246,
+    "tdScale": 1.18783,
+    "tdOddsScale": 0.801771,
+    "ctrlScale": 1.03825,
+    "subAttScale": 1.27128,
+    "subConvScale": 1.61763,
+    "caution5": 0.508404,
+    "mlWeight": 0.836067
+   },
+   "overrides": {
+    "mlWeight": 0.836067,
+    "ctrlScale": 1.03825,
+    "strikeScale": 1.11111,
+    "accScale": 1.0133,
+    "kdScale": 1.42724,
+    "kdInstant": 0.336157,
+    "kdRefStop": 0.172122,
+    "stko": 0.034867,
+    "gnpTko": 0.0293935,
+    "caution5": 0.508404,
+    "tdScale": 1.18783,
+    "tdOddsScale": 0.801771,
+    "subAttScale": 1.27128,
+    "subConvScale": 1.61763
+   },
+   "hook": {},
+   "train": {
+    "rungs": {
+     "10": 1.67888,
+     "20": 1.60894,
+     "40": 1.54869
+    },
+    "top": {
+     "objective": 1.5486920452795465,
+     "winLL": 0.6692014938745051,
+     "binLL": 1.7342219693668561,
+     "basePen": 0.012379566721613378,
+     "brier": 0.23834227079674528,
+     "accuracy": 0.5916860916860917,
+     "ece": 0.024132899863619488,
+     "simsPerFight": 40,
+     "nFailed": 0,
+     "sigLndMAE": 26.713749999999973,
+     "sigDiffCorr": 0.4133319359601464
+    }
+   },
+   "confirm": {
+    "objective": 1.567987758491365,
+    "winLL": 0.6857553761700498,
+    "binLL": 1.7310321351240834,
+    "basePen": 0.016716314759273695,
+    "brier": 0.24581855943836786,
+    "accuracy": 0.5609022556390978,
+    "ece": 0.04128252026333272,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 25.88744419642854,
+    "sigDiffCorr": 0.35824781033624514
+   },
+   "val": null
+  },
+  {
+   "rank": 3,
+   "source": "cma",
+   "id": "cma1_6",
+   "x": {
+    "strikeScale": 1.08813,
+    "accScale": 0.883048,
+    "kdScale": 1.57723,
+    "koAll": 0.93305,
+    "tdScale": 1.14629,
+    "tdOddsScale": 0.831969,
+    "ctrlScale": 1.03042,
+    "subAttScale": 1.25704,
+    "subConvScale": 2.02438,
+    "caution5": 0.464662,
+    "mlWeight": 0.972988
+   },
+   "overrides": {
+    "mlWeight": 0.972988,
+    "ctrlScale": 1.03042,
+    "strikeScale": 1.08813,
+    "accScale": 0.883048,
+    "kdScale": 1.57723,
+    "kdInstant": 0.368461,
+    "kdRefStop": 0.188663,
+    "stko": 0.0382177,
+    "gnpTko": 0.0322182,
+    "caution5": 0.464662,
+    "tdScale": 1.14629,
+    "tdOddsScale": 0.831969,
+    "subAttScale": 1.25704,
+    "subConvScale": 2.02438
+   },
+   "hook": {},
+   "train": {
+    "rungs": {
+     "10": 1.7248,
+     "20": 1.61715,
+     "40": 1.5685
+    },
+    "top": {
+     "objective": 1.5685022842681733,
+     "winLL": 0.6774930705922867,
+     "binLL": 1.7606477445414763,
+     "basePen": 0.010685341405148485,
+     "brier": 0.24177548481894023,
+     "accuracy": 0.5815850815850816,
+     "ece": 0.02934171592708197,
+     "simsPerFight": 40,
+     "nFailed": 0,
+     "sigLndMAE": 26.692576923076935,
+     "sigDiffCorr": 0.38581963263618974
+    }
+   },
+   "confirm": {
+    "objective": 1.5868013481796706,
+    "winLL": 0.6828504575141978,
+    "binLL": 1.763959190988347,
+    "basePen": 0.021971295171299275,
+    "brier": 0.24400589440771378,
+    "accuracy": 0.5714285714285714,
+    "ece": 0.029149444906826225,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 25.330301339285732,
+    "sigDiffCorr": 0.32794894116483503
+   },
+   "val": null
+  }
+ ],
+ "tpe_importance": null,
+ "history": [
+  {
+   "opt": "tpe",
+   "id": "tpe0",
+   "x": {
+    "strikeScale": 1.094,
+    "accScale": 0.9539,
+    "kdScale": 1.236,
+    "koAll": 1,
+    "tdScale": 1.018,
+    "tdOddsScale": 0.9018,
+    "ctrlScale": 1.004,
+    "subAttScale": 1.085,
+    "subConvScale": 1.488,
+    "caution5": 0.6258,
+    "mlWeight": 1
+   },
+   "rungs": {
+    "10": 1.68528,
+    "20": 1.60394,
+    "40": 1.5596
+   },
+   "complete": true,
+   "last": {
+    "objective": 1.5596,
+    "winLL": 0.67381,
+    "binLL": 1.7366,
+    "basePen": 0.017494,
+    "brier": 0.24004,
+    "accuracy": 0.59091,
+    "ece": 0.023203,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.59,
+    "sigDiffCorr": 0.41135
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe1",
+   "x": {
+    "strikeScale": 1.1463,
+    "accScale": 0.80982,
+    "kdScale": 0.95085,
+    "koAll": 1.3834,
+    "tdScale": 0.91676,
+    "tdOddsScale": 0.81162,
+    "ctrlScale": 1.0565,
+    "subAttScale": 1.0953,
+    "subConvScale": 1.6125,
+    "caution5": 0.58262,
+    "mlWeight": 0.67243
+   },
+   "rungs": {
+    "10": 1.74894
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.7489,
+    "winLL": 0.70295,
+    "binLL": 1.959,
+    "basePen": 0.066501,
+    "brier": 0.25141,
+    "accuracy": 0.5812,
+    "ece": 0.067464,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 27.688,
+    "sigDiffCorr": 0.30629
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe2",
+   "x": {
+    "strikeScale": 1.071,
+    "accScale": 1.0219,
+    "kdScale": 0.89783,
+    "koAll": 1.2497,
+    "tdScale": 0.8059,
+    "tdOddsScale": 0.81714,
+    "ctrlScale": 0.87225,
+    "subAttScale": 0.84883,
+    "subConvScale": 1.109,
+    "caution5": 0.90639,
+    "mlWeight": 0.43107
+   },
+   "rungs": {
+    "10": 1.85751
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.8575,
+    "winLL": 0.71206,
+    "binLL": 2.0392,
+    "basePen": 0.12584,
+    "brier": 0.25532,
+    "accuracy": 0.5641,
+    "ece": 0.068434,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 28.589,
+    "sigDiffCorr": 0.29775
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe3",
+   "x": {
+    "strikeScale": 0.97612,
+    "accScale": 0.96714,
+    "kdScale": 0.94833,
+    "koAll": 0.7498,
+    "tdScale": 1.1797,
+    "tdOddsScale": 0.80172,
+    "ctrlScale": 1.118,
+    "subAttScale": 0.91796,
+    "subConvScale": 2.075,
+    "caution5": 0.83199,
+    "mlWeight": 0.88687
+   },
+   "rungs": {
+    "10": 1.80545
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.8054,
+    "winLL": 0.69865,
+    "binLL": 2.006,
+    "basePen": 0.10381,
+    "brier": 0.24931,
+    "accuracy": 0.57265,
+    "ece": 0.066793,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 27.516,
+    "sigDiffCorr": 0.28623
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe4",
+   "x": {
+    "strikeScale": 1.2651,
+    "accScale": 0.8211,
+    "kdScale": 1.1122,
+    "koAll": 0.83912,
+    "tdScale": 0.95984,
+    "tdOddsScale": 0.72958,
+    "ctrlScale": 1.3014,
+    "subAttScale": 0.89811,
+    "subConvScale": 1.7124,
+    "caution5": 0.60988,
+    "mlWeight": 0.75685
+   },
+   "rungs": {
+    "10": 1.7666
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.7666,
+    "winLL": 0.71137,
+    "binLL": 2.0192,
+    "basePen": 0.045655,
+    "brier": 0.25474,
+    "accuracy": 0.55594,
+    "ece": 0.085704,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 28.937,
+    "sigDiffCorr": 0.26919
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe5",
+   "x": {
+    "strikeScale": 1.0826,
+    "accScale": 0.79835,
+    "kdScale": 1.722,
+    "koAll": 0.75833,
+    "tdScale": 0.88576,
+    "tdOddsScale": 0.88191,
+    "ctrlScale": 0.84294,
+    "subAttScale": 1.2515,
+    "subConvScale": 1.2264,
+    "caution5": 0.50873,
+    "mlWeight": 0.42691
+   },
+   "rungs": {
+    "10": 1.80125
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.8013,
+    "winLL": 0.72994,
+    "binLL": 1.9934,
+    "basePen": 0.074611,
+    "brier": 0.26351,
+    "accuracy": 0.52253,
+    "ece": 0.11053,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 28.17,
+    "sigDiffCorr": 0.27332
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe6",
+   "x": {
+    "strikeScale": 0.96803,
+    "accScale": 1.0118,
+    "kdScale": 1.5005,
+    "koAll": 1.0683,
+    "tdScale": 1.0415,
+    "tdOddsScale": 0.93451,
+    "ctrlScale": 1.0115,
+    "subAttScale": 0.8719,
+    "subConvScale": 1.3072,
+    "caution5": 0.57499,
+    "mlWeight": 0.96415
+   },
+   "rungs": {
+    "10": 1.77038
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.7704,
+    "winLL": 0.71064,
+    "binLL": 1.9899,
+    "basePen": 0.06479,
+    "brier": 0.25464,
+    "accuracy": 0.5575,
+    "ece": 0.083853,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 27.417,
+    "sigDiffCorr": 0.28802
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe7",
+   "x": {
+    "strikeScale": 1.0866,
+    "accScale": 1.0028,
+    "kdScale": 1.3826,
+    "koAll": 1.0546,
+    "tdScale": 1.1888,
+    "tdOddsScale": 0.89197,
+    "ctrlScale": 0.99263,
+    "subAttScale": 1.3403,
+    "subConvScale": 1.5813,
+    "caution5": 0.48107,
+    "mlWeight": 0.87528
+   },
+   "rungs": {
+    "10": 1.70302,
+    "20": 1.61581
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.6158,
+    "winLL": 0.68568,
+    "binLL": 1.8238,
+    "basePen": 0.018227,
+    "brier": 0.24473,
+    "accuracy": 0.57653,
+    "ece": 0.043885,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 26.792,
+    "sigDiffCorr": 0.3348
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe8",
+   "x": {
+    "strikeScale": 1.1067,
+    "accScale": 1.0447,
+    "kdScale": 1.6876,
+    "koAll": 1.094,
+    "tdScale": 1.021,
+    "tdOddsScale": 0.95914,
+    "ctrlScale": 0.88708,
+    "subAttScale": 1.1729,
+    "subConvScale": 1.4947,
+    "caution5": 0.78695,
+    "mlWeight": 0.77213
+   },
+   "rungs": {
+    "10": 1.84381
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.8438,
+    "winLL": 0.71658,
+    "binLL": 1.9835,
+    "basePen": 0.13546,
+    "brier": 0.25808,
+    "accuracy": 0.5474,
+    "ece": 0.093714,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 27.803,
+    "sigDiffCorr": 0.31198
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe9",
+   "x": {
+    "strikeScale": 1.1149,
+    "accScale": 0.90105,
+    "kdScale": 1.0687,
+    "koAll": 0.80537,
+    "tdScale": 1.0332,
+    "tdOddsScale": 0.99383,
+    "ctrlScale": 1.0487,
+    "subAttScale": 1.3396,
+    "subConvScale": 1.4699,
+    "caution5": 0.60342,
+    "mlWeight": 0.8869
+   },
+   "rungs": {
+    "10": 1.72007,
+    "20": 1.64619
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.6462,
+    "winLL": 0.68127,
+    "binLL": 1.8452,
+    "basePen": 0.0423,
+    "brier": 0.24359,
+    "accuracy": 0.57148,
+    "ece": 0.049498,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 26.988,
+    "sigDiffCorr": 0.40853
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe10",
+   "x": {
+    "strikeScale": 1.0244,
+    "accScale": 0.87016,
+    "kdScale": 1.3378,
+    "koAll": 1.0737,
+    "tdScale": 1.2173,
+    "tdOddsScale": 0.93704,
+    "ctrlScale": 0.9752,
+    "subAttScale": 0.88424,
+    "subConvScale": 1.7439,
+    "caution5": 0.91233,
+    "mlWeight": 0.92368
+   },
+   "rungs": {
+    "10": 1.72995,
+    "20": 1.64399
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.644,
+    "winLL": 0.68446,
+    "binLL": 1.8298,
+    "basePen": 0.04461,
+    "brier": 0.24441,
+    "accuracy": 0.5878,
+    "ece": 0.046219,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 26.703,
+    "sigDiffCorr": 0.34335
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe11",
+   "x": {
+    "strikeScale": 1.0011,
+    "accScale": 1.0941,
+    "kdScale": 1.2491,
+    "koAll": 1.1962,
+    "tdScale": 1.211,
+    "tdOddsScale": 0.92338,
+    "ctrlScale": 1.021,
+    "subAttScale": 1.296,
+    "subConvScale": 1.5277,
+    "caution5": 0.63401,
+    "mlWeight": 0.73635
+   },
+   "rungs": {
+    "10": 1.72275,
+    "20": 1.62884
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.6288,
+    "winLL": 0.68371,
+    "binLL": 1.8264,
+    "basePen": 0.031938,
+    "brier": 0.24461,
+    "accuracy": 0.57459,
+    "ece": 0.044185,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 26.952,
+    "sigDiffCorr": 0.35126
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe12",
+   "x": {
+    "strikeScale": 1.1111,
+    "accScale": 1.0133,
+    "kdScale": 1.4272,
+    "koAll": 0.85125,
+    "tdScale": 1.1878,
+    "tdOddsScale": 0.80177,
+    "ctrlScale": 1.0383,
+    "subAttScale": 1.2713,
+    "subConvScale": 1.6176,
+    "caution5": 0.5084,
+    "mlWeight": 0.83607
+   },
+   "rungs": {
+    "10": 1.67888,
+    "20": 1.60894,
+    "40": 1.54869
+   },
+   "complete": true,
+   "last": {
+    "objective": 1.5487,
+    "winLL": 0.6692,
+    "binLL": 1.7342,
+    "basePen": 0.01238,
+    "brier": 0.23834,
+    "accuracy": 0.59169,
+    "ece": 0.024133,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.714,
+    "sigDiffCorr": 0.41333
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe13",
+   "x": {
+    "strikeScale": 1.0452,
+    "accScale": 0.88884,
+    "kdScale": 1.351,
+    "koAll": 0.82584,
+    "tdScale": 0.99949,
+    "tdOddsScale": 0.875,
+    "ctrlScale": 1.1963,
+    "subAttScale": 1.1633,
+    "subConvScale": 1.4066,
+    "caution5": 0.55207,
+    "mlWeight": 0.85579
+   },
+   "rungs": {
+    "10": 1.73158,
+    "20": 1.65527
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.6553,
+    "winLL": 0.69317,
+    "binLL": 1.8567,
+    "basePen": 0.033764,
+    "brier": 0.24859,
+    "accuracy": 0.56488,
+    "ece": 0.057458,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 26.77,
+    "sigDiffCorr": 0.36686
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe14",
+   "x": {
+    "strikeScale": 1.2005,
+    "accScale": 1.1878,
+    "kdScale": 1.5522,
+    "koAll": 0.87361,
+    "tdScale": 1.1672,
+    "tdOddsScale": 0.83133,
+    "ctrlScale": 1.0473,
+    "subAttScale": 1.296,
+    "subConvScale": 1.7828,
+    "caution5": 0.50662,
+    "mlWeight": 0.82435
+   },
+   "rungs": {
+    "10": 1.81555
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.8155,
+    "winLL": 0.71281,
+    "binLL": 1.9712,
+    "basePen": 0.11714,
+    "brier": 0.25665,
+    "accuracy": 0.55245,
+    "ece": 0.084765,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 28.577,
+    "sigDiffCorr": 0.3156
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe15",
+   "x": {
+    "strikeScale": 1.0679,
+    "accScale": 0.99569,
+    "kdScale": 1.3362,
+    "koAll": 0.98466,
+    "tdScale": 1.2256,
+    "tdOddsScale": 0.80668,
+    "ctrlScale": 1.1564,
+    "subAttScale": 1.2247,
+    "subConvScale": 2.0027,
+    "caution5": 0.55928,
+    "mlWeight": 0.87271
+   },
+   "rungs": {
+    "10": 1.73646,
+    "20": 1.64002
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.64,
+    "winLL": 0.69033,
+    "binLL": 1.8417,
+    "basePen": 0.028863,
+    "brier": 0.24647,
+    "accuracy": 0.58159,
+    "ece": 0.038241,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 26.818,
+    "sigDiffCorr": 0.3636
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe16",
+   "x": {
+    "strikeScale": 1.1006,
+    "accScale": 1.0979,
+    "kdScale": 1.2752,
+    "koAll": 0.75472,
+    "tdScale": 1.1727,
+    "tdOddsScale": 0.89467,
+    "ctrlScale": 1.2324,
+    "subAttScale": 1.2862,
+    "subConvScale": 1.5586,
+    "caution5": 0.48144,
+    "mlWeight": 0.76874
+   },
+   "rungs": {
+    "10": 1.75035
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.7504,
+    "winLL": 0.71277,
+    "binLL": 1.9674,
+    "basePen": 0.053882,
+    "brier": 0.25543,
+    "accuracy": 0.56061,
+    "ece": 0.078456,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 27.977,
+    "sigDiffCorr": 0.28405
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe17",
+   "x": {
+    "strikeScale": 1.0605,
+    "accScale": 1.1379,
+    "kdScale": 1.5822,
+    "koAll": 0.80757,
+    "tdScale": 1.0594,
+    "tdOddsScale": 0.79394,
+    "ctrlScale": 1.244,
+    "subAttScale": 1.3182,
+    "subConvScale": 1.8545,
+    "caution5": 0.5207,
+    "mlWeight": 0.78302
+   },
+   "rungs": {
+    "10": 1.77181
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.7718,
+    "winLL": 0.71278,
+    "binLL": 1.987,
+    "basePen": 0.065525,
+    "brier": 0.25548,
+    "accuracy": 0.56915,
+    "ece": 0.074109,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 28.013,
+    "sigDiffCorr": 0.29959
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe18",
+   "x": {
+    "strikeScale": 1.1406,
+    "accScale": 1.0092,
+    "kdScale": 1.6906,
+    "koAll": 0.88622,
+    "tdScale": 1.2512,
+    "tdOddsScale": 0.72554,
+    "ctrlScale": 0.89473,
+    "subAttScale": 1.3657,
+    "subConvScale": 1.8107,
+    "caution5": 0.4599,
+    "mlWeight": 0.81162
+   },
+   "rungs": {
+    "10": 1.76586
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.7659,
+    "winLL": 0.7116,
+    "binLL": 1.9873,
+    "basePen": 0.060633,
+    "brier": 0.2562,
+    "accuracy": 0.55322,
+    "ece": 0.084442,
+    "simsPerFight": 10,
+    "nFailed": 0,
+    "sigLndMAE": 28.229,
+    "sigDiffCorr": 0.33309
+   }
+  },
+  {
+   "opt": "tpe",
+   "id": "tpe19",
+   "x": {
+    "strikeScale": 1.0281,
+    "accScale": 0.95142,
+    "kdScale": 1.3476,
+    "koAll": 1.0456,
+    "tdScale": 1.2561,
+    "tdOddsScale": 0.74137,
+    "ctrlScale": 0.98866,
+    "subAttScale": 1.1678,
+    "subConvScale": 1.3071,
+    "caution5": 0.52245,
+    "mlWeight": 0.70335
+   },
+   "rungs": {
+    "10": 1.71334,
+    "20": 1.63676
+   },
+   "complete": false,
+   "last": {
+    "objective": 1.6368,
+    "winLL": 0.69011,
+    "binLL": 1.8628,
+    "basePen": 0.015255,
+    "brier": 0.24695,
+    "accuracy": 0.55866,
+    "ece": 0.062167,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 26.935,
+    "sigDiffCorr": 0.32888
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma0_0",
+   "x": {
+    "strikeScale": 1.055,
+    "accScale": 1.036,
+    "kdScale": 1.2812,
+    "koAll": 0.76215,
+    "tdScale": 1.2319,
+    "tdOddsScale": 0.97654,
+    "ctrlScale": 0.93584,
+    "subAttScale": 1.4096,
+    "subConvScale": 1.2582,
+    "caution5": 0.61369,
+    "mlWeight": 0.82947
+   },
+   "rungs": {
+    "10": 1.76004,
+    "20": 1.64267
+   },
+   "complete": false,
+   "gen": 0,
+   "last": {
+    "objective": 1.6427,
+    "winLL": 0.69441,
+    "binLL": 1.8305,
+    "basePen": 0.033017,
+    "brier": 0.24977,
+    "accuracy": 0.55711,
+    "ece": 0.063839,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 27.219,
+    "sigDiffCorr": 0.33381
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma0_1",
+   "x": {
+    "strikeScale": 1.1124,
+    "accScale": 0.94352,
+    "kdScale": 1.3236,
+    "koAll": 0.86319,
+    "tdScale": 1.0675,
+    "tdOddsScale": 0.75781,
+    "ctrlScale": 1.1143,
+    "subAttScale": 1.1857,
+    "subConvScale": 1.7134,
+    "caution5": 0.47707,
+    "mlWeight": 0.73201
+   },
+   "rungs": {
+    "10": 1.71887,
+    "20": 1.62162,
+    "40": 1.57243
+   },
+   "complete": true,
+   "gen": 0,
+   "last": {
+    "objective": 1.5724,
+    "winLL": 0.67917,
+    "binLL": 1.755,
+    "basePen": 0.015773,
+    "brier": 0.24244,
+    "accuracy": 0.58974,
+    "ece": 0.026922,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 27.089,
+    "sigDiffCorr": 0.3822
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma0_2",
+   "x": {
+    "strikeScale": 1.0705,
+    "accScale": 0.91966,
+    "kdScale": 1.4904,
+    "koAll": 0.78818,
+    "tdScale": 1.3126,
+    "tdOddsScale": 0.76839,
+    "ctrlScale": 0.96399,
+    "subAttScale": 1.2645,
+    "subConvScale": 1.5774,
+    "caution5": 0.41136,
+    "mlWeight": 0.88759
+   },
+   "rungs": {
+    "10": 1.70567,
+    "20": 1.62717,
+    "40": 1.57666
+   },
+   "complete": true,
+   "gen": 0,
+   "last": {
+    "objective": 1.5767,
+    "winLL": 0.68144,
+    "binLL": 1.7595,
+    "basePen": 0.0155,
+    "brier": 0.24376,
+    "accuracy": 0.57226,
+    "ece": 0.039751,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 27.003,
+    "sigDiffCorr": 0.38295
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma0_3",
+   "x": {
+    "strikeScale": 1.0752,
+    "accScale": 0.96754,
+    "kdScale": 1.3119,
+    "koAll": 0.92149,
+    "tdScale": 1.2742,
+    "tdOddsScale": 0.92293,
+    "ctrlScale": 0.94554,
+    "subAttScale": 1.2792,
+    "subConvScale": 1.2662,
+    "caution5": 0.49015,
+    "mlWeight": 0.92975
+   },
+   "rungs": {
+    "10": 1.75201,
+    "20": 1.65643
+   },
+   "complete": false,
+   "gen": 0,
+   "last": {
+    "objective": 1.6564,
+    "winLL": 0.69888,
+    "binLL": 1.8695,
+    "basePen": 0.022812,
+    "brier": 0.25091,
+    "accuracy": 0.55711,
+    "ece": 0.065193,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 27.386,
+    "sigDiffCorr": 0.3649
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma0_4",
+   "x": {
+    "strikeScale": 1.0364,
+    "accScale": 1.1215,
+    "kdScale": 1.2259,
+    "koAll": 1.0754,
+    "tdScale": 1.3068,
+    "tdOddsScale": 0.79871,
+    "ctrlScale": 1.06,
+    "subAttScale": 1.3784,
+    "subConvScale": 1.8708,
+    "caution5": 0.60895,
+    "mlWeight": 0.97727
+   },
+   "rungs": {
+    "10": 1.74067,
+    "20": 1.64051,
+    "40": 1.59694
+   },
+   "complete": true,
+   "gen": 0,
+   "last": {
+    "objective": 1.5969,
+    "winLL": 0.6768,
+    "binLL": 1.7507,
+    "basePen": 0.044763,
+    "brier": 0.24141,
+    "accuracy": 0.58353,
+    "ece": 0.022779,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.457,
+    "sigDiffCorr": 0.37915
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma0_5",
+   "x": {
+    "strikeScale": 1.1603,
+    "accScale": 1.0463,
+    "kdScale": 1.3939,
+    "koAll": 0.80674,
+    "tdScale": 1.1482,
+    "tdOddsScale": 0.82314,
+    "ctrlScale": 0.86157,
+    "subAttScale": 1.3797,
+    "subConvScale": 1.7768,
+    "caution5": 0.40506,
+    "mlWeight": 0.87552
+   },
+   "rungs": {
+    "10": 1.75868,
+    "20": 1.66444
+   },
+   "complete": false,
+   "gen": 0,
+   "last": {
+    "objective": 1.6644,
+    "winLL": 0.69161,
+    "binLL": 1.8708,
+    "basePen": 0.037436,
+    "brier": 0.24762,
+    "accuracy": 0.56449,
+    "ece": 0.055217,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 28.239,
+    "sigDiffCorr": 0.37635
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma0_6",
+   "x": {
+    "strikeScale": 1.2042,
+    "accScale": 1.0516,
+    "kdScale": 1.4602,
+    "koAll": 0.91858,
+    "tdScale": 1.1291,
+    "tdOddsScale": 0.76394,
+    "ctrlScale": 0.87547,
+    "subAttScale": 1.2673,
+    "subConvScale": 1.8302,
+    "caution5": 0.4126,
+    "mlWeight": 0.75058
+   },
+   "rungs": {
+    "10": 1.78168,
+    "20": 1.69153
+   },
+   "complete": false,
+   "gen": 0,
+   "last": {
+    "objective": 1.6915,
+    "winLL": 0.69813,
+    "binLL": 1.8542,
+    "basePen": 0.066327,
+    "brier": 0.25135,
+    "accuracy": 0.55167,
+    "ece": 0.064728,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 28.411,
+    "sigDiffCorr": 0.31196
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma0_7",
+   "x": {
+    "strikeScale": 1.0821,
+    "accScale": 0.90126,
+    "kdScale": 1.4285,
+    "koAll": 0.93928,
+    "tdScale": 1.1646,
+    "tdOddsScale": 0.83016,
+    "ctrlScale": 0.99297,
+    "subAttScale": 1.3111,
+    "subConvScale": 2.0663,
+    "caution5": 0.64628,
+    "mlWeight": 0.90899
+   },
+   "rungs": {
+    "10": 1.71956,
+    "20": 1.62053,
+    "40": 1.58318
+   },
+   "complete": true,
+   "gen": 0,
+   "last": {
+    "objective": 1.5832,
+    "winLL": 0.682,
+    "binLL": 1.7693,
+    "basePen": 0.016559,
+    "brier": 0.24431,
+    "accuracy": 0.56061,
+    "ece": 0.043253,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.6,
+    "sigDiffCorr": 0.38329
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma1_0",
+   "x": {
+    "strikeScale": 1.0617,
+    "accScale": 0.96592,
+    "kdScale": 1.3531,
+    "koAll": 0.98579,
+    "tdScale": 1.1843,
+    "tdOddsScale": 0.79914,
+    "ctrlScale": 1.0231,
+    "subAttScale": 1.3257,
+    "subConvScale": 2.0827,
+    "caution5": 0.62742,
+    "mlWeight": 0.79872
+   },
+   "rungs": {
+    "10": 1.72021,
+    "20": 1.61595,
+    "40": 1.57859
+   },
+   "complete": true,
+   "gen": 1,
+   "last": {
+    "objective": 1.5786,
+    "winLL": 0.67532,
+    "binLL": 1.7628,
+    "basePen": 0.021892,
+    "brier": 0.24129,
+    "accuracy": 0.5575,
+    "ece": 0.04839,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.48,
+    "sigDiffCorr": 0.36512
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma1_1",
+   "x": {
+    "strikeScale": 1.0841,
+    "accScale": 0.92599,
+    "kdScale": 1.5492,
+    "koAll": 0.95983,
+    "tdScale": 1.0737,
+    "tdOddsScale": 0.74915,
+    "ctrlScale": 1.051,
+    "subAttScale": 1.3338,
+    "subConvScale": 1.9806,
+    "caution5": 0.62733,
+    "mlWeight": 0.9029
+   },
+   "rungs": {
+    "10": 1.71442,
+    "20": 1.63551
+   },
+   "complete": false,
+   "gen": 1,
+   "last": {
+    "objective": 1.6355,
+    "winLL": 0.68834,
+    "binLL": 1.8398,
+    "basePen": 0.027258,
+    "brier": 0.24591,
+    "accuracy": 0.57887,
+    "ece": 0.040167,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 27.047,
+    "sigDiffCorr": 0.35348
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma1_2",
+   "x": {
+    "strikeScale": 1.1264,
+    "accScale": 0.8797,
+    "kdScale": 1.6681,
+    "koAll": 0.92611,
+    "tdScale": 1.1639,
+    "tdOddsScale": 0.71722,
+    "ctrlScale": 1.0105,
+    "subAttScale": 1.3788,
+    "subConvScale": 1.8463,
+    "caution5": 0.58541,
+    "mlWeight": 0.99871
+   },
+   "rungs": {
+    "10": 1.72025,
+    "20": 1.62841,
+    "40": 1.57896
+   },
+   "complete": true,
+   "gen": 1,
+   "last": {
+    "objective": 1.579,
+    "winLL": 0.67542,
+    "binLL": 1.7505,
+    "basePen": 0.028291,
+    "brier": 0.24087,
+    "accuracy": 0.58392,
+    "ece": 0.026963,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.583,
+    "sigDiffCorr": 0.37748
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma1_3",
+   "x": {
+    "strikeScale": 1.1417,
+    "accScale": 0.89304,
+    "kdScale": 1.1632,
+    "koAll": 0.8966,
+    "tdScale": 1.3066,
+    "tdOddsScale": 0.72952,
+    "ctrlScale": 1.0425,
+    "subAttScale": 1.0894,
+    "subConvScale": 1.9847,
+    "caution5": 0.62144,
+    "mlWeight": 0.75714
+   },
+   "rungs": {
+    "10": 1.72405,
+    "20": 1.62901,
+    "40": 1.56668
+   },
+   "complete": true,
+   "gen": 1,
+   "last": {
+    "objective": 1.5667,
+    "winLL": 0.67529,
+    "binLL": 1.7503,
+    "basePen": 0.016241,
+    "brier": 0.24076,
+    "accuracy": 0.59091,
+    "ece": 0.017946,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.79,
+    "sigDiffCorr": 0.36447
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma1_4",
+   "x": {
+    "strikeScale": 1.0954,
+    "accScale": 0.90836,
+    "kdScale": 1.3285,
+    "koAll": 0.82149,
+    "tdScale": 1.1232,
+    "tdOddsScale": 0.79999,
+    "ctrlScale": 1.046,
+    "subAttScale": 1.3426,
+    "subConvScale": 2.0607,
+    "caution5": 0.45108,
+    "mlWeight": 0.73751
+   },
+   "rungs": {
+    "10": 1.7157,
+    "20": 1.64981
+   },
+   "complete": false,
+   "gen": 1,
+   "last": {
+    "objective": 1.6498,
+    "winLL": 0.68928,
+    "binLL": 1.8305,
+    "basePen": 0.04528,
+    "brier": 0.24733,
+    "accuracy": 0.56682,
+    "ece": 0.05014,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 27.095,
+    "sigDiffCorr": 0.37867
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma1_5",
+   "x": {
+    "strikeScale": 1.0529,
+    "accScale": 0.90954,
+    "kdScale": 1.6232,
+    "koAll": 0.79834,
+    "tdScale": 1.2199,
+    "tdOddsScale": 0.80298,
+    "ctrlScale": 1.0071,
+    "subAttScale": 1.347,
+    "subConvScale": 2.0063,
+    "caution5": 0.64427,
+    "mlWeight": 0.83335
+   },
+   "rungs": {
+    "10": 1.72353,
+    "20": 1.6335
+   },
+   "complete": false,
+   "gen": 1,
+   "last": {
+    "objective": 1.6335,
+    "winLL": 0.68553,
+    "binLL": 1.8374,
+    "basePen": 0.029271,
+    "brier": 0.24537,
+    "accuracy": 0.57265,
+    "ece": 0.045088,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 26.746,
+    "sigDiffCorr": 0.36072
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma1_6",
+   "x": {
+    "strikeScale": 1.0881,
+    "accScale": 0.88305,
+    "kdScale": 1.5772,
+    "koAll": 0.93305,
+    "tdScale": 1.1463,
+    "tdOddsScale": 0.83197,
+    "ctrlScale": 1.0304,
+    "subAttScale": 1.257,
+    "subConvScale": 2.0244,
+    "caution5": 0.46466,
+    "mlWeight": 0.97299
+   },
+   "rungs": {
+    "10": 1.7248,
+    "20": 1.61715,
+    "40": 1.5685
+   },
+   "complete": true,
+   "gen": 1,
+   "last": {
+    "objective": 1.5685,
+    "winLL": 0.67749,
+    "binLL": 1.7606,
+    "basePen": 0.010685,
+    "brier": 0.24178,
+    "accuracy": 0.58159,
+    "ece": 0.029342,
+    "simsPerFight": 40,
+    "nFailed": 0,
+    "sigLndMAE": 26.693,
+    "sigDiffCorr": 0.38582
+   }
+  },
+  {
+   "opt": "cma",
+   "id": "cma1_7",
+   "x": {
+    "strikeScale": 1.1298,
+    "accScale": 0.90495,
+    "kdScale": 1.2302,
+    "koAll": 0.7839,
+    "tdScale": 1.1285,
+    "tdOddsScale": 0.78134,
+    "ctrlScale": 0.95784,
+    "subAttScale": 1.198,
+    "subConvScale": 1.7677,
+    "caution5": 0.52413,
+    "mlWeight": 0.98744
+   },
+   "rungs": {
+    "10": 1.71977,
+    "20": 1.64048
+   },
+   "complete": false,
+   "gen": 1,
+   "last": {
+    "objective": 1.6405,
+    "winLL": 0.68997,
+    "binLL": 1.8596,
+    "basePen": 0.020717,
+    "brier": 0.2468,
+    "accuracy": 0.57187,
+    "ece": 0.04817,
+    "simsPerFight": 20,
+    "nFailed": 0,
+    "sigLndMAE": 27.706,
+    "sigDiffCorr": 0.33309
+   }
+  }
+ ]
+}

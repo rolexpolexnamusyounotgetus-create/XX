@@ -1,17 +1,21 @@
-/* Fight engine v3: global parameters.
+/* Fight engine global parameters (engine v4; the file name stays params3.js for every version).
    UMD: module.exports in Node, self.FightParams / window.FightParams in the browser.
    One plain object. Every entry carries a comment with its meaning and its source or default.
    Sources: data/derived/combine_fit.json (shrinkage, combination), data/derived/baserates.json and
-   baserates_tables.md (league base rates, 2015+), data/derived/priors.json (division priors, 2018+),
-   research/modeling_literature.md (age, chin, judging), research/data_baserates.md.
-   Values marked [selfcal] were set by the league-average self-calibration in tests/test_engine3.js
-   (node tests/test_engine3.js --fit); tools/calibrate.js (walk-forward) will rewrite them.
-   Units inside the engine: seconds and per-second rates unless a comment says otherwise.
-   Walk-forward calibration (tools/calibrate.js, 2026-11-06): values marked [walkfwd] were tuned on 2019-2023 backtest fights
-   (n=1955, frozen pre-fight snapshots) and checked on 2024-01-01 .. 2026-10-31 (n=1223, never tuned on).
-   Test: winner log loss 0.648 (Elo 0.6805, blend 0.6453), Brier 0.2281, accuracy 64.0%,
-   ECE 4.5%, 7-bin log loss 1.6049. Train: winner log loss 0.6721 (Elo 0.6851).
-   Details: data/derived/calibration.json and docs/CHANGELOG.md. Re-running tests/test_engine3.js --fit --write would overwrite some of them. */
+   baserates_tables.md (league base rates), data/derived/priors_dev.json (train-only division priors, fights
+   2018-01-01..2023-12-31), research/modeling_literature.md (age, chin), research/data_baserates.md and
+   data/derived/judgecal.json (judging).
+   v4 (Nov 6, 2026):
+   - [selfcal v4] values: league-average self-calibration against the TRAIN-ONLY priors
+     (node tests/test_engine3.js 8000 --fit --write --priors data/derived/priors_dev.json). v3's [selfcal] values had been
+     fit to all-years priors (2018..2026-10, incl. validation and the vault).
+   - [judgecal] values: tools/judgecal.js, maximum likelihood on the 2019-2023 judges' rounds (judgerounds_rows.json).
+   - Global-scale re-tune (tools/mlcal.py, spec tools/mlcal_spec_engine4.json, learned rates on through the out-of-fold
+     hook, TRAIN only, --no-val): no candidate beat these values on both train windows (tuning 1,300 fights and
+     confirmation 672 fights), so they stand (data/derived/mlcal_candidates_v4.json).
+   - [walkfwd] values left from v3 (tools/calibrate.js on 2019-2023 with walk-forward priors): form sds, caution5,
+     r1Caution5, drainSchedExp, age / KO-loss / size coefficients, powExp, chinExp, ctrlScale.
+   Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
@@ -83,13 +87,13 @@
     gBotRel: 0.12,           // bottom man's ground strike rate relative to the top man's (default)
 
     // ---------------- strikes ----------------
-    strikeScale: 1.094,      // [walkfwd 2026-11-06; was 1.063] global strike-attempt scale (absorbs exposure-estimate bias)
-    clinchScale: 1.074,      // [selfcal] clinch strike-rate scale
-    groundScale: 0.8362,     // [selfcal] ground strike-rate scale
+    strikeScale: 1.094,      // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.107] global strike-attempt scale (absorbs exposure-estimate bias)
+    clinchScale: 1.074,      // [selfcal v4: train-only priors_dev.json] clinch strike-rate scale
+    groundScale: 0.8362,     // [selfcal v4: train-only priors_dev.json] ground strike-rate scale
     clinchMix: [0.55, 0.33, 0.12],   // clinch target mix head/body/leg (default; leg = knees to the thigh)
     groundTopMix: [0.84, 0.15, 0.01], // top ground-strike target mix (default)
     groundBotMix: [0.6, 0.4, 0.0],    // bottom ground-strike target mix (default)
-    accScale: 0.9539,        // [walkfwd 2026-11-06; was 0.9497] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
+    accScale: 0.9539,        // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.021] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
     botAccOdds: 0.6,         // accuracy odds multiplier for strikes thrown from the bottom (default)
     accHurt: 1.5,            // accuracy odds multiplier against a hurt defender (default)
     accStam: 0.25,           // defender fatigue: odds x (1 + accStam (1 - S_def)) (default)
@@ -100,8 +104,8 @@
     outMob: 0.15,            // output x (1 - outMob (1 - mobility)) (default)
 
     // ---------------- damage, knockdowns, finishes ----------------
-    kdScale: 1.236,          // [walkfwd 2026-11-06; was 1.232] global knockdown scale on p0 (division KD per landed standing head strike)
-    kdPos: [1.0, 2.561],     // [selfcal] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates; knees and elbows)
+    kdScale: 1.236,          // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.246] global knockdown scale on p0 (division KD per landed standing head strike)
+    kdPos: [1.0, 2.561],     // [selfcal v4: train-only priors_dev.json] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates; knees and elbows)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
     kdHurt: 1.8,             // KD multiplier while hurt (default)
@@ -125,7 +129,7 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.3949,       // [walkfwd 2026-11-06; was 0.3763] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
+    kdInstant: 0.3949,       // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.3175] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
@@ -134,11 +138,11 @@
     kdRecoverStand: 0.45,    // share of recoveries that get back to the feet; the rest recover guard with the attacker on top (default)
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
-    kdRefStop: 0.2022,       // [walkfwd 2026-11-06; was 0.1898] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
+    kdRefStop: 0.2022,       // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.153] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
     refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
-    stko: 0.04096,           // [walkfwd 2026-11-06; was 0.04461] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
-    gnpTko: 0.03453,           // [walkfwd 2026-11-06; was 0.032] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
+    stko: 0.04096,           // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.03439] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
+    gnpTko: 0.03453,           // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.02467] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
     stkoBase: 0.3,           // standing TKO hazard while hurt = stko x (stkoBase + D / 100) (default)
     gnpDmg: 600,             // GNP TKO x (1 + D / gnpDmg) (default)
     gnpHurt: 2.0,            // GNP TKO multiplier while hurt (default)
@@ -167,11 +171,11 @@
     tdAttStam: 0.0,          // attacker fatigue: takedown attempts x (1 - tdAttStam (1 - S)); 0 because attempts rise by round in the data (baserates pace curve)
     tdStam: 0.15,            // defender fatigue: takedown success odds x (1 + tdStam (1 - S_def)) (small: baserates TD accuracy falls by round in 5-rounders)
     standStam: 0.3,          // bottom man's fatigue: stand-up hazard x (1 - standStam (1 - S)) (default)
-    tdScale: 1.018,          // [walkfwd 2026-11-06; was 1.008] takedown attempt rate scale
-    tdOddsScale: 0.9018,     // [walkfwd 2026-11-06; was 0.9044] takedown success odds scale
+    tdScale: 1.018,          // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.9724] takedown attempt rate scale
+    tdOddsScale: 0.9018,     // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.9103] takedown success odds scale
     sweepScale: 1.0,         // sweep / reversal rate scale (default; reversals come from each pair's data rates)
-    subAttScale: 1.085,      // [walkfwd 2026-11-06; was 1.073] submission attempt rate scale
-    subConvScale: 1.488,     // [walkfwd 2026-11-06; was 1.385] submission conversion odds scale
+    subAttScale: 1.085,      // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.042] submission attempt rate scale
+    subConvScale: 1.488,     // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.619] submission conversion odds scale
     gilloScale: 1.0,         // standing guillotine attempts on stuffed shots scale
 
     // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------
@@ -214,7 +218,7 @@
     docCap: 0.2,             // cap per interval
     corner: 0.03,            // corner stoppage hazard: corner per KD absorbed beyond the first, plus corner * (D/120)^3 (sweep: ~0.1 per 100 3-round fights; baserates corner 0.13 all, 0.35 LW, 0.52 in 5-rounders)
 
-    // ---------------- division self-calibration factors ([selfcal]; neutral = 1) ----------------
+    // ---------------- division self-calibration factors ([selfcal v4]: train-only priors_dev.json; neutral = 1) ----------------
     // att: strike-attempt scale; kd: knockdown scale; ko: scales kdInstant and kdRefStop odds and the stko / gnpTko hazards;
     // sub: submission conversion odds; ctrl: control target scale; td: takedown attempt scale.
     div: {

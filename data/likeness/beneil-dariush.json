@@ -62,7 +62,7 @@
       "cauliflower_ear": "Not obvious; the folds are visible and the rims look only slightly thick. Model as large, protruding, otherwise normal ears.",
       "notes": "In profile (Perth) the right ear stands out at an angle of roughly 30-40 degrees from the skull."
     },
-    "notable_marks_scars": "No clear permanent scars at these resolutions. Photos taken after fights show swelling and cuts (UFC 317 presser, Perth aftermath); do not model those."
+    "notable_marks_scars": "No clear permanent scars at these resolutions. A UFC 317 post-fight press photo (June 2025, viewed but not kept) shows swelling and cuts around the eyes; do not model fight damage."
   },
   "hair": {
     "style": "Short, neat cut: about 2.5-3 cm on top brushed up and slightly forward, tapered short on the sides and back (about 1 cm), no part. Earlier (2018) he wore it longer and curly.",
@@ -78,9 +78,10 @@
       "espn_side_point": "#9d8e8d",
       "espn_region_p25_dark_strands": "#4e4546"
     },
-    "colour_hex": "#8a7a74",
+    "colour_hex": "#8b7974",
     "hairline": "Straight with mild recession at the temples; dense on top.",
-    "texture": "Wavy to curly when grown out (2018 photo); at the current length it reads as short and slightly wavy."
+    "texture": "Wavy to curly when grown out (2018 photo); at the current length it reads as short and slightly wavy.",
+    "colour_hex_note": "Mean of the three lighter samples (region median, region mid-tones, side point)."
   },
   "facial_hair": {
     "type": "stubble",
@@ -90,10 +91,11 @@
       "espn_chin_region_mid_tones": "#876251",
       "espn_chin_point": "#c08b76"
     },
-    "colour_hex": "#7d5d4f",
+    "colour_hex": "#7c5b4b",
     "density": "Even and fairly dense over the jaw, chin, upper lip and the lower cheeks.",
     "length_mm": "About 2-4 mm in studio and press photos; a little longer (about 5-8 mm) in the May 2026 profile.",
-    "shape": "Full-coverage stubble with a natural, fairly low cheek line and the neck line just under the jaw."
+    "shape": "Full-coverage stubble with a natural, fairly low cheek line and the neck line just under the jaw.",
+    "colour_hex_note": "Mean of the chin region median and mid-tones."
   },
   "skin": {
     "tone_samples": [

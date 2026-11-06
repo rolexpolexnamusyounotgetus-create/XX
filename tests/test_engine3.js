@@ -8,8 +8,8 @@
 //   node tests/test_engine3.js [N] --fit      self-calibrate the global scales (Lightweight) and the per-division
 //                                             factors to the division base rates, print the values
 //   node tests/test_engine3.js [N] --fit --write   same, and rewrite the [selfcal] values in src/params3.js
-//   --priors <file>   league priors for the base-rate targets and the shrinkage (default fighters.json priors, all
-//                     years). Engine v4 self-calibration: --priors data/derived/priors_dev.json (fights before
+//   --priors <file>   league priors for the base-rate targets and the shrinkage (default data/derived/priors_dev.json,
+//                     the train-only priors v4 is calibrated against; fighters.json priors, all years, if it is missing). Engine v4 self-calibration: --priors data/derived/priors_dev.json (fights before
 //                     2024-01-01 only, tools/build_db.py --priors-until 2024-01-01; hidden-data protocol). The judges'
 //                     noise and 10-8 rule are not touched here (tools/judgecal.js fits them to real judges' rounds).
 "use strict";
@@ -31,7 +31,9 @@ function withML(fn) { E.loadMLRates(ML_MODEL); try { return fn(); } finally { E.
 
 const args = process.argv.slice(2);
 const N = +(args.find((a) => /^\d+$/.test(a)) || 20000);
-const PRIORS_FILE = args.indexOf("--priors") >= 0 ? args[args.indexOf("--priors") + 1] : null;
+// v4 is self-calibrated against the train-only priors, so the base-rate tables check against them by default
+const PRIORS_FILE = args.indexOf("--priors") >= 0 ? args[args.indexOf("--priors") + 1] :
+  (fs.existsSync(path.join(ROOT, "data/derived/priors_dev.json")) ? "data/derived/priors_dev.json" : null);
 const PRI = PRIORS_FILE ? JSON.parse(fs.readFileSync(path.isAbsolute(PRIORS_FILE) ? PRIORS_FILE : path.join(ROOT, PRIORS_FILE), "utf8")).priors : DB.priors;
 const FIT = args.includes("--fit"), WRITE = args.includes("--write"), QUICK = args.includes("--quick");
 const DATE = "2026-11-06";
@@ -102,7 +104,7 @@ function divTable(div, n) {
   const T3 = targets(div, 3), S3 = simAvg(div, 3, null, n, 101);
   const T5 = targets(div, 5), S5 = simAvg(div, 5, null, Math.round(n / 2), 202);
   const all5 = targets("ALL", 5);
-  console.log(`\n--- ${div} (${DB.priors[div].lbs || "?"} lb): league-average vs league-average, ${n} 3-round fights (data: priors 2018+, n=${T3.n}) ---`);
+  console.log(`\n--- ${div} (${PRI[div].lbs || "?"} lb): league-average vs league-average, ${n} 3-round fights (data: ${PRIORS_FILE || "fighters.json priors"}, n=${T3.n}) ---`);
   console.log("metric".padEnd(30) + "sim".padStart(9) + "data".padStart(9) + "   tolerance");
   let ok = true;
   const row = (label, sim, tgt, scale, d, tolTxt, good) => {

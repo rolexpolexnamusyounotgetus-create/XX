@@ -6,7 +6,54 @@ posterior sds, region pools, per-referee multipliers and pools, held-out metrics
 simulator to sample from) and this report. Fold pickles and logs are under `out/officials/` and `out/officials_*.log`
 (gitignored). No 2026 fight was used for any fit or score (hidden-data protocol, docs/BACKLOG.md).
 
-@@BOTTOM_LINE@@
+## Bottom line
+
+- **How much the officials explain (held out: 534 decisions, Jan 2024 to Dec 2025, fit before 2024 and frozen,
+  real round stats given).** Full model (named judges + home + closeness) vs a league judge with neither
+  (paired difference, 95% event-cluster interval; negative = better for log losses):
+  - 7-class decision log loss (A by UD/SD/MD, draw, B by MD/SD/UD): **0.7930 vs 0.8055, -0.0125 [-0.0203, -0.0056]**
+  - unanimous vs split/majority log loss: 0.4409 vs 0.4495, -0.0086 [-0.0130, -0.0046]
+  - exact three-card log-likelihood per fight: -3.8672 vs -3.8944, +0.027 [+0.012, +0.044]
+  - decision winner log loss: 0.3387 vs 0.3414, -0.0027 [-0.0083, +0.0022] (not significant)
+
+  Named-judge effects alone (same model without them): split -0.0020 [-0.0040, -0.0001], 7-class -0.0020
+  [-0.0045, +0.0004], winner +0.0003 [-0.0009, +0.0017]. They flip the predicted decision winner in 0.6% of
+  decisions (median shift 0.3 points, 90th percentile 2.4, max 17.5). **The round stats decide who wins a
+  decision; the officials shape how it is scored.** The largest single officials effect is home country abroad.
+- **Home abroad is real.** Given the round stats, the fighter from the event country gets +0.73 (SE 0.09) latent
+  units at events outside the USA, worth 2.3 landed head strikes per round at 2025 weights: an even round goes
+  60.7% to the home fighter. At US events the American gets -0.16 (SE 0.07): 47.7% of even rounds. Home terms
+  alone improve held-out 7-class log loss by -0.0105 [-0.0182, -0.0039].
+- **Judges share most of their noise.** 57% of a round's latent score variance is common to the panel
+  (sigma_u = 2.08 vs the logistic own noise, sd 1.81). Treating judges as independent predicts 37% split or majority
+  decisions (20% observed) and costs 0.14 in 7-class log loss.
+- **Era drift.** The knockdown weight rose 79% per decade (w_K = +0.58, SE 0.12): a knockdown was worth 9.7 landed
+  head strikes in 2017 and 17.1 in 2025. Control 3.3 head strikes per minute (2025), takedown 1.4, submission
+  attempt 4.3, body 0.75, leg 0.59. 10-8s peaked in 2017-2020 and fell every year since: P(10-8 | win) for a
+  +20 significant-strike round with a knockdown was 0.21 in 2019 and 0.08 in 2025.
+- **Individual judges differ, but modestly and with wide error bars.** Effect sds after tuning: sharpness 7.5%,
+  volume 7.4%, knockdown 12.5%, grappling 9.8%, 10-8 odds 20%. Most power-friendly (30+ cards since 2022): Sal
+  D'Amato (1,090 cards; knockdown weight x1.15, sd 0.08; power index +0.63, sd 0.39). Least: Adalaide Byrd (259;
+  -0.51, sd 0.34) and Chris Lee (673; knockdown weight x0.83, sd 0.10; -0.44, sd 0.28). Highest 10-8 propensity:
+  Douglas Crosby (odds x1.44, log-sd 0.13).
+- **Against the engine's current judging rule** (src/params3.js, recalibrated on 2019-2023 rounds), on the same
+  2024-25 fights with the same stats: level on the decision winner (+0.0065 [-0.0042, +0.0168]; 2022-23 +0.0011
+  [-0.0166, +0.0173]) and on the 7-class outcome (+0.0058 [-0.0097, +0.0204]), better on round scores (5-outcome
+  round log loss -0.0140 [-0.0215, -0.0071]) and on the 2022-23 7-class outcome (-0.057 [-0.106, -0.020]). It adds
+  judge identity, home, era weights, 10-8 levels by year and deductions, which the current rule lacks.
+- **Two calibration problems on 2024-25 that no earlier data predicted.** 10-8s kept falling (8.8% of cards
+  predicted with a 10-8, 5.5% observed); a damped trend tuned on 2022-23 made 2024-25 worse (-0.0033 per fight), so
+  the engine uses the 2025 level. And 2025 judges agreed far more than in any earlier year (round unanimity 0.808
+  observed vs 0.763 predicted; split or majority decisions 15.3% vs 26.6%), while 2024 was on target (0.772 vs
+  0.775; 24.4% vs 24.7%). That is a labeled knob (`panel_sharpness_shift`, 0.21 reproduces 2025), not a default.
+- **Referees barely matter for prediction.** With empirical-Bayes shrinkage every referee multiplier is within
+  a few percent of 1 and held-out loss moves by 0.001 or less in every unit. With the lighter shrinkage tuned on
+  2019-2023, only ground-and-pound stoppages improve on 2024-25 (-0.0016 [-0.0029, -0.0003] per unit) and standing
+  TKOs get worse (+0.0005 [+0.00002, +0.0011]). League rates (2019 on): a knockdown leads to the scorer's KO/TKO in
+  the same round 56.5% of the time; 68.7% of knockdown-round KOs are stopped on the knockdown blow itself; the rest
+  average 4.4 follow-up ground strikes; standing TKO without a knockdown 0.00033 per landed standing strike;
+  ground-and-pound stoppage 0.0080 per landed ground strike; doctor stoppage 0.73% of fights; DQ 0.17%; a point
+  deduction in 2.6% of decisions.
 
 ## 1. Data
 

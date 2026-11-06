@@ -52,7 +52,7 @@
    "lostJinf": "legacy inferred version of lostJ from card totals and all-round stats (looks ahead; comparison only)"
   },
   "jackknife_groups": 10,
-  "secs": 376.997617,
+  "secs": 1336.192582,
   "provenance": {
    "state_models, comparison_estimators_out, form_decomposition, simulation_check, kd_momentum_descriptive, adaptation_judges, fighter_late_ratio": "full run with 10-group jackknife (python3 tools/dynamics.py --jack 10), started 2026-11-06 10:29 UTC; parts 1-4 and 2 saved incrementally",
    "finish_hazard, engine_check": "python3 tools/dynamics.py --parts 5 --jack 10 --engine-csv <engine b50cadf sims>",
@@ -9406,7 +9406,11 @@
     "ctrl_share": 0.183983,
     "kd_per100_standing_head": 1.468792,
     "p_round_ends_ko_tko": 0.161863,
-    "p_round_ends_sub": 0.081596
+    "p_round_ends_sub": 0.081596,
+    "n_rounds": 2255,
+    "n_ko_tko": 365,
+    "n_sub": 184,
+    "n_kd": 547
    },
    "3_2": {
     "fighter_rounds": 3360,
@@ -9421,7 +9425,11 @@
     "ctrl_share": 0.198762,
     "kd_per100_standing_head": 0.736154,
     "p_round_ends_ko_tko": 0.125,
-    "p_round_ends_sub": 0.085714
+    "p_round_ends_sub": 0.085714,
+    "n_rounds": 1680,
+    "n_ko_tko": 210,
+    "n_sub": 144,
+    "n_kd": 255
    },
    "3_3": {
     "fighter_rounds": 2614,
@@ -9436,7 +9444,11 @@
     "ctrl_share": 0.205241,
     "kd_per100_standing_head": 0.440274,
     "p_round_ends_ko_tko": 0.072686,
-    "p_round_ends_sub": 0.053558
+    "p_round_ends_sub": 0.053558,
+    "n_rounds": 1307,
+    "n_ko_tko": 95,
+    "n_sub": 70,
+    "n_kd": 137
    },
    "5_1": {
     "fighter_rounds": 494,
@@ -9451,7 +9463,11 @@
     "ctrl_share": 0.136299,
     "kd_per100_standing_head": 1.215727,
     "p_round_ends_ko_tko": 0.105263,
-    "p_round_ends_sub": 0.052632
+    "p_round_ends_sub": 0.052632,
+    "n_rounds": 247,
+    "n_ko_tko": 26,
+    "n_sub": 13,
+    "n_kd": 47
    },
    "5_2": {
     "fighter_rounds": 408,
@@ -9466,7 +9482,11 @@
     "ctrl_share": 0.140848,
     "kd_per100_standing_head": 1.007839,
     "p_round_ends_ko_tko": 0.151961,
-    "p_round_ends_sub": 0.034314
+    "p_round_ends_sub": 0.034314,
+    "n_rounds": 204,
+    "n_ko_tko": 31,
+    "n_sub": 7,
+    "n_kd": 45
    },
    "5_3": {
     "fighter_rounds": 324,
@@ -9481,7 +9501,11 @@
     "ctrl_share": 0.15651,
     "kd_per100_standing_head": 0.536723,
     "p_round_ends_ko_tko": 0.074074,
-    "p_round_ends_sub": 0.049383
+    "p_round_ends_sub": 0.049383,
+    "n_rounds": 162,
+    "n_ko_tko": 12,
+    "n_sub": 8,
+    "n_kd": 19
    },
    "5_4": {
     "fighter_rounds": 278,
@@ -9496,7 +9520,11 @@
     "ctrl_share": 0.16105,
     "kd_per100_standing_head": 0.278629,
     "p_round_ends_ko_tko": 0.043165,
-    "p_round_ends_sub": 0.035971
+    "p_round_ends_sub": 0.035971,
+    "n_rounds": 139,
+    "n_ko_tko": 6,
+    "n_sub": 5,
+    "n_kd": 10
    },
    "5_5": {
     "fighter_rounds": 250,
@@ -9511,7 +9539,11 @@
     "ctrl_share": 0.180983,
     "kd_per100_standing_head": 0.423729,
     "p_round_ends_ko_tko": 0.08,
-    "p_round_ends_sub": 0.008
+    "p_round_ends_sub": 0.008,
+    "n_rounds": 125,
+    "n_ko_tko": 10,
+    "n_sub": 1,
+    "n_kd": 14
    }
   },
   "test": {
@@ -9528,7 +9560,11 @@
     "ctrl_share": 0.181041,
     "kd_per100_standing_head": 1.459555,
     "p_round_ends_ko_tko": 0.155098,
-    "p_round_ends_sub": 0.086768
+    "p_round_ends_sub": 0.086768,
+    "n_rounds": 922,
+    "n_ko_tko": 143,
+    "n_sub": 80,
+    "n_kd": 214
    },
    "3_2": {
     "fighter_rounds": 1380,
@@ -9543,7 +9579,11 @@
     "ctrl_share": 0.192657,
     "kd_per100_standing_head": 0.589911,
     "p_round_ends_ko_tko": 0.102899,
-    "p_round_ends_sub": 0.076812
+    "p_round_ends_sub": 0.076812,
+    "n_rounds": 690,
+    "n_ko_tko": 71,
+    "n_sub": 53,
+    "n_kd": 88
    },
    "3_3": {
     "fighter_rounds": 1114,
@@ -9558,7 +9598,11 @@
     "ctrl_share": 0.205908,
     "kd_per100_standing_head": 0.516129,
     "p_round_ends_ko_tko": 0.087971,
-    "p_round_ends_sub": 0.039497
+    "p_round_ends_sub": 0.039497,
+    "n_rounds": 557,
+    "n_ko_tko": 49,
+    "n_sub": 22,
+    "n_kd": 68
    },
    "5_1": {
     "fighter_rounds": 214,
@@ -9573,7 +9617,11 @@
     "ctrl_share": 0.163091,
     "kd_per100_standing_head": 1.289075,
     "p_round_ends_ko_tko": 0.102804,
-    "p_round_ends_sub": 0.037383
+    "p_round_ends_sub": 0.037383,
+    "n_rounds": 107,
+    "n_ko_tko": 11,
+    "n_sub": 4,
+    "n_kd": 20
    },
    "5_2": {
     "fighter_rounds": 180,
@@ -9588,7 +9636,11 @@
     "ctrl_share": 0.174807,
     "kd_per100_standing_head": 0.628751,
     "p_round_ends_ko_tko": 0.1,
-    "p_round_ends_sub": 0.066667
+    "p_round_ends_sub": 0.066667,
+    "n_rounds": 90,
+    "n_ko_tko": 9,
+    "n_sub": 6,
+    "n_kd": 11
    },
    "5_3": {
     "fighter_rounds": 144,
@@ -9603,7 +9655,11 @@
     "ctrl_share": 0.16823,
     "kd_per100_standing_head": 0.457218,
     "p_round_ends_ko_tko": 0.069444,
-    "p_round_ends_sub": 0.055556
+    "p_round_ends_sub": 0.055556,
+    "n_rounds": 72,
+    "n_ko_tko": 5,
+    "n_sub": 4,
+    "n_kd": 7
    },
    "5_4": {
     "fighter_rounds": 122,
@@ -9618,7 +9674,11 @@
     "ctrl_share": 0.174075,
     "kd_per100_standing_head": 0.256822,
     "p_round_ends_ko_tko": 0.04918,
-    "p_round_ends_sub": 0.04918
+    "p_round_ends_sub": 0.04918,
+    "n_rounds": 61,
+    "n_ko_tko": 3,
+    "n_sub": 3,
+    "n_kd": 4
    },
    "5_5": {
     "fighter_rounds": 106,
@@ -9633,7 +9693,11 @@
     "ctrl_share": 0.177915,
     "kd_per100_standing_head": 0.136008,
     "p_round_ends_ko_tko": 0.037736,
-    "p_round_ends_sub": 0.018868
+    "p_round_ends_sub": 0.018868,
+    "n_rounds": 53,
+    "n_ko_tko": 2,
+    "n_sub": 1,
+    "n_kd": 2
    }
   }
  },
