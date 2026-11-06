@@ -490,11 +490,11 @@ const r = h.predict("alexander-volkanovski", "justin-gaethje",
   - the four rating systems (ratings.json roster: mu, sd; formulas from ratings.py `matchup_probs`);
   - the market rating (market.json ratings: [mu, sd, last, n]; variance drifts tau² per year after the snapshot).
 - **Refit.** Coefficients are refit on every decisive fight 2010-2025 (7,093 rows) with the validated settings.
-- **Checks.** The Python and JS logits agree to 4e-16 on 40 pairs; the page stacks and the market rating agree to 1e-12. `tests/test_ml2.js` runs 245 checks, all passing on the final ml2.json.
+- **Checks.** The Python and JS logits agree to 4e-16 on 40 pairs; the page stacks and the market rating agree to 1e-12. `tests/test_ml2.js` runs 365 checks (245 before the open stack was added), all passing on the final ml2.json.
 - **Volkanovski vs Gaethje** (Dec 12, 2026, 155 lb, 5 rounds):
   - ML v2 logistic: P(Volkanovski) = 0.711 (v1 page model 0.661);
   - no-line stack: 0.759.
-  - The market opened him at about 37%.
+  - The market opened him at about 37% (no-vig average 37.2%). With that opener the open stack says 0.58. Fed into the close-trained line stack, the same opener gives 0.515, which is the misuse the open stack prevents.
   - ML v2 has no size-move adjustment beyond ml.py's weight-move terms, and its market-rating input comes from his featherweight lines. Treat the gap to the market as the model not knowing what the market knows, not as an edge.
 
 **Replace MoE's ML expert.** For the final probability, use the page stacks above:
@@ -538,3 +538,5 @@ preufc.json, backtest.json or styles.json changes, delete `out/ml2_cache/ratings
 4. **Newcomers.** The pre-UFC block, the experience buckets and the market-rating gate all lost in CV once the market rating and the rating systems were in. The remaining newcomer gap to the close (+0.012) is information we do not have.
 5. **Heavy favourites, Featherweight and Light Heavyweight** are the segments where ML v2 trails the close the most (+0.034, +0.031, +0.024).
 6. **Style matchups.** The clinch-vs-distance term is screened in by every fold, but its gain is below the deployment rule and absent on 2024-25. Re-test it on the 2026 forward test before any engine v7 work treats style interactions as winner signal.
+7. **MoE's with-line stack** (src/ml/moe.js, used by the page today) has the same close-vs-open mismatch: its weights were fit on closing lines, and the page feeds it typed-in odds. Give it an open regime too, or switch the page to `pStackOpen`.
+8. **preufc and ratings verifiers.** Neither research/model_preufc.md nor research/model_ratings.md has a verification section yet (checked 7:55 pm). preufc.json was re-saved at 7:51 pm with identical snapshots (only its `eval` block changed), and ratings.json at 7:47 pm with the same build stamp and per-fight predictions (5e-5). Rerun the table stage if either verifier changes parameters or snapshots.

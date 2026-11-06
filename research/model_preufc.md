@@ -43,8 +43,8 @@ were already done. This run added:
   - UFC-stat logistic: log loss goes from 0.6498 to **0.6376**, a change of **-0.0122 [-0.0204, -0.0042]**.
     Accuracy goes from 60.4% to 63.8%, a change of +3.4 points [+0.6, +6.3].
   - Elo with each debutant's starting rating set by his pre-UFC record: log loss goes from 0.6792 to
-    **0.6526**, a change of **-0.0266 [-0.0404, -0.0147]**. Accuracy goes from 55.5% to 59.8%, a change of
-    +4.3 points [+0.5, +8.7]. Age at debut alone accounts for only -0.0045 [-0.0163, +0.0080] of the log-loss
+    **0.6526**, a change of **-0.0266 [-0.0404, -0.0147]**. Accuracy goes from 55.0% to 59.8%, a change of
+    +4.9 points [+0.9, +9.2] (exact 0.5 ties now score half; see Verification log). Age at debut alone accounts for only -0.0045 [-0.0163, +0.0080] of the log-loss
     gain.
   - **Calibration is about level across these models.** With both corner orders pooled, each model's
     calibration slope lies within the others' 95% intervals, and every interval contains 1. Seeded Elo's ECE
@@ -52,6 +52,9 @@ were already done. This run added:
     model, but that came from corner-A ECE and is withdrawn.
   - Across all 1,026 decisive 2024-2025 bouts the seeded Elo goes from 0.6762 to 0.6538. Bouts between
     veterans improve too, because their opponents were rated better.
+  - **Plan with the smaller pooled number.** 2024-2025 is the most favourable stretch of the walk-forward record
+    (2025 alone: seeded Elo -0.036). Over every walk-forward newcomer bout 2019-2025 (1,966), seeded Elo gains
+    -0.0156 [-0.0246, -0.0064] and base + pre-UFC -0.0078 [-0.0127, -0.0028]. See the Verification log.
   - Stacked on tools/ml.py's walk-forward ML probabilities (361 backtest bouts in 2024-2025 with a 1-3 fight
     side): -0.0073 [-0.0196, +0.0052]. CV also prefers adding the block, but the 2024-2025 interval includes
     zero.
@@ -209,6 +212,9 @@ the feeder promotion, Contender Series wins and a long current streak.
   - pooled 2024-2026 aggregates were computed by this tool;
   - the repo's WIP autosave commits from about 11:38 am to 3:17 pm UTC contain them, in preufc.json and in a
     first draft of this report.
+  - The Verification log at the end lists every evaluation run that touched 2024 or later (seven in the git
+    autosaves, the first two with Sherdog records for only 4 of 1,125 test newcomer sides) and shows that no
+    setting moved after an informative look.
 - **Models.**
   - `elo`: walk-forward Elo over every UFC bout since 1994 (K 44, boost 1.5 for the first 5 bouts; the
     tools/build_db.py rule). It matches backtest_dev.json's Elo to rounding.
@@ -239,7 +245,7 @@ first draft reported, is in brackets.
 
 | Model | Log loss [95% CI] | Brier | Accuracy | ECE (corner A) |
 |---|---|---|---|---|
-| Elo | 0.6792 [0.6678, 0.6908] | 0.2432 | 55.5% | 0.016 (0.046) |
+| Elo | 0.6792 [0.6678, 0.6908] | 0.2432 | 55.0% | 0.016 (0.046) |
 | Elo seeded with age at debut | 0.6747 [0.6558, 0.6948] | 0.2407 | 58.2% | 0.015 (0.043) |
 | Elo seeded with pre-UFC record | 0.6508 [0.6337, 0.6671] | 0.2298 | 60.0% | 0.036 (0.039) |
 | **Elo seeded with pre-UFC record + age** (chosen by CV) | **0.6526 [0.6340, 0.6703]** | 0.2306 | 59.8% | 0.029 (0.035) |
@@ -264,14 +270,15 @@ Paired differences (negative = better):
 | seeded Elo (pre + age) minus base | +0.0029 [-0.0131, +0.0195] | 0.36 |
 | LightGBM + pre-UFC minus LightGBM base | -0.0127 | |
 
-Paired accuracy differences (positive = better; same card bootstrap):
+Paired accuracy differences (positive = better; same card bootstrap; an exact 0.5 scores half, so plain Elo's 26
+ties between two 1500-rated debutants no longer default to corner B):
 
 | Comparison | Mean [95% CI] | P(better) |
 |---|---|---|
 | base + pre-UFC minus base | **+3.4 points [+0.6, +6.3]** | 0.99 |
-| seeded Elo (pre + age) minus Elo | **+4.3 points [+0.5, +8.7]** | 0.98 |
-| seeded Elo (pre only) minus Elo | +4.5 points [+0.8, +8.1] | 0.99 |
-| Elo + pre-UFC minus Elo | +4.5 points [+0.8, +8.3] | 0.99 |
+| seeded Elo (pre + age) minus Elo | **+4.9 points [+0.9, +9.2]** | 0.99 |
+| seeded Elo (pre only) minus Elo | +5.1 points [+1.5, +8.6] | 1.00 |
+| Elo + pre-UFC minus Elo | +5.1 points [+1.4, +8.9] | 1.00 |
 
 With one rating per fighter and nothing else, the seeded Elo comes within noise of the full UFC-stat logistic
 on newcomer bouts. Its calibration is level with plain Elo's (next paragraph).
@@ -292,7 +299,7 @@ Every decisive 2024-2025 bout (does seeding hurt anyone?):
 
 | Set | n | Elo | seeded (age) | seeded (pre) | seeded (pre + age) |
 |---|---|---|---|---|---|
-| All decisive 2024-2025 bouts | 1,026 | 0.6762 (55.8%) | 0.6686 | 0.6532 | 0.6538 (59.8%) |
+| All decisive 2024-2025 bouts | 1,026 | 0.6762 (55.5%) | 0.6686 | 0.6532 | 0.6538 (59.8%) |
 | Backtest rule (both men >= 1 prior UFC bout) | 854 | 0.6769 (55.0%) | 0.6701 | 0.6557 | 0.6572 (59.1%) |
 
 **Calibration on 2024-2025.** Each bout is counted in both corner orders (1,066 rows from 533 bouts), so the
@@ -566,3 +573,141 @@ Sources:
 - ufcstats, via data/raw/*.csv.
 - BFO closing lines, via nlbair/ufc-data (CC BY 4.0, cached by tools/market.py).
 - tools/ml.py's data/derived/ml.json.
+
+## Verification log
+
+### Adversarial review (Nov 6, 2026, 7:15 pm to 8:05 pm UTC)
+
+I started from the assumption that the held-out gain was inflated, and looked for:
+- look-ahead leaks;
+- corner-order artefacts;
+- bad joins and duplicate fights;
+- tuning on 2024 or later;
+- over-claimed precision.
+
+I wrote fresh scripts in the session scratchpad: `rv/indep.py`, `rv/backfill.py`, `rv/datecheck.py` and
+`rv/diff_json.py`. They share only three things with tools/preufc.py:
+- the ufcstats loader (tools/build_db.py);
+- `ufc_walk`, for the baseline's UFC-stat side features;
+- the raw snapshot columns in preufc.json.
+
+Elo, the pre-UFC transforms, the seeded-Elo fit, the logistic design and CV, the bootstrap and the placebos are
+all new code.
+
+**Verdict:**
+- Both headline gains are real. They reproduce with independent code, and no look-ahead leak was found.
+- One corner-order artefact (accuracy at exact 0.5 ties) is fixed in the tool, and `eval` was rerun.
+- The 2024-2025 point estimates are the most favourable window of the walk-forward record. Plan with the pooled
+  2019-2025 numbers below. They are about 60% of the headline.
+
+| Check | Result |
+|---|---|
+| Sherdog date of each matched UFC bout against the ufcstats date. An earlier Sherdog date would put the bout's own result into `net_elo_h` (the largest seed weight), `streak_all` and the layoff. | 12,092 same day, 86 one day later (conservative), **0 earlier** |
+| Duplicate fights | 8,974 fight ids, all unique. One pairing appears twice on the same date, in 1997, outside every window |
+| Snapshot joins, every side of every 2015+ bout | 11,053 of 11,053 match on date and prior-UFC count. 0 snapshots belong to a fighter who is not in the bout. Every newcomer side has one |
+| Test set | My own newcomer filter gives the same 533 fight ids as `predictions` (split = test) |
+| Elo settings | K 44 / boost 1.5 come from elo_report.json, tuned on 2019-2023 only. My Elo matches the stored `p_elo` to 5e-5 |
+| Normalisation | Means and SDs come from training rows only: DiffModel, the seed z-scores (debuts before the fit cut-off), the finish models, and the KO/SUB/DEC model after the 4:36 pm fix. League rates in `ufc_walk` come from 2010-2018 |
+| Fresh logistic: own design, fit on mirrored rows with a free intercept, own time-ordered CV on 2019-2023 | CV picks tau 8 and the C equal to the tool's 0.01. The fitted intercept is 0.000. Test 0.6498 to 0.6376: **-0.0121 [-0.0204, -0.0036]** |
+| Fresh seeded Elo: own Elo loop, finite-difference L-BFGS rather than the tool's analytic gradient | Weights within 0.2 Elo points of the stored fit (network Elo +42.1, age at debut -38.4, log fights -29.5). Test 0.6792 to 0.6526: **-0.0266 [-0.0398, -0.0131]** |
+| Corner swap: A and B swapped on a random half of the test bouts (corner-A win share 0.567 to 0.525) | Log loss identical to 6 decimals (0.637636). Every winner model here is corner-symmetric |
+| Placebo: the pre-UFC vectors shuffled among test sides with the same prior-UFC count, model fixed, 200 shuffles | Mean 0.6575 (2.5-97.5%: 0.6476-0.6677), worse than base 0.6498. No shuffle reaches 0.6376 |
+| Placebo: the debut seeds permuted among 2024-2025 debutants, fit fixed, 40 permutations | Mean 0.6795, the same as plain Elo (0.6792) |
+| Network Elo dropped from the block | -0.0115 [-0.0193, -0.0035]. The gain does not hinge on the network feature |
+| CV restricted to the grid before 11:18 am (tau up to 4 or none) | -0.0107 [-0.0192, -0.0018]. Widening the grid added 0.0015 |
+| Sherdog backfill proxy. Event ids are issued in creation order, so each id's creation date is estimated as the running median date of ids within 150 either side (17,399 events from the 1,749 cached pages) | Events are entered about a week before they happen (median). Of 15,934 pre-UFC rows at debut since 2015, 96 (0.6%, 40 fighters) sit on an event id issued more than 60 days after the fighter's UFC debut. **None belongs to a 2023-2025 debutant.** Those 40 fighters won 38.9% of their first 3 UFC bouts, against 50.3% for everyone else, so there is no sign of success-driven backfill |
+| Pre-debut archive snapshots: Wayback Machine, then Common Crawl | **Not done.** web.archive.org and index.commoncrawl.org reset at this session's egress proxy (archive.org's availability API answered but the snapshot host did not) |
+| Calibration slopes, both corner orders, 400 card resamples | Elo 1.04 [0.65, 1.49], seeded 1.16 [0.82, 1.49], base 1.18 [0.89, 1.48], base + pre 1.24 [0.98, 1.49]. Same as the Calibration paragraph |
+| ml.json inputs to the stack | ml.json's meta says its 2024-2025 probabilities come from fits on 2010-2023, and every model is corner-symmetric. Taken as given; the stack claim is not a headline |
+
+### Every evaluation that touched 2024 or later (from the git autosaves of preufc.json)
+
+| eval.built (UTC) | Held-out set | Sherdog coverage | CV pick | Elo | base | base + pre | seeded Elo |
+|---|---|---|---|---|---|---|---|
+| 10:25 am, 10:31 am | 2024-2026 pooled, 803 | 258 of 1,711 resolved; 4 of 1,125 test newcomer sides | core, C 0.1, tau 2 | 0.6808 | 0.6482 | 0.6481 | 0.6752 |
+| 11:36 am | 2024-2026 pooled | complete | all, C 0.01, tau 8 | 0.6808 | 0.6482 | 0.6299 | 0.6497 |
+| 2:35 pm, 3:15 pm | 2024-2026 pooled | complete, strict network | core, C 0.01, tau 8 | 0.6808 | 0.6482 | 0.6336 | 0.6495 |
+| 4:01 pm, 4:49 pm | 2024-2025, 533 | complete | core, C 0.01, tau 8 | 0.6792 | 0.6498 | 0.6376 | 0.6526 |
+| 7:25 pm (this review) | 2024-2025 | complete | unchanged | unchanged | unchanged | unchanged | unchanged |
+
+- **The 10:25 am null result told nothing about the pre-UFC signal.** The crawl was still running, and only 4 test
+  newcomer sides had a record.
+- **Nothing that moved later was steered by the test score.**
+  - `PRE_CORE` has not changed since the 9:38 am autosave.
+  - The C and tau grids were widened at 11:18 am, before the first informative look (11:36 am).
+  - The strict-network fix, made for a leakage reason, made the held-out score worse (0.6299 to 0.6336). It
+    flipped the CV pick from "all" to "core".
+- **The looks were undercounted.** The earlier sentence ("a pooled 2024-2026 score in the first runs, plus this
+  second look") understates them: five evaluations with complete data touched 2024, three of them pooled with
+  2026. The conclusion stands: no setting was chosen from them.
+
+### Fix: accuracy is now corner-symmetric at exact ties
+
+- **The bug.** `(p > 0.5) == y` counted every p = 0.5 as a pick for corner B. Plain Elo (and `elo_cal` /
+  `elo+pre`, which are functions of the Elo difference) has 26 exact ties on the 533 test bouts: two debutants
+  both rated 1500. Corner A won only 38% of those, so the old rule flattered plain Elo.
+- **The fix.** New `acc_vec()` in tools/preufc.py gives an exact 0.5 half credit. It is used for the test
+  metrics, the paired accuracy differences, `scores()` and the market table.
+- **The rerun.** `eval` was rerun once (7:25 pm to 7:51 pm UTC) with no setting changed. It is deterministic:
+  `rv/diff_json.py` finds exactly 19 changed numbers in preufc.json, all of them accuracies. Every log loss,
+  interval, coefficient, stored prediction, `seeded_elo_backtest` value and roster prior is identical. The
+  vault export is identical apart from its build time.
+
+| Accuracy (2024-2025 newcomer bouts) | Before | After |
+|---|---|---|
+| Plain Elo | 55.5% [51.9, 59.3] | **55.0% [51.5, 58.6]** |
+| Seeded Elo (pre + age) minus Elo | +4.3 points [+0.5, +8.7] | **+4.9 points [+0.9, +9.2]**, P 0.99 |
+| Seeded Elo (pre only) minus Elo | +4.5 [+0.8, +8.1] | +5.1 [+1.5, +8.6] |
+| Elo + pre-UFC minus Elo | +4.5 [+0.8, +8.3] | +5.1 [+1.4, +8.9] |
+| Plain Elo, all 1,026 decisive 2024-2025 bouts | 55.8% | 55.5% |
+| base, base + pre, seeded Elo, the market table | unchanged | unchanged (no exact ties) |
+
+The tables above now carry the corrected values.
+
+### How big the gain is: plan with the pooled walk-forward number
+
+Every stored prediction is walk-forward: each CV year comes from a fit on earlier years only. Per-year
+differences (negative = better):
+
+| Year | Newcomer bouts | Seeded Elo minus Elo | base + pre minus base |
+|---|---|---|---|
+| 2019 | 327 | -0.0068 | -0.0063 |
+| 2020 | 273 | -0.0237 | -0.0116 |
+| 2021 | 289 | +0.0023 | -0.0071 |
+| 2022 | 268 | -0.0200 | -0.0102 |
+| 2023 | 276 | -0.0110 | +0.0043 |
+| 2024 | 261 | -0.0166 | -0.0090 |
+| 2025 | 272 | **-0.0361** | **-0.0152** |
+| **2019-2025 pooled (1,966; card bootstrap)** | | **-0.0156 [-0.0246, -0.0064]** | **-0.0078 [-0.0127, -0.0028]** |
+| 2019-2023 CV years only (1,433) | | -0.0115 [-0.0224, -0.0001] | -0.0061 [-0.0121, -0.0003] |
+
+- **The gain is real in every window but varies a lot from year to year.** 2025 accounts for much of the
+  2024-2025 headline.
+- **Plausible reasons later years gain more:** the seed fit uses more debut cohorts, and the strict network
+  grows each year. A leak would also produce this pattern, but the checks above rule out the leaks that can be
+  tested.
+- **What to plan with:**
+  - seeded Elo: about -0.016 log loss per newcomer bout;
+  - the faded pre-UFC block in a feature model: about -0.008.
+- **The recommendation stands.** Seed Elo, and add the block to the feature models, but not on top of a market
+  line. It is not significant once the close is in.
+
+### Wording corrections
+
+- **"No 2026 fight is in the committed json"** (relaunch summary) holds for `predictions`,
+  `seeded_elo_backtest` and every fit and score. It does not hold for the data section:
+  - `fighters[].fights` and `snapshots` carry 969 UFC rows and 960 snapshots from 2026, with results;
+  - those are the same results already in the tracked data/raw/ufc_*.csv snapshot;
+  - roster priors need them (current records, n_UFC);
+  - no model reads them.
+- **The "Independent checks" table** is scoped correctly ("Dates in `predictions`").
+
+### What this review could not settle
+
+- **Sherdog's state on each bout date.** Whole-event backfill is ruled out for the held-out years by the
+  event-id proxy. Fights added later to events that already existed cannot be detected that way, and the
+  archive snapshots that could settle it were unreachable from this session.
+- **Selection in the training years.** Veterans who debuted before 2015 are in the 2015-2020 rows only if they
+  fought in 2021 or later. That cannot inflate 2024-2025, where every veteran opponent is on the roster.
+  - It may bias the training coefficients a little.
+  - The newcomer-sides-only ablation (-0.0090 [-0.0172, -0.0012]) bounds it.
