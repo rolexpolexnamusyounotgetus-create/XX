@@ -1444,6 +1444,19 @@ def stage_cv(args):
             "veterans (8+)": nmin >= 8, "5 rounds": D["five"].to_numpy() == 1, "women": D["women"].to_numpy() == 1}
     R["oof_segments"] = {k: cmp(D["seqnet_static"].to_numpy()[oof & m], D["ml2_static"].to_numpy()[oof & m],
                                 y[oof & m], ev[oof & m]) for k, m in segs.items()}
+    # seed-ensemble size (first k refit seeds, logits averaged) and diversity vs the other experts (logit correlation)
+    seeds = sorted({s for (_, s) in W["full"]})
+    R["oof_by_n_seeds"] = {}
+    for k in sorted({1, 2, 4, len(seeds)}):
+        Ek = ensemble(W, A, "static", seeds=seeds[:k])
+        R["oof_by_n_seeds"][str(k)] = round(float(ll_vec(sig(Ek["z"][D["ex_i"].to_numpy()])[oof], y[oof]).mean()), 5)
+    zs = logit(D["seqnet_static"].to_numpy()[oof], 1e-4)
+    R["oof_logit_corr"] = {c: round(float(np.corrcoef(zs, logit(D[c].to_numpy(float)[oof], 1e-4))[0, 1]), 4)
+                           for c in ("ml2_static", "ml2lr_static", "mkt_rating", "elo", "ml")}
+    hlm = D["market"].notna().to_numpy()[oof]
+    R["oof_logit_corr"]["close"] = round(float(np.corrcoef(zs[hlm], logit(D["market"].to_numpy(float)[oof][hlm],
+                                                                           1e-4))[0, 1]), 4)
+    log("OOF by number of seeds %s; logit correlations %s" % (R["oof_by_n_seeds"], R["oof_logit_corr"]))
     for k, v in R["oof"].items():
         log("OOF 2019-2023 %-14s %s" % (k, v))
     for k, v in R["oof_paired"].items():

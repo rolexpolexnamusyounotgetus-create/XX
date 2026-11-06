@@ -1158,8 +1158,9 @@ def cv(args):
     ev = dec["event"].to_numpy()
     # symmetry: the swapped table must give exactly 1 - p
     blocks_all = [b for b in BLOCKS if b not in ("gnet2", "promo2")]
-    m = DebutLR(cfg_cols(blocks_all), 0.1, 8.0).fit(RA, RB, y)
-    sym = float(np.max(np.abs(m.predict(RA, RB) + m.predict(RB, RA) - 1.0)))
+    tr0 = yr < 2024                                          # the CV stage never fits a 2024-2025 row
+    m = DebutLR(cfg_cols(blocks_all), 0.1, 8.0).fit(take(RA, tr0), take(RB, tr0), y[tr0])
+    sym = float(np.max(np.abs(m.predict(take(RA, tr0), take(RB, tr0)) + m.predict(take(RB, tr0), take(RA, tr0)) - 1.0)))
     print("rows: %d decisive debut bouts 2012-2025 (%d in CV years, %d in 2024-25 untouched); swap test max |p+p'-1| %.2e"
           % (len(dec), int(dec["year"].isin(CV_YEARS).sum()), int((yr >= 2024).sum()), sym), flush=True)
     chosen, best, steps = select_blocks(dec, RA, RB)
@@ -1185,6 +1186,33 @@ def cv(args):
             "debut vs " + k, mm.sum(), comp["debut vs " + k]["ll_debut"], comp["debut vs " + k]["ll_ref"],
             comp["debut vs " + k]["diff"], *comp["debut vs " + k]["ci"]), flush=True)
     res["cv_compare"] = comp
+    # diagnostics on the CV rows (reported, never used to choose): per year, segments, calibration, coefficients
+    diag = {"by_year": {}, "segments": {}}
+    ps = refs["seeded_elo"]
+    for Y in CV_YEARS:
+        mm = (yr == Y) & ~np.isnan(ps)
+        diag["by_year"][Y] = {"n": int(mm.sum()), "debut": round(float(ll_vec(p_deb[mm], y[mm]).mean()), 5),
+                              "seeded_elo": round(float(ll_vec(ps[mm], y[mm]).mean()), 5)}
+    nA, nB = dec["nA"].to_numpy(), dec["nB"].to_numpy()
+    rpl = (RA["repl"] + RB["repl"]) > 0
+    segs = {"debutant vs veteran": (nA == 0) != (nB == 0), "two debutants": (nA == 0) & (nB == 0),
+            "a replacement in the bout": rpl, "no replacement": ~rpl,
+            "debutant vs 1-3 fight man": ((nA == 0) & (nB >= 1) & (nB <= 3)) | ((nB == 0) & (nA >= 1) & (nA <= 3)),
+            "debutant vs 4+ fight man": ((nA == 0) & (nB >= 4)) | ((nB == 0) & (nA >= 4))}
+    for k, sm in segs.items():
+        mm = cvm & sm & ~np.isnan(ps)
+        diag["segments"][k] = dict(paired(ev[mm], p_deb[mm], ps[mm], y[mm]),
+                                   ll_debut=round(float(ll_vec(p_deb[mm], y[mm]).mean()), 5),
+                                   ll_seeded=round(float(ll_vec(ps[mm], y[mm]).mean()), 5))
+    for k in ("debut", "seeded_elo", "close"):
+        pp = p_deb if k == "debut" else refs[k]
+        mm = cvm & ~np.isnan(pp)
+        diag.setdefault("calibration_slope", {})[k] = calib_slope(pp[mm], y[mm], ev[mm], B=500)
+    tr = yr < 2024
+    mfit = DebutLR(cfg_cols(chosen), best["C"], best["tau"]).fit(take(RA, tr), take(RB, tr), y[tr])
+    diag["coef_fit_2012_2023"] = {k: round(float(c), 4) for k, c in zip(mfit.cols, mfit.coef)}
+    res["cv_diagnostics"] = diag
+    print("CV diagnostics:", json.dumps(diag), flush=True)
     # ---- stacks: forward-chained 2021-2023 on the CV OOF rows (fit on 2019..Y-1), ml2's stack_fit
     P = dict(refs, debut=p_deb)
     regimes = {"noline": [["seeded_elo"], ["debut"], ["debut", "seeded_elo"], ["debut", "elo"]],
@@ -1539,8 +1567,8 @@ def export(args):
                  " stack gate forward-chained 2021-2023 with the 0.0005 rule; 2024-2025 scored once (holdout)",
                  "production": "coefficients below are refit on 2012-2025 by the CV-frozen procedure (deployment; never "
                                "scored)", "swap_test_production": sym},
-        "cv": {k: C[k] for k in ("rows", "steps", "chosen", "all_blocks", "cv_compare", "stacks", "stack_decisions",
-                                 "method", "swap_test_max_abs")},
+        "cv": {k: C.get(k) for k in ("rows", "steps", "chosen", "all_blocks", "cv_compare", "cv_diagnostics", "stacks",
+                                     "stack_decisions", "method", "swap_test_max_abs", "built", "frame_meta")},
         "holdout": H["out"] if H else None,
         "model": {"winner": m.export(), "method": mm.export(), "live_division_base": live_base,
                   "stacks": stacks, "stack_decisions": sd,

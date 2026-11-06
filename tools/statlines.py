@@ -1339,7 +1339,11 @@ def stage_cvfit(args):
         wl.update(winner_logits(T, rte, lambda st, rr, tt: models[st].dist(rr, tt).mean()))
         log("CV year %d: %d rows evaluated" % (Y, len(rte)))
     rows = np.concatenate(allrows)
-    ev = {st: {cn: {k: np.concatenate([store[Y]["ev"][st][cn][k] for Y in CV_YEARS])
+    def cat(parts):
+        if isinstance(parts[0], dict):
+            return {k: np.concatenate([p[k] for p in parts]) for k in parts[0]}
+        return np.concatenate(parts)
+    ev = {st: {cn: {k: cat([store[Y]["ev"][st][cn][k] for Y in CV_YEARS])
                     for k in store[CV_YEARS[0]]["ev"][st][cn]} for cn in store[CV_YEARS[0]]["ev"][st]} for st in STATS}
     R.update(report_block(T, rows, ev, "2021-2023 (forward-chained CV years; folds trained 2019..Y-1)"))
     R["engine"] = engine_compare(T, ev, rows, E, boot_for,

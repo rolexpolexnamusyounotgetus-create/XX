@@ -1407,6 +1407,22 @@ def refit_win_on_ep(X, H, Y, back=7):
     return H2
 
 
+def config_H(X, variant, schedule, Y):
+    """Hyperparameters for predicting year Y (fit on data before Jan 1 of Y) with the schedule's options applied:
+    "+q<f>" multiplies the r-dimension process noise (per fight and per year) by f; "+g" refits the prediction link
+    on EP-refit states of the training window. Returns the EP schedule and H."""
+    sched, *opts = schedule.split("+")
+    H = pickle.load(open(year_path(variant, Y), "rb"))["H"]
+    for o in opts:
+        if o.startswith("q"):
+            H = copy.deepcopy(H)
+            H["qf"][0] *= float(o[1:])
+            H["qy"][0] *= float(o[1:])
+    if "g" in opts:
+        H = refit_win_on_ep(X, H, Y)
+    return sched, H
+
+
 def _predict_job(job):
     variant, schedule, part = job
     p = pred_path(variant, schedule, part)
@@ -1414,11 +1430,8 @@ def _predict_job(job):
         return p
     X = load_data()
     t0 = time.time()
-    sched, _, g = schedule.partition("+")
     Y = {"static": 2024, "roll2025": 2025}.get(part) or int(part[3:])
-    H = pickle.load(open(year_path(variant, Y), "rb"))["H"]
-    if g == "g":
-        H = refit_win_on_ep(X, H, Y)
+    sched, H = config_H(X, variant, schedule, Y)
     years = [2024, 2025] if part == "static" else [Y]
     # oofY: hyperparameters fit on data before Jan 1 of Y; static: 2024-2025 from the fit before 2024-01-01;
     # roll2025: 2025 from the fit before 2025-01-01
@@ -1738,8 +1751,11 @@ def stage_cv(args):
     out = {"window": "2019-2023 OOF", "rule": "stepwise, simpler choice kept unless the next beats it by > %g" % SEL_MIN,
            "table": {}, "by_year": {}}
     preds = {}
+    import glob
     for v in ("nostats", "main"):
-        for sc in SCHEDULES + tuple(x + "+g" for x in SCHEDULES[1:]):
+        found = sorted(os.path.basename(q)[len("pred_%s_" % v):-len("_oof2019.pkl")]
+                       for q in glob.glob(pred_path(v, "*", "oof2019")))
+        for sc in found:
             if not all(os.path.exists(pred_path(v, sc, "oof%d" % Y)) for Y in years):
                 continue
             preds[(v, sc)] = load_preds(X, v, sc, scheme="oof")
@@ -1783,7 +1799,11 @@ def stage_cv(args):
         for va in ("plugin", "varaware"):
             b0 = stepwise(["%s|%s|%s" % (v, sc, va) for sc in SCHEDULES if (v, sc) in preds])
             sc0 = b0.split("|")[1]
-            best[(v, va)] = stepwise([b0, "%s|%s+g|%s" % (v, sc0, va)]) if (v, sc0 + "+g") in preds else b0
+            b1 = stepwise([b0, "%s|%s+g|%s" % (v, sc0, va)]) if (v, sc0 + "+g") in preds else b0
+            # r process-noise multipliers on top of the chosen schedule: the best one must beat it by > SEL_MIN
+            sc1 = b1.split("|")[1]
+            qs = ["%s|%s|%s" % (v, k[1], va) for k in preds if k[0] == v and k[1].startswith(sc1 + "+q")]
+            best[(v, va)] = stepwise([b1, min(qs, key=lambda c: LL[c])]) if qs else b1
     for v in ("nostats", "main"):
         best[v] = stepwise([best[(v, "plugin")], best[(v, "varaware")]])
     final = stepwise([best["nostats"], best["main"]])
@@ -1870,7 +1890,7 @@ def stage_eval(args):
     C = comparators(X)
     extra = {}
     for v in ("main", "nostats"):
-        for sc in SCHEDULES + tuple(x + "+g" for x in SCHEDULES[1:]):
+        for sc in SCHEDULES + ("year+g",):
             if (v, sc) != (cfg["variant"], cfg["schedule"]) and os.path.exists(pred_path(v, sc, "oof2023")):
                 extra["bayes %s/%s" % (v, sc)] = pick(load_preds(X, v, sc, scheme="oof"), cfg["varaware"])
     E = evaluate(X, G, C, list(range(2019, 2024)), cfg["varaware"], "2019-2023 OOF (yearly refits)", extra)
@@ -2098,9 +2118,8 @@ def stage_swap(args):
     corner-swapped data; P(A wins) must mirror, the method x round cells must swap sides, the stat lines must swap."""
     X = load_data()
     cfg = config()
-    H = pickle.load(open(year_path(cfg["variant"], 2019), "rb"))["H"]
+    sched, H = config_H(X, cfg["variant"], cfg["schedule"], 2019)
     Y = swap_data(X)
-    sched = cfg["schedule"].partition("+")[0]
     P1 = predict_year(X, H, 2019, schedule=sched, key="main")
     P2 = predict_year(Y, H, 2019, schedule=sched, key="swap")
     assert np.array_equal(P1["idx"], P2["idx"])
@@ -2241,9 +2260,9 @@ def stage_export(args):
         F[f] = r
     J["fights"] = F
     # production roster
-    p26 = year_path(cfg["variant"], 2026)
-    H = pickle.load(open(p26, "rb"))["H"] if os.path.exists(p26) else pickle.load(open(year_path(cfg["variant"], 2025), "rb"))["H"]
-    S = ep_snapshot(X, H, jan1(2026)) if cfg["schedule"] != "none" else run_filter(X, H, jan1(2026))["state"]
+    Yp = 2026 if os.path.exists(year_path(cfg["variant"], 2026)) else 2025
+    sched, H = config_H(X, cfg["variant"], cfg["schedule"], Yp)
+    S = ep_snapshot(X, H, jan1(2026)) if sched != "none" else run_filter(X, H, jan1(2026))["state"]
     roster = {}
     lastdiv = {}
     for i in range(X["n"]):
