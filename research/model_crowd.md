@@ -360,3 +360,129 @@ python3 tests/test_crowd.py                              # selftest + data invar
   bound 7 pm).
 - **Fade the public with the close.** The weight is negative but not significant, and not adopted. A forward sample
   would need about 4x the covered bouts to test it at the 0.003 MDE.
+
+## Verification log
+
+Adversarial verification, Nov 6, 2026, 10:50-11:10 pm UTC. Own code: `tools/crowd_verify.py` (it does not import
+tools/crowd.py or tools/ml2.py; outputs in out/crowd_cache/verify/). **Verdict: the negative result holds. Nothing
+enters production (adopt = false).** No look-ahead, 2026 data, selection on 2024-25 or corner-order leak was found.
+The defects found were in the wording of this note, plus one latent vault leak path in the tool. Neither changes a
+number or a decision.
+
+**V1. Protocol and timeline (git).**
+- The killed first run's `eval` block (commit 3b7967e, 10:25 pm) had 2024-25 stack numbers for the non-negative
+  rw/mm/crowd variants. The signed ("fade the public") and strict-freeze variants, the per-card lock check and the
+  method test were added after that block existed. None of them passes the CV gate, so this cannot have produced an
+  adoption.
+- That block's 2024-25 rows had the non-negative crowd weight at 0 with the close (difference 0.0). So it gave no hint
+  of a negative sign. Still, treat "fade the public" as a descriptive thread, not a pre-registered hypothesis.
+- The CV decisions, including the corrected method rule, are in ee4f310 (10:40:32 pm) and f84277b (10:41:10 pm),
+  before the confirm run (10:41:43 pm).
+- The method-rule correction matches ml2's own rule in effect (tools/ml2.py stage_method: the lowest-CV variant must
+  beat its non-crowd twin by more than 0.0005). No 2024-25 method number existed before the correction.
+
+**V2. 2026 data.**
+- No fight dated 2026 or later in crowd.json (max date 2025-12-13). No 2026 string in it beyond run timestamps.
+- No cached page with a 2026 `datePublished` (96 RotoWire articles, 125 + 76 Money MMA posts). No vault file was
+  written. data/raw/crowd_cache is gitignored.
+- **Fixed (latent, output-neutral):** `build_rows` used to put the bouts of an unmatched RotoWire article dated 2026
+  into `meta.match.rw_unmatched`, i.e. into the committed crowd.json, as well as into the vault. The sitemap filter
+  screens only numbered pay-per-views, so a 2026 Fight Night panel could have reached the repo that way. Such an
+  article now goes to the vault file only. On the current cache `build_rows` returns rw/mm blocks identical to
+  crowd.json, so the data hash and the frozen decisions are unchanged.
+
+**V3. Sources (robots.txt re-fetched 10:52 pm UTC, User-Agent FightLabSim/1.0).**
+- tapology.com: `Disallow: /` for anthropic-ai, Claude-Web and Claudebot. The builder's refusal is correct.
+- rotowire.com: no rule naming an Anthropic agent; `User-agent: *` allows articles.
+- moneymma.substack.com: `User-agent: *` disallows only /action/, /publish, /p/*/comment/* and similar paths, so /p/
+  posts are allowed.
+- The Wayback Machine (web.archive.org) was unreachable from this container (connection reset). So the RotoWire picks
+  could not be compared with independent pre-event snapshots, and the freeze evidence stays internal (V5).
+
+**V4. Independent re-parse and matching** (`crowd_verify.py reparse`, `compare`). The verifier used lxml (the builder
+uses BeautifulSoup) and its own ufcstats loader and surname-based matcher.
+- **RotoWire:** 477 bouts matched vs the builder's 476 (476 in common; the extra one is a 2016 bout outside the
+  backtest). The days-before values are identical. 9 bouts differ in pick counts, all because the verifier's parser
+  could not resolve misspelt picks ("Namjunas", "Rakmonov", "Volanovski", "Elliottt", "Usaman", ...) that the
+  builder's resolver placed correctly.
+- **Money MMA:** shares are identical on all 579 common bouts.
+  - The builder's single-name matcher misses 8 resolvable picks: Sergey Spivak twice, Bobby Green (ufcstats "King
+    Green"), Ian Garry, Katlyn Chookagian (ufcstats "Katlyn Cerminara"), Joseph Pyfer, Da Un Jung and Lupita
+    Godinez. The 9th is "Muniz/Park".
+  - The consensus side won 7 of these 8 (ufcstats results). The misses come from name changes and spellings, not from
+    outcomes, but the drop leans slightly against the crowd.
+  - The verifier's parse recovers 5 of them, misses 4 that the builder matches, and lands within 0.00004 of the
+    builder's gate gains (V6).
+- Panel sizes are 3-7 pickers per article (44 articles with 6, 34 with 7), not 3-8. Corrected above.
+- Money MMA contest sizes vary: the median is about 48 entrants on the 2025 posts whose table parses, and the range is
+  3-159.
+
+**V5. Look-ahead.**
+- RotoWire pages carry `dateModified` after the card (re-saved) and `datePublished` before it. Only
+  `datePublished` is used.
+- Independent leak check, before 2024 (`crowd_verify.py alone`). Where the crowd majority disagrees with the close
+  favourite, the crowd's side wins 19 of 51 for RotoWire (37%) and 13 of 30 for Money MMA (43%). The builder has 20 of
+  52 and 13 of 31.
+- Majority accuracy shows no post-event pattern:
+  - Money MMA by freeze class: lock_verified 63.7%, contest_pre_event 67.5%, by_design 64.0%.
+  - Money MMA by year: 62-66%.
+  - RotoWire by year: 60-72%. The same-day 2016 panels are 1 of 5.
+- Money MMA 2025 locks: the stated times sit 2-4 hours before the region's main-card bound (`LOCK_BOUND_ET`), except
+  Royval vs Kape, where the 7 pm ET lock equals the bound. A lock at the main-card start cannot reveal a main-card result.
+
+**V6. Stack gate re-run** (`crowd_verify.py gate builder|mine`). Own fitter: every fight in both orientations, no
+intercept, non-negative or free-sign crowd weight, same half-life grid and 0.0005 penalty, forward-chained 2021-2023,
+2024-25 rows removed before loading.
+
+| base | builder: best variant, gain | verifier, builder's inputs | verifier, own parse | passing (any of 10 variants) |
+|---|---|---|---|---|
+| close: market+ml2 | mm signed, -0.00017 | -0.00017 | -0.00015 | 0 / 0 |
+| close: market+ml2lr | mm signed, -0.00016 | -0.00016 | -0.00014 | 0 / 0 |
+| no line: ml2+mkt_rating+feat_lr | crowd, -0.00020 | -0.00020 | -0.00017 | 0 / 0 |
+| no line: ml2lr+mkt_rating | crowd, -0.00033 | -0.00033 | -0.00031 | 0 / 0 |
+| open: open+ml2 | mm, +0.00010 | +0.00010 | +0.00014 | 0 / 0 |
+| open: open+ml2lr | mm, +0.00008 | +0.00008 | +0.00012 | 0 / 0 |
+
+- The base CVs match ml2 to 5 decimals: 0.61614, 0.61624, 0.62854, 0.62984, 0.62231, 0.62275.
+- Covered-row paired CIs, verifier bootstrap (2,000 card resamples):
+  - close + mm signed: -0.0007 [-0.0033, +0.0018];
+  - no line + crowd: -0.0014 [-0.0072, +0.0050];
+  - page no line + crowd: -0.0019 [-0.0080, +0.0048].
+  These match the table in test 2.
+- **Free-intercept check.** Given the close base, a free intercept fit without mirroring learns ufcstats'
+  winner-first order (b0 = +0.123) and "improves" CV by 0.0012. With mirrored training the intercept is 0.0000.
+  Every crowd fit (stack, signed stack, slope, debut stack) has no intercept, and the corner-swap test reproduces
+  (max |dp| 2.2e-16). So no reported number exploits corner order.
+
+**V7. Stand-alone and 2024-25 numbers reproduced (not selected on).**
+- Crowd alone 2019-23 (own parse): 0.6424 on 471 fights.
+  - Against the close: +0.0370 [+0.0196, +0.0552]. Against ML v2: +0.0289 [+0.0085, +0.0493]. Against Elo: -0.0466
+    [-0.0679, -0.0267].
+  - The builder has 0.6420, +0.0365, +0.0282 and -0.0471.
+- 2024-25 static rows (`crowd_verify.py confirm`):
+  - close + mm signed: -0.0011 [-0.0024, +0.0003], weight -0.091;
+  - no line + crowd: +0.0010 [-0.0003, +0.0023];
+  - page no line + crowd: +0.0011 [-0.0004, +0.0027];
+  - open + mm: 0.0000.
+  These are identical to confirm.stack.
+- The method CV (test 3) re-run with the builder's function gives identical means: S2c+ml2win - S2+ml2win joint
+  -0.00039, which fails the rule.
+- "Close on all 2019-23 fights 0.6232" checks out (1,955 fights).
+
+**V8. Report corrections made.**
+- RotoWire panel: "3-8 writers" changed to 3-7.
+- The test 1 contest row covers 2023 only (2022 has no earlier contest year to fit a forward slope), not 2022-23.
+  The 2022 crowd row uses the panel-only slope on rows that are mostly contest shares. That miscalibration is
+  conservative for the crowd.
+- Alias matching applies to RotoWire pairs only; the Money MMA misses and their outcome lean are in V4.
+- Test 4 now also cites the second debut cell whose CI excludes 0: the 2024-25 open + contest cell, 18 bouts,
+  -0.0293 [-0.0519, -0.0037]. The matching close cell has the opposite sign, so it is still not evidence.
+
+**Reproduce:**
+```
+nice -n 5 python3 tools/crowd_verify.py reparse && nice -n 5 python3 tools/crowd_verify.py compare
+nice -n 5 python3 tools/crowd_verify.py alone
+nice -n 5 python3 tools/crowd_verify.py gate builder && nice -n 5 python3 tools/crowd_verify.py gate mine
+nice -n 5 python3 tools/crowd_verify.py confirm
+python3 tests/test_crowd.py
+```
