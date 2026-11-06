@@ -24,3 +24,6 @@ data/raw/web_cache/
 
 # agent worktrees (isolated component builds)
 .claude/worktrees/
+
+# prediction lab raw scrape caches (compact extracts are committed instead)
+data/raw/*_cache/
