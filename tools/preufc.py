@@ -303,6 +303,11 @@ def targets(fights, people, newcomer_since, extra_since=None):
     return sorted(p for p in T if not p.startswith(("amb:", "name:")))
 
 
+# ufcstats ring names that Sherdog files under the legal name (checked by hand on Sherdog's fight finder)
+SD_ALIASES = {"Loma Lookboonmee": "Konklak Suphisara", "CM Punk": "Phil Brooks", "Blood Diamond": "Mike Mathetha",
+              "Tina Black": "Valesca Machado"}
+
+
 def verify(parsed, ub):
     """How many of the person's ufcstats bouts appear in the Sherdog pro history."""
     if not parsed:
@@ -320,6 +325,8 @@ def verify(parsed, ub):
             if dd > 3:
                 continue
             s = name_sim(oname, r["opp"])
+            if oname in SD_ALIASES:
+                s = max(s, name_sim(SD_ALIASES[oname], r["opp"]))
             on, ro = core_name(oname).split(), core_name(r["opp"]).split()
             if on and ro and on[-1] == ro[-1]:
                 s = max(s, 0.8)            # same surname on the same card (RJ / Richard Harris)
@@ -385,7 +392,7 @@ def crawl(args):
         lbs = T_.get("lbs")
         nick = P.get("nick")
         tk = core_name(name).split()
-        queries = [name]
+        queries = [name] + ([SD_ALIASES[name]] if name in SD_ALIASES else [])
         if core_name(name) != norm(name):
             queries.append(" ".join(tk))
         if len(tk) > 2:
@@ -403,7 +410,7 @@ def crawl(args):
             for c in cands:
                 if c["href"] in tried:
                     continue
-                s = name_sim(name, c["name"])
+                s = max(name_sim(name, c["name"]), name_sim(SD_ALIASES.get(name, ""), c["name"]))
                 if q == nick:
                     s = max(s, 0.6 if norm(c["nick"]) == norm(nick) else 0)
                 if nick and c["nick"] and norm(c["nick"]) == norm(nick):

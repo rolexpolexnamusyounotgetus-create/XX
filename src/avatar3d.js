@@ -198,6 +198,8 @@
     }
     var mw = this.macroWeights(c), k;
     for (k in mw) add(k, mw[k]);
+    var tg = c.targets || {};
+    for (k in tg) add(k, tg[k]);
     var det = c.detail || {};
     for (k in det) {
       var sl = DETAIL[k], v = det[k];
@@ -321,6 +323,7 @@
     function take(o) { for (var k in o) if (o[k] != null && o[k] !== "" && (typeof o[k] !== "string" || known(o[k]))) a[k] = o[k]; }
     take(sc); take(ovApp);
     a.slug = slug; a.name = ov.name || prof.name || slug;
+    if (!a.likeness && src.likeness && src.likeness[slug]) a.likeness = src.likeness[slug];
     a.height_in = ov.height_in || prof.height_in || a.height_in || 70;
     a.reach_in = ov.reach_in || prof.reach_in || a.reach_in || a.height_in;
     a.stance = ov.stance || prof.stance || "Orthodox";
@@ -329,14 +332,17 @@
     return a;
   }
   function dbFromPage() {
-    var out = { fighters: {}, overrides: {}, scouting: {}, referee: null };
+    var out = { fighters: {}, overrides: {}, scouting: {}, likeness: {}, referee: null };
     if (!root.document) return out;
     function j(id) { var el = root.document.getElementById(id); if (!el) return null; try { return JSON.parse(el.textContent); } catch (e) { return null; } }
-    var f = j("fighters-db"), o = j("overrides-db"), s = j("appearance-db");
+    var f = j("fighters-db"), o = j("overrides-db"), s = j("appearance-db"), sdb = j("scouting-db");
     if (f && f.fighters) out.fighters = f.fighters;
     if (o) { out.overrides = o.fighters || {}; if (o.manual) for (var k in o.manual) out.fighters[k] = out.fighters[k] || o.manual[k]; if (o.referee) out.referee = o.referee.appearance; }
     if (s) out.scouting = s.fighters || s;
-    else if (root.FightScouting) out.scouting = root.FightScouting;
+    if (sdb) {
+      var sc = sdb.scouting || {}; for (var k2 in sc) if (sc[k2] && sc[k2].appearance) out.scouting[k2] = sc[k2].appearance;
+      out.likeness = sdb.likeness || {};
+    }
     return out;
   }
 
@@ -372,11 +378,26 @@
       det.buttocks = -0.1;
       if (female) { det.neckWidth *= 0.5; det.shoulders *= 0.6; det.vShape *= 0.5; }
     } else { det.belly = clamp((bmi - 25) * 0.08, 0, 0.4); }
-    var face = app.face || {};
-    for (var k in face) if (DETAIL[k]) det[k] = face[k];
+    var LK = app.likeness && typeof app.likeness === "object" ? app.likeness : null, targets = {}, mo = LK && LK.morphs;
+    if (mo) {
+      // likeness sheet (data/likeness): raw MakeHuman targets for face and build; macros only nudge the data-driven body
+      var mu = mo["macro/muscleUpM"] != null ? 0.5 + 0.5 * mo["macro/muscleUpM"] : (mo["macro/muscleDownM"] != null ? 0.5 - 0.5 * mo["macro/muscleDownM"] : null);
+      var we = mo["macro/weightUpM"] ? 0.5 + 0.5 * mo["macro/weightUpM"] : (mo["macro/weightDownM"] != null ? 0.5 - 0.5 * mo["macro/weightDownM"] : null);
+      if (mu != null && !ref) muscle = clamp(0.55 * muscle + 0.45 * mu, 0.55, 1);
+      if (we != null && !ref) weight = clamp(0.55 * weight + 0.45 * we, 0.2, 0.97);
+      for (var tn in mo) {
+        if (tn.indexOf("macro/") === 0 || !mo[tn]) continue;
+        targets[tn] = mo[tn];
+        for (var did in DETAIL) if (DETAIL[did].pos.indexOf(tn) >= 0 || DETAIL[did].neg.indexOf(tn) >= 0) delete det[did];
+      }
+    } else {
+      var face = app.face || {};
+      for (var k in face) if (DETAIL[k]) det[k] = face[k];
+    }
+    var propFromSheet = mo && mo["macro/proportionsUpM"] != null ? 0.5 + 0.5 * mo["macro/proportionsUpM"] : null;
     // reach -> arm stretch, computed after the bake (needs the measured span)
     return {
-      gender: female ? 0 : 1, years: years, muscle: muscle, weight: weight, heightRaw: 0.5, proportions: ref ? 0.5 : 0.75,
+      gender: female ? 0 : 1, years: years, muscle: muscle, weight: weight, heightRaw: 0.5, proportions: ref ? 0.5 : (propFromSheet != null ? Math.max(propFromSheet, 0.6) : 0.75), targets: targets,
       cupSize: female ? 0.4 : 0.5, firmness: 0.6, detail: det, H: H, reach: (+app.reach_in || hIn) * 0.0254, bmi: bmi, female: female, ref: ref
     };
   }
@@ -417,7 +438,53 @@
     L.iris = app.eyes && base.man.irises.indexOf(lower(app.eyes)) >= 0 ? lower(app.eyes) : "brownlight";
     L.brows = /thick|heavy|bushy/.test(lower(app.brows)) || cfg.muscle > 0.85 ? "eyebrows-eyebrow010" : "eyebrows-eyebrow001";
     L.tattoos = app.tattoo_marks || [];
+    var LK = app.likeness && typeof app.likeness === "object" ? app.likeness : null;
+    if (LK) applyLikeness(L, LK, app, cfg, base, ids);
     return L;
+  }
+
+  /* Likeness sheet (data/likeness/<slug>.json) -> looks: colours sampled from photos, beard type, iris,
+     brows, skin texture and tint, tattoo placement. Sheet text is data, read with simple keyword rules. */
+  function applyLikeness(L, LK, app, cfg, base, ids) {
+    var hx = /^#[0-9a-f]{6}$/i, H = LK.hair || {}, FH = LK.facial_hair || {}, SK = LK.skin || {}, RH = LK.render_hints || {};
+    if (hx.test(H.colour_hex || "")) L.hairColor = H.colour_hex;
+    if (H.length_cm === 0 && L.hair) { L.hair = null; L.scalp = 0.22; }
+    var ft = lower(FH.type);
+    if (ft) {
+      if (/clean|none/.test(ft)) L.beard = cfg.female ? 0 : 0.12;
+      else if (/stubble/.test(ft)) L.beard = 0.55;
+      else if (/full|thick|long/.test(ft)) L.beard = 1;
+      else if (/goatee|chin/.test(ft)) { L.beard = 0.85; L.chinOnly = true; L.moustacheOnly = /moustache|mustache/.test(ft); }
+      else if (/moustache|mustache/.test(ft)) { L.beard = 0.85; L.moustacheOnly = true; }
+      else if (/beard/.test(ft)) L.beard = 0.85;
+    }
+    if (hx.test(FH.colour_hex || "")) L.beardColor = FH.colour_hex;
+    var iris = lower(RH.iris || (LK.face && LK.face.eyes && LK.face.eyes.colour));
+    base.man.irises.forEach(function (n) { if (iris.indexOf(n) === 0 || iris === n) L.iris = n; });
+    if (/eyebrow010/.test(RH.eyebrows || "")) L.brows = "eyebrows-eyebrow010"; else if (/eyebrow001/.test(RH.eyebrows || "")) L.brows = "eyebrows-eyebrow001";
+    var skinPick = lower([RH.skin_base, SK.texture_pick].join(" "));
+    base.man.skins.forEach(function (s) { if (skinPick.indexOf(s.id) >= 0 && (!cfg.female === !/female/.test(s.id))) L.skin = s; });
+    var tone = SK.tone_hex_recommended || SK.tone_hex || SK.tone_hex_average_face;
+    if (hx.test(tone || "") && L.skin && L.skin.swatch) {
+      // multiply tint so the texture's average lands on the sampled tone (no brightening)
+      var t = new T.Color(tone), sw = new T.Color(L.skin.swatch);
+      var tc = new T.Color(Math.min(1, t.r / sw.r), Math.min(1, t.g / sw.g), Math.min(1, t.b / sw.b));
+      tc.lerp(new T.Color(1, 1, 1), 0.25);            // photos carry arena and flash casts: go 75% of the way
+      L.tint = "#" + tc.getHexString();
+    }
+    if (!(app.tattoo_marks && app.tattoo_marks.length) && Array.isArray(LK.tattoos)) {
+      var marks = [];
+      LK.tattoos.forEach(function (tt) {
+        var w = lower(tt.where), d = lower(tt.description);
+        if (/^none|none clearly/.test(d) || /^none/.test(w)) return;
+        var side = /right/.test(w) ? "right" : (/left/.test(w) ? "left" : null);
+        if (side && /sleeve/.test(w + " " + d) && /arm/.test(w)) marks.push({ at: side + " arm", shape: "sleeve" });
+        else if (side && /forearm/.test(w)) marks.push({ at: side + " forearm", shape: "sleeve" });
+        else if (/upper back|across the back|back/.test(w)) { var m = /"([^"]{2,16})"|'([^']{2,16})'/.exec(tt.description || ""); if (m) marks.push({ at: "upper back", text: (m[1] || m[2]).toUpperCase() }); }
+        else if (side && /shoulder/.test(w) && /cross/.test(d)) marks.push({ at: side + " shoulder", shape: "cross" });
+      });
+      if (marks.length) L.tattoos = marks.slice(0, 2);
+    }
   }
 
   /* ------------------------------------------------------------ kit colours */
@@ -806,7 +873,12 @@
     var J = this.J, pos = this.pos, self = this;
     var cv = root.document.createElement("canvas"); cv.width = 1024; cv.height = 256;
     var ctx = cv.getContext("2d"); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 1024, 256);
-    marks.slice(0, 2).forEach(function (mk, slot) {
+    var exp = [];
+    marks.forEach(function (mk) {
+      if (/^(right|left) arm$/.test(mk.at) && mk.shape === "sleeve") { var sd0 = mk.at.split(" ")[0]; exp.push({ at: sd0 + " forearm", shape: "sleeve" }, { at: sd0 + " upper arm", shape: "sleeve" }); }
+      else exp.push(mk);
+    });
+    exp.slice(0, 2).forEach(function (mk, slot) {
       var x0 = slot * 512;
       ctx.save(); ctx.translate(x0, 0); ctx.fillStyle = "#fff"; ctx.strokeStyle = "#fff";
       if (mk.text) {
@@ -827,6 +899,9 @@
       else if (mk.at === "right shoulder" || mk.at === "left shoulder") {
         var sd = mk.at === "right shoulder" ? "Right" : "Left";
         c.copy(J[sd + "Arm"].h).lerp(J[sd + "ForeArm"].h, 0.22); var out2 = sd === "Right" ? -1 : 1; ax.set(0, 0, out2 > 0 ? -1 : 1); ay.set(0, 1, 0); nrmDir.set(out2, 0, 0); w = 0.075; h = 0.075; boneSel = [sd + "Arm", sd + "Shoulder"];
+      } else if (mk.at === "right upper arm" || mk.at === "left upper arm") {
+        var ud = mk.at.indexOf("right") === 0 ? "Right" : "Left";
+        c.copy(J[ud + "Arm"].h).lerp(J[ud + "ForeArm"].h, 0.5); ay.copy(J[ud + "ForeArm"].h).sub(J[ud + "Arm"].h).normalize(); ax.set(0, 0, 1).cross(ay).normalize(); nrmDir.set(0, 0, 1); w = 0.3; h = J[ud + "ForeArm"].h.distanceTo(J[ud + "Arm"].h) * 1.05; boneSel = [ud + "Arm"]; mk.wrap = true;
       } else if (mk.at === "right forearm" || mk.at === "left forearm") {
         var fd = mk.at === "right forearm" ? "Right" : "Left";
         c.copy(J[fd + "ForeArm"].h).lerp(J[fd + "Hand"].h, 0.5); ay.copy(J[fd + "Hand"].h).sub(J[fd + "ForeArm"].h).normalize(); ax.set(0, 0, 1).cross(ay).normalize(); nrmDir.set(0, 0, 1); w = 0.22; h = J[fd + "Hand"].h.distanceTo(J[fd + "ForeArm"].h) * 0.85; boneSel = [fd + "ForeArm"]; mk.wrap = true;

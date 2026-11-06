@@ -705,6 +705,12 @@ def render_log(r, J):
       "negative = better): " + "; ".join("%s %s (better in %d of 6)" % (k, " ".join("%s:%+.0f" % (y[2:], v[y]) for y in sorted(v)),
                                                                         sum(1 for y in v if v[y] < 0))
                                          for k, v in py.items()) + ".")
+    flips = ["%s/%s (%+.3f -> %+.3f)" % (k, t, a, b) for k, v in cp.items() for t, a, b, z in
+             zip(v["terms"], v["free_coef_per_sd"], v["ab1_coef_per_sd"], v["ab1_z"]) if (a * b < 0) or abs(z) < 2]
+    A("- **Terms that vanish or flip sign under a = b = 1** (per term sd, free -> a = b = 1): %s. Under the "
+      "engine's default composition these are not matchup effects but corrections for main effects that are too "
+      "weak or too strong; leave them out (and keep the sub_att knob off) unless the engine adopts the fitted "
+      "exponents." % ("; ".join(flips) or "none"))
     tt = r["transmission"]
     A("- **Winner-level transmission is still not significant.** Clean default-on modifiers through the "
       "expected-scorecard stand-in: %+.4f log loss, CI %s; every screened term: %+.4f, CI %s."

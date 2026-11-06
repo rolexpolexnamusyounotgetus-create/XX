@@ -1884,6 +1884,9 @@ def main():
     ap.add_argument("--out", default=OUT_JSON)
     ap.add_argument("--no-test", action="store_true", help="smoke run: never compute or print 2024+ metrics")
     ap.add_argument("--no-tune", action="store_true", help="smoke run: default parameters, no grid search")
+    ap.add_argument("--ckpt", default=None, help="checkpoint file: each system's tuning result is saved as soon as "
+                                                  "it finishes and reused on a restart when its start point and grid "
+                                                  "are unchanged")
     args = ap.parse_args()
     t0 = time.time()
     logs = []
@@ -1902,6 +1905,23 @@ def main():
     if args.skip_whr:
         S = [s for s in S if s["kind"] != "whr"]
     tuned, tune_res, hists, inner = {}, {}, {}, {}
+    ck = {}
+    if args.ckpt and os.path.exists(args.ckpt):
+        try:
+            ck = json.load(open(args.ckpt))
+        except Exception:
+            ck = {}
+
+    def ck_save():
+        if args.ckpt:
+            tmp = args.ckpt + ".tmp"
+            with open(tmp, "w") as fh:
+                json.dump(ck, fh)
+            os.replace(tmp, args.ckpt)
+
+    def sig(P0, grid):
+        return json.dumps({"P0": P0, "grid": grid, "quick": args.quick, "no_tune": args.no_tune}, sort_keys=True,
+                          default=str)
     for s in S:
         P0 = dict(s["P"])
         if s.get("from") in tuned:
@@ -1919,6 +1939,14 @@ def main():
         if s["kind"] == "trueskill" and s["name"] == "trueskill":
             pass
         ts = time.time()
+        key = sig(P0, s["grid"])
+        c = ck.get(s["name"])
+        if c and c.get("sig") == key:
+            tuned[s["name"]], tune_res[s["name"]], hists[s["name"]] = c["best"], c["r"], c["hist"]
+            if c.get("inner"):
+                inner[s["name"]] = c["inner"]
+            log("  -> %s restored from checkpoint: tune log loss %.5f" % (s["name"], c["r"]["tune"]))
+            continue
         log("tuning %s (%s)" % (s["name"], s["label"]))
         if s["grid"] and not args.no_tune:
             passes = 1 if args.quick else (2 if s["kind"] == "whr" else 3)
@@ -1937,12 +1965,19 @@ def main():
                                                         for k, v in b2.items()},
                                 "score_2022_2023": r2["in_va"], "score_2019_2021": r2["in_tr"]}
             log("  time-ordered check: tuned on 2019-21 only -> 2022-23 log loss %.5f" % r2["in_va"])
+        ck[s["name"]] = {"sig": key, "best": best, "r": r, "hist": h, "inner": inner.get(s["name"])}
+        ck_save()
     # dimensional ratings
     log("tuning dimensional ratings (predictive likelihood of each stat, 2019-2023)")
     if args.no_tune:
         DP, dim_hist = {k: dict(v) for k, v in DIM_DEFAULT.items()}, {}
+    elif ck.get("_dims", {}).get("quick") == args.quick:
+        DP, dim_hist = ck["_dims"]["DP"], ck["_dims"]["hist"]
+        log("  dims restored from checkpoint")
     else:
         DP, dim_hist = dims_tune(D, args.quick, log)
+        ck["_dims"] = {"quick": args.quick, "DP": DP, "hist": dim_hist}
+        ck_save()
     if pool:
         pool.close()
 

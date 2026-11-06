@@ -935,11 +935,19 @@ def build_table(entries, priors, lookup, D):
     return T
 
 
-def boot_ci(delta, n_boot=2000, seed=SEED):
-    """Mean and 95% paired-bootstrap interval of per-fight deltas."""
+def boot_ci(delta, clusters=None, n_boot=2000, seed=SEED):
+    """Mean and 95% paired-bootstrap interval of per-fight deltas, resampling whole clusters (event dates:
+    fights on one card share judges, cage and conditions) when given."""
     rng = np.random.default_rng(seed)
-    d = np.asarray(delta)
-    bs = d[rng.integers(0, len(d), (n_boot, len(d)))].mean(1)
+    d = np.asarray(delta, float)
+    if clusters is None:
+        bs = d[rng.integers(0, len(d), (n_boot, len(d)))].mean(1)
+    else:
+        _, inv = np.unique(np.asarray(clusters), return_inverse=True)
+        cs = np.bincount(inv, weights=d)
+        cn = np.bincount(inv).astype(float)
+        pick = rng.integers(0, len(cs), (n_boot, len(cs)))
+        bs = cs[pick].sum(1) / cn[pick].sum(1)
     return float(d.mean()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))
 
 
@@ -1087,7 +1095,7 @@ def eval_winner(T, verbose=True):
     res["deltas"] = {}
     for a_, b_ in pairs:
         d = logloss(preds[a_][va], y[va]) - logloss(preds[b_][va], y[va])
-        mu, lo, hi = boot_ci(d)
+        mu, lo, hi = boot_ci(d, T["day"][va])
         res["deltas"]["%s - %s" % (a_, b_)] = {"mean": round(mu, 5), "ci95": [round(lo, 5), round(hi, 5)]}
     if verbose:
         for k, v in res["models"].items():
@@ -1145,7 +1153,7 @@ def eval_ml_stack(T, verbose=True):
         out["models"][base + "+emb_all"] = {"C": best[0], "loyo_logloss_2019_2023": round(best[1], 5)}
         for a_, b_ in (("+emb_head", "_recal"), ("+emb_all", "_recal"), ("_recal", "_raw")):
             d = logloss(preds[base + a_][va], y[va]) - logloss(preds[base + b_][va], y[va])
-            mu, lo, hi = boot_ci(d)
+            mu, lo, hi = boot_ci(d, T["day"][ii][va])
             out["deltas"]["%s%s - %s%s" % (base, a_, base, b_)] = {"mean": round(mu, 5),
                                                                     "ci95": [round(lo, 5), round(hi, 5)]}
     for k, p in preds.items():
@@ -1250,6 +1258,9 @@ def eval_stats(T, verbose=True):
     fight = R["i"]
     res = {"n_train_rows": int(tr.sum()), "n_valid_rows": int(va.sum()), "stats": {}}
     all_dev = defaultdict(lambda: np.zeros(int(va.sum())))
+    fv_all = fight[va]
+    ufights, inv_all = np.unique(fv_all, return_inverse=True)
+    contrib = defaultdict(lambda: np.zeros(len(ufights)))     # per-fight share of the mean relative change
     for si, stat in enumerate(STATS):
         y = R["y"][:, si]
         m = R["min"]
@@ -1291,10 +1302,14 @@ def eval_stats(T, verbose=True):
         _, inv = np.unique(fv, return_inverse=True)
         dfight = np.bincount(inv, weights=devs[best_emb] - devs[best_base])
         bfight = np.bincount(inv, weights=devs[best_base])
-        mu, lo, hi = boot_ci(dfight)
+        mu, lo, hi = boot_ci(dfight, T["day"][np.unique(fv)])
         tot = bfight.mean()
         out["gain"] = {"best_base": best_base, "best_emb": best_emb,
                        "rel_change": round(mu / tot, 4), "ci95": [round(lo / tot, 4), round(hi / tot, 4)]}
+        for a_, b_ in (("gbm_emb", "gbm_base"), ("glm_emb", "glm_base"), ("blend", "glm_base"),
+                       (best_emb, best_base), ("emb_direct", "glm_base")):
+            key = "%s - %s" % (a_, b_) if (a_, b_) != (best_emb, best_base) else "best_emb - best_base"
+            contrib[key] += np.bincount(inv_all, weights=devs[a_] - devs[b_]) / devs[b_].sum() / len(STATS)
         res["stats"][stat] = out
         if verbose:
             print("  stat %-8s rel dev vs glm_base: gbm_base %.4f | emb_direct %.4f blend %.4f glm_emb %.4f gbm_emb %.4f"
@@ -1303,11 +1318,19 @@ def eval_stats(T, verbose=True):
                       out["gbm_emb"]["rel"], 100 * out["gain"]["rel_change"], 100 * out["gain"]["ci95"][0],
                       100 * out["gain"]["ci95"][1]))
     res["mean_rel"] = {k: round(float(v.sum() / len(STATS)), 4) for k, v in all_dev.items()}
+    res["mean_rel_change"] = {}
+    for k, c in contrib.items():
+        mu, lo, hi = boot_ci(c, T["day"][ufights])
+        n = len(c)
+        res["mean_rel_change"][k] = {"mean": round(mu * n, 4), "ci95": [round(lo * n, 4), round(hi * n, 4)]}
+        if verbose:
+            print("  stats, mean relative deviance change %-26s %+.2f%% [%+.2f, %+.2f]" % (
+                k, 100 * mu * n, 100 * lo * n, 100 * hi * n))
     return res
 
 
 # ------------------------------------------------------------------------------------------------ production walk
-def production_walk(D, hp, noise, start, end, cold_sweeps=30, warm_sweeps=6, light_iters=2, verbose=True,
+def production_walk(D, hp, noise, start, end, cold_sweeps=30, warm_sweeps=5, light_iters=3, verbose=True,
                     tag=""):
     """Quarterly full refits on [start, end) plus a light (fighter-only Newton) update after every event, so the
     embedding used for a fight dated d has seen every earlier fight. A final full refit at `end`.
@@ -1717,6 +1740,7 @@ def main():
     ap.add_argument("--stage", default="all", choices=["noise", "cv", "walk", "eval", "all"],
                     help="run up to this stage (walk with --chunk runs one chunk only, for two parallel processes)")
     ap.add_argument("--chunk", type=int, default=0, help="1 = 2010-2017, 2 = 2018-2025 (default both)")
+    ap.add_argument("--reuse-eval", action="store_true", help="reuse the cached downstream results (re-export only)")
     args = ap.parse_args()
     os.makedirs(args.cache, exist_ok=True)
     t0 = time.time()
@@ -1728,7 +1752,12 @@ def main():
     if args.stage == "noise":
         return
     grid = CV_GRID[:2] if args.quick else CV_GRID
-    cv = stage_cv(D, noise, args.cache, grid, args.quick)
+    if args.skip_cv:
+        rpath = _pk(args.cache, "cv_results.jsonl")
+        cv = [json.loads(line) for line in open(rpath)] if os.path.exists(rpath) else \
+            [{"hp": json.load(open(OUT_JSON))["meta"]["hyperparameters"], "mean_rel": 0.0, "win_ll": 0.0}]
+    else:
+        cv = stage_cv(D, noise, args.cache, grid, args.quick)
     best = min(cv, key=cv_score)
     hp = best["hp"]
     print("chosen hyperparameters: %s (score %.4f)" % (hp, cv_score(best)), flush=True)
@@ -1743,9 +1772,14 @@ def main():
     T = build_table(entries, priors, walk_lookup(walk), D)
     print("downstream table: %d fights (%d train <= 2023, %d validation 2024-25)" % (
         len(T["id"]), int((T["year"] <= 2023).sum()), int((T["year"] >= 2024).sum())), flush=True)
-    win_res, win_preds = eval_winner(T)
-    win_res["ml_stack"] = eval_ml_stack(T)
-    stat_res = eval_stats(T)
+    epath = _pk(args.cache, "eval.pkl")
+    if args.reuse_eval and os.path.exists(epath):
+        win_res, win_preds, stat_res = _load(epath)
+    else:
+        win_res, win_preds = eval_winner(T)
+        win_res["ml_stack"] = eval_ml_stack(T)
+        stat_res = eval_stats(T)
+        _save((win_res, win_preds, stat_res), epath)
     write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, time.time() - t0, args.cache)
 
 

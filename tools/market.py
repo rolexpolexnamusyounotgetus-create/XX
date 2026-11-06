@@ -93,8 +93,12 @@ def parse_am(s):
     return v if abs(v) >= 100 else None
 
 
+NAME_ALIASES = {'tecia torres': 'tecia pennington'}  # BFO keeps a maiden name; ufcstats the married one
+
+
 def norm_name(s):
     s = unicodedata.normalize('NFKD', str(s)).encode('ascii', 'ignore').decode().lower()
+    s = NAME_ALIASES.get(s.strip(), s)
     s = re.sub(r"[\.\'`]", '', s)
     s = re.sub(r'[^a-z0-9]+', ' ', s)
     toks = [t for t in s.split() if t not in ('jr', 'sr', 'ii', 'iii', 'iv', 'de', 'da', 'dos', 'do')]
@@ -566,13 +570,17 @@ def load_bfo_matchups():
             if mu is None or t not in (1, 2):
                 continue
             m = mus.get(mu)
+            ev_slug = (r['event_url'] or '').replace('/events/', '')
+            undated = (not r['date']) or bool(re.match(r'(future-events|potential-fights|unconfirmed)', ev_slug))
             if m is None:
                 own, opp = (r['owner_name'], r['opp_name'])
                 m = mus[mu] = {'mu': mu, 'date': r['date'], 'n1': own if t == 1 else opp,
                                'n2': opp if t == 1 else own,
                                't1_url': r['owner_url'] if t == 1 else r['opp_url'],
                                't2_url': r['opp_url'] if t == 1 else r['owner_url'],
-                               'event': (r['event_url'] or '').replace('/events/', ''), 'books': {}, 'pages': []}
+                               'event': ev_slug, 'books': {}, 'pages': [], 'undated': undated}
+                if undated:
+                    m['date'] = None
             o = {'open': (_int(r['open1']), _int(r['open2'])), 'lo': (_int(r['lo1']), _int(r['lo2'])),
                  'hi': (_int(r['hi1']), _int(r['hi2']))}
             if t == 2:
@@ -692,6 +700,44 @@ def assemble(fights):
         cands = [{'key': mu, 'date': m['date'], 'n1': m['n1'], 'n2': m['n2']} for mu, m in mus.items()
                  if m.get('date') and m.get('n1') and m.get('n2')]
         mt = match_matchups(fl, cands)
+        diag['bfo_matched_pass1'] = len(mt)
+        # pass 2: rescheduled fights (BFO keeps the original date): same two names, within 10 days, stricter names
+        used = {v[0] for v in mt.values()}
+        rest = [f for f in fl if f['id'] not in mt]
+        mt2 = match_matchups(rest, [c for c in cands if c['key'] not in used], day_tol=10, min_sim=0.9)
+        mt.update(mt2)
+        diag['bfo_matched_pass2_rescheduled'] = len(mt2)
+        # pass 3: matchups BFO left on its undated Future Events / Potential Fights pages; place each in time by
+        # the dates of the dated matchups with the nearest ids (ids grow as BFO creates matchups)
+        dated = sorted((mu, m['date']) for mu, m in mus.items() if m.get('date') and not m.get('undated'))
+        ids = [d[0] for d in dated]
+        import bisect
+        def est_date(mu):
+            k = bisect.bisect_left(ids, mu)
+            near = [dt.date.fromisoformat(d[1]) for d in dated[max(0, k - 12):k + 12]]
+            near.sort()
+            return near[len(near) // 2] if near else None
+        used = {v[0] for v in mt.values()}
+        und = [(mu, m) for mu, m in mus.items() if m.get('undated') and mu not in used and m.get('n1') and m.get('n2')]
+        mt3 = {}
+        for f in fl:
+            if f['id'] in mt:
+                continue
+            d0 = dt.date.fromisoformat(f['date'])
+            best = None
+            for mu, m in und:
+                e = est_date(mu)
+                if e is None or not (-45 <= (d0 - e).days <= 400):
+                    continue
+                s1 = min(name_sim(f['A_name'], m['n1']), name_sim(f['B_name'], m['n2']))
+                s2 = min(name_sim(f['A_name'], m['n2']), name_sim(f['B_name'], m['n1']))
+                sc = max(s1, s2)
+                if sc >= 0.85 and (best is None or (sc, -abs((d0 - e).days)) > best[0]):
+                    best = ((sc, -abs((d0 - e).days)), mu, s2 > s1, sc)
+            if best and best[1] not in {v[0] for v in mt3.values()}:
+                mt3[f['id']] = (best[1], best[2], round(best[3], 3), None)
+        mt.update(mt3)
+        diag['bfo_matched_pass3_undated'] = len(mt3)
         diag['bfo_matched'] = len(mt)
         agree = Counter()
         for fid, (mu, sw, sc, g) in mt.items():

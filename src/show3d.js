@@ -622,9 +622,11 @@
   Show.prototype.setAppearance = function (app) {
     if (!this.avatarsOn || !app) return;
     var sc = this.arena.scene, self = this;
+    var prev = this.appearance || {};
     this.appearance = app;
     [["A", this.A], ["B", this.B], ["R", this.R]].forEach(function (p) {
       if (!app[p[0]]) return;
+      if (prev[p[0]] === app[p[0]] && p[1].avatar) return;   // unchanged side keeps its avatar
       var a = p[1];
       root.FightAvatar.attach(a, app[p[0]], sc).then(function (av) { if (av && self.phase === "live") av.setRound(self.rIdx); });
     });
@@ -638,7 +640,25 @@
     return out.set(Math.cos(va) * r, 0, Math.sin(va) * r);
   };
 
+  /* Appearance from the script's fighter info (app.js fills script.fighters with slug, appearance incl.
+     likeness sheet, height, reach, stance, division); only sides whose look changed are rebuilt. */
+  Show.prototype.appearanceFromScript = function (script) {
+    var F = script && script.fighters, FA2 = root.FightAvatar, out = {}, cur = this.appearance || {}, any = false;
+    if (!F || !FA2) return null;
+    ["A", "B"].forEach(function (side) {
+      var f = F[side]; if (!f || !f.slug) return;
+      var a = FA2.appearanceFor(f.slug), k;
+      if (f.appearance) for (k in f.appearance) if (f.appearance[k] != null && f.appearance[k] !== "") a[k] = f.appearance[k];
+      ["height_in", "reach_in", "stance", "division"].forEach(function (k2) { if (f[k2]) a[k2] = f[k2]; });
+      var c = cur[side];
+      if (c && c.slug === a.slug && c.shorts === a.shorts && c.trim === a.trim) return;
+      out[side] = a; any = true;
+    });
+    return any ? out : null;
+  };
+
   Show.prototype.load = function (script) {
+    if (this.avatarsOn) { var na = this.appearanceFromScript(script); if (na) this.setAppearance(Object.assign({}, this.appearance || {}, na)); }
     this.script = script; this.rIdx = 0; this.queue = []; this.clock = 0; this.finished = false; this.result = null;
     var A = this.A, B = this.B, R = this.R;
     [A, B, R].forEach(function (a) { a.act = null; a.react = null; for (var k in a.s) a.s[k].reset(); a.lunge = 0; if (a.avatar) a.avatar.resetDamage(); });
