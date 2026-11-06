@@ -25,21 +25,22 @@
   "style": {
     "archetype": "boxer",
     "stance": "orthodox",
-    "tags": ["power", "counter", "takedown-defense", "leg-kicks", "calf-kicks", "body-work", "guillotine", "durable"],
+    "tags": ["power", "counter", "takedown-defense", "leg-kicks", "calf-kicks", "guillotine", "durable"],
     "signature": [
       "right hand countering a level change (stuffed Umar Nurmagomedov's shot and KO'd him at 1:48 of R2; UFC's result line says right uppercut, other reports say a short right behind the ear)",
       "guillotine off a stuffed takedown (Figueiredo from bottom guard, 2026; Bharat Kandare from front headlock, 2017)",
-      "low kicks to open fights (vs O'Malley; 19 of 33 leg strikes landed)",
-      "right hand and long right hooks to the body",
+      "low kicks to open fights (vs O'Malley: 10 of 15 leg strikes in R1, 19 of 33 overall)",
+      "right hands and long right hooks to the body (Umar fight coverage; 3 of 3 body strikes landed there, though his overall body share is below the division average)",
       "sprawl and frame against wrestlers"
     ],
     "weaknesses": [
-      "modest volume: 3.76 sig landed/min time-decayed vs a 3.97 bantamweight average; outpointed by higher-output strikers (O'Malley 2026, Yan 2024, Kyler Phillips 2021)",
+      "modest volume: 3.76 sig landed/min time-decayed vs a 3.97 bantamweight average; lost decisions to sharper strikers: O'Malley out-landed him 48-36 on 92 attempts to his 94 (2026) and Yan out-landed him 99-86 (2024)",
       "opponents land 49% of their sig strikes on him (decayed) vs a 45.6% league average",
-      "a caught calf kick gave Umar Nurmagomedov his one takedown",
+      "a caught calf kick gave Umar Nurmagomedov his one takedown (mmasucka)",
+      "can lose rounds to takedowns: Kyler Phillips beat him in 2021 with 3 of 5 takedowns despite being out-landed 67-59",
       "lost to Sandhagen (2022) by doctor stoppage for a cut after round 4"
     ],
-    "summary": "A compact, heavy-handed boxer who sets up his right hand with low kicks and body shots and is most dangerous countering opponents who come forward or shoot. His sprawl and guillotine punish takedown attempts. He lands less volume than the elite strikers who have outpointed him, but he has never been knocked down in 18 UFC fights.",
+    "summary": "A compact, heavy-handed boxer who sets up his right hand with low kicks and is most dangerous countering opponents who come forward or shoot. His sprawl and guillotine punish takedown attempts. His output is slightly below the division average and he has lost close decisions to sharper strikers, but he has never been knocked down in 18 UFC fights.",
     "sources": [
       "https://www.ufc.com/athlete/song-yadong",
       "https://www.sherdog.com/news/articles/Scouting-Report-Yadong-Song-187972",

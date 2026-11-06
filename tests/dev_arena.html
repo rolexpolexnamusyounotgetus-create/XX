@@ -1,0 +1,136 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arena dev</title>
+<style>
+  /* the page loads these from Google Fonts; the dev server may serve local copies at /fonts/ */
+  @font-face { font-family: "Big Shoulders Display"; font-weight: 800; src: url("/fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Big Shoulders Display"; font-weight: 900; src: url("/fonts/big-shoulders-display-latin-900-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Archivo"; font-weight: 700; src: url("/fonts/archivo-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Archivo"; font-weight: 800; src: url("/fonts/archivo-latin-800-normal.woff2") format("woff2"); }
+  html, body { margin: 0; background: #000; color: #cfd6e0; font: 13px system-ui, sans-serif; }
+  #wrap { position: relative; width: 100vw; height: 100vh; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #ui { position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,.55); padding: 6px 8px; border-radius: 6px; }
+  #ui button, #ui select { font: inherit; margin: 2px; }
+  #ui.hide { display: none; }
+  #stat { white-space: pre; font: 11px ui-monospace, monospace; }
+</style>
+</head><body>
+<div id="wrap"><canvas id="c"></canvas>
+<div id="ui">
+  <div>
+    <button data-step="1">+1 s</button><button data-step="5">+5 s</button><button data-step="20">+20 s</button>
+    <button id="play">play</button>
+    <select id="shot"><option value="">auto camera</option><option>wide</option><option>mid</option><option>cage</option><option>top</option><option>close</option><option>high</option><option>ring</option></select>
+    <select id="q"><option value="">auto quality</option><option>high</option><option>medium</option><option>low</option></select>
+    <button data-burst="0.5">big moment</button>
+  </div>
+  <div id="stat"></div>
+</div></div>
+<script src="../vendor/three.min.js"></script>
+<script src="../vendor/three-r128-examples/shaders/CopyShader.js"></script>
+<script src="../vendor/three-r128-examples/shaders/LuminosityHighPassShader.js"></script>
+<script src="../vendor/three-r128-examples/shaders/FXAAShader.js"></script>
+<script src="../vendor/three-r128-examples/shaders/SMAAShader.js"></script>
+<script src="../vendor/three-r128-examples/shaders/VignetteShader.js"></script>
+<script src="../vendor/three-r128-examples/shaders/GammaCorrectionShader.js"></script>
+<script src="../vendor/three-r128-examples/postprocessing/EffectComposer.js"></script>
+<script src="../vendor/three-r128-examples/postprocessing/RenderPass.js"></script>
+<script src="../vendor/three-r128-examples/postprocessing/ShaderPass.js"></script>
+<script src="../vendor/three-r128-examples/postprocessing/UnrealBloomPass.js"></script>
+<script src="../vendor/three-r128-examples/postprocessing/SMAAPass.js"></script>
+<script src="../vendor/three-r128-examples/environments/RoomEnvironment.js"></script>
+<script src="../src/engine2.js"></script>
+<script src="../src/rig3d.js"></script>
+<script src="../src/arena3d.js"></script>
+<script src="../src/director.js"></script>
+<script src="../src/show3d.js"></script>
+<script>
+(function () {
+  var P = {}; (location.hash || "").slice(1).split("&").forEach(function (kv) { var p = kv.split("="); if (p[0]) P[p[0]] = decodeURIComponent(p[1] || "1"); });
+  if (P.noui) document.getElementById("ui").className = "hide";
+  if (P.q) window.FIGHT_QUALITY = P.q;
+  var cv = document.getElementById("c");
+  var log = [];
+  var hooks = {
+    onText: function (b, r, t) { log.push("R" + (r + 1) + " " + t.toFixed(1) + " " + b.txt); },
+    onPhase: function (p, r) { log.push("phase " + p + " r" + (r + 1)); },
+    onFinish: function (res) { log.push("finish " + JSON.stringify(res)); },
+    onResult: function (res) { log.push("result " + JSON.stringify(res)); }
+  };
+  var show = new FightShow.Show(cv, hooks, { maxDpr: P.dpr ? +P.dpr : 2, shadow: 2048, adaptive: !P.q });
+  var arena = show.arena;
+  arena.show = show;
+  function fit() { var w = cv.clientWidth, h = cv.clientHeight; show.resize(w, h); }
+  fit(); window.addEventListener("resize", fit);
+
+  var E = FightEngine, m = E.volkGaethje(E.presetKnobs("baseline"));
+  var want = P.mode || "kd", seed = +P.seed || 0, fight;
+  if (!seed) for (seed = 1; seed < 5000; seed++) {
+    fight = E.simulate(m, E.makeRng(seed), true);
+    var r1 = fight.rounds[0].ev;
+    var kd = r1.filter(function (e) { return e.k === "kd" && e.t < 90; }).length, td = r1.filter(function (e) { return e.k === "td" && e.t < 60; }).length;
+    if (want === "kd" && kd && fight.rounds.length >= 2) break;
+    if (want === "td" && td && fight.rounds.length >= 2) break;
+    if (want === "ko" && fight.method === "KO" && fight.round === 1 && fight.t < 100) break;
+    if (want === "dec" && fight.rounds.length === 5 && !fight.rounds[4].fin) break;
+  } else fight = E.simulate(m, E.makeRng(seed), true);
+  var script = FightDirector.build(fight, seed);
+  log.push("seed " + seed + " " + fight.winner + " " + fight.method + " R" + fight.round);
+  show.speed = +P.speed || 6;
+  show.load(script);
+
+  // camera override for review shots: force a show shot, or place the camera by hand
+  var forced = null, manual = null;
+  var pick0 = show.cam.pickAuto.bind(show.cam);
+  show.cam.pickAuto = function (ctx) { return forced || pick0(ctx); };
+  var update0 = show.cam.update.bind(show.cam);
+  show.cam.update = function (dt, ctx) {
+    update0(dt, ctx);
+    if (manual) { var c = this.cam; c.position.set(manual.p[0], manual.p[1], manual.p[2]); c.lookAt(manual.l[0], manual.l[1], manual.l[2]); c.fov = manual.fov; c.updateProjectionMatrix(); }
+  };
+  var VIEWS = {
+    establishing: { p: [0, 7.5, 21], l: [0, 0.6, 0], fov: 32 },
+    hardcam: { p: [0.5, 5.6, 13.5], l: [0, 0.9, 0], fov: 24 },
+    lowwide: { p: [-6.8, 1.0, 7.2], l: [0, 1.6, 0], fov: 40 },
+    crowd: { p: [3, 2.2, 3], l: [-12, 3.5, -10], fov: 50 },
+    truss: { p: [2.2, 0.6, 2.6], l: [0, 8.5, 0], fov: 55 },
+    fence: { p: [0.9, 1.25, 3.6], l: [1.3, 1.0, 4.4], fov: 40 },
+    canvas: { p: [0, 3.2, 2.4], l: [0, 0, -0.6], fov: 50 },
+    birdseye: { p: [0, 14.5, 0.01], l: [0, 0, 0], fov: 48 }
+  };
+  var running = false;
+  function stepFor(sec, render) {
+    var r0 = arena.render; arena.render = function () {};
+    var n = Math.round(sec * 30);
+    for (var i = 0; i < n; i++) show.frame(1 / 30);
+    arena.render = r0;
+    if (render !== false) show.frame(1 / 30);
+  }
+  function settle(shot) { forced = shot || null; manual = null; show.cam.cut = true; }
+  window.DEV = {
+    show: show, arena: arena, log: log, script: script, seed: seed,
+    step: stepFor,
+    shot: function (name) { settle(name); stepFor(0, true); },
+    view: function (name) { manual = VIEWS[name] || name; forced = null; show.frame(1 / 30); },
+    clearView: function () { manual = null; forced = null; },
+    views: Object.keys(VIEWS),
+    render: function () { show.render(1 / 60); },
+    stats: function () { return arena.stats(); }
+  };
+  var stat = document.getElementById("stat");
+  function info() { var s = arena.stats(); stat.textContent = show.phase + " " + show.state + " R" + (show.rIdx + 1) + " " + (show.clock || 0).toFixed(0) + "s  cam " + show.cam.label + "\n" + JSON.stringify(s); }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-step]"), function (b) { b.onclick = function () { stepFor(+b.dataset.step); info(); }; });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-burst]"), function (b) { b.onclick = function () { arena.burst(+b.dataset.burst); }; });
+  document.getElementById("shot").onchange = function (e) { settle(e.target.value); };
+  document.getElementById("q").onchange = function (e) { if (e.target.value) arena.setQuality(e.target.value); };
+  document.getElementById("play").onclick = function () { running = !running; this.textContent = running ? "pause" : "play"; last = 0; if (running) requestAnimationFrame(loop); };
+  var last = 0;
+  function loop(t) { if (!running) return; var dt = last ? Math.min(0.05, (t - last) / 1000) : 1 / 60; last = t; show.frame(dt); if ((t | 0) % 10 === 0) info(); requestAnimationFrame(loop); }
+  function ready() { try { arena.repaintMat(); } catch (e) {} show.frame(1 / 30); info(); window.READY = true; }
+  if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('900 64px "Big Shoulders Display"'), document.fonts.load('800 32px Archivo')]).then(ready, ready);
+  else ready();
+  if (P.play) document.getElementById("play").click();
+})();
+</script>
+</body></html>
