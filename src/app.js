@@ -1288,9 +1288,9 @@
       : fav + " is " + (pf < 0.6 ? "a slight" : (pf < 0.7 ? "a clear" : (pf < 0.8 ? "a strong" : "a heavy"))) + " favorite at " + pct(pf, 0) + ".";
     if (!BL.r) return s + " The blend did not load, so this is the simulator alone.";
     if (BL.useLine) {
-      var pm = BL.mk.p, d = p - pm;
+      var pm = BL.mk.p, favA = p >= 0.5, pmf = favA ? pm : 1 - pm, d = pf - pmf;
       s += Math.abs(d) < 0.01 ? " The market line carries most of the weight and the other models barely move it." :
-        " The market line alone gives " + A + " " + pct(pm, 0) + "; the other models pull that " + (d > 0 ? "up" : "down") + " to " + pct(p, 0) + ".";
+        " The market line alone gives " + fav + " " + pct(pmf, 0) + "; the other models move that " + (d > 0 ? "up" : "down") + " to " + pct(pf, 0) + ".";
       if (BL.rNo && Math.abs(BL.rNo.p - pm) > 0.15) s += " On stats alone the blend has " + A + " at " + pct(BL.rNo.p, 0) + ". A gap that size is a warning, not an edge: on past fights the market usually won those arguments.";
     } else {
       var top = null, c = BL.r.contrib || {};

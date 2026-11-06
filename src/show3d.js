@@ -296,8 +296,10 @@
       P.hp = cl ? 0.15 : 0.02 + 0.16 * hd.chinTuck + 0.04 * cr; P.hy = (cl ? 0.08 : 0.1 + 0.25 * bl) * st; P.hr = 0;
       // guard: elbows down on the ribs, gloves at cheek/brow height, lead hand a little out front, rear glove by the chin
       var op = pf.open, gh = G.height, lh = clamp(gh + (G.leadHeight - 0.6) * 0.6, 0, 1), rh = clamp(gh + (G.rearHeight - 0.6) * 0.6, 0, 1);
-      P.hl[lead].set((0.03 + 0.035 * G.leadWidth + 0.02 * op) * H * st, (0.085 + 0.115 * lh - 0.03 * op) * H, (0.17 + 0.13 * G.leadReach) * H);
-      P.hl[rear].set(-(0.045 + 0.02 * op) * H * st, (0.08 + 0.11 * rh - 0.03 * op) * H, (0.105 + 0.08 * (1 - G.rearTuck)) * H);
+      // positions are in the chest frame, which is turned with the bladed stance: swing them back onto the opponent's line
+      var cyaw = cl ? 0 : 0.09 + 0.21 * bl, lz = (0.16 + 0.12 * G.leadReach) * H, rz = (0.12 + 0.08 * (1 - G.rearTuck)) * H;
+      P.hl[lead].set(((0.035 + 0.035 * G.leadWidth + 0.02 * op) * H + lz * cyaw) * st, (0.112 + 0.115 * lh - 0.03 * op) * H, lz);
+      P.hl[rear].set((-(0.062 + 0.02 * op) * H + rz * cyaw) * st, (0.098 + 0.11 * rh - 0.03 * op) * H, rz);
       var fl = 0.12 + 0.75 * G.elbowFlare;
       P.hpl[lead].set(fl * st, -1, -0.3); P.hpl[rear].set(-fl * st, -1, -0.38);
       if (!cl) {

@@ -47,7 +47,7 @@
   var S = {
     enabled: false, wanted: false, volume: 0.8, ctx: null, buf: {}, loaded: false, loading: null, show: null, hooks: null,
     master: null, comp: null, replayLP: null, crowd: null, sfx: null, voice: null, bedGain: null, bedLP: null, bedOn: false,
-    voices: 0, plays: 0, log: [], excite: 0, level: 0.4, roarT: -99, booT: -99, hits: [], lastShowT: null, lastShowAt: 0,
+    voices: 0, ends: [], plays: 0, log: [], excite: 0, level: 0.4, roarT: -99, booT: -99, hits: [], lastShowT: null, lastShowAt: 0,
     frozen: false, clapR: -1, lastClock: 0, lastStrikeClock: 0, groundSince: null, clinchRattleT: -99, raf: 0, ui: null, rng: Math.random
   };
 
@@ -122,6 +122,9 @@
     if (!S.enabled || !S.ctx || S.ctx.state !== "running" || S.frozen) return null;
     var b = S.buf[name];
     if (!b) return null;
+    var tn = now();
+    if (S.ends.length && S.ends[0] <= tn) S.ends = S.ends.filter(function (e) { return e > tn; });
+    S.voices = S.ends.length;
     if (S.voices >= MAX_VOICES && !o.prio) return null;
     var c = S.ctx, src = c.createBufferSource(), g = c.createGain(), p = panner(o.pan);
     src.buffer = b;
@@ -130,10 +133,12 @@
     src.connect(g);
     var out = o.bus === "crowd" ? S.crowd : (o.bus === "voice" ? S.voice : S.sfx);
     if (p) { g.connect(p); p.connect(out); } else g.connect(out);
-    var t = now() + Math.max(0, o.when || 0);
-    S.voices++; S.plays++;
-    src.onended = function () { S.voices = Math.max(0, S.voices - 1); try { src.disconnect(); g.disconnect(); if (p) p.disconnect(); } catch (e) { /* gone */ } };
-    try { src.start(t); } catch (e) { S.voices--; return null; }
+    var t = tn + Math.max(0, o.when || 0);
+    src.onended = function () { try { src.disconnect(); g.disconnect(); if (p) p.disconnect(); } catch (e) { /* gone */ } };
+    try { src.start(t); } catch (e) { return null; }
+    // voices are counted by when they end, so a missed onended can never leak one
+    S.ends.push(t + b.duration / (o.rate || 1)); S.ends.sort(function (x, y) { return x - y; });
+    S.voices = S.ends.length; S.plays++;
     S.log.push({ name: name, t: +t.toFixed(3), gain: +g.gain.value.toFixed(3), pan: p ? +p.pan.value.toFixed(2) : null });
     if (S.log.length > 80) S.log.shift();
     return src;
@@ -422,7 +427,7 @@
     getVolume: function () { return S.volume; },
     state: function () {
       return { supported: !!AC, enabled: S.enabled, wanted: S.wanted, context: S.ctx ? S.ctx.state : null, loaded: S.loaded, buffers: Object.keys(S.buf).length,
-        attached: !!S.hooks, voices: S.voices, plays: S.plays, level: +S.level.toFixed(3), frozen: S.frozen, log: S.log.slice(-30) };
+        attached: !!S.hooks, voices: S.voices, plays: S.plays, level: +S.level.toFixed(3), frozen: S.frozen, log: S.log.slice() };
     },
     ready: function () { return S.loading || Promise.resolve(); },
     SOUNDS: SND,

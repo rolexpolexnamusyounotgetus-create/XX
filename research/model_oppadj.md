@@ -10,6 +10,13 @@ half-life and per-stat prior strengths" (now merged into the v5 build). Files:
   `roster[slug]` (1,229 fighters, factors at the Oct 31, 2026 snapshot plus a schedule diagnostic),
   `results` (every number in this report), `meta` (semantics, units, engine k values used).
 
+Factor names (task name -> fields in `oppadj.json`, each relative to the same field of `fighterRates`):
+att_adj -> dAtt, cAtt, gAtt (attempt rates at distance, in the clinch, on top); def_adj -> accAg[t] (accuracy
+odds allowed, t = head, body, leg) and dAttAg, cAttAg, gAttAg (attempts allowed); acc_adj -> acc[t] (accuracy
+odds); kdpow_adj -> pow; chin_adj -> chin; td_adj -> tdAtt (attempts) and tdAcc (success odds); tddef_adj ->
+tdAccAg (success odds allowed) and tdAttAg; plus ctrl / octrl (control, control allowed), topSkill / escWeak
+(control per takedown landed / absorbed), sub / subAg (submission attempts, allowed).
+
 Reproduce (4 cores): `python3 tools/oppadj.py` (about 11 minutes; `--cache f.pkl` saves the grid and
 `--reuse` re-scores from it in 80 s), then `python3 tools/oppadj.py --engine-eval` and
 `python3 tools/oppadj.py --engine-eval --engine-gated` (engine Monte Carlo, about 15 minutes each on an idle
@@ -246,7 +253,32 @@ Challenger: the same plus beta x log(F_off,X x F_def,Y) (logit for probabilities
 model already learns some schedule information from opponents' raw allowed rates, which is why the betas are
 below 1 except for strike volume, but the adjusted effects still carry information it misses.
 
-ENGINE_SECTION_TBD
+## Engine-level check (Monte Carlo, engine v3)
+
+`tools/oppadj_engine.js` simulates every 2019-2025 backtest fight in both corner orders with the same seeds
+in four configurations: plain engine rates; plain rates x factors; the ML stat-line rates through
+`src/ml/mlrates.js applyToMatchup` (the v4 core; out-of-fold rates for 2019-2023, dev model for 2024-25); ML
+targets x (F_off,X F_def,Y)^beta. 250 simulations per orientation for 2019-2023, 600 for 2024-25. Winner log
+loss on decisive fights (lower is better), deltas with 95% bootstrap intervals; 7-bin = A KO / SUB / DEC,
+draw, B DEC / SUB / KO.
+
+ENGINE_REC_TBD
+
+First run (every family, ML betas clipped to [0, 1] with no on/off selection; `results.engine_backtest`; other
+work edited the engine's judging and calibration scales between its two periods, so only the paired deltas
+within a period are meaningful):
+
+| period | plain | x factors | ML | ML x factors^beta | factors - plain | ML x f - ML | 7-bin: factors - plain | 7-bin: ML x f - ML |
+|---|---|---|---|---|---|---|---|---|
+| 2019-2023 (1,955) | 0.6724 | 0.6691 | 0.6655 | 0.6655 | -0.0034 [-0.0091, +0.0024] | -0.0000 [-0.0033, +0.0033] | -0.0095 [-0.0195, +0.0002] | -0.0073 [-0.0140, -0.0002] |
+| 2024-2025 (854) | 0.6439 | 0.6407 | 0.6296 | 0.6276 | -0.0032 [-0.0110, +0.0047] | -0.0020 [-0.0058, +0.0017] | -0.0080 [-0.0225, +0.0051] | +0.0045 [-0.0027, +0.0121] |
+
+Walk-forward Elo: 0.6857 and 0.6769. The factors make the simulator more decisive (mean |logit P(A)| 0.37 ->
+0.40) and slightly better calibrated, by about 0.003 log loss in both periods without the ML layer; with the
+ML layer the winner is unchanged to slightly better and the 7-bin outcome is better in 2019-2023 and slightly
+worse in 2024-25. None of the winner deltas is significant: the per-fight stat gains above are large and
+clear, but how much they move the winner depends on the rest of the engine, and the ML layer already carries
+part of the schedule information.
 
 ## Factor sizes
 

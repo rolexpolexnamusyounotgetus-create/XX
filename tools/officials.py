@@ -1792,6 +1792,7 @@ def run_referees(F, S, ded=None):
                               "dispersion": fin_eb[name]["disp"],
                               "heldout_2024_on": {k: wf[name][k] for k in ("test_n", "test_events", "test_loss_league",
                                                                          "test_loss_ref", "test_delta",
+                                                                         "tau_laplace_pre2024",
                                                                          "test_loss_ref_laplace", "test_delta_laplace")}}
     # per-referee rows
     refs = sorted(set(Fall.referee) - {""})
@@ -1931,13 +1932,19 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
                             "card_ll_per_fight": boot_diff(evL["card_ll"], test["models"]["indep"]["eval"]["card_ll"],
                                                            g=ga)},
         "note": "negative = better for log losses; positive = better for card log-likelihood"}
-    pA_L = evL["probs"][:, :3].sum(1)
-    pA_J = evJH["probs"][:, :3].sum(1)
-    dp = np.abs(pA_J - pA_L)
-    J["heldout_2024_on"]["judge_effect_size"] = {
-        "median_abs_dP_winner": float(np.median(dp)), "p90_abs_dP_winner": float(np.percentile(dp, 90)),
-        "max_abs_dP_winner": float(dp.max()), "share_abs_dP_over_5pts": float((dp > 0.05).mean()),
-        "share_favorite_flips": float(((pA_J > 0.5) != (pA_L > 0.5)).mean())}
+    def eff_size(e1, e0):
+        p1, p0 = e1["probs"][:, :3].sum(1), e0["probs"][:, :3].sum(1)
+        dp = np.abs(p1 - p0)
+        s1, s0 = 1 - e1["probs"][:, 0] - e1["probs"][:, 6], 1 - e0["probs"][:, 0] - e0["probs"][:, 6]
+        return {"median_abs_dP_winner": float(np.median(dp)), "p90_abs_dP_winner": float(np.percentile(dp, 90)),
+                "max_abs_dP_winner": float(dp.max()), "share_abs_dP_over_5pts": float((dp > 0.05).mean()),
+                "share_favorite_flips": float(((p1 > 0.5) != (p0 > 0.5)).mean()),
+                "median_abs_dP_split": float(np.median(np.abs(s1 - s0))),
+                "p90_abs_dP_split": float(np.percentile(np.abs(s1 - s0), 90))}
+    evLH = test["models"]["league_home"]["eval"]
+    J["heldout_2024_on"]["judge_effect_size"] = dict(eff_size(evJH, evL), what="judges + home vs league judge")
+    J["heldout_2024_on"]["effect_size_named_judges"] = dict(eff_size(evJH, evLH), what="judges + home vs league + home")
+    J["heldout_2024_on"]["effect_size_home"] = dict(eff_size(evLH, evL), what="league + home vs league")
     # round-level metrics (cards with observed round scores) and the v3 engine's rule on the same fights
     te_rows = [r for r in rows if r["year"] in test["years_eval"]]
     rl = {}
