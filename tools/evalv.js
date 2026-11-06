@@ -17,6 +17,10 @@
    - Learned stat-line rates, leak-free, when the engine has them (FightEngine.loadMLRates and params mlWeight > 0):
      data/derived/mlrates_oof.json (2019-2023: time-ordered folds trained on 2010..year-1; 2024-2025: the dev model
      trained 2010-2023), passed per fight as opts.ml = { pred } in the simulation's corner order.
+   - Durability (engine v5): durability.json walk-forward records + the train-only NORM (durOpts below).
+   - Strength of schedule (engine v5, components.styles_sos sos "wf"): sos_wf.json walk-forward pairs per fight, A/B swapped
+     with the corners; leave-one-year-out coefficients on train, the 2019-2023 fit on 2024-2025 (sosOpts below). The frozen
+     copy must include styles_sos.js next to engine3.js.
    Metrics (per split, 95% event-cluster bootstrap CIs, 2,000 resamples of events):
      winner log loss, Brier, accuracy, ECE (10 bins, mirrored), calibration slope (mirrored, no intercept), 7-bin log
      loss, method (KO / SUB / DEC) log loss, who x how x when log loss and the rest of tools/methodround.py's metrics
@@ -93,6 +97,26 @@ if (!isMainThread) {
     const base = Math.sqrt(bA * bB);
     return o === 0 ? { A: side(d.A), B: side(d.B), base } : { A: side(d.B), B: side(d.A), base };
   }
+  // styles_sos component (engine v5 merge step 3, params.components.styles_sos sub-flag sos, sosSource "wf"): a no-op until
+  // opts.sos is passed. Per fight: the one-step walk-forward pair data/derived/sos_wf.json fights[id] (opponents' quality from
+  // fights strictly before this one), A/B swapped together with the corners; coefficients meta.coef_loyo[path][year] for
+  // train fights (leave-one-year-out, the out-of-fold policy of the learned rates) and meta.coef (the full 2019-2023 fit, =
+  // src/styles_sos.js SOS_COEF) for 2024-2025. Same logic as tools/sosrec.js. The frozen copy must hold styles_sos.js next
+  // to engine3.js, or the component silently stays off: refused below.
+  const SSC = PRM && PRM.components && PRM.components.styles_sos;
+  const useSOS = !!SSC && (SSC === true || SSC.sos !== false) && ((PRM.stylesSOS && PRM.stylesSOS.sosSource) || "wf") === "wf";
+  if (useSOS && !fs.existsSync(path.join(W.engineDir, "styles_sos.js"))) throw new Error("styles_sos: " + W.engineDir + "/styles_sos.js missing (freeze it with the engine)");
+  const SOSJ = useSOS ? readJSON("data/derived/sos_wf.json") : null;
+  function sosOpts(f, o, params) {
+    const s = SOSJ.fights[f.id];
+    if (!s || !s.A || !s.B) throw new Error("styles_sos: no walk-forward pair for fight " + f.id + " (refusing a neutral run)");
+    const y = f.date.slice(0, 4), M = SOSJ.meta;
+    const coef = f.date < "2024-01-01" ? { ml: M.coef_loyo.ml[y], base: M.coef_loyo.base[y] } : { ml: M.coef.ml, base: M.coef.base };
+    if (!coef.ml || !coef.base) throw new Error("styles_sos: no coefficients for " + f.date);
+    const p = Object.assign({}, params || {});
+    p.stylesSOS = Object.assign({}, p.stylesSOS || {}, { sosCoef: coef });
+    return { sos: o === 0 ? { A: s.A, B: s.B } : { A: s.B, B: s.A }, params: p };
+  }
   const names = OOF ? OOF.meta.targets : null;
   const rates = (arr) => { const o = {}; names.forEach((n, i) => { o[n] = arr[i]; }); return o; };
   parentPort.on("message", (msg) => {
@@ -114,8 +138,12 @@ if (!isMainThread) {
             else opts.ml = false;
           } else if (typeof E.loadMLRates === "function") opts.ml = false;
           if (useDur) { opts.dur = durOpts(f.id, o); opts.params = durNorm; }
+          if (useSOS) { const so = sosOpts(f, o, opts.params); opts.sos = so.sos; opts.params = so.params; }
           const m = E.matchup(A, B, opts);
           if (useDur && !(m.dur && m.dur.baseFromRecord)) throw new Error("durability: walk-forward record not applied for " + f.id);
+          if (useSOS && !(m.stylesSOS && m.stylesSOS.sos && m.stylesSOS.sos.have && m.stylesSOS.sos.have[0] && m.stylesSOS.sos.have[1])) {
+            throw new Error("styles_sos: walk-forward pair not applied for " + f.id);
+          }
           if (m.mlApplied) acc.mlApplied++;
           const rng = E.makeRng(mix(mix(hash32(f.id), o), W.seed));
           for (let i = 0; i < W.sims; i++) {
@@ -501,6 +529,10 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
       ml_applied_share: mlShare, sims_per_order: SIMS, seed: SEED, bootstrap: B, n_fights: pfs.length, n_decisive: nWin, n_outcome: nOut, failed: errs.length,
       wall_s: (Date.now() - t0) / 1000, main_cpu_s: (cpu.user + cpu.system) / 1e6,
       priors: "data/derived/mlcal_priors_asof.json (walk-forward 5-year windows)",
+      sos: P0.components && P0.components.styles_sos && (P0.components.styles_sos === true || P0.components.styles_sos.sos !== false) &&
+        ((P0.stylesSOS && P0.stylesSOS.sosSource) || "wf") === "wf"
+        ? "styles_sos sos 'wf': data/derived/sos_wf.json pairs (corners swapped with the order); coefficients meta.coef_loyo[year] on train, meta.coef (fit 2019-2023) on 2024-2025"
+        : "off",
       notes: "CIs: 2,000 event-cluster resamples (400 for ece and calSlope). ECE is biased upward under resampling (noise in 10 " +
         "bins), so its interval is a spread, not a CI around the point estimate. Base-rate 'actual' 10-8 share is implied from " +
         "card totals (19 x judged rounds - card sum; deductions count as 10-8s); the simulated share counts judges' 10-8s plus " +

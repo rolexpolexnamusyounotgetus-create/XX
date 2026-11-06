@@ -30,6 +30,10 @@ function derived(name) {
 const load = (n) => JSON.parse(fs.readFileSync(derived(n), "utf8"));
 const BT = load("backtest_dev.json"), PRI = load("mlcal_priors_asof.json"), OOF = load("mlrates_oof.json");
 const DEV = ML.load(load("mlrates_dev.json"));
+// engine v5: leak-free durability records + train NORM (tools/durrec.js) and walk-forward SOS pairs (tools/sosrec.js,
+// leave-one-year-out coefficients on these train fights); without them the backtest matchups would use the live durability
+// fit (2008..2026-10) and run SOS neutral
+const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT), SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);
 const fights = BT.fights.filter((f) => f.date >= "2019-01-01" && f.date < "2024-01-01");
 const step = Math.max(1, Math.floor(fights.length / NF));
 const O = FP.officials, b = O.beta;
@@ -45,7 +49,11 @@ for (let fi = 0; fi < fights.length && used < NF; fi += step, used++) {
     const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: PRI[f.date.slice(0, 4)],
       params: { components: { officials: false } } };
     if (ent) { const rA = rates(ent.A), rB = rates(ent.B); opts.ml = { pred: sw ? { A: rB, B: rA } : { A: rA, B: rB }, model: DEV }; }
+    const P0 = opts.params;
+    if (DR.on(P0)) DR.apply(opts, f.id, !!sw);
+    if (SR.on(P0)) SR.apply(opts, f, !!sw);
     const m = E.matchup(prof(sw ? f.B : f.A), prof(sw ? f.A : f.B), opts);
+    DR.assertApplied(m, f.id, P0); SR.assertApplied(m, f.id, P0);
     for (let s = 0; s < N; s++) {
       const fo = E.simulate(m, E.makeRng(1000003 * fi + 7919 * sw + s + 1), true);
       for (const rec of fo.rounds) {
