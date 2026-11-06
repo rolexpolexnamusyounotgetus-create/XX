@@ -69,7 +69,7 @@ function pngSize(buf) { return buf.readUInt32BE(16) + "x" + buf.readUInt32BE(20)
   const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--no-sandbox"] });
   const page = await browser.newPage({ viewport: { width: SIZE, height: SIZE }, deviceScaleFactor: 1 });
   page.on("pageerror", e => console.error("page error:", e.message));
-  const lk = (opt("likeness", "1") === "0" ? "&likeness=0" : "") + (opt("morphs") ? "&morphs=" + encodeURIComponent(opt("morphs")) : "");
+  const lk = (opt("likeness", "1") === "0" ? "&likeness=0" : "") + (opt("extra") ? "&" + opt("extra") : "") + (opt("morphs") ? "&morphs=" + encodeURIComponent(opt("morphs")) : "");
   await page.goto(`http://127.0.0.1:${port}/tests/dev_avatar.html?w=${SIZE}&h=${SIZE}&slugs=${slug}${lk}`, { timeout: 300000 });
   const ok = await page.evaluate(() => window.DEV.ready);
   if (!ok) { console.error("avatar did not build"); process.exit(2); }

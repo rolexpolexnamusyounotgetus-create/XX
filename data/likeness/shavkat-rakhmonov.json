@@ -1,0 +1,211 @@
+{
+  "slug": "shavkat-rakhmonov",
+  "name": "Shavkat Rakhmonov",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 32,
+  "official": { "dob": "1994-10-23", "height_cm": 185.4, "reach_cm": 195.6, "stance": "Orthodox", "division": "Welterweight", "fight_weight_lb": 170 },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg",
+    "ref-cagesidepress-ufc296-mediaday-2023-12-13.jpg",
+    "ref-cagesidepress-ufc310-weighin-2024-12-06.jpg",
+    "ref-cagesidepress-ufc310-faceoff-2024-12-07.jpg",
+    "ref-cagesidepress-ufc310-ceremonial-2024-12-07.jpg",
+    "ref-cagesidepress-ufc310-postfight-2024-12-08.jpg",
+    "ref-tengrinews-akorda-award-2025-10-24.jpg",
+    "ref-azattyq-ufc296-3q-2023-12.jpg",
+    "wiki-ufc310-2024-12-08.jpg"
+  ],
+  "photo_coverage": "12 photos. Frontal: UFC studio headshot (Dec 2024), UFC 310 media day (Dec 2024) and an Oct 2025 award ceremony (the most recent clear face). Three-quarter: UFC 296 media day and a UFC 296 crop. Profile: only the UFC 310 face-off, and his fur hat covers the forehead and hair. Body: two studio cutouts (2023 and Dec 2024) and two weigh-in shots. He has not fought since Dec 2024 (knee surgeries in 2025 and early 2026), so there are no 2026 fight-week photos; the Oct 2025 photo is the only recent one. The only freely licensed photo (Commons CC0) is a dim phone snapshot, too small for face detail.",
+  "face": {
+    "shape": "Long, rectangular face, clearly longer than it is wide. Broad across the cheekbones, with only a slight taper to a wide jaw. The lower third (nose base to chin) is long. At fight weight the face is lean with flat planes under the cheekbones; off camp (Oct 2025) it is fuller and rounder.",
+    "jaw": "Wide and angular. The jaw angles sit low and far out under the ears, and the jaw line runs fairly straight toward a broad chin. In profile the jaw line is long and slopes gently down to the chin.",
+    "chin": "Broad and long, with a flat, squarish front. In profile (UFC 310 face-off) the chin sits slightly behind the lower lip, so it reads mildly receding rather than prominent.",
+    "cheekbones": "Broad and prominent, set wide, giving the face its width at eye level. Below them the cheeks are flat at fight weight.",
+    "brow_ridge": "Moderate. Not heavy, but the upper eyelid area is full, so the eyes look set under the brow rather than deep-set.",
+    "forehead": "Tall and fairly flat, mostly hidden by a blunt, straight-cut fringe in fight-week photos (the fringe sits about 3 cm above the brows). A small vertical crease or bump sits between the brows (glabella) in the studio headshot. In the profile the forehead slopes back moderately.",
+    "eyes": {
+      "shape": "Narrow almond eyes with a small vertical opening. The upper lid is full, with no visible crease across most of it, and an inner fold covers the inner corners (epicanthic fold). Outer corners are level to very slightly lower than the inner corners.",
+      "spacing": "Wide-set: the gap between the eyes is a little more than one eye-width.",
+      "colour": "Dark brown; reads near-black in arena light.",
+      "size": "Small relative to the broad face, mainly because of the narrow opening."
+    },
+    "eyebrows": {
+      "thickness": "Medium, denser toward the inner ends.",
+      "shape": "Long and fairly straight, with a very slight lift in the middle third and tails that taper down. They sit about one eye-height above the eyes.",
+      "colour": "Dark brown to black, matching the hair.",
+      "colour_hex": "#2b1d18"
+    },
+    "nose": {
+      "length": "Medium.",
+      "width": "Broad at the base, with wide, rounded nostril wings; the bridge is moderate in width.",
+      "bridge": "Low to medium height between the eyes, then straight down to the tip.",
+      "hump": "None. The profile line is straight.",
+      "tip": "Rounded and fairly full, pointing straight ahead; moderate projection in profile.",
+      "nostrils": "Wide, slightly flared, visible from the front.",
+      "fight_damage": "None obvious. The nose looks straight and symmetric in all photos."
+    },
+    "mouth": {
+      "width": "Medium, about the width between the pupils or a little more.",
+      "upper_lip": "Medium fullness with a clearly defined, slightly peaked cupid's bow.",
+      "lower_lip": "Full and rounded, fuller than the upper lip.",
+      "resting_expression": "Lips closed and relaxed, corners level. In profile the lips sit slightly forward of the chin. His smile (post-fight) narrows the eyes to slits and lifts the cheeks strongly.",
+      "teeth": "Not clearly visible in these photos."
+    },
+    "ears": {
+      "size": "Medium to large and fairly long.",
+      "protrusion": "Stand out moderately from the head; visible from the front because the sides of the hair are short.",
+      "cauliflower_ear": "No clear cauliflower ear in any photo. The rims look normal; the studio light makes the right ear rim look thin and bright.",
+      "notes": "Lobes medium and attached loosely."
+    },
+    "notable_marks_scars": "No visible scars or moles at these resolutions. A small vertical crease between the brows. Nothing to model as permanent damage."
+  },
+  "hair": {
+    "style": "Fight week (2023-2024): short blunt crop. Sides and back clipped short (about 1 cm) but not faded to skin; the top is about 3-4 cm, combed forward into a straight, heavy fringe cut level across the forehead. Oct 2025 (off camp): grown out to about 5-6 cm on top, swept to his right with a side part, sides still short.",
+    "length_cm": { "top": 3.5, "sides": 1.0, "back": 1.0, "top_oct_2025": 5.5 },
+    "colour": "Very dark brown to black, no grey visible.",
+    "colour_samples": { "studio_top": "#1a0e0d", "studio_side": "#3e1f1b", "flash_mediaday_top": "#211b13", "indoor_2025_top": "#30271b" },
+    "colour_hex": "#2a1c16",
+    "hairline": "Straight across and full, no temple recession; usually hidden under the fringe.",
+    "texture": "Straight, thick and coarse; the fringe lies flat and spiky at the ends.",
+    "notes": "For walkouts, weigh-ins and post-fight he wears a large traditional white/cream fox-fur hat (tymak style) with long ear flaps; it is a signature look, not an everyday item."
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "colour": "Dark brown-black.",
+    "colour_hex": "#2a1f1a",
+    "density": "Light and patchy: a faint moustache shadow, a sparse chin patch and light stubble along the lower jaw; little on the upper cheeks.",
+    "shape": "No shaped beard. In fight-week photos 1-3 day stubble; in the Oct 2025 photo clean-shaven.",
+    "length_mm": "0-2"
+  },
+  "skin": {
+    "tone_samples": [
+      { "photo": "espn_headshot.png", "spot": "right cheek", "hex": "#faa48a", "light": "studio, high key" },
+      { "photo": "espn_headshot.png", "spot": "left cheek", "hex": "#faa98d", "light": "studio, high key" },
+      { "photo": "espn_headshot.png", "spot": "forehead", "hex": "#fdb9a1", "light": "studio, high key (near highlight)" },
+      { "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg", "spot": "right cheek", "hex": "#eca383", "light": "on-camera flash" },
+      { "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg", "spot": "left cheek", "hex": "#f0a083", "light": "on-camera flash" },
+      { "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg", "spot": "forehead", "hex": "#f7b394", "light": "on-camera flash" },
+      { "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg", "spot": "right cheek", "hex": "#bf7e69", "light": "soft indoor, slightly underexposed" },
+      { "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg", "spot": "left cheek", "hex": "#c5826c", "light": "soft indoor, slightly underexposed" },
+      { "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg", "spot": "forehead", "hex": "#e79c80", "light": "soft indoor" },
+      { "photo": "ref-cagesidepress-ufc296-mediaday-2023-12-13.jpg", "spot": "right cheek", "hex": "#fcb68d", "light": "warm stage light" },
+      { "photo": "ref-cagesidepress-ufc296-mediaday-2023-12-13.jpg", "spot": "left cheek", "hex": "#f8b088", "light": "warm stage light" }
+    ],
+    "sampling_method": "Median of a 7-13 px box per spot (9x9 in the studio headshot); boxes checked on an overlay sheet to sit on lit cheek or forehead skin, away from stubble and highlights.",
+    "tone_average_all": "#eca385",
+    "tone_average_by_light": "#e99f81 (cheek samples averaged within each of the 4 lighting setups, then across setups, so the bright studio and flash shots do not dominate)",
+    "tone_hex": "#e99f81",
+    "tone_hex_recommended": "#d49072",
+    "tone_note": "Studio, flash and stage photos all brighten the skin; the soft-light 2025 photo reads about #c2806a. #d49072 sits between them and is the suggested render albedo.",
+    "undertone": "Warm, golden-olive. Little visible redness; the cheeks do not flush strongly in these photos.",
+    "freckles_marks": "Even tone. Light body hair: a patch of chest hair between the pecs, a thin trail down the abdomen and light hair on the forearms and shins.",
+    "texture_pick": "middleage_asian_male (swatch #dcb597, lighter than the target in every channel, so the multiply tint can reach #d49072)"
+  },
+  "body": {
+    "build": "Tall, long-limbed and lean. Reach 195.6 cm is 10 cm more than his height, so the arms look long even at rest (hands hang to mid-thigh). Long legs. Rangy rather than bulky.",
+    "body_fat": "lean",
+    "body_fat_note": "Lean with modest definition at fight week: faint four-pack outline, visible obliques, no deep cuts. Not shredded.",
+    "shoulders": "Moderately broad and slightly sloping; deltoids rounded but not big.",
+    "chest": "Flat to moderate pecs, wide rather than thick.",
+    "arms": "Long and lean, with sinewy forearms and visible veins; biceps modest for a welterweight.",
+    "waist": "Narrow, straight-sided, with a mild V from shoulders to waist.",
+    "legs_calves": "Long, slim thighs with some quad definition; calves moderate. Long shins.",
+    "neck": "Medium thickness and fairly long; looks slender against the wide jaw.",
+    "posture": "Upright and relaxed; shoulders slightly rounded forward, arms hanging long with a slight elbow bend. Calm, square-on stance in the studio cutouts.",
+    "notable_physique_traits": "Long arms and legs on a lean frame, light chest hair, wide jaw on a medium neck. Silhouette reads tall and wiry, not thick."
+  },
+  "tattoos": [
+    { "where": "none visible", "description": "None visible on the torso, arms, legs or neck in any photo (studio cutouts front and three-quarter, weigh-ins).", "size": "n/a" }
+  ],
+  "accessories_seen": "Large white/cream fox-fur hat with long fur flaps (weigh-ins, face-offs, post-fight press). A teal or light-blue wristband on the right wrist at the UFC 310 ceremonial weigh-in.",
+  "kit": {
+    "typical_shorts": "UFC-issued Venum fight shorts. Dec 2024 studio kit: black with a grey and white tiger-stripe slash pattern, UFC on the waistband, crypto.com on the left thigh, a small yellow tag on the right leg. 2023 studio kit: royal blue and black Venum shorts with RAKHMONOV in yellow. Weigh-ins: plain brown or khaki trunks.",
+    "gloves": "Standard black UFC 4 oz gloves.",
+    "walkout": "Black or brown Venum fight-week jacket with tiger-stripe pattern and the Kazakhstan flag patch on the sleeve; fur hat.",
+    "shorts_colours_hex": { "black_base": "#16171a", "grey_stripe": "#4a4d52", "white_stripe": "#e9e9e9", "blue_2023": "#1f4f99", "name_yellow": "#f2c418" },
+    "brand_note": "Venum logo visible on the 2023 shorts."
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.108,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.45,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.1,
+    "macro/heightUpM": 0.2,
+    "macro/heightDownM": 0.0,
+    "macro/proportionsUpM": 0.5,
+
+    "head/head-square": 0.3,
+    "head/head-oval": 0.15,
+    "head/head-scale-vert-incr": 0.2,
+    "head/head-scale-horiz-incr": 0.05,
+
+    "forehead/forehead-scale-vert-incr": 0.15,
+    "forehead/forehead-trans-backward": 0.1,
+
+    "chin/chin-height-incr": 0.3,
+    "chin/chin-width-incr": 0.2,
+    "chin/chin-bones-incr": 0.3,
+    "chin/chin-prominent-decr": 0.1,
+
+    "cheek/l-cheek-bones-incr": 0.35,
+    "cheek/r-cheek-bones-incr": 0.35,
+    "cheek/l-cheek-volume-decr": 0.1,
+    "cheek/r-cheek-volume-decr": 0.1,
+
+    "eyes/l-eye-height2-decr": 0.35,
+    "eyes/r-eye-height2-decr": 0.35,
+    "eyes/l-eye-scale-decr": 0.1,
+    "eyes/r-eye-scale-decr": 0.1,
+    "eyes/l-eye-epicanthus-in": 0.35,
+    "eyes/r-eye-epicanthus-in": 0.35,
+    "eyes/l-eye-trans-out": 0.1,
+    "eyes/r-eye-trans-out": 0.1,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1,
+
+    "eyebrows/eyebrows-trans-down": 0.1,
+
+    "nose/nose-scale-horiz-incr": 0.25,
+    "nose/nose-width1-incr": 0.15,
+    "nose/nose-scale-depth-decr": 0.15,
+    "nose/nose-hump-decr": 0.1,
+    "nose/nose-point-width-incr": 0.25,
+    "nose/nose-nostrils-width-incr": 0.3,
+    "nose/nose-flaring-incr": 0.15,
+
+    "mouth/mouth-lowerlip-volume-incr": 0.25,
+    "mouth/mouth-upperlip-volume-incr": 0.1,
+    "mouth/mouth-cupidsbow-incr": 0.15,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "mouth/mouth-scale-depth-incr": 0.1,
+
+    "ears/l-ear-scale-incr": 0.1,
+    "ears/r-ear-scale-incr": 0.1,
+
+    "neck/neck-scale-vert-incr": 0.1,
+    "neck/neck-scale-horiz-incr": 0.05,
+
+    "torso/measure-shoulder-dist-incr": 0.15,
+    "torso/torso-vshape-incr": 0.15,
+    "torso/measure-waist-circ-decr": 0.1,
+    "torso/measure-hips-circ-decr": 0.05
+  },
+  "morphs_extra": {
+    "_note": "Outside the requested morph list but present in assets/embed/mh-shapes-x (src/avatar3d.js reads this block). Optional refinements.",
+    "ears/l-ear-flap-incr": 0.2,
+    "ears/r-ear-flap-incr": 0.2,
+    "head/head-rectangular": 0.25
+  },
+  "render_hints": {
+    "iris": "brown",
+    "eyebrows": "eyebrow001 tinted #2b1d18, long and straight",
+    "skin_base": "middleage_asian_male tinted toward #d49072",
+    "hair": "short02 tinted #2a1c16, cut to a blunt forward fringe if possible; sides short but not faded to skin"
+  },
+  "notes": "Confidence: high for hair, skin, lack of tattoos and overall build; medium for face proportions; low-to-medium for exact morph values. The weak points are the profile (one face-off shot, under the fur hat) and recency: he has been out injured since Dec 2024, and the only 2025-2026 photo is the Oct 2025 award ceremony, where he is clean-shaven, fuller in the face and has longer side-swept hair. For a fight-ready look use the Dec 2024 photos. What to watch: (1) The likeness rests on the long rectangular face, wide jaw and broad cheekbones; a short or round head stops looking like him. (2) Eyes must be narrow with a full upper lid and an inner-corner fold; default MakeHuman eyes are too open and too creased. (3) Nose is broad at the base with a straight, low-to-medium bridge, and the lower lip is full; do not narrow the nose. (4) Blunt straight fringe over a tall forehead is a strong recognition cue in fight week. (5) Body is lean and long-limbed with light chest hair and no tattoos; keep the arms long (+10 cm ape index) and the chest modest. (6) Skin is warm golden-olive; avoid pink. Macro ageOldM 0.108 uses the avatar3d.js mapping (32-25)/65. heightUpM 0.2 is a guess for 185 cm; the avatar scales the mesh to the official height anyway. MakeHuman l-/r- morphs refer to the character's own left and right; all values here are symmetric."
+}

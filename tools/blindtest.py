@@ -1032,7 +1032,11 @@ def replay(ctx, keys):
     bins = {k: {} for k in order}
     fits = {k: [] for k in order}
     sym = {k: {"max_abs": 0.0, "n": 0} for k in order}
-    caches = {k: FitCache(k, models[k].version, not ctx.args.no_cache and not ctx.perturb_from,
+    # cache keys chain the versions of everything a model reads, so a stacker's cached predictions die with its inputs
+    cver = {}
+    for k in order:
+        cver[k] = models[k].version + "".join("|" + cver[n] for n in REGISTRY[k]["needs"] if n in cver)
+    caches = {k: FitCache(k, cver[k], not ctx.args.no_cache and not ctx.perturb_from,
                           write=not ctx.perturb_from) for k in order}
     last_fit = {k: None for k in order}         # cutoff of the fit in force
     fitted = {k: False for k in order}          # is the model object holding that fit in this process?
@@ -1057,7 +1061,7 @@ def replay(ctx, keys):
             new_fit = sched != "never" and due(sched, last_fit[k], d)
             if new_fit:
                 last_fit[k], fitted[k], fit_info[k] = d, False, None
-            cacheable = sched != "never" and REGISTRY[k]["group"] != "stack"
+            cacheable = sched != "never"
             hit = caches[k].get((last_fit[k], d)) if cacheable else None
             if hit is not None:
                 info, pr, ps = hit
@@ -1266,8 +1270,9 @@ def score(ctx, R, B_boot=2000):
             c["n"] = len(ids)
             out["paired"][k][r] = c
     # segments (common set)
+    ORDER = ["1-2 (newcomer)", "3-5", "6-10", "11+", "50-60%", "60-70%", "70-80%", "80%+", "no closing line"]
     for dim in ("experience", "year", "rounds", "title", "division", "market_fav"):
-        levels = sorted(set(seg[i][dim] for i in common))
+        levels = sorted(set(seg[i][dim] for i in common), key=lambda v: (ORDER.index(v) if v in ORDER else 99, v))
         out["segments"][dim] = {}
         for lv in levels:
             ids = [i for i in common if seg[i][dim] == lv]
@@ -1367,16 +1372,16 @@ def write_report(doc):
             n, k, " (exp.)" if M[k]["experimental"] else "", info, fmt_ci(m["ci"]), fmt_d(pc) if pc else "-",
             fmt_d(pe) if pe else "-", m["brier"], 100 * m["accuracy"], m["slope"], m["ece"]))
     A("")
-    A("Models outside the common set (own coverage):")
-    A("")
-    A("| model | n | coverage | log loss [95% CI] | vs close (same fights) |")
-    A("|---|---|---|---|---|")
-    for k, m in sorted(S["own_coverage"].items(), key=lambda kv: kv[1]["log_loss"]):
-        if k in cm["metrics"]:
-            continue
-        pc = S["paired"].get(k, {}).get("market_close")
-        A("| `%s` | %d | %.0f%% | %s | %s |" % (k, m["n"], 100 * m["coverage"], fmt_ci(m["ci"]), fmt_d(pc) if pc else "-"))
-    A("")
+    outside = [(k, m) for k, m in sorted(S["own_coverage"].items(), key=lambda kv: kv[1]["log_loss"]) if k not in cm["metrics"]]
+    if outside:
+        A("Models outside the common set (own coverage):")
+        A("")
+        A("| model | n | coverage | log loss [95% CI] | vs close (same fights) |")
+        A("|---|---|---|---|---|")
+        for k, m in outside:
+            pc = S["paired"].get(k, {}).get("market_close")
+            A("| `%s` | %d | %.0f%% | %s | %s |" % (k, m["n"], 100 * m["coverage"], fmt_ci(m["ci"]), fmt_d(pc) if pc else "-"))
+        A("")
     if "ml_lr" in S["paired"]:
         A("Paired against the replayed ML logistic (`ml_lr`) and the no-line MoE (`moe_noline`), same fights:")
         A("")

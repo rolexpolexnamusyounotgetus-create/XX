@@ -1,0 +1,215 @@
+{
+  "slug": "michael-morales",
+  "name": "Michael Morales",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 27,
+  "official": { "dob": "1999-06-24", "height_cm": 182.9, "reach_cm": 200.7, "stance": "Orthodox", "division": "Welterweight", "fight_weight_lb": 170 },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_right.png",
+    "espn_stance_left.png",
+    "ref-cagesidepress-ufc330-week-2026-08.jpg",
+    "ref-cagesidepress-ufc322-postfight-2025-11-15.jpg",
+    "ref-cagesidepress-ufc322-weighin-2025-11-14.jpg",
+    "ref-cagesidepress-ufc322-weighin-flex-2025-11-14.jpg",
+    "ref-teleamazonas-ufc322-weighin-3q-2025-11-14.jpg",
+    "ref-cagesidepress-ufc322-mediaday-2025-11-13.jpg",
+    "ref-cagesidepress-vegas106-mediaday-2025-05-14.jpg",
+    "ref-eldiario-ufc322-weighin-pair-2025-11-14.jpg",
+    "wiki-carondelet-2025-05-27.jpg",
+    "wiki-carondelet-handshake-2025-05-27.jpg"
+  ],
+  "photo_coverage": "13 photos. Frontal: UFC studio headshot (Nov 2025), UFC 322 post-fight (Nov 2025) and the Aug 2026 UFC 330 fight-week photo (most recent). Three-quarter: two UFC 322 weigh-in shots and the Carondelet Palace photo (May 2025, public domain, the best-lit face). No true 90-degree profile was found; the closest is the UFC 322 weigh-in at about 60-70 degrees. Body: studio cutouts from Nov 2025 and Nov 2023, plus weigh-ins. Two Commons photos are public domain (Presidency of Ecuador).",
+  "face": {
+    "shape": "Long oval face, lean, widest at high cheekbones and tapering through a defined jaw to a medium chin. Slightly narrower at the temples than at the cheekbones.",
+    "jaw": "Clean, defined jaw line with visible jaw angles at fight weight; moderately wide, not heavy.",
+    "chin": "Medium width, rounded-square, projecting well in three-quarter view; covered by a short chin beard.",
+    "cheekbones": "High and prominent, the widest point of the face; lean, slightly hollow cheeks below them.",
+    "brow_ridge": "Moderate; the brows sit low and close over the eyes.",
+    "forehead": "Medium height, smooth and gently rounded; a few small dark spots (old acne marks) on the forehead and temples in the 2025 photos.",
+    "eyes": {
+      "shape": "Almond-shaped with a slightly heavy, hooded upper lid; outer corners level to slightly downturned, which gives a calm, half-lidded look.",
+      "spacing": "Average, about one eye-width apart.",
+      "colour": "Dark brown.",
+      "size": "Medium."
+    },
+    "eyebrows": {
+      "thickness": "Medium to thick.",
+      "shape": "Fairly straight and low, with a soft angle near the outer third; neat, well-defined edges.",
+      "colour": "Black.",
+      "colour_hex": "#1c1414"
+    },
+    "nose": {
+      "length": "Medium.",
+      "width": "Broad at the base with wide, rounded nostril wings; the bridge is narrower and straight.",
+      "bridge": "Low to medium height, straight; slightly concave just above the tip in three-quarter view.",
+      "hump": "None.",
+      "tip": "Full and rounded, moderately projecting, pointing straight ahead.",
+      "nostrils": "Wide and visibly flared from the front.",
+      "fight_damage": "None visible."
+    },
+    "mouth": {
+      "width": "Medium to wide.",
+      "upper_lip": "Full, with a defined cupid's bow, framed by a thin moustache.",
+      "lower_lip": "Full and rounded.",
+      "resting_expression": "Closed, relaxed, often a slight smirk with one corner raised. Big open smile with even white teeth (Carondelet photo).",
+      "teeth": "Straight and white."
+    },
+    "ears": {
+      "size": "Medium.",
+      "protrusion": "Slight; ears sit fairly close to the head.",
+      "cauliflower_ear": "None visible.",
+      "notes": "Diamond stud earring in his right ear lobe in the May 2025 photo."
+    },
+    "notable_marks_scars": "Small dark spots on the forehead and temples (old acne marks), clearer in the May 2025 daylight photo. No scars visible. The front of the neck is fully tattooed up to the jaw line."
+  },
+  "hair": {
+    "style": "Current (Aug 2026): natural black hair, short on top (about 2-3 cm) with a soft wave/curl pattern, sides and back in a low taper fade, sharp line-up at the front hairline. He changes hair colour often: platinum-bleached short curls for UFC 322 (Nov 2025) and pink-dyed tight coils with dark roots, about 6-7 cm on top, in May 2025. Nov 2023: natural black, short.",
+    "length_cm": { "top": 2.5, "sides": 0.5, "back": 0.5 },
+    "colour": "Black (natural) as of Aug 2026.",
+    "colour_samples": { "aug_2026_top": "#130c0e", "nov_2025_platinum_bleach": "#dfccbe", "may_2025_pink_tips_in_shade": "#933a2d" },
+    "colour_hex": "#17100f",
+    "alt_colour_hex": { "platinum_nov_2025": "#dfccbe", "pink_may_2025": "#d0747a (visual estimate for the lit tips)" },
+    "hairline": "Straight, full, sharply edged (line-up); no recession.",
+    "texture": "Tightly curled/coily, kept short; reads as a dense textured cap at this length."
+  },
+  "facial_hair": {
+    "type": "goatee with moustache",
+    "colour": "Black.",
+    "colour_hex": "#1d1416",
+    "colour_samples": { "aug_2026_chin": "#311e22" },
+    "density": "Dense on the chin and moustache, light along the jaw.",
+    "shape": "Thin moustache joined at the mouth corners to a short, dense chin beard that wraps under the chin; a thin connecting line runs along the jaw toward the ears (light chinstrap). Cheeks shaved.",
+    "length_mm": "3-8 (chin longest)"
+  },
+  "skin": {
+    "tone_samples": [
+      { "photo": "espn_headshot.png", "spot": "right cheek", "hex": "#e8845c", "light": "studio, high key" },
+      { "photo": "espn_headshot.png", "spot": "left cheek", "hex": "#ed8960", "light": "studio, high key" },
+      { "photo": "espn_headshot.png", "spot": "forehead", "hex": "#f1a889", "light": "studio, near highlight", "excluded": true },
+      { "photo": "wiki-carondelet-2025-05-27.jpg", "spot": "right cheek", "hex": "#a76b5b", "light": "window light, shade side" },
+      { "photo": "wiki-carondelet-2025-05-27.jpg", "spot": "left cheek", "hex": "#dcb2aa", "light": "window side, specular highlight", "excluded": true },
+      { "photo": "wiki-carondelet-2025-05-27.jpg", "spot": "forehead", "hex": "#ca9a7f", "light": "window light" },
+      { "photo": "ref-cagesidepress-ufc330-week-2026-08.jpg", "spot": "right cheek", "hex": "#f7a897", "light": "flash, strong pink grade", "excluded": true },
+      { "photo": "ref-cagesidepress-ufc330-week-2026-08.jpg", "spot": "left cheek", "hex": "#f2a495", "light": "flash, strong pink grade", "excluded": true },
+      { "photo": "ref-cagesidepress-ufc330-week-2026-08.jpg", "spot": "forehead", "hex": "#ec9c86", "light": "flash, strong pink grade", "excluded": true },
+      { "photo": "ref-cagesidepress-ufc322-postfight-2025-11-15.jpg", "spot": "right cheek", "hex": "#d4936b", "light": "press-room flash" },
+      { "photo": "ref-cagesidepress-ufc322-postfight-2025-11-15.jpg", "spot": "left cheek", "hex": "#cc8453", "light": "press-room flash" },
+      { "photo": "ref-cagesidepress-ufc322-postfight-2025-11-15.jpg", "spot": "forehead", "hex": "#e6b590", "light": "press-room flash, shine", "excluded": true }
+    ],
+    "sampling_method": "Median of a 7-15 px box per spot, checked on an overlay sheet. Highlights, the pink-graded Aug 2026 shot and shiny forehead points are listed but excluded from the average.",
+    "tone_average_all": "#de987b",
+    "tone_average_kept": "#d18763",
+    "tone_hex": "#d18763",
+    "tone_hex_recommended": "#b8744f",
+    "tone_note": "The kept samples come from a high-key studio shot and flash, which brighten the skin. The best-exposed daylight photo spans #a76b5b (shade) to #ca9a7f (lit). #b8744f is the suggested render albedo: medium brown with a warm golden-red cast.",
+    "undertone": "Warm (golden to reddish-brown).",
+    "freckles_marks": "Small dark spots on the forehead; otherwise even. Very little body hair visible.",
+    "texture_pick": "young_caucasian_male (swatch #e6b393) tinted down toward #b8744f. The african skin swatches (#583724, #66402a) are darker than his tone and the tint can only darken, so start from a lighter swatch."
+  },
+  "body": {
+    "build": "Tall, rangy and very lean, with exceptionally long arms: reach 200.7 cm is about 18 cm more than his height, so the hands hang low (to mid-thigh or below) and the forearms look long. Long legs and a long neck.",
+    "body_fat": "lean",
+    "body_fat_note": "Very lean and defined: visible six-pack, obliques and serratus, separated shoulders. Shredded at weigh-ins.",
+    "shoulders": "Broad with round, capped deltoids; the widest part of the frame.",
+    "chest": "Well-developed, square pecs, more defined than thick.",
+    "arms": "Long, lean and muscular; biceps and triceps defined, long forearms with visible veins.",
+    "waist": "Narrow; clear V-taper from shoulders to waist.",
+    "legs_calves": "Long, slim, muscular thighs; lean calves; long shins.",
+    "neck": "Long and moderately thick, fully tattooed at the front.",
+    "posture": "Upright and loose, chin level or slightly raised, shoulders relaxed and low. Arms hang long with a slight bend. Often poses with hands open and fingers spread (Aug 2026).",
+    "notable_physique_traits": "Very long arms for his height, lean shredded torso, V-taper, long neck, dense tattoo coverage over the neck, chest, shoulders and both arms."
+  },
+  "tattoos": [
+    { "where": "Front of the neck, from the collarbones up to under the jaw and onto the sides of the neck", "description": "Black ornamental tribal/mandala design: symmetric filigree, scrolls and pointed shapes, with a central motif at the throat. Flows down into scroll shapes along both collarbones.", "size": "About 12 cm tall x 15 cm wide" },
+    { "where": "Right pec (upper right chest)", "description": "Black-and-grey sun or compass rose with a single eye in the centre and long fine rays radiating out, plus small four-point stars around it.", "size": "About 15 cm across" },
+    { "where": "Front of the right shoulder and upper right chest edge", "description": "Black honeycomb (hexagon) pattern in outline and dot shading, running over the front of the right deltoid.", "size": "About 12 x 10 cm" },
+    { "where": "Left pec (upper left chest)", "description": "Large colour piece in anime/manga style: a dark-haired warrior figure with a red marking across the face, holding a sword with a green-wrapped handle, with green paper or leaf fragments below. Covers an older small feather-and-infinity tattoo seen in 2023.", "size": "About 18 cm tall x 16 cm wide" },
+    { "where": "Left shoulder (deltoid)", "description": "Black geometric isometric-cube pattern (3D boxes) capping the shoulder.", "size": "About 15 x 12 cm" },
+    { "where": "Left upper arm, outer side (sleeve)", "description": "Japanese-style woman's face with dark hair and a red-and-black hannya (demon) mask over the lower face, in black, grey and red; part of a left-arm sleeve.", "size": "About 20 cm tall" },
+    { "where": "Right upper arm (sleeve)", "description": "Black-and-grey sleeve: a large portrait with one visible eye on the outer upper arm, shading and filler.", "size": "Most of the upper arm" },
+    { "where": "Left forearm (sleeve)", "description": "Black dotwork mandala / sacred-geometry pattern wrapping the forearm.", "size": "Most of the forearm" },
+    { "where": "Right elbow / upper forearm, inner side", "description": "Red and black Om symbol with leafy ornaments.", "size": "About 10 cm" },
+    { "where": "Right forearm (sleeve)", "description": "Black and grey palm tree and plant leaves (2023), and since 2025 a cartoon electric-mouse character, a red-and-white spotted mushroom, a diamond outline and numerals ('199', last digit unclear) near the wrist.", "size": "Full forearm" },
+    { "where": "Right side of the ribcage", "description": "Black-and-grey rose.", "size": "About 10 cm" },
+    { "where": "Back of the right hand", "description": "Small black tattoo, design unclear at this resolution.", "size": "About 5 cm" },
+    { "where": "Front of the right thigh, above the knee", "description": "Black lettering in a decorative script, unreadable at this resolution.", "size": "About 15 x 5 cm" },
+    { "where": "Front of the left thigh", "description": "Large black-and-grey figurative piece (a face or figure).", "size": "About 18 x 12 cm" },
+    { "where": "Right shin", "description": "Black-and-grey seated statue-like figure (resembles The Thinker), a small flower, an octagon outline, and a band of lotus or ornamental pattern around the lower calf. In 2023 there was also a large dark tattoo on the outer right calf.", "size": "Most of the shin" }
+  ],
+  "accessories_seen": "Diamond stud earring in the right ear (May 2025). Gold rings on the fingers off duty.",
+  "kit": {
+    "typical_shorts": "Short, tight vale-tudo-style UFC/Venum fight shorts (mid-thigh). Nov 2025 studio kit: purple with a tonal wave pattern, black UFC waistband tab, white check pattern on the waistband side. Nov 2023 studio kit: dark charcoal Venum shorts with black and white trim. Weigh-in (UFC 322): white-and-black camo shorts with an orange waistband.",
+    "gloves": "Standard black UFC 4 oz gloves.",
+    "shorts_colours_hex": { "purple_2025": "#4a1f8a", "purple_pattern": "#3a1670", "charcoal_2023": "#2d3236", "camo_white": "#e8e8e6", "camo_black": "#1a1a1a" },
+    "brand_note": "Venum logo on both studio kits."
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.031,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.6,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.05,
+    "macro/heightUpM": 0.15,
+    "macro/heightDownM": 0.0,
+    "macro/proportionsUpM": 0.55,
+
+    "head/head-oval": 0.3,
+    "head/head-invertedtriangular": 0.2,
+    "head/head-scale-vert-incr": 0.15,
+    "head/head-scale-horiz-decr": 0.05,
+
+    "forehead/forehead-scale-vert-incr": 0.1,
+
+    "chin/chin-prominent-incr": 0.2,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-bones-incr": 0.1,
+
+    "cheek/l-cheek-bones-incr": 0.4,
+    "cheek/r-cheek-bones-incr": 0.4,
+    "cheek/l-cheek-volume-decr": 0.15,
+    "cheek/r-cheek-volume-decr": 0.15,
+
+    "eyes/l-eye-height2-decr": 0.15,
+    "eyes/r-eye-height2-decr": 0.15,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+
+    "eyebrows/eyebrows-trans-down": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.15,
+
+    "nose/nose-scale-horiz-incr": 0.35,
+    "nose/nose-width1-incr": 0.15,
+    "nose/nose-scale-depth-decr": 0.1,
+    "nose/nose-hump-decr": 0.1,
+    "nose/nose-point-width-incr": 0.35,
+    "nose/nose-nostrils-width-incr": 0.45,
+    "nose/nose-flaring-incr": 0.3,
+
+    "mouth/mouth-upperlip-volume-incr": 0.3,
+    "mouth/mouth-lowerlip-volume-incr": 0.35,
+    "mouth/mouth-cupidsbow-incr": 0.2,
+    "mouth/mouth-scale-horiz-incr": 0.1,
+    "mouth/mouth-scale-depth-incr": 0.1,
+
+    "neck/neck-scale-vert-incr": 0.15,
+    "neck/neck-scale-horiz-incr": 0.1,
+
+    "torso/measure-shoulder-dist-incr": 0.25,
+    "torso/torso-vshape-incr": 0.35,
+    "torso/measure-waist-circ-decr": 0.2,
+    "torso/measure-hips-circ-decr": 0.1
+  },
+  "morphs_extra": {
+    "_note": "Outside the requested morph list but present in assets/embed/mh-shapes-x (src/avatar3d.js reads this block). Optional refinements.",
+    "head/head-diamond": 0.15
+  },
+  "render_hints": {
+    "iris": "brown",
+    "eyebrows": "eyebrow010 tinted #1c1414, low and straight",
+    "skin_base": "young_caucasian_male tinted toward #b8744f",
+    "hair": "short04 or a tight-curl cap tinted #17100f (Aug 2026); for the UFC 322 look tint platinum #dfccbe"
+  },
+  "notes": "Confidence: high for hair (by date), facial hair, skin, tattoos and build; medium for face proportions; low-to-medium for exact morph values. Recency is good: the Aug 2026 fight-week photo shows his current natural black hair. Weak point: no true side profile. What to watch: (1) Hair colour is date-dependent: black (Aug 2026, current), platinum (UFC 322, Nov 2025), pink (May 2025). Pick one look and keep it consistent. (2) The face reads through high cheekbones, a broad nose with wide flared nostrils, full lips and a thin moustache joined to a short dense chin beard; lean cheeks under the cheekbones. (3) Arms must be very long (+18 cm ape index); this is his most distinctive physical trait. (4) Tattoo coverage is dense: front of neck, both pecs (compass-sun on his right, colour anime warrior on his left), both shoulders (honeycomb right, cubes left) and full sleeves; mirror-check sides. (5) Skin is warm medium brown; the photo samples are bright, so use tone_hex_recommended. Macro ageOldM 0.031 uses (27-25)/65. heightUpM 0.15 is a guess for 183 cm; the avatar scales to official height. All values symmetric; l-/r- refer to the character's own sides."
+}
