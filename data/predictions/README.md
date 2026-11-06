@@ -200,7 +200,8 @@ seed, taken from the first source that has him:
 3. Otherwise 1500.
 
 - `p_a_noline` = `p_elo` = `models.elo` uses that rating against the opponent's fighters.json Elo.
-- `p_a` = the line, and the method comes from division base rates, as in fwd-1.
+- `p_a` = the line, and the method comes from division base rates, as in fwd-1. "The line" here is fwd-1's construction,
+  `market.p_a_stack_input`: the power de-vig of the mean decimal odds over every sportsbook in the consensus.
 - Flags: `debut_<side>` is kept, plus `seeded_elo_<side>` or `debut_elo_1500_<side>`.
 
 A debutants file is filled from pre-UFC records only, never from odds or results. It is committed before the event's
@@ -215,7 +216,15 @@ prediction file. Its format:
 - Instead of `elo_debut_shift`, an entry may give `"pre": {pre_wpct, pre_logn, pre_fin, pre_finl, pre_streak,
   pre_feed, pre_grad, pre_oppufc, pre_netelo, pre_dwcs, pre_agedeb, age_debut}`. These are standardized with
   preufc.json's `seeded_elo_live` betas, and a missing feature counts as the mean.
-- On Nov 6 no seed exists for the four debutants on the Nov 7 and Nov 14 cards (Degli, Lourenço, Calderon, Sanches).
+- An entry may also nest these values the way preufc.json's `fighters[slug]` does (the card desk's files):
+  `derived.seeded_elo.elo_debut_shift` is used as given, else `derived.side_pre` plus `derived.age_at_ufc_debut` go
+  through the same betas. A file's `also_upcoming` block (the next card's debutants, same shape) is a fallback that
+  never overrides a `fighters` entry. `tests/test_forward_models.js` checks each form.
+- At pre-registration (about 9:15 pm UTC, Nov 6) no seed existed for the four debutants on the Nov 7 and Nov 14 cards.
+  `data/predictions/debutants_vegas124.json` (committed 9:15 pm UTC, Sherdog pre-UFC records via tools/preufc.py)
+  now seeds them: Degli +128.2, Lourenço +17.4, Calderon -30.4 and, in `also_upcoming`, Sanches +78.6. Each shift
+  recomputes from its `side_pre` and age with preufc.json's live betas. The seed moves `p_a_noline`, `p_elo` and
+  `models.elo` only; `p_a` stays the line.
 
 ### Secondary models (scored, never chosen from forward results)
 
@@ -244,7 +253,11 @@ All of these are corner-symmetric. Swapping a and b and flipping the line gives 
 ### Scoring (per model version)
 
 - **Headline.** The paired per-bout log-loss difference of `p_a` against the market at prediction time, and against
-  the close, with an event-cluster bootstrap 95% interval.
+  the close, with an event-cluster bootstrap 95% interval. The interval is widened to the bout-level bootstrap
+  wherever that one is wider. With one event the cluster bootstrap collapses to a point, and with a few events it is
+  far too narrow (clarified Nov 6, about 9:45 pm UTC, before any prediction file; `scores.json` keeps both intervals).
+- **Results.** The tool records a fetched result only when both sources agree (`verified`). A single-source or
+  conflicting result waits for a later run or for a `--manual` entry, because `results.json` is append-only.
 - **`p_a_noline`.** Scored the same way. `p_elo` and the coin stay as baselines.
 - **Every entry in the `models` block.** Log loss, Brier and accuracy, plus the paired log-loss difference against the
   market at prediction time and against the close (`scores.json` `models`, `scores.md` "Models block").

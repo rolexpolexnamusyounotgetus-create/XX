@@ -1484,6 +1484,7 @@
     }
     var shortsG = this.shortsProxy ? null : this.shell(function (i) { return inShorts(i, -0.022); }, function (i) {
       var v = clamp01((y(i) - hemY) / hemSpan), lat = Math.abs(nrm[i * 3]);
+      if (self.cfg.female) return 0.004 + 0.005 * (1 - smooth(0.2, 0.8, v)) + 0.003 * lat * (1 - v);   // women's fight shorts sit snug
       return 0.006 + 0.022 * (1 - smooth(0.2, 0.8, v)) + 0.012 * lat * (1 - v);
     }, { name: "aKit", size: 4, fn: function (i, out, o) {
       out[o] = (y(i) - hemY) / hemSpan; out[o + 1] = Math.atan2(nrm[i * 3], nrm[i * 3 + 2]); out[o + 2] = pos[i * 3] >= 0 ? 1 : -1; out[o + 3] = pos[i * 3 + 2];
