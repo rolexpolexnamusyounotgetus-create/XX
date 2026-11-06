@@ -366,7 +366,7 @@ class SymGBM:
     def __init__(self, params=None, rounds=300):
         self.params = dict(objective="binary", learning_rate=0.03, num_leaves=15, min_data_in_leaf=60,
                            feature_fraction=0.6, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0,
-                           verbose=-1, num_threads=2, seed=7)
+                           verbose=-1, num_threads=1, seed=7)
         if params:
             self.params.update(params)
         self.rounds = rounds
@@ -508,13 +508,15 @@ def cmd_experts(args):
 
     # GBM: rounds and leaves on the same inner years (one fit per year with a validation curve)
     gbm_grid = {}
-    for leaves, mdl in ((7, 80), (15, 60), (31, 100)):
+    # one thread: on this shared 4-core box OpenMP threads oversubscribe badly (2 threads ran >10x slower)
+    for leaves, mdl in ((7, 80), (15, 60)):
         curves = []
         wts = []
         for Y in (2016, 2017, 2018):
             tr = dec & (yr < Y)
             va = dec & (yr == Y)
-            g = SymGBM({"num_leaves": leaves, "min_data_in_leaf": mdl}, rounds=800 if not args.quick else 300)
+            g = SymGBM({"num_leaves": leaves, "min_data_in_leaf": mdl, "learning_rate": 0.04},
+                       rounds=600 if not args.quick else 300)
             g.fit(XA[tr], XB[tr], C[tr], y[tr], valid=(XA[va], XB[va], C[va], y[va]))
             curves.append(np.array(g.curve))
             wts.append(va.sum())
@@ -535,7 +537,8 @@ def cmd_experts(args):
         lr = SymLR(C_best).fit(XA[tr], XB[tr], y[tr])
         pred["feat_lr"][te] = lr.predict(XA[te], XB[te])
         lr_coefs[Y] = lr.coef.tolist()
-        g = SymGBM({"num_leaves": leaves, "min_data_in_leaf": g_mdl}, rounds=g_rounds).fit(XA[tr], XB[tr], C[tr], y[tr])
+        g = SymGBM({"num_leaves": leaves, "min_data_in_leaf": g_mdl, "learning_rate": 0.04},
+                   rounds=g_rounds).fit(XA[tr], XB[tr], C[tr], y[tr])
         pred["feat_gbm"][te] = g.predict(XA[te], XB[te], C[te])
         log("fold %d: train %d -> predict %d" % (Y, tr.sum(), te.sum()))
     pred["elo"] = elo_p(XA, XB)
@@ -737,7 +740,7 @@ class GBMStack:
     def __init__(self, leaves=4, rounds=200, lr=0.03, mdl=80):
         self.params = dict(objective="binary", learning_rate=lr, num_leaves=leaves, min_data_in_leaf=mdl,
                            feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=10.0,
-                           verbose=-1, num_threads=2, seed=11)
+                           verbose=-1, num_threads=1, seed=11)
         self.rounds = rounds
 
     @staticmethod

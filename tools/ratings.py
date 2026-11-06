@@ -793,7 +793,7 @@ WHR_FULL_EVERY = 8       # full re-solve over the whole history every n-th fight
 WHR_SOLVER = "pcg"       # "pcg" (fast, chain-block variances) or "lu" (exact variances, sparse factorisation)
 
 try:
-    from sksparse.cholmod import cholesky as CHOLMOD   # optional, much faster than SuperLU
+    from sksparse.cholmod import cho_factor as CHOLMOD   # optional (scikit-sparse >= 0.5), faster than SuperLU
 except Exception:
     CHOLMOD = None
 
@@ -803,7 +803,7 @@ class _CholWrap:
         self.F = F
 
     def solve(self, b):
-        return self.F(b)
+        return self.F.solve(b)
 
 
 class WHR:
@@ -1894,11 +1894,12 @@ def main():
     best_l2, best_cv = None, 9
     Xd = np.nan_to_num(adv)
     cv_table = {}
+    dims_oof = None
     for l2 in (0.1, 1.0, 10.0, 100.0, 1000.0):
-        cvll, _ = cv_lr(D, Xd[it], l2, it)
+        cvll, oof = cv_lr(D, Xd[it], l2, it)
         cv_table[l2] = cvll
         if cvll < best_cv:
-            best_l2, best_cv = l2, cvll
+            best_l2, best_cv, dims_oof = l2, cvll, oof
     bd = fit_lr(Xd[it], ytr, best_l2)
     p_dims = expit(Xd @ bd)
     preds["dims"] = p_dims
@@ -1944,7 +1945,13 @@ def main():
     test = {k: metrics(preds[k][ix], yte) for k in names}
     boot = bootstrap(D, {k: preds[k] for k in names}, ix, base="elo_ref", B_=200 if args.no_test else 2000)
     calib = {k: calibration(preds[k][ix], yte) for k in names}
-    singles_rank = sorted([k for k in names if k != "stack"], key=lambda k: tune_res[k].get("cv", tune_res[k]["tune"]))
+    # rank single systems on the same fights: 2020-2023 (prequential predictions for the rating systems,
+    # expanding-window out-of-fold predictions for the dims model)
+    m20 = D.year[it] >= 2020
+    rank_score = {k: float(ll_vec(preds[k][it][m20], ytr[m20]).mean()) for k in names if k not in ("stack", "dims")}
+    okd = ~np.isnan(dims_oof)
+    rank_score["dims"] = float(ll_vec(dims_oof[okd], ytr[okd]).mean())
+    singles_rank = sorted(rank_score, key=lambda k: rank_score[k])
     best = singles_rank[0]
     log("held-out 2024+ (n=%d):" % len(ix))
     for k in names:
@@ -2018,6 +2025,8 @@ def main():
                      "difference by the combined uncertainty",
             "round_model": D.round_fit, "preufc_coverage_fighter_bouts": int(D.pre_cov),
             "best_single_by_tuning": best, "ranking_by_tuning": singles_rank,
+            "ranking_scores_2020_2023": {k: r5(v, 5) for k, v in rank_score.items()},
+            "stack_cv_2020_2023": r5(cur, 5),
             "log": logs,
             "runtime_s": round(time.time() - t0),
         },

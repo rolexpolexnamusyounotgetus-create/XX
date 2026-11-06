@@ -258,6 +258,14 @@
       preufcA: !!ctx.preufcA, preufcB: !!ctx.preufcB };
   }
 
+  /** Make the engine's method / round distribution agree with the stacked winner probability: returns the
+      factors that multiply every A-win quantity (bins 0-2, finA[], distA share ...) and every B-win quantity,
+      keeping the engine's draw share and its method mix within each winner. pA, pB, pD from summarize(). */
+  function winnerFactors(pA, pB, pD, p) {
+    var dec = Math.max(1e-12, 1 - pD);
+    return { fA: pA > 0 ? p * dec / pA : 0, fB: pB > 0 ? (1 - p) * dec / pB : 0 };
+  }
+
   /** Load moe.json (whole document or a model block); returns { predict(inputs), model, doc }. */
   function load(json, which) {
     var doc = typeof json === "string" ? JSON.parse(json) : json;
@@ -267,5 +275,5 @@
 
   return { load: load, predict: predictWith, gateVector: gateVector, eloProb: eloProb, devig: devig,
     decimal: decimal, calibrate: calibrate, logit: logit, sigm: sigm, featLR: featLR, sideFeatures: sideFeatures,
-    sideFromProfile: sideFromProfile, gateFromSides: gateFromSides, VERSION: "1.0.0" };
+    sideFromProfile: sideFromProfile, gateFromSides: gateFromSides, winnerFactors: winnerFactors, VERSION: "1.0.0" };
 });

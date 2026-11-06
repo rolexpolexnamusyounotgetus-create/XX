@@ -41,10 +41,20 @@
     if (!isFinite(a)) return null; return (b - a) / (365.2425 * 86400000);
   }
   function inches(v) { if (!v) return "–"; var ft = Math.floor(v / 12), i = Math.round(v - ft * 12); return ft + "′" + i + "″"; }
+  // short names as coverage uses them (same rules as the director: suffixes, particles, family-name-first names)
+  var PARTICLES = { da: 1, de: 1, "do": 1, dos: 1, das: 1, del: 1, della: 1, di: 1, du: 1, van: 1, von: 1, der: 1, den: 1, la: 1, le: 1, st: 1, "st.": 1, saint: 1, el: 1, al: 1, bin: 1, ibn: 1 };
+  var SURNAME_FIRST = { Zhang: 1, Wang: 1, Li: 1, Song: 1, Yan: 1, Liu: 1, Chen: 1, Yang: 1, Huang: 1, Zhao: 1, Wu: 1, Zhou: 1, Xu: 1, Sun: 1, Zhu: 1, Hu: 1, Guo: 1, Lin: 1, Luo: 1, Gao: 1, Liang: 1, Zheng: 1, Xie: 1, Tang: 1, Feng: 1, Deng: 1, Cao: 1, Peng: 1, Zeng: 1, Xiao: 1, Tian: 1, Dong: 1, Pan: 1, Yuan: 1, Cai: 1, Jiang: 1, Wei: 1, Su: 1, Ding: 1, Ren: 1, Shen: 1, Yao: 1, Qin: 1, Aoriqileng: 1 };
+  var SHORT_EXCEPT = { "Ian Machado Garry": "Machado Garry", "Mayra Bueno Silva": "Bueno Silva", "Waldo Cortes Acosta": "Cortes Acosta", "Antonio Carlos Junior": "Carlos Junior", "Elizeu Zaleski dos Santos": "Zaleski" };
   function lastName(name) {
-    var t = String(name || "").trim().split(/\s+/); if (!t.length) return "Fighter";
-    var l = t[t.length - 1]; if (t.length > 1 && /^(jr\.?|sr\.?|ii|iii|iv)$/i.test(l)) l = t[t.length - 2];
-    return l;
+    name = String(name || "").replace(/\s+/g, " ").trim(); if (!name) return "Fighter";
+    if (SHORT_EXCEPT[name]) return SHORT_EXCEPT[name];
+    var t = name.split(" ");
+    while (t.length > 1 && /^(jr\.?|sr\.?|ii|iii|iv)$/i.test(t[t.length - 1])) t.pop();
+    if (t.length === 1) return t[0];
+    if (t.length === 2 && SURNAME_FIRST[t[0]]) return t[0];
+    var i = t.length - 1;
+    while (i > 1 && PARTICLES[t[i - 1].toLowerCase()]) i--;
+    return t.slice(i).join(" ");
   }
   function initials(name) { var t = String(name || "").trim().split(/\s+/); return ((t[0] || "?")[0] + (t.length > 1 ? lastName(name)[0] : "")).toUpperCase(); }
   function norm(s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(); }
@@ -127,7 +137,14 @@
   function slugOf(side) { return side === "A" ? S.a : S.b; }
   function nameOf(side) { var p = prof(side); return p ? p.name : side; }
   function shortOf(side) { return lastName(nameOf(side)); }
-  function pron(side) { var p = prof(side), d = S.div || (p && p.division) || ""; return /^Women/.test(d) || /^Women/.test(p && p.division || "") ? { he: "she", his: "her", him: "her" } : { he: "he", his: "his", him: "him" }; }
+  // pronouns by the divisions a fighter competes in (as their own coverage uses); they/them when that says nothing
+  var MEN_DIV = { Flyweight: 1, Bantamweight: 1, Featherweight: 1, Lightweight: 1, Welterweight: 1, Middleweight: 1, "Light Heavyweight": 1, Heavyweight: 1 };
+  function pron(side) {
+    var p = prof(side), home = p && p.division || "", d = home || S.div || "";
+    if (/^Women/.test(d)) return { he: "she", his: "her", him: "her" };
+    if (MEN_DIV[d]) return { he: "he", his: "his", him: "him" };
+    return { he: "they", his: "their", him: "them" };
+  }
 
   function pairData(a, b) {
     var M = SCEN.matchups || {};

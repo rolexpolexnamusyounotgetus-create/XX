@@ -1163,6 +1163,7 @@ def get_table(use_cache=True):
 
 # ====================================================================== tuning (2010-2023 only)
 LR_LAMS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
+SEL_MIN = 0.0005
 
 
 def block_iter(df, dec, evm, extra_train=None):
@@ -1364,6 +1365,34 @@ def main():
     abl_base, abl = ablate_lr(df, X, y, dec, evm, lr_best, cols)
     R["tuning"]["lr_ablation"] = {"base_cv": abl_base, "groups": abl}
     log("ablation (drop group -> delta cv log loss): " + "; ".join("%s %+.4f" % (a["group"], a["drop_delta"]) for a in abl))
+    # backward group elimination on the same CV blocks: drop a whole feature group while that lowers the CV log
+    # loss by more than SEL_MIN (coarse groups only, so the selection cannot chase single-term noise)
+    keep_groups = sorted({term_group(c) for c in cols})
+    path = []
+    cur_abl = abl
+    while True:
+        worst = min(cur_abl, key=lambda a: a["drop_delta"])
+        if worst["drop_delta"] >= -SEL_MIN or len(keep_groups) <= 3:
+            break
+        keep_groups.remove(worst["group"])
+        idx = np.array([i for i, c in enumerate(cols) if term_group(c) in keep_groups])
+        base_k, cur_abl = ablate_lr(df, X[:, idx], y, dec, evm, lr_best, [cols[i] for i in idx])
+        path.append({"dropped": worst["group"], "delta": worst["drop_delta"], "cv_after": base_k})
+        log("  selection: dropped %s (%+.4f) -> cv %.5f" % (worst["group"], worst["drop_delta"], base_k))
+    sel_idx = np.array([i for i, c in enumerate(cols) if term_group(c) in keep_groups])
+    if path:
+        lr_best2, lr_grid2 = tune_lr(df, X[:, sel_idx], y, dec, evm)
+        log("LR (selected groups) best %s cv %.5f" % ({k: lr_best2[k] for k in ("train_set", "recency_half_life_years", "lam")},
+                                                      lr_best2["cv_log_loss"]))
+        if lr_best2["cv_log_loss"] < lr_best["cv_log_loss"]:
+            lr_best = lr_best2
+            X = X[:, sel_idx]
+            cols = [cols[i] for i in sel_idx]
+            specs = [t for t in specs if t["name"] in set(cols)]
+        else:
+            path.append({"reverted": "selected set did not beat the full set after re-tuning lam"})
+    R["tuning"]["lr_selection"] = {"min_gain": SEL_MIN, "path": path, "kept_groups": keep_groups,
+                                   "final_cv": lr_best["cv_log_loss"], "n_terms": len(cols)}
 
     def lr_fp(tr, te, cfg=lr_best):
         tr = lr_train_mask(df, dec, cfg, tr)

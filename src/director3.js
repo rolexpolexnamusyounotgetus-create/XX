@@ -475,7 +475,7 @@
     pounce: ["{a} jumps on top of {d}!", "{a} pounces and looks to finish.", "{a} follows {d} to the mat.", "{a} dives in after {d}."],
     recoverUp: ["{a} survives! {Hes} back on {his} feet.", "{a} recovers and stands up.", "{a} clears the cobwebs and gets up.", "{a} weathers the storm and gets back up."],
     recoverGuard: ["{a} recovers to guard and ties {d} up.", "{a} survives the flurry and gets {his} legs back in front.", "{a} weathers it and gets to guard."],
-    combo: ["{a} lands {aseq}.", "Crisp {seq} from {a}.", "{a} puts together {aseq}.", "{a} strings together {aseq}. All of it lands."],
+    combo: ["{a} lands {aseq}.", "Crisp work from {a}: {aseq}.", "{a} puts together {aseq}.", "{a} strings together {aseq}. All of it lands."],
     counter: ["{a} counters with {amove}.", "{d} misses and eats a counter {move}.", "{a} makes {d} pay with {amove}.", "{a} slips and comes back with {amove}."],
     headkick: ["{a} lands {amove}!", "{a} finds the mark with {amove}.", "{amove} from {a} lands clean!", "{d} eats {amove} from {a}."],
     specialLand: ["{amove} from {a} lands!", "{a} lands {amove}! What a shot.", "{a} connects with {amove}."],

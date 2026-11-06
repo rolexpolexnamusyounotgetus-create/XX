@@ -11,18 +11,6 @@
     "note": "ESPN athlete headshot, transparent background, date unknown"
   },
   {
-    "file": "wm-2022-belt-cropped.png",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/2/25/Islam_Makhachev_2022_UFC_belt_%28cropped%29.png",
-    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2022_UFC_belt_(cropped).png",
-    "author": "Новости ННТ",
-    "license": "CC BY 3.0",
-    "date_taken": "2022-10-26",
-    "use": "embed-ok",
-    "what": "headshot",
-    "note": "Islam Makhachev in 2022, after first title win (UFC 280)",
-    "attribution": "Новости ННТ, CC BY 3.0, via Wikimedia Commons"
-  },
-  {
     "file": "wm-2022-10-26-dagestan.jpg",
     "url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Islam_Makhachev_2022-10-26.jpg",
     "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2022-10-26.jpg",
@@ -31,20 +19,20 @@
     "date_taken": "2022-10-26",
     "use": "embed-ok",
     "what": "3q",
-    "note": "Islam Makhachev in 2022, after first title win (UFC 280)",
+    "note": "Three-quarter under a cap; 500 px thumbnail (original download was rate-limited)",
     "attribution": "Head of the Respublic of Dagestan, CC BY 3.0, via Wikimedia Commons"
   },
   {
-    "file": "wm-2023-dagestan.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Islam_Makhachev_2023.jpg",
-    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2023.jpg",
-    "author": "Head of the Respublic of Dagestan",
+    "file": "wm-2022-belt-cropped.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/25/Islam_Makhachev_2022_UFC_belt_%28cropped%29.png",
+    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2022_UFC_belt_(cropped).png",
+    "author": "Новости ННТ",
     "license": "CC BY 3.0",
-    "date_taken": "2023-02-16",
+    "date_taken": "2022-10-26",
     "use": "embed-ok",
     "what": "3q",
-    "note": "Islam Makhachev in 2023, after first Volkanovski win (UFC 284)",
-    "attribution": "Head of the Respublic of Dagestan, CC BY 3.0, via Wikimedia Commons"
+    "note": "Three-quarter right side under a cap, with the UFC belt; video still",
+    "attribution": "Новости ННТ, CC BY 3.0, via Wikimedia Commons"
   },
   {
     "file": "wm-2025-melikov-cropped.jpg",
@@ -57,6 +45,18 @@
     "what": "3q",
     "note": "Islam Makhachev and Head of the Republic of Dagestan Sergey Melikov",
     "attribution": "Unknown author (uploader did not name the photographer), CC BY 3.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2023-dagestan.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Islam_Makhachev_2023.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2023.jpg",
+    "author": "Head of the Respublic of Dagestan",
+    "license": "CC BY 3.0",
+    "date_taken": "2023-02-16",
+    "use": "embed-ok",
+    "what": "profile",
+    "note": "Left-side near-profile (about 70 degrees), smiling; shows left ear and nose line",
+    "attribution": "Head of the Respublic of Dagestan, CC BY 3.0, via Wikimedia Commons"
   },
   {
     "file": "espn-stance-left.png",

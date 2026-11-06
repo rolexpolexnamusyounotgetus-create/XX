@@ -834,3 +834,114 @@ class C6GBM:
         pa = self.m.predict(FX[self.cols].to_numpy(float))
         pb = self.m.predict(FY[self.cols].to_numpy(float))
         return 0.5 * (pa + c6_mirror(pb))
+
+
+# ============================================================== 5. market inputs (benchmark and optional feature)
+MARKET_JSON = os.path.join(ROOT, "data", "derived", "market.json")
+NLBAIR = os.path.join(ROOT, "data", "raw", "odds", "nlbair_odds.csv")
+
+
+def am_to_dec(a):
+    a = np.asarray(a, float)
+    return np.where(a > 0, 1 + a / 100.0, 1 + 100.0 / np.abs(a))
+
+
+def power_devig(dA, dB):
+    """Power margin removal for a two-way line: find k with (1/dA)^k + (1/dB)^k = 1; returns p_A."""
+    qa, qb = 1.0 / dA, 1.0 / dB
+    lo, hi = 0.5, 3.0
+    for _ in range(60):
+        k = 0.5 * (lo + hi)
+        s = qa ** k + qb ** k
+        lo, hi = (k, hi) if s > 1 else (lo, k)
+    k = 0.5 * (lo + hi)
+    return qa ** k
+
+
+def _nm(s):
+    import unicodedata
+    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode().lower()
+    return "".join(ch for ch in s if ch.isalnum() or ch == " ").split()
+
+
+def _same(a, b):
+    import difflib
+    ta, tb = _nm(a), _nm(b)
+    if not ta or not tb:
+        return 0.0
+    return max(difflib.SequenceMatcher(None, " ".join(ta), " ".join(tb)).ratio(),
+               1.0 if ta[-1] == tb[-1] and ta[0][0] == tb[0][0] else 0.0)
+
+
+def load_market(T):
+    """Pre-fight closing moneyline P(A wins) per fight (power de-vig): data/derived/market.json (2019+,
+    consensus close, oriented A/B) else nlbair/ufc-data closing-range midpoints (2013+, keyed by the
+    ufcstats fight id, orientation by name). Also the market's method / round props where market.json has
+    them (US books on BestFightOdds, about 2021 on). Closing lines are known only minutes before the
+    fight: the market variant is a live/stacking model, never a pre-fight-week forecast."""
+    pm = pd.Series(np.nan, index=T.index)
+    src = pd.Series("", index=T.index)
+    m6 = {}
+    rd = {}
+    pdec = {}
+    pos = {fid: i for i, fid in zip(T.index, T["id"])}
+    if os.path.exists(MARKET_JSON):
+        mk = json.load(open(MARKET_JSON))["fights"]
+        for fid, v in mk.items():
+            i = pos.get(fid)
+            if i is None:
+                continue
+            cd = v.get("close_dec")
+            if cd and cd[0] and cd[1] and cd[0] > 1 and cd[1] > 1:
+                pm[i] = power_devig(cd[0], cd[1])
+                src[i] = "market.json"
+            if v.get("method6"):
+                m6[i] = v["method6"]
+            if v.get("round_dist"):
+                rd[i] = v["round_dist"]
+            if v.get("p_dec") is not None:
+                pdec[i] = v["p_dec"]
+    if os.path.exists(NLBAIR):
+        nb = pd.read_csv(NLBAIR)
+        nb = nb[nb["f1_close_low"].notna() & nb["f2_close_low"].notna()]
+        for r in nb.itertuples(index=False):
+            i = pos.get(r.fight_id)
+            if i is None or not np.isnan(pm[i]):
+                continue
+            d1 = 0.5 * (am_to_dec(r.f1_close_low) + am_to_dec(r.f1_close_high))
+            d2 = 0.5 * (am_to_dec(r.f2_close_low) + am_to_dec(r.f2_close_high))
+            if not (d1 > 1 and d2 > 1):
+                continue
+            p1 = float(power_devig(d1, d2))
+            a = T.at[i, "A_name"]
+            flip = _same(a, r.f2_name) > _same(a, r.f1_name)
+            pm[i] = 1 - p1 if flip else p1
+            src[i] = "nlbair"
+    return pm, src, m6, rd, pdec
+
+
+def market_joint(T, m6, rd, draw_c):
+    """The market's own joint over the outcome cells (where method props exist): method6 spread over rounds
+    by the round props' finish-round shape (or the division base-rate shape when absent)."""
+    idx = sorted(m6)
+    P = np.full((len(T), NC_), np.nan)
+    for i in idx:
+        a_ko, a_sub, a_dec, b_ko, b_sub, b_dec = m6[i]
+        R = 5 if T.at[i, "rounds"] == 5 else 3
+        shape = None
+        if i in rd and len(rd[i]) == R + 1:
+            fr = np.asarray(rd[i][:R], float)
+            if fr.sum() > 0:
+                shape = fr / fr.sum()
+        if shape is None:
+            shape = np.array([0.5, 0.33, 0.17]) if R == 3 else np.array([0.36, 0.26, 0.18, 0.12, 0.08])
+        row = np.zeros(NC_)
+        row[I_XKO:I_XKO + R] = a_ko * shape
+        row[I_XSUB:I_XSUB + R] = a_sub * shape
+        row[I_YKO:I_YKO + R] = b_ko * shape
+        row[I_YSUB:I_YSUB + R] = b_sub * shape
+        row[I_XDEC] = a_dec * (1 - draw_c)
+        row[I_YDEC] = b_dec * (1 - draw_c)
+        row[I_DRAW] = (a_dec + b_dec) * draw_c
+        P[T.index.get_loc(i)] = row / row.sum()
+    return P

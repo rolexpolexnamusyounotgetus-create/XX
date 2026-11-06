@@ -98,6 +98,9 @@ SRC_PRIORITY = ['fightodds', 'bestfightodds', 'actionnetwork', 'covers']
 OVR_MIN, OVR_MAX = -0.01, 0.15
 OVR_MAX_EXCH = 0.20          # illiquid exchange quotes can be wide; still bounded
 OUTLIER_LOGIT = 0.60         # drop a book whose no-vig logit is this far from the cross-book median
+LOW_TRUST = {'covers'}       # columns can carry other markets or stale lines: tighter band, no best price
+OUTLIER_LOGIT_LOW = 0.25     # band for low-trust sources around the trusted books' median
+ARB_MIN = -0.002             # best-price overround below this is flagged as an arbitrage (stale line?)
 
 
 def canon_book(name):
@@ -246,6 +249,11 @@ def name_sim(a, b):
         return 0.98
     if a.replace(' ', '') == b.replace(' ', '') or ''.join(sorted(ta)) == ''.join(sorted(tb)):
         return 0.97
+    if len(ta) <= 4 and len(tb) <= 4:   # joined given names in another order: "Ko Seok-hyeon" / "Seokhyeon Ko"
+        import itertools
+        ja = {''.join(p) for p in itertools.permutations(ta)}
+        if any(''.join(p) in ja for p in itertools.permutations(tb)):
+            return 0.96
     sa, sb = set(ta), set(tb)
     short, long_ = (sa, sb) if len(sa) <= len(sb) else (sb, sa)
     if len(short) >= 2 and short <= long_:
@@ -1211,6 +1219,16 @@ def assemble_lines(b):
             if o['ok'] and abs(logit(o['p_mult']) - logit(med)) > OUTLIER_LOGIT:
                 o['ok'] = False
                 o['flag'] = f"outlier: no-vig {o['p_mult']:.3f} vs cross-book median {med:.3f}"
+    # low-trust sources must sit close to the trusted sources' median (or are dropped when none exist)
+    tmed = median([o['p_mult'] for o in obs if o['ok'] and o['src'] not in LOW_TRUST])
+    for o in obs:
+        if o['ok'] and o['src'] in LOW_TRUST:
+            if tmed is None:
+                o['ok'] = False
+                o['flag'] = 'low-trust source with no trusted line to check against'
+            elif abs(logit(o['p_mult']) - logit(tmed)) > OUTLIER_LOGIT_LOW:
+                o['ok'] = False
+                o['flag'] = f"low-trust outlier: no-vig {o['p_mult']:.3f} vs trusted median {tmed:.3f}"
     return obs
 
 
@@ -1253,12 +1271,13 @@ def consensus(books):
         out['sd_books'] = r4(math.sqrt(sum((p - mu) ** 2 for p in ps) / len(ps)))
         out['range_books'] = [r4(min(ps)), r4(max(ps))]
         out['mean_overround'] = r4(sum(v['ovr'] for v in sb.values()) / len(sb))
-        bA = max(sb.values(), key=lambda v: am_to_dec(v['ml'][0]))
-        bB = max(sb.values(), key=lambda v: am_to_dec(v['ml'][1]))
+        tr = {k: v for k, v in sb.items() if v['src'] not in LOW_TRUST} or sb
+        bA = max(tr.values(), key=lambda v: am_to_dec(v['ml'][0]))
+        bB = max(tr.values(), key=lambda v: am_to_dec(v['ml'][1]))
         out['best'] = {'A': [bA['ml'][0], bA['book']], 'B': [bB['ml'][1], bB['book']]}
         ovr_best = 1 / am_to_dec(bA['ml'][0]) + 1 / am_to_dec(bB['ml'][1]) - 1
-        out['best_overround'] = r4(ovr_best)
-        out['arb'] = ovr_best < 0
+        out['best_overround'] = round(ovr_best, 5)
+        out['arb'] = ovr_best < ARB_MIN
         out['p_consensus'] = out['p_shin_lmean']
     if sh:
         out['p_sharp_shin'] = r4(lmean([v['p_shin'] for v in sh.values()]))

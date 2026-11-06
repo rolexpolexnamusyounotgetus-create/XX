@@ -578,6 +578,9 @@ def cmd_fetch_geo(args):
         g = country_ref(fx, iso3)
         if not g:
             log("  no reference point for", iso3, row[3])
+    for k, (city, admin, iso3) in sorted(GYMS.items()):
+        if not geocode(fx, city, admin, iso3):
+            log("  no geocode for gym", k, city)
     # Sherdog birthplaces (for a fighter's home time zone), once the Sherdog pages are cached
     nat = load_sherdog_bios(offline=True)
     places = sorted(set((b["locality"], b["iso3"]) for b in nat.values() if b.get("locality") and b.get("iso3")))
@@ -880,8 +883,17 @@ def cmd_fetch_sherdog(args):
     log("search pass done: %d resolved of %d" % (sum(1 for r in res.values() if r["status"] == "ok"), len(res)))
 
 
+_BIO_MEMO = {}
+_BIO_MEMO_PATH = os.path.join(SD_DIR, "_bios_memo.json")
+
+
 def load_sherdog_bios(offline=True, fights=None, people=None):
     """person id -> Sherdog bio (nationality, birthplace, association, iso3) from the caches only."""
+    if not _BIO_MEMO and os.path.exists(_BIO_MEMO_PATH):
+        try:
+            _BIO_MEMO.update(json.load(open(_BIO_MEMO_PATH, encoding="utf-8")))
+        except ValueError:
+            pass
     if fights is None:
         fights, people = load_people_fights()
     T = target_persons(fights)
@@ -901,11 +913,24 @@ def load_sherdog_bios(offline=True, fights=None, people=None):
             if len(sids) == 1:
                 html = read_cached(sherdog_page_paths(sids[0]))
                 src = "/fighter/x-" + sids[0]
-        b = parse_sherdog_bio(html) if html else None
+        b = None
+        if html:
+            hk = "%s:%d" % (src, len(html))
+            b = _BIO_MEMO.get(hk)
+            if b is None:
+                b = parse_sherdog_bio(html)
+                _BIO_MEMO[hk] = b
         if b:
+            b = dict(b)
             b["iso3"] = country_code(b["nationality"])
             b["src"] = src
             out[pid] = b
+    try:
+        os.makedirs(SD_DIR, exist_ok=True)
+        with open(_BIO_MEMO_PATH, "w", encoding="utf-8") as fh:
+            json.dump(_BIO_MEMO, fh, ensure_ascii=False)
+    except OSError:
+        pass
     return out
 
 
@@ -986,6 +1011,30 @@ def parse_event_article(html):
             out["paras"].append({"sec": "note", "text": t, "note_id": nid})
     out["fulltext"] = " ".join(full)
     return out
+
+
+def parse_event_article_cached(path):
+    """parse_event_article with a JSON memo next to the raw cache (keyed by size and mtime, parser version)."""
+    st = os.stat(path)
+    memo = os.path.join(WIKI_DIR, "_parsed", os.path.basename(path)[:-5] + ".json")
+    key = "%d-%d-%s" % (st.st_size, int(st.st_mtime), PARSER_VERSION)
+    if os.path.exists(memo):
+        try:
+            d = json.load(open(memo, encoding="utf-8"))
+            if d.get("_key") == key:
+                return d
+        except ValueError:
+            pass
+    d = parse_event_article(open(path, encoding="utf-8").read())
+    if d is not None:
+        d["_key"] = key
+        os.makedirs(os.path.dirname(memo), exist_ok=True)
+        with open(memo, "w", encoding="utf-8") as fh:
+            json.dump(d, fh, ensure_ascii=False)
+    return d
+
+
+PARSER_VERSION = "1"
 
 
 def parse_results_table(sec):
@@ -1563,6 +1612,72 @@ def haversine_km(a, b):
     return 2 * 6371.0 * math.asin(min(1.0, math.sqrt(h)))
 
 
+# Training camps (Sherdog "association", first listed) -> (city, region, ISO3). Hand-made from public gym
+# locations for the camps with the most UFC fighters; used only for the travel / time-zone / altitude home
+# point, never for nationality. Sherdog shows the current camp, so this is a snapshot (see the research note).
+GYMS = {
+    "american top team": ("Coconut Creek", "Florida", "USA"), "kill cliff fc": ("Deerfield Beach", "Florida", "USA"),
+    "sanford mma": ("Deerfield Beach", "Florida", "USA"), "hard knocks 365": ("Coconut Creek", "Florida", "USA"),
+    "blackzilians": ("Boca Raton", "Florida", "USA"), "jaco hybrid training center": ("Boca Raton", "Florida", "USA"),
+    "mma masters": ("Miami", "Florida", "USA"), "xtreme couture": ("Las Vegas", "Nevada", "USA"),
+    "syndicate mma": ("Las Vegas", "Nevada", "USA"), "one kick's gym": ("Las Vegas", "Nevada", "USA"),
+    "one kicks gym": ("Las Vegas", "Nevada", "USA"), "ufc performance institute": ("Las Vegas", "Nevada", "USA"),
+    "jackson-wink mma": ("Albuquerque", "New Mexico", "USA"), "jackson wink mma": ("Albuquerque", "New Mexico", "USA"),
+    "jackson's mma": ("Albuquerque", "New Mexico", "USA"), "jacksons mma": ("Albuquerque", "New Mexico", "USA"),
+    "team alpha male": ("Sacramento", "California", "USA"), "mma lab": ("Glendale", "Arizona", "USA"),
+    "the mma lab": ("Glendale", "Arizona", "USA"), "fight ready": ("Scottsdale", "Arizona", "USA"),
+    "factory x": ("Englewood", "Colorado", "USA"), "elevation fight team": ("Denver", "Colorado", "USA"),
+    "grudge training center": ("Arvada", "Colorado", "USA"), "tristar gym": ("Montreal", "Quebec", "CAN"),
+    "nova uniao": ("Rio de Janeiro", "Rio de Janeiro", "BRA"), "fortis mma": ("Dallas", "Texas", "USA"),
+    "alliance mma": ("Chula Vista", "California", "USA"), "city kickboxing": ("Auckland", None, "NZL"),
+    "american kickboxing academy": ("San Jose", "California", "USA"), "sbg ireland": ("Dublin", None, "IRL"),
+    "chute boxe diego lima": ("Sao Paulo", "Sao Paulo", "BRA"), "allstars training center": ("Stockholm", None, "SWE"),
+    "valle flow striking": ("Brick", "New Jersey", "USA"), "roufusport": ("Milwaukee", "Wisconsin", "USA"),
+    "kings mma": ("Huntington Beach", "California", "USA"), "team tiger schulmann": ("Elmwood Park", "New Jersey", "USA"),
+    "team oyama": ("Irvine", "California", "USA"), "serra-longo fight team": ("East Meadow", "New York", "USA"),
+    "renzo gracie philly": ("Philadelphia", "Pennsylvania", "USA"), "the fighting nerds": ("Sao Paulo", "Sao Paulo", "BRA"),
+    "team quest": ("Gresham", "Oregon", "USA"), "cesar gracie fight team": ("Pleasant Hill", "California", "USA"),
+    "teixeira mma & fitness": ("Danbury", "Connecticut", "USA"), "team nogueira": ("Rio de Janeiro", "Rio de Janeiro", "BRA"),
+    "team kaobon": ("Liverpool", "England", "GBR"), "reign mma": ("Mission Viejo", "California", "USA"),
+    "khk mma": ("Manama", None, "BHR"), "glory mma & fitness": ("Saint Charles", "Missouri", "USA"),
+    "entram gym": ("Tijuana", "Baja California", "MEX"), "eagles mma": ("Makhachkala", "Dagestan", "RUS"),
+    "duneland vale tudo": ("Chesterton", "Indiana", "USA"), "bellmore kickboxing academy": ("Bellmore", "New York", "USA"),
+    "ufc gym costa mesa": ("Costa Mesa", "California", "USA"), "tiger muay thai": ("Phuket", None, "THA"),
+    "team lloyd irvin": ("Camp Springs", "Maryland", "USA"), "mma factory": ("Paris", None, "FRA"),
+    "team lakay": ("Baguio", "Cordillera", "PHL"), "evolve mma": ("Singapore", None, "SGP"),
+    "pitbull brothers": ("Natal", "Rio Grande do Norte", "BRA"), "black house": ("Los Angeles", "California", "USA"),
+    "gracie barra": ("Irvine", "California", "USA"), "kings mma huntington beach": ("Huntington Beach", "California", "USA"),
+    "lobo gym mma": ("Tijuana", "Baja California", "MEX"), "team sityodtong": ("Somerville", "Massachusetts", "USA"),
+    "jungle fight": ("Rio de Janeiro", "Rio de Janeiro", "BRA"), "astra fight team": ("Sao Paulo", "Sao Paulo", "BRA"),
+    "macaco gold team": ("Rio de Janeiro", "Rio de Janeiro", "BRA"), "grudge": ("Arvada", "Colorado", "USA"),
+    "akhmat fight team": ("Grozny", "Chechnya", "RUS"), "berkut": ("Grozny", "Chechnya", "RUS"),
+    "dagestan national team": ("Makhachkala", "Dagestan", "RUS"), "gorilla fight team": ("Makhachkala", "Dagestan", "RUS"),
+    "fight spirit team": ("Saint Petersburg", None, "RUS"), "strela team": ("Moscow", None, "RUS"),
+    "team petrosyan": ("Rome", None, "ITA"), "next generation mma liverpool": ("Liverpool", "England", "GBR"),
+    "london shootfighters": ("London", "England", "GBR"), "team renegade": ("Las Vegas", "Nevada", "USA"),
+    "xtreme couture mma": ("Las Vegas", "Nevada", "USA"), "drysdale jiu jitsu": ("Las Vegas", "Nevada", "USA"),
+    "extreme couture": ("Las Vegas", "Nevada", "USA"), "the treigning lab": ("Philadelphia", "Pennsylvania", "USA"),
+    "longo and weidman mma": ("Garden City", "New York", "USA"), "longo & weidman mma": ("Garden City", "New York", "USA"),
+    "bad boy mma": ("Chicago", "Illinois", "USA"), "team bodyshop": ("Mexico City", None, "MEX"),
+    "silverback fight club": ("Houston", "Texas", "USA"), "metro fight club": ("Houston", "Texas", "USA"),
+    "4oz. fight club": ("Coconut Creek", "Florida", "USA"), "combat club": ("Coconut Creek", "Florida", "USA"),
+    "mma sports center": ("Mexico City", None, "MEX"), "lion's den": ("Lakewood", "Colorado", "USA"),
+    "genesis training center": ("Tijuana", "Baja California", "MEX"),
+}
+
+
+def gym_point(gfx, assoc):
+    """Geocoded camp location for a Sherdog association list (first mapped entry wins)."""
+    for a in assoc or []:
+        k = re.sub(r"\s+", " ", fold(a).lower().strip())
+        if k in GYMS:
+            city, admin, iso3 = GYMS[k]
+            g = geocode(gfx, city, admin, iso3)
+            if g:
+                return dict(g, gym=a, iso3=iso3)
+    return None
+
+
 def build_nationality(people, pids, items, wd, bios, gfx):
     """slug-keyed nationality records and person id -> home (iso3, tz, lat, lon, elevation)."""
     recs, home = {}, {}
@@ -1611,17 +1726,19 @@ def build_nationality(people, pids, items, wd, bios, gfx):
             city, admin = locality_parts(b["locality"])
             bp = geocode(gfx, city, admin, primary)
         ref = country_ref(gfx, primary) if primary else None
-        pt = bp or ref
+        gp = gym_point(gfx, (b or {}).get("association"))
+        pt = gp or bp or ref
         home[pid] = {"iso3": primary, "countries": allc, "tz": (pt or {}).get("tz") or
                      (COUNTRIES[primary][3] if primary in COUNTRIES else None),
                      "lat": (pt or {}).get("lat"), "lon": (pt or {}).get("lon"),
-                     "elev": (bp or {}).get("elevation_m"), "basis": "birthplace" if bp else
+                     "elev": (pt or {}).get("elevation_m") if (gp or bp) else None,
+                     "basis": ("camp: " + gp["gym"]) if gp else "birthplace" if bp else
                      ("country reference city" if ref else None)}
         recs[P["slug"]] = {"name": P["name"], "ufcstats_id": pid, "iso3": primary, "how": how,
                            "countries": allc, "country_name": COUNTRIES[primary][1] if primary in COUNTRIES else None,
                            "home_point": {"basis": home[pid]["basis"], "tz": home[pid]["tz"],
                                           "lat": home[pid]["lat"], "lon": home[pid]["lon"],
-                                          "birthplace_elevation_m": home[pid]["elev"]},
+                                          "elevation_m": home[pid]["elev"]},
                            "sources": src}
     return recs, home
 
@@ -1651,7 +1768,7 @@ def cmd_build(args):
         if w and w.get("href"):
             p = wiki_path(title_of(w["href"]))
             if os.path.exists(p):
-                art = parse_event_article(open(p, encoding="utf-8").read())
+                art = parse_event_article_cached(p)
         city, admin, country = split_location(ev["location"])
         iso3 = country_code(country)
         g = dict(geocode(gfx, city, admin, iso3) or {})

@@ -382,6 +382,9 @@ def build_sides(rows, keys, mu, sd):
     D["reach_d"] = ((D.x_reach - D.y_reach) / sd["reach"]).fillna(0.0)
     D["height_d"] = ((D.x_height - D.y_height) / sd["height"]).fillna(0.0)
     D["age_d"] = ((D.x_age - D.y_age) / sd["age"]).fillna(0.0)
+    # reach and height differences are strongly collinear: use overall length and reach beyond height
+    D["length_d"] = (D.reach_d + D.height_d) / 2.0
+    D["reach_net_d"] = (D.reach_d - D.height_d) / 2.0
     D["kick_x"] = (D.zx_sh_l + D.zx_sh_b) / math.sqrt(2)
     D["kick_y"] = (D.zy_sh_l + D.zy_sh_b) / math.sqrt(2)
     D["neg_zy_dfn"] = -D.zy_dfn
@@ -400,53 +403,57 @@ def rate_specs(D):
         "dist_att": dict(desc="distance significant attempts per standing minute", fam="poisson", y="o_d_att",
                          off=lg(D.st_min), base=["zx_d_rate", "zy_od_rate"],
                          cand=["zy_kd_pow", "zy_td_int", "zy_press", "zx_press", "kick_y", "kick_x", "open",
-                               "x_sp_vs_orth", "x_orth_vs_sp", "reach_d", "height_d", ("zx_press", "zy_press"),
+                               "x_sp_vs_orth", "length_d", "reach_net_d", ("zx_press", "zy_press"),
                                ("zx_vol", "zy_dfn"), ("zx_press", "zy_kd_pow"), ("zx_d_rate", "zy_od_rate"),
                                "zy_vol", "zy_acc"]),
         "dist_acc": dict(desc="distance accuracy (landed of attempted), log5 baseline", fam="binomial",
                          y="o_d_lnd", n="o_d_att", off=lambda D: logit(D.p_acc_d), base=["zx_acc", "neg_zy_dfn"],
                          cand=[("zx_acc", "zy_dfn"), ("zx_press", "zy_dfn"), ("zx_vol", "zy_dfn"), "zy_press",
-                               "zx_press", "zy_vol", "kick_x", "kick_y", "open", "x_sp_vs_orth", "x_orth_vs_sp",
-                               "reach_d", "height_d", ("zx_acc", "zy_press"), "zy_td_int", "zy_kd_pow"]),
+                               "zx_press", "zy_vol", "kick_x", "kick_y", "open", "x_sp_vs_orth",
+                               "length_d", "reach_net_d", ("zx_acc", "zy_press"), "zy_td_int", "zy_kd_pow"]),
         "leg_share": dict(desc="leg share of significant attempts", fam="binomial", y="o_l_att", n="tot_tg",
                           off=None, base=["zx_sh_l", "zy_osh_l"],
-                          cand=["zy_td_int", "zy_press", "zy_kd_pow", "open", "x_sp_vs_orth", "x_orth_vs_sp",
-                                "reach_d", "height_d", ("zx_sh_l", "zy_osh_l"), "y_sw", "zy_sh_l"]),
+                          cand=["zy_td_int", "zy_press", "zy_kd_pow", "open", "x_sp_vs_orth",
+                                "length_d", "reach_net_d", ("zx_sh_l", "zy_osh_l"), "y_sw", "zy_sh_l"]),
         "body_share": dict(desc="body share of significant attempts", fam="binomial", y="o_b_att", n="tot_tg",
                            off=None, base=["zx_sh_b"],
-                           cand=["open", "x_sp_vs_orth", "x_orth_vs_sp", "y_sw", "zy_td_int", "zy_press",
-                                 "reach_d", "height_d"]),
+                           cand=["open", "x_sp_vs_orth", "y_sw", "zy_td_int", "zy_press",
+                                 "length_d", "reach_net_d"]),
         "td_att": dict(desc="takedown attempts per standing minute", fam="poisson", y="o_td_att",
                        off=lg(D.st_min), base=["zx_td_rate", "zy_otd_rate"],
                        cand=["zy_td_def", ("zx_td_int", "zy_td_def"), "kick_y", "zy_net", "zx_net", "zy_sub_int",
                              "zy_kd_pow", "zy_td_int", ("zx_td_int", "zy_td_int"), "zy_press", "zy_vol", "open",
-                             "reach_d", "height_d", ("zx_td_rate", "zy_otd_rate")]),
+                             "length_d", "reach_net_d", ("zx_td_rate", "zy_otd_rate")]),
         "td_acc": dict(desc="takedown success (landed of attempted), log5 baseline", fam="binomial", y="o_td_lnd",
                        n="o_td_att", off=lambda D: logit(D.p_td_acc), base=["zx_td_acc", "neg_zy_td_def"],
                        cand=[("zx_td_acc", "zy_td_def"), "kick_y", "zy_press", "zy_vol", "zx_sh_c", "zy_sh_c",
-                             "zy_ctrl", "zy_td_int", ("zx_td_int", "zy_td_int"), "open", "reach_d", "height_d",
+                             "zy_ctrl", "zy_td_int", ("zx_td_int", "zy_td_int"), "open", "length_d", "reach_net_d",
                              "zx_td_int", "zy_sub_int", "zy_kd_pow"]),
         "ctrl": dict(desc="control seconds per minute (quasi-Poisson)", fam="poisson", y="o_ctrl", off=lg(D.o_min),
                      base=["zx_ctrl", "zy_octrl"],
                      cand=[("zx_ctrl", "zy_octrl"), "zy_td_int", "zy_ctrl", ("zx_ctrl", "zy_ctrl"), "zy_sub_int",
                            "zy_octrl_td", ("zx_ctrl_td", "zy_octrl_td"), "zy_td_def", "kick_y", "zy_net",
-                           "reach_d", "height_d"]),
+                           "length_d", "reach_net_d"]),
+        "ctrl_per_td": dict(desc="control seconds per takedown landed (duration; quasi-Poisson)", fam="poisson",
+                            y="o_ctrl", off=lambda D: np.log(D.o_td_lnd + 0.5), base=["zx_ctrl_td", "zy_octrl_td"],
+                            cand=["kick_y", "zy_td_int", ("zx_ctrl", "zy_octrl"), "zy_ctrl", "zy_sub_int", "zy_td_def",
+                                  ("zx_ctrl_td", "zy_octrl_td"), "zy_net", "length_d", "reach_net_d"]),
         "kd": dict(desc="knockdowns per landed head strike", fam="poisson", y="o_kd",
                    off=lambda D: np.log(np.maximum(D.o_h_lnd, 0.5)) + np.log(D.p_kd), base=["zx_kd_pow", "zy_chin"],
                    cand=[("zx_kd_pow", "zy_chin"), "zy_press", "zx_press", "zy_vol", "zy_dfn", "zx_acc", "open",
-                         "x_sp_vs_orth", "x_orth_vs_sp", "reach_d", "height_d", ("zx_kd_pow", "zy_press"),
+                         "x_sp_vs_orth", "length_d", "reach_net_d", ("zx_kd_pow", "zy_press"),
                          ("zx_kd_pow", "zy_vol"), "zy_td_int"]),
         "sub_att": dict(desc="submission attempts per minute", fam="poisson", y="o_sub_att", off=lg(D.o_min),
                         base=["zx_sub_int", "zy_osub_int"],
                         cand=[("zx_sub_int", "zy_osub_int"), "zy_octrl", "zy_ctrl", "zy_td_int",
-                              ("zx_sub_int", "zy_td_int"), ("zx_sub_int", "zy_ctrl"), "zy_sub_int", "height_d"]),
+                              ("zx_sub_int", "zy_td_int"), ("zx_sub_int", "zy_ctrl"), "zy_sub_int", "length_d"]),
         "clinch_att": dict(desc="clinch significant attempts per minute", fam="poisson", y="o_c_att",
                            off=lg(D.o_min), base=["zx_c_rate", "zy_oc_rate"],
-                           cand=[("zx_sh_c", "zy_sh_c"), "zy_td_int", "zx_td_int", "reach_d", "height_d", "kick_y",
+                           cand=[("zx_sh_c", "zy_sh_c"), "zy_td_int", "zx_td_int", "length_d", "reach_net_d", "kick_y",
                                  "zy_press", "zy_vol", "zy_kd_pow"]),
         "gnp_att": dict(desc="ground significant attempts per own control minute", fam="poisson", y="o_g_att",
                         off=lambda D: np.log(D.top_min + 0.25), base=["zx_g_rate"],
-                        cand=["zy_sub_int", "zy_osub_int", "zy_octrl_td", "zy_td_int", "height_d", "reach_d",
+                        cand=["zy_sub_int", "zy_osub_int", "zy_octrl_td", "zy_td_int", "length_d", "reach_net_d",
                               "zy_kd_pow"]),
     }
 
@@ -604,8 +611,8 @@ def name_cluster(c):
         return "wrestler / top-control grappler"
     if c["press"] < -0.8:
         return "counter striker"
-    if c["kd_pow"] > 0.7:
-        return "power puncher"
+    if c["kd_pow"] > 0.4:
+        return "power brawler" if c["dfn"] < -0.3 else "power puncher"
     if c["sh_d"] > 1.2 and c["vol"] > 0.9:
         return "high-volume distance boxer"
     if kick > 0.6 and c["sh_d"] > 0.5:
@@ -1078,7 +1085,8 @@ def tune_shrinkage(bt, vec, keys):
 
 
 # --------------------------------------------------------------------------------------------- engine sets
-RELATIVE_TERMS = {"open", "x_sp_vs_orth", "x_orth_vs_sp", "reach_d", "height_d", "age_d", "y_sw", "kick_y"}
+RELATIVE_TERMS = {"open", "x_sp_vs_orth", "x_orth_vs_sp", "reach_d", "height_d", "length_d", "reach_net_d",
+                  "age_d", "y_sw", "kick_y"}
 
 
 def is_matchup(term):
@@ -1369,6 +1377,10 @@ def term_value(term, fx, fy, mu, sd):
         if fx.get(k) is None or fy.get(k) is None:
             return 0.0
         return (fx[k] - fy[k]) / sd[k]
+    if term == "length_d":
+        return (term_value("reach_d", fx, fy, mu, sd) + term_value("height_d", fx, fy, mu, sd)) / 2.0
+    if term == "reach_net_d":
+        return (term_value("reach_d", fx, fy, mu, sd) - term_value("height_d", fx, fy, mu, sd)) / 2.0
     sx = "southpaw" if fx.get("southpaw") else "switch" if fx.get("switch") else "orthodox" if fx.get("orthodox") else ""
     sy = "southpaw" if fy.get("southpaw") else "switch" if fy.get("switch") else "orthodox" if fy.get("orthodox") else ""
     if term == "open":

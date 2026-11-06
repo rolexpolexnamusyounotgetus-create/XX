@@ -1,0 +1,110 @@
+[
+ {
+  "file": "espn_headshot.png",
+  "url": "https://a.espncdn.com/i/headshots/mma/players/full/3166126.png",
+  "page": "https://www.espn.com/mma/fighter/_/id/3166126",
+  "author": "UFC / Zuffa LLC (official athlete headshot, served by ESPN)",
+  "license": "All rights reserved (UFC / ESPN)",
+  "date_taken": "unknown; stance-left is the South-Africa-flag shorts shoot (title era 2024-2025), stance-right the plain green Venum shoot (about 2023)",
+  "use": "reference-only",
+  "what": "headshot",
+  "notes": "Studio-lit, front-on, neutral expression, white background. 600x436. Best single source for face proportions and skin tone."
+ },
+ {
+  "file": "espn_stance_left.png",
+  "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/3166126.png",
+  "page": "https://www.espn.com/mma/fighter/_/id/3166126",
+  "author": "UFC / Zuffa LLC (official athlete photo, served by ESPN)",
+  "license": "All rights reserved (UFC / ESPN)",
+  "date_taken": "unknown; stance-left is the South-Africa-flag shorts shoot (title era 2024-2025), stance-right the plain green Venum shoot (about 2023)",
+  "use": "reference-only",
+  "what": "body"
+ },
+ {
+  "file": "espn_stance_right.png",
+  "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/3166126.png",
+  "page": "https://www.espn.com/mma/fighter/_/id/3166126",
+  "author": "UFC / Zuffa LLC (official athlete photo, served by ESPN)",
+  "license": "All rights reserved (UFC / ESPN)",
+  "date_taken": "unknown; stance-left is the South-Africa-flag shorts shoot (title era 2024-2025), stance-right the plain green Venum shoot (about 2023)",
+  "use": "reference-only",
+  "what": "body"
+ },
+ {
+  "file": "commons_2023_cc0.jpg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/IMG-Dricus-Duplessis.jpg/1280px-IMG-Dricus-Duplessis.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:IMG-Dricus-Duplessis.jpg",
+  "author": "Philippe3017 (Wikimedia Commons uploader, 'own work')",
+  "license": "CC0 1.0 (as stated on Commons)",
+  "date_taken": "2023-10-26",
+  "use": "reference-only",
+  "what": "headshot",
+  "notes": "Seated, smiling, green rugby-style shirt. Listed CC0 on Commons, but it looks like a social-media snapshot and the 'own work' claim is doubtful, so treat as reference-only until the licence is confirmed."
+ },
+ {
+  "file": "commons_2023_cc0_cropped.jpg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/3/31/IMG-Dricus-Duplessis%28cropped%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:IMG-Dricus-Duplessis(cropped).jpg",
+  "author": "Philippe3017 (Wikimedia Commons uploader)",
+  "license": "CC0 1.0 (as stated on Commons)",
+  "date_taken": "2023-10-26",
+  "use": "reference-only",
+  "what": "headshot",
+  "notes": "Crop of the above (used on Wikipedia). Same licence caveat. Shows hair with a spiky quiff, smile, shirt-on build."
+ },
+ {
+  "file": "ref_briefly_mediaday_2026-07.jpg",
+  "url": "https://cdn.briefly.co.za/images/1200x675/cc2e4bd365c70b8f.jpeg?v=1",
+  "page": "https://briefly.co.za/sports/247028-dricus-du-plessis-ufc-promise-khamzat-chimaev-loss-kamaru-usman-showdown/",
+  "author": "Agency photo as published by Briefly News",
+  "license": "All rights reserved",
+  "date_taken": "2026-07 (UFC Oklahoma City media day; backdrop reads JULY 18 SAT)",
+  "use": "reference-only",
+  "what": "3q",
+  "notes": "Recent, sharp 3q face in a cowboy hat: blue eyes, brows, nose, beard shape and colour, ear. Hat hides hair."
+ },
+ {
+  "file": "ref_gazettengr_faceoff_profile_2026-07-17.jpg",
+  "url": "https://gazettengr.com/wp-content/uploads/HNXsHiwWkAAU3AE-e1784268751244.jpg",
+  "page": "https://gazettengr.com/south-africas-du-plessis-nigerias-usman-face-off-in-ufc-showdown-in-oklahoma/",
+  "author": "Photo as published by Gazette NGR (credit not shown)",
+  "license": "All rights reserved",
+  "date_taken": "2026-07 (UFC Oklahoma City fight week face-off)",
+  "use": "reference-only",
+  "what": "profile",
+  "notes": "Clean left-facing profile at a face-off with Kamaru Usman: nose, brow, chin projection, beard depth, ear."
+ },
+ {
+  "file": "ref_aljazeera_usman_2026-07-18.jpg",
+  "url": "https://www.aljazeera.com/wp-content/uploads/2026/07/2026-07-19T035448Z_1111622452_MT1USATODAY29409677_RTRMADP_3_MMA-UFC-FIGHT-NIGHT-OKLAHOMA-CITY-DU-PLESSIS-VS-USMAN-1784452505_d0f6fc-1784454047.jpg?resize=1200%2C630&quality=80",
+  "page": "https://www.aljazeera.com/sports/2026/7/19/dricus-du-plessis-mma-ufc-unanimous-decision-kamaru-usman",
+  "author": "Alonzo Adams / Imagn Images via Reuters (credit as published)",
+  "license": "All rights reserved",
+  "date_taken": "2026-07-18",
+  "use": "reference-only",
+  "what": "headshot",
+  "notes": "Most recent face, near-frontal after the Usman win, wrapped in a South African flag; sweaty hair, slight facial marks."
+ },
+ {
+  "file": "ref_thescore_usman_2026-07-18.jpg",
+  "url": "https://assets-cms.thescore.com/uploads/image/file/841991/w1280xh720_GettyImages-2286699186.jpg?ts=1784430704",
+  "page": "https://thescore.com/mma/news/3567928/du-plessis-dominates-usman-in-ufc-okc-main-event",
+  "author": "Getty Images (as published by theScore)",
+  "license": "All rights reserved",
+  "date_taken": "2026-07-18",
+  "use": "reference-only",
+  "what": "action",
+  "notes": "3q face throwing a punch: brow, nose bridge, beard, deltoid/shoulder mass."
+ },
+ {
+  "file": "ref_cagesidepress_ufc319_weighin_2025-08-15.jpg",
+  "url": "https://cagesidepress.com/wp-content/uploads/2025/08/Dricus-du-Plessis-2-e1784247512938.jpg",
+  "page": "https://cagesidepress.com/2026/07/17/ufc-oklahoma-city-du-plessis-vs-usman-weigh-in-results/",
+  "author": "Cageside Press (credit as published)",
+  "license": "All rights reserved",
+  "date_taken": "2025-08-15 (UFC 319 ceremonial weigh-in; banner reads UFC 319 / AUG 16)",
+  "use": "reference-only",
+  "what": "body",
+  "notes": "Front-on flexing at weigh-in: arms, shoulders, chest, abs; gold chain with pendant; smiling face."
+ }
+]

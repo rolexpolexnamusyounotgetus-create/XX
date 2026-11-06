@@ -138,8 +138,8 @@
 
     // ---------------- stamina and pace ----------------
     drain: 0.0011,          // base stamina drain per second at league-average cardio in a 3-round fight (S starts at 1; ~0.4 by the end of R3; shapes the finish hazard by round)
-    r1Caution5: 0.8,         // round 1 of 5-round fights: knockdown, GNP TKO and submission conversion x this (baserates per-minute finish hazard R1 5-rd 0.0463 vs 3-rd 0.0576)
-    drainSchedExp: 0.8,      // drain x (3 / scheduled rounds)^drainSchedExp: fighters budget energy for the distance (baserates: KO hazard drops in R3 of 3-rounders, R4-5 of 5-rounders)
+    r1Caution5: 0.75,        // round 1 of 5-round fights: knockdown, GNP TKO and submission conversion x this (baserates per-minute finish hazard R1 5-rd 0.0463 vs 3-rd 0.0576 = 0.80; main-event caution)
+    drainSchedExp: 0.2,      // drain x (3 / scheduled rounds)^drainSchedExp: some pacing in 5-rounders (small: baserates 5-rd hazard falls to ~11% in R4-R5, so the championship rounds stay grueling)
     drainPos: [1.0, 1.5, 0.9, 1.6],   // drain multiplier at distance, clinch, ground top, ground bottom (default)
     drainAtt: 0.00025,       // stamina per strike attempt thrown (default)
     drainTd: 0.006,          // stamina per takedown attempt (shooter) (default)

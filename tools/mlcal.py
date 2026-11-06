@@ -67,12 +67,11 @@ def cmd_priors(args):
 
 # ------------------------------------------------------------------ evaluator process
 class Evaluator:
-    def __init__(self, spec, workers, fixed=None, hook=None):
+    def __init__(self, spec, workers, fixed=None, hook=None, engine=None, params=None):
         cmd = ["node", rel("tools/mlcal.js"), "serve", "--spec", spec, "--workers", str(workers)]
-        if fixed:
-            cmd += ["--fixed", fixed]
-        if hook:
-            cmd += ["--hook", hook]
+        for flag, v in (("--fixed", fixed), ("--hook", hook), ("--engine", engine), ("--params", params)):
+            if v:
+                cmd += [flag, v]
         self.p = subprocess.Popen(cmd,
                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1, cwd=ROOT)
         self.tick = os.sysconf("SC_CLK_TCK")
@@ -379,7 +378,7 @@ def cmd_tune(args):
     rungs = [int(v) for v in args.rungs.split(",")]
     eta = max(2, int(round(rungs[1] / rungs[0]))) if len(rungs) > 1 else 2
     t0 = time.time()
-    ev = Evaluator(args.spec, args.workers, fixed=args.fixed, hook=args.hook)
+    ev = Evaluator(args.spec, args.workers, fixed=args.fixed, hook=args.hook, engine=args.engine, params=args.params)
     try:
         info = ev.call(cmd="spec")
         dims = info["dims"]
@@ -494,7 +493,8 @@ def summary(out):
 def cmd_validate(args):
     cand = json.load(open(rel(args.cand)))
     ranks = [int(r) for r in args.ranks.split(",")] if args.ranks else [c["rank"] for c in cand["candidates"]]
-    ev = Evaluator(args.spec or cand["meta"]["spec"], args.workers, hook=args.hook or cand["meta"].get("hook"))
+    ev = Evaluator(args.spec or cand["meta"]["spec"], args.workers, hook=args.hook or cand["meta"].get("hook"),
+                   engine=args.engine, params=args.params)
     try:
         info = ev.call(cmd="spec")
         absx = lambda c: dict(c.get("overrides") or {}, **{"hook." + k: v for k, v in (c.get("hook") or {}).items()})
@@ -538,6 +538,8 @@ def main():
     p.add_argument("--tpe-share", type=float, default=0.5, help="share of --cpu-min TPE may use (0.5)")
     p.add_argument("--fixed", default=None, help="start from saved values: candidates.json#rank (rank 0 = baseline)")
     p.add_argument("--hook", default=None, help="hook module (overrides the spec's)")
+    p.add_argument("--engine", default=None, help="engine file (overrides the spec's; e.g. a frozen copy)")
+    p.add_argument("--params", default=None, help="params file (overrides the spec's)")
     p.add_argument("--out", default="data/derived/mlcal_candidates.json")
     p = sub.add_parser("validate")
     p.add_argument("--cand", default="data/derived/mlcal_candidates.json")
@@ -547,6 +549,8 @@ def main():
     p.add_argument("--val-sims", type=int, default=80)
     p.add_argument("--seed", type=int, default=20261106 + 202)
     p.add_argument("--hook", default=None)
+    p.add_argument("--engine", default=None)
+    p.add_argument("--params", default=None)
     p.add_argument("--force", action="store_true", help="re-run sets already in the ledger (avoid: validation is single-use)")
     a = ap.parse_args()
     {"priors": cmd_priors, "tune": cmd_tune, "validate": cmd_validate}[a.cmd](a)

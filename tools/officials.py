@@ -442,35 +442,61 @@ EFF = ["n", "v", "p", "g", "c"]
 
 def init_params(nJ):
     return {"beta": np.array([0.18, 0.13, 0.10, 2.4, 0.28, 0.46, 0.84, 0.3]), "w": np.zeros(3),
-            "log_su": np.log(1.0), "h": np.zeros(2), "c0": -3.0, "th": np.array([0.3, 0.3, 0.3, 0.3]),
-            "cy": np.zeros(NYEARS), "lg_e10": -6.0, "lpi": np.log(np.array([0.01, 0.002, 0.001])),
+            "log_su": np.array(0.0), "h": np.zeros(2), "c0": np.array(-3.0), "th": np.array([0.3, 0.3, 0.3, 0.3]),
+            "cy": np.zeros(NYEARS), "lg_e10": np.array(-6.0), "lpi": np.log(np.array([0.01, 0.002, 0.001])),
             "E": np.zeros((nJ, 5))}
 
 
-def make_model(dz, cfg, tau):
-    """Returns (value_and_grad(flat, data), per-fight loglik(flat, data), unravel, flat0, slot_grad, data)."""
+LAYOUT = [("beta", (8,)), ("w", (3,)), ("log_su", ()), ("h", (2,)), ("c0", ()), ("th", (4,)), ("cy", (NYEARS,)),
+          ("lg_e10", ()), ("lpi", (3,))]
+
+
+def ravel(th):
+    return np.concatenate([np.ravel(np.asarray(th[k], float)) for k, _ in LAYOUT] + [np.ravel(th["E"])])
+
+
+def unravel(flat, nJ):
+    out, i = {}, 0
+    for k, shp in LAYOUT:
+        n = int(np.prod(shp)) if shp else 1
+        out[k] = flat[i:i + n].reshape(shp)
+        i += n
+    out["E"] = flat[i:i + nJ * 5].reshape((nJ, 5))
+    return out
+
+
+_JAX = {}
+
+
+def _jax_fns():
+    """Module-level jitted functions; flags (shared, judges, home, trend) and tau are runtime arrays, so one
+    compile serves every model variant on the same design."""
+    if _JAX:
+        return _JAX
+    import os
     import jax
     import jax.numpy as jnp
-    from jax.flatten_util import ravel_pytree
+    from functools import partial
     jax.config.update("jax_enable_x64", True)
+    try:
+        CACHE.mkdir(parents=True, exist_ok=True)
+        jax.config.update("jax_compilation_cache_dir", str(CACHE / "jaxcache"))
+        jax.config.update("jax_persistent_cache_min_compile_time_secs", 2.0)
+    except Exception:
+        pass
     xq, wq = np.polynomial.hermite.hermgauss(NODES)
-    xq = jnp.array(xq * np.sqrt(2.0))
-    wq = jnp.array(wq / np.sqrt(np.pi))
-    nF, nfr = dz.nF, dz.nfr
-    tau_v = jnp.array([tau[k] for k in EFF])
-    p0 = init_params(dz.nJ)
-    flat0, unravel = ravel_pytree({k: jnp.array(v, dtype=jnp.float64) for k, v in p0.items()})
-    use_sh, use_j, use_h, use_tr = (float(cfg.get(k, 1)) for k in ("shared", "judges", "home", "trend"))
-    data = dz.arrays()
+    xq = np.asarray(xq * np.sqrt(2.0))
+    wq = np.asarray(wq / np.sqrt(np.pi))
 
-    def fr_logP(th, d, extra=None):
+    def fr_logP(th, d, fl, extra=None):
+        use_sh, use_j, use_h, use_tr = fl[0], fl[1], fl[2], fl[3]
         X, tt, home, us, yr = d["X"], d["t"], d["home"], d["us"], d["yr"]
         b = th["beta"]
         V = X[:, :3] @ b[:3]
         K = X[:, 3] * b[3]
         G = X[:, 4:] @ b[4:]
         Ez = jnp.vstack([th["E"] * use_j, jnp.zeros((1, 5))])
-        eff = Ez[d["J"]]                               # nfr x 3 x 5
+        eff = Ez[d["J"]]
         if extra is not None:
             eff = eff + extra
         w = th["w"] * use_tr
@@ -488,12 +514,11 @@ def make_model(dz, cfg, tau):
         ls = jax.nn.log_sigmoid
         e10 = jax.nn.sigmoid(th["lg_e10"])
         l1 = jnp.log1p(-e10)
-        lp = jnp.stack([l1 + ls(-eta) + ls(zB), l1 + ls(-eta) + ls(-zB), jnp.log(e10) + 0 * eta,
-                        l1 + ls(eta) + ls(-zA), l1 + ls(eta) + ls(zA)], -1)        # nfr x 3 x G x 5
-        return lp
+        return jnp.stack([l1 + ls(-eta) + ls(zB), l1 + ls(-eta) + ls(-zB), jnp.log(e10) + 0 * eta,
+                          l1 + ls(eta) + ls(-zA), l1 + ls(eta) + ls(zA)], -1)
 
-    def fight_ll(th, d, extra=None):
-        P = jnp.exp(fr_logP(th, d, extra))
+    def fight_ll(th, d, fl, nF, extra=None):
+        P = jnp.exp(fr_logP(th, d, fl, extra))
         ufr = d["ufr"]
         Q = jnp.sum(wq[None, :] * P[ufr, 0, :, d["ua"]] * P[ufr, 1, :, d["ub"]] * P[ufr, 2, :, d["uc"]], 1)
         logQ = jnp.concatenate([jnp.log(Q + 1e-300), jnp.zeros(1)])
@@ -502,58 +527,81 @@ def make_model(dz, cfg, tau):
         lprior = jnp.log(jnp.stack([p00, pi[0], pi[0], pi[1], pi[1], pi[2], jnp.array(1.0)]))
         out = jnp.zeros(nF)
         for fi, idx, dd, mask in d["buckets"]:
-            tl = logQ[idx].sum(-1) + lprior[dd]
-            tl = jnp.where(mask, tl, -jnp.inf)
+            tl = jnp.where(mask, logQ[idx].sum(-1) + lprior[dd], -jnp.inf)
             out = out.at[fi].set(jax.scipy.special.logsumexp(tl, axis=1))
         return out
 
-    def penalty(th):
-        pen = 0.5 * jnp.sum((th["E"] / tau_v[None, :]) ** 2) * use_j
+    def penalty(th, fl, tau_v):
+        pen = 0.5 * jnp.sum((th["E"] / tau_v[None, :]) ** 2) * fl[1]
         pen += 0.5 * jnp.sum(jnp.diff(th["cy"]) ** 2) / 0.3 ** 2 + 0.5 * jnp.sum(th["cy"] ** 2) / 1.0 ** 2
         pen += 0.5 * 1e-2 * (jnp.sum(th["w"] ** 2) + jnp.sum(th["h"] ** 2) + jnp.sum(th["th"] ** 2))
         pen += 0.5 * 1e-4 * jnp.sum(th["beta"] ** 2)
-        pen += 0.5 * ((th["log_su"] - 0.0) / 2.0) ** 2
+        pen += 0.5 * (th["log_su"] / 2.0) ** 2
         return pen
 
-    def obj(flat, d):
-        th = unravel(flat)
-        return -jnp.sum(fight_ll(th, d)) + penalty(th)
+    def obj(flat, d, fl, tau_v, nJ, nF):
+        th = unravel(flat, nJ)
+        return -jnp.sum(fight_ll(th, d, fl, nF)) + penalty(th, fl, tau_v)
 
-    vg = jax.jit(jax.value_and_grad(obj))
-    ll_fn = jax.jit(lambda flat, d: fight_ll(unravel(flat), d))
+    _JAX["vg"] = jax.jit(jax.value_and_grad(obj), static_argnums=(4, 5))
+    _JAX["ll"] = jax.jit(lambda flat, d, fl, nJ, nF: fight_ll(unravel(flat, nJ), d, fl, nF), static_argnums=(3, 4))
 
-    def slot_grad(flat, d):
-        th = unravel(flat)
-        return jax.grad(lambda ex: jnp.sum(fight_ll(th, d, ex)))(jnp.zeros((nfr, 3, 5)))
-    return vg, ll_fn, unravel, np.asarray(flat0), jax.jit(slot_grad), data
+    def slot_grad(flat, d, fl, nJ, nF):
+        th = unravel(flat, nJ)
+        nfr = d["X"].shape[0]
+        return jax.grad(lambda ex: jnp.sum(fight_ll(th, d, fl, nF, ex)))(jnp.zeros((nfr, 3, 5)))
+    _JAX["sg"] = jax.jit(slot_grad, static_argnums=(3, 4))
+    _JAX["jnp"] = jnp
+    return _JAX
 
 
-def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, fixed=None):
-    """MAP fit by L-BFGS. `fixed`: dict of parameter names held at their flat_init values."""
-    from scipy.optimize import minimize
-    vg, ll_fn, unravel, flat0, slot_grad, data = make_model(dz, cfg, tau)
-    x0 = flat0 if flat_init is None else flat_init
-    maxiter = maxiter or int(__import__("os").environ.get("OFFICIALS_MAXITER", 3000))
-    t0 = time.time()
+def flags_of(cfg):
+    return np.array([float(cfg.get(k, 1)) for k in ("shared", "judges", "home", "trend")])
 
-    def f(x):
-        v, g = vg(x, data)
+
+class Model:
+    """Bound evaluation functions for one design."""
+
+    def __init__(self, dz):
+        self.fns = _jax_fns()
+        self.dz = dz
+        self.data = dz.arrays()
+
+    def vg(self, x, cfg, tau):
+        jnp = self.fns["jnp"]
+        v, g = self.fns["vg"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)),
+                              jnp.asarray([tau[k] for k in EFF]), self.dz.nJ, self.dz.nF)
         return float(v), np.asarray(g, dtype=float)
-    res = minimize(f, x0, jac=True, method="L-BFGS-B", options={"maxiter": maxiter, "maxcor": 30, "gtol": 1e-5})
+
+    def ll(self, x, cfg):
+        jnp = self.fns["jnp"]
+        return np.asarray(self.fns["ll"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ, self.dz.nF))
+
+    def slot_grad(self, x, cfg):
+        jnp = self.fns["jnp"]
+        return np.asarray(self.fns["sg"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ, self.dz.nF))
+
+
+def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, model=None):
+    """MAP fit by L-BFGS-B. Returns (x, Model)."""
+    from scipy.optimize import minimize
+    import os
+    M = model or Model(dz)
+    x0 = ravel(init_params(dz.nJ)) if flat_init is None else flat_init
+    maxiter = maxiter or int(os.environ.get("OFFICIALS_MAXITER", 3000))
+    t0 = time.time()
+    res = minimize(lambda x: M.vg(x, cfg, tau), x0, jac=True, method="L-BFGS-B",
+                   options={"maxiter": maxiter, "maxcor": 30, "gtol": 1e-5})
     if verbose:
         log(f"  fit: {res.nit} it, obj {res.fun:.2f}, {time.time() - t0:.0f}s, {res.message}")
-    return res.x, unravel, (lambda x: np.asarray(ll_fn(x, data))), (lambda x: np.asarray(slot_grad(x, data)))
+    return res.x, M
 
 
-def judge_index(rows, min_cards=1):
-    c = Counter(cd[0] for r in rows for cd in r["cards"] if cd[0] != "unknown")
-    keys = sorted(k for k, n in c.items() if n >= min_cards)
-    return {k: i for i, k in enumerate(keys)}
 def to_np(th):
     return {k: np.asarray(v) for k, v in th.items()}
 
 
-def bhhh_sd(dz, th_flat, slot_grad_fn, tau):
+def bhhh_sd(dz, th_flat, slot_grad_fn, tau):  # noqa: D401
     """Per-judge posterior covariance of (n, v, p, g, c): (sum_f g_f g_f' + diag(1/tau^2))^-1, where g_f is
     fight f's score with respect to that judge's effects (outer product of per-fight gradients)."""
     G = slot_grad_fn(th_flat)                         # nfr x 3 x 5
@@ -708,55 +756,58 @@ MODELS = {"indep": {"shared": 0, "judges": 0, "home": 0},
           "judges_home": {}}
 
 
-def remap(x_old, unravel_old, jidx_old, jidx_new):
+def remap(x_old, jidx_old, jidx_new):
     """Warm start: carry every parameter over; judge rows by key (new judges start at 0)."""
-    from jax.flatten_util import ravel_pytree
-    import jax.numpy as jnp
-    th = to_np(unravel_old(x_old))
+    th = unravel(np.asarray(x_old), len(jidx_old))
     E = np.zeros((len(jidx_new), 5))
     for k, i in jidx_new.items():
         if k in jidx_old:
             E[i] = th["E"][jidx_old[k]]
+    th = dict(th)
     th["E"] = E
-    flat, _ = ravel_pytree({k: jnp.array(v, dtype=jnp.float64) for k, v in th.items()})
-    return np.asarray(flat)
+    return ravel(th)
 
 
-def fit_named(rows, nat, year_end, model, tau, init=None, init_jidx=None, init_unravel=None, eb_rounds=0):
-    """Fit on decisions dated before year_end (Jan 1). Returns a dict with params, judge index, design."""
-    tr = [r for r in rows if r["year"] < year_end]
-    jidx = judge_index(tr)
-    dz = Design(tr, jidx, nat, year_end - 1)
-    x0 = None
-    if init is not None:
-        x0 = remap(init, init_unravel, init_jidx, jidx)
-    cfg = MODELS[model]
-    log(f"fit {model} < {year_end}: {dz.nF} fights, {dz.nJ} judges, tau {tau}")
-    x, unravel, llf, sgf = fit_model(dz, cfg, tau, flat_init=x0)
-    cov = None
-    for k in range(eb_rounds):
-        cov, info = bhhh_sd(dz, x, sgf, tau)
-        ncards = np.bincount(dz.J[np.r_[0, np.cumsum([r["R"] for r in dz.rows])][:-1]].ravel(), minlength=dz.nJ + 1)[:dz.nJ]
-        tau = eb_tau(to_np(unravel(x))["E"], cov, ncards)
-        log(f"  EB tau -> {tau}")
-        x, unravel, llf, sgf = fit_model(dz, cfg, tau, flat_init=x)
-    if cfg.get("judges", 1):
-        cov, info = bhhh_sd(dz, x, sgf, tau)
-    return {"x": x, "unravel": unravel, "jidx": jidx, "tau": tau, "model": model, "year_end": year_end,
-            "train_ll": llf(x), "cov": cov, "nF": dz.nF}
+class Window:
+    """Training decisions before year_end (Jan 1) with their design and compiled model."""
+
+    def __init__(self, rows, nat, year_end):
+        self.year_end = year_end
+        self.rows = [r for r in rows if r["year"] < year_end]
+        self.jidx = judge_index(self.rows)
+        self.dz = Design(self.rows, self.jidx, nat, year_end - 1)
+        self.M = Model(self.dz)
+        starts = np.r_[0, np.cumsum([r["R"] for r in self.dz.rows])][:-1]
+        self.ncards = np.bincount(self.dz.J[starts].ravel(), minlength=self.dz.nJ + 1)[:self.dz.nJ]
+
+    def fit(self, model, tau, init=None, init_jidx=None, eb_rounds=0):
+        x0 = None if init is None else remap(init, init_jidx or self.jidx, self.jidx)
+        cfg = MODELS[model]
+        log(f"fit {model} < {self.year_end}: {self.dz.nF} fights, {self.dz.nJ} judges, tau "
+            f"{ {k: round(v, 3) for k, v in tau.items()} }")
+        x, _ = fit_model(self.dz, cfg, tau, flat_init=x0, model=self.M)
+        cov = None
+        for k in range(eb_rounds):
+            cov, info = bhhh_sd(self.dz, x, lambda z: self.M.slot_grad(z, cfg), tau)
+            tau = eb_tau(unravel(x, self.dz.nJ)["E"], cov, self.ncards)
+            log(f"  EB tau -> { {k: round(v, 3) for k, v in tau.items()} }")
+            x, _ = fit_model(self.dz, cfg, tau, flat_init=x, model=self.M)
+        if cfg.get("judges", 1):
+            cov, info = bhhh_sd(self.dz, x, lambda z: self.M.slot_grad(z, cfg), tau)
+        return {"x": x, "jidx": self.jidx, "tau": tau, "model": model, "year_end": self.year_end, "cov": cov,
+                "nF": self.dz.nF, "train_ll": self.M.ll(x, cfg)}
 
 
 def evaluate(fit, rows, nat, years, nsim=20000, seed=7):
     """Held-out: exact-card log-lik and decision metrics on decisions in `years` with frozen params."""
     te = [r for r in rows if r["year"] in years]
     dz = Design(te, fit["jidx"], nat, fit["year_end"] - 1)
-    vg, ll_fn, unravel, flat0, sg, data = make_model(dz, MODELS[fit["model"]], fit["tau"])
-    ll = np.asarray(ll_fn(fit["x"], data))
-    th = to_np(fit["unravel"](fit["x"]))
     cfg = MODELS[fit["model"]]
+    ll = Model(dz).ll(fit["x"], cfg)
+    th = to_np(unravel(np.asarray(fit["x"]), len(fit["jidx"])))
     th_sim = dict(th)
     if not cfg.get("shared", 1):
-        th_sim["log_su"] = -30.0
+        th_sim["log_su"] = np.array(-30.0)
     if not cfg.get("judges", 1):
         th_sim["E"] = np.zeros_like(th["E"])
     if not cfg.get("home", 1):
@@ -764,9 +815,10 @@ def evaluate(fit, rows, nat, years, nsim=20000, seed=7):
     if not cfg.get("trend", 1):
         th_sim["w"] = np.zeros(3)
     probs, cardp, any108 = simulate_decisions(th_sim, dz, nsim=nsim, seed=seed)
-    fids = [r["fid"] for r in dz.rows]
-    return {"fids": fids, "card_ll": ll, "probs": probs, "cardp": cardp, "any108": any108,
-            "years": [r["year"] for r in dz.rows]}
+    return {"fids": [r["fid"] for r in dz.rows], "card_ll": ll, "probs": probs, "cardp": cardp, "any108": any108,
+            "years": [r["year"] for r in dz.rows], "rows_meta": [{k: r[k] for k in ("fid", "year", "R", "winner", "cat",
+                                                                                    "n0", "n1", "cards", "referee",
+                                                                                    "region")} for r in dz.rows]}
 
 
 def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home", "judges", "judges_home"),
@@ -776,37 +828,34 @@ def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home"
     import pickle
     CACHE.mkdir(parents=True, exist_ok=True)
     years_eval = years_eval or [test_year]
-    base = fit_named(rows, nat, test_year, "league", TAU_DEFAULT)
+    W = Window(rows, nat, test_year)
+    base = W.fit("league", TAU_DEFAULT)
     fits = {"league": base}
-    jf = fit_named(rows, nat, test_year, "judges", TAU_DEFAULT, init=base["x"], init_jidx=base["jidx"],
-                   init_unravel=base["unravel"], eb_rounds=2)
+    jf = W.fit("judges", TAU_DEFAULT, init=base["x"], eb_rounds=2)
     tau_eb = jf["tau"]
     for m in models:
         if m in ("league", "judges", "judges_home"):
             continue
-        fits[m] = fit_named(rows, nat, test_year, m, tau_eb, init=base["x"], init_jidx=base["jidx"],
-                            init_unravel=base["unravel"])
+        fits[m] = W.fit(m, tau_eb, init=base["x"])
     for mult in tau_mults:
         tau = {k: v * mult for k, v in tau_eb.items()}
         sfx = "" if mult == 1.0 else f"@{mult:g}"
-        f = jf if mult == 1.0 else fit_named(rows, nat, test_year, "judges", tau, init=jf["x"], init_jidx=jf["jidx"],
-                                             init_unravel=jf["unravel"])
+        f = jf if mult == 1.0 else W.fit("judges", tau, init=jf["x"])
         if "judges" in models:
             fits["judges" + sfx] = f
         if "judges_home" in models:
-            fits["judges_home" + sfx] = fit_named(rows, nat, test_year, "judges_home", tau, init=f["x"],
-                                                  init_jidx=f["jidx"], init_unravel=f["unravel"])
+            fits["judges_home" + sfx] = W.fit("judges_home", tau, init=f["x"])
     res = {}
     for name, f in fits.items():
         ev = evaluate(f, rows, nat, years_eval)
         res[name] = {"eval": ev, "x": f["x"], "jidx": f["jidx"], "tau": f["tau"], "cov": f["cov"], "model": f["model"],
-                     "th": to_np(f["unravel"](f["x"])), "train_nF": f["nF"]}
+                     "th": to_np(unravel(np.asarray(f["x"]), len(f["jidx"]))), "train_nF": f["nF"],
+                     "ncards": W.ncards}
         log(f"  {name}: held-out card ll/fight {ev['card_ll'].mean():.4f} on {len(ev['fids'])} fights")
-    out = {"test_year": test_year, "years_eval": years_eval, "tau_eb": tau_eb, "tau_mults": list(tau_mults),
-           "models": res}
-    with open(CACHE / f"fold_{tag}.pkl", "wb") as fh:
-        pickle.dump(out, fh)
-    return out
+        with open(CACHE / f"fold_{tag}.pkl", "wb") as fh:
+            pickle.dump({"test_year": test_year, "years_eval": years_eval, "tau_eb": tau_eb,
+                         "tau_mults": list(tau_mults), "models": res}, fh)
+    return res
 
 
 def load_all():

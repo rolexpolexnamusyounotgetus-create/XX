@@ -88,6 +88,8 @@ function loadSpec(specPath, args) {
   const spec = specPath ? readJSON(specPath) : {};
   if (args && args.fixed) spec.fixed = args.fixed;
   if (args && args.hook) spec.hook = args.hook;
+  if (args && args.engine) spec.engine = args.engine;      // e.g. a frozen copy of the engine for a re-check
+  if (args && args.params) spec.params = args.params;
   spec.engine = spec.engine || "src/engine3.js";
   spec.params = spec.params || "src/params3.js";
   spec.inject = spec.inject || "opts";       // "opts": pass the full tree as opts.params; "mutate": write it into the params object

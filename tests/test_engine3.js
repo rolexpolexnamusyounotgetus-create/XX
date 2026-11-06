@@ -127,10 +127,13 @@ function divTable(div, n) {
   row("KO/TKO kinds", 0, null, "", 0, Object.entries(kk).map(([k, v]) => `${k} ${pct(v / Math.max(1, kkt))}%`).join(", "));
   const sn = Object.entries(S3.subNames).sort((x, y) => y[1] - x[1]).slice(0, 4), st = sum(Object.values(S3.subNames));
   row("submission types", 0, null, "", 0, sn.map(([k, v]) => `${k} ${pct(v / st, 0)}%`).join(", ") + "  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)");
-  const t5 = (T5.n >= 40) ? T5 : all5;
-  row("5 rounds: finish / KO / SUB", S5.fin, t5.fin, "%", 0, `KO ${pct(S5.ko)} vs ${pct(t5.ko)}, SUB ${pct(S5.sub)} vs ${pct(t5.sub)} (data ${T5.n >= 40 ? div + " 5-rd, n=" + T5.n + ", wide CI" : "pooled 5-rd of all divisions, mostly men"}; pooled 5-rd finish ${pct(all5.fin)}%)`);
+  // 5-round target: pooled 5-round hazards by round (baserates, n=571) scaled by this division's 3-round finish rate vs the
+  // pooled 3-round finish rate (division 5-round samples are 20-60 fights)
+  const H5ALL = [0.208, 0.204, 0.172, 0.108, 0.109], k5 = T3.fin / targets("ALL", 3).fin;
+  const h5t = H5ALL.map((h) => Math.min(0.9, h * k5)), fin5t = 1 - h5t.reduce((acc, h) => acc * (1 - h), 1);
   const h5 = cond(S5.koR.map((x, i) => x + S5.subR[i]));
-  row("5 rounds: hazard per round", 0, null, "", 0, h5.map((x) => pct(x)).join(" / ") + "  vs all 5-rd 20.8 / 20.4 / 17.2 / 10.8 / 10.9");
+  row("5 rounds: finish rate", S5.fin, fin5t, "%", 0, `+/-6 pts (info)${Math.abs(S5.fin - fin5t) <= 0.06 ? "  ok" : "  MISS"}; KO ${pct(S5.ko)}, SUB ${pct(S5.sub)}; own 5-rd data ${pct(T5.fin)}% (n=${T5.n}); pooled 5-rd ${pct(all5.fin)}%`);
+  row("5 rounds: hazard per round", 0, null, "", 0, h5.map((x) => pct(x)).join(" / ") + "  vs target " + h5t.map((x) => pct(x)).join(" / "));
   check(`${div}: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)`, ok);
   return { div, ok, S3, T3 };
 }
