@@ -93,7 +93,9 @@ def parse_am(s):
     return v if abs(v) >= 100 else None
 
 
-NAME_ALIASES = {'tecia torres': 'tecia pennington'}  # BFO keeps a maiden name; ufcstats the married one
+# BFO keeps earlier names where ufcstats has the current one (only needed when nlbair's crosswalk has no row)
+NAME_ALIASES = {'tecia torres': 'tecia pennington', 'brianna van buren': 'brianna fortino',
+                'joanne calderwood': 'joanne wood', 'katlyn chookagian': 'katlyn cerminara'}
 
 
 def norm_name(s):
@@ -783,7 +785,7 @@ def assemble(fights):
             best = None
             for mu, m in und:
                 e = est_date(mu)
-                if e is None or not (-45 <= (d0 - e).days <= 600):
+                if e is None or not (-45 <= (d0 - e).days <= 730):
                     continue
                 s1 = min(name_sim(f['A_name'], m['n1']), name_sim(f['B_name'], m['n2']))
                 s2 = min(name_sim(f['A_name'], m['n2']), name_sim(f['B_name'], m['n1']))
