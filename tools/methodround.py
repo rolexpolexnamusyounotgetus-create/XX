@@ -322,6 +322,23 @@ def side_features(T, PR, tag, sh):
     F["south"] = (T[tag + "_stance"].to_numpy() == "Southpaw").astype(float)
     F["min_S"] = m
     F["n_S"] = n
+    # career (undecayed) versions of the finishing and grappling rates: a long career's old evidence
+    gc = lambda k: C[:, KI[k]]
+    mc = gc("min")
+    csig = gc("d_lnd") + gc("c_lnd") + gc("g_lnd")
+    cosig = gc("od_lnd") + gc("oc_lnd") + gc("og_lnd")
+    F["cs_sub15"] = 15 * (gc("sub_att") + km * p("sub_att")) / (mc + km)
+    F["cs_osub15"] = 15 * (gc("osub_att") + km * p("sub_att")) / (mc + km)
+    F["cs_td15"] = 15 * (gc("td_lnd") + km * p("td_lnd")) / (mc + km)
+    F["cs_otd15"] = 15 * (gc("otd_lnd") + km * p("td_lnd")) / (mc + km)
+    F["cs_ctrl"] = (gc("ctrl") + km * p("ctrl")) / (mc + km)
+    F["cs_octrl"] = (gc("octrl") + km * p("ctrl")) / (mc + km)
+    F["cs_kd15"] = 15 * (gc("kd") + km * p("kd")) / (mc + km)
+    F["cs_okd15"] = 15 * (gc("okd") + km * p("kd")) / (mc + km)
+    F["cs_slpm"] = (csig + km * p_sig) / (mc + km)
+    F["cs_sapm"] = (cosig + km * p_sig) / (mc + km)
+    F["cs_subw"] = (gc("sub_w") + kf * pf("sub_w")) / (gc("n") + kf)
+    F["cs_kow"] = (gc("ko_w") + kf * pf("ko_w")) / (gc("n") + kf)
     return F
 
 
@@ -332,6 +349,19 @@ def lg(x, eps=1e-4):
 def logit(p, eps=1e-4):
     p = np.clip(p, eps, 1 - eps)
     return np.log(p / (1 - p))
+
+
+CS_KEYS = ["cs_sub15", "cs_osub15", "cs_td15", "cs_otd15", "cs_ctrl", "cs_octrl", "cs_kd15", "cs_okd15", "cs_slpm",
+           "cs_sapm", "cs_subw", "cs_kow"]
+
+
+def add_market_features(T, FX, FY, pm):
+    """Closing-line log-odds for X (Elo-implied where no line exists) and its absolute value."""
+    elo_l = ((T["A_elo"] - T["B_elo"]) / 400.0 * np.log(10)).to_numpy()
+    ml = np.where(pm.notna().to_numpy(), logit(pm.fillna(0.5).to_numpy(), 1e-3), elo_l)
+    FX["mk"], FY["mk"] = ml, -ml
+    FX["mk_a"] = FY["mk_a"] = np.abs(ml)
+    return FX, FY
 
 
 def build_features(T, PR, sh=None):
@@ -415,6 +445,9 @@ def build_features(T, PR, sh=None):
             D[k] = v
         D["x_lowdata"] = 1.0 / (1.0 + X["n_S"])
         D["y_lowdata"] = 1.0 / (1.0 + Y["n_S"])
+        for k in CS_KEYS:
+            D["x_" + k] = lg(X[k])
+            D["y_" + k] = lg(Y[k])
         return pd.DataFrame(D, index=T.index)
 
     return direction(SA, SB), direction(SB, SA), SA, SB

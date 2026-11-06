@@ -1168,7 +1168,7 @@
     else if (bins && typeof bins === "object") [["engine", "Fight engine", "var(--ink)"], ["elo", "Elo", "var(--neutral)"], ["blend", "Blend", "var(--gold)"]].forEach(function (k) { if (Array.isArray(bins[k[0]])) series.push([k[1], bins[k[0]], k[2]]); });
     if (series.length) {
       box.appendChild(el("h3", "mini", "Reliability: predicted vs actual win rate"));
-      var cb = el("div", "chart"); box.appendChild(cb); drawReliability(cb, series);
+      var cb = el("div", "chart"); cb.style.maxWidth = "440px"; box.appendChild(cb); drawReliability(cb, series);
       var lg = el("div", "bt-legend"); series.forEach(function (s) { var x = el("span"), i = el("i"); i.style.background = s[2]; x.appendChild(i); x.appendChild(document.createTextNode(s[0])); lg.appendChild(x); });
       var dg = el("span"); dg.appendChild(document.createTextNode("Dashed line: perfect calibration. Dot size: number of fights.")); lg.appendChild(dg); box.appendChild(lg);
     }
@@ -1183,7 +1183,7 @@
       ["Statistic", "Simulated", "Actual"].forEach(function (h) { var x = el("th", null, h); x.scope = "col"; r2.appendChild(x); }); h2.appendChild(r2); t2.appendChild(h2);
       var b2 = el("tbody");
       brRows.slice(0, 18).forEach(function (r) {
-        function f(v) { if (v == null || !isFinite(v)) return v == null ? "–" : String(v); return (r[3] === "pct" || (Math.abs(v) <= 1 && r[3] !== "num")) ? pct(v, 1) : fx(v, 2); }
+        function f(v) { if (v == null || !isFinite(v)) return v == null ? "–" : String(v); return (r[3] === "pct" || (Math.abs(v) <= 1 && r[3] !== "num")) ? pct(v, 1) : fx(v, Math.abs(v) >= 20 ? 0 : 2); }
         var tr = el("tr"); tr.appendChild(el("td", null, String(r[0]).replace(/_/g, " "))); tr.appendChild(el("td", null, f(r[1]))); tr.appendChild(el("td", null, f(r[2]))); b2.appendChild(tr);
       });
       t2.appendChild(b2); w2.appendChild(t2); box.appendChild(w2);

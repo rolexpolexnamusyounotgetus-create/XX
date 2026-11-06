@@ -1511,7 +1511,7 @@ def build_bouts(bouts, events, fidx, snap_time, have_cards):
         for side in ('A', 'B'):
             given = b.get(f'{side}_slug')
             hit = fidx.find(b[side], b.get('weight_class'))
-            sl = given if have_cards else (hit or {}).get('slug')
+            sl = given if (have_cards or given) else (hit or {}).get('slug')
             slugs[side] = sl
             rec[side] = {'name': b[side], 'slug': sl}
             if hit and hit['slug'] == sl:

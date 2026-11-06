@@ -1642,6 +1642,7 @@ def country_ref(fx, iso3):
             "Guatemala": "Guatemala City", "Guyana": "Georgetown", "Jamaica": "Kingston",
             "Grenada": "Saint George's", "Barbados": "Bridgetown", "Singapore": "Singapore",
             "Montevideo": "Montevideo"}.get(city, city)
+    city = {"XKX": "Pristina", "LIE": "Vaduz"}.get(iso3, city)
     return geocode(fx, city, None, iso3)
 
 

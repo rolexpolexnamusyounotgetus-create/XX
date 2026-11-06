@@ -446,9 +446,15 @@ def cmd_experts_lr_page(args):
     Cb = min(grid, key=grid.get)
     log("page LR C grid (2016-2018 inner):", {k: round(v, 4) for k, v in grid.items()}, "->", Cb)
     pred = np.full(len(rows), np.nan)
-    for Y, te in [(Y, yr == Y) for Y in range(2019, 2024)] + [(2024, (yr == 2024) | (yr == 2025))]:
+    pred_s = np.full(len(rows), np.nan)
+    for Y, te in [(Y, yr == Y) for Y in range(2019, 2026)]:
         tr = dec & (yr < Y)
-        pred[te] = SymLR(Cb).fit(XA[tr], XB[tr], y[tr]).predict(XA[te], XB[te])
+        m_ = SymLR(Cb).fit(XA[tr], XB[tr], y[tr])
+        pred[te] = m_.predict(XA[te], XB[te])
+        if Y == 2024:
+            st_ = (yr == 2024) | (yr == 2025)
+            pred_s[st_] = m_.predict(XA[st_], XB[st_])
+    pred_s[np.isnan(pred_s)] = pred[np.isnan(pred_s)]
     lr_all = SymLR(Cb).fit(XA[dec], XB[dec], y[dec])
     lr_val = SymLR(Cb).fit(XA[dec & (yr < 2024)], XB[dec & (yr < 2024)], y[dec & (yr < 2024)])
     keep = dates >= TRAIN[0]
@@ -456,7 +462,9 @@ def cmd_experts_lr_page(args):
     assert ids_new == E["ids"], "row order changed; rerun experts"
     if "feat_lr_full" not in E["pred"]:
         E["pred"]["feat_lr_full"] = E["pred"]["feat_lr"]
+        E["pred_static"]["feat_lr_full"] = E["pred_static"]["feat_lr"]
     E["pred"]["feat_lr"] = pred[keep]
+    E["pred_static"]["feat_lr"] = pred_s[keep]
     # sides of the kept rows for the JS test (raw side records) and the production coefficients
     E["lr_page"] = {"names": names, "C": Cb, "grid": grid, "coef": lr_all.coef.tolist(), "coef_valid": lr_val.coef.tolist()}
     # priors for live use: division rates from fights in 2021-01-01..2025-12-31 (= priors_asof["2026"])
@@ -472,7 +480,8 @@ def cmd_experts_lr_page(args):
     m = keep & dec
     yk = y
     for lab, sel in (("2019-23", m & (yr <= 2023)), ("2024-25", m & (yr >= 2024))):
-        print("  feat_lr(page) %s n=%d log loss %.4f" % (lab, sel.sum(), ll(pred[sel], yk[sel])))
+        print("  feat_lr(page) %s n=%d log loss %.4f (static %.4f)" % (lab, sel.sum(), ll(pred[sel], yk[sel]),
+                                                                      ll(pred_s[sel], yk[sel])))
     log("page LR done in %.0fs" % (time.time() - t0))
 
 
@@ -529,24 +538,36 @@ def cmd_experts(args):
     log("GBM grid (2016-2018 inner; mirrored-curve min):", gbm_grid, "->", leaves, g_rounds)
 
     # ---- strictly out-of-fold predictions: expanding window by year for 2019-2023, <=2023 model for 2024-25
+    # rolling: every year Y in 2019-2025 is predicted by a model trained on fights before Jan 1 of Y;
+    # static: 2024-2025 both predicted by the <=2023 model (the protocol's validation number)
     pred = {k: np.full(len(rows), np.nan) for k in ("feat_lr", "feat_gbm")}
-    folds = [(Y, yr == Y) for Y in range(2019, 2024)] + [(2024, (yr == 2024) | (yr == 2025))]
+    pred_static = {k: np.full(len(rows), np.nan) for k in ("feat_lr", "feat_gbm")}
+    folds = [(Y, yr == Y) for Y in range(2019, 2026)]
     lr_coefs = {}
     for Y, te in folds:
         tr = dec & (yr < Y)
         lr = SymLR(C_best).fit(XA[tr], XB[tr], y[tr])
-        pred["feat_lr"][te] = lr.predict(XA[te], XB[te])
         lr_coefs[Y] = lr.coef.tolist()
         g = SymGBM({"num_leaves": leaves, "min_data_in_leaf": g_mdl, "learning_rate": 0.04},
                    rounds=g_rounds).fit(XA[tr], XB[tr], C[tr], y[tr])
+        pred["feat_lr"][te] = lr.predict(XA[te], XB[te])
         pred["feat_gbm"][te] = g.predict(XA[te], XB[te], C[te])
+        if Y == 2024:
+            st_ = (yr == 2024) | (yr == 2025)
+            pred_static["feat_lr"][st_] = lr.predict(XA[st_], XB[st_])
+            pred_static["feat_gbm"][st_] = g.predict(XA[st_], XB[st_], C[st_])
         log("fold %d: train %d -> predict %d" % (Y, tr.sum(), te.sum()))
+    for k in pred_static:
+        m_ = np.isnan(pred_static[k])
+        pred_static[k][m_] = pred[k][m_]
     pred["elo"] = elo_p(XA, XB)
     pred["glicko"] = glicko_p(rows)
 
     keep = dates >= TRAIN[0]
+    pred_static["elo"], pred_static["glicko"] = pred["elo"], pred["glicko"]
     out = {"ids": [r["id"] for r, k in zip(rows, keep) if k], "dates": dates[keep].tolist(), "y": y[keep],
            "pred": {k: v[keep] for k, v in pred.items()}, "rows": [r for r, k in zip(rows, keep) if k],
+           "pred_static": {k: v[keep] for k, v in pred_static.items()},
            "feat_names": FEAT_NAMES, "lr_C": C_best, "lr_grid": lr_grid, "gbm": {"leaves": leaves, "rounds": g_rounds,
            "min_data_in_leaf": g_mdl, "grid": {str(k): v for k, v in gbm_grid.items()}},
            "lr_coefs": lr_coefs, "glicko": prep["glicko"]}
@@ -559,7 +580,8 @@ def cmd_experts(args):
     m = keep & dec
     for k, v in pred.items():
         for lab, sel in (("2019-23", m & (yr <= 2023)), ("2024-25", m & (yr >= 2024))):
-            print("  %-9s %s  n=%4d  log loss %.4f" % (k, lab, sel.sum(), ll(v[sel], y[sel])))
+            print("  %-9s %s  n=%4d  log loss %.4f (static %.4f)" % (k, lab, sel.sum(), ll(v[sel], y[sel]),
+                                                                     ll(pred_static[k][sel], y[sel])))
     log("experts done in %.0fs" % (time.time() - t0))
 
 

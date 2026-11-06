@@ -792,7 +792,7 @@
           "vec4 wear = texture2D(uWear, vUv);",
           "diffuseColor.rgb *= 1.0 - 0.34 * sqrt(clamp(wear.r, 0.0, 1.0));",
           "diffuseColor.rgb *= 1.0 - 0.2 * sqrt(clamp(wear.g, 0.0, 1.0));",
-          "diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.02, 0.02), clamp(wear.b, 0.0, 1.0) * 0.85);",
+          "diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.2, 0.012, 0.016), clamp(wear.b, 0.0, 1.0) * 0.85);",
           "float occl = 1.0;",
           "for (int ci = 0; ci < 16; ci++) { vec4 cc = uContact[ci]; if (cc.w > 0.0) { float dd = length(vWPos.xz - cc.xy) / cc.z; float f = clamp(1.0 - dd, 0.0, 1.0); occl *= 1.0 - cc.w * f * f * (3.0 - 2.0 * f); } }",
           "diffuseColor.rgb *= occl;"
@@ -1360,7 +1360,8 @@
       if (!cnt) continue;
       var cy = sy / cnt;
       C[n++].set(sx / cnt, sz / cnt, 0.85, clamp(0.34 - cy * 0.14, 0.12, 0.34));
-      for (var c2 = 0; c2 < clusters.length && n < 16; c2++) {
+      clusters.sort(function (u, w) { return u[2] - w[2]; });   // the lowest contacts first, four per actor
+      for (var c2 = 0; c2 < clusters.length && c2 < 4 && n < 16; c2++) {
         var q = clusters[c2], s = clamp(1 - q[2] / 0.32, 0, 1);
         C[n++].set(q[0] / q[3], q[1] / q[3], 0.2 + 0.05 * Math.min(4, q[3]), 0.5 * s);
         low.push(q[0] / q[3], q[1] / q[3], q[3], cy);

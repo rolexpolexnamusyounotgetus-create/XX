@@ -984,11 +984,12 @@ class WHR:
             if mx < tol:
                 break
 
-    def _exact_factor(self, N, lo):
+    def _exact_factor(self, N, lo, force=False):
         """With CHOLMOD available, factor the window Hessian at the solution so variances are exact (opponents'
         uncertainty included); otherwise the pcg chain-block approximation is used."""
         self.exact = None
-        if CHOLMOD is not None and self.P.get("solver", WHR_SOLVER) == "pcg" and self.P.get("var", "exact") == "exact":
+        if CHOLMOD is not None and self.P.get("solver", WHR_SOLVER) == "pcg" and (
+                force or self.P.get("var", "block") == "exact"):
             _, H = self._system(N, lo)
             self.exact = (_CholWrap(CHOLMOD(H)), N, lo)
 
@@ -1097,7 +1098,7 @@ class WHR:
     def final_state(self, players, ref_day):
         """Full-data posterior: mean and sd of every listed player's skill at ref_day."""
         self.solve(self.nn)
-        self._exact_factor(self.nn, 0)
+        self._exact_factor(self.nn, 0, force=True)
         D, P = self.D, self.P
         w2, vf = P["w2"], P.get("vf", 0.0)
         dy, do = P.get("dy", 0.0), P.get("do", 0.0)
