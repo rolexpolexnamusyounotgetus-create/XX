@@ -209,3 +209,209 @@ def build_table(log=None):
     T = pd.DataFrame(rows)
     print("  walk-forward table: %d fights %s..%s (%.1fs)" % (len(T), T.date.min(), T.date.max(), time.time() - t0))
     return T, priors, fights, people, state
+
+
+# ============================================================== 2. features
+WOMEN = {"Women's Strawweight", "Women's Flyweight", "Women's Bantamweight", "Women's Featherweight"}
+PRIOR_FIELDS = ["min", "n", "ko_w", "ko_l", "sub_w", "sub_l", "dec_w", "dec_l", "kd", "okd", "h_lnd", "oh_lnd",
+                "d_lnd", "c_lnd", "g_lnd", "d_att", "c_att", "g_att", "td_lnd", "td_att", "ctrl", "sub_att", "l_lnd",
+                "t_att", "kd_per_h", "acc_sig", "td_acc", "sub_conv", "mpf"]
+
+# shrinkage strengths (pseudo-exposure toward the division prior); tuned values are written to the JSON
+SHRINK = {"k_fight": 3.0,      # fights, for per-fight result rates
+          "k_min": 30.0,       # minutes, for per-minute rates
+          "k_head": 300.0,     # landed head strikes, for knockdown power / chin
+          "k_att": 150.0,      # attempts, for accuracies
+          "k_sub": 6.0}        # submission attempts, for conversion / defence
+
+
+def prior_frame(T, priors):
+    """Per-row prior rates (division of the bout, or the heavier home division for catch weights)."""
+    out = {k: np.empty(len(T)) for k in PRIOR_FIELDS + ["lbs"]}
+    for i, (y, d) in enumerate(zip(T["year"], T["prior_div"])):
+        P = priors[y].get(d) or priors[y]["ALL"]
+        for k in PRIOR_FIELDS:
+            v = P.get(k)
+            out[k][i] = v if v is not None else priors[y]["ALL"][k]
+        out["lbs"][i] = B.LBS.get(d) or P.get("lbs") or 170
+    return pd.DataFrame(out, index=T.index)
+
+
+def side_features(T, PR, tag, sh):
+    """Profile features of one side from its pre-fight sums; returns a dict of arrays."""
+    S = np.stack(T[tag + "_S"].to_numpy())
+    C = np.stack(T[tag + "_C"].to_numpy())
+    g = lambda k: S[:, KI[k]]
+    m, n = g("min"), g("n")
+    kf, km, kh, ka, ks = sh["k_fight"], sh["k_min"], sh["k_head"], sh["k_att"], sh["k_sub"]
+    p = lambda k: PR[k].to_numpy()
+    sig_l = g("d_lnd") + g("c_lnd") + g("g_lnd")
+    sig_a = g("d_att") + g("c_att") + g("g_att")
+    osig_l = g("od_lnd") + g("oc_lnd") + g("og_lnd")
+    osig_a = g("od_att") + g("oc_att") + g("og_att")
+    p_sig = p("d_lnd") + p("c_lnd") + p("g_lnd")
+    p_siga = p("d_att") + p("c_att") + p("g_att")
+    pf = lambda k: p(k) / p("n")                                   # league per-fighter-fight rate
+    F = {}
+    for k in ("ko_w", "ko_l", "sub_w", "sub_l"):
+        F[k + "_pf"] = (g(k) + kf * pf(k)) / (n + kf)                # per fight
+        F[k + "_pm"] = 15 * (g(k) + km * p(k)) / (m + km)            # per 15 min (finishing hazard)
+    F["dec_pf"] = (g("dec_w") + g("dec_l") + kf * (pf("dec_w") + pf("dec_l"))) / (n + kf)
+    F["kd15"] = 15 * (g("kd") + km * p("kd")) / (m + km)
+    F["okd15"] = 15 * (g("okd") + km * p("okd")) / (m + km)
+    F["pow"] = (g("kd") + kh * p("kd_per_h")) / (g("h_lnd") + kh)
+    F["chin"] = (g("okd") + kh * p("kd_per_h")) / (g("oh_lnd") + kh)
+    F["slpm"] = (sig_l + km * p_sig) / (m + km)
+    F["sapm"] = (osig_l + km * p_sig) / (m + km)
+    F["hlpm"] = (g("h_lnd") + km * p("h_lnd")) / (m + km)
+    F["hapm"] = (g("oh_lnd") + km * p("h_lnd")) / (m + km)
+    F["acc"] = (sig_l + ka * p("acc_sig")) / (sig_a + ka)
+    F["oacc"] = (osig_l + ka * p("acc_sig")) / (osig_a + ka)
+    F["att_pm"] = (sig_a + km * p_siga) / (m + km)
+    F["td15"] = 15 * (g("td_lnd") + km * p("td_lnd")) / (m + km)
+    F["otd15"] = 15 * (g("otd_lnd") + km * p("td_lnd")) / (m + km)
+    F["tda15"] = 15 * (g("td_att") + km * p("td_att")) / (m + km)
+    F["td_acc"] = (g("td_lnd") + ka / 5 * p("td_acc")) / (g("td_att") + ka / 5)
+    F["otd_acc"] = (g("otd_lnd") + ka / 5 * p("td_acc")) / (g("otd_att") + ka / 5)
+    F["ctrl"] = (g("ctrl") + km * p("ctrl")) / (m + km) / 60.0       # share of time in control
+    F["octrl"] = (g("octrl") + km * p("ctrl")) / (m + km) / 60.0
+    F["gnd"] = (g("g_lnd") + km * p("g_lnd")) / (m + km)
+    F["ognd"] = (g("og_lnd") + km * p("g_lnd")) / (m + km)
+    F["sub15"] = 15 * (g("sub_att") + km * p("sub_att")) / (m + km)
+    F["osub15"] = 15 * (g("osub_att") + km * p("sub_att")) / (m + km)
+    F["sub_conv"] = (g("sub_w") + ks * p("sub_conv")) / (g("sub_att") + ks)
+    F["sub_def"] = (g("sub_l") + ks * p("sub_conv")) / (g("osub_att") + ks)
+    F["leg_share"] = (g("l_lnd") + 20 * p("l_lnd") / p_sig) / (sig_l + 20)
+    F["mpf"] = (m + kf * p("mpf")) / (n + kf)
+    # career record over every UFC bout (includes fights without round stats)
+    na = T[tag + "_n"].to_numpy(float)
+    rec = lambda k: T[tag + "_rec_" + k].to_numpy(float)
+    for k in ("ko_w", "ko_l", "sub_w", "sub_l"):
+        F["c_" + k] = (rec(k) + kf * pf(k)) / (na + kf)
+    F["c_dec"] = (rec("dec_w") + rec("dec_l") + kf * (pf("dec_w") + pf("dec_l"))) / (na + kf)
+    F["c_win"] = (rec("w") + kf * 0.5) / (rec("w") + rec("l") + kf)
+    dur, dn = T[tag + "_dur"].to_numpy(float), T[tag + "_dur_n"].to_numpy(float)
+    F["c_mpf"] = (dur + kf * p("mpf")) / (dn + kf)
+    fw, fwn = T[tag + "_fin_min_w"].to_numpy(float), T[tag + "_fin_n_w"].to_numpy(float)
+    fl, fln = T[tag + "_fin_min_l"].to_numpy(float), T[tag + "_fin_n_l"].to_numpy(float)
+    F["fin_t_w"] = (fw + 2 * 6.5) / (fwn + 2)                        # mean minute of his finishing wins
+    F["fin_t_l"] = (fl + 2 * 6.5) / (fln + 2)
+    F["r1_w"] = (T[tag + "_r1_w"].to_numpy(float) + 2 * 0.5) / (fwn + 2)
+    F["r1_l"] = (T[tag + "_r1_l"].to_numpy(float) + 2 * 0.5) / (fln + 2)
+    age = T[tag + "_age"].to_numpy(float)
+    F["age"] = np.where(np.isnan(age), 30.0, age)
+    F["age30"] = np.maximum(0.0, F["age"] - 30.0)
+    F["n_all"] = na
+    F["n5"] = T[tag + "_n5"].to_numpy(float)
+    F["ko_losses"] = T[tag + "_ko_losses"].to_numpy(float)
+    F["kd_abs"] = C[:, KI["okd"]]
+    F["elo"] = T[tag + "_elo"].to_numpy(float)
+    F["opp_elo"] = T[tag + "_opp_elo"].fillna(1500).to_numpy(float)
+    lay = T[tag + "_layoff"].to_numpy(float)
+    F["layoff"] = np.where(np.isnan(lay), 365.0, lay)
+    last = T[tag + "_last"].to_numpy()
+    F["last_ko_l"] = (last == "L_KO").astype(float)
+    F["last_fin_l"] = np.isin(last, ["L_KO", "L_SUB"]).astype(float)
+    F["last_fin_w"] = np.isin(last, ["W_KO", "W_SUB"]).astype(float)
+    F["streak"] = T[tag + "_streak"].to_numpy(float)
+    F["height"] = T[tag + "_height"].to_numpy(float)
+    F["reach"] = T[tag + "_reach"].to_numpy(float)
+    F["south"] = (T[tag + "_stance"].to_numpy() == "Southpaw").astype(float)
+    F["min_S"] = m
+    F["n_S"] = n
+    return F
+
+
+def lg(x, eps=1e-4):
+    return np.log(np.maximum(x, eps))
+
+
+def logit(p, eps=1e-4):
+    p = np.clip(p, eps, 1 - eps)
+    return np.log(p / (1 - p))
+
+
+def build_features(T, PR, sh=None):
+    """Directional design for orientation X=A, Y=B and its mirror (X=B, Y=A).
+    Returns (FX, FY) where FX[i] describes fight i from A's side; FY from B's side. Columns are identical."""
+    sh = sh or SHRINK
+    SA, SB = side_features(T, PR, "A", sh), side_features(T, PR, "B", sh)
+    p = lambda k: PR[k].to_numpy()
+    p_sig = p("d_lnd") + p("c_lnd") + p("g_lnd")
+    lbs = PR["lbs"].to_numpy()
+    women = T["division"].isin(WOMEN).to_numpy() | T["prior_div"].isin(WOMEN).to_numpy()
+    common = {
+        "lbs": (lbs - 160) / 50.0,
+        "hw": (lbs >= 250).astype(float),
+        "women": women.astype(float),
+        "r5": (T["rounds"].to_numpy() == 5).astype(float),
+        "title": T["title"].to_numpy().astype(float),
+        "catch": T["division"].isin(B.NON_DIV).to_numpy().astype(float),
+        "yr": (T["year"].to_numpy() - 2016) / 10.0,
+        "lg_ko": logit((p("ko_w")) / p("n") * 2),     # league P(KO) per fight in the bout's division (prior window)
+        "lg_sub": logit((p("sub_w")) / p("n") * 2),
+        "lg_mpf": lg(p("mpf")),
+    }
+
+    def direction(X, Y):
+        D = {}
+        # own-side (attacker) and opponent-side (defender) profile, as logs where rates
+        for k in ("ko_w_pf", "sub_w_pf", "ko_w_pm", "sub_w_pm", "kd15", "pow", "slpm", "hlpm", "acc", "td15",
+                  "tda15", "td_acc", "ctrl", "gnd", "sub15", "sub_conv", "c_ko_w", "c_sub_w", "att_pm",
+                  "leg_share"):
+            D["x_" + k] = lg(X[k])
+        for k in ("ko_l_pf", "sub_l_pf", "ko_l_pm", "sub_l_pm", "okd15", "chin", "sapm", "hapm", "oacc", "otd15",
+                  "otd_acc", "octrl", "ognd", "osub15", "sub_def", "c_ko_l", "c_sub_l"):
+            D["y_" + k] = lg(Y[k])
+        # attacker's own defence and defender's own offence (both matter: wars, counters, reversals)
+        for k in ("ko_l_pf", "sub_l_pf", "okd15", "chin", "sapm", "otd15", "osub15"):
+            D["x_" + k] = lg(X[k])
+        for k in ("ko_w_pf", "sub_w_pf", "kd15", "pow", "slpm", "td15", "sub15"):
+            D["y_" + k] = lg(Y[k])
+        # symmetric fight-length tendencies
+        D["s_dec"] = logit(X["dec_pf"]) + logit(Y["dec_pf"])
+        D["s_cdec"] = logit(X["c_dec"]) + logit(Y["c_dec"])
+        D["s_mpf"] = lg(X["mpf"]) + lg(Y["mpf"])
+        D["s_cmpf"] = lg(X["c_mpf"]) + lg(Y["c_mpf"])
+        # log5-style matchup intensities (attacker x defender / league)
+        D["m_ko_pm"] = lg(X["ko_w_pm"]) + lg(Y["ko_l_pm"]) - lg(15 * p("ko_w"))
+        D["m_sub_pm"] = lg(X["sub_w_pm"]) + lg(Y["sub_l_pm"]) - lg(15 * p("sub_w"))
+        D["m_kd"] = lg(X["kd15"]) + lg(Y["okd15"]) - lg(15 * p("kd"))
+        D["m_pow"] = lg(X["pow"]) + lg(Y["chin"]) - lg(p("kd_per_h"))
+        D["m_str"] = lg(X["slpm"]) + lg(Y["sapm"]) - lg(p_sig)
+        D["m_td"] = lg(X["td15"]) + lg(Y["otd15"]) - lg(15 * p("td_lnd"))
+        D["m_ctrl"] = lg(X["ctrl"]) + lg(Y["octrl"]) - lg(p("ctrl") / 60)
+        D["m_gnd"] = lg(X["gnd"]) + lg(Y["ognd"]) - lg(p("g_lnd"))
+        D["m_subatt"] = lg(X["sub15"]) + lg(Y["osub15"]) - lg(15 * p("sub_att"))
+        D["m_subcv"] = logit(X["sub_conv"]) + logit(Y["sub_def"]) - logit(p("sub_conv"))
+        # experience, age, durability
+        D["x_age30"], D["y_age30"] = X["age30"], Y["age30"]
+        D["x_age"], D["y_age"] = (X["age"] - 30) / 5, (Y["age"] - 30) / 5
+        D["x_nlog"], D["y_nlog"] = np.log1p(X["n_all"]), np.log1p(Y["n_all"])
+        D["x_kol"], D["y_kol"] = np.log1p(X["ko_losses"]), np.log1p(Y["ko_losses"])
+        D["y_kol_age"] = np.log1p(Y["ko_losses"]) * Y["age30"] / 5
+        D["x_kdabs"], D["y_kdabs"] = np.log1p(X["kd_abs"]), np.log1p(Y["kd_abs"])
+        D["x_lay"], D["y_lay"] = np.log1p(X["layoff"] / 30), np.log1p(Y["layoff"] / 30)
+        D["x_lastkol"], D["y_lastkol"] = X["last_ko_l"], Y["last_ko_l"]
+        D["x_lastfinw"], D["y_lastfinw"] = X["last_fin_w"], Y["last_fin_w"]
+        D["x_streak"], D["y_streak"] = np.clip(X["streak"], -4, 6) / 3, np.clip(Y["streak"], -4, 6) / 3
+        D["x_fint"], D["y_fint"] = lg(X["fin_t_w"]), lg(Y["fin_t_l"])
+        D["x_r1"], D["y_r1"] = logit(X["r1_w"]), logit(Y["r1_l"])
+        D["x_cwin"], D["y_cwin"] = logit(X["c_win"]), logit(Y["c_win"])
+        # strength
+        D["d_elo"] = (X["elo"] - Y["elo"]) / 100.0
+        D["a_elo"] = np.abs(D["d_elo"])
+        D["d_oppelo"] = (X["opp_elo"] - Y["opp_elo"]) / 100.0
+        hgt = X["height"] - Y["height"]
+        rch = X["reach"] - Y["reach"]
+        D["d_height"] = np.where(np.isnan(hgt), 0.0, hgt) / 3
+        D["d_reach"] = np.where(np.isnan(rch), np.where(np.isnan(hgt), 0.0, hgt), rch) / 3
+        D["d_age"] = (X["age"] - Y["age"]) / 5
+        D["oppst"] = ((X["south"] + Y["south"]) == 1).astype(float)
+        for k, v in common.items():
+            D[k] = v
+        D["x_lowdata"] = 1.0 / (1.0 + X["n_S"])
+        D["y_lowdata"] = 1.0 / (1.0 + Y["n_S"])
+        return pd.DataFrame(D, index=T.index)
+
+    return direction(SA, SB), direction(SB, SA), SA, SB

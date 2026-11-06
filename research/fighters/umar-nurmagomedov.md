@@ -1,13 +1,13 @@
 # Umar Nurmagomedov: scouting dossier
 
-As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). No web access this pass (search budget spent, fetches blocked), so stats come from the dataset and raw ufcstats rows, and outside claims reuse URLs cited by other repo dossiers. Unverified: ranking, plans, medical suspension, appearance.
+As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). No web access in the research or fact-check passes (search budget spent, fetches blocked); outside claims reuse URLs cited by other repo dossiers. Fight numbers re-checked against raw ufcstats rows on Nov 6. Unverified: ranking, plans, medical suspension, appearance.
 
 ## Current status
 
 - **Form:** coming off a KO loss to Song Yadong at 1:48 of round 2 in the UFC Shanghai main event (Aug 29, 2026). ESPN's headline called it a massive upset.
 - **Record:** 8-2 in the UFC. His only other loss was a title-fight decision to Merab Dvalishvili (UFC 311, Jan 18, 2025).
 - **Age and frame:** 30 (born Jan 3, 1996), 5'8", 69" reach, orthodox.
-- **Booking and injuries:** none found.
+- **Booking and injuries:** not web-checked; none in the sources cited.
 
 ## Recent fights
 
@@ -16,12 +16,10 @@ As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot t
 | Aug 29, 2026 | Song Yadong | L, KO R2 1:48 | His one takedown (1 of 3) came off a caught calf kick in R1. In R2 Song stuffed his shots and countered a double-leg with a right hand (mmasucka; UFC.com says uppercut). Sig strikes 13/21 vs 11/23. |
 | Jan 24, 2026 | Deiveson Figueiredo | W, UD 30-27 x3 | 2 of 6 takedowns and 4:50 of control. Figueiredo landed 8 sig strikes. |
 | Oct 25, 2025 | Mario Bautista | W, UD 30-27 x3 | 11 of 14 takedowns and 10:46 of control, but Bautista dropped him in R2. |
-| Jan 18, 2025 | Merab Dvalishvili (title) | L, UD 47-48, 46-49, 47-48 | He held 2 of 15 on takedowns and was close on the feet (104 vs 111 landed). Merab out-landed him 36-21 in R4. |
+| Jan 18, 2025 | Merab Dvalishvili (title) | L, UD 47-48, 46-49, 47-48 | He landed only 2 of 15 takedowns and was close on the feet (104 vs 111 landed). Merab out-landed him 36-21 in R4. |
 | Aug 3, 2024 | Cory Sandhagen | W, UD 50-45, 49-46, 49-46 | 5 of 13 takedowns, 98 landed to 71, and 27 of 39 body strikes. |
 
 ## Style
-
-Umar is a control grappler in the Dagestani mould, with a clean, low-volume kickboxing game at range.
 
 - **Top control:** he lands takedowns and rides long stretches of top position (11:26 vs Almakhan, 10:49 vs Maness, 10:46 vs Bautista).
 - **Finishing from top:** he strikes from the top and has two rear-naked choke wins.
@@ -42,7 +40,7 @@ Umar is a control grappler in the Dagestani mould, with a clean, low-volume kick
 
 ## Durability and cardio
 
-- **Durability:** one KO loss and three knockdowns absorbed in 10 UFC fights, despite rarely being hit cleanly.
+- **Durability:** one KO loss and three knockdowns absorbed in 10 UFC fights, though rarely hit cleanly.
 - **Cardio:** he went five rounds twice (Sandhagen, Dvalishvili) without a visible fade in the data. The five-round sample is small (10-15 minutes per round).
 
 ## What the numbers say

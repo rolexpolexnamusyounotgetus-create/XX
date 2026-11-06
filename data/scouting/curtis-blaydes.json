@@ -3,7 +3,7 @@
   "name": "Curtis Blaydes",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Veteran heavyweight contender, aged 35, 1-1 in 2026. He lost a 28-29 x3 decision to Josh Hokit at UFC 327 in Miami (Apr 11, 2026), a slugfest with 351 sig strikes landed between them. He then beat Waldo Cortes Acosta by 29-28 x3 at Noche UFC in Glendale, Arizona (Sep 12, 2026). His last title fight was a 60-second KO loss to Tom Aspinall for the interim belt at UFC 304 (Jul 27, 2024). Hokit has since been booked against interim champion Ciryl Gane (ESPN, Oct 2026). UFC record 15-6 (1 NC) per ufcstats. No booking, ranking or injury news for Blaydes was verified in this pass.",
+    "summary": "Veteran heavyweight contender, aged 35, 1-1 in 2026. He lost a 28-29 x3 decision to Josh Hokit at UFC 327 in Miami (Apr 11, 2026), a slugfest with 351 sig strikes landed between them. He then beat Waldo Cortes Acosta by 29-28 x3 at Noche UFC in Glendale, Arizona (Sep 12, 2026). His last title fight was a 60-second KO loss to Tom Aspinall for the interim belt at UFC 304 (Jul 27, 2024). Hokit has since been booked against interim champion Ciryl Gane (ESPN, Oct 2026). UFC record 15-6 (1 NC) per ufcstats. Booking, ranking and injury news for Blaydes could not be web-checked (no search access in the research or Nov 6 fact-check passes).",
     "title": null,
     "ranking": null,
     "active": true,
@@ -58,7 +58,7 @@
     "hair": "shaved or very short (unverified: from widely published pre-2026 fight photos; no photo was checked in this pass)",
     "facial_hair": "beard (unverified, as above)",
     "skin": "medium-dark",
-    "tattoos": "not recorded (no source checked)",
+    "tattoos": "unknown (no source checked)",
     "kit": "unknown",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",

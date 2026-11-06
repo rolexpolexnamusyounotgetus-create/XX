@@ -3,7 +3,7 @@
   "name": "Petr Yan",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC bantamweight champion. He took the title from Merab Dvalishvili at UFC 323 (Dec 6, 2025; 49-46, 49-46, 48-47) and kept it in the trilogy at UFC 333 in Abu Dhabi (Oct 24, 2026; 48-47 on all three cards). Yahoo's headline called it a come-from-behind win. He has won five straight since 2024. On Oct 25, 2026 Dana White named Song Yadong and Sean O'Malley as the contenders. Betting headlines had Yan favoured in an O'Malley rematch. On Oct 30, 2026, flyweight champion Joshua Van named Yan as a possible future opponent. No booking was found. UFC record 13-4 per ufcstats; one of the losses is a 2021 DQ.",
+    "summary": "UFC bantamweight champion. He took the title from Merab Dvalishvili at UFC 323 (Dec 6, 2025; 49-46, 49-46, 48-47) and kept it in the trilogy at UFC 333 in Abu Dhabi (Oct 24, 2026; 48-47 on all three cards). Yahoo's headline called it a come-from-behind win. He has won five straight since 2024. On Oct 25, 2026 Dana White named Song Yadong and Sean O'Malley as the contenders. Betting headlines had Yan favoured in an O'Malley rematch. On Oct 30, 2026, flyweight champion Joshua Van named Yan as a possible future opponent. No booking appeared in the late-October reports cited here. UFC record 13-4 per ufcstats; one of the losses is a 2021 DQ.",
     "title": "UFC bantamweight champion",
     "ranking": null,
     "active": true,
@@ -62,7 +62,7 @@
     "hair": "short dark hair, usually cropped close (unverified: from widely published pre-2026 fight photos; no photo was checked in this pass)",
     "facial_hair": "usually clean-shaven or light stubble (unverified, as above)",
     "skin": "light",
-    "tattoos": "not recorded (no source checked)",
+    "tattoos": "unknown (no source checked)",
     "kit": "unknown",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",

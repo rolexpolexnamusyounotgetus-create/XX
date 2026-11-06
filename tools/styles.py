@@ -606,3 +606,231 @@ def name_cluster(c):
     if kick > 0.4 and c["sh_c"] > 0.4:
         return "clinch / body-kick all-rounder"
     return "balanced all-rounder"
+
+
+# --------------------------------------------------------------------------------------------- winner level
+BASE_WIN = ["elo", "age", "reach"] + MAIN_DIMS
+
+
+class WinData:
+    """decisive backtest fights as antisymmetric design pieces (A minus B; no intercept, so the corner
+    order cannot leak: flipping A and B flips every feature and the label)."""
+
+    def __init__(self, rows, mu, sd, memb=None):
+        keep = [i for i, r in enumerate(rows) if r["winner"] in ("A", "B")]
+        self.rows = [rows[i] for i in keep]
+        self.y = np.array([1.0 if r["winner"] == "A" else 0.0 for r in self.rows])
+        self.yr = np.array([int(r["date"][:4]) for r in self.rows])
+        self.tune = self.yr < int(TEST_FROM[:4])
+        self.test = ~self.tune
+        self.r5 = np.array([1.0 if r["rounds"] == 5 else 0.0 for r in self.rows])
+        self.mu, self.sd = mu, sd
+        self.Z = {}
+        for k in mu:
+            a = np.array([r["A"][k] if r["A"][k] is not None else np.nan for r in self.rows], float)
+            b = np.array([r["B"][k] if r["B"][k] is not None else np.nan for r in self.rows], float)
+            self.Z[k] = (np.nan_to_num((a - mu[k]) / sd[k]), np.nan_to_num((b - mu[k]) / sd[k]))
+        self.raw = {k: (np.array([r["A"][k] or 0.0 for r in self.rows], float),
+                        np.array([r["B"][k] or 0.0 for r in self.rows], float))
+                    for k in ("southpaw", "switch", "orthodox")}
+        if memb is not None:
+            self.M = (memb[0][keep], memb[1][keep])
+
+    def zd(self, k):
+        return self.Z[k][0] - self.Z[k][1]
+
+    def pair(self, u):
+        if isinstance(u, str):
+            return self.Z[u]
+        if isinstance(u, tuple) and u[0] == "neg":
+            a, b = self.pair(u[1])
+            return -a, -b
+        if isinstance(u, tuple) and u[0] == "mix":
+            a = sum(self.Z[k][0] for k in u[1]) / math.sqrt(len(u[1]))
+            b = sum(self.Z[k][1] for k in u[1]) / math.sqrt(len(u[1]))
+            return a, b
+        return u
+
+    def cross(self, u, v):
+        uA, uB = self.pair(u)
+        vA, vB = self.pair(v)
+        return uA * vB - uB * vA
+
+    def ctx(self, k):
+        return (self.Z[k][0] + self.Z[k][1]) / 2.0
+
+    def ind(self, k, lo=None, hi=None):
+        a, b = self.Z[k]
+        fa = np.ones_like(a, bool)
+        fb = np.ones_like(b, bool)
+        if lo is not None:
+            fa &= a > lo
+            fb &= b > lo
+        if hi is not None:
+            fa &= a < hi
+            fb &= b < hi
+        return fa.astype(float), fb.astype(float)
+
+    def base(self):
+        X = np.column_stack([self.zd(c) for c in BASE_WIN])
+        return X / X[self.tune].std(0)
+
+
+def winner_candidates(W):
+    kick = ("mix", ["sh_l", "sh_b"])
+    sp, sw, orth = W.raw["southpaw"], W.raw["switch"], W.raw["orthodox"]
+    stance_main = [sp[0] - sp[1], sw[0] - sw[1]]
+    open_sp = ((sp[0] == 1) & (orth[1] == 1)).astype(float) - ((sp[1] == 1) & (orth[0] == 1)).astype(float)
+    open_st = (((sp[0] == 1) & (orth[1] == 1)) | ((sp[1] == 1) & (orth[0] == 1))).astype(float)
+    kA, kB = W.pair(kick)
+
+    def indx(fa, fb):          # type indicator: A is type 1 and B type 2, minus the reverse
+        (a1, b1), (a2, b2) = fa, fb
+        return a1 * b2 - b1 * a2
+
+    wrestler = tuple(x * y for x, y in zip(W.ind("td_int", lo=1.0), W.ind("ctrl", lo=0.5)))
+    kicker = (((kA > 1.0)).astype(float), ((kB > 1.0)).astype(float))
+    C = {
+        # continuous crosses: A's u against B's v, antisymmetrised
+        "wrestling vs low takedown defense": ("cross", [W.cross("td_int", ("neg", "td_def"))], []),
+        "takedown accuracy vs low takedown defense": ("cross", [W.cross("td_acc", ("neg", "td_def"))], []),
+        "control vs stuck-on-bottom": ("cross", [W.cross("ctrl", "octrl_td")], []),
+        "control vs time on bottom": ("cross", [W.cross("ctrl", "octrl")], []),
+        "submission threat vs time on bottom": ("cross", [W.cross("sub_int", "octrl")], []),
+        "submission threat vs submission exposure": ("cross", [W.cross("sub_int", "osub_int")], []),
+        "kicker vs wrestler": ("cross", [W.cross(kick, "td_int")], []),
+        "pressure vs striking defense": ("cross", [W.cross("press", "dfn")], []),
+        "pressure vs counter accuracy": ("cross", [W.cross("press", "acc")], []),
+        "pressure vs volume": ("cross", [W.cross("press", "vol")], []),
+        "volume vs power": ("cross", [W.cross("vol", "kd_pow")], []),
+        "power vs chin": ("cross", [W.cross("kd_pow", "chin")], []),
+        "clinch fighter vs distance fighter": ("cross", [W.cross("sh_c", "sh_d")], []),
+        "ground-and-pound vs time on bottom": ("cross", [W.cross("g_rate", "octrl")], []),
+        "leg kicker vs opponent who gets leg-kicked": ("cross", [W.cross("sh_l", "osh_l")], []),
+        "volume vs poor cardio": ("cross", [W.cross("vol", ("neg", "late"))], []),
+        # skill differential weighted by the fight's expected context
+        "striking edge x distance context": ("context", [W.zd("net") * W.ctx("sh_d")], []),
+        "striking edge x low-wrestling context": ("context", [W.zd("net") * -W.ctx("td_int")], []),
+        "grappling edge x wrestling context": ("context", [(W.zd("ctrl") - W.zd("octrl")) * W.ctx("td_int")], []),
+        "reach edge x distance context": ("context", [W.zd("reach") * W.ctx("sh_d")], []),
+        "reach x own distance share": ("context", [W.Z["reach"][0] * W.Z["sh_d"][0] -
+                                                    W.Z["reach"][1] * W.Z["sh_d"][1]], []),
+        "age gap x five rounds": ("context", [W.zd("age") * W.r5], []),
+        "cardio edge x five rounds": ("context", [W.zd("late") * W.r5], []),
+        # stance
+        "stance main effects (southpaw, switch)": ("stance", stance_main, []),
+        "southpaw vs orthodox (open-stance edge)": ("stance", [open_sp], stance_main),
+        "kicker x open stance": ("stance", [(kA - kB) * open_st], []),
+        # type indicators (z thresholds on the 2019-2023 side distribution)
+        "wrestler type vs weak takedown defense": ("type", [indx(wrestler, W.ind("td_def", hi=-0.5))], []),
+        "kicker type vs wrestler type": ("type", [indx(kicker, W.ind("td_int", lo=1.0))], []),
+        "pressure type vs counter type": ("type", [indx(W.ind("press", lo=1.0), W.ind("press", hi=-1.0))], []),
+        "power type vs volume type": ("type", [indx(W.ind("kd_pow", lo=1.0), W.ind("vol", lo=1.0))], []),
+        "submission type vs wrestler type": ("type", [indx(W.ind("sub_int", lo=1.0), W.ind("td_int", lo=1.0))], []),
+    }
+    if hasattr(W, "M"):
+        mA, mB = W.M
+        K = mA.shape[1]
+        mains = [mA[:, j] - mB[:, j] for j in range(K - 1)]
+        pairs = [mA[:, i] * mB[:, j] - mA[:, j] * mB[:, i] for i in range(K) for j in range(i + 1, K)]
+        C["archetype main effects"] = ("archetype", mains, [])
+        C["archetype x archetype matrix"] = ("archetype", pairs, mains)
+    return C
+
+
+def _loyo_logit(X, y, yr, tune, pen):
+    p = np.zeros(len(y))
+    for Y in sorted(set(yr[tune])):
+        a, v = tune & (yr != Y), tune & (yr == Y)
+        b, _ = fit_logit(X[a], y[a], 1.0, pen=pen)
+        p[v] = sigmoid(X[v] @ b)
+    return p
+
+
+def choose_lam(X, y, yr, tune, grid=(1, 3, 10, 20, 30, 50, 100, 300)):
+    scores = {}
+    for lam in grid:
+        p = _loyo_logit(X, y, yr, tune, np.full(X.shape[1], float(lam)))
+        scores[lam] = float(logloss_vec(p[tune], y[tune]).mean())
+    best = min(scores, key=scores.get)
+    return best, scores
+
+
+def winner_tests(W, n_boot=2000, seed=SEED, lam_int=1.0):
+    y, yr, tune, test = W.y, W.yr, W.tune, W.test
+    Xb = W.base()
+    lam, lam_scores = choose_lam(Xb, y, yr, tune)
+    pen_b = np.full(Xb.shape[1], float(lam))
+    rng = np.random.default_rng(seed)
+    nT = int(test.sum())
+    boots = rng.integers(0, nT, (n_boot, nT))
+
+    def evaluate(Xref, pen_ref, Xadd, lam_add):
+        X = np.column_stack([Xref] + Xadd) if Xadd else Xref
+        pen = np.concatenate([pen_ref, np.full(len(Xadd), lam_add)]) if Xadd else pen_ref
+        b, cov = fit_logit(X[tune], y[tune], 1.0, pen=pen)
+        p_cv = _loyo_logit(X, y, yr, tune, pen)
+        p_te = sigmoid(X[test] @ b)
+        return X, pen, b, cov, p_cv, p_te
+
+    _, _, b0, _, pcv0, pte0 = evaluate(Xb, pen_b, [], 0)
+    ll_cv0 = logloss_vec(pcv0[tune], y[tune])
+    ll_te0 = logloss_vec(pte0, y[test])
+    elo_X = Xb[:, :1]
+    be, _ = fit_logit(elo_X[tune], y[tune], 1.0, pen=np.array([1.0]))
+    out = {"baseline": {"terms": BASE_WIN, "lam": lam, "lam_cv": lam_scores,
+                        "coef": dict(zip(BASE_WIN, [float(v) for v in b0])),
+                        "cv_tune": metrics(pcv0[tune], y[tune]), "test": metrics(pte0, y[test])},
+           "elo_only": {"test": metrics(sigmoid(elo_X[test] @ be), y[test])},
+           "candidates": {}}
+    cands = winner_candidates(W)
+    for name, (kind, add, given) in cands.items():
+        def std(cols):
+            return [c / (c[tune].std() or 1.0) for c in cols]
+        add_s, giv_s = std(add), std(given)
+        if giv_s:
+            Xr, pr, _, _, pcv_r, pte_r = evaluate(Xb, pen_b, giv_s, lam_int)
+        else:
+            Xr, pr, pcv_r, pte_r = Xb, pen_b, pcv0, pte0
+        la = lam_int
+        if len(add_s) > 3:      # a block (archetype matrix): pick its ridge by LOYO CV inside 2019-2023
+            best = None
+            for g in (3, 10, 30, 100, 300):
+                _, _, _, _, pc, _ = evaluate(Xr, pr, add_s, g)
+                s = logloss_vec(pc[tune], y[tune]).mean()
+                if best is None or s < best[0]:
+                    best = (s, g)
+            la = best[1]
+        X, pen, b, cov, pcv, pte = evaluate(Xr, pr, add_s, la)
+        k = len(add_s)
+        bz = b[-k:]
+        z = bz / np.sqrt(np.diag(cov)[-k:])
+        # tune-period penalised deviance gain (LR-style) for the block
+        llr = logloss_vec(sigmoid(Xr[tune] @ fit_logit(Xr[tune], y[tune], 1.0, pen=pr)[0]), y[tune]).sum()
+        llf = logloss_vec(sigmoid(X[tune] @ b), y[tune]).sum()
+        lr = 2 * (llr - llf)
+        dcv = float((logloss_vec(pcv[tune], y[tune]) - logloss_vec(pcv_r[tune], y[tune])).mean())
+        d = logloss_vec(pte, y[test]) - logloss_vec(pte_r, y[test])
+        bd = d[boots].mean(1)
+        # diagnostic only: refit on 2024+ to see whether the sign holds there
+        bt, covt = fit_logit(X[test], y[test], 1.0, pen=pen)
+        zt = bt[-k:] / np.sqrt(np.diag(covt)[-k:])
+        if k == 1:
+            screen = abs(z[0]) >= 2.0 and dcv < 0
+        else:
+            from math import erf
+            # chi-square(k) tail by Wilson-Hilferty
+            wh = ((lr / k) ** (1 / 3) - (1 - 2 / (9 * k))) / math.sqrt(2 / (9 * k)) if lr > 0 else -9
+            p_lr = 0.5 * math.erfc(wh / math.sqrt(2))
+            screen = p_lr < 0.05 and dcv < 0
+        hi = float(np.percentile(bd, 97.5))
+        verdict = ("survives" if screen and hi < 0 else
+                   "supported" if screen and d.mean() < 0 else
+                   "fails held-out" if screen else "not screened in")
+        nz = float(np.mean(np.any(np.column_stack(add) != 0, axis=1)))
+        out["candidates"][name] = {
+            "kind": kind, "k": k, "ridge": la, "coef": [float(v) for v in bz], "z_tune": [float(v) for v in z],
+            "lr_tune": float(lr), "cv_dll": dcv, "test_dll": float(d.mean()),
+            "test_dll_ci": [float(np.percentile(bd, 2.5)), hi], "z_test_only": [float(v) for v in zt],
+            "share_nonzero": nz, "screen": bool(screen), "verdict": verdict}
+    return out, Xb, pen_b

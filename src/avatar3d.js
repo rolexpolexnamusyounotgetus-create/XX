@@ -66,7 +66,7 @@
       img.onload = function () {
         var t = new T.Texture(img);
         t.flipY = false; t.encoding = srgb ? T.sRGBEncoding : T.LinearEncoding;
-        t.anisotropy = 4; t.needsUpdate = true; t.userData.shared = true;
+        t.anisotropy = 4; t.needsUpdate = true; t._shared = true;
         res(t);
       };
       img.onerror = function () { rej(new Error("FightAvatar: texture " + name)); };

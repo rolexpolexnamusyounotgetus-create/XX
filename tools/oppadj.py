@@ -617,3 +617,134 @@ def walk_binom(D, y, n, b, hl, ko, kd, mode="full", tol=2e-5, maxit=400, extra_T
         else:
             final = (a.copy(), g.copy(), c)
     return sa, sg, sc, np.array(its), final
+
+
+# ------------------------------------------------------------------ evaluation
+def pois_dev(y, mu):
+    mu = np.maximum(mu, 1e-12)
+    t = np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / mu), 0.0)
+    return 2 * (t - (y - mu))
+
+
+def binom_dev(y, n, z):
+    p = np.clip(sigm(z), 1e-9, 1 - 1e-9)
+    a = np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / (n * p)), 0.0)
+    m = n - y
+    bb = np.where(m > 0, m * np.log(np.maximum(m, 1e-12) / (n * (1 - p))), 0.0)
+    return 2 * (a + bb)
+
+
+RAW_K_GRID = {"kPM": [5, 10, 20, 40, 80, 160, 320], "kAcc": [40, 80, 150, 300, 600, 1200, 2400],
+              "kTdPM": [10, 20, 45, 90, 180, 360], "kTdAcc": [3, 6, 12, 24, 48, 96],
+              "kKD": [60, 120, 230, 460, 920, 1840, 3680], "kCtrlTD": [1, 2, 4, 8, 16, 32]}
+
+
+class Evaluator:
+    """Held-out per-fight scoring on backtest sides: each side's attacking row (what he did in the fight),
+    predicted from his offense and his opponent's defense, both frozen before the fight."""
+
+    def __init__(self, D, p):
+        self.D, self.p = D, p
+        self.opp = np.arange(len(D.s_row)) ^ 1
+        Vs = D.V[D.s_row]
+        self.fam = {}
+        for name, (kind, fields, kname, kgrid, label) in FAMILIES.items():
+            y, E, Lb = family_arrays(name, Vs, D.sL, p)
+            if kind == "count":
+                ok = E >= EVAL_MIN[name]
+            else:
+                ok = E >= 1
+            self.fam[name] = {"y": y, "E": E, "Lb": Lb, "ok": ok, "kind": kind,
+                              "tune": ok & D.s_tune, "test": ok & D.s_test}
+        self.engine_R = fighter_rates(D.s_S, D.sL, p)
+
+    # predictions on the natural scale: mu for counts, logit z for binomials
+    def pred_adj(self, name, so, sd, sc):
+        f = self.fam[name]
+        lin = sc + so + sd[self.opp]
+        if f["kind"] == "count":
+            return f["E"] * f["Lb"] * np.exp(lin)
+        return f["Lb"] + lin
+
+    def pred_raw(self, name, R):
+        f = self.fam[name]
+        off, de = FAMILIES[name][1]
+        o = self.opp
+        if name in ("accH", "accB", "accL"):
+            t = "HBL".index(name[-1])
+            return f["Lb"] + R["accSh"][:, t] + R["accAgSh"][o, t]
+        if name == "tdAcc":
+            return logit(R["tdAcc"]) + logit(R["tdAccAg"][o]) - f["Lb"]
+        if name == "topSkill":
+            return f["E"] * f["Lb"] * R["topSkill"] * R["escWeak"][o]
+        return f["E"] * f["Lb"] * (R[off] / f["Lb"]) * (R[de][o] / f["Lb"])
+
+    def score(self, name, pred, calibrate=True):
+        """Deviance on tune and test (sums), after an optional level calibration fit on tune only."""
+        f = self.fam[name]
+        y, E, tu, te = f["y"], f["E"], f["tune"], f["test"]
+        if f["kind"] == "count":
+            s = y[tu].sum() / max(pred[tu].sum(), 1e-12) if calibrate else 1.0
+            dv = pois_dev(y, pred * s)
+            return {"tune": float(dv[tu].sum()), "test": float(dv[te].sum()), "scale": float(s),
+                    "test_obs_over_pred_uncal": float(y[te].sum() / max(pred[te].sum(), 1e-12)), "dev": dv}
+        dlt = 0.0
+        if calibrate:
+            for _ in range(40):
+                pp = sigm(pred[tu] + dlt)
+                st = (y[tu].sum() - (E[tu] * pp).sum()) / max((E[tu] * pp * (1 - pp)).sum(), 1e-12)
+                dlt += st
+                if abs(st) < 1e-10:
+                    break
+        dv = binom_dev(y, E, pred + dlt)
+        return {"tune": float(dv[tu].sum()), "test": float(dv[te].sum()), "shift": float(dlt),
+                "test_obs_over_pred_uncal": float(y[te].sum() / max((E[te] * sigm(pred[te])).sum(), 1e-12)),
+                "dev": dv}
+
+    def null_pred(self, name):
+        """League-only prediction (division-year baseline, no fighter information)."""
+        f = self.fam[name]
+        return f["E"] * f["Lb"] if f["kind"] == "count" else f["Lb"].copy()
+
+
+def boot_delta(D, dv_a, dv_b, mask, nb=2000, seed=7):
+    """Cluster bootstrap (by fight) of sum(dev_a - dev_b) over masked sides. Returns mean, 2.5%, 97.5%."""
+    diff = np.where(mask, dv_a - dv_b, 0.0)
+    per_fight = diff[0::2] + diff[1::2]
+    has = (mask[0::2] | mask[1::2])
+    pf = per_fight[has]
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(pf), size=(nb, len(pf)))
+    bs = pf[idx].sum(1)
+    return float(pf.sum()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5)), int(has.sum())
+
+
+# ------------------------------------------------------------------ grid runner (forked workers share D)
+_G = {}
+
+
+def _job(args):
+    name, hl, ko, kd, mode = args
+    D, p = _G["D"], _G["p"]
+    kind = FAMILIES[name][0]
+    y, E, Lb = _G["arr"][name]
+    f = walk_count if kind == "count" else walk_binom
+    so, sd, sc, its, _ = f(D, y, E, Lb, hl, ko, kd, mode)
+    return args, so.astype(np.float32), sd.astype(np.float32), sc.astype(np.float32), float(its.mean())
+
+
+def run_grid(D, p, jobs, procs):
+    import multiprocessing as mp
+    _G["D"], _G["p"] = D, p
+    _G["arr"] = {name: family_arrays(name, D.V, D.L, p) for name in FAMILIES}
+    out = {}
+    if procs <= 1:
+        for j in jobs:
+            r = _job(j)
+            out[r[0]] = r[1:]
+        return out
+    ctx = mp.get_context("fork")
+    with ctx.Pool(procs) as pool:
+        for r in pool.imap_unordered(_job, jobs, chunksize=2):
+            out[r[0]] = r[1:]
+    return out

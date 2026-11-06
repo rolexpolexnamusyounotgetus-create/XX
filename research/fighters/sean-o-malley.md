@@ -1,6 +1,6 @@
 # Sean O'Malley: scouting dossier
 
-As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). No web access this pass (search budget spent, fetches blocked), so stats come from the dataset and raw ufcstats rows, and outside claims reuse URLs cited by other repo dossiers. Unverified: ranking, injuries, tattoos, appearance.
+As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). No web access in the research or fact-check passes (search budget spent, fetches blocked); outside claims reuse URLs cited by other repo dossiers. Fight numbers re-checked against raw ufcstats rows on Nov 6. Unverified: ranking, injuries, tattoos, appearance.
 
 ## Current status
 
@@ -8,7 +8,7 @@ As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot t
 - **Since the belt:** he lost twice to Merab Dvalishvili, then won twice. He beat Song Yadong at UFC 324 (Jan 24, 2026) and KO'd Aiemann Zahabi at UFC Freedom 250 in Washington, DC (Jun 14, 2026).
 - **Title picture:** on Oct 25, Dana White named O'Malley and Song as the contenders for champion Petr Yan (Bloody Elbow). Headlines in Sherdog and Boxing News had Yan favoured in that rematch. O'Malley beat Yan by split decision in 2022.
 - **Age and frame:** 32 (born Oct 24, 1994), 5'11", 72" reach, switch stance. Nickname "Suga".
-- **Booking:** none found.
+- **Booking:** none in the late-October reports cited.
 
 ## Recent fights
 
@@ -22,32 +22,30 @@ As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot t
 
 ## Style
 
-O'Malley is a rangy switch-stance counter striker.
-
-- **Range:** 96% of his attempts come at distance.
+- **Range:** 96% of attempts come at distance.
 - **Accuracy:** 60% career sig accuracy and 54% to the head, against league figures of about 46% and 37%.
 - **Body attack:** 22% of his decayed attempts go to the body, the 4th-highest share among 51 bantamweights with 30+ decayed minutes in the dataset.
 - **Finishing:** 7 KO/TKO wins, including Sterling for the title.
 
 ## Strengths
 
-- **Chin and defence:** he has never been knocked down in 16 UFC fights, and opponents land only 27.7% of head attempts on him.
+- **Chin and defence:** never knocked down in 16 UFC fights; opponents land just 27.7% of head attempts.
 - **Power:** 7 knockdowns, 0.55 per 15 min career against a 0.31 prior.
 
 ## Weaknesses
 
 - **Wrestling:** takedown defence is 60%, against a 65.7% league average. Dvalishvili took him down 11 times over their two fights, held 16:32 of control and submitted him.
-- **Leg kicks:** opponents throw 24% of their decayed attempts at his legs (league 9.7%), and 42% of what lands on him is leg strikes. Zahabi, Munhoz and Song all found the legs.
+- **Leg kicks:** opponents throw 24% of their decayed attempts at his legs (league 9.7%), and 42% of what lands on him is leg strikes. Zahabi, Munhoz and Song all chopped them.
 - **No offensive wrestling:** 3 takedowns landed in 16 UFC fights.
 
 ## Durability and cardio
 
 - **Durability:** one KO/TKO loss (Vera, 2020: elbows from guard after Vera landed 9 of 10 leg strikes) and no knockdowns absorbed.
-- **Cardio:** 4 five-round fights; pace looks strong late (1.00 / 1.90 / 1.03 / 2.03 / 2.36), but the Vera fight dominates that small sample.
+- **Cardio:** 4 five-round fights; late pace looks strong (1.00 / 1.90 / 1.03 / 2.03 / 2.36), but the Vera fight dominates that sample.
 
 ## What the numbers say
 
-Decayed: lands 4.75 per minute, absorbs 3.25; attempt split 71.5% head, 22.4% body, 6.1% leg; taken down 2.3 times per 15 min. Elo 1714. In the engine he should win most striking exchanges at range and carry above-average knockdown power. His main losing paths should be takedowns and leg-kick accumulation, so wrestlers and kickers deserve a real edge against him.
+Decayed: lands 4.75 per minute, absorbs 3.25; attempt split 71.5% head, 22.4% body, 6.1% leg; taken down 2.3 times per 15 min. Elo 1714. In the engine he should win most striking exchanges at range and carry above-average knockdown power. His losing paths are takedowns and leg-kick accumulation, so wrestlers and kickers deserve a real edge.
 
 ## Sources
 

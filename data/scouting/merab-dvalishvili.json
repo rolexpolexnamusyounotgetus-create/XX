@@ -3,7 +3,7 @@
   "name": "Merab Dvalishvili",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC bantamweight champion on a two-fight losing streak, both losses to Petr Yan. He won the title from Sean O'Malley at UFC 306 (Sep 14, 2024) and defended it three times in 2025: Umar Nurmagomedov (UFC 311), O'Malley again by guillotine (UFC 316) and Cory Sandhagen (UFC 320). He then lost the belt to Yan at UFC 323 (Dec 6, 2025; 46-49, 46-49, 47-48). He lost the trilogy at UFC 333 in Abu Dhabi (Oct 24, 2026; 47-48 on all three cards) after the early rounds went his way; he landed 5 of 58 takedowns. He is 35, and his UFC record is 14-4 per ufcstats. No booking or injury report was found.",
+    "summary": "Former UFC bantamweight champion on a two-fight losing streak, both losses to Petr Yan. He won the title from Sean O'Malley at UFC 306 (Sep 14, 2024) and defended it three times in 2025: Umar Nurmagomedov (UFC 311), O'Malley again by guillotine (UFC 316) and Cory Sandhagen (UFC 320). He then lost the belt to Yan at UFC 323 (Dec 6, 2025; 46-49, 46-49, 47-48). He lost the trilogy at UFC 333 in Abu Dhabi (Oct 24, 2026; 47-48 on all three cards). Yahoo called it a come-from-behind win for Yan, and the ufcstats rounds fit Merab taking R1-R2 (5 of 19 takedowns) before going 0 of 39 in R3-R5. He is 35, and his UFC record is 14-4 per ufcstats. Booking, ranking and injury news could not be web-checked (no search access in the research or Nov 6 fact-check passes).",
     "title": null,
     "ranking": null,
     "active": true,
@@ -58,14 +58,14 @@
   },
   "appearance": {
     "build": "short and compact, heavily muscled: 5'6\" (66 in) with a 68 in reach per ufcstats",
-    "hair": "short dark hair (unverified: from widely published pre-2026 fight photos; no photo was checked in this pass)",
-    "facial_hair": "dark beard, often full (unverified, as above)",
+    "hair": "short dark-brown hair (UFC 316 photos, Jun 7, 2025)",
+    "facial_hair": "short full beard, reddish-brown, lighter than his hair (UFC 316 photos, Jun 7, 2025)",
     "skin": "light",
-    "tattoos": "not recorded (no source checked)",
-    "kit": "unknown",
+    "tattoos": "unknown (no written source; none visible on the chest or arms in the two UFC 316 photos)",
+    "kit": "white shorts with red trim at UFC 316 (photo); corner colour wins in the sim",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",
-      "skin, hair and facial hair: unverified recall of widely published pre-2026 photos; a fact-check against a dated photo is needed"
+      "skin, hair, beard and kit: assets/reference/merab-dvalishvili/commons_ufc316_cropped.jpg and commons_ufc316_with_trump.jpg (Wikimedia Commons per filename; taken cageside after his UFC 316 win at the Prudential Center, Newark, Jun 7, 2025), checked by the fact-checker on 2026-11-06"
     ]
   },
   "engine_notes": [

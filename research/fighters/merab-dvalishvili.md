@@ -1,13 +1,13 @@
 # Merab Dvalishvili: scouting dossier
 
-As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). No web access this pass (search budget spent, fetches blocked), so stats come from the dataset and raw ufcstats rows, and outside claims reuse URLs cited by other repo dossiers. Unverified: ranking, plans, appearance.
+As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). No web access in the research or fact-check passes (search budget spent, fetches blocked); outside claims reuse URLs cited by other repo dossiers. Fight numbers re-checked against raw ufcstats rows on Nov 6. Unverified: ranking, plans.
 
 ## Current status
 
 - **Title:** former UFC bantamweight champion. He won the belt from Sean O'Malley (UFC 306, Sep 14, 2024) and defended it three times in 2025, against Umar Nurmagomedov, O'Malley and Cory Sandhagen.
 - **Form:** two straight losses to Petr Yan. UFC 323 (Dec 6, 2025): 46-49, 46-49, 47-48. UFC 333, Abu Dhabi (Oct 24, 2026): 47-48 on all cards.
 - **Age and frame:** 35 (born Jan 10, 1991), 5'6", 68" reach, orthodox. Nickname "The Machine".
-- **Booking and injuries:** none found.
+- **Booking and injuries:** not web-checked; none in the sources cited.
 
 ## Recent fights
 

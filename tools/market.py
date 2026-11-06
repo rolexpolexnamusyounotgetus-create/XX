@@ -846,6 +846,391 @@ def ci(v, digits=4):
     return [round(float(np.percentile(v, 2.5)), digits), round(float(np.percentile(v, 97.5)), digits)]
 
 
+
+# ----------------------------------------------------------------------------------------------
+# build: assemble + evaluate + write market.json
+# ----------------------------------------------------------------------------------------------
+
+TUNE = ('2019-01-01', '2023-12-31')
+TEST = ('2024-01-01', '2099-12-31')
+
+
+def period_of(d):
+    return 'tune' if d <= TUNE[1] else 'test'
+
+
+def cmd_build(a):
+    np = _np()
+    fights = load_backtest()
+    recs, diag = assemble(fights)
+    R = []
+    for f in fights:
+        rec = recs[f['id']]
+        c = choose(rec)
+        w = f['result']['winner']
+        row = {'id': f['id'], 'date': f['date'], 'event': f['event'], 'period': period_of(f['date']),
+               'y': 1.0 if w == 'A' else (0.0 if w == 'B' else None), 'winner': w,
+               'division': f['division'], 'title': bool(f.get('title')), 'rounds': f['rounds'],
+               'elo': 1 / (1 + 10 ** ((f['B']['elo'] - f['A']['elo']) / 400)), 'rec': rec, 'c': c}
+        if c.get('open_dec'):
+            row['p_open'] = devig(*c['open_dec'])
+            row['over_open'] = 1 / c['open_dec'][0] + 1 / c['open_dec'][1]
+        if c.get('close_dec'):
+            for m in DEVIG_METHODS:
+                row['p_close_' + m] = devig(*c['close_dec'], method=m)
+            row['over_close'] = 1 / c['close_dec'][0] + 1 / c['close_dec'][1]
+            row['src'] = c['src']
+        # alternative closing representations for the comparison
+        if rec.get('bfo_mean_close'):
+            row['p_bfo_mean'] = devig(*rec['bfo_mean_close'])
+        rng = rec.get('bfo_range') or rec.get('nl_range')
+        if rng and all(rng[0]) and all(rng[1]):
+            row['p_range_mid'] = devig(*range_mid_dec(rng[0], rng[1]))
+        if rec.get('uud_close'):
+            u = rec['uud_close']
+            d = (am_to_dec(u[0]), am_to_dec(u[1]))
+            if d[0] and d[1]:
+                row['p_uud'] = devig(*d)
+        cons = c.get('cons')
+        if cons and cons['n'] >= 2:
+            row['p_books_mean'] = devig(*cons['mean_dec'])
+            row['p_books_avgnv'] = cons['p_avg_novig']
+            row['n_books'] = cons['n']
+            row['best_dec'] = cons['best_dec']
+        R.append(row)
+    res = {'diag': diag}
+
+    # ---------------- coverage ----------------
+    cov = {'n_backtest': len(R)}
+    by_year = defaultdict(Counter)
+    for r in R:
+        yr = r['date'][:4]
+        by_year[yr]['fights'] += 1
+        by_year[yr]['open'] += 'p_open' in r
+        by_year[yr]['close'] += 'p_close_mult' in r
+        by_year[yr]['both'] += ('p_open' in r and 'p_close_mult' in r)
+        by_year[yr]['per_book_close'] += 'p_books_mean' in r
+        if 'src' in r:
+            by_year[yr]['src_' + r['src']] += 1
+    cov['by_year'] = {k: dict(v) for k, v in sorted(by_year.items())}
+    for per in ('tune', 'test'):
+        g = [r for r in R if r['period'] == per]
+        cov[per] = {'fights': len(g), 'open': sum('p_open' in r for r in g),
+                    'close': sum('p_close_mult' in r for r in g),
+                    'per_book_close': sum('p_books_mean' in r for r in g),
+                    'close_share': round(sum('p_close_mult' in r for r in g) / len(g), 4)}
+    cov['close_src'] = dict(Counter(r.get('src', 'none') for r in R))
+    cov['missing_close'] = [{'id': r['id'], 'date': r['date'], 'event': r['event']} for r in R if 'p_close_mult' not in r]
+    res['coverage'] = cov
+
+    dec = [r for r in R if r['y'] is not None]
+    def sub(per, keys):
+        return [r for r in dec if r['period'] == per and all(k in r for k in keys)]
+
+    # ---------------- headline: elo vs open vs close (common subset) ----------------
+    head = {}
+    for per in ('tune', 'test'):
+        g = sub(per, ['p_open', 'p_close_mult'])
+        y = np.array([r['y'] for r in g])
+        mods = {'elo': [r['elo'] for r in g], 'open': [r['p_open'] for r in g], 'close': [r['p_close_mult'] for r in g]}
+        out = {k: metrics(v, y) for k, v in mods.items()}
+        arrs = {}
+        for k, v in mods.items():
+            ll, br, acc = loss_arrays(v, y)
+            arrs[k + '_ll'], arrs[k + '_br'], arrs[k + '_acc'] = ll, br, acc
+        bs = boot_event([r['event'] for r in g], arrs, B=a.boot)
+        for k in mods:
+            out[k]['log_loss_ci95'] = ci(bs[k + '_ll'])
+            out[k]['brier_ci95'] = ci(bs[k + '_br'])
+            out[k]['accuracy_ci95'] = ci(bs[k + '_acc'])
+        out['diff'] = {
+            'close_minus_elo_ll': [round(float(np.mean(arrs['close_ll'] - arrs['elo_ll'])), 4), ci(bs['close_ll'] - bs['elo_ll'])],
+            'close_minus_open_ll': [round(float(np.mean(arrs['close_ll'] - arrs['open_ll'])), 4), ci(bs['close_ll'] - bs['open_ll'])],
+            'open_minus_elo_ll': [round(float(np.mean(arrs['open_ll'] - arrs['elo_ll'])), 4), ci(bs['open_ll'] - bs['elo_ll'])],
+        }
+        head[per] = out
+    # every fight with a close (not only those with an open too)
+    for per in ('tune', 'test'):
+        g = sub(per, ['p_close_mult'])
+        head[per]['close_all'] = metrics([r['p_close_mult'] for r in g], [r['y'] for r in g])
+        head[per]['elo_on_close_all'] = metrics([r['elo'] for r in g], [r['y'] for r in g])
+    res['headline'] = head
+
+    # ---------------- no-vig method (choose on tune) ----------------
+    dv = {}
+    for per in ('tune', 'test'):
+        g = sub(per, ['p_close_mult', 'p_open'])
+        y = [r['y'] for r in g]
+        dv[per] = {m: metrics([r['p_close_' + m] for r in g], y) for m in DEVIG_METHODS}
+        # opening line too
+        dv[per]['open'] = {}
+        for m in DEVIG_METHODS:
+            dv[per]['open'][m] = metrics([devig(*r['c']['open_dec'], method=m) for r in g], y)
+    best = min(DEVIG_METHODS, key=lambda m: dv['tune'][m]['log_loss'])
+    dv['chosen_on_tune'] = best
+    res['devig'] = dv
+
+    # ---------------- closing representations (common subsets) ----------------
+    reps = {}
+    for per in ('tune', 'test'):
+        reps[per] = {}
+        for pair in (('p_bfo_mean', 'p_range_mid'), ('p_bfo_mean', 'p_uud'), ('p_range_mid', 'p_uud'),
+                     ('p_bfo_mean', 'p_books_avgnv'), ('p_books_mean', 'p_books_avgnv')):
+            g = sub(per, list(pair))
+            if len(g) < 30:
+                continue
+            y = [r['y'] for r in g]
+            reps[per]['|'.join(pair)] = {k: metrics([r[k] for r in g], y) for k in pair}
+            reps[per]['|'.join(pair)]['mean_abs_diff'] = round(float(np.mean([abs(r[pair[0]] - r[pair[1]]) for r in g])), 4)
+    res['close_representations'] = reps
+
+    # ---------------- calibration + favourite-longshot bias ----------------
+    cal = {}
+    for per in ('tune', 'test', 'all'):
+        g = [r for r in dec if 'p_close_mult' in r and (per == 'all' or r['period'] == per)]
+        p = np.array([r['p_close_mult'] for r in g])
+        y = np.array([r['y'] for r in g])
+        pf = np.maximum(p, 1 - p)
+        yf = np.where(p >= 0.5, y, 1 - y)
+        b1, se1 = logreg(logit(p)[:, None], y)                       # symmetric slope
+        X = np.column_stack([np.ones(len(pf)), logit(pf)])
+        b2, se2 = logreg(X, yf)                                      # favourite intercept + slope
+        cal[per] = {'n': int(len(p)), 'table': calib_table(p, y),
+                    'slope_only': {'b': round(float(b1[0]), 4), 'se': round(float(se1[0]), 4)},
+                    'fav_intercept_slope': {'a': round(float(b2[0]), 4), 'a_se': round(float(se2[0]), 4),
+                                            'b': round(float(b2[1]), 4), 'b_se': round(float(se2[1]), 4)},
+                    'fav_win_rate': round(float(yf.mean()), 4), 'fav_implied': round(float(pf.mean()), 4)}
+        # open line calibration too
+        go = [r for r in g if 'p_open' in r]
+        po = np.array([r['p_open'] for r in go])
+        yo = np.array([r['y'] for r in go])
+        bo, so = logreg(logit(po)[:, None], yo)
+        cal[per]['open_slope_only'] = {'b': round(float(bo[0]), 4), 'se': round(float(so[0]), 4), 'n': int(len(po))}
+        # flat-stake ROI by implied-probability band, at the mean closing odds and at the best book
+        roi = []
+        bands = [(0.0, 0.2), (0.2, 0.3), (0.3, 0.4), (0.4, 0.5), (0.5, 0.6), (0.6, 0.7), (0.7, 0.8), (0.8, 1.0)]
+        sides = []
+        for r in g:
+            d = r['c']['close_dec']
+            for side, (pp, dd, yy) in enumerate(((r['p_close_mult'], d[0], r['y']), (1 - r['p_close_mult'], d[1], 1 - r['y']))):
+                bd = r['best_dec'][side] if r.get('best_dec') else None
+                sides.append((pp, dd, yy, bd))
+        for lo, hi in bands:
+            k = [x for x in sides if lo <= x[0] < hi]
+            if not k:
+                continue
+            ret = [x[2] * x[1] - 1 for x in k]
+            kb = [x for x in k if x[3]]
+            rb = [x[2] * x[3] - 1 for x in kb]
+            se = float(np.std(ret, ddof=1) / math.sqrt(len(ret))) if len(ret) > 1 else None
+            roi.append({'band': [lo, hi], 'n_sides': len(k), 'implied': round(float(np.mean([x[0] for x in k])), 4),
+                        'won': round(float(np.mean([x[2] for x in k])), 4),
+                        'roi_mean_odds': round(float(np.mean(ret)), 4), 'roi_se': round(se, 4) if se else None,
+                        'n_best': len(kb), 'roi_best_book': round(float(np.mean(rb)), 4) if rb else None})
+        cal[per]['roi_by_band'] = roi
+        cal[per]['overround_close_median'] = round(float(np.median([r['over_close'] for r in g])), 4)
+        if go:
+            cal[per]['overround_open_median'] = round(float(np.median([r['over_open'] for r in go])), 4)
+    res['calibration'] = cal
+
+    # ---------------- recalibration and stacking: fit on tune, score on test ----------------
+    st = {}
+    gt = sub('tune', ['p_close_mult', 'p_open'])
+    gs = sub('test', ['p_close_mult', 'p_open'])
+    yt = np.array([r['y'] for r in gt])
+    ys = np.array([r['y'] for r in gs])
+    def feats(g, keys):
+        cols = []
+        for k in keys:
+            cols.append(logit([r[k] for r in g]))
+        return np.column_stack(cols)
+    variants = {
+        'close_mult': (['p_close_mult'], None),
+        'close_slope': (['p_close_mult'], 'fit'),
+        'close_' + best: (['p_close_' + best], None),
+        'close_' + best + '_slope': (['p_close_' + best], 'fit'),
+        'close+open': (['p_close_mult', 'p_open'], 'fit'),
+        'close+elo': (['p_close_mult', 'elo'], 'fit'),
+        'close+open+elo': (['p_close_mult', 'p_open', 'elo'], 'fit'),
+        'open_mult': (['p_open'], None),
+        'open+elo': (['p_open', 'elo'], 'fit'),
+        'elo': (['elo'], None),
+    }
+    test_ll = {}
+    for name, (keys, mode) in variants.items():
+        Xt, Xs = feats(gt, keys), feats(gs, keys)
+        if mode == 'fit':
+            b, se = logreg(Xt, yt)
+            pt, ps = sigmoid(Xt @ b), sigmoid(Xs @ b)
+            coef = {k: [round(float(bb), 4), round(float(ss), 4)] for k, bb, ss in zip(keys, b, se)}
+        else:
+            pt, ps = sigmoid(Xt[:, 0]), sigmoid(Xs[:, 0])
+            coef = None
+        st[name] = {'coef_logit_[b,se]': coef, 'tune': metrics(pt, yt), 'test': metrics(ps, ys)}
+        test_ll[name] = loss_arrays(ps, ys)[0]
+    # favourite intercept + slope recalibration (symmetric in the corner labels)
+    def fav_form(g):
+        p = np.array([r['p_close_mult'] for r in g])
+        return p, np.where(p >= 0.5, 1.0, -1.0)
+    pt, sgt = fav_form(gt)
+    ps, sgs = fav_form(gs)
+    yft = np.where(sgt > 0, yt, 1 - yt)
+    bfa, sfa = logreg(np.column_stack([np.ones(len(pt)), logit(np.maximum(pt, 1 - pt))]), yft)
+    def apply_fav(p, b):
+        pf = sigmoid(b[0] + b[1] * logit(np.maximum(p, 1 - p)))
+        return np.where(p >= 0.5, pf, 1 - pf)
+    st['close_fav_a_b'] = {'coef_logit_[b,se]': {'a': [round(float(bfa[0]), 4), round(float(sfa[0]), 4)],
+                                                  'b': [round(float(bfa[1]), 4), round(float(sfa[1]), 4)]},
+                           'tune': metrics(apply_fav(pt, bfa), yt), 'test': metrics(apply_fav(ps, bfa), ys)}
+    test_ll['close_fav_a_b'] = loss_arrays(apply_fav(ps, bfa), ys)[0]
+    bs = boot_event([r['event'] for r in gs], test_ll, B=a.boot)
+    for name in st:
+        st[name]['test_ll_minus_close_mult'] = [round(float(np.mean(test_ll[name] - test_ll['close_mult'])), 4),
+                                                ci(bs[name] - bs['close_mult'])]
+    st['n'] = {'tune': len(gt), 'test': len(gs)}
+    res['stacking'] = st
+
+    # ---------------- by year and by segment ----------------
+    yrs = {}
+    for yr in sorted({r['date'][:4] for r in dec}):
+        g = [r for r in dec if r['date'][:4] == yr and 'p_close_mult' in r]
+        go = [r for r in g if 'p_open' in r]
+        yrs[yr] = {'close': metrics([r['p_close_mult'] for r in g], [r['y'] for r in g]),
+                   'open': metrics([r['p_open'] for r in go], [r['y'] for r in go]),
+                   'elo': metrics([r['elo'] for r in g], [r['y'] for r in g])}
+    res['by_year'] = yrs
+    seg = {}
+    for name, fn in (('title', lambda r: r['title']), ('five_round', lambda r: r['rounds'] == 5),
+                     ('womens', lambda r: r['division'].startswith("Women")),
+                     ('heavyweight', lambda r: r['division'] == 'Heavyweight')):
+        for per in ('tune', 'test'):
+            g = [r for r in dec if r['period'] == per and 'p_close_mult' in r and fn(r)]
+            if len(g) >= 20:
+                seg[f'{name}_{per}'] = metrics([r['p_close_mult'] for r in g], [r['y'] for r in g])
+    res['segments'] = seg
+
+    # ---------------- line movement ----------------
+    mv = {}
+    for per in ('tune', 'test'):
+        g = sub(per, ['p_open', 'p_close_mult'])
+        dlt = np.array([r['p_close_mult'] - r['p_open'] for r in g])
+        flips = sum(1 for r in g if (r['p_open'] - 0.5) * (r['p_close_mult'] - 0.5) < 0)
+        mv[per] = {'mean_abs_move': round(float(np.mean(np.abs(dlt))), 4),
+                   'median_abs_move': round(float(np.median(np.abs(dlt))), 4),
+                   'share_move_gt_5pts': round(float(np.mean(np.abs(dlt) > 0.05)), 4),
+                   'favourite_flips': flips, 'n': len(g)}
+    res['line_movement'] = mv
+
+    # ---------------- data checks ----------------
+    chk = {}
+    pairs = []
+    for r in R:
+        rec = r['rec']
+        if rec.get('bfo_open') and rec.get('nl_open'):
+            pairs.append(rec['bfo_open'] == rec['nl_open'])
+    chk['bfo_open_equals_nlbair_open'] = [sum(pairs), len(pairs)]
+    pairs = []
+    for r in R:
+        rec = r['rec']
+        if rec.get('bfo_range') and rec.get('nl_range'):
+            pairs.append(tuple(rec['bfo_range']) == tuple(rec['nl_range']))
+    chk['bfo_range_equals_nlbair_range'] = [sum(pairs), len(pairs)]
+    dd = [abs(r['p_bfo_mean'] - r['p_books_mean']) for r in R if 'p_bfo_mean' in r and 'p_books_mean' in r]
+    if dd:
+        chk['bfo_mean_vs_event_page_books_mean_abs_diff'] = {'n': len(dd), 'mean': round(float(np.mean(dd)), 4),
+                                                             'p95': round(float(np.percentile(dd, 95)), 4),
+                                                             'share_lt_0.005': round(float(np.mean(np.array(dd) < 0.005)), 4)}
+    du = [abs(r['p_uud'] - r['p_close_mult']) for r in R if 'p_uud' in r and 'p_close_mult' in r]
+    chk['uud_vs_close_abs_diff'] = {'n': len(du), 'mean': round(float(np.mean(du)), 4),
+                                    'p95': round(float(np.percentile(du, 95)), 4)}
+    res['checks'] = chk
+
+    # ---------------- method props (event pages, if cached) ----------------
+    if getattr(a, 'props', None):
+        res['method_market'] = method_market(a, fights, recs)
+
+    write_market_json(R, res, best)
+    print_summary(res)
+
+
+def write_market_json(R, res, best):
+    fights = {}
+    for r in R:
+        c = r['c']
+        rec = r['rec']
+        if 'p_close_mult' not in r and 'p_open' not in r:
+            continue
+        e = {}
+        if c.get('open'):
+            e['open'] = c['open']
+            e['p_novig_open'] = round(r['p_open'], 4)
+        if c.get('close'):
+            e['close'] = c['close']
+            e['close_dec'] = [round(c['close_dec'][0], 4), round(c['close_dec'][1], 4)]
+            e['p_novig_close'] = round(r['p_close_mult'], 4)
+            if best != 'mult':
+                e['p_' + best + '_close'] = round(r['p_close_' + best], 4)
+            e['overround'] = round(r['over_close'], 4)
+            e['book'] = c['book']
+            e['src'] = c['src']
+        if c.get('range') and all(c['range'][0]) and all(c['range'][1]):
+            e['close_range'] = [[c['range'][0][0], c['range'][1][0]], [c['range'][0][1], c['range'][1][1]]]
+        if rec.get('bfo_books'):
+            e['books'] = {k: list(v) for k, v in sorted(rec['bfo_books'].items())}
+        if rec.get('uud_close'):
+            e['uud_close'] = list(rec['uud_close'])
+        if rec.get('bfo_mu'):
+            e['bfo'] = {'matchup': rec['bfo_mu'], 'event': rec.get('bfo_event')}
+        fights[r['id']] = e
+    meta = {
+        'built': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
+        'tool': 'tools/market.py',
+        'orientation': 'every pair is [A, B] in backtest.json order (A = first ufcstats name); p_* = probability that A wins',
+        'open': 'first line BFO lists for the fight (one book, often weeks out; may not have been bettable in size)',
+        'close': 'consensus closing line: BFO mean of the books\' closing decimal odds (last point of BFO\'s mean-odds '
+                 'series) when both fighter pages were read; else the mean of the per-book closes on the event page; '
+                 'else the decimal midpoint of the closing range (nlbair); else one book\'s close (Ultimate UFC Dataset)',
+        'p_novig': 'multiplicative (proportional) margin removal: p_A = (1/dA) / (1/dA + 1/dB)',
+        'devig_best_on_tune': best,
+        'books': 'per-book closing lines from BFO event pages; covers only the US books BFO lists today (about 2021 on); '
+                 'Polymarket/Kalshi are listed when present but never enter the consensus',
+        'walk_forward': 'closing lines are known only minutes before the fight; they are a benchmark and a stacking input '
+                        'for live use, never a feature of a model scored on the same fight before the line closes',
+        'sources': [
+            'BestFightOdds.com (opening lines, closing ranges, mean-odds series, per-book closes), fetched by tools/market.py',
+            'nlbair/ufc-data v0.1.1 (CC BY 4.0, doi:10.5281/zenodo.23458636): BFO opening line and closing range per ufcstats fight id',
+            'Ultimate UFC Dataset (mdabbert / shortlikeafox, CC BY 4.0): one closing moneyline per fighter',
+        ],
+        'periods': {'tune': list(TUNE), 'test': list(TEST)},
+    }
+    out = {'meta': meta, 'coverage': res['coverage'], 'eval': {k: v for k, v in res.items() if k not in ('coverage',)},
+           'fights': fights}
+    with open(OUT_JSON, 'w') as fh:
+        json.dump(out, fh, separators=(',', ':'))
+    print(f'wrote {OUT_JSON}: {len(fights)} fights, {os.path.getsize(OUT_JSON) / 1e6:.2f} MB')
+
+
+def print_summary(res):
+    cov = res['coverage']
+    print('diag', res['diag'])
+    print('coverage', {k: cov[k] for k in ('tune', 'test', 'close_src')})
+    for per in ('tune', 'test'):
+        h = res['headline'][per]
+        print(per, {k: (h[k]['n'], h[k]['log_loss'], h[k]['log_loss_ci95'], h[k]['brier'], h[k]['accuracy'], h[k]['ece'])
+                    for k in ('elo', 'open', 'close')})
+        print('   diffs', h['diff'])
+    print('devig tune', {m: res['devig']['tune'][m]['log_loss'] for m in DEVIG_METHODS}, 'chosen', res['devig']['chosen_on_tune'])
+    print('devig test', {m: res['devig']['test'][m]['log_loss'] for m in DEVIG_METHODS})
+    for per in ('tune', 'test', 'all'):
+        c = res['calibration'][per]
+        print('calib', per, c['slope_only'], c['fav_intercept_slope'], 'fav won', c['fav_win_rate'], 'implied', c['fav_implied'])
+    for k, v in res['stacking'].items():
+        if k == 'n':
+            continue
+        print(f"  stack {k:28s} tune {v['tune']['log_loss']} test {v['test']['log_loss']} d {v['test_ll_minus_close_mult']} {v['coef_logit_[b,se]']}")
+    print('checks', res['checks'])
+
+
 def cmd_fetch(a):
     if not a.skip_sources:
         fetch_sources(a.cache)

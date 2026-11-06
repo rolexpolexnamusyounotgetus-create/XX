@@ -550,35 +550,45 @@
   // A seated figure and the same figure standing (a morph target), built from boxes. Faces +Z, feet at y = 0.
   function personGeometry() {
     var P = [], S = [], N = [], SN = [], PART = [], ARM = [], IDX = [];
-    var m1 = new T.Matrix4(), m2 = new T.Matrix4(), n1 = new T.Matrix3(), n2 = new T.Matrix3(), v = new T.Vector3(), q = new T.Quaternion(), e = new T.Euler(), one = new T.Vector3(1, 1, 1);
-    function box(w, h, d, part, arm, seat, stand, taperTop) {
-      var g = new T.BoxGeometry(w, h, d), pos = g.attributes.position, nor = g.attributes.normal, idx = g.index.array;
-      m1.compose(v.set(seat[0], seat[1], seat[2]), q.setFromEuler(e.set(seat[3] || 0, 0, 0)), one); n1.getNormalMatrix(m1);
-      m2.compose(v.set(stand[0], stand[1], stand[2]), q.setFromEuler(e.set(stand[3] || 0, 0, 0)), one); n2.getNormalMatrix(m2);
-      var base = P.length / 3, keep = [], map = {};
+    var m1 = new T.Matrix4(), m2 = new T.Matrix4(), n1 = new T.Matrix3(), n2 = new T.Matrix3(), v = new T.Vector3(), q = new T.Quaternion(), e = new T.Euler();
+    // add a primitive in its seated and standing placement; seat/stand = [x, y, z, rotX], sc = scale
+    function part(g, partId, arm, seat, stand, opt) {
+      opt = opt || {};
+      var pos = g.attributes.position, nor = g.attributes.normal, idx = g.index ? g.index.array : null, sc = opt.scale || [1, 1, 1];
+      m1.compose(v.set(seat[0], seat[1], seat[2]), q.setFromEuler(e.set(seat[3] || 0, 0, 0)), new T.Vector3(sc[0], sc[1], sc[2])); n1.getNormalMatrix(m1);
+      m2.compose(v.set(stand[0], stand[1], stand[2]), q.setFromEuler(e.set(stand[3] || 0, 0, 0)), new T.Vector3(sc[0], sc[1], sc[2])); n2.getNormalMatrix(m2);
+      var base = P.length / 3, map = {}, kept = 0;
       for (var i = 0; i < pos.count; i++) {
-        if (nor.getY(i) < -0.9) continue;   // the underside is never seen
-        map[i] = base + keep.length; keep.push(i);
+        if (opt.noBottom && nor.getY(i) < -0.9) continue;   // the underside is never seen
+        if (opt.keep && !opt.keep(pos.getX(i), pos.getY(i), pos.getZ(i))) continue;
+        map[i] = base + kept++;
         var x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-        if (taperTop && y > 0) x *= taperTop;
+        if (opt.taper && y > 0) x *= opt.taper;
+        if (opt.waist && y < 0) x *= opt.waist;
         v.set(x, y, z).applyMatrix4(m1); P.push(v.x, v.y, v.z);
         v.set(x, y, z).applyMatrix4(m2); S.push(v.x, v.y, v.z);
         v.set(nor.getX(i), nor.getY(i), nor.getZ(i)).applyMatrix3(n1).normalize(); N.push(v.x, v.y, v.z);
         v.set(nor.getX(i), nor.getY(i), nor.getZ(i)).applyMatrix3(n2).normalize(); SN.push(v.x, v.y, v.z);
-        PART.push(part); ARM.push(arm);
+        PART.push(partId); ARM.push(arm);
       }
-      for (i = 0; i < idx.length; i += 3) if (map[idx[i]] !== undefined && map[idx[i + 1]] !== undefined && map[idx[i + 2]] !== undefined) IDX.push(map[idx[i]], map[idx[i + 1]], map[idx[i + 2]]);
+      var n = idx ? idx.length : pos.count;
+      for (i = 0; i < n; i += 3) {
+        var i0 = idx ? idx[i] : i, i1 = idx ? idx[i + 1] : i + 1, i2 = idx ? idx[i + 2] : i + 2;
+        if (map[i0] !== undefined && map[i1] !== undefined && map[i2] !== undefined) IDX.push(map[i0], map[i1], map[i2]);
+      }
     }
-    var H2 = PI / 2;
+    function box(w, h, d) { return new T.BoxGeometry(w, h, d); }
+    var H2 = PI / 2, ico = new T.IcosahedronGeometry(1, 0);
     [-1, 1].forEach(function (sd) {
-      box(0.115, 0.46, 0.12, 2, 0, [sd * 0.1, 0.24, 0.44], [sd * 0.1, 0.24, 0.0]);                 // shin
-      box(0.14, 0.14, 0.45, 2, 0, [sd * 0.1, 0.53, 0.2], [sd * 0.1, 0.70, 0.0, H2]);               // thigh
-      box(0.1, 0.31, 0.11, 0, sd < 0 ? 1 : 2, [sd * 0.23, 0.85, 0.0], [sd * 0.23, 1.25, 0.0]);     // upper arm (sleeve)
-      box(0.085, 0.28, 0.085, 1, sd < 0 ? 1 : 2, [sd * 0.22, 0.64, 0.16, H2], [sd * 0.23, 0.95, 0.02]);   // forearm and hand
+      part(box(0.115, 0.46, 0.12), 2, 0, [sd * 0.1, 0.24, 0.44], [sd * 0.1, 0.24, 0.0], { noBottom: true });            // shin
+      part(box(0.14, 0.14, 0.45), 2, 0, [sd * 0.1, 0.53, 0.2], [sd * 0.1, 0.70, 0.0, H2], { noBottom: true });          // thigh
+      part(box(0.1, 0.31, 0.11), 0, sd < 0 ? 1 : 2, [sd * 0.23, 0.85, 0.0], [sd * 0.23, 1.25, 0.0], { noBottom: true });  // upper arm (sleeve)
+      part(box(0.08, 0.28, 0.08), 1, sd < 0 ? 1 : 2, [sd * 0.22, 0.64, 0.16, H2], [sd * 0.23, 0.95, 0.02], { noBottom: true });   // forearm and hand
     });
-    box(0.32, 0.53, 0.22, 0, 0, [0, 0.79, -0.02, -0.06], [0, 1.18, 0.0], 1.18);                   // torso, broader at the shoulders
-    box(0.17, 0.2, 0.19, 1, 0, [0, 1.16, 0.0, -0.04], [0, 1.555, 0.0]);                           // face
-    box(0.18, 0.075, 0.2, 3, 0, [0, 1.285, -0.008, -0.04], [0, 1.675, -0.006]);                   // hair or cap
+    part(box(0.3, 0.53, 0.21), 0, 0, [0, 0.79, -0.02, -0.06], [0, 1.18, 0.0], { taper: 1.25, waist: 0.95, noBottom: true });  // torso, broad shoulders
+    part(box(0.07, 0.07, 0.07), 1, 0, [0, 1.07, -0.005, -0.04], [0, 1.465, 0.0], { noBottom: true });                       // neck
+    part(ico, 1, 0, [0, 1.155, 0.005, -0.04], [0, 1.55, 0.005], { scale: [0.088, 0.112, 0.1] });                             // head
+    part(ico, 3, 0, [0, 1.19, -0.012, -0.04], [0, 1.585, -0.01], { scale: [0.094, 0.085, 0.104], keep: function (x, y, z) { return y > -0.2 || z < -0.3; } });   // hair or cap
     var g = new T.InstancedBufferGeometry();
     g.setIndex(IDX);
     g.setAttribute("position", new T.Float32BufferAttribute(P, 3));

@@ -3,7 +3,7 @@
   "name": "Umar Nurmagomedov",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Bantamweight contender coming off the first stoppage loss of his UFC career. Song Yadong knocked him out at 1:48 of round 2 in the UFC Shanghai main event (Aug 29, 2026); ESPN's headline called it a massive upset. Before that he had rebuilt with clear wins over Mario Bautista (UFC 321, Oct 25, 2025; 30-27 x3) and Deiveson Figueiredo (UFC 324, Jan 24, 2026; 30-27 x3). Those followed his only other loss, a title-fight decision to Merab Dvalishvili at UFC 311 (Jan 18, 2025; 47-48, 46-49, 47-48). He is 30, and his UFC record is 8-2 per ufcstats. No booking, ranking or injury news was found in this pass.",
+    "summary": "Bantamweight contender coming off the first stoppage loss of his UFC career. Song Yadong knocked him out at 1:48 of round 2 in the UFC Shanghai main event (Aug 29, 2026); ESPN's headline called it a massive upset. Before that he had rebuilt with clear wins over Mario Bautista (UFC 321, Oct 25, 2025; 30-27 x3) and Deiveson Figueiredo (UFC 324, Jan 24, 2026; 30-27 x3). Those followed his only other loss, a title-fight decision to Merab Dvalishvili at UFC 311 (Jan 18, 2025; 47-48, 46-49, 47-48). He is 30, and his UFC record is 8-2 per ufcstats. Booking, ranking and injury news could not be web-checked (no search access in the research or Nov 6 fact-check passes).",
     "title": null,
     "ranking": null,
     "active": true,
@@ -62,7 +62,7 @@
     "hair": "short dark hair (unverified: from widely published pre-2026 fight photos; no photo was checked in this pass)",
     "facial_hair": "dark beard (unverified, as above)",
     "skin": "light",
-    "tattoos": "not recorded (no source checked)",
+    "tattoos": "unknown (no source checked)",
     "kit": "unknown",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",

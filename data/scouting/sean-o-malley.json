@@ -3,7 +3,7 @@
   "name": "Sean O'Malley",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC bantamweight champion, 2-0 since losing the belt and in contention for another shot. He won the title by KO of Aljamain Sterling at UFC 292 (Aug 19, 2023) and defended it against Marlon Vera at UFC 299 (Mar 9, 2024). He then lost twice to Merab Dvalishvili: a decision at UFC 306 (Sep 14, 2024) and a round-3 guillotine at UFC 316 (Jun 7, 2025). Since then he has beaten Song Yadong (UFC 324, Jan 24, 2026; 29-28 x3) and knocked out Aiemann Zahabi in round 2 at UFC Freedom 250 in Washington, DC (Jun 14, 2026). On Oct 25, 2026 Dana White named O'Malley and Song as the contenders for champion Petr Yan. Betting headlines had Yan favoured in that rematch (O'Malley beat Yan by split decision in 2022). No booking was found. UFC record 12-3 (1 NC) per ufcstats.",
+    "summary": "Former UFC bantamweight champion, 2-0 since losing the belt and in contention for another shot. He won the title by KO of Aljamain Sterling at UFC 292 (Aug 19, 2023) and defended it against Marlon Vera at UFC 299 (Mar 9, 2024). He then lost twice to Merab Dvalishvili: a decision at UFC 306 (Sep 14, 2024) and a round-3 guillotine at UFC 316 (Jun 7, 2025). Since then he has beaten Song Yadong (UFC 324, Jan 24, 2026; 29-28 x3) and knocked out Aiemann Zahabi in round 2 at UFC Freedom 250 in Washington, DC (Jun 14, 2026). On Oct 25, 2026 Dana White named O'Malley and Song as the contenders for champion Petr Yan. Betting headlines had Yan favoured in that rematch (O'Malley beat Yan by split decision in 2022). No booking appeared in the late-October reports cited here. UFC record 12-3 (1 NC) per ufcstats.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -62,7 +62,7 @@
     "hair": "frequently dyed in bright, changing colours; current colour unknown (unverified: from widely published pre-2026 coverage; no photo was checked in this pass)",
     "facial_hair": "often a moustache (unverified, as above)",
     "skin": "light",
-    "tattoos": "not recorded here (no source checked in this pass)",
+    "tattoos": "unknown (no source checked)",
     "kit": "unknown",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",

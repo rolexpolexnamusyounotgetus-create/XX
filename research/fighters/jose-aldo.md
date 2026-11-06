@@ -2,7 +2,7 @@
 
 As of Friday, Nov 6, 2026. "Dataset" means `data/derived/fighters.json` and the raw ufcstats CSVs, current through Oct 31, 2026.
 
-**Limits of this pass.** The shared web-search budget ran out before Aldo could be searched, and direct page fetches (ESPN, Wikipedia, UFC.com) were blocked from this session. Everything below comes from ufcstats data. His current status (retired or active, rankings, bookings, injuries), pro record and appearance are unverified and marked unknown. A follow-up web pass is needed before the page shows a status line for him.
+**Limits of this pass.** The shared web-search budget ran out before Aldo could be searched, and page fetches (Wikipedia, UFC.com) failed, including on a Nov 6 fact-check retry. Everything below comes from ufcstats data. His current status (retired or active, rankings, bookings, injuries), pro record and appearance are unverified and marked unknown. A follow-up web pass is needed before the page shows a status line for him.
 
 ## Current status (dataset only)
 

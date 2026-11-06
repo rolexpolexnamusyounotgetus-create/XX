@@ -1,0 +1,250 @@
+{
+  "slug": "alexander-volkanovski",
+  "name": "Alexander Volkanovski",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 38,
+  "tale_of_tape": {
+    "height_cm": 168,
+    "reach_cm": 180,
+    "stance": "Orthodox",
+    "fight_weight_kg": 66,
+    "source": "data/derived/fighters.json (66 in height, 71 in reach); fight weight = featherweight limit 145 lb"
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "ufc_2026-10_ufc333_mediaday_front.jpg",
+    "zuffa_2025-12_sydney_media_3q.jpg",
+    "commons_2021_appearance.jpg",
+    "ufc_2026-01_ufc325_faceoff_profile.jpg",
+    "ufc_2026-10_ufc333_faceoff_profile_wig.webp",
+    "cageside_2025-04_ufc314_weighin_front.jpg",
+    "cageside_2025-04_ufc314_weighin_3q.jpg",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ap_2026-02_ufc325_celebration_body.jpg",
+    "ufc_2026-02_ufc325_belt_body.jpg",
+    "afp_2026-10_ufc333_action.jpg",
+    "commons_ufc232_2018.jpg",
+    "commons_2013_portrait.jpg"
+  ],
+  "face": {
+    "shape": "Long oval that tapers to the beard. The head is fairly narrow at the cheeks compared with its height, and the shaved skull adds a tall, rounded dome. Lean, with no facial fat.",
+    "jaw": "Angular and moderately wide at the angles, but the beard softens it. In profile the jaw line runs fairly straight from the ear to the chin. The masseters look solid, not bulky.",
+    "chin": "Medium width, projects moderately in profile, slightly long. Always under beard in recent photos; the 2018 stubble photo shows a squared chin with no cleft.",
+    "cheekbones": "Moderately prominent, with clear hollows below them. The hollow deepens when he is at fight weight (Apr 2025 and Oct 2026 weigh-ins).",
+    "brow_ridge": "Prominent. There is a heavy bony shelf over the eyes and a clear notch at the nasal root in profile, so the eyes look deep-set and shadowed under most lighting.",
+    "forehead": "High and broad. It slopes back moderately from the brow ridge into a high, rounded crown. Horizontal forehead lines show in the 2026 media-day still. When his hair was grown (2018) the temples were deeply receded.",
+    "eyes": {
+      "shape": "Almond. Upper lids slightly hooded under the low brows; lower lids show fine lines and mild bags.",
+      "spacing": "Average, about one eye-width apart.",
+      "colour": "Hazel-brown: olive brown in the ESPN studio headshot, lighter grey-hazel in the warm 2018 video light. Closest MakeHuman iris: brownlight.",
+      "set": "Deep-set; outer corners level to very slightly down."
+    },
+    "eyebrows": {
+      "thickness": "Medium-thick, dense",
+      "shape": "Low and fairly straight with a flat arch. The inner ends sit close to the eyes and are often drawn slightly down and together, which gives a stern resting look. The outer third tapers and dips slightly.",
+      "colour": "Dark brown (#4b3427 estimated after removing the warm cast; raw samples #6e4738 ESPN, #aa6f4d 2018 warm light)"
+    },
+    "nose": {
+      "length": "Long; a large share of face height",
+      "width": "Narrow-to-medium bridge, medium base",
+      "bridge": "High and fairly straight from the front",
+      "hump": "Slight convex dorsal line in profile (ufc_2026-01 and ufc_2026-10 profiles); no sharp hump",
+      "tip": "Slightly fleshy and rounded, pointing a little downward, with mild columella show",
+      "fight_damage": "No clear deviation or flattening visible at these resolutions. The bridge may be slightly thickened, but that is not confirmed."
+    },
+    "mouth_lips": "Medium-width mouth. Thin upper lip with a flat, low cupid's bow, partly hidden by the moustache; lower lip slightly fuller. The corners turn slightly down at rest (ESPN headshot, media day). Broad smile in the 2026 celebration photos.",
+    "ears": {
+      "size": "Medium-large",
+      "protrusion": "Clearly stick out from the head, the upper half especially. This is very visible from the front on the shaved head (ESPN headshot, media day) and is a key likeness cue.",
+      "cauliflower_ear": "None obvious. In profile the right ear shows a normal, defined helix and lobe; possible mild thickening of the upper ear cannot be confirmed."
+    },
+    "notable_marks_scars": "No permanent facial scar is clearly visible. Temporary marks are fight or training damage only: a red cut on his left cheekbone in Dec 2021 and red abrasions on his back in the UFC 333 action shot. Expression lines: forehead creases, nasolabial folds and crow's feet, which fit his age (38)."
+  },
+  "hair": {
+    "style": "Clean-shaven head, kept shaved since about 2021. A faint shadow of regrowth along the sides and back follows a horseshoe (male-pattern) outline in the ESPN headshot. Before 2021 (2013, 2018 photos): very short fade with a short top, temples deeply receded.",
+    "length_cm": 0,
+    "colour_hex": "#3e2c22",
+    "colour_note": "Natural colour dark brown, from the 2013 and 2018 photos (raw sample #6c4b2e in warm light). On the shaved scalp render only a very faint grey-brown stubble tint on the sides and back, with the crown smooth.",
+    "hairline": "Shaved, so not visible. The grown-out pattern was strongly receded temples with an M shape (2018).",
+    "texture": "Straight, fine-to-medium (2013, 2018)",
+    "do_not_use": "The platinum-blond hairdo at the UFC 333 ceremonial weigh-in (Oct 23, 2026) was a wig for his Street Fighter film role; he fought bald the next night."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "colour_hex": "#785845",
+    "colour_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "chin",
+        "hex": "#764a3f"
+      },
+      {
+        "photo": "cageside_2025-04_ufc314_weighin_front.jpg",
+        "where": "chin",
+        "hex": "#695b47"
+      },
+      {
+        "photo": "ufc_2026-10_ufc333_faceoff_profile_wig.webp",
+        "where": "jaw/chin",
+        "hex": "#70553f"
+      },
+      {
+        "photo": "zuffa_2025-12_sydney_media_3q.jpg",
+        "where": "chin (daylight; lighter skin shows through)",
+        "hex": "#90654e"
+      }
+    ],
+    "colour_note": "Medium-dark brown with warm, slightly auburn lighter hairs mixed in at the chin. No obvious grey. Moustache colour matches the beard.",
+    "density": "Dense on the chin, moustache and jaw; moderately dense on the upper cheeks with skin showing through.",
+    "shape": "Full short beard joined to the moustache. Natural, fairly low cheek line; neckline trimmed just above the Adam's apple. Length changes by period: about 1-1.5 cm at the Apr 2025 weigh-in, the ESPN headshot and Jan 2026; trimmed to about 0.5-0.8 cm in Oct 2026; heavy stubble in 2018-2021. Default for the current look: 0.8-1 cm."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "zuffa_2025-12_sydney_media_3q.jpg",
+        "where": "forehead, centre (daylight, overcast)",
+        "hex": "#e0beaa"
+      },
+      {
+        "photo": "zuffa_2025-12_sydney_media_3q.jpg",
+        "where": "right cheek above beard line (daylight)",
+        "hex": "#cb9d83"
+      },
+      {
+        "photo": "commons_2021_appearance.jpg",
+        "where": "lower forehead, unclipped area (overcast daylight)",
+        "hex": "#c29387"
+      },
+      {
+        "photo": "commons_2021_appearance.jpg",
+        "where": "left cheekbone, lit side (overcast daylight)",
+        "hex": "#be847c"
+      },
+      {
+        "photo": "commons_2021_appearance.jpg",
+        "where": "untattooed left forearm (overcast daylight)",
+        "hex": "#c39783"
+      },
+      {
+        "photo": "cageside_2025-04_ufc314_weighin_front.jpg",
+        "where": "left cheek above beard (on-camera flash)",
+        "hex": "#d6b194"
+      },
+      {
+        "photo": "cageside_2025-04_ufc314_weighin_front.jpg",
+        "where": "upper chest (flash)",
+        "hex": "#dfc196"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "right cheek (studio light, saturated, reads pink)",
+        "hex": "#c77966"
+      }
+    ],
+    "tone_hex_average_all": "#cd9e88",
+    "tone_hex_average_face": "#cc9a87",
+    "tone_hex_recommended": "#c99a82",
+    "tone_note": "Light-to-medium skin, tanned. Every source has a strong lighting cast (warm studio, flash, purple arena), so the recommended value leans on the two overcast-daylight photos (2021, Dec 2025). The face, scalp and forearms look slightly more sun-tanned and ruddy than the torso.",
+    "undertone": "Warm/olive with a ruddy flush across the nose and cheeks",
+    "freckles_marks": "No prominent freckles or moles visible. Light, even chest hair on the upper chest and sternum (ESPN headshot, weigh-ins); light forearm hair."
+  },
+  "body": {
+    "build": "Compact, muscular featherweight: short (168 cm) but heavy-framed for the height, with long arms (180 cm reach, ape index about +12 cm).",
+    "body_fat": "lean",
+    "body_fat_note": "Visible six-pack and oblique lines at the weigh-ins (Apr 2025, Oct 2026) and on fight night. Fight weight about 66 kg; walking weight is higher.",
+    "shoulders": "Broad for his height, with round, well-developed deltoids and a heavy trapezius sloping into a thick neck.",
+    "chest": "Well-developed, flat pectorals with a clear lower edge and light chest hair.",
+    "arms": "Muscular, long for his height. Strong forearms; biceps peak visible when flexed (Apr 2025).",
+    "waist": "Narrow and tight, giving a clear V-taper from the shoulders.",
+    "legs_calves": "Thick thighs with a visible quad sweep; noticeably well-developed calves and solid lower legs (ESPN stance cutouts). Legs are of normal length or slightly short in proportion to the torso.",
+    "posture": "Upright. In face-offs the chin is slightly tucked and the shoulders relaxed but squared; in the fight stance he is compact and leans slightly forward.",
+    "notable_physique_traits": "Thick neck and traps; long arms for a 168 cm frame; dense, compact musculature rather than a lanky build."
+  },
+  "tattoos": [
+    {
+      "where": "Right arm, full sleeve from shoulder to wrist. It extends onto the front of the right shoulder and collarbone and over the top of the right trapezius / rear shoulder (UFC 333 action shot).",
+      "description": "Black-and-grey work. Upper arm and deltoid: an Asian-style dragon with a scaled body coiling down the arm, the head and a clawed foot at the front of the shoulder reaching toward the collarbone. Around the elbow: a black geometric/tribal band. Forearm: dense shaded black-and-grey imagery (scales, clouds, waves) running to the wrist; it was already present on the forearm in 2013.",
+      "size": "full sleeve"
+    },
+    {
+      "where": "Left arm, torso, back, legs",
+      "description": "None visible. The left arm and torso are clean in the weigh-in and ESPN cutouts.",
+      "size": "none"
+    }
+  ],
+  "kit": {
+    "fight_shorts_current": "Dark green with gold Greek-key (meander) trim bands at the hem and side panels, THE GREAT lettering, crypto.com logo and a black/green UFC waistband (UFC 325 Jan 2026, ESPN stance-left; UFC 333 Oct 2026 green and gold).",
+    "fight_shorts_previous": "Venum green shorts with VOLKANOVSKI in gold/white on the leg (about 2022-2024, ESPN stance-right); Reebok green camo (2018-2020).",
+    "gloves": "Black UFC 4 oz gloves; red wrist tape when in the red (champion) corner.",
+    "weigh_in": "Gold chain with a round gold medallion (Apr 2025) or a thin gold chain (Oct 2026); gold wristwatch.",
+    "colours": [
+      "#1f4d2b dark green",
+      "#c9a227 gold"
+    ]
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.2,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.7,
+    "macro/weightDownM": 0.15,
+    "macro/heightDownM": 0.35,
+    "macro/proportionsUpM": 0.2,
+    "head/head-oval": 0.5,
+    "head/head-square": 0.2,
+    "head/head-scale-vert-incr": 0.2,
+    "head/head-scale-horiz-decr": 0.15,
+    "head/head-fat-decr": 0.45,
+    "forehead/forehead-scale-vert-incr": 0.3,
+    "forehead/forehead-trans-backward": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.35,
+    "eyebrows/eyebrows-trans-down": 0.3,
+    "eyebrows/eyebrows-angle-down": 0.2,
+    "eyes/l-eye-scale-decr": 0.15,
+    "eyes/r-eye-scale-decr": 0.15,
+    "eyes/l-eye-height2-decr": 0.2,
+    "eyes/r-eye-height2-decr": 0.2,
+    "eyes/l-eye-bag-incr": 0.3,
+    "eyes/r-eye-bag-incr": 0.3,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+    "nose/nose-scale-vert-incr": 0.35,
+    "nose/nose-scale-depth-incr": 0.3,
+    "nose/nose-width1-decr": 0.15,
+    "nose/nose-hump-incr": 0.15,
+    "nose/nose-point-down": 0.3,
+    "nose/nose-point-width-incr": 0.15,
+    "mouth/mouth-upperlip-volume-decr": 0.35,
+    "mouth/mouth-lowerlip-volume-decr": 0.1,
+    "mouth/mouth-cupidsbow-decr": 0.2,
+    "mouth/mouth-angles-down": 0.15,
+    "chin/chin-prominent-incr": 0.2,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-width-decr": 0.1,
+    "chin/chin-bones-incr": 0.15,
+    "cheek/l-cheek-bones-incr": 0.3,
+    "cheek/r-cheek-bones-incr": 0.3,
+    "cheek/l-cheek-volume-decr": 0.35,
+    "cheek/r-cheek-volume-decr": 0.35,
+    "neck/neck-scale-horiz-incr": 0.4,
+    "neck/neck-scale-vert-decr": 0.1,
+    "torso/measure-shoulder-dist-incr": 0.3,
+    "torso/torso-vshape-incr": 0.45,
+    "torso/measure-waist-circ-decr": 0.3,
+    "torso/measure-hips-circ-decr": 0.15,
+    "buttocks/buttocks-volume-incr": 0.1
+  },
+  "morphs_unavailable": {
+    "note": "assets/embed/mh-manifest.json has no ears/* targets. If ear targets are added, use about: ears/l|r-ear-flap-incr 0.45 (protrusion), ears/l|r-ear-scale-incr 0.2, ears/l|r-ear-lobe-incr 0.1. Until then, protruding ears are the main likeness cue that is missing.",
+    "arm_length": "Reach is 180 cm at 168 cm height (ape index about +12 cm). No morph controls arm length; if the rig allows, scale the upper-arm and forearm bones up about 3-4%."
+  },
+  "render_hints": {
+    "iris": "brownlight",
+    "skin_base": "mh-skin-middleage_caucasian_male tinted toward #c99a82",
+    "eyebrows": "eyebrow010 or eyebrow001 tinted #4b3427, kept low and straight",
+    "hair": "none (shaved); optional faint scalp-stubble tint on sides and back only",
+    "beard": "short full-beard texture or shell, colour as facial_hair.colour_hex"
+  },
+  "notes": "Confidence: medium-high for overall look (shaved head, short brown beard, long nose, heavy brow, protruding ears, right-arm dragon sleeve, compact muscular build), medium for exact morph values. There are plenty of photos, but only three are freely licensed (Commons 2013, 2018 and 2021); everything from 2025-2026 is reference-only. Watch for: (1) the blond hair in the Oct 2026 face-off is a film-role wig, so keep him bald; (2) every photo has a lighting cast, so trust the daylight samples for skin; (3) beard length changes from fight to fight (0.5-1.5 cm), so pick about 1 cm; (4) the ears stick out but the manifest has no ear morphs; (5) the eyes are deep-set under a heavy brow, and over-sized eyes or a weak brow will lose the likeness quickly; (6) the nose should be long, with a slightly down-pointing tip and a nearly straight bridge, not hooked; (7) the macro height mapping depends on the avatar code, so calibrate macro/heightDownM to a 168 cm standing height."
+}

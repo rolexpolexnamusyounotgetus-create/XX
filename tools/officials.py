@@ -317,29 +317,209 @@ def card_patterns(R, a, b, dA, dB, draw):
     return np.unique(np.concatenate(out))
 
 
-def main_data_check():
-    F, S, D, rows, notes, data_max = build_data()
-    sizes = []
-    for r in rows:
-        tot = 0
-        for (dA, dB) in DED_OPTS:
-            ps = [card_patterns(r["R"], a, b, dA, dB, r["winner"] == -1) for (_, _, a, b) in r["cards"]]
-            if any(p is None for p in ps):
+def fight_triples(r, cap=100000):
+    """Joint (card1, card2, card3) round-outcome patterns consistent with a fight's three cards.
+    Returns (codes [n, R] of o1*25+o2*5+o3, dopt [n]) or None. Deduction options are tried in stages:
+    none/one point per side first; two points and 10-10 rounds only when nothing else fits."""
+    R, draw = r["R"], r["winner"] == -1
+    if r["ded"] is not None:
+        stages = [([(r["ded"][0], r["ded"][1])], False), ([(r["ded"][0], r["ded"][1])], True)]
+        recorded = True
+    else:
+        stages = [(DED_OPTS[:3], False), (DED_OPTS, False), (DED_OPTS[:3], True), (DED_OPTS, True)]
+        recorded = False
+    for opts, allow in stages:
+        P, idx = patterns(R, allow)
+        codes, dcode, n = [], [], 0
+        for (dA, dB) in opts:
+            ps = []
+            for (_, _, a, b) in r["cards"]:
+                out = []
+                for (x, y) in ([(a, b), (b, a)] if (draw and a != b) else [(a, b)]):
+                    v = idx.get((x + dA, y + dB))
+                    if v is not None:
+                        out.append(v)
+                if not out:
+                    ps = None
+                    break
+                ps.append(np.unique(np.concatenate(out)))
+            if ps is None:
                 continue
-            tot += np.prod([len(p) for p in ps])
-        sizes.append(tot)
-    sizes = np.array(sizes)
-    log("triples per fight: mean", sizes.mean(), "max", sizes.max(), "total", sizes.sum(),
-        "zero", (sizes == 0).sum())
-    return rows, sizes
+            n += len(ps[0]) * len(ps[1]) * len(ps[2])
+            if n > cap:
+                return None
+            P1, P2, P3 = (P[q].astype(np.int32) for q in ps)
+            c = (P1[:, None, None, :] * 25 + P2[None, :, None, :] * 5 + P3[None, None, :, :]).reshape(-1, R)
+            codes.append(c)
+            dcode.append(np.full(len(c), 6 if recorded else DED_OPTS.index((dA, dB)), np.int8))
+        if codes:
+            return np.vstack(codes), np.concatenate(dcode)
+    return None
 
 
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", default="all")
-    ap.add_argument("--fetch-wikidata", action="store_true")
-    args = ap.parse_args()
-    if args.fetch_wikidata:
-        fetch_wikidata()
-    if args.stage == "check":
-        main_data_check()
+class Design:
+    """Flat arrays for a set of decisions. Judges not in `jidx` (and unnamed cards) map to the zero row."""
+
+    def __init__(self, rows, jidx, nat, year_max_param, cap=100000):
+        self.rows, kept = [], []
+        X, J, T, home, us, yr, tt, fr_f, tri, tD, tF = [], [], [], [], [], [], [], [], [], [], []
+        nJ = len(jidx)
+        nfr = 0
+        for r in rows:
+            t = fight_triples(r, cap)
+            if t is None:
+                continue
+            codes, dcode = t
+            fi = len(self.rows)
+            self.rows.append(r)
+            R = r["R"]
+            base = (nfr + np.arange(R)) * 125
+            idx = codes + base[None, :]
+            pad = np.full((len(idx), 5 - R), -1, np.int64)
+            tri.append(np.hstack([idx, pad]))
+            tD.append(dcode)
+            tF.append(np.full(len(idx), fi, np.int32))
+            X.append(r["X"])
+            J.append(np.tile([jidx.get(c[0], nJ) for c in r["cards"]], (R, 1)))
+            a, b = nat.get(r["n0"]), nat.get(r["n1"])
+            hd = (int(a == r["country"]) - int(b == r["country"])) if (a and b) else 0
+            home.append(np.full(R, hd, float))
+            us.append(np.full(R, float(r["country"] == "USA")))
+            yr.append(np.full(R, min(r["year"], year_max_param) - YEAR0))
+            tt.append(np.full(R, (r["year"] - 2017) / 10.0))
+            fr_f.append(np.full(R, fi))
+            nfr += R
+        self.nF, self.nfr, self.nJ = len(self.rows), nfr, nJ
+        self.X = np.vstack(X)
+        self.J = np.vstack(J).astype(np.int32)
+        T = np.vstack(tri)
+        T[T < 0] = nfr * 125           # padding points at a constant log 1
+        self.T = T.astype(np.int32)
+        self.tD = np.concatenate(tD).astype(np.int32)
+        self.tF = np.concatenate(tF)
+        self.home = np.concatenate(home)
+        self.us = np.concatenate(us)
+        self.yr = np.concatenate(yr).astype(np.int32)
+        self.t = np.concatenate(tt)
+        self.fr_f = np.concatenate(fr_f).astype(np.int32)
+
+
+YEAR0, NYEARS = 2001, 2027 - 2001
+NODES = 20
+TAU_DEFAULT = {"n": 0.15, "v": 0.15, "p": 0.25, "g": 0.2, "c": 0.4}
+EFF = ["n", "v", "p", "g", "c"]
+
+
+def init_params(nJ):
+    return {"beta": np.array([0.18, 0.13, 0.10, 2.4, 0.28, 0.46, 0.84, 0.3]), "w": np.zeros(3),
+            "log_su": np.log(1.0), "h": np.zeros(2), "c0": -3.0, "th": np.array([0.3, 0.3, 0.3, 0.3]),
+            "cy": np.zeros(NYEARS), "lg_e10": -6.0, "lpi": np.log(np.array([0.01, 0.002, 0.001])),
+            "E": np.zeros((nJ, 5))}
+
+
+def make_model(dz, cfg, tau):
+    """Returns (objective(theta_flat), per-fight loglik(theta_flat), unravel, flat0)."""
+    import jax
+    import jax.numpy as jnp
+    from jax.flatten_util import ravel_pytree
+    jax.config.update("jax_enable_x64", True)
+    xq, wq = np.polynomial.hermite.hermgauss(NODES)
+    xq = jnp.array(xq * np.sqrt(2.0))
+    wq = jnp.array(wq / np.sqrt(np.pi))
+    X = jnp.array(dz.X)
+    Jx = jnp.array(dz.J)
+    T = jnp.array(dz.T)
+    tD = jnp.array(dz.tD)
+    tF = jnp.array(dz.tF)
+    home = jnp.array(dz.home)
+    us = jnp.array(dz.us)
+    yr = jnp.array(dz.yr)
+    tt = jnp.array(dz.t)
+    nF, nfr = dz.nF, dz.nfr
+    tau_v = jnp.array([tau[k] for k in EFF])
+    p0 = init_params(dz.nJ)
+    flat0, unravel = ravel_pytree({k: jnp.array(v, dtype=jnp.float64) for k, v in p0.items()})
+    use_sh, use_j, use_h, use_tr = (float(cfg.get(k, 1)) for k in ("shared", "judges", "home", "trend"))
+
+    def fr_logP(th, extra=None):
+        b = th["beta"]
+        V = X[:, :3] @ b[:3]
+        K = X[:, 3] * b[3]
+        G = X[:, 4:] @ b[4:]
+        Ez = jnp.vstack([th["E"] * use_j, jnp.zeros((1, 5))])
+        eff = Ez[Jx]                                   # nfr x 3 x 5
+        if extra is not None:
+            eff = eff + extra
+        w = th["w"] * use_tr
+        core = (jnp.exp(eff[..., 1] + w[0] * tt[:, None]) * V[:, None] +
+                jnp.exp(eff[..., 2] + w[1] * tt[:, None]) * K[:, None] +
+                jnp.exp(eff[..., 3] + w[2] * tt[:, None]) * G[:, None] +
+                use_h * (th["h"][0] * us + th["h"][1] * (1 - us))[:, None] * home[:, None])
+        su = jnp.exp(th["log_su"]) * use_sh
+        u = su * xq                                    # G
+        eta = jnp.exp(eff[..., 0])[..., None] * (core[..., None] + u[None, None, :])
+        lin = th["th"][0] * V + th["th"][1] * K + th["th"][2] * G
+        cc = th["c0"] + th["cy"][yr]
+        zA = (cc[:, None] + eff[..., 4] + lin[:, None])[..., None] + th["th"][3] * u[None, None, :]
+        zB = (cc[:, None] + eff[..., 4] - lin[:, None])[..., None] - th["th"][3] * u[None, None, :]
+        ls = jax.nn.log_sigmoid
+        e10 = jax.nn.sigmoid(th["lg_e10"])
+        l1 = jnp.log1p(-e10)
+        lp = jnp.stack([l1 + ls(-eta) + ls(zB), l1 + ls(-eta) + ls(-zB), jnp.log(e10) + 0 * eta,
+                        l1 + ls(eta) + ls(-zA), l1 + ls(eta) + ls(zA)], -1)        # nfr x 3 x G x 5
+        return lp
+
+    def fight_ll(th, extra=None):
+        lp = fr_logP(th, extra)
+        P = jnp.exp(lp)
+        Q = jnp.einsum("q,nqa,nqb,nqc->nabc", wq, P[:, 0], P[:, 1], P[:, 2]).reshape(-1)
+        logQ = jnp.concatenate([jnp.log(Q + 1e-300), jnp.zeros(1)])
+        pi = jnp.exp(th["lpi"])
+        p00 = 1 - 2 * pi[0] - 2 * pi[1] - pi[2]
+        lprior = jnp.log(jnp.stack([p00, pi[0], pi[0], pi[1], pi[1], pi[2], jnp.array(1.0)]))
+        tl = logQ[T].sum(1) + lprior[tD]
+        m = jax.ops.segment_max(tl, tF, num_segments=nF)
+        s = jax.ops.segment_sum(jnp.exp(tl - m[tF]), tF, num_segments=nF)
+        return jnp.log(s) + m
+
+    def penalty(th):
+        pen = 0.5 * jnp.sum((th["E"] / tau_v[None, :]) ** 2) * use_j
+        pen += 0.5 * jnp.sum(jnp.diff(th["cy"]) ** 2) / 0.3 ** 2 + 0.5 * jnp.sum(th["cy"] ** 2) / 1.0 ** 2
+        pen += 0.5 * 1e-2 * (jnp.sum(th["w"] ** 2) + jnp.sum(th["h"] ** 2) + jnp.sum(th["th"] ** 2))
+        pen += 0.5 * 1e-4 * jnp.sum(th["beta"] ** 2)
+        pen += 0.5 * ((th["log_su"] - 0.0) / 2.0) ** 2
+        return pen
+
+    def obj(flat):
+        th = unravel(flat)
+        return -jnp.sum(fight_ll(th)) + penalty(th)
+
+    vg = jax.jit(jax.value_and_grad(obj))
+    ll_fn = jax.jit(lambda flat: fight_ll(unravel(flat)))
+
+    def slot_grad(flat):
+        th = unravel(flat)
+        g = jax.grad(lambda ex: jnp.sum(fight_ll(th, ex)))(jnp.zeros((nfr, 3, 5)))
+        return g
+    return vg, ll_fn, unravel, np.asarray(flat0), jax.jit(slot_grad)
+
+
+def fit_model(dz, cfg, tau, flat_init=None, maxiter=3000, verbose=True):
+    from scipy.optimize import minimize
+    vg, ll_fn, unravel, flat0, slot_grad = make_model(dz, cfg, tau)
+    x0 = flat0 if flat_init is None else flat_init
+
+    def f(x):
+        v, g = vg(x)
+        return float(v), np.asarray(g, dtype=float)
+    t0 = time.time()
+    res = minimize(f, x0, jac=True, method="L-BFGS-B", options={"maxiter": maxiter, "maxcor": 30, "gtol": 1e-6})
+    if verbose:
+        log(f"  fit: {res.nit} it, obj {res.fun:.2f}, {time.time() - t0:.0f}s, {res.message}")
+    return res.x, unravel, ll_fn, slot_grad
+
+
+def judge_index(rows, min_cards=1):
+    c = Counter(cd[0] for r in rows for cd in r["cards"] if cd[0] != "unknown")
+    keys = sorted(k for k, n in c.items() if n >= min_cards)
+    return {k: i for i, k in enumerate(keys)}
