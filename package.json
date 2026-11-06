@@ -1,0 +1,12 @@
+{
+  "name": "volk-gaethje-sim",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Volkanovski vs Gaethje: a position-based Monte Carlo fight engine with a 3D cage, a 20,000-fight tally, a model stack and a backtest.",
+  "scripts": {
+    "build": "python3 build.py",
+    "test": "node tests/test_engine2.js 30000",
+    "check": "python3 tests/func_check.py",
+    "serve": "python3 -m http.server 8000"
+  }
+}

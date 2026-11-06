@@ -1,0 +1,54 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>body{margin:0;background:#000}canvas{display:block}</style></head>
+<body>
+<canvas id="c" width="1800" height="1500"></canvas>
+<script src="../vendor/three.min.js"></script>
+<script src="../src/engine2.js"></script>
+<script src="../src/rig3d.js"></script>
+<script src="../src/arena3d.js"></script>
+<script src="../src/director.js"></script>
+<script src="../src/show3d.js"></script>
+<script>
+var cv = document.getElementById("c");
+var show = new FightShow.Show(cv, {}, { maxDpr: 1, shadow: 1024 });
+show.arena.renderer.setPixelRatio(1);
+show.arena.renderer.setSize(1800, 1500, false);
+var E = FightEngine;
+var fight = E.simulate(E.volkGaethje(E.presetKnobs("baseline")), E.makeRng(12345), true);
+var script = FightDirector.build(fight, 12345);
+show.load(script);
+var A = show.A, B = show.B, R = show.R, V3 = THREE.Vector3;
+
+function place() {
+  show.state = "stand";
+  A.pos.set(-0.9, 0, 0); A.yaw = Math.PI / 2; B.pos.set(0.9, 0, 0); B.yaw = -Math.PI / 2;
+  R.pos.set(2.6, 0, -1.6); R.yaw = -0.8;
+  [A, B].forEach(function (a) { a.act = null; a.react = null; a.lunge = 0; for (var k in a.s) a.s[k].reset(); a.snapMode("stand"); });
+  R.snapMode("ref");
+}
+function run(n, dt) { for (var i = 0; i < n; i++) { A.update(dt || 1 / 60); B.update(dt || 1 / 60); R.update(dt || 1 / 60); } }
+function camAt(px, py, pz, lx, ly, lz, fov) { var c = show.arena.camera; c.position.set(px, py, pz); c.lookAt(lx, ly, lz); c.fov = fov || 34; c.aspect = 600 / 500; c.updateProjectionMatrix(); }
+
+var tests = [
+  ["ground side", function () { place(); show.toGround(A, B); run(60); var c = A.pos.clone().lerp(B.pos, 0.5); camAt(c.x + 0.2, 1.3, c.z + 2.6, c.x, 0.3, c.z); }],
+  ["ground other side", function () { place(); show.toGround(A, B); run(60); var c = A.pos.clone().lerp(B.pos, 0.5); camAt(c.x - 0.3, 1.4, c.z - 2.6, c.x, 0.3, c.z); }],
+  ["ground high", function () { place(); show.toGround(A, B); run(60); var c = A.pos.clone().lerp(B.pos, 0.5); camAt(c.x + 1.8, 3.6, c.z + 1.8, c.x, 0.2, c.z); }],
+  ["gnp", function () { place(); show.toGround(A, B); run(60); A.startAction({ type: "gnp", hand: "rear", dur: 0.38, def: B, landed: true }); run(11); var c = A.pos.clone().lerp(B.pos, 0.5); camAt(c.x + 0.2, 1.3, c.z + 2.6, c.x, 0.4, c.z); }],
+  ["sub attempt", function () { place(); show.toGround(A, B); run(60); A.startAction({ type: "sub", dur: 1.3, def: B }); B.startReact({ type: "defend", dur: 1.2 }); run(30); var c = A.pos.clone().lerp(B.pos, 0.5); camAt(c.x + 0.2, 1.3, c.z + 2.6, c.x, 0.3, c.z); }],
+  ["shoot", function () { place(); A.startAction({ type: "shoot", dur: 0.6, drive: 0.9 }); run(30); camAt(0, 1.3, 3.4, 0, 0.7, 0); }],
+  ["sprawl", function () { place(); A.startAction({ type: "shoot", dur: 0.62, drive: 0.5 }); B.startReact({ type: "sprawl", dur: 0.85 }); run(26); camAt(0, 1.3, 3.4, 0, 0.7, 0); }],
+  ["walk", function () { place(); A.snapMode("walk"); B.snapMode("walk"); A.walkTo = new V3(-0.9, 0, 2); for (var i = 0; i < 25; i++) { show.updateWalker(A, 1/60); run(1); } camAt(0, 1.4, 4.4, 0, 0.9, 0); }],
+  ["decision hold", function () { place(); A.pos.set(-0.75, 0, 0.35); B.pos.set(0.75, 0, 0.35); R.pos.set(0, 0, 0.35); A.yaw = B.yaw = R.yaw = 0; A.snapMode("raised"); B.snapMode("raised"); A.raiseSide = 0; B.raiseSide = 1; A.armUp = 1; B.armUp = 0; R.snapMode("ref"); R.hold = [{ a: B, i: 1 }, { a: A, i: 0 }]; run(40); camAt(0, 1.6, 4.0, 0, 1.2, 0); }]
+];
+var r = show.arena.renderer;
+r.setScissorTest(true);
+var W = 600, Hh = 500;
+tests.forEach(function (t, i) {
+  t[1]();
+  var x = (i % 3) * W, y = 1500 - (Math.floor(i / 3) + 1) * Hh;
+  r.setViewport(x, y, W, Hh); r.setScissor(x, y, W, Hh);
+  r.render(show.arena.scene, show.arena.camera);
+});
+window.DONE = true;
+</script>
+</body></html>

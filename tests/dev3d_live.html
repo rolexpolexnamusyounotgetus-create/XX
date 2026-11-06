@@ -1,0 +1,56 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>body{margin:0;background:#000}canvas{display:block}</style></head>
+<body>
+<canvas id="c" width="1800" height="1500"></canvas>
+<script src="../vendor/three.min.js"></script>
+<script src="../src/engine2.js"></script>
+<script src="../src/rig3d.js"></script>
+<script src="../src/arena3d.js"></script>
+<script src="../src/director.js"></script>
+<script src="../src/show3d.js"></script>
+<script>
+var cv = document.getElementById("c");
+var log = [];
+var hooks = {
+  onText: function (b, r, t) { log.push("R" + (r + 1) + " " + t.toFixed(1) + " " + b.txt); },
+  onPhase: function (p, r) { log.push("phase " + p + " r" + (r + 1) + " at " + (window.TT || 0).toFixed(1)); },
+  onRoundEnd: function (r, rd) { log.push("end R" + (r + 1) + " judges " + JSON.stringify(rd.judges)); },
+  onFinish: function (res) { log.push("finish " + JSON.stringify(res)); },
+  onReplay: function (on) { log.push("replay " + on); },
+  onResult: function (res) { log.push("result " + JSON.stringify(res)); }
+};
+var show = new FightShow.Show(cv, hooks, { maxDpr: 1, shadow: 1024 });
+show.arena.renderer.setPixelRatio(1);
+show.arena.renderer.setSize(1800, 1500, false);
+var E = FightEngine, m = E.volkGaethje(E.presetKnobs("baseline"));
+var seed = 1, fight;
+var want = (location.hash || "#kd").slice(1);
+for (seed = 1; seed < 5000; seed++) {
+  fight = E.simulate(m, E.makeRng(seed), true);
+  var r1 = fight.rounds[0].ev;
+  var kd = r1.filter(function (e) { return e.k === "kd" && e.t < 90; }).length;
+  var td = r1.filter(function (e) { return e.k === "td" && e.t < 60; }).length;
+  if (want === "kd" && kd && fight.rounds.length >= 2) break;
+  if (want === "td" && td && fight.rounds.length >= 2) break;
+  if (want === "ko" && fight.method === "KO" && fight.round === 1 && fight.t < 100) break;
+  if (want === "dec" && fight.rounds.length === 5 && !fight.rounds[4].fin) break;
+}
+var script = FightDirector.build(fight, seed);
+log.push("seed " + seed + " " + fight.winner + " " + fight.method + " R" + fight.round + " " + fight.t.toFixed(0));
+show.speed = 8;
+show.load(script);
+show.arena.camera.aspect = 1.2; show.arena.camera.updateProjectionMatrix();
+var r = show.arena.renderer, W = 600, Hh = 500, cell = 0;
+r.setScissorTest(true);
+var origRender = show.arena.render.bind(show.arena);
+var capture = false;
+show.arena.render = function () { if (capture) { var x = (cell % 3) * W, y = 1500 - (Math.floor(cell / 3) + 1) * Hh; r.setViewport(x, y, W, Hh); r.setScissor(x, y, W, Hh); r.render(show.arena.scene, show.arena.camera); } };
+var times = (window.TIMES || [2, 5, 8, 11, 14, 18, 22, 27, 33]), t = 0, dt = 1 / 30, ti = 0, caps = [];
+while (ti < times.length && t < 400) {
+  capture = t + dt >= times[ti];
+  show.frame(dt); t += dt; window.TT = t;
+  if (capture) { caps.push(times[ti] + "s " + show.phase + " " + show.state + " clock " + show.clock.toFixed(1) + " cam " + show.cam.label); cell++; ti++; }
+}
+window.LOG = log; window.CAPS = caps; window.DONE = true;
+</script>
+</body></html>

@@ -1,0 +1,624 @@
+<title>Volk vs Gaethje Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A 3D fight simulation of Volkanovski vs Gaethje at 155 lb, driven by a position-based Monte Carlo engine, with live knobs, a 20,000-fight tally, a model stack and a scouting report.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Big+Shoulders+Display:wght@700;800;900&display=swap">
+<style>
+/* Layout: fight-night production truck. The live 3D feed and its broadcast HUD lead the page; the model's tally, knobs and research sit below like the analysts' desk. */
+:root {
+  --bg: #eceef1;
+  --surface: #f7f8fa;
+  --sunk: #e3e7ec;
+  --ink: #0f1217;
+  --ink-2: #48505a;
+  --muted: #666d77;
+  --line: #d3d8de;
+  --axis: #b4bac2;
+  --bar: #14181e;
+  --bar-2: #222932;
+  --bar-ink: #f2f4f6;
+  --bar-dim: #3a414b;
+  --bar-mute: #8d95a0;
+  --stage: #06070a;
+  --blue: #2a78d6;
+  --red: #e34948;
+  --neutral: #8e959e;
+  --gold: #c99a2e;
+  --on-fill: #ffffff;
+  --focus: #2a78d6;
+  --font-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+  --font-ui: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0d10; --surface: #14171c; --sunk: #1b1f25; --ink: #edf0f3; --ink-2: #b5bcc5; --muted: #8b929c;
+    --line: #272c33; --axis: #3b414a; --bar: #1e232a; --bar-2: #2a3039; --bar-ink: #f2f4f6; --bar-dim: #3e4550; --bar-mute: #8d95a0;
+    --stage: #06070a; --blue: #3987e5; --red: #e66767; --neutral: #6b727c; --gold: #d8ab45; --on-fill: #ffffff; --focus: #6aa7ef;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b0d10; --surface: #14171c; --sunk: #1b1f25; --ink: #edf0f3; --ink-2: #b5bcc5; --muted: #8b929c;
+  --line: #272c33; --axis: #3b414a; --bar: #1e232a; --bar-2: #2a3039; --bar-ink: #f2f4f6; --bar-dim: #3e4550; --bar-mute: #8d95a0;
+  --stage: #06070a; --blue: #3987e5; --red: #e66767; --neutral: #6b727c; --gold: #d8ab45; --on-fill: #ffffff; --focus: #6aa7ef;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--font-ui); -webkit-font-smoothing: antialiased; }
+.page {
+  max-width: 1320px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+  display: grid; gap: 18px;
+}
+button, input { font-family: inherit; }
+button:focus-visible, input:focus-visible, summary:focus-visible, canvas:focus-visible, a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+a { color: var(--ink); text-underline-offset: 2px; }
+p { margin: 0; }
+
+/* Masthead */
+.mast { display: grid; gap: 14px; }
+.mast-copy { display: grid; gap: 10px; min-width: 0; }
+.kicker { margin: 0; font: 600 12px/1.3 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font: 900 clamp(46px, 11.5vw, 108px)/.84 var(--font-display); text-transform: uppercase; letter-spacing: .004em; text-wrap: balance; }
+h1 .vs { display: inline-block; font-weight: 700; font-size: .34em; letter-spacing: .06em; color: var(--muted); transform: translateY(-.62em); margin: 0 .1em; }
+.dek { max-width: 64ch; color: var(--ink-2); text-wrap: pretty; }
+.corners { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.corner { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: grid; gap: 5px; align-content: start; min-width: 0; }
+.tag { justify-self: start; font: 700 11px/1 var(--font-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--on-fill); padding: 5px 7px 4px; border-radius: 3px; }
+.tag-v { background: var(--blue); } .tag-g { background: var(--red); }
+.c-name { font: 800 23px/1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; overflow-wrap: anywhere; }
+.c-meta { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.c-win { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.c-win b { font: 700 30px/1 var(--font-ui); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.c-win span { font-size: 12.5px; color: var(--ink-2); }
+
+/* Broadcast */
+.broadcast { display: grid; gap: 14px; }
+.feed { display: grid; min-width: 0; }
+.bug { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); background: var(--bar); color: var(--bar-ink); border-radius: 6px 6px 0 0; overflow: hidden; }
+.bug-f { display: flex; align-items: center; gap: 8px; padding: 8px 10px; min-width: 0; }
+.bug-f.g { justify-content: flex-end; }
+.bug-sw { width: 4px; align-self: stretch; border-radius: 2px; flex: none; }
+.bug-sw.v { background: var(--blue); } .bug-sw.g { background: var(--red); }
+.bug-n { font: 800 17px/1 var(--font-display); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+.bug-ct { font: 700 15px/1 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--bar-ink); }
+.bug-kd { display: inline-flex; gap: 3px; }
+.bug-kd i { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); display: inline-block; }
+.nm-short { display: none; }
+@media (max-width: 560px) { .nm-full { display: none; } .nm-short { display: inline; } }
+.bug-mid { display: grid; justify-items: center; align-content: center; gap: 5px; padding: 6px 14px; background: var(--bar-2); }
+.bug-clock { font: 700 18px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+.bug-clock small { font: 700 11px/1 var(--font-ui); color: var(--bar-mute); letter-spacing: .08em; margin-right: 6px; }
+.pips { display: flex; gap: 3px; }
+.pip { width: 12px; height: 4px; border-radius: 2px; background: var(--bar-dim); }
+.pip.done { background: var(--bar-mute); } .pip.on { background: var(--bar-ink); }
+.stage { position: relative; background: var(--stage); aspect-ratio: 4 / 3; max-width: 100%; overflow: hidden; }
+@media (min-width: 700px) { .stage { aspect-ratio: 16 / 9; } }
+#gl { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+#gl.free { touch-action: none; cursor: grab; }
+.ov { position: absolute; pointer-events: none; }
+.chip-ov { top: 10px; left: 10px; font: 700 10.5px/1 var(--font-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--bar-ink); background: rgba(10, 12, 16, .62); padding: 6px 8px 5px; border-radius: 3px; }
+.replay-ov { top: 10px; right: 10px; display: flex; gap: 6px; align-items: center; pointer-events: auto; }
+.rp-badge { font: 800 15px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--on-fill); background: var(--red); padding: 6px 9px 5px; border-radius: 3px; }
+.rp-skip { font: 600 12px/1 var(--font-ui); color: var(--bar-ink); background: rgba(10, 12, 16, .7); border: 1px solid rgba(255, 255, 255, .25); border-radius: 4px; padding: 0 10px; min-height: 30px; cursor: pointer; }
+.toast { top: 46px; left: 50%; transform: translateX(-50%); padding: 7px 11px 6px; border-radius: 4px; font: 800 17px/1 var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--on-fill); white-space: nowrap; }
+.toast[data-w="A"] { background: var(--blue); } .toast[data-w="B"] { background: var(--red); }
+.card-ov { left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(12, 14, 18, .82); color: var(--bar-ink); border-radius: 6px; padding: 12px 16px; text-align: center; display: grid; gap: 6px; min-width: 200px; }
+.card-ov .rc-h { font: 900 30px/.95 var(--font-display); text-transform: uppercase; letter-spacing: .03em; }
+.card-ov .rc-s { font: 600 13px/1.35 var(--font-ui); color: var(--bar-mute); font-variant-numeric: tabular-nums; }
+.banner { left: 50%; bottom: 12px; transform: translateX(-50%); width: min(86%, 420px); padding: 10px 14px; border-radius: 6px; text-align: center; color: var(--on-fill); display: grid; gap: 4px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3); pointer-events: auto; }
+.banner[data-w="A"] { background: var(--blue); } .banner[data-w="B"] { background: var(--red); } .banner[data-w="D"] { background: var(--bar-2); }
+.b-head { margin: 0; font: 900 28px/.95 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+.b-sub { margin: 0; font: 600 13.5px/1.35 var(--font-ui); }
+.b-btn { justify-self: center; margin-top: 4px; font: 700 12.5px/1 var(--font-ui); color: var(--ink); background: var(--on-fill); border: 0; border-radius: 4px; padding: 0 12px; min-height: 32px; cursor: pointer; }
+.nogl { inset: 0; display: grid; place-items: center; padding: 20px; color: var(--bar-ink); text-align: center; font-size: 14px; pointer-events: auto; }
+.deck { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; background: var(--bar); color: var(--bar-ink); border-radius: 0 0 6px 6px; padding: 8px 10px; }
+.deck-g { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dbtn { font: 700 12.5px/1 var(--font-ui); color: var(--bar); background: var(--bar-ink); border: 1px solid var(--bar-ink); border-radius: 4px; padding: 0 12px; min-height: 34px; cursor: pointer; }
+.dbtn.ghost { color: var(--bar-ink); background: transparent; border-color: var(--bar-dim); }
+.dbtn:hover { opacity: .9; }
+.dseg { display: inline-flex; border: 1px solid var(--bar-dim); border-radius: 4px; overflow: hidden; }
+.dseg button { font: 600 12px/1 var(--font-ui); background: transparent; color: var(--bar-mute); border: 0; padding: 0 9px; min-height: 32px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.dseg button + button { border-left: 1px solid var(--bar-dim); }
+.dseg button[aria-pressed="true"] { background: var(--bar-ink); color: var(--bar); }
+.dlab { font: 600 10.5px/1 var(--font-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--bar-mute); }
+.dtog { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--font-ui); color: var(--bar-ink); cursor: pointer; }
+.dtog input { accent-color: var(--bar-ink); width: 16px; height: 16px; margin: 0; }
+
+/* Live desk */
+.desk { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.sechead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+h2 { margin: 0; font: 800 27px/1 var(--font-display); text-transform: uppercase; letter-spacing: .015em; text-wrap: balance; }
+h3 { margin: 0; font: 800 18px/1.05 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+.sub { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mini { margin: 0 0 6px; font: 700 11px/1 var(--font-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.fstat { display: grid; gap: 8px; }
+.fs-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.disc { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font: 700 11px/1 var(--font-ui); color: var(--on-fill); flex: none; align-self: center; }
+.disc-v { background: var(--blue); } .disc-g { background: var(--red); }
+.fs-name { font: 700 14px/1 var(--font-ui); }
+.fs-big { margin-left: auto; font: 700 24px/1 var(--font-ui); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.fs-big small { font: 500 11.5px/1 var(--font-ui); color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.fs-row { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fs-row b { color: var(--ink); font-weight: 700; }
+.tgt { display: flex; gap: 2px; height: 10px; }
+.tgt span { height: 100%; border-radius: 2px; min-width: 0; transition: width .2s linear; }
+.t-h { background: var(--ink); } .t-b { background: var(--ink-2); } .t-l { background: var(--muted); } .t-g { background: var(--axis); }
+.tgt-key { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
+.tgt-key i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mtr { display: grid; gap: 4px; min-width: 0; }
+.mtr span { font-size: 11px; color: var(--muted); }
+.track { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.fill { height: 100%; width: 0; border-radius: 3px; transition: width .25s linear; }
+.fill-v { background: var(--blue); } .fill-g { background: var(--red); }
+.form { display: flex; flex-wrap: wrap; gap: 6px; }
+.fchip { font: 600 11.5px/1 var(--font-ui); color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; font-variant-numeric: tabular-nums; background: var(--bg); }
+.fchip b { font-weight: 700; }
+.fchip.v b { color: var(--blue); } .fchip.g b { color: var(--red); }
+.pbp { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 236px; overflow-y: auto; align-content: start; }
+.pbp li { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; font-size: 13.5px; line-height: 1.35; color: var(--ink-2); }
+.pbp li:first-child { color: var(--ink); }
+.pbp li.big { font-weight: 700; color: var(--ink); }
+.pbp li.rnd { color: var(--muted); font-style: normal; border-top: 1px solid var(--line); padding-top: 6px; }
+.ts { font: 600 12px/1.45 var(--font-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.card { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; font-variant-numeric: tabular-nums; font-size: 13px; }
+.card caption { caption-side: top; text-align: left; font: 700 10.5px/1 var(--font-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 0 0 6px; }
+.card th, .card td { text-align: center; padding: 4px 2px; border-top: 1px solid var(--line); }
+.card thead th { border-top: 0; padding-top: 6px; }
+.card thead .disc { width: 16px; height: 16px; font-size: 9.5px; }
+.card tbody th, .card tfoot th { font-weight: 500; color: var(--muted); font-size: 11px; }
+.card td { color: var(--ink-2); }
+.card td.won { font-weight: 700; color: var(--ink); }
+.card tfoot td { font-weight: 800; font-size: 14px; color: var(--ink); }
+
+/* Analyst desk */
+.duo { display: grid; gap: 18px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 8px; }
+.sp { display: grid; gap: 4px; min-width: 0; }
+.sp.g { justify-items: end; text-align: right; } .sp.d { justify-items: center; text-align: center; }
+.sp b { font: 700 36px/1 var(--font-ui); letter-spacing: -.015em; font-variant-numeric: tabular-nums; }
+.sp.d b { font-size: 16px; color: var(--ink-2); }
+.sl-k { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+.sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.sw-v { background: var(--blue); } .sw-g { background: var(--red); } .sw-d { background: var(--neutral); }
+.segwrap { display: grid; gap: 6px; }
+.segbar { position: relative; display: flex; gap: 2px; height: 28px; }
+.part { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font: 700 12.5px/1 var(--font-ui); color: var(--on-fill); min-width: 0; white-space: nowrap; transition: width .2s linear; font-variant-numeric: tabular-nums; }
+.part-v { background: var(--blue); } .part-d { background: var(--neutral); } .part-g { background: var(--red); justify-content: flex-end; }
+.mk { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.mk-note { font-size: 12.5px; color: var(--ink-2); line-height: 1.4; }
+.mk-glyph { display: inline-block; width: 2px; height: 12px; background: var(--ink); vertical-align: -1px; margin-right: 6px; border-radius: 1px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--font-ui); }
+.tip { position: absolute; z-index: 2; pointer-events: none; background: var(--ink); color: var(--bg); font: 500 12px/1.35 var(--font-ui); padding: 6px 8px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, -100%); }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.tile { padding: 10px 8px 0 0; display: grid; gap: 5px; align-content: start; min-width: 0; }
+.tile + .tile { padding-left: 10px; border-left: 1px solid var(--line); }
+.tl { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.tv { font: 700 23px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
+details.tview { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font: 600 13px/1.3 var(--font-ui); color: var(--ink-2); }
+.tbl-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: right; font-weight: 500; vertical-align: top; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data thead th { color: var(--muted); font-size: 12px; font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 600 12.5px/1 var(--font-ui); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; min-height: 34px; cursor: pointer; }
+.chip:hover { background: var(--bg); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.sliders { display: grid; gap: 15px; }
+.sl { display: grid; gap: 3px; }
+.sl-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.sl label { font: 600 14px/1.3 var(--font-ui); }
+.sl output { font: 700 14px/1 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sl input[type="range"] { width: 100%; accent-color: var(--ink); margin: 0; height: 30px; cursor: pointer; }
+.hint { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.note { font-size: 12.5px; color: var(--muted); }
+.btn { font: 600 13px/1 var(--font-ui); color: var(--bg); background: var(--ink); border: 1px solid var(--ink); border-radius: 5px; padding: 0 12px; min-height: 36px; cursor: pointer; }
+.btn.ghost { color: var(--ink); background: transparent; border-color: var(--line); }
+.btn.ghost:hover { background: var(--bg); }
+
+/* Stack, backtest */
+.lede { color: var(--ink-2); max-width: 72ch; text-wrap: pretty; }
+.callout { display: grid; gap: 4px; padding: 12px 14px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); }
+.callout b { font: 900 34px/1 var(--font-display); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+.callout span { font-size: 13px; color: var(--ink-2); }
+.bt td.p { min-width: 92px; }
+.pbar { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.pbar i { display: inline-block; height: 8px; border-radius: 2px; background: var(--ink-2); }
+.pbar.m i { background: var(--axis); }
+.res { display: inline-block; font: 700 11px/1 var(--font-ui); letter-spacing: .04em; padding: 3px 5px; border-radius: 3px; color: var(--on-fill); white-space: nowrap; }
+.res.v { background: var(--blue); } .res.g { background: var(--red); } .res.o { background: var(--bar-2); }
+.res-wrap { margin-top: 4px; }
+.small { font-size: 12px; color: var(--muted); }
+
+/* Scouting */
+.scout { display: grid; gap: 18px; }
+.sc-col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.sc-col h3 { display: flex; align-items: center; gap: 8px; }
+.sc-col p, .sc-col li { color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+.sc-col ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.dist { display: grid; gap: 5px; }
+.dist-row { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+.stackbar { display: flex; height: 14px; gap: 2px; }
+.stackbar span { height: 100%; border-radius: 2px; display: flex; align-items: center; justify-content: center; font: 700 10px/1 var(--font-ui); color: var(--on-fill); overflow: hidden; white-space: nowrap; }
+.tape { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.tape th, .tape td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+.tape th:first-child, .tape td:first-child { text-align: left; color: var(--ink-2); font-weight: 500; }
+.tape thead th { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+/* Research + method */
+.rgrid { display: grid; gap: 14px; }
+.rcard { display: grid; gap: 6px; align-content: start; min-width: 0; padding-top: 10px; border-top: 2px solid var(--ink); }
+.rcard p { color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+.rcard .src-l { font-size: 12.5px; }
+.mbody { display: grid; gap: 12px; max-width: 78ch; }
+.mbody p { color: var(--ink-2); }
+.diagram { overflow-x: auto; }
+.diagram svg { display: block; width: 100%; max-width: 760px; min-width: 520px; height: auto; }
+.src { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 13.5px; display: grid; gap: 5px; }
+footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; }
+
+@media (min-width: 760px) {
+  .duo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .scout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .rgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .mast { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: end; column-gap: 28px; }
+  .broadcast { grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr); align-items: start; }
+  .rgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fill, .part, .tgt span { transition: none; }
+}
+</style>
+
+<div class="page">
+  <header class="mast">
+    <div class="mast-copy">
+      <p class="kicker">Fight engine v2 · 3D simulation · 5 × 5 min · 155 lb</p>
+      <h1>Volkanovski <span class="vs">vs</span> Gaethje</h1>
+      <p class="dek">Every fight below is one roll of a position-by-position model built from both men's UFC careers: footwork, strikes by target, takedowns, cardio, damage and three judges with their own tastes. Watch one in the cage, then let twenty thousand more settle the argument.</p>
+    </div>
+    <div class="corners">
+      <div class="corner">
+        <span class="tag tag-v">Blue corner</span>
+        <div class="c-name">Alexander Volkanovski</div>
+        <div class="c-meta">29–4 · age 38 · 5′6″, 71.5″ reach · UFC featherweight champion</div>
+        <div class="c-win"><b id="wV">–</b><span>of 20,000 model fights</span></div>
+      </div>
+      <div class="corner">
+        <span class="tag tag-g">Red corner</span>
+        <div class="c-name">Justin Gaethje</div>
+        <div class="c-meta">28–5 · age 37 · 5′11″, 70″ reach · UFC lightweight champion</div>
+        <div class="c-win"><b id="wG">–</b><span>of 20,000 model fights</span></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="broadcast" aria-label="Fight night">
+    <div class="feed">
+      <div class="bug" aria-hidden="true">
+        <div class="bug-f v"><span class="bug-sw v"></span><span class="bug-n"><span class="nm-full">Volkanovski</span><span class="nm-short">Volk</span></span><span class="bug-ct" id="bugA">0</span><span class="bug-kd" id="kdDotsA"></span></div>
+        <div class="bug-mid"><span class="bug-clock" id="bugClock"><small id="bugRound">R1</small>5:00</span><span class="pips" id="pips"><span class="pip on"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></span></div>
+        <div class="bug-f g"><span class="bug-kd" id="kdDotsB"></span><span class="bug-ct" id="bugB">0</span><span class="bug-n">Gaethje</span><span class="bug-sw g"></span></div>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="gl" role="img" aria-label="3D view of the simulated fight. Volkanovski wears blue shorts, Gaethje red. The play-by-play beside the cage lists every key moment."></canvas>
+        <span class="ov chip-ov" id="camLabel">Broadcast</span>
+        <div class="ov replay-ov" id="replayOv" hidden><span class="rp-badge">Replay</span><button type="button" class="rp-skip" id="btnSkip">Skip</button></div>
+        <div class="ov toast" id="toast" hidden></div>
+        <div class="ov card-ov" id="roundCard" hidden><span class="rc-h" id="rcHead">Round 1</span><span class="rc-s" id="rcSub"></span></div>
+        <div class="ov banner" id="banner" hidden>
+          <p class="b-head" id="bHead"></p>
+          <p class="b-sub" id="bSub"></p>
+          <button type="button" class="b-btn" id="btnAgain">Next fight</button>
+        </div>
+        <div class="ov nogl" id="noGl" hidden><p>This browser can't draw the 3D cage, so the fight runs on the play-by-play and stats beside it.</p></div>
+      </div>
+      <div class="deck">
+        <div class="deck-g">
+          <button type="button" class="dbtn" id="btnNew">New fight</button>
+          <button type="button" class="dbtn ghost" id="btnPlay">Pause</button>
+          <span class="dlab">Speed</span>
+          <div class="dseg" role="group" aria-label="Fight speed" id="speedSeg">
+            <button type="button" data-speed="2" aria-pressed="false">2×</button>
+            <button type="button" data-speed="5" aria-pressed="true">5×</button>
+            <button type="button" data-speed="10" aria-pressed="false">10×</button>
+            <button type="button" data-speed="30" aria-pressed="false">30×</button>
+          </div>
+        </div>
+        <div class="deck-g">
+          <span class="dlab">Camera</span>
+          <div class="dseg" role="group" aria-label="Camera" id="camSeg">
+            <button type="button" data-cam="auto" aria-pressed="true">Auto</button>
+            <button type="button" data-cam="broadcast" aria-pressed="false">Wide</button>
+            <button type="button" data-cam="cageside" aria-pressed="false">Cage</button>
+            <button type="button" data-cam="overhead" aria-pressed="false">High</button>
+            <button type="button" data-cam="free" aria-pressed="false">Free</button>
+          </div>
+          <label class="dtog"><input type="checkbox" id="replayTog" checked> Replays</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="desk">
+      <div class="panel">
+        <div class="fstat">
+          <div class="fs-head"><span class="disc disc-v" aria-hidden="true">V</span><span class="fs-name">Volkanovski</span><span class="fs-big" id="landA">0<small>landed</small></span></div>
+          <div class="tgt" id="tgtA" aria-hidden="true"><span class="t-h"></span><span class="t-b"></span><span class="t-l"></span><span class="t-g"></span></div>
+          <div class="fs-row" id="rowA"></div>
+          <div class="meters">
+            <div class="mtr"><span>Head damage</span><div class="track"><div class="fill fill-v" id="mHeadA"></div></div></div>
+            <div class="mtr"><span>Legs</span><div class="track"><div class="fill fill-v" id="mLegA"></div></div></div>
+            <div class="mtr"><span>Gas tank</span><div class="track"><div class="fill fill-v" id="mGasA"></div></div></div>
+          </div>
+        </div>
+        <div class="fstat">
+          <div class="fs-head"><span class="disc disc-g" aria-hidden="true">G</span><span class="fs-name">Gaethje</span><span class="fs-big" id="landB">0<small>landed</small></span></div>
+          <div class="tgt" id="tgtB" aria-hidden="true"><span class="t-h"></span><span class="t-b"></span><span class="t-l"></span><span class="t-g"></span></div>
+          <div class="fs-row" id="rowB"></div>
+          <div class="meters">
+            <div class="mtr"><span>Head damage</span><div class="track"><div class="fill fill-g" id="mHeadB"></div></div></div>
+            <div class="mtr"><span>Legs</span><div class="track"><div class="fill fill-g" id="mLegB"></div></div></div>
+            <div class="mtr"><span>Gas tank</span><div class="track"><div class="fill fill-g" id="mGasB"></div></div></div>
+          </div>
+        </div>
+        <div class="tgt-key" aria-hidden="true"><span><i class="t-h"></i>Head</span><span><i class="t-b"></i>Body</span><span><i class="t-l"></i>Legs</span><span><i class="t-g"></i>Ground</span></div>
+        <div>
+          <h3 class="mini">Fight-night form</h3>
+          <div class="form" id="form"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div>
+          <h3 class="mini">Play-by-play</h3>
+          <ol class="pbp" id="pbp" aria-live="polite" aria-relevant="additions"></ol>
+        </div>
+        <div>
+          <h3 class="mini">Judges' cards</h3>
+          <div class="cards" id="cards"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="duo">
+    <section class="panel" aria-labelledby="tally-h">
+      <div class="sechead">
+        <h2 id="tally-h">The tally</h2>
+        <button type="button" class="btn ghost" id="btnRun">Run again</button>
+      </div>
+      <p class="sub" id="runStatus">Simulating 20,000 fights</p>
+      <div class="split">
+        <div class="sp v"><b id="pV">–</b><span class="sl-k"><span class="sw sw-v"></span>Volkanovski</span></div>
+        <div class="sp d"><b id="pD">–</b><span class="sl-k"><span class="sw sw-d"></span>Draw</span></div>
+        <div class="sp g"><b id="pG">–</b><span class="sl-k">Gaethje<span class="sw sw-g"></span></span></div>
+      </div>
+      <div class="segwrap">
+        <div class="segbar" role="img" aria-label="Win split" id="segbar">
+          <div class="part part-v" id="segV" style="width:49%"><span id="segVl"></span></div>
+          <div class="part part-d" id="segD" style="width:2%"></div>
+          <div class="part part-g" id="segG" style="width:49%"><span id="segGl"></span></div>
+          <span class="mk" style="left:35.7%" aria-hidden="true"></span>
+        </div>
+        <p class="mk-note"><span class="mk-glyph" aria-hidden="true"></span>Opening line at FightOdds.io: Gaethje −200, Volk +170, about 36% Volk once the bookmaker's margin is removed.</p>
+      </div>
+      <div>
+        <h3 class="mini">How the fights end</h3>
+        <div class="chart" id="binsChart"></div>
+      </div>
+      <div>
+        <h3 class="mini">Finishes by round</h3>
+        <div class="chart" id="roundChart"></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span class="tl">Goes the full 25 minutes</span><span class="tv" id="tDist">–</span></div>
+        <div class="tile"><span class="tl">Volk wins when it goes to the cards</span><span class="tv" id="tCards">–</span></div>
+        <div class="tile"><span class="tl">Gaethje wins inside the distance</span><span class="tv" id="tGfin">–</span></div>
+      </div>
+      <details class="tview">
+        <summary>Show the tally as a table</summary>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th scope="col">Outcome</th><th scope="col">Share</th><th scope="col">Fights</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section class="panel" aria-labelledby="knobs-h">
+      <div class="sechead">
+        <h2 id="knobs-h">The knobs</h2>
+        <button type="button" class="btn ghost" id="btnReset">Reset</button>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Scenarios"></div>
+      <div class="sliders" id="sliders"></div>
+      <p class="note">Each change re-runs the tally. The next fight in the cage uses the new settings.</p>
+    </section>
+  </div>
+
+  <div class="duo">
+    <section class="panel" aria-labelledby="stack-h">
+      <h2 id="stack-h">The model stack</h2>
+      <p class="lede">No single model gets the last word. Here are four independent reads on Volkanovski's chances, and how I blend them. Betting markets have the best long-run record, so they get real weight, but this price is an opening line on a fight that isn't booked.</p>
+      <div class="chart" id="stackChart"></div>
+      <div class="sl">
+        <div class="sl-top"><label for="k-trust">Weight on the market</label><output id="o-trust" for="k-trust"></output></div>
+        <input type="range" id="k-trust" min="0" max="0.8" step="0.05" value="0.4">
+        <p class="hint">The rest splits two to one between the fight engine and Elo. The blend is an average in log-odds, the standard way to pool probability forecasts.</p>
+      </div>
+      <div class="callout"><b id="blendOut">–</b><span id="blendNote">My number for Volkanovski</span></div>
+    </section>
+
+    <section class="panel" aria-labelledby="bt-h">
+      <h2 id="bt-h">The backtest</h2>
+      <p class="lede">Before trusting the engine on a fight that hasn't happened, I ran it on seven that have, using each man's UFC career rates, and put it next to the betting line for the same fight.</p>
+      <div class="tbl-wrap">
+        <table class="data bt">
+          <thead><tr><th scope="col">Fight and result</th><th scope="col">Engine: winner's chance</th><th scope="col">Market: winner's chance</th></tr></thead>
+          <tbody id="btBody"></tbody>
+        </table>
+      </div>
+      <p class="small" id="btSummary"></p>
+      <p class="small">Treat this as a sanity check, not proof. Seven fights is a tiny sample, mostly upsets, and the career numbers already include these fights. Markets have been well calibrated across thousands of UFC bouts; this engine has seven. On the four fights with full stats, the engine's strike-rate estimates missed by 15% on average with almost no bias.</p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="scout-h">
+    <h2 id="scout-h">Scouting report</h2>
+    <div class="tbl-wrap">
+      <table class="tape">
+        <thead><tr><th scope="col">UFC career</th><th scope="col">Volkanovski</th><th scope="col">Gaethje</th></tr></thead>
+        <tbody>
+          <tr><td>Significant strikes landed per minute</td><td>5.99</td><td>6.29</td></tr>
+          <tr><td>Significant strikes absorbed per minute</td><td>3.31</td><td>6.83</td></tr>
+          <tr><td>Knockdowns per 15 minutes</td><td>0.30</td><td>0.67</td></tr>
+          <tr><td>Takedowns per 15 minutes (accuracy)</td><td>1.63 (34%)</td><td>0.30 (27%)</td></tr>
+          <tr><td>Takedown defense</td><td>67%</td><td>73%</td></tr>
+          <tr><td>Submission attempts per 15 minutes</td><td>0.20</td><td>0.00</td></tr>
+          <tr><td>Height · reach</td><td>5′6″ · 71.5″</td><td>5′11″ · 70″</td></tr>
+          <tr><td>Pro record · losses by KO/TKO</td><td>29–4 · 3</td><td>28–5 · 3</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scout">
+      <div class="sc-col">
+        <h3><span class="disc disc-v" aria-hidden="true">V</span>Volkanovski</h3>
+        <div class="dist">
+          <div class="dist-row"><span>Targets</span><div class="stackbar" id="vTgt"></div></div>
+          <div class="dist-row"><span>Position</span><div class="stackbar" id="vPos"></div></div>
+        </div>
+        <p>Two-time featherweight champion, coming off a second-round TKO of the previously unbeaten Movsar Evloev at UFC 333 on October 24. Before that he beat Diego Lopes twice on the cards. He has offered to move up for Gaethje, or for Arman Tsarukyan if Gaethje retires.</p>
+        <ul>
+          <li>Volume and pace: his output historically climbs late, to about 7.5 significant strikes a minute in fifth rounds.</li>
+          <li>The one-two is his favorite combination and the overhand right his best punch; inside low kicks knock opponents off balance and force resets.</li>
+          <li>Switches stance mid-combination and changes levels to make opponents fear the takedown.</li>
+          <li>Watch for: he leans away in pocket exchanges, especially with his back on the fence, and he was knocked out in back-to-back fights by Islam Makhachev and Ilia Topuria in 2023–24. Both of his fights at 155 were losses to Makhachev.</li>
+        </ul>
+      </div>
+      <div class="sc-col">
+        <h3><span class="disc disc-g" aria-hidden="true">G</span>Gaethje</h3>
+        <div class="dist">
+          <div class="dist-row"><span>Targets</span><div class="stackbar" id="gTgt"></div></div>
+          <div class="dist-row"><span>Position</span><div class="stackbar" id="gPos"></div></div>
+        </div>
+        <p>Undisputed lightweight champion after Ilia Topuria retired on his stool following four rounds at UFC Freedom 250 on June 14. Topuria out-landed him 97 to 91 and scored the only knockdown, then left with two broken orbital bones. Gaethje won the interim title in January over Paddy Pimblett: two knockdowns and three takedowns, while being out-landed 156 to 144.</p>
+        <ul>
+          <li>Throws in bunches: the three-two, left hook, right hook and overhand right, with real one-punch power.</li>
+          <li>Hip-turned leg kicks that compromise the lead leg and set up the head kick that finished Dustin Poirier.</li>
+          <li>Jab feints and level-change feints to draw reactions, then the right hand or uppercut.</li>
+          <li>Watch for: he absorbs 6.83 significant strikes a minute, dips low into knees and uppercuts, and faded late against Max Holloway, who out-landed him 62 to 18 in the fifth. He was suspended pending MRIs on his right wrist and left knee after Topuria.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="small">The fight is not booked. Dana White has said there is little he would refuse Volkanovski; Gaethje has not agreed.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="research-h">
+    <h2 id="research-h">What the research says</h2>
+    <div class="rgrid">
+      <div class="rcard">
+        <h3>Simulate the fight, not the winner</h3>
+        <p>Holmes, McHale and Żychaluk built a Markov chain model that plays each MMA contest out as a fight, estimating each fighter's skills from free public data, and compared it with bookmakers' odds in the <i>International Journal of Forecasting</i> (2023). This engine borrows the idea at a smaller scale; it is my build, not theirs.</p>
+        <p class="src-l"><a href="https://econpapers.repec.org/RePEc:eee:intfor:v:39:y:2023:i:2:p:623-640" target="_blank" rel="noopener">IJF abstract</a></p>
+      </div>
+      <div class="rcard">
+        <h3>Markets are hard to beat</h3>
+        <p>Across 6,190 UFC fights from 2007 to 2022, betting odds showed no systematic bias: the calibration slope's 95% interval ran from 0.98 to 1.08. Favorites won about two-thirds of the time at Pinnacle from 2019 to 2021, and flat-betting every favorite, or every underdog, lost money once the margin was paid.</p>
+        <p class="src-l"><a href="https://agentmma.com/mma-lab/ufc-favorites-win-rate" target="_blank" rel="noopener">AgentMMA summary of the audits</a></p>
+      </div>
+      <div class="rcard">
+        <h3>Ratings top out in the high 60s</h3>
+        <p>FightMatrix found that no rating system it tested, Elo and Glicko included, picks winners much better than the high 60s percent. UFCalendar reports its own index picks the favorite 63% of the time with a Brier score of 0.232 over 26,261 fights, self-reported.</p>
+        <p class="src-l"><a href="https://www.fightmatrix.com/2019/09/18/tuning-glicko-what-i-learned-confirmed/" target="_blank" rel="noopener">FightMatrix</a> · <a href="https://www.ufcalendar.com/elo/accuracy" target="_blank" rel="noopener">UFCalendar</a></p>
+      </div>
+      <div class="rcard">
+        <h3>Judges score damage first</h3>
+        <p>The ABC criteria rank damage, then dominance, then duration; a 10–8 needs significant damage, and control without damage doesn't count. A study of UFC round scoring found head strikes matter most, knockdowns are huge, a takedown is worth about 50 seconds of control, and a submission attempt more than twice a takedown.</p>
+        <p class="src-l"><a href="https://www.abcboxing.com/wp-content/uploads/2025/08/ABC-MMA-Scoring-Criteira-Clarification-7.2025.pdf" target="_blank" rel="noopener">ABC criteria</a> · <a href="https://oconnellryan.github.io/ufc-judging-analysis.html" target="_blank" rel="noopener">UFC judging analysis</a></p>
+      </div>
+      <div class="rcard">
+        <h3>Every judge has a taste</h3>
+        <p>Bayesian hierarchical models of MMA judging show individual judges hold their own preferences for different actions, and those preferences can decide a bout (<i>European Journal of Operational Research</i>, 2024). The engine gives each simulated judge a personal weight on power and on grappling.</p>
+        <p class="src-l"><a href="https://econpapers.repec.org/RePEc:eee:ejores:v:312:y:2024:i:2:p:733-745" target="_blank" rel="noopener">EJOR abstract</a></p>
+      </div>
+      <div class="rcard">
+        <h3>Close fights go long</h3>
+        <p>In 2,941 UFC fights, matchups priced between 30% and 70% ended by KO/TKO about 30% of the time and by unanimous decision about 40%; lopsided ones finished more often. Underdogs over-performed in close fights, but not reliably enough to bet on.</p>
+        <p class="src-l"><a href="https://aggression-to-the-mean.github.io/AttM/for-the-people/arts/2021/02/16/How-Accurate-are-Fight-Odds.html" target="_blank" rel="noopener">Aggression to the Mean</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="method-h">
+    <h2 id="method-h">How the engine works</h2>
+    <div class="diagram" id="diagram"></div>
+    <div class="mbody">
+      <p>Each simulated fight is a continuous-time Markov chain. At any moment the fighters are at distance, in the clinch, or one is on top. Landed strikes, clinch entries and breaks, takedown attempts, stand-ups and submission attempts each arrive at their own rate, so the time to the next event is random, the way it is in a real fight.</p>
+      <p>Landing rates average one man's strikes landed per minute with the other's strikes absorbed, then scale by 0.85, because that average overshot elite fights in the backtest. Each landed strike picks a target from the fighter's real split. Head strikes carry knockdown risk based on career knockdown rates, pulled toward the league average so a short career doesn't read as cannon power, and rising with the defender's accumulated damage, fatigue and a bad leg. Some knockdowns end it; others leave a man rocked for 25 seconds. A shot can also wobble him without dropping him.</p>
+      <p>Leg kicks cost mobility: a slower man throws less, gets hit more and can't sit down on punches, and enough of them can end a fight. Body shots drain the gas tank. Volkanovski's pace climbs by round and Gaethje's fades. Takedown odds combine the shooter's accuracy with the defender's takedown defense. On the ground, the top man strikes and hunts submissions until the bottom man stands, which takes Gaethje about 40 seconds and Volkanovski about 35.</p>
+      <p>Three judges score each round on damage first: head strikes count most, then body, ground and leg strikes, with knockdowns, wobbles, takedowns, control time and submission attempts weighted from the scoring research. Each judge has a personal taste for power and for grappling, plus shared and individual noise. Corners can stop a fight between rounds when the damage piles up. And no one shows up as his exact career average: every simulated fight draws each man's output, power and chin for the night.</p>
+      <h3>Judgment calls, all on the knobs</h3>
+      <p>At 155 the baseline keeps 95% of Volkanovski's output and 85% of his power, and makes him 15% easier to drop than his featherweight self. Gaethje's leg-kick share starts at 18%, between his career 28% and the 6% he threw at Pimblett. Volkanovski shoots three takedowns per 15 minutes, Gaethje one and a half. Judges credit power modestly by default.</p>
+      <details>
+        <summary>Sources</summary>
+        <ul class="src">
+          <li><a href="https://www.cbssports.com/ufc/fighter/50037035/alexander-volkanovski/" target="_blank" rel="noopener">CBS Sports: Volkanovski career stats</a></li>
+          <li><a href="https://www.cbssports.com/ufc/fighter/50037034/justin-gaethje/" target="_blank" rel="noopener">CBS Sports: Gaethje career stats</a></li>
+          <li><a href="https://gidstats.com/fighters/alexander_volkanovski.html" target="_blank" rel="noopener">GidStats: Volkanovski strike targets and positions</a></li>
+          <li><a href="https://gidstats.com/fighters/justin_gaethje.html" target="_blank" rel="noopener">GidStats: Gaethje strike targets and positions</a></li>
+          <li><a href="https://www.ufcalendar.com/events/ufc-325-2026-01-31/alexander-volkanovski-vs-diego-lopes" target="_blank" rel="noopener">UFC Calendar: Volkanovski vs Lopes 2 stats</a></li>
+          <li><a href="https://www.ufcalendar.com/events/ufc-324-2026-01-24/justin-gaethje-vs-paddy-pimblett" target="_blank" rel="noopener">UFC Calendar: Gaethje vs Pimblett stats</a></li>
+          <li><a href="https://www.ufcalendar.com/fighters/alexander-volkanovski" target="_blank" rel="noopener">UFC Calendar: Volkanovski fight history</a></li>
+          <li><a href="https://www.sherdog.com/news/articles/Scouting-Report-Alexander-Volkanovski-190414/amp" target="_blank" rel="noopener">Sherdog: Volkanovski scouting report</a></li>
+          <li><a href="https://www.sherdog.com/news/articles/Scouting-Report-Justin-Gaethje-190610" target="_blank" rel="noopener">Sherdog: Gaethje scouting report</a></li>
+          <li><a href="https://mmasucka.com/opinion/previewing-a-potential-justin-gaethje-vs-alexander-volkanovski-fight/" target="_blank" rel="noopener">MMA Sucka: Gaethje vs Volkanovski preview</a></li>
+          <li><a href="https://www.ufc.com/news/main-event-spotlight-ufc-298-volkanovski-vs-topuria" target="_blank" rel="noopener">UFC.com: Volkanovski's fifth-round output</a></li>
+          <li><a href="https://www.f4wonline.com/news/ufc/justin-gaethje-ilia-topuria-ufc-freedom-250-stats-numbers/" target="_blank" rel="noopener">F4W: Gaethje vs Topuria by the numbers</a></li>
+          <li><a href="https://themaclife.com/sports/mma/gaethje-handed-medical-suspension-after-title-win/" target="_blank" rel="noopener">The Mac Life: Gaethje's medical suspension</a></li>
+          <li><a href="https://heavy.com/sports/ufc/justin-gaethje-betting-favorite-alex-volkanovski/" target="_blank" rel="noopener">Heavy: opening odds via FightOdds.io</a></li>
+          <li><a href="https://combat-edge.com/fighter/justin-gaethje-901/" target="_blank" rel="noopener">Combat Edge: Gaethje Elo</a> · <a href="https://combat-edge.com/news/ufc-333-volkanovski-vs-evloev-results/" target="_blank" rel="noopener">Volkanovski Elo after UFC 333</a></li>
+          <li>Backtest lines: <a href="https://heavy.com/sports/ufc/volkanovski-lopes-ufc-325-betting-odds/" target="_blank" rel="noopener">UFC 325</a> · <a href="https://www.lowkickmma.com/ufc-324-betting-odds-why-paddy-pimblett-never-lost-his-favorite-status-for-ufc-324-showdown/" target="_blank" rel="noopener">UFC 324</a> · <a href="https://heavy.com/sports/ufc/alexander-volkanovski-predicts-topuria-vs-gaethje/" target="_blank" rel="noopener">Freedom 250</a> · <a href="https://lowkickmma.com/justin-gaethje-holloway-ufc-300-betting-odds" target="_blank" rel="noopener">UFC 300</a> · <a href="https://www.actionnetwork.com/mma/ufc-298-odds-alexander-volkanovski-vs-ilia-topuria-saturday-february-17" target="_blank" rel="noopener">UFC 298</a> · <a href="https://heavy.com/sports/ufc/ufc-333-alexander-volkanovski-vs-movsar-evloev-betting-odds/" target="_blank" rel="noopener">UFC 333</a> · <a href="https://www.foxsports.com/stories/ufc/ufc-314-odds-diego-lopes-alexander-volkanovski" target="_blank" rel="noopener">UFC 314</a></li>
+          <li><a href="https://www.yardbarker.com/mma/articles/alexander_volkanovski_wants_superfight_with_justin_gaethje/s1_17701_44437243" target="_blank" rel="noopener">Yardbarker: the fight isn't agreed</a></li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <footer>
+    <p>Built November 6, 2026 from public UFC statistics. A model of the matchup, not a forecast, and not betting advice.</p>
+    <p>The fighters are stylized figures, not likenesses.</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script id="engine-src">
+/*__ENGINE__*/
+</script>
+<script>
+/*__RIG__*/
+</script>
+<script>
+/*__ARENA__*/
+</script>
+<script>
+/*__DIRECTOR__*/
+</script>
+<script>
+/*__SHOW__*/
+</script>
+<script>
+/*__APP__*/
+</script>
