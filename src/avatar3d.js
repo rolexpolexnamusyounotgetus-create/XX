@@ -940,6 +940,8 @@
         var sw = Math.max(g(p, L.eyeLowR, 0.014), g(p, L.eyeLowL, 0.014), g(p, L.cheekBoneR, 0.016), g(p, L.cheekBoneL, 0.016), g(p, L.browOutR, 0.014) * 0.8, g(p, L.browOutL, 0.014) * 0.8);
         m1[o1 + 1] = cut * side; m1[o1 + 2] = sw * side;
         m2[o1 + 2] = 1;
+        // T-zone (forehead, nose, chin, a little of the cheekbones): oilier skin, a tighter sheen
+        m2[o1 + 1] = Math.min(1, g(p, L.forehead, 0.032) + g(p, L.glabella, 0.014) * 0.8 + g(p, L.noseBridge, 0.012) * 0.8 + g(p, L.noseTip, 0.012) + g(p, L.chin, 0.014) * 0.7 + (g(p, L.cheekBoneR, 0.014) + g(p, L.cheekBoneL, 0.014)) * 0.35);
         // lips (soft): between the lip lines, inside the mouth corners, on the front of the face
         var lipC = (L.lipTop.y + L.lipBot.y) / 2 - 0.001, lipH = Math.max(0.0085, (L.lipTop.y - L.lipBot.y) / 2 + 0.006);
         if (p.z > L.lipBot.z - 0.025 && ax < mouthHalf + 0.006) { var le = Math.sqrt(Math.pow(ax / (mouthHalf + 0.002), 2) + Math.pow((p.y - lipC) / (lipH * 1.05), 2)); m2[o1 + 3] = 1 - smooth(0.5, 1.0, le); }
@@ -971,13 +973,28 @@
 
   /* Skin: physically based, wrap lighting for a subsurface feel, sweat as clearcoat, painted stubble,
      beard shading, cuts, swelling and leg-kick redness driven by uniforms. */
+  /* Pore texture tiling for the head and body islands, so a tile covers about 23 mm of skin on both
+     (the head island has roughly twice the body's texel density). */
+  Avatar.prototype.poreFreq = function () {
+    var base = this.base, idx = base.index, pos = this.pos, uv = base.uv, HB = { Head: 1 }, s = [0, 0, 0, 0];
+    for (var i = 0; i < idx.length; i += 6) {
+      var a = idx[i], b = idx[i + 1], k = this.boneW(a, HB) > 0.6 ? 0 : 2;
+      var dx = pos[a * 3] - pos[b * 3], dy = pos[a * 3 + 1] - pos[b * 3 + 1], dz = pos[a * 3 + 2] - pos[b * 3 + 2], du = uv[a * 2] - uv[b * 2], dv = uv[a * 2 + 1] - uv[b * 2 + 1];
+      s[k] += Math.sqrt(dx * dx + dy * dy + dz * dz); s[k + 1] += Math.sqrt(du * du + dv * dv);
+    }
+    var mh = s[1] ? s[0] / s[1] : 1.05, mb = s[3] ? s[2] / s[3] : 1.9;
+    return new T.Vector2(clamp(mh / 0.023, 25, 120), clamp(mb / 0.023, 25, 160));
+  };
   Avatar.prototype.skinMaterial = function (map, opts) {
     var self = this, looks = this.looks;
     var mat = new T.MeshPhysicalMaterial({ map: map, roughness: 0.56, metalness: 0, clearcoat: 0.0, clearcoatRoughness: 0.32, skinning: true });
     mat.color.copy(lin(looks.tint));
     // fighters train under lights and outdoors: a mild tan and less milky environment reflection, so skin
     // keeps its colour under the arena's white key light instead of washing out pale pink (not the referee)
-    if (!this.cfg.ref) { mat.color.multiply(new T.Color(0.96, 0.88, 0.82)); mat.envMapIntensity = 0.75; }
+    // fighters train under lights and outdoors: a slightly deeper tone, a little less milky env reflection;
+    // skin F0 about 0.028 (reflectivity 0.42) instead of the 0.04 plastic default
+    if (!this.cfg.ref) { mat.color.multiply(new T.Color(0.94, 0.92, 0.9)); mat.envMapIntensity = 0.7; }
+    mat.reflectivity = 0.42;
     var X = this.tex || {}, cfg = this.cfg;
     function chan(i) { return new T.Vector4(i === 0 ? 1 : 0, i === 1 ? 1 : 0, i === 2 ? 1 : 0, i === 3 ? 1 : 0); }
     if (X.normal && !this.opts.noNormal) {
@@ -992,7 +1009,7 @@
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
       uMaskOn: { value: maskOn ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
       uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 3 ? chan(looks.scalpCh) : new T.Vector4(0, 0, 0, 0) }, uScalpCh2: { value: looks.scalpCh >= 3 ? chan(looks.scalpCh - 3) : new T.Vector4(0, 0, 0, 0) },
-      uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.55 : 0 }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
+      uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.4 : 0 }, uPoreF: { value: this.poreFreq() }, uDefK: { value: cfg.ref ? 0 : clamp01(0.35 + 0.9 * ((cfg.lean || 0.5) - 0.3)) }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
     };
     mat.onBeforeCompile = function (sh) {
       for (var k in U) sh.uniforms[k] = U[k];
@@ -1001,10 +1018,11 @@
         .replace("#include <begin_vertex>", "#include <begin_vertex>\nvMask = aMask; vMask2 = aMask2; vDecal = aDecal;\nfloat swl = max(aMask.z, 0.0) * uDam.x + max(-aMask.z, 0.0) * uDam.y;\ntransformed += objectNormal * swl * 0.0055;");
       sh.fragmentShader = sh.fragmentShader
         .replace("#include <common>", "#include <common>\nvarying vec4 vMask;\nvarying vec4 vMask2;\nvarying vec4 vDecal;\nuniform float uBeard; uniform float uBeardOp; uniform vec3 uBeardCol; uniform float uScalp; uniform vec3 uHairCol; uniform vec2 uDam; uniform vec2 uLeg; uniform float uSweat; uniform float uFlush;\nuniform sampler2D uTattoo; uniform float uTatOn;\n" +
-          "uniform float uMaskOn; uniform sampler2D uMaskH; uniform sampler2D uMaskH2; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
+          "uniform float uMaskOn; uniform sampler2D uMaskH; uniform sampler2D uMaskH2; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform vec2 uPoreF; uniform float uDefK; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
           "float hh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\n" +
           "float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hh(i), hh(i + vec2(1,0)), f.x), mix(hh(i + vec2(0,1)), hh(i + vec2(1,1)), f.x), f.y); }")
         .replace("#include <map_fragment>", "#include <map_fragment>\n" +
+          "diffuseColor.rgb = mix(vec3(dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722))), diffuseColor.rgb, 0.9);\n" +
           "{ vec2 su = vUv;\n" +
           "  float hfw = length(fwidth(su * 1400.0)); float hatt = 1.0 - smoothstep(0.35, 1.2, hfw);\n" +
           "  float hair = mix(0.5, vn(su * 1400.0), hatt); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
@@ -1041,26 +1059,30 @@
           "    diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.16, 0.2, 0.25), clamp(ink, 0.0, 1.0) * 0.86);\n" +
           "  }\n" +
           "}")
-        .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nif (uSpecOn > 0.5) roughnessFactor = 0.64 - 0.3 * texture2D(uSpec, vUv).g;\nroughnessFactor = mix(roughnessFactor, 0.3, uSweat * (1.0 - gBeard)) + 0.3 * gBeard + 0.2 * gScalp;")
+        .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nif (uSpecOn > 0.5) roughnessFactor = 0.66 - 0.24 * texture2D(uSpec, vUv).g;\nroughnessFactor = mix(roughnessFactor, 0.42, clamp(vMask2.y, 0.0, 1.0) * 0.8);\nroughnessFactor *= 0.92 + 0.16 * vn(vUv * uPoreF.x * 0.4);\nroughnessFactor = mix(roughnessFactor, 0.28, uSweat * (1.0 - gBeard)) + 0.3 * gBeard + 0.2 * gScalp;")
         .replace("#include <lights_physical_fragment>", "#include <lights_physical_fragment>\n#ifdef CLEARCOAT\nmaterial.clearcoat *= 1.0 - 0.92 * max(gBeard, gScalp * 0.6);\n#endif")
         .replace("#include <normal_fragment_maps>", "#ifdef USE_NORMALMAP\n" +
           "{ vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0; mapN.xy *= normalScale;\n" +
           "  float headIsl = smoothstep(0.615, 0.64, vUv.x) * smoothstep(0.02, 0.05, vUv.y) * (1.0 - smoothstep(0.88, 0.91, vUv.y)); mapN.xy *= 1.0 - 0.9 * headIsl;\n" +
-          "  float pfw = length(fwidth(vUv * 46.0)); float patt = 1.0 - smoothstep(0.25, 0.9, pfw);\n" +
-          "  vec3 pN = texture2D( uPores, vUv * 46.0 ).xyz * 2.0 - 1.0; mapN = normalize(vec3(mapN.xy + pN.xy * uPoreAmt * patt * vec2(1.0, -1.0) * (1.0 - 0.7 * gBeard), mapN.z));\n" +
+          "  diffuseColor.rgb *= 1.0 - uDefK * 0.16 * smoothstep(0.04, 0.45, length(mapN.xy)) * (1.0 - headIsl);\n" +
+          "  float pf = mix(uPoreF.y, uPoreF.x, headIsl);\n" +
+          "  float pfw = length(fwidth(vUv * pf)); float patt = 1.0 - smoothstep(0.25, 0.9, pfw);\n" +
+          "  vec3 pN = texture2D( uPores, vUv * pf ).xyz * 2.0 - 1.0; mapN = normalize(vec3(mapN.xy + pN.xy * uPoreAmt * patt * vec2(1.0, -1.0) * (1.0 - 0.7 * gBeard), mapN.z));\n" +
           "  normal = perturbNormal2Arb( -vViewPosition, normal, mapN, faceDirection ); }\n" +
           "#endif\n" +
-          "{ vec3 pp = -vViewPosition; float fw = length(fwidth(vUv * 520.0)); float att = 1.0 - smoothstep(0.12, 0.45, fw);\n" +
-          "  float hgt = vn(vUv * 520.0);\n" +
-          "  vec2 dH = vec2(dFdx(hgt), dFdy(hgt)) * (uPoreAmt > 0.0 ? 0.0005 : 0.0012) * att * (1.0 - 0.6 * gBeard);\n" +
+          // micro relief at pore scale (about 0.4 mm), fading out once it is under a pixel; the old 2-3 mm noise read as orange peel
+          "{ vec3 pp = -vViewPosition; float hI = smoothstep(0.615, 0.64, vUv.x) * smoothstep(0.02, 0.05, vUv.y) * (1.0 - smoothstep(0.88, 0.91, vUv.y)); float mf = mix(uPoreF.y, uPoreF.x, hI) * 55.0;\n" +
+          "  float fw = length(fwidth(vUv * mf)); float att = 1.0 - smoothstep(0.15, 0.5, fw);\n" +
+          "  float hgt = vn(vUv * mf) + 0.5 * vn(vUv * mf * 0.31 + 7.0);\n" +
+          "  vec2 dH = vec2(dFdx(hgt), dFdy(hgt)) * 0.000022 * att * (1.0 - 0.6 * gBeard);\n" +
           "  vec3 dpx = dFdx(pp), dpy = dFdy(pp); vec3 pr1 = cross(dpy, normal), pr2 = cross(normal, dpx); float det = dot(dpx, pr1);\n" +
           "  vec3 grad = sign(det) * (dH.x * pr1 + dH.y * pr2); normal = normalize(abs(det) * normal - grad); }")
         .replace("#include <lights_physical_pars_fragment>", T.ShaderChunk.lights_physical_pars_fragment
-          .replace("vec3 irradiance = dotNL * directLight.color;", "vec3 irradiance = dotNL * directLight.color;\n\tfloat rawNL = dot( geometry.normal, directLight.direction );\n\tvec3 irradianceW = clamp( ( vec3( rawNL ) + vec3( 0.36, 0.16, 0.11 ) ) / vec3( 1.36, 1.16, 1.11 ), 0.0, 1.0 ) * directLight.color;\n\t#ifndef PHYSICALLY_CORRECT_LIGHTS\n\t\tirradianceW *= PI;\n\t#endif")
+          .replace("vec3 irradiance = dotNL * directLight.color;", "vec3 irradiance = dotNL * directLight.color;\n\tfloat rawNL = dot( geometry.normal, directLight.direction );\n\tvec3 irradianceW = clamp( ( vec3( rawNL ) + vec3( 0.26, 0.12, 0.08 ) ) / vec3( 1.26, 1.12, 1.08 ), 0.0, 1.0 ) * directLight.color;\n\t#ifndef PHYSICALLY_CORRECT_LIGHTS\n\t\tirradianceW *= PI;\n\t#endif")
           .replace("reflectedLight.directDiffuse += ( 1.0 - clearcoatDHR ) * irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );", "reflectedLight.directDiffuse += ( 1.0 - clearcoatDHR ) * irradianceW * BRDF_Diffuse_Lambert( material.diffuseColor );")
           .replace("reflectedLight.directDiffuse += irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );", "reflectedLight.directDiffuse += irradianceW * BRDF_Diffuse_Lambert( material.diffuseColor );"));
     };
-    mat.customProgramCacheKey = function () { return "fight-skin-v3" + (mat.normalMap ? "n" : ""); };
+    mat.customProgramCacheKey = function () { return "fight-skin-v4" + (mat.normalMap ? "n" : ""); };
     mat.extensions = { derivatives: true };
     return mat;
   };
@@ -1611,7 +1633,7 @@
         : (!full ? { offs: [0.6, 0.4, 0.6, 0.8, 1].map(function (k, j) { return j === 0 ? 0.6 * mm : k * clamp(bl * 0.38, 2.4, 5.2) * mm; }), cell: 1.5 + 0.04 * bl, sw: 0.085, dens: dB, grids: 3, opac: 2.0 }
           : { offs: [0.7, 0.16, 0.28, 0.4, 0.52, 0.64, 0.76, 0.88, 1].map(function (k, j) { return j === 0 ? 0.7 * mm : k * clamp(bl * 0.3, 5, 10) * mm; }), droop: clamp(bl * 0.12, 2, 5) * mm, cell: 2.2, sw: 0.09, dens: dB, grids: 3, opac: 2.0 });
       bo.slen = bo.cell;
-      this.addCap("beard", covB, Object.assign(bo, { len: lenB, densV: densB, dir: bdir, color: looks.beardColor, grey: looks.beardGrey || 0, lenK: 0.7, edgeK: full ? 1 : 0.7, seed: 11, spec: 0.09, shin: 60 }));
+      this.addCap("beard", covB, Object.assign(bo, { len: lenB, densV: densB, dir: bdir, color: looks.beardColor, grey: looks.beardGrey || 0, lenK: 0.7, edgeK: full ? 1 : 0.7, seed: 11, spec: 0.03, shin: 90 }));
     }
     if (looks.hairMode === "shell" && X.maskHair && X.maskHair2 && looks.scalpCh >= 0 && looks.scalpCh < 4) {
       var maskT = looks.scalpCh < 3 ? X.maskHair : X.maskHair2, ph = texPixels(maskT), covH = new Float32Array(n), ch = looks.scalpCh % 3;
@@ -1637,7 +1659,7 @@
       var ho = buzz ? { offs: [0.45 * mm, Math.max(0.8, topmm * 0.25) * mm, Math.max(1.2, topmm * 0.4) * mm], cell: Math.min(0.75 + 0.1 * topmm, 1.3), sw: 0.06, dens: 1, grids: 3, opac: 2.4 }
         : { offs: [0.5, 0.3, 0.5, 0.75, 1].map(function (k, j) { return j === 0 ? 0.5 * mm : k * clamp(topmm * 0.28, 1.8, 7) * mm; }), cell: 1.25, sw: 0.075, dens: 1, grids: 3, opac: 2.4 };
       ho.slen = ho.cell;
-      this.addCap("hair", covH, Object.assign(ho, { len: lenH, dir: hdir, color: looks.hairColor, grey: 0, lenK: 0.6, edgeK: 0.8, seed: 53, spec: 0.12, shin: 80, maskTex: maskT, maskCh: ch, maskSet: looks.scalpCh < 3 ? 0 : 1 }));
+      this.addCap("hair", covH, Object.assign(ho, { len: lenH, dir: hdir, color: looks.hairColor, grey: 0, lenK: 0.6, edgeK: 0.8, seed: 53, spec: 0.035, shin: 110, maskTex: maskT, maskCh: ch, maskSet: looks.scalpCh < 3 ? 0 : 1 }));
     }
   };
   var CAP_FS_PARS = "varying vec4 vCap;\nvarying vec2 vFlow;\nvarying vec2 vCUv;\n" +
@@ -1703,7 +1725,7 @@
     "\t  float t1 = dot( gHairT, hH ), s1 = sqrt( max( 0.0, 1.0 - t1 * t1 ) );\n" +
     "\t  vec3 tB = normalize( gHairT - geometry.normal * 0.22 ); float t2 = dot( tB, hH ), s2 = sqrt( max( 0.0, 1.0 - t2 * t2 ) );\n" +
     "\t  float nl = smoothstep( -0.1, 0.45, dot( geometry.normal, directLight.direction ) );\n" +
-    "\t  vec3 kk = vec3( pow( s1, uShin ) ) * uSpecK + material.diffuseColor * pow( s2, uShin * 0.3 ) * uSpecK * 2.2;\n" +
+    "\t  vec3 kk = vec3( pow( s1, uShin ) ) * uSpecK + material.diffuseColor * pow( s2, uShin * 0.3 ) * uSpecK * 1.5;\n" +
     "\t  reflectedLight.directSpecular += directLight.color * kk * nl; }\n" +
     "#endif\n";
   Avatar.prototype.addCap = function (name, cov, o) {
@@ -1957,7 +1979,7 @@
     this.hitClip(move, p, side == null ? 1 : side);
     this.applyLooks();
   };
-  Avatar.prototype.setRound = function (r) { this.sweat = clamp01(0.25 + 0.17 * r); this.applyLooks(); };
+  Avatar.prototype.setRound = function (r) { this.sweat = clamp01(0.22 + 0.17 * r); this.applyLooks(); };   // r: 0-based round index (also 0 at the walkout)
   Avatar.prototype.resetDamage = function () { this.damHead = [0, 0]; this.damLeg = [0, 0]; this.damBody = 0; this.sweat = 0.15; this.applyLooks(); };
   Avatar.prototype.applyLooks = function () {
     var U = this.uniforms; if (!U) return;
