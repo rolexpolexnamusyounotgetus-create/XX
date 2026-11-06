@@ -1251,14 +1251,14 @@ GBM_SPACE = {"num_leaves": [4, 7, 11, 15], "min_data_in_leaf": [40, 80, 160, 320
 GBM_FIRST = {"num_leaves": 7, "min_data_in_leaf": 160, "feature_fraction": 0.4, "bagging_fraction": 0.85,
              "lambda_l2": 20.0, "min_gain_to_split": 0.0}
 GBM_LR = 0.04
-GBM_MAX = 800
+GBM_MAX = 600
 GBM_CHECKS = list(range(50, GBM_MAX + 1, 25))
 
 XGB_SPACE = {"max_depth": [2, 3, 4], "min_child_weight": [5, 20, 60], "subsample": [0.7, 0.9],
              "colsample_bytree": [0.25, 0.4, 0.6], "lambda": [1.0, 10.0, 50.0]}
 XGB_FIRST = {"max_depth": 3, "min_child_weight": 20, "subsample": 0.85, "colsample_bytree": 0.4, "lambda": 10.0}
 XGB_ETA = 0.04
-XGB_MAX = 800
+XGB_MAX = 600
 
 
 _TREE_DATA = {}
@@ -1340,7 +1340,7 @@ def main():
     ap.add_argument("--n-lgb", type=int, default=None)
     ap.add_argument("--n-xgb", type=int, default=None)
     ap.add_argument("--boot", type=int, default=2000)
-    ap.add_argument("--jobs", type=int, default=3, help="worker processes for the tree searches (3)")
+    ap.add_argument("--jobs", type=int, default=4, help="worker processes for the tree searches (4)")
     ap.add_argument("--stage2", action="store_true", help="reuse the cached stage-1 fits (out/ml_cache/stage1.pkl)")
     args = ap.parse_args()
     if args.stage2:
@@ -1348,8 +1348,8 @@ def main():
         R["_ctx"]["args"] = args
         stage_two(R)
         return
-    n_lgb = args.n_lgb or (3 if args.quick else 14)
-    n_xgb = args.n_xgb or (2 if args.quick else 6)
+    n_lgb = args.n_lgb or (3 if args.quick else 8)
+    n_xgb = args.n_xgb or (2 if args.quick else 4)
     T0 = time.time()
 
     df, margin_tun, roster_feats, tmeta = get_table(not args.no_cache)

@@ -387,7 +387,9 @@ class Fit:
 
     def prior(self, P):
         lam, lh = self.hp["lam"], self.hp.get("lam_head", 1.0)
-        return (0.5 * lam * ((P["A"] ** 2).sum() + (P["D"] ** 2).sum() + (P["W"] ** 2).sum() + (P["V"] ** 2).sum())
+        ld = lam * self.hp.get("lam_d", 1.0)
+        return (0.5 * lam * ((P["A"] ** 2).sum() + (P["W"] ** 2).sum())
+                + 0.5 * ld * ((P["D"] ** 2).sum() + (P["V"] ** 2).sum())
                 + 0.5 * lh * ((P["ua"] ** 2).sum() + (P["ud"] ** 2).sum() + (P["M"] ** 2).sum())
                 + 0.5e-4 * (P["C"] ** 2).sum())
 
@@ -419,7 +421,8 @@ class Fit:
         Z = np.hstack([AX, DY, self.Zc])
         _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc, self.knb)
         p = Z.shape[1]
-        reg = np.r_[np.full(2 * K, lam), np.full(D.NDIV + 2, 1e-4)]
+        ld = lam * self.hp.get("lam_d", 1.0)
+        reg = np.r_[np.full(K, lam), np.full(K, ld), np.full(D.NDIV + 2, 1e-4)]
         new = {"W": P["W"].copy(), "V": P["V"].copy(), "C": P["C"].copy()}
         for t in range(NT):
             th = np.r_[P["W"][t], P["V"][t], P["C"][t]]
@@ -459,8 +462,9 @@ class Fit:
         Ob = (q[:, None, None] * jb[:, :, None] * jb[:, None, :]).reshape(len(q), -1)
         Hb += (self.Sa @ Oa + self.Sb @ Ob).reshape(F, 2 * K, 2 * K)
         X = np.hstack([P["A"], P["D"]])
-        g += lam * X
-        Hb += lam * np.eye(2 * K)[None]
+        regv = np.r_[np.full(K, lam), np.full(K, lam * self.hp.get("lam_d", 1.0))]
+        g += regv * X
+        Hb += np.diag(regv)[None]
         d = np.linalg.solve(Hb, g[:, :, None])[:, :, 0]
         d[~self.active] = 0.0
         Xn = X - d
@@ -598,3 +602,96 @@ def eval_block(D, P, idx, fidx):
     s = win_logit_emb(P, ea, eb)
     y = D.f_win[fidx]
     return dev, (np.logaddexp(0, s) - y * s), s
+
+
+# ------------------------------------------------------------------------------------------------ walk-forward
+def procrustes(Xn, Xp, w):
+    """Orthogonal R minimising sum_i w_i |Xn_i R - Xp_i|^2."""
+    U, _, Vt = np.linalg.svd((Xn * w[:, None]).T @ Xp)
+    return U @ Vt
+
+
+def align(P, Pref, w):
+    """Rotate P's offense and defense spaces onto Pref's (an equivalent solution: same predictions, same prior)."""
+    if Pref is None:
+        return P
+    RA = procrustes(P["A"], Pref["A"], w)
+    RD = procrustes(P["D"], Pref["D"], w)
+    Q = dict(P)
+    Q["A"], Q["W"], Q["ua"] = P["A"] @ RA, P["W"] @ RA, RA.T @ P["ua"]
+    Q["D"], Q["V"], Q["ud"] = P["D"] @ RD, P["V"] @ RD, RD.T @ P["ud"]
+    Q["M"] = RA.T @ P["M"] @ RD
+    return Q
+
+
+def exposure(D, T_day, hl):
+    """Decay-weighted fight count per fighter as of T (alignment weights, confidence)."""
+    w = np.exp(-math.log(2) / hl * (T_day - D.r_day))
+    w[D.r_day >= T_day] = 0.0
+    return np.bincount(D.r_x, weights=w, minlength=D.F)
+
+
+def refit_dates(start, end, every):
+    """Refit days from start (inclusive) to end (exclusive): 'month', 'quarter', 'half' or 'year'."""
+    step = {"month": 1, "quarter": 3, "half": 6, "year": 12}[every]
+    out = []
+    y, m = start.year, start.month
+    while dt.date(y, m, 1) < end:
+        out.append(dt.date(y, m, 1).toordinal())
+        m += step
+        while m > 12:
+            m -= 12
+            y += 1
+    return out
+
+
+def walk_forward(D, hp, noise, dates, until_day, keep=False, sweeps_cold=30, sweeps_warm=10, tol=1e-6,
+                 baseline=None, verbose=True, log_prefix=""):
+    """Refit at each date (warm-started, aligned to the previous refit); score the rows of each block.
+
+    Returns per-task deviance totals, the matching intercept-only totals (from `baseline`, a dict keyed by
+    block start), the win log-loss terms, and (keep=True) the aligned parameters of every refit."""
+    P_prev = None
+    dev_tot = np.zeros(NT)
+    base_tot = np.zeros(NT)
+    win_ll, win_s, win_f = [], [], []
+    fits = []
+    t0 = time.time()
+    for j, T in enumerate(dates):
+        T1 = dates[j + 1] if j + 1 < len(dates) else until_day
+        f = Fit(D, T, hp, noise, warm=P_prev, max_sweeps=sweeps_cold if P_prev is None else sweeps_warm, tol=tol)
+        P = align(f.P, P_prev, exposure(D, T, hp["hl"])) if P_prev is not None else f.P
+        P_prev = P
+        if keep:
+            fits.append({"T": T, "A": P["A"].copy(), "D": P["D"].copy(), "P": {k: v.copy() for k, v in P.items()
+                                                                              if k not in ("A", "D")},
+                         "sweeps": f.sweeps})
+        if T1 > T:
+            idx, fidx = heldout_rows(D, T, T1)
+            if len(idx):
+                dev, ll, s = eval_block(D, P, idx, fidx)
+                dev_tot += dev
+                if baseline is not None:
+                    base_tot += baseline[T]
+                win_ll.extend(ll.tolist())
+                win_s.extend(s.tolist())
+                win_f.extend(fidx.tolist())
+        if verbose:
+            print("%s refit %s: %d sweeps, %.0fs elapsed" % (log_prefix, dt.date.fromordinal(T), f.sweeps,
+                                                             time.time() - t0), flush=True)
+    return {"dev": dev_tot, "base": base_tot, "win_ll": np.array(win_ll), "win_s": np.array(win_s),
+            "win_f": np.array(win_f, dtype=int), "fits": fits}
+
+
+def baseline_dev(D, noise, dates, until_day, hl=730.0):
+    """Intercept-only (division x era x 5-round) deviance per block: the yardstick for relative deviance."""
+    out = {}
+    P_prev = None
+    for j, T in enumerate(dates):
+        T1 = dates[j + 1] if j + 1 < len(dates) else until_day
+        f = Fit(D, T, {"K": 1, "lam": 1e8, "hl": hl, "win_w": 0.0, "lam_head": 1e8}, noise, warm=P_prev,
+                max_sweeps=8)
+        P_prev = f.P
+        idx, fidx = heldout_rows(D, T, T1)
+        out[T] = deviance(D.Y[idx], D.E[idx], predict_rows(f.P, D, idx)).sum(0) if len(idx) else np.zeros(NT)
+    return out

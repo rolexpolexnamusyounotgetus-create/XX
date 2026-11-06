@@ -1639,3 +1639,203 @@ def _json_default(o):
     if isinstance(o, np.ndarray):
         return o.tolist()
     raise TypeError(type(o))
+
+
+# ============================================================== 10. roster outputs, JS export, check
+JS_SRC = os.path.join(HERE, "methodround_model.js")
+LIVE_FIELD_SINCE = dt.date(2025, 1, 1)
+
+
+def _r(x, k=5):
+    return [round(float(v), k) for v in np.ravel(x)]
+
+
+def export_js_model(D, w, chosen):
+    """Coefficients + preprocessing for tools/methodround_model.js (fit on every fight through the snapshot,
+    same hyperparameters as the held-out model)."""
+    def lr_part(model_lr, scaler, cols, binary=False):
+        part = {"cols": list(cols), "mean": _r(scaler.mean_, 6), "scale": _r(scaler.scale_, 6)}
+        if binary:
+            part["coef"] = _r(model_lr.coef_[1] - model_lr.coef_[0], 6)
+        else:
+            part["coef"] = [_r(r, 6) for r in model_lr.coef_]
+            part["intercept"] = _r(model_lr.intercept_, 6)
+        return part
+
+    c6S, _ = w.parts["S"]
+    c6M, winM = w.parts["SM"]
+    hz = w.haz
+    assert list(hz.lr.classes_) == [0, 1, 2, 3, 4]
+    nb = len(HAZ_COLS)
+    haz = {"cols": HAZ_COLS, "mean": _r(hz.scaler.mean_[:nb], 6), "scale": _r(hz.scaler.scale_[:nb], 6),
+           "coef": [_r(r, 6) for r in hz.lr.coef_], "round_cols": ROUND_COLS}
+    dec = lr_part(hz.dlr, hz.dscaler, HAZ_COLS, binary=True)
+    pri = {}
+    for d, P in D["priors"]["live"].items():
+        pri[d] = {k: (round(float(P[k]), 8) if P.get(k) is not None else None) for k in PRIOR_FIELDS}
+        pri[d]["lbs"] = P.get("lbs")
+    extras = {}
+    for p, st in D["state"].items():
+        P = D["people"].get(p)
+        if not P or not P.get("slug") or p.startswith("amb:") or not st["n_all"]:
+            continue
+        if st["last"] is None or dt.date.fromordinal(st["last"][0]) < dt.date(2019, 1, 1):
+            continue
+        extras[P["slug"]] = [st["streak"], st["last"][1], round(st["fin_min_w"], 2), st["fin_n_w"],
+                             round(st["fin_min_l"], 2), st["fin_n_l"], st["r1_w"], st["r1_l"], round(st["dur"], 2),
+                             st["dur_n"], round(st["opp_elo"] / st["n_all"], 1)]
+    return {
+        "version": 1, "fit_through": D["T"]["date"].max().isoformat(),
+        "note": "evaluate with tools/methodround_model.js (source embedded below); profiles are fighters.json "
+                "entries; extras[slug] = [streak, last result code, finishing-win minutes, finishing wins, "
+                "finished-loss minutes, finished losses, round-1 finishing wins, round-1 finished losses, career "
+                "fight minutes (all bouts), bouts with a time, mean pre-fight opponent Elo]",
+        "keys": KEYS, "shrink": SHRINK, "lbs": B.LBS, "draw_c": round(float(hz.draw_c), 6), "priors": pri,
+        "c6": {"S": lr_part(c6S.lr, c6S.scaler, c6S.cols), "SM": lr_part(c6M.lr, c6M.scaler, c6M.cols)},
+        "win": {"SM": lr_part(winM.lr, winM.sc, winM.cols, binary=True)},
+        "hazard": haz, "decision": dec, "extras": extras,
+        "source": open(JS_SRC).read(),
+    }
+
+
+def _profile_for_js(D, p, snap_day):
+    """A fighters.json-shaped profile from the walk state (for the JS check and for fighters missing from
+    fighters.json)."""
+    st, P = D["state"][p], D["people"][p]
+    T_ = P["tott"] or {}
+    lam = math.log(2) / HALF_LIFE
+    S = st["S"] * (math.exp(-lam * (snap_day - st["t"])) if st["t"] is not None and snap_day > st["t"] else 1.0)
+    rec = {k: int(st["rec"].get(k, 0)) for k in REC_KEYS}
+    return {"S": _r(S, 8), "C": _r(st["C"], 8), "record": rec, "n_fights": st["n_all"], "n_5rd": st["n5"],
+            "ko_losses": st["ko_losses"], "dob": T_["dob"].isoformat() if T_.get("dob") else None,
+            "elo": float(D["elo_now"][p]), "height_in": T_.get("height_in"), "reach_in": T_.get("reach_in"),
+            "stance": T_.get("stance") or "", "last_fight": dt.date.fromordinal(st["last"][0]).isoformat(),
+            "division": B.mode_recent(st["hist"], snap_day)}
+
+
+def live_predict(D, w, pairs, variant="S", pm=None):
+    LT = live_frame(D, pairs, "live")
+    PRl = prior_frame(LT, D["priors"])
+    FXl, FYl, _, _ = build_features(LT, PRl)
+    FXl, FYl = add_market_features(LT, FXl, FYl, pm if pm is not None else pd.Series(np.nan, index=LT.index))
+    Dl = {"T": LT, "FX": FXl, "FY": FYl}
+    P, P6, H = w.predict(Dl, np.ones(len(LT), bool), variant)
+    return LT, P
+
+
+def verify_js(js_model, D, w, n=40, seed=3):
+    """Python vs node on random live matchups (fight date = snapshot so S decays identically)."""
+    import subprocess
+    import tempfile
+    rng = np.random.default_rng(seed)
+    snap = D["T"]["date"].max()
+    snap_day = snap.toordinal()
+    slug2p = {D["people"][p]["slug"]: p for p in D["state"] if D["people"].get(p, {}).get("slug")}
+    cands = [s for s in js_model["extras"] if s in slug2p and D["state"][slug2p[s]]["last"][0] >= dt.date(2023, 1, 1).toordinal()]
+    pairs, profs = [], []
+    divs = ["Lightweight", "Heavyweight", "Women's Strawweight", "Flyweight", "Catch Weight", "Middleweight"]
+    for k in range(n):
+        a, b = rng.choice(cands, 2, replace=False)
+        q = {"a": slug2p[a], "b": slug2p[b], "division": divs[k % len(divs)], "rounds": 5 if k % 3 == 0 else 3,
+             "title": k % 4 == 0, "date": snap}
+        pairs.append(q)
+        profs.append({"a": _profile_for_js(D, q["a"], snap_day), "b": _profile_for_js(D, q["b"], snap_day),
+                      "opts": {"slugA": a, "slugB": b, "division": q["division"], "rounds": q["rounds"],
+                               "title": q["title"], "date": snap.isoformat(),
+                               "pMarketA": (0.3 + 0.4 * (k % 5) / 4) if k % 2 else None}})
+    pm = pd.Series([pr["opts"]["pMarketA"] if pr["opts"]["pMarketA"] is not None else np.nan for pr in profs])
+    LT, PS = live_predict(D, w, pairs, "S")
+    _, PM = live_predict(D, w, pairs, "SM", pm)
+    with tempfile.TemporaryDirectory() as td:
+        mp = os.path.join(td, "model.json")
+        cp = os.path.join(td, "cases.json")
+        json.dump({k: v for k, v in js_model.items() if k != "source"}, open(mp, "w"), default=_json_default)
+        json.dump(profs, open(cp, "w"), default=_json_default)
+        code = ("const MR=require(%s);const m=require(%s);const cases=require(%s);const mr=MR.create(m);"
+                "console.log(JSON.stringify(cases.map(c=>{const o=mr.predict(c.a,c.b,c.opts);"
+                "return {v:o.variant,b7:o.bins7,fr:o.finRound};})));") % (json.dumps(JS_SRC), json.dumps(mp),
+                                                                           json.dumps(cp))
+        try:
+            res = subprocess.run(["node", "-e", code], capture_output=True, text=True, timeout=120)
+            js = json.loads(res.stdout)
+        except Exception as e:  # node missing or failed
+            return {"ok": False, "error": str(e)[:300]}
+    worst = 0.0
+    for k, o in enumerate(js):
+        P = PM[k] if o["v"] == "SM" else PS[k]
+        Mg = marginals(P[None, :])
+        py7 = [Mg[c][0] for c in ("XKO", "XSUB", "XDEC", "DRAW", "YDEC", "YSUB", "YKO")]
+        R = pairs[k]["rounds"]
+        pyfr = list(Mg["fin_r"][0, :R])
+        worst = max(worst, max(abs(a - b) for a, b in zip(py7 + pyfr, o["b7"] + o["fr"])))
+    return {"ok": worst < 2e-3, "cases": len(js), "max_abs_diff": round(worst, 6),
+            "note": "Python live model vs tools/methodround_model.js on random roster matchups (S and SM variants); "
+                    "differences come from fighters.json-style rounding of S/C/Elo"}
+
+
+def roster_outputs(D, w, args):
+    """Per fighter (fighters.json slug): P(win/lose by KO, SUB, decision) and P(finish) averaged over every
+    fighter in his division active since LIVE_FIELD_SINCE (3 rounds, non-title, fight on the snapshot date),
+    stats-only variant. Plus the default matchup."""
+    snap = D["T"]["date"].max()
+    fj = json.load(open(FIGHTERS))["fighters"]
+    slug2p = {D["people"][p]["slug"]: p for p in D["state"] if D["people"].get(p, {}).get("slug")}
+    by_div = defaultdict(list)
+    field = defaultdict(list)
+    for slug, prof in fj.items():
+        p = slug2p.get(slug)
+        dv = prof.get("division")
+        if p is None or dv not in B.LBS or dv in B.NON_DIV:
+            continue
+        by_div[dv].append(p)
+        if prof.get("last_fight") and prof["last_fight"] >= LIVE_FIELD_SINCE.isoformat():
+            field[dv].append(p)
+    roster = {}
+    for dv, members in sorted(by_div.items()):
+        fl = field[dv]
+        if len(fl) < 5:
+            continue
+        pairs = [{"a": a, "b": b, "division": dv, "rounds": 3, "title": False, "date": snap}
+                 for a in members for b in fl if a != b]
+        if args.quick:
+            pairs = pairs[:2000]
+        out = []
+        for i in range(0, len(pairs), 20000):
+            LT, P = live_predict(D, w, pairs[i:i + 20000], "S")
+            out.append(P)
+        P = np.vstack(out)
+        Mg = marginals(P)
+        A = np.array([q["a"] for q in pairs[:len(P)]])
+        for a in np.unique(A):
+            m = A == a
+            slug = D["people"][a]["slug"]
+            g = lambda k: round(float(Mg[k][m].mean()), 4)
+            pa = g("pA")
+            roster[slug] = {"division": dv, "n_opponents": int(m.sum()),
+                            "vs_field": {"win": pa, "win_ko": g("XKO"), "win_sub": g("XSUB"), "win_dec": g("XDEC"),
+                                         "lose_ko": g("YKO"), "lose_sub": g("YSUB"), "lose_dec": g("YDEC"),
+                                         "draw": g("DRAW"), "finish": g("FIN"), "ko": g("KO"), "sub": g("SUB"),
+                                         "dec": g("DEC")},
+                            "method_given_win": {"ko": round(g("XKO") / pa, 4), "sub": round(g("XSUB") / pa, 4),
+                                                 "dec": round(g("XDEC") / pa, 4)}}
+    # default matchup (A = Volkanovski, blue in the page)
+    matchups = {}
+    va, ga = slug2p.get("alexander-volkanovski"), slug2p.get("justin-gaethje")
+    if va and ga:
+        q = [{"a": va, "b": ga, "division": "Lightweight", "rounds": 5, "title": True, "date": dt.date(2026, 11, 6)}]
+        for variant, pmv, note in (("S", None, "stats only"),
+                                   ("SM", 0.372, "with the no-vig market price Volkanovski 37.2% (openers Oct 24-25, "
+                                                 "2026, docs/BACKLOG.md)")):
+            LT, P = live_predict(D, w, q, variant, None if pmv is None else pd.Series([pmv]))
+            Mg = marginals(P)
+            f = lambda k: round(float(Mg[k][0]), 4)
+            matchups["alexander-volkanovski__justin-gaethje__%s" % variant] = {
+                "A": "alexander-volkanovski", "B": "justin-gaethje", "division": "Lightweight", "rounds": 5,
+                "title": True, "variant": variant, "note": note,
+                "bins7": {"A_KO": f("XKO"), "A_SUB": f("XSUB"), "A_DEC": f("XDEC"), "draw": f("DRAW"),
+                          "B_DEC": f("YDEC"), "B_SUB": f("YSUB"), "B_KO": f("YKO")},
+                "p_A": f("pA"), "p_B": f("pB"), "p_finish": f("FIN"), "p_ko": f("KO"), "p_sub": f("SUB"),
+                "p_dec": f("DEC"), "finish_round": _r(Mg["fin_r"][0, :5], 4),
+                "A_finish_round": _r((P[0, I_XKO:I_XKO + 5] + P[0, I_XSUB:I_XSUB + 5]), 4),
+                "B_finish_round": _r((P[0, I_YKO:I_YKO + 5] + P[0, I_YSUB:I_YSUB + 5]), 4)}
+    return roster, matchups
