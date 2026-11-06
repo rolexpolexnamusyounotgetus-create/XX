@@ -10,8 +10,8 @@
     "next_fight": null,
     "injuries": [
       { "what": "fight-week illness before UFC 333 (flu or chest infection by different accounts); he declined medication. No post-fight injury was reported, and no UFC 333 medical-suspension list was found (the Abu Dhabi commission's list was not published in any source checked)", "when": "2026-10", "source": "https://www.sherdog.com/news/news/Alexander-Volkanovski-says-he-was-sick-at-UFC-333-Too-easy-otherwise-203333" },
-      { "what": "long-term left-eye issue disclosed in Feb 2026; he lost vision in the left eye during UFC 314 after what he told FOX Australia was a fourth-round punch", "when": "2026-02", "source": "https://www.si.com/fannation/mma/news/alex-volkanovski-injuries-ufc-314" },
-      { "what": "possible broken hand at UFC 314 (coach Joe Lopez: 'might have broke his hand'); never confirmed by a scan report in any source found", "when": "2025-04", "source": "https://middleeasy.com/mma-news/coach-says-alexander-volkanovski-might-have-broke-his-hand-ufc-314/" }
+      { "what": "described a long-term eye issue in Feb 2026 (Bloody Elbow headline as cited in research/volkanovski.md; the page blocks scripts and was not re-read)", "when": "2026-02", "source": "https://bloodyelbow.com/2026/02/28/alexander-volkanovski-reveals-long-term-eye-issue-while-defending-tom-aspinall-from-harsh-backlash/" },
+      { "what": "UFC 314: lost vision in the left eye from what he told FOX Australia was a fourth-round punch; his coach said he might have broken his hand, never confirmed in any source found", "when": "2025-04", "source": "https://www.si.com/fannation/mma/news/alex-volkanovski-injuries-ufc-314" }
     ],
     "sources": [
       "https://en.wikipedia.org/wiki/Alexander_Volkanovski",

@@ -52,7 +52,7 @@ His Elo of 1742 is fourth among lightweights in the file. UFC record 9-1: 6 KO/T
 - Status: return timeline updated with White's Nov 4 comments and Topuria's ABC interview (April 2027, Pimblett, retirement mention). Nothing booked.
 - Ranking: No. 1 lightweight contender and No. 5 P4P, media panel Nov 3, 2026, confirmed by two mirrors; ufc.com still blocks scripts.
 - Record: 17-1 (UFCalendar, ufcrankings.org).
-- Freedom 250 judges' cards added (39-37 x3 for Gaethje after R4).
+- Freedom 250 judges' cards added (39-37 x3 for Gaethje after R4). Cageside's round-by-round, read in full, says the R2 knockdown came from a body shot, after which he took mount and threatened an armbar and a triangle (ufcstats logs no submission attempt), and that between R3 and R4 his corner called for the doctor while he said he could not see out of his eye; he appeared to retire on the stool after R4, announced as a corner stoppage ([Cageside](https://cagesidepress.com/2026/06/15/ufc-freedom-250-justin-gaethje-breaks-ilia-topuria-to-claim-undisputed-gold/)).
 - Suspension source switched to a page that loads (Yahoo/LA Times); F4W blocks scripts.
 - Appearance: kit resolved from ESPN cutouts (previously "unknown"); tattoo list extended. Still unknown: how the orbital fractures affect him.
 
@@ -87,3 +87,4 @@ His Elo of 1742 is fourth among lightweights in the file. UFC record 9-1: 6 KO/T
 - https://a.espncdn.com/i/headshots/mma/players/full/4350812.png
 - https://a.espncdn.com/i/headshots/mma/players/stance/left/4350812.png
 - https://a.espncdn.com/i/headshots/mma/players/stance/right/4350812.png
+- https://cagesidepress.com/2026/06/15/ufc-freedom-250-justin-gaethje-breaks-ilia-topuria-to-claim-undisputed-gold/

@@ -112,7 +112,7 @@
   function meanLum(img) {
     try {
       var c = root.document.createElement("canvas"); c.width = c.height = 64;
-      var x = c.getContext("2d"); x.drawImage(img, 0, 0, 64, 64);
+      var x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(img, 0, 0, 64, 64);
       var d = x.getImageData(0, 0, 64, 64).data, sum = 0, n = 0;
       for (var i = 0; i < d.length; i += 4) if (d[i + 3] > 128) {
         var r = Math.pow(d[i] / 255, 2.2), g = Math.pow(d[i + 1] / 255, 2.2), b = Math.pow(d[i + 2] / 255, 2.2);
@@ -470,7 +470,7 @@
     if (cfg.heightRaw !== h && it === 3) { cfg.heightRaw = h; base.evaluate(cfg, P); S = base.stature(P); }
     var sc = target / S, i;
     for (i = 0; i < P.length; i++) P[i] *= sc;
-    this.P = P;
+    this.P = P; this.scale = sc;
     // 2. joints from helper vertices
     var man = base.man, J = {};
     function mean(idx, out) { out.set(0, 0, 0); for (var k = 0; k < idx.length; k++) { out.x += P[idx[k] * 3]; out.y += P[idx[k] * 3 + 1]; out.z += P[idx[k] * 3 + 2]; } return out.divideScalar(idx.length); }
@@ -762,13 +762,39 @@
     g.setAttribute("aMask2", new T.BufferAttribute(a2, 4));
     g.setAttribute("aDecal", new T.BufferAttribute(this.decals(), 4));
     g.setIndex(new T.BufferAttribute(base.index.slice(), 1));
+    this.exprDelta = this.expressionDeltas();
+    var self2 = this;
+    g.morphAttributes.position = this.exprDelta.map(function (d) {
+      var arr = new Float32Array(n * 3);
+      for (var j = 0; j < n; j++) { var m = mh[j] * 3; arr[j * 3] = d[m]; arr[j * 3 + 1] = d[m + 1]; arr[j * 3 + 2] = d[m + 2]; }
+      return new T.BufferAttribute(arr, 3);
+    });
+    g.morphTargetsRelative = true;
     this.bodyGeo = g;
     var mat = this.skinMat = this.skinMaterial(map);
+    mat.morphTargets = true;
     var mesh = this.body = new T.SkinnedMesh(g, mat);
     mesh.name = "body";
+    mesh.updateMorphTargets();
+    this.morphMeshes = [mesh];
     this.group.add(mesh);
     mesh.bind(this.skeleton, new M4());
     this.meshes.push(mesh); this.disposables.push(g, mat);
+  };
+
+  /* Expression targets as full-shape deltas (MakeHuman/MPFB expression units, scaled to this body):
+     0 blink (both eyes), 1 jaw open, 2 brows down. */
+  var EXPR = [["expr/eye-left-closure", "expr/eye-right-closure"], ["expr/mouth-open"], ["expr/eyebrows-left-down", "expr/eyebrows-right-down"]];
+  Avatar.prototype.expressionDeltas = function () {
+    var base = this.base, sc = this.scale || 1;
+    return EXPR.map(function (names) {
+      var d = new Float32Array(base.N * 3);
+      names.forEach(function (nm) {
+        var m = base.morphs[nm]; if (!m) return;
+        for (var i = 0; i < m.idx.length; i++) { var o = m.idx[i] * 3; d[o] += m.d[i * 3] * m.scale * sc; d[o + 1] += m.d[i * 3 + 1] * m.scale * sc; d[o + 2] += m.d[i * 3 + 2] * m.scale * sc; }
+      });
+      return d;
+    });
   };
 
   /* Tattoo decals: planar projections in the rest pose, carried as a vertex attribute (u, v per decal;
@@ -865,8 +891,19 @@
       mat.onBeforeCompile = function (sh) { sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n\tdiffuseColor.a = clamp(diffuseColor.a * " + boost.toFixed(2) + ", 0.0, 1.0);"); };
       mat.customProgramCacheKey = function () { return "fight-proxy-alpha-" + boost; };
     }
+    if ((o.brows || o.lashes) && this.exprDelta) {
+      var D = this.exprDelta;
+      g.morphAttributes.position = D.map(function (d) {
+        var arr = new Float32Array(n * 3);
+        for (var j = 0; j < n; j++) for (var k = 0; k < 3; k++) arr[j * 3 + k] = w[j * 3] * d[r[j * 3] * 3 + k] + w[j * 3 + 1] * d[r[j * 3 + 1] * 3 + k] + w[j * 3 + 2] * d[r[j * 3 + 2] * 3 + k];
+        return new T.BufferAttribute(arr, 3);
+      });
+      g.morphTargetsRelative = true;
+      mat.morphTargets = true;
+    }
     mesh = new T.SkinnedMesh(g, mat);
     mesh.name = meta.kind;
+    if (g.morphAttributes.position) { mesh.updateMorphTargets(); this.morphMeshes.push(mesh); }
     mesh.renderOrder = meta.transparent && !o.eyes ? 2 : 0;
     this.group.add(mesh); mesh.bind(this.skeleton, new M4());
     if (extra) { this.group.add(extra); extra.bind(this.skeleton, new M4()); this.meshes.push(extra); }
@@ -1242,6 +1279,7 @@
       var a = this.actor, lead = a && a.stance < 0 ? 1 : 0;
       this.damLeg[lead] = Math.min(1, this.damLeg[lead] + 0.05 * p);
     } else this.damBody = Math.min(1, this.damBody + 0.02 * p);
+    if (this.face) this.face.flinch = Math.min(1, 0.6 + 0.3 * p);
     this.applyLooks();
   };
   Avatar.prototype.setRound = function (r) { this.sweat = clamp01(0.25 + 0.17 * r); this.applyLooks(); };
@@ -1309,9 +1347,35 @@
       if (L.autoOff != null) { L.autoOff -= dt; if (L.autoOff <= 0) { L.target = 0; L.autoOff = null; } }
       if (L.w <= 0 && L.target <= 0 && !L.prev) this.layers.splice(i, 1);
     }
+    this.tickFace(dt, a);
     var standing = m === "stand" || m === "clinch";
     this.idleW += ((standing && !a.act ? 0.75 : (standing ? 0.35 : 0)) - this.idleW) * Math.min(1, dt * 3);
     this.idleT += dt * (a.bounce || 1) * 0.9;
+  };
+  /* Blinks, flinches, KO and knockdown faces. */
+  Avatar.prototype.tickFace = function (dt, a) {
+    var F = this.face || (this.face = { blink: 0, jaw: 0, brow: 0, next: 1 + Math.random() * 3, bt: -1, flinch: 0 });
+    F.next -= dt;
+    if (F.next <= 0) { F.bt = 0; F.next = 2.2 + Math.random() * 3.5; }
+    var blink = 0;
+    if (F.bt >= 0) { F.bt += dt; blink = Math.sin(Math.min(1, F.bt / 0.16) * Math.PI); if (F.bt > 0.16) F.bt = -1; }
+    F.flinch = Math.max(0, F.flinch - dt * 3.5);
+    var m = a.mode, eyes = 0, jaw = 0, brow = 0.15;
+    if (m === "ko") { eyes = 0.85; jaw = 0.35; brow = 0; }
+    else if (m === "down") { eyes = 0.55; jaw = 0.25; brow = 0; }
+    else if (m === "celebrate") { jaw = 0.25 + 0.25 * Math.max(0, Math.sin(this.idleT * 3.1)); brow = 0; }
+    else if (a.react && a.react.type === "wobble") { eyes = 0.45; jaw = 0.18; brow = 0; }
+    else if (a.act && (a.act.type === "punch" || a.act.type === "kick" || a.act.type === "shoot")) brow = 0.55;
+    eyes = Math.max(eyes, blink, F.flinch * 0.9); brow = Math.max(brow, F.flinch * 0.7);
+    var k = Math.min(1, dt * 10);
+    F.blink += (eyes - F.blink) * (blink > 0 || F.flinch > 0 ? 1 : k); F.jaw += (jaw - F.jaw) * k * 0.5; F.brow += (brow - F.brow) * k;
+  };
+  Avatar.prototype.applyFace = function () {
+    var F = this.face; if (!F || !this.morphMeshes) return;
+    for (var i = 0; i < this.morphMeshes.length; i++) {
+      var inf = this.morphMeshes[i].morphTargetInfluences; if (!inf) continue;
+      inf[0] = F.blink; inf[1] = F.jaw; inf[2] = F.brow;
+    }
   };
   Avatar.prototype.onMode = function (from, to) {
     var C = this.base.clips; if (!C) return;
@@ -1436,8 +1500,9 @@
       if (L.prev && L.prev.w > 0) limbsFrom(L.prev, clamp01(L.prev.w));
       if (L.w > 0) limbsFrom(L, clamp01(L.w));
     });
-    // fingers
+    // fingers and face
     this.fingers();
+    this.applyFace();
     // write local rotations
     var bones = this.bones;
     bones[0].position.copy(Wp[0]); bones[0].quaternion.copy(W[0]);
@@ -1518,6 +1583,7 @@
   Avatar.prototype.snapshot = function (buf, o) {
     var Ls = this.layers;
     buf[o] = this.idleT; buf[o + 1] = this.idleW;
+    var F = this.face; buf[o + 16] = F ? F.blink : 0; buf[o + 17] = F ? F.jaw : 0; buf[o + 18] = F ? F.brow : 0;
     for (var i = 0; i < 2; i++) {
       var L = Ls[i], b = o + 2 + i * 7;
       if (L && L.clip) { buf[b] = L.clip.id + 1; buf[b + 1] = L.t; buf[b + 2] = L.w; buf[b + 3] = L.anchor.x; buf[b + 4] = L.anchor.z; buf[b + 5] = L.anchor.yaw + (L.mask === "upper" ? 1000 : 0); buf[b + 6] = L.speed + (L.target > 0 ? 0 : 100); }
@@ -1529,6 +1595,7 @@
     var src = f < 0.5 ? A : B, o = f < 0.5 ? oa : ob;
     this.idleT = lerp(A[oa], B[ob], f); if (Math.abs(B[ob] - A[oa]) > 0.5) this.idleT = src[o];
     this.idleW = lerp(A[oa + 1], B[ob + 1], f);
+    if (this.face) { this.face.blink = lerp(A[oa + 16], B[ob + 16], f); this.face.jaw = lerp(A[oa + 17], B[ob + 17], f); this.face.brow = lerp(A[oa + 18], B[ob + 18], f); }
     var layers = [];
     for (var i = 0; i < 2; i++) {
       var b = o + 2 + i * 7, id = src[b];
@@ -1551,7 +1618,7 @@
   };
 
   /* Patch the primitive Rig's replay snapshot so clip state rides along (extra floats per rig). */
-  var EXTRA = 16;
+  var EXTRA = 20;
   if (root.FightRig && root.FightRig.Rig && !root.FightRig.Rig._avPatched) {
     var R = root.FightRig.Rig, base0 = R.STRIDE;
     R._avPatched = true; R.STRIDE = base0 + EXTRA;

@@ -2195,6 +2195,7 @@ def cmd_eval(args):
         elo = (ra - rb) * LN
         return {
             "elo": elo, "debut": float(na == 0) - float(nb == 0),
+            "log_prior_fights": math.log1p(na) - math.log1p(nb),
             "missed": ma - mb, "missed_lbs": la - lb,
             "replacement": rpa - rpb, "repl_le14d": sna - snb,
             "opp_change": oca - ocb, "opp_change_le14d": lca - lcb,
@@ -2259,15 +2260,18 @@ def cmd_eval(args):
                             for j, k in enumerate(cols) if k not in base}
         res["models" if label.startswith("full") else "single"][label] = out
         return out
-    extra = [k for k in names if k not in base]
+    extra = [k for k in names if k not in base and k != "log_prior_fights"]
     for k in extra:
         summarize(base + [k], k)
+    summarize(base + ["log_prior_fights", "missed", "replacement", "repl_le14d"],
+              "robust: + log prior UFC fights control")
     # opp_change is (almost) the mirror of replacement inside a bout (one side stepped in, the other kept his
     # slot), so the two are collinear: the multi-feature models carry the replacement family only
     curated = base + ["missed", "replacement", "repl_le14d", "home_x_fullcrowd", "home_x_nocrowd_or_apex"]
     full = summarize(curated, "full: elo + debut + missed + replacement + repl_le14d + home x crowd")
     summarize([k for k in names if not k.startswith("opp_change") and k not in ("home_fullcrowd_outside_usa",
-                                                                                "home_fullcrowd_in_usa")],
+                                                                                "home_fullcrowd_in_usa",
+                                                                                "log_prior_fights")],
               "full_all: every feature except opp_change")
     summarize(base + ["replacement", "repl_le14d"], "pair: replacement + repl_le14d")
     summarize(base + ["missed", "replacement", "repl_le14d"], "full_nohome: elo + debut + missed + replacement + repl_le14d")

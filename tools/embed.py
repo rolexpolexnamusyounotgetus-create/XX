@@ -315,13 +315,21 @@ class Fit:
     and the other's defense, the win head adds Gauss-Newton cross terms), (3) the win head (logistic Newton).
     Each block step is backtracked on the full objective, so the MAP objective decreases monotonically."""
 
-    def __init__(self, D, T_day, hp, noise, warm=None, max_sweeps=40, tol=2e-6, verbose=False):
+    def __init__(self, D, T_day, hp, noise, warm=None, max_sweeps=40, tol=2e-6, verbose=False, who=None,
+                 light_iters=2):
         self.D, self.T, self.hp, self.noise = D, T_day, hp, noise
         self.knb = noise["k"]
         self.K = K = hp["K"]
         lam_hl = math.log(2) / hp["hl"]
         win = hp.get("window", 4.0) * hp["hl"]          # rows older than `window` half-lives weigh < 1/16
-        ri = np.nonzero((D.r_day < T_day) & (D.r_day >= T_day - win))[0]
+        rmask = (D.r_day < T_day) & (D.r_day >= T_day - win)
+        fmask = (D.f_day < T_day) & (D.f_day >= T_day - win) & ~np.isnan(D.f_win)
+        if who is not None:                   # light update: only rows that involve the fighters being updated
+            wm = np.zeros(D.F, bool)
+            wm[who] = True
+            rmask &= wm[D.r_x] | wm[D.r_y]
+            fmask &= wm[D.f_a] | wm[D.f_b]
+        ri = np.nonzero(rmask)[0]
         self.ri = ri
         self.w = np.exp(-lam_hl * (T_day - D.r_day[ri]))
         self.x, self.y = D.r_x[ri], D.r_y[ri]
@@ -332,7 +340,7 @@ class Fit:
         F = D.F
         self.Sx = sparse.csr_matrix((np.ones(n), (self.x, np.arange(n))), shape=(F, n))
         self.Sy = sparse.csr_matrix((np.ones(n), (self.y, np.arange(n))), shape=(F, n))
-        fi = np.nonzero((D.f_day < T_day) & (D.f_day >= T_day - win) & ~np.isnan(D.f_win))[0]
+        fi = np.nonzero(fmask)[0]
         self.fw = np.exp(-lam_hl * (T_day - D.f_day[fi])) * hp["win_w"]
         self.fa, self.fb, self.fy = D.f_a[fi], D.f_b[fi], D.f_win[fi]
         m = len(fi)
@@ -351,6 +359,14 @@ class Fit:
             raise ValueError("warm start with a different K")
         self.history = []
         self._cP, self._ceta, self._parts = None, None, (None, None)
+        if who is not None:
+            self.active = wm
+            P = self.P
+            L = self.loss(P)
+            for _ in range(light_iters):
+                P, L = self.step_fighters(P, L)
+            self.P, self.L, self.sweeps = P, L, 0
+            return
         self.run(max_sweeps, tol, verbose)
 
     # ---------------------------------------------------------------- pieces

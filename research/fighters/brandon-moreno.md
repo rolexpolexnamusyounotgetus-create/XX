@@ -1,14 +1,14 @@
 # Brandon Moreno: scouting dossier
 
-As of 2026-11-06. He/him. Orthodox, 5 ft 7 in, 70 in reach, born 1993-12-07 (age 32). Nickname "The Assassin Baby". From Tijuana, Mexico. UFC record 12-7-2 (ufcstats); pro record 24-10-2.
+As of 2026-11-06. He/him. Orthodox, 5 ft 7 in, 70 in reach, born 1993-12-07 (age 32). Nickname "The Assassin Baby". From Tijuana, Mexico. UFC record 12-7-2 (ufcstats); pro record 24-10-2 (5 KO/TKO, 11 submissions, 8 decisions; losses 1 TKO, 9 decisions; Sherdog, ESPN and Wikipedia agree). Trains with Fortis MMA (Sherdog, ESPN).
 
 ## Current status
 
 - **Former champion:** Two-time UFC flyweight champion: won the title from Deiveson Figueiredo by rear-naked choke (UFC 263, 2021), lost it back at UFC 270, won the interim belt against Kai Kara-France (UFC 277) and the undisputed belt again at UFC 283 (2023), then lost a split decision to Alexandre Pantoja (UFC 290, 2023).
 - **Last fight:** Split decision over Joseph Morales at Noche UFC, Glendale, Arizona (Sep 12, 2026; 28-29, 30-27, 30-27), ending a two-fight skid. The dissenting card surprised him.
-- **Next:** Charles Johnson, UFC 335, T-Mobile Arena, Las Vegas, Dec 12, 2026 (his third fight of 2026).
-- **Ranking:** #8 in the USA TODAY Sports/MMA Junkie media flyweight rankings (cited Oct 2026). Other lists place him differently.
-- **Injuries:** None reported in the sources found.
+- **Next:** Charles Johnson, UFC 335, T-Mobile Arena, Las Vegas, Dec 12, 2026 (his third fight of 2026). Still listed on Nov 6, 2026 (Sherdog upcoming fights; Wikipedia rankings tables).
+- **Ranking:** #8 flyweight in the official UFC rankings (media panel, released Nov 3, 2026; ufc.com via a Wayback capture of Nov 4) and #9 in the Elo-based Meta UFC rankings released Oct 31, 2026. (The USA TODAY Sports/MMA Junkie media list also had him #8 in October.)
+- **Injuries:** none reported.
 
 ## Recent fights
 
@@ -45,6 +45,16 @@ Knocked down 5 times in UFC fights (3 by Figueiredo at UFC 270), but Taira's TKO
 
 Elo 1621, 7th among active flyweights in the snapshot. He is 3-3 over his last six fights. His decayed numbers sit close to the division prior (3.99 landed per minute against 3.69; 46% accuracy against 46%). That fits a former champion turned gatekeeper. Control share: 15% for him, 8% against (decayed).
 
+## Appearance (photo check, Nov 6)
+
+No photo-based likeness sheet exists for him yet (`data/likeness/brandon-moreno.json`), so this comes from his ESPN headshot and full-body studio cutout (files dated Sep 10, 2026, Noche UFC fight week), the Cageside Press Noche UFC ceremonial weigh-in photo (Sep 11) and a Getty fight photo from Noche UFC (Sep 12). The cutout's lettering reads correctly, so left and right are his own.
+
+- **Hair:** short dark brown hair, cropped at the sides with a textured top.
+- **Facial hair:** clean-shaven.
+- **Skin:** light-medium.
+- **Tattoos:** a colour Aztec-style feathered serpent head (red, green and yellow) on the left chest; a black tribal piece over the right shoulder and collarbone; black-and-grey pieces on the right upper arm and right forearm; script down the left ribs; a small piece on the left forearm.
+- **Kit:** red-and-green Mexican-themed UFC (Venum) shorts with MORENO lettering at Noche UFC, fought from the red corner. That was an Independence-weekend design, so other events may differ. In the sim the corner colour wins.
+
 ## Sources
 
 - https://sports.yahoo.com/articles/noche-ufc-results-brandon-moreno-235942495.html
@@ -60,6 +70,8 @@ Elo 1621, 7th among active flyweights in the snapshot. He is 3-3 over his last s
 - https://www.elimparcial.com/tij/tijuana/2025/12/06/brandon-moreno-busca-el-tren-hacia-su-tercer-reinado-en-ufc/
 - https://sports.yahoo.com/articles/brandon-moreno-vs-charles-johnson-140000901.html
 - https://sports.yahoo.com/articles/brandon-morenos-next-assignment-official-012020474.html
+- Nov 6 pass, status: [ufc.com rankings, Wayback capture Nov 4, 2026](https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings); [Wikipedia: UFC rankings (Meta and media tables, rev. Nov 6, 2026)](https://en.wikipedia.org/w/index.php?title=UFC_rankings&oldid=1384021836); [Sherdog fighter page](https://www.sherdog.com/fighter/Brandon-Moreno-80173); [ESPN profile](https://www.espn.com/mma/fighter/_/id/3027545/brandon-moreno); [Wikipedia (rev. Oct 2026)](https://en.wikipedia.org/w/index.php?title=Brandon_Moreno&oldid=1382308362); [MMA Fighting: Noche UFC result](https://www.mmafighting.com/ufc/509906/noche-ufc-results-brandon-moreno-shows-off-slick-striking-and-grappling-to-beat-joseph-morales)
+- Nov 6 pass, appearance: [ESPN headshot](https://a.espncdn.com/i/headshots/mma/players/full/3027545.png) and [studio cutout](https://a.espncdn.com/i/headshots/mma/players/stance/left/3027545.png); [Cageside Press: Noche UFC weigh-in photo](https://cagesidepress.com/wp-content/uploads/2026/09/Brandon-Moreno-vs.-Joseph-Morales.jpg); Getty fight photo in the MMA Fighting result above
 - data/derived/fighters.json and data/raw (ufcstats snapshot to 2026-10-31); http://ufcstats.com/fighter-details/792be9a24df82ed6
 
-Fact-check (2026-11-06): results, scorecards, strike and takedown figures re-checked against ufcstats; no errors found. The UFC 335 booking and ranking could not be re-checked on the web (search budget spent, sites unreachable). Appearance: build from ufcstats; hair and skin tone from published photos, not re-checked.
+Fact-check (2026-11-06): results, scorecards, strike and takedown figures re-checked against ufcstats; no errors found. Open-web pass (2026-11-06, later): UFC 335 booking, rankings, record and gym re-checked; appearance re-read from dated photos (see above).

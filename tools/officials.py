@@ -596,21 +596,25 @@ class Model:
         return np.asarray(self.fns["sg"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ, self.dz.nF))
 
 
-def make_precond(M, x, cfg, tau):
-    """Linear preconditioner: exact Hessian of the global block (eigenvalues floored) and, for judge effects,
-    the per-judge information diagonal (outer product of per-fight scores) plus the prior precision."""
+def make_precond(M, x, cfg, tau, Tg=None):
+    """Linear preconditioner: exact Hessian of the global block (eigenvalues floored; reused if Tg given) and,
+    for judge effects, the per-judge information diagonal (outer product of per-fight scores) plus the prior
+    precision."""
     t0 = time.time()
-    H = M.hess_g(x, cfg, tau)
-    H = 0.5 * (H + H.T)
-    lam, Q = np.linalg.eigh(H)
-    lam = np.maximum(lam, max(1.0, 1e-4 * lam.max()))
-    Tg = Q / np.sqrt(lam)[None, :]                     # x_g = x0_g + Tg z_g
+    lam = None
+    if Tg is None:
+        H = M.hess_g(x, cfg, tau)
+        H = 0.5 * (H + H.T)
+        lam, Q = np.linalg.eigh(H)
+        lam = np.maximum(lam, max(1.0, 1e-4 * lam.max()))
+        Tg = Q / np.sqrt(lam)[None, :]                 # x_g = x0_g + Tg z_g
     nJ = M.dz.nJ
     dE = np.tile([1.0 / tau[k] ** 2 for k in EFF], (nJ, 1))
     if float(cfg.get("judges", 1)):
         _, info = bhhh_sd(M.dz, x, lambda z: M.slot_grad(z, cfg), tau)
         dE = dE + np.einsum("jkk->jk", info)
-    log(f"  preconditioner built in {time.time() - t0:.0f}s (global eig {lam.min():.3g}..{lam.max():.3g})")
+    if lam is not None:
+        log(f"  preconditioner built in {time.time() - t0:.0f}s (global eig {lam.min():.3g}..{lam.max():.3g})")
     return {"Tg": Tg, "sE": 1.0 / np.sqrt(dE.ravel())}
 
 
@@ -843,15 +847,19 @@ class Window:
             f"{ {k: round(v, 3) for k, v in tau.items()} }")
         key = "j" if cfg.get("judges", 1) else "l"
         if key not in self.pre:
-            self.pre[key] = make_precond(self.M, x0, cfg, tau)
-        x, _ = fit_model(self.dz, cfg, tau, flat_init=x0, model=self.M, precond=self.pre[key])
+            pre = make_precond(self.M, x0, cfg, tau)
+            x, _ = fit_model(self.dz, cfg, tau, flat_init=x0, model=self.M, precond=pre, maxiter=120)
+            self.pre[key] = make_precond(self.M, x, cfg, tau)     # rebuilt near the optimum, reused afterwards
+            x0 = x
+        pre = make_precond(self.M, x0, cfg, tau, Tg=self.pre[key]["Tg"])
+        x, _ = fit_model(self.dz, cfg, tau, flat_init=x0, model=self.M, precond=pre)
         cov = None
         for k in range(eb_rounds):
             cov, info = bhhh_sd(self.dz, x, lambda z: self.M.slot_grad(z, cfg), tau)
             tau = eb_tau(unravel(x, self.dz.nJ)["E"], cov, self.ncards)
             log(f"  EB tau -> { {k: round(v, 3) for k, v in tau.items()} }")
-            self.pre[key] = make_precond(self.M, x, cfg, tau)
-            x, _ = fit_model(self.dz, cfg, tau, flat_init=x, model=self.M, precond=self.pre[key])
+            pre = make_precond(self.M, x, cfg, tau, Tg=self.pre[key]["Tg"])
+            x, _ = fit_model(self.dz, cfg, tau, flat_init=x, model=self.M, precond=pre)
         if cfg.get("judges", 1):
             cov, info = bhhh_sd(self.dz, x, lambda z: self.M.slot_grad(z, cfg), tau)
         return {"x": x, "jidx": self.jidx, "tau": tau, "model": model, "year_end": self.year_end, "cov": cov,

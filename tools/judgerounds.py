@@ -35,7 +35,8 @@ WHAT IT WRITES
 
 USAGE
   python3 tools/judgerounds.py --fetch      # download missing source files (about 20 requests, 1.1 s apart)
-  python3 tools/judgerounds.py              # build from the cache (a few seconds, pandas + numpy only)
+  python3 tools/judgerounds.py --refresh    # re-download every source file (D updates weekly, N per release)
+  python3 tools/judgerounds.py              # build from the cache (about one CPU-minute, pandas + numpy only)
 """
 import argparse
 import datetime as dt
@@ -78,7 +79,7 @@ SOURCES = {
 EM_W = {"head": 0.179, "body": 0.133, "leg": 0.105, "kd": 2.42, "td": 0.286, "ctrl_min": 0.46, "sub": 0.85}
 
 
-vault_from_g = [dt.date(2026, 1, 1)]
+vault_from_g = [dt.date(2026, 1, 1)]      # set from --vault-from in main(); read by summarize()
 
 
 # ------------------------------------------------------------------ fetch

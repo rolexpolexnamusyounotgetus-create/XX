@@ -133,6 +133,16 @@ DEV.until = function (cond, max) {
   return { ok: ok, t: +DEV.t.toFixed(2), phase: show.phase, state: show.state, clock: +show.clock.toFixed(1), cam: show.cam.label, A: show.A.mode, B: show.B.mode,
     clips: [show.A, show.B].map(function (a) { return a.avatar ? a.avatar.layers.map(function (l) { return l.clip.name + ":" + l.w.toFixed(2) + "@" + l.t.toFixed(2); }).join(",") : "-"; }) };
 };
+/* Close-up on one fighter's face during the live show. */
+DEV.faceCam = function (id, dist, az) {
+  var a = show[id], av = a.avatar; if (!av) return;
+  av.sync();
+  var hp = av.Wp[av.bi.Head].clone(); hp.y += 0.08;
+  var ang = a.yaw + (az || 0.5), d = dist || 0.9, c = show.arena.camera;
+  c.position.set(hp.x + Math.sin(ang) * d, hp.y + 0.12, hp.z + Math.cos(ang) * d); c.lookAt(hp); c.fov = 30; c.updateProjectionMatrix();
+  [show.A, show.B, show.R].forEach(function (x) { if (x.avatar) x.avatar.sync(); });
+  show.arena.render();
+};
 /* Fixed camera framing the pair from a side, for comparable shots. */
 DEV.frameCam = function (az, dist, h, fov) {
   var A = show.A.pos, B = show.B.pos, mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2, th = Math.atan2(B.z - A.z, B.x - A.x) + Math.PI / 2 + (az || 0);
