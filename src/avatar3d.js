@@ -1482,11 +1482,11 @@
       (sp.meta.deleteVerts || []).forEach(function (r) { for (var q2 = r[0]; q2 <= r[1]; q2++) del[q2] = 1; });
       this.hideUnder(function (i) { return del[mhv[i]] === 1; });
     }
-    var shortsG = this.shortsProxy ? null : this.shell(function (i) { return inShorts(i); }, function (i) {
+    var shortsG = this.shortsProxy ? null : this.shell(function (i) { return inShorts(i, -0.022); }, function (i) {
       var v = clamp01((y(i) - hemY) / hemSpan), lat = Math.abs(nrm[i * 3]);
       return 0.006 + 0.022 * (1 - smooth(0.2, 0.8, v)) + 0.012 * lat * (1 - v);
     }, { name: "aKit", size: 4, fn: function (i, out, o) {
-      out[o] = clamp01((y(i) - hemY) / hemSpan); out[o + 1] = Math.atan2(nrm[i * 3], nrm[i * 3 + 2]); out[o + 2] = pos[i * 3] >= 0 ? 1 : -1; out[o + 3] = pos[i * 3 + 2];
+      out[o] = (y(i) - hemY) / hemSpan; out[o + 1] = Math.atan2(nrm[i * 3], nrm[i * 3 + 2]); out[o + 2] = pos[i * 3] >= 0 ? 1 : -1; out[o + 3] = pos[i * 3 + 2];
     } });
     var cMain = colorOf(app.shorts, "#2563c9"), cTrim = colorOf(app.trim, "#e9eef5"), cBand = colorOf(app.band || app.waistband, "#15171b");
     var U = { uMain: { value: cMain }, uTrim: { value: cTrim }, uBand: { value: cBand }, uBandW: { value: 0.045 / hemSpan } };
@@ -1506,13 +1506,14 @@
           "  c = mix(c, uTrim, (1.0 - smoothstep(0.018, 0.03, v)) * 0.9);\n" +
           "  float weave = 0.95 + 0.05 * fract(sin(dot(floor(vec2(vKit.y * 260.0, vKit.x * 420.0)), vec2(12.9898, 78.233))) * 43758.5453);\n" +
           "  diffuseColor.rgb = c * weave;\n" +
-          "  if (slit > 0.5) discard;\n" +
+          "  if (slit > 0.5 || v < 0.0) discard;\n" +
           "  if (!gl_FrontFacing) diffuseColor.rgb *= 0.8; }")
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.85, smoothstep(1.0 - uBandW, 1.0 - uBandW + 0.02, vKit.x));");
     } });
     this.shortsMat = shorts;
     if (smesh) { var oldM = smesh.material; smesh.material = shorts; this.disposables.push(shorts); if (oldM && oldM.dispose) oldM.dispose(); smesh.name = "shorts"; }
     if (shortsG) { this.addShell(shortsG, shorts, "shorts"); this.hideUnder(function (i) { return inShorts(i, 0.02); }); }
+    if (this.cfg.female) this.makeSportsTop(cMain, cTrim, cBand);
     if (this.gloveProxy) {
       // CC0 open-finger MMA glove proxy (corner-neutral colour), fitted to this hand
       var gp = this.gloveProxy, gm = this.addProxy(gp, { color: app.glove || "#16181c", tint: true, tintGain: 1.9, roughness: 0.42, reweight: true });
@@ -1558,6 +1559,69 @@
     this.hideUnder(function (i) { if (!onArmSide(i)) return false; var wp = self.boneW(i, HAND) + self.boneW(i, PROX), t = wristT(i); return (wp > 0.8 && t < -0.005 && self.boneW(i, DIST) < 0.05) || (t > 0.005 && t < 0.075); });
   };
 
+  /* Women's sports top: a racerback crop top skinned to the torso, in the corner's kit colours (main panel,
+     trim piping on every edge, an elastic under-bust band). A shell of the body a few mm out; the cloth
+     bridges across the chest (a compression top flattens the cleavage); the edges are cut per pixel along
+     smooth curves from the rest-pose position (scoop neckline, straps, armholes, racerback), so they run
+     clean instead of following the mesh's triangles. */
+  Avatar.prototype.makeSportsTop = function (cMain, cTrim, cBand) {
+    var self = this, J = this.J, pos = this.pos, nrm = this.nrm, base = this.base, n = base.mh.length, i;
+    var ARMS = {}, NECK = { Neck: 1, Head: 1 };
+    ["Left", "Right"].forEach(function (s) { ["Arm", "ForeArm", "Hand"].forEach(function (b) { ARMS[s + b] = 1; }); });
+    var apY = J.Spine2.h.y - 0.05, apX = 0.08, apZ = -1;
+    for (i = 0; i < n; i++) { var x0 = pos[i * 3], y0 = pos[i * 3 + 1], z0 = pos[i * 3 + 2]; if (y0 > J.Spine1.h.y && y0 < J.Neck.h.y && Math.abs(x0) < 0.15 && z0 > apZ) { apZ = z0; apY = y0; apX = Math.abs(x0); } }
+    var shX = Math.abs(J.LeftArm.h.x), spZ = J.Spine2.h.z;
+    var G = { bandY: apY - 0.085, scoopY: apY + 0.06, armY: apY + 0.075, sx0: shX * 0.4, sx1: shX * 0.66, rbY: apY + 0.005, topY: J.Neck.h.y + 0.04, spZ: spZ };
+    function inZone(i) { var y = pos[i * 3 + 1]; return y > G.bandY - 0.025 && y < G.topY && self.boneW(i, ARMS) < 0.35 && self.boneW(i, NECK) < 0.6; }
+    var g = this.shell(inZone, function () { return 0.003; }, { name: "aKit", size: 4, fn: function (i, out, o) { out[o] = pos[i * 3]; out[o + 1] = pos[i * 3 + 1]; out[o + 2] = pos[i * 3 + 2]; out[o + 3] = 0; } });
+    // bridge the chest: front vertices between the apexes come forward to the apex line at their height
+    var P = g.attributes.position.array, nv = P.length / 3, zA = {}, kq;
+    for (i = 0; i < nv; i++) { kq = Math.round(P[i * 3 + 1] * 250); if (Math.abs(P[i * 3]) < apX * 1.3 && P[i * 3 + 2] > spZ) zA[kq] = Math.max(zA[kq] || -1, P[i * 3 + 2]); }
+    for (i = 0; i < nv; i++) {
+      var ax = Math.abs(P[i * 3]), y = P[i * 3 + 1], z = P[i * 3 + 2]; kq = Math.round(y * 250);
+      if (z < spZ || ax > apX * 1.05 || zA[kq] == null) continue;
+      var k = smooth(G.bandY - 0.01, apY - 0.02, y) * (1 - smooth(apY + 0.02, apY + 0.07, y));
+      P[i * 3 + 2] = Math.max(z, lerp(z, zA[kq] - 0.004, k));
+    }
+    g.attributes.position.needsUpdate = true; g.computeVertexNormals();
+    var U = { uMain: { value: cMain }, uTrim: { value: cTrim }, uBand: { value: cBand }, uG1: { value: new T.Vector4(G.bandY, G.scoopY, G.armY, G.rbY) }, uG2: { value: new T.Vector4(G.sx0, G.sx1, G.topY, G.spZ) } };
+    var mat = fabricMaterial(cMain, { rough: 0.6, uniforms: U, key: "sportstop", shader: function (sh) {
+      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec4 aKit;\nvarying vec4 vKit;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = aKit;");
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec4 vKit;\nuniform vec3 uMain; uniform vec3 uTrim; uniform vec3 uBand; uniform vec4 uG1; uniform vec4 uG2;")
+        .replace("#include <color_fragment>", "#include <color_fragment>\n" +
+          "{ float ax = abs(vKit.x), y = vKit.y, z = vKit.z;\n" +
+          "  float strap = min(ax - uG2.x, uG2.y - ax);\n" +
+          "  float scoopTop = uG1.y + (uG1.z + 0.03 - uG1.y) * pow(clamp(ax / uG2.x, 0.0, 1.0), 2.5);\n" +
+          "  float armTop = uG1.z - max(0.0, ax - uG2.y) * 0.9;\n" +
+          "  float topF = ax < uG2.x ? scoopTop : armTop;\n" +
+          "  float dF = max(topF - y, strap);\n" +
+          "  float t = clamp((y - uG1.w) / max(0.02, uG2.z - uG1.w), 0.0, 1.0);\n" +
+          "  float halfW = mix(0.045, (uG2.x + uG2.y) * 0.5 + 0.012, t * t);\n" +
+          "  float dB = max(uG1.w - y, halfW - ax);\n" +
+          "  float d = mix(dB, dF, smoothstep(uG2.w - 0.03, uG2.w + 0.02, z));\n" +
+          "  d = min(d, y - uG1.x);\n" +
+          "  if (d < 0.0) discard;\n" +
+          "  vec3 c = uMain;\n" +
+          "  float band = 1.0 - smoothstep(0.034, 0.038, y - uG1.x);\n" +
+          "  c = mix(c, uBand, band);\n" +
+          "  c = mix(c, uTrim, (1.0 - smoothstep(0.004, 0.0065, d)) * (1.0 - band));\n" +
+          "  c = mix(c, uTrim, smoothstep(0.036, 0.039, y - uG1.x) * (1.0 - smoothstep(0.042, 0.045, y - uG1.x)));\n" +
+          "  float knit = 0.95 + 0.05 * fract(sin(dot(floor(vec2(vKit.x * 900.0, vKit.y * 900.0)), vec2(12.9898, 78.233))) * 43758.5453);\n" +
+          "  diffuseColor.rgb = c * knit; if (!gl_FrontFacing) diffuseColor.rgb *= 0.6; }")
+        .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.8, 1.0 - smoothstep(0.034, 0.038, vKit.y - uG1.x));");
+    } });
+    this.addShell(g, mat, "top");
+    this.topMat = mat; this.topG = G;
+    // body skin well inside the top would poke through when skinned
+    function inside(i) {
+      var x = Math.abs(pos[i * 3]), y = pos[i * 3 + 1], z = pos[i * 3 + 2];
+      if (!inZone(i) || y < G.bandY + 0.012) return false;
+      if (z > G.spZ + 0.02) return (y < G.scoopY - 0.012 && x < G.sx1) || (x > G.sx0 + 0.01 && x < G.sx1 - 0.01) || (y < G.armY - 0.015 && x >= G.sx1);
+      if (z < G.spZ - 0.03) return y < G.rbY - 0.012 || x < 0.03;
+      return y < G.armY - 0.03;
+    }
+    this.hideUnder(inside);
+  };
   Avatar.prototype.palmNormal = function (left) {
     var J = this.J, s = left ? "Left" : "Right";
     var d = J[s + "HandMiddle1"].h.clone().sub(J[s + "Hand"].h).normalize();
@@ -2581,6 +2645,7 @@
   var REFEREE = { role: "referee", height_in: 71, age: 48, build: "average", skin: "light", hair: "short grey", facial_hair: "clean-shaven", shirt: "#121316", pants: "#2b2e34", gloves: "#15161a" };
 
   root.FightAvatar = {
+    hasFemaleTop: function () { return true; },   // women get the sports top (src/app.js stands its guard down)
     supported: supported, loadBase: loadBase, build: build, attach: attach, detach: detach,
     appearanceFor: appearanceFor, configFor: configFor, dbFromPage: dbFromPage, REFEREE: REFEREE, Avatar: Avatar, defaults: DEFAULTS,
     webgl2: function (renderer) { return !!(renderer && renderer.capabilities && renderer.capabilities.isWebGL2); }

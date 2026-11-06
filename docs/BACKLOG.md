@@ -263,7 +263,14 @@ Findings from verified research that the next engine versions must use. Each lin
   2024-25 (fit <= 2023).
 - realism_sens: VERIFIED (~20:00 UTC): INCLUDE as capability: FightEngine.sensitivity (tornado data, CRN),
   tools/realism.js, the mlrates cache fix. The division/format factor layer stays OFF (no train gain).
-- dynamics: builder relaunched after the usage cap (use the corrected recipe).
+- dynamics: VERIFIED (~21:40 UTC, independent harness, 500 sims/fight): INCLUDE flag on as structure/realism.
+  On v4.0.0 (port patch): soft CE vs close -0.0017 [-0.0025, -0.0008], KD deviance -0.059 (both significant);
+  7-bin and who-x-how-x-when lean worse n.s. Round correlation 0.54 (real 0.56), KD per head strike by round and
+  5-round finish timing now match. Weak: 3-round R2 KO hazard low, 5-round R1 KO high, late submissions high.
+  Merge conditions: one joint KD level pass with durability; rebuild blend_anchor cells with the flag on.
+- v5 MERGE LAUNCHED ~21:45 UTC (scratchpad/wf_v5_merge.js, run wf_5a28d719-790): five sequential tested merge
+  steps -> train leave-one-out ablation -> joint level pass + re-tune + freeze -> single validation look ->
+  review -> decide -> first vault audit.
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the

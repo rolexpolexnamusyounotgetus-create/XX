@@ -44,8 +44,9 @@ score
     typed in by hand in the same format.
   - Scores: every scored file vs the market at prediction time, the closing line (results.json closing_odds, else
     data/derived/odds_upcoming.json's last pre-start capture), walk-forward Elo and a coin: log loss, Brier, accuracy,
-    paired differences with event-cluster bootstrap intervals, running totals event by event, method (7-way) log loss
-    and distance Brier; per model version. Writes data/predictions/scores.json and scores.md (regenerated each time).
+    paired differences with event-cluster bootstrap intervals (widened to the bout-level bootstrap where that is
+    wider, so one or a few events never give a spuriously tight interval), running totals event by event, method
+    (7-way) log loss and distance Brier; per model version. Writes data/predictions/scores.json and scores.md (regenerated each time).
   - Models block (v4.1 files on): every model in each bout's "models" block gets log loss, Brier and accuracy, and its
     paired log-loss difference vs the market at prediction time and vs the close (event-cluster bootstrap), per model
     version (scores.json "models").
@@ -617,7 +618,10 @@ def match_results(doc, G, S, have):
         if b["bout_id"] in have:
             continue
         na, nb = norm_name(b["a"]["name"]), norm_name(b["b"]["name"])
-        ga, gb = name_match(na, gnames_), name_match(nb, gnames_)
+        # the roster slug is the ufcstats spelling ("Ko Seok-hyeon" is "SeokHyeon Ko" there): fall back to it
+        sl = lambda side: " ".join((b[side].get("slug") or "").split("-"))
+        nm2 = lambda n, side, cands: name_match(n, cands) or (name_match(sl(side), cands) if sl(side) else None)
+        ga, gb = nm2(na, "a", gnames_), nm2(nb, "b", gnames_)
         rec = None
         if ga and gb:
             if (ga, gb) in gk:
@@ -639,7 +643,7 @@ def match_results(doc, G, S, have):
                 rec = {"bout_id": b["bout_id"], "outcome": outcome, "winner": winner,
                        "method": map_method(g["method"]), "round": int(g["round"]) if g["round"].isdigit() else None,
                        "time": g["time"], "details": g["details"], "sources": [g["url"] or "ufcstats via Greco1899"]}
-        ea, eb = name_match(na, snames_), name_match(nb, snames_)
+        ea, eb = nm2(na, "a", snames_), nm2(nb, "b", snames_)
         if ea and eb and (ea, eb) in sk:
             s = sk[(ea, eb)]
             w_espn = None if s["winner"] is None else ("a" if s["winner"] == ea else "b")
@@ -689,6 +693,12 @@ def cmd_score(args):
             S = {}
         for _, doc in pending:
             for rec in match_results(doc, G, S, have):
+                # README: results come from two independent sources. results.json is append-only, so a single-source
+                # or conflicting record would be frozen in; it waits for a later run (or --manual) instead
+                if not rec.get("verified"):
+                    print("pending (not recorded): %s %s, sources %s%s" % (rec["bout_id"], rec.get("outcome"),
+                          rec.get("sources"), ", " + rec["conflict"] if rec.get("conflict") else ""))
+                    continue
                 new.append(rec)
                 have.add(rec["bout_id"])
     if new:
@@ -742,24 +752,33 @@ def _metrics(v):
 
 
 def boot_ci(vals, clusters, B=2000, seed=11):
+    """95% interval of a mean paired difference: the event-cluster bootstrap, widened to the bout-level bootstrap
+    wherever that is wider. With one event the cluster bootstrap collapses to a point ([x, x] would 'exclude zero'),
+    and with a handful of events it is far too narrow; the envelope is never narrower than either."""
     import random
-    rng = random.Random(seed)
-    uc = sorted(set(clusters))
-    by = {c: [v for v, k in zip(vals, clusters) if k == c] for c in uc}
-    est = []
-    for _ in range(B):
-        s = n = 0
-        for _ in uc:
-            c = uc[rng.randrange(len(uc))]
-            s += sum(by[c])
-            n += len(by[c])
-        if n:
-            est.append(s / n)
-    est.sort()
-    if not est:
+
+    def pct(cl, sd):
+        rng = random.Random(sd)
+        uc = sorted(set(cl))
+        by = {c: [v for v, k in zip(vals, cl) if k == c] for c in uc}
+        est = []
+        for _ in range(B):
+            s = n = 0
+            for _ in uc:
+                c = uc[rng.randrange(len(uc))]
+                s += sum(by[c])
+                n += len(by[c])
+            if n:
+                est.append(s / n)
+        est.sort()
+        return (est[int(0.025 * len(est))], est[int(0.975 * len(est)) - 1]) if est else None
+
+    ev, bt = pct(clusters, seed), pct(list(range(len(vals))), seed + 1)
+    if not ev or not bt:
         return None
-    return {"est": sum(vals) / len(vals), "lo": est[int(0.025 * len(est))], "hi": est[int(0.975 * len(est)) - 1],
-            "n": len(vals), "n_events": len(uc)}
+    return {"est": sum(vals) / len(vals), "lo": min(ev[0], bt[0]), "hi": max(ev[1], bt[1]),
+            "lo_event": ev[0], "hi_event": ev[1], "lo_bout": bt[0], "hi_bout": bt[1],
+            "n": len(vals), "n_events": len(set(clusters))}
 
 
 def compute_scores(files, results, B):
@@ -857,7 +876,8 @@ def scores_md(S):
         o = S["overall"].get(k)
         if o:
             L.append("| %s (`%s`) | %d | %.4f | %.4f | %.1f%% |" % (lab, k, o["n"], o["log_loss"], o["brier"], 100 * o["accuracy"]))
-    L += ["", "Paired log-loss differences (negative = the first column is better), event-cluster bootstrap:", "",
+    L += ["", "Paired log-loss differences (negative = the first column is better); 95% interval = event-cluster "
+          "bootstrap, widened to the bout-level bootstrap where that is wider:", "",
           "| comparison | n | events | difference [95% CI] |", "|---|---|---|---|"]
     for k, c in S["paired"].items():
         if c:
@@ -880,7 +900,7 @@ def scores_md(S):
     ci = lambda c: "-" if not c else "%+.4f [%+.4f, %+.4f] (%d)" % (c["est"], c["lo"], c["hi"], c["n"])
     for v, mv in (S.get("models") or {}).items():
         L += ["", "Models block, %s (log loss; paired differences: negative = the model beats that market line; "
-              "event-cluster bootstrap):" % v, "",
+              "event-cluster bootstrap widened to the bout-level one where wider):" % v, "",
               "| model | n | log loss | Brier | accuracy | minus market at prediction [CI] (n) | minus close [CI] (n) |",
               "|---|---|---|---|---|---|---|"]
         for k, o in mv.items():
