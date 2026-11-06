@@ -504,6 +504,58 @@ def map_method(m):
     return m.title() or None
 
 
+def match_results(doc, G, S, have):
+    """Results for one ledger file's bouts from the ufcstats (G) and ESPN (S) tables; only ledger bouts are returned."""
+    out = []
+    gk = {(a, b): v for (d, a, b), v in G.items() if d == doc["date"]}
+    gnames_ = {x for k in gk for x in k}
+    sk = {(a, b): v for (d, a, b), v in S.items() if d == doc["date"]}
+    snames_ = {x for k in sk for x in k}
+    for b in doc["bouts"]:
+        if b["bout_id"] in have:
+            continue
+        na, nb = norm_name(b["a"]["name"]), norm_name(b["b"]["name"])
+        ga, gb = name_match(na, gnames_), name_match(nb, gnames_)
+        rec = None
+        if ga and gb:
+            if (ga, gb) in gk:
+                g, flip = gk[(ga, gb)], False
+            elif (gb, ga) in gk:
+                g, flip = gk[(gb, ga)], True
+            else:
+                g = None
+            if g:
+                o = g["outcome"]
+                first = {"W/L": "first", "L/W": "second"}.get(o)
+                if first:
+                    winner = ("a" if first == "first" else "b") if not flip else ("b" if first == "first" else "a")
+                    outcome = "win"
+                elif o == "D/D":
+                    winner, outcome = None, "draw"
+                else:
+                    winner, outcome = None, "nc"
+                rec = {"bout_id": b["bout_id"], "outcome": outcome, "winner": winner,
+                       "method": map_method(g["method"]), "round": int(g["round"]) if g["round"].isdigit() else None,
+                       "time": g["time"], "details": g["details"], "sources": [g["url"] or "ufcstats via Greco1899"]}
+        ea, eb = name_match(na, snames_), name_match(nb, snames_)
+        if ea and eb and (ea, eb) in sk:
+            s = sk[(ea, eb)]
+            w_espn = None if s["winner"] is None else ("a" if s["winner"] == ea else "b")
+            if rec is None:
+                rec = {"bout_id": b["bout_id"], "outcome": "win" if w_espn else "unknown", "winner": w_espn,
+                       "method": None, "round": s["round"], "time": s["clock"], "sources": []}
+            rec["sources"].append("ESPN scoreboard (%s)" % s["event"])
+            if rec["outcome"] == "win" and w_espn and w_espn != rec["winner"]:
+                rec["conflict"] = "ufcstats winner %s, ESPN winner %s" % (rec["winner"], w_espn)
+        if rec is None:
+            continue
+        rec["verified"] = len(rec["sources"]) >= 2 and "conflict" not in rec
+        rec["closing_odds"] = closing_for(b["bout_id"])
+        rec["recorded_utc"] = iso(now_utc())
+        out.append(rec)
+    return out
+
+
 def cmd_score(args):
     os.makedirs(args.dir, exist_ok=True)
     rpath = os.path.join(args.dir, "results.json")
@@ -534,53 +586,9 @@ def cmd_score(args):
             print("ESPN fetch failed: %r" % ex)
             S = {}
         for _, doc in pending:
-            gk = {(a, b): v for (d, a, b), v in G.items() if d == doc["date"]}
-            gnames_ = {x for k in gk for x in k}
-            sk = {(a, b): v for (d, a, b), v in S.items() if d == doc["date"]}
-            snames_ = {x for k in sk for x in k}
-            for b in doc["bouts"]:
-                if b["bout_id"] in have:
-                    continue
-                na, nb = norm_name(b["a"]["name"]), norm_name(b["b"]["name"])
-                ga, gb = name_match(na, gnames_), name_match(nb, gnames_)
-                rec = None
-                if ga and gb:
-                    if (ga, gb) in gk:
-                        g, flip = gk[(ga, gb)], False
-                    elif (gb, ga) in gk:
-                        g, flip = gk[(gb, ga)], True
-                    else:
-                        g = None
-                    if g:
-                        o = g["outcome"]
-                        first = {"W/L": "first", "L/W": "second"}.get(o)
-                        if first:
-                            winner = ("a" if first == "first" else "b") if not flip else ("b" if first == "first" else "a")
-                            outcome = "win"
-                        elif o == "D/D":
-                            winner, outcome = None, "draw"
-                        else:
-                            winner, outcome = None, "nc"
-                        rec = {"bout_id": b["bout_id"], "outcome": outcome, "winner": winner,
-                               "method": map_method(g["method"]), "round": int(g["round"]) if g["round"].isdigit() else None,
-                               "time": g["time"], "details": g["details"], "sources": [g["url"] or "ufcstats via Greco1899"]}
-                ea, eb = name_match(na, snames_), name_match(nb, snames_)
-                if ea and eb and (ea, eb) in sk:
-                    s = sk[(ea, eb)]
-                    w_espn = None if s["winner"] is None else ("a" if s["winner"] == ea else "b")
-                    if rec is None:
-                        rec = {"bout_id": b["bout_id"], "outcome": "win" if w_espn else "unknown", "winner": w_espn,
-                               "method": None, "round": s["round"], "time": s["clock"], "sources": []}
-                    rec["sources"].append("ESPN scoreboard (%s)" % s["event"])
-                    if rec["outcome"] == "win" and w_espn and w_espn != rec["winner"]:
-                        rec["conflict"] = "ufcstats winner %s, ESPN winner %s" % (rec["winner"], w_espn)
-                if rec is None:
-                    continue
-                rec["verified"] = len(rec["sources"]) >= 2 and "conflict" not in rec
-                rec["closing_odds"] = closing_for(b["bout_id"])
-                rec["recorded_utc"] = iso(now_utc())
+            for rec in match_results(doc, G, S, have):
                 new.append(rec)
-                have.add(b["bout_id"])
+                have.add(rec["bout_id"])
     if new:
         R["results"].extend(new)
         tmp = rpath + ".tmp"
@@ -653,7 +661,7 @@ def compute_scores(files, results, B):
             r = res.get(b["bout_id"])
             if not r:
                 continue
-            if r.get("outcome") != "win" or r.get("winner") not in ("a", "b"):
+            if r.get("outcome") != "win" or r.get("winner") not in ("a", "b") or r.get("conflict"):
                 void.append({"bout_id": b["bout_id"], "outcome": r.get("outcome")})
                 continue
             y = 1.0 if r["winner"] == "a" else 0.0

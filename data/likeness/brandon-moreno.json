@@ -1,0 +1,321 @@
+{
+  "slug": "brandon-moreno",
+  "name": "Brandon Moreno",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 32,
+  "tale_of_tape": {
+    "height_cm": 170.2,
+    "reach_cm": 177.8,
+    "stance": "Orthodox",
+    "fight_weight_lb": 125,
+    "source": "data/derived/fighters.json (67 in height, 70 in reach, Orthodox); flyweight limit 125 lb (Noche UFC, Sep 2026)"
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "c1_commons_entram_2021-02.jpg",
+    "c2_commons_ufc290_2023-07.png",
+    "ref_cageside_noche_faceoff_profile_2026-09.jpg",
+    "ref_cageside_noche_mediaday_2026-09.jpg",
+    "ref_cageside_ufc306_qa_3q_2024-09.jpg",
+    "ref_getty_sportskeeda_ufc323_faceoff_2025-12.jpg",
+    "ref_reuters_razon_ufc323_action_2025-12.jpg"
+  ],
+  "photo_coverage": "Good. 10 photos: two freely licensed Commons photos (CC BY-SA 4.0 frontal portrait, Feb 2021; CC BY 4.0 press-conference photo, Jul 2023), current studio headshot and full-body cutout (Sep 2026), an older cutout with the belt (Jan 2023), a right near-profile at the Noche UFC weigh-in (Sep 11, 2026, most recent), a frontal smiling media-day shot (Sep 2026), a high-resolution three-quarter (Sep 2024), a high-resolution right profile (Dec 2025) and one grappling photo. No clean left profile and no photo of his standing guard.",
+  "face": {
+    "shape": "Lean oval-to-rectangular face of medium width and medium-long length; flat, slightly hollow cheeks with visible smile folds.",
+    "jaw": "Defined and moderately angular, medium width.",
+    "chin": "Medium width, slightly squared, moderately projecting.",
+    "cheekbones": "High and fairly broad, with hollows below them; they bunch up strongly when he smiles.",
+    "brow_ridge": "Moderate; brows sit low over the eyes.",
+    "forehead": "Medium-high and smooth, with a straight hairline very slightly recessed at the temples.",
+    "eyes": {
+      "shape": "Almond eyes, slightly narrow, with a moderately low upper-lid crease and a slight fold at the inner corners; crow's feet and fine under-eye lines; mild lower-lid bags",
+      "spacing": "average",
+      "colour": "dark brown"
+    },
+    "eyebrows": {
+      "thickness": "medium-thick",
+      "shape": "Straight and low, tails angled slightly up and out; inner ends close",
+      "colour": "dark brown-black"
+    },
+    "nose": {
+      "length": "medium-long",
+      "width": "medium",
+      "bridge": "Straight, medium height, medium width",
+      "hump": "none",
+      "tip": "Rounded and slightly bulbous, nostrils medium-wide; in profile the tip points straight ahead to slightly up",
+      "fight_damage": "No obvious break or deviation."
+    },
+    "mouth_lips": "Medium-wide mouth; thin-to-medium upper lip, fuller lower lip; corners slightly down at rest; a wide, toothy smile that lifts the cheeks.",
+    "ears": {
+      "size": "medium-large",
+      "cauliflower_ear": "Yes, mild to moderate on both ears: the right ear's helix and concha are lumpy and thickened, and the left ear's inner folds are swollen (ESPN headshot zoom, Sep 2026).",
+      "note": "Stand out from the head; very visible with the faded sides."
+    },
+    "notable_marks_scars": "Fine lines at the outer eyes and across the forehead; a small dark mark on the right ear; no large scars visible."
+  },
+  "hair": {
+    "style": "Short textured cut: about 4-6 cm on top, worn up and slightly forward with piecey texture; low-to-mid skin fade on the sides and back.",
+    "length_cm": {
+      "top": 5,
+      "sides": 0.4
+    },
+    "colour_hex": "#16100e",
+    "colour_note": "Raw top sample in the ESPN headshot is #110b0a; very dark brown, near black.",
+    "hairline": "Straight, very slightly recessed at the temples",
+    "texture": "Straight, thick"
+  },
+  "facial_hair": {
+    "type": "none (clean-shaven)",
+    "detail": "Clean-shaven in Sep 2026 with a faint dark stubble shadow on the upper lip and chin. In 2021 he wore a thin moustache and chin stubble (Commons photo).",
+    "colour_hex": "#1c1512",
+    "density": "shadow only",
+    "shape": "none"
+  },
+  "skin": {
+    "tone_hex": "#de9371",
+    "tone_hex_method": "plain RGB mean of the face samples marked in_average (well-lit cheeks, no specular highlight, no strong colour cast); each sample is the median of the 25th-65th luma-percentile pixels of its patch",
+    "tone_hex_all_samples_avg": "#dda187",
+    "tone_hex_body": "#dda17a",
+    "tone_hex_recommended": "#dd9975",
+    "tone_hex_recommended_method": "60% face average + 40% torso (ESPN studio cutout, same lighting setup used for all four fighters in this batch), so one whole-body tint does not come out flash-pale",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "right cheek (image-left)",
+        "light": "studio flash",
+        "hex": "#e99c76",
+        "in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "left cheek (image-right)",
+        "light": "studio flash",
+        "hex": "#e59771",
+        "in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead centre",
+        "light": "studio flash (specular)",
+        "hex": "#f8c0a3",
+        "in_average": false
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "right cheek (image-left)",
+        "light": "studio flash",
+        "hex": "#df926d",
+        "in_average": true
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "left cheek (image-right)",
+        "light": "studio flash",
+        "hex": "#de8e6a",
+        "in_average": true
+      },
+      {
+        "photo": "c1_commons_entram_2021-02.jpg",
+        "where": "right cheek (image-left)",
+        "light": "indoor daylight",
+        "hex": "#e7c6bb",
+        "in_average": false
+      },
+      {
+        "photo": "c1_commons_entram_2021-02.jpg",
+        "where": "left cheek (image-right)",
+        "light": "indoor daylight",
+        "hex": "#ba8a78",
+        "in_average": false
+      },
+      {
+        "photo": "c1_commons_entram_2021-02.jpg",
+        "where": "forehead centre",
+        "light": "indoor daylight",
+        "hex": "#d6b09f",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_noche_mediaday_2026-09.jpg",
+        "where": "right cheek (image-left)",
+        "light": "presser light",
+        "hex": "#ca8d79",
+        "in_average": true
+      },
+      {
+        "photo": "ref_cageside_noche_mediaday_2026-09.jpg",
+        "where": "left cheek (image-right)",
+        "light": "presser light",
+        "hex": "#a06654",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_ufc306_qa_3q_2024-09.jpg",
+        "where": "right cheek (image-left)",
+        "light": "outdoor stage, daylight",
+        "hex": "#f7bcab",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_ufc306_qa_3q_2024-09.jpg",
+        "where": "left cheek (image-right)",
+        "light": "outdoor stage, daylight",
+        "hex": "#fccab7",
+        "in_average": false
+      }
+    ],
+    "body_samples": [
+      {
+        "photo": "espn_stance_left.png",
+        "where": "abdomen",
+        "light": "studio flash",
+        "hex": "#dda17a"
+      }
+    ],
+    "undertone": "Warm light-medium, light olive/tan; the lightest of this group.",
+    "freckles_marks": "Fine expression lines around the eyes; dark hair on the legs and forearms; little chest hair.",
+    "note": "Excluded: the specular forehead, the Feb 2021 Commons portrait (cool, one-sided window light: #e7c6bb vs #ba8a78 on the two cheeks), the shadowed media-day cheek and the over-exposed Sep 2024 daylight shot. His torso (#dda17a) is as light as his face, unlike Van's."
+  },
+  "body": {
+    "build": "Lean, average-framed flyweight: 170 cm, 57 kg (125 lb).",
+    "body_fat": "lean",
+    "body_fat_note": "Lean but not shredded: soft-edged abs, little visible vascularity compared with Taira or Van.",
+    "shoulders": "Average width, rounded",
+    "chest": "Flat, moderately defined pectorals",
+    "arms": "Long and lean; reach 178 cm (8 cm more than his height)",
+    "waist": "Narrow",
+    "legs_calves": "Long, lean legs; slim calves; hairy shins",
+    "posture": "Relaxed and upright; slight forward head carriage",
+    "notable": "Longer legs than Van; less upper-body mass."
+  },
+  "tattoos": [
+    {
+      "where": "left chest (pec)",
+      "description": "Colour Aztec-style feathered serpent head (Quetzalcoatl), snout pointing toward the centre of his chest, with red, green, yellow and white feathers, a red open mouth and a gold eye frame.",
+      "size": "medium-large"
+    },
+    {
+      "where": "right shoulder and right collarbone",
+      "description": "Black tribal flames/spikes curving over the top of the right shoulder onto the collarbone and upper chest.",
+      "size": "medium"
+    },
+    {
+      "where": "right upper arm (outer)",
+      "description": "Black-and-grey scene: a tall arch monument with clouds and a sign; a word on the sign reads like 'TIJUANA' in the cutout.",
+      "size": "large (shoulder to elbow)"
+    },
+    {
+      "where": "right forearm (outer)",
+      "description": "Black-and-grey standing Aztec warrior figure with a feathered headdress; vertical script 'Jiu Jitsu' on the inner right forearm.",
+      "size": "large (elbow to wrist)"
+    },
+    {
+      "where": "left forearm",
+      "description": "Black outline of a rapier/sword lying along the outer left forearm; small vertical script near the left wrist on the inner side; a tiny 'S'-shaped mark on the inner left arm near the elbow.",
+      "size": "medium (sword), small (script)"
+    },
+    {
+      "where": "left ribs/flank",
+      "description": "Vertical line of script down the left side (seen in the UFC 323 grappling photo); not legible.",
+      "size": "small"
+    }
+  ],
+  "tattoos_note": "The right arm carries most of the black-and-grey work; the colour piece is on the LEFT chest. Sides are his own (when he faces the camera, the serpent is image-right and the tribal shoulder image-left). Back not clearly seen.",
+  "kit": {
+    "fight_shorts": "Noche UFC (Sep 2026, red corner): red Venum shorts with an Aztec feathered-serpent print in red, green, white and gold, a black waistband with a maroon UFC tab and MORENO lettering in green. Green Venum shorts in the 2023 cutout.",
+    "presser": "T-shirts (white or black), Apple-style watch, red-white-green bead bracelet",
+    "colours": [
+      "#c8102e red",
+      "#006847 green",
+      "#ffffff white",
+      "#c9a24a gold",
+      "#111111 black"
+    ]
+  },
+  "stance_and_guard": {
+    "stance": "Orthodox (fighters.json)",
+    "observed": "No standing-guard photo was found (face-offs, pressers and one grappling photo only).",
+    "arms_note": "Long, lean arms (reach 178 cm).",
+    "style": "Jab-led boxer at range who mixes in takedowns and back takes (data/scouting/brandon-moreno.json)",
+    "confidence": "low for guard details"
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "middleage_caucasian_male (#dab396) tinted toward tone_hex_recommended #dd9975 (the swatch is about the same lightness, so the tint mostly warms it). Texture picked by age and swatch colour only.",
+    "eyebrows": "eyebrow010 tinted #221814, straight and low"
+  },
+  "ethnicity_fit": {
+    "african": 0.2,
+    "asian": 0.35,
+    "caucasian": 0.45,
+    "photos": [
+      "espn_headshot.png",
+      "c1_commons_entram_2021-02.jpg",
+      "ref_getty_sportskeeda_ufc323_faceoff_2025-12.jpg",
+      "ref_cageside_ufc306_qa_3q_2024-09.jpg"
+    ],
+    "basis": "Fitted by eye to how MakeHuman's three shape bases reproduce what the photos show: almond eyes with a slight inner-corner fold and a moderately low lid crease, high broad cheekbones, a straight medium-height bridge and a rounded, medium-wide nose tip. Not assigned from name or nationality.",
+    "confidence": "low: his features sit between the bases; check a render against the ESPN headshot and drop or flatten the block if the eyes come out too hooded"
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.122,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.6,
+    "macro/weightDownM": 0.2,
+    "macro/heightDownM": 0.19,
+    "macro/proportionsUpM": 0.55,
+    "head/head-oval": 0.3,
+    "head/head-square": 0.1,
+    "head/head-fat-decr": 0.25,
+    "head/head-scale-vert-incr": 0.05,
+    "forehead/forehead-scale-vert-incr": 0.1,
+    "chin/chin-bones-incr": 0.15,
+    "chin/chin-width-decr": 0.05,
+    "chin/chin-prominent-incr": 0.1,
+    "chin/chin-height-incr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.3,
+    "cheek/r-cheek-bones-incr": 0.3,
+    "cheek/l-cheek-volume-decr": 0.35,
+    "cheek/r-cheek-volume-decr": 0.35,
+    "eyes/l-eye-height2-decr": 0.15,
+    "eyes/r-eye-height2-decr": 0.15,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-bag-incr": 0.25,
+    "eyes/r-eye-bag-incr": 0.25,
+    "eyes/l-eye-epicanthus-in": 0.05,
+    "eyes/r-eye-epicanthus-in": 0.05,
+    "eyes/l-eye-corner1-up": 0.05,
+    "eyes/r-eye-corner1-up": 0.05,
+    "eyebrows/eyebrows-trans-down": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.1,
+    "nose/nose-scale-vert-incr": 0.1,
+    "nose/nose-scale-horiz-incr": 0.1,
+    "nose/nose-point-width-incr": 0.2,
+    "nose/nose-nostrils-width-incr": 0.15,
+    "nose/nose-flaring-incr": 0.1,
+    "nose/nose-hump-decr": 0.05,
+    "nose/nose-point-up": 0.05,
+    "mouth/mouth-lowerlip-volume-incr": 0.15,
+    "mouth/mouth-upperlip-volume-decr": 0.05,
+    "mouth/mouth-angles-down": 0.1,
+    "neck/neck-scale-horiz-incr": 0.15,
+    "torso/measure-shoulder-dist-incr": 0.1,
+    "torso/torso-vshape-incr": 0.2,
+    "torso/measure-waist-circ-decr": 0.25,
+    "torso/measure-hips-circ-decr": 0.1
+  },
+  "morphs_if_available": {
+    "note": "Ear targets from the full MakeHuman set; not in the shipped manifest.",
+    "ears/l-ear-scale-incr": 0.15,
+    "ears/r-ear-scale-incr": 0.15,
+    "ears/l-ear-rot-forward": 0.15,
+    "ears/r-ear-rot-forward": 0.15
+  },
+  "morphs_unavailable": "Cauliflower ear cannot be made with a MakeHuman target: sculpt or normal-map both ears (right a little worse). No target for the skin fade, crow's feet or smile folds (use the middle-age skin texture or a normal map).",
+  "notes": "Confidence: high for hair, clean-shaven face, ears, tattoos and build; medium-high for face proportions (studio frontal, two right profiles and a three-quarter); medium for morph values; low for guard. Watch for: (1) recognition cues are the high cheekbones with hollow cheeks, the low straight dark brows, slightly narrow almond eyes with crow's feet, the rounded nose tip and the cauliflower ears; (2) he is clean-shaven now; do not give him the 2021 moustache; (3) tattoo sides: colour serpent on the LEFT chest, black-and-grey on the RIGHT shoulder, upper arm and forearm, sword on the LEFT forearm; (4) lean but softer-edged than Taira or Van, with longer legs than Van; (5) macro/heightDownM 0.19 comes from heightUpM = 2 * (H - 1.785 m) / 0.875 (research/assets.md); some other 170 cm sheets use 0.27, so measure the mesh and nudge it to 170 cm. ageOldM 0.122 follows avatar3d.js (32.9 - 25) / 65. The ethnicity_fit block is opt-in for avatar3d.js; drop it if the orchestrator wants the neutral thirds kept."
+}

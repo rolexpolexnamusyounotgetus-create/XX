@@ -19,10 +19,10 @@ simulator to sample from) and this report. Fold pickles and logs are under `out/
   Named-judge effects alone (same model without them): split -0.0020 [-0.0040, -0.0001], 7-class -0.0020
   [-0.0045, +0.0004], winner +0.0003 [-0.0009, +0.0017]. **Verification correction:** against the same published
   parameters with every judge effect set to 0, the named effects make the decision winner worse on all three folds
-  (2024-25 +0.0019 [+0.0003, +0.0036]; 2022-23 +0.0036 [+0.0006, +0.0075]; 2019-23 +0.0015 [+0.0003, +0.0029]) and
-  never improve the 7-class loss (2024-25 -0.0003 [-0.0032, +0.0029]); only the 2024-25 split loss improves (-0.0026
-  [-0.0051, -0.0001]). The engine default is now named judges off (`knobs.named_judges`); the -0.0125 headline is
-  the home term plus the closeness shape, and the zero-effect model keeps it (-0.0122 [-0.0200, -0.0053]). On the
+  (2024-25 +0.0019 [+0.0003, +0.0035]; 2022-23 +0.0036 [+0.0006, +0.0077]; 2019-23 +0.0015 [+0.0003, +0.0028]) and
+  never improve the 7-class loss (2024-25 -0.0003 [-0.0033, +0.0029]); only the 2024-25 split loss improves (-0.0026
+  [-0.0051, -0.0000]). The engine default is now named judges off (`knobs.named_judges`); the -0.0125 headline is
+  the home term plus the closeness shape, and the zero-effect model keeps it (-0.0122 [-0.0203, -0.0053]). On the
   tuning windows the officials terms do not help (2022-23 7-class -0.0024 [-0.0119, +0.0061]; 2019-23 +0.0043
   [-0.0025, +0.0110]); see the verification log at the end. Knowing the panel moves the predicted decision winner by
   a median 0.2 points (90th percentile 1.0, max 6.2) and flips it in 0.6% of decisions; it moves P(split or
@@ -461,7 +461,8 @@ real ones (other components) for these probabilities to carry over.
 
 On real 2024-25 round stats, the published model gives split/majority 25.6% (observed 20.0%), cards with a 10-8
 8.8% with the 2023 level (5.5% observed; the 2025 level brings the rate down to the 2025 data), and 7-class
-decision log loss 0.793. The roadmap's v8 check (decision-split and scorecard calibration) should be run on the
+decision log loss 0.793. The engine default (named judges off) gives split/majority 26.4%, 7-class 0.7933 and
+decision-winner log loss 0.3368 (published 0.3387). The roadmap's v8 check (decision-split and scorecard calibration) should be run on the
 simulator's own fights once the judging block is swapped in: target split/majority 18-24% (15% in 2025), round
 unanimity 0.77-0.81, 10-8 rounds about 2% of judge-rounds (2024-25), 10-10 0.1%.
 

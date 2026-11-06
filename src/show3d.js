@@ -298,8 +298,10 @@
       var op = pf.open, gh = G.height, lh = clamp(gh + (G.leadHeight - 0.6) * 0.6, 0, 1), rh = clamp(gh + (G.rearHeight - 0.6) * 0.6, 0, 1);
       // positions are in the chest frame, which is turned with the bladed stance: swing them back onto the opponent's line
       var cyaw = cl ? 0 : 0.09 + 0.21 * bl, lz = (0.16 + 0.12 * G.leadReach) * H, rz = (0.12 + 0.08 * (1 - G.rearTuck)) * H;
-      P.hl[lead].set(((0.035 + 0.035 * G.leadWidth + 0.02 * op) * H + lz * cyaw) * st, (0.112 + 0.115 * lh - 0.03 * op) * H, lz);
-      P.hl[rear].set((-(0.062 + 0.02 * op) * H + rz * cyaw) * st, (0.098 + 0.11 * rh - 0.03 * op) * H, rz);
+      // glove height: 0 lower chest .. 0.5 chin .. 0.6 cheekbone .. 1 brow (relative to the upper chest joint)
+      function gy(v, base) { return base + 0.25 * Math.min(v, 0.5) + 0.12 * Math.max(0, v - 0.5); }
+      P.hl[lead].set(((0.035 + 0.035 * G.leadWidth + 0.02 * op) * H + lz * cyaw) * st, (gy(lh, 0.045) - 0.03 * op) * H, lz);
+      P.hl[rear].set((-(0.062 + 0.02 * op) * H + rz * cyaw) * st, (gy(rh, 0.035) - 0.03 * op) * H, rz);
       var fl = 0.04 + 0.6 * G.elbowFlare;
       P.hpl[lead].set(fl * st, -1, -0.3); P.hpl[rear].set(-fl * st, -1, -0.38);
       if (!cl) {
