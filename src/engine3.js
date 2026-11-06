@@ -572,7 +572,8 @@
   // tables for leak-free backtests; base = league rates of the shrinkage division, filled in when missing); { model } ->
   // that model handle instead of the loaded one. opts.mlModel is accepted as a shorthand for { model }.
   // params.mlWeight (0..1) blends toward the base tables (1 = full learned rates); params.mlMaxRatio caps any single
-  // multiplier; params.mlTdLevel / mlCtrlLevel (v4.0.1) scale the learned takedown-attempt and control targets (train level
+  // multiplier; params.mlTdLevel / mlCtrlLevel / mlSubLevel (v4.0.1) scale the learned takedown-attempt, control and
+  // submission-attempt targets (train level
   // matching with the learned rates on; the plain tables keep their own self-calibrated level). The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
   function mlPredFor(MLR, m, pa, pb, opts, model) {
     var x = opts.ml;
@@ -607,7 +608,7 @@
     var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
     if (!(w > 0)) return m;
     MLR.applyToMatchup(m, pred, { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
-      parts: opts.mlParts || undefined, levels: { td_att: m.p.mlTdLevel || 1, ctrl: m.p.mlCtrlLevel || 1 } });
+      parts: opts.mlParts || undefined, levels: { td_att: m.p.mlTdLevel || 1, ctrl: m.p.mlCtrlLevel || 1, sub_att: m.p.mlSubLevel || 1 } });
     m.mlPred = { A: pred.A, B: pred.B, base: pred.base };
     m.mlApplied = true;
     return m;

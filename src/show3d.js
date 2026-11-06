@@ -453,7 +453,7 @@
         // close the distance the punch needs: shoulder to target minus the arm's reach (the old fixed lunge left jabs ~0.7 m short)
         var sh = (a.hi === 0 ? this.rig.armL : this.rig.armR).sh.getWorldPosition(_u);
         this.aimPoint(a.def.body ? "body" : "head", _v);
-        var need = sh.distanceTo(_v) - (this.rig.ua + this.rig.la) * (a.def.elbowUp ? 0.86 : 0.95);
+        var need = sh.distanceTo(_v) - (this.rig.ua + this.rig.la) * (a.def.elbowUp ? 0.86 : 0.95) - 0.07;   // glove stops at the face, not the head centre
         a.lungeNeed = clamp(need * 1.12, 0, 1.15);
       }
     } else if (a.type === "kick") {
@@ -1183,7 +1183,7 @@
     var target = (clinch ? 0.6 : this.range) - A.lunge - B.lunge + A.s.kb.x * 0.25 + B.s.kb.x * 0.25;
     if (this.downed) target = Math.max(target, 1.15);
     var striking = (A.act && (A.act.type === "punch" || A.act.type === "kick")) || (B.act && (B.act.type === "punch" || B.act.type === "kick"));
-    this.d += (Math.max(clinch ? 0.5 : 0.92, target) - this.d) * Math.min(1, dt * (striking ? 20 : 7));
+    this.d += (Math.max(clinch ? 0.5 : 0.98, target) - this.d) * Math.min(1, dt * (striking ? 20 : 7));
     ax = Math.cos(this.theta); az = Math.sin(this.theta);
     var nax = this.M.x - ax * this.d / 2, naz = this.M.z - az * this.d / 2, nbx = this.M.x + ax * this.d / 2, nbz = this.M.z + az * this.d / 2;
     A.vel.set((nax - A.pos.x) / Math.max(dt, 1e-3), 0, (naz - A.pos.z) / Math.max(dt, 1e-3));

@@ -551,13 +551,14 @@ class MoEStack(Model):
     day before), as tools/moe.py does for its 2025 rolling fit."""
     symmetric = "by construction (antisymmetric logits, symmetric gates, no intercept)"
 
-    def __init__(self, ctx, experts, regime, refit="event", cal=None, cal_days=None, cal_newcomer=False):
+    def __init__(self, ctx, experts, regime, refit="event", cal=None, cal_days=None, cal_newcomer=False, method=None,
+                 hp=None):
         """experts: {moe expert name: harness model key}, e.g. {'market': 'market_close', 'ml': 'ml_lr', ...}.
         cal overrides moe.json's calibration kind; cal_days fits it on the last cal_days of forward-chained logits."""
         self.ctx, self.map, self.regime, self.refit = ctx, dict(experts), regime, refit
         mo = ctx.json("moe.json")
         cfg = mo["model"][regime]
-        self.method, self.hp = cfg["method"], dict(cfg.get("hp") or {})
+        self.method, self.hp = method or cfg["method"], dict(cfg.get("hp") or {}) if hp is None else dict(hp)
         self.cal_kind = cal or (cfg.get("calibration") or {}).get("type", "none")
         self.cal_days = cal_days
         self.cal_newcomer = cal_newcomer          # separate calibration for newcomer fights (less experienced man 1-2)
@@ -942,6 +943,11 @@ _moe_reg("moe_noline_nt", "absent", {}, "experiment: moe_noline with separate te
 _moe_reg("moe_close_nt", "present", {"market": "market_close"},
          "experiment: moe_close with separate temperatures for newcomer fights and the rest", experimental=True,
          cal="temperature", cal_newcomer=True)
+_moe_reg("moe_noline_gated", "absent", {}, "experiment: moe_noline as tools/moe.py's softmax-gated MoE (weights and "
+         "confidence depend on experience, Elo gap, layoff, age, division, 5 rounds), lam 0.03, temperature",
+         experimental=True, method="gated", hp={"lam": 0.03}, cal="temperature")
+_moe_reg("moe_close_gated", "present", {"market": "market_close"}, "experiment: moe_close as the softmax-gated MoE, lam 0.03",
+         experimental=True, method="gated", hp={"lam": 0.03})
 _moe_reg("moe_close_rt", "present", {"market": "market_close"},
          "experiment: moe_close plus a temperature fit on the last 730 days (moe.json chose none)", experimental=True,
          cal="temperature", cal_days=730)

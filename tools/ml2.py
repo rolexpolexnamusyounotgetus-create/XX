@@ -1513,6 +1513,36 @@ def stage_method(args):
     for k, v in out["paired_test"].items():
         log("  %s: %s" % (k, {m: (v[m]["diff"], v[m]["ci95"]) for m in ("joint", "method3", "bin7", "winner")}))
     log("  chosen by CV: %s" % out["chosen"])
+    # against the market's method / round props (2024-25 fights with props) and tools/ml.py's 7-bin model
+    PMK = D["PMK"]
+    hm = test & ~np.isnan(PMK[:, 0])
+    Lm = {"market_props": MR.losses_on(PMK[hm], D, hm), "S": MR.losses_on(J["S"][hm], D, hm),
+          out["chosen"]: MR.losses_on(J[out["chosen"]][hm], D, hm)}
+    btm, stm = MR.cluster_bootstrap(Lm, T["event"].to_numpy()[hm], B=2000)
+    out["market_subset"] = {"n": int(hm.sum()), "means": btm,
+                            "chosen - market_props": MR.paired_diff(Lm[out["chosen"]], Lm["market_props"], stm,
+                                                                    METHOD_METRICS),
+                            "S - market_props": MR.paired_diff(Lm["S"], Lm["market_props"], stm, METHOD_METRICS)}
+    a_mk = jload("methodround.json")["meta"]["chosen"]["a_market"]
+    Bm = (1 - a_mk) * J[out["chosen"]][hm] + a_mk * PMK[hm]
+    Lb = MR.losses_on(Bm, D, hm)
+    out["market_subset"]["blend(%.1f market) - market_props" % a_mk] = MR.paired_diff(Lb, Lm["market_props"], stm,
+                                                                                     METHOD_METRICS)
+    log("  market props subset n=%d: chosen-market %s; S-market %s" % (
+        hm.sum(), {m: out["market_subset"]["chosen - market_props"][m]["diff"] for m in ("method3", "bin7")},
+        {m: out["market_subset"]["S - market_props"][m]["diff"] for m in ("method3", "bin7")}))
+    mlj = dev_only(jload("ml.json")["fights"])
+    b7o = dict(zip(T2["fid"], T2["bin7"]))
+    rows = [i for i in np.flatnonzero(test) if T["id"].iloc[i] in mlj and mlj[T["id"].iloc[i]].get("bins7")
+            and b7o.get(T["id"].iloc[i]) is not None and b7o[T["id"].iloc[i]] >= 0]
+    l_ml = np.array([-math.log(max(mlj[T["id"].iloc[i]]["bins7"][int(b7o[T["id"].iloc[i]])], 1e-9)) for i in rows])
+    msk = np.zeros(len(T), bool)
+    msk[rows] = True
+    l_ch = MR.losses_on(J[out["chosen"]][msk], D, msk)["bin7"]
+    bb = boot(T["event"].to_numpy()[msk], [l_ch, l_ml, l_ch - l_ml], 2000)
+    out["vs_ml_v1_bins7"] = {"n": int(msk.sum()), "chosen": round(float(l_ch.mean()), 5), "ml_v1": round(float(l_ml.mean()), 5),
+                             "diff": round(float((l_ch - l_ml).mean()), 5), "diff_ci": ci_of(bb[:, 2])}
+    log("  7-bin vs tools/ml.py bins7: %s" % out["vs_ml_v1_bins7"])
     # per-fight 2024-25 cells of the chosen variant (A KO r1..R, ...) for the export
     out["_pred_test"] = {T["id"].iloc[i]: J[out["chosen"]][i].round(5).tolist() for i in np.flatnonzero(test)}
     json.dump(out, open(os.path.join(CACHE, "method.json"), "w"), default=float)

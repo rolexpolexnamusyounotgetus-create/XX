@@ -415,7 +415,8 @@
       ["acc_h", "acc_b", "acc_l", "acc_d", "acc_c", "acc_g"].forEach(function (q) { tg[i][q] = prob(odds(tg[i][q]) * a.acc); });
       tg[i].kd_h *= a.pow * aj.chin;
     }
-    // level factors on the learned targets (v4.0.1: opts.levels = { td_att, ctrl } from params mlTdLevel / mlCtrlLevel,
+    // level factors on the learned targets (v4.0.1: opts.levels = { td_att, ctrl, sub_att } from params mlTdLevel /
+    // mlCtrlLevel / mlSubLevel,
     // matched on train fights by tools/v4_levels.js; rates only, never probabilities)
     var LV = opts.levels || {};
     for (i = 0; i < 2; i++) for (k in LV) if (tg[i][k] != null && !PROB_T[k] && LV[k] > 0 && LV[k] !== 1) tg[i][k] *= LV[k];

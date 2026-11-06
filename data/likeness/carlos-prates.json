@@ -1,0 +1,335 @@
+{
+  "slug": "carlos-prates",
+  "name": "Carlos Prates",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 33,
+  "official": {
+    "height_cm": 185.4,
+    "reach_cm": 198.1,
+    "stance": "Switch",
+    "fight_weight_lb": 170,
+    "source": "data/derived/fighters.json (ufcstats: 73 in, 78 in reach, stance listed as Switch)"
+  },
+  "photos_used": [
+    "espn-full.png",
+    "espn-stance-right.png",
+    "wiki-sextoround-2026-04-17.jpg",
+    "wiki-sextoround-2025-09-04.jpg",
+    "ref-cageside-ufc322-faceoff-2025-11-14.jpg",
+    "ref-getty-ufc322-2025-11-15.jpg",
+    "ref-getty-ufc-perth-2026-05-02.jpg",
+    "ref-ufcyt-perth-ceremonial-2026-05-01.jpg"
+  ],
+  "face": {
+    "shape": "Long oval face that tapers from high, defined cheekbones to a narrow, pointed, projecting chin, so the lower face reads as an inverted triangle. Clearly longer than wide and lean, with slight hollows under the cheekbones.",
+    "jaw": "Narrow to medium, with defined but light angles that taper steeply to the chin; visible under light stubble.",
+    "chin": "Narrow, prominent and slightly long; in left profile (UFC 322 face-off) it projects forward of the lower lip. Carries a small goatee.",
+    "cheekbones": "High and defined; cheeks below are flat to slightly hollow.",
+    "brow_ridge": "Moderate; the eyes sit a little deep under straight, low brows.",
+    "forehead": "Medium height, fairly broad and smooth, with a faint horizontal crease.",
+    "eyes": {
+      "shape": "Almond with heavy, hooded upper lids that cover the top of the iris, giving a calm, half-lidded look; outer corners slightly down; mild bags beneath.",
+      "spacing": "Average to slightly wide.",
+      "colour": "Dark brown. Closest embed iris: brown."
+    },
+    "eyebrows": {
+      "thickness": "Medium-thick",
+      "shape": "Straight and low, close to the eyes, angled slightly down at the outer ends; normal gap.",
+      "colour": "Black.",
+      "colour_hex": "#241812"
+    },
+    "nose": {
+      "length": "Medium-long",
+      "width": "Narrow-to-medium bridge widening to a broad lower nose.",
+      "bridge": "Straight, medium height.",
+      "hump": "None; straight in left profile.",
+      "tip": "Broad and rounded, very slightly upturned so the nostrils show a little from the front.",
+      "nostrils": "Wide alae, moderately flared.",
+      "fight_damage": "None visible."
+    },
+    "mouth": {
+      "width": "Wide",
+      "upper_lip": "Full, with a clear cupid's bow, framed by the thin moustache.",
+      "lower_lip": "Full and wide; the most prominent feature of the lower face.",
+      "resting_expression": "Closed and relaxed, corners slightly down."
+    },
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Stand slightly out from the head; easy to see above the skin fade.",
+      "cauliflower_ear": "No. The folds are well defined in the April 2026 studio stance and the May 2026 fight photo.",
+      "notes": "Ordinary ears with a slight stand-out."
+    },
+    "notable_marks_scars": "A small dark spot on the left cheek beside the nose (April 2026 headshot; a mole or small mark). Heavy tattooing on the throat, neck and scalp (see tattoos). No visible facial scars."
+  },
+  "hair": {
+    "style": "Short black tight curls on top, about 3 cm, over a high skin fade on the sides and back; neat, straight front hairline. No part, no fringe. The faded left side shows a large blackletter scalp tattoo.",
+    "length_cm": {
+      "top": 3.0,
+      "sides": 0.2,
+      "back": 0.3
+    },
+    "colour": "Black (very dark brown in bright light).",
+    "colour_samples": {
+      "studio_top": "#2f221d",
+      "studio_sides_with_scalp": "#584236"
+    },
+    "colour_hex": "#1c1512",
+    "hairline": "Straight across the forehead with slightly receding temple corners; dense on top.",
+    "texture": "Tight curls (coily)."
+  },
+  "facial_hair": {
+    "type": "moustache and goatee",
+    "colour": "Black.",
+    "colour_samples": {
+      "studio_goatee_with_skin": "#473227",
+      "studio_moustache_with_skin": "#583b31"
+    },
+    "colour_hex": "#1e1611",
+    "density": "Sparse: a thin moustache and a small chin goatee over a faint stubble shadow on the jaw and upper neck.",
+    "length_mm": "2-5 mm (moustache and goatee); stubble about 1 mm",
+    "shape": "Thin pencil moustache along the upper-lip edge, the ends dropping slightly past the mouth corners; a small goatee/soul patch under the lower lip and on the chin point. Same look in the April 2026 studio headshot and the April 2026 interview frame."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn-full.png",
+        "spot": "right cheek (image-left)",
+        "hex": "#a16d4e",
+        "light": "studio flash",
+        "in_average": true
+      },
+      {
+        "photo": "espn-full.png",
+        "spot": "left cheek (image-right)",
+        "hex": "#b57450",
+        "light": "studio flash",
+        "in_average": true
+      },
+      {
+        "photo": "espn-full.png",
+        "spot": "forehead centre",
+        "hex": "#f7b88f",
+        "light": "studio flash (specular)",
+        "in_average": false
+      },
+      {
+        "photo": "espn-stance-right.png",
+        "spot": "right cheek (image-left)",
+        "hex": "#c48158",
+        "light": "studio flash",
+        "in_average": true
+      },
+      {
+        "photo": "espn-stance-right.png",
+        "spot": "left cheek (image-right)",
+        "hex": "#f1a87c",
+        "light": "studio flash (highlight)",
+        "in_average": false
+      },
+      {
+        "photo": "wiki-sextoround-2026-04-17.jpg",
+        "spot": "right cheek (image-left)",
+        "hex": "#996c5c",
+        "light": "indoor daylight, phone",
+        "in_average": true
+      },
+      {
+        "photo": "wiki-sextoround-2026-04-17.jpg",
+        "spot": "left cheek (image-right)",
+        "hex": "#8d583f",
+        "light": "indoor daylight, phone",
+        "in_average": true
+      },
+      {
+        "photo": "wiki-sextoround-2025-09-04.jpg",
+        "spot": "right cheek (image-left)",
+        "hex": "#825c4c",
+        "light": "dim indoor, under a cap brim",
+        "in_average": false
+      },
+      {
+        "photo": "wiki-sextoround-2025-09-04.jpg",
+        "spot": "left cheek (image-right)",
+        "hex": "#86604d",
+        "light": "dim indoor, under a cap brim",
+        "in_average": false
+      },
+      {
+        "photo": "ref-getty-ufc-perth-2026-05-02.jpg",
+        "spot": "right cheek",
+        "hex": "#69352f",
+        "light": "arena, face in shadow",
+        "in_average": false
+      }
+    ],
+    "body_samples": [
+      {
+        "photo": "espn-stance-right.png",
+        "spot": "upper chest between tattoos",
+        "hex": "#ad7e5f",
+        "light": "studio flash"
+      },
+      {
+        "photo": "espn-stance-right.png",
+        "spot": "abdomen",
+        "hex": "#c98659",
+        "light": "studio flash"
+      }
+    ],
+    "tone_hex": "#a66e50",
+    "tone_hex_method": "plain RGB mean of the five samples marked in_average (three studio cheeks, two daylight cheeks); each sample is the median of a small well-lit patch",
+    "tone_hex_all_samples_avg": "#a77155",
+    "tone_hex_body": "#bb825c",
+    "tone_hex_recommended": "#ae7655",
+    "tone_hex_recommended_method": "60% face average + 40% torso average (ESPN studio light)",
+    "undertone": "Warm, golden-brown (medium).",
+    "freckles_marks": "No freckles. Most of the arms, chest, back, neck and the left side of the scalp are tattooed."
+  },
+  "body": {
+    "build": "Tall, rangy and long-limbed for welterweight: 6 ft 1 in with a 78 in reach (+5 in ape index), so the arms look very long.",
+    "body_fat": "lean",
+    "body_fat_notes": "Defined six-pack and obliques with little body fat in the April 2026 studio stance and the May 2026 fight photo.",
+    "shoulders": "Moderately broad but not bulky; lean, rounded deltoids.",
+    "chest": "Lean, moderately developed pecs.",
+    "arms": "Very long and wiry, with lean biceps and forearms; slim arms covered by full sleeves.",
+    "waist": "Narrow.",
+    "legs_calves": "Long legs with slim thighs and slim calves; light dark leg hair.",
+    "neck": "Long and fairly slender.",
+    "posture": "Upright and loose, with the head a little forward and the chin slightly raised in the stance portrait; relaxed shoulders.",
+    "notable_physique_traits": "Very long arms and legs, narrow waist, slim build, dense tattoo coverage on the arms, chest, back and neck."
+  },
+  "tattoos": [
+    {
+      "where": "Right arm, full sleeve from shoulder to wrist",
+      "description": "Black-and-grey sleeve: a winged cherub/baby face with a halo on the outer upper arm and shoulder, cursive script including 'One life' on the front of the upper arm, a horned devil-like face on the forearm, with shading filling the gaps.",
+      "size": "Full sleeve"
+    },
+    {
+      "where": "Left arm, full sleeve from shoulder to wrist",
+      "description": "A Japanese oni/hannya-style mask with red eyes on the shoulder and deltoid inside a rope border, a woman's face in black and grey on the upper arm, red flowers/leaves around the elbow, black-and-grey work on the forearm.",
+      "size": "Full sleeve"
+    },
+    {
+      "where": "Upper and middle back, the whole back",
+      "description": "Large black-and-grey back piece under big blackletter lettering arched across the shoulders, consistent with 'NIGHTMARE' (only 'NI...' at his left shoulder and '...are' at his right are legible in these photos; EssentiallySports gives the back text as 'The Nightmare'). The letters are left as skin colour on dark shading. Below: a grinning Joker/clown face across the centre-right, a second clown face on the left, a joker playing card and roses lower down.",
+      "size": "About 45 x 45 cm, shoulders to waist"
+    },
+    {
+      "where": "Upper chest, across both pecs below the collarbones",
+      "description": "'Muay Thai' in large cursive script with flourishes, black.",
+      "size": "About 28 x 9 cm"
+    },
+    {
+      "where": "Front of the throat",
+      "description": "Ornate blackletter monogram in black, centred on the throat.",
+      "size": "About 7 x 6 cm"
+    },
+    {
+      "where": "Left side of the neck, from the collarbone up toward the jaw",
+      "description": "Three or four lines of cursive script in black; the lines read partly as '...thing / can / stop me' in the face-off profile (EssentiallySports gives 'Nothing can stop me').",
+      "size": "About 10 x 8 cm"
+    },
+    {
+      "where": "Left side of the scalp, over and behind the left ear",
+      "description": "Large arched blackletter script in black, visible through the high fade (EssentiallySports gives 'Predestinado'; not legible in these photos). Not visible on the right side.",
+      "size": "About 15 x 6 cm"
+    },
+    {
+      "where": "Left shin, front",
+      "description": "'DANGER' in large vertical black brush-style capitals running down the shin.",
+      "size": "About 30 x 6 cm"
+    }
+  ],
+  "tattoos_note": "Placement checked against the un-mirrored April 2026 studio stance (the 'Muay Thai', DANGER and UFC text read correctly), the UFC 322 face-off (left side) and the UFC Perth fight photo (right side). The right thigh and right leg look clear in the studio stance; the thighs under the shorts are not seen.",
+  "accessories_seen": "Silver chain with a large link/diamond-style necklace (UFC 322 face-off, November 2025); black caps, worn backwards or forwards, in the interview frames.",
+  "kit": {
+    "typical_shorts": "April 2026 studio portrait: white UFC shorts with a light-grey wave/scale print, black UFC waistband panel, black-and-white block pattern at the waistband sides, a Venum mark and green lettering down his LEFT leg. UFC Perth (May 2026, blue corner) and UFC 322 (November 2025, blue corner): white shorts with grey print and a black VENUM waistband tab.",
+    "gloves": "Black UFC 4 oz gloves in studio; blue cuffs at UFC Perth and UFC 322.",
+    "shorts_colours_hex": {
+      "studio_white": "#e5e2eb",
+      "grey_print": "#beb4c1",
+      "green_lettering": "#224938",
+      "black_waistband": "#131112"
+    },
+    "brand_note": "UFC-issued kit with a Venum mark."
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.123,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.4,
+    "macro/weightDownM": 0.25,
+    "macro/heightUpM": 0.2,
+    "macro/proportionsUpM": 0.55,
+    "head/head-oval": 0.35,
+    "head/head-invertedtriangular": 0.3,
+    "head/head-scale-vert-incr": 0.15,
+    "head/head-scale-horiz-decr": 0.1,
+    "head/head-fat-decr": 0.3,
+    "chin/chin-prominent-incr": 0.3,
+    "chin/chin-height-incr": 0.2,
+    "chin/chin-width-decr": 0.15,
+    "chin/chin-bones-decr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.3,
+    "cheek/r-cheek-bones-incr": 0.3,
+    "cheek/l-cheek-volume-decr": 0.35,
+    "cheek/r-cheek-volume-decr": 0.35,
+    "eyes/l-eye-height2-decr": 0.35,
+    "eyes/r-eye-height2-decr": 0.35,
+    "eyes/l-eye-corner1-down": 0.15,
+    "eyes/r-eye-corner1-down": 0.15,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1,
+    "eyebrows/eyebrows-trans-down": 0.2,
+    "eyebrows/eyebrows-trans-forward": 0.1,
+    "eyebrows/eyebrows-angle-down": 0.1,
+    "nose/nose-scale-vert-incr": 0.1,
+    "nose/nose-scale-horiz-incr": 0.15,
+    "nose/nose-point-width-incr": 0.4,
+    "nose/nose-nostrils-width-incr": 0.4,
+    "nose/nose-flaring-incr": 0.2,
+    "nose/nose-point-up": 0.1,
+    "nose/nose-hump-decr": 0.1,
+    "mouth/mouth-scale-horiz-incr": 0.15,
+    "mouth/mouth-lowerlip-volume-incr": 0.45,
+    "mouth/mouth-upperlip-volume-incr": 0.25,
+    "mouth/mouth-cupidsbow-incr": 0.15,
+    "mouth/mouth-angles-down": 0.1,
+    "neck/neck-scale-vert-incr": 0.15,
+    "neck/neck-scale-horiz-decr": 0.05,
+    "torso/measure-shoulder-dist-incr": 0.1,
+    "torso/torso-vshape-incr": 0.15,
+    "torso/measure-waist-circ-decr": 0.2,
+    "torso/measure-hips-circ-decr": 0.1,
+    "buttocks/buttocks-volume-decr": 0.1
+  },
+  "morphs_extra": {
+    "_note": "Targets from assets/embed/mh-shapes-x.bin.gz (read by src/avatar3d.js). Ordinary ears with a slight stand-out, a pointed chin and lightly hollow cheeks. The lip volumes in morphs are set up on purpose: avatar3d's athleteTargets thins every male lip, which would lose his full lips.",
+    "ears/l-ear-flap-incr": 0.15,
+    "ears/r-ear-flap-incr": 0.15,
+    "chin/chin-triangle": 0.25,
+    "community/elvs_sunken_cheeks_1": 0.15
+  },
+  "ethnicity_fit": {
+    "african": 0.45,
+    "asian": 0.05,
+    "caucasian": 0.5,
+    "photos": [
+      "espn-full.png",
+      "espn-stance-right.png",
+      "wiki-sextoround-2026-04-17.jpg",
+      "ref-cageside-ufc322-faceoff-2025-11-14.jpg"
+    ],
+    "basis": "Fitted by eye to how MakeHuman's three shape bases reproduce what the photos show: a broad, rounded nose tip with wide alae on a straight, medium-height bridge, full upper and lower lips, heavy-lidded eyes with no inner-corner fold, and a long face with high cheekbones and a narrow pointed chin. Not assigned from name, nationality or heritage.",
+    "confidence": "low: his features sit between the bases; check a render against the April 2026 headshot and drop or flatten the block if the face comes out too wide; the detail morphs work without it"
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "middleage_caucasian_male (swatch #dab396) tinted toward tone_hex_recommended #ae7655: the closest swatch lighter than his tone, since the african swatches (#583724-#66402a) are darker than the sampled tone and the avatar tint can only darken. Texture picked by swatch colour only.",
+    "eyebrows": "eyebrow010 tinted #241812, straight and low",
+    "hair": "tight-curl strand shell about 3 cm on top over a high skin fade, #1c1512",
+    "beard": "thin pencil moustache plus a small chin goatee, #1e1611, over a faint stubble shadow",
+    "tattoos": "full sleeves on both arms, 'Muay Thai' chest script, throat monogram, left-neck script, left-scalp script, full back piece, DANGER on the left shin"
+  },
+  "notes": "Confidence: high for skin tone range, hair, facial hair, tattoo placement and build; medium for face proportions; low-to-medium for exact morph values. 8 photos: 2 freely licensed (Commons CC BY 3.0 interview frames, September 2025 and April 2026), 6 reference-only; 4 are from 2026. One left profile (UFC 322 face-off, small) and a right three-quarter from the May 2026 fight photo; no true right profile. The two interview frames are close phone shots with wide-angle distortion (nose and lips exaggerated), so face proportions come from the April 2026 studio portraits. What to watch: (1) The likeness rests on the long face tapering to a narrow pointed chin, the heavy-lidded eyes, the broad nose tip with full lips, and the thin pencil moustache with a small goatee. (2) The tattoos are a major cue: both sleeves, the 'Muay Thai' chest script, the throat and left-neck pieces and the full back piece; mirror-check that the oni mask sits on his LEFT shoulder, the haloed cherub on his RIGHT arm and DANGER on his LEFT shin. (3) Build: tall, slim and very long-armed; do not bulk up the chest or arms. (4) Skin is a warm medium golden-brown; pick a lighter skin texture and tint it down rather than a darker texture. (5) His stance is listed as Switch on ufcstats. Macro values: ageOldM uses MakeHuman's 25-years-at-0.5, 90-years-at-1.0 mapping (age 33). heightUpM 0.2 matches other 185.4 cm fighters. l-/r- morphs are the character's own left and right."
+}

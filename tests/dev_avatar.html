@@ -28,6 +28,8 @@ SLUGS.forEach(function (s) {
 });
 // &morphs={"head/head-scale-horiz-incr":0.3,...} adds or replaces likeness targets for the first slug (likeness iteration)
 if (Q.get("morphs") && db.likeness[SLUGS[0]]) { try { var mo = JSON.parse(Q.get("morphs")), lk0 = db.likeness[SLUGS[0]]; lk0.morphs = Object.assign({}, lk0.morphs || {}, mo); } catch (e) { console.warn("bad morphs param", e); } }
+// &ethnic=african,asian,caucasian tries fitted ethnicity shape bases on the first slug (likeness iteration)
+if (Q.get("ethnic") && db.likeness[SLUGS[0]]) { var ev = Q.get("ethnic").split(",").map(Number); db.likeness[SLUGS[0]].ethnicity_fit = { african: ev[0], asian: ev[1], caucasian: ev[2], photos: ["(trial render)"] }; }
 var APP = SLUGS.map(function (s) { return FightAvatar.appearanceFor(s, db); });
 if (APP.length === 1) APP.push(Object.assign({}, APP[0]));   // one slug (likeness tool): same fighter in both corners
 var REF = Object.assign({}, FightAvatar.REFEREE, (overrides.referee || {}).appearance || {});

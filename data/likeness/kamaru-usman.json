@@ -264,5 +264,34 @@
     "confidence": "low",
     "source": "Set 2026-11-06 from his documented fighting style: data/scouting/kamaru-usman.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
     "notes": "Wrestle-boxer pressure: jab and body work while pushing to the fence, steady and fairly flat-footed."
+  },
+  "ethnicity_fit": {
+    "african": 0.75,
+    "asian": 0.0,
+    "caucasian": 0.25,
+    "photos": [
+      "espn_headshot.png"
+    ],
+    "method": "Fitted by eye on 2026-11-06 with tests/likeness_compare.js (front view, neutral studio light): renders with the neutral thirds, 0.60/0.05/0.35 and 0.85/0.00/0.15 were compared with the photo; nose width, nostril flare, lip fullness and face width matched best between the last two, so the fit sits between them. Values describe the shape bases that match this photo, not an assignment from name or nationality.",
+    "trials": [
+      {
+        "african": 0.333,
+        "asian": 0.333,
+        "caucasian": 0.333,
+        "note": "nose and lips too narrow, face too narrow"
+      },
+      {
+        "african": 0.6,
+        "asian": 0.05,
+        "caucasian": 0.35,
+        "note": "closer"
+      },
+      {
+        "african": 0.85,
+        "asian": 0.0,
+        "caucasian": 0.15,
+        "note": "nose width and lips close; slightly broad"
+      }
+    ]
   }
 }

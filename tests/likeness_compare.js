@@ -13,6 +13,8 @@
 //     --likeness 0          render without the likeness sheet (base data-derived face), for A/B checks
 //     --morphs '{"head/head-scale-horiz-incr":0.3}'   try target values on top of the sheet (not saved)
 //     --tag <name>          suffix for the output file names (keep several tries side by side)
+//     --ethnic a,b,c        try MakeHuman ethnicity shape bases (african, asian, caucasian weights) fitted
+//                           to the photo; record a chosen fit in the sheet's "ethnicity_fit" block with the photos used
 //
 // The sheet may list photos to compare: data/likeness/<slug>.json "compare": [{ "photo": "file",
 // "view": "front", "side": -1, "box": [x0,y0,x1,y1] }, ...]; with no --photo those are used.
@@ -69,7 +71,7 @@ function pngSize(buf) { return buf.readUInt32BE(16) + "x" + buf.readUInt32BE(20)
   const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--no-sandbox"] });
   const page = await browser.newPage({ viewport: { width: SIZE, height: SIZE }, deviceScaleFactor: 1 });
   page.on("pageerror", e => console.error("page error:", e.message));
-  const lk = (opt("likeness", "1") === "0" ? "&likeness=0" : "") + (opt("extra") ? "&" + opt("extra") : "") + (opt("morphs") ? "&morphs=" + encodeURIComponent(opt("morphs")) : "");
+  const lk = (opt("likeness", "1") === "0" ? "&likeness=0" : "") + (opt("extra") ? "&" + opt("extra") : "") + (opt("morphs") ? "&morphs=" + encodeURIComponent(opt("morphs")) : "") + (opt("ethnic") ? "&ethnic=" + opt("ethnic") : "");
   await page.goto(`http://127.0.0.1:${port}/tests/dev_avatar.html?w=${SIZE}&h=${SIZE}&slugs=${slug}${lk}`, { timeout: 300000 });
   const ok = await page.evaluate(() => window.DEV.ready);
   if (!ok) { console.error("avatar did not build"); process.exit(2); }
