@@ -1898,11 +1898,434 @@
     },
     "file": "data/derived/evalv/v4.0.1_train.json"
    },
-   "validation": null,
-   "blend": null,
+   "validation": {
+    "n_fights": 865,
+    "n_decisive": 853,
+    "sims_per_order": 300,
+    "metrics": {
+     "winLL": {
+      "est": 0.6289,
+      "lo": 0.6137,
+      "hi": 0.6435
+     },
+     "brier": {
+      "est": 0.2189,
+      "lo": 0.2118,
+      "hi": 0.2257
+     },
+     "acc": {
+      "est": 0.6665,
+      "lo": 0.6346,
+      "hi": 0.6993
+     },
+     "bin7": {
+      "est": 1.5708,
+      "lo": 1.5349,
+      "hi": 1.6098
+     },
+     "method": {
+      "est": 0.9409,
+      "lo": 0.913,
+      "hi": 0.9707
+     },
+     "dev_sig_lnd": {
+      "est": 21.8171,
+      "lo": 20.2321,
+      "hi": 23.4399
+     },
+     "dev_sig_att": {
+      "est": 43.3637,
+      "lo": 40.0248,
+      "hi": 46.8173
+     },
+     "dev_td_lnd": {
+      "est": 1.7981,
+      "lo": 1.6788,
+      "hi": 1.9326
+     },
+     "dev_ctrl": {
+      "est": 153.7115,
+      "lo": 144.1814,
+      "hi": 163.7319
+     },
+     "dev_kd": {
+      "est": 0.6528,
+      "lo": 0.6131,
+      "hi": 0.6996
+     },
+     "mae_sig_lnd": {
+      "est": 24.987,
+      "lo": 23.8921,
+      "hi": 26.0718
+     },
+     "mae_sig_att": {
+      "est": 50.976,
+      "lo": 48.7171,
+      "hi": 53.3043
+     },
+     "mae_td_lnd": {
+      "est": 1.0742,
+      "lo": 1.021,
+      "hi": 1.1291
+     },
+     "mae_ctrl": {
+      "est": 112.5717,
+      "lo": 107.6827,
+      "hi": 117.8901
+     },
+     "mae_kd": {
+      "est": 0.3209,
+      "lo": 0.307,
+      "hi": 0.3352
+     },
+     "ece": {
+      "est": 0.0713,
+      "lo": 0.0443,
+      "hi": 0.1057
+     },
+     "calSlope": {
+      "est": 1.7746,
+      "lo": 1.4542,
+      "hi": 2.1786
+     }
+    },
+    "baseRates": {
+     "n": 857,
+     "finish": {
+      "sim": 0.4873,
+      "actual": 0.4597,
+      "diff": 0.0275
+     },
+     "KO": {
+      "sim": 0.3025,
+      "actual": 0.2905,
+      "diff": 0.012
+     },
+     "SUB": {
+      "sim": 0.1847,
+      "actual": 0.1692,
+      "diff": 0.0156
+     },
+     "DEC": {
+      "sim": 0.5127,
+      "actual": 0.5403,
+      "diff": -0.0275
+     },
+     "finByRound3": {
+      "n": 752,
+      "sim": [
+       0.2487,
+       0.1433,
+       0.0911
+      ],
+      "actual": [
+       0.2367,
+       0.137,
+       0.0785
+      ]
+     },
+     "finByRound5": {
+      "n": 105,
+      "sim": [
+       0.1456,
+       0.1247,
+       0.1023,
+       0.0907,
+       0.0538
+      ],
+      "actual": [
+       0.1524,
+       0.1619,
+       0.0952,
+       0.0762,
+       0.0286
+      ]
+     },
+     "kdPer100Head": {
+      "sim": 0.746,
+      "actual": 0.6844,
+      "diff": 0.0616
+     },
+     "decision": {
+      "sim": {
+       "UD": 0.796,
+       "SD": 0.1946,
+       "MD": 0.0094
+      },
+      "actual": {
+       "UD": 0.8148,
+       "SD": 0.1808,
+       "MD": 0.0044
+      },
+      "nActual": 459
+     },
+     "r108": {
+      "sim": 0.046,
+      "actual": 0.0246,
+      "diff": 0.0214
+     },
+     "sigLndPer15": {
+      "sim": 63.3881,
+      "actual": 58.1061,
+      "diff": 5.282
+     },
+     "tdPer15": {
+      "sim": 1.3995,
+      "actual": 1.4128,
+      "diff": -0.0133
+     },
+     "ctrlPer15": {
+      "sim": 172.6532,
+      "actual": 168.3007,
+      "diff": 4.3525
+     }
+    },
+    "methodround": {
+     "joint": {
+      "submitted": 2.0699,
+      "model_S": 2.0418,
+      "diff": 0.0281,
+      "ci95": [
+       0.0075,
+       0.0476
+      ]
+     },
+     "method3": {
+      "submitted": 0.9409,
+      "model_S": 0.936,
+      "diff": 0.005,
+      "ci95": [
+       -0.0082,
+       0.0174
+      ]
+     },
+     "finish": {
+      "submitted": 0.6631,
+      "model_S": 0.6593,
+      "diff": 0.0038,
+      "ci95": [
+       -0.0073,
+       0.0145
+      ]
+     },
+     "bin7": {
+      "submitted": 1.5708,
+      "model_S": 1.5538,
+      "diff": 0.017,
+      "ci95": [
+       0.0027,
+       0.0322
+      ]
+     },
+     "method_round": {
+      "submitted": 1.434,
+      "model_S": 1.424,
+      "diff": 0.0101,
+      "ci95": [
+       -0.007,
+       0.0259
+      ]
+     },
+     "round_given_fin": {
+      "submitted": 1.0674,
+      "model_S": 1.0601,
+      "diff": 0.0072,
+      "ci95": [
+       -0.01,
+       0.0246
+      ]
+     },
+     "ko_vs_sub": {
+      "submitted": 0.6042,
+      "model_S": 0.6017,
+      "diff": 0.0026,
+      "ci95": [
+       -0.0128,
+       0.0185
+      ]
+     },
+     "method_given_winner": {
+      "submitted": 0.9181,
+      "model_S": 0.9073,
+      "diff": 0.0108,
+      "ci95": [
+       -0.0031,
+       0.0254
+      ]
+     },
+     "winner": {
+      "submitted": 0.6289,
+      "model_S": 0.6213,
+      "diff": 0.0077,
+      "ci95": [
+       -0.001,
+       0.0164
+      ]
+     },
+     "winner_brier": {
+      "submitted": 0.2189,
+      "model_S": 0.2154,
+      "diff": 0.0035,
+      "ci95": [
+       -0.0006,
+       0.0076
+      ]
+     },
+     "winner_acc": {
+      "submitted": 0.6659,
+      "model_S": 0.6753,
+      "diff": -0.0094,
+      "ci95": [
+       -0.0385,
+       0.0186
+      ]
+     },
+     "method3_brier": {
+      "submitted": 0.5641,
+      "model_S": 0.561,
+      "diff": 0.0031,
+      "ci95": [
+       -0.0061,
+       0.0117
+      ]
+     }
+    },
+    "compare": {
+     "against": "v4",
+     "paired": {
+      "winLL": {
+       "diff": -0.0034,
+       "lo": -0.0073,
+       "hi": 0.0008,
+       "n": 853
+      },
+      "brier": {
+       "diff": -0.0017,
+       "lo": -0.0038,
+       "hi": 0.0002,
+       "n": 853
+      },
+      "acc": {
+       "diff": 0.0094,
+       "lo": -0.0122,
+       "hi": 0.0319,
+       "n": 853
+      },
+      "bin7": {
+       "diff": -0.0004,
+       "lo": -0.0232,
+       "hi": 0.0149,
+       "n": 857
+      },
+      "method": {
+       "diff": 0.001,
+       "lo": -0.0046,
+       "hi": 0.0063,
+       "n": 857
+      },
+      "dev_sig_lnd": {
+       "diff": -0.0486,
+       "lo": -0.2121,
+       "hi": 0.1172,
+       "n": 865
+      },
+      "dev_sig_att": {
+       "diff": -0.0579,
+       "lo": -0.3844,
+       "hi": 0.2577,
+       "n": 865
+      },
+      "dev_td_lnd": {
+       "diff": -0.0077,
+       "lo": -0.0193,
+       "hi": 0.0041,
+       "n": 865
+      },
+      "dev_ctrl": {
+       "diff": -0.4107,
+       "lo": -1.5227,
+       "hi": 0.6332,
+       "n": 865
+      },
+      "dev_kd": {
+       "diff": 0.0011,
+       "lo": -0.0034,
+       "hi": 0.0058,
+       "n": 865
+      },
+      "mae_sig_lnd": {
+       "diff": -0.0223,
+       "lo": -0.1362,
+       "hi": 0.0929,
+       "n": 865
+      },
+      "mae_sig_att": {
+       "diff": -0.0274,
+       "lo": -0.2705,
+       "hi": 0.2133,
+       "n": 865
+      },
+      "mae_td_lnd": {
+       "diff": 0.017,
+       "lo": 0.0128,
+       "hi": 0.0213,
+       "n": 865
+      },
+      "mae_ctrl": {
+       "diff": 1.483,
+       "lo": 0.955,
+       "hi": 2.041,
+       "n": 865
+      },
+      "mae_kd": {
+       "diff": 0.0003,
+       "lo": -0.0009,
+       "hi": 0.0015,
+       "n": 865
+      }
+     }
+    },
+    "file": "data/derived/evalv/v4.0.1_val.json"
+   },
+   "blend": {
+    "market": {
+     "engine_weight": 0.00179323587976762,
+     "logloss_with": 0.5788099923758476,
+     "logloss_without": 0.5788257212949961,
+     "diff": {
+      "est": -0.0000157289191484635,
+      "lo": -0.00003115957049440681,
+      "hi": -2.182334234371639e-7,
+      "p_gt0": 0.0235
+     },
+     "n": 845
+    },
+    "nomarket": {
+     "engine_weight": 0,
+     "logloss_with": 0.5930333744000575,
+     "logloss_without": 0.5930336691698366,
+     "diff": {
+      "est": 0,
+      "lo": 0,
+      "hi": 0,
+      "p_gt0": null,
+      "raw": {
+       "est": -2.947697791072808e-7,
+       "lo": -4.819442412118878e-7,
+       "hi": -1.0681580458083556e-7,
+       "p_gt0": 0.002
+      },
+      "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
+     },
+     "n": 845
+    },
+    "dry": false
+   },
    "notes": [
-    "2026-11-06T16:43 train: v4.0.1 = v4 + the v4 review's fixes (train-only): EM judging weights refit on 2015-2023 cards (tools/judge_em_train.py; v4.0.0 used cards through 2026-10), judgecal refit + point deductions (judge.ded 0.00515/fighter-round, ded2 0.075), v4_levels re-run on all 1,999 train fights with learned-path levels for TD attempts, control and sub attempts (mlTdLevel, mlCtrlLevel, mlSubLevel), cumulative mlMaxRatio cap on TD multipliers"
-   ]
+    "2026-11-06T16:43 train: v4.0.1 = v4 + the v4 review's fixes (train-only): EM judging weights refit on 2015-2023 cards (tools/judge_em_train.py; v4.0.0 used cards through 2026-10), judgecal refit + point deductions (judge.ded 0.00515/fighter-round, ded2 0.075), v4_levels re-run on all 1,999 train fights with learned-path levels for TD attempts, control and sub attempts (mlTdLevel, mlCtrlLevel, mlSubLevel), cumulative mlMaxRatio cap on TD multipliers",
+    "2026-11-06T16:45 val: single validation look for v4.0.1 (the v4 review fixes: train-only EM judging weights, point deductions, learned-path TD/control/sub-attempt levels, cumulative TD cap), paired against v4; decided by the decision rule"
+   ],
+   "validated_at": "2026-11-06T16:45:19.279Z"
   }
  ]
 }

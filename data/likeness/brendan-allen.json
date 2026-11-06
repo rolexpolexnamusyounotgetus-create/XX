@@ -1,0 +1,229 @@
+{
+  "slug": "brendan-allen",
+  "name": "Brendan Allen",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 30,
+  "official": { "dob": "1995-12-28", "height_cm": 188.0, "reach_cm": 190.5, "stance": "Orthodox", "division": "Middleweight", "fight_weight_lb": 185 },
+  "photos_used": [
+    "ref-espn-headshot-2026-10.png",
+    "ref-espn-stance-2026-10.png",
+    "ref-espn-stance-2025-10.png",
+    "ref-getty-vegas122-fight-2026-10-10.jpg",
+    "ref-cagesidepress-vegas122-mediaday-2026-10.jpg",
+    "ref-getty-vegas122-weighin-2026-10-09.jpg",
+    "ref-ufc-vegas122-postfight-presser-2026-10-10.jpg",
+    "wiki-weighingin-2026-06-09.png",
+    "ref-getty-vegas118-weighin-2026-06-05.jpg",
+    "ref-getty-vegas118-faceoff-2026-06-05.jpg",
+    "ref-cagesidepress-vegas118-mediaday-2026-06.jpg",
+    "ref-cagesidepress-vancouver-weighin-2025-10.jpg"
+  ],
+  "photo_coverage": "12 photos; recency is good (7 from Oct 2026, UFC Vegas 122, and 4 from June 2026). Frontal: UFC studio headshot (Oct 2026), post-fight presser thumbnail (Oct 2026), Commons webcam still (June 2026, CC BY 4.0, the only embeddable photo), June 2026 media day, Oct 2025 studio cutout and weigh-in (old short haircut). Three-quarter: Oct 2026 studio cutout and media day. Profile: June 2026 weigh-in face-off (left side, near 90 degrees). Body: two studio cutouts and three weigh-ins. Action: one fight-night knee from the clinch. No back view; the back is unknown except the top of the right shoulder.",
+  "look_change_note": "His hair changed a lot in a year: short tapered cut in Oct 2025, chin-length curls by June 2026, long jaw-to-neck waves by Oct 2026. On fight night (Oct 10, 2026) it was braided tight to the scalp in several front-to-back braids. Use the long or braided look, not the short one.",
+  "face": {
+    "shape": "Long oval face, narrow-to-medium width, with a high forehead and a long lower face; reads lean and angular. Widest at the cheekbones, tapering gently to a narrow chin.",
+    "jaw": "Clean, defined jaw line that is not wide; the angles sit high and fairly far back under the ears, then the line tapers in a long V to the chin. Visible in the Oct 2025 short-hair photos and the June 2026 profile.",
+    "chin": "Narrow, moderately long, with a slightly squared tip under the stubble; in profile it projects moderately, about in line with the lower lip.",
+    "cheekbones": "Moderately prominent; the cheeks below them are flat to slightly hollow (lean face at fight week).",
+    "brow_ridge": "Moderate; the brows sit fairly low over the eyes and give a slightly deep-set look, without a heavy shelf.",
+    "forehead": "High and broad; smooth. The hairline is straight across with slightly higher temple corners (best seen in the Oct 2025 short cut).",
+    "eyes": {
+      "shape": "Medium almond eyes, slightly deep-set, with a mildly hooded upper lid; outer corners level to slightly downturned. Faint lines under the lower lids.",
+      "spacing": "Average.",
+      "colour": "Blue (light grey-blue, clear in the studio headshot and the Oct 2026 presser thumbnail).",
+      "size": "Medium."
+    },
+    "eyebrows": {
+      "thickness": "Medium.",
+      "shape": "Fairly straight and low, with a soft peak about two-thirds out and a slight downward angle at the outer tails; inner ends slightly apart.",
+      "colour": "Medium-dark brown, darker than the sun-lightened hair ends.",
+      "colour_samples": { "studio_2026_right": "#472a1f", "studio_2026_left": "#58392c", "studio_2025_right": "#5d3d35" },
+      "colour_hex": "#553629"
+    },
+    "nose": {
+      "length": "Long.",
+      "width": "Narrow bridge widening to a moderate base.",
+      "bridge": "High and straight; in profile almost straight with a faint convexity at the upper bridge.",
+      "hump": "Very slight at most.",
+      "tip": "Rounded and slightly full, pointing a little downward; projects well in profile.",
+      "nostrils": "Medium, not flared.",
+      "fight_damage": "No visible deviation. Fresh cuts on the bridge after fights (June 2026 webcam still, Oct 2026 presser) are temporary. He had facial fractures in 2020 (Sherdog headline found while searching), with no lasting visible change in these photos."
+    },
+    "mouth": {
+      "width": "Medium.",
+      "upper_lip": "Medium-thin with a clearly defined cupid's bow.",
+      "lower_lip": "Fuller than the upper lip, smooth.",
+      "resting_expression": "Lips closed and relaxed, corners level to slightly down; calm, slightly stern look in studio shots. Easy wide smile showing upper teeth at media days.",
+      "teeth": "Even and white when smiling (media days)."
+    },
+    "ears": {
+      "size": "Large, with a wide rounded helix.",
+      "protrusion": "Moderate; they stand out from the head in the Oct 2025 short-hair photos. Hidden by the long hair in most 2026 photos.",
+      "cauliflower_ear": "No. Both ears have normal, open folds in the Oct 2025 studio cutout.",
+      "lobes": "Medium, partly free."
+    },
+    "notable_marks_scars": "No large scars visible. Temporary fight marks: small cut on the nose bridge and a mark under his right eye (June 2026), a small cut on the left side of the nose bridge (Oct 2026). Possible small silver ring or stud on the left nostril rim in the Oct 2026 three-quarter studio cutout; it is not clearly visible in the frontal headshot, so treat it as unconfirmed and leave it off unless another photo shows it."
+  },
+  "hair": {
+    "style": "Long, wavy hair, centre-parted and swept back from the face, falling to the jaw at the front and to the neck at the back and sides; loose waves with flicked-out ends. Fight night: pulled back in several tight braids running front to back along the scalp, ends loose at the nape (Oct 10, 2026). Media days: often under a cap worn backwards.",
+    "length_cm": { "top": 18, "sides": 15, "back": 20 },
+    "length_note": "Lengths are estimates from the Oct 2026 photos (ends reach the jawline at the front and below the ears at the back). Oct 2025 was a short tapered cut (about 4 cm on top).",
+    "colour": "Warm medium brown with lighter golden-brown, sun-lightened ends and highlights.",
+    "colour_samples": {
+      "studio_2026_left_mass_mid": "#362015",
+      "studio_2026_right_mass_mid": "#482e21",
+      "studio_2026_top_mid": "#3c2922",
+      "studio_2025_top_mid": "#4e3428",
+      "faceoff_2026_06_mid": "#432c1f",
+      "highlights_avg": "#6f4d3e"
+    },
+    "colour_hex": "#4a3124",
+    "colour_hex_highlight": "#6f4d3e",
+    "hairline": "Straight across with slightly higher temple corners; no thinning.",
+    "texture": "Wavy to loosely curly, medium thickness, full volume."
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "colour": "Medium brown, a little lighter and redder than the head hair at the roots; reads lighter (almost ash) in high-key studio light.",
+    "colour_samples": { "webcam_moustache": "#63392b", "webcam_chin_mixed_with_skin": "#8a5842" },
+    "colour_hex": "#5e3b2b",
+    "density": "Dense on the moustache and chin, medium on the jaw, light on the upper cheeks.",
+    "shape": "Heavy stubble (several days' growth), kept at roughly the same length everywhere; the moustache line is the darkest part. Cheek line low and natural; neckline under the jaw.",
+    "length_mm": "2-4"
+  },
+  "skin": {
+    "tone_samples": [
+      { "photo": "ref-espn-headshot-2026-10.png", "spot": "right cheek", "hex": "#dd9470", "light": "studio, high key" },
+      { "photo": "ref-espn-headshot-2026-10.png", "spot": "left cheek", "hex": "#d7926f", "light": "studio, high key" },
+      { "photo": "ref-espn-headshot-2026-10.png", "spot": "forehead", "hex": "#fdc9b6", "light": "studio highlight", "excluded": true },
+      { "photo": "ref-espn-stance-2025-10.png", "spot": "right cheek", "hex": "#f2a67f", "light": "studio, high key" },
+      { "photo": "ref-espn-stance-2025-10.png", "spot": "left cheek", "hex": "#e79b72", "light": "studio, high key" },
+      { "photo": "ref-espn-stance-2025-10.png", "spot": "forehead", "hex": "#fac1a4", "light": "studio highlight", "excluded": true },
+      { "photo": "wiki-weighingin-2026-06-09.png", "spot": "right cheek", "hex": "#ca876e", "light": "webcam, indoor" },
+      { "photo": "wiki-weighingin-2026-06-09.png", "spot": "left cheek", "hex": "#d7886d", "light": "webcam, indoor" },
+      { "photo": "wiki-weighingin-2026-06-09.png", "spot": "forehead", "hex": "#fab399", "light": "webcam, shine", "excluded": true },
+      { "photo": "ref-ufc-vegas122-postfight-presser-2026-10-10.jpg", "spot": "right cheek", "hex": "#fef6ed", "light": "specular highlight", "excluded": true },
+      { "photo": "ref-ufc-vegas122-postfight-presser-2026-10-10.jpg", "spot": "left cheek", "hex": "#c58270", "light": "press-room light" },
+      { "photo": "ref-ufc-vegas122-postfight-presser-2026-10-10.jpg", "spot": "forehead", "hex": "#f6d1c1", "light": "press-room highlight", "excluded": true },
+      { "photo": "ref-cagesidepress-vancouver-weighin-2025-10.jpg", "spot": "right cheek", "hex": "#ceac98", "light": "stage light, desaturated" },
+      { "photo": "ref-cagesidepress-vancouver-weighin-2025-10.jpg", "spot": "left cheek", "hex": "#c8a492", "light": "stage light, desaturated" },
+      { "photo": "ref-cagesidepress-vancouver-weighin-2025-10.jpg", "spot": "forehead", "hex": "#dcaf9f", "light": "stage light", "excluded": true }
+    ],
+    "sampling_method": "Median of a 7-11 px box per spot (source pixels), checked on an overlay sheet. Highlights and shine are listed but excluded.",
+    "tone_average_all": "#e3aa91",
+    "tone_average_kept": "#d69679",
+    "tone_average_by_light": "#d49479",
+    "tone_hex": "#d49479",
+    "tone_hex_recommended": "#dc9f84",
+    "tone_note": "Light skin with a warm peach-tan cast; cheeks and nose flush a little redder. Studio photos run orange and bright, the stage photo runs grey. #dc9f84 is the suggested render albedo.",
+    "undertone": "Warm (peach), with mild pink flushing on the cheeks.",
+    "freckles_marks": "Even tone; no freckles visible at these resolutions. Light-to-moderate brown hair on the legs and forearms; chest and abdomen mostly smooth.",
+    "texture_pick": "middleage_caucasian_male (swatch #dab396) tinted toward #dc9f84."
+  },
+  "body": {
+    "build": "Tall, long-limbed and lean-athletic rather than bulky; 188 cm with a 190.5 cm reach. Long legs relative to the torso.",
+    "body_fat": "lean",
+    "body_fat_note": "Fight-week lean: visible upper abs and obliques, soft rather than shredded lower abs.",
+    "shoulders": "Moderately broad and slightly sloped, with rounded deltoids; not a heavily built upper body.",
+    "chest": "Moderate, flat pecs with a clear lower edge.",
+    "arms": "Long arms with lean, defined biceps and forearms; flexed biceps peak well (Oct 2025 weigh-in) but the arms look slim at rest.",
+    "waist": "Narrow; mild V-taper.",
+    "legs_calves": "Long legs with lean, moderately muscled thighs and average calves; long shins and feet.",
+    "neck": "Medium length, athletic, not thick.",
+    "posture": "Upright and relaxed: shoulders level, chest neutral, head straight or slightly tilted. In the studio cutouts the arms hang long at his sides with a slight elbow bend and the gloved fists rest by the front or outside of the thighs; feet about hip width.",
+    "notable_physique_traits": "Lean, long frame; full black tribal sleeve on the right arm and chest against an otherwise light upper body; long wavy hair."
+  },
+  "stance_observed": {
+    "official": "Orthodox (dataset, ESPN).",
+    "from_photos": "No clean photo of his standing guard was found. Fight night (Oct 2026): a knee from a two-handed collar tie, both gloves behind the opponent's head, hips square, the tattooed left thigh driving up. Studio and weigh-in stance is relaxed and upright (see posture).",
+    "from_research": "research/fighters/brendan-allen.md: a pressure grappler who forces clinches, wrestles along the fence with body locks and takes the back; walks forward behind punches and kicks; his defence is loose."
+  },
+  "tattoos": [
+    { "where": "Right arm, full sleeve from shoulder to wrist", "description": "Black Polynesian/tribal-style sleeve: bands of geometric blackwork (spearheads, waves, crescents, rows of triangles and shark-tooth patterns) wrapping the whole arm, with a large spiral motif on the outer shoulder cap. Joins the chest piece and wraps over the top and back of the right shoulder.", "size": "Full arm" },
+    { "where": "Right pec and front of the right shoulder", "description": "Continuation of the tribal sleeve: a large black tribal panel covering the whole right pec up to the collarbone and in to the sternum, around the nipple, with curved spearhead bands.", "size": "About 25 x 22 cm" },
+    { "where": "Right ribs, below the pec", "description": "Black dog tag with three lines of small, unreadable text, hanging from a fine chain line that runs up into the tribal chest piece (first clearly visible in 2026 photos).", "size": "About 9 x 5 cm, chain about 15 cm" },
+    { "where": "Left upper chest, under the collarbone", "description": "Black serif script 'James 1: 2-7' with a smaller signature-style line '-James Allen Jr.' underneath.", "size": "About 16 x 5 cm" },
+    { "where": "Abdomen, left of the midline", "description": "Black-and-grey baby footprints and a handprint with names and dates: 'Brenleigh' over a footprint with '11.27.19' (upper abdomen), 'Emme' over a smaller footprint with '11.08.21' (to its left), and 'James III \"Jay\"' over a handprint with '12-20-24' (beside the navel).", "size": "Each about 6 x 9 cm; group about 18 x 25 cm" },
+    { "where": "Left thigh, front, from the shorts line to above the knee", "description": "Realistic black-and-grey portrait piece: a young girl standing in a checked dress (full figure) with a smiling child's face beside her on the outer thigh, with shading and partial figures around them.", "size": "About 25 x 18 cm" },
+    { "where": "Left arm, both legs below the knee, right thigh", "description": "None clearly visible in the front and three-quarter photos.", "size": "-" }
+  ],
+  "accessories_seen": "Silver chain with a round pendant and a wristwatch on the left wrist (Oct 2025 weigh-in); caps worn backwards at media days (blue Oct 2026, black June 2026); fur trapper hat at the Oct 2026 presser.",
+  "kit": {
+    "typical_shorts": "UFC-issued board-style shorts ending above mid-thigh, in the corner colour. Oct 2026: deep blue with a darker wave pattern, white-dash pattern on the waistband and a black UFC tab, crypto.com logo. Oct 2025: red Venum tiger-stripe with black and white slashes, black waistband, his name down the side. June 2026 weigh-in: dark red patterned trunks.",
+    "gloves": "Standard black UFC 4 oz gloves.",
+    "shorts_colours_hex": { "blue_2026_base": "#003a6b", "blue_2026_pattern": "#00172d", "red_2025": "#b50019", "waistband_black": "#111111" }
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.077,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.45,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.1,
+    "macro/heightUpM": 0.25,
+    "macro/heightDownM": 0.0,
+    "macro/proportionsUpM": 0.5,
+
+    "head/head-oval": 0.4,
+    "head/head-scale-vert-incr": 0.15,
+    "head/head-scale-horiz-decr": 0.1,
+    "head/head-fat-decr": 0.2,
+
+    "forehead/forehead-scale-vert-incr": 0.2,
+
+    "chin/chin-height-incr": 0.15,
+    "chin/chin-width-decr": 0.15,
+    "chin/chin-prominent-incr": 0.1,
+
+    "cheek/l-cheek-bones-incr": 0.15,
+    "cheek/r-cheek-bones-incr": 0.15,
+    "cheek/l-cheek-volume-decr": 0.2,
+    "cheek/r-cheek-volume-decr": 0.2,
+
+    "eyes/l-eye-height2-decr": 0.1,
+    "eyes/r-eye-height2-decr": 0.1,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1,
+
+    "eyebrows/eyebrows-trans-down": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.15,
+
+    "nose/nose-scale-vert-incr": 0.25,
+    "nose/nose-scale-depth-incr": 0.15,
+    "nose/nose-width1-decr": 0.1,
+    "nose/nose-point-width-incr": 0.1,
+    "nose/nose-point-down": 0.1,
+    "nose/nose-hump-incr": 0.05,
+
+    "mouth/mouth-lowerlip-volume-incr": 0.15,
+    "mouth/mouth-cupidsbow-incr": 0.15,
+    "mouth/mouth-angles-down": 0.05,
+
+    "ears/l-ear-scale-incr": 0.15,
+    "ears/r-ear-scale-incr": 0.15,
+
+    "neck/neck-scale-horiz-incr": 0.15,
+    "neck/neck-scale-vert-incr": 0.05,
+
+    "torso/measure-shoulder-dist-incr": 0.15,
+    "torso/torso-vshape-incr": 0.15,
+    "torso/measure-waist-circ-decr": 0.1,
+    "torso/measure-hips-circ-decr": 0.05
+  },
+  "morphs_extra": {
+    "_note": "Outside the requested morph list but present in assets/embed/mh-shapes-x (src/avatar3d.js reads this block). Wing = ear protrusion.",
+    "ears/l-ear-wing-incr": 0.15,
+    "ears/r-ear-wing-incr": 0.15,
+    "head/head-rectangular": 0.1,
+    "chin/chin-triangle": 0.1
+  },
+  "render_hints": {
+    "iris": "blue",
+    "eyebrows": "eyebrow001 tinted #553629, medium thickness, low and fairly straight",
+    "skin_base": "middleage_caucasian_male tinted toward #dc9f84",
+    "hair": "long wavy hair to the jaw and neck, centre part, tinted #4a3124 with #6f4d3e ends (ponytail01 is the closest stock mesh; for fight night a braided-back look fits the photos best); heavy stubble tinted #5e3b2b"
+  },
+  "notes": "Confidence: high for hair (colour, length, fight-night braids), stubble, eye colour, skin, build and the main tattoos; medium for face proportions; low-to-medium for exact morph values. What to watch: (1) Current look is long, wavy, centre-parted medium-brown hair to the jaw/neck with lighter ends; on fight night it is braided tight to the scalp front to back. Do not use the short Oct 2025 cut. (2) Blue eyes, slightly deep-set under low, fairly straight medium-brown brows. (3) Long, straight nose with a rounded, slightly drooping tip; long oval face, narrow chin, lean cheeks. (4) Heavy stubble, densest on the moustache and chin, no full beard. (5) Tall, lean, long-limbed frame: avoid bulky shoulders or a thick neck. (6) Tattoos: black tribal sleeve on the right arm continuing over the right pec and the top/back of the right shoulder; dog tag on a chain on the right ribs; 'James 1: 2-7' script on the left upper chest; footprints, a handprint, names and dates on the left half of the abdomen; black-and-grey portraits on the front of the left thigh. Left arm clean. Mirror-check sides (all photos checked unmirrored by the readable UFC logos). (7) Ears are large and normal (no cauliflower). (8) A possible left-nostril ring in one Oct 2026 photo is unconfirmed. Macro ageOldM 0.077 uses (30-25)/65 (he turns 31 on 2026-12-28). heightUpM 0.25 is a guess for 188 cm; the avatar scales to official height. Values symmetric; l-/r- refer to the character's own sides. Only one embeddable (Commons) photo exists, a June 2026 webcam still."
+}

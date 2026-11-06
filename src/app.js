@@ -178,7 +178,7 @@
   var modelsReady = Promise.all([readGz("mlrates-gz"), readGz("mlpage-gz"), readGz("mr-gz")])
     .then(installModels, function () { MLR.pending = false; });
   var MKTR = (MKTJ && MKTJ.ratings) || {};
-  var ENGV = "v" + String(E.VERSION || "3").split(".")[0];
+  var ENGV = "v" + String(E.VERSION || "3");          // the one engine label the page shows (FightEngine.VERSION)
   var P0 = E.params ? E.params() : window.FightParams;
   var JP0 = P0 && P0.judge && P0.judge.power != null ? P0.judge.power : 0.25;
   (function applyOverrides() {
@@ -469,6 +469,7 @@
     $("mbNote").textContent = warn;
     $("h1A").textContent = shortOf("A"); $("h1B").textContent = shortOf("B");
     $("kicker").textContent = S.div + " · " + S.rounds + " × 5 min" + (S.title ? " · title fight" : "") + " · " + (divLbs(S.div) || "?") + " lb";
+    $("asOf").title = "Fight data through " + fmtDate(DB.meta && DB.meta.snapshot) + "; simulator engine " + ENGV;
     document.title = "Fight Lab";
     // names everywhere
     ["A", "B"].forEach(function (s) {
@@ -493,6 +494,15 @@
       league: { slpm: slpm0, acc: acc0, td15: P.td_lnd * 15, tdAcc: P.td_acc, kd: 100 * P.kd_per_h, ctrl15: P.ctrl * 15, sub15: P.sub_att * 15 }
     };
   }
+  // a champion pill: the full title, and on phones a short "UFC 155-lb champion" (CSS swaps them)
+  function titlePill(title) {
+    var pl = el("span", "pill gold"), t = String(title), lo = t.toLowerCase(), best = null;
+    DIVS.forEach(function (d) { var dn = d.toLowerCase().replace("women's ", ""); if (lo.indexOf(dn) >= 0 && (!best || dn.length > best.n.length)) best = { d: d, n: dn }; });
+    pl.appendChild(el("span", "pl", t));
+    var short = best ? "UFC " + (/women/.test(lo) || /^Women/.test(best.d) ? "women's " : "") + divLbs(best.d) + "-lb " + (/interim/.test(lo) ? "interim " : "") + "champion" : t;
+    pl.appendChild(el("span", "ps", short)); pl.title = t;
+    return pl;
+  }
   function renderTape() {
     var heads = $("tapeHeads"); heads.textContent = "";
     ["A", "B"].forEach(function (side) {
@@ -502,10 +512,11 @@
       if (p.nick) box.appendChild(el("div", "th-nick", "“" + p.nick + "”"));
       var tags = el("div", "th-tags");
       tags.appendChild(el("span", "pill", side === "A" ? "Blue corner" : "Red corner"));
-      if (sc && sc.status && sc.status.title) tags.appendChild(el("span", "pill gold", sc.status.title));
+      if (sc && sc.status && sc.status.title) tags.appendChild(titlePill(sc.status.title));
       if (sc && sc.status && sc.status.active === false) tags.appendChild(el("span", "pill warn", "Inactive"));
       if (p.manual) tags.appendChild(el("span", "pill", "Hand-entered"));
       box.appendChild(tags);
+      box.appendChild(el("div", "th-note", LIKE[slugOf(side)] ? "3D figure follows likeness notes from public photos" : "Generic 3D figure: no likeness notes yet"));
       card.appendChild(ini); card.appendChild(box); heads.appendChild(card);
     });
     var tb = $("tapeBody"); tb.textContent = "";
@@ -529,13 +540,14 @@
     row("Age", ageA ? Math.floor(ageA) : null, ageB ? Math.floor(ageB) : null, { small: "today" });
     row("Height", inches(pa.height_in), inches(pb.height_in));
     row("Reach", pa.reach_in ? pa.reach_in + "″" : null, pb.reach_in ? pb.reach_in + "″" : null);
-    row("Stance", pa.stance || null, pb.stance || null);
+    function stanceSrc(side) { var lk = LIKE[slugOf(side)]; return lk && lk.stance ? "3D stance: likeness notes" : "3D stance: estimated"; }
+    row("Stance", pa.stance || null, pb.stance || null, { subA: stanceSrc("A"), subB: stanceSrc("B") });
     row("Home division", divShort(pa.division), divShort(pb.division));
     row("UFC record", recStr(ra), recStr(rb), { subA: ra.w != null ? "W " + (ra.ko_w || 0) + " KO · " + (ra.sub_w || 0) + " sub · " + (ra.dec_w || 0) + " dec" : null, subB: rb.w != null ? "W " + (rb.ko_w || 0) + " KO · " + (rb.sub_w || 0) + " sub · " + (rb.dec_w || 0) + " dec" : null });
     row("UFC losses by method", ra.l != null ? (ra.ko_l || 0) + " KO · " + (ra.sub_l || 0) + " sub · " + (ra.dec_l || 0) + " dec" : null, rb.l != null ? (rb.ko_l || 0) + " KO · " + (rb.sub_l || 0) + " sub · " + (rb.dec_l || 0) + " dec" : null);
-    row("Elo", pa.elo || null, pb.elo || null, { small: "walk-forward, our data", cmp: 1, na: pa.elo, nb: pb.elo });
+    row("Elo", pa.elo || null, pb.elo || null, { small: "rating from past UFC results", cmp: 1, na: pa.elo, nb: pb.elo });
     row("Last fight", pa.last_fight ? fmtDate(pa.last_fight) : null, pb.last_fight ? fmtDate(pb.last_fight) : null);
-    sect("Engine profile");
+    sect("What the simulator uses");
     row("Sig. strikes landed / min", fx(ka.slpm), fx(kb.slpm), { small: "avg " + fx(L.slpm), cmp: 1, na: ka.slpm, nb: kb.slpm });
     row("Sig. strikes absorbed / min", fx(ka.sapm), fx(kb.sapm), { small: "avg " + fx(L.slpm), cmp: -1, na: ka.sapm, nb: kb.sapm });
     row("Striking accuracy", pct(ka.acc, 0), pct(kb.acc, 0), { small: "avg " + pct(L.acc, 0), cmp: 1, na: ka.acc, nb: kb.acc });
@@ -548,7 +560,7 @@
     row("Control time / 15 min", mmss(ka.ctrl15), mmss(kb.ctrl15), { small: "avg " + mmss(L.ctrl15), cmp: 1, na: ka.ctrl15, nb: kb.ctrl15 });
     row("Submission attempts / 15 min", fx(ka.sub15), fx(kb.sub15), { small: "avg " + fx(L.sub15), cmp: 1, na: ka.sub15, nb: kb.sub15 });
     row("Recency-weighted UFC minutes", fx(ka.min, 0), fx(kb.min, 0), { small: "how much data" });
-    $("tapeFoot").textContent = "Engine-profile rows are what the engine uses: UFC fights weighted toward the last two years, then pulled toward the " + S.div.toLowerCase() + " average (avg) in proportion to how little data there is. The bolder number in each row is the better one. Records cover UFC bouts only.";
+    $("tapeFoot").textContent = "The rows under “What the simulator uses” are its starting numbers: UFC fights weighted toward the last two years, then pulled toward the " + S.div.toLowerCase() + " average (avg) in proportion to how little data there is. The bolder number in each row is the better one. Records cover UFC bouts only. “3D stance: estimated” means the figure's posture comes from the fighter's style and numbers, not from photos.";
     $("tapeSub").textContent = "Data through " + fmtDate(DB.meta && DB.meta.snapshot) + " · ages as of " + fmtDate(now);
     renderDossiers();
   }
@@ -603,21 +615,29 @@
     { k: "out", label: "Output", min: 0.7, max: 1.3, step: 0.01, hint: "Strike attempts per minute. ×1.10 throws 10% more than the data says." },
     { k: "acc", label: "Accuracy", min: 0.7, max: 1.4, step: 0.01, hint: "Multiplies the odds that each strike lands. ×1.20 turns a 45% shot into about 50%." },
     { k: "pow", label: "Power", min: 0.5, max: 1.8, step: 0.01, hint: "Knockdown chance per clean head shot, and the damage each one does." },
-    { k: "chin", label: "Chin", min: 0.5, max: 2, step: 0.01, hint: "How easily a clean head shot drops this fighter. Above 1 is easier to drop. Age, weight class and past KO losses are already counted." },
+    { k: "chin", label: "Easier to drop", min: 0.5, max: 2, step: 0.01, hint: "How easily a clean head shot drops this fighter. Above ×1.00 drops more easily, below is sturdier. Age, weight class and past KO losses are already counted." },
     { k: "cardio", label: "Gas tank drain", min: 0.6, max: 1.6, step: 0.01, hint: "How fast the tank empties. Above 1 tires faster, and fatigue cuts output, accuracy and power." },
     { k: "tdAtt", label: "Takedown attempts", min: 0, max: 4, step: 0.05, hint: "How often this fighter shoots, at distance and in the clinch." },
     { k: "tdDef", label: "Takedown defense", min: 0.5, max: 2.5, step: 0.05, hint: "Divides the opponent's odds of finishing a shot. ×2.00 means the opponent's takedowns land about half as often." },
     { k: "leg", label: "Leg-kick share", min: 0, max: 0.45, step: 0.01, hint: "Share of strikes at distance aimed at the legs. Leg damage slows a fighter and costs output and power." },
     { k: "sub", label: "Submission threat", min: 0.3, max: 3, step: 0.05, hint: "Submission attempts on the ground and how often they finish." }
   ];
+  // the leg-kick share the simulator would use with the knob at data: the same number the mirror chart quotes
+  function legData(i) { var m0 = cur.m0 || cur.m; return m0 && m0.mixD && m0.mixD[i] ? m0.mixD[i][2] : (m0 && m0.R ? m0.R[i].mixD[2] : null); }
+  function knobDefault(side, kd) { return kd.k === "leg" ? legData(side === "A" ? 0 : 1) : 1; }
+  function movedKnobs(side) {
+    var a = cleanAdj(S.adj[side]), out = [];
+    KNOBS.forEach(function (kd) { var v = a[kd.k]; if (v == null) return; if (kd.k === "leg" || Math.abs(v - 1) > 0.005) out.push(kd.label.toLowerCase()); });
+    return out;
+  }
   function knobVal(side, k) { var v = S.adj[side][k]; return v == null ? (k === "leg" ? null : 1) : v; }
   function knobFmt(side, kd) {
     var i = side === "A" ? 0 : 1, v = knobVal(side, kd.k), m0 = cur.m0 || cur.m;
     if (kd.k === "leg") {
-      var data = m0 && m0.R ? m0.R[i].mixD[2] : null;
+      var data = legData(i);
       return v == null ? "data " + pct(data, 0) : pct(v, 0) + " (data " + pct(data, 0) + ")";
     }
-    if (kd.k === "chin") return Math.abs(v - 1) < 0.005 ? "×1.00 data" : mult(v) + (v > 1 ? " easier to drop" : " harder to drop");
+    if (kd.k === "chin") return Math.abs(v - 1) < 0.005 ? "×1.00 data" : mult(v) + (v > 1 ? " drops more easily" : " sturdier");
     if (kd.k === "cardio") return Math.abs(v - 1) < 0.005 ? "×1.00 data" : mult(v) + (v > 1 ? " tires faster" : " tires slower");
     if (kd.k === "tdAtt") {
       var base = m0 && m0.tdS ? m0.tdS[i] * 900 : null;
@@ -630,22 +650,36 @@
     wrap.setAttribute("aria-labelledby", "ktab" + side);
     $("ktabA").setAttribute("aria-selected", side === "A" ? "true" : "false"); $("ktabB").setAttribute("aria-selected", side === "B" ? "true" : "false");
     $("ktabA").tabIndex = side === "A" ? 0 : -1; $("ktabB").tabIndex = side === "B" ? 0 : -1;
-    var i = side === "A" ? 0 : 1, m0 = cur.m0 || cur.m;
+    var i = side === "A" ? 0 : 1;
+    syncTabDots();
     KNOBS.forEach(function (kd) {
       var d = el("div", "sl " + side), top = el("div", "sl-top"), lab = el("label", null, kd.label), out = el("output");
       var id = "k-" + kd.k; lab.htmlFor = id; out.id = "o-" + kd.k; out.htmlFor = id;
       var inp = document.createElement("input"); inp.type = "range"; inp.id = id; inp.min = kd.min; inp.max = kd.max; inp.step = kd.step;
-      var v = knobVal(side, kd.k);
-      inp.value = v == null ? (m0 && m0.R ? m0.R[i].mixD[2] : 0.1) : v;
+      var v = knobVal(side, kd.k), dv = knobDefault(side, kd);
+      inp.value = v == null ? (dv != null ? dv : 0.1) : v;
       inp.setAttribute("aria-describedby", "h-" + kd.k);
-      top.appendChild(lab); top.appendChild(out); d.appendChild(top); d.appendChild(inp);
+      // a tick under the track at the data value (the thumb is about 16px wide, so the track runs 8px in from each end)
+      var rng = el("div", "rng"); rng.appendChild(inp);
+      if (dv != null && isFinite(dv)) { var tk = el("i", "dtick"), fr = clamp((dv - kd.min) / (kd.max - kd.min), 0, 1); tk.style.left = "calc(8px + (100% - 16px) * " + fr.toFixed(4) + ")"; tk.title = "Data: " + (kd.k === "leg" ? pct(dv, 0) : "×1.00"); rng.appendChild(tk); }
+      top.appendChild(lab); top.appendChild(out); d.appendChild(top); d.appendChild(rng);
       var h = el("p", "hint", kd.hint); h.id = "h-" + kd.k; d.appendChild(h);
       wrap.appendChild(d);
       function sync() { out.textContent = knobFmt(side, kd); var vv = knobVal(side, kd.k); out.classList.toggle("moved", vv != null && Math.abs(vv - 1) > 0.005 && kd.k !== "leg" || (kd.k === "leg" && vv != null)); inp.setAttribute("aria-valuetext", out.textContent); }
       sync();
-      inp.addEventListener("input", function () { S.adj[side][kd.k] = +inp.value; S.scen = null; sync(); knobsChanged(); });
+      inp.addEventListener("input", function () { S.adj[side][kd.k] = +inp.value; S.scen = null; sync(); syncTabDots(); knobsChanged(); });
     });
     renderJudgeKnob();
+  }
+  // a dot on a corner's tab when that corner has knobs off the data
+  function syncTabDots() {
+    ["A", "B"].forEach(function (s) {
+      var t = $("ktab" + s); if (!t) return;
+      var dot = t.querySelector(".kdot"); if (!dot) { dot = el("span", "kdot"); dot.setAttribute("aria-hidden", "true"); t.appendChild(dot); }
+      var mv = movedKnobs(s); dot.hidden = !mv.length;
+      t.title = mv.length ? nameOf(s) + ": " + mv.join(", ") + " moved off the data" : "";
+      t.setAttribute("aria-label", shortOf(s) + (mv.length ? ", knobs moved" : ""));
+    });
   }
   function judgeRatio() {
     var m = cur.m; if (!m || !m.dw) return null; var g = S.judgePower;
@@ -676,7 +710,7 @@
   function syncKnobOutputs() {
     // after a rebuild, refresh labels that quote data (leg share, takedown rate) without rebuilding the panel
     KNOBS.forEach(function (kd) { var o = $("o-" + kd.k); if (o) o.textContent = knobFmt(S.tab, kd); });
-    syncJudge();
+    syncJudge(); syncTabDots();
   }
 
   function scenarioList() {
@@ -726,7 +760,7 @@
     var parts = [];
     ["A", "B"].forEach(function (s, i) {
       var f = m.fac[i], bits = [];
-      if (Math.abs(f.ageChin - 1) > 0.005) bits.push("chin ×" + fx(f.ageChin) + " for age");
+      if (Math.abs(f.ageChin - 1) > 0.005) bits.push("easier to drop ×" + fx(f.ageChin) + " for age");
       if (Math.abs(f.koChin - 1) > 0.005) bits.push("×" + fx(f.koChin) + " for " + f.koLosses + " KO loss" + (f.koLosses === 1 ? "" : "es"));
       if (Math.abs(f.sizeChin - 1) > 0.005) bits.push("×" + fx(f.sizeChin) + " for moving up " + Math.round(f.lbsUp) + " lb");
       if (Math.abs(f.agePow - 1) > 0.005) bits.push("power ×" + fx(f.agePow) + " for age");
@@ -738,20 +772,28 @@
   function renderScenNote() {
     var box = $("scenNote"); box.textContent = "";
     var terms = modelTerms();
-    function termsLine() { if (!terms) return; var p = el("p", "small"); p.appendChild(el("b", null, "Already in the model from data: ")); p.appendChild(document.createTextNode(terms + " Chin above 1 means easier to drop; the knobs multiply on top.")); box.appendChild(p); }
+    function termsLine() { if (!terms) return; var p = el("p", "small"); p.appendChild(el("b", null, "Already in the model from data: ")); p.appendChild(document.createTextNode(terms + " Above ×1.00 means easier to drop; the knobs multiply on top.")); box.appendChild(p); }
+    function movedLine() {
+      var parts = []; ["A", "B"].forEach(function (s) { var mv = movedKnobs(s); if (mv.length) parts.push(nameOf(s) + " (" + mv.join(", ") + ")"); });
+      if (Math.abs(S.judgePower - JP0) > 0.001) parts.push("the judges (credit for power " + fx(S.judgePower) + ")");
+      if (!parts.length) return;
+      var p = el("p"); p.appendChild(el("b", null, "Knobs moved: ")); p.appendChild(document.createTextNode(parts.join("; ") + ".")); box.appendChild(p);
+    }
     var sc = scenarioList().filter(function (x) { return x.id === S.scen; })[0];
     if (!sc) {
       var custom = Object.keys(cleanAdj(S.adj.A)).length + Object.keys(cleanAdj(S.adj.B)).length > 0 || Math.abs(S.judgePower - JP0) > 0.001;
       var p = el("p"); p.appendChild(el("b", null, custom ? "Custom settings. " : "Data only. "));
       p.appendChild(document.createTextNode(custom ? "You've moved the knobs by hand. Reset to data puts every knob back to 1.00." :
-        "Every knob sits at 1.00, so the engine runs on the UFC numbers, its age, weight-class and KO-loss terms, and the default judging."));
+        "Every knob sits at 1.00, so the simulator runs on the UFC numbers, its age, weight-class and KO-loss terms, and the default judging."));
       box.appendChild(p);
+      if (custom) movedLine();
       if (!pairData(S.a, S.b)) box.appendChild(el("p", null, "There are no hand-written scenarios for this pair yet; the dashed chips work for any matchup."));
       termsLine();
       return;
     }
     var h = el("p"); h.appendChild(el("b", null, sc.label + ". ")); h.appendChild(document.createTextNode(sc.note || "")); box.appendChild(h);
     if (sc.id === "rust") { var ls = layoffSide(); if (ls) box.appendChild(el("p", null, "Applied to " + nameOf(ls) + ", whose last fight was " + fmtDate(prof(ls).last_fight) + ".")); }
+    movedLine();
     if (sc.research) { var r = el("p"); r.appendChild(el("b", null, "The research: ")); r.appendChild(document.createTextNode(sc.research)); box.appendChild(r); }
     var srcs = el("div", "srcs"); if (linkList(srcs, sc.sources)) box.appendChild(srcs);
     termsLine();

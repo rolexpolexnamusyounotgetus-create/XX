@@ -170,7 +170,7 @@ predictions averaged over both corner orders.
 - Monotone constraints were tried on the rating, Elo and market-rating differences, which are increasing in A's favour. They cost CV in both libraries, so they are off.
 - Final trees average 5 LightGBM and 3 XGBoost seeds in logit space.
 - The seed ensemble is worth -0.0003 [-0.0017, +0.0011] on 2024-25: harmless, not measurable.
-- **Blend weights (OOF 2019-2023).** LR 0.416, LightGBM 0.324, XGBoost 0.237. Leave-one-year-out blend 0.6339 vs LR 0.6355.
+- **Blend weights (OOF 2019-2023).** LR 0.416, LightGBM 0.324, XGBoost 0.237. Leave-one-year-out blend 0.6344 vs LR 0.6355.
 - On 2024-25 the blend is worse than the LR alone: +0.0034 [+0.0001, +0.0066]. The trees are less underconfident there (slope 1.35 vs 1.45), but rank fights worse. The protocol keeps the blend as "ML v2", because the choice was made before 2024. The page uses the logistic, which is the better 2024-25 model and the one the JS can evaluate.
 
 ### 3. Out of fold 2019-2023 (1,955 fights) and validation 2024-2025 (854)
