@@ -2127,7 +2127,7 @@
   }
   // fight-night form in words: up to three arrows for the size of the swing, the multiplier in the tooltip
   // (the engine reports chin and cardio so that above 1 is sturdier and fresher)
-  var FORM_WORDS = [["out", "busier", "quieter", "output"], ["acc", "sharper", "less accurate", "accuracy (odds of landing)"], ["pow", "hits harder", "hits lighter", "power"],
+  var FORM_WORDS = [["out", "busier", "quieter", "output"], ["acc", "sharper", "less accurate", "accuracy"], ["pow", "hits harder", "hits lighter", "power"],
     ["chin", "harder to drop", "easier to drop", "knockdown resistance"], ["cardio", "fresher", "tires sooner", "cardio"]];
   function formWords(fm) {
     var out = [];
