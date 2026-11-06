@@ -1,297 +1,341 @@
 {
- "slug": "sean-o-malley",
- "name": "Sean O'Malley",
- "as_of": "2026-11-06",
- "age_at_as_of": 32,
- "tale_of_tape": {
-  "height_cm": 180,
-  "reach_cm": 183,
-  "stance": "Switch",
-  "fight_weight_kg": 61,
-  "source": "data/derived/fighters.json (71 in height, 72 in reach); fight weight = bantamweight limit 135 lb"
- },
- "photos_used": [
-  "espn_headshot.png",
-  "commons_2026-06-14_whitehouse_29_cropped.png",
-  "commons_2026-06-14_whitehouse_29.jpg",
-  "ref_nbcmontana_ap_profile_2026-06-14.jpg",
-  "commons_2026-06-14_grandfoyer_55.jpg",
-  "commons_2026-06-14_grandfoyer_56.jpg",
-  "commons_2026-06-14_grandfoyer_57.jpg",
-  "commons_2026-06-14_grandfoyer_58.jpg",
-  "ref_cagesidepress_weighin_2026-06-13.jpg",
-  "commons_2026-06-12_lincoln_memorial.jpg",
-  "espn_stance_left.png",
-  "espn_stance_right.png",
-  "commons_2024_cc0.jpg",
-  "commons_2018_opticgaming.png"
- ],
- "face": {
-  "shape": "Long, narrow oval. Widest at the cheekbones and temples, tapering to a narrow chin that the beard lengthens further. Very lean with no facial fat, so the face reads long and angular.",
-  "jaw": "Narrow to medium width, with a soft angle hidden under the beard. In the right profile (White House 55-57) the jawline slopes fairly steeply from ear to chin rather than running horizontal.",
-  "chin": "Narrow and fairly long; projects moderately in profile (AP left profile). Always under beard in recent photos; no cleft visible in 2018.",
-  "cheekbones": "Moderately prominent and set high, with clear hollows beneath them (most visible in the ESPN headshot and White House 29 crop).",
-  "brow_ridge": "Moderate. Brows sit low and close over the eyes, which makes the eyes look deep-set and shadowed in studio light.",
-  "forehead": "Medium height, fairly flat, mostly covered by hair or cornrows. Small tattoos at the hairline (see marks).",
-  "eyes": {
-   "shape": "Almond, slightly heavy-lidded with the upper lid partly hidden under the brow; lower lids show mild shadowing.",
-   "spacing": "Average to slightly close (a bit less than one eye-width apart).",
-   "colour": "Dark brown (ESPN headshot, White House 29). Closest MakeHuman iris: brown.",
-   "set": "Deep-set; outer corners level."
+  "slug": "sean-o-malley",
+  "name": "Sean O'Malley",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 32,
+  "tale_of_tape": {
+    "height_cm": 180,
+    "reach_cm": 183,
+    "stance": "Switch",
+    "fight_weight_kg": 61,
+    "source": "data/derived/fighters.json (71 in height, 72 in reach); fight weight = bantamweight limit 135 lb"
   },
-  "eyebrows": {
-   "thickness": "Medium",
-   "shape": "Fairly straight and low, with a slight downward slope at the inner ends that gives a frowning look at rest (ESPN headshot, stance-left).",
-   "colour": "Dark brown (#3b2a22 approx.)"
-  },
-  "nose": {
-   "length": "Long",
-   "width": "Narrow bridge, medium-width base",
-   "bridge": "High and straight from root to tip in both profiles (AP left, White House right)",
-   "hump": "None to very slight",
-   "tip": "Moderately defined, slightly rounded and projecting; level, not upturned or drooping",
-   "fight_damage": "No obvious deviation or flattening visible."
-  },
-  "mouth_lips": "Medium-narrow mouth. Thin upper lip (largely under the moustache), medium lower lip. Corners sit level to slightly down at rest.",
-  "ears": {
-   "size": "Medium, sitting close to moderately out from the head",
-   "cauliflower_ear": "No obvious cauliflower ear in the AP left profile or White House right profile; helix looks normal."
-  },
-  "marks_scars": "Several small face tattoos (as of Jun 2026): a red-outlined heart followed by the word 'Love' in script just under the right eye; a small outlined star (green-black) on the left cheekbone; a short line of script above the left eyebrow at the hairline; small symbols/lettering on the right side of the forehead at the hairline and at the left temple. No obvious scars."
- },
- "hair": {
-  "style": "Changes often. Current look (June 2026 media day, weigh-in and press week): a big, rounded mass of loose curls dyed magenta/hot pink, with deep red on his right side and royal blue on his left side and back. Fight night (June 14 2026): the same colours braided into tight straight-back cornrows ending in short braids at the nape (pink on top, blue on the left side). The earlier ESPN stance-right shoot shows undyed brown cornrows. Natural (2018): shoulder-length loose brown curls.",
-  "length_cm": 15,
-  "length_note": "About 15 cm stretched; the curls stand about 8-10 cm out from the scalp. As cornrows the hair lies flat (about 1 cm proud of the scalp).",
-  "colour_hex": "#a52e97",
-  "colour_samples": [
-   {
-    "photo": "commons_2026-06-14_whitehouse_29_cropped.png",
-    "where": "pink cornrows on top (daylight)",
-    "hex": "#a52e97"
-   },
-   {
-    "photo": "commons_2026-06-14_whitehouse_29_cropped.png",
-    "where": "blue cornrows, left side",
-    "hex": "#2f5496"
-   },
-   {
-    "photo": "espn_headshot.png",
-    "where": "magenta curls, crown (studio)",
-    "hex": "#a3005a"
-   },
-   {
-    "photo": "espn_headshot.png",
-    "where": "blue curls, left side",
-    "hex": "#164265"
-   },
-   {
-    "photo": "espn_headshot.png",
-    "where": "red curls, right side",
-    "hex": "#71000f"
-   },
-   {
-    "photo": "commons_2018_opticgaming.png",
-    "where": "natural undyed curls (2018)",
-    "hex": "#462806"
-   }
+  "photos_used": [
+    "espn_headshot.png",
+    "commons_2026-06-14_whitehouse_29_cropped.png",
+    "commons_2026-06-14_whitehouse_29.jpg",
+    "ref_nbcmontana_ap_profile_2026-06-14.jpg",
+    "commons_2026-06-14_grandfoyer_55.jpg",
+    "commons_2026-06-14_grandfoyer_56.jpg",
+    "commons_2026-06-14_grandfoyer_57.jpg",
+    "commons_2026-06-14_grandfoyer_58.jpg",
+    "ref_cagesidepress_weighin_2026-06-13.jpg",
+    "commons_2026-06-12_lincoln_memorial.jpg",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "commons_2024_cc0.jpg",
+    "commons_2018_opticgaming.png"
   ],
-  "colour_note": "Primary #a52e97 magenta-pink, secondary #2f5496 blue (his left side/back), accent #71000f red (his right side, curly look only). Natural colour medium-dark brown (#4a2f1c for render).",
-  "hairline": "Fairly straight across with mild recession at the temples (visible when braided, White House 29).",
-  "texture": "Naturally curly (medium ringlets)."
- },
- "facial_hair": {
-  "type": "short beard",
-  "colour_hex": "#45322c",
-  "colour_samples": [
-   {
-    "photo": "commons_2026-06-14_whitehouse_29_cropped.png",
-    "where": "chin",
-    "hex": "#45322c"
-   },
-   {
-    "photo": "espn_headshot.png",
-    "where": "chin",
-    "hex": "#583e35"
-   }
+  "face": {
+    "shape": "Long, narrow oval. Widest at the cheekbones and temples, tapering to a narrow chin that the beard lengthens further. Very lean with no facial fat, so the face reads long and angular.",
+    "jaw": "Narrow to medium width, with a soft angle hidden under the beard. In the right profile (White House 55-57) the jawline slopes fairly steeply from ear to chin rather than running horizontal.",
+    "chin": "Narrow and fairly long; projects moderately in profile (AP left profile). Always under beard in recent photos; no cleft visible in 2018.",
+    "cheekbones": "Moderately prominent and set high, with clear hollows beneath them (most visible in the ESPN headshot and White House 29 crop).",
+    "brow_ridge": "Moderate. Brows sit low and close over the eyes, which makes the eyes look deep-set and shadowed in studio light.",
+    "forehead": "Medium height, fairly flat, mostly covered by hair or cornrows. Small tattoos at the hairline (see marks).",
+    "eyes": {
+      "shape": "Almond, slightly heavy-lidded with the upper lid partly hidden under the brow; lower lids show mild shadowing.",
+      "spacing": "Average to slightly close (a bit less than one eye-width apart).",
+      "colour": "Dark brown (ESPN headshot, White House 29). Closest MakeHuman iris: brown.",
+      "set": "Deep-set; outer corners level."
+    },
+    "eyebrows": {
+      "thickness": "Medium",
+      "shape": "Fairly straight and low, with a slight downward slope at the inner ends that gives a frowning look at rest (ESPN headshot, stance-left).",
+      "colour": "Dark brown (#3b2a22 approx.)"
+    },
+    "nose": {
+      "length": "Long",
+      "width": "Narrow bridge, medium-width base",
+      "bridge": "High and straight from root to tip in both profiles (AP left, White House right)",
+      "hump": "None to very slight",
+      "tip": "Moderately defined, slightly rounded and projecting; level, not upturned or drooping",
+      "fight_damage": "No obvious deviation or flattening visible."
+    },
+    "mouth_lips": "Medium-narrow mouth. Thin upper lip (largely under the moustache), medium lower lip. Corners sit level to slightly down at rest.",
+    "ears": {
+      "size": "Medium, sitting close to moderately out from the head",
+      "cauliflower_ear": "No obvious cauliflower ear in the AP left profile or White House right profile; helix looks normal."
+    },
+    "marks_scars": "Several small face tattoos (as of Jun 2026): a red-outlined heart followed by the word 'Love' in script just under the right eye; a small outlined star (green-black) on the left cheekbone; a short line of script above the left eyebrow at the hairline; small symbols/lettering on the right side of the forehead at the hairline and at the left temple. No obvious scars."
+  },
+  "hair": {
+    "style": "Changes often. Current look (June 2026 media day, weigh-in and press week): a big, rounded mass of loose curls dyed magenta/hot pink, with deep red on his right side and royal blue on his left side and back. Fight night (June 14 2026): the same colours braided into tight straight-back cornrows ending in short braids at the nape (pink on top, blue on the left side). The earlier ESPN stance-right shoot shows undyed brown cornrows. Natural (2018): shoulder-length loose brown curls.",
+    "length_cm": 15,
+    "length_note": "About 15 cm stretched; the curls stand about 8-10 cm out from the scalp. As cornrows the hair lies flat (about 1 cm proud of the scalp).",
+    "colour_hex": "#a52e97",
+    "colour_samples": [
+      {
+        "photo": "commons_2026-06-14_whitehouse_29_cropped.png",
+        "where": "pink cornrows on top (daylight)",
+        "hex": "#a52e97"
+      },
+      {
+        "photo": "commons_2026-06-14_whitehouse_29_cropped.png",
+        "where": "blue cornrows, left side",
+        "hex": "#2f5496"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "magenta curls, crown (studio)",
+        "hex": "#a3005a"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "blue curls, left side",
+        "hex": "#164265"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "red curls, right side",
+        "hex": "#71000f"
+      },
+      {
+        "photo": "commons_2018_opticgaming.png",
+        "where": "natural undyed curls (2018)",
+        "hex": "#462806"
+      }
+    ],
+    "colour_note": "Primary #a52e97 magenta-pink, secondary #2f5496 blue (his left side/back), accent #71000f red (his right side, curly look only). Natural colour medium-dark brown (#4a2f1c for render).",
+    "hairline": "Fairly straight across with mild recession at the temples (visible when braided, White House 29).",
+    "texture": "Naturally curly (medium ringlets)."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "colour_hex": "#45322c",
+    "colour_samples": [
+      {
+        "photo": "commons_2026-06-14_whitehouse_29_cropped.png",
+        "where": "chin",
+        "hex": "#45322c"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "chin",
+        "hex": "#583e35"
+      }
+    ],
+    "density": "Dense on the chin, moustache and jaw edge; thinner on the cheeks, where it fades out well below the cheekbone.",
+    "shape": "Short full beard about 1-1.5 cm, kept longer and fuller at the chin so it extends the chin downward into a slight point. Moustache connects to the beard at the mouth corners. Cheek line low and soft; neckline sits under the jaw."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead to cheeks above beard (studio)",
+        "hex": "#e6a28e"
+      },
+      {
+        "photo": "commons_2026-06-14_whitehouse_29_cropped.png",
+        "where": "forehead, cheeks, nose (daylight-balanced arena light)",
+        "hex": "#d69f7b"
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "cheeks and forehead (studio, June 2026 shoot)",
+        "hex": "#d99880"
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "cheeks and forehead (studio, earlier shoot)",
+        "hex": "#d89775"
+      },
+      {
+        "photo": "commons_2026-06-14_whitehouse_29.jpg",
+        "where": "same scene as the 29 crop (not in average)",
+        "hex": "#d59d75"
+      }
+    ],
+    "tone_hex": "#db9c80",
+    "tone_note": "Average of the first four samples (median of skin-classified pixels, shadows and highlights trimmed). Light skin with a light tan.",
+    "undertone": "Warm (peach/golden).",
+    "freckles_marks": "No freckles visible; skin across the torso is heavily tattooed."
+  },
+  "body": {
+    "build": "Tall and rangy for bantamweight: long legs, long torso and arms, narrow frame. Looks slim rather than bulky in every photo.",
+    "body_fat": "lean",
+    "body_fat_note": "Abs visible but soft-edged at the June 2026 shoot; very low fat, little muscle mass compared with most bantamweights.",
+    "shoulders": "Medium width, sloping; deltoids defined but not large.",
+    "chest": "Flat, lean pectorals, covered by the chest tattoo.",
+    "arms": "Long and slim, wiry forearms; biceps small.",
+    "waist": "Narrow; the torso is long between ribcage and hips.",
+    "legs_calves": "Long, slim thighs and calves; knees bony. Long legs relative to torso (stance photos, B/W White House 58).",
+    "posture": "Upright, relaxed, slightly forward-leaning head; often stands loose with shoulders dropped.",
+    "notable": "Ectomorph build and long limbs are the main body likeness cues; avoid adding bulk."
+  },
+  "tattoos": [
+    {
+      "where": "Chest, collarbone to collarbone and down to the nipple line",
+      "description": "Large colour piece: a bird with outstretched feathered wings in red, orange and green spanning the whole chest, with a green, ornate bird/owl-like head at the sternum. Black script 'doingwell' in small lowercase letters across the upper sternum just below the collarbones.",
+      "size": "full chest"
+    },
+    {
+      "where": "Left side of abdomen and ribs",
+      "description": "Black-and-grey cobra coiled upward with lotus flowers below it (ESPN stance-right).",
+      "size": "large (ribs to waist)"
+    },
+    {
+      "where": "Left ribs/flank, beside the left arm",
+      "description": "Large vertical black script running down the left ribs between the cobra and the left arm (word not legible; ESPN stance-right).",
+      "size": "large (armpit to waist)"
+    },
+    {
+      "where": "Right ribs/flank",
+      "description": "Stacked lines of black script reading 'Float like a Butterfly / Sting like a Bee' running down the right ribs (legible in the Cageside weigh-in photo; partly visible in ESPN stance-left).",
+      "size": "medium"
+    },
+    {
+      "where": "Left arm, shoulder to wrist",
+      "description": "Full colour sleeve: dense red, yellow and green imagery with a berry/holly-like plant motif on the upper arm and a colourful piece on the forearm.",
+      "size": "full sleeve"
+    },
+    {
+      "where": "Right arm (partial, not a full sleeve)",
+      "description": "Upper arm mostly bare skin: a thin outline awareness ribbon with script on the inner biceps and a few small pieces. Forearm more heavily worked: a large shaded black-and-grey rose on the outer forearm below the elbow, dark black-and-grey work toward the wrist, a blackletter word on the inner forearm near the wrist, and letters on the knuckles (ESPN stance photos, White House 55-57, Cageside weigh-in, 2024 CC0 photo).",
+      "size": "forearm half-sleeve plus small upper-arm pieces"
+    },
+    {
+      "where": "Right shoulder and upper back",
+      "description": "A green shamrock/clover shape crossed by a black scroll banner of script on top of the right shoulder, the small word 'JOHN' beside it, '69' in black numerals on the rear shoulder, and a vertical column of large black script down the right side of the back (White House 55-57). Small black lettering on the front of the right shoulder (ESPN stance-left).",
+      "size": "large"
+    },
+    {
+      "where": "Neck",
+      "description": "Black chess king drawn on its side on the right side of the neck (clear in White House 57); a black-and-grey figure on the left side of the neck (AP profile).",
+      "size": "small-medium"
+    },
+    {
+      "where": "Face",
+      "description": "Heart and 'Love' under the right eye, star on the left cheekbone, small script above the left brow and small marks at the right hairline and left temple.",
+      "size": "small"
+    }
   ],
-  "density": "Dense on the chin, moustache and jaw edge; thinner on the cheeks, where it fades out well below the cheekbone.",
-  "shape": "Short full beard about 1-1.5 cm, kept longer and fuller at the chin so it extends the chin downward into a slight point. Moustache connects to the beard at the mouth corners. Cheek line low and soft; neckline sits under the jaw."
- },
- "skin": {
-  "tone_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "forehead to cheeks above beard (studio)",
-    "hex": "#e6a28e"
-   },
-   {
-    "photo": "commons_2026-06-14_whitehouse_29_cropped.png",
-    "where": "forehead, cheeks, nose (daylight-balanced arena light)",
-    "hex": "#d69f7b"
-   },
-   {
-    "photo": "espn_stance_left.png",
-    "where": "cheeks and forehead (studio, June 2026 shoot)",
-    "hex": "#d99880"
-   },
-   {
-    "photo": "espn_stance_right.png",
-    "where": "cheeks and forehead (studio, earlier shoot)",
-    "hex": "#d89775"
-   },
-   {
-    "photo": "commons_2026-06-14_whitehouse_29.jpg",
-    "where": "same scene as the 29 crop (not in average)",
-    "hex": "#d59d75"
-   }
-  ],
-  "tone_hex": "#db9c80",
-  "tone_note": "Average of the first four samples (median of skin-classified pixels, shadows and highlights trimmed). Light skin with a light tan.",
-  "undertone": "Warm (peach/golden).",
-  "freckles_marks": "No freckles visible; skin across the torso is heavily tattooed."
- },
- "body": {
-  "build": "Tall and rangy for bantamweight: long legs, long torso and arms, narrow frame. Looks slim rather than bulky in every photo.",
-  "body_fat": "lean",
-  "body_fat_note": "Abs visible but soft-edged at the June 2026 shoot; very low fat, little muscle mass compared with most bantamweights.",
-  "shoulders": "Medium width, sloping; deltoids defined but not large.",
-  "chest": "Flat, lean pectorals, covered by the chest tattoo.",
-  "arms": "Long and slim, wiry forearms; biceps small.",
-  "waist": "Narrow; the torso is long between ribcage and hips.",
-  "legs_calves": "Long, slim thighs and calves; knees bony. Long legs relative to torso (stance photos, B/W White House 58).",
-  "posture": "Upright, relaxed, slightly forward-leaning head; often stands loose with shoulders dropped.",
-  "notable": "Ectomorph build and long limbs are the main body likeness cues; avoid adding bulk."
- },
- "tattoos": [
-  {
-   "where": "Chest, collarbone to collarbone and down to the nipple line",
-   "description": "Large colour piece: a bird with outstretched feathered wings in red, orange and green spanning the whole chest, with a green, ornate bird/owl-like head at the sternum. Black script 'doingwell' in small lowercase letters across the upper sternum just below the collarbones.",
-   "size": "full chest"
+  "kit": {
+    "fight_shorts_current": "UFC Freedom 250 (Jun 2026): white shorts with thin light-blue diagonal pinstripes, red-and-white stripes on the lower left leg, navy waistband with white stars and UFC logo; red FREEDOM 250 gloves.",
+    "fight_shorts_previous": "Hot pink/magenta Venum shorts with a black snakeskin/halftone pattern and black waistband (ESPN stance-right, about 2025).",
+    "gloves": "Black UFC gloves normally; red in Jun 2026.",
+    "colours": [
+      "#ffffff white",
+      "#1f2f6b navy",
+      "#d0206e pink"
+    ]
   },
-  {
-   "where": "Left side of abdomen and ribs",
-   "description": "Black-and-grey cobra coiled upward with lotus flowers below it (ESPN stance-right).",
-   "size": "large (ribs to waist)"
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.11,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.3,
+    "macro/weightDownM": 0.35,
+    "macro/heightUpM": 0.08,
+    "macro/proportionsUpM": 0.5,
+    "head/head-oval": 0.5,
+    "head/head-invertedtriangular": 0.2,
+    "head/head-scale-vert-incr": 0.25,
+    "head/head-scale-horiz-decr": 0.25,
+    "head/head-fat-decr": 0.5,
+    "forehead/forehead-scale-vert-incr": 0.1,
+    "eyebrows/eyebrows-trans-down": 0.2,
+    "eyebrows/eyebrows-trans-forward": 0.2,
+    "eyebrows/eyebrows-angle-down": 0.1,
+    "eyes/l-eye-height2-decr": 0.25,
+    "eyes/r-eye-height2-decr": 0.25,
+    "eyes/l-eye-scale-decr": 0.1,
+    "eyes/r-eye-scale-decr": 0.1,
+    "eyes/l-eye-trans-in": 0.1,
+    "eyes/r-eye-trans-in": 0.1,
+    "eyes/l-eye-bag-incr": 0.2,
+    "eyes/r-eye-bag-incr": 0.2,
+    "nose/nose-scale-vert-incr": 0.45,
+    "nose/nose-scale-depth-incr": 0.3,
+    "nose/nose-width1-decr": 0.25,
+    "nose/nose-scale-horiz-decr": 0.1,
+    "nose/nose-nostrils-width-decr": 0.1,
+    "mouth/mouth-upperlip-volume-decr": 0.35,
+    "mouth/mouth-lowerlip-volume-decr": 0.1,
+    "mouth/mouth-scale-horiz-decr": 0.1,
+    "mouth/mouth-angles-down": 0.1,
+    "chin/chin-height-incr": 0.2,
+    "chin/chin-width-decr": 0.25,
+    "chin/chin-prominent-incr": 0.1,
+    "chin/chin-bones-decr": 0.1,
+    "cheek/l-cheek-volume-decr": 0.4,
+    "cheek/r-cheek-volume-decr": 0.4,
+    "cheek/l-cheek-bones-incr": 0.2,
+    "cheek/r-cheek-bones-incr": 0.2,
+    "neck/neck-scale-vert-incr": 0.2,
+    "neck/neck-scale-horiz-decr": 0.1,
+    "torso/torso-vshape-incr": 0.15,
+    "torso/measure-waist-circ-decr": 0.35,
+    "torso/measure-hips-circ-decr": 0.2,
+    "torso/measure-shoulder-dist-decr": 0.05,
+    "buttocks/buttocks-volume-decr": 0.1
   },
-  {
-   "where": "Left ribs/flank, beside the left arm",
-   "description": "Large vertical black script running down the left ribs between the cobra and the left arm (word not legible; ESPN stance-right).",
-   "size": "large (armpit to waist)"
+  "morphs_unavailable": {
+    "note": "assets/embed/mh-manifest.json has no ears/* targets. Ears are not a strong cue for him; if added use about ears/l|r-ear-scale-incr 0.05 and nothing else.",
+    "limbs": "Reach 183 cm at 180 cm; no change needed. Legs look long; if the rig allows, lengthen thighs and shins about 2%."
   },
-  {
-   "where": "Right ribs/flank",
-   "description": "Stacked lines of black script reading 'Float like a Butterfly / Sting like a Bee' running down the right ribs (legible in the Cageside weigh-in photo; partly visible in ESPN stance-left).",
-   "size": "medium"
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "mh-skin-young_caucasian_male (closest tone) tinted toward #db9c80",
+    "eyebrows": "eyebrow010 tinted #3b2a22, low and straight",
+    "hair": "afro01 scaled down and tinted #a52e97 (with blue #2f5496 on his left side if per-vertex tint is possible) for the curly look; for fight night a tight cornrow look needs a custom texture over a near-bald cap",
+    "beard": "short beard texture or shell #45322c, fuller at the chin",
+    "tattoos": "Without tattoo textures the likeness drops sharply; a skin overlay with the chest bird, the full colour left sleeve, the right-forearm rose, the cobra and flank script, and the face marks is the top priority after hair. Keep the right upper arm mostly bare."
   },
-  {
-   "where": "Left arm, shoulder to wrist",
-   "description": "Full colour sleeve: dense red, yellow and green imagery with a berry/holly-like plant motif on the upper arm and a colourful piece on the forearm.",
-   "size": "full sleeve"
+  "notes": "Confidence: high for build, nose, eyes, beard and hair colours (many clear 2026 photos, several public domain). Medium for exact jaw and chin shape because the beard hides them. Watch for: (1) hair changes almost every fight; the June 2026 look is magenta curls/cornrows with blue on his left and red on his right, (2) keep him slim and long-limbed, (3) heavy tattoos on the chest, the full left sleeve, the right forearm, both flanks, neck and face are a core part of his look (the right upper arm is mostly bare), (4) the ESPN stance-right shoot (cornrows, pink shorts) predates 2026.",
+  "review": {
+    "date": "2026-11-06",
+    "by": "second-pass photo review",
+    "changes": [
+      "Right arm corrected: not a full sleeve; upper arm is mostly bare, the work is on the forearm (rose, blackletter word) plus an outline ribbon on the inner biceps.",
+      "Neck tattoo is a chess king, not a knight; right-shoulder piece is a green shamrock with a script banner plus 'JOHN'.",
+      "Right-flank script is legible: 'Float like a Butterfly / Sting like a Bee'. Added the vertical script on the left flank.",
+      "commons_2018_opticgaming.png moved to reference-only (Commons YouTube licence review pending).",
+      "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Face, hair, beard, skin samples and build match the photos."
+    ]
   },
-  {
-   "where": "Right arm (partial, not a full sleeve)",
-   "description": "Upper arm mostly bare skin: a thin outline awareness ribbon with script on the inner biceps and a few small pieces. Forearm more heavily worked: a large shaded black-and-grey rose on the outer forearm below the elbow, dark black-and-grey work toward the wrist, a blackletter word on the inner forearm near the wrist, and letters on the knuckles (ESPN stance photos, White House 55-57, Cageside weigh-in, 2024 CC0 photo).",
-   "size": "forearm half-sleeve plus small upper-arm pieces"
-  },
-  {
-   "where": "Right shoulder and upper back",
-   "description": "A green shamrock/clover shape crossed by a black scroll banner of script on top of the right shoulder, the small word 'JOHN' beside it, '69' in black numerals on the rear shoulder, and a vertical column of large black script down the right side of the back (White House 55-57). Small black lettering on the front of the right shoulder (ESPN stance-left).",
-   "size": "large"
-  },
-  {
-   "where": "Neck",
-   "description": "Black chess king drawn on its side on the right side of the neck (clear in White House 57); a black-and-grey figure on the left side of the neck (AP profile).",
-   "size": "small-medium"
-  },
-  {
-   "where": "Face",
-   "description": "Heart and 'Love' under the right eye, star on the left cheekbone, small script above the left brow and small marks at the right hairline and left temple.",
-   "size": "small"
+  "stance": {
+    "schema": "stance/1",
+    "base": "switch",
+    "width": 0.85,
+    "depth": 1.3,
+    "crouch": 0.15,
+    "lean": 0.0,
+    "lead_foot_deg": 9.0,
+    "rear_foot_deg": 64.0,
+    "weight_front": 0.4,
+    "bladed": 0.85,
+    "guard": {
+      "style": "low",
+      "height": 0.35,
+      "lead_reach": 0.6,
+      "lead_height": 0.35,
+      "lead_width": 0.0,
+      "rear_height": 0.5,
+      "rear_tuck": 0.6,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.4
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.5,
+      "chin_tuck": 0.45
+    },
+    "bounce": {
+      "amp": 0.7,
+      "rate": 1.15
+    },
+    "switch_per_min": 2.0,
+    "feints": 0.6,
+    "hand_fighting": 0.35,
+    "posture": "open",
+    "footwork": [
+      "in-and-out",
+      "circling",
+      "stance-switch"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/sean-o-malley.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Long, bladed counter striker: narrow and deep stance, hands low, lead hand out, bouncing in and out of range and switching stance."
   }
- ],
- "kit": {
-  "fight_shorts_current": "UFC Freedom 250 (Jun 2026): white shorts with thin light-blue diagonal pinstripes, red-and-white stripes on the lower left leg, navy waistband with white stars and UFC logo; red FREEDOM 250 gloves.",
-  "fight_shorts_previous": "Hot pink/magenta Venum shorts with a black snakeskin/halftone pattern and black waistband (ESPN stance-right, about 2025).",
-  "gloves": "Black UFC gloves normally; red in Jun 2026.",
-  "colours": [
-   "#ffffff white",
-   "#1f2f6b navy",
-   "#d0206e pink"
-  ]
- },
- "morphs": {
-  "macro/sexM": 1.0,
-  "macro/ageOldM": 0.11,
-  "macro/ageYoungM": 0.0,
-  "macro/muscleUpM": 0.3,
-  "macro/weightDownM": 0.35,
-  "macro/heightUpM": 0.08,
-  "macro/proportionsUpM": 0.5,
-  "head/head-oval": 0.5,
-  "head/head-invertedtriangular": 0.2,
-  "head/head-scale-vert-incr": 0.25,
-  "head/head-scale-horiz-decr": 0.25,
-  "head/head-fat-decr": 0.5,
-  "forehead/forehead-scale-vert-incr": 0.1,
-  "eyebrows/eyebrows-trans-down": 0.2,
-  "eyebrows/eyebrows-trans-forward": 0.2,
-  "eyebrows/eyebrows-angle-down": 0.1,
-  "eyes/l-eye-height2-decr": 0.25,
-  "eyes/r-eye-height2-decr": 0.25,
-  "eyes/l-eye-scale-decr": 0.1,
-  "eyes/r-eye-scale-decr": 0.1,
-  "eyes/l-eye-trans-in": 0.1,
-  "eyes/r-eye-trans-in": 0.1,
-  "eyes/l-eye-bag-incr": 0.2,
-  "eyes/r-eye-bag-incr": 0.2,
-  "nose/nose-scale-vert-incr": 0.45,
-  "nose/nose-scale-depth-incr": 0.3,
-  "nose/nose-width1-decr": 0.25,
-  "nose/nose-scale-horiz-decr": 0.1,
-  "nose/nose-nostrils-width-decr": 0.1,
-  "mouth/mouth-upperlip-volume-decr": 0.35,
-  "mouth/mouth-lowerlip-volume-decr": 0.1,
-  "mouth/mouth-scale-horiz-decr": 0.1,
-  "mouth/mouth-angles-down": 0.1,
-  "chin/chin-height-incr": 0.2,
-  "chin/chin-width-decr": 0.25,
-  "chin/chin-prominent-incr": 0.1,
-  "chin/chin-bones-decr": 0.1,
-  "cheek/l-cheek-volume-decr": 0.4,
-  "cheek/r-cheek-volume-decr": 0.4,
-  "cheek/l-cheek-bones-incr": 0.2,
-  "cheek/r-cheek-bones-incr": 0.2,
-  "neck/neck-scale-vert-incr": 0.2,
-  "neck/neck-scale-horiz-decr": 0.1,
-  "torso/torso-vshape-incr": 0.15,
-  "torso/measure-waist-circ-decr": 0.35,
-  "torso/measure-hips-circ-decr": 0.2,
-  "torso/measure-shoulder-dist-decr": 0.05,
-  "buttocks/buttocks-volume-decr": 0.1
- },
- "morphs_unavailable": {
-  "note": "assets/embed/mh-manifest.json has no ears/* targets. Ears are not a strong cue for him; if added use about ears/l|r-ear-scale-incr 0.05 and nothing else.",
-  "limbs": "Reach 183 cm at 180 cm; no change needed. Legs look long; if the rig allows, lengthen thighs and shins about 2%."
- },
- "render_hints": {
-  "iris": "brown",
-  "skin_base": "mh-skin-young_caucasian_male (closest tone) tinted toward #db9c80",
-  "eyebrows": "eyebrow010 tinted #3b2a22, low and straight",
-  "hair": "afro01 scaled down and tinted #a52e97 (with blue #2f5496 on his left side if per-vertex tint is possible) for the curly look; for fight night a tight cornrow look needs a custom texture over a near-bald cap",
-  "beard": "short beard texture or shell #45322c, fuller at the chin",
-  "tattoos": "Without tattoo textures the likeness drops sharply; a skin overlay with the chest bird, the full colour left sleeve, the right-forearm rose, the cobra and flank script, and the face marks is the top priority after hair. Keep the right upper arm mostly bare."
- },
- "notes": "Confidence: high for build, nose, eyes, beard and hair colours (many clear 2026 photos, several public domain). Medium for exact jaw and chin shape because the beard hides them. Watch for: (1) hair changes almost every fight; the June 2026 look is magenta curls/cornrows with blue on his left and red on his right, (2) keep him slim and long-limbed, (3) heavy tattoos on the chest, the full left sleeve, the right forearm, both flanks, neck and face are a core part of his look (the right upper arm is mostly bare), (4) the ESPN stance-right shoot (cornrows, pink shorts) predates 2026.",
- "review": {
-  "date": "2026-11-06",
-  "by": "second-pass photo review",
-  "changes": [
-   "Right arm corrected: not a full sleeve; upper arm is mostly bare, the work is on the forearm (rose, blackletter word) plus an outline ribbon on the inner biceps.",
-   "Neck tattoo is a chess king, not a knight; right-shoulder piece is a green shamrock with a script banner plus 'JOHN'.",
-   "Right-flank script is legible: 'Float like a Butterfly / Sting like a Bee'. Added the vertical script on the left flank.",
-   "commons_2018_opticgaming.png moved to reference-only (Commons YouTube licence review pending).",
-   "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Face, hair, beard, skin samples and build match the photos."
-  ]
- }
 }

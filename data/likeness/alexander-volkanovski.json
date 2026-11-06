@@ -300,5 +300,48 @@
       "sources.json: corrected the page URL for the two UFC 314 Cageside photos and added licence-check notes",
       "2026-11-06 avatar pass 2: tuned with tests/likeness_compare.js against espn_headshot.png (front): head no longer narrowed, wider cheekbones, deeper-set eyes (eye-push1-in, eye-height1-decr), ears stand out further (ear-flap 0.7 plus community elvs_flap_ears_2 0.4)."
     ]
+  },
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.05,
+    "depth": 1.0,
+    "crouch": 0.35,
+    "lean": 0.25,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 52.0,
+    "weight_front": 0.5,
+    "bladed": 0.55,
+    "guard": {
+      "style": "standard",
+      "height": 0.6,
+      "lead_reach": 0.4,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.8,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.6
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.55,
+      "chin_tuck": 0.65
+    },
+    "bounce": {
+      "amp": 0.6,
+      "rate": 1.15
+    },
+    "switch_per_min": 1.5,
+    "feints": 0.8,
+    "hand_fighting": 0.3,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "lateral",
+      "stance-switch"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/alexander-volkanovski.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Feint-heavy volume striker: constant shoulder and hand feints, stance shifts behind the jab, light on his feet; compact, slightly wide base."
   }
 }

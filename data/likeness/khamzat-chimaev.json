@@ -1,211 +1,253 @@
 {
- "slug": "khamzat-chimaev",
- "name": "Khamzat Chimaev",
- "as_of": "2026-11-06",
- "age_at_as_of": 32,
- "tale_of_tape": {
-  "height_cm": 188,
-  "reach_cm": 191,
-  "stance": "Orthodox",
-  "fight_weight_kg": 84,
-  "source": "data/derived/fighters.json (74 in height, 75 in reach); fight weight = middleweight limit 185 lb"
- },
- "photos_used": [
-  "espn_headshot.png",
-  "espn_stance_left.png",
-  "espn_stance_right.png",
-  "ref_thenational_ufc328_2026-05-09.jpg",
-  "ref_lowkick_ufc328_weighin_2026-05-08.png",
-  "ref_espn_ufc319_action_2025-08-16.jpg",
-  "commons_2022.png",
-  "commons_2023_with_shamsiev.jpg",
-  "commons_2019_corner.png"
- ],
- "photo_coverage_note": "Commons has only 2019-2023 photos (none with the shaved head). Recent looks come from reference-only news photos (UFC 319 Aug 2025, UFC 328 May 2026) and the undated UFC/ESPN studio set, which matches the 2025-2026 look. Licence-free: only commons_2019_corner.png (dark, low-resolution 2019 video still, licence reviewed on Commons) is embed-ok; the 2022 still (licence review pending) and the 2023 street snapshot (doubtful own-work claim) are reference-only.",
- "face": {
-  "shape": "Broad, square-oval face: wide at the cheekbones and temples with a broad, rounded shaved skull on top. The long beard makes the overall head silhouette long and tapered at the bottom.",
-  "jaw": "Wide and strong, with heavy masseters; completely hidden by the beard, but the beard's width at the jaw angle shows the breadth.",
-  "chin": "Hidden by beard; the beard projects well forward and down from it.",
-  "cheekbones": "Broad and moderately prominent, cheeks fairly flat below them (not hollow). Face looks fuller than lighter-weight fighters.",
-  "brow_ridge": "Pronounced, with a horizontal shelf above the eyes; brows sit on it.",
-  "forehead": "High and broad (fully exposed by the shaved head), gently sloping back into a rounded crown.",
-  "eyes": {
-   "shape": "Almond, medium size, slightly hooded at the outer corners.",
-   "spacing": "Average.",
-   "colour": "Light brown to hazel (lighter than average brown in the studio headshot). Closest MakeHuman iris: brownlight.",
-   "set": "Moderately deep-set; outer corners level to slightly down."
+  "slug": "khamzat-chimaev",
+  "name": "Khamzat Chimaev",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 32,
+  "tale_of_tape": {
+    "height_cm": 188,
+    "reach_cm": 191,
+    "stance": "Orthodox",
+    "fight_weight_kg": 84,
+    "source": "data/derived/fighters.json (74 in height, 75 in reach); fight weight = middleweight limit 185 lb"
   },
-  "eyebrows": {
-   "thickness": "Medium",
-   "shape": "Fairly straight and long, with a slight downward tail at the outer ends.",
-   "colour": "Dark brown/black (#2a201c approx.)"
-  },
-  "nose": {
-   "length": "Medium",
-   "width": "Medium bridge, moderately wide base",
-   "bridge": "Straight, fairly high",
-   "hump": "Very slight",
-   "tip": "Rounded, slightly fleshy, level",
-   "fight_damage": "No obvious deviation; slight thickening of the bridge."
-  },
-  "mouth_lips": "Medium width, thin upper lip, medium lower lip; often a closed half-smile in photos.",
-  "ears": {
-   "size": "Medium-large, protruding",
-   "cauliflower_ear": "Yes, pronounced on both ears: thick, lumpy helix and swollen upper ear (ESPN headshot, UFC 319 profile, weigh-in stills)."
-  },
-  "marks_scars": "No notable face scars visible; post-fight swelling under the left eye in the UFC 328 photo (temporary)."
- },
- "hair": {
-  "style": "Head shaved very close (skin to about 1 mm) in every photo from 2024 on; a faint dark stubble shadow over the scalp. In 2019-2022 he wore a short crop.",
-  "length_cm": 0.1,
-  "colour_hex": "#2a201c",
-  "colour_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "scalp (skin plus stubble shadow, studio)",
-    "hex": "#e0b3a0"
-   }
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ref_thenational_ufc328_2026-05-09.jpg",
+    "ref_lowkick_ufc328_weighin_2026-05-08.png",
+    "ref_espn_ufc319_action_2025-08-16.jpg",
+    "commons_2022.png",
+    "commons_2023_with_shamsiev.jpg",
+    "commons_2019_corner.png"
   ],
-  "colour_note": "Natural colour black/very dark brown (2022 press photo). On the shaved scalp render only a faint grey stubble tint over skin; the scalp sample (#e0b3a0) is mostly skin.",
-  "hairline": "Full, straight front hairline when grown (2022); no recession.",
-  "texture": "Straight, thick (from 2022)."
- },
- "facial_hair": {
-  "type": "full beard",
-  "colour_hex": "#231b1a",
-  "colour_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "beard below chin (studio)",
-    "hex": "#231b1a"
-   }
+  "photo_coverage_note": "Commons has only 2019-2023 photos (none with the shaved head). Recent looks come from reference-only news photos (UFC 319 Aug 2025, UFC 328 May 2026) and the undated UFC/ESPN studio set, which matches the 2025-2026 look. Licence-free: only commons_2019_corner.png (dark, low-resolution 2019 video still, licence reviewed on Commons) is embed-ok; the 2022 still (licence review pending) and the 2023 street snapshot (doubtful own-work claim) are reference-only.",
+  "face": {
+    "shape": "Broad, square-oval face: wide at the cheekbones and temples with a broad, rounded shaved skull on top. The long beard makes the overall head silhouette long and tapered at the bottom.",
+    "jaw": "Wide and strong, with heavy masseters; completely hidden by the beard, but the beard's width at the jaw angle shows the breadth.",
+    "chin": "Hidden by beard; the beard projects well forward and down from it.",
+    "cheekbones": "Broad and moderately prominent, cheeks fairly flat below them (not hollow). Face looks fuller than lighter-weight fighters.",
+    "brow_ridge": "Pronounced, with a horizontal shelf above the eyes; brows sit on it.",
+    "forehead": "High and broad (fully exposed by the shaved head), gently sloping back into a rounded crown.",
+    "eyes": {
+      "shape": "Almond, medium size, slightly hooded at the outer corners.",
+      "spacing": "Average.",
+      "colour": "Light brown to hazel (lighter than average brown in the studio headshot). Closest MakeHuman iris: brownlight.",
+      "set": "Moderately deep-set; outer corners level to slightly down."
+    },
+    "eyebrows": {
+      "thickness": "Medium",
+      "shape": "Fairly straight and long, with a slight downward tail at the outer ends.",
+      "colour": "Dark brown/black (#2a201c approx.)"
+    },
+    "nose": {
+      "length": "Medium",
+      "width": "Medium bridge, moderately wide base",
+      "bridge": "Straight, fairly high",
+      "hump": "Very slight",
+      "tip": "Rounded, slightly fleshy, level",
+      "fight_damage": "No obvious deviation; slight thickening of the bridge."
+    },
+    "mouth_lips": "Medium width, thin upper lip, medium lower lip; often a closed half-smile in photos.",
+    "ears": {
+      "size": "Medium-large, protruding",
+      "cauliflower_ear": "Yes, pronounced on both ears: thick, lumpy helix and swollen upper ear (ESPN headshot, UFC 319 profile, weigh-in stills)."
+    },
+    "marks_scars": "No notable face scars visible; post-fight swelling under the left eye in the UFC 328 photo (temporary)."
+  },
+  "hair": {
+    "style": "Head shaved very close (skin to about 1 mm) in every photo from 2024 on; a faint dark stubble shadow over the scalp. In 2019-2022 he wore a short crop.",
+    "length_cm": 0.1,
+    "colour_hex": "#2a201c",
+    "colour_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "scalp (skin plus stubble shadow, studio)",
+        "hex": "#e0b3a0"
+      }
+    ],
+    "colour_note": "Natural colour black/very dark brown (2022 press photo). On the shaved scalp render only a faint grey stubble tint over skin; the scalp sample (#e0b3a0) is mostly skin.",
+    "hairline": "Full, straight front hairline when grown (2022); no recession.",
+    "texture": "Straight, thick (from 2022)."
+  },
+  "facial_hair": {
+    "type": "full beard",
+    "colour_hex": "#231b1a",
+    "colour_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "beard below chin (studio)",
+        "hex": "#231b1a"
+      }
+    ],
+    "density": "Very dense on the chin, jaw and under the jaw.",
+    "shape": "Long, full chin-and-jaw beard reaching about 8-10 cm below the chin, wide at the jaw and slightly tapered at the bottom. Cheeks are clear above the jawline (low, clean cheek line). Moustache trimmed very short so the upper lip stays visible."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead, cheeks, nose (bright studio)",
+        "hex": "#efad94"
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "forehead and cheeks (studio)",
+        "hex": "#cb8b6d"
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "forehead and cheeks (studio)",
+        "hex": "#dd9e82"
+      },
+      {
+        "photo": "commons_2022.png",
+        "where": "forehead and cheek (press-room light)",
+        "hex": "#b98e75"
+      },
+      {
+        "photo": "ref_lowkick_ufc328_weighin_2026-05-08.png",
+        "where": "face (dim red-shifted weigh-in light; not in average)",
+        "hex": "#9a5a58"
+      }
+    ],
+    "tone_hex": "#d4997e",
+    "tone_note": "Average of the first four samples. Light-medium skin; the studio headshot is brighter than the other photos.",
+    "undertone": "Warm (golden-peach).",
+    "freckles_marks": "No freckles or marks visible. Body hair: light-to-moderate short dark hair across the upper chest and sternum with a thin line down the middle of the abdomen; visible forearm and leg hair (ESPN stance photos)."
+  },
+  "body": {
+    "build": "Big, thick middleweight: broad shoulders, deep chest, thick neck and solid arms; heavier-looking than most at the weight.",
+    "body_fat": "lean",
+    "body_fat_note": "Abs visible but not sharply cut in the studio shots; at the May 2026 weigh-in he looked drained and flatter.",
+    "shoulders": "Broad with large, round deltoids and a high, thick trapezius.",
+    "chest": "Deep, full pectorals; light-to-moderate short dark chest hair, densest over the sternum (ESPN stance-right).",
+    "arms": "Thick upper arms and forearms; not especially long (reach about equal to height).",
+    "waist": "Moderately narrow but solid; less V-taper than the shoulders suggest because the torso is thick throughout.",
+    "legs_calves": "Solid thighs, medium calves; light leg hair.",
+    "posture": "Upright, chest forward, chin slightly down; often a relaxed half-smile.",
+    "notable": "Thick neck and trapezius plus long black beard and shaved head form the main silhouette."
+  },
+  "tattoos": [
+    {
+      "where": "Anywhere visible",
+      "description": "None visible in the studio stance photos, weigh-in stills or fight photos.",
+      "size": "-"
+    }
   ],
-  "density": "Very dense on the chin, jaw and under the jaw.",
-  "shape": "Long, full chin-and-jaw beard reaching about 8-10 cm below the chin, wide at the jaw and slightly tapered at the bottom. Cheeks are clear above the jawline (low, clean cheek line). Moustache trimmed very short so the upper lip stays visible."
- },
- "skin": {
-  "tone_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "forehead, cheeks, nose (bright studio)",
-    "hex": "#efad94"
-   },
-   {
-    "photo": "espn_stance_right.png",
-    "where": "forehead and cheeks (studio)",
-    "hex": "#cb8b6d"
-   },
-   {
-    "photo": "espn_stance_left.png",
-    "where": "forehead and cheeks (studio)",
-    "hex": "#dd9e82"
-   },
-   {
-    "photo": "commons_2022.png",
-    "where": "forehead and cheek (press-room light)",
-    "hex": "#b98e75"
-   },
-   {
-    "photo": "ref_lowkick_ufc328_weighin_2026-05-08.png",
-    "where": "face (dim red-shifted weigh-in light; not in average)",
-    "hex": "#9a5a58"
-   }
-  ],
-  "tone_hex": "#d4997e",
-  "tone_note": "Average of the first four samples. Light-medium skin; the studio headshot is brighter than the other photos.",
-  "undertone": "Warm (golden-peach).",
-  "freckles_marks": "No freckles or marks visible. Body hair: light-to-moderate short dark hair across the upper chest and sternum with a thin line down the middle of the abdomen; visible forearm and leg hair (ESPN stance photos)."
- },
- "body": {
-  "build": "Big, thick middleweight: broad shoulders, deep chest, thick neck and solid arms; heavier-looking than most at the weight.",
-  "body_fat": "lean",
-  "body_fat_note": "Abs visible but not sharply cut in the studio shots; at the May 2026 weigh-in he looked drained and flatter.",
-  "shoulders": "Broad with large, round deltoids and a high, thick trapezius.",
-  "chest": "Deep, full pectorals; light-to-moderate short dark chest hair, densest over the sternum (ESPN stance-right).",
-  "arms": "Thick upper arms and forearms; not especially long (reach about equal to height).",
-  "waist": "Moderately narrow but solid; less V-taper than the shoulders suggest because the torso is thick throughout.",
-  "legs_calves": "Solid thighs, medium calves; light leg hair.",
-  "posture": "Upright, chest forward, chin slightly down; often a relaxed half-smile.",
-  "notable": "Thick neck and trapezius plus long black beard and shaved head form the main silhouette."
- },
- "tattoos": [
-  {
-   "where": "Anywhere visible",
-   "description": "None visible in the studio stance photos, weigh-in stills or fight photos.",
-   "size": "-"
+  "kit": {
+    "fight_shorts_current": "Long (board-short cut) dark navy/blue-black Venum shorts with an abstract dark scratch pattern, white UFC and Venum logos and 'CHIMAEV' in white down the left leg (ESPN stance photos, UFC 319).",
+    "gloves": "Black UFC gloves with red tape in the red corner (UFC 328).",
+    "colours": [
+      "#1c2f4a navy",
+      "#0f1620 black",
+      "#ffffff white"
+    ]
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.11,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.75,
+    "macro/weightUpM": 0.15,
+    "macro/heightUpM": 0.22,
+    "macro/proportionsUpM": 0.4,
+    "head/head-square": 0.3,
+    "head/head-round": 0.25,
+    "head/head-scale-horiz-incr": 0.15,
+    "head/head-scale-depth-incr": 0.1,
+    "forehead/forehead-scale-vert-incr": 0.2,
+    "eyebrows/eyebrows-trans-forward": 0.3,
+    "eyebrows/eyebrows-trans-down": 0.15,
+    "eyebrows/eyebrows-angle-down": 0.1,
+    "eyes/l-eye-height2-decr": 0.1,
+    "eyes/r-eye-height2-decr": 0.1,
+    "eyes/l-eye-bag-incr": 0.2,
+    "eyes/r-eye-bag-incr": 0.2,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+    "nose/nose-scale-horiz-incr": 0.15,
+    "nose/nose-point-width-incr": 0.15,
+    "nose/nose-nostrils-width-incr": 0.15,
+    "nose/nose-hump-incr": 0.1,
+    "nose/nose-scale-vert-incr": 0.1,
+    "mouth/mouth-upperlip-volume-decr": 0.2,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "chin/chin-width-incr": 0.2,
+    "chin/chin-bones-incr": 0.3,
+    "cheek/l-cheek-bones-incr": 0.3,
+    "cheek/r-cheek-bones-incr": 0.3,
+    "cheek/l-cheek-volume-decr": 0.1,
+    "cheek/r-cheek-volume-decr": 0.1,
+    "neck/neck-scale-horiz-incr": 0.6,
+    "neck/neck-scale-vert-decr": 0.15,
+    "torso/measure-shoulder-dist-incr": 0.4,
+    "torso/torso-vshape-incr": 0.25,
+    "torso/measure-waist-circ-incr": 0.05,
+    "torso/measure-hips-circ-incr": 0.1,
+    "buttocks/buttocks-volume-incr": 0.15
+  },
+  "morphs_unavailable": {
+    "note": "assets/embed/mh-manifest.json has no ears/* targets. Cauliflower, protruding ears are a strong cue on his shaved head; if ear targets are added use about ears/l|r-ear-scale-incr 0.3, ears/l|r-ear-rot-forward 0.25, plus a lumpy-helix normal map.",
+    "trapezius": "No morph for trapezius height; if the rig allows, raise and thicken the trapezius region."
+  },
+  "render_hints": {
+    "iris": "brownlight",
+    "skin_base": "mh-skin-young_caucasian_male (closest tone) tinted toward #d4997e",
+    "eyebrows": "eyebrow001 tinted #2a201c",
+    "hair": "none (shaved); faint dark stubble tint over the whole scalp",
+    "beard": "long full-beard shell, black #231b1a, about 8-10 cm below the chin, clean cheeks, very short moustache"
+  },
+  "notes": "Confidence: high for head, beard, ears and build (clear studio photos and 2025-2026 fight photos). Medium for exact eye and nose detail (the studio headshot is small and the 2026 photos are action shots). Only one embed-ok photo (the low-resolution 2019 video still); the 2022 still and the 2023 snapshot are reference-only pending licence confirmation. Watch for: (1) beard is long, black and dense with a very short moustache, (2) shaved head with cauliflower ears, (3) thick neck and trapezius, (4) do not make him lanky; he is broad and heavy-set at 188 cm.",
+  "review": {
+    "date": "2026-11-06",
+    "by": "second-pass photo review",
+    "changes": [
+      "Chest hair corrected from light to light-to-moderate (clearly visible across the upper chest and sternum in ESPN stance-right).",
+      "commons_2022.png (Commons YouTube licence review pending) and commons_2023_with_shamsiev.jpg (self-promotional upload, doubtful own-work claim) moved to reference-only.",
+      "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Shaved head, long black beard with very short moustache, cauliflower ears, no tattoos, skin samples and build match the photos."
+    ]
+  },
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.1,
+    "depth": 1.0,
+    "crouch": 0.45,
+    "lean": 0.45,
+    "lead_foot_deg": 13.0,
+    "rear_foot_deg": 46.0,
+    "weight_front": 0.6,
+    "bladed": 0.4,
+    "guard": {
+      "style": "standard",
+      "height": 0.6,
+      "lead_reach": 0.35,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.8,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.2,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.2,
+      "rate": 0.9
+    },
+    "switch_per_min": 0,
+    "feints": 0.3,
+    "hand_fighting": 0.35,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "cage-cutting"
+    ],
+    "confidence": "low",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/khamzat-chimaev.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Forward wrestler: low, leaning stance, shoots from the first exchange."
   }
- ],
- "kit": {
-  "fight_shorts_current": "Long (board-short cut) dark navy/blue-black Venum shorts with an abstract dark scratch pattern, white UFC and Venum logos and 'CHIMAEV' in white down the left leg (ESPN stance photos, UFC 319).",
-  "gloves": "Black UFC gloves with red tape in the red corner (UFC 328).",
-  "colours": [
-   "#1c2f4a navy",
-   "#0f1620 black",
-   "#ffffff white"
-  ]
- },
- "morphs": {
-  "macro/sexM": 1.0,
-  "macro/ageOldM": 0.11,
-  "macro/ageYoungM": 0.0,
-  "macro/muscleUpM": 0.75,
-  "macro/weightUpM": 0.15,
-  "macro/heightUpM": 0.22,
-  "macro/proportionsUpM": 0.4,
-  "head/head-square": 0.3,
-  "head/head-round": 0.25,
-  "head/head-scale-horiz-incr": 0.15,
-  "head/head-scale-depth-incr": 0.1,
-  "forehead/forehead-scale-vert-incr": 0.2,
-  "eyebrows/eyebrows-trans-forward": 0.3,
-  "eyebrows/eyebrows-trans-down": 0.15,
-  "eyebrows/eyebrows-angle-down": 0.1,
-  "eyes/l-eye-height2-decr": 0.1,
-  "eyes/r-eye-height2-decr": 0.1,
-  "eyes/l-eye-bag-incr": 0.2,
-  "eyes/r-eye-bag-incr": 0.2,
-  "eyes/l-eye-corner1-down": 0.1,
-  "eyes/r-eye-corner1-down": 0.1,
-  "nose/nose-scale-horiz-incr": 0.15,
-  "nose/nose-point-width-incr": 0.15,
-  "nose/nose-nostrils-width-incr": 0.15,
-  "nose/nose-hump-incr": 0.1,
-  "nose/nose-scale-vert-incr": 0.1,
-  "mouth/mouth-upperlip-volume-decr": 0.2,
-  "mouth/mouth-scale-horiz-incr": 0.05,
-  "chin/chin-width-incr": 0.2,
-  "chin/chin-bones-incr": 0.3,
-  "cheek/l-cheek-bones-incr": 0.3,
-  "cheek/r-cheek-bones-incr": 0.3,
-  "cheek/l-cheek-volume-decr": 0.1,
-  "cheek/r-cheek-volume-decr": 0.1,
-  "neck/neck-scale-horiz-incr": 0.6,
-  "neck/neck-scale-vert-decr": 0.15,
-  "torso/measure-shoulder-dist-incr": 0.4,
-  "torso/torso-vshape-incr": 0.25,
-  "torso/measure-waist-circ-incr": 0.05,
-  "torso/measure-hips-circ-incr": 0.1,
-  "buttocks/buttocks-volume-incr": 0.15
- },
- "morphs_unavailable": {
-  "note": "assets/embed/mh-manifest.json has no ears/* targets. Cauliflower, protruding ears are a strong cue on his shaved head; if ear targets are added use about ears/l|r-ear-scale-incr 0.3, ears/l|r-ear-rot-forward 0.25, plus a lumpy-helix normal map.",
-  "trapezius": "No morph for trapezius height; if the rig allows, raise and thicken the trapezius region."
- },
- "render_hints": {
-  "iris": "brownlight",
-  "skin_base": "mh-skin-young_caucasian_male (closest tone) tinted toward #d4997e",
-  "eyebrows": "eyebrow001 tinted #2a201c",
-  "hair": "none (shaved); faint dark stubble tint over the whole scalp",
-  "beard": "long full-beard shell, black #231b1a, about 8-10 cm below the chin, clean cheeks, very short moustache"
- },
- "notes": "Confidence: high for head, beard, ears and build (clear studio photos and 2025-2026 fight photos). Medium for exact eye and nose detail (the studio headshot is small and the 2026 photos are action shots). Only one embed-ok photo (the low-resolution 2019 video still); the 2022 still and the 2023 snapshot are reference-only pending licence confirmation. Watch for: (1) beard is long, black and dense with a very short moustache, (2) shaved head with cauliflower ears, (3) thick neck and trapezius, (4) do not make him lanky; he is broad and heavy-set at 188 cm.",
- "review": {
-  "date": "2026-11-06",
-  "by": "second-pass photo review",
-  "changes": [
-   "Chest hair corrected from light to light-to-moderate (clearly visible across the upper chest and sternum in ESPN stance-right).",
-   "commons_2022.png (Commons YouTube licence review pending) and commons_2023_with_shamsiev.jpg (self-promotional upload, doubtful own-work claim) moved to reference-only.",
-   "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Shaved head, long black beard with very short moustache, cauliflower ears, no tattoos, skin samples and build match the photos."
-  ]
- }
 }

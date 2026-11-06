@@ -244,5 +244,47 @@
     "ears/r-ear-rot-forward": 0.3
   },
   "morphs_unavailable": "Ears: the shipped assets/embed/mh-manifest.json has no ear targets, so the large protruding ears cannot be shown with morphs. Suggested full-set values (ear scale up, rotated forward as a stand-in for protrusion) are under morphs_if_available; otherwise sculpt or scale the ears. No target for hair, the goatee, or the very thick neck-to-jaw line beyond neck-scale-horiz.",
-  "notes": "Confidence: medium-high for the overall look (very tall, thick neck, rectangular face, curly-top fade, goatee, light blue-grey eyes, protruding ears, neck/chest/arm tattoos); medium for exact morph values. What to watch for: (1) the neck and throat tattoos are new since 2023, so use the 2025 photos for them; (2) the goatee is narrow and pointed, and grew into a fuller jaw beard in 2026, so pick one style (default: the Oct 2025 goatee); (3) keep the eyes light blue-grey; dark eyes lose the likeness; (4) the body is big and slightly soft, not a shredded V-taper, so do not over-apply muscle; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. (6) he vacated the title in Sept 2026 after the eye injury, so do not render him with the belt by default. Review (second pass, 2026-11-06): re-checked every photo. Fixed the tattoo list: the mandala band is on the left ankle only (the right foot has a lotus and the left foot has lettering), the 2025 right sleeve is colour work (koi, skull/mask, peonies, black wrist band, tattooed hand), the left inner upper arm has a colour koi, and MCMXCIII sits at the base of the right side of the neck. The 2026 beard is a slightly wider goatee, not a jaw-line beard. Morph names and ranges validated against assets/embed/mh-manifest.json; values unchanged."
+  "notes": "Confidence: medium-high for the overall look (very tall, thick neck, rectangular face, curly-top fade, goatee, light blue-grey eyes, protruding ears, neck/chest/arm tattoos); medium for exact morph values. What to watch for: (1) the neck and throat tattoos are new since 2023, so use the 2025 photos for them; (2) the goatee is narrow and pointed, and grew into a fuller jaw beard in 2026, so pick one style (default: the Oct 2025 goatee); (3) keep the eyes light blue-grey; dark eyes lose the likeness; (4) the body is big and slightly soft, not a shredded V-taper, so do not over-apply muscle; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. (6) he vacated the title in Sept 2026 after the eye injury, so do not render him with the belt by default. Review (second pass, 2026-11-06): re-checked every photo. Fixed the tattoo list: the mandala band is on the left ankle only (the right foot has a lotus and the left foot has lettering), the 2025 right sleeve is colour work (koi, skull/mask, peonies, black wrist band, tattooed hand), the left inner upper arm has a colour koi, and MCMXCIII sits at the base of the right side of the neck. The 2026 beard is a slightly wider goatee, not a jaw-line beard. Morph names and ranges validated against assets/embed/mh-manifest.json; values unchanged.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.0,
+    "depth": 1.0,
+    "crouch": 0.25,
+    "lean": 0.2,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 52.0,
+    "weight_front": 0.5,
+    "bladed": 0.55,
+    "guard": {
+      "style": "standard",
+      "height": 0.6,
+      "lead_reach": 0.35,
+      "lead_height": 0.6,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.8,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.5,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.5,
+      "rate": 1.0
+    },
+    "switch_per_min": 0.3,
+    "feints": 0.45,
+    "hand_fighting": 0.3,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "lateral"
+    ],
+    "confidence": "low",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/tom-aspinall.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Light-footed for a heavyweight: athletic, fairly upright boxing stance with quick feints and level changes."
+  }
 }

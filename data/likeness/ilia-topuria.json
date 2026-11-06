@@ -243,5 +243,47 @@
     "ears/l-ear-scale-incr": 0.05,
     "ears/r-ear-scale-incr": 0.05
   },
-  "notes": "Confidence: high for hair, beard, skin, tattoos and build; medium-high for face proportions (two sharp frontal photos plus a studio headshot); medium for exact morph values. 8 photos: 5 Commons (CC BY / PD), 3 ESPN reference-only; 4 are from June 2026. The profile views are weak (one small in frame, one blurry video still), so nose depth and chin projection are estimates. What to watch: (1) The look depends on the groomed short dark beard with a crisp cheek line plus the high skin fade; in 2026 the top is long and slicked back, so short02/short04 alone will look too short on top. (2) Keep the brows thick, dark and low, close to the eyes. (3) The chest tattoo (two tigers + pines) and the crown-T at the throat are the strongest body cues; the sleeve is on HIS LEFT arm and the right arm is bare; 'El Matador' is on his left ribs (mirror-check: viewer's right when he faces camera). (4) Body: short (scale to 170.2 cm), very muscular, big chest and deltoids, tight waist; do not make him lanky. (5) Skin is warm light olive; avoid pink. Macro ageOldM uses (years-25)/65 like src/avatar3d.js. l-/r- morphs refer to the character's own left/right; values are symmetric."
+  "notes": "Confidence: high for hair, beard, skin, tattoos and build; medium-high for face proportions (two sharp frontal photos plus a studio headshot); medium for exact morph values. 8 photos: 5 Commons (CC BY / PD), 3 ESPN reference-only; 4 are from June 2026. The profile views are weak (one small in frame, one blurry video still), so nose depth and chin projection are estimates. What to watch: (1) The look depends on the groomed short dark beard with a crisp cheek line plus the high skin fade; in 2026 the top is long and slicked back, so short02/short04 alone will look too short on top. (2) Keep the brows thick, dark and low, close to the eyes. (3) The chest tattoo (two tigers + pines) and the crown-T at the throat are the strongest body cues; the sleeve is on HIS LEFT arm and the right arm is bare; 'El Matador' is on his left ribs (mirror-check: viewer's right when he faces camera). (4) Body: short (scale to 170.2 cm), very muscular, big chest and deltoids, tight waist; do not make him lanky. (5) Skin is warm light olive; avoid pink. Macro ageOldM uses (years-25)/65 like src/avatar3d.js. l-/r- morphs refer to the character's own left/right; values are symmetric.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.0,
+    "depth": 1.0,
+    "crouch": 0.4,
+    "lean": 0.3,
+    "lead_foot_deg": 11.0,
+    "rear_foot_deg": 54.0,
+    "weight_front": 0.55,
+    "bladed": 0.6,
+    "guard": {
+      "style": "high",
+      "height": 0.72,
+      "lead_reach": 0.25,
+      "lead_height": 0.65,
+      "lead_width": 0.0,
+      "rear_height": 0.7,
+      "rear_tuck": 0.9,
+      "elbow_flare": 0.15,
+      "shoulder_roll": 0.7
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.6,
+      "chin_tuck": 0.75
+    },
+    "bounce": {
+      "amp": 0.35,
+      "rate": 1.0
+    },
+    "switch_per_min": 0,
+    "feints": 0.35,
+    "hand_fighting": 0.15,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "cage-cutting"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/ilia-topuria.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn-stance-left.png, espn-stance-right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Pressure boxer: tight high guard, chin down, head moving off the centre line as he walks the opponent to the fence."
+  }
 }

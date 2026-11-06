@@ -256,5 +256,48 @@
     "ears/l-ear-scale-incr": 0.25,
     "ears/r-ear-scale-incr": 0.25
   },
-  "notes": "Confidence: high for hair, skin, tattoos and build; medium-high for face proportions (three good fronts including March 2026); medium for morph values; no true profile, so nose projection and chin depth are estimates. 8 photos: 3 Commons (PD / CC BY 2.0 / CC BY 3.0), 5 reference-only (ESPN x2, Las Vegas Sun Mar 2026, Aloha State Daily Jul 2026 x2). What to watch: (1) Long narrow face, high forehead with a straight edged-up hairline, hollow cheeks and high cheekbones. (2) Broad, flat-bridged nose with a wide rounded tip, and the small mole on HIS RIGHT side of the nose. (3) Ears that stick out; the embed has no ear morphs, so this cue may be lost. (4) Sparse black moustache-goatee stubble, not a full beard. (5) Heavy Polynesian chest/shoulder tribal with the central spearhead, 'HOLLOWAY' across the stomach, script on the right forearm, fox on the left upper arm. (6) Body: tall (scale to 180.3 cm), slim, long limbs; do not bulk him up. ageOldM uses (years-25)/65 like src/avatar3d.js; l-/r- values are symmetric."
+  "notes": "Confidence: high for hair, skin, tattoos and build; medium-high for face proportions (three good fronts including March 2026); medium for morph values; no true profile, so nose projection and chin depth are estimates. 8 photos: 3 Commons (PD / CC BY 2.0 / CC BY 3.0), 5 reference-only (ESPN x2, Las Vegas Sun Mar 2026, Aloha State Daily Jul 2026 x2). What to watch: (1) Long narrow face, high forehead with a straight edged-up hairline, hollow cheeks and high cheekbones. (2) Broad, flat-bridged nose with a wide rounded tip, and the small mole on HIS RIGHT side of the nose. (3) Ears that stick out; the embed has no ear morphs, so this cue may be lost. (4) Sparse black moustache-goatee stubble, not a full beard. (5) Heavy Polynesian chest/shoulder tribal with the central spearhead, 'HOLLOWAY' across the stomach, script on the right forearm, fox on the left upper arm. (6) Body: tall (scale to 180.3 cm), slim, long limbs; do not bulk him up. ageOldM uses (years-25)/65 like src/avatar3d.js; l-/r- values are symmetric.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 0.95,
+    "depth": 1.0,
+    "crouch": 0.15,
+    "lean": 0.1,
+    "lead_foot_deg": 11.0,
+    "rear_foot_deg": 54.0,
+    "weight_front": 0.5,
+    "bladed": 0.6,
+    "guard": {
+      "style": "standard",
+      "height": 0.55,
+      "lead_reach": 0.45,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.75,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.75,
+      "chin_tuck": 0.55
+    },
+    "bounce": {
+      "amp": 0.65,
+      "rate": 1.2
+    },
+    "switch_per_min": 0.3,
+    "feints": 0.5,
+    "hand_fighting": 0.25,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "lateral",
+      "circling"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/max-holloway.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn-stance-right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Tall, upright volume boxer: a lot of head and upper-body movement, rhythmic bounce, doubled jab out of a medium guard."
+  }
 }

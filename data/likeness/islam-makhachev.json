@@ -213,5 +213,47 @@
     "ears/l-ear-lobe-decr": 0.1,
     "ears/r-ear-lobe-decr": 0.1
   },
-  "notes": "Confidence: high for hair, beard, skin, eye colour and the absence of tattoos; medium for face proportions (good fronts, only small or capped side views); medium for the 2026 welterweight body (upper body only). 8 photos: 4 Commons CC BY 3.0, 4 reference-only (3 ESPN, 1 Getty Aug 2026). What to watch: (1) The beard is the main recognition cue: full, near-black, longest and rounded at the chin, with a SHORT, SPARSE moustache that shows the upper lip; a generic full beard with a heavy moustache will look wrong. (2) Very short even buzz cut (about 1.5 cm), not a fade. (3) Long straight nose, tall broad forehead, hazel-green-brown eyes. (4) Cauliflower ears on both sides (thick, compact); the embed has no ear morphs, so a normal ear is the fallback. (5) No tattoos anywhere, moderate chest hair. (6) Body: at 170 lb he is smooth and solid, mild V; scale to 177.8 cm. ageOldM uses (years-25)/65 like src/avatar3d.js; l-/r- values are symmetric."
+  "notes": "Confidence: high for hair, beard, skin, eye colour and the absence of tattoos; medium for face proportions (good fronts, only small or capped side views); medium for the 2026 welterweight body (upper body only). 8 photos: 4 Commons CC BY 3.0, 4 reference-only (3 ESPN, 1 Getty Aug 2026). What to watch: (1) The beard is the main recognition cue: full, near-black, longest and rounded at the chin, with a SHORT, SPARSE moustache that shows the upper lip; a generic full beard with a heavy moustache will look wrong. (2) Very short even buzz cut (about 1.5 cm), not a fade. (3) Long straight nose, tall broad forehead, hazel-green-brown eyes. (4) Cauliflower ears on both sides (thick, compact); the embed has no ear morphs, so a normal ear is the fallback. (5) No tattoos anywhere, moderate chest hair. (6) Body: at 170 lb he is smooth and solid, mild V; scale to 177.8 cm. ageOldM uses (years-25)/65 like src/avatar3d.js; l-/r- values are symmetric.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.05,
+    "depth": 1.0,
+    "crouch": 0.4,
+    "lean": 0.3,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 50.0,
+    "weight_front": 0.5,
+    "bladed": 0.5,
+    "guard": {
+      "style": "hand-fighting",
+      "height": 0.5,
+      "lead_reach": 0.45,
+      "lead_height": 0.45,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.7,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.3,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.35,
+      "rate": 1.0
+    },
+    "switch_per_min": 0,
+    "feints": 0.35,
+    "hand_fighting": 0.55,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "cage-cutting"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/islam-makhachev.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn-stance-left.png, espn-stance-right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Southpaw grappler: long lead hand that hand-fights and measures, level-change feints, steady pressure toward the fence."
+  }
 }

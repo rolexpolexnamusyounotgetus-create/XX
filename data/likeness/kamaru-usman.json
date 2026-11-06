@@ -222,5 +222,47 @@
     "ears/r-ear-rot-backward": 0.1
   },
   "morphs_unavailable": "No ear targets in the shipped manifest; his small, close-set ears are close to the base mesh anyway (full-set values under morphs_if_available). No grey-stubble control: do it in the texture. No target for the trapezius height.",
-  "notes": "Confidence: high for the overall look (shaved round head, broad face and jaw, wide nose, full lips, grey-flecked stubble, very muscular V-taper, no tattoos); medium for morph values. What to watch for: (1) by 2026 the stubble shows grey, which the 2023 press photo does not; (2) he moved up to middleweight in 2026, but the physique in the Jul 2026 cutout is nearly the same as in 2025; (3) the face paint in the 2026 walkout photos is not his skin; (4) avoid over-wide eyes, which are medium-small and slightly hooded; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. Review (second pass, 2026-11-06): re-checked every photo. Skin re-sampled on clean mid-cheek patches (tone_hex now darker than the first pass); fight-shorts description corrected (UFC Atlanta 2025 used the slash-stripe design, the scale pattern is the 2026 kit); beard length noted as varying. Commons licence for KamaruUsmanPress2018.png re-checked (CC BY-SA 3.0, MMAnytt). Morph names and ranges validated against assets/embed/mh-manifest.json; values unchanged."
+  "notes": "Confidence: high for the overall look (shaved round head, broad face and jaw, wide nose, full lips, grey-flecked stubble, very muscular V-taper, no tattoos); medium for morph values. What to watch for: (1) by 2026 the stubble shows grey, which the 2023 press photo does not; (2) he moved up to middleweight in 2026, but the physique in the Jul 2026 cutout is nearly the same as in 2025; (3) the face paint in the 2026 walkout photos is not his skin; (4) avoid over-wide eyes, which are medium-small and slightly hooded; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. Review (second pass, 2026-11-06): re-checked every photo. Skin re-sampled on clean mid-cheek patches (tone_hex now darker than the first pass); fight-shorts description corrected (UFC Atlanta 2025 used the slash-stripe design, the scale pattern is the 2026 kit); beard length noted as varying. Commons licence for KamaruUsmanPress2018.png re-checked (CC BY-SA 3.0, MMAnytt). Morph names and ranges validated against assets/embed/mh-manifest.json; values unchanged.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.05,
+    "depth": 1.0,
+    "crouch": 0.35,
+    "lean": 0.3,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 50.0,
+    "weight_front": 0.55,
+    "bladed": 0.5,
+    "guard": {
+      "style": "standard",
+      "height": 0.6,
+      "lead_reach": 0.4,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.8,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.3,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.35,
+      "rate": 0.95
+    },
+    "switch_per_min": 0.6,
+    "feints": 0.3,
+    "hand_fighting": 0.35,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "cage-cutting"
+    ],
+    "confidence": "low",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/kamaru-usman.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Wrestle-boxer pressure: jab and body work while pushing to the fence, steady and fairly flat-footed."
+  }
 }

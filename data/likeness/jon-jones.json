@@ -295,5 +295,48 @@
     "ears/l-ear-lobe-decr": 0.2,
     "ears/r-ear-lobe-decr": 0.2
   },
-  "notes": "Confidence: high for build, skin range, hair, beard and tattoos; medium for face proportions (good frontals from 2023-2024 and three-quarters from UFC 309 and the ESPYs; the only profile is a soft 2015 still); low-to-medium for exact morph values. Recent photos are scarce because he has not fought since November 2024; the newest clear one is July 2025. Watch for: (1) A long oval face with a tall, rounded forehead, low straight brows and heavy-lidded, deep-set eyes; default MakeHuman eyes look too open and alert. (2) Broad nose with a rounded tip and wide nostrils, full lips. (3) Beard: full and dense, black with grey at the chin; length 1.5-4 cm depending on the year (short beard is the middle value). (4) Head: very short buzz with a lined-up hairline and receding temples, shaved smooth on fight night. (5) Ears: moderate cauliflower thickening on both ears (needs a normal map). (6) Body: the defining trait is arm length (84 in reach at 76 in height) and long legs; at heavyweight keep the midsection smooth and slightly full, not shredded; use morphs_variant_light_heavyweight for his 205 lb years. (7) Tattoos are small: 'Philippians 4:13' script on the RIGHT upper chest and two Chinese characters on the LEFT ribs (his own sides). macro/ageOldM 0.215 follows avatar3d.js (39-25)/65; heightUpM 0.32 is interpolated from the other 188-196 cm sheets."
+  "notes": "Confidence: high for build, skin range, hair, beard and tattoos; medium for face proportions (good frontals from 2023-2024 and three-quarters from UFC 309 and the ESPYs; the only profile is a soft 2015 still); low-to-medium for exact morph values. Recent photos are scarce because he has not fought since November 2024; the newest clear one is July 2025. Watch for: (1) A long oval face with a tall, rounded forehead, low straight brows and heavy-lidded, deep-set eyes; default MakeHuman eyes look too open and alert. (2) Broad nose with a rounded tip and wide nostrils, full lips. (3) Beard: full and dense, black with grey at the chin; length 1.5-4 cm depending on the year (short beard is the middle value). (4) Head: very short buzz with a lined-up hairline and receding temples, shaved smooth on fight night. (5) Ears: moderate cauliflower thickening on both ears (needs a normal map). (6) Body: the defining trait is arm length (84 in reach at 76 in height) and long legs; at heavyweight keep the midsection smooth and slightly full, not shredded; use morphs_variant_light_heavyweight for his 205 lb years. (7) Tattoos are small: 'Philippians 4:13' script on the RIGHT upper chest and two Chinese characters on the LEFT ribs (his own sides). macro/ageOldM 0.215 follows avatar3d.js (39-25)/65; heightUpM 0.32 is interpolated from the other 188-196 cm sheets.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.1,
+    "depth": 1.2,
+    "crouch": 0.3,
+    "lean": 0.15,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 52.0,
+    "weight_front": 0.48,
+    "bladed": 0.55,
+    "guard": {
+      "style": "long",
+      "height": 0.45,
+      "lead_reach": 0.65,
+      "lead_height": 0.45,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.7,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.45
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.35,
+      "chin_tuck": 0.55
+    },
+    "bounce": {
+      "amp": 0.35,
+      "rate": 0.95
+    },
+    "switch_per_min": 0.8,
+    "feints": 0.5,
+    "hand_fighting": 0.6,
+    "posture": "open",
+    "footwork": [
+      "lateral",
+      "in-and-out",
+      "stance-switch"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/jon-jones.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (ref-espn-stance-left.png, ref-espn-stance-right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Long and wide, lead hand extended to frame and post, oblique kicks from range, occasional stance switches."
+  }
 }

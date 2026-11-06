@@ -263,5 +263,47 @@
     "ears/r-ear-rot-forward": 0.15
   },
   "morphs_unavailable": "Ears: no ear targets in the shipped manifest (full-set values under morphs_if_available). No target for the goatee, hair or the thick trapezius beyond neck-scale-horiz.",
-  "notes": "Confidence: high for the overall look (buzz cut, low heavy straight brows, dark eyes, full goatee, broad square face, Maori right-shoulder piece, Southern Cross on the left chest, compact muscular build); medium for exact morph values. Watch for: (1) the tattoos are on his RIGHT shoulder and LEFT chest; mirroring them breaks the likeness; (2) goatee length changes between fights; default to the Jul 2026 rounded 3-4 cm block, not the long pointed 2024 version; (3) keep the brows low and heavy and the eye opening narrow, which carries most of his expression; (4) do not make him lanky: he is short-limbed and thick for a light heavyweight; (5) macro/heightUpM uses the linear fit in research/assets.md (heightUpM = 2 * (H - 1.785 m) / 0.875); muscle and weight change stature slightly, so measure the built mesh and nudge heightUpM until it reads 183 cm."
+  "notes": "Confidence: high for the overall look (buzz cut, low heavy straight brows, dark eyes, full goatee, broad square face, Maori right-shoulder piece, Southern Cross on the left chest, compact muscular build); medium for exact morph values. Watch for: (1) the tattoos are on his RIGHT shoulder and LEFT chest; mirroring them breaks the likeness; (2) goatee length changes between fights; default to the Jul 2026 rounded 3-4 cm block, not the long pointed 2024 version; (3) keep the brows low and heavy and the eye opening narrow, which carries most of his expression; (4) do not make him lanky: he is short-limbed and thick for a light heavyweight; (5) macro/heightUpM uses the linear fit in research/assets.md (heightUpM = 2 * (H - 1.785 m) / 0.875); muscle and weight change stature slightly, so measure the built mesh and nudge heightUpM until it reads 183 cm.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 0.95,
+    "depth": 1.25,
+    "crouch": 0.2,
+    "lean": 0.05,
+    "lead_foot_deg": 10.0,
+    "rear_foot_deg": 60.0,
+    "weight_front": 0.42,
+    "bladed": 0.75,
+    "guard": {
+      "style": "low",
+      "height": 0.45,
+      "lead_reach": 0.4,
+      "lead_height": 0.5,
+      "lead_width": 0.0,
+      "rear_height": 0.55,
+      "rear_tuck": 0.7,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.45
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.45,
+      "chin_tuck": 0.55
+    },
+    "bounce": {
+      "amp": 0.85,
+      "rate": 1.2
+    },
+    "switch_per_min": 0,
+    "feints": 0.55,
+    "hand_fighting": 0.25,
+    "posture": "closed",
+    "footwork": [
+      "in-and-out",
+      "lateral"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/robert-whittaker.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Karate-based: bladed, bouncing stance and fast in-and-out blitzes behind feints."
+  }
 }

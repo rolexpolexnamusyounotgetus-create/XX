@@ -257,5 +257,46 @@
     "ears/r-ear-rot-forward": 0.1
   },
   "morphs_unavailable": "Cauliflower ear cannot be made with any MakeHuman target: sculpt it or use a normal map on both ears (left worse). No target for the crooked nose bridge, the greying beard or the receding buzz cut beyond forehead-scale-vert.",
-  "notes": "Confidence: high for the overall look (gaunt angular face, M-shaped receding buzz cut, heavy low straight brows, deep-set dark eyes, broad flattened nose, cauliflower ears, salt-and-pepper short beard with soul patch, left-arm Japanese sleeve, tiny very lean build); medium for exact morph values. Watch for: (1) the sleeve is on his LEFT arm and spills onto the left shoulder and chest; the right arm is bare; (2) the grey in the beard reads at a distance; an all-dark beard makes him look younger; (3) the 2023 Commons photo (longer hair, clean-shaven) is outdated; (4) macro/heightDownM uses heightUpM = 2 * (H - 1.785 m) / 0.875 = -0.31 from research/assets.md; this is an extrapolation below the measured builds, so measure the mesh and nudge until it reads 165 cm."
+  "notes": "Confidence: high for the overall look (gaunt angular face, M-shaped receding buzz cut, heavy low straight brows, deep-set dark eyes, broad flattened nose, cauliflower ears, salt-and-pepper short beard with soul patch, left-arm Japanese sleeve, tiny very lean build); medium for exact morph values. Watch for: (1) the sleeve is on his LEFT arm and spills onto the left shoulder and chest; the right arm is bare; (2) the grey in the beard reads at a distance; an all-dark beard makes him look younger; (3) the 2023 Commons photo (longer hair, clean-shaven) is outdated; (4) macro/heightDownM uses heightUpM = 2 * (H - 1.785 m) / 0.875 = -0.31 from research/assets.md; this is an extrapolation below the measured builds, so measure the mesh and nudge until it reads 165 cm.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.05,
+    "depth": 1.0,
+    "crouch": 0.35,
+    "lean": 0.3,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 50.0,
+    "weight_front": 0.52,
+    "bladed": 0.5,
+    "guard": {
+      "style": "standard",
+      "height": 0.55,
+      "lead_reach": 0.35,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.75,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.5
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.45,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.6,
+      "rate": 1.15
+    },
+    "switch_per_min": 0,
+    "feints": 0.35,
+    "hand_fighting": 0.3,
+    "posture": "closed",
+    "footwork": [
+      "pressure"
+    ],
+    "confidence": "low",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/alexandre-pantoja.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Pressure grappler who is willing to trade: medium guard, bouncy flyweight rhythm."
+  }
 }

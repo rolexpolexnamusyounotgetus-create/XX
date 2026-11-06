@@ -261,5 +261,46 @@
   "morphs_not_in_embed": {
     "_note": "assets/embed/mh-manifest.json has no ear targets; ears look average, so no change is suggested."
   },
-  "notes": "Confidence: high for hair (current bleached look), skin, tattoos and build; medium-high for face proportions; medium for morph values. 8 photos: 3 Commons CC0 (2021, natural dark hair), 5 reference-only (ESPN x3, Las Vegas Sun March 2026 x2). What to watch: (1) Current look is bleached platinum short hair (#dcdabd) with DARK brows and stubble; use colour_hex_natural only for a pre-2024 look. (2) The face is long and gaunt: very prominent cheekbones, hollow cheeks, deep nasolabial folds, narrow pointed chin, long straight nose; default MakeHuman cheeks are far too full. (3) Wide mouth and bright white teeth when smiling. (4) Tattoos: portraits across the chest ('Tayla' under the girl on the left pec), 'Jamais desista' on the left neck, two full sleeves (horse on the left), cartoon piece on the right shin; mirror-check, since l/r are HIS sides. (5) Body: long arms (reach 188 cm), slim legs, narrow waist; scale to 177.8 cm. ageOldM uses (years-25)/65 like src/avatar3d.js; l-/r- values are symmetric."
+  "notes": "Confidence: high for hair (current bleached look), skin, tattoos and build; medium-high for face proportions; medium for morph values. 8 photos: 3 Commons CC0 (2021, natural dark hair), 5 reference-only (ESPN x3, Las Vegas Sun March 2026 x2). What to watch: (1) Current look is bleached platinum short hair (#dcdabd) with DARK brows and stubble; use colour_hex_natural only for a pre-2024 look. (2) The face is long and gaunt: very prominent cheekbones, hollow cheeks, deep nasolabial folds, narrow pointed chin, long straight nose; default MakeHuman cheeks are far too full. (3) Wide mouth and bright white teeth when smiling. (4) Tattoos: portraits across the chest ('Tayla' under the girl on the left pec), 'Jamais desista' on the left neck, two full sleeves (horse on the left), cartoon piece on the right shin; mirror-check, since l/r are HIS sides. (5) Body: long arms (reach 188 cm), slim legs, narrow waist; scale to 177.8 cm. ageOldM uses (years-25)/65 like src/avatar3d.js; l-/r- values are symmetric.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 0.95,
+    "depth": 1.0,
+    "crouch": 0.15,
+    "lean": 0.25,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 48.0,
+    "weight_front": 0.52,
+    "bladed": 0.45,
+    "guard": {
+      "style": "high",
+      "height": 0.7,
+      "lead_reach": 0.4,
+      "lead_height": 0.65,
+      "lead_width": 0.0,
+      "rear_height": 0.7,
+      "rear_tuck": 0.8,
+      "elbow_flare": 0.3,
+      "shoulder_roll": 0.5
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.25,
+      "chin_tuck": 0.5
+    },
+    "bounce": {
+      "amp": 0.25,
+      "rate": 0.9
+    },
+    "switch_per_min": 0,
+    "feints": 0.2,
+    "hand_fighting": 0.3,
+    "posture": "closed",
+    "footwork": [
+      "pressure"
+    ],
+    "confidence": "low",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/charles-oliveira.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn-stance-left.png, espn-stance-right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Tall Muay Thai-style high guard, upright, walks forward behind a long jab and right hand."
+  }
 }

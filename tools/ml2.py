@@ -1468,6 +1468,439 @@ def stage_method(args):
 STAGES["method"] = stage_method
 
 
+# ====================================================================== stage: export (report numbers, page model, JSON)
+def segments_of(T, rows, close):
+    nA, nB = T["nA"].to_numpy()[rows], T["nB"].to_numpy()[rows]
+    nmin = np.minimum(nA, nB)
+    lbs = T["lbs"].to_numpy()[rows]
+    women = T["women"].to_numpy()[rows] > 0
+    five = T["five"].to_numpy()[rows] > 0
+    div = T["division"].to_numpy()[rows]
+    fav = np.maximum(close, 1 - close)
+    seg = {
+        "newcomer bout (a side with 1-2 prior UFC fights)": nmin <= 2,
+        "middle (fewer-fight side has 3-7)": (nmin >= 3) & (nmin <= 7),
+        "veterans (both 8+)": nmin >= 8,
+        "both newcomers (both 1-2)": np.maximum(nA, nB) <= 2,
+        "men 125-145": ~women & (lbs <= 145),
+        "men 155-185": ~women & (lbs >= 155) & (lbs <= 185),
+        "men 205-265": ~women & (lbs >= 205),
+        "women": women,
+        "3 rounds": ~five,
+        "5 rounds": five,
+        "pick'em (close favourite < 60%)": fav < 0.6,
+        "moderate favourite (60-75%)": (fav >= 0.6) & (fav < 0.75),
+        "heavy favourite (75%+)": fav >= 0.75,
+    }
+    for d in ("Flyweight", "Bantamweight", "Featherweight", "Lightweight", "Welterweight", "Middleweight",
+              "Light Heavyweight", "Heavyweight", "Women's Strawweight", "Women's Flyweight", "Women's Bantamweight"):
+        m = div == d
+        if m.sum() >= 40:
+            seg["division: " + d] = m
+    return seg
+
+
+def calib_bins(p, y, edges=(0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.9, 1.0001)):
+    """Favourite-side calibration (each fight counted once, from the favourite's side)."""
+    q = np.where(p >= 0.5, p, 1 - p)
+    o = np.where(p >= 0.5, y, 1 - y)
+    out = []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        m = (q >= lo) & (q < hi)
+        if m.sum():
+            out.append({"lo": lo, "hi": round(min(hi, 1.0), 2), "n": int(m.sum()), "pred": round(float(q[m].mean()), 4),
+                        "obs": round(float(o[m].mean()), 4)})
+    return out
+
+
+def stage_export(args):
+    S = load_table()
+    T = S["df"]
+    C = json.load(open(os.path.join(CACHE, "cv.json")))
+    F = pickle.load(open(os.path.join(CACHE, "fit.pkl"), "rb"))
+    st2 = json.load(open(os.path.join(CACHE, "stage2.json"))) if os.path.exists(os.path.join(CACHE, "stage2.json")) else None
+    SK = pickle.load(open(os.path.join(CACHE, "stack.pkl"), "rb")) if os.path.exists(os.path.join(CACHE, "stack.pkl")) else None
+    SKJ = json.load(open(os.path.join(CACHE, "stack.json"))) if os.path.exists(os.path.join(CACHE, "stack.json")) else None
+    MJ = json.load(open(os.path.join(CACHE, "method.json"))) if os.path.exists(os.path.join(CACHE, "method.json")) else None
+    P = F["preds"]
+    ev = T["evalrow"].to_numpy()
+    yr = T["year"].to_numpy()
+    y = T["y"].to_numpy(float)
+    grp = T["event"].to_numpy()
+    oo = ev & (yr >= 2019) & (yr <= 2023)
+    va = ev & (yr >= 2024) & (yr <= 2025)
+    mlj = dev_only(jload("ml.json")["fights"])
+    mk = dev_only(jload("market.json")["fights"])
+    fids = T["fid"].to_numpy()
+    ext = {"ml_v1_lr": np.array([mlj.get(f, {}).get("lr", np.nan) for f in fids], float),
+           "ml_v1_blend": np.array([mlj.get(f, {}).get("ml", np.nan) for f in fids], float),
+           "ml_v1_stack": np.array([mlj.get(f, {}).get("stack", np.nan) for f in fids], float),
+           "elo": np.array([mlj.get(f, {}).get("elo", np.nan) for f in fids], float),
+           "close": np.array([mk.get(f, {}).get("p_power_close", np.nan) for f in fids], float),
+           "open": np.array([mk.get(f, {}).get("p_novig_open", np.nan) for f in fids], float),
+           "mkt_rating": np.array([mk.get(f, {}).get("p_market_rating", np.nan) for f in fids], float)}
+    res = {"oof_2019_2023": {}, "valid_2024_2025": {"static": {}, "rolling": {}}, "paired": {}, "by_year": {},
+           "calibration": {}, "segments": {}}
+    for k in ("lr_base", "lr", "lgb", "xgb", "blend"):
+        res["oof_2019_2023"]["ml2_" + k if k != "lr_base" else "ml_v1_lr_reproduced"] = metrics(P[k + "|oof"][oo], y[oo])
+    res["oof_2019_2023"]["ml_v1_lr"] = metrics(ext["ml_v1_lr"][oo], y[oo])
+    res["oof_2019_2023"]["elo"] = metrics(ext["elo"][oo], y[oo])
+    for sch, key in (("static", "static"), ("rolling", "roll")):
+        for k in ("lr_base", "lr", "lgb", "lgb_seed1", "xgb", "xgb_seed1", "blend"):
+            nm = "ml2_" + k if k != "lr_base" else "ml_v1_lr_reproduced"
+            p = P[k + "|" + key][va]
+            m = metrics(p, y[va])
+            b = boot(grp[va], [ll_vec(p, y[va])], 2000)
+            m["log_loss_ci"] = ci_of(b[:, 0])
+            res["valid_2024_2025"][sch][nm] = m
+    for k in ("ml_v1_lr", "ml_v1_blend", "ml_v1_stack", "elo"):
+        res["valid_2024_2025"]["static"][k] = metrics(ext[k][va], y[va])
+    hc = va & ~np.isnan(ext["close"])
+    ho = va & ~np.isnan(ext["open"]) & ~np.isnan(ext["close"])
+    res["valid_2024_2025"]["static"]["close (fights with a line)"] = metrics(ext["close"][hc], y[hc])
+    res["valid_2024_2025"]["static"]["open (fights with both lines)"] = metrics(ext["open"][ho], y[ho])
+    # paired comparisons on 2024-2025
+    for sch, key in (("static", "static"), ("rolling", "roll")):
+        for k in ("lr", "blend"):
+            p = P[k + "|" + key]
+            res["paired"]["%s ml2_%s - ml_v1_lr" % (sch, k)] = compare(p[va], ext["ml_v1_lr"][va], y[va], grp[va])
+            res["paired"]["%s ml2_%s - ml_v1_blend" % (sch, k)] = compare(p[va], ext["ml_v1_blend"][va], y[va], grp[va])
+            res["paired"]["%s ml2_%s - ml_v1_stack(elo+ml+mkt_rating)" % (sch, k)] = compare(
+                p[va & ~np.isnan(ext["ml_v1_stack"])], ext["ml_v1_stack"][va & ~np.isnan(ext["ml_v1_stack"])],
+                y[va & ~np.isnan(ext["ml_v1_stack"])], grp[va & ~np.isnan(ext["ml_v1_stack"])])
+            res["paired"]["%s ml2_%s - elo" % (sch, k)] = compare(p[va], ext["elo"][va], y[va], grp[va])
+            res["paired"]["%s ml2_%s - close" % (sch, k)] = compare(p[hc], ext["close"][hc], y[hc], grp[hc])
+            res["paired"]["%s ml2_%s - open" % (sch, k)] = compare(p[ho], ext["open"][ho], y[ho], grp[ho])
+        res["paired"]["%s ml2_blend - ml2_lr" % sch] = compare(P["blend|" + key][va], P["lr|" + key][va], y[va], grp[va])
+        res["paired"]["%s ml2_lgb(5 seeds) - ml2_lgb(1 seed)" % sch] = compare(P["lgb|" + key][va], P["lgb_seed1|" + key][va],
+                                                                            y[va], grp[va])
+    res["paired"]["rolling - static (ml2_blend)"] = compare(P["blend|roll"][va], P["blend|static"][va], y[va], grp[va])
+    res["paired"]["rolling - static (ml2_lr)"] = compare(P["lr|roll"][va], P["lr|static"][va], y[va], grp[va])
+    res["paired"]["ml_v1_lr_reproduced - ml_v1_lr (static)"] = compare(P["lr_base|static"][va], ext["ml_v1_lr"][va],
+                                                                      y[va], grp[va], 500)
+    res["paired"]["oof 2019-2023 ml2_blend - ml_v1_lr"] = compare(P["blend|oof"][oo], ext["ml_v1_lr"][oo], y[oo], grp[oo])
+    res["paired"]["oof 2019-2023 ml2_lr - ml_v1_lr"] = compare(P["lr|oof"][oo], ext["ml_v1_lr"][oo], y[oo], grp[oo])
+    # by year
+    for Y in range(2019, 2026):
+        m = ev & (yr == Y)
+        sch = "oof" if Y < 2024 else "static"
+        row = {"n": int(m.sum()), "ml_v1_lr": round(ll(ext["ml_v1_lr"][m], y[m]), 5),
+               "ml2_lr": round(ll(P["lr|" + sch][m], y[m]), 5), "ml2_blend": round(ll(P["blend|" + sch][m], y[m]), 5),
+               "elo": round(ll(ext["elo"][m], y[m]), 5),
+               "ml2_blend_slope": round(M.calib_slope(P["blend|" + sch][m], y[m]), 3)}
+        mc = m & ~np.isnan(ext["close"])
+        row["close"] = round(ll(ext["close"][mc], y[mc]), 5)
+        if Y >= 2024:
+            row["ml2_blend_rolling"] = round(ll(P["blend|roll"][m], y[m]), 5)
+        res["by_year"][str(Y)] = row
+    for k, key in (("ml2_blend static", "blend|static"), ("ml2_blend rolling", "blend|roll"), ("ml2_lr static", "lr|static")):
+        res["calibration"][k] = calib_bins(P[key][va], y[va])
+    res["calibration"]["ml_v1_lr"] = calib_bins(ext["ml_v1_lr"][va], y[va])
+    res["calibration"]["close"] = calib_bins(ext["close"][hc], y[hc])
+    res["calibration"]["ml2_blend OOF 2019-2023"] = calib_bins(P["blend|oof"][oo], y[oo])
+    # segments
+    close_va = ext["close"]
+    seg = segments_of(T, np.flatnonzero(va), np.nan_to_num(close_va[va], nan=0.5))
+    for name, m in seg.items():
+        rows = np.flatnonzero(va)[m]
+        if len(rows) < 25:
+            continue
+        r = {"n": int(len(rows))}
+        for k, pv in (("ml_v1_lr", ext["ml_v1_lr"]), ("ml2_lr", P["lr|static"]), ("ml2_blend", P["blend|static"]),
+                      ("ml2_blend_rolling", P["blend|roll"]), ("elo", ext["elo"])):
+            r[k] = round(ll(pv[rows], y[rows]), 5)
+        rc = rows[~np.isnan(ext["close"][rows])]
+        r["n_line"] = int(len(rc))
+        r["close"] = round(ll(ext["close"][rc], y[rc]), 5)
+        r["ml2_blend_on_line_fights"] = round(ll(P["blend|static"][rc], y[rc]), 5)
+        r["ml2_blend - ml_v1_lr"] = compare(P["blend|static"][rows], ext["ml_v1_lr"][rows], y[rows], grp[rows], 1000)
+        r["ml2_blend - close"] = compare(P["blend|static"][rc], ext["close"][rc], y[rc], grp[rc], 1000)
+        res["segments"][name] = r
+    # gap to the close in newcomer bouts, v1 vs v2
+    out = {"meta": {}, "cv": C, "results": res, "stage2": st2, "stacks": SKJ, "method": None, "fights": {}}
+    if MJ:
+        out["method"] = {k: v for k, v in MJ.items() if not k.startswith("_")}
+    # per-fight predictions (backtest fights 2019-2025)
+    stackp = {}
+    if SK:
+        D = SK["D"]
+        for key, arr in SK["preds"].items():
+            stackp[key] = dict(zip(D["fid"], arr))
+    for i in np.flatnonzero(ev & (yr >= 2019) & (yr <= 2025)):
+        f = fids[i]
+        sch = "oof" if yr[i] < 2024 else "static"
+        e = {"set": "oof" if yr[i] < 2024 else "valid", "y": int(y[i]),
+             "ml2": round(float(P["blend|" + sch][i]), 4), "ml2_lr": round(float(P["lr|" + sch][i]), 4),
+             "ml2_lgb": round(float(P["lgb|" + sch][i]), 4), "ml2_xgb": round(float(P["xgb|" + sch][i]), 4),
+             "mr": None if np.isnan(T["mr_p"].iloc[i]) else round(float(T["mr_p"].iloc[i]), 4)}
+        if yr[i] >= 2024:
+            e["ml2_roll"] = round(float(P["blend|roll"][i]), 4)
+            e["ml2_lr_roll"] = round(float(P["lr|roll"][i]), 4)
+            for key, dd in stackp.items():
+                v = dd.get(f)
+                if v is not None and not np.isnan(v) and ("current+ml2" in key):
+                    e["stack_" + key.replace("|current+ml2|", "_")] = round(float(v), 4)
+        out["fights"][f] = e
+    out["page_model"] = page_model(T, C, F, args)
+    out["meta"] = {
+        "tool": "tools/ml2.py", "built": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "protocol": "every fight dated 2026-01-01 or later dropped right after parsing (build_db.parse_fights wrapped); "
+                    "all choices by time-ordered CV on pre-2024 data (expanding window, validation blocks 2016-17, "
+                    "2018-19, 2020-21, 2022-23; stacks forward-chained 2021-2023 from 2019); 2024-01-01..2025-12-31 "
+                    "scored once. static = models fit on fights before 2024-01-01; rolling = refit on the first of "
+                    "every month on all fights before it (stacks refit each January)",
+        "sources": {"base": "tools/ml.py feature table (rebuilt here, 2010-2025)",
+                    "ratings": "tools/ratings.py systems rerun with its tuned parameters over 2009-2025 "
+                               "(check vs ratings.json: %s)" % {k: v["max_abs_diff"] for k, v in S["ratings_check"].items()},
+                    "market_rating": "tools/market.py Kalman market rating rebuilt from 2013 (check vs market.json: %s)"
+                                     % S["mr_check"],
+                    "preufc": "data/derived/preufc.json strict snapshots (tools/preufc.side_pre), target rule applied "
+                              "pre-fight",
+                    "fightweek": "data/derived/fightweek.json",
+                    "late (stage2)": "durability.json, oppadj.json, mlrates_oof.json, methodround.json (2019+ only)"},
+        "orientation": "P(A wins | decisive), A = first ufcstats name; every model is corner-symmetric",
+        "keys": {"fights": "per backtest fight id 2019-2025: set (oof = 2019-2023 annual refit, valid = 2024-2025), "
+                           "y, ml2 (blend: LR + LightGBM + XGBoost), ml2_lr, ml2_lgb, ml2_xgb, mr (market rating), "
+                           "ml2_roll / ml2_lr_roll (monthly rolling refit, valid only), stack_<regime>_<scheme> "
+                           "(current+ml2 stacks, valid only)",
+                 "page_model": "logistic ML v2 for any two roster fighters (src/ml/ml2.js)"}}
+    json.dump(clean(out), open(OUT_JSON, "w"), separators=(",", ":"))
+    log("wrote %s (%.0f kB)" % (OUT_JSON, os.path.getsize(OUT_JSON) / 1024))
+
+
+def clean(o):
+    if isinstance(o, dict):
+        return {str(k): clean(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [clean(v) for v in o]
+    if isinstance(o, (np.floating, float)):
+        return None if (math.isnan(o) or math.isinf(o)) else float(o)
+    if isinstance(o, (np.integer,)):
+        return int(o)
+    if isinstance(o, np.ndarray):
+        return clean(o.tolist())
+    if isinstance(o, (np.bool_,)):
+        return bool(o)
+    return o
+
+
+# ------------------------------------------------------------------ page model (logistic ML v2 for any matchup)
+def rating_prob(kind, kap, ra, rb):
+    """tools/ratings.py matchup_probs: P(a beats b) from current ratings {mu, sd}."""
+    d = ra["mu"] - rb["mu"]
+    if kind == "elo":
+        return 1 / (1 + math.exp(-kap * d))
+    if kind == "glicko2":
+        g = 1.0 / math.sqrt(1.0 + 3.0 * (ra["sd"] ** 2 + rb["sd"] ** 2) / math.pi ** 2)
+        return 1 / (1 + math.exp(-kap * g * d))
+    if kind == "trueskill":
+        return 0.5 * math.erfc(-(kap * d / math.sqrt(2.0 + ra["sd"] ** 2 + rb["sd"] ** 2)) / math.sqrt(2))
+    vd = ra["sd"] ** 2 + rb["sd"] ** 2
+    return 1 / (1 + math.exp(-kap * d / math.sqrt(1.0 + math.pi * kap * kap * vd / 8.0)))
+
+
+def mr_prob(a, b, days_after_snapshot):
+    g = max(days_after_snapshot, 0) / 365.25
+    va = min(a[1] ** 2 + MR_PARAMS["tau"] ** 2 * g, 2 * MR_PARAMS["v0"])
+    vb = min(b[1] ** 2 + MR_PARAMS["tau"] ** 2 * g, 2 * MR_PARAMS["v0"])
+    return 1 / (1 + math.exp(-(a[0] - b[0]) / math.sqrt(1 + math.pi * (va + vb) / 8)))
+
+
+def _lg(p, c):
+    p = min(max(p, c), 1 - c)
+    return math.log(p / (1 - p))
+
+
+def page_eval(model, a, b, fight, probs=None):
+    """Reference logit of the page model (mirror of src/ml/ml2.js). a, b: side dicts after M.page_sides plus
+    'n', 'r' {sys: {mu, sd}}, 'mr' [mu, sd, last, n], 'pre' {key: value} (None when unavailable); fight:
+    {date, lbs, ...; fw: {A: {...}, B: {...}} optional}. probs: precomputed {sys or 'mr': P(A)} (table checks)."""
+    z = M.eval_terms([t for t in model["terms"] if t["type"] in ("logr", "logit", "lin", "hinge", "flag", "share",
+                                                                "stance")], a, b)
+    days = (dt.date.fromisoformat(fight["date"]) - dt.date.fromisoformat(model["snapshot"])).days
+    nA, nB = a["n"], b["n"]
+    g_new = 1.0 if min(nA, nB) <= 2 else 0.0
+    cache = {}
+
+    def zr(sys_, kind, kap):
+        if probs is not None and sys_ in probs:
+            return _lg(probs[sys_], 1e-3)
+        ra, rb = (a.get("r") or {}).get(sys_), (b.get("r") or {}).get(sys_)
+        if not ra or not rb:
+            return 0.0
+        return _lg(rating_prob(kind, kap, ra, rb), 1e-3)
+
+    def zm():
+        if probs is not None and "mr" in probs:
+            return 0.0 if probs["mr"] is None else _lg(probs["mr"], 1e-3)
+        if not a.get("mr") or not b.get("mr"):
+            return 0.0
+        return _lg(mr_prob(a["mr"], b["mr"], days), 1e-3)
+    fw = fight.get("fw") or {}
+    for t in model["terms"]:
+        ty = t["type"]
+        if ty == "rating":
+            x = zr(t["sys"], t["kind"], t["kappa"])
+        elif ty == "mr":
+            x = zm()
+        elif ty == "pre":
+            def pv(s, n):
+                if not s.get("pre"):
+                    return 0.0
+                v = s["pre"].get(t["key"])
+                f = math.exp(-n / t["tau"]) if t["tau"] else 1.0
+                return 0.0 if v is None else (v - t["mean"]) * f
+            x = pv(a, nA) - pv(b, nB)
+        elif ty == "fw":
+            x = float((fw.get("A") or {}).get(t["key"], 0.0) or 0.0) - float((fw.get("B") or {}).get(t["key"], 0.0) or 0.0)
+        elif ty == "nbucket":
+            x = float(t["lo"] <= nA <= t["hi"]) - float(t["lo"] <= nB <= t["hi"])
+        elif ty == "gate":
+            inner = {"mr": zm, "whr": lambda: zr("whr_rounds", t.get("kind", "whr"), t.get("kappa", 1.0)),
+                     "elo_judge": lambda: (a["elo_judge"] - b["elo_judge"]) * 0.01}[t["inner"]]()
+            x = inner * g_new
+        else:
+            continue
+        z += t["coef"] * x
+    return z
+
+
+def page_model(T, C, F, args):
+    import preufc as PU
+    lrc = C["lr"]
+    cols = lrc["cols"]
+    pm = C["pre_means"]
+    X = superset_matrix(T, pm)
+    y = T["y"].fillna(0.5).to_numpy(float)
+    tr = train_mask(T, VAULT, lrc)
+    mdl = M.LRModel(lrc["lam"], lrc.get("rec")).fit(X[cols].to_numpy(float)[tr], y[tr], T["year"].to_numpy()[tr],
+                                                   2026)
+    coef = dict(zip(cols, mdl.coef))
+    RJ = jload("ratings.json")
+    terms = []
+    for t in BASE_SPECS:
+        if t["name"] in coef:
+            terms.append(dict(t, coef=float(coef[t["name"]])))
+    for c in cols:
+        if c in BASE_COLS:
+            continue
+        if c == "z_mr":
+            t = {"name": c, "type": "mr"}
+        elif c.startswith("z_"):
+            sy = RJ["systems"][c[2:]]
+            t = {"name": c, "type": "rating", "sys": c[2:], "kind": sy["kind"],
+                 "kappa": float(sy["params"].get("kappa", 1.0))}
+        elif c.startswith("d_pre_"):
+            k = c[2:].split("@")[0]
+            t = {"name": c, "type": "pre", "key": k, "mean": pm[k], "tau": lrc["tau"]}
+        elif c.startswith("d_fw_"):
+            t = {"name": c, "type": "fw", "key": c[2:]}
+        elif c in ("d_n12", "d_n35"):
+            t = {"name": c, "type": "nbucket", "lo": 1 if c == "d_n12" else 3, "hi": 2 if c == "d_n12" else 5}
+        elif c.startswith("g_"):
+            inner = {"g_mr_new": "mr", "g_whr_new": "whr", "g_elo_new": "elo_judge"}[c]
+            t = {"name": c, "type": "gate", "inner": inner}
+            if inner == "whr":
+                t.update(kind="whr", kappa=float(RJ["systems"]["whr_rounds"]["params"].get("kappa", 1.0)))
+        else:
+            raise ValueError(c)
+        t["coef"] = float(coef[c])
+        terms.append(t)
+    mlj = jload("ml.json")
+    snap = mlj["page_model"]["snapshot"]
+    model = {"snapshot": snap, "terms": terms, "mr_params": MR_PARAMS, "train": "every decisive UFC fight 2010-01-01.."
+             "2025-12-31 (the same rows and settings the validation used, refit through 2025)",
+             "n_train": int(tr.sum()), "lam": lrc["lam"]}
+    # table self-check: page_eval on table rows (precomputed rating / market-rating probabilities) equals the
+    # design-matrix logit
+    sub = np.flatnonzero(T["evalrow"].to_numpy())[::23][:150]
+    errs = []
+    for i in sub:
+        r = T.iloc[i]
+        a = {k[2:]: (None if (isinstance(v, float) and math.isnan(v)) else v) for k, v in r.items() if k.startswith("A_")}
+        b = {k[2:]: (None if (isinstance(v, float) and math.isnan(v)) else v) for k, v in r.items() if k.startswith("B_")}
+        a["n"], b["n"] = r["nA"], r["nB"]
+        for s_, d_ in (("A_", a), ("B_", b)):
+            d_["pre"] = {k: r[s_ + k] for k in PRE_CORE} if r[s_ + "pre_ok"] > 0 else None
+            if d_["pre"]:
+                d_["pre"] = {k: (None if math.isnan(v) else v) for k, v in d_["pre"].items()}
+        probs = {s_: r["r_" + s_] for s_ in RATING_SYSTEMS}
+        probs["mr"] = None if math.isnan(r["mr_p"]) else r["mr_p"]
+        fight = {"date": snap, "fw": {"A": {k[2:]: r[k] for k in r.index if k.startswith("A_fw_")},
+                                      "B": {k[2:]: r[k] for k in r.index if k.startswith("B_fw_")}}}
+        for s_ in ("A", "B"):
+            fight["fw"][s_] = {k: (0.0 if (v is None or (isinstance(v, float) and math.isnan(v))) else v)
+                               for k, v in fight["fw"][s_].items()}
+        z1 = page_eval(model, a, b, fight, probs)
+        z0 = float(X[cols].iloc[i].to_numpy(float) @ mdl.coef)
+        errs.append(abs(z1 - z0))
+    model["selfcheck_table_max_abs_logit_diff"] = float(max(errs))
+    log("page model: %d terms; table self-check max |logit diff| %.2e" % (len(terms), max(errs)))
+    # roster: base values from ml.json's roster (live through the snapshot), ratings.json, market.json,
+    # preufc.json current snapshots
+    need = sorted({t["key"] for t in terms if "key" in t and t["type"] in ("logr", "logit", "lin", "hinge", "flag")}
+                  | {t[k] for t in terms if t["type"] == "share" for k in ("u", "v")}
+                  | {"southpaw", "orthodox", "elo_judge", "n", "_dob", "_last_fight", "years_ufc", "_prev_lbs",
+                     "_lbs_fought"} - set(M.DYNAMIC_KEYS) | {"years_ufc"})
+    sys_needed = sorted({t["sys"] for t in terms if t["type"] == "rating"} |
+                        ({"whr_rounds"} if any(t["type"] == "gate" and t["inner"] == "whr" for t in terms) else set()))
+    mkr = jload("market.json")["ratings"]
+    PJ = jload("preufc.json")["fighters"]
+    base = build_base()
+    slug2p = {v: k for k, v in base["people_slug"].items()}
+    roster = {}
+    for slug, fx in mlj["roster"].items():
+        row = [fx.get(k) for k in need]
+        rr = RJ["roster"].get(slug, {})
+        rat = [[rr[s_]["mu"], rr[s_].get("sd", 0.0)] if rr.get(s_) and rr[s_].get("mu") is not None else None
+               for s_ in sys_needed]
+        kd = base["k_dates"].get(slug2p.get(slug), [])
+        ok = (len(kd) < 4 or kd[3] >= dt.date(2015, 1, 1))
+        cur = (PJ.get(slug) or {}).get("current")
+        pre = None
+        if ok and cur:
+            v = PU.side_pre(cur, fx.get("n") or 0)
+            pre = [None if (isinstance(v[k], float) and math.isnan(v[k])) else round(v[k], 6) for k in PRE_CORE]
+        roster[slug] = {"v": row, "r": rat, "mr": mkr.get(slug), "pre": pre}
+    model["keys"] = need
+    model["rating_systems"] = sys_needed
+    model["pre_keys"] = PRE_CORE
+    model["roster"] = roster
+    # test vectors: Python reference for random roster pairs (the Node test must match to 1e-9)
+    rng = np.random.default_rng(5)
+    slugs = sorted(roster)
+    pairs = [("alexander-volkanovski", "justin-gaethje")] + [tuple(rng.choice(slugs, 2, replace=False))
+                                                              for _ in range(39)]
+    tv = []
+    for k, (sa, sb) in enumerate(pairs):
+        fight = {"date": "2026-12-12" if k % 2 == 0 else snap, "lbs": 155 if k == 0 else [125, 145, 170, 205][k % 4],
+                 "five": 1 if k % 5 == 0 else 0}
+        if k % 3 == 1:
+            fight["fw"] = {"A": {"fw_home_intl": 1.0, "fw_missed": 1.0}, "B": {"fw_repl": 1.0, "fw_repl14": 1.0}}
+        a = side_for_page(model, sa, fight)
+        b = side_for_page(model, sb, fight)
+        z = page_eval(model, a, b, fight)
+        tv.append({"a": sa, "b": sb, "fight": fight, "logit": z, "pA": 1 / (1 + math.exp(-z))})
+    model["test_vectors"] = tv
+    vg = tv[0]
+    log("page model: Volkanovski vs Gaethje (Dec 12, 2026, 155 lb, 5 rounds) P(Volk) = %.4f" % vg["pA"])
+    return model
+
+
+def side_for_page(model, slug, fight):
+    R = model["roster"][slug]
+    fx = {k: v for k, v in zip(model["keys"], R["v"])}
+    v = M.page_sides(fx, fight["date"], fight.get("lbs"), model["snapshot"])
+    v["n"] = fx.get("n") or 0
+    v["r"] = {s_: ({"mu": x[0], "sd": x[1]} if x else None) for s_, x in zip(model["rating_systems"], R["r"])}
+    v["mr"] = R["mr"]
+    v["pre"] = {k: x for k, x in zip(model["pre_keys"], R["pre"])} if R["pre"] else None
+    return v
+
+
+STAGES["export"] = stage_export
+
+
 # ====================================================================== main
 
 

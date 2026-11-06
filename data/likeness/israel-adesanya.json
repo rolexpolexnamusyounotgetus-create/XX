@@ -293,5 +293,49 @@
     "ears/l-ear-rot-forward": 0.15,
     "ears/r-ear-rot-forward": 0.15
   },
-  "notes": "Confidence: high for build, hair, skin range and the main tattoos; medium for face proportions (one sharp current frontal, one soft true profile, one three-quarter); low-to-medium for exact morph values. Few freely licensed photos: the two Commons images are small video stills from 2018 and 2022. Watch for: (1) The likeness rests on very high, wide cheekbones with hollow cheeks above a narrow, slightly pointed chin; a square or full lower face loses him. (2) Full lips with a sharp cupid's bow and a forward mouth area in profile; a low, flat nose bridge with a broad, flared base. (3) Tall, gently convex forehead and a sharp line-up with mild temple recession; hair is a short coil cap with faded sides. (4) Body is slim and long-limbed: keep the waist narrow, the neck long and the muscle lean; do not bulk the chest or arms. (5) Tattoos: 'BROKEN NATIVE' over the upper chest, Africa silhouette over the sternum, full RIGHT-arm sleeve, bird at the base of the LEFT side of the neck (sides are his own). The Aug 2024 cutout shows the chest pieces at an angle, so the Africa map there looks like it sits on his right pec; it is the same central piece. macro/ageOldM 0.185 follows avatar3d.js (37-25)/65; heightUpM 0.32 is interpolated from the other 188-196 cm sheets."
+  "notes": "Confidence: high for build, hair, skin range and the main tattoos; medium for face proportions (one sharp current frontal, one soft true profile, one three-quarter); low-to-medium for exact morph values. Few freely licensed photos: the two Commons images are small video stills from 2018 and 2022. Watch for: (1) The likeness rests on very high, wide cheekbones with hollow cheeks above a narrow, slightly pointed chin; a square or full lower face loses him. (2) Full lips with a sharp cupid's bow and a forward mouth area in profile; a low, flat nose bridge with a broad, flared base. (3) Tall, gently convex forehead and a sharp line-up with mild temple recession; hair is a short coil cap with faded sides. (4) Body is slim and long-limbed: keep the waist narrow, the neck long and the muscle lean; do not bulk the chest or arms. (5) Tattoos: 'BROKEN NATIVE' over the upper chest, Africa silhouette over the sternum, full RIGHT-arm sleeve, bird at the base of the LEFT side of the neck (sides are his own). The Aug 2024 cutout shows the chest pieces at an angle, so the Africa map there looks like it sits on his right pec; it is the same central piece. macro/ageOldM 0.185 follows avatar3d.js (37-25)/65; heightUpM 0.32 is interpolated from the other 188-196 cm sheets.",
+  "stance": {
+    "schema": "stance/1",
+    "base": "switch",
+    "width": 0.85,
+    "depth": 1.25,
+    "crouch": 0.1,
+    "lean": -0.05,
+    "lead_foot_deg": 10.0,
+    "rear_foot_deg": 60.0,
+    "weight_front": 0.38,
+    "bladed": 0.75,
+    "guard": {
+      "style": "low",
+      "height": 0.3,
+      "lead_reach": 0.65,
+      "lead_height": 0.3,
+      "lead_width": 0.0,
+      "rear_height": 0.5,
+      "rear_tuck": 0.6,
+      "elbow_flare": 0.3,
+      "shoulder_roll": 0.35
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.55,
+      "chin_tuck": 0.45
+    },
+    "bounce": {
+      "amp": 0.6,
+      "rate": 1.0
+    },
+    "switch_per_min": 1.5,
+    "feints": 0.85,
+    "hand_fighting": 0.6,
+    "posture": "open",
+    "footwork": [
+      "circling",
+      "in-and-out",
+      "stance-switch"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/israel-adesanya.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (ref-espn-stance-left.png, ref-espn-stance-right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Tall, bladed and back-weighted with a low lead hand that paws and feints (scouting: layered feints with a low lead hand), switches stance, circles at range."
+  }
 }

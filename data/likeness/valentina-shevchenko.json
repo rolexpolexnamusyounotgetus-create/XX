@@ -251,5 +251,47 @@
     "note": "Ear targets from the full MakeHuman set. They are not in the shipped assets/embed/mh-manifest.json, so they are listed here and not under morphs. Her ears are close to the base mesh, so none are suggested."
   },
   "morphs_unavailable": "Height: the research/assets.md height fit (heightUpM = 2 * (H - 1.785 m) / 0.875) is for the male base, so no heightUpF/heightDownF value is given; build her at the female default height and nudge macro/heightUpF or heightDownF until the mesh reads 165 cm. No target for the braids/ponytail, freckles or tattoos (texture work).",
-  "notes": "Confidence: high for the overall look (broad high cheekbones, rounded chin, high forehead with hair pulled back, dark-honey-blonde ponytail or braids, medium-brown eyes, fair pink skin with freckled shoulders, compact muscular build, the three torso/arm tattoos); medium for exact morph values. Watch for: (1) she is a woman: use the F macros (sexF 1; sexM 0) and keep the face soft-angled, not masculinised by the muscle macro; (2) tattoo sides: pistol on the LEFT abdomen, Thai figure on the RIGHT abdomen (new since 2025), emblem with Thai script on the LEFT upper arm, band on the RIGHT ankle; (3) hair is never loose in fights: braids for fight scenes, ponytail for weigh-ins; (4) southpaw stance (right foot forward); (5) do not make the hair platinum: it is a darker honey-blonde."
+  "notes": "Confidence: high for the overall look (broad high cheekbones, rounded chin, high forehead with hair pulled back, dark-honey-blonde ponytail or braids, medium-brown eyes, fair pink skin with freckled shoulders, compact muscular build, the three torso/arm tattoos); medium for exact morph values. Watch for: (1) she is a woman: use the F macros (sexF 1; sexM 0) and keep the face soft-angled, not masculinised by the muscle macro; (2) tattoo sides: pistol on the LEFT abdomen, Thai figure on the RIGHT abdomen (new since 2025), emblem with Thai script on the LEFT upper arm, band on the RIGHT ankle; (3) hair is never loose in fights: braids for fight scenes, ponytail for weigh-ins; (4) southpaw stance (right foot forward); (5) do not make the hair platinum: it is a darker honey-blonde.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 0.95,
+    "depth": 1.1,
+    "crouch": 0.15,
+    "lean": 0.0,
+    "lead_foot_deg": 11.0,
+    "rear_foot_deg": 54.0,
+    "weight_front": 0.42,
+    "bladed": 0.6,
+    "guard": {
+      "style": "standard",
+      "height": 0.55,
+      "lead_reach": 0.45,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.75,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.5
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.35,
+      "chin_tuck": 0.55
+    },
+    "bounce": {
+      "amp": 0.5,
+      "rate": 1.05
+    },
+    "switch_per_min": 0,
+    "feints": 0.45,
+    "hand_fighting": 0.3,
+    "posture": "closed",
+    "footwork": [
+      "circling",
+      "in-and-out"
+    ],
+    "confidence": "low",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/valentina-shevchenko.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Kickboxing counter striker: upright, back-weighted, circles and counters."
+  }
 }

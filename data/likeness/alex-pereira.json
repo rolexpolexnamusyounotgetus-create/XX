@@ -331,5 +331,47 @@
     "ears/l-ear-lobe-decr": 0.2,
     "ears/r-ear-lobe-decr": 0.2
   },
-  "notes": "Confidence: high for skin tone range, hair and beard states, tattoos and build; medium-high for face proportions (good frontal, three-quarter and left near-profile); low-to-medium for exact morph values. Watch for: (1) Pick one look. Fight night (default here) is a shaved head and light stubble; the curly hair and full beard of the studio headshot and the May 2026 Oval Office photo are the off-camp look. (2) The face is long and broad with high cheekbones, a heavy brow and deep-set, hooded eyes; if the eyes are too open or the brow too light he stops looking like himself. (3) The nose is long with a big rounded tip and wide base, but straight and undamaged; keep it projecting. (4) Ears stand out when the head is shaved. (5) Body: at heavyweight keep the waist thick and the abs smooth; use morphs_variant_light_heavyweight for the lean 205 lb version (fighters.json lists him at light heavyweight). (6) Tattoos are a strong recognition cue: black-grey dragon on the LEFT pec and shoulder, red-orange flame/tail on the RIGHT collarbone, red dragon over the upper abdomen, koi on the LEFT flank, 'kickboxing' script low on the abdomen, right-arm sleeve, left-hand and left-forearm work, portrait on the RIGHT thigh. All sides are his own (viewer's opposite when he faces the camera). macro/ageOldM 0.215 follows avatar3d.js (39-25)/65; heightUpM 0.32 is interpolated from the other 188-196 cm sheets, so scale the mesh to 193 cm if supported."
+  "notes": "Confidence: high for skin tone range, hair and beard states, tattoos and build; medium-high for face proportions (good frontal, three-quarter and left near-profile); low-to-medium for exact morph values. Watch for: (1) Pick one look. Fight night (default here) is a shaved head and light stubble; the curly hair and full beard of the studio headshot and the May 2026 Oval Office photo are the off-camp look. (2) The face is long and broad with high cheekbones, a heavy brow and deep-set, hooded eyes; if the eyes are too open or the brow too light he stops looking like himself. (3) The nose is long with a big rounded tip and wide base, but straight and undamaged; keep it projecting. (4) Ears stand out when the head is shaved. (5) Body: at heavyweight keep the waist thick and the abs smooth; use morphs_variant_light_heavyweight for the lean 205 lb version (fighters.json lists him at light heavyweight). (6) Tattoos are a strong recognition cue: black-grey dragon on the LEFT pec and shoulder, red-orange flame/tail on the RIGHT collarbone, red dragon over the upper abdomen, koi on the LEFT flank, 'kickboxing' script low on the abdomen, right-arm sleeve, left-hand and left-forearm work, portrait on the RIGHT thigh. All sides are his own (viewer's opposite when he faces the camera). macro/ageOldM 0.215 follows avatar3d.js (39-25)/65; heightUpM 0.32 is interpolated from the other 188-196 cm sheets, so scale the mesh to 193 cm if supported.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 0.95,
+    "depth": 1.1,
+    "crouch": 0.1,
+    "lean": -0.05,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 50.0,
+    "weight_front": 0.38,
+    "bladed": 0.5,
+    "guard": {
+      "style": "high",
+      "height": 0.8,
+      "lead_reach": 0.3,
+      "lead_height": 0.75,
+      "lead_width": 0.0,
+      "rear_height": 0.8,
+      "rear_tuck": 0.9,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.15,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.15,
+      "rate": 0.8
+    },
+    "switch_per_min": 0,
+    "feints": 0.25,
+    "hand_fighting": 0.2,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "flat-footed"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/alex-pereira.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (ref-espn-stance-left.png, ref-espn-stance-right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Upright kickboxing stance, weight back to kick and check, high guard, very still head, walks forward flat-footed (scouting: walks opponents down behind a high guard)."
+  }
 }

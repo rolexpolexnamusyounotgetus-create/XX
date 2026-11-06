@@ -1,225 +1,267 @@
 {
- "slug": "merab-dvalishvili",
- "name": "Merab Dvalishvili",
- "as_of": "2026-11-06",
- "age_at_as_of": 35,
- "tale_of_tape": {
-  "height_cm": 168,
-  "reach_cm": 173,
-  "stance": "Orthodox",
-  "fight_weight_kg": 61,
-  "source": "data/derived/fighters.json (66 in height, 68 in reach); fight weight = bantamweight limit 135 lb"
- },
- "photos_used": [
-  "espn_headshot.png",
-  "espn_stance_left.png",
-  "espn_stance_right.png",
-  "commons_ufc316_with_trump.jpg",
-  "commons_ufc316_cropped.jpg",
-  "ref_cagesidepress_ufc323_2025-12-06.jpg",
-  "ref_mmasucka_raf_singlet.webp",
-  "ref_mmasucka_ufc323_action.webp",
-  "commons_2022_a.png",
-  "commons_2022_b.jpg"
- ],
- "photo_coverage_note": "No clearly dated 2026 face photo was found (Commons has only 2022 and 2025 photos of him). The newest are the UFC 323 face-off profile (Dec 2025) and an undated RAF wrestling photo published Oct 2026; his look has been stable since about 2023. Only the two UFC 316 files (public domain) are embed-ok; the 2022 YouTube stills are reference-only until their CC BY licence is verified.",
- "face": {
-  "shape": "Medium-long, rectangular-oval face with broad, high cheekbones and a fairly wide jaw under the beard. Lean and weathered; forehead and cheeks show lines.",
-  "jaw": "Medium-wide and strong, mostly hidden by the beard; the beard outline makes the lower face look squared and slightly long.",
-  "chin": "Medium width, moderate projection in right profile (UFC 323 face-off); covered by beard.",
-  "cheekbones": "Prominent, broad and high; the cheeks bunch up strongly when he smiles (UFC 316, RAF photo).",
-  "brow_ridge": "Strong. Heavy brows sit low over deep-set eyes, giving a hooded, intense look at rest.",
-  "forehead": "Broad, medium-high, with clear horizontal lines. Slight temple recession.",
-  "eyes": {
-   "shape": "Almond, slightly narrow, upper lids hooded under the brow; crow's feet and under-eye lines.",
-   "spacing": "Average.",
-   "colour": "Brown (medium-dark). Closest MakeHuman iris: brown.",
-   "set": "Deep-set; outer corners level to slightly down."
+  "slug": "merab-dvalishvili",
+  "name": "Merab Dvalishvili",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 35,
+  "tale_of_tape": {
+    "height_cm": 168,
+    "reach_cm": 173,
+    "stance": "Orthodox",
+    "fight_weight_kg": 61,
+    "source": "data/derived/fighters.json (66 in height, 68 in reach); fight weight = bantamweight limit 135 lb"
   },
-  "eyebrows": {
-   "thickness": "Medium-thick",
-   "shape": "Low and nearly straight, angled slightly down toward the nose; inner ends close together.",
-   "colour": "Dark brown, darker than the beard (#2e2220 approx.)"
-  },
-  "nose": {
-   "length": "Medium-long",
-   "width": "Broad, especially across the lower half and nostrils",
-   "bridge": "Uneven: a visible crease/indent across the upper bridge and a bump below it (ESPN headshot, 2022 stills)",
-   "hump": "Moderate, irregular",
-   "tip": "Wide, rounded and fleshy, slightly drooping in profile (UFC 323 face-off)",
-   "fight_damage": "Clear signs of past breaks: crease across the bridge, slight deviation of the lower nose toward his right in the frontal headshot, and a broadened tip."
-  },
-  "mouth_lips": "Medium width; thin upper lip under a full moustache, medium lower lip. Wide, toothy smile that lifts the cheeks high.",
-  "ears": {
-   "size": "Medium-large and clearly protruding",
-   "cauliflower_ear": "Yes, both ears: thickened, lumpy helix and filled-in upper ear (ESPN headshot, RAF photo, right ear in the UFC 323 face-off profile)."
-  },
-  "marks_scars": "Crease/scar line across the nose bridge; forehead lines; small marks around the brows typical of fight scarring."
- },
- "hair": {
-  "style": "Short: skin fade on the sides and back, with a short, slightly longer top (3-4 cm) pushed up and forward. Same cut in every photo from 2022 to 2025.",
-  "length_cm": 3.5,
-  "colour_hex": "#2a2124",
-  "colour_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "top of head (studio)",
-    "hex": "#2a2124"
-   }
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "commons_ufc316_with_trump.jpg",
+    "commons_ufc316_cropped.jpg",
+    "ref_cagesidepress_ufc323_2025-12-06.jpg",
+    "ref_mmasucka_raf_singlet.webp",
+    "ref_mmasucka_ufc323_action.webp",
+    "commons_2022_a.png",
+    "commons_2022_b.jpg"
   ],
-  "colour_note": "Very dark brown, near black; clearly darker than the beard.",
-  "hairline": "Slightly receded at the temples (mild M shape), straight across the front.",
-  "texture": "Straight to slightly wavy, thick."
- },
- "facial_hair": {
-  "type": "full beard",
-  "colour_hex": "#6a4337",
-  "colour_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "chin (studio)",
-    "hex": "#59382d"
-   },
-   {
-    "photo": "espn_stance_right.png",
-    "where": "chin and jaw (studio)",
-    "hex": "#7b4e41"
-   }
-  ],
-  "colour_note": "Copper/auburn red-brown, noticeably redder and lighter than his head hair; moustache slightly darker in the centre.",
-  "density": "Dense on chin, jaw and moustache; fills the cheeks up to a fairly high, natural cheek line.",
-  "shape": "Full beard about 2-3 cm, rounded-square outline that follows the jaw and adds length below the chin; moustache connects fully."
- },
- "skin": {
-  "tone_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "forehead, cheeks, nose (studio)",
-    "hex": "#d69480"
-   },
-   {
-    "photo": "espn_stance_right.png",
-    "where": "forehead and cheeks (studio)",
-    "hex": "#d08e7c"
-   },
-   {
-    "photo": "espn_stance_left.png",
-    "where": "forehead and cheeks (studio)",
-    "hex": "#cf907d"
-   },
-   {
-    "photo": "commons_ufc316_cropped.jpg",
-    "where": "forehead and cheeks (red-shifted arena light; not in average)",
-    "hex": "#c6726a"
-   }
-  ],
-  "tone_hex": "#d2917e",
-  "tone_note": "Average of the three studio samples. Light-medium skin.",
-  "undertone": "Warm, slightly ruddy.",
-  "freckles_marks": "Small freckle/sun spots on the shoulders and upper back (ESPN stance photos); weathered skin texture on the face."
- },
- "body": {
-  "build": "Short, compact and dense: strong wrestler's frame with thick neck, broad shoulders for his height and solid thighs.",
-  "body_fat": "lean",
-  "body_fat_note": "Six-pack clearly visible in both ESPN stance photos; very lean but with more muscle mass than O'Malley at the same weight.",
-  "shoulders": "Broad for 168 cm; round deltoids and well-developed trapezius.",
-  "chest": "Full, flat pectorals with clear lower edge; light chest hair.",
-  "arms": "Muscular, medium length; strong forearms with visible veins.",
-  "waist": "Narrow and tight; clear V-taper.",
-  "legs_calves": "Thick thighs and solid calves; legs short relative to the torso.",
-  "posture": "Upright, square, slightly forward; arms held a little out from the body.",
-  "notable": "Thick neck, cauliflower ears and the copper beard against dark hair are his strongest likeness cues."
- },
- "tattoos": [
-  {
-   "where": "Left upper chest, above the pectoral toward the collarbone",
-   "description": "Outline map of Georgia filled with the Georgian flag (white field, red St George's cross and four small red crosses), thin black outline.",
-   "size": "medium (about palm-sized)"
+  "photo_coverage_note": "No clearly dated 2026 face photo was found (Commons has only 2022 and 2025 photos of him). The newest are the UFC 323 face-off profile (Dec 2025) and an undated RAF wrestling photo published Oct 2026; his look has been stable since about 2023. Only the two UFC 316 files (public domain) are embed-ok; the 2022 YouTube stills are reference-only until their CC BY licence is verified.",
+  "face": {
+    "shape": "Medium-long, rectangular-oval face with broad, high cheekbones and a fairly wide jaw under the beard. Lean and weathered; forehead and cheeks show lines.",
+    "jaw": "Medium-wide and strong, mostly hidden by the beard; the beard outline makes the lower face look squared and slightly long.",
+    "chin": "Medium width, moderate projection in right profile (UFC 323 face-off); covered by beard.",
+    "cheekbones": "Prominent, broad and high; the cheeks bunch up strongly when he smiles (UFC 316, RAF photo).",
+    "brow_ridge": "Strong. Heavy brows sit low over deep-set eyes, giving a hooded, intense look at rest.",
+    "forehead": "Broad, medium-high, with clear horizontal lines. Slight temple recession.",
+    "eyes": {
+      "shape": "Almond, slightly narrow, upper lids hooded under the brow; crow's feet and under-eye lines.",
+      "spacing": "Average.",
+      "colour": "Brown (medium-dark). Closest MakeHuman iris: brown.",
+      "set": "Deep-set; outer corners level to slightly down."
+    },
+    "eyebrows": {
+      "thickness": "Medium-thick",
+      "shape": "Low and nearly straight, angled slightly down toward the nose; inner ends close together.",
+      "colour": "Dark brown, darker than the beard (#2e2220 approx.)"
+    },
+    "nose": {
+      "length": "Medium-long",
+      "width": "Broad, especially across the lower half and nostrils",
+      "bridge": "Uneven: a visible crease/indent across the upper bridge and a bump below it (ESPN headshot, 2022 stills)",
+      "hump": "Moderate, irregular",
+      "tip": "Wide, rounded and fleshy, slightly drooping in profile (UFC 323 face-off)",
+      "fight_damage": "Clear signs of past breaks: crease across the bridge, slight deviation of the lower nose toward his right in the frontal headshot, and a broadened tip."
+    },
+    "mouth_lips": "Medium width; thin upper lip under a full moustache, medium lower lip. Wide, toothy smile that lifts the cheeks high.",
+    "ears": {
+      "size": "Medium-large and clearly protruding",
+      "cauliflower_ear": "Yes, both ears: thickened, lumpy helix and filled-in upper ear (ESPN headshot, RAF photo, right ear in the UFC 323 face-off profile)."
+    },
+    "marks_scars": "Crease/scar line across the nose bridge; forehead lines; small marks around the brows typical of fight scarring."
   },
-  {
-   "where": "Elsewhere",
-   "description": "None clearly visible on arms, back, torso or legs in these photos.",
-   "size": "-"
+  "hair": {
+    "style": "Short: skin fade on the sides and back, with a short, slightly longer top (3-4 cm) pushed up and forward. Same cut in every photo from 2022 to 2025.",
+    "length_cm": 3.5,
+    "colour_hex": "#2a2124",
+    "colour_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "top of head (studio)",
+        "hex": "#2a2124"
+      }
+    ],
+    "colour_note": "Very dark brown, near black; clearly darker than the beard.",
+    "hairline": "Slightly receded at the temples (mild M shape), straight across the front.",
+    "texture": "Straight to slightly wavy, thick."
+  },
+  "facial_hair": {
+    "type": "full beard",
+    "colour_hex": "#6a4337",
+    "colour_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "chin (studio)",
+        "hex": "#59382d"
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "chin and jaw (studio)",
+        "hex": "#7b4e41"
+      }
+    ],
+    "colour_note": "Copper/auburn red-brown, noticeably redder and lighter than his head hair; moustache slightly darker in the centre.",
+    "density": "Dense on chin, jaw and moustache; fills the cheeks up to a fairly high, natural cheek line.",
+    "shape": "Full beard about 2-3 cm, rounded-square outline that follows the jaw and adds length below the chin; moustache connects fully."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead, cheeks, nose (studio)",
+        "hex": "#d69480"
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "forehead and cheeks (studio)",
+        "hex": "#d08e7c"
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "forehead and cheeks (studio)",
+        "hex": "#cf907d"
+      },
+      {
+        "photo": "commons_ufc316_cropped.jpg",
+        "where": "forehead and cheeks (red-shifted arena light; not in average)",
+        "hex": "#c6726a"
+      }
+    ],
+    "tone_hex": "#d2917e",
+    "tone_note": "Average of the three studio samples. Light-medium skin.",
+    "undertone": "Warm, slightly ruddy.",
+    "freckles_marks": "Small freckle/sun spots on the shoulders and upper back (ESPN stance photos); weathered skin texture on the face."
+  },
+  "body": {
+    "build": "Short, compact and dense: strong wrestler's frame with thick neck, broad shoulders for his height and solid thighs.",
+    "body_fat": "lean",
+    "body_fat_note": "Six-pack clearly visible in both ESPN stance photos; very lean but with more muscle mass than O'Malley at the same weight.",
+    "shoulders": "Broad for 168 cm; round deltoids and well-developed trapezius.",
+    "chest": "Full, flat pectorals with clear lower edge; light chest hair.",
+    "arms": "Muscular, medium length; strong forearms with visible veins.",
+    "waist": "Narrow and tight; clear V-taper.",
+    "legs_calves": "Thick thighs and solid calves; legs short relative to the torso.",
+    "posture": "Upright, square, slightly forward; arms held a little out from the body.",
+    "notable": "Thick neck, cauliflower ears and the copper beard against dark hair are his strongest likeness cues."
+  },
+  "tattoos": [
+    {
+      "where": "Left upper chest, above the pectoral toward the collarbone",
+      "description": "Outline map of Georgia filled with the Georgian flag (white field, red St George's cross and four small red crosses), thin black outline.",
+      "size": "medium (about palm-sized)"
+    },
+    {
+      "where": "Elsewhere",
+      "description": "None clearly visible on arms, back, torso or legs in these photos.",
+      "size": "-"
+    }
+  ],
+  "kit": {
+    "fight_shorts_current": "White Venum shorts with red side panels and red ornamental hem, red Georgian crosses, red 'DVALISHVILI' lettering (ESPN stance-right, UFC 316, UFC 323 with a Monster logo).",
+    "fight_shorts_previous": "Red title-fight shorts with a large white/cream Aztec-sun/compass emblem on the right leg, white-green-red waistband trim and gold champion gloves (ESPN stance-left).",
+    "gloves": "Black UFC gloves; gold as champion (2024-2025).",
+    "weigh_in": "Silver curb chain with a large silver pendant (UFC 323 face-off); beaded bracelet.",
+    "colours": [
+      "#ffffff white",
+      "#c8102e red",
+      "#c9a227 gold"
+    ]
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.15,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.65,
+    "macro/weightDownM": 0.05,
+    "macro/heightDownM": 0.35,
+    "macro/proportionsUpM": 0.3,
+    "head/head-square": 0.35,
+    "head/head-oval": 0.2,
+    "head/head-fat-decr": 0.4,
+    "head/head-scale-horiz-incr": 0.05,
+    "forehead/forehead-scale-vert-incr": 0.15,
+    "eyebrows/eyebrows-trans-down": 0.3,
+    "eyebrows/eyebrows-trans-forward": 0.3,
+    "eyebrows/eyebrows-angle-down": 0.15,
+    "eyes/l-eye-scale-decr": 0.15,
+    "eyes/r-eye-scale-decr": 0.15,
+    "eyes/l-eye-height2-decr": 0.2,
+    "eyes/r-eye-height2-decr": 0.2,
+    "eyes/l-eye-bag-incr": 0.35,
+    "eyes/r-eye-bag-incr": 0.35,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+    "nose/nose-scale-horiz-incr": 0.35,
+    "nose/nose-width1-incr": 0.3,
+    "nose/nose-point-width-incr": 0.35,
+    "nose/nose-hump-incr": 0.2,
+    "nose/nose-scale-depth-incr": 0.15,
+    "nose/nose-nostrils-width-incr": 0.25,
+    "nose/nose-point-down": 0.15,
+    "nose/nose-scale-vert-incr": 0.1,
+    "mouth/mouth-upperlip-volume-decr": 0.2,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "chin/chin-width-incr": 0.15,
+    "chin/chin-bones-incr": 0.25,
+    "chin/chin-prominent-incr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.35,
+    "cheek/r-cheek-bones-incr": 0.35,
+    "cheek/l-cheek-volume-decr": 0.25,
+    "cheek/r-cheek-volume-decr": 0.25,
+    "neck/neck-scale-horiz-incr": 0.45,
+    "neck/neck-scale-vert-decr": 0.15,
+    "torso/measure-shoulder-dist-incr": 0.25,
+    "torso/torso-vshape-incr": 0.3,
+    "torso/measure-waist-circ-decr": 0.15,
+    "buttocks/buttocks-volume-incr": 0.15
+  },
+  "morphs_unavailable": {
+    "note": "assets/embed/mh-manifest.json has no ears/* targets. His cauliflower, protruding ears are a key cue; if ear targets are added use about ears/l|r-ear-scale-incr 0.25, ears/l|r-ear-rot-forward 0.2 (more protrusion), ears/l|r-ear-lobe-decr 0.1. A thickened-helix normal map would help more than shape.",
+    "nose_asymmetry": "The slight deviation of the lower nose toward his right has no symmetric morph; a small manual vertex offset or normal-map crease across the bridge would capture it."
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "mh-skin-middleage_caucasian_male (closest tone, adds forehead lines) tinted toward #d2917e",
+    "eyebrows": "eyebrow001 tinted #2e2220, low and straight",
+    "hair": "short02 or short04 trimmed to a skin fade on the sides, tinted #2a2124",
+    "beard": "full-beard texture or shell #6a4337 (copper), clearly redder than the hair"
+  },
+  "notes": "Confidence: high for hair, beard colours, ears, nose damage and build (clear studio photos plus several event photos). Medium for exact face proportions because most frontal photos are studio headshots of unknown date, and the only public-domain face photos (UFC 316, Jun 2025) show a broad smile. No clearly dated 2026 face photo found. Watch for: (1) beard is copper while head hair is near-black, (2) nose broad with a crease across the bridge, (3) both ears cauliflowered and protruding, (4) compact 168 cm frame with thick neck: do not make him tall or slender.",
+  "review": {
+    "date": "2026-11-06",
+    "by": "second-pass photo review",
+    "changes": [
+      "UFC 323 face-off photo is a right profile, not a left profile (sources.json and face notes corrected).",
+      "commons_2022_a.png and commons_2022_b.jpg moved to reference-only: the YouTube CC-BY tag on Commons has no completed licence review.",
+      "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Hair, copper beard, Georgia-flag tattoo on the left chest (only tattoo), cauliflower ears, nose, skin samples and build match the photos."
+    ]
+  },
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.1,
+    "depth": 1.0,
+    "crouch": 0.45,
+    "lean": 0.35,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 48.0,
+    "weight_front": 0.55,
+    "bladed": 0.45,
+    "guard": {
+      "style": "standard",
+      "height": 0.55,
+      "lead_reach": 0.4,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.75,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.5
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.5,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.85,
+      "rate": 1.35
+    },
+    "switch_per_min": 0,
+    "feints": 0.7,
+    "hand_fighting": 0.45,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "lateral"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/merab-dvalishvili.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Never still: bouncing, constant level-change feints and takedown entries between punches (scouting: non-stop takedown attempts, high-volume punching)."
   }
- ],
- "kit": {
-  "fight_shorts_current": "White Venum shorts with red side panels and red ornamental hem, red Georgian crosses, red 'DVALISHVILI' lettering (ESPN stance-right, UFC 316, UFC 323 with a Monster logo).",
-  "fight_shorts_previous": "Red title-fight shorts with a large white/cream Aztec-sun/compass emblem on the right leg, white-green-red waistband trim and gold champion gloves (ESPN stance-left).",
-  "gloves": "Black UFC gloves; gold as champion (2024-2025).",
-  "weigh_in": "Silver curb chain with a large silver pendant (UFC 323 face-off); beaded bracelet.",
-  "colours": [
-   "#ffffff white",
-   "#c8102e red",
-   "#c9a227 gold"
-  ]
- },
- "morphs": {
-  "macro/sexM": 1.0,
-  "macro/ageOldM": 0.15,
-  "macro/ageYoungM": 0.0,
-  "macro/muscleUpM": 0.65,
-  "macro/weightDownM": 0.05,
-  "macro/heightDownM": 0.35,
-  "macro/proportionsUpM": 0.3,
-  "head/head-square": 0.35,
-  "head/head-oval": 0.2,
-  "head/head-fat-decr": 0.4,
-  "head/head-scale-horiz-incr": 0.05,
-  "forehead/forehead-scale-vert-incr": 0.15,
-  "eyebrows/eyebrows-trans-down": 0.3,
-  "eyebrows/eyebrows-trans-forward": 0.3,
-  "eyebrows/eyebrows-angle-down": 0.15,
-  "eyes/l-eye-scale-decr": 0.15,
-  "eyes/r-eye-scale-decr": 0.15,
-  "eyes/l-eye-height2-decr": 0.2,
-  "eyes/r-eye-height2-decr": 0.2,
-  "eyes/l-eye-bag-incr": 0.35,
-  "eyes/r-eye-bag-incr": 0.35,
-  "eyes/l-eye-corner1-down": 0.1,
-  "eyes/r-eye-corner1-down": 0.1,
-  "nose/nose-scale-horiz-incr": 0.35,
-  "nose/nose-width1-incr": 0.3,
-  "nose/nose-point-width-incr": 0.35,
-  "nose/nose-hump-incr": 0.2,
-  "nose/nose-scale-depth-incr": 0.15,
-  "nose/nose-nostrils-width-incr": 0.25,
-  "nose/nose-point-down": 0.15,
-  "nose/nose-scale-vert-incr": 0.1,
-  "mouth/mouth-upperlip-volume-decr": 0.2,
-  "mouth/mouth-scale-horiz-incr": 0.05,
-  "chin/chin-width-incr": 0.15,
-  "chin/chin-bones-incr": 0.25,
-  "chin/chin-prominent-incr": 0.1,
-  "cheek/l-cheek-bones-incr": 0.35,
-  "cheek/r-cheek-bones-incr": 0.35,
-  "cheek/l-cheek-volume-decr": 0.25,
-  "cheek/r-cheek-volume-decr": 0.25,
-  "neck/neck-scale-horiz-incr": 0.45,
-  "neck/neck-scale-vert-decr": 0.15,
-  "torso/measure-shoulder-dist-incr": 0.25,
-  "torso/torso-vshape-incr": 0.3,
-  "torso/measure-waist-circ-decr": 0.15,
-  "buttocks/buttocks-volume-incr": 0.15
- },
- "morphs_unavailable": {
-  "note": "assets/embed/mh-manifest.json has no ears/* targets. His cauliflower, protruding ears are a key cue; if ear targets are added use about ears/l|r-ear-scale-incr 0.25, ears/l|r-ear-rot-forward 0.2 (more protrusion), ears/l|r-ear-lobe-decr 0.1. A thickened-helix normal map would help more than shape.",
-  "nose_asymmetry": "The slight deviation of the lower nose toward his right has no symmetric morph; a small manual vertex offset or normal-map crease across the bridge would capture it."
- },
- "render_hints": {
-  "iris": "brown",
-  "skin_base": "mh-skin-middleage_caucasian_male (closest tone, adds forehead lines) tinted toward #d2917e",
-  "eyebrows": "eyebrow001 tinted #2e2220, low and straight",
-  "hair": "short02 or short04 trimmed to a skin fade on the sides, tinted #2a2124",
-  "beard": "full-beard texture or shell #6a4337 (copper), clearly redder than the hair"
- },
- "notes": "Confidence: high for hair, beard colours, ears, nose damage and build (clear studio photos plus several event photos). Medium for exact face proportions because most frontal photos are studio headshots of unknown date, and the only public-domain face photos (UFC 316, Jun 2025) show a broad smile. No clearly dated 2026 face photo found. Watch for: (1) beard is copper while head hair is near-black, (2) nose broad with a crease across the bridge, (3) both ears cauliflowered and protruding, (4) compact 168 cm frame with thick neck: do not make him tall or slender.",
- "review": {
-  "date": "2026-11-06",
-  "by": "second-pass photo review",
-  "changes": [
-   "UFC 323 face-off photo is a right profile, not a left profile (sources.json and face notes corrected).",
-   "commons_2022_a.png and commons_2022_b.jpg moved to reference-only: the YouTube CC-BY tag on Commons has no completed licence review.",
-   "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Hair, copper beard, Georgia-flag tattoo on the left chest (only tattoo), cauliflower ears, nose, skin samples and build match the photos."
-  ]
- }
 }

@@ -1,221 +1,264 @@
 {
- "slug": "dricus-du-plessis",
- "name": "Dricus Du Plessis",
- "as_of": "2026-11-06",
- "age_at_as_of": 32,
- "tale_of_tape": {
-  "height_cm": 185,
-  "reach_cm": 193,
-  "stance": "Switch",
-  "fight_weight_kg": 84,
-  "source": "data/derived/fighters.json (73 in height, 76 in reach); fight weight = middleweight limit 185 lb"
- },
- "photos_used": [
-  "espn_headshot.png",
-  "espn_stance_left.png",
-  "espn_stance_right.png",
-  "ref_briefly_mediaday_2026-07.jpg",
-  "ref_gazettengr_faceoff_profile_2026-07-17.jpg",
-  "ref_aljazeera_usman_2026-07-18.jpg",
-  "ref_thescore_usman_2026-07-18.jpg",
-  "ref_cagesidepress_ufc319_weighin_2025-08-15.jpg",
-  "commons_2023_cc0.jpg",
-  "commons_2023_cc0_cropped.jpg"
- ],
- "photo_coverage_note": "Commons has a single photo of him (2023, listed CC0 but of doubtful provenance), so there is no confirmed embed-ok photo. Recent appearance comes from reference-only July 2026 photos (Oklahoma City media day, face-off, fight night) and the UFC/ESPN studio set.",
- "face": {
-  "shape": "Broad rectangular face with a wide, square jaw and a wide neck that runs almost straight down from the ears. Lean, with a slightly ruddy, weathered look.",
-  "jaw": "Wide and square with well-defined angles; the boxed beard follows and emphasises it.",
-  "chin": "Broad, moderately projecting and slightly squared in right profile (July 2026 face-off).",
-  "cheekbones": "Moderate, fairly flat; cheeks lean but not hollow.",
-  "brow_ridge": "Moderate to strong; brows sit low, so the eyes look narrowed.",
-  "forehead": "Medium-high and broad, with horizontal lines; slight recession at the temples.",
-  "eyes": {
-   "shape": "Narrow almond, slightly hooded; he often squints slightly.",
-   "spacing": "Average.",
-   "colour": "Blue / blue-grey (clearly light in the studio headshot and July 2026 photos). Closest MakeHuman iris: blue.",
-   "set": "Moderately deep-set; outer corners level."
+  "slug": "dricus-du-plessis",
+  "name": "Dricus Du Plessis",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 32,
+  "tale_of_tape": {
+    "height_cm": 185,
+    "reach_cm": 193,
+    "stance": "Switch",
+    "fight_weight_kg": 84,
+    "source": "data/derived/fighters.json (73 in height, 76 in reach); fight weight = middleweight limit 185 lb"
   },
-  "eyebrows": {
-   "thickness": "Medium-thin",
-   "shape": "Straight and low, slightly arched at the outer third.",
-   "colour": "Light-medium brown (#5a3e2c approx.)"
-  },
-  "nose": {
-   "length": "Medium",
-   "width": "Medium, slightly broad at the bridge",
-   "bridge": "Straight in profile, slightly flattened/broad from the front",
-   "hump": "None to very slight",
-   "tip": "Rounded, medium width, level",
-   "fight_damage": "Mild broadening of the bridge; no clear deviation."
-  },
-  "mouth_lips": "Medium width; thin upper lip, medium-full lower lip; neutral expression with level corners.",
-  "ears": {
-   "size": "Medium, moderately protruding",
-   "cauliflower_ear": "Yes, mild: upper helix and inner upper ear thickened and lumpy on both ears (ESPN headshot, right ear in the July 2026 face-off profile, left ear in the media-day photo); milder than Merab's or Chimaev's."
-  },
-  "marks_scars": "Minor facial marks after fights (July 2026); no prominent permanent face scars. Body: a thin, pale horizontal line about 10 cm long runs from just beside the navel across his lower left abdomen in ESPN stance-right (looks like an old scar); in stance-left only a faint crease at navel height shows, so it is low render priority. Temporary bruises (yellow-green on the right shoulder in stance-left, a small purple mark on the abdomen in stance-right) should be ignored."
- },
- "hair": {
-  "style": "Short textured crop: sides faded short (about 1 cm), top 4-6 cm pushed up and slightly forward into a small spiky quiff.",
-  "length_cm": 5,
-  "colour_hex": "#5c3d28",
-  "colour_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "top of head (studio, mid-tones)",
-    "hex": "#40261a"
-   },
-   {
-    "photo": "espn_stance_left.png",
-    "where": "top of head (studio)",
-    "hex": "#41271b"
-   }
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ref_briefly_mediaday_2026-07.jpg",
+    "ref_gazettengr_faceoff_profile_2026-07-17.jpg",
+    "ref_aljazeera_usman_2026-07-18.jpg",
+    "ref_thescore_usman_2026-07-18.jpg",
+    "ref_cagesidepress_ufc319_weighin_2025-08-15.jpg",
+    "commons_2023_cc0.jpg",
+    "commons_2023_cc0_cropped.jpg"
   ],
-  "colour_note": "Medium brown with lighter, slightly golden tips in bright light; the samples are mid-tone medians and read darker than the overall impression, so colour_hex is lifted toward the highlights.",
-  "hairline": "Mild recession at the temples, straight across the front.",
-  "texture": "Straight, thick, short."
- },
- "facial_hair": {
-  "type": "short beard",
-  "colour_hex": "#613d2f",
-  "colour_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "chin (studio)",
-    "hex": "#613d2f"
-   }
+  "photo_coverage_note": "Commons has a single photo of him (2023, listed CC0 but of doubtful provenance), so there is no confirmed embed-ok photo. Recent appearance comes from reference-only July 2026 photos (Oklahoma City media day, face-off, fight night) and the UFC/ESPN studio set.",
+  "face": {
+    "shape": "Broad rectangular face with a wide, square jaw and a wide neck that runs almost straight down from the ears. Lean, with a slightly ruddy, weathered look.",
+    "jaw": "Wide and square with well-defined angles; the boxed beard follows and emphasises it.",
+    "chin": "Broad, moderately projecting and slightly squared in right profile (July 2026 face-off).",
+    "cheekbones": "Moderate, fairly flat; cheeks lean but not hollow.",
+    "brow_ridge": "Moderate to strong; brows sit low, so the eyes look narrowed.",
+    "forehead": "Medium-high and broad, with horizontal lines; slight recession at the temples.",
+    "eyes": {
+      "shape": "Narrow almond, slightly hooded; he often squints slightly.",
+      "spacing": "Average.",
+      "colour": "Blue / blue-grey (clearly light in the studio headshot and July 2026 photos). Closest MakeHuman iris: blue.",
+      "set": "Moderately deep-set; outer corners level."
+    },
+    "eyebrows": {
+      "thickness": "Medium-thin",
+      "shape": "Straight and low, slightly arched at the outer third.",
+      "colour": "Light-medium brown (#5a3e2c approx.)"
+    },
+    "nose": {
+      "length": "Medium",
+      "width": "Medium, slightly broad at the bridge",
+      "bridge": "Straight in profile, slightly flattened/broad from the front",
+      "hump": "None to very slight",
+      "tip": "Rounded, medium width, level",
+      "fight_damage": "Mild broadening of the bridge; no clear deviation."
+    },
+    "mouth_lips": "Medium width; thin upper lip, medium-full lower lip; neutral expression with level corners.",
+    "ears": {
+      "size": "Medium, moderately protruding",
+      "cauliflower_ear": "Yes, mild: upper helix and inner upper ear thickened and lumpy on both ears (ESPN headshot, right ear in the July 2026 face-off profile, left ear in the media-day photo); milder than Merab's or Chimaev's."
+    },
+    "marks_scars": "Minor facial marks after fights (July 2026); no prominent permanent face scars. Body: a thin, pale horizontal line about 10 cm long runs from just beside the navel across his lower left abdomen in ESPN stance-right (looks like an old scar); in stance-left only a faint crease at navel height shows, so it is low render priority. Temporary bruises (yellow-green on the right shoulder in stance-left, a small purple mark on the abdomen in stance-right) should be ignored."
+  },
+  "hair": {
+    "style": "Short textured crop: sides faded short (about 1 cm), top 4-6 cm pushed up and slightly forward into a small spiky quiff.",
+    "length_cm": 5,
+    "colour_hex": "#5c3d28",
+    "colour_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "top of head (studio, mid-tones)",
+        "hex": "#40261a"
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "top of head (studio)",
+        "hex": "#41271b"
+      }
+    ],
+    "colour_note": "Medium brown with lighter, slightly golden tips in bright light; the samples are mid-tone medians and read darker than the overall impression, so colour_hex is lifted toward the highlights.",
+    "hairline": "Mild recession at the temples, straight across the front.",
+    "texture": "Straight, thick, short."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "colour_hex": "#613d2f",
+    "colour_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "chin (studio)",
+        "hex": "#613d2f"
+      }
+    ],
+    "colour_note": "Light-medium brown with ginger tones, a little redder than the head hair.",
+    "density": "Medium-dense across chin, jaw and moustache; neat, even coverage.",
+    "shape": "Short boxed beard about 1-1.5 cm, trimmed with a clean, fairly high cheek line and a defined neckline; follows the square jaw. Moustache connects."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead, cheeks, nose (studio)",
+        "hex": "#d38c74"
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "forehead and cheeks (studio)",
+        "hex": "#d08a73"
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "forehead and cheeks (studio)",
+        "hex": "#d9967d"
+      },
+      {
+        "photo": "ref_briefly_mediaday_2026-07.jpg",
+        "where": "cheeks and nose (media-day light)",
+        "hex": "#d98a81"
+      },
+      {
+        "photo": "ref_cagesidepress_ufc319_weighin_2025-08-15.jpg",
+        "where": "cheeks (weigh-in stage light, flushed; not in average)",
+        "hex": "#e48c7a"
+      }
+    ],
+    "tone_hex": "#d58e79",
+    "tone_note": "Average of the first four samples. Light skin that flushes red on the face and chest under exertion.",
+    "undertone": "Pink/ruddy.",
+    "freckles_marks": "Light freckling/sun spots on shoulders and upper chest (ESPN stance photos, UFC 319 weigh-in)."
+  },
+  "body": {
+    "build": "Big, powerful middleweight: very broad shoulders, thick neck, dense muscle throughout; long arms (reach 193 cm at 185 cm).",
+    "body_fat": "lean",
+    "body_fat_note": "Defined six-pack and obliques in both ESPN stance photos and at the UFC 319 weigh-in.",
+    "shoulders": "Very broad, with big round deltoids and a thick trapezius that slopes steeply into the neck.",
+    "chest": "Full, wide pectorals; light chest hair.",
+    "arms": "Long and muscular, large biceps peak when flexed (UFC 319 weigh-in), thick forearms.",
+    "waist": "Narrow relative to the shoulders; clear V-taper.",
+    "legs_calves": "Thick, well-developed thighs and calves.",
+    "posture": "Upright, chest out; often stands slightly turned with arms hanging forward.",
+    "notable": "Wide jaw plus very thick neck give a block-like head-neck-shoulder silhouette."
+  },
+  "tattoos": [
+    {
+      "where": "Anywhere visible",
+      "description": "None visible on torso, arms or legs in the ESPN stance photos and the UFC 319 weigh-in.",
+      "size": "-"
+    }
   ],
-  "colour_note": "Light-medium brown with ginger tones, a little redder than the head hair.",
-  "density": "Medium-dense across chin, jaw and moustache; neat, even coverage.",
-  "shape": "Short boxed beard about 1-1.5 cm, trimmed with a clean, fairly high cheek line and a defined neckline; follows the square jaw. Moustache connects."
- },
- "skin": {
-  "tone_samples": [
-   {
-    "photo": "espn_headshot.png",
-    "where": "forehead, cheeks, nose (studio)",
-    "hex": "#d38c74"
-   },
-   {
-    "photo": "espn_stance_left.png",
-    "where": "forehead and cheeks (studio)",
-    "hex": "#d08a73"
-   },
-   {
-    "photo": "espn_stance_right.png",
-    "where": "forehead and cheeks (studio)",
-    "hex": "#d9967d"
-   },
-   {
-    "photo": "ref_briefly_mediaday_2026-07.jpg",
-    "where": "cheeks and nose (media-day light)",
-    "hex": "#d98a81"
-   },
-   {
-    "photo": "ref_cagesidepress_ufc319_weighin_2025-08-15.jpg",
-    "where": "cheeks (weigh-in stage light, flushed; not in average)",
-    "hex": "#e48c7a"
-   }
-  ],
-  "tone_hex": "#d58e79",
-  "tone_note": "Average of the first four samples. Light skin that flushes red on the face and chest under exertion.",
-  "undertone": "Pink/ruddy.",
-  "freckles_marks": "Light freckling/sun spots on shoulders and upper chest (ESPN stance photos, UFC 319 weigh-in)."
- },
- "body": {
-  "build": "Big, powerful middleweight: very broad shoulders, thick neck, dense muscle throughout; long arms (reach 193 cm at 185 cm).",
-  "body_fat": "lean",
-  "body_fat_note": "Defined six-pack and obliques in both ESPN stance photos and at the UFC 319 weigh-in.",
-  "shoulders": "Very broad, with big round deltoids and a thick trapezius that slopes steeply into the neck.",
-  "chest": "Full, wide pectorals; light chest hair.",
-  "arms": "Long and muscular, large biceps peak when flexed (UFC 319 weigh-in), thick forearms.",
-  "waist": "Narrow relative to the shoulders; clear V-taper.",
-  "legs_calves": "Thick, well-developed thighs and calves.",
-  "posture": "Upright, chest out; often stands slightly turned with arms hanging forward.",
-  "notable": "Wide jaw plus very thick neck give a block-like head-neck-shoulder silhouette."
- },
- "tattoos": [
-  {
-   "where": "Anywhere visible",
-   "description": "None visible on torso, arms or legs in the ESPN stance photos and the UFC 319 weigh-in.",
-   "size": "-"
+  "kit": {
+    "fight_shorts_current": "Green shorts (Usman fight, Jul 2026: green with red corner tape); title era: green compression-style shorts with South African flag stripes (red, blue, yellow, black, white) and a leafy pattern, Monster and crypto.com logos (ESPN stance-left).",
+    "fight_shorts_previous": "Plain dark-green Venum shorts with red 'DU PLESSIS' lettering (ESPN stance-right).",
+    "gloves": "Black UFC gloves.",
+    "weigh_in": "Thin gold chain with a small gold pendant.",
+    "colours": [
+      "#1f6b3a green",
+      "#0d4d2b dark green",
+      "#d21f2b red",
+      "#f2c400 yellow"
+    ]
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.11,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.85,
+    "macro/weightUpM": 0.05,
+    "macro/heightUpM": 0.16,
+    "macro/proportionsUpM": 0.5,
+    "head/head-square": 0.45,
+    "head/head-scale-horiz-incr": 0.1,
+    "head/head-fat-decr": 0.2,
+    "forehead/forehead-scale-vert-incr": 0.1,
+    "eyebrows/eyebrows-trans-down": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.15,
+    "eyes/l-eye-height2-decr": 0.25,
+    "eyes/r-eye-height2-decr": 0.25,
+    "eyes/l-eye-scale-decr": 0.1,
+    "eyes/r-eye-scale-decr": 0.1,
+    "eyes/l-eye-bag-incr": 0.25,
+    "eyes/r-eye-bag-incr": 0.25,
+    "nose/nose-width1-incr": 0.15,
+    "nose/nose-point-width-incr": 0.15,
+    "nose/nose-scale-horiz-incr": 0.1,
+    "nose/nose-scale-depth-incr": 0.1,
+    "mouth/mouth-upperlip-volume-decr": 0.25,
+    "mouth/mouth-lowerlip-volume-incr": 0.1,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "chin/chin-width-incr": 0.3,
+    "chin/chin-bones-incr": 0.4,
+    "chin/chin-prominent-incr": 0.15,
+    "chin/chin-height-incr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.15,
+    "cheek/r-cheek-bones-incr": 0.15,
+    "cheek/l-cheek-volume-decr": 0.15,
+    "cheek/r-cheek-volume-decr": 0.15,
+    "neck/neck-scale-horiz-incr": 0.6,
+    "neck/neck-scale-vert-decr": 0.2,
+    "torso/measure-shoulder-dist-incr": 0.45,
+    "torso/torso-vshape-incr": 0.35,
+    "torso/measure-waist-circ-decr": 0.05,
+    "buttocks/buttocks-volume-incr": 0.15
+  },
+  "morphs_unavailable": {
+    "note": "assets/embed/mh-manifest.json has no ears/* targets. If added use about ears/l|r-ear-scale-incr 0.2 and ears/l|r-ear-rot-forward 0.15, with a thickened-helix normal map.",
+    "arm_length": "Reach 193 cm at 185 cm (ape index about +8 cm); if the rig allows, scale upper-arm and forearm bones up about 2-3%."
+  },
+  "render_hints": {
+    "iris": "blue",
+    "skin_base": "mh-skin-young_caucasian_male (closest tone) tinted toward #d58e79, slightly pink",
+    "eyebrows": "eyebrow010 tinted #5a3e2c",
+    "hair": "short04 or short01 with a faded side, tinted #5c3d28",
+    "beard": "short boxed-beard texture or shell #613d2f with a crisp cheek line"
+  },
+  "notes": "Confidence: high for build, jaw, eye colour, hair and beard (clear studio set plus several July 2026 photos). Medium for nose and lip detail. No confirmed licence-free photo: the only Commons file is listed CC0 but looks like a reposted social-media snapshot, so it is marked reference-only. Watch for: (1) blue eyes and ruddy skin, (2) square jaw with a neat boxed beard, (3) very thick neck and broad shoulders, (4) cauliflower ears are milder than Merab's or Chimaev's.",
+  "review": {
+    "date": "2026-11-06",
+    "by": "second-pass photo review",
+    "changes": [
+      "The abdominal mark is clear (not faint) in ESPN stance-right and is on the lower LEFT abdomen, not the right.",
+      "The July 2026 face-off photo is a right profile (sources.json and face notes corrected).",
+      "Commons 2023 photo stays reference-only; added the evidence (it is a phone screenshot).",
+      "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Hair, boxed beard, blue eyes, no tattoos, skin samples and build match the photos."
+    ]
+  },
+  "stance": {
+    "schema": "stance/1",
+    "base": "switch",
+    "width": 1.2,
+    "depth": 1.1,
+    "crouch": 0.35,
+    "lean": 0.3,
+    "lead_foot_deg": 12.0,
+    "rear_foot_deg": 48.0,
+    "weight_front": 0.55,
+    "bladed": 0.45,
+    "guard": {
+      "style": "standard",
+      "height": 0.5,
+      "lead_reach": 0.35,
+      "lead_height": 0.5,
+      "lead_width": 0.0,
+      "rear_height": 0.55,
+      "rear_tuck": 0.7,
+      "elbow_flare": 0.35,
+      "shoulder_roll": 0.45
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.35,
+      "chin_tuck": 0.55
+    },
+    "bounce": {
+      "amp": 0.45,
+      "rate": 1.0
+    },
+    "switch_per_min": 2.5,
+    "feints": 0.35,
+    "hand_fighting": 0.25,
+    "posture": "open",
+    "footwork": [
+      "pressure",
+      "stance-switch"
+    ],
+    "confidence": "medium",
+    "source": "Set 2026-11-06 from his documented fighting style: data/scouting/dricus-du-plessis.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
+    "notes": "Awkward, wide stance that switches constantly (scouting: forward pressure with stance switches and long combinations), hands lower, looping shots."
   }
- ],
- "kit": {
-  "fight_shorts_current": "Green shorts (Usman fight, Jul 2026: green with red corner tape); title era: green compression-style shorts with South African flag stripes (red, blue, yellow, black, white) and a leafy pattern, Monster and crypto.com logos (ESPN stance-left).",
-  "fight_shorts_previous": "Plain dark-green Venum shorts with red 'DU PLESSIS' lettering (ESPN stance-right).",
-  "gloves": "Black UFC gloves.",
-  "weigh_in": "Thin gold chain with a small gold pendant.",
-  "colours": [
-   "#1f6b3a green",
-   "#0d4d2b dark green",
-   "#d21f2b red",
-   "#f2c400 yellow"
-  ]
- },
- "morphs": {
-  "macro/sexM": 1.0,
-  "macro/ageOldM": 0.11,
-  "macro/ageYoungM": 0.0,
-  "macro/muscleUpM": 0.85,
-  "macro/weightUpM": 0.05,
-  "macro/heightUpM": 0.16,
-  "macro/proportionsUpM": 0.5,
-  "head/head-square": 0.45,
-  "head/head-scale-horiz-incr": 0.1,
-  "head/head-fat-decr": 0.2,
-  "forehead/forehead-scale-vert-incr": 0.1,
-  "eyebrows/eyebrows-trans-down": 0.15,
-  "eyebrows/eyebrows-trans-forward": 0.15,
-  "eyes/l-eye-height2-decr": 0.25,
-  "eyes/r-eye-height2-decr": 0.25,
-  "eyes/l-eye-scale-decr": 0.1,
-  "eyes/r-eye-scale-decr": 0.1,
-  "eyes/l-eye-bag-incr": 0.25,
-  "eyes/r-eye-bag-incr": 0.25,
-  "nose/nose-width1-incr": 0.15,
-  "nose/nose-point-width-incr": 0.15,
-  "nose/nose-scale-horiz-incr": 0.1,
-  "nose/nose-scale-depth-incr": 0.1,
-  "mouth/mouth-upperlip-volume-decr": 0.25,
-  "mouth/mouth-lowerlip-volume-incr": 0.1,
-  "mouth/mouth-scale-horiz-incr": 0.05,
-  "chin/chin-width-incr": 0.3,
-  "chin/chin-bones-incr": 0.4,
-  "chin/chin-prominent-incr": 0.15,
-  "chin/chin-height-incr": 0.05,
-  "cheek/l-cheek-bones-incr": 0.15,
-  "cheek/r-cheek-bones-incr": 0.15,
-  "cheek/l-cheek-volume-decr": 0.15,
-  "cheek/r-cheek-volume-decr": 0.15,
-  "neck/neck-scale-horiz-incr": 0.6,
-  "neck/neck-scale-vert-decr": 0.2,
-  "torso/measure-shoulder-dist-incr": 0.45,
-  "torso/torso-vshape-incr": 0.35,
-  "torso/measure-waist-circ-decr": 0.05,
-  "buttocks/buttocks-volume-incr": 0.15
- },
- "morphs_unavailable": {
-  "note": "assets/embed/mh-manifest.json has no ears/* targets. If added use about ears/l|r-ear-scale-incr 0.2 and ears/l|r-ear-rot-forward 0.15, with a thickened-helix normal map.",
-  "arm_length": "Reach 193 cm at 185 cm (ape index about +8 cm); if the rig allows, scale upper-arm and forearm bones up about 2-3%."
- },
- "render_hints": {
-  "iris": "blue",
-  "skin_base": "mh-skin-young_caucasian_male (closest tone) tinted toward #d58e79, slightly pink",
-  "eyebrows": "eyebrow010 tinted #5a3e2c",
-  "hair": "short04 or short01 with a faded side, tinted #5c3d28",
-  "beard": "short boxed-beard texture or shell #613d2f with a crisp cheek line"
- },
- "notes": "Confidence: high for build, jaw, eye colour, hair and beard (clear studio set plus several July 2026 photos). Medium for nose and lip detail. No confirmed licence-free photo: the only Commons file is listed CC0 but looks like a reposted social-media snapshot, so it is marked reference-only. Watch for: (1) blue eyes and ruddy skin, (2) square jaw with a neat boxed beard, (3) very thick neck and broad shoulders, (4) cauliflower ears are milder than Merab's or Chimaev's.",
- "review": {
-  "date": "2026-11-06",
-  "by": "second-pass photo review",
-  "changes": [
-   "The abdominal mark is clear (not faint) in ESPN stance-right and is on the lower LEFT abdomen, not the right.",
-   "The July 2026 face-off photo is a right profile (sources.json and face notes corrected).",
-   "Commons 2023 photo stays reference-only; added the evidence (it is a phone screenshot).",
-   "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Hair, boxed beard, blue eyes, no tattoos, skin samples and build match the photos."
-  ]
- }
 }
