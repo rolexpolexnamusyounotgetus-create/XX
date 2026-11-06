@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-06T10:10:17Z",
+ "as_of": "2026-11-06T21:13:10Z",
  "window": {
   "from": "2026-11-07",
   "to": "2026-12-20"
@@ -7,11 +7,12 @@
  "compiled_by": "Claude (research agent) for the forward-test ledger; hand-verified from the sources listed per bout",
  "coverage": "Five UFC events fall in the window. Wikipedia's List of UFC events, sherdog's UFC organization page and agentmma's calendar agree; ESPN has four (no Riyadh yet). There is nothing on Nov 28 or Dec 19 (the next UFC event after Dec 12 is Jan 16, 2027, in Dallas).",
  "unreachable_sources": {
-  "ufcstats.com": "host not allowed in this session (DNS refused)",
-  "ufc.com": "host not allowed (403 / DNS refused); official event URLs are listed but were not fetched",
-  "tapology.com": "host not allowed (403 / DNS refused)",
-  "mmajunkie.usatoday.com": "proxy 502; cited only via Wikipedia/secondary reports",
-  "bloodyelbow.com": "Cloudflare challenge; cited only via Wikipedia/secondary reports"
+  "ufcstats.com": "no connection (curl status 000) on Nov 6, 21:00Z; the local ufcstats CSVs (snapshot Oct 31) were used for the debut checks",
+  "ufc.com": "403 on Nov 6, 21:00Z; official event URLs are listed but were not fetched",
+  "tapology.com": "403 on Nov 6, 21:00Z",
+  "mmajunkie.usatoday.com": "402 on Nov 6, 21:00Z; its reports are cited only via Wikipedia and secondary outlets",
+  "bloodyelbow.com": "Cloudflare challenge on article pages; article text read from its RSS feed (bloodyelbow.com/feed/)",
+  "en.wikipedia.org API": "429 (rate limited) on Nov 6, ~21:05Z; the rendered /wiki/ pages were read instead (wikitext for Vegas 124 was read at 21:00Z before the limit)"
  },
  "schema": {
   "order": "1 = main event, then down the card. Bouts with segment \"unknown\" are not slotted yet and follow in source order.",
@@ -21,7 +22,9 @@
   "slug": "key in data/derived/fighters.json, or null for a UFC debut (not in the roster)",
   "prior_ufc_meetings": "earlier UFC bouts between the pair, from data/raw/ufc_fight_results.csv (OUTCOME is W/L for the first-named fighter in \"bout\")",
   "open_slots": "a fighter is still booked but has no opponent (nothing to predict yet)",
-  "removed": "pairings that were announced or reported and are now off, kept for the audit trail"
+  "removed": "pairings that were announced or reported and are now off, kept for the audit trail",
+  "weigh_in": "bout: official weigh-in weights in lb (a_lb, b_lb), the division limit (limit_lb) and made_weight; non-title bouts get a one-pound allowance. A miss adds miss_by_lb, catchweight_lb and purse_forfeit_pct for the side that missed. event: date, result, misses, sources",
+  "checked_utc": "event: when this event's entry was last re-checked against current sources. as_of is the snapshot time; an event not re-checked in the latest pass keeps its older checked_utc"
  },
  "events": [
   {
@@ -47,9 +50,12 @@
     "https://www.sherdog.com/news/articles/How-to-watch-UFC-Vegas-124-Start-time-Paramount43-stream-full-fight-card-203519",
     "https://www.mmafighting.com/ufc/519393/ufc-vegas-124-adds-replacement-fighter-on-4-days-notice",
     "https://agentmma.com/events/ufc-las-vegas-waldo-cortes-acosta-vs-johnny-walker",
-    "https://www.bestfightodds.com/events/ufc-vegas-124-4437"
+    "https://www.bestfightodds.com/events/ufc-vegas-124-4437",
+    "https://www.sherdog.com/news/news/UFC-Vegas-124-weighin-results-All-fighters-make-weight-203521",
+    "https://www.mmafighting.com/ufc/519766/ufc-vegas-124-weigh-in-results-waldo-cortes-acosta-has-23-pound-edge-over-johnny-walker-in-main-event",
+    "https://cagesidepress.com/2026/11/06/ufc-vegas-124-cortes-acosta-vs-walker-weigh-in-results/"
    ],
-   "card_note": "Order from the ESPN fightcenter feed (bout-ordered start times) and Wikipedia; mmafighting agrees on the main card. 14 bouts on ESPN, sherdog (card as of Nov 5), Wikipedia; mmafighting omits Lourenço-Petersen; agentmma omits Raposo-Degli. Weigh-ins Fri Nov 6 (after this snapshot): check for misses/scratches before locking predictions.",
+   "card_note": "Order from the ESPN fightcenter feed (bout-ordered start times) and Wikipedia; mmafighting agrees on the main card. 14 bouts on ESPN, sherdog (card as of Nov 5), Wikipedia; mmafighting omits Lourenço-Petersen; agentmma omits Raposo-Degli. Re-checked after the Nov 6 official weigh-ins (~21:00Z): all 14 bouts still on, all 28 fighters made weight (weigh_in blocks). Order, segments and start times are unchanged on ESPN; MMA Fighting's schedule and weigh-in post now list all 14 bouts in the same order and split (main 8 p.m. ET, prelims 5 p.m. ET), and Cageside Press agrees. MMAmania's weigh-in post shows a different main/prelim split (Ko-Turman and Kondratavičius-Petroski on the main card, Cachoeira-Milošević and Raposo-Degli on the prelims); no other source has it, so the ESPN split stands, and the lock (22:00Z) is the same either way. Wikipedia's page was last edited Nov 4, 23:52Z (no weigh-in notes). bestfightodds' event page now renders only the six main-card bouts in its static HTML; the market capture uses fightodds.io (tools/odds_upcoming.py). Debutants: Degli, Lourenço and Calderon (pre-UFC records in data/predictions/debutants_vegas124.json).",
    "bouts": [
     {
      "order": 1,
@@ -66,7 +72,7 @@
       "slug": "johnny-walker"
      },
      "status": "official",
-     "notes": "Short-notice replacement main event, booked Oct 29-30. Walker moved up to heavyweight in Oct 2026 (KO of Mick Parkin); his roster division still says Light Heavyweight.",
+     "notes": "Short-notice replacement main event, booked Oct 29-30. Walker moved up to heavyweight in Oct 2026 (KO of Mick Parkin); his roster division still says Light Heavyweight. Weigh-in: Cortes-Acosta 262, Walker 239 (a 23-lb gap; Walker's second heavyweight bout, 35 days after his UFC 332 KO of Mick Parkin; Cortes-Acosta fought at Noche UFC 4 less than two months ago).",
      "changes": [
       "Original headliner Gabriel Bonfim vs. Sean Brady (welterweight) cancelled Oct 29: Brady out with a staph infection in his knee."
      ],
@@ -77,7 +83,13 @@
       "https://www.mmafighting.com/schedule",
       "https://www.mmamania.com/ufc-fight-announcements/482485/waldo-cortes-acosta-vs-johnny-walker-now-headlines-ufc-vegas-124",
       "https://cagesidepress.com/2026/10/29/ufc-vegas-124-loses-bonfim-vs-brady-heavyweight-headliner/"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 262,
+      "b_lb": 239,
+      "limit_lb": 265,
+      "made_weight": true
+     }
     },
     {
      "order": 2,
@@ -101,7 +113,13 @@
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule",
       "https://www.mmafighting.com/ufc/518348/sean-brady-out-of-ufc-vegas-124-main-event-against-gabriel-bonfim"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 115.5,
+      "b_lb": 116,
+      "limit_lb": 115,
+      "made_weight": true
+     }
     },
     {
      "order": 3,
@@ -123,7 +141,13 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 135.5,
+      "b_lb": 135.5,
+      "limit_lb": 135,
+      "made_weight": true
+     }
     },
     {
      "order": 4,
@@ -145,7 +169,13 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 206,
+      "b_lb": 205,
+      "limit_lb": 205,
+      "made_weight": true
+     }
     },
     {
      "order": 5,
@@ -170,7 +200,13 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 136,
+      "b_lb": 136,
+      "limit_lb": 135,
+      "made_weight": true
+     }
     },
     {
      "order": 6,
@@ -188,14 +224,20 @@
       "note": "UFC debut (not in roster)"
      },
      "status": "official",
-     "notes": "Degli: UFC debut (2026 Contender Series winner).",
+     "notes": "Degli: UFC debut (2026 Contender Series winner). Degli's pre-UFC record (15-3) is in data/predictions/debutants_vegas124.json.",
      "sources": [
       "https://www.espn.com/mma/fightcenter/_/id/600061268/league/ufc",
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule",
       "https://www.sherdog.com/news/articles/How-to-watch-UFC-Vegas-124-Start-time-Paramount43-stream-full-fight-card-203519"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 125.5,
+      "b_lb": 126,
+      "limit_lb": 125,
+      "made_weight": true
+     }
     },
     {
      "order": 7,
@@ -220,7 +262,13 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 145,
+      "b_lb": 145.5,
+      "limit_lb": 145,
+      "made_weight": true
+     }
     },
     {
      "order": 8,
@@ -242,7 +290,7 @@
       "slug": "thomas-petersen"
      },
      "status": "official",
-     "notes": "Lourenço: UFC debut (2026 Contender Series).",
+     "notes": "Lourenço: UFC debut (2026 Contender Series). Lourenço's pre-UFC record (8-1) is in data/predictions/debutants_vegas124.json. Spelled Lourenço (this file), Lorenço (ESPN, Wikipedia, Cageside Press, MMAmania) and Lorenco (Sherdog, MMA Fighting, ufcstats); same fighter (Sherdog id 398156, ufcstats e3fc6c1fab298561). Weigh-in 234 vs. Petersen 253.5.",
      "changes": [
       "Alvin Hines withdrew (vertigo); Thomas Petersen replaced him (reported Oct 8, card change Oct 26)."
      ],
@@ -252,7 +300,13 @@
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.sherdog.com/news/articles/How-to-watch-UFC-Vegas-124-Start-time-Paramount43-stream-full-fight-card-203519",
       "https://www.bestfightodds.com/events/ufc-vegas-124-4437"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 234,
+      "b_lb": 253.5,
+      "limit_lb": 265,
+      "made_weight": true
+     }
     },
     {
      "order": 9,
@@ -274,7 +328,13 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 125,
+      "b_lb": 126,
+      "limit_lb": 125,
+      "made_weight": true
+     }
     },
     {
      "order": 10,
@@ -299,7 +359,13 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 145.5,
+      "b_lb": 146,
+      "limit_lb": 145,
+      "made_weight": true
+     }
     },
     {
      "order": 11,
@@ -317,7 +383,7 @@
       "note": "UFC debut (not in roster)"
      },
      "status": "official",
-     "notes": "Calderon: UFC debut on four days notice (Fury FC featherweight champion).",
+     "notes": "Calderon: UFC debut on four days notice (Fury FC featherweight champion). Calderon's pre-UFC record (11-4, 1 NC) is in data/predictions/debutants_vegas124.json. Short notice: booked Nov 3-4, four days out; his last fight was a five-round Fury FC title defense on Oct 2, 2026.",
      "changes": [
       "Lucas Brennan withdrew (torn ACL, Oct 29); Calderon booked Nov 3-4."
      ],
@@ -327,7 +393,13 @@
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/ufc/519393/ufc-vegas-124-adds-replacement-fighter-on-4-days-notice",
       "https://www.mmamania.com/ufc-fight-announcements/484031/ufc-newcomer-steps-up-on-four-days-notice-for-ufc-vegas-124"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 145.5,
+      "b_lb": 145.5,
+      "limit_lb": 145,
+      "made_weight": true
+     }
     },
     {
      "order": 12,
@@ -355,7 +427,13 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 186,
+      "b_lb": 185.5,
+      "limit_lb": 185,
+      "made_weight": true
+     }
     },
     {
      "order": 13,
@@ -381,7 +459,14 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 171,
+      "b_lb": 171,
+      "limit_lb": 170,
+      "made_weight": true,
+      "discrepancy": "Ko Seok-hyeon 171 per Sherdog, Cageside Press, MMAmania and ESPN's feed; MMA Fighting lists 170. Both are within the 171-lb non-title allowance."
+     }
     },
     {
      "order": 14,
@@ -407,7 +492,13 @@
       "https://www.sherdog.com/events/UFC-Fight-Night-293-CortesAcosta-vs-Walker-114213",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Cortes-Acosta_vs._Walker",
       "https://www.mmafighting.com/schedule"
-     ]
+     ],
+     "weigh_in": {
+      "a_lb": 169.5,
+      "b_lb": 171,
+      "limit_lb": 170,
+      "made_weight": true
+     }
     }
    ],
    "open_slots": [],
@@ -484,7 +575,26 @@
       "https://www.mmamania.com/ufc-fight-announcements/484031/ufc-newcomer-steps-up-on-four-days-notice-for-ufc-vegas-124"
      ]
     }
-   ]
+   ],
+   "weigh_in": {
+    "date": "2026-11-06",
+    "kind": "official (NSAC) weigh-ins, Fri Nov 6 from 9 a.m. PT (12 p.m. ET), faceoffs after (about 2 p.m. ET), per MMAmania",
+    "result": "All 28 fighters made weight. No misses, no catchweights, no purse forfeits, no scratches.",
+    "misses": [],
+    "allowance": "NSAC one-pound allowance in non-title bouts (no title bouts on this card)",
+    "sources": [
+     "https://www.sherdog.com/news/news/UFC-Vegas-124-weighin-results-All-fighters-make-weight-203521",
+     "https://www.mmafighting.com/ufc/519766/ufc-vegas-124-weigh-in-results-waldo-cortes-acosta-has-23-pound-edge-over-johnny-walker-in-main-event",
+     "https://cagesidepress.com/2026/11/06/ufc-vegas-124-cortes-acosta-vs-walker-weigh-in-results/",
+     "https://www.mmamania.com/ufc-weigh-in-video/484292/ufc-vegas-124-early-weigh-ins-video-results-live-stream-updates-cortes-acosta-vs-walker",
+     "https://www.espn.com/mma/fightcenter/_/id/600061268/league/ufc"
+    ],
+    "source_notes": [
+     "Sherdog (Tyler Treese, Nov 6), MMA Fighting (Alexander K. Lee, Nov 6, 7:01 PM UTC) and Cageside Press (Nov 6) post the full results; MMAmania's live post (Jesse Holland) the same weights; ESPN's fightcenter feed carries the same weights in displayWeight (fetched Nov 6, ~21:00Z).",
+     "a/b order: ESPN (competitor order 1/2), Wikipedia, MMA Fighting and Cageside Press list every pair in this file's a/b order. Sherdog's weigh-in list and MMAmania's post flip some pairs (weigh-in order, not card order)."
+    ]
+   },
+   "checked_utc": "2026-11-06T21:13:10Z"
   },
   {
    "name": "UFC 334: Gane vs. Hokit",
@@ -510,7 +620,7 @@
     "https://agentmma.com/events/ufc-334",
     "https://www.bestfightodds.com/events/ufc-334-4370"
    ],
-   "card_note": "Order and segments from ESPN (bout-ordered start times), which matches Wikipedia; mmafighting lists the prelims in a different order and puts all seven under one prelim block. ESPN and sherdog still carry Yañez vs. Díaz, which has been cancelled (Yañez hospitalized); agentmma, mmafighting and bestfightodds no longer list it.",
+   "card_note": "Order and segments from ESPN (bout-ordered start times), which matches Wikipedia; mmafighting lists the prelims in a different order and puts all seven under one prelim block. ESPN and sherdog still carry Yañez vs. Díaz, which has been cancelled (Yañez hospitalized); agentmma, mmafighting and bestfightodds no longer list it. Quick re-check Nov 6, ~21:00Z: no bout changes. ESPN unchanged (still carries Yañez-Díaz). Wikipedia (last edited Nov 5, 16:46Z) lists Juan Díaz vs. TBA; no replacement reported. MMA Fighting's schedule now gives three blocks (early prelims 5 p.m., prelims 7 p.m., main 9 p.m. ET), matching ESPN's start_utc; its bout list still runs the seven undercard bouts together in its own order. Bloody Elbow (Nov 6, read via its RSS feed) relays the same bout order as ESPN: Thompson-Radtke is the featured prelim and Gordon-Costa tops the early prelims. Sherdog's event page still lists Yañez-Díaz and a 'Nazim Sadykhov vs. Unknown Fighter' entry (stale: Sadykhov-Nascimento was cancelled Oct 8; see removed). UFC 334 weigh-ins are Fri Nov 13.",
    "bouts": [
     {
      "order": 1,
@@ -799,7 +909,7 @@
       "note": "UFC debut (not in roster)"
      },
      "status": "official",
-     "notes": "Sanches: UFC debut (2025 Contender Series winner).",
+     "notes": "Sanches: UFC debut (2025 Contender Series winner). Sanches's pre-UFC record (11-1) is in data/predictions/debutants_vegas124.json (also_upcoming).",
      "sources": [
       "https://www.espn.com/mma/fightcenter/_/id/600061400/league/ufc",
       "https://www.sherdog.com/events/UFC-334-Gane-vs-Hokit-114293",
@@ -881,7 +991,8 @@
       "https://en.wikipedia.org/wiki/UFC_334"
      ]
     }
-   ]
+   ],
+   "checked_utc": "2026-11-06T21:13:10Z"
   },
   {
    "name": "UFC Fight Night: Procházka vs. Stirling",
@@ -1251,7 +1362,8 @@
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Proch%C3%A1zka_vs._Stirling"
      ]
     }
-   ]
+   ],
+   "checked_utc": "2026-11-06T10:10:17Z"
   },
   {
    "name": "UFC Fight Night 295",
@@ -1526,7 +1638,8 @@
     }
    ],
    "open_slots": [],
-   "removed": []
+   "removed": [],
+   "checked_utc": "2026-11-06T10:10:17Z"
   },
   {
    "name": "UFC 335: Oliveira vs. Lopes",
@@ -1936,20 +2049,22 @@
       "https://en.wikipedia.org/wiki/UFC_335"
      ]
     }
-   ]
+   ],
+   "checked_utc": "2026-11-06T10:10:17Z"
   }
  ],
  "verification": {
-  "verified_utc": "2026-11-06T10:10:17Z",
-  "previous_as_of": "2026-11-06T09:47:31Z",
-  "checked": "Every event date, venue, bout, weight class, round count and title flag against the ESPN fightcenter API (site.web.api.espn.com, UFC-fed; 4 of 5 events), Wikipedia event pages (wikitext and revision history as of Nov 6, 01:01Z), sherdog event pages, the mmafighting schedule, and news from the last 72 hours (sherdog, mmafighting, mmamania, bloodyelbow, heavy and cagesidepress feeds; web search). Every non-null slug was checked against the fighter's sherdog record: the last UFC fight (date and opponent) matches fighters.json for all 104 mapped fighters whose sherdog page was fetched, and the 7 others (Sousa, Andrusca, Osmanli, Rodríguez, Garcia, Garry, Amosov) match news reports of their last fights. The 11 null slugs have no UFC bouts on sherdog (true debuts). Prior UFC meetings recomputed from data/raw/ufc_fight_results.csv: only Albazi vs. Costa.",
+  "verified_utc": "2026-11-06T21:13:10Z",
+  "previous_as_of": "2026-11-06T10:10:17Z",
+  "scope": "UFC Vegas 124: full re-check after the Nov 6 official weigh-ins. UFC 334: quick re-check. UFC Qatar, UFC Riyadh and UFC 335 were not re-checked in this pass; their entries are as of 2026-11-06T10:10:17Z (checked_utc).",
+  "checked": "UFC Vegas 124: every bout, a/b order, weight class, rounds, title flag, segment and start time against the ESPN fightcenter API (site.web.api.espn.com, UFC-fed, 14 bouts, weigh-in weights in displayWeight), Sherdog's event page (14 bouts, 28 fighter links), MMA Fighting's schedule and weigh-in results, Cageside Press weigh-in results, MMAmania's live weigh-in post and Wikipedia (wikitext, last edited Nov 4, 23:52Z); news since Nov 5 (MMA Fighting, Sherdog, MMAmania, Cageside Press, Bloody Elbow and Heavy RSS feeds; web search) shows no scratches. Every non-null slug re-matched by exact name or alias in data/derived/fighters.json (snapshot Oct 31). The three null slugs (Degli, Lourenço, Calderon) have no bouts in data/raw/ufc_fight_results.csv (ufcstats has only pre-created fighter pages with no fights) and no UFC rows on Sherdog: true debuts. Their records were read from Sherdog fighter pages and cross-checked against ESPN's records, ufcstats dates of birth and news reports (data/predictions/debutants_vegas124.json). UFC 334: ESPN feed, Sherdog event page, MMA Fighting schedule, Wikipedia (rendered page), Bloody Elbow's Nov 6 bout-order report and a news search.",
   "changes": [
-   "UFC 335: Barber vs. Judice moved from bouts (status doubtful) to removed; Carli Judice added to open_slots; bouts renumbered 1-12.",
-   "UFC 335: start_utc switched to the ESPN feed (22:00Z/00:00Z/02:00Z, three blocks) from mmafighting (22:00Z/01:00Z); Pasley-Tafa segment prelims -> early_prelims (ESPN).",
-   "UFC 334: note added that Melquizael Costa moves up from featherweight for the Gordon bout.",
-   "UFC Qatar: card_note records the ESPN vs. mmafighting main-card start conflict.",
-   "UFC Riyadh: Osmanli note clarifies his one recorded UFC bout (TUF 34 finale DQ loss), which some outlets ignore.",
-   "removed[]: roster slugs filled for fighters who are in fighters.json but were left null: Alvin Hines -> alvin-hines, Wes Schultz -> wes-schultz, Jefferson Nascimento -> jefferson-nascimento, Magomed Zaynukov -> magomed-zaynukov, Ryan Gandra -> ryan-gandra."
+   "UFC Vegas 124: weigh-ins added (event weigh_in block, per-bout weigh_in weights). All 28 fighters made weight: no misses, catchweights or purse forfeits. All 14 bouts confirmed on with the same order, segments, rounds, title flags, start times and a/b order; no status changes.",
+   "UFC Vegas 124: card_note rewritten for the post-weigh-in state (MMA Fighting now lists Lourenço-Petersen; MMAmania's divergent main/prelim split recorded and not followed); notes added on bouts 1, 6, 8 and 11.",
+   "UFC Vegas 124, bout 13: Ko Seok-hyeon's weight is 171 in four sources and 170 in MMA Fighting (recorded under weigh_in.discrepancy).",
+   "Debutants: pre-UFC records for Degli (15-3), Lourenço (8-1) and Calderon (11-4, 1 NC), plus Samuel Sanches (UFC 334, 11-1), written to data/predictions/debutants_vegas124.json in the preufc.json fighter shape, with seeded-Elo debut shifts and finish multipliers computed by tools/preufc.py's own code.",
+   "UFC 334: no bout changes; card_note extended (MMA Fighting's three start blocks now match ESPN; Sherdog's stale Yañez-Díaz and Sadykhov entries; Wikipedia still has Díaz vs. TBA).",
+   "All events: checked_utc added (Vegas 124 and UFC 334 at this as_of; the other three at 2026-11-06T10:10:17Z). Schema notes for weigh_in and checked_utc added. unreachable_sources refreshed."
   ],
   "bout_counts": {
    "total": 59,
@@ -1957,6 +2072,6 @@
    "reported": 19,
    "rumoured": 1
   },
-  "still_unreachable": "ufc.com, ufcstats.com, tapology.com (blocked); mmajunkie (DNS). Weigh-ins for Nov 7 are later on Nov 6 (after this check)."
+  "still_unreachable": "ufc.com and tapology.com (403), ufcstats.com (no connection), mmajunkie (402), Bloody Elbow article pages (Cloudflare; RSS used), Wikipedia API (429; rendered pages used)."
  }
 }

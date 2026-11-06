@@ -230,13 +230,18 @@ def market_for(snap, bid, b):
     oa, ob = m.get("odds_a"), m.get("odds_b")
     if oa is None or ob is None:
         return None
-    pm, pc, pp = m.get("p_a_novig"), c.get("p_consensus"), c.get("p_meandec_power")
+    pm, pc, pp, pmm = m.get("p_a_novig"), c.get("p_consensus"), c.get("p_meandec_power"), c.get("p_meandec_mult")
     if flip:
         oa, ob = ob, oa
-        pm, pc, pp = [None if v is None else 1 - v for v in (pm, pc, pp)]
+        pm, pc, pp, pmm = [None if v is None else 1 - v for v in (pm, pc, pp, pmm)]
     p_stack = pp if pp is not None else devig_power(oa, ob)
+    # open-trained stacks were fit on a multiplicative no-vig line (market.json p_novig_open): feed them the
+    # multiplicative de-vig of the same consensus, else the BFO mean's
+    qa, qb = 1 / dec(oa), 1 / dec(ob)
+    p_open_in = pmm if pmm is not None else (pm if pm is not None else qa / (qa + qb))
     return {"source": m.get("source", "bestfightodds"), "captured_utc": m.get("captured_utc"), "odds_a": oa, "odds_b": ob,
             "p_a_novig": pm, "p_a_consensus": pc, "p_a_power_meandec": pp, "p_a_stack_input": round(p_stack, 5),
+            "p_a_mult_meandec": pmm, "p_a_open_stack_input": round(p_open_in, 5),
             "n_books": m.get("n_books"), "n_books_consensus": c.get("n_books"), "snapshot": snap["meta"]["stamp"],
             "flipped_from_snapshot": flip}
 
@@ -287,8 +292,14 @@ def cmd_predict(args):
         sa, sb = b["a"].get("slug"), b["b"].get("slug")
         rows.append((b, bid, mk))
         bouts_in.append({"bout_id": bid, "a": sa if sa in roster else None, "b": sb if sb in roster else None,
+                         "key_a": sa or slugify(b["a"]["name"]), "key_b": sb or slugify(b["b"]["name"]),
+                         "name_a": b["a"]["name"], "name_b": b["b"]["name"],
                          "division": b.get("weight_class"), "rounds": b.get("rounds") or 3, "title": bool(b.get("title")),
-                         "p_line": mk["p_a_stack_input"] if mk else None})
+                         "p_line": mk["p_a_stack_input"] if mk else None,
+                         "p_open_in": mk["p_a_open_stack_input"] if mk else None,
+                         "p_novig": mk["p_a_novig"] if mk else None})
+        if mk and mk.get("captured_utc"):
+            mk["hours_before_lock"] = round((lock - parse_utc(mk["captured_utc"])).total_seconds() / 3600, 2)
     bt_stack = os.path.join(DERIVED, "blindtest_stack.json")
     stack_file = None
     if args.stack == "blindtest" or (args.stack == "auto" and os.path.exists(bt_stack)):
@@ -310,14 +321,23 @@ def cmd_predict(args):
     out_bouts = []
     for (b, bid, mk), bi, r in zip(rows, bouts_in, J["bouts"]):
         sa, sb = bi["a"], bi["b"]
-        ea = roster[sa]["elo"] if sa else DEBUT_ELO
-        eb = roster[sb]["elo"] if sb else DEBUT_ELO
-        p_elo = 1 / (1 + 10 ** ((eb - ea) / 400))
+        models = r.get("models") or {}
+        seeds = r.get("elo_seed") or {}
+        if models.get("elo") is not None:
+            p_elo = models["elo"]               # fighters.json Elo; a debutant seeded from his pre-UFC record when found
+        else:
+            ea = roster[sa]["elo"] if sa else DEBUT_ELO
+            eb = roster[sb]["elo"] if sb else DEBUT_ELO
+            p_elo = 1 / (1 + 10 ** ((eb - ea) / 400))
         flags = []
         if r["debut_a"]:
             flags.append("debut_a")
         if r["debut_b"]:
             flags.append("debut_b")
+        for side in ("a", "b"):
+            if r["debut_" + side]:
+                flags.append(("seeded_elo_" if (seeds.get(side) or {}).get("shift") is not None else "debut_elo_1500_")
+                             + side)
         if b.get("status") != "official":
             flags.append("status_" + str(b.get("status")))
         if not mk:
@@ -329,8 +349,11 @@ def cmd_predict(args):
             flags.append("rematch")
         debut = r["debut_a"] or r["debut_b"]
         hl, hn = r.get("head_line"), r.get("head_noline")
+        p_primary, src_primary = None, None
         if debut:
-            p_noline, src_no = p_elo, "elo_debut_prior"
+            p_noline = p_elo
+            src_no = ("elo_debut_seeded" if any((seeds.get(s) or {}).get("shift") is not None for s in ("a", "b"))
+                      else "elo_debut_prior")
             p_line = mk["p_a_stack_input"] if mk else None
             ko, sub, dc, dr = division_method_prior(fj["priors"], b.get("weight_class"), bi["rounds"])
             head = None
@@ -339,10 +362,22 @@ def cmd_predict(args):
             src_no = "moe_stack"
             p_line = r["stack_line"]["p"] if r.get("stack_line") else None
             head = hl if (args.headline == "line" and hl) else hn
+            if mk:
+                for k in (PRIMARY,) + FALLBACK:
+                    if models.get(k) is not None:
+                        p_primary, src_primary = models[k], k
+                        break
         if args.headline == "line" and p_line is not None:
-            p_a, src = p_line, ("market_line (debut fallback)" if debut else "moe_stack_with_line")
+            if debut:
+                p_a, src = p_line, "market_line (debut fallback)"
+            elif p_primary is not None:
+                p_a, src = p_primary, src_primary
+            else:
+                p_a, src = p_line, "moe_stack_with_line"
         else:
             p_a, src = p_noline, src_no
+        if args.headline == "line" and mk and not debut and src != PRIMARY:
+            flags.append("primary_fallback")
         if p_a is None:
             p_a, src = p_elo, "elo (stack unavailable)"
             flags.append("stack_unavailable")
@@ -377,6 +412,7 @@ def cmd_predict(args):
             "p_elo": round(p_elo, 5),
             "p_method": {k: round(v, 5) for k, v in pm.items()}, "p_method_source": msrc,
             "p_distance": round(pdist, 5), "p_finish_round": fin_round,
+            "models": models, "elo_seed": seeds or None,
             "experts": r.get("experts"), "stack_weights": (r.get("stack_line") or r.get("stack_noline") or {}).get("weights"),
             "engine": r.get("engine"), "methodround_S": r.get("methodround_S"),
             "market": mk, "flags": flags, "notes": r.get("notes")})
@@ -387,21 +423,33 @@ def cmd_predict(args):
         "lock_utc": iso(lock), "lock_basis": lock_basis, "created_utc": iso(t0), "card_as_of": cards.get("as_of"),
         "supersedes": supersedes,
         "model": {
-            "version": "fwd-1: MoE stack %s (%s); engine %s / params %s; methodround S/SM; ML page model %s" % (
+            "version": "%s: primary %s (ML v2 %s, fit-2019-2023 stacks %s); MoE stack %s (%s); engine %s / params %s; "
+                       "methodround S/SM; ML page model %s" % (
+                MODEL_VERSION, PRIMARY, jm.get("ml2_built"), jm.get("forward_models_sha256_16"),
                 os.path.basename(jm.get("stack_source") or ""), jm.get("stack_built"), jm.get("engine_version"),
                 jm.get("params_version"), jm.get("ml_page_snapshot")),
             "stack": {"source": jm.get("stack_source"), "built": jm.get("stack_built"), "sha256_16": jm.get("stack_sha256_16"),
                       "blind_scores_2024_2025": (jload(stack_file) or {}).get("meta", {}).get("blind_scores") if stack_file else None},
-            "p_a": "MoE stack WITH the market line captured at prediction time as its 'market' expert (p_a_line); "
-                   "p_a_noline = the same stack without the line; debutants fall back to the line / Elo with a 1500 "
-                   "debut rating" if args.headline == "line" else "MoE stack without the market line",
+            "p_a": ("forward model v4.1 (data/predictions/README.md): p_a = models.%s, the ML v2 open stack (weights fit "
+                    "2019-2023 on opening lines) fed the multiplicative de-vig consensus line captured at prediction "
+                    "time (market.p_a_open_stack_input), whatever the capture time before the lock; if it cannot run, "
+                    "the first of %s (flag primary_fallback); no line: p_a_noline. p_a_line = the MoE stack with the "
+                    "line (fwd-1's p_a); p_a_noline = the MoE stack without it. Debutants: p_a = the line, p_a_noline = "
+                    "Elo with the debutant seeded from his pre-UFC record when a seed exists (else 1500)"
+                    % (PRIMARY, list(FALLBACK))) if args.headline == "line" else "MoE stack without the market line",
+            "primary": PRIMARY if args.headline == "line" else "stack_noline", "fallback": list(FALLBACK),
+            "models": MODEL_DEFS, "models_order": jm.get("model_keys"),
+            "ml2_static_weights": jm.get("ml2_static_weights"), "ml2_prod_weights": jm.get("ml2_prod_weights"),
+            "ratings_stack": jm.get("ratings_stack"), "seed_betas": jm.get("seed_betas"),
+            "debutant_files": jm.get("debutant_files"),
             "headline": args.headline, "code_commit": commit, "uncommitted_changes": bool(dirty),
             "roster_snapshot": jm.get("roster_snapshot"), "n_sims": 2 * args.sims, "sims_per_corner_order": args.sims,
             "engine": {k: jm.get(k) for k in ("engine_dir", "engine_version", "params_version", "engine_sha256_16",
                                                "params_sha256_16", "mlrates_js_sha256_16", "mlrates_native")},
             "inputs_sha256_16": {n: sha16(os.path.join(DERIVED, n)) for n in
                                  ("fighters.json", "moe_page.json", "ml.json", "market.json", "methodround.json",
-                                  "mlrates.json")},
+                                  "mlrates.json", "ml2.json", "forward_models.json", "ratings.json", "preufc.json",
+                                  "blindtest_stack.json")},
             "tool": TOOL},
         "odds_snapshot": {"file": os.path.relpath(snapt[1], ROOT), "snapshot_utc": iso(snapt[0])} if snapt else None,
         "probability_conventions": "p_a, p_a_line, p_a_noline, p_elo = P(a wins | not a draw); p_method sums to 1 with "
@@ -426,12 +474,15 @@ def cmd_predict(args):
 
 def print_table(doc):
     print("%s  %s  lock %s  (%d bouts)" % (doc["date"], doc["event"], doc["lock_utc"], len(doc["bouts"])))
-    print("%-48s %6s %6s %6s %6s %6s  %s" % ("bout (a vs b)", "p_a", "line", "noline", "mkt", "elo", "flags"))
+    print("%-48s %6s %6s %6s %6s %6s %6s %6s  %s" % ("bout (a vs b)", "p_a", "line", "noline", "ml2c", "ml2lr", "mkt", "elo",
+                                                    "flags"))
     for b in doc["bouts"]:
         mk = (b.get("market") or {}).get("p_a_novig")
+        m = b.get("models") or {}
         f = lambda v: "   -  " if v is None else "%6.3f" % v
-        print("%-48s %s %s %s %s %s  %s" % ((b["a"]["name"] + " vs " + b["b"]["name"])[:48], f(b["p_a"]), f(b["p_a_line"]),
-                                          f(b["p_a_noline"]), f(mk), f(b["p_elo"]), ",".join(b["flags"])))
+        print("%-48s %s %s %s %s %s %s %s  %s" % ((b["a"]["name"] + " vs " + b["b"]["name"])[:48], f(b["p_a"]),
+                                                f(b["p_a_line"]), f(b["p_a_noline"]), f(m.get("ml2_stack_close")),
+                                                f(m.get("ml2_lr")), f(mk), f(b["p_elo"]), ",".join(b["flags"])))
 
 
 # ====================================================================== results
@@ -679,6 +730,13 @@ def _ll(p, y):
     return -(y * math.log(p) + (1 - y) * math.log(1 - p))
 
 
+def _metrics(v):
+    """[(p, y)] -> n, log loss, Brier, accuracy (a 0.5 forecast counts half)."""
+    return {"n": len(v), "log_loss": sum(_ll(p, y) for p, y in v) / len(v),
+            "brier": sum((p - y) ** 2 for p, y in v) / len(v),
+            "accuracy": sum(0.5 if abs(p - 0.5) < 1e-12 else float((p > 0.5) == (y > 0.5)) for p, y in v) / len(v)}
+
+
 def boot_ci(vals, clusters, B=2000, seed=11):
     import random
     rng = random.Random(seed)
@@ -722,6 +780,7 @@ def compute_scores(files, results, B):
                     m7 = b["p_method"].get("%s_%s" % (r["winner"], k))
             rows.append({"bout_id": b["bout_id"], "event": doc["event"], "date": doc["date"], "file": os.path.basename(f),
                          "version": doc["model"]["version"], "y": y, "p": pv, "p_method_actual": m7,
+                         "m": {k: v for k, v in (b.get("models") or {}).items() if v is not None},
                          "went_distance": None if not r.get("method") else (1.0 if "Dec" in str(r["method"]) else 0.0),
                          "p_distance": b.get("p_distance"), "verified": r.get("verified", False),
                          "flags": b.get("flags", [])})
@@ -756,6 +815,23 @@ def compute_scores(files, results, B):
                                 "event_scores": block(ev), "running": block(cum)})
     for v in sorted({r["version"] for r in rows}):
         out["by_version"][v] = block([r for r in rows if r["version"] == v])
+    # models block (v4.1 files on): per model version, every model's metrics and its paired log-loss difference vs the
+    # market at prediction time and vs the close, event-cluster bootstrap (same draws per comparison)
+    out["models"] = {}
+    order = list(MODEL_DEFS)
+    for v in sorted({r["version"] for r in rows}):
+        rs = [r for r in rows if r["version"] == v and r.get("m")]
+        if not rs:
+            continue
+        mv = {}
+        for k in sorted({k for r in rs for k in r["m"]}, key=lambda k: (order.index(k) if k in order else len(order), k)):
+            o = _metrics([(r["m"][k], r["y"]) for r in rs if k in r["m"]])
+            for ref in ("market_pred", "market_close"):
+                d = [(_ll(r["m"][k], r["y"]) - _ll(r["p"][ref], r["y"]), r["date"]) for r in rs
+                     if k in r["m"] and r["p"].get(ref) is not None]
+                o["minus_" + ref] = boot_ci([a for a, _ in d], [c for _, c in d], B) if len(d) >= 2 else None
+            mv[k] = o
+        out["models"][v] = mv
     m = [r["p_method_actual"] for r in rows if r["p_method_actual"]]
     if m:
         out["method"] = {"n": len(m), "log_loss_7way": sum(-math.log(max(x, 1e-6)) for x in m) / len(m)}
@@ -797,6 +873,16 @@ def scores_md(S):
         L += ["", "By model version:", ""]
         for v, o in S["by_version"].items():
             L.append("- %s: p_a %.4f (n %d)" % (v, o["p_a"]["log_loss"], o["p_a"]["n"]))
+    ci = lambda c: "-" if not c else "%+.4f [%+.4f, %+.4f] (%d)" % (c["est"], c["lo"], c["hi"], c["n"])
+    for v, mv in (S.get("models") or {}).items():
+        L += ["", "Models block, %s (log loss; paired differences: negative = the model beats that market line; "
+              "event-cluster bootstrap):" % v, "",
+              "| model | n | log loss | Brier | accuracy | minus market at prediction [CI] (n) | minus close [CI] (n) |",
+              "|---|---|---|---|---|---|---|"]
+        for k, o in mv.items():
+            L.append("| `%s` | %d | %.4f | %.4f | %.1f%% | %s | %s |" % (k, o["n"], o["log_loss"], o["brier"],
+                                                                   100 * o["accuracy"], ci(o.get("minus_market_pred")),
+                                                                   ci(o.get("minus_market_close"))))
     return "\n".join(L) + "\n"
 
 
