@@ -1,0 +1,349 @@
+{
+ "meta": {
+  "tool": "tools/preufc_scale.js",
+  "sims": 4000,
+  "divisions": [
+   "Bantamweight",
+   "Lightweight",
+   "Middleweight"
+  ],
+  "priors": "data/derived/priors_dev.json (fights before 2024-01-01)",
+  "note": "gamma = d log OR(per-fight odds) / d log(hazard multiplier); scale = 1 / gamma (mean over divisions, formats and both directions)"
+ },
+ "rows": [
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "pow",
+   "M": 1.5232,
+   "p0": 0.1475,
+   "p1": 0.2157,
+   "gamma": 1.102
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "pow",
+   "M": 0.5008,
+   "p0": 0.1475,
+   "p1": 0.0757,
+   "gamma": 1.0805
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "sub",
+   "M": 1.5919,
+   "p0": 0.0927,
+   "p1": 0.13,
+   "gamma": 0.8163
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "sub",
+   "M": 0.183,
+   "p0": 0.0927,
+   "p1": 0.02,
+   "gamma": 0.9487
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "chin",
+   "M": 1.7314,
+   "p0": 0.1542,
+   "p1": 0.2417,
+   "gamma": 1.0175
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "chin",
+   "M": 0.7922,
+   "p0": 0.1542,
+   "p1": 0.1175,
+   "gamma": 1.3506
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "pow",
+   "M": 1.5232,
+   "p0": 0.1777,
+   "p1": 0.254,
+   "gamma": 1.0795
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "pow",
+   "M": 0.5008,
+   "p0": 0.1777,
+   "p1": 0.1013,
+   "gamma": 0.9425
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "sub",
+   "M": 1.5919,
+   "p0": 0.1067,
+   "p1": 0.1427,
+   "gamma": 0.7135
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "sub",
+   "M": 0.183,
+   "p0": 0.1067,
+   "p1": 0.0272,
+   "gamma": 0.8541
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "chin",
+   "M": 1.7314,
+   "p0": 0.1908,
+   "p1": 0.2707,
+   "gamma": 0.8276
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "chin",
+   "M": 0.7922,
+   "p0": 0.1908,
+   "p1": 0.1487,
+   "gamma": 1.2846
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 3,
+   "knob": "pow",
+   "M": 1.5232,
+   "p0": 0.1735,
+   "p1": 0.2437,
+   "gamma": 1.0189
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 3,
+   "knob": "pow",
+   "M": 0.5008,
+   "p0": 0.1735,
+   "p1": 0.0872,
+   "gamma": 1.1376
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 3,
+   "knob": "sub",
+   "M": 1.5919,
+   "p0": 0.0915,
+   "p1": 0.1247,
+   "gamma": 0.7469
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 3,
+   "knob": "sub",
+   "M": 0.183,
+   "p0": 0.0915,
+   "p1": 0.0245,
+   "gamma": 0.8177
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 3,
+   "knob": "chin",
+   "M": 1.7314,
+   "p0": 0.1623,
+   "p1": 0.262,
+   "gamma": 1.1039
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 3,
+   "knob": "chin",
+   "M": 0.7922,
+   "p0": 0.1623,
+   "p1": 0.128,
+   "gamma": 1.1897
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 5,
+   "knob": "pow",
+   "M": 1.5232,
+   "p0": 0.1973,
+   "p1": 0.2692,
+   "gamma": 0.9627
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 5,
+   "knob": "pow",
+   "M": 0.5008,
+   "p0": 0.1973,
+   "p1": 0.1168,
+   "gamma": 0.8966
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 5,
+   "knob": "sub",
+   "M": 1.5919,
+   "p0": 0.1008,
+   "p1": 0.1345,
+   "gamma": 0.7037
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 5,
+   "knob": "sub",
+   "M": 0.183,
+   "p0": 0.1008,
+   "p1": 0.0328,
+   "gamma": 0.7045
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 5,
+   "knob": "chin",
+   "M": 1.7314,
+   "p0": 0.211,
+   "p1": 0.31,
+   "gamma": 0.945
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 5,
+   "knob": "chin",
+   "M": 0.7922,
+   "p0": 0.211,
+   "p1": 0.1653,
+   "gamma": 1.2909
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 3,
+   "knob": "pow",
+   "M": 1.5232,
+   "p0": 0.1785,
+   "p1": 0.2492,
+   "gamma": 1.0074
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 3,
+   "knob": "pow",
+   "M": 0.5008,
+   "p0": 0.1785,
+   "p1": 0.0887,
+   "gamma": 1.1604
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 3,
+   "knob": "sub",
+   "M": 1.5919,
+   "p0": 0.1098,
+   "p1": 0.1495,
+   "gamma": 0.763
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 3,
+   "knob": "sub",
+   "M": 0.183,
+   "p0": 0.1098,
+   "p1": 0.0328,
+   "gamma": 0.7608
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 3,
+   "knob": "chin",
+   "M": 1.7314,
+   "p0": 0.169,
+   "p1": 0.2705,
+   "gamma": 1.0942
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 3,
+   "knob": "chin",
+   "M": 0.7922,
+   "p0": 0.169,
+   "p1": 0.1492,
+   "gamma": 0.6342
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 5,
+   "knob": "pow",
+   "M": 1.5232,
+   "p0": 0.198,
+   "p1": 0.2747,
+   "gamma": 1.0175
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 5,
+   "knob": "pow",
+   "M": 0.5008,
+   "p0": 0.198,
+   "p1": 0.1227,
+   "gamma": 0.8211
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 5,
+   "knob": "sub",
+   "M": 1.5919,
+   "p0": 0.1383,
+   "p1": 0.1825,
+   "gamma": 0.7106
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 5,
+   "knob": "sub",
+   "M": 0.183,
+   "p0": 0.1383,
+   "p1": 0.039,
+   "gamma": 0.8093
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 5,
+   "knob": "chin",
+   "M": 1.7314,
+   "p0": 0.2013,
+   "p1": 0.3135,
+   "gamma": 1.0833
+  },
+  {
+   "div": "Middleweight",
+   "rounds": 5,
+   "knob": "chin",
+   "M": 0.7922,
+   "p0": 0.2013,
+   "p1": 0.1737,
+   "gamma": 0.7759
+  }
+ ],
+ "gamma": {
+  "pow": 1.0188959230506032,
+  "sub": 0.7791001289933135,
+  "chin": 1.0497820021740933
+ },
+ "scale": {
+  "pow": 0.981,
+  "sub": 1.284,
+  "chin": 0.953
+ }
+}

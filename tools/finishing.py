@@ -385,48 +385,103 @@ def nb_strength(K, Ex):
     return float(math.exp(r.x))
 
 
-def eb_block(feats, base, v, lam_pre=0.5, m_pre=2.0, fixed_m=None):
-    """EB rate ratios for every methodround row side, from a baseline fit before v and prior strengths fit by
-    marginal likelihood on person totals before v. Returns ({rate: (n, 2) log ratio}, {rate: (n, 2) expected},
-    meta)."""
+GH_Z, GH_W = np.polynomial.hermite_e.hermegauss(24)        # nodes / weights for N(0, 1)
+GH_W = GH_W / GH_W.sum()
+PRE_IDX = {"ko_w": 1, "sub_w": 2, "dec_w": 3, "ko_l": 4, "sub_l": 5, "dec_l": 6}
+
+
+def pre_shift(feats, base, rate, v, a=4.0):
+    """Logit-scale shift of a fighter's pre-UFC rate (shrunk with a pseudo-bouts toward the pre-UFC league mean
+    of the training rows) from that mean; 0 where no pre-UFC record. (n, 2)."""
+    pre = feats["pre"]
+    if rate not in PRE_MAP:
+        return np.zeros(pre.shape[:2]), None
+    kk, nn = pre[:, :, PRE_IDX[PRE_MAP[rate][0]]], pre[:, :, 0]
+    tr = (base["T"]["year"] < v).to_numpy()[:, None] & ~np.isnan(kk)
+    mu = float(np.sum(np.where(tr, kk, 0)) / max(1.0, np.sum(np.where(tr, nn, 0))))
+    sh = logit((np.nan_to_num(kk) + a * mu) / (np.nan_to_num(nn) + a)) - logit(mu)
+    return np.where(np.isnan(kk), 0.0, sh), mu
+
+
+def eb_block(feats, base, v, use_pre=True, fixed=None):
+    """Logit-normal random-effects EB per finishing indicator. For fighter i and indicator q:
+    logit P(y_ij = 1) = logit p0_j + u_i, u_i ~ N(lam * pre_shift_i, sigma^2), with p0 the baseline logit
+    (division x era x age x format, fit on events before v). sigma and lam are fit by marginal likelihood (24-node
+    Gauss-Hermite quadrature) on every person's events dated before v; each row side then gets the posterior mean
+    and sd of u_i given his events strictly before the bout. Returns ({rate: (n, 2) post mean}, {rate: (n, 2) post
+    sd}, meta)."""
     T = base["T"]
     E = feats["E"]
     pb = fit_baselines(feats, v)
     yr = E["year"].to_numpy()
     PA, PB = feats["PA"], feats["PB"]
     n = len(T)
-    LR, EX, meta = {}, {}, {"m": {}, "mu_pre": {}}
-    pre = feats["pre"]
-    tr_rows = (T["year"] < v).to_numpy()
+    order, start = feats["order"], feats["start"]
+    npers = len(start) - 1
+    pid_ev = np.repeat(np.arange(npers), np.diff(start))            # person of each ordered event
+    U, SD, meta = {}, {}, {"sigma": {}, "lam": {}, "mu_pre": {}}
+    G = U_GRID
+    dates = T["date"].to_numpy()
     for rate, (ind, expo) in EB_RATES.items():
-        k_ev = E[ind].to_numpy(float)
-        cK, cE = person_cumsum(feats, k_ev), person_cumsum(feats, pb[rate])
-        # person totals at the cutoff (events before v) for the prior strength
-        cKv, cEv = person_cumsum(feats, k_ev * (yr < v)), person_cumsum(feats, pb[rate] * (yr < v))
-        ntot = np.diff(feats["start"])
-        Kp = np.array([cKv(p, ntot[p]) for p in range(len(ntot))])
-        Ep = np.array([cEv(p, ntot[p]) for p in range(len(ntot))])
-        m = fixed_m.get(rate) if fixed_m else None
-        m = m if m is not None else nb_strength(Kp, Ep)
-        meta["m"][rate] = round(m, 3)
-        K2 = np.zeros((n, 2))
-        E2 = np.zeros((n, 2))
+        y = E[ind].to_numpy(float)[order]
+        ex = E[expo].to_numpy(float)[order] > 0
+        z0 = logit(np.clip(pb[rate][order], 1e-4, 1 - 1e-4))
+        trv = (yr[order] < v) & ex
+        sh2, mu = pre_shift(feats, base, rate, v) if use_pre else (np.zeros((n, 2)), None)
+        meta["mu_pre"][rate] = None if mu is None else round(mu, 4)
+        # event log-likelihood on a fixed grid of u (independent of the prior), and its per-person cumsum
+        zz = z0[:, None] + G[None, :]
+        Lg = np.where(ex[:, None], y[:, None] * zz - np.logaddexp(0, zz), 0.0)
+        cs = np.vstack([np.zeros((1, len(G))), np.cumsum(Lg, 0)])
+        # hyperparameter fit: every person's events before v; prior mean lam * (pre-UFC shift at his earliest row
+        # side dated before v, else 0)
+        Sp = np.zeros((npers, len(G)))
+        np.add.at(Sp, pid_ev, Lg * trv[:, None])
+        ps = np.zeros(npers)
+        seen = np.zeros(npers, bool)
+        for i in np.argsort(dates, kind="stable"):
+            if T["year"].iat[i] >= v:
+                break
+            for s, P in ((0, PA), (1, PB)):
+                pid = P[i][0]
+                if not seen[pid] and sh2[i, s] != 0.0:
+                    ps[pid], seen[pid] = sh2[i, s], True
+        act = np.zeros(npers, bool)
+        act[np.unique(pid_ev[trv])] = True
+        Sa, psa = Sp[act], ps[act]
+        mx = Sa.max(1, keepdims=True)
+        ES = np.exp(Sa - mx)
+
+        def nll(th):
+            sigma, lam = math.exp(th[0]), th[1]
+            pr = np.exp(-0.5 * ((G[None, :] - lam * psa[:, None]) / sigma) ** 2)
+            pr /= pr.sum(1, keepdims=True)
+            return -float(np.sum(mx[:, 0] + np.log(np.maximum((ES * pr).sum(1), 1e-300))))
+        if fixed and rate in fixed:
+            sigma, lam = fixed[rate]
+        elif use_pre and rate in PRE_MAP:
+            r = minimize(nll, [math.log(0.3), 0.3], method="Nelder-Mead",
+                         options={"xatol": 1e-3, "fatol": 1e-3, "maxiter": 300})
+            sigma, lam = math.exp(r.x[0]), float(r.x[1])
+        else:
+            r = minimize_scalar(lambda t: nll([t, 0.0]), bounds=(math.log(0.01), math.log(2.0)), method="bounded")
+            sigma, lam = math.exp(r.x), 0.0
+        meta["sigma"][rate], meta["lam"][rate] = round(sigma, 4), round(lam, 4)
+        um = np.zeros((n, 2))
+        us = np.zeros((n, 2))
         for s, P in ((0, PA), (1, PB)):
-            K2[:, s] = [cK(pid, k) for pid, k in P]
-            E2[:, s] = [cE(pid, k) for pid, k in P]
-        rho0 = np.ones((n, 2))
-        if rate in PRE_MAP and lam_pre:
-            kc, nc = PRE_MAP[rate]
-            ki, ni = 1 + ["ko_w", "sub_w", "dec_w", "ko_l", "sub_l", "dec_l"].index(kc), 0
-            kk, nn = pre[:, :, ki], pre[:, :, ni]
-            okp = ~np.isnan(kk) & tr_rows[:, None]
-            mu = float(np.nansum(np.where(okp, kk, 0)) / max(1.0, np.nansum(np.where(okp, nn, 0))))
-            meta["mu_pre"][rate] = round(mu, 4)
-            rp = (np.nan_to_num(kk) + m_pre) / (np.nan_to_num(nn) * mu + m_pre)
-            rho0 = np.where(np.isnan(kk), 1.0, rp ** lam_pre)
-        LR[rate] = np.log((K2 + m * rho0) / (E2 + m))
-        EX[rate] = E2
-    return LR, EX, meta
+            pid, k = P[:, 0], P[:, 1]
+            S = cs[start[pid] + k] - cs[start[pid]]
+            lp = S - 0.5 * ((G[None, :] - lam * sh2[:, s][:, None]) / sigma) ** 2      # the row side's own snapshot
+            w = np.exp(lp - lp.max(1, keepdims=True))
+            w /= w.sum(1, keepdims=True)
+            um[:, s] = (w * G[None, :]).sum(1)
+            us[:, s] = np.sqrt(np.maximum((w * G[None, :] ** 2).sum(1) - um[:, s] ** 2, 0.0))
+        U[rate], SD[rate] = um, us
+    return U, SD, meta
+
+
+U_GRID = np.linspace(-4.0, 4.0, 81)
 
 
 # ====================================================================== (b) online opponent-adjusted finishing filter

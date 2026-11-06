@@ -808,8 +808,9 @@ def _of(s):
 
 
 def _int(s):
-    s = (s or "").strip()
-    return int(s) if s.isdigit() else None
+    """A count as the Greco CSV writes it: "2" or, in most rows, "2.0"; anything else -> None."""
+    m = re.match(r"^\s*(\d+)(?:\.0+)?\s*$", s or "")
+    return int(m.group(1)) if m else None
 
 
 def _mmss(s):

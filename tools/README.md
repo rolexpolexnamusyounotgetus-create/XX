@@ -295,6 +295,20 @@ nice -n 5 python3 tools/forward_models.py export   # data/derived/forward_models
 node tests/test_forward_models.js                  # weights vs Python, ratings vs ratings.json, corner symmetry, debut seeds
 ```
 
+Forward model v4.2 (README "Forward model v4.2", events dated 2026-11-14 on; `--fwd auto` picks the version by event
+date and refuses to write under any other): winner unchanged; a bout with a debutant takes its method from the debut
+method model (`data/derived/debut.json`, fed `p_a`) with the division base rates as a scored secondary;
+`models.debut_model` is monitored; every bout gets a `statlines` block from `tools/forward_statlines.js` (StatDist
+"prod" tables mixed over the primary method cells' fight-length grid). It runs the frozen engine in `versions/v4` and
+refuses to write when a pinned input's hash differs. `score` adds the debut-method comparison and scores the stat lines
+against ufcstats per-fight totals (Greco1899 `ufc_fight_stats.csv`, appended to `statlines_results.json`).
+
+```
+python3 tools/forward_ledger.py predict --event 2026-11-14 --fwd 4.2 --dry-run --sims 5000
+node tests/test_forward_v42.js          # fwd-4.1 byte identity (golden), corner symmetry, cells, debut bouts, guards
+python3 tests/test_forward_score42.py   # Greco stat parse, match rules, debut-method and stat-line scoring
+```
+
 
 ## ml2.py: ML v2 feature union (winner model, stacks, method/round refit)
 
