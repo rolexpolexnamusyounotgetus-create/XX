@@ -22,7 +22,10 @@
    Step 2: components.durability (applyDurability) and components.dynamics (dynTables). Step 3: components.styles_sos
    (src/styles_sos.js through the public matchup wrapper at the end; strength of schedule on, active only with opts.sos),
    components.officials (officialsFor / officialsRound; off, opt-in per call) and components.realism_sens
-   (realismFactors; off) with FightEngine.sensitivity / rateSd (tornado data, common random numbers).
+   (realismFactors; off) with FightEngine.sensitivity / rateSd (tornado data, common random numbers). Step 4: the learned
+   stat-line path and newcomer priors: components.embed (embedTargets: the embedding blend of the learned targets),
+   components.oppadj (oppadjTargets: opponent adjustment of the learned targets; off, exclusive with styles_sos sos) and
+   components.preufc (applyPreUFC: pre-UFC finish-odds priors for fighters with 0-3 UFC fights).
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
@@ -78,6 +81,10 @@
   function getML() { return MLR0 || (root && root.MLRates) || null; }
   var SS0 = null; if (typeof require === "function") { try { SS0 = require("./styles_sos.js"); } catch (e) { SS0 = null; } }  // [styles_sos]
   function getSS() { return SS0 || (root && root.StylesSOS) || null; }  // [styles_sos]
+  // v5 merge step 4 (components.embed): the embedding evaluator, needed only to compute task predictors from a loaded roster
+  // (loadEmbed); backtests pass precomputed predictors in opts.embed
+  var EMB0 = null; if (typeof require === "function") { try { EMB0 = require("./ml/embed.js"); } catch (e) { EMB0 = null; } }
+  function getEmbMod() { return EMB0 || (root && root.FightEmbed) || null; }
 
   function mergeParams(base, over) {
     var out = {}, k, k2;
@@ -775,6 +782,9 @@
     if (!pred) return m;
     var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
     if (!(w > 0)) return m;
+    // v5 merge step 4: the learned targets are rewritten before the adapter re-targets the tables: the embedding blend
+    // (components.embed). Off: pred is untouched and the adapter gets exactly the step-3 inputs.
+    if (compOn(m.p, "embed")) pred = embedTargets(m, pa, pb, opts, pred);
     var fl = v401Flags(m.p), mo = { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
       parts: opts.mlParts || undefined };
     // v5 step 1 (components.v401): (c) learned-path levels on the takedown-attempt / control / sub-attempt targets;

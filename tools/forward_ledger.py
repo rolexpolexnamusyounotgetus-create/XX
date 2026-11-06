@@ -639,6 +639,89 @@ def cmd_predict(args):
     print("wrote %s (read-only; commit and push it before %s)" % (os.path.relpath(target, ROOT), iso(lock)))
 
 
+def run_statlines(date, bouts_in, out_bouts, engine_dir):
+    """tools/forward_statlines.js on every bout's primary method cells by round (fwd-4.2 stat-line block)."""
+    jb = []
+    for bi, ob in zip(bouts_in, out_bouts):
+        jb.append({"bout_id": bi["bout_id"], "a": bi["a"], "b": bi["b"], "key_a": bi["key_a"], "key_b": bi["key_b"],
+                   "division": bi["division"], "rounds": bi["rounds"], "title": bi["title"], "S": ob["_cells"]})
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+        json.dump({"date": date, "bouts": jb}, fh)
+        tmp = fh.name
+    try:
+        res = subprocess.run(["node", os.path.join(HERE, "forward_statlines.js"), tmp, "--engine-dir", engine_dir],
+                             capture_output=True, text=True, cwd=ROOT, check=True)
+    finally:
+        os.unlink(tmp)
+    J = json.loads(res.stdout)
+    by = {}
+    for x in J["bouts"]:
+        bid = x.pop("bout_id")
+        by[bid] = x
+    return {"meta": J["meta"], "bouts": by}
+
+
+def apply_model_42(doc, jm, slm, args, mism):
+    """The model block of a fwd-4.2 file (README "Forward model v4.2"): fwd-4.1's block plus what v4.2 adds."""
+    M = doc["model"]
+    M["version"] = ("%s: primary %s (ML v2 %s, fit-2019-2023 stacks %s); debut method debut.json %s; stat lines "
+                    "statlines.json %s (prod); MoE stack %s (%s); engine %s / params %s (%s); methodround S/SM; ML page "
+                    "model %s" % (
+                        MODEL_VERSION_42, PRIMARY, jm.get("ml2_built"), jm.get("forward_models_sha256_16"),
+                        (jm.get("debut_model") or {}).get("sha256_16"), slm.get("statlines_sha256_16"),
+                        os.path.basename(jm.get("stack_source") or ""), jm.get("stack_built"), jm.get("engine_version"),
+                        jm.get("params_version"), jm.get("engine_dir"), jm.get("ml_page_snapshot")))
+    M["p_a"] = M["p_a"].replace("forward model v4.1", "forward model v4.2 (winner rules unchanged from v4.1)", 1)
+    M["models"] = MODEL_DEFS_42
+    M["p_method"] = (
+        "bouts without a debutant: as fwd-4.1 (method-and-round model scaled to p_a). Bouts with a debutant: the debut "
+        "method model (data/derived/debut.json, src/ml/debut.js method()) fed pW = p_a (the line, power de-vig, else "
+        "the seeded Elo): a_m = p_a (1 - dr) P(m | a wins), b_m = (1 - p_a)(1 - dr) P(m | b wins), draw = dr (division "
+        "base-rate draw share); p_distance = a_dec + b_dec + draw; p_finish_round splits the KO and SUB cells by the "
+        "division base-rate round profile; p_method_secondary.division_base_rates = fwd-4.1's cells (scored secondary)")
+    M["statlines"] = {
+        "definition": "per fighter, sig_lnd / sig_att / td_lnd / td_att / ctrl (s) / kd / sub_att: mean, p10, p50, p90 "
+                      "(smallest integer y with mixture CDF >= q) of src/ml/statdist.js prod tables mixed over "
+                      "StatDist.lengthGrid of the bout's primary method cells by round; blend_mean = the mlrates + "
+                      "embedding blend rate x expected minutes (comparator)",
+        "stats": list(STAT_KEYS), "evaluator": slm}
+    M["debut_model"] = jm.get("debut_model")
+    M["preregistration"] = {"readme_section": "data/predictions/README.md, Forward model v4.2 (Nov 6-7, 2026)",
+                            "pinned_inputs": FWD42_PINNED, "pinned_inputs_ok": not mism, "pinned_mismatches": mism or None}
+    M["inputs_sha256_16"] = dict(M["inputs_sha256_16"], **{n: sha16(os.path.join(DERIVED, n)) for n in
+                                                            ("debut.json", "statlines.json", "embed_model.json", "oppadj.json")})
+    M["code_sha256_16"] = {p: sha16(os.path.join(ROOT, p)) for p in FWD42_CODE}
+    M["fwd"] = "4.2"
+    M["tool"] = TOOL_42
+
+
+def print_table_42(doc):
+    """fwd-4.2 additions: debut bouts' method vs the base-rate secondary, and the stat-line blocks."""
+    cl = ("a_ko", "a_sub", "a_dec", "draw", "b_dec", "b_sub", "b_ko")
+    for b in doc["bouts"]:
+        sec = (b.get("p_method_secondary") or {}).get("division_base_rates")
+        if not sec:
+            continue
+        print("\ndebut bout %s vs %s (p_a %.4f, %s): p_method (%s)" % (b["a"]["name"], b["b"]["name"], b["p_a"],
+                                                                     b["debut_method"]["p_w_source"], " ".join(cl)))
+        print("  debut method model  " + " ".join("%6.3f" % b["p_method"][k] for k in cl) + "   p_distance %.3f" % b["p_distance"])
+        print("  division base rates " + " ".join("%6.3f" % sec["p_method"][k] for k in cl) + "   p_distance %.3f" % sec["p_distance"])
+        dm = b["debut_method"]
+        print("  P(KO/SUB/DEC | a wins) %s, | b wins %s; debut_model P(a) %s" % (
+            "/".join("%.3f" % v for v in dm["given_a"]), "/".join("%.3f" % v for v in dm["given_b"]),
+            "%.4f" % b["models"]["debut_model"] if b["models"].get("debut_model") is not None else "-"))
+    print("\nstat lines (P10 / P50 / P90 (mean)); length: P(distance), expected minutes")
+    for b in doc["bouts"]:
+        s = b.get("statlines")
+        if not s:
+            continue
+        print("%s vs %s  [P(dist) %.3f, %.1f min]" % (b["a"]["name"], b["b"]["name"], s["length"]["p_distance"],
+                                                     s["length"]["mean_minutes"]))
+        for side in ("a", "b"):
+            print("  %-22s " % b[side]["name"][:22] + "  ".join("%s %d/%d/%d (%.1f)" % (k, v["p10"], v["p50"], v["p90"], v["mean"])
+                                                             for k, v in s[side].items()))
+
+
 def print_table(doc):
     print("%s  %s  lock %s  (%d bouts)" % (doc["date"], doc["event"], doc["lock_utc"], len(doc["bouts"])))
     print("%-48s %6s %6s %6s %6s %6s %6s %6s  %s" % ("bout (a vs b)", "p_a", "line", "noline", "ml2c", "ml2lr", "mkt", "elo",
@@ -716,6 +799,105 @@ def greco_results(events, stamp_dir):
             "outcome": row["OUTCOME"].strip(), "method": row["METHOD"].strip(), "round": row["ROUND"].strip(),
             "time": row["TIME"].strip(), "details": row["DETAILS"].strip(), "url": row["URL"].strip(), "event": ev}
     return out, sorted(names)
+
+
+def _of(s):
+    """ufcstats "x of y" -> (x, y); anything else -> (None, None)."""
+    m = re.match(r"^\s*(\d+)\s+of\s+(\d+)\s*$", s or "")
+    return (int(m.group(1)), int(m.group(2))) if m else (None, None)
+
+
+def _int(s):
+    s = (s or "").strip()
+    return int(s) if s.isdigit() else None
+
+
+def _mmss(s):
+    m = re.match(r"^\s*(\d+):(\d\d)\s*$", s or "")
+    return 60 * int(m.group(1)) + int(m.group(2)) if m else None
+
+
+def stat_row(row):
+    """One ufcstats per-round row (Greco1899 ufc_fight_stats.csv) -> the fwd-4.2 stat-line stats."""
+    sl, sa = _of(row.get("SIG.STR."))
+    tl, ta = _of(row.get("TD"))
+    return {"sig_lnd": sl, "sig_att": sa, "td_lnd": tl, "td_att": ta, "ctrl": _mmss(row.get("CTRL")),
+            "kd": _int(row.get("KD")), "sub_att": _int(row.get("SUB.ATT"))}
+
+
+def parse_greco_stats(event_details_text, fight_stats_text, dates):
+    """ufcstats per-round stat rows for events on the given dates: {(date, norm a, norm b): {"event", "fighters":
+    {norm fighter: {round: stats}}}}. A round already seen for a fighter is kept (an event listed twice counts once)."""
+    names = {}
+    for row in csv.DictReader(io.StringIO(event_details_text)):
+        try:
+            d = dt.datetime.strptime(row["DATE"].strip(), "%B %d, %Y").date().isoformat()
+        except Exception:
+            continue
+        if d in dates:
+            names[row["EVENT"].strip()] = d
+    out = {}
+    if not names:
+        return out
+    for row in csv.DictReader(io.StringIO(fight_stats_text)):
+        ev = (row.get("EVENT") or "").strip()
+        if ev not in names:
+            continue
+        parts = re.split(r"\s+vs\.?\s+", (row.get("BOUT") or "").strip())
+        m = re.match(r"^Round (\d+)$", (row.get("ROUND") or "").strip())
+        if len(parts) != 2 or not m:
+            continue
+        rec = out.setdefault((names[ev], norm_name(parts[0]), norm_name(parts[1])), {"event": ev, "fighters": {}})
+        fr = rec["fighters"].setdefault(norm_name(row.get("FIGHTER")), {})
+        fr.setdefault(int(m.group(1)), stat_row(row))
+    return out
+
+
+def greco_stats(dates, stamp_dir):
+    """Fetch (or reuse this run's copies of) ufc_event_details.csv and ufc_fight_stats.csv; parse for the dates."""
+    os.makedirs(stamp_dir, exist_ok=True)
+    texts = []
+    for name in ("ufc_event_details.csv", "ufc_fight_stats.csv"):
+        p = os.path.join(stamp_dir, name)
+        data = open(p, "rb").read() if os.path.exists(p) else fetch(GRECO + name, p)
+        texts.append(data.decode("utf-8", "replace"))
+    return parse_greco_stats(texts[0], texts[1], set(dates))
+
+
+def match_stats(doc, GS, have, results):
+    """Stat totals for one ledger file's stat-line bouts: only bouts with a verified win / draw result in results.json,
+    and only when both fighters' rows cover every round through the result's round (README "Forward model v4.2")."""
+    out = []
+    res = {r["bout_id"]: r for r in results}
+    gk = {(a, b): v for (d, a, b), v in GS.items() if d == doc["date"]}
+    gnames_ = {x for k in gk for x in k}
+    for b in doc["bouts"]:
+        r = res.get(b["bout_id"])
+        if (not b.get("statlines") or b["bout_id"] in have or not r or not r.get("verified") or r.get("conflict")
+                or r.get("outcome") not in ("win", "draw") or not isinstance(r.get("round"), int)):
+            continue
+        sl = lambda side: " ".join((b[side].get("slug") or "").split("-"))
+        nm2 = lambda n, side, cands: name_match(n, cands) or (name_match(sl(side), cands) if sl(side) else None)
+        na, nb = norm_name(b["a"]["name"]), norm_name(b["b"]["name"])
+        ga, gb = nm2(na, "a", gnames_), nm2(nb, "b", gnames_)
+        g = (gk.get((ga, gb)) or gk.get((gb, ga))) if ga and gb else None
+        if not g:
+            continue
+        fa, fb = nm2(na, "a", set(g["fighters"])), nm2(nb, "b", set(g["fighters"]))
+        if not fa or not fb or fa == fb:
+            continue
+        rounds = list(range(1, r["round"] + 1))
+        if any(k not in g["fighters"][f] for f in (fa, fb) for k in rounds):
+            continue
+        tot = {}
+        for side, f in (("a", fa), ("b", fb)):
+            rows = [g["fighters"][f][k] for k in rounds]
+            tot[side] = {s: (None if any(x[s] is None for x in rows) else sum(x[s] for x in rows)) for s in STAT_KEYS}
+            tot[side]["ufcstats_name"] = f
+        out.append({"bout_id": b["bout_id"], "a": tot["a"], "b": tot["b"], "rounds": r["round"], "event": g["event"],
+                    "source": "ufcstats per-round rows (Greco1899 ufc_fight_stats.csv), summed through the result's "
+                              "round", "recorded_utc": iso(now_utc())})
+    return out
 
 
 def espn_results(dates, stamp_dir):
@@ -871,7 +1053,35 @@ def cmd_score(args):
             fh.write("\n")
         os.replace(tmp, rpath)
         print("results.json: +%d results (append-only)" % len(new))
-    S = compute_scores(files, R["results"], args.boot)
+    # fwd-4.2 stat lines: ufcstats per-fight totals for bouts with a verified win / draw (append-only file)
+    spath = os.path.join(args.dir, "statlines_results.json")
+    SR = jload(spath, {"results": []})
+    have_s = {x["bout_id"] for x in SR["results"]}
+    res_by = {x["bout_id"]: x for x in R["results"]}
+    want_s = [(f, doc) for f, _, doc, _ in files
+              if any(b.get("statlines") and b["bout_id"] not in have_s and (res_by.get(b["bout_id"]) or {}).get("verified")
+                     for b in doc["bouts"])]
+    new_s = []
+    if want_s and not args.no_fetch:
+        stamp_dir = os.path.join(FETCH_DIR, now_utc().strftime("%Y%m%d-%H%M"))
+        try:
+            GS = greco_stats(sorted({doc["date"] for _, doc in want_s}), stamp_dir)
+        except Exception as ex:
+            print("ufcstats stats (Greco1899 CSV) fetch failed: %r" % ex)
+            GS = {}
+        for _, doc in want_s:
+            for rec in match_stats(doc, GS, have_s, R["results"]):
+                new_s.append(rec)
+                have_s.add(rec["bout_id"])
+    if new_s:
+        SR["results"].extend(new_s)
+        tmp = spath + ".tmp"
+        with open(tmp, "w") as fh:
+            json.dump(SR, fh, indent=1)
+            fh.write("\n")
+        os.replace(tmp, spath)
+        print("statlines_results.json: +%d stat records (append-only)" % len(new_s))
+    S = compute_scores(files, R["results"], args.boot, SR["results"])
     with open(os.path.join(args.dir, "scores.json"), "w") as fh:
         json.dump(S, fh, indent=1)
         fh.write("\n")
@@ -943,14 +1153,86 @@ def boot_ci(vals, clusters, B=2000, seed=11):
             "n": len(vals), "n_events": len(set(clusters))}
 
 
-def compute_scores(files, results, B):
+def pois_dev(y, mu):
+    """Poisson deviance of a mean (research/model_statlines.md): 2 [y ln(y / mu) - (y - mu)]."""
+    mu = max(mu, 1e-10)
+    return 2 * ((y * math.log(y / mu) if y > 0 else 0.0) - (y - mu))
+
+
+def method_probs(pm, winner, k):
+    """7-way cell, method given the winner, marginal KO / SUB / DEC of the actual outcome."""
+    p7 = pm.get("%s_%s" % (winner, k))
+    ws = sum(pm["%s_%s" % (winner, x)] for x in ("ko", "sub", "dec"))
+    m3 = (pm["a_" + k] + pm["b_" + k]) / max(1 - pm.get("draw", 0.0), 1e-12)
+    return p7, p7 / max(ws, 1e-12), m3
+
+
+def score_method_debut(rows, B):
+    """fwd-4.2: debut method (primary) vs division base rates (secondary) on bouts with a debutant, per version."""
+    out = {}
+    nl = lambda x: -math.log(max(x, 1e-6))
+    for v in sorted({r["version"] for r in rows}):
+        rs = [r for r in rows if r["version"] == v]
+        o = {"n": len(rs), "n_events": len({r["date"] for r in rs}), "primary": {}, "base_rates": {}, "paired": {}}
+        cl = [r["date"] for r in rs]
+        for j, name in enumerate(("log_loss_7way", "log_loss_given_winner", "log_loss_method3")):
+            a = [nl(r["prim"][j]) for r in rs]
+            c = [nl(r["sec"][j]) for r in rs]
+            o["primary"][name], o["base_rates"][name] = sum(a) / len(a), sum(c) / len(c)
+            o["paired"][name] = boot_ci([x - y for x, y in zip(a, c)], cl, B) if len(rs) >= 2 else None
+        a = [(r["dist"][0] - r["dist"][2]) ** 2 for r in rs]
+        c = [(r["dist"][1] - r["dist"][2]) ** 2 for r in rs]
+        o["primary"]["distance_brier"], o["base_rates"]["distance_brier"] = sum(a) / len(a), sum(c) / len(c)
+        o["paired"]["distance_brier"] = boot_ci([x - y for x, y in zip(a, c)], cl, B) if len(rs) >= 2 else None
+        out[v] = o
+    return out
+
+
+def score_statlines(rows, B):
+    """fwd-4.2 stat lines vs ufcstats totals, per version and stat (fight-sides)."""
+    out = {}
+    for v in sorted({r["version"] for r in rows}):
+        mv = {}
+        for st in STAT_KEYS:
+            rs = [r for r in rows if r["version"] == v and r["stat"] == st]
+            if not rs:
+                continue
+            dm = [pois_dev(r["y"], r["mean"]) for r in rs]
+            db = [pois_dev(r["y"], r["blend_mean"]) for r in rs]
+            n = len(rs)
+            mv[st] = {"n": n, "n_bouts": len({r["bout_id"] for r in rs}), "deviance_mean": sum(dm) / n,
+                      "deviance_blend_mean": sum(db) / n,
+                      "deviance_minus_blend": boot_ci([x - y for x, y in zip(dm, db)], [r["date"] for r in rs], B)
+                      if n >= 2 else None,
+                      "coverage_p10_p90": sum(1 for r in rs if r["p10"] <= r["y"] <= r["p90"]) / n,
+                      "above_p90": sum(1 for r in rs if r["y"] > r["p90"]) / n,
+                      "below_p10": sum(1 for r in rs if r["y"] < r["p10"]) / n,
+                      "mae_p50": sum(abs(r["y"] - r["p50"]) for r in rs) / n}
+        out[v] = mv
+    return out
+
+
+def compute_scores(files, results, B, stats=None):
     res = {r["bout_id"]: r for r in results}
-    rows, void = [], []
+    srec = {x["bout_id"]: x for x in (stats or [])}
+    rows, void, mrows, srows = [], [], [], []
     for f, created, doc, ct in files:
         for b in doc["bouts"]:
             r = res.get(b["bout_id"])
             if not r:
                 continue
+            # fwd-4.2 stat lines: verified win / draw results with ufcstats totals (README "Forward model v4.2")
+            sx = srec.get(b["bout_id"])
+            if (b.get("statlines") and sx and r.get("verified") and not r.get("conflict")
+                    and r.get("outcome") in ("win", "draw")):
+                for side in ("a", "b"):
+                    for st in STAT_KEYS:
+                        y, fc = (sx.get(side) or {}).get(st), (b["statlines"].get(side) or {}).get(st)
+                        if y is None or not fc:
+                            continue
+                        srows.append({"version": doc["model"]["version"], "date": doc["date"], "bout_id": b["bout_id"],
+                                      "side": side, "stat": st, "y": float(y), "mean": fc["mean"],
+                                      "blend_mean": fc["blend_mean"], "p10": fc["p10"], "p50": fc["p50"], "p90": fc["p90"]})
             if r.get("outcome") != "win" or r.get("winner") not in ("a", "b") or r.get("conflict"):
                 void.append({"bout_id": b["bout_id"], "outcome": r.get("outcome")})
                 continue
@@ -1098,7 +1380,11 @@ def main():
     p.add_argument("--odds", default=None, help="odds snapshot stamp (default: the newest before the lock)")
     p.add_argument("--odds-dir", default=None)
     p.add_argument("--sims", type=int, default=2000, help="engine sims per corner order (default 2000)")
-    p.add_argument("--engine-dir", default="src")
+    p.add_argument("--engine-dir", default=None,
+                   help="engine folder (default: src for fwd-4.1; fwd-4.2 is pinned to versions/v4)")
+    p.add_argument("--fwd", choices=["auto", "4.1", "4.2"], default="auto",
+                   help="forward model version; auto = the one data/predictions/README.md assigns to the event date "
+                        "(fwd-4.2 from 2026-11-14, fwd-4.1 before); writing under another version is refused")
     p.add_argument("--headline", choices=["line", "noline"], default="line")
     p.add_argument("--stack", choices=["auto", "blindtest", "page"], default="auto",
                    help="MoE weights: blindtest = data/derived/blindtest_stack.json (refit with the current engine, blind-"
