@@ -1054,6 +1054,8 @@ def main():
                                                                  "or after this date (2021-01-01)")
     ap.add_argument("--priors-window", type=int, default=5,
                     help="years of fights before Jan 1 of each backtest year used for backtest.json priors_asof (5)")
+    ap.add_argument("--include-vault", action="store_true",
+                    help="keep sealed vault fights (>= VAULT_FROM, default 2026-01-01) in backtest.json; audits only")
     ap.add_argument("--priors-until", default=None,
                     help="live league priors (priors.json / fighters.json priors) use only fights dated before this "
                          "ISO date. Default: every fight up to the snapshot (production). Tuning and dev evaluation "
@@ -1165,8 +1167,21 @@ def main():
         "priors": priors})
     if args.priors_out and os.path.abspath(args.priors_out) != os.path.abspath(os.path.join(OUT, "priors.json")):
         write_priors_file(args.priors_out, priors, snap, built, until)
+    # Hidden-data protocol (docs/BACKLOG.md): fights on or after VAULT_FROM are sealed. They go only to the
+    # vault file outside the repository; backtest.json and backtest_dev.json hold the development years.
+    vault_from = os.environ.get("VAULT_FROM", "2026-01-01")
+    vault_dir = os.environ.get("VAULT_DIR", "/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault")
+    vault_entries = [e for e in entries if e["date"] >= vault_from]
+    if not getattr(args, "include_vault", False):
+        entries = [e for e in entries if e["date"] < vault_from]
     n_dec = sum(1 for e in entries if e["result"]["winner"] in ("A", "B"))
     a_rate = sum(1 for e in entries if e["result"]["winner"] == "A") / max(n_dec, 1)
+    if vault_entries:
+        os.makedirs(vault_dir, exist_ok=True)
+        write_json(os.path.join(vault_dir, "backtest_vault.json"),
+                   {"meta": {"vault_from": vault_from, "n": len(vault_entries), "keys": KEYS, "built": built,
+                             "note": "sealed: open only for the milestone vault audits"},
+                    "priors_asof": priors_asof, "fights": vault_entries})
     size_b = write_json(os.path.join(OUT, "backtest.json"), {
         "meta": {"source": SOURCE, "snapshot": snap.isoformat(), "built": built, "half_life_days": args.half_life,
                  "from": BACKTEST_FROM.isoformat(), "n": len(entries), "keys": KEYS,
@@ -1188,6 +1203,9 @@ def main():
                            % args.priors_window},
         "priors_asof": priors_asof,
         "fights": entries})
+    write_json(os.path.join(OUT, "backtest_dev.json"), {"meta": {"source": SOURCE, "dev_until": vault_from,
+               "n": len(entries), "keys": KEYS, "built": built, "note": "same as backtest.json (vault excluded)"},
+               "priors_asof": priors_asof, "fights": entries})
     elo_report["built"] = built
     elo_report["snapshot"] = snap.isoformat()
     size_e = write_json(os.path.join(OUT, "elo_report.json"), elo_report)
