@@ -696,12 +696,14 @@ def render_log(r, J):
     conf = ["%s/%s" % (k, c["term"]) for k, v in ns.items() for c in v["candidates"] if c["verdict"] == "confirmed"]
     fails = ["%s/%s" % (k, c["term"]) for k, v in ns.items() for c in v["candidates"] if c["verdict"] == "fails"]
     A("- **A stricter split confirms fewer single terms.** Screening on 2019-2021 and confirming on 2022-2023 "
-      "(about 700 fights) confirms only %s; %s go the wrong way in 2022-2023 although most then hold on 2024+. "
-      "Single-term evidence is year-to-year noisy, and the block-level tune CV is the steadier guide."
+      "(about 700 fights) confirms only %s; %s do not confirm there (deviance change >= 0 or the 2022-2023 refit "
+      "flips sign), although several of them hold on 2024+. Single-term evidence is noisy from year to year; the "
+      "block-level tune CV, which pools five years, is the steadier guide."
       % (", ".join(conf) or "none", ", ".join(fails) or "none"))
     py = r["per_year"]
     A("- **Per-year forward chaining** (fit on all earlier years from 2019, score the next year; deviance change, "
-      "negative = better): " + "; ".join("%s %s" % (k, " ".join("%s:%+.0f" % (y[2:], v[y]) for y in sorted(v)))
+      "negative = better): " + "; ".join("%s %s (better in %d of 6)" % (k, " ".join("%s:%+.0f" % (y[2:], v[y]) for y in sorted(v)),
+                                                                        sum(1 for y in v if v[y] < 0))
                                          for k, v in py.items()) + ".")
     tt = r["transmission"]
     A("- **Winner-level transmission is still not significant.** Clean default-on modifiers through the "
