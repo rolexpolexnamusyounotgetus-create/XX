@@ -225,7 +225,8 @@ console.log("\n=== 4. structure ===");
   ok(near(lay2.kd[0] / y30.kd[0], 0.64, 1e-9), "withdrawn layoff knob works when set (x0.64 at 730+ days)");
   // trace format unchanged
   const fOff = E.simulate(p0, E.makeRng(5), true), fOn = E.simulate(wh, E.makeRng(5), true);
-  const shape = (f) => JSON.stringify([Object.keys(f).sort(), Object.keys(f.rounds[0]).sort(), Object.keys(f.rounds[0].st).sort(), Object.keys(f.totals.A).sort()]);
+  // nDed (components.v401 deductions, v5 merge step 1) is set on fights that reach the cards only, so it is left out here
+  const shape = (f) => JSON.stringify([Object.keys(f).filter((k) => k !== "nDed").sort(), Object.keys(f.rounds[0]).sort(), Object.keys(f.rounds[0].st).sort(), Object.keys(f.totals.A).sort()]);
   ok(shape(fOff) === shape(fOn), "trace format unchanged (fight, round, stats keys)");
   // summary sanity
   const s = E.summarize(wh, 4000, 11);
