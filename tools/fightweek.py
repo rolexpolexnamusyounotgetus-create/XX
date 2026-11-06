@@ -582,6 +582,301 @@ def cmd_fetch_geo(args):
     log("failed venues:", bad, "requests:", fx.n)
 
 
+# ------------------------------------------------------------------ people and nationality
+def load_people_fights():
+    import build_db as B
+    lg = {}
+    fights, _ = B.parse_fights(lg)
+    people = B.build_people(fights, lg)
+    return fights, people
+
+
+def load_wikidata():
+    import csv
+    items = {}
+    for r in csv.DictReader(open(os.path.join(RAW, "wikidata_mma_people.csv"), encoding="utf-8")):
+        it = items.setdefault(r["item"], {"names": set(), "ufc": set(), "sherdog": set(), "cc": Counter(),
+                                          "bc": Counter(), "sc": Counter(), "dob": set(), "label": r["name"]})
+        if r["name"]:
+            it["names"].add(norm(r["name"]))
+        for k in ("ufc", "sherdog"):
+            if r[k]:
+                it[k].add(r[k].strip())
+        for k in ("cc", "bc", "sc"):
+            if r[k]:
+                it[k][r[k]] += 1
+        if r["dob"]:
+            it["dob"].add(r["dob"][:10])
+    p = os.path.join(RAW, "wikidata_mma_altlabels.csv")
+    if os.path.exists(p):
+        for r in csv.DictReader(open(p, encoding="utf-8")):
+            if r["item"] in items and r["alt"]:
+                items[r["item"]]["names"].add(norm(r["alt"]))
+    return items
+
+
+def match_wikidata(people, pids, items, sd_href=None):
+    """person id -> (wikidata item, how). Strong keys first (Sherdog id, UFC slug), then name + DOB."""
+    by_sd, by_ufc, by_name, by_dob = defaultdict(set), defaultdict(set), defaultdict(set), defaultdict(set)
+    for q, it in items.items():
+        for s in it["sherdog"]:
+            by_sd[s].add(q)
+        for u in it["ufc"]:
+            by_ufc[u.lower()].add(q)
+        for n in it["names"]:
+            by_name[n].add(q)
+        for d in it["dob"]:
+            by_dob[d].add(q)
+    out = {}
+    for pid in pids:
+        P = people[pid]
+        dob = (P.get("tott") or {}).get("dob")
+        dob = dob.isoformat() if dob else None
+
+        def dob_ok(q):
+            ds = items[q]["dob"]
+            if not dob or not ds:
+                return True
+            return any(abs((dt.date.fromisoformat(d) - dt.date.fromisoformat(dob)).days) <= 1 for d in ds
+                       if re.match(r"\d{4}-\d\d-\d\d$", d))
+        sdid = None
+        if sd_href and sd_href.get(pid):
+            m = re.search(r"-(\d+)$", sd_href[pid])
+            sdid = m.group(1) if m else None
+        cands, how = set(), None
+        if sdid and by_sd.get(sdid):
+            cands, how = set(by_sd[sdid]), "sherdog id"
+        if not cands and by_ufc.get(P["slug"]):
+            cands, how = {q for q in by_ufc[P["slug"]] if dob_ok(q)}, "ufc slug"
+        if not cands:
+            c = {q for q in by_name.get(norm(P["name"]), set()) if dob_ok(q)}
+            if len(c) > 1 and dob:
+                c = {q for q in c if items[q]["dob"] and dob_ok(q)}
+            cands, how = c, "name"
+        if not cands and dob:
+            last = norm(P["name"]).split()[-1] if norm(P["name"]) else ""
+            c = {q for q in by_dob.get(dob, set()) if last and any(last in n.split() for n in items[q]["names"])}
+            cands, how = c, "dob + last name"
+        if len(cands) == 1:
+            out[pid] = (cands.pop(), how)
+    return out
+
+
+def sherdog_page_paths(href_or_id):
+    """Cached Sherdog page locations: preufc's cache first, then this tool's."""
+    if re.match(r"^\d+$", str(href_or_id)):
+        return [os.path.join(SD_DIR, "fighter", "id-%s.html" % href_or_id)]
+    tail = href_or_id.rsplit("/", 1)[-1]
+    return [os.path.join(SD_OLD, "fighter", tail + ".html"), os.path.join(SD_DIR, "fighter", tail + ".html")]
+
+
+def read_cached(paths):
+    for p in paths:
+        if os.path.exists(p) and os.path.getsize(p) > 0:
+            with open(p, encoding="utf-8", errors="replace") as fh:
+                return fh.read()
+    return None
+
+
+def parse_sherdog_bio(html):
+    if not html or html.startswith("<!-- 404"):
+        return None
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "lxml")
+    fn = soup.find("span", class_="fn")
+    if not fn:
+        return None
+    na = soup.find("strong", itemprop="nationality")
+    loc = soup.find("span", class_="locality")
+    assoc = [a.get_text(strip=True) for a in soup.find_all("a", class_="association")]
+    bd = soup.find("span", itemprop="birthDate")
+    canon = soup.find("link", rel="canonical")
+    return {"name": fn.get_text(strip=True), "nationality": na.get_text(strip=True) if na else None,
+            "locality": loc.get_text(strip=True) if loc else None, "association": assoc,
+            "dob_text": bd.get_text(strip=True) if bd else None,
+            "href": canon.get("href") if canon else None}
+
+
+def sherdog_index():
+    """person id -> Sherdog href known from tools/preufc.py's resolver and this tool's own resolver."""
+    out = {}
+    for p in (os.path.join(SD_OLD, "resolve.json"), os.path.join(SD_DIR, "resolve.json")):
+        if os.path.exists(p):
+            try:
+                for pid, r in json.load(open(p)).items():
+                    if r.get("status") == "ok" and r.get("href"):
+                        out[pid] = r["href"]
+            except ValueError:
+                pass
+    return out
+
+
+def target_persons(fights):
+    T = {}
+    for f in fights:
+        if f.date >= SINCE:
+            for p in f.persons:
+                if not p.startswith(("amb:", "name:")):
+                    T[p] = max(T.get(p, f.date), f.date)
+    return T
+
+
+def other_sherdog_rate(window=30.0):
+    """Requests per second another crawler (tools/preufc.py) is making to Sherdog, from its cache writes."""
+    now = time.time()
+    n = 0
+    for sub in ("fighter", "search"):
+        d = os.path.join(SD_OLD, sub)
+        if os.path.isdir(d):
+            with os.scandir(d) as it:
+                for e in it:
+                    try:
+                        if now - e.stat().st_mtime < window:
+                            n += 1
+                    except OSError:
+                        pass
+    return n / window
+
+
+def cmd_fetch_sherdog(args):
+    """Sherdog bio pages for every 2012+ UFC fighter: by the Sherdog id in Wikidata or preufc's resolver;
+    otherwise by name search verified against the fighter's ufcstats bouts (tools/preufc.py logic)."""
+    import preufc as PU
+    fights, people = load_people_fights()
+    T = target_persons(fights)
+    items = load_wikidata()
+    sdx = sherdog_index()
+    wd = match_wikidata(people, list(T), items, sdx)
+    fx = Fetcher(min_gap=1.1, offline=args.offline)
+
+    def polite_get(url, path):
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            return open(path, encoding="utf-8", errors="replace").read()
+        other = other_sherdog_rate()
+        fx.min_gap = 1.0 / max(0.1, 0.95 - other)   # keep the combined rate to Sherdog under 1 request/s
+        return fx.get(url, path)
+
+    # oldest careers first: tools/preufc.py (if it is running) covers recent newcomers
+    order = sorted(T, key=lambda p: T[p])
+    need_search = []
+    t0 = time.time()
+    got = 0
+    for i, pid in enumerate(order):
+        if pid in sdx:
+            if read_cached(sherdog_page_paths(sdx[pid])):
+                continue
+            polite_get(PU.BASE + sdx[pid], sherdog_page_paths(sdx[pid])[-1])
+            got += 1
+            continue
+        q = wd.get(pid)
+        sids = sorted(items[q[0]]["sherdog"]) if q else []
+        if len(sids) == 1:
+            path = sherdog_page_paths(sids[0])[0]
+            polite_get("%s/fighter/x-%s" % (PU.BASE, sids[0]), path)
+            got += 1
+        else:
+            need_search.append(pid)
+        if (i + 1) % 100 == 0:
+            log("  %d/%d persons, %d requests, %.0f s, %d left for search" % (
+                i + 1, len(order), fx.n, time.time() - t0, len(need_search)))
+    log("id pass done: %d requests; %d persons need a name search" % (fx.n, len(need_search)))
+    if args.no_search:
+        return
+    # name search with verification (tools/preufc.py), caching into this tool's directory
+    PU.CACHE = SD_DIR
+    _, _, bouts = PU.load_ufc()
+    res_path = os.path.join(SD_DIR, "resolve.json")
+    res = json.load(open(res_path)) if os.path.exists(res_path) else {}
+    pfx = PU.Fetcher(offline=args.offline)
+    orig_get = pfx.get
+
+    def pget(url, path):
+        if not (os.path.exists(path) and os.path.getsize(path) > 0):
+            alt = os.path.join(SD_OLD, os.path.relpath(path, SD_DIR))
+            if os.path.exists(alt) and os.path.getsize(alt) > 0:
+                return open(alt, encoding="utf-8", errors="replace").read()
+            other = other_sherdog_rate()
+            PU.MIN_GAP = 1.0 / max(0.1, 0.95 - other)
+        return orig_get(url, path)
+    pfx.get = pget
+    for k, pid in enumerate(need_search):
+        if pid in res or pid in sherdog_index():
+            continue
+        P = people[pid]
+        name = P["name"]
+        nick = P.get("nick")
+        lbs = (P.get("tott") or {}).get("lbs")
+        tk = PU.norm(name).split()
+        queries = [name] + ([tk[0] + " " + tk[-1]] if len(tk) > 2 else []) + ([tk[-1]] if len(tk) >= 2 else [])
+        tried, ok = set(), False
+        for qtxt in queries:
+            html = pfx.get(PU.BASE + "/stats/fightfinder?" + urllib.parse.urlencode({"SearchTxt": qtxt}),
+                           PU.search_path(qtxt))
+            scored = []
+            for c in PU.parse_search(html):
+                if c["href"] in tried:
+                    continue
+                s = PU.name_sim(name, c["name"])
+                if nick and c["nick"] and PU.norm(c["nick"]) == PU.norm(nick):
+                    s += 0.25
+                if lbs and c["lbs"]:
+                    s -= min(0.3, abs(c["lbs"] - lbs) / 100.0)
+                scored.append((s, c["href"]))
+            scored.sort(reverse=True)
+            for s, href in scored[:3]:
+                if s < 0.6:
+                    break
+                tried.add(href)
+                parsed = PU.parse_fighter(pfx.get(PU.BASE + href, PU.fighter_path(href)))
+                kk, _ = PU.verify(parsed, bouts[pid])
+                if PU.is_verified(kk, len(bouts[pid])):
+                    res[pid] = {"href": href, "status": "ok", "how": "search:" + qtxt, "matched": kk,
+                                "n_ufc": len(bouts[pid]), "name": name, "slug": P["slug"]}
+                    ok = True
+                    break
+            if ok:
+                break
+        if not ok:
+            res[pid] = {"href": None, "status": "unresolved", "name": name, "slug": P["slug"],
+                        "tried": sorted(tried)}
+        if (k + 1) % 25 == 0:
+            json.dump(res, open(res_path, "w"), indent=0)
+            log("  search %d/%d, %d ok, %.0f s" % (k + 1, len(need_search),
+                                                  sum(1 for r in res.values() if r["status"] == "ok"),
+                                                  time.time() - t0))
+    os.makedirs(SD_DIR, exist_ok=True)
+    json.dump(res, open(res_path, "w"), indent=0)
+    log("search pass done: %d resolved of %d" % (sum(1 for r in res.values() if r["status"] == "ok"), len(res)))
+
+
+def load_sherdog_bios(offline=True, fights=None, people=None):
+    """person id -> Sherdog bio (nationality, birthplace, association, iso3) from the caches only."""
+    if fights is None:
+        fights, people = load_people_fights()
+    T = target_persons(fights)
+    items = load_wikidata()
+    sdx = sherdog_index()
+    wd = match_wikidata(people, list(T), items, sdx)
+    out = {}
+    for pid in T:
+        html = None
+        src = None
+        if pid in sdx:
+            html = read_cached(sherdog_page_paths(sdx[pid]))
+            src = sdx[pid]
+        if html is None and pid in wd:
+            sids = sorted(items[wd[pid][0]]["sherdog"])
+            if len(sids) == 1:
+                html = read_cached(sherdog_page_paths(sids[0]))
+                src = "/fighter/x-" + sids[0]
+        b = parse_sherdog_bio(html) if html else None
+        if b:
+            b["iso3"] = country_code(b["nationality"])
+            b["src"] = src
+            out[pid] = b
+    return out
+
+
 def locality_parts(pl):
     parts = [p.strip() for p in pl.split(",") if p.strip()]
     return parts[0], (parts[1] if len(parts) > 1 else None)

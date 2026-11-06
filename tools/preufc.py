@@ -987,12 +987,13 @@ def ufc_walk(fights, people):
 
 
 class EloRunner:
-    """Fast walk-forward Elo over every UFC bout, with optional per-person debut seeds."""
+    """Fast walk-forward Elo over every UFC bout. Debut seeds apply to people whose first UFC bout is on or
+    after `seed_from`; the state just before `seed_from` is computed once and reused."""
 
-    def __init__(self, fights, K, boost, boost_n=5):
+    def __init__(self, fights, K, boost, boost_n=5, seed_from=None):
         self.K, self.boost, self.boost_n = K, boost, boost_n
         idx = {}
-        self.seq = []
+        seq = []
         for f in fights:
             a, b = f.persons
             if a == b:
@@ -1000,30 +1001,47 @@ class EloRunner:
             ia = idx.setdefault(a, len(idx))
             ib = idx.setdefault(b, len(idx))
             sa = {"A": 1.0, "B": 0.0, "D": 0.5}.get(f.winner)
-            self.seq.append((ia, ib, sa, f.fid))
+            seq.append((ia, ib, sa, f.fid, f.date))
         self.idx = idx
         self.np = len(idx)
+        self.seed_from = seed_from or dt.date(1900, 1, 1)
+        self.head = [t for t in seq if t[4] < self.seed_from]
+        self.tail = [t for t in seq if t[4] >= self.seed_from]
+        R, N, pre = self._loop([1500.0] * self.np, [0] * self.np, self.head, self.boost)
+        self.R0, self.N0, self.pre0 = R, N, pre
+        self.tail_pos = {t[3]: k for k, t in enumerate(self.tail)}
 
-    def run(self, seed=None, boost=None):
-        import numpy as np
-        R = np.full(self.np, 1500.0) if seed is None else seed.astype(float).copy()
-        N = np.zeros(self.np, dtype=int)
-        K = self.K
-        bo = self.boost if boost is None else boost
-        bn = self.boost_n
+    def _loop(self, R, N, seq, bo, until=None):
+        K, bn = self.K, self.boost_n
         pre = {}
-        for ia, ib, sa, fid in self.seq:
+        for ia, ib, sa, fid, d in seq:
+            if until is not None and d >= until:
+                break
             ra, rb = R[ia], R[ib]
             ea = 1.0 / (1.0 + 10.0 ** ((rb - ra) / 400.0))
             pre[fid] = (ra, rb, ea)
             if sa is not None:
-                ka = K * (bo if N[ia] < bn else 1.0)
-                kb = K * (bo if N[ib] < bn else 1.0)
+                ka = K * bo if N[ia] < bn else K
+                kb = K * bo if N[ib] < bn else K
                 R[ia] = ra + ka * (sa - ea)
                 R[ib] = rb - kb * (sa - ea)
             N[ia] += 1
             N[ib] += 1
-        return pre
+        return R, N, pre
+
+    def run(self, seed=None, boost=None, until=None):
+        """seed: {person index: debut rating} for people debuting on/after seed_from. Returns fid -> (ra, rb, ea)."""
+        bo = self.boost if boost is None else boost
+        R = list(self.R0)
+        N = list(self.N0)
+        if seed:
+            for k, v in seed.items():
+                if self.N0[k] == 0:
+                    R[k] = float(v)
+        _, _, pre = self._loop(R, N, self.tail, bo, until)
+        out = dict(self.pre0)
+        out.update(pre)
+        return out
 
 
 def side_pre(snap, n_prior):
@@ -1251,7 +1269,7 @@ def evaluate(args):
     train_from = dt.date.fromisoformat(args.extra_since or args.since)
     rep = json.load(open(os.path.join(DERIVED, "elo_report.json")))
     K, boost = rep["chosen"]["K"], rep["chosen"]["boost"]
-    E = EloRunner(fights, K, boost)
+    E = EloRunner(fights, K, boost, seed_from=train_from)
     elo_pre = E.run()
     ufc = ufc_walk(fights, people)
     df_all = build_frame(fights, people, ufc, elo_pre, snaps, train_from)
@@ -1296,66 +1314,59 @@ def evaluate(args):
         T = people[p].get("tott") or {}
         return (d - T["dob"]).days / 365.25 if T.get("dob") else float("nan")
 
-    def fit_seed(keys, use_age, fit_to, fit_from=train_from, l2=1.0, fit_boost=False):
-        """Fit seed coefficients by minimizing Elo log loss on newcomer bouts in [fit_from, fit_to)."""
+    def fit_seed(keys, use_age, fit_to, fit_from=train_from, sigma=75.0, fit_boost=False):
+        """Fit seed coefficients (Elo points per SD) by minimizing Elo log loss on newcomer bouts in
+        [fit_from, fit_to); mild ridge = Gaussian prior with sd `sigma` Elo points per coefficient."""
         from scipy.optimize import minimize
-        ps = [p for p in deb if first_fid[p][1] < fit_to]
-        M = []
-        for p in ps:
+        nk = len(keys) + int(use_age)
+        ps = [p for p in deb if first_fid[p][1] >= train_from and p in E.idx]
+
+        def raw(p):
             sp = deb[p]
             row = [sp[k] for k in keys] if sp else [float("nan")] * len(keys)
             if use_age:
                 row.append(age_at(p, first_fid[p][1]))
-            M.append(row)
-        M = np.array(M, float) if M else np.zeros((0, len(keys) + use_age))
-        mu = np.nanmean(M, axis=0)
-        sdv = np.nanstd(M, axis=0)
-        sdv = np.where(sdv < 1e-9, 1.0, sdv)
-        nk = len(keys) + int(use_age)
-
-        def zmat(plist):
-            Z = np.zeros((E.np, nk + 1))
-            has = np.zeros(E.np, bool)
-            for p in plist:
-                if p not in E.idx:
-                    continue
-                sp = deb[p]
-                row = [sp[k] for k in keys] if sp else [float("nan")] * len(keys)
-                if use_age:
-                    row.append(age_at(p, first_fid[p][1]))
-                v = np.array(row, float)
-                miss = sp is None
-                v = np.where(np.isnan(v), mu, v)
-                z = (v - mu) / sdv
-                if miss and keys:
-                    z[:len(keys)] = 0.0
-                Z[E.idx[p], :nk] = z
-                Z[E.idx[p], nk] = 1.0 if (miss and keys) else 0.0
-                has[E.idx[p]] = True
-            return Z, has
-        Zall, _ = zmat(list(deb))
+            return row
+        fitp = [p for p in ps if first_fid[p][1] < fit_to]
+        M = np.array([raw(p) for p in fitp], float) if fitp else np.zeros((0, nk))
+        mu = np.nanmean(M, axis=0) if len(M) else np.zeros(nk)
+        sdv = np.nanstd(M, axis=0) if len(M) else np.ones(nk)
+        sdv = np.where(~np.isfinite(sdv) | (sdv < 1e-9), 1.0, sdv)
+        mu = np.where(np.isfinite(mu), mu, 0.0)
+        Zrows, Zidx = [], []
+        for p in ps:
+            v = np.array(raw(p), float)
+            miss = deb[p] is None
+            v = np.where(np.isnan(v), mu, v)
+            z = (v - mu) / sdv
+            if miss and keys:
+                z[:len(keys)] = 0.0
+            Zrows.append(np.concatenate([z, [1.0 if (miss and keys) else 0.0]]))
+            Zidx.append(E.idx[p])
+        Z = np.array(Zrows) if Zrows else np.zeros((0, nk + 1))
         sel = df[(df["date"] >= fit_from) & (df["date"] < fit_to) & df["newc"]]
         fids, yv = sel["fid"].tolist(), sel["y"].to_numpy()
+        nfit = max(1, len(fids))
 
         def obj(theta):
             beta = theta[:nk + 1]
             bo = theta[nk + 1] if fit_boost else None
-            seed = 1500.0 + Zall @ beta
-            pre_ = E.run(seed, boost=bo)
+            sv = 1500.0 + Z @ beta
+            pre_ = E.run(dict(zip(Zidx, sv)), boost=bo, until=fit_to)
             p = np.array([pre_[f][2] for f in fids])
-            return ll(p, yv) + l2 * 1e-6 * float(beta @ beta)
+            return ll(p, yv) + float(beta @ beta) / (2 * sigma ** 2 * nfit)
         th0 = np.zeros(nk + 1 + int(fit_boost))
         if fit_boost:
             th0[-1] = boost
-        r = minimize(obj, th0, method="Powell", options={"maxiter": 4000, "xtol": 0.5, "ftol": 1e-7})
+        r = minimize(obj, th0, method="L-BFGS-B", options={"eps": 0.25, "maxiter": 200})
         beta = r.x[:nk + 1]
         bo = r.x[nk + 1] if fit_boost else None
         return {"beta": beta, "boost": bo, "mu": mu, "sd": sdv, "keys": keys + (["age_debut"] if use_age else []),
-                "Z": Zall, "loss": r.fun}
+                "Z": Z, "Zidx": Zidx, "loss": r.fun, "nit": r.nit}
 
     def seeded_pre(sfit):
-        seed = 1500.0 + sfit["Z"] @ sfit["beta"]
-        return E.run(seed, boost=sfit["boost"]), seed
+        sv = 1500.0 + sfit["Z"] @ sfit["beta"]
+        return E.run(dict(zip(sfit["Zidx"], sv)), boost=sfit["boost"]), sv
 
     # ---------------- model zoo
     base_sets = {"elo": ["elo"], "base": BASE_KEYS}

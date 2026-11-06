@@ -607,19 +607,41 @@ def range_mid_dec(lo, hi):
     return tuple((am_to_dec(lo[i]) + am_to_dec(hi[i])) / 2 for i in (0, 1))
 
 
-def book_consensus(books):
-    """Sportsbook closes (exchanges excluded) -> (mean decimal per side, n, mean of per-book no-vig p1)."""
-    sb = {k: v for k, v in books.items() if k not in EXCHANGES and v[0] and v[1]}
-    if len(sb) < 1:
-        return None
-    d = [(am_to_dec(a), am_to_dec(b)) for a, b in sb.values()]
-    d = [x for x in d if x[0] and x[1]]
+def book_consensus(books, max_dev=0.15):
+    """Sportsbook closes (exchanges excluded) -> robust consensus.
+    A book's line is dropped when its overround is implausible (outside 0.98-1.25) or its no-vig p is more than
+    `max_dev` from the median book (stale or in-play prices). Returns the mean decimal odds of the kept books,
+    their mean no-vig p, the best price per side, and counts."""
+    d = []
+    for k, (a, b) in books.items():
+        if k in EXCHANGES or not a or not b:
+            continue
+        x = (am_to_dec(a), am_to_dec(b))
+        if not x[0] or not x[1] or not (0.98 <= 1 / x[0] + 1 / x[1] <= 1.25):
+            continue
+        d.append((k, x, devig(*x)))
     if not d:
         return None
-    md = (sum(x[0] for x in d) / len(d), sum(x[1] for x in d) / len(d))
-    pnv = sum(devig(x[0], x[1]) for x in d) / len(d)
-    best = (max(x[0] for x in d), max(x[1] for x in d))
-    return {'mean_dec': md, 'n': len(d), 'p_avg_novig': pnv, 'best_dec': best, 'books': sorted(sb)}
+    ps = sorted(t[2] for t in d)
+    med = ps[len(ps) // 2] if len(ps) % 2 else (ps[len(ps) // 2 - 1] + ps[len(ps) // 2]) / 2
+    keep = [t for t in d if abs(t[2] - med) <= max_dev]
+    md = (sum(t[1][0] for t in keep) / len(keep), sum(t[1][1] for t in keep) / len(keep))
+    return {'mean_dec': md, 'n': len(keep), 'n_dropped': len(d) - len(keep), 'p_avg_novig': sum(t[2] for t in keep) / len(keep),
+            'p_median_novig': med, 'best_dec': (max(t[1][0] for t in keep), max(t[1][1] for t in keep)),
+            'books': sorted(t[0] for t in keep)}
+
+
+def range_spread(rng):
+    """largest implied-probability gap between the low and high closing price of either side."""
+    (lo, hi) = rng
+    return max(abs(1 / am_to_dec(lo[i]) - 1 / am_to_dec(hi[i])) for i in (0, 1))
+
+
+def sane_pair(d, lo=0.98, hi=1.2):
+    return bool(d and d[0] and d[1] and d[0] > 1 and d[1] > 1 and lo <= 1 / d[0] + 1 / d[1] <= hi)
+
+
+MAX_RANGE_SPREAD = 0.20  # a wider closing range carries a stale or in-play price (see the report)
 
 
 def assemble(fights):
@@ -688,40 +710,52 @@ def assemble(fights):
 
 
 def choose(rec):
-    """Pick the representation used for open / close and compute probabilities for side A."""
+    """Pick the representation used for open / close and compute probabilities for side A.
+
+    Close precedence (outcome-blind rules): robust per-book consensus with >= 3 US books; BFO mean of books when
+    the closing range is not contaminated; per-book consensus with 1-2 books; decimal midpoint of a clean closing
+    range; one book's close (Ultimate UFC Dataset) when sane; otherwise no close."""
     out = {}
-    op = rec.get('bfo_open') or rec.get('nl_open')
-    if op and op[0] and op[1]:
-        d = (am_to_dec(op[0]), am_to_dec(op[1]))
-        if d[0] and d[1]:
-            out['open'] = list(op)
-            out['open_dec'] = d
+    for src in ('bfo_open', 'nl_open'):
+        op = rec.get(src)
+        if op and op[0] and op[1]:
+            d = (am_to_dec(op[0]), am_to_dec(op[1]))
+            if sane_pair(d, 0.98, 1.35):
+                out['open'] = list(op)
+                out['open_dec'] = d
+                break
     cons = book_consensus(rec.get('bfo_books') or {})
     rng = rec.get('bfo_range') or rec.get('nl_range')
-    if rec.get('bfo_mean_close'):
-        out['close_dec'] = rec['bfo_mean_close']
-        out['book'] = 'BFO mean of books' + (f" ({cons['n']} US books)" if cons else '')
-        out['src'] = 'bfo_mean'
-    elif cons and cons['n'] >= 2:
-        out['close_dec'] = cons['mean_dec']
-        out['book'] = f"BFO per-book mean ({cons['n']} US books)"
-        out['src'] = 'bfo_books'
-    elif rng and all(rng[0]) and all(rng[1]):
-        out['close_dec'] = range_mid_dec(rng[0], rng[1])
+    if rng and not (all(rng[0]) and all(rng[1])):
+        rng = None
+    spread = range_spread(rng) if rng else None
+    clean_rng = spread is not None and spread <= MAX_RANGE_SPREAD
+    mean = rec.get('bfo_mean_close')
+    u = rec.get('uud_close')
+    ud = (am_to_dec(u[0]), am_to_dec(u[1])) if u else None
+    if cons and cons['n'] >= 3:
+        out['close_dec'], out['src'] = cons['mean_dec'], 'bfo_books'
+        out['book'] = f"mean of {cons['n']} US books (BFO event page)"
+    elif sane_pair(mean) and (rng is None or clean_rng):
+        out['close_dec'], out['src'] = mean, 'bfo_mean'
+        out['book'] = 'BFO mean of books'
+    elif cons:
+        out['close_dec'], out['src'] = cons['mean_dec'], 'bfo_books'
+        out['book'] = f"mean of {cons['n']} US book(s) (BFO event page)"
+    elif clean_rng:
+        out['close_dec'], out['src'] = range_mid_dec(rng[0], rng[1]), 'range_mid'
         out['book'] = 'BFO closing-range midpoint'
-        out['src'] = 'range_mid'
-    elif rec.get('uud_close'):
-        u = rec['uud_close']
-        out['close_dec'] = (am_to_dec(u[0]), am_to_dec(u[1]))
+    elif sane_pair(ud, 0.99, 1.15):
+        out['close_dec'], out['src'] = ud, 'uud'
         out['book'] = 'single book close (Ultimate UFC Dataset)'
-        out['src'] = 'uud'
-    if out.get('close_dec') and not (out['close_dec'][0] and out['close_dec'][1]):
-        out.pop('close_dec')
+    elif rng or mean or u:
+        out['close_flag'] = 'contaminated'  # in-play/stale prices and no clean fallback
     if out.get('close_dec'):
         d = out['close_dec']
         out['close'] = [dec_to_am(d[0]), dec_to_am(d[1])]
     out['cons'] = cons
     out['range'] = rng
+    out['spread'] = spread
     return out
 
 
@@ -882,22 +916,26 @@ def cmd_build(a):
             row['over_close'] = 1 / c['close_dec'][0] + 1 / c['close_dec'][1]
             row['src'] = c['src']
         # alternative closing representations for the comparison
-        if rec.get('bfo_mean_close'):
+        clean = c.get('spread') is None or c['spread'] <= MAX_RANGE_SPREAD
+        if sane_pair(rec.get('bfo_mean_close')) and clean:
             row['p_bfo_mean'] = devig(*rec['bfo_mean_close'])
-        rng = rec.get('bfo_range') or rec.get('nl_range')
-        if rng and all(rng[0]) and all(rng[1]):
-            row['p_range_mid'] = devig(*range_mid_dec(rng[0], rng[1]))
+        if c.get('range') and clean:
+            row['p_range_mid'] = devig(*range_mid_dec(c['range'][0], c['range'][1]))
         if rec.get('uud_close'):
             u = rec['uud_close']
             d = (am_to_dec(u[0]), am_to_dec(u[1]))
-            if d[0] and d[1]:
+            if sane_pair(d, 0.99, 1.15):
                 row['p_uud'] = devig(*d)
+        row['spread'] = c.get('spread')
+        row['close_flag'] = c.get('close_flag')
         cons = c.get('cons')
         if cons and cons['n'] >= 2:
             row['p_books_mean'] = devig(*cons['mean_dec'])
             row['p_books_avgnv'] = cons['p_avg_novig']
+            row['p_books_median'] = cons['p_median_novig']
             row['n_books'] = cons['n']
             row['best_dec'] = cons['best_dec']
+            row['n_books_dropped'] = cons['n_dropped']
         R.append(row)
     res = {'diag': diag}
 
