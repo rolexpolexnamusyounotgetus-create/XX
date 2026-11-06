@@ -591,7 +591,7 @@
   }
   function defaultAppearance() {
     var FA2 = root.FightAvatar, db = FA2.dbFromPage();
-    return { A: FA2.appearanceFor("alexander-volkanovski", db), B: FA2.appearanceFor("justin-gaethje", db), R: FA2.REFEREE };
+    return { A: FA2.appearanceFor("alexander-volkanovski", db), B: FA2.appearanceFor("justin-gaethje", db), R: Object.assign({}, FA2.REFEREE, db.referee || {}) };
   }
   /* appearance: { A, B, R } objects (FightAvatar.appearanceFor(slug) builds one from the roster).
      Skinned avatars replace the primitive figures as they finish building. */

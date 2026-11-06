@@ -391,6 +391,151 @@ def logit(p):
     return np.log(p / (1 - p))
 
 
+
+class FrailPois:
+    """Poisson counts with a gamma frailty (mean 1, variance alpha) per group (fighter-fight):
+
+        y[g,r] ~ Poisson(theta_g * E[g,r] * exp(x[g,r]' beta)),  theta_g ~ Gamma(1/alpha, alpha)
+
+    Integrating theta gives the negative multinomial; covariates that are functions of earlier rounds are
+    predetermined (the sequential factorization holds). Cluster-robust sandwich by fight."""
+
+    def __init__(self, df, ycol, ecol, xcols, gcol="g", ccol="fid"):
+        d = df[df[ecol] > 0].copy()
+        self.xcols = list(xcols)
+        self.y = d[ycol].to_numpy(float)
+        self.lE = np.log(d[ecol].to_numpy(float))
+        self.X = d[self.xcols].to_numpy(float)
+        self.g = pd.factorize(d[gcol])[0]
+        self.c = pd.factorize(d[ccol])[0]
+        self.G = self.g.max() + 1
+        self.Yg = np.bincount(self.g, self.y, self.G)
+        self.const = (-special.gammaln(self.y + 1)).sum()
+        self.n = len(d)
+        self.d = d
+
+    def _parts(self, b, la):
+        a = math.exp(la)
+        k = 1 / a
+        mu = np.exp(np.clip(self.lE + self.X @ b, -50, 50))
+        Mg = np.bincount(self.g, mu, self.G)
+        return a, k, mu, Mg
+
+    def negll(self, par):
+        b, la = par[:-1], par[-1]
+        a, k, mu, Mg = self._parts(b, la)
+        ll = (special.gammaln(k + self.Yg) - special.gammaln(k)).sum() + self.const
+        ll += (self.y * (self.lE + self.X @ b)).sum() + self.Yg.sum() * la
+        ll -= ((k + self.Yg) * np.log1p(a * Mg)).sum()
+        return -ll
+
+    def grad_obs(self, par):
+        """Per-observation contributions to the score (beta part) and per-group alpha part."""
+        b, la = par[:-1], par[-1]
+        a, k, mu, Mg = self._parts(b, la)
+        fac = (k + self.Yg) * a / (1 + a * Mg)          # per group
+        gb_obs = (self.y - fac[self.g] * mu)[:, None] * self.X
+        # d/d log(alpha): chain d/da * a
+        dk = -1 / a ** 2
+        ga_grp = (dk * (special.digamma(k + self.Yg) - special.digamma(k)) + self.Yg / a
+                  - dk * np.log1p(a * Mg) - (k + self.Yg) * Mg / (1 + a * Mg)) * a
+        return gb_obs, ga_grp
+
+    def grad(self, par):
+        gb_obs, ga_grp = self.grad_obs(par)
+        return -np.concatenate([gb_obs.sum(0), [ga_grp.sum()]])
+
+    def fit(self, b0=None, la0=math.log(0.5)):
+        p0 = np.concatenate([np.zeros(len(self.xcols)) if b0 is None else b0, [la0]])
+        r = optimize.minimize(self.negll, p0, jac=self.grad, method="L-BFGS-B",
+                              options={"maxiter": 5000, "gtol": 1e-8})
+        self.par = r.x
+        self.ll = -r.fun
+        # numerical Hessian from the analytic gradient
+        k = len(self.par); H = np.zeros((k, k)); h = 1e-5
+        for j in range(k):
+            e = np.zeros(k); e[j] = h
+            H[:, j] = (self.grad(self.par + e) - self.grad(self.par - e)) / (2 * h)
+        H = (H + H.T) / 2
+        self.Hinv = np.linalg.inv(H)
+        gb_obs, ga_grp = self.grad_obs(self.par)
+        # cluster scores by fight
+        C = self.c.max() + 1
+        sc = np.zeros((C, k))
+        for j in range(k - 1):
+            sc[:, j] = np.bincount(self.c, gb_obs[:, j], C)
+        gc = np.zeros(self.G); gc[:] = ga_grp
+        grp_c = np.zeros(self.G, int); grp_c[self.g] = self.c
+        sc[:, -1] = np.bincount(grp_c, gc, C)
+        self.cov = self.Hinv @ (sc.T @ sc) @ self.Hinv
+        return self
+
+    def coef(self):
+        se = np.sqrt(np.diag(self.cov))
+        out = {n: {"est": float(b), "se": float(s)} for n, b, s in zip(self.xcols, self.par[:-1], se[:-1])}
+        out["frailty_var"] = {"est": float(math.exp(self.par[-1])), "se_log": float(se[-1])}
+        return out
+
+    def score_other(self, other, par=None):
+        """Held-out log-likelihood of another FrailPois dataset with fixed parameters, and the sequential
+        predictive means E[y_r | earlier rounds of the same group] (posterior-updated frailty)."""
+        par = self.par if par is None else par
+        b, la = par[:-1], par[-1]
+        a = math.exp(la); k = 1 / a
+        mu = np.exp(other.lE + other.X @ b)
+        Mg = np.bincount(other.g, mu, other.G)
+        ll = (special.gammaln(k + other.Yg) - special.gammaln(k)).sum() + other.const
+        ll += (other.y * (other.lE + other.X @ b)).sum() + other.Yg.sum() * la
+        ll -= ((k + other.Yg) * np.log1p(a * Mg)).sum()
+        # sequential predictive means (rows are in round order within group)
+        d = other.d.assign(_mu=mu, _y=other.y, _g=other.g)
+        cy = d.groupby("_g")["_y"].cumsum() - d["_y"]
+        cm = d.groupby("_g")["_mu"].cumsum() - d["_mu"]
+        pred = mu * (k + cy.to_numpy()) / (k + cm.to_numpy())
+        return float(ll), pred, mu
+
+
+def grouped_jackknife(fit_fn, df, key="fid", G=20, seed=7):
+    """Delete-a-group jackknife over fights. fit_fn(df) -> dict name -> estimate. Returns name -> se."""
+    ids = df[key].unique()
+    rng = np.random.default_rng(seed)
+    lab = dict(zip(ids, rng.integers(0, G, len(ids))))
+    grp = df[key].map(lab).to_numpy()
+    full = fit_fn(df)
+    reps = []
+    for gq in range(G):
+        reps.append(fit_fn(df[grp != gq]))
+    out = {}
+    for n in full:
+        v = np.array([r[n] for r in reps])
+        out[n] = float(math.sqrt((G - 1) / G * ((v - v.mean()) ** 2).sum()))
+    return full, out
+
+
+# ================================================================================================
+# per-person walk-forward history
+# ================================================================================================
+def person_history(S, p0_kd):
+    """Pre-fight features per (fid, idx), built only from the person's earlier fights in the panel:
+    career minutes, sig attempts / min, KD absorbed per standing head absorbed (chin index) and KD scored per
+    standing head landed (power index), both shrunk toward p0_kd with 230 head strikes (engine kKD)."""
+    FS = (S.groupby(["fid", "idx"], sort=False)
+            .agg(pid=("pid", "first"), DATE=("DATE", "first"), mins=("mins", "sum"), sig_a=("sig_a", "sum"),
+                 sig_l=("sig_l", "sum"), kd=("kd", "sum"), okd=("o_kd", "sum"), sh=("sh_l", "sum"),
+                 osh=("o_sh_l", "sum"), td_a=("td_a", "sum"), ctrl=("ctrl", "sum"), octrl=("o_ctrl", "sum"))
+            .reset_index().sort_values(["DATE", "fid", "idx"]))
+    cols = ["mins", "sig_a", "sig_l", "kd", "okd", "sh", "osh", "td_a", "ctrl", "octrl"]
+    g = FS.groupby("pid", sort=False)
+    for c in cols:
+        FS["h_" + c] = g[c].cumsum() - FS[c]
+    FS["h_n"] = g.cumcount()
+    k = 230.0
+    FS["chin_idx"] = ((FS.h_okd + k * p0_kd) / (FS.h_osh + k)) / p0_kd
+    FS["pow_idx"] = ((FS.h_kd + k * p0_kd) / (FS.h_sh + k)) / p0_kd
+    FS["h_attpm"] = (FS.h_sig_a + 40 * 8.0) / (FS.h_mins + 40)
+    return FS
+
+
 if __name__ == "__main__" and "--panel-only" in sys.argv:
     t = time.time()
     F, S, notes = build_panel()

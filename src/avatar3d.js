@@ -315,12 +315,12 @@
     return a;
   }
   function dbFromPage() {
-    var out = { fighters: {}, overrides: {}, scouting: {} };
+    var out = { fighters: {}, overrides: {}, scouting: {}, referee: null };
     if (!root.document) return out;
     function j(id) { var el = root.document.getElementById(id); if (!el) return null; try { return JSON.parse(el.textContent); } catch (e) { return null; } }
     var f = j("fighters-db"), o = j("overrides-db"), s = j("appearance-db");
     if (f && f.fighters) out.fighters = f.fighters;
-    if (o) { out.overrides = o.fighters || {}; if (o.manual) for (var k in o.manual) out.fighters[k] = out.fighters[k] || o.manual[k]; }
+    if (o) { out.overrides = o.fighters || {}; if (o.manual) for (var k in o.manual) out.fighters[k] = out.fighters[k] || o.manual[k]; if (o.referee) out.referee = o.referee.appearance; }
     if (s) out.scouting = s.fighters || s;
     return out;
   }
@@ -366,6 +366,9 @@
 
   function looksFor(app, cfg, base) {
     var ref = cfg.ref, hairT = lower(app.hair), fhT = lower(app.facial_hair);
+    // v2 overrides stored colours here: hair "#rrggbb", beard true/false
+    if (/^#[0-9a-f]{6}$/.test(hairT)) { app = Object.assign({}, app, { hair_color: app.hair_color || app.hair }); hairT = "short"; }
+    if (!fhT && app.beard != null) fhT = app.beard === true ? "short beard" : (app.beard === false ? "clean-shaven" : lower(app.beard));
     var L = { hair: null, scalp: 0, hairColor: pickColor(app.hair_color || app.hair, "#2a1d14"), beard: 0.22, beardShell: 0, moustacheOnly: false, chinOnly: false };
     if (/bald|shaved|shaven head|clean-shaven head/.test(hairT)) { L.hair = null; L.scalp = 0.22; }
     else if (/buzz|very short|crew|induction|clipper/.test(hairT)) { L.hair = null; L.scalp = 0.9; }
