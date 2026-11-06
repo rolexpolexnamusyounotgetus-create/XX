@@ -347,13 +347,19 @@
   var leagueCache = {};
 
   // engine v3's static expectation for two league-average (no-data) fighters with the matchup's settings
+  // Cache key: division settings, the division priors and the parameter set (version label plus any per-call overrides,
+  // so a tuner that injects params through opts.params never reuses a stale league level). The league-average pair has
+  // no date of birth, so the date does not enter.
   function leagueExpect(m, FE) {
-    var o = m.opts || {}, key = [m.division, m.rounds, m.title, m.date, m.p.version, JSON.stringify(m.P && [m.P.d_att, m.P.ctrl, m.P.kd_per_h, m.P.td_acc])].join("|");
+    var o = m.opts || {}, P = m.P || {};
+    var key = [m.division, m.rounds, m.title, m.p.version, JSON.stringify([P.d_att, P.c_att, P.g_att, P.ctrl, P.kd_per_h, P.td_acc, P.td_att, P.sub_att, P.rev, P.acc_h, P.acc_d]),
+      o.params ? JSON.stringify(o.params) : ""].join("|");
     if (leagueCache[key]) return leagueCache[key];
-    var o2 = {}; for (var k in o) if (k !== "adjA" && k !== "adjB" && k.charAt(0) !== "_") o2[k] = o[k];
-    o2.division = m.division; o2.rounds = m.rounds; o2.title = m.title;
+    var o2 = {}; for (var k in o) if (k !== "adjA" && k !== "adjB" && k !== "ml" && k !== "mlModel" && k.charAt(0) !== "_") o2[k] = o[k];
+    o2.division = m.division; o2.rounds = m.rounds; o2.title = m.title; o2.ml = false;
     if (!o2.priors) { o2.priors = { ALL: m.P }; o2.priors[m.division] = m.P; }
-    var eL = engineSide((FE.__mlratesOrig || FE.matchup)(EMPTY, EMPTY, o2), 0);
+    var base = FE.matchupBase || FE.__mlratesOrig || FE.matchup;
+    var eL = engineSide(base(EMPTY, EMPTY, o2), 0);
     var keys = Object.keys(leagueCache); if (keys.length > 200) leagueCache = {};
     leagueCache[key] = eL;
     return eL;

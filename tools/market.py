@@ -19,11 +19,17 @@ Sources (all public, credited in the output meta and in research/model_market.md
 Usage (from the project root; about 1.5 hours of polite fetching the first time, seconds after that):
   python3 -I tools/market.py fetch --cache DIR    # git sources + BFO event and fighter pages -> data/raw/odds/*.csv
   python3 -I tools/market.py props --cache DIR    # method / decision / round props from cached event pages
-  python3 -I tools/market.py build --props        # match, clean, evaluate -> data/derived/market.json
+  python3 -I tools/market.py build --props        # match, clean, evaluate -> data/derived/market.json (+ vault rows outside the repo)
   python3 -I tools/market.py tables               # markdown tables for research/model_market.md
 
 Outputs: data/raw/odds/{nlbair_odds,uud_odds,bfo_event_lines,bfo_fighter_lines,bfo_event_props}.csv + sources.json
 (compact extracts, committed), data/derived/market.json (fights keyed by backtest id, coverage, eval, ratings).
+
+Hidden-data protocol (docs/BACKLOG.md): every evaluation uses fights before 2026-01-01 only (tune 2019-2023, test =
+validation 2024-2025). Fights from 2026-01-01 (the vault) are matched to odds without looking at results, written to
+<--vault-dir>/market_vault.json outside the repository for the milestone auditor, and left out of market.json's
+per-fight table and of every score. The live `ratings` snapshot alone runs over all fights through the snapshot (live
+use only, never for scoring 2026 fights).
 
 Downloaded pages are untrusted data: they are parsed with regular expressions only, never executed.
 """
@@ -47,7 +53,9 @@ from collections import Counter, defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ODDS_DIR = os.path.join(ROOT, 'data', 'raw', 'odds')
-BACKTEST = os.path.join(ROOT, 'data', 'derived', 'backtest.json')
+BACKTEST = os.path.join(ROOT, 'data', 'derived', 'backtest.json')   # every fight: matching and the live snapshot only
+VAULT_FROM = '2026-01-01'   # hidden-data protocol: fights on or after this date are never scored here
+VAULT_DIR = '/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault'  # = tools/make_vault.py
 OUT_JSON = os.path.join(ROOT, 'data', 'derived', 'market.json')
 BFO = 'https://www.bestfightodds.com'
 UA = ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -994,26 +1002,38 @@ def ci(v, digits=4):
 # ----------------------------------------------------------------------------------------------
 
 TUNE = ('2019-01-01', '2023-12-31')
-TEST = ('2024-01-01', '2099-12-31')
+TEST = ('2024-01-01', '2025-12-31')   # validation years; 2026+ is the sealed vault (VAULT_FROM)
 
 
 def period_of(d):
+    if d >= VAULT_FROM:
+        return 'vault'
     return 'tune' if d <= TUNE[1] else 'test'
+
+
+def make_row(f, rec):
+    """One market row per fight. Vault fights (2026+) get no result fields at all."""
+    c = choose(rec)
+    per = period_of(f['date'])
+    w = f['result']['winner'] if per != 'vault' else None
+    row = {'id': f['id'], 'date': f['date'], 'event': f['event'], 'period': per,
+           'y': 1.0 if w == 'A' else (0.0 if w == 'B' else None), 'winner': w,
+           'division': f['division'], 'title': bool(f.get('title')), 'rounds': f['rounds'],
+           'elo': 1 / (1 + 10 ** ((f['B']['elo'] - f['A']['elo']) / 400)), 'rec': rec, 'c': c}
+    return row, c
 
 
 def cmd_build(a):
     np = _np()
-    fights = load_backtest()
-    recs, diag = assemble(fights)
-    R = []
-    for f in fights:
+    fights_all = load_backtest()
+    # matching is outcome-blind (dates, names, prices), so it runs over every fight; scoring uses dev fights only
+    recs, diag = assemble(fights_all)
+    fights = [f for f in fights_all if f['date'] < VAULT_FROM]
+    vault = [f for f in fights_all if f['date'] >= VAULT_FROM]
+    R, V = [], []
+    for f in fights_all:
         rec = recs[f['id']]
-        c = choose(rec)
-        w = f['result']['winner']
-        row = {'id': f['id'], 'date': f['date'], 'event': f['event'], 'period': period_of(f['date']),
-               'y': 1.0 if w == 'A' else (0.0 if w == 'B' else None), 'winner': w,
-               'division': f['division'], 'title': bool(f.get('title')), 'rounds': f['rounds'],
-               'elo': 1 / (1 + 10 ** ((f['B']['elo'] - f['A']['elo']) / 400)), 'rec': rec, 'c': c}
+        row, c = make_row(f, rec)
         if c.get('open_dec'):
             row['p_open'] = devig(*c['open_dec'])
             row['over_open'] = 1 / c['open_dec'][0] + 1 / c['open_dec'][1]
@@ -1045,11 +1065,13 @@ def cmd_build(a):
             row['n_books'] = cons['n']
             row['best_dec'] = cons['best_dec']
             row['n_books_dropped'] = cons['n_dropped']
-        R.append(row)
+        (V if row['period'] == 'vault' else R).append(row)
+    assert all(r['date'] < VAULT_FROM for r in R) and all(r['y'] is None for r in V)
     res = {'diag': diag}
 
     # ---------------- coverage ----------------
-    cov = {'n_backtest': len(R)}
+    cov = {'n_backtest': len(R), 'scope': f'dev fights (before {VAULT_FROM}); {len(V)} vault fights are exported '
+                                        f'outside the repo and never scored', 'n_vault_exported': len(V)}
     by_year = defaultdict(Counter)
     for r in R:
         yr = r['date'][:4]
@@ -1205,9 +1227,9 @@ def cmd_build(a):
     res['calibration'] = cal
 
     # ---------------- market rating (walk-forward prior for fights with no line) ----------------
-    mr, mr_pred, mr_cur, mr_adj = market_rating(R, fights, boot=min(a.boot, 1000))
+    mr, mr_pred, mr_cur, mr_adj = market_rating(R, fights, boot=min(a.boot, 1000), V=V, fights_all=fights_all)
     res['market_rating'] = mr
-    for r in R:
+    for r in R + V:
         if r['id'] in mr_pred:
             r['p_mrating'] = mr_pred[r['id']]
         if r['id'] in mr_adj:
@@ -1390,9 +1412,11 @@ def cmd_build(a):
 
     # ---------------- method props (event pages, if cached) ----------------
     if getattr(a, 'props', None):
-        res['method_market'] = method_market(a, fights, recs)
+        res['method_market'] = method_market(a, fights_all, recs)  # scores tune/test only; vault rows only exported
 
     write_market_json(R, res, best)
+    if not getattr(a, 'no_vault_export', False):
+        write_vault_json(V, res, best, a.vault_dir)
     print_summary(res)
 
 
@@ -1457,7 +1481,9 @@ def residual_features(R, fights_by_id, boot=1000):
 
 def rating_stream(R, fights):
     """Chronological stream of UFC fights 2013+ with ufcstats fighter ids, closing p (fighter 1) and result.
-    Backtest fights use this tool's chosen close; the rest use nlbair's (range midpoint, multiplicative)."""
+    Backtest fights use this tool's chosen close; the rest use nlbair's (range midpoint, multiplicative).
+    R: market rows (dev and vault) for the closes; fights: backtest fights after nlbair's window. Scoring runs
+    the filter with until=TEST[1], so no 2026 line or result can reach a scored prediction."""
     import pandas as pd
     nl = pd.read_csv(os.path.join(ODDS_DIR, 'nlbair_odds.csv'), low_memory=False)
     with open(os.path.join(ROOT, 'data', 'derived', 'fighters.json')) as fh:
@@ -1526,9 +1552,12 @@ def run_rating(stream, sig_m=0.35, tau=0.35, v0=0.6, mu0=0.0, kappa=0.5, until=N
     return pred, {k: [mu[k], var[k], last[k].isoformat(), n[k]] for k in mu}
 
 
-def market_rating(R, fights, boot=1000):
+def market_rating(R, fights, boot=1000, V=(), fights_all=None):
+    """R: dev rows (scored); V: vault rows (exported only). Scored predictions come from a filter run that stops at
+    TEST[1]; the live snapshot and the vault rows' predictions come from a second run over every fight."""
     np = _np()
-    stream, slug_id = rating_stream(R, fights)
+    V = list(V)
+    stream, slug_id = rating_stream(list(R) + V, fights_all or fights)
     dec = [r for r in R if r['y'] is not None]
     keep = {r['id'] for r in R}
     tune_ids = [r for r in dec if r['period'] == 'tune']
@@ -1543,11 +1572,14 @@ def market_rating(R, fights, boot=1000):
                     grid.append(((sig_m, tau, v0, kappa), ll))
     grid.sort(key=lambda x: x[1])
     (sig_m, tau, v0, kappa), ll_t = grid[0]
-    pred, state = run_rating(stream, sig_m, tau, v0, 0.0, kappa, keep=keep)
+    pred, _ = run_rating(stream, sig_m, tau, v0, 0.0, kappa, until=TEST[1], keep=keep)     # scored: data to 2025-12-31
+    pred_v, state = run_rating(stream, sig_m, tau, v0, 0.0, kappa, keep={r['id'] for r in V})  # live snapshot + vault rows
+    sd = [e for e in stream if e['date'] <= TEST[1]]
     out = {'params': {'sig_m': sig_m, 'tau_per_year': tau, 'v0': v0, 'mu0': 0.0, 'kappa_result': kappa},
            'grid_best5': [[list(k), round(v, 4)] for k, v in grid[:5]],
-           'stream': {'fights': len(stream), 'with_close': sum(1 for e in stream if e['p'] is not None),
-                      'from': stream[0]['date'], 'to': stream[-1]['date']}}
+           'stream': {'fights': len(sd), 'with_close': sum(1 for e in sd if e['p'] is not None),
+                      'from': sd[0]['date'], 'to': sd[-1]['date']},
+           'live_snapshot_stream_to': stream[-1]['date']}
     for per in ('tune', 'test'):
         g = [r for r in dec if r['period'] == per and r['id'] in pred and 'p_close_mult' in r and 'p_open' in r]
         y = np.array([r['y'] for r in g])
@@ -1568,7 +1600,7 @@ def market_rating(R, fights, boot=1000):
     # what the closing line adds beyond the rating: weight-class moves and age (for cross-division hypotheticals)
     with open(BACKTEST) as fh:
         pri = json.load(fh)['priors_asof']
-    fb = {f['id']: f for f in fights}
+    fb = {f['id']: f for f in (fights_all or fights)}
     def lbs(yr, dv):
         return (pri.get(yr, {}).get(dv) or {}).get('lbs')
     def mv(f, side):
@@ -1580,15 +1612,19 @@ def market_rating(R, fights, boot=1000):
             return 0, 0
         return (1, 0) if a_ > b_ else (0, 1)
     adj = {}
-    for per in ('tune', 'test'):
-        g = [r for r in R if r['period'] == per and r['id'] in pred and 'p_close_mult' in r]
+    for r in V:
+        if r['id'] in pred_v:
+            pred[r['id']] = pred_v[r['id']]   # exported only; every score below filters on tune/test
+    for per in ('tune', 'test', 'vault'):
+        g = [r for r in (V if per == 'vault' else R) if r['period'] == per and r['id'] in pred
+             and (per == 'vault' or 'p_close_mult' in r)]
         X, z, yy = [], [], []
         for r in g:
             f = fb[r['id']]
             ua, da = mv(f, 'A')
             ub, db = mv(f, 'B')
             X.append([ua - ub, da - db, ((f['A'].get('age') or 30) - (f['B'].get('age') or 30)) / 5])
-            z.append(float(logit([r['p_close_mult']])[0] - logit([pred[r['id']]])[0]))
+            z.append(float(logit([r['p_close_mult']])[0] - logit([pred[r['id']]])[0]) if 'p_close_mult' in r else float('nan'))
             yy.append(r['y'])
         adj[per] = (np.array(X), np.array(z), [r['id'] for r in g], yy)
     Xt, zt, _, _ = adj['tune']
@@ -1610,8 +1646,10 @@ def market_rating(R, fights, boot=1000):
         pr1.append(1 / (1 + math.exp(-(l0 + float(x @ bt_)))))
         yv.append(y)
     pred_adj = {}
-    for per in ('tune', 'test'):
+    for per in ('tune', 'test', 'vault'):
         X_, _, ids_, _ = adj[per]
+        if not len(ids_):
+            continue
         for x, i in zip(X_, ids_):
             pred_adj[i] = 1 / (1 + math.exp(-(float(logit([pred[i]])[0]) + float(x @ bt_))))
     out['close_minus_rating'] = {
@@ -1636,7 +1674,7 @@ def market_rating(R, fights, boot=1000):
     return out, pred, cur, pred_adj
 
 
-def write_market_json(R, res, best):
+def encode_rows(R, res, best):
     fights = {}
     for r in R:
         c = r['c']
@@ -1678,6 +1716,28 @@ def write_market_json(R, res, best):
             if 'round_dist' in mm:
                 e['round_dist'] = mm['round_dist']
         fights[r['id']] = e
+    return fights
+
+
+def write_vault_json(V, res, best, vault_dir):
+    """Vault fights (2026+): the same per-fight fields as market.json, written outside the repository for the
+    milestone auditor. Nothing here is scored, and the build never reads this file back."""
+    if not vault_dir:
+        return
+    os.makedirs(vault_dir, exist_ok=True)
+    path = os.path.join(vault_dir, 'market_vault.json')
+    out = {'meta': {'built': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'), 'tool': 'tools/market.py',
+                    'what': f'market.json per-fight fields for the vault fights (from {VAULT_FROM}); same orientation and '
+                            'fields as data/derived/market.json; open only at the v6/v10 audits',
+                    'devig_best_on_tune': best},
+           'fights': encode_rows(V, res, best)}
+    with open(path, 'w') as fh:
+        json.dump(out, fh, separators=(',', ':'))
+    print(f'wrote {path}: {len(out["fights"])} vault fights (outside the repo)')
+
+
+def write_market_json(R, res, best):
+    fights = encode_rows(R, res, best)
     meta = {
         'built': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
         'tool': 'tools/market.py',
@@ -1695,9 +1755,9 @@ def write_market_json(R, res, best):
         'devig_best_on_tune': best,
         'books': 'per-book closing lines [A, B] (American) from BFO event pages; covers only the US books BFO lists today '
                  '(about 2021 on)',
-        'exchanges': 'Kalshi and Polymarket prices on BFO past-event pages are left out of market.json and the consensus: '
-                     'Kalshi\'s recorded last price scores log loss 0.33 vs 0.62 for the consensus on the same 2026 fights, '
-                     'i.e. it was captured after the result (eval.per_book); they stay in data/raw/odds/bfo_event_lines.csv',
+        'exchanges': 'Kalshi and Polymarket prices on BFO past-event pages (2026 only) are left out of market.json and the '
+                     'consensus: the first build found Kalshi\'s recorded last price was captured after the result. They stay '
+                     'in data/raw/odds/bfo_event_lines.csv; those 2026 rows encode results, so dev agents must not read them',
         'walk_forward': 'closing lines are known only minutes before the fight; they are a benchmark and a stacking input '
                         'for live use, never a feature of a model scored on the same fight before the line closes',
         'sources': [
@@ -1705,12 +1765,15 @@ def write_market_json(R, res, best):
             'nlbair/ufc-data v0.1.1 (CC BY 4.0, doi:10.5281/zenodo.23458636): BFO opening line and closing range per ufcstats fight id',
             'Ultimate UFC Dataset (mdabbert / shortlikeafox, CC BY 4.0): one closing moneyline per fighter',
         ],
-        'periods': {'tune': list(TUNE), 'test': list(TEST)},
+        'periods': {'tune': list(TUNE), 'test': list(TEST), 'vault_from': VAULT_FROM},
+        'scope': f'per-fight rows and every score cover dev fights only (before {VAULT_FROM}); vault rows go to '
+                 'market_vault.json outside the repo. `ratings` alone is fit through the snapshot (live use only)',
     }
     ev = {k: v for k, v in res.items() if k not in ('coverage', '_ratings')}
     meta['p_market_rating'] = ('walk-forward pre-fight probability from the market rating (Kalman filter on earlier closing '
                                'lines and results; eval.market_rating has the equations and parameters); usable before any line exists')
-    meta['ratings'] = 'current market ratings by fighters.json slug: [mu (log-odds), sd, last fight date, fights seen]'
+    meta['ratings'] = ('current market ratings by fighters.json slug: [mu (log-odds), sd, last fight date, fights seen]; '
+                       'fit on every fight through the snapshot (2026 included): live use only, never for scoring 2026 fights')
     meta['p_market_rating_adj'] = ('p_market_rating plus the tune-fit offsets the closing line adds beyond the rating: '
                                    'logit += c_up (up_A - up_B) + c_down (down_A - down_B) + c_age (age_A - age_B) / 5; '
                                    'coefficients in eval.market_rating.adj_coef')
@@ -1874,8 +1937,10 @@ def method_market(a, fights, recs):
                 q = [1 / am_to_dec(d[f'r{k}']) for k in range(1, K + 1)] + [1 / am_to_dec(d['godec_yes'])]
                 for m in rd:
                     rd[m].append(_norm(q, m))
-        row = {'id': f['id'], 'date': f['date'], 'event': f['event'], 'period': period_of(f['date']),
-               'cls': method_class(f), 'K': K, 'res': f['result']}
+        per_ = period_of(f['date'])
+        row = {'id': f['id'], 'date': f['date'], 'event': f['event'], 'period': per_,
+               'cls': method_class(f) if per_ != 'vault' else None, 'K': K,
+               'res': f['result'] if per_ != 'vault' else {}}
         if six['mult']:
             for m in six:
                 row['six_' + m] = list(np.mean(six[m], axis=0))
@@ -2079,7 +2144,7 @@ def cmd_tables(a):
             rb = f"{b['roi_best_book']:+.3f} ({b['n_best']})" if b['roi_best_book'] is not None else ''
             L.append(f"| {per} | {b['band'][0]:.1f}-{b['band'][1]:.1f} | {b['n_sides']} | {b['implied']:.3f} | {b['won']:.3f} | "
                      f"{b['roi_mean_odds']:+.3f} ({b['roi_se']:.3f}) | {rb} |")
-    L.append('\n### Recalibration and stacking (fit on 2019-2023, scored on 2024+)\n')
+    L.append('\n### Recalibration and stacking (fit on 2019-2023, scored on 2024-2025)\n')
     L.append('| Variant | Coefficients on logit scale [b, se] | LL tune | LL test | Test LL - close (95% CI) |')
     L.append('|---|---|---|---|---|')
     for k, v in E['stacking'].items():
@@ -2211,6 +2276,8 @@ def main():
     b = sub.add_parser('build')
     b.add_argument('--boot', type=int, default=2000, help='bootstrap resamples (by event)')
     b.add_argument('--props', action='store_true', help='also evaluate the method/round prop markets')
+    b.add_argument('--vault-dir', default=VAULT_DIR, help='where market_vault.json goes (outside the repo)')
+    b.add_argument('--no-vault-export', action='store_true')
     b.set_defaults(func=cmd_build)
     t = sub.add_parser('tables')
     t.set_defaults(func=cmd_tables)
