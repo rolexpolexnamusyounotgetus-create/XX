@@ -1,0 +1,277 @@
+{
+  "slug": "tatsuro-taira",
+  "name": "Tatsuro Taira",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 26,
+  "tale_of_tape": {
+    "height_cm": 170.2,
+    "reach_cm": 177.8,
+    "stance": "Orthodox",
+    "fight_weight_lb": 125,
+    "source": "data/derived/fighters.json (67 in height, 70 in reach, Orthodox); 125 lb at the UFC 328 weigh-in (May 2026)"
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_right.png",
+    "espn_stance_left.png",
+    "c1_commons_interview_2025-11.png",
+    "ref_getty_sportskeeda_ufc323_faceoff_2025-12.jpg",
+    "ref_cageside_ufc328_faceoff_profile_2026-05.jpg",
+    "ref_cageside_ufc328_weighin_3q_2026-05.jpg",
+    "ref_cageside_ufc328_weighin_front_2026-05.jpg",
+    "ref_superlutas_portrait_2025-12.jpg",
+    "ref_agentmma_ufc_cutout_older.png"
+  ],
+  "photo_coverage": "Good for the face, thin for action. 10 photos: one freely licensed (Commons CC BY 3.0 video still, Nov 2025); studio headshot and full-body cutout (May 2026) plus a Jul 2025 cutout; a high-resolution left three-quarter (Dec 2025); left profile, three-quarter and frontal shots from the UFC 328 ceremonial weigh-in (May 8, 2026, his most recent appearance); a close frontal portrait; an older cutout that shows his forehead. No clean right profile and no photo of his standing guard.",
+  "face": {
+    "shape": "Long, narrow oval face that tapers to a small chin; slim, with flat cheeks and no fullness at the jaw.",
+    "jaw": "Narrow and smoothly tapered; jaw angles soft and set high, little width at the gonial angle.",
+    "chin": "Small, narrow and slightly pointed, moderately projecting; fairly tall from lower lip to chin tip.",
+    "cheekbones": "Moderately prominent and wide-set relative to the narrow jaw; flat midface in the frontal view; slight hollow below at fight weight.",
+    "brow_ridge": "Low and smooth.",
+    "forehead": "Usually hidden under a fringe; the older short-haired cutout shows a medium-height, smooth forehead with a straight hairline.",
+    "eyes": {
+      "shape": "Narrow almond eyes with a low or absent upper-lid crease and a small inner-corner fold; upper lids full; outer corners level to slightly raised",
+      "spacing": "average",
+      "colour": "dark brown"
+    },
+    "eyebrows": {
+      "thickness": "medium",
+      "shape": "Straight, nearly horizontal, fairly long, tapering at the tails",
+      "colour": "dark brown (darker than the lightened hair)"
+    },
+    "nose": {
+      "length": "long",
+      "width": "medium-narrow at the bridge, medium at the tip",
+      "bridge": "Straight, low-to-medium height, narrow",
+      "hump": "none",
+      "tip": "Rounded, a little bulbous, pointing straight ahead; nostrils medium",
+      "fight_damage": "None visible."
+    },
+    "mouth_lips": "Medium-narrow mouth with full lips, the lower lip especially full; well-defined cupid's bow; the lips project slightly in profile; resting expression is a closed, slightly pouting mouth with corners turned down.",
+    "ears": {
+      "size": "medium",
+      "cauliflower_ear": "Not clearly: the right ear in the studio shots is normal; the left ear in the UFC 328 profile may have slightly thickened upper folds, but the photo is soft. Treat as normal.",
+      "note": "Lie fairly close to the head and are often half covered by hair."
+    },
+    "notable_marks_scars": "Light freckling or small spots on the cheeks (close portrait); no scars visible."
+  },
+  "hair": {
+    "style": "Shaggy mushroom/mop cut: long, layered top with a heavy fringe falling to the brows, longer pieces over the tops of the ears, tapered shorter at the nape. Lightened since late 2025.",
+    "length_cm": {
+      "top": 9,
+      "sides": 4
+    },
+    "colour_hex": "#5a4535",
+    "colour_note": "Look as of his last fight (UFC 328, May 2026): lightened hair that reads ash-blond/honey in studio flash (ESPN samples #624735 to #88664e) and dark brown with lighter streaks under arena light (#292620 to #403b32), with darker roots. #5a4535 is a mid value; add lighter streaks (#8a6a50). Natural colour (Jul and Nov 2025) is near-black brown, #1a1314; Dec 2025 (UFC 323) was a brighter bleached blond.",
+    "hairline": "Hidden by the fringe; straight where visible",
+    "texture": "Straight, fine to medium, layered and piecey"
+  },
+  "facial_hair": {
+    "type": "none (clean-shaven)",
+    "colour_hex": "#1a1314",
+    "density": "none visible",
+    "shape": "none"
+  },
+  "skin": {
+    "tone_hex": "#e2966f",
+    "tone_hex_method": "plain RGB mean of the face samples marked in_average (well-lit cheeks, no specular highlight, no strong colour cast); each sample is the median of the 25th-65th luma-percentile pixels of its patch",
+    "tone_hex_all_samples_avg": "#c08866",
+    "tone_hex_body": "#be845d",
+    "tone_hex_recommended": "#d38f68",
+    "tone_hex_recommended_method": "60% face average + 40% torso (ESPN studio cutout, same lighting setup used for all four fighters in this batch), so one whole-body tint does not come out flash-pale",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "right cheek (image-left)",
+        "light": "studio flash",
+        "hex": "#e69c72",
+        "in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "left cheek (image-right)",
+        "light": "studio flash",
+        "hex": "#e6996f",
+        "in_average": true
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "right cheek (image-left)",
+        "light": "studio flash",
+        "hex": "#a3694a",
+        "in_average": false
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "left cheek (image-right)",
+        "light": "studio flash",
+        "hex": "#dc9169",
+        "in_average": true
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "chest centre",
+        "light": "studio flash",
+        "hex": "#79503b",
+        "in_average": false
+      },
+      {
+        "photo": "c1_commons_interview_2025-11.png",
+        "where": "right cheek (image-left)",
+        "light": "indoor webcam, warm",
+        "hex": "#e1936e",
+        "in_average": true
+      },
+      {
+        "photo": "c1_commons_interview_2025-11.png",
+        "where": "left cheek (image-right)",
+        "light": "indoor webcam, warm",
+        "hex": "#e09373",
+        "in_average": true
+      },
+      {
+        "photo": "ref_cageside_ufc328_weighin_front_2026-05.jpg",
+        "where": "right cheek (image-left)",
+        "light": "stage light",
+        "hex": "#e0caaa",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_ufc328_weighin_front_2026-05.jpg",
+        "where": "left cheek (image-right)",
+        "light": "stage light",
+        "hex": "#aa9570",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_ufc328_weighin_3q_2026-05.jpg",
+        "where": "left cheek",
+        "light": "stage light",
+        "hex": "#6c4f31",
+        "in_average": false
+      }
+    ],
+    "body_samples": [
+      {
+        "photo": "espn_stance_right.png",
+        "where": "upper abdomen",
+        "light": "studio flash",
+        "hex": "#be845d"
+      }
+    ],
+    "undertone": "Warm light-to-medium, peach-yellow; the lightest face of this group in arena light, though studio flash makes him sample close to Van.",
+    "freckles_marks": "Light freckles or small spots on the cheeks; very little body hair.",
+    "note": "Excluded: a shadow-edge cheek in the Jul 2025 cutout, a neck sample that fell in shadow, and the UFC 328 weigh-in photos (green-yellow stage cast). The Nov 2025 Commons still is warm indoor light but agrees with the studio cheeks."
+  },
+  "body": {
+    "build": "Lean, long-limbed flyweight: 170 cm, 57 kg (125 lb) at weigh-in, long torso and long legs.",
+    "body_fat": "lean",
+    "body_fat_note": "Very lean: sharp six-pack, visible serratus and obliques, veins on the forearms.",
+    "shoulders": "Moderate width, sloping slightly; narrower-looking than Van's",
+    "chest": "Flat, defined pectorals",
+    "arms": "Long and wiry; reach 178 cm (8 cm more than his height)",
+    "waist": "Very narrow",
+    "legs_calves": "Long, lean thighs and slim calves",
+    "posture": "Upright, neck long, head carried slightly forward",
+    "notable": "Long neck; long, narrow overall proportions."
+  },
+  "tattoos": [
+    {
+      "where": "none",
+      "description": "none visible on the chest, abdomen, arms or legs (ESPN cutouts Jul 2025 and May 2026, UFC 328 weigh-in)",
+      "size": "none"
+    }
+  ],
+  "tattoos_note": "Back not fully seen, but the shoulders and upper back are bare in the UFC 328 profile.",
+  "kit": {
+    "fight_shorts": "Standard UFC Venum shorts: white with a light-grey pattern (May 2026 cutout) or black with grey and white stripes (Jul 2025 cutout); fought UFC 328 from the blue corner (data/scouting).",
+    "presser": "Backwards white-and-black patterned Venum cap and patterned jacket at UFC 323",
+    "colours": [
+      "#ffffff white",
+      "#111111 black",
+      "#9a9a9a grey"
+    ]
+  },
+  "stance_and_guard": {
+    "stance": "Orthodox (fighters.json)",
+    "observed": "No standing-guard photo was found; fight-week shots only.",
+    "arms_note": "Long, thin arms (reach 178 cm); posed, his arms hang straight with the hands at mid-thigh.",
+    "style": "Grappler who chains takedown attempts and hunts the back; low striking output (data/scouting/tatsuro-taira.json)",
+    "confidence": "low for guard details"
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "young_caucasian_male (the only young-age light swatch, #e6b393) tinted toward tone_hex_recommended #d38f68; middleage_asian_male (#dcb597) is an equally light alternative. Texture picked by age and swatch colour only.",
+    "eyebrows": "eyebrow001 tinted #2e221c, straight",
+    "hair": "a shaggy mop proxy with a full fringe, tinted #5a4535 with lighter streaks"
+  },
+  "ethnicity_fit": {
+    "african": 0.1,
+    "asian": 0.65,
+    "caucasian": 0.25,
+    "photos": [
+      "espn_headshot.png",
+      "ref_getty_sportskeeda_ufc323_faceoff_2025-12.jpg",
+      "ref_superlutas_portrait_2025-12.jpg",
+      "c1_commons_interview_2025-11.png"
+    ],
+    "basis": "Fitted by eye to how MakeHuman's three shape bases reproduce what the photos show: narrow almond eyes with a low or absent upper-lid crease and an inner-corner fold, a flat midface, a straight low-to-medium nasal bridge and full lips on a long, narrow face. Not assigned from name or nationality.",
+    "confidence": "low-to-medium: check a render against the ESPN headshot and the UFC 323 three-quarter; the detail morphs below are kept moderate so the sheet still works if this block is removed"
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.027,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.6,
+    "macro/weightDownM": 0.3,
+    "macro/heightDownM": 0.19,
+    "macro/proportionsUpM": 0.6,
+    "head/head-oval": 0.4,
+    "head/head-scale-horiz-decr": 0.15,
+    "head/head-scale-vert-incr": 0.1,
+    "head/head-fat-decr": 0.25,
+    "chin/chin-width-decr": 0.25,
+    "chin/chin-prominent-incr": 0.1,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-bones-decr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.2,
+    "cheek/r-cheek-bones-incr": 0.2,
+    "cheek/l-cheek-volume-decr": 0.25,
+    "cheek/r-cheek-volume-decr": 0.25,
+    "eyes/l-eye-height2-decr": 0.3,
+    "eyes/r-eye-height2-decr": 0.3,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-epicanthus-in": 0.15,
+    "eyes/r-eye-epicanthus-in": 0.15,
+    "eyes/l-eye-corner1-up": 0.08,
+    "eyes/r-eye-corner1-up": 0.08,
+    "eyebrows/eyebrows-trans-down": 0.05,
+    "nose/nose-scale-vert-incr": 0.2,
+    "nose/nose-width1-decr": 0.05,
+    "nose/nose-scale-depth-decr": 0.05,
+    "nose/nose-hump-decr": 0.1,
+    "nose/nose-point-width-incr": 0.1,
+    "nose/nose-nostrils-width-incr": 0.05,
+    "nose/nose-point-down": 0.05,
+    "mouth/mouth-lowerlip-volume-incr": 0.35,
+    "mouth/mouth-upperlip-volume-incr": 0.2,
+    "mouth/mouth-cupidsbow-incr": 0.2,
+    "mouth/mouth-scale-horiz-decr": 0.1,
+    "mouth/mouth-angles-down": 0.15,
+    "mouth/mouth-scale-depth-incr": 0.1,
+    "neck/neck-scale-vert-incr": 0.2,
+    "neck/neck-scale-horiz-decr": 0.05,
+    "torso/measure-shoulder-dist-decr": 0.05,
+    "torso/torso-vshape-incr": 0.15,
+    "torso/measure-waist-circ-decr": 0.35,
+    "torso/measure-hips-circ-decr": 0.15,
+    "buttocks/buttocks-volume-decr": 0.1
+  },
+  "morphs_if_available": {
+    "note": "Ear targets are not in the shipped manifest; none needed beyond defaults."
+  },
+  "morphs_unavailable": "The fringe and layered mop need a hair proxy (no morph); no target for the lid crease itself.",
+  "notes": "Confidence: high for hair (cut and its colour history), the long narrow face, narrow eyes, long straight nose, full lips, absence of tattoos and the long lean build; medium for morph values; low for guard and stance details. Watch for: (1) the fringe covers the forehead and brows' upper edge; without it he stops looking like himself; (2) pick one hair colour per scene: the lightened 2026 colour by default (#5a4535 with streaks), near-black for a 2025 look; (3) the lower face is the strongest cue: small narrow chin, full lower lip, slight pout; (4) keep him visibly taller, longer-limbed and narrower than Van (170 vs 165 cm; reach 178 vs 165 cm); (5) macro/heightDownM 0.19 comes from heightUpM = 2 * (H - 1.785 m) / 0.875 (research/assets.md); some other 170 cm sheets use 0.27, so measure the mesh and nudge it to 170 cm. ageOldM 0.027 follows avatar3d.js (26.8 - 25) / 65. The ethnicity_fit block is opt-in for avatar3d.js; drop it if the orchestrator wants the neutral thirds kept."
+}

@@ -756,7 +756,8 @@
    },
    "best": "judges_home@0.5",
    "named_judges_recommended": true,
-   "mult": 0.5
+   "mult": 0.5,
+   "home_on_tuning_fold": true
   },
   "tau_multiplier": 0.5,
   "tau_eb_pre2019": {
@@ -26189,6 +26190,459 @@
     },
     "sharpness_shift_matching_split": 0.279642,
     "sharpness_mult": 1.322657
+   }
+  },
+  "verification": {
+   "note": "paired differences, event-cluster bootstrap (2,000 draws); negative = first model better. named_off = published parameters with every judge effect 0; usa_off = also h_USA = 0; home_off = both home terms 0",
+   "test": {
+    "fold": "fit before 2024, scored 2024-2025 (validation)",
+    "n": 534,
+    "metrics": {
+     "published": {
+      "winner_logloss": 0.338686,
+      "class7_logloss": 0.792993,
+      "split_logloss": 0.440851,
+      "pred_split_rate": 0.255814,
+      "obs_split_rate": 0.200375
+     },
+     "league_home": {
+      "winner_logloss": 0.338343,
+      "class7_logloss": 0.794975,
+      "split_logloss": 0.442897,
+      "pred_split_rate": 0.260945,
+      "obs_split_rate": 0.200375
+     },
+     "league": {
+      "winner_logloss": 0.341363,
+      "class7_logloss": 0.805512,
+      "split_logloss": 0.449465,
+      "pred_split_rate": 0.263001,
+      "obs_split_rate": 0.200375
+     },
+     "named_off": {
+      "winner_logloss": 0.336822,
+      "class7_logloss": 0.793277,
+      "split_logloss": 0.443494,
+      "pred_split_rate": 0.263616,
+      "obs_split_rate": 0.200375
+     },
+     "named_off_usa_off": {
+      "winner_logloss": 0.337551,
+      "class7_logloss": 0.794925,
+      "split_logloss": 0.444461,
+      "pred_split_rate": 0.263988,
+      "obs_split_rate": 0.200375
+     },
+     "named_off_home_off": {
+      "winner_logloss": 0.339617,
+      "class7_logloss": 0.804065,
+      "split_logloss": 0.450451,
+      "pred_split_rate": 0.267202,
+      "obs_split_rate": 0.200375
+     }
+    },
+    "diff": {
+     "published - named_off": {
+      "winner_logloss": {
+       "mean": 0.001865,
+       "lo": 0.000254,
+       "hi": 0.003529,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": -0.000284,
+       "lo": -0.003319,
+       "hi": 0.002947,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": -0.002642,
+       "lo": -0.00512,
+       "hi": -4.3e-05,
+       "boot": "events (84)"
+      }
+     },
+     "named_off - league_home": {
+      "winner_logloss": {
+       "mean": -0.001522,
+       "lo": -0.002408,
+       "hi": -0.000719,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": -0.001698,
+       "lo": -0.003064,
+       "hi": -0.000376,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": 0.000596,
+       "lo": -0.000358,
+       "hi": 0.001501,
+       "boot": "events (84)"
+      }
+     },
+     "named_off - league": {
+      "winner_logloss": {
+       "mean": -0.004542,
+       "lo": -0.010286,
+       "hi": 0.000469,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": -0.012236,
+       "lo": -0.020306,
+       "hi": -0.005276,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": -0.005971,
+       "lo": -0.010634,
+       "hi": -0.001831,
+       "boot": "events (84)"
+      }
+     },
+     "named_off_usa_off - named_off": {
+      "winner_logloss": {
+       "mean": 0.000729,
+       "lo": -0.000433,
+       "hi": 0.001977,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": 0.001648,
+       "lo": -8e-06,
+       "hi": 0.003404,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": 0.000967,
+       "lo": -0.000158,
+       "hi": 0.002256,
+       "boot": "events (84)"
+      }
+     },
+     "named_off_home_off - named_off": {
+      "winner_logloss": {
+       "mean": 0.002795,
+       "lo": -0.002263,
+       "hi": 0.008594,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": 0.010788,
+       "lo": 0.004167,
+       "hi": 0.018454,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": 0.006957,
+       "lo": 0.003206,
+       "hi": 0.011231,
+       "boot": "events (84)"
+      }
+     }
+    }
+   },
+   "tune22": {
+    "fold": "fit before 2022, scored 2022-2023 (tuning)",
+    "n": 485,
+    "metrics": {
+     "published": {
+      "winner_logloss": 0.378045,
+      "class7_logloss": 0.965911,
+      "split_logloss": 0.502918,
+      "pred_split_rate": 0.243515,
+      "obs_split_rate": 0.243299
+     },
+     "league_home": {
+      "winner_logloss": 0.374759,
+      "class7_logloss": 0.96373,
+      "split_logloss": 0.501567,
+      "pred_split_rate": 0.24823,
+      "obs_split_rate": 0.243299
+     },
+     "league": {
+      "winner_logloss": 0.376786,
+      "class7_logloss": 0.968299,
+      "split_logloss": 0.503716,
+      "pred_split_rate": 0.248989,
+      "obs_split_rate": 0.243299
+     },
+     "named_off": {
+      "winner_logloss": 0.374457,
+      "class7_logloss": 0.963516,
+      "split_logloss": 0.500898,
+      "pred_split_rate": 0.248285,
+      "obs_split_rate": 0.243299
+     },
+     "named_off_usa_off": {
+      "winner_logloss": 0.374921,
+      "class7_logloss": 0.964328,
+      "split_logloss": 0.501737,
+      "pred_split_rate": 0.24842,
+      "obs_split_rate": 0.243299
+     },
+     "named_off_home_off": {
+      "winner_logloss": 0.376605,
+      "class7_logloss": 0.969204,
+      "split_logloss": 0.50422,
+      "pred_split_rate": 0.249697,
+      "obs_split_rate": 0.243299
+     }
+    },
+    "diff": {
+     "published - named_off": {
+      "winner_logloss": {
+       "mean": 0.003587,
+       "lo": 0.000634,
+       "hi": 0.007744,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": 0.002395,
+       "lo": -0.000882,
+       "hi": 0.005784,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": 0.00202,
+       "lo": -0.00034,
+       "hi": 0.004815,
+       "boot": "events (84)"
+      }
+     },
+     "named_off - league_home": {
+      "winner_logloss": {
+       "mean": -0.000302,
+       "lo": -0.00084,
+       "hi": 8.7e-05,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": -0.000215,
+       "lo": -0.001613,
+       "hi": 0.000965,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": -0.000669,
+       "lo": -0.001794,
+       "hi": 0.000154,
+       "boot": "events (84)"
+      }
+     },
+     "named_off - league": {
+      "winner_logloss": {
+       "mean": -0.002328,
+       "lo": -0.008965,
+       "hi": 0.004316,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": -0.004783,
+       "lo": -0.013904,
+       "hi": 0.004738,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": -0.002818,
+       "lo": -0.007636,
+       "hi": 0.001153,
+       "boot": "events (84)"
+      }
+     },
+     "named_off_usa_off - named_off": {
+      "winner_logloss": {
+       "mean": 0.000463,
+       "lo": -0.001346,
+       "hi": 0.002467,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": 0.000813,
+       "lo": -0.001386,
+       "hi": 0.003023,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": 0.000839,
+       "lo": -0.000101,
+       "hi": 0.001815,
+       "boot": "events (84)"
+      }
+     },
+     "named_off_home_off - named_off": {
+      "winner_logloss": {
+       "mean": 0.002148,
+       "lo": -0.004401,
+       "hi": 0.008657,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": 0.005688,
+       "lo": -0.003426,
+       "hi": 0.01486,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": 0.003323,
+       "lo": -0.000739,
+       "hi": 0.008243,
+       "boot": "events (84)"
+      }
+     }
+    }
+   },
+   "tune": {
+    "fold": "fit before 2019, scored 2019-2023 (tuning)",
+    "n": 1243,
+    "metrics": {
+     "published": {
+      "winner_logloss": 0.356995,
+      "class7_logloss": 0.914914,
+      "split_logloss": 0.466655,
+      "pred_split_rate": 0.266678,
+      "obs_split_rate": 0.21963
+     },
+     "league_home": {
+      "winner_logloss": 0.355112,
+      "class7_logloss": 0.913475,
+      "split_logloss": 0.467438,
+      "pred_split_rate": 0.271777,
+      "obs_split_rate": 0.21963
+     },
+     "league": {
+      "winner_logloss": 0.35493,
+      "class7_logloss": 0.910626,
+      "split_logloss": 0.466354,
+      "pred_split_rate": 0.272788,
+      "obs_split_rate": 0.21963
+     },
+     "named_off": {
+      "winner_logloss": 0.355476,
+      "class7_logloss": 0.913127,
+      "split_logloss": 0.466703,
+      "pred_split_rate": 0.269595,
+      "obs_split_rate": 0.21963
+     },
+     "named_off_usa_off": {
+      "winner_logloss": 0.354829,
+      "class7_logloss": 0.912219,
+      "split_logloss": 0.466299,
+      "pred_split_rate": 0.269631,
+      "obs_split_rate": 0.21963
+     },
+     "named_off_home_off": {
+      "winner_logloss": 0.355122,
+      "class7_logloss": 0.911889,
+      "split_logloss": 0.466008,
+      "pred_split_rate": 0.270535,
+      "obs_split_rate": 0.21963
+     }
+    },
+    "diff": {
+     "published - named_off": {
+      "winner_logloss": {
+       "mean": 0.001519,
+       "lo": 0.000306,
+       "hi": 0.002817,
+       "boot": "events (210)"
+      },
+      "class7_logloss": {
+       "mean": 0.001787,
+       "lo": -0.000177,
+       "hi": 0.003791,
+       "boot": "events (210)"
+      },
+      "split_logloss": {
+       "mean": -4.8e-05,
+       "lo": -0.001051,
+       "hi": 0.001057,
+       "boot": "events (210)"
+      }
+     },
+     "named_off - league_home": {
+      "winner_logloss": {
+       "mean": 0.000364,
+       "lo": 7.8e-05,
+       "hi": 0.00063,
+       "boot": "events (210)"
+      },
+      "class7_logloss": {
+       "mean": -0.000348,
+       "lo": -0.001162,
+       "hi": 0.00045,
+       "boot": "events (210)"
+      },
+      "split_logloss": {
+       "mean": -0.000735,
+       "lo": -0.001243,
+       "hi": -0.000255,
+       "boot": "events (210)"
+      }
+     },
+     "named_off - league": {
+      "winner_logloss": {
+       "mean": 0.000546,
+       "lo": -0.004054,
+       "hi": 0.005261,
+       "boot": "events (210)"
+      },
+      "class7_logloss": {
+       "mean": 0.002501,
+       "lo": -0.003584,
+       "hi": 0.008828,
+       "boot": "events (210)"
+      },
+      "split_logloss": {
+       "mean": 0.000349,
+       "lo": -0.002842,
+       "hi": 0.003587,
+       "boot": "events (210)"
+      }
+     },
+     "named_off_usa_off - named_off": {
+      "winner_logloss": {
+       "mean": -0.000647,
+       "lo": -0.001603,
+       "hi": 0.000271,
+       "boot": "events (210)"
+      },
+      "class7_logloss": {
+       "mean": -0.000908,
+       "lo": -0.002285,
+       "hi": 0.000545,
+       "boot": "events (210)"
+      },
+      "split_logloss": {
+       "mean": -0.000404,
+       "lo": -0.001114,
+       "hi": 0.000317,
+       "boot": "events (210)"
+      }
+     },
+     "named_off_home_off - named_off": {
+      "winner_logloss": {
+       "mean": -0.000354,
+       "lo": -0.0051,
+       "hi": 0.004282,
+       "boot": "events (210)"
+      },
+      "class7_logloss": {
+       "mean": -0.001238,
+       "lo": -0.007571,
+       "hi": 0.004823,
+       "boot": "events (210)"
+      },
+      "split_logloss": {
+       "mean": -0.000695,
+       "lo": -0.003927,
+       "hi": 0.002439,
+       "boot": "events (210)"
+      }
+     }
+    }
    }
   },
   "fold_sources": {
@@ -59122,7 +59576,7 @@
    "dq",
    "deduction"
   ],
-  "referee_note": "multipliers on the league rate (odds for kd_finish, kd_single, doctor, dq, deduction; rate for kd_follow, stand_tko, gnp_tko); default = empirical-Bayes shrinkage (referees_eb); referees_tuned = less shrinkage (2019-2023 tuned tau), a style knob that did not improve 2024-2025 predictions",
+  "referee_note": "multipliers on the league rate (odds for kd_finish, kd_single, doctor, dq, deduction; rate for kd_follow, stand_tko, gnp_tko); default = empirical-Bayes shrinkage (referees_eb); referees_tuned = less shrinkage (2019-2023 tuned tau), a style knob that did not improve 2024-2025 predictions. Verification caution: the dq column rests on 22 DQs in all (1-5 per referee), its tau sits at the top of the grid (0.8) and the 2024-25 check had 2 DQs (not significant); use 1.0 for dq unless a DQ scenario is wanted",
   "referees_eb": {
    "Andrew Glenn": [
     17,
@@ -60538,6 +60992,7 @@
    "dq": 0.001667,
    "deduction_per_decision": 0.026256
   },
+  "named_judges_default": false,
   "knobs": {
    "panel_sharpness_shift": {
     "default": 0.0,
@@ -60554,9 +61009,75 @@
     "fit_before_2022": 1.277428,
     "note": "one N(0, sd^2) draw per fight added to every round's shared noise; improved 2022-23 but not 2024-25 (section 3.2 of research/model_officials.md), so it is off by default"
    },
+   "named_judges": {
+    "default": false,
+    "evidence": {
+     "test": {
+      "winner_logloss": {
+       "mean": 0.001865,
+       "lo": 0.000254,
+       "hi": 0.003529,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": -0.000284,
+       "lo": -0.003319,
+       "hi": 0.002947,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": -0.002642,
+       "lo": -0.00512,
+       "hi": -4.3e-05,
+       "boot": "events (84)"
+      }
+     },
+     "tune22": {
+      "winner_logloss": {
+       "mean": 0.003587,
+       "lo": 0.000634,
+       "hi": 0.007744,
+       "boot": "events (84)"
+      },
+      "class7_logloss": {
+       "mean": 0.002395,
+       "lo": -0.000882,
+       "hi": 0.005784,
+       "boot": "events (84)"
+      },
+      "split_logloss": {
+       "mean": 0.00202,
+       "lo": -0.00034,
+       "hi": 0.004815,
+       "boot": "events (84)"
+      }
+     },
+     "tune": {
+      "winner_logloss": {
+       "mean": 0.001519,
+       "lo": 0.000306,
+       "hi": 0.002817,
+       "boot": "events (210)"
+      },
+      "class7_logloss": {
+       "mean": 0.001787,
+       "lo": -0.000177,
+       "hi": 0.003791,
+       "boot": "events (210)"
+      },
+      "split_logloss": {
+       "mean": -4.8e-05,
+       "lo": -0.001051,
+       "hi": 0.001057,
+       "boot": "events (210)"
+      }
+     }
+    },
+    "note": "true = use engine.judges[key] effects for an assigned panel; false (default unless the named-judge effects beat zero effects on the 2024-25 7-class loss without hurting the winner loss on any fold) = every judge is the league judge (effects 0) with the same league parameters. Verification: the named effects made the decision-winner log loss worse on all three folds (2024-25, 2022-23, 2019-23) and never improved the 7-class loss; they help only the split/unanimous loss in 2024-25. Keep them for assigned-official scenarios, not for the default forecast"
+   },
    "home_effect": {
     "default": 1.0,
-    "note": "multiplier on h (0 turns the home-country effect off)"
+    "note": "multiplier on h (0 turns the home-country effect off). Verification: with named judges off, dropping both home terms costs +0.011 [+0.004, +0.018] 7-class log loss on 2024-25 and +0.006 [-0.003, +0.015] on 2022-23; with the fit before 2019 it is neutral on 2019-23 (-0.001). h_USA changed sign across fits (+0.07 before 2019, -0.10 before 2022, -0.14 before 2024, -0.16 final): treat it as unstable"
    },
    "referee_table": {
     "default": "referees_eb",
