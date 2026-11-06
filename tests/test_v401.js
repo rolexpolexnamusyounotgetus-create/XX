@@ -45,10 +45,14 @@ for (const e of [E, E4, E41]) e.loadDB(dbJson);
 const mlJson = readJSON("data/derived/mlrates.json");
 function withML(eng, fn) { eng.loadMLRates(mlJson); try { return fn(); } finally { eng.loadMLRates(null); } }
 
-const OFFS = [{ components: { v401: false } },
-  { components: { v401: { emJudge: false, deductions: false, mlLevels: false, tdCap: false, koTargets: false } } }];
+// v5 merge: the components merged after step 1 (durability, dynamics, ...) stay off in every comparison of this file, so
+// it keeps testing step 1 against its own base whatever later steps add (each later step has its own identity test)
+const LATER_OFF = {};
+for (const k of Object.keys(E.params().components || {})) if (k !== "v401") LATER_OFF[k] = false;
+const comp = (v401) => ({ components: Object.assign({}, LATER_OFF, { v401 }) });
+const OFFS = [comp(false), comp({ emJudge: false, deductions: false, mlLevels: false, tdCap: false, koTargets: false })];
 const SUBS = ["emJudge", "deductions", "mlLevels", "tdCap", "koTargets"];
-const only = (s) => { const o = {}; for (const k of SUBS) o[k] = k === s; return { components: { v401: o } }; };
+const only = (s) => { const o = {}; for (const k of SUBS) o[k] = k === s; return comp(o); };
 
 // ------------------------------------------------------------------ matchup generators
 const rng = E.makeRng(20261106);
@@ -125,7 +129,7 @@ check("identity covers >= 300 random matchups incl. traced fights", total >= 300
 
 // ------------------------------------------------------------------ 2. port fidelity vs v4.0.1
 {
-  const ON = { components: { v401: { emJudge: true, deductions: true, mlLevels: true, tdCap: true, koTargets: false } } };
+  const ON = comp({ emJudge: true, deductions: true, mlLevels: true, tdCap: true, koTargets: false });
   let bad = 0, n = 0, nM = 0, firstBad = null;
   const cs = casesA.slice(0, 50).concat(casesC.slice(0, 50));
   E41.loadMLRates(mlJson); E.loadMLRates(mlJson);
@@ -170,7 +174,7 @@ check("identity covers >= 300 random matchups incl. traced fights", total >= 300
   } finally { E.loadMLRates(null); }
   const fl = E.v401Flags(E.params());
   check("default params: all five v401 sub-flags on (until the Calibrate stage decides)", SUBS.every((s) => fl[s]), JSON.stringify(fl));
-  const p = E.resolveParams({ components: { v401: false } }), P4 = require(path.join(ROOT, "versions/v4/params3.js"));
+  const p = E.resolveParams(comp(false)), P4 = require(path.join(ROOT, "versions/v4/params3.js"));
   const keys = ["kdScale", "kdInstant", "kdRefStop", "stko", "gnpTko", "subConvScale", "kdPos"], jk = ["head", "body", "leg", "kd", "td", "ctrlMin", "sub", "sharedSd", "sharedFight", "indSd", "t108", "t108kd", "hurt", "power", "tasteSd"];
   check("v401 off resolves to v4.0.0's parameter values (judge, KO block, levels)", keys.every((k) => JSON.stringify(p[k]) === JSON.stringify(P4[k])) &&
     jk.every((k) => p.judge[k] === P4.judge[k]) && !(p.judge.ded > 0) && (p.mlTdLevel || 1) === 1 && (p.mlCtrlLevel || 1) === 1 && (p.mlSubLevel || 1) === 1);

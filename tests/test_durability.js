@@ -2,10 +2,12 @@
 /* Durability component (params.components.durability, engine v5) checks.
    1. Flag off = the engine before the component, bit for bit: matchup tables, traced fights and Monte Carlo summaries
       for plain, learned-rate (v4) and manual matchups equal those of the pre-component engine source. That source is
-      DUR_BASE_FILE (a path), else DUR_BASE_REV (git), else the frozen versions/v<VERSION>/ (or v<major>/) folder of the
-      engine version in src/ (the main checkout), else git 275b339 (the builder's base sync); without any of them the
-      cases are compared against the golden hashes in tests/fixtures/durability_off_golden.json
-      (node tests/test_durability.js --write-golden refreshes them from the base found).
+      DUR_BASE_FILE (a path), else DUR_BASE_REV (git), else tests/fixtures/engine3_pre_durability.js (v5 merge step 2:
+      the engine of step 1, commit 9656818), else the frozen versions/v<VERSION>/ (or v<major>/) folder of the engine
+      version in src/, else git 275b339 (the builder's base sync); without any of them the cases are compared against the
+      golden hashes in tests/fixtures/durability_off_golden.json (node tests/test_durability.js --write-golden refreshes
+      them from the base found). The v5 components merged after durability (every components key but v401 and
+      durability) are switched off for this comparison; the base engine ignores them.
    2. Covariates reproduce durability.json roster chin_cov / pow_cov for every fighter (live coefficients).
    3. Knockdown probabilities reproduce research/model_durability.md section 8 (Volkanovski-Gaethje, 730-day level).
    4. Structure: corner swap, age, KO-loss recency, knobs, size knob default 0, engineWeight limits, record precedence,
@@ -30,6 +32,8 @@ const OOF = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "derived", "mlrat
 const PRI = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "derived", "mlcal_priors_asof.json"), "utf8"));
 E.loadDB(dbJson);
 const OFF = { components: { durability: false } };
+// the kdScale a matchup runs on: params.kdScale x components.v401 koComp.kdScale when koTargets is on (v5 merge step 1)
+const KDS = E.resolveParams().kdScale;
 const GOLDEN = path.join(ROOT, "tests", "fixtures", "durability_off_golden.json");
 const BASE_REV = process.env.DUR_BASE_REV || "275b339";
 
@@ -83,7 +87,7 @@ function loadEngineSource(src) {
   return mod.exports;
 }
 // The pre-component engine, first found wins: DUR_BASE_FILE (a path to an engine3.js); DUR_BASE_REV (a git revision,
-// when set); the frozen folder of the engine version src/ carries (versions/v<VERSION>/, or versions/v<major>/ for
+// when set); tests/fixtures/engine3_pre_durability.js (v5 merge: the step-1 engine durability was merged onto); the frozen folder of the engine version src/ carries (versions/v<VERSION>/, or versions/v<major>/ for
 // X.0.0: the component does not bump VERSION, so in the main checkout that is the engine it was applied to); the
 // builder's base-sync commit 275b339 from git; else the golden fixture. The base source runs with the current
 // src/params3.js and src/ml/mlrates.js, flag off.
@@ -97,6 +101,8 @@ function baseEngine() {
   };
   if (process.env.DUR_BASE_FILE) { BASE_NAME = "file " + process.env.DUR_BASE_FILE; return loadEngineSource(fs.readFileSync(process.env.DUR_BASE_FILE, "utf8")); }
   if (process.env.DUR_BASE_REV) return fromGit(BASE_REV);
+  const fx = path.join(ROOT, "tests", "fixtures", "engine3_pre_durability.js");
+  if (fs.existsSync(fx)) { BASE_NAME = "tests/fixtures/engine3_pre_durability.js (v5 merge step 1 engine)"; return loadEngineSource(fs.readFileSync(fx, "utf8")); }
   const v = String(E.VERSION || ""), dirs = ["v" + v];
   if (/^\d+\.0\.0$/.test(v)) dirs.push("v" + v.split(".")[0]);
   for (const d of dirs) {
@@ -109,6 +115,9 @@ function baseEngine() {
 // ---------------------------------------------------------------- 1. flag off = pre-component engine
 console.log("=== 1. flag off equals the engine before the component ===");
 const saved = FP.components.durability;
+// v5 merge: components merged after durability (dynamics, ...) are off for the whole flag-off comparison
+const LATER = Object.keys(FP.components).filter((k) => k !== "v401" && k !== "durability"), savedLater = LATER.map((k) => FP.components[k]);
+LATER.forEach((k) => { FP.components[k] = false; });
 FP.components.durability = false;                       // global flag off for this block
 const offRes = runCases(E);
 FP.components.durability = saved;
@@ -126,6 +135,7 @@ else for (const name in offRes) {
   const a = offRes[name], b = ref[name];
   ok(b && a.tables === b.tables && a.traces === b.traces && a.summary === b.summary, "flag off == " + refName + ": " + name);
 }
+LATER.forEach((k, i) => { FP.components[k] = savedLater[i]; });
 // the per-call override (opts.params.components.durability = false) is the same path
 {
   const vg = { division: "Lightweight", rounds: 5, title: true, date: "2026-11-06", ml: false };
@@ -159,13 +169,13 @@ console.log("\n=== 2. covariates reproduce the roster (live coefficients) ===");
 console.log("\n=== 3. Volkanovski-Gaethje knockdown probabilities (research section 8) ===");
 E.loadDurability(DUR);
 {
-  const o = { division: "Lightweight", rounds: 5, title: false, date: "2026-10-31", ml: false, params: { durability: { engineWeight: 0, kdCal: 1 / FP.kdScale } } };   // the data model's own hazard
+  const o = { division: "Lightweight", rounds: 5, title: false, date: "2026-10-31", ml: false, params: { durability: { engineWeight: 0, kdCal: 1 / KDS } } };   // the data model's own hazard
   const m = E.matchup("alexander-volkanovski", "justin-gaethje", o);
   ok(near(100 * m.kd[0], 0.59, 0.01) && near(100 * m.kd[1], 1.04, 0.015), "pure durability, 730-day level: Volk drops Gaethje 0.59 / 100, Gaethje drops Volk 1.04 / 100",
     (100 * m.kd[0]).toFixed(3) + " / " + (100 * m.kd[1]).toFixed(3));
   ok(m.dur.A.src === "record" && near(m.dur.A.chin, 1.07, 0.01) && near(m.dur.B.chin, 0.80, 0.01) && near(m.dur.A.pow, 0.74, 0.01) && near(m.dur.B.pow, 0.98, 0.01),
     "roster totals: Volk chin 1.07 power 0.74, Gaethje chin 0.80 power 0.98", JSON.stringify([m.dur.A.chin, m.dur.A.pow, m.dur.B.chin, m.dur.B.pow].map((x) => +x.toFixed(3))));
-  const m365 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, o, { params: { durability: { engineWeight: 0, kdCal: 1 / FP.kdScale, level: 0.011706 } } }));
+  const m365 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, o, { params: { durability: { engineWeight: 0, kdCal: 1 / KDS, level: 0.011706 } } }));
   ok(near(100 * m365.kd[0], 0.67, 0.01) && near(100 * m365.kd[1], 1.19, 0.015), "365-day level scenario: 0.67 / 1.19 per 100", (100 * m365.kd[0]).toFixed(3) + " / " + (100 * m365.kd[1]).toFixed(3));
   const mt = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, o, { title: true }));
   ok(near(mt.kd[0] / m.kd[0], Math.exp(-0.09636), 1e-9), "title fight x0.908");
@@ -197,7 +207,7 @@ console.log("\n=== 4. structure ===");
   // engineWeight limits
   const p0 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: OFF }, vg));
   const w1 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: { durability: { engineWeight: 1 } } }, vg));
-  ok(near(w1.kd[0] / w1.dur.base / w1.dur.kdCal / FP.kdScale, p0.kd[0] / w1.dur.engLevel, 1e-12) && near(w1.gnp[1], p0.gnp[1], 1e-12) && near(w1.dw[0], p0.dw[0], 1e-12),
+  ok(near(w1.kd[0] / w1.dur.base / w1.dur.kdCal / KDS, p0.kd[0] / w1.dur.engLevel, 1e-12) && near(w1.gnp[1], p0.gnp[1], 1e-12) && near(w1.dw[0], p0.dw[0], 1e-12),
     "engineWeight 1: the engine's own structure at the durability level (gnp and damage unchanged)");
   const wh = E.matchup("alexander-volkanovski", "justin-gaethje", vg), w0 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: { durability: { engineWeight: 0 } } }, vg));
   ok(near(Math.log(wh.dur.relK[0]), 0.5 * Math.log(w0.dur.relK[0]) + 0.5 * Math.log(w1.dur.relK[0]), 1e-12), "engineWeight 0.5 is the geometric mean of 0 and 1");
@@ -206,7 +216,7 @@ console.log("\n=== 4. structure ===");
   ok(rel.dur.mode === "relative" && near(rel.dur.base, rel.dur.engLevel * rel.dur.ctx, 1e-15), "level null: relative mode on the engine's division level");
   // record precedence: opts.dur beats the roster
   const rec = { A: { chin_re: 1, chin_cov: 1, pow_re: 2, pow_cov: 1 }, B: { chin_re: 1.5, chin_cov: 1, pow_re: 1, pow_cov: 1 }, base: 0.01 };
-  const mr = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ dur: rec, params: { durability: { engineWeight: 0, kdCal: 1 / FP.kdScale } } }, vg));
+  const mr = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ dur: rec, params: { durability: { engineWeight: 0, kdCal: 1 / KDS } } }, vg));
   ok(near(mr.kd[0], 0.01 * 2 * 1.5, 1e-12) && near(mr.kd[1], 0.01, 1e-12) && mr.dur.baseFromRecord, "opts.dur records and base override the roster and the level");
   // withdrawn terms are neutral unless set
   const lay = mk({ age: 30 }, { age: 30, layoff: 900, last_ko_loss: 1, ufc_years: 8 });
