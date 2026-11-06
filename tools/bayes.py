@@ -1385,6 +1385,19 @@ def pred_path(variant, schedule, part):
     return os.path.join(CACHE, "pred_%s_%s_%s.pkl" % (variant, schedule, part))
 
 
+def refit_win_on_ep(X, H, Y, back=7):
+    """The prediction link (win GLM beta) refit on pre-fight states from yearly EP refits + filter over the training
+    window Y-back..Y-1 (the update model, beta_up and the method GLM, is unchanged). Uses data before Jan 1 of Y only."""
+    R = run_schedule(X, H, list(range(Y - back, Y)), "year")
+    idx = win_rows(X, Y, back)
+    idx = idx[R["done"][idx]]
+    mu, S = feat_moments(R, idx)
+    H2 = copy.deepcopy(H)
+    H2["win"]["beta"] = fit_win_glm(mu, S, X["win"][idx], varaware=H["win"]["varaware"], beta0=H["win"]["beta"])
+    H2["win_glm_states"] = "EP yearly refits + filter, %d-%d" % (Y - back, Y - 1)
+    return H2
+
+
 def _predict_job(job):
     variant, schedule, part = job
     p = pred_path(variant, schedule, part)
@@ -1392,16 +1405,15 @@ def _predict_job(job):
         return p
     X = load_data()
     t0 = time.time()
-    if part.startswith("oof"):              # one OOF year: hyperparameters fit on data before Jan 1 of that year
-        Y = int(part[3:])
-        H = pickle.load(open(year_path(variant, Y), "rb"))["H"]
-        P = predict_year(X, H, Y, schedule=schedule)
-    elif part == "static":                  # 2024-2025 with the hyperparameters fit before 2024-01-01
-        H = pickle.load(open(year_path(variant, 2024), "rb"))["H"]
-        P = predict_year(X, H, 2024, years=[2024, 2025], schedule=schedule)
-    elif part == "roll2025":                # 2025 with the hyperparameters refit on data before 2025-01-01
-        H = pickle.load(open(year_path(variant, 2025), "rb"))["H"]
-        P = predict_year(X, H, 2025, schedule=schedule)
+    sched, _, g = schedule.partition("+")
+    Y = {"static": 2024, "roll2025": 2025}.get(part) or int(part[3:])
+    H = pickle.load(open(year_path(variant, Y), "rb"))["H"]
+    if g == "g":
+        H = refit_win_on_ep(X, H, Y)
+    years = [2024, 2025] if part == "static" else [Y]
+    # oofY: hyperparameters fit on data before Jan 1 of Y; static: 2024-2025 from the fit before 2024-01-01;
+    # roll2025: 2025 from the fit before 2025-01-01
+    P = predict_year(X, H, Y, years=years, schedule=sched)
     P["H"] = H
     pickle.dump(P, open(p, "wb"))
     log("predict %s %s %s done (%.0f s)" % (variant, schedule, part, time.time() - t0))
@@ -1718,7 +1730,7 @@ def stage_cv(args):
            "table": {}, "by_year": {}}
     preds = {}
     for v in ("nostats", "main"):
-        for sc in SCHEDULES:
+        for sc in SCHEDULES + tuple(x + "+g" for x in SCHEDULES[1:]):
             if not all(os.path.exists(pred_path(v, sc, "oof%d" % Y)) for Y in years):
                 continue
             preds[(v, sc)] = load_preds(X, v, sc, scheme="oof")
@@ -1760,7 +1772,9 @@ def stage_cv(args):
     best = {}
     for v in ("nostats", "main"):
         for va in ("plugin", "varaware"):
-            best[(v, va)] = stepwise(["%s|%s|%s" % (v, sc, va) for sc in SCHEDULES if (v, sc) in preds])
+            b0 = stepwise(["%s|%s|%s" % (v, sc, va) for sc in SCHEDULES if (v, sc) in preds])
+            sc0 = b0.split("|")[1]
+            best[(v, va)] = stepwise([b0, "%s|%s+g|%s" % (v, sc0, va)]) if (v, sc0 + "+g") in preds else b0
     for v in ("nostats", "main"):
         best[v] = stepwise([best[(v, "plugin")], best[(v, "varaware")]])
     final = stepwise([best["nostats"], best["main"]])
@@ -1847,7 +1861,7 @@ def stage_eval(args):
     C = comparators(X)
     extra = {}
     for v in ("main", "nostats"):
-        for sc in SCHEDULES:
+        for sc in SCHEDULES + tuple(x + "+g" for x in SCHEDULES[1:]):
             if (v, sc) != (cfg["variant"], cfg["schedule"]) and os.path.exists(pred_path(v, sc, "oof2023")):
                 extra["bayes %s/%s" % (v, sc)] = pick(load_preds(X, v, sc, scheme="oof"), cfg["varaware"])
     E = evaluate(X, G, C, list(range(2019, 2024)), cfg["varaware"], "2019-2023 OOF (yearly refits)", extra)
@@ -2077,8 +2091,9 @@ def stage_swap(args):
     cfg = config()
     H = pickle.load(open(year_path(cfg["variant"], 2019), "rb"))["H"]
     Y = swap_data(X)
-    P1 = predict_year(X, H, 2019, schedule=cfg["schedule"], key="main")
-    P2 = predict_year(Y, H, 2019, schedule=cfg["schedule"], key="swap")
+    sched = cfg["schedule"].partition("+")[0]
+    P1 = predict_year(X, H, 2019, schedule=sched, key="main")
+    P2 = predict_year(Y, H, 2019, schedule=sched, key="swap")
     assert np.array_equal(P1["idx"], P2["idx"])
     sw = np.r_[np.arange(10, 20), np.arange(0, 10), 21, 20, 22]
     out = {"n": int(len(P1["idx"])), "config": cfg,
@@ -2167,8 +2182,6 @@ def virtual_pair(X, H, S, pa, pb, day, five=True, div="Lightweight"):
         gap = (day - S["last"][p]) / YEAR
         age = X["age"][i, side] + (day - X["day"][i]) / YEAR
         ages.append(age)
-        c, Q, _ = node_params({"age": np.array([[age, age]]), "day": np.array([day]), "pre_ok": np.zeros((1, 2), bool),
-                               "pre": np.zeros((1, 2, 7))} | {}, H, np.array([0]), np.array([0])) if False else (None, None, None)
         dr = age_G(np.array([age]), H["dy"], H["do"], H["ay"], H["ao"]) - age_G(np.array([age - gap]), H["dy"], H["do"], H["ay"], H["ao"])
         dr -= H["lay"] * max(0.0, min(gap, 4.0) - 0.75)
         g6 = min(gap, 6.0)
@@ -2234,8 +2247,8 @@ def stage_export(args):
         sd = np.sqrt(np.diag(S["P"][p]))
         Lb = {k: float(X["L_" + k][i]) for k in STATS}
         mm = S["M"][p]
-        roster[X["slug"][i][side] if isinstance(X["slug"][i], (list, tuple)) else str(p)] = {
-            "name": X["name"][i][side] if isinstance(X["name"][i], (list, tuple)) else None,
+        roster[X["slug"][p]] = {
+            "name": X["name"][p],
             "last_fight": str(dt.date.fromordinal(int(X["day"][i]))), "division": X["division"][i],
             "mean": {d: rd(mm[j], 3) for j, d in enumerate(DIMS)}, "sd": {d: rd(sd[j], 3) for j, d in enumerate(DIMS)},
             "rates_vs_average": {"sig_landed_pm": rd(math.exp(Lb["str"] + mm[DI["so"]]), 3),
@@ -2254,15 +2267,11 @@ def stage_export(args):
                         "multipliers (r in logit units)"}
     # the project's matchup
     try:
-        sl = {}
-        for i in range(X["n"]):
-            for s in (0, 1):
-                sl[X["slug"][i][s]] = X["ia"][i] if s == 0 else X["ib"][i]
-        pa, pb = sl["alexander-volkanovski"], sl["justin-gaethje"]
+        pa, pb = X["slug"].index("alexander-volkanovski"), X["slug"].index("justin-gaethje")
         V = virtual_pair(X, H, S, pa, pb, jan1(2026))
         J["matchup"] = {"alexander-volkanovski__justin-gaethje": {"pA": rd(V["pA"]), "logit_mean": rd(V["logit_mean"]),
                         "logit_sd": rd(V["logit_sd"]), "as_of": "2026-01-01 (states through 2025-12-31)"}}
-    except (KeyError, TypeError, IndexError) as e:
+    except (ValueError, KeyError, TypeError, IndexError) as e:
         J["matchup"] = {"error": str(e)}
     with open(OUT_JSON, "w") as fh:
         json.dump(J, fh, separators=(",", ":"), default=float)
