@@ -709,7 +709,7 @@
     function box(w, h, d) { return new T.BoxGeometry(w, h, d); }
     // rounded limbs: open elliptical prisms (their ends hide inside the next part), a capped eight-sided torso
     function limb(w, h, d, seg, cap) { var g = new T.CylinderGeometry(w / 2, w / 2, h, seg || 6, 1, !cap); g.scale(1, 1, d / w); return g; }
-    var H2 = PI / 2, ico = new T.IcosahedronGeometry(1, 0), head = new T.IcosahedronGeometry(1, 1);
+    var H2 = PI / 2, ico = new T.IcosahedronGeometry(1, 0), head = ico;
     [-1, 1].forEach(function (sd) {
       part(limb(0.115, 0.46, 0.12), 2, 0, [sd * 0.1, 0.24, 0.44], [sd * 0.1, 0.24, 0.0], { noBottom: true });            // shin
       part(limb(0.14, 0.45, 0.14).rotateX(H2), 2, 0, [sd * 0.1, 0.53, 0.2], [sd * 0.1, 0.70, 0.0, H2], { noBottom: true });   // thigh

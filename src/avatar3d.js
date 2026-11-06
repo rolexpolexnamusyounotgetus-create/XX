@@ -707,6 +707,8 @@
     var masks = this.computeMasks(P, J);
     // 7. materials and meshes
     function optTex(name, srgb) { return assetUrl(name) ? loadTexture(name, !!srgb).catch(function () { return null; }) : null; }
+    var shortsId = cfg.ref || cfg.female || opts.proxyShorts === false ? null : (typeof opts.proxyShorts === "string" ? opts.proxyShorts : "clothes-elvs_male_swim_shorts1");
+    if (shortsId && !base.man.proxies.some(function (p) { return p.kind + "-" + p.id === shortsId; })) shortsId = null;
     var gloveId = "clothes-learning_mma_fighting_gloves", wantGlove = !cfg.ref && opts.proxyGloves !== false && base.man.proxies.some(function (p) { return p.kind + "-" + p.id === gloveId; });
     return Promise.all([
       loadTexture(looks.skin.file, true),
@@ -715,7 +717,7 @@
       looks.hair ? base.proxy(looks.hair) : null,
       optTex("mh-skin-athletic-n.jpg"), optTex("mh-skin-pores-n.jpg"), optTex("mh-skin-spec.jpg"), optTex("mh-mask-hair.png"), optTex("mh-mask-beard.png"), optTex("mh-mask-hair2.png"),
       wantGlove ? base.proxy(gloveId).catch(function () { return null; }) : null,
-      !cfg.ref && opts.proxyShorts ? base.proxy(opts.proxyShorts).catch(function () { return null; }) : null
+      shortsId ? base.proxy(shortsId).catch(function () { return null; }) : null
     ]).then(function (r) {
       self.shortsProxy = r[13];
       self.tex = { normal: r[6], pores: r[7], spec: r[8], maskHair: r[9], maskBeard: r[10], maskHair2: r[11] };
@@ -1247,7 +1249,20 @@
     function y(i) { return pos[i * 3 + 1]; }
     function inShorts(i, pad) { pad = pad || 0; return y(i) < waistY - pad && y(i) > hemY + pad && self.boneW(i, ARMS) < 0.05; }
     var hemSpan = Math.max(0.05, waistY - hemY);
-    if (this.shortsProxy) { shortsG = null; }
+    var sp = this.shortsProxy, smesh = null;
+    if (sp) {
+      // fitted board-shorts proxy (cloth hangs between the legs instead of two tubes); kit panels from its rest shape
+      smesh = this.addProxy(sp, { color: app.shorts || "#2563c9", roughness: 0.7 });
+      var sg = smesh.geometry, spos = sg.attributes.position.array, snrm = sg.attributes.normal.array, nv = spos.length / 3, top = -1e9, bot = 1e9, q;
+      for (q = 0; q < nv; q++) { top = Math.max(top, spos[q * 3 + 1]); bot = Math.min(bot, spos[q * 3 + 1]); }
+      var span2 = Math.max(0.05, top - bot), kit = new Float32Array(nv * 4);
+      for (q = 0; q < nv; q++) { kit[q * 4] = clamp01((spos[q * 3 + 1] - bot) / span2); kit[q * 4 + 1] = Math.atan2(snrm[q * 3], snrm[q * 3 + 2]); kit[q * 4 + 2] = spos[q * 3] >= 0 ? 1 : -1; kit[q * 4 + 3] = spos[q * 3 + 2]; }
+      sg.setAttribute("aKit", new T.BufferAttribute(kit, 4));
+      hemSpan = span2;
+      var del = new Uint8Array(this.base.N), mhv = this.base.mh;
+      (sp.meta.deleteVerts || []).forEach(function (r) { for (var q2 = r[0]; q2 <= r[1]; q2++) del[q2] = 1; });
+      this.hideUnder(function (i) { return del[mhv[i]] === 1; });
+    }
     var shortsG = this.shortsProxy ? null : this.shell(function (i) { return inShorts(i); }, function (i) {
       var v = clamp01((y(i) - hemY) / hemSpan), lat = Math.abs(nrm[i * 3]);
       return 0.006 + 0.022 * (1 - smooth(0.2, 0.8, v)) + 0.012 * lat * (1 - v);
@@ -1277,15 +1292,8 @@
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.85, smoothstep(1.0 - uBandW, 1.0 - uBandW + 0.02, vKit.x));");
     } });
     this.shortsMat = shorts;
+    if (smesh) { var oldM = smesh.material; smesh.material = shorts; this.disposables.push(shorts); if (oldM && oldM.dispose) oldM.dispose(); smesh.name = "shorts"; }
     if (shortsG) { this.addShell(shortsG, shorts, "shorts"); this.hideUnder(function (i) { return inShorts(i, 0.02); }); }
-    if (this.shortsProxy) {
-      var sp = this.shortsProxy, smesh = this.addProxy(sp, { color: app.shorts || "#2563c9", tint: true, tintGain: 1.5, roughness: 0.7 });
-      smesh.name = "shorts";
-      var del = new Uint8Array(this.base.N);
-      (sp.meta.deleteVerts || []).forEach(function (r) { for (var q = r[0]; q <= r[1]; q++) del[q] = 1; });
-      var mhv = this.base.mh;
-      this.hideUnder(function (i) { return del[mhv[i]] === 1; });
-    }
     if (this.gloveProxy) {
       // CC0 open-finger MMA glove proxy (corner-neutral colour), fitted to this hand
       var gm = this.addProxy(this.gloveProxy, { color: app.glove || "#16181c", tint: true, tintGain: 1.9, roughness: 0.42 });

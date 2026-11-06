@@ -9,6 +9,7 @@ Run from the project root:
     python3 tools/fightweek.py build           # parse caches -> data/derived/fightweek.json (no network)
     python3 tools/fightweek.py eval            # walk-forward check (train 2012-2023, validate 2024-2025)
     python3 tools/fightweek.py report          # markdown tables for research/data_fightweek.md
+    python3 tools/fightweek.py verify          # leakage checks on the parsers (corner-order swap, post-fight text)
     python3 tools/fightweek.py all             # build + eval (no network)
 
 Sources (all cached raw under data/raw/web_cache/<site>/, gitignored):
@@ -2264,6 +2265,9 @@ def cmd_eval(args):
     fw = json.load(open(OUT, encoding="utf-8"))
     F = fw["fights"]
     fights, people = load_people_fights()
+    # hidden-data protocol: no 2026 result enters the evaluation, not even as Elo history that only later rows
+    # would use (pre-2026 ratings are identical either way; verified Nov 6)
+    fights = [f for f in fights if f.date <= dt.date(2025, 12, 31)]
     _, pre, _ = B.run_elo(fights, 44, boost=1.5, store=True)
     nprior = Counter()
     rows = []
@@ -2369,9 +2373,12 @@ def cmd_eval(args):
                "val_delta_ci95": [float(np.percentile(bd, 2.5)), float(np.percentile(bd, 97.5))]}
         # replication on the validation years (estimate only; not used to choose anything)
         bv, cv = fit_logit(X[va][:, ii], y[va])
-        sv = np.sqrt(np.diag(cv))
-        out["val_refit"] = {k: {"b": float(bv[j]), "ci95": [float(bv[j] - 1.96 * sv[j]), float(bv[j] + 1.96 * sv[j])],
-                                "nonzero_val": int((X[va][:, ii[j]] != 0).sum())}
+        sv = np.sqrt(np.clip(np.diag(cv), 0, None))
+        nzv = [int((X[va][:, i_] != 0).sum()) for i_ in ii]
+        # a feature that is zero in every validation fight (elo_x_nocrowd: no closed doors after 2021) has no
+        # refit; report null instead of a fake 0 [0, 0]
+        out["val_refit"] = {k: ({"b": float(bv[j]), "ci95": [float(bv[j] - 1.96 * sv[j]), float(bv[j] + 1.96 * sv[j])],
+                                 "nonzero_val": nzv[j]} if nzv[j] else {"b": None, "ci95": None, "nonzero_val": 0})
                             for j, k in enumerate(cols) if k not in base}
         res["models" if label.startswith(("full", "pair", "robust")) else "single"][label] = out
         return out
@@ -2386,14 +2393,60 @@ def cmd_eval(args):
     # slot), so the two are collinear: the multi-feature models carry the replacement family only
     curated = base + ["missed", "replacement", "repl_le14d", "home_x_fullcrowd", "home_x_nocrowd_or_apex"]
     full = summarize(curated, "full: elo + debut + missed + replacement + repl_le14d + home x crowd")
+    # `home` is dropped here: home = home_x_fullcrowd + home_x_nocrowd_or_apex exactly, so with all three the
+    # coefficients (and their CIs) are not identified (the first version printed them anyway)
     summarize([k for k in names if not k.startswith("opp_change") and k not in ("home_fullcrowd_outside_usa",
-                                                                                "home_fullcrowd_in_usa",
+                                                                                "home_fullcrowd_in_usa", "home",
                                                                                 "log_prior_fights", "usa_national")],
-              "full_all: every feature except opp_change")
+              "full_all: every feature except opp_change and plain home")
     summarize(base + ["replacement", "repl_le14d"], "pair: replacement + repl_le14d")
     summarize(base + ["missed", "replacement", "repl_le14d"], "full_nohome: elo + debut + missed + replacement + repl_le14d")
     summarize(base + ["missed", "replacement", "repl_le14d", "home_fullcrowd_outside_usa"],
               "full_intl: elo + debut + missed + replacement + repl_le14d + home outside USA")
+    # Train-only model selection (added by the verification pass). The home split above was proposed after a
+    # table that included 2024-2025; this repeats the choice with training data only: rolling origin, fit on all
+    # years before Y and score year Y for Y = 2016..2023, pick the lowest pooled log loss, then score the pick once
+    # on 2024-2025. Validation numbers for the losers are shown too, but nothing is chosen on them.
+    def rolling_ll(cols):
+        ii = [names.index(k) for k in cols]
+        tot = []
+        for Y in range(2016, 2024):
+            fm, em = yr < Y, yr == Y
+            bb, _ = fit_logit(X[fm][:, ii], y[fm])
+            tot.append(ll(sym_pred(X[em][:, ii], bb), y[em]))
+        return float(np.concatenate(tot).mean())
+    s0 = base + ["missed", "replacement", "repl_le14d"]
+    cands = {"base": base, "base2 (+ log prior fights)": base2,
+             "S0: base + missed + replacement + repl_le14d": s0,
+             "S0 + home": s0 + ["home"],
+             "S0 + home x full crowd": s0 + ["home_x_fullcrowd"],
+             "S0 + home x full crowd + home x no crowd/Apex": s0 + ["home_x_fullcrowd", "home_x_nocrowd_or_apex"],
+             "S0 + home full crowd outside USA": s0 + ["home_fullcrowd_outside_usa"],
+             "S0 + home outside USA + home in USA": s0 + ["home_fullcrowd_outside_usa", "home_fullcrowd_in_usa"],
+             "S0 + usa_national": s0 + ["usa_national"],
+             "S0 + home outside USA + usa_national": s0 + ["home_fullcrowd_outside_usa", "usa_national"]}
+    sel = {}
+    for lab, cols in cands.items():
+        ii = [names.index(k) for k in cols]
+        bb, _ = fit_logit(X[tr][:, ii], y[tr])
+        lv = ll(sym_pred(X[va][:, ii], bb), y[va])
+        d = lv - l0
+        bd = d[boot_idx].mean(axis=1)
+        sel[lab] = {"features": cols, "rolling_cv_logloss_2016_2023": rolling_ll(cols),
+                    "val_logloss": float(lv.mean()), "val_delta_vs_base": float(d.mean()),
+                    "val_delta_ci95": [float(np.percentile(bd, 2.5)), float(np.percentile(bd, 97.5))]}
+    fw_only = [k for k in sel if k not in ("base", "base2 (+ log prior fights)", "S0 + usa_national",
+                                           "S0 + home outside USA + usa_national")]
+    pick = min(fw_only, key=lambda k: sel[k]["rolling_cv_logloss_2016_2023"])
+    res["train_only_selection"] = {
+        "rule": "rolling origin inside 2012-2023 (fit years < Y, score Y, Y = 2016..2023); lowest pooled log loss "
+                "among the fight-week candidates (usa_national is a rating correction and is listed separately)",
+        "candidates": sel, "pick_fightweek": pick}
+    log("\ntrain-only selection (rolling CV 2016-2023 -> one look at 2024-2025):")
+    for lab, o in sel.items():
+        log("  %-48s CV %.5f | val %.4f  dLL %+.4f [%+.4f, %+.4f]%s" % (
+            lab, o["rolling_cv_logloss_2016_2023"], o["val_logloss"], o["val_delta_vs_base"], *o["val_delta_ci95"],
+            "   <- pick" if lab == pick else ""))
     # report
     log("\nbase (elo + debut): coef %s; val log loss %.4f, Brier %.4f" % (
         {k: round(v, 3) for k, v in res["models"]["base: elo + debut"]["coef"].items()}, l0.mean(),
@@ -2404,9 +2457,11 @@ def cmd_eval(args):
         o = res["single"][k]
         c = o["coef"][k]
         vr = o["val_refit"][k]
-        log("%-30s %8.3f [%7.3f, %7.3f] %7.2f %6d | %+9.5f [%+9.5f, %+9.5f] | %6.3f [%.2f, %.2f] n=%d" % (
+        vtxt = ("%6.3f [%.2f, %.2f] n=%d" % (vr["b"], vr["ci95"][0], vr["ci95"][1], vr["nonzero_val"])
+                if vr["b"] is not None else "n/a (no validation fight has it)")
+        log("%-30s %8.3f [%7.3f, %7.3f] %7.2f %6d | %+9.5f [%+9.5f, %+9.5f] | %s" % (
             k, c["b"], c["ci95"][0], c["ci95"][1], c["z"] or 0, c["nonzero_train"], o["val_delta_logloss_vs_base"],
-            o["val_delta_ci95"][0], o["val_delta_ci95"][1], vr["b"], vr["ci95"][0], vr["ci95"][1], vr["nonzero_val"]))
+            o["val_delta_ci95"][0], o["val_delta_ci95"][1], vtxt))
     log("base2 (elo + debut + log prior fights): coef %s; val log loss %.4f" % (
         {k: round(v, 3) for k, v in res["models"]["base2: elo + debut + log prior UFC fights"]["coef"].items()},
         l02.mean()))
@@ -2430,7 +2485,9 @@ def cmd_eval(args):
     vc = np.array([F[d[0].fid]["venue"]["iso3"] or "" for d in data])
     grp = {}
     for g_name, sel in (("Brazil", vc == "BRA"), ("USA", vc == "USA"), ("other", (vc != "BRA") & (vc != "USA"))):
-        for lo, hi in ((2012, 2019), (2020, 2025)):
+        # training and validation years kept apart (the first version pooled 2020-2025, so the US / non-US
+        # split was read off a table that included the validation years)
+        for lo, hi in ((2012, 2019), (2020, 2023), (2024, 2025)):
             m = sel & (yr >= lo) & (yr <= hi) & (X[:, jh] != 0)
             won = np.where(X[m, jh] > 0, y[m], 1 - y[m])
             ex = 1 / (1 + np.exp(-np.where(X[m, jh] > 0, X[m, je], -X[m, je]) * b0[0]))
@@ -2526,9 +2583,11 @@ def cmd_report(args):
     for k, o in ev["single"].items():
         c = o["coef"][k]
         v = o["val_refit"][k]
-        print("| %s | %+.3f | [%+.3f, %+.3f] | %.1f | %d | %+.4f | [%+.4f, %+.4f] | %+.2f [%+.2f, %+.2f], %d |" % (
+        vtxt = ("%+.2f [%+.2f, %+.2f], %d" % (v["b"], v["ci95"][0], v["ci95"][1], v["nonzero_val"])
+                if v.get("b") is not None else "n/a, 0")
+        print("| %s | %+.3f | [%+.3f, %+.3f] | %.1f | %d | %+.4f | [%+.4f, %+.4f] | %s |" % (
             k, c["b"], c["ci95"][0], c["ci95"][1], c["z"] or 0, c["nonzero_train"], o["val_delta_logloss_vs_base"],
-            o["val_delta_ci95"][0], o["val_delta_ci95"][1], v["b"], v["ci95"][0], v["ci95"][1], v["nonzero_val"]))
+            o["val_delta_ci95"][0], o["val_delta_ci95"][1], vtxt))
     print("\n| model | val log loss | val Brier | delta log loss [95% CI] |")
     print("|---|---|---|---|")
     for lab, o in ev["models"].items():
@@ -2540,14 +2599,72 @@ def cmd_report(args):
         if "coef" in o and isinstance(next(iter(o["coef"].values())), dict):
             print("\n%s: " % lab + ", ".join("%s %+.3f [%+.3f, %+.3f]" % (k, c["b"], c["ci95"][0], c["ci95"][1])
                                             for k, c in o["coef"].items()))
+    tos = ev.get("train_only_selection")
+    if tos:
+        print("\n| candidate (train-only selection) | rolling CV log loss 2016-23 | val log loss | val dLL vs base [95% CI] |")
+        print("|---|---|---|---|")
+        for lab, o in tos["candidates"].items():
+            print("| %s%s | %.5f | %.4f | %+.4f [%+.4f, %+.4f] |" % (
+                lab, " (pick)" if lab == tos["pick_fightweek"] else "", o["rolling_cv_logloss_2016_2023"],
+                o["val_logloss"], o["val_delta_vs_base"], *o["val_delta_ci95"]))
     for key in ("descriptive_train", "home_by_period", "home_by_country_period", "missed_by_size_train"):
         print("\n%s: %s" % (key, json.dumps({k: {kk: (round(vv, 3) if isinstance(vv, float) else vv)
                                                 for kk, vv in v.items()} for k, v in ev[key].items()})))
 
 
+def cmd_verify(args):
+    """Leakage checks on the text parsers (no network, about 2 minutes):
+    1. corner-order invariance: rerun the weigh-in and bout-change parsers with every bout's A/B swapped; the
+       output must be the exact mirror (any difference would let ufcstats' winner-first order leak in);
+    2. post-fight text: rerun them without paragraphs from post-fight sections (payouts, bonuses, reception,
+       controversies, fight write-ups, brackets) and list what changes (anything found only there is suspect)."""
+    events = load_ufcstats()
+    wl = parse_event_list(open(wiki_path("List_of_UFC_events"), encoding="utf-8").read())
+    wmatch, _ = match_events(events, wl)
+    post = re.compile(r"payout|bonus|viewership|reception|reaction|milestone|controvers|scandal|^results|bracket|"
+                      r"tournament results|\bfight$|lawler vs|aftermath|records|episodes|other fights", re.I)
+    swap = {"A": "B", "B": "A"}
+    n = Counter()
+    diffs = []
+    for ename, ev in sorted(events.items(), key=lambda kv: kv[1]["date"]):
+        w = wmatch.get(ename)
+        p = wiki_path(title_of(w["href"])) if w and w.get("href") else None
+        if not p or not os.path.exists(p):
+            n["no_article"] += 1
+            continue
+        art = parse_event_article_cached(p, w["href"])
+        paras = art.get("paras", [])
+        c0 = Card(ev["bouts"])
+        wi0, bc0 = parse_weighins(c0, paras, ev["date"]), parse_bout_changes(c0, paras, ev["date"])
+        c1 = Card([dict(b, A=b["B"], B=b["A"]) for b in ev["bouts"]])
+        wi1 = {(k[0], swap[k[1]]): v for k, v in parse_weighins(c1, paras, ev["date"]).items()}
+        bc1 = {(k[0], swap[k[1]]): v for k, v in parse_bout_changes(c1, paras, ev["date"]).items()}
+        keep = [x for x in paras if not post.search(x.get("sec") or "")]
+        c2 = Card(ev["bouts"])
+        wi2, bc2 = parse_weighins(c2, keep, ev["date"]), parse_bout_changes(c2, keep, ev["date"])
+        sw = lambda v: v and (v["lbs_over"], v["weighed"], bool(v.get("negated")), bool(v.get("explicit")))
+        sc = lambda v: v and (v["role"], v["days"])
+        for test, a_, b_, sig in (("swap:weighin", wi0, wi1, sw), ("swap:change", bc0, bc1, sc),
+                                  ("postfight:weighin", wi0, wi2, sw), ("postfight:change", bc0, bc2, sc)):
+            for k in set(a_) | set(b_):
+                if sig(a_.get(k)) != sig(b_.get(k)):
+                    n[test] += 1
+                    diffs.append({"test": test, "event": ename, "fid": k[0], "side": k[1],
+                                  "with": sig(a_.get(k)), "without": sig(b_.get(k)),
+                                  "text": (a_.get(k) or b_.get(k) or {}).get("text")})
+        n["events"] += 1
+        n["weighin_records"] += len(wi0)
+        n["change_records"] += len(bc0)
+    log("verify: %s" % dict(n))
+    for d in diffs:
+        log("  %s" % json.dumps(d, ensure_ascii=False, default=str)[:400])
+    return n, diffs
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["fetch-wiki", "fetch-geo", "fetch-sherdog", "build", "eval", "report", "all"])
+    ap.add_argument("cmd", choices=["fetch-wiki", "fetch-geo", "fetch-sherdog", "build", "eval", "report", "verify",
+                                   "all"])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--no-search", action="store_true", help="fetch-sherdog: skip the name-search pass")
     args = ap.parse_args()
@@ -2563,6 +2680,8 @@ def main():
         cmd_eval(args)
     elif args.cmd == "report":
         cmd_report(args)
+    elif args.cmd == "verify":
+        cmd_verify(args)
     else:
         cmd_build(args)
         cmd_eval(args)

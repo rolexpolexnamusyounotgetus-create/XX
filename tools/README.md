@@ -215,6 +215,7 @@ is stored as `PolymarketUS`, and BFO's Kalshi prices include the taker fee.
 python3 tools/fightweek.py fetch-wiki | fetch-geo | fetch-sherdog   # cached, <= 1 request/second per site
 python3 tools/fightweek.py all                                       # build + walk-forward eval (no network)
 python3 tools/fightweek.py report                                    # markdown tables for the research note
+python3 tools/fightweek.py verify                                    # leakage checks: corner-order swap, post-fight text
 ```
 
 Needs requests, bs4/lxml, pandas, numpy (no scipy). Reads Wikipedia event articles (`/wiki/` pages;

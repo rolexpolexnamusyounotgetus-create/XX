@@ -128,3 +128,23 @@ Findings from verified research that the next engine versions must use. Each lin
 - Failed mid-run on the usage cap, to relaunch: oppadj fit, officials fit, ratings fit, preufc fit, embed fit;
   verifiers for dynamics, market, ml, fightweek; 3D reviews/fixes; page UI/QA reviews/fix; v3 calibrate/
   reviews/fix; asset clip conversion + verify; scouting and likeness checkers.
+
+## Engine v4 status (Nov 6, built and train-measured; validation not yet looked at)
+- v4 = learned stat-line rates inside the engine (FightEngine.loadMLRates / opts.ml), train-only priors
+  (data/derived/priors_dev.json via tools/build_db.py --priors-until 2024-01-01) with the self-calibration re-run on
+  them, EM judging with noise and 10-8 rule fit on 2019-2023 judges' rounds (tools/judgecal.js), train-only level
+  matching with the learned rates on (tools/v4_levels.js). The mlcal global-scale search (TRAIN, --no-val) found nothing
+  that beats the self-calibrated set on both train windows. Frozen: versions/v4/; v3 reference: versions/v3/.
+- TRAIN (2019-2023, symmetric, 300 sims per order, paired vs v3): winner log loss 0.6635 vs 0.6716 (-0.0081 [-0.0134,
+  -0.0026]), Brier -0.0040, accuracy +3.4 pts; 7-bin +0.0074 [-0.0092, +0.0254] and method -0.0018 (both n.s.);
+  stat-line deviance better on landed, attempts, takedowns and control. Details: docs/CHANGELOG.md v4,
+  data/derived/version_history.json.
+- NEXT (one look each, in this order): `node tools/evalv.js --version v3 --split val`, then
+  `node tools/evalv.js --version v4 --split val --compare v3` (runs the blend test: the MoE linear stacker refit with v4's
+  engine, validated engine weight, validation log loss with vs without the engine). v4 ships only if it beats v3 there
+  (ROADMAP rule) and should earn a non-zero blend weight (Prediction status above).
+- Known gaps for v5/v6: 5-round finish timing (sim 14.5/12.8/10.4/9.3/5.4% by round vs 17.3/16.5/9.5/5.3/4.9% on
+  train); simulated decisions UD 76-79% vs 80% in the judges' rounds (fight-level coherence beyond the shared
+  fight-level noise); MD share 0.5% vs 2% (deductions are not modeled); hurt weight 0.8 in judging is a judgment call.
+- Hidden-data note: evalv drops every 2026 fight on load; methodround --score now takes --backtest
+  data/derived/backtest_dev.json and a date window; tuning and the self-calibration used only pre-2024 data.
