@@ -141,6 +141,24 @@ A random-entry recomputation of backtest snapshots from raw per-fight vectors ma
 - `python3 tools/methodround.py --score cells.json --score-from D0 --score-until D1 --score-out out.json --backtest
   data/derived/backtest_dev.json` adds JSON output and a date window to the method/round yardstick.
 
+## Engine v5 merge step 1: components.v401 (v4.0.1's train-only fixes)
+
+- Flags: `params.components.v401 = { emJudge, deductions, mlLevels, tdCap, koTargets }` in src/params3.js, or per call through
+  `opts.params.components.v401` (`false` switches all five off). `FightEngine.resolveParams(over)` returns the parameter set a
+  matchup runs on; `FightEngine.v401Flags(p)` the sub-flags. Each sub-flag off puts back v4.0.0's values
+  (`params.v401.off`), so with all five off the engine is v4.0.0 bit for bit.
+- `node tests/test_v401.js [150]` (about 10 s): flag-off identity against versions/v4 (fights incl. traces and summaries over
+  450 matchups: random pairs with and without the learned rates, 2019-2023 backtest fights in both corner orders), port
+  fidelity against versions/v4.0.1-rejected (sub-flags a-d on), and that every sub-flag does something.
+- `python3 tools/ko_composition.py` writes data/derived/ko_composition_pre2024.json: the KO/TKO composition targets of the
+  self-calibration (ground, clinch, standing without a knockdown) from fights before 2024-01-01 (2019-2023 adopted; the
+  table is cut right after loading). ufcstats labels ~24% of 2015-2018 strike KO/TKOs "In Clinch" and ~7% from 2019 on.
+- `node tools/v401_kocomp.js [--n 30000] [--iters 12] [--write]` turns those targets into the koTargets factors
+  (`params.v401.koComp`): two restricted fits of the KO block on league-average Lightweight pairs (train-only priors,
+  learned rates off, common random numbers), v4 targets vs 2019-2023 targets; writes data/derived/v401_kocomp.json.
+- Provenance of the flag-on values: data/derived/judge_em_train.json (a), data/derived/judgecal_v401.json (a, b; v4.0.1's
+  tools/judgecal.js run), data/derived/v4_levels_v401.json (c and t108; v4.0.1's tools/v4_levels.js run).
+
 ## Adding or overriding a fighter
 
 All hand edits go in `data/overrides.json`, keyed by the fighter's slug from fighters.json. The build
