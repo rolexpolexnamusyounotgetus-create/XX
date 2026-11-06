@@ -72,7 +72,7 @@ DEV.shoot = function () {
   var c = show.arena.camera; c.position.copy(cam.position); c.quaternion.copy(cam.quaternion); c.fov = cam.fov; c.aspect = W / H; c.updateProjectionMatrix();
   show.arena.render();
 };
-DEV.lineupActors = function () { return [show.A, show.B, extras[0], extras[1], show.R].filter(Boolean); };
+DEV.lineupActors = function () { return [show.A, show.B].concat(extras).concat(Q.get("noref") ? [] : [show.R]).filter(Boolean); };
 DEV.pose = function (actors, mode, yaw, dt) {
   actors.forEach(function (a, i) {
     var n = actors.length, x = (i - (n - 1) / 2) * (n > 5 ? 0.95 : 1.15);

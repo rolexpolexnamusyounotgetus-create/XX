@@ -1032,8 +1032,9 @@ def build(args):
                       "or 'UFC' for UFC rows ufcstats lacks or '' for non-UFC]",
             "current": "the same features as of today (non-UFC record including fights between or after UFC stints)",
         },
-        "promotions": {pr: {"graduates": len(v), "grad_bouts": len(gradres[pr]),
-                            "grad_win": round(promo_q(pr, today)["grad"], 4)}
+        # graduates' results through the end of 2025 only (the 2026 vault stays out of every aggregate)
+        "promotions": {pr: {"graduates": len(v), "grad_bouts": sum(1 for d_, _ in gradres[pr] if d_ < VAULT_FROM),
+                            "grad_win": round(promo_q(pr, VAULT_FROM)["grad"], 4)}
                        for pr, v in sorted(grads.items(), key=lambda kv: -len(kv[1]))[:80]},
         "network": {"fights": len(net_fights), "nodes": len(R), "strict_fights": strict.n_fights,
                     "strict_cutoffs": [c.isoformat() for c in strict.cuts]},
@@ -1043,7 +1044,7 @@ def build(args):
     if os.path.exists(old):
         try:
             prev = json.load(open(old))
-            for k in ("predictions", "eval"):
+            for k in ("predictions", "eval", "seeded_elo_backtest", "roster_priors"):
                 if k in prev:
                     obj[k] = prev[k]
         except Exception:

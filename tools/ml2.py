@@ -9,6 +9,7 @@ Run from the project root (stages cache into out/ml2_cache/, so each can be re-r
     nice -n 5 python3 tools/ml2.py stage2     # 2019+-only sources (durability, oppadj, mlrates, methodround) on top
     nice -n 5 python3 tools/ml2.py stack      # no-line / with-line MoE-style stacks vs the current stack and the close
     nice -n 5 python3 tools/ml2.py method     # methodround model S refit with the new features (method, 7-bin)
+    nice -n 5 python3 tools/ml2.py verify     # truncation / flipped-result tests of the rebuilt rating features
     nice -n 5 python3 tools/ml2.py export     # data/derived/ml2.json (+ the page model and JS test vectors)
     nice -n 5 python3 tools/ml2.py all        # everything above in order
 
@@ -1635,6 +1636,7 @@ def stage_export(args):
              "mr": None if np.isnan(T["mr_p"].iloc[i]) else round(float(T["mr_p"].iloc[i]), 4)}
         if yr[i] >= 2024:
             e["ml2_roll"] = round(float(P["blend|roll"][i]), 4)
+            e["p_rolling"] = e["ml2_roll"]            # name tools/blindtest_plugins/ml2.py looks for first
             e["ml2_lr_roll"] = round(float(P["lr|roll"][i]), 4)
             for key, dd in stackp.items():
                 v = dd.get(f)
@@ -1901,16 +1903,64 @@ def side_for_page(model, slug, fight):
 STAGES["export"] = stage_export
 
 
+# ====================================================================== stage: verify (truncation tests of the new features)
+def stage_verify(args):
+    """Rebuild the rating systems and the market rating with the data stream cut at CUT and check that every
+    feature value for fights before CUT is identical to the full build (no feature sees a later fight)."""
+    import ratings as RT
+    S = load_table()
+    T = S["df"]
+    cut = dt.date(2024, 6, 1)
+    out = {"cut": cut.isoformat()}
+    D = RT.load_data()
+    RT.prepare(D, log=lambda s: None)
+    J = jload("ratings.json")
+    ev = np.where((D.day >= dt.date(2009, 1, 1).toordinal()) & (D.day < cut.toordinal()))[0]
+    full = pickle.load(open(os.path.join(CACHE, "ratings_all.pkl"), "rb"))
+    fidx = {f: i for i, f in enumerate(full["fid"])}
+    for name in ("whr_rounds", "glicko2", "elo_full", "trueskill_mov"):
+        Sy = J["systems"][name]
+        p, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=cut.toordinal(), record=False, eval_idx=ev)
+        a = p[ev]
+        b = full["p"][name][[fidx[D.fid[i]] for i in ev]]
+        out[name] = {"n": int(len(ev)), "max_abs_diff": float(np.nanmax(np.abs(a - b)))}
+        log("truncation %s: max |diff| %.2e on %d fights before %s" % (name, out[name]["max_abs_diff"], len(ev), cut))
+    sub = T[T["date"] < cut].copy()
+    mr_cut, _, _ = build_market_rating(sub)
+    mr_full = T.set_index("fid")["mr_p"]
+    d = [abs(v[0] - mr_full[f]) for f, v in mr_cut.items() if f in mr_full.index and not np.isnan(mr_full[f])]
+    out["market_rating"] = {"n": len(d), "max_abs_diff": float(max(d))}
+    log("truncation market rating: max |diff| %.2e on %d fights" % (max(d), len(d)))
+    # flipped-result perturbation: every result on/after the cut reversed must leave earlier ratings unchanged
+    Df = RT.load_data()
+    RT.prepare(Df, log=lambda s: None)
+    late = Df.day >= cut.toordinal()
+    Df.y = np.where(late & Df.obs, 1 - Df.y, Df.y)
+    Sy = J["systems"]["glicko2"]
+    p2, _, _ = RT.run_system(Df, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False)
+    pf = full["p"]["glicko2"]
+    early = np.where(~late & (Df.day >= dt.date(2009, 1, 1).toordinal()))[0]
+    lt = np.where(late)[0]
+    out["glicko2_flip_after_cut"] = {"max_abs_diff_before": float(np.nanmax(np.abs(p2[early] - pf[[fidx[Df.fid[i]] for i in early]]))),
+                                     "share_changed_after": float(np.mean(np.abs(p2[lt] - pf[[fidx[Df.fid[i]] for i in lt]]) > 1e-6))}
+    log("flip test glicko2: %s" % out["glicko2_flip_after_cut"])
+    json.dump(out, open(os.path.join(CACHE, "verify.json"), "w"), indent=1)
+
+
+STAGES["verify"] = stage_verify
+
+
 # ====================================================================== main
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("stage", choices=["table", "cv", "fit", "stage2", "stack", "method", "export", "all"])
+    ap.add_argument("stage", choices=["table", "cv", "fit", "stage2", "stack", "method", "verify", "export", "all"])
     ap.add_argument("--jobs", type=int, default=2)
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args()
-    order = ["table", "cv", "fit", "stage2", "stack", "method", "export"] if args.stage == "all" else [args.stage]
+    order = (["table", "cv", "fit", "stage2", "stack", "method", "verify", "export"] if args.stage == "all"
+             else [args.stage])
     for st in order:
         t0 = time.time()
         log("== stage %s" % st)
