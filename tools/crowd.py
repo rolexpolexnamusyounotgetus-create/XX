@@ -179,13 +179,30 @@ def moneymma_urls(sitemap_xml):
     return out
 
 
+def moneymma_contest_urls(sitemap_xml):
+    """Pre-event contest-entry posts (they state the lock time in their free part): pre-2026 only."""
+    out = []
+    for u in re.findall(r"<url>(.*?)</url>", sitemap_xml, re.S):
+        loc = re.search(r"<loc>(.*?)</loc>", u).group(1)
+        lm = re.search(r"<lastmod>(.*?)</lastmod>", u)
+        slug = loc.rsplit("/", 1)[-1]
+        if "results" in slug or "draftkings" in slug or "year" in slug or "reminder" in slug:
+            continue
+        if not ("pick-em-contest" in slug or re.search(r"-pick(-em)?(-[0-9a-f]{3})?$", slug)):
+            continue
+        if not lm or lm.group(1) >= VAULT_FROM:
+            continue                     # contest posts for 2026 cards: never fetched
+        out.append(loc)
+    return out
+
+
 def cmd_fetch(args):
     os.makedirs(CACHE, exist_ok=True)
     rw = fetch(RW_SITEMAP, refresh=args.refresh_sitemaps)
     mm = fetch(MM_SITEMAP, refresh=args.refresh_sitemaps)
-    urls = rotowire_urls(rw) + moneymma_urls(mm)
-    log("fetch: %d RotoWire picks articles, %d Money MMA results posts (pre-2026 filters applied)" % (
-        len(rotowire_urls(rw)), len(moneymma_urls(mm))))
+    urls = rotowire_urls(rw) + moneymma_urls(mm) + moneymma_contest_urls(mm)
+    log("fetch: %d RotoWire picks articles, %d Money MMA results posts, %d contest posts (pre-2026 filters applied)" % (
+        len(rotowire_urls(rw)), len(moneymma_urls(mm)), len(moneymma_contest_urls(mm))))
     n_new = 0
     for k, u in enumerate(urls):
         if os.path.exists(cache_path(u)):

@@ -820,7 +820,12 @@ def stage_cv(args):
             Pgb = np.where(np.isfinite(allpreds[(head, lg)]), allpreds[(head, lg)], inc)
             cmp_best = paired(Pgb[mg], inc[mg], y[mg], ev[mg], args.boot)
             passed = cmp_inc["diff"] < -SEL_MIN and cmp_best["diff"] < -SEL_MIN
+            # descriptive only (not in the decision rule): the scheme against its own uncalibrated long-history base
+            Pgl = np.where(np.isfinite(allpreds[(head, li)]), allpreds[(head, li)], base)
+            mgl = mg & np.isfinite(base)
+            cmp_base = paired(Pgl[mgl], base[mgl], y[mgl], ev[mgl], args.boot)
             H["families"][fam] = {"inner_choice": li, "inner_choice_inner_ll": H["configs"][li]["inner_ll"],
+                                  "inner_choice_vs_long_base_gate": cmp_base,
                                   "inner_choice_vs_incumbent_gate": cmp_inc,
                                   "inner_choice_gate_slope": round(calib_slope(Pg[mg], y[mg]), 3),
                                   "gate_best": lg, "gate_best_vs_incumbent": cmp_best, "passes": bool(passed)}

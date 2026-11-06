@@ -671,7 +671,7 @@ def glm_design(Fd, rows, fin):
 def candidates(st):
     c = [("pois_base", "pois", {}), ("nb_base", "nb", {"t": False, "glm": None}),
          ("nb_t", "nb", {"t": True, "glm": None})]
-    for lam in (30.0, 300.0, 3000.0):
+    for lam in (30.0, 300.0, 3000.0, 10000.0):
         c.append(("nb_glm_l%g" % lam, "nb", {"t": True, "glm": lam}))
     c.append(("nb_gbm", "gbm", {}))
     if st in SPARSE:
@@ -889,7 +889,7 @@ def stage_cv(args):
 
 
 SELECT_RULE = ("per stat, start from nb_base (the verified mlrates + embedding mean with one NB shape); walk the ladder "
-               "nb_t -> best nb_glm (ridge 3/30/300) -> nb_gbm, and for sparse stats also the zero-inflated versions "
+               "nb_t -> best nb_glm (ridge 30/300/3000/10000) -> nb_gbm, and for sparse stats also the zero-inflated versions "
                "(and for control the zero-inflated Beta); a candidate replaces the current choice only if its pooled "
                "2021-2023 CV log score (NLL per fight-side) is lower by more than 0.001 nats AND it is lower in at least 2 "
                "of the 3 CV years. 'JS-evaluable' excludes nb_gbm (the page has no tree evaluator for it).")
