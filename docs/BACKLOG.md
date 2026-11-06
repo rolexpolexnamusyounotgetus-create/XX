@@ -64,6 +64,17 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- seqnet (lab 3, VERIFIED): NOT adopted anywhere. Deep career-sequence net 0.6193 on 2024-25 (+0.0276 vs ML v2
+  blend, +0.0315 vs close); every stack gate rejects it; method x round far worse than S; stat-line term -0.10%
+  (tiny). Do-not-do: deep winner models over UFC-only careers (3.7-6.7k fights per refit overfit); revisit only with
+  a much larger universe (e.g. regional pre-UFC sequences). Kept as a standing negative baseline plugin.
+- bayes (lab 3, VERIFIED): NOT adopted in production stacks (page no-line CV -0.0010 n.s., 2024-25 +0.0007 flat;
+  weight 0 next to the close; open stacks reject). Standalone 0.6153 on 2024-25, level with round-level WHR, walk-
+  forward clean. Optional uses: ratings-only fallback partner for WHR (2024-25 -0.0045 [-0.0096, +0.0007]) and the
+  roster skill means/sds (bayes.json) as opponent-adjusted simulator inputs for KD/chin and grappling rates.
+- LAB 3 SCORECARD: 7 projects, all verified. Adopted: debut METHOD model, statlines. Not adopted: crowd, linemove,
+  calib, seqnet, bayes. Conclusion: winner-level gains on top of ML v2 + the line are exhausted with public data;
+  remaining value is in method/round (debuts, props), stat lines, and newcomers.
 - debut (lab 3, VERIFIED ~23:40 UTC, research/model_debut.md): ADOPT the debut METHOD model for bouts with a UFC
   debutant (replaces division base rates; fed the ledger's winner probability: close, else open, else seeded Elo).
   2024-25 (172 decisive debut bouts, one look): marginal KO/SUB/DEC 0.9879 vs 1.0330 (-0.045 [-0.075, -0.017]);
