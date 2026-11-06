@@ -1088,3 +1088,93 @@ def predict_year(X, H, Y, years=None):
     pl = win_prob(H["win"]["beta"], *feat_moments(R, idx), varaware=False)[0]
     return {"idx": idx, "cells": C, "pA": pA, "pA_plugin": pl, "m": m, "v": v, "stats": st,
             "m0": R["m0"][idx], "sd0": sd, "new": R["new"][idx]}
+
+
+# ====================================================================== stages
+VARIANTS = {
+    # the model as specified: stat skills feed the result link (beta_up from the win GLM)
+    "main": {},
+    # results update only r; stat skills still enter the win GLM
+    "r_only": {"link": "r_only"},
+    # ablation: a pure dynamic Bradley-Terry on the round encoder (no stats, no method likelihood)
+    "nostats": {"w_stat": 0.0, "w_meth": 0.0, "link": "r_only"},
+}
+
+
+def variant_hyper(name):
+    H = default_hyper()
+    H.update(copy.deepcopy(VARIANTS[name]))
+    return H
+
+
+def year_path(variant, Y):
+    return os.path.join(CACHE, "fit_%s_%d.pkl" % (variant, Y))
+
+
+def stage_fit(args):
+    """Warm-started chain of yearly refits: hyperparameters for year Y use data before Jan 1 of Y only; predictions
+    for Y come from the filter run with them (states updated after every fight day)."""
+    X = load_data()
+    y0, y1 = [int(v) for v in args.years.split("-")]
+    v = args.variant
+    H = variant_hyper(v)
+    prev = year_path(v, y0 - 1)
+    if os.path.exists(prev):
+        H = pickle.load(open(prev, "rb"))["H"]
+    for Y in range(y0, y1 + 1):
+        p = year_path(v, Y)
+        if os.path.exists(p) and not args.force:
+            H = pickle.load(open(p, "rb"))["H"]
+            log("%s %d cached" % (v, Y))
+            continue
+        cold = Y == y0 and not os.path.exists(prev)
+        if v == "nostats":
+            H = fit_year_nostats(X, Y, H, sweeps=3 if cold else 2)
+        else:
+            H = fit_year(X, Y, H, em_iters=2 if cold else 1, sweeps=3 if cold else 2, stat_sweeps=2 if cold else 1)
+        P = predict_year(X, H, Y)
+        pickle.dump({"H": H, "P": P, "variant": v, "year": Y}, open(p, "wb"))
+        ev = X["evalrow"][P["idx"]]
+        yv = X["win"][P["idx"]][ev]
+        pa = P["pA"][ev]
+        log("%s %d: eval fights %d, winner LL %.5f (plug-in %.5f)" % (
+            v, Y, ev.sum(), -np.mean(yv * np.log(pa) + (1 - yv) * np.log(1 - pa)),
+            -np.mean(yv * np.log(P["pA_plugin"][ev]) + (1 - yv) * np.log(1 - P["pA_plugin"][ev]))))
+    if args.static_from:
+        Ys = int(args.static_from)
+        H = pickle.load(open(year_path(v, Ys), "rb"))["H"]
+        P = predict_year(X, H, Ys, years=list(range(Ys, y1 + 1)))
+        pickle.dump({"H": H, "P": P, "variant": v, "years": list(range(Ys, y1 + 1))},
+                    open(os.path.join(CACHE, "fit_%s_static%d.pkl" % (v, Ys)), "wb"))
+        log("%s static fit through %d-12-31 predicted %s" % (v, Ys - 1, list(range(Ys, y1 + 1))))
+
+
+def fit_year_nostats(X, Y, H0, sweeps=2, logf=log):
+    seq = sequences(X)
+    H = copy.deepcopy(H0)
+    R = run_filter(X, H, jan1(Y), store=True)
+    H = em_update(X, R, H, Y, seq)
+    H, best = coord_search(X, H, Y, sweeps=sweeps, logf=logf)
+    R = run_filter(X, H, jan1(Y))
+    H, ll = glm_step(X, R, H, Y)
+    H["fit_through"] = str(dt.date(Y - 1, 12, 31))
+    H["train_win_ll"] = ll
+    logf("  %d nostats final win LL %.5f" % (Y, ll))
+    return H
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("stage")
+    ap.add_argument("--years", default="2019-2023")
+    ap.add_argument("--variant", default="main")
+    ap.add_argument("--force", action="store_true")
+    ap.add_argument("--static-from", default=None)
+    args = ap.parse_args()
+    STAGES[args.stage](args)
+
+
+STAGES = {"data": stage_data, "fit": stage_fit}
+
+if __name__ == "__main__":
+    main()

@@ -191,8 +191,12 @@ def token_features(f, s, prt, close, ages, pre):
     feats = {}
     p, q = f.persons[s], f.persons[1 - s]
     me, op = pre[s], pre[1 - s]
-    feats["age"] = ((ages[s] - 30.0) / 5.0) if ages[s] is not None else 0.0
-    feats["age_na"] = 1.0 if ages[s] is None else 0.0
+    # LEAK GUARD: ufcstats' tale of the tape is a current snapshot, and a missing DOB / reach / stance marks a
+    # short career (debut sides with a missing reach lost 346 of 392 fights). No missingness flag reaches the
+    # network: a missing DOB takes the opponent's age (as tools/ml.py does), size enters only as differences
+    # when both values exist.
+    ag = ages[s] if ages[s] is not None else ages[1 - s]
+    feats["age"] = ((ag - 30.0) / 5.0) if ag is not None else 0.0
     feats["gap"] = math.log1p(me["gap"]) if me["gap"] is not None else 0.0
     feats["first"] = 1.0 if me["gap"] is None else 0.0
     feats["lbs"] = (me["lbs"] - 160.0) / 40.0
@@ -367,8 +371,7 @@ def load_data():
 
 # ====================================================================== arrays for the network
 MAXLEN = 24
-SIDE_NAMES = ["age", "age_na", "height", "height_na", "reach", "reach_na", "ape", "south", "switch", "orth",
-              "stance_na", "layoff", "debut", "logn", "lbs_move"]
+SIDE_NAMES = ["age", "d_height", "d_reach", "d_ape", "south", "switch", "layoff", "debut", "logn", "lbs_move"]
 CTX_NAMES = ["five", "title", "women", "catch", "lbs", "era"]
 
 
@@ -398,18 +401,21 @@ def build_arrays(d, maxlen=MAXLEN):
         CTX[i] = [float(e["five"]), float(e["title"]), float(e["women"]), float(e["catch"]),
                   (e["lbs"] - 160.0) / 40.0, (e["year"] - 2015) / 10.0]
         for s in (0, 1):
-            si = e["sides"][s]
+            si, so = e["sides"][s], e["sides"][1 - s]
             h = si["hist"][-maxlen:]
             H[i, s, :len(h)] = h
             LEN[i, s] = len(h)
             NPRIOR[i, s] = si["n"]
-            age, ht, rc, stc = si["age"], si["height"], si["reach"], si["stance"]
-            SIDE[i, s] = [((age - 30.0) / 5.0) if age is not None else 0.0, float(age is None),
-                          ((ht - 70.0) / 3.0) if ht else 0.0, float(not ht),
-                          ((rc - 72.0) / 4.0) if rc else 0.0, float(not rc),
-                          ((rc - ht) / 3.0) if (rc and ht) else 0.0,
-                          float(stc == "Southpaw"), float(stc == "Switch"), float(stc == "Orthodox"),
-                          float(stc not in ("Southpaw", "Switch", "Orthodox")),
+            # leak guard (see token_features): no missingness flags; a missing DOB takes the opponent's age;
+            # height / reach / ape only as own-minus-opponent differences when both men have the value
+            age = si["age"] if si["age"] is not None else so["age"]
+            both_h = bool(si["height"] and so["height"])
+            both_r = bool(si["reach"] and so["reach"])
+            d_ape = ((si["reach"] - si["height"]) - (so["reach"] - so["height"])) if (both_h and both_r) else 0.0
+            SIDE[i, s] = [((age - 30.0) / 5.0) if age is not None else 0.0,
+                          ((si["height"] - so["height"]) / 3.0) if both_h else 0.0,
+                          ((si["reach"] - so["reach"]) / 4.0) if both_r else 0.0, d_ape / 3.0,
+                          float(si["stance"] == "Southpaw"), float(si["stance"] == "Switch"),
                           math.log1p(si["gap"]) if si["gap"] is not None else 0.0, float(si["n"] == 0),
                           math.log1p(si["n"]),
                           ((e["lbs"] - si["last_lbs"]) / 10.0) if si["last_lbs"] else 0.0]
