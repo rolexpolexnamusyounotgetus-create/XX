@@ -163,6 +163,9 @@ DEV.faceCam = function (id, dist, az) {
 DEV.frameCam = function (az, dist, h, fov) {
   var A = show.A.pos, B = show.B.pos, mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2, th = Math.atan2(B.z - A.z, B.x - A.x) + Math.PI / 2 + (az || 0);
   var c = show.arena.camera; c.position.set(mx + Math.cos(th) * (dist || 3.4), h || 1.35, mz + Math.sin(th) * (dist || 3.4)); c.lookAt(mx, 0.9, mz);
+  // keep the referee off the near side of this camera (the show parks him opposite its own camera)
+  var R = show.R, nx = Math.cos(th), nz = Math.sin(th), side = (R.pos.x - mx) * nx + (R.pos.z - mz) * nz;
+  if (side > 0) { R.pos.x -= 2 * side * nx; R.pos.z -= 2 * side * nz; R.yaw = Math.atan2(mx - R.pos.x, mz - R.pos.z); R.update(0.001); }
   c.fov = fov || 40; c.updateProjectionMatrix();
   [show.A, show.B, show.R].forEach(function (a) { if (a.avatar) a.avatar.sync(); });
   show.arena.render();

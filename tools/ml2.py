@@ -114,7 +114,7 @@ def metrics(p, y):
     y = np.asarray(y, float)
     out = {"n": int(len(y)), "log_loss": round(ll(p, y), 5), "brier": round(float(np.mean((p - y) ** 2)), 5),
            "accuracy": round(float(np.mean(np.where(p == 0.5, 0.5, (p > 0.5) == (y > 0.5)))), 4)}
-    out["calib_slope"] = round(M.calib_slope(p, y), 3)
+    out["calib_slope"] = round(M.calib_slope(p, y)[1], 3)
     out["ece_sym"] = round(M.ece_sym(p, y), 4)
     return out
 
@@ -1588,7 +1588,7 @@ def stage_export(args):
         row = {"n": int(m.sum()), "ml_v1_lr": round(ll(ext["ml_v1_lr"][m], y[m]), 5),
                "ml2_lr": round(ll(P["lr|" + sch][m], y[m]), 5), "ml2_blend": round(ll(P["blend|" + sch][m], y[m]), 5),
                "elo": round(ll(ext["elo"][m], y[m]), 5),
-               "ml2_blend_slope": round(M.calib_slope(P["blend|" + sch][m], y[m]), 3)}
+               "ml2_blend_slope": round(M.calib_slope(P["blend|" + sch][m], y[m])[1], 3)}
         mc = m & ~np.isnan(ext["close"])
         row["close"] = round(ll(ext["close"][mc], y[mc]), 5)
         if Y >= 2024:

@@ -1907,9 +1907,11 @@
         else if (hl.move === "hook" || hl.move === "headkick" || hl.move === "elbow") { nm = hl.side === 0 ? "koRight" : "koLeft"; mir = false; }
         else nm = ["koBack", "koFallBack", "koFace", "koFwd"][Math.floor(Math.random() * 4)];
       } else nm = (this.app.slug || "x").length % 3 === 0 ? "fallFwd" : "fallBack2";
-      this.clip(nm, 1, 0.1, { restart: true, speed: M ? 1.15 : 1.4, mirror: mir });
+      // start where the fall begins (the clips open with a stagger the show has no time for)
+      var KO_T0 = { koBack: 1.5, koFwd: 1.7, koFallBack: 0.2, koFace: 0, koKnees: 1.0, koLeft: 0.9, koRight: 0.9 };
+      this.clip(nm, 1, 0.12, { restart: true, speed: M ? 1.25 : 1.4, mirror: mir, t: M ? (KO_T0[nm] || 0) : 0 });
     } else if (to === "down") {
-      this.clip(M ? "kdSit" : "fallBack2", 1, 0.1, { restart: true, speed: M ? 1.3 : 1.4, mirror: Math.random() < 0.5 });
+      this.clip(M ? "kdSit" : "fallBack2", 1, 0.1, { restart: true, speed: M ? 1.3 : 1.4, mirror: Math.random() < 0.5, t: M ? 0.1 : 0 });
     } else if (to === "stand" && from === "down") {
       var L0 = this.clip("getUp", 1, 0.08, { restart: true, speed: M ? 1.7 : 1.55, t: 0.05 });
       if (L0) L0.autoOff = (L0.clip.dur - L0.t) / L0.speed - 0.3;
