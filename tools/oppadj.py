@@ -70,9 +70,9 @@ PRIOR_YEAR0 = 2004
 
 
 # ------------------------------------------------------------------ engine parameters (single source: params3.js)
-def engine_params():
+def engine_params(path=None):
     js = ("const p=require(%s);process.stdout.write(JSON.stringify(p))"
-          % json.dumps(os.path.join(ROOT, "src", "params3.js")))
+          % json.dumps(path or os.path.join(ROOT, "src", "params3.js")))
     out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout
     return json.loads(out)
 
@@ -1311,7 +1311,7 @@ def engine_eval(args):
         recipe = out["results"].get("roster_recipe", {}).get("families")
         Plw = dict(fj["priors"]["ALL"])
         Plw.update({k: v for k, v in fj["priors"]["Lightweight"].items() if v is not None})
-        p_eng = engine_params()
+        p_eng = engine_params(os.path.join(frz, "params3.js"))      # the k values of the engine copy being simulated
         for t, slug in (("A", "alexander-volkanovski"), ("B", "justin-gaethje")):
             pr = dict(fj["fighters"][slug])
             if recipe and "eff" in out["roster"][slug]:

@@ -1853,12 +1853,15 @@ def tuning_choice():
              if n.startswith("judges_home") or n in ("league_home", "league")}
         out[tag] = c
     tag = "tune22" if "tune22" in out else "tune"
-    c = {n: v for n, v in out[tag].items() if n != "league"}
+    # verification fix: the league judge without the home term is a candidate too (it was excluded before, so the
+    # home term was never tested on a tuning fold). It does not change the pick on tune22 (league -4.2026).
+    c = dict(out[tag])
     best = max(c, key=c.get)
-    named = best != "league_home"
+    named = best.startswith("judges_home")
     jh = best if named else max((n for n in c if n.startswith("judges_home")), key=c.get)
     mult = 1.0 if "@" not in jh else float(jh.split("@")[1])
-    return {"fold": tag, "candidates": out, "best": best, "named_judges_recommended": named, "mult": mult}
+    return {"fold": tag, "candidates": out, "best": best, "named_judges_recommended": named, "mult": mult,
+            "home_on_tuning_fold": best != "league"}
 
 
 def metrics_block(ev, rows_by_fid):
@@ -2417,6 +2420,52 @@ def agreement_block(rows, nat, final_fit, test, sfx, by_fid, shifts=(0.0, 0.1, 0
         out["final_fit_" + label] = {"split_obs": obs, "grid": {f"{k:g}": v for k, v in grid.items()},
                                      "sharpness_shift_matching_split": sh_star,
                                      "sharpness_mult": float(math.exp(sh_star))}
+    return out
+
+
+def verification_block(rows, nat, by_fid, sfx, folds=(("test", "fit before 2024, scored 2024-2025 (validation)"),
+                                                         ("tune22", "fit before 2022, scored 2022-2023 (tuning)"),
+                                                         ("tune", "fit before 2019, scored 2019-2023 (tuning)"))):
+    """Adversarial-review ablations of the published structure on every fold, with this tool's own simulator:
+    the published parameters (judges_home x mult) with named-judge effects set to 0, then also h_USA = 0, then
+    both home terms 0. Decision metrics with event-cluster bootstrap intervals (negative = the first model is
+    better). Decides the engine defaults for named judges and the US home term."""
+    out = {"note": "paired differences, event-cluster bootstrap (2,000 draws); negative = first model better. "
+                   "named_off = published parameters with every judge effect 0; usa_off = also h_USA = 0; "
+                   "home_off = both home terms 0"}
+    for tag, label in folds:
+        if not fold_exists(tag):
+            continue
+        t = load_fold(tag)
+        name = "judges_home" + sfx
+        if name not in t["models"] or t["models"][name]["eval"] is None:
+            continue
+        v = t["models"][name]
+        ev = v["eval"]
+        rws = [by_fid[f] for f in ev["fids"]]
+        dz = Design(rws, v["jidx"], nat, t["test_year"] - 1)
+        assert [r["fid"] for r in dz.rows] == list(ev["fids"])
+        th0 = sim_params(_fit_th(v), MODELS["judges_home"])
+        P = {"published": ev["probs"], "league_home": t["models"]["league_home"]["eval"]["probs"],
+             "league": t["models"]["league"]["eval"]["probs"]}
+        for nm, hm in (("named_off", (1.0, 1.0)), ("named_off_usa_off", (0.0, 1.0)), ("named_off_home_off", (0.0, 0.0))):
+            th = dict(th0)
+            th["E"] = np.zeros_like(th0["E"])
+            th["h"] = np.asarray(th0["h"], float) * np.array(hm)
+            P[nm], _, _, _ = simulate_decisions(th, dz, nsim=8000, seed=7)
+        M = {k: decision_metrics(p, rws) for k, p in P.items()}
+        blk = {"fold": label, "n": len(rws), "metrics": {k: {q: m[q] for q in ("winner_logloss", "class7_logloss",
+                                                                               "split_logloss", "pred_split_rate",
+                                                                               "obs_split_rate")}
+                                                         for k, m in M.items()}, "diff": {}}
+        for a, b in (("published", "named_off"), ("named_off", "league_home"), ("named_off", "league"),
+                     ("named_off_usa_off", "named_off"), ("named_off_home_off", "named_off")):
+            blk["diff"][f"{a} - {b}"] = {q: boot_diff(M[a]["_" + k], M[b]["_" + k], g=M[a]["_g" if k != "ll_w" else "_g_w"])
+                                         for q, k in (("winner_logloss", "ll_w"), ("class7_logloss", "ll7"),
+                                                      ("split_logloss", "ll_nu"))}
+        out[tag] = blk
+        log(f"verification {tag}: " + "; ".join(f"{k} 7c {d['class7_logloss']['mean']:+.4f} w {d['winner_logloss']['mean']:+.4f}"
+                                                for k, d in blk["diff"].items()))
     return out
 
 

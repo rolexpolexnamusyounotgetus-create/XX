@@ -27,6 +27,7 @@ SLUGS.forEach(function (s) {
   if (Q.get("likeness") !== "0") { var lk = getJSON("../data/likeness/" + s + ".json"); if (lk) db.likeness[s] = lk; }
 });
 var APP = SLUGS.map(function (s) { return FightAvatar.appearanceFor(s, db); });
+if (APP.length === 1) APP.push(Object.assign({}, APP[0]));   // one slug (likeness tool): same fighter in both corners
 var REF = Object.assign({}, FightAvatar.REFEREE, (overrides.referee || {}).appearance || {});
 var log = [], logEl = document.getElementById("log");
 function L(s) { log.push(s); logEl.textContent = log.slice(-12).join("\n"); }
