@@ -9,13 +9,15 @@
    ML2.load(json)                           -> handle (json = ml2.json's page_model object, or a string)
    handle.has(slug)                         -> true when the fighter is in the ML v2 roster
    handle.side(slug, fight)                 -> the fighter's values for that fight (age, layoff, ... recomputed)
-   handle.predict(slugA, slugB, fight[, pLine]) -> { pA, z, pMR, pStack, pStackLine } or null
+   handle.predict(slugA, slugB, fight[, pLine[, pOpen]]) -> { pA, z, pMR, pStack, pStackLine, pStackOpen } or null
        pA = the ML v2 logistic; pMR = market rating (both fighters rated); pStack = the validated no-line stack
        (ML v2 + market rating, page_model.stack.noline); pStackLine = the with-line stack when pLine (de-vigged
-       closing-line P(A), e.g. MoE.devig) is given (page_model.stack.line)
+       CLOSING-line P(A), e.g. MoE.devig) is given (page_model.stack.line); pStackOpen = the opening-line stack when
+       pOpen (de-vigged opener, or any line quoted before fight night) is given (page_model.stack.open). Before the
+       close exists, pass the line as pOpen, not pLine: the line stack's weights were fit on closing lines.
        fight = { date: "YYYY-MM-DD", lbs: 155, five: 1,
                  fw: { A: { fw_missed: 0, fw_repl: 0, fw_repl14: 0, fw_home_intl: 0, ... }, B: {...} } }   (fw optional)
-   handle.predictSides(a, b, fight[, pLine]) -> same, from two side objects (for fighters outside the roster)
+   handle.predictSides(a, b, fight[, pLine[, pOpen]]) -> same, from two side objects (for fighters outside the roster)
    ML2.ratingProb(kind, kappa, ra, rb)      -> P(a beats b) for one rating system ({mu, sd})
    ML2.marketRatingProb(a, b, daysAfterSnapshot, params) -> P(a beats b) from market ratings [mu, sd, last, n]
 
@@ -164,10 +166,10 @@
       }
       return sigm(z);
     }
-    function predictSides(a, b, fight, pLine) {
+    function predictSides(a, b, fight, pLine, pOpen) {
       var z = evalLogit(doc, a, b, fight);
       if (!isFinite(z)) return null;
-      var out = { pA: sigm(z), z: z, pMR: null, pStack: null, pStackLine: null };
+      var out = { pA: sigm(z), z: z, pMR: null, pStack: null, pStackLine: null, pStackOpen: null };
       if (a.mr && b.mr) {
         var days = Math.round((Date.parse(fight.date) - Date.parse(doc.snapshot)) / DAY);
         out.pMR = marketRatingProb(a.mr, b.mr, days, doc.mr_params);
@@ -175,6 +177,7 @@
       if (doc.stack) {
         out.pStack = stackP(doc.stack.noline, { ml2lr: out.pA, mkt_rating: out.pMR });
         if (!miss(pLine)) out.pStackLine = stackP(doc.stack.line, { ml2lr: out.pA, mkt_rating: out.pMR, market: pLine });
+        if (!miss(pOpen) && doc.stack.open) out.pStackOpen = stackP(doc.stack.open, { ml2lr: out.pA, mkt_rating: out.pMR, open: pOpen });
       }
       return out;
     }
@@ -183,10 +186,10 @@
       has: function (slug) { return !!R[slug]; },
       side: side,
       predictSides: predictSides,
-      predict: function (slugA, slugB, fight, pLine) {
+      predict: function (slugA, slugB, fight, pLine, pOpen) {
         var a = side(slugA, fight), b = side(slugB, fight);
         if (!a || !b) return null;
-        return predictSides(a, b, fight, pLine);
+        return predictSides(a, b, fight, pLine, pOpen);
       }
     };
   }

@@ -26,6 +26,12 @@ for (const tv of pm.test_vectors) {
     ok((tv.p_mr === null && rl.pMR === null) || Math.abs(rl.pMR - tv.p_mr) < 1e-12, `market rating ${tv.a} vs ${tv.b}`);
     ok(Math.abs(rl.pStack - tv.p_stack_noline) < 1e-12, `no-line stack ${tv.a} vs ${tv.b}`);
     ok(Math.abs(rl.pStackLine - tv.p_stack_line) < 1e-12, `line stack ${tv.a} vs ${tv.b}`);
+    ok(rl.pStackOpen === null, `no opener -> no open stack ${tv.a} vs ${tv.b}`);
+  }
+  if (tv.p_stack_open !== undefined) {
+    const ro = h.predict(tv.a, tv.b, tv.fight, undefined, tv.p_open);
+    ok(Math.abs(ro.pStackOpen - tv.p_stack_open) < 1e-12, `open stack ${tv.a} vs ${tv.b}`);
+    ok(ro.pStackLine === null, `opener does not feed the close-trained line stack ${tv.a} vs ${tv.b}`);
   }
   // corner symmetry: swapping the fighters (and the fight-week flags) gives exactly 1 - p
   const f2 = JSON.parse(JSON.stringify(tv.fight));

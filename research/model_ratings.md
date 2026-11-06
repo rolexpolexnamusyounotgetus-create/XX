@@ -268,7 +268,18 @@ Parameters chosen on 2019-2021 only, then scored on 2022-2023:
 | glicko2 | 0.6406 | 0.6506 | 0.010 |
 | trueskill | 0.6454 | 0.6503 | 0.005 |
 | trueskill_mov | 0.6434 | 0.6468 | 0.003 |
-<!--WHR_INNER-->
+| whr | 0.6455 | 0.6503 | 0.005 |
+| whr_rounds | 0.6364 | **0.6437** | 0.007 |
+
+The main run skipped the WHR rows for cost; this session ran them (`review_whr`). The chain was re-chosen on 2019-2021
+end to end, so no upstream WHR input saw 2022-2023:
+
+- whr starts from elo_full's own 2019-2021 choice of the shared priors;
+- whr_rounds starts from that whr choice plus elo_rounds' 2019-2021 round weights.
+
+The 2019-2021 choice for whr_rounds differs from the full-window one: w2 0.067 vs 0.027, kappa 1.46 vs 1.10, w_round
+0.6 vs 0.8. It still scores best of all systems on 2022-2023 (0.6437, against 0.6468 for trueskill_mov and 0.6506 for
+glicko2), so picking whr_rounds as the best single system does not depend on in-window tuning.
 
 - The in-window tuning scores flatter the systems with many parameters by up to 0.010. The 2024-2025 numbers carry
   none of that.

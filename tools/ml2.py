@@ -237,10 +237,12 @@ def build_ratings():
 MR_PARAMS = {"sig_m": 0.5, "tau": 0.5, "v0": 1.5, "mu0": 0.0, "kappa": 1.5}   # market.json eval.market_rating.params
 
 
-def build_market_rating(df):
+def build_market_rating(df, perturb_from=None):
     """tools/market.py's walk-forward Kalman market rating (filter on earlier closing lines and results), rebuilt
     from 2013 so pre-2019 rows have it. Same stream as market.py (nlbair closes; this tool's closes from
-    market.json for dev fights), cut at 2025-12-31. Returns per fid: p_A, mu/var/n per side before the fight."""
+    market.json for dev fights), cut at 2025-12-31. Returns per fid: p_A, mu/var/n per side before the fight.
+    perturb_from (verify stage only): reverse the closing line and the result of every stream fight dated on or
+    after that ISO date."""
     nl = pd.read_csv(os.path.join(ROOT, "data", "raw", "odds", "nlbair_odds.csv"), low_memory=False)
     nl = nl[nl["event_date"] < VAULT_S]
     mk = dev_only(jload("market.json")["fights"])
@@ -265,6 +267,11 @@ def build_market_rating(df):
         stream.append({"id": r.fid, "date": r.date.isoformat(), "i": r.a, "j": r.b,
                        "p": mk[r.fid].get("p_novig_close"), "y": y})
     stream.sort(key=lambda x: (x["date"], x["id"]))
+    if perturb_from:
+        for e in stream:
+            if e["date"] >= perturb_from:
+                e["p"] = None if e["p"] is None else 1.0 - e["p"]
+                e["y"] = None if e["y"] is None else 1.0 - e["y"]
     P = MR_PARAMS
     mu, var, last, n = {}, {}, {}, defaultdict(int)
     out = {}
@@ -1448,6 +1455,15 @@ STACKS = {
         "page: ml2lr+mkt_rating": ["ml2lr", "mkt_rating"],
         "ml2s+mkt_rating+feat_lr": ["ml2s", "mkt_rating", "feat_lr"],
     },
+    # opening-line regime (added by the ml2 verifier): before fight night the page only has an opener or a moving
+    # line, never the close, and the close-trained "line" weights overweight a noisier input. Fit on market.json's
+    # p_novig_open.
+    "open": {
+        "open+current": ["open", "mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo"],
+        "open+ml2": ["open", "ml2"],
+        "page: open+ml2lr": ["open", "ml2lr"],
+        "page: open+ml2lr+mkt_rating": ["open", "ml2lr", "mkt_rating"],
+    },
 }
 
 
@@ -1476,10 +1492,12 @@ def stage_stack(args):
     y = D["y"].to_numpy(float)
     yr = D["year"].to_numpy()
     has_line = D["market"].notna().to_numpy()
+    has_open = D["open"].notna().to_numpy()
+    rows_of = {"line": has_line, "noline": np.ones(len(D), bool), "open": has_open}
     R = {"cv": {}, "valid": {}, "weights": {}, "segments": {}}
     out_preds = {}
     for regime, sets in STACKS.items():
-        rows_ok = has_line if regime == "line" else np.ones(len(D), bool)
+        rows_ok = rows_of[regime]
         for name, cols in sets.items():
             # forward-chained CV inside 2019-2023 for the recency half-life
             cvs = {}
@@ -1534,6 +1552,21 @@ def stage_stack(args):
                                                                              ev_grp[va])
                 cmpd["%s|%s|current vs close" % (regime, sch)] = compare(cur, D["market"].to_numpy()[va], y[va],
                                                                          ev_grp[va])
+    # opening-line regime: each stack vs the open itself and vs the current experts on the open (fights with an open)
+    vo = has_open & va_all
+    po = D["open"].to_numpy(float)
+    for sch in ("static", "roll"):
+        cur_o = out_preds["open|open+current|%s" % sch][vo]
+        cmpd["open|%s|open+current vs open" % sch] = compare(cur_o, po[vo], y[vo], ev_grp[vo])
+        for name in ("open+ml2", "page: open+ml2lr", "page: open+ml2lr+mkt_rating"):
+            pn = out_preds["open|%s|%s" % (name, sch)][vo]
+            cmpd["open|%s|%s vs open" % (sch, name)] = compare(pn, po[vo], y[vo], ev_grp[vo])
+            cmpd["open|%s|%s vs open+current" % (sch, name)] = compare(pn, cur_o, y[vo], ev_grp[vo])
+    # the misuse this regime prevents: an opener fed into the close-trained page line stack (weights fit <= 2023)
+    wl = R["weights"]["line|page: market+ml2lr"]
+    z_mis = wl["market"] * zmat(D, ["open"])[:, 0] + wl["ml2lr"] * zmat(D, ["ml2lr_static"])[:, 0]
+    cmpd["open|static|close-trained line stack fed the open vs page: open+ml2lr"] = compare(
+        sig(z_mis[vo]), out_preds["open|page: open+ml2lr|static"][vo], y[vo], ev_grp[vo])
     for k, v in cmpd.items():
         log("%-42s a %.5f b %.5f diff %+.5f %s" % (k, v["a"], v["b"], v["diff"], v["diff_ci"]))
     R["paired"] = cmpd
@@ -1616,8 +1649,11 @@ def stage_stack(args):
     # production weights for the page (inputs the page can compute: the ML v2 logistic page model, the market
     # rating, the de-vigged line), refit on 2019-2025 (OOF 2019-2023 + monthly-rolling 2024-2025 predictions)
     PROD = {}
-    for regime, name in (("line", "page: market+ml2lr"), ("noline", "page: ml2lr+mkt_rating")):
-        rows_ok = has_line if regime == "line" else np.ones(len(D), bool)
+    cvb = lambda k: R["cv"][k]["by_h"][str(R["cv"][k]["chosen_h"])]
+    open_page = ("page: open+ml2lr+mkt_rating" if cvb("open|page: open+ml2lr+mkt_rating")
+                 < cvb("open|page: open+ml2lr") - SEL_MIN else "page: open+ml2lr")
+    for regime, name in (("line", "page: market+ml2lr"), ("noline", "page: ml2lr+mkt_rating"), ("open", open_page)):
+        rows_ok = rows_of[regime]
         h = R["cv"]["%s|%s" % (regime, name)]["chosen_h"]
         cols = STACKS[regime][name]
         _, b = stack_predict(D, cols, "roll", h, 2025, np.zeros(len(D), bool), rows_ok)
@@ -2160,12 +2196,13 @@ def page_eval(model, a, b, fight, probs=None):
     return z
 
 
-def page_stack_eval(stack, p_lr, p_mr, p_line=None):
+def page_stack_eval(stack, p_lr, p_mr, p_line=None, p_open=None):
     """Page stacks: no intercept, non-negative logit weights; inputs clipped to [0.01, 0.99] (moe convention).
-    A missing market rating enters as 0.5 (logit 0)."""
+    A missing market rating enters as 0.5 (logit 0). p_line: de-vigged closing line (stack 'line'); p_open: de-vigged
+    opener or any pre-fight line before the close (stack 'open')."""
     def z(p):
         return 0.0 if p is None else _lg(p, stack["pclip"])
-    inp = {"ml2lr": p_lr, "mkt_rating": p_mr, "market": p_line}
+    inp = {"ml2lr": p_lr, "mkt_rating": p_mr, "market": p_line, "open": p_open}
     return 1 / (1 + math.exp(-sum(w * z(inp[k]) for k, w in zip(stack["inputs"], stack["weights"]))))
 
 
@@ -2292,6 +2329,9 @@ def page_model(T, C, F, args, stacks=None):
             e["p_stack_noline"] = page_stack_eval(stacks["noline"], e["pA"], p_mr)
             e["p_line"] = 0.35 + 0.01 * k
             e["p_stack_line"] = page_stack_eval(stacks["line"], e["pA"], p_mr, e["p_line"])
+            if stacks.get("open"):
+                e["p_open"] = 0.37 + 0.01 * k
+                e["p_stack_open"] = page_stack_eval(stacks["open"], e["pA"], p_mr, None, e["p_open"])
         tv.append(e)
     model["test_vectors"] = tv
     model["stack"] = stacks
