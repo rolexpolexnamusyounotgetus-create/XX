@@ -986,7 +986,7 @@
     }
     var maskOn = !!(X.maskHair && X.maskBeard && X.maskHair2);
     var U = this.uniforms = this.uniforms || {
-      uBeard: { value: looks.beard }, uBeardOp: { value: looks.beardLen >= 12 ? 0.9 : (looks.beardLen >= 6 ? 0.8 : 0.7) * (looks.beardDensity < 0.85 ? 0.88 : 1) }, uBeardCol: { value: lin(looks.beardColor) }, uScalp: { value: looks.scalp }, uHairCol: { value: lin(looks.hairColor) },
+      uBeard: { value: looks.beard }, uBeardOp: { value: (looks.beardLen >= 12 ? 0.75 : (looks.beardLen >= 4 ? 0.68 : (looks.beardLen >= 0.5 ? 0.6 : 0.45))) * (looks.beardDensity < 0.85 ? 0.88 : 1) }, uBeardCol: { value: lin(looks.beardColor) }, uScalp: { value: looks.scalp }, uHairCol: { value: lin(looks.hairColor) },
       uDam: { value: new T.Vector2(0, 0) }, uLeg: { value: new T.Vector2(0, 0) }, uSweat: { value: 0 }, uFlush: { value: 0 },
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
       uMaskOn: { value: maskOn ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
@@ -1014,16 +1014,15 @@
           "    float inH = step(0.0, hu.x) * step(hu.x, 1.0) * step(0.0, hu.y) * step(hu.y, 1.0);\n" +
           "    vec2 hc = clamp(hu, 0.0, 1.0); mS = (dot(texture2D(uMaskH, hc), uScalpCh) + dot(texture2D(uMaskH2, hc), uScalpCh2)) * inH;\n" +
           "  }\n" +
-          "  float bd = smoothstep(0.04 + 0.22 * vn(su * 160.0), 0.85, mB) * clamp(uBeard, 0.0, 1.0); gBeard = bd;\n" +
-          "  float bfw = length(fwidth(su * 1700.0)); float bk = 1.0 - smoothstep(0.45, 1.3, bfw);\n" +
-          "  float bn1 = vn(su * 1700.0), bn2 = vn(su * 520.0), bn3 = vn(su * 90.0);\n" +
-          "  float dens = clamp(bd * (0.85 + 0.3 * bn3), 0.0, 1.0);\n" +
-          "  float hairs = mix(dens, smoothstep(1.0 - dens - 0.02, 1.0 - dens + 0.2, bn1 * 0.7 + bn2 * 0.3), bk);\n" +
-          "  vec3 bcol = uBeardCol * (0.68 + 0.45 * bn2);\n" +
-          "  diffuseColor.rgb *= 1.0 - 0.16 * smoothstep(0.0, 0.5, mB) * clamp(uBeard * 1.4, 0.0, 1.0);\n" +
-          "  diffuseColor.rgb = mix(diffuseColor.rgb, bcol, clamp(hairs * (0.5 + 0.42 * bd), 0.0, uBeardOp));\n" +
-          "  float sc = mS * uScalp; float sst = sc * (0.55 + 0.45 * smoothstep(0.2, 0.9, hair)); gScalp = sc;\n" +
-          "  diffuseColor.rgb = mix(diffuseColor.rgb, uHairCol * 0.7, clamp(sst * 0.85, 0.0, 0.9));\n" +
+          // hair roots and the shade under a beard or hair cap: a cooler, darker undertone, no dots (the cap draws the hairs)
+          "  float bd = smoothstep(0.04, 0.85, mB) * clamp(uBeard, 0.0, 1.0) * (0.8 + 0.4 * vn(su * 160.0)); gBeard = bd;\n" +
+          "  vec3 rootB = mix(diffuseColor.rgb * vec3(0.72, 0.74, 0.8), uBeardCol, 0.25);\n" +
+          "  diffuseColor.rgb = mix(diffuseColor.rgb, rootB, clamp(bd * uBeardOp, 0.0, 0.9));\n" +
+          "  float rfw = length(fwidth(su * 2400.0)); float rk = 1.0 - smoothstep(0.25, 0.8, rfw);\n" +
+          "  diffuseColor.rgb = mix(diffuseColor.rgb, uBeardCol * 0.75, clamp(smoothstep(0.6, 0.92, vn(su * 2400.0)) * rk * bd * uBeardOp * 0.5, 0.0, 1.0));\n" +
+          "  float sc = mS * uScalp; gScalp = sc;\n" +
+          "  vec3 rootS = mix(diffuseColor.rgb * vec3(0.7, 0.72, 0.78), uHairCol, 0.4);\n" +
+          "  diffuseColor.rgb = mix(diffuseColor.rgb, rootS, clamp(sc * (0.78 + 0.22 * vn(su * 300.0)) * 0.92, 0.0, 0.92));\n" +
           "  float sideL = step(0.0, vMask.y);\n" +
           "  float dam = mix(uDam.y, uDam.x, step(0.0, vMask.z));\n" +
           "  float swz = abs(vMask.z) * dam; diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.05, 0.62, 0.66), clamp(swz * 0.75, 0.0, 0.6));\n" +
