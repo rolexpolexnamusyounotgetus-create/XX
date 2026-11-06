@@ -1504,7 +1504,7 @@
     var N = 44, hz = new Float32Array(N * 4), hr = new Float32Array(N * 2);
     for (i = 0; i < N; i++) {
       var a2 = r() * TAU, rr, y2, sz;
-      if (i < 16) { rr = r() * 3.2; y2 = 4.6 + r() * 4.5; sz = 4 + r() * 3; }          // under the truss, above the fighters
+      if (i < 8) { rr = r() * 2.5; y2 = 5.2 + r() * 4; sz = 7 + r() * 3; }              // under the truss, above the fighters
       else if (i < 34) { rr = RA + 0.6 + r() * 4.5; y2 = 0.4 + r() * 6; sz = 5 + r() * 4; }   // around the apron and the tables
       else { rr = 10 + r() * 8; y2 = 2 + r() * 8; sz = 8 + r() * 5; }                // out over the floor seats
       hz[i * 4] = Math.cos(a2) * rr; hz[i * 4 + 1] = y2; hz[i * 4 + 2] = Math.sin(a2) * rr; hz[i * 4 + 3] = sz;

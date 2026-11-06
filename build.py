@@ -266,11 +266,11 @@ def forward_block():
             ob = odds.get(bid)
             mk = None
             if ob and ob.get("p") is not None:
-                p = ob["p"]
+                p, oa, obb = ob["p"], ob.get("oa"), ob.get("ob")
                 # the snapshot is oriented like the card; flip if its A is the card's B
                 if ob.get("a") and a.get("slug") and ob["a"] != a.get("slug"):
-                    p = 1 - p
-                mk = {"p": p, "n": ob.get("n"), "oa": ob.get("oa"), "ob": ob.get("ob")}
+                    p, oa, obb = 1 - p, obb, oa
+                mk = {"p": p, "n": ob.get("n"), "oa": oa, "ob": obb}
             bouts.append({"id": bid, "order": b.get("order"), "seg": b.get("segment"), "wc": b.get("weight_class"),
                           "rounds": b.get("rounds"), "title": bool(b.get("title")), "status": b.get("status"),
                           "a": {"name": a.get("name"), "slug": a.get("slug")}, "b": {"name": bb.get("name"), "slug": bb.get("slug")},

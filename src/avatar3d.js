@@ -713,11 +713,11 @@
       base.proxy("eyes-high-poly"), loadTexture("mh-iris-" + looks.iris + ".webp", true),
       base.proxy(looks.brows), base.proxy("eyelashes-eyelashes01"),
       looks.hair ? base.proxy(looks.hair) : null,
-      optTex("mh-skin-athletic-n.jpg"), optTex("mh-skin-pores-n.jpg"), optTex("mh-skin-spec.jpg"), optTex("mh-mask-hair.png"), optTex("mh-mask-beard.png"),
+      optTex("mh-skin-athletic-n.jpg"), optTex("mh-skin-pores-n.jpg"), optTex("mh-skin-spec.jpg"), optTex("mh-mask-hair.png"), optTex("mh-mask-beard.png"), optTex("mh-mask-hair2.png"),
       wantGlove ? base.proxy(gloveId).catch(function () { return null; }) : null
     ]).then(function (r) {
-      self.tex = { normal: r[6], pores: r[7], spec: r[8], maskHair: r[9], maskBeard: r[10] };
-      self.gloveProxy = r[11];
+      self.tex = { normal: r[6], pores: r[7], spec: r[8], maskHair: r[9], maskBeard: r[10], maskHair2: r[11] };
+      self.gloveProxy = r[12];
       self.makeBody(r[0], masks);
       self.addProxy(r[1], { map: r[2], roughness: 0.12, eyes: true });
       self.addProxy(r[3], { color: looks.beardColor === looks.hairColor ? looks.hairColor : mixHex(looks.hairColor, looks.beardColor, 0.4), brows: true });
@@ -895,13 +895,13 @@
       var ns = cfg.ref ? 0.35 : 0.45 + 0.75 * (cfg.lean || 0.5);
       mat.normalMap = X.normal; mat.normalScale = new T.Vector2(ns, -ns);
     }
-    var maskOn = !!(X.maskHair && X.maskBeard);
+    var maskOn = !!(X.maskHair && X.maskBeard && X.maskHair2);
     var U = this.uniforms = this.uniforms || {
       uBeard: { value: looks.beard }, uBeardCol: { value: lin(looks.beardColor) }, uScalp: { value: looks.scalp }, uHairCol: { value: lin(looks.hairColor) },
       uDam: { value: new T.Vector2(0, 0) }, uLeg: { value: new T.Vector2(0, 0) }, uSweat: { value: 0 }, uFlush: { value: 0 },
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
-      uMaskOn: { value: maskOn ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskB: { value: X.maskBeard || null },
-      uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 4 ? chan(looks.scalpCh) : new T.Vector4() }, uScalpCh2: { value: looks.scalpCh === 4 ? chan(3) : new T.Vector4() },
+      uMaskOn: { value: maskOn ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
+      uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 3 ? chan(looks.scalpCh) : new T.Vector4() }, uScalpCh2: { value: looks.scalpCh >= 3 ? chan(looks.scalpCh - 3) : new T.Vector4() },
       uBeardCh: { value: chan(looks.beardCh || 0) }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.55 : 0 }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
     };
     mat.onBeforeCompile = function (sh) {
@@ -911,7 +911,7 @@
         .replace("#include <begin_vertex>", "#include <begin_vertex>\nvMask = aMask; vMask2 = aMask2; vDecal = aDecal;\nfloat swl = max(aMask.z, 0.0) * uDam.x + max(-aMask.z, 0.0) * uDam.y;\ntransformed += objectNormal * swl * 0.0055;");
       sh.fragmentShader = sh.fragmentShader
         .replace("#include <common>", "#include <common>\nvarying vec4 vMask;\nvarying vec4 vMask2;\nvarying vec4 vDecal;\nuniform float uBeard; uniform vec3 uBeardCol; uniform float uScalp; uniform vec3 uHairCol; uniform vec2 uDam; uniform vec2 uLeg; uniform float uSweat; uniform float uFlush;\nuniform sampler2D uTattoo; uniform float uTatOn;\n" +
-          "uniform float uMaskOn; uniform sampler2D uMaskH; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
+          "uniform float uMaskOn; uniform sampler2D uMaskH; uniform sampler2D uMaskH2; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
           "float hh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\n" +
           "float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hh(i), hh(i + vec2(1,0)), f.x), mix(hh(i + vec2(0,1)), hh(i + vec2(1,1)), f.x), f.y); }")
         .replace("#include <map_fragment>", "#include <map_fragment>\n" +
@@ -923,7 +923,7 @@
           "    mB = dot(texture2D(uMaskB, su), uBeardCh);\n" +
           "    vec2 hu = (su - vec2(0.6, 0.03)) / vec2(0.3, 0.84);\n" +
           "    float inH = step(0.0, hu.x) * step(hu.x, 1.0) * step(0.0, hu.y) * step(hu.y, 1.0);\n" +
-          "    mS = max(dot(texture2D(uMaskH, clamp(hu, 0.0, 1.0)), uScalpCh) * inH, dot(texture2D(uMaskB, su), uScalpCh2));\n" +
+          "    vec2 hc = clamp(hu, 0.0, 1.0); mS = (dot(texture2D(uMaskH, hc), uScalpCh) + dot(texture2D(uMaskH2, hc), uScalpCh2)) * inH;\n" +
           "  }\n" +
           "  float bd = clamp(mB * uBeard, 0.0, 1.0); gBeard = bd;\n" +
           "  float g2fw = length(fwidth(su * 700.0)); float g2 = mix(0.5, vn(su * 700.0) * 0.55 + vn(su * 1700.0) * 0.45, 1.0 - smoothstep(0.35, 1.1, g2fw));\n" +
@@ -953,6 +953,7 @@
         .replace("#include <lights_physical_fragment>", "#include <lights_physical_fragment>\n#ifdef CLEARCOAT\nmaterial.clearcoat *= 1.0 - 0.92 * max(gBeard, gScalp * 0.6);\n#endif")
         .replace("#include <normal_fragment_maps>", "#ifdef USE_NORMALMAP\n" +
           "{ vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0; mapN.xy *= normalScale;\n" +
+          "  float headIsl = smoothstep(0.615, 0.64, vUv.x) * smoothstep(0.02, 0.05, vUv.y) * (1.0 - smoothstep(0.88, 0.91, vUv.y)); mapN.xy *= 1.0 - 0.9 * headIsl;\n" +
           "  float pfw = length(fwidth(vUv * 46.0)); float patt = 1.0 - smoothstep(0.25, 0.9, pfw);\n" +
           "  vec3 pN = texture2D( uPores, vUv * 46.0 ).xyz * 2.0 - 1.0; mapN = normalize(vec3(mapN.xy + pN.xy * uPoreAmt * patt * vec2(1.0, -1.0) * (1.0 - 0.7 * gBeard), mapN.z));\n" +
           "  normal = perturbNormal2Arb( -vViewPosition, normal, mapN, faceDirection ); }\n" +
@@ -1377,8 +1378,8 @@
       this.addStrandShell("beard", covB, { len: function () { return lb; }, layers: lb > 0.012 ? 7 : (lb > 0.005 ? 5 : 3), color: looks.beardColor, density: looks.beardDensity,
         dir: function (i, out) { return out.set(0, -0.55, 0.12); }, freq: 1100, thick: lb > 0.012 ? 0.62 : 0.5 });
     }
-    if (looks.hairMode === "shell" && X.maskHair && looks.scalpCh >= 0 && looks.scalpCh < 4) {
-      var ph = texPixels(X.maskHair), covH = new Float32Array(n), ch = looks.scalpCh;
+    if (looks.hairMode === "shell" && X.maskHair && X.maskHair2 && looks.scalpCh >= 0 && looks.scalpCh < 4) {
+      var ph = texPixels(looks.scalpCh < 3 ? X.maskHair : X.maskHair2), covH = new Float32Array(n), ch = looks.scalpCh % 3;
       for (i = 0; i < n; i++) {
         if (this.boneW(i, HEADB) < 0.5) continue;
         var u = (uv[i * 2] - 0.6) / 0.3, v = (uv[i * 2 + 1] - 0.03) / 0.84;

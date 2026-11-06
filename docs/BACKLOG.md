@@ -113,9 +113,13 @@ Findings from verified research that the next engine versions must use. Each lin
   market rating 0.6258 (+offsets 0.6148), Elo 0.6770; method6 1.4770; p_dec 0.6516; round 1.1384. Walk-forward
   Kalman "market rating" works as a no-line prior. Soft-label scoring against the close is 3-4.6x less noisy but
   rewards closeness to the market: a screen only. Volk-Gaethje: market rating 63.5% Volk vs ~37% openers.
-- ML benchmark (tools/ml.py; verifier cut off): logistic 0.6156 on 2024+ (66.6% accuracy) vs Elo 0.6799;
-  ties the open line, 0.023 behind the close; stack Elo+ML+market rating 0.6071. Engine v3 adds nothing to the
-  stack. Gap to the close concentrated in newcomers (0.051 log loss when a fighter has 1-2 UFC fights).
+- ML benchmark (tools/ml.py, data/derived/ml.json, research/model_ml.md; VERIFIED after a fix, Nov 6 pm): the
+  first build scored 2024-2026 (vault included) and fit the page model through the snapshot; now 2024-2025 only,
+  page model fit before 2026, 2026 pre-fight predictions exported to the vault dir (ml_vault.json). On 2024-2025
+  (854 fights): logistic 0.6062 (67.9%) vs Elo 0.6769; ties the open (-0.0055 [-0.022, 0.011]), 0.018 behind the
+  close; stack Elo+ML+market rating 0.5935 (845); open+ML beats the open by 0.021, close+ML the close by 0.0055
+  [0.0026, 0.0080]. Engine v3 adds nothing. Gap to the close concentrated in newcomers (0.036 with 1-2 UFC fights).
+  No look-ahead found (self-leak perturbation test, joins, corner symmetry all clean).
 - Method/round (tools/methodround.py, verified): model S beats division base rates on method by -0.0445
   [-0.062, -0.027]; 7-bin 1.5643 (SM 1.5243); ties the market's method props in a 40/60 blend. It is the
   yardstick for the simulator's method/round output.
