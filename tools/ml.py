@@ -1717,7 +1717,15 @@ def seven(R):
         S["gbm_fact"][teY] = assemble7(P["lgb"][teY], gA, gB, pD)
         S["mlgbm_fact"][teY] = assemble7(P["ml"][teY], gA, gB, pD)
         if rec_key in P:
-            S["stack_fact"][teY] = assemble7(P[rec_key][teY], MA_lr[teY], MB_lr[teY], pD)
+            # Verification fix (Nov 6): OOF years use the leave-one-year-out stack, not the stack whose weights
+            # were fit on all of 2019-2023 (which made this model's OOF 7-bin score, and so its selection as
+            # `recommended`, in-sample). Rows without a LOYO value (draws, non-backtest rows) keep the stack
+            # value; for a draw the 7-bin likelihood does not depend on P(win).
+            pw = P[rec_key][teY]
+            lo_ = R.get("_loyo", {}).get(rec_key)
+            if Y in OOF_YEARS and lo_ is not None:
+                pw = np.where(np.isnan(lo_[teY]), pw, lo_[teY])
+            S["stack_fact"][teY] = assemble7(pw, MA_lr[teY], MB_lr[teY], pD)
         md = SoftmaxLR(d_best["C"]).fit(np.vstack([D0[tr7], D1[tr7]]),
                                         np.r_[k7[tr7], MIRROR7[k7[tr7].astype(int)]].astype(int))
         S["direct_lr"][teY] = 0.5 * (md.predict(D0[teY], 7) + md.predict(D1[teY], 7)[:, MIRROR7])
@@ -1857,6 +1865,7 @@ def stacking(R):
         pt[ok] = 1 / (1 + np.exp(-Zall[ok] @ w))
         key = "stack:" + name
         P[key] = pt
+        R.setdefault("_loyo", {})[key] = lo      # honest OOF (weights fit without the row's year)
         # paired event-bootstrap differences on the same test rows: stack - ml, stack - its strongest single input
         g = df.loc[te, "event"].to_numpy()
         yt = y[te]
@@ -1890,6 +1899,9 @@ def stacking(R):
             miss = np.isnan(P[key]) & ~np.isnan(P[base_key])
             v["n_fallback_all_rows"] = int(miss.sum())
             P[key] = np.where(miss, P[base_key], P[key])
+            if key in R.get("_loyo", {}) and base_key in R["_loyo"]:
+                lo_, lb_ = R["_loyo"][key], R["_loyo"][base_key]
+                R["_loyo"][key] = np.where(np.isnan(lo_) & ~np.isnan(lb_), lb_, lo_)
     # recommended pre-line product stack: best OOF-LOYO among variants without opening/closing lines
     cands = [v for v in out["variants"] if not any(k in ("mkt_open", "mkt_close") for k in v["inputs"])]
     full_cov = [v for v in cands if all(k in ("elo", "ml", "lr", "lgb", "xgb", "mkt_rating") for k in v["inputs"])]

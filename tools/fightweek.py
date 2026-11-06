@@ -1157,7 +1157,7 @@ class Card:
     @staticmethod
     def key(t):
         """Accent-folded lower case; punctuation kept so numbers and phrases survive."""
-        return fold(t).lower().replace("'", "")
+        return re.sub(r"(?<=\w)'s\b", "", fold(t).lower().replace("\u2019", "'")).replace("'", "")
 
     def mentions(self, text, prefer=None):
         """[(start, end, idx, kind)] fighter mentions in text (positions in the normalized text).
@@ -1227,7 +1227,8 @@ NEG_TRIG = re.compile(r"(?:successfully|eventually|later|subsequently|then) (?:m
                       r"made the (?:required |contracted )?(?:\w+ )?limit|on (?:his|her|their) second attempt|"
                       r"later,? (?:he |she )?(?:re-?)?weighed in (?:again )?at exactly", re.I)
 NUM = r"(\d+(?:\.\d+)?(?:\s?\u00bd)?|\u00bd)"
-W_RE = re.compile(r"(?:weighed in at|weighing in at|weighed at|weigh in at|came in at|coming in at|tipped the scales at|"
+W_RE = re.compile(r"(?:weighed in at|weighing in at|weighed at|weighing at|weigh in at|came in at|coming in at|"
+                  r"tipped the scales at|weighed in over the \d{3}[- ](?:pound|lb)s?\.? [a-z ]{0,30}?limit at|"
                   r"weighed in|weighing in|weighed)\s+(?:a\s+)?(\d{3}(?:\.\d+)?(?:\s?\u00bd)?)", re.I)
 OVER_RE = re.compile(
     r"((?:\d+(?:\.\d+)?(?:\s?\u00bd)?|\u00bd|half(?: of)? a|a half|one and a half|two and a half|three and a half|"
@@ -1271,6 +1272,9 @@ def parse_weighins(card, paras, event):
         for s in sents:
             ms, k = card.mentions(s, prefer=txt)
             trig = list(WEIGH_TRIG.finditer(k))
+            if trig and re.search(r"\b(?:scrapped|cancell?ed|called off|nixed|(?:weeks?|months?) earlier at)\b", k):
+                prev_subj = []
+                continue
             subj_here = []
             if trig and not re.search(r"post-fight|in (?:his|her) (?:previous|last|next)|previously missed|"
                                       r"(?:second|third|fourth|fifth|sixth) time|history", k):
@@ -1291,7 +1295,8 @@ def parse_weighins(card, paras, event):
                                 break
                         # the subject must not be the object of "surrender ... to X" / "opponent X"
                         gap_after = k[last[1]:tm.start()]
-                        if re.search(r"\b(?:to|against|opponent|face|faced|facing)\s*$", k[max(0, last[0] - 30):last[0]]):
+                        if re.search(r"\b(?:to|against|opponent|face|faced|facing|(?:bout|fight|matchup|contest|pairing) "
+                                     r"with)\s*$", k[max(0, last[0] - 30):last[0]]):
                             continue
                         if len(gap_after) > 160 or re.search(r"\b(?:but|after|when|because|while|since|before|"
                                                              r"although|though|whereas|however)\b", gap_after):
@@ -1324,7 +1329,7 @@ def parse_weighins(card, paras, event):
                 before = [x for x in ms if x[1] <= m.start()]
                 if before and not re.search(r"\b(?:to|opponent)\s*$", k[max(0, before[-1][0] - 15):before[-1][0]]):
                     subj_here.append(before[-1][2])
-            for m in re.finditer(r"\bwith ([a-z' .-]{3,60}?) (?:being )?(?:fined|forfeiting|surrendering)", k):
+            for m in re.finditer(r"\bwith ((?:[a-z'.-]+ ){0,3}[a-z'.-]+) (?:being )?(?:fined|forfeiting|surrendering)", k):
                 inside = [x for x in ms if m.start(1) <= x[0] < m.end(1)]
                 subj_here.extend(x[2] for x in inside)
             subj_here = list(dict.fromkeys(subj_here))
