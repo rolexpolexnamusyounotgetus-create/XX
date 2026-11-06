@@ -27,7 +27,8 @@ Conventions (checked against the data, see research/data_baserates.md)
   * Strings in the CSVs carry stray trailing spaces; everything is stripped.
   * OUTCOME "W/L" / "L/W" refers to the two names in BOUT in order.
   * Judges' scores in DETAILS are written "loser - winner" (fight loser first), whatever the BOUT order:
-    every unanimous decision since 2015 reads low-high, and dissenting cards in split decisions read
+    6,742 of 6,744 non-draw unanimous-decision cards since 2015 read low-high (the two exceptions are
+    mislabeled decisions), and in 568 of 569 non-draw split decisions exactly one card (the dissent) reads
     high-low. Draw cards are unordered.
   * Fight time uses 5-minute rounds: (ROUND-1)*300 + TIME. Only all-5-minute-round formats are used for
     time-based rates.
@@ -613,10 +614,13 @@ def form_block(Sg, min_fights=4):
     res = {}
     for col, vcol, lab in [("l", "vl", "sig_landed"), ("a", "va", "sig_attempted")]:
         d = g.copy()
-        for _ in range(6):  # iterate the minimum-fights filter on both sides
+        while True:  # iterate the minimum-fights filter on both sides until it converges
             cf = d.FIGHTER.value_counts()
             co = d.OPP.value_counts()
-            d = d[d.FIGHTER.map(cf).ge(min_fights) & d.OPP.map(co).ge(min_fights)]
+            keep = d.FIGHTER.map(cf).ge(min_fights) & d.OPP.map(co).ge(min_fights)
+            if keep.all():
+                break
+            d = d[keep]
         mean_r = (d[col] + 0.5) / d.nr  # per-round mean
         y = np.log(mean_r)
         a = pd.Series(0.0, index=d.index)
@@ -649,7 +653,9 @@ def form_block(Sg, min_fights=4):
 def pace_block(Sg, Fg, fmt=FMT5, R=5):
     fids = Fg[(Fg.fmt == fmt)].fid
     s = Sg[Sg.fid.isin(fids) & (Sg.rsec >= 300)]
-    dist_fids = Fg[(Fg.fmt == fmt) & ~Fg.finish & Fg.cat.isin(RESULT_CATS)].fid
+    # went the full scheduled distance (excludes technical decisions that ended early)
+    dist_fids = Fg[(Fg.fmt == fmt) & ~Fg.finish & Fg.cat.isin(RESULT_CATS) & (Fg.end_round == R) &
+                   (Fg.end_sec == 300)].fid
     out = {}
     for lab, sub in [("all_full_rounds", s), ("went_distance_only", s[s.fid.isin(dist_fids)])]:
         rows = []
@@ -682,11 +688,20 @@ def pace_block(Sg, Fg, fmt=FMT5, R=5):
 # ----------------------------------------------------------------------------------------------
 # judging
 # ----------------------------------------------------------------------------------------------
-CARD_RE = re.compile(r"(.+?)\s(\d{1,2})\s-\s(\d{1,2})\.")
+CARD_RE = re.compile(r"(\d{1,2})\s*-\s*(\d{1,2})\.")
 
 
 def parse_cards(det):
-    return [(m.group(1).strip(), int(m.group(2)), int(m.group(3))) for m in CARD_RE.finditer(det)]
+    """Score pairs anchored on 'dd - dd.'; the judge name is whatever text sits between the previous card
+    and this score (it can be empty, and ufcstats sometimes omits the space, e.g. 'Brian Tyler27 - 30.').
+    An earlier regex that required 'name<space>score' silently dropped about 1% of decisions."""
+    out, pos = [], 0
+    for m in CARD_RE.finditer(det):
+        name = det[pos:m.start()].strip()
+        name = re.sub(r"^Technical Decision.*?\bby [A-Z][\w'.-]*(?=[A-Z])", "", name).strip()
+        out.append((name or "unknown", int(m.group(1)), int(m.group(2))))
+        pos = m.end()
+    return out
 
 
 def decisions_frame(Fg):
@@ -763,7 +778,7 @@ def judging_block(Fg, top_judges=25):
     for fid, x in C[C.cat.isin(["S-DEC", "M-DEC"])].groupby("fid"):
         idx_min = x.index[x.margin <= 0]  # card for the loser (split) or a drawn card (majority)
         C.loc[idx_min, "dissent"] = True
-    jt = C.groupby("judge").agg(cards=("fid", "size"), rounds=("R", "sum"), dissent=("dissent", "sum"),
+    jt = C[C.judge != "unknown"].groupby("judge").agg(cards=("fid", "size"), rounds=("R", "sum"), dissent=("dissent", "sum"),
                                 i108=("implied_108", lambda s: s.clip(lower=0).sum()),
                                 first=("year", "min"), last=("year", "max"),
                                 margin=("margin", "mean")).sort_values("cards", ascending=False)

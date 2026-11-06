@@ -1,0 +1,90 @@
+{
+  "slug": "valentina-shevchenko",
+  "name": "Valentina Shevchenko",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former two-time UFC women's flyweight champion: the dataset holds 13 flyweight title fights for her (11-1-1). She regained the belt from Alexa Grasso at UFC 306 (Sep 14, 2024, 50-45 x3), then beat Manon Fiorot at UFC 315 (May 10, 2025, 48-47 x3) and Zhang Weili at UFC 322 (Nov 15, 2025, 50-45 x3). The Zhang fight is still her last bout in the ufcstats snapshot through Oct 31, 2026. ufcstats records UFC 332 (Oct 3, 2026), Natalia Silva vs. Wang Cong, as a women's flyweight title bout and not an interim one (the snapshot labels interim bouts as such), so she no longer appears to hold the belt. How it left her (vacated, stripped or retired), and whether she is injured or booked, could not be checked on the web in this pass: the shared search budget was spent and direct page fetches were blocked. Treat current status as unknown.",
+    "title": null,
+    "ranking": null,
+    "active": null,
+    "next_fight": null,
+    "injuries": null,
+    "sources": [
+      "http://ufcstats.com/fighter-details/132deb59abae64b1",
+      "http://ufcstats.com/fight-details/7606f6b6c19f2d73",
+      "http://ufcstats.com/fight-details/9e9d1764a015f313",
+      "http://ufcstats.com/fight-details/6f83cfae0c800ef8",
+      "http://ufcstats.com/fight-details/3f804eec9183e597",
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_results.csv"
+    ]
+  },
+  "style": {
+    "archetype": "counter striker",
+    "stance": "southpaw",
+    "tags": ["counter", "southpaw", "leg-kicks", "head-kicks", "top-control", "ground-and-pound", "takedown-defense", "durable", "late-surge"],
+    "signature": [
+      "left head kick from southpaw (KO of Jessica Eye 26 s into round 2 at UFC 238; ufcstats logs it as 'Kick to Head At Distance')",
+      "elbows and punches from the crucifix (TKO of Jessica Andrade at UFC 261, 'Elbows to Head From Crucifix'; TKO of Katlyn Cerminara at UFC 247, 'Punches to Head From Crucifix')",
+      "takedowns into long top control in recent title fights: 8 of 12 takedowns and 16:04 of control vs Grasso (UFC 306); 5 of 6 and 13:24 vs Zhang (UFC 322)",
+      "accurate low kicks: 88% of her leg strikes land (decayed); 17 of 19 vs Fiorot, 40 of 52 vs Holly Holm (2016)",
+      "armbar from bottom guard (Julianna Pena, round 2, Jan 28, 2017)"
+    ],
+    "weaknesses": [
+      "low output: 5.1 significant attempts per minute (decayed) against a women's flyweight average of 9.2, so close fights can slip away (split draw with Grasso at Noche UFC 2023, out-landed 84-80)",
+      "submitted once: Grasso took her back and choked her out at 4:34 of round 4 at UFC 285 while she led 87-59 in significant strikes",
+      "body defence: 32% of the strikes that land on her (decayed) go to the body; Fiorot landed 35 of 37 body strikes and held 7:07 of control at UFC 315",
+      "age 38 (born 1988-03-07 per ufcstats) and no fight since Nov 15, 2025",
+      "lost both UFC fights with Amanda Nunes at bantamweight (UD 2016, split decision for the title 2017)"
+    ],
+    "summary": "A southpaw counter-striker who throws little but lands a lot (53% of significant strikes, decayed) and finishes with kicks and ground strikes from the crucifix. In her last three title fights she relied on takedowns and long top control, which kept Grasso and Zhang from doing anything. She has never been stopped by strikes in 19 UFC fights.",
+    "sources": [
+      "data/derived/fighters.json",
+      "http://ufcstats.com/fighter-details/132deb59abae64b1",
+      "http://ufcstats.com/fight-details/4127b45c3d546eef",
+      "http://ufcstats.com/fight-details/34d2632fd26e7078",
+      "http://ufcstats.com/fight-details/05cceae674c81b86",
+      "http://ufcstats.com/fight-details/a69afe4a88c0ca12",
+      "http://ufcstats.com/fight-details/b395c89e19a3fec4",
+      "http://ufcstats.com/fight-details/ab79fe7b35ccc3dc",
+      "http://ufcstats.com/fight-details/cb16346d93746ebc"
+    ]
+  },
+  "moves": {
+    "jab": 0.26,
+    "cross": 0.3,
+    "hook": 0.14,
+    "overhand": 0.05,
+    "upper": 0.1,
+    "headkick": 0.15,
+    "bodykick": 0.6,
+    "bodyhook": 0.15,
+    "bodystraight": 0.25,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.05,
+    "elbow": 0.15,
+    "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. In fighters.json her decayed significant attempts go 78.5% head, 10.7% body and 10.8% legs (landed 67.9/14.4/17.8; career attempts 76.1/10.6/13.3). Her leg share is above the women's flyweight average of 8.7% and her body share below the average of 14.0%. Accuracy is 46% head, 71% body and 88% legs. No web scouting source could be read in this pass, and ufcstats does not log strike types, so the within-group splits are judgement. The straight left ('cross' for a southpaw) and jab lead the head group to fit a counter-striker. Head kick 0.15 is above a boxer's because her head-kick KO of Jessica Eye (UFC 238) is in the data. Body kicks lead the body group to fit a kicker, which is also judgement. Legs are split evenly because the data cannot tell calf kicks from inside kicks. elbow 0.15 reflects the crucifix elbow TKO of Andrade (UFC 261). No spinning finish appears in her data, so spinning is 0."
+  },
+  "appearance": {
+    "build": "5 ft 5 in with a 66 in reach (ufcstats); lean and athletic for flyweight",
+    "hair": "blonde, usually in tight braids for fights (not re-checked against photos in this pass)",
+    "facial_hair": "none",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/132deb59abae64b1",
+      "hair and skin from general familiarity with widely published fight photos; not re-checked against a URL in this pass (web access unavailable)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "In 5-round fights her landed rate relative to round 1 runs 1.00, 0.97, 1.34, 1.62 and 1.40 (minute weights 80/73/61/59/50). The women's flyweight norm is 1.00, 0.90, 1.01, 1.14 and 1.32, so her output rises more than most in rounds 3-5.", "source": "data/derived/fighters.json (pace, pace_w, priors)" },
+    { "note": "Grappling (decayed): 2.8 takedowns landed per 15 min at 60% accuracy (division 1.29 at 39%). Her control is 325 s per 15 min against a division 180, and opponents get 115 s.", "source": "data/derived/fighters.json" },
+    { "note": "Power: 0.46 knockdowns per 100 significant head strikes landed (decayed) against a division rate of 0.25. Chin: one knockdown absorbed in 19 UFC fights (Grasso, Sep 2023) and no KO/TKO losses.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/b395c89e19a3fec4" },
+    { "note": "Takedown defence is 82% decayed (opponents complete 2.4 of 13.3) and 76% career (13 of 55). The division average is about 61%.", "source": "data/derived/fighters.json" },
+    { "note": "Five of her 19 UFC fights were at bantamweight, all before 2018. Her decayed rates come almost entirely from flyweight title fights.", "source": "data/derived/fighters.json (divisions)" }
+  ],
+  "confidence": "low"
+}

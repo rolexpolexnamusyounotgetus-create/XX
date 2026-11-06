@@ -1,0 +1,89 @@
+{
+  "slug": "tatiana-suarez",
+  "name": "Tatiana Suarez",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Strawweight contender who has won two straight since losing a five-round decision to Zhang Weili for the title at UFC 312 (Feb 8, 2025; 49-46, 49-46, 49-45). She beat Amanda Lemos 29-28 x3 at Noche UFC (Sep 13, 2025) and choked out Loopy Godinez with a rear-naked choke at 2:29 of round 2 at UFC 327 in Miami (Apr 11, 2026). She is 9-1 in the UFC, counting her TUF 23 final win. The strawweight champion is Mackenzie Dern (won at UFC 321, Oct 25, 2025; defended at UFC 330, Aug 15, 2026). Her ranking, next booking and injuries could not be checked on the web in this pass: the shared search budget was spent and direct page fetches were blocked.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": null,
+    "sources": [
+      "http://ufcstats.com/fighter-details/b08012bbe542592a",
+      "http://ufcstats.com/fight-details/f506977877074aa6",
+      "http://ufcstats.com/fight-details/9474f64347aade7a",
+      "http://ufcstats.com/fight-details/03c2a836d033be8f",
+      "http://ufcstats.com/fight-details/4700d42c9869674a",
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_results.csv"
+    ]
+  },
+  "style": {
+    "archetype": "wrestler",
+    "stance": "southpaw",
+    "tags": ["chain-wrestling", "cage-wrestling", "clinch", "top-control", "ground-and-pound", "submissions", "guillotine", "back-takes", "body-work", "southpaw", "durable"],
+    "signature": [
+      "guillotine choke after dropping to guard (Montana De La Rosa, 2:51 of round 2, Feb 25, 2023; Jessica Andrade, 1:31 of round 2, Aug 5, 2023)",
+      "rear-naked choke after taking the back (Alexa Grasso, round 1, May 19, 2018; Loopy Godinez, round 2, UFC 327, Apr 11, 2026)",
+      "constant takedown attempts: 9.5 per 15 min (decayed), including 15 vs Zhang Weili, 13 vs Nina Nunes and 12 vs Amanda Lemos",
+      "ground-and-pound from top (TKO of Carla Esparza with punches from guard, UFC 228: 9 of 11 takedowns, 70 ground strikes landed, 12:58 of control)",
+      "clinch and body work: 46.6% of her landed strikes go to the body and 34.6% land in the clinch (decayed)",
+      "D'Arce choke (Amanda Cooper, round 1, TUF 23 final, Jul 8, 2016)"
+    ],
+    "weaknesses": [
+      "her takedowns land less often now: 33% decayed against 46% career (1 of 15 vs Zhang, 3 of 12 vs Lemos)",
+      "easy to hit at range: opponents land 61.5% of their significant strikes on her (decayed), against a strawweight norm of 45%; Lemos out-landed her 23-20 and Godinez 18-12",
+      "low striking output: 1.5 significant strikes landed per minute (decayed) against a division 4.1, and 28% head accuracy",
+      "little to fall back on when the takedown fails: Zhang out-landed her 53-12 and held 10:54 of control at UFC 312",
+      "a long layoff in the record: no UFC fight between Jun 8, 2019 and Feb 25, 2023 (cause not verified in this pass); age 35"
+    ],
+    "summary": "A wrestler who shoots constantly, chains attempts against the fence and wins with control, ground strikes and chokes: 5 of her 9 UFC wins are submissions. Her striking is mostly a way into the clinch. When the takedown does not come, as against Zhang Weili, she has little else. She has never been knocked down in the UFC.",
+    "sources": [
+      "data/derived/fighters.json",
+      "http://ufcstats.com/fighter-details/b08012bbe542592a",
+      "http://ufcstats.com/fight-details/5737084215c45792",
+      "http://ufcstats.com/fight-details/ec2358459ffbe7de",
+      "http://ufcstats.com/fight-details/24f2d2dd9fea5d79",
+      "http://ufcstats.com/fight-details/fd61e6146f3b2942",
+      "http://ufcstats.com/fight-details/56403d0fd259c5d9",
+      "http://ufcstats.com/fight-details/f8b9b5ee3d4a8ac3"
+    ]
+  },
+  "moves": {
+    "jab": 0.28,
+    "cross": 0.3,
+    "hook": 0.2,
+    "overhand": 0.12,
+    "upper": 0.07,
+    "headkick": 0.03,
+    "bodykick": 0.35,
+    "bodyhook": 0.4,
+    "bodystraight": 0.25,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.3,
+    "elbow": 0.1,
+    "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. In fighters.json her decayed significant attempts go 45.6% head, 36.5% body and 17.9% legs (landed 25.6/46.6/27.8; career attempts 60.7/25.1/14.2). Against the strawweight average of 75.6/15.2/9.2 she is extremely body- and leg-heavy. Much of the body work comes in the clinch (21.5% of her decayed attempts, against a division 8%), which the director draws from its own clinch table. No web scouting source could be read in this pass, and ufcstats does not log strike types, so the within-group splits are judgement. The head group is a simple punch split with almost no head kicks, to fit a wrestler using strikes to close distance. Hooks lead the body group. Legs are split evenly because the data cannot tell calf kicks from inside kicks; she landed 9 of 11 vs Lemos and 9 of 14 vs Zhang. knee 0.30 reflects her clinch-heavy body work, which is judgement. elbow 0.10 covers top strikes. No spinning attacks appear in her data. Low confidence for the within-group splits."
+  },
+  "appearance": {
+    "build": "5 ft 5 in with a 66 in reach (ufcstats); stocky, strong wrestler's frame",
+    "hair": "dark brown to black, usually braided for fights (not re-checked against photos in this pass)",
+    "facial_hair": "none",
+    "skin": "light-medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/b08012bbe542592a",
+      "hair, skin and build from general familiarity with widely published fight photos; not re-checked against a URL in this pass (web access unavailable)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Takedowns (decayed): 9.5 attempted and 3.1 landed per 15 min, against a strawweight 1.38 landed. Accuracy has fallen to 33% decayed from 46% career. Control is 447 s per 15 min decayed and 536 career, against a division 185.", "source": "data/derived/fighters.json (S, C, priors)" },
+    { "note": "Defence at range is poor: opponents land 61.5% of significant strikes on her (decayed) and 56% career, against a strawweight norm of 45%. She has absorbed no knockdowns in 10 UFC fights and has scored none.", "source": "data/derived/fighters.json" },
+    { "note": "Submission threat: 0.61 attempts per 15 min decayed against a division 0.40. Five of her 9 UFC wins are submissions: two guillotines, two rear-naked chokes and a D'Arce.", "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv" },
+    { "note": "Her round-by-round pace in 3-round fights (1.00, 1.02, 1.55; minute weights 41.5/26.9/19.6) rests on few late-round minutes, because many of her fights end in round 2. In her one 5-round fight (Zhang) she landed 1 of 15 takedowns overall; in rounds 4-5 combined she landed 4 significant strikes and 0 of 5 takedowns.", "source": "data/derived/fighters.json (pace); http://ufcstats.com/fight-details/03c2a836d033be8f" }
+  ],
+  "confidence": "medium"
+}

@@ -8,3 +8,9 @@ __pycache__/
 data/derived/backtest.json
 tools/__pycache__/
 out/
+
+# reference photos: kept local, never committed or embedded (sources.json files are committed)
+assets/reference/**/*.jpg
+assets/reference/**/*.jpeg
+assets/reference/**/*.png
+assets/reference/**/*.webp

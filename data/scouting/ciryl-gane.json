@@ -1,0 +1,92 @@
+{
+  "slug": "ciryl-gane",
+  "name": "Ciryl Gane",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "UFC interim heavyweight champion. He stopped Alex Pereira at 1:27 of round 2 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026): a counter jab put Pereira down and Gane out-landed him 54-12. Before that, his undisputed title fight with Tom Aspinall at UFC 321 (Oct 25, 2025) was ruled a no contest at 4:35 of round 1 after Gane poked Aspinall in the eye. He has been booked against Josh Hokit (reported by ESPN, Oct 2026); the date, event and whether the interim belt is at stake were not confirmed in the sources available this session. He was also interim champion in 2021 (beat Derrick Lewis, UFC 265) and lost title fights to Francis Ngannou (UFC 270, decision) and Jon Jones (UFC 285, submission).",
+    "title": "UFC interim heavyweight champion",
+    "ranking": null,
+    "active": true,
+    "next_fight": "Josh Hokit (booking reported by ESPN, Oct 2026; date, event and title status not confirmed in the sources available this session)",
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/787bb1f087ccff8a",
+      "http://ufcstats.com/fight-details/5727d5be8c373346",
+      "http://ufcstats.com/fight-details/6390c8e74630473e",
+      "https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title",
+      "https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/",
+      "https://boxingnews.com/news/alex-pereira-vs-ciryl-gane-result-and-reaction",
+      "https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335",
+      "https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/"
+    ]
+  },
+  "style": {
+    "archetype": "kickboxer",
+    "stance": "orthodox",
+    "tags": ["footwork", "switch-stance", "jab", "counter", "leg-kicks", "body-work", "range-control", "rangy", "volume"],
+    "signature": [
+      "counter jab (it dropped Alex Pereira at UFC Freedom 250 before the stoppage)",
+      "low kicks to the legs at very high accuracy (career 284 of 319, 89%; 13 of 13 vs Aspinall, 32 of 32 vs Derrick Lewis)",
+      "body kicks and body punches at range (39 of 49 body strikes vs Spivac, 30 of 40 vs Tuivasa)",
+      "constant lateral movement and stance switches to stay at the end of his range",
+      "follow-up punches on the ground to finish a hurt opponent (Lewis at UFC 265; 15 of 17 ground strikes vs Pereira)",
+      "occasional submissions: heel hook (Don'Tale Mayes), arm-triangle (Raphael Pessoa)"
+    ],
+    "weaknesses": [
+      "takedown defense 47% career (opponents 9 of 17): Ngannou took him down 4 of 5 times with 509 s of control and won the decision at UFC 270; Jones took him down and submitted him in 2:04 at UFC 285; Volkov landed 3 of 4 with 272 s of control at UFC 310",
+      "knocked down once (Tai Tuivasa, 2022)",
+      "fouls: the eye poke that ended the Aspinall fight, and Pereira complained of shots to the back of the head at Freedom 250",
+      "output falls in round 5 of five-round fights (0.60 of round 1)"
+    ],
+    "summary": "A Muay Thai-based heavyweight who moves like a much lighter man: he circles, switches stance, jabs and chops the legs and body from range, and makes opponents miss. All three of his title-level setbacks came from wrestling or grappling (Ngannou's takedowns, Jones's guillotine) or a foul (the Aspinall eye poke), not from being out-struck.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/787bb1f087ccff8a",
+      "http://ufcstats.com/fight-details/5727d5be8c373346",
+      "http://ufcstats.com/fight-details/e786542667fdecf0",
+      "http://ufcstats.com/fight-details/636fd144716a3084",
+      "http://ufcstats.com/fight-details/f706508c52f337a6",
+      "http://ufcstats.com/fight-details/ea006bae605e2a6b",
+      "http://ufcstats.com/fight-details/810c9da07970c4a6",
+      "http://ufcstats.com/fight-details/bf732e22055e8634",
+      "https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.34,
+    "cross": 0.24,
+    "hook": 0.16,
+    "overhand": 0.04,
+    "upper": 0.08,
+    "headkick": 0.14,
+    "bodykick": 0.55,
+    "bodyhook": 0.2,
+    "bodystraight": 0.25,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.04,
+    "knee": 0.15,
+    "elbow": 0.12,
+    "notes": "Each group (head, body, leg) sums to 1. From the decayed sums in fighters.json his significant attempts go 60% head, 20% body, 20% legs; landed 47/24/29, because body (79%) and leg (93%) accuracy far exceed head accuracy (51%). Career split is 59/21/20. The jab gets the top head weight because his range game is built on it and a counter jab dropped Pereira (Freedom 250). Head kick 0.14 reflects his Muay Thai base. The body group leans to kicks. Leg kicks are split evenly between rear-leg calf/outside kicks and lead-leg inside kicks because he switches stance often. Knee 0.15 and elbow 0.12 cover clinch work (the elbow in the clinch that finished Junior dos Santos, UFC 256). Spinning 0.04 is a token weight; no spinning finish is on record. ufcstats does not record technique types, so the within-group splits are judgment. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw (snapshot 2026-10-31)."
+  },
+  "appearance": {
+    "build": "tall, long-limbed and athletic; lean for a heavyweight (6 ft 4 in, 81 in reach, listed 245 lb per ufcstats)",
+    "hair": "short, close-cropped black hair",
+    "facial_hair": "usually a short beard",
+    "skin": "dark",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/787bb1f087ccff8a",
+      "https://www.ufc.com/athlete/ciryl-gane"
+    ]
+  },
+  "engine_notes": [
+    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.57, 1.64, 1.06, 0.60 (minute-weighted): output builds through rounds 2-3 and drops in round 5 (based on 15 round-5 minutes: Rozenstruik, Volkov 1, Ngannou).", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "Takedown defense is the lever against him: 43% decayed and 47% career, with opponents' control at about 92 s per 15 min decayed. He lands only 23% of his own takedowns (8 of 34 career).", "source": "data/derived/fighters.json" },
+    { "note": "91% of his significant attempts come at distance. Leg accuracy 89% career and 93% decayed; head accuracy 47% career.", "source": "data/derived/fighters.json" },
+    { "note": "Chin: 1 knockdown absorbed in 14 UFC fights (Tuivasa) and no KO/TKO losses. Power: 4 knockdowns career, 0.91 per 100 head strikes landed (1.17 decayed).", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/810c9da07970c4a6" },
+    { "note": "Against Aspinall at UFC 321 he landed 30 of 40 significant strikes in 4:35, including 13 of 13 leg kicks, before the eye poke ended the fight.", "source": "http://ufcstats.com/fight-details/6390c8e74630473e" }
+  ],
+  "confidence": "medium"
+}

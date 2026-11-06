@@ -1,0 +1,88 @@
+{
+  "slug": "zhang-weili",
+  "name": "Zhang Weili",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former two-time UFC strawweight champion: the dataset holds 8 strawweight title fights for her (6-2). She won the belt by KO of Jessica Andrade (Aug 31, 2019), lost it to Rose Namajunas (2021), regained it from Carla Esparza at UFC 281 (Nov 12, 2022) and defended it three times. She then moved up and lost a 50-45 x3 decision to Valentina Shevchenko for the flyweight title at UFC 322 (Nov 15, 2025). That is still her last fight in the ufcstats snapshot through Oct 31, 2026. The strawweight belt passed to Mackenzie Dern, who beat Virna Jandiroba for it at UFC 321 (Oct 25, 2025) and defended it against Gillian Robertson at UFC 330 (Aug 15, 2026). Her current division, booking, ranking and health could not be checked on the web in this pass: the shared search budget was spent and direct page fetches were blocked.",
+    "title": null,
+    "ranking": null,
+    "active": null,
+    "next_fight": null,
+    "injuries": null,
+    "sources": [
+      "http://ufcstats.com/fighter-details/1ebe20ebbfa15e29",
+      "http://ufcstats.com/fight-details/7606f6b6c19f2d73",
+      "http://ufcstats.com/fight-details/03c2a836d033be8f",
+      "http://ufcstats.com/fight-details/85b5d59f8eea976a",
+      "http://ufcstats.com/fight-details/7d3da3c4153717de",
+      "http://ufcstats.com/fight-details/4700d42c9869674a",
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_results.csv"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "switch",
+    "tags": ["power", "switch-stance", "spinning", "ground-and-pound", "top-control", "back-takes", "fast-starter"],
+    "signature": [
+      "spinning back fist (KO of Joanna Jedrzejczyk at 2:28 of round 2, UFC 275, Jun 11, 2022)",
+      "fast punching finish (KO of Jessica Andrade 42 s into round 1 to win the title, Aug 31, 2019)",
+      "rear-naked choke from the back crucifix (Carla Esparza, 1:05 of round 2, UFC 281, to regain the title)",
+      "takedowns into heavy ground-and-pound: 96 ground strikes landed and 16:07 of control vs Amanda Lemos (UFC 292); 68 ground strikes and 12:44 of control vs Yan Xiaonan (UFC 300)",
+      "stopping a wrestler: Tatiana Suarez completed 1 of 15 takedowns against her at UFC 312, and she held 10:54 of control herself"
+    ],
+    "weaknesses": [
+      "out-grappled at flyweight: Shevchenko took her down 5 of 6 times and held 13:24 of control, and she landed only 9 of 59 head strikes (UFC 322)",
+      "knocked out by a Rose Namajunas head kick at 1:18 of round 1 (UFC 261) and dropped by Yan Xiaonan (UFC 300); she absorbs 0.95 knockdowns per 100 head strikes taken (decayed), against a strawweight rate of 0.33",
+      "hittable: opponents land 48% of their significant strikes on her (decayed), above the strawweight norm of 45%",
+      "her output falls after round 1 in five-round fights, to 0.75-0.81 of the opening round",
+      "small for flyweight: 5 ft 4 in with a 63 in reach (ufcstats)"
+    ],
+    "summary": "A compact, powerful switch-stance striker who added a heavy takedown and ground-and-pound game in her second strawweight reign: her last three strawweight title wins featured 10 to 16 minutes of control each. She can end fights suddenly (a 42-second KO, a spinning back fist KO) and does her best work early, but her output dips after round 1 and Shevchenko out-grappled her at flyweight.",
+    "sources": [
+      "data/derived/fighters.json",
+      "http://ufcstats.com/fighter-details/1ebe20ebbfa15e29",
+      "http://ufcstats.com/fight-details/4305cb30533dac77",
+      "http://ufcstats.com/fight-details/357cf8a9b6737625",
+      "http://ufcstats.com/fight-details/845e38dfbfea6e53",
+      "http://ufcstats.com/fight-details/66eddbe35056c06d",
+      "http://ufcstats.com/fight-details/6d8da45352344964"
+    ]
+  },
+  "moves": {
+    "jab": 0.22,
+    "cross": 0.26,
+    "hook": 0.2,
+    "overhand": 0.1,
+    "upper": 0.1,
+    "headkick": 0.12,
+    "bodykick": 0.45,
+    "bodyhook": 0.3,
+    "bodystraight": 0.25,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.12,
+    "knee": 0.15,
+    "elbow": 0.15,
+    "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. In fighters.json her decayed significant attempts go 68.3% head, 16.8% body and 14.9% legs (landed 60.6/21.0/18.4; career attempts 68.0/13.4/18.5). Her leg share is well above the strawweight average of 9.2%. By position, 25% of her decayed attempts come on the ground (division 6%), which the director already draws as ground strikes. No web scouting source could be read in this pass, and ufcstats does not log strike types, so the within-group splits are judgement. The head group is spread across punches to fit a power striker who switches stance, with head kick 0.12 for a kicking striker. Legs are split evenly because the data cannot tell calf kicks from inside kicks. spinning 0.12 reflects the spinning back fist KO of Jedrzejczyk. knee and elbow 0.15 are judgement for her clinch and top work: 10% of her landed strikes come in the clinch and 38% on the ground (decayed). Low confidence."
+  },
+  "appearance": {
+    "build": "5 ft 4 in with a 63 in reach (ufcstats); compact and muscular",
+    "hair": "black, usually braided or tied back for fights (not re-checked against photos in this pass)",
+    "facial_hair": "none",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/1ebe20ebbfa15e29",
+      "hair, skin and build from general familiarity with widely published fight photos; not re-checked against a URL in this pass (web access unavailable)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "In 5-round fights her landed rate relative to round 1 runs 1.00, 0.76, 0.80, 0.75 and 0.81 (minute weights 37/31/30/30/30). The strawweight norm is 1.00, 0.88, 1.15, 1.21 and 1.15, so she is a front-loaded striker. Some of the later drop is time spent in top control.", "source": "data/derived/fighters.json (pace, pace_w, priors)" },
+    { "note": "Grappling (decayed): 1.65 takedowns per 15 min at 52% accuracy (strawweight 1.38). Her control is 279 s per 15 min, but opponents' control is also high at 226 s, driven by Shevchenko (804 s) and Suarez (356 s). Takedown defence is 61% decayed and 64% career (12 of 33 allowed).", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Power: 3 career knockdowns, 0.47 per 100 significant head strikes landed (decayed) against a strawweight rate of 0.33. Chin: 2 knockdowns absorbed and 1 KO/TKO loss (Namajunas head kick) in 13 UFC fights.", "source": "data/derived/fighters.json" },
+    { "note": "Only 1 of her 13 UFC fights was at flyweight, the 50-45 x3 loss to Shevchenko. Her rates come from strawweight, so flyweight inputs should lean on the division prior.", "source": "data/derived/fighters.json (divisions); http://ufcstats.com/fight-details/7606f6b6c19f2d73" }
+  ],
+  "confidence": "low"
+}

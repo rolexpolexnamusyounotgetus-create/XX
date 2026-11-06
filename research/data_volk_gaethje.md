@@ -32,7 +32,9 @@ python3 tools/fighter_report.py "Bruno Silva" --only-divisions Middleweight   # 
 - Data fixes found on the way. (1) The scrape lists two cards twice under two names ("Noche UFC: Lopes vs.
   Silva" / "UFC Fight Night: Lopes vs. Silva", and the same for "Grasso vs. Shevchenko 2"), with the same 25
   fight URLs. Without a fix those fights count twice. The scripts keep one row per fight URL. (2) "UFC - Road
-  to UFC 4.6" has no row in the events file, so it has no date and is dropped. (3) In `DETAILS`, ufcstats
+  to UFC 4.6" (2 bouts) has no row in the events file, so it has no date and is dropped. The two "UFC Fight
+  Night:" aliases of the duplicated cards have no event row either. The scripts sort by date before
+  de-duplicating, so they keep the dated "Noche UFC" copy. (3) In `DETAILS`, ufcstats
   lists each judge's card loser-first: Volkanovski's 50-45 wins over Holloway read "45 - 50". The reports
   flip the cards so the fighter's own score comes first. (4) The fighter files have 9 duplicate names (e.g.
   Bruno Silva, Michael McDonald). Bouts carry no fighter id, so the report warns on those names and takes
@@ -69,10 +71,16 @@ the division from Oct 31, 2020 to Oct 31, 2026, counting each bout from both sid
    ground-and-pound finishing more than standing knockdown power. High confidence on the counts, medium on
    the interpretation (Volk lands many jabs and low-power shots).
 5. **Pace.** In fights that reached round 5, Volk's sig. landed per minute rises from 4.40 in round 1 to 7.20
-   in round 5 (1.64x). The featherweight league curve is 1.32x at round 5, so Volk rises well above it.
-   Gaethje's three five-round fights that reached round 5 go 4.33 to 5.94 (1.37x; lightweight league 1.31x).
-   The v2 engine had Gaethje fading ([1.05, 1.00, 0.98, 0.97, 0.93]); the data doesn't show a fade in his
-   output, though n = 3. Medium confidence.
+   in round 5 (1.64x). *[Corrected in verification.]* The league curve to compare with is the one for league
+   fights that also reached round 5: featherweight 2020-2026 goes 1.00, 1.45, 1.35, 1.64, 1.39 (17 fights), and
+   featherweight plus lightweight 2015-2026 goes 1.00, 1.32, 1.24, 1.34, 1.35 (47 fights). The 1.32x figure
+   first quoted here came from all five-round fights, a mix in which early finishes drop out of later rounds.
+   Against the like-for-like curves, Volk's fifth round is about 1.2x the league ratio (1.64 vs 1.35-1.39). His
+   average over rounds 2-5 (1.43) is close to the league's (1.31-1.46), and in round 2 he is below it. So he
+   finishes strong, but by less than "well above" suggested. Gaethje's three fights that reached round 5 go
+   4.33 to 5.94 (1.37x). That is about league-typical: 1.35 for featherweight plus lightweight 2015-2026, 1.57
+   for lightweight 2020-2026 (only 10 fights). The v2 engine had Gaethje fading ([1.05, 1.00, 0.98, 0.97,
+   0.93]); the data doesn't show a fade in his output, though n = 3. Medium confidence.
 6. **Gaethje's leg kicks have almost disappeared.** Leg-strike attempts per minute by fight: 4.29, 2.86,
    3.67 (2017-18); 0.53, 0.44, 0.25 in his last three fights (Fiziev 2, Pimblett, Topuria). His leg share of
    sig. attempts is 14.9% career and 7.7% over the last 3 years. v2's "gaeLeg 0.18" knob and the "Gaethje
@@ -81,7 +89,8 @@ the division from Oct 31, 2020 to Oct 31, 2026, counting each bout from both sid
    3 years). Gaethje defends 73% (74% decayed) and is taken down rarely (opponents attempt 2.2 per 15). The
    walk-forward fit projects Volk at about 3.0 takedown attempts per 15 against Gaethje and about 30% success:
    roughly 0.9 takedowns landed per 15 and 1.5 over 25 minutes. Volk at lightweight was controlled for
-   245 seconds per 15 (Makhachev), against 23 at featherweight. Medium confidence.
+   245 seconds per 15, against 23 at featherweight. That covers all three lightweight fights: 476 of the 576
+   seconds came in the two Makhachev fights and 100 against Kasuya. Medium confidence.
 8. **Head-to-head projection** (section 10, tuned shrinkage and decay, lightweight league): Volk lands about
    6.1-7.2 sig. strikes a minute on Gaethje across windows and decompositions, and Gaethje about 3.8-4.4 on
    Volk. Over 25 minutes that's roughly 150-180 to 95-110. A knockdown per landed head strike is about 0.45-0.62
@@ -91,14 +100,22 @@ the division from Oct 31, 2020 to Oct 31, 2026, counting each bout from both sid
 9. **How to combine rates** (section 11, 6,976 training and 2,048 test fighter-fights, walk-forward). The
    pure log-linear rule `league x (x / league) x (y_allowed / league)`, applied after shrinking each
    fighter's rate toward the division, beat both the fitted exponents and the v2 average out of sample for
-   strike attempts, landed strikes, accuracy (log5) and knockdowns per head strike. For takedown attempts
-   and takedown accuracy the fitted exponents won. The v2 average under-predicts high-pace pairs by about
-   25-30%. Predictions ran 5% high in 2024-2026 (observed / predicted 0.95 for both strike attempts and
+   strike attempts, landed strikes and accuracy (log5). For knockdowns per head strike it tied (test deviance
+   1,496.6 vs 1,497.0) *[corrected in verification]*. For takedown attempts and takedown accuracy the fitted
+   exponents won. The v2 average under-predicts high-pace pairs by about 25% (24-25%) *[corrected from
+   "25-30%"]*. Predictions ran 5% high in 2024-2026 (observed / predicted 0.95 for both strike attempts and
    landed strikes), so a global strike scale of about 0.95 belongs in calibration (v2 used 0.85 on a
-   different formula). High confidence for the method comparison.
+   different formula). That 0.95 was measured with a league baseline pooled over 2012-2026. With the
+   2020-2026 league that `fighter_report.py --vs` uses, the same test gives 0.96-0.975 (verification log), so
+   the scale has to match the league window the engine uses. High confidence for the method comparison.
 10. **Age** (men, 2010-2026, cross-sectional): knockdowns absorbed per 100 head strikes absorbed rise about
     3.7% a year after age 30 (SE 0.8%); knockdowns scored per head strike fall about 2.8% a year (SE 1.0%).
-    At 38 that is about 1.34x and 0.80x the age-30 rates. Both men are 37-38 as of the snapshot (Volk 38,
+    At 38 that is about 1.34x and 0.80x the age-30 rates. *[Verification: these figures come from a model
+    with a hinge at 30 and a flat rate before 30. The chin slope depends on the specification. Adding
+    division effects gives 3.2%/yr. A two-piece fit with division effects gives 2.2%/yr (SE 1.0%), and in
+    that fit the chin rate also rises about 3.9%/yr before 30. Raw bins: 0.94 per 100 at ages 28-31, 1.13 at
+    36-38, 1.21 at 38+. So use 2-4%/yr for chin, or 1.2-1.34x at 38. The power decline holds across
+    specifications at -2.5 to -3.6%/yr.]* Both men are 37-38 as of the snapshot (Volk 38,
     born Sep 29, 1988; Gaethje 37, born Nov 14, 1988, per ufcstats), so age roughly cancels head to head,
     but it matters against league priors. Medium confidence: survivor and selection effects pull both ways.
 
@@ -266,9 +283,10 @@ head accuracy 38.9%, knockdowns per 100 head strikes landed 0.94, takedown attem
 control 169 s per 15. Full tables are in `data/derived/fighter_alexander-volkanovski.md` and
 `data/derived/fighter_justin-gaethje.md`.
 
-Against the v2 inputs: the career rates match the HANDOFF's ufcstats figures within rounding (Volk 5.98 /
-3.33 / 56.9% / 0.29 KD per 15 / 1.63 takedowns per 15 at 34% / 67% takedown defense; Gaethje 6.29 / 6.83 /
-57.6% / 0.67 / 0.30 at 27% / 73%). The target splits differ. v2 used landed shares of head 63 / body 11 / leg
+Against the v2 inputs: the career rates in this dataset (Volk 5.98 / 3.33 / 56.9% / 0.29 KD per 15 / 1.63
+takedowns per 15 at 34% / 67% takedown defense; Gaethje 6.29 / 6.83 / 57.6% / 0.67 / 0.30 at 27% / 73%) match
+the HANDOFF's ufcstats figures to within 0.02 a minute. The HANDOFF has Volk at 5.99 / 3.31 / 57% / 0.30 and
+the same Gaethje figures. The target splits differ. v2 used landed shares of head 63 / body 11 / leg
 26 (Volk) and 63 / 9 / 28 (Gaethje). This dataset gives landed shares of 65.6 / 10.2 / 24.2 and 66.2 / 10.9 /
 22.9 career. Over the last 3 years they are 77.2 / 7.0 / 15.9 and 72.9 / 14.1 / 12.9: both men have moved
 toward the head. Attempt shares, which v3 needs because it models attempts times accuracy, are head 78 / body 7
@@ -315,8 +333,9 @@ Reading these:
 - Fitted shrinkage strengths (beta-binomial, maximum likelihood over 923 men with at least 20 head strikes,
   Oct 2020 to Oct 2026, each against his division's rate): chin k = 224 head strikes absorbed (95% interval
   178-282), power k = 237 head strikes landed (188-316). v2 used 300 for power. The between-fighter sd of the
-  true rate is about 0.65 per 100 at a league mean near 0.95, so chins genuinely vary about 2:1 across the
-  middle of the league.
+  true rate is about 0.65 per 100 at a league mean near 0.95, so chins genuinely vary about 2.7:1 across the
+  middle of the league (the implied Beta prior's 25th and 75th percentiles are 0.47 and 1.27 per 100;
+  *corrected from "about 2:1" in verification*).
 - The walk-forward predictive optimum is heavier: k = 500 head strikes with no time decay (section 11). For
   forecasting the next fight, use 500. The 224 describes career-level spread.
 - Chin events, counting KO/TKO losses with no knockdown recorded: Gaethje adds Poirier 1 (round 4, punch
@@ -361,6 +380,8 @@ Reading these:
 
 **Featherweight league, five-round fights (2020-2026)**: landed/min vs R1 by round: R1 1.00, R2 1.31, R3 1.34, R4 1.55, R5 1.32
 
+*[Added in verification.]* That league line pools every five-round fight, the same mix as the "all five-round fights" table. The comparison for the "reached round 5" table is the league's own reached-round-5 curve: featherweight 2020-2026 1.00, 1.45, 1.35, 1.64, 1.39 (17 fights; 1.00, 1.51, 1.34, 1.72, 1.38 without Volk's fights); featherweight plus lightweight 2015-2026 1.00, 1.32, 1.24, 1.34, 1.35 (47 fights); all men 2015-2026 1.00, 1.27, 1.25, 1.29, 1.33 (211 fights). Fresh code, dataset, rounds weighted by minutes.
+
 ### Gaethje
 
 **All five-round fights (rounds weighted by minutes fought)**
@@ -393,7 +414,9 @@ Reading these:
 
 **Lightweight league, five-round fights (2020-2026)**: landed/min vs R1 by round: R1 1.00, R2 1.20, R3 1.08, R4 1.10, R5 1.31
 
-Engine use. Divide each fighter's curve by his division's league curve to get a personal cardio ratio, then
+*[Added in verification.]* As above, this pools all five-round fights. Lightweight fights 2020-2026 that reached round 5: 1.00, 1.51, 1.29, 1.34, 1.57 (10 fights; 1.00, 1.76, 1.36, 1.43, 1.73 for the 7 without Gaethje's or Volk's fights). That sample is too small to use alone. Featherweight plus lightweight 2015-2026 that reached round 5: 1.00, 1.32, 1.24, 1.34, 1.35 (47 fights).
+
+Engine use. Divide each fighter's curve by his division's league curve, using the same composition (reached-round-5 by reached-round-5), to get a personal cardio ratio, then
 shrink it (`pace_ratio` and `pace_w` in the profile JSON hold landed per minute relative to round 1, with minutes
 as weights). Volk's late-round rise is real and large. His fifth-round accuracy (60.6%) is his best, and
 opponents' accuracy against him drops to 36.6%. Gaethje's curve rests on three fights (Ferguson, Holloway,
@@ -470,7 +493,7 @@ showed a chin edge against Topuria.
 
 ## 10. Head-to-head projection (lightweight, five rounds)
 
-Each fighter's rate is first shrunk toward the projection division with the pseudo-exposure k that tools/fit_combine.py tuned walk-forward, using the time-decay half-life that won for that rate (sig_att_pm k=40, half-life 1460, sig_lnd_pm k=40, half-life 730, sig_acc k=300, half-life 730, td_att_pm k=30, half-life 1460, td_acc k=50, half-life none, kd_per_head k=500, half-life none). Per-minute rates then combine log-linearly: league x (attacker / league) x (defender allows / league); accuracies combine by log5 on odds against the division. 'Fitted' rows use the regression exponents (sig_att_pm a=1.0281, b=0.8896, sig_lnd_pm a=1.0965, b=0.9845, sig_acc a=1.0921, b=0.7992, td_att_pm a=1.2811, b=0.6077, td_acc a=0.6397, b=1.2853, kd_per_head a=1.1246, b=0.9124). Out of sample (2024 onward) the pure rule beat the fitted exponents for strikes, accuracy and knockdowns, and the fitted rule won for takedowns, so those are the recommended rows. Expected totals ignore finishes, damage and fatigue.
+Each fighter's rate is first shrunk toward the projection division with the pseudo-exposure k that tools/fit_combine.py tuned walk-forward, using the time-decay half-life that won for that rate (sig_att_pm k=40, half-life 1460, sig_lnd_pm k=40, half-life 730, sig_acc k=300, half-life 730, td_att_pm k=30, half-life 1460, td_acc k=50, half-life none, kd_per_head k=500, half-life none). Per-minute rates then combine log-linearly: league x (attacker / league) x (defender allows / league); accuracies combine by log5 on odds against the division. 'Fitted' rows use the regression exponents (sig_att_pm a=1.0281, b=0.8896, sig_lnd_pm a=1.0965, b=0.9845, sig_acc a=1.0921, b=0.7992, td_att_pm a=1.2811, b=0.6077, td_acc a=0.6397, b=1.2853, kd_per_head a=1.1246, b=0.9124). Out of sample (2024 onward) the pure rule beat the fitted exponents for strikes and accuracy, tied for knockdowns (1,496.6 vs 1,497.0), and the fitted rule won for takedowns, so those are the recommended rows. Expected totals ignore finishes, damage and fatigue.
 
 | Projected rate | Alexander Volkanovski on Justin Gaethje | Justin Gaethje on Alexander Volkanovski |
 |---|---|---|
@@ -518,8 +541,10 @@ Sensitivity to the rate window (same formula; `--window career | last3y | decaye
 | last 3 years | 6.12 | 3.80 | 0.60 | 1.10 | 0.62 | 0.74 | 0.87 | 0.59 |
 | decayed, half-life 2 years | 6.30 | 4.21 | 0.62 | 0.97 | 0.63 | 0.73 | 0.96 | 0.64 |
 
-Shade the strike rows down about 5% for the 2024-2026 bias (observed / predicted 0.95). These are rates
-before damage, fatigue, position and finishes, which are the engine's job.
+Shade the strike rows down about 3-5% for the 2024-2026 bias. The fit measured observed / predicted 0.95
+with a 2012-2026 pooled league. This table uses the 2020-2026 league, and with that baseline the same test
+gives about 0.96-0.975 (verification log). These are rates before damage, fatigue, position and finishes,
+which are the engine's job.
 
 ## 11. How rates combine: walk-forward fit (engine parameters)
 
@@ -557,19 +582,26 @@ What this means for v3:
   accuracy no decay (or 4 years) is as good. The spec's single 730-day half-life is a reasonable default;
   the per-rate half-lives above are better.
 - On high-pace pairs (relevant because Gaethje's opponents attempt 11-14 strikes a minute), the pure rule
-  over-predicts by about 5-7% and the v2 average under-predicts by about 25-30%.
+  over-predicts by about 5-7% and the v2 average under-predicts by about 24-25% (observed is about 1.33x
+  the average's prediction). *[Verification: the average's shortfall holds across shrinkage and league
+  choices, at 20-31% short. The pure rule's error moves from -4% to +13% with k and the league window (8-49
+  pairs), so treat "5-7%" as low confidence.]*
+- *[Verification note.]* `fit_combine.py` computes the league rates over 2012-01-01 to 2026-10-31
+  (`league(db, t0, s1)`), so the test period's own data enters the baseline. Recomputed with a training-only
+  league, the test bias is unchanged (0.946 vs 0.946 undecayed), so the leak is harmless here. It should
+  still be fixed for a strict walk-forward.
 
 ## 12. Audit of v2 inputs against the data
 
 | v2 setting | v2 value | Data says | Suggested v3 treatment |
 |---|---|---|---|
-| Landing rate | average of SLpM and SApM x 0.85 | Average under-predicts high-pace pairs ~25-30%; pure rule best out of sample, 5% high in 2024-26 | Pure log-linear, global scale ~0.95 in calibration |
+| Landing rate | average of SLpM and SApM x 0.85 | Average under-predicts high-pace pairs ~25% (20-31% across specifications); pure rule best out of sample, 3-5% high in 2024-26 depending on league window | Pure log-linear, global scale ~0.95-0.97 in calibration, matched to the league window |
 | KD prior | 0.009 per landed head strike, worth 300 | LW 0.0095, FW 0.0094; EB k 224-237, predictive k 500 | p0 = division rate, k = 500 for forecasting |
 | Volk chin knob (multiplies his KD risk; >1 = more KD-prone; Gaethje 1.0) | 1.15 | Volk/Gaethje shrunk chin ratio: career 1.15x, decayed 1.07x, last 4 years 1.51x. Volk vs FW league: last 4y 1.32x, decayed 0.97x | Data sets both chins; age term and a recent window carry the decline |
 | Volk power knob | 0.85 | Shrunk 0.52-0.56 vs 0.94 = 0.55-0.6x league per head strike | Data-driven power; GnP finishing separate |
-| Gaethje power | career KD 0.67 per 15 | 1.07 KD per 100 head landed (1.07x league) | Data-driven |
-| Volk pace | [0.94, 0.98, 1.00, 1.04, 1.10] | Reached-R5 fights: 1.00, 1.21, 1.44, 1.42, 1.64 vs R1; FW league 1.00, 1.31, 1.34, 1.55, 1.32 | Personal ratio vs league curve, shrunk |
-| Gaethje pace | [1.05, 1.00, 0.98, 0.97, 0.93] (fade) | 1.00, 1.34, 0.98, 1.43, 1.37 (n = 3); LW league 1.00, 1.20, 1.08, 1.10, 1.31 | Shrink hard to league; no fade evidence |
+| Gaethje power | career KD 0.67 per 15 | 1.07 KD per 100 head landed raw (1.12x league 0.95); shrunk 1.02-1.04 (1.07-1.09x) *[corrected: was "1.07x league"]* | Data-driven |
+| Volk pace | [0.94, 0.98, 1.00, 1.04, 1.10] | Reached-R5 fights: 1.00, 1.21, 1.44, 1.42, 1.64 vs R1; league reached-R5 curve FW 2020-26 1.00, 1.45, 1.35, 1.64, 1.39, FW+LW 2015-26 1.00, 1.32, 1.24, 1.34, 1.35 *[corrected: the all-five-round curve was quoted before]* | Personal ratio vs the like-for-like league curve, shrunk; his R5 is ~1.2x league |
+| Gaethje pace | [1.05, 1.00, 0.98, 0.97, 0.93] (fade) | 1.00, 1.34, 0.98, 1.43, 1.37 (n = 3); league reached-R5 curve LW 2020-26 1.00, 1.51, 1.29, 1.34, 1.57 (n = 10), FW+LW 2015-26 1.00, 1.32, 1.24, 1.34, 1.35 *[corrected as above]* | Shrink hard to league; no fade evidence, no rise above league either |
 | Targets (landed shares) | Volk 63/11/26, Gaethje 63/9/28 | Decayed attempt shares Volk 78/7/15, Gaethje 82/9/9 | Attempts x accuracy per target from data |
 | gaeLeg knob | 0.18 (preset 0.32) | Leg share of attempts 7.7% last 3y, 0.25-0.53 leg attempts/min in last 3 fights | Default to data, keep the knob |
 | volkTd / gaeTd | 3.0 / 1.5 attempts per 15 | Projected 2.96 / 1.30 with the fitted takedown model | Data-driven |
@@ -603,3 +635,87 @@ What this means for v3:
   (UFC 324), https://www.cbssports.com/ufc/fighter/50037035/alexander-volkanovski/ and
   https://www.cbssports.com/ufc/fighter/50037034/justin-gaethje/ (pro records 29-4 and 28-5),
   https://combat-edge.com/news/ufc-333-volkanovski-vs-evloev-results/ (UFC 333; the dataset agrees: TKO R2 4:54).
+
+## Verification log
+
+Adversarial check, Nov 6, 2026. I recomputed the numbers with new pandas code written for this check, not
+with `tools/fighter_report.py` (scratch scripts in
+`/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/adv_verify_070617/`). The code
+strips the CSVs, joins events on the stripped name, keeps one row per fight URL, and splits each bout from
+both sides using the exact `FIGHTER` name in `ufc_fight_stats.csv`.
+
+**Web.** I could not re-check anything on the web this session. The shared search budget was used up, and
+f4wonline.com, combat-edge.com and cbssports.com don't resolve from this network. Post-mid-2026 facts (UFC
+324, 325, Freedom 250, 333) therefore rest on the dataset. Two other project files corroborate them, but I
+did not re-fetch their sources either. `research/gaethje.md` cites Cageside Press and AP for UFC 324 (UD
+48-47, 49-46, 49-46), and CBS, Field Level Media, MMA Mania and Sports Talk Florida for Freedom 250 (corner
+stoppage after round 4; Topuria landed 44 in round 2). `research/matchup_market.md` and
+`research/volkanovski.md` cite Yahoo and news4jax/AP for UFC 333 (TKO R2 4:54) and the 29-4 record.
+
+**Name matching and sides.** I searched every `FIGHTER` name containing "volk" or "gaet". The near-names are
+Alexander Volkov, Jacob Volkmann, Volkan Oezdemir and Gaetano Pirrello. None of them appears in any of the
+35 bouts (19 Volkanovski, 16 Gaethje). Each bout has exactly two fighters, one stats row per round per
+fighter, and a final round that matches `ROUND` in the results. I read each result from `OUTCOME` in `BOUT`
+order (for example, "Topuria vs. Gaethje, L/W" gives Gaethje the win). Each fighter name appears once in the
+fighter files.
+
+**Full table check.** I compared all 22 columns of both per-fight totals tables (35 fights) and the date,
+event, opponent, result, round, time and schedule of both fight logs with fresh output. There were 0
+mismatches.
+
+Recomputed independently (all match unless noted):
+
+| Number | Report | Fresh |
+|---|---|---|
+| Volk SLpM / SApM, career (312.9 min) | 5.98 / 3.33 | 5.980 / 3.334 |
+| Gaethje SLpM / SApM, career (202.2 min) | 6.29 / 6.83 | 6.287 / 6.832 |
+| Volk KD scored / absorbed, career | 6 / 4 | 6 / 4 |
+| Gaethje KD scored / absorbed, career | 9 / 4 | 9 / 4 |
+| Volk chin, career / last 4y | 4 in 632 (0.63) / 3 in 189 (1.59) | same |
+| Gaethje chin, career / last 4y | 4 in 766 (0.52) / 2 in 279 (0.72) | same |
+| Power per 100 head landed: Gaethje career; Volk career, 4y, decayed | 1.07; 0.49, 0.28, 0.21 | 1.070; 0.489, 0.276, 0.214 |
+| TD accuracy / defense, Volk | 34.3% / 67.3% | 34/99, 17 of 52 allowed |
+| TD accuracy / defense, Gaethje | 26.7% / 73.3% | 4/15, 8 of 30 allowed |
+| Volk reached-R5 pace (7 fights) | 4.40, 5.34, 6.31, 6.26, 7.20 | same; 1.64x |
+| Gaethje reached-R5 pace (3 fights) | 4.33 ... 5.94 (1.37x) | same |
+| Lightweight league 2020-26: SLpM, acc., KD/100 head | 4.32, 47.97%, 0.95 | 4.326, 47.95%, 0.954 |
+| Featherweight league all-5-round curve | 1.00, 1.31, 1.34, 1.55, 1.32 | same (but see correction 1) |
+| Gaethje leg attempts/min, first 3 and last 3 fights | 4.29, 2.86, 3.67; 0.53, 0.44, 0.25 | same |
+| Gaethje leg share of sig. attempts, career / 3y | 14.9% / 7.7% | 14.90% / 7.70% |
+| Opp. accuracy on Gaethje, last 7 fights | all >= 50% | 63.8, 57.4, 51.9, 58.6, 57.1, 50.2, 59.9 |
+| Gaethje 3y opp. accuracy vs LW league | 55.7% vs 48.0% | 55.72% vs 47.95% |
+| UFC 324 sig. / total / KD / TD / ctrl | 144-156 / 200-170 / 2-0 / 3 of 3 / 5:55 | same |
+| Freedom 250 sig. / KD / Gaethje TD / R2 sig. | 91-97 / 0-1 in R2 / 0 of 5 / 12-44 | same; "toCorner Stoppage", R4 5:00, ref Marc Goddard |
+| Opponent-adjusted (leave-one-out) | Volk 1.53x / 0.74x; Gaethje 1.55x / 1.45x | 1.52x / 0.73x; 1.53x / 1.42x (method details differ) |
+| Walk-forward sample size | 6,976 train / 2,048 test | 6,976 / 2,048 |
+| Sig. attempts test deviance, undecayed, k = 60 | 43,388 (JSON `decay_scan`) | 43,388; league-only 57,530 |
+| EB prior strength, chin | k = 224 (178-282), 923 fighters | k = 228 (178-293), 926 fighters |
+| EB prior strength, power | k = 237 (188-316) | k = 243 (190-311), 871 fighters (the "923" applies to the chin fit only) |
+| Age, chin slope after 30 (hinge-only Poisson) | 3.7%/yr (SE 0.8%) | 3.73% (SE 0.82%) |
+| Duplicate cards / URLs; Road to UFC 4.6 undated | 2 cards, 25 URLs; yes | same |
+| Duplicate fighter names | 9 | 9 |
+
+Corrections made above:
+1. **Pace comparison (section 1 item 5, section 7, section 12).** The report compared each fighter's
+   reached-round-5 curve with the league's all-five-round curve, which its own section 7 warns against. Like
+   for like, Volk's round-5 ratio is about 1.2x the league's, not "well above". His rounds 2-5 average is
+   near league-typical. Gaethje's is about league-typical, not above the league.
+2. **Gaethje power vs league (section 12).** 1.07 per 100 against 0.95 is 1.12x, not 1.07x. The shrunk
+   value is 1.07-1.09x.
+3. **v2 average on high-pace pairs.** It falls short by 24-25% at the tuned settings and 20-31% across
+   specifications, not 25-30%. The pure rule's +5-7% is specification-sensitive (-4% to +13%).
+4. **Knockdowns, pure vs fitted.** A tie (0.4 deviance), not a win.
+5. **Calibration scale.** The 0.95 depends on the league window. It is 0.96-0.975 with the 2020-2026 league
+   the projection uses. `fit_combine.py` also builds its league from data that includes the test period.
+   This is harmless here (bias 0.946 either way) but should be fixed.
+6. **Age (section 1 item 10).** The chin slope is 2.2-3.7%/yr depending on specification, and the chin rate
+   already rises before 30. The power slope holds.
+7. **Chin spread.** The middle of the prior spans about 2.7:1, not 2:1.
+8. Smaller fixes: the "within rounding" match to the HANDOFF is within 0.02; the lightweight control figure
+   includes Kasuya; the "UFC Fight Night:" aliases are undated too.
+
+Left as written, with notes. The pro records (29-4, 28-5) and the pre-UFC 13-1 and 17-0 are arithmetic on
+the dataset plus the HANDOFF's web citations. They agree with project files citing AP and UFCalendar. They
+are also consistent with Volk's widely reported 21-1 record after UFC 245 and Gaethje's 17-0 WSOF run. All
+of that is from memory or from files I did not re-fetch, so confidence is medium. The UFC 274 bout is filed
+by ufcstats as a non-title bout; I report the dataset label.

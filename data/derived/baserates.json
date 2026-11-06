@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated": "2026-11-06 08:52",
+  "generated": "2026-11-06 09:05",
   "raw_dir": "/home/user/XX/data/raw",
   "since": "2015-01-01",
   "data_max_date": "2026-10-31",
@@ -957,17 +957,17 @@
     }
    },
    "judging": {
-    "n_decisions_parsed": 2871,
+    "n_decisions_parsed": 2893,
     "type_shares": {
-     "U-DEC": 0.785765,
-     "S-DEC": 0.198654,
-     "M-DEC": 0.015581
+     "U-DEC": 0.786718,
+     "S-DEC": 0.197822,
+     "M-DEC": 0.01546
     },
-    "draw_share_of_decisions": 0.016371,
-    "implied_108_per_round": 0.046854,
-    "cards_implied_108_or_deduction_share": 0.124695,
-    "share_decisions_judges_disagree_on_winner": 0.214235,
-    "min_pairwise_round_disagreement_rate": 0.131231
+    "draw_share_of_decisions": 0.016246,
+    "implied_108_per_round": 0.046953,
+    "cards_implied_108_or_deduction_share": 0.124899,
+    "share_decisions_judges_disagree_on_winner": 0.213282,
+    "min_pairwise_round_disagreement_rate": 0.131409
    }
   },
   "lightweight": {
@@ -1858,17 +1858,17 @@
     }
    },
    "judging": {
-    "n_decisions_parsed": 397,
+    "n_decisions_parsed": 402,
     "type_shares": {
-     "U-DEC": 0.782051,
-     "S-DEC": 0.194872,
-     "M-DEC": 0.023077
+     "U-DEC": 0.782278,
+     "S-DEC": 0.194937,
+     "M-DEC": 0.022785
     },
-    "draw_share_of_decisions": 0.017632,
-    "implied_108_per_round": 0.046956,
-    "cards_implied_108_or_deduction_share": 0.120067,
-    "share_decisions_judges_disagree_on_winner": 0.217949,
-    "min_pairwise_round_disagreement_rate": 0.134293
+    "draw_share_of_decisions": 0.017413,
+    "implied_108_per_round": 0.046386,
+    "cards_implied_108_or_deduction_share": 0.118574,
+    "share_decisions_judges_disagree_on_winner": 0.217722,
+    "min_pairwise_round_disagreement_rate": 0.134278
    }
   },
   "featherweight": {
@@ -2742,17 +2742,17 @@
     }
    },
    "judging": {
-    "n_decisions_parsed": 355,
+    "n_decisions_parsed": 356,
     "type_shares": {
-     "U-DEC": 0.787356,
-     "S-DEC": 0.189655,
-     "M-DEC": 0.022989
+     "U-DEC": 0.787966,
+     "S-DEC": 0.189112,
+     "M-DEC": 0.022923
     },
-    "draw_share_of_decisions": 0.019718,
-    "implied_108_per_round": 0.057893,
-    "cards_implied_108_or_deduction_share": 0.151174,
-    "share_decisions_judges_disagree_on_winner": 0.212644,
-    "min_pairwise_round_disagreement_rate": 0.138365
+    "draw_share_of_decisions": 0.019663,
+    "implied_108_per_round": 0.057738,
+    "cards_implied_108_or_deduction_share": 0.150749,
+    "share_decisions_judges_disagree_on_winner": 0.212034,
+    "min_pairwise_round_disagreement_rate": 0.137877
    }
   },
   "five_round": {
@@ -5293,37 +5293,37 @@
   }
  },
  "judging": {
-  "n_decisions_parsed": 2871,
+  "n_decisions_parsed": 2893,
   "type_shares": {
-   "U-DEC": 0.785765,
-   "S-DEC": 0.198654,
-   "M-DEC": 0.015581
+   "U-DEC": 0.786718,
+   "S-DEC": 0.197822,
+   "M-DEC": 0.01546
   },
   "draws": 47,
-  "draw_share_of_decisions": 0.016371,
-  "n_cards": 8613,
-  "cards_implied_108_or_deduction_share": 0.124695,
-  "implied_108_per_round": 0.046854,
-  "cards_with_10_10_or_odd_total": 8,
-  "implied_108_per_round_3rd": 0.047523,
+  "draw_share_of_decisions": 0.016246,
+  "n_cards": 8679,
+  "cards_implied_108_or_deduction_share": 0.124899,
+  "implied_108_per_round": 0.046953,
+  "cards_with_10_10_or_odd_total": 9,
+  "implied_108_per_round_3rd": 0.047631,
   "implied_108_per_round_5rd": 0.042373,
-  "decisions_with_any_implied_108_share": 0.191571,
+  "decisions_with_any_implied_108_share": 0.191842,
   "implied_108_per_round_by_year": {
    "2015": {
-    "cards": 645,
-    "per_round": 0.036482
+    "cards": 651,
+    "per_round": 0.036157
    },
    "2016": {
-    "cards": 735,
-    "per_round": 0.044847
+    "cards": 741,
+    "per_round": 0.044501
    },
    "2017": {
-    "cards": 669,
-    "per_round": 0.071188
+    "cards": 672,
+    "per_round": 0.070881
    },
    "2018": {
-    "cards": 657,
-    "per_round": 0.04852
+    "cards": 681,
+    "per_round": 0.050633
    },
    "2019": {
     "cards": 831,
@@ -5334,79 +5334,79 @@
     "per_round": 0.065378
    },
    "2021": {
-    "cards": 762,
-    "per_round": 0.050654
+    "cards": 765,
+    "per_round": 0.050468
    },
    "2022": {
-    "cards": 711,
-    "per_round": 0.037428
+    "cards": 717,
+    "per_round": 0.038882
    },
    "2023": {
-    "cards": 735,
-    "per_round": 0.050531
+    "cards": 738,
+    "per_round": 0.050338
    },
    "2024": {
     "cards": 837,
     "per_round": 0.025065
    },
    "2025": {
-    "cards": 753,
-    "per_round": 0.025031
+    "cards": 765,
+    "per_round": 0.024661
    },
    "2026": {
-    "cards": 600,
-    "per_round": 0.037447
+    "cards": 603,
+    "per_round": 0.03727
    }
   },
   "card_patterns_winner_first": {
    "3": {
     "29-28": {
-     "n": 3640,
-     "share": 0.468107
+     "n": 3671,
+     "share": 0.46812
     },
     "30-27": {
-     "n": 2762,
-     "share": 0.355195
+     "n": 2785,
+     "share": 0.355139
     },
     "28-29": {
-     "n": 462,
-     "share": 0.059414
+     "n": 463,
+     "share": 0.059041
     },
     "30-26": {
-     "n": 390,
-     "share": 0.050154
+     "n": 395,
+     "share": 0.05037
     },
     "29-27": {
-     "n": 258,
-     "share": 0.033179
+     "n": 260,
+     "share": 0.033155
     },
     "30-25": {
-     "n": 98,
-     "share": 0.012603
+     "n": 99,
+     "share": 0.012624
     },
     "27-30": {
      "n": 51,
-     "share": 0.006559
+     "share": 0.006503
     },
     "28-28": {
-     "n": 37,
-     "share": 0.004758
+     "n": 38,
+     "share": 0.004846
     },
     "29-26": {
      "n": 33,
-     "share": 0.004244
+     "share": 0.004208
     },
     "28-27": {
-     "n": 20,
-     "share": 0.002572
+     "n": 21,
+     "share": 0.002678
     },
     "30-24": {
      "n": 9,
-     "share": 0.001157
+     "share": 0.001148
     },
     "27-29": {
      "n": 4,
-     "share": 0.000514
+     "share": 0.00051
     }
    },
    "5": {
@@ -5460,26 +5460,26 @@
     }
    }
   },
-  "share_decisions_cards_not_identical": 0.590652,
-  "share_decisions_judges_disagree_on_winner": 0.214235,
-  "min_pairwise_round_disagreement_rate": 0.131231,
-  "judges_total": 359,
+  "share_decisions_cards_not_identical": 0.592059,
+  "share_decisions_judges_disagree_on_winner": 0.213282,
+  "min_pairwise_round_disagreement_rate": 0.131409,
+  "judges_total": 360,
   "per_judge_top": [
    {
     "judge": "Sal D'amato",
-    "cards": 959,
+    "cards": 960,
     "years": "2015-2026",
-    "dissent_rate": 0.058394,
-    "implied_108_per_round": 0.046504,
-    "mean_margin_to_fight_winner": 1.98123
+    "dissent_rate": 0.058333,
+    "implied_108_per_round": 0.04646,
+    "mean_margin_to_fight_winner": 1.980208
    },
    {
     "judge": "Derek Cleary",
-    "cards": 663,
+    "cards": 664,
     "years": "2015-2026",
-    "dissent_rate": 0.066365,
-    "implied_108_per_round": 0.052825,
-    "mean_margin_to_fight_winner": 1.873303
+    "dissent_rate": 0.066265,
+    "implied_108_per_round": 0.052752,
+    "mean_margin_to_fight_winner": 1.875
    },
    {
     "judge": "Chris Lee",
@@ -5491,35 +5491,43 @@
    },
    {
     "judge": "Mike Bell",
-    "cards": 539,
+    "cards": 541,
     "years": "2015-2026",
-    "dissent_rate": 0.068646,
-    "implied_108_per_round": 0.049629,
-    "mean_margin_to_fight_winner": 1.762523
+    "dissent_rate": 0.068392,
+    "implied_108_per_round": 0.04946,
+    "mean_margin_to_fight_winner": 1.763401
    },
    {
     "judge": "Junichiro Kamijo",
-    "cards": 409,
+    "cards": 410,
     "years": "2015-2026",
-    "dissent_rate": 0.051345,
-    "implied_108_per_round": 0.036281,
-    "mean_margin_to_fight_winner": 1.875306
+    "dissent_rate": 0.05122,
+    "implied_108_per_round": 0.036199,
+    "mean_margin_to_fight_winner": 1.878049
    },
    {
     "judge": "Eric Colon",
-    "cards": 390,
+    "cards": 391,
     "years": "2015-2026",
-    "dissent_rate": 0.053846,
-    "implied_108_per_round": 0.034455,
-    "mean_margin_to_fight_winner": 1.84359
+    "dissent_rate": 0.053708,
+    "implied_108_per_round": 0.034373,
+    "mean_margin_to_fight_winner": 1.846547
    },
    {
     "judge": "Ron McCarthy",
-    "cards": 278,
+    "cards": 280,
     "years": "2015-2026",
-    "dissent_rate": 0.053957,
-    "implied_108_per_round": 0.044018,
-    "mean_margin_to_fight_winner": 1.859712
+    "dissent_rate": 0.053571,
+    "implied_108_per_round": 0.043722,
+    "mean_margin_to_fight_winner": 1.853571
+   },
+   {
+    "judge": "Ben Cartlidge",
+    "cards": 250,
+    "years": "2015-2026",
+    "dissent_rate": 0.04,
+    "implied_108_per_round": 0.06375,
+    "mean_margin_to_fight_winner": 1.948
    },
    {
     "judge": "Tony Weeks",
@@ -5530,20 +5538,12 @@
     "mean_margin_to_fight_winner": 1.875502
    },
    {
-    "judge": "Ben Cartlidge",
-    "cards": 249,
-    "years": "2015-2026",
-    "dissent_rate": 0.040161,
-    "implied_108_per_round": 0.06399,
-    "mean_margin_to_fight_winner": 1.951807
-   },
-   {
     "judge": "David Lethaby",
-    "cards": 195,
+    "cards": 196,
     "years": "2018-2026",
-    "dissent_rate": 0.051282,
-    "implied_108_per_round": 0.063593,
-    "mean_margin_to_fight_winner": 2.025641
+    "dissent_rate": 0.05102,
+    "implied_108_per_round": 0.063291,
+    "mean_margin_to_fight_winner": 2.020408
    },
    {
     "judge": "Adalaide Byrd",
@@ -5618,20 +5618,20 @@
     "mean_margin_to_fight_winner": 1.789474
    },
    {
-    "judge": "Glenn Trowbridge",
-    "cards": 84,
-    "years": "2015-2020",
-    "dissent_rate": 0.083333,
-    "implied_108_per_round": 0.083969,
-    "mean_margin_to_fight_winner": 1.857143
-   },
-   {
     "judge": "Evan Field",
     "cards": 84,
     "years": "2015-2026",
     "dissent_rate": 0.083333,
     "implied_108_per_round": 0.085271,
     "mean_margin_to_fight_winner": 2.047619
+   },
+   {
+    "judge": "Glenn Trowbridge",
+    "cards": 84,
+    "years": "2015-2020",
+    "dissent_rate": 0.083333,
+    "implied_108_per_round": 0.083969,
+    "mean_margin_to_fight_winner": 1.857143
    },
    {
     "judge": "Jeff Mullen",
@@ -5659,292 +5659,292 @@
    },
    {
     "judge": "Vito Paolillo",
-    "cards": 74,
+    "cards": 75,
     "years": "2020-2026",
-    "dissent_rate": 0.081081,
-    "implied_108_per_round": 0.039474,
-    "mean_margin_to_fight_winner": 1.905405
+    "dissent_rate": 0.08,
+    "implied_108_per_round": 0.038961,
+    "mean_margin_to_fight_winner": 1.92
    }
   ],
-  "dissent_rate_overall": 0.070243
+  "dissent_rate_overall": 0.070054
  },
  "round_model": {
   "clean_subset": {
-   "n_fights": 499,
-   "n_rounds": 1541,
+   "n_fights": 501,
+   "n_rounds": 1547,
    "definition": "decisions where all three cards are 30-27 (or 50-45) for the winner, so every round's winner is known",
    "target": {
     "coef": {
-     "head_l": 0.411435,
-     "body_l": 0.309525,
-     "leg_l": 0.286524,
-     "kd": 2.811636,
-     "td_l": 0.651402,
-     "ctrl_min": 0.881651,
-     "sub": 1.342003
+     "head_l": 0.412094,
+     "body_l": 0.309971,
+     "leg_l": 0.285404,
+     "kd": 2.807682,
+     "td_l": 0.671023,
+     "ctrl_min": 0.875309,
+     "sub": 1.345847
     },
     "se": {
-     "head_l": 0.029124,
-     "body_l": 0.0334,
-     "leg_l": 0.031897,
-     "kd": 0.85041,
-     "td_l": 0.150664,
-     "ctrl_min": 0.105784,
-     "sub": 0.395634
+     "head_l": 0.029169,
+     "body_l": 0.033323,
+     "leg_l": 0.031847,
+     "kd": 0.85008,
+     "td_l": 0.149888,
+     "ctrl_min": 0.105295,
+     "sub": 0.395624
     },
-    "loglik": -241.008629,
-    "in_sample_round_accuracy": 0.93965,
+    "loglik": -241.841346,
+    "in_sample_round_accuracy": 0.939884,
     "head_equiv": {
      "head_l": 1.0,
-     "body_l": 0.752305,
-     "leg_l": 0.696402,
-     "kd": 6.833733,
-     "td_l": 1.583245,
-     "ctrl_min": 2.14287,
-     "sub": 3.261763
+     "body_l": 0.752185,
+     "leg_l": 0.692569,
+     "kd": 6.813201,
+     "td_l": 1.628323,
+     "ctrl_min": 2.124049,
+     "sub": 3.26587
     }
    },
    "position": {
     "coef": {
-     "dist_l": 0.352515,
-     "clinch_l": 0.301716,
-     "ground_l": 0.471,
-     "kd": 2.993466,
-     "td_l": 0.634082,
-     "ctrl_min": 0.850832,
-     "sub": 1.431872
+     "dist_l": 0.352259,
+     "clinch_l": 0.301792,
+     "ground_l": 0.473073,
+     "kd": 2.990154,
+     "td_l": 0.65568,
+     "ctrl_min": 0.843308,
+     "sub": 1.438654
     },
     "se": {
-     "dist_l": 0.02498,
-     "clinch_l": 0.046942,
-     "ground_l": 0.07139,
-     "kd": 0.844303,
-     "td_l": 0.149781,
-     "ctrl_min": 0.101977,
-     "sub": 0.40232
+     "dist_l": 0.024933,
+     "clinch_l": 0.047021,
+     "ground_l": 0.071562,
+     "kd": 0.843902,
+     "td_l": 0.149185,
+     "ctrl_min": 0.101457,
+     "sub": 0.4024
     },
-    "loglik": -250.278147,
-    "in_sample_round_accuracy": 0.935756,
+    "loglik": -251.29283,
+    "in_sample_round_accuracy": 0.935359,
     "head_equiv": {
      "dist_l": 1.0,
-     "clinch_l": 0.855895,
-     "ground_l": 1.336113,
-     "kd": 8.491744,
-     "td_l": 1.798738,
-     "ctrl_min": 2.413607,
-     "sub": 4.061876
+     "clinch_l": 0.856733,
+     "ground_l": 1.342969,
+     "kd": 8.488506,
+     "td_l": 1.861357,
+     "ctrl_min": 2.394,
+     "sub": 4.084079
     }
    },
    "extended": {
     "coef": {
-     "head_l": 0.421719,
-     "body_l": 0.305259,
-     "leg_l": 0.28901,
-     "sig_miss": -0.030642,
-     "nonsig_l": 0.066219,
-     "kd": 2.858547,
-     "td_l": 0.716296,
-     "td_miss": -0.070512,
-     "ctrl_min": 0.901189,
-     "sub": 1.440022,
-     "rev": 0.380818
+     "head_l": 0.422595,
+     "body_l": 0.305803,
+     "leg_l": 0.288718,
+     "sig_miss": -0.031244,
+     "nonsig_l": 0.066792,
+     "kd": 2.857817,
+     "td_l": 0.727705,
+     "td_miss": -0.072172,
+     "ctrl_min": 0.89959,
+     "sub": 1.442704,
+     "rev": 0.384281
     },
     "se": {
-     "head_l": 0.03053,
-     "body_l": 0.034034,
-     "leg_l": 0.032779,
-     "sig_miss": 0.010679,
-     "nonsig_l": 0.014072,
-     "kd": 0.846796,
-     "td_l": 0.163836,
-     "td_miss": 0.065834,
-     "ctrl_min": 0.117065,
-     "sub": 0.424733,
-     "rev": 0.466999
+     "head_l": 0.030566,
+     "body_l": 0.034001,
+     "leg_l": 0.032789,
+     "sig_miss": 0.010642,
+     "nonsig_l": 0.014066,
+     "kd": 0.847426,
+     "td_l": 0.162948,
+     "td_miss": 0.065798,
+     "ctrl_min": 0.11702,
+     "sub": 0.425175,
+     "rev": 0.467408
     },
-    "loglik": -224.831826,
-    "in_sample_round_accuracy": 0.94549,
+    "loglik": -225.16462,
+    "in_sample_round_accuracy": 0.945055,
     "head_equiv": {
      "head_l": 1.0,
-     "body_l": 0.723843,
-     "leg_l": 0.685312,
-     "sig_miss": -0.072659,
-     "nonsig_l": 0.157022,
-     "kd": 6.778314,
-     "td_l": 1.698513,
-     "td_miss": -0.167202,
-     "ctrl_min": 2.13694,
-     "sub": 3.414646,
-     "rev": 0.903014
+     "body_l": 0.723631,
+     "leg_l": 0.683202,
+     "sig_miss": -0.073935,
+     "nonsig_l": 0.158052,
+     "kd": 6.762548,
+     "td_l": 1.721993,
+     "td_miss": -0.170782,
+     "ctrl_min": 2.128729,
+     "sub": 3.413919,
+     "rev": 0.909338
     }
    }
   },
   "em_all_cards": {
-   "n_cards": 7495,
-   "n_fights": 2651,
+   "n_cards": 7550,
+   "n_fights": 2672,
    "definition": "all decision cards whose total implies only 10-9 rounds; latent round winners per judge, EM with a weighted no-intercept logistic M-step",
    "target": {
     "coef": {
-     "head_l": 0.179252,
-     "body_l": 0.132743,
-     "leg_l": 0.105071,
-     "kd": 2.420986,
-     "td_l": 0.286013,
-     "ctrl_min": 0.46036,
-     "sub": 0.847209
+     "head_l": 0.178865,
+     "body_l": 0.132633,
+     "leg_l": 0.104248,
+     "kd": 2.384599,
+     "td_l": 0.284443,
+     "ctrl_min": 0.460725,
+     "sub": 0.843627
     },
     "head_equiv": {
      "head_l": 1.0,
-     "body_l": 0.74054,
-     "leg_l": 0.586163,
-     "kd": 13.506053,
-     "td_l": 1.595594,
-     "ctrl_min": 2.568231,
-     "sub": 4.726361
+     "body_l": 0.741529,
+     "leg_l": 0.58283,
+     "kd": 13.331868,
+     "td_l": 1.590267,
+     "ctrl_min": 2.57583,
+     "sub": 4.716565
     },
-    "n_card_rounds": 23645
+    "n_card_rounds": 23810
    },
    "position": {
     "coef": {
-     "dist_l": 0.137002,
-     "clinch_l": 0.157825,
-     "ground_l": 0.274461,
-     "kd": 2.294223,
-     "td_l": 0.284689,
-     "ctrl_min": 0.412119,
-     "sub": 0.88888
+     "dist_l": 0.136424,
+     "clinch_l": 0.15821,
+     "ground_l": 0.275796,
+     "kd": 2.261403,
+     "td_l": 0.283154,
+     "ctrl_min": 0.412634,
+     "sub": 0.888483
     },
     "head_equiv": {
      "dist_l": 1.0,
-     "clinch_l": 1.151987,
-     "ground_l": 2.003337,
-     "kd": 16.745889,
-     "td_l": 2.077988,
-     "ctrl_min": 3.008117,
-     "sub": 6.488074
+     "clinch_l": 1.15969,
+     "ground_l": 2.02161,
+     "kd": 16.57628,
+     "td_l": 2.075546,
+     "ctrl_min": 3.024641,
+     "sub": 6.512658
     },
-    "n_card_rounds": 23645
+    "n_card_rounds": 23810
    },
    "extended": {
     "coef": {
-     "head_l": 0.173997,
-     "body_l": 0.130088,
-     "leg_l": 0.102604,
-     "sig_miss": -0.007627,
-     "nonsig_l": 0.020513,
-     "kd": 2.384522,
-     "td_l": 0.366804,
-     "td_miss": -0.096719,
-     "ctrl_min": 0.462455,
-     "sub": 0.875342,
-     "rev": 0.334641
+     "head_l": 0.173656,
+     "body_l": 0.130012,
+     "leg_l": 0.101747,
+     "sig_miss": -0.007678,
+     "nonsig_l": 0.020541,
+     "kd": 2.346469,
+     "td_l": 0.364234,
+     "td_miss": -0.09727,
+     "ctrl_min": 0.463831,
+     "sub": 0.870914,
+     "rev": 0.331276
     },
     "head_equiv": {
      "head_l": 1.0,
-     "body_l": 0.747646,
-     "leg_l": 0.58969,
-     "sig_miss": -0.043837,
-     "nonsig_l": 0.11789,
-     "kd": 13.704366,
-     "td_l": 2.108103,
-     "td_miss": -0.555863,
-     "ctrl_min": 2.65783,
-     "sub": 5.03078,
-     "rev": 1.923254
+     "body_l": 0.748677,
+     "leg_l": 0.585912,
+     "sig_miss": -0.044216,
+     "nonsig_l": 0.118288,
+     "kd": 13.512198,
+     "td_l": 2.097452,
+     "td_miss": -0.560134,
+     "ctrl_min": 2.670982,
+     "sub": 5.015179,
+     "rev": 1.907663
     },
-    "n_card_rounds": 23645
+    "n_card_rounds": 23810
    }
   },
   "holdout": {
-   "n_test_decisions": 962,
-   "accuracy": 0.840956,
-   "brier": 0.110483,
-   "log_loss": 0.341642,
-   "baseline_more_sig_landed_accuracy": 0.790541,
+   "n_test_decisions": 968,
+   "accuracy": 0.840909,
+   "brier": 0.110691,
+   "log_loss": 0.341917,
+   "baseline_more_sig_landed_accuracy": 0.789256,
    "calibration": [
     {
      "bin": "0.0-0.1",
-     "n": 248,
-     "mean_pred": 0.022121,
-     "observed": 0.052419
+     "n": 247,
+     "mean_pred": 0.022078,
+     "observed": 0.048583
     },
     {
      "bin": "0.1-0.2",
-     "n": 60,
-     "mean_pred": 0.152238,
-     "observed": 0.216667
+     "n": 61,
+     "mean_pred": 0.151769,
+     "observed": 0.245902
     },
     {
      "bin": "0.2-0.3",
-     "n": 48,
-     "mean_pred": 0.24748,
-     "observed": 0.270833
+     "n": 50,
+     "mean_pred": 0.247742,
+     "observed": 0.24
     },
     {
      "bin": "0.3-0.4",
-     "n": 41,
-     "mean_pred": 0.3454,
-     "observed": 0.487805
+     "n": 44,
+     "mean_pred": 0.347697,
+     "observed": 0.5
     },
     {
      "bin": "0.4-0.5",
-     "n": 35,
-     "mean_pred": 0.443136,
-     "observed": 0.514286
+     "n": 33,
+     "mean_pred": 0.44499,
+     "observed": 0.515152
     },
     {
      "bin": "0.5-0.6",
      "n": 33,
-     "mean_pred": 0.556179,
+     "mean_pred": 0.557516,
      "observed": 0.606061
     },
     {
      "bin": "0.6-0.7",
      "n": 42,
-     "mean_pred": 0.655512,
+     "mean_pred": 0.654722,
      "observed": 0.666667
     },
     {
      "bin": "0.7-0.8",
      "n": 58,
-     "mean_pred": 0.749804,
+     "mean_pred": 0.748885,
      "observed": 0.672414
     },
     {
      "bin": "0.8-0.9",
-     "n": 66,
-     "mean_pred": 0.857486,
-     "observed": 0.712121
+     "n": 65,
+     "mean_pred": 0.856375,
+     "observed": 0.707692
     },
     {
      "bin": "0.9-1.0",
-     "n": 331,
-     "mean_pred": 0.979965,
-     "observed": 0.966767
+     "n": 335,
+     "mean_pred": 0.979212,
+     "observed": 0.967164
     }
    ],
    "train_before": "2023-01-01",
    "coef_train": {
-    "head_l": 0.174689,
-    "body_l": 0.12696,
-    "leg_l": 0.105862,
-    "kd": 2.212043,
-    "td_l": 0.270119,
-    "ctrl_min": 0.465513,
-    "sub": 0.899917
+    "head_l": 0.173584,
+    "body_l": 0.127844,
+    "leg_l": 0.105156,
+    "kd": 2.165398,
+    "td_l": 0.264589,
+    "ctrl_min": 0.467659,
+    "sub": 0.887547
    },
    "clean_model": {
-    "n_test_decisions": 962,
-    "accuracy": 0.841996,
-    "brier": 0.127057,
-    "log_loss": 0.554939,
-    "baseline_more_sig_landed_accuracy": 0.790541,
+    "n_test_decisions": 968,
+    "accuracy": 0.840909,
+    "brier": 0.127643,
+    "log_loss": 0.557024,
+    "baseline_more_sig_landed_accuracy": 0.789256,
     "calibration": [
      {
       "bin": "0.0-0.1",
-      "n": 348,
-      "mean_pred": 0.011323,
-      "observed": 0.109195
+      "n": 350,
+      "mean_pred": 0.01136,
+      "observed": 0.111429
      },
      {
       "bin": "0.1-0.2",
@@ -5972,9 +5972,9 @@
      },
      {
       "bin": "0.5-0.6",
-      "n": 27,
-      "mean_pred": 0.5485,
-      "observed": 0.62963
+      "n": 28,
+      "mean_pred": 0.550125,
+      "observed": 0.607143
      },
      {
       "bin": "0.6-0.7",
@@ -5996,9 +5996,9 @@
      },
      {
       "bin": "0.9-1.0",
-      "n": 438,
-      "mean_pred": 0.990659,
-      "observed": 0.901826
+      "n": 441,
+      "mean_pred": 0.99068,
+      "observed": 0.902494
      }
     ],
     "coef_train": {
@@ -6116,60 +6116,60 @@
    "went_distance_only": [
     {
      "round": 1,
-     "fighter_rounds": 474,
-     "sig_landed_per_min": 3.216456,
-     "sig_att_per_min": 7.26962,
-     "sig_acc": 0.442452,
-     "head_landed_per_min": 1.694093,
-     "body_landed_per_min": 0.735865,
-     "leg_landed_per_min": 0.786498,
-     "dist_att_per_min": 6.580169,
-     "clinch_att_per_min": 0.3827,
-     "ground_att_per_min": 0.306751,
-     "td_att_per15": 2.746835,
-     "td_acc": 0.322581,
-     "ctrl_sec_per_round": 40.004219,
-     "kd_per100_standing_head": 0.434487,
+     "fighter_rounds": 472,
+     "sig_landed_per_min": 3.215678,
+     "sig_att_per_min": 7.276695,
+     "sig_acc": 0.441915,
+     "head_landed_per_min": 1.697458,
+     "body_landed_per_min": 0.735593,
+     "leg_landed_per_min": 0.782627,
+     "dist_att_per_min": 6.585169,
+     "clinch_att_per_min": 0.383475,
+     "ground_att_per_min": 0.308051,
+     "td_att_per15": 2.752119,
+     "td_acc": 0.323326,
+     "ctrl_sec_per_round": 40.173729,
+     "kd_per100_standing_head": 0.435552,
      "att_ratio_to_r1": 1.0,
      "landed_ratio_to_r1": 1.0
     },
     {
      "round": 2,
-     "fighter_rounds": 474,
-     "sig_landed_per_min": 3.913502,
-     "sig_att_per_min": 8.588186,
-     "sig_acc": 0.455684,
-     "head_landed_per_min": 2.318987,
-     "body_landed_per_min": 0.837975,
-     "leg_landed_per_min": 0.75654,
-     "dist_att_per_min": 7.837975,
-     "clinch_att_per_min": 0.477215,
-     "ground_att_per_min": 0.272996,
-     "td_att_per15": 2.911392,
-     "td_acc": 0.345652,
-     "ctrl_sec_per_round": 41.459916,
-     "kd_per100_standing_head": 0.505296,
-     "att_ratio_to_r1": 1.18138,
-     "landed_ratio_to_r1": 1.216713
+     "fighter_rounds": 472,
+     "sig_landed_per_min": 3.903814,
+     "sig_att_per_min": 8.572034,
+     "sig_acc": 0.455413,
+     "head_landed_per_min": 2.313983,
+     "body_landed_per_min": 0.838136,
+     "leg_landed_per_min": 0.751695,
+     "dist_att_per_min": 7.819068,
+     "clinch_att_per_min": 0.478814,
+     "ground_att_per_min": 0.274153,
+     "td_att_per15": 2.904661,
+     "td_acc": 0.347921,
+     "ctrl_sec_per_round": 41.635593,
+     "kd_per100_standing_head": 0.508756,
+     "att_ratio_to_r1": 1.178012,
+     "landed_ratio_to_r1": 1.213994
     },
     {
      "round": 3,
-     "fighter_rounds": 474,
-     "sig_landed_per_min": 3.988186,
-     "sig_att_per_min": 8.68903,
-     "sig_acc": 0.458991,
-     "head_landed_per_min": 2.476371,
-     "body_landed_per_min": 0.819831,
-     "leg_landed_per_min": 0.691983,
-     "dist_att_per_min": 7.851899,
-     "clinch_att_per_min": 0.52616,
-     "ground_att_per_min": 0.31097,
-     "td_att_per15": 3.43038,
+     "fighter_rounds": 472,
+     "sig_landed_per_min": 3.98178,
+     "sig_att_per_min": 8.670339,
+     "sig_acc": 0.459242,
+     "head_landed_per_min": 2.469068,
+     "body_landed_per_min": 0.819068,
+     "leg_landed_per_min": 0.693644,
+     "dist_att_per_min": 7.829661,
+     "clinch_att_per_min": 0.52839,
+     "ground_att_per_min": 0.312288,
+     "td_att_per15": 3.444915,
      "td_acc": 0.311808,
-     "ctrl_sec_per_round": 41.64135,
-     "kd_per100_standing_head": 0.254222,
-     "att_ratio_to_r1": 1.195252,
-     "landed_ratio_to_r1": 1.239932
+     "ctrl_sec_per_round": 41.817797,
+     "kd_per100_standing_head": 0.256176,
+     "att_ratio_to_r1": 1.191522,
+     "landed_ratio_to_r1": 1.23824
     },
     {
      "round": 4,
@@ -6187,8 +6187,8 @@
      "td_acc": 0.333333,
      "ctrl_sec_per_round": 46.847458,
      "kd_per100_standing_head": 0.214628,
-     "att_ratio_to_r1": 1.234298,
-     "landed_ratio_to_r1": 1.293138
+     "att_ratio_to_r1": 1.233098,
+     "landed_ratio_to_r1": 1.293451
     },
     {
      "round": 5,
@@ -6206,11 +6206,11 @@
      "td_acc": 0.29794,
      "ctrl_sec_per_round": 52.493644,
      "kd_per100_standing_head": 0.201379,
-     "att_ratio_to_r1": 1.259071,
-     "landed_ratio_to_r1": 1.311977
+     "att_ratio_to_r1": 1.257847,
+     "landed_ratio_to_r1": 1.312294
     }
    ],
-   "n_fights_went_distance": 237
+   "n_fights_went_distance": 236
   },
   "three_round": {
    "all_full_rounds": [
@@ -6275,41 +6275,41 @@
    "went_distance_only": [
     {
      "round": 1,
-     "fighter_rounds": 5316,
-     "sig_landed_per_min": 3.369451,
-     "sig_att_per_min": 7.7114,
-     "sig_acc": 0.436944,
-     "head_landed_per_min": 1.875207,
-     "body_landed_per_min": 0.772272,
-     "leg_landed_per_min": 0.721971,
-     "dist_att_per_min": 6.736682,
-     "clinch_att_per_min": 0.593078,
-     "ground_att_per_min": 0.38164,
-     "td_att_per15": 3.619639,
-     "td_acc": 0.369816,
-     "ctrl_sec_per_round": 52.8655,
-     "kd_per100_standing_head": 0.549573,
+     "fighter_rounds": 5300,
+     "sig_landed_per_min": 3.371736,
+     "sig_att_per_min": 7.719962,
+     "sig_acc": 0.436755,
+     "head_landed_per_min": 1.876679,
+     "body_landed_per_min": 0.772113,
+     "leg_landed_per_min": 0.722943,
+     "dist_att_per_min": 6.746717,
+     "clinch_att_per_min": 0.591736,
+     "ground_att_per_min": 0.381509,
+     "td_att_per15": 3.623208,
+     "td_acc": 0.36963,
+     "ctrl_sec_per_round": 52.771887,
+     "kd_per100_standing_head": 0.550669,
      "att_ratio_to_r1": 1.0,
      "landed_ratio_to_r1": 1.0
     },
     {
      "round": 2,
-     "fighter_rounds": 5316,
-     "sig_landed_per_min": 3.764409,
-     "sig_att_per_min": 8.389466,
-     "sig_acc": 0.448707,
-     "head_landed_per_min": 2.341836,
-     "body_landed_per_min": 0.82246,
-     "leg_landed_per_min": 0.600113,
-     "dist_att_per_min": 7.344319,
-     "clinch_att_per_min": 0.604289,
-     "ground_att_per_min": 0.440858,
-     "td_att_per15": 3.906321,
-     "td_acc": 0.348888,
-     "ctrl_sec_per_round": 57.597254,
-     "kd_per100_standing_head": 0.327076,
-     "att_ratio_to_r1": 1.08793,
-     "landed_ratio_to_r1": 1.117218
+     "fighter_rounds": 5300,
+     "sig_landed_per_min": 3.764792,
+     "sig_att_per_min": 8.391132,
+     "sig_acc": 0.448663,
+     "head_landed_per_min": 2.342,
+     "body_landed_per_min": 0.822642,
+     "leg_landed_per_min": 0.600151,
+     "dist_att_per_min": 7.346151,
+     "clinch_att_per_min": 0.604151,
+     "ground_att_per_min": 0.44083,
+     "td_att_per15": 3.911321,
+     "td_acc": 0.349059,
+     "ctrl_sec_per_round": 57.591698,
+     "kd_per100_standing_head": 0.328035,
+     "att_ratio_to_r1": 1.08694,
+     "landed_ratio_to_r1": 1.116574
     },
     {
      "round": 3,
@@ -6327,11 +6327,11 @@
      "td_acc": 0.337184,
      "ctrl_sec_per_round": 61.658302,
      "kd_per100_standing_head": 0.207485,
-     "att_ratio_to_r1": 1.139406,
-     "landed_ratio_to_r1": 1.162879
+     "att_ratio_to_r1": 1.138142,
+     "landed_ratio_to_r1": 1.162091
     }
    ],
-   "n_fights_went_distance": 2658
+   "n_fights_went_distance": 2650
   },
   "five_round_lw_fw": {
    "all_full_rounds": [
@@ -6533,26 +6533,26 @@
  },
  "form": {
   "sig_landed": {
-   "n_fighter_fights": 2680,
-   "n_fighters": 407,
-   "resid_sd_log": 0.448233,
-   "poisson_sd_log": 0.156557,
-   "within_fight_sd_log": 0.269914,
-   "implied_form_sd_log_vs_poisson": 0.420003,
-   "implied_form_sd_log": 0.357854,
-   "fighter_effect_sd_log": 0.349386,
-   "opponent_effect_sd_log": 0.37461
+   "n_fighter_fights": 2326,
+   "n_fighters": 343,
+   "resid_sd_log": 0.447824,
+   "poisson_sd_log": 0.154794,
+   "within_fight_sd_log": 0.265364,
+   "implied_form_sd_log_vs_poisson": 0.42022,
+   "implied_form_sd_log": 0.360733,
+   "fighter_effect_sd_log": 0.334756,
+   "opponent_effect_sd_log": 0.368343
   },
   "sig_attempted": {
-   "n_fighter_fights": 2680,
-   "n_fighters": 407,
-   "resid_sd_log": 0.415701,
-   "poisson_sd_log": 0.103271,
-   "within_fight_sd_log": 0.249573,
-   "implied_form_sd_log_vs_poisson": 0.402669,
-   "implied_form_sd_log": 0.332447,
-   "fighter_effect_sd_log": 0.3361,
-   "opponent_effect_sd_log": 0.351161
+   "n_fighter_fights": 2326,
+   "n_fighters": 343,
+   "resid_sd_log": 0.416106,
+   "poisson_sd_log": 0.101801,
+   "within_fight_sd_log": 0.245945,
+   "implied_form_sd_log_vs_poisson": 0.403461,
+   "implied_form_sd_log": 0.335642,
+   "fighter_effect_sd_log": 0.319513,
+   "opponent_effect_sd_log": 0.335619
   },
   "note": "full rounds only, fighter-fights with >= 2 full rounds; two-way fixed effects (fighter output, opponent allowance) on log mean per-round count; fighters and opponents with >= 4 such fights. resid_sd_log is the calibration target for between-fight spread; implied_form_sd removes the sampling noise implied by round-to-round variance inside the fight. It still holds style-matchup interaction, so it is an upper bound on pure night-to-night form."
  },
@@ -7312,10 +7312,10 @@
   ],
   "pace_att_ratio_5rd_went_distance": [
    1.0,
-   1.18138,
-   1.195252,
-   1.234298,
-   1.259071
+   1.178012,
+   1.191522,
+   1.233098,
+   1.257847
   ],
   "pace_att_ratio_3rd": [
    1.0,
@@ -7338,10 +7338,10 @@
    "title": 0.362669,
    "lw_fw_five_round": 0.243964
   },
-  "form_sd_log_sig_landed": 0.357854,
-  "form_sd_log_sig_attempted": 0.332447,
-  "between_fight_resid_sd_log_sig_landed": 0.448233,
-  "between_fight_resid_sd_log_sig_attempted": 0.415701,
+  "form_sd_log_sig_landed": 0.360733,
+  "form_sd_log_sig_attempted": 0.335642,
+  "between_fight_resid_sd_log_sig_landed": 0.447824,
+  "between_fight_resid_sd_log_sig_attempted": 0.416106,
   "sub_att_per_est_ground_minute": {
    "all": 0.165299,
    "lightweight": 0.163891,
@@ -7359,29 +7359,29 @@
    "lw_fw_five_round": 3.252033
   },
   "judging": {
-   "unanimous_share": 0.785765,
-   "split_share": 0.198654,
-   "majority_share": 0.015581,
-   "draw_share_of_decisions": 0.016371,
-   "implied_108_per_round": 0.046854,
-   "min_pairwise_round_disagreement": 0.131231,
+   "unanimous_share": 0.786718,
+   "split_share": 0.197822,
+   "majority_share": 0.01546,
+   "draw_share_of_decisions": 0.016246,
+   "implied_108_per_round": 0.046953,
+   "min_pairwise_round_disagreement": 0.131409,
    "round_logit_coef_em_target": {
-    "head_l": 0.179252,
-    "body_l": 0.132743,
-    "leg_l": 0.105071,
-    "kd": 2.420986,
-    "td_l": 0.286013,
-    "ctrl_min": 0.46036,
-    "sub": 0.847209
+    "head_l": 0.178865,
+    "body_l": 0.132633,
+    "leg_l": 0.104248,
+    "kd": 2.384599,
+    "td_l": 0.284443,
+    "ctrl_min": 0.460725,
+    "sub": 0.843627
    },
    "round_logit_coef_clean_target": {
-    "head_l": 0.411435,
-    "body_l": 0.309525,
-    "leg_l": 0.286524,
-    "kd": 2.811636,
-    "td_l": 0.651402,
-    "ctrl_min": 0.881651,
-    "sub": 1.342003
+    "head_l": 0.412094,
+    "body_l": 0.309971,
+    "leg_l": 0.285404,
+    "kd": 2.807682,
+    "td_l": 0.671023,
+    "ctrl_min": 0.875309,
+    "sub": 1.345847
    }
   }
  }

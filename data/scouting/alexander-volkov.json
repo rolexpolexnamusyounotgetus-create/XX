@@ -1,0 +1,92 @@
+{
+  "slug": "alexander-volkov",
+  "name": "Alexander Volkov",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Veteran heavyweight contender on a three-fight win streak: a split decision over Jailton Almeida (UFC 321, Oct 25, 2025), a unanimous decision over Waldo Cortes Acosta (UFC 328, May 9, 2026; 30-27, 29-28, 29-28) and a unanimous decision over Rizvan Kuniev (UFC 333, Oct 24, 2026; 29-28, 30-27, 30-27). The streak began after a split-decision loss to Ciryl Gane (UFC 310, Dec 7, 2024). UFC record 15-5 since his 2016 debut. No next fight was found, and his current ranking could not be verified this session.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/279566840aa55bf2",
+      "http://ufcstats.com/fight-details/8788a6dda6e64aff",
+      "http://ufcstats.com/fight-details/22ba4f1b0aafbf82",
+      "http://ufcstats.com/fight-details/b42a3386a7dccb3d",
+      "http://ufcstats.com/fight-details/f706508c52f337a6",
+      "https://www.ufc.com/athlete/alexander-volkov"
+    ]
+  },
+  "style": {
+    "archetype": "kickboxer",
+    "stance": "orthodox",
+    "tags": ["rangy", "range-control", "jab", "volume", "leg-kicks", "body-work", "knees", "clinch"],
+    "signature": [
+      "long jab and straight right behind a 6 ft 7 in frame",
+      "low kicks to the lead leg (43 of 44 leg strikes vs Cortes Acosta in May 2026, 32 of 42 vs Pavlovich, 56 of 62 vs Gane in 2021)",
+      "front kick to the body (finished Walt Harris at UFC 254, logged as a front kick to the body)",
+      "body shots at range (18 of 20 body strikes vs Gane in 2024, 25 of 33 vs Kuniev)",
+      "short punches in the clinch (finishes of Fabricio Werdum in round 4 and Stefan Struve are logged as punches in the clinch)",
+      "occasional finish on the mat: Ezekiel choke from mount vs Tai Tuivasa (UFC 293)"
+    ],
+    "weaknesses": [
+      "wrestlers can hold him down: Curtis Blaydes landed 14 of 25 takedowns with 19:52 of control (UFC Fight Night, Jun 2020, UD loss), and Jailton Almeida landed 7 of 9 with 647 s of control (Volkov still won a split decision)",
+      "submitted by Tom Aspinall (armbar, round 1, 2022) after two takedowns",
+      "knocked out by Derrick Lewis with 11 seconds left in a fight he was leading 121-39 in significant strikes (UFC 229, 2018)",
+      "modest power for his size: 0.52 knockdowns per 100 head strikes landed career, and 8 of his 15 UFC wins went to decision",
+      "lost both fights to Ciryl Gane (UD 2021, SD 2024)"
+    ],
+    "summary": "A 6 ft 7 in kickboxer who fights at long range with a high-volume jab, straight right, low kicks, body kicks and front kicks, and wins on output over three rounds. He is hard to hurt (one KO loss in 20 UFC fights) but can be taken down and held by strong wrestlers.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/279566840aa55bf2",
+      "http://ufcstats.com/fight-details/22ba4f1b0aafbf82",
+      "http://ufcstats.com/fight-details/cd3bb8a2824fbf22",
+      "http://ufcstats.com/fight-details/78afed76d0e9a639",
+      "http://ufcstats.com/fight-details/ccfe7b0d29c5440c",
+      "http://ufcstats.com/fight-details/e835e9a4564db497",
+      "http://ufcstats.com/fight-details/0c3622569cd8062a",
+      "http://ufcstats.com/fight-details/b42a3386a7dccb3d",
+      "http://ufcstats.com/fight-details/397ace87deeb8697",
+      "http://ufcstats.com/fight-details/06641a8c62e45661",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.32,
+    "cross": 0.3,
+    "hook": 0.12,
+    "overhand": 0.06,
+    "upper": 0.08,
+    "headkick": 0.12,
+    "bodykick": 0.45,
+    "bodyhook": 0.15,
+    "bodystraight": 0.4,
+    "calf": 0.6,
+    "inside": 0.4,
+    "spinning": 0.03,
+    "knee": 0.2,
+    "elbow": 0.1,
+    "notes": "Each group (head, body, leg) sums to 1. From the decayed sums in fighters.json his significant attempts go 65% head, 19% body, 17% legs (landed 49/26/25), and career attempts 71/16/13, so recent fights show more body and leg work. Body accuracy is 78% and leg accuracy 86% decayed, against 43% to the head. The head group leans on the jab and straight right (0.62 together), which are his range tools at 6 ft 7 in; the head kick (0.12) is a kickboxer's share. In the body group, bodystraight (0.40) stands in for his front kicks and straight punches to the body (the front kick finished Walt Harris), with roundhouse body kicks at 0.45. Leg kicks lean to the rear-leg outside/calf kick (43 of 44 vs Cortes Acosta). Knee 0.20 covers clinch knees and clinch work (8 of 10 clinch strikes vs Kuniev); no spinning finishes are on record. ufcstats does not record technique types, so the within-group splits are judgment. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw (snapshot 2026-10-31)."
+  },
+  "appearance": {
+    "build": "very tall and long (6 ft 7 in, 80 in reach, listed 250 lb per ufcstats); long-limbed rather than bulky",
+    "hair": "short brown hair",
+    "facial_hair": "varies; often stubble or a short beard",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/279566840aa55bf2",
+      "https://www.ufc.com/athlete/alexander-volkov"
+    ]
+  },
+  "engine_notes": [
+    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.05, 0.94, 0.91, 0.64 (minute-weighted, 7 five-round fights): steady through round 4, then a drop in round 5.", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "Takedown defense 65% decayed and 71% career (opponents 30 of 102). Opponents' control is high: about 166 s per 15 min decayed and 194 s career, mostly from Blaydes (19:52 in 2020) and Almeida (647 s in 2025).", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/0c3622569cd8062a; http://ufcstats.com/fight-details/b42a3386a7dccb3d" },
+    { "note": "Chin: 2 knockdowns absorbed and 1 KO/TKO loss (Lewis, 2018) in 20 UFC fights, 0.44 knockdowns absorbed per 100 head strikes taken career.", "source": "data/derived/fighters.json" },
+    { "note": "High volume: 10.2 significant attempts and 6.5 landed per minute decayed, and he absorbs 3.5 per minute. Power per strike is low (0.34 knockdowns per 100 head strikes landed decayed), so his wins come by decision more often than not.", "source": "data/derived/fighters.json" },
+    { "note": "91% of his significant attempts come at distance (decayed). He rarely takes opponents down himself: 0.40 takedowns per 15 min decayed.", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "medium"
+}

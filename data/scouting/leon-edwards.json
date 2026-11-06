@@ -1,0 +1,81 @@
+{
+  "slug": "leon-edwards",
+  "name": "Leon Edwards",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC welterweight champion. He won the title by head-kick KO of Kamaru Usman at UFC 278 (Aug 20, 2022), defended it against Usman (UFC 286, Mar 18, 2023) and Colby Covington (UFC 296, Dec 16, 2023), and lost it to Belal Muhammad at UFC 304 (Jul 27, 2024). He has lost three straight: Muhammad (UD), Sean Brady (guillotine R4, London, Mar 22, 2025) and Carlos Prates (KO R2 1:28, UFC 322, Nov 15, 2025). He has not fought since Nov 15, 2025, about 12 months, according to the ufcstats snapshot (through Oct 31, 2026). This pass had no web access, so no booking, ranking, injury or retirement news could be checked.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/f1fac969a1d70b08",
+      "http://ufcstats.com/fight-details/3c60884853766487",
+      "http://ufcstats.com/fight-details/371ed8497799998e",
+      "http://ufcstats.com/fight-details/ec5163539a133f17",
+      "http://ufcstats.com/fight-details/3fa8ee3fdc04fe36",
+      "http://ufcstats.com/event-details/4f853e98886283cf"
+    ]
+  },
+  "style": {
+    "archetype": "kickboxer",
+    "stance": "southpaw",
+    "tags": ["southpaw", "head-kicks", "body-work", "leg-kicks", "clinch", "counter", "range-control", "cardio"],
+    "signature": [
+      "left head kick from southpaw (KO of Kamaru Usman, R5 4:04, UFC 278; ufcstats 'Kick to Head At Distance')",
+      "strikes to the legs and body at range: 50/53 leg and 36/39 body strikes landed against Usman at UFC 286",
+      "clinch and body work: 12/12 clinch strikes and 11/12 body strikes landed against Brady in R1 (Mar 2025)",
+      "occasional takedowns: 2/3 with 3:00 of control against Prates in R1 (Nov 2025)",
+      "accurate, low-volume striking: 61.5% significant accuracy decayed vs 47.7% for the division"
+    ],
+    "weaknesses": [
+      "three straight losses (Muhammad UD, Brady SUB R4, Prates KO R2), and 12 months out of action at age 35",
+      "takedown defense down to 46.7% over the last 3 years (career 63.7%). He was controlled 348 s per 15 min over that span (division 167): 12:02 by Muhammad and 11:10 by Brady",
+      "low output: 3.2 significant attempts per minute over the last 3 years vs 8.4 for the division; out-landed in each of his last three fights",
+      "first UFC KO loss and second career knockdown absorbed came against Prates (Nov 2025)"
+    ],
+    "summary": "A southpaw kickboxer who works at range with straight punches and kicks to the legs, body and head, and is accurate rather than busy. His biggest wins came from kicks: the head-kick KO of Usman, and 86 leg and body strikes landed in their third fight (UFC 286). Since 2024, wrestlers have controlled him for long spells and his output has dropped. He has lost his last three and has not fought since November 2025.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/f1fac969a1d70b08",
+      "data/derived/fighters.json",
+      "tools/fighter_report.py (snapshot 2026-10-31)"
+    ]
+  },
+  "moves": {
+    "jab": 0.35,
+    "cross": 0.3,
+    "hook": 0.12,
+    "overhand": 0.05,
+    "upper": 0.08,
+    "headkick": 0.18,
+    "bodykick": 0.5,
+    "bodyhook": 0.08,
+    "bodystraight": 0.12,
+    "calf": 0.4,
+    "inside": 0.3,
+    "spinning": 0.03,
+    "knee": 0.2,
+    "elbow": 0.15,
+    "notes": "Target split from the fighters.json S sums: decayed significant attempts go 62.2% head, 19.7% body, 18.2% legs, and landed strikes 46.6% head, 26.1% body, 27.3% legs. Career attempts are 71.3/16.6/12.1. Body and legs are well above the welterweight attempt rates (13.9% and 9.3%), so body kicks (0.5) and low kicks (calf 0.4, inside 0.3) get the most weight. Distance body strikes are taken to be mostly kicks, since his biggest body totals came at distance (36/39 vs Usman at UFC 286). That is a judgment: ufcstats does not separate punches from kicks. Head kick is 0.18 because of the Usman KO. Clinch strikes are 13.0% of his decayed landed strikes (division 9.9%), so knees get 0.2 and elbows 0.15. The hand split (right jab vs left straight vs hook) is not in ufcstats and follows his southpaw jab-and-straight game as a judgment, not a count. Spinning 0.03 is a token: none of his finishes are spinning strikes. No outside scouting source could be fetched this pass."
+  },
+  "appearance": {
+    "build": "tall and long for welterweight; 6 ft 2 in with a 74 in reach (ufcstats)",
+    "hair": "short, close-cropped dark",
+    "facial_hair": "unknown",
+    "skin": "dark",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/f1fac969a1d70b08"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Five-round experience: 9 scheduled five-round fights. His output is flat across rounds (round 5 at 0.99x round 1 over 34 min of round-5 data), so he neither fades nor surges.", "source": "data/derived/fighters.json (pace 1, 1.10, 0.89, 0.97, 0.99; pace_w 45, 40.3, 40, 36.6, 34.1)" },
+    { "note": "Grappling has become the hole: decayed takedown defense 53.9% (division 64.1%) and 292 s controlled per 15 min (division 167). Usman also controlled him 10:36 at UFC 278 before the head-kick KO.", "source": "data/derived/fighters.json; tools/fighter_report.py per-fight table (UFC 278 control); http://ufcstats.com/fight-details/ec5163539a133f17" },
+    { "note": "Chin: 2 knockdowns absorbed in 20 UFC fights (Barberena 2017, Prates 2025) and 1 KO loss (Prates).", "source": "tools/fighter_report.py (snapshot 2026-10-31)" },
+    { "note": "Inactivity: last fight 2025-11-15, about 12 months before the as-of date. Status after that is unverified.", "source": "data/derived/fighters.json" },
+    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources.", "source": "research pass 2026-11-06" }
+  ],
+  "confidence": "medium"
+}

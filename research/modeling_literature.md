@@ -21,19 +21,19 @@ Written Friday, Nov 6, 2026.
 
 | What | Number | Source |
 |---|---|---|
-| Best achievable winner accuracy (closing line) | 66.5-68.6% favourite win rate; vig-free close log loss 0.606, Brier 0.210 | fightline-ml (4,636 fights, 2016-2026) [H]; UFCalendar (6,210 fights) [M]; my calc 6,916 fights: log loss 0.608, Brier 0.2105, favourite 66.6% [D] |
+| Best achievable winner accuracy (closing line) | 66.5-68.6% favourite win rate; vig-free close log loss 0.606, Brier 0.210 | fightline-ml (4,636 fights, 2016-2026) [M, self-reported README]; UFCalendar (6,210 fights) [L-M]; my calc 6,916 fights: log loss 0.608, Brier 0.2105, favourite 66.6% [D] |
 | Published Markov simulator | 61.8% vs bookmaker 61.2% on 327 fights from 2018 | Holmes et al. 2023 [H] |
 | Open-source Markov replication | 61.7%, log loss 0.656 (2024-26, 1,475 fights) | FightLab [M] |
 | Stats + age logistic (no market) | 63.8%, log loss 0.634 | FightLab [M] |
-| Elo alone | 55-56%, log loss 0.683-0.685 | FightLab, fightline-ml, PIGJET [M]; my K=48 Elo: 55.1%, 0.683 [D] |
+| Elo alone | 55-56%, log loss 0.680-0.685 | FightLab (0.680), fightline-ml (0.6849), PIGJET (0.6846) [M]; my K=48 Elo: 55.1%, 0.683 [D] |
 | Market bias | mild favourite-longshot bias after proportional de-vig: recalibration slope 1.08 [1.01, 1.16] | my calc [D]; fightline-ml reports 1.02-1.11 [M] |
 | KD per 100 landed significant head strikes | 0.83 overall (2015+); men 0.84-1.22 by division (0.94 pooled); women 0.27-0.55 | [D] |
-| KD to finish | 58% of rounds with a one-sided KD end in a KO/TKO by the KD scorer in that round; 71% of KO/TKO wins include a KD by the winner in the finishing round | [D] |
+| KD to finish | 58% of rounds with a one-sided KD end in a KO/TKO by the KD scorer in that round; 71% of KO/TKO wins include a KD by the winner in the finishing round. ufcstats logs the finishing knockdown itself as a KD, so the KD rate above is a "KD-or-KO" rate (as in Holmes) | [D] |
 | Judges, per round (logit per unit of difference) | head 0.176, body 0.135, leg 0.106, KD 2.11, TD 0.336, control-minute 0.443, sub attempt 0.658, reversal 0.305, missed strike −0.004 | my round-level fit from judges' totals, 11,037 cards [D] |
-| Judges agree beyond the box score | all three cards give the same round count in 52% of 3-round decisions, vs 31% if judges were independent given the stats; shared round-noise sd ≈ 2.5 logits | [D] |
+| Judges agree beyond the box score | all three cards give the same round count in 52% of 3-round decisions, vs 34% if judges were independent given the stats (simulation conditioned on the official winner; 31% unconditioned); shared round-noise sd ≈ 2.2 logits (2.0-2.5) | [D] |
 | 10-8 rate per judge-round | 6.8% (2019) to 2.0% (2025) | [D]; UFCalendar 6.39% / 2.09% [M] |
 | Age | beyond Elo: −0.062 logits per year of age gap, plus −0.040 per year past 34; win minus Elo expectation is −7 points at 34-38 and −16 at 38+ | [D] |
-| Chin and power with age (within-fighter) | KD absorbed per head strike ×1.21 at 34-36 and ×1.35 at 37+ vs the same fighters at ≤33; KD scored ×0.79 and ×0.67 | [D], regression-to-the-mean caveat |
+| Chin and power with age (within-fighter) | KD absorbed per head strike ×1.21 at ages over 33 up to 36 and ×1.35 over 36, vs the same fighters at 33 or younger; KD scored ×0.79 and ×0.67 | [D], regression-to-the-mean caveat |
 | Moving up one division | win minus Elo expectation −0.5 points (n=478); no extra KO susceptibility | [D] |
 | Time decay | best test log loss at a 2-3 year half-life (flat from 1.5 to 4) | [D] |
 | Shrinkage for per-minute rates | best at 10-30 pseudo-minutes of division-average fighting | [D]; FightLab uses 40 minutes and 400 landed strikes for KO rates [M] |
@@ -57,7 +57,8 @@ body and leg are pooled as "body". Control time is split into ground and clinch 
 ground techniques (ground strikes, submission attempts, positional advances) versus clinch techniques.
 
 **Skill models.** 13 Bayesian GLMs fitted with `bayesglm` (R package arm): weakly informative Cauchy
-priors (scale 10 for the intercept, 2.5 for coefficients), approximate posterior modes by EM. Each
+priors (scale 10 for the intercept, 2.5 for binary predictors, 2.5/(2·sd) for numeric predictors),
+approximate posterior modes by EM. Each
 skill has an intercept, an attack effect for fighter i, a defence effect for opponent j, and a
 weight-class term (the weight limit in pounds). Exposure enters as an offset:
 
@@ -122,6 +123,10 @@ https://www.sciencedirect.com/science/article/pii/S0377221723005428 (abstract an
   positive. Judges also show reputation bias (they favour fighters ranked higher). Fans are less biased
   than judges. [M] (via search summaries of the paper)
 - Coefficient tables: unknown (paywalled; not read).
+- Fact-check: FightLab's README links a Liverpool-repository copy of this paper
+  (https://livrepository.liverpool.ac.uk/id/eprint/3171986), which supports its existence. The
+  bullets above come from search summaries and were not re-verified (RePEc, ScienceDirect and the
+  Liverpool repository were unreachable, and the search budget was exhausted).
 
 Holmes's Liverpool PhD thesis, "Quantitative Essays on Mixed Martial Arts: A Markov Chain Based
 Forecasting Model and Analyses of the Judges" (May 2022), holds both papers
@@ -136,7 +141,9 @@ Forecasting Model and Analyses of the Judges" (May 2022), holds both papers
     stand-ups and reversals.
   - Rates combine as `league × (A offence / league) × (B allowed / league)`. They are
     recency-weighted (2-year half-life) and shrunk with pseudo-exposure: `k_min = 40` minutes,
-    `k_ko = 400` landed strikes, `k_sub = 4` attempts.
+    `k_ko = 400` landed strikes, `k_sub = 4` attempts. (40 and 400 are the settings in the README
+    and PROJECT_BREAKDOWN, chosen on 2021-23 validation; the `Params` defaults in `markov.py` are
+    15 and 150.)
   - Four league multipliers (stand-up, clinch, KO, sub) are fixed-point calibrated to league ground
     share, clinch share, KO rate and submission rate.
   - Test 2024-26 (1,475 fights): **61.7%, log loss 0.656, AUC 0.659**. A logistic on the same rates
@@ -226,8 +233,9 @@ count at all [M].
   head strike. Body strikes can't knock out [H].
 - **FightLab.** Separate per-landed-strike knockdown and KO probabilities, each shrunk with 400
   pseudo-strikes; a league KO multiplier is calibrated to the observed KO rate [M].
-- **Hutchison et al. (2014)**, American Journal of Sports Medicine 42(6), 844 numbered UFC events
-  2006-2012 (https://journals.sagepub.com/doi/10.1177/0363546514526151) [M]:
+- **Hutchison et al. (2014)**, American Journal of Sports Medicine 42(6): 844 fights (matches) at
+  numbered UFC events, 2006-2012 (https://journals.sagepub.com/doi/10.1177/0363546514526151) [M;
+  details below not re-verified in the fact-check, host blocked]:
   - KOs were about 13% of matches (108) and TKOs about 21% (179).
   - Every KO came from a direct head impact; the mandible was the most common site (53.9%).
   - Video work covered the 30 seconds before stoppages.
@@ -265,6 +273,13 @@ per head strike matches lightweight.
 - **70.9%** of KO/TKO finishes (n=1,907) had at least one KD by the winner in the finishing round. The
   other 29% are standing TKOs or stoppages without a recorded knockdown, so the engine needs a
   "hurt + accumulated damage" stoppage path as well as the knockdown path.
+- **What ufcstats counts as a KD.** The knockdown that ends a fight is itself logged as a KD. In 13
+  of 15 one-shot finishes since 2015 (≤20 s into the round, ≤3 significant strikes landed by the
+  winner) the winner has KD = 1; the two without are injury stoppages. Holloway's KO of Gaethje (UFC
+  300, R5) and Topuria's KO of Volkanovski (UFC 298, R2) both show KD = 1 [D]. So the KD rates in this
+  section are "KD-or-KO" rates, as Holmes pooled them. The engine should draw one KD event per landed
+  head strike at this rate and decide the finish afterwards. A separate per-strike KO path added on
+  top would double count.
 
 **Does damage build up within a fight?** Per-strike KD rates by round, for the same pairs:
 
@@ -275,7 +290,13 @@ per head strike matches lightweight.
 
 - Per landed head strike, knockdowns get rarer late in fights, not more common. Head strikes landed
   per round rise (17.0 → 26.9 in that 5-round sample).
-- Selection (pairs with durable chins reach R5) can't explain a within-sample decline.
+- Within each sample, every round except the last is a round that did not end the fight, while the
+  last round also includes finishing knockdowns. That inflates the last round (3-round sample: R3
+  0.42 > R2 0.31; R5 0.31 > R4 0.21). The clean comparison is between the earlier rounds (R1-R4 in
+  the R5 sample: 0.44, 0.41, 0.32, 0.21), and it still declines. Cross-fight selection (pairs with
+  durable chins reach R5) can't produce that, because it is the same fights in every round.
+- The counts are small: about 24, 30, 24, 17 and 27 knockdowns in R1-R5 of the R5 sample, so each
+  round's rate carries about ±20% Poisson error. Treat the decline as suggestive.
 - So attacker fatigue, and later volume being lower-power work, outweigh accumulated defender damage
   at league level.
 - Engine implication: if v3 adds a damage term that raises the defender's KD risk, it also needs an
@@ -301,11 +322,12 @@ worse), and the same for KDs scored ("power index"). Pooled, 2010+:
 | Power index (KD scored obs/exp) | 1.12 | 1.06 | 0.99 | 0.93 | 0.91 | 0.82 | 0.68 |
 | KO/TKO loss rate per fight | 11.3% | 13.5% | 16.6% | 18.4% | 21.1% | 24.6% | 24.6% |
 
-**Within-fighter** (the same fighters at ≤33 vs later, at least 3 fights at ≤33):
-- 34-36 (471 fighters): chin ×**1.21**, power ×**0.79**.
-- 37+ (198 fighters): chin ×**1.35**, power ×**0.67**.
-- Caveat: fighters who last to 37 had good early chin luck (0.75 at ≤33), so some of this is
-  regression to the mean. Treat ×1.2-1.35 as an upper-middle estimate.
+**Within-fighter** (the same fighters at age 33.0 or younger vs later, at least 3 fights at that age;
+ages are exact, so the script's bins are (0, 33], (33, 36] and over 36):
+- Over 33 up to 36 (471 fighters): chin ×**1.21**, power ×**0.79**.
+- Over 36 (198 fighters): chin ×**1.35**, power ×**0.67**.
+- Caveat: fighters who last past 36 had good early chin luck (0.75 at 33 or younger), so some of this
+  is regression to the mean. Treat ×1.2-1.35 as an upper-middle estimate.
 - The pooled ratio between ages 27-30 and 35-37 is also about ×1.23.
 
 **Prior UFC KO/TKO losses:**
@@ -367,7 +389,7 @@ Cap any extra term at about ×1.1-1.15.
 | Result minus Elo expectation turns negative at about 31, is clearly negative from 34 and about twice as bad from 38. A 35-year-old's rating runs about 5 points per fight too high, a 40-year-old's about 12. A fighter 8+ years older wins about a third of the time | FightLab `docs/PROJECT_BREAKDOWN.md` (raw.githubusercontent.com/martineza96/FightLab) | M |
 | Bookmakers don't fully price youth (or travel) advantages, but out-of-sample returns are rarely significant | Miller & Nichols (2026), Journal of Economics and Finance 50(1), https://link.springer.com/article/10.1007/s12197-026-09757-x | M (abstract) |
 | Lighter-division fighters end their elite windows 4-5 years before heavyweights | https://www.fightmatrix.com/2026/10/22/the-age-curve-in-combat-sports-statistical-breakdown-of-apex-performance-windows-across-ufc-divisions/ | L (no visible method) |
-| Men below welterweight aged 35+ are winless in UFC title fights | https://www.si.com/fannation/mma/news/alex-volkanovski-curse-ufc-314 | L (tiny sample) |
+| ~~Men below welterweight aged 35+ are winless in UFC title fights~~ Out of date: it could only have held before UFC 314 (Apr 12, 2025). Since then, men aged 35+ have won six title fights below welterweight: Volkanovski at UFC 314 (36), UFC 325 (37) and UFC 333 (38); Pantoja at UFC 317 (35); Gaethje at UFC 324 (interim, 37) and UFC Freedom 250 (37) | https://www.si.com/fannation/mma/news/alex-volkanovski-curse-ufc-314 (original claim); refuted from data/raw title bouts and DOBs [D] | H (refutation) |
 | Peak ages by weight class from a rigorous study | not found | unknown |
 
 **From the data** (2010+, both fighters with DOB, `age_weight.py`) [D]:
@@ -387,11 +409,14 @@ Cap any extra term at about ×1.1-1.15.
 
 - **Logit** (6,576 fights), win ~ Elo + age gap + years past 34: Elo term 1.12 (se 0.09); **−0.062**
   per year of age gap (se 0.007); **−0.040** per extra year past 34 (se 0.018).
-- **Time-decayed stats** (h = 2 y): adding the age difference to a rate-difference logistic cuts test
-  log loss from 0.6648 to 0.6523, and accuracy rises 60.4% → 61.4% (`halflife.py`).
-- **For Volkanovski vs Gaethje:** the two are about half a year apart, so the age-gap term is near
-  zero. But both are past 37, so the chin and power aging terms in 3.3 apply to both of them, which
-  raises the KO-loss rate for each.
+- **Time-decayed stats** (h = 2 y, k = 60): on the same 2,227 test fights (both DOBs known), adding
+  the age difference to a rate-difference logistic cuts test log loss from 0.6656 to 0.6523 (paired
+  difference −0.0133, se 0.0031). Accuracy rises from 60.3% to 61.4%. (`halflife.py` prints 0.6648
+  for the no-age model, but on 2,271 fights. The like-for-like figure is from a fact-check rerun.)
+- **For Volkanovski vs Gaethje:** ufcstats gives DOBs of Sep 29, 1988 (Volkanovski) and Nov 14, 1988
+  (Gaethje). That is about six weeks apart, so the age-gap term is near zero. But both are past 37,
+  so the chin and power aging terms in 3.3 apply to both of them, which raises the KO-loss rate for
+  each.
 
 ---
 
@@ -416,6 +441,12 @@ Cap any extra term at about ×1.1-1.15.
   | Same | 8,776 | 0.504 | 0.505 | −0.001 | 17.8% | 1.015 |
   | Up one | 478 | 0.506 | 0.511 | −0.005 | 15.5% | 0.850 |
 
+  - Sampling error: the binomial se of a win rate is about 2.3 points for n=478 and 2.5 for n=387.
+    So "up one" is −0.5 points (95% CI about −5 to +4), and "down" is −4.2 (about −9 to +1), which
+    is not significant at 5%.
+  - The chin index is relative to the division fought in. In absolute terms (KD per head strike
+    absorbed) a mover's risk still rises when the new division's base rate is higher, e.g. LW 0.84 →
+    WW 1.02 per 100. From FW (0.88) to LW (0.84) the base rate doesn't rise.
   - Within movers up, home vs up: chin index 0.864 vs 0.850; KO-loss rate 14.4% vs 15.5%.
   - Movers up aged 34+: win − Elo expectation −0.089 (n=155), about the same as the age effect alone
     (−0.07 at 34-38).
@@ -438,8 +469,8 @@ Cap any extra term at about ×1.1-1.15.
 |---|---|---|---|
 | Elo, K=64, finishes ×1.25 | 56.0% alone, log loss 0.680 (2024-26); adds nothing on top of stats | FightLab | M |
 | Elo | log loss 0.6849, Brier 0.246, 55.4% (2016-26, 4,636 fights) | fightline-ml (raw.githubusercontent.com/AnthonyOlakangil/fightline-ml) | M |
-| Vanilla Elo / Glicko-2 per division + matchup features | 55.8%, 0.6846 / 60.3%, 0.6588 (6,616 fights 2013+, walk-forward) | PIGJET/ufc-elo | M |
-| Glicko-2 + XGBoost, Platt-calibrated | 61.5% vs 57.9% baseline (test after Oct 2018) | XEchosen/ufc-fight-prediction | M |
+| Vanilla Elo / Glicko-2 per division + matchup features | 55.8%, 0.6846 / corner-aware model 60.3%, 0.6588; order-invariant website predictor 60.1%, 0.6637 (6,616 fights 2013+, walk-forward) | PIGJET/ufc-elo README | M |
+| Glicko-2 + XGBoost | 61.5% raw vs 57.9% red-corner baseline (1,175 test fights after Oct 2018); Platt scaling improves log loss 0.678 → 0.662 but drops accuracy to 59.3% | XEchosen/ufc-fight-prediction README | M |
 | Bayesian Bradley-Terry | 54.1% (2018) | Holmes 2023 | H |
 | My Elo K=48 | 55.1%, log loss 0.683, Brier 0.245 (2015+, ≥3 prior fights, n=4,261) | [D] | H |
 | UFCalendar Elo; Power Index | 60.1%, Brier 0.270 (17,582 MMA fights); 63%, Brier 0.232 (26,259) | https://www.ufcalendar.com/elo/accuracy, /power-index/accuracy | L (self-reported, all promotions, snapshots differ) |
@@ -450,9 +481,11 @@ Cap any extra term at about ×1.1-1.15.
 **Takeaways.**
 - In the UFC, ratings alone reach 55-60%. Stats-based models reach 60-64%. The closing line gets
   66-69% (section 8), and nothing public beats it.
-- About 70% looks like the practical ceiling. Claims of 72-85% (e.g. WarrierRajeev 72% "valid",
-  igordobronx "~85%") look like the leakage FightLab measured: 82-88% with leaky features vs 64%
-  honestly [M]. Those two repos were not audited here.
+- About 70% looks like the practical ceiling. Claims above that (e.g. WarrierRajeev's 72.2%
+  "Accuracy (valid)" in its README) look like the leakage FightLab measured: 82-88% with leaky
+  features vs 64% honestly [M]. The repo was not audited here. (An earlier draft also cited an
+  igordobronx repo at "~85%". Its README couldn't be found in the fact-check, so that figure was
+  removed.)
 - Use Elo as a baseline and a sanity prior, not as the engine.
 
 ---
@@ -466,7 +499,7 @@ Cap any extra term at about ×1.1-1.15.
     recalibrating itself: model weight 0.04-0.08 vs market 1.00-1.10.
   - Proportional de-vig leaves a favourite-longshot bias that a recalibration slope of 1.02-1.11
     undoes.
-  - The close beats the open by 0.012 nats.
+  - The close beats the open by 0.012 nats (measured on 1,975 development-window fights, 2010-2015).
   - The closing favourite won 66.5% of 6,790 priced decisive fights.
 - **My calculation** [D] (`market.py`, on ufc-master.csv from github.com/shortlikeafox/ultimate_ufc_dataset,
   Apache-2.0; closing odds 2010-03-21 to 2026-03-28; 6,916 decisive fights):
@@ -528,7 +561,11 @@ Cap any extra term at about ×1.1-1.15.
 - **Gift (2018)**, Journal of Sports Economics 19(8): live round-by-round judging in Nevada and
   California, 2001-2012. No titleholder bias and none against fighters given point deductions. Bias
   toward larger betting favourites, fighters with insurmountable leads, and the **previous-round
-  winner** (https://journals.sagepub.com/doi/abs/10.1177/1527002517702422) [M].
+  winner** (https://journals.sagepub.com/doi/abs/10.1177/1527002517702422) [M]. Fact-check: the
+  paper's existence, title, journal (vol. 19) and DOI are confirmed by Holmes et al. (2023)'s
+  reference list. Holmes et al. also say Gift's round models use titleholder status, betting odds and
+  previous-round winner as non-performance variables. The direction of each finding, the sample and
+  the issue/pages were not re-verified (host blocked).
 - **Feldman (2020)**, Journal of Applied Sport Management 12(2): takedowns landed, knockdowns, sig.
   strikes landed, damage and control raise round-win odds. Secondary summaries say submission attempts
   were not significant (https://trace.tennessee.edu/jasm/vol12/iss2/5) [M].
@@ -576,16 +613,25 @@ Cap any extra term at about ×1.1-1.15.
 - **Drift.** Knockdowns gain weight and takedowns lose it across eras, as the 2017 and 2025 guidance
   on damage would predict.
 - **10-8 per judge-round**, from the totals: 1.9-3.9% in 2010-16, 6.6% (2017), 6.8% (2019), then
-  2.5% (2024), 2.0% (2025), 3.2% (2026 to date). This matches UFCalendar's 2019 and 2025 figures.
+  2.5% (2024), 2.0% (2025), 3.2% (2026 to date). This is close to UFCalendar's reported 6.39% (2019)
+  and 2.09% (2025); the UFCalendar page wasn't re-checked in the fact-check.
+  - Caveat: inferring 10-8s from totals counts any point deduction as a 10-8 (or misreads it), and
+    ufcstats DETAILS mention deductions in only 6 decisions since 2015. So these rates are slight
+    upper bounds.
 - **Split share of decisions:** 15-26% in 2010-2024, 13.7% in 2025, 13.4% in 2026. Majority
-  decisions 1-4%.
+  decisions 0.7-4%.
 - **Shared noise** (`judge_noise.py`):
   - In 3,341 three-round decisions with three unambiguous cards, all three judges gave the same round
     count **52.2%** of the time.
-  - Independent judges, given the box score, would agree 30.5% of the time.
+  - Independent judges, given the box score, would agree 30.5% of the time (`judge_noise.py`).
+    That simulation doesn't condition on the official winner winning, though the observed sample does
+    (the fights are oriented winner-minus-loser). Conditioned like-for-like in a fact-check rerun,
+    independent judges agree **33.7%** of the time. The simulated share of rounds to the winner,
+    0.781, then matches the observed 0.786 (unconditioned it was 0.701).
   - A shared round-level noise term u ~ N(0, σ_u²), with β scaled to keep the marginal fit, matches
-    the observed agreement at **σ_u ≈ 2.5** (β ×1.78). That puts the inter-judge correlation in round
-    "impression" at about 0.65.
+    the observed agreement at **σ_u ≈ 2.2** (β ×1.66) when conditioned (σ_u 2.0 → 49.7%, 2.5 →
+    54.7%), or at 2.5 (β ×1.78) unconditioned. That puts the inter-judge correlation in round
+    "impression" at about 0.6.
   - Judges see a lot the box score doesn't (damage, near-finishes, effective aggression) and they see
     it together. In the engine, part of σ_u can be replaced by engine-only events (hurt/wobble,
     accumulated damage); calibrate the rest.
@@ -619,11 +665,11 @@ the numbers, don't vendor the code.
 | martineza96/FightLab | Same ufcstats source; logistic predictor + Holmes-style Markov simulator (Python, vectorized; 10k five-rounders in about 0.6 s) | Markov 61.7% / 0.656; predictor 63.8% / 0.634; 7-outcome log loss 1.615-1.599 vs 1.726 base rate | Position-time accounting from control and technique shares; offence × allowed odds ratio; pseudo-exposure shrinkage (40 min, 400 strikes, 4 sub attempts); 2-year half-life; fixed-point calibration of league multipliers; symmetric no-intercept judge model; frozen card reviews |
 | AnthonyOlakangil/fightline-ml | Walk-forward model vs vig-free close, leak tests, event-level bootstrap | Market 0.6063 vs model 0.6796 log loss; Elo 0.6849 | Evaluation protocol (point-in-time joins, leakage tests, bootstrap by event, pre-registration); verified closing-odds join; de-vig caveat |
 | shortlikeafox/ultimate_ufc_dataset | Closing moneylines plus method odds, 2010-03 to 2026-03 (Apache-2.0) | — | Market benchmark for the v3 backtest (whitelist name, date and odds columns only) |
-| PIGJET/ufc-elo | Glicko-2 per division, layoff RD inflation, cross-division offsets, order-invariant predictor | 60.3% / 0.6588 walk-forward 2013+ | Rating baseline design; symmetric predictor |
-| XEchosen/ufc-fight-prediction | Hand-written Glicko-2 with layoff and division-change RD, leakage-safe lagged features, Platt scaling | 61.5% vs 57.9% | RD inflation on division change |
+| PIGJET/ufc-elo | Glicko-2 per division, layoff RD inflation, cross-division offsets, order-invariant predictor | Corner-aware 60.3% / 0.6588; order-invariant 60.1% / 0.6637 (walk-forward 2013+) | Rating baseline design; symmetric predictor |
+| XEchosen/ufc-fight-prediction | Hand-written Glicko-2 (R) with layoff and division-change RD, XGBoost on lagged features, Platt scaling | 61.5% raw (59.3% after Platt) vs 57.9% red-corner baseline | RD inflation on division change |
 | Greco1899/scrape_ufc_stats | Scraper behind data/raw (GPL-3.0) | — | Refresh path (ufcstats now blocks plain scrapers, per fightline-ml) |
 | cflores124/UFC312_FightOutcome_Simulation_2025 | Poisson/binomial Monte Carlo for one card | — | Little |
-| WarrierRajeev/UFC-Predictions, igordobronx/fight_predictor_plataform | ML predictors | 72% "valid" / "~85% backtested" | Cautionary: almost certainly leakage or random splits |
+| WarrierRajeev/UFC-Predictions | ML predictor | 72.2% "Accuracy (valid)" | Cautionary: likely leakage or a random split (not audited) |
 
 ---
 
@@ -700,7 +746,8 @@ Pace: pace_d(r) = league round multipliers (§4); ρ_X(r) = fighter's late-round
      decay-weighted mean age of his evidence. The decayed stats already contain most of the decline.
    - Δage = age_fight − ā_evidence.
    - Starting coefficients (fit in calibration): chin `exp(0.04-0.05 per year past 30)`, power
-     `exp(−0.05 per year past 30)`. These reproduce ×1.2-1.35 and ×0.67-0.79 at 34-37+ (§3.3).
+     `exp(−0.05 per year past 30)`. These roughly reproduce ×1.2-1.35 and ×0.67-0.79 at ages over 33
+     and over 36 (§3.3).
    - Output and cardio aging: unknown from this research. Leave them neutral, then check the backtest
      residual against age gap; it should come out flat (raw data: −0.062 logits per year beyond Elo).
 6. **Prior KO losses.** Feed them into the chin posterior as evidence (as extra KD-absorbed events)
@@ -749,7 +796,7 @@ Pace: pace_d(r) = league round multipliers (§4); ρ_X(r) = fighter's late-round
     (§9).
   - In-fight counts: landed per minute, takedowns, control, KD per 100 head strikes (§2, §3.2).
   - Per-fight landed-strike error.
-- **Benchmarks on the same fights.** Elo (log loss about 0.683-0.685), the stats logistic
+- **Benchmarks on the same fights.** Elo (log loss about 0.680-0.685), the stats logistic
   (0.634-0.664), the de-vigged closing line (0.606-0.608, with a recalibration slope of about 1.08),
   and a log-odds blend of engine and market fitted walk-forward.
 - **Uncertainty on differences.** Paired per-fight log-loss differences with a bootstrap over events
@@ -778,6 +825,9 @@ stand-up and clinch-exit hazards; age chin and power coefficients; form sds; σ_
   knowledge, not re-checked this session (search budget exhausted).
 - No public data covers time in position, knockdown follow-up sequences, or "hurt" states, so these
   engine parts can only be calibrated to aggregates.
+- The adversarial fact-check (verification log below) could not reach the peer-reviewed hosts either.
+  Holmes 2023 and the GitHub projects were checked at source. The other papers' findings stand as
+  originally sourced, with the flags given.
 
 ## 14. Reproducing the [D] numbers
 
@@ -802,14 +852,14 @@ python3 -I research/analysis/market.py PATH/TO/ufc-master.csv   # closing-line c
 1. Holmes, B., McHale, I. G., Żychaluk, K. (2023). A Markov chain model for forecasting results of mixed martial arts contests. International Journal of Forecasting 39(2), 623-640. https://doi.org/10.1016/j.ijforecast.2022.01.007 (full text: https://prod-dcd-datasets-public-files-eu-west-1.s3.eu-west-1.amazonaws.com/05bdcbd7-50e1-4f75-95e5-693192fd2708; index: https://ideas.repec.org/a/eee/intfor/v39y2023i2p623-640.html)
 2. Holmes, B., McHale, I. G., Żychaluk, K. (2024). Detecting individual preferences and erroneous verdicts in mixed martial arts judging using Bayesian hierarchical models. European Journal of Operational Research 312(2), 733-745. https://doi.org/10.1016/j.ejor.2023.07.004 ; https://ideas.repec.org/a/eee/ejores/v312y2024i2p733-745.html
 3. Holmes, B. (2022). Quantitative Essays on Mixed Martial Arts (PhD thesis, University of Liverpool). https://livrepository.liverpool.ac.uk/id/eprint/3166169
-4. Gift, P. (2018). Performance Evaluation and Favoritism. Journal of Sports Economics 19(8), 1147-1173. https://journals.sagepub.com/doi/abs/10.1177/1527002517702422
+4. Gift, P. (2018; online 2017). Performance evaluation and favoritism: Evidence from mixed martial arts. Journal of Sports Economics 19 (issue 8 and pages 1147-1173 not re-verified). https://journals.sagepub.com/doi/abs/10.1177/1527002517702422 (title, journal, volume and DOI as cited in Holmes et al. 2023)
 5. Feldman, T. (2020). The Way of the Fight: An Analysis of MMA Judging. Journal of Applied Sport Management 12(2). https://trace.tennessee.edu/jasm/vol12/iss2/5
 6. Berthet, V. (2024). Improving MMA judging with consensus scoring: A statistical analysis of MMA bouts from 2003 to 2023. arXiv:2401.03280. https://arxiv.org/abs/2401.03280v1
 7. Berthet, V. (2023). FightTracker: Real-time predictive analytics for Mixed Martial Arts bouts. arXiv:2312.11067. https://arxiv.org/abs/2312.11067v1
 8. Miller, K. M., Nichols, M. W. (2026). Efficient market insights and favorite-longshot bias in mixed martial arts betting markets. Journal of Economics and Finance 50(1). https://link.springer.com/article/10.1007/s12197-026-09757-x
 9. Robbins, T. Weak Form Efficiency in Sports Betting Markets (working paper, East Carolina University). https://myweb.ecu.edu/robbinst/PDFs/Weak%20Form%20Efficiency%20in%20Sports%20Betting%20Markets.pdf
 10. Stanhope, S. (2021). UCSAS poster on UFC odds calibration. https://statds.org/events/ucsas2021/posters/ucsas2021_15_Stephen_Stanhope.pdf
-11. Hutchison, M. G., et al. (2014). Video and competition-data analysis of all KOs and TKOs at numbered UFC events, 2006-2012. American Journal of Sports Medicine 42(6) (exact title not re-checked). https://journals.sagepub.com/doi/10.1177/0363546514526151
+11. Hutchison, M. G., et al. (2014). American Journal of Sports Medicine 42(6); a video and competition-data analysis of KOs and TKOs in 844 fights at numbered UFC events, 2006-2012. Exact title not verified (recalled as "Head trauma in mixed martial arts"; host blocked in the fact-check). https://journals.sagepub.com/doi/10.1177/0363546514526151
 12. Predictors of two consecutive knockout losses in Ultimate Fighting Championship athletes (2026). The Physician and Sportsmedicine 54(3). https://pubmed.ncbi.nlm.nih.gov/41674479/
 13. Incidence of concussions in male mixed martial arts competition in relation to number of matches and previous knockout losses (journal details not verified). https://www.researchgate.net/publication/362236679
 14. Lamas, L., et al. (2024). No-gi Brazilian jiu-jitsu: A Markovian analysis of elite-level combat dynamics. Int. J. Sports Science & Coaching. https://journals.sagepub.com/doi/10.1177/17479541231210979
@@ -837,3 +887,72 @@ python3 -I research/analysis/market.py PATH/TO/ufc-master.csv   # closing-line c
 30. XEchosen/ufc-fight-prediction. https://github.com/XEchosen/ufc-fight-prediction
 31. Greco1899/scrape_ufc_stats (source of data/raw). https://github.com/Greco1899/scrape_ufc_stats
 32. WarrierRajeev/UFC-Predictions. https://github.com/WarrierRajeev/UFC-Predictions
+
+---
+
+## Verification log
+
+Adversarial fact-check, Friday, Nov 6, 2026. I tried to refute each claim, not to confirm it.
+
+**What could be checked.**
+- The Holmes et al. (2023) PDF was re-downloaded from the Mendeley bucket and its text extracted.
+- The GitHub READMEs and code were read at raw.githubusercontent.com: FightLab (README,
+  PROJECT_BREAKDOWN, `markov.py`), fightline-ml, PIGJET, XEchosen, WarrierRajeev, cflores124,
+  ultimate_ufc_dataset and the Greco1899 LICENSE.
+- Every `research/analysis/*.py` script was re-run on `data/raw`. `market.py` was re-run on a fresh
+  copy of `ufc-master.csv`.
+- The scripts were read for logic errors. Extra checks went to throwaway scripts in the session
+  scratchpad, not the repo.
+- Blocked: the shared web-search budget was exhausted before this check started. Crossref, PubMed,
+  arXiv, RePEc and the other publisher hosts don't resolve from this session. Peer-reviewed
+  findings other than Holmes 2023 could only be checked against what Holmes 2023 and the GitHub
+  sources say about them.
+
+**Key claims.**
+
+| # | Claim | Verdict | Note |
+|---|---|---|---|
+| 1 | Holmes 2023: 61.77% vs bookmaker 61.16%, BT 54.13%, logistic 47.71%; adj_ko 0.4, adj_sm 2; judging logit 0.172 / 0.838 / 0.547; ROI 10.2% and 26.5% | Confirmed | All match Tables 2, 6, 7 and 8 and §7 of the PDF: 327 test fights, 9,377 judged rounds, overrounds 4.25% / 23.38%, method accuracy 38.84 vs 32.72, bootstrap 61.62 (sd 0.53), endings 162/107/57 actual vs 167/103/57 predicted. Minor fix: the Cauchy prior scale is 2.5 for binary and 2.5/(2·sd) for numeric predictors. The PDF is the article-in-press version, so the volume and pages come from the DOI and index. |
+| 2 | fightline-ml: close 0.6063 / 0.2096 / 66.7% on 4,636 fights; LightGBM 0.6796; Elo 0.6849; stacking ≈ 0 | Confirmed | README eval table and stacking control (−0.0009 nats, attributed to the market's own recalibration). The summary table had rated this [H]; now [M], since the numbers are self-reported. "Close beats open by 0.012" now notes it was measured on 1,975 fights from 2010-2015. |
+| 3 | 6,916 fights: log loss 0.608, Brier 0.2105, fav 66.6%, slope 1.084 [1.011, 1.157]; 75-80% bucket 83.1% | Confirmed | Re-ran exactly. fightline-ml independently verified these as closing lines (3,812 jointly covered fights). The Robbins 6,190-fight claim is still unverified. |
+| 4 | KD per 100 head strikes: 0.83 all, 0.94 men, LW 0.84, FW 0.88, LHW 1.22, women 0.27-0.55 | Confirmed | Re-ran; men pooled = 2,399 / 254,443 = 0.943. |
+| 5 | 58.1% / 85.9% / 70.9% | Confirmed | Re-ran (n = 2,306 rounds; 1,907 KO/TKO). Added a caveat: ufcstats logs the finishing knockdown as a KD (13 of 15 one-shot finishes, including Holloway-Gaethje and Topuria-Volkanovski), so these are KD-or-KO rates. |
+| 6 | KD per 100 head strikes by round, R5 sample 0.44 / 0.41 / 0.32 / 0.21 / 0.31 | Confirmed, reasoning tightened | The numbers reproduce. The doc said "selection can't explain" the decline. More precisely, the last round of each sample is inflated by finishing KDs, and only about 17-30 KDs fall in each round, so the R1-R4 decline is suggestive, not firm. |
+| 7 | Round-level judge β (head 0.176 … miss −0.004); KD 10.2 → 15.3 head-strike units; TD 2.7 → 1.5 | Confirmed | Re-ran (11,037 cards). The 2025-26 KD weight has se 0.52 on β 2.98, so 15.3 has a wide interval (se about 2.7 units; 95% about ±5). The era drift is about 2-2.4 se. |
+| 8 | Unanimity 52.2% vs 30.5% independent; σ_u ≈ 2.5 | Corrected | 52.2% and 30.5% reproduce, but the simulation didn't condition on the official winner winning, which the observed sample does. Conditioned, independent judges give 33.7% and the winner's round share matches (0.781 vs 0.786 observed). The matching σ_u is ≈ 2.2 (β ×1.66; correlation ≈ 0.6), not 2.5. The conclusion (strong shared judge signal) stands. |
+| 9 | 10-8 6.8% (2019), 2.0% (2025); UFCalendar 6.39% / 2.09%; splits 13-14% in 2025-26 | Confirmed for [D]; UFCalendar unverifiable | Re-ran: 6.82%, 2.04%, splits 13.7% / 13.4%. UFCalendar page unreachable. Added a caveat that totals-based inference counts point deductions as 10-8s (ufcstats lists deductions in only 6 decisions since 2015). Majority decisions are 0.7-4%, not 1-4%. |
+| 10 | −0.062 per year of gap, −0.040 per year past 34; residual −0.07 / −0.16 | Confirmed | Re-ran (n = 6,576; se 0.007 and 0.018). Elo is walk-forward and pre-fight. |
+| 11 | Within-fighter chin ×1.21 / ×1.35, power ×0.79 / ×0.67 | Corrected (labels) | The ratios reproduce, but the bins in `age_weight.py` are exact ages (0, 33], (33, 36], (36, 60], not "34-36" and "37+". Relabelled "over 33 up to 36" and "over 36" throughout. |
+| 12 | Up one: 50.6% vs 51.1% (n = 478); chin 0.85 vs 1.02; 0.864 vs 0.850; down −4.2 | Confirmed | Re-ran. Added sampling error (up: CI about −5 to +4 points; down: not significant at 5%). Noted that the chin index is relative to the new division's base rate. |
+| 13 | FightLab Markov 61.7% / 0.656; logistic 63.8% / 0.634; Elo 56.0% (1,475 fights) | Confirmed | README tables. FightLab's Elo log loss is 0.680, so the summary range became 0.680-0.685. The README's k_min = 40 and k_ko = 400 differ from the code defaults (15 and 150); noted. |
+| 14 | Gift 2018 findings; Holmes EJOR 2024 judge preferences and home × crowd | Unverifiable (existence partly confirmed) | Gift's title, JSE vol. 19 and DOI are confirmed by Holmes 2023's references, which also list his covariates (champion, odds, previous round). FightLab links a Liverpool copy of the EJOR paper. The findings themselves couldn't be re-read. |
+| 15 | Half-life 2-3 y best (0.6636-0.6637 vs 0.6687); k 10-30 best | Confirmed, with caveat | Re-ran. Decay vs no decay is real (paired +0.0051, se 0.0018). Between 1.5 and 6 years the differences are at or within about 2 se (1.5 vs 3: +0.0011, se 0.0012). h and k were picked on the test window, with no separate validation. |
+
+**Other corrections from skimming the whole file.**
+- §3.1 Hutchison 2014: "844 numbered UFC events" was wrong. The data hold only 98 numbered UFC
+  events in 2006-2012 (1,016 fights). 108/844 = 12.8% and 179/844 = 21.2% match the quoted 13% and
+  21%, so 844 is the fight count. Fixed.
+- §5 SI "men below welterweight aged 35+ are winless in title fights": refuted by the dataset. There
+  have been six such wins since Apr 2025, four of them by Volkanovski or Gaethje. Struck through.
+- §5 "about half a year apart": the ufcstats DOBs (Sep 29 and Nov 14, 1988) put them about six weeks
+  apart. Fixed.
+- §5 age in the half-life logistic: the "0.6648 → 0.6523" comparison mixed samples (2,271 vs 2,227
+  fights). On the same 2,227 fights it is 0.6656 → 0.6523, with accuracy 60.3% → 61.4%. Fixed.
+- §7 / §11 PIGJET: 60.3% / 0.6588 is the corner-aware variant. The order-invariant predictor scores
+  60.1% / 0.6637. Fixed.
+- §7 / §11 XEchosen: 61.5% is the raw XGBoost accuracy. Platt scaling gives 59.3% (log loss 0.678 →
+  0.662), so "Platt-calibrated 61.5%" was wrong. Fixed.
+- §7 / §11 igordobronx/fight_predictor_plataform "~85%": no README at raw.githubusercontent.com
+  (HEAD, main, master or common name variants). The figure was removed.
+- §3.2 and §0: added that ufcstats KD counts include the finishing knockdown (engine implication:
+  don't add a separate KO path on top of the KD rate).
+- §1.3: noted the FightLab code defaults versus the README settings.
+
+**Not verified (no change in substance, flags kept).** Holmes EJOR 2024 findings; Holmes thesis; the
+Gift findings, sample and pages; Feldman 2020; Berthet 2023 and 2024 (arXiv); Miller & Nichols 2026;
+Robbins; Stanhope 2021; Hutchison's title, mandible share and other details; the Physician and
+Sportsmedicine 2026 study; the Japanese concussion study; Lamas 2024; Kovalchik 2016; the LJMU review;
+ABC 2025 criteria; O'Connell; UFCalendar, AgentMMA, FightMatrix, Bloody Elbow, The Fight Algorithm,
+Threads, Wagerwire and The Sport Journal figures; the "11 of 27" second-division title bids. All
+hosts were unreachable or the search budget was spent. None were found to be wrong, and none were
+re-confirmed.

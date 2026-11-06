@@ -1,0 +1,80 @@
+{
+  "slug": "sean-brady",
+  "name": "Sean Brady",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Welterweight contender, UFC 9-2 (ufcstats). Last fought at UFC 328 in Newark (May 9, 2026), beating Joaquin Buckley by unanimous decision (30-25, 30-25, 30-27) with 4 of 10 takedowns and 12:09 of control. That was a rebound from a first-round TKO loss to Michael Morales at UFC 322 (Nov 15, 2025). Nothing after May 9, 2026 is in the ufcstats snapshot (through Oct 31, 2026). This pass had no web access, so no booking, ranking or injury news could be checked.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/45f7cb591c3ab00b",
+      "http://ufcstats.com/fight-details/845b8653f9cf839c",
+      "http://ufcstats.com/fight-details/477af74ea3cbba8b",
+      "http://ufcstats.com/fight-details/371ed8497799998e",
+      "http://ufcstats.com/fight-details/ee9ade72b44dfa06",
+      "http://ufcstats.com/event-details/9eedac48b497de5a"
+    ]
+  },
+  "style": {
+    "archetype": "grappler/BJJ",
+    "stance": "orthodox",
+    "tags": ["chain-wrestling", "top-control", "ground-and-pound", "submissions", "guillotine", "takedown-defense", "leg-kicks", "chin-concern"],
+    "signature": [
+      "guillotine choke from mount (Leon Edwards R4 1:39, Mar 2025; Christian Aguilera R2, Aug 2020)",
+      "arm-triangle from half guard (Jake Matthews R3, Mar 2021) and kimura from side control (Kelvin Gastelum R3, Dec 2023)",
+      "repeated takedown attempts into long top control: 4/10 and 12:09 vs Buckley, 5/7 and 11:10 vs Edwards, 7/17 and 10:34 vs Gilbert Burns",
+      "high-volume ground strikes from top (71 of his 77 significant strikes vs Buckley landed on the ground)",
+      "accurate low kicks at range (127 of 145 career leg-strike attempts landed)"
+    ],
+    "weaknesses": [
+      "stopped twice by punches at distance by fighters he could not take down: Belal Muhammad R2 (0/5 takedowns, Oct 2022) and Michael Morales R1 (0/1, Nov 2025)",
+      "knockdowns absorbed: 1.47 per 100 head strikes absorbed over the last 3 years vs 0.84 for welterweight (small sample: 1 knockdown in 68 head strikes)",
+      "no UFC knockouts: 0.05 knockdowns per 100 head strikes landed decayed vs 0.84 for the division",
+      "almost no body work: 4.1% of decayed significant attempts go to the body (welterweight 13.9%)"
+    ],
+    "summary": "A grappler who wins by getting the fight down and keeping it there. He tries about 8 takedowns per 15 minutes (division 3.75), lands about half, and averages around 500 seconds of control per 15. Standing he throws straight punches and accurate low kicks but has no UFC knockouts. Both of his losses were stoppages by punches at distance against fighters who stopped his takedowns.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/45f7cb591c3ab00b",
+      "data/derived/fighters.json",
+      "tools/fighter_report.py (snapshot 2026-10-31)"
+    ]
+  },
+  "moves": {
+    "jab": 0.45,
+    "cross": 0.4,
+    "hook": 0.2,
+    "overhand": 0.15,
+    "upper": 0.08,
+    "headkick": 0.03,
+    "bodykick": 0.08,
+    "bodyhook": 0.04,
+    "bodystraight": 0.04,
+    "calf": 0.3,
+    "inside": 0.25,
+    "spinning": 0.0,
+    "knee": 0.08,
+    "elbow": 0.12,
+    "notes": "Target split from the fighters.json S sums: decayed significant attempts go 87.0% head, 4.1% body, 8.8% legs, and landed strikes 79.6% head, 6.2% body, 14.2% legs. Career landed is 72.1/6.7/21.2. The body is under a third of the 13.9% welterweight attempt share, so all three body moves stay small. Low kicks get 0.55 in total (calf 0.3, inside 0.25) because they are his most accurate strike (127/145 career) and about 21% of his career landed strikes, even though his last two fights had almost none. ufcstats does not record calf vs inside kicks. 40% of his decayed landed strikes come on the ground, mostly to the head from top position. Ground-and-pound should carry that, and elbow 0.12 stands in for ground elbows, which ufcstats does not separate from punches. The jab/cross/hook split is also not in ufcstats. Straight punches are favoured as a judgment from his distance output, not a count. Spinning is 0 and head kick 0.03 because neither appears in his finishes or the scouting data. No outside scouting source could be fetched this pass."
+  },
+  "appearance": {
+    "build": "compact, stocky welterweight; 5 ft 10 in with a 72 in reach (ufcstats)",
+    "hair": "short dark brown",
+    "facial_hair": "unknown",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/45f7cb591c3ab00b"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Takedowns decide his fights: 7.96 attempts and 501 s of control per 15 min decayed (division 3.75 and 167). He landed 0 takedowns in both losses (0/5 Muhammad, 0/1 Morales) and was stopped standing both times. Any knob that lowers his takedown success should raise his KO risk.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/477af74ea3cbba8b" },
+    { "note": "Chin: 2 KO/TKO losses in 11 UFC fights, both from punches at distance. 1 knockdown absorbed (Morales); Muhammad stopped him with no knockdown recorded.", "source": "data/derived/fighters.json (ko_losses 2, kd_absorbed 1)" },
+    { "note": "Five-round sample is two fights: Burns (W 50-45, 50-45, 49-46) and Edwards (SUB R4). His pace vector (1, 1.24, 0.79, 1.04, 1.48) rests on 5 minutes of round 5. Treat it as noise and use the division prior.", "source": "data/derived/fighters.json (pace_w 10, 10, 10, 6.65, 5)" },
+    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources.", "source": "research pass 2026-11-06" }
+  ],
+  "confidence": "medium"
+}

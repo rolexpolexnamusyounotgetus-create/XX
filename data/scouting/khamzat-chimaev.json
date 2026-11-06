@@ -1,0 +1,76 @@
+{
+  "slug": "khamzat-chimaev",
+  "name": "Khamzat Chimaev",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC middleweight champion. He won the belt from Dricus Du Plessis (UD 50-44 x3, UFC 319, Aug 16, 2025) and lost it to Sean Strickland by split decision at UFC 328 (May 9, 2026; 48-47 Sanidad for Chimaev, 48-47 Colon and D'Amato for Strickland). UFC record 9-1. No fight in the snapshot since May 2026 and no booking found. Web checks were blocked in this pass, so ranking, any rematch talk and any injury news are unverified.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/767755fd74662dbf",
+      "http://ufcstats.com/fight-details/70f1621080b3435c",
+      "http://ufcstats.com/fight-details/12cedec11b37ddc0",
+      "https://www.espn.com/mma/ufc/story/_/id/48728368/strickland-stuns-chimaev-ufc-middleweight-title",
+      "data/scouting/nassourdine-imavov.json (ESPN link above carried from that pass; not re-opened here)",
+      "data/derived/fighters.json (last_fight 2026-05-09, snapshot 2026-10-31)"
+    ]
+  },
+  "style": {
+    "archetype": "chain wrestler (sambo/dagestani)",
+    "stance": "orthodox",
+    "tags": ["chain-wrestling", "top-control", "ground-and-pound", "submissions", "back-takes", "pressure", "power", "fast-starter", "fades-late"],
+    "signature": [
+      "takedown chains from the first exchange: 12 of 17 vs Du Plessis (UFC 319), 9 of 13 vs Strickland (UFC 328), 2 of 2 with 4:47 control in R1 of both",
+      "long top control: 21:40 of 25 minutes vs Du Plessis; 54% control share decayed",
+      "chokes: D'Arce (John Phillips 2020, Kevin Holland 2022) and rear-naked choke (Li Jingliang 2021, Robert Whittaker R1 3:34, Oct 2024)",
+      "ground strikes: TKO of Rhys McKee from mount (2020); 19 of 22 ground strikes in R3 vs Du Plessis",
+      "one-punch power standing: KO of Gerald Meerschaert at 0:17 of R1 (2020)",
+      "body punching on the feet when the takedowns stop: 35 of 65 body strikes landed vs Strickland"
+    ],
+    "weaknesses": [
+      "output and control drop after R1 in three of his four UFC decisions: Burns out-landed him 101-81 over R2-R3 (2022), Usman 33-22 over R2-R3 (2023), and Strickland 123-98 over R2-R5 (2026)",
+      "lost the title to a pure boxer who stayed upright: after 4:47 of R1 control, he managed 0:04, 0:00 and 0:54 in R2-R4 vs Strickland",
+      "his striking defense is only average when he is kept standing: Burns landed 119 sig strikes on him in 15 minutes"
+    ],
+    "summary": "A heavy, forceful wrestler who chains takedowns from the opening exchange, holds top position and finishes with chokes or ground strikes. When the first takedown sticks he can control a whole fight, as he did against Du Plessis. His three closest decisions all turned the same way: the opponent survived R1 and out-landed him on the feet after that.",
+    "sources": [
+      "http://ufcstats.com/fight-details/12cedec11b37ddc0",
+      "http://ufcstats.com/fight-details/70f1621080b3435c",
+      "http://ufcstats.com/fight-details/b8bf186f884678ea",
+      "http://ufcstats.com/fight-details/f23e9729b2b73c27",
+      "http://ufcstats.com/fight-details/0111e6a64b5184c6",
+      "http://ufcstats.com/fight-details/394b0347b0438622",
+      "http://ufcstats.com/fight-details/987cdcbc809e210d",
+      "data/raw/ufc_fight_stats.csv",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.22, "cross": 0.3, "hook": 0.2, "overhand": 0.16, "upper": 0.08, "headkick": 0.04,
+    "bodykick": 0.3, "bodyhook": 0.4, "bodystraight": 0.3,
+    "calf": 0.4, "inside": 0.6, "spinning": 0.0, "knee": 0.08, "elbow": 0.06,
+    "notes": "Group shares follow fighters.json decayed sums: sig attempts 73.5% head, 20.5% body, 5.9% leg (career 80.5/14.2/5.2). The middleweight league is 77.2/14.0/8.8, so he goes to the body more than average and to the legs less. Much of his output is on the ground (24.8% of landed sig decayed, 40.9% career), and those strikes are drawn by the ground-strike tables, not these weights. On the feet, the cross leads the head group because his only distance KO is a single punch (Meerschaert) and no source in this pass describes a jab-led game. The body weights lean to hooks because the body volume vs Strickland (35 of 65) came in the open with no clinch time logged, which suggests punches more than kicks, though ufcstats does not say which. Leg strikes are rare; the inside kick gets the larger share as a judgment. Spinning is 0 because nothing in the data or prior coverage shows it. Knee and elbow are small judgments. Web scouting sources could not be opened in this pass, so the in-group weights are data-led judgments."
+  },
+  "appearance": {
+    "build": "6'2\" with a 75\" reach (dataset); a thick, heavily muscled frame with broad shoulders, a thick neck and heavy arms (widely published fight photos; not re-checked in this pass)",
+    "hair": "short dark hair (not re-checked in this pass)",
+    "facial_hair": "full dark beard in most published fight photos",
+    "skin": "light",
+    "tattoos": "unknown (no source in this pass)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height_in 74, reach_in 75, stance Orthodox)",
+      "http://ufcstats.com/fighter-details/767755fd74662dbf"
+    ]
+  },
+  "engine_notes": [
+    { "note": "R1 is a wrestling round: in UFC 319 and UFC 328 he spent 4:47 of R1 on top both times and landed 1 and 0 sig strikes in those rounds. The ufcstats pace curve therefore reads 5.5x to 19x R1 in later rounds; that ratio reflects his near-zero R1 striking, not a late surge.", "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv" },
+    { "note": "Control per round vs Du Plessis was 4:47, 4:47, 4:46, 4:26, 2:54. Vs Strickland it was 4:47, 0:04, 0:00, 0:54, 1:31, with Strickland logging 3:01 of control himself in R2. A takedown-success knob that decays after R1 would fit both fights.", "source": "http://ufcstats.com/fight-details/12cedec11b37ddc0; http://ufcstats.com/fight-details/70f1621080b3435c" },
+    { "note": "Takedowns 5.8 per 15 min decayed at 62% (middleweight league 1.36 at 36%). Opponents rarely shoot on him (0.87 per 15 min).", "source": "data/derived/fighters.json; priors.Middleweight" },
+    { "note": "Never knocked down in 10 UFC fights; no stoppage losses.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)" }
+  ],
+  "confidence": "medium"
+}

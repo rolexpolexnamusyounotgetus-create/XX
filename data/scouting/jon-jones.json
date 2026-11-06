@@ -1,0 +1,88 @@
+{
+  "slug": "jon-jones",
+  "name": "Jon Jones",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC light heavyweight and heavyweight champion. His last fight was UFC 309 (Nov 16, 2024), where he stopped Stipe Miocic with a spinning back kick to the body at 4:29 of round 3 to retain the heavyweight title. His retirement was announced in June 2025 and interim champion Tom Aspinall was promoted to undisputed champion (widely reported; not re-verified on the web this session). He has had no UFC fight since UFC 309 through the ufcstats snapshot of Oct 31, 2026. The June 2026 White House card (UFC Freedom 250) went ahead without him, with Ciryl Gane and Alex Pereira fighting for the interim heavyweight title. No booking or confirmed comeback was found in the sources available this session.",
+    "title": null,
+    "ranking": null,
+    "active": false,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/07f72a2a7591b409",
+      "http://ufcstats.com/fight-details/b35e47f2f58ef026",
+      "http://ufcstats.com/fight-details/636fd144716a3084",
+      "https://www.ufc.com/athlete/jon-jones",
+      "https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/",
+      "https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "orthodox",
+    "tags": ["rangy", "range-control", "leg-kicks", "body-work", "elbows", "spinning", "clinch", "trips", "top-control", "ground-and-pound", "guillotine", "takedown-defense", "durable", "cardio", "switch-stance"],
+    "signature": [
+      "oblique (stomp) kick and low kicks to the lead leg from long range (ufcstats does not split kick types; 83% leg accuracy in the decayed sums)",
+      "body kicks and side kicks to the body; the spinning back kick to the body that finished Stipe Miocic at UFC 309",
+      "elbows standing, in the clinch and on the ground (finishes of Brandon Vera, elbow from guard, and Vladimir Matyushenko, elbows from crucifix)",
+      "guillotine choke (Jake O'Brien and Lyoto Machida standing, Ryan Bader from half guard, Ciryl Gane on the ground in 2:04 at UFC 285)",
+      "clinch takedowns and trips into top control and ground strikes (40 of 46 ground strikes landed vs Miocic, 778 s of control vs Anthony Smith)",
+      "knee in the clinch (finish of Mauricio Rua, UFC 128)"
+    ],
+    "weaknesses": [
+      "age 39 (born 1987-07-19) and no fight since Nov 16, 2024",
+      "only two heavyweight fights in the dataset (Gane, Miocic); his rates come mostly from 205 lb",
+      "his last three light heavyweight title fights were close: split decision over Thiago Santos (UFC 239) and a unanimous decision over Dominick Reyes in which Reyes out-landed him 116-104 in significant strikes (UFC 247)",
+      "career head accuracy 48%: at distance he relies on volume to the body and legs more than clean head shots"
+    ],
+    "summary": "A long, versatile all-rounder with an 84 in reach who controls range with kicks to the legs and body, then wins the clinch and the mat with trips, top control, elbows and chokes. He has never been knocked down or finished in 24 UFC fights; his only loss is a 2009 disqualification for illegal elbows. The open questions are age, a two-year layoff and a small heavyweight sample.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/07f72a2a7591b409",
+      "http://ufcstats.com/fight-details/b35e47f2f58ef026",
+      "http://ufcstats.com/fight-details/636fd144716a3084",
+      "http://ufcstats.com/fight-details/fae99a4089f8abb0",
+      "http://ufcstats.com/fight-details/8fcdfee81cc604e3",
+      "http://ufcstats.com/fight-details/5b9f545890407976",
+      "http://ufcstats.com/fight-details/ceaae1db8ccde29c",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.26,
+    "cross": 0.26,
+    "hook": 0.16,
+    "overhand": 0.08,
+    "upper": 0.1,
+    "headkick": 0.14,
+    "bodykick": 0.6,
+    "bodyhook": 0.15,
+    "bodystraight": 0.25,
+    "calf": 0.4,
+    "inside": 0.6,
+    "spinning": 0.08,
+    "knee": 0.12,
+    "elbow": 0.35,
+    "notes": "Each group (head, body, leg) sums to 1; the engine's target split picks the group. From the decayed sums in fighters.json his significant attempts go 62% head, 18% body, 20% legs (landed 56/21/23), and career attempts 60/19/21. Body accuracy is 82% and leg accuracy 83% decayed, so most body and leg work is kicks: bodykick gets 0.60, and leg strikes lean to 'inside' (0.60) as the closest animation to his lead-leg oblique and stomp kicks. The head group spreads across straight punches, because his range game uses the jab and straight right; head kick is 0.14 for a kicker with his reach. Elbow is 0.35 because elbows finished Vera and Matyushenko and he uses them heavily on top. Spinning is 0.08 for the spinning back kick that finished Miocic (UFC 309) and his spinning elbow. Knee 0.12 covers the clinch knee that finished Rua. ufcstats does not record technique types, so the within-group split is judgment from his finishes and general coverage. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw (snapshot 2026-10-31)."
+  },
+  "appearance": {
+    "build": "tall and very long-limbed (6 ft 4 in, 84 in reach per ufcstats); broader and heavier through the torso at heavyweight (listed 248 lb) than in his light heavyweight years",
+    "hair": "short, close-cropped black hair",
+    "facial_hair": "varies; often a short trimmed beard",
+    "skin": "dark",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/07f72a2a7591b409",
+      "https://www.ufc.com/athlete/jon-jones"
+    ]
+  },
+  "engine_notes": [
+    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.10, 1.36, 1.16, 1.01 (minute-weighted, 17 five-round fights): output peaks in round 3 and does not fade in rounds 4-5.", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "Chin: 0 knockdowns absorbed and 0 KO/TKO losses in 24 UFC fights. His only loss is a DQ (illegal elbows vs Matt Hamill, 2009) and his UFC 214 win over Cormier was overturned to a no contest after a failed drug test.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/5ab286735ccee803" },
+    { "note": "Takedown defense: opponents landed 2 of 40 career attempts (95%). He controls about 213 s per 15 min career and 200 s per 15 min decayed.", "source": "data/derived/fighters.json" },
+    { "note": "Decayed sums cover only 17.7 minutes, almost all from the Miocic fight (96 of 119 significant strikes, 40 of 46 on the ground), so decayed accuracy (73%) is well above career (63%). Shrink toward career numbers and the heavyweight prior, and apply a layoff discount for no fight since Nov 2024.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/b35e47f2f58ef026" },
+    { "note": "Power: 6 knockdowns in 24 UFC fights, 0.79 per 100 significant head strikes landed career. His finishes come more from accumulation, elbows and chokes than one-shot power: 6 KO/TKO, 6 submissions, 10 decisions.", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "low"
+}

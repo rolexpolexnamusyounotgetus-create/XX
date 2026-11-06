@@ -1,0 +1,92 @@
+{
+  "slug": "tom-aspinall",
+  "name": "Tom Aspinall",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "UFC heavyweight champion, sidelined. He won the interim title by knocking out Sergei Pavlovich at 1:09 of round 1 at UFC 295 (Nov 11, 2023) and defended it by knocking out Curtis Blaydes in 60 seconds at UFC 304 (Jul 27, 2024). He became undisputed champion when Jon Jones's retirement was announced in June 2025 (widely reported; not re-verified this session). His first undisputed defense, against Ciryl Gane at UFC 321 (Oct 25, 2025, Abu Dhabi), was ruled a no contest at 4:35 of round 1 after an eye poke by Gane left him unable to continue. He has not fought since. Gane then won an interim title against Alex Pereira (Jun 14, 2026) and has been booked against Josh Hokit (reported Oct 2026), which implies Aspinall still holds the undisputed belt but has no confirmed return date.",
+    "title": "UFC heavyweight champion (undisputed; Ciryl Gane holds the interim title)",
+    "ranking": null,
+    "active": false,
+    "next_fight": null,
+    "injuries": [
+      { "what": "eye injury from an eye poke by Ciryl Gane at UFC 321; ruled unable to continue (no contest). Treatment and return timeline not verified this session", "when": "2025-10", "source": "http://ufcstats.com/fight-details/6390c8e74630473e" },
+      { "what": "knee injury 15 seconds into the first Curtis Blaydes fight; recorded as a TKO loss", "when": "2022-07", "source": "http://ufcstats.com/fight-details/d0fb381cacbb0446" }
+    ],
+    "sources": [
+      "http://ufcstats.com/fighter-details/399afbabc02376b5",
+      "http://ufcstats.com/fight-details/6390c8e74630473e",
+      "http://ufcstats.com/fight-details/db49619221b282af",
+      "http://ufcstats.com/fight-details/ec434314c5438fc7",
+      "https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title",
+      "https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335",
+      "https://bloodyelbow.com/2026/02/28/alexander-volkanovski-reveals-long-term-eye-issue-while-defending-tom-aspinall-from-harsh-backlash/",
+      "https://www.ufc.com/athlete/tom-aspinall"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "orthodox",
+    "tags": ["power", "fast-starter", "footwork", "jab", "elbows", "top-control", "ground-and-pound", "submissions"],
+    "signature": [
+      "fast single punches at distance as the opponent steps in or reaches (finishes of Pavlovich at 1:09, Blaydes at 1:00, Tybura at 1:13 and Jake Collier at 0:45 are all logged as punches at distance)",
+      "follow-up ground strikes on a dropped opponent (10 of 11 ground strikes landed vs Blaydes at UFC 304)",
+      "takedown into top control and a submission: straight armbar from half guard vs Alexander Volkov (UFC Fight Night, Mar 2022), rear-naked choke vs Andrei Arlovski",
+      "elbow in the clinch (KO of Serghei Spivac, 2021)",
+      "leg and body kicks early (8 of 8 leg and 5 of 6 body strikes landed vs Gane before the stoppage)"
+    ],
+    "weaknesses": [
+      "very small sample: 22.9 UFC minutes over 10 fights, and he has never fought past 1:09 of round 2, so his cardio and late-round output are untested",
+      "out of action since Oct 25, 2025 with an eye injury",
+      "knee injury ended the first Blaydes fight in 15 seconds (2022)",
+      "absorbed 30 significant strikes from Gane in 4:35 (Gane landed 13 of 13 to the legs and 9 of 11 to the body)"
+    ],
+    "summary": "A heavyweight with lightweight hand speed and the grappling to finish on the mat. Most of his fights end in the first round off a fast punch at distance, followed by strikes on the ground; he has also submitted Volkov and Arlovski. He has almost never been tested beyond the first round, and he has been inactive since the eye-poke no contest with Gane.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/399afbabc02376b5",
+      "http://ufcstats.com/fight-details/db49619221b282af",
+      "http://ufcstats.com/fight-details/ec434314c5438fc7",
+      "http://ufcstats.com/fight-details/90e46589a18064bc",
+      "http://ufcstats.com/fight-details/06641a8c62e45661",
+      "http://ufcstats.com/fight-details/b977ffcc6428046f",
+      "http://ufcstats.com/fight-details/15b1c7ddc4415fdd",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.3,
+    "cross": 0.28,
+    "hook": 0.24,
+    "overhand": 0.06,
+    "upper": 0.08,
+    "headkick": 0.04,
+    "bodykick": 0.45,
+    "bodyhook": 0.3,
+    "bodystraight": 0.25,
+    "calf": 0.55,
+    "inside": 0.45,
+    "spinning": 0.0,
+    "knee": 0.05,
+    "elbow": 0.15,
+    "notes": "Each group (head, body, leg) sums to 1. From the decayed sums in fighters.json his significant attempts go 75% head, 11% body, 14% legs (landed 66/13/21), and career attempts 77/10/13, so the head group dominates. Inside it, jab, cross and hook carry 0.82 between them because his finishes are fast straight punches and hooks at distance (Pavlovich, Blaydes, Tybura, Collier); uppercut and overhand are minor, and the head kick is a token 0.04 (no head-kick finish on record). Body and leg weights are close to neutral defaults because ufcstats does not split kicks from punches and his sample is small (career leg strikes 33 of 33 landed, 8 of them vs Gane; body 23 of 26). Elbow 0.15 covers the clinch elbow that finished Spivac and ground elbows; no spinning attacks on record. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw (snapshot 2026-10-31)."
+  },
+  "appearance": {
+    "build": "big, thick heavyweight frame (6 ft 5 in, 78 in reach, listed 256 lb per ufcstats); solid rather than lean",
+    "hair": "short brown hair",
+    "facial_hair": "usually a short beard",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/399afbabc02376b5",
+      "https://www.ufc.com/athlete/tom-aspinall"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Power: 5 knockdowns in 22.9 UFC minutes, or 4.2 per 100 significant head strikes landed (decayed and career), the highest in this batch of heavyweights. 6 KO/TKO wins and 2 submissions; no decisions.", "source": "data/derived/fighters.json" },
+    { "note": "No pace data beyond round 1: none of his UFC fights reached round 3, and his only round-2 minutes came against Arlovski (finished at 1:09 of round 2). Round 3-5 output should come from the heavyweight prior, not his own numbers.", "source": "data/derived/fighters.json (pace, pace_w); http://ufcstats.com/fight-details/15b1c7ddc4415fdd" },
+    { "note": "0 knockdowns absorbed. His one KO/TKO loss in the dataset is the knee injury 15 s into Blaydes 1, not a strike stoppage; treat his chin as unknown rather than proven bad.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/d0fb381cacbb0446" },
+    { "note": "Decayed rates (11.1 attempts per minute, opponents landing 54%) come mostly from the 4:35 Gane fight and should be shrunk hard toward the heavyweight prior. Apply a layoff and injury discount for no fight since Oct 25, 2025.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/6390c8e74630473e" },
+    { "note": "Grappling: 4 of 5 takedowns career and about 200 s of control per 15 min. Opponents are 0 for 2 on takedowns against him (tiny sample).", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "low"
+}

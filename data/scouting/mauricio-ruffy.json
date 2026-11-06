@@ -1,0 +1,69 @@
+{
+  "slug": "mauricio-ruffy",
+  "name": "Mauricio Ruffy",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Active, coming off a loss. Arman Tsarukyan knocked him out with a standing elbow in the clinch at 4:56 of round 1 at UFC 331 in Los Angeles (Sep 19, 2026). That ended a two-fight win streak: TKO wins over Rafael Fiziev (UFC 325, Jan 31, 2026) and Michael Chandler (UFC Freedom 250, Washington, DC, Jun 14, 2026). UFC record 5-2 in fighters.json. No booking, current ranking or injury could be confirmed in this pass (web search was unavailable).",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "data/derived/fighters.json (recent: 2026-09-19 L Tsarukyan KO R1 4:56, elbow in clinch; 2026-06-14 W Chandler TKO R1 4:29; 2026-01-31 W Fiziev TKO R2 4:30)",
+      "data/raw/ufc_event_details.csv (UFC 331 Los Angeles; UFC Freedom 250 Washington, DC; UFC 325 Sydney)",
+      "https://www.mmaweekly.com/news/arman-tsarukyan-lands-elbow-knockout-on-mauricio-ruffy-at-ufc-331 (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
+      "https://sports.yahoo.com/articles/arman-tsarukyan-knocks-mauricio-ruffy-061351913.html (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
+      "https://www.bjpenn.com/mma-news/arman-tsarukyan/ufc-331-results-arman-tsarukyan-kos-mauricio-ruffy-video/ (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
+      "https://www.tapology.com/fightcenter/bouts/1166249-ufc-331-arman-ahalkalakets-tsarukyan-vs-mauricio-ruffy (cited in data/scouting/arman-tsarukyan.json; not re-fetched)"
+    ]
+  },
+  "style": {
+    "archetype": "power puncher",
+    "stance": "orthodox",
+    "tags": ["power", "head-kicks", "spinning", "rangy", "takedown-defense", "fast-starter"],
+    "signature": [
+      "spinning wheel kick (KO of King Green at 2:07 of R1, UFC 313)",
+      "punches at distance into ground finishes: two knockdowns then ground punches vs Michael Chandler (R1 4:29); a knockdown then ground punches vs Rafael Fiziev (R2 4:30)",
+      "punching KO at distance (Jamie Mullarkey, UFC 301, R1 4:42)",
+      "head-hunting accuracy: 82% of landed significant strikes go to the head, and 56.5% of all significant attempts land"
+    ],
+    "weaknesses": [
+      "both UFC losses came once grapplers closed the distance: Benoit Saint Denis (3 of 10 takedowns, 4:38 control, rear-naked choke R2) and Tsarukyan (10 takedown attempts, 3:00 of control, clinch elbow KO R1)",
+      "opponents shoot on him 9.2 times per 15 min (lightweight median about 4.2) and control him 18% of the time, though he stops 87% of the shots",
+      "eats body and leg strikes: 63% of what opponents land on him goes to the body or legs (James Llontop landed 39 body and 22 leg strikes in a decision he still won)",
+      "small sample: 7 UFC fights and 48.7 minutes, with only one fight past round 2"
+    ],
+    "summary": "A rangy orthodox striker with big, accurate power. He has six knockdowns in under 49 UFC minutes and finishes hurt opponents on the ground, plus a spinning-wheel-kick KO. On the feet he mostly targets the head and is rarely hit there. His two losses came when grapplers (Saint Denis, Tsarukyan) dragged him into the clinch and onto the mat.",
+    "sources": [
+      "data/derived/fighters.json (career C and recency-weighted S sums; lightweight medians over 120 lightweights with 30+ UFC minutes)",
+      "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (UFC 301, 309, 313, 325, 331, Freedom 250 and Paris 2025 bout stats and methods)",
+      "data/scouting/arman-tsarukyan.json and data/scouting/benoit-saint-denis.json (fight accounts)"
+    ]
+  },
+  "moves": {
+    "jab": 0.25, "cross": 0.32, "hook": 0.2, "overhand": 0.08, "upper": 0.08, "headkick": 0.07,
+    "bodykick": 0.45, "bodyhook": 0.3, "bodystraight": 0.25,
+    "calf": 0.55, "inside": 0.45, "spinning": 0.15, "knee": 0.05, "elbow": 0.05,
+    "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json: recency-weighted landed shares are head 0.82 / body 0.08 / leg 0.11 and attempt shares are head 0.86 / body 0.07 / leg 0.07 (lightweight median landed about 0.62 / 0.22 / 0.15). So he is far more head-focused than the division and body work is rare. The head group favours the rear straight and hooks behind a jab, because his finishes are punches at distance or knockdowns into ground strikes (Mullarkey, Fiziev, Chandler). Head kicks get a little weight for the wheel-kick KO. Spinning is 0.15, well above most lightweights, for the same KO (UFC Stats: 'Kick to Head At Distance, Wheel kick', UFC 313). Body and leg groups are generic splits because UFC Stats does not separate kicks from punches there. Knee and elbow are low: only 4% of his landed strikes come in the clinch. These weights are analyst judgment on a 7-fight sample; no published technique breakdown could be fetched in this pass."
+  },
+  "appearance": {
+    "build": "long-limbed lightweight: 5'11\" with a 75-inch reach (fighters.json)",
+    "hair": "unknown (photos could not be checked in this pass)",
+    "facial_hair": "unknown",
+    "skin": "unknown",
+    "tattoos": "none confirmed",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height, reach)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Knockdown power: 6 knockdowns in 48.7 UFC minutes (1.85 per 15 min; lightweight median about 0.31), at least one in 5 of his 7 fights.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Accuracy and defence at range: 56.5% significant accuracy (median about 47%) and 59% defence (median about 54%), absorbing 3.5 per minute career.", "source": "data/derived/fighters.json (C sums)" },
+    { "note": "Takedown defence is good on first contact (26 of 30 stopped, 87%) but grapplers keep shooting: 9.2 attempts against him per 15 min, and 166-187 seconds of opponent control per 15. Both losses followed sustained clinch or wrestling pressure.", "source": "data/derived/fighters.json (otd, octrl); data/raw/ufc_fight_stats.csv" },
+    { "note": "No offensive grappling recorded: 0 of 1 on takedowns and 0 submission attempts in the UFC.", "source": "data/derived/fighters.json" },
+    { "note": "No five-round data and little beyond round 2 (only the Llontop decision went 15 minutes), so cardio and late-round output are unknown and should carry wide uncertainty.", "source": "data/derived/fighters.json (pace has round 1 only)" }
+  ],
+  "confidence": "medium"
+}

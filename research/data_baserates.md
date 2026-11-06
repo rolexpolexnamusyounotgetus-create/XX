@@ -9,24 +9,24 @@ Confidence legend: **high** = direct count from the dataset with a large sample;
 ## The numbers the engine should hit (summary)
 
 1. **Method split, all UFC 2015+ (high):** KO/TKO 32.2%, submission 17.5%, unanimous 37.9%, split 9.6%, majority 0.7%, draw 0.8%, NC 1.0%. Lightweight finishes more (52.7% vs 50.3%); 5-round bouts finish 58.5%, with KO/TKO 42.5%.
-2. **5-round finish hazard (high, n = 571):** conditional on reaching the round, R1 20.8%, R2 20.4%, R3 17.2%, R4 10.8%, R5 10.9%; 41.5% go 25 minutes. Title fights go the distance more often (46.7%); LW+FW 5-rounders less (33.6%, n = 122, medium). Hazard drops by about half after round 3.
+2. **5-round finish hazard (high, n = 571):** conditional on reaching the round, R1 20.8%, R2 20.4%, R3 17.2%, R4 10.8%, R5 10.9%; 41.5% are not finished (236 of 571, 41.3%, go the full 25 minutes; the 237th is Cejudo vs Song, a technical decision after an eye poke in round 3). Title fights go the distance more often (46.7%); LW+FW 5-rounders less (33.6%, n = 122, medium). Hazard drops by about half after round 3.
 3. **Strikes (high):** 57.4 significant strikes landed and 125.2 attempted per 15 minutes per fighter (3.83 / 8.35 per minute), 45.9% accuracy. Accuracy by target: head 37.5%, body 69.1%, leg 81.1%; by position: distance 41.6%, clinch 71.7%, ground 71.8%.
 4. **Knockdowns (medium):** 0.95 per 100 landed standing head strikes (bounds 0.91-0.99); lightweight 0.98, title fights 0.70, 5-round fights 0.78. Per 100 landed sig strikes of any kind: 0.52. v2's prior of 0.009 per landed head strike sits between the all-position head rate (0.83 per 100) and the standing bounds.
-5. **Knockdown to finish (high):** a fighter-round with a knockdown ends in a finish by that fighter in the same round 61.8% of the time (63.4% at lightweight; 71.2% after two or more knockdowns); the scorer wins the fight 85.4%. 91.0% of distance KO/TKOs and 31.3% of ground KO/TKOs show a winner knockdown in the final round, so the engine should route nearly every standing stoppage through a knockdown event.
+5. **Knockdown to finish (high):** a fighter-round with a knockdown ends in a finish by that fighter in the same round 61.8% of the time (63.4% at lightweight; 71.2% after two or more knockdowns); the scorer wins the fight in 85.4% of knockdown fighter-rounds (counted per fighter-fight with a knockdown: 84.9%, or 86.4% excluding draws and no contests). 91.0% of distance KO/TKOs and 31.3% of ground KO/TKOs show a winner knockdown in the final round, so the engine should route nearly every standing stoppage through a knockdown event.
 6. **Grappling (high for counts, medium for time):** 3.86 takedown attempts and 1.40 landed per 15 (36.3%); 171 control seconds per fighter per 15; raw control per landed takedown 122 s, but a round-level fit attributes only 55 s of control directly to each takedown. Submission attempts 0.40 per 15; 29.6% of attempts end the fight.
 7. **Position time (low):** control covers 37.9% of fight time (both fighters). Splitting it, ground is about 29%-33%, clinch control 5%-9%, and distance or neutral clinch 62%. 5-round fights: control 31%.
-8. **Pace in 5-round fights (high):** in the 237 5-round fights that went 25 minutes, attempts per minute rise from 7.27 in round 1 to 9.15 in round 5 (x1.26); head strikes landed per minute go from 1.69 to 2.91 while leg strikes fall from 0.79 to 0.51. Knockdowns per 100 standing head strikes fall from 0.43 to 0.20 (this sample has no finishes by construction, so read the level with care). No league-wide fade: tiring has to be fighter-specific.
+8. **Pace in 5-round fights (high):** in the 236 5-round fights that went 25 minutes, attempts per minute rise from 7.28 in round 1 to 9.15 in round 5 (x1.26); head strikes landed per minute go from 1.70 to 2.91 while leg strikes fall from 0.78 to 0.51. Knockdowns per 100 standing head strikes fall from 0.44 to 0.20 (this sample has no finishes by construction, so read the level with care). No league-wide fade: tiring has to be fighter-specific.
 9. **Round-to-round noise (high):** sig strikes landed per fighter-round: mean 18.5, sd 12.4, variance/mean 8.3 (negative binomial k about 2.6); opponents' outputs in the same round correlate 0.43; a fighter's output correlates 0.58 from one round to the next. Plain Poisson draws are far too tight; the engine needs shared pace and form noise.
 10. **Fight-to-fight spread (medium):** after removing fighter and opponent effects, a fighter's log sig-strike output varies 0.45 sd between fights; removing within-fight sampling leaves at most 0.36. v2's output form sd of 0.10 is likely too tight, but this bound still includes style-matchup effects.
-11. **Judging (high):** 2,871 decisions: unanimous 78.6%, split 19.9%, majority 1.6% (non-draw); draws 1.6% of decisions. Implied 10-8 rounds (or point deductions) 4.7% of decision rounds, down to about 2.5% in 2024-2025. Judge pairs disagree on at least 13.1% of rounds.
-12. **Round-winner weights (medium):** the EM fit on 7,495 judges' cards gives, per landed strike differential, head 0.179, body 0.133, leg 0.105 logits; knockdown 2.42, takedown 0.286, control 0.460 per minute, submission attempt 0.847. In head-strike units: body 0.74, leg 0.59, knockdown 13.5, takedown 1.6, a minute of control 2.6, submission attempt 4.7. Out of sample (decisions from 2023 on) it picks the decision winner 84.1% of the time vs 79.1% for "more sig strikes landed" (Brier 0.110).
-13. **Stoppages between rounds (high count, small n):** doctor stoppages 0.76 per 100 fights, corner stoppages 0.13, injury stoppages 0.44; in 5-round fights 1.55, 0.52 and 2.42.
+11. **Judging (high):** 2,893 decisions: unanimous 78.7%, split 19.8%, majority 1.5% (non-draw); draws 1.6% of decisions. Implied 10-8 rounds (or point deductions) 4.7% of decision rounds, down to about 2.5% in 2024-2025. Judge pairs disagree on at least 13.1% of rounds.
+12. **Round-winner weights (medium):** the EM fit on 7,550 judges' cards gives, per landed strike differential, head 0.179, body 0.133, leg 0.104 logits; knockdown 2.38, takedown 0.284, control 0.461 per minute, submission attempt 0.844. In head-strike units: body 0.74, leg 0.58, knockdown 13.3, takedown 1.6, a minute of control 2.6, submission attempt 4.7. Out of sample (968 decisions from 2023 on) it picks the decision winner 84.1% of the time vs 78.9% for "more sig strikes landed" (Brier 0.111).
+13. **Doctor, corner and injury stoppages (high count, small n):** doctor stoppages 0.76 per 100 fights, corner stoppages 0.13, injury stoppages 0.44; in 5-round fights 1.55, 0.52 and 2.42. These are not all between-round stoppages: 18 of the 45 doctor stoppages and 23 of the 26 injury stoppages happened mid-round. 43 non-strike stoppages of any kind (0.73 per 100 fights) came between rounds (section 9).
 
 ## Data, definitions and checks
 
 - **Source.** ufcstats.com via github.com/Greco1899/scrape_ufc_stats, snapshot in `data/raw/` (see /home/user/XX/data/raw). Fight results, per-round per-fighter stats and event dates are joined on the stripped EVENT and BOUT strings. (high)
 - **Cleaning notes** (all handled in the script, all listed in `meta.notes`): 25 fights appear twice under two event names (same fight URL); kept the copy whose event has a date, dropped the copies under ['UFC Fight Night: Grasso vs. Shevchenko 2', 'UFC Fight Night: Lopes vs. Silva']; 1 event(s) missing from ufc_event_details.csv; dates imputed from the neighbouring event in results order: ['UFC - Road to UFC 4.6']; dropped 2 rows with duplicate (EVENT, BOUT): ['Kazushi Sakuraba vs. Marcus Silveira']; 1 fights excluded from stats-based measures (round rows missing, unparsed numbers, unmatched names or non-5-minute rounds). The duplicated events would otherwise have double-counted 25 fights and broken the stats join (four stat rows per round). (high)
-- **Judges' scores are written loser-first.** In DETAILS every unanimous decision since 2015 reads low-high (6,655 of 6,657 cards since 2015; the two exceptions are a 28-28 card in Cummins vs Blachowicz, UFC 210, and a 29-28 dissent in Trinaldo vs Parke, Fight Night Condit vs Alves, both apparently mislabeled as unanimous), and in split decisions exactly one card in three (561 of 1,683) reads high-low, whatever order the BOUT string lists the fighters. So `a - b` in DETAILS is (fight loser's score) - (fight winner's score). The script relies on this. (high)
+- **Judges' scores are written loser-first.** In DETAILS, 6,742 of the 6,744 cards in non-draw unanimous decisions since 2015 read low-high, for both W/L and L/W fights (the two exceptions are a 28-28 card in Cummins vs Blachowicz, UFC 210, and a 29-28 dissent in Trinaldo vs Parke, Fight Night Condit vs Alves, both apparently mislabeled as unanimous). In 568 of the 569 non-draw split decisions exactly one card (the dissent) reads high-low; the exception, Demopoulos vs Frey (Fight Night Tsarukyan vs Gamrot), has corrupt cards (29-29, 28-28, 27-30). This holds whatever order the BOUT string lists the fighters. (An earlier version quoted 6,655 of 6,657 and 561 of 1,683, because the card regex dropped decisions whose DETAILS omit a judge's name or the space before the score; fixed, see Verification log.) So `a - b` in DETAILS is (fight loser's score) - (fight winner's score). The script relies on this. (high)
 - **Spot check against public reporting.** Topuria vs Gaethje (UFC Freedom 250): Topuria 97 sig landed, Gaethje 91, one Topuria knockdown, recorded as KO/TKO round 4, 5:00, "Corner Stoppage" with Gaethje the winner, matching HANDOFF.md. Gaethje vs Holloway (UFC 300): Holloway 181, Gaethje 103, matching. Gaethje vs Pimblett (UFC 324): Gaethje 2 knockdowns, 3 of 3 takedowns, 5:55 control, but **Pimblett out-landed Gaethje 156-144** in this data; HANDOFF.md says Gaethje out-landed him 156-144, which looks like a transposition to fix. (high, dataset)
 - **Fight time** = (ROUND - 1) x 300 + TIME for formats with all-5-minute rounds; 2015+ is almost entirely "3 Rnd (5-5-5)" and "5 Rnd (5-5-5-5-5)", plus 37 TUF overtime bouts. Per-15 rates divide by fighter-time (each round counted once per fighter). (high)
 - **Method buckets.** KO/TKO includes "TKO - Doctor's Stoppage" and corner stoppages (ufcstats writes these as KO/TKO with DETAILS "toCorner Stoppage"); NC = Overturned and Could Not Continue; DQ separate; draws come from OUTCOME D/D. Finish rate excludes NC, DQ and other. (high)
@@ -237,7 +237,7 @@ Divide per-15 numbers by 15 for ufcstats-style per-minute rates (league SLpM abo
 | UFC title bouts | 0.840 | 0.320 | 0.058 |
 | LW+FW 5-round bouts | 0.772 | 0.407 | 0.061 |
 
-Reading the columns: the standing-head denominator is bounded because ufcstats gives head and position totals but not their cross-tab (lower bound max(HEAD - GROUND, 0), upper bound min(HEAD, DISTANCE + CLINCH)); the point value is the midpoint and the range is shown. "P(finish same round given KD)" counts fighter-rounds with at least one knockdown that ended in a finish by the knockdown scorer in that round; the knockdown itself is often the finish. The last table gives per-strike stoppage hazards: ground KO/TKOs per 100 landed ground sig strikes (any target), standing KO/TKOs per 100 landed standing head strikes, and standing stoppages with no recorded knockdown (rare: 0.049 per 100). (medium)
+Reading the columns: the standing-head denominator is bounded because ufcstats gives head and position totals but not their cross-tab (lower bound max(HEAD - GROUND, 0), upper bound min(HEAD, DISTANCE + CLINCH)); the point value is the midpoint and the range is shown. "P(finish same round given KD)" counts fighter-rounds with at least one knockdown that ended in a finish by the knockdown scorer in that round; the knockdown itself is often the finish. The last table gives per-strike stoppage hazards: ground KO/TKOs per 100 landed ground sig strikes (any target), standing KO/TKOs per 100 landed standing head strikes, and standing stoppages with no recorded knockdown (rare: 0.049 per 100). The numerator counts every knockdown, including ones from body shots and kicks (about 7% of strike KO/TKOs target the body or legs), so "per head strike" slightly overstates the head-only rate. (medium)
 
 ## 6. Takedowns, control and submissions
 
@@ -353,7 +353,7 @@ Corner or doctor stoppage by round, 5-round fights (all UFC):
 | 4 | 299 | 5 | 1.67% |
 | 5 | 266 | 1 | 0.38% |
 
-Corner stoppages are rare: 8 since 2015 in this data, one of them Topuria's retirement against Gaethje. Injury stoppages ("toKnee Injury" etc.) are more common in 5-round fights in this sample (14 of 579), but the count is small. (high count, medium as a rate)
+Corner stoppages are rare: 8 between-round corner stoppages since 2015 in this data, one of them Topuria's retirement against Gaethje. A ninth record, Du Plessis vs Brunson (UFC 285, round 2, 4:59), carries "Corner Stoppage" after a strike description and is counted here as a stoppage by strikes. Injury stoppages ("toKnee Injury" etc.) are more common in 5-round fights in this sample (14 of 579), but the count is small. (high count, medium as a rate)
 
 ## 10. Pace curve
 
@@ -367,15 +367,15 @@ Corner stoppages are rare: 8 since 2015 in this data, one of them Topuria's reti
 | 4 | 544 | 4.15 | 8.80 | 47.2% | 1.206 | 2.74/0.83/0.58 | 3.30 | 33.4% | 49.2 | 0.20 |
 | 5 | 474 | 4.22 | 9.16 | 46.1% | 1.255 | 2.91/0.79/0.51 | 3.99 | 29.8% | 52.3 | 0.20 |
 
-**went distance only** (n fights = 237)
+**went distance only** (n fights = 236)
 
 | Round | Fighter-rounds | Sig landed/min | Sig att/min | Acc | Att vs R1 | Head/Body/Leg landed/min | TD att/15 | TD acc | CTRL s/round | KD per 100 standing head |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 474 | 3.22 | 7.27 | 44.2% | 1.000 | 1.69/0.74/0.79 | 2.75 | 32.3% | 40.0 | 0.43 |
-| 2 | 474 | 3.91 | 8.59 | 45.6% | 1.181 | 2.32/0.84/0.76 | 2.91 | 34.6% | 41.5 | 0.51 |
-| 3 | 474 | 3.99 | 8.69 | 45.9% | 1.195 | 2.48/0.82/0.69 | 3.43 | 31.2% | 41.6 | 0.25 |
-| 4 | 472 | 4.16 | 8.97 | 46.4% | 1.234 | 2.72/0.84/0.60 | 3.26 | 33.3% | 46.8 | 0.21 |
-| 5 | 472 | 4.22 | 9.15 | 46.1% | 1.259 | 2.91/0.80/0.51 | 4.01 | 29.8% | 52.5 | 0.20 |
+| 1 | 472 | 3.22 | 7.28 | 44.2% | 1.000 | 1.70/0.74/0.78 | 2.75 | 32.3% | 40.2 | 0.44 |
+| 2 | 472 | 3.90 | 8.57 | 45.5% | 1.178 | 2.31/0.84/0.75 | 2.90 | 34.8% | 41.6 | 0.51 |
+| 3 | 472 | 3.98 | 8.67 | 45.9% | 1.192 | 2.47/0.82/0.69 | 3.44 | 31.2% | 41.8 | 0.26 |
+| 4 | 472 | 4.16 | 8.97 | 46.4% | 1.233 | 2.72/0.84/0.60 | 3.26 | 33.3% | 46.8 | 0.21 |
+| 5 | 472 | 4.22 | 9.15 | 46.1% | 1.258 | 2.91/0.80/0.51 | 4.01 | 29.8% | 52.5 | 0.20 |
 
 **LW+FW 5-round fights, went distance only** (n fights = 41)
 
@@ -399,22 +399,22 @@ Full rounds only. The went-the-distance sample holds the same fights in every ro
 
 ## 11. Judging
 
-Decisions parsed: 2871 (8613 cards). Unanimous 78.6%, split 19.9%, majority 1.6% of non-draw decisions; draws 1.6% of decisions. Judges disagree on the winner in 21.4% of decisions; cards are not identical in 59.1%. Minimum pairwise round disagreement: 13.1% of rounds. Implied 10-8 (or deduction) per round: 4.69% (3-rd 4.75%, 5-rd 4.24%); cards with one: 12.5%; decisions with at least one such card: 19.2%.
+Decisions parsed: 2893 (8679 cards). Unanimous 78.7%, split 19.8%, majority 1.5% of non-draw decisions; draws 1.6% of decisions. Judges disagree on the winner in 21.3% of decisions; cards are not identical in 59.2%. Minimum pairwise round disagreement: 13.1% of rounds. Implied 10-8 (or deduction) per round: 4.70% (3-rd 4.76%, 5-rd 4.24%); cards with one: 12.5%; decisions with at least one such card: 19.2%.
 
 Card patterns, 3 rounds (winner's score first):
 
 | Card | n | Share |
 |---|---|---|
-| 29-28 | 3640 | 46.8% |
-| 30-27 | 2762 | 35.5% |
-| 28-29 | 462 | 5.9% |
-| 30-26 | 390 | 5.0% |
-| 29-27 | 258 | 3.3% |
-| 30-25 | 98 | 1.3% |
+| 29-28 | 3671 | 46.8% |
+| 30-27 | 2785 | 35.5% |
+| 28-29 | 463 | 5.9% |
+| 30-26 | 395 | 5.0% |
+| 29-27 | 260 | 3.3% |
+| 30-25 | 99 | 1.3% |
 | 27-30 | 51 | 0.7% |
-| 28-28 | 37 | 0.5% |
+| 28-28 | 38 | 0.5% |
 | 29-26 | 33 | 0.4% |
-| 28-27 | 20 | 0.3% |
+| 28-27 | 21 | 0.3% |
 | 30-24 | 9 | 0.1% |
 | 27-29 | 4 | 0.1% |
 
@@ -439,35 +439,35 @@ Implied 10-8 per round by year:
 
 | Year | Cards | Per round |
 |---|---|---|
-| 2015 | 645 | 3.65% |
-| 2016 | 735 | 4.48% |
-| 2017 | 669 | 7.12% |
-| 2018 | 657 | 4.85% |
+| 2015 | 651 | 3.62% |
+| 2016 | 741 | 4.45% |
+| 2017 | 672 | 7.09% |
+| 2018 | 681 | 5.06% |
 | 2019 | 831 | 7.12% |
 | 2020 | 678 | 6.54% |
-| 2021 | 762 | 5.07% |
-| 2022 | 711 | 3.74% |
-| 2023 | 735 | 5.05% |
+| 2021 | 765 | 5.05% |
+| 2022 | 717 | 3.89% |
+| 2023 | 738 | 5.03% |
 | 2024 | 837 | 2.51% |
-| 2025 | 753 | 2.50% |
-| 2026 | 600 | 3.74% |
+| 2025 | 765 | 2.47% |
+| 2026 | 603 | 3.73% |
 
-10-8 rounds are inferred from card totals: each 10-9 round sums to 19, so 19 x rounds minus the card total counts 10-8 rounds, but point deductions reduce totals the same way, so these are upper bounds on 10-8s. The 2017 jump lines up with the ABC's revised 10-8 criteria that took effect January 1, 2017 (reported by BJPenn.com, https://bjpenn.com/mma-news/mma-judging-criteria/new-mma-judging-criteria-finalized-implemented-2017 , and Rotowire, https://www.rotowire.com/mma/article/mma-barometer-29118 ; medium). A Bloody Elbow analysis reported 10-8s in 7.3% of 2017 rounds vs 3.4% in 2001-2012 (via search summary of https://bloodyelbow.com/2018/02/01/be-analytics-crunching-numbers-2017-10-8-judging-scoring-criteria-ufc-mma-editorial ; page not fetched, medium); this data's implied 7.1% for 2017 decision rounds is consistent. The rate has fallen to about 2.5% in 2024-2025 (high, this data).
+10-8 rounds are inferred from card totals: each 10-9 round sums to 19, so 19 x rounds minus the card total counts 10-8 rounds, but point deductions reduce totals the same way, so these are upper bounds on 10-8s. The 2017 jump lines up with the ABC's revised 10-8 criteria that took effect January 1, 2017 (reported by BJPenn.com, https://bjpenn.com/mma-news/mma-judging-criteria/new-mma-judging-criteria-finalized-implemented-2017 , and Rotowire, https://www.rotowire.com/mma/article/mma-barometer-29118 ; medium). A Bloody Elbow analysis reported 10-8s in 7.3% of 2017 rounds vs 3.4% in 2001-2012 (via search summary of https://bloodyelbow.com/2018/02/01/be-analytics-crunching-numbers-2017-10-8-judging-scoring-criteria-ufc-mma-editorial ; page not fetched, medium); this data's implied 7.1% for 2017 decision rounds is consistent. 2017 is not unique, though: 2019 was as high (7.1%) and 2020 close (6.5%), so read the rule change as one factor among several. The rate has fallen to about 2.5% in 2024-2025 (high, this data).
 
 Most frequent judges:
 
 | Judge | Cards | Years | Dissent rate | Implied 10-8 per round | Mean margin to winner |
 |---|---|---|---|---|---|
-| Sal D'amato | 959 | 2015-2026 | 5.8% | 4.65% | 1.98 |
-| Derek Cleary | 663 | 2015-2026 | 6.6% | 5.28% | 1.87 |
+| Sal D'amato | 960 | 2015-2026 | 5.8% | 4.65% | 1.98 |
+| Derek Cleary | 664 | 2015-2026 | 6.6% | 5.28% | 1.88 |
 | Chris Lee | 542 | 2015-2026 | 7.4% | 4.91% | 1.87 |
-| Mike Bell | 539 | 2015-2026 | 6.9% | 4.96% | 1.76 |
-| Junichiro Kamijo | 409 | 2015-2026 | 5.1% | 3.63% | 1.88 |
-| Eric Colon | 390 | 2015-2026 | 5.4% | 3.45% | 1.84 |
-| Ron McCarthy | 278 | 2015-2026 | 5.4% | 4.40% | 1.86 |
+| Mike Bell | 541 | 2015-2026 | 6.8% | 4.95% | 1.76 |
+| Junichiro Kamijo | 410 | 2015-2026 | 5.1% | 3.62% | 1.88 |
+| Eric Colon | 391 | 2015-2026 | 5.4% | 3.44% | 1.85 |
+| Ron McCarthy | 280 | 2015-2026 | 5.4% | 4.37% | 1.85 |
+| Ben Cartlidge | 250 | 2015-2026 | 4.0% | 6.38% | 1.95 |
 | Tony Weeks | 249 | 2015-2026 | 6.8% | 4.42% | 1.88 |
-| Ben Cartlidge | 249 | 2015-2026 | 4.0% | 6.40% | 1.95 |
-| David Lethaby | 195 | 2018-2026 | 5.1% | 6.36% | 2.03 |
+| David Lethaby | 196 | 2018-2026 | 5.1% | 6.33% | 2.02 |
 | Adalaide Byrd | 182 | 2015-2026 | 10.4% | 5.31% | 1.75 |
 | Clemens Werner | 148 | 2016-2026 | 2.0% | 4.91% | 2.09 |
 | Dave Tirelli | 143 | 2015-2026 | 9.1% | 3.58% | 1.99 |
@@ -477,104 +477,104 @@ Most frequent judges:
 | Doug Crosby | 110 | 2015-2022 | 9.1% | 6.14% | 1.87 |
 | Rick Winter | 102 | 2015-2026 | 11.8% | 2.88% | 1.85 |
 | Anders Ohlsson | 95 | 2017-2026 | 8.4% | 5.19% | 1.79 |
-| Glenn Trowbridge | 84 | 2015-2020 | 8.3% | 8.40% | 1.86 |
 | Evan Field | 84 | 2015-2026 | 8.3% | 8.53% | 2.05 |
+| Glenn Trowbridge | 84 | 2015-2020 | 8.3% | 8.40% | 1.86 |
 | Jeff Mullen | 83 | 2016-2017 | 4.8% | 4.69% | 1.78 |
 | Paul Sutherland | 82 | 2015-2026 | 8.5% | 4.80% | 1.93 |
 | Howard Hughes | 77 | 2015-2024 | 6.5% | 6.28% | 1.87 |
-| Vito Paolillo | 74 | 2020-2026 | 8.1% | 3.95% | 1.91 |
+| Vito Paolillo | 75 | 2020-2026 | 8.0% | 3.90% | 1.92 |
 
-"Dissent rate" is the share of a judge's cards that went against the majority (the loser's card in a split, the drawn card in a majority decision). Overall 7.0% of cards dissent; 359 distinct judges appear. Judges with high dissent rates and enough cards (Adalaide Byrd, Marcos Rosales, Rick Winter at 10-12%) are candidates for per-judge noise if the engine ever models named judges. (high)
+"Dissent rate" is the share of a judge's cards that went against the majority (the loser's card in a split, the drawn card in a majority decision). Overall 7.0% of cards dissent; 360 distinct judge-name strings appear (a few are run-together spellings in the source, such as "RaphaelDavis"; cards with no judge name are left out of the per-judge table). Judges with high dissent rates and enough cards (Adalaide Byrd, Marcos Rosales, Rick Winter at 10-12%) are candidates for per-judge noise if the engine ever models named judges. (high)
 
 ## 12. Round-winner model
 
 Logistic regression without intercept (the model is symmetric: swap corners and the sign flips), implemented with Newton/IRLS in numpy. Features are per-round differentials, fighter A minus fighter B.
 
-- **Clean subset**: 499 decisions where all three cards were 30-27 or 50-45 for the winner, so every round's winner is known (1541 rounds). These are lopsided fights, so the fit sees few close rounds and its slopes are too steep (it is overconfident on new data, see holdout).
-- **EM on all cards**: every judge's card whose total implies only 10-9 rounds (7,495 cards, 2,651 fights). The card fixes how many rounds each fighter won but not which; the E-step computes each round's posterior under the current model by enumerating the possible round assignments, the M-step is a weighted logistic fit. This uses split and close decisions too and is the recommended source of judging weights.
+- **Clean subset**: 501 decisions where all three cards were 30-27 or 50-45 for the winner, so every round's winner is known (1547 rounds). These are lopsided fights, so the fit sees few close rounds and its slopes are too steep (it is overconfident on new data, see holdout).
+- **EM on all cards**: every judge's card whose total implies only 10-9 rounds (7,550 cards, 2,672 fights). The card fixes how many rounds each fighter won but not which; the E-step computes each round's posterior under the current model by enumerating the possible round assignments, the M-step is a weighted logistic fit. This uses split and close decisions too and is the recommended source of judging weights.
 
-**Clean subset (every card 30-27 / 50-45)**: 499 fights, 1541 rounds
+**Clean subset (every card 30-27 / 50-45)**: 501 fights, 1547 rounds
 
 _target features_ (in-sample round accuracy 94.0%)
 
 | Feature | Coef | SE | Head-strike equivalents |
 |---|---|---|---|
-| head_l | 0.4114 | 0.0291 | 1.00 |
-| body_l | 0.3095 | 0.0334 | 0.75 |
-| leg_l | 0.2865 | 0.0319 | 0.70 |
-| kd | 2.8116 | 0.8504 | 6.83 |
-| td_l | 0.6514 | 0.1507 | 1.58 |
-| ctrl_min | 0.8817 | 0.1058 | 2.14 |
-| sub | 1.3420 | 0.3956 | 3.26 |
+| head_l | 0.4121 | 0.0292 | 1.00 |
+| body_l | 0.3100 | 0.0333 | 0.75 |
+| leg_l | 0.2854 | 0.0318 | 0.69 |
+| kd | 2.8077 | 0.8501 | 6.81 |
+| td_l | 0.6710 | 0.1499 | 1.63 |
+| ctrl_min | 0.8753 | 0.1053 | 2.12 |
+| sub | 1.3458 | 0.3956 | 3.27 |
 
-**EM on all 10-9-only cards**: 7495 cards from 2651 fights
+**EM on all 10-9-only cards**: 7550 cards from 2672 fights
 
 _target features_
 
 | Feature | Coef | Head-strike equivalents |
 |---|---|---|
-| head_l | 0.1793 | 1.00 |
-| body_l | 0.1327 | 0.74 |
-| leg_l | 0.1051 | 0.59 |
-| kd | 2.4210 | 13.51 |
-| td_l | 0.2860 | 1.60 |
-| ctrl_min | 0.4604 | 2.57 |
-| sub | 0.8472 | 4.73 |
+| head_l | 0.1789 | 1.00 |
+| body_l | 0.1326 | 0.74 |
+| leg_l | 0.1042 | 0.58 |
+| kd | 2.3846 | 13.33 |
+| td_l | 0.2844 | 1.59 |
+| ctrl_min | 0.4607 | 2.58 |
+| sub | 0.8436 | 4.72 |
 
 _position features_
 
 | Feature | Coef | Head-strike equivalents |
 |---|---|---|
-| dist_l | 0.1370 | 1.00 |
-| clinch_l | 0.1578 | 1.15 |
-| ground_l | 0.2745 | 2.00 |
-| kd | 2.2942 | 16.75 |
-| td_l | 0.2847 | 2.08 |
-| ctrl_min | 0.4121 | 3.01 |
-| sub | 0.8889 | 6.49 |
+| dist_l | 0.1364 | 1.00 |
+| clinch_l | 0.1582 | 1.16 |
+| ground_l | 0.2758 | 2.02 |
+| kd | 2.2614 | 16.58 |
+| td_l | 0.2832 | 2.08 |
+| ctrl_min | 0.4126 | 3.02 |
+| sub | 0.8885 | 6.51 |
 
 _extended features_
 
 | Feature | Coef | Head-strike equivalents |
 |---|---|---|
-| head_l | 0.1740 | 1.00 |
-| body_l | 0.1301 | 0.75 |
-| leg_l | 0.1026 | 0.59 |
-| sig_miss | -0.0076 | -0.04 |
+| head_l | 0.1737 | 1.00 |
+| body_l | 0.1300 | 0.75 |
+| leg_l | 0.1017 | 0.59 |
+| sig_miss | -0.0077 | -0.04 |
 | nonsig_l | 0.0205 | 0.12 |
-| kd | 2.3845 | 13.70 |
-| td_l | 0.3668 | 2.11 |
-| td_miss | -0.0967 | -0.56 |
-| ctrl_min | 0.4625 | 2.66 |
-| sub | 0.8753 | 5.03 |
-| rev | 0.3346 | 1.92 |
+| kd | 2.3465 | 13.51 |
+| td_l | 0.3642 | 2.10 |
+| td_miss | -0.0973 | -0.56 |
+| ctrl_min | 0.4638 | 2.67 |
+| sub | 0.8709 | 5.02 |
+| rev | 0.3313 | 1.91 |
 
-Holdout: models fit on decisions before 2023-01-01, tested on 962 later decisions (target features, three independent judges).
+Holdout: models fit on decisions before 2023-01-01, tested on 968 later decisions (target features, three independent judges).
 
 | Model | Accuracy | Brier | Log loss |
 |---|---|---|---|
-| EM, all 10-9 cards | 84.1% | 0.110 | 0.342 |
-| Clean subset | 84.2% | 0.127 | 0.555 |
-| More sig strikes landed | 79.1% | - | - |
+| EM, all 10-9 cards | 84.1% | 0.111 | 0.342 |
+| Clean subset | 84.1% | 0.128 | 0.557 |
+| More sig strikes landed | 78.9% | - | - |
 
 EM model calibration on the holdout (P(first-listed fighter wins the decision)):
 
 | Bin | n | Mean predicted | Observed |
 |---|---|---|---|
-| 0.0-0.1 | 248 | 2.2% | 5.2% |
-| 0.1-0.2 | 60 | 15.2% | 21.7% |
-| 0.2-0.3 | 48 | 24.7% | 27.1% |
-| 0.3-0.4 | 41 | 34.5% | 48.8% |
-| 0.4-0.5 | 35 | 44.3% | 51.4% |
-| 0.5-0.6 | 33 | 55.6% | 60.6% |
-| 0.6-0.7 | 42 | 65.6% | 66.7% |
-| 0.7-0.8 | 58 | 75.0% | 67.2% |
-| 0.8-0.9 | 66 | 85.7% | 71.2% |
-| 0.9-1.0 | 331 | 98.0% | 96.7% |
+| 0.0-0.1 | 247 | 2.2% | 4.9% |
+| 0.1-0.2 | 61 | 15.2% | 24.6% |
+| 0.2-0.3 | 50 | 24.8% | 24.0% |
+| 0.3-0.4 | 44 | 34.8% | 50.0% |
+| 0.4-0.5 | 33 | 44.5% | 51.5% |
+| 0.5-0.6 | 33 | 55.8% | 60.6% |
+| 0.6-0.7 | 42 | 65.5% | 66.7% |
+| 0.7-0.8 | 58 | 74.9% | 67.2% |
+| 0.8-0.9 | 65 | 85.6% | 70.8% |
+| 0.9-1.0 | 335 | 97.9% | 96.7% |
 
-Clean-subset position and extended variants are in `data/derived/baserates_tables.md`. Readings: body strikes count about three-quarters of a head strike and leg strikes about 0.6; ground strikes count about double a distance strike in the position fit (they come with dominant position); a knockdown is worth 13-17 landed head strikes; a takedown about 1.6-2.1; a minute of control about 2.6-3.0; a submission attempt about 5-6.5. Missed strikes carry essentially no credit (aggression is not rewarded per se), and missed takedowns cost a little. The model is well calibrated at the extremes but overconfident in the middle bands (10-40% and 70-90%), which is what you expect when three judges are treated as independent: the engine's judges need a shared noise component (and a per-fight taste term) on top of individual noise, tuned to the split-decision rate and the 13% pairwise round disagreement. (medium)
+Clean-subset position and extended variants are in `data/derived/baserates_tables.md`. Readings: body strikes count about three-quarters of a head strike and leg strikes about 0.6; ground strikes count about double a distance strike in the position fit (they come with dominant position); a knockdown is worth 13-17 landed head strikes; a takedown about 1.6-2.1; a minute of control about 2.6-3.0; a submission attempt about 4.7-6.5. Missed strikes carry essentially no credit (aggression is not rewarded per se), and missed takedowns cost a little. The model is well calibrated at the extremes but overconfident in the middle bands (10-40% and 70-90%), which is what you expect when three judges are treated as independent: the engine's judges need a shared noise component (and a per-fight taste term) on top of individual noise, tuned to the split-decision rate and the 13% pairwise round disagreement. (medium)
 
-Compared with v2's judging weights (head 1, body 0.8, leg 0.55, ground 0.85, knockdown 12, takedown 3, control 0.06 per second = 3.6 per minute, submission attempt 7): body and leg are close; knockdown is close; v2 overweights takedowns (3 vs about 1.6-2.1) and submission attempts (7 vs about 5), slightly overweights control, and underweights ground strikes (0.85 vs about 2 in the position fit, which partly reflects top position itself).
+Compared with v2's judging weights (head 1, body 0.8, leg 0.55, ground 0.85, knockdown 12, takedown 3, control 0.06 per second = 3.6 per minute, submission attempt 7): body and leg are close; knockdown is close; v2 overweights takedowns (3 vs about 1.6-2.1) and submission attempts (7 vs about 4.7-6.5), slightly overweights control, and underweights ground strikes (0.85 vs about 2 in the position fit, which partly reflects top position itself).
 
 ## 13. Divisions (priors for any matchup)
 
@@ -619,8 +619,8 @@ Strike volume rose about 30% from 2015 to 2021 and has been flat since; accuracy
 
 | Stat | Fighter-fights | Fighters | Residual SD (log) | Poisson SD | Within-fight SD | Implied form SD | Fighter effect SD | Opponent effect SD |
 |---|---|---|---|---|---|---|---|---|
-| sig_landed | 2680 | 407 | 0.448 | 0.157 | 0.270 | 0.358 | 0.349 | 0.375 |
-| sig_attempted | 2680 | 407 | 0.416 | 0.103 | 0.250 | 0.332 | 0.336 | 0.351 |
+| sig_landed | 2326 | 343 | 0.448 | 0.155 | 0.265 | 0.361 | 0.335 | 0.368 |
+| sig_attempted | 2326 | 343 | 0.416 | 0.102 | 0.246 | 0.336 | 0.320 | 0.336 |
 
 full rounds only, fighter-fights with >= 2 full rounds; two-way fixed effects (fighter output, opponent allowance) on log mean per-round count; fighters and opponents with >= 4 such fights. resid_sd_log is the calibration target for between-fight spread; implied_form_sd removes the sampling noise implied by round-to-round variance inside the fight. It still holds style-matchup interaction, so it is an upper bound on pure night-to-night form.
 
@@ -641,13 +641,13 @@ Use the residual SD as the calibration target: the engine's fighter-vs-fighter s
 | Estimated ground / clinch-control share of time | 0.326 / 0.053 | position_time |
 | 5-round conditional finish rate R1-R5 | 0.208, 0.204, 0.172, 0.108, 0.109 | hazard |
 | Corner/doctor stoppage per round reached, 5-round R1-R5 | 0.0017, 0.0044, 0.0083, 0.0167, 0.0038 | stoppages |
-| Pace (attempts vs R1), 5-round went-distance | 1.000, 1.181, 1.195, 1.234, 1.259 | pace_curve |
+| Pace (attempts vs R1), 5-round went-distance | 1.000, 1.178, 1.192, 1.233, 1.258 | pace_curve |
 | Round sig-landed NB k | 2.55 | round_dist |
 | Corr of opponents' sig landed in a round | 0.430 | round_dist |
-| Between-fight residual SD, log sig landed | 0.448 (form upper bound 0.358) | form |
-| Decision type shares U / S / M | 0.786 / 0.199 / 0.016 | judging |
-| Implied 10-8 per decision round | 0.0469 (2024-25 about 0.025) | judging |
-| Round logit weights (EM): head, body, leg, KD, TD, ctrl/min, sub | 0.179, 0.133, 0.105, 2.421, 0.286, 0.460, 0.847 | round_model |
+| Between-fight residual SD, log sig landed | 0.448 (form upper bound 0.361) | form |
+| Decision type shares U / S / M | 0.787 / 0.198 / 0.015 | judging |
+| Implied 10-8 per decision round | 0.0470 (2024-25 about 0.025) | judging |
+| Round logit weights (EM): head, body, leg, KD, TD, ctrl/min, sub | 0.179, 0.133, 0.104, 2.385, 0.284, 0.461, 0.844 | round_model |
 
 All of these are also in `baserates.json` under `engine_targets`, keyed by group, so the engine can read the division or format that matches the fight.
 
@@ -670,3 +670,59 @@ All of these are also in `baserates.json` under `engine_targets`, keyed by group
 - 2017 10-8 criteria: https://bjpenn.com/mma-news/mma-judging-criteria/new-mma-judging-criteria-finalized-implemented-2017 ; https://www.rotowire.com/mma/article/mma-barometer-29118 ; https://bloodyelbow.com/2018/02/01/be-analytics-crunching-numbers-2017-10-8-judging-scoring-criteria-ufc-mma-editorial (search summaries; pages not fetched)
 - Event date check for the renamed Noche UFC card (Sep 13, 2025): https://en.wikipedia.org/wiki/UFC_Fight_Night:_Lopes_vs._Silva ; https://www.ufc.com/event/ufc-fight-night-september-13-2025
 
+## Verification log
+
+Adversarial fact-check, Friday, November 6, 2026. I recomputed the headline numbers from `data/raw/` with fresh pandas code written for this check; it does not import or copy `tools/baserates.py`. The scripts are in the session scratchpad, not the repo. Unless a line says otherwise, the recomputed value matched the text to the stated precision.
+
+**Parsing hazards checked**
+- Trailing spaces: EVENT in `ufc_fight_results.csv` carries a trailing space (e.g. "UFC 324: Gaethje vs. Pimblett "). After stripping, 2015+ has 5,928 fights. Every one joins to the stats file, with exactly two rows per round and both names matching the BOUT string.
+- Renamed events: 25 fights appear twice with identical fight URLs (14 under Noche UFC / UFC Fight Night: Lopes vs. Silva, 11 under Noche UFC / UFC Fight Night: Grasso vs. Shevchenko 2). The stats file also holds both copies (64 + 64 and 52 + 52 rows), so without the URL dedup every round of those fights would join four rows. The two "UFC Fight Night" names, plus "UFC - Road to UFC 4.6", are missing from the event file. Confirmed.
+- "---" and "--" values: "---" appears only in SIG.STR. % (212 rows) and TD % (19,678 rows), which are not used. CTRL "--" appears in 432 rows, none of them in the 2015+ window. KD, SUB.ATT and REV. parse as floats ("1.0"). No NaNs remain in the 2015+ stats.
+- OUTCOME order: W/L and L/W refer to the BOUT names in order, checked against results I know. Examples: Volkanovski vs Topuria (UFC 298) L/W; Holloway vs Volkanovski (UFC 245) L/W; Khabib vs McGregor (UFC 229) W/L; Makhachev vs Volkanovski (UFC 284, 294) W/L; Gaethje vs Holloway (UFC 300) L/W; Poirier vs Gaethje (UFC 291) L/W; Ferguson vs Gaethje (UFC 249) L/W; Alvarez vs Gaethje (UFC 218) W/L.
+- Draws, no contests and formats: 48 D/D (31 majority, 13 split, 3 unanimous, 1 overturned) and 58 NC/NC. There are 37 "3 Rnd + OT" bouts and one "3 Rnd (10-5-5)" bout; the latter is the single fight excluded from stats.
+
+**Errors found and fixed (script, JSON and this file)**
+1. *Judges' card regex dropped about 1% of decisions.* `CARD_RE = (.+?)\s(\d{1,2})\s-\s(\d{1,2})\.` needs a judge name followed by a space. ufcstats sometimes omits the name ("28 - 29.28 - 29.27 - 30.") or the space ("Brian Tyler27 - 30."), and 22 decisions were silently dropped. Rewritten to anchor on the score pairs (cards with no name are kept, as "unknown", and left out of the per-judge table). Effects: decisions parsed 2,871 -> 2,893; U/S/M 78.6/19.9/1.6 -> 78.7/19.8/1.5; EM cards 7,495 -> 7,550; EM knockdown coefficient 2.42 -> 2.38 (13.5 -> 13.3 head-strike units); leg 0.105 -> 0.104; holdout n 962 -> 968, Brier 0.110 -> 0.111, baseline 79.1% -> 78.9%; clean subset 499 -> 501. The orientation counts in "Judges' scores are written loser-first" were corrected the same way (6,742 of 6,744; 568 of 569). No card was mis-parsed, only dropped, so the direction of every conclusion is unchanged.
+2. *The pace curve's "went 25 minutes" sample held a 15-minute fight.* Cejudo vs Song (Fight Night, technical decision after an eye poke in round 3) was counted among 5-round fights that "went the distance". It sat in rounds 1-3 only (474 fighter-rounds vs 472 in rounds 4-5), so the sample was not the same in every round. The script now requires the fight to end at 5:00 of the last scheduled round: 237 -> 236 fights (3-round: 2,658 -> 2,650). R1 attempts 7.27 -> 7.28 a minute, head 1.69 -> 1.70, leg 0.79 -> 0.78, ratios 1.181/1.195/1.234/1.259 -> 1.178/1.192/1.233/1.258.
+3. *"41.5% go 25 minutes"* in 5-round bouts is the not-finished share; 236 of 571 (41.3%) actually go 25 minutes. Wording fixed. The hazard table's "reached" counts (297 for R4) correctly treat Cejudo vs Song as not reaching round 4.
+4. *The form block's minimum-fights filter stopped after 6 passes*, leaving 15 fighters below the stated 4-fight minimum. It now iterates to convergence: 2,680 -> 2,326 fighter-fights. Residual sd unchanged at 0.448; implied form sd 0.358 -> 0.361. An exact least-squares two-way fixed-effects fit with dummy variables (not backfitting) gives 0.451 / 0.361 at 2,466 fighter-fights (10 passes), so the result is robust to the filter.
+5. *Summary item 13 was headed "Stoppages between rounds"*, but 18 of the 45 doctor stoppages and 23 of the 26 injury stoppages happened mid-round (27 doctor and 3 injury stoppages came at 5:00). Retitled.
+6. *"The scorer wins the fight 85.4%"* is per knockdown fighter-round. Per fighter-fight with a knockdown it is 84.9% (86.4% excluding draws and no contests). Clarified.
+7. *Corner stoppages:* 8 records start "toCorner Stoppage" (between rounds). A ninth record (Du Plessis vs Brunson, UFC 285, R2 4:59) appends "Corner Stoppage" to a strike description and is counted as strikes. Noted in section 9.
+8. Section 11 now notes that 2019 matched 2017's implied 10-8 rate (7.1%), so the 2017 jump is not unique to the rule-change year.
+
+**Independent recomputation of the headline numbers**
+
+| Claim | Text | Recomputed | Verdict |
+|---|---|---|---|
+| Method split, all 2015+ (n = 5,928) | KO/TKO 32.2, Sub 17.5, U 37.9, S 9.6, M 0.7, draw 0.8, NC 1.0, finish 50.3% | 32.2, 17.5, 37.9, 9.6, 0.7, 0.8, 1.0, 50.3% | confirmed |
+| Lightweight / 5-round finish rate | 52.7% / 58.5% (KO/TKO 42.5%) | 52.7% / 58.5% (42.5%) | confirmed |
+| 5-round hazard (n = 571) | 20.8, 20.4, 17.2, 10.8, 10.9% | 20.8, 20.4, 17.2, 10.8, 10.9% (R4 10.7% if Cejudo vs Song counts as reaching R4) | confirmed |
+| 3-round hazard (n = 5,248) | 25.4, 21.2, 13.8% | 25.4, 21.2, 13.8% | confirmed |
+| KD per 100 standing head landed | 0.95 (0.91-0.99); LW 0.98; title 0.70; 5-rd 0.78 | 0.952 (0.913-0.994); 0.976; 0.704; 0.781 | confirmed |
+| KD per 100 head / per 100 sig | 0.83 / 0.52 | 0.827 / 0.521 | confirmed |
+| KD round -> same-round finish | 61.8% (LW 63.4%, 2+ KD 71.2%) | 61.8% (63.4%, 71.2%), n = 2,364 KD fighter-rounds | confirmed |
+| Distance KO/TKOs with winner KD in final round | 91.0% | 90.8% (my position coding, n = 1,099) | confirmed |
+| Sig strikes per 15 | 57.4 landed / 125.2 attempted, 45.9% | 57.44 / 125.20, 45.9% | confirmed |
+| Accuracy by target / position | head 37.5, body 69.1, leg 81.1; dist 41.6, clinch 71.7, ground 71.8 | identical | confirmed |
+| Takedowns per 15 | 3.86 att / 1.40 landed, 36.3% | 3.86 / 1.40, 36.3% | confirmed |
+| Sub attempts per 15 / conversion | 0.40 / 29.6% | 0.405 / 29.6% (1,040 sub wins / 3,519 attempts) | confirmed |
+| CTRL per 15 / per TD | 170.7 s / 121.7 s | 170.7 / 121.7 | confirmed |
+| Pace, 5-rd went distance | 7.27 -> 9.15 att/min; leg 0.79 -> 0.51; head 1.69 -> 2.91 (n = 237) | 7.28 -> 9.15; 0.78 -> 0.51; 1.70 -> 2.91 (n = 236) | corrected (fix 2) |
+| Decision types | 78.6 / 19.9 / 1.6 | 78.7 / 19.8 / 1.5 (2,893 decisions) | corrected (fix 1) |
+| Implied 10-8 per round | 4.7% overall; 2017 7.1%; 2024-25 about 2.5% | 4.70%; 7.09%; 2.51% / 2.47% | confirmed |
+| EM round logit | head 0.179, body 0.133, leg 0.105, KD 2.42, TD 0.286, ctrl 0.46/min, sub 0.85 | 0.179, 0.133, 0.104, 2.38, 0.284, 0.461, 0.844 (7,550 cards; own EM over all round assignments) | corrected (fix 1); signs and ratios confirmed |
+| Holdout 2023+ | 84.1% vs 79.1%, Brier 0.110 | 84.1% vs 78.9%, Brier 0.111 (n = 968) | corrected (fix 1) |
+| Round sig landed distribution | mean 18.52, sd 12.37, var/mean 8.26, NB k 2.55; corr r -> r+1 0.584 | identical; opponent corr 0.434 on one row per round (0.430 in the script, which counts each round twice) | confirmed |
+| Between-fight residual sd | 0.45; form at most 0.36 | 0.451 / 0.361 (exact FE) | confirmed |
+| Stoppages | doctor 45 (0.76/100), corner 8 (0.13), injury 26 (0.44); 5-rd injury 14/579 (2.42) | same counts | confirmed (see fix 7) |
+| UFC 324 strikes | Pimblett 156, Gaethje 144; Gaethje 2 KD, 3/3 TD, 5:55 ctrl | Pimblett 156 of 311, Gaethje 144 of 254; total 200-170 Gaethje; 2-0 KD; TD 3/3 vs 0/5; CTRL 355 s vs 48 s | confirmed (dataset) |
+| UFC Freedom 250 | Topuria 97, Gaethje 91, 1 Topuria KD, KO/TKO R4 5:00 corner, Gaethje winner | identical in the dataset (OUTCOME L/W) | confirmed (dataset only) |
+
+**Claims I could not verify on the web.** The web search budget for this session was used up before this check, and ufcalendar.com and agentmma.com do not resolve from this session's network. None of the cited secondary pages (UFCalendar, AgentMMA, Bloody Elbow, BJPenn, Rotowire, Wikipedia, UFC.com) was re-fetched, so their wording stays as the original author cited it (search summaries, medium).
+
+For the control-time definition (claim: CTRL includes clinch control on the fence) I ran a data test instead. In the 3,633 full rounds with no takedown, no ground strike attempt, no knockdown, no reversal and no submission attempt by either fighter, CTRL rises steeply with clinch strike attempts: 6 s mean at 0 clinch attempts, 22 s at 1-4, 43 s at 5-9, 72 s at 10-19 and 105 s at 20 or more. Those no-ground rounds hold 10% of all control seconds. Control in rounds with no ground action is hard to explain unless clinch control is counted, so I treat the claim as supported (medium-high).
+
+**Other caveats noticed (not errors)**
+- Injury stoppages may be under-labeled: 18 doctor stoppages since 2015 have blank DETAILS, so their cause (cut or injury) is unknown, and injuries recorded only as doctor stoppages are not in the injury count. The roughly 10x gap between 5-round bouts (2.42 per 100) and other bouts (0.22 per 100) may partly reflect more detailed notes for main events.
+- Judge-pair disagreement (13.1%) and the round model use only 10-9-only cards; the decision-type shares use all decisions.

@@ -1,0 +1,77 @@
+{
+  "slug": "dricus-du-plessis",
+  "name": "Dricus Du Plessis",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC middleweight champion (won the belt from Sean Strickland at UFC 297 in Jan 2024, defended it twice, lost it to Khamzat Chimaev by unanimous decision at UFC 319 on Aug 16, 2025). Last fight: unanimous decision over Kamaru Usman (50-45, 49-46, 49-46) in a five-round non-title main event, UFC Fight Night Oklahoma City, Jul 18, 2026. UFC record 10-1. The belt is now with Strickland (beat Chimaev May 9, 2026). Brendan Allen called him out after beating Christian Leroy Duncan on Oct 10, 2026 (per the Allen research pass). No booking found. Web checks were blocked in this pass, so ranking and any post-July news are unverified.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/0d7b51c9d2649a6e",
+      "http://ufcstats.com/fight-details/701c97405da76603",
+      "http://ufcstats.com/fight-details/12cedec11b37ddc0",
+      "http://ufcstats.com/fight-details/70f1621080b3435c",
+      "https://sports.yahoo.com/mma/article/ufc-vegas-122-results-brendan-allen-stops-christian-leroy-duncan-with-late-choke-calls-out-ex-champ-030151648.html",
+      "data/scouting/brendan-allen.json (callout after the Oct 10, 2026 win; not re-opened in this pass)",
+      "data/derived/fighters.json (last_fight 2026-07-18, snapshot 2026-10-31)"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "switch",
+    "tags": ["pressure", "volume", "power", "switch-stance", "leg-kicks", "body-work", "wild-exchanges", "back-takes", "submissions", "ground-and-pound", "cardio", "durable", "late-surge"],
+    "signature": [
+      "forward pressure with stance switches and long combinations (ufcstats lists him as switch; 9.9 sig attempts per minute decayed vs 8.1 middleweight average)",
+      "punching power at distance: KO/TKO of Markus Perez, Trevin Giles and Robert Whittaker (punches to head at distance), Derek Brunson (punches from guard)",
+      "heavy leg and body kicking when the opponent is a pure boxer: 52 of 62 leg strikes and 45 of 59 body strikes vs Strickland at UFC 312",
+      "back takes and chokes: neck crank from back control vs Darren Till (R3, Dec 2022), rear-naked choke vs Israel Adesanya (R4, Aug 2024)",
+      "timely takedowns in striking fights: 6 of 11 vs Strickland (UFC 297), 4 of 9 vs Adesanya (UFC 305)"
+    ],
+    "weaknesses": [
+      "elite chain wrestling: Chimaev took him down 12 times in 17 attempts and held him for 21:40 of 25 minutes (UFC 319); he landed 13 sig strikes",
+      "takedown defense 54.8% decayed (league middleweight about 64%); opponents hold 19% control share against him",
+      "hittable in exchanges: decayed 4.0 sig absorbed per minute, slightly above the 3.9 middleweight average"
+    ],
+    "summary": "A switch-stance pressure fighter who throws a lot and keeps throwing late, mixing heavy punches with leg and body kicks, and who can wrestle and take the back when a striker over-commits. He has never been knocked down in the UFC. His one UFC loss came from a wrestler who kept him on the mat for nearly the whole fight.",
+    "sources": [
+      "http://ufcstats.com/fight-details/d13849f49f99bf01",
+      "http://ufcstats.com/fight-details/14e53999507c76a7",
+      "http://ufcstats.com/fight-details/6c44af21414e4143",
+      "http://ufcstats.com/fight-details/ecab8b8b36727b8d",
+      "http://ufcstats.com/fight-details/4ec5d9bd1442e6c1",
+      "http://ufcstats.com/fight-details/c2fc4c1e0c769655",
+      "http://ufcstats.com/fight-details/12cedec11b37ddc0",
+      "data/raw/ufc_fight_stats.csv",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.2, "cross": 0.24, "hook": 0.24, "overhand": 0.18, "upper": 0.08, "headkick": 0.06,
+    "bodykick": 0.5, "bodyhook": 0.3, "bodystraight": 0.2,
+    "calf": 0.5, "inside": 0.5, "spinning": 0.03, "knee": 0.06, "elbow": 0.05,
+    "notes": "Group shares come from fighters.json decayed sums: sig attempts 76.8% head, 11.8% body, 11.4% leg (career 75.7/11.2/13.0). Middleweight league is 77.2/14.0/8.8, so he sends a bit more to the legs and a bit less to the body than average. The split swings by opponent: 230 of 273 attempts went to the head vs Usman (Jul 2026), but 121 of 314 went to legs and body vs Strickland (Feb 2025), where 52 of 62 leg strikes landed. 89% of his landed sig strikes are at distance, so clinch and ground weights stay low. Inside the head group, hooks and the cross lead and the overhand is high because his KO wins are punches at distance (Perez, Giles, Whittaker); the jab is lower because no source in this pass describes a jab-led game. Body weights favour kicks because 45 of 59 body strikes vs Strickland 2 came at distance with no clinch time; ufcstats does not say kick or punch, so the 0.5/0.3/0.2 split is a judgment. Leg weights are an even split because no source in this pass separates calf from inside kicks. Spinning, knee and elbow are small judgments, not counted by any source here. Web scouting sources could not be opened in this pass (search budget spent, espn.com and wikipedia.org did not resolve), so these weights rest on the ufcstats data."
+  },
+  "appearance": {
+    "build": "6'1\" with a 76\" reach (dataset); a thick, heavily muscled middleweight frame, broad through the chest, shoulders and legs (judgment from widely published fight photos, not re-checked in this pass)",
+    "hair": "short dark-brown hair, closely cropped in most fight photos (not re-checked in this pass)",
+    "facial_hair": "varies between clean-shaven and short stubble or a short beard; no confirmed 2026 description",
+    "skin": "light",
+    "tattoos": "unknown (no source in this pass)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height_in 73, reach_in 76, stance Switch)",
+      "http://ufcstats.com/fighter-details/0d7b51c9d2649a6e"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Output rises late: in five five-round fights his sig landed per minute by round is 1.00, 1.19, 1.40, 1.19 and 1.45 times R1.", "source": "data/derived/fighters.json (pace)" },
+    { "note": "Zero knockdowns absorbed and zero stoppage losses in 11 UFC fights, including 25 minutes with Strickland twice and 20 minutes with Adesanya.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)" },
+    { "note": "Takedown defense is the hole: 54.8% decayed and 50% career, with opponents shooting 3.4 times per 15 min. Chimaev went 12 of 17 at UFC 319.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/12cedec11b37ddc0" },
+    { "note": "Usman went 0 for 7 on takedowns against him at middleweight in Jul 2026, so his defense is fine against wrestlers who cannot chain attempts.", "source": "http://ufcstats.com/fight-details/701c97405da76603" },
+    { "note": "Highest Elo among active middleweights in the dataset (1769); Usman 1749, Chimaev 1737, Strickland 1734.", "source": "data/derived/fighters.json (elo)" }
+  ],
+  "confidence": "medium"
+}

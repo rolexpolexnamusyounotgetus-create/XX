@@ -1,0 +1,81 @@
+{
+  "slug": "jack-della-maddalena",
+  "name": "Jack Della Maddalena",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC welterweight champion. He won the title from Belal Muhammad at UFC 315 in Montreal (May 10, 2025; 48-47, 48-47, 49-46). He lost it to Islam Makhachev at UFC 322 (Nov 15, 2025; 45-50 x3, controlled for 19:10). Carlos Prates then stopped him in a five-round main event in Perth (May 2, 2026; TKO R3 3:17, elbows to the body after three knockdowns). That is two straight losses. Nothing after May 2, 2026 is in the ufcstats snapshot (through Oct 31, 2026). Rakhmonov's manager denied a rumored January 2027 fight with Shavkat Rakhmonov on Oct 30, 2026, per the Bloody Elbow report cited in the project's Rakhmonov file. That report was not re-fetched here, and no booking or ranking could be checked (no web access).",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/6b453bc35a823c3f",
+      "http://ufcstats.com/fight-details/eb6d9fef6c374830",
+      "http://ufcstats.com/fight-details/856f6ee049373843",
+      "http://ufcstats.com/fight-details/b873c116e39c9920",
+      "http://ufcstats.com/event-details/872b018076f831b0",
+      "https://bloodyelbow.com/2026/10/30/shavkat-rakhmonovs-ufc-return-facing-another-delay-as-his-manager-shuts-down-rumored-fight/"
+    ]
+  },
+  "style": {
+    "archetype": "boxer",
+    "stance": "switch",
+    "tags": ["power", "volume", "body-work", "switch-stance", "fast-starter", "late-surge", "cardio"],
+    "signature": [
+      "punches to the body: KO of Ramazan Emeev with a punch to the body, R1 2:32 (UFC 275; ufcstats 'Punch to Body At Distance')",
+      "heavy body work: 19.5% of decayed significant attempts go to the body (division 13.9%); 47/65 body strikes landed against Muhammad",
+      "early finishing power: his first four UFC opponents (Rodriguez, Emeev, Roberts, Brown) were all finished in R1 (2022-2023)",
+      "fifth-round surge: 53/83 significant strikes landed in R5 against Muhammad to win the title",
+      "finishes hurt opponents on the ground: elbows to Gilbert Burns, R3 3:43 (UFC 299), and a rear-naked choke of Randy Brown, R1 (UFC 284), each after a knockdown"
+    ],
+    "weaknesses": [
+      "takedown defense 41.7% over the last 3 years (division 64.1%). Makhachev went 4/4 and controlled him 19:10, and Burns went 7/11 with 5:07 control",
+      "almost no wrestling offense: 0.48 takedowns per 15 min decayed (division 1.35), 25% accuracy",
+      "knocked down three times and stopped by Prates (May 2026), his first UFC loss by KO/TKO",
+      "two straight losses; Bassil Hafez also controlled him 6:48 (3/20 takedowns) in a 2023 split decision"
+    ],
+    "summary": "A switch-stance boxer who builds behind straight punches, attacks the body, and turns it up late: he landed 53 significant strikes in the fifth round to take the title from Muhammad. He finished each of his first four UFC opponents in round 1. His weak spot is the mat, where wrestlers have controlled him for long spells. Carlos Prates knocked him down three times and finished him in May 2026.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/6b453bc35a823c3f",
+      "data/derived/fighters.json",
+      "tools/fighter_report.py (snapshot 2026-10-31)"
+    ]
+  },
+  "moves": {
+    "jab": 0.5,
+    "cross": 0.45,
+    "hook": 0.35,
+    "overhand": 0.1,
+    "upper": 0.2,
+    "headkick": 0.05,
+    "bodykick": 0.2,
+    "bodyhook": 0.4,
+    "bodystraight": 0.3,
+    "calf": 0.12,
+    "inside": 0.1,
+    "spinning": 0.02,
+    "knee": 0.08,
+    "elbow": 0.06,
+    "notes": "Target split from the fighters.json S sums: decayed significant attempts go 73.3% head, 19.5% body, 7.2% legs, and landed strikes 63.1% head, 25.7% body, 11.2% legs. Career attempts are 73.8/19.5/6.7. His body share is about 1.4x the welterweight rate (13.9%), and a punch to the body finished Emeev, so the body moves total 0.9. They lean to punches (body hook 0.4, body straight 0.3) over kicks (0.2). Leg attempts are below the division rate (9.3%), so low kicks are small. 88% of his decayed landed strikes come at distance and 7.8% in the clinch, so knees and elbows are small. His elbow finish of Burns was on the ground. ufcstats does not split jab, cross, hook and uppercut. That split follows his boxing style as a judgment, not a count. No outside scouting source could be fetched this pass."
+  },
+  "appearance": {
+    "build": "athletic, medium frame; 5 ft 11 in with a 73 in reach (ufcstats)",
+    "hair": "short dark",
+    "facial_hair": "unknown",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/6b453bc35a823c3f"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Fast starts in three-round fights: 6.89 significant landed per minute in round 1 across 7 three-round fights, with 4 first-round finishes.", "source": "tools/fighter_report.py pace table (snapshot 2026-10-31)" },
+    { "note": "Five-round pace (1, 1.23, 1.06, 1.09, 1.72) comes from 2 fights that reached round 5 (Muhammad, Makhachev). The round-5 jump mostly comes from the Muhammad fight (53 landed in R5), so shrink it toward the prior.", "source": "data/derived/fighters.json (pace_w 15, 15, 13.3, 10, 10)" },
+    { "note": "Grappling defense is the hole: controlled 331 s per 15 min over the last 3 years (division 167).", "source": "tools/fighter_report.py (snapshot 2026-10-31)" },
+    { "note": "Chin: all 3 knockdowns he has absorbed in the UFC came in the Prates fight (1 in R2, 2 in R3). Before that he was never knocked down in 105 UFC minutes.", "source": "data/raw/ufc_fight_stats.csv; http://ufcstats.com/fight-details/eb6d9fef6c374830" },
+    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources.", "source": "research pass 2026-11-06" }
+  ],
+  "confidence": "medium"
+}

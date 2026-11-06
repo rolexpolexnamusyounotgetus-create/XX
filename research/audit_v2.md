@@ -13,9 +13,11 @@ Chromium with SwiftShader, taking 40+ screenshots of the cage and both page widt
 **Confidence tags:** **[high]** measured or read directly from code or data. **[med]** an inference
 from measurements, with caveats stated. **[low]** a judgment or an unverified external fact.
 
-**Repo state note [high].** `build.py` at HEAD (commit `eeb164e`) is already the v3 build script and
-expects `src/params3.js`, `src/engine3.js` and `src/director3.js`, which don't exist yet. So
-`python3 build.py` currently fails with `FileNotFoundError: src/params3.js`. To audit v2, I built
+**Repo state note [high].** `build.py` at HEAD (commit `eeb164e` when audited; HEAD has since moved
+to `e59bc48`, whose `build.py` is unchanged, and the working-tree copy also expects `src/avatar3d.js`)
+is already the v3 build script and expects `src/params3.js`, `src/engine3.js` and
+`src/director3.js`, which don't exist yet. So `python3 build.py` currently fails with
+`FileNotFoundError: src/params3.js`. To audit v2, I built
 the page from the v2 commit's `build.py` and sources in the scratchpad. The result was byte-identical
 to the committed `volk-gaethje-simulator.html`.
 
@@ -30,15 +32,15 @@ The scripts are listed in the Reproduce section at the end.
 
 | # | Pri | Finding | Evidence | Fix |
 |---|---|---|---|---|
-| 1 | P0 | **Finishing dynamics are backwards.** v2's finish hazard *rises* by round; real five-round UFC fights show a *falling* hazard. Fed league-average inputs, v2 finishes 36% of five-rounders vs 58.5% in the data. | Data 2015+, n=574: hazard by round .207/.204/.171/.110/.109. v2, league clone: .063/.074/.089/.098/.106. v2, Volk vs Gaethje: .076/.096/.119/.162/.185 | KD follow-up state, standing TKO, damage that partly recovers, real heterogeneity. Calibrate to the hazard curve. |
-| 2 | P0 | **Knockdowns convert to finishes too rarely.** | Data: 57.0% of rounds with a KD end in that fighter's KO/TKO the same round (n=2,361). v2: 35-40%. | Model the post-KD sequence explicitly, calibrated to 0.56 (1 KD) and 0.67 (2+ KD). |
+| 1 | P0 | **Too few finishes, and the hazard runs the wrong way.** v2's finish hazard *rises* by round; real five-round UFC fights show a *falling* hazard. Fed league-average inputs, v2 finishes 36% of five-rounders vs 58.5% in the data (and fewer in 25 minutes than real three-round fights do in 15: 49.5%). The level gap is the hard evidence; the shape is partly a heterogeneity effect (§0.1). | Data 2015+, n=574: hazard by round .207/.204/.171/.110/.109. v2, league clone: .063/.074/.089/.098/.106. v2, Volk vs Gaethje: .076/.096/.119/.162/.185. Removing v2's damage feedback flattens the clone to .063-.071 (verification log). | KD follow-up state, standing TKO, damage that partly recovers, real heterogeneity. Calibrate to the hazard curve. |
+| 2 | P0 | **Knockdowns convert to finishes too rarely.** | Data: 57.0% of rounds with a KD end in that fighter's KO/TKO the same round (n=2,361). v2, measured the same way: 37% (league clone) to 43% (Volk vs Gaethje); 35-39% per KD event. | Model the post-KD sequence explicitly, calibrated to 0.56 (1 KD) and 0.67 (2+ KD), counting the finishing KD as ufcstats does. |
 | 3 | P0 | **The strike-rate formula is biased.** It averages landed/min and absorbed/min, then scales by 0.85, a factor tuned on 4 in-sample fights. | Walk-forward, 5,878 fight-sides: v2's formula under-predicts landed strikes by 18.3% (16.9% on 5-round fights). Poisson deviance 13.89 vs 11.59 for shrunk, time-decayed multiplicative rates. | Attempts x accuracy per position, multiplicative rates with log5 on accuracy, shrinkage, 2-year half-life. Delete STRIKE_CAL. |
-| 4 | P0 | **Chin is ignored.** The KD chance depends only on the attacker's power; the defender's KD susceptibility exists only as a Volk knob. | KD deviance: power-only 9,027, power x chin 8,845 (k=300, 10,496 fight-sides). The best prior strength is about 300 head strikes. | `p = power * chin / p0`, both shrunk with k ≈ 300. |
+| 4 | P0 | **Chin is ignored.** The KD chance depends only on the attacker's power; the defender's KD susceptibility exists only as hand-set knobs (`volkChin`, and Gaethje's `mileage`) plus random night form. | KD deviance: power-only 9,027, power x chin 8,845 (k=300, 10,496 fight-sides). For power x chin the best prior strength of those tried is 300 head strikes. | `p = power * chin / p0`, both shrunk with k ≈ 300. |
 | 5 | P0 | **The engine is badly overconfident about volume.** Night-to-night form sd is 0.10. | Fight-level landed rates have a log residual sd of 0.58, of which Poisson noise explains 0.15. The extra sd is up to 0.53 for attempts and 0.40 (logit) for accuracy. | Calibrate form sds in the walk-forward backtest. Add a shared pace factor and posterior skill draws. |
 | 6 | P0 | **Everything is hard-wired to Volkanovski and Gaethje:** engine constants, knobs, presets, director move tables, 3D specs, mat lettering, HUD copy, sliders, model stack, backtest, page copy. | See section 2 (60+ sites). | Roster JSON, generic knobs (`adjA`/`adjB`), templated copy, data-driven appearance and styles. |
 | 7 | P0 | **"Landed" strikes visibly miss.** At distance, every landed punch stops short of its target. | 133 of 133 landed punches stopped a median 0.76 m short (p90 0.95 m); kicks 0.54 m. Pelvis-to-pelvis distance at impact is 1.64 m against an arm length of 0.59-0.63 m. | Derive fighting range from reach and step in on the strike. Measure contact in a test. |
-| 8 | P0 | **The backtest can't support the page's claim.** The page says the engine "scored a little better than the line". | n=7, in-sample (career stats include the predicted fights). Lopes 1 and 2 are identical inputs. STRIKE_CAL was tuned on 4 of these fights. | Walk-forward over 2019-2026 with frozen profiles (already in the v3 spec). |
-| 9 | P1 | **Judging is too noisy and partly ill-posed.** | v2 league clone: split decisions 30% vs data 18.5%, draws 2.2% of fights vs 0.87%. 4.8% of simulated judges *penalize* power. 10-8s happen only through knockdowns. | Fit weights and noise to the decision split and draw rate. Clip tastes. Add a damage/dominance path to 10-8. |
+| 8 | P0 | **The backtest can't support the claim made for it.** The chat summary says the engine "scored a little better than the line" (CONVERSATION.md:84); the page prints the Brier and log-loss comparison (app.js:296) with a caveat. | n=7, in-sample (career stats include the predicted fights). Lopes 1 and 2 are identical inputs. STRIKE_CAL was tuned on 4 of these fights. | Walk-forward over 2019-2026 with frozen profiles (already in the v3 spec). |
+| 9 | P1 | **Judging is too noisy and partly ill-posed.** | v2 league clone: split decisions 30% vs data 17.6% (five-round, draws excluded on both sides), draws 2.2% of fights vs 0.87%. 4.8% of simulated judges *penalize* power. 10-8s happen only through knockdowns. | Fit weights and noise to the decision split and draw rate. Clip tastes. Add a damage/dominance path to 10-8. |
 | 10 | P1 | **The engine and the show don't agree.** Trace mode changes the fight. The HUD control clock comes from the animation. Beats lag the clock badly at high speed. | 1,491 of 2,000 seeds produce a different fight with trace on (engine2.js:235). HUD control 0:26 vs engine 37.6 s in seed 2443 R1. Max beat lag 201 fight-s at 30x (6.2 s at 5x). | No RNG draws inside `if (trace)`. HUD stats from engine totals. Time-warp the show clock to the beat queue. |
 
 ---
@@ -54,11 +56,11 @@ The scripts are listed in the Reproduce section at the end.
 | Finishes by round, % of all fights | 20.7 / 16.2 / 10.8 / 5.7 / 5.1 | 25.4 / 15.9 / 8.1 | 6.3 / 6.9 / 7.7 / 7.8 / 7.5 | 7.6 / 8.9 / 9.9 / 11.9 / 11.4 |
 | Hazard (P finish \| round reached) | **.207 .204 .171 .110 .109** | .254 .213 .139 | **.063 .074 .089 .098 .106** | **.076 .096 .119 .162 .185** |
 | KO/TKO (incl. doctor) / sub / decision | 43.0 / 15.3 / 41.5 | 31.4 / 17.9 / 50.5 | 28.6 / 7.6 / 61.6 (+2.2 draw) | 48.5 / 0.8 / 49.2 (+1.5 draw) |
-| Decisions: UD / SD / MD | 78.2 / 18.5 / 3.4 | 77.4 / 20.1 / 2.5 | 66.6 / 30.2 / 3.2 | 67.4 / 29.6 / 2.9 |
+| Decisions: UD / SD / MD (draws excluded; v2 columns are computed this way) | 79.8 / 17.6 / 2.6 (n=233; 78.2 / 18.5 / 3.4 if the 5 split and majority draws are counted) | 78.5 / 20.0 / 1.4 (77.4 / 20.1 / 2.5 with draws) | 66.6 / 30.2 / 3.2 | 67.4 / 29.6 / 2.9 |
 | Draws, share of all fights | 0.87% | 0.83% | 2.1-2.2% | 1.4% |
 | 10-8 rounds | 17.6% of judges' cards have a total below 19 x rounds (a 10-8 or a deduction), about 3.8% per round | 12.0% of cards | 4.0% of round cards | 4.1% of round cards |
-| KD round ends in that fighter's same-round KO/TKO | 57.0% (1 KD: 56.0%, 2+: 67.0%; n=2,361 rounds, all formats) | same | 35.4% | 39.5% |
-| KO/TKO with no KD by the winner in the finishing round | 27.6% (n=1,858) | same | only GNP or leg TKO possible | same |
+| KD round ends in that fighter's same-round KO/TKO | 57.0% (1 KD: 56.0%, 2+: 67.0%; n=2,361 rounds, 3- and 5-round formats) | same | 37.2-37.6% per KD-round (1 KD: 37%, 2+: 47-48%); 35.5% per KD event | 42.5% per KD-round (1 KD: 42%, 2+: 51%); 39.4% per KD event |
+| KO/TKO with no KD by the winner in the finishing round | 27.6% (n=1,858) | same | only GNP or leg TKO possible: 7.6-7.9% of in-round KO-type finishes (corner stoppages come on top) | 2.2% |
 | Landed sig. strikes per fighter-minute | 3.83 (LW 3.94) | | 3.23 from an input of 3.94 (-18%) | |
 
 All **[high]**, with three provisos. The 10-8 proxy also counts point deductions. In "LW clone",
@@ -72,6 +74,13 @@ v2 run on league-average inputs should reproduce the league curve, and it invert
 in engine2.js cause this: head damage accumulates with no recovery (`dH`, lines 196 and 225-230,
 only stamina recovers at line 277), and the multiplicative `(1 + dH/200)` KD term (line 200). On
 top of that, per-fight variance is too small to create realistic heterogeneity (section 1.14).
+
+*Verification [high]:* in a scratch copy of engine2.js with the standing `(1 + dH/200)` term, the
+`0.0022 dH` finish term and the `x1.12` per-KD chin decay removed, the league clone's hazard is
+.063/.063/.066/.071/.067 (finish share 28.9%) and Volk vs Gaethje's is .068/.070/.075/.084/.079.
+So damage feedback does produce the rising curve, and it also supplies about a fifth of the
+clone's finishes and a third of Volk vs Gaethje's (49.8% falls to 32.5%). A stricter comparison than the five-round column: the clone is a league-average pair, and
+v2 finishes 36% of them in 25 minutes while real three-round fights finish 49.5% in 15.
 
 ### 0.2 Walk-forward test of the strike-rate formula
 
@@ -97,6 +106,10 @@ League constants (2012+): 3.72 landed/min, 8.22 attempted/min, accuracy .453.
   The reason to switch is structural (misses as events, accuracy modifiers for fatigue, damage and
   position), not a gain in landed-strike accuracy.
 - On 5-round fights only (n=822 fight-sides), v2's formula is still biased -16.9%.
+- combo.py tried only k = 30 min and a 730-day half-life. A verification sweep (k = 5, 15, 30, 60,
+  120 min x half-life 365, 730, 1,460 days, no decay) found 30 min / 730 days best at 11.59, with
+  1,460 days at k = 30-60 within 0.06 and no decay at best 11.79 **[high]**. So the defaults hold,
+  but the optimum is shallow.
 
 ### 0.3 Chin test (walk-forward, 2016-2026, 10,496 fight-sides)
 
@@ -110,8 +123,11 @@ decayed sums (730-day half-life). League KD per landed head strike p0 = 0.0086 (
 | 600 | 9,322.5 | 9,111.9 | 9,184.4 | 8,979.8 |
 | 1000 | 9,322.5 | 9,173.3 | 9,226.5 | 9,079.8 |
 
-**[high].** Chin adds about as much information as power does over the league baseline. v2's
-KD_PRIOR_N = 300 happens to be the best strength. KD_PRIOR = 0.009 is close to the data's 0.0083
+**[high].** Over the league baseline, chin alone cuts deviance by 198 and power alone by 295, so
+chin carries about two-thirds as much information as power; together they cut 477. For power x chin,
+300 is the best of the four strengths tried. For power alone, which is v2's structure, k = 100 is
+marginally better than 300 (9,020 vs 9,027), so v2's KD_PRIOR_N = 300 is near-optimal rather than
+optimal (and v2 applies it to undecayed career sums). KD_PRIOR = 0.009 is close to the data's 0.0083
 (2015+) and 0.0086 (2012+).
 
 ### 0.4 Night-to-night variance (overdispersion)
@@ -129,9 +145,17 @@ because it also contains style interactions the rate model misses. Even if half 
 error, v2's 0.10 is several times too small. This matters for this matchup: v2's "Volk wins 67% of
 the fights that go the distance" rests on a volume edge the engine treats as near-certain.
 
+*Like-for-like check [high]:* the same decomposition on v2's own output (one fighter's landed
+strikes in simulated fights that go 25 minutes, 20,000 sims each) gives a log sd of 0.163 with
+Poisson 0.111, so an extra sd of 0.119 for the league clone, and 0.148 / 0.086 / 0.121 for Volk vs
+Gaethje. Positional swings and damage add only about 0.02 on top of `FORM_OUT`, against up to
+0.565 in the data. (The "67%" figure re-runs as 66.9% of 25-minute fights including draws, 69.0%
+of decisions excluding them; 40,000 sims.)
+
 ### 0.5 Volkanovski and Gaethje in the dataset vs engine2's constants
 
-v2's career constants (engine2.js:34-37) match the dataset's career totals **[high]**:
+v2's career constants (engine2.js:34-37) match the dataset's career totals to within 0.02 a minute
+(Gaethje's rates exactly; Volk's are 5.99/3.31 vs 5.98/3.33 in the data) **[high]**:
 
 | | Volkanovski, data | v2 | Gaethje, data | v2 |
 |---|---|---|---|---|
@@ -144,9 +168,20 @@ v2's career constants (engine2.js:34-37) match the dataset's career totals **[hi
 | Head / body / leg share of landed | .656 / .102 / .242 | .63 / .11 / .26 | .662 / .109 / .229 | .63 / .09 / .28 |
 | Distance / clinch / ground share | .764 / .084 / .152 | .75 / .09 / .16 | .838 / .128 / .035 | .86 / .12 / .02 |
 
-Differences in target and position splits come from v2 using GidStats rather than ufcstats. The
-slider hint "Gaethje career 28% leg kicks" (app.js:27) is GidStats; ufcstats says 22.9%.
-"6% against Pimblett" checks out (9 of 144 landed = 6.2%) **[high]**.
+Differences in target and position splits come from v2 using GidStats rather than ufcstats
+(HANDOFF.md:66-72 lists GidStats-style splits; sources at HANDOFF.md:106-107).
+
+**Correction (verification pass) [high].** The slider hint (app.js:27) reads "Share of his strikes
+at distance aimed at the legs. Career 28%; 6% against Pimblett", and the engine applies `leg` only to
+distance strikes (engine2.js:75-77, :184). On that distance-only basis ufcstats gives Gaethje 27.3%
+career (very close to 28%) and 8.8% against Pimblett (9 of 102 distance strikes landed). The 22.9%
+and 6.2% (9 of 144) figures are shares of *all* landed strikes. So the hint's "28%" is roughly right
+for what the knob means, and it is the "6%" that uses the wrong denominator. The real engine flaw is
+broader: v2 feeds all-strike target splits (`head`/`body`/`leg`) into the distance-only target draw,
+which understates leg shares at distance (Volk: v2 .26 vs ufcstats .316 of distance strikes landed).
+Note also that the baseline knobs replace data values: Volk's takedown attempts become 3.0 per 15
+(data 4.75), Gaethje's 1.5 (data 1.11), Gaethje's leg share 0.18, plus `volkPow` 0.85, `volkOut`
+0.95 and `volkChin` 1.15 (engine2.js:39, :89-96). These are labeled judgment calls, not fits.
 
 **Recency matters [high].** Since 2022, Volk lands 5.51/min with a .552 defense rate and has absorbed
 3 KDs in 284 opponent head strikes landed. Gaethje lands 5.26 and absorbs 6.00 with a .439 defense
@@ -206,7 +241,9 @@ already plans the fix; "Spec gap" means it doesn't yet.
 - **Effects:**
   - The director invents misses visually (director.js:110-124). They use hard-coded `ACC`
     (director.js:5) times a 0.6 fudge, so the cage shows about 0.45 misses per landed strike for
-    Volk against a real 0.75, i.e. 60% of his real misses.
+    Volk against a real 0.75, i.e. 60% of his real misses. Misses are generated only for distance
+    strikes (director.js:114), where his real rate is 0.86 misses per landed (distance accuracy
+    .538), so the cage shows closer to half (verification pass).
   - 25% of the fake misses are credited to the *other* fighter (director.js:119), and their targets
     follow a fixed 70/12/18 split (director.js:120).
   - Misses can't cost stamina, can't feed the judges' aggression criterion, and can't drive the
@@ -246,7 +283,8 @@ already plans the fix; "Spec gap" means it doesn't yet.
   finish coin flip (:205), hurt (:207-209).
 - **Problems:**
   - **Chin is missing** (§0.3) **[high]**. The defender's KD susceptibility only enters through
-    the Volk knob `durA`.
+    hand-set knobs (`durA` from `volkChin`; `durB` from Gaethje's `mileage`, engine2.js:92-93) and
+    random night form (`cA`/`cB`), never from data.
   - **Undocumented extra 0.85** on the KD rate (:71) **[high]**.
   - **Head strikes are approximated** as `slpm * mins * head` (:59), which counts ground head
     strikes and uses a career share. The data has exact head-landed counts.
@@ -254,13 +292,20 @@ already plans the fix; "Spec gap" means it doesn't yet.
     (0.75 + 0.25 mob)` are uncalibrated, and `dH` never recovers between rounds. That produces the
     rising hazard in §0.1 **[high]**.
   - **KD to finish is one instant coin flip,** `pf = 0.28 + 0.0022 dH (+0.15 if rocked)`, capped at
-    0.68 (:205). Measured conversion in sims is 35-40% vs 57% in the data **[high]**.
+    0.68 (:205). Measured the same way as the data (share of a fighter's KD rounds that end in his
+    KO/TKO that round, finishing KD included), v2 converts 37% (league clone) to 43% (Volk vs
+    Gaethje), vs 57% in the data; per KD event it is 35-39% **[high]**. Note for calibration:
+    ufcstats counts the finishing knockdown as a KD, and 70% of KD rounds are the fight's last round
+    (81% of those convert), so the 57% target mixes instant finishes with follow-up finishes. v3
+    must count KDs the same way.
   - **Hurt is defined as `roll < 2.5 x pKD`** (:207), so wobbles are always exactly 1.5x knockdowns.
     Arbitrary **[high]**.
   - **No standing TKO without a knockdown.** The data has 27.6% of KO/TKOs without a winner KD in
     the finishing round **[high]**.
-  - **No body-shot KO,** which is about 3% of KO/TKO finishes judging by the top finish details
-    (28 "Punch to Body At Distance" and 25 "Kick to Body At Distance" out of 1,858) **[med]**.
+  - **No body-shot KO,** which is about 5% of KO/TKO finishes: 101 of 1,858 finish details name a
+    body strike (the two largest, 28 "Punch to Body At Distance" and 25 "Kick to Body At Distance",
+    are 2.9% on their own; knees to the body add 24) **[high for the count; med as a share of
+    true body KOs, since details are free text]**.
 - **Instead:**
   - `p = p0 * (power_X/p0) * (chin_Y/p0)`, both shrunk with k ≈ 300; aging, prior-KO and size terms
     fit from data.
@@ -278,11 +323,13 @@ already plans the fix; "Spec gap" means it doesn't yet.
 - **Stamina [high, from code and the trace probe]:**
   - Drain is 0.00016-0.00024 per second (:35, :37, :176), about 5% per round. Body shots take
     `0.006 w` each (:215), and half recovers between rounds (:277).
-  - Output depends on stamina only through `0.82 + 0.18 S` (:155), a roughly 1% effect.
+  - Output depends on stamina only through `0.82 + 0.18 S` (:155). Median stamina at the end of
+    round 5 is .87 (Volk) and .83 (Gaethje) in 5,000 traced fights, so the output cost peaks at about
+    2-3% (corrected from "roughly 1%" in the verification pass).
   - So the HUD's "Gas tank" is cosmetic, and the hand-set `pace` arrays do all the late-round work.
 - **Mobility:** `mob = 1 - 0.006 dL`, floored at 0.6 (:154). Leg TKO hazard `0.003 (dL-30)/10`
-  per leg strike (:219). Plausible, but the data has 11 leg-kick TKOs out of 1,872 KO/TKOs since
-  2015 (0.6%) **[high]**. v2's Volk vs Gaethje LEG finishes are 0.18% of fights, which is fine.
+  per leg strike (:219). Plausible, but the data has 11 leg-kick TKOs out of 1,858 three- and
+  five-round KO/TKOs since 2015 (0.6%; 1,872 in all formats) **[high]**. v2's Volk vs Gaethje LEG finishes are 0.18% of fights, which is fine.
 - **Instead:** fit pace curves from the data (division curve plus a shrunk per-fighter ratio, Spec ✓).
   Make stamina matter through attempt rate and accuracy, and fit its size so late-round accuracy
   and pace match §0.5 **[med]**.
@@ -306,7 +353,9 @@ already plans the fix; "Spec gap" means it doesn't yet.
 
 ### 1.9 Submissions: structural zeros and flat conversion (P1)
 - **Where:** `m.subA = sub15/900*6` (:81), a magic x6 per top-second; `pSubA = 0.22 x subDef` (:82),
-  the same 22% for everyone.
+  a flat 22% scaled only by the defender's hand-set `subDef` (Gaethje 0.8, everyone else 1).
+  Attempts only happen from top position (:166-168): no guard submissions from the bottom and no
+  guillotines or back takes off scrambles.
 - **Problem:** Gaethje's `sub15 = 0` means he *never* attempts a submission. In 5,000 simulated
   fights he made 0 attempts **[high]**. League LW/FW five-rounders end by submission 16% of the
   time (n=123, 2015+) **[high]**.
@@ -315,15 +364,17 @@ already plans the fix; "Spec gap" means it doesn't yet.
 
 ### 1.10 Judging (P1)
 - **Where:** engine2.js:259-273.
-- **What's good [high]:** the weights are research-flavored and partly consistent with the
-  O'Connell analysis. A takedown (3) equals 50 s of control at 0.06/s, and a submission attempt
-  (7) is more than twice a takedown.
+- **What's good [high for the arithmetic; low for the source match]:** A takedown (3) equals 50 s of
+  control at 0.06/s, and a submission attempt (7) is more than twice a takedown. That mirrors v2's
+  own summary of the O'Connell analysis (HANDOFF.md:94-95), so the "consistency" is by construction;
+  the analysis itself (oconnellryan.github.io) could not be fetched in the verification pass (host
+  not allowed in this session) and is unverified here.
 - **Problems:**
   1. **Negative power tastes [high].** `jGam = gamma + 0.15 N(0,1)` (:141) is unclipped, so at the
      default gamma 0.25 about 4.8% of simulated judges score power *negatively*.
   2. **Too much noise [high].** Shared 0.05 x total plus individual 0.09 x (iA+iB) + 1 (:264, :268)
-     gives about 30% split decisions and about 2% draws on neutral matchups, vs 18.5-20% and 0.85%
-     in the data.
+     gives about 30% split decisions and about 2% draws on neutral matchups, vs 17.6-20% (draws
+     excluded) and 0.85% in the data.
   3. **10-8s need a knockdown gap [high].** `big` (:269) makes a 10-8 impossible for a dominant
      grappling round or a lopsided damage round without a KD. That contradicts the ABC criteria
      (damage, dominance, duration) that the page itself cites. The overall 10-8 frequency (about 4%
@@ -348,7 +399,7 @@ already plans the fix; "Spec gap" means it doesn't yet.
 - **Instead:** a hazard calibrated to those base rates, with a doctor (cut) path. Spec ✓.
 
 ### 1.12 Fixed five rounds (P1)
-- **Where:** engine2.js:147, :278, :290 hard-code 5 x 300 s.
+- **Where:** engine2.js:143, :147, :172, :278 hard-code 5 x 300 s.
 - **Problem:** three-round fights can't be simulated, so the 5,278 three-round fights can't be used
   for calibration and most matchups can't be run.
 - **Instead:** `opts.rounds`. Spec ✓.
@@ -393,8 +444,9 @@ already plans the fix; "Spec gap" means it doesn't yet.
     observations.
   - STRIKE_CAL was tuned on four of these fights, then the "15% RMS, 1% bias" strike error was
     reported on the same four.
-  - Brier and log loss vs the market on 7 fights have no statistical power. The page's "the engine
-    scored a little better than the line" (CONVERSATION.md) isn't supported.
+  - Brier and log loss vs the market on 7 fights have no statistical power. The chat summary's "it
+    scored a little better than the line" (CONVERSATION.md:84; the page itself shows the numbers with
+    a caveat, page.src.html:476, app.js:296) isn't supported.
 - **Instead:** walk-forward with frozen profiles, tune on 2019-2023, report on 2024+, with Elo and
   market baselines where lines exist. Spec ✓.
 
@@ -423,7 +475,7 @@ Each row needs to change before "any two fighters" works **[high, from code]**.
 | engine2.js:34-37 | VOLK and GAETHJE stat literals plus hand-set `gnp`, `getUp`, `ctrl`, `subDef`, `drain`, `pace` | profiles from `data/derived/fighters.json`; derived ground and pace params |
 | engine2.js:39-49 | knob names (`volkChin`, `gaeLeg`…) and presets | generic `adjA`/`adjB`; `data/scenarios.json` keyed by matchup |
 | engine2.js:89-96, :306 | `volkGaethje()` and `VOLK`/`GAETHJE` exports | `matchup(profA, profB, opts)` only |
-| engine2.js:147, :278, :290 | 5 rounds | `opts.rounds` |
+| engine2.js:143, :147, :172, :278 | 5 rounds of 300 s | `opts.rounds` |
 | director.js:4-5 | `NAMES`, `SHORT`, `ACC` | from profiles (name, short name) and matchup accuracy |
 | director.js:6-19 | per-fighter MOVES tables (jab/cross/hook mix, kicks, KD punches) | derive from data (target mix, position mix, leg share) plus style archetypes picked from stats |
 | director.js:72-104 | text templates hard-code "his" | pronoun field per fighter (needed for women's divisions) |
@@ -460,8 +512,10 @@ above is done.
     subtract 0.16-0.32 m for punches and 0.3-0.68 m for kicks (:250-268, :895). Arm IK clamps to
     reach (rig3d.js:182), so the glove stops in the air.
   - Measured over a full five-round fight: punch gap median 0.758 m, p90 0.954 m, 100% over 15 cm
-    (n=133). Kick gap median 0.539 m (n=62). Clinch strikes connect (median 1.1 cm). Screenshots
-    k09 and c03.
+    (n=133). Kick gap median 0.539 m (n=62). Clinch strikes connect (median 1.1 cm). A verification
+    rerun of measure.js gave 0.760 / 0.991 / 0.585 m with the same counts; the exact values move
+    because the show draws from `Math.random`. Screenshot k09 shows a landed punch short of the
+    face; c03 shows the standing range.
   - Fix: set range from the attacker's reach (shoulder offset + arm length + opponent head
     offset), roughly 0.9-1.1 m pelvis to pelvis for punches by my estimate **[med]**. Step in on the
     strike; snap the defender's head back on impact. Add a unit check that landed strikes come
@@ -563,7 +617,9 @@ above is done.
   budget exhausted) [low]**. If v3 moves to ES modules (`<script type="module">` with jsdelivr),
   the blob-worker trick still works because the engine has no three.js dependency.
 - **Layout:** stage `aspect-ratio` 4:3 below 700 px and 16:9 above (:99-100). Fine, but on phones
-  the fighters are about 70 px tall (m01).
+  the fighters are only about 100-110 px tall in mid and clinch shots (m01, p02_part0), and wide
+  shots would put them near 60 px by scaling from the desktop wide shot (corrected from "about
+  70 px").
 - **v2 build.py** is minimal and correct (guards against `</script` and duplicate placeholders).
 
 ### 3.7 tests/
@@ -605,7 +661,9 @@ horizontal scroll.
 - Faces are featureless eggs with a nose bump; hair is a hemisphere cap and the beard a dark blob
   (c03, c06).
 - Gloves are black spheres. Shorts flare like a skirt (c06). Feet are flat ellipsoids.
-- Both fighters share nearly the same skin tone and build; the only real tell is shorts color.
+- Both fighters share nearly the same skin tone (0xd9a383 vs 0xd59a7c) and build (1.07 vs 1.0); shorts
+  color is the main tell, helped a little by height (1.68 vs 1.80 m), hair color and Volk's beard
+  blob (show3d.js:555-556).
 - The referee is the same mannequin in gray: a segmented, "Michelin-man" torso with bare
   ball-joint shoulders (k10, c11).
 
@@ -640,7 +698,8 @@ horizontal scroll.
   - The referee sits in the background of most shots and in the foreground of the result shot (c11).
   - The decision ceremony is framed from behind (d02).
   - Ground and overhead shots leave the fighters at about 20% of frame height (k06, k07).
-  - On phones the fighters are about 70 px tall (m01), because `narrow` *widens* the FOV
+  - On phones the fighters are about 100-110 px tall in mid and clinch shots (m01) and smaller in
+    wide shots: the stage is small, and `narrow` *widens* the FOV on top of that
     (show3d.js:495-507).
 
 **HUD and overlays [med]**
@@ -711,8 +770,9 @@ horizontal scroll.
 The spec already covers most engine items (sections 1.1-1.5, 1.7, 1.9-1.13, 1.16). Gaps worth
 adding to the spec:
 
-1. **Measured defaults:** shrinkage k ≈ 30 min for rates, ≈ 150 attempts for accuracy, ≈ 300 head
-   strikes for KD power and chin; half-life 730 days. Validated in §0.2-0.3.
+1. **Measured defaults:** shrinkage k ≈ 30 min for rates, ≈ 150 attempts for accuracy (not swept),
+   ≈ 300 head strikes for KD power x chin (100-300 for power alone); half-life 730 days. The rate k
+   and half-life were best of a 5 x 4 grid in the verification sweep (§0.2), with a shallow optimum.
 2. **A league hazard-curve target** for the league-vs-league test (5 rds: .207/.204/.171/.110/.109;
    3 rds: .254/.213/.139), plus KD conversion targets (.56 / .67) and the 27.6% share of KO/TKO
    without a KD.
@@ -720,7 +780,8 @@ adding to the spec:
 4. **Posterior skill draws per simulated fight and a shared fight-pace factor,** in addition to
    night form. Form-sd upper bounds: §0.4.
 5. **Judging fit from card totals,** because ufcstats has no per-round judge scores. Calibration
-   targets: UD/SD/MD .78/.19/.03, draws 0.85%, 10-8 per round about 4%.
+   targets (five-round, draws excluded): UD/SD/MD .80/.18/.03, draws 0.85-0.87% of fights, 10-8
+   per round about 4%.
 6. **A seeded show RNG** (`script.seed`) so animation and camera are reproducible.
 7. **Contact geometry:** fighting range derived from reach; a landed-strike contact test.
 8. **HUD stats from engine totals,** never from animation state; show clock time-warp when beats back up.
@@ -775,7 +836,7 @@ Key screenshots:
 |---|---|
 | Contact sheet | `contact_sheet.png` |
 | Live exchanges | `c02_live_wide.png`, `c03_live_mid_or_cage.png`, `k09_finish_fall.png` |
-| Clinch | `k01_clinch.png`, `c04_clinch.png` |
+| Clinch | `k01_clinch.png` (`c04_clinch.png` is named for the clinch but shows the pair apart; it is the top-rail framing example) |
 | Knockdown | `k02_knockdown_fall.png`, `k03_kd_followup.png`, `k04_kd_replay.png` |
 | Takedown and ground | `k05_shoot.png`, `k06_ground.png`, `k07_ground_gnp.png` |
 | Break, finish, result | `k08_corner_break.png`, `k10_finish_ref.png`, `c11_result.png` |
@@ -783,3 +844,96 @@ Key screenshots:
 | Camera modes | `c12_cam_cageside.png`, `c13_cam_overhead.png`, `c14_cam_free.png` |
 | Phone stage | `m01_stage_390.png` |
 | Full pages | `p01_full_1280.png` (and `p01_part0-3.png`), `p02_full_390.png` (and parts) |
+
+---
+
+## Verification log
+
+Adversarial fact-check, Friday, Nov 6, 2026. Every key claim was re-derived independently where
+possible (my own pandas loaders on `data/raw/`, my own engine probes) rather than by re-reading the
+audit's scripts; where only the audit's scripts could measure something (walk-forward, chin, 3D), I
+read them for leakage and bugs and re-ran them. All 14 screenshots on the contact sheet plus m01,
+p01_part0, p01_part3 and p02_part0 were inspected directly. Probe scripts are in
+`/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/verify/`
+(`base.py`, `v2.py`-`v6.py`, `sim.js`, `disp.js`, `ksweep.py`, `eng_nodmg.js`). Nothing under
+`src/`, `tests/` or `legacy/` was modified, and no git history was changed.
+
+### Verdicts on the key claims
+
+| # | Claim | Verdict | Notes |
+|---|---|---|---|
+| 1 | 574 five-round fights, 58.5% finishes, by round 20.7/16.2/10.8/5.7/5.1, hazard .207/.204/.171/.110/.109 | Confirmed | Independent loader (Noche UFC alias, NC excluded, duplicate dropped) reproduces every figure. Interpretation softened: the level gap is the hard evidence; the falling shape is partly heterogeneity. |
+| 2 | v2 league clone 36.2% finishes (28.6/7.6/61.6, draw 2.2), hazard .063 to .106; Volk vs Gaethje .076 to .185 | Confirmed | 40,000-sim reruns: 36.5% and 36.9% (two seeds), hazard .066-.068 to .107-.108; Volk vs Gaethje 49.75%, .076 to .185. Mechanism confirmed: removing damage feedback flattens the hazard (§0.1). |
+| 3 | 57.0% KD-round conversion (56.0 / 67.0, n=2,361); v2 converts 35-40% | Corrected | Data figures confirmed exactly. The v2 figure was per KD *event*; measured per KD-round like the data, v2 is 37% (clone) to 43% (Volk vs Gaethje). Conclusion unchanged. |
+| 4 | 27.6% of 1,858 KO/TKOs had no winner KD in the finishing round | Confirmed | 1,858 of 1,858 winner rows matched by name. |
+| 5 | Walk-forward 5,878 fight-sides: v2 formula -18.3%, deviance 13.89; shrunk decayed multiplicative 11.59, -0.8% | Confirmed | combo.py re-run reproduces every table cell; no look-ahead in the cumulative or decayed sums (league constants use all 2012+ data, a negligible leak). Added: k and half-life were not tuned by the audit; my sweep finds 30 min / 730 d best of a 5 x 4 grid. |
+| 6 | Chin cuts KD deviance 9,027 to 8,845 at k=300; 300 beats 100/600/1000 | Confirmed, with a correction | Numbers reproduce. "300 is best" holds for power x chin only; for power alone (v2's structure) 100 edges 300. "Chin adds about as much as power" corrected to about two-thirds. |
+| 7 | Landed log residual sd 0.583, Poisson 0.146, extra 0.565; attempts 0.533; accuracy 0.401; v2 FORM_OUT 0.10 | Confirmed | Re-run reproduces. Added a like-for-like check: v2's own simulated extra sd is about 0.12. |
+| 8 | engine2.js:235 draws `rng.u()` only under trace; 1,491 of 2,000 seeds differ | Confirmed | Code read and parity.js re-run: 1,491. |
+| 9 | 133 landed distance punches stop a median 0.758 m short (p90 0.954), kicks 0.539, clinch about 1 cm | Confirmed (values vary by run) | Rerun: 0.760 / 0.991 / 0.585 m, clinch 1.1 cm, pelvis distance 1.65 m. Code at show3d.js:875, :895-896 and rig3d.js:182 matches. The show uses `Math.random`, so exact values move. |
+| 10 | HUD control from animation (app.js:437); seed 2443 R1 HUD 0:26 vs engine 37.6 s | Confirmed | hudctrl2.js rerun shows 0:26; my engine run gives ctrlA 37.6 s (takedown at 95 s, up at 133 s). |
+| 11 | Beat lag up to 201 fight-s at 30x, 6.2 at 5x | Confirmed | hudctrl.js rerun: 201.2 and 6.2. Those two runs use the seeds after 2443 in the patched list, not 2443. The "takedown at 95 s dispatched at 105.3 s" detail was not re-measured. |
+| 12 | Decisions UD 78.2 / SD 18.5 / MD 3.4, draws 0.87%; v2 about 30% SD, 1.4-2.2% draws; 4.8% negative judge tastes | Corrected | The data split counted the 5 draws (3 split, 2 majority) as SD/MD while v2's excluded draws. Like-for-like: 79.8 / 17.6 / 2.6 (n=233). v2: SD 28.8% (Volk vs Gaethje), 29.8-30.4% (clone); draws 1.44% / 2.2%. Negative tastes: P(Z < -1.667) = 4.78%, confirmed. |
+| 13 | v2 career stats match ufcstats exactly; Gaethje leg share 22.9% not 28%; 6.2% vs Pimblett | Corrected | Volk 312.9 min and 19 fights, Gaethje 202.2 min and 16 fights confirmed; Volk's rates differ by 0.01-0.02 (5.99/3.31 vs 5.98/3.33), so "within rounding", not "exactly". The leg-share point misread the hint: it describes distance strikes, where ufcstats gives 27.3% career and 8.8% vs Pimblett. |
+| 14 | build.py at HEAD (eeb164e) fails on src/params3.js; v2 rebuilt from e95a852 is byte-identical | Confirmed, commit updated | HEAD is now e59bc48 (same build.py); `python3 build.py <scratch path>` still raises FileNotFoundError for src/params3.js. My own `git archive e95a852` rebuild is byte-identical (`cmp`) to both the committed and working-tree page. |
+
+### Other corrections made in the body
+
+- TL;DR #8 and §1.16: the "scored a little better than the line" quote is from CONVERSATION.md:84,
+  not the page; the page shows the numbers with a caveat.
+- TL;DR #4 and §1.5: defender KD susceptibility also enters via Gaethje's `mileage` knob (`durB`)
+  and random night form.
+- §1.5: body-strike KO/TKOs are about 5% (101 of 1,858), not about 3%.
+- §1.6: stamina's output effect peaks at about 2-3%, not about 1%.
+- §1.9: submission conversion is 22% times the defender's `subDef`, not identical for everyone.
+- §1.10: the O'Connell "consistency" is by construction (v2's weights came from HANDOFF's summary)
+  and the source was not reachable here **[low]**.
+- §1.12 and §2: the 5 x 300 s hard-coding is at engine2.js:143, :147, :172, :278 (line 290 is not
+  part of it).
+- §4.1 and §3.6: phone-stage fighters are about 100-110 px tall in mid and clinch shots, not about
+  70 px; skin and build are near-identical but height, hair and beard also differ.
+- §5: calibration targets restated with draws excluded; shrinkage defaults described as swept for
+  rates only.
+
+### Visual assessment check
+
+Confirmed from the images: landed punch visibly short (k09); knockdown follow-up winding up far from
+the downed fighter (k03); shot and sprawl overlap (k05); ambiguous ground position (k06, k07); truss
+across the high shot (c01, k08); top rail across the fighters (c04); referee in the background of
+most shots and in the foreground of the result (c02, k01, c11); round and decision cards over the
+action (d02, k08); stick-straight celebration arms (c11, k10); segmented referee torso (k10, c11);
+featureless faces, hair caps, beard blob and black-sphere gloves (c06); crowd of identical pawns
+(c01, k08); diagram label clipped to "0.45 a minut" and the empty right half of the panel
+(p01_part3); deck controls wrapping at 390 px with no overflow (p02_part0). Toast and card
+persistence is a harness artifact, as the audit says. "Framed from behind" in d02 is plausible but
+hard to confirm because the faces have no features. The interpenetration in k05 is likely but
+partly occluded.
+
+### Important flaws the audit missed (added to the body where noted)
+
+1. **Target splits applied to the wrong denominator** (added to §0.5). v2 applies all-strike target
+   shares to distance strikes only, which understates leg kicks at distance (Volk .26 vs .316).
+2. **Baseline knobs override data** (added to §0.5): Volk's TD attempts 3.0 per 15 vs 4.75 in the
+   data, Gaethje's 1.5 vs 1.11, leg share 0.18, plus the power, output and chin "tax". These are
+   labeled judgments, but none is fitted.
+3. **KD definition for calibration** (added to §1.5): ufcstats counts the finishing KD, and 70% of
+   KD rounds are the fight's last round, so v3 has to count KDs the same way for the 0.56 / 0.67
+   targets to mean anything.
+4. **Bottom-position and scramble submissions don't exist** (added to §1.9).
+5. **Fake misses are fewer than stated** (added to §1.2), because they only cover distance strikes,
+   where accuracy is lower.
+6. **Judges' power credit uses career power (`m.wA`, engine2.js:266), not the night's power form
+   `qA`**, so a fighter with a big power night is not scored as harder-hitting. Minor.
+7. **Working-tree note:** `src/page.src.html` has an uncommitted 24-line change (v3 script and JSON
+   placeholders) relative to HEAD. The audit's page line numbers refer to e95a852 and still line up,
+   because the insertions come after line 606.
+
+### Not verified
+
+- Market (0.357) and Elo (1879 vs 1869) inputs, which come from v2's HANDOFF. The arithmetic
+  -200 / +170 to 35.7% after removing the margin checks out.
+- Asset licenses (Quaternius, Poly Haven, ambientCG, Mixamo) and newer three.js builds on the
+  allowed CDNs. The audit already marks these [low]. The session's web-search budget was exhausted
+  and oconnellryan.github.io is not reachable from this session.
+- Crowd seat count (about 1,400) behind the "90% of triangles" estimate; only the arithmetic was
+  checked.

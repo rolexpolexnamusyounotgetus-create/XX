@@ -1,0 +1,69 @@
+{
+  "slug": "dan-hooker",
+  "name": "Dan Hooker",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Active, on a three-fight losing streak, all by stoppage: Arman Tsarukyan (arm-triangle from mount, R2, Doha, Nov 22, 2025), Benoit Saint Denis (TKO from mount, R2, UFC 325, Sydney, Jan 31, 2026) and Salahdine Parnasse (KO by a punch at 2:35 of R1, Paris, Sep 5, 2026). Sibling scouting sources report him booked against Brian Ortega, in Ortega's lightweight debut, at a UFC Fight Night in Doha on Nov 21, 2026; this pass could not re-verify that. UFC record 14-11 in fighters.json.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": "Brian Ortega, lightweight, UFC Fight Night, Doha, Qatar, Nov 21, 2026 (per ufcalendar.com and Yahoo as cited in data/scouting/brian-ortega.json; not re-verified in this pass)",
+    "injuries": [],
+    "sources": [
+      "data/derived/fighters.json (recent: 2026-09-05 L Parnasse KO R1 2:35; 2026-01-31 L Saint Denis TKO R2 4:45; 2025-11-22 L Tsarukyan sub R2 3:34)",
+      "data/raw/ufc_event_details.csv (Doha, Sydney, Paris locations)",
+      "https://www.ufcalendar.com/fights/dan-hooker-vs-brian-ortega (cited in data/scouting/brian-ortega.json; not re-fetched)",
+      "https://sports.yahoo.com/articles/ufc-analyst-dan-hooker-vs-170039364.html (cited in data/scouting/brian-ortega.json; not re-fetched)"
+    ]
+  },
+  "style": {
+    "archetype": "kickboxer",
+    "stance": "switch",
+    "tags": ["switch-stance", "jab", "leg-kicks", "body-work", "knees", "clinch", "guillotine", "rangy", "volume", "takedown-defense", "wild-exchanges", "chin-concern"],
+    "signature": [
+      "front kick to the body (KO of Claudio Puelles, UFC 281, R2 4:06)",
+      "knee to the head in the clinch (KOs of Ross Pearson, 2017, and Jim Miller, 2018)",
+      "leg kicks at volume: 40 leg strikes landed against Paul Felder (2020), 23 against Jalin Turner (UFC 290)",
+      "body work in the pocket: 24 of his 65 landed strikes went to the body against Mateusz Gamrot (UFC 305)",
+      "guillotine chokes (finished Mark Eddiva, 2016, and Marc Diakiese, 2017)"
+    ],
+    "weaknesses": [
+      "three straight stoppage losses in 2025-26 (Tsarukyan sub, Saint Denis TKO, Parnasse KO)",
+      "elite grapplers get him down and keep him there: Tsarukyan had 6:02 of control, Saint Denis 6:14 with 67 ground strikes, Islam Makhachev a kimura in 2:25",
+      "5 KO/TKO losses in 25 UFC fights, 2 of them since Jan 2026",
+      "defence has fallen: 40% significant-strike defence and 5.6 absorbed per minute recency-weighted (career 49% and 4.9; lightweight median about 54% and 4.1)"
+    ],
+    "summary": "A tall switch-stance kickboxer from New Zealand's City Kickboxing who fights at a high pace from range: a jab and long straights, front kicks and round kicks to the legs and body, and knees when he gets a clinch. He has real finishing ability standing and a dangerous guillotine. But he is hittable, and his last three fights ended inside the distance against an elite wrestler, a grappler and a striker.",
+    "sources": [
+      "data/derived/fighters.json (career C and recency-weighted S sums; lightweight medians over 120 lightweights with 30+ UFC minutes)",
+      "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (2014-2026 bout stats and methods)",
+      "data/scouting/arman-tsarukyan.json and data/scouting/benoit-saint-denis.json (fight accounts)",
+      "https://en.wikipedia.org/wiki/Dan_Hooker (reference page for background; could not be fetched in this pass)"
+    ]
+  },
+  "moves": {
+    "jab": 0.32, "cross": 0.28, "hook": 0.15, "overhand": 0.07, "upper": 0.12, "headkick": 0.06,
+    "bodykick": 0.55, "bodyhook": 0.25, "bodystraight": 0.2,
+    "calf": 0.6, "inside": 0.4, "spinning": 0.02, "knee": 0.4, "elbow": 0.1,
+    "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json: recency-weighted landed shares are head 0.54 / body 0.24 / leg 0.21 and attempt shares are head 0.68 / body 0.18 / leg 0.14 (career landed 0.62 / 0.18 / 0.20; lightweight median landed about 0.62 / 0.22 / 0.15). So legs run well above the division and the body at or above it. Head group leans on the jab and straight from his long frame (6'0\", 75-inch reach); head kicks are a small share. In the body group kicks lead, because his body-strike finish was a front kick (Puelles). Calf outweighs inside because his leg strikes come at volume from range. UFC Stats does not separate calf from thigh kicks, so that split is judgment. Knee is high (0.4) for two clinch-knee KOs (Pearson, Miller), with 8% of his landed strikes in the clinch. Spinning is near zero. These weights are analyst judgment from the bout stats; no published breakdown could be fetched in this pass."
+  },
+  "appearance": {
+    "build": "tall, long-limbed lightweight who previously fought at featherweight: 6'0\" with a 75-inch reach (fighters.json; 7 featherweight bouts in the dataset)",
+    "hair": "unknown (photos could not be checked in this pass)",
+    "facial_hair": "unknown",
+    "skin": "light",
+    "tattoos": "none confirmed",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height, reach, divisions)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Opponents shoot on him 7.7 times per 15 min recency-weighted (6.4 career; lightweight median about 4.2) and controlled him 261 seconds per 15 recently (132 career). His 73-77% takedown defence holds early, but against elite wrestlers it gives way over a round.", "source": "data/derived/fighters.json (S and C sums)" },
+    { "note": "Chin trending down: knockdowns absorbed per 15 min rose from 0.18 career to 0.39 recency-weighted, with KO/TKO losses to Saint Denis and Parnasse in 2026. His KO losses outnumber the knockdowns he has absorbed (5 vs 3), because several stoppages came without a scored knockdown first.", "source": "data/derived/fighters.json (ko_losses, kd_absorbed, okd)" },
+    { "note": "Power: 9 knockdowns and 7 KO/TKO wins in 245.7 UFC minutes (0.55 knockdowns per 15; median about 0.31).", "source": "data/derived/fighters.json" },
+    { "note": "Submission threat from guard and front headlock persists (1.26 attempts per 15 recency-weighted; 2 each against Tsarukyan and Saint Denis), but his last submission win was in 2017.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Pace in his four five-round fights: 1.00 / 1.65 / 1.37 / 0.60 / 1.00 relative to round 1. Output peaks in rounds 2-3 and dips in round 4.", "source": "data/derived/fighters.json (pace)" }
+  ],
+  "confidence": "medium"
+}

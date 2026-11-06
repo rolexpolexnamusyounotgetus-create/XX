@@ -1,0 +1,79 @@
+{
+  "slug": "sean-o-malley",
+  "name": "Sean O'Malley",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC bantamweight champion, 2-0 since losing the belt and in contention for another shot. He won the title by KO of Aljamain Sterling at UFC 292 (Aug 19, 2023) and defended it against Marlon Vera at UFC 299 (Mar 9, 2024). He then lost twice to Merab Dvalishvili: a decision at UFC 306 (Sep 14, 2024) and a round-3 guillotine at UFC 316 (Jun 7, 2025). Since then he has beaten Song Yadong (UFC 324, Jan 24, 2026; 29-28 x3) and knocked out Aiemann Zahabi in round 2 at UFC Freedom 250 in Washington, DC (Jun 14, 2026). On Oct 25, 2026 Dana White named O'Malley and Song as the contenders for champion Petr Yan. Betting headlines had Yan favoured in that rematch (O'Malley beat Yan by split decision in 2022). No booking was found. UFC record 12-3 (1 NC) per ufcstats.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/b50a426a33da0012",
+      "http://ufcstats.com/fight-details/60de0423ae6ed097",
+      "http://ufcstats.com/fight-details/007e8e0d4a39d82c",
+      "http://ufcstats.com/fight-details/e61d83e4e1f9c4d7",
+      "http://ufcstats.com/fight-details/3146e5a47a922976",
+      "https://cagesidepress.com/2026/01/24/ufc-324-sean-omalley-takes-close-decision-over-song-yadong",
+      "https://bloodyelbow.com/2026/10/25/a-good-problem-dana-white-reveals-2-fighters-are-in-contention-to-face-petr-yan-next/",
+      "https://boxingnews.com/news/yan-favored-omalley-rematch-volkanovski-underdog",
+      "https://www.sherdog.com/news/news/Petr-Yan-favored-in-2-rematches-Volkanovski-underdog-to-Gaethje-203356",
+      "data/derived/fighters.json"
+    ]
+  },
+  "style": {
+    "archetype": "counter striker",
+    "stance": "switch",
+    "tags": ["counter", "switch-stance", "rangy", "range-control", "body-work", "power", "durable"],
+    "signature": [
+      "long-range sniping from both stances: 96% of his career sig attempts come at distance, landed at 60% (vs 45.6% for the league)",
+      "body attack: 22% of decayed attempts go to the body (vs a 14.1% bantamweight average), including 61 of 68 body strikes vs Marlon Vera at UFC 299",
+      "knockdown into ground punches to take the title from Aljamain Sterling, R2 0:51, UFC 292 (ufcstats)",
+      "punches at distance to stop Aiemann Zahabi, R2 4:02, UFC Freedom 250 (ufcstats)",
+      "late-round takeover: out-landed Song 25-12 in R3 at UFC 324 and bloodied him (Cageside Press)"
+    ],
+    "weaknesses": [
+      "wrestling: takedown defence is 60% career and decayed vs a 65.7% league average. Dvalishvili landed 11 of 27 takedowns with 16:32 of control over two fights and submitted him with a guillotine",
+      "takes leg kicks: 24% of opponents' decayed attempts go to his legs (vs 9.7% for the league) and land at a high rate. Zahabi landed 26 of 31 leg strikes, Pedro Munhoz 26 of 30 and Song 19 of 33",
+      "almost no offensive wrestling: 3 takedowns landed in 16 UFC fights",
+      "his only KO/TKO loss came after leg damage early in his career (Marlon Vera, 2020; ufcstats lists elbows from guard)"
+    ],
+    "summary": "A tall, long switch-stance counter-puncher who fights almost entirely at range, landing at a very high rate with straight shots and a heavy body attack. He has real one-shot power and has never been knocked down in the UFC. Opponents beat him by wrestling him (Dvalishvili twice) or by chopping his legs, not by out-striking him upstairs.",
+    "sources": [
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_stats.csv",
+      "http://ufcstats.com/fight-details/894c44c3d04aaf6f",
+      "http://ufcstats.com/fight-details/ee796ecb4ee8680b",
+      "http://ufcstats.com/fight-details/60de0423ae6ed097",
+      "http://ufcstats.com/fight-details/007e8e0d4a39d82c",
+      "http://ufcstats.com/fight-details/39dccca8e8083072",
+      "https://cagesidepress.com/2026/01/24/ufc-324-sean-omalley-takes-close-decision-over-song-yadong"
+    ]
+  },
+  "moves": {
+    "jab": 0.22, "cross": 0.3, "hook": 0.14, "overhand": 0.04, "upper": 0.14, "headkick": 0.16,
+    "bodykick": 0.6, "bodyhook": 0.1, "bodystraight": 0.3,
+    "calf": 0.5, "inside": 0.5, "spinning": 0.04, "knee": 0.05, "elbow": 0.0,
+    "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. fighters.json time-decayed attempt split is 71.5% head, 22.4% body and 6.1% leg (landed 63.6/26.9/9.5), against a bantamweight average of 76.2/14.1/9.7. That is one of the most body-heavy splits in the division. 96% of his career attempts are at distance, which pushes the head group toward straight punches (jab and cross) and away from overhands. It also pushes the body group toward kicks and straights rather than hooks, since body hooks are an inside weapon. headkick 0.16 and bodykick 0.60 are judgments for a rangy kicker and are not confirmed by a scouting page; no web page could be opened in this pass. The leg split, spinning 0.04 and knee 0.05 are unsourced low defaults."
+  },
+  "appearance": {
+    "build": "tall, lean and long-limbed for bantamweight: 5'11\" (71 in) with a 72 in reach per ufcstats",
+    "hair": "frequently dyed in bright, changing colours; current colour unknown (unverified: from widely published pre-2026 coverage; no photo was checked in this pass)",
+    "facial_hair": "often a moustache (unverified, as above)",
+    "skin": "light",
+    "tattoos": "not recorded here (no source checked in this pass)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",
+      "skin, hair and facial hair: unverified recall of widely published pre-2026 photos; a fact-check against a dated photo is needed"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Never knocked down in 16 UFC fights (0 knockdowns absorbed). He has scored 7 knockdowns (0.55 per 15 min career, 0.45 decayed) vs a 0.31 bantamweight prior.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Opponents' best striking avenue is the legs: 19.4% of their career attempts and 23.8% decayed go there, and 42% of what lands on him (decayed) is leg strikes. His opponents' head accuracy is only 27.7% career vs 37.1% for the league.", "source": "data/derived/fighters.json" },
+    { "note": "Offensive grappling is close to zero (0.12 takedown attempts per 15 min decayed). Opponents take him down 2.3 times per 15 min decayed and hold 11.4 s/min of control, above the 10.6 league rate.", "source": "data/derived/fighters.json" },
+    { "note": "Five-round sample is small: 4 bouts (20 / 15.8 / 14.7 / 10 / 10 minutes per round). Pace 1.00 / 1.90 / 1.03 / 2.03 / 2.36 is driven by the 230-of-356 Vera fight, so shrink it toward the prior.", "source": "data/derived/fighters.json (pace, pace_w)" }
+  ],
+  "confidence": "medium"
+}

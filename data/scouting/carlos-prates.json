@@ -1,0 +1,88 @@
+{
+  "slug": "carlos-prates",
+  "name": "Carlos Prates",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Welterweight contender, 7-1 in the UFC with all seven wins by KO/TKO (ufcstats). Most recently he knocked Jack Della Maddalena down three times and stopped him with elbows to the body in round 3 of a five-round main event in Perth (May 2, 2026). Before that he knocked out Leon Edwards in round 2 at UFC 322 (Nov 15, 2025). The reports cited in the project's Morales and Makhachev scouting files say Islam Makhachev verbally agreed to face him at UFC 336 and then backed out. Prates is now booked against Michael Morales for the interim UFC welterweight title, as the UFC 336 co-main event (Jan 30, 2027, Scotiabank Arena, Toronto). Those reports were not re-fetched in this pass (no web access).",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": "vs Michael Morales for the interim UFC welterweight title, UFC 336 co-main event, Jan 30, 2027, Scotiabank Arena, Toronto (per reports cited in data/scouting/michael-morales.json; not re-verified this pass)",
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/7ee0fd831c0fe7c3",
+      "http://ufcstats.com/fight-details/eb6d9fef6c374830",
+      "http://ufcstats.com/fight-details/3c60884853766487",
+      "http://ufcstats.com/fight-details/42585ce706c086de",
+      "http://ufcstats.com/fight-details/633f4b5ec767769d",
+      "http://ufcstats.com/event-details/872b018076f831b0",
+      "https://heavy.com/sports/ufc/interim-title-fight-headlines-ufc-336/",
+      "https://sports.yahoo.com/articles/ufc-336-gets-massive-co-204308357.html",
+      "https://www.f4wonline.com/news/ufc/ufc-336-title-fights-confirmed-nterim-welterweight-champion/",
+      "https://www.fightful.com/mma/interim-welterweight-title-fight-set-for-ufc-336-flyweight-title-fight-to-headline/",
+      "https://sports.yahoo.com/articles/dana-white-islam-makhahev-verbally-045008414.html"
+    ]
+  },
+  "style": {
+    "archetype": "muay thai",
+    "stance": "switch",
+    "tags": ["power", "switch-stance", "rangy", "knees", "elbows", "spinning", "leg-kicks", "takedown-defense", "durable"],
+    "signature": [
+      "punch KOs at range: Trevin Giles (R2), Li Jingliang (R2, 3 knockdowns), Neil Magny (R1, 2 knockdowns) and Leon Edwards (R2)",
+      "spinning back elbow (KO of Geoff Neal at 4:59 of R1, UFC 319, Aug 2025)",
+      "knee to the body at distance (KO of Charles Radtke, R1 4:47, Jun 2024)",
+      "elbows to the body from top half guard (finish of Della Maddalena, R3 3:17, May 2026)",
+      "low kicks: 13% of decayed significant attempts go to the legs (division 9.3%); 14/15 leg strikes landed against Della Maddalena",
+      "knockdown power: 2.32 knockdowns per 15 min and 5.9 per 100 head strikes landed (division 0.84)"
+    ],
+    "weaknesses": [
+      "hittable: opponents land 52.3% of significant strikes on him (division 47.7%), 4.35 per minute",
+      "takes leg kicks: 1.49 leg strikes absorbed per minute (division 0.66); Trevin Giles landed 41/49 and Li Jingliang 25/37",
+      "out-worked over five rounds by Ian Machado Garry (UD loss, Apr 2025): out-landed 126-63, with 4/19 takedowns landed on him",
+      "almost no wrestling offense (0.19 takedown attempts per 15 min) and almost no clinch offense (about 1% of landed strikes)",
+      "opponents shoot often: 7.55 takedown attempts per 15 min against him (division 3.75)"
+    ],
+    "summary": "A tall, very long-armed (78 in reach) switch-stance Muay Thai striker with rare stopping power: seven UFC wins, seven stoppages, and 2.3 knockdowns per 15 minutes. He fights almost entirely at range with straight punches, hooks, kicks and knees, and finishes with spinning and ground elbows. He is hittable and takes leg kicks. His one UFC loss was a decision to a rangy, busy striker who out-landed him over five rounds.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/7ee0fd831c0fe7c3",
+      "data/derived/fighters.json",
+      "tools/fighter_report.py (snapshot 2026-10-31)"
+    ]
+  },
+  "moves": {
+    "jab": 0.3,
+    "cross": 0.45,
+    "hook": 0.35,
+    "overhand": 0.15,
+    "upper": 0.15,
+    "headkick": 0.12,
+    "bodykick": 0.3,
+    "bodyhook": 0.1,
+    "bodystraight": 0.1,
+    "calf": 0.3,
+    "inside": 0.2,
+    "spinning": 0.12,
+    "knee": 0.25,
+    "elbow": 0.15,
+    "notes": "Target split from the fighters.json S sums: decayed significant attempts go 74.8% head, 12.2% body, 13.0% legs, and landed strikes 62.9% head, 16.5% body, 20.7% legs. Career attempts are 72.1/13.7/14.2. Body attempts are at the welterweight rate (13.9%), and his body finishes were a knee (Radtke) and ground elbows (Della Maddalena), so body kicks and knees take most of the body weight and body punches stay small. Leg attempts are 1.4x the division rate (9.3%), so calf and inside kicks get 0.5 together. ufcstats does not split calf from inside kicks. 89% of his decayed landed strikes come at distance and about 1% in the clinch, so the knee weight (0.25) is mainly distance knees, and elbow (0.15) covers the spinning back elbow and ground elbows. Spinning is 0.12 because one of his seven KOs was a spinning back elbow. The head punches favour the cross and hook, which scored four punch KOs, but ufcstats does not record which punch landed, so that split is a judgment. No outside scouting source could be fetched this pass."
+  },
+  "appearance": {
+    "build": "tall and very long-armed for welterweight; 6 ft 1 in with a 78 in reach (ufcstats)",
+    "hair": "short dark",
+    "facial_hair": "unknown",
+    "skin": "medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/7ee0fd831c0fe7c3"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Knockdown power far above the division: 2.32 knockdowns per 15 min and 5.9 per 100 head strikes landed (division 0.84), but from only 77.4 UFC minutes. Shrink toward the prior; the report's empirical-Bayes power estimate exists for this.", "source": "tools/fighter_report.py chin-and-power table (snapshot 2026-10-31)" },
+    { "note": "Never knocked down in the UFC: 0 knockdowns absorbed across 182 head strikes absorbed and 77.4 minutes.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)" },
+    { "note": "Five-round sample is the Machado Garry decision (25 min) and the Della Maddalena stoppage (13.3 min). His pace vector (1, 1.74, 2.45, 0.87, 1.59) is noise; use the division prior.", "source": "data/derived/fighters.json (pace_w 14.8, 10, 8.28, 5, 5)" },
+    { "note": "Opponents try to wrestle him: 7.55 takedown attempts per 15 min, 79.5% defended. Machado Garry went 4/19, and Edwards went 2/3 with 3:00 of control in R1 before being knocked out in R2.", "source": "tools/fighter_report.py; http://ufcstats.com/fight-details/3c60884853766487" },
+    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). The UFC 336 booking comes from sources another agent cited in data/scouting/michael-morales.json and islam-makhachev.json. Ranking, hair/skin descriptions and technique labels have not been checked against outside sources.", "source": "research pass 2026-11-06" }
+  ],
+  "confidence": "medium"
+}
