@@ -50,6 +50,19 @@ score
   - Models block (v4.1 files on): every model in each bout's "models" block gets log loss, Brier and accuracy, and its
     paired log-loss difference vs the market at prediction time and vs the close (event-cluster bootstrap), per model
     version (scores.json "models").
+
+Forward model v4.2 (data/predictions/README.md, "Forward model v4.2 (Nov 6-7, 2026)", pre-registered before this code)
+  - --fwd auto (default) picks the version the README assigns to the event date: fwd-4.2 for events dated 2026-11-14 or
+    later, fwd-4.1 before; writing a ledger file under any other version is refused (dry runs may use either). The
+    fwd-4.1 path is byte-identical to tool 1.1 (tests/test_forward_v42.js).
+  - fwd-4.2 reads only the pinned files of the README table (FWD42_PINNED below; refuses to write when one differs) and
+    the frozen engine in versions/v4. Winner: unchanged. A bout with a debutant takes p_method / p_distance /
+    p_finish_round from the debut method model (debut.json) fed p_a, with fwd-4.1's division-base-rate cells kept as
+    p_method_secondary; models.debut_model is the monitored debut winner model. Every bout gets a "statlines" block
+    (tools/forward_statlines.js: src/ml/statdist.js prod tables mixed over the primary method cells' length grid).
+  - score: also scores the debut method against its base-rate secondary, and the stat-line block against ufcstats
+    per-fight totals (Greco1899 ufc_fight_stats.csv), appended to data/predictions/statlines_results.json (append-only)
+    for bouts whose two-source result is verified.
 """
 import argparse
 import csv
@@ -75,7 +88,8 @@ GRECO = "https://raw.githubusercontent.com/Greco1899/scrape_ufc_stats/main/"
 ESPN = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=%s"
 UA = "FightLabSim/1.0 (forward-ledger)"     # the project's fetch User-Agent (no browser string, no email)
 DEBUT_ELO = 1500.0                        # tools/build_db.py start rating
-TOOL = "tools/forward_ledger.py 1.1"
+TOOL = "tools/forward_ledger.py 1.1"     # the fwd-4.1 path writes this exact string (byte-identical files)
+TOOL_42 = "tools/forward_ledger.py 1.2"  # tool version of fwd-4.2 files
 # Forward model v4.1 (pre-registered in data/predictions/README.md): p_a = the first of these models-block entries that
 # exists for the bout, when a line was captured before the lock; the ML v2 open stack (weights fit 2019-2023 on opening
 # lines) is the primary, the rest are fallbacks for a fighter missing from the ML v2 roster.
@@ -105,6 +119,77 @@ MODEL_DEFS = {
     "simulator": "engine (src/engine3.js) summarize, both corner orders, learned stat-line rates, draws removed",
 }
 LEDGER_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})_([a-z0-9-]+?)(?:_v(\d+))?\.json$")
+
+# ---- forward model v4.2 (data/predictions/README.md "Forward model v4.2 (Nov 6-7, 2026)")
+FWD_EFFECTIVE = (("2026-11-14", "4.2"),)  # (first event date, version) as the README assigns them; before: 4.1
+MODEL_VERSION_42 = "fwd-4.2"
+FWD42_ENGINE_DIR = "versions/v4"          # frozen engine 4.0.0 / params 4.0.0-selfcal-pre2024 (= Vegas 124's engine)
+# the README table "Files and hashes fwd-4.2 reads" (sha256, first 16 hex); a different hash refuses a fwd-4.2 file
+FWD42_PINNED = {
+    "data/derived/fighters.json": "df4d868a2195fb4a", "data/derived/moe_page.json": "34a33d1837e9b912",
+    "data/derived/ml.json": "444b7b1e62086cc1", "data/derived/market.json": "8edb0a6cc9c3ca4f",
+    "data/derived/methodround.json": "b26b7e373367f346", "data/derived/mlrates.json": "6dec930e670f7c70",
+    "data/derived/ml2.json": "0837826dbc05cd1f", "data/derived/forward_models.json": "20269ec7642c1db8",
+    "data/derived/ratings.json": "5fc4f8a3be14051f", "data/derived/preufc.json": "30111c93e864dfe0",
+    "data/derived/blindtest_stack.json": "ded17ce026bbff29", "data/derived/debut.json": "f6709d52292ccc83",
+    "data/derived/statlines.json": "30c3a959a1a3ac2a", "data/derived/embed_model.json": "061d9fba48cc6633",
+    "data/derived/oppadj.json": "c27c8c6de3733c59",
+    "versions/v4/engine3.js": "6c661f68a4c41c1d", "versions/v4/params3.js": "e16a6481319f9b15",
+    "versions/v4/ml/mlrates.js": "b563032dd9468f7b",
+    "src/ml/moe.js": "ad1097b488bbb3ac", "src/ml/mlpage.js": "d4c72febf5c57666", "src/ml/ml2.js": "a840ae6ad9e6bcc3",
+    "src/ml/debut.js": "e5bbc188f4cf42c9", "src/ml/statdist.js": "c7facbbc4b406be1", "src/ml/embed.js": "e3fa72fd6c0b140b",
+    "tools/methodround_model.js": "60d90d231bb4300f",
+}
+FWD42_CODE = ("tools/forward_ledger.py", "tools/forward_ledger.js", "tools/forward_statlines.js")
+STAT_KEYS = ("sig_lnd", "sig_att", "td_lnd", "td_att", "ctrl", "kd", "sub_att")
+MODEL_DEFS_42 = dict(MODEL_DEFS, debut_model=(
+    "monitored secondary (fwd-4.2): the no-line debut winner model (src/ml/debut.js winner(), data/derived/debut.json; "
+    "16-column symmetric logistic refit 2012-2025) for a bout with a debutant; null otherwise; never the primary"))
+
+
+def fwd_for_date(date):
+    """The forward model version the README assigns to an event date."""
+    v = "4.1"
+    for start, ver in FWD_EFFECTIVE:
+        if date >= start:
+            v = ver
+    return v
+
+
+def pinned_mismatches():
+    out = []
+    for p, h in FWD42_PINNED.items():
+        a = sha16(os.path.join(ROOT, p))
+        if a != h:
+            out.append({"file": p, "pinned": h, "found": a})
+    return out
+
+
+def round_profile(priors, division, rounds):
+    """Division base-rate round profile (the table of division_method_prior): KO and SUB shares per round, each summing
+    to 1; ALL's profile when the division's list sums to 0."""
+    def prof(P):
+        f = P.get("fin5" if rounds == 5 else "fin3") or P.get("fin3")
+        return [list(f.get("KO") or []), list(f.get("SUB") or [])]
+    P = priors.get(division) or priors.get("ALL")
+    ko, sub = prof(P)
+    allko, allsub = prof(priors["ALL"])
+    out = []
+    for xs, alt in ((ko, allko), (sub, allsub)):
+        xs = (xs + [0.0] * rounds)[:rounds]
+        if sum(xs) <= 0:
+            xs = (alt + [0.0] * rounds)[:rounds]
+        if sum(xs) <= 0:
+            xs = [1.0] * rounds
+        out.append([x / sum(xs) for x in xs])
+    return out[0], out[1]
+
+
+def cells_from_profile(pm, ko_prof, sub_prof):
+    """S cells [a KO r1..R, a SUB r1..R, b KO r1..R, b SUB r1..R, a DEC, b DEC, draw] from 7-way method cells."""
+    return ([pm["a_ko"] * w for w in ko_prof] + [pm["a_sub"] * w for w in sub_prof] +
+            [pm["b_ko"] * w for w in ko_prof] + [pm["b_sub"] * w for w in sub_prof] +
+            [pm["a_dec"], pm["b_dec"], pm["draw"]])
 
 
 def now_utc():
@@ -267,6 +352,25 @@ def cmd_predict(args):
     if t0 >= lock:
         raise SystemExit("refused: the %s card locked at %s (now %s); a prediction after the lock is not a forward "
                          "test" % (ev["name"], iso(lock), iso(t0)))
+    # forward model version (README "Forward model v4.2": fwd-4.2 from 2026-11-14 on, fwd-4.1 before)
+    assigned = fwd_for_date(ev["date"])
+    fwd = assigned if args.fwd == "auto" else args.fwd
+    if fwd != assigned and not args.dry_run:
+        raise SystemExit("refused: data/predictions/README.md assigns fwd-%s to events dated %s (asked for fwd-%s); a "
+                         "ledger file is written under the pre-registered version only (--dry-run may compare)"
+                         % (assigned, ev["date"], fwd))
+    engine_dir = args.engine_dir or (FWD42_ENGINE_DIR if fwd == "4.2" else "src")
+    mism = []
+    if fwd == "4.2":
+        mism = pinned_mismatches()
+        if os.path.normpath(engine_dir) != os.path.normpath(FWD42_ENGINE_DIR):
+            mism.append({"file": "--engine-dir", "pinned": FWD42_ENGINE_DIR, "found": engine_dir})
+        if mism and not args.dry_run:
+            raise SystemExit("refused: fwd-4.2 reads only the files pre-registered in data/predictions/README.md; these "
+                             "differ: %s. A changed input is a new version (fwd-4.2.1+) that needs a README addendum "
+                             "first." % json.dumps(mism))
+        for m in mism:
+            print("WARNING (dry run): fwd-4.2 pinned input differs: %s pinned %s, found %s" % (m["file"], m["pinned"], m["found"]))
     slug = slugify(ev["name"])
     base = os.path.join(args.dir, "%s_%s.json" % (ev["date"], slug))
     existing = sorted([f for f in glob.glob(os.path.join(args.dir, "%s_%s*.json" % (ev["date"], slug)))
@@ -308,12 +412,17 @@ def cmd_predict(args):
             raise SystemExit("--stack blindtest: run python3 tools/blindtest.py export first")
         stack_file = bt_stack
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
-        json.dump({"date": ev["date"], "sims": args.sims, "bouts": bouts_in}, fh)
+        jin = {"date": ev["date"], "sims": args.sims, "bouts": bouts_in}
+        if fwd == "4.2":
+            jin["headline"] = args.headline
+        json.dump(jin, fh)
         tmp = fh.name
     try:
-        cmd = ["node", os.path.join(HERE, "forward_ledger.js"), tmp, "--engine-dir", args.engine_dir]
+        cmd = ["node", os.path.join(HERE, "forward_ledger.js"), tmp, "--engine-dir", engine_dir]
         if stack_file:
             cmd += ["--moe", os.path.relpath(stack_file, ROOT)]
+        if fwd == "4.2":
+            cmd += ["--fwd", "4.2"]
         res = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, check=True)
     finally:
         os.unlink(tmp)
@@ -407,6 +516,48 @@ def cmd_predict(args):
             pm = {"a_ko": qa * ko / fs, "a_sub": qa * sub / fs, "a_dec": qa * dc / fs,
                   "b_ko": qb * ko / fs, "b_sub": qb * sub / fs, "b_dec": qb * dc / fs, "draw": dr}
             pdist, fin_round, msrc = pm["a_dec"] + pm["b_dec"] + dr, None, "division base rates"
+        extra = None
+        if fwd == "4.2":
+            # README "Forward model v4.2": debut bouts take the debut method model fed p_a (division base rates kept as
+            # the scored secondary); every bout's primary cells by round become the stat-line fight-length grid
+            extra = {}
+            ko_prof, sub_prof = round_profile(fj["priors"], b.get("weight_class"), bi["rounds"])
+            dm = r.get("debut_method")
+            if debut and not dm:
+                raise SystemExit("fwd-4.2: the debut method model did not run for %s (%s)" % (bid, r.get("notes")))
+            if debut:
+                if abs(dm["p_w_used"] - p_a) > 1e-9:
+                    raise SystemExit("fwd-4.2: debut method fed %r but p_a is %r for %s" % (dm["p_w_used"], p_a, bid))
+                extra["p_method_secondary"] = {"division_base_rates": {
+                    "p_method": {k: round(v, 5) for k, v in pm.items()}, "p_distance": round(pdist, 5),
+                    "source": "division base rates scaled to p_a (fwd-4.1's debut method)"}}
+                _, _, _, dr = division_method_prior(fj["priors"], b.get("weight_class"), bi["rounds"])
+                qa, qb = p_a * (1 - dr), (1 - p_a) * (1 - dr)
+                ga, gb = dm["given_a"], dm["given_b"]
+                pm = {"a_ko": qa * ga[0], "a_sub": qa * ga[1], "a_dec": qa * ga[2],
+                      "b_ko": qb * gb[0], "b_sub": qb * gb[1], "b_dec": qb * gb[2], "draw": dr}
+                pdist = pm["a_dec"] + pm["b_dec"] + dr
+                cells = cells_from_profile(pm, ko_prof, sub_prof)
+                R_ = bi["rounds"]
+                fin_round = {"a": [round(cells[i] + cells[R_ + i], 5) for i in range(R_)],
+                             "b": [round(cells[2 * R_ + i] + cells[3 * R_ + i], 5) for i in range(R_)]}
+                msrc = "debut method model (debut.json)"
+                extra["debut_method"] = dm
+                extra["debut_path"] = r.get("debut_path")
+            elif head and head.get("p_method"):
+                if head.get("koA") is not None:
+                    cells = ([v * fa for v in head["koA"]] + [v * fa for v in head["subA"]] +
+                             [v * fb for v in head["koB"]] + [v * fb for v in head["subB"]] +
+                             [pm["a_dec"], pm["b_dec"], pm["draw"]])
+                else:     # engine head: per-round finishes split into KO and SUB by its own KO / SUB totals
+                    fa_ko = pm["a_ko"] / max(pm["a_ko"] + pm["a_sub"], 1e-12)
+                    fb_ko = pm["b_ko"] / max(pm["b_ko"] + pm["b_sub"], 1e-12)
+                    cells = ([v * fa * fa_ko for v in head["finA"]] + [v * fa * (1 - fa_ko) for v in head["finA"]] +
+                             [v * fb * fb_ko for v in head["finB"]] + [v * fb * (1 - fb_ko) for v in head["finB"]] +
+                             [pm["a_dec"], pm["b_dec"], pm["draw"]])
+            else:
+                cells = cells_from_profile(pm, ko_prof, sub_prof)
+            extra["_cells"] = cells
         out_bouts.append({
             "bout_id": bid, "order": b.get("order"), "segment": b.get("segment"),
             "a": {"name": b["a"]["name"], "slug": b["a"].get("slug")}, "b": {"name": b["b"]["name"], "slug": b["b"].get("slug")},
@@ -421,6 +572,13 @@ def cmd_predict(args):
             "experts": r.get("experts"), "stack_weights": (r.get("stack_line") or r.get("stack_noline") or {}).get("weights"),
             "engine": r.get("engine"), "methodround_S": r.get("methodround_S"),
             "market": mk, "flags": flags, "notes": r.get("notes")})
+        if extra is not None:
+            out_bouts[-1].update(extra)
+    if fwd == "4.2":
+        sl = run_statlines(ev["date"], bouts_in, out_bouts, engine_dir)
+        for ob in out_bouts:
+            ob.pop("_cells", None)
+            ob["statlines"] = sl["bouts"][ob["bout_id"]]
     commit = git("rev-parse", "HEAD")
     dirty = git("status", "--porcelain", "--", "src", "tools", "data/derived")
     doc = {
@@ -460,7 +618,11 @@ def cmd_predict(args):
         "probability_conventions": "p_a, p_a_line, p_a_noline, p_elo = P(a wins | not a draw); p_method sums to 1 with "
                                    "the draw; a/b in cards_upcoming.json order",
         "bouts": out_bouts}
+    if fwd == "4.2":
+        apply_model_42(doc, jm, sl["meta"], args, mism)
     print_table(doc)
+    if fwd == "4.2":
+        print_table_42(doc)
     if args.dry_run:
         if args.dry_out:
             with open(args.dry_out, "w") as fh:
