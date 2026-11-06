@@ -14,9 +14,11 @@ a prior UFC fight (the backtest universe): 1,955 in 2019-2023, 854 in 2024-2025.
 
 ## Bottom line
 
-1. **As a rating system it is the best in the project, by a hair: level with round-level WHR and ahead of Glicko-2.**
-   It does not get near ML v2 or the closing line, and on its own it adds nothing to any stack that contains ML v2
-   or a line.
+1. **As a rating system it is level with the best in the project: round-level WHR and the ratings stack (every
+   difference n.s.).** Its point estimates are ahead of Glicko-2 and the Elo variants, but those CIs include 0 too.
+   On 2024-25 the ratings stack scores better (+0.0041, n.s.). *(Verifier correction: the note first said "the best
+   in the project, by a hair".)* It does not get near ML v2 or the closing line, and on its own it adds nothing to
+   any stack that contains ML v2 or a line.
 
    | winner log loss | 2019-2023 OOF (1,955) | bayes minus it [CI] | 2024-2025, scored once (854) | bayes minus it [CI] |
    |---|---|---|---|---|
@@ -35,13 +37,19 @@ a prior UFC fight (the backtest universe): 1,955 in 2019-2023, 854 in 2024-2025.
    stacks and in ml2's CV-chosen no-line stack. On 2024-25 the one stack it entered that matters for production does
    not improve: page no-line + bayes **+0.0007 [-0.0024, +0.0036]**. Recommendation: **do not add it to the page
    no-line stack**; the CV gain was within noise and the confirmation is flat. As a WHR substitute or partner in a
-   ratings-only fallback it helps consistently (2024-25 -0.0042 to -0.0045, CI just touching 0).
+   ratings-only stack the point estimates favour it in both windows, but every CI includes 0: CV [-0.0067, +0.0014]
+   and [-0.0064, +0.0016]; 2024-25 [-0.0096, +0.0007] and [-0.0093, +0.0007]. The production ratings-only fallback is
+   ratings.py's `stack` (model_ratings.md), and bayes only ties it (-0.0001 / +0.0041, n.s.). Not adopted there
+   either. *(Verifier correction: the note first said "helps consistently ... CI just touching 0".)*
 3. **What carried the gain over a filter.** Re-solving the history with expectation propagation (TrueSkill-through-
    time style) is the one big structural gain: monthly EP refits vs the plain one-pass filter **-0.0049 [-0.0075,
    -0.0023]** on 2019-2023 (2024-25: -0.0036 [-0.0076, +0.0001]). The stat likelihood (strikes, takedowns, control,
-   submissions, knockdowns feeding the skills) is worth **-0.0070 [-0.0124, -0.0017]** over the same model with results
-   only. This is the same lesson as the ratings note ("scoring rounds needs WHR"): many small signals pay only when the
-   whole history is re-solved.
+   submissions and knockdowns feeding the skills) is worth **-0.0065 [-0.0120, -0.0011]** over the same model with
+   results only, at the same (quarterly) EP schedule. It is -0.0061 [-0.0116, -0.0007] at the yearly schedule and
+   -0.0048 [-0.0103, +0.0006] (n.s.) with the filter alone. *(Verifier correction: the -0.0070 [-0.0124, -0.0017]
+   first quoted paired monthly main with quarterly nostats, and nostats was never run monthly.)* This is the same
+   lesson as the ratings note ("scoring rounds needs WHR"): many small signals pay only when the whole history is
+   re-solved.
 4. **Uncertainty: the posterior is useful for calibration but does not flag the hard fights.**
    - Folding the posterior variance into the probability (P = sigmoid(m / sqrt(1 + pi v / 8))) fixes the plug-in's
      overconfidence on 2019-2023: calibration slope 0.80 -> 0.99, log loss -0.0024 [-0.0055, +0.0008] (chosen by CV).
@@ -103,7 +111,8 @@ the task allows, so the model uses the Kalman / EP approximation the task offers
   other information about both men, earlier and later) times the likelihood, with Laplace moments; parallel updates,
   damping 0.8, until the skill means move < 0.002 (14 sweeps from the filter's messages, 6-7 when warm-started from
   the previous refit; about 1.4 s per sweep over 7,500 fights). Converged log loss does not depend on the damping (0.66201 / 0.66202 / 0.66202 at
-  0.5 / 0.8 / 1.0 on a test year). The filter then carries the EP state forward to the next cut.
+  0.5 / 0.8 / 1.0 on a test year; the test was nostats with yearly EP on 2019, and the verifier's rerun gives
+  0.66199 / 0.66201 / 0.66201: `tools/bayes_verify.py damping`). The filter then carries the EP state forward to the next cut.
 - **Hyperparameters (empirical Bayes, refit every Jan 1 on data before it, warm-started from the previous year).**
   An EM M-step on per-fighter RTS-smoothed states (newcomer prior, Sigma0, stat-skill process noise and age drift,
   pace / form sds); type-II ML of the stat-side variance scales and NB dispersions on one-step predictive likelihood;
@@ -144,7 +153,7 @@ pre-2024 data only).
 | main, yearly EP, round-encoder weight x 2 / with noise x 0.25 | 0.64561 / 0.64524 | |
 | nostats (results only), filter / yearly EP / quarterly EP | 0.65359 / 0.65122 / 0.65091 | 0.65927 / 0.65613 / 0.65571 |
 
-- Steps taken: filter -> yearly EP (-0.0037) -> quarterly (-0.0007) -> monthly (-0.0005, just over the rule);
+- Steps taken: filter -> yearly EP (-0.0037) -> quarterly (-0.0007) -> monthly (-0.000503, 3e-6 over the rule);
   plug-in -> variance-aware (-0.0024); nostats -> main (-0.0073). "+g" and every noise / weight multiplier fail
   the rule (best +0.0001).
 - WHR keeps its process noise small (w2 0.027 per year) where the filter-tuned r noise is 2-8 times larger; shrinking
