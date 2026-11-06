@@ -73,7 +73,9 @@
       // out-of-fold rows, each year scored by the recipe fit without it: mean relative deviance over 18 targets -0.72% [-0.97,
       // -0.49] vs the recalibrated rates, -0.42% [-0.68, -0.16] vs the raw learned rates). A no-op until a caller passes
       // opts.embed (backtests: tools/mlpathrec.js) or loads a roster (FightEngine.loadEmbed(embed_model.json), bouts dated on or
-      // after 2026-01-01 only).
+      // after 2026-01-01 only). Engine-level train check (tools/v5_step4_check.js, 1,999 fights x 2 orders x 300 sims, common
+      // random numbers, vs embed off): winner log loss -0.0042 [-0.0074, -0.0011]; per-fight deviance sig landed -0.31 [-0.46,
+      // -0.16], sig attempts -0.72 [-1.05, -0.39], control -1.61 [-2.91, -0.35]; 7-bin, method, TD and KD n.s.
       embed: true,
       // v5 merge step 4: opponent adjustment of the learned targets, research/model_oppadj.md ML-path recipe (block `oppadj`
       // below; engine3.js oppadjTargets). OFF: it competes with styles_sos sos "wf" (both adjust for the schedule) and the
@@ -84,7 +86,11 @@
       // finish-odds multipliers from the regional record for fighters with 0-3 UFC fights. The verified recipe; styles_sos's
       // newcomer sub-flag (the older stub) stays off and the engine refuses both. A no-op until a caller passes opts.preufc
       // (backtests: tools/mlpathrec.js, preufc.json snapshots) or loads a roster (FightEngine.loadPreUFC(preufc.json)).
-      preufc: false
+      // ON: engine-level train check vs embed alone (tools/v5_step4_check.js, 300 sims per order, common random numbers): 7-bin
+      // -0.0086 [-0.0167, -0.0001], method -0.0053 [-0.0106, +0.0001], KD deviance -0.0081 [-0.0127, -0.0032], KO-win log loss
+      // per newcomer side -0.0080 [-0.0154, -0.0004]; winner and stat lines n.s. Caveat: the recipe's exponents were fit on
+      // 2015-2023 newcomer sides, so 2019-2023 is not out of sample for them; the research's held-out check is its 2024-25 look.
+      preufc: true
     },
 
     // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------

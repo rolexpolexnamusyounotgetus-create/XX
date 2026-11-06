@@ -716,7 +716,8 @@ def props_cond(rec, K, rep_m="m6", rep_r="er"):
     """Props-implied method | winner (2 x 3) and round | side, method (2 x 2 x 5), or None where the family is absent.
     rep_m: 'm6' (method six-way) or 'm6_gd' (m6 with its decision cells rescaled so that P(decision) = the mean of m6
     and goes-to-decision). rep_r: 'er' (fight ends in round k: unsided), 'wr' (fighter wins in round k: per side),
-    'best' (mr > wr > er: the most specific family quoted)."""
+    'best' (mr > wr > er: the most specific family quoted). rep_m 'm6_mr': the mean of m6 and the six-way implied by
+    the method-by-round family (mr) where both are quoted."""
     import numpy as np
     M = R = None
     m6 = rec.get("m6")
@@ -728,6 +729,11 @@ def props_cond(rec, K, rep_m="m6", rep_r="er"):
             v = v.copy()
             v[[2, 5]] *= tgt / pd_m6
             v[[0, 1, 3, 4]] *= (1 - tgt) / (1 - pd_m6)
+        if rep_m == "m6_mr" and rec.get("mr") is not None:
+            f = np.asarray(rec["mr"], float)
+            mr6 = np.array([f[:K].sum(), f[K:2 * K].sum(), f[4 * K], f[2 * K:3 * K].sum(), f[3 * K:4 * K].sum(),
+                            f[4 * K + 1]])
+            v = 0.5 * (v / v.sum() + mr6 / mr6.sum())
         A, B = v[:3], v[3:][[0, 1, 2]]
         M = np.stack([A / A.sum(), B / B.sum()])
     order = {"er": ("er",), "wr": ("wr",), "best": ("mr", "wr", "er")}[rep_r]
@@ -784,89 +790,138 @@ def mirror(P):
     return Q
 
 
-def pool_method(Ms, alpha, beta):
-    """Log-linear pool of method | winner experts: log p ∝ sum_j alpha_j log M_j + beta (beta = [0, b_sub, b_dec],
-    shared by both sides, so the pool is corner-symmetric)."""
+def _softmax_last(s):
     import numpy as np
-    s = sum(a * np.log(np.clip(M, 1e-6, 1)) for a, M in zip(alpha, Ms)) + np.asarray(beta)[None, None, :]
-    s -= s.max(-1, keepdims=True)
+    s = s - s.max(-1, keepdims=True)
     e = np.exp(s)
     return e / e.sum(-1, keepdims=True)
 
 
-def pool_round(Rs, gamma, delta, K):
-    """Log-linear pool of round | side, method shapes: log p ∝ sum_j gamma_j log R_j + delta_K (round biases by
-    format, delta[K][0] = 0), rounds past K masked."""
+NB_REF = math.log(4.0)            # book-count weighting is centred on 4 books
+
+
+def method_weights(par, n_exp, p_idx, lognb):
+    """Per-row log-linear weights (n x n_exp): alpha_j, plus alpha_nb x (log books - log 4) on the props expert."""
+    import numpy as np
+    n = len(lognb)
+    Wt = np.tile(np.asarray(par["alpha"], float), (n, 1))
+    if par.get("alpha_nb") and p_idx is not None:
+        Wt[:, p_idx] = np.maximum(0.0, Wt[:, p_idx] + par["alpha_nb"] * (lognb - NB_REF))
+    return Wt
+
+
+def pool_method(mode, Ms, par, ext):
+    """Pool of method | winner experts (each n x 2 x 3; sides A, B; KO, SUB, DEC). Corner-symmetric: no term depends
+    on the corner, only on each side's own conditionals (and, for 'jlin', each source's own P(that side wins)).
+      log : log p ∝ sum_j w_j log M_j
+      lin : p = sum_j w_j M_j, w on the simplex
+      jlin: p(side) ∝ sum_j w_j W_j(side) M_j(side), W_j = source j's own winner probability (the structure of the
+            current 40/60 blend of joints, methodround.json a_market)
+    then the debias tilt p ∝ p exp(beta), beta = [0, b_sub, b_dec] shared by both sides. alpha_nb (optional) moves
+    the props expert's weight with its book count: w_P x exp(alpha_nb (log books - log 4)) for lin / jlin,
+    w_P + alpha_nb (log books - log 4) for log."""
+    import numpy as np
+    beta = np.asarray(par.get("beta") or [0.0, 0.0, 0.0], float)
+    if mode == "log":
+        Wt = method_weights(par, len(Ms), ext.get("p_idx"), ext["lognb"])
+        s = sum(Wt[:, j][:, None, None] * np.log(np.clip(M, 1e-6, 1)) for j, M in enumerate(Ms))
+        return _softmax_last(s + beta[None, None, :])
+    n = len(ext["lognb"])
+    Wt = np.tile(np.asarray(par["w"], float), (n, 1))
+    if par.get("alpha_nb") and ext.get("p_idx") is not None:
+        Wt[:, ext["p_idx"]] *= np.exp(par["alpha_nb"] * (ext["lognb"] - NB_REF))
+        Wt /= Wt.sum(1, keepdims=True)
+    if mode == "lin":
+        P = sum(Wt[:, j][:, None, None] * M for j, M in enumerate(Ms))
+    else:
+        P = np.zeros_like(Ms[0])
+        for s_ in (0, 1):
+            c = [Wt[:, j] * (W if s_ == 0 else 1 - W) for j, W in enumerate(ext["Wsrc"])]
+            tot = sum(c)
+            P[:, s_] = sum(c_[:, None] * M[:, s_] for c_, M in zip(c, Ms)) / tot[:, None]
+    if np.any(beta):
+        P = P * np.exp(beta)[None, None, :]
+        P = P / P.sum(-1, keepdims=True)
+    return P
+
+
+def pool_round(mode, Rs, par, K):
+    """Pool of round | side, method shapes (n x 2 x 2 x 5), rounds past K masked.
+      log: log p ∝ sum_j gamma_j log R_j + delta_K (optional round biases by format, delta[K][0] = 0)
+      lin: p = sum_j w_j R_j"""
     import numpy as np
     K = np.asarray(K)
-    s = sum(g * np.log(np.clip(R, 1e-6, 1)) for g, R in zip(gamma, Rs))
-    if delta is not None:
-        for k_ in (3, 5):
-            m = K == k_
-            s[m] = s[m] + np.asarray(delta[k_])[None, None, :]
     mask = np.arange(R5)[None, :] >= K[:, None]
-    s = np.where(mask[:, None, None, :], -1e9, s)
-    s -= s.max(-1, keepdims=True)
-    e = np.exp(s)
-    e = np.where(mask[:, None, None, :], 0.0, e)
-    return e / e.sum(-1, keepdims=True)
+    if mode == "lin":
+        P = sum(w_ * R for w_, R in zip(par["w"], Rs))
+    else:
+        s = sum(g * np.log(np.clip(R, 1e-6, 1)) for g, R in zip(par["gamma"], Rs))
+        if par.get("delta"):
+            for k_ in (3, 5):
+                m = K == k_
+                s[m] = s[m] + np.asarray(par["delta"][str(k_)] if str(k_) in par["delta"] else par["delta"][k_])[None, None, :]
+        s = np.where(mask[:, None, None, :], -1e9, s)
+        P = np.exp(s - s.max(-1, keepdims=True))
+    P = np.where(mask[:, None, None, :], 0.0, P)
+    return P / P.sum(-1, keepdims=True)
 
 
-def fit_method_pool(Ms, side, meth, n_exp, bias=("dec",)):
-    """MLE of (alpha >= 0, beta) on method given the actual winner. bias: subset of ('sub', 'dec')."""
+def _simplex(th):
+    import numpy as np
+    e = np.exp(np.r_[0.0, th])
+    return e / e.sum()
+
+
+def fit_method(mode, Ms, side, meth, ext, bias=(), nb=False):
+    """MLE on method given the actual winner. Returns the parameter dict for pool_method."""
     import numpy as np
     from scipy.optimize import minimize
+    n_exp = len(Ms)
     ix = np.arange(len(side))
-    L = [np.log(np.clip(M[ix, side], 1e-6, 1)) for M in Ms]   # n x 3 for the winner's side
-    nb = len(bias)
+    nw = n_exp if mode == "log" else n_exp - 1
 
     def unpack(th):
-        a = th[:n_exp]
-        b = np.zeros(3)
+        par = {"alpha": [float(x) for x in th[:nw]]} if mode == "log" else {"w": [float(x) for x in _simplex(th[:nw])]}
+        par["beta"] = [0.0, 0.0, 0.0]
         for j, nm in enumerate(bias):
-            b[1 if nm == "sub" else 2] = th[n_exp + j]
-        return a, b
+            par["beta"][1 if nm == "sub" else 2] = float(th[nw + j])
+        if nb:
+            par["alpha_nb"] = float(th[-1])
+        return par
 
     def f(th):
-        a, b = unpack(th)
-        s = sum(a_ * l for a_, l in zip(a, L)) + b
-        s -= s.max(1, keepdims=True)
-        lse = np.log(np.exp(s).sum(1))
-        return float(np.mean(lse - s[ix, meth]))
-    th0 = np.r_[np.full(n_exp, 1.0 / n_exp), np.zeros(nb)]
-    r = minimize(f, th0, method="L-BFGS-B", bounds=[(0, 5)] * n_exp + [(-3, 3)] * nb)
-    a, b = unpack(r.x)
-    return a, b
+        P = pool_method(mode, Ms, unpack(th), ext)
+        return float(np.mean(-np.log(np.clip(P[ix, side, meth], 1e-12, 1))))
+    th0 = np.r_[np.full(nw, 1.0 / n_exp) if mode == "log" else np.zeros(nw), np.zeros(len(bias)), [0.0] if nb else []]
+    bounds = ([(0, 5)] * nw if mode == "log" else [(-8, 8)] * nw) + [(-3, 3)] * len(bias) + ([(-2, 2)] if nb else [])
+    r = minimize(f, th0, method="L-BFGS-B", bounds=bounds)
+    return unpack(r.x)
 
 
-def fit_round_pool(Rs, side, meth, rnd, K, n_exp, with_delta=False):
+def fit_round(mode, Rs, side, meth, rnd, K, with_delta=False):
     import numpy as np
     from scipy.optimize import minimize
+    n_exp = len(Rs)
     ix = np.arange(len(side))
-    L = [np.log(np.clip(R[ix, side, meth], 1e-6, 1)) for R in Rs]   # n x 5
-    K = np.asarray(K)
-    mask = np.arange(R5)[None, :] >= K[:, None]
+    m2 = np.minimum(meth, 1)
 
     def unpack(th):
-        g = th[:n_exp]
-        if not with_delta:
-            return g, None
-        d3 = np.r_[0.0, th[n_exp:n_exp + 2], 0.0, 0.0]
-        d5 = np.r_[0.0, th[n_exp + 2:n_exp + 6]]
-        return g, {3: d3, 5: d5}
+        if mode == "lin":
+            return {"w": [float(x) for x in _simplex(th)]}
+        par = {"gamma": [float(x) for x in th[:n_exp]], "delta": None}
+        if with_delta:          # 3-round bouts only: 5-round finishes are too few per fold (CV dry run: overfit)
+            par["delta"] = {"3": [0.0, float(th[n_exp]), float(th[n_exp + 1]), 0.0, 0.0], "5": [0.0] * 5}
+        return par
 
     def f(th):
-        g, d = unpack(th)
-        s = sum(g_ * l for g_, l in zip(g, L))
-        if d is not None:
-            s = s + np.where((K == 3)[:, None], d[3][None, :], d[5][None, :])
-        s = np.where(mask, -1e9, s)
-        s -= s.max(1, keepdims=True)
-        lse = np.log(np.where(mask, 0, np.exp(s)).sum(1))
-        return float(np.mean(lse - s[ix, rnd]))
-    nd = 6 if with_delta else 0
-    th0 = np.r_[np.full(n_exp, 1.0 / n_exp), np.zeros(nd)]
-    r = minimize(f, th0, method="L-BFGS-B", bounds=[(0, 5)] * n_exp + [(-3, 3)] * nd)
+        P = pool_round(mode, Rs, unpack(th), K)
+        return float(np.mean(-np.log(np.clip(P[ix, side, m2, rnd], 1e-12, 1))))
+    if mode == "lin":
+        r = minimize(f, np.zeros(n_exp - 1), method="L-BFGS-B", bounds=[(-8, 8)] * (n_exp - 1))
+    else:
+        nd = 2 if with_delta else 0
+        r = minimize(f, np.r_[np.full(n_exp, 1.0 / n_exp), np.zeros(nd)], method="L-BFGS-B",
+                     bounds=[(0, 5)] * n_exp + [(-3, 3)] * nd)
     return unpack(r.x)
 
 
@@ -926,6 +981,8 @@ def assemble(rep_m="m6", rep_r="er"):
     A["hasM"] = ~np.isnan(Mp[:, 0, 0])
     A["hasR"] = ~np.isnan(Rp[:, 0, 0, 0])
     A["seg"], A["n_books"], A["recs"] = np.array(seg), np.array(nb), recs
+    A["n_books_m6"] = np.array([(r.get("n_books") or {}).get("m6", 0) for r in recs])
+    A["Wp"] = np.array([sum(r["m6"][:3]) / sum(r["m6"]) if r.get("m6") else 0.5 for r in recs])
     # props-alone joint (own winner from m6): m6 (+ the model's draw share) spread by the props' round shapes,
     # S2's shapes where no round family is quoted
     Pj = np.full((n, NC), np.nan)
@@ -946,39 +1003,55 @@ def losses(P, y):
 
 
 class Spec:
-    """A pool configuration: method experts + biases, round experts + format biases, props representations."""
+    """A pool configuration: method experts, mode (log / lin / jlin), debias terms and book-count weighting; round
+    experts, mode (log / lin) and format biases; the props representations (rep_m, rep_r)."""
 
-    def __init__(self, name, m_exp=("S2",), m_bias=(), r_exp=("S2",), r_delta=False, rep_m="m6", rep_r="er"):
+    def __init__(self, name, m_exp=("S2",), m_bias=(), r_exp=("S2",), r_delta=False, rep_m="m6", rep_r="er",
+                 m_mode="log", r_mode="log", m_nb=False):
         self.name, self.m_exp, self.m_bias, self.r_exp = name, tuple(m_exp), tuple(m_bias), tuple(r_exp)
         self.r_delta, self.rep_m, self.rep_r = r_delta, rep_m, rep_r
+        self.m_mode, self.r_mode, self.m_nb = m_mode, r_mode, m_nb
 
     def as_dict(self):
-        return {"name": self.name, "m_exp": list(self.m_exp), "m_bias": list(self.m_bias), "r_exp": list(self.r_exp),
-                "r_delta": self.r_delta, "rep_m": self.rep_m, "rep_r": self.rep_r}
+        return {"name": self.name, "m_exp": list(self.m_exp), "m_bias": list(self.m_bias), "m_mode": self.m_mode,
+                "m_nb": self.m_nb, "r_exp": list(self.r_exp), "r_delta": self.r_delta, "r_mode": self.r_mode,
+                "rep_m": self.rep_m, "rep_r": self.rep_r}
 
-    def fixed(self):
-        """Specs without fitted parameters (a single expert taken as is)."""
-        return len(self.m_exp) == 1 and not self.m_bias and len(self.r_exp) == 1 and not self.r_delta
+    @staticmethod
+    def from_dict(d):
+        return Spec(d["name"], d["m_exp"], d["m_bias"], d["r_exp"], d["r_delta"], d["rep_m"], d["rep_r"],
+                    d.get("m_mode", "log"), d.get("r_mode", "log"), d.get("m_nb", False))
+
+    def _mfit(self):
+        return len(self.m_exp) > 1 or bool(self.m_bias) or self.m_nb
+
+    def _rfit(self):
+        return len(self.r_exp) > 1 or self.r_delta
+
+    def _ext(self, A, rows):
+        import numpy as np
+        W = {"S2": A["W_ml2"], "SM": A["W_ml2"], "S": A["W_ml2"], "B46": A["W_ml2"], "P": A["Wp"]}
+        return {"lognb": np.log(np.maximum(A["n_books_m6"][rows], 1)),
+                "p_idx": self.m_exp.index("P") if "P" in self.m_exp else None,
+                "Wsrc": [W[e][rows] for e in self.m_exp]}
 
     def fit(self, A, tr):
-        import numpy as np
-        par = {"alpha": [1.0] * len(self.m_exp), "beta": [0.0, 0.0, 0.0], "gamma": [1.0] * len(self.r_exp),
-               "delta": None}
+        par = {"m": {"alpha": [1.0] * len(self.m_exp), "beta": [0.0, 0.0, 0.0]} if self.m_mode == "log"
+               else {"w": [1.0 / len(self.m_exp)] * len(self.m_exp)},
+               "r": {"gamma": [1.0] * len(self.r_exp), "delta": None} if self.r_mode == "log"
+               else {"w": [1.0 / len(self.r_exp)] * len(self.r_exp)}}
         mm = tr & (A["side"] >= 0)
         if "P" in self.m_exp:
             mm = mm & A["hasM"]
-        if len(self.m_exp) > 1 or self.m_bias:
-            a, b = fit_method_pool([A["M"][e][mm] for e in self.m_exp], A["side"][mm], A["meth"][mm],
-                                   len(self.m_exp), self.m_bias)
-            par["alpha"], par["beta"] = [float(x) for x in a], [float(x) for x in b]
+        if self._mfit():
+            par["m"] = fit_method(self.m_mode, [A["M"][e][mm] for e in self.m_exp], A["side"][mm], A["meth"][mm],
+                                  self._ext(A, mm), self.m_bias, self.m_nb)
         rr = tr & (A["rnd"] >= 0)
         if "P" in self.r_exp:
             rr = rr & A["hasR"]
-        if len(self.r_exp) > 1 or self.r_delta:
-            g, d = fit_round_pool([A["R"][e][rr] for e in self.r_exp], A["side"][rr], A["meth"][rr], A["rnd"][rr],
-                                  A["K"][rr], len(self.r_exp), self.r_delta)
-            par["gamma"] = [float(x) for x in g]
-            par["delta"] = None if d is None else {k: [float(x) for x in v] for k, v in d.items()}
+        if self._rfit():
+            par["r"] = fit_round(self.r_mode, [A["R"][e][rr] for e in self.r_exp], A["side"][rr], A["meth"][rr],
+                                 A["rnd"][rr], A["K"][rr], self.r_delta)
         par["n_fit_method"], par["n_fit_round"] = int(mm.sum()), int(rr.sum())
         return par
 
@@ -989,13 +1062,16 @@ class Spec:
         R = A["R"]["S2"][rows].copy()
         okm = np.ones(rows.sum(), bool) if "P" not in self.m_exp else A["hasM"][rows]
         if okm.any():
-            Ms = [A["M"][e][rows][okm] for e in self.m_exp]
-            M[okm] = pool_method(Ms, par["alpha"], par["beta"]) if (len(Ms) > 1 or self.m_bias) else Ms[0]
+            sub = rows.copy()
+            sub[rows] = okm
+            Ms = [A["M"][e][sub] for e in self.m_exp]
+            M[okm] = pool_method(self.m_mode, Ms, par["m"], self._ext(A, sub)) if self._mfit() else Ms[0]
         okr = np.ones(rows.sum(), bool) if "P" not in self.r_exp else A["hasR"][rows]
         if okr.any():
-            Rs = [A["R"][e][rows][okr] for e in self.r_exp]
-            R[okr] = pool_round(Rs, par["gamma"], par["delta"], A["K"][rows][okr]) \
-                if (len(Rs) > 1 or self.r_delta) else Rs[0]
+            sub = rows.copy()
+            sub[rows] = okr
+            Rs = [A["R"][e][sub] for e in self.r_exp]
+            R[okr] = pool_round(self.r_mode, Rs, par["r"], A["K"][sub]) if self._rfit() else Rs[0]
         return M, R
 
 
@@ -1203,30 +1279,48 @@ def cv_loss_round(A, spec, folds, rows):
     return float(l.mean()), l, pars
 
 
-def select_sequence(A_of, seq, metric_fn, rows_fn, log_name):
-    """Nested selection: each candidate is compared with the current choice; it replaces it only if the CV loss
-    improves by more than SEL_MIN (0.0005)."""
-    table, cur = [], None
-    for spec, parent in seq:
+def select_stages(A_of, start, stages, metric_fn, rows_fn, log_name):
+    """Staged forward selection: each stage builds alternatives from the current choice; the best alternative
+    replaces the current choice only if its CV loss is lower by more than SEL_MIN (0.0005, tools/ml2.py's rule)."""
+    table = []
+
+    def run(spec):
         A = A_of(spec)
-        folds = fwd_folds(A)
         rows = rows_fn(A)
-        loss, _, pars = metric_fn(A, spec, folds, rows)
-        row = {"spec": spec.name, "cv": round(loss, 5), "n": int(rows.sum()), "params_by_fold": pars}
-        if cur is None:
-            cur = (spec, loss)
-            row["decision"] = "start"
-        elif parent is None or parent == cur[0].name:
-            if loss < cur[1] - SEL_MIN:
-                row["decision"] = "accepted (%.5f < %.5f - %.4f)" % (loss, cur[1], SEL_MIN)
-                cur = (spec, loss)
-            else:
-                row["decision"] = "rejected"
+        loss, _, pars = metric_fn(A, spec, fwd_folds(A), rows)
+        return loss, int(rows.sum()), pars
+    l0, n0, p0 = run(start)
+    cur = (start, l0)
+    table.append({"stage": 0, "spec": start.name, "cv": round(l0, 5), "n": n0, "params_by_fold": p0,
+                  "decision": "start"})
+    log("%s %-40s CV %.5f n=%d start" % (log_name, start.name, l0, n0))
+    for k, build in enumerate(stages, 1):
+        alts = build(cur[0])
+        res = []
+        for spec in alts:
+            loss, n, pars = run(spec)
+            res.append((loss, spec))
+            table.append({"stage": k, "spec": spec.name, "cv": round(loss, 5), "n": n, "params_by_fold": pars,
+                          "vs_current": round(loss - cur[1], 5)})
+            log("%s %-40s CV %.5f n=%d (vs current %+.5f)" % (log_name, spec.name, loss, n, loss - cur[1]))
+        if not res:
+            continue
+        lb, sb = min(res, key=lambda x: x[0])
+        if lb < cur[1] - SEL_MIN:
+            table.append({"stage": k, "decision": "accepted %s (%.5f < %.5f - %.4f)" % (sb.name, lb, cur[1], SEL_MIN)})
+            log("%s stage %d: accepted %s" % (log_name, k, sb.name))
+            cur = (sb, lb)
         else:
-            row["decision"] = "skipped (parent %s not chosen)" % parent
-        table.append(row)
-        log("%s %-36s CV %.5f n=%d -> %s" % (log_name, spec.name, loss, rows.sum(), row["decision"]))
+            table.append({"stage": k, "decision": "kept %s (best alternative %s %.5f)" % (cur[0].name, sb.name, lb)})
+            log("%s stage %d: kept %s" % (log_name, k, cur[0].name))
     return cur[0], table
+
+
+def _clone(spec, name, **kw):
+    d = spec.as_dict()
+    d.update(kw)
+    d["name"] = name
+    return Spec.from_dict(d)
 
 
 @stage("cv")
@@ -1242,15 +1336,22 @@ def stage_cv(args):
     A_of = lambda s: assemble(s.rep_m, s.rep_r)          # noqa: E731
     fold_years = lambda A: np.isin(A["year"], CV_YEARS)  # noqa: E731
     rows_m = lambda A: fold_years(A) & (A["side"] >= 0) & A["hasM"]                         # noqa: E731
-    rows_r = lambda A: fold_years(A) & (A["rnd"] >= 0) & A["hasR"] & A["hasM"]              # noqa: E731
+    hasR_all = assemble(rep_r="er")["hasR"] & assemble(rep_r="wr")["hasR"] & assemble(rep_r="best")["hasR"]
+    rows_r = lambda A: fold_years(A) & (A["rnd"] >= 0) & hasR_all & A["hasM"]               # noqa: E731
     # --- method given the winner
-    seq_m = [(Spec("S2"), None),
-             (Spec("S2+P", m_exp=("S2", "P")), "S2"),
-             (Spec("S2+P | dec", m_exp=("S2", "P"), m_bias=("dec",)), "S2+P"),
-             (Spec("S2+P | dec, sub", m_exp=("S2", "P"), m_bias=("dec", "sub")), "S2+P | dec"),
-             (Spec("S2+SM+P | dec", m_exp=("S2", "SM", "P"), m_bias=("dec",)), "S2+P | dec"),
-             (Spec("S2+P | dec [m6_gd]", m_exp=("S2", "P"), m_bias=("dec",), rep_m="m6_gd"), "S2+P | dec")]
-    best_m, tab_m = select_sequence(A_of, seq_m, cv_loss_method, rows_m, "method")
+    m_stages = [
+        lambda c: [Spec("S2+P log", m_exp=("S2", "P")),
+                   Spec("S2+P log [m6_gd]", m_exp=("S2", "P"), rep_m="m6_gd"),
+                   Spec("S2+P log [m6_mr]", m_exp=("S2", "P"), rep_m="m6_mr"),
+                   Spec("S2+P jlin [m6_mr]", m_exp=("S2", "P"), m_mode="jlin", rep_m="m6_mr"),
+                   Spec("S2+P lin", m_exp=("S2", "P"), m_mode="lin"),
+                   Spec("S2+P jlin", m_exp=("S2", "P"), m_mode="jlin")],
+        lambda c: [_clone(c, c.name + " | dec", m_bias=["dec"]), _clone(c, c.name + " | dec, sub", m_bias=["dec", "sub"])]
+        if "P" in c.m_exp else [],
+        lambda c: [_clone(c, c.name + " | books", m_nb=True)] if "P" in c.m_exp else [],
+        lambda c: [_clone(c, c.name.replace("S2+", "S2+SM+", 1), m_exp=["S2", "SM"] + [e for e in c.m_exp if e != "S2"])]
+        if "P" in c.m_exp else []]
+    best_m, tab_m = select_stages(A_of, Spec("S2"), m_stages, cv_loss_method, rows_m, "method")
     # comparators (not candidates): props alone, the current 40/60 blend's conditionals
     comp = {}
     for spec in (Spec("P", m_exp=("P",), r_exp=("P",)), Spec("B46", m_exp=("B46",), r_exp=("B46",))):
@@ -1258,14 +1359,13 @@ def stage_cv(args):
         comp[spec.name] = {"method_given_winner": round(cv_loss_method(A, spec, fwd_folds(A), rows_m(A))[0], 5),
                            "round_given_fin": round(cv_loss_round(A, spec, fwd_folds(A), rows_r(A))[0], 5)}
     # --- round given a finish (method part fixed at the chosen spec)
-    mk = dict(m_exp=best_m.m_exp, m_bias=best_m.m_bias, rep_m=best_m.rep_m)
-    seq_r = [(Spec("S2 shapes", **mk), None),
-             (Spec("S2+P[er]", r_exp=("S2", "P"), rep_r="er", **mk), "S2 shapes"),
-             (Spec("S2+P[wr]", r_exp=("S2", "P"), rep_r="wr", **mk), "S2+P[er]"),
-             (Spec("S2+P[best]", r_exp=("S2", "P"), rep_r="best", **mk), "S2+P[er]"),
-             (Spec("S2+P[er] | delta", r_exp=("S2", "P"), rep_r="er", r_delta=True, **mk), "S2+P[er]")]
-    best, tab_r = select_sequence(A_of, seq_r, cv_loss_round, rows_r, "round ")
-    best.name = "pool: %s / %s" % (best_m.name, best.name)
+    r_start = _clone(best_m, "S2 shapes", r_exp=["S2"], r_mode="log", r_delta=False, rep_r="er")
+    r_stages = [
+        lambda c: [_clone(c, "S2+P[%s] %s" % (rep, md), r_exp=["S2", "P"], rep_r=rep, r_mode=md)
+                   for rep in ("er", "wr", "best") for md in ("log", "lin")],
+        lambda c: [_clone(c, c.name + " | delta", r_delta=True)] if c.r_mode == "log" and "P" in c.r_exp else []]
+    best, tab_r = select_stages(A_of, r_start, r_stages, cv_loss_round, rows_r, "round ")
+    best = _clone(best, "pool: %s / %s" % (best_m.name, best.name))
     res["selection"] = {"method": tab_m, "round": tab_r, "comparators": comp, "chosen": best.as_dict()}
     log("cv: chosen %s (%.0f s)" % (best.as_dict(), time.time() - t0))
     # --- the package table on the CV folds: every package composed with the same winner (W_close)
@@ -1305,16 +1405,31 @@ def stage_cv(args):
     # --- final parameters for the 2024-25 look and for production-before-2024: fit on 2021-2023
     tr = (A["year"] >= 2021) & (A["year"] <= 2023)
     res["params_fit_2021_2023"] = best.fit(A, tr)
-    # corner symmetry of the chosen pool: swapping A and B mirrors the joint exactly
-    rows = tr & A["hasM"]
-    M, R = best.predict(A, rows, res["params_fit_2021_2023"])
-    P = compose(A["W_close"][rows], M, R, A["K"][rows], A["draw_c"])
-    Ms, Rs = M[:, ::-1], R[:, ::-1]
-    Ps = compose(1 - A["W_close"][rows], Ms, Rs, A["K"][rows], A["draw_c"])
-    res["corner_swap_max_abs"] = float(np.max(np.abs(mirror(Ps) - P)))
-    assert res["corner_swap_max_abs"] < 1e-12
+    # corner symmetry of the chosen pool: swapping A and B in every input mirrors the joint exactly
+    res["corner_swap_max_abs"] = swap_check(A, best, res["params_fit_2021_2023"], tr)
+    assert res["corner_swap_max_abs"] < 1e-12, res["corner_swap_max_abs"]
     json.dump(res, open(os.path.join(CACHE, "cv.json"), "w"), indent=1, default=float)
     log("cv: written out/props_cache/cv.json (%.0f s)" % (time.time() - t0))
+
+
+def swap_assembly(A):
+    """The same fights with A and B swapped in every input (experts' sides, winners, props' own winner)."""
+    B = dict(A)
+    B["M"] = {k: v[:, ::-1] for k, v in A["M"].items()}
+    B["R"] = {k: v[:, ::-1] for k, v in A["R"].items()}
+    for k in ("W_close", "W_ml2", "Wp"):
+        B[k] = 1 - A[k]
+    return B
+
+
+def swap_check(A, spec, par, rows):
+    import numpy as np
+    M, R = spec.predict(A, rows, par)
+    P = compose(A["W_close"][rows], M, R, A["K"][rows], A["draw_c"])
+    B = swap_assembly(A)
+    Ms, Rs = spec.predict(B, rows, par)
+    Ps = compose(B["W_close"][rows], Ms, Rs, B["K"][rows], B["draw_c"])
+    return float(np.max(np.abs(mirror(Ps) - P)))
 
 
 def joints_cache(A, spec, folds, wname):
@@ -1379,7 +1494,7 @@ def stage_valid(args):
         raise SystemExit("run `prereg` first (and commit it) before the single look")
     pr = json.load(open(PREREG))
     ch = pr["frozen_from"]["chosen"]
-    best = Spec(ch["name"], ch["m_exp"], ch["m_bias"], ch["r_exp"], ch["r_delta"], ch["rep_m"], ch["rep_r"])
+    best = Spec.from_dict(ch)
     par = pr["frozen_from"]["params"]
     A_of = lambda s: assemble(s.rep_m, s.rep_r)          # noqa: E731
     A = A_of(best)

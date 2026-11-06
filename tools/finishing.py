@@ -80,6 +80,8 @@ import methodround as MR  # noqa: E402
 import build_db as B  # noqa: E402
 
 assert B.parse_fights is M2._parse_dev_only, "vault wrapper missing"
+if __name__ == "__main__":                 # cached objects (FoldData) pickle under the module name "finishing"
+    sys.modules.setdefault("finishing", sys.modules["__main__"])
 STAGES = {}
 R5, NC_ = MR.R5, MR.NC_
 I_XKO, I_XSUB, I_YKO, I_YSUB, I_XDEC, I_YDEC, I_DRAW = (MR.I_XKO, MR.I_XSUB, MR.I_YKO, MR.I_YSUB, MR.I_XDEC,
@@ -584,6 +586,7 @@ FILTER_DEFAULT = {"sigma0": 0.8, "tau": 0.15}
 
 class FoldData:
     """Everything a fold needs: EB block fit before v, filter state, cardio, S2 designs, ML v2 winner logit."""
+    __module__ = "finishing"
 
     def __init__(self, base, feats, v, filt, card, use_pre=True):
         self.v = v
