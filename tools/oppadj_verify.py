@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """Adversarial verification of tools/oppadj.py (opponent / strength-of-schedule adjustment).
 
-Three parts, each writing into data/derived/oppadj_verify.json:
+Four parts, each writing into data/derived/oppadj_verify.json (report: research/model_oppadj.md, Verification log):
 
   fresh   Independent re-implementation of the headline held-out result (2024-2025 per-fight deviance of the
           opponent-adjusted rates vs the engine's raw shrunk rates) for takedown attempts, control and distance
           strike attempts. Own row construction from build_db's parsed fights, own engine-raw rates from the
-          backtest S, own fit (exact joint Newton on the penalized Poisson MAP with a sparse Hessian, not the
-          analyst's alternating IPF), own scoring and bootstraps (fight-cluster and a two-way fighter
-          "pigeonhole" bootstrap). Also checks fighter order, the actual-stat join and that S is pre-fight, and
-          a placebo that shows the leakage check has power (fitting through the fight's own date).
-  attrib  Uses oppadj.py's own code and its cached grid to split the gains: half-life averaging vs the
-          opponent adjustment (raw re-tuned and no-opp baselines given the same averaging), the
-          combination-exponent claim (raw re-tuned rates on 2019-2023 and every model on 2024-2025), an
-          oracle re-level on 2024-2025 (level drift vs ranking), and the ML-stack gain from raw re-tuned rates.
-  vg      The Volkanovski vs Gaethje roster factors: Volkanovski's factors are computed against Featherweight
-          priors but the fight is simulated at Lightweight; measures the mismatch.
+          backtest S, own fit (exact joint Newton on the penalized Poisson MAP, Hessian solved by preconditioned
+          CG, not the analyst's alternating IPF), own scoring and uncertainty (fight-cluster bootstrap, a
+          dyadic-robust variance for fighters who appear in several test fights, the conservative pigeonhole
+          bootstrap). Also checks fighter order, the actual-stat join, that S is pre-fight, and runs a placebo
+          (fit through the fight's own date) to show the leak check has power.
+  attrib  Uses oppadj.py's own code and its cached grid to split the gains: half-life averaging vs the opponent
+          adjustment (raw re-tuned and no-opp baselines given the same averaging), the combination-exponent
+          claim (raw re-tuned rates on 2019-2023 and every model on 2024-2025), an oracle re-level on 2024-2025
+          (level drift vs ranking), and the ML-stack gain from raw re-tuned rates vs the adjustment.
+  inner   Tune-only family on/off rule: hyperparameters re-selected on 2019-2021, scored on 2022-2023.
+  vg      Volkanovski vs Gaethje: his roster factors are computed against Featherweight priors while the bout is
+          simulated at Lightweight; measures the mismatch.
 
     python3 tools/oppadj_verify.py --part fresh
     python3 tools/oppadj_verify.py --part attrib --cache <oppadj grid pickle>
@@ -336,10 +338,19 @@ def boots(rows, d_base, d_new, mask, nb=2000, seed=5):
         totp.append(100 * np.sum(ws * diff) / max(np.sum(ws * base), 1e-9))
     tot, totp = np.array(tot), np.array(totp)
     q = lambda a: [r(np.percentile(a, 2.5), 4), r(np.percentile(a, 97.5), 4)]
-    return {"delta": r(diff.sum(), 6), "pct": r(100 * diff.sum() / base.sum(), 4), "n_fights": int(keep.sum()),
+    # dyadic-robust variance of the sum: pairs of fights sharing a fighter (own derivation: sum over fighters of
+    # the squared sum of centred fight deltas, minus each fight's own square counted twice)
+    A_ = rows.X[rows.srow[0::2]][keep]
+    B_ = rows.X[rows.srow[1::2]][keep]
+    e = pf - pf.mean()
+    V = np.sum((np.bincount(A_, e, rows.NP) + np.bincount(B_, e, rows.NP)) ** 2) - np.sum(e ** 2)
+    se = math.sqrt(V if V > 0 else np.sum(e ** 2))
+    bsum = base.sum()
+    return {"delta": r(diff.sum(), 6), "pct": r(100 * diff.sum() / bsum, 4), "n_fights": int(keep.sum()),
             "fight_cluster_95": q(fc), "fight_cluster_pct_95": q(fcp),
-            "two_way_fighter_95": q(tot), "two_way_fighter_pct_95": q(totp),
-            "se_ratio_two_way_over_fight": r(np.std(tot) / max(np.std(fc), 1e-12), 3)}
+            "dyadic_robust_pct_95": [r(100 * (pf.sum() - 1.96 * se) / bsum, 4), r(100 * (pf.sum() + 1.96 * se) / bsum, 4)],
+            "se_ratio_dyadic_over_fight_iid": r(se / math.sqrt(np.sum(e ** 2)), 3),
+            "pigeonhole_conservative_95": q(tot), "pigeonhole_conservative_pct_95": q(totp)}
 
 
 def part_fresh(args):
@@ -408,9 +419,10 @@ def part_fresh(args):
                 "p99_abs_diff_log_change": r(np.percentile(np.abs((ratio_a - ratio_a[m].mean()) - (ratio_f - ratio_f[m].mean()))[m], 99), 4)}
         res["families"][nm] = out
         fv = out["final_vs_engine"]
-        print("%s: test dev engine %.0f adj %.0f final %.0f | final vs engine %.2f%% fight95 %s two-way95 %s | analyst %.2f%%"
+        print("%s: test dev engine %.0f adj %.0f final %.0f | final vs engine %.2f%% fight95 %s dyadic95 %s pigeonhole95 %s | analyst %.2f%%"
               % (nm, out["engine_raw"]["test_dev"], out["opp_adjusted"]["test_dev"], out["final"]["test_dev"],
-                 fv["pct"], fv["fight_cluster_pct_95"], fv["two_way_fighter_pct_95"], out["analyst"]["final_vs_engine_pct"]))
+                 fv["pct"], fv["fight_cluster_pct_95"], fv["dyadic_robust_pct_95"], fv["pigeonhole_conservative_pct_95"],
+                 out["analyst"]["final_vs_engine_pct"]))
         o["fresh"] = res
         save_out(o)
     # placebo: what a leak would look like (fit through the fight's own date) for takedown attempts

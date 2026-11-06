@@ -729,11 +729,26 @@ def boot_delta(D, dv_a, dv_b, mask, nb=2000, seed=7):
 
 
 def boot_delta_twoway(D, dv_a, dv_b, mask, nb=2000, seed=13):
-    """Two-way (fighter) pigeonhole bootstrap of sum(dev_a - dev_b): Poisson(1) weight per person, each side
-    weighted by w_attacker * w_defender (both sides of a fight share the weight, so fight clustering is nested).
-    A fighter appears in several 2024-25 fights; the fight-cluster bootstrap treats those as independent.
-    Added by the verification pass (research/model_oppadj.md, Verification log). Returns delta, 2.5%, 97.5%."""
+    """Uncertainty of sum(dev_a - dev_b) that allows for fighter-level dependence (verification pass): a fighter
+    appears in several 2024-25 fights and the fight-cluster bootstrap treats those fights as independent.
+    Returns (delta, dyadic lo, dyadic hi, pigeonhole lo, pigeonhole hi, se fight-cluster, se dyadic).
+    dyadic: normal interval with the dyadic-robust variance of the sum (Fafchamps-Gubert / Aronow-Samii-Assenova):
+      V = sum over pairs of fights that share a fighter (and each fight with itself) of e_f e_f', e_f = D_f - mean,
+      computed as sum_q (sum of e over fighter q's fights)^2 - sum_f e_f^2.
+    pigeonhole: Poisson(1) weight per person, side weight w_X * w_Y (Owen 2007); conservative here (it counts
+      each fight's own variance about three times), reported as an upper bound only."""
     diff = np.where(mask, dv_a - dv_b, 0.0)
+    has = mask[0::2] | mask[1::2]
+    Df = (diff[0::2] + diff[1::2])[has]
+    A, Bp = D.s_person[0::2][has], D.s_person[1::2][has]
+    e = Df - Df.mean()
+    Sq = np.bincount(A, e, D.NP) + np.bincount(Bp, e, D.NP)
+    V = float(np.sum(Sq ** 2) - np.sum(e ** 2))
+    Vf = float(np.sum(e ** 2))
+    if V <= 0:
+        V = Vf
+    tot = float(Df.sum())
+    se_d = math.sqrt(V)
     m = diff != 0
     dX, dY, dd = D.s_person[m], D.s_opp[m], diff[m]
     rng = np.random.default_rng(seed)
@@ -741,7 +756,8 @@ def boot_delta_twoway(D, dv_a, dv_b, mask, nb=2000, seed=13):
     for b in range(nb):
         w = rng.poisson(1.0, D.NP).astype(float)
         bs[b] = np.sum(w[dX] * w[dY] * dd)
-    return float(diff.sum()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))
+    return (tot, tot - 1.96 * se_d, tot + 1.96 * se_d, float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5)),
+            math.sqrt(Vf), se_d)
 
 
 # ------------------------------------------------------------------ grid runner (forked workers share D)
@@ -1594,10 +1610,14 @@ def main():
                                             "n_fights": v[3],
                                             "pct_of_baseline": rnd(100 * v[0] / max(base_for[k], 1e-9), 3)}
                                         for k, v in boots.items()},
-            "test_delta_twoway_bootstrap_95": {k: {"delta": rnd(v[0], 5), "lo": rnd(v[1], 5), "hi": rnd(v[2], 5),
-                                                   "pct_lo": rnd(100 * v[1] / max(base_for[k], 1e-9), 3),
-                                                   "pct_hi": rnd(100 * v[2] / max(base_for[k], 1e-9), 3)}
-                                               for k, v in boots2.items()},
+            "test_delta_fighter_dependence_95": {k: {"delta": rnd(v[0], 5),
+                                                     "dyadic_lo": rnd(v[1], 5), "dyadic_hi": rnd(v[2], 5),
+                                                     "dyadic_pct_lo": rnd(100 * v[1] / max(base_for[k], 1e-9), 3),
+                                                     "dyadic_pct_hi": rnd(100 * v[2] / max(base_for[k], 1e-9), 3),
+                                                     "pigeonhole_pct_lo": rnd(100 * v[3] / max(base_for[k], 1e-9), 3),
+                                                     "pigeonhole_pct_hi": rnd(100 * v[4] / max(base_for[k], 1e-9), 3),
+                                                     "se_fight_iid": rnd(v[5], 4), "se_dyadic": rnd(v[6], 4)}
+                                                 for k, v in boots2.items()},
             "like_for_like_baselines": {
                 "note": ("raw re-tuned and no-opp baselines with the same half-life-averaging option as the adjusted "
                          "model (verification pass); *_same_averaging bootstrap keys compare against these"),
