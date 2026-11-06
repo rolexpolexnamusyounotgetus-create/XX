@@ -19,6 +19,7 @@ Three parts, each writing into data/derived/oppadj_verify.json:
 
     python3 tools/oppadj_verify.py --part fresh
     python3 tools/oppadj_verify.py --part attrib --cache <oppadj grid pickle>
+    python3 tools/oppadj_verify.py --part inner --cache <oppadj grid pickle>
     python3 tools/oppadj_verify.py --part vg
 
 Walk-forward: every fit for a fight on day T uses rows with day < T; levels are fit on 2019-2023; 2024-2025 is
@@ -651,6 +652,56 @@ def part_attrib(args):
     save_out(o)
 
 
+# ====================================================================== part 2b: tune-only family on/off rule
+def part_inner(args):
+    """Could the family on/off switch have been decided without the 2024-25 validation period? Re-select every
+    hyperparameter (half-life, k pair, averaging, lambda, level) on 2019-2021 from the cached walk-forward fits and
+    score final vs engine raw on 2022-2023 (both inside the tune period, so the 2024-25 numbers stay untouched)."""
+    import pickle
+    import oppadj as O
+    p = O.engine_params()
+    D = O.Data(p)
+    D.sides_by_date = O._sides_by_date(D)
+    ev = O.Evaluator(D, p)
+    with open(args.cache, "rb") as fh:
+        raw, G, hls, kg = pickle.load(fh)[:4]
+    opp = json.load(open(os.path.join(OUT, "oppadj.json")))
+    old_ids = list(opp["snapshots"].keys())
+    pos = {fid: i for i, fid in enumerate(old_ids)}
+    sel = np.array([2 * pos[e["id"]] + s for e in D.entries for s in (0, 1)], int)
+    in_tu = (D.s_date >= "2019-01-01") & (D.s_date <= "2021-12-31")
+    in_te = (D.s_date >= "2022-01-01") & (D.s_date <= "2023-12-31")
+    res = {}
+    for nm, A in opp["results"]["families"].items():
+        kind = O.FAMILIES[nm][0]
+        f = ev.fam[nm]
+        f["tune"], f["test"] = f["ok"] & in_tu, f["ok"] & in_te
+        full = {k[1:4]: tuple(a.astype(float)[sel] for a in v[:3]) for k, v in G.items() if k[0] == nm and k[4] == "full"}
+        sc = {c: ev.score(nm, ev.pred_adj(nm, *a))["tune"] for c, a in full.items()}
+        bf = min(sc, key=sc.get)
+        per_hl = {hl: min((c for c in sc if c[0] == hl), key=sc.get) for hl in hls if any(c[0] == hl for c in sc)}
+        pa1 = ev.pred_adj(nm, *full[bf])
+        pav = O.avg_preds(kind, [ev.pred_adj(nm, *full[c]) for c in per_hl.values()])
+        use_avg = ev.score(nm, pav)["tune"] < sc[bf]
+        pa = pav if use_avg else pa1
+        pe = ev.pred_raw(nm, ev.engine_R)
+        lam_sc = {l_: ev.score(nm, O.blend(kind, pa, pe, l_))["tune"] for l_ in O.LAM_GRID}
+        lam = min(lam_sc, key=lam_sc.get)
+        de, dfin = ev.score(nm, pe), ev.score(nm, O.blend(kind, pa, pe, lam))
+        bd = O.boot_delta(D, de["dev"], dfin["dev"], f["test"], 2000)
+        res[nm] = {"inner_choice": {"half_life": bf[0], "k": [bf[1], bf[2]], "average": bool(use_avg), "lambda": lam},
+                   "final_vs_engine_2022_2023_pct": r(100 * bd[0] / de["test"], 4),
+                   "ci_abs": [r(bd[1], 5), r(bd[2], 5)],
+                   "inner_rule_on": bool(bd[0] > 0),
+                   "validation_rule_on": A["test_delta_bootstrap_95"]["final_vs_engine_raw"]["delta"] > 0}
+        print("%-9s inner choice %s | 2022-23 final vs engine %.2f%% [%s] on=%s | 2024-25 rule on=%s" % (
+            nm, res[nm]["inner_choice"], res[nm]["final_vs_engine_2022_2023_pct"], res[nm]["ci_abs"],
+            res[nm]["inner_rule_on"], res[nm]["validation_rule_on"]))
+    o = load_out()
+    o["inner_onoff"] = {"note": "hyperparameters re-selected on 2019-2021, scored 2022-2023 (inside tune)", "families": res}
+    save_out(o)
+
+
 # ====================================================================== part 3: Volkanovski vs Gaethje division mismatch
 def part_vg(args):
     import oppadj as O
@@ -708,12 +759,12 @@ def part_vg(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--part", required=True, choices=["fresh", "attrib", "vg"])
+    ap.add_argument("--part", required=True, choices=["fresh", "attrib", "inner", "vg"])
     ap.add_argument("--families", default="tdAtt,ctrl,dAtt")
     ap.add_argument("--cache", default="")
     ap.add_argument("--no-placebo", action="store_true")
     args = ap.parse_args()
-    {"fresh": part_fresh, "attrib": part_attrib, "vg": part_vg}[args.part](args)
+    {"fresh": part_fresh, "attrib": part_attrib, "inner": part_inner, "vg": part_vg}[args.part](args)
 
 
 if __name__ == "__main__":

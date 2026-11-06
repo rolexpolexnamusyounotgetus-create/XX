@@ -160,6 +160,51 @@ DEV.frameCam = function (az, dist, h, fov) {
   [show.A, show.B, show.R].forEach(function (a) { if (a.avatar) a.avatar.sync(); });
   show.arena.render();
 };
+/* Neutral studio for likeness work: arena hidden, grey backdrop, soft key/fill/rim light, no post FX. */
+DEV.studio = function (on) {
+  var sc = show.arena.scene, keep = {};
+  DEV.lineupActors().forEach(function (a) { if (a.avatar) keep[a.avatar.group.uuid] = 1; });
+  if (on) {
+    DEV._hidden = [];
+    sc.children.forEach(function (o) { if (!keep[o.uuid] && o.visible) { o.visible = false; DEV._hidden.push(o); } });
+    var L = DEV._studio = new THREE.Group();
+    L.add(new THREE.HemisphereLight(0xdfe6ef, 0x5a5048, 0.55));
+    var key = new THREE.DirectionalLight(0xfff4ea, 1.55); key.position.set(1.2, 2.2, 2.4); L.add(key); L.add(key.target);
+    var fill = new THREE.DirectionalLight(0xe8eefc, 0.55); fill.position.set(-2, 1.4, 1.6); L.add(fill);
+    var rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(0, 2.2, -2.5); L.add(rim);
+    sc.add(L); DEV._bg = sc.background; sc.background = new THREE.Color(0x6b6f75); DEV._fog = sc.fog; sc.fog = null;
+    DEV._env = sc.environment;
+  } else {
+    (DEV._hidden || []).forEach(function (o) { o.visible = true; });
+    if (DEV._studio) sc.remove(DEV._studio); sc.background = DEV._bg; sc.fog = DEV._fog;
+  }
+};
+/* Head render for a likeness comparison. view: front | 3q | profile (side: +1 his left, -1 his right),
+   box: [x0,y0,x1,y1] crown-to-chin, ear-to-ear box in the output image (fractions). */
+DEV.headShot = function (i, view, side, box, yawDeg) {
+  var actors = DEV.lineupActors(), a = actors[i]; if (!a || !a.avatar) return null;
+  DEV.pose(actors, "walk", 0);
+  actors.forEach(function (o, k) { if (o.avatar) o.avatar.group.visible = k === i; });
+  var av = a.avatar, J = av.J, P = av.P, bi = av.bi;
+  var q = av.W[bi.Head].clone().multiply(av.restQ[bi.Head].clone().invert());
+  function lm(n) { return new THREE.Vector3(P[n * 3], P[n * 3 + 1], P[n * 3 + 2]).sub(J.Head.h).applyQuaternion(q).add(av.Wp[bi.Head]); }
+  var chin = lm(5225), crown = lm(5225).clone(); crown.y = a.pos.y + av.cfg.H;
+  var c = chin.clone().lerp(crown, 0.5); c.z = lm(297).z - 0.09;
+  var hh = crown.y - chin.y;
+  box = box || [0.3, 0.18, 0.7, 0.82];
+  var ang = { front: 0, "3q": 0.62, profile: Math.PI / 2 }[view] || 0; ang = ang * (side || 1) + (yawDeg || 0) * Math.PI / 180;
+  var fov = 12, Hpx = H, bh = (box[3] - box[1]) * Hpx, d = hh * Hpx / (2 * Math.tan(fov * Math.PI / 360) * bh);
+  cam.fov = fov; cam.aspect = W / H;
+  cam.position.set(c.x + Math.sin(ang) * d, c.y, c.z + Math.cos(ang) * d); cam.lookAt(c);
+  // shift so the head centre lands on the box centre
+  var cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
+  cam.setViewOffset(W, H, -(cx - 0.5) * W, -(cy - 0.5) * H, W, H);
+  cam.updateProjectionMatrix();
+  var r = show.arena.renderer; r.info.reset(); a.avatar.sync(); r.render(show.arena.scene, cam);
+  cam.clearViewOffset();
+  actors.forEach(function (o) { if (o.avatar) o.avatar.group.visible = true; });
+  return { d: +d.toFixed(2), hh: +hh.toFixed(3) };
+};
 DEV.info = function () {
   return DEV.lineupActors().map(function (a) {
     var av = a.avatar; if (!av) return { id: a.id, avatar: false };

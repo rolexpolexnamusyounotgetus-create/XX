@@ -167,7 +167,7 @@
         "light": "warm indoor video light"
       }
     ],
-    "tone_average_all": "#c88168",
+    "tone_average_all": "#c9856d",
     "tone_average_used": "#c48068",
     "tone_hex": "#c48068",
     "tone_note": "Each sample is the median of a box on lit skin (box in source pixels); the shadowed right cheek in the April 2026 still (#885545) was left out, and the over-bright studio forehead is not in the used average. Studio cutouts read lighter and pinker, media-day stills darker; the used average mixes them on purpose.",
