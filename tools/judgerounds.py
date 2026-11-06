@@ -34,7 +34,7 @@ WHAT IT WRITES
   research/data_judgerounds.md is written by hand from the printed report.
 
 USAGE
-  python3 tools/judgerounds.py --fetch      # download/refresh the cached source files (about 15 requests)
+  python3 tools/judgerounds.py --fetch      # download missing source files (about 20 requests, 1.1 s apart)
   python3 tools/judgerounds.py              # build from the cache (a few seconds, pandas + numpy only)
 """
 import argparse
@@ -47,7 +47,6 @@ import json
 import math
 import os
 import re
-import sys
 import time
 import unicodedata
 from collections import Counter, defaultdict

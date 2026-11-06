@@ -55,7 +55,8 @@ if (mode === "expect") {
     out.plain = { pA: s0.pA, pB: s0.pB, pD: s0.pD, bins: s0.bins, finA: s0.finA, finB: s0.finB, avgA: pick(s0.avg.A), avgB: pick(s0.avg.B), avgMin: s0.avgMin };
     if (model) {
       const ctx = { division: f.division, prior_division: f.prior_division, rounds: f.rounds, title: f.title, year: f.year, priors: D.priors[String(f.year)] };
-      const pred = ML.predict(model, pA, pB, ctx);
+      // precomputed (out-of-fold) rates when the fight carries them, else the model
+      const pred = f.ml ? f.ml : ML.predict(model, pA, pB, ctx);
       const m1 = FE.matchup(pA, pB, opts);
       const info = ML.applyToMatchup(m1, pred, { engine: FE, scales: D.scales || null });
       const s1 = FE.summarize(m1, N, seed0 + idx);

@@ -25,14 +25,15 @@ As of Friday, November 6, 2026. Built for the v3 engine: numbers first, narrativ
 |---|---|---|
 | Born | Sep 29, 1988 (age 38.1 on Nov 6, 2026) | Dataset (ufc_fighter_tott) |
 | Height / reach / stance | 5'6" / 71" / Orthodox (switches stance often) | Dataset. v2 HANDOFF used 71.5" (UFC.com); ufcstats lists 71" |
-| Pro record | 29-4 | [news4jax/AP](https://www.news4jax.com/sports/2026/10/24/alexander-volkanovski-stops-movsar-evloev-in-2nd-round-to-retain-featherweight-title-at-ufc-333/) (M); was 28-4 entering UFC 333 per [UFC Calendar preview](https://www.ufcalendar.com/blog/volkanovski-evloev-how-volkanovski-wins-ufc-333) |
+| Pro record | 29-4 | [news4jax/AP](https://www.news4jax.com/sports/2026/10/24/alexander-volkanovski-stops-movsar-evloev-in-2nd-round-to-retain-featherweight-title-at-ufc-333/) (M); was 28-4 entering UFC 333 per [UFC Calendar preview](https://www.ufcalendar.com/blog/volkanovski-evloev-how-volkanovski-wins-ufc-333) and [ESPN, Oct 15](https://www.espn.com/mma/story/_/id/50189696/ufc-champ-volkanovski-proposes-send-superbout-vs-gaethje). Re-verified Nov 6 (open network): [Wikipedia](https://en.wikipedia.org/wiki/Alexander_Volkanovski) record table, [UFCalendar](https://www.ufcalendar.com/fighters/alexander-volkanovski), [Sherdog](https://www.sherdog.com/news/news/Arman-Tsarukyan-sets-one-condition-for-fighting-Alexander-Volkanovski-203451) (H) |
 | UFC record | 16-3 (W: 6 KO/TKO, 0 sub, 10 dec; L: 2 KO/TKO, 1 dec) | Dataset (19 UFC fights) |
-| Pre-UFC | 13-1 (derived: 29-4 minus 16-3); only pre-UFC loss came in Australia's AFC | [SI](https://www.si.com/fannation/mma/news/ufc-314-alexander-volkanovski-214-lbs-rugby-mma) / search summary (M) |
+| Pre-UFC | 13-1; the only pre-UFC loss was to Corey Nelson at Australian FC 5 (2013) | Counted row by row from the [Wikipedia](https://en.wikipedia.org/wiki/Alexander_Volkanovski) record table on Nov 6 (H; previously derived from 29-4 minus 16-3) |
 | Current title | UFC featherweight champion (defended at UFC 333, Oct 24, 2026) | Dataset; [ABC/AP](https://abcnews.com/amp/Sports/wireStory/alexander-volkanovski-stops-movsar-evloev-2nd-round-retain-137543714) (H) |
 | Lightweight UFC record | 1-2 (beat Yusuke Kasuya in his 2016 UFC debut at 155; lost twice to Islam Makhachev in 2023) | Dataset |
 | Last fight | W, TKO (punches from half guard), R2 4:54, vs Movsar Evloev (20-0), UFC 333, Abu Dhabi | Dataset; [Yahoo](https://sports.yahoo.com/mma/live/ufc-333-live-results-volkanovski-vs-evloev-updates-round-by-round-scoring-for-todays-title-double-header-110000274.html) (H) |
-| Camp | Head coach Joe Lopez (Freestyle MMA, Australia); Eugene Bareman (City Kickboxing, Auckland) corners him | [CBS Sports](https://www.cbssports.com/ufc/news/ufc-333-alexander-volkanovski-featherweight-title-history-movsar-evloev/) (M), [Tapology](https://www.tapology.com/fightcenter/fighters/41705-alex-volkanski) (M) |
-| Booked next | Nothing booked as of Nov 6, 2026 | [Bloody Elbow, Nov 5, 2026](https://bloodyelbow.com/2026/11/05/justin-gaethje-vs-alexander-volkanovski-dana-white-reveals-whats-holding-up-superfight/) (M) |
+| Camp | Head coach Joe Lopez (Freestyle Fighting Gym, per the Wikipedia infobox, which cites freestylemma.com.au; Volk fights out of Windang, NSW); Eugene Bareman (City Kickboxing, Auckland) corners him | [CBS Sports](https://www.cbssports.com/ufc/news/ufc-333-alexander-volkanovski-featherweight-title-history-movsar-evloev/) (M), [Tapology](https://www.tapology.com/fightcenter/fighters/41705-alex-volkanski) (M) |
+| Booked next | Nothing booked as of Nov 6, 2026 | [Bloody Elbow, Nov 5, 2026](https://bloodyelbow.com/2026/11/05/justin-gaethje-vs-alexander-volkanovski-dana-white-reveals-whats-holding-up-superfight/), [Sherdog, Nov 5](https://www.sherdog.com/news/news/Dana-White-awaits-Justin-Gaethje-decision-on-Alexander-Volkanovski-fight-203509), [UFCalendar](https://www.ufcalendar.com/fighters/alexander-volkanovski) (H) |
+| Ranking | Featherweight champion; No. 2 men's pound-for-pound behind Islam Makhachev (UFC media panel, Nov 3, 2026) | [UFCalendar](https://www.ufcalendar.com/rankings/mens-pound-for-pound), [ufcrankings.org](https://ufcrankings.org/pound-for-pound/) (H: two mirrors agree; ufc.com returns 403 to scripts) |
 
 ---
 
@@ -303,13 +304,13 @@ Vacant featherweight title after Topuria vacated. Volk was 36.5. Round by round 
 - Knockdown: Lopes dropped him in the closing seconds of round 2 with a jab and overhand right; Volk got up quickly
   ([AOL/AP](https://aol.com/news/alexander-volkanovski-survives-knockdown-beat-060658367.html),
   [Cageside Press](https://cagesidepress.com/2025/04/13/alexander-volkanovski-becomes-two-time-champion-decisions-lopes), M).
-  Lopes won round 2 on two of three cards (search summary, M).
+  Lopes won round 2 on two of three cards: Cleary and D'Amato gave him R2, and Cleary and Chris Lee gave him R4, for 48-47 (Cleary) and 49-46 twice ([MMA Decisions](https://mmadecisions.com/decision/15364/Alexander-Volkanovski-vs-Diego-Lopes), H, re-verified Nov 6).
 - Afterward Volk said he "completely lost vision in my left eye" after that punch, with vision returning gradually
   ([Sportskeeda](https://www.sportskeeda.com/mma/news-alexander-volkanovski-admits-lost-vision-mid-fight-diego-lopes-blow),
   [Bloody Elbow](https://bloodyelbow.com/2025/04/13/alexander-volkanovski-reveals-frightening-moment-he-was-blinded-during-ufc-314-win), M;
-  sources disagree whether it was round 2 or round 4, L). Coach Lopez said he "might have broke his hand"
+  sources disagree whether it was round 2 or round 4, L; re-verified Nov 6: [SI](https://www.si.com/fannation/mma/news/alex-volkanovski-injuries-ufc-314), read in full, says he told FOX Australia it was a punch in the fourth round, M). Coach Lopez said he "might have broke his hand"
   ([The Mac Life](https://themaclife.com/sports/mma/report-alexander-volkanovski-dealing-with-potential-broken-hand-following-ufc-314-title-win), M;
-  whether a fracture was confirmed is unknown).
+  no fracture confirmation found in a Nov 6 search; every report still says "might have" or "potential", e.g. [MiddleEasy](https://middleeasy.com/mma-news/coach-says-alexander-volkanovski-might-have-broke-his-hand-ufc-314/)).
 - Late surge: 82 sig landed in rounds 4-5 vs 51 in rounds 1-2, at 68% accuracy in round 4 and 70% in round 5, while
   Lopes landed 14 of 59 in round 5.
 
@@ -380,10 +381,10 @@ Volk was 38.07, the oldest featherweight title-fight winner in the dataset (feat
 | When | What | Source |
 |---|---|---|
 | Oct 2026 (UFC 333 week) | Sick (flu or chest infection), fought without medication | Heavy, Sherdog, MMA Sucka (M) |
-| Post-UFC 333 | No injury reported in the coverage I found; medical suspension unknown | unknown |
+| Post-UFC 333 | No injury reported. No UFC 333 medical-suspension list was found in a Nov 6 search (the Abu Dhabi commission's list does not appear to have been published); only Rizvan Kuniev's precautionary hospital trip was reported from the card | [Sherdog](https://www.sherdog.com/news/news/Alexander-Volkanovski-says-he-was-sick-at-UFC-333-Too-easy-otherwise-203333), [MMA Mania](https://www.mmamania.com/ufc-333-fight-card-start-time-live-stream-volkanovski-vs-evloev/481929/one-fighter-rizvan-kuniev-transported-to-hospital-following-violent-ufc-333) (M; suspension still not public) |
 | Feb 2026 | Revealed a long-term eye issue (per the headline; that it dates from UFC 314 is an inference, not confirmed, L) | [Bloody Elbow, Feb 28, 2026](https://bloodyelbow.com/2026/02/28/alexander-volkanovski-reveals-long-term-eye-issue-while-defending-tom-aspinall-from-harsh-backlash/) (M) |
 | Jan 2026 (UFC 325 camp) | Shoulder injury about four weeks out; withdrawal discussed | Bloody Elbow, Sherdog (M) |
-| Apr 2025 (UFC 314) | Lost vision in the left eye after a Lopes punch (the R2 knockdown or a round-4 shot; sources disagree, see section 6); possible broken hand (unconfirmed) | Sportskeeda, The Mac Life (M) |
+| Apr 2025 (UFC 314) | Lost vision in the left eye after a Lopes punch (he told FOX Australia it was a fourth-round punch per SI; other accounts tie it to the R2 knockdown, see section 6); possible broken hand (never confirmed) | Sportskeeda, The Mac Life, [SI](https://www.si.com/fannation/mma/news/alex-volkanovski-injuries-ufc-314) (M) |
 | Oct 2023 | Head-kick KO (concussion effects he later described) | MiddleEasy (M) |
 | Jul 2023 | Elbow surgery, about six weeks' recovery; his manager said it had bothered him for over a year | [BJPenn](https://bjpenn.com/mma-news/alex-volkanovski/alexander-volkanovski-has-successful-elbow-surgery-for-unbearable-injury) (M) |
 | 2024 (retrospective) | Lopez said Volk fought a title fight with bone fragments in his elbow and little use of the left arm in camp | [Bloody Elbow, Nov 4, 2024](https://bloodyelbow.com/2024/11/04/coach-reveals-alexander-volkanovski-had-bits-of-broken-bone-in-his-elbow-during-his-infamous-ufc-featherweight-title-fight) (M; which fight is unclear) |
@@ -407,8 +408,9 @@ that his recent injuries changed output. The eye issue and two KO losses since 2
 
 ### Camp and coaches
 
-- Joe Lopez: head coach, Freestyle MMA (Australia); Volk's BJJ black belt is under him (search summary of
-  Wikipedia and Tapology, M). Lopez has been the main public voice on his injuries.
+- Joe Lopez: head coach at Freestyle Fighting Gym (the gym's site is freestylemma.com.au; Volk fights out of Windang, NSW); Volk's BJJ
+  black belt is under him (Wikipedia infobox, read directly Nov 6, H). Wikipedia also lists City Kickboxing, Tiger
+  Muay Thai and Bangtao Muay Thai & MMA as teams. Lopez has been the main public voice on his injuries.
 - Eugene Bareman: City Kickboxing co-founder, cornered Volk at UFC 333; has compared him to Georges St-Pierre
   ([CBS Sports](https://www.cbssports.com/ufc/news/ufc-333-alexander-volkanovski-featherweight-title-history-movsar-evloev/),
   [MMA News](https://www.mmanews.com/article/alexander-volkanovskis-coach-compares-him-mma-legend), M).
@@ -430,7 +432,11 @@ that his recent injuries changed output. The eye issue and two KO losses since 2
   [MMA Sucka](https://mmasucka.com/news/alexander-volkanovski-justin-gaethje-ufc-333-superfight-retirement/)), and
   `research/gaethje.md` says he first floated it on a podcast in mid-October and after beating Evloev said "If they
   wanted to give me that opportunity, I would retire. Win or lose, retire." ([AgentMMA](https://agentmma.com/news/91994-volkanovski-says-he-d-retire-after-a-superfight-with-gaethje-win-or-lose)).
-  Treat it as said both before and after UFC 333; which wording came from which appearance is unconfirmed.
+  Treat it as said both before and after UFC 333. **Re-verified Nov 6 (open network):** the pre-fight version is
+  ESPN's Oct 15, 2026 story on the "Who Da Fook Are These Guys?" podcast: "Imagine that, do it as a send-off...
+  Let's do a superfight with the lightweight title on the line" ([ESPN](https://www.espn.com/mma/story/_/id/50189696/ufc-champ-volkanovski-proposes-send-superbout-vs-gaethje), H).
+  The "win or lose, retire" wording is the post-UFC 333 one (AgentMMA). Which outlet first used "something I would
+  retire for" was not traced.
 - **Tsarukyan if Gaethje retires.** He offered to vacate the featherweight title to fight Arman Tsarukyan for a
   vacant lightweight title if Gaethje retires or won't fight him (`research/matchup_market.md` attributes the offer
   to an MMA Fighting interview; whether the Helwani appearance is the same interview is unconfirmed, L), and said
@@ -601,7 +607,7 @@ climbs and his opponents' accuracy falls at the same time.
 ## 16. Open questions
 
 - Gaethje's decision and timing (hands; said no fight before 2027). Any booking changes every age input.
-- Volk's post-UFC 333 medical suspension and whether the eye issue has been formally assessed (unknown).
+- Volk's post-UFC 333 medical suspension (no list published as of Nov 6) and whether the eye issue has been formally assessed (no report found).
 - Volk's planned weight management for 155 with a full camp (no 2026 statement found).
 - Exact strike mechanics of the Makhachev head kick and the Mendes knockdown round (sources conflict; video needed).
 - Whether the post-2025 drop in leg-kick usage is a choice or a constraint (hand, shoulder or eye issues).
@@ -681,6 +687,23 @@ Web (accessed Nov 6, 2026; claims taken from search-result summaries where direc
 - https://agentmma.com/mma-lab/ufc-fighter-peak-age
 - https://bloodyelbow.com/2013/07/18/ufc-going-deeper-into-mma-fighter-longevity-does-age-matter/
 
+Added in the Nov 6 open-network re-verification (pages read directly):
+
+- https://en.wikipedia.org/wiki/Alexander_Volkanovski
+- https://www.ufcalendar.com/fighters/alexander-volkanovski
+- https://www.ufcalendar.com/rankings/mens-pound-for-pound
+- https://www.ufcalendar.com/rankings/featherweight
+- https://ufcrankings.org/pound-for-pound/
+- https://www.sherdog.com/news/news/Dana-White-awaits-Justin-Gaethje-decision-on-Alexander-Volkanovski-fight-203509
+- https://www.sherdog.com/news/news/Arman-Tsarukyan-sets-one-condition-for-fighting-Alexander-Volkanovski-203451
+- https://www.sherdog.com/news/news/Alexander-Volkanovski-says-he-was-sick-at-UFC-333-Too-easy-otherwise-203333
+- https://www.espn.com/mma/story/_/id/50189696/ufc-champ-volkanovski-proposes-send-superbout-vs-gaethje
+- https://mmadecisions.com/decision/15364/Alexander-Volkanovski-vs-Diego-Lopes
+- https://www.si.com/fannation/mma/news/alex-volkanovski-injuries-ufc-314
+- https://middleeasy.com/mma-news/coach-says-alexander-volkanovski-might-have-broke-his-hand-ufc-314/ (search-result snippet only)
+- https://www.mmamania.com/ufc-333-fight-card-start-time-live-stream-volkanovski-vs-evloev/481929/one-fighter-rizvan-kuniev-transported-to-hospital-following-violent-ufc-333 (search-result snippet only)
+- data/likeness/alexander-volkanovski.json (photo-based likeness sheet)
+
 ---
 
 ## Verification log
@@ -755,6 +778,33 @@ fully independent.
   knockdown strikes are not.
 - **Camp name** (not checked): the file says "Freestyle MMA"; the full gym name may be Freestyle Fighting Gym
   (checker's recall, not a source). Unverified this pass; left as written.
+
+### Re-verification, Nov 6, 2026 (open network)
+
+A later pass with the network open (curl plus DuckDuckGo HTML search; ufc.com and Bloody Elbow returned 403 to
+scripts, so their pages were not re-read). Changes are made inline above; summary:
+
+- **Record:** 29-4 confirmed by the Wikipedia record table, UFCalendar and Sherdog. Pre-UFC 13-1 now counted row by
+  row from Wikipedia (only loss: Corey Nelson, AFC 5, 2013), so it no longer rests on the 29-4 arithmetic.
+- **Ranking:** No. 2 men's pound-for-pound and featherweight champion on the UFC media panel of Nov 3, 2026, per two
+  mirrors (UFCalendar, ufcrankings.org). The UFC's newer algorithmic Meta rankings (introduced June 2026) also list
+  him as featherweight champion.
+- **Status:** nothing booked (UFCalendar, Sherdog Nov 5). White (Jim Rome Show, Nov 4-5): "I would pretty much do
+  anything for Alexander Volkanovski... The big question is: what does Justin Gaethje wanna do?" Tsarukyan (Nov 2)
+  says he would fight Volkanovski only for the title.
+- **Retirement-fight wording:** pre-fight "send-off" quote traced to ESPN, Oct 15, 2026 (section 10).
+- **Camp name:** Freestyle Fighting Gym, per the Wikipedia infobox (resolves the open item in the log above).
+- **UFC 314:** round-by-round cards now from MMA Decisions (Lopes took R2 on two cards and R4 on two cards). SI,
+  read in full, has Volk telling FOX Australia the vision loss came from a fourth-round punch; the broken hand was
+  never confirmed.
+- **Post-UFC 333 health:** no injury reported and no medical-suspension list found.
+- **Still open:** the MMA Junkie "not necessarily retiring after his next fight" line (not re-checked); per-round
+  judges at UFC 284; the Mendes knockdown round; any 2026 statement on walk-around weight.
+- **Appearance:** the photo-based likeness sheet `data/likeness/alexander-volkanovski.json` is the source for the
+  avatar (shaved head, short medium-dark brown beard with some grey, light-medium tanned skin, full dragon sleeve
+  on the right arm, 2026 kit dark green with gold Greek-key trim). Do not use the blond wig from the UFC 333
+  face-off. These conclusions are copied into the new scouting file `data/scouting/alexander-volkanovski.json`
+  (created this pass; there was none before), with a pointer to the sheet.
 
 ### Net assessment
 

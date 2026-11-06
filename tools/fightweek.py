@@ -1295,8 +1295,8 @@ def parse_weighins(card, paras, event):
                 if len(allw) > len(weights):
                     weights = allw
                 allo = [(m.start(), wnum(m.group(1))) for m in re.finditer(
-                    r"(\d+(?:\.\d+)?|half a|a half|one|two|three|four|five|six|seven|eight|nine|ten)"
-                    r"(?: and a half)?[- ](?:pounds?|lbs?\.?|lb)\b(?!\s*(?:\(|,)?\s*\d)", k) if m.start() >= t0]
+                    r"((?:\d+(?:\.\d+)?|half a|a half|one|two|three|four|five|six|seven|eight|nine|ten)"
+                    r"(?: and a half)?)[- ](?:pounds?|lbs?\.?|lb)\b(?!\s*(?:\(|,)?\s*\d)", k) if m.start() >= t0]
                 allo = [(p, o) for p, o in allo if o is not None and 0 < o < 30]
                 if len(allo) > len(overs) and re.search(r"\bover\b", k):
                     overs = allo
@@ -2334,7 +2334,7 @@ def cmd_eval(args):
         j = names.index(k)
         m = tr & (X[:, j] != 0)
         won = np.where(X[m, j] > 0, y[m], 1 - y[m])
-        elo_exp = 1 / (1 + np.exp(-np.where(X[m, j] > 0, X[m, names.index("elo")], -X[m, names.index("elo")])))
+        elo_exp = 1 / (1 + np.exp(-b0[0] * np.where(X[m, j] > 0, X[m, names.index("elo")], -X[m, names.index("elo")])))
         desc[k] = {"n": int(m.sum()), "win_rate_flagged_side": float(won.mean()) if m.sum() else None,
                    "elo_expected": float(elo_exp.mean()) if m.sum() else None}
     res["descriptive_train"] = desc

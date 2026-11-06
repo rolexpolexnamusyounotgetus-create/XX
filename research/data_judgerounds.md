@@ -24,7 +24,7 @@ protocol. Every number below is from the dev period (2006-2025) unless it says o
 ## Where the data came from, and why not mmadecisions.com itself
 
 The task said to scrape mmadecisions.com. Its robots.txt (last updated 2025-03-04, a ditig.com template) lists
-about 70 search-engine crawlers with an empty `Disallow:` and then ends with `User-agent: *` / `Disallow: /`.
+76 search-engine crawlers with an empty `Disallow:` and then ends with `User-agent: *` / `Disallow: /`.
 Our agent ("FightLabSim/1.0 (private research)") is not on the list, so every page is off limits to us
 (confirmed with Python's `urllib.robotparser`). One request to the home page went out together with the
 robots.txt check, before the file was read; nothing from it was kept, and no other mmadecisions page was

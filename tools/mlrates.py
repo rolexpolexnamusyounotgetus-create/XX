@@ -1220,7 +1220,9 @@ def bucket_of(r):
 
 def cmd_sim(args):
     d = load_dataset()
-    rows = [r for r in d["rows"] if VAL_FROM.year <= r["year"] < CUTOFF.year
+    period = args.period
+    lo_y, hi_y = (VAL_FROM.year, CUTOFF.year - 1) if period == "val" else (2019, VAL_FROM.year - 1)
+    rows = [r for r in d["rows"] if lo_y <= r["year"] <= hi_y
             and r["sides"][0]["n"] > 0 and r["sides"][1]["n"] > 0]
     if args.quick:
         rows = rows[:40]
@@ -1228,18 +1230,32 @@ def cmd_sim(args):
     J = json.load(open(os.path.join(OUT, "mlrates_dev.json")))     # trained 2010-2023 only
     years = sorted({str(r["year"]) for r in rows})
     fights = [fight_json(r) for r in rows]
+    if period == "train":
+        # 2019-2023: out-of-fold rates (time-ordered folds), never an in-sample prediction
+        oofj = json.load(open(os.path.join(OUT, "mlrates_oof.json")))
+        keep = []
+        for fj, r in zip(fights, rows):
+            ent = oofj["fights"].get(r["id"])
+            if not ent or "A" not in ent or "B" not in ent:
+                continue
+            P = prior_for(d["priors"][str(r["year"])], r["prior_division"])
+            fj["ml"] = {"A": dict(zip(TNAMES, ent["A"])), "B": dict(zip(TNAMES, ent["B"])),
+                        "base": [pget(P, BASE_KEY[t]) for t in TNAMES]}
+            keep.append((fj, r))
+        fights = [k[0] for k in keep]
+        rows = [k[1] for k in keep]
     nproc = max(1, min(2, args.procs))
     chunks = [list(range(k, len(fights), nproc)) for k in range(nproc)]
     procs, outs = [], []
     t0 = time.time()
     for ci, idx in enumerate(chunks):
-        inp = os.path.join(CACHE, "sim_in_%d.json" % ci)
-        outp = os.path.join(CACHE, "sim_out_%d.json" % ci)
+        inp = os.path.join(CACHE, "sim_in_%s_%d.json" % (period, ci))
+        outp = os.path.join(CACHE, "sim_out_%s_%d.json" % (period, ci))
         with open(inp, "w") as fh:
             json.dump({"priors": priors_json({y: d["priors"][y] for y in years}), "model": J,
                        "fights": [fights[i] for i in idx]}, fh)
         procs.append(subprocess.Popen(["node", os.path.join(HERE, "mlrates_engine.js"), "sim", inp, outp, str(N),
-                                       str(1000 + ci)]))
+                                       str((1000 if period == "val" else 5000) + ci)]))
         outs.append((idx, outp))
     for p in procs:
         if p.wait() != 0:
@@ -1294,7 +1310,9 @@ def cmd_sim(args):
     b7 = [x for x in recs if x["bucket"] is not None]
     fid = np.array([x["fight"] for x in dec])
     out = {"n_fights": len(recs), "n_decisive": len(dec), "n_bucketed": len(b7), "nsim": N,
-           "params_version": params_version, "model": "data/derived/mlrates_dev.json (trained 2010-2023)"}
+           "params_version": params_version, "period": period,
+           "model": ("data/derived/mlrates_dev.json (trained 2010-2023)" if period == "val" else
+                     "data/derived/mlrates_oof.json (time-ordered out-of-fold rates)")}
     for k in ("plain", "ml"):
         out[k] = {"winner_log_loss": float(np.mean([x[k]["ll"] for x in dec])),
                   "brier": float(np.mean([x[k]["brier"] for x in dec])),
@@ -1330,7 +1348,35 @@ def cmd_sim(args):
                                            "obs": float(yy[(pp >= q[i]) & ((pp < q[i + 1]) if i < 9 else (pp <= 1))].mean())
                                            if ((pp >= q[i]) & ((pp < q[i + 1]) if i < 9 else (pp <= 1))).any() else None}
                                           for i in range(10)]
-    path = os.path.join(CACHE, "sim_report.json")
+    with open(os.path.join(CACHE, "sim_recs_%s.json" % period), "w") as fh:
+        json.dump([{"id": x["id"], "winner": x["winner"], "bucket": x["bucket"],
+                    "plain": x["plain"]["pA"], "ml": x["ml"]["pA"]} for x in recs], fh)
+    # logit-slope recalibration (no intercept, mirrored) fit on the 2019-2023 simulations, applied here
+    trp = os.path.join(CACHE, "sim_recs_train.json")
+    if period == "val" and os.path.exists(trp):
+        tr = [x for x in json.load(open(trp)) if x["winner"] in ("A", "B")]
+        out["recalibration"] = {}
+        for k in ("plain", "ml"):
+            pt = np.clip(np.array([x[k] for x in tr]), 1e-4, 1 - 1e-4)
+            yt = np.array([1.0 if x["winner"] == "A" else 0.0 for x in tr])
+            zt = logit_np(pt)
+            sl = 1.0
+            for _ in range(50):
+                q = sigm_np(sl * zt)
+                g = ((yt - q) * zt).sum()
+                h = (q * (1 - q) * zt * zt).sum()
+                sl += g / max(h, 1e-9)
+            pv = np.clip(np.array([x[k]["pA"] for x in dec]), 1e-4, 1 - 1e-4)
+            qv = np.clip(sigm_np(sl * logit_np(pv)), 1e-4, 1 - 1e-4)
+            llv = -(yv * np.log(qv) + (1 - yv) * np.log(1 - qv))
+            out["recalibration"][k] = {"slope_fit_2019_2023": float(sl), "n_fit": len(tr),
+                                       "val_winner_log_loss": float(llv.mean()),
+                                       "val_brier": float(np.mean((qv - yv) ** 2))}
+            out[k]["_llv_recal"] = llv.tolist()
+        dd = np.array(out["ml"].pop("_llv_recal")) - np.array(out["plain"].pop("_llv_recal"))
+        mu, lo, hi = boot_ci(dd, fid)
+        out["recalibration"]["ml_minus_plain"] = {"mean": mu, "lo": lo, "hi": hi}
+    path = os.path.join(CACHE, "sim_report_%s.json" % period)
     with open(path, "w") as fh:
         json.dump(out, fh, indent=1)
     log(json.dumps({k: v for k, v in out.items() if k not in ("plain", "ml")}, indent=1))
@@ -1345,6 +1391,8 @@ def main():
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--nsim", type=int, default=600, help="simulations per fight and config in `sim` (600)")
     ap.add_argument("--procs", type=int, default=2, help="node worker processes for `sim` (<= 2)")
+    ap.add_argument("--period", choices=["val", "train"], default="val",
+                    help="`sim` fights: val = 2024-2025 with the dev model; train = 2019-2023 with out-of-fold rates")
     args = ap.parse_args()
     if args.cmd in ("build", "all"):
         cmd_build(args)
