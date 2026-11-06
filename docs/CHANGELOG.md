@@ -200,6 +200,88 @@ No validation (2024-2025) number is computed in these steps; the Measure stage t
     - The verifier's v4.0.0 figures for dynamics alone were 69.3% -> 63.9%.
   - Nothing from 2024-25 was scored, and no 2026 fight was read.
 
+### Step 3 (Nov 6, 6:20 pm ET): styles_sos, officials, realism_sens
+
+- **Base.** The step-2 commit 8317287 (src/engine3.js sha256 0760f47b..., which was also the working tree when the step began).
+  Each component went in as a 3-way merge in this order: styles_sos, officials, realism_sens. The frozen pre-component engines are
+  kept as tests/fixtures/engine3_pre_styles_sos.js (= 8317287), engine3_pre_officials.js and engine3_pre_realism.js.
+- **(a) styles_sos** (scratchpad/components/styles_sos.onmain.patch).
+  - Merge base: 7e93291 ("Engine v4 kept"), the only commit where every hunk applies; its engine and params equal versions/v4.
+  - engine3.js, params3.js, build.py and test_engine3.js merged without conflicts. ENGINE_V3_SPEC.md and tools/README.md had
+    append/append conflicts; both sides were kept.
+  - The patch's own `components: {}` key would again have shadowed `v401` / `durability` / `dynamics`. It is folded into the
+    single components block.
+  - Shipped as verified: `styles_sos: { styles: false, sos: true, newcomer: false }`, `stylesSOS.sosSource: "wf"`.
+  - SOS acts only when a caller passes `opts.sos`; no profile carries `sos`. So the page and every tool that passes no pairs are
+    exactly step 2 (tested on 400 fights).
+  - **Harness wiring.** New tools/sosrec.js passes each backtest fight's sos_wf.json pair, with A/B swapped together with the
+    corners, plus coefficients:
+    - train fights: `meta.coef_loyo[year]` (out-of-year, the learned rates' OOF policy);
+    - 2024-2025: `meta.coef`, fit on 2019-2023 (= the module's SOS_COEF);
+    - fights dated 2026-01-01 or later are refused, and so is a fight without a pair.
+  - Wired into tools/evalv.js (its own copy, `sosOpts`; it refuses a frozen copy without styles_sos.js and asserts SOS was
+    applied), officials_engcal.js, realism.js, dynamics_bt.js, dynamics_calibrate.js, mlcal.js, moe_engine_bt.js and
+    v4_levels.js.
+  - The freeze must copy src/styles_sos.js into versions/v5/ next to engine3.js.
+  - tests/test_styles_sos.js, adapted to the merge:
+    - the source check is now strip([styles_sos] lines) of the merged engine == the step-2 engine;
+    - `components: false` now switches every v5 component off, so the plain engine gets the same override.
+- **(b) officials** (scratchpad/components/officials_component_only.patch; base 98564b7, whose engine3.js = versions/v4).
+  - Four add/add conflicts, each resolved by keeping both sides: `m.dyn` + `m.off` in matchupBase; the deductions function +
+    the officials block; dynamics' `cpre` cards snapshot + the officials / v4 judging dispatch; both export sets.
+  - The RNG contract holds on the step-2 engine: 9 start normals, then 1 + 3 per judged round. Deductions are still drawn after
+    the cards.
+  - Shipped: `components.officials: false`, so the prediction path keeps the v4 judging with the v401 fixes. Named-judge effects
+    are off (`officials.perJudge: false`, BACKLOG OFFICIALS).
+  - Opt-in per call to show real officials: `opts.params.components.officials = true` with `opts.judges` / `opts.referee`. It is
+    deliberately not switched on by named judges alone, so flag off stays bit-identical for every input.
+  - Following officials.md "Base commits and patches":
+    - the golden was rewritten against engine3_pre_officials.js (`--write-golden`);
+    - `engAdj` was re-measured on the current engine by tools/officials_engcal.js `--write`. Train 2019-2023 only (500 fights x
+      2 orders x 60 sims), now with durrec + sosrec inputs: aH 0.01897, aP -0.0931, vHH 0.42062, vHP 0.58684, vPP 30.37291. Only
+      the opt-in path uses it.
+  - test_officials' two tendency checks now switch perJudge on explicitly. A new check shows the default makes two different
+    panels score identically.
+- **(c) realism_sens** (scratchpad/components/realism_sens.patch, against v4.0.1 1f30636), re-applied by hand.
+  - Applied: `compOn`, `realismFactors` + the `dvf` hook + `m._src` / `m.realism` in matchupBase, `sensitivity` / `rateSd` /
+    `knobSd`, the exports, the `realism` params block (factors fit on v4.0.1), `components.realism_sens: false`, test_engine3's
+    simAvg (realism off, kept with step 2's relative durability), the new test and fixture, tools/realism.js, spec and README.
+  - **mlrates cache fix:** step 1 had already added the components flags to the `leagueExpect` key; `m.realism` is now added too.
+  - Two merge fixes in `sensitivity`:
+    - variants rebuild through the public `api.matchup`; the internal `matchup` would have dropped styles_sos from every variant;
+    - an officials name array in `opts.judges` is carried as `{ names }`, not garbled by the for-in copy.
+  - tools/realism.js now uses durrec + sosrec (smoke-run on 2023, 395 fights, 0 errors).
+  - The digest fixture was rewritten against the pre-realism engine.
+- **Version labels.** Engine VERSION stays "5.0.0-dev". The params label is "5.0.0-dev.3-selfcal-pre2024".
+- **Tests (all pass).**
+  - New `node tests/test_v5_step3.js`: 28 passed. Three references, each over 450 matchups: whole fight JSON incl. traces
+    (4,500 fights), 45 summaries and explain() outputs.
+    - all three off = step 2;
+    - officials + realism off = step 2 + styles_sos;
+    - realism off = + officials.
+    - The groups are random pairs with learned rates + roster + random `opts.sos` + named officials, plain tables, and 2019-2023
+      backtest fights x 2 corner orders with OOF rates, durability records and walk-forward SOS pairs.
+    - A strict group runs the step-2 engine on 8317287's own params3.js and mlrates.js: 300 matchups, 0 mismatches.
+    - Also checked: each flag changes fights, SOS with no input is a no-op, sosrec mirrors under a corner swap, the officials
+      opt-in, and sensitivity rebuilds keep SOS and the officials names.
+  - `node tests/test_engine3.js` (N 20,000): 81 passed. `node tests/test_director3.js 300`: OK, 300 of 300 matchups with learned
+    rates; `NO_ML=1 ... 100`: OK.
+  - test_mlrates 47 OK, test_v401 15, test_v5_step2 16, test_durability 34 OK, test_dynamics 23, test_mlcal 33,
+    test_styles_sos 42, test_officials 24, test_realism_sens 45 (46 with `--ref-dir`).
+  - Also pass: test_moe 21, test_mlpage 5, test_calib 14, test_statdist, test_forward_models, test_blindtest_stack.
+  - `python3 build.py <tmp>` builds with StylesSOS in the engine script. The published page was not rebuilt.
+  - An evalv `--dev` train smoke run (4 sims) ran 1,999 fights with 0 failures and SOS applied, and its output was deleted. Its
+    numbers are not a measurement.
+- **For the next stages.**
+  - The calibration slope moves with SOS on (verifier: 1.026 -> 1.014 on the learned path), so recalibrate with it on.
+  - Never stack sosSource "oppadj" with "wf".
+  - Refit `realism` (tools/realism.js fit) on v5 before ever turning realism_sens on.
+  - If officials is ever turned on, re-level its 10-8 c0 (it overshoots on engine rounds) and centre the referee standing-TKO
+    multipliers.
+  - calibrate.js, statlines_engine.js, oppadj_engine.js, mlrates_engine.js and mlcal_verify.js still pass neither durability
+    records nor SOS pairs.
+  - Nothing from 2024-25 was scored, no 2026 fight was read, and the only number fit here (engAdj) used 2019-2023 fights.
+
 ## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored
 
 **Status: rejected by the decision rule.** The validation look ran once, at 11:45 am ET, paired against v4. The

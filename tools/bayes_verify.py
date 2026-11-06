@@ -501,6 +501,29 @@ def stage_lookahead(args):
     save_out(J)
 
 
+# ---------------------------------------------------------------- stage: damping (the note's EP damping claim)
+def stage_damping(args):
+    """The note says converged log loss does not depend on the EP damping (0.66201 / 0.66202 / 0.66202 at 0.5 / 0.8 /
+    1.0 'on a test year'); 0.66201 is nostats / yearly EP / 2019 in cv.log, so rerun that: EP at 2019-01-01 with each
+    damping, filter through 2019, score the 2019 backtest fights."""
+    sys.path.insert(0, HERE)
+    import bayes as BY
+    X = BY.load_data()
+    H = pickle.load(open(BY.year_path("nostats", 2019), "rb"))["H"]
+    a, b = BY.jan1(2019), BY.jan1(2020)
+    out = {}
+    for d in (0.5, 0.8, 1.0):
+        S = BY.ep_snapshot(X, H, a, damp=d, key="dmp")
+        R = BY.run_filter(X, H, b, init=S, from_day=a, store=True, key="dmp")
+        idx = np.flatnonzero((X["year"] == 2019) & R["done"] & X["evalrow"])
+        _, pA, _, _ = BY.cells(X, R, H, idx)
+        out[str(d)] = {"ll": round(float(llv(pA, X["win"][idx]).mean()), 5), "n": int(len(idx)), "ep_iters": len(S["iters"]) + 1}
+        log("damping", d, out[str(d)])
+    J = load_out()
+    J["damping_2019_nostats_yearly"] = out
+    save_out(J)
+
+
 # ---------------------------------------------------------------- stage: swap (chosen config on 2023)
 def stage_swap(args):
     sys.path.insert(0, HERE)
@@ -524,11 +547,12 @@ def stage_swap(args):
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["score", "stack", "lookahead", "swap", "all"])
+    ap.add_argument("stage", choices=["score", "stack", "lookahead", "swap", "damping", "all"])
     ap.add_argument("--quick", action="store_true")
     a = ap.parse_args()
     if a.stage == "all":
         stage_score(a)
         stage_stack(a)
     else:
-        {"score": stage_score, "stack": stage_stack, "lookahead": stage_lookahead, "swap": stage_swap}[a.stage](a)
+        {"score": stage_score, "stack": stage_stack, "lookahead": stage_lookahead, "swap": stage_swap,
+         "damping": stage_damping}[a.stage](a)
