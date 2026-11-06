@@ -595,12 +595,12 @@
     if (top === 0 || (top == null && /bald|clean-shaven head|shaved head|head shaved|shaven head/.test(txt))) {
       L.hair = null; L.hairMode = "paint"; L.scalpCh = horseshoe || reced ? 3 : 4; L.scalp = 0.2;
     } else if ((top != null && top <= 1.3) || (top == null && /buzz|induction|clipper|very short|crew cut/.test(txt))) {
-      L.hair = null; L.hairMode = "shell"; L.hairLen = Math.max(0.25, top || 0.6); L.scalpCh = reced ? 2 : (horseshoe ? 3 : (fade ? 1 : 0)); L.scalp = 0.9;
+      L.hair = null; L.hairMode = "shell"; L.hairLen = Math.max(0.25, top || 0.6); L.scalpCh = reced ? 2 : (horseshoe ? 3 : 0); L.fade = fade; L.scalp = 0.9;
     } else if (top != null && top <= 6.5 && /fade|taper|crop|crew|short|high and tight|buzz|textured|spiky|tapered|coil|curl/.test(txt) &&
         !(/\blong\b|ponytail|\bbun\b|braid|afro|\bmop\b|shoulder|mullet/.test(txt) || (/fringe/.test(txt) && !/no fringe/.test(txt)))) {
       // crops and fades: painted hair colour on the scalp under a strand shell; the hair lies down, so the shell
       // carries at most ~2.6 cm of volume however long the top is
-      L.hair = null; L.hairMode = "shell"; L.hairLen = Math.min(top, 2.6); L.scalpCh = reced ? 2 : (fade ? 1 : 0); L.scalp = 0.95;
+      L.hair = null; L.hairMode = "shell"; L.hairLen = Math.min(top, 2.6); L.scalpCh = reced ? 2 : 0; L.fade = fade; L.scalp = 0.95;
     } else if (L.hair) { L.scalpCh = reced ? 2 : 0; L.scalp = 0.55; }
     else if (!L.hair && L.scalp > 0.5) { L.hairMode = "shell"; L.hairLen = 0.5; L.scalpCh = 0; }
     else if (!L.hair) { L.scalpCh = 4; }
@@ -647,6 +647,9 @@
   function applyLikeness(L, LK, app, cfg, base, ids) {
     var hx = /^#[0-9a-f]{6}$/i, H = LK.hair || {}, FH = LK.facial_hair || {}, SK = LK.skin || {}, RH = LK.render_hints || {};
     if (hx.test(H.colour_hex || "")) L.hairColor = H.colour_hex;
+    // dyed two-tone hair: "#rrggbb on his left side" in the render hints tints that side of the hair mesh
+    var sideM = /(#[0-9a-f]{6})[^#()]{0,24}\bon (his|her) left side/i.exec(String(RH.hair || ""));
+    if (sideM) L.hairSideColor = sideM[1];
     if (H.length_cm === 0 && L.hair) { L.hair = null; L.scalp = 0.22; }
     var ft = lower(FH.type);
     if (ft) {
@@ -804,7 +807,7 @@
       self.addProxy(r[1], { map: r[2], roughness: 0.12, eyes: true });
       self.addProxy(r[3], { color: mixHex(looks.beardColor === looks.hairColor ? looks.hairColor : mixHex(looks.hairColor, looks.beardColor, 0.4), "#a07a5c", 0.25), brows: true });
       self.addProxy(r[4], { lashes: true });
-      if (r[5]) self.addProxy(r[5], { color: looks.hairColor, hair: true, cutY: looks.hairCut != null && self.maskL ? (self.maskL.sideburnR.y + self.maskL.sideburnL.y) / 2 + looks.hairCut : null });
+      if (r[5]) self.addProxy(r[5], { color: looks.hairColor, sideColor: looks.hairSideColor || null, hair: true, cutY: looks.hairCut != null && self.maskL ? (self.maskL.sideburnR.y + self.maskL.sideburnL.y) / 2 + looks.hairCut : null });
       if (self.cfg.ref) self.makeRefKit(); else self.makeFightKit();
       if ((!self.cfg.ref || looks.hairMode === "shell") && !self.opts.noStrands) self.makeStrands();
       self.initRetarget();
@@ -954,6 +957,7 @@
         var earCut = ax > earX - 0.005 && p.y < sbY + 0.03 && p.z < earZ + 0.03 && p.z > earZ - 0.05 ? 0.3 : 1;
         m2[o1] = hl * nape * earCut;
       }
+      if (looks.fade) m2[o1] = smooth(sbY - 0.035, sbY + 0.04, p.y);
     }
     // kick zone: outer and front of thigh and calf, from the skin weights
     var bi = base.boneIndex, mh = base.mh, wts = base.weights, jts = base.joints;
@@ -1007,7 +1011,7 @@
       uBeard: { value: looks.beard }, uBeardOp: { value: (looks.beardLen >= 12 ? 0.75 : (looks.beardLen >= 4 ? 0.68 : (looks.beardLen >= 0.5 ? 0.6 : 0.45))) * (looks.beardDensity < 0.85 ? 0.88 : 1) }, uBeardCol: { value: lin(looks.beardColor) }, uScalp: { value: looks.scalp }, uHairCol: { value: lin(looks.hairColor) },
       uDam: { value: new T.Vector2(0, 0) }, uLeg: { value: new T.Vector2(0, 0) }, uSweat: { value: 0 }, uFlush: { value: 0 },
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
-      uMaskOn: { value: maskOn ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
+      uMaskOn: { value: maskOn ? 1 : 0 }, uFadeOn: { value: looks.fade ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
       uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 3 ? chan(looks.scalpCh) : new T.Vector4(0, 0, 0, 0) }, uScalpCh2: { value: looks.scalpCh >= 3 ? chan(looks.scalpCh - 3) : new T.Vector4(0, 0, 0, 0) },
       uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.4 : 0 }, uPoreF: { value: this.poreFreq() }, uDefK: { value: cfg.ref ? 0 : clamp01(0.35 + 0.9 * ((cfg.lean || 0.5) - 0.3)) }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
     };
@@ -1018,7 +1022,7 @@
         .replace("#include <begin_vertex>", "#include <begin_vertex>\nvMask = aMask; vMask2 = aMask2; vDecal = aDecal;\nfloat swl = max(aMask.z, 0.0) * uDam.x + max(-aMask.z, 0.0) * uDam.y;\ntransformed += objectNormal * swl * 0.0055;");
       sh.fragmentShader = sh.fragmentShader
         .replace("#include <common>", "#include <common>\nvarying vec4 vMask;\nvarying vec4 vMask2;\nvarying vec4 vDecal;\nuniform float uBeard; uniform float uBeardOp; uniform vec3 uBeardCol; uniform float uScalp; uniform vec3 uHairCol; uniform vec2 uDam; uniform vec2 uLeg; uniform float uSweat; uniform float uFlush;\nuniform sampler2D uTattoo; uniform float uTatOn;\n" +
-          "uniform float uMaskOn; uniform sampler2D uMaskH; uniform sampler2D uMaskH2; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform vec2 uPoreF; uniform float uDefK; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
+          "uniform float uMaskOn; uniform float uFadeOn; uniform sampler2D uMaskH; uniform sampler2D uMaskH2; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform vec2 uPoreF; uniform float uDefK; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
           "float hh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\n" +
           "float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hh(i), hh(i + vec2(1,0)), f.x), mix(hh(i + vec2(0,1)), hh(i + vec2(1,1)), f.x), f.y); }")
         .replace("#include <map_fragment>", "#include <map_fragment>\n" +
@@ -1032,6 +1036,7 @@
           "    vec2 hu = (su - vec2(0.6, 0.03)) / vec2(0.3, 0.84);\n" +
           "    float inH = step(0.0, hu.x) * step(hu.x, 1.0) * step(0.0, hu.y) * step(hu.y, 1.0);\n" +
           "    vec2 hc = clamp(hu, 0.0, 1.0); mS = (dot(texture2D(uMaskH, hc), uScalpCh) + dot(texture2D(uMaskH2, hc), uScalpCh2)) * inH;\n" +
+          "    if (uFadeOn > 0.5) mS *= vMask2.x;\n" +
           "  }\n" +
           // hair roots and the shade under a beard or hair cap: a cooler, darker undertone, no dots (the cap draws the hairs)
           "  float bd = smoothstep(0.04, 0.85, mB) * clamp(uBeard, 0.0, 1.0) * (0.8 + 0.4 * vn(su * 160.0)); gBeard = bd;\n" +
@@ -1230,7 +1235,7 @@
       var kept = [];
       for (var q = 0; q < index.length; q += 3) {
         var ya = pos[index[q] * 3 + 1], yb = pos[index[q + 1] * 3 + 1], yc = pos[index[q + 2] * 3 + 1];
-        if (Math.max(ya, yb, yc) > o.cutY && (ya + yb + yc) / 3 > o.cutY - 0.006) kept.push(index[q], index[q + 1], index[q + 2]);
+        if (Math.max(ya, yb, yc) > o.cutY - 0.016 && (ya + yb + yc) / 3 > o.cutY - 0.02) kept.push(index[q], index[q + 1], index[q + 2]);
       }
       index = new Uint32Array(kept);
     }
@@ -1248,8 +1253,16 @@
     var mesh, extra = null;
     if (o.hair) {
       mat.alphaTest = 0.5; mat.side = T.DoubleSide;
-      hairShading(mat, 1 / px.lum);
-      var tips = mat.clone(); hairShading(tips, 1 / px.lum); tips.alphaTest = 0.04; tips.transparent = true; tips.depthWrite = false;
+      // rest position and depth off the scalp (the fitted offset) for the cut fade, root shading and side tints
+      var aR = new Float32Array(n * 4), maxD = 0, hc = this.headC || this.J.Head.h;
+      for (i = 0; i < n; i++) { var dd = Math.hypot(off[i * 3] * s[0], off[i * 3 + 1] * s[1], off[i * 3 + 2] * s[2]); aR[i * 4] = pos[i * 3]; aR[i * 4 + 1] = pos[i * 3 + 1]; aR[i * 4 + 2] = pos[i * 3 + 2]; aR[i * 4 + 3] = dd; maxD = Math.max(maxD, dd); }
+      g.setAttribute("aHairR", new T.BufferAttribute(aR, 4));
+      var afro = /afro/.test(meta.id), HU = { uHK: { value: 1 / px.lum }, uCutOn: { value: o.cutY != null ? 1 : 0 }, uCutY: { value: o.cutY != null ? o.cutY : 0 }, uCutZ: { value: hc.z + 0.01 },
+        uMaxD: { value: Math.max(0.01, maxD * (afro ? 0.8 : 0.6)) }, uAfro: { value: afro ? 1 : 0 }, uSideOn: { value: o.sideColor ? 1 : 0 }, uSideCol: { value: o.sideColor ? lin(o.sideColor) : new T.Color(1, 1, 1) },
+        uBump: { value: afro ? 0.0009 : 0.0004 } };
+      hairShading(mat, HU);
+      var tips = mat.clone(); hairShading(tips, HU); tips.alphaTest = 0.04; tips.transparent = true; tips.depthWrite = false;
+      this.hairU = HU;
       extra = new T.SkinnedMesh(g, tips); extra.renderOrder = 3; extra.castShadow = false;
       this.hairMats = [mat, tips];
       this.disposables.push(tips);
@@ -1310,14 +1323,39 @@
     }
     return { j: J, w: Wt };
   };
-  function hairShading(m, k) {
-    k = (k || 4.5).toFixed(2);
-    // texture luminance x hair colour (any colour), then HumanForge's darkening of near-white
-    // transparent texels so strand tips fade instead of haloing
+  /* Hair proxy shading: texture luminance x hair colour with the contrast pulled in (the curl textures
+     read as a knit pattern at full contrast), roots darker than the outer layers (depth off the scalp),
+     slow clump-scale brightness variation, a bump from the texture's own luminance so strands catch the
+     light, ragged alpha at the silhouette for curls, a soft ragged fade along a fade cut (lower at the
+     front temples, so no notch opens there), and an optional tint on his left side (dyed hair). */
+  function hairShading(m, U) {
     m.onBeforeCompile = function (sh) {
-      sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n\tdiffuseColor.rgb = diffuse * clamp(dot(texelColor.rgb, vec3(0.299, 0.587, 0.114)) * " + k + ", 0.0, 2.2);\n\tdiffuseColor.rgb *= mix(0.35, 1.0, smoothstep(0.05, 0.85, diffuseColor.a));");
+      for (var k in U) sh.uniforms[k] = U[k];
+      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec4 aHairR;\nvarying vec4 vHairR;")
+        .replace("#include <begin_vertex>", "#include <begin_vertex>\nvHairR = aHairR;");
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec4 vHairR;\nuniform float uHK; uniform float uCutOn; uniform float uCutY; uniform float uCutZ; uniform float uMaxD; uniform float uAfro; uniform float uSideOn; uniform vec3 uSideCol; uniform float uBump;\n" +
+          "float hh2(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\n" +
+          "float hvn(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); vec2 o = i.xy + i.z * vec2(17.0, 31.0);\n" +
+          "  return mix(mix(mix(hh2(o), hh2(o + vec2(1.0, 0.0)), f.x), mix(hh2(o + vec2(0.0, 1.0)), hh2(o + vec2(1.0, 1.0)), f.x), f.y),\n" +
+          "             mix(mix(hh2(o + vec2(17.0, 31.0)), hh2(o + vec2(18.0, 31.0)), f.x), mix(hh2(o + vec2(17.0, 32.0)), hh2(o + vec2(18.0, 32.0)), f.x), f.y), f.z); }")
+        .replace("#include <map_fragment>", "#include <map_fragment>\n" +
+          "{ float lum = clamp(dot(texelColor.rgb, vec3(0.299, 0.587, 0.114)) * uHK * 0.5, 0.0, 1.0);\n" +
+          "  vec3 base = diffuse; if (uSideOn > 0.5) base = mix(base, uSideCol, smoothstep(-0.015, 0.035, vHairR.x));\n" +
+          "  float ao = mix(0.4, 1.0, smoothstep(0.0, uMaxD, vHairR.w));\n" +
+          "  float clump = hvn(vHairR.xyz * 55.0);\n" +
+          "  diffuseColor.rgb = base * mix(0.42, 1.22, pow(lum, mix(0.85, 0.7, uAfro))) * ao * (0.82 + 0.36 * clump);\n" +
+          "  diffuseColor.rgb *= mix(0.35, 1.0, smoothstep(0.05, 0.85, diffuseColor.a));\n" +
+          "  if (uAfro > 0.5 && diffuseColor.a < 0.995) diffuseColor.a *= 0.6 + 0.8 * hh2(floor(vUv * 900.0));\n" +
+          "  if (uCutOn > 0.5) { float cy = uCutY - 0.016 * smoothstep(uCutZ, uCutZ + 0.07, vHairR.z); float j = hh2(floor(vUv * 700.0)) - 0.5;\n" +
+          "    diffuseColor.a *= smoothstep(cy - 0.004, cy + 0.014, vHairR.y + j * 0.01); } }")
+        .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n" +
+          "{ float lb = dot(texture2D(map, vUv).rgb, vec3(0.299, 0.587, 0.114)) * uHK * 0.5;\n" +
+          "  vec3 pp = -vViewPosition; vec2 dH = vec2(dFdx(lb), dFdy(lb)) * uBump;\n" +
+          "  vec3 dpx = dFdx(pp), dpy = dFdy(pp); vec3 hq1 = cross(dpy, normal), hq2 = cross(normal, dpx); float det = dot(dpx, hq1);\n" +
+          "  normal = normalize(abs(det) * normal - sign(det) * (dH.x * hq1 + dH.y * hq2)); }");
     };
-    m.customProgramCacheKey = function () { return "fight-hair-" + k; };
+    m.customProgramCacheKey = function () { return "fight-hair-v2"; };
+    m.extensions = { derivatives: true };
   }
 
   /* ------------------------------------------------------------ kit shells from the body itself */
@@ -1647,7 +1685,11 @@
       if (looks.hair) topmm = Math.min(topmm, Math.max(sidemm * 1.6, 8));   // a hair mesh carries the top: the cap only has to blend into it
       var earY = M ? (M.sideburnR.y + M.sideburnL.y) / 2 : this.J.Head.h.y + 0.05, hc = this.headC || this.J.Head.h;
       var whorl = new V3(hc.x, this.cfg.H - 0.012, hc.z - 0.055), lenH = new Float32Array(n);
-      for (i = 0; i < n; i++) if (covH[i] > 0) lenH[i] = lerp(sidemm, topmm, smooth(earY + 0.025, earY + 0.085, P[i * 3 + 1])) / Math.max(0.1, topmm);
+      var densH = new Float32Array(n).fill(1);
+      for (i = 0; i < n; i++) if (covH[i] > 0) {
+        lenH[i] = lerp(sidemm, topmm, smooth(earY + 0.025, earY + 0.085, P[i * 3 + 1])) / Math.max(0.1, topmm);
+        if (looks.fade) { var fk = smooth(earY - 0.035, earY + 0.04, P[i * 3 + 1]); densH[i] = 0.15 + 0.85 * fk; lenH[i] *= 0.35 + 0.65 * fk; }
+      }
       var hdir = function (v, out) {
         var y = P[v * 3 + 1], tf = smooth(earY + 0.03, earY + 0.09, y);
         out.set(P[v * 3] - whorl.x, (P[v * 3 + 1] - whorl.y) * 0.4, P[v * 3 + 2] - whorl.z).normalize();
@@ -1659,7 +1701,7 @@
       var ho = buzz ? { offs: [0.45 * mm, Math.max(0.8, topmm * 0.25) * mm, Math.max(1.2, topmm * 0.4) * mm], cell: Math.min(0.75 + 0.1 * topmm, 1.3), sw: 0.06, dens: 1, grids: 3, opac: 2.4 }
         : { offs: [0.5, 0.3, 0.5, 0.75, 1].map(function (k, j) { return j === 0 ? 0.5 * mm : k * clamp(topmm * 0.28, 1.8, 7) * mm; }), cell: 1.25, sw: 0.075, dens: 1, grids: 3, opac: 2.4 };
       ho.slen = ho.cell;
-      this.addCap("hair", covH, Object.assign(ho, { len: lenH, dir: hdir, color: looks.hairColor, grey: 0, lenK: 0.6, edgeK: 0.8, seed: 53, spec: 0.035, shin: 110, maskTex: maskT, maskCh: ch, maskSet: looks.scalpCh < 3 ? 0 : 1 }));
+      this.addCap("hair", covH, Object.assign(ho, { len: lenH, densV: densH, dir: hdir, color: looks.hairColor, grey: 0, lenK: 0.6, edgeK: 0.8, seed: 53, spec: 0.035, shin: 110, maskTex: maskT, maskCh: ch, maskSet: looks.scalpCh < 3 ? 0 : 1 }));
     }
   };
   var CAP_FS_PARS = "varying vec4 vCap;\nvarying vec2 vFlow;\nvarying vec2 vCUv;\n" +
@@ -1712,7 +1754,7 @@
     "  a = clamp(a * uOpac, 0.0, 1.0);\n" +
     "  if (a < 0.004) discard;\n" +
     "  vec3 col = uCapCol * shade * mix(0.66, 1.06, h);\n" +
-    "  col = mix(col, vec3(0.42, 0.41, 0.4), clamp(grey, 0.0, 1.0) * 0.85);\n" +
+    "  col = mix(col, vec3(0.26, 0.25, 0.245), clamp(grey, 0.0, 1.0) * 0.8);\n" +
     "  diffuseColor = vec4(col, a); gHairA = a; }\n";
   var CAP_FS_TANGENT =
     "{ vec3 q0 = dFdx(-vViewPosition), q1 = dFdy(-vViewPosition); vec2 st0 = dFdx(vCUv), st1 = dFdy(vCUv);\n" +
