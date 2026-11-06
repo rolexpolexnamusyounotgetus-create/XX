@@ -575,6 +575,306 @@ def symmetry_check(T, cfg):
             "ok": err < 1e-9 and err_g < 1e-9}
 
 
+# ====================================================================== stage: cv (pre-2024 only)
+BLOCKS = [(2016, 2017), (2018, 2019), (2020, 2021), (2022, 2023)]
+TAUS = [2.0, 4.0, 8.0, 16.0, None]
+LAMS = [0.02, 0.05, 0.1, 0.2]
+NEW_BLOCKS = ["rat", "mr", "pre", "fw", "exp", "gate"]
+SEL_MIN = 0.0005
+_G = {}
+
+
+def superset_matrix(T, pm):
+    """Every candidate LR column (the pre block once per fade tau) so CV configs are column subsets."""
+    cfg = {"blocks": ["rat", "mr", "fw", "exp", "gate"], "pre_means": pm,
+           "rat_sys": RATING_SYSTEMS}
+    X = lr_matrix(T, cfg)
+    for tau in TAUS:
+        P = new_terms(T, {"blocks": ["pre"], "tau": tau, "pre_means": pm})
+        P.columns = ["%s@%s" % (c, tau) for c in P.columns]
+        X = pd.concat([X, P], axis=1)
+    return X
+
+
+def block_cols(X, blocks, tau, rat_sys=("whr_rounds", "glicko2", "elo_full", "trueskill_mov"), drop_groups=()):
+    cols = [c for c in BASE_COLS if M.term_group(c) not in drop_groups]
+    if "rat" in blocks:
+        cols += ["z_" + s for s in rat_sys]
+    if "mr" in blocks:
+        cols += ["z_mr"]
+    if "pre" in blocks:
+        cols += ["d_%s@%s" % (k, tau) for k in PRE_CORE]
+    if "fw" in blocks:
+        cols += [c for c in X.columns if c.startswith("d_fw_")]
+    if "exp" in blocks:
+        cols += ["d_n12", "d_n35"]
+    if "gate" in blocks:
+        cols += (["g_mr_new"] if "mr" in blocks else []) + ["g_whr_new", "g_elo_new"]
+    return cols
+
+
+def cv_masks(T, y0, y1, train_set="all", since=None):
+    yr = T["year"].to_numpy()
+    tr = T["dec"].to_numpy() & (yr < y0)
+    if since:
+        tr &= yr >= since
+    if train_set == "both_exp":
+        tr &= T["both_exp"].to_numpy()
+    va = T["evalrow"].to_numpy() & (yr >= y0) & (yr <= y1)
+    return tr, va
+
+
+def _lr_cv_one(job):
+    cols, lam, rec, train_set, since = job
+    T, X, y = _G["T"], _G["X"], _G["y"]
+    Xc = X[cols].to_numpy(float)
+    yrs = T["year"].to_numpy()
+    tot, n, per = 0.0, 0, []
+    for y0, y1 in BLOCKS:
+        tr, va = cv_masks(T, y0, y1, train_set, since)
+        m = M.LRModel(lam, rec).fit(Xc[tr], y[tr], yrs[tr], y0)
+        l = ll(m.predict(Xc[va]), y[va])
+        tot += l * va.sum()
+        n += va.sum()
+        per.append(round(l, 5))
+    return round(tot / n, 5), per
+
+
+def run_jobs(fn, jobs, n_jobs):
+    if n_jobs <= 1 or len(jobs) < 2:
+        return [fn(j) for j in jobs]
+    from multiprocessing import Pool
+    with Pool(n_jobs) as pool:
+        return pool.map(fn, jobs)
+
+
+def lr_search(cols, n_jobs, lams=LAMS, rec=None, train_set="all", since=None):
+    res = run_jobs(_lr_cv_one, [(cols, lam, rec, train_set, since) for lam in lams], n_jobs)
+    k = int(np.argmin([r[0] for r in res]))
+    return {"lam": lams[k], "cv": res[k][0], "blocks": res[k][1], "grid": {str(l): r[0] for l, r in zip(lams, res)}}
+
+
+def stage_cv(args):
+    S = load_table()
+    T = S["df"]
+    pm = pre_means(T)
+    X = superset_matrix(T, pm)
+    y = T["y"].fillna(0.5).to_numpy(float)
+    _G.update(T=T, X=X, y=y)
+    sym = symmetry_check(T, {"blocks": NEW_BLOCKS, "tau": 8.0, "pre_means": pm})
+    log("symmetry check %s" % sym)
+    assert sym["ok"], sym
+    R = {"symmetry": sym, "pre_means": pm}
+    nj = args.jobs
+    # 1. baseline: ml.py's 80 terms (reproduces its CV)
+    base = lr_search(block_cols(X, [], None), nj)
+    log("base LR CV %.5f (lam %s) %s" % (base["cv"], base["lam"], base["blocks"]))
+    R["base"] = base
+    # 2. greedy forward selection of the new blocks (tau of the pre block searched when it enters)
+    chosen, cur, tau = [], base, 8.0
+    path = []
+    while True:
+        best = None
+        for b in NEW_BLOCKS:
+            if b in chosen:
+                continue
+            if b == "gate" and not ({"rat", "mr"} & set(chosen)):
+                continue
+            taus = TAUS if b == "pre" else [tau]
+            for tt in taus:
+                r = lr_search(block_cols(X, chosen + [b], tt), nj)
+                log("  + %s (tau %s): CV %.5f lam %s" % (b, tt, r["cv"], r["lam"]))
+                path.append({"step": len(chosen) + 1, "add": b, "tau": tt, "cv": r["cv"], "lam": r["lam"]})
+                if best is None or r["cv"] < best[1]["cv"]:
+                    best = (b, r, tt)
+        if best is None or best[1]["cv"] > cur["cv"] - SEL_MIN:
+            break
+        chosen.append(best[0])
+        cur, tau = best[1], best[2]
+        log("ADD %s -> CV %.5f (lam %s, tau %s)" % (best[0], cur["cv"], cur["lam"], tau))
+    R["forward"] = {"path": path, "chosen": chosen, "tau": tau, "cv": cur["cv"], "lam": cur["lam"]}
+    # 3. rating systems: the four rated best by ratings.py's own tuning vs all seven
+    rs_best = ("whr_rounds", "glicko2", "elo_full", "trueskill_mov")
+    if "rat" in chosen:
+        alt = {}
+        for name, rs in (("whr_rounds only", ("whr_rounds",)), ("whr_rounds+glicko2", ("whr_rounds", "glicko2")),
+                         ("four", rs_best), ("all seven", tuple(RATING_SYSTEMS))):
+            r = lr_search(block_cols(X, chosen, tau, rs), nj)
+            alt[name] = r["cv"]
+            log("  rating set %s: CV %.5f" % (name, r["cv"]))
+        pick = min(alt, key=alt.get)
+        if alt[pick] < alt["four"] - SEL_MIN:
+            rs_best = {"whr_rounds only": ("whr_rounds",), "whr_rounds+glicko2": ("whr_rounds", "glicko2"),
+                       "all seven": tuple(RATING_SYSTEMS)}[pick]
+        R["rating_sets"] = alt
+    R["rat_sys"] = list(rs_best)
+    cur = lr_search(block_cols(X, chosen, tau, rs_best), nj)
+    # 4. backward elimination of ml.py's base groups now that the new blocks are in
+    drops, bpath = [], []
+    groups = sorted({M.term_group(c) for c in BASE_COLS})
+    while True:
+        best = None
+        for g in groups:
+            if g in drops:
+                continue
+            r = lr_search(block_cols(X, chosen, tau, rs_best, drops + [g]), nj, lams=[cur["lam"]])
+            bpath.append({"drop": g, "cv": r["cv"]})
+            if best is None or r["cv"] < best[1]["cv"]:
+                best = (g, r)
+        if best is None or best[1]["cv"] > cur["cv"] - SEL_MIN:
+            break
+        drops.append(best[0])
+        cur = lr_search(block_cols(X, chosen, tau, rs_best, drops), nj)
+        log("DROP base group %s -> CV %.5f" % (best[0], cur["cv"]))
+    R["backward"] = {"path": bpath, "dropped": drops}
+    cols = block_cols(X, chosen, tau, rs_best, drops)
+    # 5. training set and recency weighting
+    alt = {"all": cur["cv"]}
+    for name, kw in (("both_exp", {"train_set": "both_exp"}), ("recency 8y", {"rec": 8.0}),
+                     ("recency 4y", {"rec": 4.0}), ("since 2013", {"since": 2013})):
+        r = lr_search(cols, nj, lams=[cur["lam"]], **kw)
+        alt[name] = r["cv"]
+        log("  train variant %s: CV %.5f" % (name, r["cv"]))
+    pick = min(alt, key=alt.get)
+    train = {"train_set": "all", "rec": None, "since": None}
+    if alt[pick] < alt["all"] - SEL_MIN:
+        train = {"both_exp": {"train_set": "both_exp", "rec": None, "since": None},
+                 "recency 8y": {"train_set": "all", "rec": 8.0, "since": None},
+                 "recency 4y": {"train_set": "all", "rec": 4.0, "since": None},
+                 "since 2013": {"train_set": "all", "rec": None, "since": 2013}}[pick]
+    R["train_variants"] = alt
+    fin = lr_search(cols, nj, lams=[0.01, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3],
+                    rec=train["rec"], train_set=train["train_set"], since=train["since"])
+    log("FINAL LR: %d terms, blocks %s, tau %s, lam %s, CV %.5f (base %.5f)"
+        % (len(cols), chosen, tau, fin["lam"], fin["cv"], base["cv"]))
+    R["lr"] = {"cols": cols, "blocks": chosen, "tau": tau, "rat_sys": list(rs_best), "drop_groups": drops,
+               "lam": fin["lam"], "cv": fin["cv"], "cv_blocks": fin["blocks"], "grid": fin["grid"], **train}
+    # 6. single-block ablations from the final model (CV change when one new block is removed)
+    abl = {}
+    for b in chosen:
+        r = lr_search(block_cols(X, [c for c in chosen if c != b], tau, rs_best, drops), nj, lams=[fin["lam"]],
+                      rec=train["rec"], train_set=train["train_set"], since=train["since"])
+        abl[b] = round(r["cv"] - fin["cv"], 5)
+    R["lr_ablation_drop_one"] = abl
+    log("ablation (CV change when dropped): %s" % abl)
+    # 7. trees
+    R["trees"] = tune_trees(T, X, y, cols, args)
+    json.dump(R, open(os.path.join(CACHE, "cv.json"), "w"), indent=1, default=float)
+
+
+# ------------------------------------------------------------------ trees
+GBM_CFGS = [
+    {"num_leaves": 7, "min_data_in_leaf": 160, "feature_fraction": 0.6, "bagging_fraction": 0.7, "lambda_l2": 60.0},
+    {"num_leaves": 5, "min_data_in_leaf": 200, "feature_fraction": 0.4, "bagging_fraction": 0.8, "lambda_l2": 30.0},
+    {"num_leaves": 11, "min_data_in_leaf": 240, "feature_fraction": 0.5, "bagging_fraction": 0.7, "lambda_l2": 100.0},
+    {"num_leaves": 4, "min_data_in_leaf": 120, "feature_fraction": 0.3, "bagging_fraction": 0.8, "lambda_l2": 10.0},
+    {"num_leaves": 7, "min_data_in_leaf": 320, "feature_fraction": 0.3, "bagging_fraction": 0.85, "lambda_l2": 30.0},
+]
+XGB_CFGS = [
+    {"max_depth": 4, "min_child_weight": 60, "subsample": 0.9, "colsample_bytree": 0.4, "lambda": 50.0},
+    {"max_depth": 3, "min_child_weight": 40, "subsample": 0.8, "colsample_bytree": 0.3, "lambda": 20.0},
+    {"max_depth": 2, "min_child_weight": 30, "subsample": 0.8, "colsample_bytree": 0.5, "lambda": 10.0},
+]
+LGB_LR, XGB_ETA = 0.04, 0.04
+CHECKS = list(range(50, 801, 25))
+
+
+def tree_mats(T, X, cols):
+    Xl = X[BASE_COLS + [c for c in cols if c not in BASE_COLS]]    # trees always see ml.py's full base set
+    G0 = gbm_matrix(T, Xl, False)
+    G1 = gbm_matrix(T, Xl, True)
+    return G0, G1
+
+
+def mono_vec(G, on):
+    return [1 if (on and c in ["d_" + m for m in MONO] + MONO) else 0 for c in G.columns]
+
+
+def lgb_train(cfg, G0, G1, y, rounds, seed, mono, sw=None):
+    import lightgbm as lgb
+    Xa = pd.concat([G0, G1], ignore_index=True)
+    ya = np.r_[y, 1 - y]
+    p = dict(cfg)
+    p.update(objective="binary", verbose=-1, num_threads=1, max_bin=63, seed=seed, bagging_seed=seed,
+             feature_fraction_seed=seed, bagging_freq=1, deterministic=True, force_row_wise=True,
+             learning_rate=LGB_LR)
+    if mono:
+        p["monotone_constraints"] = mono_vec(G0, True)
+        p["monotone_constraints_method"] = "advanced"
+    return lgb.train(p, lgb.Dataset(Xa, ya, weight=None if sw is None else np.r_[sw, sw]), num_boost_round=rounds)
+
+
+def lgb_predict(m, G0, G1, it=None):
+    return 0.5 * (m.predict(G0, num_iteration=it) + 1 - m.predict(G1, num_iteration=it))
+
+
+def xgb_train(cfg, G0, G1, y, rounds, seed, mono):
+    import xgboost as xgb
+    Xa = pd.concat([G0, G1], ignore_index=True)
+    ya = np.r_[y, 1 - y]
+    p = dict(cfg)
+    p.update(objective="binary:logistic", eval_metric="logloss", nthread=1, tree_method="hist", max_bin=63,
+             seed=seed, verbosity=0, eta=XGB_ETA)
+    if mono:
+        p["monotone_constraints"] = "(" + ",".join(str(v) for v in mono_vec(G0, True)) + ")"
+    return xgb.train(p, xgb.DMatrix(Xa, label=ya), num_boost_round=rounds)
+
+
+def xgb_predict(m, G0, G1, it=None):
+    import xgboost as xgb
+    r = (0, it) if it else (0, 0)
+    return 0.5 * (m.predict(xgb.DMatrix(G0), iteration_range=r) + 1 - m.predict(xgb.DMatrix(G1), iteration_range=r))
+
+
+def _tree_cv_one(job):
+    kind, cfg, mono, seed = job
+    T, G0, G1, y = _G["T"], _G["G0"], _G["G1"], _G["y"]
+    curves = {c: [0.0, 0] for c in CHECKS}
+    per = []
+    for y0, y1 in BLOCKS:
+        tr, va = cv_masks(T, y0, y1)
+        if kind == "lgb":
+            m = lgb_train(cfg, G0[tr], G1[tr], y[tr], CHECKS[-1], seed, mono)
+            preds = {c: lgb_predict(m, G0[va], G1[va], c) for c in CHECKS}
+        else:
+            m = xgb_train(cfg, G0[tr], G1[tr], y[tr], CHECKS[-1], seed, mono)
+            preds = {c: xgb_predict(m, G0[va], G1[va], c) for c in CHECKS}
+        for c in CHECKS:
+            curves[c][0] += ll(preds[c], y[va]) * va.sum()
+            curves[c][1] += va.sum()
+    curve = {c: v[0] / v[1] for c, v in curves.items()}
+    best = min(curve, key=curve.get)
+    return {"kind": kind, "cfg": cfg, "mono": mono, "seed": seed, "rounds": best, "cv": round(curve[best], 5),
+            "curve": {str(c): round(v, 5) for c, v in curve.items() if c % 100 == 0}}
+
+
+def tune_trees(T, X, y, cols, args):
+    G0, G1 = tree_mats(T, X, cols)
+    _G.update(G0=G0, G1=G1)
+    log("tree design: %d columns" % G0.shape[1])
+    jobs = [("lgb", c, False, 1) for c in GBM_CFGS] + [("xgb", c, False, 1) for c in XGB_CFGS]
+    if args.quick:
+        jobs = jobs[:2] + jobs[len(GBM_CFGS):len(GBM_CFGS) + 1]
+    res = run_jobs(_tree_cv_one, jobs, args.jobs)
+    for r in res:
+        log("  %s %s rounds %d CV %.5f" % (r["kind"], r["cfg"], r["rounds"], r["cv"]))
+    out = {"search": res}
+    for kind in ("lgb", "xgb"):
+        rr = [r for r in res if r["kind"] == kind]
+        b = min(rr, key=lambda r: r["cv"])
+        # monotone constraints on the rating / Elo / market-rating differences, and a second seed
+        mres = run_jobs(_tree_cv_one, [(kind, b["cfg"], True, 1), (kind, b["cfg"], False, 2)], args.jobs)
+        log("  %s best + monotone: CV %.5f (rounds %d); other seed: %.5f" % (kind, mres[0]["cv"], mres[0]["rounds"],
+                                                                              mres[1]["cv"]))
+        pick = mres[0] if mres[0]["cv"] < b["cv"] - 0.0002 else b
+        out[kind] = {"cfg": pick["cfg"], "mono": pick["mono"], "rounds": pick["rounds"], "cv": pick["cv"],
+                     "cv_no_mono": b["cv"], "cv_mono": mres[0]["cv"], "cv_seed2": mres[1]["cv"]}
+    return out
+
+
+STAGES["cv"] = stage_cv
+
+
 # ====================================================================== main
 STAGES = {}
 

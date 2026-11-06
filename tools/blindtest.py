@@ -1,0 +1,1529 @@
+#!/usr/bin/env python3
+"""Standing blind-test harness: an event-by-event walk-forward replay of every registered model (task key: blindtest).
+
+Run from the project root (Python 3.13 + numpy/pandas/scipy/scikit-learn/lightgbm/xgboost; nice it on the shared box):
+
+    nice -n 5 python3 tools/blindtest.py list                    # registered models, versions, refit schedules
+    nice -n 5 python3 tools/blindtest.py replay                  # replay 2024-01-01..2025-12-31, score, write outputs
+    nice -n 5 python3 tools/blindtest.py replay --models elo,ml_lr,moe_noline     # a subset (+ what they need)
+    nice -n 5 python3 tools/blindtest.py replay --ml-refit month # refit the ML logistic monthly instead of per event
+    nice -n 5 python3 tools/blindtest.py score                   # re-score the stored replay, rewrite the report
+    python3 tools/blindtest.py replay --quick                    # first 8 events, 300 bootstrap resamples (smoke)
+
+What a replay does (docs/BACKLOG.md "Evaluation rule" and "Hidden-data protocol"):
+  1. Universe: data/derived/backtest_dev.json fights (both men had a prior UFC fight; every fight dated 2026-01-01 or
+     later is dropped on load, and any plugin output for a fight outside this set is discarded at the door).
+     Replay window 2024-01-01..2025-12-31 (the protocol's validation years); history 2019-01-01..2023-12-31 feeds only
+     the stackers, through each model's strictly out-of-sample 2019-2023 predictions.
+  2. For each UFC event date in the window, in order, every registered model is refit/updated with data strictly
+     before that date and predicts that card. Schedules: 'event' (refit before every card), 'month' (refit before the
+     first card of each month), 'never' (frozen fit made before 2024, or a sequential rating whose pre-fight state
+     already uses every earlier fight: Elo, market rating, WHR...). Stackers refit before every card on all earlier
+     rows (history + the replay's own earlier predictions). Every fit records fit_through (its last training fight)
+     and the harness refuses a fit_through on or after the card's date.
+  3. Each prediction is stored per backtest fight id with the model version, the refit cutoff and fit_through; the
+     replay itself carries a UTC timestamp. P is always P(first-named fighter A wins | decisive).
+  4. Scoring is symmetric (per-fight log loss on the probability given to the actual winner, models are corner-
+     symmetric by construction and the refit models are checked with A and B swapped), with 95% event-cluster
+     bootstrap CIs (2,000 resamples of event dates, the same draws for every model and paired difference),
+     cumulative curves over the window, mirrored calibration tables and slopes, and per-segment tables
+     (newcomers = the less experienced man has 1-2 prior UFC fights).
+  Outputs: data/derived/blindtest.json (predictions + fits + scores), the auto section of research/model_blindtest.md.
+  Heavy fits are cached in out/blindtest_cache/ (keyed by model version and cutoff; --no-cache recomputes).
+
+Adding a model is a ~10-line plugin, either here or in a file tools/blindtest_plugins/<name>.py (auto-imported):
+
+    from blindtest import register, Stored
+
+    @register("ml2", group="model", line=None, desc="ML v2 (tools/ml2.py), walk-forward per its protocol")
+    def _ml2(ctx):
+        d = ctx.json("ml2.json")                      # None when the file is absent -> the model is skipped
+        if not d:
+            return None
+        P = {i: r["p"] for i, r in d["fights"].items()}
+        hist = {i: r["p"] for i, r in d["fights"].items() if r.get("set") == "oof"}   # strictly out-of-sample 2019-23
+        return Stored(P, history=hist, version="ml2.json built " + d["meta"]["built"])
+
+  A model that refits subclasses Model and implements fit(cutoff, P) (data strictly before cutoff) and
+  predict(fids, P) (-> {fid: P(A)}), optionally predict_swapped(fids, P) for the symmetry check; see MLLogistic below.
+  A stacker is one line with Stack(...) or MoEStack(...); see the registrations at the bottom.
+"""
+import os
+
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):   # the box is shared and busy
+    os.environ.setdefault(_v, "1")
+import argparse
+import datetime as dt
+import glob
+import hashlib
+import importlib.util
+import json
+import math
+import pickle
+import sys
+import time
+import warnings
+
+import numpy as np
+
+warnings.filterwarnings("ignore")
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+ROOT = os.path.dirname(HERE)
+DERIVED = os.path.join(ROOT, "data", "derived")
+CACHE = os.environ.get("BLINDTEST_CACHE", os.path.join(ROOT, "out", "blindtest_cache"))
+OUT_JSON = os.environ.get("BLINDTEST_OUT", os.path.join(DERIVED, "blindtest.json"))
+REPORT_MD = os.path.join(ROOT, "research", "model_blindtest.md")
+PLUGIN_DIR = os.path.join(HERE, "blindtest_plugins")
+
+VAULT_FROM = "2026-01-01"          # sealed: never read, fit or scored here
+HIST_FROM = "2019-01-01"           # stacker history starts here (out-of-sample predictions 2019-2023)
+WINDOW = ("2024-01-01", "2025-12-31")
+PCLIP = 0.01                       # expert probabilities clipped before logits in the stackers (= tools/moe.py)
+TOOL_VERSION = "blindtest 1.0 (2026-11-06)"
+
+
+def log(*a):
+    print(time.strftime("%H:%M:%S"), *a, flush=True)
+
+
+def logit(p):
+    p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
+def sigm(z):
+    return 1.0 / (1.0 + np.exp(-np.asarray(z, float)))
+
+
+def r4(x):
+    return None if x is None or not np.isfinite(x) else round(float(x), 4)
+
+
+def r5(x):
+    return None if x is None or not np.isfinite(x) else round(float(x), 5)
+
+
+def sha_files(*paths):
+    h = hashlib.sha256()
+    for p in paths:
+        if p and os.path.exists(p):
+            st = os.stat(p)
+            h.update(("%s:%d:%d" % (os.path.basename(p), st.st_size, int(st.st_mtime))).encode())
+    return h.hexdigest()[:10]
+
+
+def wjson(path, obj):
+    tmp = path + ".tmp"
+    with open(tmp, "w") as fh:
+        json.dump(obj, fh, separators=(",", ":"), allow_nan=False)
+    os.replace(tmp, path)
+
+
+# ====================================================================== registry and model classes
+REGISTRY = {}
+
+
+def register(key, group="model", line=None, refit="never", needs=(), desc="", experimental=False):
+    """Register a model factory: factory(ctx) -> Model or None (None = inputs missing, model skipped).
+    group: 'benchmark' (market lines), 'model' (a forecaster), 'stack' (reads other models' predictions).
+    line: None (pre-fight info only), 'open' (uses the opening line), 'close' (uses the closing line)."""
+    def deco(factory):
+        REGISTRY[key] = dict(factory=factory, group=group, line=line, refit=refit, needs=tuple(needs), desc=desc,
+                             experimental=experimental)
+        return factory
+    return deco
+
+
+class Model:
+    """Base class. Subclasses that learn implement fit(); every model implements predict()."""
+    refit = "never"
+    version = ""
+    note = ""
+    symmetric = "by construction"
+
+    def history(self):
+        """{fid: P(A)} strictly out-of-sample predictions for HIST_FROM..window start (stacker training rows)."""
+        return {}
+
+    def fit(self, cutoff, P):
+        """Refit on data strictly before cutoff (ISO date). P = {model: {fid: p}} known so far. Returns
+        {'fit_through': last training date, 'n_train': rows} or None."""
+        return None
+
+    def predict(self, fids, P):
+        raise NotImplementedError
+
+    def bins7(self, fids):
+        """Optional {fid: [A KO, A SUB, A DEC, draw, B DEC, B SUB, B KO]}."""
+        return {}
+
+    def fit_through_of(self, fid):
+        """For stored models that know it per fight (e.g. annual refits)."""
+        return None
+
+
+class Stored(Model):
+    """Precomputed walk-forward predictions keyed by backtest fight id (sequential ratings, frozen fits made before
+    the window, or a tool's own documented walk-forward output)."""
+    def __init__(self, preds, history=None, bins=None, version="", note="", fit_through=None, symmetric="by construction"):
+        self.preds = {k: float(v) for k, v in preds.items() if v is not None and np.isfinite(v)}
+        self._hist = {k: float(v) for k, v in (history or {}).items() if v is not None and np.isfinite(v)}
+        self._bins = bins or {}
+        self.version, self.note, self.symmetric = version, note, symmetric
+        self._ft = fit_through or {}
+
+    def history(self):
+        return self._hist
+
+    def predict(self, fids, P):
+        return {f: self.preds[f] for f in fids if f in self.preds}
+
+    def bins7(self, fids):
+        return {f: self._bins[f] for f in fids if f in self._bins}
+
+    def fit_through_of(self, fid):
+        return self._ft.get(fid)
+
+
+# ====================================================================== context (data shared by plugins)
+class Ctx:
+    def __init__(self, args):
+        self.args = args
+        self._json = {}
+        bt = json.load(open(os.path.join(DERIVED, "backtest_dev.json")))
+        self.bt_meta = bt["meta"]
+        fights = [f for f in bt["fights"] if f["date"] < VAULT_FROM]          # hidden-data protocol
+        self.fights = {f["id"]: f for f in fights}
+        self.order = [f["id"] for f in sorted(fights, key=lambda f: f["date"])]
+        self.date = {i: self.fights[i]["date"] for i in self.order}
+        self.y = {}
+        for i, f in self.fights.items():
+            w = f["result"]["winner"]
+            self.y[i] = 1.0 if w == "A" else (0.0 if w == "B" else None)
+        self.hist_ids = [i for i in self.order if HIST_FROM <= self.date[i] < WINDOW[0]]
+        self.win_ids = [i for i in self.order if WINDOW[0] <= self.date[i] <= WINDOW[1]]
+        self._ml = None
+        self._moe_rows = None
+
+    def json(self, name):
+        if name not in self._json:
+            p = os.path.join(DERIVED, name)
+            try:
+                self._json[name] = json.load(open(p)) if os.path.exists(p) else None
+            except Exception as ex:            # another agent may be mid-write
+                log("could not read %s: %s" % (name, ex))
+                self._json[name] = None
+        return self._json[name]
+
+    def path(self, name):
+        return os.path.join(DERIVED, name)
+
+    def dev(self, d):
+        """Restrict a {fid: x} map to dev fights (drops 2026 and anything outside backtest_dev)."""
+        return {k: v for k, v in d.items() if k in self.fights}
+
+    # ---- tools/ml.py walk-forward feature table (stage-1 cache), 2026 rows removed
+    def ml(self):
+        if self._ml is None:
+            import ml as M
+            import __main__
+            for n in ("LRModel", "SoftmaxLR"):                 # stage1.pkl was pickled from tools/ml.py's __main__
+                if not hasattr(__main__, n):
+                    setattr(__main__, n, getattr(M, n))
+            path = os.path.join(ROOT, "out", "ml_cache", "stage1.pkl")
+            if not os.path.exists(path):
+                raise SystemExit("out/ml_cache/stage1.pkl missing: run python3 tools/ml.py once (stage one)")
+            with open(path, "rb") as fh:
+                R = pickle.load(fh)
+            c = R["_ctx"]
+            df = c["df"]
+            dates = np.array([d.isoformat() for d in df["date"]])
+            keep = dates < VAULT_FROM
+            df = df[keep].reset_index(drop=True)
+            specs = [t for t in M.lr_term_specs() if t["name"] in set(c["cols"])]
+            X = M.lr_design(df, specs)[c["cols"]].to_numpy()
+            dX = float(np.max(np.abs(X - c["X"][keep])))
+            if dX > 1e-9:
+                raise SystemExit("ML design drift: current tools/ml.py lr_design differs from stage1 by %g" % dX)
+            self._ml = dict(M=M, df=df, X=X, y=c["y"][keep], dec=c["dec"][keep], dates=dates[keep],
+                            years=c["years"][keep], G0=c["G0"][keep].reset_index(drop=True),
+                            G1=c["G1"][keep].reset_index(drop=True), cols=c["cols"], lr_best=c["lr_best"],
+                            lgb_best=c["lgb_best"], xgb_best=c["xgb_best"],
+                            row={f: k for k, f in enumerate(df["fid"])}, sha=sha_files(path),
+                            n_2026_dropped=int((~keep).sum()))
+            log("ML table: %d rows 2010-2025 (%d rows from 2026 dropped), %d logistic terms"
+                % (len(df), self._ml["n_2026_dropped"], X.shape[1]))
+        return self._ml
+
+    # ---- tools/moe.py rows (gating inputs, 2019-2025 backtest_dev fights)
+    def moe_rows(self):
+        if self._moe_rows is None:
+            import moe as MO
+            with open(os.path.join(ROOT, "out", "moe_cache", "experts.pkl"), "rb") as fh:
+                E = pickle.load(fh)
+            rows = {}
+            for fid, r in zip(E["ids"], E["rows"]):
+                if fid in self.fights:
+                    r = dict(r)
+                    f = self.fights[fid]
+                    r["slugA"], r["slugB"] = f["A"]["slug"], f["B"]["slug"]
+                    rows[fid] = r
+            ids = list(rows)
+            G = MO.gating_matrix([rows[i] for i in ids], None)
+            pre = self.json("preufc.json")
+            snaps = set()
+            if pre:
+                for slug, fr in pre.get("fighters", {}).items():
+                    for s_ in fr.get("snapshots") or []:
+                        if s_ and len(s_) > 3 and s_[3]:
+                            snaps.add((slug, s_[1]))
+            G[:, MO.GATE_NAMES.index("preufc")] = [0.5 * ((rows[i]["slugA"], i) in snaps) + 0.5 * ((rows[i]["slugB"], i) in snaps)
+                                                   for i in ids]
+            self._moe_rows = dict(MO=MO, E=E, G={i: G[k] for k, i in enumerate(ids)})
+        return self._moe_rows
+
+
+# ====================================================================== refit models
+def _fit_lr_warm(X, y, lam, w0=None):
+    """tools/ml.py fit_lr (L2 logistic, no intercept, standardised columns) with an optional warm start."""
+    from scipy.optimize import minimize
+    n, d = X.shape
+    sw = np.full(n, 1.0 / n)
+
+    def f(w):
+        z = X @ w
+        p = 1 / (1 + np.exp(-z))
+        return np.sum(sw * (np.logaddexp(0, z) - y * z)) + 0.5 * lam * w @ w, X.T @ (sw * (p - y)) + lam * w
+    r = minimize(f, np.zeros(d) if w0 is None else w0, jac=True, method="L-BFGS-B",
+                 options={"maxiter": 3000, "gtol": 1e-7, "ftol": 1e-12})
+    return r.x
+
+
+class MLLogistic(Model):
+    """tools/ml.py winner logistic (selected 80 terms, lam and train set chosen by CV on 2010-2023), refit on every
+    decisive fight before the cutoff (2010 on). Antisymmetric design, no intercept."""
+    symmetric = "checked: P(B,A) = 1 - P(A,B) on every replayed fight"
+
+    def __init__(self, ctx, refit="event"):
+        self.ctx, self.refit = ctx, refit
+        T = ctx.ml()
+        self.T = T
+        cfg = T["lr_best"]
+        if cfg.get("train_set") != "all" or cfg.get("recency_half_life_years"):
+            raise SystemExit("ml_lr plugin expects train_set 'all' without recency weights; got %s" % cfg)
+        self.lam = cfg["lam"]
+        self.version = "tools/ml.py logistic, %d terms, lam %g, stage1 %s, refit per %s" % (
+            T["X"].shape[1], self.lam, T["sha"], refit)
+        mlj = ctx.json("ml.json")
+        self._hist = {i: r["lr"] for i, r in mlj["fights"].items() if r.get("set") == "oof" and r.get("lr") is not None}
+        self.coef = None
+
+    def history(self):
+        return self.ctx.dev(self._hist)
+
+    def fit(self, cutoff, P):
+        T = self.T
+        tr = (T["dates"] < cutoff) & T["dec"]
+        X = T["X"][tr]
+        s = X.std(0) + 1e-9
+        w0 = None if self.coef is None else self.coef * s
+        w = _fit_lr_warm(X / s, T["y"][tr], self.lam, w0)
+        self.coef = w / s
+        return {"fit_through": str(T["dates"][tr].max()), "n_train": int(tr.sum())}
+
+    def _rows(self, fids):
+        return [(f, self.T["row"][f]) for f in fids if f in self.T["row"]]
+
+    def predict(self, fids, P):
+        return {f: float(sigm(self.T["X"][k] @ self.coef)) for f, k in self._rows(fids)}
+
+    def predict_swapped(self, fids, P):
+        return {f: float(sigm(-self.T["X"][k] @ self.coef)) for f, k in self._rows(fids)}
+
+
+class MLTrees(Model):
+    """tools/ml.py LightGBM / XGBoost winner model with frozen hyperparameters (chosen on 2010-2023 CV), refit on every
+    decisive fight before the cutoff. Trained on mirrored rows, predictions averaged over both corner orders."""
+    symmetric = "by construction (mirrored rows, both orders averaged)"
+
+    def __init__(self, ctx, kind, refit="month"):
+        self.ctx, self.kind, self.refit = ctx, kind, refit
+        T = ctx.ml()
+        self.T, self.best = T, T["lgb_best" if kind == "lgb" else "xgb_best"]
+        self.version = "tools/ml.py %s %s rounds %d, stage1 %s, refit per %s" % (
+            kind, json.dumps(self.best["cfg"], sort_keys=True), self.best["rounds"], T["sha"], refit)
+        mlj = ctx.json("ml.json")
+        key = "gbm" if kind == "lgb" else "xgb"
+        self._hist = {i: r[key] for i, r in mlj["fights"].items() if r.get("set") == "oof" and r.get(key) is not None}
+        self.m = None
+
+    def history(self):
+        return self.ctx.dev(self._hist)
+
+    def fit(self, cutoff, P):
+        T, M = self.T, self.T["M"]
+        tr = (T["dates"] < cutoff) & T["dec"]
+        if self.kind == "lgb":
+            self.m = M.lgb_fit(dict(self.best["cfg"], learning_rate=M.GBM_LR), T["G0"][tr], T["G1"][tr], T["y"][tr],
+                               self.best["rounds"])
+        else:
+            self.m = M.xgb_fit(dict(self.best["cfg"], eta=M.XGB_ETA), T["G0"][tr], T["G1"][tr], T["y"][tr],
+                               self.best["rounds"])
+        return {"fit_through": str(T["dates"][tr].max()), "n_train": int(tr.sum())}
+
+    def predict(self, fids, P):
+        T, M = self.T, self.T["M"]
+        rows = [(f, T["row"][f]) for f in fids if f in T["row"]]
+        if not rows:
+            return {}
+        idx = [k for _, k in rows]
+        fn = M.lgb_pred if self.kind == "lgb" else M.xgb_pred
+        p = fn(self.m, T["G0"].iloc[idx], T["G1"].iloc[idx])
+        return {f: float(v) for (f, _), v in zip(rows, p)}
+
+    def predict_swapped(self, fids, P):
+        T, M = self.T, self.T["M"]
+        rows = [(f, T["row"][f]) for f in fids if f in T["row"]]
+        if not rows:
+            return {}
+        idx = [k for _, k in rows]
+        fn = M.lgb_pred if self.kind == "lgb" else M.xgb_pred
+        p = fn(self.m, T["G1"].iloc[idx], T["G0"].iloc[idx])
+        return {f: float(v) for (f, _), v in zip(rows, p)}
+
+
+class FeatLR(Model):
+    """tools/moe.py page feature LR ('feat_lr': side-feature differences a fighters.json profile carries, no
+    intercept, C chosen on 2016-2018), refit on every decisive snapshot entry before the cutoff (2010 on)."""
+    symmetric = "checked: P(B,A) = 1 - P(A,B) on every replayed fight"
+
+    def __init__(self, ctx, refit="event"):
+        self.ctx, self.refit = ctx, refit
+        import moe as MO
+        self.MO = MO
+        with open(os.path.join(ROOT, "out", "moe_cache", "prep.pkl"), "rb") as fh:
+            prep = pickle.load(fh)
+        entries = [e for e in prep["entries"] if e["date"] < VAULT_FROM]
+        rows = MO.build_table(entries, prep["keys"], prep["priors_asof"])
+        MO.FEAT_NAMES = None
+        XA, XB, _ = MO.mats(rows)
+        E = ctx.moe_rows()["E"]
+        names = E["lr_page"]["names"]
+        cols = [MO.FEAT_NAMES.index(n) for n in names]
+        self.XA, self.XB = XA[:, cols], XB[:, cols]
+        self.y = np.array([r["y"] for r in rows])
+        self.dates = np.array([r["date"] for r in rows])
+        self.dec = np.isfinite(self.y)
+        self.row = {r["id"]: k for k, r in enumerate(rows)}
+        self.C = E["lr_page"]["C"]
+        self.version = "tools/moe.py page feature LR, %d features, C %g, prep %s, refit per %s" % (
+            len(names), self.C, sha_files(os.path.join(ROOT, "out", "moe_cache", "prep.pkl")), refit)
+        self._hist = {fid: float(p) for fid, d, p in zip(E["ids"], E["dates"], E["pred"]["feat_lr"])
+                      if HIST_FROM <= d < WINDOW[0] and np.isfinite(p)}
+        self.m = None
+
+    def history(self):
+        return self.ctx.dev(self._hist)
+
+    def fit(self, cutoff, P):
+        tr = (self.dates < cutoff) & self.dec
+        self.m = self.MO.SymLR(self.C).fit(self.XA[tr], self.XB[tr], self.y[tr])
+        return {"fit_through": str(self.dates[tr].max()), "n_train": int(tr.sum())}
+
+    def predict(self, fids, P):
+        idx = [(f, self.row[f]) for f in fids if f in self.row]
+        if not idx:
+            return {}
+        k = [j for _, j in idx]
+        p = self.m.predict(self.XA[k], self.XB[k])
+        return {f: float(v) for (f, _), v in zip(idx, p)}
+
+    def predict_swapped(self, fids, P):
+        idx = [(f, self.row[f]) for f in fids if f in self.row]
+        if not idx:
+            return {}
+        k = [j for _, j in idx]
+        p = self.m.predict(self.XB[k], self.XA[k])
+        return {f: float(v) for (f, _), v in zip(idx, p)}
+
+
+# ====================================================================== stackers
+class Stack(Model):
+    """Symmetric logit-linear stack: p = sigmoid(sum_k w_k logit(p_k)), w_k >= 0, no intercept, one weight vector per
+    availability pattern; optional recency half-life (years) and temperature. Refit before every card on every
+    decisive fight from 2019-01-01 to the day before (history rows use each expert's out-of-sample predictions)."""
+    symmetric = "by construction (antisymmetric logits, no intercept)"
+
+    def __init__(self, ctx, experts, h=None, required=None, refit="event"):
+        self.ctx, self.experts, self.h, self.refit = ctx, list(experts), h, refit
+        self.required = list(required or experts)
+        self.version = "linear stack of %s%s" % ("+".join(self.experts), (", half-life %g y" % h) if h else "")
+        self.fits = {}
+        self._train = None
+
+    def _matrix(self, fids, P):
+        L = np.zeros((len(fids), len(self.experts)))
+        M = np.zeros((len(fids), len(self.experts)), bool)
+        for j, e in enumerate(self.experts):
+            pe = P.get(e, {})
+            for i, f in enumerate(fids):
+                v = pe.get(f)
+                if v is not None and np.isfinite(v):
+                    L[i, j] = logit(np.clip(v, PCLIP, 1 - PCLIP))
+                    M[i, j] = True
+        return L, M
+
+    def _weights(self, dates):
+        if not self.h:
+            return np.ones(len(dates))
+        t = np.array([dt.date.fromisoformat(d).toordinal() for d in dates], float)
+        w = 0.5 ** ((t.max() - t) / (365.25 * self.h))
+        return w * len(w) / w.sum()
+
+    def fit(self, cutoff, P):
+        import moe as MO
+        ids = [i for i in self.ctx.order if HIST_FROM <= self.ctx.date[i] < cutoff and self.ctx.y[i] is not None]
+        L, M = self._matrix(ids, P)
+        y = np.array([self.ctx.y[i] for i in ids])
+        w = self._weights([self.ctx.date[i] for i in ids])
+        self._train = (L, M, y, w)
+        self.fits = {}
+        req = [self.experts.index(e) for e in self.required]
+        ok = M[:, req].all(1)
+        self._fit_pattern(tuple(range(len(self.experts))))
+        self._train = (L, M, y, w)
+        return {"fit_through": max(self.ctx.date[i] for i, o in zip(ids, ok) if o), "n_train": int(ok.sum())}
+
+    def _fit_pattern(self, idx):
+        import moe as MO
+        L, M, y, w = self._train
+        ok = M[:, list(idx)].all(1)
+        if ok.sum() < 50:
+            return None
+        self.fits[idx] = MO.LinStack().fit(L[ok][:, list(idx)], y[ok], w[ok]).w
+        return self.fits[idx]
+
+    def predict(self, fids, P):
+        L, M = self._matrix(fids, P)
+        req = [self.experts.index(e) for e in self.required]
+        out = {}
+        for i, f in enumerate(fids):
+            if not M[i, req].all():
+                continue
+            idx = tuple(j for j in range(len(self.experts)) if M[i, j])
+            wv = self.fits.get(idx)
+            if wv is None:
+                wv = self._fit_pattern(idx)
+            if wv is None:
+                continue
+            out[f] = float(sigm(L[i, list(idx)] @ wv))
+        return out
+
+    def weights(self):
+        full = tuple(range(len(self.experts)))
+        w = self.fits.get(full)
+        return None if w is None else {e: round(float(v), 4) for e, v in zip(self.experts, w)}
+
+
+class MoEStack(Model):
+    """tools/moe.py stacker with the configuration data/derived/moe.json chose for a regime ('present' = a market line
+    is an expert, 'absent' = no line): method, hyper-parameters and calibration kind. Refit before every card on every
+    decisive fight from 2019-01-01 to the day before; the calibration is fit on forward-chained out-of-fold stack
+    logits (each year 2021.. predicted by a stacker trained before Jan 1 of that year, the cutoff's own year up to the
+    day before), as tools/moe.py does for its 2025 rolling fit."""
+    symmetric = "by construction (antisymmetric logits, symmetric gates, no intercept)"
+
+    def __init__(self, ctx, experts, regime, refit="event"):
+        """experts: {moe expert name: harness model key}, e.g. {'market': 'market_close', 'ml': 'ml_lr', ...}."""
+        self.ctx, self.map, self.regime, self.refit = ctx, dict(experts), regime, refit
+        mo = ctx.json("moe.json")
+        cfg = mo["model"][regime]
+        self.method, self.hp = cfg["method"], dict(cfg.get("hp") or {})
+        self.cal_kind = (cfg.get("calibration") or {}).get("type", "none")
+        self.names = [e for e in mo["model"]["experts"] if e in self.map] + [e for e in self.map if e not in mo["model"]["experts"]]
+        R = ctx.moe_rows()
+        self.MO, self.Gall = R["MO"], R["G"]
+        self.drops = self.MO.make_drops(self.names)[0]
+        self.version = "tools/moe.py %s %s cal=%s, experts %s" % (
+            self.method, json.dumps(self.hp, sort_keys=True), self.cal_kind,
+            "+".join("%s=%s" % (e, self.map[e]) if e != self.map[e] else e for e in self.names))
+        self._fold_cache = {}
+        self.st, self.cal = None, None
+
+    def _mats(self, fids, P):
+        L = np.zeros((len(fids), len(self.names)))
+        M = np.zeros((len(fids), len(self.names)), bool)
+        for j, e in enumerate(self.names):
+            pe = P.get(self.map[e], {})
+            for i, f in enumerate(fids):
+                v = pe.get(f)
+                if v is not None and np.isfinite(v):
+                    L[i, j] = logit(np.clip(v, PCLIP, 1 - PCLIP))
+                    M[i, j] = True
+        D = self.Gall
+        G = np.array([D[f] if f in D else np.full(len(self.MO.GATE_NAMES), np.nan) for f in fids], float)
+        return L, M, G
+
+    def _gs(self, G):
+        Gn = np.where(np.isfinite(G), G, self.mu)
+        return np.hstack([np.ones((len(G), 1)), (Gn - self.mu) / self.sd])
+
+    def _rows_before(self, cutoff, start=HIST_FROM):
+        return [i for i in self.ctx.order if start <= self.ctx.date[i] < cutoff and self.ctx.y[i] is not None
+                and i in self.Gall]
+
+    def _fit_stacker(self, ids, P):
+        L, M, G = self._mats(ids, P)
+        y = np.array([self.ctx.y[i] for i in ids])
+        yrs = np.array([int(self.ctx.date[i][:4]) for i in ids])
+        ok = M.any(1)
+        st = self.MO.Stacker(self.method, self.names, self.drops, self.hp)
+        return st.fit(L[ok], M[ok], self._gs(G[ok]), y[ok], yrs[ok])
+
+    def _logits(self, st, ids, P):
+        """Stack logits under every availability pattern of this regime (as tools/moe.py's OOF folds)."""
+        L, M, G = self._mats(ids, P)
+        y = np.array([self.ctx.y[i] for i in ids])
+        zs, ys = [], []
+        for d in self.drops:
+            if self.regime == "present" and "market" in d:
+                continue
+            Md = self.MO.drop_mask(M, self.names, d)
+            ok = Md.any(1)
+            if ok.sum():
+                try:
+                    zs.append(self._safe_logit(st, L[ok], Md[ok], self._gs(G[ok])))
+                    ys.append(y[ok])
+                except KeyError:
+                    continue
+        return (np.concatenate(zs), np.concatenate(ys)) if zs else (np.zeros(0), np.zeros(0))
+
+    def _safe_logit(self, st, L, M, G):
+        if self.method != "linear":
+            return st.logit(L, M, G)
+        z = np.zeros(len(L))
+        for i in range(len(L)):
+            pat = frozenset(e for e, m in zip(self.names, M[i]) if m)
+            if pat not in st.lin:                       # untrained pattern: largest trained pattern inside it
+                best = max((p for p in st.lin if p <= pat), key=len, default=None)
+                if best is None:
+                    raise KeyError(sorted(pat))
+                pat = best
+            idx, m = st.lin[pat]
+            z[i] = L[i, idx] @ m.w
+        return z
+
+    def fit(self, cutoff, P):
+        ids = self._rows_before(cutoff)
+        _, _, G = self._mats(ids, P)
+        self.mu = np.nanmean(G, 0)
+        self.sd = np.nanstd(G, 0) + 1e-9
+        self.st = self._fit_stacker(ids, P)
+        self.cal = self.MO.Calib("none").fit(None, None) if self.cal_kind == "none" else None
+        if self.cal_kind != "none":
+            T = int(cutoff[:4])
+            zs, ys = [], []
+            for Y in range(2021, T + 1):
+                start, end = "%d-01-01" % Y, min("%d-01-01" % (Y + 1), cutoff)
+                te = self._rows_before(end, start)
+                if not te:
+                    continue
+                key = (Y, end)
+                if key not in self._fold_cache:
+                    if ("st", Y) not in self._fold_cache:
+                        self._fold_cache[("st", Y)] = self._fit_stacker(self._rows_before(start), P)
+                    self._fold_cache[key] = self._logits(self._fold_cache[("st", Y)], te, P)
+                z, yy = self._fold_cache[key]
+                zs.append(z)
+                ys.append(yy)
+            self.cal = self.MO.Calib(self.cal_kind).fit(np.concatenate(zs), np.concatenate(ys))
+        return {"fit_through": max(self.ctx.date[i] for i in ids), "n_train": len(ids),
+                "calibration": self.cal.export() if hasattr(self.cal, "export") else None}
+
+    def predict(self, fids, P):
+        fids = [f for f in fids if f in self.Gall]
+        L, M, G = self._mats(fids, P)
+        out = {}
+        if self.regime == "present":
+            mi = self.names.index("market")
+            keep = M[:, mi]
+        else:
+            keep = M.any(1)
+        for i, f in enumerate(fids):
+            if not keep[i]:
+                continue
+            z = self._safe_logit(self.st, L[i:i + 1], M[i:i + 1], self._gs(G[i:i + 1]))
+            out[f] = float(self.cal(sigm(z))[0])
+        return out
+
+    def predict_swapped(self, fids, P):
+        Q = {self.map[e]: {f: 1 - v for f, v in P.get(self.map[e], {}).items() if f in set(fids)} for e in self.names}
+        return self.predict(fids, Q)
+
+    def weights(self):
+        if self.method != "linear" or self.st is None:
+            return None
+        full = frozenset(self.names) if self.regime == "present" else frozenset(e for e in self.names if e != "market")
+        best = max((p for p in self.st.lin if p <= full), key=len, default=None)
+        if best is None:
+            return None
+        idx, m = self.st.lin[best]
+        return {self.names[j]: round(float(v), 4) for j, v in zip(idx, m.w)}
+
+
+# ====================================================================== registered models
+def _bt_p(ctx, fn):
+    return {i: fn(f) for i, f in ctx.fights.items()}
+
+
+@register("market_close", group="benchmark", line="close",
+          desc="consensus closing line, power de-vig (data/derived/market.json p_power_close; p_novig_close if absent)")
+def _market_close(ctx):
+    mk = ctx.json("market.json")
+    P = {i: (r.get("p_power_close") or r.get("p_novig_close")) for i, r in mk["fights"].items()}
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="market.json built " + mk["meta"]["built"],
+                  note="known minutes before the fight: a benchmark and a stacking input, never a pre-fight feature")
+
+
+@register("market_open", group="benchmark", line="open", desc="opening line, proportional de-vig (market.json p_novig_open)")
+def _market_open(ctx):
+    mk = ctx.json("market.json")
+    P = {i: r.get("p_novig_open") for i, r in mk["fights"].items()}
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="market.json built " + mk["meta"]["built"])
+
+
+@register("elo", desc="walk-forward Elo (tools/build_db.py: K 44, x1.5 for the first 5 UFC fights; tuned 2019-2023)")
+def _elo(ctx):
+    P = _bt_p(ctx, lambda f: 1 / (1 + 10 ** ((f["B"]["elo"] - f["A"]["elo"]) / 400.0)))
+    return Stored(P, history=P, version="build_db Elo K44 boost1.5, backtest_dev built " + str(ctx.bt_meta.get("built")),
+                  note="sequential: each pre-fight rating includes every earlier result")
+
+
+@register("elo_sig", desc="strike-share margin Elo (tools/ml.py, K and share tuned 2010-2023), walk-forward")
+def _elo_sig(ctx):
+    mlj = ctx.json("ml.json")
+    P = {i: r.get("elo_sig") for i, r in mlj["fights"].items()}
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="ml.json built " + mlj["meta"]["built"])
+
+
+@register("mkt_rating", desc="market rating: walk-forward Kalman filter on earlier closing lines (tools/market.py)")
+def _mkt_rating(ctx):
+    mk = ctx.json("market.json")
+    P = {i: r.get("p_market_rating") for i, r in mk["fights"].items()}
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="market.json built " + mk["meta"]["built"])
+
+
+@register("ratings_whr", desc="round-level WHR (tools/ratings.py whr_rounds; params tuned 2019-2023, stream cut 2024-01-01)")
+def _ratings_whr(ctx):
+    r = ctx.json("ratings.json")
+    if not r:
+        return None
+    P = {i: v["p"].get("whr_rounds") for i, v in r["predictions"].items()}
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="ratings.json built " + r["meta"]["built"],
+                  note="2019-2023 rows are in-sample for its ~20 tuned hyper-parameters")
+
+
+@register("ratings_stack", desc="tools/ratings.py logistic stack of its rating systems (weights fit on 2019-2023)")
+def _ratings_stack(ctx):
+    r = ctx.json("ratings.json")
+    if not r:
+        return None
+    P = {i: v["p"].get("stack") for i, v in r["predictions"].items()}
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="ratings.json built " + r["meta"]["built"],
+                  note="2019-2023 rows are cross-validated by year; 2024+ frozen")
+
+
+@register("ratings_plus", desc="tools/ratings.py rating logits + pre-fight covariates (fit on 2019-2023)")
+def _ratings_plus(ctx):
+    r = ctx.json("ratings.json")
+    if not r:
+        return None
+    P = {i: v["p"].get("ratings_plus") for i, v in r["predictions"].items()}
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="ratings.json built " + r["meta"]["built"])
+
+
+@register("preufc_elo", desc="Elo seeded at debut from the Sherdog pre-UFC record (tools/preufc.py; beta fit on pre-2024 debuts)")
+def _preufc_elo(ctx):
+    d = ctx.json("preufc.json")
+    if not d or "seeded_elo_backtest" not in d:
+        return None
+    P = d["seeded_elo_backtest"]
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="preufc.json built " + d["meta"]["built"])
+
+
+@register("ml_lr", refit="event", desc="tools/ml.py logistic winner model, refit before every card")
+def _ml_lr(ctx):
+    return MLLogistic(ctx, refit=ctx.args.ml_refit)
+
+
+@register("ml_lr_static", desc="tools/ml.py logistic frozen at its 2010-2023 fit (ml.json 'lr'): the no-refit control")
+def _ml_lr_static(ctx):
+    mlj = ctx.json("ml.json")
+    P = {i: r.get("lr") for i, r in mlj["fights"].items()}
+    return Stored(ctx.dev(P), history={i: r["lr"] for i, r in mlj["fights"].items() if r.get("set") == "oof"},
+                  version="ml.json built " + mlj["meta"]["built"])
+
+
+@register("ml_lgb", refit="month", desc="tools/ml.py LightGBM, frozen hyper-parameters, refit before each month's first card")
+def _ml_lgb(ctx):
+    return MLTrees(ctx, "lgb", refit=ctx.args.tree_refit)
+
+
+@register("ml_xgb", refit="month", desc="tools/ml.py XGBoost, frozen hyper-parameters, refit before each month's first card")
+def _ml_xgb(ctx):
+    return MLTrees(ctx, "xgb", refit=ctx.args.tree_refit)
+
+
+@register("feat_lr", refit="event", desc="tools/moe.py page feature LR, refit before every card")
+def _feat_lr(ctx):
+    return FeatLR(ctx, refit=ctx.args.ml_refit)
+
+
+def _engine_factory(ver):
+    def fac(ctx):
+        P, B = {}, {}
+        for split in ("train", "val"):
+            p = os.path.join(DERIVED, "evalv", "%s_%s.json" % (ver, split))
+            if not os.path.exists(p):
+                continue
+            d = json.load(open(p))
+            for r in d["fights"]:
+                if r["id"] in ctx.fights and r.get("pA") is not None:
+                    P[r["id"]] = r["pA"]
+                    if r.get("b7"):
+                        B[r["id"]] = r["b7"]
+            meta = d["meta"]
+        if not any(WINDOW[0] <= ctx.date[i] <= WINDOW[1] for i in P):
+            return None
+        hist = {i: p for i, p in P.items() if ctx.date[i] < WINDOW[0]}
+        return Stored(P, history=hist, bins=B, version="evalv %s (engine %s, params sha %s, %s sims/order)" % (
+            ver, meta.get("engine_version"), str(meta.get("params_sha256", ""))[:12], meta.get("sims")),
+            note="frozen engine (global scales self-calibrated on 2019-2023 train), walk-forward profiles, leak-free "
+                 "learned stat-line rates; 2019-2023 rows are in-sample for those few scales",
+            symmetric="by construction (both corner orders simulated and averaged)")
+    return fac
+
+
+for _p in sorted(glob.glob(os.path.join(DERIVED, "evalv", "v*_val.json"))):
+    _ver = os.path.basename(_p).split("_")[0]
+    register("engine_" + _ver, desc="simulator %s (tools/evalv.js validation run, %s)" % (_ver, os.path.basename(_p)))(
+        _engine_factory(_ver))
+
+
+def _mr_cells_to(cells, R):
+    c = np.asarray(cells, float)
+    aK, aS, bK, bS = c[:R].sum(), c[R:2 * R].sum(), c[2 * R:3 * R].sum(), c[3 * R:4 * R].sum()
+    aD, bD, dr = c[4 * R], c[4 * R + 1], c[4 * R + 2]
+    pa, pb = aK + aS + aD, bK + bS + bD
+    return pa / max(1e-12, pa + pb), [aK, aS, aD, dr, bD, bS, bK]
+
+
+def _mr_factory(variant):
+    def fac(ctx):
+        d = ctx.json("methodround.json")
+        if not d:
+            return None
+        P, B, FT = {}, {}, {}
+        for i, r in d["fights"].items():
+            if i not in ctx.fights:
+                continue
+            key = variant + "_refit" if r.get(variant + "_refit") else variant
+            if not r.get(key):
+                continue
+            ft = r.get("fit_through")
+            if key.endswith("_refit"):
+                ft = "%d-12-31" % (int(r["date"][:4]) - 1)
+            p, b = _mr_cells_to(r[key], r["rounds"] or 3)
+            P[i], B[i], FT[i] = p, b, ft
+        return Stored(P, history={i: p for i, p in P.items() if ctx.date[i] < WINDOW[0]}, bins=B, fit_through=FT,
+                      version="methodround.json %s (annual refit where published) built %s" % (variant, d["meta"]["built"]),
+                      symmetric="by construction (both orientations averaged)")
+    return fac
+
+
+register("mr_S", desc="method/round model S (tools/methodround.py, stats only); P(A) = its A cells / (1 - draw)")(_mr_factory("S"))
+register("mr_SM", line="close", desc="method/round model SM (S + the closing line as a feature)")(_mr_factory("SM"))
+
+register("ml_blend", group="stack", refit="event", needs=("ml_lr", "ml_lgb", "ml_xgb"),
+         desc="tools/ml.py blend of logistic, LightGBM and XGBoost (non-negative logit weights), refit before every card")(
+    lambda ctx: Stack(ctx, ["ml_lr", "ml_lgb", "ml_xgb"]))
+register("stack_elo_ml_mr", group="stack", refit="event", needs=("elo", "ml_lr", "mkt_rating"),
+         desc="the ml.json recommended pre-line stack (Elo + ML + market rating), refit before every card")(
+    lambda ctx: Stack(ctx, ["elo", "ml_lr", "mkt_rating"], required=["elo", "ml_lr"]))
+
+_ENG = sorted([k for k in REGISTRY if k.startswith("engine_v")], key=lambda k: int(k[8:]))
+_ENGK = _ENG[-1] if _ENG else None
+_MOE_BASE = {"mkt_rating": "mkt_rating", "ml": "ml_lr", "feat_lr": "feat_lr", "elo_sig": "elo_sig", "elo": "elo"}
+if _ENGK:
+    _MOE_BASE["engine"] = _ENGK
+
+
+def _moe_reg(key, regime, extra, desc, experimental=False):
+    ex = dict(_MOE_BASE, **extra)
+    register(key, group="stack", line={"market_close": "close", "market_open": "open"}.get(extra.get("market")),
+             refit="event", needs=tuple(sorted(set(ex.values()))), desc=desc, experimental=experimental)(
+        lambda ctx: MoEStack(ctx, ex, regime))
+
+
+_moe_reg("moe_noline", "absent", {}, "the MoE stacker without a line (moe.json 'absent' config), refit before every card")
+_moe_reg("moe_open", "present", {"market": "market_open"}, "the MoE stacker with the opening line as its market expert")
+_moe_reg("moe_close", "present", {"market": "market_close"}, "the MoE stacker with the closing line ('present' config)")
+_moe_reg("moe_noline_plus", "absent", {"ratings": "ratings_whr", "mr": "mr_S"},
+         "experiment: moe_noline + round-level WHR + method/round S as extra experts", experimental=True)
+_moe_reg("moe_close_plus", "present", {"market": "market_close", "ratings": "ratings_whr", "mr": "mr_S"},
+         "experiment: moe_close + round-level WHR + method/round S as extra experts", experimental=True)
+
+
+def load_plugins():
+    sys.modules.setdefault("blindtest", sys.modules[__name__])
+    if not os.path.isdir(PLUGIN_DIR):
+        return []
+    done = []
+    for p in sorted(glob.glob(os.path.join(PLUGIN_DIR, "*.py"))):
+        if os.path.basename(p).startswith("_"):
+            continue
+        spec = importlib.util.spec_from_file_location("blindtest_plugin_" + os.path.basename(p)[:-3], p)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        done.append(os.path.relpath(p, ROOT))
+    return done
+
+
+# ====================================================================== replay
+def topo(keys):
+    out, seen = [], set()
+
+    def visit(k):
+        if k in seen:
+            return
+        seen.add(k)
+        for n in REGISTRY[k]["needs"]:
+            if n in REGISTRY:
+                visit(n)
+        out.append(k)
+    for k in keys:
+        visit(k)
+    return out
+
+
+def due(schedule, last, cutoff):
+    if last is None:
+        return True
+    if schedule == "event":
+        return True
+    if schedule == "month":
+        return cutoff[:7] != last[:7]
+    if schedule == "year":
+        return cutoff[:4] != last[:4]
+    return False
+
+
+class FitCache:
+    """Per-model pickle of {cutoff: (fit info, {fid: p}, {fid: p swapped})} keyed by the model's version string."""
+    def __init__(self, key, version, enabled):
+        self.enabled = enabled
+        os.makedirs(CACHE, exist_ok=True)
+        self.path = os.path.join(CACHE, "%s_%s.pkl" % (key, hashlib.sha256(version.encode()).hexdigest()[:12]))
+        self.d = {}
+        if enabled and os.path.exists(self.path):
+            try:
+                self.d = pickle.load(open(self.path, "rb"))
+            except Exception:
+                self.d = {}
+        self.dirty = False
+
+    def get(self, k):
+        return self.d.get(k) if self.enabled else None
+
+    def put(self, k, v):
+        self.d[k] = v
+        self.dirty = True
+
+    def save(self):
+        if self.dirty:
+            pickle.dump(self.d, open(self.path + ".tmp", "wb"))
+            os.replace(self.path + ".tmp", self.path)
+            self.dirty = False
+
+
+def replay(ctx, keys):
+    t_start = time.time()
+    replay_utc = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    models, skipped = {}, {}
+    for k in topo(keys):
+        spec = REGISTRY[k]
+        if any(n not in models for n in spec["needs"]):
+            skipped[k] = "needs %s" % [n for n in spec["needs"] if n not in models]
+            continue
+        try:
+            m = spec["factory"](ctx)
+        except SystemExit:
+            raise
+        except Exception as ex:
+            skipped[k] = "factory failed: %r" % ex
+            log("skip %s: %r" % (k, ex))
+            continue
+        if m is None:
+            skipped[k] = "inputs not present"
+            continue
+        if spec["refit"] != "never" and getattr(m, "refit", None) is None:
+            m.refit = spec["refit"]
+        models[k] = m
+    order = [k for k in topo(keys) if k in models]
+    log("models: %s" % ", ".join(order))
+    if skipped:
+        log("skipped: %s" % skipped)
+
+    # P[model][fid]: history (strictly out-of-sample 2019-2023) + replay predictions as they are made
+    P = {k: dict(models[k].history()) for k in order}
+    for k in order:
+        bad = [f for f in P[k] if f not in ctx.fights or ctx.date[f] >= WINDOW[0]]
+        if bad:
+            raise SystemExit("%s: history has %d rows outside 2019-2023 dev fights" % (k, len(bad)))
+    rec = {k: {} for k in order}                # fid -> [p, refit_at, fit_through]
+    bins = {k: {} for k in order}
+    fits = {k: [] for k in order}
+    sym = {k: {"max_abs": 0.0, "n": 0} for k in order}
+    caches = {k: FitCache(k, models[k].version, not ctx.args.no_cache) for k in order}
+    last_fit = {k: None for k in order}
+    leak = []
+    events = []
+    by_date = {}
+    for i in ctx.win_ids:
+        by_date.setdefault(ctx.date[i], []).append(i)
+    dates = sorted(by_date)
+    if ctx.args.quick:
+        dates = dates[:8]
+    for n_ev, d in enumerate(dates):
+        fids = by_date[d]
+        ev = {"date": d, "event": ctx.fights[fids[0]]["event"], "n": len(fids), "refit": []}
+        for k in order:
+            m = models[k]
+            sched = getattr(m, "refit", "never") or "never"
+            info = None
+            if sched != "never" and due(sched, last_fit[k], d):
+                cached = caches[k].get(d)
+                if cached is not None and not REGISTRY[k]["group"] == "stack":
+                    info, pr, ps = cached
+                    m._cached_pred = (pr, ps)
+                else:
+                    info = m.fit(d, P) or {}
+                    m._cached_pred = None
+                last_fit[k] = d
+                ev["refit"].append(k)
+                fits[k].append(dict(info, refit_at=d))
+                if info.get("fit_through") and info["fit_through"] >= d:
+                    leak.append("%s fit through %s for the %s card" % (k, info["fit_through"], d))
+            elif sched == "never" and last_fit[k] is None:
+                last_fit[k] = WINDOW[0]
+            cached_pred = getattr(m, "_cached_pred", None)
+            if cached_pred is not None and sched != "never" and last_fit[k] == d:
+                pr, ps = cached_pred
+                pr = {f: v for f, v in pr.items() if f in set(fids)}
+            else:
+                pr = m.predict(fids, P)
+                ps = m.predict_swapped(fids, P) if hasattr(m, "predict_swapped") else None
+                if sched != "never" and last_fit[k] == d and REGISTRY[k]["group"] != "stack":
+                    caches[k].put(d, (fits[k][-1], pr, ps))
+            if ps:
+                for f, v in ps.items():
+                    if f in pr:
+                        sym[k]["max_abs"] = max(sym[k]["max_abs"], abs(pr[f] + v - 1.0))
+                        sym[k]["n"] += 1
+            # monthly models refit on the month's first card keep predicting later cards from the same fit
+            if sched not in ("never", "event") and last_fit[k] != d:
+                pr = m.predict(fids, P)
+            ft_fit = fits[k][-1].get("fit_through") if fits[k] else None
+            for f, v in pr.items():
+                if f not in ctx.fights or ctx.date[f] != d:
+                    continue
+                ft = m.fit_through_of(f) or ft_fit
+                if ft and ft >= d:
+                    leak.append("%s fit through %s predicts %s (%s)" % (k, ft, f, d))
+                rec[k][f] = [float(v), last_fit[k] if sched != "never" else None, ft]
+                P[k][f] = float(v)
+            for f, b in m.bins7(fids).items():
+                bins[k][f] = [float(x) for x in b]
+        events.append(ev)
+        if (n_ev + 1) % 10 == 0 or n_ev == len(dates) - 1:
+            log("event %d/%d %s (%.0f s)" % (n_ev + 1, len(dates), d, time.time() - t_start))
+            for c in caches.values():
+                c.save()
+    for c in caches.values():
+        c.save()
+    if leak:
+        raise SystemExit("look-ahead guard tripped:\n  " + "\n  ".join(leak[:20]))
+    meta_models = {}
+    for k in order:
+        m, spec = models[k], REGISTRY[k]
+        w = m.weights() if hasattr(m, "weights") else None
+        meta_models[k] = {"version": m.version, "desc": spec["desc"], "group": spec["group"], "line": spec["line"],
+                          "refit": getattr(m, "refit", "never"), "needs": list(spec["needs"]),
+                          "experimental": spec["experimental"], "n_fits": len(fits[k]), "note": m.note,
+                          "symmetric": m.symmetric, "n_history": len(P[k]) - len(rec[k]),
+                          "symmetry_check": {"n": sym[k]["n"], "max_abs_p_plus_pswap_minus_1": float("%.3g" % sym[k]["max_abs"])} if sym[k]["n"] else None,
+                          "final_weights": w}
+    return dict(replay_utc=replay_utc, seconds=round(time.time() - t_start), models=meta_models, skipped=skipped,
+                rec=rec, bins=bins, fits=fits, events=events, order=order)
+
+
+# ====================================================================== scoring
+def bin7_of(f):
+    w, m = f["result"]["winner"], f["result"]["method"]
+    if w == "D":
+        return 3
+    if w not in ("A", "B"):
+        return None
+    k = {"KO": 0, "DOC": 0, "SUB": 1, "UD": 2, "SD": 2, "MD": 2}.get(m)
+    if k is None:
+        return None
+    return k if w == "A" else 6 - k
+
+
+def segments_of(f, p_close):
+    a, b = f["A"], f["B"]
+    nmin = min(a.get("n") or 0, b.get("n") or 0)
+    div = f.get("division") or ""
+    grp = "women" if div.startswith("Women") else {"Flyweight": "light (125-145)", "Bantamweight": "light (125-145)",
+                                                   "Featherweight": "light (125-145)", "Light Heavyweight": "heavy (205+)",
+                                                   "Heavyweight": "heavy (205+)"}.get(div, "middle (155-185)")
+    s = {"experience": "1-2 (newcomer)" if nmin <= 2 else ("3-5" if nmin <= 5 else ("6-10" if nmin <= 10 else "11+")),
+         "year": f["date"][:4], "rounds": "5 rounds" if f["rounds"] == 5 else "3 rounds",
+         "title": "title" if f.get("title") else "non-title", "division": grp}
+    if p_close is None:
+        s["market_fav"] = "no closing line"
+    else:
+        q = max(p_close, 1 - p_close)
+        s["market_fav"] = "50-60%" if q < 0.6 else ("60-70%" if q < 0.7 else ("70-80%" if q < 0.8 else "80%+"))
+    return s
+
+
+def calib_slope(p, y):
+    """Mirrored, no-intercept logistic slope of y on logit(p) (1 = calibrated, > 1 underconfident)."""
+    z = logit(p)
+    z, yy = np.r_[z, -z], np.r_[y, 1 - y]
+    b = 1.0
+    for _ in range(50):
+        q = sigm(b * z)
+        g = np.sum((q - yy) * z)
+        h = np.sum(q * (1 - q) * z * z) + 1e-12
+        b -= g / h
+        if abs(g / h) < 1e-10:
+            break
+    return float(b)
+
+
+def basic_metrics(p, y):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    ll = -(y * np.log(p) + (1 - y) * np.log(1 - p))
+    acc = np.where(np.abs(p - 0.5) < 1e-12, 0.5, ((p > 0.5) == (y > 0.5)).astype(float))
+    pm, ym = np.r_[p, 1 - p], np.r_[y, 1 - y]
+    bins = np.minimum((pm * 10).astype(int), 9)
+    ece = sum(abs(pm[bins == b].mean() - ym[bins == b].mean()) * (bins == b).mean() for b in range(10) if (bins == b).any())
+    return {"n": int(len(y)), "log_loss": r5(ll.mean()), "brier": r5(np.mean((p - y) ** 2)), "accuracy": r4(acc.mean()),
+            "ece": r4(ece), "slope": r4(calib_slope(p, y))}
+
+
+def calib_table(p, y, nb=10):
+    pm, ym = np.r_[p, 1 - p], np.r_[y, 1 - y]
+    bins = np.minimum((pm * nb).astype(int), nb - 1)
+    out = []
+    for b in range(nb // 2, nb):
+        s = bins == b
+        if s.sum():
+            out.append({"bin": "%d-%d%%" % (b * 100 // nb, (b + 1) * 100 // nb), "n": int(s.sum()),
+                        "pred": r4(pm[s].mean()), "obs": r4(ym[s].mean())})
+    return out
+
+
+class Boot:
+    """Event-cluster bootstrap with one fixed set of resampling weights over the window's event dates."""
+    def __init__(self, clusters_all, B, seed=7):
+        self.uc = sorted(set(clusters_all))
+        self.ix = {c: k for k, c in enumerate(self.uc)}
+        rng = np.random.default_rng(seed)
+        C = len(self.uc)
+        draws = rng.integers(0, C, (B, C))
+        self.W = np.zeros((B, C))
+        np.add.at(self.W, (np.repeat(np.arange(B), C), draws.ravel()), 1.0)
+
+    def ci(self, vals, clusters):
+        """Mean of vals with a 95% CI (resampling events; fights in unsampled events drop out)."""
+        k = np.array([self.ix[c] for c in clusters])
+        S = np.bincount(k, weights=vals, minlength=len(self.uc))
+        N = np.bincount(k, minlength=len(self.uc)).astype(float)
+        num, den = self.W @ S, self.W @ N
+        ok = den > 0
+        est = num[ok] / den[ok]
+        lo, hi = np.percentile(est, [2.5, 97.5])
+        return {"est": r5(vals.mean()), "lo": r5(lo), "hi": r5(hi), "p_gt0": r4(np.mean(est > 0))}
+
+
+def score(ctx, R, B_boot=2000):
+    rec, order, models = R["rec"], R["order"], R["models"]
+    close = {f: v[0] for f, v in rec.get("market_close", {}).items()}
+    win_dec = [i for i in ctx.win_ids if ctx.y[i] is not None and (not R.get("quick_dates") or ctx.date[i] in R["quick_dates"])]
+    if R.get("quick_dates"):
+        win_dec = [i for i in win_dec if ctx.date[i] in set(R["quick_dates"])]
+    seg = {i: segments_of(ctx.fights[i], close.get(i)) for i in win_dec}
+    boot = Boot([ctx.date[i] for i in win_dec], B_boot)
+    yv = {i: ctx.y[i] for i in win_dec}
+
+    def arr(k, ids):
+        return np.array([rec[k][i][0] for i in ids]), np.array([yv[i] for i in ids])
+
+    def lls(k, ids):
+        p, y = arr(k, ids)
+        p = np.clip(p, 1e-6, 1 - 1e-6)
+        return -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+    out = {"n_window_decisive": len(win_dec), "own_coverage": {}, "common": {}, "paired": {}, "segments": {},
+           "calibration": {}, "cumulative": {}, "seven_bin": {}, "by_year": {}}
+    for k in order:
+        ids = [i for i in win_dec if i in rec[k]]
+        if len(ids) < 20:
+            continue
+        p, y = arr(k, ids)
+        m = basic_metrics(p, y)
+        m["coverage"] = r4(len(ids) / len(win_dec))
+        m["ci"] = boot.ci(lls(k, ids), [ctx.date[i] for i in ids])
+        out["own_coverage"][k] = m
+    # common set: every non-experimental model with >= 95% coverage (the newcomer-only and partial models are left out)
+    head = [k for k in order if k in out["own_coverage"] and out["own_coverage"][k]["coverage"] >= 0.95]
+    common = [i for i in win_dec if all(i in rec[k] for k in head)]
+    out["common"]["models"] = head
+    out["common"]["n"] = len(common)
+    out["common"]["n_events"] = len(set(ctx.date[i] for i in common))
+    out["common"]["metrics"] = {}
+    cl = [ctx.date[i] for i in common]
+    for k in head:
+        p, y = arr(k, common)
+        m = basic_metrics(p, y)
+        m["ci"] = boot.ci(lls(k, common), cl)
+        out["common"]["metrics"][k] = m
+        out["calibration"][k] = calib_table(p, y)
+    refs = [r for r in ("market_close", "market_open", "elo", "ml_lr", "moe_noline") if r in out["own_coverage"]]
+    for k in out["own_coverage"]:
+        out["paired"][k] = {}
+        for r in refs:
+            if r == k:
+                continue
+            ids = [i for i in win_dec if i in rec[k] and i in rec[r]]
+            if len(ids) < 20:
+                continue
+            d = lls(k, ids) - lls(r, ids)
+            c = boot.ci(d, [ctx.date[i] for i in ids])
+            c["n"] = len(ids)
+            out["paired"][k][r] = c
+    # segments (common set)
+    for dim in ("experience", "year", "rounds", "title", "division", "market_fav"):
+        levels = sorted(set(seg[i][dim] for i in common))
+        out["segments"][dim] = {}
+        for lv in levels:
+            ids = [i for i in common if seg[i][dim] == lv]
+            row = {"n": len(ids)}
+            for k in head:
+                row[k] = r5(lls(k, ids).mean())
+            if "market_close" in head and len(ids) >= 20:
+                for k in head:
+                    if k != "market_close":
+                        d = lls(k, ids) - lls("market_close", ids)
+                        row.setdefault("d_close", {})[k] = boot.ci(d, [ctx.date[i] for i in ids])
+            out["segments"][dim][lv] = row
+    # newcomer table on each model's own coverage (includes partial-coverage models)
+    out["newcomers_own"] = {}
+    for k in out["own_coverage"]:
+        ids = [i for i in win_dec if i in rec[k] and seg[i]["experience"].startswith("1-2")]
+        if len(ids) >= 20:
+            p, y = arr(k, ids)
+            out["newcomers_own"][k] = basic_metrics(p, y)
+    # cumulative curves on the common set, event by event
+    ev_dates = sorted(set(cl))
+    cum = {"dates": ev_dates, "n": [], "log_loss": {k: [] for k in head}, "d_close": {k: [] for k in head},
+           "events_beating_close": {}}
+    L = {k: lls(k, common) for k in head}
+    dates_c = np.array(cl)
+    for d in ev_dates:
+        s = dates_c <= d
+        cum["n"].append(int(s.sum()))
+        for k in head:
+            cum["log_loss"][k].append(r5(L[k][s].mean()))
+            if "market_close" in head:
+                cum["d_close"][k].append(r5((L[k][s] - L["market_close"][s]).mean()))
+    if "market_close" in head:
+        for k in head:
+            per = [(L[k][dates_c == d] - L["market_close"][dates_c == d]).mean() for d in ev_dates]
+            cum["events_beating_close"][k] = int(sum(1 for v in per if v < 0))
+    out["cumulative"] = cum
+    for yv_ in ("2024", "2025"):
+        ids = [i for i in common if ctx.date[i].startswith(yv_)]
+        out["by_year"][yv_] = {k: r5(lls(k, ids).mean()) for k in head}
+    # 7-bin (models that publish bins), on the fights where they all do
+    b7 = {i: bin7_of(ctx.fights[i]) for i in ctx.win_ids}
+    bk = [k for k in order if len([i for i in R["bins"].get(k, {}) if i in b7]) >= 0.95 * len(ctx.win_ids) * (0.0 if R.get("quick_dates") else 1.0) and R["bins"].get(k)]
+    ids7 = [i for i in ctx.win_ids if b7[i] is not None and all(i in R["bins"][k] for k in bk)]
+    if R.get("quick_dates"):
+        ids7 = [i for i in ids7 if ctx.date[i] in set(R["quick_dates"])]
+    if bk and ids7:
+        cl7 = [ctx.date[i] for i in ids7]
+        L7 = {}
+        for k in bk:
+            v = []
+            for i in ids7:
+                b = np.clip(np.asarray(R["bins"][k][i], float), 1e-6, None)
+                b = b / b.sum()
+                v.append(-math.log(b[b7[i]]))
+            L7[k] = np.array(v)
+            out["seven_bin"][k] = boot.ci(L7[k], cl7)
+        out["seven_bin"]["n"] = len(ids7)
+        if len(bk) > 1:
+            ref = "mr_S" if "mr_S" in bk else bk[0]
+            out["seven_bin"]["paired_vs_" + ref] = {k: boot.ci(L7[k] - L7[ref], cl7) for k in bk if k != ref}
+    return out
+
+
+# ====================================================================== report
+def fmt_ci(c, d=4):
+    if not c:
+        return ""
+    return ("%." + str(d) + "f [%." + str(d) + "f, %." + str(d) + "f]") % (c["est"], c["lo"], c["hi"])
+
+
+def fmt_d(c):
+    if not c:
+        return ""
+    return "%+.4f [%+.4f, %+.4f]" % (c["est"], c["lo"], c["hi"])
+
+
+def write_report(doc):
+    S, M = doc["scores"], doc["meta"]["models"]
+    lines = []
+    A = lines.append
+    cm = S["common"]
+    A("_Generated by `python3 tools/blindtest.py` (replay %s UTC, %d events, %d decisive fights in the window; "
+      "common set %d fights on %d events). Lower log loss is better; differences are model minus reference, "
+      "negative = the model is better; 95%% event-cluster bootstrap CIs (%d resamples)._"
+      % (doc["meta"]["replay_utc"].replace("+00:00", ""), len(doc["events"]), S["n_window_decisive"], cm["n"],
+         cm["n_events"], doc["meta"]["bootstrap"]))
+    A("")
+    A("### Cumulative blind scoreboard, 2024-01-01..2025-12-31 (common set)")
+    A("")
+    A("| # | model | info | log loss [95% CI] | vs close | vs Elo | Brier | acc | slope | ECE |")
+    A("|---|---|---|---|---|---|---|---|---|---|")
+    rows = sorted(cm["metrics"].items(), key=lambda kv: kv[1]["log_loss"])
+    for n, (k, m) in enumerate(rows, 1):
+        info = {"close": "close", "open": "open"}.get(M[k]["line"], "no line")
+        pc = S["paired"].get(k, {}).get("market_close")
+        pe = S["paired"].get(k, {}).get("elo")
+        A("| %d | `%s`%s | %s | %s | %s | %s | %.4f | %.1f%% | %.2f | %.3f |" % (
+            n, k, " (exp.)" if M[k]["experimental"] else "", info, fmt_ci(m["ci"]), fmt_d(pc) if pc else "-",
+            fmt_d(pe) if pe else "-", m["brier"], 100 * m["accuracy"], m["slope"], m["ece"]))
+    A("")
+    A("Models outside the common set (own coverage):")
+    A("")
+    A("| model | n | coverage | log loss [95% CI] | vs close (same fights) |")
+    A("|---|---|---|---|---|")
+    for k, m in sorted(S["own_coverage"].items(), key=lambda kv: kv[1]["log_loss"]):
+        if k in cm["metrics"]:
+            continue
+        pc = S["paired"].get(k, {}).get("market_close")
+        A("| `%s` | %d | %.0f%% | %s | %s |" % (k, m["n"], 100 * m["coverage"], fmt_ci(m["ci"]), fmt_d(pc) if pc else "-"))
+    A("")
+    if "ml_lr" in S["paired"]:
+        A("Paired against the replayed ML logistic (`ml_lr`) and the no-line MoE (`moe_noline`), same fights:")
+        A("")
+        A("| model | vs ml_lr | vs moe_noline |")
+        A("|---|---|---|")
+        for k, _ in rows:
+            a = S["paired"].get(k, {}).get("ml_lr")
+            b = S["paired"].get(k, {}).get("moe_noline")
+            A("| `%s` | %s | %s |" % (k, fmt_d(a) if a else "-", fmt_d(b) if b else "-"))
+        A("")
+    cu = S["cumulative"]
+    A("### Cumulative log loss over time (common set; checkpoints at the last card of each quarter)")
+    A("")
+    keys = [k for k, _ in rows]
+    show = [k for k in ("market_close", "moe_close", "moe_open", "market_open", "moe_noline", "stack_elo_ml_mr",
+                        "ml_blend", "ml_lr", "feat_lr", "ratings_stack", "mr_S", _ENGK, "elo") if k in keys]
+    A("| through | n | " + " | ".join("`%s`" % k for k in show) + " |")
+    A("|---|---|" + "---|" * len(show))
+    qs = {}
+    for j, d in enumerate(cu["dates"]):
+        qs["%s Q%d" % (d[:4], (int(d[5:7]) - 1) // 3 + 1)] = j
+    for q, j in qs.items():
+        A("| %s (%s) | %d | " % (q, cu["dates"][j], cu["n"][j]) + " | ".join("%.4f" % cu["log_loss"][k][j] for k in show) + " |")
+    A("")
+    if cu.get("d_close"):
+        A("Cumulative paired difference vs the closing line at the same checkpoints, and the number of the %d cards on "
+          "which the model's mean log loss beat the close:" % len(cu["dates"]))
+        A("")
+        show2 = [k for k in show if k != "market_close"]
+        A("| through | " + " | ".join("`%s`" % k for k in show2) + " |")
+        A("|---|" + "---|" * len(show2))
+        for q, j in qs.items():
+            A("| %s | " % q + " | ".join("%+.4f" % cu["d_close"][k][j] for k in show2) + " |")
+        A("| cards beating the close | " + " | ".join("%d" % cu["events_beating_close"].get(k, 0) for k in show2) + " |")
+        A("")
+    A("### By segment (common set, log loss)")
+    A("")
+    show3 = [k for k in ("market_close", "moe_close", "market_open", "moe_noline", "ml_lr", "ratings_stack", "mr_S", _ENGK, "elo") if k in keys]
+    for dim, lab in (("experience", "less experienced man's prior UFC fights"), ("market_fav", "closing-line favourite"),
+                     ("year", "year"), ("rounds", "scheduled rounds"), ("title", "title"), ("division", "division group")):
+        A("**%s**" % lab)
+        A("")
+        A("| segment | n | " + " | ".join("`%s`" % k for k in show3) + " | moe_noline - close |")
+        A("|---|---|" + "---|" * len(show3) + "---|")
+        for lv, row in S["segments"][dim].items():
+            dc = (row.get("d_close") or {}).get("moe_noline")
+            A("| %s | %d | " % (lv, row["n"]) + " | ".join("%.4f" % row[k] for k in show3) + " | %s |" % (fmt_d(dc) if dc else "-"))
+        A("")
+    if S.get("newcomers_own"):
+        A("Newcomer fights (the less experienced man has 1-2 prior UFC fights), each model's own coverage:")
+        A("")
+        A("| model | n | log loss | Brier | acc | slope |")
+        A("|---|---|---|---|---|---|")
+        for k, m in sorted(S["newcomers_own"].items(), key=lambda kv: kv[1]["log_loss"]):
+            A("| `%s` | %d | %.4f | %.4f | %.1f%% | %.2f |" % (k, m["n"], m["log_loss"], m["brier"], 100 * m["accuracy"], m["slope"]))
+        A("")
+    A("### Calibration (mirrored; favourite side)")
+    A("")
+    show4 = [k for k in ("market_close", "moe_close", "moe_noline", "ml_lr", _ENGK, "elo") if k in S["calibration"]]
+    bins = [b["bin"] for b in S["calibration"][show4[0]]] if show4 else []
+    A("| bin | " + " | ".join("`%s` n / pred / obs" % k for k in show4) + " |")
+    A("|---|" + "---|" * len(show4))
+    for b in bins:
+        cells = []
+        for k in show4:
+            r = next((x for x in S["calibration"][k] if x["bin"] == b), None)
+            cells.append("%d / %.3f / %.3f" % (r["n"], r["pred"], r["obs"]) if r else "-")
+        A("| %s | " % b + " | ".join(cells) + " |")
+    A("")
+    if S.get("seven_bin"):
+        sb = S["seven_bin"]
+        A("### 7-bin outcome (A KO / SUB / DEC, draw, B DEC / SUB / KO), n = %d" % sb["n"])
+        A("")
+        A("| model | 7-bin log loss [95% CI] | vs mr_S |")
+        A("|---|---|---|")
+        pv = sb.get("paired_vs_mr_S", {})
+        for k, c in sb.items():
+            if isinstance(c, dict) and "est" in c:
+                A("| `%s` | %s | %s |" % (k, fmt_ci(c), fmt_d(pv[k]) if k in pv else "-"))
+        A("")
+    A("### Models, versions and refit schedules")
+    A("")
+    A("| model | group | refit | fits | version | symmetry |")
+    A("|---|---|---|---|---|---|")
+    for k, m in M.items():
+        sc = m.get("symmetry_check")
+        A("| `%s` | %s | %s | %d | %s | %s |" % (k, m["group"], m["refit"], m["n_fits"], m["version"].replace("|", "/"),
+                                              ("swap-checked on %d fights, max dev %.1e" % (sc["n"], sc["max_abs_p_plus_pswap_minus_1"])) if sc else m["symmetric"]))
+    A("")
+    wts = {k: m["final_weights"] for k, m in M.items() if m.get("final_weights")}
+    if wts:
+        A("Final stack weights (last refit, before the 2025-12-13 card; full availability pattern):")
+        A("")
+        for k, w in wts.items():
+            A("- `%s`: %s" % (k, ", ".join("%s %.3f" % (e, v) for e, v in w.items())))
+        A("")
+    body = "\n".join(lines)
+    if os.path.exists(REPORT_MD):
+        txt = open(REPORT_MD).read()
+        a, b = "<!-- BEGIN AUTO (tools/blindtest.py) -->", "<!-- END AUTO -->"
+        if a in txt and b in txt:
+            txt = txt.split(a)[0] + a + "\n" + body + "\n" + b + txt.split(b, 1)[1]
+            open(REPORT_MD, "w").write(txt)
+            return
+    open(REPORT_MD, "w").write("# Standing blind test\n\n<!-- BEGIN AUTO (tools/blindtest.py) -->\n" + body +
+                               "\n<!-- END AUTO -->\n")
+
+
+# ====================================================================== main
+def build_doc(ctx, R, S, args, plugins):
+    fights = {}
+    for i in ctx.win_ids:
+        f = ctx.fights[i]
+        ps = {k: R["rec"][k][i] for k in R["order"] if i in R["rec"][k]}
+        if not ps:
+            continue
+        fights[i] = {"date": f["date"], "event": f["event"], "A": f["A"]["slug"], "B": f["B"]["slug"],
+                     "y": ctx.y[i], "bin7": bin7_of(f), "nA": f["A"].get("n"), "nB": f["B"].get("n"),
+                     "p": {k: [r4(v[0]), v[1], v[2]] for k, v in ps.items()}}
+    meta = {"tool": "tools/blindtest.py", "version": TOOL_VERSION, "replay_utc": R["replay_utc"],
+            "replay_seconds": R["seconds"], "window": list(WINDOW), "history_from": HIST_FROM,
+            "vault_from": VAULT_FROM, "bootstrap": args.boot,
+            "protocol": "event-by-event walk-forward replay: before each UFC event date every model is refit/updated "
+                        "with data strictly before that date (per its schedule) and predicts that card; fights dated "
+                        "2026-01-01 or later are never read; history rows (2019-2023) carry each model's strictly "
+                        "out-of-sample predictions and train only the stackers",
+            "orientation": "p = P(first-named fighter A wins | decisive), A as in backtest_dev.json; scoring uses the "
+                           "probability given to the actual winner (symmetric)",
+            "keys": {"fights[id].p[model]": "[P(A), refit cutoff (null = frozen/sequential), fit_through]",
+                     "fits[model]": "every refit: refit_at (the card date), fit_through, n_train"},
+            "models": R["models"], "skipped": R["skipped"], "plugins": plugins,
+            "inputs": {n: sha_files(os.path.join(DERIVED, n)) for n in
+                       ("backtest_dev.json", "ml.json", "market.json", "moe.json", "ratings.json", "methodround.json",
+                        "preufc.json")}}
+    return {"meta": meta, "events": R["events"], "fits": R["fits"], "fights": fights, "scores": S}
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("cmd", choices=["list", "replay", "score"])
+    ap.add_argument("--models", default=None, help="comma-separated model keys (default: all registered)")
+    ap.add_argument("--ml-refit", default="event", choices=["event", "month", "year"])
+    ap.add_argument("--tree-refit", default="month", choices=["event", "month", "year"])
+    ap.add_argument("--boot", type=int, default=2000)
+    ap.add_argument("--no-cache", action="store_true")
+    ap.add_argument("--quick", action="store_true", help="first 8 cards only, 300 resamples, no outputs written "
+                                                         "unless --out is given")
+    ap.add_argument("--out", default=None)
+    args = ap.parse_args()
+    plugins = load_plugins()
+    if args.cmd == "list":
+        for k, s in REGISTRY.items():
+            print("%-18s %-9s refit=%-6s line=%-5s %s%s" % (k, s["group"], s["refit"], s["line"] or "-", s["desc"],
+                                                         " [experimental]" if s["experimental"] else ""))
+        return
+    out = args.out or (None if args.quick else OUT_JSON)
+    if args.quick:
+        args.boot = min(args.boot, 300)
+    ctx = Ctx(args)
+    if args.cmd == "score":
+        doc = json.load(open(args.out or OUT_JSON))
+        R = {"rec": {}, "bins": {}, "order": list(doc["meta"]["models"]), "models": doc["meta"]["models"]}
+        for k in R["order"]:
+            R["rec"][k] = {i: v["p"][k] for i, v in doc["fights"].items() if k in v["p"]}
+        R["bins"] = doc.get("_bins", {})
+        doc["scores"] = score(ctx, R, args.boot)
+        doc["meta"]["bootstrap"] = args.boot
+        wjson(args.out or OUT_JSON, doc)
+        write_report(doc)
+        log("rescored -> %s, %s" % (args.out or OUT_JSON, REPORT_MD))
+        return
+    keys = [k.strip() for k in args.models.split(",")] if args.models else list(REGISTRY)
+    for k in keys:
+        if k not in REGISTRY:
+            raise SystemExit("unknown model %s (python3 tools/blindtest.py list)" % k)
+    log("universe: %d dev fights; window %s..%s: %d fights (%d decisive) on %d cards; history %d fights"
+        % (len(ctx.fights), WINDOW[0], WINDOW[1], len(ctx.win_ids), sum(ctx.y[i] is not None for i in ctx.win_ids),
+           len(set(ctx.date[i] for i in ctx.win_ids)), len(ctx.hist_ids)))
+    R = replay(ctx, keys)
+    if args.quick:
+        R["quick_dates"] = [e["date"] for e in R["events"]]
+    S = score(ctx, R, args.boot)
+    doc = build_doc(ctx, R, S, args, plugins)
+    doc["_bins"] = {k: {i: [r4(x) for x in b] for i, b in v.items() if i in doc["fights"]} for k, v in R["bins"].items() if v}
+    for k, m in sorted(S["common"]["metrics"].items(), key=lambda kv: kv[1]["log_loss"]):
+        pc = S["paired"].get(k, {}).get("market_close")
+        log("  %-18s ll %.4f  acc %.3f  vs close %s" % (k, m["log_loss"], m["accuracy"], fmt_d(pc) if pc else "-"))
+    if out:
+        wjson(out, doc)
+        if out == OUT_JSON:
+            write_report(doc)
+        log("wrote %s (%d fights) and %s" % (out, len(doc["fights"]), REPORT_MD if out == OUT_JSON else "no report"))
+
+
+if __name__ == "__main__":
+    main()
