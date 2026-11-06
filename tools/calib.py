@@ -1392,6 +1392,10 @@ def stage_export(args):
                              "production_cfg[head]": "walk-forward refit config for fit_from_history / "
                                                      "Calib.fitFromHistory ({kind: none} today)",
                              "monitor": "trailing slope monitor settings read by the pre-registered rule 6.5.1 (b)",
+                             "rule": "operating characteristics of the pre-registered drift rule (synthetic outcomes "
+                                     "on 2021-2023 inputs) and the 2015-2023 replay of the ledger monitor",
+                             "test_vectors": "synthetic vectors for tests/test_calib.js (no fight data)",
+                             "confirm": "the single 2024-2025 look, after data/derived/calib_prereg.json was committed",
                              "fights": "per backtest fight 2019-2025 (blind-test plugin): set hist/valid and the "
                                        "heads' predictions (incumbent = chosen; *_wf = walk-forward trailing "
                                        "temperature, experimental)"}},
@@ -1399,8 +1403,9 @@ def stage_export(args):
            "production": production, "production_cfg": production_cfg,
            "monitor": {"window": 200, "z": 1.96, "ci": "Wald (observed information), mirrored no-intercept slope",
                        "rule": "docs/V6_V10_PLAN.md 6.5.1 (b): switch the production no-line stack to h 3, T 1 when the "
-                               "trailing-200 CI includes 1 at two consecutive quarterly checks (pre-registered; see "
-                               "rule.findings for its operating characteristics)"},
+                               "trailing-200 CI includes 1 at two consecutive quarterly checks (pre-registered; "
+                               "drift_rule_b / Calib.ruleB compute it; rule.scenarios holds its operating "
+                               "characteristics, research/model_calib.md section 4)"},
            "drift": {"by_year": {c: {Y: {"n": v["n"], "slope": v["slope"], "slope_ci": v["slope_ci"],
                                          "log_loss": v["log_loss"]} for Y, v in d.items()} for c, d in drift["by_year"].items()},
                      "pooled_2012_2023": drift["pooled"], "persistence": drift["persistence"],

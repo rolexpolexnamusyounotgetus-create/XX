@@ -17,9 +17,10 @@ Nov 6, 2026, ~10:45 pm UTC. Code: `tools/calib.py`. Output: `data/derived/calib.
 2. **Before 2024, the year-to-year drift in calibration was noise you could not exploit.**
    - **Rating systems and both lines:** their yearly slopes (2012-2023) spread no more than one year's sampling noise
      (excess sd 0 to 0.05). The lag-1 correlation of log slopes is -0.23 to +0.40.
-   - **ML fits, the market rating and the stacks:** they show some excess spread (0.11-0.24). Most of it is the small-sample overconfidence
-     of the 2012-2016 fits plus one episode: in 2017 every model family was underconfident (no-line stack 1.73) and
-     the close was not (0.97). It reverted by 2019 (0.81).
+   - **ML fits, the market rating and the stacks:** they show some excess spread (0.11-0.24). Most of it is the
+     small-sample overconfidence of the 2012-2016 fits plus one episode. In 2017 the rating, market-rating, ML and
+     stack families were underconfident (no-line stack 1.73) while the close was not (0.97). It reverted by 2019
+     (0.81).
    - **Rescaling by last year's slope:** it never helped any family in 2014-2023 (T2). For the no-line stack it hurt:
      +0.0033 [+0.0002, +0.0064].
 3. **2024-25, scored once: the choice is the incumbents** (T5). They reproduce ml2's published static numbers.
@@ -56,8 +57,9 @@ Nov 6, 2026, ~10:45 pm UTC. Code: `tools/calib.py`. Output: `data/derived/calib.
      - **(iii) Rule (b) is not a test.** A trailing-200 slope has a Wald CI of about ±0.46, so its CI includes 1
        almost always. In every scenario from slope 1.0 to 1.6, rule (b) fires at its first opportunity with probability
        0.60-0.91 and within four checks with probability 0.85-0.99. That includes persistent 2024-25-like
-       underconfidence (0.88 / 0.98). The 2015-2023 replay had the CI include 1 at 31 of 36 quarterly checks. At about
-       40 ledger bouts a month, expect the first check at 2027-06-30 and the switch at 2027-09-30.
+       underconfidence (0.88 / 0.98). The 2015-2023 replay had the CI include 1 at 31 of 36 quarterly checks. At 40-50
+       ledger bouts a month from Nov 7, 2026, the first ready check falls on 2027-03-31 or 2027-06-30, and the switch
+       most likely one quarter later.
      - The rule's text also does not name which ledger column is "the production no-line stack". fwd-4.1's
        `p_a_noline` is the MoE stack (h 1.5, T 1.17); `ml2_stack_noline_prod` is the ML v2 page stack. v9 should name
        one.
@@ -392,7 +394,8 @@ CI excluded 1 only at 2015-03-31, 2017-06-30, 2017-09-30, 2017-12-31 (the 2017 e
    4.2 would call that "inconclusive".
 4. **Rule (b) is close to an unconditional switch two quarters after the ledger reaches 200 scored bouts.** It fires
    by the fourth check with probability 0.85 or more in every scenario. On plan 6.4's count (10-14 bouts a card, about
-   40 a month), the first check with 200 bouts is 2027-06-30 and the likely switch is 2027-09-30. A one-way switch
+   40-50 a month from Nov 7, 2026), the first check with 200 bouts is 2027-03-31 or 2027-06-30, and the likely switch
+   is the quarter after. A one-way switch
    trivially satisfies plan 4's "fires at most once" replay criterion, but here that criterion says nothing.
 5. **For v9, recorded here and not adopted:**
    - test the production stack's slope against its own break-even (about 0.97), or test the validated stack's slope
