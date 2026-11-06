@@ -1256,7 +1256,7 @@ def engine_eval(args):
         fj = json.load(open(os.path.join(OUT, "fighters.json")))
         offr = [nm for nm, v in out["results"]["recommendation"]["families"].items() if v["engine_path_lambda"] == 0]
         vg = {"id": "volk_gaethje", "date": "2026-11-06", "division": "Lightweight", "prior_division": "Lightweight",
-              "rounds": 5, "title": True, "ml": None}
+              "rounds": 5, "title": True, "ml": None, "hypothetical": True}
         for t, slug in (("A", "alexander-volkanovski"), ("B", "justin-gaethje")):
             pr = dict(fj["fighters"][slug])
             pr["oppadj"] = gate_factors(out["roster"][slug], offr)

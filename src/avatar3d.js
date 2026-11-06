@@ -728,7 +728,7 @@
       if (!self.cfg.ref || looks.hairMode === "shell") self.makeStrands();
       self.initRetarget();
       self.measure();
-      self.group.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; } });
+      self.group.traverse(function (o) { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = !o.userData.noShadow; o.frustumCulled = false; } });
       return self;
     });
   };
@@ -1453,11 +1453,11 @@
           "  float near = step(sq1, c) * step(h, len) * inCell;\n" +
           "  float farA = step(dith, c * (1.0 - h * 0.85) * 0.9);\n" +
           "  diffuseColor.a = mix(near, farA, farK);\n" +
-          "  diffuseColor.rgb *= (0.5 + 0.5 * h) * (0.82 + 0.36 * sq2); }\n" +
+          "  diffuseColor.rgb *= (0.62 + 0.45 * h) * (0.82 + 0.36 * sq2); }\n" +
           "#include <alphatest_fragment>");
     };
     mat.customProgramCacheKey = function () { return "strands-v1"; };
-    var mesh = new T.SkinnedMesh(g, mat); mesh.name = name; mesh.castShadow = false;
+    var mesh = new T.SkinnedMesh(g, mat); mesh.name = name; mesh.castShadow = false; mesh.userData.noShadow = true;
     if (md.length) { mesh.updateMorphTargets(); this.morphMeshes.push(mesh); }
     this.group.add(mesh); mesh.bind(this.skeleton, new M4());
     this.meshes.push(mesh); this.disposables.push(g, mat);
@@ -1820,17 +1820,29 @@
     // forward kinematics for the torso, then limbs
     this.fk(bi.Spine); this.fk(bi.Spine1); this.fk(bi.Spine2); this.fk(bi.Neck); this.fk(bi.Head); this.fk(bi.LeftShoulder); this.fk(bi.RightShoulder);
     this.fk(bi.LeftUpLeg); this.fk(bi.RightUpLeg); this.fk(bi.LeftArm); this.fk(bi.RightArm);
-    // shoulder shrug when the upper arm is raised
+    // shoulders: shrug when the upper arm is raised; roll the shoulders forward around the chin when the
+    // hands come up in front (the guard), which also spreads the bend so the deltoid does not crease
+    var prof = this.actor && this.actor.prof, roll = prof && prof.guard ? prof.guard.shoulderRoll : 0.5;
+    var cUp = tv[2].set(0, 1, 0).applyQuaternion(qC), cFw = _v6.set(0, 0, 1).applyQuaternion(qC);
     for (i = 0; i < 2; i++) {
       var Ls = this.limbs[i], ks = i === 0 ? bi.LeftShoulder : bi.RightShoulder;
-      var hand = rig.handPos(i === 0, _v3), sp = Wp[Ls.iu];
-      var up = clamp((hand.y - sp.y) / (Ls.l1 + Ls.l2), -1, 1);
+      var hand = rig.handPos(i === 0, _v3), sp = Wp[Ls.iu], reachL = Ls.l1 + Ls.l2;
+      var up = clamp((hand.y - sp.y) / reachL, -1, 1), fwd = clamp(_v4.copy(hand).sub(sp).dot(cFw) / reachL, -1, 1);
+      var touched = false;
       if (up > 0.15) {
         var ax = _v4.copy(Wp[Ls.iu]).sub(Wp[ks]).normalize();
-        var axis = tv[2].crossVectors(ax, YAX).normalize();
-        W[ks].premultiply(tq[7].setFromAxisAngle(axis, (up - 0.15) * 0.3));
-        this.fk(Ls.iu);
+        var axis = _v5.crossVectors(ax, YAX).normalize();
+        W[ks].premultiply(tq[7].setFromAxisAngle(axis, (up - 0.15) * 0.42)); touched = true;
       }
+      var g = clamp01((fwd - 0.05) / 0.45) * clamp01((up + 0.55) / 0.5);
+      if (g > 0.01 && !this.cfg.ref) {
+        var pa = (0.1 + 0.2 * roll) * g;
+        W[ks].premultiply(tq[7].setFromAxisAngle(cUp, i === 0 ? -pa : pa));
+        var ax2 = _v4.copy(Wp[Ls.iu]).sub(Wp[ks]).normalize();
+        W[ks].premultiply(tq[7].setFromAxisAngle(_v5.crossVectors(ax2, cUp).normalize(), 0.06 * g));
+        touched = true;
+      }
+      if (touched) this.fk(Ls.iu);
     }
     var drv = this.rig, el = _v5;
     for (i = 0; i < 4; i++) {

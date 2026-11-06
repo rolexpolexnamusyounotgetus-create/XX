@@ -84,7 +84,7 @@ let k = 0;
 const r4 = (x) => Math.round(x * 1e4) / 1e4;
 D.fights.forEach(function (f, idx) {
   if (idx % PARTS !== PART) return;
-  if (f.date >= "2026-01-01") throw new Error("vault fight passed to the engine check: " + f.id);
+  if (f.date >= "2026-01-01" && !f.hypothetical) throw new Error("vault fight passed to the engine check: " + f.id);
   const o = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date,
     priors: D.priors[f.date.slice(0, 4)] };
   const out = {};

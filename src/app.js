@@ -1458,6 +1458,28 @@
     var d = el("div"); d.appendChild(el("h3", "mini", "Versions"));
     var list = null;
     if (VERS) list = Array.isArray(VERS) ? VERS : (Array.isArray(VERS.versions) ? VERS.versions : (typeof VERS === "object" ? Object.keys(VERS).filter(function (k) { return VERS[k] && typeof VERS[k] === "object"; }).map(function (k) { var o = {}; for (var kk in VERS[k]) o[kk] = VERS[k][kk]; if (!o.version) o.version = k; return o; }) : null));
+    if (list && list.length && list.some(function (v) { return v && (v.train || v.validation); })) {
+      // tools/evalv.js schema: versions[] with train / validation {n_decisive, metrics: {winLL: {est, lo, hi}, ...}}, blend, notes
+      var est = function (M, k) { var x = M && M[k]; return x == null ? null : (typeof x === "number" ? x : (x.est != null ? +x.est : null)); };
+      var anyVal = false;
+      var vr = list.map(function (v) {
+        var val = v.validation && v.validation.metrics ? v.validation : null, tr = v.train && v.train.metrics ? v.train : null, src = val || tr, M = src ? src.metrics : null;
+        if (val) anyVal = true;
+        var bw = v.blend == null ? null : (typeof v.blend === "number" ? v.blend : [v.blend.weight, v.blend.w, v.blend.moe_weight, v.blend.engine].filter(function (x) { return typeof x === "number"; })[0]);
+        return { cells: [v.version + (v.engine_version ? " (" + v.engine_version + ")" : ""), val ? "2024-25" : (tr ? "2019-23 *" : "–"), src && src.n_decisive ? nf.format(src.n_decisive) : "–",
+          fx(est(M, "winLL"), 4), fx(est(M, "bin7"), 4), fx(est(M, "method"), 4), pct(est(M, "acc"), 1), bw == null ? "–" : pct(bw, 0)], note: v.notes && v.notes[0] };
+      });
+      d.appendChild(table(["Version", "Fights from", "Fights", "Winner log loss", "7-outcome log loss", "Method log loss", "Accuracy", "Blend weight"], vr));
+      d.appendChild(el("p", "small", "From data/derived/version_history.json (tools/evalv.js). " + (anyVal ? "" : "No version has its one-time validation score yet; ") + "* tuning-period numbers, shown until a version's single look at 2024-25 is recorded. Each version also has to earn a non-zero weight in the blend and beat the method-and-round model to replace the one before."));
+      var notes = vr.filter(function (r) { return r.note; });
+      if (notes.length) {
+        var dn = el("details", "more"); dn.appendChild(el("summary", null, "Version notes"));
+        var un = el("ul", "caveats"); notes.forEach(function (r) { un.appendChild(el("li", null, r.cells[0] + ": " + r.note)); }); dn.appendChild(un); d.appendChild(dn);
+      }
+      var sm0 = BENCH && BENCH.sim;
+      if (sm0 && sm0.val_plain && sm0.val_ml) d.appendChild(el("p", "small", "Reference from the stat-line model's report, 2024-25 (" + nf.format(sm0.n || 0) + " fights, " + (sm0.nsim || 400) + " simulations each): the v3 simulator scored " + fx(sm0.val_plain.winner_log_loss, 4) + " on its own rates and " + fx(sm0.val_ml.winner_log_loss, 4) + " with the ML stat lines; pooled over 2019-2025 the lines help by " + (sm0.pooled ? fx(-sm0.pooled.ml_minus_plain.mean, 4) : "–") + ", in all seven years."));
+      return d;
+    }
     if (list && list.length) {
       // a tolerant reader: version label, then whichever numeric metrics the history file carries
       var flat = list.map(function (v) {
@@ -2120,38 +2142,30 @@
     audioAttach();
   }
 
-  /* ---- broadcast sound (src/audio.js, FightAudio): muted until the viewer turns it on; the first click anywhere
-     unlocks the audio context, as browsers require a user gesture before any sound */
+  /* ---- broadcast sound (src/audio.js, FightAudio): off until the viewer turns it on (FightAudio remembers the choice per
+     viewer); FightAudio creates its audio context on the first click or key press after that, as browsers require */
   var AU = { api: null, on: false, unlocked: false };
   function audioAttach() {
     var FA = window.FightAudio;
     AU.api = null;
-    if (FA && typeof FA.attach === "function" && show && !textMode) {
-      try { AU.api = FA.attach(show) || FA; } catch (e) { AU.api = null; }
+    if (FA && typeof FA.attach === "function" && FA.supported !== false && show && !textMode) {
+      try { var r = FA.attach(show); AU.api = r && typeof r === "object" ? r : (r === false ? null : FA); } catch (e) { AU.api = null; }
     }
     $("sndWrap").hidden = !AU.api;
-    if (AU.api) audioApply();
+    if (AU.api) { AU.on = typeof AU.api.isEnabled === "function" ? !!AU.api.isEnabled() : false; $("soundTog").checked = AU.on; audioApply(); }
   }
   function audioApply() {
-    var a = AU.api, muted = !AU.on; if (!a) return;
+    var a = AU.api, on = AU.on; if (!a) return;
     try {
-      if (typeof a.setMuted === "function") a.setMuted(muted);
-      else if (typeof a.mute === "function" && typeof a.unmute === "function") { if (muted) a.mute(); else a.unmute(); }
-      else if (typeof a.setEnabled === "function") a.setEnabled(!muted);
-      else if ("muted" in a) a.muted = muted;
-      else if ("enabled" in a) a.enabled = !muted;
+      if (typeof a.setEnabled === "function") a.setEnabled(on);
+      else if (typeof a.setMuted === "function") a.setMuted(!on);
+      else if (typeof a.mute === "function" && typeof a.unmute === "function") { if (on) a.unmute(); else a.mute(); }
     } catch (e) { /* sound is optional */ }
   }
   function audioUnlock() {
     if (AU.unlocked || !AU.api) return;
     AU.unlocked = true;
-    var a = AU.api, FA = window.FightAudio;
-    try {
-      if (typeof a.unlock === "function") a.unlock();
-      else if (typeof a.resume === "function") a.resume();
-      else if (FA && typeof FA.unlock === "function") FA.unlock();
-    } catch (e) { /* ignore */ }
-    audioApply();
+    try { if (typeof AU.api.unlock === "function") AU.api.unlock(); else if (typeof AU.api.resume === "function") AU.api.resume(); } catch (e) { /* ignore */ }
   }
   document.addEventListener("pointerdown", function first() { if (!AU.api) return; document.removeEventListener("pointerdown", first, true); audioUnlock(); }, true);
   function newFight() {
@@ -2223,7 +2237,7 @@
     $("lineTog").addEventListener("change", function () { S.line = this.checked; renderForecast(); });
     $("mlTog").checked = S.ml; $("mlTog").disabled = !MLR.ok && !MLR.pending;
     $("mlTog").addEventListener("change", function () { S.ml = this.checked; buildMatchup(); renderWhy(); renderKnobPanel(); renderMLCard(); renderForecast(); queueTally(true); });
-    $("sndTog").addEventListener("change", function () { audioUnlock(); AU.on = this.checked; audioApply(); });
+    $("soundTog").addEventListener("change", function () { audioUnlock(); AU.on = this.checked; audioApply(); });
     // live show controls
     $("btnNew").addEventListener("click", newFight);
     $("btnAgain").addEventListener("click", newFight);

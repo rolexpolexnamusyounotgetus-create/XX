@@ -130,25 +130,25 @@ the strongest baseline that has no opponent adjustment.
 
 ## Results by stat family (held-out 2024-2025)
 
-Deviance on 2024-25 sides (lower is better). "final vs engine" and "opp-adj vs no-opp" are deviance
-reductions with 95% bootstrap intervals in percent of the baseline's deviance. The slope is the coefficient on
+Deviance on 2024-25 sides (lower is better). "final vs engine" and "opp-adj vs no-opp" are deviance changes
+(negative = better) with 95% bootstrap intervals, in percent of the baseline's deviance. The slope is the coefficient on
 log(final / engine raw) when the held-out outcomes are regressed on it with the engine raw prediction as
 offset (1 = the adjustment is right-sized on unseen fights, 0 = no information; quasi-likelihood SE).
 
 | family | engine fields | half-life (days) | k off / def | lambda | engine raw | raw re-tuned | opp-adj | final | final vs engine | opp-adj vs no-opp | slope (se) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| distance attempts | dAtt, dAttAg | avg of 5 | 12 / 25 dist. min | 0.7 | 16116 | 15501 | 15111 | 15240 | **+5.4%** [+3.5, +7.2] | +9.4% [+7.4, +11.3] | 1.60 (0.14) |
-| clinch attempts | cAtt, cAttAg | 2190 | 40 / 40 fight min | 0.8 | 9873 | 9843 | 9791 | 9775 | +1.0% [-0.3, +2.4] | +0.3% [-1.0, +1.6] | 0.83 (0.24) |
-| ground attempts | gAtt, gAttAg | 2190 | 12 / 12 top min | 0.9 | 14645 | 14395 | 14209 | 14218 | **+2.9%** [+0.6, +5.2] | +2.8% [+1.4, +4.2] | 1.39 (0.28) |
-| head accuracy | accSh[0], accAgSh[0] | avg of 5 | 300 / 300 att. | 1.0 | 5094 | 5016 | 4928 | 4928 | **+3.3%** [+0.8, +5.9] | +3.7% [+1.7, +5.7] | 1.13 (0.13) |
-| body accuracy | accSh[1], accAgSh[1] | 2190 | 80 / 150 att. | 0.7 | 2964 | 2942 | 3027 | 2997 | -1.1% [-2.1, -0.1] | +0.4% [-0.3, +1.1] | 0.94 (0.26) |
-| leg accuracy | accSh[2], accAgSh[2] | avg of 5 | 80 / 40 att. | 0.9 | 2819 | 2739 | 2718 | 2722 | **+3.4%** [+1.9, +5.0] | +0.8% [+0.0, +1.6] | 1.04 (0.17) |
-| knockdowns / head landed | pow, chin | 1460 | 230 / 460 head landed | 0.7 | 1259 | 1266 | 1275 | 1268 | -0.7% [-1.4, -0.1] | -0.1% [-0.5, +0.2] | -0.57 (0.71) |
-| takedown attempts | tdAtt, tdAttAg | 1095 | 8 / 16 stand. min | 1.0 | 6038 | 5519 | 5341 | 5341 | **+11.5%** [+8.3, +15.0] | +2.7% [+0.2, +5.2] | 1.03 (0.08) |
-| takedown success | tdAcc, tdAccAg | 2190 | 48 / 24 TD att. | 1.0 | 2026 | 1954 | 1947 | 1947 | **+3.9%** [+2.0, +5.9] | +0.4% [-0.3, +1.1] | 1.29 (0.17) |
-| control time | ctrl, octrl | 1460 | 10 / 20 fight min | 0.9 | 211961 | 205427 | 195872 | 195216 | **+7.9%** [+4.4, +11.5] | +4.8% [+2.1, +7.6] | 0.95 (0.08) |
-| control per takedown | topSkill, escWeak | 2190 | 16 / 16 TDs landed | 0.9 | 78508 | 73455 | 73151 | 73246 | **+6.7%** [+3.2, +10.4] | +0.5% [-0.2, +1.3] | 1.17 (0.17) |
-| submission attempts | sub, subAg | 2190 | 22 / 45 ground min | 1.0 | 1324 | 1311 | 1327 | 1327 | -0.3% [-2.4, +1.8] | -0.1% [-0.8, +0.6] | 0.46 (0.23) |
+| distance attempts | dAtt, dAttAg | avg of 5 | 12 / 25 dist. min | 0.7 | 16116 | 15501 | 15111 | 15240 | **-5.4%** [-7.2, -3.5] | -9.4% [-11.3, -7.4] | 1.60 (0.14) |
+| clinch attempts | cAtt, cAttAg | 2190 | 40 / 40 fight min | 0.8 | 9873 | 9843 | 9791 | 9775 | -1.0% [-2.4, +0.3] | -0.3% [-1.6, +1.0] | 0.83 (0.24) |
+| ground attempts | gAtt, gAttAg | 2190 | 12 / 12 top min | 0.9 | 14645 | 14395 | 14209 | 14218 | **-2.9%** [-5.2, -0.6] | -2.8% [-4.2, -1.4] | 1.39 (0.28) |
+| head accuracy | accSh[0], accAgSh[0] | avg of 5 | 300 / 300 att. | 1.0 | 5094 | 5016 | 4928 | 4928 | **-3.3%** [-5.9, -0.8] | -3.7% [-5.7, -1.7] | 1.13 (0.13) |
+| body accuracy | accSh[1], accAgSh[1] | 2190 | 80 / 150 att. | 0.7 | 2964 | 2942 | 3027 | 2997 | +1.1% [+0.1, +2.1] | -0.4% [-1.1, +0.3] | 0.94 (0.26) |
+| leg accuracy | accSh[2], accAgSh[2] | avg of 5 | 80 / 40 att. | 0.9 | 2819 | 2739 | 2718 | 2722 | **-3.4%** [-5.0, -1.9] | -0.8% [-1.6, -0.0] | 1.04 (0.17) |
+| knockdowns / head landed | pow, chin | 1460 | 230 / 460 head landed | 0.7 | 1259 | 1266 | 1275 | 1268 | +0.7% [+0.1, +1.4] | +0.1% [-0.2, +0.5] | -0.57 (0.71) |
+| takedown attempts | tdAtt, tdAttAg | 1095 | 8 / 16 stand. min | 1.0 | 6038 | 5519 | 5341 | 5341 | **-11.5%** [-15.0, -8.3] | -2.7% [-5.2, -0.2] | 1.03 (0.08) |
+| takedown success | tdAcc, tdAccAg | 2190 | 48 / 24 TD att. | 1.0 | 2026 | 1954 | 1947 | 1947 | **-3.9%** [-5.9, -2.0] | -0.4% [-1.1, +0.3] | 1.29 (0.17) |
+| control time | ctrl, octrl | 1460 | 10 / 20 fight min | 0.9 | 211961 | 205427 | 195872 | 195216 | **-7.9%** [-11.5, -4.4] | -4.8% [-7.6, -2.1] | 0.95 (0.08) |
+| control per takedown | topSkill, escWeak | 2190 | 16 / 16 TDs landed | 0.9 | 78508 | 73455 | 73151 | 73246 | **-6.7%** [-10.4, -3.2] | -0.5% [-1.3, +0.2] | 1.17 (0.17) |
+| submission attempts | sub, subAg | 2190 | 22 / 45 ground min | 1.0 | 1324 | 1311 | 1327 | 1327 | +0.3% [-1.8, +2.4] | +0.1% [-0.6, +0.8] | 0.46 (0.23) |
 
 Averaged half-lives: distance attempts 365:6/6, 730:12/12, 1095:12/25, 1460:12/25, 2190:12/25; head accuracy
 365-1095 at 150/150 and 1460-2190 at 300/300; leg accuracy 365:40/40 and 730-2190 at 80/40.
@@ -176,7 +176,8 @@ Reading the table:
 
 ### Half-life scan
 
-Best k at each half-life, two-way model, tune / test deviance (the engine's 730 days in the middle):
+Best k at each half-life, two-way model, tune / test deviance (the engine's sums use 730 days; bold = best
+single half-life on tune; distance attempts, head and leg accuracy use the average over all five):
 
 | family | 365 | 730 | 1095 | 1460 | 2190 | 3650 (diagnostic, chosen k) |
 |---|---|---|---|---|---|---|
@@ -192,8 +193,8 @@ Best k at each half-life, two-way model, tune / test deviance (the engine's 730 
 | control per takedown | 172424 / 74329 | 170819 / 73693 | 170439 / 73354 | 170021 / 73206 | **169729** / 73151 | 169659 / 73216 |
 | submission attempts | 3351 / 1344 | 3307 / 1326 | 3289 / 1323 | 3284 / 1324 | **3282** / 1327 | 3279 / 1329 |
 
-Skill estimates want a much longer memory than the engine's 730-day sums: 2190 days for strike volume, head
-accuracy, takedown success, control per takedown and submissions; 1460 for control and knockdowns; 1095 for
+Skill estimates want a much longer memory than the engine's 730-day sums: 2190 days (or the five-way average)
+for strike volume, head accuracy, takedown success, control per takedown and submissions; 1460 for control and knockdowns; 1095 for
 takedown attempts; only leg accuracy prefers 730. Seven families sit at the end of the task grid, but the
 3650-day diagnostic is worse or flat on tune for all of them (clinch attempts, control per takedown and
 submissions are flat within 0.1%), so the edge of the grid is not hiding a gain. The best half-life on
@@ -236,19 +237,19 @@ Baseline: the ML rate of `tools/mlrates.py` (time-ordered out-of-fold rates for 
 trained 2010-2023 for 2024-25; `data/derived/mlrates_oof.json`) x exposure, one level term fit on 2019-2023.
 Challenger: the same plus beta x log(F_off,X x F_def,Y) (logit for probabilities), beta fit on 2019-2023.
 
-| family | beta (2019-23 fit) | beta (2024-25, diagnostic) | test deviance ML | ML + oppadj | reduction |
+| family | beta (2019-23 fit) | beta (2024-25, diagnostic) | test deviance ML | ML + oppadj | change |
 |---|---|---|---|---|---|
-| distance attempts | 0.93 | 1.70 | 36594 | 35667 | **+2.53%** [+1.40, +3.70] |
-| clinch attempts | 0.99 | 0.73 | 9697 | 9626 | +0.73% [-0.65, +2.10] |
-| ground attempts | 0.17 | 0.57 | 18557 | 18527 | +0.17% [-0.21, +0.52] |
-| takedown attempts | 0.37 | 0.32 | 4264 | 4209 | +1.29% [-0.30, +2.81] |
-| control time | 0.62 | 0.59 | 195884 | 190303 | **+2.85%** [+0.50, +5.22] |
-| head accuracy | 0.55 | 0.78 | 7032 | 6964 | +0.97% [-0.13, +2.08] |
-| body accuracy | 0.56 | 0.60 | 3106 | 3126 | -0.65% [-1.23, -0.07] |
-| leg accuracy | 0.26 | 0.32 | 2694 | 2679 | **+0.55%** [+0.14, +0.97] |
-| takedown success | 0.12 | 0.51 | 1905 | 1899 | **+0.29%** [+0.05, +0.55] |
-| knockdowns | 0.26 | -1.07 | 1246 | 1249 | -0.20% [-0.39, -0.03] |
-| submission attempts | 0.36 | -0.12 | 1426 | 1434 | -0.59% [-1.30, +0.11] |
+| distance attempts | 0.93 | 1.70 | 36594 | 35667 | **-2.53%** [-3.70, -1.40] |
+| clinch attempts | 0.99 | 0.73 | 9697 | 9626 | -0.73% [-2.10, +0.65] |
+| ground attempts | 0.17 | 0.57 | 18557 | 18527 | -0.17% [-0.52, +0.21] |
+| takedown attempts | 0.37 | 0.32 | 4264 | 4209 | -1.29% [-2.81, +0.30] |
+| control time | 0.62 | 0.59 | 195884 | 190303 | **-2.85%** [-5.22, -0.50] |
+| head accuracy | 0.55 | 0.78 | 7032 | 6964 | -0.97% [-2.08, +0.13] |
+| body accuracy | 0.56 | 0.60 | 3106 | 3126 | +0.65% [+0.07, +1.23] |
+| leg accuracy | 0.26 | 0.32 | 2694 | 2679 | **-0.55%** [-0.97, -0.14] |
+| takedown success | 0.12 | 0.51 | 1905 | 1899 | **-0.29%** [-0.55, -0.05] |
+| knockdowns | 0.26 | -1.07 | 1246 | 1249 | +0.20% [+0.03, +0.39] |
+| submission attempts | 0.36 | -0.12 | 1426 | 1434 | +0.59% [-0.11, +1.30] |
 
 (ML counts use fight minutes as exposure, so these deviances are larger than in the family table.) The ML
 model already learns some schedule information from opponents' raw allowed rates, which is why the betas are
@@ -325,7 +326,23 @@ Roster factors at the Oct 31, 2026 snapshot (relative to the engine's raw rates 
 | schedule: opponents' control allowed | 0.742 | 0.881 | Volk's opponents were hard to hold down |
 | schedule: opponents' KD per head landed allowed | 0.765 | 0.921 | Volk hit tough chins |
 
-VG_TBD
+Engine v3 (params 4.0.0-selfcal-pre2024, no ML layer, `fighters.json` profiles, 5 x 5 lightweight title
+fight, 10,000 simulations per corner order, same seeds), plain rates vs the recommended factor set
+(`results.engine_backtest_recommended.volk_gaethje`):
+
+| | plain | with factors |
+|---|---|---|
+| Volkanovski wins | 61.5% | 65.1% |
+| Volk KO / SUB / DEC | 14.6 / 4.2 / 42.7% | 14.7 / 2.6 / 47.8% |
+| Gaethje KO / SUB / DEC | 16.4 / 1.9 / 19.8% | 16.0 / 0.9 / 17.8% |
+| sig. strikes landed, Volk / Gaethje | 122.8 / 80.2 | 130.4 / 81.6 |
+| takedowns landed, Volk / Gaethje | 1.07 / 0.99 | 1.64 / 0.69 |
+| control seconds, Volk / Gaethje | 109 / 95 | 106 / 53 |
+
+The adjustment mostly changes the grappling exchange: Volkanovski's takedown success and control are
+credited for a tough schedule, Gaethje's control and takedown volume are cut. It moves the engine further from
+the market openers (about 37% Volkanovski, docs/BACKLOG.md); the stacked blend, not the simulator, sets the
+winner probability on the page, so this is a "how" change more than a "who" change.
 
 ## Recommendation for the engine
 
