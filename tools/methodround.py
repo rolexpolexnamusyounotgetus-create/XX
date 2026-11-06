@@ -2126,12 +2126,12 @@ groups are roughly neutral for method (kept for the winner and for the page).
    use the engine for the play-by-play and the fight story.
 2. **Factorize the final forecast:** P(A wins) from the winner ensemble (market + Elo + engine + this model's
    winner), then P(method, round | winner) from this model's conditional shares (`methodGivenWin` in the JS
-   output; the per-fight cells give the same). Method given winner is where this model adds the most, and it
-   leaves the winner question to the stack.
+   output; the per-fight cells give the same). That keeps the winner question with the stack and uses this
+   model for what it was built for (the evidence line above gives its method-given-winner edge).
 3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta). The
    props are sharper than the model on finish vs decision and KO vs submission (they price in pre-UFC records,
    camp news and styles the stats do not see); the model matches them on the finishing round, and the blend is
-   at least as good as the props on every target.
+   within noise of the props or better on every target.
 4. **Without a line** (hypothetical matchups such as Volkanovski vs Gaethje before odds): use S.
 5. Natural next inputs: pre-UFC records (tools/preufc.py; Sherdog crawl was incomplete when this ran, so it is not
    used), opponent-adjusted rates (tools/oppadj.py) and the durability model's chin/power estimates

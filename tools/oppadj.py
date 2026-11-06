@@ -931,6 +931,77 @@ def pack_factors(F, j):
     return out
 
 
+LAM_GRID = [round(0.1 * i, 1) for i in range(11)]
+
+
+def blend(kind, pa, pe, lam):
+    """Geometric blend for counts (log scale), linear on the logit for probabilities."""
+    if kind == "count":
+        pos = (pa > 0) & (pe > 0)
+        out = lam * pa + (1 - lam) * pe
+        out[pos] = np.exp(lam * np.log(pa[pos]) + (1 - lam) * np.log(pe[pos]))
+        return out
+    return lam * pa + (1 - lam) * pe
+
+
+def adj_terms(ev, so, sd, sc):
+    return sc / 2 + so, sc / 2 + sd[ev.opp]
+
+
+def raw_terms(ev, name, R):
+    f, o = ev.fam[name], ev.opp
+    fo, fd = FAMILIES[name][1]
+    if name.startswith("acc"):
+        t = "HBL".index(name[-1])
+        return R["accSh"][:, t], R["accAgSh"][o, t]
+    if name == "tdAcc":
+        return logit(R["tdAcc"]) - f["Lb"], logit(R["tdAccAg"][o]) - f["Lb"]
+    if name == "topSkill":
+        return np.log(R["topSkill"]), np.log(R["escWeak"][o])
+    return np.log(R[fo] / f["Lb"]), np.log(R[fd][o] / f["Lb"])
+
+
+def comb_fit(ev, name, terms):
+    """Fit log mu = log(E L) + c0 + a * offense + b * defense (or the logit analogue) on 2019-2023 sides:
+    a = b = 1 is the engine's pure log-linear / log5 combination. Returns a, b, c0 with standard errors
+    (quasi-likelihood)."""
+    f = ev.fam[name]
+    m = f["tune"]
+    X = np.column_stack([np.ones(m.sum()), terms[0][m], terms[1][m]])
+    y = f["y"][m]
+    if f["kind"] == "count":
+        off = np.log(np.maximum(f["E"][m] * f["Lb"][m], 1e-12))
+        bta = np.array([math.log(max(y.sum(), 1e-9) / np.exp(off).sum()), 1.0, 1.0])
+        for _ in range(60):
+            mu = np.exp(X @ bta + off)
+            H = (X.T * mu) @ X
+            st = np.linalg.solve(H, X.T @ (y - mu))
+            bta += st
+            if np.abs(st).max() < 1e-10:
+                break
+        mu = np.exp(X @ bta + off)
+        phi = float(np.sum((y - mu) ** 2 / mu) / max(len(y) - 3, 1))
+        cov = np.linalg.inv((X.T * mu) @ X) * phi
+    else:
+        n = f["E"][m]
+        off = f["Lb"][m]
+        bta = np.array([0.0, 1.0, 1.0])
+        for _ in range(60):
+            pp = sigm(X @ bta + off)
+            W = n * pp * (1 - pp) + 1e-12
+            st = np.linalg.solve((X.T * W) @ X, X.T @ (y - n * pp))
+            bta += st
+            if np.abs(st).max() < 1e-10:
+                break
+        pp = sigm(X @ bta + off)
+        W = n * pp * (1 - pp) + 1e-12
+        phi = float(np.sum((y - n * pp) ** 2 / W) / max(len(y) - 3, 1))
+        cov = np.linalg.inv((X.T * W) @ X) * phi
+    se = np.sqrt(np.diag(cov))
+    return {"a": rnd(bta[1], 4), "a_se": rnd(se[1], 3), "b": rnd(bta[2], 4), "b_se": rnd(se[2], 3),
+            "c0": rnd(bta[0], 4), "dispersion": rnd(phi, 3)}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--procs", type=int, default=max(1, (os.cpu_count() or 2)))
@@ -1060,21 +1131,28 @@ def main():
         bf, bfs = select(full_sc)
         bn, bns = select(nosos_sc)
         br, brs = select(raw[name])
-        # held-out deviance arrays for the bootstrap
         so, sd, sc, _ = G[(name,) + bf + ("full",)]
         so, sd, sc = so.astype(float), sd.astype(float), sc.astype(float)
-        dv_full = ev.score(name, ev.pred_adj(name, so, sd, sc))
-        dv_eng = ev.score(name, ev.pred_raw(name, ev.engine_R))
+        pa, pe = ev.pred_adj(name, so, sd, sc), ev.pred_raw(name, ev.engine_R)
+        dv_full = ev.score(name, pa)
+        dv_eng = ev.score(name, pe)
         Rr = fighter_rates(Ss[br[0]], D.sL, p, k={kname: {fields[0]: br[1], fields[1]: br[2]}})
         dv_raw = ev.score(name, ev.pred_raw(name, Rr))
         so1 = G[(name, bn[0], bn[1], bn[1], "nosos")][0].astype(float)
         sd1 = G[(name, bn[0], bn[2], bn[2], "nosos")][1].astype(float)
         sc1 = G[(name, bn[0], bn[1], bn[1], "nosos")][2].astype(float)
         dv_nos = ev.score(name, ev.pred_adj(name, so1, sd1, sc1))
+        # blend weight on 2019-2023: factor^lambda (lambda 0 = engine raw, 1 = fully opponent-adjusted)
+        lam_sc = {lam: ev.score(name, blend(kind, pa, pe, lam)) for lam in LAM_GRID}
+        lam = min(lam_sc, key=lambda l_: lam_sc[l_]["tune"])
+        dv_fin = lam_sc[lam]
         te = ev.fam[name]["test"]
         boots = {"vs_engine_raw": boot_delta(D, dv_eng["dev"], dv_full["dev"], te, args.boot),
                  "vs_raw_tuned": boot_delta(D, dv_raw["dev"], dv_full["dev"], te, args.boot),
-                 "vs_nosos_tuned": boot_delta(D, dv_nos["dev"], dv_full["dev"], te, args.boot)}
+                 "vs_nosos_tuned": boot_delta(D, dv_nos["dev"], dv_full["dev"], te, args.boot),
+                 "final_vs_engine_raw": boot_delta(D, dv_eng["dev"], dv_fin["dev"], te, args.boot)}
+        base_for = {"vs_engine_raw": dv_eng["test"], "vs_raw_tuned": brs["test"], "vs_nosos_tuned": bns["test"],
+                    "final_vs_engine_raw": dv_eng["test"]}
         hl_scan = {}
         for hl in hls:
             c_ = min((k for k in full_sc if k[0] == hl), key=lambda k: full_sc[k]["tune"])
@@ -1089,16 +1167,18 @@ def main():
                    if k[1] == bf[1] and k[2] == bf[2]}
         test_best_cfg = min(full_sc, key=lambda c: full_sc[c]["test"])
         n_te = int(te.sum())
+        cal_of = lambda sc_: sc_.get("scale", sc_.get("shift"))
         res["families"][name] = {
             "label": label, "kind": kind, "engine_fields": list(fields), "engine_k_param": kname,
             "engine_k_value": p[kname],
             "n_tune_sides": int(ev.fam[name]["tune"].sum()), "n_test_sides": n_te,
             "chosen": {"half_life_days": bf[0], "k_offense": bf[1], "k_defense": bf[2],
-                       "k_unit": {"count": "exposure units (see k_unit_note)", "binom": "attempts"}[kind]},
+                       "k_unit": {"count": "exposure units (see k_unit_note)", "binom": "attempts"}[kind],
+                       "blend_lambda": lam},
             "deviance": {
                 "league_only": {"tune": rnd(null_sc[name]["tune"], 6), "test": rnd(null_sc[name]["test"], 6)},
                 "engine_raw": {"tune": rnd(eng_sc[name]["tune"], 6), "test": rnd(eng_sc[name]["test"], 6),
-                               "cal": rnd(eng_sc[name].get("scale", eng_sc[name].get("shift")), 4),
+                               "cal": rnd(cal_of(eng_sc[name]), 4),
                                "test_obs_over_pred_uncal": rnd(eng_sc[name]["test_obs_over_pred_uncal"], 4)},
                 "raw_tuned": {"tune": rnd(brs["tune"], 6), "test": rnd(brs["test"], 6),
                               "half_life_days": br[0], "k_offense": br[1], "k_defense": br[2],
@@ -1106,14 +1186,15 @@ def main():
                 "nosos_tuned": {"tune": rnd(bns["tune"], 6), "test": rnd(bns["test"], 6),
                                 "half_life_days": bn[0], "k_offense": bn[1], "k_defense": bn[2]},
                 "opp_adjusted": {"tune": rnd(bfs["tune"], 6), "test": rnd(bfs["test"], 6),
-                                 "cal": rnd(bfs.get("scale", bfs.get("shift")), 4),
+                                 "cal": rnd(cal_of(bfs), 4),
                                  "test_obs_over_pred_uncal": rnd(bfs["test_obs_over_pred_uncal"], 4)},
+                "final_blend": {"tune": rnd(dv_fin["tune"], 6), "test": rnd(dv_fin["test"], 6),
+                                "lambda": lam, "cal": rnd(cal_of(dv_fin), 4)},
             },
+            "lambda_scan": {str(l_): [rnd(v["tune"], 6), rnd(v["test"], 6)] for l_, v in lam_sc.items()},
             "test_delta_bootstrap_95": {k: {"delta": rnd(v[0], 5), "lo": rnd(v[1], 5), "hi": rnd(v[2], 5),
                                             "n_fights": v[3],
-                                            "pct_of_baseline": rnd(100 * v[0] / max(
-                                                {"vs_engine_raw": eng_sc[name]["test"], "vs_raw_tuned": brs["test"],
-                                                 "vs_nosos_tuned": bns["test"]}[k], 1e-9), 3)}
+                                            "pct_of_baseline": rnd(100 * v[0] / max(base_for[k], 1e-9), 3)}
                                         for k, v in boots.items()},
             "test_best_config_for_reference": {"half_life_days": test_best_cfg[0], "k_offense": test_best_cfg[1],
                                                "k_defense": test_best_cfg[2],
@@ -1121,125 +1202,88 @@ def main():
             "half_life_scan": hl_scan,
             "k_scan_at_chosen_half_life": k_scan,
             "half_life_scan_at_chosen_k": hl_at_k,
+            "combination_exponents_tune": {
+                "opp_adjusted": comb_fit(ev, name, adj_terms(ev, so, sd, sc)),
+                "engine_raw": comb_fit(ev, name, raw_terms(ev, name, ev.engine_R))},
         }
-        chosen[name] = {"cfg": bf, "so": so, "sd": sd, "sc": sc, "cal_adj": bfs.get("scale", bfs.get("shift")),
-                        "cal_eng": eng_sc[name].get("scale", eng_sc[name].get("shift")),
-                        "raw_cfg": br, "R_raw": Rr, "cal_raw": brs.get("scale", brs.get("shift"))}
-        dl = res["families"][name]["test_delta_bootstrap_95"]["vs_engine_raw"]
-        print("%-9s hl %4d k %s/%s | test dev engine %.0f raw-tuned %.0f nosos %.0f adj %.0f | "
-              "adj vs engine %.1f%% [%.0f, %.0f]"
-              % (name, bf[0], bf[1], bf[2], eng_sc[name]["test"], brs["test"], bns["test"], bfs["test"],
-                 dl["pct_of_baseline"], dl["lo"], dl["hi"]))
+        chosen[name] = {"cfg": bf, "so": so, "sd": sd, "sc": sc, "cal_adj": cal_of(bfs),
+                        "cal_eng": cal_of(eng_sc[name]), "raw_cfg": br, "R_raw": Rr, "cal_raw": cal_of(brs),
+                        "lam": lam, "cal_fin": cal_of(dv_fin)}
+        dl = res["families"][name]["test_delta_bootstrap_95"]
+        print("%-9s hl %4d k %s/%s lam %.1f | test dev engine %.0f raw-tuned %.0f nosos %.0f adj %.0f final %.0f | "
+              "adj vs engine %.1f%% [%.0f, %.0f]; final %.1f%%"
+              % (name, bf[0], bf[1], bf[2], lam, eng_sc[name]["test"], brs["test"], bns["test"], bfs["test"],
+                 dv_fin["test"], dl["vs_engine_raw"]["pct_of_baseline"], dl["vs_engine_raw"]["lo"],
+                 dl["vs_engine_raw"]["hi"], dl["final_vs_engine_raw"]["pct_of_baseline"]))
+
+    def predict(name, which, unit=False):
+        """Calibrated per-side prediction: mu (counts) or logit (binomials). which: engine, raw_tuned,
+        full (lambda 1) or final (blend)."""
+        ch = chosen[name]
+        kind = FAMILIES[name][0]
+        if which == "engine":
+            pr, cal = ev.pred_raw(name, ev.engine_R, unit), ch["cal_eng"]
+        elif which == "raw_tuned":
+            pr, cal = ev.pred_raw(name, ch["R_raw"], unit), ch["cal_raw"]
+        elif which == "full":
+            pr, cal = ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"], unit), ch["cal_adj"]
+        else:
+            pr = blend(kind, ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"], unit),
+                       ev.pred_raw(name, ev.engine_R, unit), ch["lam"])
+            cal = ch["cal_fin"]
+        return pr * cal if kind == "count" else pr + cal
+
+    def parts_for(which, unit=False):
+        sh = np.column_stack([predict(n_, which) - ev.fam[n_]["Lb"] for n_ in ("accH", "accB", "accL")])
+        out = {"sh": sh, "kdf": predict("kd", which, True) / ev.fam["kd"]["Lb"], "td_z": predict("tdAcc", which)}
+        for n_ in ("dAtt", "cAtt", "gAtt", "tdAtt", "ctrl"):
+            out[n_] = predict(n_, which, unit)
+        out["mu_d"], out["mu_c"], out["mu_g"], out["mu_tdatt"] = out["dAtt"], out["cAtt"], out["gAtt"], out["tdAtt"]
+        return out
 
     # ---- composites: per-fight strikes / KD / TD conditional on the fight's time in each position
-    def parts_for(which):
-        o_ = ev.opp
-        P = {}
-        for name in ("dAtt", "cAtt", "gAtt", "tdAtt"):
-            f = ev.fam[name]
-            if which == "adj":
-                ch = chosen[name]
-                P[name] = ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"]) * ch["cal_adj"]
-            else:
-                R_ = ev.engine_R if which == "engine" else chosen[name]["R_raw"]
-                cal = chosen[name]["cal_eng"] if which == "engine" else chosen[name]["cal_raw"]
-                P[name] = ev.pred_raw(name, R_) * cal
-        sh = np.zeros((len(o_), 3))
-        for t, name in enumerate(("accH", "accB", "accL")):
-            f = ev.fam[name]
-            if which == "adj":
-                ch = chosen[name]
-                sh[:, t] = ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"]) - f["Lb"] + ch["cal_adj"]
-            else:
-                R_ = ev.engine_R if which == "engine" else chosen[name]["R_raw"]
-                cal = chosen[name]["cal_eng"] if which == "engine" else chosen[name]["cal_raw"]
-                sh[:, t] = ev.pred_raw(name, R_) - f["Lb"] + cal
-        fk = ev.fam["kd"]
-        if which == "adj":
-            ch = chosen["kd"]
-            kdf = np.exp(ch["sc"] + ch["so"] + ch["sd"][o_]) * ch["cal_adj"]
-            ch = chosen["tdAcc"]
-            tdz = ev.pred_adj("tdAcc", ch["so"], ch["sd"], ch["sc"]) + ch["cal_adj"]
-        else:
-            R_ = ev.engine_R if which == "engine" else chosen["kd"]["R_raw"]
-            cal = chosen["kd"]["cal_eng"] if which == "engine" else chosen["kd"]["cal_raw"]
-            kdf = R_["pow"] / fk["Lb"] * R_["chin"][o_] / fk["Lb"] * cal
-            R_ = ev.engine_R if which == "engine" else chosen["tdAcc"]["R_raw"]
-            cal = chosen["tdAcc"]["cal_eng"] if which == "engine" else chosen["tdAcc"]["cal_raw"]
-            tdz = ev.pred_raw("tdAcc", R_) + cal
-        return {"mu_d": P["dAtt"], "mu_c": P["cAtt"], "mu_g": P["gAtt"], "sh": sh, "kdf": kdf,
-                "mu_tdatt": P["tdAtt"], "td_z": tdz}
-
     Vs = D.V[D.s_row]
     actual = {"sig_att": Vs[:, KI["d_att"]] + Vs[:, KI["c_att"]] + Vs[:, KI["g_att"]],
               "sig_lnd": Vs[:, KI["d_lnd"]] + Vs[:, KI["c_lnd"]] + Vs[:, KI["g_lnd"]],
               "h_lnd": Vs[:, KI["h_lnd"]], "kd": Vs[:, KI["kd"]], "td_lnd": Vs[:, KI["td_lnd"]]}
     okc = Vs[:, KI["min"]] >= 0.5
-    comp = {w: composites(D, ev, p, parts_for(w)) for w in ("engine", "raw_tuned", "adj")}
+    WHICH = ("engine", "raw_tuned", "full", "final")
+    comp = {w: composites(D, ev, p, parts_for(w)) for w in WHICH}
     res["composites"] = {}
     for k in actual:
         y = actual[k]
-        row = {}
-        dvs = {}
-        for w in comp:
+        row, dvs, aes = {}, {}, {}
+        tu, te = okc & D.s_tune, okc & D.s_test
+        for w in WHICH:
             mu = comp[w][k]
-            tu, te = okc & D.s_tune, okc & D.s_test
             s = y[tu].sum() / mu[tu].sum()          # one level constant per composite, fit on tune
-            dv = pois_dev(y, mu * s)
-            dvs[w] = dv
-            row[w] = {"test_dev": rnd(dv[te].sum(), 6), "test_mae": rnd(np.abs(y[te] - mu[te] * s).mean(), 4),
+            dvs[w] = pois_dev(y, mu * s)
+            aes[w] = np.abs(y - mu * s)
+            row[w] = {"test_dev": rnd(dvs[w][te].sum(), 6), "test_mae": rnd(aes[w][te].mean(), 4),
                       "test_rmse": rnd(np.sqrt(((y[te] - mu[te] * s) ** 2).mean()), 4), "tune_scale": rnd(s, 4)}
-        te = okc & D.s_test
-        bd = boot_delta(D, dvs["engine"], dvs["adj"], te, args.boot)
-        br_ = boot_delta(D, dvs["raw_tuned"], dvs["adj"], te, args.boot)
-        # MAE bootstrap (by fight)
-        ae_e = np.abs(y - comp["engine"][k] * row["engine"]["tune_scale"])
-        ae_a = np.abs(y - comp["adj"][k] * row["adj"]["tune_scale"])
-        bm = boot_delta(D, ae_e, ae_a, te, args.boot)
-        row["adj_vs_engine_dev_95"] = [rnd(bd[0], 5), rnd(bd[1], 5), rnd(bd[2], 5)]
-        row["adj_vs_raw_tuned_dev_95"] = [rnd(br_[0], 5), rnd(br_[1], 5), rnd(br_[2], 5)]
-        row["adj_vs_engine_mae_per_side_95"] = [rnd(bm[0] / te.sum(), 4), rnd(bm[1] / te.sum(), 4),
-                                                rnd(bm[2] / te.sum(), 4)]
+        for w in ("full", "final"):
+            bd = boot_delta(D, dvs["engine"], dvs[w], te, args.boot)
+            br_ = boot_delta(D, dvs["raw_tuned"], dvs[w], te, args.boot)
+            bm = boot_delta(D, aes["engine"], aes[w], te, args.boot)
+            row[w]["vs_engine_dev_95"] = [rnd(bd[0], 5), rnd(bd[1], 5), rnd(bd[2], 5)]
+            row[w]["vs_raw_tuned_dev_95"] = [rnd(br_[0], 5), rnd(br_[1], 5), rnd(br_[2], 5)]
+            row[w]["vs_engine_mae_per_side_95"] = [rnd(bm[0] / te.sum(), 4), rnd(bm[1] / te.sum(), 4),
+                                                   rnd(bm[2] / te.sum(), 4)]
         row["n_test_sides"] = int(te.sum())
         res["composites"][k] = row
-        print("composite %-7s test dev engine %.0f raw-tuned %.0f adj %.0f | MAE %.2f / %.2f / %.2f"
-              % (k, row["engine"]["test_dev"], row["raw_tuned"]["test_dev"], row["adj"]["test_dev"],
-                 row["engine"]["test_mae"], row["raw_tuned"]["test_mae"], row["adj"]["test_mae"]))
+        print("composite %-7s test dev engine %.0f raw-tuned %.0f full %.0f final %.0f | MAE %.2f / %.2f / %.2f / %.2f"
+              % (k, row["engine"]["test_dev"], row["raw_tuned"]["test_dev"], row["full"]["test_dev"],
+                 row["final"]["test_dev"], row["engine"]["test_mae"], row["raw_tuned"]["test_mae"],
+                 row["full"]["test_mae"], row["final"]["test_mae"]))
 
     # ---- winner proxy: pre-fight expected output differences only (symmetric, no intercept)
-    def rates_for(which):
-        P = parts_for(which)
-        out = {"sh": P["sh"], "kdf": P["kdf"], "td_z": P["td_z"]}
-        for name in ("dAtt", "cAtt", "gAtt", "tdAtt", "ctrl"):
-            f = ev.fam[name]
-            if which == "adj":
-                ch = chosen[name]
-                mu = ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"]) * ch["cal_adj"]
-            else:
-                R_ = ev.engine_R if which == "engine" else chosen[name]["R_raw"]
-                cal = chosen[name]["cal_eng"] if which == "engine" else chosen[name]["cal_raw"]
-                mu = ev.pred_raw(name, R_) * cal
-            out[name] = mu / np.maximum(f["E"], 1e-9)
-            bad = f["E"] <= 1e-9          # rate when this fight had no exposure: recompute from the linear form
-            if bad.any():
-                if which == "adj":
-                    ch = chosen[name]
-                    out[name][bad] = (f["Lb"] * np.exp(ch["sc"] + ch["so"] + ch["sd"][ev.opp]) * ch["cal_adj"])[bad]
-                else:
-                    E1 = dict(f)
-                    tmp = ev.fam[name]["E"].copy()
-                    ev.fam[name]["E"] = np.ones_like(tmp)
-                    R_ = ev.engine_R if which == "engine" else chosen[name]["R_raw"]
-                    cal = chosen[name]["cal_eng"] if which == "engine" else chosen[name]["cal_raw"]
-                    out[name][bad] = (ev.pred_raw(name, R_) * cal)[bad]
-                    ev.fam[name]["E"] = tmp
-        return out
-
-    feats = {w: winner_features(D, ev, p, rates_for(w)) for w in ("engine", "raw_tuned", "adj")}
-    wp = winner_proxy(D, {"engine": feats["engine"], "raw_tuned": feats["raw_tuned"], "adj": feats["adj"],
-                          "elo": feats["adj"], "engine+elo": feats["engine"], "adj+elo": feats["adj"]})
+    feats = {w: winner_features(D, ev, p, parts_for(w, unit=True)) for w in WHICH}
+    wp = winner_proxy(D, {"engine": feats["engine"], "raw_tuned": feats["raw_tuned"], "full": feats["full"],
+                          "final": feats["final"], "elo": feats["final"], "engine+elo": feats["engine"],
+                          "final+elo": feats["final"]})
     res["winner_proxy"] = {k: {kk: vv for kk, vv in v.items() if kk != "_ll"} for k, v in wp.items()}
-    for a_, b_ in (("engine", "adj"), ("raw_tuned", "adj"), ("engine+elo", "adj+elo"), ("elo", "adj+elo")):
+    for a_, b_ in (("engine", "final"), ("engine", "full"), ("raw_tuned", "final"), ("engine+elo", "final+elo"),
+                   ("elo", "final+elo")):
         m, lo, hi = boot_ll(wp[a_]["_ll"], wp[b_]["_ll"], args.boot)
         res["winner_proxy"]["delta_%s_minus_%s" % (a_, b_)] = [rnd(m, 4), rnd(lo, 4), rnd(hi, 4)]
     for k, v in res["winner_proxy"].items():
@@ -1247,18 +1291,40 @@ def main():
               "ll %.4f brier %.4f acc %.3f" % (v["log_loss"], v["brier"], v["accuracy"]))
 
     # ---- per-snapshot factors (relative to the engine's raw rates from the same backtest S)
+    def cal_term(ch, kind):
+        return math.sqrt(ch["cal_fin"] / ch["cal_eng"]) if kind == "count" else (ch["cal_fin"] - ch["cal_eng"]) / 2
+
     F = {}
     for name, ch in chosen.items():
         kind = FAMILIES[name][0]
-        if kind == "count":
-            cal = math.sqrt(ch["cal_adj"] / ch["cal_eng"])
-        else:
-            cal = (ch["cal_adj"] - ch["cal_eng"]) / 2
-        F.update(side_factors(name, ch["so"], ch["sd"], ch["sc"], ev.engine_R, D.sL, cal))
+        F.update(side_factors(name, ch["so"], ch["sd"], ch["sc"], ev.engine_R, D.sL, cal_term(ch, kind), ch["lam"]))
     snaps = {}
     for i, e in enumerate(D.entries):
         snaps[e["id"]] = {"A": pack_factors(F, 2 * i), "B": pack_factors(F, 2 * i + 1)}
-    # factor spread summary (2024+ sides)
+    # self-check: the engine form with these factors reproduces the blended held-out predictions
+    chk = {}
+    for name in ("dAtt", "accH", "kd", "tdAcc", "topSkill"):
+        kind, (fo, fd) = FAMILIES[name][:2]
+        R2 = {k: (v.copy() if isinstance(v, np.ndarray) else v) for k, v in ev.engine_R.items()}
+        if name.startswith("acc"):
+            t = "HBL".index(name[-1])
+            R2["accSh"][:, t] += np.log(F["acc_%d" % t])
+            R2["accAgSh"][:, t] += np.log(F["accAg_%d" % t])
+        elif name == "tdAcc":
+            R2["tdAcc"] = sigm(logit(R2["tdAcc"]) + np.log(F["tdAcc"]))
+            R2["tdAccAg"] = sigm(logit(R2["tdAccAg"]) + np.log(F["tdAccAg"]))
+        else:
+            R2[fo] = R2[fo] * F[fo]
+            R2[fd] = R2[fd] * F[fd]
+        ch = chosen[name]
+        via = ev.pred_raw(name, R2)
+        via = via * ch["cal_eng"] if kind == "count" else via + ch["cal_eng"]
+        tgt = predict(name, "final")
+        ok = ev.fam[name]["ok"]
+        chk[name] = rnd(float(np.max(np.abs(np.log(via[ok] / tgt[ok])) if kind == "count"
+                                     else np.abs(via[ok] - tgt[ok]))), 3)
+    res["factor_selfcheck_max_abs_log_error"] = chk
+    print("factor self-check (max |log| error, rounding only):", chk)
     spread = {}
     for k in sorted(F):
         lf = np.log(F[k][D.s_test])
@@ -1280,19 +1346,17 @@ def main():
     Rr = fighter_rates(Sr, Lr, p)
     T_snap = float(D.snapshot.toordinal() + 1)
     pidx = np.array([inv.get(s, -1) for s in slugs])
-    FR = {}
-    sched = {}
+    has = pidx >= 0
+    FR, sched = {}, {}
     for name, ch in chosen.items():
         kind = FAMILIES[name][0]
         hl, ko, kd = ch["cfg"]
         y, E, Lb = family_arrays(name, D.V, D.L, p)
         f = walk_count if kind == "count" else walk_binom
         _, _, _, _, (o_all, d_all, c_all) = f(D, y, E, Lb, hl, ko, kd, "full", extra_T=T_snap)
-        has = pidx >= 0
         o_r = np.where(has, o_all[np.maximum(pidx, 0)], 0.0)
         d_r = np.where(has, d_all[np.maximum(pidx, 0)], 0.0)
-        cal = math.sqrt(ch["cal_adj"] / ch["cal_eng"]) if kind == "count" else (ch["cal_adj"] - ch["cal_eng"]) / 2
-        FR.update(side_factors(name, o_r, d_r, np.full(len(slugs), c_all), Rr, Lr, cal))
+        FR.update(side_factors(name, o_r, d_r, np.full(len(slugs), c_all), Rr, Lr, cal_term(ch, kind), ch["lam"]))
         # schedule diagnostic: exposure-weighted mean opponent defense effect he faced (decayed)
         w = np.exp(-math.log(2) / hl * (T_snap - D.day))
         if kind == "count":
@@ -1320,8 +1384,8 @@ def main():
         fam["chosen"]["k_offense_engine_units"] = rnd(fam["chosen"]["k_offense"] / u, 3)
         fam["chosen"]["k_defense_engine_units"] = rnd(fam["chosen"]["k_defense"] / u, 3)
         fam["chosen"]["calibration_neutral_term"] = rnd(
-            math.sqrt(chosen[name]["cal_adj"] / chosen[name]["cal_eng"]) if fam["kind"] == "count"
-            else (chosen[name]["cal_adj"] - chosen[name]["cal_eng"]) / 2, 4)
+            math.sqrt(chosen[name]["cal_fin"] / chosen[name]["cal_eng"]) if fam["kind"] == "count"
+            else (chosen[name]["cal_fin"] - chosen[name]["cal_eng"]) / 2, 4)
 
     meta = {
         "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
