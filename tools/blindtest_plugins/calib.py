@@ -5,7 +5,10 @@ calib.json fights[id] (backtest fights 2019-2025): set (hist = 2019-2023, valid 
 (noline = ML v2 logistic + market rating, open = opener + ML v2 logistic, line = close + ML v2 logistic):
   <head>     the pre-registered choice of tools/calib.py (data/derived/calib_prereg.json). Nothing passed the CV gate,
              so it is the incumbent: tools/ml2.py's page stack, forward-chained 2021-2023 (fit 2019..Y-1, no 2019-2020
-             history) and fit 2019-2023 for 2024-2025 (= forward_models.json ml2_static).
+             history) and fit 2019-2023 for 2024-2025 (forward_models.json ml2_static weights). open / line equal
+             ml2's published static predictions; noline differs on 9 2024-25 fights where market.json has no
+             p_market_rating (ml2 enters that input as logit 0; calib feeds ml2's table rating mr_p), 0.58940 vs
+             0.58899 (verifier, research/model_calib.md "Verification log").
   <head>_wf  experimental control: the same stack fit each year on 2013..Y-1 with a trailing temperature refit before
              every card (the temperature family's 2016-2020 choice), walk-forward through 2024-2025. Rejected by the
              2021-2023 gate; registered so the harness can show what a deployed recalibration would have done.

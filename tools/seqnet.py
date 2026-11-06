@@ -1664,6 +1664,8 @@ def stage_export(args):
            "cv": json.load(open(os.path.join(CACHE, "cv.json"))),
            "validation_2024_2025": json.load(open(os.path.join(CACHE, "confirm.json"))) if os.path.exists(
                os.path.join(CACHE, "confirm.json")) else None,
+           "blindtest_replay": json.load(open(os.path.join(CACHE, "blindtest_summary.json"))) if os.path.exists(
+               os.path.join(CACHE, "blindtest_summary.json")) else None,
            "fights": fights}
     json.dump(out, open(OUT_JSON, "w"), separators=(",", ":"), default=float)
     log("wrote %s (%d fights, %.0f KB)" % (OUT_JSON, len(fights), os.path.getsize(OUT_JSON) / 1024))

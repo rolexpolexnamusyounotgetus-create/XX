@@ -18,18 +18,22 @@ Nov 6, 2026, ~10:45 pm UTC. Code: `tools/calib.py`. Output: `data/derived/calib.
    - **Rating systems and both lines:** their yearly slopes (2012-2023) spread no more than one year's sampling noise
      (excess sd 0 to 0.05). The lag-1 correlation of log slopes is -0.23 to +0.40.
    - **ML fits, the market rating and the stacks:** they show some excess spread (0.11-0.24). Most of it is the
-     small-sample overconfidence of the 2012-2016 fits plus one episode. In 2017 the rating, market-rating, ML and
-     stack families were underconfident (no-line stack 1.73) while the close was not (0.97). It reverted by 2019
-     (0.81).
-   - **Rescaling by last year's slope:** it never helped any family in 2014-2023 (T2). For the no-line stack it hurt:
-     +0.0033 [+0.0002, +0.0064].
+     small-sample overconfidence of the 2012-2016 fits plus one episode. In 2017 the tuned rating systems (WHR,
+     Glicko-2, Elo-full, TrueSkill 1.08-1.27), the market rating, ML and stack families were underconfident (no-line
+     stack 1.73) while the close was not (0.97); plain Elo (0.71) and strike Elo (0.92) were not underconfident
+     either (verifier correction). It reverted by 2019 (0.81).
+   - **Rescaling by last year's slope:** it never helped any family significantly in 2014-2023 (T2; point estimates
+     as low as -0.0017, every CI includes 0). For the no-line stack it hurt: +0.0033 [+0.0002, +0.0064].
 3. **2024-25, scored once: the choice is the incumbents** (T5). They reproduce ml2's published static numbers.
-   - The no-line stack is 0.0004 apart: 0.5894 here vs 0.5890 in ml2, because the market-rating source differs (see
-     Caveats).
+   - The no-line stack is 0.0004 apart: 0.5894 here vs 0.5890 in ml2, because market.json has no market rating for
+     9 of the 854 fights, which ml2's stack entered as logit 0 (see Caveats; verifier correction).
    - The close stack beats the close by -0.0096 [-0.0141, -0.0052].
-   - The 2024-25 shift was larger than anything in 2012-2023. Pooled 2024-25 slopes were 1.36-1.54 for the rating,
-     market-rating and ML families (Elo and strike Elo 1.13-1.14), against a pre-2024 cross-family yearly mean of at
-     most exp(0.134) = 1.14. The close stayed at 1.13 / 1.09.
+   - Across families, the 2024-25 shift was larger than anything in 2012-2023 (like-for-like, verifier correction).
+     The mean log slope over the 11 families with every year from 2014 to 2025 was +0.268 in 2024 and +0.310 in
+     2025 (slope 1.31 / 1.36). The highest earlier year was +0.124 (2022). Pooled 2024-25 slopes were 1.36-1.54 for
+     the rating, market-rating and ML families (Elo and strike Elo 1.13-1.14). Single families had reached those
+     levels before: the market rating was at 1.38 in 2022 and 1.55 [1.16, 1.98] in 2023, the open at 1.49 in 2022,
+     and the no-line stack at 1.73 in 2017. The close stayed at 1.13 / 1.09.
 4. **For the record only (cannot change anything): a per-card trailing temperature would have hedged 2024-25.**
    - The temperature family's 2016-2020 choice refits before every card on the last 200-400 scored bouts, with a
      N(1, 0.15²) prior.
@@ -37,11 +41,16 @@ Nov 6, 2026, ~10:45 pm UTC. Code: `tools/calib.py`. Output: `data/derived/calib.
      its own uncalibrated base.
    - On 2024-25 it scored -0.0047 [-0.0089, -0.0003] (no line), -0.0024 (open, n.s.), -0.0017 (close stack, n.s.)
      and -0.0035 [-0.0060, -0.0009] (ML v2 logistic) against the static incumbents. Against ml2's own rolling refits it
-     was -0.0009 to -0.0031.
+     was -0.0009 to -0.0031, and only the ML v2 logistic's CI excludes 0 (-0.0031 [-0.0052, -0.0004]). The other
+     three include 0 (verifier). So most of the hedge against the static incumbents comes from refitting on 2024-25
+     outcomes at all, not from the temperature form.
+   - These are 24 descriptive rows (6 families x 4 heads) on an episode already known before this work began
+     (BACKLOG: "every input became underconfident in 2024-25"). Picking the best of them is a 2024-25 selection.
    - That is one episode, already seen, so it is not adoptable. It is a candidate for v9 to pre-register as an
      insurance arm whose clean test is the forward ledger or vault audit 2.
 5. **Segments:** women's bouts (slope 0.71-0.88) and five-rounders (0.74-0.89) look overconfident before 2024.
-   No-line newcomer bouts look underconfident (1.17-1.20). Segment temperatures still fail the gate: the best gain is
+   No-line newcomer bouts look underconfident (1.17-1.20). Only 2 of the 24 segment-by-head CIs exclude 1 (open stack,
+   women 0.71 [0.46, 0.97]; close stack, debut 1.28 [1.08, 1.50]). Chance alone would give about 1.2 (verifier). Segment temperatures still fail the gate: the best gain is
    -0.0004 for the open stack, and the line-stack "five" cell is -0.0002.
 6. **Consistency with the PRE-REGISTERED production drift rule** (docs/V6_V10_PLAN.md 6.5.1):
    - My results agree with its default, which is to change nothing. The rule's expected cost is small in every
@@ -156,7 +165,8 @@ of fits on a few hundred fights, not drift.
 | stack_open | +0.0004 [-0.0025, +0.0033] | +0.0022 [-0.0001, +0.0047] | +0.0000 [-0.0029, +0.0028] | +0.0004 [-0.0025, +0.0034] | +0.0003 [-0.0004, +0.0011] |
 | stack_line | +0.0002 [-0.0027, +0.0027] | +0.0007 [-0.0008, +0.0023] | +0.0007 [-0.0022, +0.0032] | +0.0015 [-0.0014, +0.0042] | +0.0001 [-0.0004, +0.0007] |
 
-Negative = the rescaled predictions are better. No family improves on any window. The ML and stack families' 2014-2016
+Negative = the rescaled predictions are better. No family improves significantly on any window: every CI includes 0,
+and the most negative point estimate is -0.0017. The ML and stack families' 2014-2016
 overconfidence would look correctable in hindsight, but a temperature estimated from the year before does not track it.
 
 ## 2. Recalibration candidates, chosen by rolling-origin CV within 2023
@@ -249,8 +259,9 @@ debut column comes from the `all` universe.
 - **The consistent ones.** Women's bouts and five-rounders lean overconfident in every head. The pre-2024 no-line
   stack leans underconfident on newcomers. The latter is the opposite of what the blind test saw on 2024-25 for the MoE
   no-line stack (0.81), so it is not a stable property.
-- **Debut bouts.** The close-stack slope on debut bouts in the all universe, 1.28 [1.08, 1.50], is the only CI that
-  clears 1.
+- **Debut bouts.** The close-stack slope on debut bouts in the all universe, 1.28 [1.08, 1.50], is the only CI above
+  1. One other CI excludes 1, from below: open stack, women 0.71 [0.46, 0.97]. Two of 24 cells is about what chance
+  gives (verifier).
 - **Segment temperatures.** Even estimated with shrinkage, they fail the 0.0005 gate in both universes. The do-not-do
   list already says no segment-specific temperatures, and this note confirms it with CV.
 
@@ -268,6 +279,9 @@ recorded in the pre-registration. The look ran from 10:36:31 to 10:37:00 pm UTC.
 | open | 843 | none (incumbent) | 0.58115 | 1.313 | 0.19849 | 0.6999 | -0.0043 [-0.0157, +0.0067] | 0.57997 (slope 1.254) |
 | line | 845 | none (incumbent) | 0.57574 | 1.171 | 0.19639 | 0.7077 | -0.0096 [-0.0141, -0.0052] | 0.57493 (slope 1.147) |
 | ml2lr | 854 | none (incumbent) | 0.58865 | 1.449 | 0.20140 | 0.6897 | +0.0003 [-0.0171, +0.0167] | 0.58819 (slope 1.405) |
+
+"vs close" is paired on the fights that have a close: 845 for noline and ml2lr, 843 for open, 845 for line
+(verifier note).
 
 Descriptive only. Each family's 2016-2020 choice was run walk-forward through 2024-25, and by the pre-registration none
 of it can change anything.
@@ -485,8 +499,13 @@ node tests/test_calib.js
 
 - **The incumbent no-line stack differs from ml2's by 0.0004 on 2024-25** (0.58940 vs 0.58899, slope 1.359 vs 1.371).
   Its market-rating input is ml2's table rating (`mr_p`, rebuilt from 2013 so the long-history stacks have it), while
-  ml2's stack stage used market.json's `p_market_rating`. The open and close stacks reproduce ml2 exactly (0.58115,
-  0.57574).
+  ml2's stack stage used market.json's `p_market_rating`.
+  - Verifier correction: the two ratings agree to within 1e-4 on every fight where both exist, 2019-2025. The whole
+    gap comes from 9 of the 854 2024-25 fights, where market.json has no `p_market_rating` and ml2's stack enters the
+    input as logit 0 (p = 0.5).
+  - With those 9 set to missing, the verifier's code gives 0.58899 / slope 1.371, which is ml2's number.
+  - The weights are identical (0.7049 / 0.5526), and the gate years are unaffected (0.62984 in both).
+  - The open and close stacks reproduce ml2 exactly (0.58115, 0.57574).
 - **Which no-line stack.** The rule analysis uses the ML v2 no-line stack. The MoE no-line stack in fwd-4.1's
   `p_a_noline` has the same mechanism (h 1.5 + T 1.17), but its k was not computed.
 - **Scenario outcomes are synthetic.** They are drawn from a one-parameter slope model on real 2021-2023 inputs. A
