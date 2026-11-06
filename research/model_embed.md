@@ -11,6 +11,15 @@ Status:
   - style neighbours,
   - an empirical look-ahead check.
 - Validation (2024-2025) was scored once per build: once for the first build and once after the bug fix.
+- **Verified Nov 6, 2026 (adversarial review, "Verification log" at the end).** No look-ahead, no 2026 data, no corner
+  leak; every number reproduces from a fresh rebuild. Two protocol fixes changed the conclusions on the winner side:
+  1. The integration rule now compares base, +head and +head x exp by time-ordered CV. It used to pick only between
+     the two head variants by leave-one-year-out, so it "chose the head" even where training CV said the head hurts.
+     On top of the no-line stack, the ratings stack, the close and the close + stack, train CV now **rejects** the
+     head, so its validated contribution there is 0.
+  2. The exported stat-line recipe is the CV-selected one (time-ordered CV; 14 of 18 targets keep the term). The
+     builder had exported all 18 targets after seeing that the CV-selected recipe scored 0.01% worse on validation.
+  The stat-line gain stands: **-1.67% [-2.11, -1.24]**.
 
 Outputs:
 - `data/derived/embed.json`: model, per-snapshot embeddings, quarterly refits, roster embeddings, axes,
@@ -35,10 +44,11 @@ Hidden-data protocol:
 ## Results in one screen (validation 2024-01-01..2025-12-31, symmetric, event-cluster bootstrap 95% CIs)
 
 **Stat lines: a clear, significant gain.**
-- On top of the verified mlrates stat-line model, adding the embedding's task predictor per target lowers mean
-  relative deviance over 18 targets by **-1.68% [-2.13, -1.23]** (1,730 directed rows).
+- On top of the verified mlrates stat-line model, adding the embedding's task predictor lowers mean relative
+  deviance over 18 targets by **-1.67% [-2.11, -1.24]** (1,730 directed rows). This is the exported recipe: the term
+  is kept for the 14 targets where time-ordered CV inside 2019-2023 says it helps.
   - Fit on mlrates' 2019-2023 out-of-fold rows.
-  - Every segment improves: attackers with 1-2 UFC fights -1.57% [-2.36, -0.75]; 2024 -1.47%; 2025 -1.90%.
+  - Every segment improves: attackers with 1-2 UFC fights -1.51% [-2.31, -0.69]; 2024 -1.47%; 2025 -1.88%.
   - Largest gains: distance accuracy -5.1%, leg accuracy -3.6%, control -3.3%, head accuracy -2.9%,
     head attempts -2.6%.
 - Against this project's own per-stat baselines (10 per-fight stats):
@@ -48,22 +58,28 @@ Hidden-data protocol:
 
 **Winner: real signal, but already in the current stack.**
 
-| model, 2024-25 (854 decisive fights) | log loss | vs reference, 95% CI |
-|---|---|---|
-| embedding head alone (antisymmetric, no other features) | 0.6336 | -0.0433 [-0.0607, -0.0264] vs Elo 0.6769 |
-| this tool's logistic, base features | 0.6184 | |
-| same + embedding features | 0.6149 | -0.0036 [-0.0122, +0.0051] |
-| ML logistic (ml.json `lr`, recalibrated on 2019-23) + head | 0.6063 | -0.0025 [-0.0060, +0.0011] |
-| no-line stack (Elo + ML + market rating) + head | 0.5941 | -0.0012 [-0.0028, +0.0005] |
-| no-line best (that stack + ratings stack) + head | 0.5907 | -0.0006 [-0.0015, +0.0003] |
-| opening line + head | 0.5976 | **-0.0088 [-0.0143, -0.0036]** |
-| closing line + head | 0.5836 | -0.0013 [-0.0026, -0.0001] |
-| closing line + no-line stack + head | 0.5788 | +0.0004 [-0.0003, +0.0011] |
+The last column is the verified decision: the variant (base, + head, + head x exp) with the lowest time-ordered CV
+log loss inside 2019-2023. Where train CV picks the base, the head's validated contribution is 0, whatever the
+2024-25 delta shows.
+
+| model, 2024-25 (854 decisive fights) | log loss | + head vs reference, 95% CI | train CV keeps the head? |
+|---|---|---|---|
+| embedding head alone (antisymmetric, no other features) | 0.6336 | -0.0433 [-0.0607, -0.0264] vs Elo 0.6769 | n/a |
+| this tool's logistic, base features | 0.6184 | | |
+| same + embedding features | 0.6149 | -0.0036 [-0.0122, +0.0051] | yes (CV -0.006) |
+| ML logistic (ml.json `lr`, recalibrated on 2019-23) + head | 0.6063 | -0.0025 [-0.0060, +0.0011] | yes |
+| no-line stack (Elo + ML + market rating) + head | 0.5941 | -0.0012 [-0.0028, +0.0005] | **no** (CV +0.0015) |
+| no-line best (that stack + ratings stack) + head | 0.5907 | -0.0006 [-0.0015, +0.0003] | **no** (CV +0.0015) |
+| opening line + head | 0.5976 | **-0.0088 [-0.0143, -0.0036]** | yes |
+| closing line + head | 0.5836 | -0.0013 [-0.0026, -0.0001] | **no** (CV +0.0006) |
+| closing line + no-line stack + head | 0.5788 | +0.0004 [-0.0003, +0.0011] | **no** (CV +0.0016) |
 
 - The head beats plain Elo clearly. It trails the tuned rating systems in `ratings.json` on the same years:
   WHR-with-rounds 0.618 and Glicko-2 0.623 (858 rows).
-- What it knows is mostly what the ML features, the ratings and the market already know. It helps the opening line clearly
-  and the close marginally, and adds nothing once the close and the ML stack are both present.
+- What it knows is mostly what the ML features, the ratings and the market already know. Train CV keeps it only on
+  top of a single model (the ML logistic, n.s. on validation) and the opening line (the one clear gain). On top of
+  the no-line stack, the ratings stack and the closing line, train CV rejects it. The close's -0.0013 is a
+  validation-only delta that a pre-registered rule would not have taken.
 - No winner variant closes the newcomer gap. In fights where a man has 1-2 UFC fights, the head scores 0.656
   vs the close 0.604. The embedding of a man with one or two fights is mostly the division-average prior.
 - Five-round fights (105) are the only segment where the embedding features help the feature models
