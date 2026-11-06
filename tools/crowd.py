@@ -247,18 +247,21 @@ def parse_rotowire(h):
             if len(names) != 2 or not all(names):
                 continue
             wc = cells[start - 1].get_text(" ", strip=True) if start == 2 and len(cells) > 1 else ""
-            picks = {}
+            picks, struck = {}, {}
             for j, c in enumerate(cells[start:start + len(pickers)]):
                 t = c.get_text(" ", strip=True)
                 if t and t.upper() not in ("N/A", "-", "--"):
                     picks[pickers[j]] = t
-            bouts.append({"a": names[0], "b": names[1], "wc": wc, "picks": picks})
+                    # audit only (never a feature): RotoWire strikes through losing picks after the event
+                    struck[pickers[j]] = bool(c.find(["s", "del", "strike"]) or "line-through" in str(c))
+            bouts.append({"a": names[0], "b": names[1], "wc": wc, "picks": picks, "_struck": struck})
     # merge bouts split across several tables (one table per 3 pickers)
     merged = {}
     for b in bouts:
         k = (norm_name(b["a"]), norm_name(b["b"]))
         if k in merged:
             merged[k]["picks"].update(b["picks"])
+            merged[k]["_struck"].update(b["_struck"])
         else:
             merged[k] = b
     return {"published": _date_published(h), "title": title, "pickers": sorted(set(pickers_all)),
@@ -342,6 +345,24 @@ def _name_score(x, y):
     return max(cr * 0.95, jac * 0.9 + (0.1 if last else 0.0))
 
 
+def _pair_score(a, b, fa, fb):
+    """Both names must match; one weak name is allowed when the other matches exactly and the weak pair shares a
+    surname, a first name, or one name's tokens contain the other's ("Ian Garry" / "Ian Machado Garry", "Bobby
+    Green" / "King Green"): the opponent and the date window pin the bout down."""
+    sa, sb = _name_score(a, fa), _name_score(b, fb)
+    lo, hi = min(sa, sb), max(sa, sb)
+    if lo >= 0.8:
+        return lo
+    if hi >= 0.97:
+        x, y = (a, fa) if sa < sb else (b, fb)
+        tx, ty = set(norm_name(x).split()), set(norm_name(y).split())
+        fx_, fy_ = norm_name(x).split()[0], norm_name(y).split()[0]
+        first = fx_ == fy_ or (min(len(fx_), len(fy_)) >= 4 and (fx_.startswith(fy_) or fy_.startswith(fx_)))
+        if tx and ty and (tx <= ty or ty <= tx or norm_name(x).split()[-1] == norm_name(y).split()[-1] or first):
+            return 0.8     # married-name changes keep the first name ("Katlyn Chookagian" / "Katlyn Cerminara")
+    return lo
+
+
 class FightIndex:
     def __init__(self, fights):
         self.fights = fights
@@ -357,8 +378,8 @@ class FightIndex:
         """Best fight in [d0, d1] whose two names match (a, b) in either order. -> (fight, swapped, score) or None."""
         best = None
         for f in self.window(d0, d1):
-            s1 = min(_name_score(a, f["a"]), _name_score(b, f["b"]))
-            s2 = min(_name_score(a, f["b"]), _name_score(b, f["a"]))
+            s1 = _pair_score(a, b, f["a"], f["b"])
+            s2 = _pair_score(a, b, f["b"], f["a"])
             s, sw = (s1, False) if s1 >= s2 else (s2, True)
             if s >= thr and (best is None or s > best[2]):
                 best = (f, sw, s)
@@ -439,6 +460,11 @@ def build_rows(fights=None, verbose=True):
                     s = "B" if s == "A" else "A"
                 na += s == "A"
                 nb += s == "B"
+                if f["winner"] in ("A", "B"):     # audit: were the picks shown the picks that were scored?
+                    aud = st.setdefault("strike_audit", {"cells": 0, "struck": 0, "consistent": 0})
+                    aud["cells"] += 1
+                    aud["struck"] += int(b["_struck"].get(pk, False))
+                    aud["consistent"] += int(b["_struck"].get(pk, False) == (s != f["winner"]))
             if na + nb == 0:
                 continue
             gap = _days(pub, f["date"])
@@ -495,3 +521,269 @@ def build_rows(fights=None, verbose=True):
         log("Money MMA: %d posts (%d without a consensus block), %d picks, %d matched, %d unmatched" % (
             sm["posts"], sm["posts_no_picks"], sm["picks"], sm["matched"], sm["n_unmatched"]))
     return rows, rep
+
+
+# ====================================================================== evaluation
+STACK_CACHE = os.path.join(ROOT, "out", "ml2_cache", "stack.pkl")
+EVAL_OUT = os.path.join(ROOT, "out", "crowd_cache")
+CROWD_COLS = ("rw", "mm", "crowd")
+# the CV-chosen ML v2 stacks (research/model_ml2.md section 6) and the page variants, by regime
+BASE_SETS = {
+    "line": {"market+ml2": ["market", "ml2"], "page: market+ml2lr": ["market", "ml2lr"]},
+    "noline": {"ml2+mkt_rating+feat_lr": ["ml2", "mkt_rating", "feat_lr"], "page: ml2lr+mkt_rating": ["ml2lr", "mkt_rating"]},
+    "open": {"open+ml2": ["open", "ml2"], "page: open+ml2lr": ["open", "ml2lr"]},
+}
+RW_PRIOR = 0.5                     # pseudo-picks per side when a panel share becomes a probability
+MM_CLIP = 0.03
+
+
+def crowd_probs(r):
+    """Per-fight crowd inputs as P(A): rw (panel share, shrunk), mm (contest consensus share), crowd (mean logit)."""
+    out = {}
+    if r.get("rw") and r["rw"].get("frozen") == "pre_event":
+        w = r["rw"]
+        out["rw"] = (w["n_a"] + RW_PRIOR) / (w["n"] + 2 * RW_PRIOR)
+    if r.get("mm"):
+        out["mm"] = min(max(r["mm"]["share_a"], MM_CLIP), 1 - MM_CLIP)
+    zs = [math.log(p / (1 - p)) for p in out.values()]
+    if zs:
+        z = sum(zs) / len(zs)
+        out["crowd"] = 1 / (1 + math.exp(-z))
+    return out
+
+
+def _np():
+    import numpy as np
+    import pandas as pd
+    return np, pd
+
+
+def attach_crowd(D, crowd_fights):
+    np, pd = _np()
+    for c in CROWD_COLS:
+        D[c] = np.nan
+    D["rw_n"] = 0
+    idx = {f: i for i, f in enumerate(D["fid"])}
+    for fid, r in crowd_fights.items():
+        if fid in idx:
+            p = crowd_probs(r)
+            for c, v in p.items():
+                D.iat[idx[fid], D.columns.get_loc(c)] = v
+            if "rw" in p:
+                D.iat[idx[fid], D.columns.get_loc("rw_n")] = r["rw"]["n"]
+    return D
+
+
+def fit_slope(z, y, w=None):
+    """One-parameter calibration p = sigmoid(b z), no intercept (symmetric). Returns b."""
+    np, _ = _np()
+    from scipy.optimize import minimize_scalar
+    w = np.ones(len(z)) if w is None else w
+    f = lambda b: float(np.sum(w * (np.logaddexp(0, b * z) - y * b * z)))
+    return float(minimize_scalar(f, bounds=(0.0, 10.0), method="bounded").x)
+
+
+def logit_np(p, c=1e-6):
+    np, _ = _np()
+    p = np.clip(np.asarray(p, float), c, 1 - c)
+    return np.log(p / (1 - p))
+
+
+def run_eval(args):
+    import pickle
+    np, pd = _np()
+    sys.argv = [sys.argv[0]]
+    import ml2 as M2
+    os.makedirs(EVAL_OUT, exist_ok=True)
+    doc = json.load(open(OUT_JSON))
+    CF = doc["fights"]
+    S = pickle.load(open(STACK_CACHE, "rb"))
+    D = S["D"].copy()
+    assert str(D["date"].max()) < VAULT_FROM and int(D["year"].max()) <= 2025, "2026 rows in the stack table"
+    D = attach_crowd(D, CF)
+    y = D["y"].to_numpy(float)
+    yr = D["year"].to_numpy()
+    ev = D["event"].to_numpy()
+    has = {"line": D["market"].notna().to_numpy(), "open": D["open"].notna().to_numpy(), "noline": np.ones(len(D), bool)}
+    cov = {c: D[c].notna().to_numpy() for c in CROWD_COLS}
+    R = {"coverage": {}, "alone": {}, "stack": {}, "debut": {}, "freeze": {}, "swap": {}}
+    for c in CROWD_COLS:
+        R["coverage"][c] = {str(Y): int((cov[c] & (yr == Y)).sum()) for Y in range(2019, 2026)}
+        R["coverage"][c]["of_rows"] = {str(Y): int((yr == Y).sum()) for Y in range(2019, 2026)}
+    log("coverage in the ML v2 stack table (backtest fights 2019-2025, %d rows): %s" % (
+        len(D), {c: int(cov[c].sum()) for c in CROWD_COLS}))
+
+    # ---------------- test 1: the crowd alone vs Elo / ML v2 / open / close on the same fights
+    R["alone"] = test_alone(D, CF, M2, np)
+    # ---------------- test 2: the crowd as an expert in the no-line, open and close stacks
+    R["stack"] = test_stack(D, M2, np, has, cov)
+    # ---------------- test 4: debut bouts (outside the backtest universe)
+    R["debut"] = test_debut(CF, M2, np)
+    # ---------------- freeze / leak checks and symmetry
+    R["freeze"] = freeze_checks(CF, D, np)
+    R["swap"] = swap_test(D, M2, np, has)
+    R["meta"] = {"tool": TOOL_VERSION, "run": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+                 "stack_table": "out/ml2_cache/stack.pkl (tools/ml2.py stage stack; OOF 2019-2023, static/rolling 2024-25)",
+                 "rule": "an input enters a stack only if forward-chained CV 2021-2023 improves by more than %g (ml2 SEL_MIN)"
+                         % M2.SEL_MIN, "bootstrap": "2,000 event-cluster resamples, paired (tools/ml2.py compare)"}
+    json.dump(R, open(os.path.join(EVAL_OUT, "eval.json"), "w"), indent=1, default=float)
+    doc["eval"] = R
+    json.dump(doc, open(OUT_JSON, "w"), indent=1)
+    log("eval written to %s and %s" % (os.path.join(EVAL_OUT, "eval.json"), OUT_JSON))
+    return R
+
+
+def _forward_slope(z_all, y_all, yr_all, train_mask, years):
+    """b fit on rows of years < Y (train_mask), for each Y; returns {Y: b}."""
+    np, _ = _np()
+    out = {}
+    for Y in years:
+        m = train_mask & (yr_all < Y)
+        out[Y] = fit_slope(z_all[m], y_all[m]) if m.sum() >= 15 else None
+    return out
+
+
+def test_alone(D, CF, M2, np):
+    """Crowd alone, calibrated by one no-intercept slope fit forward (years before the scored year; 2024-25 uses
+    <= 2023), against Elo, ML v2 (OOF / static), the open and the close on the same backtest fights."""
+    allrows = []                                  # every covered decisive fight (all universes) for the slope
+    for fid, r in CF.items():
+        if r.get("winner") not in ("A", "B"):
+            continue
+        p = crowd_probs(r)
+        for c in CROWD_COLS:
+            if c in p:
+                allrows.append((c, int(r["date"][:4]), math.log(p[c] / (1 - p[c])), 1.0 if r["winner"] == "A" else 0.0))
+    out = {}
+    yr = D["year"].to_numpy()
+    y = D["y"].to_numpy(float)
+    for c in CROWD_COLS:
+        rr = [x for x in allrows if x[0] == c]
+        if not rr:
+            continue
+        zA = np.array([x[2] for x in rr]); yA = np.array([x[3] for x in rr]); yrA = np.array([x[1] for x in rr])
+        slopes = _forward_slope(zA, yA, yrA, np.ones(len(rr), bool), range(2017, 2026))
+        b24 = fit_slope(zA[yrA <= 2023], yA[yrA <= 2023]) if (yrA <= 2023).sum() >= 15 else None
+        zc = logit_np(D[c].to_numpy(float))
+        pc = np.full(len(D), np.nan)
+        for Y in range(2019, 2024):
+            m = (yr == Y) & D[c].notna().to_numpy()
+            if slopes.get(Y) is not None:
+                pc[m] = 1 / (1 + np.exp(-slopes[Y] * zc[m]))
+        m = (yr >= 2024) & D[c].notna().to_numpy()
+        if b24 is not None:
+            pc[m] = 1 / (1 + np.exp(-b24 * zc[m]))
+        D["p_" + c] = pc
+        res = {"slope_by_year": {str(k): (round(v, 3) if v is not None else None) for k, v in slopes.items()},
+               "slope_fit_le_2023": round(b24, 3) if b24 is not None else None}
+        for per, lo, hi in (("2019-2023 (forward)", 2019, 2023), ("2024-2025 (one look)", 2024, 2025)):
+            m = (~np.isnan(pc)) & (yr >= lo) & (yr <= hi) & D["market"].notna().to_numpy() & D["open"].notna().to_numpy()
+            if m.sum() < 10:
+                continue
+            g = D["event"].to_numpy()[m]
+            row = {"n": int(m.sum()), "events": int(len(set(g)))}
+            for k, col in (("crowd", None), ("elo", "elo"), ("ml2", "ml2_static"), ("ml2lr", "ml2lr_static"),
+                           ("open", "open"), ("close", "market")):
+                p = pc[m] if col is None else D[col].to_numpy(float)[m]
+                row[k] = round(M2.ll(p, y[m]), 5)
+                row[k + "_acc"] = round(float(np.mean((p > 0.5) == (y[m] > 0.5)) + 0.5 * np.mean(p == 0.5)), 4)
+            for k, col in (("elo", "elo"), ("ml2", "ml2_static"), ("open", "open"), ("close", "market")):
+                row["crowd - " + k] = M2.compare(pc[m], D[col].to_numpy(float)[m], y[m], g)
+            # raw majority-pick accuracy (ties = half) and the share of unanimous / split panels
+            raw = D[c].to_numpy(float)[m]
+            row["majority_pick_acc"] = round(float(np.mean(np.where(raw == 0.5, 0.5, (raw > 0.5) == (y[m] > 0.5)))), 4)
+            row["close_fav_agrees_with_crowd"] = round(float(np.mean((raw > 0.5) == (D["market"].to_numpy(float)[m] > 0.5))), 4)
+            res[per] = row
+            log("alone %-6s %-22s n %3d | crowd %.4f elo %.4f ml2 %.4f open %.4f close %.4f | crowd-close %+.4f %s" % (
+                c, per, row["n"], row["crowd"], row["elo"], row["ml2"], row["open"], row["close"],
+                row["crowd - close"]["diff"], row["crowd - close"]["diff_ci"]))
+        out[c] = res
+    return out
+
+
+def _cv_set(D, M2, np, cols, rows_ok, y, yr):
+    """ml2's forward-chained stack CV (2021-2023, recency half-life chosen with the SEL_MIN penalty). Returns
+    (cv by h, chosen h, OOF predictions for 2021-2023 under the chosen h)."""
+    cvs, oof = {}, {}
+    for h in (None, 3.0, 1.5):
+        tot = nn = 0.0
+        arr = np.full(len(D), np.nan)
+        for Y in (2021, 2022, 2023):
+            m = rows_ok & (yr == Y)
+            p, _ = M2.stack_predict(D, cols, "static", h, Y - 1, m, rows_ok)
+            arr[m] = p
+            tot += M2.ll(p, y[m]) * m.sum()
+            nn += m.sum()
+        cvs[str(h)] = round(tot / nn, 6)
+        oof[str(h)] = arr
+    hb = min(cvs, key=lambda k: cvs[k] + (0 if k == "None" else M2.SEL_MIN))
+    return cvs, (None if hb == "None" else float(hb)), oof[hb]
+
+
+def test_stack(D, M2, np, has, cov):
+    y = D["y"].to_numpy(float)
+    yr = D["year"].to_numpy()
+    ev = D["event"].to_numpy()
+    close = D["market"].to_numpy(float)
+    va = (yr >= 2024) & (yr <= 2025)
+    cvy = (yr >= 2021) & (yr <= 2023)
+    out = {}
+    for regime, sets in BASE_SETS.items():
+        rows_ok = has[regime]
+        for bname, bcols in sets.items():
+            key = "%s|%s" % (regime, bname)
+            res = {"base_cols": bcols, "cands": {}}
+            cvb, hb, oofb = _cv_set(D, M2, np, bcols, rows_ok, y, yr)
+            pst_b, wb = M2.stack_predict(D, bcols, "static", hb, 2023, rows_ok & va, rows_ok)
+            res["base"] = {"cv_by_h": cvb, "h": hb, "cv": cvb[str(hb)], "w_le_2023": dict(zip(bcols, np.round(wb, 4).tolist()))}
+            pb_full = np.full(len(D), np.nan)
+            pb_full[rows_ok & va] = pst_b
+            prb = np.full(len(D), np.nan)
+            for Y in (2024, 2025):
+                m = rows_ok & (yr == Y)
+                prb[m], _ = M2.stack_predict(D, bcols, "roll", hb, Y - 1, m, rows_ok)
+            for c in CROWD_COLS:
+                cols = bcols + [c]
+                cvc, hc, oofc = _cv_set(D, M2, np, cols, rows_ok, y, yr)
+                gain = cvc[str(hc)] - cvb[str(hb)]
+                m_cv = rows_ok & cvy
+                m_cvc = m_cv & cov[c]
+                r = {"cv_by_h": cvc, "h": hc, "cv": cvc[str(hc)], "cv_gain": round(gain, 6),
+                     "passes_gate": bool(gain < -M2.SEL_MIN),
+                     "cv_paired_all": M2.compare(oofc[m_cv], oofb[m_cv], y[m_cv], ev[m_cv]),
+                     "cv_paired_covered": (M2.compare(oofc[m_cvc], oofb[m_cvc], y[m_cvc], ev[m_cvc])
+                                           if m_cvc.sum() >= 10 else None),
+                     "n_cv_covered": int(m_cvc.sum())}
+                # the one 2024-25 look (static: fit <= 2023; rolling: experts' rolling columns, stack refit each January)
+                pst, w = M2.stack_predict(D, cols, "static", hc, 2023, rows_ok & va, rows_ok)
+                r["w_le_2023"] = dict(zip(cols, np.round(w, 4).tolist()))
+                pc_full = np.full(len(D), np.nan)
+                pc_full[rows_ok & va] = pst
+                prc = np.full(len(D), np.nan)
+                for Y in (2024, 2025):
+                    m = rows_ok & (yr == Y)
+                    prc[m], _ = M2.stack_predict(D, cols, "roll", hc, Y - 1, m, rows_ok)
+                mv = rows_ok & va
+                mvc = mv & cov[c]
+                r["valid_static_all"] = M2.compare(pc_full[mv], pb_full[mv], y[mv], ev[mv])
+                r["valid_roll_all"] = M2.compare(prc[mv], prb[mv], y[mv], ev[mv])
+                r["valid_static_covered"] = (M2.compare(pc_full[mvc], pb_full[mvc], y[mvc], ev[mvc])
+                                             if mvc.sum() >= 10 else None)
+                r["n_valid_covered"] = int(mvc.sum())
+                mk = mv & has["line"]
+                r["valid_static_vs_close"] = M2.compare(pc_full[mk], close[mk], y[mk], ev[mk])
+                res["cands"][c] = r
+                log("stack %-32s +%-5s CV %.5f vs %.5f (gain %+.5f, h %s, %s) | covered CV %s | 2024-25 static %+.5f %s "
+                    "covered %s | w %s" % (
+                        key, c, r["cv"], res["base"]["cv"], gain, hc, "PASS" if r["passes_gate"] else "fail",
+                        ("%+.4f %s (n %d)" % (r["cv_paired_covered"]["diff"], r["cv_paired_covered"]["diff_ci"],
+                                              r["n_cv_covered"])) if r["cv_paired_covered"] else "-",
+                        r["valid_static_all"]["diff"], r["valid_static_all"]["diff_ci"],
+                        ("%+.4f %s (n %d)" % (r["valid_static_covered"]["diff"], r["valid_static_covered"]["diff_ci"],
+                                              r["n_valid_covered"])) if r["valid_static_covered"] else "-",
+                        r["w_le_2023"]))
+            best = min(res["cands"], key=lambda k: res["cands"][k]["cv"])
+            res["best_crowd_variant_by_cv"] = best
+            res["adopted"] = best if res["cands"][best]["passes_gate"] else None
+            out[key] = res
+    return out

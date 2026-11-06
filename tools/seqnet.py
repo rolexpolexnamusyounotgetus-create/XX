@@ -687,9 +687,9 @@ def fit_one(A, cfg, seed, until_day, epochs=None, val=None, pred_idx=None):
     if best_state is not None and epochs is None:
         model.load_state_dict(best_state)
     out = {"curve": curve, "best": best, "n_train": int(len(tr))}
-    if pred_idx is not None:
+    out["draw"] = prep.draw
+    if pred_idx is not None and len(pred_idx):
         out["pred"] = predict(model, prep, pred_idx)
-        out["draw"] = prep.draw
     out["model"] = model
     out["prep_stats"] = (prep.base.numpy(), prep.sw.numpy())
     return out
@@ -729,13 +729,25 @@ def _job(job):
     return r
 
 
-def run_pool(jobs, workers):
+def run_pool(jobs, workers, on_result=None):
+    """Run training jobs in <= workers forked processes (1 torch thread each); on_result(r) is called as each
+    job finishes (incremental saves)."""
+    out = []
     if workers <= 1:
-        return [_job(j) for j in jobs]
+        for j in jobs:
+            r = _job(j)
+            out.append(r)
+            if on_result:
+                on_result(r)
+        return out
     import multiprocessing as mp
     ctx = mp.get_context("fork")
-    with ctx.Pool(workers, initializer=lambda: os.nice(0)) as pool:
-        return pool.map(_job, jobs, chunksize=1)
+    with ctx.Pool(workers) as pool:
+        for r in pool.imap_unordered(_job, jobs, chunksize=1):
+            out.append(r)
+            if on_result:
+                on_result(r)
+    return out
 
 
 def ll_bin(z, y):
@@ -780,14 +792,18 @@ def stage_hpcv(args):
         j["Y"] = j["Y"]          # validation year = Y-1, prediction year = Y
     log("hpcv: %d jobs" % len(jobs))
     t0 = time.time()
-    res = run_pool(jobs, args.workers)
     R.setdefault("runs", {})
-    for r in res:
+
+    def save(r):
         j = r["job"]
         pidx = r["pidx"]
         R["runs"]["%s|%d|%d" % (j["name"], j["Y"], j["seed"])] = {
             "best": r["best"], "curve": [round(c, 5) for c in r["curve"]], "secs": r["secs"],
             "fid": A["FID"][pidx].tolist(), "z": np.round(r["pred"]["z"], 5).tolist()}
+        json.dump(R, open(path, "w"))
+        log("hpcv run %s %d seed %d: best epoch %d (val %.4f), %.0f s" % (j["name"], j["Y"], j["seed"], r["best"][1],
+                                                                       r["best"][0], r["secs"]))
+    run_pool(jobs, args.workers, save)
     # summary: seed-averaged logit per fold, scored on eval rows of the fold year
     summ = {}
     for nm in HP_CONFIGS:
@@ -851,9 +867,13 @@ def stage_walk(args):
     t0 = time.time()
     if jobs:
         log("walk phase 1 (early stopping): %d jobs" % len(jobs))
-        for r in run_pool(jobs, args.workers):
+
+        def save1(r):
             W["es"][(r["job"]["Y"], r["job"]["seed"])] = {"curve": r["curve"], "best": r["best"], "secs": r["secs"]}
-        pickle.dump(W, open(path, "wb"))
+            pickle.dump(W, open(path, "wb"))
+            log("es %d seed %d: best epoch %d (val %.4f), %.0f s" % (r["job"]["Y"], r["job"]["seed"], r["best"][1],
+                                                                   r["best"][0], r["secs"]))
+        run_pool(jobs, args.workers, save1)
     W["epochs"] = {}
     for Y in WALK_YEARS:
         cur = np.mean([W["es"][(Y, s)]["curve"] for s in ES_SEEDS], 0)
@@ -867,10 +887,14 @@ def stage_walk(args):
                 jobs.append({"kind": "full", "cfg": cfg, "seed": s, "Y": Y, "epochs": W["epochs"][Y], "pred_years": py})
     if jobs:
         log("walk phase 2 (refits): %d jobs" % len(jobs))
-        for r in run_pool(jobs, args.workers):
+
+        def save2(r):
             W["full"][(r["job"]["Y"], r["job"]["seed"])] = {"pidx": r["pidx"], "pred": r["pred"], "draw": r["draw"],
                                                             "secs": r["secs"], "n_train": r["n_train"]}
-        pickle.dump(W, open(path, "wb"))
+            pickle.dump(W, open(path, "wb"))
+            log("refit %d seed %d: %d epochs on %d rows, %.0f s" % (r["job"]["Y"], r["job"]["seed"],
+                                                                    r["job"]["epochs"], r["n_train"], r["secs"]))
+        run_pool(jobs, args.workers, save2)
     W["cfg"] = ch
     pickle.dump(W, open(path, "wb"))
     log("walk done in %.0f s" % (time.time() - t0))
@@ -956,7 +980,617 @@ def stage_swaptest(args):
     json.dump(out, open(os.path.join(CACHE, "swaptest.json"), "w"), indent=1)
 
 
-STAGES = {"data": stage_data, "hpcv": stage_hpcv, "walk": stage_walk, "swaptest": stage_swaptest}
+
+# ====================================================================== evaluation helpers
+SEL_MIN = 0.0005
+EMBED_STATE = os.environ.get("SEQNET_EMBED_STATE", "/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/"
+                             "scratchpad/embed_cache/eval_state.pkl")
+
+
+def M2():
+    """tools/ml2.py, for its stack code (stack_fit, zmat, rec_w, stack_predict), metrics and paired bootstrap; the
+    seqnet expert is routed through ml2.col_for like ml2's own experts ("seqnet_static" / "seqnet_roll")."""
+    import ml2 as m2
+    if not getattr(m2, "_seqnet_patched", False):
+        orig = m2.col_for
+
+        def col_for(c, scheme):
+            if c in ("seqnet",):
+                return c + "_" + scheme
+            return orig(c, scheme)
+        m2.col_for = col_for
+        m2._seqnet_patched = True
+    return m2
+
+
+def expert_D(W, A):
+    """ml2's 2019-2025 expert table (out/ml2_cache/stack.pkl, every column as ml2's stack stage used it) plus the
+    seqnet columns: OOF annual refits for 2019-2023; 'static' 2024-2025 = fit before 2024-01-01, 'roll' = fit before
+    Jan 1 of the fight's year."""
+    D = pickle.load(open(os.path.join(ROOT, "out", "ml2_cache", "stack.pkl"), "rb"))["D"].copy()
+    pos = {f: i for i, f in enumerate(A["FID"])}
+    ii = np.array([pos[f] for f in D["fid"]])
+    Es, Ea = ensemble(W, A, "static"), ensemble(W, A, "annual")
+    D["seqnet_static"] = sig(Es["z"][ii])
+    D["seqnet_roll"] = sig(Ea["z"][ii])
+    D["ex_i"] = ii
+    assert np.all(A["YW"][ii] == D["y"].to_numpy()), "label mismatch with ml2's table"
+    return D, Es, Ea
+
+
+def boot_paired(la, lb, groups, n=2000, seed=7):
+    """Event-cluster bootstrap of mean(la - lb): returns mean diff and 95% CI."""
+    rng = np.random.default_rng(seed)
+    g = pd.factorize(groups)[0]
+    G = g.max() + 1
+    d = la - lb
+    S = np.bincount(g, d, G)
+    C = np.bincount(g, minlength=G).astype(float)
+    bs = []
+    for _ in range(n):
+        w = np.bincount(rng.integers(0, G, G), minlength=G)
+        bs.append((w * S).sum() / (w * C).sum())
+    return float(d.mean()), [float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))]
+
+
+def ll_vec(p, y):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+
+def cal_slope(p, y):
+    from scipy.optimize import minimize_scalar
+    z = logit(p)
+    f = lambda b: np.sum(np.logaddexp(0, b * z) - y * b * z)
+    return float(minimize_scalar(f, bounds=(0.05, 5), method="bounded").x)
+
+
+def winner_metrics(p, y):
+    return {"n": int(len(y)), "ll": round(float(ll_vec(p, y).mean()), 5),
+            "brier": round(float(np.mean((p - y) ** 2)), 5), "acc": round(float(np.mean((p > 0.5) == (y == 1))), 4),
+            "slope": round(cal_slope(p, y), 3)}
+
+
+def cmp(pa, pb, y, groups):
+    a, b = ll_vec(pa, y), ll_vec(pb, y)
+    d, ci = boot_paired(a, b, groups)
+    return {"n": int(len(y)), "a": round(float(a.mean()), 5), "b": round(float(b.mean()), 5), "diff": round(d, 5),
+            "ci": [round(ci[0], 5), round(ci[1], 5)]}
+
+
+STACK_SETS = {
+    "line": [("market+ml2", ["market", "ml2"]), ("page: market+ml2lr", ["market", "ml2lr"]),
+             ("market+seqnet", ["market", "seqnet"])],
+    "noline": [("ml2+mkt_rating+feat_lr", ["ml2", "mkt_rating", "feat_lr"]),
+               ("page: ml2lr+mkt_rating", ["ml2lr", "mkt_rating"]),
+               ("seqnet alone", ["seqnet"]), ("seqnet+mkt_rating", ["seqnet", "mkt_rating"])],
+    "open": [("open+ml2", ["open", "ml2"]), ("page: open+ml2lr", ["open", "ml2lr"]),
+             ("open+seqnet", ["open", "seqnet"])],
+}
+GATE_PAIRS = {   # base set -> base + seqnet (the gate: CV gain beyond SEL_MIN)
+    "line": ["market+ml2", "page: market+ml2lr"],
+    "noline": ["ml2+mkt_rating+feat_lr", "page: ml2lr+mkt_rating"],
+    "open": ["open+ml2", "page: open+ml2lr"],
+}
+
+
+def stack_cv_one(m2, D, cols, rows_ok, y, yr):
+    cvs, preds = {}, {}
+    for h in (None, 3.0, 1.5):
+        tot = nn = 0.0
+        pr = np.full(len(D), np.nan)
+        for Y in (2021, 2022, 2023):
+            m = rows_ok & (yr == Y)
+            p, _ = m2.stack_predict(D, cols, "static", h, Y - 1, m, rows_ok)
+            pr[m] = p
+            tot += m2.ll(p, y[m]) * m.sum()
+            nn += m.sum()
+        cvs[str(h)] = round(tot / nn, 5)
+        preds[str(h)] = pr
+    hbest = min(cvs, key=lambda k: cvs[k] + (0 if k == "None" else SEL_MIN))
+    return cvs, hbest, preds[hbest]
+
+
+def stack_gate(W, A):
+    """Forward-chained 2021-2023 stack CV (fit on 2019..Y-1 OOF rows, predict Y), ml2's code and rules."""
+    m2 = M2()
+    D, _, _ = expert_D(W, A)
+    y, yr = D["y"].to_numpy(float), D["year"].to_numpy()
+    rows_of = {"line": D["market"].notna().to_numpy(), "noline": np.ones(len(D), bool),
+               "open": D["open"].notna().to_numpy()}
+    R = {"sets": {}, "gate": {}, "paired_cv_years": {}}
+    P = {}
+    for regime, sets in STACK_SETS.items():
+        allsets = list(sets) + [(nm + " + seqnet", cols + ["seqnet"]) for nm, cols in sets if nm in GATE_PAIRS[regime]]
+        for nm, cols in allsets:
+            cvs, hb, pr = stack_cv_one(m2, D, cols, rows_of[regime], y, yr)
+            h = None if hb == "None" else float(hb)
+            _, b = m2.stack_predict(D, cols, "static", h, 2023, np.zeros(len(D), bool), rows_of[regime])
+            R["sets"]["%s|%s" % (regime, nm)] = {"cols": cols, "cv_by_h": cvs, "chosen_h": h, "cv": cvs[hb],
+                                                 "weights_fit_2019_2023": dict(zip(cols, np.round(b, 4).tolist()))}
+            P["%s|%s" % (regime, nm)] = pr
+            log("stack CV %-6s %-34s CV %.5f (h %s) w<=2023 %s" % (regime, nm, cvs[hb], h, np.round(b, 3)))
+        for base in GATE_PAIRS[regime]:
+            kb, kn = "%s|%s" % (regime, base), "%s|%s + seqnet" % (regime, base)
+            gain = R["sets"][kn]["cv"] - R["sets"][kb]["cv"]
+            R["gate"][kn] = {"cv_base": R["sets"][kb]["cv"], "cv_plus": R["sets"][kn]["cv"], "gain": round(gain, 5),
+                             "enters": bool(gain < -SEL_MIN),
+                             "seqnet_weight": R["sets"][kn]["weights_fit_2019_2023"]["seqnet"]}
+            m = rows_of[regime] & (yr >= 2021) & (yr <= 2023)
+            R["paired_cv_years"][kn + " vs base"] = cmp(P[kn][m], P[kb][m], y[m], D["event"].to_numpy()[m])
+            log("GATE %-40s gain %+.5f -> %s %s" % (kn, gain, "ENTERS" if gain < -SEL_MIN else "rejected",
+                                                    R["paired_cv_years"][kn + " vs base"]))
+    return R, D, P
+
+
+def stat_rows(A, years):
+    """Directed stat rows (example i, side s) in the backtest universe with stats."""
+    m = np.isin(A["YEAR"], years) & (~A["AMB"]) & (A["NPRIOR"].min(1) >= 1) & (A["SN"].sum((1, 2)) > 0)
+    ii = np.flatnonzero(m)
+    return np.r_[ii, ii], np.r_[np.zeros(len(ii), int), np.ones(len(ii), int)]
+
+
+def unit_dev(y, n, eta, t):
+    """mlrates' unit deviance for target t: Poisson on counts with exposure n (eta = log rate per minute), binomial
+    with n trials (eta = logit)."""
+    if t < N_POIS:
+        mu = n * np.exp(eta)
+        return 2 * (np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / np.maximum(mu, 1e-12)), 0) - (y - mu))
+    p = np.clip(sig(eta), 1e-9, 1 - 1e-9)
+    ph = np.clip(y / np.maximum(n, 1e-12), 0, 1)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        a = np.where(y > 0, y * np.log(np.maximum(ph, 1e-300) / p), 0)
+        b = np.where(n - y > 0, (n - y) * np.log(np.maximum(1 - ph, 1e-300) / (1 - p)), 0)
+    return np.where(n > 0, 2 * (a + b), 0.0)
+
+
+def mlrates_eta(A, ii, ss):
+    """mlrates OOF / dev rates (mlrates_oof.json) on the link scale; nan where the fight is missing."""
+    mo = jload("mlrates_oof.json")
+    assert mo["meta"]["targets"] == STAT_TARGETS
+    F = mo["fights"]
+    out = np.full((len(ii), 18), np.nan)
+    for k, (i, s) in enumerate(zip(ii, ss)):
+        e = F.get(A["FID"][i])
+        if e is None or e["date"] >= VAULT_S:
+            continue
+        v = np.array(e["A" if s == 0 else "B"], float)
+        out[k, :N_POIS] = np.log(np.maximum(v[:N_POIS], 1e-9))
+        out[k, N_POIS:] = logit(np.clip(v[N_POIS:], 1e-6, 1 - 1e-6))
+    return out
+
+
+def embed_eta(A, ii, ss):
+    """The embedding task predictor (tools/embed.py walk, cached eval_state) per directed row; nan if missing."""
+    if not os.path.exists(EMBED_STATE):
+        return None
+    import embed as EM
+    T = pickle.load(open(EMBED_STATE, "rb"))["T"]
+    row = {f: j for j, f in enumerate(T["id"])}
+    out = np.full((len(ii), 18), np.nan)
+    cols = [EM.TI[EM.MLR_MAP[t]] for t in STAT_TARGETS]
+    for k, (i, s) in enumerate(zip(ii, ss)):
+        j = row.get(A["FID"][i])
+        if j is None or A["YEAR"][i] >= 2026:
+            continue
+        out[k] = (T["eta_ab"] if s == 0 else T["eta_ba"])[j, cols]
+    return out
+
+
+def glm_fit(Z, y, n, binom, iters=50):
+    """Newton for a Poisson-log (exposure n) or binomial-logit (n trials) GLM, tiny ridge."""
+    b = np.zeros(Z.shape[1])
+    for _ in range(iters):
+        eta = Z @ b
+        if binom:
+            p = sig(eta)
+            g = Z.T @ (n * p - y)
+            Hs = (Z * (n * p * (1 - p))[:, None]).T @ Z
+        else:
+            mu = n * np.exp(np.clip(eta, -30, 10))
+            g = Z.T @ (mu - y)
+            Hs = (Z * mu[:, None]).T @ Z
+        step = np.linalg.solve(Hs + 1e-6 * np.eye(len(b)), g + 1e-6 * b)
+        b -= step
+        if np.max(np.abs(step)) < 1e-9:
+            break
+    return b
+
+
+RECIPES = {"recal": ["ml"], "+seqnet": ["ml", "seq"], "+emb": ["ml", "emb"], "+emb+seqnet": ["ml", "emb", "seq"]}
+
+
+def stat_eval(A, Ea, years_fit=(2019, 2023), years_score=None, cv=True):
+    """Per target: deviance of seqnet alone vs mlrates alone, and of embed-style recipes (link = b0 + b1 link(mlrates)
+    + b2 link(seqnet) [+ b3 eta_emb]), with the keep rule by time-ordered CV inside 2019-2023. years_score None ->
+    CV numbers only; else recipes fit on years_fit and scored on years_score."""
+    yrs_all = list(range(years_fit[0], (years_score or years_fit)[-1] + 1)) if years_score else \
+        list(range(years_fit[0], years_fit[1] + 1))
+    ii, ss = stat_rows(A, yrs_all)
+    Y, N = A["SY"][ii, ss], A["SN"][ii, ss]
+    SEQ = np.where(ss[:, None] == 0, Ea["ea"][ii], Ea["eb"][ii])
+    ML = mlrates_eta(A, ii, ss)
+    EMB = embed_eta(A, ii, ss)
+    yr = A["YEAR"][ii]
+    ok_rows = ~np.isnan(ML).any(1) & ~np.isnan(SEQ).any(1)
+    if EMB is not None:
+        ok_rows &= ~np.isnan(EMB).any(1)
+    ev = A["EVENT"][ii]
+    res = {"n_rows": {}, "per_target": {}, "emb_available": EMB is not None}
+    fitm = ok_rows & (yr >= years_fit[0]) & (yr <= years_fit[1])
+    scm = ok_rows & np.isin(yr, years_score) if years_score else None
+    contrib = defaultdict(lambda: np.zeros(int((scm if years_score else fitm).sum())))
+    for t, tn in enumerate(STAT_TARGETS):
+        binom = t >= N_POIS
+        y, n = Y[:, t], N[:, t]
+        has = n > 0
+        cols = {"ml": ML[:, t], "seq": SEQ[:, t], "emb": EMB[:, t] if EMB is not None else np.zeros(len(y))}
+        if not binom:
+            offs = np.log(np.maximum(n, 1e-9))
+        r = {}
+        # raw: each model as is
+        if years_score:
+            m = scm & has
+        else:
+            m = fitm & has
+        d_ml = unit_dev(y[m], n[m], cols["ml"][m], t)
+        d_sq = unit_dev(y[m], n[m], cols["seq"][m], t)
+        dd, ci = boot_paired(d_sq, d_ml, ev[m], n=1000)
+        r["raw_seqnet_vs_mlrates"] = {"dev_ml": round(float(d_ml.mean()), 5), "dev_seq": round(float(d_sq.mean()), 5),
+                                      "rel": round(dd / d_ml.mean(), 4), "ci": [round(c / d_ml.mean(), 4) for c in ci],
+                                      "n": int(m.sum())}
+        full = np.zeros(int((scm if years_score else fitm).sum()))
+        sel = (scm if years_score else fitm)
+        contrib["raw_ml"] += 0
+        # recipes: time-ordered CV inside 2019-2023 (fit years < v, score v = 2020..2023)
+        cvd = {}
+        for rn, cs in RECIPES.items():
+            if "emb" in cs and EMB is None:
+                continue
+            Z = np.c_[np.ones(len(y)), np.column_stack([cols[c] for c in cs])]
+            tot = 0.0
+            for v in range(2020, 2024):
+                a = fitm & has & (yr < v)
+                bb = fitm & has & (yr == v)
+                if binom:
+                    b = glm_fit(Z[a], y[a], n[a], True)
+                    tot += unit_dev(y[bb], n[bb], Z[bb] @ b, t).sum()
+                else:
+                    b = glm_fit(Z[a], y[a], n[a], False)
+                    tot += unit_dev(y[bb], n[bb], Z[bb] @ b, t).sum()
+            cvd[rn] = tot
+        r["cv_dev"] = {k: round(v, 2) for k, v in cvd.items()}
+        r["cv_rel_seqnet_on_mlrates"] = round((cvd["+seqnet"] - cvd["recal"]) / cvd["recal"], 5)
+        r["keep_seqnet_on_mlrates"] = bool(cvd["+seqnet"] < cvd["recal"])
+        if "+emb" in cvd:
+            r["cv_rel_emb_on_mlrates"] = round((cvd["+emb"] - cvd["recal"]) / cvd["recal"], 5)
+            r["cv_rel_seqnet_on_mlrates_emb"] = round((cvd["+emb+seqnet"] - cvd["+emb"]) / cvd["+emb"], 5)
+            r["keep_emb"] = bool(cvd["+emb"] < cvd["recal"])
+            r["keep_seqnet_on_mlrates_emb"] = bool(cvd["+emb+seqnet"] < cvd["+emb"])
+        if years_score:
+            # fit each recipe on years_fit, score years_score
+            dv = {}
+            for rn, cs in RECIPES.items():
+                if "emb" in cs and EMB is None:
+                    continue
+                Z = np.c_[np.ones(len(y)), np.column_stack([cols[c] for c in cs])]
+                a = fitm & has
+                b = glm_fit(Z[a], y[a], n[a], binom)
+                dv[rn] = np.where(has[sel], unit_dev(y[sel], np.where(has[sel], n[sel], 1.0), Z[sel] @ b, t), 0.0)
+            # CV-selected versions (the keep rule above)
+            dv["mlrates+seqnet (CV keep)"] = dv["+seqnet"] if r["keep_seqnet_on_mlrates"] else dv["recal"]
+            if "+emb" in dv:
+                dv["mlrates+emb (CV keep)"] = dv["+emb"] if r["keep_emb"] else dv["recal"]
+                base_e = dv["mlrates+emb (CV keep)"]
+                dv["mlrates+emb+seqnet (CV keep)"] = (dv["+emb+seqnet"] if r["keep_emb"] else dv["+seqnet"]) \
+                    if (r["keep_seqnet_on_mlrates_emb"] if r["keep_emb"] else r["keep_seqnet_on_mlrates"]) else base_e
+            r["valid_dev"] = {k: round(float(v.mean()), 5) for k, v in dv.items()}
+            for a_, b_ in (("+seqnet", "recal"), ("mlrates+seqnet (CV keep)", "recal"),
+                           ("mlrates+emb (CV keep)", "recal"),
+                           ("mlrates+emb+seqnet (CV keep)", "mlrates+emb (CV keep)")):
+                if a_ in dv and b_ in dv:
+                    d_, ci_ = boot_paired(dv[a_], dv[b_], ev[sel], n=1000)
+                    base = dv[b_].mean()
+                    r["valid %s vs %s" % (a_, b_)] = {"rel": round(d_ / base, 4),
+                                                      "ci": [round(ci_[0] / base, 4), round(ci_[1] / base, 4)]}
+                    contrib["%s vs %s" % (a_, b_)] += (dv[a_] - dv[b_]) / max(dv[b_].sum(), 1e-9) / 18
+            # raw mean relative deviance contribution (seqnet alone vs mlrates alone)
+            draw_ml = np.where(has[sel], unit_dev(y[sel], np.where(has[sel], n[sel], 1.0), cols["ml"][sel], t), 0)
+            draw_sq = np.where(has[sel], unit_dev(y[sel], np.where(has[sel], n[sel], 1.0), cols["seq"][sel], t), 0)
+            contrib["raw seqnet vs mlrates"] += (draw_sq - draw_ml) / max(draw_ml.sum(), 1e-9) / 18
+        else:
+            draw_ml = np.where(has[sel], unit_dev(y[sel], np.where(has[sel], n[sel], 1.0), cols["ml"][sel], t), 0)
+            draw_sq = np.where(has[sel], unit_dev(y[sel], np.where(has[sel], n[sel], 1.0), cols["seq"][sel], t), 0)
+            contrib["raw seqnet vs mlrates"] += (draw_sq - draw_ml) / max(draw_ml.sum(), 1e-9) / 18
+        res["per_target"][tn] = r
+    sel = (scm if years_score else fitm)
+    res["n_rows"] = int(sel.sum())
+    res["mean_rel"] = {}
+    for k, c in contrib.items():
+        if not np.any(c):
+            continue
+        d_, ci_ = boot_paired(c * len(c), np.zeros(len(c)), ev[sel], n=1000)
+        res["mean_rel"][k] = {"mean": round(d_, 4), "ci": [round(ci_[0], 4), round(ci_[1], 4)]}
+    cvm = {}
+    for key in ("cv_rel_seqnet_on_mlrates", "cv_rel_emb_on_mlrates", "cv_rel_seqnet_on_mlrates_emb"):
+        v = [res["per_target"][t].get(key) for t in STAT_TARGETS]
+        if all(x is not None for x in v):
+            cvm[key] = round(float(np.mean(v)), 5)
+    res["cv_mean_rel"] = cvm
+    return res
+
+
+def method_eval(A, E, D_ids_years, ml2win=None, s2=None):
+    """methodround metrics for the seqnet 23-cell joint vs methodround S (walk-forward), on backtest fights of the
+    given years with an outcome cell (draws kept, DQ/NC dropped). ml2win: optional {fid: P(A)} replacing the
+    winner; s2: optional {fid: 23-cell} (ml2's S2+ml2win, 2024-2025 only)."""
+    import methodround as MR
+    mr = jload("methodround.json")["fights"]
+    years = D_ids_years
+    m = np.isin(A["YEAR"], years) & (~A["AMB"]) & (A["NPRIOR"].min(1) >= 1) & ~np.isnan(E["z"])
+    m &= (A["CLS"] >= 0) | A["DRAW"]
+    ii = np.array([i for i in np.flatnonzero(m) if A["FID"][i] in mr and "S" in mr[A["FID"][i]]
+                   and mr[A["FID"][i]]["date"] < VAULT_S])
+    if s2 is not None:
+        ii = np.array([i for i in ii if A["FID"][i] in s2])
+    T = pd.DataFrame({"rounds": A["SCHED"][ii],
+                      "cls": [("DRAW" if A["DRAW"][i] else ("DEC" if A["CLS"][i] == 10 else
+                                                            ("KO" if A["CLS"][i] < 5 else "SUB"))) for i in ii],
+                      "winner": A["WINNER"][ii], "rnd": [int(min(5, max(1, (A["CLS"][i] % 5) + 1)))
+                                                         if 0 <= A["CLS"][i] < 10 else 1 for i in ii]})
+    y = MR.outcome_cells(T)
+    P = {"seqnet": joint23(E, ii)}
+    if ml2win is not None:
+        E2 = dict(E)
+        z2 = E["z"].copy()
+        for i in ii:
+            q = ml2win.get(A["FID"][i])
+            if q is not None:
+                z2[i] = logit(q)
+        E2["z"] = z2
+        P["seqnet method + ml2 winner"] = joint23(E2, ii)
+    P["S"] = np.stack([MR.expand_cells(mr[A["FID"][i]]["S"], int(A["SCHED"][i])) for i in ii])
+    if s2 is not None:
+        P["S2+ml2win"] = np.stack([np.asarray(s2[A["FID"][i]], float) for i in ii])
+    ok = y >= 0
+    L = {k: MR.per_fight_losses(v[ok], y[ok], T[ok]) for k, v in P.items()}
+    ev = A["EVENT"][ii][ok]
+    keys = ["joint", "method3", "bin7", "finish", "method_round", "round_given_fin", "method_given_winner", "winner"]
+    out = {"n": int(ok.sum()), "means": {}, "paired": {}}
+    for k, Lk in L.items():
+        out["means"][k] = {m_: round(float(np.nanmean(Lk[m_])), 5) for m_ in keys}
+    refs = ["S"] + (["S2+ml2win"] if s2 is not None else [])
+    for k in L:
+        for ref in refs:
+            if k == ref:
+                continue
+            pr = {}
+            for m_ in keys:
+                a, b = L[k][m_], L[ref][m_]
+                okm = ~np.isnan(a) & ~np.isnan(b)
+                d_, ci_ = boot_paired(a[okm], b[okm], ev[okm])
+                pr[m_] = {"diff": round(d_, 5), "ci": [round(ci_[0], 5), round(ci_[1], 5)]}
+            out["paired"]["%s - %s" % (k, ref)] = pr
+    return out
+
+
+# ====================================================================== stage: cv (pre-2024 numbers only)
+def stage_cv(args):
+    A = get_arrays()
+    W = pickle.load(open(os.path.join(CACHE, "walk.pkl"), "rb"))
+    R = {"config": W["cfg"], "epochs": {str(k): v for k, v in W["epochs"].items()}}
+    m2 = M2()
+    D, Es, Ea = expert_D(W, A)
+    y, yr, ev = D["y"].to_numpy(float), D["year"].to_numpy(), D["event"].to_numpy()
+    oof = (yr >= 2019) & (yr <= 2023)
+    R["oof"] = {"seqnet": winner_metrics(D["seqnet_static"].to_numpy()[oof], y[oof])}
+    for c in ("ml2_static", "ml2lr_static", "mkt_rating", "elo", "ml"):
+        R["oof"][c] = winner_metrics(D[c].to_numpy(float)[oof], y[oof])
+    R["oof_paired"] = {}
+    for c in ("ml2_static", "ml2lr_static", "mkt_rating", "elo", "ml"):
+        R["oof_paired"]["seqnet - " + c] = cmp(D["seqnet_static"].to_numpy()[oof], D[c].to_numpy(float)[oof], y[oof],
+                                               ev[oof])
+    hl = oof & D["market"].notna().to_numpy()
+    R["oof_paired"]["seqnet - close"] = cmp(D["seqnet_static"].to_numpy()[hl], D["market"].to_numpy(float)[hl], y[hl],
+                                            ev[hl])
+    R["oof_by_year"] = {}
+    for Y in range(2019, 2024):
+        m = yr == Y
+        R["oof_by_year"][str(Y)] = {"n": int(m.sum()), "seqnet": round(float(ll_vec(D["seqnet_static"].to_numpy()[m], y[m]).mean()), 5),
+                                    "ml2": round(float(ll_vec(D["ml2_static"].to_numpy()[m], y[m]).mean()), 5),
+                                    "elo": round(float(ll_vec(D["elo"].to_numpy(float)[m], y[m]).mean()), 5)}
+    # segments, OOF
+    nmin = np.minimum(D["nA"].to_numpy(), D["nB"].to_numpy())
+    segs = {"newcomer bout (min prior 1-2)": nmin <= 2, "middle (3-7)": (nmin >= 3) & (nmin <= 7),
+            "veterans (8+)": nmin >= 8, "5 rounds": D["five"].to_numpy() == 1, "women": D["women"].to_numpy() == 1}
+    R["oof_segments"] = {k: cmp(D["seqnet_static"].to_numpy()[oof & m], D["ml2_static"].to_numpy()[oof & m],
+                                y[oof & m], ev[oof & m]) for k, m in segs.items()}
+    for k, v in R["oof"].items():
+        log("OOF 2019-2023 %-14s %s" % (k, v))
+    for k, v in R["oof_paired"].items():
+        log("OOF paired %-24s %s" % (k, v))
+    # stack gate
+    G, _, _ = stack_gate(W, A)
+    R["stack"] = G
+    # method x round on CV years (walk-forward S from methodround.json)
+    ml2oof = {f: p for f, p in zip(D["fid"], D["ml2_static"]) if True}
+    R["method_cv"] = method_eval(A, Ea, list(range(2019, 2024)), ml2win=ml2oof)
+    for k, v in R["method_cv"]["means"].items():
+        log("method 2019-2023 %-28s %s" % (k, v))
+    for k, v in R["method_cv"]["paired"].items():
+        log("method paired %-34s bin7 %s method3 %s joint %s mgw %s" % (k, v["bin7"], v["method3"], v["joint"],
+                                                                        v["method_given_winner"]))
+    # stat lines on 2019-2023 (OOF vs mlrates OOF; recipe CV)
+    R["stats_cv"] = stat_eval(A, Ea)
+    log("stats CV mean rel: %s | cv recipes: %s" % (R["stats_cv"]["mean_rel"], R["stats_cv"]["cv_mean_rel"]))
+    for t in STAT_TARGETS:
+        q = R["stats_cv"]["per_target"][t]
+        log("  stat %-7s raw seq vs ml %+.4f %s | cv +seq %+.5f | +emb %s | +emb+seq %s" % (
+            t, q["raw_seqnet_vs_mlrates"]["rel"], q["raw_seqnet_vs_mlrates"]["ci"], q["cv_rel_seqnet_on_mlrates"],
+            q.get("cv_rel_emb_on_mlrates"), q.get("cv_rel_seqnet_on_mlrates_emb")))
+    json.dump(R, open(os.path.join(CACHE, "cv.json"), "w"), indent=1, default=float)
+    log("cv stage written")
+
+
+
+# ====================================================================== stage: confirm (2024-2025, scored once)
+def stage_confirm(args):
+    mark = os.path.join(CACHE, "confirm.done")
+    if os.path.exists(mark) and not args.force:
+        raise SystemExit("2024-2025 was already scored once (%s); rerun only with --force, which is recorded" % mark)
+    A = get_arrays()
+    W = pickle.load(open(os.path.join(CACHE, "walk.pkl"), "rb"))
+    cvj = json.load(open(os.path.join(CACHE, "cv.json")))
+    m2 = M2()
+    D, Es, Ea = expert_D(W, A)
+    y, yr, ev = D["y"].to_numpy(float), D["year"].to_numpy(), D["event"].to_numpy()
+    va = (yr >= 2024) & (yr <= 2025)
+    R = {"scored_at": dt.datetime.utcnow().isoformat() + "Z", "forced_rerun": bool(os.path.exists(mark))}
+    cols = {"seqnet static": "seqnet_static", "seqnet annual": "seqnet_roll", "ml2 blend static": "ml2_static",
+            "ml2 blend rolling": "ml2_roll", "ml2 logistic static": "ml2lr_static", "ml2 logistic rolling": "ml2lr_roll",
+            "market rating": "mkt_rating", "elo": "elo", "ml v1": "ml"}
+    R["standalone"] = {k: winner_metrics(D[c].to_numpy(float)[va], y[va]) for k, c in cols.items()}
+    hl = va & D["market"].notna().to_numpy()
+    ho = va & D["open"].notna().to_numpy()
+    R["standalone"]["close (845)"] = winner_metrics(D["market"].to_numpy(float)[hl], y[hl])
+    R["standalone"]["open (843)"] = winner_metrics(D["open"].to_numpy(float)[ho], y[ho])
+    R["paired"] = {}
+    for sc in ("seqnet_static", "seqnet_roll"):
+        for k, c in cols.items():
+            if c.startswith("seqnet"):
+                continue
+            R["paired"]["%s - %s" % (sc, k)] = cmp(D[sc].to_numpy()[va], D[c].to_numpy(float)[va], y[va], ev[va])
+        R["paired"]["%s - close" % sc] = cmp(D[sc].to_numpy()[hl], D["market"].to_numpy(float)[hl], y[hl], ev[hl])
+        R["paired"]["%s - open" % sc] = cmp(D[sc].to_numpy()[ho], D["open"].to_numpy(float)[ho], y[ho], ev[ho])
+    R["paired"]["seqnet annual - seqnet static"] = cmp(D["seqnet_roll"].to_numpy()[va], D["seqnet_static"].to_numpy()[va],
+                                                       y[va], ev[va])
+    R["by_year"] = {str(Y): {k: round(float(ll_vec(D[c].to_numpy(float)[yr == Y], y[yr == Y]).mean()), 5)
+                             for k, c in cols.items()} for Y in (2024, 2025)}
+    nmin = np.minimum(D["nA"].to_numpy(), D["nB"].to_numpy())
+    segs = {"newcomer bout (min prior 1-2)": nmin <= 2, "middle (3-7)": (nmin >= 3) & (nmin <= 7),
+            "veterans (8+)": nmin >= 8, "5 rounds": D["five"].to_numpy() == 1, "women": D["women"].to_numpy() == 1}
+    R["segments"] = {k: {"seqnet - ml2 blend (static)": cmp(D["seqnet_static"].to_numpy()[va & m],
+                                                             D["ml2_static"].to_numpy()[va & m], y[va & m], ev[va & m])}
+                     for k, m in segs.items()}
+    for k, v in R["standalone"].items():
+        log("2024-25 %-22s %s" % (k, v))
+    for k, v in R["paired"].items():
+        log("2024-25 paired %-38s %s" % (k, v))
+    # stacks: every gate pair, static (fit <= 2023, CV-chosen h) and rolling (refit each January on roll columns)
+    rows_of = {"line": D["market"].notna().to_numpy(), "noline": np.ones(len(D), bool),
+               "open": D["open"].notna().to_numpy()}
+    R["stacks"] = {}
+    for key, g in cvj["stack"]["sets"].items():
+        regime, nm = key.split("|", 1)
+        rows_ok = rows_of[regime]
+        h = g["chosen_h"]
+        m = rows_ok & va
+        p_st, b = m2.stack_predict(D, g["cols"], "static", h, 2023, m, rows_ok)
+        p_ro = np.full(len(D), np.nan)
+        for Y in (2024, 2025):
+            mm = rows_ok & (yr == Y)
+            p_ro[mm], _ = m2.stack_predict(D, g["cols"], "roll", h, Y - 1, mm, rows_ok)
+        R["stacks"][key] = {"static": winner_metrics(p_st, y[m]), "roll": winner_metrics(p_ro[m], y[m]),
+                            "_p_static": p_st, "_p_roll": p_ro[m], "_m": m}
+    for kn, gate in cvj["stack"]["gate"].items():
+        regime = kn.split("|")[0]
+        kb = kn[:-len(" + seqnet")]
+        a, b = R["stacks"][kn], R["stacks"][kb]
+        m = a["_m"]
+        gate_r = {"enters_by_cv": gate["enters"], "cv_gain": gate["gain"],
+                  "static": cmp(a["_p_static"], b["_p_static"], y[m], ev[m]),
+                  "roll": cmp(a["_p_roll"], b["_p_roll"], y[m], ev[m])}
+        if regime != "line":
+            mc = m & D["market"].notna().to_numpy()
+            sub = mc[m]
+            gate_r["plus vs close (static)"] = cmp(a["_p_static"][sub], D["market"].to_numpy(float)[mc], y[mc], ev[mc])
+        else:
+            gate_r["plus vs close (static)"] = cmp(a["_p_static"], D["market"].to_numpy(float)[m], y[m], ev[m])
+            gate_r["base vs close (static)"] = cmp(b["_p_static"], D["market"].to_numpy(float)[m], y[m], ev[m])
+        R.setdefault("gate_valid", {})[kn] = gate_r
+        log("2024-25 stack %-40s (CV %s) static %s roll %s" % (kn, "enters" if gate["enters"] else "rejected",
+                                                              gate_r["static"], gate_r["roll"]))
+    for k in R["stacks"]:
+        for q in ("_p_static", "_p_roll", "_m"):
+            R["stacks"][k].pop(q)
+    # method x round: vs methodround S and ml2's S2+ml2win (same 857-fight universe)
+    mj = json.load(open(os.path.join(ROOT, "out", "ml2_cache", "method.json")))
+    s2 = mj.get("_pred_test", {})
+    ml2st = dict(zip(D["fid"], D["ml2_static"]))
+    R["method"] = method_eval(A, Es, [2024, 2025], ml2win=ml2st, s2=s2 if s2 else None)
+    for k, v in R["method"]["means"].items():
+        log("method 2024-25 %-28s %s" % (k, v))
+    for k, v in R["method"]["paired"].items():
+        log("method paired %-34s bin7 %s method3 %s joint %s mgw %s" % (k, v["bin7"], v["method3"], v["joint"],
+                                                                        v["method_given_winner"]))
+    # stat lines: seqnet static (fit < 2024) vs mlrates dev (fit 2010-2023), recipes fit on 2019-2023
+    R["stats"] = stat_eval(A, Es, years_fit=(2019, 2023), years_score=[2024, 2025])
+    log("stats 2024-25 mean rel: %s" % R["stats"]["mean_rel"])
+    for t in STAT_TARGETS:
+        q = R["stats"]["per_target"][t]
+        log("  stat %-7s raw seq vs ml %+.4f %s | %s" % (
+            t, q["raw_seqnet_vs_mlrates"]["rel"], q["raw_seqnet_vs_mlrates"]["ci"],
+            {k: v for k, v in q.items() if k.startswith("valid ")}))
+    json.dump(R, open(os.path.join(CACHE, "confirm.json"), "w"), indent=1, default=float)
+    open(mark, "w").write(R["scored_at"] + ("\nforced rerun\n" if R["forced_rerun"] else "\n"))
+    log("confirm written (2024-2025 scored once)")
+
+
+# ====================================================================== stage: export
+def n_params():
+    A = get_arrays()
+    cfg = chosen_cfg()["cfg"]
+    m = make_model(cfg, A["TOK"].shape[1], A["SIDE"].shape[-1], A["CTX"].shape[1])
+    return int(sum(p.numel() for p in m.parameters()))
+
+
+def stage_export(args):
+    A = get_arrays()
+    W = pickle.load(open(os.path.join(CACHE, "walk.pkl"), "rb"))
+    D, Es, Ea = expert_D(W, A)
+    d = load_data()
+    rd = lambda x: None if x is None or not np.isfinite(x) else round(float(x), 5)
+    fights = {}
+    for r in D.itertuples():
+        i = r.ex_i
+        rec = {"date": A["DAY"][i] and dt.date.fromordinal(int(A["DAY"][i])).isoformat(), "y": int(r.y),
+               "set": "oof" if r.year <= 2023 else "valid", "p": rd(r.seqnet_static), "p_annual": rd(r.seqnet_roll),
+               "fit_through": "%d-12-31" % (int(Ea["fit_year"][i]) - 1),
+               "fit_through_static": "%d-12-31" % (int(Es["fit_year"][i]) - 1)}
+        for nm, E in (("bins7", Es), ("bins7_annual", Ea)):
+            P = joint23(E, np.array([i]))[0]
+            rec[nm] = [rd(x) for x in (P[0:5].sum(), P[5:10].sum(), P[20], P[22], P[21], P[15:20].sum(),
+                                       P[10:15].sum())]
+            fr = P[0:5] + P[5:10] + P[10:15] + P[15:20]
+            rec["fin_round" + nm[5:]] = [rd(x) for x in fr[:int(A["SCHED"][i])]]
+        fights[r.fid] = rec
+    out = {"meta": {"tool": "tools/seqnet.py", "built": dt.datetime.utcnow().isoformat() + "Z",
+                    "data_last_fight": d["last_fight"],
+                    "protocol": "fights dated 2026-01-01 or later dropped at parse; hyperparameters by time-ordered "
+                                "CV on 2016-2018 folds; walk-forward annual refits 2019-2025 trained strictly before "
+                                "Jan 1 of the predicted year (early stopping on the last training year, then a refit); "
+                                "2024-2025 scored once (confirm stage)",
+                    "config": W["cfg"], "epochs_by_refit_year": {str(k): v for k, v in W["epochs"].items()},
+                    "seeds": sorted({s for (_, s) in W["full"]}), "n_params": n_params(),
+                    "token_features": d["tok_names"], "side_features": SIDE_NAMES, "context_features": CTX_NAMES,
+                    "stat_targets": STAT_TARGETS, "method_classes": METHOD_CLASSES,
+                    "columns": {"p": "P(A wins): 2019-2023 annual OOF refit, 2024-2025 fit before 2024-01-01",
+                                "p_annual": "P(A wins): fit before Jan 1 of the fight's year (walk-forward)",
+                                "bins7": "[A KO, A SUB, A DEC, draw, B DEC, B SUB, B KO] (static fit)",
+                                "fin_round": "P(finish in round r), r = 1..scheduled (static fit)"}},
+           "hpcv": json.load(open(os.path.join(CACHE, "hpcv.json")))["summary"],
+           "swaptest": json.load(open(os.path.join(CACHE, "swaptest.json"))) if os.path.exists(
+               os.path.join(CACHE, "swaptest.json")) else None,
+           "cv": json.load(open(os.path.join(CACHE, "cv.json"))),
+           "validation_2024_2025": json.load(open(os.path.join(CACHE, "confirm.json"))) if os.path.exists(
+               os.path.join(CACHE, "confirm.json")) else None,
+           "fights": fights}
+    json.dump(out, open(OUT_JSON, "w"), separators=(",", ":"), default=float)
+    log("wrote %s (%d fights, %.0f KB)" % (OUT_JSON, len(fights), os.path.getsize(OUT_JSON) / 1024))
+
+
+STAGES = {"data": stage_data, "hpcv": stage_hpcv, "walk": stage_walk, "swaptest": stage_swaptest, "cv": stage_cv,
+          "confirm": stage_confirm, "export": stage_export}
 
 
 def main():

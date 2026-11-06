@@ -536,6 +536,8 @@ def run_filter(X, H, until_day, store=False, newton_iter=4, key="main"):
         out["m1"] = np.full((n, 2, K), np.nan)
         out["P1"] = np.full((n, 2, K, K), np.nan)
         out["eta1"] = np.zeros((n, NR))
+        out["eta0"] = np.zeros((n, NR))
+        out["v0"] = np.zeros((n, NR))
     eyeK = np.eye(K)
     for idx in day_batches(X, until_day):
         nb = len(idx)
@@ -606,6 +608,10 @@ def run_filter(X, H, until_day, store=False, newton_iter=4, key="main"):
         L0[:, IEA, IEA] = L0[:, IEB, IEB] = 1.0 / H["sig_e"] ** 2
         Z = M0.copy()
         Gt = np.transpose(G, (0, 2, 1))
+        if store:                      # prior predictive mean / variance of every row's linear predictor
+            P0z = np.linalg.inv(L0)
+            out["eta0"][idx] = (G @ M0[..., None])[..., 0] + off
+            out["v0"][idx] = np.einsum("fod,fde,foe->fo", G, P0z, G)
         for it in range(newton_iter):
             eta = (G @ Z[..., None])[..., 0] + off
             d1, W, ll = lik(eta, yy, ww, kv, both=(it == newton_iter - 1))
@@ -757,3 +763,256 @@ def stat_pred(X, R, H, idx):
                 out["%s_%d" % (st, s)] = np.exp(lexp + X["L_" + st][idx] + mean + 0.5 * var)
                 out["%s_lv_%d" % (st, s)] = var
     return out
+
+
+# ====================================================================== empirical Bayes: EM on smoothed states
+def sequences(X):
+    seq = defaultdict(list)
+    for i in range(X["n"]):
+        seq[X["ia"][i]].append((i, 0))
+        seq[X["ib"][i]].append((i, 1))
+    return seq
+
+
+def smooth(X, R, seq, until_day):
+    """Per-fighter RTS smoother over the filter's (ADF) prior / posterior states. Returns lists of debut states
+    (fight, side, ms, Ps) and consecutive increments (fight_prev, fight_next, side_next, ms_prev, ms_next, Ps_prev,
+    Ps_next, cross)."""
+    deb, inc = [], []
+    for p, lst in seq.items():
+        lst = [(i, s) for i, s in lst if X["day"][i] < until_day and R["done"][i]]
+        if not lst:
+            continue
+        T = len(lst)
+        m1 = np.array([R["m1"][i, s] for i, s in lst])
+        P1 = np.array([R["P1"][i, s] for i, s in lst])
+        m0 = np.array([R["m0"][i, s] for i, s in lst])
+        P0 = np.array([R["P0"][i, s] for i, s in lst])
+        ms, Ps = m1.copy(), P1.copy()
+        cross = [None] * T
+        for t in range(T - 2, -1, -1):
+            J = P1[t] @ np.linalg.inv(P0[t + 1])
+            ms[t] = m1[t] + J @ (ms[t + 1] - m0[t + 1])
+            Ps[t] = P1[t] + J @ (Ps[t + 1] - P0[t + 1]) @ J.T
+            cross[t + 1] = Ps[t + 1] @ J.T          # Cov(x_{t+1}, x_t | all)
+        deb.append((lst[0][0], lst[0][1], ms[0], Ps[0]))
+        for t in range(T - 1):
+            inc.append((lst[t][0], lst[t + 1][0], lst[t + 1][1], ms[t], ms[t + 1], Ps[t], Ps[t + 1], cross[t + 1]))
+    return deb, inc
+
+
+def nb_k_ml(y, mu, w=None, grid=None):
+    grid = grid if grid is not None else np.exp(np.linspace(np.log(0.3), np.log(60), 60))
+    w = np.ones_like(y) if w is None else w
+    best, bk = -np.inf, grid[0]
+    for k in grid:
+        ll = np.sum(w * (gammaln(y + k) - gammaln(k) - gammaln(y + 1) + k * np.log(k / (k + mu)) + y * np.log(mu / (k + mu))))
+        if ll > best:
+            best, bk = ll, k
+    return float(bk)
+
+
+def em_update(X, R, H, Y, seq, years_back=12, shrink_off=0.0):
+    """One EM M-step on states smoothed with data before Jan 1 of Y. Updates (in a copy of H): the newcomer prior
+    (mean regressed on age and pre-UFC record for r; global mean for the stat dims; full covariance Sigma0), process
+    noise (q_fight, q_year) and age drift of the stat dimensions, pace / form sds, NB dispersions."""
+    H = copy.deepcopy(H)
+    lo, hi = jan1(Y - years_back), jan1(Y)
+    deb, inc = smooth(X, R, seq, hi)
+    # --- newcomer prior
+    D0 = [(i, s, m, P) for i, s, m, P in deb if X["day"][i] >= lo]
+    ms = np.array([d[2] for d in D0])
+    Ps = np.array([d[3] for d in D0])
+    ii = np.array([d[0] for d in D0])
+    ss = np.array([d[1] for d in D0])
+    age = X["age"][ii, ss]
+    aa = np.clip(np.where(np.isnan(age), 29.0, age), 20.0, 42.0) - 29.0
+    pok = X["pre_ok"][ii, ss]
+    pre = X["pre"][ii, ss] * pok[:, None]
+    F = np.c_[np.ones(len(ii)), aa, pre]
+    lam = np.r_[0.0, 0.0, np.full(7, 2.0)]
+    coef = np.linalg.solve(F.T @ F + np.diag(lam), F.T @ ms[:, 0])
+    H["r_new"] = {"c0": float(coef[0]), "c_age": float(coef[1]), "c_pre": coef[2:]}
+    mu = ms.mean(0)
+    mu[0] = 0.0
+    H["mu0"] = mu
+    res = ms - mu[None]
+    res[:, 0] = ms[:, 0] - F @ coef
+    S0 = (res.T @ res + Ps.sum(0)) / len(ms)
+    if shrink_off:
+        S0 = (1 - shrink_off) * S0 + shrink_off * np.diag(np.diag(S0))
+    H["Sigma0"] = 0.5 * (S0 + S0.T)
+    # --- increments: drift and process noise of the stat dimensions (r keeps its tuned age curve and noise)
+    I0 = [t for t in inc if X["day"][t[1]] >= lo]
+    gap = np.array([(X["day"][t[1]] - X["day"][t[0]]) / YEAR for t in I0])
+    g6 = np.minimum(gap, 6.0)
+    an = np.array([X["age"][t[1], t[2]] for t in I0])
+    amid = np.where(np.isnan(an), 30.0, an - gap / 2.0) - 30.0
+    dm = np.array([t[4] - t[3] for t in I0])
+    A = np.c_[g6, g6 * amid]
+    da, db = H["drift_a"].copy(), H["drift_b"].copy()
+    qf, qy = H["qf"].copy(), H["qy"].copy()
+    for k in range(1, K):
+        c = np.linalg.lstsq(A, dm[:, k], rcond=None)[0]
+        da[k], db[k] = c
+        res = dm[:, k] - A @ c
+        e2 = res ** 2 + np.array([t[5][k, k] + t[6][k, k] - 2 * t[7][k, k] for t in I0])
+        Bm = np.c_[np.ones(len(g6)), g6]
+        from scipy.optimize import nnls
+        cq = nnls(Bm, e2)[0]
+        qf[k], qy[k] = max(cq[0], 1e-6), max(cq[1], 1e-6)
+    H["drift_a"], H["drift_b"], H["qf"], H["qy"] = da, db, qf, qy
+    # --- pace and form
+    sel = (X["day"] >= lo) & (X["day"] < hi) & X["has"] & R["done"]
+    H["sig_u"] = float(np.sqrt(np.mean(R["zu"][sel, 0] ** 2 + R["vu"][sel, 0])))
+    H["sig_e"] = float(np.sqrt(np.mean(np.r_[R["zu"][sel, 1] ** 2 + R["vu"][sel, 1], R["zu"][sel, 2] ** 2 + R["vu"][sel, 2]])))
+    # --- NB dispersions: one-step-ahead predictive ML. The pre-fight predictive of a count is NB(lambda, k) mixed
+    # over lambda = exp(eta), eta ~ N(eta0, v0) (skills, pace, form); moment-matched to NB(mu, k_eff) with
+    # mu = exp(eta0 + v0 / 2) and 1 / k_eff = e^v0 / k + e^v0 - 1.
+    H["k"] = nb_dispersions(R, sel)
+    return H
+
+
+NB_ROWS = {"str": list(range(R_STR, R_STR + 10)), "td": [R_TD, R_TD + 1], "ctl": [R_CTL, R_CTL + 1],
+           "sub": [R_SUB, R_SUB + 1], "kd": [R_KD, R_KD + 1]}
+
+
+def nb_pred_ll(y, eta0, v0, k):
+    v0 = np.minimum(v0, 5.0)
+    mu = np.exp(np.clip(eta0 + v0 / 2.0, -30, 15))
+    ke = 1.0 / (np.exp(v0) / k + np.exp(v0) - 1.0)
+    return gammaln(y + ke) - gammaln(ke) - gammaln(y + 1) + ke * np.log(ke / (ke + mu)) + y * np.log(mu / (ke + mu))
+
+
+def nb_dispersions(R, sel, grid=None):
+    SD = _SD["main"]
+    grid = grid if grid is not None else np.exp(np.linspace(np.log(0.3), np.log(200), 70))
+    out = {}
+    for st, rr in NB_ROWS.items():
+        ys, e0, v0 = [], [], []
+        for r in rr:
+            ok = sel & (SD["m"][:, r] > 0)
+            ys.append(SD["y"][ok, r])
+            e0.append(R["eta0"][ok, r])
+            v0.append(R["v0"][ok, r])
+        y, e, v = np.concatenate(ys), np.concatenate(e0), np.concatenate(v0)
+        lls = [np.sum(nb_pred_ll(y, e, v, k)) for k in grid]
+        out[st] = float(grid[int(np.argmax(lls))])
+    return out
+
+
+# ====================================================================== fitting one year
+def win_rows(X, Y, back=7):
+    return np.flatnonzero(X["trainrow"] & (X["year"] >= Y - back) & (X["year"] < Y))
+
+
+def meth_rows_idx(X, Y, back=10):
+    return np.flatnonzero(np.isin(X["cat"], (1, 2, 3)) & ~np.isnan(X["win"]) & (X["year"] >= Y - back) & (X["year"] < Y))
+
+
+def glm_step(X, R, H, Y):
+    """Refit the result link (win GLM) and the method GLM on pre-fight states of the window before Y."""
+    H = copy.deepcopy(H)
+    idx = win_rows(X, Y)
+    mu, S = feat_moments(R, idx)
+    y = X["win"][idx]
+    beta = fit_win_glm(mu, S, y, varaware=H["win"]["varaware"], beta0=H["win"]["beta"])
+    H["win"]["beta"] = beta
+    if H["link"] == "glm" and beta[0] > 0.05:
+        bu = np.clip(beta / beta[0], -1.0, 2.0)
+        bu[0] = 1.0
+        H["beta_up"] = bu
+    elif H["link"] == "r_only":
+        H["beta_up"] = np.r_[1.0, np.zeros(NF - 1)]
+    H["meth"] = fit_meth_glm(R, X, H, meth_rows_idx(X, Y))
+    p, _, _ = win_prob(beta, mu, S, H["win"]["varaware"])
+    return H, float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+
+
+CD_PARAMS = [("qy_r", "mul", 1.5), ("qf_r", "mul", 1.6), ("w_round", "mul", 1.25), ("w_fround", "add", 0.3),
+             ("w_rem", "add", 0.15), ("do", "add", 0.006), ("lay", "add", 0.03), ("v0_r", "mul", 1.3)]
+
+
+def get_p(H, name):
+    return {"qy_r": lambda: H["qy"][0], "qf_r": lambda: H["qf"][0], "v0_r": lambda: H["Sigma0"][0, 0]}.get(name, lambda: H[name])()
+
+
+def set_p(H, name, v):
+    H = copy.deepcopy(H)
+    if name == "qy_r":
+        H["qy"][0] = v
+    elif name == "qf_r":
+        H["qf"][0] = v
+    elif name == "v0_r":
+        s = math.sqrt(max(v, 1e-4) / H["Sigma0"][0, 0])
+        H["Sigma0"][0, :] *= s
+        H["Sigma0"][:, 0] *= s
+    else:
+        H[name] = v
+    return H
+
+
+def objective(X, H, Y):
+    R = run_filter(X, H, jan1(Y))
+    H2, ll = glm_step(X, R, H, Y)
+    return ll, H2
+
+
+def coord_search(X, H, Y, sweeps=2, logf=log, params=None):
+    params = params or CD_PARAMS
+    best, Hb = objective(X, H, Y)
+    H = Hb
+    logf("  CD start %.5f" % best)
+    for sw in range(sweeps):
+        improved = False
+        for name, kind, step in params:
+            v0 = get_p(H, name)
+            for direction in (1, -1):
+                v = v0 * step ** direction if kind == "mul" else v0 + direction * step
+                if kind == "add" and v < 0:
+                    continue
+                ll, H2 = objective(X, set_p(H, name, v), Y)
+                if ll < best - 1e-5:
+                    best, H = ll, H2
+                    improved = True
+                    logf("  CD %s %.4g -> %.4g: %.5f" % (name, v0, v, ll))
+                    break
+        if not improved:
+            break
+    return H, best
+
+
+def fit_year(X, Y, H0, em_iters=3, sweeps=2, logf=log):
+    """Hyperparameters for predicting year Y from data before Jan 1 of Y."""
+    seq = sequences(X)
+    H = copy.deepcopy(H0)
+    t0 = time.time()
+    for it in range(em_iters):
+        R = run_filter(X, H, jan1(Y), store=True)
+        H = em_update(X, R, H, Y, seq)
+        R = run_filter(X, H, jan1(Y))
+        H, ll = glm_step(X, R, H, Y)
+        logf("  %d EM %d: win LL %.5f  k %s  sig_u %.3f sig_e %.3f  beta %s" % (
+            Y, it, ll, {k: round(v, 2) for k, v in H["k"].items()}, H["sig_u"], H["sig_e"], np.round(H["win"]["beta"], 3)))
+    H, best = coord_search(X, H, Y, sweeps=sweeps, logf=logf)
+    R = run_filter(X, H, jan1(Y), store=True)
+    H = em_update(X, R, H, Y, seq)
+    R = run_filter(X, H, jan1(Y))
+    H, ll = glm_step(X, R, H, Y)
+    logf("  %d final win LL %.5f (%.0f s)" % (Y, ll, time.time() - t0))
+    H["fit_through"] = str(dt.date(Y - 1, 12, 31))
+    H["train_win_ll"] = ll
+    return H
+
+
+def predict_year(X, H, Y, years=None):
+    """Run the filter with H through Dec 31 of the last predicted year and record predictions for those years."""
+    years = years or [Y]
+    R = run_filter(X, H, jan1(max(years) + 1))
+    idx = np.flatnonzero(np.isin(X["year"], years) & R["done"])
+    C, pA, m, v = cells(X, R, H, idx)
+    st = stat_pred(X, R, H, idx)
+    sd = np.sqrt(np.einsum("fskk->fsk", R["P0"][idx]))
+    pl = win_prob(H["win"]["beta"], *feat_moments(R, idx), varaware=False)[0]
+    return {"idx": idx, "cells": C, "pA": pA, "pA_plugin": pl, "m": m, "v": v, "stats": st,
+            "m0": R["m0"][idx], "sd0": sd, "new": R["new"][idx]}

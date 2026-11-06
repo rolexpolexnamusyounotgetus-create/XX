@@ -189,7 +189,7 @@ def stage_build(args):
         eta = [None, None]
         if sn:
             q = int(sn["q"])
-            if not Q[q]["T"] < r["date"]:
+            if not Q[q]["T"] <= r["date"]:      # a refit dated T uses rows strictly before T
                 n_q_bad += 1
             dv = didx.get(r["division"], didx.get(r["prior_division"], didx["Lightweight"]))
             era = (dt.date.fromisoformat(r["date"]).toordinal() - era0) / 3652.5
@@ -252,7 +252,7 @@ def stage_build(args):
     T["finish_time"] = finish_time_table(ds["rows"])
     T["bt_ids"] = set(bt)
     T["event"] = np.array([bt[f]["event"] if f in bt else d for f, d in zip(T["fid"], T["date"])], dtype=object)
-    assert max(T["date"]) < VAULT_FROM
+    assert max(T["date"]) < VAULT_FROM and n_q_bad == 0
     pickle.dump(T, open(os.path.join(CACHE, "table.pkl"), "wb"), protocol=4)
     n = len(T["fid"])
     log("table: %d fight-sides (%d fights) %s..%s, both-prior %d, with embedding %d, S cells %d fights; quarter-order "
@@ -670,15 +670,15 @@ def glm_design(Fd, rows, fin):
 def candidates(st):
     c = [("pois_base", "pois", {}), ("nb_base", "nb", {"t": False, "glm": None}),
          ("nb_t", "nb", {"t": True, "glm": None})]
-    for lam in (3.0, 30.0, 300.0):
+    for lam in (30.0, 300.0, 3000.0):
         c.append(("nb_glm_l%g" % lam, "nb", {"t": True, "glm": lam}))
     c.append(("nb_gbm", "gbm", {}))
     if st in SPARSE:
         c.append(("zinb_t", "nb", {"t": True, "glm": None, "zi": True}))
-        c.append(("zinb_glm_l30", "nb", {"t": True, "glm": 30.0, "zi": True}))
+        c.append(("zinb_glm_l300", "nb", {"t": True, "glm": 300.0, "zi": True}))
     if st == "ctrl":
         c.append(("zibeta_t", "zibeta", {"glm": None}))
-        c.append(("zibeta_glm_l30", "zibeta", {"glm": 30.0}))
+        c.append(("zibeta_glm_l300", "zibeta", {"glm": 300.0}))
     return c
 
 

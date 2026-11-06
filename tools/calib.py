@@ -949,6 +949,32 @@ def stage_rule(args):
                                   "procedure (OOF 2019-2023 + monthly-rolling 2024-2025 rows); h 1.5 reproduces the "
                                   "published page weights. Only weights are computed; no 2024-25 prediction is scored")
     z_h3 = Z @ np.array(wts["3.0"])
+    # break-even: the true slope s* at which the switched (h 3) and the production (h 1.5) settings tie in expected
+    # log loss, and the production stack's population slope t* at s* (soft labels)
+    lo_, hi_ = 0.8, 2.0
+    f = lambda s: exp_ll(z_prod, s) - exp_ll(z_h3, s)
+    for _ in range(60):
+        mid = 0.5 * (lo_ + hi_)
+        lo_, hi_ = (mid, hi_) if f(mid) > 0 else (lo_, mid)
+    s_star = 0.5 * (lo_ + hi_)
+    t_star = float(fit_glm(z_prod[:, None], sig(s_star * z_val), np.ones(len(z_val)), np.array([1.0]),
+                           np.array([0.0]))[0])
+    R["break_even"] = {"true_slope_on_validated": round(s_star, 4), "production_slope": round(t_star, 4),
+                       "reading": "switching to h 3 lowers expected log loss only when the true slope (validated "
+                                  "scale) is below s*, i.e. when the production stack's own slope is below t*"}
+    log("break-even: s* %.3f on the validated scale = production slope t* %.3f (k %.3f)" % (s_star, t_star, k))
+    sim_a_core = sim_a
+
+    def sim_a(s, n=370):
+        out = sim_a_core(s, n)
+        fire = 0
+        for _ in range(nsim):
+            i = rng.integers(0, len(z_val), n)
+            yy = (rng.random(n) < sig(s * z_val[i])).astype(float)
+            b, _ = wald_slope(z_prod[i], yy)
+            fire += b < t_star
+        out["p_switch_breakeven_rule"] = round(fire / nsim, 3)
+        return out
     sc = {}
     for s in grid:
         a = sim_a(s)
@@ -956,6 +982,11 @@ def stage_rule(args):
         e = {"exp_ll_production_h1.5": r5(exp_ll(z_prod, s)), "exp_ll_switched_h3": r5(exp_ll(z_h3, s)),
              "exp_ll_validated": r5(exp_ll(z_val, s))}
         e["switch_helps"] = bool(e["exp_ll_switched_h3"] < e["exp_ll_production_h1.5"])
+        lp, ls = e["exp_ll_production_h1.5"], e["exp_ll_switched_h3"]
+        best = min(lp, ls)
+        reg = lambda q: round(q * ls + (1 - q) * lp - best, 6)
+        e["regret"] = {"never_switch": reg(0.0), "rule_a": reg(a["p_switch_rule_a"]), "rule_b_q4": reg(b["p_fire_by_q4"]),
+                       "breakeven_rule": reg(a["p_switch_breakeven_rule"])}
         sc[str(s)] = {**a, **b, **e}
         log("s %.2f: prod slope ~%.3f | rule a switch %.3f (persist branch %.3f) | rule b by q2 %.3f, q4 %.3f | "
             "E[ll] prod %.5f switched %.5f -> switch %s" % (s, a["median_prod_slope"], a["p_switch_rule_a"],
@@ -976,6 +1007,12 @@ def stage_rule(args):
                 fire += 1
         alt[str(s)] = round(fire / nsim, 3)
     R["alt_rule_validated_stack_p_switch"] = alt
+    for s0 in grid:
+        sc[str(s0)]["p_switch_validated_stack_rule"] = alt[str(s0)]
+        log("s %.2f regret (expected log loss above the better setting): never %.5f | rule a %.5f | rule b %.5f | "
+            "break-even rule %.5f (p switch %.3f)" % (s0, *[sc[str(s0)]["regret"][k_] for k_ in
+                                                          ("never_switch", "rule_a", "rule_b_q4", "breakeven_rule")],
+                                                       sc[str(s0)]["p_switch_breakeven_rule"]))
     # historical replay 2015-2023 of the ledger monitor on the deployed no-line stack (fit 2013..Y-1, h 1.5)
     pipe = Pipe(D)
     base = pipe.base_long("noline", list(range(2014, 2024)))

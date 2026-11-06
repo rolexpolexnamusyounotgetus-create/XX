@@ -487,6 +487,307 @@ def info(tau, s):
 STAGES["timing"] = stage_timing
 
 
+# ====================================================================== shared: the stack table (dev evaluation rows)
+def stack_table():
+    """tools/ml2.py's expert table (out/ml2_cache/stack.pkl: 2,809 decisive dev evaluation fights 2019-2025, ML v2
+    logistic OOF for 2019-2023 and static/rolling for 2024-2025) joined to the trajectories on the fight id."""
+    S = pickle.load(open(os.path.join(ML2_CACHE, "stack.pkl"), "rb"))
+    E = S["D"].copy().reset_index(drop=True)
+    assert (pd.to_datetime(E["date"]) < pd.Timestamp(VAULT_S)).all()
+    tr = load_traj()["D"].set_index("fid")
+    tm = pickle.load(open(os.path.join(CACHE, "timing.pkl"), "rb"))
+    lead = pd.Series(tm["lead_days"], index=load_traj()["D"]["fid"])
+    P = np.full((len(E), NPTS), np.nan)
+    for i, f in enumerate(E["fid"]):
+        if f in tr.index:
+            pp, pm = tr.at[f, "snap_pow"], tr.at[f, "snap_mult"]
+            if isinstance(pp, list):
+                P[i] = [np.nan if x is None else x for x in pp]
+                P[i, 0] = pm[0]
+    E["lead_days"] = [lead.get(f, np.nan) for f in E["fid"]]
+    for c in ("range_spread", "books_p", "mu"):
+        E[c] = [tr.at[f, c] if (f in tr.index and c in tr.columns) else None for f in E["fid"]]
+    E["full"] = ~np.isnan(P).any(1) & E["market"].notna().to_numpy() & E["open"].notna().to_numpy()
+    return E, P, tm
+
+
+def zcol(p):
+    return np.nan_to_num(ml2.logit(np.clip(np.asarray(p, float), PCLIP, 1 - PCLIP), 1e-6))
+
+
+def fit_w(Z, y, yrs, until, h):
+    return ml2.stack_fit(Z, y, ml2.rec_w(yrs, until + 1, h))
+
+
+def cv_stack(Z, y, yrs, rows, h_grid=(None, 3.0, 1.5), Zfeed=None):
+    """Forward-chained CV 2021-2023 (fit on 2019..Y-1 rows, predict Y) for each half-life; returns
+    (cv by h, chosen h with the 0.0005 preference for no recency weighting, OOF predictions for the chosen h).
+    Zfeed: an alternative design used only at prediction time (cross-feeding)."""
+    Zf = Z if Zfeed is None else Zfeed
+    out, oof = {}, {}
+    for h in h_grid:
+        tot = nn = 0.0
+        pr = np.full(len(y), np.nan)
+        for Y in CV_YEARS:
+            tr = rows & (yrs >= 2019) & (yrs <= Y - 1)
+            te = rows & (yrs == Y)
+            b = fit_w(Z[tr], y[tr], yrs[tr], Y - 1, h)
+            pr[te] = sg(Zf[te] @ b)
+            tot += ml2.ll(pr[te], y[te]) * te.sum()
+            nn += te.sum()
+        out[str(h)] = round(tot / nn, 5)
+        oof[str(h)] = pr
+    hb = min(out, key=lambda k: out[k] + (0 if k == "None" else SEL_MIN))
+    return out, (None if hb == "None" else float(hb)), oof[hb]
+
+
+def cv_fixed_h(Z, y, yrs, rows, h, Zfeed=None):
+    r, _, pr = cv_stack(Z, y, yrs, rows, (h,), Zfeed)
+    return r[str(h)], pr
+
+
+def cv_groups(E):
+    return E["event"].to_numpy()
+
+
+# ====================================================================== stage: stacks
+def bridge_line(Z, tau, s, v0, target, rng, draws=1):
+    """Synthetic line at `target` days before the close for each row: the Gaussian-martingale (Brownian-bridge)
+    interpolation between the two sparkline points that bracket it in time, in information time I(tau) from the
+    fitted volatility profile, plus the bridge noise sqrt(w (1 - w) (I_a - I_b)). NaN when the line did not exist yet
+    (target earlier than the opener). Returns draws x n."""
+    n = len(Z)
+    out = np.full((draws, n), np.nan)
+    Ia = np.array([[info(t, s) for t in row] for row in tau])   # n x 10
+    for i in range(n):
+        if np.isnan(tau[i]).any() or np.isnan(Z[i]).any():
+            continue
+        if tau[i, 0] < target:          # not posted yet
+            continue
+        js = [j for j in range(NPTS) if tau[i, j] >= target]
+        a_ = max(js)
+        if a_ == NPTS - 1:
+            out[:, i] = Z[i, a_]
+            continue
+        b_ = a_ + 1
+        ia, ib, it = Ia[i, a_] + v0 * (NPTS - 1 - a_), Ia[i, b_] + v0 * (NPTS - 1 - b_), info(target, s)
+        it = it + v0 * max(0.0, (target - tau[i, b_]) / max(tau[i, a_] - tau[i, b_], 1e-9))
+        den = max(ia - ib, 1e-9)
+        w = float(np.clip((ia - it) / den, 0, 1))
+        sd = math.sqrt(max(w * (1 - w) * den, 0.0))
+        out[:, i] = Z[i, a_] + w * (Z[i, b_] - Z[i, a_]) + sd * rng.standard_normal(draws)
+    return out
+
+
+def stage_stacks(a):
+    E, P, tm = stack_table()
+    y = E["y"].to_numpy(float)
+    yrs = E["year"].to_numpy()
+    full = E["full"].to_numpy(bool)
+    pre = full & (yrs <= 2023)
+    cvr = full & np.isin(yrs, CV_YEARS)
+    R = {"rows": {"dev_eval_rows": int(len(E)), "full_trajectory": int(full.sum()), "pre2024_full": int(pre.sum()),
+                  "cv_years_full": int(cvr.sum())}}
+    Zml = zcol(E["ml2lr_static"])
+    Zb = zcol(E["ml2_static"])
+    Zmr = zcol(E["mkt_rating"])
+    ZS = np.column_stack([zcol(P[:, j]) for j in range(NPTS)])
+    Zclose = zcol(E["market"])
+    # 0. raw lines by snapshot (no stack), pre-2024 and the CV years
+    raw = {}
+    for j in range(NPTS):
+        raw[j] = {"ll_2019_2023": round(ml2.ll(P[pre, j], y[pre]), 5), "ll_cv_years": round(ml2.ll(P[cvr, j], y[cvr]), 5)}
+    raw["close_market_json"] = {"ll_2019_2023": round(ml2.ll(E["market"].to_numpy(float)[pre], y[pre]), 5),
+                                "ll_cv_years": round(ml2.ll(E["market"].to_numpy(float)[cvr], y[cvr]), 5)}
+    raw["ml2lr"] = {"ll_2019_2023": round(ml2.ll(sg(Zml[pre]), y[pre]), 5), "ll_cv_years": round(ml2.ll(sg(Zml[cvr]), y[cvr]), 5)}
+    R["raw_lines"] = raw
+    log("raw lines LL (2019-2023 | CV years): " + " ".join("%s %.4f|%.4f" % (k, v["ll_2019_2023"], v["ll_cv_years"]) for k, v in raw.items()))
+    # 1. per-snapshot stacks: line_j + ML v2 logistic (the page model), +/- market rating, +/- the opener
+    per = {}
+    chosen = {}
+    for j in range(NPTS):
+        for name, cols in (("line+ml2lr", [ZS[:, j], Zml]), ("line+ml2lr+mr", [ZS[:, j], Zml, Zmr]),
+                           ("line+ml2", [ZS[:, j], Zb]), ("line+open+ml2lr", [ZS[:, j], ZS[:, 0], Zml])):
+            if name == "line+open+ml2lr" and j == 0:
+                continue
+            Z = np.column_stack(cols)
+            cv, h, oof = cv_stack(Z, y, yrs, full)
+            b = fit_w(Z[pre], y[pre], yrs[pre], 2023, h)
+            per["%d|%s" % (j, name)] = {"cv_by_h": cv, "h": h, "cv": cv[str(h)], "weights_fit_le_2023": np.round(b, 4).tolist()}
+        base = per["%d|line+ml2lr" % j]
+        chosen[j] = {"h": base["h"], "w": base["weights_fit_le_2023"]}
+        log("snap %d: line+ml2lr CV %.5f (h %s) w %s | +mr %.5f | ml2 blend %.5f | +open %s" % (
+            j, base["cv"], base["h"], base["weights_fit_le_2023"], per["%d|line+ml2lr+mr" % j]["cv"],
+            per["%d|line+ml2" % j]["cv"], per.get("%d|line+open+ml2lr" % j, {}).get("cv")))
+    R["per_snapshot"] = per
+    # the close itself (market.json power close) as a check against ml2's 'page: market+ml2lr' (CV 0.61624 on its rows)
+    Zc = np.column_stack([Zclose, Zml])
+    cvc, hc, oofc = cv_stack(Zc, y, yrs, full)
+    R["close_stack"] = {"cv_by_h": cvc, "h": hc}
+    log("close (market.json) + ml2lr on full-trajectory rows: %s" % cvc)
+    # 2. cross-feeding: stack trained on snapshot i (its chosen h), fed snapshot j at prediction (CV years)
+    XF = np.full((NPTS, NPTS), np.nan)
+    oof_ij = {}
+    for i in range(NPTS):
+        Zi = np.column_stack([ZS[:, i], Zml])
+        for j in range(NPTS):
+            Zj = np.column_stack([ZS[:, j], Zml])
+            v, pr = cv_fixed_h(Zi, y, yrs, full, chosen[i]["h"], Zfeed=Zj)
+            XF[i, j] = v
+            oof_ij[(i, j)] = pr
+    R["cross_feed_cv"] = {"rows_trained_on_snapshot_i_cols_fed_snapshot_j": np.round(XF, 5).tolist()}
+    log("cross-feed CV LL (row = trained on i, col = fed j):\n" + "\n".join(
+        "  %d: " % i + " ".join("%.4f" % v for v in XF[i]) for i in range(NPTS)))
+    # paired CIs for the key cross-feeds (CV years): fed j = 8 and fed the close (9)
+    g = cv_groups(E)
+    pairs = {}
+    for fedj in (4, 6, 7, 8, 9):
+        m = cvr
+        for i in (0, 4, 6, 7, 8, 9):
+            if i == fedj:
+                continue
+            pairs["trained %d vs trained %d, fed %d" % (i, fedj, fedj)] = ml2.compare(
+                oof_ij[(i, fedj)][m], oof_ij[(fedj, fedj)][m], y[m], g[m], a.boot)
+    R["cross_feed_paired"] = pairs
+    for k, v in pairs.items():
+        log("  %-36s %+.5f %s" % (k, v["diff"], v["diff_ci"]))
+    pickle.dump({"R": R, "oof_ij": oof_ij, "chosen": chosen}, open(os.path.join(CACHE, "stacks_part1.pkl"), "wb"))
+    # 3. maturity-adaptive "any-time" stack: rows stacked over snapshots 1..9; logit = (a0 + a1 m) Z_line +
+    #    (b0 + b1 m) Z_ml with m = (9 - j) / 9 (sparkline position; no timing needed); no intercept (symmetric)
+    def anytime_design(js, m_of):
+        rows, Zs, ys, ws, yy, jj = [], [], [], [], [], []
+        for j in js:
+            m = m_of(j)
+            Zs.append(np.column_stack([ZS[:, j], m * ZS[:, j], Zml, m * Zml]))
+            ys.append(y)
+            yy.append(yrs)
+            jj.append(np.full(len(y), j))
+        return np.vstack(Zs), np.concatenate(ys), np.concatenate(yy), np.concatenate(jj)
+    from scipy.optimize import minimize
+
+    def lr_fit(Z, yv, wv):
+        wv = wv / wv.sum()
+
+        def f(b):
+            q = Z @ b
+            return np.sum(wv * (np.logaddexp(0, q) - yv * q)) + 1e-4 * b @ b, Z.T @ (wv * (sg(q) - yv)) + 2e-4 * b
+        return minimize(f, np.zeros(Z.shape[1]), jac=True, method="L-BFGS-B").x
+    js = list(range(1, NPTS))
+    Za, ya, yra, ja = anytime_design(js, lambda j: (9 - j) / 9.0)
+    fulla = np.tile(full, len(js))
+    any_cv = {}
+    for j in js:
+        tot = nn = 0.0
+        for Y in CV_YEARS:
+            tr = fulla & (yra >= 2019) & (yra <= Y - 1)
+            te = full & (yrs == Y)
+            b = lr_fit(Za[tr], ya[tr], np.ones(tr.sum()))
+            Zj = np.column_stack([ZS[:, j], (9 - j) / 9.0 * ZS[:, j], Zml, (9 - j) / 9.0 * Zml])
+            pr = sg(Zj[te] @ b)
+            tot += ml2.ll(pr, y[te]) * te.sum()
+            nn += te.sum()
+        any_cv[j] = round(tot / nn, 5)
+    ball = lr_fit(Za[fulla & (yra <= 2023)], ya[fulla & (yra <= 2023)], np.ones((fulla & (yra <= 2023)).sum()))
+    R["anytime_stack"] = {"cv_by_snapshot": any_cv, "coef_fit_le_2023": np.round(ball, 4).tolist(),
+                          "design": "logit = (a0 + a1 m) z_line + (b0 + b1 m) z_ml2lr, m = (9 - j) / 9"}
+    log("any-time stack CV by snapshot: %s; coef %s" % (any_cv, np.round(ball, 3)))
+    # 4. synthetic T-k lines (Brownian bridge between bracketing points, information time from the timing stage)
+    s, v0 = tm["s"], tm["v0"]
+    L = E["lead_days"].to_numpy(float)
+    tau = np.array([[(9 - j) / 9.0 * l for j in range(NPTS)] for l in L])
+    rng = np.random.default_rng(20261106)
+    syn = {}
+    DRAWS = 8
+    # validation of the bridge on a real point: synthesize point 6 from points 4 and 8 only, then compare the stack
+    # trained on the synthetic point-6 lines with the stack trained on the real ones, both fed the real point 6
+    Zv = ZS.copy()
+    tau_v = tau.copy()
+    def bridge_between(a_, b_, j, draws):
+        o = np.full((draws, len(E)), np.nan)
+        for i in range(len(E)):
+            if np.isnan(tau[i]).any() or np.isnan(ZS[i]).any():
+                continue
+            ia = info(tau[i, a_], s) + v0 * (9 - a_)
+            ib = info(tau[i, b_], s) + v0 * (9 - b_)
+            it = info(tau[i, j], s) + v0 * (9 - j)
+            den = max(ia - ib, 1e-9)
+            w = float(np.clip((ia - it) / den, 0, 1))
+            o[:, i] = ZS[i, a_] + w * (ZS[i, b_] - ZS[i, a_]) + math.sqrt(w * (1 - w) * den) * rng.standard_normal(draws)
+        return o
+    val = {}
+    for (a_, b_, j) in ((4, 8, 6), (6, 9, 8), (5, 9, 7)):
+        o = bridge_between(a_, b_, j, DRAWS)
+        okr = full & ~np.isnan(o[0])
+        Zst = np.vstack([np.column_stack([o[d], Zml]) for d in range(DRAWS)])
+        yst, yrst, okst = np.tile(y, DRAWS), np.tile(yrs, DRAWS), np.tile(okr, DRAWS)
+        Zreal = np.column_stack([ZS[:, j], Zml])
+        tot_s = tot_r = nn = 0.0
+        prs = np.full(len(y), np.nan)
+        prr = np.full(len(y), np.nan)
+        for Y in CV_YEARS:
+            tr = okst & (yrst >= 2019) & (yrst <= Y - 1)
+            te = okr & (yrs == Y)
+            bs = fit_w(Zst[tr], yst[tr], yrst[tr], Y - 1, chosen[j]["h"])
+            trr = okr & (yrs >= 2019) & (yrs <= Y - 1)
+            br = fit_w(Zreal[trr], y[trr], yrs[trr], Y - 1, chosen[j]["h"])
+            prs[te] = sg(Zreal[te] @ bs)
+            prr[te] = sg(Zreal[te] @ br)
+        m = okr & np.isin(yrs, CV_YEARS)
+        bs_all = fit_w(Zst[okst & (yrst <= 2023)], yst[okst & (yrst <= 2023)], yrst[okst & (yrst <= 2023)], 2023, chosen[j]["h"])
+        val["point %d from %d and %d" % (j, a_, b_)] = {
+            "weights_synthetic": np.round(bs_all, 4).tolist(), "weights_real": chosen[j]["w"],
+            "var(real - point a)": round(float(np.var(ZS[okr, j] - ZS[okr, a_])), 5),
+            "var(synthetic - point a)": round(float(np.var(o[0][okr] - ZS[okr, a_])), 5),
+            "corr(real, synthetic) of (z - z_a)": round(float(np.corrcoef(ZS[okr, j] - ZS[okr, a_], o[0][okr] - ZS[okr, a_])[0, 1]), 3),
+            "fed real point: synthetic-trained vs real-trained": ml2.compare(prs[m], prr[m], y[m], g[m], a.boot)}
+        log("bridge check %s: %s" % ("point %d from %d and %d" % (j, a_, b_), val["point %d from %d and %d" % (j, a_, b_)]))
+    R["bridge_validation"] = val
+    for k_days, label in ((0.25, "T-6h"), (1.0, "T-24h"), (3.0, "T-72h"), (7.0, "T-7d")):
+        o = bridge_line(ZS, tau, s, v0, k_days, rng, DRAWS)
+        okr = full & ~np.isnan(o[0])
+        Zst = np.vstack([np.column_stack([o[d], Zml]) for d in range(DRAWS)])
+        yst, yrst, okst = np.tile(y, DRAWS), np.tile(yrs, DRAWS), np.tile(okr, DRAWS)
+        cvh = {}
+        for h in (None, 3.0, 1.5):
+            tot = nn = 0.0
+            for Y in CV_YEARS:
+                tr = okst & (yrst >= 2019) & (yrst <= Y - 1)
+                te = okst & (yrst == Y)
+                b = fit_w(Zst[tr], yst[tr], yrst[tr], Y - 1, h)
+                pr = sg(Zst[te] @ b)
+                tot += ml2.ll(pr, yst[te]) * te.sum()
+                nn += te.sum()
+            cvh[str(h)] = round(tot / nn, 5)
+        hb = min(cvh, key=lambda k: cvh[k] + (0 if k == "None" else SEL_MIN))
+        h = None if hb == "None" else float(hb)
+        b = fit_w(Zst[okst & (yrst <= 2023)], yst[okst & (yrst <= 2023)], yrst[okst & (yrst <= 2023)], 2023, h)
+        # how the snapshot-trained stacks do when fed this synthetic line (CV years, mean over draws)
+        fedcv = {}
+        for i in (0, 6, 7, 8, 9):
+            tot = nn = 0.0
+            for Y in CV_YEARS:
+                trr = full & (yrs >= 2019) & (yrs <= Y - 1)
+                Zi = np.column_stack([ZS[:, i], Zml])
+                bi = fit_w(Zi[trr], y[trr], yrs[trr], Y - 1, chosen[i]["h"])
+                te = okst & (yrst == Y)
+                pr = sg(Zst[te] @ bi)
+                tot += ml2.ll(pr, yst[te]) * te.sum()
+                nn += te.sum()
+            fedcv["trained on snapshot %d" % i] = round(tot / nn, 5)
+        raw_ll = round(float(np.mean([ml2.ll(sg(o[d][okr & np.isin(yrs, CV_YEARS)]), y[okr & np.isin(yrs, CV_YEARS)])
+                                      for d in range(DRAWS)])), 5)
+        syn[label] = {"days": k_days, "rows": int(okr.sum()), "cv_by_h": cvh, "h": h, "weights_fit_le_2023": np.round(b, 4).tolist(),
+                      "raw_line_ll_cv_years": raw_ll, "snapshot_stacks_fed_this_line_cv": fedcv}
+        log("synthetic %s: rows %d CV %s (h %s) w %s raw %.5f | fed: %s" % (label, okr.sum(), cvh, h, np.round(b, 3), raw_ll, fedcv))
+    R["synthetic_tk"] = syn
+    p1 = pickle.load(open(os.path.join(CACHE, "stacks_part1.pkl"), "rb"))
+    pickle.dump({"R": R, "oof_ij": p1["oof_ij"], "chosen": chosen}, open(os.path.join(CACHE, "stacks.pkl"), "wb"))
+    wjson(os.path.join(CACHE, "stacks.json"), R)
+
+
+STAGES["stacks"] = stage_stacks
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
