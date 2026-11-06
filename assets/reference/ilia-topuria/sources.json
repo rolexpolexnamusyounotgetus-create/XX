@@ -53,5 +53,27 @@
     "use": "reference-only",
     "what": "body",
     "note": "ESPN full-body fight-stance cutout, date unknown"
+  },
+  {
+    "file": "wm-2022-mmanytt.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/37/Ilia_Topuria.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "page": "https://commons.wikimedia.org/wiki/File:Ilia_Topuria.jpg",
+    "author": "MMAnytt",
+    "license": "CC BY 3.0",
+    "date_taken": "2022-03-16",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Ilia Topuria in 2022"
+  },
+  {
+    "file": "wm-2026-06-13-rogan-interview.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/c8/UFC_Freedom_250_Ceremonial_Weigh_In_%289748628%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "page": "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748628).jpg",
+    "author": "U.S. Army photo by Sgt. 1st Class Brittany Primavera",
+    "license": "Public domain",
+    "date_taken": "Taken on 14 June 2026",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Joe Rogan interviews UFC Fighter Ilia Topuria at the ceremonial UFC Freedom 250 weigh-ins on the Ellipse, Saturday, June 13, 2026. Marines assigned to the U.S. Marine Corps Silent Drill Platoon suppor"
   }
 ]

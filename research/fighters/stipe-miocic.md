@@ -2,10 +2,10 @@
 
 *As of 2026-11-06. He/him. Orthodox, 6 ft 4 in, 80-inch reach, born 1982-08-19 (age 44). UFC record 14-5 in fighters.json (9 KO/TKO, 5 decisions). Two-time former UFC heavyweight champion.*
 
-**Research note:** web search was unavailable (budget used up; Wikipedia and ufc.com blocked). UFC facts come from the UFC Stats snapshot of 2026-10-31. Current status was checked against Sherdog's fight record, fetched 2026-11-06 (cached in data/raw/sherdog_cache).
+**Research note:** no web search was available. UFC facts: UFC Stats snapshot of 2026-10-31. Status: Sherdog's fight record, fetched 2026-11-06 (data/raw/sherdog_cache).
 
 ## Current status
-**Retired.** On **Nov 16, 2024** he lost to Jon Jones at UFC 309 in New York, TKO at 4:29 of round 3 after a spinning back kick to the body and follow-up strikes. He said after the fight that he was done. It was his first fight in three and a half years, since he lost the title to Francis Ngannou on **Mar 27, 2021**. Sherdog's record, fetched Nov 6, 2026, shows no bout after UFC 309 (pro record 20-5), and none appears in the UFC data through Oct 31, 2026. I found no comeback or booking, but could not search beyond that page. He has no title, no ranking and no next fight.
+**Retired.** On **Nov 16, 2024** he lost to Jon Jones at UFC 309 in New York, TKO at 4:29 of round 3 after a spinning back kick to the body and follow-up strikes. He said after the fight that he was done. It was his first fight in three and a half years, since he lost the title to Francis Ngannou on **Mar 27, 2021**. Sherdog's record, fetched Nov 6, 2026, shows no bout after UFC 309 (pro record 20-5), and none appears in the UFC data through Oct 31, 2026. No comeback or booking was found. No title, ranking or next fight.
 
 ## Recent fights
 - **L Jon Jones, UFC 309 (Nov 2024), TKO R3, title fight.** He was out-landed 96-37, and Jones landed 40 ground strikes. He attempted no takedowns.
@@ -42,6 +42,6 @@ His Elo is 1731, 5th of 92 heavyweights in the file, behind Jones, Ngannou, Gane
 - http://ufcstats.com/fight-details/6921344f8e706d0f (UFC 241)
 - http://ufcstats.com/fight-details/8238f9d2fd961757 (UFC 220)
 - http://ufcstats.com/fight-details/e27504d07ebbc441 (UFC 198)
-- https://www.sherdog.com/fighter/Stipe-Miocic-39537 (pro record; fetched 2026-11-06, cached at data/raw/sherdog_cache/fighter/Stipe-Miocic-39537.html)
-- https://en.wikipedia.org/wiki/Stipe_Miocic (reference for the retirement; not reachable this session)
+- https://www.sherdog.com/fighter/Stipe-Miocic-39537 (fetched 2026-11-06; cached in data/raw/sherdog_cache)
+- https://en.wikipedia.org/wiki/Stipe_Miocic (not reachable this session)
 - data/derived/fighters.json; data/raw/ufc_fight_stats.csv (UFC Stats snapshot 2026-10-31)

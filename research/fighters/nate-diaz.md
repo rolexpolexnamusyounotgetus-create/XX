@@ -2,15 +2,15 @@
 
 *As of 2026-11-06. He/him. Southpaw, 6 ft 0 in, 76-inch reach, born 1985-04-16 (age 41). UFC record 16-11 in fighters.json (10 submissions, 2 KO/TKO, 4 decisions).*
 
-**Research note:** web search was unavailable this session. UFC facts come from the UFC Stats snapshot of 2026-10-31; the Perry result comes from Sherdog's fight record (fetched 2026-11-06, cached in data/raw/sherdog_cache). The boxing bouts are widely reported but were not re-opened.
+**Research note:** no web search was available. UFC facts: UFC Stats snapshot of 2026-10-31. Perry result: Sherdog record, fetched 2026-11-06 (data/raw/sherdog_cache); boxing results not re-opened.
 
 ## Current status
-**Not in the UFC.** His last MMA fight was a loss to **Mike Perry** on Most Valuable Promotions' "Rousey vs. Carano" card on **May 16, 2026**: his corner stopped it at the end of round 2 (TKO, corner stoppage, referee Mike Beltran, per Sherdog). That was his first MMA fight since UFC 279 on **Sep 10, 2022**, where he submitted Tony Ferguson with a guillotine from bottom guard at 2:52 of round 4 to complete his UFC contract. In between he boxed twice: a unanimous-decision loss to Jake Paul (**Aug 5, 2023**) and a majority-decision win over Jorge Masvidal (**Jul 6, 2024**). His Sherdog pro MMA record is 21-14. No retirement, injury or new booking was found, though only the Sherdog page could be checked. He has no title, no UFC ranking and no confirmed next fight.
+**Not in the UFC.** His last MMA fight was a loss to **Mike Perry** on Most Valuable Promotions' "Rousey vs. Carano" card on **May 16, 2026**: his corner stopped it after round 2 (referee Mike Beltran, per Sherdog). It was his first MMA fight since UFC 279 (**Sep 10, 2022**), where his round-4 guillotine of Tony Ferguson completed his UFC contract. In between he boxed twice: a unanimous-decision loss to Jake Paul (**Aug 5, 2023**) and a majority-decision win over Jorge Masvidal (**Jul 6, 2024**). Sherdog pro MMA record: 21-14. No retirement, injury or new booking was found, though only Sherdog could be checked. No title, ranking or next fight.
 
 ## Recent fights
 - **L Mike Perry, MVP "Rousey vs. Carano" (May 2026), TKO (corner stoppage) after R2.** Not a UFC bout; no stats in the data.
 - **W Tony Ferguson, UFC 279 (Sep 2022), guillotine R4.** He out-landed Ferguson 101-80, but Ferguson landed 34 of 39 leg kicks.
-- **L Leon Edwards, UFC 263 (Jun 2021), decision (46-49 x3).** Edwards won on leg kicks (23 of 23) and takedowns (4 of 5, 4:59 of control). Diaz landed 31 significant strikes in round 5, his best round.
+- **L Leon Edwards, UFC 263 (Jun 2021), decision (46-49 x3).** Edwards won on leg kicks (23 of 23) and takedowns (4 of 5, 4:59 of control). He landed 31 significant strikes in round 5.
 - **L Jorge Masvidal, UFC 244 (Nov 2019), doctor stoppage after R3 for facial cuts.** He was knocked down twice and out-landed 112-43.
 - **L/W Conor McGregor, UFC 202 / UFC 196 (2016).** He lost a majority decision at UFC 202 (McGregor landed 40 of 45 leg kicks) after choking McGregor out at UFC 196.
 
@@ -29,7 +29,7 @@ He is a long, upright southpaw who walks forward behind a pawing right jab and l
 - **Age (41)**, and the corner stoppage against Perry in his first MMA fight in more than three and a half years.
 
 ## Durability and cardio
-He has absorbed 9 knockdowns in 337 UFC minutes but rarely been finished: one KO by strikes in 27 UFC fights, plus the Masvidal doctor stoppage and, outside the UFC, the Perry corner stoppage. His cardio is a defining trait. In five-round fights his pace by round, relative to round 1, is 1.00 / 1.38 / 1.06 / 1.21 / 1.00. In three-round fights it is 1.00 / 1.18 / 1.37.
+9 knockdowns absorbed in 337 UFC minutes, but rarely finished: one KO by strikes in 27 UFC fights, plus the Masvidal doctor stoppage and the Perry corner stoppage. His cardio is a defining trait. In five-round fights his pace by round, relative to round 1, is 1.00 / 1.38 / 1.06 / 1.21 / 1.00. In three-round fights it is 1.00 / 1.18 / 1.37.
 
 ## What the numbers say
 His Elo is 1641, 16th of 160 lightweights in the file. It is frozen at his 2022 form and does not include the Perry loss. fighters.json lists him at lightweight, but his last five UFC fights were at welterweight, so a current matchup should be at 170 lb. Use the career sums for a prime version. The recency-weighted sums (13 minutes, mostly Ferguson and Edwards) are thin.
@@ -42,7 +42,7 @@ His Elo is 1641, 16th of 160 lightweights in the file. It is frozen at his 2022 
 - http://ufcstats.com/fight-details/648396cc751c730d (UFC 202)
 - http://ufcstats.com/fight-details/4ace70bff9debdfb (UFC 196)
 - http://ufcstats.com/fight-details/bc72dac46f0383f1 (Henderson, 2012)
-- https://www.sherdog.com/fighter/Nate-Diaz-11451 (pro record incl. the May 16, 2026 Perry loss; fetched 2026-11-06, cached at data/raw/sherdog_cache/fighter/Nate-Diaz-11451.html)
-- https://www.sherdog.com/events/Most-Valuable-Promotions-Rousey-vs-Carano-111723 (event page; not opened)
-- https://en.wikipedia.org/wiki/Nate_Diaz (reference for the boxing bouts; not reachable this session)
+- https://www.sherdog.com/fighter/Nate-Diaz-11451 (fetched 2026-11-06; cached in data/raw/sherdog_cache)
+- https://www.sherdog.com/events/Most-Valuable-Promotions-Rousey-vs-Carano-111723 (not opened)
+- https://en.wikipedia.org/wiki/Nate_Diaz (not reachable this session)
 - data/derived/fighters.json; data/raw/ufc_fight_stats.csv (UFC Stats snapshot 2026-10-31)

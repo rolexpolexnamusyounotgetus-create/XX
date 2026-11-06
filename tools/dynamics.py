@@ -79,13 +79,11 @@ def build_panel():
     S["fkey"] = S.fid.map(bd.url_id)
     S["pid"] = [pid.get((k, i)) for k, i in zip(S.fkey, S.idx)]
     S["opid"] = [pid.get((k, 1 - i)) for k, i in zip(S.fkey, S.idx)]
-    S = S.merge(F[["fid", "DATE", "division", "title", "five", "ko_target", "ko_pos", "METHOD", "det", "REFEREE"]],
+    S = S.merge(F[["fid", "DATE", "division", "title", "five", "ko_target", "METHOD", "det", "REFEREE"]],
                 on="fid", how="left")
     S["R"] = np.where(S.five, 5, 3)
     S = S.sort_values(["DATE", "fid", "idx", "rnd"]).reset_index(drop=True)
     # standing head landed (ufcstats does not cross head x position): midpoint of the bounds, as baserates
-    for p in ("", "o_"):
-        pass
     lo = (S.head_l - S.ground_l).clip(lower=0)
     hi = np.minimum(S.head_l, S.dist_l + S.clinch_l)
     S["sh_l"] = (lo + hi) / 2
@@ -109,7 +107,6 @@ def build_panel():
     S["fin_sub_against"] = (S["last"] & S.cat.eq("SUB") & lost).astype(int)
     S["fin_sub_for"] = (S["last"] & S.cat.eq("SUB") & won).astype(int)
     S["fin_other_against"] = (S["last"] & ko & ~strikes & lost).astype(int)  # doctor, corner, injury
-    S["fin_ground"] = S.ko_pos.eq("ground") if "ko_pos" in S else False
     # cumulative state before the round (same fight, same fighter): sums over earlier rounds
     cum_src = {
         "c_att": "sig_a", "c_tot": "tot_a", "c_lnd": "sig_l", "c_hl": "head_l", "c_tda": "td_a", "c_tdl": "td_l",
@@ -443,8 +440,25 @@ class FrailPois:
         gb_obs, ga_grp = self.grad_obs(par)
         return -np.concatenate([gb_obs.sum(0), [ga_grp.sum()]])
 
-    def fit(self, b0=None, la0=math.log(0.5)):
+    def fit(self, b0=None, la0=math.log(0.5), fixed_la=None):
         p0 = np.concatenate([np.zeros(len(self.xcols)) if b0 is None else b0, [la0]])
+        if fixed_la is not None:
+            fb = lambda b: self.negll(np.r_[b, fixed_la])
+            gb = lambda b: self.grad(np.r_[b, fixed_la])[:-1]
+            r = optimize.minimize(fb, p0[:-1], jac=gb, method="L-BFGS-B", options={"maxiter": 5000, "gtol": 1e-8})
+            self.par = np.r_[r.x, fixed_la]
+            self.ll = -r.fun
+            k = len(r.x); H = np.zeros((k, k)); h = 1e-5
+            for j in range(k):
+                e = np.zeros(k); e[j] = h
+                H[:, j] = (gb(r.x + e) - gb(r.x - e)) / (2 * h)
+            Hinv = np.linalg.pinv((H + H.T) / 2)
+            gb_obs, _ = self.grad_obs(self.par)
+            C = self.c.max() + 1
+            sc = np.column_stack([np.bincount(self.c, gb_obs[:, j], C) for j in range(k)])
+            cov = Hinv @ (sc.T @ sc) @ Hinv
+            self.cov = np.zeros((k + 1, k + 1)); self.cov[:k, :k] = cov
+            return self
         r = optimize.minimize(self.negll, p0, jac=self.grad, method="L-BFGS-B",
                               options={"maxiter": 5000, "gtol": 1e-8})
         self.par = r.x
@@ -986,3 +1000,340 @@ def part2(S):
                              for r in cur[cur.slug.notna() & (cur["last"] >= "2019-01-01")].itertuples()}
     res["cellmeans_log_rate"] = cellmeans
     return res
+
+
+# ================================================================================================
+# part 3: judges' consensus labels
+# ================================================================================================
+def part3_judges(F, S, xbase, jack=0):
+    coef, cse, nclean = fit_round_logit(S, F, TRAIN)
+    lab, sure, nk = judge_labels(F, S, coef)
+    d = S.copy()
+    key_prev = list(zip(d.fid, d.idx, d.rnd - 1))
+    d["lostJ"] = [1 - lab[k] if k in lab else np.nan for k in key_prev]
+    labeled = set(f for f, _, _ in lab.keys())
+    D = d[d.fid.isin(labeled)].copy()
+    D.loc[D.rnd == 1, "lostJ"] = 0.0
+    D = D[D.lostJ.notna()]
+    # agreement of the two labels on rounds 1..R-1 (previous-round labels)
+    a = D[D.rnd >= 2]
+    agree = float(((a.lostJ > 0.5) == (a.lost > 0.5)).mean())
+    res = {"round_logit_train": {"coef": coef, "se": cse, "n_clean_fights": nclean},
+           "n_decisions_labeled": nk, "n_fights_in_sample": int(D.fid.nunique()),
+           "share_fights_all_cards_sweep": float(np.mean([v for f, v in sure.items() if f in labeled])),
+           "agreement_lostJ_vs_lost_sig": agree, "models": {}}
+    xs = [x for x in xbase if x not in ("lost", "behind2_final", "partial")]
+    for name in ("out", "acc"):
+        for lab_name, xc in (("judges", xs + ["lostJ"]), ("sig_diff", xs + ["lost"]), ("both", xs + ["lostJ", "lost"])):
+            dd = prep_outcome(D, name)
+            tr = dd[dd.period == "train"]; te = dd[dd.period == "test"]
+            m = DynRE(tr, "y", "v", xc).fit()
+            g = m.gamma()
+            if jack and lab_name != "both":
+                def ffit(df):
+                    mm = DynRE(df, "y", "v", xc, fixed_cells=m.cells).fit(m.p)
+                    return {k: v["est"] for k, v in mm.gamma().items()}
+                _, jse = grouped_jackknife(ffit, tr, G=jack)
+                for k in g:
+                    g[k]["se_jack"] = jse[k]
+            mt = DynRE(te, "y", "v", xc, fixed_cells=m.cells)
+            # test-period refit for a direct replication of the label effect
+            mtest = DynRE(te, "y", "v", xc).fit(m.p)
+            res["models"][f"{name}_{lab_name}"] = {
+                "gamma": {k: g[k] for k in g if k in ("lostJ", "lost", "D10", "K_lag", "Ks_lag")},
+                "test_refit": {k: v for k, v in mtest.gamma().items() if k in ("lostJ", "lost")},
+                "n_train": m.n_obs, "n_test": mt.n_obs}
+            print(f"  [judges {name} {lab_name}] " + ", ".join(f"{k} {v['est']:+.3f}"
+                                                            for k, v in g.items() if k in ("lostJ", "lost")), flush=True)
+    # takedown attempts with the judges' label
+    dd = D[D.rsec >= 30].copy()
+    cells = sorted(dd.cell.unique())
+    for c in cells:
+        dd["c" + c] = (dd.cell == c).astype(float)
+    cc = ["c" + c for c in cells]
+    for lab_name, xc in (("judges", xs + ["lostJ"]), ("sig_diff", xs + ["lost"])):
+        tr = dd[dd.period == "train"]; te = dd[dd.period == "test"]
+        m = FrailPois(tr, "td_a", "mins", cc + xc).fit()
+        mte = FrailPois(te, "td_a", "mins", cc + xc).fit()
+        co = m.coef()
+        res["models"][f"tda_{lab_name}"] = {"gamma": {k: co[k] for k in ("lostJ", "lost") if k in co},
+                                            "test_refit": {k: mte.coef()[k] for k in ("lostJ", "lost") if k in co}}
+    return res
+
+
+# ================================================================================================
+# part 4: knockdown momentum (descriptive diff-in-diff next to the model coefficients)
+# ================================================================================================
+def part4_descriptive(S):
+    d = S[S.full].copy().sort_values(["fid", "idx", "rnd"])
+    d["y"] = np.log((d.sig_a + 0.5) / 5)
+    d["acc_l"] = np.log((d.sig_l + 0.5) / (d.sig_a - d.sig_l + 0.5))
+    d["tda"] = d.td_a
+    g = d.groupby(["fid", "idx"])
+    for c in ("y", "acc_l", "tda"):
+        d["d_" + c] = d[c] - g[c].shift(1)
+    d = d[(d.rnd >= 2) & d["d_y"].notna()]
+    grp = np.select([(d.l_okd >= 1) & (d.l_kd == 0), (d.l_kd >= 1) & (d.l_okd == 0), (d.l_kd == 0) & (d.l_okd == 0)],
+                    ["dropped_prev_round", "scored_kd_prev_round", "no_kd_prev_round"], "both")
+    d["grp"] = grp
+    out = {}
+    for per in ("train", "test"):
+        x = d[d.period == per]
+        rows = {}
+        ctrl = x[x.grp == "no_kd_prev_round"]
+        cm = ctrl.groupby("cell")[["d_y", "d_acc_l", "d_tda"]].mean()
+        for gname in ("dropped_prev_round", "scored_kd_prev_round", "no_kd_prev_round"):
+            z = x[x.grp == gname]
+            adj = z[["d_y", "d_acc_l", "d_tda"]].to_numpy() - cm.reindex(z.cell).to_numpy()
+            rows[gname] = {"n": int(len(z)),
+                           "d_log_output_vs_control": float(np.nanmean(adj[:, 0])),
+                           "se": float(np.nanstd(adj[:, 0]) / math.sqrt(max(len(z), 1))),
+                           "d_logit_acc_vs_control": float(np.nanmean(adj[:, 1])),
+                           "d_td_att_vs_control": float(np.nanmean(adj[:, 2]))}
+        out[per] = rows
+    return out
+
+
+# ================================================================================================
+# part 5: finish hazard vs accumulated damage
+# ================================================================================================
+def damage_bin(D):
+    return pd.cut(D, [-0.1, 0.5, 20, 40, 60, 1e9], labels=["0 (R1)", "1-20", "21-40", "41-60", "61+"])
+
+
+def part5(S, F):
+    d = S.copy().sort_values(["fid", "idx", "rnd"])
+    tr0 = d[d.period == "train"]
+    p0 = tr0.o_kd.sum() / tr0.o_sh_l.sum()
+    H = person_history(d, p0)
+    d = d.merge(H[["fid", "idx", "chin_idx", "pow_idx"]], on=["fid", "idx"], how="left")
+    O = H[["fid", "idx", "pow_idx"]].copy(); O["idx"] = 1 - O.idx
+    d = d.merge(O.rename(columns={"pow_idx": "opow"}), on=["fid", "idx"], how="left")
+    dv = tr0.groupby("division").apply(lambda x: x.o_kd.sum() / max(x.o_sh_l.sum(), 1), include_groups=False)
+    d["ldiv"] = np.log(d.division.map(dv).fillna(p0) / p0)
+    d["lchin"] = np.log(d.chin_idx.fillna(1.0)); d["lpow"] = np.log(d.opow.fillna(1.0))
+    d = d.sort_values(["fid", "idx", "rnd"]).reset_index(drop=True)
+    cells = sorted(d.cell.unique())
+    for c in cells:
+        d["c" + c] = (d.cell == c).astype(float)
+    cc = ["c" + c for c in cells]
+    pre = ["ldiv", "lchin", "lpow"]
+    tr, te = d[d.period == "train"], d[d.period == "test"]
+    res = {"p0_kd_per_standing_head_train": float(p0)}
+    # ---- (a) knockdowns per landed standing head strike absorbed
+    specs = {"null": cc + pre, "damage": cc + pre + ["D10", "K_lag", "K_early"],
+             "fatigue": cc + pre + ["A100", "oA100"],
+             "full": cc + pre + ["D10", "K_lag", "K_early", "A100", "oA100"]}
+    kd = {}
+    fitted = {}
+    for nm, X in specs.items():
+        m = FrailPois(tr, "o_kd", "o_sh_l", X).fit()
+        mt = FrailPois(te, "o_kd", "o_sh_l", X)
+        llt, pred, mu = m.score_other(mt)
+        fitted[nm] = (m, mt, pred)
+        co = m.coef()
+        kd[nm] = {"coef": {k: v for k, v in co.items()}, "train_ll": m.ll, "test_ll": llt, "n_train": m.n,
+                  "kd_train": float(tr.o_kd.sum()), "kd_test": float(te.o_kd.sum())}
+        print(f"  [kd {nm}] test ll {llt:.1f} frailty {co['frailty_var']['est']:.2f}", flush=True)
+    # no-frailty comparison (Poisson, alpha fixed tiny) for the damage spec
+    for nm in ("null", "damage"):
+        X = specs[nm]
+        m = FrailPois(tr, "o_kd", "o_sh_l", X).fit(fixed_la=math.log(1e-6))
+        llt, _, _ = m.score_other(FrailPois(te, "o_kd", "o_sh_l", X))
+        kd[nm + "_nofrailty"] = {"coef": {k: v for k, v in m.coef().items() if k != "frailty_var"},
+                                 "train_ll": m.ll, "test_ll": llt}
+    # round profile of the per-strike hazard (structural, given frailty), null spec
+    co = kd["null"]["coef"]
+    prof = {}
+    for R in (3, 5):
+        b = co[f"c{R}_1"]["est"]
+        prof[str(R)] = [math.exp(co[f"c{R}_{r}"]["est"] - b) for r in range(1, R + 1)]
+    kd["round_profile_given_frailty"] = prof
+    m_nf = FrailPois(tr, "o_kd", "o_sh_l", specs["null"]).fit(fixed_la=math.log(1e-6))
+    co2 = m_nf.coef()
+    kd["round_profile_marginal"] = {str(R): [math.exp(co2[f"c{R}_{r}"]["est"] - co2[f"c{R}_1"]["est"])
+                                             for r in range(1, R + 1)] for R in (3, 5)}
+    # calibration on test by prior damage and by round (sequential predictive means, damage spec)
+    m, mt, pred = fitted["damage"]
+    z = mt.d.assign(pred=pred)
+    z["Dbin"] = damage_bin(z.c_ohl)
+    cal = z.groupby("Dbin", observed=True).agg(obs=("o_kd", "sum"), pred=("pred", "sum"), sh=("o_sh_l", "sum"),
+                                               n=("o_kd", "size"))
+    m0_, mt0_, pred0 = fitted["null"]
+    z0 = mt0_.d.assign(pred=pred0); z0["Dbin"] = damage_bin(z0.c_ohl)
+    cal0 = z0.groupby("Dbin", observed=True).pred.sum()
+    kd["test_calibration_by_prior_damage"] = {
+        str(k): {"obs": float(r.obs), "pred_damage_model": float(r.pred), "pred_null_model": float(cal0[k]),
+                 "kd_per_100_standing_head_obs": 100 * float(r.obs / r.sh), "rounds": int(r.n)}
+        for k, r in cal.iterrows()}
+    calr = z.groupby("cell").agg(obs=("o_kd", "sum"), pred=("pred", "sum"), sh=("o_sh_l", "sum"))
+    kd["test_calibration_by_round"] = {k: {"obs": float(r.obs), "pred": float(r.pred),
+                                           "per100_obs": 100 * float(r.obs / r.sh)} for k, r in calr.iterrows()}
+    # do the two directions share a fight-level volatility? correlation of per-fighter-fight Pearson residuals
+    mnf = FrailPois(tr, "o_kd", "o_sh_l", specs["null"]).fit(fixed_la=math.log(1e-6))
+    q = mnf.d.assign(mu=np.exp(mnf.lE + mnf.X @ mnf.par[:-1]))
+    agg = q.groupby(["fid", "idx"]).agg(y=("o_kd", "sum"), mu=("mu", "sum")).reset_index()
+    agg["r"] = (agg.y - agg.mu) / np.sqrt(agg.mu)
+    pv = agg.pivot(index="fid", columns="idx", values="r").dropna()
+    pva = agg.pivot(index="fid", columns="idx", values="y").dropna()
+    kd["direction_residual_corr"] = {"pearson": float(np.corrcoef(pv[0], pv[1])[0, 1]), "n_fights": int(len(pv))}
+    res["kd_hazard"] = kd
+    # ---- (b) knockdown -> finish conversion, per knockdown (geometric within the round)
+    import statsmodels.api as sm
+    k_rows = []
+    kr = d[d.o_kd >= 1]
+    for r in kr.itertuples(index=False):
+        n = int(r.o_kd)
+        fin = int(r.fin_ko_against)
+        for j in range(n):
+            k_rows.append({"y": int(fin and j == n - 1), "D10": r.D10, "kd_index": r.c_okd + j,
+                           "rnd0": r.rnd - 1, "five": float(r.R == 5), "lpow": r.lpow, "lchin": r.lchin,
+                           "ldiv": r.ldiv, "period": r.period, "fid": r.fid, "first_in_round": float(j == 0),
+                           "A100": r.A100, "oA100": r.oA100})
+    K = pd.DataFrame(k_rows)
+    conv = {}
+    Xs = {"null": ["rnd0", "five", "ldiv"], "damage": ["rnd0", "five", "ldiv", "D10", "kd_index"],
+          "full": ["rnd0", "five", "ldiv", "D10", "kd_index", "lpow", "lchin", "oA100"]}
+    for nm, X in Xs.items():
+        a = K[K.period == "train"]; b = K[K.period == "test"]
+        mm = sm.Logit(a.y, sm.add_constant(a[X])).fit(disp=0, cov_type="cluster",
+                                                      cov_kwds={"groups": pd.factorize(a.fid)[0]})
+        pb = mm.predict(sm.add_constant(b[X]))
+        llt = float((b.y * np.log(pb) + (1 - b.y) * np.log(1 - pb)).sum())
+        conv[nm] = {"coef": {k: {"est": float(mm.params[k]), "se": float(mm.bse[k])} for k in ["const"] + X},
+                    "test_ll": llt, "n_train": int(len(a)), "n_test": int(len(b)),
+                    "rate_train": float(a.y.mean()), "rate_test": float(b.y.mean()),
+                    "pred_test_mean": float(pb.mean())}
+    K["Dbin"] = damage_bin(K.D10 * 10)
+    conv["empirical_by_prior_damage"] = {per: {str(k): {"rate": float(g.y.mean()), "n": int(len(g))}
+                                               for k, g in K[K.period == per].groupby("Dbin", observed=True)}
+                                         for per in ("train", "test")}
+    conv["empirical_by_kd_index"] = {per: {str(int(k)): {"rate": float(g.y.mean()), "n": int(len(g))}
+                                           for k, g in K[K.period == per].groupby(K.kd_index.clip(upper=3))}
+                                     for per in ("train", "test")}
+    conv["empirical_by_round"] = {per: {f"{int(f5) and 5 or 3}_{int(r0) + 1}": {"rate": float(g.y.mean()), "n": int(len(g))}
+                                        for (f5, r0), g in K[K.period == per].groupby(["five", "rnd0"])}
+                                  for per in ("train", "test")}
+    res["kd_conversion"] = conv
+    # ---- (c) non-knockdown stoppages (standing TKO, ground TKO), joint frailty with the knockdown process
+    d["ko_ground"] = d.ko_pos.eq("ground")
+    d["st_y"] = ((d.fin_ko_against == 1) & (d.o_kd == 0) & ~d.ko_ground).astype(float)
+    d["gt_y"] = ((d.fin_ko_against == 1) & (d.o_kd == 0) & d.ko_ground).astype(float)
+    base = ["rnd0", "five"]
+    d["rnd0"] = d.rnd - 1; d["five"] = (d.R == 5).astype(float); d["K_prior"] = d.c_okd
+    stack = []
+    for typ, ycol, ecol in (("kd", "o_kd", "o_sh_l"), ("st", "st_y", "o_sh_l"), ("gt", "gt_y", "o_ground_l")):
+        z = d[["g", "fid", "period", ycol, ecol] + cc + pre + ["D10", "K_prior", "rnd0", "five"]].copy()
+        z = z.rename(columns={ycol: "yy", ecol: "EE"})
+        z["typ"] = typ
+        stack.append(z)
+    Z = pd.concat(stack, ignore_index=True)
+    xcols = []
+    for typ in ("kd", "st", "gt"):
+        ind = (Z.typ == typ).astype(float)
+        if typ == "kd":
+            for c in cc:
+                Z[f"{typ}:{c}"] = ind * Z[c]; xcols.append(f"{typ}:{c}")
+        else:
+            Z[f"{typ}:const"] = ind; xcols.append(f"{typ}:const")
+            for c in ("rnd0", "five"):
+                Z[f"{typ}:{c}"] = ind * Z[c]; xcols.append(f"{typ}:{c}")
+        for c in pre + ["D10", "K_prior"]:
+            Z[f"{typ}:{c}"] = ind * Z[c]; xcols.append(f"{typ}:{c}")
+    Z = Z.sort_values(["g", "typ"]).reset_index(drop=True)
+    jt = {}
+    for lab, fl in (("joint_frailty", None), ("no_frailty", math.log(1e-6))):
+        a = Z[Z.period == "train"]; b = Z[Z.period == "test"]
+        m = FrailPois(a, "yy", "EE", xcols).fit(fixed_la=fl)
+        llt, _, _ = m.score_other(FrailPois(b, "yy", "EE", xcols))
+        co = m.coef()
+        jt[lab] = {"coef": {k: v for k, v in co.items() if not (k.startswith("kd:c"))}, "test_ll": llt}
+    jt["events_train"] = {"st": float(d.loc[d.period == "train", "st_y"].sum()),
+                          "gt": float(d.loc[d.period == "train", "gt_y"].sum()),
+                          "kd": float(d.loc[d.period == "train", "o_kd"].sum())}
+    jt["events_test"] = {"st": float(d.loc[d.period == "test", "st_y"].sum()),
+                         "gt": float(d.loc[d.period == "test", "gt_y"].sum())}
+    jt["rate_per_standing_head_st_train"] = float(d.loc[d.period == "train", "st_y"].sum() /
+                                                  d.loc[d.period == "train", "o_sh_l"].sum())
+    jt["rate_per_ground_strike_gt_train"] = float(d.loc[d.period == "train", "gt_y"].sum() /
+                                                  d.loc[d.period == "train", "o_ground_l"].sum())
+    res["non_kd_stoppage"] = jt
+    # ---- (d) empirical finish hazard tables
+    tab = {}
+    for per in ("train", "test"):
+        x = d[d.period == per]
+        t = {}
+        for (R, r), g in x.groupby(["R", "rnd"]):
+            t[f"{R}_{r}"] = {"rounds": int(len(g)), "p_stopped_by_strikes": float(g.fin_ko_against.mean()),
+                             "p_kd_absorbed": float((g.o_kd >= 1).mean()),
+                             "stoppages_per_100_head_absorbed": 100 * float(g.fin_ko_against.sum() /
+                                                                            max(g.o_head_l.sum(), 1))}
+        xb = x[x.rnd >= 2].copy()
+        xb["Dbin"] = damage_bin(xb.c_ohl)
+        byd = {}
+        for k, g in xb.groupby("Dbin", observed=True):
+            byd[str(k)] = {"rounds": int(len(g)), "p_stopped_by_strikes": float(g.fin_ko_against.mean()),
+                           "stoppages_per_100_head_absorbed": 100 * float(g.fin_ko_against.sum() / max(g.o_head_l.sum(), 1)),
+                           "kd_per_100_standing_head": 100 * float(g.o_kd.sum() / max(g.o_sh_l.sum(), 1)),
+                           "head_absorbed_per_min": float(g.o_head_l.sum() / g.mins.sum())}
+        tab[per] = {"by_round": t, "by_prior_damage_rounds2plus": byd}
+    res["hazard_tables"] = tab
+    return res
+
+
+# ================================================================================================
+# main
+# ================================================================================================
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--quick", action="store_true", help="skip jackknife and simulation checks")
+    ap.add_argument("--jack", type=int, default=20)
+    ap.add_argument("--parts", default="1,2,3,4,5")
+    a = ap.parse_args(argv)
+    jack = 0 if a.quick else a.jack
+    parts = set(a.parts.split(","))
+    t0 = time.time()
+    F, S, notes = build_panel()
+    S = add_covariates(S)
+    print(f"panel: {S.fid.nunique()} fights, {len(S)} fighter-rounds ({time.time() - t0:.0f}s)", flush=True)
+    per = S.groupby("period").fid.nunique().to_dict()
+    J = {"meta": {"tool": "tools/dynamics.py", "built": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+                  "snapshot": str(S.DATE.max().date()), "train": TRAIN, "test": TEST, "ext": EXT,
+                  "fights_by_period": per, "formats": [FMT3, FMT5], "notes": notes, "covariates": XDOC,
+                  "jackknife_groups": jack}}
+    if parts & {"1", "3", "4"}:
+        print("part 1/3/4: dynamic RE models", flush=True)
+        mods = {}
+        for name in ("out", "dist", "acc", "hacc"):
+            o, m0, m1 = fit_dynre_outcome(S, name, STATE_X, jack=jack if name in ("out", "dist", "acc") else 0)
+            mods[name] = o
+            if name == "out":
+                m0_out = m0
+        mods["tda"] = fit_tda(S, STATE_X)
+        J["state_models"] = mods
+        J["comparison_estimators_out"] = comparison_estimators(S)
+        if not a.quick:
+            print("  simulation check of the estimator (null model, own-output fatigue proxy)", flush=True)
+            J["simulation_check"] = sim_check(S, m0_out, reps=2, gam_true=(0.0, -0.15))
+        J["kd_momentum_descriptive"] = part4_descriptive(S)
+    if "3" in parts:
+        print("part 3: judges' labels", flush=True)
+        J["adaptation_judges"] = part3_judges(F, S, STATE_X, jack=jack)
+    if "2" in parts:
+        print("part 2: per-fighter late-round ratios", flush=True)
+        J["fighter_late_ratio"] = part2(S)
+    if "5" in parts:
+        print("part 5: finish hazard", flush=True)
+        J["finish_hazard"] = part5(S, F)
+    J["meta"]["secs"] = time.time() - t0
+    old = {}
+    if os.path.exists(OUT_JSON) and parts != {"1", "2", "3", "4", "5"}:
+        old = json.load(open(OUT_JSON))
+    old.update(r6(J, 6))
+    with open(OUT_JSON, "w") as fh:
+        json.dump(old, fh, indent=1)
+    print(f"wrote {OUT_JSON} ({time.time() - t0:.0f}s)")
+
+
+if __name__ == "__main__":
+    main()

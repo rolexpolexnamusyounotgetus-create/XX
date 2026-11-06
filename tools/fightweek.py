@@ -662,12 +662,34 @@ def match_wikidata(people, pids, items, sd_href=None):
     return out
 
 
+_SD_BY_ID = {}
+
+
+def _sd_id_index():
+    """Sherdog numeric id -> cached page path, over both caches (refreshed on demand)."""
+    _SD_BY_ID.clear()
+    for d in (os.path.join(SD_OLD, "fighter"), os.path.join(SD_DIR, "fighter")):
+        if os.path.isdir(d):
+            for fn in os.listdir(d):
+                m = re.search(r"-(\d+)\.html$", fn)
+                if m:
+                    _SD_BY_ID.setdefault(m.group(1), os.path.join(d, fn))
+    return _SD_BY_ID
+
+
 def sherdog_page_paths(href_or_id):
-    """Cached Sherdog page locations: preufc's cache first, then this tool's."""
+    """Cached Sherdog page locations: preufc's cache first, then this tool's (last = where to write)."""
+    sid = str(href_or_id) if re.match(r"^\d+$", str(href_or_id)) else None
+    if sid is None:
+        m = re.search(r"-(\d+)$", href_or_id)
+        sid = m.group(1) if m else None
+    paths = []
+    if sid and sid in _SD_BY_ID:
+        paths.append(_SD_BY_ID[sid])
     if re.match(r"^\d+$", str(href_or_id)):
-        return [os.path.join(SD_DIR, "fighter", "id-%s.html" % href_or_id)]
+        return paths + [os.path.join(SD_DIR, "fighter", "id-%s.html" % href_or_id)]
     tail = href_or_id.rsplit("/", 1)[-1]
-    return [os.path.join(SD_OLD, "fighter", tail + ".html"), os.path.join(SD_DIR, "fighter", tail + ".html")]
+    return paths + [os.path.join(SD_OLD, "fighter", tail + ".html"), os.path.join(SD_DIR, "fighter", tail + ".html")]
 
 
 def read_cached(paths):
@@ -748,6 +770,7 @@ def cmd_fetch_sherdog(args):
     sdx = sherdog_index()
     wd = match_wikidata(people, list(T), items, sdx)
     fx = Fetcher(min_gap=1.1, offline=args.offline)
+    _sd_id_index()
 
     def polite_get(url, path):
         if os.path.exists(path) and os.path.getsize(path) > 0:
@@ -857,6 +880,7 @@ def load_sherdog_bios(offline=True, fights=None, people=None):
     items = load_wikidata()
     sdx = sherdog_index()
     wd = match_wikidata(people, list(T), items, sdx)
+    _sd_id_index()
     out = {}
     for pid in T:
         html = None
@@ -886,6 +910,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["fetch-wiki", "fetch-geo", "fetch-sherdog", "build", "eval", "all"])
     ap.add_argument("--offline", action="store_true")
+    ap.add_argument("--no-search", action="store_true", help="fetch-sherdog: skip the name-search pass")
     args = ap.parse_args()
     if args.cmd == "fetch-wiki":
         cmd_fetch_wiki(args)

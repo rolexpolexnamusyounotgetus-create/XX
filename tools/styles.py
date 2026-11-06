@@ -1023,3 +1023,459 @@ def transmission_test(D, rows, W, Xb, pen_b, variants, n_boot=2000, seed=SEED):
                          for k in ("h", "b", "l", "kd", "td", "ctrl")}
     out["median_abs_rel_shift"] = shifts
     return out
+
+
+# --------------------------------------------------------------------------------------------- engine sets
+RELATIVE_TERMS = {"open", "x_sp_vs_orth", "x_orth_vs_sp", "reach_d", "height_d", "age_d", "y_sw", "kick_y"}
+
+
+def is_matchup(term):
+    """a matchup term involves the opponent's style or the pair's relative physicals / stances; terms built
+    only from the attacker's own style are decomposition corrections, not matchups"""
+    return "zy_" in term or term in RELATIVE_TERMS
+
+
+def _spec_data(D, m):
+    y = D[m["y"]].to_numpy(float)
+    n = D[m["n"]].to_numpy(float) if m.get("n") else None
+    off = m["off"](D) if callable(m["off"]) else (np.zeros(len(D)) if m["off"] is None else m["off"])
+    off = np.asarray(off, float)
+    ok = np.isfinite(off) & np.isfinite(y)
+    if n is not None:
+        ok &= n > 0
+    return y, n, off, ok
+
+
+def _term_from_name(t):
+    return tuple(t.split("*")) if "*" in t else t
+
+
+def recommend_sets(D, rate_res):
+    """Per rate model: start from held-out survivors, then add held-out-supported matchup terms in order of
+    tune z, keeping each only if it lowers the 2019-2023 leave-one-year-out CV deviance given the terms
+    already in (this resolves collinear pairs such as reach vs height on tune data alone)."""
+    specs = rate_specs(D)
+    tune = D.tune.to_numpy()
+    yr = D.date.str[:4].astype(int).to_numpy()
+    sets = {}
+    for name, res in rate_res.items():
+        m = specs[name]
+        y, n, off, ok = _spec_data(D, m)
+        tr = tune & ok
+        nn = lambda mask: None if n is None else n[mask]
+        cands = [c for c in res["candidates"] if c["verdict"] in ("survives", "supported") and is_matchup(c["term"])]
+        cands.sort(key=lambda c: (c["verdict"] != "survives", -abs(c["z_tune"])))
+
+        def cvdev(terms):
+            cols = [np.ones(len(D))] + [_col(D, c) for c in m["base"]]
+            for t in terms:
+                x = _col(D, _term_from_name(t))
+                cols.append(x / (x[tr].std() or 1.0))
+            X = np.column_stack(cols)
+            tot = 0.0
+            for Y in range(2019, 2024):
+                a, v = tr & (yr != Y), tr & (yr == Y)
+                b, _, _ = fit_glm(X[a], y[a], m["fam"], off[a], nn(a))
+                tot += glm_dev(X[v], b, y[v], m["fam"], off[v], nn(v)).sum()
+            return tot
+        chosen, tier, cur = [], {}, cvdev([])
+        for c in cands:
+            if c["verdict"] == "survives":
+                chosen.append(c["term"])
+                tier[c["term"]] = 1
+                cur = cvdev(chosen)
+                continue
+            d = cvdev(chosen + [c["term"]])
+            if d < cur:
+                chosen.append(c["term"])
+                tier[c["term"]] = 2
+                cur = d
+        if chosen:
+            sets[name] = {"terms": chosen, "tier": tier}
+    return sets
+
+
+def joint_rate_eval(D, sets, sd_feat, n_boot=1000, seed=SEED):
+    """joint fit of each model's recommended terms on 2019-2023; held-out deviance change vs the base"""
+    specs = rate_specs(D)
+    tune = D.tune.to_numpy()
+    fi = D.fi.to_numpy()
+    rng = np.random.default_rng(seed)
+    out = {}
+    for name, st in sets.items():
+        m = specs[name]
+        y, n, off, ok = _spec_data(D, m)
+        tr, te = tune & ok, (~tune) & ok
+        nn = lambda mask: None if n is None else n[mask]
+        base_cols = [np.ones(len(D))] + [_col(D, c) for c in m["base"]]
+        Xb = np.column_stack(base_cols)
+        b0, _, _ = fit_glm(Xb[tr], y[tr], m["fam"], off[tr], nn(tr))
+        dev0 = glm_dev(Xb[te], b0, y[te], m["fam"], off[te], nn(te))
+        cols, scales = list(base_cols), []
+        for t in st["terms"]:
+            x = _col(D, _term_from_name(t))
+            s = x[tr].std() or 1.0
+            scales.append(s)
+            cols.append(x / s)
+        X = np.column_stack(cols)
+        b, cov, disp = fit_glm(X[tr], y[tr], m["fam"], off[tr], nn(tr))
+        dev = glm_dev(X[te], b, y[te], m["fam"], off[te], nn(te))
+        dd = dev - dev0
+        ufi = np.unique(fi[te])
+        per_f = np.bincount(np.searchsorted(ufi, fi[te]), weights=dd, minlength=len(ufi))
+        bs = np.array([per_f[rng.integers(0, len(ufi), len(ufi))].sum() for _ in range(n_boot)])
+        kb = len(m["base"]) + 1
+        terms = []
+        for j, t in enumerate(st["terms"]):
+            coef_sd = float(b[kb + j])
+            terms.append({"term": t, "tier": st["tier"][t], "coef_per_term_sd": coef_sd,
+                          "term_sd": float(scales[j]), "coef_per_unit": coef_sd / scales[j],
+                          "z_tune": float(b[kb + j] / math.sqrt(cov[kb + j, kb + j] * disp)),
+                          "mult_at_plus1sd": float(math.exp(coef_sd))})
+        out[name] = {"desc": m["desc"], "family": m["fam"], "base_terms": [cname(c) for c in m["base"]],
+                     "base_coef_joint": [float(v) for v in b[:kb]], "terms": terms,
+                     "test_dev_change": float(dd.sum()), "test_dev_change_pct": float(dd.sum() / dev0.sum() * 100),
+                     "test_dev_ci": [float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))]}
+    return out
+
+
+# --------------------------------------------------------------------------------------------- mismatch subset
+def mismatch_eval(W, preds, arch_memb=None, q=2 / 3.0):
+    """held-out log loss on style-mismatch fights: style distance between the two weighted style vectors
+    above the 2019-2023 two-thirds quantile (threshold fixed on tune fights)"""
+    Wt = dim_weights()
+    zA = np.column_stack([W.Z[d][0] for d in STYLE_DIMS]) * Wt
+    zB = np.column_stack([W.Z[d][1] for d in STYLE_DIMS]) * Wt
+    dist = np.sqrt(((zA - zB) ** 2).sum(1))
+    thr = float(np.quantile(dist[W.tune], q))
+    mm = W.test & (dist > thr)
+    out = {"threshold": thr, "n_test_mismatch": int(mm.sum()), "n_test": int(W.test.sum()), "models": {}}
+    sub = mm[W.test]
+    for k, p in preds.items():
+        out["models"][k] = {"mismatch": metrics(p[sub], W.y[mm]), "other": metrics(p[~sub], W.y[W.test & ~mm])}
+    if arch_memb is not None:
+        mA, mB = arch_memb
+        la, lb = mA.argmax(1), mB.argmax(1)
+        diff = W.test & (la != lb) & (mA.max(1) > 0.5) & (mB.max(1) > 0.5)
+        out["n_test_diff_archetype_confident"] = int(diff.sum())
+        sub2 = diff[W.test]
+        for k, p in preds.items():
+            out["models"][k]["diff_archetype"] = metrics(p[sub2], W.y[diff])
+    return out
+
+
+# --------------------------------------------------------------------------------------------- live roster
+def live_features(fj):
+    """style/skill features for every roster fighter as of the snapshot (live priors: for display and for
+    the engine's live matchups only; never for backtests)"""
+    keys = fj["meta"]["keys"]
+    ex = Side(keys)
+    snap = dt.date.fromisoformat(fj["meta"]["snapshot"])
+    out = {}
+    for slug, p in fj["fighters"].items():
+        div = p.get("division")
+        P = fj["priors"].get(div) or fj["priors"]["ALL"]
+        if P.get("fallback"):
+            P = fj["priors"].get(P["fallback"], fj["priors"]["ALL"])
+        age = None
+        if p.get("dob"):
+            age = (snap - dt.date.fromisoformat(p["dob"])).days / 365.25
+        meta = {"n": p.get("n_fights"), "age": age, "reach_in": p.get("reach_in"), "height_in": p.get("height_in"),
+                "stance": p.get("stance"), "elo": p.get("elo"), "ko_losses": p.get("ko_losses"),
+                "pace": p.get("pace"), "pace_w": p.get("pace_w")}
+        try:
+            out[slug] = (p, ex.features(p["S"], P, meta))
+        except (ZeroDivisionError, ValueError, TypeError):
+            continue
+    return out
+
+
+# --------------------------------------------------------------------------------------------- scouting
+TAG_FEATURES = {      # scouting tag -> (data feature, expected sign)
+    "pressure": ("press", +1), "counter": ("press", -1), "volume": ("vol", +1), "power": ("kd_pow", +1),
+    "leg-kicks": ("sh_l", +1), "calf-kicks": ("sh_l", +1), "body-work": ("sh_b", +1), "clinch": ("sh_c", +1),
+    "top-control": ("ctrl", +1), "ground-and-pound": ("g_rate", +1), "submissions": ("sub_int", +1),
+    "back-takes": ("sub_int", +1), "chain-wrestling": ("td_int", +1), "cage-wrestling": ("td_int", +1),
+    "takedown-defense": ("td_def", +1), "rangy": ("reach_rel", +1), "chin-concern": ("chin", +1),
+    "durable": ("chin", -1), "head-movement": ("dfn", +1), "cardio": ("late", +1), "late-surge": ("late", +1),
+    "fades-late": ("late", -1), "elbows": ("sh_c", +1), "knees": ("sh_c", +1), "jab": ("sh_h", +1),
+}
+
+
+def auc(pos, neg):
+    pos, neg = np.asarray(pos, float), np.asarray(neg, float)
+    if len(pos) == 0 or len(neg) == 0:
+        return None
+    allv = np.concatenate([pos, neg])
+    ranks = np.argsort(np.argsort(allv)) + 1.0
+    # average ties
+    order = np.argsort(allv)
+    sv = allv[order]
+    i = 0
+    while i < len(sv):
+        j = i
+        while j + 1 < len(sv) and sv[j + 1] == sv[i]:
+            j += 1
+        if j > i:
+            ranks[order[i:j + 1]] = (i + j) / 2.0 + 1.0
+        i = j + 1
+    rp = ranks[:len(pos)].sum()
+    return float((rp - len(pos) * (len(pos) + 1) / 2.0) / (len(pos) * len(neg)))
+
+
+SCOUT_TO_ARCH = {   # scouting archetype -> broad family for the cross-tab
+    "wrestler": "grappling", "chain wrestler (sambo/dagestani)": "grappling", "grappler/BJJ": "grappling",
+    "wrestle-boxer": "grappling", "pressure striker": "pressure", "volume striker": "volume",
+    "power puncher": "power", "counter striker": "counter", "kickboxer": "kicking", "muay thai": "kicking",
+    "karate/point fighter": "kicking", "boxer": "boxing", "all-rounder": "all-round"}
+
+
+def scouting_validation(live, mu, sd, arch):
+    files = sorted(glob.glob(os.path.join(ROOT, "data", "scouting", "*.json")))
+    recs = []
+    reach_res = None
+    # reach relative to height (ape index) among roster fighters, for the "rangy" tag
+    ape = [f["reach"] - f["height"] for _, f in live.values() if f["reach"] and f["height"]]
+    ape_mu, ape_sd = float(np.mean(ape)), float(np.std(ape))
+    Wt = np.array(arch["weights"])
+    cent = np.array(arch["centroids_w"])
+    for fp in files:
+        with open(fp) as fh:
+            sc = json.load(fh)
+        slug = sc.get("slug")
+        if slug not in live:
+            continue
+        p, f = live[slug]
+        z = {k: (f[k] - mu[k]) / sd[k] for k in mu if f.get(k) is not None}
+        z["reach_rel"] = ((f["reach"] - f["height"]) - ape_mu) / ape_sd if f["reach"] and f["height"] else 0.0
+        zw = np.array([z[d] for d in STYLE_DIMS]) * Wt
+        memb = soft_membership(zw[None], cent, arch["temp"])[0]
+        st = sc.get("style", {})
+        recs.append({"slug": slug, "name": sc.get("name"), "archetype": st.get("archetype"),
+                     "stance": st.get("stance"), "tags": set(st.get("tags", [])), "z": z, "memb": memb,
+                     "data_stance": (p.get("stance") or "").lower(), "mins": f["mins"]})
+    tags = {}
+    for tag, (feat, sign) in TAG_FEATURES.items():
+        pos = [sign * r["z"][feat] for r in recs if tag in r["tags"]]
+        neg = [sign * r["z"][feat] for r in recs if tag not in r["tags"]]
+        if len(pos) >= 3:
+            tags[tag] = {"feature": feat, "sign": sign, "n_tagged": len(pos), "auc": auc(pos, neg)}
+    # archetype cross-tab: data archetype (max membership) vs scouting family
+    ct = defaultdict(Counter)
+    for r in recs:
+        ct[SCOUT_TO_ARCH.get(r["archetype"], r["archetype"])][arch["names"][int(np.argmax(r["memb"]))]] += 1
+    stance_agree = Counter((r["stance"], r["data_stance"]) for r in recs)
+    return {"n_fighters": len(recs), "tag_auc": tags, "crosstab": {k: dict(v) for k, v in ct.items()},
+            "stance_pairs": {"%s|%s" % k: v for k, v in stance_agree.items()},
+            "fighters": [{"slug": r["slug"], "scouting_archetype": r["archetype"],
+                          "data_archetype": arch["names"][int(np.argmax(r["memb"]))],
+                          "membership": round(float(np.max(r["memb"])), 3)} for r in recs]}
+
+
+# --------------------------------------------------------------------------------------------- engine helper
+def term_value(term, fx, fy, mu, sd):
+    """value of a modifier term for attacker X (features fx) against defender Y (fy), in the units the
+    coefficients `coef_per_unit` use"""
+    def z(f, k):
+        v = f.get(k)
+        return 0.0 if v is None else (v - mu[k]) / sd[k]
+    if "*" in term:
+        a, b = term.split("*")
+        return term_value(a, fx, fy, mu, sd) * term_value(b, fx, fy, mu, sd)
+    if term.startswith("zx_"):
+        return z(fx, term[3:])
+    if term.startswith("zy_"):
+        return z(fy, term[3:])
+    if term == "kick_y":
+        return (z(fy, "sh_l") + z(fy, "sh_b")) / math.sqrt(2)
+    if term == "kick_x":
+        return (z(fx, "sh_l") + z(fx, "sh_b")) / math.sqrt(2)
+    if term in ("reach_d", "height_d", "age_d"):
+        k = term[:-2]
+        if fx.get(k) is None or fy.get(k) is None:
+            return 0.0
+        return (fx[k] - fy[k]) / sd[k]
+    sx = "southpaw" if fx.get("southpaw") else "switch" if fx.get("switch") else "orthodox" if fx.get("orthodox") else ""
+    sy = "southpaw" if fy.get("southpaw") else "switch" if fy.get("switch") else "orthodox" if fy.get("orthodox") else ""
+    if term == "open":
+        return float({sx, sy} == {"southpaw", "orthodox"})
+    if term == "x_orth_vs_sp":
+        return float(sx == "orthodox" and sy == "southpaw")
+    if term == "x_sp_vs_orth":
+        return float(sx == "southpaw" and sy == "orthodox")
+    if term == "y_sw":
+        return float(sy == "switch")
+    raise KeyError(term)
+
+
+def matchup_modifiers(fx, fy, mu, sd, joint):
+    """per-rate modifiers for X attacking Y: multipliers for Poisson rates, log-odds shifts for shares"""
+    out = {}
+    for name, j in joint.items():
+        s = sum(t["coef_per_unit"] * term_value(t["term"], fx, fy, mu, sd) for t in j["terms"])
+        out[name] = {"log_shift": s, "mult": math.exp(s)} if j["family"] == "poisson" else {"logit_shift": s}
+    return out
+
+
+# --------------------------------------------------------------------------------------------- main
+def rnd(x, d=4):
+    if isinstance(x, float):
+        return float(("%." + str(d) + "g") % x) if x != 0 else 0.0
+    if isinstance(x, dict):
+        return {k: rnd(v, d) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [rnd(v, d) for v in x]
+    if isinstance(x, (np.floating,)):
+        return rnd(float(x), d)
+    if isinstance(x, (np.integer,)):
+        return int(x)
+    if isinstance(x, np.ndarray):
+        return rnd(x.tolist(), d)
+    return x
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--boot", type=int, default=2000, help="bootstrap replicates for held-out CIs (2000)")
+    ap.add_argument("--k", type=int, default=8, help="number of archetypes (8)")
+    ap.add_argument("--no-report", action="store_true")
+    args = ap.parse_args()
+    t0 = dt.datetime.now()
+    print("loading backtest and per-fight vectors ...")
+    bt = load_backtest()
+    vec, keys = per_fight_vectors()
+    rows = build_table(bt, vec)
+    feats = sorted(rows[0]["A"].keys())
+    tune_mask = np.array([r["date"] < TEST_FROM for r in rows])
+    mu, sd = zconsts(rows, feats, tune_mask)
+    print("fights %d (tune %d, test %d)" % (len(rows), tune_mask.sum(), (~tune_mask).sum()))
+
+    print("archetypes ...")
+    arch = fit_archetypes(rows, mu, sd, k_final=args.k)
+    memb = memberships(rows, mu, sd, arch)
+
+    print("winner-level interaction tests ...")
+    W = WinData(rows, mu, sd, memb)
+    win, Xb, pen_b = winner_tests(W, n_boot=args.boot)
+    win_elo, _, _ = winner_tests(W, n_boot=args.boot, base_terms=["elo"])
+    # every tune-screened winner-level term at once (the honest "add what looked good" model)
+    cands = winner_candidates(W)
+    screened = [k for k, c in win["candidates"].items() if c["screen"]]
+    comb = {"terms": screened}
+    if screened:
+        add = []
+        for k in screened:
+            add += [c / (c[W.tune].std() or 1.0) for c in cands[k][1]]
+        X = np.column_stack([Xb] + add)
+        pen = np.concatenate([pen_b, np.full(len(add), 1.0)])
+        b, _ = fit_logit(X[W.tune], W.y[W.tune], 1.0, pen=pen)
+        p_comb = sigmoid(X[W.test] @ b)
+        comb["test"] = metrics(p_comb, W.y[W.test])
+    b0, _ = fit_logit(Xb[W.tune], W.y[W.tune], 1.0, pen=pen_b)
+    p_base = sigmoid(Xb[W.test] @ b0)
+    be, _ = fit_logit(Xb[W.tune][:, :1], W.y[W.tune], 1.0, pen=np.array([1.0]))
+    p_elo = sigmoid(Xb[W.test][:, :1] @ be)
+
+    print("rate-level tests ...")
+    D = build_sides(rows, keys, mu, sd)
+    rates = rate_tests(D, n_boot=args.boot)
+    sets = recommend_sets(D, rates)
+    tier1 = {k: {"terms": [t for t in v["terms"] if v["tier"][t] == 1],
+                 "tier": {t: 1 for t in v["terms"] if v["tier"][t] == 1}} for k, v in sets.items()}
+    tier1 = {k: v for k, v in tier1.items() if v["terms"]}
+    joint = joint_rate_eval(D, sets, sd, n_boot=args.boot)
+    joint1 = joint_rate_eval(D, tier1, sd, n_boot=args.boot)
+
+    print("transmission test ...")
+    variants = {"none": {}, "tier1": {k: v["terms"] for k, v in tier1.items()},
+                "recommended": {k: [_term_from_name(t) for t in v["terms"]] for k, v in sets.items()}}
+    variants["tier1"] = {k: [_term_from_name(t) for t in v] for k, v in variants["tier1"].items()}
+    trans = transmission_test(D, rows, W, Xb, pen_b, variants, n_boot=args.boot)
+    # predictions for the mismatch table
+    preds = {"elo": p_elo, "skill_baseline": p_base}
+    if screened:
+        preds["skill_baseline+screened_interactions"] = p_comb
+    fi = D.fi.to_numpy()
+    side = D.side.to_numpy()
+    idx = {(f, s_): j for j, (f, s_) in enumerate(zip(fi, side))}
+    for vname, extra in variants.items():
+        eta = predict_rates(D, extra, len(rows))
+        imp, _ = expected_scorecard(D, eta, rows)
+        dA = np.array([imp[idx[(i, "A")]] - imp[idx[(i, "B")]] for i in W.keep]) * 15.0
+        fs = dA / dA[W.tune].std()
+        X = np.column_stack([Xb[:, :1], fs])
+        b, _ = fit_logit(X[W.tune], W.y[W.tune], 1.0, pen=np.array([1.0, 1.0]))
+        preds["elo+scorecard(%s)" % vname] = sigmoid(X[W.test] @ b)
+    mism = mismatch_eval(W, preds, arch_memb=W.M)
+
+    print("live roster and scouting ...")
+    fj = json.load(open(os.path.join(DER, "fighters.json")))
+    live = live_features(fj)
+    scout = scouting_validation(live, mu, sd, arch)
+    Wt = np.array(arch["weights"])
+    cent = np.array(arch["centroids_w"])
+    roster = {}
+    keep_feats = STYLE_DIMS + ["td_def", "td_acc", "octrl", "octrl_td", "osh_l", "chin", "g_rate", "sub_int",
+                               "d_rate", "od_rate", "td_rate", "otd_rate"]
+    keep_feats = list(dict.fromkeys(keep_feats))
+    for slug, (p, f) in live.items():
+        zw = np.array([(f[d] - mu[d]) / sd[d] for d in STYLE_DIMS]) * Wt
+        m_ = soft_membership(zw[None], cent, arch["temp"])[0]
+        roster[slug] = {"archetype": arch["names"][int(np.argmax(m_))], "membership": rnd(m_.tolist(), 3),
+                        "z": {k: rnd((f[k] - mu[k]) / sd[k], 3) for k in keep_feats},
+                        "kick": rnd(((f["sh_l"] - mu["sh_l"]) / sd["sh_l"] + (f["sh_b"] - mu["sh_b"]) / sd["sh_b"])
+                                    / math.sqrt(2), 3),
+                        "stance": p.get("stance"), "mins_decayed": rnd(f["mins"], 3)}
+    examples = {}
+    pairs = [("alexander-volkanovski", "justin-gaethje"), ("islam-makhachev", "alexander-volkanovski"),
+             ("alex-pereira", "magomed-ankalaev"), ("merab-dvalishvili", "sean-o-malley"),
+             ("khamzat-chimaev", "dricus-du-plessis"), ("ilia-topuria", "max-holloway")]
+    for a, b in pairs:
+        if a in live and b in live:
+            fa, fb = live[a][1], live[b][1]
+            examples["%s vs %s" % (a, b)] = {
+                "archetypes": [roster[a]["archetype"], roster[b]["archetype"]],
+                a: rnd(matchup_modifiers(fa, fb, mu, sd, joint), 3),
+                b: rnd(matchup_modifiers(fb, fa, mu, sd, joint), 3)}
+    J = {
+        "meta": {"built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                 "snapshot": bt["meta"]["snapshot"], "tune": list(TUNE), "test_from": TEST_FROM,
+                 "n_fights": len(rows), "n_decisive": int(len(W.y)), "n_test_decisive": int(W.test.sum()),
+                 "shrinkage": {"K_MIN": K_MIN, "K_ATT": K_ATT, "K_TD": K_TD, "K_HEAD": K_HEAD, "K_CTRLTD": K_CTRLTD},
+                 "style_dims": STYLE_DIMS, "main_dims": BASE_WIN, "bootstrap": args.boot,
+                 "notes": "features are log rate ratios or log-odds differences vs the division prior of the fight "
+                          "year (backtest: priors_asof; live roster: fighters.json priors); z = (feature - mu) / sd "
+                          "with mu, sd from 2019-2023 backtest sides. Winner models are antisymmetric with no "
+                          "intercept. Rate models: one row per fight side, X attacking Y."},
+        "zscore": {"mu": rnd(mu, 6), "sd": rnd(sd, 6)},
+        "archetypes": rnd(arch, 4),
+        "winner_level": {"skill_baseline": rnd(win["baseline"]), "elo_only": rnd(win["elo_only"]),
+                         "candidates": rnd(win["candidates"]), "screened_combined": rnd(comb),
+                         "on_top_of_elo_only": {"baseline": rnd(win_elo["baseline"]),
+                                                "candidates": rnd(win_elo["candidates"])}},
+        "rate_level": rnd(rates),
+        "engine_modifiers": {"recommended": rnd(joint, 5), "tier1_only": rnd(joint1, 5),
+                             "selection": {k: v for k, v in sets.items()}},
+        "transmission": rnd(trans),
+        "mismatch": rnd(mism),
+        "scouting": rnd(scout),
+        "examples": examples,
+        "roster": roster,
+    }
+    with open(OUT_JSON, "w") as fh:
+        json.dump(J, fh, separators=(",", ":"))
+    print("wrote %s (%.0f KB)" % (OUT_JSON, os.path.getsize(OUT_JSON) / 1024))
+    if not args.no_report:
+        with open(OUT_MD, "w") as fh:
+            fh.write(render_report(J))
+        print("wrote %s" % OUT_MD)
+    print("done in %.0f s" % (dt.datetime.now() - t0).total_seconds())
+    return J
+
+
+def render_report(J):
+    return "# placeholder\n"
+
+
+if __name__ == "__main__":
+    main()

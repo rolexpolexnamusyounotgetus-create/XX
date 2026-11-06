@@ -37,6 +37,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const os = require("os");
 const { Worker, isMainThread, parentPort, workerData } = require("worker_threads");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -272,7 +273,8 @@ class Pool {
     this.n = Math.max(1, Math.min(nWorkers, tasks.length));
     this.groups = Array.from({ length: this.n }, () => []);
     tasks.forEach((t, i) => this.groups[i % this.n].push(i));
-    const common = { enginePath: absPath(spec.engine), paramsPath: absPath(spec.params), hookPath: spec.hook ? absPath(spec.hook) : null,
+    const common = { enginePath: spec.enginePath || absPath(spec.engine), paramsPath: spec.paramsPath || absPath(spec.params),
+      hookPath: spec.hook ? absPath(spec.hook) : null,
       inject: spec.inject, priors: PA };
     this.workers = this.groups.map((g) => new Worker(__filename, { workerData: Object.assign({
       tasks: g.map((i) => { const t = tasks[i], f = fights[t.fi]; return { swap: t.swap, seed: t.seed, f: { id: f.id, date: f.date, year: f.year,
@@ -442,19 +444,46 @@ function metrics(fights, acc, targets, pi7, objCfg, detail) {
   return out;
 }
 // ------------------------------------------------------------------ the session (shared by serve and eval)
+/* Snapshot the engine's directory (.js/.json files) and the params file at session start, so every phase of a
+   run (tuning, confirmation, validation) uses the same code even if someone edits src/ meanwhile. */
+function snapshotEngine(spec) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mlcal-"));
+  const eng = absPath(spec.engine), par = absPath(spec.params), srcDir = path.dirname(eng);
+  const copy = (from, to, depth) => {
+    fs.mkdirSync(to, { recursive: true });
+    for (const e of fs.readdirSync(from, { withFileTypes: true })) {
+      const a = path.join(from, e.name), b = path.join(to, e.name);
+      if (e.isDirectory()) { if (depth > 0 && !e.name.startsWith(".") && e.name !== "node_modules") copy(a, b, depth - 1); }
+      else if (/\.(js|json)$/.test(e.name) && fs.statSync(a).size < 4e6) fs.copyFileSync(a, b);
+    }
+  };
+  copy(srcDir, dir, 2);
+  const inside = !path.relative(srcDir, par).startsWith("..");
+  const parSnap = inside ? path.join(dir, path.relative(srcDir, par)) : path.join(dir, "__params__", path.basename(par));
+  if (!inside) { fs.mkdirSync(path.dirname(parSnap), { recursive: true }); fs.copyFileSync(par, parSnap); }
+  return { dir, engine: path.join(dir, path.basename(eng)), params: parSnap };
+}
+
 class Session {
   constructor(spec, nWorkers) {
-    this.spec = spec;
+    this.spec = Object.assign({}, spec);
+    spec = this.spec;
     this.nWorkers = nWorkers;
-    this.base = freshRequire(spec.params);
+    if (spec.snapshot !== false) {
+      this.snap = snapshotEngine(spec);
+      spec.enginePath = this.snap.engine; spec.paramsPath = this.snap.params;
+      const cleanup = () => { try { fs.rmSync(this.snap.dir, { recursive: true, force: true }); } catch (e) { /* ignore */ } };
+      process.once("exit", cleanup);
+    } else { spec.enginePath = absPath(spec.engine); spec.paramsPath = absPath(spec.params); }
+    this.base = freshRequire(spec.paramsPath);
     this.dims = resolveSpec(spec, this.base);
     this.PA = readJSON(spec.priors);
     for (const y of Object.keys(this.PA)) if (+y >= 2026) delete this.PA[y];
     this.pool = null; this.accs = new Map();
-    const E = freshRequire(spec.engine);
+    const E = freshRequire(spec.enginePath);
     this.engineVersion = E.VERSION || null;
-    this.paramsHash = sha1(fs.readFileSync(absPath(spec.params), "utf8")).slice(0, 12);
-    this.engineHash = sha1(fs.readFileSync(absPath(spec.engine), "utf8")).slice(0, 12);
+    this.paramsHash = sha1(fs.readFileSync(spec.paramsPath, "utf8")).slice(0, 12);
+    this.engineHash = sha1(fs.readFileSync(spec.enginePath, "utf8")).slice(0, 12);
   }
   specInfo() {
     return { dims: this.dims.map((d) => ({ name: d.name, kind: d.kind, paths: d.paths, value: d.value, lo: d.lo, hi: d.hi, log: d.log, int: d.int })),

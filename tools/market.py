@@ -16,9 +16,14 @@ Sources (all public, credited in the output meta and in research/model_market.md
      range and BFO's mean-odds series per side; its last point is the mean of the books' closing
      decimal odds).
 
-Usage (from the project root):
-  python3 -I tools/market.py fetch --cache DIR       # sources + BFO pages -> data/raw/odds/*.csv
-  python3 -I tools/market.py build                   # match + evaluate -> data/derived/market.json
+Usage (from the project root; about 1.5 hours of polite fetching the first time, seconds after that):
+  python3 -I tools/market.py fetch --cache DIR    # git sources + BFO event and fighter pages -> data/raw/odds/*.csv
+  python3 -I tools/market.py props --cache DIR    # method / decision / round props from cached event pages
+  python3 -I tools/market.py build --props        # match, clean, evaluate -> data/derived/market.json
+  python3 -I tools/market.py tables               # markdown tables for research/model_market.md
+
+Outputs: data/raw/odds/{nlbair_odds,uud_odds,bfo_event_lines,bfo_fighter_lines,bfo_event_props}.csv + sources.json
+(compact extracts, committed), data/derived/market.json (fights keyed by backtest id, coverage, eval, ratings).
 
 Downloaded pages are untrusted data: they are parsed with regular expressions only, never executed.
 """
@@ -928,6 +933,8 @@ def cmd_build(a):
                 row['p_uud'] = devig(*d)
         row['spread'] = c.get('spread')
         row['close_flag'] = c.get('close_flag')
+        if c.get('range'):
+            row['p_range_raw'] = devig(*range_mid_dec(c['range'][0], c['range'][1]))
         cons = c.get('cons')
         if cons and cons['n'] >= 2:
             row['p_books_mean'] = devig(*cons['mean_dec'])
@@ -963,6 +970,28 @@ def cmd_build(a):
     res['coverage'] = cov
 
     dec = [r for r in R if r['y'] is not None]
+
+    # ---------------- cleaning: stale / in-play prices in the closing range ----------------
+    cl = {'rule': f'closing range spread (implied-probability gap between low and high price of a side) > {MAX_RANGE_SPREAD} '
+                  'marks the range and BFO mean as contaminated; per-book lines more than 0.15 from the median book are dropped',
+          'contaminated_no_close': {per: sum(1 for r in R if r['period'] == per and r.get('close_flag')) for per in ('tune', 'test')},
+          'books_dropped': sum(r.get('n_books_dropped', 0) for r in R),
+          'fights_with_dropped_book': sum(1 for r in R if r.get('n_books_dropped')), 'leak_test': {}}
+    for per in ('tune', 'test'):
+        for lo, hi in ((0, 0.05), (0.05, 0.1), (0.1, 0.2), (0.2, 1.01)):
+            g = [r for r in dec if r['period'] == per and r.get('spread') is not None and lo <= r['spread'] < hi
+                 and 'p_uud' in r and 'p_open' in r]
+            if not g:
+                continue
+            y = [r['y'] for r in g]
+            cl['leak_test'][f'{per}_{lo}-{hi}'] = {
+                'n': len(g), 'll_range_mid_raw': metrics([r['p_range_raw'] for r in g], y)['log_loss'],
+                'll_single_book_uud': metrics([r['p_uud'] for r in g], y)['log_loss'],
+                'll_open': metrics([r['p_open'] for r in g], y)['log_loss'],
+                'll_chosen_close': metrics([r['p_close_mult'] for r in g if 'p_close_mult' in r],
+                                           [r['y'] for r in g if 'p_close_mult' in r])['log_loss'] if any('p_close_mult' in r for r in g) else None}
+    res['cleaning'] = cl
+
     def sub(per, keys):
         return [r for r in dec if r['period'] == per and all(k in r for k in keys)]
 
@@ -1014,7 +1043,8 @@ def cmd_build(a):
     for per in ('tune', 'test'):
         reps[per] = {}
         for pair in (('p_bfo_mean', 'p_range_mid'), ('p_bfo_mean', 'p_uud'), ('p_range_mid', 'p_uud'),
-                     ('p_bfo_mean', 'p_books_avgnv'), ('p_books_mean', 'p_books_avgnv')):
+                     ('p_bfo_mean', 'p_books_mean'), ('p_books_mean', 'p_books_avgnv'), ('p_books_mean', 'p_books_median'),
+                     ('p_books_mean', 'p_uud')):
             g = sub(per, list(pair))
             if len(g) < 30:
                 continue
@@ -1863,6 +1893,15 @@ def cmd_tables(a):
             L.append('|---|---|---|')
             for c, (pp, oo) in v['class_pred_vs_obs'].items():
                 L.append(f'| {c} | {pp:.3f} | {oo:.3f} |')
+    cl = E.get('cleaning')
+    if cl:
+        L.append('\n### Cleaning: stale or in-play prices in the closing range\n')
+        L.append(f"Rule: {cl['rule']}. Fights left with no close: {cl['contaminated_no_close']}; books dropped {cl['books_dropped']} "
+                 f"in {cl['fights_with_dropped_book']} fights.\n")
+        L.append('| Period, range spread | n | LL raw range midpoint | LL single-book close (UUD) | LL open | LL chosen close |')
+        L.append('|---|---|---|---|---|---|')
+        for k, v in cl['leak_test'].items():
+            L.append(f"| {k} | {v['n']} | {v['ll_range_mid_raw']:.4f} | {v['ll_single_book_uud']:.4f} | {v['ll_open']:.4f} | {_f(v['ll_chosen_close'], 4)} |")
     L.append('\n### Data checks\n')
     for k, v in E['checks'].items():
         L.append(f'- {k}: {v}')

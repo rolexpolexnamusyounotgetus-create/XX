@@ -119,7 +119,7 @@ function check(sc, fight, m, id, opts) {
   });
   var tot = null;
   sc.rounds.forEach(function (rd, ri) {
-    var er = fight.rounds[ri], endT = er.fin ? er.fin.t : 300, beats = rd.beats;
+    var er = fight.rounds[ri], endT = er.fin ? Math.max(er.fin.t, er.ev.length ? er.ev[er.ev.length - 1].t : 0) : 300, beats = rd.beats;
     agg.rounds++; agg.sec += endT;
     if (Math.abs(rd.endT - endT) > 1e-9) fail(id, "R" + (ri + 1) + " endT " + rd.endT + " vs " + endT);
     var prevT = -1, st = 0, pos = null, downed = false, v2 = "stand", landedSeen = 0, missSeen = 0, lastStrike = {};

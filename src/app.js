@@ -1543,7 +1543,7 @@
     if (!this.sc || this.paused || this.done) return;
     if (this.wait > 0) { this.wait -= dt; return; }
     var rd = this.sc.rounds[this.r]; this.t = Math.min(rd.endT, this.t + dt * this.speed);
-    while (this.q.length && this.q[0].t <= this.t) {
+    while (this.q.length && (this.q[0].t <= this.t || this.t >= rd.endT)) {
       var b = this.q.shift(); this.hooks.onBeat(b, this.r); if (b.txt) this.hooks.onText(b, this.r, b.t);
       if (b.kd || b.hurt || b.fin) this.hooks.onImpact(b);
     }

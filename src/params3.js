@@ -71,13 +71,13 @@
     gBotRel: 0.12,           // bottom man's ground strike rate relative to the top man's (default)
 
     // ---------------- strikes ----------------
-    strikeScale: 1.044,        // [selfcal] global strike-attempt scale (absorbs exposure-estimate bias)
-    clinchScale: 1.072,        // [selfcal] clinch strike-rate scale
-    groundScale: 0.8455,        // [selfcal] ground strike-rate scale
+    strikeScale: 1.063,        // [selfcal] global strike-attempt scale (absorbs exposure-estimate bias)
+    clinchScale: 1.063,        // [selfcal] clinch strike-rate scale
+    groundScale: 0.8183,        // [selfcal] ground strike-rate scale
     clinchMix: [0.55, 0.33, 0.12],   // clinch target mix head/body/leg (default; leg = knees to the thigh)
     groundTopMix: [0.84, 0.15, 0.01], // top ground-strike target mix (default)
     groundBotMix: [0.6, 0.4, 0.0],    // bottom ground-strike target mix (default)
-    accScale: 0.9496,           // [selfcal] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
+    accScale: 0.9497,           // [selfcal] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
     botAccOdds: 0.6,         // accuracy odds multiplier for strikes thrown from the bottom (default)
     accHurt: 1.5,            // accuracy odds multiplier against a hurt defender (default)
     accStam: 0.25,            // defender fatigue: odds x (1 + accStam (1 - S_def)) (default)
@@ -88,8 +88,8 @@
     outMob: 0.15,            // output x (1 - outMob (1 - mobility)) (default)
 
     // ---------------- damage, knockdowns, finishes ----------------
-    kdScale: 1.132,            // [selfcal] global knockdown scale on p0 (division KD per landed standing head strike)
-    kdPos: [1.0, 2.533],       // KD multiplier for distance, clinch head strikes (baserates: clinch 12-13% of KOs on ~10% of landed)
+    kdScale: 1.232,            // [selfcal] global knockdown scale on p0 (division KD per landed standing head strike)
+    kdPos: [1.0, 2.769],       // KD multiplier for distance, clinch head strikes (baserates: clinch 12-13% of KOs on ~10% of landed)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
     kdHurt: 1.8,             // KD multiplier while hurt (default)
@@ -113,7 +113,7 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.3032,         // [selfcal] P(knockdown is an immediate knockout), x damage and division factors
+    kdInstant: 0.3763,         // [selfcal] P(knockdown is an immediate knockout), x damage and division factors
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
@@ -122,11 +122,11 @@
     kdRecoverStand: 0.45,    // share of recoveries that get back to the feet; the rest recover guard with the attacker on top (default)
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
-    kdRefStop: 0.1445,         // [selfcal] P(referee stops it) per landed follow-up head strike, x damage factor
+    kdRefStop: 0.1898,         // [selfcal] P(referee stops it) per landed follow-up head strike, x damage factor
     refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
-    stko: 0.03775,             // [selfcal] standing TKO hazard per landed standing head strike while hurt, x D/100 (baserates: 0.00049 per standing head overall)
-    gnpTko: 0.01907,          // [selfcal] GNP TKO hazard per landed top ground head strike (x sub-position, damage); baserates ground KO 0.0097 per ground landed incl. follow-ups
+    stko: 0.04461,             // [selfcal] standing TKO hazard per landed standing head strike while hurt, x D/100 (baserates: 0.00049 per standing head overall)
+    gnpTko: 0.032,          // [selfcal] GNP TKO hazard per landed top ground head strike (x sub-position, damage); baserates ground KO 0.0097 per ground landed incl. follow-ups
     stkoBase: 0.3,           // standing TKO hazard while hurt = stko x (stkoBase + D / 100) (default)
     gnpDmg: 600,             // GNP TKO x (1 + D / gnpDmg) (default)
     gnpHurt: 2.0,            // GNP TKO multiplier while hurt (default)
@@ -153,11 +153,11 @@
     tdAttStam: 0.0,          // attacker fatigue: takedown attempts x (1 - tdAttStam (1 - S)); 0 because attempts rise by round in the data (baserates pace curve)
     tdStam: 0.15,            // defender fatigue: takedown success odds x (1 + tdStam (1 - S_def)) (small: baserates TD accuracy falls by round in 5-rounders)
     standStam: 0.3,          // bottom man's fatigue: stand-up hazard x (1 - standStam (1 - S)) (default)
-    tdScale: 1.007,            // [selfcal] takedown attempt rate scale
-    tdOddsScale: 0.9043,        // [selfcal] takedown success odds scale
+    tdScale: 1.008,            // [selfcal] takedown attempt rate scale
+    tdOddsScale: 0.9044,        // [selfcal] takedown success odds scale
     sweepScale: 1.0,         // [selfcal] sweep / reversal rate scale
-    subAttScale: 1.08,        // [selfcal] submission attempt rate scale
-    subConvScale: 0.8704,       // [selfcal] submission conversion odds scale
+    subAttScale: 1.073,        // [selfcal] submission attempt rate scale
+    subConvScale: 1.385,       // [selfcal] submission conversion odds scale
     gilloScale: 1.0,         // standing guillotine attempts on stuffed shots scale
 
     // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------
@@ -185,11 +185,11 @@
       hurt: 1.0,                              // per hurt/wobble scored (engine-only event; literature 12.5: between a head strike and a KD)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
       sharedSd: 1.1,                          // [selfcal] sd of the round noise shared by the three judges (logits)
-      indSd: 1.259,                             // [selfcal] sd of each judge's own noise (logits)
+      indSd: 1.206,                             // [selfcal] sd of each judge's own noise (logits)
       tasteSd: 0.2,                           // lognormal sd of each judge's fight-level taste for striking / grappling / damage (literature 12.5: 0.15-0.25)
-      t108: 5.511,                              // logit margin a 10-8 needs with a one-knockdown edge (ABC: damage required) [selfcal]
-      t108b: 8.511,                             // logit margin a 10-8 needs with no knockdown edge but 2+ hurts/KDs more [selfcal]
-      t108kd2: 2.511                          // logit margin a 10-8 needs with a two-knockdown edge [selfcal]
+      t108: 6.136,                              // logit margin a 10-8 needs with a one-knockdown edge (ABC: damage required) [selfcal]
+      t108b: 9.136,                             // logit margin a 10-8 needs with no knockdown edge but 2+ hurts/KDs more [selfcal]
+      t108kd2: 3.136                          // logit margin a 10-8 needs with a two-knockdown edge [selfcal]
     },
 
     // ---------------- between rounds ----------------
@@ -201,18 +201,18 @@
     // att: strike-attempt scale; kd: knockdown scale; ko: scales kdInstant and kdRefStop odds and the stko / gnpTko hazards;
     // sub: submission conversion odds; ctrl: control target scale; td: takedown attempt scale.
     div: {
-      "Flyweight": { att: 1, kd: 1, ko: 0.709, sub: 1.237, ctrl: 1.005, td: 1.013 },
-      "Bantamweight": { att: 1.003, kd: 1.028, ko: 0.757, sub: 1.071, ctrl: 0.991, td: 1.013 },
-      "Featherweight": { att: 1, kd: 1.017, ko: 0.86, sub: 1.072, ctrl: 1.011, td: 1.009 },
-      "Lightweight": { att: 1.006, kd: 1.015, ko: 0.908, sub: 0.937, ctrl: 1.023, td: 1.013 },
-      "Welterweight": { att: 1.003, kd: 1.006, ko: 1, sub: 1.273, ctrl: 1.033, td: 1.007 },
-      "Middleweight": { att: 1.007, kd: 1.022, ko: 1.293, sub: 1.531, ctrl: 1.055, td: 1.009 },
-      "Light Heavyweight": { att: 1.013, kd: 1.015, ko: 1.175, sub: 1.286, ctrl: 1.065, td: 1.014 },
-      "Heavyweight": { att: 1.009, kd: 1.017, ko: 1.116, sub: 0.882, ctrl: 1.069, td: 1.004 },
-      "Women's Strawweight": { att: 0.993, kd: 0.924, ko: 0.765, sub: 0.991, ctrl: 1.041, td: 0.997 },
-      "Women's Flyweight": { att: 0.993, kd: 0.946, ko: 1.062, sub: 1.192, ctrl: 1.056, td: 0.989 },
-      "Women's Bantamweight": { att: 0.989, kd: 0.887, ko: 0.773, sub: 1.024, ctrl: 1.065, td: 0.98 },
-      "Women's Featherweight": { att: 0.962, kd: 0.849, ko: 0.91, sub: 1.31, ctrl: 1.256, td: 0.965 }
+      "Flyweight": { att: 0.997, kd: 1.021, ko: 0.659, sub: 1.195, ctrl: 1.002, td: 1.017 },
+      "Bantamweight": { att: 0.996, kd: 1.02, ko: 0.704, sub: 1.071, ctrl: 0.984, td: 1.018 },
+      "Featherweight": { att: 0.999, kd: 1.03, ko: 0.805, sub: 1.03, ctrl: 1.002, td: 1.011 },
+      "Lightweight": { att: 1, kd: 1.017, ko: 0.869, sub: 0.935, ctrl: 1.025, td: 1.009 },
+      "Welterweight": { att: 1, kd: 0.992, ko: 0.933, sub: 1.252, ctrl: 1.041, td: 1.012 },
+      "Middleweight": { att: 1.006, kd: 1.003, ko: 1.185, sub: 1.587, ctrl: 1.05, td: 1.01 },
+      "Light Heavyweight": { att: 1.009, kd: 1.002, ko: 1.12, sub: 1.332, ctrl: 1.063, td: 1.014 },
+      "Heavyweight": { att: 1.004, kd: 1.005, ko: 1.069, sub: 0.901, ctrl: 1.069, td: 1.001 },
+      "Women's Strawweight": { att: 0.992, kd: 0.902, ko: 0.696, sub: 0.999, ctrl: 1.035, td: 0.996 },
+      "Women's Flyweight": { att: 0.985, kd: 0.933, ko: 0.976, sub: 1.174, ctrl: 1.061, td: 0.994 },
+      "Women's Bantamweight": { att: 0.985, kd: 0.858, ko: 0.743, sub: 1.008, ctrl: 1.066, td: 0.985 },
+      "Women's Featherweight": { att: 0.959, kd: 0.86, ko: 0.856, sub: 1.313, ctrl: 1.269, td: 0.964 }
     }
   };
   if (typeof module !== "undefined" && module.exports) module.exports = FightParams;

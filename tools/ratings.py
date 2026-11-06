@@ -996,3 +996,161 @@ def run_whr(D, P, until=None, record=False, eval_idx=None):
     days = D.day[eval_idx]
     p, rec = model.run(days, until=until, record=record)
     return p, rec, model
+
+
+# =====================================================================================================
+# Dimensional ratings: offence / defence per skill, Kalman (EKF) updates from per-fight stats
+# =====================================================================================================
+# dim: (label, kind) with kind nb = negative-binomial count with exposure, bin = binomial accuracy,
+# qp = quasi-Poisson amount with exposure
+DIMS = {
+    "str": ("sig strikes landed per minute (striking offence vs striking defence)", "nb"),
+    "acc": ("sig strike accuracy (precision vs evasion)", "bin"),
+    "pwr": ("knockdowns per landed head strike, KO wins without a KD count as one (power vs chin)", "nb"),
+    "td": ("takedowns landed per 15 minutes (takedown offence vs takedown defence)", "nb"),
+    "ctl": ("control minutes per minute (top control vs escapes)", "qp"),
+    "sub": ("submission attempts per 15 minutes (submission threat vs submission defence)", "nb"),
+}
+DIM_DEFAULT = {"str": {"q": 0.02, "v0": 0.06, "k": 6.0}, "acc": {"q": 0.01, "v0": 0.03, "k": 3.0},
+               "pwr": {"q": 0.02, "v0": 0.15, "k": 3.0}, "td": {"q": 0.05, "v0": 0.4, "k": 1.5},
+               "ctl": {"q": 0.05, "v0": 0.4, "k": 2.0}, "sub": {"q": 0.05, "v0": 0.3, "k": 1.0}}
+DIV_GROUP = {"Catch Weight": "ALL", "Open Weight": "ALL"}
+
+
+def dim_obs(D):
+    """Per fight, per direction (A on B, B on A): (count, exposure) per dim; None when no round stats."""
+    n = D.n
+    obs = {k: np.full((n, 2, 2), np.nan) for k in DIMS}
+    for i in range(n):
+        rr = D.rounds[i]
+        if not rr:
+            continue
+        tot = [defaultdict(float), defaultdict(float)]
+        mins = 0.0
+        for k in rr:
+            a, b = rr[k]
+            mins += a["mins"]
+            for s, g in ((0, a), (1, b)):
+                for key in ("sig_l", "sig_a", "head_l", "kd", "td_l", "ctrl", "sub"):
+                    tot[s][key] += g[key]
+        if mins <= 0.05:
+            continue
+        for s in (0, 1):
+            t = tot[s]
+            won_ko = D.cat[i] == "KO" and D.winner[i] == ("A" if s == 0 else "B")
+            kd = t["kd"] + (1.0 if won_ko and t["kd"] == 0 else 0.0)
+            obs["str"][i, s] = (t["sig_l"], mins)
+            obs["acc"][i, s] = (t["sig_l"], t["sig_a"])
+            obs["pwr"][i, s] = (kd, t["head_l"] + 1.0)
+            obs["td"][i, s] = (t["td_l"], mins / 15.0)
+            obs["ctl"][i, s] = (min(t["ctrl"] / 60.0, mins), mins)
+            obs["sub"][i, s] = (t["sub"], mins / 15.0)
+    return obs
+
+
+def _nb_ll(k, mu, size):
+    from scipy.special import gammaln
+    return (gammaln(k + size) - gammaln(size) - gammaln(k + 1) + size * np.log(size / (size + mu))
+            + k * np.log(mu / (size + mu) + 1e-300))
+
+
+def run_dims(D, DP, until=None, record=True, dims=None):
+    """Kalman filter per dim. State per fighter: offence (mean, var) and defence (mean, var), relative to a
+    walk-forward division baseline (exponentially weighted league rate, about 3-year memory).
+    Returns per-fight pre-fight states (n, 2 sides, n_dims, 4: off m, off v, def m, def v), the predicted
+    rates for the 2 directions and per-dim predictive log-likelihood of the stats on each fight."""
+    until = until or 10 ** 9
+    dims = dims or list(DIMS)
+    obs = D.dim_obs
+    nd = len(dims)
+    st = {}                     # (player, dim) -> [om, ov, dm, dv, last_day]
+    base = defaultdict(lambda: [0.0, 0.0])   # (div, dim) -> EW sums (count, exposure)
+    rho = 0.997                 # per-fight decay of the league baseline (about 300 fights of memory)
+    pre = np.full((D.n, 2, nd, 4), np.nan) if record else None
+    pll = np.full((D.n, nd), np.nan)
+    pred = np.full((D.n, 2, nd), np.nan)
+    prior_rate = {"str": 3.5, "acc": 0.45, "pwr": 0.01, "td": 1.3, "ctl": 0.2, "sub": 0.5}
+    for i in range(D.n):
+        d = D.day[i]
+        if d >= until:
+            break
+        div = DIV_GROUP.get(D.division[i], D.division[i])
+        a, b = D.ia[i], D.ib[i]
+        for j, dim in enumerate(dims):
+            prm = DP[dim]
+            q, v0, size = prm["q"], prm["v0"], prm["k"]
+            kind = DIMS[dim][1]
+            S = []
+            for p in (a, b):
+                s = st.get((p, dim))
+                if s is None:
+                    s = [0.0, v0, 0.0, v0, d]
+                    st[(p, dim)] = s
+                else:
+                    gap = (d - s[4]) / YEAR
+                    s[1] = min(v0, s[1] + q * gap)
+                    s[3] = min(v0, s[3] + q * gap)
+                    s[4] = d
+                S.append(s)
+            if record:
+                pre[i, 0, j] = S[0][:4]
+                pre[i, 1, j] = S[1][:4]
+            bc, be = base[(div, dim)]
+            if kind == "bin":
+                bl = math.log((bc + 50 * prior_rate[dim]) / (be - bc + 50 * (1 - prior_rate[dim])))
+            else:
+                bl = math.log((bc + 20 * prior_rate[dim]) / (be + 20))
+            o = obs[dim][i]
+            if np.isnan(o[0, 0]):
+                continue
+            lls = 0.0
+            for s_, (att, dfn) in enumerate(((S[0], S[1]), (S[1], S[0]))):
+                k, ex = o[s_]
+                eta = bl + att[0] - dfn[2]
+                sv = att[1] + dfn[3]
+                if kind == "bin":
+                    if ex <= 0:
+                        continue
+                    pr = 1.0 / (1.0 + math.exp(-eta))
+                    mu = ex * pr
+                    sc = (k - mu) / size          # size = overdispersion factor phi for accuracy
+                    info = ex * pr * (1 - pr) / size
+                    pred[i, s_, j] = pr
+                    lls += float(-(k * math.log(pr + 1e-12) + (ex - k) * math.log(1 - pr + 1e-12))
+                                 + (k * math.log(k / ex + 1e-12) + (ex - k) * math.log(1 - k / ex + 1e-12)))
+                else:
+                    if ex <= 0:
+                        continue
+                    mu = math.exp(eta) * ex
+                    pred[i, s_, j] = mu / ex
+                    if kind == "nb":
+                        sc = (k - mu) * size / (size + mu)
+                        info = mu * size / (size + mu)
+                        lls += float(-_nb_ll(k, mu, size))
+                    else:
+                        sc = (k - mu) / size
+                        info = mu / size
+                        lls += float((mu - k * math.log(mu + 1e-12)) / size)
+                den = 1.0 + info * sv
+                att[0] += att[1] * sc / den
+                dfn[2] -= dfn[3] * sc / den
+                att[1] -= att[1] * att[1] * info / den
+                dfn[3] -= dfn[3] * dfn[3] * info / den
+                att[1] = max(att[1], 1e-5)
+                dfn[3] = max(dfn[3], 1e-5)
+            pll[i, j] = lls
+            # update the baseline after the fight
+            for s_ in (0, 1):
+                k, ex = o[s_]
+                base[(div, dim)][0] = base[(div, dim)][0] * rho + k
+                base[(div, dim)][1] = base[(div, dim)][1] * rho + ex
+    return pre, pred, pll, st
+
+
+def dim_features(pre, dims):
+    """Antisymmetric matchup features from pre-fight dim states: expected log-rate advantage per dim
+    ((off_A - def_B) - (off_B - def_A))."""
+    om = pre[:, :, :, 0]
+    dm = pre[:, :, :, 2]
+    adv = (om[:, 0] - dm[:, 1]) - (om[:, 1] - dm[:, 0])
+    return adv

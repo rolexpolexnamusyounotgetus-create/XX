@@ -1238,20 +1238,6 @@ class GBMDiff:
         return 0.5 * (p1 + 1 - p2)
 
 
-def seed_design(people, deb, keys, mu, sd):
-    """Standardized debut pre-UFC features per person (zeros when unresolved), plus a missing flag."""
-    import numpy as np
-    Z = {}
-    for p, sp in deb.items():
-        if sp is None:
-            Z[p] = np.concatenate([np.zeros(len(keys)), [1.0]])
-        else:
-            v = np.array([sp[k] for k in keys], float)
-            v = np.where(np.isnan(v), mu, v)
-            Z[p] = np.concatenate([(v - mu) / sd, [0.0]])
-    return Z
-
-
 def evaluate(args):
     import numpy as np
     import pandas as pd

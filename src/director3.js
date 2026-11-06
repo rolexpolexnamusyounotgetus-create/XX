@@ -219,7 +219,7 @@
       case "cross": return R ? [R + " hand", "straight " + R, R + " straight", "cross"] : ["cross", "straight rear hand", "rear straight"];
       case "hook": return L ? [L + " hook", "lead hook", "hook"] : ["lead hook", "hook"];
       case "overhand": return R ? ["overhand " + R, "looping overhand", "overhand"] : ["looping overhand", "overhand"];
-      case "upper": return R ? [R + " uppercut", "uppercut", "rear uppercut"] : ["uppercut", "rear uppercut"];
+      case "upper": return R ? [R + " uppercut", "uppercut"] : ["uppercut", "rear uppercut"];
       case "headkick": return R ? ["head kick", R + " high kick", "high kick"] : ["head kick", "high kick"];
       case "bodykick": return F.liverKick ? ["body kick", R + " kick to the liver", "kick to the ribs"] : (R ? ["body kick", R + " kick to the body", "kick to the ribs"] : ["body kick", "kick to the ribs"]);
       case "bodyhook": return L === "left" ? ["left hook to the body", "left hook to the liver", "body hook"] : (L ? [L + " hook to the body", "hook to the body", "body hook"] : ["hook to the body", "body hook"]);
@@ -323,9 +323,9 @@
       if (W.dl.calf + W.dl.inside <= 0) W.dl = { calf: 0.58, inside: 0.42 };
       W.source = "scouting";
     } else {
-      var k = S.kick * S.divKick, v = S.vol, p = S.pow, ape = S.ape;
+      var k = Math.pow(S.kick * S.divKick, 0.7), v = S.vol, p = S.pow, ape = S.ape;
       W = {
-        dh: { jab: 0.28 * v * ape, cross: 0.24, hook: 0.18 * Math.sqrt(p), overhand: 0.1 * p / ape, upper: 0.1 * Math.sqrt(p), headkick: 0.045 * k,
+        dh: { jab: 0.28 * v * ape, cross: 0.24, hook: 0.18 * Math.sqrt(p), overhand: 0.1 * p / ape, upper: 0.1 * Math.sqrt(p), headkick: 0.035 * k,
           spinfist: hasTag(F, "spinning") ? 0.01 : 0, wheel: hasTag(F, "spinning") ? 0.005 : 0, flyknee: hasTag(F, "flying-knee") ? 0.02 : 0.002, elbow: 0.004 },
         db: { bodykick: 0.38 * k, bodyhook: 0.34, bodystraight: 0.28 * ape, spinback: hasTag(F, "spinning") ? 0.03 : 0, knee: 0.03 * S.clinchK },
         dl: { calf: 0.58, inside: 0.42 },
@@ -446,8 +446,9 @@
       "{a} shoots {atech} and drags {d} down.", "{a} hits {atech}. {Hes} {posin}.", "{a} gets {d} down with {atech}.", "{a} times {atech} and takes {d} down.",
       "{Atech} from {a}, and {d} goes down."],
     tdClinch: ["{a} hits {atech} from the clinch. {d} is on {dhis} back.", "{a} drags {d} off the fence with {atech}.", "{Atech} from {a} in the clinch, and {d} goes down.",
-      "{a} finishes {atech} against the cage."],
+      "{a} finishes {atech} on the fence."],
     tdLate: ["{a} sneaks in {atech} with {clock} left in the round."],
+    tdxCount: ["{d} stops another shot. {a} is {N} for {M} on takedowns.", "Another takedown stuffed. {a} is {N} for {M}.", "{d} denies {a} again: {N} for {M} on takedowns."],
     tdx: ["{d} stuffs the {tech}.", "{a} shoots {atech}. {d} sprawls and stays up.", "{d} reads the level change and sprawls.", "{a} goes for {atech}, but {d} defends.",
       "{d} shakes off the {tech}.", "{d} defends the {tech} and circles off.", "Good takedown defense from {d}.", "{a} can't finish the {tech}.",
       "{d} sprawls on the {tech}.", "{d} keeps {dhis} feet on the {tech}."],
@@ -476,24 +477,29 @@
     recoverGuard: ["{a} recovers to guard and ties {d} up.", "{a} survives the flurry and gets {his} legs back in front.", "{a} weathers it and gets to guard."],
     combo: ["{a} lands {aseq}.", "Crisp {seq} from {a}.", "{a} puts together {aseq}.", "{a} strings together {aseq}. All of it lands."],
     counter: ["{a} counters with {amove}.", "{d} misses and eats a counter {move}.", "{a} makes {d} pay with {amove}.", "{a} slips and comes back with {amove}."],
-    headkick: ["{a} lands {amove} upstairs!", "{a} goes high with {amove} and finds the mark.", "{amove} from {a} lands clean!"],
+    headkick: ["{a} lands {amove}!", "{a} finds the mark with {amove}.", "{amove} from {a} lands clean!", "{d} eats {amove} from {a}."],
     specialLand: ["{amove} from {a} lands!", "{a} lands {amove}! What a shot.", "{a} connects with {amove}."],
     bigMiss: ["{a} misses with a big {move}.", "{d} slips a big {move} from {a}.", "{a} swings and misses with the {move}.", "{d} makes {a} miss with the {move}."],
+    bigMissKick: ["{d} leans away from {a_s} {move}.", "{a} whiffs on the {move}.", "{d} steps back from {amove}.", "{d} makes {a} miss with the {move}."],
     body: ["{a} digs {amove}.", "{a} goes to the body with {amove}.", "{a} sinks {amove}."],
     legN: ["{a} has landed {N} leg kicks.", "Leg kick number {N} for {a}.", "{N} leg kicks landed now for {a}.", "That's {N} kicks to the legs for {a}."],
     bodyN: ["{a} has landed {N} to the body.", "{N} body shots landed for {a}.", "{a} keeps investing downstairs: {N} to the body."],
-    legHurt: ["{d} is feeling those leg kicks.", "{d_s} lead leg is reddening.", "The leg kicks are adding up on {d}."],
+    legHurt: ["{d} is feeling those leg kicks.", "{d_s} lead leg is starting to take damage.", "The leg kicks are adding up on {d}."],
     legBad: ["{d_s} lead leg is compromised.", "{d} is limping now.", "{d} can barely plant on that lead leg."],
     tired: ["{d} is breathing hard.", "{d_s} pace is dropping.", "{d} is slowing down."],
     damage: ["{d} has taken a lot of punishment.", "{d} is marked up.", "{d} is absorbing a lot of damage."]
   };
   var NOTES = {
-    ground: ["{a} has {ctrl} of control in the round.", "{a} keeping {d} flat {posin}.", "Heavy top pressure from {a} {posfrom}.",
+    guard: ["{a} working from inside {d_s} guard.", "{d} is tying {a} up from guard.", "{a} has {ctrl} of control in the round, working from guard."],
+    ground: ["{a} has {ctrl} of control in the round.", "{a} keeping {d} flat {posin}.", "{a} applying heavy pressure {posfrom}.",
       "{d} needs to get back up. {a} is controlling {posfrom}.", "{a} is grinding {posfrom}; {ctrl} of control so far this round."],
+    back: ["{a} keeps {d_s} back; {ctrl} of control in the round.", "{a} still on {d_s} back. {d} is fighting the hands.", "{d} is stuck with {a} on {dhis} back."],
     clinch: ["{a} leaning on {d} against the fence.", "Grinding in the clinch. {a} has the better position.", "Hand-fighting along the fence. {a} is pressing.",
       "{a} keeps {d} pinned on the cage."],
-    dist: ["Patient stretch at range.", "A lull. Both fighters resetting at range.", "Measured pace in the center of the cage.", "Feints and footwork. Neither one committing.",
-      "{a} {N}, {d} {M} in significant strikes landed this round.", "{a} has the edge so far this round, {N} landed to {M}."]
+    lull: ["Patient stretch at range.", "A lull. Both fighters resetting at range.", "Measured pace in the center of the cage.", "Not much committed in the last few exchanges."],
+    busy: ["Busy exchanges in the center.", "Both fighters letting their hands go.", "Plenty of traffic at range."],
+    dist: ["{a} {N}, {d} {M} in significant strikes landed this round.", "{a} has the edge so far this round, {N} landed to {M}.", "{a} is outlanding {d} {N} to {M} in this round."],
+    even: ["Close round on the stat sheet: {N} landed apiece.", "Even on the strike count so far, {N} each.", "Nothing between them in landed strikes this round."]
   };
 
   // ------------------------------------------------------------------ voice: fills templates, never repeats a line in a fight
@@ -663,7 +669,7 @@
 
     for (var ri = 0; ri < fight.rounds.length; ri++) {
       var rd = fight.rounds[ri], ev = rd.ev || [];
-      var endT = rd.fin ? rd.fin.t : 300;
+      var endT = roundEnd(rd);
       var base = cum.slice();
       var R = processRound(ri, rd, ev, endT, base);
       script.rounds.push(R);
@@ -808,7 +814,7 @@
         b = keep[i];
         if (b.k !== "strike") continue;
         var opp = other(b.who);
-        b.counter = b.st < 2 && b.t - lastStrikeT[opp] < 0.8 && b.t - lastStrikeT[opp] >= 0 && lastStrikeMiss[opp];
+        b.counter = b.st === 0 && b.t - lastStrikeT[opp] < 0.8 && b.t - lastStrikeT[opp] >= 0 && lastStrikeMiss[opp];
         var tech = chooseTech(F[b.who], b, b.ci > 0 ? prevMove[b.combo] : null, b.fin ? finDetail : null);
         b.tech = tech; b.move = SUP[tech] || EXT[tech] || tech;
         b.side = SIDE_OF[tech] || null;
@@ -842,7 +848,7 @@
       if (introTxt) beats.unshift({ t: 0, k: "note", who: null, st: 0, pos: null, ctl: null, i: -1, txt: introTxt, intro: true });
 
       // ---- pass 8: notes in long quiet stretches of play-by-play
-      addNotes(beats, timeline, base, cumT, cumV, endT, ri);
+      addNotes(beats, timeline, base, cumT, cumV, endT, ev);
 
       // ---- pass 9: stats on every beat, priority
       for (i = 0; i < beats.length; i++) {
@@ -881,8 +887,8 @@
               extra.push(voice.say(["That's the {n} time {d} has been down in this fight.", "{d} is down for the {n} time tonight."], c2));
             } else if (F[d].kd_absorbed != null && !fc.said["kdc" + d]) {
               fc.said["kdc" + d] = true;
-              var nk = +F[d].kd_absorbed, c3 = ctx(w); c3.N = numWord(nk); c3.times = nk === 1 ? "time" : "times";
-              extra.push(voice.take(voice.fill(nk === 0 ? "It's the first knockdown of {d_s} UFC career." : "{d} had been knocked down {N} {times} before in the UFC.", c3)));
+              var nk = +F[d].kd_absorbed, c3 = ctx(w); c3.N = nk === 1 ? "once" : (nk === 2 ? "twice" : numWord(nk) + " times");
+              extra.push(voice.take(voice.fill(nk === 0 ? "It's the first knockdown of {d_s} UFC career." : "{d} had been knocked down {N} before in the UFC.", c3)));
             }
             txt = join(txt, extra);
           } else if (b.fin) {
@@ -904,7 +910,7 @@
           } else if (b.landed && !b.down) {
             txt = color(b, bi, beats, rc, c, w, d);
           } else if (b.miss && !b.down && b.st < 2 && rc.miss < 1 && (b.tech === "overhand" || b.tech === "headkick" || b.tech === "wheel" || b.tech === "spinback" || b.tech === "spinfist" || b.tech === "flyknee") && r() < 0.15) {
-            txt = voice.say(T.bigMiss, c); if (txt) rc.miss++;
+            txt = voice.say(CLASS[b.tech] === "kick" || CLASS[b.tech] === "knee" ? T.bigMissKick : T.bigMiss, c); if (txt) rc.miss++;
           }
         } else if (k === "clinch") {
           if (b.via === "tdx") txt = r() < 0.7 ? voice.say(T.clinchTdx, c) : null;
@@ -932,17 +938,19 @@
           b.tech = tech2; c.tech = tech2; c.atech = article(tech2);
           c.N = fc.td[w]; c.M = fc.tda[w];
           if (r() < 0.6) txt = voice.say(T.tdx, c);
-          if (fc.tda[w] >= 3 && r() < 0.5) txt = join(txt, [voice.say(fc.td[w] === 0 ? ["{a} is 0 for {M} on takedowns."] : ["{a} is {N} for {M} on takedowns.", "{a} has {N} of {M} takedowns."], c)]);
+          if (fc.tda[w] >= 3 && r() < 0.5) txt = txt ? join(txt, [voice.say(fc.td[w] === 0 ? ["{a} is 0 for {M} on takedowns."] : ["{a} is {N} for {M} on takedowns.", "{a} has {N} of {M} takedowns."], c)]) : voice.say(T.tdxCount, c);
         } else if (k === "pass") {
           fc.pass[w]++;
           c.n = ordinal(fc.pass[w]); c.posname = POS_NAME[b.pos] || "a better position";
           var poolP = b.pos === "half" ? T.passHalf : (b.pos === "side" ? T.passSide : (b.pos === "mount" ? T.passMount : (b.pos === "back" ? (b.from === "guard" ? T.passBackScramble.concat(T.passBack) : T.passBack) : null)));
           if (poolP && (b.pos === "mount" || b.pos === "back" || r() < 0.75)) txt = voice.say(poolP, c, ["{a} advances to {posname}, {his} {n} pass of the fight."]);
+          if (txt) rc.posSaid = b.pos;
         } else if (k === "esc") {
           fc.esc[w]++;
           c.n = ordinal(fc.esc[w]); c.posname = POS_NAME[b.pos] || "guard";
           var poolE = b.from === "mount" ? T.escMount : (b.from === "back" ? T.escBack : (b.pos === "guard" ? T.escGuard : T.escHalf));
-          if (b.from === "mount" || b.from === "back" || r() < 0.5) txt = voice.say(poolE, c, ["{a} works back to {posname}. That's {his} {n} escape of the fight."]);
+          if (b.from === "mount" || b.from === "back" || rc.posSaid === b.from || r() < 0.5) txt = voice.say(poolE, c, ["{a} works back to {posname}. That's {his} {n} escape of the fight."]);
+          rc.posSaid = txt ? b.pos : null;
         } else if (k === "sweep") {
           fc.sweep[w]++;
           c.n = ordinal(fc.sweep[w]); c.posbot = POS_BOT[b.from] || "from the bottom"; c.posin = posIn(b.pos, F[d].short);
@@ -980,7 +988,7 @@
         if (t || mt) return join(t, [mt]);
         if (!opt) return null;
         var tech = b.tech;
-        if ((tech === "headkick" || tech === "spinfist" || tech === "spinback" || tech === "wheel" || tech === "flyknee") && rc.special < 2 && r() < 0.8) {
+        if ((tech === "headkick" || tech === "spinfist" || tech === "spinback" || tech === "wheel" || tech === "flyknee") && rc.special < 1 && r() < (tech === "headkick" ? 0.5 : 0.8)) {
           t = voice.say(tech === "headkick" ? T.headkick : T.specialLand, c); if (t) { rc.special++; rc.color++; } return t;
         }
         if (b.counter && rc.counter < 2 && r() < 0.35) { t = voice.say(T.counter, c); if (t) { rc.counter++; rc.color++; } return t; }
@@ -1020,7 +1028,7 @@
         return false;
       }
 
-      function addNotes(beats, timeline, base, cumT, cumV, endT, ri) {
+      function addNotes(beats, timeline, base, cumT, cumV, endT, ev) {
         var txtT = [];
         for (var q = 0; q < beats.length; q++) if (beats[q].txt) txtT.push(beats[q].t);
         txtT.push(endT);
@@ -1035,12 +1043,19 @@
           var v = statsVecAt(cumT, cumV, base, timeline, tm), c, pool, txt = null;
           if (st >= 2 && cw && ps !== "down") {
             c = ctx(cw); c.ctrl = mmss(v[(cw === "B" ? NK : 0) + SI.ctrl] - base[(cw === "B" ? NK : 0) + SI.ctrl]);
-            c.posin = posIn(ps, F[other(cw)].short); c.posfrom = POS_FROM[ps] || "from the top"; pool = NOTES.ground;
+            c.posin = posIn(ps, F[other(cw)].short); c.posfrom = POS_FROM[ps] || "from the top";
+            pool = ps === "back" ? NOTES.back : (ps === "guard" ? NOTES.guard : NOTES.ground);
           } else if (st === 1 && cw) { c = ctx(cw); pool = NOTES.clinch; }
           else if (st === 0) {
+            // what the engine actually had them doing around this moment
+            var nA = 0, nB = 0;
+            for (var x = 0; x < ev.length; x++) { var ex = ev[x]; if (STRIKE_K[ex.k] && Math.abs(ex.t - tm) <= 12) { if (ex.w === "A") nA++; else nB++; } }
             var la = v[SI.sig_lnd] - base[SI.sig_lnd], lb = v[NK + SI.sig_lnd] - base[NK + SI.sig_lnd], lead = la >= lb ? "A" : "B";
             c = ctx(lead); c.N = Math.max(la, lb); c.M = Math.min(la, lb);
-            pool = Math.abs(la - lb) >= 6 ? NOTES.dist.slice(4) : NOTES.dist.slice(0, 4);
+            if (nA + nB <= 2) pool = NOTES.lull;
+            else if (nA >= 4 && nB >= 4) pool = NOTES.busy;
+            else if (la === lb) pool = la > 0 ? NOTES.even : null;
+            else pool = NOTES.dist;
           }
           if (pool) txt = voice.say(pool, c);
           if (!txt) continue;
@@ -1126,6 +1141,12 @@
       case "gnp": return "punches";
     }
     return "punches";
+  }
+  // the engine rounds event times to 0.01 s but not fin.t: the round ends at whichever is later
+  function roundEnd(rd) {
+    if (!rd.fin) return 300;
+    var ev = rd.ev || [], lt = ev.length ? ev[ev.length - 1].t : 0;
+    return Math.max(rd.fin.t, lt);
   }
   function inferKdTo(ev, i, s) { var n = ev[i + 1]; if (n && n.k === "reset" && Math.abs(n.t - ev[i].t) < 0.02) return 0; if (n && n.s >= 2 && n.pos === "down") return n.s; return 0; }
   function segAt(tl, t) { for (var i = 0; i < tl.length; i++) if (t >= tl[i][0] && t < tl[i][1]) return tl[i]; return tl.length ? tl[tl.length - 1] : null; }
