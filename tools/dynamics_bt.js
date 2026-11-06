@@ -71,6 +71,8 @@ const TN = oof.meta.targets;
 const keys = bt.meta.keys;
 // durability component (v5 merge step 2): leak-free walk-forward records + train NORM (tools/durrec.js)
 const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);
+// v5 merge step 3: walk-forward SOS pairs (tools/sosrec.js; leave-one-year-out coefficients before 2024) when components.styles_sos sos is on
+const SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);
 
 const cfgArgs = optAll("--cfg");
 const CFGS = [];
@@ -132,8 +134,9 @@ for (const f of fights) {
         const o = optsFor(f, swap);
         o.params = cparams;
         DR.apply(o, f.id, swap);
+        if (SR.on(cparams)) SR.apply(o, f, swap);
         m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
-        DR.assertApplied(m, f.id, cparams);
+        DR.assertApplied(m, f.id, cparams); SR.assertApplied(m, f.id, cparams);
       } catch (e) { ok = false; nErr++; if (nErr < 4) console.error(String(e && e.stack || e)); break; }
       const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
       for (let s = 0; s < SIMS; s++) {

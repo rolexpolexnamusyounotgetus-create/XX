@@ -303,7 +303,7 @@ class Pool {
       hookPath: spec.hook ? absPath(spec.hook) : null,
       inject: spec.inject, priors: PA,
       // the worker may run from a session snapshot in os.tmpdir() (snapshotEngine), so it gets the repo's durrec.js and root here
-      durrecPath: path.join(__dirname, "durrec.js"), root: ROOT };
+      durrecPath: path.join(__dirname, "durrec.js"), sosrecPath: path.join(__dirname, "sosrec.js"), root: ROOT };
     this.workers = this.groups.map((g) => new Worker(spec.workerFile || __filename, { workerData: Object.assign({
       tasks: g.map((i) => { const t = tasks[i], f = fights[t.fi]; return { swap: t.swap, seed: t.seed, f: { id: f.id, date: f.date, year: f.year,
         division: f.division, rounds: f.rounds, title: f.title, A: f.A, B: f.B } }; }) }, common) }));
@@ -333,6 +333,8 @@ function workerMain() {
   const { enginePath, paramsPath, hookPath, inject, priors, tasks } = workerData;
   const E = require(enginePath), P0 = require(paramsPath);
   const DR = require(workerData.durrecPath || path.join(__dirname, "durrec.js"))(E, workerData.root || path.resolve(__dirname, ".."));
+  // v5 merge step 3: walk-forward SOS pairs (tools/sosrec.js; leave-one-year-out coefficients before 2024) when components.styles_sos sos is on
+  const SR = require(workerData.sosrecPath || path.join(__dirname, "sosrec.js"))(E, workerData.root || path.resolve(__dirname, ".."));
   const hook = hookPath ? require(hookPath) : null;
   let cacheKey = null, cache = null;
   function build(t, tree, hp) {
@@ -341,8 +343,10 @@ function workerMain() {
     if (inject !== "mutate") opts.params = tree;
     if (hook && hook.matchupOpts) opts = hook.matchupOpts(opts, { fight: f, swap: t.swap, A, B, hookParams: hp, params: tree }) || opts;
     DR.apply(opts, f.id, t.swap);   // v5: durability walk-forward record + train NORM when the component is on (tools/durrec.js)
+    const P0 = opts.params;
+    if (SR.on(P0)) SR.apply(opts, f, t.swap);   // v5: walk-forward SOS pair (tools/sosrec.js)
     const m = E.matchup(A, B, opts);
-    DR.assertApplied(m, f.id, opts.params);
+    DR.assertApplied(m, f.id, opts.params); SR.assertApplied(m, f.id, P0);
     return m;
   }
   parentPort.on("message", (msg) => {

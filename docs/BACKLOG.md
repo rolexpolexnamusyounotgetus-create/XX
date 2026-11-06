@@ -64,6 +64,19 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- debut (lab 3, VERIFIED ~23:40 UTC, research/model_debut.md): ADOPT the debut METHOD model for bouts with a UFC
+  debutant (replaces division base rates; fed the ledger's winner probability: close, else open, else seeded Elo).
+  2024-25 (172 decisive debut bouts, one look): marginal KO/SUB/DEC 0.9879 vs 1.0330 (-0.045 [-0.075, -0.017]);
+  method given the winner -0.084 [-0.128, -0.040]; who x how -0.079 [-0.147, -0.014]; CV -0.033 [-0.059, -0.006].
+  WINNER unchanged (line where there is one, seeded Elo without): the debut winner model's CV gain (-0.049 nested)
+  was not confirmed on 2024-25 (+0.003 [-0.046, +0.050]); log it as a monitored candidate (--debut-model). It is
+  overconfident (slope 0.81). Going primary needs a new forward version pre-registered before a lock (fwd-6+).
+- statlines (lab 3, VERIFIED, research/model_statlines.md): ADOPT as the distributional stat-line layer
+  (src/ml/statdist.js, P10/P50/P90 per fighter, mixed over the fight-length distribution) and as v8's retarget
+  target. 2024-25 (one look): better log score than the NB baseline on all 19 stats with CIs excluding 0; 80% band
+  coverage 0.77-0.82; vs engine v4 unconditional deviance: control -6.2 s [-10.7, -2.5], sig landed -0.75 [-1.31,
+  -0.14], TD landed -0.058 [-0.089, -0.027]; engine's 80% bands far too narrow for TD attempts (0.52 coverage) and
+  control (0.68). No winner use (zero stack weight; CV rejects).
 - crowd (lab 3, VERIFIED): NOT adopted. Public consensus panels (RotoWire, Money MMA; Tapology's robots.txt
   disallows Claude crawlers, so it was not scraped) fail the forward-chained 2021-23 gate in every stack (0 of 60
   variants pass; best gain -0.0003) and in the method model; 2024-25 agrees (all within +-0.0013, n.s.). Crowd

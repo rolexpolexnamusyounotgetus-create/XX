@@ -1,0 +1,697 @@
+{
+ "join_audit": {
+  "raw_rows_2026_dropped": 480,
+  "backtest_ids": 2864,
+  "not_in_raw": [],
+  "nondecisive": 55,
+  "outside_2019_2025": 0,
+  "no_bayes": [],
+  "no_whr": [],
+  "no_ml2lr": [],
+  "date_mismatch": [],
+  "not_in_raw_n": 0,
+  "no_bayes_n": 0,
+  "no_whr_n": 0,
+  "no_ml2lr_n": 0,
+  "date_mismatch_n": 0
+ },
+ "label_mismatch_vs_bayes_data": 0,
+ "score": {
+  "2019-2023": {
+   "n": 1955,
+   "standalone": {
+    "bayes": {
+     "ll": [
+      0.64389,
+      0.6305,
+      0.6577
+     ],
+     "acc": 0.6235,
+     "slope": 0.991
+    },
+    "bayes_plugin": {
+     "ll": [
+      0.6463,
+      0.6299,
+      0.6632
+     ],
+     "acc": 0.6235,
+     "slope": 0.802
+    },
+    "whr": {
+     "ll": [
+      0.64467,
+      0.6322,
+      0.6576
+     ],
+     "acc": 0.6159,
+     "slope": 1.051
+    },
+    "glicko2": {
+     "ll": [
+      0.64987,
+      0.6374,
+      0.663
+     ],
+     "acc": 0.6061,
+     "slope": 0.99
+    },
+    "elo_full": {
+     "ll": [
+      0.65031,
+      0.6381,
+      0.6631
+     ],
+     "acc": 0.6143,
+     "slope": 1.011
+    },
+    "ratings_stack": {
+     "ll": [
+      0.64398,
+      0.6315,
+      0.6572
+     ],
+     "acc": 0.623,
+     "slope": 1.045
+    },
+    "ml2lr": {
+     "ll": [
+      0.63558,
+      0.6202,
+      0.6509
+     ],
+     "acc": 0.643,
+     "slope": 0.945
+    },
+    "mkt_rating": {
+     "ll": [
+      0.65412,
+      0.6436,
+      0.6646
+     ],
+     "acc": 0.6097,
+     "slope": 1.122
+    },
+    "close": {
+     "ll": [
+      0.62321,
+      0.6096,
+      0.6374
+     ],
+     "n": 1955
+    },
+    "open": {
+     "ll": [
+      0.63771,
+      0.6262,
+      0.6493
+     ],
+     "n": 1955
+    }
+   },
+   "paired_bayes_minus": {
+    "bayes_plugin": [
+     -0.0024,
+     -0.0056,
+     0.0007
+    ],
+    "whr": [
+     -0.00078,
+     -0.0071,
+     0.0055
+    ],
+    "glicko2": [
+     -0.00597,
+     -0.0149,
+     0.0033
+    ],
+    "elo_full": [
+     -0.00641,
+     -0.0153,
+     0.003
+    ],
+    "ratings_stack": [
+     -9e-05,
+     -0.0065,
+     0.0062
+    ],
+    "ml2lr": [
+     0.00832,
+     -0.0,
+     0.017
+    ],
+    "mkt_rating": [
+     -0.01022,
+     -0.0221,
+     0.0014
+    ],
+    "close": [
+     0.02068,
+     0.01,
+     0.0314,
+     1955
+    ],
+    "open": [
+     0.00619,
+     -0.0057,
+     0.0183,
+     1955
+    ]
+   },
+   "free_intercept": {
+    "bayes": {
+     "a": 0.2103,
+     "a_se": 0.048,
+     "b": 0.952,
+     "mean_p": 0.5242,
+     "ll_gain_from_a_and_b": -0.00493
+    },
+    "whr": {
+     "a": 0.1934,
+     "a_se": 0.048,
+     "b": 1.003,
+     "mean_p": 0.5269,
+     "ll_gain_from_a_and_b": -0.00425
+    },
+    "ml2lr": {
+     "a": 0.2023,
+     "a_se": 0.0486,
+     "b": 0.911,
+     "mean_p": 0.5278,
+     "ll_gain_from_a_and_b": -0.00465
+    }
+   },
+   "share_A_wins": 0.5708,
+   "sd_terciles": [
+    {
+     "n": 652,
+     "acc": 0.6135,
+     "ll": 0.65343,
+     "share_newcomer_bouts": 0.495
+    },
+    {
+     "n": 651,
+     "acc": 0.6267,
+     "ll": 0.64028,
+     "share_newcomer_bouts": 0.379
+    },
+    {
+     "n": 652,
+     "acc": 0.6304,
+     "ll": 0.63796,
+     "share_newcomer_bouts": 0.198
+    }
+   ]
+  },
+  "2024-2025": {
+   "n": 854,
+   "standalone": {
+    "bayes": {
+     "ll": [
+      0.6153,
+      0.5975,
+      0.6327
+     ],
+     "acc": 0.6698,
+     "slope": 1.325
+    },
+    "bayes_plugin": {
+     "ll": [
+      0.61117,
+      0.5897,
+      0.632
+     ],
+     "acc": 0.6698,
+     "slope": 1.073
+    },
+    "whr": {
+     "ll": [
+      0.61696,
+      0.602,
+      0.6324
+     ],
+     "acc": 0.6686,
+     "slope": 1.47
+    },
+    "glicko2": {
+     "ll": [
+      0.62331,
+      0.608,
+      0.6404
+     ],
+     "acc": 0.6616,
+     "slope": 1.352
+    },
+    "elo_full": {
+     "ll": [
+      0.62576,
+      0.6108,
+      0.6417
+     ],
+     "acc": 0.6604,
+     "slope": 1.353
+    },
+    "ratings_stack": {
+     "ll": [
+      0.61123,
+      0.5954,
+      0.6276
+     ],
+     "acc": 0.6756,
+     "slope": 1.431
+    },
+    "ml2lr": {
+     "ll": [
+      0.58864,
+      0.57,
+      0.6085
+     ],
+     "acc": 0.6897,
+     "slope": 1.449
+    },
+    "bayes_roll": {
+     "ll": [
+      0.61461,
+      0.597,
+      0.6315
+     ],
+     "slope": 1.34
+    },
+    "close": {
+     "ll": [
+      0.58537,
+      0.5605,
+      0.6105
+     ],
+     "n": 845
+    },
+    "open": {
+     "ll": [
+      0.60936,
+      0.5906,
+      0.628
+     ],
+     "n": 843
+    }
+   },
+   "paired_bayes_minus": {
+    "bayes_plugin": [
+     0.00413,
+     0.0004,
+     0.0079
+    ],
+    "whr": [
+     -0.00166,
+     -0.011,
+     0.0075
+    ],
+    "glicko2": [
+     -0.00801,
+     -0.021,
+     0.0045
+    ],
+    "elo_full": [
+     -0.01047,
+     -0.0238,
+     0.0027
+    ],
+    "ratings_stack": [
+     0.00406,
+     -0.0052,
+     0.013
+    ],
+    "ml2lr": [
+     0.02666,
+     0.0145,
+     0.0385
+    ],
+    "bayes_roll": [
+     0.00069,
+     -0.0007,
+     0.002
+    ],
+    "close": [
+     0.02698,
+     0.0087,
+     0.0456,
+     845
+    ],
+    "open": [
+     0.00258,
+     -0.0145,
+     0.02,
+     843
+    ]
+   },
+   "free_intercept": {
+    "bayes": {
+     "a": 0.0998,
+     "a_se": 0.0731,
+     "b": 1.313,
+     "mean_p": 0.5161,
+     "ll_gain_from_a_and_b": -0.00519
+    },
+    "whr": {
+     "a": 0.0612,
+     "a_se": 0.0753,
+     "b": 1.457,
+     "mean_p": 0.5209,
+     "ll_gain_from_a_and_b": -0.00771
+    },
+    "ml2lr": {
+     "a": 0.0471,
+     "a_se": 0.0781,
+     "b": 1.441,
+     "mean_p": 0.5242,
+     "ll_gain_from_a_and_b": -0.00903
+    }
+   },
+   "share_A_wins": 0.541,
+   "sd_terciles": [
+    {
+     "n": 285,
+     "acc": 0.6211,
+     "ll": 0.6464,
+     "share_newcomer_bouts": 0.744
+    },
+    {
+     "n": 284,
+     "acc": 0.6761,
+     "ll": 0.62167,
+     "share_newcomer_bouts": 0.144
+    },
+    {
+     "n": 285,
+     "acc": 0.7123,
+     "ll": 0.57785,
+     "share_newcomer_bouts": 0.032
+    }
+   ]
+  }
+ },
+ "ablations": {
+  "n": 1955,
+  "export_vs_cache_max_abs": 5e-05,
+  "main|month minus main|none": [
+   -0.00486,
+   -0.0074,
+   -0.0023
+  ],
+  "main|month minus main|quarter": [
+   -0.0005,
+   -0.0012,
+   0.0002
+  ],
+  "main|quarter minus main|year": [
+   -0.00072,
+   -0.0021,
+   0.0007
+  ],
+  "main|year minus main|none": [
+   -0.00364,
+   -0.0059,
+   -0.0013
+  ],
+  "main|month minus nostats|quarter": [
+   -0.00702,
+   -0.0124,
+   -0.0016
+  ],
+  "main|quarter minus nostats|quarter": [
+   -0.00651,
+   -0.012,
+   -0.0011
+  ],
+  "main|year minus nostats|year": [
+   -0.0061,
+   -0.0116,
+   -0.0007
+  ],
+  "main|none minus nostats|none": [
+   -0.00483,
+   -0.0103,
+   0.0006
+  ],
+  "main|month minus main|month|plugin": [
+   -0.0024,
+   -0.0056,
+   0.0007
+  ],
+  "ll": {
+   "main|month": 0.6439,
+   "main|month|plugin": 0.6463,
+   "main|quarter": 0.6444,
+   "main|quarter|plugin": 0.64691,
+   "main|year": 0.64511,
+   "main|year|plugin": 0.64772,
+   "main|none": 0.64876,
+   "main|none|plugin": 0.65222,
+   "nostats|quarter": 0.65091,
+   "nostats|quarter|plugin": 0.65571,
+   "nostats|year": 0.65122,
+   "nostats|year|plugin": 0.65613,
+   "nostats|none": 0.65359,
+   "nostats|none|plugin": 0.65927
+  }
+ },
+ "meta": {
+  "tool": "tools/bayes_verify.py",
+  "updated": "2026-11-06T23:20:47+00:00"
+ },
+ "stack_gate": {
+  "line|close+ml2 + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.61613,
+   "cv_plus": 0.61616,
+   "gain": 2e-05,
+   "h_base": null,
+   "h_plus": null,
+   "enters": false,
+   "paired_cv": [
+    2e-05,
+    -0.0,
+    0.0001
+   ],
+   "bayes_weight_fit_2019_2023": 0.0,
+   "weights_plus": {
+    "close": 0.756,
+    "ml2": 0.374,
+    "bayes": 0.0
+   },
+   "valid_2024_2025_plus_minus_base": [
+    0.0,
+    -0.0,
+    0.0
+   ],
+   "n_valid": 845
+  },
+  "line|close+ml2lr + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.61623,
+   "cv_plus": 0.61627,
+   "gain": 3e-05,
+   "h_base": null,
+   "h_plus": null,
+   "enters": false,
+   "paired_cv": [
+    3e-05,
+    -0.0001,
+    0.0002
+   ],
+   "bayes_weight_fit_2019_2023": 0.0,
+   "weights_plus": {
+    "close": 0.775,
+    "ml2lr": 0.339,
+    "bayes": 0.0
+   },
+   "valid_2024_2025_plus_minus_base": [
+    0.0,
+    -0.0,
+    0.0
+   ],
+   "n_valid": 845
+  },
+  "line|close+whr + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.61743,
+   "cv_plus": 0.61734,
+   "gain": -9e-05,
+   "h_base": null,
+   "h_plus": null,
+   "enters": false,
+   "paired_cv": [
+    -9e-05,
+    -0.001,
+    0.0009
+   ],
+   "bayes_weight_fit_2019_2023": 0.135,
+   "weights_plus": {
+    "close": 0.861,
+    "whr": 0.145,
+    "bayes": 0.135
+   },
+   "valid_2024_2025_plus_minus_base": [
+    -0.00057,
+    -0.0018,
+    0.0006
+   ],
+   "n_valid": 845
+  },
+  "noline|ml2+mkt_rating+feat_lr + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.62854,
+   "cv_plus": 0.62824,
+   "gain": -0.0003,
+   "h_base": 1.5,
+   "h_plus": 1.5,
+   "enters": false,
+   "paired_cv": [
+    -0.0003,
+    -0.0017,
+    0.0012
+   ],
+   "bayes_weight_fit_2019_2023": 0.202,
+   "weights_plus": {
+    "ml2": 0.608,
+    "mkt_rating": 0.513,
+    "feat_lr": 0.0,
+    "bayes": 0.202
+   },
+   "valid_2024_2025_plus_minus_base": [
+    0.00024,
+    -0.0019,
+    0.0022
+   ],
+   "n_valid": 854
+  },
+  "noline|ml2lr+mkt_rating + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.62983,
+   "cv_plus": 0.62883,
+   "gain": -0.00101,
+   "h_base": 1.5,
+   "h_plus": 1.5,
+   "enters": true,
+   "paired_cv": [
+    -0.00101,
+    -0.0032,
+    0.0012
+   ],
+   "bayes_weight_fit_2019_2023": 0.286,
+   "weights_plus": {
+    "ml2lr": 0.486,
+    "mkt_rating": 0.561,
+    "bayes": 0.286
+   },
+   "valid_2024_2025_plus_minus_base": [
+    0.00068,
+    -0.0024,
+    0.0037
+   ],
+   "n_valid": 854
+  },
+  "noline|whr+glicko2 + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.63911,
+   "cv_plus": 0.63666,
+   "gain": -0.00244,
+   "h_base": null,
+   "h_plus": null,
+   "enters": true,
+   "paired_cv": [
+    -0.00244,
+    -0.0066,
+    0.0016
+   ],
+   "bayes_weight_fit_2019_2023": 0.586,
+   "weights_plus": {
+    "whr": 0.23,
+    "glicko2": 0.297,
+    "bayes": 0.586
+   },
+   "valid_2024_2025_plus_minus_base": [
+    -0.00445,
+    -0.0098,
+    0.0008
+   ],
+   "n_valid": 854
+  },
+  "noline|whr + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.6394,
+   "cv_plus": 0.63717,
+   "gain": -0.00223,
+   "h_base": null,
+   "h_plus": null,
+   "enters": true,
+   "paired_cv": [
+    -0.00223,
+    -0.0063,
+    0.0018
+   ],
+   "bayes_weight_fit_2019_2023": 0.555,
+   "weights_plus": {
+    "whr": 0.527,
+    "bayes": 0.555
+   },
+   "valid_2024_2025_plus_minus_base": [
+    -0.00419,
+    -0.0093,
+    0.0008
+   ],
+   "n_valid": 854
+  },
+  "open|open+ml2 + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.62231,
+   "cv_plus": 0.62238,
+   "gain": 8e-05,
+   "h_base": null,
+   "h_plus": null,
+   "enters": false,
+   "paired_cv": [
+    8e-05,
+    -0.0006,
+    0.0007
+   ],
+   "bayes_weight_fit_2019_2023": 0.06,
+   "weights_plus": {
+    "open": 0.625,
+    "ml2": 0.589,
+    "bayes": 0.06
+   },
+   "valid_2024_2025_plus_minus_base": [
+    0.00011,
+    -0.0006,
+    0.0007
+   ],
+   "n_valid": 843
+  },
+  "open|open+ml2lr + bayes": {
+   "n_cv": 1224,
+   "cv_base": 0.62275,
+   "cv_plus": 0.62262,
+   "gain": -0.00014,
+   "h_base": null,
+   "h_plus": null,
+   "enters": false,
+   "paired_cv": [
+    -0.00014,
+    -0.0011,
+    0.0008
+   ],
+   "bayes_weight_fit_2019_2023": 0.111,
+   "weights_plus": {
+    "open": 0.646,
+    "ml2lr": 0.508,
+    "bayes": 0.111
+   },
+   "valid_2024_2025_plus_minus_base": [
+    0.00034,
+    -0.0009,
+    0.0015
+   ],
+   "n_valid": 843
+  }
+ }
+}

@@ -48,6 +48,8 @@ const extra = JSON.parse(opt("--params", "{}"));
 // data/derived/durability.json and the train NORM (tools/durrec.js), as tools/evalv.js and tools/dynamics_bt.js do; the
 // paired "flag off" reference is then step 1 + durability (dynamics off)
 const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);
+// v5 merge step 3: walk-forward SOS pairs (tools/sosrec.js; leave-one-year-out coefficients before 2024) when components.styles_sos sos is on
+const SR = require(path.join(ROOT, "tools/sosrec.js"))(E, ROOT);
 
 const allTrain = bt.fights.filter((f) => f.date >= FROM && f.date <= TO && oof.fights[f.id]);
 const fights = bt.fights.filter((f, i) => f.date >= FROM && f.date <= TO && i % STRIDE === 0 && oof.fights[f.id]);
@@ -90,8 +92,9 @@ function run(params) {
     for (const swap of [false, true]) {
       const o = optsFor(f, swap, params);
       DR.apply(o, f.id, swap);   // v5: durability walk-forward record + train NORM when the component is on (tools/durrec.js)
+      if (SR.on(params)) SR.apply(o, f, swap);   // v5: walk-forward SOS pair (tools/sosrec.js)
       const m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
-      DR.assertApplied(m, f.id, params);
+      DR.assertApplied(m, f.id, params); SR.assertApplied(m, f.id, params);
       const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
       for (let s = 0; s < SIMS; s++) {
         const fight = E.simulate(m, rng, true), nr = fight.rounds.length;
