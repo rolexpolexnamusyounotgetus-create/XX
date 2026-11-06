@@ -1,0 +1,325 @@
+{
+ "meta": {
+  "tool": "tools/evalv.js",
+  "rule": "validation numbers are computed once per version (tools/evalv.js --split val refuses a second look at the same files); train numbers can be refreshed; a second validation look needs a new version entry and a note",
+  "splits": {
+   "train": [
+    "2019-01-01",
+    "2024-01-01"
+   ],
+   "val": [
+    "2024-01-01",
+    "2026-01-01"
+   ]
+  }
+ },
+ "versions": [
+  {
+   "version": "v3",
+   "date": "2026-11-06",
+   "engine_version": "3.0.0",
+   "params_version": "3.0.0-wf-2026-11-06",
+   "engine_sha256": "7dcac8239b8d4aaa27367aec51378731e2d170b50dabba9d0ea95ef430066fe2",
+   "params_sha256": "06173bc61ee788fae415e4e629aab1c466dc72aa27f560bb3bdad4b53d489fc2",
+   "mlrates_js_sha256": null,
+   "train": {
+    "n_fights": 1999,
+    "n_decisive": 1952,
+    "sims_per_order": 300,
+    "metrics": {
+     "winLL": {
+      "est": 0.6716,
+      "lo": 0.662,
+      "hi": 0.6814
+     },
+     "brier": {
+      "est": 0.2394,
+      "lo": 0.2349,
+      "hi": 0.2441
+     },
+     "acc": {
+      "est": 0.571,
+      "lo": 0.5501,
+      "hi": 0.5912
+     },
+     "bin7": {
+      "est": 1.6636,
+      "lo": 1.635,
+      "hi": 1.6929
+     },
+     "method": {
+      "est": 0.969,
+      "lo": 0.9462,
+      "hi": 0.9929
+     },
+     "dev_sig_lnd": {
+      "est": 24.3022,
+      "lo": 23.0527,
+      "hi": 25.4924
+     },
+     "dev_sig_att": {
+      "est": 50.6072,
+      "lo": 48.1564,
+      "hi": 53.0442
+     },
+     "dev_td_lnd": {
+      "est": 1.8559,
+      "lo": 1.78,
+      "hi": 1.9409
+     },
+     "dev_ctrl": {
+      "est": 164.5258,
+      "lo": 157.959,
+      "hi": 171.0898
+     },
+     "dev_kd": {
+      "est": 0.7206,
+      "lo": 0.6894,
+      "hi": 0.7556
+     },
+     "mae_sig_lnd": {
+      "est": 26.4101,
+      "lo": 25.526,
+      "hi": 27.2331
+     },
+     "mae_sig_att": {
+      "est": 56.2311,
+      "lo": 54.5392,
+      "hi": 57.9533
+     },
+     "mae_td_lnd": {
+      "est": 1.0634,
+      "lo": 1.0314,
+      "hi": 1.0979
+     },
+     "mae_ctrl": {
+      "est": 114.598,
+      "lo": 111.2271,
+      "hi": 117.8984
+     },
+     "mae_kd": {
+      "est": 0.346,
+      "lo": 0.3355,
+      "hi": 0.3571
+     },
+     "ece": {
+      "est": 0.0181,
+      "lo": 0.0063,
+      "hi": 0.0408
+     },
+     "calSlope": {
+      "est": 0.9262,
+      "lo": 0.7406,
+      "hi": 1.1105
+     }
+    },
+    "baseRates": {
+     "n": 1972,
+     "finish": {
+      "sim": 0.4959,
+      "actual": 0.4924,
+      "diff": 0.0035
+     },
+     "KO": {
+      "sim": 0.3215,
+      "actual": 0.3174,
+      "diff": 0.004
+     },
+     "SUB": {
+      "sim": 0.1745,
+      "actual": 0.1749,
+      "diff": -0.0005
+     },
+     "DEC": {
+      "sim": 0.5041,
+      "actual": 0.5076,
+      "diff": -0.0035
+     },
+     "finByRound3": {
+      "n": 1729,
+      "sim": [
+       0.2531,
+       0.1455,
+       0.0918
+      ],
+      "actual": [
+       0.2441,
+       0.1671,
+       0.0752
+      ]
+     },
+     "finByRound5": {
+      "n": 243,
+      "sim": [
+       0.1526,
+       0.1324,
+       0.1045,
+       0.0921,
+       0.0539
+      ],
+      "actual": [
+       0.1728,
+       0.1646,
+       0.0947,
+       0.0535,
+       0.0494
+      ]
+     },
+     "kdPer100Head": {
+      "sim": 0.7879,
+      "actual": 0.7816,
+      "diff": 0.0063
+     },
+     "decision": {
+      "sim": {
+       "UD": 0.7941,
+       "SD": 0.1918,
+       "MD": 0.0141
+      },
+      "actual": {
+       "UD": 0.7859,
+       "SD": 0.1937,
+       "MD": 0.0204
+      },
+      "nActual": 981
+     },
+     "r108": {
+      "sim": 0.0509,
+      "actual": 0.0529,
+      "diff": -0.0019
+     },
+     "sigLndPer15": {
+      "sim": 60.9503,
+      "actual": 61.1447,
+      "diff": -0.1944
+     },
+     "tdPer15": {
+      "sim": 1.3063,
+      "actual": 1.306,
+      "diff": 0.0003
+     },
+     "ctrlPer15": {
+      "sim": 163.6973,
+      "actual": 163.027,
+      "diff": 0.6703
+     }
+    },
+    "methodround": {
+     "joint": {
+      "submitted": 2.1984,
+      "model_S": 2.1523,
+      "diff": 0.0461,
+      "ci95": [
+       0.0301,
+       0.0625
+      ]
+     },
+     "method3": {
+      "submitted": 0.969,
+      "model_S": 0.9569,
+      "diff": 0.0121,
+      "ci95": [
+       0.0039,
+       0.0206
+      ]
+     },
+     "finish": {
+      "submitted": 0.6677,
+      "model_S": 0.6607,
+      "diff": 0.0071,
+      "ci95": [
+       0.0005,
+       0.0136
+      ]
+     },
+     "bin7": {
+      "submitted": 1.6636,
+      "model_S": 1.6281,
+      "diff": 0.0354,
+      "ci95": [
+       0.0224,
+       0.0494
+      ]
+     },
+     "method_round": {
+      "submitted": 1.5001,
+      "model_S": 1.4811,
+      "diff": 0.0191,
+      "ci95": [
+       0.0087,
+       0.0297
+      ]
+     },
+     "round_given_fin": {
+      "submitted": 1.0787,
+      "model_S": 1.062,
+      "diff": 0.0167,
+      "ci95": [
+       0.0048,
+       0.0284
+      ]
+     },
+     "ko_vs_sub": {
+      "submitted": 0.6119,
+      "model_S": 0.6016,
+      "diff": 0.0103,
+      "ci95": [
+       -0.0019,
+       0.0228
+      ]
+     },
+     "method_given_winner": {
+      "submitted": 0.9507,
+      "model_S": 0.9342,
+      "diff": 0.0165,
+      "ci95": [
+       0.0063,
+       0.0268
+      ]
+     },
+     "winner": {
+      "submitted": 0.6716,
+      "model_S": 0.6518,
+      "diff": 0.0198,
+      "ci95": [
+       0.0123,
+       0.0276
+      ]
+     },
+     "winner_brier": {
+      "submitted": 0.2394,
+      "model_S": 0.2301,
+      "diff": 0.0094,
+      "ci95": [
+       0.0059,
+       0.0131
+      ]
+     },
+     "winner_acc": {
+      "submitted": 0.571,
+      "model_S": 0.6204,
+      "diff": -0.0494,
+      "ci95": [
+       -0.0693,
+       -0.0293
+      ]
+     },
+     "method3_brier": {
+      "submitted": 0.582,
+      "model_S": 0.5751,
+      "diff": 0.0069,
+      "ci95": [
+       0.0013,
+       0.013
+      ]
+     }
+    },
+    "compare": null,
+    "file": "data/derived/evalv/v3_train.json"
+   },
+   "validation": null,
+   "blend": null,
+   "notes": []
+  }
+ ]
+}

@@ -804,6 +804,11 @@ python3 tools/dynamics.py                      # full: jackknife, simulation che
 python3 tools/dynamics.py --quick              # point estimates and held-out only
 node tools/dynamics_engine.js /tmp/eng.csv --sims 30 [--engine-dir src]
 python3 tools/dynamics.py --quick --parts 5 --engine-csv /tmp/eng.csv
+# added by the verification:
+node tools/dynamics_engine.js /tmp/eng_tr.csv --sims 12 --from 2019-01-01 --to 2023-12-31 [--engine-dir src]
+python3 tools/dynamics.py --parts none --engine-csv /tmp/eng_tr.csv --engine-period train --engine-key engine_check_v4dev_train
+python3 tools/dynamics.py --parts J            # judges'-label models only
+python3 tools/dynamics_audit.py                # independent re-derivation -> data/derived/dynamics_audit.json
 ```
 
 JSON keys:
@@ -815,9 +820,12 @@ JSON keys:
 | `form_decomposition` | section 2.4 |
 | `simulation_check` | the estimator simulation |
 | `kd_momentum_descriptive` | the raw difference-in-differences |
-| `adaptation_judges` | section 4 |
+| `adaptation_judges` | section 4 (published round scores; `*_judges_inferred_legacy` = the old look-ahead label) |
 | `fighter_late_ratio` | part 2, with `current` and `cardio_by_slug` |
 | `finish_hazard` | `kd_hazard`, `kd_conversion`, `non_kd_stoppage`, `hazard_tables` |
 | `targets_by_round` | marginal round-by-round targets |
 | `round_correlations_train` | raw output correlations |
 | `engine_check` | section 7 |
+| `engine_check_v4dev_train`, `engine_check_v4dev_test` | section 7.1 (engine as of 14:22, real 2019-2023 / 2024-2025) |
+| `state_models.*.test_refit`, `form_decomposition.*_test_refit` | 2024-2025 refits (replication checks) |
+| `kd_momentum_descriptive.skip_round` | knockdown momentum vs the round before the knockdown round |

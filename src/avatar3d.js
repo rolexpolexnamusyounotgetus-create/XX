@@ -1440,19 +1440,19 @@
           "float sh1(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }")
         .replace("#include <alphatest_fragment>",
           "{ vec2 cell = vSUv * uFreq; vec2 ci = floor(cell); vec2 cf = fract(cell) - 0.5;\n" +
-          "  float r1 = sh1(ci), r2 = sh1(ci + 17.3), r3 = sh1(ci + 41.7);\n" +
+          "  float sq1 = sh1(ci), sq2 = sh1(ci + 17.3), sq3 = sh1(ci + 41.7);\n" +
           "  float c = clamp(vFur.y * uDens * 1.25, 0.0, 1.0), h = vFur.x;\n" +
-          "  float len = 0.45 + 0.55 * r2;\n" +
-          "  vec2 off = (vec2(r3, sh1(ci + 3.1)) - 0.5) * 0.5;\n" +
+          "  float len = 0.45 + 0.55 * sq2;\n" +
+          "  vec2 off = (vec2(sq3, sh1(ci + 3.1)) - 0.5) * 0.5;\n" +
           "  float rad = uThick * 0.5 * (1.0 - 0.7 * h / max(len, 0.05));\n" +
           "  float inCell = step(length(cf - off), rad);\n" +
           "  float fw = length(fwidth(cell));\n" +
-          "  float far = smoothstep(0.6, 1.6, fw);\n" +
+          "  float farK = smoothstep(0.6, 1.6, fw);\n" +
           "  float dith = sh1(gl_FragCoord.xy * 0.731 + h * 7.0);\n" +
-          "  float near = step(r1, c) * step(h, len) * inCell;\n" +
+          "  float near = step(sq1, c) * step(h, len) * inCell;\n" +
           "  float farA = step(dith, c * (1.0 - h * 0.85) * 0.9);\n" +
-          "  diffuseColor.a = mix(near, farA, far);\n" +
-          "  diffuseColor.rgb *= (0.5 + 0.5 * h) * (0.82 + 0.36 * r2); }\n" +
+          "  diffuseColor.a = mix(near, farA, farK);\n" +
+          "  diffuseColor.rgb *= (0.5 + 0.5 * h) * (0.82 + 0.36 * sq2); }\n" +
           "#include <alphatest_fragment>");
     };
     mat.customProgramCacheKey = function () { return "strands-v1"; };
