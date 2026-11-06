@@ -1188,14 +1188,32 @@ def write_fixtures(d, J, n=60):
         if r["year"] >= 2020 and r["sides"][0]["n"] == 0 and i not in pick:
             pick.append(i)
             break
+    # reviewer additions: a weight-class mover beyond 3 x 10 lb (the +-3 clip bug) and a copy of a fixture with the
+    # layoff removed from both experienced sides (median-imputation path used for backtest_dev.json sides)
+    for i, r in enumerate(rows):
+        if r["year"] >= 2019 and i not in pick:
+            P = prior_for(pri[str(r["year"])], r["prior_division"])
+            ctx = {"rounds": r["rounds"], "title": r["title"], "division": r["division"],
+                   "prior_division": r["prior_division"], "year": r["year"]}
+            fa, _ = features(side_profile(r["sides"][0]), side_profile(r["sides"][1]), ctx, P)
+            if abs(fa[FI["upX"]]) > 3 or abs(fa[FI["upY"]]) > 3:
+                pick.append(i)
+                break
+    nolay = next(i for i in pick if rows[i]["sides"][0]["n"] > 0 and rows[i]["sides"][1]["n"] > 0)
     fx = []
     years_needed = set()
-    for i in pick:
+    for i in pick + [("nolay", nolay)]:
+        tag_nolay = isinstance(i, tuple)
+        i = i[1] if tag_nolay else i
         r = rows[i]
         P = prior_for(pri[str(r["year"])], r["prior_division"])
         ctx = {"rounds": r["rounds"], "title": r["title"], "division": r["division"],
                "prior_division": r["prior_division"], "year": r["year"]}
         fj = fight_json(r)
+        if tag_nolay:
+            fj["id"] = r["id"] + "-nolayoff"
+            fj["A"]["layoff"] = None
+            fj["B"]["layoff"] = None
         prof = []
         for tag in ("A", "B"):
             sd = dict(fj[tag])
@@ -1207,7 +1225,7 @@ def write_fixtures(d, J, n=60):
         Bv = np.array([[base[t] for t in TNAMES]] * 2)
         eta, _, _ = model_eta(J, Xf, Bv)
         years_needed.add(str(r["year"]))
-        fx.append({"id": r["id"], "fight": fj, "featA": fa, "featB": fb,
+        fx.append({"id": fj["id"], "fight": fj, "featA": fa, "featB": fb,
                    "etaA": eta[0].tolist(), "etaB": eta[1].tolist()})
     out = {"note": "built by tools/mlrates.py fit; checked by tests/test_mlrates.js", "model": "data/derived/mlrates.json",
            "priors": priors_json({y: pri[y] for y in sorted(years_needed)}), "fixtures": fx}

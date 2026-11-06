@@ -671,7 +671,11 @@ def _jax_fns():
 
     def grad_g(xg, xE, d, fl, tau_v, nJ, nF):
         return jax.grad(obj)(jnp.concatenate([xg, xE]), d, fl, tau_v, nJ, nF)[:NG]
-    _JAX["hg"] = jax.jit(jax.jacfwd(grad_g), static_argnums=(5, 6))
+
+    def hvp_g(xg, xE, v, d, fl, tau_v, nJ, nF):
+        # one Hessian-vector product of the global block (forward over reverse); memory of one gradient
+        return jax.jvp(lambda z: grad_g(z, xE, d, fl, tau_v, nJ, nF), (xg,), (v,))[1]
+    _JAX["hvp"] = jax.jit(hvp_g, static_argnums=(6, 7))
     _JAX["jnp"] = jnp
     return _JAX
 
@@ -701,8 +705,13 @@ class Model:
     def hess_g(self, x, cfg, tau):
         jnp = self.fns["jnp"]
         x = jnp.asarray(x)
-        return np.asarray(self.fns["hg"](x[:N_GLOBAL], x[N_GLOBAL:], self.data, jnp.asarray(flags_of(cfg)),
-                                         jnp.asarray([tau[k] for k in EFF]), self.dz.nJ, self.dz.nF))
+        fl, tv = jnp.asarray(flags_of(cfg)), jnp.asarray([tau[k] for k in EFF])
+        cols = []
+        for i in range(N_GLOBAL):
+            e = jnp.zeros(N_GLOBAL).at[i].set(1.0)
+            cols.append(np.asarray(self.fns["hvp"](x[:N_GLOBAL], x[N_GLOBAL:], e, self.data, fl, tv,
+                                                   self.dz.nJ, self.dz.nF)))
+        return np.stack(cols, 1)
 
     def slot_grad(self, x, cfg):
         jnp = self.fns["jnp"]

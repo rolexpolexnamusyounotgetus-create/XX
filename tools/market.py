@@ -677,6 +677,9 @@ def assemble(fights):
         r['nl_open'] = (_int(q.f1_open), _int(q.f2_open))
         r['nl_range'] = ((_int(q.f1_close_low), _int(q.f2_close_low)), (_int(q.f1_close_high), _int(q.f2_close_high)))
         r['nl_bfo_url'] = q.bfo_profile_url if isinstance(q.bfo_profile_url, str) else None
+        if r['nl_bfo_url'] and isinstance(q.bfo_owner_id, str):
+            r['nl_bfo_path'] = re.sub(r'^https?://[^/]+', '', r['nl_bfo_url'])
+            r['nl_owner_is_A'] = q.bfo_owner_id == q.f1_id
         n_nl += 1
     diag['nlbair_matched'] = n_nl
     # 2. Ultimate UFC Dataset (single-book closing line), matched on date and names
@@ -699,8 +702,44 @@ def assemble(fights):
     if mus:
         cands = [{'key': mu, 'date': m['date'], 'n1': m['n1'], 'n2': m['n2']} for mu, m in mus.items()
                  if m.get('date') and m.get('n1') and m.get('n2')]
-        mt = match_matchups(fl, cands)
-        diag['bfo_matched_pass1'] = len(mt)
+        # pass 0: nlbair's crosswalk names the BFO page of one fighter (and which ufcstats fighter owns it), so
+        # BFO's own spellings (Bobby Green for King Green, Ronaldo Souza for Jacare, ...) cannot break the match
+        by_url = defaultdict(list)
+        for mu, m in mus.items():
+            for t in (1, 2):
+                if m.get(f't{t}_url'):
+                    by_url[m[f't{t}_url']].append((mu, t))
+        mt = {}
+        taken = set()
+        for f in fl:
+            r = recs[f['id']]
+            path = r.get('nl_bfo_path')
+            if not path:
+                continue
+            d0 = dt.date.fromisoformat(f['date'])
+            best = None
+            for mu, t in by_url.get(path, []):
+                m = mus[mu]
+                if mu in taken or not m.get('date') or m.get('undated'):
+                    continue
+                g = (dt.date.fromisoformat(m['date']) - d0).days
+                if abs(g) > 3:
+                    continue
+                opp_name = m[f'n{3 - t}']
+                opp_ufc = f['B_name'] if r['nl_owner_is_A'] else f['A_name']
+                sc = name_sim(opp_name, opp_ufc)
+                if best is None or (sc, -abs(g)) > best[0]:
+                    best = ((sc, -abs(g)), mu, t, sc, g)
+            if best and best[3] >= 0.3:
+                mu, t = best[1], best[2]
+                sw = (t == 1) != r['nl_owner_is_A']
+                mt[f['id']] = (mu, sw, round(best[3], 3), best[4])
+                taken.add(mu)
+        diag['bfo_matched_pass0_crosswalk'] = len(mt)
+        rest = [f for f in fl if f['id'] not in mt]
+        mt1 = match_matchups(rest, [c for c in cands if c['key'] not in taken])
+        mt.update(mt1)
+        diag['bfo_matched_pass1_names'] = len(mt1)
         # pass 2: rescheduled fights (BFO keeps the original date): same two names, within 10 days, stricter names
         used = {v[0] for v in mt.values()}
         rest = [f for f in fl if f['id'] not in mt]

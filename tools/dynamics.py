@@ -1555,6 +1555,7 @@ def main(argv=None):
     ap.add_argument("--parts", default="1,2,3,4,5")
     ap.add_argument("--engine-csv", default=None, help="CSV from tools/dynamics_engine.js: adds the engine check")
     ap.add_argument("--engine-label", default="engine3 (src/)")
+    ap.add_argument("--engine-key", default="engine_check", help="JSON key for the engine check")
     a = ap.parse_args(argv)
     jack = 0 if a.quick else a.jack
     parts = set(a.parts.split(","))
@@ -1599,7 +1600,7 @@ def main(argv=None):
         J["finish_hazard"] = part5(S, F)
     if a.engine_csv:
         print("engine check", flush=True)
-        J["engine_check"] = engine_check(S, a.engine_csv, a.engine_label)
+        J[a.engine_key] = engine_check(S, a.engine_csv, a.engine_label)
     J["meta"]["secs"] = time.time() - t0
     save(J, parts)
     print(f"wrote {OUT_JSON} ({time.time() - t0:.0f}s)")

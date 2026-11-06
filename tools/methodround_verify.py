@@ -576,13 +576,15 @@ def main(argv=None):
     ap.add_argument("--ablations", action="store_true", help="part 5 only (tuning-period ablations), merged into "
                                                                 "the existing output")
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--out", default=OUT, help="output JSON (default data/derived/methodround_verify.json)")
     args = ap.parse_args(argv)
+    out_path = args.out
     if args.ablations:
-        res = json.load(open(OUT)) if os.path.exists(OUT) else {}
+        res = json.load(open(out_path)) if os.path.exists(out_path) else {}
         print("part 5: tuning-period ablations (2020-2023 CV only)")
         res["part5_ablations"] = part5_ablations()
-        json.dump(res, open(OUT, "w"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
-        print("wrote", OUT)
+        json.dump(res, open(out_path, "w"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
+        print("wrote", out_path)
         return
     res = {"tool": "tools/methodround_verify.py", "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     print("part 1: independent rescoring")
@@ -595,8 +597,12 @@ def main(argv=None):
         res["part2_leakage"] = part2(cuts)
         print("part 3/4: symmetry refit and forking-paths audit")
         res["part3_4"] = part3_4(quick=args.quick)
-    json.dump(res, open(OUT, "w"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
-    print("wrote", OUT)
+    if os.path.exists(out_path):                      # keep part 5 from an earlier --ablations run
+        old = json.load(open(out_path))
+        if "part5_ablations" in old:
+            res["part5_ablations"] = old["part5_ablations"]
+    json.dump(res, open(out_path, "w"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
+    print("wrote", out_path)
 
 
 if __name__ == "__main__":

@@ -78,6 +78,19 @@ SOURCES = {
 # only as a sanity check of the joined data, never refit.
 EM_W = {"head": 0.179, "body": 0.133, "leg": 0.105, "kd": 2.42, "td": 0.286, "ctrl_min": 0.46, "sub": 0.85}
 
+# Point deductions that source N's pre-deduction ("raw") columns miss, each from a cited source. Without the
+# patch the round's published scores are impossible as verdicts (e.g. a 9-9 needs a deduction from the
+# round winner). {ufcstats fight id: {"rounds": {round: (points taken from A, points taken from B)}, "source"}}
+DEDUCTION_PATCHES = {
+    "0eb16f1307f66a11": {   # UFC 285, Mana Martinez (A) vs. Cameron Saaiman (B); found by the verifier, Nov 6 2026
+        "rounds": {1: (0, 1)},
+        "source": "en.wikipedia.org/wiki/UFC_285 results note: 'Saaimann was deducted 1 point in round 1 due to "
+                  "multiple groin strikes'. N's raw columns show no deduction, which leaves Byrd's published "
+                  "round 1 as 9-9; with the point added back to B all three ufcstats totals still reconcile "
+                  "(26-29, 27-28, 28-28)."},
+}
+DED_NOTE = re.compile(r"^(Point|Two Points|Points) Deducted:\s*(.*?)\s+by\s+(.+)$", re.I)
+
 
 vault_from_g = [dt.date(2026, 1, 1)]      # set from --vault-from in main(); read by summarize()
 
@@ -236,13 +249,33 @@ def load_ufcstats():
         winner = {"W/L": "A", "L/W": "B", "D/D": "D", "NC/NC": "NC"}.get(r.OUTCOME, "NC")
         wc = r.WEIGHTCLASS
         tourn = "Tournament" in wc
-        cards = [(clean_judge(nm), int(x), int(y)) for nm, x, y in DETAIL_CARD.findall(r.DETAILS)]
+        raw_cards = DETAIL_CARD.findall(r.DETAILS)
+        cards = [(clean_judge(nm), int(x), int(y)) for nm, x, y in raw_cards]
+        # the note ufcstats glues onto the first judge's name ("Point Deducted: Low Blow by Watson")
+        note, ufc_ded = "", None
+        if raw_cards and (r.METHOD.startswith("Decision") or r.METHOD == "Overturned"):
+            nm0 = raw_cards[0][0].strip()
+            c0 = cards[0][0]
+            note = nm0[: len(nm0) - len(c0)].strip() if c0 and nm0.endswith(c0) else ("" if c0 else nm0)
+            m = DED_NOTE.match(note)
+            if m:
+                pts = 2 if m.group(1).lower().startswith("two") else (1 if m.group(1).lower() == "point" else None)
+                who = set(norm(m.group(3)).split())
+                ta, tb = set(norm(names[0]).split()), set(norm(names[1]).split())
+                if "each" in who:
+                    ufc_ded = {"A": pts, "B": pts}
+                elif who and who <= ta and not who <= tb:
+                    ufc_ded = {"A": pts, "B": 0}
+                elif who and who <= tb and not who <= ta:
+                    ufc_ded = {"A": 0, "B": pts}
+                else:
+                    ufc_ded = {"A": None, "B": None}       # side not identifiable from the note
         fights[fid] = dict(
             fid=fid, idx=int(r.idx), event=r.EVENT, date=date, loc=ev_loc.get(r.EVENT, ""),
             A=names[0].strip(), B=names[1].strip(), winner=winner, method=r.METHOD, wc=wc,
             title=("Title" in wc and not tourn) or "Championship" in wc, women="Women" in wc,
             rnd=int(r.ROUND) if r.ROUND.isdigit() else 1, time_s=parse_mmss(r.TIME), sched=sched,
-            lengths=lengths, referee=r.REFEREE, details=r.DETAILS,
+            lengths=lengths, referee=r.REFEREE, details=r.DETAILS, note=note, ufc_ded=ufc_ded,
             ufc_cards=cards if r.METHOD.startswith("Decision") or r.METHOD == "Overturned" else [])
     by_date = defaultdict(list)
     for f in fights.values():
@@ -308,7 +341,21 @@ def load_nlbair(fights, log):
                 pr, orw = int(r.primary_score_raw), int(r.opponent_score_raw)
                 rounds[int(r.round)] = (pp, op, pr, orw) if p1 else (op, pp, orw, pr)
             judges.append(dict(jid=int(jid) if jid != -1 else None, name=jname, pos=int(pos), rounds=rounds))
-        cards[fid] = dict(src="N", mmad_id=int(g["mmad_decision_id"].iloc[0]), judges=judges, raw_known=True,
+        patch = DEDUCTION_PATCHES.get(fid)
+        if patch:
+            for j in judges:
+                for rnd, (da, db) in patch["rounds"].items():
+                    x = j["rounds"].get(rnd)
+                    if x is not None and (x[2], x[3]) == (x[0], x[1]):
+                        j["rounds"][rnd] = (x[0], x[1], x[0] + da, x[1] + db)
+            log["N_deduction_patches"].append({"fight": fid, "rounds": {str(k): v for k, v in patch["rounds"].items()},
+                                               "source": patch["source"]})
+        # a verdict always gives someone 10: a raw round without a 10 means N missed (part of) a deduction
+        unrec = [[j["name"], r] for j in judges for r, x in sorted(j["rounds"].items()) if max(x[2], x[3]) < 10]
+        raw_known = not unrec
+        if unrec:
+            log["N_unrecorded_deduction"].append({"fight": fid, "judge_rounds": unrec})
+        cards[fid] = dict(src="N", mmad_id=int(g["mmad_decision_id"].iloc[0]), judges=judges, raw_known=raw_known,
                           jurisdiction=g["jurisdiction"].iloc[0])
     log["N_orientation_check"] = dict(orient_check)
     cwm = cw.dropna(subset=["mmad_decision_id"])

@@ -27,16 +27,24 @@ line is needed). Every model is exactly corner-symmetric, so a score is the same
 
 | what the page has | MoE static | MoE rolling | best single input | MoE minus best single, static [CI] |
 |---|---|---|---|---|
-| everything + closing line | **0.5821** [0.556, 0.606] | 0.5812 | market 0.5857 | **-0.0061 [-0.0085, -0.0035]** |
+| everything + closing line (the 844 fights with a line) | **0.5796** [0.555, 0.604] | 0.5787 | market 0.5857 | **-0.0061 [-0.0088, -0.0034]** |
 | everything, no line | **0.5955** [0.574, 0.617] | 0.5919 | ml 0.6079 | **-0.0124 [-0.0230, -0.0014]** |
 | no line, no market rating | 0.6061 | 0.6018 | ml 0.6079 | -0.0018 [-0.0032, -0.0005] |
 | moe.js alone (engine + feature LR + Elo) | 0.6145 | 0.6095 | feat_lr 0.6133 | +0.0013 [-0.0012, +0.0037] |
-| line + engine + feature LR + Elo | 0.5832 | 0.5823 | market 0.5857 | -0.0053 [-0.0074, -0.0031] |
+| line + engine + feature LR + Elo (844 fights with a line) | 0.5804 | 0.5795 | market 0.5857 | -0.0053 [-0.0074, -0.0031] |
 
-- **The stack beats the closing line.** It improves on the de-vigged close by 0.006 log loss, and the CI excludes zero. That is about 1% of log loss, against the hardest benchmark there is. By year:
+Review correction (Verification log): the two line rows used to show 0.5821 / 0.5832 on 854 fights, which included
+10 fights without a line, next to the market's 844. They are now on the same 844 fights. The differences were
+already on 844.
+
+- **With a line, the stack beat the closing line in 2024-25 but not in 2021-2023.** In 2024-25 it improves on the de-vigged close by 0.006 log loss, and the CI excludes zero. By year:
   - 2024: 0.5818 vs 0.5871.
   - 2025: 0.5773 static and 0.5754 rolling, vs 0.5842.
-- **Without a line it nearly reaches the market.** The no-line stack is 0.012 better than the best single pre-line expert. In 2025 the rolling no-line stack scores 0.5802, almost the closing line's 0.5842. The gain comes from blending tools/ml.py, the walk-forward market rating (from earlier closing lines) and the feature LR. Their logits correlate 0.58-0.91, so they still carry different information.
+  - The same stacker in the forward-chained CV years 2021-2023 is level with the line: +0.0011 [-0.0023, +0.0046] (2021 -0.003, 2022 +0.006, 2023 -0.000).
+  - Pooled over every out-of-sample year (2021-2025, n = 2,061): -0.0019 [-0.0042, +0.0004].
+  - Read it as level with the line to slightly better, not as a reliable edge. The 2024-25 gain is information rather than a calibration artefact: it holds against the market given its best 2024-25 slope (-0.0057 [-0.0100, -0.0016]).
+  - Numbers: moe.json `report.audit`.
+- **Without a line it nearly reaches the market.** The no-line stack is 0.012 better than the best single pre-line expert. Unlike the line-present gain, this one also holds in the CV years: -0.0071 [-0.0136, -0.0006] vs tools/ml.py's model in 2021-2023. In 2025 the rolling no-line stack scores 0.5802, almost the closing line's 0.5842. The gain comes from blending tools/ml.py, the walk-forward market rating (from earlier closing lines) and the feature LR. Their logits correlate 0.58-0.91, so they still carry different information.
 - **A linear stack wins in both regimes.** Within each family, hyper-parameters were chosen by forward-chained CV on 2021-2023. The two winners:
   - With a line: constrained logit-linear, no intercept, no recency weighting, no calibration.
   - Without a line: the same, plus recency weights (half-life 1.5 years) and temperature calibration.
@@ -46,6 +54,12 @@ line is needed). Every model is exactly corner-symmetric, so a score is the same
   - The static no-line stack is therefore pessimistic. Its 2021-2023 temperature shrinks predictions that should have been stretched.
   - The production model is refit on 2019-2025 with recency weighting, and its no-line temperature came out at 1.17, i.e. it stretches.
   - Every other model in the project should be recalibrated on recent data too.
+  - **Risk:** the production no-line model is much sharper than the validated one: weight sum 1.82 × temperature 1.17, against 1.45 × 1.04.
+    - Its mean |p − 0.5| is 0.187, against 0.141 for the validated model on the same 2019-2023 fights.
+    - If 2026 fights look like 2019-2023 rather than 2024-25, it costs 0.013 log loss there: 0.6556 vs 0.6425.
+    - The same procedure, run one year earlier (fit through T, scored on T+1), under-stretched every year it could be checked (2023, 2024, 2025), and its temperature helped each time.
+    - So the stretch is supported, but only by a 3-year trend. Watch the forward-test log loss. If 2026 calibration slopes fall back toward 1, refit with h = 3 or drop the temperature.
+    - Line-present production is barely affected: 0.6228 vs 0.6221 on 2019-2023.
 
 ## Experts
 
@@ -279,6 +293,8 @@ Generic `ratings.json` / `methodround.json` / `oppadj.json` readers are already 
 - **The engine expert** used 200 sims per fight (100 per corner order). Its Monte Carlo noise (about 0.14 of the 0.55 total logit sd) slightly attenuates its weight. The page's 20,000-sim tally is sharper than what the stack saw.
   - The engine and params hashes are recorded in `moe_engine_bt.json`.
   - The engine was being recalibrated while this ran. Rerun after the new `params3.js` lands.
+  - That params3 version is stale: its sha256 prefix was `c3eec948...`, the current file's is `2321d486...`.
+  - Its `[selfcal]` scales were fit to league base rates from 2015-01-01 to 2026-10-31, which include 2024-25 and the vault. Only league averages reach the engine (no per-fight outcomes), and it has weight 0 in every validated pattern the page uses, so no validated number depends on it. Production gives it 0.02-0.12 in patterns without ml or market.
 - **Live-only data from other files.** The ml.json page model and market.json `ratings` are fit through the snapshot (2026-10-31), so they include vault fights. That is fine for live use, but they must not be used to score 2026 fights.
   - This tool read only backtest_dev ids from those files.
   - Its own data (snapshots, priors, Glicko, feature LR, priors for live use) stops at 2025-12-31.

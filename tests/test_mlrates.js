@@ -43,6 +43,11 @@ console.log("fixtures: " + FX.fixtures.length + " fights; max |feature diff| " +
 ok(maxF < 1e-9, "features reproduce Python (max diff " + maxF + ")");
 ok(maxE < 1e-6, "linear predictors reproduce Python (max diff " + maxE + ")");
 ok(maxR === 0, "corner swap swaps predictions exactly");
+// reviewer: the parity check must cover a weight-class move beyond 3 x 10 lb (a +-3 clip once diverged from the
+// trained feature) and the median-layoff imputation for experienced sides without a layoff (backtest_dev sides)
+const iUp = model.fnames.indexOf("upX"), iUpY = model.fnames.indexOf("upY");
+ok(FX.fixtures.some((fx) => Math.abs(fx.featA[iUp]) > 3 || Math.abs(fx.featA[iUpY]) > 3), "fixtures include a weight-class move > 30 lb");
+ok(FX.fixtures.some((fx) => /-nolayoff$/.test(fx.id) && fx.fight.A.layoff == null && fx.fight.A.n > 0), "fixtures include experienced sides with no layoff");
 
 // ---- 4: adapter with the engine
 let FE = null;

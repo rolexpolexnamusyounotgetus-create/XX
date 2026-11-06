@@ -356,8 +356,8 @@ Decision sample (fights that went the distance; train 7,712 output rows):
 
 | Label | output | accuracy (logit) | TD attempts |
 |---|---|---|---|
-| lostJ (judges) | +0.000 (0.011); test refit +0.032 (0.015) | **-0.043 (0.016)**; test -0.033 (0.028) | +0.016 (0.048); test -0.019 (0.066) |
-| lost (sig landed), same sample | -0.014 (0.009); test -0.000 (0.012) | -0.025 (0.013); test -0.003 (0.023) | -0.004 (0.037); test -0.018 (0.051) |
+| lostJ (judges) | +0.000 (0.011; jackknife 0.010); test refit +0.032 (0.015) | **-0.043 (0.016)**; test -0.033 (0.028) | +0.016 (0.048); test -0.019 (0.066) |
+| lost (sig landed), same sample | -0.014 (0.009; jackknife 0.009); test -0.000 (0.012) | -0.025 (0.013); test -0.003 (0.023) | -0.004 (0.037); test -0.018 (0.051) |
 | lost, all fights (section 2.2) | -0.008 (0.009) | -0.018 (0.013) | -0.020 (0.033) |
 
 No output or takedown response to losing a round, in either period. Accuracy dips by about 1 point after a round
