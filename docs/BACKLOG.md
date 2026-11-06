@@ -64,6 +64,13 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- OWNER REDIRECT (Nov 6 ~22:00 UTC): resources move from the 3D game to ML / stats / prediction. 3D pass 3 was
+  stopped after its systemic round (beard/short-hair caps, skin, body definition, women's sports top shipped;
+  likeness labs not run). Prediction lab round 3 launched (scratchpad/wf_predict_lab3.js, four workflows): crowd
+  (community picks), linemove (line timing/trajectories, T-24h stacks), seqnet (deep career-sequence model), bayes
+  (hierarchical dynamic skill model), calib (drift/recalibration), debut (debut-universe model), statlines
+  (distributional stat-line models). Each: CV-gated on <= 2023, scored once on 2024-25, adversarially verified.
+  Adopted experts enter production through v6 (scratchpad/wf_engine_v6_v10.js).
 - PRE-REGISTERED (Nov 6 ~21:55 UTC, before vault audit 1 is read; docs/V6_V10_PLAN.md 6.5 and 7.1): the production
   drift rule (no-line stack keeps h 1.5 and its temperature; switches to h 3, T 1 only if audit 1's mirrored slope
   for the frozen production no-line stack is < 1.15 with a CI including 1, or the forward ledger's trailing-200
