@@ -1,7 +1,7 @@
 {
  "meta": {
-  "built": "2026-11-06T22:38:08+00:00",
-  "tool": "crowd 1.0 (2026-11-06)",
+  "built": "2026-11-06T22:41:02+00:00",
+  "tool": "crowd 1.1 (2026-11-06)",
   "orientation": "A = first ufcstats name (backtest order); share_a = share of the panel / contest entrants picking A; P(A) inputs: rw = (n_a + 0.5) / (n + 1), mm = clip(share_a, 0.03, 0.97), crowd = mean of the available logits",
   "sources": {
    "rw": "RotoWire staff / expert picks (rotowire.com/mma/article/...): 3-8 RotoWire MMA writers pick every main-card bout of each UFC pay-per-view; 2016 and 2019-2025 here. robots.txt allows every agent; llms.txt invites LLM use",

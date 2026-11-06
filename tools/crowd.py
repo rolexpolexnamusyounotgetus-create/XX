@@ -5,9 +5,11 @@ Run from the project root, niced (the box is shared):
 
     nice -n 5 python3 tools/crowd.py fetch            # cache source pages (>= 2 s between requests)
     nice -n 5 python3 tools/crowd.py build            # parse + match to ufcstats fight ids -> data/derived/crowd.json
-    nice -n 5 python3 tools/crowd.py eval             # CV gates on pre-2024 data, then the one 2024-25 look
-    nice -n 5 python3 tools/crowd.py capture --event "UFC 334"   # forward capture for an upcoming card
-    python3 tools/crowd.py selftest                   # swap test, parser fixtures, vault guard
+    nice -n 5 python3 tools/crowd.py eval --stage cv        # every choice: CV on pre-2024 data (2024-25 rows dropped)
+    nice -n 5 python3 tools/crowd.py eval --stage confirm   # the one 2024-25 look, decisions frozen by the cv stage
+    nice -n 5 python3 tools/crowd.py capture --event "UFC 334: Gane vs. Hokit" --date 2026-11-14 [--dry-run]
+    nice -n 5 python3 tools/crowd.py capture --source moneymma --event "UFC 334: Gane vs. Hokit" --date 2026-11-14
+    python3 tools/crowd.py selftest                         # parser fixtures, matching, symmetry, vault guard
 
 SOURCES (what the brief asked for and what was used; research/model_crowd.md "Sources"):
   * Tapology community predictions (the brief's primary source) are NOT fetched. tapology.com/robots.txt disallows
@@ -24,9 +26,12 @@ SOURCES (what the brief asked for and what was used; research/model_crowd.md "So
     spot-checked against the records rows, see `audit_rotowire`).
   * USED 2 - Money MMA pick'em contest consensus (moneymma.substack.com; robots.txt allows every agent): for each
     UFC card since Feb 2022 the free part of the results post lists, for the contest's five bouts, the fighter the
-    majority of contest entrants picked and the share who picked him. Frozen: entries are made in a contest post
-    published before the event; the results post (after the event) reports the entries. The lock rule itself is
-    behind the paywall and was not read; the leak check is that the consensus is less accurate than the close.
+    majority of contest entrants (about 50) picked and the share who picked him. Frozen: entries lock before the card
+    (prize contest); the 2025 contest posts state the lock in their free part ("All picks must be submitted by 6:00 PM
+    Eastern Sat, January 18th"; 3 am ET for Shanghai, 10 am ET for Abu Dhabi), checked per card against the main
+    card's earliest start (parse_contest / lock_status). 2022-2024 rules are paywalled: those cards are kept on the
+    contest's rules, with a strict sensitivity (mm_s / crowd_s) that keeps only cards with a pre-event contest post,
+    and leak checks (crowd vs close disagreements).
 
 PROTOCOL (docs/BACKLOG.md, docs/V6_V10_PLAN.md): fights dated 2026-01-01 or later are dropped at parse; source
 pages are only fetched for events before 2026 (sitemap lastmod / event number filters), and any 2026 row that still
@@ -65,7 +70,7 @@ VAULT_DIR = os.environ.get("CROWD_VAULT_DIR", "/tmp/claude-0/-home-user-XX/4b441
                            "scratchpad/vault")
 UA = "FightLabSim/1.0"
 MIN_GAP = 2.2                      # seconds between requests to one host
-TOOL_VERSION = "crowd 1.0 (2026-11-06)"
+TOOL_VERSION = "crowd 1.1 (2026-11-06)"
 
 RW_SITEMAP = "https://www.rotowire.com/mma_articles.xml"
 MM_SITEMAP = "https://moneymma.substack.com/sitemap.xml"
@@ -1595,6 +1600,21 @@ def cmd_selftest(args):
     Q = parse_moneymma(mm)
     assert Q["picks"] == [("Sean O’Malley", 0.71), ("Daniel Zellhuber", 0.74)], Q
     ok.append("moneymma parser")
+    cp = ('<script type="application/ld+json">{"datePublished": "2025-10-20T04:29:00+00:00"}</script>'
+          '<div class="available-content"><p>Next up: UFC 321. All picks must be submitted by 10:00 AM Eastern Sat, '
+          'Oct 25th. If you don’t predict ...</p></article>')
+    c = parse_contest(cp)
+    assert c["lock_md"] == (10, 25) and abs(c["lock_h"] - 10.0) < 1e-9, c
+    assert lock_status(c, "2025-10-25", "middle_east") == "lock_verified"
+    assert lock_status(c, "2025-10-25", "asia") == "lock_after_bound"          # 10 am ET is after an Asian card
+    assert lock_status(c, "2025-11-08", "americas") == "lock_text_inconsistent"  # stale date in the post
+    assert lock_status(parse_contest("<p>Continue reading this post for free</p>"), "2025-10-25", "europe") == "paywalled"
+    assert event_region("Abu Dhabi, Abu Dhabi, United Arab Emirates", "UFC 321: Aspinall vs. Gane") == "middle_east"
+    assert event_region("Las Vegas, Nevada, USA", "UFC 323: Dvalishvili vs. Yan 2") == "americas_ppv"
+    mm_drop = {"mm": {"share_a": 0.7, "freeze": "lock_after_bound"}}
+    mm_bd = {"mm": {"share_a": 0.7, "freeze": "by_design"}}
+    assert "mm" not in crowd_probs(mm_drop) and "mm" in crowd_probs(mm_bd) and "mm" not in crowd_probs(mm_bd, strict=True)
+    ok.append("contest lock parser, per-card lock check, freeze categories in crowd_probs")
     # 3. name matching
     assert _pair_score("Ian Garry", "Neil Magny", "Ian Machado Garry", "Neil Magny") >= 0.8
     assert _pair_score("Zhang Weili", "Valentina Shevchenko", "Weili Zhang", "Valentina Shevchenko") >= 0.8
