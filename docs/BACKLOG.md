@@ -148,3 +148,17 @@ Findings from verified research that the next engine versions must use. Each lin
   fight-level noise); MD share 0.5% vs 2% (deductions are not modeled); hurt weight 0.8 in judging is a judgment call.
 - Hidden-data note: evalv drops every 2026 fight on load; methodround --score now takes --backtest
   data/derived/backtest_dev.json and a date window; tuning and the self-calibration used only pre-2024 data.
+
+- CORRECTION (dynamics verifier, Nov 6 ~15:00 UTC): research/model_dynamics.md was fixed after a look-ahead in
+  its judges' round label and acceptance targets taken from the 2024-25 validation window. Use the corrected
+  recipe in that file (train-window targets; form.vol cut to 0.5 at most, not 0.3; KD momentum next round:
+  scorer x0.92, dropped man about x0.95, not x1.05; 5-round late KO rate gap is ~1.6-2x, not 2-3x, and the
+  current engine at 0.073 closes most of it; own-output AR(1) did not replicate on 2024-25 (0.68 -> ~0.45);
+  kPace 45 vs 15 is within noise). Treat the old "E1-E11" values above as superseded.
+- CORRECTION (ml verifier): on 2024-25 only, the logistic model scores 0.6062 [0.5902, 0.6230] (67.9%) vs Elo
+  0.6769; ties the opening line; 0.018 behind the close; close + ML beats the close by 0.0055 [0.0026, 0.0080].
+- CORRECTION (fightweek verifier): fight-week features add -0.0064 [-0.0117, -0.0012] validation log loss on top
+  of Elo, mostly from the home-crowd-outside-the-USA term; weight misses and short-notice replacements alone are
+  within noise. Experience alone is worth twice the whole fight-week block.
+- PROTOCOL FIX: backtest.json now holds 2019-2025 only (2026 sealed outside the repo); tools/build_db.py enforces
+  it on every rebuild (--include-vault only for audits).
