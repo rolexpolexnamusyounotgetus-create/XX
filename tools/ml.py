@@ -1010,6 +1010,7 @@ def load_external(ids):
         for key, field in (("mkt_close", "p_power_close"), ("mkt_close_mult", "p_novig_close"),
                            ("mkt_open", "p_novig_open"), ("mkt_rating", "p_market_rating")):
             ext[key] = {i: M[i][field] for i in ids if i in M and M[i].get(field) is not None}
+        ext["mkt_method6"] = {i: M[i]["method6"] for i in ids if i in M and M[i].get("method6")}
         src["market"] = "data/derived/market.json (tools/market.py): p_power_close = power de-vig of the consensus close; " \
                         "p_novig_open = multiplicative de-vig of the opening line; p_market_rating = walk-forward " \
                         "Kalman market rating from earlier closing lines (usable before a line exists)"
@@ -1297,3 +1298,172 @@ def stack_fit(Z, y, lam=1e-3):
 
 def to_logit(p):
     return _logit(np.asarray(p, float))
+
+
+# ====================================================================== main
+def r4(x):
+    return None if x is None or (isinstance(x, float) and not math.isfinite(x)) else round(float(x), 4)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--quick", action="store_true", help="small GBM / XGB searches")
+    ap.add_argument("--no-cache", action="store_true", help="rebuild the feature table")
+    ap.add_argument("--n-lgb", type=int, default=None)
+    ap.add_argument("--n-xgb", type=int, default=None)
+    ap.add_argument("--boot", type=int, default=2000)
+    args = ap.parse_args()
+    n_lgb = args.n_lgb or (3 if args.quick else 14)
+    n_xgb = args.n_xgb or (2 if args.quick else 6)
+    T0 = time.time()
+
+    df, margin_tun, roster_feats, tmeta = get_table(not args.no_cache)
+    df = df[(df["year"] >= FEATURES_FROM.year) & (~df["amb"])].reset_index(drop=True)
+    df = add_derived(df)
+    bt = json.load(open(os.path.join(DERIVED, "backtest.json")))
+    bt_ids = {e["id"] for e in bt["fights"]}
+    bt_by_id = {e["id"]: e for e in bt["fights"]}
+    df["in_bt"] = df["fid"].isin(bt_ids)
+    # sanity: walk-forward Elo matches backtest.json
+    chk = df[df["in_bt"]].head(300)
+    err = max(abs(bt_by_id[f]["A"]["elo"] - a) for f, a in zip(chk["fid"], chk["A_elo"]))
+    log("rows %d (2010+); backtest rows %d of %d; max |Elo - backtest Elo| on 300 rows %.3f"
+        % (len(df), int(df["in_bt"].sum()), len(bt_ids), err))
+
+    specs = lr_term_specs()
+    Xdf = lr_design(df, specs)
+    cols = list(Xdf.columns)
+    X = Xdf.to_numpy()
+    y = (df["winner"] == "A").to_numpy(dtype=float)
+    dec = df["winner"].isin(["A", "B"]).to_numpy()
+    evm = df["both_exp"].to_numpy()
+    years = df["year"].to_numpy()
+    G0 = gbm_design(df, Xdf)
+    G1 = gbm_design(df, Xdf, flip=True)
+    log("design: %d logistic terms, %d GBM columns" % (X.shape[1], G0.shape[1]))
+    oof = (df["year"] >= OOF_YEARS[0]) & (df["year"] <= OOF_YEARS[-1])
+    test = df["year"] >= TEST_FROM
+    oof_bt = (oof & df["in_bt"] & dec).to_numpy()
+    test_bt = (test & df["in_bt"] & dec).to_numpy()
+    log("OOF (2019-2023) decisive backtest rows %d; test (2024+) decisive backtest rows %d" % (oof_bt.sum(), test_bt.sum()))
+
+    R = {"meta": {}, "tuning": {}, "oof": {}, "test": {}}
+
+    # ---------------------------------------------------------- logistic regression
+    t0 = time.time()
+    lr_best, lr_grid = tune_lr(df, X, y, dec, evm)
+    log("LR best %s cv %.5f (%.0f s)" % ({k: lr_best[k] for k in ("train_set", "recency_half_life_years", "lam")},
+                                        lr_best["cv_log_loss"], time.time() - t0))
+    R["tuning"]["lr"] = {"best": lr_best, "grid": lr_grid}
+    abl_base, abl = ablate_lr(df, X, y, dec, evm, lr_best, cols)
+    R["tuning"]["lr_ablation"] = {"base_cv": abl_base, "groups": abl}
+    log("ablation (drop group -> delta cv log loss): " + "; ".join("%s %+.4f" % (a["group"], a["drop_delta"]) for a in abl))
+
+    def lr_fp(tr, te, cfg=lr_best):
+        tr = lr_train_mask(df, dec, cfg, tr)
+        ref = years[te].min() if te.any() else TUNE_END + 1
+        m = lr_from_cfg(cfg).fit(X[tr], y[tr], years[tr], ref)
+        return m.predict(X[te]), m
+
+    # ---------------------------------------------------------- trees
+    t0 = time.time()
+    log("LightGBM search (%d configs x %d blocks)" % (n_lgb, len(BLOCKS)))
+    lgb_best, lgb_res = tune_trees("lgb", df, G0, G1, y, dec, evm, n_lgb)
+    log("LightGBM best %s rounds %d cv %.5f (%.0f s)" % (lgb_best["cfg"], lgb_best["rounds"], lgb_best["cv_log_loss"],
+                                                       time.time() - t0))
+    R["tuning"]["lgb"] = {"best": lgb_best, "search": lgb_res, "learning_rate": GBM_LR}
+    t0 = time.time()
+    log("XGBoost search (%d configs)" % n_xgb)
+    xgb_best, xgb_res = tune_trees("xgb", df, G0, G1, y, dec, evm, n_xgb)
+    log("XGBoost best %s rounds %d cv %.5f (%.0f s)" % (xgb_best["cfg"], xgb_best["rounds"], xgb_best["cv_log_loss"],
+                                                      time.time() - t0))
+    R["tuning"]["xgb"] = {"best": xgb_best, "search": xgb_res, "eta": XGB_ETA}
+
+    # ---------------------------------------------------------- walk-forward OOF (2019-2023) and frozen test (2024+)
+    P = {k: np.full(len(df), np.nan) for k in ("lr", "lgb", "xgb", "lr_refit", "lgb_refit", "xgb_refit")}
+    t0 = time.time()
+    for Y in OOF_YEARS:
+        tr = ((df["year"] < Y) & dec).to_numpy()
+        te = (df["year"] == Y).to_numpy()
+        P["lr"][te], _ = lr_fp(tr, te)
+        P["lgb"][te], _ = tree_fit_pred("lgb", lgb_best, G0, G1, y, tr, te)
+        P["xgb"][te], _ = tree_fit_pred("xgb", xgb_best, G0, G1, y, tr, te)
+        log("  OOF %d done (%.0f s)" % (Y, time.time() - t0))
+    tr = ((df["year"] <= TUNE_END) & dec).to_numpy()
+    te = test.to_numpy()
+    P["lr"][te], lr_final = lr_fp(tr, te)
+    P["lgb"][te], lgb_final = tree_fit_pred("lgb", lgb_best, G0, G1, y, tr, te)
+    P["xgb"][te], xgb_final = tree_fit_pred("xgb", xgb_best, G0, G1, y, tr, te)
+    # production-style annual refit (fixed hyperparameters): 2024 from <=2023, 2025 from <=2024, 2026 from <=2025
+    for Y in sorted(df.loc[test, "year"].unique()):
+        trY = ((df["year"] < Y) & dec).to_numpy()
+        teY = (df["year"] == Y).to_numpy()
+        if Y == TEST_FROM:
+            for k in ("lr", "lgb", "xgb"):
+                P[k + "_refit"][teY] = P[k][teY]
+            continue
+        P["lr_refit"][teY], _ = lr_fp(trY, teY)
+        P["lgb_refit"][teY], _ = tree_fit_pred("lgb", lgb_best, G0, G1, y, trY, teY)
+        P["xgb_refit"][teY], _ = tree_fit_pred("xgb", xgb_best, G0, G1, y, trY, teY)
+    log("final fits + annual refits done (%.0f s)" % (time.time() - t0))
+    P["elo"] = 1 / (1 + 10 ** (-(df["A_elo"] - df["B_elo"]).to_numpy() / 400))
+    P["elo_sig"] = 1 / (1 + 10 ** (-(df["A_elo_sig"] - df["B_elo_sig"]).to_numpy() / 400))
+    P["elo_judge"] = 1 / (1 + 10 ** (-(df["A_elo_judge"] - df["B_elo_judge"]).to_numpy() / 400))
+    # "frozen at 2018" check inside the tuning period: does refitting every year help? (decides the live policy)
+    tr18 = ((df["year"] <= 2018) & dec).to_numpy()
+    te19 = oof.to_numpy()
+    p18, _ = lr_fp(tr18, te19)
+    R["tuning"]["refit_check_lr_2019_2023"] = {
+        "annual_refit": round(log_loss(P["lr"][oof_bt], y[oof_bt]), 5),
+        "frozen_at_2018": round(log_loss(p18[oof_bt[te19]], y[oof_bt]), 5)}
+
+    # ---------------------------------------------------------- ML blend + recalibration (fit on OOF 2019-2023)
+    Zo = np.column_stack([to_logit(P[k][oof_bt]) for k in ("lr", "lgb", "xgb")])
+    w_ml = stack_fit(Zo, y[oof_bt])
+    R["tuning"]["ml_blend_weights"] = dict(zip(("lr", "lgb", "xgb"), [round(float(v), 4) for v in w_ml]))
+    # leave-one-year-out estimate of the blend inside 2019-2023
+    loyo = np.full(len(df), np.nan)
+    for Y in OOF_YEARS:
+        trm = oof_bt & (years != Y)
+        tem = oof_bt & (years == Y)
+        w = stack_fit(np.column_stack([to_logit(P[k][trm]) for k in ("lr", "lgb", "xgb")]), y[trm])
+        loyo[tem] = 1 / (1 + np.exp(-np.column_stack([to_logit(P[k][tem]) for k in ("lr", "lgb", "xgb")]) @ w))
+    allp = np.column_stack([to_logit(P[k]) for k in ("lr", "lgb", "xgb")])
+    P["ml"] = 1 / (1 + np.exp(-(np.nan_to_num(allp) @ w_ml)))
+    P["ml"][np.isnan(P["lr"])] = np.nan
+    R["tuning"]["ml_blend_loyo_2019_2023"] = round(log_loss(loyo[oof_bt], y[oof_bt]), 5)
+    for k in ("lr_refit", "lgb_refit", "xgb_refit"):
+        pass
+    allr = np.column_stack([to_logit(P[k]) for k in ("lr_refit", "lgb_refit", "xgb_refit")])
+    P["ml_refit"] = np.where(test.to_numpy(), 1 / (1 + np.exp(-(np.nan_to_num(allr) @ w_ml))), np.nan)
+    # Platt (slope only: corner-symmetric) and symmetric isotonic, fit on OOF
+    from sklearn.isotonic import IsotonicRegression
+    calib = {}
+    for k in ("lr", "lgb", "xgb", "ml"):
+        zk = to_logit(P[k][oof_bt])[:, None]
+        a = float(stack_fit(zk, y[oof_bt], lam=0.0)[0])
+        pp = P[k][oof_bt]
+        iso = IsotonicRegression(y_min=0.01, y_max=0.99, out_of_bounds="clip").fit(np.r_[pp, 1 - pp], np.r_[y[oof_bt], 1 - y[oof_bt]])
+        calib[k] = {"platt_slope": round(a, 4)}
+        P[k + "_platt"] = 1 / (1 + np.exp(-a * to_logit(np.nan_to_num(P[k], nan=0.5))))
+        P[k + "_iso"] = iso.predict(np.nan_to_num(P[k], nan=0.5))
+        # symmetrise isotonic output exactly: average f(p) and 1 - f(1-p)
+        P[k + "_iso"] = 0.5 * (P[k + "_iso"] + 1 - iso.predict(1 - np.nan_to_num(P[k], nan=0.5)))
+        if k == "ml":
+            calib[k]["isotonic_knots"] = [[round(float(a_), 4), round(float(b_), 4)]
+                                          for a_, b_ in zip(iso.X_thresholds_, iso.y_thresholds_)]
+    R["tuning"]["recalibration"] = calib
+    log("blend weights %s; LOYO blend %.5f; Platt slopes %s" % (R["tuning"]["ml_blend_weights"],
+                                                                 R["tuning"]["ml_blend_loyo_2019_2023"],
+                                                                 {k: v["platt_slope"] for k, v in calib.items()}))
+    R["_P"] = P
+    R["_ctx"] = dict(df=df, X=X, y=y, dec=dec, evm=evm, years=years, G0=G0, G1=G1, cols=cols, specs=specs,
+                     oof_bt=oof_bt, test_bt=test_bt, oof=oof.to_numpy(), test=test.to_numpy(),
+                     lr_best=lr_best, lgb_best=lgb_best, xgb_best=xgb_best, lr_final=lr_final,
+                     lgb_final=lgb_final, xgb_final=xgb_final, w_ml=w_ml, bt_by_id=bt_by_id,
+                     roster_feats=roster_feats, margin_tun=margin_tun, tmeta=tmeta, args=args, T0=T0)
+    stage_two(R)
+
+
+if __name__ == "__main__":
+    main()

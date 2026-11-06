@@ -1,0 +1,206 @@
+{
+  "slug": "kamaru-usman",
+  "name": "Kamaru Usman",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 39,
+  "tale_of_tape": {
+    "height_cm": 182.9,
+    "reach_cm": 193.0,
+    "stance": "Switch",
+    "fight_weight_lb": 186,
+    "source": "data/derived/fighters.json (72 in height, 76 in reach); 186 lb at the UFC Oklahoma City weigh-in (Jul 2026, middleweight); 171 lb at UFC Atlanta (Jun 2025)"
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "01_headshot_ufc286_press_bjpenn.jpg",
+    "02_3q_cage_reuters.jpg",
+    "03_profile_action_ufc_atlanta_2025_imagn.jpg",
+    "04_profile_faceoff_2026_gazettengr.jpg",
+    "08_commons_press_2018_mmanytt.png"
+  ],
+  "photo_coverage": "Good for the face and body. The ESPN headshot and right-stance cutout were uploaded in Jul 2026, so they are current. The profiles are an action shot (Jun 2025) and a small 2026 face-off in sunglasses. Only one freely licensed photo was found (Commons, 2018) and a hat and sunglasses hide most of the face. A second Commons file (Kamaru_Usman.jpg, 2022, CC BY-SA 4.0) could not be downloaded because of Wikimedia rate limiting.",
+  "face": {
+    "shape": "Broad and powerful: wide at the cheekbones and jaw, roughly as wide as it is tall below the hairline. The shaved skull is a smooth, rounded dome.",
+    "jaw": "Very wide and strong, with prominent jaw angles and solid masseters. The jaw line is fairly straight into a very thick neck.",
+    "chin": "Broad and square, of moderate projection, under short stubble",
+    "cheekbones": "High and broad, clearly defined under the eyes; little fat below them",
+    "brow_ridge": "Strong and wide. Horizontal creases run across the lower forehead.",
+    "forehead": "Broad and moderately tall, sloping back smoothly into the shaved crown",
+    "eyes": {
+      "shape": "Almond, medium-small, with slightly heavy upper lids",
+      "spacing": "average to slightly wide",
+      "colour": "dark brown"
+    },
+    "eyebrows": {
+      "thickness": "medium",
+      "shape": "Fairly straight and low, with the inner ends slightly lowered (a focused look in most photos)",
+      "colour": "black"
+    },
+    "nose": {
+      "length": "medium",
+      "width": "broad",
+      "bridge": "low-to-medium, straight",
+      "hump": "none",
+      "tip": "Broad, rounded tip with wide nostrils and flared alae",
+      "fight_damage": "None obvious"
+    },
+    "mouth_lips": "Wide mouth with full lips; the lower lip is slightly fuller. A defined cupid's bow. Neutral to slightly downturned at rest.",
+    "ears": {
+      "size": "small to medium",
+      "cauliflower_ear": "None visible",
+      "note": "Set close to the head"
+    },
+    "notable_marks_scars": "No prominent scars visible at photo resolution. Horizontal forehead lines; slight under-eye bags in the 2026 photos."
+  },
+  "hair": {
+    "style": "Head fully shaved, smooth scalp",
+    "length_cm": 0,
+    "colour_hex": "#1c1614",
+    "colour_note": "Scalp shows only skin; any regrowth would be black. Render the head bald with the skin material.",
+    "hairline": "Not visible (shaved)",
+    "texture": "n/a (shaved)"
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "detail": "Short stubble beard plus moustache about 2 to 4 mm long (ESPN Jul 2026, 2025 fights). Sometimes a short trimmed beard up to about 1 cm (2023 press photo 01).",
+    "colour_hex": "#3e3330",
+    "colour_note": "Salt-and-pepper: black with a clear sprinkling of grey/white, densest on the chin and along the jaw in the 2026 ESPN headshot (jaw sample #725f5f, chin #522e22 with skin showing through). No grey in the 2023 photo.",
+    "density": "even, short, full coverage of the jaw, chin and upper lip",
+    "shape": "close-cropped full stubble following the jawline; the cheeks are clean above the jaw line"
+  },
+  "skin": {
+    "tone_hex": "#a0654d",
+    "tone_hex_method": "average of the cheek samples only (forehead samples sit on specular highlights in every photo); each sample is the median of the 25th-65th luma percentile pixels of the patch",
+    "tone_hex_all_samples_avg": "#ae755e",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead, centre",
+        "light": "studio flash",
+        "hex": "#d8a79b"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-left side",
+        "light": "studio flash",
+        "hex": "#92543b"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-right side",
+        "light": "studio flash",
+        "hex": "#ae6850"
+      },
+      {
+        "photo": "01_headshot_ufc286_press_bjpenn.jpg",
+        "where": "forehead, centre",
+        "light": "press-event lighting",
+        "hex": "#ba8464"
+      },
+      {
+        "photo": "01_headshot_ufc286_press_bjpenn.jpg",
+        "where": "cheek below cheekbone, image-left side",
+        "light": "press-event lighting",
+        "hex": "#955d41"
+      },
+      {
+        "photo": "01_headshot_ufc286_press_bjpenn.jpg",
+        "where": "cheek below cheekbone, image-right side",
+        "light": "press-event lighting",
+        "hex": "#ab7c67"
+      }
+    ],
+    "undertone": "Warm (red-brown). Deep brown skin; studio and flash light lift the measured values.",
+    "freckles_marks": "No freckles. Even tone. Slightly lighter specular sheen on the forehead and cheekbones in every photo.",
+    "note": "Both photos used for sampling are brightly lit, so the cheek medians (#92543b to #ae7c67) read lighter than the skin looks in arena photos. Match the render against the ESPN headshot under similar lighting rather than using the hex blind. He is clearly darker than Leon Edwards in side-by-side photos."
+  },
+  "body": {
+    "build": "Very muscular, compact-powerful (183 cm) with long arms (193 cm reach, ape index about +10 cm)",
+    "body_fat": "lean",
+    "body_fat_note": "Visible abs and obliques in the 2025-2026 cutouts and fight photos; vascular arms",
+    "shoulders": "Very broad, with large rounded deltoids and high, heavy trapezius",
+    "chest": "Thick, full pectorals with a sharply defined lower edge",
+    "arms": "Long and heavily muscled; big biceps and triceps, thick forearms",
+    "waist": "Narrow and tight, giving a strong V-taper",
+    "legs_calves": "Muscular thighs with long shins; calves moderate, sitting high on the leg",
+    "posture": "Upright, chest up, shoulders back",
+    "notable": "The neck is very thick and blends into the traps."
+  },
+  "tattoos": [
+    {
+      "where": "none visible",
+      "description": "No tattoos visible on the face, torso, arms or legs in the ESPN cutouts or the fight and weigh-in photos",
+      "size": "none"
+    }
+  ],
+  "kit": {
+    "fight_shorts": "Black Venum shorts with a grey leaf/chevron pattern and USMAN in green (UFC Atlanta 2025, UFC Oklahoma City 2026); grey/black tiger-stripe crypto.com shorts (ESPN 2025 cutout); earlier gold/black champion shorts",
+    "walkout": "Often carries the Nigerian flag (green-white-green). Wore green-white-green face paint at UFC Oklahoma City (Jul 2026).",
+    "colours": [
+      "#111111 black",
+      "#00a651 green",
+      "#ffffff white"
+    ]
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.215,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.9,
+    "macro/weightUpM": 0.1,
+    "macro/heightUpM": 0.1,
+    "macro/proportionsUpM": 0.6,
+    "head/head-round": 0.25,
+    "head/head-square": 0.3,
+    "head/head-scale-horiz-incr": 0.2,
+    "head/head-scale-depth-incr": 0.15,
+    "forehead/forehead-scale-vert-incr": 0.15,
+    "forehead/forehead-trans-forward": 0.1,
+    "chin/chin-width-incr": 0.4,
+    "chin/chin-bones-incr": 0.5,
+    "chin/chin-prominent-incr": 0.1,
+    "eyebrows/eyebrows-trans-down": 0.2,
+    "eyebrows/eyebrows-trans-forward": 0.3,
+    "nose/nose-scale-horiz-incr": 0.5,
+    "nose/nose-width1-incr": 0.3,
+    "nose/nose-nostrils-width-incr": 0.5,
+    "nose/nose-flaring-incr": 0.3,
+    "nose/nose-point-width-incr": 0.4,
+    "nose/nose-scale-depth-decr": 0.15,
+    "nose/nose-hump-decr": 0.2,
+    "mouth/mouth-scale-horiz-incr": 0.25,
+    "mouth/mouth-upperlip-volume-incr": 0.35,
+    "mouth/mouth-lowerlip-volume-incr": 0.4,
+    "mouth/mouth-cupidsbow-incr": 0.15,
+    "mouth/mouth-angles-down": 0.1,
+    "neck/neck-scale-horiz-incr": 0.55,
+    "torso/measure-shoulder-dist-incr": 0.6,
+    "torso/torso-vshape-incr": 0.7,
+    "torso/measure-waist-circ-decr": 0.3,
+    "torso/measure-hips-circ-decr": 0.1,
+    "buttocks/buttocks-volume-incr": 0.2,
+    "cheek/l-cheek-bones-incr": 0.3,
+    "cheek/r-cheek-bones-incr": 0.3,
+    "cheek/l-cheek-volume-decr": 0.1,
+    "cheek/r-cheek-volume-decr": 0.1,
+    "eyes/l-eye-scale-decr": 0.15,
+    "eyes/r-eye-scale-decr": 0.15,
+    "eyes/l-eye-height2-decr": 0.1,
+    "eyes/r-eye-height2-decr": 0.1,
+    "eyes/l-eye-trans-out": 0.05,
+    "eyes/r-eye-trans-out": 0.05,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15
+  },
+  "morphs_if_available": {
+    "note": "Ear targets from the full MakeHuman set. They are not in the shipped assets/embed/mh-manifest.json, so they are listed here and not under morphs.",
+    "ears/l-ear-scale-decr": 0.1,
+    "ears/r-ear-scale-decr": 0.1,
+    "ears/l-ear-rot-backward": 0.1,
+    "ears/r-ear-rot-backward": 0.1
+  },
+  "morphs_unavailable": "No ear targets in the shipped manifest; his small, close-set ears are close to the base mesh anyway (full-set values under morphs_if_available). No grey-stubble control: do it in the texture. No target for the trapezius height.",
+  "notes": "Confidence: high for the overall look (shaved round head, broad face and jaw, wide nose, full lips, grey-flecked stubble, very muscular V-taper, no tattoos); medium for morph values. What to watch for: (1) by 2026 the stubble shows grey, which the 2023 press photo does not; (2) he moved up to middleweight in 2026, but the physique in the Jul 2026 cutout is nearly the same as in 2025; (3) the face paint in the 2026 walkout photos is not his skin; (4) avoid over-wide eyes, which are medium-small and slightly hooded; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height."
+}

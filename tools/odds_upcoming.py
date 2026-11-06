@@ -664,7 +664,7 @@ def fo_queries(F):
     if os.path.exists(qcache):        # the bundle (6 MB) is fetched once per site deploy, not per run
         with open(qcache) as fh:
             q = json.load(fh)
-        if all(n in q for n in FO_QUERY_NAMES[:3]):
+        if q.get('_names') == FO_QUERY_NAMES:     # parsed with the current query list
             return q
     js, _ = F.get('fightodds', 'bundle', FO_SITE + m.group(1))
     if not js:
@@ -682,6 +682,7 @@ def fo_queries(F):
             if mm:
                 q[name] = _js_unescape(mm.group(1))
     if q:
+        q['_names'] = FO_QUERY_NAMES
         os.makedirs(os.path.dirname(qcache), exist_ok=True)
         with open(qcache, 'w') as fh:
             json.dump(q, fh)
@@ -1607,8 +1608,11 @@ def cmd_snapshot(a):
     now = dt.datetime.now(dt.timezone.utc)
     stamp = a.replay or now.strftime('%Y%m%d-%H%M')
     if a.replay:
-        # snapshot time = the replayed capture time
-        now = dt.datetime.strptime(a.replay, '%Y%m%d-%H%M').replace(tzinfo=dt.timezone.utc)
+        # snapshot time = when the replayed capture started (earliest cached response of that stamp)
+        cached = glob.glob(os.path.join(CACHE_ROOT, '*', a.replay, '*.gz'))
+        if not cached:
+            raise SystemExit(f'no cached pages under data/raw/web_cache/*/{a.replay}/')
+        now = dt.datetime.fromtimestamp(min(os.path.getmtime(x) for x in cached), dt.timezone.utc)
     since = dt.date.fromisoformat(a.since) if a.since else (now.date() - dt.timedelta(days=1))
     until = dt.date.fromisoformat(a.until) if a.until else (now.date() + dt.timedelta(days=45))
     F = Fetcher(stamp, replay=bool(a.replay), delay=a.delay)
@@ -1881,6 +1885,28 @@ def cmd_show(a):
               f"books {c.get('n_books', 0):>2}  P(dist) {fmt(pm)}  {r.get('status') or ''}")
 
 
+def cmd_plan(a):
+    """Recommended capture times (UTC) for the events in the latest snapshot."""
+    snaps = load_snapshots()
+    if not snaps:
+        print('no snapshots yet: run `snapshot` first')
+        return
+    s = snaps[-1]
+    now = dt.datetime.now(dt.timezone.utc)
+    print(f"from {s['_path']} (now {zstr(now)}):")
+    for e in s['events']:
+        lock = _iso(e.get('lock_utc'))
+        if not lock:
+            continue
+        plan = [('T-24h (day-before line)', lock - dt.timedelta(hours=24)),
+                ('T-2h (prediction-time market, before the ledger lock)', lock - dt.timedelta(hours=2)),
+                ('T+10h (archived closing lines, after the card)', lock + dt.timedelta(hours=10))]
+        print(f"  {e['date']} {e['name']} lock {e['lock_utc']} ({e.get('lock_src')}), "
+              f"{e.get('n_bouts_with_odds', 0)}/{e.get('n_bouts', 0)} bouts with odds")
+        for lab, t in plan:
+            print(f"     {'done/past' if t < now else 'due     '} {zstr(t)}  {lab}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -1899,6 +1925,7 @@ def main():
     t = sub.add_parser('timeline')
     w = sub.add_parser('show')
     w.add_argument('stamp', nargs='?')
+    sub.add_parser('plan')
     a = ap.parse_args()
     if a.cmd == 'snapshot':
         a.delay = max(1.0, a.delay)
@@ -1907,6 +1934,8 @@ def main():
         cmd_timeline(a)
     elif a.cmd == 'show':
         cmd_show(a)
+    elif a.cmd == 'plan':
+        cmd_plan(a)
 
 
 if __name__ == '__main__':

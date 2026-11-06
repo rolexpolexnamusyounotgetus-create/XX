@@ -1556,8 +1556,9 @@ def write_market_json(R, res, best):
             e['src'] = c['src']
         if c.get('range') and all(c['range'][0]) and all(c['range'][1]):
             e['close_range'] = [[c['range'][0][0], c['range'][1][0]], [c['range'][0][1], c['range'][1][1]]]
-        if rec.get('bfo_books'):
-            e['books'] = {k: list(v) for k, v in sorted(rec['bfo_books'].items())}
+        bk = {k: list(v) for k, v in sorted((rec.get('bfo_books') or {}).items()) if k not in EXCHANGES}
+        if bk:
+            e['books'] = bk
         if rec.get('uud_close'):
             e['uud_close'] = list(rec['uud_close'])
         if rec.get('bfo_mu'):
@@ -1590,8 +1591,11 @@ def write_market_json(R, res, best):
                     'result; such ranges and BFO means are not used (eval.cleaning)',
         'p_novig': 'multiplicative (proportional) margin removal: p_A = (1/dA) / (1/dA + 1/dB)',
         'devig_best_on_tune': best,
-        'books': 'per-book closing lines from BFO event pages; covers only the US books BFO lists today (about 2021 on); '
-                 'Polymarket/Kalshi are listed when present but never enter the consensus',
+        'books': 'per-book closing lines [A, B] (American) from BFO event pages; covers only the US books BFO lists today '
+                 '(about 2021 on)',
+        'exchanges': 'Kalshi and Polymarket prices on BFO past-event pages are left out of market.json and the consensus: '
+                     'Kalshi\'s recorded last price scores log loss 0.33 vs 0.62 for the consensus on the same 2026 fights, '
+                     'i.e. it was captured after the result (eval.per_book); they stay in data/raw/odds/bfo_event_lines.csv',
         'walk_forward': 'closing lines are known only minutes before the fight; they are a benchmark and a stacking input '
                         'for live use, never a feature of a model scored on the same fight before the line closes',
         'sources': [

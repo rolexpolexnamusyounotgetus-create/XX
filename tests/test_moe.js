@@ -65,6 +65,33 @@ const csum = Object.values(r0.contrib).reduce((x, y) => x + y, 0);
 check("weights sum to 1", Math.abs(wsum - 1) < 1e-9, wsum);
 if (prod.model.method !== "gbm") check("contributions sum to the logit", Math.abs(csum - r0.z) < 1e-9, csum.toFixed(6) + " vs " + r0.z.toFixed(6));
 
+// built-in ML expert (feature LR): reproduce Python on validation rows, symmetry, and a live profile matchup
+if (doc.feat) {
+  let maxF = 0, maxFS = 0;
+  for (const t of doc.feat.test_vectors) {
+    const p = MoE.featLR(doc.feat, t.A, t.B, { division: t.division, priors: t.priors, coef: "coef_valid" });
+    const q = MoE.featLR(doc.feat, t.B, t.A, { division: t.division, priors: t.priors, coef: "coef_valid" });
+    maxF = Math.max(maxF, Math.abs(p - t.p_valid));
+    maxFS = Math.max(maxFS, Math.abs(p + q - 1));
+  }
+  check(`featLR reproduces Python on ${doc.feat.test_vectors.length} validation fights`, maxF < 1e-9, "max |diff| " + maxF.toExponential(2));
+  check("featLR corner swap gives 1 - p", maxFS < 1e-12, maxFS.toExponential(2));
+  const fj = path.join(ROOT, "data/derived/fighters.json");
+  if (fs.existsSync(fj)) {
+    const db = JSON.parse(fs.readFileSync(fj, "utf8"));
+    const o = { keys: db.meta.keys, snapshot: db.meta.snapshot, halfLife: db.meta.half_life_days };
+    const A = MoE.sideFromProfile(db.fighters["alexander-volkanovski"], "2026-12-12", o);
+    const B = MoE.sideFromProfile(db.fighters["justin-gaethje"], "2026-12-12", o);
+    const pml = MoE.featLR(doc.feat, A, B, { division: "Lightweight" });
+    const gate = MoE.gateFromSides(A, B, { division: "Lightweight", rounds: 5 });
+    const r = prod.predict({ experts: { engine: 0.6, ml: pml, feat_lr: pml, elo: MoE.eloProb(A.elo, B.elo) }, gate });
+    const rm = prod.predict({ experts: { engine: 0.6, ml: pml, feat_lr: pml, elo: MoE.eloProb(A.elo, B.elo), market: MoE.devig(160, -180) }, gate });
+    check("live profiles: Volkanovski vs Gaethje evaluates", pml > 0.05 && pml < 0.95 && r.p > 0 && r.p < 1,
+      `featLR ${pml.toFixed(3)}, MoE (engine 0.60, no market) ${r.p.toFixed(3)}, with market +160/-180 ${rm.p.toFixed(3)}; weights ` +
+      Object.entries(rm.weights).map(([k, v]) => k + " " + v.toFixed(2)).join(", "));
+  }
+}
+
 // helpers
 check("eloProb symmetric", Math.abs(MoE.eloProb(1600, 1500) + MoE.eloProb(1500, 1600) - 1) < 1e-12);
 const pv = MoE.devig(-150, 130), pm = MoE.devig(-150, 130, "mult");

@@ -1293,7 +1293,42 @@ def report_and_export(args):
             tv.append({"experts": exs, "gate": gs,
                        "p_prod": float(predict_py(model_prod, st_prod, cal_prod, exs, gv, experts, F["mu"], F["sd"])),
                        "p_valid": float(predict_py(model_val, st, out["_cal"], exs, gv, experts, F["mu"], F["sd"]))})
+    # ---- built-in ML expert (page-computable feature LR) + its test vectors
+    feat = None
+    with open(os.path.join(CACHE, "experts.pkl"), "rb") as fh:
+        EX = pickle.load(fh)
+    if "lr_page" in EX:
+        lp = EX["lr_page"]
+        need = sorted({k for _, ks, _ in RATE_DEFS for k in ks} | {k for _, a, b, _, _ in ACC_DEFS for k in a + b})
+        def psub(PA):
+            return {d: {k: PA[d].get(k, 0.0) for k in need} for d in PA if isinstance(PA[d], dict)}
+        with open(os.path.join(CACHE, "prep.pkl"), "rb") as fh:
+            prep = pickle.load(fh)
+        feat = {"names": lp["names"], "coef": lp["coef"], "coef_valid": lp["coef_valid"], "C": lp["C"],
+                "keys": prep["keys"], "rate_defs": [list(d) for d in RATE_DEFS], "acc_defs": [list(d) for d in ACC_DEFS],
+                "priors": psub(EX["priors_2026"]), "half_life_days": 730,
+                "notes": "symmetric L2 logistic regression on side-feature differences, no intercept; 'coef' fit on "
+                         "decisive UFC fights 2010-2025, 'coef_valid' on 2010-2023 (produced the 2024-2025 numbers); "
+                         "priors = division rates from fights 2021-2025"}
+        ent = {e["id"]: e for e in prep["entries"]}
+        ftv = []
+        rng2 = np.random.default_rng(9)
+        for i in rng2.choice(np.where(VA)[0], size=min(40, VA.sum()), replace=False):
+            e = ent[rows[i]["id"]]
+            sides = []
+            for t in ("A", "B"):
+                s = e[t]
+                sides.append({k: s.get(k) for k in ("S", "age", "height_in", "reach_in", "n", "ko_losses", "kd_absorbed",
+                                                     "elo", "cmin", "w", "l", "streak", "last3", "n5", "fin_w", "fin_l",
+                                                     "layoff", "stance", "home")})
+            div = e.get("prior_division") or e["division"]
+            PA = prep["priors_asof"][e["date"][:4]]
+            ftv.append({"A": sides[0], "B": sides[1], "division": div, "priors": psub({div: PA.get(div) or PA["ALL"],
+                        "ALL": PA["ALL"]}), "p_valid": float(P["feat_lr"][i])})
+        feat["test_vectors"] = ftv
+
     doc = {
+        "feat": feat,
         "meta": {"tool": "tools/moe.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
                  "train": TRAIN, "valid": VALID, "vault_excluded_from": VAULT_FROM.isoformat(),
                  "orientation": "every probability is P(first-named fighter A wins); the model is exactly symmetric "

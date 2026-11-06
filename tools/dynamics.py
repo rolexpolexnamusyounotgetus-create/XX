@@ -109,25 +109,7 @@ def build_panel():
     S["fin_sub_against"] = (S["last"] & S.cat.eq("SUB") & lost).astype(int)
     S["fin_sub_for"] = (S["last"] & S.cat.eq("SUB") & won).astype(int)
     S["fin_other_against"] = (S["last"] & ko & ~strikes & lost).astype(int)  # doctor, corner, injury
-    # cumulative state before the round (same fight, same fighter): sums over earlier rounds
-    cum_src = {
-        "c_att": "sig_a", "c_tot": "tot_a", "c_lnd": "sig_l", "c_hl": "head_l", "c_tda": "td_a", "c_tdl": "td_l",
-        "c_ctrl": "ctrl", "c_kd": "kd", "c_sub": "sub",
-        "c_oatt": "o_sig_a", "c_ohl": "o_head_l", "c_osl": "o_sig_l", "c_osh": "o_sh_l", "c_obl": "o_body_l",
-        "c_oll": "o_leg_l", "c_ogl": "o_ground_l", "c_okd": "o_kd", "c_otdl": "o_td_l", "c_otda": "o_td_a",
-        "c_octrl": "o_ctrl", "c_osub": "o_sub", "c_otot": "o_tot_l",
-    }
-    g = S.groupby(["fid", "idx"], sort=False)
-    for c, src in cum_src.items():
-        S[c] = g[src].cumsum() - S[src]
-    S["c_min"] = g["mins"].cumsum() - S["mins"]
-    # lagged (previous round) quantities
-    lag_src = {"l_sigl": "sig_l", "l_osigl": "o_sig_l", "l_att": "sig_a", "l_oatt": "o_sig_a", "l_kd": "kd",
-               "l_okd": "o_kd", "l_hl": "head_l", "l_ohl": "o_head_l", "l_tdl": "td_l", "l_otdl": "o_td_l",
-               "l_ctrl": "ctrl", "l_octrl": "o_ctrl", "l_tda": "td_a", "l_acc_l": "sig_l", "l_sub": "sub",
-               "l_osub": "o_sub", "l_bl": "body_l", "l_ll": "leg_l", "l_obl": "o_body_l", "l_oll": "o_leg_l"}
-    for c, src in lag_src.items():
-        S[c] = g[src].shift(1)
+    S = add_cum(S)
     S["year"] = S.DATE.dt.year
     S["period"] = np.select([(S.DATE >= TRAIN[0]) & (S.DATE <= TRAIN[1]),
                              (S.DATE >= TEST[0]) & (S.DATE <= TEST[1]),
@@ -139,6 +121,33 @@ def build_panel():
     S["dob"] = pd.to_datetime(S.pid.map(dob))
     S["age"] = (S.DATE - S.dob).dt.days / 365.25
     return F, S, notes
+
+
+CUM_SRC = {
+    "c_att": "sig_a", "c_tot": "tot_a", "c_lnd": "sig_l", "c_hl": "head_l", "c_tda": "td_a", "c_tdl": "td_l",
+    "c_ctrl": "ctrl", "c_kd": "kd", "c_sub": "sub",
+    "c_oatt": "o_sig_a", "c_ohl": "o_head_l", "c_osl": "o_sig_l", "c_osh": "o_sh_l", "c_obl": "o_body_l",
+    "c_oll": "o_leg_l", "c_ogl": "o_ground_l", "c_okd": "o_kd", "c_otdl": "o_td_l", "c_otda": "o_td_a",
+    "c_octrl": "o_ctrl", "c_osub": "o_sub", "c_otot": "o_tot_l",
+}
+LAG_SRC = {"l_sigl": "sig_l", "l_osigl": "o_sig_l", "l_att": "sig_a", "l_oatt": "o_sig_a", "l_kd": "kd",
+           "l_okd": "o_kd", "l_hl": "head_l", "l_ohl": "o_head_l", "l_tdl": "td_l", "l_otdl": "o_td_l",
+           "l_ctrl": "ctrl", "l_octrl": "o_ctrl", "l_tda": "td_a", "l_sub": "sub",
+           "l_osub": "o_sub", "l_bl": "body_l", "l_ll": "leg_l", "l_obl": "o_body_l", "l_oll": "o_leg_l"}
+
+
+def add_cum(S):
+    """Cumulative state before each round (same fight, same fighter) and previous-round values.
+    Rows must be sorted by fight, fighter, round. Columns missing from S are skipped."""
+    g = S.groupby(["fid", "idx"], sort=False)
+    for c, src in CUM_SRC.items():
+        if src in S:
+            S[c] = g[src].cumsum() - S[src]
+    S["c_min"] = g["mins"].cumsum() - S["mins"]
+    for c, src in LAG_SRC.items():
+        if src in S:
+            S[c] = g[src].shift(1)
+    return S
 
 
 # ================================================================================================
@@ -1342,6 +1351,144 @@ def round_corr(S):
     out["fighters_same_round"] = float(b.corr().iloc[0, 1])
     return out
 
+
+# ================================================================================================
+# engine check: the same dynamics statistics on engine-simulated fights (tools/dynamics_engine.js)
+# ================================================================================================
+ENG_RENAME = {"sig_att": "sig_a", "sig_lnd": "sig_l", "h_att": "head_a", "h_lnd": "head_l", "d_att": "dist_a",
+              "d_lnd": "dist_l", "c_att": "clinch_a", "c_lnd": "clinch_l", "g_att": "ground_a", "g_lnd": "ground_l",
+              "td_att": "td_a", "td_lnd": "td_l", "sub_att": "sub", "sh_lnd": "sh_l", "b_lnd": "body_l",
+              "l_lnd": "leg_l"}
+
+
+def engine_panel(csv, max_sims=None):
+    E = pd.read_csv(csv)
+    if max_sims is not None:
+        E = E[E.sim < max_sims]
+    E["fkey"] = E.fid.astype(str)
+    E["fid"] = E.fkey + ":" + E.sim.astype(str)
+    E = E.rename(columns=ENG_RENAME)
+    E["rsec"] = E.rsec.clip(lower=1)
+    E["mins"] = E.rsec / 60
+    E["full"] = E.rsec >= 299.5
+    E["tot_a"] = E.sig_a; E["tot_l"] = E.sig_l
+    oc = ["sig_a", "sig_l", "head_l", "sh_l", "body_l", "leg_l", "ground_l", "kd", "td_l", "td_a", "ctrl", "sub",
+          "tot_l", "dist_a"]
+    O = E[["fid", "rnd", "idx"] + oc].copy(); O["idx"] = 1 - O.idx
+    E = E.merge(O.rename(columns={c: "o_" + c for c in oc}), on=["fid", "rnd", "idx"], how="left")
+    E = E.sort_values(["fid", "idx", "rnd"]).reset_index(drop=True)
+    E["last"] = E.rnd == E.groupby("fid").rnd.transform("max")
+    opp_side = np.where(E.idx == 0, "B", "A")
+    strikes = E.method.isin(["KO", "TKO", "GNP", "LEG"])
+    E["fin_ko_against"] = (E["last"] & (E.winner == opp_side) & strikes & (E.fin_round == E.rnd)).astype(int)
+    E["fin_sub_against"] = (E["last"] & (E.winner == opp_side) & E.method.eq("SUB") & (E.fin_round == E.rnd)).astype(int)
+    E = add_cum(E)
+    E["period"] = "test"
+    E["division"] = E.division.astype(str)
+    return add_covariates(E)
+
+
+def late_ratio_simple(S):
+    full = S[S.full].copy()
+    full["la"] = np.log((full.sig_a + 0.5) / 5)
+    cm = full.groupby("cell").la.mean()
+    full["la_c"] = full.la - full.cell.map(cm)
+    full = full.sort_values(["fid", "idx", "rnd"])
+    first = full.groupby(["fid", "idx"]).head(1).set_index(["fid", "idx"])
+    late = full[full.rnd >= 2].groupby(["fid", "idx"]).agg(alate=("la_c", "mean"), T=("rnd", "max"), n=("rnd", "size"))
+    FF = first[["la_c"]].join(late, how="inner")
+    FF = FF[FF.n == FF["T"] - 1]
+    FF["LR"] = FF.alate - FF.la_c
+    return FF.reset_index()
+
+
+def engine_check(S, csv, label):
+    t0 = time.time()
+    E = engine_panel(csv)
+    keys = set(E.fkey.unique())
+    real = S[(S.period == "test") & S.fid.map(bd.url_id).isin(keys)].copy()
+    res = {"engine_csv": csv, "label": label, "n_engine_fights": int(E.fid.nunique()),
+           "n_matchups": int(len(keys)), "n_real_fights": int(real.fid.nunique())}
+    Es = E[E.sim < 8].copy()
+    # 1-2: output and accuracy dynamics
+    dyn = {}
+    for name in ("out", "acc"):
+        row = {}
+        for lab, d0 in (("engine", Es), ("real", real)):
+            d = prep_outcome(d0, name)
+            m0 = DynRE(d, "y", "v", ["partial"]).fit()
+            m1 = DynRE(d, "y", "v", STATE_X, fixed_cells=m0.cells).fit(m0.p)
+            cells0 = {k[5:]: v for k, v in m0.est().items() if k.startswith("cell:")}
+            curve = {str(R): [math.exp(cells0[f"{R}_{r}"] - cells0[f"{R}_1"]) for r in range(1, R + 1)
+                              if f"{R}_{r}" in cells0] for R in (3, 5) if f"{R}_1" in cells0}
+            row[lab] = {"var_components_null": m0.var_components(), "round_curve": curve,
+                        "gamma": {k: v for k, v in m1.gamma().items()}}
+        dyn[name] = row
+        print(f"  [engine check {name}] done ({time.time() - t0:.0f}s)", flush=True)
+    res["dynre"] = dyn
+    # 3: knockdown hazard per standing head strike absorbed (cells only; frailty includes matchup spread)
+    kd = {}
+    for lab, d0 in (("engine", E), ("real", real)):
+        d = d0.sort_values(["fid", "idx", "rnd"]).copy()
+        cells = sorted(d.cell.unique())
+        for c in cells:
+            d["c" + c] = (d.cell == c).astype(float)
+        cc = ["c" + c for c in cells]
+        row = {}
+        for nm, X in (("null", cc), ("damage", cc + ["D10", "K_lag", "K_early"]), ("fatigue", cc + ["A100", "oA100"])):
+            m = FrailPois(d, "o_kd", "o_sh_l", X).fit()
+            co = m.coef()
+            row[nm] = {k: v for k, v in co.items() if not k.startswith("c") or k in ("D10",)}
+            if nm == "null":
+                row["round_profile"] = {str(R): [math.exp(co[f"c{R}_{r}"]["est"] - co[f"c{R}_1"]["est"])
+                                                 for r in range(1, R + 1)] for R in (3, 5) if f"c{R}_1" in co}
+                row["r1_rate_3rd"] = math.exp(co["c3_1"]["est"]) if "c3_1" in co else None
+        d["Dbin"] = damage_bin(d.c_ohl)
+        b = d[d.rnd >= 2].groupby("Dbin", observed=True)
+        row["by_prior_damage"] = {str(k): {"kd_per100_sh": 100 * float(g.o_kd.sum() / max(g.o_sh_l.sum(), 1)),
+                                           "p_stopped": float(g.fin_ko_against.mean()),
+                                           "head_absorbed_pm": float(g.o_head_l.sum() / g.mins.sum()),
+                                           "rounds": int(len(g))} for k, g in b}
+        kd[lab] = row
+    res["kd_hazard"] = kd
+    print(f"  [engine check kd] done ({time.time() - t0:.0f}s)", flush=True)
+    # 4: targets by round
+    tg = {}
+    for lab, d in (("engine", E), ("real", real)):
+        t = {}
+        for (R, r), g in d.groupby(["R", "rnd"]):
+            m = g.mins.sum()
+            t[f"{R}_{r}"] = {"fighter_rounds": int(len(g)), "sig_att_pm": float(g.sig_a.sum() / m),
+                             "sig_lnd_pm": float(g.sig_l.sum() / m), "sig_acc": float(g.sig_l.sum() / max(g.sig_a.sum(), 1)),
+                             "td_att_per15": float(15 * g.td_a.sum() / m), "ctrl_share": float(g.ctrl.sum() / g.rsec.sum()),
+                             "kd_per100_standing_head": float(100 * g.kd.sum() / max(g.sh_l.sum(), 1)),
+                             "p_round_ends_ko_tko": float(g.fin_ko_against.sum() / (len(g) / 2)),
+                             "p_round_ends_sub": float(g.fin_sub_against.sum() / (len(g) / 2))}
+        tg[lab] = t
+    res["targets_by_round"] = tg
+    # 5: late-round ratio: total variance and the persistent (matchup) share in the engine
+    FE = late_ratio_simple(E)
+    FE["mkey"] = FE.fid.str.split(":").str[0] + ":" + FE.idx.astype(str)
+    g = FE.groupby("mkey").LR
+    within = float(g.var().mean()); nbar = float(g.size().mean())
+    between = float(g.mean().var() - within / nbar)
+    FR = late_ratio_simple(real)
+    res["late_ratio"] = {"engine_total_var": float(FE.LR.var()), "engine_between_matchup_var": between,
+                         "engine_within_matchup_var": within, "real_total_var": float(FR.LR.var()),
+                         "engine_mean": float(FE.LR.mean()), "real_mean": float(FR.LR.mean())}
+    # 6: round correlations
+    rc = {}
+    for lab, d in (("engine", Es), ("real", real)):
+        x = d[d.full].copy(); x["y"] = np.log((x.sig_a + 0.5) / 5)
+        w = x.pivot_table(index=["fid", "idx"], columns="rnd", values="y")
+        bq = x.pivot_table(index=["fid", "rnd"], columns="idx", values="y").dropna()
+        rc[lab] = {"own_r1_r2": float(w[[1, 2]].dropna().corr().iloc[0, 1]),
+                   "own_r1_r3": float(w[[1, 3]].dropna().corr().iloc[0, 1]) if 3 in w else None,
+                   "fighters_same_round": float(bq.corr().iloc[0, 1])}
+    res["round_correlations"] = rc
+    res["secs"] = time.time() - t0
+    return res
+
 # ================================================================================================
 # main
 # ================================================================================================
@@ -1350,6 +1497,8 @@ def main(argv=None):
     ap.add_argument("--quick", action="store_true", help="skip jackknife and simulation checks")
     ap.add_argument("--jack", type=int, default=20)
     ap.add_argument("--parts", default="1,2,3,4,5")
+    ap.add_argument("--engine-csv", default=None, help="CSV from tools/dynamics_engine.js: adds the engine check")
+    ap.add_argument("--engine-label", default="engine3 (src/)")
     a = ap.parse_args(argv)
     jack = 0 if a.quick else a.jack
     parts = set(a.parts.split(","))
@@ -1391,6 +1540,9 @@ def main(argv=None):
     if "5" in parts:
         print("part 5: finish hazard", flush=True)
         J["finish_hazard"] = part5(S, F)
+    if a.engine_csv:
+        print("engine check", flush=True)
+        J["engine_check"] = engine_check(S, a.engine_csv, a.engine_label)
     J["meta"]["secs"] = time.time() - t0
     save(J, parts)
     print(f"wrote {OUT_JSON} ({time.time() - t0:.0f}s)")

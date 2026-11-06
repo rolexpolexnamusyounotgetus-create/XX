@@ -790,6 +790,7 @@ def run_trueskill(D, P, until=None, record=False):
 # =====================================================================================================
 WHR_WINDOW = 6.0         # years of free nodes in the per-day re-solve (older nodes held fixed)
 WHR_FULL_EVERY = 8       # full re-solve over the whole history every n-th fight day
+WHR_SOLVER = "pcg"       # "pcg" (fast, chain-block variances) or "lu" (exact variances, sparse factorisation)
 
 try:
     from sksparse.cholmod import cholesky as CHOLMOD   # optional, much faster than SuperLU
@@ -908,6 +909,8 @@ class WHR:
     def solve(self, N, lo=0, tol=1e-5, max_it=30):
         if N - lo <= 0:
             return
+        if self.P.get("solver", WHR_SOLVER) == "pcg":
+            return self._solve_pcg(N, lo, tol, max_it)
         for it in range(max_it):
             g, H = self._system(N, lo)
             lu = self._factor(H)
@@ -920,9 +923,67 @@ class WHR:
             if mx < tol:
                 break
 
+    # ---- preconditioned conjugate gradients with the fighters' chain (tridiagonal) blocks as preconditioner
+    def _tridiag(self, H, N, lo):
+        """Permutation putting each fighter's nodes next to each other, and the banded form of H restricted to
+        the chain edges (block-diagonal over fighters, tridiagonal inside a block)."""
+        loc = np.arange(lo, N)
+        perm = np.lexsort((loc, self.node_p[lo:N]))           # local indices sorted by fighter, then time
+        Hc = H.tocsr()
+        dg = Hc.diagonal()[perm]
+        nodes = perm + lo
+        same = self.node_p[nodes[1:]] == self.node_p[nodes[:-1]]
+        off = np.zeros(len(perm) - 1)
+        if same.any():
+            off[same] = np.asarray(Hc[perm[1:][same], perm[:-1][same]]).ravel()
+        ab = np.zeros((3, len(perm)))
+        ab[0, 1:] = off
+        ab[1] = dg
+        ab[2, :-1] = off
+        return perm, ab, Hc
+
+    def _solve_pcg(self, N, lo, tol, max_it):
+        from scipy.linalg import solve_banded
+        for it in range(max_it):
+            g, H = self._system(N, lo)
+            perm, ab, Hc = self._tridiag(H, N, lo)
+            inv = np.empty_like(perm)
+            inv[perm] = np.arange(len(perm))
+
+            def Minv(r):
+                z = solve_banded((1, 1), ab, r[perm], check_finite=False)
+                return z[inv]
+
+            b = -g
+            x = Minv(b)                 # block-Jacobi start
+            r = b - Hc @ x
+            z = Minv(r)
+            pdir = z.copy()
+            rz = r @ z
+            bn = np.linalg.norm(b) + 1e-12
+            for k in range(300):
+                Ap = Hc @ pdir
+                alpha = rz / (pdir @ Ap)
+                x += alpha * pdir
+                r -= alpha * Ap
+                if np.linalg.norm(r) < 1e-7 * bn + 1e-10:
+                    break
+                z = Minv(r)
+                rz2 = r @ z
+                pdir = z + (rz2 / rz) * pdir
+                rz = rz2
+            mx = np.max(np.abs(x))
+            if mx > 2.0:
+                x *= 2.0 / mx
+            self.x[lo:N] += x
+            self.tri, self.luN, self.lulo = (perm, inv, ab), N, lo
+            if mx < tol:
+                break
+
     def variances(self, nodes):
-        """Posterior variance (diagonal of the inverse Hessian) of nodes inside the last solved window; nodes
-        outside it (comebacks after more than the window length) get the newcomer variance."""
+        """Posterior variance of nodes inside the last solved window: exact diagonal of the inverse Hessian with
+        a factorisation, or (pcg) the fighter's own chain block (opponents treated as known, as in Coulom's
+        WHR). Nodes outside the window (comebacks after more than the window length) get the newcomer variance."""
         nodes = np.asarray(nodes, int)
         if len(nodes) == 0:
             return np.zeros(0)
@@ -932,9 +993,16 @@ class WHR:
         if ins.any():
             loc = nodes[ins] - lo
             E = np.zeros((N - lo, len(loc)))
-            E[loc, np.arange(len(loc))] = 1.0
-            X = self.lu.solve(E)
-            out[ins] = X[loc, np.arange(len(loc))]
+            if self.P.get("solver", WHR_SOLVER) == "pcg":
+                from scipy.linalg import solve_banded
+                perm, inv, ab = self.tri
+                E[inv[loc], np.arange(len(loc))] = 1.0
+                X = solve_banded((1, 1), ab, E, check_finite=False)
+                out[ins] = X[inv[loc], np.arange(len(loc))]
+            else:
+                E[loc, np.arange(len(loc))] = 1.0
+                X = self.lu.solve(E)
+                out[ins] = X[loc, np.arange(len(loc))]
         return out
 
     def run(self, eval_days, until=None, record=False):

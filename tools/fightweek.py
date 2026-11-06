@@ -1525,6 +1525,482 @@ def locality_parts(pl):
     return parts[0], (parts[1] if len(parts) > 1 else None)
 
 
+# ------------------------------------------------------------------ build
+DIV_LBS = {"Strawweight": 115, "Flyweight": 125, "Bantamweight": 135, "Featherweight": 145, "Lightweight": 155,
+           "Welterweight": 170, "Middleweight": 185, "Light Heavyweight": 205, "Heavyweight": 265}
+
+
+ALT_FIX = {"New Orleans": 2.0}      # cities the geocoder returns without an elevation
+
+
+def division_limit(wc):
+    w = wc.lower()
+    for name in sorted(DIV_LBS, key=len, reverse=True):
+        if name.lower() in w:
+            if name == "Heavyweight" and "light heavyweight" in w:
+                continue
+            return DIV_LBS[name]
+    return None
+
+
+def utc_offset_h(tz, day):
+    from zoneinfo import ZoneInfo
+    try:
+        t = dt.datetime(day.year, day.month, day.day, 12, tzinfo=dt.timezone.utc).astimezone(ZoneInfo(tz))
+        return t.utcoffset().total_seconds() / 3600.0
+    except Exception:
+        return None
+
+
+def haversine_km(a, b):
+    if not a or not b or a[0] is None or b[0] is None:
+        return None
+    la1, lo1, la2, lo2 = map(math.radians, (a[0], a[1], b[0], b[1]))
+    h = math.sin((la2 - la1) / 2) ** 2 + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
+    return 2 * 6371.0 * math.asin(min(1.0, math.sqrt(h)))
+
+
+def build_nationality(people, pids, items, wd, bios, gfx):
+    """slug-keyed nationality records and person id -> home (iso3, tz, lat, lon, elevation)."""
+    recs, home = {}, {}
+    for pid in pids:
+        P = people[pid]
+        q = wd.get(pid)
+        it = items[q[0]] if q else None
+        b = bios.get(pid)
+        votes = []
+        src = {}
+        if it:
+            sc = [country_code(c) for c, _ in it["sc"].most_common()]
+            cc = [country_code(c) for c, _ in it["cc"].most_common()]
+            bc = [country_code(c) for c, _ in it["bc"].most_common()]
+            src["wikidata"] = {"item": q[0].rsplit("/", 1)[-1], "match": q[1], "sport_country": sc, "citizenship": cc,
+                               "birth_country": bc}
+        else:
+            sc = cc = bc = []
+        sd = b["iso3"] if b else None
+        if b:
+            src["sherdog"] = {"nationality": b.get("nationality"), "birthplace": b.get("locality"),
+                              "association": b.get("association")[:3] if b.get("association") else [],
+                              "page": b.get("src")}
+        # primary: Wikidata country for sport > Sherdog nationality > single citizenship > citizenship that
+        # matches birth country > birth country > first citizenship
+        primary, how = None, None
+        sc = [c for c in sc if c]
+        cc = [c for c in cc if c]
+        bc = [c for c in bc if c]
+        if sc:
+            primary, how = sc[0], "wikidata country for sport"
+        elif sd:
+            primary, how = sd, "sherdog nationality"
+        elif len(set(cc)) == 1:
+            primary, how = cc[0], "wikidata citizenship"
+        elif cc and set(cc) & set(bc):
+            primary, how = sorted(set(cc) & set(bc))[0], "wikidata citizenship = birth country"
+        elif bc:
+            primary, how = bc[0], "wikidata birth country"
+        elif cc:
+            primary, how = cc[0], "wikidata citizenship (first of several)"
+        allc = sorted(set(sc) | set(cc) | set(bc) | ({sd} if sd else set()))
+        # home point: Sherdog birthplace when it lies in the primary country, else the country reference city
+        bp = None
+        if b and b.get("locality") and b.get("iso3") and b["iso3"] == primary:
+            city, admin = locality_parts(b["locality"])
+            bp = geocode(gfx, city, admin, primary)
+        ref = country_ref(gfx, primary) if primary else None
+        pt = bp or ref
+        home[pid] = {"iso3": primary, "countries": allc, "tz": (pt or {}).get("tz") or
+                     (COUNTRIES[primary][3] if primary in COUNTRIES else None),
+                     "lat": (pt or {}).get("lat"), "lon": (pt or {}).get("lon"),
+                     "elev": (bp or {}).get("elevation_m"), "basis": "birthplace" if bp else
+                     ("country reference city" if ref else None)}
+        recs[P["slug"]] = {"name": P["name"], "ufcstats_id": pid, "iso3": primary, "how": how,
+                           "countries": allc, "country_name": COUNTRIES[primary][1] if primary in COUNTRIES else None,
+                           "home_point": {"basis": home[pid]["basis"], "tz": home[pid]["tz"],
+                                          "lat": home[pid]["lat"], "lon": home[pid]["lon"],
+                                          "birthplace_elevation_m": home[pid]["elev"]},
+                           "sources": src}
+    return recs, home
+
+
+def cmd_build(args):
+    t0 = time.time()
+    events = load_ufcstats()
+    wl = parse_event_list(open(wiki_path("List_of_UFC_events"), encoding="utf-8").read())
+    wmatch, how = match_events(events, wl)
+    fights, people = load_people_fights()
+    fmap = {f.fid: f for f in fights}
+    pids = sorted(target_persons(fights))
+    items = load_wikidata()
+    sdx = sherdog_index()
+    wd = match_wikidata(people, pids, items, sdx)
+    bios = load_sherdog_bios(fights=fights, people=people)
+    gfx = Fetcher(offline=True)
+    nat, home = build_nationality(people, pids, items, wd, bios, gfx)
+    log("people %d: wikidata %d, sherdog %d, nationality known %d (%.1f s)" % (
+        len(pids), len(wd), len(bios), sum(1 for r in nat.values() if r["iso3"]), time.time() - t0))
+    out = {}
+    stats = Counter()
+    ev_meta = {}
+    for ename, ev in sorted(events.items(), key=lambda kv: kv[1]["date"]):
+        w = wmatch.get(ename)
+        art = None
+        if w and w.get("href"):
+            p = wiki_path(title_of(w["href"]))
+            if os.path.exists(p):
+                art = parse_event_article(open(p, encoding="utf-8").read())
+        city, admin, country = split_location(ev["location"])
+        iso3 = country_code(country)
+        g = dict(geocode(gfx, city, admin, iso3) or {})
+        if g.get("elevation_m") is None and city in ALT_FIX:
+            g["elevation_m"] = ALT_FIX[city]
+        venue_name = (art or {}).get("infobox", {}).get("Venue") or (w or {}).get("venue")
+        apex = bool(venue_name and "apex" in venue_name.lower())
+        crowd, crowd_basis = crowd_status((art or {}).get("infobox", {}), ev["date"], venue_name,
+                                          (art or {}).get("fulltext", "")) if art else ("full", "no article")
+        etype = event_type(ename, ev["date"])
+        venue = {"name": venue_name, "city": city, "region": admin, "country": country, "iso3": iso3,
+                 "lat": g.get("lat"), "lon": g.get("lon"), "altitude_m": g.get("elevation_m"), "tz": g.get("tz"),
+                 "apex": apex}
+        voff = utc_offset_h(g["tz"], ev["date"]) if g.get("tz") else None
+        card = Card(ev["bouts"])
+        paras = (art or {}).get("paras", [])
+        wi = parse_weighins(card, paras, ev["date"]) if art else {}
+        bc = parse_bout_changes(card, paras, ev["date"]) if art else {}
+        # results table rows -> bout (card segment, wiki weight class, note text)
+        seg_of = {}
+        for r in (art or {}).get("results", []):
+            ma, _ = card.mentions(r["A"])
+            mb, _ = card.mentions(r["B"])
+            fa = {card.f[x[2]]["fid"] for x in ma}
+            fb = {card.f[x[2]]["fid"] for x in mb}
+            both = fa & fb
+            if len(both) == 1:
+                fid = both.pop()
+                seg_of[fid] = {"segment": r["segment"], "wc": r["wc"],
+                               "notes": [art["notes"].get(n, "") for n in r["note_ids"] if art["notes"].get(n)]}
+        para_fids = [set(card.f[m[2]]["fid"] for m in card.mentions(p["text"], prefer=p["text"])[0]) for p in paras]
+        ev_meta[ename] = {"wiki": (art or {}).get("canonical") or ((w or {}).get("href")), "venue": venue,
+                          "crowd": crowd, "crowd_basis": crowd_basis, "event_type": etype}
+        stats["events"] += 1
+        stats["events_with_article"] += bool(art)
+        n_bouts = len(ev["bouts"])
+        for bi, b in enumerate(sorted(ev["bouts"], key=lambda b: b["idx"])):
+            fid = b["fid"]
+            f = fmap.get(fid)
+            if f is None:
+                stats["bouts_not_in_build_db"] += 1
+                continue
+            pa, pb = f.persons
+            title = ("Title" in b["wc"] and "Tournament" not in b["wc"])
+            lim = division_limit(b["wc"])
+            seg = seg_of.get(fid, {})
+            text_all = " ".join(p["text"] for p, fs in zip(paras, para_fids) if fid in fs)
+            cw_lbs = None
+            for src in [seg.get("wc") or ""] + seg.get("notes", []) + [text_all]:
+                mm = CATCH_RE.search(src)
+                if mm:
+                    cw_lbs = int(next(x for x in mm.groups() if x))
+                    break
+            booked_cw = "catch" in b["wc"].lower() or (seg.get("wc") or "").lower().startswith("catch")
+            rec = {"date": ev["date"].isoformat(), "event": ename, "A": people[pa]["slug"] if pa in people else None,
+                   "B": people[pb]["slug"] if pb in people else None, "division": f.division, "title": title,
+                   "missed_weight": {}, "missed": {}, "weighed": {}, "short_notice": {}, "replacement": {},
+                   "opp_change": {}, "home": {}, "home_any": {}, "nat": {}, "tz_shift_h": {}, "travel_km": {},
+                   "home_elev_m": {}}
+            notes = []
+            anymiss = False
+            for side, pid in (("A", pa), ("B", pb)):
+                m = wi.get((fid, side))
+                if m and m["negated"] and m["lbs_over"] is None and m["weighed"] is None:
+                    m = None
+                if not art:
+                    rec["missed"][side] = None
+                    rec["missed_weight"][side] = None
+                    rec["weighed"][side] = None
+                elif m:
+                    anymiss = True
+                    over = m["lbs_over"]
+                    limit = None
+                    if over is None and m["weighed"] is not None:
+                        limit = cw_lbs + (0 if title else 1) if (booked_cw and cw_lbs) else \
+                            (lim + (0 if title else 1) if lim else None)
+                        if limit:
+                            over = round(m["weighed"] - limit, 2)
+                            if over <= 0 or over > 25:
+                                over = None
+                    rec["missed"][side] = True
+                    rec["missed_weight"][side] = over
+                    rec["weighed"][side] = m["weighed"]
+                    notes.append("%s missed weight%s%s" % (side, " by %g lb" % over if over is not None else "",
+                                                           " (weighed %g)" % m["weighed"] if m["weighed"] else ""))
+                    stats["missed"] += 1
+                    stats["missed_with_lbs"] += over is not None
+                else:
+                    rec["missed"][side] = False
+                    rec["missed_weight"][side] = 0.0
+                    rec["weighed"][side] = None
+                c = bc.get((fid, side))
+                if c and c["role"] == "replacement":
+                    rec["replacement"][side] = True
+                    rec["short_notice"][side] = c["days"]
+                    rec["opp_change"][side] = None
+                    notes.append("%s late replacement (%s days, %s%s)" % (
+                        side, c["days"] if c["days"] is not None else "?", c["basis"] or "no date",
+                        ", 'short notice'" if c["short_notice_phrase"] else ""))
+                    stats["replacement"] += 1
+                    stats["replacement_days"] += c["days"] is not None
+                elif c:
+                    rec["replacement"][side] = False
+                    rec["short_notice"][side] = None
+                    rec["opp_change"][side] = c["days"] if c["days"] is not None else -1
+                    notes.append("%s opponent changed (%s days, %s)" % (
+                        side, c["days"] if c["days"] is not None else "?", c["basis"] or "no date"))
+                    stats["opp_change"] += 1
+                else:
+                    rec["replacement"][side] = False if art else None
+                    rec["short_notice"][side] = None
+                    rec["opp_change"][side] = None
+                h = home.get(pid, {})
+                rec["nat"][side] = h.get("iso3")
+                rec["home"][side] = (h["iso3"] == iso3) if h.get("iso3") and iso3 else None
+                rec["home_any"][side] = (iso3 in h["countries"]) if h.get("countries") and iso3 else None
+                hoff = utc_offset_h(h["tz"], ev["date"]) if h.get("tz") else None
+                if hoff is not None and voff is not None:
+                    d = abs(hoff - voff) % 24
+                    rec["tz_shift_h"][side] = round(min(d, 24 - d), 2)
+                else:
+                    rec["tz_shift_h"][side] = None
+                km = haversine_km((h.get("lat"), h.get("lon")), (g.get("lat"), g.get("lon")))
+                rec["travel_km"][side] = round(km) if km is not None else None
+                rec["home_elev_m"][side] = h.get("elev")
+            # opponent change marker -1 means "changed, date unknown"
+            rec["catchweight"] = {"is": bool(booked_cw or anymiss), "lbs": cw_lbs,
+                                  "why": "booked" if booked_cw else ("weight miss" if anymiss else None)}
+            rec["venue"] = {k: venue[k] for k in ("city", "country", "iso3", "altitude_m", "apex")}
+            rec["no_crowd"] = crowd == "none"
+            rec["crowd"] = crowd
+            rec["event_type"] = etype
+            rec["card_segment"] = seg.get("segment")
+            rec["bout_order"] = bi + 1           # 1 = main event (ufcstats lists the card top-down)
+            rec["n_bouts"] = n_bouts
+            rec["notes"] = notes
+            rec["sources"] = {"wiki": ev_meta[ename]["wiki"], "ufcstats_event": ev["ufcstats_event_id"]}
+            chg = {s: {k: v for k, v in bc[(fid, s)].items() if k in ("role", "days", "basis", "booked_vs",
+                                                                       "short_notice_phrase")}
+                   for s in ("A", "B") if (fid, s) in bc}
+            if chg:
+                rec["change_detail"] = chg
+            mtxt = {s: wi[(fid, s)]["text"][0][:240] for s in ("A", "B") if (fid, s) in wi}
+            if mtxt:
+                rec["weighin_text"] = mtxt
+            out[fid] = rec
+            stats["bouts"] += 1
+    meta = {
+        "built": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "tool": "tools/fightweek.py build",
+        "coverage": dict(stats),
+        "event_match": dict(how),
+        "people": {"n": len(pids), "wikidata": len(wd), "sherdog": len(bios),
+                   "nationality": sum(1 for r in nat.values() if r["iso3"])},
+        "fields": {
+            "missed_weight": "lbs over the limit at the official weigh-in (0 = no miss reported on Wikipedia; null = "
+                             "no article, or a miss whose size the article does not give)",
+            "missed": "true if the Wikipedia event article reports the fighter missing weight",
+            "weighed": "reported scale weight for a miss (lbs) when the article gives it",
+            "catchweight": "is: booked at catchweight (ufcstats / Wikipedia weight class) or contested off-weight "
+                           "after a miss; lbs: agreed limit when stated; why: booked | weight miss",
+            "short_notice": "days of notice for a late replacement (who stepped in for a withdrawn fighter); null "
+                            "when not a replacement or when the article gives no date",
+            "replacement": "true if the fighter replaced a withdrawn fighter (not booked in this pairing originally)",
+            "opp_change": "the fighter's booked opponent was replaced: days before the event when the new opponent "
+                          "was set (-1 = changed, date unknown); null = no change found",
+            "home": "fighter's primary nationality (see fighters[slug]) equals the venue country",
+            "home_any": "venue country is any of the fighter's countries (sport country, citizenships, birth "
+                        "country, Sherdog nationality)",
+            "tz_shift_h": "hours between the venue's UTC offset and the fighter's home point (birthplace if in his "
+                          "primary country, else the country's reference city) on the event date, wrapped to <= 12",
+            "travel_km": "great-circle km from that home point to the venue city",
+            "venue.altitude_m": "venue city elevation (Open-Meteo geocoder / GeoNames)",
+            "no_crowd": "event held behind closed doors (COVID-19 period)",
+            "crowd": "none | limited | full",
+            "event_type": "numbered_ppv (UFC ### through 2025) | numbered (2026+, no PPV) | fight_night | tuf_finale",
+            "card_segment": "Wikipedia results-table heading (main card / preliminary card ...)",
+            "bout_order": "1 = main event, ufcstats card order",
+        },
+        "walk_forward": "all fields are known before the fight; nationality and home point are a current snapshot",
+        "events": {k: {"date": events[k]["date"].isoformat(), **v} for k, v in ev_meta.items()},
+    }
+    os.makedirs(DERIVED, exist_ok=True)
+    with open(OUT, "w", encoding="utf-8") as fh:
+        json.dump({"meta": meta, "fights": out, "fighters": nat}, fh, ensure_ascii=False, separators=(",", ":"))
+    log("wrote %s: %d fights, %s (%.1f s)" % (OUT, len(out), dict(stats), time.time() - t0))
+
+
+# ------------------------------------------------------------------ walk-forward check
+def fit_logit(X, y, l2=1e-4, iters=50):
+    """No-intercept logistic regression on mirrored data; returns beta, covariance for the unique fights."""
+    import numpy as np
+    Xm = np.vstack([X, -X])
+    ym = np.concatenate([y, 1 - y])
+    b = np.zeros(X.shape[1])
+    for _ in range(iters):
+        z = Xm @ b
+        p = 1 / (1 + np.exp(-z))
+        g = Xm.T @ (ym - p) - l2 * b
+        H = (Xm * (p * (1 - p))[:, None]).T @ Xm + l2 * np.eye(len(b))
+        step = np.linalg.solve(H, g)
+        b += step
+        if np.max(np.abs(step)) < 1e-9:
+            break
+    z = Xm @ b
+    p = 1 / (1 + np.exp(-z))
+    H = (Xm * (p * (1 - p))[:, None]).T @ Xm
+    cov = np.linalg.pinv(H) * 2.0        # mirrored rows double the information of the unique fights
+    return b, cov
+
+
+def cmd_eval(args):
+    import numpy as np
+    import build_db as B
+    fw = json.load(open(OUT, encoding="utf-8"))
+    F = fw["fights"]
+    fights, people = load_people_fights()
+    _, pre, _ = B.run_elo(fights, 44, boost=1.5, store=True)
+    nprior = Counter()
+    rows = []
+    for f in fights:
+        a, b = f.persons
+        if f.fid in F and f.winner in ("A", "B") and not a.startswith("amb:") and not b.startswith("amb:") \
+                and dt.date(2012, 1, 1) <= f.date <= dt.date(2025, 12, 31):
+            rows.append((f, nprior[a], nprior[b]))
+        nprior[a] += 1
+        nprior[b] += 1
+    LN = math.log(10) / 400.0
+
+    def feats(f, na, nb):
+        r = F[f.fid]
+        ra, rb = pre[f.fid]
+        g = lambda d, s, default=0.0: (d.get(s) if d.get(s) is not None else default)
+        ma, mb = float(bool(r["missed"].get("A"))), float(bool(r["missed"].get("B")))
+        la = min(10.0, g(r["missed_weight"], "A") or (1.5 if ma else 0.0))
+        lb = min(10.0, g(r["missed_weight"], "B") or (1.5 if mb else 0.0))
+        rpa, rpb = float(bool(r["replacement"].get("A"))), float(bool(r["replacement"].get("B")))
+        sna = float(rpa and r["short_notice"].get("A") is not None and r["short_notice"]["A"] <= 14)
+        snb = float(rpb and r["short_notice"].get("B") is not None and r["short_notice"]["B"] <= 14)
+        oca, ocb = float(r["opp_change"].get("A") is not None), float(r["opp_change"].get("B") is not None)
+        lca = float(r["opp_change"].get("A") is not None and 0 <= r["opp_change"]["A"] <= 14)
+        lcb = float(r["opp_change"].get("B") is not None and 0 <= r["opp_change"]["B"] <= 14)
+        ha, hb = float(bool(r["home"].get("A"))), float(bool(r["home"].get("B")))
+        full = 1.0 if r["crowd"] == "full" and not r["venue"]["apex"] else 0.0
+        tza, tzb = g(r["tz_shift_h"], "A"), g(r["tz_shift_h"], "B")
+        alt = (r["venue"]["altitude_m"] or 0) / 1000.0
+        hi = 1.0 if alt >= 1.0 else 0.0
+        ea = 1.0 if (r["home_elev_m"].get("A") or 0) >= 1000 else 0.0
+        eb = 1.0 if (r["home_elev_m"].get("B") or 0) >= 1000 else 0.0
+        elo = (ra - rb) * LN
+        return {
+            "elo": elo, "debut": float(na == 0) - float(nb == 0),
+            "missed": ma - mb, "missed_lbs": la - lb,
+            "replacement": rpa - rpb, "repl_le14d": sna - snb,
+            "opp_change": oca - ocb, "opp_change_le14d": lca - lcb,
+            "home": ha - hb, "home_x_fullcrowd": (ha - hb) * full, "home_x_nocrowd_or_apex": (ha - hb) * (1 - full),
+            "tz_shift_per6h": (tza - tzb) / 6.0,
+            "altitude_adapted_at_altitude": (ea - eb) * hi,
+            "elo_x_nocrowd": elo * float(r["no_crowd"]), "elo_x_altitude_km": elo * alt,
+            "elo_x_catchweight": elo * float(r["catchweight"]["is"]),
+        }
+    data = [(f, feats(f, na, nb), 1.0 if f.winner == "A" else 0.0) for f, na, nb in rows]
+    names = list(data[0][1].keys())
+    X = np.array([[d[1][k] for k in names] for d in data])
+    y = np.array([d[2] for d in data])
+    yr = np.array([d[0].date.year for d in data])
+    tr = yr <= 2023
+    va = (yr >= 2024) & (yr <= 2025)
+    log("decisive fights: train 2012-2023 %d, validate 2024-2025 %d" % (tr.sum(), va.sum()))
+
+    def ll(p, yy):
+        p = np.clip(p, 1e-9, 1 - 1e-9)
+        return -(yy * np.log(p) + (1 - yy) * np.log(1 - p))
+
+    def sym_pred(Xs, bta):
+        # symmetric by construction (no intercept): p(A) = sigma(x.b), p(B) = 1 - p(A)
+        return 1 / (1 + np.exp(-(Xs @ bta)))
+    res = {"n_train": int(tr.sum()), "n_val": int(va.sum()), "models": {}, "single": {}}
+    base = ["elo", "debut"]
+    ib = [names.index(k) for k in base]
+    b0, c0 = fit_logit(X[tr][:, ib], y[tr])
+    p0 = sym_pred(X[va][:, ib], b0)
+    l0 = ll(p0, y[va])
+    rng = np.random.default_rng(20261106)
+    boot_idx = rng.integers(0, va.sum(), size=(2000, va.sum()))
+    res["models"]["base: elo + debut"] = {"coef": dict(zip(base, map(float, b0))),
+                                          "val_logloss": float(l0.mean()),
+                                          "val_brier": float(((p0 - y[va]) ** 2).mean())}
+
+    def summarize(cols, label):
+        ii = [names.index(k) for k in cols]
+        bb, cc = fit_logit(X[tr][:, ii], y[tr])
+        p1 = sym_pred(X[va][:, ii], bb)
+        l1 = ll(p1, y[va])
+        d = l1 - l0
+        bd = d[boot_idx].mean(axis=1)
+        se = np.sqrt(np.diag(cc))
+        out = {"coef": {k: {"b": float(bb[j]), "se": float(se[j]), "ci95": [float(bb[j] - 1.96 * se[j]),
+                                                                            float(bb[j] + 1.96 * se[j])],
+                            "z": float(bb[j] / se[j]) if se[j] > 0 else None,
+                            "nonzero_train": int((X[tr][:, ii[j]] != 0).sum())}
+                        for j, k in enumerate(cols)},
+               "val_logloss": float(l1.mean()), "val_brier": float(((p1 - y[va]) ** 2).mean()),
+               "val_delta_logloss_vs_base": float(d.mean()),
+               "val_delta_ci95": [float(np.percentile(bd, 2.5)), float(np.percentile(bd, 97.5))]}
+        # replication on the validation years (estimate only; not used to choose anything)
+        bv, cv = fit_logit(X[va][:, ii], y[va])
+        sv = np.sqrt(np.diag(cv))
+        out["val_refit"] = {k: {"b": float(bv[j]), "ci95": [float(bv[j] - 1.96 * sv[j]), float(bv[j] + 1.96 * sv[j])],
+                                "nonzero_val": int((X[va][:, ii[j]] != 0).sum())}
+                            for j, k in enumerate(cols) if k not in base}
+        res["models" if label.startswith("full") else "single"][label] = out
+        return out
+    extra = [k for k in names if k not in base]
+    for k in extra:
+        summarize(base + [k], k)
+    full = summarize(names, "full: elo + debut + all context")
+    # report
+    log("\nbase (elo + debut): coef %s; val log loss %.4f, Brier %.4f" % (
+        {k: round(v, 3) for k, v in res["models"]["base: elo + debut"]["coef"].items()}, l0.mean(),
+        ((p0 - y[va]) ** 2).mean()))
+    log("\n%-30s %8s %18s %7s %6s | %9s %22s | %s" % ("feature (Elo+debut+x)", "b", "95% CI (train)", "z", "n!=0",
+                                                     "dLL val", "95% CI", "val refit b [CI]"))
+    for k in extra:
+        o = res["single"][k]
+        c = o["coef"][k]
+        vr = o["val_refit"][k]
+        log("%-30s %8.3f [%7.3f, %7.3f] %7.2f %6d | %+9.5f [%+9.5f, %+9.5f] | %6.3f [%.2f, %.2f] n=%d" % (
+            k, c["b"], c["ci95"][0], c["ci95"][1], c["z"] or 0, c["nonzero_train"], o["val_delta_logloss_vs_base"],
+            o["val_delta_ci95"][0], o["val_delta_ci95"][1], vr["b"], vr["ci95"][0], vr["ci95"][1], vr["nonzero_val"]))
+    log("\nfull model: val log loss %.4f (base %.4f), delta %+.5f [%+.5f, %+.5f]" % (
+        full["val_logloss"], l0.mean(), full["val_delta_logloss_vs_base"], *full["val_delta_ci95"]))
+    for k, c in full["coef"].items():
+        log("   %-30s %8.3f [%7.3f, %7.3f]" % (k, c["b"], c["ci95"][0], c["ci95"][1]))
+    # descriptive base rates (train years): win rate of the side with the flag, symmetric
+    desc = {}
+    for k in ("missed", "replacement", "repl_le14d", "opp_change", "home", "home_x_fullcrowd"):
+        j = names.index(k)
+        m = tr & (X[:, j] != 0)
+        won = np.where(X[m, j] > 0, y[m], 1 - y[m])
+        elo_exp = 1 / (1 + np.exp(-np.where(X[m, j] > 0, X[m, names.index("elo")], -X[m, names.index("elo")])))
+        desc[k] = {"n": int(m.sum()), "win_rate_flagged_side": float(won.mean()) if m.sum() else None,
+                   "elo_expected": float(elo_exp.mean()) if m.sum() else None}
+    res["descriptive_train"] = desc
+    log("\ndescriptive (train years, flagged side): " + json.dumps({k: {kk: (round(vv, 3) if isinstance(vv, float) else vv)
+                                                                          for kk, vv in v.items()} for k, v in desc.items()}))
+    fw["meta"]["eval"] = res
+    with open(OUT, "w", encoding="utf-8") as fh:
+        json.dump(fw, fh, ensure_ascii=False, separators=(",", ":"))
+    log("eval stored in %s meta.eval" % OUT)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["fetch-wiki", "fetch-geo", "fetch-sherdog", "build", "eval", "all"])

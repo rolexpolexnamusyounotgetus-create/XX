@@ -1,0 +1,231 @@
+{
+  "slug": "leon-edwards",
+  "name": "Leon Edwards",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 35,
+  "tale_of_tape": {
+    "height_cm": 188.0,
+    "reach_cm": 188.0,
+    "stance": "Southpaw",
+    "fight_weight_lb": 170,
+    "source": "data/derived/fighters.json (74 in height, 74 in reach); 170 lb at the UFC 322 weigh-in (Nov 2025)"
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "01_headshot_ufc322_media_cagesidepress.jpg",
+    "02_3q_walkout_mmajunkie.jpg",
+    "03_profile_ufc322_msg_bjpenn.jpg",
+    "04_profile_faceoff_ufc_london_2025_imagn.jpg",
+    "07_commons_3q_2021.png"
+  ],
+  "photo_coverage": "Good. ESPN headshot and stance-left were uploaded during UFC 322 week (Nov 2025). Two profiles (Mar 2025, Nov 2025), a recent flash-lit frontal and a warm-light three-quarter. One freely licensed photo (Commons, 2021). A Commons file 'Leon Edwards UFC BELT 2023.png' (CC BY-SA 4.0) was left out: it looks like an official UFC promo cutout uploaded as 'own work', so its licence is doubtful. He has not fought since Nov 2025, so there is no 2026 fight photo.",
+  "face": {
+    "shape": "Long oval, lean. Narrower than it is long, tapering through a beard-covered jaw to a moderately narrow chin.",
+    "jaw": "Moderately wide, softened and squared off by the beard. In profile (03, 04) the jaw line is clean and slopes gently to the chin.",
+    "chin": "Medium width, slightly long, moderate projection, under the beard",
+    "cheekbones": "High and well defined; the cheeks below are lean/hollow",
+    "brow_ridge": "Moderate",
+    "forehead": "High, made to look higher by the receding temples; smooth and rounded",
+    "eyes": {
+      "shape": "Almond to slightly round, medium size, with a calm, slightly heavy-lidded look",
+      "spacing": "average",
+      "colour": "dark brown"
+    },
+    "eyebrows": {
+      "thickness": "medium",
+      "shape": "Gently arched, tapering at the outer ends",
+      "colour": "black"
+    },
+    "nose": {
+      "length": "medium",
+      "width": "medium-broad",
+      "bridge": "medium height, straight",
+      "hump": "none",
+      "tip": "Rounded, moderately broad, with medium-wide nostrils",
+      "fight_damage": "None obvious"
+    },
+    "mouth_lips": "Medium width; full lips with a full lower lip. Neutral at rest; wide smile with even teeth (Commons 2021).",
+    "ears": {
+      "size": "medium",
+      "cauliflower_ear": "None obvious",
+      "note": "Sit slightly out from the head"
+    },
+    "notable_marks_scars": "A small round reddish-dark mark on the upper right chest below the collarbone (ESPN headshot). A few small dark spots on the cheeks/forehead (cagesidepress photo)."
+  },
+  "hair": {
+    "style": "Very short buzz cut, even all over",
+    "length_cm": 0.4,
+    "colour_hex": "#1a1411",
+    "colour_note": "Black. The buzz is short enough that scalp skin shows through, so render it as a dark tint over skin rather than strands.",
+    "hairline": "Receded at the temples into a rounded M; the front centre sits at roughly the normal height",
+    "texture": "Tightly coiled (visible as a dense, even buzz)"
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "detail": "Dense full beard about 1 to 2 cm long, joined to the moustache, trimmed to a clean, fairly high cheek line and a neat neck line under the jaw",
+    "colour_hex": "#1e1714",
+    "colour_note": "Black (jaw sample #2b1917). No visible grey as of Nov 2025.",
+    "density": "dense and even",
+    "shape": "boxed full beard following the jaw, slightly fuller at the chin"
+  },
+  "skin": {
+    "tone_hex": "#c4724b",
+    "tone_hex_method": "average of the cheek samples only (forehead samples sit on specular highlights in every photo); each sample is the median of the 25th-65th luma percentile pixels of the patch",
+    "tone_hex_all_samples_avg": "#cc8462",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead, centre",
+        "light": "studio flash, warm grade",
+        "hex": "#ec9e83"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-left side",
+        "light": "studio flash, warm grade",
+        "hex": "#bf512e"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-right side",
+        "light": "studio flash, warm grade",
+        "hex": "#db633d"
+      },
+      {
+        "photo": "01_headshot_ufc322_media_cagesidepress.jpg",
+        "where": "forehead, centre",
+        "light": "on-camera flash",
+        "hex": "#e2bba5"
+      },
+      {
+        "photo": "01_headshot_ufc322_media_cagesidepress.jpg",
+        "where": "cheek below cheekbone, image-left side",
+        "light": "on-camera flash",
+        "hex": "#df9a6f"
+      },
+      {
+        "photo": "01_headshot_ufc322_media_cagesidepress.jpg",
+        "where": "cheek below cheekbone, image-right side",
+        "light": "on-camera flash",
+        "hex": "#d48960"
+      },
+      {
+        "photo": "02_3q_walkout_mmajunkie.jpg",
+        "where": "forehead, centre",
+        "light": "warm arena light",
+        "hex": "#c5a38c"
+      },
+      {
+        "photo": "02_3q_walkout_mmajunkie.jpg",
+        "where": "cheek below cheekbone, image-left side",
+        "light": "warm arena light",
+        "hex": "#985a2f"
+      },
+      {
+        "photo": "02_3q_walkout_mmajunkie.jpg",
+        "where": "cheek below cheekbone, image-right side",
+        "light": "warm arena light",
+        "hex": "#b37957"
+      }
+    ],
+    "undertone": "Warm (orange-red). Medium-dark brown skin.",
+    "freckles_marks": "Small dark spots on the cheeks and forehead; a small reddish mark on the upper right chest.",
+    "note": "The ESPN grade is very warm (cheek samples #bf512e and #db633d), and the flash photo is lifted. The three-photo cheek average (#c4724b) is a reasonable midpoint. He reads lighter and warmer than Kamaru Usman in comparable light."
+  },
+  "body": {
+    "build": "Long-limbed, lean, athletic welterweight (188 cm, 77 kg)",
+    "body_fat": "lean",
+    "body_fat_note": "Abs visible in both ESPN cutouts",
+    "shoulders": "Moderately broad and squared, with defined deltoids",
+    "chest": "Flat, well-defined pectorals of medium thickness",
+    "arms": "Long and lean, with defined biceps and forearms",
+    "waist": "Narrow, clear V-taper",
+    "legs_calves": "Long legs with lean thighs; slim calves",
+    "posture": "Upright and relaxed",
+    "notable": "Long neck and long limbs relative to his frame. He looks taller and slimmer than Usman."
+  },
+  "tattoos": [
+    {
+      "where": "left pectoral / upper left chest",
+      "description": "Script reading 'Death Before Dishonour' in two lines",
+      "size": "medium"
+    },
+    {
+      "where": "right pectoral / upper right chest",
+      "description": "Several lines of script near the collarbone, with a black-and-grey vertical portrait/figure below it on the upper right chest",
+      "size": "medium"
+    },
+    {
+      "where": "left side of torso (ribs/flank)",
+      "description": "A vertical column of large script letters running down the ribs (not readable at the available resolution)",
+      "size": "medium (tall)"
+    },
+    {
+      "where": "left forearm",
+      "description": "Black-and-grey forearm piece, dense, from the elbow toward the wrist",
+      "size": "half sleeve (forearm)"
+    }
+  ],
+  "kit": {
+    "fight_shorts": "Black/grey patterned UFC shorts with crypto.com logo (2025); red Venum shorts (2022); black with gold trim as champion (2023-2024)",
+    "walkout": "Black Venum hoodie with gold UFC lettering (champion era)",
+    "colours": [
+      "#111111 black",
+      "#c8102e red",
+      "#c9a227 gold"
+    ]
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.154,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.7,
+    "macro/weightDownM": 0.1,
+    "macro/heightUpM": 0.22,
+    "macro/proportionsUpM": 0.7,
+    "head/head-oval": 0.45,
+    "head/head-scale-vert-incr": 0.15,
+    "head/head-scale-horiz-decr": 0.1,
+    "head/head-fat-decr": 0.2,
+    "forehead/forehead-scale-vert-incr": 0.25,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-prominent-incr": 0.1,
+    "chin/chin-bones-decr": 0.1,
+    "chin/chin-width-decr": 0.05,
+    "eyebrows/eyebrows-angle-up": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.1,
+    "nose/nose-scale-horiz-incr": 0.3,
+    "nose/nose-nostrils-width-incr": 0.35,
+    "nose/nose-point-width-incr": 0.3,
+    "nose/nose-flaring-incr": 0.2,
+    "nose/nose-width1-incr": 0.1,
+    "nose/nose-scale-vert-incr": 0.05,
+    "mouth/mouth-upperlip-volume-incr": 0.3,
+    "mouth/mouth-lowerlip-volume-incr": 0.35,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "neck/neck-scale-horiz-incr": 0.25,
+    "neck/neck-scale-vert-incr": 0.1,
+    "torso/measure-shoulder-dist-incr": 0.35,
+    "torso/torso-vshape-incr": 0.55,
+    "torso/measure-waist-circ-decr": 0.4,
+    "torso/measure-hips-circ-decr": 0.2,
+    "buttocks/buttocks-volume-incr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.35,
+    "cheek/r-cheek-bones-incr": 0.35,
+    "cheek/l-cheek-volume-decr": 0.3,
+    "cheek/r-cheek-volume-decr": 0.3,
+    "eyes/l-eye-height2-incr": 0.05,
+    "eyes/r-eye-height2-incr": 0.05,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1
+  },
+  "morphs_if_available": {
+    "note": "Ear targets from the full MakeHuman set. They are not in the shipped assets/embed/mh-manifest.json, so they are listed here and not under morphs.",
+    "ears/l-ear-rot-forward": 0.1,
+    "ears/r-ear-rot-forward": 0.1
+  },
+  "morphs_unavailable": "No hairline-recession or beard-shape targets: do these in the hair/beard textures. No ear targets in the shipped manifest (a small forward rotation is under morphs_if_available).",
+  "notes": "Confidence: medium-high for the overall look (long oval face, receding buzz cut, dense boxed black beard, high cheekbones, long lean frame, chest scripts); medium for morph values. What to watch for: (1) the receding temple hairline is important for the likeness and must be in the scalp texture; (2) the beard is dense and neatly edged, so do not render stubble; (3) keep him slimmer and longer-limbed than Usman; (4) no 2026 photos exist because he has not fought since UFC 322 (Nov 2025), so the Nov 2025 photos are the most current; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height."
+}

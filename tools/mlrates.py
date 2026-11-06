@@ -509,12 +509,12 @@ def glm_design(X, mean, sd, pairs):
     return np.hstack(cols)
 
 
-def glm_fit(Z, y, e, off, kind, lam, w_extra=None, iters=30):
+def glm_fit(Z, y, e, off, kind, lam, w_extra=None, iters=30, init=None, tol=1e-6):
     """Ridge-penalised GLM by IRLS. Poisson: E[y] = e exp(off + b0 + Z b); binomial: y ~ Bin(e, sigm(off + b0 + Z b)).
     The intercept b0 is unpenalised. Returns (b0, b)."""
     n, p = Z.shape
     A = np.hstack([np.ones((n, 1)), Z])
-    beta = np.zeros(p + 1)
+    beta = np.zeros(p + 1) if init is None else np.concatenate([[init[0]], init[1]])
     pen = np.full(p + 1, lam)
     pen[0] = 0.0
     for _ in range(iters):
@@ -532,7 +532,7 @@ def glm_fit(Z, y, e, off, kind, lam, w_extra=None, iters=30):
         AW = A * W[:, None]
         H = A.T @ AW + np.diag(pen)
         new = np.linalg.solve(H, AW.T @ z)
-        if np.max(np.abs(new - beta)) < 1e-7:
+        if np.max(np.abs(new - beta)) < tol:
             beta = new
             break
         beta = new
@@ -783,7 +783,7 @@ def model_eta(J, X, BASEv):
 # ------------------------------------------------------------------ fit pipeline
 OOF_YEARS = [2020, 2021, 2022, 2023]          # time-ordered CV folds inside the training period
 ES_SPLIT = (2017, (2018, 2019))               # round / epoch selection: train <= 2017, stop on 2018-2019
-GLM_LAMS = [10.0, 100.0, 1000.0]
+GLM_LAMS = [10.0, 50.0, 250.0, 1250.0]
 GLM_TOP = 12                                   # interactions among the top-k GBM features of each target
 MLP_CFG = dict(hidden=(96, 48), drop=0.15, wd=1e-3, lr=2e-3)
 MLP_SEEDS = 2
@@ -854,6 +854,9 @@ def cmd_fit(args):
               "n_val_rows_both_prior": int((valM & bp).sum()), "engine": eng_meta}
     log("rows: train %d, validation %d (both with a prior UFC fight: %d)" % (trainM.sum(), valM.sum(), (valM & bp).sum()))
     quick = args.quick
+    global OOF_YEARS, MLP_SEEDS
+    if quick:                                     # smoke test of every code path (numbers meaningless)
+        OOF_YEARS, MLP_SEEDS = [2023], 1
 
     # ---------------- 1) round selection for GBM (train <= 2017, early stop on 2018-2019)
     es_tr = (yr >= TRAIN_FROM.year) & (yr <= ES_SPLIT[0])
@@ -862,7 +865,7 @@ def cmd_fit(args):
     for t in range(nt):
         e = EX[:, t]
         a, b = es_tr & (e > 0), es_va & (e > 0)
-        bst, it = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], 1500, X[b], Y[b, t], e[b], OFF[b, t])
+        bst, it = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], 30 if quick else 1500, X[b], Y[b, t], e[b], OFF[b, t])
         it = max(it, 20)
         rounds.append(it)
         gain = bst.feature_importance("gain", iteration=it)
@@ -884,15 +887,32 @@ def cmd_fit(args):
     ep_list = []
     for s in range(MLP_SEEDS):
         net = mlp_train(X[es_tr], Y[es_tr], EX[es_tr], OFF[es_tr], X[es_va], Y[es_va], EX[es_va], OFF[es_va],
-                        seed=100 + s, task_w=tw, epochs=150, **MLP_CFG)
+                        seed=100 + s, task_w=tw, epochs=3 if quick else 150, **MLP_CFG)
         ep_list.append(net["epochs"])
     mlp_epochs = int(round(np.mean(ep_list)))
     report["mlp_epochs_es"] = ep_list
     log("  mlp epochs %s -> %d (%.0fs)" % (ep_list, mlp_epochs, time.time() - t_start))
 
+    # ---------------- 2b) GLM ridge strength per target (same split)
+    lam_t = []
+    mean_es = X[es_tr].mean(0)
+    sd_es = X[es_tr].std(0) + 1e-6
+    for t in range(nt):
+        e = EX[:, t]
+        a, b = es_tr & (e > 0), es_va & (e > 0)
+        Za = glm_design(X[a], mean_es, sd_es, pairs_t[t])
+        Zb = glm_design(X[b], mean_es, sd_es, pairs_t[t])
+        devs, init = [], None
+        for lam in sorted(GLM_LAMS, reverse=True):
+            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam, iters=15, init=init)
+            init = (b0, bb)
+            devs.append((target_dev(t, Y[b, t], e[b], OFF[b, t] + b0 + Zb @ bb).mean(), lam))
+        lam_t.append(min(devs)[1])
+    report["glm_lambda"] = dict(zip(TNAMES, lam_t))
+    log("  glm lambdas %s (%.0fs)" % (lam_t, time.time() - t_start))
+
     # ---------------- 3) time-ordered CV: out-of-fold predictions for 2020-2023
     oof = {k: np.full((len(yr), nt), np.nan) for k in ("glm", "gbm", "mlp")}
-    oof_glm_lam = {lam: np.full((len(yr), nt), np.nan) for lam in GLM_LAMS}
     for b in OOF_YEARS:
         trm = (yr >= TRAIN_FROM.year) & (yr < b)
         tem = yr == b
@@ -903,9 +923,8 @@ def cmd_fit(args):
             a = trm & (e > 0)
             Za = glm_design(X[a], mean, sd, pairs_t[t])
             Zt = glm_design(X[tem], mean, sd, pairs_t[t])
-            for lam in GLM_LAMS:
-                b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam, iters=15)
-                oof_glm_lam[lam][tem, t] = b0 + Zt @ bb
+            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam_t[t], iters=15)
+            oof["glm"][tem, t] = b0 + Zt @ bb
             bst, _ = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], rounds[t])
             oof["gbm"][tem, t] = bst.predict(X[tem], raw_score=True)
         acc = np.zeros((tem.sum(), nt))
@@ -916,15 +935,6 @@ def cmd_fit(args):
         oof["mlp"][tem] = acc
         log("  fold %d done (%.0fs)" % (b, time.time() - t_start))
     oofM = np.isin(yr, OOF_YEARS)
-    lam_t = []
-    for t in range(nt):
-        e = EX[:, t]
-        m = oofM & (e > 0)
-        devs = [target_dev(t, Y[m, t], e[m], OFF[m, t] + oof_glm_lam[lam][m, t]).mean() for lam in GLM_LAMS]
-        k = int(np.argmin(devs))
-        lam_t.append(GLM_LAMS[k])
-        oof["glm"][:, t] = oof_glm_lam[GLM_LAMS[k]][:, t]
-    report["glm_lambda"] = dict(zip(TNAMES, lam_t))
 
     # ---------------- 4) stacking weights on the out-of-fold predictions (no intercept; deltas over the offset)
     from scipy.optimize import minimize
@@ -1137,6 +1147,137 @@ def write_fixtures(d, J, n=60):
     with open(path, "w") as fh:
         json.dump(out, fh, separators=(",", ":"))
     log("wrote %s (%d fights)" % (path, len(fx)))
+
+
+# ------------------------------------------------------------------ simulator: plain engine vs ML rates (validation)
+def bucket_of(r):
+    w, m = r["winner"], r["method"]
+    if w not in ("A", "B"):
+        return 3 if m == "DRAW" else None
+    kind = 0 if m in ("KO", "DOC") else (1 if m == "SUB" else (2 if m in ("UD", "SD", "MD") else None))
+    if kind is None:
+        return None
+    return kind if w == "A" else 6 - kind
+
+
+def cmd_sim(args):
+    d = load_dataset()
+    rows = [r for r in d["rows"] if VAL_FROM.year <= r["year"] < CUTOFF.year
+            and r["sides"][0]["n"] > 0 and r["sides"][1]["n"] > 0]
+    if args.quick:
+        rows = rows[:40]
+    N = args.nsim
+    J = json.load(open(os.path.join(OUT, "mlrates_dev.json")))     # trained 2010-2023 only
+    years = sorted({str(r["year"]) for r in rows})
+    fights = [fight_json(r) for r in rows]
+    nproc = max(1, min(2, args.procs))
+    chunks = [list(range(k, len(fights), nproc)) for k in range(nproc)]
+    procs, outs = [], []
+    t0 = time.time()
+    for ci, idx in enumerate(chunks):
+        inp = os.path.join(CACHE, "sim_in_%d.json" % ci)
+        outp = os.path.join(CACHE, "sim_out_%d.json" % ci)
+        with open(inp, "w") as fh:
+            json.dump({"priors": priors_json({y: d["priors"][y] for y in years}), "model": J,
+                       "fights": [fights[i] for i in idx]}, fh)
+        procs.append(subprocess.Popen(["node", os.path.join(HERE, "mlrates_engine.js"), "sim", inp, outp, str(N),
+                                       str(1000 + ci)]))
+        outs.append((idx, outp))
+    for p in procs:
+        if p.wait() != 0:
+            raise SystemExit("sim worker failed")
+    res = [None] * len(fights)
+    params_version = None
+    for idx, outp in outs:
+        o = json.load(open(outp))
+        params_version = o["params_version"]
+        for i, rr in zip(idx, o["rows"]):
+            res[i] = rr
+    log("simulated %d validation fights x %d (x2 configs) in %.0fs" % (len(fights), N, time.time() - t0))
+
+    eps = 0.5 / N
+
+    def ll_win(p, y):
+        p = min(max(p, 1e-4), 1 - 1e-4)
+        return -(y * math.log(p) + (1 - y) * math.log(1 - p))
+
+    recs = []
+    for r, rr in zip(rows, res):
+        b = bucket_of(r)
+        rec = {"id": r["id"], "fight": r["id"], "bucket": b, "winner": r["winner"]}
+        for k in ("plain", "ml"):
+            s = rr[k]
+            pA = s["pA"] / max(1e-9, s["pA"] + s["pB"])
+            bins = np.array(s["bins"]) * (1 - 7 * eps) + eps
+            rec[k] = {"pA": pA, "bins": bins.tolist()}
+            if r["winner"] in ("A", "B"):
+                y = 1.0 if r["winner"] == "A" else 0.0
+                # symmetric scoring: both orientations (identical for a corner-symmetric model; kept explicit)
+                rec[k]["ll"] = 0.5 * (ll_win(pA, y) + ll_win(1 - pA, 1 - y))
+                rec[k]["brier"] = (pA - y) ** 2
+                rec[k]["acc"] = 1.0 if (pA > 0.5) == (y > 0.5) else (0.5 if pA == 0.5 else 0.0)
+            if b is not None:
+                rec[k]["ll7"] = -math.log(bins[b])
+            # simulated per-minute stat rates vs the fight's actual per-minute rates
+            mins = r["minutes"]
+            v = r["v"]
+            for tag, si, avg in (("A", 0, s["avgA"]), ("B", 1, s["avgB"])):
+                act_sl = (v[si][KI["d_lnd"]] + v[si][KI["c_lnd"]] + v[si][KI["g_lnd"]]) / mins
+                act_td = v[si][KI["td_lnd"]] / mins
+                act_ct = v[si][KI["ctrl"]] / mins
+                rec[k]["sl_err_" + tag] = abs(avg["sig_lnd"] / s["avgMin"] - act_sl)
+                rec[k]["td_err_" + tag] = abs(avg["td_lnd"] / s["avgMin"] - act_td)
+                rec[k]["ct_err_" + tag] = abs(avg["ctrl"] / s["avgMin"] - act_ct)
+        eA, eB = r["sides"][0]["elo"], r["sides"][1]["elo"]
+        rec["elo_pA"] = 1 / (1 + 10 ** ((eB - eA) / 400))
+        recs.append(rec)
+
+    dec = [x for x in recs if x["winner"] in ("A", "B")]
+    b7 = [x for x in recs if x["bucket"] is not None]
+    fid = np.array([x["fight"] for x in dec])
+    out = {"n_fights": len(recs), "n_decisive": len(dec), "n_bucketed": len(b7), "nsim": N,
+           "params_version": params_version, "model": "data/derived/mlrates_dev.json (trained 2010-2023)"}
+    for k in ("plain", "ml"):
+        out[k] = {"winner_log_loss": float(np.mean([x[k]["ll"] for x in dec])),
+                  "brier": float(np.mean([x[k]["brier"] for x in dec])),
+                  "accuracy": float(np.mean([x[k]["acc"] for x in dec])),
+                  "outcome7_log_loss": float(np.mean([x[k]["ll7"] for x in b7])),
+                  "sig_lnd_per_min_mae": float(np.mean([0.5 * (x[k]["sl_err_A"] + x[k]["sl_err_B"]) for x in recs])),
+                  "td_lnd_per_min_mae": float(np.mean([0.5 * (x[k]["td_err_A"] + x[k]["td_err_B"]) for x in recs])),
+                  "ctrl_s_per_min_mae": float(np.mean([0.5 * (x[k]["ct_err_A"] + x[k]["ct_err_B"]) for x in recs]))}
+    yv = np.array([1.0 if x["winner"] == "A" else 0.0 for x in dec])
+    pe = np.clip(np.array([x["elo_pA"] for x in dec]), 1e-4, 1 - 1e-4)
+    out["elo_winner_log_loss"] = float(np.mean(-(yv * np.log(pe) + (1 - yv) * np.log(1 - pe))))
+    dll = np.array([x["ml"]["ll"] - x["plain"]["ll"] for x in dec])
+    mu, lo, hi = boot_ci(dll, fid)
+    out["ml_minus_plain_winner_ll"] = {"mean": mu, "lo": lo, "hi": hi}
+    d7 = np.array([x["ml"]["ll7"] - x["plain"]["ll7"] for x in b7])
+    mu, lo, hi = boot_ci(d7, np.array([x["fight"] for x in b7]))
+    out["ml_minus_plain_outcome7_ll"] = {"mean": mu, "lo": lo, "hi": hi}
+    for key, nm in (("sl", "sig_lnd_per_min"), ("td", "td_lnd_per_min"), ("ct", "ctrl_s_per_min")):
+        dd = np.array([0.5 * (x["ml"][key + "_err_A"] + x["ml"][key + "_err_B"] - x["plain"][key + "_err_A"]
+                              - x["plain"][key + "_err_B"]) for x in recs])
+        mu, lo, hi = boot_ci(dd, np.array([x["fight"] for x in recs]))
+        out["ml_minus_plain_" + nm + "_mae"] = {"mean": mu, "lo": lo, "hi": hi}
+    # calibration of the ML-sim winner probability (deciles of the A-oriented and mirrored predictions)
+    for k in ("plain", "ml"):
+        p = np.array([x[k]["pA"] for x in dec])
+        pp = np.concatenate([p, 1 - p])
+        yy = np.concatenate([yv, 1 - yv])
+        q = np.linspace(0, 1, 11)
+        out[k]["calibration_mirrored"] = [{"lo": float(q[i]), "hi": float(q[i + 1]),
+                                           "n": int(((pp >= q[i]) & (pp < q[i + 1] if i < 9 else pp <= 1)).sum()),
+                                           "pred": float(pp[(pp >= q[i]) & ((pp < q[i + 1]) if i < 9 else (pp <= 1))].mean())
+                                           if ((pp >= q[i]) & ((pp < q[i + 1]) if i < 9 else (pp <= 1))).any() else None,
+                                           "obs": float(yy[(pp >= q[i]) & ((pp < q[i + 1]) if i < 9 else (pp <= 1))].mean())
+                                           if ((pp >= q[i]) & ((pp < q[i + 1]) if i < 9 else (pp <= 1))).any() else None}
+                                          for i in range(10)]
+    path = os.path.join(CACHE, "sim_report.json")
+    with open(path, "w") as fh:
+        json.dump(out, fh, indent=1)
+    log(json.dumps({k: v for k, v in out.items() if k not in ("plain", "ml")}, indent=1))
+    for k in ("plain", "ml"):
+        log(k, json.dumps({kk: vv for kk, vv in out[k].items() if kk != "calibration_mirrored"}))
 
 
 # ------------------------------------------------------------------ main

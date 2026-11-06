@@ -42,12 +42,18 @@ SEED = 20261106
 
 # --------------------------------------------------------------------------------------------- shrinkage
 # Pseudo-exposure of the division prior blended into every rate (minutes for per-minute rates, attempts
-# for proportions, landed head strikes for knockdown rates). Tuned lightly on 2019-2023 (see report).
-K_MIN = 20.0        # per-minute rates
-K_ATT = 60.0        # strike accuracy / defense / attempt shares (attempts)
+# for proportions, landed head strikes for knockdown rates). main() re-chooses K_MIN, K_ATT, K_TD and
+# K_HEAD by leave-one-year-out CV deviance of the rate models on 2019-2023 (tune_shrinkage); these are
+# the grid values it picked on the Oct 31, 2026 snapshot.
+K_MIN = 10.0        # per-minute rates
+K_ATT = 120.0       # strike accuracy / defense / attempt shares (attempts)
 K_TD = 8.0          # takedown accuracy / defense (attempts)
-K_HEAD = 250.0      # knockdowns per landed head strike
+K_HEAD = 125.0      # knockdowns per landed head strike
 K_CTRLTD = 3.0      # control seconds per takedown landed (takedowns)
+SHRINK_GRID = {"K_MIN": ((5.0, 10.0, 20.0), ("dist_att", "td_att", "ctrl", "sub_att", "clinch_att")),
+               "K_ATT": ((60.0, 120.0, 240.0), ("dist_acc", "leg_share", "body_share")),
+               "K_TD": ((4.0, 8.0, 16.0), ("td_acc",)),
+               "K_HEAD": ((60.0, 125.0, 250.0), ("kd",))}
 
 
 def logit(p):
@@ -764,6 +770,7 @@ def winner_tests(W, n_boot=2000, seed=SEED, lam_int=1.0, base_terms=None):
     y, yr, tune, test = W.y, W.yr, W.tune, W.test
     base_terms = base_terms or BASE_WIN
     Xb = W.base(base_terms)
+    col_sd = np.column_stack([W.zd(c) for c in base_terms])[tune].std(0)
     lam, lam_scores = choose_lam(Xb, y, yr, tune)
     pen_b = np.full(Xb.shape[1], float(lam))
     rng = np.random.default_rng(seed)
@@ -785,6 +792,7 @@ def winner_tests(W, n_boot=2000, seed=SEED, lam_int=1.0, base_terms=None):
     be, _ = fit_logit(elo_X[tune], y[tune], 1.0, pen=np.array([1.0]))
     out = {"baseline": {"terms": base_terms, "lam": lam, "lam_cv": lam_scores,
                         "coef": dict(zip(base_terms, [float(v) for v in b0])),
+                        "col_sd": dict(zip(base_terms, [float(v) for v in col_sd])),
                         "cv_tune": metrics(pcv0[tune], y[tune]), "test": metrics(pte0, y[test])},
            "elo_only": {"test": metrics(sigmoid(elo_X[test] @ be), y[test])},
            "candidates": {}}
@@ -1024,6 +1032,49 @@ def transmission_test(D, rows, W, Xb, pen_b, variants, n_boot=2000, seed=SEED):
                          for k in ("h", "b", "l", "kd", "td", "ctrl")}
     out["median_abs_rel_shift"] = shifts
     return out
+
+
+def rate_cv_deviance(D, models):
+    """leave-one-year-out CV deviance (2019-2023) of the base rate models, relative per model"""
+    specs = rate_specs(D)
+    tune = D.tune.to_numpy()
+    yr = D.date.str[:4].astype(int).to_numpy()
+    out = {}
+    for name in models:
+        m = specs[name]
+        y, n, off, ok = _spec_data(D, m)
+        tr = tune & ok
+        nn = lambda mask: None if n is None else n[mask]
+        X = np.column_stack([np.ones(len(D))] + [_col(D, c) for c in m["base"]])
+        tot = 0.0
+        for Y in range(2019, 2024):
+            a, v = tr & (yr != Y), tr & (yr == Y)
+            b, _, _ = fit_glm(X[a], y[a], m["fam"], off[a], nn(a))
+            tot += glm_dev(X[v], b, y[v], m["fam"], off[v], nn(v)).sum()
+        out[name] = float(tot)
+    return out
+
+
+def tune_shrinkage(bt, vec, keys):
+    """coordinate search over the prior strengths: each constant is judged by the summed relative CV
+    deviance of the rate models it feeds (tune years only); the others stay at their current values"""
+    g = globals()
+    log = {}
+    for const, (grid, models) in SHRINK_GRID.items():
+        res = {}
+        for v in grid:
+            g[const] = v
+            rows = build_table(bt, vec)
+            tm = np.array([r["date"] < TEST_FROM for r in rows])
+            mu, sd = zconsts(rows, sorted(rows[0]["A"].keys()), tm)
+            res[v] = rate_cv_deviance(build_sides(rows, keys, mu, sd), models)
+        ref = res[grid[0]]
+        score = {v: sum(res[v][m] / ref[m] for m in models) / len(models) for v in grid}
+        best = min(score, key=score.get)
+        g[const] = best
+        log[const] = {"grid": list(grid), "models": list(models), "cv_deviance": {str(v): res[v] for v in grid},
+                      "mean_rel": {str(v): score[v] for v in grid}, "chosen": best}
+    return log
 
 
 # --------------------------------------------------------------------------------------------- engine sets
@@ -1362,11 +1413,18 @@ def main():
     ap.add_argument("--boot", type=int, default=2000, help="bootstrap replicates for held-out CIs (2000)")
     ap.add_argument("--k", type=int, default=8, help="number of archetypes (8)")
     ap.add_argument("--no-report", action="store_true")
+    ap.add_argument("--no-shrink-tune", action="store_true", help="skip the prior-strength grid (use the defaults)")
     args = ap.parse_args()
     t0 = dt.datetime.now()
     print("loading backtest and per-fight vectors ...")
     bt = load_backtest()
     vec, keys = per_fight_vectors()
+    if args.no_shrink_tune:
+        shrink_log = None
+    else:
+        print("tuning prior strengths on 2019-2023 ...")
+        shrink_log = tune_shrinkage(bt, vec, keys)
+        print("  " + ", ".join("%s=%g" % (k, v["chosen"]) for k, v in shrink_log.items()))
     rows = build_table(bt, vec)
     feats = sorted(rows[0]["A"].keys())
     tune_mask = np.array([r["date"] < TEST_FROM for r in rows])
@@ -1476,6 +1534,7 @@ def main():
                  "snapshot": bt["meta"]["snapshot"], "tune": list(TUNE), "test_from": TEST_FROM,
                  "n_fights": len(rows), "n_decisive": int(len(W.y)), "n_test_decisive": int(W.test.sum()),
                  "shrinkage": {"K_MIN": K_MIN, "K_ATT": K_ATT, "K_TD": K_TD, "K_HEAD": K_HEAD, "K_CTRLTD": K_CTRLTD},
+                 "shrinkage_tuning": shrink_log,
                  "style_dims": STYLE_DIMS, "main_dims": BASE_WIN, "bootstrap": args.boot,
                  "notes": "features are log rate ratios or log-odds differences vs the division prior of the fight "
                           "year (backtest: priors_asof; live roster: fighters.json priors); z = (feature - mu) / sd "

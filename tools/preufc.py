@@ -1384,12 +1384,14 @@ def evaluate(args):
         for C in (1.0,):
             o = cv_eval(lambda: mk(C), trainval)
             cvlog.append({"model": name, "C": C, "cv_ll": oof_ll(o, trainval)})
-    for C in (0.01, 0.03, 0.1, 0.3, 1.0):
+    Cs = (0.1,) if args.quick else (0.01, 0.03, 0.1, 0.3, 1.0)
+    taus = (2.0,) if args.quick else (1.0, 2.0, 4.0, None)
+    for C in Cs:
         o = cv_eval(lambda: DiffModel(BASE_KEYS, [], C=C), trainval)
         cvlog.append({"model": "base", "C": C, "cv_ll": oof_ll(o, trainval)})
     for fs_name, fs in (("core", PRE_CORE), ("all", PRE_KEYS)):
-        for C in (0.01, 0.03, 0.1, 0.3):
-            for tau in (1.0, 2.0, 4.0, None):
+        for C in Cs[:4]:
+            for tau in taus:
                 o = cv_eval(lambda: DiffModel(BASE_KEYS, fs, C=C, tau=tau), trainval)
                 cvlog.append({"model": "base+pre_" + fs_name, "C": C, "tau": tau, "cv_ll": oof_ll(o, trainval)})
                 o = cv_eval(lambda: DiffModel(["elo"], fs, C=C, tau=tau), trainval)
@@ -1408,8 +1410,11 @@ def evaluate(args):
     # 2) seeded Elo: CV per year (fit on [train_from, Y), score newcomer bouts of year Y)
     seed_cv = {}
     seed_cache = {}
-    for nm, keys, use_age in (("seed_age", [], True), ("seed_pre", PRE_CORE, False), ("seed_pre+age", PRE_CORE, True),
-                              ("seed_small+age", seed_keys_all["pre_small"], True)):
+    seed_variants = (("seed_age", [], True), ("seed_pre", PRE_CORE, False), ("seed_pre+age", PRE_CORE, True),
+                     ("seed_small+age", seed_keys_all["pre_small"], True))
+    if args.quick:
+        seed_variants = seed_variants[2:3]
+    for nm, keys, use_age in seed_variants:
         ps, ys = [], []
         for Y in CV_YEARS:
             sf = fit_seed(keys, use_age, dt.date(Y, 1, 1))
@@ -1752,6 +1757,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--retry", action="store_true", help="retry unresolved targets")
+    ap.add_argument("--quick", action="store_true", help="eval: small grids (debugging only)")
     args = ap.parse_args()
     if args.cmd == "crawl":
         crawl(args)
