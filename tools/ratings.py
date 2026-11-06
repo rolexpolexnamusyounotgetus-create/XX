@@ -2933,7 +2933,141 @@ def review_oppufc(path=OUT_JSON, systems=("elo_full", "glicko2", "trueskill_mov"
     return res
 
 
+def review_audit(path=OUT_JSON):
+    """Adversarial review checks that need no tuning (python3 tools/ratings.py review_audit), written to
+    ratings.json["review"]["reviewer_audit"]. Nothing here is chosen on 2024-2025; 2026 fights are never scored.
+      - raw join: every stored prediction against data/raw/ufc_fight_results.csv (outcome by fight URL id, corner order
+        by the raw bout name) and backtest.json; duplicate pair-dates; a fighter twice on one day
+      - corner order: first-named win share; log loss of every system scored from B's corner (mirrored) vs A's
+      - calibration slope by year (no intercept) for elo_ref, whr_rounds, stack, dims and the close, and the yearly
+        log-loss gap whr_rounds - close (a test-only leak would narrow the gap, a period effect leaves it)
+      - event + fighter (dyadic) cluster-robust SEs of the headline 2024-2025 differences: sums e_i e_j over pairs of
+        fights that share an event or a fighter
+      - cumulative ablation scored on both windows with the stored parameters (diagnostic only)
+      - pre-UFC prior coverage of 2015+ debutants by later UFC career length (survivor check)
+      - corner-swap antisymmetry of the dims matchup features"""
+    import csv
+    J = json.load(open(path))
+    D = load_data()
+    prepare(D, log=lambda *a: None)
+    out = {"what": review_audit.__doc__.split("\n")[0]}
+    # raw join
+    raw = {}
+    for r in csv.DictReader(open(os.path.join(ROOT, "data", "raw", "ufc_fight_results.csv"), encoding="utf-8")):
+        raw.setdefault(r["URL"].rstrip("/").split("/")[-1], r)
+    bt = {e["id"]: e for e in json.load(open(BACKTEST))["fights"]}
+    bad = defaultdict(list)
+    for fid, e in J["predictions"].items():
+        r, b = raw.get(fid), bt.get(fid)
+        if r is None or b is None:
+            bad["missing raw or backtest row"].append(fid)
+            continue
+        y = {"W/L": 1.0, "L/W": 0.0, "D/D": 0.5}.get(r["OUTCOME"].strip())
+        if e["y"] != y:
+            bad["stored y differs from raw outcome"].append(fid)
+        if (e["A"], e["B"]) != (b["A"]["slug"], b["B"]["slug"]):
+            bad["corner order differs from backtest"].append(fid)
+        n1 = r["BOUT"].split(" vs. ")[0].strip()
+        if n1 != b["A"]["name"]:
+            bad["raw first name differs from backtest A name (aliases)"].append("%s: %s / %s" % (fid, n1, b["A"]["name"]))
+    pairs = defaultdict(int)
+    for e in J["predictions"].values():
+        pairs[(e["date"], tuple(sorted((e["A"], e["B"]))))] += 1
+    out["raw_join"] = {"n": len(J["predictions"]), "problems": {k: v[:10] for k, v in bad.items()},
+                       "problem_counts": {k: len(v) for k, v in bad.items()},
+                       "duplicate_pair_dates": sum(v - 1 for v in pairs.values() if v > 1)}
+    names = [k for k in J["systems"]]
+    P = {k: np.full(D.n, np.nan) for k in names}
+    for fid, e in J["predictions"].items():
+        for k in names:
+            if e["p"].get(k) is not None:
+                P[k][D.fidx[fid]] = e["p"][k]
+    it, ix, y = D.idx_tune, D.idx_test, D.y
+    out["corner_order"] = {"A_win_share_tune": round(float(y[it].mean()), 4), "A_win_share_test": round(float(y[ix].mean()), 4),
+                           "max_abs_mirrored_minus_direct_test_ll": max(
+                               abs(float(ll_vec(1 - P[k][ix], 1 - y[ix]).mean() - ll_vec(P[k][ix], y[ix]).mean()))
+                               for k in names)}
+    # slope by year
+    pm = market_probs(D)
+
+    def slope(p, yy):
+        return float(_logit_fit(logit(p)[:, None], yy)[0][0])
+    sy = {}
+    for yr in range(2019, 2026):
+        m = np.r_[it, ix]
+        m = m[D.year[m] == yr]
+        mm = m[~np.isnan(pm[m])]
+        row = {k: round(slope(P[k][m], y[m]), 3) for k in ("elo_ref", "whr_rounds", "stack", "dims")}
+        row["close"] = round(slope(pm[mm], y[mm]), 3)
+        row["ll_gap_whr_rounds_minus_close"] = round(float(ll_vec(P["whr_rounds"][mm], y[mm]).mean()
+                                                           - ll_vec(pm[mm], y[mm]).mean()), 4)
+        row["n"], row["n_close"] = int(len(m)), int(len(mm))
+        sy[str(yr)] = row
+    out["slope_by_year"] = sy
+    # dyadic SEs
+    ev = np.unique([D.event[i] for i in ix], return_inverse=True)[1]
+    fa, fb = D.ia[ix], D.ib[ix]
+    S = (ev[:, None] == ev[None, :]) | (fa[:, None] == fa[None, :]) | (fa[:, None] == fb[None, :]) \
+        | (fb[:, None] == fa[None, :]) | (fb[:, None] == fb[None, :])
+    E = (ev[:, None] == ev[None, :]).astype(float)
+    S = S.astype(float)
+    n = len(ix)
+    se = {}
+    for a, b in (("whr_rounds", "elo_ref"), ("stack", "whr_rounds"), ("ratings_plus", "stack"), ("whr_rounds", "glicko2"),
+                 ("whr_rounds", "whr"), ("whr_hybrid", "whr_rounds")):
+        if a not in P or b not in P:
+            continue
+        d = ll_vec(P[a][ix], y[ix]) - ll_vec(P[b][ix], y[ix])
+        e = d - d.mean()
+        s_d = math.sqrt(float(e @ S @ e)) / n
+        se["%s - %s" % (a, b)] = {"d_log_loss": round(float(d.mean()), 5), "se_iid": round(math.sqrt(float(e @ e)) / n, 5),
+                                  "se_event": round(math.sqrt(float(e @ E @ e)) / n, 5), "se_event_fighter": round(s_d, 5),
+                                  "ci95_event_fighter": [round(float(d.mean() - 1.96 * s_d), 5),
+                                                         round(float(d.mean() + 1.96 * s_d), 5)]}
+    out["dyadic_cluster_se_2024_2025"] = se
+    # cumulative ablation on both windows (diagnostic; stored parameters)
+    ev_all = np.r_[D.bt_idx, D.idx_vault]
+    ab = {}
+    for name in ("elo_full", "glicko2", "trueskill_mov", "whr_rounds"):
+        Pp, kind, rows = dict(J["systems"][name]["params"]), J["systems"][name]["kind"], []
+        for lab, ch in CUM_STEPS:
+            Pp = dict(Pp, **ch)
+            p = run_system(D, kind, Pp, eval_idx=ev_all)[0]
+            rows.append({"step": lab, "tune": round(score(D, p, it), 5), "test": round(score(D, p, ix), 5)})
+        ab[name] = rows
+    out["cumulative_ablation_both_windows"] = ab
+    # pre-UFC coverage of 2015+ debutants by later career length
+    first, nb = {}, defaultdict(int)
+    for i in range(D.n):
+        for s_, p in ((0, D.ia[i]), (1, D.ib[i])):
+            nb[p] += 1
+            first.setdefault(p, (i, s_))
+    cov = defaultdict(lambda: [0, 0])
+    for p, (i, s_) in first.items():
+        if D.day[i] < PRE_FROM or D.pids[p].startswith("amb:"):
+            continue
+        key = "1" if nb[p] == 1 else ("2-3" if nb[p] <= 3 else ("4-7" if nb[p] <= 7 else "8+"))
+        cov[key][0] += 1
+        cov[key][1] += int(D.pre[i, s_, 0] == D.pre[i, s_, 0])
+    out["preufc_coverage_2015_debuts_by_career_bouts"] = {k: {"n": v[0], "covered": v[1]} for k, v in sorted(cov.items())}
+    # dims antisymmetry under a corner swap
+    D2 = _swap_corners(load_data())
+    prepare(D2, log=lambda *a: None)
+    DP = J["systems"]["dims"]["dim_params"]
+    a0, a1 = run_dims(D, DP, record=True), run_dims(D2, DP, record=True)
+    b_ = D.bt_idx
+    out["dims_swap_antisymmetry_max_abs"] = {
+        "rate_diff": float(np.nanmax(np.abs((a1[1][:, 0] - a1[1][:, 1])[b_] + (a0[1][:, 0] - a0[1][:, 1])[b_]))),
+        "log_adv": float(np.nanmax(np.abs(dim_features(a1[0], list(DIMS))[b_] + dim_features(a0[0], list(DIMS))[b_])))}
+    _save_review(path, "reviewer_audit", out)
+    print(json.dumps({k: v for k, v in out.items() if k not in ("cumulative_ablation_both_windows",)}, indent=1)[:4000])
+    return out
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "review_audit":
+        review_audit(OUT_JSON)
+        sys.exit(0)
     if len(sys.argv) > 1 and sys.argv[1] == "review_leak":
         review_leak(OUT_JSON, sys.argv[2].split(",") if len(sys.argv) > 2 else None)
         sys.exit(0)

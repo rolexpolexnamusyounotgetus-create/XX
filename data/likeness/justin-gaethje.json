@@ -281,7 +281,6 @@
     "head/head-scale-horiz-incr": 0.5,
     "head/head-scale-vert-decr": 0.25,
     "head/head-scale-depth-incr": 0.1,
-    "head/head-fat-incr": 0.15,
     "forehead/forehead-scale-vert-incr": 0.15,
     "forehead/forehead-trans-backward": 0.1,
     "chin/chin-bones-incr": 0.35,
@@ -289,12 +288,12 @@
     "chin/chin-prominent-incr": 0.15,
     "cheek/l-cheek-bones-incr": 0.15,
     "cheek/r-cheek-bones-incr": 0.15,
-    "cheek/l-cheek-volume-incr": 0.3,
-    "cheek/r-cheek-volume-incr": 0.3,
-    "eyes/l-eye-scale-decr": 0.3,
-    "eyes/r-eye-scale-decr": 0.3,
-    "eyes/l-eye-height2-decr": 0.45,
-    "eyes/r-eye-height2-decr": 0.45,
+    "cheek/l-cheek-volume-incr": 0.1,
+    "cheek/r-cheek-volume-incr": 0.1,
+    "eyes/l-eye-scale-decr": 0.15,
+    "eyes/r-eye-scale-decr": 0.15,
+    "eyes/l-eye-height2-decr": 0.2,
+    "eyes/r-eye-height2-decr": 0.2,
     "eyes/l-eye-bag-incr": 0.25,
     "eyes/r-eye-bag-incr": 0.25,
     "eyes/l-eye-corner1-down": 0.1,
@@ -303,7 +302,7 @@
     "eyebrows/eyebrows-trans-forward": 0.3,
     "eyebrows/eyebrows-angle-down": 0.1,
     "nose/nose-scale-horiz-incr": 0.35,
-    "nose/nose-scale-vert-incr": 0.1,
+    "nose/nose-scale-vert-incr": 0.25,
     "nose/nose-width1-incr": 0.45,
     "nose/nose-hump-decr": 0.15,
     "nose/nose-point-width-incr": 0.4,
@@ -321,8 +320,8 @@
     "torso/measure-waist-circ-incr": 0.1,
     "torso/measure-hips-circ-incr": 0.05,
     "buttocks/buttocks-volume-incr": 0.1,
-    "eyes/l-eye-height1-decr": 0.35,
-    "eyes/r-eye-height1-decr": 0.35,
+    "eyes/l-eye-height1-decr": 0.15,
+    "eyes/r-eye-height1-decr": 0.15,
     "ears/l-ear-flap-incr": 0.55,
     "ears/r-ear-flap-incr": 0.5,
     "ears/l-ear-scale-incr": 0.2,
@@ -351,7 +350,8 @@
       "sources: checked every Commons licence against the API and page wikitext (all PD-USGov variants or CC BY-SA 4.0, as labelled); corrected the weigh-in photographer to Sgt. 1st Class Brittany Primavera; redated the ESPN stance portrait to early 2025 or before (CDN Last-Modified 2025-03-07).",
       "morphs: all 54 names exist in assets/embed/mh-manifest.json, all values are in 0..1, no incr/decr pair conflicts; values unchanged. macro/ageOldM 0.19 matches avatar3d.js (37-25)/65.",
       "2026-11-06 avatar pass 2: tuned with tests/likeness_compare.js against ref-espn-headshot.png (front): wider and shorter face, smaller hooded eyes (upper lid lowered with the newly baked eye-height1 target), protruding ears and a wider, flatter nose (community elvs_nose_widening_1); ear values from morphs_not_in_embed now apply directly."
-    ]
+    ],
+    "likeness_pass_2026_11_06_v4": "Eyes opened (smaller eye-height and eye-scale decreases), cheek volume and face fat reduced so the face reads square rather than puffy, nose lengthened, after side-by-side renders against ref-espn-headshot.png."
   },
   "notes": "Confidence: high for hair, beard, skin, tattoos and overall build; medium for face proportions; low-to-medium for exact morph values. 14 usable photos (9 Commons PD/CC BY-SA, 5 reference-only), 12 of them from 2026, so recent coverage is good. The weak point is a true side profile: the only one (CBS, Aug 2026) is about 70 degrees and under a cap, and the face-off profile has a microphone over the nose. Frontal shape is driven by the UFC studio headshot plus the Oval Office photo. What to watch: (1) The likeness depends on the broad, flattened nose, wide jaw and very thick neck; if the nose is too narrow or the neck too thin it stops looking like him. (2) The beard must be clearly redder (copper) than the medium-brown head hair; this colour split is a strong recognition cue. (3) Keep the eyes small and hooded under a low, heavy brow; default MakeHuman eyes look too open. (4) Skin should be fair and ruddy, with extra red on the nose and cheeks; do not use a neutral beige. (5) Hair is a short fade with a 4-5 cm textured top and receding temples; short02 or short04 tinted #5e4536 is the closest proxy, but check the temple recession. (6) The 'BEFORE / DISHONOR' warrior piece on the right side and the cross on the right upper arm are the signature tattoos; mirror-check them, because both are on HIS right side (viewer's left when he faces the camera). (7) Body: lean, wrestler-thick trunk, mild V, big legs; at fight weight do not make him bulky in the chest. Macro values: ageOldM uses MakeHuman's 25-years-at-0.5, 90-years-at-1.0 mapping (age 37, turning 38 on 2026-11-14). heightUpM 0.1 is a guess for about 180 cm, so scale the final mesh to 180.3 cm if the avatar code supports it. MakeHuman l-/r- morphs refer to the character's own left and right; the values here are symmetric.",
   "stance": {
@@ -396,5 +396,15 @@
     "confidence": "medium",
     "source": "Set 2026-11-06 from his documented fighting style: data/scouting/justin-gaethje.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (ref-espn-stance.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
     "notes": "Wide, low, fairly square stance (squared up to throw and check calf kicks), high tight guard with elbows in, walks forward flat-footed and bobs his head behind the guard."
+  },
+  "ethnicity_fit": {
+    "african": 0.3333,
+    "asian": 0.3333,
+    "caucasian": 0.3333,
+    "photos": [
+      "ref-espn-headshot.png (front)"
+    ],
+    "method": "Fitted by eye with tests/likeness_compare.js on 2026-11-06: the neutral MakeHuman thirds and a 0.15/0.15/0.7 trial were rendered front, 3/4 and profile at the headshot's framing. The trial narrowed the cheeks and jaw, while his face is broad and square, so the neutral blend fits better and is kept. Shape bases only; skin colour comes from the tone samples.",
+    "confidence": "low"
   }
 }

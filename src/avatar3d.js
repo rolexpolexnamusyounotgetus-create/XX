@@ -982,7 +982,7 @@
     }
     var maskOn = !!(X.maskHair && X.maskBeard && X.maskHair2);
     var U = this.uniforms = this.uniforms || {
-      uBeard: { value: looks.beard }, uBeardCol: { value: lin(looks.beardColor) }, uScalp: { value: looks.scalp }, uHairCol: { value: lin(looks.hairColor) },
+      uBeard: { value: looks.beard }, uBeardOp: { value: looks.beardLen >= 12 ? 0.9 : (looks.beardLen >= 6 ? 0.8 : 0.7) * (looks.beardDensity < 0.85 ? 0.88 : 1) }, uBeardCol: { value: lin(looks.beardColor) }, uScalp: { value: looks.scalp }, uHairCol: { value: lin(looks.hairColor) },
       uDam: { value: new T.Vector2(0, 0) }, uLeg: { value: new T.Vector2(0, 0) }, uSweat: { value: 0 }, uFlush: { value: 0 },
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
       uMaskOn: { value: maskOn ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
@@ -995,7 +995,7 @@
         .replace("#include <common>", "#include <common>\nattribute vec4 aMask;\nattribute vec4 aMask2;\nattribute vec4 aDecal;\nvarying vec4 vMask;\nvarying vec4 vMask2;\nvarying vec4 vDecal;\nuniform vec2 uDam;")
         .replace("#include <begin_vertex>", "#include <begin_vertex>\nvMask = aMask; vMask2 = aMask2; vDecal = aDecal;\nfloat swl = max(aMask.z, 0.0) * uDam.x + max(-aMask.z, 0.0) * uDam.y;\ntransformed += objectNormal * swl * 0.0055;");
       sh.fragmentShader = sh.fragmentShader
-        .replace("#include <common>", "#include <common>\nvarying vec4 vMask;\nvarying vec4 vMask2;\nvarying vec4 vDecal;\nuniform float uBeard; uniform vec3 uBeardCol; uniform float uScalp; uniform vec3 uHairCol; uniform vec2 uDam; uniform vec2 uLeg; uniform float uSweat; uniform float uFlush;\nuniform sampler2D uTattoo; uniform float uTatOn;\n" +
+        .replace("#include <common>", "#include <common>\nvarying vec4 vMask;\nvarying vec4 vMask2;\nvarying vec4 vDecal;\nuniform float uBeard; uniform float uBeardOp; uniform vec3 uBeardCol; uniform float uScalp; uniform vec3 uHairCol; uniform vec2 uDam; uniform vec2 uLeg; uniform float uSweat; uniform float uFlush;\nuniform sampler2D uTattoo; uniform float uTatOn;\n" +
           "uniform float uMaskOn; uniform sampler2D uMaskH; uniform sampler2D uMaskH2; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
           "float hh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\n" +
           "float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hh(i), hh(i + vec2(1,0)), f.x), mix(hh(i + vec2(0,1)), hh(i + vec2(1,1)), f.x), f.y); }")
@@ -1015,9 +1015,9 @@
           "  float bn1 = vn(su * 1700.0), bn2 = vn(su * 520.0), bn3 = vn(su * 90.0);\n" +
           "  float dens = clamp(bd * (0.85 + 0.3 * bn3), 0.0, 1.0);\n" +
           "  float hairs = mix(dens, smoothstep(1.0 - dens - 0.02, 1.0 - dens + 0.2, bn1 * 0.7 + bn2 * 0.3), bk);\n" +
-          "  vec3 bcol = uBeardCol * (0.5 + 0.45 * bn2);\n" +
+          "  vec3 bcol = uBeardCol * (0.68 + 0.45 * bn2);\n" +
           "  diffuseColor.rgb *= 1.0 - 0.16 * smoothstep(0.0, 0.5, mB) * clamp(uBeard * 1.4, 0.0, 1.0);\n" +
-          "  diffuseColor.rgb = mix(diffuseColor.rgb, bcol, clamp(hairs * (0.5 + 0.42 * bd), 0.0, 0.9));\n" +
+          "  diffuseColor.rgb = mix(diffuseColor.rgb, bcol, clamp(hairs * (0.5 + 0.42 * bd), 0.0, uBeardOp));\n" +
           "  float sc = mS * uScalp; float sst = sc * (0.55 + 0.45 * smoothstep(0.2, 0.9, hair)); gScalp = sc;\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, uHairCol * 0.7, clamp(sst * 0.85, 0.0, 0.9));\n" +
           "  float sideL = step(0.0, vMask.y);\n" +
@@ -1382,6 +1382,21 @@
     if (sp) {
       // fitted board-shorts proxy (cloth hangs between the legs instead of two tubes); kit panels from its rest shape
       smesh = this.addProxy(sp, { color: app.shorts || "#2563c9", roughness: 0.7 });
+      // fight shorts hang taut across the seat: bridge the gluteal cleft (each back-facing vertex takes the
+      // furthest-back depth among its neighbours across ~7 cm at the same height), then lift the cloth 3 mm
+      // off the skin so the body does not poke through along the side seams
+      (function (g) {
+        var P0 = g.attributes.position.array, nv0 = P0.length / 3, cz = J.Hips.h.z, out = new Float32Array(P0), a2;
+        for (a2 = 0; a2 < nv0; a2++) {
+          var ya = P0[a2 * 3 + 1], za = P0[a2 * 3 + 2], xa = P0[a2 * 3]; if (za > cz - 0.02 || Math.abs(xa) > 0.09 || ya < hipJ - 0.12) continue;
+          var zmin = za;
+          for (var b2 = 0; b2 < nv0; b2++) { var dx = P0[b2 * 3] - xa, dy = P0[b2 * 3 + 1] - ya; if (dx * dx < 0.0049 && dy * dy < 0.0001 && P0[b2 * 3 + 2] < zmin) zmin = P0[b2 * 3 + 2]; }
+          out[a2 * 3 + 2] = lerp(za, zmin, 0.85 * smooth(0.09, 0.03, Math.abs(xa)));
+        }
+        g.attributes.position.array.set(out); g.computeVertexNormals();
+        var Nn = g.attributes.normal.array; for (a2 = 0; a2 < P0.length; a2++) P0[a2] += Nn[a2] * 0.003;
+        g.attributes.position.needsUpdate = true; g.computeVertexNormals();
+      })(smesh.geometry);
       var sg = smesh.geometry, spos = sg.attributes.position.array, snrm = sg.attributes.normal.array, nv = spos.length / 3, top = -1e9, bot = 1e9, q;
       for (q = 0; q < nv; q++) { top = Math.max(top, spos[q * 3 + 1]); bot = Math.min(bot, spos[q * 3 + 1]); }
       var span2 = Math.max(0.05, top - bot), kit = new Float32Array(nv * 4);
@@ -1534,7 +1549,7 @@
       // layer of strands for the jaw silhouette (a full-length dense shell read as a speckled block)
       var lb = looks.beardShellLen, longB = lb >= 0.015, sl = longB ? Math.min(lb, 0.022) * 0.7 : Math.min(lb, 0.0065) * 0.75;
       this.addStrandShell("beard", covB, { grey: looks.beardGrey || 0, len: function () { return sl; }, layers: longB ? 6 : 3, color: looks.beardColor, density: looks.beardDensity * (longB ? 0.8 : 0.62),
-        dir: function (i, out) { return out.set(0, -0.45, 0.08); }, freq: longB ? 1700 : 2300, thick: 0.5, gain: 0.8, farK: 0.25 });
+        dir: function (i, out) { return out.set(0, -0.45, 0.08); }, freq: longB ? 1700 : 2300, thick: 0.5, gain: 0.95, farK: 0.25 });
     }
     if (looks.hairMode === "shell" && X.maskHair && X.maskHair2 && looks.scalpCh >= 0 && looks.scalpCh < 4) {
       var ph = texPixels(looks.scalpCh < 3 ? X.maskHair : X.maskHair2), covH = new Float32Array(n), ch = looks.scalpCh % 3;
