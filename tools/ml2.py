@@ -1740,7 +1740,9 @@ def stage_export(args):
         r["ml2_blend - close"] = compare(P["blend|static"][rc], ext["close"][rc], y[rc], grp[rc], 1000)
         res["segments"][name] = r
     # gap to the close in newcomer bouts, v1 vs v2
-    out = {"meta": {}, "cv": C, "results": res, "stage2": st2, "stacks": SKJ, "method": None, "fights": {}}
+    vpath = os.path.join(CACHE, "verify.json")
+    out = {"meta": {}, "cv": C, "results": res, "stage2": st2, "stacks": SKJ, "method": None, "fights": {},
+           "verify": json.load(open(vpath)) if os.path.exists(vpath) else None}
     if MJ:
         out["method"] = {k: v for k, v in MJ.items() if not k.startswith("_")}
     # per-fight predictions (backtest fights 2019-2025)
@@ -1765,7 +1767,7 @@ def stage_export(args):
                 if v is not None and not np.isnan(v) and ("current+ml2" in key):
                     e["stack_" + key.replace("|current+ml2|", "_")] = round(float(v), 4)
         out["fights"][f] = e
-    out["page_model"] = page_model(T, C, F, args)
+    out["page_model"] = page_model(T, C, F, args, (SKJ or {}).get("page_stack"))
     out["meta"] = {
         "tool": "tools/ml2.py", "built": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "protocol": "every fight dated 2026-01-01 or later dropped right after parsing (build_db.parse_fights wrapped); "
@@ -1889,7 +1891,16 @@ def page_eval(model, a, b, fight, probs=None):
     return z
 
 
-def page_model(T, C, F, args):
+def page_stack_eval(stack, p_lr, p_mr, p_line=None):
+    """Page stacks: no intercept, non-negative logit weights; inputs clipped to [0.01, 0.99] (moe convention).
+    A missing market rating enters as 0.5 (logit 0)."""
+    def z(p):
+        return 0.0 if p is None else _lg(p, stack["pclip"])
+    inp = {"ml2lr": p_lr, "mkt_rating": p_mr, "market": p_line}
+    return 1 / (1 + math.exp(-sum(w * z(inp[k]) for k, w in zip(stack["inputs"], stack["weights"]))))
+
+
+def page_model(T, C, F, args, stacks=None):
     import preufc as PU
     lrc = C["lr"]
     cols = lrc["cols"]
@@ -2004,8 +2015,17 @@ def page_model(T, C, F, args):
         a = side_for_page(model, sa, fight)
         b = side_for_page(model, sb, fight)
         z = page_eval(model, a, b, fight)
-        tv.append({"a": sa, "b": sb, "fight": fight, "logit": z, "pA": 1 / (1 + math.exp(-z))})
+        e = {"a": sa, "b": sb, "fight": fight, "logit": z, "pA": 1 / (1 + math.exp(-z))}
+        if stacks:
+            days = (dt.date.fromisoformat(fight["date"]) - dt.date.fromisoformat(snap)).days
+            p_mr = mr_prob(a["mr"], b["mr"], days) if (a.get("mr") and b.get("mr")) else None
+            e["p_mr"] = p_mr
+            e["p_stack_noline"] = page_stack_eval(stacks["noline"], e["pA"], p_mr)
+            e["p_line"] = 0.35 + 0.01 * k
+            e["p_stack_line"] = page_stack_eval(stacks["line"], e["pA"], p_mr, e["p_line"])
+        tv.append(e)
     model["test_vectors"] = tv
+    model["stack"] = stacks
     vg = tv[0]
     log("page model: Volkanovski vs Gaethje (Dec 12, 2026, 155 lb, 5 rounds) P(Volk) = %.4f" % vg["pA"])
     return model

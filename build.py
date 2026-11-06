@@ -6,7 +6,8 @@
 The page loads three.js from a pinned CDN URL and inlines everything else: the engine and its
 calibrated parameters (one script, so the tally Web Worker can be built from its text), the 3D rig,
 arena, director, show and app scripts, and JSON blocks for the fighter roster, calibration results,
-scenario presets and overrides. Embedded binary assets (assets/embed/*) become data: URIs on
+scenario presets and overrides (the roster, scouting files and likeness sheets ship gzip + base64 and the page inflates
+them before it starts). Embedded binary assets (assets/embed/*) become data: URIs on
 window.FightAssets. That is what the claude.ai artifact host allows.
 """
 import base64
@@ -210,9 +211,9 @@ def bench_block():
     def row(label, o, key):
         if o and o.get("log_loss") is not None:
             rows.append({"label": label, "key": key, "ll": o["log_loss"], "acc": o.get("accuracy"), "n": o.get("n")})
-    row("Market, closing line (no-vig)", g(e, "devig", "test", "power"), "close")
+    row("Market closing line, bookmaker's cut removed", g(e, "devig", "test", "power"), "close")
     row("Market, opening line", g(e, "headline", "test", "open"), "open")
-    row("ML logistic (tools/ml.py)", g(t, "lr"), "ml")
+    row("ML model (logistic)", g(t, "lr"), "ml")
     row("Market rating (from past closing lines)", g(e, "market_rating", "test", "market_rating"), "mkt_rating")
     row("Strike-share Elo", g(t, "elo_sig"), "elo_sig")
     row("Elo", g(t, "elo"), "elo")

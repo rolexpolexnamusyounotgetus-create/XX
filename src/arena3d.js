@@ -799,7 +799,7 @@
         var basic = function (col, mult, side) { return new T.MeshBasicMaterial({ color: new T.Color(col).multiplyScalar(mult), side: side || T.FrontSide }); };
         var fx = sky ? ENV.fixtures : 1;
         if (sky) {
-          var skyMat = new T.ShaderMaterial({ uniforms: { uMap: { value: sky }, uGain: { value: ENV.gain }, uL: { value: ENV_LOG_L }, uK: { value: ENV_LOG_K }, uYaw: { value: ENV.yaw } }, vertexShader: ENVSKY_VS, fragmentShader: ENVSKY_FS, side: T.BackSide, depthWrite: false });
+          var skyMat = new T.ShaderMaterial({ uniforms: { uMap: { value: sky }, uGain: { value: ENV.gain }, uL: { value: ENV_LOG_L }, uK: { value: ENV_LOG_K }, uYaw: { value: ENV.yaw } }, vertexShader: ENVSKY_VS, fragmentShader: ENV.fs || ENVSKY_FS, side: T.BackSide, depthWrite: false });
           es.add(keep(new T.Mesh(new T.SphereGeometry(60, 48, 24), skyMat)));
         } else {
           es.add(keep(new T.Mesh(new T.SphereGeometry(60, 24, 12), basic(0x0a0e17, 1, T.BackSide))));
@@ -1866,5 +1866,5 @@
   // vertical field of view for a 35 mm-equivalent focal length (36 mm wide sensor) at a given aspect
   function lensFov(mm, aspect) { var h = 2 * Math.atan(18 / mm); return 2 * Math.atan(Math.tan(h / 2) / Math.max(0.3, aspect || 16 / 9)) * 180 / PI; }
 
-  root.FightArena = { Arena: Arena, APO: APO, RV: RV, vertexAngle: vertexAngle, BLUE_K: BLUE_K, RED_K: RED_K, SIDE: SIDE, FLOOR_Y: FLOOR_Y, RAIL_Y: RAIL_Y, QUALITY: QUALITY, lensFov: lensFov };
+  root.FightArena = { ENV: ENV, _buildEnvironment: buildEnvironment, Arena: Arena, APO: APO, RV: RV, vertexAngle: vertexAngle, BLUE_K: BLUE_K, RED_K: RED_K, SIDE: SIDE, FLOOR_Y: FLOOR_Y, RAIL_Y: RAIL_Y, QUALITY: QUALITY, lensFov: lensFov };
 })(typeof window !== "undefined" ? window : globalThis);

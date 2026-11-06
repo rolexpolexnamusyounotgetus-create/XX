@@ -21,6 +21,12 @@ for (const tv of pm.test_vectors) {
   const d = Math.abs(r.z - tv.logit);
   maxd = Math.max(maxd, d);
   ok(d < 1e-9, `logit ${tv.a} vs ${tv.b}: js ${r.z} py ${tv.logit}`);
+  if (tv.p_stack_noline !== undefined) {
+    const rl = h.predict(tv.a, tv.b, tv.fight, tv.p_line);
+    ok((tv.p_mr === null && rl.pMR === null) || Math.abs(rl.pMR - tv.p_mr) < 1e-12, `market rating ${tv.a} vs ${tv.b}`);
+    ok(Math.abs(rl.pStack - tv.p_stack_noline) < 1e-12, `no-line stack ${tv.a} vs ${tv.b}`);
+    ok(Math.abs(rl.pStackLine - tv.p_stack_line) < 1e-12, `line stack ${tv.a} vs ${tv.b}`);
+  }
   // corner symmetry: swapping the fighters (and the fight-week flags) gives exactly 1 - p
   const f2 = JSON.parse(JSON.stringify(tv.fight));
   if (f2.fw) f2.fw = { A: f2.fw.B, B: f2.fw.A };
@@ -32,7 +38,8 @@ ok(Math.abs(ML2.ratingProb("elo", 1, { mu: 0.3 }, { mu: -0.2 }) - 1 / (1 + Math.
 ok(Math.abs(ML2.ndtr(0) - 0.5) < 1e-16 && Math.abs(ML2.ndtr(1.959963984540054) - 0.975) < 1e-12, "ndtr");
 const vg = pm.test_vectors[0];
 console.log(`ML2 page model: ${pm.terms.length} terms, ${Object.keys(pm.roster).length} roster fighters; ` +
-            `${vg.a} vs ${vg.b} on ${vg.fight.date}: P(A) = ${vg.pA.toFixed(4)}`);
+            `${vg.a} vs ${vg.b} on ${vg.fight.date}: P(A) = ${vg.pA.toFixed(4)}` +
+            (vg.p_stack_noline !== undefined ? `, no-line stack ${vg.p_stack_noline.toFixed(4)}` : ""));
 console.log(`max |logit js - py| = ${maxd.toExponential(2)} over ${pm.test_vectors.length} vectors`);
 console.log(fails === 0 ? `ok: ${checks} checks` : `${fails} of ${checks} checks FAILED`);
 process.exit(fails === 0 ? 0 : 1);
