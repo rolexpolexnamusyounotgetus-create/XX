@@ -35,7 +35,10 @@
       // v5 merge step 1: v4.0.1's train-only fixes, one sub-flag each (true / false for all five): (a) emJudge pre-2024 EM
       // judging weights + the noise / 10-8 refit on them; (b) deductions; (c) mlLevels learned-path levels + companions;
       // (d) tdCap cumulative takedown cap; (e) koTargets KO/TKO composition from 2019-2023 fights. Values: v401 below.
-      v401: { emJudge: true, deductions: true, mlLevels: true, tdCap: true, koTargets: true }
+      v401: { emJudge: true, deductions: true, mlLevels: true, tdCap: true, koTargets: true },
+      // v5 merge step 2: knockdown chin / power block of research/model_durability.md (engine3.js applyDurability;
+      // values: durability below)
+      durability: true
     },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
@@ -44,6 +47,51 @@
     mlTdLevel: 1.067,   // [v401 c: levels v4.0.1, tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; off 1] factor on the learned takedown-attempt targets (v4.0.0 left takedowns landed 6% low on train)
     mlCtrlLevel: 1.053,  // [v401 c: same; off 1] factor on the learned control targets (v4.0.0: control 5% low on train)
     mlSubLevel: 1.083,   // [v401 c: same; off 1] factor on the learned submission-attempt targets (v4.0.0: attempts 6.5% low on train, which the submission conversion scale had absorbed)
+
+    // ---------------- durability: knockdown chin and power (engine v5; research/model_durability.md section 9) ----------------
+    // KD hazard per landed standing head strike by i on j = kdCal x base_ij x rel_ij (see engine3.js applyDurability).
+    // terms: live Poisson fit 2008-01-01..2026-10-31 (data/derived/durability.json engine.terms_live; log-rate coefficients
+    // vs the trailing league level, Lightweight / non-title / 3-round / age-30 reference). Backtests pass walk-forward
+    // records (durability.json backtest[fight_id]: chin_re, chin_cov, pow_re, pow_cov and the base L730 x context) per call.
+    durability: {
+      level: 0.010274,   // league KD per landed standing head strike, trailing 730 days at the Oct 31, 2026 snapshot (durability.json engine.level_now_trailing_730); labeled scenario: 0.011706 = trailing 365 days ("current season", 2025-26 surge)
+      terms: {
+        "const": 0.07774,                                  // vs the trailing level
+        "div_Flyweight": 0.15988, "div_Bantamweight": 0.11456, "div_Featherweight": 0.08257, "div_Welterweight": 0.08936,
+        "div_Middleweight": 0.18624, "div_Light Heavyweight": 0.33379, "div_Heavyweight": 0.14286, "div_Catch Weight": -0.09189,
+        "div_Women's Strawweight": -1.08298, "div_Women's Flyweight": -1.12069, "div_Women's Bantamweight": -1.06114,
+        "div_Women's Featherweight": -0.56292,             // division multipliers vs Lightweight (FLY 1.17 ... LHW 1.40; women 0.33-0.57)
+        five: -0.11143,      // five-round fight x0.895 (after fighter effects)
+        title: -0.09636,     // title fight x0.908
+        d_age_c: 0.06177,    // defender chin: +6.4%/yr at every age (no knee at 30: hinge below)
+        d_age_h30: -0.0016,  // change in the defender slope past 30
+        d_age_na: 0.79895,   // defender age unknown
+        d_okd_r: -0.14251,   // per KD absorbed in the last 365 days (tempers chin_re's reaction: diminishing evidence)
+        d_okd_o: -0.08,      // per older KD absorbed
+        d_kol_r: 0.18908,    // per KO/TKO loss (strikes or corner) in the last 365 days: x1.21
+        d_kol_o: 0.0749,     // per older KO/TKO loss: x1.08
+        a_age_c: -0.00445,   // attacker power, slope below 30 (flat)
+        a_age_h30: -0.03589  // attacker power past 30: -4.0%/yr (x0.72 from 30 to 38)
+      },
+      normChin: 0.9972,  // NORM = 2024+ exposure-weighted mean of the live C_d (durability.json engine.norm_chin); backtests on 2019-2023 use norm_chin_backtest_2019_2023 0.9882
+      normPow: 0.9752,   // same for P_a (engine.norm_pow); 2019-2023 backtests use 1.0183
+      alphaChin: 3,      // Gamma(3, 3) prior on the fighter chin multiplier, worth ~290 standing head strikes (tuned on 2019-2023)
+      alphaPow: 2.5,     // Gamma(2.5, 2.5) prior on the fighter power multiplier (~245 standing head strikes)
+      fallbackEB: true,  // profiles without a durability record: chin_re / pow_re from career sums (opponent effects taken as 1)
+      standShare: 0.9,   // standing share of landed head strikes for that fallback (research section 1: 90% since 2019)
+      engineWeight: 0.5, // [train 2019-2023] geometric weight on the engine's own KD structure (v3 ratios, or the v4 learned rates); 1 - w on durability. Static KD deviance on 2019-2023: w 0.5 beat durability alone by 20 [-42, +1] and v4 alone by 36 [-58, -15]
+      kdCal: 1.1639618,  // [train 2019-2023] extra conversion x kdScale from the data hazard to the engine's base hazard (its in-fight KD modifiers average below 1); level-matched to the FROZEN v4 engine's simulated knockdowns per fight on 2019-2023 (verifier, Nov 6: 1,999 fights x 300 sims, OOF rates; kdScale 1.391 -> kdCal x kdScale 1.619): 1.18780096 (the builder's value, matched to the in-flight v4 with kdScale 1.246) gave on 0.474 vs off 0.465 per fight there, 1.164 gives 0.467. Re-match after any kdScale / KD-modifier change: kdCal x KD_off / KD_on. kdCalRel (default 1) replaces it in relative mode
+      chinExp: 1,        // exponent on C_d (validation slope 0.98 +- 0.10; the first version's 1.15 is withdrawn)
+      powExp: 1,         // exponent on P_a (validation 0.80 +- 0.08 is worth only -2.3 +- 4 on 2024+, so 1)
+      sizeChin: 0,       // labeled knob, no size tax by default: chin x exp(sizeChin x lbs up / 10) for the man above his home division (data: x0.85-0.91 per class up, the wrong sign for a tax)
+      sizePow: 0,        // labeled knob: power x exp(-sizePow x lbs up / 10)
+      gnpCal: 1,         // scale on the GNP TKO hazard when the component is on (sqrt of the blended power x chin product, as v3)
+      stkoCal: 1,        // scale on the standing TKO hazard (same)
+      caution5: null,    // null keeps the engine's caution5 for 5-round fights; a number overrides it while the component is on
+      // first-version terms that failed the 2019-2023 one-SE rule (research/model_durability.md V4); labeled knobs, neutral:
+      // layoff24 (first version x0.64 at 730+ days), lastKO (x1.163 when the last fight was a KO loss), ufcYear (+0.021/yr in the UFC)
+      withdrawn: { layoff24: null, lastKO: null, ufcYear: 0, ufcYearRef: 2.6 }
+    },
 
     // ---------------- profile estimation (shrinkage toward the fight division's priors) ----------------
     kPM: 40,          // per-minute rate prior strength, fight-minutes of division-average fighting (combine_fit meta.shrink_k_default.pm)

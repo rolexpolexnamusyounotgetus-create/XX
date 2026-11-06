@@ -711,6 +711,46 @@ def side_actual(v):
             "sub_att": g("sub_att"), "h_lnd": g("h_lnd"), "b_lnd": g("b_lnd"), "l_lnd": g("l_lnd")}
 
 
+def dur_fields(stt, day):
+    """Durability snapshot fields (engine v5, research/model_durability.md): KO/TKO losses (strikes or corner, not doctor)
+    and knockdowns absorbed in the 365 days before `day` (strictly earlier fights), layoff in days, whether the last
+    fight was a KO/TKO loss, and years since the UFC debut. Only fights before `day` are in stt["fights"]."""
+    kol_r = 0
+    kd_r = 0.0
+    for f, s in stt["fights"]:
+        if day - f.day > 365:
+            continue
+        if f.winner == ("B" if s == 0 else "A") and f.method == "KO":
+            kol_r += 1
+        if f.stats:
+            kd_r += float(f.stats["v"][s][KI["okd"]])
+    out = {"ko_losses_365": kol_r, "kd_absorbed_365": rnd(kd_r)}
+    if stt["fights"]:
+        last, ls = stt["fights"][-1]
+        out["layoff"] = int(day - last.day)
+        out["last_ko_loss"] = 1 if (last.winner == ("B" if ls == 0 else "A") and last.method == "KO") else 0
+        out["ufc_years"] = rnd((day - stt["fights"][0][0].day) / 365.25, 4)
+    return out
+
+
+_DUR_ROSTER = None
+
+
+def dur_roster():
+    """durability.json roster (tools/durability.py, live fit) by slug, or {} when the file is missing. fighters.json profiles
+    carry its fighter multipliers as `dur` so the engine's durability component (engine v5) needs no extra file."""
+    global _DUR_ROSTER
+    if _DUR_ROSTER is None:
+        _DUR_ROSTER = {}
+        path = os.path.join(OUT, "durability.json")
+        if os.path.exists(path):
+            with open(path) as f:
+                r = json.load(f).get("roster", {})
+            _DUR_ROSTER = {k: {"chin_re": v["chin_re"], "pow_re": v["pow_re"], "chin_cov": v["chin_cov"], "pow_cov": v["pow_cov"]}
+                           for k, v in r.items() if v.get("chin_re") is not None}
+    return _DUR_ROSTER
+
+
 def new_state():
     return {"S": np.zeros(NK), "C": np.zeros(NK), "t": None, "n_all": 0, "ko_losses": 0, "hist": [],
             "r3m": np.zeros(3), "r3l": np.zeros(3), "fights": [],
@@ -754,6 +794,7 @@ def walk(fights, people, elo_pre, half_life):
                     "pace": pace, "pace_w": pace_w, "pace3": pace3, "pace3_w": pace3_w,
                     "S": rlist(stt["S"]),
                 }
+                sides[tag].update(dur_fields(stt, f.day))
             e = {"id": f.fid, "date": f.date.isoformat(), "event": f.event, "division": f.division,
                  "rounds": f.sched, "title": f.title}
             if f.division in NON_DIV:
@@ -953,6 +994,8 @@ def fighter_profile(p, stt, people, elo_now, snap_day):
         "S": rlist(stt["S"]), "C": rlist(stt["C"]),
         "pace": pace, "pace_w": pace_w, "pace3": pace3, "pace3_w": pace3_w,
         "recent": recent,
+        **dur_fields(stt, snap_day),
+        **({"dur": dur_roster()[P["slug"]]} if P["slug"] in dur_roster() else {}),
     }
 
 
@@ -1132,6 +1175,12 @@ def main():
             "ctrl": "ufcstats control seconds count clinch control as well as ground control",
             "results": "ko_* include doctor and corner stoppages; DQ wins and losses are in record.dq_w/dq_l only",
             "ko_losses": "career KO/TKO losses by strikes or corner stoppage (doctor stoppages excluded)",
+            "durability": "ko_losses_365 / kd_absorbed_365: KO/TKO losses and knockdowns absorbed in UFC fights in the "
+                          "365 days before the snapshot (backtest: before the fight date); layoff: days since the last "
+                          "UFC fight; last_ko_loss: 1 if that fight was a KO/TKO loss; ufc_years: years since the UFC "
+                          "debut (engine v5 durability inputs, research/model_durability.md); dur: the fighter's chin / "
+                          "power multipliers from data/derived/durability.json roster (chin_re, pow_re: walk-forward Gamma "
+                          "posterior means; chin_cov, pow_cov: covariates at the durability snapshot), when that file exists",
             "pace": "sig landed per minute by round in 5-round fights relative to round 1, weights = minutes; "
                     "3-round fights (rounds 1-3) when no 5-round fight of his reached round 2. pace3/pace3_w: "
                     "the 3-round curve on its own (shrink toward priors pace3 for 3-round bouts)",

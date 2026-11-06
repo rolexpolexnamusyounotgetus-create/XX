@@ -76,6 +76,9 @@ function targets(div, nR) {
 
 // ---------------------------------------------------------------- simulate a league-average pair
 function simAvg(div, nR, params, n, seed) {
+  // durability component (v5): its absolute knockdown level tracks the trailing league level (params.durability.level),
+  // not the priors' era, so the priors-era self-calibration runs it in relative mode (the priors' division level)
+  params = Object.assign({}, params, { durability: Object.assign({}, params && params.durability, { level: null }) });
   const m = E.matchup(avgProfile(div, "A"), avgProfile(div, "B"), { division: div, rounds: nR, title: nR === 5, params, priors: PRI, ml: false });
   const s = E.summarize(m, n, seed);
   const a = s.avg.A, b = s.avg.B, p15 = (k) => (a.per15[k] + b.per15[k]) / 2;
@@ -312,7 +315,10 @@ console.log("\n=== Engine v4: learned stat-line rates (loadMLRates / opts.ml) ==
 {
   const mBase = E.matchupBase("alexander-volkanovski", "justin-gaethje", VG_OPTS);
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  check("matchup without a model equals matchupBase", same(mVG.dRate, mBase.dRate) && same(Array.from(mVG.accO), Array.from(mBase.accO)) && same(mVG.kd, mBase.kd));
+  // durability component (v5): with it on, matchup() also rewrites kd / gnp / stko / dw, so the kd part runs with it off
+  const mNoDur = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: { components: { durability: false } } }, VG_OPTS));
+  check("matchup without a model equals matchupBase (kd with the durability component off)", same(mVG.dRate, mBase.dRate) && same(Array.from(mVG.accO), Array.from(mBase.accO)) &&
+    same(mNoDur.dRate, mBase.dRate) && same(Array.from(mNoDur.accO), Array.from(mBase.accO)) && same(mNoDur.kd, mBase.kd));
   const mML = withML(() => E.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS));
   check("with a model loaded matchup applies the learned rates", mML.mlApplied === true && !!mML.ml && !!mML.ml.ratios[0].d && !same(mML.dRate, mBase.dRate),
     `distance attempt ratio Volk ${f2(mML.ml.ratios[0].d)}, Gaethje ${f2(mML.ml.ratios[1].d)}`);

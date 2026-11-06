@@ -1,0 +1,61 @@
+{
+ "base_rev": "versions/v4",
+ "params_version": "4.0.0-selfcal-pre2024",
+ "note": "flag-off digests of tests/test_durability.js cases computed with the pre-component engine (versions/v4) and the current params3.js",
+ "cases": {
+  "plain VG 5rd title": {
+   "tables": "1bd705ea90b0cd67c53109da94dacda666c69c106d88e13c395a5a8c18a2af05",
+   "traces": "69b46bba030356a09dbc2258c3f584ed08539773d8fd82d11ee26678ef858a30",
+   "summary": "3eb5154a958f2c51971067be375c3d1b3b261bddee75dd3ca891e711a8211828",
+   "kd": [
+    0.005894075142739138,
+    0.013947402093682715
+   ]
+  },
+  "plain GV 3rd": {
+   "tables": "ec7f8208c5cd2246662689dc8e49ebcd86364de1d1d329e9e187b9134444f8f8",
+   "traces": "c1f6ea05e4e6e98f23c5473ce640fe181a3f8c24d54a9b368826d2769e2f8fd4",
+   "summary": "988f808f7ae5ae59cc3553bc7073f092a0882afe7066dd7679690b23293e1a2c",
+   "kd": [
+    0.013947402093682715,
+    0.005894075142739138
+   ]
+  },
+  "plain knobs": {
+   "tables": "271a7e73b9ca943c5cbdd6f090fe25e55e2a174565e540c314ba31ad2ea2dae4",
+   "traces": "2acff32c936c86145824fb4a91019ea82872d372aaf2290c5f5317e91089152f",
+   "summary": "0a39e227f1f4288340bb31dbab74fe87d2ca15b9302b252c3459a2c21d39fcc3",
+   "kd": [
+    0.004774200865618702,
+    0.018410570763661187
+   ]
+  },
+  "oof pred 2019": {
+   "tables": "3693eb6310f91be32a9a6078187664b18c2ff32779d8e3fad8483ec6d00971d3",
+   "traces": "836040ce3c99785d970a30d625bb86d64d6c3b92454392b0c4fcbb09d35ba9b5",
+   "summary": "bd2ea0fdb55e419287b481946690a3b1a0bc7ef489514413a25a7e0eec4b0dee",
+   "kd": [
+    0.01022739002406544,
+    0.027708996368576853
+   ]
+  },
+  "ml model VG": {
+   "tables": "6d2d76ff8bee9c8006321f08d7121239f479ede30600a386c1eb11b10820fdf7",
+   "traces": "1b9cd3d6ffbbbb0a6c6fc73b73a457359fc70e4f9b3bc8a9091c8b72bf2a5a95",
+   "summary": "67a8a08918c41913fd42c0116aebd4575e4a14c4e3f2bbd8fe869797eb95d62f",
+   "kd": [
+    0.009385536082532559,
+    0.012076008852444352
+   ]
+  },
+  "manual": {
+   "tables": "c24066cb2b05184767a4e74599be26681ad5346db7d7c7e6618491cb6671ff9f",
+   "traces": "a92fa52e3cc3c6aa9dd154bbf940193835894c4c399883415b19941fc2fa75df",
+   "summary": "1ea751f74d1421723c303c4d35335ebaca3a9ce552bc585f978bd923de0dd52f",
+   "kd": [
+    0.016600629122665408,
+    0.013057402384621244
+   ]
+  }
+ }
+}

@@ -289,3 +289,34 @@ priors, and take out-of-fold learned rates when the engine has them.
   who x how x when (paired vs model S). Also per-fight stat-line deviance and a base-rate table, all with event-cluster bootstrap CIs.
 - The blend test (tools/evalv_blend.py) refits the MoE stacker with the version's engine probabilities.
 - Validation numbers are computed once per version (`--split val` refuses a second look) and stored in data/derived/version_history.json.
+
+## Engine v5 component: durability (`params.components.durability`)
+
+Replaces the power and chin block (item 5 above) with the knockdown model of research/model_durability.md
+(tools/durability.py, data/derived/durability.json). With the flag false, `matchup()` is the v4 engine bit for bit
+(tests/test_durability.js). The hook runs after the base tables and the learned rates (`applyDurability` in
+engine3.js) and rewrites `m.kd`, `m.gnp`, `m.stko` and `m.dw`; `simulate()` and the trace format are unchanged.
+
+- Knockdown hazard per landed standing head strike, i on j: `kdCal * kdScale * base_ij * rel_ij`, with
+  `base_ij = level * exp(const + division + five * [5 rounds] + title * [title])` (league level tracked by
+  `params.durability.level`; backtests pass the walk-forward base of each record) and
+  `rel_ij = (C_j * P_i * knobs)^(1 - w) * engRel_ij^w`. `C = chin_cov * chin_re`, `P = pow_cov * pow_re`;
+  `chin_cov` prices defender age (+6.4%/yr at every age), knockdowns absorbed and KO/TKO losses (recent 365 days and
+  older), `pow_cov` attacker age (-4.0%/yr past 30); `chin_re` / `pow_re` are walk-forward Gamma(3) / Gamma(2.5)
+  fighter multipliers. `engRel` is the engine's own knockdown structure relative to its division level (v3 ratios or
+  the v4 learned rates); `w = params.durability.engineWeight` (0.5). GNP and standing TKO hazards scale with
+  `sqrt(rel_ij)` (mean 1 after NORM), damage per head strike with the blended power ratio.
+- Inputs per side: `opts.dur = { A, B, base }` (corner order of the call), `prof.dur`, the roster registered with
+  `FightEngine.loadDurability(durability.json)`, else computed from the profile (`age`/`dob`, `ko_losses`,
+  `ko_losses_365`, `kd_absorbed`, `kd_absorbed_365`; tools/build_db.py writes the recency fields) with `chin_re` /
+  `pow_re` from career sums (`fallbackEB`). The roster is the live fit, so it is applied only to matchups dated on or
+  after its snapshot (`meta.snapshot`); a hand-made profile (`manualProfile`) without an age is the reference age, not
+  the data's "age unknown" term.
+- Backtests and the version evaluation (tools/evalv.js) must pass `opts.dur` from `durability.json` `backtest[id]`
+  (strict walk-forward: 2019-2023 entries fit on 2008..Y-1, 2024-2025 entries on 2008-2023; `base` =
+  `p_A / (C_B P_A)`, geometric mean of both directions) and the train-only NORM (`norm_*_backtest_2019_2023`).
+  Without them the computed fallback uses the live-fit terms (2008..2026-10) and the Oct 2026 level.
+- `params.durability.level = null` switches to relative mode (the engine's own division level times context, C x P
+  divided by NORM). Size (`sizeChin`, `sizePow`, default 0) and the withdrawn first-version terms (`withdrawn`:
+  layoff, last-fight KO, years in the UFC; neutral) stay labeled knobs. `m.dur` carries every input and factor;
+  `explain()` prints them.

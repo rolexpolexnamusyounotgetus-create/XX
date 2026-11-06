@@ -77,6 +77,22 @@ if (!isMainThread) {
   const byId = new Map(fights.map((f) => [f.id, f]));
   const priors = readJSON("data/derived/mlcal_priors_asof.json");
   const OOF = useML ? readJSON("data/derived/mlrates_oof.json") : null;
+  // durability component (engine v5, params.components.durability): leak-free per-fight inputs. Without them the engine
+  // falls back to the live-fit terms (2008..2026-10, which include the validation years and the vault) and the Oct 2026
+  // league level. durability.json backtest[id] is strict walk-forward (2019-2023 entries fit on 2008..Y-1, 2024-2025
+  // entries on 2008-2023); base = L730(t) x exp(const + division + context) recovered from p / (C x P); NORM = the
+  // train-only strict-refit values (norm_*_backtest_2019_2023), so no 2024+ data enters either split.
+  const useDur = typeof E.loadDurability === "function" && !!(PRM && PRM.components && PRM.components.durability);
+  const DURJ = useDur ? readJSON("data/derived/durability.json") : null;
+  const durNorm = useDur ? { durability: { normChin: DURJ.engine.norm_chin_backtest_2019_2023, normPow: DURJ.engine.norm_pow_backtest_2019_2023 } } : null;
+  function durOpts(id, o) {
+    const d = DURJ && DURJ.backtest[id];
+    if (!d) throw new Error("durability: no walk-forward record for fight " + id + " (refusing the live-fit fallback)");
+    const side = (x) => ({ chin_re: x.chin_re, chin_cov: x.chin_cov, pow_re: x.pow_re, pow_cov: x.pow_cov });
+    const bA = d.p.A / (d.B.chin_re * d.B.chin_cov * d.A.pow_re * d.A.pow_cov), bB = d.p.B / (d.A.chin_re * d.A.chin_cov * d.B.pow_re * d.B.pow_cov);
+    const base = Math.sqrt(bA * bB);
+    return o === 0 ? { A: side(d.A), B: side(d.B), base } : { A: side(d.B), B: side(d.A), base };
+  }
   const names = OOF ? OOF.meta.targets : null;
   const rates = (arr) => { const o = {}; names.forEach((n, i) => { o[n] = arr[i]; }); return o; };
   parentPort.on("message", (msg) => {
@@ -97,7 +113,9 @@ if (!isMainThread) {
             if (ent && ent.A && ent.B) opts.ml = { pred: o === 0 ? { A: rates(ent.A), B: rates(ent.B) } : { A: rates(ent.B), B: rates(ent.A) } };
             else opts.ml = false;
           } else if (typeof E.loadMLRates === "function") opts.ml = false;
+          if (useDur) { opts.dur = durOpts(f.id, o); opts.params = durNorm; }
           const m = E.matchup(A, B, opts);
+          if (useDur && !(m.dur && m.dur.baseFromRecord)) throw new Error("durability: walk-forward record not applied for " + f.id);
           if (m.mlApplied) acc.mlApplied++;
           const rng = E.makeRng(mix(mix(hash32(f.id), o), W.seed));
           for (let i = 0; i < W.sims; i++) {

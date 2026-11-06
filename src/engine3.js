@@ -653,7 +653,7 @@
     }
     return pred;
   }
-  function matchup(profA, profB, opts) {
+  function matchupML(profA, profB, opts) {
     opts = opts || {};
     var pa = resolve(profA), pb = resolve(profB);
     var m = matchupBase(pa, pb, opts);
@@ -686,6 +686,150 @@
     return MLMODEL;
   }
   function mlModel() { return MLMODEL; }
+
+  // ------------------------------------------------------------------ durability (engine v5 component: params.components.durability)
+  // Replaces the chin / power block with the knockdown model of research/model_durability.md (tools/durability.py,
+  // data/derived/durability.json). Knockdown hazard per landed standing head strike by i on j:
+  //   m.kd[i] = kdCal * kdScale * base_ij * relK_ij
+  //   base_ij = level * exp(const + div + five * [5 rounds] + title * [title])        (league level tracked by params)
+  //   relK_ij = (C_j^chinExp * P_i^powExp * size * knobs)^(1 - w) * engRel_ij^w      (w = engineWeight)
+  //   (relative mode, params.durability.level null: base_ij = the engine's division level x context, C x P / NORM,
+  //   and kdCalRel in place of kdCal x kdScale)
+  //   C_j = chin_cov_j * chin_re_j,  P_i = pow_cov_i * pow_re_i
+  //   chin_cov = exp(d_age_c (age - 30) + d_age_h30 max(0, age - 30) + d_age_na [age unknown]
+  //                  + d_okd_r KDabs_365d + d_okd_o KDabs_older + d_kol_r KOL_365d + d_kol_o KOL_older)
+  //   pow_cov  = exp(a_age_c (age - 30) + a_age_h30 max(0, age - 30))
+  //   chin_re = (alphaChin + KD absorbed) / (alphaChin + expected), pow_re = (alphaPow + KD scored) / (alphaPow + expected)
+  // engRel_ij is the engine's own knockdown structure relative to its division level (v3 power x chin ratios, or the
+  // learned v4 rates when they were applied): m.kd_before / (kd0 * kdScale * div kd). GNP and standing TKO hazards scale
+  // with sqrt(rel_ij) and damage per head strike with the blended power ratio, as v3 / v4 do with their own products
+  // (rel_ij = relK_ij with C x P / NORM: mean about 1).
+  // Inputs per side (first found wins): opts.dur.A / opts.dur.B (corner order of this call; backtests pass the
+  // walk-forward records of durability.json backtest[fight_id]), prof.dur, the roster registered with loadDurability()
+  // (by slug), else computed from the profile (age, ko_losses[_365], kd_absorbed[_365]; chin_re / pow_re from career
+  // sums when params.durability.fallbackEB, else 1). opts.dur.base overrides base_ij (backtests: the walk-forward
+  // L730(t) x exp(const + division + context) of the record). The result carries m.dur (inputs and factors).
+  // The roster is the LIVE fit (fighter effects through the durability snapshot, so they contain the outcomes of every
+  // fight up to it). Leak guard: it is used only for matchups dated on or after its snapshot (durability.json
+  // meta.snapshot), never for a backtest fight; earlier fights need opts.dur (the walk-forward backtest records).
+  var DURROSTER = null, DURASOF = null;
+  function loadDurability(json) {
+    if (json == null) { DURROSTER = null; DURASOF = null; return null; }
+    var d = typeof json === "string" ? JSON.parse(json) : json, r = d.roster || d, out = {};
+    for (var s in r) {
+      var x = r[s];
+      if (x && (x.chin_re != null || x.pow_re != null)) out[s] = { chin_re: x.chin_re, pow_re: x.pow_re, chin_cov: x.chin_cov, pow_cov: x.pow_cov };
+    }
+    DURROSTER = out;
+    DURASOF = (d.meta && d.meta.snapshot) || d.asof || null;
+    return { n: Object.keys(out).length, asof: DURASOF };
+  }
+  function durCovariates(dp, prof, age, date) {
+    // chin and power covariate multipliers vs the reference profile (30 years old, no knockdowns absorbed, no KO losses)
+    var T = dp.terms || {}, tm = function (k) { return T[k] != null ? +T[k] : 0; };
+    var kol = +prof.ko_losses || 0, kolR = prof.ko_losses_365 != null ? +prof.ko_losses_365 : 0;
+    var kda = +prof.kd_absorbed || 0, kdaR = prof.kd_absorbed_365 != null ? +prof.kd_absorbed_365 : 0;
+    var kolO = Math.max(0, kol - kolR), kdaO = Math.max(0, kda - kdaR);
+    var lc = 0, lp = 0;
+    if (age != null && isFinite(age)) {
+      var a30 = age - 30, h30 = Math.max(0, a30);
+      lc += tm("d_age_c") * a30 + tm("d_age_h30") * h30;
+      lp += tm("a_age_c") * a30 + tm("a_age_h30") * h30;
+    } else if (!prof.manual) lc += tm("d_age_na");   // the data's "age unknown" (x2.22: obscure short-stint fighters); a hand-made profile without an age is the reference
+    lc += tm("d_okd_r") * kdaR + tm("d_okd_o") * kdaO + tm("d_kol_r") * kolR + tm("d_kol_o") * kolO;
+    // withdrawn first-version terms, kept as labeled knobs (all neutral by default; research/model_durability.md V4)
+    var wd = dp.withdrawn || {};
+    if (prof.layoff != null && isFinite(prof.layoff) && +prof.layoff >= 730 && wd.layoff24 != null) lc += Math.log(wd.layoff24);
+    if (prof.last_ko_loss && wd.lastKO != null) lc += Math.log(wd.lastKO);
+    if (prof.ufc_years != null && wd.ufcYear) lc += wd.ufcYear * (+prof.ufc_years - (wd.ufcYearRef || 0));
+    return { chin: Math.exp(lc), pow: Math.exp(lp), kolR: kolR, kolO: kolO, kdaR: kdaR, kdaO: kdaO };
+  }
+  function durSide(m, prof, i, opts, dp, lvlDiv) {
+    var rost = DURROSTER && prof.slug && DURROSTER[prof.slug] && (!DURASOF || !m.date || String(m.date) >= DURASOF) ? DURROSTER[prof.slug] : null;
+    var od = opts.dur || null, rec = (od && od[SIDE[i]]) || prof.dur || rost || null;
+    var age = m.ages ? m.ages[i] : ageAt(prof, m.date), cov = null, src = rec ? "record" : "computed";
+    var chinCov = rec && rec.chin_cov != null ? +rec.chin_cov : null, powCov = rec && rec.pow_cov != null ? +rec.pow_cov : null;
+    if (chinCov == null || powCov == null) {
+      cov = durCovariates(dp, prof, age, m.date);
+      if (chinCov == null) chinCov = cov.chin;
+      if (powCov == null) powCov = cov.pow;
+    }
+    var chinRe = rec && rec.chin_re != null ? +rec.chin_re : null, powRe = rec && rec.pow_re != null ? +rec.pow_re : null;
+    if ((chinRe == null || powRe == null) && dp.fallbackEB) {
+      // walk-forward empirical Bayes from career sums (C, else the decayed S): opponent effects taken as 1 and 90% of
+      // head strikes standing (research/model_durability.md section 1)
+      var C = prof.C ? (Array.isArray(prof.C) ? (function () { var o = {}, ks = prof.keys || (DB && DB.meta && DB.meta.keys) || KEYS; for (var q = 0; q < ks.length; q++) o[ks[q]] = +prof.C[q] || 0; return o; })() : prof.C) : sums(prof);
+      var sh = dp.standShare != null ? dp.standShare : 0.9;
+      if (chinRe == null) chinRe = ((dp.alphaChin || 3) + (+C.okd || 0)) / ((dp.alphaChin || 3) + lvlDiv * chinCov * sh * (+C.oh_lnd || 0));
+      if (powRe == null) powRe = ((dp.alphaPow || 2.5) + (+C.kd || 0)) / ((dp.alphaPow || 2.5) + lvlDiv * powCov * sh * (+C.h_lnd || 0));
+    }
+    if (chinRe == null) chinRe = 1;
+    if (powRe == null) powRe = 1;
+    return { src: src, age: age, chin_re: chinRe, pow_re: powRe, chin_cov: chinCov, pow_cov: powCov, cov: cov };
+  }
+  function applyDurability(m, pa, pb, opts) {
+    var p = m.p, dp = p.durability || {}, i, j, k;
+    var T = dp.terms || {}, tm = function (k2) { return T[k2] != null ? +T[k2] : 0; };
+    var od = opts.dur || {};
+    var dv = (p.div && p.div[m.division]) || {}, dvkd = dv.kd != null ? dv.kd : 1;
+    var engLevel = m.L.kd0 * p.kdScale * dvkd;                         // the engine's own division level (v3 / v4 KD)
+    // absolute mode (params.durability.level set): base = tracked league level x division x context, and the fit's
+    // constant already prices the average chin x power, so no NORM on the knockdown hazard. Relative mode (level null):
+    // base = the engine's own division level x context, with C x P divided by NORM (their league mean).
+    var absMode = dp.level != null;
+    var ctx = Math.exp(tm("five") * (m.rounds >= 5 ? 1 : 0) + tm("title") * (m.title ? 1 : 0));
+    var lvl = absMode ? +dp.level : null;                              // league KD per landed standing head strike
+    var lvlDiv = absMode ? lvl * Math.exp(tm("const") + tm("div_" + m.division)) : m.L.kd0;
+    var base = absMode ? (od.base != null && isFinite(od.base) ? +od.base : lvlDiv * ctx) : engLevel * ctx;
+    var norm = (dp.normChin != null ? dp.normChin : 1) * (dp.normPow != null ? dp.normPow : 1);
+    var normK = absMode ? 1 : norm;
+    var w = dp.engineWeight != null ? clip(+dp.engineWeight, 0, 1) : 0;
+    var cExp = dp.chinExp != null ? +dp.chinExp : 1, pExp = dp.powExp != null ? +dp.powExp : 1;
+    var kdCal = absMode ? (dp.kdCal != null ? +dp.kdCal : 1) : (dp.kdCalRel != null ? +dp.kdCalRel : 1);
+    var sd = [durSide(m, pa, 0, opts, dp, lvlDiv), durSide(m, pb, 1, opts, dp, lvlDiv)];
+    var up = [0, 0];
+    for (i = 0; i < 2; i++) {
+      var hl = m.homeLbs ? m.homeLbs[i] : null;
+      up[i] = (m.fightLbs && hl) ? Math.max(0, m.fightLbs - hl) / 10 : 0;
+    }
+    var koF = dv.ko != null ? dv.ko : 1;
+    var engKd = m.kd.slice(), rel = [0, 0], relK = [0, 0], engRel = [0, 0], powRel = [0, 0];
+    for (i = 0; i < 2; i++) {
+      j = 1 - i;
+      var C = Math.pow(sd[j].chin_cov * sd[j].chin_re, cExp) * Math.exp((dp.sizeChin || 0) * up[j]);
+      var P = Math.pow(sd[i].pow_cov * sd[i].pow_re, pExp) * Math.exp(-(dp.sizePow || 0) * up[i]);
+      var cp = C * P * m.adj[i].pow * m.adj[j].chin;
+      engRel[i] = engKd[i] / engLevel;
+      rel[i] = w > 0 ? Math.pow(cp / norm, 1 - w) * Math.pow(engRel[i], w) : cp / norm;     // mean about 1: TKO hazards, damage
+      relK[i] = w > 0 ? Math.pow(cp / normK, 1 - w) * Math.pow(engRel[i], w) : cp / normK;  // knockdown hazard
+      var pd = P / (dp.normPow != null ? dp.normPow : 1) * m.adj[i].pow, pe = m.fac && m.fac[i] ? m.fac[i].pow : 1;
+      powRel[i] = w > 0 ? Math.pow(pd, 1 - w) * Math.pow(pe, w) : pd;
+    }
+    for (i = 0; i < 2; i++) {
+      m.kd[i] = kdCal * (absMode ? p.kdScale : 1) * base * relK[i];
+      m.dw[i] = Math.pow(powRel[i], p.powDmgExp);
+      m.gnp[i] = p.gnpTko * Math.sqrt(rel[i]) * koF * (dp.gnpCal != null ? dp.gnpCal : 1);
+      m.stko[i] = p.stko * Math.sqrt(rel[i]) * koF * (dp.stkoCal != null ? dp.stkoCal : 1);
+    }
+    if (dp.caution5 != null && m.rounds >= 5) {
+      for (k = 0; k < m.rounds; k++) m.finR[k] = (k === 0 ? p.r1Caution5 : 1) * dp.caution5;
+    }
+    function pub(s) {
+      var o = { src: s.src, age: s.age, chin_re: s.chin_re, chin_cov: s.chin_cov, pow_re: s.pow_re, pow_cov: s.pow_cov,
+        chin: s.chin_cov * s.chin_re, pow: s.pow_cov * s.pow_re };
+      if (s.cov) { o.ko_losses_365 = s.cov.kolR; o.ko_losses_older = s.cov.kolO; o.kd_absorbed_365 = s.cov.kdaR; o.kd_absorbed_older = s.cov.kdaO; }
+      return o;
+    }
+    m.dur = { A: pub(sd[0]), B: pub(sd[1]), mode: absMode ? "absolute" : "relative", level: lvl, base: base, baseFromRecord: absMode && od.base != null,
+      ctx: ctx, norm: norm, w: w, kdCal: kdCal, rel: rel, relK: relK, engRel: engRel, engKd: engKd, engLevel: engLevel, lbsUp: up };
+    return m;
+  }
+  function matchup(profA, profB, opts) {
+    opts = opts || {};
+    var m = matchupML(profA, profB, opts);
+    if (m.p.components && m.p.components.durability) applyDurability(m, resolve(profA), resolve(profB), opts);
+    return m;
+  }
 
   // ------------------------------------------------------------------ RNG (v2's xoshiro-style generator)
   function makeRng(seed) {
@@ -1235,6 +1379,8 @@
       o.kd = { p0: m.kd[i] / (fc.pow * fo.chin), perHeadLanded: m.kd[i], powerRatio: fc.powRaw, oppChinRatio: fo.chinRaw, ageChinOpp: fo.ageChin, agePow: fc.agePow,
         koLossChinOpp: fo.koChin, oppKoLosses: fo.koLosses, sizeChinOpp: fo.sizeChin, sizePow: fc.sizePow, knobPow: m.adj[i].pow, knobChinOpp: m.adj[j].chin,
         damagePerHead: m.dw[i], instantKO: prob(m.instO) };
+      if (m.dur) o.kd.durability = { mode: m.dur.mode, base: m.dur.base, rel: m.dur.rel[i], engineRel: m.dur.engRel[i], engineWeight: m.dur.w,
+        oppChin: m.dur[SIDE[j]].chin, ownPow: m.dur[SIDE[i]].pow, opp: m.dur[SIDE[j]], own: m.dur[SIDE[i]] };
       o.grappling = { tdAttPer15Stand: m.tdS[i] * 900, tdSuccess: m.pTd[i], tdSuccessClinch: prob(m.tdOC[i] * m.adj[j].tdDef), ctrlTargetPer15: m.ctrlT[i] * 15,
         topSkill: R[i].topSkill, oppEscapeWeakness: R[j].escWeak, passEdge: m.gEdge[i], standUpMeanSecWhenUnder: 1 / Math.max(1e-9, m.up[i]),
         sweepPerMinBottom: m.sw[i] * 60 };
@@ -1250,9 +1396,16 @@
       lines.push("  Distance target mix head/body/leg " + m.mixD[i].map(pct).join(" / "));
       lines.push("  Expected per 15 (base): sig att " + f(o.expectedPer15.sigAtt, 1) + ", landed " + f(o.expectedPer15.sigLnd, 1) + " (dist " + f(dl, 1) + ", clinch " + f(cl, 1) + ", ground " + f(gl, 1) +
         "); career landed/min " + f(o.career.slpm) + ", absorbed/min " + f(o.career.sapm));
-      lines.push("  KD per landed standing head strike " + f(100 * m.kd[i], 3) + "% = p0 " + f(100 * o.kd.p0, 3) + "% x power " + f(fc.powRaw) + " x opp chin " + f(fo.chinRaw) +
-        " x opp age " + f(fo.ageChin) + " x own age (power) " + f(fc.agePow) + " x opp KO losses (" + fo.koLosses + ") " + f(fo.koChin) + " x opp size " + f(fo.sizeChin) + " x own size (power) " + f(fc.sizePow) +
-        " x knobs " + f(m.adj[i].pow) + "/" + f(m.adj[j].chin) + "; damage/head " + f(m.dw[i]));
+      if (m.dur) {
+        var dO = m.dur[SIDE[j]], dS = m.dur[SIDE[i]];
+        lines.push("  KD per landed standing head strike " + f(100 * m.kd[i], 3) + "% (durability, " + m.dur.mode + "): base " + f(100 * m.dur.base, 3) + "% x kdCal x kdScale x [opp chin " +
+          f(dO.chin) + " (cov " + f(dO.chin_cov) + " x fighter " + f(dO.chin_re) + ") x own power " + f(dS.pow) + " (cov " + f(dS.pow_cov) + " x fighter " + f(dS.pow_re) + ") x knobs " +
+          f(m.adj[i].pow) + "/" + f(m.adj[j].chin) + "]^" + f(1 - m.dur.w) + " x engine structure " + f(m.dur.engRel[i]) + "^" + f(m.dur.w) + "; damage/head " + f(m.dw[i]));
+      } else {
+        lines.push("  KD per landed standing head strike " + f(100 * m.kd[i], 3) + "% = p0 " + f(100 * o.kd.p0, 3) + "% x power " + f(fc.powRaw) + " x opp chin " + f(fo.chinRaw) +
+          " x opp age " + f(fo.ageChin) + " x own age (power) " + f(fc.agePow) + " x opp KO losses (" + fo.koLosses + ") " + f(fo.koChin) + " x opp size " + f(fo.sizeChin) + " x own size (power) " + f(fc.sizePow) +
+          " x knobs " + f(m.adj[i].pow) + "/" + f(m.adj[j].chin) + "; damage/head " + f(m.dw[i]));
+      }
       lines.push("  Takedowns: " + f(o.grappling.tdAttPer15Stand) + " att per 15 standing min, success " + pct(m.pTd[i]) + " (career " + pct(R[i].tdAcc) + " vs opp allows " + pct(R[j].tdAccAg) + ", league " + pct(P.td_acc) +
         "); control target " + f(o.grappling.ctrlTargetPer15, 0) + " s/15 (league " + f(P.ctrl * 15, 0) + "), top skill " + f(R[i].topSkill) + " x opp escape " + f(R[j].escWeak) + " -> pass edge " + f(m.gEdge[i]));
       lines.push("  When under: mean stand-up " + f(1 / m.up[i], 0) + " s, sweeps " + f(m.sw[i] * 60, 3) + "/min");
@@ -1342,7 +1495,8 @@
   var api = {
     VERSION: VERSION, KEYS: KEYS, STATS: STK,
     loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
-    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound, deductions: deductions,
+    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound, deductions: deductions, loadDurability: loadDurability,
+    durabilityCovariates: function (prof, age, dp) { return durCovariates(dp || (getParams() || {}).durability || {}, prof || {}, age, null); },
     summarize: summarize, explain: explain, manualProfile: manualProfile,
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
