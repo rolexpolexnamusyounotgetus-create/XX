@@ -588,6 +588,8 @@
     if (typeof len === "number") top = len; else if (len && typeof len === "object") { top = firstNum(len.top); sides = firstNum(len.sides); }
     L.hairMode = L.hair ? "mesh" : "paint"; L.scalpCh = -1; L.hairLen = 0; L.hairSides = sides;
     var reced = /reced|receding|m shape|m-shape|thinning|widow/.test(txt), horseshoe = /horseshoe|male-pattern|crown thinning|bald on top/.test(txt);
+    // "slightly receded temple corners" on a dense hairline is a normal hairline, not the receding-buzz mask
+    if (reced && /(slight|mild|minor|a little)\w*\s+(\w+\s+){0,2}(reced|recess)/.test(txt) && !/thinning|deeply|heavily|strongly|widow/.test(txt)) reced = false;
     var fade = /fade|taper|high and tight|clipped very short|skin fade/.test(txt);
     if (top === 0 || (top == null && /bald|clean-shaven head|shaved head|head shaved|shaven head/.test(txt))) {
       L.hair = null; L.hairMode = "paint"; L.scalpCh = horseshoe || reced ? 3 : 4; L.scalp = 0.2;
