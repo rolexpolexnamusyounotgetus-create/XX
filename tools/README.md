@@ -266,6 +266,17 @@ in Node by `tools/forward_ledger.js` (MoE stack with and without the line, exper
 `score` pulls results for finished ledger events only (ufcstats via the Greco1899 CSVs into `out/forward_results/`,
 ESPN's scoreboard JSON as the second source), appends them to `results.json`, and regenerates `scores.json`/`scores.md`.
 
+Forward model v4.1 (pre-registered in `data/predictions/README.md`): each bout also carries a `models` block (benchmark
+line, MoE stacks with and without the line, ML v2 logistic and its page stacks with fit-2019-2023 and production weights,
+whr_rounds, ratings stack, Elo with pre-UFC-seeded debutants, simulator). `p_a` is `ml2_stack_open`, and `score` rates
+every model against the market at prediction time and against the close, per model version. The fit-2019-2023 ML v2
+weights come from:
+
+```
+nice -n 5 python3 tools/forward_models.py export   # data/derived/forward_models.json from tools/ml2.py's cached stack table
+node tests/test_forward_models.js                  # weights vs Python, ratings vs ratings.json, corner symmetry, debut seeds
+```
+
 
 ## ml2.py: ML v2 feature union (winner model, stacks, method/round refit)
 

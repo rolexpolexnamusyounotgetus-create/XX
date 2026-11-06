@@ -113,10 +113,151 @@ not claimed until the paired interval excludes zero.
 experts, the simulator's raw output, `p_a_line` / `p_a_noline` / `p_elo` and the flags), refusing to overwrite or to
 predict after the lock; `--supersede` adds a `_v2` before the lock. Model version `fwd-1` sets `p_a` to the MoE
 stack with the market line captured at prediction time as one of its experts (it says so in the file's `model.p_a`);
-`p_a_noline` is the same stack without the line, and both are scored. `python3 tools/forward_ledger.py score`
+`p_a_noline` is the same stack without the line, and both are scored. From Nov 6, 2026 the tool writes model version
+`fwd-4.1` instead (section "Forward model v4.1" below: the primary `p_a` and every scored secondary model).
+`python3 tools/forward_ledger.py score`
 fetches results for finished ledger events (ufcstats through the Greco1899 CSVs and ESPN's scoreboard as the
 second source), appends them to `results.json` and regenerates `scores.json` / `scores.md`. The backtest-side
 counterpart is `tools/blindtest.py` (event-by-event replay of 2024-2025, `research/model_blindtest.md`).
+
+## Forward model v4.1 (Nov 6, 2026)
+
+Pre-registered on Nov 6, 2026, about 9:15 pm UTC. At that time no prediction file existed in this folder and no
+forward result had been recorded. The model below applies to every file whose `model.version` starts with `fwd-4.1`.
+
+- **Code and data.** The code is `tools/forward_ledger.py` 1.1 and `tools/forward_ledger.js`. The fixed ML v2 weights
+  are exported by `tools/forward_models.py` to `data/derived/forward_models.json`. The tests are
+  `tests/test_forward_models.js`, `tests/test_ml2.js` and `tests/test_blindtest_stack.js`.
+- **Version string.** The ML v2 build, the forward_models.json hash, the MoE stack build, the engine and the ML page
+  snapshot are all part of `model.version`. If any of them changes, the version changes and its scores are a separate
+  tally.
+
+### Primary `p_a` (a line was captured before the lock): `ml2_stack_open`
+
+**Definition.** `ml2_stack_open` is the ML v2 page "open" stack with weights fit on 2019-2023 only, on opening lines:
+
+`logit p_a = 0.6596 logit(line) + 0.5825 logit(ML v2 logistic)`
+
+- Inputs are clipped to [0.01, 0.99]. There is no intercept.
+- The full-precision weights are in `forward_models.json`. They reproduce tools/ml2.py's cached static fit exactly.
+- `line` is the multiplicative de-vig of the consensus line captured at prediction time
+  (`market.p_a_open_stack_input`), the same construction as the no-vig opener the stack was fit on.
+- The rule is the same whatever the capture time before the lock. There is no switch by capture time.
+  `market.hours_before_lock` records each bout's lead.
+
+**Fallbacks.**
+- A fighter missing from the ML v2 roster: `stack_open`, then `stack_line`. The bout is flagged `primary_fallback`.
+- No line for the bout: `p_a = p_a_noline`.
+- A debutant: `p_a` = the line, as in fwd-1.
+
+**Why this stack.** The evidence comes from research/model_ml2.md (section 6 and the Verification log) and
+research/model_blindtest.md.
+
+1. **ML v2 stacks beat the MoE stacks in both line regimes.** This holds both in the pre-2024 CV and on 2024-2025.
+
+   | regime | CV 2021-2023 (ML v2 vs MoE experts) | 2024-2025 (ML v2 vs MoE experts) |
+   |---|---|---|
+   | close | 0.61624 vs 0.61922 | 0.5757 vs 0.5788 |
+   | open | 0.62275 vs 0.62840 | 0.5812 vs 0.5852, -0.0041 [-0.0066, -0.0014] |
+
+   In the blind replay, `ml2_stack_line` scored 0.5760 against `moe_close`'s 0.5774.
+2. **The line in a ledger file is not the close.**
+   - It is the newest snapshot before the lock. That is planned for about T-25h to T-8h. The Nov 6 snapshots are T-36h
+     for the Nov 7 card and T-204h for UFC 334.
+   - The verified ML v2 recipe sends any pre-fight line, opener or moving, to the open stack. The line stack is kept
+     for a true closing line.
+   - Close-trained weights fed an opener cost +0.0099 [+0.0064, +0.0133] (ML v2). The MoE stacks show the same in the
+     blind replay: +0.0102 [+0.0057, +0.0145].
+3. **Supporting check.** This was run for this pre-registration and is not part of a verified report.
+   - Method: a scratch script called tools/ml2.py's own `stack_predict` on its cached table. The weights were fixed
+     and nothing was fitted. It covered the 843 fights of 2024-2025 that have both lines.
+   - Result, as close-trained minus open-trained ML v2 stack:
+
+     | line fed to both stacks | difference [95% CI] |
+     |---|---|
+     | the close | +0.0049 [+0.0016, +0.0078] |
+     | the logit midpoint of open and close | +0.0065 [+0.0033, +0.0095] |
+     | the open | +0.0099 [+0.0064, +0.0133] |
+
+   - The open-trained weights did at least as well wherever the captured line sits between open and close, so no
+     capture-time rule is needed.
+   - Caveat: on the close itself this reflects 2024-2025. Every model was underconfident then and ML v2 was strong.
+     The 2019-2025 production refit raises the close stack's ML v2 weight from 0.34 to 0.48. In 2019-2023 the
+     close-trained weights remain the CV choice for a true close, so `ml2_stack_close` is the main secondary.
+
+### No-line primary: `p_a_noline`
+
+`p_a_noline` is unchanged from fwd-1: the MoE stack without a line (`blindtest_stack.json` `model`, absent block).
+For a debutant it is `p_elo`, with the debutant seeded as below.
+
+### Debutants
+
+The 1500 debut rating is replaced by a seeded rating when a seed exists. A debutant's Elo is 1500 plus his pre-UFC
+seed, taken from the first source that has him:
+
+1. `data/predictions/debutants_*.json`.
+2. preufc.json `roster_priors[slug].elo_debut_shift`, the shift at his UFC debut.
+3. Otherwise 1500.
+
+- `p_a_noline` = `p_elo` = `models.elo` uses that rating against the opponent's fighters.json Elo.
+- `p_a` = the line, and the method comes from division base rates, as in fwd-1.
+- Flags: `debut_<side>` is kept, plus `seeded_elo_<side>` or `debut_elo_1500_<side>`.
+
+A debutants file is filled from pre-UFC records only, never from odds or results. It is committed before the event's
+prediction file. Its format:
+
+```json
+{"meta": {"built": "...", "source": "sherdog via tools/preufc.py"},
+ "fighters": {"samuel-sanches": {"name": "Samuel Sanches", "elo_debut_shift": 35.0, "source": "..."}}}
+```
+
+- The key is the fighter's slugified name.
+- Instead of `elo_debut_shift`, an entry may give `"pre": {pre_wpct, pre_logn, pre_fin, pre_finl, pre_streak,
+  pre_feed, pre_grad, pre_oppufc, pre_netelo, pre_dwcs, pre_agedeb, age_debut}`. These are standardized with
+  preufc.json's `seeded_elo_live` betas, and a missing feature counts as the mean.
+- On Nov 6 no seed exists for the four debutants on the Nov 7 and Nov 14 cards (Degli, Lourenço, Calderon, Sanches).
+
+### Secondary models (scored, never chosen from forward results)
+
+Every bout carries a `models` block with P(a wins | not a draw) for each model below, or null when the model cannot
+run. `model.models` in each file repeats these definitions.
+
+| model | what it is |
+|---|---|
+| `market_novig` | Benchmark: the BestFightOdds mean at prediction time, multiplicative no-vig (= `market.p_a_novig`). |
+| `stack_line` | MoE stack, close-trained weights, fed the power de-vig consensus (= `p_a_line`, fwd-1's `p_a`). |
+| `stack_open` | MoE stack, open-trained weights (`model_open`), fed the multiplicative de-vig consensus. |
+| `stack_noline` | MoE stack without a line (= `p_a_noline` for non-debut bouts). |
+| `ml2_lr` | ML v2 logistic page model (refit 2010-2025). |
+| `ml2_stack_close` | ML v2 line stack, fit 2019-2023 on closing lines (market 0.7733 + ML v2 0.3397), fed the power de-vig consensus. |
+| `ml2_stack_open` | **Primary** (above). |
+| `ml2_stack_noline` | ML v2 no-line stack, fit 2019-2023 (ML v2 0.7049 + market rating 0.5526, half-life 1.5 y). |
+| `ml2_stack_*_prod` | The same three ML v2 stacks with the page's production weights, refit 2019-2025 (ml2.json `page_model.stack`). |
+| `whr_rounds` | Round-level WHR from ratings.json's current roster ratings. |
+| `ratings_stack` | ratings.json's stack of whr_rounds, glicko2 and dims, logit weights fit 2019-2023. No `ratings_plus`. |
+| `elo` | fighters.json Elo, with debutants seeded as above (= `p_elo`). |
+| `simulator` | Engine 4.0.0 summarize, both corner orders, learned stat-line rates, draws removed. |
+
+All of these are corner-symmetric. Swapping a and b and flipping the line gives exactly 1 - p for every model
+(`tests/test_forward_models.js`). The engine is included because its seeds follow the unordered pair.
+
+### Scoring (per model version)
+
+- **Headline.** The paired per-bout log-loss difference of `p_a` against the market at prediction time, and against
+  the close, with an event-cluster bootstrap 95% interval.
+- **`p_a_noline`.** Scored the same way. `p_elo` and the coin stay as baselines.
+- **Every entry in the `models` block.** Log loss, Brier and accuracy, plus the paired log-loss difference against the
+  market at prediction time and against the close (`scores.json` `models`, `scores.md` "Models block").
+- **Claims.** A lead is not claimed until its paired interval excludes zero.
+- **Questions the secondaries answer.** These are exploratory, and nothing switches on them within v4.1:
+  - `ml2_stack_open` vs `ml2_stack_close`: which weights suit a line captured before the close, read against
+    `hours_before_lock`;
+  - the ML v2 stacks vs the MoE stacks;
+  - fit-2019-2023 vs production weights;
+  - `ml2_stack_noline` vs `stack_noline`;
+  - `whr_rounds`, `ratings_stack`, `elo` and `simulator` as single models.
+- **Changing the primary.** Doing so needs a new model version, chosen at a milestone and never on forward results
+  alone (rule 5).
 
 ## Card snapshot notes (`cards_upcoming.json`)
 
