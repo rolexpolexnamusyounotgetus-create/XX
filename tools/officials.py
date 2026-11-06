@@ -67,6 +67,7 @@ import baserates as br  # noqa: E402  (loader and card regex shared with the bas
 RAW = ROOT / "data" / "raw"
 OUT = ROOT / "data" / "derived" / "officials.json"
 WIKIDATA = RAW / "wikidata_mma_people.csv"
+WIKIDATA_ALT = RAW / "wikidata_mma_altlabels.csv"
 SINCE = "2001-01-01"
 
 FEATS = ["head_l", "body_l", "leg_l", "kd", "td_l", "ctrl_min", "sub", "rev"]
@@ -156,30 +157,62 @@ def region_of(location):
     return country, REGION.get(country, "Other")
 
 
-def load_nationality(people_names):
-    """Map ufcstats fighter names to an ISO3 country (Wikidata country for sport, else citizenship,
-    else birth country). Matched by normalized name; ambiguous names dropped."""
+def _nkey(s):
+    s = str(s).lower()
+    s = (s.replace("á", "a").replace("ã", "a").replace("é", "e").replace("í", "i").replace("ó", "o")
+         .replace("ú", "u").replace("ç", "c").replace("ñ", "n").replace("ö", "o").replace("ü", "u"))
+    return re.sub(r"[^a-z]", "", s)
+
+
+def load_nationality(people_names, dob=None):
+    """Map ufcstats fighter names to an ISO3 country: Wikidata country for sport, else citizenship, else
+    birth country. Matched by normalized English label or alias; a name shared by several Wikidata people
+    is resolved by date of birth (ufcstats tale of the tape) or dropped. Fallback: same date of birth and
+    same last name."""
     if not WIKIDATA.exists():
         return {}, {"matched": 0, "note": "wikidata file missing; run with --fetch-wikidata"}
     w = pd.read_csv(WIKIDATA)
-    w["key"] = w["name"].fillna("").map(lambda s: re.sub(r"[^a-z]", "", s.lower()))
-    best = {}
-    for key, g in w.groupby("key"):
-        if not key or g.item.nunique() > 1:
-            continue
+    alt = pd.read_csv(WIKIDATA_ALT) if WIKIDATA_ALT.exists() else pd.DataFrame(columns=["item", "alt"])
+    w["dob"] = pd.to_datetime(w["dob"].astype(str).str[:10], errors="coerce")
+    country, wdob = {}, {}
+    for item, g in w.groupby("item"):
         for col in ("sc", "cc", "bc"):
             vals = g[col].dropna()
             if len(vals):
-                # citizenship can list several countries: take the most frequent (ties: first)
-                best[key] = vals.value_counts().index[0]
+                country[item] = vals.value_counts().index[0]
                 break
-    out = {}
+        wdob[item] = set(g["dob"].dropna())
+    keys = defaultdict(set)
+    for item, nm in zip(w["item"], w["name"]):
+        if isinstance(nm, str):
+            keys[_nkey(nm)].add(item)
+    for item, nm in zip(alt["item"], alt["alt"]):
+        if isinstance(nm, str):
+            keys[_nkey(nm)].add(item)
+    bydob = defaultdict(set)
+    for item, ds in wdob.items():
+        for d in ds:
+            bydob[d].add(item)
+    labels = dict(zip(w["item"], w["name"]))
+    out, how = {}, Counter()
+    dob = dob or {}
     for nm in people_names:
-        k = re.sub(r"[^a-z]", "", nm.lower())
-        if k in best:
-            out[nm] = best[k]
+        cands = {i for i in keys.get(_nkey(nm), set()) if i in country}
+        d = dob.get(nm)
+        if len(cands) > 1 and d is not None:
+            cands = {i for i in cands if d in wdob.get(i, set())}
+        if len(cands) == 1:
+            out[nm] = country[cands.pop()]
+            how["name"] += 1
+            continue
+        if not cands and d is not None:
+            last = _nkey(nm.split()[-1])
+            c2 = {i for i in bydob.get(d, set()) if i in country and last and last in _nkey(labels.get(i, ""))}
+            if len(c2) == 1:
+                out[nm] = country[c2.pop()]
+                how["dob+last name"] += 1
     return out, {"wikidata_people": int(w.item.nunique()), "matched_names": len(out),
-                 "names_needed": len(people_names)}
+                 "names_needed": len(people_names), "how": dict(how)}
 
 
 def fetch_wikidata():

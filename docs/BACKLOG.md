@@ -59,3 +59,9 @@ Findings from verified research that the next engine versions must use. Each lin
   fights; a separate auditor opens the vault only at milestones (v6 and v10) and reports once.
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
+
+## Research tooling note
+- Agents launched before the network opened hit DNS failures in WebFetch and a shared web-search cap
+  (about 200 calls per turn). With unrestricted network, research agents should fetch pages with curl
+  (generic User-Agent) and fall back to https://html.duckduckgo.com/html/?q=<query> for search when the
+  WebSearch budget runs out. Re-verify items flagged "unverified" in data/scouting/*.json this way.

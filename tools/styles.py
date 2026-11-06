@@ -322,3 +322,200 @@ def glm_dev(X, b, y, family, offset=None, n_trials=None):
         t1 = np.where(y > 0, y * np.log(y / (n * pr)), 0.0)
         t2 = np.where(n - y > 0, (n - y) * np.log((n - y) / (n * (1 - pr))), 0.0)
     return 2 * (t1 + t2)
+
+
+# --------------------------------------------------------------------------------------------- tables
+def zconsts(rows, feats, tune_mask):
+    mu, sd = {}, {}
+    for k in feats:
+        v = np.array([r[t][k] if r[t][k] is not None else np.nan for r, m in zip(rows, tune_mask) if m
+                      for t in "AB"], float)
+        mu[k] = float(np.nanmean(v))
+        sd[k] = float(np.nanstd(v)) or 1.0
+    return mu, sd
+
+
+OUT_KEYS = ["min", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",
+            "l_att", "l_lnd", "kd", "td_att", "td_lnd", "ctrl", "sub_att", "rev", "octrl"]
+
+
+def build_sides(rows, keys, mu, sd):
+    """fight-side frame: X = attacker (this side), Y = opponent; o_* = what X actually did in the fight"""
+    import pandas as pd
+    KI = {k: i for i, k in enumerate(keys)}
+    feats = list(mu)
+    recs = []
+    for i, r in enumerate(rows):
+        if r.get("vA") is None or r.get("vB") is None:
+            continue
+        for X, Y, vX in (("A", "B", r["vA"]), ("B", "A", r["vB"])):
+            d = {"fi": i, "date": r["date"], "tune": r["date"] < TEST_FROM, "side": X}
+            for k in feats:
+                d["x_" + k] = r[X][k]
+                d["y_" + k] = r[Y][k]
+            for k in OUT_KEYS:
+                d["o_" + k] = vX[KI[k]]
+            P = r["prior"]
+            d["p_acc_d"], d["p_td_acc"], d["p_kd"] = P["acc_d"], P["td_acc"], P["kd_per_h"]
+            recs.append(d)
+    D = pd.DataFrame(recs)
+    add = {}
+    for k in feats:
+        add["zx_" + k] = ((D["x_" + k] - mu[k]) / sd[k]).fillna(0.0)
+        add["zy_" + k] = ((D["y_" + k] - mu[k]) / sd[k]).fillna(0.0)
+    D = pd.concat([D, pd.DataFrame(add)], axis=1)
+    D["st_min"] = np.maximum(D.o_min - (D.o_ctrl + D.o_octrl) / 60.0, 0.15 * D.o_min)
+    D["top_min"] = D.o_ctrl / 60.0
+    D["open"] = (((D.x_southpaw == 1) & (D.y_orthodox == 1)) | ((D.x_orthodox == 1) & (D.y_southpaw == 1))).astype(float)
+    D["x_sp_vs_orth"] = ((D.x_southpaw == 1) & (D.y_orthodox == 1)).astype(float)
+    D["x_orth_vs_sp"] = ((D.x_orthodox == 1) & (D.y_southpaw == 1)).astype(float)
+    D["x_sw"], D["y_sw"] = D.x_switch, D.y_switch
+    D["reach_d"] = ((D.x_reach - D.y_reach) / sd["reach"]).fillna(0.0)
+    D["height_d"] = ((D.x_height - D.y_height) / sd["height"]).fillna(0.0)
+    D["age_d"] = ((D.x_age - D.y_age) / sd["age"]).fillna(0.0)
+    D["kick_x"] = (D.zx_sh_l + D.zx_sh_b) / math.sqrt(2)
+    D["kick_y"] = (D.zy_sh_l + D.zy_sh_b) / math.sqrt(2)
+    D["neg_zy_dfn"] = -D.zy_dfn
+    D["neg_zy_td_def"] = -D.zy_td_def
+    D["tot_tg"] = D.o_h_att + D.o_b_att + D.o_l_att
+    return D.copy()
+
+
+# --------------------------------------------------------------------------------------------- rate models
+# Each spec: outcome count y for attacker X, exposure (offset), the engine-style main effects (X's own rate
+# and what Y allows, both log-ratios to the division prior: coefficient 1 = the engine's log-linear / log5
+# combination) and the pre-registered style candidates. A candidate is a column name or a (u, v) product.
+def rate_specs(D):
+    lg = np.log
+    return {
+        "dist_att": dict(desc="distance significant attempts per standing minute", fam="poisson", y="o_d_att",
+                         off=lg(D.st_min), base=["zx_d_rate", "zy_od_rate"],
+                         cand=["zy_kd_pow", "zy_td_int", "zy_press", "zx_press", "kick_y", "kick_x", "open",
+                               "x_sp_vs_orth", "x_orth_vs_sp", "reach_d", "height_d", ("zx_press", "zy_press"),
+                               ("zx_vol", "zy_dfn"), ("zx_press", "zy_kd_pow"), ("zx_d_rate", "zy_od_rate"),
+                               "zy_vol", "zy_acc"]),
+        "dist_acc": dict(desc="distance accuracy (landed of attempted), log5 baseline", fam="binomial",
+                         y="o_d_lnd", n="o_d_att", off=lambda D: logit(D.p_acc_d), base=["zx_acc", "neg_zy_dfn"],
+                         cand=[("zx_acc", "zy_dfn"), ("zx_press", "zy_dfn"), ("zx_vol", "zy_dfn"), "zy_press",
+                               "zx_press", "zy_vol", "kick_x", "kick_y", "open", "x_sp_vs_orth", "x_orth_vs_sp",
+                               "reach_d", "height_d", ("zx_acc", "zy_press"), "zy_td_int", "zy_kd_pow"]),
+        "leg_share": dict(desc="leg share of significant attempts", fam="binomial", y="o_l_att", n="tot_tg",
+                          off=None, base=["zx_sh_l", "zy_osh_l"],
+                          cand=["zy_td_int", "zy_press", "zy_kd_pow", "open", "x_sp_vs_orth", "x_orth_vs_sp",
+                                "reach_d", "height_d", ("zx_sh_l", "zy_osh_l"), "y_sw", "zy_sh_l"]),
+        "body_share": dict(desc="body share of significant attempts", fam="binomial", y="o_b_att", n="tot_tg",
+                           off=None, base=["zx_sh_b"],
+                           cand=["open", "x_sp_vs_orth", "x_orth_vs_sp", "y_sw", "zy_td_int", "zy_press",
+                                 "reach_d", "height_d"]),
+        "td_att": dict(desc="takedown attempts per standing minute", fam="poisson", y="o_td_att",
+                       off=lg(D.st_min), base=["zx_td_rate", "zy_otd_rate"],
+                       cand=["zy_td_def", ("zx_td_int", "zy_td_def"), "kick_y", "zy_net", "zx_net", "zy_sub_int",
+                             "zy_kd_pow", "zy_td_int", ("zx_td_int", "zy_td_int"), "zy_press", "zy_vol", "open",
+                             "reach_d", "height_d", ("zx_td_rate", "zy_otd_rate")]),
+        "td_acc": dict(desc="takedown success (landed of attempted), log5 baseline", fam="binomial", y="o_td_lnd",
+                       n="o_td_att", off=lambda D: logit(D.p_td_acc), base=["zx_td_acc", "neg_zy_td_def"],
+                       cand=[("zx_td_acc", "zy_td_def"), "kick_y", "zy_press", "zy_vol", "zx_sh_c", "zy_sh_c",
+                             "zy_ctrl", "zy_td_int", ("zx_td_int", "zy_td_int"), "open", "reach_d", "height_d",
+                             "zx_td_int", "zy_sub_int", "zy_kd_pow"]),
+        "ctrl": dict(desc="control seconds per minute (quasi-Poisson)", fam="poisson", y="o_ctrl", off=lg(D.o_min),
+                     base=["zx_ctrl", "zy_octrl"],
+                     cand=[("zx_ctrl", "zy_octrl"), "zy_td_int", "zy_ctrl", ("zx_ctrl", "zy_ctrl"), "zy_sub_int",
+                           "zy_octrl_td", ("zx_ctrl_td", "zy_octrl_td"), "zy_td_def", "kick_y", "zy_net",
+                           "reach_d", "height_d"]),
+        "kd": dict(desc="knockdowns per landed head strike", fam="poisson", y="o_kd",
+                   off=lambda D: np.log(np.maximum(D.o_h_lnd, 0.5)) + np.log(D.p_kd), base=["zx_kd_pow", "zy_chin"],
+                   cand=[("zx_kd_pow", "zy_chin"), "zy_press", "zx_press", "zy_vol", "zy_dfn", "zx_acc", "open",
+                         "x_sp_vs_orth", "x_orth_vs_sp", "reach_d", "height_d", ("zx_kd_pow", "zy_press"),
+                         ("zx_kd_pow", "zy_vol"), "zy_td_int"]),
+        "sub_att": dict(desc="submission attempts per minute", fam="poisson", y="o_sub_att", off=lg(D.o_min),
+                        base=["zx_sub_int", "zy_osub_int"],
+                        cand=[("zx_sub_int", "zy_osub_int"), "zy_octrl", "zy_ctrl", "zy_td_int",
+                              ("zx_sub_int", "zy_td_int"), ("zx_sub_int", "zy_ctrl"), "zy_sub_int", "height_d"]),
+        "clinch_att": dict(desc="clinch significant attempts per minute", fam="poisson", y="o_c_att",
+                           off=lg(D.o_min), base=["zx_c_rate", "zy_oc_rate"],
+                           cand=[("zx_sh_c", "zy_sh_c"), "zy_td_int", "zx_td_int", "reach_d", "height_d", "kick_y",
+                                 "zy_press", "zy_vol", "zy_kd_pow"]),
+        "gnp_att": dict(desc="ground significant attempts per own control minute", fam="poisson", y="o_g_att",
+                        off=lambda D: np.log(D.top_min + 0.25), base=["zx_g_rate"],
+                        cand=["zy_sub_int", "zy_osub_int", "zy_octrl_td", "zy_td_int", "height_d", "reach_d",
+                              "zy_kd_pow"]),
+    }
+
+
+def _col(D, c):
+    if isinstance(c, tuple):
+        return (D[c[0]] * D[c[1]]).to_numpy(float)
+    return D[c].to_numpy(float)
+
+
+def cname(c):
+    return c if isinstance(c, str) else c[0] + "*" + c[1]
+
+
+def rate_tests(D, n_boot=1000, seed=SEED, z_screen=3.0):
+    """Fit every rate spec on 2019-2023 sides, test each candidate: tune z (quasi-likelihood), leave-one-
+    year-out CV deviance change inside 2019-2023, held-out 2024+ deviance change with a fight-level
+    bootstrap CI, and a test-only refit z (diagnostic, never used for selection)."""
+    specs = rate_specs(D)
+    fi = D.fi.to_numpy()
+    tune = D.tune.to_numpy()
+    yr = D.date.str[:4].astype(int).to_numpy()
+    rng = np.random.default_rng(seed)
+    out = {}
+    for name, m in specs.items():
+        y = D[m["y"]].to_numpy(float)
+        n = D[m["n"]].to_numpy(float) if m.get("n") else None
+        off = m["off"](D) if callable(m["off"]) else (np.zeros(len(D)) if m["off"] is None else m["off"])
+        off = np.asarray(off, float)
+        ok = np.isfinite(off) & np.isfinite(y)
+        if n is not None:
+            ok &= n > 0
+        tr, te = tune & ok, (~tune) & ok
+        nn = lambda mask: None if n is None else n[mask]
+        Xb = np.column_stack([np.ones(len(D))] + [_col(D, c) for c in m["base"]])
+        b0, cov0, disp0 = fit_glm(Xb[tr], y[tr], m["fam"], off[tr], nn(tr))
+        dev0 = fit_dev = glm_dev(Xb[te], b0, y[te], m["fam"], off[te], nn(te))
+        bn, _, _ = fit_glm(Xb[tr][:, :1], y[tr], m["fam"], off[tr], nn(tr))
+        devn = glm_dev(Xb[te][:, :1], bn, y[te], m["fam"], off[te], nn(te))
+        # leave-one-year-out CV deviance of the baseline inside the tuning years
+        def loyo(X):
+            tot = 0.0
+            for Y in range(2019, 2024):
+                a, v = tr & (yr != Y), tr & (yr == Y)
+                b, _, _ = fit_glm(X[a], y[a], m["fam"], off[a], nn(a))
+                tot += glm_dev(X[v], b, y[v], m["fam"], off[v], nn(v)).sum()
+            return tot
+        cv0 = loyo(Xb)
+        ufi = np.unique(fi[te])
+        boots = [rng.integers(0, len(ufi), len(ufi)) for _ in range(n_boot)]
+        res = {"desc": m["desc"], "family": m["fam"], "n_tune": int(tr.sum()), "n_test": int(te.sum()),
+               "base_terms": [cname(c) for c in m["base"]],
+               "base_coef": [float(v) for v in b0], "base_se": [float(v) for v in np.sqrt(np.diag(cov0) * disp0)],
+               "dispersion": disp0, "test_dev_null": float(devn.sum()), "test_dev_base": float(dev0.sum()),
+               "candidates": []}
+        for c in m["cand"]:
+            x = _col(D, c)
+            s = x[tr].std() or 1.0
+            X = np.column_stack([Xb, x / s])
+            b, cov, disp = fit_glm(X[tr], y[tr], m["fam"], off[tr], nn(tr))
+            z = b[-1] / math.sqrt(cov[-1, -1] * disp)
+            cv = loyo(X) - cv0
+            dd = glm_dev(X[te], b, y[te], m["fam"], off[te], nn(te)) - dev0
+            per_f = np.bincount(np.searchsorted(ufi, fi[te]), weights=dd, minlength=len(ufi))
+            bs = np.array([per_f[bi].sum() for bi in boots])
+            bt_, covt, dispt = fit_glm(X[te], y[te], m["fam"], off[te], nn(te))
+            zt = bt_[-1] / math.sqrt(covt[-1, -1] * dispt)
+            passed_screen = abs(z) >= z_screen and cv < 0
+            res["candidates"].append({
+                "term": cname(c), "sd": float(s), "coef_per_sd": float(b[-1]), "coef_raw": float(b[-1] / s),
+                "se_per_sd": float(math.sqrt(cov[-1, -1] * disp)), "z_tune": float(z), "cv_dev_change": float(cv),
+                "test_dev_change": float(dd.sum()), "test_dev_ci": [float(np.percentile(bs, 2.5)),
+                                                                     float(np.percentile(bs, 97.5))],
+                "test_dev_change_pct": float(dd.sum() / dev0.sum() * 100), "z_test_only": float(zt),
+                "screen": bool(passed_screen),
+                "verdict": ("survives" if passed_screen and np.percentile(bs, 97.5) < 0 else
+                            "supported" if passed_screen and dd.sum() < 0 and np.sign(zt) == np.sign(z) else
+                            "fails held-out" if passed_screen else "not screened in"),
+            })
+        out[name] = res
+    return out

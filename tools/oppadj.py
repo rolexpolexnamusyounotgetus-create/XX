@@ -385,3 +385,235 @@ class Data:
             if len(ii):
                 out[j] = np.exp(-lam * (T - self.day[ii])) @ self.V[ii]
         return out
+
+
+# ------------------------------------------------------------------ stat families
+# name: kind, engine fields (offense, defense), engine k parameter, k grid (exposure units), short label
+FAMILIES = {
+    "dAtt":     ("count", ("dAtt", "dAttAg"), "kPM", [6, 12, 25, 50, 100, 200], "distance strike attempts per distance minute"),
+    "cAtt":     ("count", ("cAtt", "cAttAg"), "kPM", [10, 20, 40, 80, 160, 320], "clinch strike attempts per fight minute"),
+    "gAtt":     ("count", ("gAtt", "gAttAg"), "kPM", [1.5, 3, 6, 12, 24, 48], "ground strike attempts per top minute"),
+    "accH":     ("binom", ("accH", "accAgH"), "kAcc", [40, 80, 150, 300, 600, 1200, 2400], "head accuracy"),
+    "accB":     ("binom", ("accB", "accAgB"), "kAcc", [40, 80, 150, 300, 600, 1200, 2400], "body accuracy"),
+    "accL":     ("binom", ("accL", "accAgL"), "kAcc", [40, 80, 150, 300, 600, 1200, 2400], "leg accuracy"),
+    "kd":       ("count", ("pow", "chin"), "kKD", [60, 120, 230, 460, 920, 1840, 3680], "knockdowns per landed head strike"),
+    "tdAtt":    ("count", ("tdAtt", "tdAttAg"), "kTdPM", [8, 16, 33, 66, 130, 260], "takedown attempts per standing minute"),
+    "tdAcc":    ("binom", ("tdAcc", "tdAccAg"), "kTdAcc", [3, 6, 12, 24, 48, 96], "takedown success"),
+    "ctrl":     ("count", ("ctrl", "octrl"), "kPM", [10, 20, 40, 80, 160, 320], "control seconds per fight minute"),
+    "topSkill": ("count", ("topSkill", "escWeak"), "kCtrlTD", [1, 2, 4, 8, 16, 32], "control seconds per takedown landed"),
+    "sub":      ("count", ("sub", "subAg"), "kPM", [3, 6, 11, 22, 45, 90], "submission attempts per ground minute"),
+}
+# minimum exposure for a held-out row to be scored (tiny exposures with events give unbounded deviance)
+EVAL_MIN = {"dAtt": 0.5, "cAtt": 0.5, "gAtt": 0.25, "kd": 1, "tdAtt": 0.5, "ctrl": 0.5, "topSkill": 1, "sub": 0.5}
+
+
+def row_exposures(V, p):
+    gs = p["ctrlGroundShare"]
+    mn = V[:, KI["min"]]
+    c, oc = V[:, KI["ctrl"]], V[:, KI["octrl"]]
+    return {"min": mn,
+            "distMin": np.maximum(0.25 * mn, mn - (c + oc) / 60),
+            "standMin": np.maximum(0.3 * mn, mn - (c + oc) / 60 * gs),
+            "topMin": c / 60 * gs, "botMin": oc / 60 * gs, "grMin": (c + oc) / 60 * gs}
+
+
+def row_acc_baseline(V, L, p):
+    """Expected accuracy by target for each row given its own position attempts (engine expAcc), n x 3."""
+    eps = 1e-6
+    n = len(V)
+    cm = np.tile(np.array(p["clinchMix"]), (n, 1))
+    gm = np.tile(np.array(p["groundTopMix"]), (n, 1))
+    w = np.column_stack([V[:, KI["d_att"]] + eps * L.P_d_att, V[:, KI["c_att"]] + eps * L.P_c_att,
+                         V[:, KI["g_att"]] + eps * L.P_g_att])
+    md = dist_mix(V, "", L, p)
+    return np.column_stack([exp_acc(L, w, [md, cm, gm], t) for t in range(3)])
+
+
+def family_arrays(name, V, L, p):
+    """(y, E, Lb) for counts or (y, n, b) for binomials, one entry per row, offense perspective."""
+    ex = row_exposures(V, p)
+    g = lambda k: V[:, KI[k]]
+    if name == "dAtt":
+        return g("d_att"), ex["distMin"], L.dAtt
+    if name == "cAtt":
+        return g("c_att"), ex["min"], L.P_c_att
+    if name == "gAtt":
+        return g("g_att"), ex["topMin"], L.gAtt
+    if name == "tdAtt":
+        return g("td_att"), ex["standMin"], L.tdAtt
+    if name == "ctrl":
+        return g("ctrl"), ex["min"], L.P_ctrl
+    if name == "topSkill":
+        return g("ctrl"), g("td_lnd"), L.P_ctrl_per_td
+    if name == "sub":
+        return g("sub_att"), ex["grMin"], L.sub
+    if name == "kd":
+        return g("kd"), g("h_lnd"), L.P_kd_per_h
+    if name == "tdAcc":
+        return g("td_lnd"), g("td_att"), logit(L.P_td_acc)
+    if name in ("accH", "accB", "accL"):
+        t = "HBL".index(name[-1])
+        nm = "hbl"[t]
+        e = row_acc_baseline(V, L, p)[:, t]
+        return g(nm + "_lnd"), g(nm + "_att"), logit(e)
+    raise KeyError(name)
+
+
+# ------------------------------------------------------------------ walk-forward solvers
+def _sides_by_date(D):
+    out = [[] for _ in D.dates]
+    for j, di in enumerate(D.s_date_idx):
+        out[di].append(j)
+    return [np.array(x, dtype=int) for x in out]
+
+
+def walk_count(D, y, E, Lb, hl, ko, kd, mode="full", tol=2e-5, maxit=400, extra_T=None):
+    """Walk-forward Poisson-gamma two-way fit. Returns per backtest side: offense o, defense d, level c
+    (from the fit on that fight's date using earlier rows only). mode: 'full' (opponent-adjusted),
+    'nosos' (division/era baselines and level, opponents treated as average). extra_T: also fit at this
+    day (rows with day < extra_T) and return the full (o, d, c) person arrays."""
+    X, Y, day, NP = D.X, D.Y, D.day, D.NP
+    EL = E * Lb
+    o = np.zeros(NP)
+    d = np.zeros(NP)
+    ns = len(D.s_row)
+    so, sd, sc = np.zeros(ns), np.zeros(ns), np.zeros(ns)
+    lam = math.log(2) / hl
+    sbd = D.sides_by_date
+    its = []
+    dates = list(D.dates)
+    cuts = list(D.cut)
+    if extra_T is not None:
+        dates.append(extra_T)
+        cuts.append(int(np.searchsorted(day, extra_T, side="left")))
+    final = None
+    for di, (T, na) in enumerate(zip(dates, cuts)):
+        w = np.exp(-lam * (T - day[:na]))
+        Xa, Ya = X[:na], Y[:na]
+        wy, wEL, wE = w * y[:na], w * EL[:na], w * E[:na]
+        Yo, Yd = np.bincount(Xa, wy, NP), np.bincount(Ya, wy, NP)
+        WEo, WEd = np.bincount(Xa, wE, NP), np.bincount(Ya, wE, NP)
+        WELo, WELd = np.bincount(Xa, wEL, NP), np.bincount(Ya, wEL, NP)
+        sEL = wEL.sum()
+        Lg = sEL / max(wE.sum(), 1e-300)
+        Lbo = np.where(WEo > 0, WELo / np.maximum(WEo, 1e-300), Lg)
+        Lbd = np.where(WEd > 0, WELd / np.maximum(WEd, 1e-300), Lg)
+        c = math.log(max(wy.sum(), 1e-300) / max(sEL, 1e-300))
+        ec = math.exp(c)
+        ao, ad = ko * Lbo * ec, kd * Lbd * ec
+        if mode == "nosos":
+            o = np.log((Yo + ao) / (WELo * ec + ao))
+            d = np.log((Yd + ad) / (WELd * ec + ad))
+            it = 1
+        else:
+            wELc = wEL * ec
+            for it in range(1, maxit + 1):
+                Do = np.bincount(Xa, wELc * np.exp(d[Ya]), NP)
+                o_new = np.log((Yo + ao) / (Do + ao))
+                Dd = np.bincount(Ya, wELc * np.exp(o_new[Xa]), NP)
+                d_new = np.log((Yd + ad) / (Dd + ad))
+                # common shift along the o+delta / d-delta ridge (only the priors pin it): exact 1-D optimum
+                A, Dsum = ao.sum(), ad.sum()
+                Ao, Bd = (ao * np.exp(o_new)).sum(), (ad * np.exp(d_new)).sum()
+                q = (A - Dsum)
+                ed = (q + math.sqrt(q * q + 4 * Ao * Bd)) / (2 * Ao)
+                sh = math.log(ed)
+                o_new += sh
+                d_new -= sh
+                delta = max(np.abs(o_new - o).max(), np.abs(d_new - d).max())
+                o, d = o_new, d_new
+                if delta < tol:
+                    break
+        its.append(it)
+        if di < len(D.dates):
+            js = sbd[di]
+            so[js], sd[js], sc[js] = o[D.s_person[js]], d[D.s_person[js]], c
+        else:
+            final = (o.copy(), d.copy(), c)
+    return so, sd, sc, np.array(its), final
+
+
+def walk_binom(D, y, n, b, hl, ko, kd, mode="full", tol=2e-5, maxit=400, extra_T=None):
+    """Walk-forward binomial-logit two-way fit with pseudo-attempt priors (k attempts at the fighter's own
+    baseline). Same outputs as walk_count (a, g, c)."""
+    X, Y, day, NP = D.X, D.Y, D.day, D.NP
+    a = np.zeros(NP)
+    g = np.zeros(NP)
+    ns = len(D.s_row)
+    sa, sg, sc = np.zeros(ns), np.zeros(ns), np.zeros(ns)
+    lam = math.log(2) / hl
+    sbd = D.sides_by_date
+    its = []
+    dates = list(D.dates)
+    cuts = list(D.cut)
+    if extra_T is not None:
+        dates.append(extra_T)
+        cuts.append(int(np.searchsorted(day, extra_T, side="left")))
+    final = None
+    pb = sigm(b)
+    c = 0.0
+    for di, (T, na) in enumerate(zip(dates, cuts)):
+        w = np.exp(-lam * (T - day[:na]))
+        Xa, Ya, ba = X[:na], Y[:na], b[:na]
+        wy, wn = w * y[:na], w * n[:na]
+        Yo, Yd = np.bincount(Xa, wy, NP), np.bincount(Ya, wy, NP)
+        No, Nd = np.bincount(Xa, wn, NP), np.bincount(Ya, wn, NP)
+        eg = (wn * pb[:na]).sum() / max(wn.sum(), 1e-300)
+        bo = logit(np.where(No > 0, np.bincount(Xa, wn * pb[:na], NP) / np.maximum(No, 1e-300), eg))
+        bd = logit(np.where(Nd > 0, np.bincount(Ya, wn * pb[:na], NP) / np.maximum(Nd, 1e-300), eg))
+        # level c: sum of expected = sum of observed at baseline (1-D Newton)
+        sy = wy.sum()
+        for _ in range(30):
+            pp = sigm(ba + c)
+            step = (sy - (wn * pp).sum()) / max((wn * pp * (1 - pp)).sum(), 1e-300)
+            c += step
+            if abs(step) < 1e-10:
+                break
+        if mode == "nosos":
+            a = np.zeros(NP)
+            g = np.zeros(NP)
+            for it in range(1, 60):
+                eta = ba + c + a[Xa]
+                pp = sigm(eta)
+                pr = sigm(bo + c + a)
+                G = Yo - np.bincount(Xa, wn * pp, NP) + ko * (sigm(bo + c) - pr)
+                H = np.bincount(Xa, wn * pp * (1 - pp), NP) + ko * pr * (1 - pr)
+                st = G / H
+                a += st
+                if np.abs(st).max() < tol:
+                    break
+            for it2 in range(1, 60):
+                eta = ba + c + g[Ya]
+                pp = sigm(eta)
+                pr = sigm(bd + c + g)
+                G = Yd - np.bincount(Ya, wn * pp, NP) + kd * (sigm(bd + c) - pr)
+                H = np.bincount(Ya, wn * pp * (1 - pp), NP) + kd * pr * (1 - pr)
+                st = G / H
+                g += st
+                if np.abs(st).max() < tol:
+                    break
+            it = max(it, it2)
+        else:
+            base = ba + c
+            for it in range(1, maxit + 1):
+                pp = sigm(base + a[Xa] + g[Ya])
+                pr = sigm(bo + c + a)
+                G = Yo - np.bincount(Xa, wn * pp, NP) + ko * (sigm(bo + c) - pr)
+                H = np.bincount(Xa, wn * pp * (1 - pp), NP) + ko * pr * (1 - pr)
+                sta = G / H
+                a = a + sta
+                pp = sigm(base + a[Xa] + g[Ya])
+                pr = sigm(bd + c + g)
+                G = Yd - np.bincount(Ya, wn * pp, NP) + kd * (sigm(bd + c) - pr)
+                H = np.bincount(Ya, wn * pp * (1 - pp), NP) + kd * pr * (1 - pr)
+                stg = G / H
+                g = g + stg
+                if max(np.abs(sta).max(), np.abs(stg).max()) < tol:
+                    break
+        its.append(it)
+        if di < len(D.dates):
+            js = sbd[di]
+            sa[js], sg[js], sc[js] = a[D.s_person[js]], g[D.s_person[js]], c
+        else:
+            final = (a.copy(), g.copy(), c)
+    return sa, sg, sc, np.array(its), final

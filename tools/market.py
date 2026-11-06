@@ -483,10 +483,6 @@ def fetch_bfo(cache, since, until, delay):
     print(f'BFO done: {len(ev_rows)} event-line rows, {len(f_rows)} fighter-line rows, {F.n_net} requests', flush=True)
 
 
-def cmd_build(a):  # replaced below
-    raise NotImplementedError
-
-
 def cmd_fetch(a):
     if not a.skip_sources:
         fetch_sources(a.cache)

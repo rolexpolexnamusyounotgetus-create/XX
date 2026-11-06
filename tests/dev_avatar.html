@@ -1,0 +1,124 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Avatar dev</title>
+<style>body{margin:0;background:#000;color:#ccc;font:12px system-ui}canvas{display:block}#log{position:fixed;left:6px;bottom:6px;white-space:pre;pointer-events:none}</style></head>
+<body>
+<canvas id="c"></canvas>
+<div id="log"></div>
+<script src="../vendor/three.min.js"></script>
+<script src="fightassets_shim.js" data-base="../assets/embed/"></script>
+<script src="../src/engine2.js"></script>
+<script src="../src/rig3d.js"></script>
+<script src="../src/avatar3d.js"></script>
+<script src="../src/arena3d.js"></script>
+<script src="../src/director.js"></script>
+<script src="../src/show3d.js"></script>
+<script>
+/* Avatar dev page. Serve the repo root over http, open /tests/dev_avatar.html?w=1280&h=720.
+   DEV.lineup(yaw, mode) / DEV.head(i) / DEV.live(want) + DEV.step(sec) + DEV.render() drive it from a harness. */
+var Q = new URLSearchParams(location.search), W = +(Q.get("w") || 1280), H = +(Q.get("h") || 720);
+var cv = document.getElementById("c"); cv.width = W; cv.height = H; cv.style.width = W + "px"; cv.style.height = H + "px";
+function getJSON(u) { var x = new XMLHttpRequest(); x.open("GET", u, false); x.send(); return x.status === 200 ? JSON.parse(x.responseText) : null; }
+var fighters = getJSON("../data/derived/fighters.json"), overrides = getJSON("../data/overrides.json") || {};
+var SLUGS = (Q.get("slugs") || "alexander-volkanovski,justin-gaethje,sergei-pavlovich,tatsuro-taira").split(",");
+var db = { fighters: fighters.fighters, overrides: overrides.fighters || {}, scouting: {} };
+SLUGS.forEach(function (s) { var sc = getJSON("../data/scouting/" + s + ".json"); if (sc && sc.appearance) db.scouting[s] = sc.appearance; });
+var APP = SLUGS.map(function (s) { return FightAvatar.appearanceFor(s, db); });
+var REF = Object.assign({}, FightAvatar.REFEREE, (overrides.referee || {}).appearance || {});
+var log = [], logEl = document.getElementById("log");
+function L(s) { log.push(s); logEl.textContent = log.slice(-12).join("\n"); }
+
+var show = new FightShow.Show(cv, {
+  onPhase: function (p, r) { L("phase " + p + " r" + (r + 1)); }, onFinish: function (res) { L("finish " + JSON.stringify(res)); },
+  onReplay: function (on) { L("replay " + on); }, onResult: function (res) { L("result " + JSON.stringify(res)); }
+}, { maxDpr: 1, shadow: 2048, appearance: { A: APP[0], B: APP[1], R: REF } });
+var renderer = show.arena.renderer, scene = show.arena.scene;
+renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+show.arena.camera.aspect = W / H; show.arena.camera.updateProjectionMatrix();
+var extras = [];
+var DEV = window.DEV = { show: show, app: APP, ref: REF, log: log, extras: extras };
+var cam = new THREE.PerspectiveCamera(35, W / H, 0.05, 200);
+DEV.cam = cam;
+
+function waitAvatars() {
+  return new Promise(function (res) {
+    var t0 = performance.now();
+    (function poll() {
+      var ok = show.A.avatar && show.B.avatar && show.R.avatar && extras.every(function (a) { return a.avatar; });
+      if (ok || performance.now() - t0 > 120000) res(ok); else setTimeout(poll, 100);
+    })();
+  });
+}
+// two more roster fighters for the lineup
+APP.slice(2).forEach(function (app, i) {
+  var a = new FightShow.Actor({ H: app.height_in * 0.0254, build: 1, skin: 0xd9a383, shorts: 0x444444, glove: 0x16181c, hair: 0x231710 }, "X" + i, /south/i.test(app.stance) ? -1 : 1, scene);
+  a.snapMode("walk");
+  extras.push(a);
+  FightAvatar.attach(a, Object.assign({ shorts: i ? "#1f8a4c" : "#d0d3d8", trim: i ? "#f2f2f2" : "#111111" }, app), scene);
+});
+DEV.ready = waitAvatars().then(function (ok) { L("avatars ready: " + ok); DEV.ok = ok; return ok; });
+
+DEV.lineupActors = function () { return [show.A, show.B, extras[0], extras[1], show.R].filter(Boolean); };
+DEV.pose = function (actors, mode, yaw, dt) {
+  actors.forEach(function (a, i) {
+    var n = actors.length, x = (i - (n - 1) / 2) * 1.35;
+    a.pos.set(x, 0, 0); a.yaw = yaw; a.vel.set(0, 0, 0); a.opp = null; a.act = null; a.react = null; a.walkTo = null;
+    if (a.mode !== mode || a.tr) a.snapMode(mode); else a.replant(true);
+    for (var k = 0; k < (dt ? 1 : 6); k++) a.update(dt || 1 / 30);
+    if (a.avatar) a.avatar.sync();
+  });
+};
+DEV.lineup = function (yaw, mode) {
+  var actors = DEV.lineupActors();
+  DEV.pose(actors, mode || "walk", yaw || 0);
+  cam.fov = 30; cam.aspect = W / H; cam.position.set(0, 1.25, 9.6); cam.lookAt(0, 0.98, 0); cam.updateProjectionMatrix();
+  renderer.render(scene, cam);
+};
+DEV.head = function (i, yaw, mode) {
+  var actors = DEV.lineupActors(), a = actors[i];
+  DEV.pose(actors, mode || "walk", yaw || 0);
+  var hp = a.avatar ? a.avatar.Wp[a.avatar.bi.Head].clone() : a.rig.headPos(new THREE.Vector3());
+  hp.y += 0.09;
+  var d = 0.95, ang = (yaw || 0) + (Q.get("headAng") ? +Q.get("headAng") : 0.35);
+  cam.fov = 26; cam.position.set(hp.x + Math.sin(ang) * d, hp.y + 0.02, hp.z + Math.cos(ang) * d); cam.lookAt(hp.x, hp.y - 0.02, hp.z); cam.updateProjectionMatrix();
+  renderer.render(scene, cam);
+};
+DEV.hideExtras = function (hide) { extras.forEach(function (a) { a.rig.root.visible = !hide && !a.avatar; if (a.avatar) a.avatar.group.visible = !hide; }); };
+DEV.live = function (want) {
+  DEV.hideExtras(true);
+  var E = FightEngine, m = E.volkGaethje(E.presetKnobs("baseline")), seed, fight;
+  want = want || "kd";
+  for (seed = 1; seed < 5000; seed++) {
+    fight = E.simulate(m, E.makeRng(seed), true);
+    var r1 = fight.rounds[0].ev;
+    var kd = r1.filter(function (e) { return e.k === "kd" && e.t < 90; }).length, td = r1.filter(function (e) { return e.k === "td" && e.t < 60; }).length;
+    if (want === "kd" && kd && fight.rounds.length >= 2) break;
+    if (want === "td" && td && fight.rounds.length >= 2) break;
+    if (want === "ko" && fight.method === "KO" && fight.round === 1 && fight.t < 100) break;
+    if (want === "dec" && fight.rounds.length === 5 && !fight.rounds[4].fin) break;
+  }
+  var script = FightDirector.build(fight, seed);
+  L("seed " + seed + " " + fight.winner + " " + fight.method + " R" + fight.round + " " + fight.t.toFixed(0));
+  show.speed = +(Q.get("speed") || 8);
+  show.load(script);
+  DEV.t = 0;
+  return { seed: seed, winner: fight.winner, method: fight.method, round: fight.round, t: fight.t };
+};
+DEV.step = function (sec) {
+  var orig = show.arena.render; show.arena.render = function () {};
+  var n = Math.round(sec * 30);
+  for (var i = 0; i < n; i++) { show.frame(1 / 30); DEV.t += 1 / 30; }
+  show.arena.render = orig;
+  return { t: DEV.t, phase: show.phase, state: show.state, clock: show.clock, cam: show.cam.label, A: show.A.mode, B: show.B.mode };
+};
+DEV.render = function () { show.render(1 / 30); };
+DEV.info = function () {
+  return DEV.lineupActors().map(function (a) {
+    var av = a.avatar; if (!av) return { id: a.id, avatar: false };
+    var d = av.dims;
+    return { id: a.id, slug: av.app.slug || av.app.role, H: +d.H.toFixed(3), span: +d.span.toFixed(3), reach: +(av.cfg.reach).toFixed(3), stretch: +av.armStretch.toFixed(3),
+      muscle: +av.cfg.muscle.toFixed(2), weight: +av.cfg.weight.toFixed(2), bmi: +av.cfg.bmi.toFixed(1), years: +av.cfg.years.toFixed(1), skin: av.looks.skin.id, hair: av.looks.hair, beard: av.looks.beard,
+      tris: av.meshes.reduce(function (s, m) { return s + (m.geometry.index ? m.geometry.index.count / 3 : 0); }, 0) };
+  });
+};
+</script>
+</body></html>

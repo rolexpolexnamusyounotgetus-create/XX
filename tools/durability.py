@@ -395,3 +395,117 @@ def eb_walk(df, base_mu, alpha_c, alpha_p, hl_c=None, hl_p=None, use_c=True, use
     if final_state:
         out["state"] = {"Yc": dict(Yc), "Mc": dict(Mc), "Tc": dict(Tc), "Yp": dict(Yp), "Mp": dict(Mp), "Tp": dict(Tp)}
     return out
+
+
+# ------------------------------------------------------------------ model specification
+DEFAULT_SPEC = {"level": 730, "knots": [30.0], "win": 730, "alpha_c": 4.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None}
+
+
+def prepare(df, spec):
+    X = add_columns(df.copy(), knots=tuple(spec["knots"]), win=spec["win"])
+    X["lv"] = trailing_level(X, spec["level"])
+    X["use"] = (X.has_stats == 1) & (X.E > 0) & (X.amb == 0)
+    for d in sorted(X.division.dropna().unique()):
+        X["div_" + d] = (X.division == d).astype(float)
+    return X
+
+
+def blocks(spec, X=None):
+    kn = [int(k) for k in spec["knots"]]
+    divs = sorted(d for d in LBS if d not in ("Lightweight", "Open Weight"))
+    if X is not None:
+        divs = [d for d in divs if ("div_" + d) in X.columns]
+    return {
+        "div": ["div_" + d for d in divs],
+        "ctx": ["five", "title"],
+        "age_d": ["d_age_c"] + ["d_age_h%d" % k for k in kn] + ["d_age_na"],
+        "age_a": ["a_age_c"] + ["a_age_h%d" % k for k in kn],
+        "dmg": ["d_yrs", "d_lognp", "d_cumoh100", "d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o", "d_debut"],
+        "lay": ["d_lay_short", "d_lay_12_24", "d_lay_24p", "d_last_ko_loss", "d_ko_short"],
+        "move": ["d_up_cls", "d_dn_cls", "a_up_cls", "a_dn_cls"],
+        "move_lbs": ["d_up_lbs", "d_dn_lbs", "a_up_lbs", "a_dn_lbs"],
+        "body": ["d_ht_rel", "d_ape", "a_ht_rel", "a_ape", "reach_adv"],
+        "aexp": ["a_yrs", "a_lognp", "a_debut"],
+    }
+
+
+def final_cols(spec, X=None):
+    b = blocks(spec, X)
+    return b["div"] + b["ctx"] + b["age_d"] + b["age_a"] + b["dmg"] + b["lay"]
+
+
+def fit_kd(X, cols, fit_mask, spec, eb=True, use_level=True, extra_off=None, iters=4, ridge=1e-4,
+           use_c=True, use_p=True, final_state=False):
+    """Fit fixed effects with walk-forward fighter effects as offsets; returns a dict with everything."""
+    D = np.column_stack([np.ones(len(X))] + [X[c].to_numpy(float) for c in cols])
+    y = X.y.fillna(0).to_numpy(float)
+    E = X.E.fillna(0).to_numpy(float)
+    logE = np.log(np.where(E > 0, E, 1.0))
+    lv = np.log(X.lv.to_numpy(float)) if use_level else np.zeros(len(X))
+    xo = np.zeros(len(X)) if extra_off is None else extra_off
+    offf = np.zeros(len(X))
+    b, w = None, None
+    for _ in range(iters if eb else 1):
+        b, cov, _ = pois_fit(D[fit_mask], y[fit_mask], (logE + lv + xo + offf)[fit_mask], beta0=b, ridge=ridge)
+        if not eb:
+            break
+        base = np.exp(D @ b + logE + lv + xo) * (E > 0) * X.use.to_numpy()
+        w = eb_walk(X, base, spec["alpha_c"], spec["alpha_p"], spec.get("hl_c"), spec.get("hl_p"), use_c, use_p,
+                    final_state=final_state)
+        offf = np.log(w["chin"]) + np.log(w["pow"])
+    if eb:
+        b, cov, _ = pois_fit(D[fit_mask], y[fit_mask], (logE + lv + xo + offf)[fit_mask], beta0=b, ridge=ridge)
+    lin = D @ b
+    mu = np.exp(lin + logE + lv + xo + offf)
+    return {"cols": cols, "b": b, "cov": cov, "D": D, "y": y, "E": E, "mu": mu, "lin": lin, "off_fe": offf,
+            "lv": lv, "xo": xo, "walk": w, "fit": fit_mask}
+
+
+def window(X, lo, hi=None):
+    m = X.use & (X.date >= lo)
+    if hi:
+        m &= X.date <= hi
+    return m.to_numpy()
+
+
+def dev_of(r, mask):
+    return float(pois_dev(r["y"][mask], r["mu"][mask]).sum())
+
+
+def tune(df, verbose=True):
+    """Staged grid on 2019-2023 (fit 2008-2018). Returns the chosen spec and the grid."""
+    grid = []
+    best = dict(DEFAULT_SPEC)
+    cache = {}
+
+    def score(spec):
+        key = (spec["level"], tuple(spec["knots"]), spec["win"])
+        if key not in cache:
+            cache[key] = prepare(df, spec)
+        X = cache[key]
+        fm, em = window(X, *TUNE_FIT), window(X, *TUNE_EVAL)
+        r = fit_kd(X, final_cols(spec, X), fm, spec)
+        d = dev_of(r, em)
+        grid.append({"spec": {k: spec[k] for k in ("level", "knots", "win", "alpha_c", "alpha_p", "hl_c", "hl_p")},
+                     "dev_2019_2023": round(d, 2)})
+        if verbose:
+            print("  tune %-70s dev %.1f" % (grid[-1]["spec"], d))
+        return d
+
+    def stage(key, values):
+        nonlocal best
+        scores = []
+        for v in values:
+            s = dict(best)
+            s[key] = v
+            scores.append((score(s), v))
+        best[key] = min(scores, key=lambda t: t[0])[1]
+
+    stage("level", [180, 365, 730])
+    stage("knots", [[30.0], [27.0, 31.0, 35.0], [28.0, 32.0, 36.0]])
+    stage("win", [365, 730, 1095])
+    stage("alpha_c", [2.0, 3.0, 4.0, 6.0, 10.0])
+    stage("alpha_p", [2.0, 2.5, 3.0, 4.0, 6.0])
+    stage("hl_c", [None, 1825, 2920])
+    stage("hl_p", [None, 1825, 2920])
+    return best, grid
