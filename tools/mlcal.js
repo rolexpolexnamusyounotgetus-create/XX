@@ -301,7 +301,9 @@ class Pool {
     tasks.forEach((t, i) => this.groups[i % this.n].push(i));
     const common = { enginePath: spec.enginePath || absPath(spec.engine), paramsPath: spec.paramsPath || absPath(spec.params),
       hookPath: spec.hook ? absPath(spec.hook) : null,
-      inject: spec.inject, priors: PA };
+      inject: spec.inject, priors: PA,
+      // the worker may run from a session snapshot in os.tmpdir() (snapshotEngine), so it gets the repo's durrec.js and root here
+      durrecPath: path.join(__dirname, "durrec.js"), root: ROOT };
     this.workers = this.groups.map((g) => new Worker(spec.workerFile || __filename, { workerData: Object.assign({
       tasks: g.map((i) => { const t = tasks[i], f = fights[t.fi]; return { swap: t.swap, seed: t.seed, f: { id: f.id, date: f.date, year: f.year,
         division: f.division, rounds: f.rounds, title: f.title, A: f.A, B: f.B } }; }) }, common) }));
@@ -330,7 +332,7 @@ class Pool {
 function workerMain() {
   const { enginePath, paramsPath, hookPath, inject, priors, tasks } = workerData;
   const E = require(enginePath), P0 = require(paramsPath);
-  const DR = require(path.join(__dirname, "durrec.js"))(E, path.resolve(__dirname, ".."));
+  const DR = require(workerData.durrecPath || path.join(__dirname, "durrec.js"))(E, workerData.root || path.resolve(__dirname, ".."));
   const hook = hookPath ? require(hookPath) : null;
   let cacheKey = null, cache = null;
   function build(t, tree, hp) {

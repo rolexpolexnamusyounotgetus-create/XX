@@ -1692,6 +1692,8 @@ def stage_export(a):
         "test_vectors": ad["test_vectors"],
         "fights": fights,
     }
+    if "verification" in doc:           # keep the verifier's block (tools/linemove.py verify) across re-exports
+        out["verification"] = doc["verification"]
     tmp = OUT_JSON + ".tmp"
     with open(tmp, "w") as fh:          # compact: the per-fight block dominates the size
         json.dump(out, fh, separators=(",", ":"), default=float)
@@ -1914,9 +1916,140 @@ def stage_tables(a):
         ["open-trained fed the opener", dci(smc["open-trained fed point 0 minus the close"]), dci(smv["open-trained (static) fed point 0 minus the close"])]] +
         [["consensus fed point %d" % j, dci(smc["consensus fed point %d minus the close" % j]),
           dci(smv["consensus (static) fed point %d minus the close" % j])] for j in (1, 4, 8, 9)])
+    VF = D.get("verification")
+    if not VF:
+        return
+    ci3 = lambda v: "%+.3f [%+.3f, %+.3f]" % tuple(v)
+    qb = VF["q1_level_baseline"]
+    table("V1 (verifier) Q1 baseline: OOS R^2 of the move to the close, CV 2019-23 / 2024-25",
+          ["from point", "line level only", "ML v2 gap only (M1)", "level + ML v2", "corr(move, gap) <= 2023 / 2019-23"],
+          [[k.split()[-1]] + ["%.3f / %.3f" % (qb[k][m]["oos_r2_cv_2019_2023"], qb[k][m]["r2_2024_2025"])
+                              for m in ("level only", "ML v2 gap only (M1)", "level + ML v2")] +
+           ["%.3f / %.3f" % (qb[k]["corr(move, gap) pooled <= 2023"], qb[k]["corr(move, gap) 2019-2023"])] for k in qb])
+    cn = VF["clv_neutrality"]
+    table("V2 (verifier) CLV neutrality: T4's measure vs a de-vig-consistent fair CLV, ML v2's side and the favourite rule",
+          ["period | point", "ML v2 side fav. share", "ML v2 T4", "favourite T4", "ML v2 fair CLV", "favourite fair CLV",
+           "ROI ML v2", "ROI favourite", "ROI ML v2 minus fav."],
+          [[k, v["ML v2 side is the favourite (share of bets)"], ci3(v["ML v2 side | T4 CLV minus both sides"]),
+            ci3(v["favourite | T4 CLV minus both sides"]), ci3(v["ML v2 side | fair CLV (mult both ends)"]),
+            ci3(v["favourite | fair CLV (mult both ends)"]), ci3(v["ML v2 side | ROI"]), ci3(v["favourite | ROI"]),
+            ci3(v["ROI ML v2 side minus favourite (paired)"])] for k, v in cn.items()])
+    fi = VF["free_intercept"]
+    table("V3 (verifier) free-intercept check, CV 2021-23, stacks fed point 8 (A wins %.3f)" % fi["A wins (share), CV years"],
+          ["stack", "intercept by CV year", "with intercept minus without"],
+          [[k, v["intercept_by_cv_year"], dci(v["with intercept minus without (CV, fed 8)"])] for k, v in fi.items() if isinstance(v, dict)])
+    mr = VF["missing_rows"]
+    table("V4 (verifier) decisive evaluation fights without a full trajectory (excluded from every arm)",
+          ["period", "missing / of", "A wins missing / present", "ML v2 LL missing / present", "missing with a close"],
+          [[k, "%d / %d" % (v["missing"], v["of"]), "%.3f / %.3f" % (v["A_win_missing"], v["A_win_present"]),
+            "%.4f / %.4f" % (v["ml2lr_ll_missing"], v["ml2lr_ll_present"]), v["missing_with_a_market_close"]] for k, v in mr.items()])
 
 
 STAGES["tables"] = stage_tables
+
+
+# ====================================================================== stage: verify (adversarial verifier, Nov 6 2026)
+def stage_verify(a):
+    """Verifier checks added after both 2024-2025 looks; nothing here selects anything. Writes linemove.json
+    "verification" (and out/linemove_cache/verify.json):
+    (1) Q1 baseline: out-of-sample R^2 of the move from the line level alone (mean reversion of a noisy snapshot)
+        against level + ML v2 (the same span as level + gap);
+    (2) T4's "CLV minus both sides" is not neutral: the close is power-de-vigged while the bet price carries its vig
+        proportionally, so a favourite rule scores about +0.03 at every consensus point. Reported next to a
+        de-vig-consistent fair CLV (multiplicative at point s and at the close) for ML v2's side and the favourite
+        rule, and the favourite's ROI as the ROI baseline;
+    (3) free-intercept check on the stacks (CV 2021-23): what an intercept, i.e. the ufcstats corner order, would add;
+    (4) the decisive evaluation fights without a full trajectory (excluded from every arm)."""
+    D = load_traj()["D"]
+    P, Pm, decA, decB = traj_matrix(D)
+    yrs = D["year"].to_numpy()
+    okall = (~np.isnan(P).any(1)) & D["evalrow"].to_numpy(bool) & D["ml2lr"].notna().to_numpy()
+    ok = okall & (yrs <= 2023)
+    va = okall & (yrs >= 2024) & (yrs <= 2025)
+    z, zml = lg(P), lg(D["ml2lr"].to_numpy(float))
+    y, g = D["y"].to_numpy(float), D["event"].to_numpy()
+    R = {"note": "verifier stage; descriptive (2024-2025 Q1 rows were already a pre-registered secondary)"}
+    q = {}
+    for s in (0, 1, 4, 8):
+        tgt = z[:, 9] - z[:, s]
+        out = {}
+        for name, X in (("level only", z[:, [s]]), ("ML v2 gap only (M1)", (zml - z[:, s])[:, None]),
+                        ("level + ML v2", np.column_stack([z[:, s], zml]))):
+            sse = ss0 = 0.0
+            for Y in range(2019, 2024):
+                tr, te = ok & (yrs < Y), ok & (yrs == Y)
+                e = tgt[te] - X[te] @ ols0(X[tr], tgt[tr])
+                sse, ss0 = sse + e @ e, ss0 + tgt[te] @ tgt[te]
+            e = tgt[va] - X[va] @ ols0(X[ok], tgt[ok])
+            out[name] = {"oos_r2_cv_2019_2023": round(1 - sse / ss0, 4), "r2_2024_2025": round(1 - float(e @ e) / float(tgt[va] @ tgt[va]), 4)}
+        m19 = ok & (yrs >= 2019)
+        out["corr(move, gap) pooled <= 2023"] = round(float(np.corrcoef(tgt[ok], (zml - z[:, s])[ok])[0, 1]), 4)
+        out["corr(move, gap) 2019-2023"] = round(float(np.corrcoef(tgt[m19], (zml - z[:, s])[m19])[0, 1]), 4)
+        q["from point %d" % s] = out
+    R["q1_level_baseline"] = q
+    pc = P[:, 9]
+    clv = {}
+    for per, msk in (("2019-2023", ok & (yrs >= 2019)), ("2024-2025", va)):
+        for s in (0, 1, 4, 8):
+            e = sg(zml) - P[:, s]
+            both = 0.5 * ((pc * decA[:, s] - 1) + ((1 - pc) * decB[:, s] - 1))
+            row = {"ML v2 side is the favourite (share of bets)": round(float(np.mean((e > 0)[msk] == (z[msk, s] > 0))), 3)}
+            arrs, names = [], []
+            for rule, sA in (("ML v2 side", e > 0), ("favourite", z[:, s] > 0)):
+                t4 = np.where(sA, pc * decA[:, s] - 1, (1 - pc) * decB[:, s] - 1) - both
+                fair = np.where(sA, Pm[:, 9] / Pm[:, s], (1 - Pm[:, 9]) / (1 - Pm[:, s])) - 1
+                roi = np.where(sA, y * decA[:, s] - 1, (1 - y) * decB[:, s] - 1)
+                arrs += [t4[msk], fair[msk], roi[msk]]
+                names += ["%s | %s" % (rule, k) for k in ("T4 CLV minus both sides", "fair CLV (mult both ends)", "ROI")]
+            arrs.append(arrs[2] - arrs[5])
+            names.append("ROI ML v2 side minus favourite (paired)")
+            bs = ml2.boot(g[msk], arrs, a.boot, 7)
+            for k, (nm, v) in enumerate(zip(names, arrs)):
+                row[nm] = [round(float(v.mean()), 4), round(float(np.percentile(bs[:, k], 2.5)), 4), round(float(np.percentile(bs[:, k], 97.5)), 4)]
+            clv["%s | point %d" % (per, s)] = row
+    R["clv_neutrality"] = clv
+    # (3) free intercept (CV 2021-2023; fit 2019..Y-1; stacks fed point 8)
+    E, PS, _ = stack_table()
+    yE, yrE, full, gE = E["y"].to_numpy(float), E["year"].to_numpy(), E["full"].to_numpy(bool), cv_groups(E)
+    ZS = np.column_stack([zcol(PS[:, j]) for j in range(NPTS)])
+    Zml = zcol(E["ml2lr_static"])
+    cvr = full & np.isin(yrE, CV_YEARS)
+    fi = {"A wins (share), CV years": round(float(yE[cvr].mean()), 4)}
+    for name, js in (("open_trained", [0]), ("consensus", [4, 5, 6, 7, 8]), ("close_trained", [9])):
+        p0, p1, icp = np.full(len(yE), np.nan), np.full(len(yE), np.nan), {}
+        for Y in CV_YEARS:
+            trm = full & (yrE >= 2019) & (yrE <= Y - 1)
+            Zt = np.vstack([np.column_stack([ZS[trm, k], Zml[trm]]) for k in js])
+            yt = np.tile(yE[trm], len(js))
+            b0 = ml2.stack_fit(Zt, yt)
+            b1 = lr_fit(np.column_stack([np.ones(len(yt)), Zt]), yt)
+            te = full & (yrE == Y)
+            Zf = np.column_stack([ZS[te, 8], Zml[te]])
+            p0[te], p1[te] = sg(Zf @ b0), sg(np.column_stack([np.ones(te.sum()), Zf]) @ b1)
+            icp[Y] = round(float(b1[0]), 4)
+        fi[name] = {"intercept_by_cv_year": icp, "with intercept minus without (CV, fed 8)": ml2.compare(p1[cvr], p0[cvr], yE[cvr], gE[cvr], a.boot)}
+    R["free_intercept"] = fi
+    # (4) who is missing from the scored universe
+    zE = zcol(E["ml2lr_static"])
+    miss = {}
+    for per, msk in (("2019-2023", yrE <= 2023), ("2024-2025", yrE >= 2024)):
+        mi, ha = msk & ~full, msk & full
+        miss[per] = {"missing": int(mi.sum()), "of": int(msk.sum()), "A_win_missing": round(float(yE[mi].mean()), 3),
+                     "A_win_present": round(float(yE[ha].mean()), 3),
+                     "ml2lr_ll_missing": round(ml2.ll(sg(zE[mi]), yE[mi]), 4), "ml2lr_ll_present": round(ml2.ll(sg(zE[ha]), yE[ha]), 4),
+                     "missing_with_a_market_close": int((mi & E["market"].notna().to_numpy()).sum())}
+    R["missing_rows"] = miss
+    wjson(os.path.join(CACHE, "verify.json"), R)
+    doc = json.load(open(OUT_JSON))
+    doc["verification"] = R
+    tmp = OUT_JSON + ".tmp"
+    with open(tmp, "w") as fh:
+        json.dump(doc, fh, separators=(",", ":"), default=float)
+    os.replace(tmp, OUT_JSON)
+    log(json.dumps(R, indent=1, default=float))
+
+
+STAGES["verify"] = stage_verify
 
 
 def main():
