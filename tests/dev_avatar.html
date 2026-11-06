@@ -14,7 +14,8 @@
 <script src="../src/show3d.js"></script>
 <script>
 /* Avatar dev page. Serve the repo root over http, open /tests/dev_avatar.html?w=1280&h=720.
-   DEV.lineup(yaw, mode) / DEV.head(i) / DEV.live(want) + DEV.step(sec) + DEV.render() drive it from a harness. */
+   DEV.lineup(yaw, mode) / DEV.head(i) / DEV.headShot(...) / DEV.bodyShot(i, az, d) / DEV.guardCam(i, az, d) / DEV.live(want) +
+   DEV.step(sec) + DEV.render() drive it from a harness. */
 var Q = new URLSearchParams(location.search), W = +(Q.get("w") || 1280), H = +(Q.get("h") || 720);
 var cv = document.getElementById("c"); cv.width = W; cv.height = H; cv.style.width = W + "px"; cv.style.height = H + "px";
 function getJSON(u) { var x = new XMLHttpRequest(); x.open("GET", u, false); x.send(); return x.status === 200 ? JSON.parse(x.responseText) : null; }
@@ -218,6 +219,26 @@ DEV.headShot = function (i, view, side, box, yawDeg) {
   cam.clearViewOffset();
   actors.forEach(function (o) { if (o.avatar) o.avatar.group.visible = true; });
   return { d: +d.toFixed(2), hh: +hh.toFixed(3) };
+};
+/* Torso close-up of lineup fighter i (az: camera azimuth around him, d: distance); studio=true renders without post. */
+DEV.bodyShot = function (i, az, d, studio) {
+  var actors = DEV.lineupActors(); DEV.pose(actors, "walk", 0);
+  actors.forEach(function (o, k) { if (o.avatar) o.avatar.group.visible = k === i; });
+  var a = actors[i], av = a.avatar, p = av.Wp[av.bi.Spine1].clone();
+  cam.fov = 30; cam.aspect = W / H; cam.position.set(p.x + Math.sin(az) * d, p.y + 0.15, p.z + Math.cos(az) * d); cam.lookAt(p.x, p.y + 0.05, p.z); cam.updateProjectionMatrix();
+  if (studio) { var r = show.arena.renderer; r.info.reset(); av.sync(); r.render(show.arena.scene, cam); } else DEV.shoot();
+  actors.forEach(function (o) { if (o.avatar) o.avatar.group.visible = true; });
+  return 1;
+};
+/* Guard check: fighter i alone in his stance, camera at the opponent's eye line (az 0) or around him. */
+DEV.guardCam = function (i, az, d) {
+  var actors = DEV.lineupActors(); DEV.pose(actors, "stand", 0);
+  actors.forEach(function (o, k) { if (o.avatar) o.avatar.group.visible = k === i; });
+  var a = actors[i], av = a.avatar, p = av ? av.Wp[av.bi.Neck].clone() : a.rig.headPos(new THREE.Vector3());
+  cam.fov = 30; cam.aspect = W / H; cam.position.set(p.x + Math.sin(az || 0) * (d || 1.9), p.y + 0.02, p.z + Math.cos(az || 0) * (d || 1.9)); cam.lookAt(p.x, p.y - 0.12, p.z); cam.updateProjectionMatrix();
+  DEV.shoot();
+  actors.forEach(function (o) { if (o.avatar) o.avatar.group.visible = true; });
+  return 1;
 };
 DEV.info = function () {
   return DEV.lineupActors().map(function (a) {

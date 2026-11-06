@@ -22,6 +22,15 @@
    normal map, tiled pores and a roughness map on island-evened skins; MMA glove and board-shorts
    proxies; Mixamo fight clips for strikes (timed to the driver's contact and pulled onto the target),
    reactions, knockdowns, get-ups, the takedown entry and the referee; southpaw mirroring.
+   Pass 3 (Nov 6, 2026, night): hair and beard caps replace the strand-shell dot clouds (shells 0.5-12 mm off the
+   skin drawn as anti-aliased procedural strokes along a growth-direction field, averaging to their mean coverage at a
+   distance, Kajiya-Kay sheen; stubble, short and full beards and buzz / crew / fade caps by sheet length, fade
+   density by height, seam-safe hairline coverage); smooth root shade in the skin instead of painted dots; hair proxies
+   with a soft ragged fade cut (no temple notch), root darkening, curl bump and alpha breakup (afro), and a sheet-driven
+   left-side dye tint; skin: no orange cast, F0 0.028, softer wrap, T-zone sheen, pores and micro relief at pore scale
+   for head and body islands (the old 2-3 mm noise read as orange peel), photo tones de-casted before tinting;
+   definition from the sheet's body-fat call (normal strength plus a slope darkening); women's racerback sports top
+   (hasFemaleTop) and snug shorts with clean hems; tattoo sleeves wrap the arm (they collapsed to stripes).
    Credits: board shorts mesh "elvs_male_swim_shorts1" by Elvaerwyn, CC BY 2.5 SE (makehumancommunity.org);
    MMA glove proxy by "learning" and Mindfront skin/normal maps, CC0; motion clips from Adobe Mixamo. */
 (function (root) {
@@ -1913,8 +1922,8 @@
       uOpac: { value: o.opac || 1.4 }, uGrey: { value: o.grey || 0 }, uSpecK: { value: o.spec || 0.1 }, uShin: { value: o.shin || 60 }, uMaskOn: { value: o.maskTex ? 1 : 0 },
       uMaskT: { value: o.maskTex || null }, uMaskCh: { value: maskCh }, uLenK: { value: o.lenK != null ? o.lenK : 0.6 }, uEdgeK: { value: o.edgeK != null ? o.edgeK : 0.8 },
       uSeed: { value: o.seed || 0 }, uCapCol: { value: lin(o.color) } };
-    var mat = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.82, metalness: 0, skinning: true, morphTargets: !!md.length, transparent: true, depthWrite: false, side: T.FrontSide });
-    mat.envMapIntensity = 0.45;
+    var mat = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, metalness: 0, skinning: true, morphTargets: !!md.length, transparent: true, depthWrite: false, side: T.FrontSide });
+    mat.envMapIntensity = 0.25;
     mat.defines = { CAP_KK: "" };
     mat.onBeforeCompile = function (sh) {
       for (var kk in U) sh.uniforms[kk] = U[kk];
