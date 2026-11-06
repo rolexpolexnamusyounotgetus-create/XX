@@ -19,8 +19,8 @@
    v4.0.1 (Nov 6, 2026; the v4 review's fixes, train-only):
    - judge weights [em pre-2024]: the EM round-winner fit on 2015-2023 cards only (tools/judge_em_train.py); v4.0.0's came
      from all cards through 2026-10. [judgecal] values refit with them, plus point deductions (judge.ded, judge.ded2).
-   - [levels v4.0.1]: tools/v4_levels.js re-run on all 1,999 train fights with two more levers (tdScale, ctrlScale), so
-     takedowns and control are on the train level with the learned rates on.
+   - [levels v4.0.1]: tools/v4_levels.js re-run on all 1,999 train fights with two more levers on the learned-rate path
+     (mlTdLevel, mlCtrlLevel), so takedowns and control are on the train level with the learned rates on.
    - src/ml/mlrates.js: the mlMaxRatio cap applies to the cumulative takedown-attempt multiplier and to the TD-odds one.
    - [walkfwd] values left from v3 (tools/calibrate.js on 2019-2023 with walk-forward priors): form sds, caution5,
      r1Caution5, drainSchedExp, age / KO-loss / size coefficients, powExp, chinExp, ctrlScale.
@@ -32,7 +32,9 @@
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
-    mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio)
+    mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio; v4.0.1: on the cumulative takedown multiplier too)
+    mlTdLevel: 1.0932,   // [levels v4.0.1: tools/v4_levels.js on the 2019-2023 fights, learned rates on] factor on the learned takedown-attempt targets (v4.0.0: 1, which left takedowns landed 6% low on train)
+    mlCtrlLevel: 1.058,  // [levels v4.0.1: same] factor on the learned control targets (v4.0.0: 1, control 5% low on train)
 
     // ---------------- profile estimation (shrinkage toward the fight division's priors) ----------------
     kPM: 40,          // per-minute rate prior strength, fight-minutes of division-average fighting (combine_fit meta.shrink_k_default.pm)
@@ -49,7 +51,7 @@
     combB: 1,         // log-linear exponent on the defender's allowed ratio (same source)
     powExp: 1.104,        // [walkfwd 2026-11-06; was 1] exponent on the shrunk power ratio (KD scored per landed head strike vs division); same knockdown regression
     chinExp: 0.5463,       // [walkfwd 2026-11-06; was 1] exponent on the shrunk chin ratio (KD absorbed per landed head strike absorbed vs division); Poisson regression of actual knockdowns on predicted (chin history predicts less than the raw ratio)
-    ctrlScale: 1.062,     // [levels v4.0.1: tools/v4_levels.js, control s per 15 on 2019-2023 fights with the learned rates on (v4.0.0 left it 5% low); v4.0.0 = v3 walkfwd 1.004] global scale on each pair's control-time target (1 / get-up scale)
+    ctrlScale: 1.004,     // [walkfwd 2026-11-06; was 1] global scale on each pair's control-time target (1 / get-up scale); moment-matched to control per minute in the walk-forward backtest (the learned-rate path has its own level, mlCtrlLevel)
 
     // ---------------- positions ----------------
     ctrlGroundShare: 0.84,   // share of ufcstats control time spent on the ground; rest is clinch control (baserates est 0.89 main, 0.79 alt; midpoint)
@@ -180,7 +182,7 @@
     tdAttStam: 0.0,          // attacker fatigue: takedown attempts x (1 - tdAttStam (1 - S)); 0 because attempts rise by round in the data (baserates pace curve)
     tdStam: 0.15,            // defender fatigue: takedown success odds x (1 + tdStam (1 - S_def)) (small: baserates TD accuracy falls by round in 5-rounders)
     standStam: 0.3,          // bottom man's fatigue: stand-up hazard x (1 - standStam (1 - S)) (default)
-    tdScale: 1.113,          // [levels v4.0.1: tools/v4_levels.js, takedowns landed per 15 on 2019-2023 fights with the learned rates on (v4.0.0 left them 6% low); v4.0.0 selfcal 1.018; v3 walkfwd 0.9724] takedown attempt rate scale
+    tdScale: 1.018,          // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.9724] takedown attempt rate scale (the learned-rate path has its own level, mlTdLevel)
     tdOddsScale: 0.9018,     // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.9103] takedown success odds scale
     sweepScale: 1.0,         // sweep / reversal rate scale (default; reversals come from each pair's data rates)
     subAttScale: 1.085,      // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.042] submission attempt rate scale

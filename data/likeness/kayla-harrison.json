@@ -1,0 +1,296 @@
+{
+  "slug": "kayla-harrison",
+  "name": "Kayla Harrison",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 36,
+  "tale_of_tape": {
+    "height_cm": 172.7,
+    "reach_cm": 167.6,
+    "stance": "Southpaw",
+    "fight_weight_lb": 135,
+    "source": "data/derived/fighters.json (68 in height, 66 in reach, Southpaw, born 1990-07-02); bantamweight (135 lb). Won the UFC women's bantamweight title at UFC 316 (Jun 7, 2025), her last fight in the data. Withdrew from the Jan 2026 Nunes fight after neck surgery; news reports (AgentMMA) have her defending against Amanda Nunes at UFC 334 on Nov 14, 2026. Reach is 5 cm SHORTER than her height."
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ref_si_imagn_ufc316_reacts_2025-06-07.jpg",
+    "ref_si_imagn_scar_article_lead.jpg",
+    "ref_heavy_getty_2219116991.jpg",
+    "ref_si_ufc316_nunes_faceoff_2025-06-07.jpg",
+    "ref_mmasucka_2026-10.webp",
+    "ref_mmasucka_2026-06.webp",
+    "ref_cageside_ufc300_ceremonial_2024-04-12.jpg",
+    "c1_commons_whitehouse_ufc316_a_2025-06-07.jpg",
+    "c2_commons_whitehouse_ufc316_b_2025-06-07.jpg",
+    "c5_commons_rio2016_podium.jpg"
+  ],
+  "photo_coverage": "Good for 2024-2025. Frontal studio headshot with the belt, two full-body studio cut-outs (braided and loose hair), a left-side near-profile and a right-side near-profile, several UFC 316 photos (front, three-quarter, smiling), a UFC 300 weigh-in flex, and two public-domain White House photos (three-quarter, smiling). No clearly dated 2026 photo: she has not fought since June 2025 (neck surgery), and the newest image is a small inset from a late-2025 press face-off with long loose hair. A post-surgery neck scar has been reported but is not visible in any photo here, so it is not modelled.",
+  "face": {
+    "shape": "Square-to-rectangular face with a broad, strong lower half: wide jaw, wide chin, lean flat cheeks, broad forehead. Reads strong and angular rather than oval.",
+    "jaw": "Wide and well-defined with clear angles; strong masseter area; jawline nearly straight to a broad chin.",
+    "chin": "Broad and slightly squared, projecting forward a little in both profiles.",
+    "cheekbones": "Moderate height; cheeks lean, flat to slightly hollow; deep smile lines from nose to mouth corners.",
+    "brow_ridge": "Moderate; brows sit fairly low.",
+    "forehead": "Broad and medium-high with visible horizontal lines; small healed marks/scrapes above the right brow in the studio headshot.",
+    "eyes": {
+      "shape": "Almond, slightly deep-set, average opening; crow's feet at the outer corners, prominent when she smiles.",
+      "spacing": "Average.",
+      "colour": "Light blue to blue-grey. Closest MakeHuman iris: light blue / blue-grey."
+    },
+    "eyebrows": {
+      "thickness": "Medium",
+      "shape": "Fairly straight with a soft lift over the outer third; natural, not heavily groomed.",
+      "colour": "Light brown (sample #713026 is skin-tinted; render about #7a5a40)."
+    },
+    "nose": {
+      "length": "Medium-long",
+      "width": "Medium-broad bridge and a rounded, slightly bulbous tip",
+      "bridge": "Straight, medium height; straight in both profiles",
+      "hump": "None",
+      "tip": "Rounded, level to very slightly downturned",
+      "fight_damage": "No clear deviation visible."
+    },
+    "mouth_lips": "Wide mouth with thin lips (thin upper lip, slightly fuller lower lip); held in a firm closed line at rest. Very wide open smile showing upper and lower teeth.",
+    "ears": {
+      "size": "Medium, close to the head.",
+      "cauliflower_ear": "None visible on either ear (left ear in the UFC 316 face-off, right ear in the black-kit profile), despite her judo background."
+    },
+    "marks_scars": "Forehead lines, crow's feet and deep nasolabial lines; small healed marks on the forehead. Freckles on the shoulders and upper chest. Faint vertical scar below the left kneecap (see body)."
+  },
+  "hair": {
+    "style": "Fight night and title photos: tight cornrows from a centre part (four to six rows) running back into two long plaits or into a bun at the crown (UFC 316, studio headshot, black-kit profile). Weigh-ins, media and studio: long, loose, wavy hair past the shoulders, sometimes half-up at the crown (UFC 300 weigh-in, studio cut-out, late-2025 press face-off inset).",
+    "length_cm": 50,
+    "length_note": "Loose hair falls well past the shoulders to about the shoulder blades or lower.",
+    "colour_hex": "#9a6a48",
+    "colour_samples": [
+      {
+        "photo": "espn_stance_right.png",
+        "where": "loose waves (studio)",
+        "hex": "#b37f59"
+      },
+      {
+        "photo": "ref_cageside_ufc300_ceremonial_2024-04-12.jpg",
+        "where": "loose hair (stage light)",
+        "hex": "#97855a"
+      },
+      {
+        "photo": "ref_si_ufc316_nunes_faceoff_2025-06-07.jpg",
+        "where": "plait down the back (arena)",
+        "hex": "#7e5342"
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "braid behind the neck (studio)",
+        "hex": "#825648"
+      }
+    ],
+    "colour_note": "Dark honey blonde to light golden brown: braids read light brown (#7e5342 to #825648) with lighter ends, loose waves read golden dark blonde (#b37f59). Use #9a6a48 as the base with lighter honey ends.",
+    "hairline": "Straight to gently rounded, full; no recession.",
+    "texture": "Wavy, medium-thick; fine flyaways along the braids.",
+    "avatar_choice": "Fight look: cornrow texture on the scalp plus two plaits (ponytail01 split or retinted). Media look: long wavy proxy if one is added; none shipped."
+  },
+  "facial_hair": {
+    "type": "none",
+    "colour_hex": null,
+    "density": "none",
+    "shape": "none"
+  },
+  "skin": {
+    "tone_hex": "#db947c",
+    "tone_hex_method": "Plain RGB mean of the samples marked in_average (well-lit cheek/forehead patches; specular, blue-cast and deep-shadow patches excluded); each sample is the mean of the 15th-85th luma-percentile pixels of the patch.",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead",
+        "light": "studio flash",
+        "hex": "#f0c0b4",
+        "in_average": false
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek image-left",
+        "light": "studio flash",
+        "hex": "#dd7e6d",
+        "in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek image-right",
+        "light": "studio flash",
+        "hex": "#dc7a65",
+        "in_average": true
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "cheek image-left",
+        "light": "studio flash",
+        "hex": "#f3a982",
+        "in_average": true
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "cheek image-left",
+        "light": "studio flash",
+        "hex": "#dc988c",
+        "in_average": true
+      },
+      {
+        "photo": "ref_heavy_getty_2219116991.jpg",
+        "where": "cheek image-left",
+        "light": "arena light (blue cast)",
+        "hex": "#74524d",
+        "in_average": false
+      },
+      {
+        "photo": "c1_commons_whitehouse_ufc316_a_2025-06-07.jpg",
+        "where": "cheek image-left",
+        "light": "warm arena light",
+        "hex": "#c87161",
+        "in_average": true
+      },
+      {
+        "photo": "ref_cageside_ufc300_ceremonial_2024-04-12.jpg",
+        "where": "cheek image-left",
+        "light": "weigh-in stage light",
+        "hex": "#b48f73",
+        "in_average": true
+      },
+      {
+        "photo": "ref_si_imagn_ufc316_reacts_2025-06-07.jpg",
+        "where": "forehead",
+        "light": "arena light",
+        "hex": "#dcb9b3",
+        "in_average": true
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "cheek image-right",
+        "light": "studio flash",
+        "hex": "#f2a179",
+        "in_average": true
+      },
+      {
+        "photo": "c1_commons_whitehouse_ufc316_a_2025-06-07.jpg",
+        "where": "forehead",
+        "light": "warm arena light",
+        "hex": "#e49e7e",
+        "in_average": true
+      }
+    ],
+    "body_samples": [
+      {
+        "photo": "espn_stance_right.png",
+        "where": "left deltoid (lit, studio)",
+        "hex": "#e79b73"
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "abdomen (studio, includes ab shadows)",
+        "hex": "#985739"
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "right thigh front (lower, less light)",
+        "hex": "#884a36"
+      }
+    ],
+    "tone_note": "Fair-to-light skin with a warm tan; the face is often ruddy or flushed in fight photos (#c87161 cage-side). The lit shoulder matches the face; the abdomen and legs read darker in the studio cut-outs because of light fall-off and muscle shadow, not a different tone. Aim for about #db947c on the face and body.",
+    "undertone": "Warm (peach).",
+    "freckles_marks": "Freckles across the shoulders and upper chest; no other body marks seen."
+  },
+  "body": {
+    "build": "Exceptionally muscular for a 135-lb woman: wide, thick shoulders and traps, big arms, deep six-pack and powerful thighs; reads like a heavier-class physique cut down to bantamweight. Tall for the division but with relatively short arms.",
+    "body_fat": "lean",
+    "body_fat_note": "Very lean on fight week: full six-pack, obliques and serratus visible (studio cut-out, UFC 316).",
+    "shoulders": "Very broad with large, capped deltoids and a thick trapezius sloping up to a strong neck.",
+    "chest": "Athletic, muscular upper chest under a sports bra.",
+    "arms": "Large biceps and triceps with clear separation, thick forearms with visible veins; arms short for her height (reach 167.6 cm vs height 172.7 cm).",
+    "waist": "Moderate; strong V-taper from the shoulders.",
+    "legs_calves": "Thick, powerful quads and hamstrings, strong calves. A faint thin vertical scar runs down the front-inner side of the LEFT knee just below the kneecap (espn_stance_right.png); paint it faintly in the skin texture.",
+    "posture": "Upright and square, shoulders slightly forward from the muscle mass, arms hanging away from the sides; calm, serious face at rest, big grin after wins.",
+    "notable": "Neck, traps and shoulder mass are the main body cues; she must look clearly more muscular and broader than every other woman in the roster."
+  },
+  "tattoos": [
+    {
+      "where": "Anywhere visible",
+      "description": "None visible on arms, shoulders, torso or legs in the studio cut-outs, weigh-in or fight photos.",
+      "size": "-"
+    }
+  ],
+  "kit": {
+    "fight_kit_recent": "Blue Venum sports bra and shorts with a darker blue tiger-stripe print and white stripes, black waistband with white UFC logo, Monster logo on the shorts, blue wrist tape (UFC 316, Jun 2025; studio cut-outs).",
+    "other": "Black Venum kit with silver speckle print (2024, black-kit profile photo); black top and camo trousers at the UFC 300 weigh-in.",
+    "gloves": "Black UFC 4-oz gloves.",
+    "colours": [
+      "#1f3f8f blue",
+      "#0e1f4f dark blue",
+      "#ffffff white",
+      "#111111 black"
+    ]
+  },
+  "stance_and_guard_observed": {
+    "stance": "Southpaw (fighters.json).",
+    "from_photos": "Black-kit photo (right-side view): hands high and close at chin level, one gloved hand open with fingers extended forward as a grip-fighting hand while the other is a closed fist; shoulders hunched, chin down. This open-hand grip-fighting look is a strong cue from her judo background; scouting data should set the rest."
+  },
+  "morphs": {
+    "macro/sexF": 1.0,
+    "macro/ageOldF": 0.175,
+    "macro/ageYoungF": 0.0,
+    "macro/muscleUpF": 0.95,
+    "macro/weightDownF": 0.05,
+    "macro/proportionsUpF": 0.4,
+    "head/head-square": 0.35,
+    "head/head-scale-horiz-incr": 0.05,
+    "head/head-fat-decr": 0.2,
+    "forehead/forehead-scale-vert-incr": 0.1,
+    "chin/chin-bones-incr": 0.35,
+    "chin/chin-width-incr": 0.25,
+    "chin/chin-prominent-incr": 0.2,
+    "chin/chin-height-incr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.15,
+    "cheek/r-cheek-bones-incr": 0.15,
+    "cheek/l-cheek-volume-decr": 0.25,
+    "cheek/r-cheek-volume-decr": 0.25,
+    "eyebrows/eyebrows-trans-down": 0.1,
+    "eyebrows/eyebrows-angle-up": 0.05,
+    "eyebrows/eyebrows-trans-forward": 0.1,
+    "eyes/l-eye-height2-decr": 0.05,
+    "eyes/r-eye-height2-decr": 0.05,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15,
+    "nose/nose-scale-vert-incr": 0.15,
+    "nose/nose-width1-incr": 0.1,
+    "nose/nose-point-width-incr": 0.15,
+    "nose/nose-scale-depth-incr": 0.05,
+    "nose/nose-point-down": 0.05,
+    "mouth/mouth-upperlip-volume-decr": 0.35,
+    "mouth/mouth-lowerlip-volume-decr": 0.15,
+    "mouth/mouth-scale-horiz-incr": 0.1,
+    "mouth/mouth-cupidsbow-decr": 0.1,
+    "neck/neck-scale-horiz-incr": 0.45,
+    "torso/measure-shoulder-dist-incr": 0.55,
+    "torso/torso-vshape-incr": 0.45,
+    "torso/measure-waist-circ-decr": 0.1,
+    "torso/measure-hips-circ-decr": 0.05,
+    "buttocks/buttocks-volume-incr": 0.05
+  },
+  "morphs_extra_macro": {
+    "note": "Outside the requested list but in the shipped manifest; neutral athletic values.",
+    "macro/cupDownF": 0.5,
+    "macro/firmUpF": 0.5
+  },
+  "morphs_if_available": {
+    "note": "Ear targets are not in assets/embed/mh-manifest.json. Ears are medium and flat to the head; no shaping needed."
+  },
+  "morphs_unavailable": "Height: no heightUpF/heightDownF given (the research/assets.md fit is for the male base); build at the female default and scale to 172.7 cm, then SHORTEN the arm bones about 3 percent so reach reads 167.6 cm. Trap and neck mass may need more than neck-scale-horiz: a trapezius bulge in the normal map or a custom target. Cornrows and freckles are texture work. avatar3d.js reads the M macros; muscleUpF 0.95 documents intent (the most muscular woman in the roster).",
+  "render_hints": {
+    "iris": "light blue / blue-grey",
+    "skin_base": "young_caucasian_female tinted toward #db947c, add shoulder freckles",
+    "eyebrows": "eyebrow010 tinted #7a5a40, straight",
+    "hair": "fight: centre-part cornrows into two plaits, #9a6a48 with lighter ends"
+  },
+  "notes": "Confidence: high for build, eye colour, hair (both looks), jaw and chin, thin wide mouth, and the absence of tattoos; medium for nose tip and exact morph values; medium for the faint left-knee scar. Watch for: (1) the very broad, muscular shoulders, traps and neck; (2) square face with a wide jaw and chin and thin lips; (3) light blue eyes and honey-blonde braids; (4) arms slightly short for her height; (5) open-hand grip-fighting lead in her guard; (6) no 2026 fight photos exist; the reported neck-surgery scar is not visible in any photo and is not modelled."
+}

@@ -13,15 +13,16 @@
      judge.t108   -> 10-8 share of judge-rounds in simulated decisions = 3.55% (2021-2023 judges' rounds, deductions
                      removed, judgerounds_rows.json; the era tools/judgecal.js fits the threshold to)
    v4.0.1 adds two levers (the v4.0.0 run left takedowns 6% and control 5% low on train with the learned rates on):
-     tdScale      -> takedowns landed per 15 minutes per fighter (actual, the same definition as tools/evalv.js)
-     ctrlScale    -> control seconds per 15 minutes per fighter
+     mlTdLevel    -> takedowns landed per 15 minutes per fighter (actual, the same definition as tools/evalv.js); a factor
+                     on the learned takedown-attempt targets only, so the plain tables keep their self-calibrated level
+     mlCtrlLevel  -> control seconds per 15 minutes per fighter (factor on the learned control targets)
    and reports draws, the decision split and the card-implied 10-8 share (judges' 10-8s + 3 x deduction points per
    judge-round, comparable with the ufcstats card totals) for information (not targets).
    Sample: up to --n train fights (fixed hash order), one corner order per fight by hash, --sims sims, common random
    numbers across iterations, out-of-fold learned rates (data/derived/mlrates_oof.json), walk-forward priors.
 
      node tools/v4_levels.js [--n 1000] [--sims 40] [--iters 3] [--workers 2] [--write]
-   --write rewrites kdScale, kdInstant, kdRefStop, stko, gnpTko, subConvScale, judge.t108, tdScale and ctrlScale in
+   --write rewrites kdScale, kdInstant, kdRefStop, stko, gnpTko, subConvScale, judge.t108, mlTdLevel and mlCtrlLevel in
    src/params3.js. v4.0.1 run: --n 2000 (every train fight) --sims 20 --iters 5. */
 "use strict";
 const fs = require("fs");
@@ -99,9 +100,9 @@ function run(over) {
   }))).then((parts) => parts.reduce((a, b) => { for (const q in b) a[q] = (a[q] || 0) + b[q]; return a; }, {}));
 }
 const odds = (p) => p / (1 - p), prob = (o) => o / (1 + o), oddsR = (t, s) => odds(t) / odds(s);
-const g = { kdScale: P0.kdScale, koAll: 1, subConvScale: P0.subConvScale, t108: P0.judge.t108, tdScale: P0.tdScale, ctrlScale: P0.ctrlScale };
+const g = { kdScale: P0.kdScale, koAll: 1, subConvScale: P0.subConvScale, t108: P0.judge.t108, mlTdLevel: P0.mlTdLevel || 1, mlCtrlLevel: P0.mlCtrlLevel || 1 };
 const over = () => ({ kdScale: g.kdScale, kdInstant: prob(odds(P0.kdInstant) * g.koAll), kdRefStop: prob(odds(P0.kdRefStop) * g.koAll),
-  stko: P0.stko * g.koAll, gnpTko: P0.gnpTko * g.koAll, subConvScale: g.subConvScale, judge: { t108: g.t108 }, tdScale: g.tdScale, ctrlScale: g.ctrlScale });
+  stko: P0.stko * g.koAll, gnpTko: P0.gnpTko * g.koAll, subConvScale: g.subConvScale, judge: { t108: g.t108 }, mlTdLevel: g.mlTdLevel, mlCtrlLevel: g.mlCtrlLevel });
 (async () => {
   const t0 = Date.now();
   let S = null;
@@ -111,7 +112,7 @@ const over = () => ({ kdScale: g.kdScale, kdInstant: prob(odds(P0.kdInstant) * g
       r108card: (a.w108 + 3 * a.ded) / a.jr, drawShareOfDecisions: a.draw / Math.max(1, a.dec), drawShareOfFights: a.draw / a.n,
       UD: a.ud / Math.max(1, a.dec - a.draw), SD: a.sd / Math.max(1, a.dec - a.draw), MD: a.md / Math.max(1, a.dec - a.draw) };
     console.log(`it ${it}: KO ${(100 * S.ko).toFixed(1)} SUB ${(100 * S.sub).toFixed(1)} KD/100 ${S.kd100.toFixed(3)} 10-8 ${(100 * S.r108).toFixed(2)} TD/15 ${S.td15.toFixed(3)} ctrl/15 ${S.ctrl15.toFixed(1)}  ` +
-      `| kdScale ${g.kdScale.toFixed(4)} koAll ${g.koAll.toFixed(4)} subConvScale ${g.subConvScale.toFixed(4)} t108 ${g.t108.toFixed(3)} tdScale ${g.tdScale.toFixed(4)} ctrlScale ${g.ctrlScale.toFixed(4)}  (${((Date.now() - t0) / 1000).toFixed(0)} s)\n` +
+      `| kdScale ${g.kdScale.toFixed(4)} koAll ${g.koAll.toFixed(4)} subConvScale ${g.subConvScale.toFixed(4)} t108 ${g.t108.toFixed(3)} mlTdLevel ${g.mlTdLevel.toFixed(4)} mlCtrlLevel ${g.mlCtrlLevel.toFixed(4)}  (${((Date.now() - t0) / 1000).toFixed(0)} s)\n` +
       `      info: card 10-8 ${(100 * S.r108card).toFixed(2)}%, draws ${(100 * S.drawShareOfDecisions).toFixed(2)}% of decisions (${(100 * S.drawShareOfFights).toFixed(2)}% of fights), UD/SD/MD ${(100 * S.UD).toFixed(1)}/${(100 * S.SD).toFixed(1)}/${(100 * S.MD).toFixed(1)}`);
     if (it === ITERS) break;
     const rk = Math.pow(T.kd100 / S.kd100, 0.9);
@@ -120,13 +121,13 @@ const over = () => ({ kdScale: g.kdScale, kdInstant: prob(odds(P0.kdInstant) * g
     g.koAll *= Math.pow(oddsR(T.ko, Math.min(0.95, S.ko * Math.pow(rk, 0.6))), 0.8);
     g.subConvScale *= Math.pow(oddsR(T.sub, S.sub), 0.9);
     g.t108 *= Math.pow(S.r108 / T.r108, 0.35);
-    g.tdScale *= Math.pow(T.td15 / S.td15, 0.9);
-    g.ctrlScale *= Math.pow(T.ctrl15 / S.ctrl15, 0.8);
+    g.mlTdLevel *= Math.pow(T.td15 / S.td15, 0.9);
+    g.mlCtrlLevel *= Math.pow(T.ctrl15 / S.ctrl15, 0.8);
   }
   for (const w of workers) w.terminate();
   const o = over();
   const out = { kdScale: o.kdScale, kdInstant: o.kdInstant, kdRefStop: o.kdRefStop, stko: o.stko, gnpTko: o.gnpTko, subConvScale: o.subConvScale, t108: g.t108,
-    tdScale: g.tdScale, ctrlScale: g.ctrlScale };
+    mlTdLevel: g.mlTdLevel, mlCtrlLevel: g.mlCtrlLevel };
   console.log("values:", JSON.stringify(out));
   fs.writeFileSync(path.join(ROOT, "data/derived/v4_levels.json"), JSON.stringify({ meta: { tool: "tools/v4_levels.js", built: new Date().toISOString(),
     sample: sample.length, sims: SIMS, iters: ITERS, split: "train 2019-2023", engine: require(path.join(ROOT, "src/engine3.js")).VERSION, params: P0.version },
