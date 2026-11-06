@@ -3,17 +3,19 @@
   "name": "Jorge Masvidal",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Retired from MMA. He announced his retirement in the cage after losing a unanimous decision to Gilbert Burns at UFC 287 in Miami (Apr 8, 2023), his fourth straight loss. He then lost a majority decision to Nate Diaz in a boxing match (Jul 6, 2024). He runs the Gamebred bare-knuckle MMA promotion. Age 41. No MMA bout appears in the UFC Stats snapshot of Oct 31, 2026. Comeback talk, bookings and any 2025-26 news were NOT verified this session (web search budget used up; Wikipedia and ufc.com blocked).",
+    "summary": "Retired from MMA; no title or ranking. He announced his retirement in the cage after losing a unanimous decision to Gilbert Burns at UFC 287 in Miami (Apr 8, 2023), his fourth straight loss, and Sherdog's fight record (page fetched Nov 6, 2026) shows no MMA bout since (pro record 35-17). He lost a boxing match to Nate Diaz by majority decision (Jul 6, 2024) and founded the Gamebred bare-knuckle MMA promotion (both widely reported; not re-opened this session). On Nov 4, 2026 Sherdog reported that he is scheduled to meet Khamzat Chimaev in a submission-only grappling match on Dec 4, 2026 at The Agenda in Dubai; that is not an MMA bout. Age 41 (42 on Nov 12, 2026). No other booking or comeback was confirmed in the sources available this session (web search budget exhausted).",
     "title": null,
     "ranking": null,
     "active": false,
-    "next_fight": null,
+    "next_fight": "Reported, not an MMA bout: submission-only grappling match vs Khamzat Chimaev, The Agenda, Dubai, Dec 4, 2026 (Sherdog, Nov 4, 2026)",
     "injuries": [],
     "sources": [
       "http://ufcstats.com/fighter-details/47b9e0e7703a4868",
       "http://ufcstats.com/fight-details/71ea7d7985dad804 (UFC 287 vs Burns)",
       "data/derived/fighters.json (last_fight 2023-04-08, snapshot 2026-10-31)",
-      "https://en.wikipedia.org/wiki/Jorge_Masvidal (reference for the retirement, the Diaz boxing match and Gamebred; not reachable this session, so unverified)"
+      "https://www.sherdog.com/fighter/Jorge-Masvidal-7688 (pro record 35-17, last bout UFC 287; copy fetched 2026-11-06 at data/raw/sherdog_cache/fighter/Jorge-Masvidal-7688.html)",
+      "https://www.sherdog.com/news/news/Khamzat-Chimaev-vs-Jorge-Masvidal-grappling-match-reportedly-set-203461 (Nov 4, 2026; headline and teaser read from the cached fighter page, article not opened)",
+      "https://en.wikipedia.org/wiki/Jorge_Masvidal (reference for the retirement, the Diaz boxing match and Gamebred; not reachable this session)"
     ]
   },
   "style": {

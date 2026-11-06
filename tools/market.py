@@ -1690,6 +1690,148 @@ def calib_bins_generic(p, y, edges=(0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0001
     return out
 
 
+# ----------------------------------------------------------------------------------------------
+# tables: markdown for the report, rendered from market.json (no hand-copied numbers)
+# ----------------------------------------------------------------------------------------------
+
+def _f(x, d=3):
+    return '' if x is None else (f'{x:.{d}f}' if isinstance(x, float) else str(x))
+
+
+def _ci(v, d=3):
+    return f'[{v[0]:.{d}f}, {v[1]:.{d}f}]'
+
+
+def cmd_tables(a):
+    with open(OUT_JSON) as fh:
+        M = json.load(fh)
+    E, C = M['eval'], M['coverage']
+    L = []
+    L.append('### Coverage by year (backtest fights)\n')
+    L.append('| Year | Fights | Open | Close | Close share | Per-book closes | Close source |')
+    L.append('|---|---|---|---|---|---|---|')
+    for yr, v in C['by_year'].items():
+        src = ', '.join(f"{k[4:]} {n}" for k, n in sorted(v.items()) if k.startswith('src_'))
+        L.append(f"| {yr} | {v['fights']} | {v.get('open', 0)} | {v.get('close', 0)} | {v.get('close', 0) / v['fights']:.1%} | {v.get('per_book_close', 0)} | {src} |")
+    for per in ('tune', 'test'):
+        v = C[per]
+        L.append(f"| **{per}** | {v['fights']} | {v['open']} | {v['close']} | {v['close_share']:.1%} | {v['per_book_close']} | |")
+    L.append('\n### Headline: decisive fights with both an opening and a closing line\n')
+    L.append('| Period | Model | n | Log loss [95% CI] | Brier [95% CI] | Accuracy [95% CI] | ECE |')
+    L.append('|---|---|---|---|---|---|---|')
+    for per in ('tune', 'test'):
+        h = E['headline'][per]
+        for k, lab in (('elo', 'Elo (K 44)'), ('open', 'Opening line'), ('close', 'Closing line')):
+            m = h[k]
+            L.append(f"| {per} | {lab} | {m['n']} | {m['log_loss']:.4f} {_ci(m['log_loss_ci95'], 4)} | {m['brier']:.4f} {_ci(m['brier_ci95'], 4)} | "
+                     f"{m['accuracy']:.3f} {_ci(m['accuracy_ci95'])} | {m['ece']:.4f} |")
+        mr = E['market_rating'][per]['market_rating']
+        L.append(f"| {per} | Market rating (no line needed) | {mr['n']} | {mr['log_loss']:.4f} | {mr['brier']:.4f} | {mr['accuracy']:.3f} | {mr['ece']:.4f} |")
+    L.append('\n| Period | Close - Elo (LL) | Close - Open (LL) | Open - Elo (LL) | Rating - Elo (LL) | Rating - Open (LL) |')
+    L.append('|---|---|---|---|---|---|')
+    for per in ('tune', 'test'):
+        d = E['headline'][per]['diff']
+        r = E['market_rating'][per]
+        L.append(f"| {per} | {d['close_minus_elo_ll'][0]:+.4f} {_ci(d['close_minus_elo_ll'][1], 4)} | {d['close_minus_open_ll'][0]:+.4f} {_ci(d['close_minus_open_ll'][1], 4)} | "
+                 f"{d['open_minus_elo_ll'][0]:+.4f} {_ci(d['open_minus_elo_ll'][1], 4)} | {r['rating_minus_elo_ll'][0]:+.4f} {_ci(r['rating_minus_elo_ll'][1], 4)} | "
+                 f"{r['rating_minus_open_ll'][0]:+.4f} {_ci(r['rating_minus_open_ll'][1], 4)} |")
+    L.append('\n### No-vig method (closing and opening lines; same fights as the headline)\n')
+    L.append('| Method | Close LL tune | Close LL test | Open LL tune | Open LL test |')
+    L.append('|---|---|---|---|---|')
+    for m in DEVIG_METHODS:
+        L.append(f"| {m} | {E['devig']['tune'][m]['log_loss']:.4f} | {E['devig']['test'][m]['log_loss']:.4f} | "
+                 f"{E['devig']['tune']['open'][m]['log_loss']:.4f} | {E['devig']['test']['open'][m]['log_loss']:.4f} |")
+    L.append(f"\nChosen on tune: **{E['devig']['chosen_on_tune']}**.\n")
+    L.append('### Closing-line representations (pairwise, common fights, multiplicative no-vig)\n')
+    L.append('| Period | Pair | n | LL first | LL second | Mean abs diff in p |')
+    L.append('|---|---|---|---|---|---|')
+    for per in ('tune', 'test'):
+        for pair, v in E['close_representations'][per].items():
+            a1, a2 = pair.split('|')
+            L.append(f"| {per} | {a1[2:]} vs {a2[2:]} | {v[a1]['n']} | {v[a1]['log_loss']:.4f} | {v[a2]['log_loss']:.4f} | {v['mean_abs_diff']:.4f} |")
+    L.append('\n### Calibration of the closing line (favourite side)\n')
+    for per in ('tune', 'test'):
+        c = E['calibration'][per]
+        L.append(f"**{per}** (n {c['n']}): favourites won {c['fav_win_rate']:.3f} vs implied {c['fav_implied']:.3f}; slope-only "
+                 f"b = {c['slope_only']['b']:.3f} (se {c['slope_only']['se']:.3f}); favourite intercept+slope a = {c['fav_intercept_slope']['a']:+.3f} "
+                 f"(se {c['fav_intercept_slope']['a_se']:.3f}), b = {c['fav_intercept_slope']['b']:.3f} (se {c['fav_intercept_slope']['b_se']:.3f}); "
+                 f"opening-line slope b = {c['open_slope_only']['b']:.3f} (se {c['open_slope_only']['se']:.3f}); median overround close "
+                 f"{c['overround_close_median']:.4f}, open {c.get('overround_open_median', float('nan')):.4f}.\n")
+        L.append('| Favourite p | n | Mean implied | Won | 95% CI |')
+        L.append('|---|---|---|---|---|')
+        for b in c['table']:
+            L.append(f"| {b['lo']:.2f}-{b['hi']:.2f} | {b['n']} | {b['pred']:.3f} | {b['obs']:.3f} | [{b['ci95'][0]:.3f}, {b['ci95'][1]:.3f}] |")
+        L.append('')
+    L.append('### Favourite-longshot bias: flat-stake ROI by implied probability (both sides of every fight)\n')
+    L.append('| Period | Implied band | Sides | Mean implied | Won | ROI at mean close (se) | ROI at best US book (n) |')
+    L.append('|---|---|---|---|---|---|---|')
+    for per in ('tune', 'test', 'all'):
+        for b in E['calibration'][per]['roi_by_band']:
+            rb = f"{b['roi_best_book']:+.3f} ({b['n_best']})" if b['roi_best_book'] is not None else ''
+            L.append(f"| {per} | {b['band'][0]:.1f}-{b['band'][1]:.1f} | {b['n_sides']} | {b['implied']:.3f} | {b['won']:.3f} | "
+                     f"{b['roi_mean_odds']:+.3f} ({b['roi_se']:.3f}) | {rb} |")
+    L.append('\n### Recalibration and stacking (fit on 2019-2023, scored on 2024+)\n')
+    L.append('| Variant | Coefficients on logit scale [b, se] | LL tune | LL test | Test LL - close (95% CI) |')
+    L.append('|---|---|---|---|---|')
+    for k, v in E['stacking'].items():
+        if k == 'n':
+            continue
+        co = '' if not v['coef_logit_[b,se]'] else '; '.join(f"{kk} {vv[0]:+.3f} ({vv[1]:.3f})" for kk, vv in v['coef_logit_[b,se]'].items())
+        d = v['test_ll_minus_close_mult']
+        L.append(f"| {k} | {co} | {v['tune']['log_loss']:.4f} | {v['test']['log_loss']:.4f} | {d[0]:+.4f} {_ci(d[1], 4)} |")
+    L.append(f"\nn: {E['stacking']['n']}\n")
+    L.append('### Does anything known before the fight beat the close? (one feature at a time, plus all)\n')
+    L.append('| Feature (A minus B) | Tune coef (se) | Test refit coef (se) | Test LL change vs close+slope (95% CI) |')
+    L.append('|---|---|---|---|')
+    rf = E['residual_features']
+    for k, v in list(rf['single'].items()) + [('ALL nine', rf['all'])]:
+        if k == 'ALL nine':
+            L.append(f"| all nine | see json | see json | {v['test_ll_minus_close_slope'][0]:+.4f} {_ci(v['test_ll_minus_close_slope'][1], 4)} |")
+        else:
+            t, s_ = v['tune_coef'][k], v['test_refit_coef'][k]
+            L.append(f"| {k} | {t[0]:+.4f} ({t[1]:.4f}) | {s_[0]:+.4f} ({s_[1]:.4f}) | {v['test_ll_minus_close_slope'][0]:+.4f} {_ci(v['test_ll_minus_close_slope'][1], 4)} |")
+    L.append('\n### By year (closing line, all decisive fights with a close)\n')
+    L.append('| Year | n | Close LL | Close acc | Open LL | Elo LL |')
+    L.append('|---|---|---|---|---|---|')
+    for yr, v in E['by_year'].items():
+        L.append(f"| {yr} | {v['close']['n']} | {v['close']['log_loss']:.4f} | {v['close']['accuracy']:.3f} | {v['open']['log_loss']:.4f} | {v['elo']['log_loss']:.4f} |")
+    L.append('\n### Segments (closing line)\n')
+    L.append('| Segment | n | LL | Brier | Acc |')
+    L.append('|---|---|---|---|---|')
+    for k, v in E['segments'].items():
+        L.append(f"| {k} | {v['n']} | {v['log_loss']:.4f} | {v['brier']:.4f} | {v['accuracy']:.3f} |")
+    L.append('\n### Line movement (no-vig, open to close)\n')
+    L.append('| Period | n | Mean abs move | Median abs move | Share moving > 5 pts | Favourite flips |')
+    L.append('|---|---|---|---|---|---|')
+    for per, v in E['line_movement'].items():
+        L.append(f"| {per} | {v['n']} | {v['mean_abs_move']:.4f} | {v['median_abs_move']:.4f} | {v['share_move_gt_5pts']:.3f} | {v['favourite_flips']} |")
+    mm = E.get('method_market')
+    if mm and 'eval' in mm:
+        L.append('\n### Method-of-victory and round markets (per-book closes, 2021 on)\n')
+        L.append('| Period | n | 6-way LL market (power) | market (mult) | market rescaled to moneyline | moneyline x division base rates | base rates only | uniform | Market - baseline (95% CI) | Books |')
+        L.append('|---|---|---|---|---|---|---|---|---|---|')
+        for per, v in mm['eval'].items():
+            L.append(f"| {per} | {v['n']} | {v['ll6_market_power']:.4f} | {v['ll6_market_mult']:.4f} | {v['ll6_market_power_ml_rescaled']:.4f} | "
+                     f"{v['ll6_moneyline_x_base_rates']:.4f} | {v['ll6_base_rates_only']:.4f} | {v['ll6_uniform']:.4f} | "
+                     f"{_ci(v['ll6_market_minus_baseline_ci95'], 4)} | {v['mean_books']} |")
+        for per, v in mm['eval'].items():
+            g = v['goes_to_decision']
+            L.append(f"\n**{per} goes to decision**: market LL {g['market']['log_loss']:.4f} / Brier {g['market']['brier']:.4f} vs base rate "
+                     f"LL {g['base_rate']['log_loss']:.4f} / Brier {g['base_rate']['brier']:.4f} (n {g['market']['n']}; predicted {g['pred_mean']:.3f}, observed {g['obs_mean']:.3f}).")
+            if 'round_of_finish' in v:
+                r = v['round_of_finish']
+                L.append(f"**{per} round of finish** (rounds 1..K + decision, n {r['n']}): market LL {r['ll_market_power']:.4f} (mult {r['ll_market_mult']:.4f}) vs base rates {r['ll_base_rates']:.4f}.")
+            L.append('\n| Class | Predicted share | Observed share |')
+            L.append('|---|---|---|')
+            for c, (pp, oo) in v['class_pred_vs_obs'].items():
+                L.append(f'| {c} | {pp:.3f} | {oo:.3f} |')
+    L.append('\n### Data checks\n')
+    for k, v in E['checks'].items():
+        L.append(f'- {k}: {v}')
+    L.append(f"- diag: {E['diag']}")
+    print('\n'.join(L))
+
+
 def cmd_props(a):
     F = Fetcher(os.path.join(a.cache, 'bfo'))
     ev = read_csv(os.path.join(ODDS_DIR, 'bfo_event_lines.csv'))
@@ -1733,6 +1875,8 @@ def main():
     b.add_argument('--boot', type=int, default=2000, help='bootstrap resamples (by event)')
     b.add_argument('--props', action='store_true', help='also evaluate the method/round prop markets')
     b.set_defaults(func=cmd_build)
+    t = sub.add_parser('tables')
+    t.set_defaults(func=cmd_tables)
     pr = sub.add_parser('props')
     pr.add_argument('--cache', default=os.path.expanduser('~/.cache/xx-market'))
     pr.set_defaults(func=cmd_props)

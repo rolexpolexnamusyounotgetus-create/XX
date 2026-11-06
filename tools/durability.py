@@ -217,8 +217,8 @@ def add_columns(df, knots=(27.0, 31.0, 35.0), win=730):
     # weight move vs the pre-fight home division (catch / open weight bouts: unknown -> 0 with a flag)
     for p in ("d", "a"):
         home = X[p + "_home"]
-        fl = X["fight_lbs"]
-        hl = X[p + "_home_lbs"]
+        fl = pd.to_numeric(X["fight_lbs"], errors="coerce").astype(float)
+        hl = pd.to_numeric(X[p + "_home_lbs"], errors="coerce").astype(float)
         known = fl.notna() & hl.notna()
         mv = np.where(known, fl - hl.fillna(0), 0.0)
         X[p + "_mv_lbs"] = mv
@@ -235,7 +235,7 @@ def add_columns(df, knots=(27.0, 31.0, 35.0), win=730):
         X[p + "_dn_pct"] = np.where(known, -100 * np.log(np.where(known, fl, 1) / np.where(known, hl, 1)), 0.0).clip(0, None)
         X[p + "_catch"] = (~known & (X[p + "_n_prior"] > 0)).astype(float)
         X[p + "_debut"] = (X[p + "_n_prior"] == 0).astype(float)
-        age = X[p + "_age"]
+        age = pd.to_numeric(X[p + "_age"], errors="coerce").astype(float)
         X[p + "_age_na"] = age.isna().astype(float)
         a = age.fillna(30.0)
         X[p + "_age_c"] = a - 30.0

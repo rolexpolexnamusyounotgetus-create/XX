@@ -3,7 +3,7 @@
   "name": "Nate Diaz",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Not under UFC contract. His last UFC fight was UFC 279 (Sep 10, 2022), a round-4 guillotine from bottom guard over Tony Ferguson that completed his UFC contract. He then boxed: a unanimous-decision loss to Jake Paul (Aug 5, 2023) and a majority-decision win over Jorge Masvidal (Jul 6, 2024). He was reported in early 2026 as booked against Mike Perry on a May 16, 2026 MMA card promoted by Most Valuable Promotions on Netflix. That booking and its result were NOT verified this session (web search budget used up; Wikipedia and ufc.com blocked). Age 41. He has never announced a retirement. No UFC bout appears in the UFC Stats snapshot of Oct 31, 2026.",
+    "summary": "Not under UFC contract; no title or ranking. His last MMA bout was a loss to Mike Perry on Most Valuable Promotions' 'Rousey vs. Carano' card (May 16, 2026): TKO by corner stoppage at the end of round 2 (5:00), referee Mike Beltran, per Sherdog's fight record (page fetched Nov 6, 2026). It was his first MMA fight since UFC 279 (Sep 10, 2022), where he submitted Tony Ferguson with a round-4 guillotine from bottom guard in the last fight of his UFC contract. In between he boxed twice: a unanimous-decision loss to Jake Paul (Aug 5, 2023) and a majority-decision win over Jorge Masvidal (Jul 6, 2024) (widely reported; not re-opened this session). Sherdog pro MMA record: 21-14. Age 41. No retirement announcement, injury report or new booking was found in the sources available this session (web search budget exhausted; Wikipedia and ufc.com unreachable), so anything after May 2026 is unconfirmed. The Perry bout was not a UFC fight and has no stats in the UFC Stats snapshot of Oct 31, 2026.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -12,9 +12,10 @@
     "sources": [
       "http://ufcstats.com/fighter-details/8355922d564b152c",
       "http://ufcstats.com/fight-details/7e8fd03e070d0c25 (UFC 279 vs Ferguson)",
-      "data/derived/fighters.json (last_fight 2022-09-10, snapshot 2026-10-31)",
-      "https://bloodyelbow.com/2026/03/08/max-holloway-vs-charles-oliveira-2-ufc-326-result-nate-diaz-enraged-as-bmf-title-changes-hands-in-boring-clash/ (headline only, cited in this repo's charles-oliveira dossier; not opened by this agent)",
-      "https://en.wikipedia.org/wiki/Nate_Diaz (reference for the boxing bouts and the 2026 booking; not reachable this session, so unverified)"
+      "data/derived/fighters.json (last UFC fight 2022-09-10, snapshot 2026-10-31)",
+      "https://www.sherdog.com/fighter/Nate-Diaz-11451 (pro record 21-14 incl. the May 16, 2026 corner-stoppage loss to Mike Perry; copy fetched 2026-11-06 at data/raw/sherdog_cache/fighter/Nate-Diaz-11451.html)",
+      "https://www.sherdog.com/events/Most-Valuable-Promotions-Rousey-vs-Carano-111723 (event page linked from that record; not opened)",
+      "https://en.wikipedia.org/wiki/Nate_Diaz (reference for the two boxing bouts; not reachable this session)"
     ]
   },
   "style": {
@@ -33,9 +34,9 @@
       "weak takedown defence: 44% career (lightweight median 67%); Benson Henderson held him down for 16:58 (2012) and opponents controlled him for 29% of his UFC minutes",
       "cuts: his loss to Masvidal at UFC 244 was a doctor stoppage for facial cuts after round 3",
       "little one-punch power: 0.18 knockdowns per 15 min (lightweight median 0.31) and only 2 KO/TKO wins in 27 UFC fights",
-      "inactivity and age: no UFC bout since Sep 2022; age 41"
+      "age and decline: 41, and stopped on his corner's call after round 2 by Mike Perry (May 16, 2026, MVP card, Sherdog) in his first MMA fight in more than three and a half years"
     ],
-    "summary": "A long-armed southpaw who walks opponents down behind a busy jab and left straight, keeps punching in the clinch and gets stronger as the fight goes on. Off his back he is a dangerous Cesar Gracie-trained grappler with guillotines, triangles and chokes; ten of his 16 UFC wins are submissions. He is hard to stop (one KO loss by strikes in 27 UFC fights) but gives up leg kicks, takedowns and cuts.",
+    "summary": "A long-armed southpaw who walks opponents down behind a busy jab and left straight, keeps punching in the clinch and gets stronger as the fight goes on. Off his back he is a dangerous Cesar Gracie-trained grappler with guillotines, triangles and chokes; ten of his 16 UFC wins are submissions. He was hard to stop in the UFC (one KO loss by strikes in 27 fights), though his corner pulled him after round 2 against Mike Perry in May 2026 at age 41, and he gives up leg kicks, takedowns and cuts.",
     "sources": [
       "data/derived/fighters.json (career C and recency-weighted S sums; division medians computed over lightweights with 30+ UFC minutes)",
       "data/raw/ufc_fight_stats.csv and ufc_fight_results.csv (UFC 196, 202, 244, 263, 279 bout and round stats)",
@@ -67,10 +68,10 @@
   "engine_notes": [
     { "note": "Output rises through the fight. Five-round pace relative to round 1 is 1.00 / 1.38 / 1.06 / 1.21 / 1.00, and the three-round curve is 1.00 / 1.18 / 1.37. Edwards (UFC 263) is the example: 10, 13, 3, 19 and 31 significant strikes landed by round.", "source": "data/derived/fighters.json (pace, pace3); data/raw/ufc_fight_stats.csv" },
     { "note": "Submission threat off his back is far above average: 1.16 attempts per 15 min career (lightweight median 0.28, league 0.42) and 10 submission wins, five of them guillotines. A takedown by the opponent should not be treated as a safe position against him.", "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv" },
-    { "note": "Low knockdown power, high durability: 0.18 knockdowns scored per 15 min vs a median of 0.31, and one KO loss by strikes (Josh Thomson head kick, 2013) in 27 UFC fights, despite 9 knockdowns absorbed.", "source": "data/derived/fighters.json (kd, ko_losses, kd_absorbed)" },
+    { "note": "Low knockdown power, high durability: 0.18 knockdowns scored per 15 min vs a median of 0.31, and one KO loss by strikes (Josh Thomson head kick, 2013) in 27 UFC fights, despite 9 knockdowns absorbed. Outside the UFC, his corner stopped his May 16, 2026 fight with Mike Perry after round 2.", "source": "data/derived/fighters.json (kd, ko_losses, kd_absorbed); https://www.sherdog.com/fighter/Nate-Diaz-11451" },
     { "note": "Leg-kick and takedown vulnerability: opponents' landed significant strikes go 57% head / 18% body / 25% legs against him, and he stops only 44% of takedowns. Opponents with a kicking game or wrestling should get a bonus.", "source": "data/derived/fighters.json (opponent sums)" },
     { "note": "Division: fighters.json files him at lightweight (career-most), but his last five UFC fights (2016-2022) were all at welterweight. For a current matchup use 170 lb.", "source": "data/derived/fighters.json (divisions, recent)" },
-    { "note": "Layoff: no UFC fight since Sep 10, 2022, and only boxing bouts since have been confirmed. Apply an inactivity and age (41) discount, and use the career sums for a prime version.", "source": "data/derived/fighters.json (last_fight); status sources above" }
+    { "note": "Current form: his only MMA bout since Sep 10, 2022 is the corner-stoppage loss to Mike Perry outside the UFC (May 16, 2026), which has no stats in the UFC data. Apply an age (41) and decline discount for a current version, and use the career sums for a prime version.", "source": "data/derived/fighters.json (last_fight); https://www.sherdog.com/fighter/Nate-Diaz-11451" }
   ],
-  "confidence": "low"
+  "confidence": "medium"
 }

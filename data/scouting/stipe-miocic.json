@@ -3,7 +3,7 @@
   "name": "Stipe Miocic",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Retired. The two-time former UFC heavyweight champion lost to Jon Jones at UFC 309 in New York (Nov 16, 2024), TKO at 4:29 of round 3 after a spinning back kick to the body, and said after the fight that he was done fighting. It was his first fight since losing the title to Francis Ngannou at UFC 260 (Mar 27, 2021). Age 44. No UFC bout appears in the UFC Stats snapshot of Oct 31, 2026. Any 2025-26 news (honours, comeback talk) was NOT verified this session (web search budget used up; Wikipedia and ufc.com blocked).",
+    "summary": "Retired; no title or ranking. The two-time former UFC heavyweight champion lost to Jon Jones at UFC 309 in New York (Nov 16, 2024), TKO at 4:29 of round 3 after a spinning back kick to the body and punches, and said after the fight that he was done fighting (widely reported; not re-opened this session). It was his first fight since losing the title to Francis Ngannou at UFC 260 (Mar 27, 2021). Sherdog's fight record (page fetched Nov 6, 2026) shows no bout after UFC 309 (pro record 20-5), and none appears in the UFC Stats snapshot of Oct 31, 2026. No comeback or booking was found in the sources available this session (web search budget exhausted). Age 44.",
     "title": null,
     "ranking": null,
     "active": false,
@@ -13,7 +13,8 @@
       "http://ufcstats.com/fighter-details/d28dee5c705991df",
       "http://ufcstats.com/fight-details/b35e47f2f58ef026 (UFC 309 vs Jones)",
       "data/derived/fighters.json (last_fight 2024-11-16, snapshot 2026-10-31)",
-      "https://en.wikipedia.org/wiki/Stipe_Miocic (reference for the post-fight retirement; not reachable this session, so unverified)"
+      "https://www.sherdog.com/fighter/Stipe-Miocic-39537 (pro record 20-5, last bout UFC 309; copy fetched 2026-11-06 at data/raw/sherdog_cache/fighter/Stipe-Miocic-39537.html)",
+      "https://en.wikipedia.org/wiki/Stipe_Miocic (reference for the post-fight retirement; not reachable this session)"
     ]
   },
   "style": {

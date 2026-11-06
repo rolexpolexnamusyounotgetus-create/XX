@@ -310,6 +310,283 @@ def cmd_fetch_wiki(args):
     log("done: %d requests" % fx.n)
 
 
+# ------------------------------------------------------------------ countries
+# ISO3: (ISO2, English name, aliases, representative IANA zone for a fighter whose base is unknown,
+#        continent). The zone is the most populous one (USA: Chicago, a compromise between coasts;
+#        Russia: Moscow, which also covers Dagestan and Chechnya; Brazil: Sao Paulo).
+COUNTRIES = {
+    "USA": ("US", "United States", ["usa", "u s", "us", "united states of america", "america", "puerto rico"],
+            "America/Chicago", "NA"),
+    "CAN": ("CA", "Canada", [], "America/Toronto", "NA"),
+    "MEX": ("MX", "Mexico", [], "America/Mexico_City", "NA"),
+    "BRA": ("BR", "Brazil", ["brasil"], "America/Sao_Paulo", "SA"),
+    "ARG": ("AR", "Argentina", [], "America/Argentina/Buenos_Aires", "SA"),
+    "CHL": ("CL", "Chile", [], "America/Santiago", "SA"),
+    "URY": ("UY", "Uruguay", [], "America/Montevideo", "SA"),
+    "PRY": ("PY", "Paraguay", [], "America/Asuncion", "SA"),
+    "PER": ("PE", "Peru", [], "America/Lima", "SA"),
+    "BOL": ("BO", "Bolivia", [], "America/La_Paz", "SA"),
+    "ECU": ("EC", "Ecuador", [], "America/Guayaquil", "SA"),
+    "COL": ("CO", "Colombia", [], "America/Bogota", "SA"),
+    "VEN": ("VE", "Venezuela", [], "America/Caracas", "SA"),
+    "GUY": ("GY", "Guyana", [], "America/Guyana", "SA"),
+    "SUR": ("SR", "Suriname", [], "America/Paramaribo", "SA"),
+    "PAN": ("PA", "Panama", [], "America/Panama", "NA"),
+    "CRI": ("CR", "Costa Rica", [], "America/Costa_Rica", "NA"),
+    "NIC": ("NI", "Nicaragua", [], "America/Managua", "NA"),
+    "HND": ("HN", "Honduras", [], "America/Tegucigalpa", "NA"),
+    "SLV": ("SV", "El Salvador", [], "America/El_Salvador", "NA"),
+    "GTM": ("GT", "Guatemala", [], "America/Guatemala", "NA"),
+    "CUB": ("CU", "Cuba", [], "America/Havana", "NA"),
+    "DOM": ("DO", "Dominican Republic", [], "America/Santo_Domingo", "NA"),
+    "HTI": ("HT", "Haiti", [], "America/Port-au-Prince", "NA"),
+    "JAM": ("JM", "Jamaica", [], "America/Jamaica", "NA"),
+    "TTO": ("TT", "Trinidad and Tobago", ["trinidad"], "America/Port_of_Spain", "NA"),
+    "BHS": ("BS", "Bahamas", ["the bahamas"], "America/Nassau", "NA"),
+    "GRD": ("GD", "Grenada", [], "America/Grenada", "NA"),
+    "CUW": ("CW", "Curacao", [], "America/Curacao", "NA"),
+    "BRB": ("BB", "Barbados", [], "America/Barbados", "NA"),
+    "GBR": ("GB", "United Kingdom", ["uk", "great britain", "england", "scotland", "wales", "northern ireland",
+                                     "britain"], "Europe/London", "EU"),
+    "IRL": ("IE", "Ireland", ["republic of ireland"], "Europe/Dublin", "EU"),
+    "FRA": ("FR", "France", [], "Europe/Paris", "EU"),
+    "DEU": ("DE", "Germany", [], "Europe/Berlin", "EU"),
+    "NLD": ("NL", "Netherlands", ["holland", "the netherlands"], "Europe/Amsterdam", "EU"),
+    "BEL": ("BE", "Belgium", [], "Europe/Brussels", "EU"),
+    "LUX": ("LU", "Luxembourg", [], "Europe/Luxembourg", "EU"),
+    "CHE": ("CH", "Switzerland", [], "Europe/Zurich", "EU"),
+    "AUT": ("AT", "Austria", [], "Europe/Vienna", "EU"),
+    "LIE": ("LI", "Liechtenstein", [], "Europe/Vaduz", "EU"),
+    "ITA": ("IT", "Italy", [], "Europe/Rome", "EU"),
+    "ESP": ("ES", "Spain", [], "Europe/Madrid", "EU"),
+    "PRT": ("PT", "Portugal", [], "Europe/Lisbon", "EU"),
+    "DNK": ("DK", "Denmark", [], "Europe/Copenhagen", "EU"),
+    "SWE": ("SE", "Sweden", [], "Europe/Stockholm", "EU"),
+    "NOR": ("NO", "Norway", [], "Europe/Oslo", "EU"),
+    "FIN": ("FI", "Finland", [], "Europe/Helsinki", "EU"),
+    "ISL": ("IS", "Iceland", [], "Atlantic/Reykjavik", "EU"),
+    "POL": ("PL", "Poland", [], "Europe/Warsaw", "EU"),
+    "CZE": ("CZ", "Czech Republic", ["czechia"], "Europe/Prague", "EU"),
+    "SVK": ("SK", "Slovakia", [], "Europe/Bratislava", "EU"),
+    "HUN": ("HU", "Hungary", [], "Europe/Budapest", "EU"),
+    "ROU": ("RO", "Romania", [], "Europe/Bucharest", "EU"),
+    "BGR": ("BG", "Bulgaria", [], "Europe/Sofia", "EU"),
+    "GRC": ("GR", "Greece", [], "Europe/Athens", "EU"),
+    "CYP": ("CY", "Cyprus", [], "Asia/Nicosia", "EU"),
+    "SVN": ("SI", "Slovenia", [], "Europe/Ljubljana", "EU"),
+    "HRV": ("HR", "Croatia", [], "Europe/Zagreb", "EU"),
+    "BIH": ("BA", "Bosnia and Herzegovina", ["bosnia", "bosnia herzegovina"], "Europe/Sarajevo", "EU"),
+    "SRB": ("RS", "Serbia", [], "Europe/Belgrade", "EU"),
+    "MNE": ("ME", "Montenegro", [], "Europe/Podgorica", "EU"),
+    "MKD": ("MK", "North Macedonia", ["macedonia"], "Europe/Skopje", "EU"),
+    "ALB": ("AL", "Albania", [], "Europe/Tirane", "EU"),
+    "XKX": ("XK", "Kosovo", [], "Europe/Belgrade", "EU"),
+    "MDA": ("MD", "Moldova", [], "Europe/Chisinau", "EU"),
+    "UKR": ("UA", "Ukraine", [], "Europe/Kyiv", "EU"),
+    "BLR": ("BY", "Belarus", [], "Europe/Minsk", "EU"),
+    "LTU": ("LT", "Lithuania", [], "Europe/Vilnius", "EU"),
+    "LVA": ("LV", "Latvia", [], "Europe/Riga", "EU"),
+    "EST": ("EE", "Estonia", [], "Europe/Tallinn", "EU"),
+    "RUS": ("RU", "Russia", ["russian federation"], "Europe/Moscow", "EU"),
+    "GEO": ("GE", "Georgia", [], "Asia/Tbilisi", "AS"),
+    "ARM": ("AM", "Armenia", [], "Asia/Yerevan", "AS"),
+    "AZE": ("AZ", "Azerbaijan", [], "Asia/Baku", "AS"),
+    "TUR": ("TR", "Turkey", ["turkiye"], "Europe/Istanbul", "AS"),
+    "KAZ": ("KZ", "Kazakhstan", [], "Asia/Almaty", "AS"),
+    "UZB": ("UZ", "Uzbekistan", [], "Asia/Tashkent", "AS"),
+    "KGZ": ("KG", "Kyrgyzstan", [], "Asia/Bishkek", "AS"),
+    "TJK": ("TJ", "Tajikistan", [], "Asia/Dushanbe", "AS"),
+    "TKM": ("TM", "Turkmenistan", [], "Asia/Ashgabat", "AS"),
+    "AFG": ("AF", "Afghanistan", [], "Asia/Kabul", "AS"),
+    "IRN": ("IR", "Iran", [], "Asia/Tehran", "AS"),
+    "IRQ": ("IQ", "Iraq", [], "Asia/Baghdad", "AS"),
+    "SYR": ("SY", "Syria", [], "Asia/Damascus", "AS"),
+    "LBN": ("LB", "Lebanon", [], "Asia/Beirut", "AS"),
+    "JOR": ("JO", "Jordan", [], "Asia/Amman", "AS"),
+    "ISR": ("IL", "Israel", [], "Asia/Jerusalem", "AS"),
+    "PSE": ("PS", "Palestine", [], "Asia/Hebron", "AS"),
+    "SAU": ("SA", "Saudi Arabia", [], "Asia/Riyadh", "AS"),
+    "ARE": ("AE", "United Arab Emirates", ["uae"], "Asia/Dubai", "AS"),
+    "QAT": ("QA", "Qatar", [], "Asia/Qatar", "AS"),
+    "BHR": ("BH", "Bahrain", [], "Asia/Bahrain", "AS"),
+    "KWT": ("KW", "Kuwait", [], "Asia/Kuwait", "AS"),
+    "OMN": ("OM", "Oman", [], "Asia/Muscat", "AS"),
+    "PAK": ("PK", "Pakistan", [], "Asia/Karachi", "AS"),
+    "IND": ("IN", "India", [], "Asia/Kolkata", "AS"),
+    "NPL": ("NP", "Nepal", [], "Asia/Kathmandu", "AS"),
+    "LKA": ("LK", "Sri Lanka", [], "Asia/Colombo", "AS"),
+    "BGD": ("BD", "Bangladesh", [], "Asia/Dhaka", "AS"),
+    "MMR": ("MM", "Myanmar", ["burma"], "Asia/Yangon", "AS"),
+    "THA": ("TH", "Thailand", [], "Asia/Bangkok", "AS"),
+    "KHM": ("KH", "Cambodia", [], "Asia/Phnom_Penh", "AS"),
+    "VNM": ("VN", "Vietnam", [], "Asia/Ho_Chi_Minh", "AS"),
+    "MYS": ("MY", "Malaysia", [], "Asia/Kuala_Lumpur", "AS"),
+    "SGP": ("SG", "Singapore", [], "Asia/Singapore", "AS"),
+    "IDN": ("ID", "Indonesia", [], "Asia/Jakarta", "AS"),
+    "PHL": ("PH", "Philippines", ["the philippines"], "Asia/Manila", "AS"),
+    "CHN": ("CN", "China", ["people s republic of china", "peoples republic of china"], "Asia/Shanghai", "AS"),
+    "HKG": ("HK", "Hong Kong", [], "Asia/Hong_Kong", "AS"),
+    "MAC": ("MO", "Macau", ["macao"], "Asia/Macau", "AS"),
+    "TWN": ("TW", "Taiwan", [], "Asia/Taipei", "AS"),
+    "MNG": ("MN", "Mongolia", [], "Asia/Ulaanbaatar", "AS"),
+    "KOR": ("KR", "South Korea", ["korea", "republic of korea", "korea south"], "Asia/Seoul", "AS"),
+    "JPN": ("JP", "Japan", [], "Asia/Tokyo", "AS"),
+    "AUS": ("AU", "Australia", [], "Australia/Sydney", "OC"),
+    "NZL": ("NZ", "New Zealand", [], "Pacific/Auckland", "OC"),
+    "FJI": ("FJ", "Fiji", [], "Pacific/Fiji", "OC"),
+    "WSM": ("WS", "Samoa", [], "Pacific/Apia", "OC"),
+    "TON": ("TO", "Tonga", [], "Pacific/Tongatapu", "OC"),
+    "PNG": ("PG", "Papua New Guinea", [], "Pacific/Port_Moresby", "OC"),
+    "VUT": ("VU", "Vanuatu", [], "Pacific/Efate", "OC"),
+    "FSM": ("FM", "Micronesia", [], "Pacific/Pohnpei", "OC"),
+    "GUM": ("GU", "Guam", [], "Pacific/Guam", "OC"),
+    "ZAF": ("ZA", "South Africa", [], "Africa/Johannesburg", "AF"),
+    "NGA": ("NG", "Nigeria", [], "Africa/Lagos", "AF"),
+    "CMR": ("CM", "Cameroon", [], "Africa/Douala", "AF"),
+    "COD": ("CD", "DR Congo", ["democratic republic of the congo", "congo kinshasa", "dr congo", "drc"],
+            "Africa/Kinshasa", "AF"),
+    "COG": ("CG", "Republic of the Congo", ["congo", "congo brazzaville"], "Africa/Brazzaville", "AF"),
+    "AGO": ("AO", "Angola", [], "Africa/Luanda", "AF"),
+    "CIV": ("CI", "Ivory Coast", ["cote d ivoire", "cote divoire"], "Africa/Abidjan", "AF"),
+    "GHA": ("GH", "Ghana", [], "Africa/Accra", "AF"),
+    "SEN": ("SN", "Senegal", [], "Africa/Dakar", "AF"),
+    "GIN": ("GN", "Guinea", [], "Africa/Conakry", "AF"),
+    "CPV": ("CV", "Cape Verde", ["cabo verde"], "Atlantic/Cape_Verde", "AF"),
+    "MAR": ("MA", "Morocco", [], "Africa/Casablanca", "AF"),
+    "DZA": ("DZ", "Algeria", [], "Africa/Algiers", "AF"),
+    "TUN": ("TN", "Tunisia", [], "Africa/Tunis", "AF"),
+    "LBY": ("LY", "Libya", [], "Africa/Tripoli", "AF"),
+    "EGY": ("EG", "Egypt", [], "Africa/Cairo", "AF"),
+    "ETH": ("ET", "Ethiopia", [], "Africa/Addis_Ababa", "AF"),
+    "SOM": ("SO", "Somalia", [], "Africa/Mogadishu", "AF"),
+    "KEN": ("KE", "Kenya", [], "Africa/Nairobi", "AF"),
+    "UGA": ("UG", "Uganda", [], "Africa/Kampala", "AF"),
+    "TZA": ("TZ", "Tanzania", [], "Africa/Dar_es_Salaam", "AF"),
+    "RWA": ("RW", "Rwanda", [], "Africa/Kigali", "AF"),
+    "ZMB": ("ZM", "Zambia", [], "Africa/Lusaka", "AF"),
+    "ZWE": ("ZW", "Zimbabwe", [], "Africa/Harare", "AF"),
+    "MOZ": ("MZ", "Mozambique", [], "Africa/Maputo", "AF"),
+    "NAM": ("NA", "Namibia", [], "Africa/Windhoek", "AF"),
+    "BWA": ("BW", "Botswana", [], "Africa/Gaborone", "AF"),
+    "MUS": ("MU", "Mauritius", [], "Indian/Mauritius", "AF"),
+    "GAB": ("GA", "Gabon", [], "Africa/Libreville", "AF"),
+    "BEN": ("BJ", "Benin", [], "Africa/Porto-Novo", "AF"),
+    "TGO": ("TG", "Togo", [], "Africa/Lome", "AF"),
+    "SLE": ("SL", "Sierra Leone", [], "Africa/Freetown", "AF"),
+    "LBR": ("LR", "Liberia", [], "Africa/Monrovia", "AF"),
+    "MLI": ("ML", "Mali", [], "Africa/Bamako", "AF"),
+    "SDN": ("SD", "Sudan", [], "Africa/Khartoum", "AF"),
+}
+# historical states -> successor used when nothing better is known
+HISTORIC = {"SUN": "RUS", "YUG": "SRB", "SCG": "SRB", "CSK": "CZE", "DDR": "DEU"}
+
+
+def _country_index():
+    idx = {}
+    for iso3, (iso2, name, aliases, tz, cont) in COUNTRIES.items():
+        for k in [iso3.lower(), iso2.lower(), name] + aliases:
+            idx[norm(k)] = iso3
+    return idx
+
+
+CIDX = _country_index()
+
+
+def country_code(s):
+    """Any country spelling (ufcstats, Sherdog, Wikidata ISO3) -> ISO3, or None."""
+    if not s:
+        return None
+    if s in HISTORIC:
+        return HISTORIC[s]
+    if s in COUNTRIES:
+        return s
+    return CIDX.get(norm(s))
+
+
+def split_location(loc):
+    """'Las Vegas, Nevada, USA' -> ('Las Vegas', 'Nevada', 'USA')."""
+    parts = [p.strip() for p in loc.split(",") if p.strip()]
+    city = parts[0]
+    country = parts[-1] if len(parts) > 1 else parts[0]
+    admin = parts[1] if len(parts) > 2 else None
+    if city == "Washington" and admin == "DC":
+        admin = "District of Columbia"
+    return city, admin, country
+
+
+def geo_path(key):
+    return os.path.join(GEO_DIR, re.sub(r"[^A-Za-z0-9]+", "_", fold(key)).strip("_")[:150] + ".json")
+
+
+GEO_FIX = {  # city names the geocoder spells differently
+    "New York City": "New York", "Kallang": "Singapore", "Saint Petersburg": "Saint Petersburg",
+    "Fort Campbell": "Fort Campbell North", "Elmont": "Elmont", "St. Louis": "St Louis",
+}
+
+
+def geocode(fx, city, admin, iso3):
+    """Best Open-Meteo geocoder hit for a city in a country (admin region as a tiebreak)."""
+    iso2 = COUNTRIES[iso3][0] if iso3 in COUNTRIES else None
+    q = GEO_FIX.get(city, city)
+    key = "%s__%s" % (q, iso2 or "XX")
+    url = ("https://geocoding-api.open-meteo.com/v1/search?" +
+           urllib.parse.urlencode({"name": q, "count": 20, "language": "en", "format": "json"} |
+                                  ({"countryCode": iso2} if iso2 else {})))
+    txt = fx.get(url, geo_path(key), accept="application/json")
+    if not txt or txt.startswith("<!--"):
+        return None
+    try:
+        res = json.loads(txt).get("results") or []
+    except ValueError:
+        return None
+    if not res:
+        return None
+
+    def score(r):
+        s = 0.0
+        if admin and norm(r.get("admin1", "")) and (norm(admin) in norm(r.get("admin1", "")) or
+                                                     norm(r.get("admin1", "")) in norm(admin)):
+            s += 2
+        if norm(r.get("name", "")) == norm(q):
+            s += 1
+        s += math.log10(1 + (r.get("population") or 0)) / 10
+        return s
+    best = max(res, key=score)
+    return {"lat": best.get("latitude"), "lon": best.get("longitude"), "elevation_m": best.get("elevation"),
+            "tz": best.get("timezone"), "geo_name": best.get("name"), "geo_admin1": best.get("admin1"),
+            "population": best.get("population")}
+
+
+def cmd_fetch_geo(args):
+    fx = Fetcher(min_gap=1.1, offline=args.offline)
+    events = load_ufcstats()
+    locs = sorted(set(e["location"] for e in events.values()))
+    bad = []
+    for loc in locs:
+        city, admin, country = split_location(loc)
+        iso3 = country_code(country)
+        g = geocode(fx, city, admin, iso3)
+        if not g:
+            bad.append(loc)
+        else:
+            log("%-45s %-8s %6s m  %s" % (loc[:45], iso3, g["elevation_m"], g["tz"]))
+    # Sherdog birthplaces (for a fighter's home time zone), once the Sherdog pages are cached
+    nat = load_sherdog_bios(offline=True)
+    places = sorted(set((b["locality"], b["iso3"]) for b in nat.values() if b.get("locality") and b.get("iso3")))
+    log("venue locations %d (%d failed); birthplaces to geocode %d" % (len(locs), len(bad), len(places)))
+    for i, (pl, iso3) in enumerate(places):
+        city, admin = locality_parts(pl)
+        geocode(fx, city, admin, iso3)
+        if (i + 1) % 100 == 0:
+            log("  %d/%d birthplaces, %d requests" % (i + 1, len(places), fx.n))
+    log("failed venues:", bad, "requests:", fx.n)
+
+
+def locality_parts(pl):
+    parts = [p.strip() for p in pl.split(",") if p.strip()]
+    return parts[0], (parts[1] if len(parts) > 1 else None)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["fetch-wiki", "fetch-geo", "fetch-sherdog", "build", "eval", "all"])
