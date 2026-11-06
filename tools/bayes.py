@@ -2259,6 +2259,7 @@ def stage_export(args):
              "p": rd(pick(Gs, cfg["varaware"])[i]), "p_roll": rd(pick(Gr, cfg["varaware"])[i]),
              "p_plugin": rd(Gs["pA_plugin"][i]), "logit_sd": rd(math.sqrt(max(Gs["v"][i], 0.0))),
              "fit_through": Gs["H"][int(X["year"][i])].get("fit_through"),
+             "fit_through_roll": Gr["H"][int(X["year"][i])].get("fit_through"),   # verifier fix: p_roll's own cutoff
              "cells": [rd(c) for c in Gs["cells"][i]],
              "skill_A": [rd(c, 3) for c in Gs["m0"][i, 0]], "skill_B": [rd(c, 3) for c in Gs["m0"][i, 1]],
              "skill_sd_A": [rd(c, 3) for c in Gs["sd0"][i, 0]], "skill_sd_B": [rd(c, 3) for c in Gs["sd0"][i, 1]]}

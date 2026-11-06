@@ -40,11 +40,15 @@ def _bayes(ctx):
         if r.get("set") == "oof" and r.get("p") is not None:
             H[i] = r["p"]
             P[i] = r["p"]
-        elif r.get("set") == "valid":
+        FT[i] = r.get("fit_through")
+        if r.get("set") == "valid":
             v = r.get("p_roll") if r.get("p_roll") is not None else r.get("p")
             if v is not None:
                 P[i] = v
-        FT[i] = r.get("fit_through")
+            if r.get("p_roll") is not None:
+                # verifier fix: p_roll for 2025 comes from the hyperparameter fit through 2024-12-31, not the static
+                # fit's 2023-12-31; record the cutoff of the prediction actually served
+                FT[i] = r.get("fit_through_roll") or ("2024-12-31" if r.get("date", "") >= "2025-01-01" else FT[i])
         b = _bins7(r.get("cells"))
         if b and r.get("set") == "valid":
             BN[i] = b

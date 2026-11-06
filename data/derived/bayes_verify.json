@@ -456,7 +456,7 @@
  },
  "meta": {
   "tool": "tools/bayes_verify.py",
-  "updated": "2026-11-06T23:20:47+00:00"
+  "updated": "2026-11-06T23:24:06+00:00"
  },
  "stack_gate": {
   "line|close+ml2 + bayes": {
@@ -692,6 +692,40 @@
     0.0015
    ],
    "n_valid": 843
+  }
+ },
+ "lookahead": {
+  "predict_oof2022_month": {
+   "cut": "2022-06-15",
+   "n_pre": 231,
+   "n_post": 280,
+   "max_abs_dp_pre_cut": 0.0,
+   "max_abs_dcells_pre_cut": 0.0,
+   "max_abs_dp_post_cut (must be > 0)": 0.35170187583152096,
+   "rerun_vs_builder_cache_max_abs": 0.0,
+   "sec": 123
+  },
+  "fit_2021_on_post2020_perturbed": {
+   "max_abs_diff_vs_cached_fit": {
+    "qf": 0.0,
+    "qy": 0.0,
+    "Sigma0": 0.0,
+    "mu0": 0.0,
+    "drift_a": 0.0,
+    "drift_b": 0.0,
+    "sig_u": 0.0,
+    "sig_e": 0.0,
+    "w_round": 0.0,
+    "w_fround": 0.0,
+    "w_rem": 0.0,
+    "do": 0.0,
+    "lay": 0.0,
+    "beta_up": 0.0,
+    "win_beta": 0.0,
+    "k": 0.0
+   },
+   "max": 0.0,
+   "sec": 67
   }
  }
 }
