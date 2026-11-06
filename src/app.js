@@ -1,3 +1,8 @@
+/* Guard (until src/avatar3d.js gives female avatars a sports top): women's matchups use the simple figures. */
+(function () { var FA = window.FightAvatar; if (!FA || !FA.attach || FA.attach.__womenGuard) return; var orig = FA.attach;
+  FA.attach = function (actor, app) { var d = (app && app.division) || "", x = String((app && app.sex) || "").toLowerCase();
+    if ((/^women/i.test(d) || x === "female") && !(FA.hasFemaleTop && FA.hasFemaleTop())) return Promise.resolve(null);
+    return orig.apply(this, arguments); }; FA.attach.__womenGuard = true; })();
 /* Fight Lab page controller: matchup pickers, tale of the tape, live 3D fight and HUD, the 20,000-fight
    tally (blob Web Worker built from the engine script's own text), knobs and scenarios, the engine's
    explanation, the model stack, the backtest panel and the shareable matchup link.
