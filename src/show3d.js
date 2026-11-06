@@ -313,7 +313,8 @@
         if (u >= 1) { f.sw = 0; f.p.copy(f.to); f.yaw = f.toYaw; }
       }
     }
-    if (this.act && (this.act.type === "kick" || this.act.type === "shoot")) return;
+    // kicks plant the support foot; a shot steps in (penetration step) rather than stretching the legs out behind
+    if (this.act && this.act.type === "kick") return;
     if (!this.feet[0].sw && !this.feet[1].sw) {
       var best = -1, bestE = 0;
       for (i = 0; i < 2; i++) {

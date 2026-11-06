@@ -4,6 +4,8 @@ Nov 6, 2026, about 7:20 pm (final run: tables and fits 4:45-4:52 pm on ratings.j
 re-export 7:05-7:15 pm). Tool: `tools/ml2.py`. Output: `data/derived/ml2.json`. Page evaluator: `src/ml/ml2.js`,
 checked by `tests/test_ml2.js`. Scratch caches: `out/ml2_cache/` (gitignored).
 
+Adversarial verification, about 7:25-8:00 pm: no leakage found and every headline number reproduced from a fresh rebuild. The headline was reframed around the CV-chosen blend, the leak tests were rewritten so they can see a leak, and an opening-line stack was added for the page. Details are in the Verification log at the end.
+
 The winner model, rebuilt on every verified feature source. It was then fed into the no-line and with-line stacks
 and into the method/round model S.
 
@@ -539,4 +541,134 @@ preufc.json, backtest.json or styles.json changes, delete `out/ml2_cache/ratings
 5. **Heavy favourites, Featherweight and Light Heavyweight** are the segments where ML v2 trails the close the most (+0.034, +0.031, +0.024).
 6. **Style matchups.** The clinch-vs-distance term is screened in by every fold, but its gain is below the deployment rule and absent on 2024-25. Re-test it on the 2026 forward test before any engine v7 work treats style interactions as winner signal.
 7. **MoE's with-line stack** (src/ml/moe.js, used by the page today) has the same close-vs-open mismatch: its weights were fit on closing lines, and the page feeds it typed-in odds. Give it an open regime too, or switch the page to `pStackOpen`.
-8. **preufc and ratings verifiers.** Neither research/model_preufc.md nor research/model_ratings.md has a verification section yet (checked 7:55 pm). preufc.json was re-saved at 7:51 pm with identical snapshots (only its `eval` block changed), and ratings.json at 7:47 pm with the same build stamp and per-fight predictions (5e-5). Rerun the table stage if either verifier changes parameters or snapshots.
+8. **Ratings verifier.** research/model_ratings.md has no verification section yet (checked 8:00 pm). ratings.json was re-saved at 7:47 pm with the same build stamp and per-fight predictions (5e-5). preufc's verifier has signed off (research/model_preufc.md: no look-ahead found; it fixed an accuracy tie artefact and reran only `eval`), and preufc.json's snapshots are unchanged. Rerun the table stage if the ratings verifier changes parameters.
+
+## Verification log
+
+Adversarial review of ml2 (tools/ml2.py, data/derived/ml2.json, src/ml/ml2.js, tests/test_ml2.js,
+tools/blindtest_plugins/ml2.py, this report), Nov 6, 2026, 7:24-8:00 pm. The starting assumption was that every
+validation gain was fake.
+
+**Verdict: the gains are real.** No leakage, corner-order exploitation, wrong join or JS/Python mismatch was found.
+The report overstated three things and the page recipe had one misuse risk. All four are fixed below. The numbers
+in ml2.json `results`, `cv`, `stage2`, `method` and `fights` are unchanged, byte for byte.
+
+### Fresh rerun
+
+- The whole pipeline (table, cv, fit, stage2, stack, method) was rebuilt from data/raw into a separate cache
+  (`ML2_CACHE` in the scratchpad), 7:24-7:52 pm, on the 7:19 pm ratings.json.
+- cv.json, stage2.json and method.json are identical to the builder's. Every per-fight prediction in fit.pkl
+  (LR, LightGBM, XGBoost, blend; OOF, static, rolling) matches with max |diff| 0. Blend weights 0.434 / 0.399 / 0.153.
+  2024-25: LR 0.58865 static / 0.58819 rolling, blend 0.59176 / 0.59095. Method S2+ml2win 7-bin 1.5171,
+  -0.0367 [-0.0511, -0.0218] vs S.
+- Table checks: ratings vs ratings.json 5e-5 on 2,864 dev fights; market rating vs market.json 9.2e-5 on 2,855.
+- **Independent refit.** scikit-learn on mirrored rows, no intercept, the same penalty: static LR 0.58865 scored
+  A-first and B-first (max |p - (1 - p_swapped)| 1.7e-16) and 0.58865 under a seeded random corner swap. Max |diff|
+  from the cached predictions is 7e-5 (optimizer tolerance).
+- **Placebo.** Shuffling the five new columns (four ratings, market rating) across fights within each year gives
+  0.6076, back at v1's 0.6062. The gain needs each fight's own pre-fight ratings.
+
+### Leakage hunt
+
+- **2026.** `parse_fights` is wrapped before ml.py loads; the table, ratings, method tables and market stream assert
+  or filter dates < 2026-01-01. oppadj.json is not date-filtered, but it is joined only on table fight ids, which
+  stop at 2025-12-13.
+  - The page roster (ml.json, ratings.json and market.json rosters, preufc `current`) is live state through
+    2026-10-31. That is the same as ml and moe: live use only, never scored.
+- **Feature timing, read in the code.**
+  - WHR: `_system(N, lo)` takes only nodes strictly before the fight day (observations, chain edges indexed by their
+    later node, and newcomer priors).
+  - Elo, Glicko-2, TrueSkill: sequential, and each prediction is written before its update.
+  - The market-rating Kalman filter writes p before the line and result updates.
+  - nlbair has no duplicate fight ids and no fighter twice on one date, so no fight can see its own update.
+- **Perturbation tests (verifier's own).**
+  - Every rating system: the outcomes of every fight from d0 on were reversed, with d0 = 2017-07-08, 2021-03-06 and
+    2024-06-01. For WHR-rounds, Glicko-2 and Elo-full that was the encoder output; for TrueSkill-mov, the winner.
+  - Predictions up to and including d0 moved by max |diff| 0 in every case, and 70-98% of later predictions moved.
+    The fights on d0 were checked too (11 / 15 / 12 fights), which covers each fight's own result and same-day
+    results.
+  - Market rating: closing lines and results reversed from 2016-07-09, 2021-03-06 and 2024-06-01 in both streams.
+    Predictions up to and including d0 moved by 0; 70-93% of later ones moved.
+- **Builder's verify stage was blind (fixed).**
+  - Its truncation test only stopped evaluating at the cut. WHR's graph still held the later fights, and the
+    market-rating stream still held every nlbair row, so a leak in either would have shown identically in both runs.
+  - Its result flip changed D.y / D.winner, which WHR-rounds never reads: 0% of its later predictions moved.
+  - `stage_verify` now reverses the encoded outcome and D.y / D.winner for the ratings, and the line and result for
+    the market rating (`build_market_rating(..., perturb_from)`), and it compares the cut day itself.
+  - New result in ml2.json `verify`, d0 = 2024-06-01:
+    - all four systems: max |diff| 0 up to and including d0;
+    - later predictions moved: WHR-rounds 97.9%, Glicko-2 70.6%, Elo-full 70.4%, TrueSkill-mov 70.6%;
+    - market rating: 0 on 5,490 fights, 70.6% of later ones moved;
+    - cached features vs the current preufc.json: max |diff| 0.
+- **Scalers and encoders.**
+  - LRModel standardises on each fit's training rows only.
+  - The pre-UFC centring means (not in the LR) and the style z-constants (not adopted) use pre-2024 rows. They are
+    not target-based.
+- **Out of fold.**
+  - Stacks are forward-chained on ML v2's annual-refit OOF rows; trees and LR are refit per window with
+    `date < until`.
+  - The one shared piece is the 3-weight blend, fit on all of 2019-2023 OOF. Its leave-one-year-out score
+    (0.6343 vs 0.6338) bounds that optimism at about 0.0005.
+- **Joins and orientation.**
+  - nlbair f1 is table corner A on all 6,302 matched rows.
+  - ratings.py and ml.py share build_db's person order.
+  - market.json closes reproduce market.py's 0.5854.
+  - ML v1 is reproduced exactly (0.60625, max |diff| 0).
+- **Corner order.** No intercept anywhere. The LR and tree designs are antisymmetric (8.9e-16, rechecked
+  independently). Trees average both orders. A seeded random swap leaves the score unchanged.
+- **Market close as a feature.** In the no-line regime the market rating uses only earlier fights' closes, so it is
+  fine. The with-line page stack was another matter; it is item 4 below.
+
+### Problems found and fixed
+
+1. **Headline led with a model the CV did not choose.** The CV choice is the blend (OOF 0.6338 vs 0.6356). The
+   report led with the logistic (0.5887) and cited its better 2024-25 score as a reason the page uses it. The
+   bottom line now leads with the blend: 0.5918, +0.0037 [-0.0129, +0.0197] against the close. The logistic is
+   presented as the JS-constrained page model.
+   - The page's no-line stack is likewise not CV's pick: 0.62984 vs 0.62854 for the blend-based stack. That is now
+     stated.
+2. **Missing comparison.** Against the v1 stack (Elo + ML v1 + market rating, 0.5958), the blend gains
+   -0.0041 [-0.0091, +0.0007], which is not significant. A good part of ML v2's gain over the v1 logistic was
+   already available by stacking the market rating. Added to the bottom line.
+3. **"Out of sample" pooled 2021-2025.** The 2021-2023 rows are out of sample for the stack weights only. ML v2's
+   blocks, penalty, trees and blend weights were CV-chosen on years including them, and the ratings and
+   market-rating parameters were tuned on 2019-2023.
+   - On 2021-2023 alone, the with-line stack is -0.0015 [-0.0061, +0.0030] against the close.
+   - With the line, ML v2's gain over the current stack is not significant on 2024-25 (-0.0022 [-0.0043, +0.0001]).
+   - Caveats added. The OOF 2019-2023 comparison with v1 carries the same caveat (both models).
+4. **Close-trained line stack fed openers (fixed in code).**
+   - The problem: the page only has openers or typed-in odds before fight night, and the recipe sent them to the
+     with-line stack, whose weights were fit on closing lines. On 2024-25 that costs +0.0099 [+0.0064, +0.0133]
+     against a stack fit on the open (843 fights).
+   - The fix: tools/ml2.py now fits an "open" regime with the same protocol (no intercept, non-negative weights,
+     forward-chained CV 2021-2023 for the half-life, one look at 2024-25).
+   - Page open stack (open 0.66 + ML v2 logistic 0.58, fit before 2024):
+     - 0.5812 static / 0.5800 rolling;
+     - -0.028 [-0.037, -0.020] against the open and -0.0041 [-0.0066, -0.0014] against the current experts on the
+       open;
+     - -0.0043 [-0.0157, +0.0067] against the close.
+   - CV gives the market rating 0.004 weight, so the page stack leaves it out. Production weights (2019-2025):
+     open 0.61, ML v2 logistic 0.72.
+   - Exported as `page_model.stack.open`. `ML2.predict(a, b, fight, pClose, pOpen)` now returns `pStackOpen`.
+     tests/test_ml2.js checks it against Python to 1e-12 and checks that an opener never reaches the line stack:
+     365 checks pass.
+   - Volkanovski vs Gaethje with the 37.2% opener: 0.58 (the close-trained stack would say 0.515).
+   - MoE's line stack has the same mismatch: open thread 7.
+
+### Not changed (judged acceptable, documented)
+
+- The rating and market-rating parameters were tuned on 2019-2023, so they shape the 2010-2023 training rows and the
+  CV. That is training-side only, and every 2024-25 prediction uses parameters chosen before 2024.
+- 2024-25 is reported for many variants (stage 2, S3, styles, seeds, stacks). Apart from the page-model wording in
+  item 1, no deployed choice rests on those looks.
+- preufc.json was re-saved at 7:51 pm (identical snapshots; only `eval` changed) and ratings.json at 7:47 pm (same
+  build stamp, per-fight predictions within 5e-5). The export at 7:51:58 pm is current for both. preufc's
+  verifier has signed off (no leak); the ratings verifier has not.
+
+### Files changed
+
+tools/ml2.py (open regime, verify stage, `build_market_rating(perturb_from)`, page stack inputs), src/ml/ml2.js
+(`pOpen` / `pStackOpen`), tests/test_ml2.js, data/derived/ml2.json (re-exported 7:51:58 pm: `stacks` gains the open
+regime, `verify` has the new tests, `page_model.stack.open` and the test vectors are new; all other blocks are
+byte-identical), tools/README.md and this report. Scratch scripts for the independent checks are in the session
+scratchpad (selfleak_ratings.py, selfleak_trueskill.py, selfleak_mr.py, indep_lr.py).

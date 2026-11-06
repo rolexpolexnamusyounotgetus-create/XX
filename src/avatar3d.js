@@ -1931,8 +1931,19 @@
       if (Ls) Ls.autoOff = act.dur + 0.15;
       return;
     }
+    if ((act.type === "gnp" || act.type === "hammer") && this.actor && this.actor.mode === "top") {
+      // ground and pound: the Mixamo top-position torso drive under the driver's arms (which aim the shots)
+      var Lg = this.clip("gnp", 0.75, 0.12, { mask: "torso", t: Math.random() * 1.5, loop: true });
+      if (Lg) Lg.autoOff = act.dur + 0.25;
+      return;
+    }
     if (act.type === "punch") { c = this.clipByName(STRIKE_CLIP[mv] || (act.hand === "lead" ? "jab" : "cross")); side = act.hi; frac = 0.42; }
-    else if (act.type === "kick") { c = this.clipByName(STRIKE_CLIP[mv] || "midkick"); side = act.li; frac = 0.48; }
+    else if (act.type === "kick") {
+      // some body kicks come out as a teep (push kick): more often for in-and-out, range fighters
+      var pf = this.actor && this.actor.prof, teepP = 0.2 + 0.35 * (pf && pf.foot ? pf.foot.inout : 0.3);
+      var nm = mv === "bodykick" && this.clipByName("teep") && Math.random() < teepP ? "teep" : (STRIKE_CLIP[mv] || "midkick");
+      c = this.clipByName(nm); side = act.li; frac = 0.48;
+    }
     else return;
     if (!c || c.hit == null) return;
     var clipSide = c.eff && c.eff.charAt(0) === "l" ? 0 : 1, mir = clipSide !== side;
@@ -1981,17 +1992,27 @@
     } else if (to === "stand" && from === "down") {
       var L0 = this.clip("getUp", 1, 0.08, { restart: true, speed: M ? 1.7 : 1.55, t: 0.05 });
       if (L0) L0.autoOff = (L0.clip.dur - L0.t) / L0.speed - 0.3;
-    } else if (to === "celebrate") this.clip(M ? "victoryIdle" : "fistPump", 0.85, 0.5, { mask: "upper", loop: true });
+    } else if (to === "celebrate") this.clip(M ? (M.clips.victory2 ? "victory2" : "victoryIdle") : "fistPump", 0.85, 0.5, { mask: "upper", loop: true });
     else if (to === "sit" && M) this.clip("sitIdle", 0.55, 0.6, { mask: "torso", loop: true });
     else if (to === "refstop" && M) { var Lr = this.clip("refStop", 0.7, 0.2, { mask: "upper", restart: true, speed: 1.2 }); if (Lr) Lr.autoOff = 1.1; }
-    else if (to === "raised" && M && this.actor && this.actor.armTarget === 0) this.clip("disappointed", 0.5, 0.8, { mask: "torso", t: 0.3 });
+    else if (to === "raised" && M && this.actor && this.actor.armTarget === 0) this.clip(M.clips.defeat2 ? "defeat2" : "disappointed", 0.5, 0.8, { mask: "torso", t: 0.3 });
     else {
       this.layers.forEach(function (L) { if (L.mask === "upper" || L.mask === "torso" || (L.mask === "full" && L.clip && L.clip.name !== "getUp")) { L.target = 0; L.rate = 1 / 0.45; } });
     }
     if (to === "walk" && (from === "ko" || from === "down" || from === null)) this.layers.forEach(function (l) { l.target = 0; l.rate = 1 / 0.3; });
   };
   Avatar.prototype.onReact = function (r) {
-    if (r.type === "wobble") { var L = this.clip("dizzy", 0.55, 0.15, { mask: "upper", t: 0.3, restart: true }); if (L) L.autoOff = r.dur * 0.8; }
+    if (this.cfg.ref || this.opts.noMocap || !this.base.mocap) return;
+    var a = this.actor, mir = !!(a && a.stance < 0), L;
+    if (r.type === "wobble") { L = this.clip("dizzy", 0.55, 0.15, { mask: "upper", t: 0.3, restart: true }); if (L) L.autoOff = r.dur * 0.8; }
+    else if (r.type === "block" || r.type === "defend") {
+      // gloves up to the brow (Mixamo Block), over the driver's tightened guard
+      L = this.clip("block", 0.7, 0.06, { mask: "upper", t: 0.62, speed: 1.5, restart: true, mirror: mir }); if (L) L.autoOff = Math.max(0.2, r.dur * 0.85);
+    } else if (r.type === "slip" || r.type === "duck") {
+      // upper-body slip to the side the driver leans (dir +1 his left)
+      var left = (r.dir || 1) * (a ? a.stance : 1) > 0;
+      L = this.clip(left ? "slipL" : "slipR", r.type === "duck" ? 0.45 : 0.6, 0.06, { mask: "upper", t: 0.45, speed: 1.7, restart: true }); if (L) L.autoOff = Math.max(0.2, r.dur * 0.8);
+    }
   };
 
   /* Pull a limb's end onto the driver's target (hand: glove centre; foot: ankle) by weight w, bending

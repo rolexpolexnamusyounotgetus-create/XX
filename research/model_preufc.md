@@ -576,7 +576,7 @@ Sources:
 
 ## Verification log
 
-### Adversarial review (Nov 6, 2026, 7:15 pm to 8:05 pm UTC)
+### Adversarial review (Nov 6, 2026, 7:15 pm to 7:55 pm UTC)
 
 I started from the assumption that the held-out gain was inflated, and looked for:
 - look-ahead leaks;
@@ -617,7 +617,7 @@ all new code.
 | CV restricted to the grid before 11:18 am (tau up to 4 or none) | -0.0107 [-0.0192, -0.0018]. Widening the grid added 0.0015 |
 | Sherdog backfill proxy. Event ids are issued in creation order, so each id's creation date is estimated as the running median date of ids within 150 either side (17,399 events from the 1,749 cached pages) | Events are entered about a week before they happen (median). Of 15,934 pre-UFC rows at debut since 2015, 96 (0.6%, 40 fighters) sit on an event id issued more than 60 days after the fighter's UFC debut. **None belongs to a 2023-2025 debutant.** Those 40 fighters won 38.9% of their first 3 UFC bouts, against 50.3% for everyone else, so there is no sign of success-driven backfill |
 | Pre-debut archive snapshots: Wayback Machine, then Common Crawl | **Not done.** web.archive.org and index.commoncrawl.org reset at this session's egress proxy (archive.org's availability API answered but the snapshot host did not) |
-| Calibration slopes, both corner orders, 400 card resamples | Elo 1.04 [0.65, 1.49], seeded 1.16 [0.82, 1.49], base 1.18 [0.89, 1.48], base + pre 1.24 [0.98, 1.49]. Same as the Calibration paragraph |
+| Calibration slopes, both corner orders, 400 card resamples | Elo 1.04 [0.65, 1.49], seeded 1.16 [0.82, 1.49], base 1.18 [0.89, 1.48], base + pre 1.24 [0.98, 1.49]. They match the Calibration paragraph within resampling noise, and every interval contains 1 |
 | ml.json inputs to the stack | ml.json's meta says its 2024-2025 probabilities come from fits on 2010-2023, and every model is corner-symmetric. Taken as given; the stack claim is not a headline |
 
 ### Every evaluation that touched 2024 or later (from the git autosaves of preufc.json)
