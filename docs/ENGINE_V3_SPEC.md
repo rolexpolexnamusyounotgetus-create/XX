@@ -263,7 +263,10 @@ versions/v<N>/ (engine3.js, params3.js and, from v4, ml/mlrates.js). Three chang
    factors) were re-fit to it: `node tests/test_engine3.js 8000 --fit --write --priors data/derived/priors_dev.json`.
    Backtest shrinkage keeps the walk-forward `priors_asof[year]` (data/derived/mlcal_priors_asof.json).
 3. **Judging.** `FightEngine.judgeRound` scores each round. Each judge's z = EM round-winner logit of the
-   differentials, using head 0.179, body 0.133, leg 0.105, KD 2.42, TD 0.286, control 0.46/min and sub attempt 0.85 (all 7,550 ufcstats cards).
+   differentials, using head 0.179, body 0.133, leg 0.105, KD 2.42, TD 0.286, control 0.46/min and sub attempt 0.85. These are the earlier 7,495-card EM run over ufcstats cards from 2015 through 2026-10
+   (the params comment says 7,550). That window includes the validation years and the vault: v4's judging weights are not
+   train-only. The train-only refit on 2015-2023 cards (data/derived/judge_em_train.json) shipped in v4.0.1, which was
+   rejected (docs/CHANGELOG.md), and is a v5 item.
    Engine-only terms are added: hurt 0.8 and judges.power x head x power-weighted damage. Then come shared noise and individual noise.
    - The shared noise has a fight-level part, `sharedFight`: one draw per fight that persists across rounds.
    - Fight-level tastes are off (`tasteSd` 0). A judge who dissents twice in a fight does so in either direction equally often.

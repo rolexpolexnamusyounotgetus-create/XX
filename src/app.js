@@ -1886,10 +1886,16 @@
   }
 
   /* ================================================================ research section visibility */
+  var researchWasDefault = null;
   function renderResearch() {
     var isDefault = (S.a === "alexander-volkanovski" && S.b === "justin-gaethje") || (S.b === "alexander-volkanovski" && S.a === "justin-gaethje");
-    $("researchNote").textContent = isDefault ? "Headline facts for the default matchup, from fact-checked research files. Fighters are described by their own coverage." :
-      "This section covers the default matchup, Volkanovski vs Gaethje at lightweight. For " + nameOf("A") + " and " + nameOf("B") + ", see the scouting notes in the tale of the tape.";
+    $("researchNote").textContent = isDefault ? "Headline facts for this matchup, checked against the sources linked under each card. Fighters are described as their own coverage describes them." :
+      "These notes cover the default matchup, Volkanovski vs Gaethje at lightweight, so they are folded away. For " + nameOf("A") + " and " + nameOf("B") + ", see the scouting notes in the tale of the tape.";
+    // collapse the default pair's research when another pair is on; open it again when the default pair comes back
+    var det = $("researchDet");
+    if (det && researchWasDefault !== isDefault) det.open = isDefault;
+    researchWasDefault = isDefault;
+    renderCaveats();
   }
 
   /* ================================================================ diagram */
@@ -1912,7 +1918,7 @@
     path("M520,150 L606,150"); label(563, 140, "GNP, sub");
     path("M140,44 C330,-6 560,40 640,124"); label(400, 22, "KO, TKO, leg kicks");
     path("M140,256 C330,306 560,262 640,176"); label(400, 296, "knees, punches");
-    node(120, 70, 168, 44, "Distance", "strikes by target"); node(120, 230, 168, 44, "Clinch", "one man controls");
+    node(120, 70, 168, 44, "Distance", "strikes by target"); node(120, 230, 168, 44, "Clinch", "one fighter controls");
     node(410, 150, 220, 64, "On the ground", "guard · half · side · mount · back"); node(676, 150, 132, 44, "Fight over", null, "var(--sunk)");
     $("diagram").appendChild(svg);
   })();
@@ -2058,6 +2064,16 @@
     if (sc) for (k in sc) if (k !== "sources" && k !== "notes") app[k] = sc[k];
     if (lk && typeof lk === "object") app.likeness = lk;
     if (ov) for (k in ov) app[k] = ov[k];
+    // no likeness sheet and no written hair notes: a generic figure, so vary hair length and colour by a hash of the slug
+    // (stable for each fighter) instead of giving every such fighter the same head; nothing else is guessed
+    if (!lk && !app.hair && !app.hair_color) {
+      var h = hashStr(slug), fem = /^Women/.test(p.division || S.div || "");
+      var styles = fem ? ["hair tied back in a ponytail", "braided hair tied back", "hair in a bun", "short crop"] :
+        ["short hair, short on the sides", "buzz cut", "short crop", "medium-length hair, swept back", "shaved head", "high and tight fade"];
+      var cols = ["#1b1410", "#2a1d14", "#3b2a1e", "#4a3426", "#6b4a33", "#141110"];
+      app.hair = styles[h % styles.length]; app.hair_color = cols[(h >>> 8) % cols.length];
+      app.generic = true;
+    }
     // the corner colour wins for the kit
     app.shorts = side === "A" ? "#2563c9" : "#c9312f";
     return { name: p.name, short: lastName(p.name), slug: slug, nick: p.nick || null, corner: side === "A" ? "blue" : "red", appearance: app,
@@ -2097,10 +2113,30 @@
     ["A", "B"].forEach(function (s) {
       var fm = fight.form && fight.form[s]; if (!fm) return;
       var c = el("span", "fchip " + s); c.appendChild(el("b", null, shortOf(s)));
-      c.appendChild(document.createTextNode(" output " + signedPct(fm.out) + " · accuracy " + signedPct(fm.acc) + " · power " + signedPct(fm.pow) + " · chin " + signedPct(fm.chin) + " · cardio " + signedPct(fm.cardio)));
-      c.title = "Tonight's draw of " + nameOf(s) + "'s form against the settings. Chin and cardio above zero mean sturdier and fresher.";
+      var parts = formWords(fm);
+      parts.forEach(function (q) {
+        var w = el("span", "fm"); w.title = q.tip;
+        var ar = el("i", null, (q.up ? "▲" : "▼").repeat(q.lv)); ar.setAttribute("aria-hidden", "true"); w.appendChild(ar);
+        w.appendChild(document.createTextNode(q.word)); w.appendChild(el("span", "vh", " (" + q.tip + ")"));
+        c.appendChild(w);
+      });
+      if (!parts.length) c.appendChild(el("span", "fm", "about as usual"));
+      c.title = "Tonight's draw of " + nameOf(s) + "'s form, against the numbers the simulator plays from. ▲ is a better night than usual, ▼ a worse one; more arrows, a bigger swing. Hover a word for the number.";
       form.appendChild(c);
     });
+  }
+  // fight-night form in words: up to three arrows for the size of the swing, the multiplier in the tooltip
+  // (the engine reports chin and cardio so that above 1 is sturdier and fresher)
+  var FORM_WORDS = [["out", "busier", "quieter", "output"], ["acc", "sharper", "less accurate", "accuracy (odds of landing)"], ["pow", "hits harder", "hits lighter", "power"],
+    ["chin", "harder to drop", "easier to drop", "knockdown resistance"], ["cardio", "fresher", "tires sooner", "cardio"]];
+  function formWords(fm) {
+    var out = [];
+    FORM_WORDS.forEach(function (d) {
+      var v = fm[d[0]]; if (v == null || !isFinite(v) || v <= 0) return;
+      var a = Math.abs(Math.log(v)); if (a < Math.log(1.08)) return;
+      out.push({ up: v > 1, lv: a < Math.log(1.25) ? 1 : (a < Math.log(1.6) ? 2 : 3), word: v > 1 ? d[1] : d[2], tip: d[3] + " ×" + fx(v) + " tonight (" + signedPct(v) + ")", a: a });
+    });
+    return out;
   }
   function hudApply(e) {
     var w = e.w, c = H.cur[w];
@@ -2110,7 +2146,9 @@
     if (k === "miss" || k === "hit" || k === "hurt" || k === "kd" || k === "fin") {
       c.att++;
       if (k !== "miss") { c.lnd++; c.land[e.loc === "ground" ? 3 : (e.tg || 0)]++; }
-      if (k === "kd") c.kd++; if (k === "hurt") c.hurt++;
+      // a one-shot KO is traced only as its "fin" event, but the engine counts it as a knockdown in the round's totals
+      if (k === "kd" || (k === "fin" && e.how === "KO")) c.kd++;
+      if (k === "hurt") c.hurt++;
     } else if (k === "td") { c.td++; c.tda++; }
     else if (k === "tdx") c.tda++;
     else if (k === "sub" || k === "subx") c.sub++;
@@ -2267,7 +2305,12 @@
         $("bSub").textContent = detail + (dec ? " · " + cardsFor(sc.cards, w) : " · round " + sc.round + (m === "CORNER" || m === "DOC" ? "" : ", " + mmss(sc.t)));
       }
       bn.hidden = false;
-      if (H) { var f = H.f; for (var rr = H.r; rr < f.rounds.length; rr++) hudSync(rr, f.rounds[rr].fin ? f.rounds[rr].fin.t : 300); renderStats(); }
+      if (H) {
+        var f = H.f; for (var rr = H.r; rr < f.rounds.length; rr++) hudSync(rr, f.rounds[rr].fin ? f.rounds[rr].fin.t : 300);
+        // end exactly on the engine's totals, the finishing round included
+        if (f.rounds.every(function (x) { return x.st; })) { H.base = { A: zc(), B: zc() }; f.rounds.forEach(function (x) { addRoundTotals(H.base, x.st); }); H.cur = { A: zc(), B: zc() }; H.idx = 1e9; H.owner = null; }
+        renderStats();
+      }
       clearTimeout(autoNext);
       autoNext = setTimeout(function () { if (show && !show.paused && visible && !document.hidden) newFight(); }, 11000);
     }

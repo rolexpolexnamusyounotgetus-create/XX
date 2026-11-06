@@ -17,6 +17,14 @@ accuracy 60.5% vs 57.1%.
   - v4 still trails methodround model S: who x how x when +0.029, winner +0.011.
 - **Blend test.** The stacker gives the engine weight 0.037 with the closing line (v3: 0) and 0 without a line. The
   blend's log loss moves by -0.0002 [-0.0006, +0.0001], which is not significant.
+- **v4.0.1, the review's fixes, was rejected** (one validation look, 11:45 am ET).
+  - What it changed: train-only EM judging weights, point deductions, learned-path TD/control/sub levels, and a
+    cumulative takedown cap.
+  - Validation winner log loss: 0.6289 vs v4's 0.6324, -0.0034 [-0.0073, +0.0008]. Nothing else was significant, so the
+    decision rule rejects it.
+  - src/ holds v4 again. The work is in versions/v4.0.1-rejected/.
+  - Caveat: v4's EM judging weights saw cards through 2026-10. Fixing that is a v5 item (docs/BACKLOG.md
+    "Engine v4 review follow-ups").
 
 Details: docs/CHANGELOG.md (v4), docs/BACKLOG.md ("Engine v4 status"), docs/ENGINE_V3_SPEC.md ("Engine v4"),
 data/derived/version_history.json.

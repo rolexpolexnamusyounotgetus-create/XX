@@ -3,7 +3,8 @@
 Findings from verified research that the next engine versions must use. Each line names its source.
 
 ## Judging (v4 or v8)
-- (v4 review) These all-cards fits run from 2015 through 2026-10, which includes the validation years and the vault.
+- (v4 review) The all-cards EM fits in the next bullet run from 2015 through 2026-10, which includes the validation
+  years and the vault.
   For engine tuning use the train-only refit in data/derived/judge_em_train.json (5,519 cards 2015-2023, from
   tools/judge_em_train.py): head 0.1742, body 0.1271, leg 0.1042, KD 2.164, TD 0.278, control 0.462/min, sub 0.847.
 - Use the EM round-winner fit over all 7,495 cards with only 10-9 rounds (research/data_baserates.md,
