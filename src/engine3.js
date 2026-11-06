@@ -363,6 +363,25 @@
     return x;
   }
 
+  // ------------------------------------------------------------------ components (params.components.<name>: true = on)
+  function compOn(p, name) { return !!(p && p.components && p.components[name]); }
+
+  // realism_sens (v5 merge step 3; OFF: components.realism_sens false): per-division and per-format correction factors fit on
+  // 2019-2023 walk-forward backtest fights where the engine's simulated base rates miss the real ones (tools/realism.js fit;
+  // empirical-Bayes shrunk toward 1). They multiply the division self-calibration factors (p.div: att, kd, ko, sub, ctrl, td),
+  // so they reach the learned-rate targets too (src/ml/mlrates.js re-levels to the engine's own league expectation, built
+  // with the same factors). Off -> null. A factor counts only when it is a finite positive number (null, "", a negative or 0
+  // is ignored = 1: isFinite(null) is true, so a null meant as "unset" would otherwise zero the lever). The shipped factors
+  // were fit on v4.0.1 final: refit (tools/realism.js fit) on the v5 engine before ever turning the flag on.
+  function realismFactors(p, division, nR) {
+    if (!compOn(p, "realism_sens") || !p.realism) return null;
+    var d = (p.realism.div && p.realism.div[division]) || null, f = (p.realism.fmt && p.realism.fmt[String(nR)]) || null, out = {}, k, n = 0;
+    function ok(v) { return v != null && v !== "" && isFinite(v) && +v > 0; }
+    if (d) for (k in d) if (ok(d[k])) { out[k] = +d[k]; n++; }
+    if (f) for (k in f) if (ok(f[k])) { out[k] = (out[k] != null ? out[k] : 1) * +f[k]; n++; }
+    return n ? out : null;
+  }
+
   // ------------------------------------------------------------------ matchup (v3 rate tables, no learned model)
   function matchupBase(profA, profB, opts) {
     opts = opts || {};
@@ -374,7 +393,8 @@
     var P = priorFor(division, opts.priors);
     var nR = opts.rounds || (opts.title ? 5 : 3);
     var dv = (p.div && p.div[division]) || {};
-    function dvf(k) { return dv[k] != null ? dv[k] : 1; }
+    var rz = realismFactors(p, division, nR);   // realism_sens component: walk-forward division / format factors, null when off
+    function dvf(k) { var v = dv[k] != null ? dv[k] : 1; return rz && rz[k] != null ? v * rz[k] : v; }
     var L = league(P, p);
     var profs = [profA, profB];
     var R = [fighterRates(profA, P, L, p, nR), fighterRates(profB, P, L, p, nR)];
@@ -384,6 +404,9 @@
     var a = p.combA, b = p.combB, i, j, k;
     var m = { version: VERSION, A: info(profA), B: info(profB), division: division, rounds: nR, title: !!opts.title, date: date,
       p: p, P: P, L: L, R: R, adj: adj, judgePower: jud.power != null ? +jud.power : p.judge.power, opts: opts };
+    // the two resolved profiles, for sensitivity() rebuilds (non-enumerable: no effect on the tables, copies or JSON)
+    Object.defineProperty(m, "_src", { value: { A: profA, B: profB }, enumerable: false, writable: true, configurable: true });
+    if (rz) m.realism = rz;
 
     // ---- strike attempt rates
     m.dRate = [0, 0]; m.cRate = [0, 0]; m.gRate = [0, 0]; m.gBot = [0, 0];
@@ -1649,6 +1672,139 @@
     return out;
   }
 
+  // ------------------------------------------------------------------ sensitivity (realism_sens component): tornado data
+  var SENS_KEYS = ["out", "acc", "pow", "chin", "cardio", "tdAtt", "tdDef", "sub"];
+  var SENS_LABEL = { out: "striking output", acc: "striking accuracy", pow: "knockdown power", chin: "chin (KD susceptibility)",
+    cardio: "cardio (stamina drain)", tdAtt: "takedown attempts", tdDef: "takedown defense", sub: "submission threat",
+    judgePower: "judges' credit for power" };
+  var SENS_UP_GOOD = { out: 1, acc: 1, pow: 1, chin: -1, cardio: -1, tdAtt: 1, tdDef: 1, sub: 1 };   // knob up is good (1) / bad (-1) for him
+
+  // Posterior sd of fighter i's key profile rates (log scale for rates, logit for probabilities) from the shrinkage
+  // pseudo-counts: I = his events + prior strength x prior rate (the same k's matchup() shrinks with), times a per-stat
+  // over-dispersion phi fit on 2019-2023 fights against the out-of-fold learned rates (tools/realism.js disp ->
+  // params.realism.disp; 1 = Poisson / binomial):  sd(log rate) = sqrt(phi / I),  sd(logit p) = sqrt(phi / (n p (1 - p))).
+  // pow / chin are scaled by the engine's exponents on the shrunk ratios (powExp, chinExp), so each sd is on the knob's scale.
+  function rateSd(m, i) {
+    var p = m.p, P = m.P, L = m.L, R = m.R[i], s = R.sums, ds = (p.realism && p.realism.disp) || {};
+    function ph(k) { return ds[k] != null && isFinite(ds[k]) && ds[k] > 0 ? +ds[k] : 1; }
+    var att = s.d_att + s.c_att + s.g_att, attP = p.kPM * (P.d_att + P.c_att + P.g_att);
+    var nAcc = s.h_att + s.b_att + s.l_att, lnd = s.h_lnd + s.b_lnd + s.l_lnd;
+    var accP = (P.h_lnd + P.b_lnd + P.l_lnd) / Math.max(1e-9, P.h_att + P.b_att + P.l_att);
+    var nA = nAcc + p.kAcc, acc = clip((lnd + p.kAcc * accP) / nA, 0.02, 0.98), p0 = P.kd_per_h;
+    var tdN = s.otd_att + p.kTdAcc, tdP = clip(R.tdAccAg, 0.02, 0.98);
+    return {
+      out: Math.sqrt(ph("att") / Math.max(1, att + attP)),
+      acc: Math.sqrt(ph("acc") / Math.max(1, nA * acc * (1 - acc))),
+      pow: (p.powExp != null ? p.powExp : 1) * Math.sqrt(ph("kd") / Math.max(0.25, s.kd + p.kKD * p0)),
+      chin: (p.chinExp != null ? p.chinExp : 1) * Math.sqrt(ph("kd") / Math.max(0.25, s.okd + p.kKD * p0)),
+      tdAtt: Math.sqrt(ph("td_att") / Math.max(0.25, s.td_att + p.kTdPM * L.stand * L.tdAtt)),
+      tdDef: Math.sqrt(ph("td_acc") / Math.max(0.25, tdN * tdP * (1 - tdP))),
+      sub: Math.sqrt(ph("sub_att") / Math.max(0.25, s.sub_att + p.kPM * L.ground * L.sub))
+    };
+  }
+  // 1-sd sizes for the knob items: params.realism.knobSd, else the fight-night form sds (params.form), which already carry the
+  // model error the walk-forward fit saw; judges' power is additive (default 0.25 = its own default value).
+  function knobSd(p) {
+    var F = p.form || {}, K = (p.realism && p.realism.knobSd) || {};
+    function g(k, d) { return K[k] != null && isFinite(K[k]) ? +K[k] : d; }
+    return { out: g("out", F.out || 0.15), acc: g("acc", F.acc || 0.12), pow: g("pow", F.pow || 0.3), chin: g("chin", F.chin || 0.3),
+      cardio: g("cardio", F.cardio || 0.15), tdAtt: g("tdAtt", F.grap || 0.3), tdDef: g("tdDef", F.grap || 0.3), sub: g("sub", F.sub || 0.5),
+      judgePower: g("judgePower", 0.25) };
+  }
+
+  // FightEngine.sensitivity(m, opts): the change in P(win) and in the method shares for -z / +z sd of each knob and of each
+  // fighter's key profile rates (tornado data for the page). Every variant is rebuilt with the matchup's own options (same
+  // division, priors, learned rates, knobs) and replays the same per-fight seeds (common random numbers: identical fight-night form
+  // draws, so the differences carry far less Monte Carlo noise than the probabilities themselves).
+  //   opts: { n: sims per variant (default 1000), seed (1), z (1), kinds: ["knob", "rate"], sides: ["A", "B"],
+  //           keys: subset of ["out", "acc", "pow", "chin", "cardio", "tdAtt", "tdDef", "sub", "judgePower"],
+  //           sd: { key: sd, A: { key: sd }, B: {...} } overrides, profA / profB (when m has none), onProgress(f) }
+  //   Knob items scale adjA / adjB[key] by exp(-z sd) / exp(+z sd) (judges' power: -/+ z sd, floored at 0). Rate items move the
+  //   same lever by the fighter's posterior sd (rateSd; rates without a profile estimate, cardio, are knob-only).
+  //   Returns { n, seed, z, base: S, items: [{ id, key, side, kind, label, sd, mult: [lo, hi], upGood, lo: S, hi: S,
+  //   dPA: [lo.pA - base.pA, hi.pA - base.pA], dPWin: (his P(win) at +z) - (at -z) signed to "good for him", swing }], ms },
+  //   items sorted by swing = |hi.pA - lo.pA|; S = { pA, pB, pD, ko, sub, dec, bins[7], finA[r], finB[r] }.
+  function sensitivity(m, opts) {
+    opts = opts || {};
+    var src = m._src || {}, profA = opts.profA || src.A, profB = opts.profB || src.B;
+    if (!profA || !profB) throw new Error("FightEngine.sensitivity: no profiles on the matchup (build it with matchup() or pass opts.profA / opts.profB)");
+    var N = opts.n || 1000, seed = opts.seed == null ? 1 : +opts.seed, z = opts.z == null ? 1 : +opts.z, t0 = Date.now();
+    var kinds = opts.kinds || ["knob", "rate"], sides = opts.sides || ["A", "B"], keys = opts.keys || SENS_KEYS.concat(["judgePower"]);
+    // v5 merge: variants rebuild through the public matchup (api.matchup), so the components that wrap it (styles_sos)
+    // apply to every variant as they did to m; m from matchupBase alone rebuilds with matchupBase
+    var mo = m.opts || {}, build = m.mlApplied === undefined ? matchupBase : (api && api.matchup) || matchup, ov = opts.sd || {};
+    function r4(x) { return Math.round(x * 1e4) / 1e4; }
+    // per-fight seeds: fight k of every variant starts from the same generator state, so one desynchronised fight (a hit
+    // instead of a miss consumes extra draws) cannot desynchronise the rest, as one shared stream (summarize) would
+    var seeds = new Array(N);
+    for (var q = 0; q < N; q++) { var h = Math.imul((seed >>> 0) ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(q + 1, 0xc2b2ae35); h ^= h >>> 15; h = Math.imul(h, 0x27d4eb2d); seeds[q] = (h ^ (h >>> 13)) >>> 0; }
+    function brief(mv) {
+      var b = [0, 0, 0, 0, 0, 0, 0], nR = mv.rounds, fA = [], fB = [], w = new Int8Array(N), k;
+      for (k = 0; k < nR; k++) { fA.push(0); fB.push(0); }
+      for (k = 0; k < N; k++) {
+        var f = simulate(mv, makeRng(seeds[k]), false), bk = bucket(f);
+        b[bk]++; w[k] = bk < 3 ? 2 : (bk === 3 ? 1 : 0);
+        if (!isDecision(f)) { if (f.winner === "A") fA[f.round - 1]++; else if (f.winner === "B") fB[f.round - 1]++; }
+      }
+      for (k = 0; k < 7; k++) b[k] /= N;
+      var out = { pA: r4(b[0] + b[1] + b[2]), pB: r4(b[4] + b[5] + b[6]), pD: r4(b[3]), ko: r4(b[0] + b[6]), sub: r4(b[1] + b[5]),
+        dec: r4(b[2] + b[3] + b[4]), bins: b.map(r4), finA: fA.map(function (x) { return r4(x / N); }), finB: fB.map(function (x) { return r4(x / N); }) };
+      Object.defineProperty(out, "_w", { value: w, enumerable: false });   // per-fight A score (2 win, 1 draw, 0 loss), for paired se
+      return out;
+    }
+    // Monte Carlo se of (y.pA - x.pA) from the per-fight paired differences (draws count half)
+    function pairSe(x, y) {
+      var s = 0, s2 = 0;
+      for (var k = 0; k < N; k++) { var d = (y._w[k] - x._w[k]) / 2; s += d; s2 += d * d; }
+      var mu = s / N; return Math.sqrt(Math.max(0, s2 / N - mu * mu) / N);
+    }
+    function sdOf(side, key, d) {
+      if (side && ov[side] && ov[side][key] != null) return +ov[side][key];
+      return ov[key] != null && typeof ov[key] !== "object" ? +ov[key] : d;
+    }
+    var ks = knobSd(m.p), rs = [rateSd(m, 0), rateSd(m, 1)], specs = [];
+    kinds.forEach(function (kind) {
+      keys.forEach(function (key) {
+        if (key === "judgePower") { if (kind === "knob") specs.push({ key: key, side: null, kind: kind, sd: sdOf(null, key, ks.judgePower) }); return; }
+        if (SENS_UP_GOOD[key] == null) return;
+        sides.forEach(function (sd0) {
+          var i = sd0 === "B" ? 1 : 0, v = kind === "knob" ? ks[key] : rs[i][key];
+          if (v == null || !isFinite(v)) return;
+          specs.push({ key: key, side: SIDE[i], kind: kind, sd: sdOf(SIDE[i], key, v) });
+        });
+      });
+    });
+    var total = 1 + 2 * specs.length, done = 0;
+    function tick() { done++; if (opts.onProgress) opts.onProgress(done / total); }
+    var base = brief(m); tick();
+    var items = specs.map(function (sp) {
+      var res = [null, null], mult = [1, 1];
+      for (var d = 0; d < 2; d++) {
+        var sg = d === 0 ? -1 : 1, o = {}, k;
+        for (k in mo) o[k] = mo[k];
+        o.adjA = {}; for (k in (mo.adjA || {})) o.adjA[k] = mo.adjA[k];
+        o.adjB = {}; for (k in (mo.adjB || {})) o.adjB[k] = mo.adjB[k];
+        if (Array.isArray(mo.judges)) o.judges = { names: mo.judges.slice() };   // v5 merge: officials names (engine3.js officialsFor)
+        else { o.judges = {}; for (k in (mo.judges || {})) o.judges[k] = mo.judges[k]; }
+        if (sp.key === "judgePower") { mult[d] = Math.max(0, m.judgePower + sg * z * sp.sd); o.judges.power = mult[d]; }
+        else {
+          var ak = sp.side === "A" ? "adjA" : "adjB", cur = m.adj[sp.side === "A" ? 0 : 1][sp.key];
+          mult[d] = Math.exp(sg * z * sp.sd); o[ak][sp.key] = cur * mult[d];
+        }
+        res[d] = brief(build(profA, profB, o)); tick();
+      }
+      var up = sp.key === "judgePower" ? 0 : SENS_UP_GOOD[sp.key];
+      var pw0 = sp.side === "B" ? res[0].pB : res[0].pA, pw1 = sp.side === "B" ? res[1].pB : res[1].pA;
+      return { id: (sp.side ? sp.side + "." : "") + sp.key + "." + sp.kind, key: sp.key, side: sp.side, kind: sp.kind,
+        label: (sp.side ? (sp.side === "A" ? m.A.name : m.B.name) + ": " : "") + SENS_LABEL[sp.key] + (sp.kind === "rate" ? " (estimate)" : " (knob)"),
+        sd: r4(sp.sd), mult: [r4(mult[0]), r4(mult[1])], upGood: up, lo: res[0], hi: res[1],
+        dPA: [r4(res[0].pA - base.pA), r4(res[1].pA - base.pA)], dPWin: up ? r4(up * (pw1 - pw0)) : null,
+        swing: r4(Math.abs(res[1].pA - res[0].pA)), se: r4(pairSe(res[0], res[1])) };
+    });
+    items.sort(function (x, y) { return y.swing - x.swing; });
+    return { n: N, seed: seed, z: z, base: base, items: items, ms: Date.now() - t0 };
+  }
+
   // ------------------------------------------------------------------ explain: why the matchup looks the way it does
   function explain(m) {
     var P = m.P, L = m.L, R = m.R, out = { division: m.division, rounds: m.rounds, A: null, B: null, pair: null, text: "" };
@@ -1806,6 +1962,7 @@
     durabilityCovariates: function (prof, age, dp) { return durCovariates(dp || (getParams() || {}).durability || {}, prof || {}, age, null); },
     loadOfficials: loadOfficials, officialsTable: function () { return OFFTAB; }, officialsTableFor: officialsTableFor, officialsRound: officialsRound,
     summarize: summarize, explain: explain, manualProfile: manualProfile,
+    sensitivity: sensitivity, rateSd: rateSd, realismFactors: realismFactors,   // realism_sens component (v5 merge step 3)
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
     clip: clip, log5: log5, odds: odds, prob: prob, params: getParams,

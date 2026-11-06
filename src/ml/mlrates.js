@@ -349,12 +349,14 @@
   // engine v3's static expectation for two league-average (no-data) fighters with the matchup's settings
   // Cache key: division settings, the division priors and the parameter set (version label plus any per-call overrides,
   // so a tuner that injects params through opts.params never reuses a stale league level; engine v5: also the resolved
-  // components flags, so a flag switched on the shared FightParams object never reuses a stale level). The league-average pair has
-  // no date of birth, so the date does not enter.
+  // components flags, so a flag switched on the shared FightParams object never reuses a stale level; v5 merge step 3, from
+  // realism_sens: also the realism factors in effect (m.realism), which re-level the league expectation and can change on the
+  // shared FightParams without a version or flag change). The league-average pair has no date of birth, so the date does not
+  // enter.
   function leagueExpect(m, FE) {
     var o = m.opts || {}, P = m.P || {};
     var key = [m.division, m.rounds, m.title, m.p.version, JSON.stringify([P.d_att, P.c_att, P.g_att, P.ctrl, P.kd_per_h, P.td_acc, P.td_att, P.sub_att, P.rev, P.acc_h, P.acc_d]),
-      o.params ? JSON.stringify(o.params) : "", m.p.components ? JSON.stringify(m.p.components) : ""].join("|");
+      o.params ? JSON.stringify(o.params) : "", m.p.components ? JSON.stringify(m.p.components) : "", m.realism ? JSON.stringify(m.realism) : ""].join("|");
     if (leagueCache[key]) return leagueCache[key];
     var o2 = {}; for (var k in o) if (k !== "adjA" && k !== "adjB" && k !== "ml" && k !== "mlModel" && k.charAt(0) !== "_") o2[k] = o[k];
     o2.division = m.division; o2.rounds = m.rounds; o2.title = m.title; o2.ml = false;

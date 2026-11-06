@@ -2155,7 +2155,7 @@ def stage_confirm(args):
     C = comparators(X)
     years = [2024, 2025]
     out = {"window": "2024-01-01..2025-12-31, scored once", "config": cfg, "forced_rerun": bool(os.path.exists(p)),
-           "computed": dt.datetime.utcnow().isoformat(timespec="seconds") + "Z"}
+           "computed": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}
     Gs = load_preds(X, cfg["variant"], cfg["schedule"], scheme="static")
     Gr = load_preds(X, cfg["variant"], cfg["schedule"], scheme="roll")
     extra = {"bayes (roll: 2025 from the fit before 2025)": pick(Gr, cfg["varaware"])}
@@ -2237,7 +2237,7 @@ def stage_export(args):
     X = load_data()
     cfg = config()
     rd = lambda a, d=4: None if a is None or not np.isfinite(a) else round(float(a), d)
-    J = {"meta": {"tool": "tools/bayes.py", "built": dt.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    J = {"meta": {"tool": "tools/bayes.py", "built": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
                   "data_through": str(dt.date.fromordinal(int(X["day"].max()))),
                   "protocol": "fights dated 2026-01-01 or later dropped at parse; hyperparameters refit each Jan 1 on "
                               "earlier fights (empirical Bayes); every choice by 2019-2023 OOF / forward-chained "

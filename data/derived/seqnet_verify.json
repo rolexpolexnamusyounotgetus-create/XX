@@ -1,0 +1,142 @@
+{
+ "protocol": {
+  "data_last_fight": "2025-12-13",
+  "n_examples_2026_or_later": 0,
+  "max_token_day": "2025-12-13",
+  "history_tokens_checked": 94963,
+  "history_tokens_same_day": 113,
+  "history_tokens_after": 0,
+  "labels_vs_raw_csv": {
+   "n": 2809,
+   "missing_in_raw": 0,
+   "mismatch": 0
+  },
+  "seqnet_json_label_mismatch_vs_ml2": 0,
+  "seqnet_json_vs_ml2_ids": {
+   "ml2_rows": 2809,
+   "seqnet_rows": 2809,
+   "ml2_without_seqnet": 0,
+   "seqnet_dates_2026": 0
+  },
+  "walk_windows": {
+   "2019": {
+    "n_train_recomputed": 3680,
+    "n_train_logged": [
+     3680
+    ],
+    "pred_years": [
+     2019
+    ],
+    "last_train_day": "2018-12-29",
+    "match": true,
+    "pred_after_train": true
+   },
+   "2020": {
+    "n_train_recomputed": 4196,
+    "n_train_logged": [
+     4196
+    ],
+    "pred_years": [
+     2020
+    ],
+    "last_train_day": "2019-12-21",
+    "match": true,
+    "pred_after_train": true
+   },
+   "2021": {
+    "n_train_recomputed": 4652,
+    "n_train_logged": [
+     4652
+    ],
+    "pred_years": [
+     2021
+    ],
+    "last_train_day": "2020-12-19",
+    "match": true,
+    "pred_after_train": true
+   },
+   "2022": {
+    "n_train_recomputed": 5161,
+    "n_train_logged": [
+     5161
+    ],
+    "pred_years": [
+     2022
+    ],
+    "last_train_day": "2021-12-18",
+    "match": true,
+    "pred_after_train": true
+   },
+   "2023": {
+    "n_train_recomputed": 5672,
+    "n_train_logged": [
+     5672
+    ],
+    "pred_years": [
+     2023
+    ],
+    "last_train_day": "2022-12-17",
+    "match": true,
+    "pred_after_train": true
+   },
+   "2024": {
+    "n_train_recomputed": 6192,
+    "n_train_logged": [
+     6192
+    ],
+    "pred_years": [
+     2024,
+     2025
+    ],
+    "last_train_day": "2023-12-16",
+    "match": true,
+    "pred_after_train": true
+   },
+   "2025": {
+    "n_train_recomputed": 6709,
+    "n_train_logged": [
+     6709
+    ],
+    "pred_years": [
+     2025
+    ],
+    "last_train_day": "2024-12-14",
+    "match": true,
+    "pred_after_train": true
+   }
+  },
+  "ensemble_vs_json_maxabs": {
+   "p": 4.9994644103490415e-06,
+   "p_annual": 4.9994644103490415e-06
+  },
+  "hpcv_rescored": {
+   "cv": {
+    "base": 0.64592,
+    "from2010": 0.64526,
+    "long_hist": 0.64567,
+    "side_elo": 0.64679,
+    "slow": 0.64745,
+    "slow_reg": 0.64781,
+    "small": 0.64816,
+    "transformer": 0.65358,
+    "winner_only": 0.64733
+   },
+   "n": 1093,
+   "pick_with_0.0005_rule": "from2010",
+   "passing": [
+    "from2010"
+   ],
+   "builder_chosen": "from2010"
+  },
+  "timeline": {
+   "chosen_frozen": "2026-11-06T22:46:24.955765Z",
+   "prereg_commit": "2026-11-06T22:55:43+00:00",
+   "confirm_scored_at": "2026-11-06T22:55:49.660457Z",
+   "confirm_forced_rerun": false
+  }
+ },
+ "_meta": {
+  "tool": "tools/seqnet_verify.py",
+  "updated": "2026-11-06T23:08:46.473933Z"
+ }
+}

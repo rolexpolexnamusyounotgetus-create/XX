@@ -427,7 +427,7 @@
       tau: { n: 0.075, v: 0.075, k: 0.125, g: 0.1, c: 0.2 },               // population sds of judge effects (sharpness, volume, knockdown, grappling, 10-8): 0.5 x the pre-2019 EB sds, multiplier and 10-8 sd chosen by held-out 2019-2023 panel likelihood
       refTau: { kdf: 0, stko: 0.3, gnp: 0 },                               // population sds of referee effects (log multipliers); held-out 2019-2023 deviance chose 0 for KD follow-up stoppage and ground-and-pound, 0.3 for standing TKO
       hurtHS: null,           // engine-only hurts in head-strike units (null: judge.hurt / judge.head, the v4 ratio)
-      engAdj: { aH: 0.01802, aP: -0.09981, vHH: 0.37811, vHP: 0.49617, vPP: 33.75428 },   // engine-only terms' slopes on the count index and residual covariance (tools/officials_engcal.js --write; null = raw terms)
+      engAdj: { aH: 0.01897, aP: -0.0931, vHH: 0.42062, vHP: 0.58684, vPP: 30.37291 },   // engine-only terms' slopes on the count index and residual covariance (tools/officials_engcal.js --write; null = raw terms)
       // v5: named-judge effects OFF (docs/BACKLOG.md OFFICIALS: they make decision-winner log loss worse in all three windows;
       // component ablation jd - lg: winner -0.0001 [-0.0003, +0.0002], decision outcome +0.0006 [-0.0039, +0.0047]): every judge
       // scores as the league judge; names are still drawn / recorded in fight.officials
