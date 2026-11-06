@@ -9,10 +9,16 @@ Run from the project root (stages cache into out/linemove_cache/, so each can be
     nice -n 5 python3 tools/linemove.py q1       # how much of the move is predictable; closing-line value of model bets
     nice -n 5 python3 tools/linemove.py stacks   # snapshot stacks, cross-feeding costs, synthetic T-k lines (CV <= 2023)
     nice -n 5 python3 tools/linemove.py beyond   # movement / dispersion beyond the close (winner, method)
-    nice -n 5 python3 tools/linemove.py valid    # the CV-chosen configurations scored ONCE on 2024-01-01..2025-12-31
+    nice -n 5 python3 tools/linemove.py prereg   # write the pre-registration (PREREG) into data/derived/linemove.json
+    nice -n 5 python3 tools/linemove.py valid    # PREREG's configurations scored ONCE on 2024-01-01..2025-12-31
+    nice -n 5 python3 tools/linemove.py addendum # second run, pre-2024: fwd-4.1 as run, share of the open->close gain,
+                                                 # per-book closes, production weights, test vectors
+    nice -n 5 python3 tools/linemove.py prereg2  # write PREREG_ADDENDUM
+    nice -n 5 python3 tools/linemove.py valid_addendum   # PREREG_ADDENDUM's secondaries scored once on 2024-2025
     nice -n 5 python3 tools/linemove.py export   # data/derived/linemove.json
     nice -n 5 python3 tools/linemove.py vault    # 2026 trajectories -> the auditors' vault dir (no outcome is read)
-    nice -n 5 python3 tools/linemove.py all      # build .. export
+    nice -n 5 python3 tools/linemove.py all      # build timing q1 stacks beyond addendum export (the two 2024-2025
+                                                 # looks are separate commands and are not re-run by `all`)
 
 Data. BestFightOdds (BFO) fighter pages carry, for every bout and each side, a 10-point "sparkline" of BFO's mean odds
 (the data-sparkline attribute already parsed into data/raw/odds/bfo_fighter_lines.csv by tools/market.py): point 0
@@ -1647,15 +1653,15 @@ def stage_export(a):
     for i in np.flatnonzero(full):
         Y = int(yrs[i])
         r = {"date": str(E["date"].iloc[i])[:10], "set": "valid" if Y >= 2024 else ("oof" if Y >= 2021 else "train"),
-             "traj": [_r(x, 5) for x in P[i]], "traj_mult": [_r(x, 5) for x in Pm[i]]}
+             "traj": [_r(x, 4) for x in P[i]], "traj_mult": [_r(x, 4) for x in Pm[i]]}
         if Y >= 2024:
-            r["p_cons8_static"] = _r(vap["PC"][("static", 8)][i], 6)
-            r["p_cons8_roll"] = _r(vap["PC"][("roll", 8)][i], 6)
-            r["p_open_fed8mult_static"] = _r(vap["PIM"][("static", 8)][i], 6)
-            r["p_open_fed8mult_roll"] = _r(vap["PIM"][("roll", 8)][i], 6)
+            r["p_cons8_static"] = _r(vap["PC"][("static", 8)][i], 5)
+            r["p_cons8_roll"] = _r(vap["PC"][("roll", 8)][i], 5)
+            r["p_open_fed8mult_static"] = _r(vap["PIM"][("static", 8)][i], 5)
+            r["p_open_fed8mult_roll"] = _r(vap["PIM"][("roll", 8)][i], 5)
         elif Y >= 2021:
-            r["p_cons8_oof"] = _r(adp["pc"][8][i], 6)
-            r["p_open_fed8mult_oof"] = _r(adp["pim"][8][i], 6)
+            r["p_cons8_oof"] = _r(adp["pc"][8][i], 5)
+            r["p_open_fed8mult_oof"] = _r(adp["pim"][8][i], 5)
         fights[E["fid"].iloc[i]] = r
     assert all(v["date"] < VAULT_S for v in fights.values())
     tres = dict(tmg["res"])
@@ -1686,7 +1692,10 @@ def stage_export(a):
         "test_vectors": ad["test_vectors"],
         "fights": fights,
     }
-    wjson(OUT_JSON, out)
+    tmp = OUT_JSON + ".tmp"
+    with open(tmp, "w") as fh:          # compact: the per-fight block dominates the size
+        json.dump(out, fh, separators=(",", ":"), default=float)
+    os.replace(tmp, OUT_JSON)
     log("wrote %s (%d fights, %.0f KB)" % (OUT_JSON, len(fights), os.path.getsize(OUT_JSON) / 1024))
 
 
@@ -1784,7 +1793,7 @@ def main():
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
     ap.add_argument("--boot", type=int, default=2000)
     a = ap.parse_args()
-    order = [s for s in STAGES if s not in ("vault",)] if a.stage == "all" else [a.stage]
+    order = ["build", "timing", "q1", "stacks", "beyond", "addendum", "export"] if a.stage == "all" else [a.stage]
     for s in order:
         log("== stage %s" % s)
         STAGES[s](a)
