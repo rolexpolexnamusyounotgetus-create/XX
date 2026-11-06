@@ -120,15 +120,17 @@ agent names, at least 2.2 s between requests, no logins, nothing behind the payw
 | 2024 | 429 | 62 | 96 | 115 | 51 |
 | 2025 | 425 | 56 | 158 | 158 | 87 |
 
-The crowd covers 24% of the 2021-2023 CV rows and 32% of 2024-25. Whole-population gains are therefore diluted by
-about 3-4x relative to the covered rows, so the covered-row differences are reported too.
+The crowd covers 30% of the 2021-2023 CV rows (372 of 1,224) and 32% of 2024-25 (273 of 854). Whole-population
+gains are therefore diluted by about 3x relative to the covered rows, so the covered-row differences are reported
+too.
 
 ## Freeze (when the shares are fixed)
 
 **RotoWire.**
 - The article's JSON-LD `datePublished` must be at least one calendar day before the ufcstats event date.
-- Days before the card, over all 476 matched bouts: 4 days for 15 bouts, 3 for 71, 2 for 355, 1 for 30, and 0 (same
-  day) for 5. The same-day bouts are kept in the file but never fit or scored.
+- Days before the card, over all 476 matched bouts (crowd.json `meta.rw_days_published_before_event`): 4 days for 15
+  bouts, 3 for 71, 2 for 355, 1 for 30, and 0 (same day) for 5. The same-day bouts are kept in the file but never fit
+  or scored.
 - After the card, the articles are re-saved with losing picks struck through and the panel's records added. Only the
   cell text is read; strike marks are never used.
 - Consistency check: the strike marks agree with the results on 2,764 of 2,773 decisive pick cells. The picks shown
@@ -184,8 +186,8 @@ decisive UFC bout of the earlier years, and the 2024-25 look uses the slope fit 
 | close | +0.0365 [+0.0194, +0.0528] | +0.0184 [-0.0022, +0.0388] |
 
 - The crowd's majority agrees with the closing favourite on 80-91% of bouts.
-- These are main-card and pay-per-view bouts, where the close is less accurate than on a whole card (0.6056 vs about
-  0.585).
+- These are main-card and pay-per-view bouts, where the close is sharper than on whole cards: 0.6056 here vs 0.6232
+  on all 1,955 backtest fights of 2019-2023.
 
 ## Test 2: the crowd as a stack expert (the gate)
 
@@ -217,12 +219,13 @@ For example, market+ml2 has CV 0.61614, and its 2024-25 static score is -0.0087 
 
 **Weights fit on data through 2023.**
 - With a line (close or open), the non-negative crowd weight is 0 or under 0.013.
-- Without a line it is 0.08-0.11.
+- Without a line it is 0.08-0.11 for mm and crowd, and 0-0.006 for rw.
 - Signed weights with the close: rw -0.05, mm -0.09, mm_s -0.13, crowd -0.05.
 
 **The one look, 2024-25** (`confirm.stack`, all 60 variants), static and rolling:
 - every difference against its base is within ±0.0013, and none is significant in the static fits;
-- one rolling no-line row, mm, is +0.0009 [+0.0001, +0.0016], i.e. worse.
+- two rolling no-line rows (mm in both no-line bases) are worse, with CIs just above 0: +0.0009 [+0.0001, +0.0016]
+  and +0.0010 [+0.0001, +0.0019].
 
 ## Test 3: method and round
 
@@ -298,7 +301,7 @@ harder.
   - `eval --stage confirm` refuses to run unless those decisions exist and the data hash matches. It refuses a
     second look unless `--again` is passed, which reproduces the same numbers.
   - The earlier killed run had computed 2024-25 numbers in the same pass as its CV, before this split. No choice here
-    used them: they were not read, and they were overwritten.
+    used them: this run did not read them, and replaced them.
 - **Corner swap test.** A random half of the rows has every expert and y flipped. Every stack, non-negative and
   signed, gives the same predictions to 2.2e-16. crowd_probs(p) + crowd_probs(swapped) = 1 exactly.
 - **Orientation check, method test.** The crowd logit's sign agrees with ML v2's on 76% of covered method rows, as

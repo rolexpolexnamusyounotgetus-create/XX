@@ -46,6 +46,7 @@ import os
 for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ.setdefault(_v, "1")
 import argparse
+import collections
 import datetime as dt
 import hashlib
 import html as htmlmod
@@ -1168,6 +1169,8 @@ def cmd_build(args):
                   "mm_picks": sm["picks"], "mm_matched": sm["matched"], "mm_unmatched": sm["unmatched"],
                   "mm_match_rate": round(sm["matched"] / max(1, sm["picks"]), 4),
                   "rw_articles": st["articles"], "mm_posts": sm["posts"]},
+        "rw_days_published_before_event": {str(k): v for k, v in sorted(
+            collections.Counter(r["rw"]["days_before"] for r in out.values() if r.get("rw")).items())},
         "coverage_by_year": cov, "ufc_bouts_by_year": dict(sorted(n_by_year.items())),
         "coverage_backtest": {src: sum(1 for r in out.values() if src in r and r["in_backtest"]
                                        and (src != "rw" or r["rw"]["frozen"] == "pre_event")) for src in ("rw", "mm")},
