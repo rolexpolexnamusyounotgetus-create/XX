@@ -13,7 +13,9 @@ protocol, docs/BACKLOG.md).
 JUDGES. A round-level latent model explains each card: in round r of fight f, judge j sees
 
     eta_jfr = exp(n_j) * [ exp(v_j + w_V t) * V_fr + exp(p_j + w_K t) * K_fr + exp(g_j + w_G t) * G_fr
-                           + h * home_fr + u_fr ],          u_fr ~ N(0, sigma_u^2) shared by the 3 judges
+                           + h * home_fr + u_fr ],          u_fr ~ N(0, s_fr^2) shared by the 3 judges
+    s_fr = sigma_u * exp(-kappa * |core0_fr|)  (closeness option; core0 = the league judge's stat edge, no home term;
+                                                kappa = 0 without it; the published fit uses it)
     V = b_head dHead + b_body dBody + b_leg dLeg      (landed strike differentials, A - B)
     K = b_kd dKD                                      (knockdown differential)
     G = b_td dTD + b_ctrl dCtrlMin + b_sub dSubAtt + b_rev dRev
@@ -47,7 +49,8 @@ Outputs
   out/officials/                fold pickles and JAX compilation cache (gitignored)
 
 Usage
-  python3 tools/officials.py --stage all     # three folds in parallel, then the post stage (hours under load)
+  python3 tools/officials.py --stage all     # base folds, structure variants, closeness folds, post (about an hour)
+  OFFICIALS_SUFFIX=_c python3 tools/officials.py --stage post   # rebuild officials.json from the closeness folds
   python3 tools/officials.py --stage fold --test-year 2024 --tag test --eval-years 2024,2025 \
           --tau-mults 0.5,1,2 --models indep,league,league_home,judges,judges_home
   python3 tools/officials.py --stage post    # deductions, referees, tables, officials.json from fold pickles
@@ -2509,15 +2512,28 @@ if __name__ == "__main__":
         F, S, D, rows, nat, info, notes, data_max = load_all()
         run_post(rows, nat, info, F, S, data_max, notes)
     elif args.stage == "all":
+        # 1) base-structure folds; 2) structural variants (league + home) on the tuning and held-out windows;
+        # 3) the same folds refit with the closeness option (warm-started from 1); 4) post stage on the closeness folds.
         import subprocess
-        procs = []
-        for tag, ty, ev, models in (("tune", 2019, "2019,2020,2021,2022,2023", "league,league_home,judges_home"),
-                                    ("test", 2024, "2024,2025", "indep,league,league_home,judges,judges_home"),
-                                    ("final", 2026, "2026", "league,judges_home")):
-            procs.append(subprocess.Popen([sys.executable, __file__, "--stage", "fold", "--test-year", str(ty),
-                                           "--tag", tag, "--eval-years", ev, "--tau-mults", "0.5,1,2",
-                                           "--models", models]))
-        for p_ in procs:
-            p_.wait()
-        F, S, D, rows, nat, info, notes, data_max = load_all()
-        run_post(rows, nat, info, F, S, data_max, notes)
+        import os
+
+        def run_batch(cmds, env=None):
+            ps = [subprocess.Popen([sys.executable, __file__] + c, env=env) for c in cmds]
+            for p_ in ps:
+                p_.wait()
+        FOLDS = (("tune", 2019, "2019,2020,2021,2022,2023", "league,league_home,judges_home", "0.5,1,2"),
+                 ("tune22", 2022, "2022,2023", "league,league_home,judges_home", "0.5,1,2"),
+                 ("test", 2024, "2024,2025", "indep,league,league_home,judges,judges_home", "0.5,1,2"),
+                 ("test25", 2025, "2025", "league,league_home,judges_home", "0.5,1,2"),
+                 ("final", 2026, "2026", "league,judges_home", "0.5,1,2"))
+        run_batch([["--stage", "fold", "--test-year", str(ty), "--tag", tag, "--eval-years", ev, "--models", mo,
+                    "--tau-mults", tm] for tag, ty, ev, mo, tm in FOLDS])
+        variants = "league_home,lh_probit,lh_close,lh_fight,lh_close_fight,lh_probit_close"
+        run_batch([["--stage", "structure", "--test-year", "2022", "--tag", "s22", "--eval-years", "2022,2023",
+                    "--models", variants, "--init-tag", "tune22"],
+                   ["--stage", "structure", "--test-year", "2024", "--tag", "s24", "--eval-years", "2024,2025",
+                    "--models", variants, "--init-tag", "test"]])
+        run_batch([["--stage", "fold", "--struct", "closeness", "--test-year", str(ty), "--tag", tag + "_c",
+                    "--eval-years", ev, "--models", mo.replace("indep,", ""), "--tau-mults", tm, "--init-tag", tag]
+                   for tag, ty, ev, mo, tm in FOLDS])
+        run_batch([["--stage", "post"]], env=dict(os.environ, OFFICIALS_SUFFIX="_c"))

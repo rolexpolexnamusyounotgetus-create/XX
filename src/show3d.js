@@ -1,11 +1,148 @@
 /* The show: turns an animation script into a live 3D fight with footwork, strikes, takedowns,
-   knockdowns, a referee, broadcast cameras and instant replays. */
+   knockdowns, a referee, broadcast cameras and instant replays.
+
+   STANCE PROFILES. Every fighter stands, moves and guards his own way. FightShow.stanceProfile(info)
+   builds a profile from script.fighters[side] (slug, stance, height_in, reach_in, division,
+   scouting {archetype, tags}, appearance.likeness): data-derived defaults from the archetype, tags,
+   stance, ape index and division, then any explicit "stance" block in data/likeness/<slug>.json on top.
+   Schema of that block (every field optional; numbers are unitless 0..1 unless noted):
+
+     "stance": {
+       "schema": "stance/1",
+       "base": "orthodox" | "southpaw" | "switch",   // the stance he starts in (switch: starts orthodox)
+       "width": 1.0,          // lateral foot spacing, multiple of a neutral stance (0.7 narrow .. 1.4 wide)
+       "depth": 1.0,          // front-to-back foot spacing, multiple of neutral (0.7 .. 1.4)
+       "crouch": 0.3,         // 0 tall and upright .. 1 deep, knees bent, hips low
+       "lean": 0.2,           // torso lean: -0.5 leaning back .. 1 far forward over the lead knee
+       "lead_foot_deg": 10,   // lead toes turned in toward the centre line, degrees (negative = turned out)
+       "rear_foot_deg": 45,   // rear foot turned out, degrees (90 = fully side-on)
+       "weight_front": 0.5,   // share of weight on the lead leg (0.35 back-weighted kicker .. 0.65 pressure)
+       "bladed": 0.6,         // hips and shoulders: 0 square to the opponent .. 1 fully side-on
+       "guard": {
+         "style": "standard",   // label only: standard | high | long | low | shell | peekaboo | hand-fighting
+         "height": 0.6,         // gloves: 0 chest .. 0.5 chin .. 1 brow
+         "lead_reach": 0.35,    // lead hand: 0 by the face .. 1 extended, pawing or measuring
+         "lead_height": 0.6,    // lead glove height relative to the guard height (0 low .. 1 high)
+         "lead_width": 0.0,     // lead glove: -1 across the centre line .. 1 out wide
+         "rear_height": 0.6,    // rear glove: 0 chest .. 1 brow (0.5 = chin)
+         "rear_tuck": 0.8,      // rear glove: 0 held out front .. 1 pinned to the cheek
+         "elbow_flare": 0.2,    // 0 elbows on the ribs .. 1 winged out
+         "shoulder_roll": 0.6   // shoulders rolled forward around the chin (0 open .. 1 hunched shell)
+       },
+       "head": { "offset": 0.0,  // head off the centre line: -1 rear side .. 1 lead side
+                 "movement": 0.4, // head and upper-body movement amplitude (0 still .. 1 constant slips)
+                 "chin_tuck": 0.6 },
+       "bounce": { "amp": 0.5,   // 0 flat-footed and planted .. 1 springy on the toes
+                   "rate": 1.0 },// rhythm multiplier (1 = about 1.5 bounces per second)
+       "switch_per_min": 0,   // stance switches per minute of standing time
+       "feints": 0.25,        // hand and shoulder feints, level-change feints (0 never .. 1 constant)
+       "hand_fighting": 0.2,  // lead hand pawing, touching and parrying the opponent's lead
+       "posture": "closed",   // closed (chin behind the shoulder) | open (square, hands lower)
+       "footwork": ["pressure"], // any of: pressure, circling, in-and-out, lateral, flat-footed, stance-switch, cage-cutting
+       "source": "...", "confidence": "low|medium|high", "notes": "..."
+     }
+
+   The profile drives Actor.homeFor (footprint), Actor.poseFor("stand") (guard, crouch, bounce, head
+   movement, feints) and Show.updatePair (who presses, circling, range). Avatars read actor.prof for the
+   shoulder roll and chin tuck. */
 (function (root) {
   "use strict";
   var T = root.THREE, FR = root.FightRig, FA = root.FightArena;
   if (!T || !FR || !FA) return;
   var V3 = T.Vector3, clamp = FR.clamp;
   var TAU = Math.PI * 2;
+  var DEG = Math.PI / 180;
+
+  /* ------------------------------------------------------------ stance profiles */
+  function num(v, d) { return typeof v === "number" && isFinite(v) ? v : d; }
+  function neutralProfile() {
+    return { base: 1, width: 1, depth: 1, crouch: 0.3, lean: 0.2, leadToe: 10 * DEG, rearToe: 45 * DEG, weightFront: 0.5, bladed: 0.6,
+      guard: { style: "standard", height: 0.6, leadReach: 0.35, leadHeight: 0.6, leadWidth: 0, rearHeight: 0.6, rearTuck: 0.8, elbowFlare: 0.2, shoulderRoll: 0.6 },
+      head: { offset: 0, move: 0.4, chinTuck: 0.6 }, bounce: { amp: 0.5, rate: 1 }, switchRate: 0, feints: 0.25, handFight: 0.2, open: 0,
+      foot: { pressure: 0.4, circling: 0.3, inout: 0.3, lateral: 0.2 }, src: "neutral" };
+  }
+  /* info: script.fighters[side] (or an appearance object with slug/stance/division/likeness/style). */
+  function stanceProfile(info) {
+    info = info || {};
+    var P = neutralProfile(), G = P.guard, Hd = P.head, F = P.foot, Bo = P.bounce;
+    var app = info.appearance || info, sc = info.scouting || info.style || app.style || {};
+    var arch = String(sc.archetype || "").toLowerCase(), tags = {}, i;
+    (sc.tags || []).forEach(function (t) { tags[String(t).toLowerCase()] = 1; });
+    var stanceTxt = String(info.stance || app.stance || sc.stance || "orthodox").toLowerCase();
+    P.base = /south/.test(stanceTxt) ? -1 : 1;
+    if (/switch/.test(stanceTxt)) P.switchRate = 0.8;
+    function add(o, k, v) { o[k] += v; }
+    // archetype
+    if (/wrestl|chain|sambo/.test(arch)) { add(P, "crouch", 0.22); add(P, "width", 0.1); add(P, "lean", 0.2); add(P, "bladed", -0.18); add(P, "weightFront", 0.05);
+      add(G, "height", -0.12); add(G, "leadReach", 0.15); add(G, "elbowFlare", 0.05); add(Bo, "amp", -0.15); add(P, "handFight", 0.35); add(F, "pressure", 0.2); G.style = "hand-fighting"; }
+    if (/wrestle-boxer/.test(arch)) { add(P, "crouch", -0.08); add(G, "height", 0.08); add(P, "handFight", -0.15); G.style = "standard"; }
+    if (/kickbox|muay/.test(arch)) { add(P, "weightFront", -0.1); add(P, "crouch", -0.1); add(P, "bladed", -0.1); add(G, "height", 0.15); add(G, "leadReach", 0.1); G.style = "high";
+      if (/muay/.test(arch)) { add(Bo, "amp", -0.15); add(Bo, "rate", -0.3); add(P, "bladed", -0.15); } }
+    if (/karate|point/.test(arch)) { add(P, "bladed", 0.25); add(P, "width", -0.1); add(P, "depth", 0.2); add(Bo, "amp", 0.35); add(G, "height", -0.2); add(G, "leadReach", 0.15);
+      add(F, "inout", 0.4); add(P, "weightFront", -0.08); G.style = "low"; }
+    if (/boxer/.test(arch) && !/wrestle/.test(arch)) { add(P, "crouch", 0.08); add(G, "height", 0.05); add(Hd, "move", 0.2); add(G, "shoulderRoll", 0.1); }
+    if (/pressure/.test(arch)) { add(P, "weightFront", 0.08); add(P, "lean", 0.15); add(F, "pressure", 0.4); add(Bo, "amp", -0.1); add(G, "height", 0.05); }
+    if (/counter/.test(arch)) { add(P, "weightFront", -0.08); add(F, "circling", 0.3); add(F, "inout", 0.2); add(G, "height", -0.1); add(G, "leadReach", 0.15); add(Hd, "move", 0.15); add(F, "pressure", -0.25); }
+    if (/volume/.test(arch)) { add(P, "feints", 0.2); add(Bo, "amp", 0.15); add(F, "lateral", 0.2); add(F, "pressure", 0.15); }
+    if (/power/.test(arch)) { add(P, "crouch", 0.1); add(P, "weightFront", 0.04); add(Bo, "amp", -0.15); }
+    if (/grappler|bjj/.test(arch)) { add(P, "crouch", 0.1); add(G, "height", -0.1); add(G, "leadReach", 0.1); add(Bo, "amp", -0.1); }
+    // tags
+    if (tags["switch-stance"]) P.switchRate = Math.max(P.switchRate, 1.2);
+    if (tags.southpaw && P.base > 0 && !/orth/.test(stanceTxt)) P.base = -1;
+    if (tags.feints) add(P, "feints", 0.25);
+    if (tags["head-movement"]) add(Hd, "move", 0.25);
+    if (tags.footwork) { add(Bo, "amp", 0.15); add(F, "circling", 0.15); add(F, "lateral", 0.15); }
+    if (tags.pressure) { add(F, "pressure", 0.25); add(P, "weightFront", 0.04); }
+    if (tags.counter) { add(F, "circling", 0.15); add(F, "pressure", -0.1); }
+    if (tags.rangy || tags["range-control"]) { add(G, "leadReach", 0.15); add(P, "depth", 0.08); add(F, "inout", 0.2); }
+    if (tags["short-range"]) { add(P, "crouch", 0.1); add(P, "depth", -0.1); }
+    if (tags["head-kicks"] || tags["leg-kicks"]) add(P, "weightFront", -0.03);
+    if (tags["chain-wrestling"] || tags["double-leg"] || tags["single-leg"]) add(P, "crouch", 0.06);
+    // body: long arms reach out more; heavyweights bounce less and slower; flyweights more
+    var ape = num(+info.reach_in, 0) - num(+info.height_in, 0);
+    if (info.reach_in && info.height_in && ape > 2) add(G, "leadReach", Math.min(0.15, (ape - 2) * 0.04));
+    var div = String(info.division || app.division || "");
+    if (/heavy/i.test(div) && !/light/i.test(div)) { add(Bo, "amp", -0.2); add(Bo, "rate", -0.15); add(P, "crouch", -0.05); }
+    if (/fly|straw/i.test(div)) { add(Bo, "amp", 0.1); add(Bo, "rate", 0.1); }
+    P.src = "derived: " + (arch || "no archetype") + (Object.keys(tags).length ? " + tags" : "");
+    // explicit block from the likeness sheet wins
+    var lk = app.likeness && typeof app.likeness === "object" ? app.likeness : null, S = (lk && lk.stance) || info.stanceProfile || null;
+    if (S && typeof S === "object") {
+      var b = String(S.base || "").toLowerCase();
+      if (/south/.test(b)) P.base = -1; else if (/orth/.test(b)) P.base = 1; else if (/switch/.test(b)) { P.base = 1; P.switchRate = Math.max(P.switchRate, 1); }
+      P.width = num(S.width, P.width); P.depth = num(S.depth, P.depth); P.crouch = num(S.crouch, P.crouch); P.lean = num(S.lean, P.lean);
+      if (S.lead_foot_deg != null) P.leadToe = num(S.lead_foot_deg, 10) * DEG;
+      if (S.rear_foot_deg != null) P.rearToe = num(S.rear_foot_deg, 45) * DEG;
+      P.weightFront = num(S.weight_front, P.weightFront); P.bladed = num(S.bladed, P.bladed);
+      var g = S.guard || {};
+      G.style = g.style || G.style; G.height = num(g.height, G.height); G.leadReach = num(g.lead_reach, G.leadReach); G.leadHeight = num(g.lead_height, G.leadHeight);
+      G.leadWidth = num(g.lead_width, G.leadWidth); G.rearHeight = num(g.rear_height, G.rearHeight); G.rearTuck = num(g.rear_tuck, G.rearTuck);
+      G.elbowFlare = num(g.elbow_flare, G.elbowFlare); G.shoulderRoll = num(g.shoulder_roll, G.shoulderRoll);
+      var h = S.head || {}; Hd.offset = num(h.offset, Hd.offset); Hd.move = num(h.movement, Hd.move); Hd.chinTuck = num(h.chin_tuck, Hd.chinTuck);
+      var bo = S.bounce || {}; Bo.amp = num(bo.amp, Bo.amp); Bo.rate = num(bo.rate, Bo.rate);
+      P.switchRate = num(S.switch_per_min, P.switchRate); P.feints = num(S.feints, P.feints); P.handFight = num(S.hand_fighting, P.handFight);
+      if (S.posture) P.open = /open/i.test(S.posture) ? 1 : 0;
+      if (Array.isArray(S.footwork)) {
+        var fw = S.footwork.join(" ").toLowerCase();
+        F.pressure = /pressure|cage-cutting|forward/.test(fw) ? 0.85 : (/circl|counter|back/.test(fw) ? 0.15 : F.pressure);
+        F.circling = /circl|lateral|angle/.test(fw) ? 0.75 : F.circling * 0.6;
+        F.inout = /in-and-out|in and out|blitz/.test(fw) ? 0.8 : F.inout * 0.7;
+        F.lateral = /lateral|circl/.test(fw) ? 0.6 : F.lateral;
+        if (/flat/.test(fw)) Bo.amp = Math.min(Bo.amp, 0.2);
+        if (/stance-switch|switch/.test(fw)) P.switchRate = Math.max(P.switchRate, 1.2);
+      }
+      P.src = "likeness sheet" + (S.confidence ? " (" + S.confidence + ")" : "");
+    }
+    // clamp
+    P.width = clamp(P.width, 0.7, 1.45); P.depth = clamp(P.depth, 0.7, 1.45); P.crouch = clamp(P.crouch, 0, 1); P.lean = clamp(P.lean, -0.5, 1);
+    P.weightFront = clamp(P.weightFront, 0.3, 0.7); P.bladed = clamp(P.bladed, 0, 1);
+    ["height", "leadReach", "leadHeight", "rearHeight", "rearTuck", "elbowFlare", "shoulderRoll"].forEach(function (k) { G[k] = clamp(G[k], 0, 1); });
+    G.leadWidth = clamp(G.leadWidth, -1, 1); Hd.offset = clamp(Hd.offset, -1, 1); Hd.move = clamp(Hd.move, 0, 1); Hd.chinTuck = clamp(Hd.chinTuck, 0, 1);
+    Bo.amp = clamp(Bo.amp, 0, 1); Bo.rate = clamp(Bo.rate, 0.5, 1.6); P.switchRate = clamp(P.switchRate, 0, 6);
+    P.feints = clamp(P.feints, 0, 1); P.handFight = clamp(P.handFight, 0, 1);
+    for (i in F) F[i] = clamp(F[i], 0, 1);
+    return P;
+  }
 
   function lerp(a, b, t) { return a + (b - a) * t; }
   function smooth(t) { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }

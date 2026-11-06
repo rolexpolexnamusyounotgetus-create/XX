@@ -905,6 +905,59 @@
     });
   };
 
+  // photo surfaces: ambientCG chain-link (opacity; the wire normal is derived from it), Fabric036 weave and slubs
+  // under the printed canvas, Poly Haven leather grain on the pads. Each one replaces its procedural stand-in.
+  Arena.prototype.loadSurfaces = function () {
+    var A = this, warn = function (e) { if (root.console) console.warn("[arena]", e && e.message); };
+    if (assetUrl("arena-fence-opacity.webp")) loadImage("arena-fence-opacity.webp").then(function (img) {
+      var N = 512, d = pixels(img, N).data, a = new Float32Array(N * N), h = new Float32Array(N * N), t = new Float32Array(N * N), x, y, i;
+      for (i = 0; i < N * N; i++) a[i] = d[i * 4] / 255;
+      // the photo wire is a touch thin for a vinyl-coated cage mesh: grow it by a fraction of a texel
+      for (y = 0; y < N; y++) for (x = 0; x < N; x++) {
+        i = y * N + x;
+        var m = Math.max(a[y * N + (x + 1) % N], a[y * N + (x - 1 + N) % N], a[((y + 1) % N) * N + x], a[((y - 1 + N) % N) * N + x]);
+        t[i] = Math.max(a[i], m * 0.55);
+      }
+      // a soft height field from the coverage, then its gradient as the round-wire normal
+      for (y = 0; y < N; y++) for (x = 0; x < N; x++) { i = y * N + x; h[i] = (t[i] * 4 + t[y * N + (x + 1) % N] + t[y * N + (x - 1 + N) % N] + t[((y + 1) % N) * N + x] + t[((y - 1 + N) % N) * N + x]) / 8; }
+      var alpha = new Uint8Array(N * N * 4), normal = new Uint8Array(N * N * 4), sc = 2.6;
+      for (y = 0; y < N; y++) for (x = 0; x < N; x++) {
+        i = y * N + x; var o = i * 4, av = Math.round(t[i] * 255);
+        alpha[o] = alpha[o + 1] = alpha[o + 2] = av; alpha[o + 3] = 255;
+        var dx = h[y * N + (x + 1) % N] - h[y * N + (x - 1 + N) % N], dy = h[((y + 1) % N) * N + x] - h[((y - 1 + N) % N) * N + x];
+        var nx = -dx * sc, ny = -dy * sc, l = Math.sqrt(nx * nx + ny * ny + 1);
+        normal[o] = (nx / l * 0.5 + 0.5) * 255; normal[o + 1] = (ny / l * 0.5 + 0.5) * 255; normal[o + 2] = (1 / l * 0.5 + 0.5) * 255; normal[o + 3] = 255;
+      }
+      var at = dataTex(alpha, N, N, A.aniso), nt = dataTex(normal, N, N, A.aniso), tile = 0.85;
+      at.repeat.set(A.fenceDims[0] / tile, A.fenceDims[1] / tile); nt.repeat.copy(at.repeat);
+      var fm = A.fenceMat, oa = fm.alphaMap, on = fm.normalMap;
+      fm.alphaMap = at; fm.normalMap = nt; fm.normalScale.set(1.0, 1.0); A.fenceU.uAlphaN.value = N; fm.needsUpdate = true;
+      if (oa) oa.dispose(); if (on) on.dispose();
+      A.surfaces = (A.surfaces || 0) | 1;
+    }).catch(warn);
+    if (assetUrl("arena-mat-weave-normal.jpg")) loadImage("arena-mat-weave-normal.jpg").then(function (img) {
+      var t = imageTex(img, false, A.aniso, true), m = A.floor.material, old = m.normalMap;
+      m.normalMap = t; m.normalScale.set(0.42, 0.42); A.matU.uDetail.value = 2 * RV / 0.035; m.needsUpdate = true;
+      if (old) old.dispose();
+      A.surfaces = (A.surfaces || 0) | 2;
+    }).catch(warn);
+    if (assetUrl("arena-mat-slub.webp")) loadImage("arena-mat-slub.webp").then(function (img) {
+      A.matU.uSlub.value = imageTex(img, false, A.aniso, true); A.matU.uSlubAmt.value = 0.16;
+      A.surfaces = (A.surfaces || 0) | 4;
+    }).catch(warn);
+    if (assetUrl("arena-leather-normal.jpg")) Promise.all([loadImage("arena-leather-normal.jpg"), assetUrl("arena-leather-rough.jpg") ? loadImage("arena-leather-rough.jpg") : null]).then(function (im) {
+      var nBase = imageTex(im[0], false, A.aniso, true), rBase = im[1] ? imageTex(im[1], false, A.aniso, true) : null;
+      A.leather.forEach(function (L, k) {
+        var n = k ? nBase.clone() : nBase, r = rBase ? (k ? rBase.clone() : rBase) : null;
+        n.repeat.set(L.rep[0], L.rep[1]); n.needsUpdate = true;
+        L.m.normalMap = n; L.m.normalScale = new T.Vector2(0.55, 0.55);
+        if (r) { r.repeat.copy(n.repeat); r.needsUpdate = true; L.m.roughnessMap = r; L.m.roughness = Math.min(1, L.m.roughness * 1.35); }
+        L.m.needsUpdate = true;
+      });
+      A.surfaces = (A.surfaces || 0) | 8;
+    }).catch(warn);
+  };
+
   /* ---- lights ---- */
   function buildLights(A) {
     var Q = A.Q;
@@ -934,6 +987,9 @@
       sp.position.set(Math.cos(va) * 9.5, 4.6, Math.sin(va) * 9.5); sp.target.position.set(-Math.cos(va) * 0.6, 1.2, -Math.sin(va) * 0.6);
       A.own(sp); A.own(sp.target); A.rims.push(sp);
     });
+    // press photographers' flashes at the cage-side tables: one light that jumps between them (count stays fixed)
+    var fl = A.flashLight = new T.PointLight(0xeef3ff, 0, 16, 2);
+    fl.position.set(0, FLOOR_Y + 1.6, 7.2); A.own(fl);
   }
 
   /* ---- the canvas ---- */
@@ -944,19 +1000,24 @@
     var tex = A.matTex = canvasTex(c, true, A.aniso);
     tex.repeat.set(1 / (2 * RV), 1 / (2 * RV)); tex.offset.set(0.5, 0.5);
     var weave = weaveNormal(256, 16, A.aniso);
+    var grey = new T.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1, T.RGBAFormat); grey.needsUpdate = true;
+    A.matU = { uDetail: { value: 2 * RV / 0.1 }, uSlub: { value: grey }, uSlubRep: { value: 2 * RV / 0.45 }, uSlubAmt: { value: 0 } };
     var wc = makeCanvas(512, 512), wctx = wc.getContext("2d");
     wctx.fillStyle = "#000"; wctx.fillRect(0, 0, 512, 512);
     A.wear = { c: wc, ctx: wctx, tex: canvasTex(wc, false, 1), dirty: false, upT: 0, stampT: 0, decayT: 0 };
     var mat = new T.MeshStandardMaterial({ map: tex, normalMap: weave, normalScale: new T.Vector2(0.32, 0.32), roughness: 0.8, metalness: 0, envMapIntensity: 0.22 });
     mat.onBeforeCompile = function (sh) {
       sh.uniforms.uWear = { value: A.wear.tex };
-      sh.uniforms.uDetail = { value: 2 * RV / 0.1 };
+      sh.uniforms.uDetail = A.matU.uDetail; sh.uniforms.uSlub = A.matU.uSlub; sh.uniforms.uSlubRep = A.matU.uSlubRep; sh.uniforms.uSlubAmt = A.matU.uSlubAmt;
       sh.uniforms.uContact = { value: A.contacts };
       sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWPos;")
         .replace("#include <fog_vertex>", "#include <fog_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;");
-      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform sampler2D uWear; uniform float uDetail; uniform vec4 uContact[16]; varying vec3 vWPos;")
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform sampler2D uWear; uniform sampler2D uSlub; uniform float uDetail, uSlubRep, uSlubAmt; uniform vec4 uContact[16]; varying vec3 vWPos;")
         .replace("#include <map_fragment>", [
           "#include <map_fragment>",
+          // printed fabric under the print: slubs and thread lines at two scales so the tile never repeats visibly
+          "float slub = texture2D(uSlub, vUv * uSlubRep).r * 0.62 + texture2D(uSlub, vUv * uSlubRep * 0.37 + vec2(0.31, 0.17)).r * 0.38;",
+          "diffuseColor.rgb *= 1.0 + (slub - 0.5) * uSlubAmt;",
           "vec4 wear = texture2D(uWear, vUv);",
           "diffuseColor.rgb *= 1.0 - 0.34 * sqrt(clamp(wear.r, 0.0, 1.0));",
           "diffuseColor.rgb *= 1.0 - 0.2 * sqrt(clamp(wear.g, 0.0, 1.0));",
@@ -965,7 +1026,7 @@
           "for (int ci = 0; ci < 16; ci++) { vec4 cc = uContact[ci]; if (cc.w > 0.0) { float dd = length(vWPos.xz - cc.xy) / cc.z; float f = clamp(1.0 - dd, 0.0, 1.0); occl *= 1.0 - cc.w * f * f * (3.0 - 2.0 * f); } }",
           "diffuseColor.rgb *= occl;"
         ].join("\n"))
-        .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness;\nroughnessFactor = mix(roughnessFactor, 0.28, sqrt(clamp(wear.g, 0.0, 1.0)) * 0.9);\nroughnessFactor = mix(roughnessFactor, 0.45, clamp(wear.b, 0.0, 1.0));")
+        .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness * (1.0 + (slub - 0.5) * uSlubAmt * 1.6);\nroughnessFactor = mix(roughnessFactor, 0.28, sqrt(clamp(wear.g, 0.0, 1.0)) * 0.9);\nroughnessFactor = mix(roughnessFactor, 0.45, clamp(wear.b, 0.0, 1.0));")
         .replace("#include <normal_fragment_maps>", T.ShaderChunk.normal_fragment_maps.replace("texture2D( normalMap, vUv )", "texture2D( normalMap, vUv * uDetail )"));
       A.matShader = sh;
     };
@@ -996,13 +1057,15 @@
   function buildFence(A) {
     var g = A.fence = new T.Group(); A.own(g);
     var cl = chainLink(256, 4, A.aniso), meshH = MESH_TOP - MESH_BOT, cell = 0.05, tile = cell * 4;
+    A.fenceU = { uAlphaN: { value: 256 } }; A.fenceDims = [SIDE, meshH];
     cl.normal.repeat.set(SIDE / tile, meshH / tile); cl.alpha.repeat.copy(cl.normal.repeat);
     var fenceMat = new T.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.46, metalness: 0.05, alphaMap: cl.alpha, normalMap: cl.normal, normalScale: new T.Vector2(1.2, 1.2), transparent: true, depthWrite: false, side: T.DoubleSide, envMapIntensity: 0.6 });
     fenceMat.onBeforeCompile = function (sh) {
-      sh.fragmentShader = sh.fragmentShader.replace("#include <alphamap_fragment>", [
+      sh.uniforms.uAlphaN = A.fenceU.uAlphaN;
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform float uAlphaN;").replace("#include <alphamap_fragment>", [
         "#ifdef USE_ALPHAMAP",
         "  float aRaw = texture2D( alphaMap, vUv ).g;",
-        "  vec2 tcx = dFdx(vUv * 256.0), tcy = dFdy(vUv * 256.0);",
+        "  vec2 tcx = dFdx(vUv * uAlphaN), tcy = dFdy(vUv * uAlphaN);",
         "  float lod = 0.5 * log2(max(max(dot(tcx, tcx), dot(tcy, tcy)), 1e-6));",
         "  float aSharp = clamp((aRaw - 0.5) / max(fwidth(aRaw), 1e-3) + 0.5, 0.0, 1.0);",
         "  diffuseColor.a *= mix(aSharp, min(1.0, aRaw * 1.6), smoothstep(0.2, 1.6, lod));",
@@ -1033,17 +1096,21 @@
     var postGeo = new T.LatheGeometry(prof, 20);
     var capProf = [[0.0, 1.66], [0.15, 1.66], [0.158, 1.7], [0.16, 1.76], [0.152, 1.82], [0.128, 1.87], [0.085, 1.9], [0.0, 1.91]].map(function (p) { return new T.Vector2(Math.max(1e-3, p[0]), p[1]); });
     var capGeo = new T.LatheGeometry(capProf, 20);
-    var posts = { black: [], blue: [], red: [] }, caps = { black: padItems, blue: [], red: [] };
+    var posts = { black: [], blue: [], red: [] }, caps = { black: [], blue: [], red: [] };
     for (k = 0; k < 8; k++) {
       var va = vertexAngle(k), kind = k === BLUE_K ? "blue" : (k === RED_K ? "red" : "black"), px = Math.cos(va) * RV, pz = Math.sin(va) * RV;
       posts[kind].push(place(postGeo, px, 0, pz, PI / 2 - va));
       caps[kind].push(place(capGeo, px, 0, pz, 0));
     }
     var texs = { black: postTexture("#101114", null), blue: postTexture("#123a8a", "#e9eef5"), red: postTexture("#8e1a22", "#111111") };
-    var capMats = { blue: vinyl(0x163f93, 0.4), red: vinyl(0x951c24, 0.4) };
+    var capMats = { black: padMat.clone(), blue: vinyl(0x163f93, 0.4), red: vinyl(0x951c24, 0.4) };
+    // leather-grain targets for loadSurfaces(): material and how often the grain tiles over its UVs
+    A.leather = [{ m: padMat, rep: [2, 14] }];
     ["black", "blue", "red"].forEach(function (kd) {
-      g.add(new T.Mesh(mergeGeos(posts[kd]), new T.MeshStandardMaterial({ map: texs[kd], roughness: 0.46, metalness: 0, envMapIntensity: 0.45 })));
-      if (kd !== "black") g.add(new T.Mesh(mergeGeos(caps[kd]), capMats[kd]));
+      var pm = new T.MeshStandardMaterial({ map: texs[kd], roughness: 0.46, metalness: 0, envMapIntensity: 0.45 });
+      g.add(new T.Mesh(mergeGeos(posts[kd]), pm));
+      g.add(new T.Mesh(mergeGeos(caps[kd]), capMats[kd]));
+      A.leather.push({ m: pm, rep: [3, 7] }, { m: capMats[kd], rep: [4, 1] });
     });
     var pads = new T.Mesh(mergeGeos(padItems), padMat); pads.receiveShadow = true; g.add(pads);
     g.add(new T.Mesh(mergeGeos(metalItems), metal));

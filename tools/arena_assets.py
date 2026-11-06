@@ -15,8 +15,8 @@ What it writes and why (sizes are what the page pays, before base64):
 - arena-mat-weave-normal.jpg: ambientCG Fabric036 normal, a 128 px crop at full resolution (the weave period is
   8 px, so a 128 crop tiles), high-passed so the crop seams vanish.
 - arena-mat-slub.webp: ambientCG Fabric036 colour, grey, 256 px, normalised: slubs and print grain under the print.
-- arena-leather-normal.jpg / arena-leather-rough.jpg: Poly Haven leather_white normal (512) and roughness (256)
-  for the post, rail and cap pads.
+- arena-leather-normal.jpg: Poly Haven leather_white normal (512 px, grain amplified x5 so JPEG keeps it) for the
+  post, rail and cap pads. Its roughness map is flat (0.60-0.63) and is left out.
 - audio-*.mp3: the arena audio pack re-encoded for the page (mono; crowd 48-56 kbps, one-shots 64 kbps).
 """
 import os
@@ -105,9 +105,13 @@ def slub(src, dst):
     Image.fromarray(g.astype(np.uint8)).save(dst, quality=72, method=6)
 
 
-def leather(src_n, src_r, dst_n, dst_r):
-    Image.open(src_n).convert("RGB").resize((512, 512), Image.LANCZOS).save(dst_n, quality=88, subsampling=0)
-    Image.open(src_r).convert("L").resize((256, 256), Image.LANCZOS).save(dst_r, quality=85)
+def leather(src_n, dst_n):
+    # the grain is shallow (xy std ~0.012 at 512 px): store it amplified x5 so JPEG keeps it; arena3d.js scales it back
+    n = np.asarray(Image.open(src_n).convert("RGB").resize((512, 512), Image.LANCZOS)).astype(np.float64) / 255 * 2 - 1
+    xy = (n[..., :2] - n[..., :2].mean(axis=(0, 1))) * 5.0
+    z = np.sqrt(np.clip(1 - (xy ** 2).sum(-1), 0.05, 1))
+    out = np.dstack([xy[..., 0], xy[..., 1], z])
+    Image.fromarray(np.clip((out * 0.5 + 0.5) * 255 + 0.5, 0, 255).astype(np.uint8)).save(dst_n, quality=88, subsampling=0)
 
 
 # name in the pack -> (source file, kbps). All mono.
@@ -167,8 +171,7 @@ def main():
     weave_normal(os.path.join(fab, "Fabric036_1K-JPG_NormalGL.jpg"), os.path.join(OUT, "arena-mat-weave-normal.jpg"))
     slub(os.path.join(fab, "Fabric036_1K-JPG_Color.jpg"), os.path.join(OUT, "arena-mat-slub.webp"))
     lw = os.path.join(net, "textures", "leather", "leather_white")
-    leather(os.path.join(lw, "leather_white_nor_gl_1k.jpg"), os.path.join(lw, "leather_white_rough_1k.jpg"),
-            os.path.join(OUT, "arena-leather-normal.jpg"), os.path.join(OUT, "arena-leather-rough.jpg"))
+    leather(os.path.join(lw, "leather_white_nor_gl_1k.jpg"), os.path.join(OUT, "arena-leather-normal.jpg"))
     audio(os.path.join(wide, "audio"))
     total = 0
     for name in sorted(os.listdir(OUT)):

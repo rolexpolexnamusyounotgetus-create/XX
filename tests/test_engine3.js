@@ -7,6 +7,10 @@
 //   node tests/test_engine3.js [N] --fit      self-calibrate the global scales (Lightweight) and the per-division
 //                                             factors to the division base rates, print the values
 //   node tests/test_engine3.js [N] --fit --write   same, and rewrite the [selfcal] values in src/params3.js
+//   --priors <file>   league priors for the base-rate targets and the shrinkage (default fighters.json priors, all
+//                     years). Engine v4 self-calibration: --priors data/derived/priors_dev.json (fights before
+//                     2024-01-01 only, tools/build_db.py --priors-until 2024-01-01; hidden-data protocol). The judges'
+//                     noise and 10-8 rule are not touched here (tools/judgecal.js fits them to real judges' rounds).
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -20,6 +24,8 @@ const DB = E.loadDB(dbJson);
 
 const args = process.argv.slice(2);
 const N = +(args.find((a) => /^\d+$/.test(a)) || 20000);
+const PRIORS_FILE = args.indexOf("--priors") >= 0 ? args[args.indexOf("--priors") + 1] : null;
+const PRI = PRIORS_FILE ? JSON.parse(fs.readFileSync(path.isAbsolute(PRIORS_FILE) ? PRIORS_FILE : path.join(ROOT, PRIORS_FILE), "utf8")).priors : DB.priors;
 const FIT = args.includes("--fit"), WRITE = args.includes("--write"), QUICK = args.includes("--quick");
 const DATE = "2026-11-06";
 
@@ -34,14 +40,14 @@ const sum = (a) => a.reduce((x, y) => x + y, 0);
 
 // ---------------------------------------------------------------- synthetic league-average fighter
 function avgProfile(div, tag) {
-  const P = DB.priors[div], S = {};
+  const P = PRI[div], S = {};
   for (const k of E.KEYS) S[k] = (P[k] || 0) * 400;   // 400 fight-minutes of exactly league-average fighting
   return { name: `${tag || "Average"} ${div}`, division: div, S, age: 30, ko_losses: 0, pace: null, pace_w: null };
 }
 
 // ---------------------------------------------------------------- base-rate targets from the division priors (2018+)
 function targets(div, nR) {
-  const P = DB.priors[div];
+  const P = PRI[div];
   const fin = nR === 5 ? P.fin5 : P.fin3, dec = nR === 5 ? P.dec5 : P.dec3;
   const ko = sum(fin.KO), sub = sum(fin.SUB), d = fin.DEC + fin.DRAW, tot = ko + sub + d;  // renormalized without DQ/NC/other
   const lnd = P.d_lnd + P.c_lnd + P.g_lnd, att = P.d_att + P.c_att + P.g_att;
@@ -58,7 +64,7 @@ function targets(div, nR) {
 
 // ---------------------------------------------------------------- simulate a league-average pair
 function simAvg(div, nR, params, n, seed) {
-  const m = E.matchup(avgProfile(div, "A"), avgProfile(div, "B"), { division: div, rounds: nR, title: nR === 5, params });
+  const m = E.matchup(avgProfile(div, "A"), avgProfile(div, "B"), { division: div, rounds: nR, title: nR === 5, params, priors: PRI, ml: false });
   const s = E.summarize(m, n, seed);
   const a = s.avg.A, b = s.avg.B, p15 = (k) => (a.per15[k] + b.per15[k]) / 2;
   const out = {
@@ -158,8 +164,7 @@ function selfCalibrate(n) {
   const g = {
     strikeScale: P0.strikeScale, accScale: P0.accScale, groundScale: P0.groundScale, clinchScale: P0.clinchScale, kdScale: P0.kdScale,
     tdScale: P0.tdScale, tdOddsScale: P0.tdOddsScale, subAttScale: P0.subAttScale, subConvScale: P0.subConvScale,
-    kdInstant: P0.kdInstant, kdRefStop: P0.kdRefStop, gnpTko: P0.gnpTko, stko: P0.stko, kdClinch: P0.kdPos[1],
-    indSd: P0.judge.indSd, t108: P0.judge.t108
+    kdInstant: P0.kdInstant, kdRefStop: P0.kdRefStop, gnpTko: P0.gnpTko, stko: P0.stko, kdClinch: P0.kdPos[1]
   };
   const ref = "Lightweight", T = targets(ref, 3);
   // KO/TKO composition targets (baserates_tables.md, strike stoppages): ground 28%, clinch 12.5%; standing stoppages without a
@@ -169,9 +174,8 @@ function selfCalibrate(n) {
   const oddsR = (t, s2) => (t / (1 - t)) / (s2 / (1 - s2));
   const asParams = (gv, divv) => ({ strikeScale: gv.strikeScale, accScale: gv.accScale, groundScale: gv.groundScale, clinchScale: gv.clinchScale,
     kdScale: gv.kdScale, tdScale: gv.tdScale, tdOddsScale: gv.tdOddsScale, subAttScale: gv.subAttScale, subConvScale: gv.subConvScale,
-    kdInstant: gv.kdInstant, kdRefStop: gv.kdRefStop, gnpTko: gv.gnpTko, stko: gv.stko, kdPos: [1, gv.kdClinch],
-    judge: { indSd: gv.indSd, t108: gv.t108, t108b: gv.t108 + 3, t108kd2: Math.max(0.5, gv.t108 - 3) }, div: divv || {} });
-  console.log(`\n=== Self-calibration: global scales on ${ref} (3 rounds), ${n} fights per iteration ===`);
+    kdInstant: gv.kdInstant, kdRefStop: gv.kdRefStop, gnpTko: gv.gnpTko, stko: gv.stko, kdPos: [1, gv.kdClinch], div: divv || {} });
+  console.log(`\n=== Self-calibration: global scales on ${ref} (3 rounds), ${n} fights per iteration; priors ${PRIORS_FILE || "fighters.json (all years)"} ===`);
   for (let it = 0; it < 10; it++) {
     const S = simAvg(ref, 3, asParams(g), n, 1000 + it);
     console.log(`it ${it}: fin ${pct(S.fin)} (${pct(T.fin)}) KO ${pct(S.ko)} (${pct(T.ko)}) SUB ${pct(S.sub)} (${pct(T.sub)}) kdFin ${pct(S.kdFin)} (${pct(T.kdFin)}) ` +
@@ -192,11 +196,9 @@ function selfCalibrate(n) {
     g.gnpTko *= dmp(oddsR(TG.ground, Math.max(0.005, S.gShare)), 0.9);
     g.kdClinch *= dmp(oddsR(TG.clinch, Math.max(0.005, S.cShare)), 0.8);
     g.stko *= dmp(oddsR(TG.standNoKd, Math.max(0.003, S.stShare)), 0.8);
-    g.indSd *= dmp(T.dec.SD / Math.max(0.01, S.dec.SD), 0.6);
-    g.t108 *= dmp(S.r108 / 0.035, 0.35);
   }
   console.log("global:", JSON.stringify(g));
-  const divs = Object.keys(DB.priors).filter((d) => !["ALL", "Catch Weight", "Open Weight"].includes(d));
+  const divs = Object.keys(PRI).filter((d) => !["ALL", "Catch Weight", "Open Weight"].includes(d));
   const divF = {};
   console.log(`\n=== Self-calibration: per-division factors (3 rounds), ${n} fights per iteration ===`);
   for (const d of divs) {
@@ -223,7 +225,7 @@ function selfCalibrate(n) {
     fs.writeFileSync(PARAMS_SRC, src);
     writeParams({ strikeScale: g.strikeScale, accScale: g.accScale, groundScale: g.groundScale, clinchScale: g.clinchScale, kdScale: g.kdScale,
       tdScale: g.tdScale, tdOddsScale: g.tdOddsScale, subAttScale: g.subAttScale, subConvScale: g.subConvScale, kdInstant: g.kdInstant, kdRefStop: g.kdRefStop,
-      gnpTko: g.gnpTko, stko: g.stko, indSd: g.indSd, t108: g.t108, t108b: g.t108 + 3, t108kd2: Math.max(0.5, g.t108 - 3) }, divF);
+      gnpTko: g.gnpTko, stko: g.stko }, divF);
     console.log("\nwrote src/params3.js");
   }
 }

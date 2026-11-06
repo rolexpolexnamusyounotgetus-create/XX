@@ -678,23 +678,23 @@
   function statObj(st, i) { var o = {}; for (var k = 0; k < NS; k++) o[STK[k]] = st[i * NS + k]; o.ctrl = +o.ctrl.toFixed(1); o.dmg = +o.dmg.toFixed(2); return o; }
 
   // ------------------------------------------------------------------ judges (one round)
-  // Each judge j scores z_j = mu_j + individual noise, mu_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared
-  // (logits; A minus B differentials; individual sd = indSd x exp(-indClose x |mu_j|): judges split on rounds that look
-  // close to the whole panel), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
+  // Each judge j scores z_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared + individual noise (logits; A
+  // minus B differentials; the shared noise has a fight-level part sF, variance share sharedFight, drawn once per fight:
+  // the panel's view beyond the counts persists from round to round), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
   // striking = head * dHead + body * dBody + leg * dLeg landed; grappling = td * dTD + ctrlMin * dCtrl / 60 + sub * dSubAtt;
   // damage = kd * dKD + hurt * dHurt + judgePower * head * dPow (engine-only: hurts and power beyond the strike count).
   // The round goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd * min(2, winner's KD edge). The shared and individual
-  // sds, the tastes and the 10-8 thresholds are fit to the 2019-2023 judges' rounds (tools/judgecal.js). Draw order: one
-  // shared normal, then one normal per judge. Adds the scores to cards and returns the number of 10-8s; js (optional)
+  // sds, the fight-level share, the tastes and the 10-8 thresholds are fit to the 2019-2023 judges' rounds
+  // (tools/judgecal.js). Draw order: one shared normal, then one normal per judge. Adds the scores to cards and returns the number of 10-8s; js (optional)
   // receives [A, B] per judge.
-  function judgeRound(J, jp, dHL, dBL, dLL, dKd, dTd, dCtrl, dSub, dHu, dPow, tS, tG, tP, rng, cards, js) {
+  function judgeRound(J, jp, dHL, dBL, dLL, dKd, dTd, dCtrl, dSub, dHu, dPow, tS, tG, tP, sF, rng, cards, js) {
     var dStr = J.head * dHL + J.body * dBL + J.leg * dLL;
     var dGr = J.td * dTd + J.ctrlMin * dCtrl / 60 + J.sub * dSub;
     var dDm = J.kd * dKd + J.hurt * dHu + jp * J.head * dPow;
-    var shared = J.sharedSd * rng.normal(), n108 = 0, kc = J.t108kd || 0, gc = J.indClose || 0;
+    var rho = J.sharedFight || 0;
+    var shared = (sF || 0) + J.sharedSd * Math.sqrt(1 - rho) * rng.normal(), n108 = 0, kc = J.t108kd || 0;
     for (var j = 0; j < 3; j++) {
-      var mu = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared;
-      var z = mu + J.indSd * (gc > 0 ? Math.exp(-gc * (mu < 0 ? -mu : mu)) : 1) * rng.normal();
+      var z = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared + J.indSd * rng.normal();
       var aw = z > 0, mg = aw ? z : -z, kdE = aw ? dKd : -dKd;
       var big = mg > J.t108 - kc * (kdE <= 0 ? 0 : (kdE >= 2 ? 2 : kdE));
       var scA = aw ? 10 : (big ? 8 : 9), scB = aw ? (big ? 8 : 9) : 10;
@@ -725,6 +725,7 @@
     var subK = [fSubO[0] * fSubD[1], fSubO[1] * fSubD[0]], subKs = [Math.sqrt(subK[0]), Math.sqrt(subK[1])];
     var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1];
     for (j = 0; j < 3; j++) { tS[j] = lnorm(rng, J.tasteSd); tG[j] = lnorm(rng, J.tasteSd); tP[j] = lnorm(rng, J.tasteSd); }
+    var jF = J.sharedSd * Math.sqrt(J.sharedFight || 0) * rng.normal();   // judges' fight-level shared view (always drawn: fixed draw order)
     var kdB = [m.kd[0] * fPow[0] * fChin[1] * vol, m.kd[1] * fPow[1] * fChin[0] * vol];
     var dw = [m.dw[0] * Math.pow(fPow[0], K.powDmgExp), m.dw[1] * Math.pow(fPow[1], K.powDmgExp)];
     var pcF = [Math.sqrt(fPow[0] * fChin[1] * vol), Math.sqrt(fPow[1] * fChin[0] * vol)];
@@ -994,7 +995,7 @@
       var js = trace ? [] : null;
       n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
         st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
-        st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), tS, tG, tP, rng, cards, js);
+        st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), tS, tG, tP, jF, rng, cards, js);
       if (trace) rec.judges = js;
 
       // ---- between rounds: recovery, doctor and corner stoppages

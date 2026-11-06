@@ -223,6 +223,38 @@ def judge_labels(F, S, coef):
     return lab, sure, nk
 
 
+JR_ROWS = os.path.join(ROOT, "data", "derived", "judgerounds_rows.json")
+JR_OK = ("agree", "agree_partial_panel", "totals_agree_names_differ")
+
+
+def true_judge_labels(S):
+    """Published per-round judges' scores (tools/judgerounds.py, MMA Decisions-derived, development file: no
+    fight from 2026). Returns lab[(fid, idx, rnd)] = share of the three judges who gave round rnd to fighter idx
+    (10-10 rounds count half), for fights whose cards are complete, agree with ufcstats and cover every round.
+
+    Added by the Nov 6 verification: the inferred label of judge_labels() spreads each card's total over the
+    rounds with a round-winner model fit on the stats of ALL rounds of the fight, so the label of round r-1 is
+    partly a function of rounds r..R (the outcome being modeled and later rounds) and of the final result. It
+    agrees with the published scores on 92% of rounds, but the test-period output coefficient moved from +0.009
+    (published) to +0.034 (inferred) and the accuracy coefficient was attenuated by half."""
+    J = json.load(open(JR_ROWS))
+    R = pd.DataFrame(J["rounds"]["rows"], columns=J["rounds"]["cols"])
+    R = R[R.complete & R.ufc_check.isin(JR_OK) & (R.nJ == 3) & (R.date < VAULT_FROM)]
+    cover = R.groupby("fid").rnd.agg(["size", "max"])
+    keep = set(cover[cover["size"] == cover["max"]].index)
+    R = R[R.fid.isin(keep)]
+    fk = dict(zip(S.fid.map(bd.url_id), S.fid))
+    lab = {}
+    for r in R.itertuples(index=False):
+        f = fk.get(r.fid)
+        if f is None:
+            continue
+        pA = (r.nA + 0.5 * r.nE) / r.nJ
+        lab[(f, 0, int(r.rnd))] = pA
+        lab[(f, 1, int(r.rnd))] = 1 - pA
+    return lab
+
+
 def fit_round_logit(S, F, period):
     """Round-winner logistic on clean sweeps (all cards 30-27 / 50-45) from the given period only."""
     d = F[F.cat.isin(["U-DEC"]) & (F.end_round == F.sched) & (F.end_sec == 300) &
@@ -1067,25 +1099,36 @@ def part2(S):
 # part 3: judges' consensus labels
 # ================================================================================================
 def part3_judges(F, S, xbase, jack=0):
+    """lostJ = share of the three judges who gave the previous round to the opponent, from the PUBLISHED
+    per-round scores (true_judge_labels). The earlier inferred label (judge_labels) is kept as lostJinf on the
+    same fights for comparison only: it looks ahead (see true_judge_labels)."""
     coef, cse, nclean = fit_round_logit(S, F, TRAIN)
-    lab, sure, nk = judge_labels(F, S, coef)
+    lab_inf, sure, nk = judge_labels(F, S, coef)
+    lab = true_judge_labels(S)
     d = S.copy()
     key_prev = list(zip(d.fid, d.idx, d.rnd - 1))
     d["lostJ"] = [1 - lab[k] if k in lab else np.nan for k in key_prev]
-    labeled = set(f for f, _, _ in lab.keys())
+    d["lostJinf"] = [1 - lab_inf[k] if k in lab_inf else np.nan for k in key_prev]
+    labeled = set(f for f, _, _ in lab.keys()) & set(f for f, _, _ in lab_inf.keys())
     D = d[d.fid.isin(labeled)].copy()
-    D.loc[D.rnd == 1, "lostJ"] = 0.0
-    D = D[D.lostJ.notna()]
-    # agreement of the two labels on rounds 1..R-1 (previous-round labels)
+    D.loc[D.rnd == 1, ["lostJ", "lostJinf"]] = 0.0
+    D = D[D.lostJ.notna() & D.lostJinf.notna()]
+    # agreement of the labels on rounds 1..R-1 (previous-round labels)
     a = D[D.rnd >= 2]
     agree = float(((a.lostJ > 0.5) == (a.lost > 0.5)).mean())
-    res = {"round_logit_train": {"coef": coef, "se": cse, "n_clean_fights": nclean},
-           "n_decisions_labeled": nk, "n_fights_in_sample": int(D.fid.nunique()),
+    res = {"label_source": "published per-round judges' scores (data/derived/judgerounds_rows.json: complete cards that "
+                           "agree with ufcstats, all rounds covered); lostJinf = the earlier inferred label (looks ahead)",
+           "round_logit_train": {"coef": coef, "se": cse, "n_clean_fights": nclean},
+           "n_decisions_labeled_inferred": nk, "n_fights_in_sample": int(D.fid.nunique()),
+           "n_fights_by_period": D.groupby("period").fid.nunique().to_dict(),
            "share_fights_all_cards_sweep": float(np.mean([v for f, v in sure.items() if f in labeled])),
-           "agreement_lostJ_vs_lost_sig": agree, "models": {}}
+           "agreement_lostJ_vs_lost_sig": agree,
+           "agreement_lostJinf_vs_lostJ": float(((a.lostJinf > 0.5) == (a.lostJ > 0.5)).mean()),
+           "corr_lostJinf_vs_lostJ": float(np.corrcoef(a.lostJinf, a.lostJ)[0, 1]), "models": {}}
     xs = [x for x in xbase if x not in ("lost", "behind2_final", "partial")]
     for name in ("out", "acc"):
-        for lab_name, xc in (("judges", xs + ["lostJ"]), ("sig_diff", xs + ["lost"]), ("both", xs + ["lostJ", "lost"])):
+        for lab_name, xc in (("judges", xs + ["lostJ"]), ("sig_diff", xs + ["lost"]), ("both", xs + ["lostJ", "lost"]),
+                             ("judges_inferred_legacy", xs + ["lostJinf"])):
             dd = prep_outcome(D, name)
             tr = dd[dd.period == "train"]; te = dd[dd.period == "test"]
             m = DynRE(tr, "y", "v", xc).fit()
