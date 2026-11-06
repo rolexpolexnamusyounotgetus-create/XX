@@ -1045,10 +1045,7 @@
           "  float mB = vMask.x, mS = vMask2.x;\n" +
           "  if (uMaskOn > 0.5) {\n" +
           "    mB = vMask.x;\n" +
-          "    vec2 hu = (su - vec2(0.6, 0.03)) / vec2(0.3, 0.84);\n" +
-          "    float inH = step(0.0, hu.x) * step(hu.x, 1.0) * step(0.0, hu.y) * step(hu.y, 1.0);\n" +
-          "    vec2 hc = clamp(hu, 0.0, 1.0); mS = (dot(texture2D(uMaskH, hc), uScalpCh) + dot(texture2D(uMaskH2, hc), uScalpCh2)) * inH;\n" +
-          "    if (uFadeOn > 0.5) mS *= vMask2.x;\n" +
+          "    mS = vMask2.x * (0.88 + 0.24 * vn(su * 420.0));\n" +
           "  }\n" +
           // hair roots and the shade under a beard or hair cap: a cooler, darker undertone, no dots (the cap draws the hairs)
           "  float bd = smoothstep(0.04, 0.85, mB) * clamp(uBeard, 0.0, 1.0) * (0.8 + 0.4 * vn(su * 160.0)); gBeard = bd;\n" +
@@ -1116,8 +1113,12 @@
     for (var i = 0; i < n; i++) for (var k = 0; k < 4; k++) { a1[i * 4 + k] = masks.m1[mh[i] * 4 + k]; a2[i * 4 + k] = masks.m2[mh[i] * 4 + k]; }
     g.setAttribute("aMask", new T.BufferAttribute(a1, 4));
     var vb = this.vMaskBeard = new Float32Array(n); for (i = 0; i < n; i++) vb[i] = a1[i * 4];
-    g.setAttribute("aMask2", new T.BufferAttribute(a2, 4));
     g.setAttribute("aDecal", new T.BufferAttribute(this.decals(), 4));
+    // scalp shade: the hairline mask per vertex (seam-safe, fade folded in) replaces the geometric scalp mask in
+    // aMask2.x (the skin program is at the 16-attribute limit with skinning and the expression morphs)
+    var sc0 = this.scalpCoverage();
+    if (this.tex && this.tex.maskHair && this.tex.maskHair2) for (i = 0; i < n; i++) a2[i * 4] = sc0 ? sc0[i] * (this.looks.fade ? masks.m2[mh[i] * 4] : 1) : 0;
+    g.setAttribute("aMask2", new T.BufferAttribute(a2, 4));
     g.setIndex(new T.BufferAttribute(base.index.slice(), 1));
     this.exprDelta = this.expressionDeltas();
     var self2 = this;
@@ -1717,6 +1718,32 @@
     for (i = 0; i < n; i++) { var l = Math.hypot(acc[i * 2], acc[i * 2 + 1]); if (l > 1e-9) { acc[i * 2] /= l; acc[i * 2 + 1] /= l; } else { acc[i * 2] = 0; acc[i * 2 + 1] = 1; } }
     return acc;
   };
+  /* Hairline-mask coverage per render vertex, robust at UV island edges: the mask is also sampled a few
+     texels in toward each adjacent triangle, and duplicates of one MakeHuman vertex share the best value,
+     so a UV seam through the scalp does not open a bald line. */
+  Avatar.prototype.scalpCoverage = function () {
+    if (this._scalpCov !== undefined) return this._scalpCov;
+    var looks = this.looks, X = this.tex || {}, base = this.base, n = base.mh.length, uv = base.uv, idx = base.index, mh = base.mh, i, k;
+    this._scalpCov = null;
+    if (!root.document || !X.maskHair || !X.maskHair2 || !(looks.scalpCh >= 0 && looks.scalpCh < 5)) return null;
+    var ph = texPixels(looks.scalpCh < 3 ? X.maskHair : X.maskHair2), ch = looks.scalpCh % 3, cov = new Float32Array(n), HEADB = { Head: 1, Neck: 1 };
+    function samp(u, v) { u = (u - 0.6) / 0.3; v = (v - 0.03) / 0.84; return (u < -0.02 || u > 1.02 || v < -0.02 || v > 1.02) ? 0 : sampleMask(ph, clamp01(u), clamp01(v), ch); }
+    for (i = 0; i < n; i++) if (this.boneW(i, HEADB) >= 0.5) cov[i] = samp(uv[i * 2], uv[i * 2 + 1]);
+    for (i = 0; i < idx.length; i += 3) {
+      var cu = (uv[idx[i] * 2] + uv[idx[i + 1] * 2] + uv[idx[i + 2] * 2]) / 3, cv = (uv[idx[i] * 2 + 1] + uv[idx[i + 1] * 2 + 1] + uv[idx[i + 2] * 2 + 1]) / 3;
+      for (k = 0; k < 3; k++) {
+        var v0 = idx[i + k]; if (this.boneW(v0, HEADB) < 0.5) continue;
+        var du = cu - uv[v0 * 2], dv = cv - uv[v0 * 2 + 1], dl = Math.hypot(du, dv); if (dl < 1e-6) continue;
+        var t = Math.min(1, 0.0045 / dl), c2 = samp(uv[v0 * 2] + du * t, uv[v0 * 2 + 1] + dv * t);
+        if (c2 > cov[v0]) cov[v0] = c2;
+      }
+    }
+    var best = new Float32Array(base.N);
+    for (i = 0; i < n; i++) if (cov[i] > best[mh[i]]) best[mh[i]] = cov[i];
+    for (i = 0; i < n; i++) cov[i] = best[mh[i]];
+    this._scalpCov = cov;
+    return cov;
+  };
   Avatar.prototype.makeStrands = function () {
     var looks = this.looks, X = this.tex || {}, base = this.base, n = base.mh.length, uv = base.uv, i, self = this;
     if (!root.document) return;
@@ -1751,13 +1778,7 @@
       this.addCap("beard", covB, Object.assign(bo, { len: lenB, densV: densB, dir: bdir, color: looks.beardColor, grey: looks.beardGrey || 0, lenK: 0.7, edgeK: full ? 1 : 0.7, seed: 11, spec: 0.03, shin: 90 }));
     }
     if (looks.hairMode === "shell" && X.maskHair && X.maskHair2 && looks.scalpCh >= 0 && looks.scalpCh < 4) {
-      var maskT = looks.scalpCh < 3 ? X.maskHair : X.maskHair2, ph = texPixels(maskT), covH = new Float32Array(n), ch = looks.scalpCh % 3;
-      for (i = 0; i < n; i++) {
-        if (this.boneW(i, HEADB) < 0.5) continue;
-        var u = (uv[i * 2] - 0.6) / 0.3, v = (uv[i * 2 + 1] - 0.03) / 0.84;
-        if (u < -0.02 || u > 1.02 || v < -0.02 || v > 1.02) continue;
-        covH[i] = sampleMask(ph, clamp01(u), clamp01(v), ch);
-      }
+      var maskT = looks.scalpCh < 3 ? X.maskHair : X.maskHair2, ch = looks.scalpCh % 3, covH = new Float32Array(this.scalpCoverage());
       var topmm = looks.hairLen * 10, sidemm = looks.hairSides != null ? Math.min(topmm, looks.hairSides * 10) : (ch === 1 ? topmm * 0.3 : topmm * 0.8);
       if (looks.hair) topmm = Math.min(topmm, Math.max(sidemm * 1.6, 8));   // a hair mesh carries the top: the cap only has to blend into it
       var earY = M ? (M.sideburnR.y + M.sideburnL.y) / 2 : this.J.Head.h.y + 0.05, hc = this.headC || this.J.Head.h;

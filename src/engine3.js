@@ -15,6 +15,10 @@
    submissions, knockdowns with a follow-up sequence, hurt states, standing / ground-and-pound / leg TKOs,
    stamina and pace, three judges (v4: EM round-winner weights with shared + individual noise and a
    margin-based 10-8 rule, all fit on 2019-2023 judges' rounds), and doctor / corner stoppages.
+   v5 (in progress; the merge log is docs/CHANGELOG.md "v5 merge log"): each v5 component sits behind its own
+   params.components.<name> flag, and every flag-off path reproduces v4.0.0 for fixed seeds. Step 1, components.v401:
+   v4.0.1's train-only fixes (pre-2024 EM judging weights, point deductions, learned-path levels, the cumulative
+   takedown cap, KO/TKO composition targets from 2019-2023 fights), one sub-flag each (see resolveParams below).
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
@@ -26,7 +30,7 @@
   else root.FightEngine = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
   "use strict";
-  var VERSION = "4.0.0";
+  var VERSION = "5.0.0-dev";   // v5 merge in progress (v4.0.0 base); the freeze sets 5.0.0
 
   // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
   var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",
@@ -84,6 +88,61 @@
       } else out[k] = o;
     }
     return out;
+  }
+
+  // ------------------------------------------------------------------ components (engine v5)
+  // params.components.<name> switches each v5 component; every flag-off path reproduces engine v4.0.0 exactly for fixed
+  // seeds (tests/test_v401.js for step 1). Flags can be set in params3.js or per call through opts.params.components.
+  // components.v401 (v5 merge step 1): v4.0.1's train-only fixes. v4.0.1's single validation look rejected them as a
+  // bundle by the decision rule (no CI excluded 0), not because they are wrong; v5 carries them, measured inside v5's own
+  // look, and the Calibrate stage keeps each only if it helps in the train leave-one-out. One sub-flag each:
+  //   emJudge    (a) EM round-winner judging weights refit on 2015-2023 cards (tools/judge_em_train.py), with the judges'
+  //                  noise, fight-level share and 10-8 KD term refit on them (tools/judgecal.js, 2019-2023 rounds) and the
+  //                  10-8 threshold t108 re-levelled with them (tools/v4_levels.js, train fights)
+  //   deductions (b) point deductions judge.ded / judge.ded2 (tools/judgecal.js, 2019-2023 decision rounds; drawn after
+  //                  the last round, so a fight is unchanged up to the cards)
+  //   mlLevels   (c) learned-path levels mlTdLevel / mlCtrlLevel / mlSubLevel (src/ml/mlrates.js opts.levels) with the
+  //                  companion levels of the same tools/v4_levels.js run: kdScale, kdInstant, kdRefStop, stko, gnpTko,
+  //                  subConvScale
+  //   tdCap      (d) mlMaxRatio caps the cumulative takedown-attempt multiplier and the takedown-odds one (src/ml/mlrates.js
+  //                  opts.cumCap; v4.0.0 capped each of three refit steps, so it compounded past x4 on 20 of 3,998 sides)
+  //   koTargets  (e) the self-calibration's KO/TKO composition targets taken from 2019-2023 fights (tools/ko_composition.py:
+  //                  ground 28.6%, clinch 7.1%, standing without a knockdown 7.2%; v4: 28 / 12.5 / 7 from all years):
+  //                  factors params.v401.koComp on kdScale, kdPos[1] (clinch), gnpTko, stko and, on odds, kdInstant /
+  //                  kdRefStop (tools/v401_kocomp.js, league-average pairs on the train-only priors)
+  // params3.js keeps the flag-on values in the usual fields and v4.0.0's values in params.v401.off. A sub-flag that is off
+  // puts those back BEFORE the opts.params overrides, so an explicit override always wins. koTargets multiplies AFTER the
+  // overrides: the stored fields stay the pre-(e) levels, and a tuner that moves them through opts.params still gets the
+  // factor (tools/v4_levels.js --write then writes pre-(e) levels, consistent with what it fitted).
+  // components.v401: true / false switches all five; an object switches each sub-flag (on unless it is false).
+  var V401_SUB = ["emJudge", "deductions", "mlLevels", "tdCap", "koTargets"];
+  function v401Flags(p) {
+    var c = p && p.components ? p.components.v401 : null, o = {}, i;
+    for (i = 0; i < V401_SUB.length; i++) o[V401_SUB[i]] = c === true || (!!c && typeof c === "object" && c[V401_SUB[i]] !== false);
+    return o;
+  }
+  // base params (FightParams) + per-call overrides -> the parameter set a matchup runs on
+  function resolveParams(base, over) {
+    var p = mergeParams(base, over), fl = v401Flags(p), OFF = base.v401 && base.v401.off, i;
+    if (OFF) {
+      var back = null;
+      for (i = 0; i < V401_SUB.length; i++) {
+        var s = V401_SUB[i];
+        if (fl[s] || !OFF[s]) continue;
+        back = back ? mergeParams(back, OFF[s]) : mergeParams({}, OFF[s]);
+      }
+      if (back) p = mergeParams(mergeParams(base, back), over);
+    }
+    var KC = fl.koTargets && base.v401 && base.v401.koComp;
+    if (KC) {
+      if (KC.kdScale) p.kdScale *= KC.kdScale;
+      if (KC.kdInstant) p.kdInstant = prob(odds(p.kdInstant) * KC.kdInstant);
+      if (KC.kdRefStop) p.kdRefStop = prob(odds(p.kdRefStop) * KC.kdRefStop);
+      if (KC.gnpTko) p.gnpTko *= KC.gnpTko;
+      if (KC.stko) p.stko *= KC.stko;
+      if (KC.kdClinch && p.kdPos) { p.kdPos = p.kdPos.slice(); p.kdPos[1] *= KC.kdClinch; }
+    }
+    return p;
   }
 
   function sums(prof) {
@@ -302,7 +361,7 @@
     opts = opts || {};
     var base = getParams();
     if (!base) throw new Error("FightEngine: FightParams not loaded (load params3.js first)");
-    var p = mergeParams(base, opts.params);
+    var p = resolveParams(base, opts.params);   // v5: components flags (components.v401 sub-flags) applied here
     profA = resolve(profA); profB = resolve(profB);
     var division = opts.division || profA.division || profA.home || "Lightweight";
     var P = priorFor(division, opts.priors);
@@ -571,7 +630,10 @@
   // tables for leak-free backtests; base = league rates of the shrinkage division, filled in when missing); { model } ->
   // that model handle instead of the loaded one. opts.mlModel is accepted as a shorthand for { model }.
   // params.mlWeight (0..1) blends toward the base tables (1 = full learned rates); params.mlMaxRatio caps any single
-  // multiplier. The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
+  // multiplier (components.v401.tdCap: also the cumulative takedown multipliers); params.mlTdLevel / mlCtrlLevel /
+  // mlSubLevel (components.v401.mlLevels) scale the learned takedown-attempt, control and submission-attempt targets (train
+  // level matching with the learned rates on; the plain tables keep their own self-calibrated level).
+  // The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
   function mlPredFor(MLR, m, pa, pb, opts, model) {
     var x = opts.ml;
     var pred = null;
@@ -604,8 +666,13 @@
     if (!pred) return m;
     var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
     if (!(w > 0)) return m;
-    MLR.applyToMatchup(m, pred, { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
-      parts: opts.mlParts || undefined });
+    var fl = v401Flags(m.p), mo = { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
+      parts: opts.mlParts || undefined };
+    // v5 step 1 (components.v401): (c) learned-path levels on the takedown-attempt / control / sub-attempt targets;
+    // (d) the cap on the cumulative takedown multipliers. Off: the adapter gets exactly v4.0.0's options.
+    if (fl.mlLevels) mo.levels = { td_att: m.p.mlTdLevel || 1, ctrl: m.p.mlCtrlLevel || 1, sub_att: m.p.mlSubLevel || 1 };
+    if (fl.tdCap) mo.cumCap = true;
+    MLR.applyToMatchup(m, pred, mo);
     m.mlPred = { A: pred.A, B: pred.B, base: pred.base };
     m.mlApplied = true;
     return m;
@@ -680,7 +747,9 @@
   // ------------------------------------------------------------------ judges (one round)
   // Each judge j scores z_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared + individual noise (logits; A
   // minus B differentials; the shared noise has a fight-level part sF, variance share sharedFight, drawn once per fight:
-  // the panel's view beyond the counts persists from round to round), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
+  // the panel's view beyond the counts persists from round to round), with the EM round-winner weights (components.v401.emJudge:
+  // refit on the 5,519 ufcstats cards of 2015-2023 only, tools/judge_em_train.py; off: v4.0.0's fit on all 7,550 cards
+  // through 2026-10, research/data_baserates.md):
   // striking = head * dHead + body * dBody + leg * dLeg landed; grappling = td * dTD + ctrlMin * dCtrl / 60 + sub * dSubAtt;
   // damage = kd * dKD + hurt * dHurt + judgePower * head * dPow (engine-only: hurts and power beyond the strike count).
   // The round goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd * min(2, winner's KD edge). The shared and individual
@@ -703,6 +772,32 @@
       if (js) js.push([scA, scB]);
     }
     return n108;
+  }
+
+  // ------------------------------------------------------------------ point deductions (v4.0.1; v5: components.v401.deductions)
+  // Fouls cost points on all three cards: in each round each fighter is docked with probability J.ded (1 point, 2 with
+  // probability J.ded2; tools/judgecal.js on 2019-2023 decision rounds: 0.5% per fighter-round, 3.1% of decisions).
+  // They are drawn once the last round is over and only for fights that go to the cards, so every earlier draw of the
+  // fight is unchanged (common random numbers with v4.0.0 up to the decision) and a finished fight never consumes them.
+  // rounds (trace) gets rec.ded = [A, B] and the per-round judges' scores lose the points, so the round cards still add
+  // up to fight.cards. Returns the points deducted. With J.ded 0 (the sub-flag off) it draws nothing.
+  function deductions(J, nR, rng, cards, rounds) {
+    var pd = J.ded || 0;
+    if (!(pd > 0)) return 0;
+    var p2 = J.ded2 || 0, n = 0;
+    for (var r = 0; r < nR; r++) for (var i = 0; i < 2; i++) {
+      if (rng.u() >= pd) continue;
+      var pts = rng.u() < p2 ? 2 : 1, j;
+      n += pts;
+      for (j = 0; j < 3; j++) cards[j][i] -= pts;
+      var rec = rounds && rounds[r];
+      if (rec) {
+        if (rec.judges) for (j = 0; j < rec.judges.length; j++) rec.judges[j][i] -= pts;
+        if (!rec.ded) rec.ded = [0, 0];
+        rec.ded[i] += pts;
+      }
+    }
+    return n;
   }
 
   // ------------------------------------------------------------------ simulate one fight
@@ -1020,7 +1115,8 @@
         }
       }
     }
-    // ---- decision
+    // ---- decision (point deductions first: drawn only now, see deductions(); fight.nDed only when they are on)
+    if (J.ded > 0) fight.nDed = deductions(J, nR, rng, cards, rounds);
     var ja = 0, jb = 0;
     for (var q = 0; q < 3; q++) { if (cards[q][0] > cards[q][1]) ja++; else if (cards[q][1] > cards[q][0]) jb++; }
     var dr = 3 - ja - jb;
@@ -1048,7 +1144,7 @@
     var rng = makeRng(seed == null ? 1 : seed), nR = m.rounds, i, k;
     var bins = [0, 0, 0, 0, 0, 0, 0], finA = [], finB = [], finKO = [], finSUB = [];
     for (k = 0; k < nR; k++) { finA.push(0); finB.push(0); finKO.push(0); finSUB.push(0); }
-    var methods = {}, dist = 0, distA = 0, distB = 0, dec = { UD: 0, SD: 0, MD: 0, DRAW: 0 }, n108 = 0, rndsJudged = 0, secs = 0;
+    var methods = {}, dist = 0, distA = 0, distB = 0, dec = { UD: 0, SD: 0, MD: 0, DRAW: 0 }, n108 = 0, nDed = 0, rndsJudged = 0, secs = 0;
     var sumA = new Float64Array(NS), sumB = new Float64Array(NS);
     var koLoc = { dist: 0, clinch: 0, ground: 0, "between rounds": 0 }, subNames = {}, koKind = { KO: 0, TKO_followup: 0, TKO_standing: 0, GNP: 0, LEG: 0, DOC: 0, CORNER: 0 }, kdr = 0, kdrf = 0;
     var chunk = Math.max(1, Math.floor(N / 50));
@@ -1059,7 +1155,7 @@
       var TA = f.totals.A, TB = f.totals.B;
       for (k = 0; k < NS; k++) { sumA[k] += TA[STK[k]]; sumB[k] += TB[STK[k]]; }
       if (isDecision(f)) {
-        dist++; dec[f.method]++; secs += nR * 300; rndsJudged += nR;
+        dist++; dec[f.method]++; secs += nR * 300; rndsJudged += nR; nDed += f.nDed || 0;
         if (f.winner === "A") distA++; else if (f.winner === "B") distB++;
       } else {
         secs += (f.round - 1) * 300 + f.t; rndsJudged += f.method === "CORNER" || f.method === "DOC" ? f.round : f.round - 1;
@@ -1088,7 +1184,7 @@
     var avgA = avgOf(sumA), avgB = avgOf(sumB);
     var pA = (bins[0] + bins[1] + bins[2]) / N, pB = (bins[4] + bins[5] + bins[6]) / N, pD = bins[3] / N;
     var fins = N - dist;
-    return {
+    var out = {
       n: N, seed: seed, bins: bins.map(function (x) { return x / N; }), counts: bins,
       pA: pA, pB: pB, pD: pD, se: Math.sqrt(pA * (1 - pA) / N),
       finA: finA.map(function (x) { return x / N; }), finB: finB.map(function (x) { return x / N; }),
@@ -1100,6 +1196,8 @@
       avg: { A: avgA, B: avgB },
       kd15: (sumA[I_KD] + sumB[I_KD]) / 2 / mins * 15, ctrl15: (sumA[I_CTRL] + sumB[I_CTRL]) / 2 / mins * 15
     };
+    if (m.p.judge && m.p.judge.ded > 0) out.dedPerDecision = nDed / Math.max(1, dist);   // v4.0.1 / v5 deductions: points per decision
+    return out;
   }
 
   // ------------------------------------------------------------------ explain: why the matchup looks the way it does
@@ -1244,11 +1342,13 @@
   var api = {
     VERSION: VERSION, KEYS: KEYS, STATS: STK,
     loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
-    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound,
+    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound, deductions: deductions,
     summarize: summarize, explain: explain, manualProfile: manualProfile,
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
-    clip: clip, log5: log5, odds: odds, prob: prob, params: getParams
+    clip: clip, log5: log5, odds: odds, prob: prob, params: getParams,
+    // v5: the parameter set a matchup runs on (base params + components flags + opts.params overrides), and the v401 sub-flags
+    resolveParams: function (over, base) { return resolveParams(base || getParams(), over); }, v401Flags: v401Flags
   };
   return api;
 });
