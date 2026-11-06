@@ -368,3 +368,29 @@ Sub-flags `{ styles, sos, newcomer }`; knobs in `params.stylesSOS`. Records its 
 - **newcomer**: accepted and ignored (pre-UFC priors not implemented).
 - Defaults: sub-flag `styles` off, `sos` on with source "wf". With `styles` switched on, the style blocks default to none
   on the learned-rate path and all four on the base tables.
+
+## Officials component (roadmap v8; `params.components.officials`)
+
+Off (false): the engine is bit-for-bit the engine without it (tests/test_officials.js checks fights, traces and
+summaries against the base engine). On: named judges and the referee, with tendencies fit walk-forward by
+tools/officials_engine.py (data/derived/officials_engine.json, loaded with `FightEngine.loadOfficials(json)`; table Y is
+fit only on the five years before Y, table 2024 = 2019-2023 is the production table).
+
+- `opts.judges = [name or "m<id>", x3]` (or `{ names, power }`, which keeps the `judges.power` knob), `opts.referee =
+  name`, `opts.judgePool = [[key, weight], ...]` (sample the judges from an event's panel), `opts.officials` (a table set
+  to use instead of the loaded one, or `false`). Unnamed slots are drawn from the table's recent pool; names missing
+  from the table get effects drawn from the population sds.
+- Judging per round (A - B differentials): `eta_j = exp(n_j) (exp(v_j) V + exp(k_j) K + exp(g_j) G + u) + e_j`, with
+  `V` landed head/body/leg, `K` knockdowns plus the engine-only hurt and power terms, `G` takedowns, control,
+  submission attempts and reversals; `u` shared by the panel (a fight-level part and a round part), `e_j` Logistic(0, 1).
+  10-8 for the winner W: `sigmoid(c0 + c_j + thV V_W + thK K_W + thG G_W + eps)`, `eps` shared; 10-10 at a small rate.
+- Referee: multipliers on the follow-up stoppage odds after a knockdown, the standing-TKO hazard and the
+  ground-and-pound TKO hazard.
+- RNG: the main stream keeps the v4 draw count (the nine start-of-fight taste normals, the fight-level judge normal,
+  1 + 3 normals per judged round), so flag-on and flag-off fights with one seed share the fight path until officials
+  change an outcome; judge picks and 10-8 / 10-10 draws use a second stream seeded from the start-of-fight normals.
+- Output: each fight carries `officials: { judges: [names], referee, refMult }` when the flag is on. Trace format unchanged.
+- v5 (merge step 3): `components.officials` is false in params3.js, so the prediction path keeps the v4 judging
+  (with the `components.v401` judging fixes). Opt-in per call to show real officials: `opts.params = { components: {
+  officials: true } }` with `opts.judges` / `opts.referee`. Named-judge effects are off (`params.officials.perJudge:
+  false`, docs/BACKLOG.md OFFICIALS): every judge scores as the league judge, and the names are still drawn and recorded.
