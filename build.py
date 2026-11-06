@@ -36,7 +36,6 @@ SCRIPTS = {
 
 # placeholder -> JSON file (minified and made safe inside <script type="application/json">)
 JSON_BLOCKS = {
-    "/*__FIGHTERS_JSON__*/": "data/derived/fighters.json",
     "/*__CALIB_JSON__*/": "data/derived/calibration.json",
     "/*__SCENARIOS_JSON__*/": "data/scenarios.json",
     "/*__OVERRIDES_JSON__*/": "data/overrides.json",
@@ -52,8 +51,16 @@ OPTIONAL = {"src/avatar3d.js": "", "src/director3.js": "", "data/derived/calibra
             "src/audio.js": "", "src/ml/moe.js": "", "src/ml/mlrates.js": "", "src/ml/mlpage.js": "",
             "tools/methodround_model.js": ""}
 
+# the fighter roster: gzip + base64 (about a quarter of the plain JSON); the page inflates it before anything else runs.
+# The plain placeholder still works for older page sources.
+FIGHTERS_GZ_MARKER = "/*__FIGHTERS_GZ__*/"
+FIGHTERS_JSON_MARKER = "/*__FIGHTERS_JSON__*/"
+FIGHTERS_FILE = "data/derived/fighters.json"
+
 # optional block: scouting files and likeness sheets by slug, inlined only when the page asks for them
+# (gzip + base64 under SCOUTING_GZ_MARKER, plain JSON under SCOUTING_MARKER for older page sources)
 SCOUTING_MARKER = "/*__SCOUTING_JSON__*/"
+SCOUTING_GZ_MARKER = "/*__SCOUTING_GZ__*/"
 SCOUTING_DIRS = (("data/scouting", "scouting"), ("data/likeness", "likeness"))
 
 
@@ -73,7 +80,7 @@ def safe_json(rel):
     return text.replace("</", "<\\/")
 
 
-def scouting_json():
+def scouting_data():
     out = {}
     for rel, key in SCOUTING_DIRS:
         out[key] = {}
@@ -88,7 +95,11 @@ def scouting_json():
                     out[key][name[:-5]] = json.load(f)
             except ValueError as e:
                 print("warning: skipping " + rel + "/" + name + " (" + str(e) + ")", file=sys.stderr)
-    text = json.dumps(out, separators=(",", ":"), ensure_ascii=False)
+    return out
+
+
+def scouting_json():
+    text = json.dumps(scouting_data(), separators=(",", ":"), ensure_ascii=False)
     return text.replace("</", "<\\/")
 
 
@@ -311,8 +322,13 @@ DERIVED_GZ = {
 }
 
 
-def derived_gz(fn):
+def gz_b64(data):
     import gzip
+    raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+    return base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode("ascii")
+
+
+def derived_gz(fn):
     try:
         data = no_nan(fn())
     except Exception as e:
@@ -320,8 +336,7 @@ def derived_gz(fn):
         data = None
     if data is None:
         return ""
-    raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
-    return base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode("ascii")
+    return gz_b64(data)
 
 
 def derived_json(fn):
@@ -362,6 +377,15 @@ def main():
             raise SystemExit("placeholder " + marker + " must appear exactly once in page.src.html")
         page = page.replace(marker, code)
 
+    # the roster: exactly one of the two placeholders
+    n_gz, n_js = page.count(FIGHTERS_GZ_MARKER), page.count(FIGHTERS_JSON_MARKER)
+    if n_gz + n_js != 1:
+        raise SystemExit("page.src.html needs exactly one roster placeholder (" + FIGHTERS_GZ_MARKER + " or " + FIGHTERS_JSON_MARKER + ")")
+    if n_gz:
+        page = page.replace(FIGHTERS_GZ_MARKER, gz_b64(json.loads(read(FIGHTERS_FILE))))
+    else:
+        page = page.replace(FIGHTERS_JSON_MARKER, safe_json(FIGHTERS_FILE))
+
     for marker, rel in JSON_BLOCKS.items():
         if page.count(marker) != 1:
             raise SystemExit("placeholder " + marker + " must appear exactly once in page.src.html")
@@ -374,7 +398,9 @@ def main():
         if page.count(marker) == 1:
             page = page.replace(marker, derived_gz(fn))
 
-    if page.count(SCOUTING_MARKER) == 1:
+    if page.count(SCOUTING_GZ_MARKER) == 1:
+        page = page.replace(SCOUTING_GZ_MARKER, gz_b64(scouting_data()))
+    elif page.count(SCOUTING_MARKER) == 1:
         page = page.replace(SCOUTING_MARKER, scouting_json())
 
     if ASSETS_MARKER in page:

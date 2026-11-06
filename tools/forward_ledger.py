@@ -251,12 +251,20 @@ def cmd_predict(args):
         bouts_in.append({"bout_id": bid, "a": sa if sa in roster else None, "b": sb if sb in roster else None,
                          "division": b.get("weight_class"), "rounds": b.get("rounds") or 3, "title": bool(b.get("title")),
                          "p_line": mk["p_a_stack_input"] if mk else None})
+    bt_stack = os.path.join(DERIVED, "blindtest_stack.json")
+    stack_file = None
+    if args.stack == "blindtest" or (args.stack == "auto" and os.path.exists(bt_stack)):
+        if not os.path.exists(bt_stack):
+            raise SystemExit("--stack blindtest: run python3 tools/blindtest.py export first")
+        stack_file = bt_stack
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
         json.dump({"date": ev["date"], "sims": args.sims, "bouts": bouts_in}, fh)
         tmp = fh.name
     try:
-        res = subprocess.run(["node", os.path.join(HERE, "forward_ledger.js"), tmp, "--engine-dir", args.engine_dir],
-                             capture_output=True, text=True, cwd=ROOT, check=True)
+        cmd = ["node", os.path.join(HERE, "forward_ledger.js"), tmp, "--engine-dir", args.engine_dir]
+        if stack_file:
+            cmd += ["--moe", os.path.relpath(stack_file, ROOT)]
+        res = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT, check=True)
     finally:
         os.unlink(tmp)
     J = json.loads(res.stdout)
@@ -341,9 +349,11 @@ def cmd_predict(args):
         "lock_utc": iso(lock), "lock_basis": lock_basis, "created_utc": iso(t0), "card_as_of": cards.get("as_of"),
         "supersedes": supersedes,
         "model": {
-            "version": "fwd-1: page package (MoE stack moe_page.json %s; engine %s / params %s; methodround S/SM; ML page "
-                       "model %s)" % (jm.get("moe_page_built"), jm.get("engine_version"), jm.get("params_version"),
-                                      jm.get("ml_page_snapshot")),
+            "version": "fwd-1: MoE stack %s (%s); engine %s / params %s; methodround S/SM; ML page model %s" % (
+                os.path.basename(jm.get("stack_source") or ""), jm.get("stack_built"), jm.get("engine_version"),
+                jm.get("params_version"), jm.get("ml_page_snapshot")),
+            "stack": {"source": jm.get("stack_source"), "built": jm.get("stack_built"), "sha256_16": jm.get("stack_sha256_16"),
+                      "blind_scores_2024_2025": (jload(stack_file) or {}).get("meta", {}).get("blind_scores") if stack_file else None},
             "p_a": "MoE stack WITH the market line captured at prediction time as its 'market' expert (p_a_line); "
                    "p_a_noline = the same stack without the line; debutants fall back to the line / Elo with a 1500 "
                    "debut rating" if args.headline == "line" else "MoE stack without the market line",
@@ -780,6 +790,9 @@ def main():
     p.add_argument("--sims", type=int, default=2000, help="engine sims per corner order (default 2000)")
     p.add_argument("--engine-dir", default="src")
     p.add_argument("--headline", choices=["line", "noline"], default="line")
+    p.add_argument("--stack", choices=["auto", "blindtest", "page"], default="auto",
+                   help="MoE weights: blindtest = data/derived/blindtest_stack.json (refit with the current engine, blind-"
+                        "tested by tools/blindtest.py), page = moe_page.json; auto = blindtest when the file exists")
     p.add_argument("--supersede", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--dry-out", default=None, help="with --dry-run: write the would-be file here (outside the ledger)")

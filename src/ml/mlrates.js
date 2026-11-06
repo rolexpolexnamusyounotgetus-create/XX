@@ -368,7 +368,7 @@
   // pred: MLRates.predict output. opts: {engine (FightEngine), level: "engine" (default) | "absolute", weight (0..1, default
   // 1: blend toward the engine's own rates), parts: {grappling,
   // strikes, accuracy, kd, subs: false to keep the engine's own}, maxRatio (cap on any single multiplier, default 4),
-  // levels ({target: factor} on the learned rate targets, e.g. { td_att: 1.09, ctrl: 1.06 }; v4.0.1)}.
+  // levels ({target: factor} on the learned rate targets, e.g. { td_att: 1.07, ctrl: 1.05, sub_att: 1.08 }; v4.0.1)}.
   // level "engine": the target for each stat is the engine's own league-average expectation x (ML / league rate), so the
   // simulator keeps its calibrated league level (its in-fight modifiers, e.g. on knockdowns, stay balanced) and plays the
   // ML's matchup-specific multipliers; probabilities combine on odds. level "absolute": the ML rates are imposed on the
@@ -416,8 +416,7 @@
       tg[i].kd_h *= a.pow * aj.chin;
     }
     // level factors on the learned targets (v4.0.1: opts.levels = { td_att, ctrl, sub_att } from params mlTdLevel /
-    // mlCtrlLevel / mlSubLevel,
-    // matched on train fights by tools/v4_levels.js; rates only, never probabilities)
+    // mlCtrlLevel / mlSubLevel, matched on train fights by tools/v4_levels.js; rates only, never probabilities)
     var LV = opts.levels || {};
     for (i = 0; i < 2; i++) for (k in LV) if (tg[i][k] != null && !PROB_T[k] && LV[k] > 0 && LV[k] !== 1) tg[i][k] *= LV[k];
     // optional blend toward the engine's own rates: weight 1 = ML rates, 0 = plain engine (geometric on rates, logit on

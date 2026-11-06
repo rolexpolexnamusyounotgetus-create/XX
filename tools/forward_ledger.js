@@ -36,8 +36,10 @@ const DB = E.loadDB(FJ);
 let mlNative = false;
 const mlr = rd("data/derived/mlrates.json");
 if (typeof E.loadMLRates === "function") { E.loadMLRates(mlr); mlNative = true; } else MLRates.load(mlr);
-const MOEJ = rd("data/derived/moe_page.json");
-const MOE = MoE.load(MOEJ);
+const MOEJ = rd("data/derived/moe_page.json");                 // feat (the feature LR) always comes from here
+const stackPath = opt("--moe", null);                            // e.g. data/derived/blindtest_stack.json
+const STACKJ = stackPath ? JSON.parse(fs.readFileSync(path.resolve(ROOT, stackPath), "utf8")) : MOEJ;
+const MOE = MoE.load(STACKJ);
 const mlj = rd("data/derived/ml.json");
 const MLP = MLPage.load({ snapshot: mlj.page_model.snapshot, winner: mlj.page_model.winner, stack: mlj.page_model.stack,
   roster: mlj.roster });
@@ -109,7 +111,9 @@ const out = { meta: {
   params_version: (() => { try { return require(path.join(engineDir, "params3.js")).version; } catch (e) { return null; } })(),
   engine_sha256_16: sha(path.join(engineDir, "engine3.js")), params_sha256_16: sha(path.join(engineDir, "params3.js")),
   mlrates_js_sha256_16: sha(path.join(engineDir, "ml", "mlrates.js")),
-  moe_page_built: (MOEJ.meta || {}).built || null, moe_js: MoE.VERSION, ml_page_snapshot: mlj.page_model.snapshot,
+  moe_page_built: (MOEJ.meta || {}).built || null, moe_js: MoE.VERSION,
+  stack_source: stackPath || "data/derived/moe_page.json", stack_built: (STACKJ.meta || {}).built || null,
+  stack_sha256_16: sha(path.resolve(ROOT, stackPath || "data/derived/moe_page.json")), ml_page_snapshot: mlj.page_model.snapshot,
   ml_built: mlj.meta.built, market_built: MKT.meta.built, methodround_built: (rd("data/derived/methodround.json").meta || {}).built,
   roster_snapshot: (FJ.meta || {}).snapshot, mlrates_native: mlNative, sims_per_order: input.sims
 }, bouts: [] };

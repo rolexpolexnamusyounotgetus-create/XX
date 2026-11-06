@@ -19,7 +19,7 @@
    v4.0.1 (Nov 6, 2026; the v4 review's fixes, train-only):
    - judge weights [em pre-2024]: the EM round-winner fit on 2015-2023 cards only (tools/judge_em_train.py); v4.0.0's came
      from all cards through 2026-10. [judgecal] values refit with them, plus point deductions (judge.ded, judge.ded2).
-   - [levels v4.0.1]: tools/v4_levels.js re-run on all 1,999 train fights with two more levers on the learned-rate path
+   - [levels v4.0.1]: tools/v4_levels.js re-run on all 1,999 train fights with three more levers on the learned-rate path
      (mlTdLevel, mlCtrlLevel, mlSubLevel), so takedowns, control and submission attempts are on the train level with the
      learned rates on.
    - src/ml/mlrates.js: the mlMaxRatio cap applies to the cumulative takedown-attempt multiplier and to the TD-odds one.
@@ -117,7 +117,7 @@
     outMob: 0.15,            // output x (1 - outMob (1 - mobility)) (default)
 
     // ---------------- damage, knockdowns, finishes ----------------
-    kdScale: 1.383,          // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on (v4.0.0 levels: kdScale 1.391, kdInstant 0.3673, kdRefStop 0.184, stko 0.03644, gnpTko 0.03072, subConvScale 1.847); v3 walkfwd 1.246] global knockdown scale on p0 (division KD per landed standing head strike)
+    kdScale: 1.383,          // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; v4.0.0 levels 1.391; v3 walkfwd 1.246] global knockdown scale on p0 (division KD per landed standing head strike)
     kdPos: [1.0, 2.561],     // [selfcal v4: train-only priors_dev.json] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates; knees and elbows)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
@@ -142,7 +142,7 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.3623,       // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on (v4.0.0 levels: kdScale 1.391, kdInstant 0.3673, kdRefStop 0.184, stko 0.03644, gnpTko 0.03072, subConvScale 1.847); v3 walkfwd 0.3175] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
+    kdInstant: 0.3623,       // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; v4.0.0 levels 0.3673; v3 walkfwd 0.3175] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
@@ -151,11 +151,11 @@
     kdRecoverStand: 0.45,    // share of recoveries that get back to the feet; the rest recover guard with the attacker on top (default)
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
-    kdRefStop: 0.1807,       // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on (v4.0.0 levels: kdScale 1.391, kdInstant 0.3673, kdRefStop 0.184, stko 0.03644, gnpTko 0.03072, subConvScale 1.847); v3 walkfwd 0.153] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
+    kdRefStop: 0.1807,       // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; v4.0.0 levels 0.184; v3 walkfwd 0.153] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
     refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
-    stko: 0.03565,           // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on (v4.0.0 levels: kdScale 1.391, kdInstant 0.3673, kdRefStop 0.184, stko 0.03644, gnpTko 0.03072, subConvScale 1.847); v3 walkfwd 0.03439] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
-    gnpTko: 0.03005,           // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on (v4.0.0 levels: kdScale 1.391, kdInstant 0.3673, kdRefStop 0.184, stko 0.03644, gnpTko 0.03072, subConvScale 1.847); v3 walkfwd 0.02467] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
+    stko: 0.03565,           // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; v4.0.0 levels 0.03644; v3 walkfwd 0.03439] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
+    gnpTko: 0.03005,           // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; v4.0.0 levels 0.03072; v3 walkfwd 0.02467] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
     stkoBase: 0.3,           // standing TKO hazard while hurt = stko x (stkoBase + D / 100) (default)
     gnpDmg: 600,             // GNP TKO x (1 + D / gnpDmg) (default)
     gnpHurt: 2.0,            // GNP TKO multiplier while hurt (default)
@@ -188,7 +188,7 @@
     tdOddsScale: 0.9018,     // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.9103] takedown success odds scale
     sweepScale: 1.0,         // sweep / reversal rate scale (default; reversals come from each pair's data rates)
     subAttScale: 1.085,      // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.042] submission attempt rate scale
-    subConvScale: 1.697,      // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on (v4.0.0 levels: kdScale 1.391, kdInstant 0.3673, kdRefStop 0.184, stko 0.03644, gnpTko 0.03072, subConvScale 1.847); v3 walkfwd 1.619] submission conversion odds scale
+    subConvScale: 1.697,      // [levels v4.0.1: tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; v4.0.0 levels 1.847; v3 walkfwd 1.619] submission conversion odds scale
     gilloScale: 1.0,         // standing guillotine attempts on stuffed shots scale
 
     // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------

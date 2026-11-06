@@ -1232,19 +1232,21 @@ STACKS = {
         "current+ml2": ["market", "mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo", "ml2"],
         "market+ml2": ["market", "ml2"],
         "market+ml2+mkt_rating+feat_lr": ["market", "ml2", "mkt_rating", "feat_lr"],
+        "page: market+ml2lr": ["market", "ml2lr"],
     },
     "noline": {
         "current": ["mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo"],
         "current+ml2": ["mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo", "ml2"],
         "ml2 alone": ["ml2"],
         "ml2+mkt_rating+feat_lr": ["ml2", "mkt_rating", "feat_lr"],
+        "page: ml2lr+mkt_rating": ["ml2lr", "mkt_rating"],
     },
 }
 
 
 def col_for(c, scheme):
-    if c == "ml2":
-        return "ml2_" + scheme
+    if c in ("ml2", "ml2lr"):
+        return c + "_" + scheme
     if scheme == "roll" and c in ("ml", "feat_lr"):
         return c + "_roll"
     return c
@@ -1379,6 +1381,44 @@ def stage_stack(args):
                       for sch in ("static", "roll")}
         BY[str(Y)]["close"] = round(ll(close[m & has_line], y[m & has_line]), 5)
     R["by_year"] = BY
+    # pooled out-of-sample 2021-2025: forward-chained CV years (fit on 2019..Y-1) + 2024-2025 static (fit <= 2023)
+    POOL = {}
+    for regime in ("line", "noline"):
+        rows_ok = has_line if regime == "line" else np.ones(len(D), bool)
+        pp = {}
+        for name in ("current", "current+ml2"):
+            arr = np.full(len(D), np.nan)
+            h = R["cv"]["%s|%s" % (regime, name)]["chosen_h"]
+            for Y in (2021, 2022, 2023):
+                m = rows_ok & (yr == Y)
+                arr[m], _ = stack_predict(D, STACKS[regime][name], "static", h, Y - 1, m, rows_ok)
+            v = rows_ok & va_all
+            arr[v] = out_preds["%s|%s|static" % (regime, name)][v]
+            pp[name] = arr
+        m = rows_ok & (yr >= 2021) & (yr <= 2025) & has_line
+        POOL[regime + " current+ml2 - current"] = compare(pp["current+ml2"][m], pp["current"][m], y[m], ev_grp[m])
+        POOL[regime + " current+ml2 - close"] = compare(pp["current+ml2"][m], close[m], y[m], ev_grp[m])
+        POOL[regime + " current - close"] = compare(pp["current"][m], close[m], y[m], ev_grp[m])
+        mc = rows_ok & (yr >= 2021) & (yr <= 2023) & has_line
+        POOL[regime + " CV years 2021-2023 current+ml2 - close"] = compare(pp["current+ml2"][mc], close[mc], y[mc], ev_grp[mc])
+        POOL[regime + " CV years 2021-2023 current+ml2 - current"] = compare(pp["current+ml2"][mc], pp["current"][mc],
+                                                                             y[mc], ev_grp[mc])
+    for k, v in POOL.items():
+        log("pooled %-50s n %d diff %+.5f %s" % (k, v["n"], v["diff"], v["diff_ci"]))
+    R["pooled_2021_2025"] = POOL
+    # production weights for the page (inputs the page can compute: the ML v2 logistic page model, the market
+    # rating, the de-vigged line), refit on 2019-2025 (OOF 2019-2023 + monthly-rolling 2024-2025 predictions)
+    PROD = {}
+    for regime, name in (("line", "page: market+ml2lr"), ("noline", "page: ml2lr+mkt_rating")):
+        rows_ok = has_line if regime == "line" else np.ones(len(D), bool)
+        h = R["cv"]["%s|%s" % (regime, name)]["chosen_h"]
+        cols = STACKS[regime][name]
+        _, b = stack_predict(D, cols, "roll", h, 2025, np.zeros(len(D), bool), rows_ok)
+        PROD[regime] = {"inputs": cols, "weights": np.round(b, 4).tolist(), "recency_half_life_years": h,
+                        "fit": "2019-2025 (OOF 2019-2023, monthly-rolling 2024-2025), no intercept, non-negative",
+                        "pclip": 0.01}
+    R["page_stack"] = PROD
+    log("page stack weights: %s" % PROD)
     log("by year: %s" % json.dumps(BY))
     pickle.dump({"D": D, "preds": out_preds}, open(os.path.join(CACHE, "stack.pkl"), "wb"))
     json.dump(R, open(os.path.join(CACHE, "stack.json"), "w"), indent=1, default=float)
@@ -1987,8 +2027,11 @@ STAGES["export"] = stage_export
 
 # ====================================================================== stage: verify (truncation tests of the new features)
 def stage_verify(args):
-    """Rebuild the rating systems and the market rating with the data stream cut at CUT and check that every
-    feature value for fights before CUT is identical to the full build (no feature sees a later fight)."""
+    """Truncation and flipped-result tests of the rebuilt rating features. Each system is run twice in the same
+    process (same inputs): the full stream to 2025-12-31 and the stream cut at CUT; every prediction for a fight
+    before CUT must be identical. A third run reverses every result on/after CUT: earlier predictions must not
+    move. Also reports how far the cached features are from a rebuild with the current preufc.json (the ratings'
+    newcomer prior reads it), so a later preufc.json rebuild is visible."""
     import ratings as RT
     S = load_table()
     T = S["df"]
@@ -1997,35 +2040,34 @@ def stage_verify(args):
     D = RT.load_data()
     RT.prepare(D, log=lambda s: None)
     J = jload("ratings.json")
-    ev = np.where((D.day >= dt.date(2009, 1, 1).toordinal()) & (D.day < cut.toordinal()))[0]
-    full = pickle.load(open(os.path.join(CACHE, "ratings_all.pkl"), "rb"))
-    fidx = {f: i for i, f in enumerate(full["fid"])}
+    ev_all = np.where(D.day >= dt.date(2009, 1, 1).toordinal())[0]
+    early = ev_all[D.day[ev_all] < cut.toordinal()]
+    late = ev_all[D.day[ev_all] >= cut.toordinal()]
+    cached = pickle.load(open(os.path.join(CACHE, "ratings_all.pkl"), "rb"))
+    cidx = {f: i for i, f in enumerate(cached["fid"])}
+    Df = RT.load_data()
+    RT.prepare(Df, log=lambda s: None)
+    flip = (Df.day >= cut.toordinal()) & Df.obs
+    Df.y = np.where(flip, 1 - Df.y, Df.y)
+    Df.winner = [{"A": "B", "B": "A"}.get(w, w) if f else w for w, f in zip(Df.winner, flip)]
     for name in ("whr_rounds", "glicko2", "elo_full", "trueskill_mov"):
         Sy = J["systems"][name]
-        p, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=cut.toordinal(), record=False, eval_idx=ev)
-        a = p[ev]
-        b = full["p"][name][[fidx[D.fid[i]] for i in ev]]
-        out[name] = {"n": int(len(ev)), "max_abs_diff": float(np.nanmax(np.abs(a - b)))}
-        log("truncation %s: max |diff| %.2e on %d fights before %s" % (name, out[name]["max_abs_diff"], len(ev), cut))
+        pf, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False, eval_idx=ev_all)
+        pt, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=cut.toordinal(), record=False, eval_idx=early)
+        px, _, _ = RT.run_system(Df, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False, eval_idx=ev_all)
+        pc = cached["p"][name][[cidx[D.fid[i]] for i in ev_all]]
+        out[name] = {"n_before_cut": int(len(early)),
+                     "truncation_max_abs_diff": float(np.nanmax(np.abs(pt[early] - pf[early]))),
+                     "flip_after_cut_max_abs_diff_before": float(np.nanmax(np.abs(px[early] - pf[early]))),
+                     "flip_after_cut_share_changed_after": float(np.mean(np.abs(px[late] - pf[late]) > 1e-9)),
+                     "cached_vs_current_preufc_max_abs_diff": float(np.nanmax(np.abs(pf[ev_all] - pc)))}
+        log("verify %s: %s" % (name, out[name]))
     sub = T[T["date"] < cut].copy()
     mr_cut, _, _ = build_market_rating(sub)
     mr_full = T.set_index("fid")["mr_p"]
     d = [abs(v[0] - mr_full[f]) for f, v in mr_cut.items() if f in mr_full.index and not np.isnan(mr_full[f])]
-    out["market_rating"] = {"n": len(d), "max_abs_diff": float(max(d))}
-    log("truncation market rating: max |diff| %.2e on %d fights" % (max(d), len(d)))
-    # flipped-result perturbation: every result on/after the cut reversed must leave earlier ratings unchanged
-    Df = RT.load_data()
-    RT.prepare(Df, log=lambda s: None)
-    late = Df.day >= cut.toordinal()
-    Df.y = np.where(late & Df.obs, 1 - Df.y, Df.y)
-    Sy = J["systems"]["glicko2"]
-    p2, _, _ = RT.run_system(Df, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False)
-    pf = full["p"]["glicko2"]
-    early = np.where(~late & (Df.day >= dt.date(2009, 1, 1).toordinal()))[0]
-    lt = np.where(late)[0]
-    out["glicko2_flip_after_cut"] = {"max_abs_diff_before": float(np.nanmax(np.abs(p2[early] - pf[[fidx[Df.fid[i]] for i in early]]))),
-                                     "share_changed_after": float(np.mean(np.abs(p2[lt] - pf[[fidx[Df.fid[i]] for i in lt]]) > 1e-6))}
-    log("flip test glicko2: %s" % out["glicko2_flip_after_cut"])
+    out["market_rating"] = {"n": len(d), "truncation_max_abs_diff": float(max(d))}
+    log("verify market rating: %s" % out["market_rating"])
     json.dump(out, open(os.path.join(CACHE, "verify.json"), "w"), indent=1)
 
 

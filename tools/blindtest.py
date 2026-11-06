@@ -1529,6 +1529,70 @@ def write_report(doc):
 
 
 # ====================================================================== main
+STACK_JSON = os.path.join(DERIVED, "blindtest_stack.json")
+EXPORT = {"present": "moe_close", "absent": "moe_noline"}
+
+
+def export_stack(args):
+    """Refit the replay's two production stackers (moe_close for 'a line is given', moe_noline for 'no line') on every
+    dev fight 2019-01-01..2025-12-31 (history + the replay's own predictions; nothing from 2026) and write them in
+    src/ml/moe.js's format to data/derived/blindtest_stack.json, with Python-computed test vectors for the Node test
+    (tests/test_blindtest_stack.js). tools/forward_ledger.js can use it instead of moe_page.json (--stack blindtest)."""
+    doc = json.load(open(args.out or OUT_JSON))
+    ctx = Ctx(args)
+    keys = topo(list(EXPORT.values()))
+    models = {}
+    for k in keys:
+        models[k] = REGISTRY[k]["factory"](ctx)
+    P = {k: {f: v for f, v in models[k].history().items() if f in ctx.fights and HIST_FROM <= ctx.date[f] < WINDOW[0]}
+         for k in keys}
+    for f, r in doc["fights"].items():
+        for k in keys:
+            if k in r["p"] and r["p"][k][0] is not None:
+                P[k][f] = r["p"][k][0]
+    mo = ctx.json("moe.json")
+    full = list(mo["model"]["experts"])
+    out = {"method": "switch", "on": "market", "experts": full, "pclip": PCLIP,
+           "optional_groups": mo["model"].get("optional_groups")}
+    vectors = []
+    fit_info = {}
+    for regime, key in EXPORT.items():
+        m = models[key]
+        info = m.fit("2026-01-01", P)
+        fit_info[key] = info
+        lin = {}
+        for pat, (idx, ls) in m.st.lin.items():
+            names = [m.names[j] for j in idx]
+            lin["+".join(e for e in full if e in names)] = {m.names[j]: float(w) for j, w in zip(idx, ls.w)}
+        out[regime] = {"method": "linear", "experts": full, "pclip": PCLIP, "hp": m.hp,
+                       "gate": {"names": list(m.MO.GATE_NAMES), "mu": [float(x) for x in m.mu], "sd": [float(x) for x in m.sd]},
+                       "calibration": m.cal.export() if hasattr(m.cal, "export") else {"type": "none"}, "linear": lin}
+        if m.method != "linear":
+            raise SystemExit("export supports the linear method only (%s is %s)" % (key, m.method))
+        # test vectors: the last 60 window fights of this regime, experts as the stack saw them
+        ids = [i for i in ctx.win_ids if i in m.Gall][-60:]
+        pr = m.predict(ids, P)
+        for i in ids:
+            if i not in pr:
+                continue
+            ex = {e: P[m.map[e]][i] for e in m.names if i in P[m.map[e]]}
+            vectors.append({"regime": regime, "id": i, "experts": ex, "p": pr[i]})
+    res = {"meta": {"tool": "tools/blindtest.py export", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                    "replay_utc": doc["meta"]["replay_utc"], "fit": "every decisive dev fight 2019-01-01..2025-12-31 "
+                    "(2019-2023 rows: each expert's out-of-sample predictions; 2024-2025 rows: the replay's blind ones); "
+                    "fights from 2026 are never read",
+                    "experts_map": {r: models[k].map for r, k in EXPORT.items()},
+                    "versions": {k: models[k].version for k in keys}, "fit_info": fit_info,
+                    "blind_scores": {k: doc["scores"]["common"]["metrics"].get(k) for k in EXPORT.values()},
+                    "usage": "MoE.load(doc).predict({experts, gate}) with src/ml/moe.js; the 'engine' expert is engine "
+                             "%s (FightEngine.summarize, both corner orders, draws removed)" % _ENGK},
+           "model": out, "test_vectors": vectors}
+    wjson(STACK_JSON, res)
+    log("wrote %s: present %d patterns, absent %d patterns, %d test vectors; weights present %s, absent %s" % (
+        STACK_JSON, len(out["present"]["linear"]), len(out["absent"]["linear"]), len(vectors),
+        models[EXPORT["present"]].weights(), models[EXPORT["absent"]].weights()))
+
+
 SELFTEST_MODELS = ["ml_lr", "feat_lr", "ml_lgb", "ml_xgb", "ml_blend", "stack_elo_ml_mr", "moe_noline", "moe_close"]
 
 
@@ -1593,7 +1657,7 @@ def build_doc(ctx, R, S, args, plugins):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["list", "replay", "score", "selftest"])
+    ap.add_argument("cmd", choices=["list", "replay", "score", "selftest", "export"])
     ap.add_argument("--models", default=None, help="comma-separated model keys (default: all registered)")
     ap.add_argument("--ml-refit", default="event", choices=["event", "month", "year"])
     ap.add_argument("--tree-refit", default="month", choices=["event", "month", "year"])
@@ -1612,6 +1676,10 @@ def main():
         return
     if args.cmd == "selftest":
         selftest(args)
+        return
+    if args.cmd == "export":
+        args.perturb_from = None
+        export_stack(args)
         return
     out = args.out or (None if args.quick or args.cards else OUT_JSON)
     if args.quick:

@@ -612,6 +612,9 @@
     else if (/stubble|scruff/.test(ft) || L.beard >= 0.5) { L.beardCh = /heavy/.test(ft) ? 1 : 0; L.beardLen = mm || (/heavy/.test(ft) ? 3.5 : 1.5); }
     L.beardDensity = /patchy|sparse|thin|light/.test(lower(FH.density || "")) ? 0.75 : (/dense|thick/.test(lower(FH.density || "")) ? 1 : 0.9);
     L.beardShellLen = L.beardLen >= 2 ? Math.min(L.beardLen, 30) / 1000 : 0;
+    // grey hairs: share of light strands from the sheet's colour notes (salt-and-pepper, a few grey hairs...)
+    var gtx = lower([FH.colour, FH.colour_note, FH.notes].join(" "));
+    L.beardGrey = /salt[- ]and[- ]pepper|mostly grey|heavily grey/.test(gtx) ? 0.3 : (/grey|gray|white hairs|silver/.test(gtx) ? 0.1 : 0);
     L.beardShell = 0;   // the old single-layer shell is replaced by the strand shell
   }
 
@@ -1450,7 +1453,7 @@
         covB[i] = bv * (lmB ? clamp01(lmB[i] * 2.2) : 1);
       }
       var lb = looks.beardShellLen;
-      this.addStrandShell("beard", covB, { len: function () { return lb * 0.7; }, layers: lb > 0.012 ? 7 : (lb > 0.005 ? 5 : 3), color: looks.beardColor, density: looks.beardDensity,
+      this.addStrandShell("beard", covB, { grey: looks.beardGrey || 0, len: function () { return lb * 0.7; }, layers: lb > 0.012 ? 7 : (lb > 0.005 ? 5 : 3), color: looks.beardColor, density: looks.beardDensity,
         dir: function (i, out) { return out.set(0, -0.45, 0.08); }, freq: 1250, thick: lb > 0.012 ? 0.62 : 0.55, gain: 1.8 });
     }
     if (looks.hairMode === "shell" && X.maskHair && X.maskHair2 && looks.scalpCh >= 0 && looks.scalpCh < 4) {
@@ -1506,13 +1509,13 @@
     g.setAttribute("skinIndex", new T.BufferAttribute(si, 4)); g.setAttribute("skinWeight", new T.BufferAttribute(sw, 4)); g.setAttribute("aFur", new T.BufferAttribute(fur, 2));
     g.setIndex(new T.BufferAttribute(index, 1));
     if (md.length) { g.morphAttributes.position = md.map(function (a) { return new T.BufferAttribute(a, 3); }); g.morphTargetsRelative = true; }
-    var col = lin(o.color).multiplyScalar(o.gain || 1), U = { uFreq: { value: o.freq || 1000 }, uDens: { value: o.density || 1 }, uThick: { value: o.thick || 0.55 } };
+    var col = lin(o.color).multiplyScalar(o.gain || 1), U = { uFreq: { value: o.freq || 1000 }, uDens: { value: o.density || 1 }, uThick: { value: o.thick || 0.55 }, uGrey: { value: o.grey || 0 } };
     var mat = new T.MeshStandardMaterial({ color: col, roughness: o.hair ? 0.62 : 0.78, metalness: 0, skinning: true, morphTargets: !!md.length, alphaTest: 0.5, side: T.DoubleSide });
     mat.onBeforeCompile = function (sh) {
       for (var kk in U) sh.uniforms[kk] = U[kk];
       sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec2 aFur;\nvarying vec2 vFur;\nvarying vec2 vSUv;")
         .replace("#include <begin_vertex>", "#include <begin_vertex>\nvFur = aFur; vSUv = uv;");
-      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec2 vFur;\nvarying vec2 vSUv;\nuniform float uFreq; uniform float uDens; uniform float uThick;\n" +
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec2 vFur;\nvarying vec2 vSUv;\nuniform float uFreq; uniform float uDens; uniform float uThick; uniform float uGrey;\n" +
           "float sh1(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }")
         .replace("#include <alphatest_fragment>",
           "{ vec2 cell = vSUv * uFreq; vec2 ci = floor(cell); vec2 cf = fract(cell) - 0.5;\n" +
@@ -1528,10 +1531,11 @@
           "  float near = step(sq1, c) * step(h, len) * inCell;\n" +
           "  float farA = step(dith, c * (1.0 - h * 0.85) * 0.9);\n" +
           "  diffuseColor.a = mix(near, farA, farK);\n" +
-          "  diffuseColor.rgb *= (0.62 + 0.45 * h) * (0.82 + 0.36 * sq2); }\n" +
+          "  diffuseColor.rgb *= (0.62 + 0.45 * h) * (0.82 + 0.36 * sq2);\n" +
+          "  if (sh1(ci + 7.7) < uGrey) diffuseColor.rgb = vec3(0.42, 0.41, 0.4) * (0.8 + 0.4 * sq2); }\n" +
           "#include <alphatest_fragment>");
     };
-    mat.customProgramCacheKey = function () { return "strands-v1"; };
+    mat.customProgramCacheKey = function () { return "strands-v2"; };
     var mesh = new T.SkinnedMesh(g, mat); mesh.name = name; mesh.castShadow = false; mesh.userData.noShadow = true;
     if (md.length) { mesh.updateMorphTargets(); this.morphMeshes.push(mesh); }
     this.group.add(mesh); mesh.bind(this.skeleton, new M4());

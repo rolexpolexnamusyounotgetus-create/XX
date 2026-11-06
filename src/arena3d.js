@@ -606,6 +606,7 @@
     "void main() {",
     "  float n = texture2D(uTex, vUv).r * (0.75 + 0.25 * texture2D(uTex, vUv * 0.7 + vec2(uTime * 0.004, 0.0)).g);",
     "  gl_FragColor = vec4(uColor * n * vA, 1.0);",
+    "  #include <encodings_fragment>",
     "}"
   ].join("\n");
 
@@ -626,6 +627,7 @@
     "  c = mix(vec3(lum), c, mix(0.3, 0.82, up));",
     "  c *= mix(0.07, 1.0, up);",
     "  gl_FragColor = vec4(c * uGain, 1.0);",
+    "  #include <encodings_fragment>",
     "}"
   ].join("\n");
 
@@ -813,9 +815,9 @@
         var led = keep(new T.Mesh(new T.CylinderGeometry(5.9, 5.9, 0.6, 32, 1, true), basic(0x4060b0, 0.6, T.BackSide))); led.position.y = -1.6; es.add(led);
         [-1, 1].forEach(function (s) { var sc = keep(new T.Mesh(new T.PlaneGeometry(14, 8), basic(0x90a6d8, 1.4))); sc.position.set(s * 40, 18, 0); sc.lookAt(0, 1, 0); es.add(sc); });
         var rt = pm.fromScene(es, 0.035, 0.1, 100);
-        tex = rt.texture; tex.userData.rt = rt;
+        tex = rt.texture; tex._fightRT = rt;   // kept for dev checks (readRenderTargetPixels)
       }
-    } catch (e) { tex = null; }
+    } catch (e) { tex = null; if (root.console) console.warn("[arena] environment build failed", e && e.message); }
     pm.dispose();
     disposables.forEach(function (d) { d.dispose(); });
     return tex;
