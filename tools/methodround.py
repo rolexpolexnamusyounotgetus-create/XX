@@ -94,7 +94,7 @@ def build_table(log=None):
     fights, _ = B.parse_fights(log)
     people = B.build_people(fights, log)
     B.build_vectors(fights, log)
-    _, elo_pre, _ = B.run_elo(fights, ELO_K, ELO_BOOST, store=True)
+    elo_now, elo_pre, _ = B.run_elo(fights, ELO_K, ELO_BOOST, store=True)
     years = list(range(TRAIN_FROM.year, fights[-1].date.year + 1))
     priors = {y: B.build_priors(fights, dt.date(y - PRIOR_WINDOW, 1, 1), dt.date(y, 1, 1)) for y in years}
     print("  parsed %d fights, %d people, priors for %d years (%.1fs)" % (len(fights), len(people), len(years),
@@ -211,7 +211,8 @@ def build_table(log=None):
                 st["last"] = (f.day, res + ("_" + cls if cls in ("KO", "SUB", "DEC") else ""))
     T = pd.DataFrame(rows)
     print("  walk-forward table: %d fights %s..%s (%.1fs)" % (len(T), T.date.min(), T.date.max(), time.time() - t0))
-    return T, priors, fights, people, state
+    priors["live"] = B.build_priors(fights, fights[-1].date.replace(year=fights[-1].date.year - PRIOR_WINDOW), None)
+    return T, priors, fights, people, state, elo_now
 
 
 # ============================================================== 2. features
@@ -231,7 +232,8 @@ SHRINK = {"k_fight": 3.0,      # fights, for per-fight result rates
 def prior_frame(T, priors):
     """Per-row prior rates (division of the bout, or the heavier home division for catch weights)."""
     out = {k: np.empty(len(T)) for k in PRIOR_FIELDS + ["lbs"]}
-    for i, (y, d) in enumerate(zip(T["year"], T["prior_div"])):
+    keys = T["prior_year"] if "prior_year" in T else T["year"]
+    for i, (y, d) in enumerate(zip(keys, T["prior_div"])):
         P = priors[y].get(d) or priors[y]["ALL"]
         for k in PRIOR_FIELDS:
             v = P.get(k)
@@ -1362,7 +1364,7 @@ def tune(D, quick=False):
 
 
 def prepare(quick=False):
-    T, priors, fights, people, state = build_table()
+    T, priors, fights, people, state, elo_now = build_table()
     T = T.reset_index(drop=True)
     PR = prior_frame(T, priors)
     FX, FY, SA, SB = build_features(T, PR)
@@ -1372,7 +1374,8 @@ def prepare(quick=False):
     y = outcome_cells(T)
     PMK = market_joint(T, m6, rd, 0.014)
     D = {"T": T, "PR": PR, "PMK": PMK, "FX": FX, "FY": FY, "y": y, "stat_cols": stat_cols, "pm": pm, "msrc": src,
-         "m6": m6, "rd": rd, "pdec": pdec, "priors": priors, "fights": fights, "people": people, "state": state}
+         "m6": m6, "rd": rd, "pdec": pdec, "priors": priors, "fights": fights, "people": people, "state": state,
+         "elo_now": elo_now}
     return D
 
 
@@ -1406,7 +1409,8 @@ def live_frame(D, pairs, live_priors_year):
     elo_now = D["elo_now"]
     for q in pairs:
         day = q["date"].toordinal()
-        r = {"id": q.get("id", ""), "date": q["date"], "day": day, "year": live_priors_year, "event": "live",
+        r = {"id": q.get("id", ""), "date": q["date"], "day": day, "year": q["date"].year,
+             "prior_year": live_priors_year, "event": "live",
              "division": q["division"], "rounds": q["rounds"], "title": q.get("title", False), "tourn": False,
              "winner": "", "method": "", "cls": None, "rnd": 0, "time_s": None, "fight_s": None}
         r.update(side_row("A", D["people"][q["a"]], D["state"][q["a"]], day, q["date"], elo_now[q["a"]]))
@@ -1418,3 +1422,220 @@ def live_frame(D, pairs, live_priors_year):
         r["prior_div"] = pdiv
         rows.append(r)
     return pd.DataFrame(rows)
+
+
+# ============================================================== 9. main
+def rd4(x):
+    return [round(float(v), 4) for v in x]
+
+
+def compact_joint(row, R):
+    """Per-fight joint for the JSON: A KO by round, A SUB by round, B KO by round, B SUB by round, A dec,
+    B dec, draw (scheduled rounds only)."""
+    return (rd4(row[I_XKO:I_XKO + R]) + rd4(row[I_XSUB:I_XSUB + R]) + rd4(row[I_YKO:I_YKO + R])
+            + rd4(row[I_YSUB:I_YSUB + R]) + rd4(row[[I_XDEC, I_YDEC, I_DRAW]]))
+
+
+def summary_of(P):
+    M = marginals(P)
+    return {"p_fin": M["FIN"], "p_ko": M["KO"], "p_sub": M["SUB"], "p_dec": M["DEC"], "p_a": M["pA"],
+            "p_b": M["pB"], "p_draw": M["DRAW"]}
+
+
+def run(args):
+    t0 = time.time()
+    print("1/7 data and features")
+    D = prepare(args.quick)
+    T, y = D["T"], D["y"]
+    print("2/7 tuning on %d-%d (validation years %s)" % (TUNE_YEARS[0], TUNE_YEARS[1], VALID_YEARS))
+    chosen, tune_log = tune(D, args.quick)
+    cfgs = variant_cfgs(D["stat_cols"], chosen["C6_S"], chosen["C6_SM"], chosen["C_win"])
+    print("3/7 walk-forward fits (%.0fs)" % (time.time() - t0))
+    test = (T["date"] >= TEST_FROM).to_numpy()
+    preds = {k: np.full((len(T), NC_), np.nan) for k in ("S", "SM", "S_refit", "SM_refit")}
+    fit_through = np.full(len(T), "", dtype=object)
+    windows = {}
+    oof_years = [] if args.quick else list(range(2019, 2024))
+    for until in oof_years + [2024, 2025, 2026]:
+        w = Window(D, until, cfgs, chosen["C_haz"])
+        windows[until] = w
+        if until < 2024:
+            m = (T["year"] == until).to_numpy()
+            for v in ("S", "SM"):
+                preds[v][m] = w.predict(D, m, v)[0]
+                preds[v + "_refit"][m] = preds[v][m]
+            fit_through[m] = "%d-12-31" % (until - 1)
+        elif until == 2024:
+            for v in ("S", "SM"):
+                preds[v][test] = w.predict(D, test, v)[0]
+            m = (T["year"] == 2024).to_numpy()
+            for v in ("S", "SM"):
+                preds[v + "_refit"][m] = preds[v][m]
+        else:
+            m = (T["year"] == until).to_numpy()
+            for v in ("S", "SM"):
+                preds[v + "_refit"][m] = w.predict(D, m, v)[0]
+        print("  window < %d done (%.0fs)" % (until, time.time() - t0))
+    fit_through[test] = "2023-12-31"
+    base = baseline_joint(T, D["priors"], k_shrink=50, elo=False)
+    base_elo = baseline_joint(T, D["priors"], k_shrink=50, elo=True)
+    base_raw = baseline_joint(T, D["priors"], k_shrink=0, elo=False)
+    PMK = D["PMK"]
+    a = chosen["a_market"]
+    blend = np.where(np.isnan(PMK), np.nan, (1 - a) * preds["SM"] + a * np.nan_to_num(PMK))
+    blend_refit = np.where(np.isnan(PMK), np.nan, (1 - a) * preds["SM_refit"] + a * np.nan_to_num(PMK))
+
+    print("4/7 held-out evaluation, 2024-01-01 .. %s (%.0fs)" % (T["date"].max(), time.time() - t0))
+    ev = test & (y >= 0)
+    Tt = T[ev]
+    models = {"base_division_raw": base_raw, "base_division": base, "base_division_elo": base_elo,
+              "S": preds["S"], "S_refit": preds["S_refit"], "SM": preds["SM"], "SM_refit": preds["SM_refit"]}
+    L = {k: losses_on(v[ev], D, ev) for k, v in models.items()}
+    boot, st = cluster_bootstrap(L, Tt["event"].to_numpy(), B=400 if args.quick else 2000)
+    paired = {
+        "S_minus_base_division": paired_diff(L["S"], L["base_division"], st, METRICS),
+        "S_minus_base_division_elo": paired_diff(L["S"], L["base_division_elo"], st, METRICS),
+        "SM_minus_S": paired_diff(L["SM"], L["S"], st, METRICS),
+        "S_refit_minus_S": paired_diff(L["S_refit"], L["S"], st, METRICS),
+        "SM_minus_base_division_elo": paired_diff(L["SM"], L["base_division_elo"], st, METRICS),
+    }
+    # market props subset
+    hm = ev & ~np.isnan(PMK[:, 0])
+    Th = T[hm]
+    Lm = {"market_props": losses_on(PMK[hm], D, hm), "SM": losses_on(preds["SM"][hm], D, hm),
+          "S": losses_on(preds["S"][hm], D, hm), "SM_market_blend": losses_on(blend[hm], D, hm),
+          "SM_refit_market_blend": losses_on(blend_refit[hm], D, hm),
+          "base_division_elo": losses_on(base_elo[hm], D, hm)}
+    boot_m, st_m = cluster_bootstrap(Lm, Th["event"].to_numpy(), B=400 if args.quick else 2000)
+    paired_m = {"SM_minus_market": paired_diff(Lm["SM"], Lm["market_props"], st_m, METRICS),
+                "S_minus_market": paired_diff(Lm["S"], Lm["market_props"], st_m, METRICS),
+                "blend_minus_market": paired_diff(Lm["SM_market_blend"], Lm["market_props"], st_m, METRICS),
+                "blend_minus_SM": paired_diff(Lm["SM_market_blend"], Lm["SM"], st_m, METRICS)}
+    calib = {"S": calibration_report(preds["S"][ev], y[ev], Tt), "SM": calibration_report(preds["SM"][ev], y[ev], Tt),
+             "base_division": calibration_report(base[ev], y[ev], Tt),
+             "market_props": calibration_report(PMK[hm], y[hm], Th),
+             "SM_market_blend": calibration_report(blend[hm], y[hm], Th)}
+    # by division and format: method3 / joint vs base
+    by_div = []
+    for dv, g in Tt.groupby("division"):
+        ix = np.where(ev)[0][np.isin(np.where(ev)[0], g.index.to_numpy())]
+        if len(ix) < 15:
+            continue
+        mm = np.zeros(len(T), bool)
+        mm[ix] = True
+        ls, lb = losses_on(preds["S"][mm], D, mm), losses_on(base[mm], D, mm)
+        is_ko, is_sub, is_dec = outcome_flags(y[mm])
+        Ms = marginals(preds["S"][mm])
+        by_div.append({"division": dv, "n": int(len(ix)), "obs_ko": round(float(is_ko.mean()), 3),
+                       "obs_sub": round(float(is_sub.mean()), 3), "obs_dec": round(float(is_dec.mean()), 3),
+                       "pred_ko": round(float(Ms["KO"].mean()), 3), "pred_sub": round(float(Ms["SUB"].mean()), 3),
+                       "pred_dec": round(float(Ms["DEC"].mean()), 3),
+                       "method3_S": round(float(np.nanmean(ls["method3"])), 4),
+                       "method3_base": round(float(np.nanmean(lb["method3"])), 4),
+                       "joint_S": round(float(np.nanmean(ls["joint"])), 4),
+                       "joint_base": round(float(np.nanmean(lb["joint"])), 4)})
+    by_fmt = []
+    for R in (3, 5):
+        mm = ev & ((T["rounds"].to_numpy() == 5) == (R == 5))
+        row = {"rounds": R, "n": int(mm.sum())}
+        for nm in ("S", "SM", "base_division"):
+            lsx = losses_on(models[nm][mm], D, mm)
+            row[nm] = {k: round(float(np.nanmean(lsx[k])), 4) for k in ("joint", "method3", "finish", "round_given_fin",
+                                                                       "winner")}
+        by_fmt.append(row)
+    by_year = []
+    for yr_ in sorted(Tt["year"].unique()):
+        mm = ev & (T["year"] == yr_).to_numpy()
+        row = {"year": int(yr_), "n": int(mm.sum())}
+        for nm in ("S", "S_refit", "SM", "SM_refit", "base_division"):
+            lsx = losses_on(models[nm][mm], D, mm)
+            row[nm] = {k: round(float(np.nanmean(lsx[k])), 4) for k in ("joint", "method3", "winner")}
+        by_year.append(row)
+    # tuning-period walk-forward (out-of-fold) numbers, for reference
+    oof = None
+    if oof_years:
+        om = T["year"].isin(oof_years).to_numpy() & (y >= 0)
+        oof = {nm: summarize_losses(losses_on(v[om], D, om)) for nm, v in
+               (("S", preds["S"]), ("SM", preds["SM"]), ("base_division", base), ("base_division_elo", base_elo))}
+        oof = {k: {m: round(v, 5) for m, v in d.items()} for k, d in oof.items()}
+        oof["n"] = int(om.sum())
+
+    print("5/7 roster and matchup outputs (%.0fs)" % (time.time() - t0))
+    w_live = Window(D, 2027, cfgs, chosen["C_haz"])
+    roster, matchups = roster_outputs(D, w_live, args)
+    print("6/7 compact JS model (%.0fs)" % (time.time() - t0))
+    js_model = export_js_model(D, w_live, chosen)
+    js_check = verify_js(js_model, D, w_live)
+    print("7/7 writing outputs (%.0fs)" % (time.time() - t0))
+    bt_ids = set(f["id"] for f in json.load(open(BACKTEST))["fights"])
+    fights_out = {}
+    for i in np.where(T["id"].isin(bt_ids).to_numpy())[0]:
+        R = 5 if T.at[i, "rounds"] == 5 else 3
+        rec = {"date": T.at[i, "date"].isoformat(), "rounds": R, "fit_through": fit_through[i]}
+        for v in ("S", "SM"):
+            P = preds[v][i]
+            if np.isnan(P).any():
+                continue
+            rec[v] = compact_joint(P, R)
+        if "S" not in rec:
+            continue
+        if T.at[i, "year"] >= 2025:
+            for v in ("S_refit", "SM_refit"):
+                rec[v] = compact_joint(preds[v][i], R)
+        sm = summary_of(preds["S"][i:i + 1])
+        rec["sum_S"] = {k: round(float(v[0]), 4) for k, v in sm.items()}
+        fights_out[T.at[i, "id"]] = rec
+    out = {
+        "meta": {
+            "tool": "tools/methodround.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+            "snapshot": T["date"].max().isoformat(),
+            "what": "Method-and-round benchmark: per fight P(A/B by KO/TKO in round r), P(A/B by submission in round r), "
+                    "P(A/B by decision), P(draw); everything else (finish, method split, 7-bin, finishing round, "
+                    "P(fighter wins by KO/sub/dec)) is a marginal",
+            "cells": "fights[id][variant] = A KO r1..R, A SUB r1..R, B KO r1..R, B SUB r1..R, A DEC, B DEC, DRAW "
+                     "(R = scheduled rounds; A = first ufcstats name, as in backtest.json); KO/TKO includes doctor "
+                     "and corner stoppages; DQ and no-contests are not modelled",
+            "variants": {"S": "stats only: pre-fight UFC stats, record, age, Elo; usable for any matchup at any time",
+                         "SM": "S plus the closing moneyline (log-odds) as a feature and a separate winner logit; the "
+                               "line is known only minutes before the fight, so SM is a live/stacking variant",
+                         "*_refit": "same hyperparameters, coefficients re-estimated each Jan 1 on everything before "
+                                    "(2025 and 2026 fights only; 2024 equals the frozen fit)"},
+            "walk_forward": "features use only fights before the fight date; priors from the 5 calendar years before "
+                            "the fight's year; hyperparameters and blend weight chosen by expanding-window CV with "
+                            "validation years 2020-2023; 2019-2023 predictions are out-of-fold (fit_through = Dec 31 "
+                            "of the previous year); 2024+ predictions come from the fit through 2023-12-31",
+            "chosen": chosen, "shrink": SHRINK, "train_from": {"S": 2012, "SM": 2013, "hazard": HAZ_START},
+            "recency_half_life_years": HL_YEARS, "elo": {"K": ELO_K, "boost": ELO_BOOST},
+            "market_sources": "data/derived/market.json (tools/market.py: consensus closing moneyline; method6, round "
+                              "and decision props from US books on BestFightOdds, 2021+); nlbair/ufc-data closing "
+                              "ranges (data/raw/odds/nlbair_odds.csv) for 2013-2018 moneylines",
+            "n_fights_table": int(len(T)), "n_backtest_fights": len(fights_out),
+        },
+        "tuning": {"cv": tune_log, "oof_2019_2023": oof},
+        "test": {"period": [TEST_FROM.isoformat(), T["date"].max().isoformat()], "n": int(ev.sum()),
+                 "metrics": boot, "paired": paired, "market_subset": {"n": int(hm.sum()), "metrics": boot_m,
+                                                                      "paired": paired_m},
+                 "calibration": calib, "by_division": by_div, "by_format": by_fmt, "by_year": by_year},
+        "matchups": matchups,
+        "roster": roster,
+        "js_model": js_model,
+        "js_check": js_check,
+        "fights": fights_out,
+    }
+    with open(OUT_JSON, "w") as fh:
+        json.dump(out, fh, separators=(",", ":"), allow_nan=False, default=_json_default)
+    print("  wrote %s (%.1f MB)" % (OUT_JSON, os.path.getsize(OUT_JSON) / 1e6))
+    write_report(out)
+    print("  wrote %s; done in %.0fs" % (OUT_MD, time.time() - t0))
+
+
+def _json_default(o):
+    if isinstance(o, (np.integer,)):
+        return int(o)
+    if isinstance(o, (np.floating,)):
+        return None if np.isnan(o) else float(o)
+    if isinstance(o, (dt.date,)):
+        return o.isoformat()
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    raise TypeError(type(o))

@@ -332,11 +332,29 @@ def bootstrap(D, preds, idx, base=None, B_=2000, seed=7):
 AY, AO = 27.0, 31.0        # knots of the age drift: improving before AY, declining after AO
 
 
-def age_G(a, dy, do):
-    """Integral of the drift rate g(a) = dy*(AY-a)+ - do*(a-AO)+ (rating units per year of age)."""
+def age_G(a, dy, do, ay=AY, ao=AO):
+    """Integral of the drift rate g(a) = dy*(ay-a)+ - do*(a-ao)+ (rating units per year of age)."""
     if a != a:          # nan: unknown age -> no drift
         return 0.0
-    return -dy * max(0.0, AY - a) ** 2 / 2.0 - do * max(0.0, a - AO) ** 2 / 2.0
+    return -dy * max(0.0, ay - a) ** 2 / 2.0 - do * max(0.0, a - ao) ** 2 / 2.0
+
+
+def drift(P, age, gap_y, n_so_far):
+    """Deterministic skill change between a fighter's previous fight and the next one (rating units):
+    age curve (improvement before ay, accelerating decline after ao), early-career learning
+    dl * exp(-(n - 1) / nl) on entering fight n + 1, and a layoff term -lay * (min(gap, 4) - 0.75)+."""
+    d = 0.0
+    dy, do = P.get("dy", 0.0), P.get("do", 0.0)
+    if (dy or do) and age == age and gap_y > 0:
+        ay, ao = P.get("ay", AY), P.get("ao", AO)
+        d += age_G(age, dy, do, ay, ao) - age_G(age - gap_y, dy, do, ay, ao)
+    dl = P.get("dl", 0.0)
+    if dl and n_so_far >= 1:
+        d += dl * math.exp(-(n_so_far - 1) / P.get("nl", 4.0))
+    lay = P.get("lay", 0.0)
+    if lay and gap_y > 0.75:
+        d -= lay * (min(gap_y, 4.0) - 0.75)
+    return d
 
 
 def newcomer(age, P):
@@ -591,8 +609,7 @@ def run_elo(D, P, until=None, record=False):
                 gap = 0.0
             else:
                 gap = (d - last[p]) / YEAR
-                if (dy or do) and gap > 0 and dob[p] == dob[p]:
-                    r[p] += age_G(age, dy, do) - age_G(age - gap, dy, do)
+                r[p] += drift(P, age, gap, nf[p])
             k = K * (1.0 + kb * math.exp(-nf[p] / kn)) * (1.0 + kl * min(gap, 3.0))
             if nf[p] < boost_n:
                 k *= boost
@@ -626,6 +643,7 @@ def run_glicko2(D, P, until=None, record=False):
     kap = P.get("kappa", 1.0)
     phimin = P.get("phimin", 0.0)
     mu, phi, sig, last = {}, {}, {}, {}
+    nfc = defaultdict(int)
     out = np.full(D.n, np.nan)
     rec = np.full((D.n, 4), np.nan) if record else None
     pi2 = math.pi ** 2
@@ -642,8 +660,7 @@ def run_glicko2(D, P, until=None, record=False):
                 gap = (d - last[p])
                 if gap > 0:
                     phi[p] = min(phi0, math.sqrt(phi[p] ** 2 + sig[p] ** 2 * gap / T))
-                    if (dy or do) and D.dob[p] == D.dob[p]:
-                        mu[p] += age_G(age, dy, do) - age_G(age - gap / YEAR, dy, do)
+                mu[p] += drift(P, age, gap / YEAR, nfc[p])
         ma, mb, pa, pb = mu[a], mu[b], phi[a], phi[b]
         gc = 1.0 / math.sqrt(1.0 + 3.0 * (pa * pa + pb * pb) / pi2)
         out[i] = 1.0 / (1.0 + math.exp(-kap * gc * (ma - mb)))
@@ -697,7 +714,9 @@ def run_glicko2(D, P, until=None, record=False):
             mu[b], phi[b], sig[b] = nb
         last[a] = d
         last[b] = d
-    return out, rec, {"mu": mu, "phi": phi, "sig": sig, "last": last}
+        nfc[a] += 1
+        nfc[b] += 1
+    return out, rec, {"mu": mu, "phi": phi, "sig": sig, "last": last, "n": nfc}
 
 
 def phi_q2(phi, q):
@@ -739,6 +758,7 @@ def run_trueskill(D, P, until=None, record=False):
     th_d = P.get("th_draw", 0.1)
     w_fin = P.get("w_fin", 1.0)
     mu, var, last = {}, {}, {}
+    nfc = defaultdict(int)
     out = np.full(D.n, np.nan)
     rec = np.full((D.n, 4), np.nan) if record else None
     for i in range(D.n):
@@ -752,8 +772,7 @@ def run_trueskill(D, P, until=None, record=False):
             else:
                 gap = (d - last[p]) / YEAR
                 var[p] = min(s0 * s0, var[p] + tau_y * tau_y * gap + gam * gam)
-                if (dy or do) and gap > 0 and D.dob[p] == D.dob[p]:
-                    mu[p] += age_G(age, dy, do) - age_G(age - gap, dy, do)
+                mu[p] += drift(P, age, gap, nfc[p])
         ma, mb, va, vb = mu[a], mu[b], var[a], var[b]
         c2 = 2 * beta2 + va + vb
         c = math.sqrt(c2)
@@ -784,7 +803,9 @@ def run_trueskill(D, P, until=None, record=False):
             var[b] = vb * max(1e-4, 1 - ww * vb / c2 * wv)
         last[a] = d
         last[b] = d
-    return out, rec, {"mu": mu, "var": var, "last": last}
+        nfc[a] += 1
+        nfc[b] += 1
+    return out, rec, {"mu": mu, "var": var, "last": last, "n": nfc}
 
 
 # =====================================================================================================
@@ -839,13 +860,16 @@ class WHR:
         w2, vf, s0 = P["w2"], P.get("vf", 0.0), P["s0"]
         dy, do = P.get("dy", 0.0), P.get("do", 0.0)
         prev = np.full(2 * K, -1)
+        pos = np.zeros(2 * K, int)          # number of the fighter's earlier (observed) fights
         lastn = {}
         for n in range(2 * K):
             p = node_p[n]
             if p in lastn:
                 prev[n] = lastn[p]
+                pos[n] = pos[lastn[p]] + 1
             lastn[p] = n
         self.prev = prev
+        self.pos = pos
         e = np.where(prev >= 0)[0]
         self.e_n = e
         self.e_p = prev[e]
@@ -853,8 +877,8 @@ class WHR:
         self.e_c = 1.0 / (w2 * dt_y + vf + 1e-9)
         self.c_of = np.zeros(2 * K)
         self.c_of[e] = self.e_c
-        self.e_d = np.array([age_G(node_age[n], dy, do) - age_G(node_age[m], dy, do)
-                             for n, m in zip(e, self.e_p)]) if (dy or do) else np.zeros(len(e))
+        self.e_d = np.array([drift(P, node_age[n], (node_day[n] - node_day[m]) / YEAR, pos[n])
+                             for n, m in zip(e, self.e_p)])
         f = np.where(prev < 0)[0]
         self.f_n = f
         self.f_m = np.array([newcomer_i(D, P, obs[n // 2], n % 2, node_age[n]) for n in f])
@@ -1075,8 +1099,7 @@ class WHR:
                     if p in lastnode:
                         n = lastnode[p]
                         gap = (dday - self.node_day[n]) / YEAR
-                        m = self.x[n] + (age_G(age, dy, do) - age_G(self.node_age[n], dy, do)
-                                         if (dy or do) else 0.0)
+                        m = self.x[n] + drift(P, age, gap, self.pos[n] + 1)
                         v = V[n] + w2 * gap + vf
                     else:
                         m, v = newcomer_i(D, P, i, len(ms), age), s0 * s0
@@ -1117,7 +1140,7 @@ class WHR:
             n = last[p]
             gap = (ref_day - self.node_day[n]) / YEAR
             age = (ref_day - D.dob[p]) / YEAR if D.dob[p] == D.dob[p] else float("nan")
-            m = self.x[n] + (age_G(age, dy, do) - age_G(self.node_age[n], dy, do) if (dy or do) else 0.0)
+            m = self.x[n] + drift(P, age, gap, self.pos[n] + 1)
             out[p] = (float(m), float(math.sqrt(V[n] + w2 * gap + vf)), float(self.x[n]), float(math.sqrt(V[n])))
         return out
 
@@ -1522,6 +1545,8 @@ def specs(quick):
     LN = LN10_400
     shared = [("mu_new", [-0.3, -0.2, -0.1, 0.0]), ("age_new", [-0.04, -0.02, 0.0, 0.02]),
               ("dy", [0.0, 0.02, 0.05, 0.1]), ("do", [0.0, 0.01, 0.02, 0.04, 0.08]),
+              ("ay", [25.0, 27.0, 29.0, 31.0]), ("ao", [29.0, 31.0, 33.0, 35.0]),
+              ("dl", [0.0, 0.03, 0.06, 0.1, 0.15]), ("nl", [2.0, 4.0, 8.0]), ("lay", [0.0, 0.05, 0.1, 0.2]),
               ("pre_wp", [0.0, 0.5, 1.0, 2.0]), ("pre_n", [0.0, 0.05, 0.1, 0.2]),
               ("pre_net", [0.0, 0.1, 0.2, 0.4]), ("pre_dwcs", [0.0, 0.1, 0.2, 0.3]),
               ("kappa", [0.8, 0.9, 1.0, 1.1, 1.2])]
@@ -1565,7 +1590,8 @@ def specs(quick):
               "grid": [("s0", [0.5, 0.8, 1.0, 1.3, 1.7]), ("tau_y", [0.05, 0.1, 0.2, 0.3, 0.5]),
                        ("gam", [0.0, 0.1, 0.2, 0.3])] + [(k, [round(1.5 * v, 4) for v in vals])
                                                          if k in ("mu_new", "age_new", "dy", "do", "pre_wp",
-                                                                  "pre_n", "pre_net", "pre_dwcs") else (k, vals)
+                                                                  "pre_n", "pre_net", "pre_dwcs", "dl", "lay")
+                                                         else (k, vals)
                                                          for k, vals in shared]})
     S.append({"name": "trueskill_mov", "kind": "trueskill", "family": "TrueSkill",
               "label": "TrueSkill with method-aware (ordinal) outcomes: finishes and unanimous decisions "
@@ -1582,7 +1608,8 @@ def specs(quick):
               "label": "Whole-History Rating (Bayesian Bradley-Terry, Gaussian random-walk skill, history re-solved "
                        "before every fight day), binary outcomes",
               "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "pre_on": True}, "from_shared": "elo_full", "coarse": True,
-              "grid": whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2])]})
+              "grid": whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2]), ("do", [0.01, 0.02, 0.04]),
+                                  ("dl", [0.0, 0.05, 0.1]), ("mu_new", [-0.3, -0.15, 0.0])]})
     S.append({"name": "whr_mov", "kind": "whr", "family": "WHR",
               "label": "WHR with margin of victory (fractional / weighted outcomes by method)",
               "P": {"enc": "mov", "pre_on": True}, "from": "whr", "from_mov": "elo_full", "coarse": True,
@@ -1775,7 +1802,8 @@ def matchup_probs(roster, sys_params, a, b, stack=None, dims_coef=None, baseline
 # =====================================================================================================
 # final runs, outputs
 # =====================================================================================================
-SHARED_KEYS = ("mu_new", "age_new", "dy", "do", "pre_on", "pre_wp", "pre_n", "pre_net", "pre_dwcs")
+SHARED_KEYS = ("mu_new", "age_new", "dy", "do", "ay", "ao", "dl", "nl", "lay", "pre_on", "pre_wp", "pre_n", "pre_net",
+               "pre_dwcs")
 MOV_KEYS = ("y_ud", "y_sd", "y_dq", "w_fin", "w_r1")
 
 
@@ -1809,13 +1837,13 @@ def roster_states(D, finals, DP, dim_state, ref_day):
                 if p not in st["r"]:
                     continue
                 gap = (ref_day - st["last"][p]) / YEAR
-                m = st["r"][p] + (age_G(age, dy, do) - age_G(age - gap, dy, do) if (dy or do) else 0.0)
+                m = st["r"][p] + drift(P, age, gap, st["n"][p])
                 row[name] = {"mu": r5(m), "n": int(st["n"][p])}
             elif kind == "glicko2":
                 if p not in st["mu"]:
                     continue
                 gap = ref_day - st["last"][p]
-                m = st["mu"][p] + (age_G(age, dy, do) - age_G(age - gap / YEAR, dy, do) if (dy or do) else 0.0)
+                m = st["mu"][p] + drift(P, age, gap / YEAR, st["n"][p])
                 ph = min(P["phi0"], math.sqrt(st["phi"][p] ** 2 + st["sig"][p] ** 2 * gap / P["T"]))
                 row[name] = {"mu": r5(m), "sd": r5(ph), "vol": r5(st["sig"][p], 5),
                              "elo_scale": r5(1500 + 173.7178 * m, 1)}
@@ -1823,7 +1851,7 @@ def roster_states(D, finals, DP, dim_state, ref_day):
                 if p not in st["mu"]:
                     continue
                 gap = (ref_day - st["last"][p]) / YEAR
-                m = st["mu"][p] + (age_G(age, dy, do) - age_G(age - gap, dy, do) if (dy or do) else 0.0)
+                m = st["mu"][p] + drift(P, age, gap, st["n"][p])
                 v = min(P["s0"] ** 2, st["var"][p] + P["tau_y"] ** 2 * gap + P.get("gam", 0.0) ** 2)
                 row[name] = {"mu": r5(m), "sd": r5(math.sqrt(v))}
             elif kind == "whr":

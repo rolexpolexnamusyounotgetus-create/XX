@@ -59,7 +59,7 @@ def lnd(s):
 def load():
     ev = rd("ufc_event_details.csv")
     edate = {e: dt.datetime.strptime(d, "%B %d, %Y").date() for e, d in zip(ev.EVENT, ev.DATE) if d}
-    res = rd("ufc_fight_results.csv")
+    res = rd("ufc_fight_results.csv").rename(columns={"TIME FORMAT": "FMT"})
     res["i"] = np.arange(len(res))
     res = res[res.EVENT.isin(edate)].drop_duplicates("URL", keep="first")
     res = res[res.BOUT.str.count(" vs. ") == 1].copy()
@@ -104,7 +104,7 @@ def build():
         win = {"W/L": 0, "L/W": 1}.get(r.OUTCOME)
         ko = r.METHOD == "KO/TKO"
         division = div_of(r.WEIGHTCLASS)
-        five = 1.0 if r._7.startswith("5 Rnd") else 0.0          # TIME FORMAT
+        five = 1.0 if r.FMT.startswith("5 Rnd") else 0.0
         title = 1.0 if (("Title" in r.WEIGHTCLASS and "Tournament" not in r.WEIGHTCLASS) or "Championship" in r.WEIGHTCLASS) else 0.0
         stats = None
         if nb.get((r.EVENT, r.BOUT), 0) == 1:
@@ -130,8 +130,7 @@ def build():
                 real = [d for d0, d in s["hist"] if d not in ("CW", "OW")]
             home = None
             if real:
-                vc = pd.Series(real[::-1]).value_counts(sort=False)
-                home = vc.idxmax() if len(vc) else None
+                vc = pd.Series(real).value_counts()
                 best = vc.max()
                 home = next(d for d in real[::-1] if vc[d] == best)
             feats.append({"age": age, "n": s["n"], "yrs": (day - s["first"]) / 365.25 if s["n"] else 0.0, "lay": lay,

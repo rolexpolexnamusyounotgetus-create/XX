@@ -1304,6 +1304,7 @@ def report_and_export(args):
     pm_ = page["regimes"]["market"]["methods"][chosen["market"]]["patterns"][mpat]
     pn_ = page["regimes"]["nomarket"]["methods"][chosen["nomarket"]]["patterns"][npat]
     common = np.array(sorted(set(pm_["_idx"]) & set(pn_["_idx"])))
+    common = common[np.isfinite(P["market"][common])]          # segment tables: rows with a market line
     maps = {k: dict(zip(src["_idx"], src[f])) for k, src, f in (("ms", pm_, "_ps"), ("mr", pm_, "_pr"),
                                                                  ("ns", pn_, "_ps"), ("nr", pn_, "_pr"))}
     full_maps = {}

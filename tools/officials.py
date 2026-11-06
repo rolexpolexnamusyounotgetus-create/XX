@@ -912,58 +912,94 @@ def design_fixed(df, kind):
     return X
 
 
-def glmm_fit(y, X, g, family, offset=None, tau=0.3, ref_levels=None, iters=60, ridge_b=1e-3):
+def glmm_fit(y, X, g, family, offset=None, tau=0.3, ref_levels=None, iters=50, ridge_b=1e-3):
     """Random-intercept GLM by penalized Newton: eta = X b + u_g + offset, u ~ N(0, tau^2).
-    family: 'binomial' or 'poisson'. Returns dict with beta, u (per level), u_sd (Laplace), loglik."""
+    family: 'binomial' or 'poisson'. The one-hot random-effect block is handled with group sums, so the
+    Hessian is [X'WX, X'WZ; Z'WX, diag(Z'WZ) + 1/tau^2]. Returns beta, u per level with Laplace sds, loglik
+    and the Laplace log marginal likelihood (beta profiled)."""
     y = np.asarray(y, float)
     X = np.asarray(X, float)
     off = np.zeros(len(y)) if offset is None else np.asarray(offset, float)
     levels = ref_levels if ref_levels is not None else sorted(set(g))
     li = {k: i for i, k in enumerate(levels)}
     gi = np.array([li.get(k, -1) for k in g])
+    ok = gi >= 0
+    gi_ok = gi[ok]
     p, G = X.shape[1], len(levels)
     use_re = tau > 0
-    Z = np.zeros((len(y), G))
-    ok = gi >= 0
-    Z[np.nonzero(ok)[0], gi[ok]] = 1.0
-    A = np.hstack([X, Z]) if use_re else X
-    pen = np.r_[np.full(p, ridge_b), np.full(G, 1.0 / tau ** 2)] if use_re else np.full(p, ridge_b)
-    th = np.zeros(A.shape[1])
+    beta = np.zeros(p)
+    u = np.zeros(G)
     if family == "poisson":
-        th[0] = math.log(max(y.sum(), 0.5) / max(np.exp(off).sum(), 1e-9))
+        beta[0] = math.log(max(y.sum(), 0.5) / max(np.exp(off).sum(), 1e-9))
+    else:
+        m = min(max(y.mean(), 1e-4), 1 - 1e-4)
+        beta[0] = math.log(m / (1 - m))
+
+    def eta_of(beta, u):
+        e = X @ beta + off
+        if use_re:
+            e = e.copy()
+            e[ok] += u[gi_ok]
+        return e
+
     for _ in range(iters):
-        eta = A @ th + off
+        eta = eta_of(beta, u)
         if family == "binomial":
             mu = 1 / (1 + np.exp(-eta))
             W = mu * (1 - mu)
         else:
             mu = np.exp(np.clip(eta, -30, 30))
             W = mu
-        grad = A.T @ (y - mu) - pen * th
-        H = (A * W[:, None]).T @ A + np.diag(pen)
-        step = np.linalg.solve(H, grad)
-        th += step
-        if np.abs(step).max() < 1e-8:
+        r = y - mu
+        gb = X.T @ r - ridge_b * beta
+        Hbb = (X * W[:, None]).T @ X + ridge_b * np.eye(p)
+        if use_re:
+            gu = np.bincount(gi_ok, weights=r[ok], minlength=G) - u / tau ** 2
+            Duu = np.bincount(gi_ok, weights=W[ok], minlength=G) + 1.0 / tau ** 2
+            Hbu = np.zeros((p, G))
+            for k in range(p):
+                Hbu[k] = np.bincount(gi_ok, weights=(X[ok, k] * W[ok]), minlength=G)
+            # Schur complement on beta
+            S_ = Hbb - (Hbu / Duu[None, :]) @ Hbu.T
+            rhs = gb - Hbu @ (gu / Duu)
+            db = np.linalg.solve(S_, rhs)
+            du = (gu - Hbu.T @ db) / Duu
+        else:
+            db = np.linalg.solve(Hbb, gb)
+            du = np.zeros(G)
+        beta += db
+        u += du
+        if max(np.abs(db).max(), np.abs(du).max() if G else 0) < 1e-8:
             break
-    eta = A @ th + off
+    eta = eta_of(beta, u)
     if family == "binomial":
         mu = 1 / (1 + np.exp(-eta))
         ll = float(np.sum(y * np.log(mu + 1e-12) + (1 - y) * np.log(1 - mu + 1e-12)))
+        W = mu * (1 - mu)
     else:
         mu = np.exp(eta)
         ll = float(np.sum(y * eta - mu))
-    cov = np.linalg.inv(H)
-    out = {"beta": th[:p], "beta_sd": np.sqrt(np.diag(cov)[:p]), "levels": levels, "tau": tau, "loglik": ll,
-           "family": family, "cols": None}
+        W = mu
+    Hbb = (X * W[:, None]).T @ X + ridge_b * np.eye(p)
+    out = {"levels": levels, "tau": tau, "loglik": ll, "family": family, "cols": None, "beta": beta}
     if use_re:
-        out["u"] = th[p:]
-        out["u_sd"] = np.sqrt(np.diag(cov)[p:])
-        out["n"] = Z.sum(0)
-        out["events"] = (Z * y[:, None]).sum(0)
-        # Laplace log marginal likelihood (beta profiled)
-        Hbb = H[p:, p:]
-        sign, logdet = np.linalg.slogdet(Hbb)
-        out["log_marginal"] = float(ll - 0.5 * np.sum(th[p:] ** 2) / tau ** 2 - G * math.log(tau) - 0.5 * logdet)
+        Duu = np.bincount(gi_ok, weights=W[ok], minlength=G) + 1.0 / tau ** 2
+        Hbu = np.zeros((p, G))
+        for k in range(p):
+            Hbu[k] = np.bincount(gi_ok, weights=(X[ok, k] * W[ok]), minlength=G)
+        S_ = Hbb - (Hbu / Duu[None, :]) @ Hbu.T
+        Sinv = np.linalg.inv(S_)
+        out["beta_sd"] = np.sqrt(np.diag(Sinv))
+        # var(u_k) = 1/D_k + (Hbu[:,k]/D_k)' Sinv (Hbu[:,k]/D_k)
+        Bk = Hbu / Duu[None, :]
+        out["u"] = u
+        out["u_sd"] = np.sqrt(1.0 / Duu + np.einsum("pk,pq,qk->k", Bk, Sinv, Bk))
+        out["n"] = np.bincount(gi_ok, minlength=G).astype(float)
+        out["events"] = np.bincount(gi_ok, weights=y[ok], minlength=G)
+        out["log_marginal"] = float(ll - 0.5 * np.sum(u ** 2) / tau ** 2 - G * math.log(tau)
+                                    - 0.5 * np.sum(np.log(Duu * tau ** 2)) - 0.5 * np.linalg.slogdet(S_)[1])
+    else:
+        out["beta_sd"] = np.sqrt(np.diag(np.linalg.inv(Hbb)))
     return out
 
 

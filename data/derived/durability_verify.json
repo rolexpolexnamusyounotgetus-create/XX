@@ -1,0 +1,133 @@
+{
+ "rows_test": 2905,
+ "kd_test": 681,
+ "fights_test": 1503,
+ "ladder": [
+  {
+   "model": "M0L",
+   "dev_test": 2774.46,
+   "kd_exp": 596.1,
+   "dev_test_rescaled": 2762.9
+  },
+  {
+   "model": "M1",
+   "dev_test": 2714.9,
+   "kd_exp": 578.2,
+   "dev_test_rescaled": 2697.61
+  },
+  {
+   "model": "M3",
+   "dev_test": 2646.05,
+   "kd_exp": 564.3,
+   "dev_test_rescaled": 2623.44
+  },
+  {
+   "model": "V3",
+   "dev_test": 2605.95,
+   "kd_exp": 536.3,
+   "dev_test_rescaled": 2570.02
+  },
+  {
+   "model": "E3",
+   "dev_test": 2570.41,
+   "kd_exp": 592.8,
+   "dev_test_rescaled": 2557.88
+  },
+  {
+   "model": "F",
+   "dev_test": 2559.99,
+   "kd_exp": 630.5,
+   "dev_test_rescaled": 2556.05
+  },
+  {
+   "model": "Fnokd",
+   "dev_test": 2551.99,
+   "kd_exp": 616.5,
+   "dev_test_rescaled": 2545.47
+  }
+ ],
+ "pairs": [
+  {
+   "model": "F",
+   "vs": "M0L",
+   "diff": -214.48,
+   "se_fight": 32.44,
+   "se_fighter_multiway": 39.01,
+   "diff_rescaled": -206.85,
+   "se_rescaled_fighter": 38.71
+  },
+  {
+   "model": "F",
+   "vs": "V3",
+   "diff": -45.96,
+   "se_fight": 18.7,
+   "se_fighter_multiway": 19.26,
+   "diff_rescaled": -13.97,
+   "se_rescaled_fighter": 15.69
+  },
+  {
+   "model": "F",
+   "vs": "E3",
+   "diff": -10.42,
+   "se_fight": 15.19,
+   "se_fighter_multiway": 15.17,
+   "diff_rescaled": -1.83,
+   "se_rescaled_fighter": 14.71
+  },
+  {
+   "model": "F",
+   "vs": "M3",
+   "diff": -86.07,
+   "se_fight": 22.39,
+   "se_fighter_multiway": 29.26,
+   "diff_rescaled": -67.4,
+   "se_rescaled_fighter": 26.79
+  },
+  {
+   "model": "E3",
+   "vs": "V3",
+   "diff": -35.54,
+   "se_fight": 15.33,
+   "se_fighter_multiway": 16.55,
+   "diff_rescaled": -12.13,
+   "se_rescaled_fighter": 15.37
+  },
+  {
+   "model": "E3",
+   "vs": "M0L",
+   "diff": -204.05,
+   "se_fight": 30.03,
+   "se_fighter_multiway": 36.71,
+   "diff_rescaled": -205.02,
+   "se_rescaled_fighter": 37.72
+  },
+  {
+   "model": "M3",
+   "vs": "M1",
+   "diff": -68.84,
+   "se_fight": 17.54,
+   "se_fighter_multiway": 20.11,
+   "diff_rescaled": -74.16,
+   "se_rescaled_fighter": 20.68
+  },
+  {
+   "model": "Fnokd",
+   "vs": "F",
+   "diff": -8.0,
+   "se_fight": 7.21,
+   "se_fighter_multiway": 7.87,
+   "diff_rescaled": -10.58,
+   "se_rescaled_fighter": 7.77
+  }
+ ],
+ "chin_exponent": {
+  "val_slope_chin": 1.1645,
+  "val_se": 0.0937,
+  "val_slope_pow": 0.8713,
+  "test_slope_chin": 1.4233,
+  "test_se": 0.1269,
+  "test_slope_pow": 0.8916,
+  "test_gain": -7.17,
+  "se_fight": 3.03
+ }
+}
