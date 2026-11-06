@@ -16,7 +16,7 @@ As of Nov 6, 2026. Stats: `data/derived/fighters.json` and `data/raw/` (ufcstats
 |---|---|---|---|
 | Sep 12, 2026 | Manon Fiorot | W UD 29-28 x3 | Won R1 33-21 with a knockdown, then traded evenly (R2 23-24, R3 24-27). Out-landed her 80-72 on 196 attempts to 226 |
 | Mar 28, 2026 | Maycee Barber | W KO R1 2:42 | Punch at distance; out-landed her 12-5 before the finish |
-| May 10, 2025 | Natalia Silva | L UD 27-30 x3 | Out-landed 65-45, and 0 of 2 on takedowns |
+| May 10, 2025 | Natalia Silva | L UD 27-30 x3 | Out-landed 45-65, and 0 of 2 on takedowns |
 | Sep 14, 2024 | Valentina Shevchenko | L UD 45-50 x3 | Taken down 8 of 12 times and controlled for 16:04; landed 18 of 100 |
 | Sep 16, 2023 | Valentina Shevchenko | D SD | Scored a knockdown and landed 31 of 35 in the clinch |
 | Mar 4, 2023 | Valentina Shevchenko | W SUB R4 4:34 | Took the back, then a rear-naked choke |

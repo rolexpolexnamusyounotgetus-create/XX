@@ -69,7 +69,7 @@ def build_panel():
     # people ids (namesakes resolved by build_db)
     log = {}
     fights, _ = bd.parse_fights(log)
-    bd.build_people(fights, log)
+    people = bd.build_people(fights, log)
     pid = {}
     for f in fights:
         if f.persons:
@@ -132,6 +132,11 @@ def build_panel():
     S["year"] = S.DATE.dt.year
     S["period"] = np.select([(S.DATE >= TRAIN[0]) & (S.DATE <= TRAIN[1]), (S.DATE >= TEST[0]),
                              (S.DATE >= EXT[0]) & (S.DATE <= EXT[1])], ["train", "test", "ext"], "old")
+    slug = {k: v.get("slug") for k, v in people.items()}
+    S["slug"] = S.pid.map(slug)
+    dob = {k: (v.get("tott") or {}).get("dob") for k, v in people.items()}
+    S["dob"] = pd.to_datetime(S.pid.map(dob))
+    S["age"] = (S.DATE - S.dob).dt.days / 365.25
     return F, S, notes
 
 
@@ -530,7 +535,3 @@ def person_history(S, p0_kd):
     return FS
 
 
-if __name__ == "__main__" and "--panel-only" in sys.argv:
-    t = time.time()
-    F, S, notes = build_panel()
-    print(time.time() - t, len(F), len(S))

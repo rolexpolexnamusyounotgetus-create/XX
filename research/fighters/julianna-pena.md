@@ -13,8 +13,8 @@ As of Nov 6, 2026. Stats: `data/derived/fighters.json` and `data/raw/` (ufcstats
 
 | Date | Opponent | Result | How |
 |---|---|---|---|
-| Jun 7, 2025 | Kayla Harrison | L SUB R2 4:55 | Taken down 2 of 3 times and controlled for 6:05, out-landed 30-9, then a kimura |
-| Oct 5, 2024 | Raquel Pennington | W SD (48-47, 47-48, 48-47) | Won R1 on volume (25-17), then took R2-R3 with 2 takedowns and 5:20 of control. Dropped in R4 and out-landed 61-43 over R4-R5 |
+| Jun 7, 2025 | Kayla Harrison | L SUB R2 4:55 | Taken down 2 of 3 times and controlled for 6:05, out-landed 9-30, then a kimura |
+| Oct 5, 2024 | Raquel Pennington | W SD (48-47, 47-48, 48-47) | Won R1 on volume (25-17), then took R2-R3 with 2 takedowns and 5:20 of control. Dropped in R4 and out-landed 43-61 over R4-R5 |
 | Jul 30, 2022 | Amanda Nunes | L UD (45-50, 43-50, 44-50) | Knocked down three times, taken down 6 of 8 times, and controlled for 11:49 |
 | Dec 11, 2021 | Amanda Nunes | W SUB R2 3:26 | Out-boxed Nunes 79-46, nearly all at distance, then a rear-naked choke |
 | Jan 23, 2021 | Sara McMann | W SUB R3 3:39 | Clinch work (10 of 10), then a rear-naked choke |

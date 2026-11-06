@@ -422,6 +422,46 @@ def load_dataset():
         return pickle.load(fh)
 
 
+# ------------------------------------------------------------------ engine v3 static expectations (node)
+def side_json(sd):
+    return {"S": [B.rnd(x, 6) for x in sd["S"]], "age": sd["age"], "ko_losses": sd["ko_losses"], "home": sd["home"],
+            "n": sd["n"], "elo": sd["elo"], "height_in": sd["height_in"], "reach_in": sd["reach_in"],
+            "stance": sd["stance"], "layoff": sd["layoff"]}
+
+
+def fight_json(r):
+    return {"id": r["id"], "year": r["year"], "date": r["date"], "division": r["division"],
+            "prior_division": r["prior_division"], "rounds": r["rounds"], "title": r["title"],
+            "A": side_json(r["sides"][0]), "B": side_json(r["sides"][1])}
+
+
+def priors_json(priors):
+    return {y: {d: {k: v for k, v in P.items() if not isinstance(v, (dict, list))} for d, P in py.items()}
+            for y, py in priors.items()}
+
+
+def cmd_engine(args):
+    d = load_dataset()
+    rows = d["rows"]
+    inp = os.path.join(CACHE, "engine_in.json")
+    outp = os.path.join(CACHE, "engine_out.json")
+    with open(inp, "w") as fh:
+        json.dump({"priors": priors_json(d["priors"]), "fights": [fight_json(r) for r in rows]}, fh)
+    t0 = time.time()
+    subprocess.run(["node", os.path.join(HERE, "mlrates_engine.js"), "expect", inp, outp], check=True)
+    eo = json.load(open(outp))
+    E = np.full((len(d["M"]["row"]), len(TNAMES)), np.nan)
+    for k, (ri, s) in enumerate(zip(d["M"]["row"], d["M"]["side"])):
+        rr = eo["rows"][ri]
+        if rr is not None:
+            E[k] = [rr[s][t] for t in TNAMES]
+    np.save(os.path.join(CACHE, "engine_expect.npy"), E)
+    with open(os.path.join(CACHE, "engine_meta.json"), "w") as fh:
+        json.dump({"params_version": eo["params_version"], "engine_version": eo["engine_version"]}, fh)
+    log("engine expectations saved (%.1fs), params %s, NaN rows %d"
+        % (time.time() - t0, eo["params_version"], int(np.isnan(E).any(axis=1).sum())))
+
+
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])

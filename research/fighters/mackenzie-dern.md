@@ -16,12 +16,12 @@ As of Nov 6, 2026. Stats: `data/derived/fighters.json` and `data/raw/` (ufcstats
 | Oct 25, 2025 | Virna Jandiroba | W UD | Out-landed her 118-106 but was taken down 9 times in 17 attempts (9:07 of control). Won R5 35-23 with 11 ground strikes |
 | Jan 11, 2025 | Amanda Ribas | W SUB R3 4:56 | Armbar from mount with 4 seconds left |
 | Aug 3, 2024 | Loopy Godinez | W UD 29-28 x3 | A kickboxing fight: 72-67 landed, 2 of 5 takedowns |
-| Feb 17, 2024 | Amanda Lemos | L UD 28-29 x3 | Out-landed 41-21 and dropped once |
+| Feb 17, 2024 | Amanda Lemos | L UD 28-29 x3 | Out-landed 21-41 and dropped once |
 | Nov 11, 2023 | Jessica Andrade | L KO R2 3:15 | Dropped four times |
 
 ## Style
 
-She is a BJJ specialist; her pedigree as a world-level jiu-jitsu competitor is *recalled*. The dataset backs the label: she has five submission wins (armbar from mount three times, a kneebar from bottom guard and a rear-naked choke), and time-decayed control of 278 s per 15 min against a division mean of 185. On the feet she is a head-hunter. 86% of her attempts go to the head, and coverage often describes a looping overhand right (*recalled*). She shoots often but rarely finishes the takedown cleanly. Her career takedown accuracy is 22%, so she reaches the mat through scrambles, clinches and opponents' mistakes as much as through wrestling.
+She is a BJJ specialist; her pedigree as a world-level jiu-jitsu competitor is *recalled*. The dataset backs the label: she has five submission wins (armbar from mount three times, a kneebar from bottom guard and a rear-naked choke), and time-decayed control of 278 s per 15 min against a division mean of 185. On the feet she is a head-hunter: 86% of her attempts go to the head. She shoots often but rarely finishes the takedown cleanly. Her career takedown accuracy is 22%, so she reaches the mat through scrambles, clinches and opponents' mistakes as much as through wrestling.
 
 ## Strengths
 

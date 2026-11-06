@@ -1034,10 +1034,18 @@ def cmd_build(a):
             cal[per]['overround_open_median'] = round(float(np.median([r['over_open'] for r in go])), 4)
     res['calibration'] = cal
 
+    # ---------------- market rating (walk-forward prior for fights with no line) ----------------
+    mr, mr_pred, mr_cur = market_rating(R, fights, boot=min(a.boot, 1000))
+    res['market_rating'] = mr
+    for r in R:
+        if r['id'] in mr_pred:
+            r['p_mrating'] = mr_pred[r['id']]
+    res['_ratings'] = mr_cur
+
     # ---------------- recalibration and stacking: fit on tune, score on test ----------------
     st = {}
-    gt = sub('tune', ['p_close_mult', 'p_open'])
-    gs = sub('test', ['p_close_mult', 'p_open'])
+    gt = sub('tune', ['p_close_mult', 'p_open', 'p_mrating'])
+    gs = sub('test', ['p_close_mult', 'p_open', 'p_mrating'])
     yt = np.array([r['y'] for r in gt])
     ys = np.array([r['y'] for r in gs])
     def feats(g, keys):
@@ -1056,6 +1064,11 @@ def cmd_build(a):
         'open_mult': (['p_open'], None),
         'open+elo': (['p_open', 'elo'], 'fit'),
         'elo': (['elo'], None),
+        'market_rating': (['p_mrating'], None),
+        'market_rating_slope': (['p_mrating'], 'fit'),
+        'market_rating+elo': (['p_mrating', 'elo'], 'fit'),
+        'close+market_rating': (['p_close_mult', 'p_mrating'], 'fit'),
+        'open+market_rating': (['p_open', 'p_mrating'], 'fit'),
     }
     test_ll = {}
     for name, (keys, mode) in variants.items():
@@ -1148,14 +1161,6 @@ def cmd_build(a):
 
     # ---------------- does anything beat the close? ----------------
     res['residual_features'] = residual_features(R, {f['id']: f for f in fights}, boot=min(a.boot, 1000))
-
-    # ---------------- market rating (walk-forward prior for fights with no line) ----------------
-    mr, mr_pred, mr_cur = market_rating(R, fights, boot=min(a.boot, 1000))
-    res['market_rating'] = mr
-    for r in R:
-        if r['id'] in mr_pred:
-            r['p_mrating'] = mr_pred[r['id']]
-    res['_ratings'] = mr_cur
 
     # ---------------- method props (event pages, if cached) ----------------
     if getattr(a, 'props', None):
@@ -1302,10 +1307,10 @@ def market_rating(R, fights, boot=1000):
     keep = {r['id'] for r in R}
     tune_ids = [r for r in dec if r['period'] == 'tune']
     grid = []
-    for sig_m in (0.2, 0.35, 0.5):
-        for tau in (0.2, 0.35, 0.5):
-            for v0 in (0.3, 0.6, 1.0):
-                for kappa in (0.0, 0.25, 0.5, 1.0):
+    for sig_m in (0.35, 0.5, 0.75):
+        for tau in (0.35, 0.5, 0.75):
+            for v0 in (1.0, 1.5):
+                for kappa in (0.0, 1.0, 1.5, 2.0):
                     pred, _ = run_rating(stream, sig_m, tau, v0, 0.0, kappa, until=TUNE[1], keep=keep)
                     g = [r for r in tune_ids if r['id'] in pred]
                     ll = float(np.mean(loss_arrays([pred[r['id']] for r in g], [r['y'] for r in g])[0]))

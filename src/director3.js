@@ -445,7 +445,7 @@
     td: ["{a} changes levels and finishes {atech}. {d} lands {posin}.", "Takedown, {a}! {Atech} puts {d} on {dhis} back.",
       "{a} shoots {atech} and drags {d} down.", "{a} hits {atech}. {Hes} {posin}.", "{a} gets {d} down with {atech}.", "{a} times {atech} and takes {d} down.",
       "{Atech} from {a}, and {d} goes down."],
-    tdClinch: ["{a} hits {atech} from the clinch. {d} is on {dhis} back.", "{a} drags {d} off the fence with {atech}.", "{Atech} from {a}! {d} goes down {posin2}.",
+    tdClinch: ["{a} hits {atech} from the clinch. {d} is on {dhis} back.", "{a} drags {d} off the fence with {atech}.", "{Atech} from {a} in the clinch, and {d} goes down.",
       "{a} finishes {atech} against the cage."],
     tdLate: ["{a} sneaks in {atech} with {clock} left in the round."],
     tdx: ["{d} stuffs the {tech}.", "{a} shoots {atech}. {d} sprawls and stays up.", "{d} reads the level change and sprawls.", "{a} goes for {atech}, but {d} defends.",
@@ -543,101 +543,732 @@
     F.kd_absorbed = of.kd_absorbed != null ? of.kd_absorbed : (prof && prof.kd_absorbed != null ? prof.kd_absorbed : null);
     F.profile = prof;
     F.p = pronounsFor(of.pronouns || of.pronoun || (prof && prof.pronouns), F.division, F.fightDivision);
-    F.tags = (sc && sc.style && sc.style.tags) || of.tags || [];
-    F.archetype = (sc && sc.style && sc.style.archetype) || of.archetype || null;
+    var fsc = F.slug && root.FightScouting && root.FightScouting[F.slug] || null;
+    F.tags = (sc && sc.style && sc.style.tags) || of.tags || (fsc && (fsc.tags || (fsc.style && fsc.style.tags))) || [];
+    F.archetype = (sc && sc.style && sc.style.archetype) || of.archetype || (fsc && (fsc.archetype || (fsc.style && fsc.style.archetype))) || null;
     F.scoutMoves = (opts.moves && opts.moves[side]) || (sc && sc.moves) || null;
     F.style = styleOf(F, side, opts);
     return F;
   }
 
   // ------------------------------------------------------------------ build
+  var POWER_BASE = { jab: 0.3, cross: 0.55, hook: 0.6, overhand: 0.65, upper: 0.55, headkick: 0.8, bodykick: 0.6, bodyhook: 0.5, bodystraight: 0.4, calf: 0.5,
+    inside: 0.4, short: 0.35, elbow: 0.5, kneehead: 0.65, knee: 0.5, shortbody: 0.35, gnp: 0.45, gnpelbow: 0.55, upelbow: 0.3, spinfist: 0.7, spinback: 0.8,
+    wheel: 0.85, flyknee: 0.85 };
+  var STRIKE_K = { miss: 1, hit: 1, hurt: 1, kd: 1, fin: 1 };
+  var POS_EVENT = { pass: 1, esc: 1, sweep: 1, td: 1, recover: 1, up: 1, reset: 1, kd: 1 };
+  var METHOD_LONG = { KO: "knockout", TKO: "TKO", GNP: "TKO (ground strikes)", LEG: "TKO (leg kicks)", CORNER: "TKO (corner stoppage)",
+    DOC: "TKO (doctor's stoppage)", UD: "unanimous decision", SD: "split decision", MD: "majority decision" };
+  var KO_LIKE = { KO: 1, TKO: 1, GNP: 1, LEG: 1, CORNER: 1, DOC: 1 };
+
+  function divText(d) {
+    if (!d) return null;
+    if (d === "Catch Weight") return "a catchweight";
+    if (d === "Open Weight") return "openweight";
+    return d.toLowerCase().replace("women's ", "women's ");
+  }
+  function recText(rec) { if (!rec || rec.w == null) return null; return rec.w + "-" + rec.l + (rec.d ? "-" + rec.d : ""); }
+  function introLine(F, nR, division, title) {
+    var a = F.A, b = F.B, dv = divText(division), rw = nR ? NUMW[nR] + "-round " : "";
+    var s = a.name + " vs " + b.name;
+    if (nR || title) s += ", " + article(rw + (title ? "title fight" : "fight")) + (dv ? " at " + dv : "") + ".";
+    else s += dv ? " at " + dv + "." : ".";
+    var ra = recText(a.record), rb = recText(b.record);
+    if (ra && rb) s += " UFC records: " + a.short + " " + ra + ", " + b.short + " " + rb + ".";
+    s += " " + a.short + " in the blue corner, " + b.short + " in the red.";
+    return capSent(s);
+  }
+  function judgeTally(js) {
+    var o = { A: 0, B: 0, e: 0, a8: 0, b8: 0 };
+    if (!js) return o;
+    for (var j = 0; j < js.length; j++) {
+      var c = js[j];
+      if (c[0] > c[1]) { o.A++; if (c[0] - c[1] >= 2) o.a8++; }
+      else if (c[1] > c[0]) { o.B++; if (c[1] - c[0] >= 2) o.b8++; }
+      else o.e++;
+    }
+    return o;
+  }
+
+  function parseDetail(d) {
+    var m = /^(Punch|Punches|Kick|Kicks|Knee|Knees|Elbow|Elbows) to (Head|Body|Leg)/.exec(d || "");
+    if (!m) return null;
+    var tool = m[1].toLowerCase().replace(/e?s$/, "");
+    if (tool === "punche") tool = "punch";
+    return { tool: tool, plural: /s$/.test(m[1]), tgt: { Head: 0, Body: 1, Leg: 2 }[m[2]] };
+  }
+  var CANON = { "kick0": "headkick", "kick1": "bodykick", "kick2": "calf", "punch0": "cross", "punch1": "bodyhook", "knee0": "kneehead", "knee1": "knee",
+    "knee2": "knee", "elbow0": "elbow", "elbow1": "elbow", "punch0c": "short", "punch1c": "shortbody" };
+
   function build(fight, seed, opts) {
+    if (!fight || !fight.rounds) throw new Error("FightDirector.build: needs a traced fight (FightEngine.simulate(m, rng, true))");
     opts = opts || {};
     seed = seed == null ? 1 : seed;
     var r = mulberry((seed ^ 0x5bd1e995) >>> 0);
     var voice = new Voice(r);
     var SUP = detectShowMoves(opts);
-    var thinCfg = { cap: 4, iso: 0.55, clinch: 0.6, ground: 0.35, down: 0.5 };
-    if (opts.thin) for (var tk in opts.thin) thinCfg[tk] = opts.thin[tk];
+    var cfg = { cap: 4, iso: 0.55, clinch: 0.6, ground: 0.35, down: 0.5 };
+    if (opts.thin) for (var tk in opts.thin) cfg[tk] = opts.thin[tk];
+    // scouting moves inlined by the page (window.FightScouting[slug].moves), if the build carries them
+    var FSc = root.FightScouting;
+    if (FSc && !opts.moves) {
+      var mv = {};
+      ["A", "B"].forEach(function (w) {
+        var sl = (opts.fighters && opts.fighters[w] && opts.fighters[w].slug) || (opts.matchup && opts.matchup[w] && opts.matchup[w].slug);
+        if (sl && FSc[sl] && FSc[sl].moves) mv[w] = FSc[sl].moves;
+      });
+      if (mv.A || mv.B) { opts = copy(opts); opts.moves = mv; }
+    }
     var F = { A: fighterCtx("A", fight, opts), B: fighterCtx("B", fight, opts) };
     if (F.A.short === F.B.short) { F.A.short = F.A.name; F.B.short = F.B.name; }
-    if (F.A.name === F.B.name) { F.A.short = F.A.name + " (blue)"; F.B.short = F.B.name + " (red)"; }
+    if (F.A.name === F.B.name) { F.A.short = F.A.name + " (blue)"; F.B.short = F.B.name + " (red)"; F.A.name = F.A.short; F.B.name = F.B.short; }
     F.A.liverKick = F.A.stance === "Southpaw" && F.B.stance === "Orthodox";
     F.B.liverKick = F.B.stance === "Southpaw" && F.A.stance === "Orthodox";
     F.A.W = buildMoves(F.A, F.B, opts, SUP); F.B.W = buildMoves(F.B, F.A, opts, SUP);
+    F.A._u = F.B._u = r;
     var m = opts.matchup || null;
-    var nR = opts.rounds || (m && m.rounds) || (fight.method && /^(UD|SD|MD|DRAW)$/.test(fight.method) ? fight.rounds.length : null);
+    var isDec = /^(UD|SD|MD|DRAW)$/.test(fight.method || "");
+    var nR = opts.rounds || (m && m.rounds) || (isDec ? fight.rounds.length : null);
     var title = opts.title != null ? !!opts.title : !!(m && m.title);
     var division = (m && m.division) || opts.division || F.A.division || null;
-    // visual power per fighter: the engine's head damage per landed head strike (power ratio ^ 0.5)
-    var dw = { A: m && m.dw ? m.dw[0] : null, B: m && m.dw ? m.dw[1] : null };
+    var pf = powerFactors(fight, m);
 
     var script = { version: 3, director: VERSION, seed: seed, winner: fight.winner, method: fight.method, detail: fight.detail || "", round: fight.round, t: fight.t,
       cards: fight.cards, form: fight.form, fin: fight.fin || null, totals: fight.totals || null, nRounds: nR, title: title, division: division,
       fighters: {}, names: { A: F.A.name, B: F.B.name }, short: { A: F.A.short, B: F.B.short }, moves: { A: F.A.W, B: F.B.W },
       rounds: [], lines: [], intro: null, result: null, decision: null };
+    ["A", "B"].forEach(function (w) {
+      var o = copy(F[w].out);
+      o.name = F[w].name; o.short = F[w].short; o.slug = F[w].slug; o.nick = F[w].nick; o.division = F[w].division;
+      o.stance = F[w].stance || o.stance || null; o.height_in = F[w].height_in; o.reach_in = F[w].reach_in;
+      o.pronouns = F[w].p.key; o.power = +pf[w].toFixed(3); o.corner = w === "A" ? "blue" : "red";
+      script.fighters[w] = o;
+    });
 
     function ctx(w) {
-      var a = F[w], d = F[other(w)];
+      var a = F[w || "A"], d = F[other(w || "A")];
       return { a: a.short, A: a.name, d: d.short, D: d.name, a_s: poss(a.short), d_s: poss(d.short), A_s: poss(a.name), D_s: poss(d.name),
         he: a.p.he, him: a.p.him, his: a.p.his, hes: a.p.hes, He: cap1(a.p.he), His: cap1(a.p.his), Hes: cap1(a.p.hes),
         dhe: d.p.he, dhim: d.p.him, dhis: d.p.his, dhes: d.p.hes };
     }
-    function line(rIdx, t, txt, k, who, big) { if (txt) script.lines.push({ r: rIdx, t: t, txt: txt, k: k, who: who || null, big: !!big }); }
+    function addLine(rIdx, t, txt, k, who, big) { if (txt) script.lines.push({ r: rIdx, t: t, txt: txt, k: k, who: who || null, big: !!big }); }
 
-    // fight-level counters for context lines
-    var fc = { td: { A: 0, B: 0 }, tda: { A: 0, B: 0 }, kd: { A: 0, B: 0 }, kdSuffered: { A: 0, B: 0 }, pass: { A: 0, B: 0 }, esc: { A: 0, B: 0 }, up: { A: 0, B: 0 },
-      sub: { A: 0, B: 0 }, hurt: { A: 0, B: 0 }, leg: { A: 0, B: 0 }, body: { A: 0, B: 0 }, pounce: { A: 0, B: 0 }, sweep: { A: 0, B: 0 },
-      metLeg: { A: 0, B: 0 }, metTired: { A: 0, B: 0 }, metDmg: { A: 0, B: 0 }, careerKdSaid: { A: false, B: false } };
-    var cum = []; for (var ci0 = 0; ci0 < 2 * NK; ci0++) cum.push(0);
-    var engineDmg = { A: [0, 0], B: [0, 0] };   // [sum of head damage added, landed head strikes] (fallback for power)
+    // fight-level counters
+    function pair() { return { A: 0, B: 0 }; }
+    var fc = { td: pair(), tda: pair(), kd: pair(), down: pair(), pass: pair(), esc: pair(), up: pair(), sub: pair(), hurt: pair(), leg: pair(), body: pair(),
+      pounce: pair(), sweep: pair(), reset: 0, said: {} };
+    var cum = []; for (var c0 = 0; c0 < 2 * NK; c0++) cum.push(0);
 
-    // intro line
-    var intro = introLine(F, nR, division, title, voice);
-    script.intro = intro; line(0, null, intro, "intro", null, false);
+    script.intro = voice.take(introLine(F, nR, division, title));
 
     for (var ri = 0; ri < fight.rounds.length; ri++) {
       var rd = fight.rounds[ri], ev = rd.ev || [];
       var endT = rd.fin ? rd.fin.t : 300;
       var base = cum.slice();
-      // ---- pass 1: stats, timeline, state per event
+      var R = processRound(ri, rd, ev, endT, base);
+      script.rounds.push(R);
+    }
+
+    // ---- result, decision
+    var last = script.rounds[script.rounds.length - 1];
+    var W = fight.winner, Lw = W === "A" || W === "B" ? other(W) : null;
+    if (isDec) {
+      script.decision = decisionText(fight, F, voice);
+      script.result = voice.take(W === "D" ? capSent(F.A.name + " and " + F.B.name + " fight to a " + ({ DRAW: "" }[fight.method] || "") + "draw.") :
+        capSent(F[W].name + " def. " + F[Lw].name + " by " + METHOD_LONG[fight.method] + " (" + cardsText(fight.cards, W) + ")."));
+      addLine(last.r, 300, script.decision.text, "decision", W === "D" ? null : W, true);
+    } else if (W === "A" || W === "B") {
+      var how = fight.method === "SUB" ? "submission (" + subName(fight.fin && (fight.fin.name || fight.fin.detail)) + ")" : (METHOD_LONG[fight.method] || fight.method);
+      var when = fight.method === "CORNER" || fight.method === "DOC" ? "after round " + fight.round : "at " + mmss(fight.t) + " of round " + fight.round;
+      script.result = voice.take(capSent(F[W].name + " def. " + F[Lw].name + " by " + how + ", " + when + "."));
+    }
+    return script;
+
+    // ================================================================ one round
+    function processRound(ri, rd, ev, endT, base) {
+      var i, e, b;
+      // ---- pass 1: engine stats, state, timeline
       var s = 0, ctl = null, pos = null, downed = null, tPrev = 0;
-      var timeline = [], segStart = 0, segS = 0, segCtl = null, segPos = null;
+      var timeline = [], segStart = 0, segKey = "0|null|null", segS = 0, segCtl = null, segPos = null;
       var cumT = [], cumV = [], info = [];
-      for (var i = 0; i < ev.length; i++) {
-        var e = ev[i], te = Math.min(e.t, endT);
-        var who0 = controllerOf(s, ctl);
-        if (who0) cum[(who0 === "B" ? NK : 0) + SI.ctrl] += Math.max(0, te - tPrev);
+      for (i = 0; i < ev.length; i++) {
+        e = ev[i];
+        var te = Math.min(e.t, endT);
+        var cw = controllerOf(s, ctl);
+        if (cw) cum[(cw === "B" ? NK : 0) + SI.ctrl] += Math.max(0, te - tPrev);
         tPrev = Math.max(tPrev, te);
         var before = { s: s, ctl: ctl, pos: pos, downed: downed };
         applyEvent(cum, e);
-        // state after the event
-        var sNew = e.k === "kd" ? (e.to != null ? e.to : s) : (e.s != null ? e.s : s);
-        if (e.k === "kd") { if (sNew >= 2) { downed = other(e.w); pos = "down"; } else downed = null; }
-        else if (e.k === "recover") { downed = null; pos = sNew >= 2 ? (e.pos || "guard") : null; }
-        else if (e.k === "reset" || e.k === "up" || e.k === "break") { downed = null; pos = null; }
-        else if (sNew >= 2 && e.pos) pos = e.pos === "down" ? (downed ? "down" : pos) : e.pos;
-        if (sNew < 2) pos = null;
-        if (sNew === 1) {
-          if (e.k === "clinch") ctl = e.w;
-          else if (e.k === "up") ctl = other(e.w);
-          else if (s !== 1) ctl = ctl || e.w;
-        } else ctl = null;
-        if (sNew < 2) downed = null;
-        if (head damage(e)) {}
+        var sNew = e.k === "kd" ? (e.to != null ? e.to : inferKdTo(ev, i, s)) : (e.s != null ? e.s : s);
+        if (sNew === 1) { if (e.k === "clinch") ctl = e.w; else if (e.k === "up") ctl = other(e.w); else if (s !== 1 || !ctl) ctl = ctl || e.w || null; }
+        else ctl = null;
+        if (sNew >= 2) {
+          if (e.k === "kd") { downed = other(e.w); pos = "down"; }
+          else if (e.k === "recover") { downed = null; pos = e.pos && e.pos !== "down" ? e.pos : "guard"; }
+          else if (e.pos) pos = e.pos === "down" ? (downed ? "down" : pos || "guard") : e.pos;
+          else if (!pos) pos = "guard";
+          if (pos !== "down") downed = null;
+        } else { pos = null; downed = null; }
+        if (e.k === "subx" && sNew >= 2) {
+          var nx = ev[i + 1];
+          if (nx && nx.s === sNew && nx.pos && nx.pos !== "down" && nx.pos !== pos && !POS_EVENT[nx.k]) pos = nx.pos;
+        } else if (sNew >= 2 && e.pos && e.pos !== "down" && e.pos !== pos && !POS_EVENT[e.k]) pos = e.pos;
         s = sNew;
-        info.push({ before: before, s: s, ctl: ctl, pos: pos, downed: downed });
+        info.push({ before: before, s: s, ctl: ctl, pos: pos });
         cumT.push(e.t); cumV.push(cum.slice());
-        var segKey = s + "|" + ctl + "|" + pos;
-        if (segKey !== segS + "|" + segCtl + "|" + segPos) {
-          if (te > segStart) timeline.push([segStart, te, segS, segCtl, segPos]);
-          segStart = te; segS = s; segCtl = ctl; segPos = pos;
+        var cwNew = controllerOf(s, ctl), key = s + "|" + cwNew + "|" + pos;
+        if (key !== segKey) {
+          if (te > segStart) timeline.push([segStart, +te.toFixed(2), segS, segCtl, segPos]);
+          segStart = +te.toFixed(2); segKey = key; segS = s; segCtl = cwNew; segPos = pos;
+        }
+      }
+      var cwEnd = controllerOf(s, ctl);
+      if (cwEnd) cum[(cwEnd === "B" ? NK : 0) + SI.ctrl] += Math.max(0, endT - tPrev);
+      if (endT > segStart || !timeline.length) timeline.push([segStart, endT, segS, segCtl, segPos]);
+
+      // ---- pass 2: candidate beats from engine events
+      var cand = [];
+      for (i = 0; i < ev.length; i++) {
+        e = ev[i]; var inf = info[i], w = e.w || null;
+        b = { t: e.t, k: null, who: w, st: inf.s, pos: inf.pos, ctl: inf.s === 1 ? inf.ctl : null, i: i, ev: e };
+        if (STRIKE_K[e.k]) {
+          b.k = "strike"; b.st = e.s != null ? e.s : inf.before.s; b.pos = b.st >= 2 ? (e.pos || inf.before.pos || "guard") : null;
+          b.ctl = b.st === 1 ? inf.before.ctl : null;
+          b.tgt = e.tg != null ? e.tg : 0; b.loc = e.loc || (b.st === 0 ? "dist" : (b.st === 1 ? "clinch" : "ground"));
+          b.landed = e.k !== "miss"; b.miss = e.k === "miss"; b.kd = e.k === "kd"; b.hurt = e.k === "hurt"; b.fin = e.k === "fin";
+          if (b.fin) b.how = e.how || null;
+          if (b.st >= 2) { b.top = (b.st === 2) === (w === "A"); b.down = b.pos === "down"; }
+          if (b.kd) { b.to = inf.s; b.st = inf.before.s; b.ctl = b.st === 1 ? inf.before.ctl : null; b.pos = null; }
+        } else if (e.k === "clinch") {
+          b.k = "clinch"; b.st = 1; b.ctl = w;
+          if (e.swap) b.swap = true;
+          var pe = ev[i - 1];
+          if (pe && pe.k === "tdx" && pe.w === w && Math.abs(pe.t - e.t) < 0.02) b.via = "tdx";
+        } else if (e.k === "break") { b.k = "break"; b.st = 0; }
+        else if (e.k === "td") { b.k = "td"; b.from = e.from != null ? (e.from === 1 ? 1 : 0) : (inf.before.s === 1 ? 1 : 0); b.pos = inf.pos; }
+        else if (e.k === "tdx") { b.k = "tdx"; b.from = e.loc === "clinch" || inf.before.s === 1 ? 1 : 0; }
+        else if (e.k === "pass") { b.k = "pass"; b.from = inf.before.pos; }
+        else if (e.k === "esc") { b.k = "esc"; b.from = inf.before.pos; }
+        else if (e.k === "sweep") { b.k = "sweep"; b.from = inf.before.pos; }
+        else if (e.k === "up") { b.k = "up"; }
+        else if (e.k === "sub" || e.k === "subx") {
+          b.k = e.k; b.name = e.name || "Submission"; b.sub = subName(b.name); b.standing = inf.before.s < 2;
+          b.pos = b.standing ? null : (e.pos || inf.before.pos); b.at = b.pos; b.bottom = !b.standing && ((inf.before.s === 2) !== (w === "A"));
+          b.st = inf.before.s; b.ctl = b.st === 1 ? inf.before.ctl : null;
+          if (e.k === "subx") { b.st = inf.s; b.pos = b.standing ? null : inf.pos; }
+        } else if (e.k === "recover") { b.k = "recover"; }
+        else if (e.k === "reset") {
+          var pk = ev[i - 1];
+          if (pk && pk.k === "kd" && Math.abs(pk.t - e.t) < 0.02) continue;   // the kd beat already carries to = 0
+          b.k = "reset"; b.who = null; b.from = inf.before.s;
+        } else continue;
+        cand.push(b);
+      }
+
+      // ---- pass 3: thin misses (keep every landed strike; keep misses inside combinations with a landed strike)
+      var runs = { A: { t: -99, id: -1, st: -1 }, B: { t: -99, id: -1, st: -1 } }, runLanded = {}, runId = 0;
+      for (i = 0; i < cand.length; i++) {
+        b = cand[i];
+        if (b.k !== "strike") { runs.A.t = runs.B.t = -99; continue; }
+        var ru = runs[b.who];
+        if (b.t - ru.t >= 1.6 || ru.st !== b.st) { ru.id = ++runId; ru.st = b.st; }
+        ru.t = b.t; b._run = ru.id;
+        if (b.landed) runLanded[ru.id] = true;
+      }
+      var keep = [];
+      for (i = 0; i < cand.length; i++) {
+        b = cand[i];
+        if (b.k !== "strike" || b.landed) { keep.push(b); continue; }
+        var p = b.down ? cfg.down : (b.st >= 2 ? cfg.ground : (runLanded[b._run] ? 1 : (b.st === 1 ? cfg.clinch : cfg.iso)));
+        if (r() >= p) continue;
+        var n10 = 0;
+        for (var j = 0; j < cand.length; j++) {
+          var o = cand[j];
+          if (o.k === "strike" && o.who === b.who && Math.abs(o.t - b.t) <= 5 && (o.landed || o._kept)) n10++;
+        }
+        if (n10 >= cfg.cap) continue;
+        b._kept = true; keep.push(b);
+      }
+
+      // ---- pass 4: combinations (same man, same position, <1.6 s apart, no transition in between)
+      var lastS = { A: null, B: null }, comboN = 0;
+      for (i = 0; i < keep.length; i++) {
+        b = keep[i];
+        if (b.k !== "strike") { lastS.A = lastS.B = null; continue; }
+        var ls = lastS[b.who];
+        if (ls && b.t - ls.t < 1.6 && ls.st === b.st && !ls.kd && !b.down) { b.chain = true; b.combo = ls.combo; b.ci = ls.ci + 1; }
+        else { b.combo = ++comboN; b.ci = 0; }
+        if (b.kd) { lastS.A = lastS.B = null; } else lastS[b.who] = b;
+      }
+
+      // ---- pass 5: techniques
+      var prevMove = {}, lastStrikeT = { A: -99, B: -99 }, lastStrikeMiss = { A: false, B: false };
+      var finDetail = rd.fin && fight.fin ? parseDetail(fight.fin.detail) : null;
+      for (i = 0; i < keep.length; i++) {
+        b = keep[i];
+        if (b.k !== "strike") continue;
+        var opp = other(b.who);
+        b.counter = b.st < 2 && b.t - lastStrikeT[opp] < 0.8 && b.t - lastStrikeT[opp] >= 0 && lastStrikeMiss[opp];
+        var tech = chooseTech(F[b.who], b, b.ci > 0 ? prevMove[b.combo] : null, b.fin ? finDetail : null);
+        b.tech = tech; b.move = SUP[tech] || EXT[tech] || tech;
+        b.side = SIDE_OF[tech] || null;
+        var pw = POWER_BASE[tech] != null ? POWER_BASE[tech] : 0.5;
+        pw *= clip(pf[b.who], 0.6, 1.5);
+        if (b.kd || b.fin) pw = 1; else if (b.hurt) pw = Math.max(0.85, pw); else if (b.miss) pw *= 0.8;
+        b.power = +clip(pw, 0.1, 1).toFixed(2);
+        prevMove[b.combo] = tech;
+        lastStrikeT[b.who] = b.t; lastStrikeMiss[b.who] = b.miss;
+        delete b._run; delete b._kept;
+      }
+
+      // ---- pass 6: derived beats (pounce after a knockdown; clinch after a stand-up into the fence)
+      var beats = [];
+      for (i = 0; i < keep.length; i++) {
+        b = keep[i]; beats.push(b);
+        if (b.k === "strike" && b.kd && b.to >= 2) beats.push({ t: b.t, k: "pounce", who: b.who, st: b.to, pos: "down", ctl: null, i: -1, ev: b.ev });
+        else if (b.k === "up" && b.st === 1) beats.push({ t: b.t, k: "clinch", who: other(b.who), st: 1, pos: null, ctl: other(b.who), via: "up", i: -1, ev: b.ev });
+      }
+
+      // ---- pass 7: play-by-play
+      var rc = { td: pair(), kd: pair(), hurt: pair(), color: 0, combo: 0, counter: 0, special: 0, miss: 0, body: 0, clinchSaid: false };
+      for (i = 0; i < beats.length; i++) {
+        b = beats[i];
+        b.txt = narrate(b, i, beats, rc, ri, endT) || undefined;
+        if (!b.txt) delete b.txt;
+      }
+
+      // ---- round intro note at 0:00 (round 1: the fight intro)
+      var introTxt = ri === 0 ? script.intro : roundIntro(ri);
+      if (introTxt) beats.unshift({ t: 0, k: "note", who: null, st: 0, pos: null, ctl: null, i: -1, txt: introTxt, intro: true });
+
+      // ---- pass 8: notes in long quiet stretches of play-by-play
+      addNotes(beats, timeline, base, cumT, cumV, endT, ri);
+
+      // ---- pass 9: stats on every beat, priority
+      for (i = 0; i < beats.length; i++) {
+        b = beats[i];
+        var v = b.i >= 0 ? cumV[b.i] : statsVecAt(cumT, cumV, base, timeline, b.t);
+        b.stats = statsObj(v);
+        b.pri = b.k === "note" ? 0 : (b.k === "strike" ? (b.kd || b.fin || b.hurt ? 2 : (b.miss ? 0 : 1)) : 2);
+      }
+
+      var R = { r: ri, beats: beats, endT: endT, judges: rd.judges || null, stoppage: rd.stoppage || null, fin: rd.fin || null, st: rd.st || null,
+        dHA: rd.dHA, dHB: rd.dHB, dLA: rd.dLA, dLB: rd.dLB, SA: rd.SA, SB: rd.SB, endState: rd.endState || null,
+        base: statsObj(base), end: statsObj(cum), timeline: timeline, density: density(beats, ev, endT, timeline),
+        cum: { t: cumT, v: cumV, base: base }, intro: introTxt || null, outro: null };
+      R.outro = roundOutro(R, ri);
+      for (i = 0; i < beats.length; i++) if (beats[i].txt) addLine(ri, beats[i].t, beats[i].txt, beats[i].k, beats[i].who, beats[i].kd || beats[i].fin || beats[i].k === "sub");
+      if (R.outro) addLine(ri, endT, R.outro, "outro", null, !!(rd.fin || rd.stoppage));
+      return R;
+
+      // ------------------------------------------------------------ narration for one beat
+      function narrate(b, bi, beats, rc, ri, endT) {
+        var w = b.who, d = w ? other(w) : null, c = ctx(w), k = b.k, e = b.ev, txt = null, Fa = w ? F[w] : null;
+        if (k === "strike") {
+          var mvT = moveTexts(b.tech, Fa, b.tgt, b.pos);
+          c._mv = mvT; setMove(c, mvT[0]);
+          if (b.landed && b.loc === "dist" && b.tgt === 2) fc.leg[w]++;
+          if (b.landed && b.tgt === 1 && b.loc !== "ground") fc.body[w]++;
+          if (b.kd) {
+            rc.kd[w]++; fc.kd[w]++; fc.down[d]++;
+            var poolK = b.tgt === 1 ? T.kdBody : (b.st === 1 ? T.kdClinch : (b.counter ? T.kdCounter.concat(T.kd) : T.kd));
+            c.N = fc.kd[w];
+            txt = voice.say(poolK, c, ["Knockdown number {N} for {a}!", "{a} scores knockdown number {N}!"]);
+            var extra = [];
+            if (b.to === 0) { var wu = voice.say(T.waveUp, ctx(w)); if (wu) extra.push(wu); }
+            if (fc.down[d] >= 2) {
+              var c2 = ctx(w); c2.n = ordinal(fc.down[d]);
+              extra.push(voice.say(["That's the {n} time {d} has been down in this fight.", "{d} is down for the {n} time tonight."], c2));
+            } else if (F[d].kd_absorbed != null && !fc.said["kdc" + d]) {
+              fc.said["kdc" + d] = true;
+              var nk = +F[d].kd_absorbed, c3 = ctx(w); c3.N = numWord(nk); c3.times = nk === 1 ? "time" : "times";
+              extra.push(voice.take(voice.fill(nk === 0 ? "It's the first knockdown of {d_s} UFC career." : "{d} had been knocked down {N} {times} before in the UFC.", c3)));
+            }
+            txt = join(txt, extra);
+          } else if (b.fin) {
+            var how = b.how, pool, dt = finDetail;
+            c.moves = plural(b.tech, dt);
+            c.posfrom = POS_FROM[b.pos] || "on the ground";
+            if (how === "KO") pool = b.tgt === 1 ? T.finKOBody : T.finKO;
+            else if (how === "GNP") pool = T.finGNP;
+            else if (how === "LEG") pool = T.finLEG;
+            else if (b.down) pool = T.finFollow;
+            else if (b.st === 1) pool = T.finTKOClinch;
+            else pool = T.finTKO;
+            txt = voice.say(pool, c, ["It's over! {a} finishes {d}."]);
+          } else if (b.hurt) {
+            rc.hurt[w]++; fc.hurt[w]++;
+            c.n = ordinal(fc.hurt[w]);
+            txt = voice.say(b.counter ? T.hurtCounter.concat(T.hurt) : T.hurt, c, ["{a} hurts {d} for the {n} time in this fight."]);
+            txt = join(txt, [meter(b, w, d)]);
+          } else if (b.landed && !b.down) {
+            txt = color(b, bi, beats, rc, c, w, d);
+          } else if (b.miss && !b.down && b.st < 2 && rc.miss < 1 && (b.tech === "overhand" || b.tech === "headkick" || b.tech === "wheel" || b.tech === "spinback" || b.tech === "spinfist" || b.tech === "flyknee") && r() < 0.15) {
+            txt = voice.say(T.bigMiss, c); if (txt) rc.miss++;
+          }
+        } else if (k === "clinch") {
+          if (b.via === "tdx") txt = r() < 0.7 ? voice.say(T.clinchTdx, c) : null;
+          else if (b.via === "up") txt = null;
+          else if (b.swap) txt = r() < 0.6 ? voice.say(T.clinchSwap, c) : null;
+          else if (!rc.clinchSaid ? r() < 0.9 : r() < 0.3) txt = voice.say(T.clinch, c);
+          if (txt) rc.clinchSaid = true;
+        } else if (k === "break") {
+          if (r() < 0.2) txt = voice.say(T.brk, c);
+        } else if (k === "td") {
+          rc.td[w]++; fc.td[w]++; fc.tda[w]++;
+          var counterTd = lastOppStrike(beats, bi, w, 1.5);
+          var tech = pickW(tdTechs(Fa, b.from === 1, counterTd), r()) || "double-leg";
+          b.tech = tech;
+          c.tech = tech; c.atech = article(tech); c.Atech = cap1(article(tech)); c.posin = posIn(b.pos, F[d].short); c.clock = mmss(endT - b.t);
+          c.n = ordinal(fc.td[w]);
+          var poolT = b.from === 1 ? T.tdClinch : T.td;
+          if (b.t > 280 && endT >= 300) poolT = T.tdLate.concat(poolT);
+          txt = voice.say(poolT, c, ["{a} lands {his} {n} takedown of the fight."]);
+          if (rc.td[w] >= 2 && r() < 0.85) { var cr = ctx(w); cr.n = ordinal(rc.td[w]); cr.r = ri + 1; txt = join(txt, [voice.say(["That's {his} {n} takedown of the round.", "{n} takedown of round {r} for {a}."], cr)]); }
+          else if (fc.td[w] >= 3 && r() < 0.6) { var cf = ctx(w); cf.N = numWord(fc.td[w]); txt = join(txt, [voice.say(["{N} takedowns now for {a}.", "{a} has {N} takedowns in the fight."], cf)]); }
+        } else if (k === "tdx") {
+          fc.tda[w]++;
+          var tech2 = pickW(tdTechs(Fa, b.from === 1, lastOppStrike(beats, bi, w, 1.5)), r()) || "single-leg";
+          b.tech = tech2; c.tech = tech2; c.atech = article(tech2);
+          c.N = fc.td[w]; c.M = fc.tda[w];
+          if (r() < 0.6) txt = voice.say(T.tdx, c);
+          if (fc.tda[w] >= 3 && r() < 0.5) txt = join(txt, [voice.say(fc.td[w] === 0 ? ["{a} is 0 for {M} on takedowns."] : ["{a} is {N} for {M} on takedowns.", "{a} has {N} of {M} takedowns."], c)]);
+        } else if (k === "pass") {
+          fc.pass[w]++;
+          c.n = ordinal(fc.pass[w]); c.posname = POS_NAME[b.pos] || "a better position";
+          var poolP = b.pos === "half" ? T.passHalf : (b.pos === "side" ? T.passSide : (b.pos === "mount" ? T.passMount : (b.pos === "back" ? (b.from === "guard" ? T.passBackScramble.concat(T.passBack) : T.passBack) : null)));
+          if (poolP && (b.pos === "mount" || b.pos === "back" || r() < 0.75)) txt = voice.say(poolP, c, ["{a} advances to {posname}, {his} {n} pass of the fight."]);
+        } else if (k === "esc") {
+          fc.esc[w]++;
+          c.n = ordinal(fc.esc[w]); c.posname = POS_NAME[b.pos] || "guard";
+          var poolE = b.from === "mount" ? T.escMount : (b.from === "back" ? T.escBack : (b.pos === "guard" ? T.escGuard : T.escHalf));
+          if (b.from === "mount" || b.from === "back" || r() < 0.5) txt = voice.say(poolE, c, ["{a} works back to {posname}. That's {his} {n} escape of the fight."]);
+        } else if (k === "sweep") {
+          fc.sweep[w]++;
+          c.n = ordinal(fc.sweep[w]); c.posbot = POS_BOT[b.from] || "from the bottom"; c.posin = posIn(b.pos, F[d].short);
+          txt = voice.say(T.sweep, c, ["{a} sweeps for the {n} time."]);
+        } else if (k === "up") {
+          fc.up[w]++;
+          c.n = ordinal(fc.up[w]);
+          if (r() < 0.85) txt = voice.say(b.st === 1 ? T.upClinch : T.up, c, ["{a} is back up for the {n} time."]);
+        } else if (k === "reset") {
+          fc.reset++; c.n = ordinal(fc.reset);
+          txt = voice.say(T.reset, c, ["The referee's {n} restart of the fight."]);
+        } else if (k === "sub" || k === "subx") {
+          fc.sub[w]++;
+          c.sub = b.sub; c.asub = article(b.sub); c.posfrom = b.at ? (b.bottom ? (POS_BOT[b.at] || "from the bottom") : (POS_FROM[b.at] || "")) : "";
+          c.n = ordinal(fc.sub[w]);
+          var poolS = k === "sub" ? (b.standing ? T.subStand : (b.bottom ? T.subBottom : T.sub)) : (b.standing ? T.subxStand : (b.bottom ? T.subxBottom : T.subx));
+          if (b.standing && !/guillotine/i.test(b.sub)) poolS = poolS.filter(function (x) { return !/[Gg]uillotine/.test(x); });
+          txt = voice.say(poolS, c, k === "sub" ? ["{d} taps to the {sub}!"] : ["{a} tries {asub}, {his} {n} submission attempt of the fight."]);
+        } else if (k === "pounce") {
+          fc.pounce[w]++; c.n = ordinal(fc.pounce[w]);
+          txt = voice.say(T.pounce, c, ["{a} pounces for the {n} time."]);
+        } else if (k === "recover") {
+          c.N = fc.down[w];
+          txt = voice.say(b.st === 0 ? T.recoverUp : T.recoverGuard, c, ["{a} survives knockdown number {N}."]);
+        }
+        return txt;
+      }
+
+      function color(b, bi, beats, rc, c, w, d) {
+        var t = null, opt = rc.color < 7;
+        // milestones and wear always get a line
+        if (b.loc === "dist" && b.tgt === 2 && [5, 10, 15, 20, 25, 30, 40, 50].indexOf(fc.leg[w]) >= 0) { c.N = fc.leg[w]; t = voice.say(T.legN, c); }
+        else if (b.tgt === 1 && b.loc !== "ground" && [10, 20, 30, 40].indexOf(fc.body[w]) >= 0) { c.N = fc.body[w]; t = voice.say(T.bodyN, c); }
+        var mt = meter(b, w, d);
+        if (t || mt) return join(t, [mt]);
+        if (!opt) return null;
+        var tech = b.tech;
+        if ((tech === "headkick" || tech === "spinfist" || tech === "spinback" || tech === "wheel" || tech === "flyknee") && rc.special < 2 && r() < 0.8) {
+          t = voice.say(tech === "headkick" ? T.headkick : T.specialLand, c); if (t) { rc.special++; rc.color++; } return t;
+        }
+        if (b.counter && rc.counter < 2 && r() < 0.35) { t = voice.say(T.counter, c); if (t) { rc.counter++; rc.color++; } return t; }
+        // a landed combination of three or more: narrate it on its last landed strike
+        if (b.combo && b.ci >= 2 && rc.combo < 2 && b.st < 2) {
+          var nxt = nextInCombo(beats, bi, b.combo);
+          if (!(nxt && nxt.landed)) {
+            var seq = [], allLanded = true, kk;
+            for (kk = bi; kk >= 0; kk--) { var o = beats[kk]; if (o.k !== "strike" || o.who !== w) { if (o.k === "strike") continue; break; } if (o.combo !== b.combo) break; seq.unshift(o); }
+            for (kk = 0; kk < seq.length; kk++) if (!seq[kk].landed) allLanded = false;
+            if (seq.length >= 3 && allLanded && r() < 0.6) {
+              var parts = seq.map(function (o) { return seqText(F[w], o.tech); });
+              c.seq = parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
+              c.aseq = article(c.seq);
+              t = voice.say(T.combo, c); if (t) { rc.combo++; rc.color++; } return t;
+            }
+          }
+        }
+        if (b.tgt === 1 && b.loc === "dist" && rc.body < 1 && r() < 0.05) { t = voice.say(T.body, c); if (t) { rc.body++; rc.color++; } return t; }
+        return null;
+      }
+
+      // wear lines from the engine's own snapshots (leg damage, stamina, head damage)
+      function meter(b, w, d) {
+        var e = b.ev; if (!e || e.dA == null) return null;
+        var g = d === "A" ? e.gA : e.gB, sv = d === "A" ? e.sA : e.sB, dm = d === "A" ? e.dA : e.dB, c = ctx(w);
+        if (b.tgt === 2 && g >= 28 && !fc.said["leg2" + d]) { fc.said["leg2" + d] = fc.said["leg1" + d] = true; return voice.say(T.legBad, c); }
+        if (b.tgt === 2 && g >= 15 && !fc.said["leg1" + d]) { fc.said["leg1" + d] = true; return voice.say(T.legHurt, c); }
+        if (sv != null && sv < 0.42 && !fc.said["tired" + d]) { fc.said["tired" + d] = true; return voice.say(T.tired, c); }
+        if (dm >= 45 && !fc.said["dmg" + d]) { fc.said["dmg" + d] = true; return voice.say(T.damage, c); }
+        return null;
+      }
+
+      function nextInCombo(beats, bi, combo) { for (var q = bi + 1; q < beats.length; q++) { if (beats[q].k === "strike" && beats[q].combo === combo) return beats[q]; if (beats[q].k !== "strike") return null; } return null; }
+      function lastOppStrike(beats, bi, w, win) {
+        for (var q = bi - 1; q >= 0; q--) { var o = beats[q]; if (beats[bi].t - o.t > win) return false; if (o.k === "strike" && o.who === other(w)) return true; }
+        return false;
+      }
+
+      function addNotes(beats, timeline, base, cumT, cumV, endT, ri) {
+        var txtT = [];
+        for (var q = 0; q < beats.length; q++) if (beats[q].txt) txtT.push(beats[q].t);
+        txtT.push(endT);
+        var gaps = [], prevT = 0;
+        for (q = 0; q < txtT.length; q++) { if (txtT[q] - prevT > 28) gaps.push([prevT, txtT[q]]); prevT = txtT[q]; }
+        gaps.sort(function (x, y) { return (y[1] - y[0]) - (x[1] - x[0]); });
+        var made = 0;
+        for (q = 0; q < gaps.length && made < 2; q++) {
+          var tm = +((gaps[q][0] + gaps[q][1]) / 2).toFixed(2);
+          if (endT - tm < 8 || tm < 6) continue;
+          var seg = segAt(timeline, tm), st = seg ? seg[2] : 0, cw = seg ? seg[3] : null, ps = seg ? seg[4] : null;
+          var v = statsVecAt(cumT, cumV, base, timeline, tm), c, pool, txt = null;
+          if (st >= 2 && cw && ps !== "down") {
+            c = ctx(cw); c.ctrl = mmss(v[(cw === "B" ? NK : 0) + SI.ctrl] - base[(cw === "B" ? NK : 0) + SI.ctrl]);
+            c.posin = posIn(ps, F[other(cw)].short); c.posfrom = POS_FROM[ps] || "from the top"; pool = NOTES.ground;
+          } else if (st === 1 && cw) { c = ctx(cw); pool = NOTES.clinch; }
+          else if (st === 0) {
+            var la = v[SI.sig_lnd] - base[SI.sig_lnd], lb = v[NK + SI.sig_lnd] - base[NK + SI.sig_lnd], lead = la >= lb ? "A" : "B";
+            c = ctx(lead); c.N = Math.max(la, lb); c.M = Math.min(la, lb);
+            pool = Math.abs(la - lb) >= 6 ? NOTES.dist.slice(4) : NOTES.dist.slice(0, 4);
+          }
+          if (pool) txt = voice.say(pool, c);
+          if (!txt) continue;
+          var nb = { t: tm, k: "note", who: cw || null, st: st, pos: st >= 2 ? ps : null, ctl: st === 1 ? cw : null, i: -1, txt: txt };
+          var at = 0; while (at < beats.length && beats[at].t <= tm) at++;
+          beats.splice(at, 0, nb); made++;
         }
       }
     }
-    return script;
-  }
-  function cap1(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-  root.FightDirector = { build: build };
+    // ================================================================ round intro / outro text
+    function roundIntro(ri) {
+      var prev = script.rounds[ri - 1]; if (!prev) return null;
+      var head = nR && ri === nR - 1 ? "Final round." : (nR === 5 && ri === 3 ? "Round 4, into the championship rounds." : "Round " + (ri + 1) + ".");
+      var jt = judgeTally(prev.judges), parts = [head];
+      if (prev.judges) {
+        var X = jt.A > jt.B ? "A" : (jt.B > jt.A ? "B" : null);
+        if (X) {
+          var n8 = X === "A" ? jt.a8 : jt.b8, cx = ctx(X); cx.r = ri; cx.n8 = numWord(n8);
+          if (n8 > 0) parts.push(voice.fill(n8 === 3 ? "{a} won round {r} 10-8 on all three cards." : "{a} took round {r}, with a 10-8 on {n8} " + (n8 === 1 ? "card." : "cards."), cx));
+          else parts.push(voice.fill(jt[X] === 3 ? "{a} took round {r} on all three cards." : "Two of three judges gave round {r} to {a}.", cx));
+        }
+      }
+      var e = prev.end, la = e.A.sig_lnd, lb = e.B.sig_lnd, ca = e.A.ctrl, cb = e.B.ctrl;
+      if (Math.abs(ca - cb) >= 120) { var cw = ca > cb ? "A" : "B", c1 = ctx(cw); c1.ctrl = mmss(Math.max(ca, cb)); parts.push(voice.fill("{a} has {ctrl} of control time so far.", c1)); }
+      else if (la !== lb) { var lw = la > lb ? "A" : "B", c2 = ctx(lw); c2.N = Math.max(la, lb); c2.M = Math.min(la, lb); parts.push(voice.fill("{a} leads {N}-{M} in significant strikes landed.", c2)); }
+      else parts.push("Significant strikes landed are level at " + la + ".");
+      return voice.take(parts.join(" "));
+    }
+    function roundOutro(R, ri) {
+      var st = R.end, b0 = R.base, la = st.A.sig_lnd - b0.A.sig_lnd, lb = st.B.sig_lnd - b0.B.sig_lnd, txt;
+      var W = fight.winner, L = W === "A" || W === "B" ? other(W) : null;
+      if (R.fin) {
+        var how = fight.method === "SUB" ? "submission" : (METHOD_LONG[fight.method] || fight.method);
+        txt = F[W].name + " wins by " + how + " at " + mmss(R.fin.t) + " of round " + (ri + 1) + ".";
+        var ctxL = careerLine(W, L);
+        if (ctxL) txt += " " + ctxL;
+        return voice.take(capSent(txt));
+      }
+      txt = "End of round " + (ri + 1) + ". Significant strikes landed: " + F.A.short + " " + la + ", " + F.B.short + " " + lb + ".";
+      if (R.judges) {
+        var jt = judgeTally(R.judges), X = jt.A > jt.B ? "A" : (jt.B > jt.A ? "B" : null);
+        if (X) {
+          var n8 = X === "A" ? jt.a8 : jt.b8;
+          txt += " " + (jt[X] === 3 ? "All three judges score it for " : "Two judges score it for ") + F[X].short + (n8 ? " (" + numWord(n8) + " at 10-8)" : "") + ".";
+        }
+      }
+      if (R.stoppage) {
+        var loser = other(R.stoppage);
+        txt += fight.method === "DOC" ? " The ringside doctor stops the fight. " + F[loser].short + " can't continue." : " " + poss(F[loser].short) + " corner stops the fight on the stool.";
+        txt += " " + F[R.stoppage].name + " wins by TKO.";
+      }
+      return voice.take(capSent(txt));
+    }
+    function careerLine(W, L) {
+      var rl = F[L].record, rw = F[W].record, c = ctx(W);
+      if (KO_LIKE[fight.method]) {
+        if (rl && rl.ko_l === 0) return voice.fill("{d} had never lost by KO or TKO in the UFC.", c);
+        if (rw && rw.ko_w != null) { c.n = ordinal(rw.ko_w + 1); return voice.fill("It's the {n} KO or TKO win of {a_s} UFC career.", c); }
+      } else if (fight.method === "SUB") {
+        if (rl && rl.sub_l === 0) return voice.fill("{d} had never been submitted in the UFC.", c);
+        if (rw && rw.sub_w != null) { c.n = ordinal(rw.sub_w + 1); return voice.fill(rw.sub_w === 0 ? "It's the first submission win of {a_s} UFC career." : "It's {a_s} {n} submission win in the UFC.", c); }
+      }
+      return null;
+    }
+  }
+
+  // ------------------------------------------------------------------ helpers used by build
+  function cap1(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function join(txt, extra) {
+    var out = txt || "";
+    for (var i = 0; i < extra.length; i++) if (extra[i]) out = out ? out + " " + extra[i] : extra[i];
+    return out || null;
+  }
+  function plural(tech, dt) {
+    if (dt && dt.tool === "elbow") return "elbows";
+    if (dt && dt.tool === "knee") return "knees";
+    switch (tech) {
+      case "gnpelbow": case "elbow": case "upelbow": return "elbows";
+      case "knee": case "kneehead": case "flyknee": return "knees";
+      case "calf": return "calf kicks";
+      case "inside": return "leg kicks";
+      case "gnp": return "punches";
+    }
+    return "punches";
+  }
+  function inferKdTo(ev, i, s) { var n = ev[i + 1]; if (n && n.k === "reset" && Math.abs(n.t - ev[i].t) < 0.02) return 0; if (n && n.s >= 2 && n.pos === "down") return n.s; return 0; }
+  function segAt(tl, t) { for (var i = 0; i < tl.length; i++) if (t >= tl[i][0] && t < tl[i][1]) return tl[i]; return tl.length ? tl[tl.length - 1] : null; }
+  function statsVecAt(cumT, cumV, base, timeline, t) {
+    var lo = 0, hi = cumT.length - 1, k = -1;
+    while (lo <= hi) { var mid = (lo + hi) >> 1; if (cumT[mid] <= t) { k = mid; lo = mid + 1; } else hi = mid - 1; }
+    var v = (k >= 0 ? cumV[k] : base).slice(), t0 = k >= 0 ? cumT[k] : 0;
+    for (var i = 0; i < timeline.length; i++) {
+      var sg = timeline[i], a = Math.max(sg[0], t0), b = Math.min(sg[1], t);
+      if (b > a && sg[3]) v[(sg[3] === "B" ? NK : 0) + SI.ctrl] += b - a;
+    }
+    return v;
+  }
+  function powerFactors(fight, m) {
+    if (m && m.dw) return { A: m.dw[0], B: m.dw[1] };
+    // estimate from the trace: head damage the defender takes per landed distance head strike
+    var sum = { A: 0, B: 0 }, n = { A: 0, B: 0 };
+    for (var ri = 0; ri < fight.rounds.length; ri++) {
+      var ev = fight.rounds[ri].ev || [], prev = null;
+      for (var i = 0; i < ev.length; i++) {
+        var e = ev[i];
+        if (prev && e.k === "hit" && e.tg === 0 && e.loc === "dist" && e.dA != null) {
+          var dl = e.w === "A" ? e.dB - prev.dB : e.dA - prev.dA;
+          if (dl > 0 && dl < 3) { sum[e.w] += dl; n[e.w]++; }
+        }
+        if (e.dA != null) prev = e;
+      }
+    }
+    return { A: n.A >= 5 ? sum.A / n.A : 1, B: n.B >= 5 ? sum.B / n.B : 1 };
+  }
+  function cardsText(cards, W) {
+    return (cards || []).map(function (c) { var a = c[0], b = c[1]; return W === "B" ? b + "-" + a : a + "-" + b; }).join(", ");
+  }
+  function decisionText(fight, F, voice) {
+    var W = fight.winner, cards = fight.cards || [], method = fight.method, txt;
+    function cardFor(c, side) { return side === "B" ? c[1] + "-" + c[0] : c[0] + "-" + c[1]; }
+    function winnerOf(c) { return c[0] > c[1] ? "A" : (c[1] > c[0] ? "B" : null); }
+    if (W === "D") {
+      var kind = method === "DRAW" ? (cards.filter(function (c) { return c[0] === c[1]; }).length === 3 ? "unanimous" : (cards.filter(function (c) { return c[0] === c[1]; }).length === 2 ? "majority" : "split")) : "";
+      var parts = cards.map(function (c) { var x = winnerOf(c); return x ? cardFor(c, x) + " " + F[x].short : c[0] + "-" + c[1] + " even"; });
+      txt = "We go to the scorecards. " + parts.join(", ") + ". This one is a " + kind + " draw.";
+    } else {
+      var L = other(W), agree = [], dissent = [], even = [];
+      cards.forEach(function (c) { var x = winnerOf(c); if (x === W) agree.push(cardFor(c, W)); else if (x === L) dissent.push(cardFor(c, L)); else even.push(c[0] + "-" + c[1]); });
+      if (method === "UD") txt = "We go to the scorecards. " + agree.join(", ") + ", for the winner by unanimous decision, " + F[W].name + "!";
+      else if (method === "SD") txt = "Split decision. One judge has it " + dissent.join(", ") + " for " + F[L].short + ", overruled by " + agree.join(" and ") + " for the winner, " + F[W].name + "!";
+      else txt = "Majority decision. One judge has it " + even.join(", ") + " even; " + agree.join(" and ") + " for the winner, " + F[W].name + "!";
+    }
+    return { text: voice.take(txt) || txt, cards: cards, winner: W, method: method };
+  }
+
+  // technique for one strike beat
+  function chooseTech(Fa, b, prev, dt) {
+    var W = Fa.W, tg = b.tgt, loc = b.loc;
+    if (loc === "ground") {
+      if (b.down) return dt && dt.tool === "elbow" ? "gnpelbow" : (Fa._u() < 0.85 ? "gnp" : "gnpelbow");
+      if (b.fin && dt) return dt.tool === "elbow" ? "gnpelbow" : "gnp";
+      return b.top ? (pickW(W.gt, Fa._u()) || "gnp") : "upelbow";
+    }
+    var clinch = loc === "clinch";
+    var grp = clinch ? [W.ch, W.cb, W.cl][tg] : [W.dh, W.db, W.dl][tg];
+    var w = {}, k;
+    for (k in grp) w[k] = grp[k];
+    if (prev && NEXT[prev]) for (k in NEXT[prev]) if (w[k] != null) w[k] *= NEXT[prev][k];
+    if (!prev && b.ci === 0) for (k in FIRST) if (w[k] != null) w[k] *= FIRST[k];
+    if (b.counter && tg === 0) { if (w.hook != null) w.hook *= 1.4; if (w.cross != null) w.cross *= 1.25; if (w.jab != null) w.jab *= 0.7; }
+    if (b.kd || b.fin) for (k in w) w[k] *= KDP[k] != null ? KDP[k] : 1;
+    else if (b.hurt) for (k in w) w[k] *= Math.sqrt(KDP[k] != null ? KDP[k] : 1);
+    if (b.fin && b.how === "LEG" && w.calf != null) w.calf *= 1.5;
+    if (b.fin && dt && dt.tgt === tg) {
+      var f = {}, any = false;
+      for (k in w) if (CLASS[k] === dt.tool && w[k] > 0) { f[k] = w[k]; any = true; }
+      if (any) w = f;
+      else return CANON[dt.tool + tg + (clinch && dt.tool === "punch" ? "c" : "")] || CANON[dt.tool + tg] || pickW(grp, Fa._u()) || "cross";
+    }
+    return pickW(w, Fa._u()) || (tg === 2 ? "calf" : (tg === 1 ? "bodyhook" : "cross"));
+  }
+
+  // ------------------------------------------------------------------ density: what the show may compress
+  function density(beats, ev, endT, timeline) {
+    var bin = 10, nb = Math.max(1, Math.ceil(endT / bin)), n = [], strikes = [], evs = [], act = [], warp = [], i;
+    for (i = 0; i < nb; i++) { n.push(0); strikes.push(0); evs.push(0); act.push(0); }
+    for (i = 0; i < ev.length; i++) evs[Math.min(nb - 1, Math.floor(ev[i].t / bin))]++;
+    var vis = [];
+    for (i = 0; i < beats.length; i++) {
+      var b = beats[i]; if (b.k === "note") continue;
+      vis.push(b.t);
+      var k = Math.min(nb - 1, Math.floor(b.t / bin));
+      n[k]++;
+      if (b.k === "strike") { strikes[k]++; act[k] += b.kd || b.fin || b.hurt ? 4 : (b.miss ? 0.6 : 1); }
+      else act[k] += 2;
+    }
+    for (i = 0; i < nb; i++) { act[i] = +act[i].toFixed(1); warp.push(+clip(4 / (act[i] + 1), 0.6, 3).toFixed(2)); }
+    var quiet = [], prev = 0;
+    vis.push(endT);
+    for (i = 0; i < vis.length; i++) {
+      if (vis[i] - prev >= 6) { var sg = segAt(timeline, (prev + vis[i]) / 2); quiet.push([+prev.toFixed(2), +vis[i].toFixed(2), sg ? sg[2] : 0, sg ? sg[3] : null]); }
+      prev = vis[i];
+    }
+    var tq = 0; for (i = 0; i < quiet.length; i++) tq += quiet[i][1] - quiet[i][0];
+    return { bin: bin, n: n, strikes: strikes, ev: evs, act: act, warp: warp, quiet: quiet, quietSecs: +tq.toFixed(1), beats: vis.length - 1 };
+  }
+
+  // ------------------------------------------------------------------ public helpers
+  // exact engine stats (fight cumulative) at clock time t of round r, control included
+  function statsAt(script, r, t) {
+    var R = script.rounds[r]; if (!R) return null;
+    return statsObj(statsVecAt(R.cum.t, R.cum.v, R.cum.base, R.timeline, Math.min(t, R.endT)));
+  }
+  function roundStatsAt(script, r, t) {
+    var a = statsAt(script, r, t), b = script.rounds[r].base, out = { A: {}, B: {} };
+    for (var k = 0; k < NK; k++) { var key = STAT_KEYS[k]; out.A[key] = +(a.A[key] - b.A[key]).toFixed(1); out.B[key] = +(a.B[key] - b.B[key]).toFixed(1); }
+    return out;
+  }
+  // suggested clock warp at time t (smoothly interpolated between 10 s bin centers)
+  function warpAt(round, t) {
+    var d = round && round.density; if (!d) return 1;
+    var x = t / d.bin - 0.5, i = Math.floor(x), f = x - i, w = d.warp;
+    var a = w[clip(i, 0, w.length - 1)], b = w[clip(i + 1, 0, w.length - 1)];
+    return a + (b - a) * clip(f, 0, 1);
+  }
+  // fighter description for opts.fighters from a fighters.json profile plus overrides and scouting
+  function describe(prof, extra, scouting) {
+    prof = prof || {}; extra = extra || {};
+    var o = { name: prof.name, slug: prof.slug, nick: prof.nick, stance: prof.stance, height_in: prof.height_in, reach_in: prof.reach_in,
+      division: prof.division, record: prof.record, kd_absorbed: prof.kd_absorbed, dob: prof.dob };
+    if (scouting && scouting.appearance) o.appearance = scouting.appearance;
+    for (var k in extra) o[k] = extra[k];
+    if (!o.short && o.name) o.short = shortName(o.name);
+    return o;
+  }
+
+  var API = {
+    VERSION: VERSION, build: build, statsAt: statsAt, roundStatsAt: roundStatsAt, warpAt: warpAt, describe: describe,
+    shortName: shortName, pronounsFor: pronounsFor, moveTexts: moveTexts,
+    STAT_KEYS: STAT_KEYS, BASE_MOVES: BASE_MOVES, EXTENDED: EXT,
+    KINDS: ["strike", "clinch", "break", "td", "tdx", "pass", "esc", "sweep", "up", "sub", "subx", "pounce", "recover", "reset", "note"],
+    // v2 compatibility: generic names (the page passes real ones through opts.fighters)
+    NAMES: { A: "Blue corner", B: "Red corner" }, SHORT: { A: "Blue", B: "Red" },
+    MOVE_TXT: { jab: "jab", cross: "right hand", hook: "left hook", overhand: "overhand right", upper: "uppercut", headkick: "head kick", bodykick: "body kick",
+      bodyhook: "hook to the body", bodystraight: "straight to the body", calf: "calf kick", inside: "inside low kick", short: "short punch", elbow: "elbow",
+      kneehead: "knee", knee: "knee", shortbody: "body shot", gnp: "ground strike", gnpelbow: "elbow", upelbow: "elbow from the bottom" }
+  };
+  root.FightDirector = API;
+  if (typeof module !== "undefined" && module.exports) module.exports = API;
 })(typeof window !== "undefined" ? window : (typeof self !== "undefined" ? self : globalThis));

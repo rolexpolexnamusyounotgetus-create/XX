@@ -874,7 +874,6 @@ def win_size_check(X, fit_mask):
 def exposure_rate(X, fit_mask, k=15.0):
     """Pre-fight expected standing head strikes landed per minute by a on d (decayed sums, shrunk to league)."""
     tr = X[fit_mask]
-    L = float(tr.E.sum() / tr["min"].sum()) / 2.0 * 2.0      # per fighter-minute (each row is one direction)
     L = float(tr.E.sum() / tr["min"].sum())
     ra = (X.a_dsh.to_numpy(float) + k * L) / (X.a_dmin.to_numpy(float) + k)
     rd = (X.d_dosh.to_numpy(float) + k * L) / (X.d_dmin.to_numpy(float) + k)
@@ -936,3 +935,327 @@ def ko_model(X, r_final, spec, fm_dates=(FIT_FROM, "2023-12-31")):
                  "test_calibration_deciles": [{"n": int(a.n), "pred": round(float(a.pred), 4), "obs": round(float(a.obs), 4)}
                                               for a in cal.itertuples()],
                  "league_standing_head_per_min": round(Lsh, 4)}, preds
+
+
+# ------------------------------------------------------------------ fighter-level outputs
+def ref_profile(X, fit_mask, knots):
+    """Reference fighter for the covariate multipliers: age 30, median experience, no knockdowns or KO losses
+    absorbed, 4-12 month layoff, at home."""
+    nd = X[fit_mask & (X.d_n_prior > 0).to_numpy()]
+    ref = {"d_age_c": 0.0, "d_age_na": 0.0, "a_age_c": 0.0,
+           "d_yrs": float(nd.d_yrs.median()), "d_lognp": float(nd.d_lognp.median()),
+           "d_cumoh100": float(nd.d_cumoh100.median()), "d_debut": 0.0}
+    for k in knots:
+        ref["d_age_h%d" % int(k)] = 0.0
+        ref["a_age_h%d" % int(k)] = 0.0
+    for c in ("d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o", "d_lay_short", "d_lay_12_24", "d_lay_24p",
+              "d_last_ko_loss", "d_ko_short", "d_up_cls", "d_dn_cls", "a_up_cls", "a_dn_cls"):
+        ref[c] = 0.0
+    return ref
+
+
+def split_lin(r, X, ref):
+    names = ["const"] + r["cols"]
+    D, b = r["D"], r["b"]
+    idd = [i for i, n in enumerate(names) if n.startswith("d_")]
+    ida = [i for i, n in enumerate(names) if n.startswith("a_")]
+    refd = np.array([ref.get(names[i], 0.0) for i in idd])
+    refa = np.array([ref.get(names[i], 0.0) for i in ida])
+    lin_d = D[:, idd] @ b[idd] - refd @ b[idd]
+    lin_a = D[:, ida] @ b[ida] - refa @ b[ida]
+    lin_ctx = r["lin"] - lin_d - lin_a
+    return lin_d, lin_a, lin_ctx, idd, ida
+
+
+class _F:
+    pass
+
+
+def now_features(stt, P, date, division, spec):
+    f = _F()
+    f.date, f.day, f.division = date, date.toordinal(), division
+    x = side_features(stt, P, f, 0)
+    row = {}
+    for k, v in x.items():
+        row["d_" + k] = v
+        row["a_" + k] = v
+    one = pd.DataFrame([dict(row, division=division, fight_lbs=LBS.get(division), sched=5, title=0,
+                             elo_a=1500.0, elo_d=1500.0, has_stats=1, y=0.0, E=1.0, H=1.0, amb=0)])
+    one = add_columns(one, knots=tuple(spec["knots"]), win=spec["win"])
+    for c in ("d_lay_short", "d_lay_12_24", "d_lay_24p", "d_ko_short", "a_lay_short", "a_lay_12_24", "a_lay_24p"):
+        one[c] = 0.0       # the roster numbers assume a normal 4-12 month layoff; the engine applies the real one
+    return one.iloc[0], x
+
+
+def gamma_q(shape, rate, qs=(0.05, 0.5, 0.95)):
+    return [float(sst.gamma.ppf(q, shape, scale=1.0 / rate)) for q in qs]
+
+
+def roster_outputs(X, r_live, spec, state, people, snap_date, ref, roster_slugs, n_draw=4000, seed=7):
+    st = r_live["walk"]["state"]
+    names = ["const"] + r_live["cols"]
+    idd = [i for i, n in enumerate(names) if n.startswith("d_")]
+    ida = [i for i, n in enumerate(names) if n.startswith("a_")]
+    cov = r_live.get("cov_cl", r_live["cov"])
+    rng = np.random.default_rng(seed)
+    draws = rng.multivariate_normal(r_live["b"], cov, size=n_draw)
+    slug2p = {P.get("slug"): p for p, P in people.items() if P.get("slug")}
+    out = {}
+    ac, ap = spec["alpha_c"], spec["alpha_p"]
+    for slug in roster_slugs:
+        p = slug2p.get(slug)
+        if p is None or p not in state:
+            continue
+        stt = state[p]
+        P = people[p]
+        home = B.mode_recent(stt["hist"], snap_date.toordinal()) if stt["hist"] else None
+        if home is None or home in NON_DIV:
+            home = "Lightweight"
+        row, x = now_features(stt, P, snap_date, home, spec)
+        xd = np.array([row[names[i]] if names[i] in row else 0.0 for i in idd], float) - \
+            np.array([ref.get(names[i], 0.0) for i in idd])
+        xa = np.array([row[names[i]] if names[i] in row else 0.0 for i in ida], float) - \
+            np.array([ref.get(names[i], 0.0) for i in ida])
+        lc = float(xd @ r_live["b"][idd])
+        lp = float(xa @ r_live["b"][ida])
+        lcd = draws[:, idd] @ xd
+        lpd = draws[:, ida] @ xa
+        yc, mc = st["Yc"].get(p, 0.0), st["Mc"].get(p, 0.0)
+        yp, mp = st["Yp"].get(p, 0.0), st["Mp"].get(p, 0.0)
+        cs, cr, ps, pr = ac + yc, ac + mc, ap + yp, ap + mp
+        u = rng.gamma(cs, 1.0 / cr, n_draw)
+        v = rng.gamma(ps, 1.0 / pr, n_draw)
+        tc = np.exp(lcd) * u
+        tp = np.exp(lpd) * v
+
+        def q(a):
+            return [round(float(t), 4) for t in np.quantile(a, [0.05, 0.5, 0.95])]
+        out[slug] = {
+            "name": P.get("name"), "age": round(x["age"], 2) if np.isfinite(x["age"]) else None, "home": home,
+            "ufc_fights": int(x["n_prior"]), "kd_absorbed": round(yc, 2), "kd_absorbed_expected": round(mc, 3),
+            "kd_scored": round(yp, 2), "kd_scored_expected": round(mp, 3),
+            "ko_losses_recent": int(x["kol_r%d" % spec["win"]]), "ko_losses_old": int(x["kol_o%d" % spec["win"]]),
+            "kd_absorbed_recent": int(x["okd_r%d" % spec["win"]]),
+            "cum_head_absorbed": int(x["cum_oh"]), "years_in_ufc": round(x["yrs_ufc"], 2),
+            "chin_re": round(cs / cr, 4), "chin_re_q": [round(t, 4) for t in gamma_q(cs, cr)],
+            "chin_re_shape_rate": [round(cs, 4), round(cr, 4)],
+            "pow_re": round(ps / pr, 4), "pow_re_q": [round(t, 4) for t in gamma_q(ps, pr)],
+            "pow_re_shape_rate": [round(ps, 4), round(pr, 4)],
+            "chin_cov": round(math.exp(lc), 4), "pow_cov": round(math.exp(lp), 4),
+            "chin_total_q": q(tc), "pow_total_q": q(tp),
+            "chin_total": round(float(np.mean(tc)), 4), "pow_total": round(float(np.mean(tp)), 4),
+        }
+    return out
+
+
+def matchup(r_live, spec, roster, ref, a_slug, b_slug, division, level_now, five=1, title=0, n_draw=4000, seed=11,
+            people=None, state=None, snap_date=None, move_fit=None):
+    """KD probability per landed standing head strike in each direction for a hypothetical fight."""
+    names = ["const"] + r_live["cols"]
+    b = r_live["b"]
+    ctx = b[0] + (b[names.index("div_" + division)] if ("div_" + division) in names else 0.0) \
+        + five * b[names.index("five")] + title * b[names.index("title")]
+    out = {"division": division, "five": five, "title": title, "level_now": round(level_now, 6)}
+    rng = np.random.default_rng(seed)
+    for att, de in ((a_slug, b_slug), (b_slug, a_slug)):
+        A, Dd = roster[att], roster[de]
+        u = rng.gamma(*[Dd["chin_re_shape_rate"][0], 1.0 / Dd["chin_re_shape_rate"][1]], n_draw)
+        v = rng.gamma(*[A["pow_re_shape_rate"][0], 1.0 / A["pow_re_shape_rate"][1]], n_draw)
+        p_mean = level_now * math.exp(ctx) * Dd["chin_cov"] * A["pow_cov"] * Dd["chin_re"] * A["pow_re"]
+        pd_ = level_now * math.exp(ctx) * Dd["chin_cov"] * A["pow_cov"] * u * v
+        out[att + "->" + de] = {"p_per_standing_head": round(p_mean, 6),
+                                "p_q": [round(float(t), 6) for t in np.quantile(pd_, [0.05, 0.5, 0.95])],
+                                "kd_per_100": round(100 * p_mean, 3)}
+    return out
+
+
+def backtest_multipliers(X, r_pre, ref):
+    lin_d, lin_a, lin_ctx, _, _ = split_lin(r_pre, X, ref)
+    w = r_pre["walk"]
+    p = np.exp(r_pre["lin"] + r_pre["lv"]) * w["chin"] * w["pow"]
+    bt = json.load(open(os.path.join(ROOT, "data", "derived", "backtest.json")))
+    ids = {e["id"] for e in bt["fights"]}
+    out = {}
+    fid = X.fid.to_numpy()
+    sd = X.side_def.to_numpy()
+    for i in np.where(np.isin(fid, list(ids)))[0]:
+        e = out.setdefault(fid[i], {"A": {}, "B": {}, "p": {}})
+        d = sd[i]
+        a = "A" if d == "B" else "B"
+        e[d]["chin_re"] = round(float(w["chin"][i]), 4)
+        e[d]["chin_cov"] = round(float(math.exp(lin_d[i])), 4)
+        e[a]["pow_re"] = round(float(w["pow"][i]), 4)
+        e[a]["pow_cov"] = round(float(math.exp(lin_a[i])), 4)
+        e["p"][a] = round(float(p[i]), 6)          # KD per standing head strike landed by a
+    return out
+
+
+def kd_level_series(X):
+    s = X[X.use].copy()
+    s["half"] = s.year.astype(str) + np.where(pd.to_datetime(s.date).dt.month <= 6, "H1", "H2")
+    g = s.groupby("half").agg(kd=("y", "sum"), E=("E", "sum"), fights=("fid", "nunique"))
+    g = g[g.index >= "2016"]
+    return [{"period": k, "fights": int(r.fights), "kd": int(r.kd), "kd_per_1000_standing_head": round(1000 * r.kd / r.E, 2)}
+            for k, r in g.iterrows()]
+
+
+def calib_all(X, res, tm):
+    mus = {k: res[k]["mu"] for k in ("M0L", "M1", "V3", "F")}
+    w = res["F"]["walk"]
+    da = pd.cut(X.d_age, [0, 27, 30, 33, 36, 99], labels=["<27", "27-30", "30-33", "33-36", "36+"]).astype(str).to_numpy()
+    aa = pd.cut(X.a_age, [0, 27, 30, 33, 36, 99], labels=["<27", "27-30", "30-33", "33-36", "36+"]).astype(str).to_numpy()
+    mv = np.where(X.d_mv_cls < 0, "down", np.where(X.d_mv_cls > 0, "up", np.where(X.d_debut > 0, "debut", "same")))
+    amv = np.where(X.a_mv_cls < 0, "down", np.where(X.a_mv_cls > 0, "up", np.where(X.a_debut > 0, "debut", "same")))
+    kol = (X.d_kol_r + X.d_kol_o).clip(upper=2).astype(int).astype(str).replace({"2": "2+"}).to_numpy()
+    okd = (X.d_okd_r + X.d_okd_o).clip(upper=3).astype(int).astype(str).replace({"3": "3+"}).to_numpy()
+    ct = np.full(len(X), "", dtype=object)
+    pt = np.full(len(X), "", dtype=object)
+    qc = np.quantile(w["chin"][tm], [1 / 3, 2 / 3])
+    qp = np.quantile(w["pow"][tm], [1 / 3, 2 / 3])
+    ct[:] = np.where(w["chin"] < qc[0], "low (good chin)", np.where(w["chin"] < qc[1], "mid", "high (weak chin)"))
+    pt[:] = np.where(w["pow"] < qp[0], "low power", np.where(w["pow"] < qp[1], "mid", "high power"))
+    sex = np.where(X.women > 0, "women", "men")
+    yr = X.year.astype(str).to_numpy()
+    return {
+        "defender_age": calib(X, tm, mus, da, ["<27", "27-30", "30-33", "33-36", "36+", "nan"]),
+        "attacker_age": calib(X, tm, mus, aa, ["<27", "27-30", "30-33", "33-36", "36+", "nan"]),
+        "defender_weight_move": calib(X, tm, mus, mv, ["down", "same", "up", "debut"]),
+        "attacker_weight_move": calib(X, tm, mus, amv, ["down", "same", "up", "debut"]),
+        "defender_prior_ko_losses": calib(X, tm, mus, kol, ["0", "1", "2+"]),
+        "defender_prior_kd_absorbed": calib(X, tm, mus, okd, ["0", "1", "2", "3+"]),
+        "defender_chin_effect_tercile": calib(X, tm, mus, ct, ["low (good chin)", "mid", "high (weak chin)"]),
+        "attacker_power_effect_tercile": calib(X, tm, mus, pt, ["low power", "mid", "high power"]),
+        "sex": calib(X, tm, mus, sex, ["men", "women"]),
+        "year": calib(X, tm, mus, yr),
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--quick", action="store_true", help="skip the tuning grid; use DEFAULT_SPEC")
+    args = ap.parse_args()
+    t0 = time.time()
+    df, state, people, fights, snap_day = build_table()
+    snap_date = dt.date.fromordinal(snap_day)
+
+    if args.quick:
+        spec, grid = dict(DEFAULT_SPEC), []
+    else:
+        print("tuning on 2019-2023 (fit 2008-2018) ...")
+        spec, grid = tune(df)
+    print("spec:", spec)
+    X = prepare(df, spec)
+    groups = X["def"].to_numpy()
+
+    print("held-out ladder (fit 2008-2023, score 2024+) ...")
+    res, ladder_rows, info = ladder(X, spec)
+    tm = window(X, TEST_FROM)
+    fm = window(X, FIT_FROM, "2023-12-31")
+    for r in ladder_rows:
+        print("  %-58s dev %.1f  vs M0L %+.1f (se %.1f)  KD obs %d exp %.1f" % (
+            r["model"], r["dev_test"], r["vs_M0L"]["total"], r["vs_M0L"]["se_total"], r["kd_obs"], r["kd_exp"]))
+    pw = pairwise(X, res, tm, [("F", "V3"), ("F", "E3"), ("F", "M3"), ("E3", "V3"), ("F+move", "F"), ("F+lbs", "F"),
+                              ("F+body", "F"), ("C30", "M1"), ("M2", "C30")])
+    coefs = {k: coef_table(res[k], X, groups) for k in ("F", "F+move", "F+lbs", "F+body", "M3", "C30")}
+    slopes = {"defender": age_slopes(res["F"], "d", spec["knots"]), "attacker": age_slopes(res["F"], "a", spec["knots"])}
+    slopes_m2 = {"defender": age_slopes(res["M2"], "d", spec["knots"]), "attacker": age_slopes(res["M2"], "a", spec["knots"])}
+    slopes_m3 = {"defender": age_slopes(res["M3"], "d", spec["knots"]), "attacker": age_slopes(res["M3"], "a", spec["knots"])}
+    eb_cal = {"train": ebslope(X, res["F"], fm), "test": ebslope(X, res["F"], tm)}
+    od = overdispersion(X, res["F"], fm, spec)
+    cal = calib_all(X, res, tm)
+
+    print("within-fighter, claims, size checks ...")
+    if "d_age_h30" not in X.columns:
+        X["d_age_h30"] = np.clip(X.d_age.fillna(30) - 30, 0, None)
+    all08 = window(X, FIT_FROM)
+    zc = ["d_age_c", "d_age_h30", "d_lognp", "d_cumoh100", "d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o",
+          "d_lay_short", "d_lay_12_24", "d_lay_24p"]
+    wf = {"pre2024": within_fighter(X, res["F"], fm, zc)}
+    claims = {"replication_2010_on_all_data": claim_age(X, window(X, "2010-01-01")),
+              "replication_2008_2023": claim_age(X, fm)}
+    wins = win_size_check(X, ((X.has_stats == 1) & (X.amb == 0) & (X.date >= FIT_FROM)).to_numpy())
+
+    print("KO/TKO loss per fight ...")
+    ko_rows, ko_info, _ = ko_model(X, res["F"], spec)
+    for r in ko_rows:
+        print("  %-55s test log loss %.5f  vs K0 %+.2f (se %.2f)  vs K2 %+.2f (se %.2f)" % (
+            r["model"], r["logloss_test"], r["vs_K0"]["total"], r["vs_K0"]["se"], r["vs_K2"]["total"], r["vs_K2"]["se"]))
+
+    print("live fit on everything and roster multipliers ...")
+    r_live = fit_kd(X, final_cols(spec, X), all08, spec, final_state=True)
+    coef_live = coef_table(r_live, X, groups)
+    slopes_live = {"defender": age_slopes(r_live, "d", spec["knots"]), "attacker": age_slopes(r_live, "a", spec["knots"])}
+    r_live_move = fit_kd(X, final_cols(spec, X) + blocks(spec, X)["move"], all08, spec)
+    coef_live_move = coef_table(r_live_move, X, groups)
+    wf["all_2008_on"] = within_fighter(X, r_live, all08, zc)
+    ref = ref_profile(X, fm, spec["knots"])
+    roster_slugs = list(json.load(open(os.path.join(ROOT, "data", "derived", "fighters.json")))["fighters"].keys())
+    roster = roster_outputs(X, r_live, spec, state, people, snap_date, ref, roster_slugs)
+    # level now: trailing league rate at the snapshot, and the recent 365-day rate
+    s = X[X.use & (X.day > snap_day - spec["level"])]
+    level_now = float(s.y.sum() / s.E.sum())
+    s365 = X[X.use & (X.day > snap_day - 365)]
+    level_365 = float(s365.y.sum() / s365.E.sum())
+    # normalization so that multiplying the engine's division p0 by chin_total x pow_total keeps the average
+    lin_d, lin_a, lin_ctx, _, _ = split_lin(r_live, X, ref)
+    wl = r_live["walk"]
+    rec = window(X, TEST_FROM)
+    Ew = X.E.to_numpy(float)
+    norm_chin = float(np.sum(Ew[rec] * np.exp(lin_d[rec]) * wl["chin"][rec]) / Ew[rec].sum())
+    norm_pow = float(np.sum(Ew[rec] * np.exp(lin_a[rec]) * wl["pow"][rec]) / Ew[rec].sum())
+    norm_joint = float(np.sum(Ew[rec] * np.exp(lin_d[rec] + lin_a[rec]) * wl["chin"][rec] * wl["pow"][rec]) / Ew[rec].sum())
+    mu_live = {}
+    for lv_name, lv_val in (("trailing_730", level_now), ("trailing_365", level_365)):
+        mu_live[lv_name] = matchup(r_live, spec, roster, ref, "alexander-volkanovski", "justin-gaethje", "Lightweight",
+                                   lv_val)
+    bt_mult = backtest_multipliers(X, res["F"], ref)
+    series = kd_level_series(X)
+
+    names_live = ["const"] + r_live["cols"]
+    out = {
+        "meta": {
+            "tool": "tools/durability.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+            "snapshot": snap_date.isoformat(), "spec": spec, "fit_from": FIT_FROM, "tune_fit": TUNE_FIT,
+            "tune_eval": TUNE_EVAL, "test_from": TEST_FROM, "info": info,
+            "model": "KD_ad ~ Poisson(E_ad p_ad); log p_ad = log L730(t) + const + division + 5-round + title + f(defender) "
+                     "+ g(attacker) + log u_d + log v_a; E = standing head strikes landed by a (midpoint of the ufcstats "
+                     "bounds); u, v = Gamma(alpha, alpha) fighter chin / power effects with walk-forward posterior means "
+                     "(alpha + KD) / (alpha + expected KD) over earlier fights",
+            "exposure": "standing head landed = (max(HEAD - GROUND, 0) + min(HEAD, DISTANCE + CLINCH)) / 2 per fight",
+            "reference_profile": ref,
+        },
+        "tuning_grid": grid,
+        "ladder_test": ladder_rows, "pairwise_test": pw,
+        "coef_pre2024": coefs, "coef_live": coef_live, "coef_live_with_move": coef_live_move,
+        "age_slopes_pre2024": slopes, "age_slopes_live": slopes_live,
+        "age_slopes_no_fighter_effects": {"M2_age_only": slopes_m2, "M3_covariates": slopes_m3},
+        "fighter_effect_calibration_slopes": eb_cal,
+        "overdispersion_train": od,
+        "calibration_test": cal,
+        "within_fighter": {k: {kk: vv for kk, vv in v.items() if kk != "cov_cluster"} for k, v in wf.items()},
+        "claims": {"age_league_poisson": claims, "win_size": wins},
+        "ko_loss_model": {"models": ko_rows, "info": ko_info},
+        "engine": {
+            "level_now_trailing_730": round(level_now, 6), "level_now_trailing_365": round(level_365, 6),
+            "terms_live": {n: round(float(b), 5) for n, b in zip(names_live, r_live["b"])},
+            "norm_chin": round(norm_chin, 4), "norm_pow": round(norm_pow, 4), "norm_joint": round(norm_joint, 4),
+            "alpha_chin": spec["alpha_c"], "alpha_pow": spec["alpha_p"],
+        },
+        "kd_level_series": series,
+        "matchup_volkanovski_gaethje": mu_live,
+        "roster": roster,
+        "backtest": bt_mult,
+    }
+    with open(OUT_JSON, "w") as fh:
+        json.dump(out, fh, separators=(",", ":"), default=lambda o: None if (isinstance(o, float) and not np.isfinite(o)) else o)
+    print("wrote %s (%.1f MB) in %.0fs" % (OUT_JSON, os.path.getsize(OUT_JSON) / 1e6, time.time() - t0))
+    for s_ in ("alexander-volkanovski", "justin-gaethje"):
+        r = roster.get(s_)
+        print(" ", s_, {k: r[k] for k in ("age", "kd_absorbed", "kd_absorbed_expected", "chin_re", "chin_re_q", "chin_cov",
+                                         "chin_total_q", "kd_scored", "kd_scored_expected", "pow_re", "pow_re_q", "pow_cov",
+                                         "pow_total_q")})
+    print(" ", json.dumps(mu_live))
+
+
+if __name__ == "__main__":
+    main()

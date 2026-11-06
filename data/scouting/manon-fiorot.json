@@ -30,7 +30,7 @@
       "fast finishes on a hurt opponent: punches at distance vs Leonardo and Ricci (2021), ground punches vs Jasudavicius at 1:14 of R1 (2025)"
     ],
     "weaknesses": [
-      "accuracy: 39% of significant attempts land, time-decayed (division 43%); 51 of 196 head strikes vs Grasso and 58 of 225 vs Namajunas",
+      "accuracy: 39% of significant attempts land, time-decayed (division 43%); 51 of 196 head strikes vs Grasso and 39 of 197 vs Namajunas",
       "leg kicks get through: 0.81 leg strikes absorbed per minute, time-decayed (division 0.63); Shevchenko landed 17 of 19, Katlyn Cerminara 20 of 23",
       "knocked down in each of her last two decision losses (Shevchenko R4, Grasso R1)",
       "takedown offence rarely lands: 9 of 31 career, 1 of 12 vs Shevchenko",
@@ -80,7 +80,7 @@
   },
   "engine_notes": [
     { "note": "Volume: 12.9 significant attempts per minute time-decayed and 13.6 career (division 9.2), landing 5.05 and 5.56 per minute (division 3.98). She absorbs 4.08 per minute, decayed.", "source": "data/derived/fighters.json" },
-    { "note": "Takedown defence is elite: 87.5% career, 86% decayed (division 61%). Opponents' control is 44 s per 15 min, decayed (division 180).", "source": "data/derived/fighters.json" },
+    { "note": "Takedown defence is elite: 87.5% career, 86% decayed (division 61%). Opponents' control is 43 s per 15 min, decayed (division 180).", "source": "data/derived/fighters.json" },
     { "note": "Late rounds: in her two 5-round fights (Blanchfield, Shevchenko) her output by round is 1.00, 0.95, 1.05, 1.46, 1.46 of round 1, against a division curve of 1.00, 0.90, 1.01, 1.14, 1.32. Only two fights, but she out-landed both opponents in R5 (42-27 vs Blanchfield, 18-15 vs Shevchenko).", "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv" },
     { "note": "Chin: 2 knockdowns absorbed in 10 UFC fights, both in her two losses; 0.65 per 100 head strikes absorbed career (division 0.25). No KO loss. Knockdown power is low: 1 knockdown scored, though she has 3 KO/TKO wins.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
     { "note": "Elo 1672, fourth among flyweights who have fought since Nov 2024 (Shevchenko 1750, Silva 1722, Blanchfield 1676).", "source": "data/derived/fighters.json" }

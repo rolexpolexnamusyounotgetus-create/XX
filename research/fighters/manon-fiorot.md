@@ -18,7 +18,7 @@ As of Nov 6, 2026. Stats: `data/derived/fighters.json` and `data/raw/` (ufcstats
 | Oct 18, 2025 | Jasmine Jasudavicius | W TKO R1 1:14 | 16 of 27 landed, the last 8 on the ground |
 | May 10, 2025 | Valentina Shevchenko | L UD 47-48 x3 | Clinch game: 29 of 33 clinch strikes, 35 of 37 to the body, 7:07 of control. But 1 of 12 takedowns, 17 of 19 Shevchenko leg strikes absorbed, and dropped in R4 |
 | Mar 30, 2024 | Erin Blanchfield | W UD 50-45 x3 | Landed 172 of 359 and stuffed all 3 takedowns. Out-landed her 88-64 over R4-R5 |
-| Sep 2, 2023 | Rose Namajunas | W UD | Out-landed 60-58 on 225 attempts but won 30-27, 29-28 x2. Stuffed 6 of 6 takedowns |
+| Sep 2, 2023 | Rose Namajunas | W UD | Out-landed 58-60 on 225 attempts but won 30-27, 29-28 x2. Stuffed 6 of 6 takedowns |
 
 ## Style
 
@@ -27,7 +27,7 @@ She is a volume striker. She throws 13.6 significant strikes per minute over her
 ## Strengths
 
 - Output: she lands 5.56 significant strikes per minute career (division 3.98).
-- Takedown defence: 87.5% career. Opponents average 44 s of control per 15 min against her (decayed; division 180).
+- Takedown defence: 87.5% career. Opponents average 43 s of control per 15 min against her (decayed; division 180).
 - Late rounds: she out-landed both five-round opponents in R5.
 
 ## Weaknesses

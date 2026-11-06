@@ -261,133 +261,200 @@ def deviance(Y, E, eta):
     return dev
 
 
-class Fit:
-    """One MAP fit on the rows before date T, weighted by decay."""
+def _glm_terms(eta, Y, E, wc):
+    """Loss, gradient wrt eta and Fisher weight per row and task, all already weighted by wc."""
+    G = np.empty_like(eta)
+    H = np.empty_like(eta)
+    pz = ~IS_BIN
+    ep = E[:, pz] * np.exp(np.clip(eta[:, pz], -30, 20))
+    L = (wc[:, pz] * (ep - Y[:, pz] * eta[:, pz])).sum()
+    G[:, pz] = ep - Y[:, pz]
+    H[:, pz] = ep
+    eb = eta[:, IS_BIN]
+    sb = 1.0 / (1.0 + np.exp(-eb))
+    L += (wc[:, IS_BIN] * (E[:, IS_BIN] * np.logaddexp(0, eb) - Y[:, IS_BIN] * eb)).sum()
+    G[:, IS_BIN] = E[:, IS_BIN] * sb - Y[:, IS_BIN]
+    H[:, IS_BIN] = E[:, IS_BIN] * sb * (1 - sb)
+    return L, G * wc, H * wc
 
-    def __init__(self, D, T_day, hp, cw, warm=None, maxiter=3000, rows_from=None):
-        self.D, self.T, self.hp = D, T_day, hp
-        K = hp["K"]
-        self.mod = Model(D.F, D.NDIV, K)
+
+class Fit:
+    """One MAP fit on the rows dated before T (ordinal day), decay-weighted, by alternating block Newton.
+
+    Blocks: (1) every task's loadings W_t, V_t and intercepts (a weighted GLM per task given the fighters),
+    (2) every fighter's [a_i, d_i] (a 2K x 2K Newton step per fighter; stat rows involve one fighter's offense
+    and the other's defense, the win head adds Gauss-Newton cross terms), (3) the win head (logistic Newton).
+    Each block step is backtracked on the full objective, so the MAP objective decreases monotonically."""
+
+    def __init__(self, D, T_day, hp, cw, warm=None, max_sweeps=60, tol=1e-7, verbose=False):
+        self.D, self.T, self.hp, self.cw = D, T_day, hp, cw
+        self.K = K = hp["K"]
         lam_hl = math.log(2) / hp["hl"]
-        rm = D.r_day < T_day
-        if rows_from is not None:
-            rm &= D.r_day >= rows_from
-        self.ri = np.nonzero(rm)[0]
-        self.w = np.exp(-lam_hl * (T_day - D.r_day[self.ri]))
-        fm = (D.f_day < T_day) & ~np.isnan(D.f_win)
-        self.fi = np.nonzero(fm)[0]
-        self.fw = np.exp(-lam_hl * (T_day - D.f_day[self.fi])) * hp["win_w"]
-        ri = self.ri
+        ri = np.nonzero(D.r_day < T_day)[0]
+        self.ri = ri
+        self.w = np.exp(-lam_hl * (T_day - D.r_day[ri]))
         self.x, self.y = D.r_x[ri], D.r_y[ri]
         self.div, self.era, self.five = D.r_div[ri], D.r_era[ri], D.r_five[ri]
         self.Yr, self.Er = D.Y[ri], D.E[ri]
-        self.cw = cw                                     # per-task weight = 1 / dispersion
+        self.wc = self.w[:, None] * cw[None, :]
         n = len(ri)
-        self.Sx = sparse.csr_matrix((np.ones(n), (self.x, np.arange(n))), shape=(D.F, n))
-        self.Sy = sparse.csr_matrix((np.ones(n), (self.y, np.arange(n))), shape=(D.F, n))
-        self.Sd = sparse.csr_matrix((np.ones(n), (self.div, np.arange(n))), shape=(D.NDIV, n))
-        fa, fb = D.f_a[self.fi], D.f_b[self.fi]
-        m = len(fa)
-        self.fa, self.fb, self.fy = fa, fb, D.f_win[self.fi]
-        self.Sa = sparse.csr_matrix((np.ones(m), (fa, np.arange(m))), shape=(D.F, m))
-        self.Sb = sparse.csr_matrix((np.ones(m), (fb, np.arange(m))), shape=(D.F, m))
-        # fighters that never appear before T keep their prior (zero) and are excluded from the optimisation
-        self.active = np.zeros(D.F, bool)
+        F = D.F
+        self.Sx = sparse.csr_matrix((np.ones(n), (self.x, np.arange(n))), shape=(F, n))
+        self.Sy = sparse.csr_matrix((np.ones(n), (self.y, np.arange(n))), shape=(F, n))
+        fi = np.nonzero((D.f_day < T_day) & ~np.isnan(D.f_win))[0]
+        self.fw = np.exp(-lam_hl * (T_day - D.f_day[fi])) * hp["win_w"]
+        self.fa, self.fb, self.fy = D.f_a[fi], D.f_b[fi], D.f_win[fi]
+        m = len(fi)
+        self.Sa = sparse.csr_matrix((np.ones(m), (self.fa, np.arange(m))), shape=(F, m))
+        self.Sb = sparse.csr_matrix((np.ones(m), (self.fb, np.arange(m))), shape=(F, m))
+        self.active = np.zeros(F, bool)
         self.active[self.x] = True
         self.active[self.y] = True
-        th0 = warm.copy() if warm is not None else self.init()
-        self.theta = self.optimise(th0, maxiter)
-        self.P = self.mod.unpack(self.theta)
+        # per-row context design for the intercept block
+        self.Zc = np.zeros((n, D.NDIV + 2))
+        self.Zc[np.arange(n), self.div] = 1.0
+        self.Zc[:, D.NDIV] = self.era
+        self.Zc[:, D.NDIV + 1] = self.five
+        self.P = self.init() if warm is None else {k: v.copy() for k, v in warm.items()}
+        if warm is not None and warm["A"].shape[1] != K:
+            raise ValueError("warm start with a different K")
+        self.history = []
+        self.run(max_sweeps, tol, verbose)
 
+    # ---------------------------------------------------------------- pieces
     def init(self):
+        D, K = self.D, self.K
         rng = np.random.default_rng(SEED)
-        P = {k: np.zeros(s) for k, (_, _, s) in self.mod.sl.items()}
-        K = self.hp["K"]
-        P["A"] = rng.normal(0, 0.05, (self.D.F, K))
-        P["D"] = rng.normal(0, 0.05, (self.D.F, K))
-        P["W"] = rng.normal(0, 0.05, (NT, K))
-        P["V"] = rng.normal(0, 0.05, (NT, K))
-        # intercepts at the weighted league rate of each task
-        w = self.w[:, None]
-        num = (w * self.Yr).sum(0)
-        den = (w * self.Er).sum(0)
+        P = {"A": rng.normal(0, 0.1, (D.F, K)), "D": rng.normal(0, 0.1, (D.F, K)),
+             "W": rng.normal(0, 0.1, (NT, K)), "V": rng.normal(0, 0.1, (NT, K)),
+             "C": np.zeros((NT, D.NDIV + 2)), "ua": np.zeros(K), "ud": np.zeros(K), "M": np.zeros((K, K))}
+        num = (self.w[:, None] * self.Yr).sum(0)
+        den = (self.w[:, None] * self.Er).sum(0)
         r = num / np.maximum(den, 1e-9)
         base = np.where(IS_BIN, np.log(np.clip(r, 1e-6, 1 - 1e-6) / np.clip(1 - r, 1e-6, 1)),
                         np.log(np.maximum(r, 1e-6)))
-        P["mu"] = np.repeat(base[:, None], self.D.NDIV, axis=1)
-        return self.mod.pack(P)
+        P["C"][:, :D.NDIV] = base[:, None]
+        return P
 
-    def objective(self, th):
-        mod, hp = self.mod, self.hp
-        P = mod.unpack(th)
-        lam, lamw = hp["lam"], hp["lam"]
-        AX = P["A"][self.x]
-        DY = P["D"][self.y]
-        eta = (P["mu"][:, self.div].T + np.outer(self.era, P["be"]) + np.outer(self.five, P["g5"])
-               + AX @ P["W"].T + DY @ P["V"].T)
-        E, Y = self.Er, self.Yr
-        # losses
-        G = np.empty_like(eta)
-        L = 0.0
-        pz = ~IS_BIN
-        ep = np.exp(np.clip(eta[:, pz], -30, 20))
-        lp = E[:, pz] * ep - Y[:, pz] * eta[:, pz]
-        G[:, pz] = E[:, pz] * ep - Y[:, pz]
-        eb = eta[:, IS_BIN]
-        sp = np.logaddexp(0, eb)
-        lb = E[:, IS_BIN] * sp - Y[:, IS_BIN] * eb
-        G[:, IS_BIN] = E[:, IS_BIN] / (1 + np.exp(-eb)) - Y[:, IS_BIN]
-        wc = self.w[:, None] * self.cw[None, :]
-        L += (wc[:, pz] * lp).sum() + (wc[:, IS_BIN] * lb).sum()
-        G *= wc
-        g = {}
-        g["W"] = G.T @ AX
-        g["V"] = G.T @ DY
-        g["A"] = self.Sx @ (G @ P["W"])
-        g["D"] = self.Sy @ (G @ P["V"])
-        g["mu"] = (self.Sd @ G).T
-        g["be"] = G.T @ self.era
-        g["g5"] = G.T @ self.five
-        # win head
+    def eta(self, P):
+        return self.Zc @ P["C"].T + P["A"][self.x] @ P["W"].T + P["D"][self.y] @ P["V"].T
+
+    def win_s(self, P):
         Aa, Ab, Da, Db = P["A"][self.fa], P["A"][self.fb], P["D"][self.fa], P["D"][self.fb]
-        MDb, MDa = Db @ P["M"].T, Da @ P["M"].T
-        s = (Aa - Ab) @ P["ua"] + (Da - Db) @ P["ud"] + (Aa * MDb).sum(1) - (Ab * MDa).sum(1)
-        L += (self.fw * (np.logaddexp(0, s) - self.fy * s)).sum()
-        gs = self.fw * (1 / (1 + np.exp(-s)) - self.fy)
-        g["ua"] = (Aa - Ab).T @ gs
-        g["ud"] = (Da - Db).T @ gs
-        g["M"] = (Aa * gs[:, None]).T @ Db - (Ab * gs[:, None]).T @ Da
-        gA_a = gs[:, None] * (P["ua"][None, :] + MDb)
-        gA_b = gs[:, None] * (-P["ua"][None, :] - MDa)
-        MtAa, MtAb = Aa @ P["M"], Ab @ P["M"]
-        gD_a = gs[:, None] * (P["ud"][None, :] - MtAb)
-        gD_b = gs[:, None] * (-P["ud"][None, :] + MtAa)
-        g["A"] = g["A"] + self.Sa @ gA_a + self.Sb @ gA_b
-        g["D"] = g["D"] + self.Sa @ gD_a + self.Sb @ gD_b
-        # priors
-        L += 0.5 * lam * ((P["A"] ** 2).sum() + (P["D"] ** 2).sum())
-        g["A"] = g["A"] + lam * P["A"]
-        g["D"] = g["D"] + lam * P["D"]
-        L += 0.5 * lamw * ((P["W"] ** 2).sum() + (P["V"] ** 2).sum())
-        g["W"] = g["W"] + lamw * P["W"]
-        g["V"] = g["V"] + lamw * P["V"]
-        lh = hp.get("lam_head", 1.0)
-        L += 0.5 * lh * ((P["ua"] ** 2).sum() + (P["ud"] ** 2).sum() + (P["M"] ** 2).sum())
-        g["ua"] = g["ua"] + lh * P["ua"]
-        g["ud"] = g["ud"] + lh * P["ud"]
-        g["M"] = g["M"] + lh * P["M"]
-        r = 1e-4
-        L += 0.5 * r * ((P["mu"] ** 2).sum() + (P["be"] ** 2).sum() + (P["g5"] ** 2).sum())
-        g["mu"] = g["mu"] + r * P["mu"]
-        g["be"] = g["be"] + r * P["be"]
-        g["g5"] = g["g5"] + r * P["g5"]
-        inact = ~self.active
-        g["A"][inact] = 0.0
-        g["D"][inact] = 0.0
-        return L, self.mod.pack(g)
+        return ((Aa - Ab) @ P["ua"] + (Da - Db) @ P["ud"] + ((Aa @ P["M"]) * Db).sum(1)
+                - ((Ab @ P["M"]) * Da).sum(1))
 
-    def optimise(self, th0, maxiter):
-        res = minimize(self.objective, th0, jac=True, method="L-BFGS-B",
-                       options={"maxiter": maxiter, "maxcor": 20, "ftol": 1e-10, "gtol": 1e-5})
-        self.nit, self.nfev, self.fun = res.nit, res.nfev, res.fun
-        return res.x
+    def loss(self, P):
+        lam, lh = self.hp["lam"], self.hp.get("lam_head", 1.0)
+        L, _, _ = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc)
+        s = self.win_s(P)
+        L += (self.fw * (np.logaddexp(0, s) - self.fy * s)).sum()
+        L += 0.5 * lam * ((P["A"] ** 2).sum() + (P["D"] ** 2).sum() + (P["W"] ** 2).sum() + (P["V"] ** 2).sum())
+        L += 0.5 * lh * ((P["ua"] ** 2).sum() + (P["ud"] ** 2).sum() + (P["M"] ** 2).sum())
+        L += 0.5e-4 * (P["C"] ** 2).sum()
+        return L
+
+    def _accept(self, P, new, L0, keys):
+        """Backtracking: take the step if it lowers the objective, else halve it (up to 6 times)."""
+        step = 1.0
+        for _ in range(7):
+            trial = dict(P)
+            for k in keys:
+                trial[k] = P[k] + step * (new[k] - P[k])
+            L1 = self.loss(trial)
+            if L1 <= L0:
+                return trial, L1
+            step *= 0.5
+        return P, L0
+
+    def step_loadings(self, P, L0):
+        lam, K, D = self.hp["lam"], self.K, self.D
+        AX, DY = P["A"][self.x], P["D"][self.y]
+        Z = np.hstack([AX, DY, self.Zc])
+        _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc)
+        p = Z.shape[1]
+        reg = np.r_[np.full(2 * K, lam), np.full(D.NDIV + 2, 1e-4)]
+        new = {"W": P["W"].copy(), "V": P["V"].copy(), "C": P["C"].copy()}
+        for t in range(NT):
+            th = np.r_[P["W"][t], P["V"][t], P["C"][t]]
+            g = Z.T @ G[:, t] + reg * th
+            Hm = (Z * H[:, t:t + 1]).T @ Z + np.diag(reg)
+            try:
+                d = np.linalg.solve(Hm, g)
+            except np.linalg.LinAlgError:
+                d = np.linalg.lstsq(Hm, g, rcond=None)[0]
+            th = th - d
+            new["W"][t], new["V"][t], new["C"][t] = th[:K], th[K:2 * K], th[2 * K:]
+        return self._accept(P, new, L0, ("W", "V", "C"))
+
+    def step_fighters(self, P, L0):
+        lam, K, F = self.hp["lam"], self.K, self.D.F
+        _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc)
+        W, V = P["W"], P["V"]
+        g = np.zeros((F, 2 * K))
+        g[:, :K] = self.Sx @ (G @ W)
+        g[:, K:] = self.Sy @ (G @ V)
+        Hb = np.zeros((F, 2 * K, 2 * K))
+        RA = np.einsum("nt,tk,tl->nkl", H, W, W, optimize=True).reshape(len(H), K * K)
+        RD = np.einsum("nt,tk,tl->nkl", H, V, V, optimize=True).reshape(len(H), K * K)
+        Hb[:, :K, :K] = (self.Sx @ RA).reshape(F, K, K)
+        Hb[:, K:, K:] = (self.Sy @ RD).reshape(F, K, K)
+        # win head (Gauss-Newton)
+        Aa, Ab, Da, Db = P["A"][self.fa], P["A"][self.fb], P["D"][self.fa], P["D"][self.fb]
+        M = P["M"]
+        s = self.win_s(P)
+        sg = 1 / (1 + np.exp(-s))
+        gs = self.fw * (sg - self.fy)
+        q = self.fw * sg * (1 - sg)
+        ja = np.hstack([P["ua"][None, :] + Db @ M.T, P["ud"][None, :] - Ab @ M])
+        jb = np.hstack([-P["ua"][None, :] - Da @ M.T, -P["ud"][None, :] + Aa @ M])
+        g += self.Sa @ (gs[:, None] * ja) + self.Sb @ (gs[:, None] * jb)
+        Oa = (q[:, None, None] * ja[:, :, None] * ja[:, None, :]).reshape(len(q), -1)
+        Ob = (q[:, None, None] * jb[:, :, None] * jb[:, None, :]).reshape(len(q), -1)
+        Hb += (self.Sa @ Oa + self.Sb @ Ob).reshape(F, 2 * K, 2 * K)
+        X = np.hstack([P["A"], P["D"]])
+        g += lam * X
+        Hb += lam * np.eye(2 * K)[None]
+        d = np.linalg.solve(Hb, g[:, :, None])[:, :, 0]
+        d[~self.active] = 0.0
+        Xn = X - d
+        new = {"A": Xn[:, :K], "D": Xn[:, K:]}
+        return self._accept(P, new, L0, ("A", "D"))
+
+    def win_design(self, P):
+        Aa, Ab, Da, Db = P["A"][self.fa], P["A"][self.fb], P["D"][self.fa], P["D"][self.fb]
+        inter = (Aa[:, :, None] * Db[:, None, :] - Ab[:, :, None] * Da[:, None, :]).reshape(len(Aa), -1)
+        return np.hstack([Aa - Ab, Da - Db, inter])
+
+    def step_head(self, P, L0):
+        K, lh = self.K, self.hp.get("lam_head", 1.0)
+        Phi = self.win_design(P)
+        th = np.r_[P["ua"], P["ud"], P["M"].ravel()]
+        s = Phi @ th
+        sg = 1 / (1 + np.exp(-s))
+        g = Phi.T @ (self.fw * (sg - self.fy)) + lh * th
+        Hm = (Phi * (self.fw * sg * (1 - sg))[:, None]).T @ Phi + lh * np.eye(len(th))
+        th = th - np.linalg.solve(Hm, g)
+        new = {"ua": th[:K], "ud": th[K:2 * K], "M": th[2 * K:].reshape(K, K)}
+        return self._accept(P, new, L0, ("ua", "ud", "M"))
+
+    def run(self, max_sweeps, tol, verbose):
+        P = self.P
+        L = self.loss(P)
+        self.L_start = L
+        t0 = time.time()
+        for it in range(max_sweeps):
+            Lprev = L
+            P, L = self.step_loadings(P, L)
+            P, L = self.step_fighters(P, L)
+            P, L = self.step_head(P, L)
+            self.history.append(L)
+            if verbose:
+                print("  sweep %d  L=%.4f  (%.1fs)" % (it, L, time.time() - t0))
+            if Lprev - L < tol * abs(L):
+                break
+        self.P, self.L, self.sweeps = P, L, it + 1
+
+    # ---------------------------------------------------------------- predictions
+    def emb(self, idx):
+        return np.hstack([self.P["A"][idx], self.P["D"][idx]])

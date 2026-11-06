@@ -370,7 +370,7 @@ function accumulate(acc, tasks, rec) {
 function metrics(fights, acc, targets, pi7, objCfg, detail) {
   const cfg = Object.assign({ wWin: 1, wBins: 0.5, wBase: 1, wStat: 0, binPrior: 1, winPrior: 0.5, pClip: 0.005 }, objCfg || {});
   const brCfg = cfg.baserates || BR_DEFAULT, brW = cfg.brWeight != null ? cfg.brWeight : 0.003;
-  let ll = 0, br = 0, hit = 0, nW = 0, ll7 = 0, n7 = 0, nErr = 0;
+  let ll = 0, br = 0, brS = 0, hit = 0, nW = 0, ll7 = 0, n7 = 0, nErr = 0;
   const ece = Array.from({ length: 10 }, () => [0, 0, 0]);
   const sh = [0, 0, 0, 0, 0, 0, 0], f3 = [0, 0, 0], dec = { UD: 0, SD: 0, MD: 0 }, st = {};
   for (const k of STAT_KEYS) st[k] = 0;
@@ -387,7 +387,7 @@ function metrics(fights, acc, targets, pi7, objCfg, detail) {
     for (let k = 0; k < 7; k++) q[k] = (c[k] + cfg.binPrior * pi7[k]) / (N + cfg.binPrior);
     if (f.winA != null) {
       ll -= f.winA ? Math.log(p) : Math.log(1 - p);
-      br += (p - f.winA) * (p - f.winA);
+      brS += (p - f.winA) * (p - f.winA);
       hit += p > 0.5 ? f.winA : (p < 0.5 ? 1 - f.winA : 0.5);
       nW++;
       for (const [pp, yy] of [[p, f.winA], [1 - p, 1 - f.winA]]) { const b = Math.min(9, Math.floor(pp * 10)); ece[b][0]++; ece[b][1] += pp; ece[b][2] += yy; }
@@ -431,32 +431,16 @@ function metrics(fights, acc, targets, pi7, objCfg, detail) {
   const failPenalty = nErr > 0.02 * fights.length ? 10 : 0;
   const objective = cfg.wWin * llW + cfg.wBins * ll7v + cfg.wBase * br + cfg.wStat * statTerm + failPenalty;
   const out = {
-    objective: isFinite(objective) ? objective : 99, winLL: llW, binLL: ll7v, basePen: br, brier: nW ? br === br ? null : null : null,
-    nFights: fights.length, nWinner: nW, nFailed: nErr,
-    winner: { logloss: llW, brier: nW ? (detail === undefined ? 0 : 0) : 0 }
+    objective: isFinite(objective) ? objective : 99, winLL: llW, binLL: ll7v, basePen: br,
+    brier: nW ? brS / nW : NaN, accuracy: nW ? hit / nW : NaN, ece: eceN ? eceV / eceN : NaN,
+    nFights: fights.length, nWinner: nW, nFailed: nErr
   };
-  out.brier = nW ? brierOf(fights, acc, cfg) : NaN;
-  out.accuracy = nW ? hit / nW : NaN;
-  out.ece = eceN ? eceV / eceN : NaN;
-  delete out.winner;
   out.baserates = { sim, data: targets, terms: brTerms };
   out.statline = { sigLndMAE: nSt ? sigAE / nSt : null, tdLndMAE: nSt ? tdAE / nSt : null, kdMAE: nSt ? kdAE / nSt : null,
     sigDiffCorr: sxx > 0 && syy > 0 ? sxy / Math.sqrt(sxx * syy) : null };
   if (per) out.perFight = per;
   return out;
 }
-function brierOf(fights, acc, cfg) {
-  let s = 0, n = 0;
-  for (let i = 0; i < fights.length; i++) {
-    const f = fights[i], a = i * REC, N = acc.rec[a + R_N];
-    if (acc.err[i] || !(N > 0) || f.winA == null) continue;
-    const c = acc.rec.subarray(a + R_C, a + R_C + 7), cA = c[0] + c[1] + c[2], cB = c[4] + c[5] + c[6];
-    const p = clip((cA + cfg.winPrior) / (cA + cB + 2 * cfg.winPrior), cfg.pClip, 1 - cfg.pClip);
-    s += (p - f.winA) ** 2; n++;
-  }
-  return s / Math.max(1, n);
-}
-
 // ------------------------------------------------------------------ the session (shared by serve and eval)
 class Session {
   constructor(spec, nWorkers) {

@@ -1327,16 +1327,21 @@
     app.shorts = side === "A" ? "#2563c9" : "#c9312f";
     return { name: p.name, short: lastName(p.name), slug: slug, nick: p.nick || null, corner: side === "A" ? "blue" : "red", appearance: app,
       stance: p.stance || (SCOUT[slug] && SCOUT[slug].style && SCOUT[slug].style.stance) || "Orthodox", height_in: p.height_in || null, reach_in: p.reach_in || null,
-      division: p.division || null, pron: pron(side), scouting: SCOUT[slug] ? { archetype: SCOUT[slug].style && SCOUT[slug].style.archetype, tags: SCOUT[slug].style && SCOUT[slug].style.tags, moves: SCOUT[slug].moves } : null };
+      division: p.division || null, pron: pron(side), pronouns: pron(side).he, record: p.record || null, kd_absorbed: p.kd_absorbed != null ? p.kd_absorbed : null, scouting: SCOUT[slug] ? { archetype: SCOUT[slug].style && SCOUT[slug].style.archetype, tags: SCOUT[slug].style && SCOUT[slug].style.tags, moves: SCOUT[slug].moves } : null };
   }
   function buildScript(fight, seed) {
     var fighters = { A: fighterInfo("A"), B: fighterInfo("B") }, sc = null, FD = window.FightDirector;
     if (FD && typeof FD.build === "function") {
-      try { sc = FD.build(fight, seed, { fighters: fighters, matchup: cur.m, scouting: { A: SCOUT[S.a] || null, B: SCOUT[S.b] || null } }); } catch (e) { sc = null; }
+      try {
+        sc = FD.build(fight, seed, { fighters: fighters, matchup: cur.m, rounds: S.rounds, title: S.title,
+          scouting: { A: SCOUT[S.a] || null, B: SCOUT[S.b] || null }, profiles: { A: prof("A"), B: prof("B") } });
+      } catch (e) { sc = null; if (window.console) console.warn("FightDirector.build failed; using the page's own director", e); }
       if (sc && (!sc.rounds || sc.rounds.length !== fight.rounds.length)) sc = null;
     }
     if (!sc) sc = localDirector(fight, seed, fighters);
-    sc.fighters = fighters;
+    // keep whatever the director added to script.fighters; fill in anything it left out
+    if (!sc.fighters) sc.fighters = fighters;
+    else ["A", "B"].forEach(function (s) { var t = sc.fighters[s] || (sc.fighters[s] = {}); for (var k in fighters[s]) if (t[k] == null) t[k] = fighters[s][k]; });
     sc.meta = { division: S.div, lbs: divLbs(S.div), rounds: S.rounds, title: S.title, scheduled: S.rounds };
     if (sc.winner == null) sc.winner = fight.winner;
     if (sc.method == null) sc.method = fight.method;
