@@ -681,6 +681,32 @@ def main():
         c["complete"] = completeness(fights[fid], c["judges"])
         if c["validation"]["ufc"] != "agree":
             log["ufc_disagreements"].append((fid, c["src"], c["validation"]))
+    # ufcstats deduction notes ("Point Deducted: ... by X") against N's raw scores (dev fights)
+    ded_notes = Counter()
+    for fid, c in merged.items():
+        f = fights[fid]
+        if f["date"] >= vault_from:
+            continue
+        nd = [0, 0]
+        if c["raw_known"]:
+            for r in sorted({r for j in c["judges"] for r in j["rounds"]}):
+                xs = [j["rounds"][r] for j in c["judges"] if r in j["rounds"]]
+                nd[0] += max(x[2] - x[0] for x in xs)
+                nd[1] += max(x[3] - x[1] for x in xs)
+        u = f["ufc_ded"]
+        if u is None:
+            if c["raw_known"] and sum(nd):
+                ded_notes["N_deduction_without_ufcstats_note"] += 1
+            continue
+        if not c["raw_known"]:
+            ded_notes["note_on_fight_without_raw_scores"] += 1
+        elif u["A"] is None or u["B"] is None:
+            ded_notes["note_side_unclear"] += 1
+        elif nd[0] >= u["A"] and nd[1] >= u["B"]:
+            ded_notes["note_matched_by_N_raw"] += 1
+        else:
+            ded_notes["note_missing_in_N_raw"] += 1
+            log["ufc_note_missing_in_N"].append((fid, f["note"], nd))
     judge_ids_by_ufcname = {}
     for jid, votes in name_votes.items():
         for nm in votes:
@@ -688,9 +714,10 @@ def main():
     stop = load_davies_stoppage(fights, by_date, {**{norm(v): k for k, v in jname.items()}, **judge_ids_by_ufcname})
 
     # slugs where the project already resolved people (backtest) or the roster name is unique
-    slug_of = {}
+    slug_of, roster_slugs = {}, set()
     try:
         roster = json.load(open(DERIVED / "fighters.json"))["fighters"]
+        roster_slugs = set(roster)
         cnt = Counter(v["name"] for v in roster.values())
         slug_of = {v["name"]: s for s, v in roster.items() if cnt[v["name"]] == 1}
     except (OSError, KeyError, ValueError):
@@ -701,13 +728,37 @@ def main():
             bt_slugs[f["id"]] = (f["A"].get("slug"), f["B"].get("slug"))
     except (OSError, KeyError, ValueError):
         pass
+    # fightweek.json carries build_db's per-bout person resolution (ufcstats person ids, namesakes split by
+    # weight) for 2012+ fights, including the ones backtest.json leaves out
+    fw_slugs = {}
+    try:
+        for fid, f in json.load(open(DERIVED / "fightweek.json"))["fights"].items():
+            fw_slugs[fid] = (f.get("A"), f.get("B"))
+    except (OSError, KeyError, ValueError, AttributeError):
+        pass
+    slug_src = Counter()
+
+    def slugs_for(fid, f):
+        out = []
+        for s, nm in ((0, f["A"]), (1, f["B"])):
+            for src, tbl in (("backtest", bt_slugs), ("fightweek", fw_slugs)):
+                v = (tbl.get(fid) or (None, None))[s]
+                if v and (v in roster_slugs or not roster_slugs):
+                    out.append(v)
+                    slug_src[src] += 1
+                    break
+            else:
+                v = slug_of.get(nm)
+                out.append(v)
+                slug_src["unique roster name" if v else "none"] += 1
+        return out
 
     rstats = load_round_stats(fights)
 
     # ---------------------------------------------------------- outputs
     def fight_record(fid, c):
         f = fights[fid]
-        sl = bt_slugs.get(fid) or (slug_of.get(f["A"]), slug_of.get(f["B"]))
+        sl = slugs_for(fid, f)
         js = []
         for j in sorted(c["judges"], key=lambda j: j["pos"]):
             rr = [j["rounds"][r] for r in sorted(j["rounds"])]
@@ -724,6 +775,10 @@ def main():
                    validation=c["validation"])
         if c.get("jurisdiction"):
             rec["jurisdiction"] = c["jurisdiction"]
+        if f["note"]:
+            rec["ufc_note"] = f["note"]                # e.g. "Point Deducted: Illegal Knee by Papazian"
+        if f["ufc_ded"]:
+            rec["ufc_deduction"] = f["ufc_ded"]        # points per side named in that note (None = unclear)
         return rec
 
     def round_rows(fids):
@@ -764,6 +819,8 @@ def main():
                    key=lambda k: (fights[k]["date"], -fights[k]["idx"]))
 
     rounds_dev, scores_dev = round_rows(dev)
+    rounds_v, scores_v = round_rows(vault)
+    asof_info = add_judge_asof([(rounds_dev, scores_dev), (rounds_v, scores_v)])
     report = summarize(rounds_dev, scores_dev, fights, merged, dev, jname)
     judges_tbl = judge_table(rounds_dev, scores_dev, jname, name_votes)
 
@@ -804,7 +861,15 @@ def main():
             "D_unmatched": len(unmatched_D), "D_unmatched_examples": unmatched_D[:40],
             "D_duplicate_fight": log["D_duplicate_fight"],
             "N_fights_not_in_ufcstats": log["N_fight_not_in_ufcstats"],
+            "N_deduction_patches": log["N_deduction_patches"],
+            "N_unrecorded_deduction_fights_set_raw_unknown": log["N_unrecorded_deduction"],
+            "ufcstats_deduction_notes_vs_N_raw": dict(ded_notes, missing_examples=log["ufc_note_missing_in_N"][:20]),
+            "judge_asof_columns": asof_info,
         },
+        "judges_table_note": "judges{} aggregates (rounds, share_10_8_plus, share_10_10, dissent_rate, first, last) "
+                             "span the whole dev period 2006-2025, including the 2024-2025 validation years. They "
+                             "are descriptive and NOT walk-forward safe as model inputs; use the jp_* columns of "
+                             "judgerounds_rows.json scores (history strictly before each fight date) instead.",
         "report_dev": report,
     }
     out = {"meta": meta, "judges": judges_tbl,
@@ -829,7 +894,22 @@ def main():
                   "totals_agree_names_differ).",
         "scores": "one row per judge per round: ri = row index into rounds.rows, jid = MMA Decisions judge id "
                   "(negative = no id, matched by name), pos = card position on MMA Decisions, A/B = published "
-                  "score, A_raw/B_raw = before deductions (null when unknown).",
+                  "score, A_raw/B_raw = before deductions (null when unknown). jp_fights, jp_rounds, jp_wide, "
+                  "jp_even, jp_oa, jp_dis = the judge's history on dates strictly before this fight (walk-forward "
+                  "safe): earlier fights, rounds, 10-8-or-wider rounds, 10-10 rounds, rounds where the other two "
+                  "judges agreed, and of those the rounds this judge differed (null for unnamed judges).",
+        "column_roles": {
+            "labels_or_derived_from_scores": ["winner", "nA", "nB", "nE", "n_wide", "ded_A", "ded_B", "complete",
+                                              "ufc_check", "nJ", "end_rnd (with winner: how the fight ended)"],
+            "in_round_inputs": "A_*/B_* ufcstats counts for the same round and mins: known only after the round, "
+                               "so a pre-fight forecast must simulate them",
+            "pre_fight_known": ["date", "rnd", "sched", "title", "women", "wc", "jid", "jp_* history"],
+            "warning": "never feed winner, nA/nB/nE/n_wide, ufc_check or complete to a model that predicts the "
+                       "round scores: they are computed from those scores. A is the first name in the ufcstats "
+                       "BOUT string and wins the majority in about 57% of three-judge dev rounds (report_dev."
+                       "rounds3_majority_to_A; ufcstats lists the winner first more often), so train and evaluate "
+                       "symmetrically (mirror A/B), "
+                       "docs/BACKLOG.md."},
         "load": "pd.DataFrame(d['rounds']['rows'], columns=d['rounds']['cols']); same for scores; "
                 "merge scores.ri -> rounds index",
         "judges": "see data/derived/judgerounds.json -> judges"},
@@ -838,7 +918,6 @@ def main():
     write_json(DERIVED / "judgerounds.json", out)
     write_json(DERIVED / "judgerounds_rows.json", rows_out)
     os.makedirs(a.vault_dir, exist_ok=True)
-    rounds_v, scores_v = round_rows(vault)
     write_json(Path(a.vault_dir) / "judgerounds_vault.json",
                {"meta": dict(meta, report_dev=None, checks_vault={"ufcstats_totals": dict(vstats_vault),
                                                                   "source_overlap_N_vs_D": dict(cmp_vault)}),
@@ -857,6 +936,9 @@ def main():
     print("source overlap N vs D:", dict(cmp_stats))
     print("ufcstats totals check:", dict(vstats))
     print("stoppage_unverified matched:", len(stop))
+    print("N deduction patches:", len(log["N_deduction_patches"]), " N fights with unrecorded deductions:",
+          len(log["N_unrecorded_deduction"]), " ufcstats notes vs N raw:", dict(ded_notes))
+    print("judge as-of columns:", asof_info)
     print(json.dumps(report, indent=1))
 
 
@@ -871,8 +953,10 @@ def write_json(path, obj):
         if isinstance(o, (dt.date,)):
             return o.isoformat()
         raise TypeError(type(o))
-    with open(path, "w") as fh:
+    tmp = Path(str(path) + ".tmp")
+    with open(tmp, "w") as fh:
         json.dump(obj, fh, separators=(",", ":"), default=default)
+    os.replace(tmp, path)                       # readers (officials.py) never see a half-written file
     print("wrote", path, "%.1f MB" % (os.path.getsize(path) / 1e6))
 
 
@@ -918,6 +1002,11 @@ def summarize(rounds, scores, fights, merged, dev, jname):
     k = S["raw_known"]
     rep["judge_round_10_8_plus_raw_known"] = round(float((S.loc[k, "mA"].abs() >= 2).mean()), 5)
     rep["judge_round_10_8_plus_published_all"] = round(float((S["mP"].abs() >= 2).mean()), 5)
+    rep["judge_round_10_8_plus_all_deductions_removed_where_known"] = round(float((S["mA"].abs() >= 2).mean()), 5)
+    # how much deductions inflate a published-score 10-8 rate (measured where deductions are known); D-only
+    # fights (mostly 2006-2012) carry this bias because their deductions cannot be removed
+    rep["deduction_inflation_of_10_8_rate_pp_raw_known"] = round(100 * float(
+        (S.loc[k, "mP"].abs() >= 2).mean() - (S.loc[k, "mA"].abs() >= 2).mean()), 3)
     rep["deductions_rounds_raw_known"] = int(((R["ded_A"].fillna(0) > 0) | (R["ded_B"].fillna(0) > 0)).sum())
     # per-year and per era 10-8 rate (raw where known)
     yr = S.groupby("year").apply(lambda g: pd.Series({"judge_rounds": len(g),
@@ -935,6 +1024,8 @@ def summarize(rounds, scores, fights, merged, dev, jname):
     rep["rounds3_with_an_even_score"] = round(float((R3["nE"] > 0).mean()), 4)
     rep["rounds3_any_10_8"] = round(float((R3["n_wide"] > 0).mean()), 4)
     rep["rounds3_all_three_10_8"] = round(float((R3["n_wide"] == 3).mean()), 4)
+    dec3 = R3[R3["nA"] != R3["nB"]]
+    rep["rounds3_majority_to_A"] = round(float((dec3["nA"] > dec3["nB"]).mean()), 4)   # ufcstats A/B order bias
     # pairwise judge disagreement on the round winner
     piv = S[S["nJ"] == 3].copy()
     piv["w"] = np.sign(piv["mA"])
@@ -1003,6 +1094,47 @@ def summarize(rounds, scores, fights, merged, dev, jname):
     top = per.sort_values(ascending=False).head(15)
     rep["top_judges_by_rounds"] = {jname.get(int(j), str(j)): int(n) for j, n in top.items()}
     return rep
+
+
+ASOF_COLS = ["jp_fights", "jp_rounds", "jp_wide", "jp_even", "jp_oa", "jp_dis"]
+
+
+def add_judge_asof(tables):
+    """Walk-forward judge history, appended to every scores row: the same judge's counts over rounds on dates
+    strictly before this fight's date (same-day fights never see each other). jp_fights / jp_rounds = earlier
+    fights / rounds scored; jp_wide = of those, margin 2+ (10-8 or wider); jp_even = 10-10; jp_oa = rounds
+    where the other two judges agreed on a winner; jp_dis = of those, rounds where this judge did not.
+    Pre-deduction scores where known. Null for unnamed judges. Computed over dev and vault together in date
+    order, so a dev row only ever counts earlier dev rounds."""
+    frames = []
+    for k, (rounds, scores) in enumerate(tables):
+        R, S = frame(rounds), frame(scores)
+        S = S.join(R[["date", "fid", "raw_known", "nJ", "nA", "nB"]], on="ri")
+        S["tbl"], S["row"] = k, np.arange(len(S))
+        frames.append(S)
+    S = pd.concat(frames, ignore_index=True)
+    rk = S["raw_known"].astype(bool)
+    mA = np.where(rk, S["A_raw"], S["A"]).astype(float) - np.where(rk, S["B_raw"], S["B"]).astype(float)
+    w = np.sign(mA)
+    oA = S["nA"] - (w > 0)
+    oB = S["nB"] - (w < 0)
+    oa = (S["nJ"] == 3) & (((oA == 2) & (oB == 0)) | ((oB == 2) & (oA == 0)))
+    dis = oa & (((oA == 2) & (w <= 0)) | ((oB == 2) & (w >= 0)))
+    S = S.assign(one=1, wide=(np.abs(mA) >= 2).astype(int), even=(mA == 0).astype(int),
+                 oa=oa.astype(int), dis=dis.astype(int))
+    has = S["jid"].notna()
+    g = (S[has].groupby(["jid", "date"])
+         .agg(jp_rounds=("one", "sum"), jp_wide=("wide", "sum"), jp_even=("even", "sum"), jp_oa=("oa", "sum"),
+              jp_dis=("dis", "sum"), jp_fights=("fid", "nunique")).sort_index())
+    prior = g.groupby(level=0).cumsum() - g          # exclusive of the current date
+    S = S.join(prior, on=["jid", "date"])
+    for k, (_, scores) in enumerate(tables):
+        sub = S[S["tbl"] == k].sort_values("row")
+        vals = sub[ASOF_COLS].to_numpy(float)
+        scores["cols"] = list(scores["cols"]) + ASOF_COLS
+        for i, row in enumerate(scores["rows"]):
+            row.extend(None if not np.isfinite(v) else int(v) for v in vals[i])
+    return {"judge_rounds": int(len(S)), "with_history": int((S["jp_rounds"].fillna(0) > 0).sum())}
 
 
 def judge_table(rounds, scores, jname, name_votes):

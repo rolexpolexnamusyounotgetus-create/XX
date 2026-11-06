@@ -98,7 +98,7 @@ title, 5 rounds, catch weight): 160 columns.
 ### Leakage checks, and one leak found and removed
 
 - **Truncation test.** The feature table rebuilt from fights before 2024-06-01 only is identical, cell for cell, to
-  the full-data table on those fights (6,405 rows x 207 features, 0 cells differ). No feature sees a later fight.
+  the full-data table on those fights (6,405 rows x 209 features, 0 cells differ). No feature sees a later fight.
 - **Independent recomputation.** Elo, decayed exposure and fight counts match `backtest.json`, which
   `tools/build_db.py` builds with separate code (see Data and protocol).
 - **Leak found: missing tale-of-the-tape values.** ufcstats' height, reach, DOB and stance are a current snapshot,
@@ -148,8 +148,8 @@ defence terms, and only add variance. After re-tuning, the penalty is 0.05 with 
 the most valuable single group, and the two margin-aware Elos are worth more than plain Elo, which adds nothing
 once they are in.
 
-**Feature parameters** (logistic CV on annual 2016-2023 folds, penalty 0.1; earlier table version): the sweep is flat,
-so the literature defaults stay.
+**Feature parameters** (logistic CV on annual 2016-2023 folds, penalty 0.1, run on an earlier build of the feature
+table): the sweep is flat, so the literature defaults stay.
 
 | Setting | CV log loss |
 |---|---|
@@ -420,8 +420,8 @@ double count.
 - `roster[slug]`: the per-fighter values as of the snapshot, plus `_dob`, `_last_fight`, `_prev_lbs`,
   `_lbs_fought` (so the page recomputes age, layoff, years in the UFC, weight-class move and new-class for the fight
   date and weight), and `mr_mu` / `mr_sd` (market rating) when market.json has one.
-- `page_model.test_vectors`: seven matchups with the Python answer. The JS below reproduces them to 5e-5 (rounding of
-  the stored coefficients); `selfcheck_max_abs_logit_diff` checks the term evaluator against the training design.
+- `page_model.test_vectors`: seven matchups with the Python answer. The JS below reproduces them to 5e-5 (the vectors are
+  stored to 4 decimals); `selfcheck_max_abs_logit_diff` checks the term evaluator against the training design.
 
 Test vectors (fight on Nov 15, 2026, 5 rounds; P(A wins); these are checks for the JS, not forecasts):
 
@@ -513,13 +513,14 @@ function mlPredict(model, roster, slugA, slugB, fight) {
 
 ## Recommendation for the final ensemble (v9)
 
-1. **Winner probability with no line (the page, any matchup): the Elo + ML + market-rating stack.** On 2024+ it is
-   the best pre-line number this project has: 0.6057 on 1,213 fights, 0.0106 [0.0028, 0.0183] better than the ML blend and 0.073 better than Elo. On the page use `page_model.stack["elo+lr+mkt_rating"]`
-   (logistic instead of the blend, 0.6055 on test), and `elo+lr` when either fighter has no market
+1. **Winner probability with no line (the page, any matchup): the Elo + ML + market-rating stack.** On 2024+ it
+   is the best pre-line number this project has: 0.6057 on 1,213 fights, 0.0106 [0.0028, 0.0183] better than the
+   ML blend and 0.073 better than Elo. On the page use `page_model.stack["elo+lr+mkt_rating"]` (logistic instead
+   of the blend, 0.6055 on test) with `binsStack` for the 7 bins, and `elo+lr` when either fighter has no market
    rating. The Elo weight is negative because Elo is already inside both other inputs; that is expected.
 2. **Once a line exists, stack it with the ML probability, not the other way round.** Open + ML beats the open by
-   0.0174 [0.0113, 0.0234]; close + ML beats the close by 0.0034 [0.0010, 0.0059] (both intervals exclude zero). Weights in
-   `results.stacking.variants`.
+   0.0174 [0.0113, 0.0234]; close + ML beats the close by 0.0034 [0.0010, 0.0059]; both intervals exclude zero.
+   Weights are in `results.stacking.variants`.
 3. **Do not average the engine's win probability into the product yet.** Engine v3 (moe_engine_bt.json) gets a
    weight of about zero next to the ML blend and makes the stack slightly worse on the 854 fights it covers. Use
    the engine for how the fight goes (methods, rounds, stat lines, the 3D replay) and anchor it to the stack:
@@ -549,8 +550,8 @@ function mlPredict(model, roster, slugA, slugB, fight) {
 - **2024+ is an easier period than 2019-2023 for everyone.** The closing line goes from 0.624 (tune) to 0.590 (test),
   and the ML blend moves about as much. Compare models on the same fights, never across periods or with other
   projects' numbers from other years.
-- **Models are under-confident in 2024+** (calibration slope 1.2-1.4 for the ML models, about 1.0 for the close).
-  Nothing fit on 2019-2023 can see this (OOF slopes are 0.93-1.0), and the test-fit slope is reported only as a
+- **Models are under-confident in 2024+** (calibration slope 1.25-1.40 for the ML models, 1.06 for the close).
+  Nothing fit on 2019-2023 can see this (OOF Platt slopes 0.91-1.01), and the test-fit slope is reported only as a
   diagnostic. The rolling-temperature rule is the walk-forward way to track it.
 - **Engine inputs.** moe_engine_bt.json is engine v3.0.0 at 100 simulations per corner order (Monte Carlo noise
   about 0.035 in p), it covers 2019-2025 only, and the engine's parameters were self-calibrated with 2019-2023 in
@@ -564,15 +565,18 @@ function mlPredict(model, roster, slugA, slugB, fight) {
 - **Tale-of-the-tape values are current, not historical.** Height, reach and DOB do not change; stance can, and a
   few fighters switched. Their missingness is handled as above.
 - **Not used:** the A/B order (a real pre-fight signal: the first-named fighter, usually the red corner, won 55.1% of
-  decisive 2024+ fights, but it means nothing for a hypothetical matchup), pre-UFC records (data/derived/preufc.json covers 258 of 1,711 targets so far),
-  fight-week context, and opponent-adjusted rates from tools/oppadj.py (not yet written as per-fight features).
+  decisive 2024+ fights, but it means nothing for a hypothetical matchup), pre-UFC records
+  (data/derived/preufc.json covers 258 of 1,711 targets so far), fight-week context, and opponent-adjusted rates
+  from tools/oppadj.py (not yet available as per-fight features).
 
 ## Reproduce
 
 ```
 python3 tools/ml.py                # full run: features, CV on 2010-2023, final fits, stacking, 7 bins, export
 python3 tools/ml.py --stage2       # redo stacking / 7-bin / evaluation / export from out/ml_cache/stage1.pkl
+python3 tools/ml.py --stage2 --page-only   # redo only the page model and the export
 python3 tools/ml.py --quick        # small tree searches (development)
+python3 tools/ml.py --direct7-gbm  # also fit a direct 7-class LightGBM (slow; not part of the reported run)
 ```
 
 Python 3.13 with numpy, pandas, scipy, scikit-learn 1.9, lightgbm 4.7 and xgboost 3.4. BLAS is pinned to one thread

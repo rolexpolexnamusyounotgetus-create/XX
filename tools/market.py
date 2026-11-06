@@ -475,20 +475,37 @@ def fetch_bfo(cache, since, until, delay):
             todo.append(u)
     print(f'BFO: {len(todo)} fighter pages', flush=True)
     f_rows = []
-    for i, u in enumerate(todo):
-        html = F.get(BFO + u)
-        if not html:
-            continue
-        for r in parse_fighter_page(html):
-            r['page'] = u
-            r['date'] = parse_date_text(r['date_text'])
-            r['spark'] = ';'.join(f'{x:.6g}' for x in r['spark'])
-            f_rows.append(r)
-        if (i + 1) % 100 == 0:
-            print(f'  fighters {i + 1}/{len(todo)} (net {F.n_net})', flush=True)
-    write_csv(os.path.join(ODDS_DIR, 'bfo_fighter_lines.csv'), f_rows,
-              ['page', 'mu', 'owner_team', 'owner_url', 'owner_name', 'opp_url', 'opp_name', 'event_url', 'event_name',
-               'date', 'open1', 'lo1', 'hi1', 'open2', 'lo2', 'hi2', 'spark'])
+    fl_cols = ['page', 'mu', 'owner_team', 'owner_url', 'owner_name', 'opp_url', 'opp_name', 'event_url', 'event_name',
+               'date', 'open1', 'lo1', 'hi1', 'open2', 'lo2', 'hi2', 'spark']
+
+    def read_pages(pages):
+        for i, u in enumerate(pages):
+            html = F.get(BFO + u)
+            if not html:
+                continue
+            for r in parse_fighter_page(html):
+                r['page'] = u
+                r['date'] = parse_date_text(r['date_text'])
+                r['spark'] = ';'.join(f'{x:.6g}' for x in r['spark'])
+                f_rows.append(r)
+            if (i + 1) % 100 == 0:
+                print(f'  fighters {i + 1}/{len(pages)} (net {F.n_net})', flush=True)
+    read_pages(todo)
+    write_csv(os.path.join(ODDS_DIR, 'bfo_fighter_lines.csv'), f_rows, fl_cols)
+    # second round: matchups found through the nlbair crosswalk or BFO's other spellings may lack the partner's page
+    recs, _ = assemble(load_backtest())
+    allmus = load_bfo_matchups()
+    extra = []
+    for r in recs.values():
+        m = allmus.get(r.get('bfo_mu'))
+        for t in (1, 2):
+            u = m and m.get(f't{t}_url')
+            if u and u not in seen and not m.get(f'spark{t}'):
+                seen.add(u)
+                extra.append(u)
+    print(f'BFO: {len(extra)} more fighter pages (second round)', flush=True)
+    read_pages(extra)
+    write_csv(os.path.join(ODDS_DIR, 'bfo_fighter_lines.csv'), f_rows, fl_cols)
     print(f'BFO done: {len(ev_rows)} event-line rows, {len(f_rows)} fighter-line rows, {F.n_net} requests', flush=True)
 
 

@@ -305,3 +305,98 @@ Generic `ratings.json` / `methodround.json` / `oppadj.json` readers are already 
   - The feature models do not see the move up to 155 or the 5-round late-career context. Treat a large no-line vs line gap as a flag, not an edge.
 - **Gating.** The gated MoE is exported as an alternative (`gated_validated`, validated fit only) because the task asked for one. It is not the recommended model.
 - **Hidden-data protocol.** Every fight dated 2026-01-01 or later was dropped before anything was computed, and no 2026 fight was scored.
+
+## Verification log
+
+Adversarial review, Nov 6, 2026 (independent reviewer).
+
+**Starting assumption:** the gain is fake until proven.
+
+**What was re-run:**
+
+- **Fresh code.** I re-ran the headline numbers with my own code:
+  - my own feature-LR refit;
+  - my own non-negative, no-intercept stacker and event-date bootstrap;
+  - an expert matrix rebuilt from the raw files (backtest_dev.json, market.json, ml.json, moe_engine_bt.json), not from `fit.pkl`.
+- **The tool's own checks.** The checks below that are reproducible from the tool now live in `tools/moe.py` `audit_checks()`. They are written to moe.json `report.audit` by `python3 tools/moe.py report`.
+
+**Verdict:**
+
+- I found no leakage, no corner-order exploitation and no material validation reuse.
+- The JS evaluator matches Python.
+- The no-line gain is robust.
+- **The line-present claim was overstated, and is now corrected.** The 2024-25 gain over the closing line is genuine, but it does not reproduce in 2021-2023.
+
+| # | check | result | status |
+|---|---|---|---|
+| 1 | Hidden data | See note 1 | pass (upstream caveat) |
+| 2 | Feature-LR out-of-fold protocol | See note 2 | pass |
+| 3 | External experts' provenance | See note 3 | pass |
+| 4 | Corner order | See note 4 | pass |
+| 5 | Headline, fresh code | See note 5 | reproduced |
+| 6 | Validation reuse | See note 6 | minor, disclosed |
+| 7 | Stability across years (new) | See note 7 | claim corrected |
+| 8 | Production stretch (new) | See note 8 | risk documented |
+| 9 | JS vs Python, train/serve | See note 9 | pass |
+| 10 | Exposure offsets | Not applicable: moe has no count model. | n/a |
+| 11 | Stale input | See note 11 | open, refresh recipe |
+
+**Notes:**
+
+1. **Hidden data.**
+   - backtest_dev: 2,864 fights, the last dated 2025-12-13, none in 2026.
+   - prep.pkl: 5,632 entries; prep.pkl and experts.pkl both end 2025-12-13.
+   - The rebuilt walk-forward snapshots match backtest_dev's pre-fight snapshots exactly (S, Elo, age, n) on all 2,864 × 2 sides.
+   - Upstream caveat: the engine's params3 `[selfcal]` scales used league base rates through 2026-10-31. The engine has weight 0 in every validated pattern the page uses.
+2. **Feature-LR out-of-fold protocol.**
+   - My refit uses my own code: train-only scaling, mirrored rows, no intercept, expanding windows.
+   - The 2016-2018 inner grid picks the same C, 0.01.
+   - It reproduces the tool's rolling and static 2019-2025 predictions: max |diff| 0 and 5.6e-17.
+   - Label-shuffle probe (training labels permuted): 2024-25 log loss 0.6959.
+3. **External experts' provenance.**
+   - ml.json `lr`: 2019-2023 rows are marked `oof`. In 2024, `lr` equals `lr_refit` (both are the ≤2023 fit). In 2025 they differ (max 0.035).
+   - tools/ml.py: its LR has no intercept and is tuned by CV on 2010-2023. Its strike-share Elo is tuned on 2010-2023.
+   - market.json `p_market_rating`: the prediction is stored before the update, and the parameter grid is cut at 2023-12-31. `ratings` stores sd (sqrt of the variance), which matches `MoE.ratingProb`.
+   - Elo: K and boost were chosen on 2019-2023.
+4. **Corner order.**
+   - Swapping a random half of the validation fights leaves the log loss unchanged (0.579665 both ways).
+   - Swapping a random half of the training fights leaves the weights unchanged (max change 3e-16).
+   - No expert's mean P(A) exceeds the market's on the same fights, 2019-2025: market 0.541, mkt_rating 0.534, elo_sig 0.532, elo 0.528, ml 0.518, feat_lr 0.508, engine 0.495; observed 0.562.
+   - Recalibration intercepts on training are all positive (0.12-0.31), so no expert absorbed the first-named effect.
+   - A free-intercept stack would learn +0.14 logit. The model has none.
+5. **Headline, fresh code.**
+   - With a line: 0.5797 vs the market's 0.5857 on 844 fights, −0.0060 [−0.0088, −0.0035]. The tool gives −0.0061.
+   - My weights (market 0.88, mkt_rating 0.11, ml 0.04, feat_lr 0.14) match `model_validated` within 0.004.
+   - No line: 0.5920 vs ml 0.6058, −0.0138 [−0.0254, −0.0027]. This is on the 844 fights that have every pre-line expert. The tool's 854 fights include 10 without mkt_rating and give −0.0124.
+   - 2025 rolling, no line: 0.5800; the tool gives 0.5802.
+6. **Validation reuse.**
+   - The parsimony margin was added after a run whose validation lines were printed.
+   - Under the original pure-CV rule, the gated stack would have been chosen (CV 0.61958 vs linear 0.61964). It gives −0.0058 [−0.0087, −0.0029] vs the market on the same fights, so the rule did not matter.
+   - The GBM meta-learner (−0.0105 on validation) was rejected by CV, as it should be.
+   - No other choice touched 2024-25.
+7. **Stability across years (new).**
+   - The line-present stacker in the forward-chained CV years 2021-2023: +0.0011 [−0.0023, +0.0046] vs the line.
+   - Pooled over 2021-2025: −0.0019 [−0.0042, +0.0004].
+   - Fold weights are unstable: mkt_rating gets 0 in every CV fold and 0.10 in the final fit; the engine gets 0.14 in the 2022 fold only.
+   - The 2024-25 gain is information, not stretch:
+     - the market at its oracle 2024-25 slope (1.108) scores 0.5849, and the stack still beats it by −0.0057 [−0.0100, −0.0016];
+     - the stack with weights renormalised to sum 1 scores 0.5836.
+   - The write-up now says "level with the line to slightly better" instead of "beats the line".
+   - The no-line gain holds in the CV years: −0.0071 [−0.0136, −0.0006] vs ml.
+8. **Production stretch (new).**
+   - On 2019-2023 fights, the production no-line model scores 0.6556 against the validated fit's 0.6425, with mean |p − 0.5| of 0.187 against 0.141.
+   - I suspected the temperature double-counts the recency fit. The data do not support that: run one year earlier, the procedure's next-year oracle temperature exceeded its OOF temperature in 2023, 2024 and 2025, and the temperature helped each time (−0.0005, −0.0025, −0.0025).
+   - Kept as shipped, with a risk note in the Verdict section.
+9. **JS vs Python, train/serve.**
+   - `node tests/test_moe.js`: 21 passed, 0 failed after the re-export.
+   - The re-export left model, model_validated, alternatives, feat, test vectors and moe_page.json byte-identical.
+   - By code, `sideFromProfile` builds the same features as training: UFC W/L, finishes from ko/sub wins, streak and last-3 draw handling, n_5rd, layoff, decay.
+   - Minor live-only differences:
+     - career minutes come from stat vectors rather than fight_s (the same for fights with stats);
+     - market ratings are drifted to the market snapshot date, not the fight date.
+11. **Stale input.** moe_engine_bt.json was built with params3 `c3eec948...` and engine3 `de94aa5d...`. The current files are `2321d486...` and `7dcac823...`. Rerun the engine step and `fit` once tools/calibrate.js's walk-forward params land (see Refresh recipe).
+
+**Changes made by the review:**
+
+- `tools/moe.py`: new `audit_checks()`, written to moe.json `report.audit`. Re-exported with `python3 tools/moe.py report`.
+- This report: the line rows of the headline table are now on the same 844 fights; the verdict bullet is rewritten; a production-stretch risk note and an engine caveat are added; this log.

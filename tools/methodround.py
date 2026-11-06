@@ -1980,7 +1980,7 @@ def write_report(o):
                      "%.2f" % c["slope"], "%.2f" % c["intercept"]])
     L.append(_md_table(["Event", "n", "Mean predicted", "Observed", "ECE", "Slope", "Intercept"], rows))
     L.append("\nSlope = logistic recalibration slope of the outcome on logit(p) (1 = calibrated, < 1 = "
-             "overconfident). win_* pool both corners (two rows per fight).\n")
+             "overconfident, > 1 = underconfident). win_* pool both corners (two rows per fight).\n")
     for k in ("KO", "SUB", "DEC"):
         c = cs[k]
         L.append("**P(%s) by decile:** " % k + "; ".join("%.2f→%.2f (n=%d)" % (r["pred"], r["obs"], r["n"])
@@ -2142,12 +2142,23 @@ groups are roughly neutral for method (kept for the winner and for the page).
 2. **Factorize the final forecast:** P(A wins) from the winner ensemble (market + Elo + engine + this model's
    winner), then P(method, round | winner) from this model's conditional shares (`methodGivenWin` in the JS
    output; the per-fight cells give the same). That keeps the winner question with the stack and uses this
-   model for what it was built for (the evidence line above gives its method-given-winner edge).
-3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta). The
-   props are sharper than the model on finish vs decision and KO vs submission (they price in pre-UFC records,
-   camp news and styles the stats do not see); the model matches them on the finishing round, and the blend is
-   within noise of the props or better on every target.
-4. **Without a line** (hypothetical matchups such as Volkanovski vs Gaethje before odds): use S.
+   model for what it was built for (the evidence line above gives its method-given-winner edge over base
+   rates). When method props are posted, take the conditional shares from the SM + market blend instead: on
+   method given the winner the props beat SM clearly (see item 3), so this model's shares are the fallback
+   for fights without props, not a replacement for them.""")
+    if sm["n"]:
+        dm, db = sm["paired"]["SM_minus_market"], sm["paired"]["blend_minus_market"]
+        L.append("""3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta).
+   The props beat SM on the 3-class method (%s, barely significant) and clearly on method given the winner
+   (%s); finish vs decision (%s) and KO vs submission (%s) lean the same way but neither is significant on its
+   own (the props price in pre-UFC records, camp news and styles the stats do not see). The model matches them
+   on the finishing round (%s), and the blend is within noise of the props on every target (method %s, joint
+   %s).""" % (_dci(dm.get("method3")), _dci(dm.get("method_given_winner")), _dci(dm.get("finish")), _dci(dm.get("ko_vs_sub")),
+       _dci(dm.get("round_given_fin")), _dci(db.get("method3")), _dci(db.get("joint"))))
+    else:
+        L.append("3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in "
+                 "the meta).")
+    L.append("""4. **Without a line** (hypothetical matchups such as Volkanovski vs Gaethje before odds): use S.
 5. Natural next inputs: pre-UFC records (tools/preufc.py; Sherdog crawl was incomplete when this ran, so it is not
    used), opponent-adjusted rates (tools/oppadj.py) and the durability model's chin/power estimates
    (data/derived/durability.json) as extra features; refit with `python3 tools/methodround.py`.

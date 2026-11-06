@@ -467,10 +467,11 @@
     var tone = SK.tone_hex_recommended || SK.tone_hex || SK.tone_hex_average_face;
     if (hx.test(tone || "") && L.skin && L.skin.swatch) {
       // multiply tint so the texture's average lands on the sampled tone (no brightening)
-      var t = new T.Color(tone), sw = new T.Color(L.skin.swatch);
+      // ratio in linear light; stored as an sRGB hex because the material converts tints to linear
+      var t = new T.Color(tone).convertSRGBToLinear(), sw = new T.Color(L.skin.swatch).convertSRGBToLinear();
       var tc = new T.Color(Math.min(1, t.r / sw.r), Math.min(1, t.g / sw.g), Math.min(1, t.b / sw.b));
-      tc.lerp(new T.Color(1, 1, 1), 0.25);            // photos carry arena and flash casts: go 75% of the way
-      L.tint = "#" + tc.getHexString();
+      tc.lerp(new T.Color(1, 1, 1), 0.3);             // photos carry arena and flash casts: go 70% of the way
+      L.tint = "#" + tc.convertLinearToSRGB().getHexString();
     }
     if (!(app.tattoo_marks && app.tattoo_marks.length) && Array.isArray(LK.tattoos)) {
       var marks = [];

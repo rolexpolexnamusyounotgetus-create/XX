@@ -52,7 +52,6 @@ SD_DIR = os.path.join(CACHE, "sherdog")
 SD_OLD = os.path.join(RAW, "sherdog_cache")
 DERIVED = os.path.join(ROOT, "data", "derived")
 OUT = os.path.join(DERIVED, "fightweek.json")
-OUT_NAT = os.path.join(DERIVED, "nationality.json")
 UA = "FightLabSim/1.0 (private research)"
 CA = "/root/.ccr/ca-bundle.crt"
 SINCE = dt.date(2012, 1, 1)

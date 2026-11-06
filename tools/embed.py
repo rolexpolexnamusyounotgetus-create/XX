@@ -1444,12 +1444,21 @@ def stitch_and_orient(w1, w2, D, hp, ref_date=dt.date(2019, 1, 1)):
     act = exposure(D, ref_date.toordinal(), hp["hl"]) >= 1.0
     scA = q["A"][act].std(0) + 1e-9
     scD = q["D"][act].std(0) + 1e-9
-    # order the axes by how much they move predictions (loading norm x fighter sd)
-    oa = np.argsort(-(np.sqrt((W ** 2).sum(0)) * scA))
-    od = np.argsort(-(np.sqrt((Vv ** 2).sum(0)) * scD))
+    # order the axes by how much they move predictions (loading norm x fighter sd); the L2 (nuclear-norm-like)
+    # prior leaves some axes nearly unused: those keep the live axes' typical scale instead of being blown up
+    # to unit sd (which would turn them into pure noise features)
+    effA = np.sqrt((W ** 2).sum(0)) * scA
+    effD = np.sqrt((Vv ** 2).sum(0)) * scD
+    liveA, liveD = effA >= 0.05 * effA.max(), effD >= 0.05 * effD.max()
+    scA = np.where(liveA, scA, np.median(scA[liveA]))
+    scD = np.where(liveD, scD, np.median(scD[liveD]))
+    oa = np.argsort(-effA)
+    od = np.argsort(-effD)
     PA = np.eye(len(oa))[:, oa]
     PD = np.eye(len(od))[:, od]
     apply_walk(merged, np.diag(sa / scA) @ PA, np.diag(sd / scD) @ PD)
+    merged["axis_effect"] = {"offense": np.round(effA[oa] / effA.max(), 4).tolist(),
+                             "defense": np.round(effD[od] / effD.max(), 4).tolist()}
     return merged
 
 
@@ -1647,7 +1656,7 @@ def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs,
             "corner": "A / B as in backtest_dev.json (A = first-named); nothing in the model uses the order",
             "cv": [{"hp": c["hp"], "mean_rel_dev": round(c["mean_rel"], 4), "win_logloss": round(c["win_ll"], 4),
                     "score": round(cv_score(c), 4)} for c in cv],
-            "stitch": walk.get("stitch"), "runtime_s": round(secs)}
+            "stitch": walk.get("stitch"), "axis_effect": walk.get("axis_effect"), "runtime_s": round(secs)}
     out = {"meta": meta, "model": {k: model[k] for k in ("K", "tasks", "divs", "C", "W", "V", "ua", "ud", "M")},
            "axes": axes, "neighbours": nn, "signature": signature,
            "validation": {"winner": win_res, "stats": stat_res},

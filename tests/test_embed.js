@@ -1,5 +1,5 @@
 // Node test: src/ml/embed.js reproduces tools/embed.py on the exported compact model.
-//   node tests/test_embed.js            (reads data/derived/embed_model.json)
+//   node tests/test_embed.js            (reads data/derived/embed_model.json; EMBED_MODEL=path overrides)
 // The model's `check` block holds Python outputs (tools/embed.py py_eval_compact on the rounded exported
 // parameters) for named matchups and 25 random roster pairs; every number must match to 1e-9 (relative).
 "use strict";
@@ -8,7 +8,8 @@ const path = require("path");
 const assert = require("assert");
 const FightEmbed = require(path.join(__dirname, "..", "src", "ml", "embed.js"));
 
-const model = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "derived", "embed_model.json"), "utf8"));
+const file = process.env.EMBED_MODEL || path.join(__dirname, "..", "data", "derived", "embed_model.json");
+const model = JSON.parse(fs.readFileSync(file, "utf8"));
 const E = FightEmbed.load(model);
 const ERA = (Date.UTC(2026, 0, 1) - Date.UTC(2015, 0, 1)) / 86400000 / 3652.5;
 
