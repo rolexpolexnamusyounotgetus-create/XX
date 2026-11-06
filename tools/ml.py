@@ -1415,13 +1415,33 @@ def main():
     G0 = gbm_design(df, Xdf)
     G1 = gbm_design(df, Xdf, flip=True)
     log("design: %d logistic terms, %d GBM columns" % (X.shape[1], G0.shape[1]))
+    # corner-symmetry guard (verification, Nov 6): with A and B swapped in the table, the logistic design must be
+    # exactly -X and the tree design exactly the flipped design, bit for bit; otherwise a tree can tell the
+    # original orientation (A wins 55-57%) from the mirrored one. tools/ml.py stops if this fails.
+    sw_cols = {}
+    for c in df.columns:
+        if c.startswith("A_"):
+            sw_cols[c] = df["B_" + c[2:]]
+        elif c.startswith("B_"):
+            sw_cols[c] = df["A_" + c[2:]]
+        elif c.startswith("M_") and c[2:] not in M_SYM:
+            sw_cols[c] = -df[c]
+    dsw = df.assign(**sw_cols)
+    Xsw = lr_design(dsw, specs)
+    G0sw = gbm_design(dsw, Xsw)
+    sym = {"max_abs_lr_design_X_plus_Xswapped": float(np.max(np.abs(Xsw.to_numpy() + X))),
+           "tree_design_swapped_equals_flipped": bool(np.array_equal(G0sw.to_numpy(), G1.to_numpy(), equal_nan=True))}
+    log("symmetry guard: %s" % sym)
+    if sym["max_abs_lr_design_X_plus_Xswapped"] != 0.0 or not sym["tree_design_swapped_equals_flipped"]:
+        raise SystemExit("corner-symmetry guard failed: %s" % sym)
+    del dsw, Xsw, G0sw
     oof = (df["year"] >= OOF_YEARS[0]) & (df["year"] <= OOF_YEARS[-1])
     test = df["year"] >= TEST_FROM
     oof_bt = (oof & df["in_bt"] & dec).to_numpy()
     test_bt = (test & df["in_bt"] & dec).to_numpy()
     log("OOF (2019-2023) decisive backtest rows %d; test (2024+) decisive backtest rows %d" % (oof_bt.sum(), test_bt.sum()))
 
-    R = {"meta": {}, "tuning": {}, "oof": {}, "test": {}}
+    R = {"meta": {}, "tuning": {"symmetry_check": sym}, "oof": {}, "test": {}}
 
     # ---------------------------------------------------------- logistic regression
     t0 = time.time()

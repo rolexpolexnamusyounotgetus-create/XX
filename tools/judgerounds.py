@@ -28,7 +28,12 @@ WHAT IT WRITES
                                       stoppage_unverified}. a/b follow the ufcstats BOUT order (A first).
   data/derived/judgerounds_rows.json  {meta, rounds: {cols, rows}, scores: {cols, rows}}: one row per scored
                                       round with both fighters' ufcstats round stats, and one row per judge
-                                      per round (published and pre-deduction scores).
+                                      per round (published and pre-deduction scores, plus the judge's
+                                      walk-forward history jp_* from dates strictly before the fight).
+                                      meta.column_roles says which columns are labels (never model inputs).
+  N's raw scores are patched where a cited source shows a missed deduction (DEDUCTION_PATCHES); an N round
+  whose raw scores give nobody 10 makes the fight raw_known=false. ufcstats DETAILS notes are kept per fight
+  (ufc_note, ufc_deduction). The judges{} aggregates span the whole dev period: descriptive only.
   Both hold fights before --vault-from (default 2026-01-01) only. Fights on or after it go to the vault
   directory outside the repo (judgerounds_vault.json, judgerounds_rows_vault.json), as in make_vault.py.
   research/data_judgerounds.md is written by hand from the printed report.

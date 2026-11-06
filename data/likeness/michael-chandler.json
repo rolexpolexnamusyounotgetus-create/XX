@@ -75,7 +75,7 @@
   "texture": "Straight, thick, styled with product."
  },
  "facial_hair": {
-  "type": "short beard",
+  "type": "stubble",
   "colour": "Dark brown with a few grey hairs on the chin.",
   "colour_samples": {
    "espn-headshot:beard-chin": "#bb7e67",
@@ -84,8 +84,8 @@
   "colour_samples_note": "The studio chin sample mixes stubble and skin; the 2023 jaw sample is closer to the strand colour.",
   "colour_hex": "#3d3030",
   "density": "Medium-dense on the moustache, chin and jaw; lighter on the upper cheeks.",
-  "length_mm": "About 3-6 mm (short boxed stubble-beard) in 2023-2026.",
-  "shape": "Short full stubble-beard following the jaw, with a connected moustache; low natural cheek line, neckline under the jaw."
+  "length_mm": "About 2-5 mm: heavy stubble rather than a beard (about 2-3 mm in the 2023 near-profile, 3-5 mm in the studio headshot and walkout photo).",
+  "shape": "Even heavy stubble following the jaw with a slightly denser connected moustache; low natural cheek line, neckline under the jaw."
  },
  "skin": {
   "tone_samples": [
@@ -231,5 +231,15 @@
   "beard": "short stubble-beard texture, colour #3d3030",
   "scar": "optional thin pale line on the left cheek below the outer eye"
  },
- "notes": "Confidence: high for hair, build, tattoos, skin and overall face shape; medium for nose and eye detail; low-to-medium for exact morph values. 13 photos (6 Commons CC BY/CC BY-SA/PD, 7 reference-only incl. one Commons file with a doubtful own-work claim), 5 from 2026 (two public-domain government photos from UFC Freedom 250 week). Good near-profile: Gage Skidmore 2023 (right side, laughing). What to watch: (1) the square, wide jaw and high cheekbones; (2) M-shaped receding hairline with a short dark quiff; (3) very muscular, compact body, much more muscle than the other three; (4) broad nose tip and cauliflower ears; (5) the \"Blessed\" chest script and rib text are the visible tattoos."
+ "notes": "Confidence: high for hair, build, tattoos, skin and overall face shape; medium for nose and eye detail; low-to-medium for exact morph values. 13 photos (6 Commons CC BY/CC BY-SA/PD, 7 reference-only incl. one Commons file with a doubtful own-work claim), 5 from 2026 (two public-domain government photos from UFC Freedom 250 week). Good near-profile: Gage Skidmore 2023 (right side, laughing). What to watch: (1) the square, wide jaw and high cheekbones; (2) M-shaped receding hairline with a short dark quiff; (3) very muscular, compact body, much more muscle than the other three; (4) broad nose tip and cauliflower ears; (5) the \"Blessed\" chest script and rib text are the visible tattoos.",
+ "review": {
+  "by": "second-pass reviewer",
+  "date": "2026-11-06",
+  "changes": [
+   "Re-checked every photo; hair and M-shaped hairline, cauliflower ears, left-cheek scar, tattoos (Blessed, rib text, ACE/AP forearms, left-shoulder character), build, kit and skin samples are supported.",
+   "Facial hair changed from \"short beard\" to heavy stubble (2-5 mm); no photo shows a beard longer than about 5 mm.",
+   "All six Commons embed-ok licences confirmed on Commons (2 PD US government, 2 CC BY-SA 2.0, 1 CC BY 2.0, 1 reviewed CC BY 3.0).",
+   "Morph names all exist in assets/embed/mh-manifest.json; all values are within 0..1."
+  ]
+ }
 }

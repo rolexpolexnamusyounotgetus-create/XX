@@ -57,7 +57,7 @@
   "notable_marks_scars": "Scar tissue and thickening over both eyebrows. A small red tattoo (a letter \"K\" with a diamond) on the right side of the neck just behind and below the right ear."
  },
  "hair": {
-  "style": "Very short buzz cut, slightly longer on top than on the sides, no part. In December 2021 he wore a short side-swept crop (about 3-4 cm on top); every later photo shows the buzz cut.",
+  "style": "Very short buzz cut, slightly longer on top than on the sides, no part. In December 2021 he wore a short side-swept crop (about 3-4 cm on top); the 2023 training still, the studio set, UFC 302 (2024) and UFC 318 (July 2025) all show the buzz cut. The undated weigh-in photo (cap on backwards) shows a few cm of darker hair through the cap opening, so he sometimes grows the top out between fights.",
   "length_cm": {
    "top": 0.8,
    "sides": 0.4,
@@ -125,9 +125,9 @@
    },
    {
     "photo": "ref-bjpenn-weighin-2025-07.jpg",
-    "spot": "cheek, image left (his right)",
+    "spot": "left cheek (the near, lit side in this three-quarter view of his left side)",
     "hex": "#bf9975",
-    "light": "stage light, left cheek lit"
+    "light": "stage light"
    },
    {
     "photo": "ref-bjpenn-weighin-2025-07.jpg",
@@ -192,14 +192,19 @@
    "size": "Hand-sized"
   },
   {
-   "where": "Right outer thigh, just below the shorts line",
-   "description": "Solid dark tattoo, roughly cross- or fleur-de-lis-shaped, mostly hidden by shorts (seen when his shorts rode up at UFC 318); low confidence on the design",
+   "where": "Right thigh, front/outer side just below the shorts line",
+   "description": "Solid dark tattoo shaped like a cross or fleur-de-lis (upright bar with short side arms), mostly hidden by shorts; seen when his shorts rode up at UFC 318. Low confidence on the exact design.",
    "size": "About 12-15 cm tall"
+  },
+  {
+   "where": "Back of the neck just behind the left ear, at the hairline",
+   "description": "Small dark (black/grey) tattoo, roughly diamond-shaped, seen only from behind in the UFC 318 embrace photo; possibly a counterpart to the red \"K\"-and-diamond on the right side. Low confidence on the design.",
+   "size": "About 1.5-2 cm"
   }
  ],
  "accessories_seen": "Gold chain and a large gold watch at the 2025 weigh-in, backwards black cap; gold UFC title-fight gloves at UFC 302.",
  "kit": {
-  "typical_shorts": "Black Venum UFC shorts with a grey snakeskin print, white diagonal stripes at the sides and a vertical UFC wordmark on his right thigh (studio). Multicolour tropical-floral \"Diamond\" shorts (red, teal, blue and green flowers and palm leaves on black) at UFC 302 (2024), and a darker red/green floral version at UFC 318 (2025).",
+  "typical_shorts": "Black UFC-kit shorts with a grey snakeskin print, white diagonal stripes at the sides, a vertical UFC wordmark on his right thigh and the crypto.com logo (studio; no maker logo visible). Multicolour tropical-floral \"Diamond\" shorts (red, teal, blue and green flowers and palm leaves on black) at UFC 302 (2024), and a darker red/green floral version at UFC 318 (2025).",
   "gloves": "Standard black UFC 4 oz gloves with corner-coloured cuffs (blue cuff at UFC 318); gold gloves in title fights."
  },
  "morphs": {
@@ -257,5 +262,17 @@
   "beard": "heavy-stubble texture over jaw, chin and upper lip, colour #4a3328",
   "tattoos": "Full sleeves on both arms and the two chest pieces are essential; a decal or skin overlay is needed for him to read correctly."
  },
- "notes": "Confidence: high for hair, ears, tattoos, build and skin; medium for face proportions; low-to-medium for exact morph values. 11 photos (4 Commons CC BY/CC BY-SA/PD, 7 reference-only incl. one Commons file with a doubtful own-work claim). Recent coverage is limited: the newest usable face is a July 2025 weigh-in photo (he retired that month), and there is nothing clean from 2026. The best true profile is the 2024 cage shot (bloody nose); the 2011 Navy photo is a real profile but 15 years old. What to watch: (1) the protruding cauliflower ears matter a lot and the embed has no ear targets. (2) Tattoo sleeves and chest pieces. (3) Buzz cut with receding temples, heavy brow over deep-set dark eyes, broad flattened nose. (4) Lean, not bulky."
+ "notes": "Confidence: high for hair, ears, tattoos, build and skin; medium for face proportions; low-to-medium for exact morph values. 11 photos (2 embed-ok: the 2011 CC BY-SA fan-expo photo and the 2011 public-domain Navy photo; 9 reference-only, incl. two Commons YouTube stills whose CC BY claim has not been licence-reviewed and one Commons file with a doubtful own-work claim). Recent coverage is limited: the newest usable face is an undated weigh-in photo published in July 2025 (he retired that month), and there is nothing clean from 2026. The best true profile is the 2024 cage shot (bloody nose); the 2011 Navy photo is a real profile but 15 years old. What to watch: (1) the protruding cauliflower ears matter a lot and the embed has no ear targets. (2) Tattoo sleeves and chest pieces. (3) Buzz cut with receding temples, heavy brow over deep-set dark eyes, broad flattened nose. (4) Lean, not bulky.",
+ "review": {
+  "by": "second-pass reviewer",
+  "date": "2026-11-06",
+  "changes": [
+   "Re-checked every photo; buzz cut, receding temples, stubble, protruding cauliflower ears, chest and sleeve tattoos, the red K-and-diamond on the right neck, build and skin samples are supported.",
+   "Added a small dark tattoo behind the left ear (UFC 318 embrace photo) and refined the thigh-tattoo location (front/outer right thigh).",
+   "The undated weigh-in photo shows longer hair under the cap than at UFC 318; its date is now marked unverified and the hair note updated.",
+   "Studio black shorts show no Venum logo; kit text corrected.",
+   "wm-2021-ufc269-presser.jpg and wm-2023-stance.png downgraded to reference-only: their YouTube CC BY claims are not licence-reviewed on Commons.",
+   "Morph names all exist in assets/embed/mh-manifest.json; all values are within 0..1."
+  ]
+ }
 }

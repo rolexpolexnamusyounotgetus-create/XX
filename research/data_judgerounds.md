@@ -250,3 +250,112 @@ events, re-download D (`--refresh`). D picks up new UFC events every Monday, and
 Sources to credit: Bair, N. (2026), UFC Data: scorecards, round statistics, and betting odds, 2013 to 2026
 (v0.1.1), Zenodo, doi:10.5281/zenodo.23458636 (CC BY 4.0). Davies, M. (2026), ufc-judging-analysis, GitHub.
 Also MMA Decisions (mmadecisions.com) and ufcstats.com.
+
+## Verification log
+
+Verifier pass, Nov 6, 2026. The checks were scripted independently of `tools/judgerounds.py` (own parsers for
+N, D, the ufcstats CSVs and Wikipedia), and all requests went out with the project user agent, at most one per
+1.1 s, after a robots.txt check.
+
+**What was re-fetched, and what could not be.**
+- GitHub raw (robots.txt 404, so allowed): N `ufc_judge_rounds.csv` and D `ufc_round_scores.csv` and
+  `ufc_scorecards.csv` were downloaded fresh into a scratch directory. All three SHA-256 prefixes equal
+  `FETCHED.json`, so the cache is what the sources publish today.
+- Wikipedia (/wiki/ pages only; robots.txt bars /w/ and /api/): `List_of_UFC_events` and 39 event articles (41 fights),
+  cached under `data/raw/web_cache/wikipedia/verify_judgerounds/`.
+- Press pages that publish official round-by-round cards: foxsports.com (UFC 167) and mmasucka.com (UFC 259),
+  cached under `data/raw/web_cache/{foxsports,mmasucka}/`. Yahoo was skipped because its robots.txt bars
+  anthropic-ai and ClaudeBot.
+- Not fetched:
+  - mmadecisions.com, the original source page: its robots.txt bars us, and the network proxy now refuses
+    the host.
+  - ufcstats.com fight pages: robots.txt is 404, but every page now answers with a JavaScript proof-of-work
+    bot challenge ("Checking your browser"), which was not circumvented. One challenge page was fetched and
+    deleted. The ufcstats side was checked against the repo's CSV snapshot instead.
+
+**Spot check: 41 fights.** The sample has two parts:
+- 30 random dev fights (seed 20261106): 20 from N or N+D, 10 D-only.
+- 11 targeted fights:
+  - deductions: Martinez vs. Saaiman 2023, Figueiredo vs. Moreno 2020, Leites vs. Marquardt 2008;
+  - namesakes: Bruno Silva vs. Dvorak 2020, Pereira vs. Bruno Silva 2022;
+  - same-day events (2014-05-31, Berlin and Barueri): Thiago vs. Umalatov, Pesta vs. Magomedov;
+  - adjacent-day events: Maynard vs. Guida 2012;
+  - a D-only rematch: Silva vs. Franklin 2;
+  - one random `differs` fight and one random `totals_agree_names_differ` fight.
+
+| Check | Result |
+|---|---|
+| Every judge-round vs the fresh N / D rows (198 judge cards; N+D fights checked against both) | 41 / 41 fights identical on published scores. The only difference is the deliberate Saaiman raw patch below. |
+| Round stats in `judgerounds_rows.json` vs a fresh parse of `ufc_fight_stats.csv` (131 rounds, 15 stats per side) | 41 / 41 identical |
+| Derived row fields (nJ, nA, nB, nE, n_wide, ded_A/B, the published pair in scores) recomputed from the cards | 41 / 41 identical |
+| Wikipedia: bout found, winner orientation | 41 found. 40 / 40 winners agree; the remaining one (Lombard vs. Burkman 2015) is NC on both. |
+| Wikipedia: card totals | 36 exact; 3 partial panels whose cards are a subset of Wikipedia's; 1 NC with no scores. 1 differs: Rosa vs. Melo 2020, where Wikipedia has 30-27 and both ufcstats and MMA Decisions have 29-27, so Wikipedia is the outlier. |
+| Wikipedia on `differs` (Jacare vs. Hermansson 2019) | Wikipedia's 49-45, 48-47, 48-47 matches MMA Decisions. ufcstats has 46-49 for Cleary, so the flag points at a ufcstats typo. |
+| Deduction notes on Wikipedia | Figueiredo (round 3) matches N's raw. Saaiman (round 1) was missing in N, now patched. Papazian (round 1, D-only) cannot be separated, as the caveat says. |
+
+**Round-level check against the press (not copies of MMA Decisions).**
+- GSP vs. Hendricks, UFC 167 (Fox Sports, which printed the official card): all three judges gave Hendricks
+  rounds 2 and 4 and GSP rounds 3 and 5. Round 1 went to GSP from D'Amato and Weeks and to Hendricks from
+  Trowbridge. That is 15 of 15 judge-rounds identical, judge names included.
+- Blachowicz vs. Adesanya, UFC 259 (MMA Sucka): D'Amato gave Adesanya one round (round 3) for 49-46. Cleary
+  gave him round 3 and scored round 5 10-8 for Blachowicz, 49-45. Kamijo gave him round 2 and scored round 5
+  10-8, 49-45. That is 15 of 15 identical.
+- Jones vs. Reyes (UFC 247) and Volkanovski vs. Holloway 2 (UFC 251) agree with the round structure in search
+  summaries: Reyes won round 1 on all three cards and Soliz gave Jones rounds 2-5; Holloway took rounds 1-2,
+  Volkanovski took 3 on every card, and only Lethaby gave Holloway round 5. Those pages were not fetched (image
+  scorecards or barred sites), so these two are not counted.
+
+**Global checks (all 3,388 dev fights).**
+- Identity: A and B equal the ufcstats BOUT order, the date equals the event date, the winner equals OUTCOME,
+  every total equals the sum of its rounds, and no row is dated 2026 or later.
+- Orientation: in none of the 3,248 decisive decisions with 2 or more cards do most cards favour the ufcstats
+  loser.
+- Coverage: the by-year table and the 96.4% figure (3,018 / 3,131) reproduce exactly.
+- Headline numbers reproduce: 10,692 rounds, 31,319 judge-rounds, 411 judges (47 with 100+ rounds, 14 with
+  500+), 22.4% non-unanimous rounds, 14.95% pair disagreement, EM 83.95% vs 78.34% for the sig-strike leader,
+  and the clean subset of 10,628 rounds (3,911 / 1,699).
+- Two corrections in this note: 11,751 judge-rounds was the unfiltered 2019-2023 count (the clean count is
+  11,700), and the 3.62% 10-8 share covers only the fights where deductions are known.
+
+**Fight-id matching.**
+- D's URL slug order equals its fighter_1 order in 4,015 of 4,016 decisions. The other one is Luana Santos vs.
+  Yana Santos (2026, vault), which the full slug names resolve.
+- All 385 D-only matches:
+  - surnames agree in 383; the two others are ring names and both are correct (Kimbo Slice = Kevin Ferguson;
+    "Macapa" = John Teixeira, whose cards favour Viana as ufcstats says);
+  - D's winner equals the ufcstats winner in 367 of 367 checkable fights;
+  - 370 are on the same date and 15 one day off (time zones); 284 + 92 agree with ufcstats totals.
+- Same-day events (2014-05-31 and 2014-06-28, 50 fights): all are N+D, and the D matcher agrees with N's
+  crosswalk.
+- The two Bruno Silvas are attached to the right fights. 45 rematch pairs each sit on their own dates.
+
+**Walk-forward.**
+- The files are labels (judges' scores) plus in-round stats, so they are safe as training targets.
+- The `judges` table, however, aggregates 2006-2025, validation years included, and would leak if used as a
+  feature. It is now flagged in `meta.judges_table_note`, and walk-forward `jp_*` columns were added.
+- 300 random scores rows were recomputed from scratch (strictly earlier dates, same judge): 0 mismatches.
+- Columns derived from the scores (winner, nA/nB/nE, n_wide, ded, ufc_check, complete) are now labelled as
+  labels in `meta.column_roles`, together with the 56.8% A-majority bias.
+- The verifier read only the vault file's dates (201 fights, 2026-01-24..2026-10-31) to confirm the split.
+
+**Fixes made (tool, outputs and this note).**
+1. N missed a deduction in Martinez vs. Saaiman, UFC 285. Byrd's published round 1 was 9-9, which needs a
+   deduction, and Wikipedia confirms Saaiman lost 1 point in round 1. `DEDUCTION_PATCHES` adds it back
+   (raw 9-10, 10-9, 10-9). A new detector sets `raw_known: false` for any N fight whose raw round gives nobody
+   10; none remain.
+2. `ufc_note` and `ufc_deduction` come from the ufcstats DETAILS prefix. The cross-check: 13 of 13 notes on N
+   fights match N's raw scores, 56 N fights have deductions with no note, and 5 D-only fights have notes.
+3. Slugs now also come from fightweek.json: 1,803 fighter sides filled, none changed or lost, and both slugs
+   on 3,165 of 3,388 fights (previously 1,971).
+4. Walk-forward judge history columns `jp_*` were added to scores, in dev and vault alike.
+5. Added `meta.column_roles`, `meta.judges_table_note`, and the report fields
+   `deduction_inflation_of_10_8_rate_pp_raw_known` (0.295), `rounds3_majority_to_A` (0.5684) and
+   `judge_round_10_8_plus_all_deductions_removed_where_known` (0.0354).
+6. JSON writes are atomic (temporary file, then rename), so officials.py never reads a half-written file.
+7. This note: the 10-8 wording; 11,751 corrected to 11,700; 71 to 72 rounds and 68 to 69 fights with
+   deductions; 10-10 0.10% corrected to 0.09%; 2023 10-8 3.7% corrected to 3.6%; 16.9% corrected to 17.0%;
+   a flag on 2011-2012 10-8 rates; the new fields documented.
+8. Removed a 14-byte cache file `davies/LICENSE` that held "404: Not Found". D has no license file.
+
+The rebuild changed nothing else: the same 3,388 fights and the same published scores; all other report
+numbers moved by less than 0.1 point.

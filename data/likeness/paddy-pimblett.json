@@ -55,7 +55,7 @@
   "notable_marks_scars": "None notable visible."
  },
  "hair": {
-  "style": "Long layered shag / mullet to the shoulders with a long side-swept fringe falling to the eyes, worn down in public (January and July 2026). On fight night (UFC 314, UFC 324, UFC 329) it is braided back in tight cornrows ending in short braids at the nape, which exposes the forehead and ears.",
+  "style": "Long layered shag / mullet reaching the jaw and collar, with a long side-swept fringe falling to the eyes, worn down in public (January and July 2026). On fight night at UFC 314 (April 2025) it was braided back in tight cornrows, which exposes the forehead and ears; none of these photos show his hair in the cage at UFC 324 or UFC 329.",
   "length_cm": {
    "top": 18,
    "sides": 22,
@@ -133,7 +133,7 @@
   },
   "body_note": "The pec sample is taken through light ginger chest hair.",
   "undertone": "Very fair with a pink-peach undertone; flushes red on the face, chest and shoulders under exertion and stage light.",
-  "freckles_marks": "No distinct freckles in these photos. Light ginger chest hair in the centre of the chest and on the upper abdomen.",
+  "freckles_marks": "No distinct freckles in these photos. Light-brown to ginger chest hair across the centre of the chest and both pecs, thinning into a trail down the abdomen (clearest in the orange-shorts studio photo and at UFC 314); light underarm and forearm hair.",
   "texture_pick": "young_caucasian_male tinted pinker toward tone_hex, with a light flush on the cheeks and nose."
  },
  "body": {
@@ -141,7 +141,7 @@
   "body_fat": "lean",
   "body_fat_notes": "Lean with visible abs at fight weight (studio, UFC 324 and UFC 329 weigh-ins). He is widely reported to gain a lot of weight between fights; model fight-week shape.",
   "shoulders": "Moderate width, slightly sloping.",
-  "chest": "Flat to moderately developed pecs with light ginger hair.",
+  "chest": "Flat to moderately developed pecs with light-brown/ginger chest hair.",
   "arms": "Long and lean, modest biceps.",
   "waist": "Slim.",
   "legs": "Long and lean, defined but not bulky thighs, bony knees.",
@@ -152,8 +152,8 @@
  "tattoos_note": "None visible on the torso, arms or legs in the studio stance photos, the 2025 cage photos or the 2026 weigh-ins.",
  "accessories_seen": "Large gold wristwatch at weigh-ins; black gum shield with gold lettering (UFC 314).",
  "kit": {
-  "typical_shorts": "Short, close-fitting Venum compression-style (\"vale tudo\") fight shorts rather than board shorts: orange with a black waistband and white \"PIMBLETT\" on his left thigh (2024-2026, also at UFC 329), red with black panels (about 2022). Weigh-in: black-and-white abstract-print board shorts.",
-  "gloves": "Standard black UFC 4 oz gloves with blue cuffs as the blue-corner fighter (UFC 324, UFC 329)."
+  "typical_shorts": "Short, close-fitting Venum compression-style (\"vale tudo\") fight shorts rather than board shorts: orange with a black waistband and white \"PIMBLETT\" on his left thigh (studio, about 2024-2025), red with black panels and the crypto.com logo (studio, about 2022). Weigh-ins (January and July 2026): black-and-white abstract-print board shorts. His UFC 324 and UFC 329 fight shorts are not shown in these photos.",
+  "gloves": "Standard black UFC 4 oz gloves; blue cuffs at UFC 314 (April 2025)."
  },
  "morphs": {
   "macro/sexM": 1.0,
@@ -204,8 +204,20 @@
   "iris": "blue",
   "skin_base": "young_caucasian_male tinted pinker toward tone_hex",
   "eyebrows": "eyebrow001 or eyebrow010 (thinner one), tinted #8a6446",
-  "hair": "Fight night: tight cornrows braided straight back from the hairline, as a scalp texture or low shell tinted #a67d54 with a slightly darker #7d5a3c between braids (this matches his look in the cage in 2025-2026). Walkouts/weigh-ins: long shoulder-length shag with fringe; no embed proxy fits (short01/02/04 are too short, ponytail01 is tied back), so a new proxy would be needed.",
+  "hair": "Fight night (as at UFC 314, April 2025): tight cornrows braided straight back from the hairline, as a scalp texture or low shell tinted #a67d54 with a slightly darker #7d5a3c between braids. Walkouts/weigh-ins/media: long jaw-to-collar shag with fringe; no embed proxy fits (short01/02/04 are too short, ponytail01 is tied back), so a new proxy would be needed.",
   "beard": "very light stubble tint only, colour #b07a50"
  },
- "notes": "Confidence: high for hair, eyes, skin and build; medium for face proportions; low-to-medium for exact morph values. Only one Commons photo exists (a 2021 CC BY interview still), so 9 of 10 photos are reference-only; 6 are from 2025-2026, including a clean left profile (January 2026) and a clean frontal face with the hair braided back (April 2025). What to watch: (1) hair is the main cue: cornrows on fight night, long golden shag otherwise. (2) Long narrow face, light-blue eyes, long straight nose, narrow chin. (3) Very fair, pink-toned skin. (4) Long-limbed, narrow, lean body; no tattoos. (5) His weight changes a lot between fights; use fight-week shape."
+ "notes": "Confidence: high for hair, eyes, skin and build; medium for face proportions; low-to-medium for exact morph values. Only one Commons photo exists (a 2021 CC BY interview still), so 9 of 10 photos are reference-only; 6 are from 2025-2026, including a clean left profile (January 2026) and a clean frontal face with the hair braided back (April 2025). What to watch: (1) hair is the main cue: cornrows in the cage at UFC 314 (later fight nights not covered by these photos), long golden shag otherwise. (2) Long narrow face, light-blue eyes, long straight nose, narrow chin. (3) Very fair, pink-toned skin. (4) Long-limbed, narrow, lean body; no tattoos. (5) His weight changes a lot between fights; use fight-week shape.",
+ "review": {
+  "by": "second-pass reviewer",
+  "date": "2026-11-06",
+  "changes": [
+   "Re-checked every photo; face, light-blue eyes, hair colour, stubble, skin samples, build and the absence of tattoos are supported.",
+   "Cornrows are only shown at UFC 314; removed the unsupported UFC 324/UFC 329 fight-night hair, shorts and glove claims.",
+   "Hair length described as jaw-to-collar (the photos do not show it reaching the shoulders).",
+   "Chest hair is more than \"light\" in the studio and UFC 314 photos; description updated.",
+   "wm-2021-interview.jpg licence confirmed (reviewed CC BY 3.0).",
+   "Morph names all exist in assets/embed/mh-manifest.json; all values are within 0..1."
+  ]
+ }
 }

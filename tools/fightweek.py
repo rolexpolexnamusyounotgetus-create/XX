@@ -1351,6 +1351,13 @@ def parse_weighins(card, paras, event):
                 t0 = trig[0].start()
                 allw = [(m.start(), wnum(m.group(1))) for m in re.finditer(
                     r"(\d{3}(?:\.\d+)?(?:\s?\u00bd)?)\s*(?:pounds?|lbs?\.?|lb)\b", k) if m.start() >= t0]
+                # "coming in at 128, 129, 160 and 120 pounds, respectively": every number of the list
+                for lm in re.finditer(r"\b\d{3}(?:\.\d+)?(?:\s*(?:,|and|, and)\s*\d{3}(?:\.\d+)?)+\s*(?:pounds?|lbs?\.?|lb)\b",
+                                      k[t0:]):
+                    nums = [(t0 + lm.start() + x.start(), float(x.group(0)))
+                            for x in re.finditer(r"\d{3}(?:\.\d+)?", lm.group(0))]
+                    if len(nums) > len(allw):
+                        allw = nums
                 allw = [(p, w) for p, w in allw if w and 100 <= w <= 300]
                 if len(allw) > len(weights):
                     weights = allw
@@ -1453,8 +1460,9 @@ def date_cues(s, event_date):
         out.append((4, "fight week"))
     # explicit dates (not the event's own original date: "originally planned to take place on April 18")
     for m in re.finditer(r"\b(?:on |by |as of )?(%s) (\d{1,2})(?:st|nd|rd|th)?(?:,? (\d{4}))?\b" % MON_RE, k):
-        ctx = k[max(0, m.start(1) - 60):m.start(1)]      # up to the month, so a leading "on" stays in the context
-        if EVENT_DATE_CTX.search(ctx) or EVENT_AT_DATE.search(ctx) or \
+        ctx = k[max(0, m.start() - 60):m.start()]
+        ctx_on = k[max(0, m.start(1) - 60):m.start(1)]   # up to the month, so a leading "on" stays in the context
+        if EVENT_DATE_CTX.search(ctx) or EVENT_HELD_ON.search(ctx_on) or EVENT_AT_DATE.search(ctx_on) or \
                 re.match(r"\s*(?:,\s*\d{4}\s*)?,?\s*(?:at|in) (?:ufc|the ufc|bellator|the event|ufc fight night|the ultimate)",
                          k[m.end():m.end() + 30]):
             continue                      # the date of an event, not of the change
@@ -1518,6 +1526,7 @@ REPL_NEAR = re.compile(r"replaced by|replace(?:d|s)? (?:him|her|them)\b|as (?:a 
                        r"(?:will|would) face|to face|faced|took on|against", re.I)
 WITHDRAW_RE = re.compile(r"\b(?:however|but|pulled out|withdr|forced|removed|out of the|injur|due to|scrapped|"
                          r"cancel|replaced|ruled out|was pulled|sidelined|illness|visa|suspend|tested positive)\b", re.I)
+EVENT_HELD_ON = re.compile(r"(?:take place|took place|taking place|be held|was held|been held|happen|occur)\s+on\s*$", re.I)
 EVENT_AT_DATE = re.compile(r"\b(?:at|for|to|from) (?:ufc|the ufc|ufc fight night|ufc on [a-z]+|the ultimate fighter|"
                            r"bellator|strikeforce)\b[^,.;]{0,40}?\s+on\s*$", re.I)   # "... at UFC 151 on <date>"
 # the final pairing was moved to this event after the replacement: the change belongs to the earlier event
@@ -2081,6 +2090,10 @@ def cmd_build(args):
                     # only "weighed in at W": a miss only if W is over the limit
                     if not (m["weighed"] and limit and m["weighed"] > limit):
                         m = None
+                if m and m["lbs_over"] is None and m["weighed"] and limit and m["weighed"] <= limit and \
+                        limit_basis in ("division named in the weigh-in text", "ufcstats weight class",
+                                        "Wikipedia weight class"):
+                    m = None             # stated scale weight at or under the limit (UFC 259: Adesanya 201.5 at 205)
                 if not art:
                     rec["missed"][side] = None
                     rec["missed_weight"][side] = None

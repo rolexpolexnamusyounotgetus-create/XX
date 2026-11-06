@@ -4,12 +4,13 @@
     "url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Arman_Tsarukyan_2019.jpg",
     "page": "https://commons.wikimedia.org/wiki/File:Arman_Tsarukyan_2019.jpg",
     "author": "inFocus media (YouTube: \"Arman Tsarukyan #UFC240 Interview - Tallinn / Estonia\")",
-    "license": "CC BY 3.0",
+    "license": "CC BY 3.0 (claimed via YouTube; unverified)",
     "date_taken": "2019-06-23",
-    "use": "embed-ok",
+    "use": "reference-only",
     "what": "headshot",
-    "notes": "Video still, front-on, overcast outdoor light (face underexposed). Short trimmed beard and short side-parted hair show the jaw line better than later photos. Seven years old.",
-    "attribution": "inFocus media, CC BY 3.0, via Wikimedia Commons"
+    "notes": "Video still, front-on, overcast outdoor light (face underexposed). Short trimmed beard (about 8-12 mm) and a short crop: faded sides and a short textured top pushed forward/up, not side-parted. Shows the jaw line better than later photos. Seven years old.",
+    "attribution": "inFocus media, CC BY 3.0, via Wikimedia Commons",
+    "license_check": "2026-11-06 review: the Commons page carries {{YouTube CC-BY}} with a pending {{LicenseReview}} (category \"License review needed\"), so the CC BY claim on the source video has not been confirmed. Kept reference-only until a reviewer (or a direct check of youtube.com/watch?v=1oRylIjaZSA) confirms the Creative Commons licence; then it can go back to embed-ok with the attribution below."
   },
   {
     "file": "wm-2024-ufc300-interview.png",
@@ -21,7 +22,8 @@
     "use": "embed-ok",
     "what": "3q",
     "notes": "Post-fight interview after UFC 300, three-quarter view of his right side. Bruising under the eyes from the fight; good view of the right ear (cauliflower) and full beard. Slight video smoothing.",
-    "attribution": "Chamatkar Sandhu, CC BY 3.0, via Wikimedia Commons"
+    "attribution": "Chamatkar Sandhu, CC BY 3.0, via Wikimedia Commons",
+    "license_check": "2026-11-06 review: Commons {{YouTubeReview}} by Aurelio de Sandoval (2024-05-13) confirms the source video is CC BY; the video page also shows \"Creative Commons Attribution license (reuse allowed)\"."
   },
   {
     "file": "wm-2026.webp",

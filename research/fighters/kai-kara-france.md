@@ -5,7 +5,7 @@ As of 2026-11-06. He/him. Orthodox, 5 ft 4 in, 69 in reach, born 1993-03-26 (age
 ## Current status
 
 - **Last fight:** Rear-naked-choke loss to Alexandre Pantoja at 1:55 of round 3 for the flyweight title, UFC 317 (Jun 28, 2025); CBS wrote that Pantoja submitted him "with ease". His second title shot, after the interim-title loss to Brandon Moreno (UFC 277, 2022).
-- **On a break since Nov 2025:** He told the UFC he would take at least a year off to pursue cultural and personal interests outside fighting. His team told Ariel Helwani he is "not retiring necessarily". He withdrew from the drug-testing pool, which took him out of the rankings on Nov 18, 2025 until he tells the UFC he is back (MMA Mania; Wikipedia).
+- **On a break since Nov 2025:** He told the UFC he would take at least a year off to pursue cultural and personal interests outside fighting. Ariel Helwani, after speaking with his team, reported that he is "not retiring necessarily, but he is taking a break". He withdrew from the drug-testing pool, which took him out of the rankings on Nov 18, 2025 until he tells the UFC he is back (MMA Mania; Wikipedia).
 - **Now (Nov 6, 2026):** No report of a return, a booking or re-entry to the testing pool was found (Google News and Bing News searches). He is not in the official flyweight top 15 of Nov 3, 2026. Manel Kape named him as an opponent for after the Van fight (Oct 2026). The scouting file marks him inactive (`active: false`).
 - **Injury history:** a knee injury cost him a Feb 2023 fight (UFC 284) and a training concussion a Sep 2023 fight with Kape (UFC 293), per Wikipedia. No injury is linked to the current break.
 

@@ -221,5 +221,15 @@
   "hair": "a short proxy with volume on top (short02 or short04), tinted #2d1f1a; sides tapered, not shaved",
   "beard": "full beard shell 3-5 cm deep at the chin, colour #261b18; it defines the lower-face silhouette"
  },
- "notes": "Confidence: high for hair, beard, eyes, skin and physique; medium for face proportions because the jaw and chin are hidden under the beard in every photo since 2024; low-to-medium for exact morph values. 9 photos (2 Commons CC BY, 7 reference-only incl. one Commons file with a doubtful own-work claim); 4 are from 2026. No clean true profile exists: the best are two September 2026 weigh-in shots (one about 80 degrees but with a fist under the chin, one from behind). What to watch: (1) the beard is the main silhouette cue: a long, dense, rounded full beard; without it he will not read as him. (2) Low, thick, straight brows over medium-brown eyes. (3) Long straight nose. (4) Thick swept-up hair with volume, not a fade. (5) Lean and muscular with long arms; no tattoos at all."
+ "notes": "Confidence: high for hair, beard, eyes, skin and physique; medium for face proportions because the jaw and chin are hidden under the beard in every photo since 2024; low-to-medium for exact morph values. 9 photos (1 embed-ok: the reviewed CC BY 2024 interview still; 8 reference-only, incl. the 2019 Commons still whose YouTube CC BY claim is still awaiting licence review and the 2026 Commons file with a doubtful own-work claim); 4 are from 2026. No clean true profile exists: the best are two September 2026 weigh-in shots (one about 80 degrees but with a fist under the chin, one from behind). What to watch: (1) the beard is the main silhouette cue: a long, dense, rounded full beard; without it he will not read as him. (2) Low, thick, straight brows over medium-brown eyes. (3) Long straight nose. (4) Thick swept-up hair with volume, not a fade. (5) Lean and muscular with long arms; no tattoos at all.",
+ "review": {
+  "by": "second-pass reviewer",
+  "date": "2026-11-06",
+  "changes": [
+   "Re-checked every photo: hair, full beard, brows, eyes, nose, cauliflower ears, no tattoos, physique and kit descriptions are supported by the photos; skin samples re-sampled and consistent.",
+   "wm-2019-infocus.jpg downgraded to reference-only: its YouTube CC BY claim is still pending Commons licence review.",
+   "Corrected the 2019 hair note in sources.json (faded short crop, not side-parted).",
+   "Morph names all exist in assets/embed/mh-manifest.json; all values are within 0..1."
+  ]
+ }
 }

@@ -19,7 +19,7 @@
     "date_taken": null,
     "use": "reference-only",
     "what": "body",
-    "notes": "Full-body studio cut-out, three-quarter from his right; black Venum shorts with grey snakeskin print and white diagonal stripes. Main physique and tattoo reference."
+    "notes": "Full-body studio cut-out, three-quarter from his right; black UFC-kit shorts with a grey snakeskin print, white diagonal stripes, vertical UFC wordmark and crypto.com logo (no maker logo visible). Main physique and tattoo reference."
   },
   {
     "file": "espn-stance-right.png",
@@ -37,24 +37,26 @@
     "url": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Dustin_Poirier_UFC_269.jpg",
     "page": "https://commons.wikimedia.org/wiki/File:Dustin_Poirier_UFC_269.jpg",
     "author": "MMAnytt (YouTube press-conference still)",
-    "license": "CC BY 3.0",
+    "license": "CC BY 3.0 (claimed via YouTube; unverified)",
     "date_taken": "2021-12-09",
-    "use": "embed-ok",
+    "use": "reference-only",
     "what": "headshot",
     "notes": "Front-on press-conference still, longer hair on top (about 3-4 cm, side-swept) than his usual buzz cut. Small (349 px).",
-    "attribution": "MMAnytt, CC BY 3.0, via Wikimedia Commons"
+    "attribution": "MMAnytt, CC BY 3.0, via Wikimedia Commons",
+    "license_check": "2026-11-06 review: the Commons page uses {{YouTube CC-BY}} but has no licence review, so the Creative Commons licence on the source video (youtube.com/watch?v=2uHR-hTB5xY) is unconfirmed. Kept reference-only until it is verified; then it can go back to embed-ok with the attribution below."
   },
   {
     "file": "wm-2023-stance.png",
     "url": "https://upload.wikimedia.org/wikipedia/commons/6/69/Dustin_Poirier_stance.png",
     "page": "https://commons.wikimedia.org/wiki/File:Dustin_Poirier_stance.png",
     "author": "TLF Apparel (YouTube video still)",
-    "license": "CC BY 3.0",
+    "license": "CC BY 3.0 (claimed via YouTube; unverified)",
     "date_taken": "2023-07-14",
-    "use": "embed-ok",
+    "use": "reference-only",
     "what": "action",
     "notes": "Training still, shadow-boxing in a black tank top; forearm sleeves, ear and brow visible, face partly behind the lead arm.",
-    "attribution": "TLF Apparel, CC BY 3.0, via Wikimedia Commons"
+    "attribution": "TLF Apparel, CC BY 3.0, via Wikimedia Commons",
+    "license_check": "2026-11-06 review: the Commons page uses {{YouTube CC-BY}} but has no licence review, so the Creative Commons licence on the source video (youtube.com/watch?v=I4_x0GWHSis) is unconfirmed. Kept reference-only until it is verified; then it can go back to embed-ok with the attribution below."
   },
   {
     "file": "wm-2024.jpg",
@@ -65,7 +67,7 @@
     "date_taken": "2024-06-01",
     "use": "reference-only",
     "what": "profile",
-    "notes": "Right-side profile in the cage at UFC 302 (floral shorts, gold title-fight gloves), bloodied nose. Best profile: ear, nose bridge, jaw, right-arm sleeve and the red \"K\"-and-diamond neck tattoo. Commons lists this as the uploader's \"own work\" under CC BY-SA 4.0, but it looks like professional event/promo photography, so the licence claim is doubtful. Treated as reference-only until the provenance is checked."
+    "notes": "Right-side profile in the cage at UFC 302 (floral shorts, gold title-fight gloves), bloodied nose. Best profile: ear, nose bridge, jaw, right-arm sleeve and the red \"K\"-and-diamond neck tattoo. Commons lists this as the uploader's \"own work\" under CC BY-SA 4.0, but it looks like professional event/promo photography, so the licence claim is doubtful. Treated as reference-only until the provenance is checked. Commons gives the date as 2024-07-01; the floral shorts and gold gloves match UFC 302 (2024-06-01), which is used here."
   },
   {
     "file": "wm-2011.png",
@@ -97,10 +99,11 @@
     "page": "https://www.bjpenn.com/mma-news/dustin-poirier/ufc-318-weigh-in-results-dustin-poirier-tips-the-scales-one-last-time",
     "author": "Unknown agency photographer (via BJPenn.com)",
     "license": "All rights reserved",
-    "date_taken": "2025-07",
+    "date_taken": null,
     "use": "reference-only",
     "what": "3q",
-    "notes": "Shirtless weigh-in pose, backwards cap, three-quarter view of his left side; latest clear face. Shows nose shape in 3/4, cauliflower left ear, stubble, chest script, hand tattoos and a gold chain and watch. Article is UFC 318 week (July 2025); the exact event of the photo is not captioned."
+    "notes": "Shirtless weigh-in pose, backwards cap, three-quarter view of his left side; latest clear face. Shows nose shape in 3/4, cauliflower left ear, stubble, chest script, hand tattoos and a gold chain and watch. The article is from UFC 318 week (July 2025) but the photo is not captioned, and the hair showing through the cap opening is a few cm long and dark brown, longer than the buzz cut he had in the cage at UFC 318, so it may be from an earlier weigh-in. Date unverified.",
+    "date_note": "Published with a July 2025 article; shoot date unknown (2024-2025)."
   },
   {
     "file": "ref-ap-ufc318-action-2025-07-19.jpg",

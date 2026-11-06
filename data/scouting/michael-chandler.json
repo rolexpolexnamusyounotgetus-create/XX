@@ -3,16 +3,32 @@
   "name": "Michael Chandler",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Last fought Jun 14, 2026, when Mauricio Ruffy knocked him down twice and stopped him with ground punches at 4:29 of round 1 at UFC Freedom 250 in Washington, DC. That was his fourth straight loss, after Dustin Poirier (2022), Charles Oliveira (2024) and Paddy Pimblett (2025), and he is 2-6 in the UFC (fighters.json). He is 40. Neither the research pass nor the Nov 6, 2026 fact-check could confirm on the web whether he has retired, is ranked or has a fight booked, and no other project file reports a retirement or booking, so 'active' is an unverified default.",
+    "summary": "Active, but unranked and unbooked. Mauricio Ruffy stopped him at 4:29 of round 1 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026). Reports say spinning kicks from Ruffy hurt and dropped him before the ground-punch finish. It was his fourth straight loss, after Dustin Poirier (2022), Charles Oliveira (2024) and Paddy Pimblett (2025). Pro record 23-11-0 (ESPN, UFCalendar); UFC 2-6. He is 40. He has rejected calls to retire and says he plans to keep fighting (MMA Junkie, Sep 18, 2026; BJPenn), and ESPN lists him as active. No bout is booked on Nov 6 (ESPN, UFCalendar). A fight with King Green has been floated in the media (Green called him out, and Jorge Masvidal discussed it on a podcast), but the UFC has announced nothing. On Nov 4, 2026 he appeared on WWE NXT as a special guest referee; Cageside Press sees no clear sign of a move to pro wrestling.",
     "title": null,
-    "ranking": null,
+    "ranking": "Unranked: not in the UFC lightweight top 15 of either the media-panel rankings (Nov 3, 2026, per ufcalendar.com; ufcrankings.org, updated Nov 5, agrees) or the UFC/Meta algorithmic rankings (Oct 31, 2026 board; ufcalendar.com, MMA Mania). ufc.com/rankings returned 403 to scripts.",
     "active": true,
     "next_fight": null,
-    "injuries": [],
+    "injuries": [
+      {
+        "what": "45-day mandatory medical suspension for the TKO loss to Ruffy (it ran out in late July 2026). No injury beyond that was reported",
+        "when": "2026-06",
+        "source": "https://www.mmamania.com/ufc-medical-suspensions-and-injuries/451613/ilia-topuria-benched-six-months-broken-face-ufc-white-house-medical-suspensions"
+      }
+    ],
     "sources": [
       "data/derived/fighters.json (recent: 2026-06-14 L Ruffy TKO R1 4:29; 2025-04-12 L Pimblett TKO R3 3:07; 2024-11-16 L Oliveira U-DEC; 2022-11-12 L Poirier RNC R3)",
-      "data/raw/ufc_event_details.csv (UFC Freedom 250, Washington, DC, Jun 14, 2026)",
-      "https://www.cbssports.com/mma/news/ufc-314-results-highlights-paddy-pimblett-lives-up-to-his-moniker-with-thumping-tko-of-michael-chandler/ (cited in data/scouting/paddy-pimblett.json; not re-fetched)"
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/2504988 (ESPN: status Active, record 23-11-0, team Kill Cliff FC; overview shows only a previous fight; read Nov 6, 2026)",
+      "https://www.ufcalendar.com/fighters/michael-chandler (23-11-0, no next fight listed; read Nov 6, 2026)",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/09/18/ufc-michael-chandler-opinion-plans-keep-fighting-40-retirement-losing-skid-cte-damage/91824040007/ (search snippet; page returned 402 to scripts)",
+      "https://www.bjpenn.com/mma-news/michael-chandler/michael-chandler-dismisses-the-idea-of-mma-retirement/ (search snippet)",
+      "https://middleeasy.com/mma-news/mauricio-ruffy-michael-chandler-knockout-ufc-freedom-250-results/",
+      "https://mmasucka.com/news/king-green-vs-michael-chandler-rumored-as-ufc-lightweight-showdown-gains-attention/ (Oct 27, 2026)",
+      "https://cagesidepress.com/2026/11/05/michael-chandler-appears-at-wwe-nxt-as-guest-referee/",
+      "https://en.wikipedia.org/wiki/Michael_Chandler_(fighter) (revision of Nov 5, 2026, read via the API; no retirement or booking listed)",
+      "https://www.ufcalendar.com/rankings",
+      "https://ufcrankings.org/lightweight",
+      "https://www.mmamania.com/ufc-medical-suspensions-and-injuries/451613/ilia-topuria-benched-six-months-broken-face-ufc-white-house-medical-suspensions",
+      "https://www.cbssports.com/mma/news/ufc-314-results-highlights-paddy-pimblett-lives-up-to-his-moniker-with-thumping-tko-of-michael-chandler/ (cited in data/scouting/paddy-pimblett.json)"
     ]
   },
   "style": {
@@ -37,7 +53,7 @@
       "data/derived/fighters.json (UFC-only C and S sums since 2021; lightweight medians over 120 lightweights with 30+ UFC minutes)",
       "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (UFC 257, 262, 268, 274, 281, 309, 314 and Freedom 250 bout stats and methods)",
       "data/scouting/paddy-pimblett.json and data/scouting/charles-oliveira.json (fight accounts)",
-      "https://en.wikipedia.org/wiki/Michael_Chandler (reference page for background; could not be fetched in this pass)"
+      "https://en.wikipedia.org/wiki/Michael_Chandler_(fighter) (background; read via the API on Nov 6, 2026)"
     ]
   },
   "moves": {
@@ -47,15 +63,17 @@
     "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json: recency-weighted landed shares are head 0.67 / body 0.22 / leg 0.11 and attempt shares are head 0.75 / body 0.17 / leg 0.07 (career landed the same, 0.67 / 0.23 / 0.10; lightweight median landed about 0.62 / 0.22 / 0.15). So he throws a little more to the head and less to the legs than the division. The head group leans on power punches (rear hand, hook, overhand) over the jab, matching his recorded punch KO of Hooker and his exchange-heavy fights. Headkick is small and stands for the front kick that finished Ferguson. The body group favours hooks because his body volume comes in pocket exchanges (28 body strikes vs Gaethje); UFC Stats does not separate body punches from kicks. Calf/inside is a generic split. Spinning is 0. Knee is low because only 2% of his landed strikes come in the clinch. Elbow is 0.1 for ground strikes, which are 24% of his landed. These weights are analyst judgment from the bout stats; no published breakdown could be fetched in this pass."
   },
   "appearance": {
-    "build": "short, compact lightweight: 5'8\" with a 71-inch reach (fighters.json)",
-    "hair": "unknown (photos could not be checked in this pass)",
-    "facial_hair": "unknown",
-    "skin": "light",
-    "tattoos": "none confirmed",
-    "kit": "unknown",
+    "build": "short, compact lightweight: 5'8\" with a 71-inch reach (fighters.json); very muscular and lean, with a thick neck and a clear V-taper (likeness sheet)",
+    "hair": "very dark brown, near black: short faded sides and back with 4-6 cm on top pushed up and back into a short quiff, and a strong M-shaped recession at both temples; the same style 2021-2026 (data/likeness/michael-chandler.json)",
+    "facial_hair": "short boxed stubble-beard, about 3-6 mm, dark brown with a few grey hairs on the chin, with a joined moustache (likeness sheet, 2023-2026)",
+    "skin": "light-medium",
+    "tattoos": "'Blessed' in black cursive script on the left upper chest; about eight lines of small black text on the right ribcage; small vertical letters 'ACE' on the right inner forearm and small letters (partly seen as 'AP') on the left inner forearm; a single black East Asian character on the back of the left shoulder (likeness sheet)",
+    "kit": "patriotic red Venum shorts with navy stars and stripes, with blue 'Freedom 250' gloves, in the June 2026 studio photos; red shorts with white stripes at UFC Freedom 250; earlier, black UFC shorts with a tonal star print (likeness sheet). The corner colour wins in the sim",
+    "notes": "Hair, facial hair, skin, tattoos and kit are copied from the photo-based likeness sheet data/likeness/michael-chandler.json (13 photos, 5 from 2026, listed in its photos_used and in assets/reference/michael-chandler/sources.json). The sheet is the better source for appearance; see it for face shape, the cheek scar, cauliflower ears, colour hex values and morphs. Its skin call is 'warm, light-medium olive/tan' (tone #dd9d88). That replaces the earlier unverified 'light' in this file.",
     "sources": [
       "data/derived/fighters.json (height, reach)",
-      "skin: unverified recall of widely published fight photos; not checked against a dated photo (web access unavailable in the research pass and the fact-check)"
+      "data/likeness/michael-chandler.json",
+      "assets/reference/michael-chandler/sources.json"
     ]
   },
   "engine_notes": [
@@ -65,5 +83,5 @@
     { "note": "The dataset covers only his UFC run since 2021. His earlier Bellator career is not in the sums, so career rates describe him from age 34 on.", "source": "data/derived/fighters.json (UFC fights only)" },
     { "note": "Recent landed output has dropped: 2.9 significant strikes per minute recency-weighted vs 3.8 career, though accuracy held (53%).", "source": "data/derived/fighters.json (S vs C sums)" }
   ],
-  "confidence": "low"
+  "confidence": "medium"
 }
