@@ -25,8 +25,9 @@ What it does (research/model_ml.md has the results and the reasoning):
    - L2 logistic regression on antisymmetric difference and matchup features (no intercept), with backward
      elimination of whole feature groups on the CV blocks,
    - LightGBM and XGBoost on side features, differences, matchup terms and context,
-   - 7-bin outcome models (A KO, A sub, A dec, draw, B dec, B sub, B KO): direct multinomial logistic and
-     LightGBM, plus a factorised winner x method-given-winner model.
+   - 7-bin outcome models (A KO, A sub, A dec, draw, B dec, B sub, B KO): a direct multinomial logistic (and,
+     with --direct7-gbm, a direct 7-class LightGBM), plus factorised P(win) x P(method | winner) models with a
+     softmax or LightGBM method model and P(win) from the logistic, the blend, LightGBM or the stack.
 3. Time-ordered CV inside 2010-2023 only (expanding window, validation years 2015-2023); out-of-fold
    predictions for 2019-2023 feed Platt / isotonic recalibration and the stacking layer. 2024+ is
    scored once by the models trained on 2010-2023.
@@ -231,8 +232,6 @@ def side_features(st, day, P, prm, fight_lbs):
     m = kv(S, "min")
     mu = lambda k: pv[KI[k]]                    # league per-minute
     sig_mu = pv[SIG_L].sum()
-    sigatt_mu = pv[SIG_A].sum()
-    acc_mu = sig_mu / max(sigatt_mu, 1e-9)
 
     def rate(keys, src=S, mins=None, k=km):
         idx = [KI[x] for x in keys]
@@ -301,7 +300,6 @@ def side_features(st, day, P, prm, fight_lbs):
     cats = st.cat
     W = sum(1 for r in res if r == 1.0)
     L = sum(1 for r in res if r == 0.0)
-    D = sum(1 for r in res if r == 0.5)
     f["n"] = n_all
     f["log_n"] = math.log1p(n_all)
     f["wins"] = W
@@ -1352,6 +1350,8 @@ def main():
     ap.add_argument("--n-xgb", type=int, default=None)
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--jobs", type=int, default=4, help="worker processes for the tree searches (4)")
+    ap.add_argument("--direct7-gbm", action="store_true",
+                    help="also fit a direct 7-class LightGBM (both corner orders; slow on a busy box)")
     ap.add_argument("--stage2", action="store_true", help="reuse the cached stage-1 fits (out/ml_cache/stage1.pkl)")
     args = ap.parse_args()
     if args.stage2:
@@ -1566,7 +1566,7 @@ def _lgb_multi_fit(params, X, k, ncls, rounds, sw=None):
 def seven(R):
     """7-bin outcome models: factorised (winner x method | winner) and direct multinomial."""
     C, P = R["_ctx"], R["_P"]
-    df, dec, evm, years = C["df"], C["dec"], C["evm"], C["years"]
+    df, dec, evm = C["df"], C["dec"], C["evm"]
     quick = C["args"].quick
     n = len(df)
     k7 = df["bin7"].to_numpy(dtype=float)
@@ -1643,7 +1643,7 @@ def seven(R):
 
     # -- direct 7-bin LightGBM (both corner orders); one configuration, rounds by block CV
     dg_best = None
-    if not quick:
+    if C["args"].direct7_gbm:
         DG0 = np.hstack([C["G0"].to_numpy(), D0])
         DG1 = np.hstack([C["G1"].to_numpy(), D1])
         cfg = {"num_leaves": 7, "min_data_in_leaf": 160, "feature_fraction": 0.4, "lambda_l2": 20.0}
@@ -2188,7 +2188,7 @@ def page_stack(model, roster, sa, sb, fight):
 
 
 def page_model(R):
-    C, P = R["_ctx"], R["_P"]
+    C = R["_ctx"]
     df, X, y, dec, years = C["df"], C["X"], C["y"], C["dec"], C["years"]
     specs = C["specs"]
     cfg = C["lr_best"]
@@ -2323,7 +2323,7 @@ def clean_json(o):
 
 def write_outputs(R):
     C, P, S = R["_ctx"], R["_P"], R["_S"]
-    df, y = C["df"], C["y"]
+    df = C["df"]
     rec_stack = "stack:" + R["stacking"]["recommended_pre_line"]
     rec7 = R["seven"]["recommended"]
     fights = {}

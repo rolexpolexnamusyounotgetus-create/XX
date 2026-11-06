@@ -305,8 +305,10 @@ object `m`; engine3.js and params3.js are untouched):
 
 1. Targets. For each side and stat: target = (engine v3's static expectation for two league-average fighters with
    the same division, rounds and priors) x (ML rate / league rate), on odds for probabilities. The simulator keeps
-   its calibrated league level, its in-fight modifiers stay balanced (the engine's static KD expectation is
-   1.5-2x its simulated KD rate), and only the matchup-specific multipliers come from the ML. Position accuracies
+   its calibrated league level and its in-fight modifiers stay balanced: the engine's static KD-per-head
+   expectation runs 1.5-2x the observed league rate, and its self-calibrated in-fight modifiers bring the simulated
+   rate back down, so imposing the observed rate on the static table would under-produce knockdowns. Only the
+   matchup-specific multipliers come from the ML. Position accuracies
    are shifted on the logit scale to be coherent with the target accuracies. The matchup's knobs then multiply in:
    out (attempts), acc (accuracy odds), tdAtt, opponent's tdDef, sub, pow x opponent's chin (KD). The leg knob
    overrides the learned target mix. Optional `weight` in 0..1 blends toward the engine's own rates.

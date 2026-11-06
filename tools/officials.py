@@ -2,49 +2,60 @@
 """
 officials.py - v8 engine component: judges and referees, fit on the ufcstats snapshot.
 
-JUDGES. Every judge's card total in DETAILS is parsed (ufcstats writes the fight loser's score first;
-draw cards are unordered) and mapped to the two fighters. A round-level latent model explains each
-card: in round r of fight f, judge j sees
+DATA. Every decision's three judges' totals are parsed from DETAILS (ufcstats writes the fight loser's
+score first; draw cards are unordered; "Point Deducted: ... by <name>" prefixes are parsed and stripped)
+and mapped to the two fighters. Where tools/judgerounds.py has the official round-by-round cards (MMA
+Decisions via two GitHub datasets; 3,182 of 3,876 decisions with all three judges, 154 partial panels)
+the observed round scores are used, before deductions where known; judges are identified by their MMA
+Decisions id (ufcstats spellings mapped to it). Fights from 2026-01-01 on are never used (hidden-data
+protocol, docs/BACKLOG.md).
+
+JUDGES. A round-level latent model explains each card: in round r of fight f, judge j sees
 
     eta_jfr = exp(n_j) * [ exp(v_j + w_V t) * V_fr + exp(p_j + w_K t) * K_fr + exp(g_j + w_G t) * G_fr
                            + h * home_fr + u_fr ],          u_fr ~ N(0, sigma_u^2) shared by the 3 judges
     V = b_head dHead + b_body dBody + b_leg dLeg      (landed strike differentials, A - B)
     K = b_kd dKD                                      (knockdown differential)
     G = b_td dTD + b_ctrl dCtrlMin + b_sub dSubAtt + b_rev dRev
-    t = (year - 2017) / 10
+    t = (year - 2017) / 10;  home = [A is a home fighter] - [B is] (Wikidata nationality vs event country)
 
 and scores the round for A with P = sigmoid(eta) (logistic own noise). The round winner W gets a 10-8
 with P = sigmoid(c0 + c_year + c_j + th_V V_W + th_K K_W + th_G G_W + th_u u_W) (scores oriented to W);
-a 10-10 has a small fixed probability. Only card totals are observed, so each card's likelihood is the
-sum over every round-outcome pattern (B10-8, B10-9, 10-10, A10-9, A10-8 per round) consistent with its
-totals; the shared noise is integrated per round by Gauss-Hermite quadrature, which makes the three
-cards of a fight dependent. Point deductions are latent (fight-level, per fighter, 0/1/2 points) unless
-DETAILS records them. Judge effects (n, v, p, g, c) are Gaussian random effects shrunk to the league
-(MAP with hyperparameters chosen by walk-forward predictive likelihood on 2019-2023); posterior sds
-from the Laplace approximation.
+a 10-10 has a small fixed probability. A card with round scores contributes its observed pattern; a card
+known only by its total contributes the sum over every round-outcome pattern (B10-8, B10-9, 10-10,
+A10-9, A10-8 per round) consistent with it. The shared noise is integrated per round by Gauss-Hermite
+quadrature, which makes the three cards of a fight dependent. Point deductions are latent (fight-level,
+per fighter, 0/1/2 points) unless known. Judge effects (n sharpness, v volume, p knockdown, g grappling,
+c 10-8 propensity) are Gaussian random effects shrunk to the league: MAP, variances by empirical Bayes
+times a multiplier tuned on 2019-2023 (fit before 2019); posterior sds from the information (outer
+product of per-fight scores) plus the prior precision. MAP by preconditioned L-BFGS with JAX gradients.
 
-REFEREES. Per-referee random effects (penalized GLMs, shrunk to the league) on: knockdown-round
-finish conversion, finishing-sequence length after a knockdown (proxies for KD-to-stoppage time:
-share of KD finishes stopped at distance with no follow-up on the ground, ground strikes landed in
-the finishing round), standing TKO without a knockdown per landed standing head strike, ground-and-
-pound stoppage per landed ground strike, point deductions (posterior from the judge model plus the
-few recorded in DETAILS) and DQs.
+REFEREES. Per-referee random intercepts (penalized GLMs, Laplace/EB and walk-forward tuned shrinkage):
+knockdown-round finish conversion; quick-stoppage proxies for KD-to-stoppage time (finishing blow is a
+single strike; follow-up ground strikes in the finishing round, quasi-Poisson); standing TKO without a KD
+per landed standing strike; ground-and-pound stoppage per landed ground strike; overall KO/TKO rate;
+doctor stoppages; DQs; point deductions (observed from MMA Decisions raw vs published round scores).
 
-Walk-forward: hyperparameters tuned on 2019-2023 (train on years before each tuning year), reported on
-2024+ with parameters refit on all data before each test year. Never fit on the test period.
+WALK-FORWARD. Tuning: fit before 2019, score 2019-2023. Held-out: fit before 2024 (frozen), score
+2024-01-01..2025-12-31. Final tables: fit on everything before 2026. Never fit on the test period.
 
 Outputs
-  data/derived/officials.json   machine-readable: league judging params, per-judge and per-referee
-                                tables, sampling pools by region, held-out metrics
-  research/model_officials.md   (written by hand from the printed results)
+  data/derived/officials.json   league judging params (with SEs), per-judge table, region pools and
+                                summaries, per-referee multipliers and pools, deduction model and checks,
+                                held-out metrics
+  research/model_officials.md   method, results, recommendation (written from the printed results)
+  out/officials/                fold pickles and JAX compilation cache (gitignored)
 
 Usage
-  python3 tools/officials.py                 # everything (about 30-60 minutes on 4 cores)
-  python3 tools/officials.py --stage data    # parse and summarize only
-  python3 tools/officials.py --quick         # skip the hyperparameter grid (use the stored choice)
+  python3 tools/officials.py --stage all     # three folds in parallel, then the post stage (hours under load)
+  python3 tools/officials.py --stage fold --test-year 2024 --tag test --eval-years 2024,2025 \
+          --tau-mults 0.5,1,2 --models indep,league,league_home,judges,judges_home
+  python3 tools/officials.py --stage post    # deductions, referees, tables, officials.json from fold pickles
+  python3 tools/officials.py --fetch-wikidata   # refresh data/raw/wikidata_mma_people.csv (nationality)
 
-Needs pandas, numpy, scipy and jax (pip install "jax[cpu]"). Nationality for the home-fighter effect comes
-from Wikidata (CC0): data/raw/wikidata_mma_people.csv, fetched once with --fetch-wikidata.
+Needs pandas, numpy, scipy and jax (pip install "jax[cpu]"). Inputs: data/raw/*.csv,
+data/derived/judgerounds.json, data/raw/wikidata_mma_people.csv and wikidata_mma_altlabels.csv (Wikidata,
+CC0).
 """
 import argparse
 import itertools

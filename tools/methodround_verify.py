@@ -101,7 +101,6 @@ def losses(c, o):
         p_w = pa if w == "A" else 1 - pa
         L["winner"] = -math.log(p_w)
         L["winner_acc"] = 0.5 if abs(pa - 0.5) < 1e-9 else float((pa > 0.5) == (w == "A"))
-        side = c["AKO"].sum() if False else None
         tot = pA if w == "A" else pB
         wc = c[w + "DEC"] if cls == "DEC" else c[w + cls].sum()
         L["method_given_winner"] = -math.log(wc / tot)
@@ -219,12 +218,12 @@ def part1(B=2000):
                 T[name][k].append(v)
         ev.append(f["event"])
         if o[0] in ("A", "B"):
-            pa_S.append(cS["AKO"].sum() + cS["ASUB"].sum() + cS["ADEC"])
+            pA_ = cS["AKO"].sum() + cS["ASUB"].sum() + cS["ADEC"]
+            pB_ = cS["BKO"].sum() + cS["BSUB"].sum() + cS["BDEC"]
+            pa_S.append(pA_ / (pA_ + pB_))
             aw.append(o[0] == "A")
         m = mk.get(f["id"])
         has = bool(m and m.get("method6"))
-        for name in ("S_mk", "SM_mk", "market_mk", "blend_mk", "base_elo_mk"):
-            pass
         if has:
             cm = market_cells(m, R)
             for name, c in (("S", cS), ("SM", cSM), ("market", cm), ("blend", blend(cSM, cm, 0.6)),
@@ -461,10 +460,6 @@ def part3_4(B=2000, quick=False):
         out["swap_refit_S_max_abs_cell_diff"], out["swap_refit_S_metric_max_abs_diff"], time.time() - t0))
     # (c) forking paths: alternatives to settings fixed in code; CV 2020-2023 vs 2024+
     vm = T["year"].isin(M.VALID_YEARS).to_numpy()
-    H = {}
-    for v in M.VALID_YEARS:
-        pass
-
     def haz_oof():
         Hh = np.zeros((len(T), M.NC_))
         for v in M.VALID_YEARS:

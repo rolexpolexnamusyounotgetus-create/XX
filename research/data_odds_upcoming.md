@@ -59,12 +59,13 @@ The 09:50 and 10:02 files were rebuilt from their cached raw pages by the final 
 
 The lines get filled in as the books open each card. Rerun the tool and the new bouts appear.
 
-**Books seen (28):**
+**Books seen (29):**
 
 - Sportsbooks: FanDuel, DraftKings, BetMGM, Caesars, BetRivers, Unibet, Betway, HardRock, bet365,
   Fanatics, theScore, Bovada, MyBookie, BetUS, YouWager, BetAnything, Cloudbet.
 - Sharp/low-margin: Pinnacle, Circa, Bookmaker, BetOnline, Bet105.
-- Exchanges / prediction markets: Polymarket, Kalshi, SXBet, ProphetX, 4casters, 4Cx.
+- Exchanges / prediction markets: Polymarket (international book), PolymarketUS (the Polymarket US app,
+  BFO's "Polymarket" column), Kalshi, SXBet, ProphetX, 4casters, 4Cx.
 
 Every bout with odds has at least one sharp book. 16 of 29 have Pinnacle, and 26 of 29 have an
 exchange.
@@ -80,7 +81,7 @@ are at least 1.25 s apart overall. Every raw response is cached gzip'd under
 | Source | What it gives | robots.txt | Requests/run |
 |---|---|---|---|
 | **fightodds.io** (public GraphQL API the site itself calls, `api.fightodds.io/gql`, with the site's own persisted query texts read from its JS bundle; the 6 MB bundle is fetched once per site deploy and its queries cached) | 24 books per bout incl. Pinnacle, Circa, Bookmaker, BetOnline and 6 exchanges; per book the current line, the **opening line**, best/worst seen; Pinnacle's full timestamped history (`OddsChartQrQuery`) | no rules (site serves its SPA; API host has only Cloudflare content-signal comments, no Disallow) | ~70 (1 event list, 5 event tables, 1 per fight, 2 per fight for history) |
-| **bestfightodds.com** event pages | Moneylines for the US books BFO lists today (FanDuel, Caesars, BetRivers, Betway, Unibet; its DraftKings/BetMGM columns are empty right now) plus Polymarket/Kalshi; **props** (method, inside the distance, goes to decision, rounds totals, round betting) | all allowed except `/cnadm/` | ~9 |
+| **bestfightodds.com** event pages | Moneylines for the US books BFO lists today (FanDuel, Caesars, BetRivers, Betway, Unibet; its DraftKings/BetMGM columns are empty right now) plus Polymarket US (stored as `PolymarketUS`) and Kalshi (BFO's Kalshi prices include Kalshi's taker fee); **props** (method, inside the distance, goes to decision, rounds totals, round betting) | all allowed except `/cnadm/` | ~9 |
 | **actionnetwork.com** `/ufc/odds` (`__NEXT_DATA__`) | Next card only: DK, FanDuel, BetMGM, bet365, Polymarket, AN's own opener and consensus, scheduled start per bout | `/*?*` disallowed, so no date parameter, next card only; `api.actionnetwork.com` disallows everything and is not used | 1 |
 | **covers.com** `/sport/mma/ufc/odds` (oddsshark.com/ufc/odds redirects here) | BetMGM, bet365, DK, FanDuel, Fanatics, BetRivers, Caesars, theScore, HardRock | allowed | 1 |
 | **Wikipedia** (`/wiki/` pages only; `/w/` and `/api/` are disallowed) | Scheduled events and cards (fallback when `cards_upcoming.json` is absent) | allowed for `/wiki/` | 6 |
@@ -118,8 +119,10 @@ are at least 1.25 s apart overall. Every raw response is cached gzip'd under
   price.
 - A book seen on several sites counts once, preferring fightodds > BFO > Action Network > Covers.
   The other copies stay in `other_source_lines`, and `src_disagree` flags a copy more than 3 points
-  off (6 cases today, all timing differences between scrapes).
-- In 20261106-1015: 587 lines were used (fightodds 518, Covers 34, BFO 21, AN 14), 249 duplicate
+  off. There are 2 cases in 20261106-1015, and neither is a timing difference (see the verification log):
+  Ko-Turman BetRivers (fightodds -714/+475, BFO -1115/+650, unchanged over four reads in 40 minutes)
+  and Pavlovich-Pereira HardRock (fightodds -200/+160, Covers -170/+140).
+- In 20261106-1015: 613 lines were used (fightodds 518, BFO 47, Covers 34, AN 14), 223 duplicate
   copies were kept for audit and 80 Covers lines were rejected.
 
 **No-vig probabilities.** Implied probabilities are q_i = 1/d_i, with S = Σq. Per book:
@@ -139,7 +142,7 @@ in):
 | `p_{mult,shin,power}_lmean` / `_median` | same per method; medians as a robustness check |
 | `p_meandec_mult` | mean of the books' decimal odds per side, then multiplicative devig; the estimator behind the historical close in `data/derived/market.json`, so forward and backtest benchmarks are comparable |
 | `p_sharp_shin`, `p_pinnacle_shin` | Pinnacle, Circa, Bookmaker, BetOnline, Bet105 (logit-mean of Shin); Pinnacle alone |
-| `p_exchange_mult` | Polymarket, Kalshi, SXBet, ProphetX, 4casters, 4Cx |
+| `p_exchange_mult` | Polymarket, PolymarketUS, Kalshi, SXBet, ProphetX, 4casters, 4Cx (logit-mean of multiplicative no-vig) |
 | `best`, `best_overround`, `arb` | best price per side over trusted sportsbooks; arb flagged below -0.2% |
 | `sd_books`, `range_books`, `mean_overround` | dispersion and margin |
 
@@ -174,8 +177,9 @@ Summaries built from those prices:
 
 - A bout's start is its segment's `start_utc` from the card file (prelims, main, early_prelims).
   Failing that it is Action Network's scheduled time, then the event lock.
-- A capture is `pre_start` or `post_start` relative to that start.
-- `pre_lock` is set when the capture comes before the event's earliest start.
+- A capture is `pre_start` or `post_start` relative to that start, judged by the latest fetch time of
+  the bout's lines (a run takes about 4 minutes), not the time the run started.
+- `pre_lock` is set when those lines were all fetched before the event's earliest start.
 - Riyadh has no published times yet. Its lock is a conservative regional estimate (12:00 UTC for
   Middle East cards).
 
@@ -197,32 +201,32 @@ P(A) is the probability that the first-named fighter wins.
 
 | Date | A vs B | Books | P(A) consensus (Shin) | BFO ledger: odds, no-vig | Sharp | Exchanges | Open | Pinnacle open (UTC) | P(distance) |
 |---|---|---|---|---|---|---|---|---|---|
-| 11-07 | Waldo Cortes-Acosta vs Johnny Walker | 20 | 0.674 | -235/+185, 0.666 | 0.676 | 0.668 | 0.642 | -201/+170 (11-01 23:50) | 0.225 |
+| 11-07 | Waldo Cortes-Acosta vs Johnny Walker | 20 | 0.674 | -235/+185, 0.666 | 0.676 | 0.667 | 0.642 | -201/+170 (11-01 23:50) | 0.225 |
 | 11-07 | Tatiana Suarez vs Virna Jandiroba | 21 | 0.651 | -205/+165, 0.640 | 0.650 | 0.641 | 0.630 | -168/+143 (11-01 13:20) | 0.715 |
 | 11-07 | Davey Grant vs Elijah Smith | 21 | 0.263 | +243/-316, 0.277 | 0.261 | 0.267 | 0.321 | +187/-223 (11-01 23:50) | 0.428 |
-| 11-07 | Billy Elekana vs Lucas Fernando | 21 | 0.256 | +246/-323, 0.275 | 0.253 | 0.261 | 0.299 | +212/-255 (11-01 13:20) | 0.404 |
+| 11-07 | Billy Elekana vs Lucas Fernando | 21 | 0.256 | +246/-323, 0.275 | 0.253 | 0.259 | 0.299 | +212/-255 (11-01 13:20) | 0.404 |
 | 11-07 | Priscila Cachoeira vs Nina Nikolija Milošević | 21 | 0.188 | +356/-501, 0.208 | 0.184 | 0.189 | 0.206 | +337/-425 (11-01 13:20) | 0.225 |
-| 11-07 | Mitch Raposo vs Marcos Degli | 21 | 0.318 | +188/-237, 0.331 | 0.315 | 0.318 | 0.314 | +199/-238 (11-01 13:20) | 0.460 |
+| 11-07 | Mitch Raposo vs Marcos Degli | 21 | 0.318 | +188/-237, 0.331 | 0.315 | 0.317 | 0.314 | +199/-238 (11-01 13:20) | 0.460 |
 | 11-07 | Keiichiro Nakamura vs Ollie Schmid | 21 | 0.757 | -350/+268, 0.741 | 0.764 | 0.755 | 0.756 | -370/+298 (11-01 13:20) | 0.259 |
 | 11-07 | Gabriel Lourenço vs Thomas Petersen | 20 | 0.391 | +139/-175, 0.397 | 0.387 | 0.387 | 0.394 | +142/-167 (11-01 13:20) | 0.364 |
 | 11-07 | Karine Silva vs Gabriella Fernandes | 21 | 0.672 | -224/+177, 0.657 | 0.675 | 0.670 | 0.609 | -160/+136 (11-01 13:20) | 0.570 |
 | 11-07 | José Mauro Delano vs Murtazali Magomedov | 21 | 0.517 | -119/-103, 0.517 | 0.515 | 0.514 | 0.510 | -119/+102 (11-01 13:20) | 0.418 |
-| 11-07 | Austin Bashi vs Carlos Calderon | 20 | 0.823 | -522/+376, 0.800 | 0.828 | 0.806 | 0.802 | -486/+378 (11-05 15:20) | |
+| 11-07 | Austin Bashi vs Carlos Calderon | 20 | 0.823 | -522/+376, 0.800 | 0.828 | 0.807 | 0.802 | -486/+378 (11-05 15:20) |  |
 | 11-07 | Mantas Kondratavičius vs Andre Petroski | 20 | 0.729 | -312/+241, 0.721 | 0.726 | 0.721 | 0.727 | -288/+238 (11-01 13:20) | 0.221 |
-| 11-07 | Ko Seok-hyeon vs Wellington Turman | 21 | 0.853 | -769/+518, 0.845 | 0.852 | 0.837 | 0.834 | -650/+482 (11-01 13:20) | 0.489 |
-| 11-07 | Jonny Parsons vs José Henrique Souza | 20 | 0.321 | +191/-240, 0.327 | 0.319 | 0.320 | 0.373 | +162/-191 (11-01 13:20) | 0.380 |
+| 11-07 | Ko Seok-hyeon vs Wellington Turman | 21 | 0.853 | -769/+518, 0.845 | 0.852 | 0.836 | 0.834 | -650/+482 (11-01 13:20) | 0.489 |
+| 11-07 | Jonny Parsons vs José Henrique Souza | 20 | 0.321 | +191/-240, 0.327 | 0.319 | 0.319 | 0.373 | +162/-191 (11-01 13:20) | 0.380 |
 | 11-14 | Ciryl Gane vs Josh Hokit | 21 | 0.689 | -259/+203, 0.686 | 0.681 | 0.651 | 0.699 | -245/+205 (09-20 14:21) | 0.343 |
-| 11-14 | Kayla Harrison vs Amanda Nunes | 21 | 0.628 | -193/+156, 0.627 | 0.625 | 0.616 | 0.644 | -210/+177 (09-20 14:21) | 0.374 |
-| 11-14 | Caio Borralho vs Yousri Belgaroui | 16 | 0.588 | -157/+127, 0.581 | 0.585 | 0.586 | 0.561 | | |
-| 11-14 | Uroš Medić vs Kevin Holland | 16 | 0.614 | -173/+138, 0.602 | 0.604 | 0.615 | 0.594 | | |
-| 11-14 | Bilal Hasan vs Luis Gurule | 16 | 0.878 | -923/+574, 0.859 | 0.882 | 0.825 | 0.878 | | |
-| 11-14 | Stephen Thompson vs Charles Radtke | 10 | 0.554 | -129/+104, 0.535 | 0.546 | 0.529 | 0.539 | | |
-| 11-14 | Drew Dober vs Chris Duncan | 8 | 0.403 | +133/-161, 0.410 | 0.408 | 0.412 | 0.419 | | |
-| 11-14 | Jim Miller vs Terrance McKinney | 10 | 0.337 | +172/-222, 0.348 | 0.343 | 0.340 | 0.340 | | |
-| 11-14 | Donte Johnson vs César Almeida | 10 | 0.617 | -184/+150, 0.618 | 0.616 | 0.599 | 0.593 | | |
-| 11-14 | Jared Gordon vs Melquizael Costa | 10 | 0.234 | +300/-412, 0.237 | 0.228 | 0.211 | 0.233 | | |
-| 11-14 | Macy Chiasson vs Beatriz Mesquita | 8 | 0.343 | +172/-222, 0.348 | 0.342 | 0.335 | 0.343 | | |
-| 11-14 | Evan Elder vs Samuel Sanches | 10 | 0.514 | -120/-105, 0.516 | 0.513 | 0.528 | 0.517 | | |
+| 11-14 | Kayla Harrison vs Amanda Nunes | 21 | 0.628 | -193/+156, 0.627 | 0.625 | 0.618 | 0.644 | -210/+177 (09-20 14:21) | 0.374 |
+| 11-14 | Caio Borralho vs Yousri Belgaroui | 16 | 0.588 | -157/+127, 0.581 | 0.585 | 0.585 | 0.561 |  |  |
+| 11-14 | Uroš Medić vs Kevin Holland | 16 | 0.614 | -173/+138, 0.602 | 0.604 | 0.621 | 0.594 |  |  |
+| 11-14 | Bilal Hasan vs Luis Gurule | 16 | 0.878 | -923/+574, 0.859 | 0.882 | 0.834 | 0.878 |  |  |
+| 11-14 | Stephen Thompson vs Charles Radtke | 10 | 0.554 | -129/+104, 0.535 | 0.546 | 0.531 | 0.539 |  |  |
+| 11-14 | Drew Dober vs Chris Duncan | 8 | 0.403 | +133/-161, 0.410 | 0.408 | 0.413 | 0.419 |  |  |
+| 11-14 | Jim Miller vs Terrance McKinney | 10 | 0.337 | +172/-222, 0.348 | 0.343 | 0.335 | 0.340 |  |  |
+| 11-14 | Donte Johnson vs César Almeida | 10 | 0.617 | -184/+150, 0.618 | 0.616 | 0.622 | 0.593 |  |  |
+| 11-14 | Jared Gordon vs Melquizael Costa | 10 | 0.234 | +300/-412, 0.237 | 0.228 | 0.210 | 0.233 |  |  |
+| 11-14 | Macy Chiasson vs Beatriz Mesquita | 8 | 0.343 | +172/-222, 0.348 | 0.342 | 0.345 | 0.343 |  |  |
+| 11-14 | Evan Elder vs Samuel Sanches | 10 | 0.514 | -120/-105, 0.516 | 0.513 | 0.531 | 0.517 |  |  |
 | 11-21 | Jiří Procházka vs Navajo Stirling | 6 | 0.436 | +110/-138, 0.451 | 0.436 | | 0.438 | | |
 | 12-12 | Charles Oliveira vs Diego Lopes | 13 | 0.576 | -156/+123, 0.577 | 0.571 | | 0.585 | | |
 | 12-12 | Sergei Pavlovich vs Alex Pereira | 14 | 0.644 | -203/+160, 0.635 | 0.644 | | 0.614 | | |
@@ -241,11 +245,11 @@ Numbers worth knowing (29 bouts, one capture; read them as descriptive, not as t
     against the historical `market.json` close, and `p_consensus` as the best current estimate.
 - **Sharp books vs the consensus: 0.35 points** on average (max 1.0).
 - **Exchanges vs sportsbooks (multiplicative): 1.0 point.** Exchanges price some favourites lower,
-  e.g. Gane 0.651 vs 0.689 and Hasan 0.825 vs 0.878.
+  e.g. Gane 0.651 vs 0.689 and Hasan 0.834 vs 0.878.
 - **Moves since the open.** The mean absolute move is 1.8 points (max 6.3). 3 of 29 moved more than
-  5 points: Karine Silva 0.609 to 0.672, Grant 0.321 to 0.263, and Parsons 0.373 to 0.321. 76% moved
-  toward the opening favourite.
-- **Method market** (15 bouts, 3-4 retail books, median margin 18% on the 7-way market):
+  5 points: Karine Silva 0.609 to 0.672, Grant 0.321 to 0.263, and Parsons 0.373 to 0.321. 22 of the
+  28 bouts that moved (79%) moved toward the opening favourite.
+- **Method market** (15 bouts; 4 retail books for 11 of them, 3 for 3, 1 for Kayla Harrison-Amanda Nunes... see note; median margin 18% on the 7-way market):
   - Average P(KO) 0.42, P(sub) 0.20, P(decision) 0.38, P(draw) 0.009.
   - Its implied P(A) matches the moneyline consensus within 1.1 points on average.
   - The two P(distance) estimates (two-way prop vs method sum) differ by 1.1 points on average.

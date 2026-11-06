@@ -1712,6 +1712,17 @@ TERM_DOCS = {
     "reach_d": "(reach_X - reach_Y) / sd_reach", "height_d": "(height_X - height_Y) / sd_height",
     "zy_ctrl": "defender's control propensity (z)", "zy_octrl_td": "defender stuck on bottom (z)",
     "zy_kd_pow*": "", "zy_net": "defender's striking differential (z)",
+    "zy_octrl": "defender's time-controlled propensity (z)", "zy_osub_int": "defender's submission exposure (z)",
+    "zy_sh_l": "defender's leg-kick share (z)", "zy_acc": "defender's distance accuracy (z)",
+    "zy_dfn": "defender's distance defense (z)",
+}
+
+RATE_WORDS = {
+    "dist_att": "distance attempts per standing minute", "leg_share": "leg-kick share", "body_share": "body share",
+    "td_att": "takedown attempts per standing minute", "ctrl_per_td": "control time per takedown",
+    "gnp_att": "ground strikes per top-control minute", "ctrl": "control per minute", "kd": "knockdowns per head strike",
+    "sub_att": "submission attempts per minute", "clinch_att": "clinch strikes per minute",
+    "dist_acc": "distance accuracy", "td_acc": "takedown success",
 }
 
 RATE_ENGINE = {
@@ -1783,37 +1794,44 @@ def render_report(J):
          _f(wl["elo_only"]["test"]["log_loss"], 4), n_w, len(surv_w), len(supp_w), ", ".join(supp_w) or "none",
          wl["candidates"]["archetype x archetype matrix"]["test_dll"],
          _f(base["test"]["log_loss"], 4), _f(wl["screened_combined"].get("test", {}).get("log_loss"), 4)))
-    A("- **Inside the fight, matchups are real and measurable.** At the rate level (one row per fighter per fight, "
-      "X attacking Y, exposure-correct baselines that already contain the engine's log-linear / log5 main effects), "
-      "several style terms pass a tune-period screen and then improve 2024+ deviance with fight-level bootstrap "
-      "intervals that exclude zero. The blocks recommended on by default:")
+    A("- **Inside the fight, some matchups are real and measurable.** At the rate level (one row per fighter per "
+      "fight, X attacking Y, exposure-correct baselines that already contain the engine's log-linear / log5 main "
+      "effects), terms and blocks are selected and switched on with 2019-2023 data only (fight-clustered z screen, "
+      "leave-one-year-out CV deviance with a fight bootstrap) and then scored once on 2024+. On by default:")
     for name, j in em["default_on"].items():
-        terms = ", ".join("%s %+.3f/sd%s" % (t["term"], t["coef_per_term_sd"], " (judgment)" if t["tier"] == 3 else "")
-                          for t in j["terms"])
-        A("  - `%s` (%s): %s; 2024+ deviance %+.2f%% (95%% CI of the change %s)%s."
-          % (name, j["desc"], terms, j["test_dev_change_pct"], _f(j["test_dev_ci"], 0),
-             "; a composition check, not applied in the engine (section 9)" if name == "ctrl" else ""))
-    def _cu(model, term):
-        for t in em["default_on"].get(model, {}).get("terms", []):
-            if t["term"] == term:
-                return t["coef_per_unit"]
-        return float("nan")
-    A("  In words: fighters throw about %.1f%% less at distance per sd of the opponent's knockdown power; the longer "
-      "man throws more at distance, kicks the legs less and shoots less; open-stance fights see about %.0f%% fewer "
-      "distance attempts; everyone kicks the legs less and shoots about %.0f%% less per sd of the opponent's "
-      "wrestling, and shoots about %.0f%% less per sd of takedown defense, which also cuts control time per takedown "
-      "by about %.0f%%; kickers get taken down more."
-      % (100 * (1 - math.exp(_cu("dist_att", "zy_kd_pow"))), 100 * (1 - math.exp(_cu("dist_att", "open"))),
-         100 * (1 - math.exp(_cu("td_att", "zy_td_int"))), 100 * (1 - math.exp(_cu("td_att", "zy_td_def"))),
-         100 * (1 - math.exp(_cu("ctrl_per_td", "zy_td_def")))))
+        terms = ", ".join("%s %+.3f/sd" % (t["term"], t["coef_per_term_sd"]) for t in j["terms"])
+        A("  - `%s` (%s): %s; 2019-2023 CV deviance change %+.0f (95%% CI %s); 2024+ deviance %+.2f%% (95%% CI of "
+          "the change %s)%s."
+          % (name, j["desc"], terms, j["cv_dev_change"], _f(j["cv_dev_ci"], 0), j["test_dev_change_pct"],
+             _f(j["test_dev_ci"], 0), "; a composition check, not applied in the engine (section 9)" if name == "ctrl" else ""))
+    if em["optional_off"]:
+        A("  Selected but off by default (the 2019-2023 CV interval crosses zero): " +
+          "; ".join("`%s` (%s; 2024+ %+.2f%%, CI %s)" % (k, ", ".join(t["term"] for t in j["terms"]),
+                                                        j["test_dev_change_pct"], _f(j["test_dev_ci"], 0))
+                    for k, j in em["optional_off"].items()) + ".")
+    words = []
+    for name, j in em["default_on"].items():
+        if name == "ctrl":
+            continue
+        unit = "x" if j["family"] == "poisson" else "odds x"
+        parts = []
+        for t in j["terms"]:
+            if t["term"] in ("open", "x_sp_vs_orth", "y_sw"):
+                parts.append("%s%.2f %s" % (unit, math.exp(t["coef_per_unit"]),
+                                            "in open-stance fights" if t["term"] == "open" else "when " + TERM_DOCS.get(t["term"], t["term"])))
+            else:
+                parts.append("%s%.2f per +1 sd of %s" % (unit, math.exp(t["coef_per_term_sd"]),
+                                                          TERM_DOCS.get(t["term"], t["term"]).replace(" (z)", "")))
+        words.append("%s %s" % (RATE_WORDS.get(name, name), ", ".join(parts)))
+    A("  In words: " + "; ".join(words) + ".")
     v = tr["variants"]
     vd = v.get("default_on", {}).get("elo_plus_impact", {}).get("vs_none", {})
     vc = v.get("tune_screened", {}).get("elo_plus_impact", {}).get("vs_none", {})
-    A("- **Applied mechanistically, they move win probabilities only slightly.** Feeding the modifiers through "
-      "an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes win "
-      "probabilities by a median %.1f points (max %.1f) and moves 2024+ log loss of the Elo + scorecard model by "
-      "%+.4f (CI %s); the clean variant that uses only the tune-period screen moves it by %+.4f (CI %s). Neither is "
-      "significant: the gain is in realistic fight statistics, not in a measurable edge on who wins."
+    A("- **Applied mechanistically, they move win probabilities only slightly.** Feeding the default-on modifiers "
+      "through an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes "
+      "win probabilities by a median %.1f points (max %.1f) and moves 2024+ log loss of the Elo + scorecard model by "
+      "%+.4f (CI %s); every tune-screened matchup term at once moves it by %+.4f (CI %s). Neither is significant: "
+      "the gain is in realistic fight statistics, not in a measurable edge on who wins."
       % (100 * vd.get("median_abs_dp", 0), 100 * vd.get("max_abs_dp", 0), vd.get("test_dll", 0),
          _f(vd.get("ci"), 4), vc.get("test_dll", 0), _f(vc.get("ci"), 4)))
     A("- **Recommendation:** apply styles as rate modifiers inside the engine (section 9, exact equations and values); "
@@ -1846,14 +1864,20 @@ def render_report(J):
     A("- Symmetry: winner models are antisymmetric (every feature is A minus B, no intercept), so the first-named "
       "corner, which wins 56% of the time, cannot leak; rate models have one row per side.")
     A("- Uncertainty: held-out changes carry 95%% intervals from a paired bootstrap over test fights (%d replicates; "
-      "both sides of a fight resampled together in the rate models). 'z (tune)' is the Wald z on 2019-2023 "
-      "(quasi-likelihood dispersion for counts). 'z (test only)' refits on 2024+ as a diagnostic and is never used "
-      "for selection." % m["bootstrap"])
-    A("- Selection rule (fixed before looking at 2024+): a winner-level term is *screened in* if |z (tune)| >= 2 "
-      "(likelihood-ratio p < 0.05 for blocks) and leave-one-year-out CV log loss inside 2019-2023 improves; a "
-      "rate-level term if |z (tune)| >= 3 and CV deviance improves (the stricter bar allows for about 150 rate "
-      "tests). A screened term **survives** if its 2024+ change is negative with the 95% CI below zero, is "
-      "**supported** if the change is negative and the test-only refit has the same sign, else **fails held-out**.")
+      "both sides of a fight resampled together in the rate models). In the rate models 'z (tune)' is the Wald z on "
+      "2019-2023 with a fight-clustered sandwich covariance (the two sides of a fight share pace, duration and the "
+      "finishing sequence); in the winner models it uses the inverse penalised Hessian. 'z (test only)' refits on "
+      "2024+ as a diagnostic and is never used for selection." % m["bootstrap"])
+    A("- Selection rule, all on 2019-2023: a winner-level term is *screened in* if |z (tune)| >= 2 "
+      "(likelihood-ratio p < 0.05 for blocks) and leave-one-year-out CV log loss improves. A rate-level term is "
+      "*screened* if |z (tune)| >= 3 and leave-one-year-out (LOYO) CV deviance improves (the stricter bar allows for "
+      "about 140 rate tests), and **CV-confirmed** if the LOYO out-of-fold deviance change also has a fight-bootstrap "
+      "95% CI below zero. Rate terms are assembled per model by forward addition on LOYO CV, and a block is **on by "
+      "default** when its joint LOYO CV change has a CI below zero. 2024+ is then scored once and labelled "
+      "descriptively (**holds**: CI below zero; **same sign**: negative change and the test-only refit agrees; "
+      "**fails**). Winner-level terms carry the same descriptive 2024+ labels (survives / supported / fails "
+      "held-out); none is recommended. (The first version of this analysis used the 2024+ intervals to give "
+      "verdicts, pick terms and switch blocks on; see the verification log.)")
     sh = m.get("shrinkage_tuning") or {}
     A("- Prior strengths (pseudo-exposure toward the division prior) chosen by leave-one-year-out CV deviance of the "
       "rate models on 2019-2023: " + ", ".join("%s = %g (grid %s)" % (k, v["chosen"], "/".join("%g" % g for g in v["grid"]))
@@ -1965,25 +1989,31 @@ def render_report(J):
                       _f(r["dispersion"], 1), "%.1f%%" % (100 * (1 - r["test_dev_base"] / r["test_dev_null"]))))
     A(_tbl(["Model", "Outcome", "Main effects (per sd)", "Dispersion", "2024+ deviance explained"], rows_))
     A("")
-    A("Screened-in and other notable candidates (coefficient per sd of the term; deviance change on 2024+, sum over "
-      "fight sides; negative = better):")
+    A("Screened and other notable candidates (coefficient per sd of the term; deviance changes summed over fight "
+      "sides, negative = better; the verdict uses 2019-2023 only, the 2024+ columns are reported after the fact):")
     A("")
     rows_ = []
     for name, r in rl.items():
         for c in r["candidates"]:
             if c["screen"] or (c["test_dev_ci"][1] < 0 and abs(c["z_tune"]) >= 2):
                 rows_.append((name, "`%s`" % c["term"], "%+.4f" % c["coef_per_sd"], _f(c["z_tune"], 2),
-                              "%+.1f" % c["cv_dev_change"], "%+.1f (%+.2f%%)" % (c["test_dev_change"], c["test_dev_change_pct"]),
-                              "[%+.1f, %+.1f]" % tuple(c["test_dev_ci"]), _f(c["z_test_only"], 2),
-                              c["verdict"] + ("" if is_matchup(c["term"]) else " (own-style, not a matchup)")))
-    A(_tbl(["Model", "Term", "Coef/sd", "z (tune)", "CV change", "2024+ change", "95% CI", "z (test only)", "Verdict"], rows_))
+                              "%+.1f %s" % (c["cv_dev_change"], "[%+.0f, %+.0f]" % tuple(c.get("cv_dev_ci", [float("nan")] * 2))),
+                              c["verdict"] + ("" if is_matchup(c["term"]) else " (own-style, not a matchup)"),
+                              "%+.1f (%+.2f%%)" % (c["test_dev_change"], c["test_dev_change_pct"]),
+                              "[%+.1f, %+.1f]" % tuple(c["test_dev_ci"]), _f(c["z_test_only"], 2), c.get("heldout", "")))
+    A(_tbl(["Model", "Term", "Coef/sd", "z (tune, clustered)", "LOYO CV change [95% CI]", "Verdict (2019-2023)",
+            "2024+ change", "2024+ 95% CI", "z (test only)", "2024+ result"], rows_))
     A("")
-    A("Everything else (%d candidates, listed in `styles.json`) failed the screen. Null results worth stating: "
-      "no style term changes distance accuracy, takedown success, knockdowns per landed head strike or submission "
-      "attempts beyond the main effects; the log5 / log-linear combination itself shows no interaction "
+    no_block = [k for k in rl if k not in em["default_on"]]
+    A("Everything else (%d candidates, listed in `styles.json`) failed the screen. Null results worth stating: no "
+      "block for %s passes the 2019-2023 CV (a few single terms clear the z screen there, such as the defender's "
+      "volume on knockdowns per head strike or the defender's time on bottom on submission attempts, but their CV "
+      "gain is not distinguishable from zero); the log5 / log-linear combination itself shows no interaction "
       "(`zx_acc*zy_dfn`, `zx_td_acc*zy_td_def`, `zx_kd_pow*zy_chin`, `zx_d_rate*zy_od_rate` all near zero), so "
-      "the engine's multiplicative composition is adequate. Southpaw vs orthodox does not change accuracy or "
-      "knockdowns." % sum(1 for r in rl.values() for c in r["candidates"] if not c["screen"]))
+      "the engine's multiplicative form is adequate (its exponents are another matter, section 6). Southpaw vs "
+      "orthodox does not change accuracy or knockdowns."
+      % (sum(1 for r in rl.values() for c in r["candidates"] if not c["screen"]),
+         ", ".join(RATE_WORDS.get(k, k) for k in no_block)))
     A("")
     # ------------------------------------------------------------------ modifiers
     A("## 6. The modifier set and its size")

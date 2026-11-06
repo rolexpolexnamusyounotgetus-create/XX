@@ -5,7 +5,9 @@ Fresh code: it does NOT import tools/durability.py or tools/build_db.py. It pars
 identifies fighters by their ufcstats name (no people resolution), recomputes every pre-fight feature, the
 trailing league level, the walk-forward Gamma chin / power effects, and fits the Poisson models with statsmodels.
 It then scores the held-out ladder on 2024-01-01 onward (fit 2008-2023) and reports fight-clustered and
-fighter-multiway-clustered SEs, a level-neutral (rescaled) comparison, and the chin-exponent claim.
+fighter-multiway-clustered SEs, a level-neutral comparison (each half-year rescaled to its observed total; a
+diagnostic that uses outcomes, never a model), and the chin-exponent claim. "F" is the analyst's original
+36-parameter model; "Fr" is the reduced model chosen by the one-SE elimination on 2019-2023.
 
     python3 tools/durability_verify.py            # about 1 minute; prints a table, writes data/derived/durability_verify.json
 """
@@ -226,6 +228,8 @@ def add(X):
 COV = ["d_agec", "d_ageh", "d_age_na", "a_agec", "a_ageh", "d_yrs", "d_lognp", "d_oh100", "d_okd_r", "d_okd_o",
        "d_kol_r", "d_kol_o", "d_debut", "d_lay_s", "d_lay_m", "d_lay_l", "d_lastko", "d_koshort",
        "a_yrs", "a_lognp", "a_debut"]
+# the reduced covariate set chosen by the one-SE elimination on 2019-2023 in tools/durability.py (verification run)
+COV_R = ["d_agec", "d_ageh", "d_age_na", "d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o", "a_agec", "a_ageh"]
 
 
 def walk(X, base, use_c=True, use_p=True, ac=ALPHA_C, ap=ALPHA_P):
@@ -255,7 +259,7 @@ def walk(X, base, use_c=True, use_p=True, ac=ALPHA_C, ap=ALPHA_P):
     return chin, pw
 
 
-def fit(X, cols, fm, eb=False, use_c=True, use_p=True, level=True, extra=None, iters=5):
+def fit(X, cols, fm, eb=False, use_c=True, use_p=True, level=True, extra=None, iters=5, ap=ALPHA_P):
     Z = sm.add_constant(X[cols].to_numpy(float), has_constant="add") if cols else np.ones((len(X), 1))
     y = np.nan_to_num(X.y.to_numpy(float))
     E = np.where(X.use, X.E.fillna(1.0), 1.0)
@@ -267,7 +271,7 @@ def fit(X, cols, fm, eb=False, use_c=True, use_p=True, level=True, extra=None, i
         if not eb:
             break
         base = np.exp(Z @ m.params + off0) * X.use.to_numpy()
-        chin, pw = walk(X, base, use_c, use_p)
+        chin, pw = walk(X, base, use_c, use_p, ap=ap)
         fe = np.log(chin) + np.log(pw)
     if eb:
         m = sm.GLM(y[fm], Z[fm], family=sm.families.Poisson(), offset=(off0 + fe)[fm]).fit()
@@ -326,26 +330,33 @@ def main():
         "E3": fit(X, ctx, fm, eb=True),
         "F": fit(X, ctx + COV, fm, eb=True),
         "Fnokd": fit(X, ctx + [c for c in COV if c not in ("d_okd_r", "d_okd_o")], fm, eb=True),
+        "Fr": fit(X, ctx + COV_R, fm, eb=True, ap=2.5),
     }
     y = np.nan_to_num(X.y.to_numpy(float))
     D = {k: dev(y, v["mu"]) for k, v in models.items()}
     out = {"rows_test": int(tm.sum()), "kd_test": int(y[tm].sum()), "fights_test": int(X.fid[tm].nunique()), "ladder": [], "pairs": []}
+    per = (pd.to_datetime(X.date).dt.year.astype(str) + np.where(pd.to_datetime(X.date).dt.month <= 6, "a", "b")).to_numpy()
+
+    def resc(mu):
+        """Level-neutral diagnostic (uses outcomes): each half-year's predictions scaled to its observed total."""
+        out_ = mu.copy()
+        for p_ in np.unique(per[tm]):
+            mm = tm & (per == p_)
+            out_[mm] = mu[mm] * y[mm].sum() / mu[mm].sum()
+        return out_
+
     for k, v in models.items():
         mu = v["mu"]
-        s = y[tm].sum() / mu[tm].sum()
-        dres = dev(y, mu * s)          # level-neutral: rescaled to the observed test total (diagnostic only)
+        dres = dev(y, resc(mu))
         out["ladder"].append({"model": k, "dev_test": round(float(D[k][tm].sum()), 2), "kd_exp": round(float(mu[tm].sum()), 1),
                               "dev_test_rescaled": round(float(dres[tm].sum()), 2)})
         print("  %-6s dev %.1f  exp %.1f  rescaled dev %.1f" % (k, D[k][tm].sum(), mu[tm].sum(), dres[tm].sum()))
     # paired comparisons
-    resc = {}
-    for k, v in models.items():
-        s = y[tm].sum() / v["mu"][tm].sum()
-        resc[k] = dev(y, v["mu"] * s)
+    R = {k: dev(y, resc(v["mu"])) for k, v in models.items()}
     for a, b in (("F", "M0L"), ("F", "V3"), ("F", "E3"), ("F", "M3"), ("E3", "V3"), ("E3", "M0L"), ("M3", "M1"),
-                 ("Fnokd", "F")):
+                 ("Fnokd", "F"), ("Fr", "M0L"), ("Fr", "V3"), ("Fr", "E3"), ("Fr", "F")):
         d = D[a] - D[b]
-        dr = resc[a] - resc[b]
+        dr = R[a] - R[b]
         row = {"model": a, "vs": b, "diff": round(float(d[tm].sum()), 2), "se_fight": round(se_fight(X, tm, d), 2),
                "se_fighter_multiway": round(se_fighter(X, tm, d), 2), "diff_rescaled": round(float(dr[tm].sum()), 2),
                "se_rescaled_fighter": round(se_fighter(X, tm, dr), 2)}

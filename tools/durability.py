@@ -413,8 +413,8 @@ def eb_walk(df, base_mu, alpha_c, alpha_p, hl_c=None, hl_p=None, use_c=True, use
 OPT_ORDER = ["exp_d", "okd", "kol", "lay3", "lastko", "age_a", "aexp"]
 ALL_BLOCKS = list(OPT_ORDER)
 # the spec chosen by tune() on 2019-2023 (Nov 6, 2026 verification run); --quick uses it without re-tuning
-DEFAULT_SPEC = {"level": 730, "knots": [30.0], "win": 365, "alpha_c": 3.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None,
-                "blocks": ["okd", "kol"]}
+DEFAULT_SPEC = {"level": 730, "knots": [30.0], "win": 365, "alpha_c": 3.0, "alpha_p": 2.5, "hl_c": None, "hl_p": None,
+                "blocks": ["okd", "kol", "age_a"]}
 ANALYST_SPEC = {"level": 730, "knots": [30.0], "win": 365, "alpha_c": 3.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None,
                 "blocks": list(ALL_BLOCKS)}      # the original 36-parameter model, kept as a comparison row
 
@@ -573,8 +573,28 @@ def tune(df, verbose=True):
         best["blocks"] = [k for k in best["blocks"] if k != c["block"]]
     stage("alpha_c", [2.0, 3.0, 4.0, 6.0, 10.0])
     stage("alpha_p", [2.0, 2.5, 3.0, 4.0, 6.0])
-    stage("hl_c", [None, 1825, 2920])
-    stage("hl_p", [None, 1825, 2920])
+
+    def stage_simple(key, values, simplest):
+        """Like stage(), but keep the simplest value unless another beats it by more than one fight-clustered SE."""
+        nonlocal best
+        s0 = dict(best)
+        s0[key] = simplest
+        d0, dv0, Xs, em = score_rows(s0)
+        win_v, win_z = simplest, 1.0
+        for v in values:
+            if v == simplest:
+                continue
+            s = dict(best)
+            s[key] = v
+            d1, dv1, _, _ = score_rows(s)
+            fd = fight_diff(Xs, em, dv0[em], dv1[em])          # positive = v is better
+            z = fd["total"] / max(fd["se_total"], 1e-9)
+            if z > win_z:
+                win_v, win_z = v, z
+        best[key] = win_v
+
+    stage_simple("hl_c", [None, 1825, 2920], None)       # decay adds engine state: needs a 1-SE gain
+    stage_simple("hl_p", [None, 1825, 2920], None)
     # validation diagnostics for the chosen spec: calibration slopes of the fighter effects on 2019-2023
     X = prepare(df, best)
     r = fit_kd(X, final_cols(best, X), window(X, *TUNE_FIT), best)
