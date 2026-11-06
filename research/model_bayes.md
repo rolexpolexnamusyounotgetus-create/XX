@@ -336,3 +336,70 @@ The yearly fits warm-start from the previous year's hyperparameters, so they mus
 - The 2024-25 underconfidence seen in every model (ratings note) shows here too (slope 1.32); not corrected.
 - No JS evaluator: the model needs the EP state of every fighter, so the page would read the roster from bayes.json
   rather than run the model.
+
+## Verification log
+
+Adversarial verification, Nov 6, 2026, 11:15 pm - 11:45 pm UTC. Tool: `tools/bayes_verify.py`. Output:
+`data/derived/bayes_verify.json`. I did not use the builder's scorer, bootstrap or stack code. Labels, dates and
+cards come from the raw ufcstats CSVs, and rows dated 2026-01-01 or later (480) are dropped as they are parsed. The
+look-ahead and swap stages do call the builder's model code, but on data I corrupted or swapped myself.
+
+**Verdict: the numbers are real and walk-forward clean. Adopt: no.** No production stack (stacks, forward package,
+predict) gains from bayes:
+- **Page no-line stack:** bayes passes the CV rule only on the point estimate (-0.0010, CI [-0.0032, +0.0012]).
+  The pre-registered 2024-25 confirmation is flat: +0.0007 [-0.0024, +0.0037].
+- **Every other production stack:** rejected by CV.
+- **Decision rule:** V6_V10_PLAN 6.3 keeps a component only on a 2024-25 CI that excludes 0. No bayes stack has one.
+- **Ratings-only fallback:** it stays ratings.py's `stack`.
+- **Roster export:** available as an optional simulator input, but not adopted. No gate covers it, and its strike
+  rates trail mlrates.
+
+| check | result |
+|---|---|
+| Protocol order | Pre-look export 55c74e5 at 11:07:03 pm. It holds the CV choice (main / month / variance-aware) and all nine gate decisions, identical to the final file, with `confirm` null. `confirm` ran at 11:08:02 pm with `forced_rerun` false. 2024-25 predictions were stored but never scored before that (the logs of `fit` and `predict` carry no 2024-25 score). The stack gate read only 2019-2023 rows: it ran at 11:04, before the month static predictions existed (11:06). |
+| 2026 data | None in data.pkl (last fight 2025-12-13), bayes.json (latest dates are 2025-12-13 and the 2026-01-01 as-of date), the yearly fits or the roster. Nothing was collected for the vault. |
+| Look-ahead, predictions | Every fight from 2022-06-15 on scrambled (winner flipped, round encoder flipped, method changed, all counts replaced by noise), walk-forward baselines rebuilt, OOF 2022 rerun with monthly EP + filter. The 231 pre-cut predictions and their 23 cells are bit-identical (max diff 0.0). The 280 post-cut predictions move by up to 0.35, the positive control. The unperturbed rerun matches the builder's cache exactly. |
+| Look-ahead, hyperparameters | The 2021 empirical-Bayes fit, warm-started from the cached 2020 fit, on data scrambled from 2021-01-01, equals the cached `fit_main_2021` on every parameter (max diff 0.0). The yearly refit sees only data before Jan 1. |
+| Other leak paths read in code | The round-encoder model is fit on pre-2019 cards. The pre-UFC snapshots are strict walk-forward. L_* baselines, method offsets, round shapes and draw share are pre-fight values. Win and method GLMs use years < Y. EP chains stop at the cut day, and the fights are sorted by day (checked). |
+| Labels and joins | 2,864 backtest fights; 55 non-decisive; 1,955 decisive in 2019-23 and 854 in 2024-25. No backtest fight lacks a bayes, WHR or ML v2 prediction, so no bout failed to match. Raw-CSV labels disagree with bayes's data in 0 fights. The close covers 1,955 and 845 fights. |
+| Scores (own bootstrap, 2,000 card resamples) | All reproduced: 0.64389 [0.6305, 0.6577] (2019-23) and 0.6153 [0.5975, 0.6327] (2024-25). Paired, bayes minus: whr_rounds -0.00078 [-0.0071, +0.0055]; glicko2 -0.0060 [-0.0149, +0.0033]; ML v2 logistic +0.0083 [-0.0000, +0.0170]; close +0.0207 [+0.0100, +0.0314]. On 2024-25: ML v2 logistic +0.0267 [+0.0145, +0.0385]; close +0.0270 [+0.0087, +0.0456]; ratings stack +0.0041 [-0.0052, +0.0130]. Market rating: bayes -0.0102 [-0.0221, +0.0014] on 2019-23. |
+| Ablations | Monthly EP vs filter: -0.00486 [-0.0074, -0.0023] (confirmed). Month vs quarter: -0.000503, which passes the 0.0005 rule by 3e-6. Stat likelihood at the same schedule: -0.0065 [-0.0120, -0.0011] quarterly, -0.0061 yearly, -0.0048 n.s. with the filter alone; the note's -0.0070 mixed schedules (corrected above). Variance-aware vs plug-in link: -0.0024 [-0.0056, +0.0007]. |
+| Corner order | No intercept anywhere. Swap test on 2023 with the chosen monthly schedule and 2023 hyperparameters (the builder tested 2019): max \|P(A,B) + P(B,A) - 1\| = 8e-15, cells mirror to 4e-15. Free-intercept check, y ~ a + b logit(p) unmirrored on 2019-23: a = 0.210 (se 0.048) for bayes, 0.193 for WHR, 0.202 for ML v2 logistic. bayes leaves as much of the listing-order signal (A wins 57.1%) unused as the other symmetric models, so it does not exploit corner order. |
+| Stack gate (own mirrored non-negative stacker; same partners, h grid, 0.0005 rule) | All nine decisions reproduced, gains within 1e-5. Page no-line: -0.00101 [-0.0032, +0.0012], enters, weight 0.286. Ratings-only: -0.00244 and -0.00223, enter. Close: weight 0. Open stacks: +0.00008 and -0.00014, rejected. ml2's chosen no-line stack: -0.00030, rejected. 2024-25 (recomputed, not selected on): page no-line +0.0007 [-0.0024, +0.0037]; ratings-only -0.0045 [-0.0098, +0.0008] and -0.0042 [-0.0093, +0.0008]. |
+| Method x round (own outcome cells from the raw METHOD/ROUND columns) | Reproduced. method3 bayes minus S: +0.0108 [+0.0031, +0.0194] on 2019-23 and -0.0161 [-0.0290, -0.0045] on 2024-25. Round given a finish: +0.0090 and +0.0146, worse in both windows. |
+| Uncertainty terciles | Reproduced: accuracy 61.4 / 62.7 / 63.0% (2019-23) and 62.1 / 67.6 / 71.2% (2024-25). Newcomer-bout shares 50 / 38 / 20% and 74 / 14 / 3%. |
+| EP damping claim | The "test year" is nostats / yearly EP / 2019. Rerun: 0.66199 / 0.66201 / 0.66201 at damping 0.5 / 0.8 / 1.0, which confirms the claim. |
+| Export reproducibility | `bayes.py export` rerun: every prediction, the roster (1,285 fighters) and the matchup (0.7549) are identical. The only changes are `built` and the new field below. `tests/test_bayes.py` passes. |
+
+Fixes:
+- **Plugin metadata (`tools/blindtest_plugins/bayes.py`, `tools/bayes.py` export):** the plugin served `p_roll`
+  for 2025 but recorded `fit_through` 2023-12-31, the static fit's cutoff. `p_roll` comes from the fit through
+  2024-12-31. The export now writes `fit_through_roll`, and the plugin records the cutoff of the prediction it
+  serves. Values were never affected, and the harness's fit_through guard passes either way.
+- **Known inconsistency, not changed:** the plugin's 7-bin cells for 2025 still come from the static fit while P
+  comes from `p_roll`. Both are walk-forward clean.
+- **Report corrections, marked in place:** "best rating system by a hair" (bottom line 1); "helps consistently
+  ... CI just touching 0" (bottom line 2); stat-likelihood -0.0070 corrected to -0.0065 at the same schedule
+  (bottom line 3); the margin of the monthly-schedule step; the provenance of the damping test.
+
+Not re-derived independently:
+- The stat-line deviances against mlrates (the bayes side of that comparison is not in bayes.json). They are negative
+  or level results and support no adoption.
+- The roster's per-minute rates.
+
+Other notes:
+- **Post-look idea:** the builder's suggestion to drop the pace/form variance from the strike mean correction was
+  measured after the look. Any version that adopts it must pass the pre-2024 gate, and 2024-25 cannot serve as its
+  confirmation.
+- **Hyperparameter stability:** the result-side hyperparameters wander from year to year (qy_r 0.061 -> 0.137 ->
+  0.308 -> 0.205 -> 0.137 -> 0.061 across the 2019-2026 fits). That fits the builder's finding that the posterior
+  sd of r tracks career length. It is a modelling weakness, not a leak.
+
+Reproduce (from the project root, nice -n 5):
+
+```
+python3 tools/bayes_verify.py all        # score (+ method, ablations) and stack gate, ~1 min
+python3 tools/bayes_verify.py lookahead  # perturbation tests, ~3 min
+python3 tools/bayes_verify.py swap       # 2023 corner swap, ~2.5 min
+python3 tools/bayes_verify.py damping    # EP damping claim, ~30 s
+```
