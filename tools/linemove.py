@@ -1337,6 +1337,264 @@ def stage_valid(a):
 STAGES["valid"] = stage_valid
 
 
+# ====================================================================== stage: addendum (pre-2024 CV, second run)
+# The first run was stopped by a container restart after `valid`. This stage adds, on pre-2024 data only:
+#  (a) the forward ledger's incumbent AS RUN (fwd-4.1: open-trained weights fed the MULTIPLICATIVE de-vig of the
+#      consensus line, data/predictions/README.md) against the consensus stack (fed the power de-vig, market.py's
+#      convention for mean odds);
+#  (b) how much of the market's open -> close log-loss gain the model already knows (share recovered by the
+#      open-trained stack), and the consensus stack fed point j against the raw close;
+#  (c) per-book closes (seven US books, 2021+) against the consensus close (descriptive; no sharp book is listed);
+#  (d) production weights (2019-2025, ml2's production procedure: OOF 2019-2023 + monthly-rolling 2024-2025 ML v2
+#      logistic; deployment, never scored) and test vectors.
+def snaps_E(E, kind):
+    tr = load_traj()["D"].set_index("fid")
+    out = np.full((len(E), NPTS), np.nan)
+    for i, f in enumerate(E["fid"]):
+        if f in tr.index:
+            v = tr.at[f, "snap_" + kind]
+            if isinstance(v, list):
+                out[i] = [np.nan if x is None else x for x in v]
+    return out
+
+
+def oof_trained(ZS_fit, Zml, y, yrs, rows, js, Zfeed, h=None, years=CV_YEARS):
+    """Forward-chained OOF (fit 2019..Y-1 on the pooled training points js of ZS_fit, predict year Y from Zfeed =
+    [line, ml] columns)."""
+    pr = np.full(len(y), np.nan)
+    for Y in years:
+        b = pooled_fit(ZS_fit, Zml, y, yrs, rows, js, Y - 1, h)
+        te = rows & (yrs == Y)
+        pr[te] = sg(Zfeed[te] @ b)
+    return pr
+
+
+def share_recovered(l_open, l_model, l_close, g, nboot):
+    bs = ml2.boot(g, [l_open, l_model, l_close], nboot, 7)
+    r = (bs[:, 0] - bs[:, 1]) / (bs[:, 0] - bs[:, 2])
+    pt = (l_open.mean() - l_model.mean()) / (l_open.mean() - l_close.mean())
+    return {"n": int(len(l_open)), "ll_open_raw": round(float(l_open.mean()), 5), "ll_model": round(float(l_model.mean()), 5),
+            "ll_close_raw": round(float(l_close.mean()), 5), "share": round(float(pt), 3),
+            "share_ci": [round(float(np.percentile(r, 2.5)), 3), round(float(np.percentile(r, 97.5)), 3)]}
+
+
+def per_book(E, rows, y, g, nboot):
+    mm = E["market_mult"].to_numpy(float)
+    books = sorted({k for b in E["books_p"] if isinstance(b, dict) for k in b})
+    out = {}
+    for bk in books:
+        pb = np.array([b.get(bk, np.nan) if isinstance(b, dict) else np.nan for b in E["books_p"]], float)
+        m = rows & ~np.isnan(pb) & ~np.isnan(mm)
+        if m.sum() < 100:
+            continue
+        out[bk] = ml2.compare(np.clip(pb[m], 1e-4, 1 - 1e-4), mm[m], y[m], g[m], nboot)
+    pmean = np.array([np.mean(list(b.values())) if isinstance(b, dict) and len(b) >= 3 else np.nan for b in E["books_p"]])
+    m = rows & ~np.isnan(pmean) & ~np.isnan(mm)
+    out["mean of the US books (>= 3 books)"] = ml2.compare(pmean[m], mm[m], y[m], g[m], nboot)
+    return out
+
+
+def stage_addendum(a):
+    E, P, tm = stack_table()
+    Pm = snaps_E(E, "mult")
+    y = E["y"].to_numpy(float)
+    yrs = E["year"].to_numpy()
+    full = E["full"].to_numpy(bool)
+    g = cv_groups(E)
+    cvr = full & np.isin(yrs, CV_YEARS)
+    ZS = np.column_stack([zcol(P[:, j]) for j in range(NPTS)])        # power (point 0 multiplicative)
+    ZM = np.column_stack([zcol(Pm[:, j]) for j in range(NPTS)])       # multiplicative at every point
+    Zml = zcol(E["ml2lr_static"])
+    BY = pickle.load(open(os.path.join(CACHE, "beyond.pkl"), "rb"))["R"]
+    cset = BY["consensus_stack"]["chosen_set"]
+    cjs = {"S8": [8], "S678": [6, 7, 8], "S4-8": [4, 5, 6, 7, 8], "S1-9": list(range(1, NPTS))}[cset]
+    R = {"consensus_set": cset}
+    fed = list(range(4, NPTS))
+    # (a) incumbent as run: open-trained (point 0, multiplicative) fed the multiplicative consensus
+    pc = {j: oof_trained(ZS, Zml, y, yrs, full, cjs, np.column_stack([ZS[:, j], Zml])) for j in range(NPTS)}
+    pim = {j: oof_trained(ZS, Zml, y, yrs, full, [0], np.column_stack([ZM[:, j], Zml])) for j in range(NPTS)}
+    pip = {j: oof_trained(ZS, Zml, y, yrs, full, [0], np.column_stack([ZS[:, j], Zml])) for j in range(NPTS)}
+    inc = {}
+    cat = lambda d: np.concatenate([d[j][cvr] for j in fed])
+    yy, gg = np.tile(y[cvr], len(fed)), np.tile(g[cvr], len(fed))
+    inc["consensus minus open-trained fed MULT (fwd-4.1 as run), pooled fed 4-9"] = ml2.compare(cat(pc), cat(pim), yy, gg, a.boot)
+    inc["open-trained fed MULT minus open-trained fed POWER, pooled fed 4-9"] = ml2.compare(cat(pim), cat(pip), yy, gg, a.boot)
+    for j in fed:
+        inc["consensus minus open-trained fed MULT, fed %d" % j] = ml2.compare(pc[j][cvr], pim[j][cvr], y[cvr], g[cvr], a.boot)
+    R["incumbent_as_run"] = inc
+    for k, v in inc.items():
+        log("CV %-70s a %.5f b %.5f %+.5f %s" % (k, v["a"], v["b"], v["diff"], v["diff_ci"]))
+    # (b) share of the open -> close gain the model already knows; consensus stack at j vs the raw close
+    close = E["market"].to_numpy(float)
+    lo, lc = ml2.ll_vec(P[cvr, 0], y[cvr]), ml2.ll_vec(close[cvr], y[cvr])
+    sh = {"open-trained stack (opener + ML v2 logistic)": share_recovered(lo, ml2.ll_vec(pip[0][cvr], y[cvr]), lc, g[cvr], a.boot),
+          "ML v2 logistic alone": share_recovered(lo, ml2.ll_vec(sg(Zml[cvr]), y[cvr]), lc, g[cvr], a.boot)}
+    for j in (1, 4, 8):
+        sh["raw consensus point %d" % j] = share_recovered(lo, ml2.ll_vec(P[cvr, j], y[cvr]), lc, g[cvr], a.boot)
+        sh["consensus stack fed point %d" % j] = share_recovered(lo, ml2.ll_vec(pc[j][cvr], y[cvr]), lc, g[cvr], a.boot)
+    R["share_of_open_to_close_gain"] = sh
+    vs_close = {}
+    for j in (0, 1, 4, 6, 8, 9):
+        src = pip[0] if j == 0 else pc[j]
+        vs_close["%s fed point %d minus the close" % ("open-trained" if j == 0 else "consensus", j)] = ml2.compare(
+            src[cvr], close[cvr], y[cvr], g[cvr], a.boot)
+    R["stack_minus_close"] = vs_close
+    for k, v in list(sh.items()) + list(vs_close.items()):
+        log("CV %-50s %s" % (k, {kk: v[kk] for kk in v if kk in ("share", "share_ci", "diff", "diff_ci", "a", "b")}))
+    # (c) per-book closes vs the consensus (multiplicative both), 2021-2023
+    rb = full & (yrs >= 2021) & (yrs <= 2023)
+    R["per_book_2021_2023"] = per_book(E, rb, y, g, a.boot)
+    for k, v in R["per_book_2021_2023"].items():
+        log("book %-36s n %4d ll %.5f vs consensus %.5f %+.5f %s" % (k, v["n"], v["a"], v["b"], v["diff"], v["diff_ci"]))
+    # (d) production weights (deployment: fit 2019-2025 like ml2's page stacks; never scored) + the <= 2023 weights
+    Zprod = np.where(yrs >= 2024, zcol(E["ml2lr_roll"]), Zml)
+    W = {}
+    for name, js, Zl in (("open_trained", [0], ZS), ("consensus", cjs, ZS), ("close_trained", [9], ZS)):
+        W[name] = {"training_points": js, "inputs": ["line", "ml2lr"],
+                   "line_devig": "multiplicative (single-book opener)" if js == [0] else "power de-vig of BFO mean decimal odds",
+                   "weights_fit_2019_2023": np.round(pooled_fit(Zl, Zml, y, yrs, full, js, 2023), 6).tolist(),
+                   "weights_production_2019_2025": np.round(pooled_fit(Zl, Zprod, y, yrs, full, js, 2025), 6).tolist(),
+                   "recency_half_life_years": None, "pclip": PCLIP, "intercept": False}
+        log("weights %-14s <=2023 %s production %s" % (name, W[name]["weights_fit_2019_2023"], W[name]["weights_production_2019_2025"]))
+    R["weights"] = W
+    # test vectors (corner swap exact by construction: no intercept, odd in both inputs)
+    vec = []
+    for pl, pm_ in ((0.5, 0.5), (0.62, 0.55), (0.8, 0.6), (0.3, 0.45), (0.95, 0.9), (0.05, 0.2), (0.71, 0.33), (0.004, 0.999)):
+        zl, zm = zcol([pl])[0], zcol([pm_])[0]
+        row = {"line": pl, "ml2lr": pm_}
+        for name in W:
+            for k_ in ("weights_fit_2019_2023", "weights_production_2019_2025"):
+                b = np.array(W[name][k_])
+                p = float(sg(b[0] * zl + b[1] * zm))
+                ps = float(sg(b[0] * -zl + b[1] * -zm))
+                assert abs(p + ps - 1) < 1e-12
+                row["%s|%s" % (name, k_)] = p
+        vec.append(row)
+    R["test_vectors"] = vec
+    pickle.dump({"R": R, "pc": pc, "pim": pim, "pip": pip}, open(os.path.join(CACHE, "addendum.pkl"), "wb"))
+    wjson(os.path.join(CACHE, "addendum.json"), R)
+
+
+STAGES["addendum"] = stage_addendum
+
+
+PREREG_ADDENDUM = {
+    "written": "2026-11-06 ~22:36 UTC by the second run, after the pre-2024 `addendum` stage and BEFORE this run read "
+               "any 2024-2025 number: out/linemove_cache/valid.json (written 22:24 UTC by the first run under PREREG) "
+               "has not been opened by this run; committed to git before `valid_addendum` runs",
+    "why": "the forward ledger's incumbent (fwd-4.1 ml2_stack_open) feeds the MULTIPLICATIVE de-vig of the consensus "
+           "line to open-trained weights; PREREG's primary fed both stacks the power de-vig. The as-run incumbent is "
+           "the comparison the routing decision needs",
+    "secondaries": [
+        "consensus stack (S4-8, fit 2019-2023) minus fwd-4.1 as run (open-trained, fit 2019-2023, fed the "
+        "multiplicative de-vig of BFO mean odds at points 4..9), pooled fed 4-9 and per point; also with January "
+        "refits (ML v2 monthly-rolling logistic). CV 2021-2023: -0.00152 [-0.0035, +0.0005]",
+        "share of the opener -> close log-loss gain recovered by the open-trained stack (opener + ML v2 logistic); "
+        "CV 2021-2023: 0.716 [0.283, 1.755] (descriptive)",
+        "consensus stack fed point j minus the close (market.json power close), j = 1, 4, 8, 9; CV 2021-2023 "
+        "-0.0016 / -0.0022 / -0.0032 / -0.0022, all CIs include 0 (descriptive)",
+        "per-book closes vs the consensus close (multiplicative both), seven US books (descriptive)",
+    ],
+    "routing_recommendation_fixed_before_the_look": {
+        "single-book opener (BFO's first price)": "open-trained stack, multiplicative de-vig (unchanged)",
+        "consensus line (mean over books) captured at any time before the lock": "consensus stack, power de-vig "
+            "(replaces fwd-4.1's open-trained weights fed the multiplicative consensus)",
+        "true closing line (backtests, results pages)": "close-trained stack, power de-vig (unchanged; the consensus "
+            "stack ties it on the close in CV, -0.00003)",
+        "contingency": "if the as-run secondary (static, pooled 4-9) has a CI entirely above 0 on 2024-2025, the "
+                       "recommendation reverts to fwd-4.1's routing; otherwise it stands as a CV-chosen change, "
+                       "confirmed only if the CI upper bound is below 0",
+    },
+}
+
+
+def stage_prereg2(a):
+    doc = json.load(open(OUT_JSON)) if os.path.exists(OUT_JSON) else {}
+    doc["prereg_addendum"] = PREREG_ADDENDUM
+    wjson(OUT_JSON, doc)
+    log("addendum pre-registration written to %s" % OUT_JSON)
+
+
+STAGES["prereg2"] = stage_prereg2
+
+
+def stage_valid_addendum(a):
+    """The PREREG_ADDENDUM secondaries on 2024-01-01..2025-12-31 (scored once, after the pre-registration commit)."""
+    E, P, tm = stack_table()
+    Pm = snaps_E(E, "mult")
+    y = E["y"].to_numpy(float)
+    yrs = E["year"].to_numpy()
+    full = E["full"].to_numpy(bool)
+    g = cv_groups(E)
+    va = full & (yrs >= 2024) & (yrs <= 2025)
+    ZS = np.column_stack([zcol(P[:, j]) for j in range(NPTS)])
+    ZM = np.column_stack([zcol(Pm[:, j]) for j in range(NPTS)])
+    Zst = zcol(E["ml2lr_static"])
+    Zr = np.where(yrs >= 2024, zcol(E["ml2lr_roll"]), Zst)
+    AD = pickle.load(open(os.path.join(CACHE, "addendum.pkl"), "rb"))["R"]
+    cjs = {"S8": [8], "S678": [6, 7, 8], "S4-8": [4, 5, 6, 7, 8], "S1-9": list(range(1, NPTS))}[AD["consensus_set"]]
+    fed = list(range(4, NPTS))
+    V = {"prereg_addendum": PREREG_ADDENDUM, "n": int(va.sum()), "cards": int(len(set(g[va])))}
+
+    def preds(js, Zline_feed, scheme, j):
+        out = np.full(len(y), np.nan)
+        if scheme == "static":
+            b = pooled_fit(ZS, Zst, y, yrs, full, js, 2023)
+            out[va] = sg(np.column_stack([Zline_feed[va, j], Zst[va]]) @ b)
+            return out
+        for Y in (2024, 2025):
+            b = pooled_fit(ZS, Zr, y, yrs, full, js, Y - 1)
+            te = va & (yrs == Y)
+            out[te] = sg(np.column_stack([Zline_feed[te, j], Zr[te]]) @ b)
+        return out
+    PC, PIM, PIP = {}, {}, {}
+    res = {}
+    yy, gg = np.tile(y[va], len(fed)), np.tile(g[va], len(fed))
+    for sch in ("static", "roll"):
+        for j in range(NPTS):
+            PC[(sch, j)] = preds(cjs, ZS, sch, j)
+            PIM[(sch, j)] = preds([0], ZM, sch, j)
+            PIP[(sch, j)] = preds([0], ZS, sch, j)
+        cat = lambda d: np.concatenate([d[(sch, j)][va] for j in fed])
+        res["%s | consensus minus fwd-4.1 as run (open-trained fed MULT), pooled fed 4-9" % sch] = ml2.compare(
+            cat(PC), cat(PIM), yy, gg, a.boot)
+        res["%s | open-trained fed MULT minus fed POWER, pooled fed 4-9" % sch] = ml2.compare(cat(PIM), cat(PIP), yy, gg, a.boot)
+        for j in fed:
+            res["%s | consensus minus fwd-4.1 as run, fed %d" % (sch, j)] = ml2.compare(
+                PC[(sch, j)][va], PIM[(sch, j)][va], y[va], g[va], a.boot)
+    V["incumbent_as_run"] = res
+    prim = res["static | consensus minus fwd-4.1 as run (open-trained fed MULT), pooled fed 4-9"]
+    V["as_run_verdict"] = ("confirmed" if prim["diff_ci"][1] < 0 else
+                           ("contradicted" if prim["diff_ci"][0] > 0 else "not confirmed"))
+    close = E["market"].to_numpy(float)
+    lo, lc = ml2.ll_vec(P[va, 0], y[va]), ml2.ll_vec(close[va], y[va])
+    V["share_of_open_to_close_gain"] = {
+        "open-trained stack (static)": share_recovered(lo, ml2.ll_vec(PIP[("static", 0)][va], y[va]), lc, g[va], a.boot),
+        "ML v2 logistic alone (static)": share_recovered(lo, ml2.ll_vec(sg(Zst[va]), y[va]), lc, g[va], a.boot)}
+    for j in (1, 4, 8):
+        V["share_of_open_to_close_gain"]["raw consensus point %d" % j] = share_recovered(lo, ml2.ll_vec(P[va, j], y[va]), lc, g[va], a.boot)
+        V["share_of_open_to_close_gain"]["consensus stack fed point %d (static)" % j] = share_recovered(
+            lo, ml2.ll_vec(PC[("static", j)][va], y[va]), lc, g[va], a.boot)
+    V["stack_minus_close"] = {"consensus (static) fed point %d minus the close" % j: ml2.compare(
+        PC[("static", j)][va], close[va], y[va], g[va], a.boot) for j in (1, 4, 8, 9)}
+    V["stack_minus_close"]["open-trained (static) fed point 0 minus the close"] = ml2.compare(
+        PIP[("static", 0)][va], close[va], y[va], g[va], a.boot)
+    V["per_book"] = per_book(E, va, y, g, a.boot)
+    V["scored_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    wjson(os.path.join(CACHE, "valid_addendum.json"), V)
+    pickle.dump({"V": V, "PC": PC, "PIM": PIM, "PIP": PIP}, open(os.path.join(CACHE, "valid_addendum.pkl"), "wb"))
+    for k, v in res.items():
+        log("  %-78s a %.5f b %.5f %+.5f %s" % (k, v["a"], v["b"], v["diff"], v["diff_ci"]))
+    log("as-run verdict: %s" % V["as_run_verdict"])
+    for k, v in V["share_of_open_to_close_gain"].items():
+        log("  share %-48s %s %s" % (k, v["share"], v["share_ci"]))
+    for k, v in list(V["stack_minus_close"].items()) + list(V["per_book"].items()):
+        log("  %-56s n %d a %.5f b %.5f %+.5f %s" % (k, v["n"], v["a"], v["b"], v["diff"], v["diff_ci"]))
+
+
+STAGES["valid_addendum"] = stage_valid_addendum
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])

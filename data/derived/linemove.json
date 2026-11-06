@@ -14,5 +14,21 @@
   ],
   "not_scored": "the decision-prop variants (none passed), B1, B2, B4-B8 (failed the gate)",
   "failure": "primary CI upper bound above +0.0005 counts as 'not confirmed'; a CI entirely above 0 counts as 'contradicted' (the open-trained stack stays primary for consensus lines)"
+ },
+ "prereg_addendum": {
+  "written": "2026-11-06 ~22:36 UTC by the second run, after the pre-2024 `addendum` stage and BEFORE this run read any 2024-2025 number: out/linemove_cache/valid.json (written 22:24 UTC by the first run under PREREG) has not been opened by this run; committed to git before `valid_addendum` runs",
+  "why": "the forward ledger's incumbent (fwd-4.1 ml2_stack_open) feeds the MULTIPLICATIVE de-vig of the consensus line to open-trained weights; PREREG's primary fed both stacks the power de-vig. The as-run incumbent is the comparison the routing decision needs",
+  "secondaries": [
+   "consensus stack (S4-8, fit 2019-2023) minus fwd-4.1 as run (open-trained, fit 2019-2023, fed the multiplicative de-vig of BFO mean odds at points 4..9), pooled fed 4-9 and per point; also with January refits (ML v2 monthly-rolling logistic). CV 2021-2023: -0.00152 [-0.0035, +0.0005]",
+   "share of the opener -> close log-loss gain recovered by the open-trained stack (opener + ML v2 logistic); CV 2021-2023: 0.716 [0.283, 1.755] (descriptive)",
+   "consensus stack fed point j minus the close (market.json power close), j = 1, 4, 8, 9; CV 2021-2023 -0.0016 / -0.0022 / -0.0032 / -0.0022, all CIs include 0 (descriptive)",
+   "per-book closes vs the consensus close (multiplicative both), seven US books (descriptive)"
+  ],
+  "routing_recommendation_fixed_before_the_look": {
+   "single-book opener (BFO's first price)": "open-trained stack, multiplicative de-vig (unchanged)",
+   "consensus line (mean over books) captured at any time before the lock": "consensus stack, power de-vig (replaces fwd-4.1's open-trained weights fed the multiplicative consensus)",
+   "true closing line (backtests, results pages)": "close-trained stack, power de-vig (unchanged; the consensus stack ties it on the close in CV, -0.00003)",
+   "contingency": "if the as-run secondary (static, pooled 4-9) has a CI entirely above 0 on 2024-2025, the recommendation reverts to fwd-4.1's routing; otherwise it stands as a CV-chosen change, confirmed only if the CI upper bound is below 0"
+  }
  }
 }
