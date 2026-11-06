@@ -166,7 +166,23 @@
     man.bones.forEach(function (b, j) { self.boneIndex[b.name.replace(PRE, "")] = j; });
     this.proxyCache = {};
     this.clips = clips;
+    this.mocap = null;
   }
+  /* Extra targets (assets/embed/mh-shapes-x.bin.gz): same packed coding, own header. */
+  Base.prototype.addShapes = function (bytes) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), hl = dv.getUint32(0, true);
+    var hdr = JSON.parse(utf8(bytes.subarray(4, 4 + hl))), data = bytes.subarray(4 + hl), morphs = this.morphs;
+    hdr.morphs.forEach(function (m) {
+      var idx = unplane16(data, m.offset, m.count, false), d = new Int16Array(m.count * 3), at = m.offset + m.count * 2;
+      for (var kk = 0; kk < 3; kk++) {
+        var v = m.bits === 8 ? unplane8(data, at, m.count) : unplane16(data, at, m.count, true);
+        at += m.count * (m.bits === 8 ? 1 : 2);
+        for (var j = 0; j < m.count; j++) d[j * 3 + kk] = v[j];
+      }
+      if (!morphs[m.name]) morphs[m.name] = { idx: idx, d: d, scale: m.scale };
+    });
+    this.extraShapes = hdr.morphs.length;
+  };
   Base.prototype.macroWeights = function (c) {
     // HumanForge macroWeights (MIT), with height given as MakeHuman's raw 0..1 value and age in years
     var w = {}, g = clamp01(c.gender);
@@ -182,8 +198,12 @@
     var years = clamp(c.years, 18, 90), t;
     if (years < 25) { t = (25 - years) / 7; w["macro/ageYoungF"] = t * (1 - g); w["macro/ageYoungM"] = t * g; }
     else { t = (years - 25) / 65; w["macro/ageOldF"] = t * (1 - g); w["macro/ageOldM"] = t * g; }
-    // ethnicity mix stays at MakeHuman's neutral thirds: appearance varies only skin tone, hair and beard
-    ["african", "asian", "caucasian"].forEach(function (r) { w["macro/" + r + "F"] = (1 / 3) * (1 - g); w["macro/" + r + "M"] = (1 / 3) * g; });
+    // ethnicity shape bases stay at MakeHuman's neutral thirds unless the likeness sheet carries an
+    // "ethnicity_fit" block: weights fitted by eye to that person's reference photos (recorded with the
+    // photos used), never assigned from name, nationality or assumption
+    var E = c.ethnic, ea = 1 / 3, eb = 1 / 3, ec = 1 / 3;
+    if (E && E.african + E.asian + E.caucasian > 0.01) { var es = E.african + E.asian + E.caucasian; ea = E.african / es; eb = E.asian / es; ec = E.caucasian / es; }
+    [["african", ea], ["asian", eb], ["caucasian", ec]].forEach(function (r) { w["macro/" + r[0] + "F"] = r[1] * (1 - g); w["macro/" + r[0] + "M"] = r[1] * g; });
     return w;
   };
   Base.prototype.evaluate = function (c, out) {
@@ -251,14 +271,25 @@
     hips: pr("torso", "measure-hips-circ"), vShape: pr("torso", "torso-vshape"), belly: pr("stomach", "stomach-pregnant"), buttocks: pr("buttocks", "buttocks-volume")
   };
 
-  function parseClips(bytes) {
+  /* Clip sets. v1 (mh-clips.bin.gz, Mesh2Motion): frame-major int16. v2 (mh-mocap.bin.gz, Mixamo):
+     per clip channel-major, delta-coded int16 in low/high byte planes, own fps, plus contact metadata. */
+  function parseClips(bytes, setId, idBase) {
     var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     var hl = dv.getUint32(0, true), header = JSON.parse(utf8(bytes.subarray(4, 4 + hl))), data0 = 4 + hl;
-    var nb = header.bones.length, per = 3 + nb * 4, out = { fps: header.fps, bones: header.bones, src: header.src, clips: {}, list: [] };
+    var nb = header.bones.length, per = 3 + nb * 4, v2 = /mocap\/2/.test(header.format || "");
+    var out = { fps: header.fps, bones: header.bones, src: header.src, clips: {}, list: [], set: setId || 0 };
     for (var name in header.clips) {
-      var c = header.clips[name], n = c.frames;
-      var raw = new Int16Array(bytes.buffer.slice(bytes.byteOffset + data0 + c.off, bytes.byteOffset + data0 + c.off + n * per * 2));
-      out.clips[name] = { name: name, frames: n, dur: (n - 1) / header.fps, loop: c.loop, data: raw, per: per, id: out.list.length };
+      var c = header.clips[name], n = c.frames, fps = c.fps || header.fps, raw;
+      if (v2) {
+        raw = new Int16Array(n * per);
+        var b = bytes.subarray(data0 + c.off, data0 + c.off + n * per * 2);
+        for (var ch = 0; ch < per; ch++) {
+          var o = ch * n * 2, acc = 0;
+          for (var f = 0; f < n; f++) { acc = (acc + (b[o + f] | (b[o + n + f] << 8))) & 0xffff; raw[f * per + ch] = acc > 32767 ? acc - 65536 : acc; }
+        }
+      } else raw = new Int16Array(bytes.buffer.slice(bytes.byteOffset + data0 + c.off, bytes.byteOffset + data0 + c.off + n * per * 2));
+      out.clips[name] = { name: name, frames: n, fps: fps, dur: (n - 1) / fps, loop: c.loop, data: raw, per: per, id: (idBase || 0) + out.list.length, set: out.set,
+        eff: c.eff || null, hit: c.hit != null ? c.hit : null, go: c.go != null ? c.go : null, back: c.back != null ? c.back : null, bones: header.bones };
       out.list.push(name);
     }
     return out;
@@ -271,10 +302,22 @@
   function loadBase() {
     if (basePromise) return basePromise;
     if (!supported()) return Promise.reject(new Error("FightAvatar: not supported here"));
+    function opt(name, fn) { return assetUrl(name) ? fn(name).catch(function (e) { if (root.console) console.warn("FightAvatar: optional " + name, e); return null; }) : Promise.resolve(null); }
     basePromise = fetchBytes("mh-manifest.json").then(function (mb) {
       var man = JSON.parse(utf8(mb));
-      return Promise.all([loadBin(man.shapes.file), loadBin(man.body.file), assetUrl("mh-clips.bin.gz") ? loadBin("mh-clips.bin.gz").catch(function () { return null; }) : null])
-        .then(function (r) { return new Base(man, r[0], readGlb(r[1]), r[2] ? parseClips(r[2]) : null); });
+      return Promise.all([loadBin(man.shapes.file), loadBin(man.body.file), opt("mh-clips.bin.gz", loadBin), opt("mh-shapes-x.bin.gz", loadBin),
+        opt("mh-proxies-x.json", fetchBytes), opt("mh-mocap.bin.gz", loadBin)])
+        .then(function (r) {
+          if (r[4]) { try { var px = JSON.parse(utf8(r[4])); man.proxies = man.proxies.concat(px.proxies || []); } catch (e) { if (root.console) console.warn(e); } }
+          var old = r[2] ? parseClips(r[2], 0, 0) : null;
+          var b = new Base(man, r[0], readGlb(r[1]), old);
+          if (r[3]) b.addShapes(r[3]);
+          if (r[5]) b.mocap = parseClips(r[5], 1, old ? old.list.length : 0);
+          b.clipSets = [old, b.mocap];
+          b.clipList = [];
+          b.clipSets.forEach(function (S) { if (S) S.list.forEach(function (n) { b.clipList.push(S.clips[n]); }); });
+          return b;
+        });
     });
     basePromise.catch(function (e) { if (root.console) console.warn(e); });
     return basePromise;
@@ -319,6 +362,7 @@
     src = src || dbFromPage();
     var prof = (src.fighters && src.fighters[slug]) || {}, ov = (src.overrides && src.overrides[slug]) || {}, ovApp = ov.appearance || {};
     var sc = (src.scouting && src.scouting[slug]) || {};
+    var st = src.style && src.style[slug];
     var a = {};
     function take(o) { for (var k in o) if (o[k] != null && o[k] !== "" && (typeof o[k] !== "string" || known(o[k]))) a[k] = o[k]; }
     take(sc); take(ovApp);
@@ -329,10 +373,11 @@
     a.stance = ov.stance || prof.stance || "Orthodox";
     a.division = ov.division || prof.division || "Lightweight";
     a.dob = ov.dob || prof.dob || null;
+    if (st && !a.style) a.style = st;
     return a;
   }
   function dbFromPage() {
-    var out = { fighters: {}, overrides: {}, scouting: {}, likeness: {}, referee: null };
+    var out = { fighters: {}, overrides: {}, scouting: {}, likeness: {}, style: {}, referee: null };
     if (!root.document) return out;
     function j(id) { var el = root.document.getElementById(id); if (!el) return null; try { return JSON.parse(el.textContent); } catch (e) { return null; } }
     var f = j("fighters-db"), o = j("overrides-db"), s = j("appearance-db"), sdb = j("scouting-db");
@@ -340,7 +385,8 @@
     if (o) { out.overrides = o.fighters || {}; if (o.manual) for (var k in o.manual) out.fighters[k] = out.fighters[k] || o.manual[k]; if (o.referee) out.referee = o.referee.appearance; }
     if (s) out.scouting = s.fighters || s;
     if (sdb) {
-      var sc = sdb.scouting || {}; for (var k2 in sc) if (sc[k2] && sc[k2].appearance) out.scouting[k2] = sc[k2].appearance;
+      var sc = sdb.scouting || {};
+      for (var k2 in sc) { if (sc[k2] && sc[k2].appearance) out.scouting[k2] = sc[k2].appearance; if (sc[k2] && sc[k2].style) out.style[k2] = sc[k2].style; }
       out.likeness = sdb.likeness || {};
     }
     return out;
@@ -394,12 +440,48 @@
       var face = app.face || {};
       for (var k in face) if (DETAIL[k]) det[k] = face[k];
     }
+    // targets the sheets list outside "morphs" (ear, lip and other targets missing from the first embed; now in mh-shapes-x)
+    if (LK) ["morphs_unavailable", "morphs_not_in_embed", "morphs_if_available", "morphs_extra"].forEach(function (key) {
+      var blk = LK[key]; if (!blk || typeof blk !== "object") return;
+      for (var tn2 in blk) {
+        var v2 = blk[tn2]; if (typeof v2 !== "number" || tn2.indexOf("/") < 0 || tn2.indexOf("macro/") === 0) continue;
+        var nm2 = TARGET_ALIAS[tn2] || tn2; if (targets[nm2] == null) targets[nm2] = v2;
+      }
+    });
+    if (!ref) athleteTargets(targets, app, LK, muscle, bmi, female, div);
+    var ethnic = null, EF = LK && LK.ethnicity_fit;
+    if (EF && typeof EF === "object" && Array.isArray(EF.photos) && EF.photos.length) ethnic = { african: +EF.african || 0, asian: +EF.asian || 0, caucasian: +EF.caucasian || 0 };
     var propFromSheet = mo && mo["macro/proportionsUpM"] != null ? 0.5 + 0.5 * mo["macro/proportionsUpM"] : null;
     // reach -> arm stretch, computed after the bake (needs the measured span)
     return {
       gender: female ? 0 : 1, years: years, muscle: muscle, weight: weight, heightRaw: 0.5, proportions: ref ? 0.5 : (propFromSheet != null ? Math.max(propFromSheet, 0.6) : 0.75), targets: targets,
-      cupSize: female ? 0.4 : 0.5, firmness: 0.6, detail: det, H: H, reach: (+app.reach_in || hIn) * 0.0254, bmi: bmi, female: female, ref: ref
+      cupSize: female ? 0.4 : 0.5, firmness: 0.6, detail: det, H: H, reach: (+app.reach_in || hIn) * 0.0254, bmi: bmi, female: female, ref: ref, ethnic: ethnic,
+      lean: ref ? 0 : clamp01(0.55 + (muscle - 0.85) * 2 - Math.max(0, bmi - 27) * 0.08 + (/lean|shredded|six-pack|visible abs|defined/.test(lower(LK && LK.body && (LK.body.body_fat + " " + (LK.body.body_fat_note || LK.body.body_fat_notes || "")))) ? 0.25 : 0))
     };
+  }
+  var TARGET_ALIAS = { "ears/l-ear-big-incr": "ears/l-ear-scale-incr", "ears/r-ear-big-incr": "ears/r-ear-scale-incr" };
+  function addT(t, name, v) { if (Math.abs(v) > 1e-3) t[name] = (t[name] || 0) + v; }
+  function lrT(t, base, v) { addT(t, base.replace("/", "/l-"), v); addT(t, base.replace("/", "/r-"), v); }
+  /* Athletic definition: muscle targets driven by build and division, leaner limbs, a lip correction
+     (the MakeHuman base reads full-lipped on these faces), cues from the sheet's body notes. */
+  function athleteTargets(t, app, LK, muscle, bmi, female, div) {
+    var B = LK && LK.body ? LK.body : {}, txt = lower([B.build, B.shoulders, B.chest, B.arms, B.legs_calves, B.neck, B.notable_physique_traits, B.waist, app.build].join(" "));
+    var k = female ? 0.5 : 1, m = clamp01((muscle - 0.7) / 0.3);
+    var heavy = /heavyweight/i.test(div) && !/light/i.test(div);
+    addT(t, "torso/torso-muscle-pectoral-incr", k * (0.18 + 0.3 * m + (/flat pec|flat pector|not bulky/.test(txt) ? -0.12 : 0) + (/big chest|thick chest|well-developed pec|barrel/.test(txt) ? 0.12 : 0)));
+    addT(t, "torso/torso-muscle-dorsi-incr", k * (0.25 + 0.3 * m + (/v-taper|v taper|wide back|lats/.test(txt) ? 0.15 : 0)));
+    lrT(t, "arms/upperarm-shoulder-muscle-incr", k * (0.3 + 0.35 * m + (/round.{0,12}delt|broad shoulder|big shoulder|capped/.test(txt) ? 0.15 : 0)));
+    lrT(t, "arms/upperarm-muscle-incr", k * (0.25 + 0.35 * m + (/big arms|thick arms|bicep/.test(txt) ? 0.1 : 0) - (/lanky|slim arms|thin arms/.test(txt) ? 0.15 : 0)));
+    lrT(t, "arms/lowerarm-muscle-incr", k * (0.3 + 0.3 * m + (/forearm/.test(txt) ? 0.12 : 0)));
+    lrT(t, "legs/upperleg-muscle-incr", k * (0.25 + 0.3 * m + (/quad|thick thigh|powerful legs|big legs|tree trunk/.test(txt) ? 0.18 : 0) - (/thin legs|skinny legs|long thin/.test(txt) ? 0.15 : 0)));
+    lrT(t, "legs/lowerleg-muscle-incr", k * (0.2 + 0.3 * m + (/calves|calf/.test(txt) ? 0.15 : 0)));
+    if (/calves|calf/.test(txt) && /well-developed|thick|big|noticeabl/.test(txt)) addT(t, "legs/measure-calf-circ-incr", 0.2);
+    if (!heavy || bmi < 30) { lrT(t, "arms/upperarm-fat-decr", 0.35); lrT(t, "arms/lowerarm-fat-decr", 0.3); lrT(t, "legs/upperleg-fat-decr", 0.25); lrT(t, "legs/lowerleg-fat-decr", 0.3); }
+    if (/thick neck|very thick neck|wide neck|traps/.test(txt)) { addT(t, "neck/measure-neck-circ-incr", 0.25); addT(t, "neck/neck-back-scale-depth-incr", 0.3); }
+    if (!female) {
+      addT(t, "mouth/mouth-upperlip-height-decr", 0.18); addT(t, "mouth/mouth-lowerlip-height-decr", 0.12);
+      addT(t, "mouth/mouth-upperlip-volume-decr", 0.12); addT(t, "mouth/mouth-lowerlip-volume-decr", 0.1);
+    }
   }
 
   function looksFor(app, cfg, base) {

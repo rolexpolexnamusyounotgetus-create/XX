@@ -33,9 +33,17 @@ Outputs: data/derived/dynamics.json; progress printed; the report is research/mo
 
 Usage:   python3 tools/dynamics.py                 (about 15 minutes on an idle 4-core machine)
          python3 tools/dynamics.py --quick         (no jackknife, no simulation check: about 8 minutes)
-         python3 tools/dynamics.py --parts 2,5     (a subset; merges into the existing JSON)
-         node tools/dynamics_engine.js /tmp/eng.csv --sims 30 [--engine-dir src]
-         python3 tools/dynamics.py --quick --parts 5 --engine-csv /tmp/eng.csv
+         python3 tools/dynamics.py --parts 2,5     (a subset; every run merges into the existing JSON
+                                                    unless --fresh; --parts J reruns only the judges' labels)
+         node tools/dynamics_engine.js /tmp/eng_tr.csv --sims 12 --from 2019-01-01 --to 2023-12-31 [--engine-dir src]
+         python3 tools/dynamics.py --parts none --engine-csv /tmp/eng_tr.csv --engine-period train --engine-key K
+         (engine checks against 2019-2023 real fights are for tuning; --engine-period test, the default and the
+          2024-2025 window, is for version selection only)
+
+Verification (Nov 6): tools/dynamics_audit.py re-derives the headline numbers with independent code; the
+fixes it led to (published judges' round scores instead of an inferred label that looked ahead, held-out
+refits, skip-round knockdown contrasts, train-window engine checks, the vault-free backtest file) are logged
+at the end of research/model_dynamics.md.
 """
 import argparse
 import datetime as dt
