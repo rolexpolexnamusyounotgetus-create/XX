@@ -19,6 +19,10 @@
    params.components.<name> flag, and every flag-off path reproduces v4.0.0 for fixed seeds. Step 1, components.v401:
    v4.0.1's train-only fixes (pre-2024 EM judging weights, point deductions, learned-path levels, the cumulative
    takedown cap, KO/TKO composition targets from 2019-2023 fights), one sub-flag each (see resolveParams below).
+   Step 2: components.durability (applyDurability) and components.dynamics (dynTables). Step 3: components.styles_sos
+   (src/styles_sos.js through the public matchup wrapper at the end; strength of schedule on, active only with opts.sos),
+   components.officials (officialsFor / officialsRound; off, opt-in per call) and components.realism_sens
+   (realismFactors; off) with FightEngine.sensitivity / rateSd (tornado data, common random numbers).
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {

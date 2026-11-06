@@ -227,7 +227,81 @@ def stage_score(args):
         log("  sd terciles:", W["sd_terciles"])
     J["score"] = out
     J["ablations"] = ablations(rows)
+    J["method"] = method_check(B)
     save_out(J)
+
+
+def method_check(B):
+    """bayes 23 cells vs methodround S, outcome cells from the raw CSV (KO/TKO incl. doctor, Submission, Decision*,
+    draws; DQ / NC / overturned / could-not-continue skipped). Own losses: joint, method3, round given a finish."""
+    ev = {r["EVENT"].strip(): dt.datetime.strptime(r["DATE"].strip(), "%B %d, %Y").date()
+          for r in csv.DictReader(open(os.path.join(RAW, "ufc_event_details.csv")))}
+    out_cell = {}
+    for r in csv.DictReader(open(os.path.join(RAW, "ufc_fight_results.csv"))):
+        d = ev.get(r["EVENT"].strip())
+        if d is None or d >= VAULT:
+            continue
+        fid = r["URL"].strip().rstrip("/").split("/")[-1]
+        o, me, rd = r["OUTCOME"].strip(), r["METHOD"].strip(), int(r["ROUND"].strip() or 0)
+        if o == "D/D":
+            out_cell[fid] = (22, d, r["EVENT"].strip())
+            continue
+        if o not in ("W/L", "L/W"):
+            continue
+        a = o == "W/L"
+        if me in ("KO/TKO", "TKO - Doctor's Stoppage"):
+            c = (0 if a else 10) + rd - 1
+        elif me == "Submission":
+            c = (5 if a else 15) + rd - 1
+        elif me.startswith("Decision"):
+            c = 20 if a else 21
+        else:
+            continue
+        out_cell[fid] = (c, d, r["EVENT"].strip())
+    MR = json.load(open(os.path.join(DER, "methodround.json")))["fights"]
+    res = {}
+    for win, (lo, hi) in (("2019-2023", (2019, 2023)), ("2024-2025", (2024, 2025))):
+        cb, cs, yc, evs = [], [], [], []
+        for fid, r in B["fights"].items():
+            oc = out_cell.get(fid)
+            s = (MR.get(fid) or {}).get("S")
+            if oc is None or s is None or not (lo <= oc[1].year <= hi) or any(v is None for v in r["cells"]):
+                continue
+            R = int(MR[fid]["rounds"])
+            row = np.zeros(23)
+            row[0:R], row[5:5 + R], row[10:10 + R], row[15:15 + R] = s[0:R], s[R:2 * R], s[2 * R:3 * R], s[3 * R:4 * R]
+            row[20:23] = s[4 * R:4 * R + 3]
+            cb.append(r["cells"])
+            cs.append(row)
+            yc.append(oc[0])
+            evs.append(oc[2])
+        y = np.array(yc)
+        bt = Boot(evs)
+        L = {}
+        for nm, P in (("bayes", np.array(cb, float)), ("S", np.array(cs))):
+            P = np.clip(P, 1e-9, None)
+            P = P / P.sum(1, keepdims=True)
+            n = len(y)
+            ko = P[:, 0:5].sum(1) + P[:, 10:15].sum(1)
+            sb = P[:, 5:10].sum(1) + P[:, 15:20].sum(1)
+            de = P[:, 20] + P[:, 21] + P[:, 22]
+            isko = ((y >= 0) & (y < 5)) | ((y >= 10) & (y < 15))
+            issb = ((y >= 5) & (y < 10)) | ((y >= 15) & (y < 20))
+            rr = np.where(isko | issb, y % 5, 0)
+            finr = P[:, 0:5] + P[:, 5:10] + P[:, 10:15] + P[:, 15:20]
+            fin = isko | issb
+            L[nm] = {"joint": -np.log(P[np.arange(n), y]),
+                     "method3": -np.log(np.where(isko, ko, np.where(issb, sb, de))),
+                     "round_given_fin": np.where(fin, -np.log(finr[np.arange(n), rr] / np.maximum(ko + sb, 1e-12)), np.nan)}
+        W = {"n": int(len(y))}
+        for k in ("joint", "method3", "round_given_fin"):
+            ok = ~np.isnan(L["bayes"][k])
+            b2 = Boot(np.array(evs)[ok])
+            W[k] = {"bayes": round(float(L["bayes"][k][ok].mean()), 4), "S": round(float(L["S"][k][ok].mean()), 4),
+                    "bayes_minus_S": b2.mean_ci(L["bayes"][k][ok] - L["S"][k][ok])}
+        res[win] = W
+        log("method", win, W)
+    return res
 
 
 def cached_oof(variant, sched, X):
