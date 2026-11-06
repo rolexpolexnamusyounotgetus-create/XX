@@ -245,12 +245,12 @@
       return lerp(F.cheek.z + 0.012 * sc, F.brow.z, clamp((y - F.cheek.y) / Math.max(0.01, F.brow.y - F.cheek.y), 0, 1));
     }
     // rear glove: beside the chin, a little in toward the centre line
-    var ry = hy(rh) - 0.03 * op * sc, rx = -st * (cx * 0.62 + 0.01 * sc + 0.02 * op * sc);
+    var ry = hy(rh) - 0.03 * op * sc, rx = -st * (cx * 1.05 + 0.012 * sc + 0.02 * op * sc);
     _g1.set(rx, ry, fz(ry) + GR + (0.006 + 0.1 * (1 - G.rearTuck)) * sc);
     this.headToChest(P, _g1, P.hl[rear]);
     // lead glove: out on the centre line toward the opponent, at its own height
     var ly = hy(lh) - 0.03 * op * sc, reach = (0.07 + 0.3 * G.leadReach) * sc;
-    var lx = st * (cx * (0.55 - 0.45 * G.leadReach) + 0.04 * G.leadWidth * sc + 0.02 * op * sc);
+    var lx = st * (cx * (1.0 - 0.5 * G.leadReach) + 0.04 * G.leadWidth * sc + 0.02 * op * sc);
     _g2.set(lx, ly - 0.25 * reach * 0.3, fz(ly) + GR + 0.01 * sc + reach);
     this.headToChest(P, _g2, P.hl[lead]);
   };
