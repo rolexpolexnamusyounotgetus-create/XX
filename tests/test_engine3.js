@@ -1,5 +1,6 @@
-// Engine v3 tests: spec invariants, league-average base-rate self-calibration per division,
-// Volk vs Gaethje summary and explain(), speed.
+// Engine tests (v4; the file keeps its v3 name): spec invariants, the learned stat-line layer (loadMLRates, opts.ml,
+// determinism, corner symmetry), the judges (EM weights, shared / fight-level noise, 10-8 rule), league-average
+// base-rate self-calibration per division, Volk vs Gaethje summary and explain(), speed.
 //
 // Usage:
 //   node tests/test_engine3.js [N]            run everything (N fights per Monte Carlo check, default 20000)
@@ -21,6 +22,12 @@ const E = require(ENGINE_SRC);
 const BASE = require(PARAMS_SRC);
 const dbJson = fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8");
 const DB = E.loadDB(dbJson);
+// learned stat-line model (engine v4): loaded only inside withML(), so every other check runs on the base tables
+const ML_SRC = path.join(ROOT, "src/ml/mlrates.js");
+const MLR = require(ML_SRC);
+const mlJson = JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/mlrates.json"), "utf8"));
+const ML_MODEL = MLR.load(mlJson);
+function withML(fn) { E.loadMLRates(ML_MODEL); try { return fn(); } finally { E.loadMLRates(null); } }
 
 const args = process.argv.slice(2);
 const N = +(args.find((a) => /^\d+$/.test(a)) || 20000);
@@ -239,7 +246,9 @@ const mVG = E.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS);
 const strip = (f) => JSON.stringify({ w: f.winner, m: f.method, d: f.detail, r: f.round, t: f.t, c: f.cards, tot: f.totals, form: f.form, n108: f.n108 });
 
 console.log("\n=== API and determinism ===");
-check("API surface", ["loadDB", "profile", "matchup", "simulate", "bucket", "makeRng", "summarize", "explain", "manualProfile"].every((k) => typeof E[k] === "function") && E.VERSION === "3.0.0", "VERSION " + E.VERSION);
+check("API surface", ["loadDB", "profile", "matchup", "matchupBase", "simulate", "bucket", "makeRng", "summarize", "explain", "manualProfile",
+  "loadMLRates", "mlModel", "judgeRound"].every((k) => typeof E[k] === "function") && E.VERSION === "4.0.0", "VERSION " + E.VERSION);
+check("no learned model loaded by default: matchup = base tables", !E.mlModel() && mVG.mlApplied === false);
 check("engine source has no Math.random", !/Math\.random/.test(fs.readFileSync(ENGINE_SRC, "utf8")));
 {
   const saved = Math.random; Math.random = () => { throw new Error("Math.random used"); };
@@ -267,18 +276,103 @@ check("same seed, same fight", strip(E.simulate(mVG, E.makeRng(42), false)) === 
   check("trace parity holds over a shared rng stream", ok);
 }
 {
-  // browser / blob Web Worker: the concatenation params3.js + engine3.js runs with no module system
-  const src = fs.readFileSync(PARAMS_SRC, "utf8") + "\n" + fs.readFileSync(ENGINE_SRC, "utf8");
+  // browser / blob Web Worker: the page's engine script (params3.js + src/ml/mlrates.js + engine3.js) runs with no module
+  // system; without a model it reproduces Node, and loadMLRates() inside it reproduces Node's learned-rate matchup
+  const src = fs.readFileSync(PARAMS_SRC, "utf8") + "\n" + fs.readFileSync(ML_SRC, "utf8") + "\n" + fs.readFileSync(ENGINE_SRC, "utf8");
   const ctx = { console, Math, Date, JSON, Float64Array, Int8Array, Object, Array, isFinite, Number, String, Error };
   ctx.self = ctx; vm.createContext(ctx); vm.runInContext(src, ctx);
   const W = ctx.FightEngine;
-  let ok = !!W && !!ctx.FightParams;
+  let ok = !!W && !!ctx.FightParams && !!ctx.MLRates, okML = false;
   if (ok) {
     W.loadDB(dbJson);
     const mw = W.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS);
     ok = strip(W.simulate(mw, W.makeRng(5), true)) === strip(E.simulate(mVG, E.makeRng(5), true));
+    W.loadMLRates(mlJson);
+    const mwl = W.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS);
+    const mnl = withML(() => E.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS));
+    okML = mwl.mlApplied && strip(W.simulate(mwl, W.makeRng(6), true)) === strip(E.simulate(mnl, E.makeRng(6), true));
   }
-  check("worker-style concatenation (self.FightParams + self.FightEngine) reproduces Node results", ok);
+  check("worker-style concatenation (self.FightParams + self.MLRates + self.FightEngine) reproduces Node results", ok);
+  check("worker-style loadMLRates reproduces Node's learned-rate matchup", okML);
+}
+
+console.log("\n=== Engine v4: learned stat-line rates (loadMLRates / opts.ml) ===");
+{
+  const mBase = E.matchupBase("alexander-volkanovski", "justin-gaethje", VG_OPTS);
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  check("matchup without a model equals matchupBase", same(mVG.dRate, mBase.dRate) && same(Array.from(mVG.accO), Array.from(mBase.accO)) && same(mVG.kd, mBase.kd));
+  const mML = withML(() => E.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS));
+  check("with a model loaded matchup applies the learned rates", mML.mlApplied === true && !!mML.ml && !!mML.ml.ratios[0].d && !same(mML.dRate, mBase.dRate),
+    `distance attempt ratio Volk ${f2(mML.ml.ratios[0].d)}, Gaethje ${f2(mML.ml.ratios[1].d)}`);
+  const mOff = withML(() => E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: false }, VG_OPTS)));
+  check("opts.ml === false keeps the base tables", mOff.mlApplied === false && same(mOff.dRate, mBase.dRate) && same(Array.from(mOff.accO), Array.from(mBase.accO)));
+  const mW0 = withML(() => E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: { mlWeight: 0 } }, VG_OPTS)));
+  check("params.mlWeight 0 keeps the base tables", mW0.mlApplied === false && same(mW0.dRate, mBase.dRate));
+  // precomputed per-side rates (the leak-free backtest path) give the same tables as the loaded model
+  const ctxP = { division: "Lightweight", rounds: 5, title: true, date: DATE, priors: DB.priors };
+  const pred = MLR.predict(ML_MODEL, DB.profile("alexander-volkanovski"), DB.profile("justin-gaethje"), ctxP);
+  const mPre = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pred.A, B: pred.B } } }, VG_OPTS));
+  const relDiff = (a, b) => Math.max(...a.map((x, i) => Math.abs(x - b[i]) / Math.max(1e-12, Math.abs(b[i]))));
+  check("opts.ml = { pred } reproduces the loaded model's tables", mPre.mlApplied && relDiff(mPre.dRate, mML.dRate) < 1e-9 && relDiff(Array.from(mPre.accO), Array.from(mML.accO)) < 1e-9 &&
+    relDiff(mPre.kd, mML.kd) < 1e-9, `max rel diff dRate ${relDiff(mPre.dRate, mML.dRate).toExponential(1)}`);
+  // determinism
+  check("ML: same seed, same fight", strip(E.simulate(mML, E.makeRng(42), false)) === strip(E.simulate(mML, E.makeRng(42), false)));
+  const mML2 = withML(() => E.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS));
+  check("ML: matchup is deterministic (same tables twice)", same(mML.dRate, mML2.dRate) && same(Array.from(mML.accO), Array.from(mML2.accO)) && same(mML.tdD, mML2.tdD) && same(mML.occ, mML2.occ));
+  let tp = true; for (let sd = 1; sd <= 150; sd++) if (strip(E.simulate(mML, E.makeRng(sd), false)) !== strip(E.simulate(mML, E.makeRng(sd), true))) { tp = false; break; }
+  check("ML: trace on/off gives the same fight (150 seeds)", tp);
+  // corner symmetry: the model has no corner input; the swapped matchup mirrors the tables and the outcome
+  const pBA = MLR.predict(ML_MODEL, DB.profile("justin-gaethje"), DB.profile("alexander-volkanovski"), ctxP);
+  check("ML: predict(A, B) and predict(B, A) swap exactly", MLR.TNAMES.every((t) => Math.abs(pred.A[t] - pBA.B[t]) < 1e-12 && Math.abs(pred.B[t] - pBA.A[t]) < 1e-12));
+  const mMLBA = withML(() => E.matchup("justin-gaethje", "alexander-volkanovski", VG_OPTS));
+  const mir = Math.max(Math.abs(mML.dRate[0] / mMLBA.dRate[1] - 1), Math.abs(mML.dRate[1] / mMLBA.dRate[0] - 1), Math.abs(mML.kd[0] / mMLBA.kd[1] - 1),
+    Math.abs(mML.tdD[0] / mMLBA.tdD[1] - 1), Math.abs(mML.occ[3] - mMLBA.occ[4]));
+  check("ML: swapping corners mirrors the learned tables", mir < 1e-6, `max rel diff ${mir.toExponential(1)}`);
+  const NSm = Math.max(4000, Math.round(N / 2));
+  const sAB = E.summarize(mML, NSm, 314), sBA = E.summarize(mMLBA, NSm, 2718);
+  const se = Math.sqrt(sAB.pA * (1 - sAB.pA) / NSm + sBA.pB * (1 - sBA.pB) / NSm);
+  check("ML: swapping corners swaps the probabilities", Math.abs(sAB.pA - sBA.pB) < 4 * se + 0.003, `Volk ${pct(sAB.pA)}% as A vs ${pct(sBA.pB)}% as B; base tables ${pct(E.summarize(mVG, NSm, 314).pA)}%`);
+  const mc = withML(() => E.matchup("justin-gaethje", "justin-gaethje", VG_OPTS)), sc = E.summarize(mc, NSm, 55);
+  const pw = sc.pA / (sc.pA + sc.pB), sec = Math.sqrt(0.25 / (NSm * (1 - sc.pD)));
+  check("ML: a fighter vs his clone wins about 50%", Math.abs(pw - 0.5) < 4 * sec + 0.003, `${pct(pw)}% of non-draws`);
+  // knobs still act on top of the learned rates
+  const mChin = withML(() => E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ adjA: { chin: 1.6 } }, VG_OPTS)));
+  const sChin = E.summarize(mChin, NSm, 314);
+  check("ML: Volk chin knob 1.6 raises Gaethje's KO/TKO share", sChin.bins[6] > sAB.bins[6] + 0.01, `${pct(sAB.bins[6])}% -> ${pct(sChin.bins[6])}%`);
+  // league level preserved: a league-average pair plays about the same base rates with and without the learned rates
+  const avA = avgProfile("Lightweight", "A"), avB = avgProfile("Lightweight", "B"), oL = { division: "Lightweight", rounds: 3, priors: PRI };
+  const s0 = E.summarize(E.matchup(avA, avB, Object.assign({ ml: false }, oL)), NSm, 11);
+  const s1 = E.summarize(withML(() => E.matchup(avA, avB, Object.assign({ date: "2023-06-01" }, oL))), NSm, 11);
+  check("ML: league-average pair keeps the league level (finish rate within 4 pts, sig landed within 8%)",
+    Math.abs(s0.fins - s1.fins) < 0.04 && Math.abs(s1.avg.A.sig_lnd / s0.avg.A.sig_lnd - 1) < 0.08, `finish ${pct(s0.fins)}% -> ${pct(s1.fins)}%, sig landed ${f2(s0.avg.A.sig_lnd, 1)} -> ${f2(s1.avg.A.sig_lnd, 1)}`);
+}
+
+console.log("\n=== Engine v4: judges (EM weights, shared + fight-level noise, 10-8 rule) ===");
+{
+  const J = BASE.judge, T1 = [1, 1, 1];
+  check("judge weights are the EM fit", J.head === 0.179 && J.body === 0.133 && J.leg === 0.105 && J.kd === 2.42 && J.td === 0.286 && J.ctrlMin === 0.46 && J.sub === 0.85);
+  function panel(d, n, seed, sF) {
+    const rng = E.makeRng(seed); let aW = 0, nonU = 0, n108 = 0;
+    for (let i = 0; i < n; i++) {
+      const c = [[0, 0], [0, 0], [0, 0]], js = [];
+      n108 += E.judgeRound(J, 0, d[0], d[1], d[2], d[3], d[4], d[5], d[6], 0, 0, T1, T1, T1, sF ? J.sharedSd * Math.sqrt(J.sharedFight) * rng.normal() : 0, rng, c, js);
+      const a = js.filter((x) => x[0] > x[1]).length; aW += a; if (a === 1 || a === 2) nonU++;
+    }
+    return { pA: aW / (3 * n), nonU: nonU / n, r108: n108 / (3 * n) };
+  }
+  const even = panel([0, 0, 0, 0, 0, 0, 0], 20000, 1, true);
+  check("an even round is a coin flip", Math.abs(even.pA - 0.5) < 0.015, `P(A) ${pct(even.pA)}%`);
+  const dA = panel([6, 2, 1, 0, 1, 30, 0], 20000, 2, true), dB = panel([-6, -2, -1, 0, -1, -30, 0], 20000, 3, true);
+  check("judging is corner-symmetric (mirrored differentials mirror the round)", Math.abs(dA.pA - (1 - dB.pA)) < 0.015, `${pct(dA.pA)}% vs ${pct(1 - dB.pA)}%`);
+  check("more output wins more rounds", dA.pA > 0.7, `P(A) ${pct(dA.pA)}% for +6 head, +2 body, +1 leg, +1 TD, +30 s control`);
+  const big = panel([25, 5, 3, 1, 2, 120, 1], 20000, 4, true), kdOnly = panel([0, 0, 0, 1, 0, 0, 0], 20000, 5, true);
+  check("10-8s come with lopsided rounds, rarely with even ones", big.r108 > 0.15 && even.r108 < 0.003, `lopsided ${pct(big.r108)}%, even ${pct(even.r108, 2)}%`);
+  check("a lone knockdown edge usually wins the round", kdOnly.pA > 0.8, `P(KD scorer) ${pct(kdOnly.pA)}%`);
+  check("non-unanimous share of even-looking rounds near the data (MMA Decisions |EM| < 0.5: 43%)", even.nonU > 0.3 && even.nonU < 0.55, `${pct(even.nonU)}%`);
+  // engine fights: the panel's decision split and 10-8 share in Volk vs Gaethje stay in a sane band
+  const sv = E.summarize(mVG, 4000, 21);
+  check("decision split and 10-8 share in a sane band", sv.dec.UD > 0.6 && sv.dec.UD < 0.95 && sv.r108 > 0.005 && sv.r108 < 0.12,
+    `UD ${pct(sv.dec.UD)}%, SD ${pct(sv.dec.SD)}%, 10-8 ${pct(sv.r108, 2)}% per judge-round`);
 }
 
 console.log("\n=== Trace format ===");

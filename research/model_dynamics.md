@@ -23,6 +23,9 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
   earlier output costs at most a few percent: -4.5% per 100 attempts thrown (SE 2.4%, jackknife 3.0%). The league pace curve
   rises by round and stays the main dynamic. Structural round multipliers for distance output are
   [1, 1.15, 1.26] (3 rounds) and [1, 1.22, 1.23, 1.31, 1.37] (5 rounds).
+  *Verified (refit on 2024-2025 alone): the damage term is -1.6% per 10 at distance (SE 1.0%) and -4.0% (SE 1.8%)
+  on all sig attempts per round-minute, so read "no decay" as "at most a few percent per 10 head strikes". The own-
+  output term flips sign at distance (+4.6%, SE 5.1%): there is no volume fatigue either way.*
 - **Fixed-effects fits get the fatigue question backwards.** Within-fight fixed effects say each 100 attempts thrown
   cuts later output by 42%. A simulation with no fatigue at all reproduces that -0.42 (-0.40 to -0.44): it is pure
   mean reversion. The dynamic random-effects estimator, which conditions on earlier rounds through the
@@ -33,20 +36,32 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
   own round-to-round noise is an AR(1) process (sd 0.31, autocorrelation 0.68), where the engine uses iid noise.
   Accuracy has individual fight-night form of sd 0.29 logit (engine `form.acc` 0.12). Profiles explain accuracy
   only about 0.55 for 1, so it should be attenuated.
+  *Verified: the shared pace (sd 0.38 on the 2024-2025 refit) and the accuracy form (0.27) replicate; the AR(1)
+  persistence does not: 0.45 on the 2024-2025 refit, 0.27-0.49 by the method of moments. Treat 0.68 as the upper
+  end and target the engine's realized persistence on 2019-2023 matchups (0.63), section 8 E2.*
 - **Per-fighter cardio is real but small.** A fighter's true late-round output ratio has sd 0.16 on the log scale
   (τ² 0.026, 95% CI 0.018-0.034). One fight's observed ratio has sd 0.66, so a single fight is about 6% signal.
   Walk-forward empirical-Bayes predictions are calibrated on held-out fights (slope 0.92-0.98) but explain only
   about 2% of the variance. The engine's `kPace` 15 overweights fighter history. The train-chosen value is 45:
   held-out skill rises from 2.1% to 2.6%. The opponent's cardio moves your late output too, with coefficient
-  0.4-0.7.
-- **No between-round adaptation.** Losing a round, by the judges' consensus or on strikes landed, does not change
-  output (+0.0% SE 1.1%, -0.8% SE 0.9%) or takedown attempts (+1.6% SE 4.8%). Accuracy dips slightly after a
-  round the judges gave away: -0.04 logit (SE 0.016), about 1 point. Down two rounds entering the final round,
-  fighters throw 4.7% less (SE 1.6%), not more.
+  0.4-0.7. *Verified: the held-out gain of 45 over 15 is not significant (+0.6 points, fight-bootstrap 95% CI -0.6
+  to +1.9; on train +1.5, CI +0.4 to +2.5), and kPace 30 scores 2.7% held out. Any value in 30-45 is supported.*
+- **No between-round adaptation in output.** Losing a round, by the judges or on strikes landed, does not change
+  output (published judges' scores: -0.9%, SE 0.9%; held-out refit +0.9%, SE 1.4%; sig landed: -0.8%, SE 0.9%) or
+  takedown attempts (+0.6%, SE 4.5%). Accuracy dips after a round the judges gave away: -0.079 logit (SE 0.015),
+  about 2 points, and it replicates on 2024-2025 (-0.085, SE 0.026). Down two rounds entering the final round,
+  fighters throw 4.7% less (SE 1.6%) in train, not more; this does not replicate on 2024-2025 (-0.3%, SE 2.5%).
+  *Corrected by the verification: the first version inferred which rounds a judge gave away from the card totals
+  and the stats of all rounds of the fight (a label that looks ahead into the round it explains); section 4 now
+  uses the published per-round scores.*
 - **Knockdown momentum.** The scorer eases off next round: output -8.8% (SE 3.0%, jackknife 3.5%), accuracy -0.058 logit,
   takedown attempts -12%. The man who was dropped does not slow: output +6% (SE 3%, jackknife 1.8%), takedown attempts +12%. Once
   per-fight frailty is in, his knockdown risk in the next round is x1.15 (95% CI 0.83-1.60). Without frailty it
-  looks like x2.0, but that is selection.
+  looks like x2.0, but that is selection. *Verified: both output coefficients replicate on 2024-2025 (scorer -7.0%,
+  SE 4.0%; dropped +12.5%, SE 4.6%), but they are relative to an expectation that contains the knockdown round's own
+  output: the scorer's knockdown round runs +15% above the round before (SE 4%) and the dropped man's -12% (SE 4%).
+  Against the round before the knockdown round, the next round is -5.9% for the scorer (SE 4.8%) and -2.6% for the
+  dropped man (SE 4.9%) on 2010-2023. An engine multiplier on the baseline rate should match that contrast (E4).*
 - **Finish hazard vs accumulated damage: per-strike risk does not rise.** Knockdowns per landed standing head
   strike show no damage effect with a gamma frailty per fighter-fight: -4% per 10 head strikes absorbed (SE 4%).
   Adding damage terms worsens held-out log-likelihood. The frailty itself is strongly supported: variance about
@@ -56,12 +71,17 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
   round. Only non-knockdown stoppages lean on damage: +11% per 10 head strikes absorbed earlier (SE about 5%).
   Battered fighters are finished more often because they keep absorbing more per minute (head strikes absorbed
   per minute 2.2 → 6.2 across prior-damage bins), not because each strike gets more dangerous.
-- **The engine has too much knockdown heterogeneity.** On the same matchups, its knockdown frailty (fight-level
+- **The engine has too much knockdown heterogeneity** (*on the 2024-2025 matchups only; see the correction at the
+  end of this bullet*). On the same matchups, its knockdown frailty (fight-level
   variance of the per-strike rate) is 1.7 against 0.9 real. The engine check (section 7) cannot tell shared
   from per-direction volatility: the per-fight residual correlation of the two directions is -0.015 in the
   engine (with shared `vol` 0.6) and -0.024 real, because stopping hides the shared part. So the cut is sized to
   the total. `research/model_durability.md` puts a quarter to a third of the variance in the shared part, so cut
-  `vol` 0.6 to 0.3 and keep power and chin at 0.45.
+  `vol` 0.6 to 0.3 and keep power and chin at 0.45. *Corrected by the verification: the 0.9 comes from the
+  validation window. On 2019-2023 matchups (the tuning window) the real cells-only frailty is 1.49 and the current
+  engine's 1.64; the profile-adjusted frailty also halves from train (1.08) to a 2024-2025 refit (0.53). The cut to
+  0.3 was sized on validation data and is not supported by the training years: at most `vol` 0.6 to 0.5, then
+  recheck on 2019-2023 (E7).*
 - **Engine v3 check.** Two snapshots, b50cadf (09:46) and the current aabd475 (11:10), were run on the same 865
   validation matchups, 30 sims each. Both have:
   - round-to-round output correlation 0.19 vs 0.53 real;
@@ -70,7 +90,11 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
   - a per-strike knockdown hazard that falls too little after round 2.
 
   In 5-round fights the current engine finishes 0.11, 0.10 and 0.10 per round by KO/TKO in rounds 3-5 against
-  0.07, 0.05 and 0.04 real. Section 8 lists the exact changes.
+  0.07, 0.05 and 0.04 real. Section 8 lists the exact changes. *Verified: those real rates rest on 5, 3 and 2
+  finishes; pooled over rounds 3-5 the real rate is 0.054 (95% CI 0.029-0.096) in 2024-2025 and 0.066
+  (0.046-0.093) in 2019-2023, so the excess was about 1.6-2x, not 2-3x. The engine as of 14:22 (params 4.0.0-dev,
+  section 7.1) is at 0.074 on 2019-2023 matchups: this gap is closed, while the round-to-round persistence, the
+  shared/individual form split and the knockdown round decline are still off.*
 
 ## 1. Data, periods and estimators
 
@@ -455,7 +479,10 @@ The damage model does no better than the null in any bin.
 
 The R1 rate at league-average chin, power and frailty is 0.0151 per landed standing head strike (3-round). On test,
 the train profile over-predicts round-2 knockdowns: 88 observed vs 114 predicted in 3-round fights, 11 vs 17 in
-5-round fights. The decline is if anything steeper out of sample.
+5-round fights. The decline is if anything steeper out of sample. *Verified: only for round 2. Round 3 is under-
+predicted (68 observed vs 58 predicted in 3-round fights), so rounds 2-3 together are 156 vs 172. A refit on
+2024-2025 alone gives [1, 0.44, 0.41] and [1, 0.56, 0.42, 0.26, 0.14] with frailty variance 0.53 (train 1.08); the
+5-round rounds 4-5 rest on 4 and 2 knockdowns.*
 
 **Shared volatility.** Per fighter-fight Pearson residuals of knockdowns absorbed (no-frailty expectation,
 real exposures), correlation between the two directions of the same fight:
@@ -586,6 +613,11 @@ The engine's damage terms are near zero in its own output (D10 +0.005), which ma
 Every number is a starting value for `tools/calibrate.js` / mlcal. The acceptance check is the engine-check
 statistics above plus `targets_by_round`.
 
+*Verification note (Nov 6): the acceptance values below were first taken from the real 2024-2025 fights, the
+validation window. Under the hidden-data protocol, tuning targets must come from 2019-2023. Section 7.1 now has
+an engine check against 2019-2023 matchups; use its "real" column (`engine_check_v4dev_train` in the JSON) for
+tuning, and the 2024-2025 check only to choose between versions. The corrected targets are in each item below.*
+
 **E1. Pace curve** (multiplier on per-position strike rates, by round):
 
     pace3 = [1, 1.15, 1.26]                     (was [1, 1.104, 1.148])
@@ -615,9 +647,22 @@ Target the realized sig attempts per minute by round:
         output sd fighter-fight 0.50, corr 0.80, AR(1) about 0.5, own-round corr R1-R2 0.53
         accuracy persistent sd about 0.32
 
+    Verified, corrected (Nov 6). The engine as of 14:22 (params 4.0.0-dev) already has form.out 0.357, form.pace
+    0.329, form.acc 0.478 from the walk-forward calibration. On 2019-2023 matchups it gets the total fight-level
+    output spread right (sd 0.49 vs 0.44 real) but splits it wrongly (corr between the two fighters 0.49 vs 0.85
+    real), has no round persistence (AR 0.01 vs 0.63) and too much accuracy spread (0.44 vs 0.34, AR -0.12 vs 0.70).
+    So: move output variance from the individual to the shared draw (form.out about 0.18-0.20, form.pace about
+    0.40), add the AR(1) round noise with phi about 0.6 (train 0.63-0.68; it is 0.45-0.51 on 2024-2025 and 0.27-0.49
+    by moments, so do not go above 0.68), cut form.acc to about 0.30 and give accuracy its own AR(1) round noise
+    (sd about 0.24, phi about 0.7).
+    Acceptance on 2019-2023 matchups (engine_check_v4dev_train, real column): output sd fighter-fight 0.44, corr
+    0.85, AR(1) 0.63, own-round corr R1-R2 0.57, fighters same round 0.66; accuracy sd fighter-fight 0.34, AR 0.70.
+
 **E3. Damage and fatigue on rates:** none. Do not add damage multipliers to per-position output or accuracy. Keep
 hurt effects within the round, as now: `hurtEnd` resets between rounds. Defender fatigue raising attacker accuracy
 (`accStam` 0.25) is consistent with the data: +0.08 logit per 100 opponent attempts, about +0.07 after two rounds.
+*Verified: that term does not replicate: the 2024-2025 refit gives -0.131 (SE 0.061). The data neither support nor
+rule out `accStam`; leave it as a labeled knob and do not cite this fit for it.*
 
 **E4. Knockdown momentum** (next round only, after a round in which i scored at least one knockdown and the fight
 continued):

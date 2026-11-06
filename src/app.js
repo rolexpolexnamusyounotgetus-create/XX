@@ -1386,7 +1386,7 @@
     var box = $("mlCards"), lede = $("mlLede"); if (!box) return;
     box.textContent = "";
     var pred = mlPredict(prof("A"), prof("B"));
-    if (!pred) { lede.textContent = MLR.ok ? "The stat-line model could not score this pair." : "The stat-line model is not in this build."; return; }
+    if (!pred) { lede.textContent = MLR.pending ? "Loading the stat-line model." : (MLR.ok ? "The stat-line model could not score this pair." : "The stat-line model is not in this build (or this browser can't unpack it)."); return; }
     lede.textContent = "Per minute of fight time, each fighter against this opponent, from a learned model trained on 2010-2025 UFC fights. On 2024-25 fights it beat the simulator's own rates on 12 of 18 stats, and feeding it to the simulator improved its winner calls. " +
       (cur.m && cur.m.mlApplied ? "The simulator is using these lines now." : "The toggle in the forecast panel has them switched off, so the simulator uses its data-only rates.") + " Avg is the " + S.div.toLowerCase() + " average.";
     var base = {}; (pred.base || []).forEach(function (v, i) { base[(window.MLRates && window.MLRates.TNAMES[i]) || i] = v; });
@@ -2273,7 +2273,7 @@
   resetHud({ rounds: [], form: null }, null);
   writeHash();
   $("runStatus").textContent = "Starting the tally";
-  window.FightLab = { state: S, matchup: function () { return cur.m; }, tally: function () { return lastAgg; }, newFight: function () { newFight(); }, script: function () { return script; } };
+  window.FightLab = { state: S, matchup: function () { return cur.m; }, tally: function () { return lastAgg; }, newFight: function () { newFight(); }, script: function () { return script; }, blend: function () { return BL; }, models: function () { return { moe: !!MOE, mlpage: !!MLP, methodround: !!MR, mlrates: MLR }; } };
   // the compressed models arrive a few milliseconds after the first paint: re-render everything that reads them
   var started = false;
   function afterModels() {
