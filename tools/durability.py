@@ -869,3 +869,70 @@ def win_size_check(X, fit_mask):
     b4, cov4, _ = logit_fit(Z4, y)
     res["elo_plus_lbs_move_per10"] = {"per_10lb_up": round(float(10 * b4[2]), 4), "se": round(float(10 * np.sqrt(cov4[2, 2])), 4)}
     return res
+
+
+def exposure_rate(X, fit_mask, k=15.0):
+    """Pre-fight expected standing head strikes landed per minute by a on d (decayed sums, shrunk to league)."""
+    tr = X[fit_mask]
+    L = float(tr.E.sum() / tr["min"].sum()) / 2.0 * 2.0      # per fighter-minute (each row is one direction)
+    L = float(tr.E.sum() / tr["min"].sum())
+    ra = (X.a_dsh.to_numpy(float) + k * L) / (X.a_dmin.to_numpy(float) + k)
+    rd = (X.d_dosh.to_numpy(float) + k * L) / (X.d_dmin.to_numpy(float) + k)
+    return 0.5 * (np.log(ra) + np.log(rd)) - math.log(L), L
+
+
+def ko_model(X, r_final, spec, fm_dates=(FIT_FROM, "2023-12-31")):
+    """KO/TKO loss per fight (logistic; pre-fight features only). Rows: each defender of each fight with stats."""
+    base = (X.has_stats == 1) & (X.amb == 0)
+    fm = (base & (X.date >= fm_dates[0]) & (X.date <= fm_dates[1])).to_numpy()
+    tm = (base & (X.date >= TEST_FROM)).to_numpy()
+    y = X.ko_loss.to_numpy(float)
+    bl = blocks(spec, X)
+    lexp, Lsh = exposure_rate(X, (X.use & (X.date >= fm_dates[0]) & (X.date <= fm_dates[1])).to_numpy())
+    w = r_final["walk"]
+    comp = r_final["lin"] + r_final["lv"] + np.log(w["chin"]) + np.log(w["pow"])     # log KD per standing head strike
+    comp = comp - np.nanmean(comp[fm])
+    X = X.assign(k_comp=comp, k_lexp=lexp, k_lsched=np.log(np.where(X.sched > 0, X.sched * 5.0, 15.0)) - math.log(15),
+                 k_lchin=np.log(w["chin"]), k_lpow=np.log(w["pow"]), k_lv=np.log(X.lv) - np.log(X.lv[fm].mean()))
+    specs = [
+        ("K0 constant", []),
+        ("K1 division + scheduled length", bl["div"] + ["k_lsched"]),
+        ("K2 K1 + Elo difference", bl["div"] + ["k_lsched", "elo_diff"]),
+        ("K3 K2 + trailing KD level", bl["div"] + ["k_lsched", "elo_diff", "k_lv"]),
+        ("K4 composite: predicted KD rate + exposure + Elo", ["k_comp", "k_lexp", "k_lsched", "elo_diff"]),
+        ("K5 direct: K3 + age, damage, layoff, fighter effects", bl["div"] + ["k_lsched", "elo_diff", "k_lv", "k_lexp"]
+         + bl["age_d"] + bl["age_a"] + bl["dmg"] + bl["lay"] + ["k_lchin", "k_lpow"]),
+        ("K6 K5 + weight move", bl["div"] + ["k_lsched", "elo_diff", "k_lv", "k_lexp"] + bl["age_d"] + bl["age_a"]
+         + bl["dmg"] + bl["lay"] + ["k_lchin", "k_lpow"] + bl["move"]),
+        ("K7 K4 + direct damage and move terms", ["k_comp", "k_lexp", "k_lsched", "elo_diff", "d_kol_r", "d_kol_o",
+                                                 "d_okd_r", "d_okd_o"] + bl["move"]),
+    ]
+    out, preds = [], {}
+    for name, cols in specs:
+        Z = np.column_stack([np.ones(len(X))] + [X[c].to_numpy(float) for c in cols])
+        b, cov, _ = logit_fit(Z[fm], y[fm])
+        p = 1 / (1 + np.exp(-(Z @ b)))
+        preds[name.split()[0]] = p
+        se = np.sqrt(np.diag(cov))
+        out.append({"model": name, "coef": [{"term": t, "coef": round(float(bb), 5), "se": round(float(ss), 5)}
+                                            for t, bb, ss in zip(["const"] + cols, b, se)],
+                    "logloss_test": round(float(logloss(y[tm], p[tm]).mean()), 5),
+                    "logloss_train": round(float(logloss(y[fm], p[fm]).mean()), 5),
+                    "ko_rate_test": round(float(y[tm].mean()), 4), "pred_rate_test": round(float(p[tm].mean()), 4)})
+    l0 = logloss(y[tm], preds["K0"][tm])
+    l2 = logloss(y[tm], preds["K2"][tm])
+    for row in out:
+        k = row["model"].split()[0]
+        lk = logloss(y[tm], preds[k][tm])
+        for tag, ref in (("vs_K0", l0), ("vs_K2", l2)):
+            d = fight_diff(X, tm, lk, ref)
+            row[tag] = {"total": round(d["total"], 2), "se": round(d["se_total"], 2), "per_row": round(d["total"] / tm.sum(), 5)}
+    # calibration of the best direct model by predicted decile on the test set
+    best = min(out, key=lambda r: r["logloss_test"])["model"].split()[0]
+    p = preds[best][tm]
+    q = pd.qcut(p, 10, labels=False, duplicates="drop")
+    cal = pd.DataFrame({"q": q, "p": p, "y": y[tm]}).groupby("q").agg(n=("y", "size"), pred=("p", "mean"), obs=("y", "mean"))
+    return out, {"rows_fit": int(fm.sum()), "rows_test": int(tm.sum()), "best": best,
+                 "test_calibration_deciles": [{"n": int(a.n), "pred": round(float(a.pred), 4), "obs": round(float(a.obs), 4)}
+                                              for a in cal.itertuples()],
+                 "league_standing_head_per_min": round(Lsh, 4)}, preds

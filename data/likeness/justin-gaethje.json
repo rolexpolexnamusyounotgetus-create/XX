@@ -66,8 +66,8 @@
   "hair": {
     "style": "Short tapered or faded cut. The sides and back are clipped very short, close to skin at the bottom and blending to about 1 cm higher up. The top is about 4-5 cm, textured, pushed up and forward with no strong part. The front is brushed up slightly; there is no fringe.",
     "length_cm": { "top": 4.5, "sides": 0.5, "back": 0.5 },
-    "colour": "Medium brown, warm to ash, with lighter golden-brown tips under bright light. Clearly darker and less red than the beard.",
-    "colour_samples": { "studio_side": "#674a3c", "studio_top_shadow": "#3f2a20", "arena_top": "#795743", "arena_top_2": "#674b41", "oval_office_top": "#473a32" },
+    "colour": "Medium brown, warm to ash, with lighter golden-brown tips under bright light. Clearly darker and less red than the beard. It reads darker brown when styled wet with product (Lincoln Memorial, June 2026) and more auburn under warm light (2022 presser), so do not tint it from a single photo.",
+    "colour_samples": { "studio_side": "#674a3c", "studio_top_shadow": "#3f2a20", "arena_top": "#795743", "arena_top_2": "#674b41", "oval_office_top": "#473a32", "review_studio_top": "#654d41", "review_arena_top": "#5e463c", "review_lincoln_top_styled_night": "#39302a" },
     "colour_hex": "#5e4536",
     "hairline": "Receding at both temples (mild M shape), with the central forelock intact. Hair is still dense on top; no crown thinning visible.",
     "texture": "Straight to slightly wavy and fairly coarse. It goes wavy or curly on top when sweaty (UFC 324 fence photo).",
@@ -95,6 +95,16 @@
       { "photo": "wiki-oval-office-2026-05-06.jpg", "spot": "left cheek", "hex": "#e6acab", "light": "indoor flash, magenta grade" },
       { "photo": "wiki-oval-office-2026-05-06.jpg", "spot": "forehead", "hex": "#ecbfbe", "light": "indoor flash, magenta grade" }
     ],
+    "review_cross_check_samples": [
+      { "photo": "ref-espn-headshot.png", "spot": "right cheek", "hex": "#f0a392" },
+      { "photo": "ref-espn-headshot.png", "spot": "left cheek", "hex": "#ef9f8a" },
+      { "photo": "wiki-gators-2026-08-28.jpg", "spot": "right cheek, edge of beard", "hex": "#be8275" },
+      { "photo": "wiki-gators-2026-08-28.jpg", "spot": "left cheek, edge of beard", "hex": "#ad7e72" },
+      { "photo": "ref-thescore-ufc324-fence-2026-01-24.jpg", "spot": "left cheek", "hex": "#d6937a" },
+      { "photo": "ref-thescore-ufc324-fence-2026-01-24.jpg", "spot": "forehead", "hex": "#dfad9a" }
+    ],
+    "review_cross_check_average": "#d59684",
+    "review_cross_check_note": "Independent 9x9-pixel median samples taken in review. They agree with the original samples, with an average a little darker because two of them sit in the cap shadow in the Gators photo. tone_hex #dc9b8b is kept. Studio forehead points hit specular highlights (#fbccbc), so do not use them.",
     "tone_average_all": "#e0a399",
     "tone_average_excluding_magenta_cast": "#dc9b8b",
     "tone_hex": "#dc9b8b",
@@ -128,17 +138,23 @@
       "size": "About 25 cm tall x 18 cm wide"
     },
     {
-      "where": "Left side of the ribcage, below the left pec toward the flank",
-      "description": "Small black line-work symbol, shaped like a hook or stylised anchor",
-      "size": "About 6-8 cm"
+      "where": "Left side of the ribcage, below and outside the left pec, toward the flank",
+      "description": "Small black line-work curl. From the front (studio stance, weigh-in) it looks like a hook or a small bird; from the side (UFC 324 fence photo) it reads as an eye-like swirl with a curled tail. No colour.",
+      "size": "About 5 cm tall x 8-10 cm wide"
+    },
+    {
+      "where": "Back of the left shoulder (rear deltoid / top of the shoulder blade)",
+      "description": "Small black outline tattoo, only partly visible at the edge of the shoulder in the UFC 324 fence photo: an elongated looped line. None of the photos shows his back, so its full design and size are unknown.",
+      "size": "Unknown (the visible part is about 6-8 cm long)",
+      "confidence": "low"
     }
   ],
-  "accessories_seen": "Silver cross pendant on a chain (weigh-in, 2022 presser), a thin chain and a large steel wristwatch in daily wear, a white baseball cap.",
+  "accessories_seen": "Silver cross pendant on a chain (weigh-in, 2022 presser), a thin chain and a large steel wristwatch on the left wrist in daily wear, a white baseball cap, and a thin multicoloured string bracelet on the left wrist at the June 2026 weigh-in.",
   "kit": {
-    "typical_shorts": "Black UFC-issued fight shorts with white diagonal stripes on his left hip and thigh, UFC wordmarks on the waistband and leg, and a crypto.com logo on the right leg. The official studio portrait has a tonal dark grey stars-and-stripes print. At UFC 324 (Jan 2026) the black shorts carried a Monster Energy logo.",
+    "typical_shorts": "Black UFC-issued fight shorts. Two white diagonal stripes, a vertical UFC wordmark and the crypto.com logo all sit on his RIGHT hip and thigh (viewer's left when he faces the camera), with a UFC wordmark on the front of the waistband just to his left of centre. The official studio portrait (early 2025 or before) has a tonal dark grey stars-and-stripes print. At UFC 324 (Jan 2026) the black shorts had a tonal pattern and a green Monster Energy claw logo, also on his right thigh. At UFC Freedom 250 (June 2026) the shorts were white with thin light-blue diagonal lines, matching the walkout jersey.",
     "gloves": "Standard UFC 4 oz gloves with corner-coloured cuffs: red cuffs at UFC 324, blue 'Freedom 250' gloves at the White House event (June 2026).",
     "walkout": "UFC Freedom 250 (June 2026): navy hood with red and white trim, black UFC beanie, white/light-blue patterned walkout jersey with a crypto.com logo, US flag over the shoulders. At the weigh-in: navy UFC track pants, white cap.",
-    "shorts_colours_hex": { "black_base": "#15171a", "grey_print": "#3a3d42", "white_stripes": "#f2f2f2" },
+    "shorts_colours_hex": { "black_base": "#15171a", "grey_print": "#3a3d42", "white_stripes": "#f2f2f2", "freedom250_white": "#eef1f6", "freedom250_blue_lines": "#8fb8e6" },
     "brand_note": "No apparel brand logo is legible on the shorts in these photos; describe them as UFC-issued."
   },
   "morphs": {

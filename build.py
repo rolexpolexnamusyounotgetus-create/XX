@@ -42,7 +42,11 @@ MAX_BYTES = 15 * 1024 * 1024
 
 
 # pieces another workstream may not have written yet: missing ones build as empty with a warning
-OPTIONAL = {"src/avatar3d.js": "", "data/derived/calibration.json": "null", "data/scenarios.json": "{}"}
+OPTIONAL = {"src/avatar3d.js": "", "src/director3.js": "", "data/derived/calibration.json": "null", "data/scenarios.json": "{}"}
+
+# optional block: scouting files and likeness sheets by slug, inlined only when the page asks for them
+SCOUTING_MARKER = "/*__SCOUTING_JSON__*/"
+SCOUTING_DIRS = (("data/scouting", "scouting"), ("data/likeness", "likeness"))
 
 
 def read(rel):
@@ -58,6 +62,25 @@ def safe_json(rel):
     data = json.loads(read(rel))
     text = json.dumps(data, separators=(",", ":"), ensure_ascii=False)
     # "</" inside a script block would end it; "<\/" is the same JSON string
+    return text.replace("</", "<\\/")
+
+
+def scouting_json():
+    out = {}
+    for rel, key in SCOUTING_DIRS:
+        out[key] = {}
+        d = os.path.join(ROOT, rel)
+        if not os.path.isdir(d):
+            continue
+        for name in sorted(os.listdir(d)):
+            if not name.endswith(".json") or name.startswith("."):
+                continue
+            try:
+                with open(os.path.join(d, name), encoding="utf-8") as f:
+                    out[key][name[:-5]] = json.load(f)
+            except ValueError as e:
+                print("warning: skipping " + rel + "/" + name + " (" + str(e) + ")", file=sys.stderr)
+    text = json.dumps(out, separators=(",", ":"), ensure_ascii=False)
     return text.replace("</", "<\\/")
 
 
@@ -110,6 +133,9 @@ def main():
         if page.count(marker) != 1:
             raise SystemExit("placeholder " + marker + " must appear exactly once in page.src.html")
         page = page.replace(marker, safe_json(rel))
+
+    if page.count(SCOUTING_MARKER) == 1:
+        page = page.replace(SCOUTING_MARKER, scouting_json())
 
     if ASSETS_MARKER in page:
         page = page.replace(ASSETS_MARKER, assets_js())

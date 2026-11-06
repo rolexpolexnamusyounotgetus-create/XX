@@ -885,8 +885,9 @@
     [["A", A, 0], ["B", B, 1]].forEach(function (s) {
       var side = s[0], o = s[1].kd, row = el("div", "chain");
       row.setAttribute("aria-label", shortOf(side) + " drops " + shortOf(other(side)) + " " + pct(o.perHeadLanded, 2) + " of the time per clean standing head shot");
-      function f(label, v, inv) {
+      function f(label, v, inv, always) {
         if (v == null || !isFinite(v)) return;
+        if (!always && label !== "base" && Math.abs(v - 1) < 0.005) return;
         var span = el("span", "f" + (Math.abs(v - 1) < 0.02 ? "" : ((v > 1) !== !!inv ? " up" : " dn")));
         span.appendChild(el("b", null, (label === "base" ? pct(v, 2) : "×" + fx(v)))); span.appendChild(document.createTextNode(" " + (label === "base" ? divl + " base" : label)));
         if (row.children.length) row.appendChild(el("span", "op", "·"));
@@ -894,8 +895,8 @@
       }
       var opp = shortOf(other(side));
       f("base", o.p0);
-      f(shortOf(side) + "'s power", o.powerRatio);
-      f(opp + "'s chin", o.oppChinRatio);
+      f(shortOf(side) + "'s power", o.powerRatio, false, true);
+      f(opp + "'s chin", o.oppChinRatio, false, true);
       f(opp + "'s age", o.ageChinOpp);
       f("own age", o.agePow);
       f(opp + "'s " + o.oppKoLosses + " KO losses", o.koLossChinOpp);
@@ -1495,7 +1496,7 @@
       }
     },
     onRoundEnd: function (r, rd) {
-      if (H) { hudSync(r, 300); H.base = { A: zc(), B: zc() }; for (var rr = 0; rr <= r; rr++) addRoundTotals(H.base, H.f.rounds[rr].st); H.cur = { A: zc(), B: zc() }; H.idx = 1e9; scheduleHud(); }
+      if (H) { hudSync(r, 300); H.base = { A: zc(), B: zc() }; for (var rr = 0; rr <= r; rr++) addRoundTotals(H.base, H.f.rounds[rr].st); H.cur = { A: zc(), B: zc() }; H.idx = 1e9; H.owner = null; H.lastT = 300; scheduleHud(); }
       var st = rd.st || {}, la = st.A ? st.A.sig_lnd : 0, lb = st.B ? st.B.sig_lnd : 0;
       if (rd.judges && H) { for (var j = 0; j < 3; j++) H.cards[j].push(rd.judges[j]); renderCards(); }
       var cards = rd.judges ? rd.judges.map(function (s) { return s[0] + "–" + s[1]; }).join(", ") : "";

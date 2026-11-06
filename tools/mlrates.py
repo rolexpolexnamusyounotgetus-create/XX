@@ -274,7 +274,7 @@ def features(X, Y, ctx, P):
     def up(side):
         h = side.get("home")
         hl = DIV_LBS.get(h) if h else None
-        return (lbs_f - hl) / 10.0 if (hl and lbs_f) else 0.0
+        return min(3.0, max(-3.0, (lbs_f - hl) / 10.0)) if (hl and lbs_f) else 0.0
 
     def lay(side):
         v = side.get("layoff")

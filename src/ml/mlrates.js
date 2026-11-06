@@ -144,7 +144,7 @@
     var ax = X.age, ay = Y.age, ageNa = (ax == null || ay == null) ? 1 : 0;
     var rx = X.reach_in, ry = Y.reach_in, hx = X.height_in, hy = Y.height_in, reachNa = (rx == null || ry == null) ? 1 : 0;
     var sx = stanceCode(X.stance), sy = stanceCode(Y.stance), oppst = ((sx === 0 && sy === 1) || (sx === 1 && sy === 0)) ? 1 : 0;
-    function up(sd) { var hl = sd.home ? LBS[sd.home] : null; return (hl && lbsF) ? (lbsF - hl) / 10 : 0; }
+    function up(sd) { var hl = sd.home ? LBS[sd.home] : null; return (hl && lbsF) ? clip((lbsF - hl) / 10, -3, 3) : 0; }
     function lay(sd) { return sd.layoff != null ? [Math.log1p(sd.layoff / 30.4), 0] : [0, 1]; }
     var lx = lay(X), ly = lay(Y);
     f.push(ctx.rounds === 5 ? 1 : 0, ctx.title ? 1 : 0, women, Math.log(lbsF / 155), (ctx.year - 2018) / 10,
@@ -158,8 +158,54 @@
     return f;
   }
 
+  // ------------------------------------------------------------------ engine v3 static expectation
+  // Per-minute expected attempts by position and target, accuracies, KD per landed head strike, takedowns, control,
+  // submissions and reversals implied by a FightEngine.matchup() object m before pace, stamina, damage and form
+  // (the same arithmetic as engine3 explain(), extended to every target). Side i = 0 (A) or 1 (B).
+  function prob(o) { return o / (1 + o); }
+  function engineSide(m, i) {
+    var p = m.p, occ = m.occ, j = 1 - i, t, k;
+    var cs = p.clinchCtrlStrike;
+    var att = [m.dRate[i] * 60 * occ[0],
+      m.cRate[i] * 60 * (occ[1 + i] * cs + occ[2 - i] * (2 - cs)),
+      m.gRate[i] * 60 * occ[3 + i],
+      m.gBot[i] * 60 * occ[4 - i]];                         // distance, clinch, ground top, ground bottom
+    var mixes = [m.mixD[i], p.clinchMix, p.groundTopMix, p.groundBotMix];
+    var A = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]], Lnd = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (var pc = 0; pc < 4; pc++) for (t = 0; t < 3; t++) {
+      A[pc][t] = att[pc] * mixes[pc][t];
+      Lnd[pc][t] = A[pc][t] * prob(m.accO[(i * 4 + pc) * 3 + t]);
+    }
+    function sumT(M, t) { return M[0][t] + M[1][t] + M[2][t] + M[3][t]; }
+    function sumP(M, pc) { return M[pc][0] + M[pc][1] + M[pc][2]; }
+    var hA = sumT(A, 0), bA = sumT(A, 1), lA = sumT(A, 2), hL = sumT(Lnd, 0), bL = sumT(Lnd, 1), lL = sumT(Lnd, 2);
+    var dA = sumP(A, 0), cA = sumP(A, 1), gA = sumP(A, 2) + sumP(A, 3), dL = sumP(Lnd, 0), cL = sumP(Lnd, 1), gL = sumP(Lnd, 2) + sumP(Lnd, 3);
+    var kdPos = p.kdPos || [1, 1.1];
+    var kdN = m.kd[i] * (Lnd[0][0] * kdPos[0] + Lnd[1][0] * kdPos[1] + p.kdBodyRatio * (Lnd[0][1] * kdPos[0] + Lnd[1][1] * kdPos[1]));
+    var tdDist = m.tdD[i] * occ[0], tdCC = m.tdCC[i] * occ[1 + i], tdCU = m.tdCU[i] * occ[2 - i];
+    var tdAtt = (tdDist + tdCC + tdCU) * 60;
+    var tdL = (tdDist * prob(m.tdO[i]) + tdCC * prob(m.tdOC[i]) + tdCU * prob(m.tdOC[i] * 0.8)) * 60;
+    var ctrl = (occ[3 + i] + occ[1 + i]) * 60;
+    var subTop = 0, subBot = 0, rev = 0;
+    for (k = 0; k < 5; k++) {
+      subTop += m.occS[i][k] * m.subTPos[i * 5 + k];
+      subBot += m.occS[j][k] * m.subBPos[j * 5 + k];
+      rev += m.occS[j][k] * m.swPos[j * 5 + k];
+    }
+    var oppTdFail = (m.tdD[j] * occ[0] * (1 - prob(m.tdO[j])) + m.tdCC[j] * occ[1 + j] * (1 - prob(m.tdOC[j])) +
+      m.tdCU[j] * occ[2 - j] * (1 - prob(m.tdOC[j] * 0.8))) * 60;
+    var sub = (subTop * occ[3 + i] + subBot * occ[4 - i]) * 60 + oppTdFail * m.gillo[i];
+    return { d_att: dA, c_att: cA, g_att: gA, h_att: hA, b_att: bA, l_att: lA, td_att: tdAtt, sub_att: sub,
+      rev: rev * occ[4 - i] * 60, ctrl: ctrl,
+      acc_h: hL / Math.max(1e-9, hA), acc_b: bL / Math.max(1e-9, bA), acc_l: lL / Math.max(1e-9, lA),
+      acc_d: dL / Math.max(1e-9, dA), acc_c: cL / Math.max(1e-9, cA), acc_g: gL / Math.max(1e-9, gA),
+      td_acc: tdL / Math.max(1e-9, tdAtt), kd_h: kdN / Math.max(1e-9, hL),
+      _A: A, _L: Lnd, _att: att };
+  }
+  function engineExpect(m) { return { A: engineSide(m, 0), B: engineSide(m, 1) }; }
+
   return {
-    KEYS: KEYS, TNAMES: TNAMES, BASE_KEY: BASE_KEY, DEFAULT_FC: DEFAULT_FC,
+    KEYS: KEYS, TNAMES: TNAMES, BASE_KEY: BASE_KEY, DEFAULT_FC: DEFAULT_FC, engineExpect: engineExpect,
     features: features, priorFor: priorFor, sumsOf: sumsOf, league: league,
     _internal: { shr: shr, lr: lr, lgt: lgt, sigm: sigm, clip: clip }
   };

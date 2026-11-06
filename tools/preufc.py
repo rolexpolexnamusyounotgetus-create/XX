@@ -688,11 +688,14 @@ def build(args):
         grad_cumw[pr] = cw
     PRIOR_GRAD = 10.0
 
+    all_deb = sorted(first_ufc[p] for p in rowsby if first_ufc[p] >= grad_from)
+
     def promo_q(pr, D):
+        G = bisect.bisect_left(all_deb, D)
         g = bisect.bisect_left(grads.get(pr, []), D)
         k = bisect.bisect_left(grad_dates.get(pr, []), D)
         wins = grad_cumw[pr][k - 1] if k > 0 else 0
-        return {"feed": math.log1p(g), "grad": (wins + PRIOR_GRAD * 0.5) / (k + PRIOR_GRAD), "n_grad": g,
+        return {"feed": math.log1p(1000.0 * g / max(G, 1)), "grad": (wins + PRIOR_GRAD * 0.5) / (k + PRIOR_GRAD), "n_grad": g,
                 "n_res": k}
 
     # ---- Sherdog network: every pro fight seen on any resolved page, deduped; opponent records and a
@@ -838,8 +841,8 @@ def build(args):
             "layoff_days": "days since the last pro fight of any kind", "n_2y": "pro fights in the 2 years before",
             "promos / last_promo / n_promos": "non-UFC promotions (Sherdog event-name prefix, big orgs merged)",
             "dwcs_w dwcs_n": "Dana White's Contender Series wins / fights (not in ufcstats)",
-            "promo_feed": "mean over the last 6 non-UFC fights of log(1 + number of UFC fighters who came through "
-                          "that promotion and debuted in the UFC before the bout date); graduates counted only from "
+            "promo_feed": "mean over the last 6 non-UFC fights of log(1 + 1000 x share of all UFC debutants before the "
+                          "bout date who came through that promotion); graduates counted only from "
                           "meta.graduates_from on, where the target set holds every debut (older debuts are "
                           "survivors only)",
             "promo_feed_max": "max of the same over the last 6 non-UFC fights",

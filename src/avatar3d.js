@@ -717,8 +717,8 @@
         .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n" +
           "{ vec3 pp = -vViewPosition; float hgt = vn(vUv * 620.0) * 0.55 + vn(vUv * 1500.0) * 0.45;\n" +
           "  vec2 dH = vec2(dFdx(hgt), dFdy(hgt)) * 0.0035 * (1.0 - 0.6 * clamp(vMask.x * uBeard, 0.0, 1.0));\n" +
-          "  vec3 dpx = dFdx(pp), dpy = dFdy(pp); vec3 r1 = cross(dpy, normal), r2 = cross(normal, dpx); float det = dot(dpx, r1);\n" +
-          "  vec3 grad = sign(det) * (dH.x * r1 + dH.y * r2); normal = normalize(abs(det) * normal - grad); }")
+          "  vec3 dpx = dFdx(pp), dpy = dFdy(pp); vec3 pr1 = cross(dpy, normal), pr2 = cross(normal, dpx); float det = dot(dpx, pr1);\n" +
+          "  vec3 grad = sign(det) * (dH.x * pr1 + dH.y * pr2); normal = normalize(abs(det) * normal - grad); }")
         .replace("#include <lights_physical_pars_fragment>", T.ShaderChunk.lights_physical_pars_fragment
           .replace("vec3 irradiance = dotNL * directLight.color;", "vec3 irradiance = dotNL * directLight.color;\n\tfloat rawNL = dot( geometry.normal, directLight.direction );\n\tvec3 irradianceW = clamp( ( vec3( rawNL ) + vec3( 0.36, 0.16, 0.11 ) ) / vec3( 1.36, 1.16, 1.11 ), 0.0, 1.0 ) * directLight.color;\n\t#ifndef PHYSICALLY_CORRECT_LIGHTS\n\t\tirradianceW *= PI;\n\t#endif")
           .replace("reflectedLight.directDiffuse += ( 1.0 - clearcoatDHR ) * irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );", "reflectedLight.directDiffuse += ( 1.0 - clearcoatDHR ) * irradianceW * BRDF_Diffuse_Lambert( material.diffuseColor );")
