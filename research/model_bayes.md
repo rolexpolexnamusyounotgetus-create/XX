@@ -3,7 +3,8 @@
 Nov 6, 2026, 10:25-11:20 pm UTC. This run continued the partial work of an earlier run that a container restart
 killed at about 10:22 pm: the data stage, the Laplace filter and the empirical-Bayes fitting were reused; the EP
 smoothing refits, the prediction schedule, the CV / stack / confirm / export stages and everything below are new.
-Tool: `tools/bayes.py`. Output: `data/derived/bayes.json`. Plugin: `tools/blindtest_plugins/bayes.py`. Scratch caches:
+Tool: `tools/bayes.py`. Output: `data/derived/bayes.json`. Plugin: `tools/blindtest_plugins/bayes.py`. Test:
+`tests/test_bayes.py`. Scratch caches:
 `out/bayes_cache/` (gitignored; `cv.json`, `eval.json`, `stack.json`, `confirm.json`, `swaptest.json` and the logs are
 the sources of every number here and are copied into `bayes.json`).
 
