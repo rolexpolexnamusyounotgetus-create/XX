@@ -1799,7 +1799,7 @@
       var ho = buzz ? { offs: [0.45 * mm, Math.max(0.8, topmm * 0.25) * mm, Math.max(1.2, topmm * 0.4) * mm], cell: Math.min(0.75 + 0.1 * topmm, 1.3), sw: 0.06, dens: 1, grids: 3, opac: 2.4 }
         : { offs: [0.5, 0.3, 0.5, 0.75, 1].map(function (k, j) { return j === 0 ? 0.5 * mm : k * clamp(topmm * 0.28, 1.8, 7) * mm; }), cell: 1.25, sw: 0.075, dens: 1, grids: 3, opac: 2.4 };
       ho.slen = ho.cell;
-      this.addCap("hair", covH, Object.assign(ho, { len: lenH, densV: densH, dir: hdir, color: looks.hairColor, grey: 0, lenK: 0.6, edgeK: 0.8, seed: 53, spec: 0.035, shin: 110, maskTex: maskT, maskCh: ch, maskSet: looks.scalpCh < 3 ? 0 : 1 }));
+      this.addCap("hair", covH, Object.assign(ho, { len: lenH, densV: densH, dir: hdir, color: looks.hairColor, grey: 0, lenK: 0.6, edgeK: 0.8, seed: 53, spec: 0.016, shin: 110, maskTex: maskT, maskCh: ch, maskSet: looks.scalpCh < 3 ? 0 : 1 }));
     }
   };
   var CAP_FS_PARS = "varying vec4 vCap;\nvarying vec2 vFlow;\nvarying vec2 vCUv;\n" +
@@ -1865,7 +1865,7 @@
     "\t  float t1 = dot( gHairT, hH ), s1 = sqrt( max( 0.0, 1.0 - t1 * t1 ) );\n" +
     "\t  vec3 tB = normalize( gHairT - geometry.normal * 0.22 ); float t2 = dot( tB, hH ), s2 = sqrt( max( 0.0, 1.0 - t2 * t2 ) );\n" +
     "\t  float nl = smoothstep( -0.1, 0.45, dot( geometry.normal, directLight.direction ) );\n" +
-    "\t  vec3 kk = vec3( pow( s1, uShin ) ) * uSpecK + material.diffuseColor * pow( s2, uShin * 0.3 ) * uSpecK * 1.5;\n" +
+    "\t  vec3 kk = mix( vec3( 1.0 ), material.diffuseColor * 3.0, 0.35 ) * pow( s1, uShin ) * uSpecK + material.diffuseColor * pow( s2, uShin * 0.3 ) * uSpecK * 1.5;\n" +
     "\t  reflectedLight.directSpecular += directLight.color * kk * nl; }\n" +
     "#endif\n";
   Avatar.prototype.addCap = function (name, cov, o) {

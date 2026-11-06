@@ -1,4 +1,4 @@
-/* Fight engine global parameters (engine v4; the file name stays params3.js for every version).
+/* Fight engine global parameters (engine v4 -> v5 merge; the file name stays params3.js for every version).
    UMD: module.exports in Node, self.FightParams / window.FightParams in the browser.
    One plain object. Every entry carries a comment with its meaning and its source or default.
    Sources: data/derived/combine_fit.json (shrinkage, combination), data/derived/baserates.json and
@@ -18,15 +18,32 @@
      (data/derived/v4_levels.json). The self-calibrated league level ran ~10% low on knockdowns there.
    - [walkfwd] values left from v3 (tools/calibrate.js on 2019-2023 with walk-forward priors): form sds, caution5,
      r1Caution5, drainSchedExp, age / KO-loss / size coefficients, powExp, chinExp, ctrlScale.
+   v5 merge (docs/CHANGELOG.md "v5 merge log"): every component behind components.<name>; flag off = v4.0.0 for fixed seeds.
+   - step 1, components.v401: v4.0.1's train-only fixes (versions/v4.0.1-rejected/), one sub-flag each, default on until
+     the Calibrate stage's train leave-one-out decides. The usual fields carry the flag-on values ([v401 a] .. [v401 e]
+     tags); v401.off (just before div, below) holds v4.0.0's values, which a sub-flag that is off puts back. Tools that
+     rewrite these fields in place (tools/v4_levels.js --write, tools/judgecal.js --write, tests/test_engine3.js --fit
+     --write) write the flag-on values: run them with the sub-flag on, or drop the sub-flag first.
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "4.0.0-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01)
+    version: "5.0.0-dev.1-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge step 1 (components.v401)
+
+    // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
+    components: {
+      // v5 merge step 1: v4.0.1's train-only fixes, one sub-flag each (true / false for all five): (a) emJudge pre-2024 EM
+      // judging weights + the noise / 10-8 refit on them; (b) deductions; (c) mlLevels learned-path levels + companions;
+      // (d) tdCap cumulative takedown cap; (e) koTargets KO/TKO composition from 2019-2023 fights. Values: v401 below.
+      v401: { emJudge: true, deductions: true, mlLevels: true, tdCap: true, koTargets: true }
+    },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
     mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
-    mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio)
+    mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio; [v401 d] tdCap: on the cumulative takedown multipliers too)
+    mlTdLevel: 1.067,   // [v401 c: levels v4.0.1, tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; off 1] factor on the learned takedown-attempt targets (v4.0.0 left takedowns landed 6% low on train)
+    mlCtrlLevel: 1.053,  // [v401 c: same; off 1] factor on the learned control targets (v4.0.0: control 5% low on train)
+    mlSubLevel: 1.083,   // [v401 c: same; off 1] factor on the learned submission-attempt targets (v4.0.0: attempts 6.5% low on train, which the submission conversion scale had absorbed)
 
     // ---------------- profile estimation (shrinkage toward the fight division's priors) ----------------
     kPM: 40,          // per-minute rate prior strength, fight-minutes of division-average fighting (combine_fit meta.shrink_k_default.pm)
@@ -107,7 +124,7 @@
     outMob: 0.15,            // output x (1 - outMob (1 - mobility)) (default)
 
     // ---------------- damage, knockdowns, finishes ----------------
-    kdScale: 1.391,          // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 1.246] global knockdown scale on p0 (division KD per landed standing head strike)
+    kdScale: 1.383,          // [v401 c: levels v4.0.1, tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; off = levels v4 1.391; v3 walkfwd 1.246; v401 e: x koComp.kdScale] global knockdown scale on p0 (division KD per landed standing head strike)
     kdPos: [1.0, 2.561],     // [selfcal v4: train-only priors_dev.json] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates; knees and elbows)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
@@ -132,7 +149,7 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.3673,       // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.3175] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
+    kdInstant: 0.3623,       // [v401 c: levels v4.0.1; off = levels v4 0.3673; v3 walkfwd 0.3175; v401 e: odds x koComp.kdInstant] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
@@ -141,11 +158,11 @@
     kdRecoverStand: 0.45,    // share of recoveries that get back to the feet; the rest recover guard with the attacker on top (default)
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
-    kdRefStop: 0.184,       // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.153] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
+    kdRefStop: 0.1807,       // [v401 c: levels v4.0.1; off = levels v4 0.184; v3 walkfwd 0.153; v401 e: odds x koComp.kdRefStop] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
     refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
-    stko: 0.03644,           // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.03439] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
-    gnpTko: 0.03072,           // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.02467] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
+    stko: 0.03565,           // [v401 c: levels v4.0.1; off = levels v4 0.03644; v3 walkfwd 0.03439; v401 e: x koComp.stko] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
+    gnpTko: 0.03005,           // [v401 c: levels v4.0.1; off = levels v4 0.03072; v3 walkfwd 0.02467; v401 e: x koComp.gnpTko] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
     stkoBase: 0.3,           // standing TKO hazard while hurt = stko x (stkoBase + D / 100) (default)
     gnpDmg: 600,             // GNP TKO x (1 + D / gnpDmg) (default)
     gnpHurt: 2.0,            // GNP TKO multiplier while hurt (default)
@@ -178,7 +195,7 @@
     tdOddsScale: 0.9018,     // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.9103] takedown success odds scale
     sweepScale: 1.0,         // sweep / reversal rate scale (default; reversals come from each pair's data rates)
     subAttScale: 1.085,      // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.042] submission attempt rate scale
-    subConvScale: 1.847,     // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 1.619] submission conversion odds scale
+    subConvScale: 1.697,     // [v401 c: levels v4.0.1 (with mlSubLevel's 8% more attempts); off = levels v4 1.847; v3 walkfwd 1.619] submission conversion odds scale
     gilloScale: 1.0,         // standing guillotine attempts on stuffed shots scale
 
     // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------
@@ -197,29 +214,56 @@
     },
 
     // ---------------- judging ----------------
-    // v4: EM round-winner fit over all 7,550 ufcstats cards with only 10-9 rounds (docs/BACKLOG.md "Judging";
-    // research/data_baserates.md item 12), logit per landed differential. Noise, tastes and the 10-8 rule are fit to the
-    // 2019-2023 judges' rounds in data/derived/judgerounds_rows.json by tools/judgecal.js (train years only).
+    // [v401 a] emJudge (default): EM round-winner fit over the 5,519 ufcstats cards of 2015-01-01..2023-12-31 with only 10-9
+    // rounds (tools/judge_em_train.py -> data/derived/judge_em_train.json; same code as baserates.json
+    // round_model.em_all_cards), logit per landed differential, with the noise and the 10-8 KD term refit on these weights
+    // (tools/judgecal.js on the 2019-2023 judges' rounds in data/derived/judgerounds_rows.json, train years only) and t108
+    // re-levelled (tools/v4_levels.js). Off (v401.off.emJudge): v4.0.0's all-cards fit through 2026-10 (validation years and
+    // the vault) and the judgecal / levels values fit on it. [v401 b] deductions: judge.ded / ded2 (off: 0).
     judge: {
-      head: 0.179, body: 0.133, leg: 0.105,   // per landed sig strike differential to head / body / leg (EM fit)
-      kd: 2.42,                               // per knockdown (EM fit; 13.5 head strikes)
-      td: 0.286,                              // per takedown landed (EM fit)
-      ctrlMin: 0.46,                          // per minute of control (EM fit; ufcstats control includes clinch control)
-      sub: 0.85,                              // per submission attempt (EM fit)
+      head: 0.1742, body: 0.1271, leg: 0.1042,   // [v401 a: em pre-2024] per landed sig strike differential to head / body / leg (v4.0.0, all years: 0.179 / 0.133 / 0.105)
+      kd: 2.1635,                               // [v401 a: em pre-2024] per knockdown (12.4 head strikes; v4.0.0 2.42)
+      td: 0.2780,                               // [v401 a: em pre-2024] per takedown landed (v4.0.0 0.286)
+      ctrlMin: 0.4623,                          // [v401 a: em pre-2024] per minute of control (ufcstats control includes clinch control; v4.0.0 0.46)
+      sub: 0.8467,                              // [v401 a: em pre-2024] per submission attempt (v4.0.0 0.85)
       hurt: 0.8,                              // per hurt/wobble scored (engine-only event, not in ufcstats: about 1/3 of a knockdown; judgment call)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
-      sharedSd: 1.416,                        // [judgecal] sd of the noise shared by the three judges (logits; ML on 2019-2023 rounds 1.531, less the engine-only hurt / power terms' residual variance)
-      sharedFight: 0.3303,                    // [judgecal] share of the shared variance drawn once per fight (persists across rounds; data 0.283 of 1.531^2, LR 101): panel residuals correlate ~0.12 between rounds of a fight
-      indSd: 1.079,                           // [judgecal] sd of each judge's own noise (logits)
+      sharedSd: 1.357,                        // [judgecal; v401 a, v4.0.0 1.416] sd of the noise shared by the three judges (logits; ML on 2019-2023 rounds 1.489 with the pre-2024 weights (v4.0.0: 1.531), less the engine-only hurt / power terms' residual variance)
+      sharedFight: 0.3402,                    // [judgecal; v401 a, v4.0.0 0.3303] share of the shared variance drawn once per fight (persists across rounds; data 0.283 of 1.489^2, LR 101): panel residuals correlate ~0.12 between rounds of a fight
+      indSd: 1.053,                           // [judgecal; v401 a, v4.0.0 1.079] sd of each judge's own noise (logits)
       tasteSd: 0,                             // lognormal sd of each judge's fight-level taste for striking / grappling / damage; 0 in v4: a judge who dissents twice in a fight does so in either direction equally often (judgecal: no fight-level taste; v3 0.2 from literature 12.5)
-      t108: 8.555,                            // [judgecal 7.07 on real rounds; levels v4 8.555: simulated decision rounds give the 2021-2023 3.5% 10-8 share on train fights] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge); 2021-2023 threshold (2019-2020: 6.29; 10-8 share 3.6% vs 5.9%)
-      t108kd: -1.087                          // [judgecal] threshold change per knockdown of edge; negative: z already carries 2.42 per KD, and judges give a 10-8 to 13% of KD-edge round winners, not the 23% that z alone implies
+      t108: 8.31,                            // [judgecal + levels v4.0.1; v401 a, v4.0.0 8.555] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge); judgecal fits it on real rounds (2021-2023 threshold; 2019-2020 lower, 10-8 share 3.6% vs 5.9%), then tools/v4_levels.js re-levels it so simulated decision rounds give the 2021-2023 3.6% share on train fights (the engine's rounds, with hurts, are more lopsided)
+      t108kd: -0.8585,                        // [judgecal; v401 a, v4.0.0 -1.087] threshold change per knockdown of edge; negative: z already carries the KD weight, and judges give a 10-8 to 13% of KD-edge round winners, not the 23% that z alone implies
+      ded: 0.00515,                           // [judgecal; v401 b, off 0] point deduction (foul) per fighter per round, on all three cards; 2019-2023 decision rounds (v4.0.0 had none, so its draws and majority decisions came from 10-8s alone)
+      ded2: 0.075                             // [judgecal; v401 b] share of deductions that cost 2 points
     },
 
     // ---------------- between rounds ----------------
     doc: 0.06,               // doctor stoppage hazard between rounds: doc * (D/100)^2, capped (sweep: ~0.7 per 100 league-average 3-round fights; baserates doctor 0.76 per 100 all, 1.5 LW, 1.55 in 5-rounders)
     docCap: 0.2,             // cap per interval
     corner: 0.03,            // corner stoppage hazard: corner per KD absorbed beyond the first, plus corner * (D/120)^3 (sweep: ~0.1 per 100 3-round fights; baserates corner 0.13 all, 0.35 LW, 0.52 in 5-rounders)
+
+    // ---------------- v5 merge step 1: components.v401 values (src/engine3.js resolveParams) ----------------
+    // off: v4.0.0's values, put back (before opts.params overrides) for each sub-flag that is off. Never tuned: they are
+    // the reference that makes each flag-off path reproduce v4.0.0 (tests/test_v401.js). One line per sub-flag on purpose:
+    // the in-place rewriters (tools/v4_levels.js, tools/judgecal.js, tests/test_engine3.js --write) match a field name at
+    // the start of a line, so they only ever touch the usual (flag-on) fields above.
+    // koComp: (e) factors from re-aiming the self-calibration's KO/TKO composition at 2019-2023 fights (tools/ko_composition.py
+    // -> data/derived/ko_composition_pre2024.json: ground 28.6%, clinch 7.1%, standing without a KD 7.2%, vs v4's all-years
+    // 28 / 12.5 / 7; the clinch share is the big move: ufcstats labelled ~24% of strike KO/TKOs "In Clinch" in 2015-2018
+    // and ~7% from 2019 on). tools/v401_kocomp.js fits kdScale, kdPos[1], gnpTko, stko and kdInstant / kdRefStop (odds)
+    // twice on league-average Lightweight pairs (train-only priors, learned rates off, common random numbers), once to v4's
+    // targets and once to the 2019-2023 ones, holding knockdowns per head strike and KD-to-finish at the engine's own level;
+    // factor = second / first. Applied after the opts.params overrides, so the usual fields stay the pre-(e) levels.
+    v401: {
+      off: {
+        emJudge: { judge: { head: 0.179, body: 0.133, leg: 0.105, kd: 2.42, td: 0.286, ctrlMin: 0.46, sub: 0.85, sharedSd: 1.416, sharedFight: 0.3303, indSd: 1.079, t108: 8.555, t108kd: -1.087 } },
+        deductions: { judge: { ded: 0, ded2: 0 } },
+        mlLevels: { mlTdLevel: 1, mlCtrlLevel: 1, mlSubLevel: 1, kdScale: 1.391, kdInstant: 0.3673, kdRefStop: 0.184, stko: 0.03644, gnpTko: 0.03072, subConvScale: 1.847 }
+      },
+      koTargets: { ground: 0.2859, clinch: 0.0711, standNoKd: 0.0725 },   // (e) the self-calibration's composition targets (tests/test_engine3.js --fit uses them while the sub-flag is on; v4: 0.28 / 0.125 / 0.07)
+      koComp: { kdScale: 1, kdClinch: 1, gnpTko: 1, stko: 1, kdInstant: 1, kdRefStop: 1 }
+    },
 
     // ---------------- division self-calibration factors ([selfcal v4]: train-only priors_dev.json; neutral = 1) ----------------
     // att: strike-attempt scale; kd: knockdown scale; ko: scales kdInstant and kdRefStop odds and the stko / gnpTko hazards;

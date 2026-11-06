@@ -348,12 +348,13 @@
 
   // engine v3's static expectation for two league-average (no-data) fighters with the matchup's settings
   // Cache key: division settings, the division priors and the parameter set (version label plus any per-call overrides,
-  // so a tuner that injects params through opts.params never reuses a stale league level). The league-average pair has
+  // so a tuner that injects params through opts.params never reuses a stale league level; engine v5: also the resolved
+  // components flags, so a flag switched on the shared FightParams object never reuses a stale level). The league-average pair has
   // no date of birth, so the date does not enter.
   function leagueExpect(m, FE) {
     var o = m.opts || {}, P = m.P || {};
     var key = [m.division, m.rounds, m.title, m.p.version, JSON.stringify([P.d_att, P.c_att, P.g_att, P.ctrl, P.kd_per_h, P.td_acc, P.td_att, P.sub_att, P.rev, P.acc_h, P.acc_d]),
-      o.params ? JSON.stringify(o.params) : ""].join("|");
+      o.params ? JSON.stringify(o.params) : "", m.p.components ? JSON.stringify(m.p.components) : ""].join("|");
     if (leagueCache[key]) return leagueCache[key];
     var o2 = {}; for (var k in o) if (k !== "adjA" && k !== "adjB" && k !== "ml" && k !== "mlModel" && k.charAt(0) !== "_") o2[k] = o[k];
     o2.division = m.division; o2.rounds = m.rounds; o2.title = m.title; o2.ml = false;
@@ -367,7 +368,10 @@
 
   // pred: MLRates.predict output. opts: {engine (FightEngine), level: "engine" (default) | "absolute", weight (0..1, default
   // 1: blend toward the engine's own rates), parts: {grappling,
-  // strikes, accuracy, kd, subs: false to keep the engine's own}, maxRatio (cap on any single multiplier, default 4)}.
+  // strikes, accuracy, kd, subs: false to keep the engine's own}, maxRatio (cap on any single multiplier, default 4),
+  // levels ({target: factor} on the learned rate targets, e.g. { td_att: 1.07, ctrl: 1.05, sub_att: 1.08 }; v4.0.1, engine v5
+  // components.v401.mlLevels), cumCap (true: maxRatio caps the cumulative takedown-attempt multiplier and the takedown-odds
+  // one; v4.0.1, engine v5 components.v401.tdCap; absent: v4.0.0's per-step cap)}.
   // level "engine": the target for each stat is the engine's own league-average expectation x (ML / league rate), so the
   // simulator keeps its calibrated league level (its in-fight modifiers, e.g. on knockdowns, stay balanced) and plays the
   // ML's matchup-specific multipliers; probabilities combine on odds. level "absolute": the ML rates are imposed on the
@@ -414,6 +418,10 @@
       ["acc_h", "acc_b", "acc_l", "acc_d", "acc_c", "acc_g"].forEach(function (q) { tg[i][q] = prob(odds(tg[i][q]) * a.acc); });
       tg[i].kd_h *= a.pow * aj.chin;
     }
+    // level factors on the learned targets (v4.0.1: opts.levels = { td_att, ctrl, sub_att } from params mlTdLevel /
+    // mlCtrlLevel / mlSubLevel, matched on train fights by tools/v4_levels.js; rates only, never probabilities)
+    var LV = opts.levels || {};
+    for (i = 0; i < 2; i++) for (k in LV) if (tg[i][k] != null && !PROB_T[k] && LV[k] > 0 && LV[k] !== 1) tg[i][k] *= LV[k];
     // optional blend toward the engine's own rates: weight 1 = ML rates, 0 = plain engine (geometric on rates, logit on
     // probabilities), for tuning how far to trust the learned rates
     var wgt = opts.weight == null ? 1 : clip(+opts.weight, 0, 1);
@@ -430,7 +438,8 @@
     if (on("grappling")) {
       var e0 = engineExpect(m), es = [e0.A, e0.B];
       for (i = 0; i < 2; i++) {
-        var ro = odds(tg[i].td_acc) / odds(es[i].td_acc);
+        // v4.0.1 / opts.cumCap: capped like every other multiplier (v4.0.0: uncapped)
+        var ro = opts.cumCap ? rr(odds(tg[i].td_acc), odds(es[i].td_acc)) : odds(tg[i].td_acc) / odds(es[i].td_acc);
         m.tdO[i] *= ro; m.tdOC[i] *= ro; ratios[i].tdOdds = ro;
         var rv = rr(tg[i].rev, es[i].rev); m.sw[i] *= rv; ratios[i].rev = rv;
         for (k = 0; k < 5; k++) m.swPos[(1 - i) * 5 + k] *= rv;
@@ -445,7 +454,9 @@
         refitOccupancy(m, FE);
         var e1 = engineExpect(m), e1s = [e1.A, e1.B];
         for (i = 0; i < 2; i++) {
-          var r1 = rr(tg[i].td_att, e1s[i].td_att);
+          // v4.0.1 / opts.cumCap: the cap applies to the cumulative multiplier (v4.0.0 capped each of the three steps, so it
+          // could compound to 4^3; 20 of 3,998 train sides went past 4, up to x6.3)
+          var r1 = opts.cumCap ? rr(tdr[i] * tg[i].td_att, e1s[i].td_att) / tdr[i] : rr(tg[i].td_att, e1s[i].td_att);
           m.tdD[i] *= r1; m.tdCC[i] *= r1; m.tdCU[i] *= r1; tdr[i] *= r1;
         }
       }
