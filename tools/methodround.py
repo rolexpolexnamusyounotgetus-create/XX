@@ -2074,7 +2074,10 @@ recency half-lives (3-4 years slightly worse); training from 2008 (slightly wors
 model); a factorized winner x method-given-winner model (better winner, worse method; its winner part is reused
 in SM). Feature-group ablations: grappling, submission, fight-length tendencies and division terms carry the
 method signal; striking volume, age/experience and Elo carry the winner signal; recent-form and durability
-groups are roughly neutral for method (kept for the winner and for the page).
+groups are roughly neutral for method (kept for the winner and for the page). These comparisons are not executed
+by `run()` (the LightGBM, factorized and recalibration classes are kept for reference only), and the fixed
+settings (half-life, training start, shrinkage, feature list) were set during development; `python3
+tools/methodround_verify.py` re-runs both checks on the same folds (see the Verification log).
 
 **Tuning (expanding window, validation years 2020-2023):**
 """ % (o["meta"]["n_fights_table"], len(o["js_model"]["c6"]["S"]["cols"]), SHRINK["k_fight"], SHRINK["k_min"],
