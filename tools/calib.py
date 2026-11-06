@@ -841,7 +841,171 @@ DECISION_RULE = (
     "keeps the incumbent (no recalibration). Fixed before any cv output was read; 2024-2025 never enters.")
 
 
-STAGES = {"table": stage_table, "drift": stage_drift, "cv": stage_cv}
+# ====================================================================== stage: rule (the pre-registered drift rule)
+PROD_NOLINE = {"inputs": ["ml2lr", "mkt_rating"], "weights": [1.0335, 0.3906], "h": 1.5,
+               "source": "ml2.json stacks.page_stack.noline (refit 2019-2025, h 1.5): the page / production no-line stack"}
+VALID_NOLINE = {"inputs": ["ml2lr", "mkt_rating"], "weights": [0.7049, 0.5526], "h": 1.5,
+                "source": "ml2.json stacks.weights['noline|page: ml2lr+mkt_rating'] (fit 2019-2023): the validated stack"}
+
+
+def wald_slope(z, y, w=None):
+    """Mirrored calibration slope of logits z and its Wald SE (observed information)."""
+    w = np.ones(len(z)) if w is None else w
+    b = float(fit_glm(z[:, None], y, w, np.array([1.0]), np.array([0.0]))[0])
+    p = sig(b * z)
+    info = float(np.sum(w * p * (1 - p) * z * z))
+    return b, 1.0 / math.sqrt(max(info, 1e-12))
+
+
+def slope_monitor(p, y, window=200, z_crit=1.96):
+    """Trailing-window calibration monitor for the forward ledger (pre-registered rule 6.5.1 (b) reads its CI):
+    mirrored slope of the last `window` scored bouts, Wald 95% CI, and whether the CI includes 1."""
+    p = np.asarray(p, float)[-window:]
+    y = np.asarray(y, float)[-window:]
+    if len(p) < window:
+        return {"n": int(len(p)), "ready": False}
+    b, se = wald_slope(logit(p), y)
+    lo, hi = b - z_crit * se, b + z_crit * se
+    return {"n": int(len(p)), "ready": True, "slope": round(b, 4), "ci": [round(lo, 4), round(hi, 4)],
+            "ci_includes_1": bool(lo <= 1 <= hi)}
+
+
+def stage_rule(args):
+    """(4) Consistency check of the pre-registered production drift rule (docs/V6_V10_PLAN.md 6.5.1, BACKLOG
+    PRE-REGISTERED): (a) audit 1 switches the production no-line stack from h 1.5 (+ its temperature) to h 3, T 1 when
+    the FROZEN PRODUCTION stack's mirrored vault slope is < 1.15 with a CI including 1; (b) the ledger switches when its
+    trailing-200 slope CI includes 1 at two consecutive quarterly checks. Nothing here reads a 2024+ outcome: the
+    scenarios draw synthetic outcomes on 2021-2023 inputs; the replay uses 2015-2023 only."""
+    D0 = load_table()
+    D = train_only(D0)
+    assert D["year"].max() <= 2023
+    rng = np.random.default_rng(20261106)
+    rows = head_rows(D, "noline") & (D["year"].to_numpy() >= 2021)
+    Z = zcols(D[rows].reset_index(drop=True), ["ml2lr", "mkt_rating"])
+    z_val = Z @ np.array(VALID_NOLINE["weights"])
+    z_prod = Z @ np.array(PROD_NOLINE["weights"])
+    k = float(np.sum(z_prod * z_val) / np.sum(z_val * z_val))
+    R = {"inputs": "2021-2023 backtest-universe fights (1,224): ML v2 logistic OOF + market rating logits",
+         "production": PROD_NOLINE, "validated": VALID_NOLINE,
+         "sharpness_ratio_prod_over_valid": round(k, 4),
+         "reading": "a 'true' slope s on the validated stack's logit means outcomes follow sig(s * z_valid); s = 1 is "
+                    "2019-2023-like calibration (the validated stack's 2021-2023 slope is about 1.08), s = 1.37 is the "
+                    "published 2024-25 slope of the validated stack (ml2.json stacks.valid, static); the production "
+                    "stack then shows a slope of about s / k"}
+    grid = [0.9, 1.0, 1.1, 1.2, 1.3, 1.37, 1.45, 1.6]
+    nsim = args.nsim
+
+    def sim_a(s, n=370):
+        fire = keep = 0
+        sl = []
+        for _ in range(nsim):
+            i = rng.integers(0, len(z_val), n)
+            q = sig(s * z_val[i])
+            yy = (rng.random(n) < q).astype(float)
+            b, se = wald_slope(z_prod[i], yy)
+            lo, hi = b - 1.96 * se, b + 1.96 * se
+            sl.append(b)
+            if b < 1.15 and lo <= 1 <= hi:
+                fire += 1
+            if b >= 1.2 and lo > 1:
+                keep += 1
+        return {"p_switch_rule_a": round(fire / nsim, 3), "p_persist_branch": round(keep / nsim, 3),
+                "median_prod_slope": round(float(np.median(sl)), 3)}
+
+    def sim_b(s, per_q=130, quarters=4, window=200):
+        """Stream of bouts; checks at the end of each quarter on the trailing `window`; fire after two consecutive
+        checks whose CI includes 1. Returns P(fired by quarter 2) and P(fired by quarter 4)."""
+        f2 = f4 = 0
+        for _ in range(nsim):
+            n = per_q * quarters + window
+            i = rng.integers(0, len(z_val), n)
+            yy = (rng.random(n) < sig(s * z_val[i])).astype(float)
+            inc = []
+            for qn in range(1, quarters + 1):
+                end = window + per_q * qn if qn > 0 else window
+                b, se = wald_slope(z_prod[i][end - window:end], yy[end - window:end])
+                inc.append(b - 1.96 * se <= 1 <= b + 1.96 * se)
+            fired_at = next((qn + 1 for qn in range(1, len(inc)) if inc[qn] and inc[qn - 1]), None)
+            f2 += fired_at is not None and fired_at <= 2
+            f4 += fired_at is not None
+        return {"p_fire_by_q2": round(f2 / nsim, 3), "p_fire_by_q4": round(f4 / nsim, 3)}
+
+    def exp_ll(z_pred, s):
+        q = sig(s * z_val)
+        p = np.clip(sig(z_pred), 1e-6, 1 - 1e-6)
+        return float(np.mean(-(q * np.log(p) + (1 - q) * np.log(1 - p))))
+
+    # the switched setting: h 3 (production refit through 2025 by ml2's own procedure = deployment, nothing scored)
+    M2 = ml2mod()
+    S2 = pickle.load(open(os.path.join(ML2_CACHE, "stack.pkl"), "rb"))
+    DD = S2["D"]
+    wts = {}
+    for h in (1.5, 3.0, None):
+        _, b = M2.stack_predict(DD, ["ml2lr", "mkt_rating"], "roll", h, 2025, np.zeros(len(DD), bool),
+                                np.ones(len(DD), bool))
+        wts[str(h)] = [round(float(x), 4) for x in b]
+    R["production_refit_weights_by_h"] = wts
+    R["production_refit_note"] = ("tools/ml2.py stack_predict(scheme 'roll', fit_until_year 2025): the production "
+                                  "procedure (OOF 2019-2023 + monthly-rolling 2024-2025 rows); h 1.5 reproduces the "
+                                  "published page weights. Only weights are computed; no 2024-25 prediction is scored")
+    z_h3 = Z @ np.array(wts["3.0"])
+    sc = {}
+    for s in grid:
+        a = sim_a(s)
+        b = sim_b(s)
+        e = {"exp_ll_production_h1.5": r5(exp_ll(z_prod, s)), "exp_ll_switched_h3": r5(exp_ll(z_h3, s)),
+             "exp_ll_validated": r5(exp_ll(z_val, s))}
+        e["switch_helps"] = bool(e["exp_ll_switched_h3"] < e["exp_ll_production_h1.5"])
+        sc[str(s)] = {**a, **b, **e}
+        log("s %.2f: prod slope ~%.3f | rule a switch %.3f (persist branch %.3f) | rule b by q2 %.3f, q4 %.3f | "
+            "E[ll] prod %.5f switched %.5f -> switch %s" % (s, a["median_prod_slope"], a["p_switch_rule_a"],
+                                                            a["p_persist_branch"], b["p_fire_by_q2"], b["p_fire_by_q4"],
+                                                            e["exp_ll_production_h1.5"], e["exp_ll_switched_h3"],
+                                                            "helps" if e["switch_helps"] else "hurts"))
+    R["scenarios"] = sc
+    # alternative v9 rule (NOT adopted; informs v9 only): judge the unsharpened validated stack, or test the production
+    # stack's slope against 1/k
+    alt = {}
+    for s in grid:
+        fire = 0
+        for _ in range(nsim):
+            i = rng.integers(0, len(z_val), 370)
+            yy = (rng.random(370) < sig(s * z_val[i])).astype(float)
+            b, se = wald_slope(z_val[i], yy)
+            if b < 1.15 and b - 1.96 * se <= 1 <= b + 1.96 * se:
+                fire += 1
+        alt[str(s)] = round(fire / nsim, 3)
+    R["alt_rule_validated_stack_p_switch"] = alt
+    # historical replay 2015-2023 of the ledger monitor on the deployed no-line stack (fit 2013..Y-1, h 1.5)
+    pipe = Pipe(D)
+    base = pipe.base_long("noline", list(range(2014, 2024)))
+    ok = pipe.rows("noline") & np.isfinite(base)
+    idx = np.flatnonzero(ok)
+    order = idx[np.argsort(D["date"].to_numpy()[idx], kind="stable")]
+    rep = []
+    for Y in range(2015, 2024):
+        for qe in ("03-31", "06-30", "09-30", "12-31"):
+            cut = "%d-%s" % (Y, qe)
+            sel = order[D["date"].to_numpy()[order] <= cut]
+            mon = slope_monitor(base[sel], pipe.y[sel], 200)
+            if mon.get("ready"):
+                rep.append({"quarter_end": cut, **mon})
+    fires, prev = [], False
+    for r in rep:
+        if r["ci_includes_1"] and prev:
+            fires.append(r["quarter_end"])
+        prev = r["ci_includes_1"]
+    R["replay_2015_2023"] = {"checks": rep, "n_checks": len(rep),
+                             "share_ci_includes_1": round(float(np.mean([r["ci_includes_1"] for r in rep])), 3),
+                             "first_fire": fires[0] if fires else None, "n_pairs_meeting_condition": len(fires),
+                             "quarters_ci_excludes_1": [r["quarter_end"] for r in rep if not r["ci_includes_1"]]}
+    log("replay 2015-2023: %d quarterly checks, CI includes 1 in %.0f%%; condition (b) first met %s; CI excludes 1 at %s"
+        % (len(rep), 100 * R["replay_2015_2023"]["share_ci_includes_1"], R["replay_2015_2023"]["first_fire"],
+           R["replay_2015_2023"]["quarters_ci_excludes_1"]))
+    json.dump(R, open(os.path.join(CACHE, "rule.json"), "w"), indent=1)
+
+
+STAGES = {"table": stage_table, "drift": stage_drift, "cv": stage_cv, "rule": stage_rule}
 
 
 def main():
@@ -849,6 +1013,7 @@ def main():
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--boot-slope", type=int, default=400, help="resamples for slope CIs (each refits)")
+    ap.add_argument("--nsim", type=int, default=4000, help="rule stage: simulations per scenario")
     ap.add_argument("--universe", default="backtest", choices=["backtest", "all"],
                     help="backtest = both men had a prior UFC fight (the scored universe); all = every decisive fight")
     args = ap.parse_args()

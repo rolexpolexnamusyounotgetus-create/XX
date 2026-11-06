@@ -817,7 +817,146 @@ def stage_hpcv(args):
     log("hpcv done in %.0f s" % (time.time() - t0))
 
 
-STAGES = {"data": stage_data, "hpcv": stage_hpcv}
+
+# ====================================================================== stage: walk-forward annual refits
+WALK_YEARS = list(range(2019, 2026))
+ES_SEEDS = [21, 22]
+FULL_SEEDS = [101, 102, 103, 104, 105]
+
+
+def chosen_cfg():
+    """The configuration chosen by the hyperparameter CV (lowest 2016-2018 CV log loss), frozen in
+    out/seqnet_cache/chosen.json the first time the walk runs."""
+    path = os.path.join(CACHE, "chosen.json")
+    if os.path.exists(path):
+        return json.load(open(path))
+    H = json.load(open(os.path.join(CACHE, "hpcv.json")))
+    summ = H["summary"]
+    best = min(summ, key=lambda k: summ[k]["cv_ll"])
+    ch = {"name": best, "cfg": dict(DEFAULT_CFG, **HP_CONFIGS[best]), "cv_ll": summ[best]["cv_ll"],
+          "all": {k: v["cv_ll"] for k, v in summ.items()}, "frozen": dt.datetime.utcnow().isoformat() + "Z"}
+    json.dump(ch, open(path, "w"), indent=1)
+    return ch
+
+
+def stage_walk(args):
+    A = get_arrays()
+    ch = chosen_cfg()
+    cfg = HP_CONFIGS[ch["name"]]
+    log("walk with config %s: %s" % (ch["name"], ch["cfg"]))
+    path = os.path.join(CACHE, "walk.pkl")
+    W = pickle.load(open(path, "rb")) if os.path.exists(path) else {"es": {}, "full": {}}
+    jobs = [{"kind": "es", "cfg": cfg, "seed": s, "Y": Y, "pred_years": []} for Y in WALK_YEARS for s in ES_SEEDS
+            if (Y, s) not in W["es"]]
+    t0 = time.time()
+    if jobs:
+        log("walk phase 1 (early stopping): %d jobs" % len(jobs))
+        for r in run_pool(jobs, args.workers):
+            W["es"][(r["job"]["Y"], r["job"]["seed"])] = {"curve": r["curve"], "best": r["best"], "secs": r["secs"]}
+        pickle.dump(W, open(path, "wb"))
+    W["epochs"] = {}
+    for Y in WALK_YEARS:
+        cur = np.mean([W["es"][(Y, s)]["curve"] for s in ES_SEEDS], 0)
+        W["epochs"][Y] = int(np.argmin(cur)) + 1
+        log("refit %d: early-stopping curve on %d, best epoch %d (val ll %.4f)" % (Y, Y - 1, W["epochs"][Y], cur.min()))
+    jobs = []
+    for Y in WALK_YEARS:
+        py = [2024, 2025] if Y == 2024 else [Y]
+        for s in FULL_SEEDS[:args.seeds]:
+            if (Y, s) not in W["full"]:
+                jobs.append({"kind": "full", "cfg": cfg, "seed": s, "Y": Y, "epochs": W["epochs"][Y], "pred_years": py})
+    if jobs:
+        log("walk phase 2 (refits): %d jobs" % len(jobs))
+        for r in run_pool(jobs, args.workers):
+            W["full"][(r["job"]["Y"], r["job"]["seed"])] = {"pidx": r["pidx"], "pred": r["pred"], "draw": r["draw"],
+                                                            "secs": r["secs"], "n_train": r["n_train"]}
+        pickle.dump(W, open(path, "wb"))
+    W["cfg"] = ch
+    pickle.dump(W, open(path, "wb"))
+    log("walk done in %.0f s" % (time.time() - t0))
+
+
+def ensemble(W, A, scheme="annual", seeds=None):
+    """Per example arrays (nan where not predicted): winner logit z, method|winner probs for A and B (11 each),
+    stat etas for A and B (18 each), draw share. scheme 'annual': year Y from the fit before Jan 1 Y; 'static':
+    2024-2025 from the fit before 2024-01-01 (2019-2023 identical in both)."""
+    n = len(A["DAY"])
+    Z = np.full(n, np.nan)
+    PA, PB = np.full((n, 11), np.nan), np.full((n, 11), np.nan)
+    EA, EB = np.full((n, 18), np.nan), np.full((n, 18), np.nan)
+    DR = np.full(n, np.nan)
+    FIT = np.full(n, 0)
+    seeds = seeds or sorted({s for (_, s) in W["full"]})
+    for Y in WALK_YEARS:
+        runs = [W["full"][(Y, s)] for s in seeds if (Y, s) in W["full"]]
+        if not runs:
+            continue
+        pidx = runs[0]["pidx"]
+        yrs = A["YEAR"][pidx]
+        if scheme == "annual":
+            take = yrs == Y
+        else:
+            take = (yrs == Y) if Y < 2024 else ((yrs >= 2024) if Y == 2024 else np.zeros(len(pidx), bool))
+        ii = pidx[take]
+        Z[ii] = np.mean([r["pred"]["z"][take] for r in runs], 0)
+        PA[ii] = np.mean([r["pred"]["pa"][take] for r in runs], 0)
+        PB[ii] = np.mean([r["pred"]["pb"][take] for r in runs], 0)
+        EA[ii] = np.mean([r["pred"]["ea"][take] for r in runs], 0)
+        EB[ii] = np.mean([r["pred"]["eb"][take] for r in runs], 0)
+        FIT[ii] = Y
+        dr = runs[0]["draw"]
+        DR[ii] = np.where(A["SCHED"][ii] == 5, dr[5], dr[3])
+    return {"z": Z, "pa": PA, "pb": PB, "ea": EA, "eb": EB, "draw": DR, "fit_year": FIT}
+
+
+def joint23(E, i):
+    """methodround's 23-cell joint (orientation X = A) for example rows i."""
+    z, pa, pb, dr = E["z"][i], E["pa"][i], E["pb"][i], E["draw"][i]
+    p = sig(z)
+    P = np.zeros((len(i), 23))
+    wa, wb = (1 - dr) * p, (1 - dr) * (1 - p)
+    P[:, 0:5] = wa[:, None] * pa[:, 0:5]
+    P[:, 5:10] = wa[:, None] * pa[:, 5:10]
+    P[:, 10:15] = wb[:, None] * pb[:, 0:5]
+    P[:, 15:20] = wb[:, None] * pb[:, 5:10]
+    P[:, 20] = wa * pa[:, 10]
+    P[:, 21] = wb * pb[:, 10]
+    P[:, 22] = dr
+    return P
+
+
+# ====================================================================== stage: corner-swap test
+def stage_swaptest(args):
+    """Train a short model and check P(A,B) + P(B,A) = 1, method cells permute and stat lines swap exactly when the
+    corners of every example are swapped (history, side features, labels)."""
+    torch = _torch()
+    A = get_arrays()
+    cfg = dict(DEFAULT_CFG, **HP_CONFIGS[chosen_cfg()["name"]] if os.path.exists(os.path.join(CACHE, "hpcv.json"))
+               else {}, max_ep=2)
+    r = fit_one(A, cfg, 5, day_of(2015), epochs=2)
+    model = r["model"]
+    prep = Prep(A, day_of(2015), cfg)
+    idx = np.flatnonzero((A["YEAR"] == 2015) & (~np.isnan(A["YW"])))
+    p1 = predict(model, prep, idx)
+    # swapped copy of the arrays
+    B2 = dict(A)
+    for k in ("H", "LEN", "SIDE", "SY", "SN", "NPRIOR"):
+        B2[k] = A[k][:, ::-1].copy()
+    B2["YW"] = np.where(np.isnan(A["YW"]), np.nan, 1 - A["YW"]).astype(np.float32)
+    prep2 = Prep(B2, day_of(2015), cfg)
+    p2 = predict(model, prep2, idx)
+    out = {"n": int(len(idx)),
+           "max|pA+pA_swapped-1|": float(np.max(np.abs(sig(p1["z"]) + sig(p2["z"]) - 1))),
+           "max|z+z_swapped|": float(np.max(np.abs(p1["z"] + p2["z"]))),
+           "max|methodA-methodB_swapped|": float(np.max(np.abs(p1["pa"] - p2["pb"]))),
+           "max|statA-statB_swapped|": float(np.max(np.abs(p1["ea"] - p2["eb"])))}
+    log("swap test: %s" % out)
+    assert out["max|z+z_swapped|"] < 1e-5 and out["max|methodA-methodB_swapped|"] < 1e-5 \
+        and out["max|statA-statB_swapped|"] < 1e-5, "corner symmetry violated"
+    json.dump(out, open(os.path.join(CACHE, "swaptest.json"), "w"), indent=1)
+
+
+STAGES = {"data": stage_data, "hpcv": stage_hpcv, "walk": stage_walk, "swaptest": stage_swaptest}
 
 
 def main():

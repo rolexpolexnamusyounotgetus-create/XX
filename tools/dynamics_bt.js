@@ -10,6 +10,9 @@
    Leak-free inputs: frozen pre-fight profiles (backtest_dev.json), walk-forward division priors
    (data/derived/mlcal_priors_asof.json: rates from the 5 years before Jan 1 of the fight's year), and out-of-fold
    learned stat-line rates (data/derived/mlrates_oof.json, folds trained on 2010..year-1). No live roster values.
+   v5 merge step 2: when a configuration runs the durability component (params.components.durability, on by default),
+   each matchup gets the walk-forward record of data/derived/durability.json backtest[id] as opts.dur and the train-only
+   NORM, exactly as tools/evalv.js does; a fight without a record throws (never the live-fit fallback).
 
    Hidden-data protocol (docs/BACKLOG.md): this tool refuses fights dated 2024-01-01 or later unless
    DYN_ALLOW_VALIDATION=1 is set (reserved for the single v5 validation measurement), and never reads 2026 fights.
@@ -66,6 +69,25 @@ const priorsAsof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlcal_prior
 const oof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlrates_oof.json"), "utf8"));
 const TN = oof.meta.targets;
 const keys = bt.meta.keys;
+// durability component (v5 merge step 2): leak-free walk-forward records, as in tools/evalv.js durOpts
+let DURJ = null;
+function durRec(id, swap) {
+  if (!DURJ) DURJ = JSON.parse(fs.readFileSync(dataFile("data/derived/durability.json"), "utf8"));
+  const d = DURJ.backtest[id];
+  if (!d) throw new Error("durability: no walk-forward record for fight " + id + " (refusing the live-fit fallback)");
+  const side = (x) => ({ chin_re: x.chin_re, chin_cov: x.chin_cov, pow_re: x.pow_re, pow_cov: x.pow_cov });
+  const bA = d.p.A / (d.B.chin_re * d.B.chin_cov * d.A.pow_re * d.A.pow_cov), bB = d.p.B / (d.A.chin_re * d.A.chin_cov * d.B.pow_re * d.B.pow_cov);
+  const base = Math.sqrt(bA * bB);
+  return swap ? { A: side(d.B), B: side(d.A), base } : { A: side(d.A), B: side(d.B), base };
+}
+function withDurNorm(cparams) {
+  if (!DURJ) DURJ = JSON.parse(fs.readFileSync(dataFile("data/derived/durability.json"), "utf8"));
+  const o = Object.assign({}, cparams || {});
+  o.durability = Object.assign({ normChin: DURJ.engine.norm_chin_backtest_2019_2023, normPow: DURJ.engine.norm_pow_backtest_2019_2023 }, (cparams && cparams.durability) || {});
+  return o;
+}
+const durOn = (cparams) => typeof E.loadDurability === "function" && typeof E.resolveParams === "function" &&
+  !!(E.resolveParams(cparams || {}).components || {}).durability;
 
 const cfgArgs = optAll("--cfg");
 const CFGS = [];
@@ -126,7 +148,10 @@ for (const f of fights) {
       try {
         const o = optsFor(f, swap);
         o.params = cparams;
+        const useDur = durOn(cparams);
+        if (useDur) { o.dur = durRec(f.id, swap); o.params = withDurNorm(cparams); }
         m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
+        if (useDur && !(m.dur && m.dur.baseFromRecord)) throw new Error("durability: walk-forward record not applied for " + f.id);
       } catch (e) { ok = false; nErr++; if (nErr < 4) console.error(String(e && e.stack || e)); break; }
       const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
       for (let s = 0; s < SIMS; s++) {
@@ -197,7 +222,7 @@ for (const f of fights) {
 const meta = {
   tool: "tools/dynamics_bt.js", engine_version: E.VERSION, params_version: FP.version, sims_per_orientation: SIMS,
   configs: CFGS, from: FROM, to: TO, engine3_sha256_16: sha(path.join(EDIR, "engine3.js")), params3_sha256_16: sha(path.join(EDIR, "params3.js")),
-  inputs: "backtest_dev.json frozen profiles; mlcal_priors_asof.json walk-forward priors; mlrates_oof.json out-of-fold learned rates",
+  inputs: "backtest_dev.json frozen profiles; mlcal_priors_asof.json walk-forward priors; mlrates_oof.json out-of-fold learned rates; durability.json backtest walk-forward records + train NORM when a configuration runs components.durability",
   orientation: "every number is in backtest order (A = first-named); averaged over the A-B and B-A runs with seeds md5(id:1), md5(id:2)",
   rt_columns: ["reached", "secs"].concat(RS), built: new Date().toISOString(), errors: nErr
 };
