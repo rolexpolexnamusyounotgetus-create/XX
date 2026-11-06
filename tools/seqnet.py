@@ -1087,12 +1087,18 @@ def cal_slope(p, y):
 
 
 def winner_metrics(p, y):
+    p, y = np.asarray(p, float), np.asarray(y, float)
+    ok = ~np.isnan(p)                      # a benchmark column can miss a few fights (mkt_rating: 9 in 2025)
+    p, y = p[ok], y[ok]
     return {"n": int(len(y)), "ll": round(float(ll_vec(p, y).mean()), 5),
             "brier": round(float(np.mean((p - y) ** 2)), 5), "acc": round(float(np.mean((p > 0.5) == (y == 1))), 4),
             "slope": round(cal_slope(p, y), 3)}
 
 
 def cmp(pa, pb, y, groups):
+    pa, pb, y, groups = np.asarray(pa, float), np.asarray(pb, float), np.asarray(y, float), np.asarray(groups)
+    ok = ~np.isnan(pa) & ~np.isnan(pb)
+    pa, pb, y, groups = pa[ok], pb[ok], y[ok], groups[ok]
     a, b = ll_vec(pa, y), ll_vec(pb, y)
     d, ci = boot_paired(a, b, groups)
     return {"n": int(len(y)), "a": round(float(a.mean()), 5), "b": round(float(b.mean()), 5), "diff": round(d, 5),
@@ -1588,6 +1594,28 @@ def stage_confirm(args):
     log("confirm written (2024-2025 scored once)")
 
 
+# ====================================================================== stage: addendum (benchmark rows only)
+def stage_addendum(args):
+    """The confirm stage's market-rating rows came out NaN (mkt_rating is missing for 9 of the 854 fights in 2025).
+    This scores that benchmark on its non-missing fights with the now NaN-safe helpers and stores it under
+    confirm.json["addendum"]; it reads seqnet's frozen predictions and changes none of them (not a second look)."""
+    A = get_arrays()
+    W = pickle.load(open(os.path.join(CACHE, "walk.pkl"), "rb"))
+    R = json.load(open(os.path.join(CACHE, "confirm.json")))
+    D, _, _ = expert_D(W, A)
+    y, yr, ev = D["y"].to_numpy(float), D["year"].to_numpy(), D["event"].to_numpy()
+    va = (yr >= 2024) & (yr <= 2025)
+    mk = D["mkt_rating"].to_numpy(float)
+    ad = {"note": "market rating on the fights where it exists (845 of 854); seqnet numbers unchanged",
+          "market rating": winner_metrics(mk[va], y[va]),
+          "by_year": {str(Y): winner_metrics(mk[yr == Y], y[yr == Y]) for Y in (2024, 2025)}}
+    for sc in ("seqnet_static", "seqnet_roll"):
+        ad["%s - market rating" % sc] = cmp(D[sc].to_numpy()[va], mk[va], y[va], ev[va])
+    R["addendum"] = ad
+    json.dump(R, open(os.path.join(CACHE, "confirm.json"), "w"), indent=1, default=float)
+    log("addendum: %s" % ad)
+
+
 # ====================================================================== stage: export
 def n_params():
     A = get_arrays()
@@ -1642,7 +1670,7 @@ def stage_export(args):
 
 
 STAGES = {"data": stage_data, "hpcv": stage_hpcv, "walk": stage_walk, "swaptest": stage_swaptest, "cv": stage_cv,
-          "confirm": stage_confirm, "export": stage_export}
+          "confirm": stage_confirm, "addendum": stage_addendum, "export": stage_export}
 
 
 def main():
