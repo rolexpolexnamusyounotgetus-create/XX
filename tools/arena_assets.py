@@ -15,7 +15,7 @@ What it writes and why (sizes are what the page pays, before base64):
 - arena-mat-weave-normal.jpg: ambientCG Fabric036 normal, a 128 px crop at full resolution (the weave period is
   8 px, so a 128 crop tiles), high-passed so the crop seams vanish.
 - arena-mat-slub.webp: ambientCG Fabric036 colour, grey, 256 px, normalised: slubs and print grain under the print.
-- arena-leather-normal.jpg: Poly Haven leather_white normal (512 px, grain amplified x5 so JPEG keeps it) for the
+- arena-leather-normal.jpg: Poly Haven leather_white normal (256 px, grain amplified x4 so JPEG keeps it) for the
   post, rail and cap pads. Its roughness map is flat (0.60-0.63) and is left out.
 - audio-*.mp3: the arena audio pack re-encoded for the page (mono; crowd 48-56 kbps, one-shots 64 kbps).
 """
@@ -106,12 +106,12 @@ def slub(src, dst):
 
 
 def leather(src_n, dst_n):
-    # the grain is shallow (xy std ~0.012 at 512 px): store it amplified x5 so JPEG keeps it; arena3d.js scales it back
-    n = np.asarray(Image.open(src_n).convert("RGB").resize((512, 512), Image.LANCZOS)).astype(np.float64) / 255 * 2 - 1
-    xy = (n[..., :2] - n[..., :2].mean(axis=(0, 1))) * 5.0
+    # the grain is shallow (xy std ~0.01): store it amplified x4 so JPEG keeps it; arena3d.js scales it back
+    n = np.asarray(Image.open(src_n).convert("RGB").resize((256, 256), Image.LANCZOS)).astype(np.float64) / 255 * 2 - 1
+    xy = (n[..., :2] - n[..., :2].mean(axis=(0, 1))) * 4.0
     z = np.sqrt(np.clip(1 - (xy ** 2).sum(-1), 0.05, 1))
     out = np.dstack([xy[..., 0], xy[..., 1], z])
-    Image.fromarray(np.clip((out * 0.5 + 0.5) * 255 + 0.5, 0, 255).astype(np.uint8)).save(dst_n, quality=88, subsampling=0)
+    Image.fromarray(np.clip((out * 0.5 + 0.5) * 255 + 0.5, 0, 255).astype(np.uint8)).save(dst_n, quality=85, subsampling=0)
 
 
 # name in the pack -> (source file, kbps). All mono.

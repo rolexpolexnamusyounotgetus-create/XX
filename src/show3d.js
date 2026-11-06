@@ -193,11 +193,19 @@
     this.feet = [new Foot(), new Foot()];
     this.s = { hp: new Spring(150, 13), hy: new Spring(150, 13), hr: new Spring(150, 13), tp: new Spring(110, 13), tr: new Spring(110, 13), kb: new Spring(55, 11), dip: new Spring(120, 14) };
     this.lunge = 0; this.opp = null; this.phase = Math.random() * 10; this.bounce = spec.bounce || 1;
+    this.prof = neutralProfile(); this.feint = null; this.feT = 1 + Math.random() * 3; this.swT = 20 + Math.random() * 20; this.homeStance = stance;
     this.P = newPose(); this.P2 = newPose(); this.PB = newPose();
     this.walkTo = null; this.faceTo = null; this.walkSpeed = 1.2;
     this.armUp = 0; this.wave = 0;
     this.lastHit = 0;
   }
+  /* Stance profile (see the header): footprint, guard, rhythm and movement for this fighter. */
+  Actor.prototype.setProfile = function (pf) {
+    this.prof = pf || neutralProfile();
+    this.stance = this.homeStance = this.prof.base || 1;
+    this.bounce = 0.4 + 1.4 * this.prof.bounce.amp;
+    this.swT = this.prof.switchRate > 0 ? 8 + Math.random() * 40 / this.prof.switchRate : 1e9;
+  };
   Actor.prototype.local = function (x, z, out) {
     var c = Math.cos(this.yaw), s = Math.sin(this.yaw);
     return out.set(this.pos.x + x * c + z * s, 0, this.pos.z - x * s + z * c);
@@ -226,7 +234,12 @@
     if (m === "walk" || m === "celebrate" || m === "raised") { x = (i === 0 ? 0.055 : -0.055) * H; z = 0; yo = (i === 0 ? 0.08 : -0.08); }
     else if (m === "ref" || m === "refstop") { x = (i === 0 ? 0.1 : -0.1) * H; z = (i === 0 ? 0.02 : -0.02) * H; yo = (i === 0 ? 0.25 : -0.25); }
     else if (m === "clinch") { if (i === lead) { x = 0.06 * H * st; z = 0.1 * H; yo = -0.2 * st; } else { x = -0.14 * H * st; z = -0.1 * H; yo = -0.7 * st; } }
-    else { if (i === lead) { x = 0.035 * H * st; z = 0.14 * H; yo = -0.12 * st; } else { x = -0.115 * H * st; z = -0.12 * H; yo = -0.75 * st; } }
+    else {
+      // fighting stance from the profile: width and depth of the base, toe angles, weight over the lead or rear leg
+      var pf = this.prof, c = -0.04 * H, half = 0.075 * H * pf.width, shiftZ = -(pf.weightFront - 0.5) * 0.18 * H;
+      if (i === lead) { x = (c + half) * st; z = 0.14 * H * pf.depth + shiftZ; yo = -pf.leadToe * st; }
+      else { x = (c - half) * st; z = -0.12 * H * pf.depth + shiftZ; yo = -pf.rearToe * st; }
+    }
     this.local(x, z, out); out.y = this.rig.ankleH;
     this.feet[i].homeYaw = this.yaw + yo;
     return out;
@@ -275,13 +288,34 @@
     if (stepping) for (i = 0; i < 2; i++) { var f = this.feet[i]; P.fp[i].copy(f.p); P.fyaw[i] = f.yaw; P.fpole[i].set(Math.sin(f.yaw), 0.25, Math.cos(f.yaw)); }
     var bob = Math.sin(this.phase * TAU * 1.5) * 0.007 * H * this.bounce;
     if (m === "stand" || m === "clinch") {
-      var cl = m === "clinch";
-      P.py = (cl ? 0.452 : 0.466) * H + (cl ? 0 : bob); P.pp = cl ? 0.34 : 0.12; P.pyaw = (cl ? -0.3 : -0.62) * st; P.pr = 0;
-      P.sp = cl ? 0.16 : 0.05; P.sy = (cl ? 0.12 : 0.24) * st; P.sr = 0;
-      P.cp = cl ? 0.14 : 0.07; P.cy = (cl ? 0.1 : 0.14) * st; P.cr = 0;
-      P.hp = cl ? 0.15 : 0.1; P.hy = (cl ? 0.08 : 0.24) * st; P.hr = 0;
-      P.hl[lead].set(0.05 * H * st, 0.122 * H, 0.155 * H); P.hl[rear].set(-0.045 * H * st, 0.112 * H, 0.1 * H);
-      P.hpl[lead].set(0.55 * st, -1, -0.35); P.hpl[rear].set(-0.55 * st, -1, -0.35);
+      var cl = m === "clinch", pf = this.prof, G = pf.guard, hd = pf.head, bl = pf.bladed, cr = pf.crouch, ln = pf.lean;
+      if (!cl) bob = Math.sin(this.phase * TAU * 1.5 * pf.bounce.rate) * 0.0125 * H * pf.bounce.amp;
+      P.py = (cl ? 0.452 : 0.478 - 0.038 * cr) * H + (cl ? 0 : bob); P.pp = cl ? 0.34 : 0.05 + 0.13 * cr + 0.05 * ln; P.pyaw = (cl ? -0.3 : -(0.25 + 0.6 * bl)) * st; P.pr = 0;
+      P.sp = cl ? 0.16 : 0.02 + 0.07 * ln + 0.03 * cr; P.sy = (cl ? 0.12 : 0.1 + 0.25 * bl) * st; P.sr = 0;
+      P.cp = cl ? 0.14 : 0.03 + 0.05 * ln + 0.05 * G.shoulderRoll; P.cy = (cl ? 0.1 : 0.06 + 0.14 * bl) * st; P.cr = 0;
+      P.hp = cl ? 0.15 : 0.02 + 0.16 * hd.chinTuck + 0.04 * cr; P.hy = (cl ? 0.08 : 0.1 + 0.25 * bl) * st; P.hr = 0;
+      // guard: elbows down on the ribs, gloves at cheek/brow height, lead hand a little out front, rear glove by the chin
+      var op = pf.open, gh = G.height, lh = clamp(gh + (G.leadHeight - 0.6) * 0.6, 0, 1), rh = clamp(gh + (G.rearHeight - 0.6) * 0.6, 0, 1);
+      P.hl[lead].set((0.03 + 0.035 * G.leadWidth + 0.02 * op) * H * st, (0.085 + 0.115 * lh - 0.03 * op) * H, (0.17 + 0.13 * G.leadReach) * H);
+      P.hl[rear].set(-(0.045 + 0.02 * op) * H * st, (0.08 + 0.11 * rh - 0.03 * op) * H, (0.105 + 0.08 * (1 - G.rearTuck)) * H);
+      var fl = 0.12 + 0.75 * G.elbowFlare;
+      P.hpl[lead].set(fl * st, -1, -0.3); P.hpl[rear].set(-fl * st, -1, -0.38);
+      if (!cl) {
+        // upper-body movement and head position off the centre line
+        var hm = hd.move, wv = this.phase * TAU * 0.42;
+        P.cr += (hm * 0.06 * Math.sin(wv) + hd.offset * 0.07) * st; P.sr += hm * 0.035 * Math.sin(wv + 0.7) * st;
+        P.hr += (hm * 0.04 * Math.sin(wv * 1.3 + 1.1) - hd.offset * 0.05) * st; P.px += hm * 0.012 * H * Math.sin(wv + 0.3);
+        P.cp += hm * 0.025 * Math.sin(wv * 0.7 + 2);
+        var fe = this.feint;
+        if (fe) {
+          var fb = bell(fe.t / fe.dur);
+          if (fe.type === "jab") { P.hl[lead].z += 0.07 * H * fb; P.hl[lead].y -= 0.01 * H * fb; P.cy -= 0.1 * st * fb; P.sp += 0.04 * fb; }
+          else if (fe.type === "rear") { P.hl[rear].z += 0.04 * H * fb; P.cy += 0.12 * st * fb; P.pyaw += 0.08 * st * fb; }
+          else if (fe.type === "shoulder") { P.cr += 0.09 * fe.dir * fb; P.cp += 0.05 * fb; P.hr -= 0.05 * fe.dir * fb; }
+          else if (fe.type === "level") { P.py -= 0.055 * H * fb; P.pp += 0.16 * fb; P.sp += 0.06 * fb; P.hl[lead].y -= 0.02 * H * fb; P.hl[rear].y -= 0.02 * H * fb; }
+          else if (fe.type === "paw") { P.hl[lead].x -= 0.05 * H * st * fb; P.hl[lead].z += 0.06 * H * fb; P.hl[lead].y -= 0.02 * H * fb; }
+        }
+      }
       if (cl && opp) {
         // collar tie with the lead hand, underhook with the rear hand
         opp.rig.headPos(P.hw[lead]); opp.fwd(_v); P.hw[lead].addScaledVector(_v, -0.07); P.hw[lead].y -= 0.1; P.hwk[lead] = 1;
@@ -407,12 +441,26 @@
   Actor.prototype.startAction = function (a) {
     a.t = 0; this.act = a;
     var lead = this.stance > 0 ? 0 : 1;
+    this.feint = null;
     if (a.type === "punch" || a.type === "gnp" || a.type === "hammer") {
       a.hi = a.hand === "lead" ? lead : 1 - lead;
       a.start = this.rig.handPos(a.hi === 0, new V3());
+      if (a.type === "punch" && this.opp) {
+        // close the distance the punch needs: shoulder to target minus the arm's reach (the old fixed lunge left jabs ~0.7 m short)
+        var sh = (a.hi === 0 ? this.rig.armL : this.rig.armR).sh.getWorldPosition(_u);
+        this.aimPoint(a.def.body ? "body" : "head", _v);
+        var need = sh.distanceTo(_v) - (this.rig.ua + this.rig.la) * (a.def.elbowUp ? 0.86 : 0.95);
+        a.lungeNeed = clamp(need * 1.12, 0, 1.15);
+      }
     } else if (a.type === "kick") {
       a.li = a.leg === "lead" ? lead : 1 - lead;
       a.start = this.feet[a.li].p.clone();
+      if (this.opp) {
+        var hp = (a.li === 0 ? this.rig.legL : this.rig.legR).hip.getWorldPosition(_u);
+        this.aimPoint(a.def.aim, _v);
+        var reachK = a.def.knee ? 0.62 : 0.97;
+        a.lungeNeed = clamp((hp.distanceTo(_v) - (this.rig.th + this.rig.sh) * reachK) * 1.1, 0, 1.2);
+      }
     }
   };
   Actor.prototype.startReact = function (r) { r.t = 0; this.react = r; };
@@ -446,7 +494,7 @@
       var tw = (a.hi === (st > 0 ? 0 : 1) ? 1 : 1) * d.twist;
       var dirSign = a.hand === "lead" ? 1 : 1;
       P.cy += tw * st * e * dirSign; P.pyaw += d.hip * st * e; P.pp += d.lean * e; P.py -= (d.dip || 0) * H * e;
-      this.lunge = d.lunge * e * (a.lungeK == null ? 1 : a.lungeK);
+      this.lunge = Math.max(d.lunge * 0.6, a.lungeNeed || 0) * e * (a.lungeK == null ? 1 : a.lungeK);
       if (!a.hitDone && u >= 0.42) { a.hitDone = true; if (a.onHit) a.onHit(); }
     } else if (a.type === "kick") {
       var k = a.def, h = 0.48, kc = kickCurve(u, h);
@@ -473,7 +521,7 @@
         this.rig.chestToWorld(-0.15 * H * st, -0.06 * H, -0.08 * H, _u);
         P.hw[rh].copy(P.hwk[rh] > 0 ? P.hw[rh] : _u).lerp(_u, kc); P.hwk[rh] = Math.max(P.hwk[rh], kc * 0.9);
       }
-      this.lunge = k.lunge * smooth(u / h) * (u < h ? 1 : 1 - smooth((u - h - 0.1) / (1 - h - 0.1)));
+      this.lunge = Math.max(k.lunge * 0.5, a.lungeNeed || 0) * smooth(u / h) * (u < h ? 1 : 1 - smooth((u - h - 0.1) / (1 - h - 0.1)));
       if (!a.hitDone && u >= h) { a.hitDone = true; if (a.onHit) a.onHit(); }
     } else if (a.type === "gnp" || a.type === "hammer") {
       var gh = 0.5;
@@ -564,8 +612,30 @@
     P.py -= Math.max(0, s.dip.x) * 0.25 * this.H;
   };
 
+  /* Idle habits while standing: feints, hand-fighting and stance switches (rates from the profile). */
+  Actor.prototype.habits = function (dt) {
+    var pf = this.prof;
+    if (this.feint) { this.feint.t += dt; if (this.feint.t >= this.feint.dur) this.feint = null; }
+    if (this.mode !== "stand" || this.act || this.react || this.tr || this.isRef || !this.opp) return;
+    this.feT -= dt;
+    if (this.feT <= 0) {
+      var rate = pf.feints + pf.handFight * 0.8;
+      this.feT = lerp(5.5, 0.9, clamp(rate, 0, 1)) * (0.6 + Math.random() * 0.8);
+      if (rate > 0.05 && !this.feint) {
+        var r = Math.random() * rate, ty;
+        if (r < pf.handFight * 0.8) ty = "paw";
+        else { var q = Math.random(); ty = q < 0.4 ? "jab" : (q < 0.62 ? "shoulder" : (q < 0.82 ? "level" : "rear")); }
+        this.feint = { type: ty, t: 0, dur: ty === "level" ? 0.38 : (ty === "paw" ? 0.3 : 0.24), dir: Math.random() < 0.5 ? 1 : -1 };
+      }
+    }
+    if (pf.switchRate > 0) {
+      this.swT -= dt;
+      if (this.swT <= 0) { this.stance = -this.stance; this.swT = (12 + Math.random() * 30) / pf.switchRate; }
+    }
+  };
   Actor.prototype.update = function (dt) {
     this.phase += dt;
+    this.habits(dt);
     if (STEP_MODES[this.mode]) this.stepFeet(dt);
     var P = this.P;
     this.poseFor(this.mode, P);
@@ -797,8 +867,10 @@
   Show.prototype.load = function (script) {
     if (this.avatarsOn) { var na = this.appearanceFromScript(script); if (na) this.setAppearance(Object.assign({}, this.appearance || {}, na)); }
     this.script = script; this.rIdx = 0; this.queue = []; this.clock = 0; this.finished = false; this.result = null;
-    var A = this.A, B = this.B, R = this.R;
-    [A, B, R].forEach(function (a) { a.act = null; a.react = null; for (var k in a.s) a.s[k].reset(); a.lunge = 0; if (a.avatar) a.avatar.resetDamage(); });
+    var A = this.A, B = this.B, R = this.R, F = (script && script.fighters) || {};
+    A.setProfile(stanceProfile(F.A || (this.appearance && this.appearance.A)));
+    B.setProfile(stanceProfile(F.B || (this.appearance && this.appearance.B)));
+    [A, B, R].forEach(function (a) { a.act = null; a.react = null; a.feint = null; for (var k in a.s) a.s[k].reset(); a.lunge = 0; if (a.avatar) a.avatar.resetDamage(); });
     this.cornerSpot("A", 0.9, A.pos); this.cornerSpot("B", 0.9, B.pos);
     A.yaw = Math.atan2(-A.pos.x, -A.pos.z); B.yaw = Math.atan2(-B.pos.x, -B.pos.z);
     A.snapMode("walk"); B.snapMode("walk");
@@ -1080,9 +1152,10 @@
     this.omTimer -= dt;
     if (this.omTimer <= 0) {
       this.omTimer = 1.8 + this.rnd() * 2.6;
-      var opts = [-0.42, -0.22, -0.1, 0, 0.1, 0.22, 0.42];
-      this.omT = clinch ? 0 : opts[Math.floor(this.rnd() * opts.length)];
-      this.range = 1.68 + this.rnd() * 0.3;
+      var opts = [-0.42, -0.22, -0.1, 0, 0.1, 0.22, 0.42], circ = 0.55 + 0.9 * (A.prof.foot.circling + B.prof.foot.circling) / 2;
+      this.omT = clinch ? 0 : opts[Math.floor(this.rnd() * opts.length)] * circ;
+      var io = (A.prof.foot.inout + B.prof.foot.inout) / 2;
+      this.range = 1.42 + 0.1 * io + this.rnd() * (0.18 + 0.22 * io);
     }
     var ax = Math.cos(this.theta), az = Math.sin(this.theta);
     var aPos = _v.set(this.M.x - ax * this.d / 2, 0, this.M.z - az * this.d / 2), bPos = _w.set(this.M.x + ax * this.d / 2, 0, this.M.z + az * this.d / 2);
@@ -1097,14 +1170,16 @@
     }
     this.om += (this.omT - this.om) * Math.min(1, dt * 1.6);
     this.theta += this.om * dt;
-    var press = clinch ? 0.32 : 0.12;
-    var dirSign = clinch && this.clinchBy === "A" ? 1 : -1;
+    var pa = A.prof.foot.pressure, pb = B.prof.foot.pressure;
+    var press = clinch ? 0.32 : 0.05 + 0.2 * Math.abs(pa - pb);
+    var dirSign = clinch ? (this.clinchBy === "A" ? 1 : -1) : (pa > pb ? 1 : -1);
     this.M.x += ax * press * dirSign * dt; this.M.z += az * press * dirSign * dt;
     var mr2 = Math.hypot(this.M.x, this.M.z);
     if (!clinch && mr2 > 2.2) { this.M.x -= this.M.x / mr2 * (mr2 - 2.2) * 0.4 * dt; this.M.z -= this.M.z / mr2 * (mr2 - 2.2) * 0.4 * dt; }
     var target = (clinch ? 0.6 : this.range) - A.lunge - B.lunge + A.s.kb.x * 0.25 + B.s.kb.x * 0.25;
     if (this.downed) target = Math.max(target, 1.15);
-    this.d += (Math.max(0.5, target) - this.d) * Math.min(1, dt * 7);
+    var striking = (A.act && (A.act.type === "punch" || A.act.type === "kick")) || (B.act && (B.act.type === "punch" || B.act.type === "kick"));
+    this.d += (Math.max(0.5, target) - this.d) * Math.min(1, dt * (striking ? 20 : 7));
     ax = Math.cos(this.theta); az = Math.sin(this.theta);
     var nax = this.M.x - ax * this.d / 2, naz = this.M.z - az * this.d / 2, nbx = this.M.x + ax * this.d / 2, nbz = this.M.z + az * this.d / 2;
     A.vel.set((nax - A.pos.x) / Math.max(dt, 1e-3), 0, (naz - A.pos.z) / Math.max(dt, 1e-3));
@@ -1238,5 +1313,5 @@
     return false;
   };
 
-  root.FightShow = { Show: Show, SPECS: SPECS, Actor: Actor };
+  root.FightShow = { Show: Show, SPECS: SPECS, Actor: Actor, stanceProfile: stanceProfile, neutralProfile: neutralProfile };
 })(typeof window !== "undefined" ? window : globalThis);

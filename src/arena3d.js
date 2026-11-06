@@ -945,18 +945,24 @@
       A.matU.uSlub.value = imageTex(img, false, A.aniso, true); A.matU.uSlubAmt.value = 0.16;
       A.surfaces = (A.surfaces || 0) | 4;
     }).catch(warn);
-    if (assetUrl("arena-leather-normal.jpg")) Promise.all([loadImage("arena-leather-normal.jpg"), assetUrl("arena-leather-rough.jpg") ? loadImage("arena-leather-rough.jpg") : null]).then(function (im) {
-      var nBase = imageTex(im[0], false, A.aniso, true), rBase = im[1] ? imageTex(im[1], false, A.aniso, true) : null;
-      A.leather.forEach(function (L, k) {
-        var n = k ? nBase.clone() : nBase, r = rBase ? (k ? rBase.clone() : rBase) : null;
-        n.repeat.set(L.rep[0], L.rep[1]); n.needsUpdate = true;
-        L.m.normalMap = n; L.m.normalScale = new T.Vector2(0.55, 0.55);
-        if (r) { r.repeat.copy(n.repeat); r.needsUpdate = true; L.m.roughnessMap = r; L.m.roughness = Math.min(1, L.m.roughness * 1.35); }
-        L.m.needsUpdate = true;
-      });
+    if (assetUrl("arena-leather-normal.jpg")) loadImage("arena-leather-normal.jpg").then(function (img) {
+      var n = imageTex(img, false, A.aniso, true);
+      A.leather.forEach(function (L) { leatherize(L.m, n, L.rep); });
       A.surfaces = (A.surfaces || 0) | 8;
     }).catch(warn);
   };
+  // leather grain on a pad material; the grain tiles in the shader because a printed map (posts) owns vUv's transform
+  function leatherize(m, tex, rep) {
+    var R = { value: new T.Vector2(rep[0], rep[1]) };
+    m.normalMap = tex; m.normalScale = new T.Vector2(0.26, 0.26);   // the map stores the grain x4
+    m.onBeforeCompile = function (sh) {
+      sh.uniforms.uGrainRep = R;
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform vec2 uGrainRep;")
+        .replace("#include <normal_fragment_maps>", T.ShaderChunk.normal_fragment_maps.split("texture2D( normalMap, vUv )").join("texture2D( normalMap, vUv * uGrainRep )"));
+    };
+    m.customProgramCacheKey = function () { return "fightlab-leather"; };
+    m.needsUpdate = true;
+  }
 
   /* ---- lights ---- */
   function buildLights(A) {
@@ -1230,7 +1236,7 @@
           var L = base.distanceTo(aim) * 0.82;
           var cone = new T.CylinderGeometry(0.1, 0.1 + L * 0.15, L, 20, 1, true); cone.translate(0, -L / 2, 0);
           var sm = new T.Mesh(cone, shaftMat.clone());
-          sm.material.uniforms.uLen.value = L; sm.material.uniforms.uTime = A.U.uTime;
+          sm.material.uniforms.uLen.value = L; sm.material.uniforms.uTime = A.U.uTime; sm.material.uniforms.uIntensity = A.U.uShaft;
           sm.position.copy(base); sm.quaternion.copy(qq); sm.renderOrder = 3; sm.userData.arena = true;
           shafts.push(sm);
         }
@@ -1280,7 +1286,7 @@
     var crowdMat = A.crowdMat = new T.ShaderMaterial({
       uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, {}]), vertexShader: CROWD_VS, fragmentShader: CROWD_FS, fog: true
     });
-    ["uTime", "uExcite", "uStand", "uWave", "uHouse", "uSpill"].forEach(function (u) { crowdMat.uniforms[u] = A.U[u]; });
+    ["uTime", "uExcite", "uStand", "uWave", "uHouse", "uSpill", "uPulse", "uFocus"].forEach(function (u) { crowdMat.uniforms[u] = A.U[u]; });
     var base = personGeometry();
     var near = new CrowdBuilder(), far = [], farCol = [], farSkin = [], farPar = [], heads = [];
 
@@ -1367,7 +1373,7 @@
       pg.setAttribute("position", new T.Float32BufferAttribute(far, 3)); pg.setAttribute("aC0", new T.Float32BufferAttribute(farCol, 3));
       pg.setAttribute("aC2", new T.Float32BufferAttribute(farSkin, 3)); pg.setAttribute("aPar", new T.Float32BufferAttribute(farPar, 2));
       var farMat = new T.ShaderMaterial({ uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, {}]), vertexShader: FAR_VS, fragmentShader: FAR_FS, fog: true });
-      ["uTime", "uExcite", "uScale", "uSpill"].forEach(function (u) { farMat.uniforms[u] = A.U[u]; }); farMat.uniforms.uHouse = A.U.uFarHouse;
+      ["uTime", "uExcite", "uScale", "uSpill", "uPulse"].forEach(function (u) { farMat.uniforms[u] = A.U[u]; }); farMat.uniforms.uHouse = A.U.uFarHouse;
       var pts = new T.Points(pg, farMat); pts.frustumCulled = false; A.own(pts); A.farCrowd = pts;
     }
     A.heads = heads;
@@ -1444,8 +1450,15 @@
   /* ---- camera flashes and phone screens ---- */
   function buildFx(A) {
     var heads = A.heads, nh = heads.length / 3, r = rng(23);
-    var NF = 380, fpos = new Float32Array(NF * 3), fcol = new Float32Array(NF * 3);
-    for (var f = 0; f < NF; f++) { var h = Math.floor(r() * nh) * 3; fpos[f * 3] = heads[h]; fpos[f * 3 + 1] = heads[h + 1] + 0.25; fpos[f * 3 + 2] = heads[h + 2]; }
+    var NF = 380, NPRESS = A.nPress = 24, fpos = new Float32Array(NF * 3), fcol = new Float32Array(NF * 3);
+    for (var f = 0; f < NF; f++) {
+      if (f < NPRESS) {   // photographers along the apron, cameras at head height
+        var pa = (f / NPRESS) * TAU + r() * 0.12, pr = RA + 0.45 + r() * 0.5;
+        fpos[f * 3] = Math.cos(pa) * pr; fpos[f * 3 + 1] = FLOOR_Y + 1.45 + r() * 0.35; fpos[f * 3 + 2] = Math.sin(pa) * pr;
+        continue;
+      }
+      var h = Math.floor(r() * nh) * 3; fpos[f * 3] = heads[h]; fpos[f * 3 + 1] = heads[h + 1] + 0.25; fpos[f * 3 + 2] = heads[h + 2];
+    }
     var fg = new T.BufferGeometry();
     fg.setAttribute("position", new T.BufferAttribute(fpos, 3));
     fg.setAttribute("color", new T.BufferAttribute(fcol, 3));
@@ -1461,6 +1474,44 @@
     var pg = new T.BufferGeometry(); pg.setAttribute("position", new T.BufferAttribute(pp, 3)); pg.setAttribute("aRand", new T.BufferAttribute(pr, 1));
     var pm = new T.ShaderMaterial({ uniforms: { uScale: A.U.uScale, uPhones: A.U.uPhones, uTime: A.U.uTime }, vertexShader: PHONE_VS, fragmentShader: PHONE_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending });
     A.phones = new T.Points(pg, pm); A.phones.frustumCulled = false; A.own(A.phones);
+    buildHaze(A);
+  }
+
+  // haze: ~40 drifting sheets around and above the cage, one instanced draw, additive, faded near the lens
+  function buildHaze(A) {
+    var S = 128, c = makeCanvas(S, S), ctx = c.getContext("2d"), r = rng(31), i;
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, S, S);
+    ctx.globalCompositeOperation = "lighter";
+    for (i = 0; i < 70; i++) {
+      var x = S * (0.2 + r() * 0.6), y = S * (0.2 + r() * 0.6), rad = S * (0.08 + r() * 0.2), g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      var a = 0.05 + r() * 0.08;
+      g.addColorStop(0, "rgba(" + Math.round(255 * a) + "," + Math.round(255 * a * (0.6 + r() * 0.8)) + ",0,1)"); g.addColorStop(1, "rgba(0,0,0,1)");
+      ctx.fillStyle = g; ctx.fillRect(x - rad, y - rad, 2 * rad, 2 * rad);
+    }
+    // fade the sheet to nothing at its edges
+    ctx.globalCompositeOperation = "multiply";
+    var e = ctx.createRadialGradient(S / 2, S / 2, S * 0.1, S / 2, S / 2, S * 0.5);
+    e.addColorStop(0, "#fff"); e.addColorStop(1, "#000");
+    ctx.fillStyle = e; ctx.fillRect(0, 0, S, S);
+    var tex = canvasTex(c, false, 1);
+    var N = 44, hz = new Float32Array(N * 4), hr = new Float32Array(N * 2);
+    for (i = 0; i < N; i++) {
+      var a2 = r() * TAU, rr, y2, sz;
+      if (i < 16) { rr = r() * 3.2; y2 = 4.6 + r() * 4.5; sz = 4 + r() * 3; }          // under the truss, above the fighters
+      else if (i < 34) { rr = RA + 0.6 + r() * 4.5; y2 = 0.4 + r() * 6; sz = 5 + r() * 4; }   // around the apron and the tables
+      else { rr = 10 + r() * 8; y2 = 2 + r() * 8; sz = 8 + r() * 5; }                // out over the floor seats
+      hz[i * 4] = Math.cos(a2) * rr; hz[i * 4 + 1] = y2; hz[i * 4 + 2] = Math.sin(a2) * rr; hz[i * 4 + 3] = sz;
+      hr[i * 2] = r(); hr[i * 2 + 1] = (r() - 0.5) * 0.05;
+    }
+    var g2 = new T.InstancedBufferGeometry();
+    var quad = new T.PlaneGeometry(1, 1);
+    g2.index = quad.index; g2.attributes.position = quad.attributes.position;
+    g2.setAttribute("aHz", new T.InstancedBufferAttribute(hz, 4));
+    g2.setAttribute("aHr", new T.InstancedBufferAttribute(hr, 2));
+    g2.instanceCount = N;
+    var m = new T.ShaderMaterial({ uniforms: { uTime: A.U.uTime, uHaze: A.U.uHaze, uTex: { value: tex }, uColor: { value: new T.Color(1.0, 0.93, 0.84).multiplyScalar(0.55) } }, vertexShader: HAZE_VS, fragmentShader: HAZE_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending });
+    var mesh = A.haze = new T.Mesh(g2, m); mesh.frustumCulled = false; mesh.renderOrder = 4; mesh.visible = A.Q.haze > 0;
+    A.own(mesh);
   }
 
   /* ------------------------------------------------------------ post-processing */
@@ -1632,15 +1683,41 @@
     U.uStand.value = Math.min(1, Math.max(M.s, M.bs));
     U.uWave.value = M.wave;
     U.uPhones.value = Math.min(0.9, M.p + M.be * 0.25);
-    // camera flashes
-    var colA = this.flashes.geometry.attributes.color, arr = colA.array, r = this.flashRng;
+    // heads follow the fight; a big moment sends a reaction out through the rows from the side nearest it
+    var F = this.fx;
+    if (show && show.focus) U.uFocus.value.set(show.focus.x, 1.2, show.focus.z);
+    if (this._pulse) {
+      var IP = show && show.impact ? show.impact : null;
+      U.uPulse.value.set(this.t, IP ? IP.x : 0, IP ? IP.z : 0, Math.min(1, 0.35 + this._pulse * 1.3));
+      this._pulse = 0;
+    }
+    // haze: thick for the walkout, thinner for later walk-ins, a faint residue through the rounds
+    var hz = 0.14;
+    if (ph === "intro") hz = show && show.rIdx ? 0.5 : 1;
+    else if (ph === "break") hz = 0.3;
+    else if (ph === "finish" || ph === "result" || ph === "decision") hz = 0.36;
+    else if (!ph || ph === "idle") hz = 0.6;
+    F.haze += (hz - F.haze) * Math.min(1, dt * (hz > F.haze ? 0.9 : 0.25));
+    U.uHaze.value = F.haze * (this.Q.haze || 0);
+    U.uShaft.value = 0.008 + 0.017 * F.haze;
+    // camera flashes; the press at the apron fire hardest on knockdowns and light the cage for a frame
+    var colA = this.flashes.geometry.attributes.color, arr = colA.array, r = this.flashRng, np = this.nPress || 0, pressHit = -1, pressV = 0;
+    F.storm = Math.max(0, F.storm - dt);
     for (var i = 0; i < arr.length; i += 3) {
-      var v = arr[i] * Math.exp(-dt * 18);
-      if (r() < this.flashLevel * dt * 60) v = 0.7 + r() * 0.6;
+      var v = arr[i] * Math.exp(-dt * 18), pressI = i / 3 < np;
+      var pr = this.flashLevel * dt * 60 * (pressI ? (F.storm > 0 ? 2.5 : 0.6) : 1);
+      if (r() < pr) { v = 0.7 + r() * 0.6; if (pressI && v > pressV) { pressV = v; pressHit = i; } }
       arr[i] = arr[i + 1] = arr[i + 2] = v;
     }
     colA.needsUpdate = true;
     this.flashLevel += (0.004 + M.p * 0.01 - this.flashLevel) * Math.min(1, dt * 0.8);
+    F.press *= Math.exp(-dt * 30);
+    if (pressHit >= 0 && pressV > F.press) {
+      var fp = this.flashes.geometry.attributes.position.array;
+      this.flashLight.position.set(fp[pressHit], fp[pressHit + 1], fp[pressHit + 2]);
+      F.press = pressV; F.kick = Math.max(F.kick, 0.018 * pressV);
+    }
+    this.flashLight.intensity = F.press * 60;
     // cornermen come up with the stools
     if (this.corner) this.corner.visible = !!(this.stools.A.visible || this.stools.B.visible);
     // boards: names from the script, round and clock from the show
@@ -1689,6 +1766,8 @@
 
   Arena.prototype.burst = function (lvl) {
     this.flashLevel = Math.max(this.flashLevel, lvl);
+    this._pulse = Math.max(this._pulse || 0, lvl);                 // placed at show.impact on the next tick
+    if (lvl >= 0.2) this.fx.storm = Math.max(this.fx.storm, 1.2 + lvl * 1.6);
     if (lvl >= 0.25 && Math.random() < 0.65) this._blood = lvl;   // dropped next tick, once the show has set the impact point
     var M = this.mood;
     M.be = Math.max(M.be, Math.min(1, 0.35 + lvl * 1.4));
@@ -1698,11 +1777,20 @@
   };
 
   Arena.prototype.render = function () {
-    var now = perfNow();
+    var now = perfNow(), ticked = this._tracked, F = this.fx;
+    var rdt = this._lastRender ? Math.min(0.1, (now - this._lastRender) / 1000) : 1 / 60; this._lastRender = now;
     this.renderer.info.reset();
     if (!this._tracked) this.trackActors();
     this._tracked = false;
-    if (this.finish) this.finish.uniforms.uTime.value = (now / 1000) % 1000;
+    // replays: the show skips tickFx, so keep the crowd moving in slow motion and bring in the replay grade
+    var sh = this.show || (root.VGSim && root.VGSim.show) || null, inReplay = !!(sh && sh.phase === "replay");
+    if (inReplay && !ticked && !sh.paused) { this.t += rdt * 0.42; this.U.uTime.value = this.t; }
+    F.ca += ((inReplay ? 1 : 0) - F.ca) * Math.min(1, rdt * 4);
+    F.kick *= Math.exp(-rdt * 16);
+    if (this.finish) {
+      var fu = this.finish.uniforms;
+      fu.uTime.value = (now / 1000) % 1000; fu.uCA.value = F.ca; fu.uReplay.value = F.ca * 0.7; fu.uKick.value = F.kick;
+    }
     var fovScale = this.cssH * this.renderer.getPixelRatio() / (2 * Math.tan(this.camera.fov * PI / 360));
     this.U.uScale.value = fovScale;
     if (this.composer && this.postOn) {
@@ -1729,6 +1817,7 @@
     var g = this.gov, Q = this.Q;
     if (this.dprScale > 0.86 && this.baseDpr * 0.85 >= 0.99) { this.dprScale = 0.85; this.resize(this.cssW, this.cssH); }
     else if (this.bloom && this.bloom.enabled) this.bloom.enabled = false;
+    else if (this.haze && this.haze.visible) this.haze.visible = false;
     else if (Q.aa === "smaa") { Q.aa = "fxaa"; this.applyAA(); }
     else if (this.dprScale > 0.71) { this.dprScale = 0.7; this.resize(this.cssW, this.cssH); }
     else if (this.key.shadow.mapSize.x > 1024) { this.key.shadow.mapSize.set(1024, 1024); if (this.key.shadow.map) { this.key.shadow.map.dispose(); this.key.shadow.map = null; } }
@@ -1742,7 +1831,8 @@
   Arena.prototype.setQuality = function (q) {
     if (!QUALITY[q]) return;
     var Q = QUALITY[q];
-    this.quality = q; this.Q.aa = Q.aa; this.Q.bloom = Q.bloom;
+    this.quality = q; this.Q.aa = Q.aa; this.Q.bloom = Q.bloom; this.Q.haze = Q.haze;
+    if (this.haze) this.haze.visible = Q.haze > 0;
     this.baseDpr = Math.min(root.devicePixelRatio || 1, Q.dpr, this.opts.maxDpr || 2); this.dprScale = 1;
     if (this.bloom) this.bloom.enabled = Q.bloom > 0;
     this.applyAA();
@@ -1753,7 +1843,7 @@
   };
   Arena.prototype.stats = function () {
     var i = this.renderer.info;
-    return { quality: this.quality, tier: this.tier, gpu: this.gpu.renderer, post: !!(this.composer && this.postOn), linearPost: !!this.linearPost, bloom: !!(this.bloom && this.bloom.enabled), aa: this.Q.aa, dpr: this.renderer.getPixelRatio(), frameMs: this.gov ? +this.gov.ema.toFixed(1) : null, calls: i.render.calls, triangles: i.render.triangles, crowd: this.crowdCount };
+    return { quality: this.quality, tier: this.tier, gpu: this.gpu.renderer, post: !!(this.composer && this.postOn), linearPost: !!this.linearPost, bloom: !!(this.bloom && this.bloom.enabled), aa: this.Q.aa, dpr: this.renderer.getPixelRatio(), frameMs: this.gov ? +this.gov.ema.toFixed(1) : null, calls: i.render.calls, triangles: i.render.triangles, crowd: this.crowdCount, env: this.envState, surfaces: this.surfaces || 0, haze: !!(this.haze && this.haze.visible) };
   };
 
   // vertical field of view for a 35 mm-equivalent focal length (36 mm wide sensor) at a given aspect

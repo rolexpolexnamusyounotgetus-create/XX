@@ -628,7 +628,7 @@ def add_covariates(S):
     S["cell"] = S.R.astype(str) + "_" + S.rnd.astype(str)
     S["partial"] = (~S.full).astype(float)
     S["D10"] = S.c_ohl / 10                     # head sig strikes absorbed in earlier rounds, per 10
-    S["H10"] = S.c_hl / 10                      # head sig strikes landed on him in earlier rounds, per 10
+    S["H10"] = S.c_hl / 10                      # head sig strikes he landed on the opponent in earlier rounds, per 10
     S["K_lag"] = S.l_okd                        # knockdowns absorbed in the previous round
     S["K_early"] = S.c_okd - S.l_okd            # knockdowns absorbed before the previous round
     S["Ks_lag"] = S.l_kd                        # knockdowns scored in the previous round
@@ -687,7 +687,8 @@ XDOC = {
     "Ks_early": "knockdowns scored before the previous round",
     "lost": "lost the previous round on sig strikes landed (tie 0.5)",
     "behind2_final": "final scheduled round and down 2+ rounds on sig-landed rounds",
-    "lostJ": "share of judges who gave the previous round to the opponent (decisions only)",
+    "lostJ": "share of judges who gave the previous round to the opponent: published per-round scores (decisions only)",
+    "lostJinf": "legacy inferred version of lostJ from card totals and all-round stats (looks ahead; comparison only)",
 }
 
 
@@ -720,6 +721,10 @@ def fit_dynre_outcome(S, name, xcols, jack=0, label=""):
         _, jse = grouped_jackknife(ffit, tr, G=jack)
         for k in gam:
             gam[k]["se_jack"] = jse[k]
+    # replication: the same model refit on the test period alone (a check, never used for selection)
+    mt0 = DynRE(te, "y", "v", ["partial"], fixed_cells=m0.cells).fit(m0.p)
+    mt1 = DynRE(te, "y", "v", xcols, fixed_cells=m0.cells).fit(m1.p)
+    test_refit = {"gamma": mt1.gamma(), "var_components_null": mt0.var_components()}
     cells0 = {k[5:]: v for k, v in m0.est().items() if k.startswith("cell:")}
     curve = {}
     for R in (3, 5):
@@ -736,6 +741,7 @@ def fit_dynre_outcome(S, name, xcols, jack=0, label=""):
                              "dll_per_obs": (p1["ll"] - p0["ll"]) / max(p1["n"], 1),
                              "mse_reduction_pct": 100 * (1 - p1["mse"] / p0["mse"])},
         "train_one_step": {"null": pt0, "full": pt1, "dll_per_obs": (pt1["ll"] - pt0["ll"]) / max(pt1["n"], 1)},
+        "test_refit": test_refit,
         "secs": time.time() - t0,
     }
     print(f"  [{label or name}] train n={m1.n_obs} test dLL/obs={out['heldout_one_step']['dll_per_obs']:+.4f} "
@@ -776,6 +782,11 @@ def form_decomposition(S, jack=0):
         p1 = m1.predictive(DynRE(te, "y", "v", ["partial"] + xs, fixed_cells=m0.cells))
         vc = m1.var_components()
         sa, rho = vc["sd_fighter_fight"], vc["corr_fighters"]
+        mt = DynRE(te, "y", "v", ["partial"] + xs, fixed_cells=m0.cells).fit(m1.p)
+        vt = mt.var_components()
+        out[name + "_test_refit"] = {"with_profile": vt, "gamma": mt.gamma(),
+                                     "form_sd_individual": math.sqrt(max(vt["sd_fighter_fight"] ** 2 * (1 - vt["corr_fighters"]), 0)),
+                                     "form_sd_shared_fight": math.sqrt(max(vt["sd_fighter_fight"] ** 2 * vt["corr_fighters"], 0))}
         out[name] = {"null": m0.var_components(), "with_profile": vc, "gamma": m1.gamma(),
                      "form_sd_individual": math.sqrt(max(sa ** 2 * (1 - rho), 0)),
                      "form_sd_shared_fight": math.sqrt(max(sa ** 2 * rho, 0)) if rho > 0 else 0.0,
@@ -1032,9 +1043,13 @@ def part2(S):
                        "test": skill(tst[col], p, var[col]["league_mean"])}
     res["systematic"] = sysres
     # the engine's current rule (backtest.json pace / pace_w, landed per round, kPace) vs realized LR
-    bt = json.load(open(os.path.join(ROOT, "data", "derived", "backtest.json")))
+    # backtest_dev.json: the development copy without 2026 fights (hidden-data protocol); the pace fields are
+    # walk-forward (tools/build_db.py builds them from fights before each one)
+    bt = json.load(open(os.path.join(ROOT, "data", "derived", "backtest_dev.json")))
     rows = []
     for f in bt["fights"]:
+        if f["date"] >= VAULT_FROM:
+            continue
         for side, idx in (("A", 0), ("B", 1)):
             x = f[side]
             rows.append((f["id"], idx, x.get("pace"), x.get("pace_w")))
@@ -1133,7 +1148,7 @@ def part3_judges(F, S, xbase, jack=0):
             tr = dd[dd.period == "train"]; te = dd[dd.period == "test"]
             m = DynRE(tr, "y", "v", xc).fit()
             g = m.gamma()
-            if jack and lab_name != "both" and name == "out":
+            if jack and lab_name in ("judges", "sig_diff") and name == "out":
                 def ffit(df):
                     mm = DynRE(df, "y", "v", xc, fixed_cells=m.cells).fit(m.p)
                     return {k: v["est"] for k, v in mm.gamma().items()}
@@ -1144,24 +1159,26 @@ def part3_judges(F, S, xbase, jack=0):
             # test-period refit for a direct replication of the label effect
             mtest = DynRE(te, "y", "v", xc).fit(m.p)
             res["models"][f"{name}_{lab_name}"] = {
-                "gamma": {k: g[k] for k in g if k in ("lostJ", "lost", "D10", "K_lag", "Ks_lag")},
-                "test_refit": {k: v for k, v in mtest.gamma().items() if k in ("lostJ", "lost")},
+                "gamma": {k: g[k] for k in g if k in ("lostJ", "lostJinf", "lost", "D10", "K_lag", "Ks_lag")},
+                "test_refit": {k: v for k, v in mtest.gamma().items() if k in ("lostJ", "lostJinf", "lost")},
                 "n_train": m.n_obs, "n_test": mt.n_obs}
             print(f"  [judges {name} {lab_name}] " + ", ".join(f"{k} {v['est']:+.3f}"
-                                                            for k, v in g.items() if k in ("lostJ", "lost")), flush=True)
+                                                            for k, v in g.items() if k in ("lostJ", "lostJinf", "lost")), flush=True)
     # takedown attempts with the judges' label
     dd = D[D.rsec >= 30].copy()
     cells = sorted(dd.cell.unique())
     for c in cells:
         dd["c" + c] = (dd.cell == c).astype(float)
     cc = ["c" + c for c in cells]
-    for lab_name, xc in (("judges", xs + ["lostJ"]), ("sig_diff", xs + ["lost"])):
+    for lab_name, xc in (("judges", xs + ["lostJ"]), ("sig_diff", xs + ["lost"]),
+                         ("judges_inferred_legacy", xs + ["lostJinf"])):
         tr = dd[dd.period == "train"]; te = dd[dd.period == "test"]
         m = FrailPois(tr, "td_a", "mins", cc + xc).fit()
         mte = FrailPois(te, "td_a", "mins", cc + xc).fit()
         co = m.coef()
-        res["models"][f"tda_{lab_name}"] = {"gamma": {k: co[k] for k in ("lostJ", "lost") if k in co},
-                                            "test_refit": {k: mte.coef()[k] for k in ("lostJ", "lost") if k in co}}
+        keys = ("lostJ", "lostJinf", "lost")
+        res["models"][f"tda_{lab_name}"] = {"gamma": {k: co[k] for k in keys if k in co},
+                                            "test_refit": {k: mte.coef()[k] for k in keys if k in co}}
     return res
 
 
@@ -1195,7 +1212,46 @@ def part4_descriptive(S):
                            "d_logit_acc_vs_control": float(np.nanmean(adj[:, 1])),
                            "d_td_att_vs_control": float(np.nanmean(adj[:, 2]))}
         out[per] = rows
+    out["skip_round"] = {"+".join(p): kd_skip_round(S, p) for p in (("train",), ("ext", "train"), ("test",))}
     return out
+
+
+def kd_skip_round(S, periods):
+    """Added by the Nov 6 verification. Output of the knockdown scorer / the dropped man in round r+1 compared
+    with round r-1 (the round BEFORE the knockdown round), against fighter-fights with no knockdown in r-1 and r
+    (same format and round). Rounds r-1 and r full; r+1 at least 60 s at its per-minute rate, any events (no
+    selection on what happens after the knockdown round). The dynamic RE coefficients Ks_lag / K_lag are relative
+    to an expectation that already contains the knockdown round's own output (the scorer's spike, the dropped
+    man's dip); an engine multiplier on the baseline rate should match this skip-round contrast instead."""
+    x = S[S.period.isin(list(periods))].copy()
+    x["y"] = np.log((x.sig_a + 0.5) / x.mins)
+    key = ["fid", "idx"]
+    P = {c: x.pivot_table(index=key, columns="rnd", values=c) for c in ("y", "kd", "o_kd", "rsec")}
+    Rr = x.groupby(key).R.first()
+    rows = []
+    for r in (2, 3, 4):
+        if r + 1 not in P["y"].columns:
+            continue
+        q = lambda c, rr: P[c][rr]
+        ok = (q("rsec", r - 1) >= 300) & (q("rsec", r) >= 300) & (q("rsec", r + 1) >= 60)
+        ok &= (q("kd", r - 1) == 0) & (q("o_kd", r - 1) == 0)
+        for lab, sel in (("scorer", ok & (q("kd", r) >= 1) & (q("o_kd", r) == 0)),
+                         ("dropped", ok & (q("o_kd", r) >= 1) & (q("kd", r) == 0)),
+                         ("control", ok & (q("kd", r) == 0) & (q("o_kd", r) == 0))):
+            for i in sel[sel].index:
+                rows.append((lab, f"{Rr[i]}_{r}", P["y"].loc[i, r] - P["y"].loc[i, r - 1],
+                             P["y"].loc[i, r + 1] - P["y"].loc[i, r], P["y"].loc[i, r + 1] - P["y"].loc[i, r - 1]))
+    D = pd.DataFrame(rows, columns=["grp", "cell", "kd_round_vs_before", "after_vs_kd_round", "after_vs_before"])
+    cols = ["kd_round_vs_before", "after_vs_kd_round", "after_vs_before"]
+    cm = D[D.grp == "control"].groupby("cell")[cols].mean()
+    res = {"n_control": int((D.grp == "control").sum())}
+    for lab in ("scorer", "dropped"):
+        z = D[D.grp == lab]
+        adj = z[cols].to_numpy() - cm.reindex(z.cell).to_numpy()
+        res[lab] = {"n": int(len(z))}
+        for j, c in enumerate(cols):
+            res[lab][c] = {"est": float(np.nanmean(adj[:, j])), "se": float(np.nanstd(adj[:, j]) / math.sqrt(max(len(z), 1)))}
+    return res
 
 
 # ================================================================================================
@@ -1424,6 +1480,8 @@ def targets(S):
                 "kd_per100_standing_head": float(100 * g.kd.sum() / max(g.sh_l.sum(), 1)),
                 "p_round_ends_ko_tko": float(g.fin_ko_against.sum() / (len(g) / 2)),
                 "p_round_ends_sub": float(g.fin_sub_against.sum() / (len(g) / 2)),
+                "n_rounds": int(len(g) // 2), "n_ko_tko": int(g.fin_ko_against.sum()), "n_sub": int(g.fin_sub_against.sum()),
+                "n_kd": int(g.kd.sum()),
             }
         out[per] = t
     return out
@@ -1493,12 +1551,15 @@ def late_ratio_simple(S):
     return FF.reset_index()
 
 
-def engine_check(S, csv, label):
+def engine_check(S, csv, label, real_period="test"):
+    """real_period: the window of the real fights the engine sims are compared with. Use "train" (sims from
+    `node tools/dynamics_engine.js <csv> --from 2019-01-01 --to 2023-12-31`) for anything that tunes the engine;
+    "test" (2024-2025) is for version selection only (hidden-data protocol)."""
     t0 = time.time()
     E = engine_panel(csv)
     keys = set(E.fkey.unique())
-    real = S[(S.period == "test") & S.fid.map(bd.url_id).isin(keys)].copy()
-    res = {"engine_csv": csv, "label": label, "n_engine_fights": int(E.fid.nunique()),
+    real = S[(S.period == real_period) & S.fid.map(bd.url_id).isin(keys)].copy()
+    res = {"engine_csv": csv, "label": label, "real_period": real_period, "n_engine_fights": int(E.fid.nunique()),
            "n_matchups": int(len(keys)), "n_real_fights": int(real.fid.nunique())}
     Es = E[E.sim < 8].copy()
     # 1-2: output and accuracy dynamics
@@ -1562,7 +1623,8 @@ def engine_check(S, csv, label):
                              "td_att_per15": float(15 * g.td_a.sum() / m), "ctrl_share": float(g.ctrl.sum() / g.rsec.sum()),
                              "kd_per100_standing_head": float(100 * g.kd.sum() / max(g.sh_l.sum(), 1)),
                              "p_round_ends_ko_tko": float(g.fin_ko_against.sum() / (len(g) / 2)),
-                             "p_round_ends_sub": float(g.fin_sub_against.sum() / (len(g) / 2))}
+                             "p_round_ends_sub": float(g.fin_sub_against.sum() / (len(g) / 2)),
+                             "n_rounds": int(len(g) // 2), "n_ko_tko": int(g.fin_ko_against.sum()), "n_kd": int(g.kd.sum())}
         tg[lab] = t
     res["targets_by_round"] = tg
     # 5: late-round ratio: total variance and the persistent (matchup) share in the engine
@@ -1599,6 +1661,9 @@ def main(argv=None):
     ap.add_argument("--engine-csv", default=None, help="CSV from tools/dynamics_engine.js: adds the engine check")
     ap.add_argument("--engine-label", default="engine3 (src/)")
     ap.add_argument("--engine-key", default="engine_check", help="JSON key for the engine check")
+    ap.add_argument("--engine-period", default="test", choices=["train", "test"],
+                    help="real-fight window for the engine check (train for tuning, test for selection only)")
+    ap.add_argument("--fresh", action="store_true", help="drop keys of the existing JSON that this run does not write")
     a = ap.parse_args(argv)
     jack = 0 if a.quick else a.jack
     parts = set(a.parts.split(","))
@@ -1628,7 +1693,7 @@ def main(argv=None):
             J["simulation_check"] = sim_check(S, m0_out, reps=2, gam_true=(0.0, -0.15))
         J["kd_momentum_descriptive"] = part4_descriptive(S)
         save(J, parts | {"partial"})
-    if "3" in parts:
+    if "3" in parts or "J" in parts:          # J: the judges'-label models alone
         print("part 3: judges' labels", flush=True)
         J["adaptation_judges"] = part3_judges(F, S, STATE_X, jack=jack)
         save(J, parts | {"partial"})
@@ -1643,17 +1708,22 @@ def main(argv=None):
         J["finish_hazard"] = part5(S, F)
     if a.engine_csv:
         print("engine check", flush=True)
-        J[a.engine_key] = engine_check(S, a.engine_csv, a.engine_label)
+        J[a.engine_key] = engine_check(S, a.engine_csv, a.engine_label, a.engine_period)
     J["meta"]["secs"] = time.time() - t0
-    save(J, parts)
+    save(J, parts, fresh=a.fresh)
     print(f"wrote {OUT_JSON} ({time.time() - t0:.0f}s)")
 
 
-def save(J, parts):
+def save(J, parts, fresh=False):
+    """Merge into the existing JSON (keys this run did not compute, e.g. earlier engine checks, are kept; meta is
+    merged so hand-written provenance survives). --fresh starts from an empty file."""
     old = {}
-    if os.path.exists(OUT_JSON) and parts != {"1", "2", "3", "4", "5"}:
+    if os.path.exists(OUT_JSON) and not fresh:
         old = json.load(open(OUT_JSON))
-    old.update(r6(J, 6))
+    new = r6(J, 6)
+    if "meta" in new and isinstance(old.get("meta"), dict):
+        meta = old["meta"]; meta.update(new["meta"]); new["meta"] = meta
+    old.update(new)
     tmp = OUT_JSON + ".tmp"
     with open(tmp, "w") as fh:
         json.dump(old, fh, indent=1)

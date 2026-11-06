@@ -1051,6 +1051,30 @@ def comb_fit(ev, name, terms):
             "c0": rnd(bta[0], 4), "dispersion": rnd(phi, 3)}
 
 
+# factor fields per family (acc / accAg entries are (list name, target index))
+FAMILY_FIELDS = {"dAtt": ["dAtt", "dAttAg"], "cAtt": ["cAtt", "cAttAg"], "gAtt": ["gAtt", "gAttAg"],
+                 "accH": [("acc", 0), ("accAg", 0)], "accB": [("acc", 1), ("accAg", 1)], "accL": [("acc", 2), ("accAg", 2)],
+                 "kd": ["pow", "chin"], "tdAtt": ["tdAtt", "tdAttAg"], "tdAcc": ["tdAcc", "tdAccAg"],
+                 "ctrl": ["ctrl", "octrl"], "topSkill": ["topSkill", "escWeak"], "sub": ["sub", "subAg"]}
+
+
+def gate_factors(F, off):
+    """Copy of one side's factor dict with the families in `off` set to 1 (not applied)."""
+    G = {k: (list(v) if isinstance(v, list) else v) for k, v in F.items()}
+    for fam in off:
+        for fld in FAMILY_FIELDS[fam]:
+            if isinstance(fld, tuple):
+                G[fld[0]][fld[1]] = 1.0
+            else:
+                G[fld] = 1.0
+    return G
+
+
+def snaps_sha(snaps):
+    import hashlib
+    return hashlib.sha256(json.dumps(snaps, sort_keys=True).encode()).hexdigest()[:16]
+
+
 # ------------------------------------------------------------------ engine-level check (Monte Carlo, engine v3)
 def _bucket7(res):
     w, m = res["winner"], res["method"]
@@ -1080,6 +1104,14 @@ def engine_eval(args):
     om = out["results"].get("over_mlrates", {}).get("families", {})
     # pre-declared rule: beta = clip(beta fit on 2019-2023, 0, 1); topSkill has no ML counterpart
     ml_beta = {nm: float(min(1.0, max(0.0, om[nm]["beta_tune"]))) if nm in om else 0.0 for nm in FAMILIES}
+    off = []
+    block = "engine_backtest"
+    if args.engine_gated:
+        rec = out["results"]["recommendation"]
+        off = [nm for nm, v in rec["families"].items() if v["engine_path_lambda"] == 0]
+        ml_beta = {nm: float(rec["families"][nm]["ml_path_beta"]) for nm in FAMILIES}
+        snaps = {fid: {t: gate_factors(v[t], off) for t in ("A", "B")} for fid, v in snaps.items()}
+        block = "engine_backtest_recommended"
 
     def prior_for(py, div):
         allp = py.get("ALL", {})
@@ -1092,7 +1124,8 @@ def engine_eval(args):
                "test_2024_2025": (TEST_FROM, VAULT_FROM, args.engine_sims_test)}
     strip = ("pace3", "pace3_w", "kd_absorbed")
     CFG = ("plain", "adj", "ml", "ml_adj")
-    res_all = {"ml_beta_used": {k: rnd(v, 4) for k, v in ml_beta.items()}}
+    res_all = {"ml_beta_used": {k: rnd(v, 4) for k, v in ml_beta.items()}, "families_off": off,
+               "factors_sha16": snaps_sha(out["snapshots"])}
     for per, (lo, hi, N) in periods.items():
         fights = []
         for e in bt["fights"]:
@@ -1191,7 +1224,30 @@ def engine_eval(args):
                        "targets x (F_off,X F_def,Y)^beta (ml_beta_used); same seeds for every configuration, both "
                        "corner orders averaged; winner log loss on decisive fights; 7-bin = [A KO, A SUB, A DEC, "
                        "DRAW, B DEC, B SUB, B KO]; 2026+ never simulated")
-    out["results"]["engine_backtest"] = res_all
+    # Volkanovski vs Gaethje (live profiles, roster factors, 5 x 5 title fight at lightweight), plain vs adjusted
+    if args.engine_gated and "recommendation" in out["results"]:
+        fj = json.load(open(os.path.join(OUT, "fighters.json")))
+        offr = [nm for nm, v in out["results"]["recommendation"]["families"].items() if v["engine_path_lambda"] == 0]
+        vg = {"id": "volk_gaethje", "date": "2026-11-06", "division": "Lightweight", "prior_division": "Lightweight",
+              "rounds": 5, "title": True, "ml": None}
+        for t, slug in (("A", "alexander-volkanovski"), ("B", "justin-gaethje")):
+            pr = dict(fj["fighters"][slug])
+            pr["oppadj"] = gate_factors(out["roster"][slug], offr)
+            vg[t] = pr
+        inp = os.path.join(scratch, "in_vg.json")
+        with open(inp, "w") as fh:
+            json.dump({"keys": fj["meta"]["keys"], "priors": {"2026": fj["priors"]}, "ml_beta": ml_beta, "fights": [vg]}, fh)
+        o_ = os.path.join(scratch, "out_vg.json")
+        subprocess.run(["node", os.path.join(HERE, "oppadj_engine.js"), inp, o_, str(args.engine_sims_vg), "0", "1"], check=True)
+        rr = json.load(open(o_))["rows"]["volk_gaethje"]
+        res_all["volk_gaethje"] = {"sims_per_orientation": args.engine_sims_vg, "families_off": offr,
+                                   "plain": rr["plain"], "adj": rr["adj"],
+                                   "factors": {"A": vg["A"]["oppadj"], "B": vg["B"]["oppadj"]},
+                                   "note": "A = Volkanovski, B = Gaethje; pA = P(Volkanovski wins); bins as above; "
+                                           "fighters.json profiles and live priors; recommended factor set"}
+        print("  Volk-Gaethje: plain pA %.4f pB %.4f | adj pA %.4f pB %.4f"
+              % (rr["plain"]["pA"], rr["plain"]["pB"], rr["adj"]["pA"], rr["adj"]["pB"]))
+    out["results"][block] = res_all
     n = B.write_json(args.out, out)
     print("updated %s (%s)" % (args.out, B.human(n)))
 
@@ -1210,6 +1266,9 @@ def main():
     ap.add_argument("--engine-sims-test", type=int, default=1000)
     ap.add_argument("--engine-sims-tune", type=int, default=300)
     ap.add_argument("--engine-dir", default="", help="scratch directory for the engine check (default out/oppadj_engine)")
+    ap.add_argument("--engine-gated", action="store_true",
+                    help="engine check with the recommended factor set (families off, ML-path betas) only")
+    ap.add_argument("--engine-sims-vg", type=int, default=10000)
     args = ap.parse_args()
     if args.engine_eval:
         engine_eval(args)
@@ -1681,6 +1740,31 @@ def main():
     for name, ch in chosen.items():
         kind = FAMILIES[name][0]
         F.update(multi_factors(name, ch["CA"], ev.engine_R, D.sL, cal_term(ch, kind), ch["lam"]))
+    # ---- recommendation (version selection on 2024-25 is allowed by the protocol; hyperparameters stay tune-only):
+    # engine path: lambda chosen on 2019-2023, set to 0 for a family whose final factors did not beat the engine's raw
+    # rates on 2024-25 per-fight deviance; ML path: beta = clip(beta fit on 2019-2023, 0, 1), 0 where the stacked
+    # 2024-25 deviance did not improve on the ML rate alone (topSkill: no ML counterpart, engine path only)
+    om_ = res.get("over_mlrates", {}).get("families", {})
+    recf = {}
+    for name in FAMILIES:
+        fam = res["families"][name]
+        gain = fam["test_delta_bootstrap_95"]["final_vs_engine_raw"]["delta"]
+        lam_ = fam["chosen"]["blend_lambda"] if gain > 0 else 0.0
+        if name in om_:
+            mb = float(min(1.0, max(0.0, om_[name]["beta_tune"]))) if om_[name]["test_gain_95"][0] > 0 else 0.0
+        else:
+            mb = 0.0
+        recf[name] = {"engine_path_lambda": lam_, "ml_path_beta": rnd(mb, 3),
+                      "fields": [f if isinstance(f, str) else "%s[%d]" % f for f in FAMILY_FIELDS[name]],
+                      "validated_gain_vs_engine_pct": fam["test_delta_bootstrap_95"]["final_vs_engine_raw"]["pct_of_baseline"],
+                      "validated_gain_over_ml_pct": om_[name]["test_gain_pct"] if name in om_ else None}
+    res["recommendation"] = {
+        "families": recf,
+        "rule": ("engine path: apply the snapshot / roster factors of families with engine_path_lambda > 0 (the factors "
+                 "already include their lambda); set the others to 1. ML path (src/ml/mlrates.js targets): multiply each "
+                 "ML target by (F_off,X * F_def,Y)^ml_path_beta (odds for probabilities); topSkill/escWeak multiply the "
+                 "engine's R directly in both paths")}
+
     snaps = {}
     for i, e in enumerate(D.entries):
         snaps[e["id"]] = {"A": pack_factors(F, 2 * i), "B": pack_factors(F, 2 * i + 1)}
@@ -1807,6 +1891,16 @@ def main():
         "runtime_s": round(time.time() - t0, 1),
     }
     out = {"meta": meta, "results": res, "snapshots": snaps, "roster": roster}
+    meta["factors_sha16"] = snaps_sha(snaps)
+    if os.path.exists(args.out):
+        try:
+            old = json.load(open(args.out))
+            for blk in ("engine_backtest", "engine_backtest_recommended"):
+                ob = old.get("results", {}).get(blk)
+                if ob and ob.get("factors_sha16") == meta["factors_sha16"]:
+                    res[blk] = ob
+        except (OSError, ValueError):
+            pass
     n = B.write_json(args.out, out)
     print("wrote %s (%s) in %.0f s" % (args.out, B.human(n), time.time() - t0))
 

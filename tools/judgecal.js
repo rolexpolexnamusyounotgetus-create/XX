@@ -6,12 +6,14 @@
    judges, complete cards, ufcstats round stats present, deductions known (raw scores), no 10-10 rounds.
 
    Model (the engine's FightEngine.judgeRound without the engine-only hurt / power terms): judge j scores
-   z_j = x + s + e_j, x = the EM round-winner logit of the round's ufcstats differentials (params3 judge weights:
+   z_j = x + s_r + e_j, x = the EM round-winner logit of the round's ufcstats differentials (params3 judge weights:
    head 0.179, body 0.133, leg 0.105, KD 2.42, TD 0.286, control 0.46/min, sub attempt 0.85; never refit here),
-   s ~ N(0, sharedSd^2) shared by the panel, e_j ~ N(0, indSd^2). The round goes to sign(z_j); a 10-8 when
-   |z_j| > t108 - t108kd x min(2, winner's KD edge). Maximum likelihood over (sharedSd, indSd, t108kd, t108 for
-   2019-2020, t108 for 2021-2023), integrating s on a 161-point grid. The engine uses the 2021-2023 threshold: the
-   10-8 rate fell back after 2020 (5.9% -> 3.6% of judge-rounds) and that is the most recent train era.
+   s_r ~ N(0, sharedSd^2) shared by the panel with a fight-level part (s_r = sharedSd (sqrt(rho) F + sqrt(1 - rho) u_r),
+   F drawn once per fight: panel residuals correlate ~0.12 between rounds of a fight), e_j ~ N(0, indSd^2). The round
+   goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd x min(2, winner's KD edge). Maximum likelihood: the round-level
+   likelihood (integrating s_r on a 161-point grid) for sharedSd, indSd, t108kd, t108 2019-2020 and t108 2021-2023,
+   then the fight-level likelihood (F and u_r on grids) for rho with the rest fixed. The engine uses the 2021-2023
+   threshold: the 10-8 rate fell back after 2020 (5.9% -> 3.6% of judge-rounds) and that is the most recent train era.
 
    Then a check with the engine's own judgeRound (tastes on, one fight-level taste draw per judge) on the same real
    rounds: non-unanimous share, pairwise disagreement, majority-vs-EM agreement by |x| band, 10-8 share (with and
@@ -76,22 +78,49 @@ for (let k = 0; k < NG; k++) { const s = -8 + 16 * k / (NG - 1); GS.push(s); GW.
 const gw = GW.reduce((a, b) => a + b, 0); for (let k = 0; k < NG; k++) GW[k] /= gw;
 
 // ------------------------------------------------------------------ likelihood
-// th = [log sharedSd, log indSd, log indClose, t108kd (linear), log t108 early, log t108 late]
-// individual sd = indSd x exp(-indClose x |x + s|): judges disagree mostly on rounds that look close to the whole panel
+// th = [log sharedSd, log indSd, t108kd (linear), log t108 early, log t108 late]
+function judgeProbs(r, ss, si, kc, tE, tL) {
+  const t0 = r.late ? tL : tE;
+  const TA = Math.max(0.05, t0 - kc * Math.min(2, Math.max(0, r.d.kd))), TB = Math.max(0.05, t0 - kc * Math.min(2, Math.max(0, -r.d.kd)));
+  return (mu) => {
+    const p0 = Phi(-mu / si), pA8 = 1 - Phi((TA - mu) / si), pB8 = Phi((-TB - mu) / si);
+    const pA9 = Math.max(1e-300, 1 - p0 - pA8), pB9 = Math.max(1e-300, p0 - pB8);
+    let pr = 1;
+    for (const q of r.o) pr *= q.w > 0 ? (q.wide ? Math.max(1e-300, pA8) : pA9) : (q.wide ? Math.max(1e-300, pB8) : pB9);
+    return pr;
+  };
+}
+// round-level (composite) likelihood: the per-round marginals do not depend on the fight-level share
 function negLL(th, sub) {
-  const ss = Math.exp(th[0]), si = Math.exp(th[1]), gam = Math.exp(th[2]), kc = th[3], tE = Math.exp(th[4]), tL = Math.exp(th[5]);
+  const ss = Math.exp(th[0]), si = Math.exp(th[1]), kc = th[2], tE = Math.exp(th[3]), tL = Math.exp(th[4]);
   let nll = 0;
   for (const r of sub || rounds) {
-    const t0 = r.late ? tL : tE;
-    const TA = Math.max(0.05, t0 - kc * Math.min(2, Math.max(0, r.d.kd))), TB = Math.max(0.05, t0 - kc * Math.min(2, Math.max(0, -r.d.kd)));
+    const g = judgeProbs(r, ss, si, kc, tE, tL);
     let L = 0;
-    for (let k = 0; k < NG; k++) {
-      const mu = r.x + ss * GS[k], sd = si * Math.exp(-gam * Math.abs(mu));
-      const p0 = Phi(-mu / sd), pA8 = 1 - Phi((TA - mu) / sd), pB8 = Phi((-TB - mu) / sd);
-      const pA9 = Math.max(1e-300, 1 - p0 - pA8), pB9 = Math.max(1e-300, p0 - pB8);
-      let pr = GW[k];
-      for (const q of r.o) pr *= q.w > 0 ? (q.wide ? Math.max(1e-300, pA8) : pA9) : (q.wide ? Math.max(1e-300, pB8) : pB9);
-      L += pr;
+    for (let k = 0; k < NG; k++) L += GW[k] * g(r.x + ss * GS[k]);
+    nll -= Math.log(Math.max(1e-300, L));
+  }
+  return nll;
+}
+// fight-level likelihood in the fight-level share rho (others fixed): s_r = sharedSd (sqrt(rho) F + sqrt(1 - rho) e_r)
+const NF = 41, FS = [], FW = [], NE = 61, ES = [], EW = [];
+for (let k = 0; k < NF; k++) { const v = -6 + 12 * k / (NF - 1); FS.push(v); FW.push(Math.exp(-0.5 * v * v)); }
+for (let k = 0; k < NE; k++) { const v = -6 + 12 * k / (NE - 1); ES.push(v); EW.push(Math.exp(-0.5 * v * v)); }
+{ const a = FW.reduce((x, y) => x + y, 0), b = EW.reduce((x, y) => x + y, 0); for (let k = 0; k < NF; k++) FW[k] /= a; for (let k = 0; k < NE; k++) EW[k] /= b; }
+function negLLfight(rho, est, fightsMap) {
+  const ss = est.sharedSd, si = est.indSd, a = ss * Math.sqrt(rho), b = ss * Math.sqrt(1 - rho);
+  let nll = 0;
+  for (const rs of fightsMap.values()) {
+    const gs = rs.map((r) => judgeProbs(r, ss, si, est.t108kd, est.t108_2019_2020, est.t108_2021_2023));
+    let L = 0;
+    for (let f = 0; f < NF; f++) {
+      let pf = FW[f];
+      for (let i = 0; i < rs.length; i++) {
+        let Lr = 0; const base = rs[i].x + a * FS[f];
+        for (let e = 0; e < NE; e++) Lr += EW[e] * gs[i](base + b * ES[e]);
+        pf *= Lr;
+      }
+      L += pf;
     }
     nll -= Math.log(Math.max(1e-300, L));
   }
@@ -139,18 +168,31 @@ function hessianSE(f, x) {
 }
 
 const t0 = Date.now();
-const th0 = [Math.log(1.5), Math.log(1.3), Math.log(0.1), 0, Math.log(6.5), Math.log(7.3)];
-let fit = nelderMead(negLL, th0, [0.3, 0.3, 0.8, 0.5, 0.2, 0.2], 800);
-fit = nelderMead(negLL, fit.x, [0.08, 0.08, 0.3, 0.2, 0.05, 0.05], 800);
+const th0 = [Math.log(1.5), Math.log(1.1), -1, Math.log(6.3), Math.log(7.1)];
+let fit = nelderMead(negLL, th0, [0.3, 0.3, 0.5, 0.2, 0.2], 800);
+fit = nelderMead(negLL, fit.x, [0.08, 0.08, 0.2, 0.05, 0.05], 800);
 const se = hessianSE(negLL, fit.x);
-const est = { sharedSd: Math.exp(fit.x[0]), indSd: Math.exp(fit.x[1]), indClose: Math.exp(fit.x[2]), t108kd: fit.x[3],
-  t108_2019_2020: Math.exp(fit.x[4]), t108_2021_2023: Math.exp(fit.x[5]) };
-const seLog = { sharedSd: se[0], indSd: se[1], indClose: se[2], t108kd: se[3], t108_2019_2020: se[4], t108_2021_2023: se[5] };
-// reference: homoscedastic fit (indClose = 0), for the record
-const fit0 = nelderMead((t) => negLL([t[0], t[1], -30, t[2], t[3], t[4]]), [fit.x[0], fit.x[1], fit.x[3], fit.x[4], fit.x[5]], [0.1, 0.1, 0.3, 0.05, 0.05], 600);
-console.log(`ML fit (${((Date.now() - t0) / 1000).toFixed(1)} s): nll ${fit.f.toFixed(1)} over ${rounds.length} rounds (homoscedastic: ${fit0.f.toFixed(1)}, ` +
-  `sharedSd ${Math.exp(fit0.x[0]).toFixed(3)}, indSd ${Math.exp(fit0.x[1]).toFixed(3)})`);
+const est = { sharedSd: Math.exp(fit.x[0]), indSd: Math.exp(fit.x[1]), t108kd: fit.x[2], t108_2019_2020: Math.exp(fit.x[3]), t108_2021_2023: Math.exp(fit.x[4]) };
+const seLog = { sharedSd: se[0], indSd: se[1], t108kd: se[2], t108_2019_2020: se[3], t108_2021_2023: se[4] };
+console.log(`round-level ML fit (${((Date.now() - t0) / 1000).toFixed(1)} s): nll ${fit.f.toFixed(1)} over ${rounds.length} rounds`);
 for (const k in est) console.log(`  ${k.padEnd(16)} ${est[k].toFixed(4)}  (se ${k === "t108kd" ? "" : "on log scale "}${seLog[k].toFixed(3)})`);
+// fight-level share: golden-section search on the full fight likelihood
+const fightsAll = new Map();
+for (const r of rounds) { if (!fightsAll.has(r.fid)) fightsAll.set(r.fid, []); fightsAll.get(r.fid).push(r); }
+let lo = 0, hi = 0.8;
+const gr = (Math.sqrt(5) - 1) / 2;
+let c1 = hi - gr * (hi - lo), c2 = lo + gr * (hi - lo), f1 = negLLfight(c1, est, fightsAll), f2v = negLLfight(c2, est, fightsAll);
+for (let it = 0; it < 14; it++) {
+  if (f1 < f2v) { hi = c2; c2 = c1; f2v = f1; c1 = hi - gr * (hi - lo); f1 = negLLfight(c1, est, fightsAll); }
+  else { lo = c1; c1 = c2; f1 = f2v; c2 = lo + gr * (hi - lo); f2v = negLLfight(c2, est, fightsAll); }
+}
+est.sharedFight = (lo + hi) / 2;
+const nllF0 = negLLfight(1e-9, est, fightsAll), nllF = negLLfight(est.sharedFight, est, fightsAll);
+const hF = 0.02, d2 = (negLLfight(est.sharedFight + hF, est, fightsAll) - 2 * nllF + negLLfight(Math.max(1e-6, est.sharedFight - hF), est, fightsAll)) / (hF * hF);
+seLog.sharedFight = d2 > 0 ? 1 / Math.sqrt(d2) : NaN;
+console.log(`  sharedFight      ${est.sharedFight.toFixed(4)}  (se ${seLog.sharedFight.toFixed(3)}; fight-level nll ${nllF.toFixed(1)} vs ${nllF0.toFixed(1)} at 0, ` +
+  `LR ${(2 * (nllF0 - nllF)).toFixed(1)}; ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
+console.log(`  total judge sd ${Math.hypot(est.sharedSd, est.indSd).toFixed(3)} (a logistic with these weights would imply ~1.70)`);
 
 // within-judge persistence: when the same judge dissents twice in a fight, same direction or not (tastes would make it
 // the same direction more often than not)
@@ -225,9 +267,10 @@ function simulateJudges(Jp, rs, nSims, seed, tasteOn) {
       const lnorm = (sd) => (sd > 0 ? Math.exp(sd * rng.normal() - 0.5 * sd * sd) : 1);
       for (let j = 0; j < 3; j++) { tS[j] = tasteOn ? lnorm(Jp.tasteSd) : 1; tG[j] = tasteOn ? lnorm(Jp.tasteSd) : 1; tP[j] = tasteOn ? lnorm(Jp.tasteSd) : 1; }
       const cards = [[0, 0], [0, 0], [0, 0]];
+      const jF = Jp.sharedSd * Math.sqrt(Jp.sharedFight || 0) * rng.normal();
       for (const r of frs) {
         const js = [], c0 = [[0, 0], [0, 0], [0, 0]];
-        E.judgeRound(Jp, 0, r.d.head, r.d.body, r.d.leg, r.d.kd, r.d.td, r.d.ctrl, r.d.sub, 0, 0, tS, tG, tP, rng, c0, js);
+        E.judgeRound(Jp, 0, r.d.head, r.d.body, r.d.leg, r.d.kd, r.d.td, r.d.ctrl, r.d.sub, 0, 0, tS, tG, tP, jF, rng, c0, js);
         const o = js.map((x) => ({ w: x[0] > x[1] ? 1 : -1, wide: Math.abs(x[0] - x[1]) >= 2 }));
         out.push({ x: r.x, d: r.d, o, nA: o.filter((q) => q.w > 0).length });
         js.forEach((x, j) => { cards[j][0] += x[0]; cards[j][1] += x[1]; });
@@ -243,11 +286,11 @@ function simulateJudges(Jp, rs, nSims, seed, tasteOn) {
   const nd = ud + sd + md;
   return { rounds: dataStats(out), dec: { fights: decCards.length / nSims, UD: ud / nd, SD: sd / nd, MD: md / nd, drawShare: dr / decCards.length } };
 }
-const Jfit = Object.assign({}, J0, { sharedSd: est.sharedSd, indSd: est.indSd, indClose: est.indClose, t108kd: est.t108kd, t108: est.t108_2021_2023 });
+const Jfit = Object.assign({}, J0, { sharedSd: est.sharedSd, indSd: est.indSd, sharedFight: est.sharedFight, t108kd: est.t108kd, t108: est.t108_2021_2023 });
 const JfitEarly = Object.assign({}, Jfit, { t108: est.t108_2019_2020 });
 const lateFights = new Map([...fights].filter(([, rs]) => rs[0].late)), earlyFights = new Map([...fights].filter(([, rs]) => !rs[0].late));
 const simLateT = simulateJudges(Jfit, lateFights, SIMS, 11, true), simEarlyT = simulateJudges(JfitEarly, earlyFights, SIMS, 12, true);
-const simLate0 = simulateJudges(Jfit, lateFights, SIMS, 11, false);
+const simLate0 = simulateJudges(Object.assign({}, Jfit, { sharedFight: 0 }), lateFights, SIMS, 11, false);
 // pooled 2019-2023 check: each era with its own threshold
 function pool(a, b, na, nb) {
   const o = {}; for (const k in a) o[k] = Array.isArray(a[k]) ? a[k].map((v, i) => (v * na + b[k][i] * nb) / (na + nb)) : (typeof a[k] === "number" ? (a[k] * na + b[k] * nb) / (na + nb) : a[k]);
@@ -274,7 +317,7 @@ console.log("  majority=EM by band:                      data " + dataAll.majori
   "  model " + simAll.rounds.majorityAgreesByBand.map((v) => (100 * v).toFixed(0)).join("/"));
 console.log(`  decisions (${dataDec.fights} complete fights): data UD ${(100 * dataDec.UD).toFixed(1)} SD ${(100 * dataDec.SD).toFixed(1)} MD ${(100 * dataDec.MD).toFixed(1)}` +
   `  model UD ${(100 * simAll.dec.UD).toFixed(1)} SD ${(100 * simAll.dec.SD).toFixed(1)} MD ${(100 * simAll.dec.MD).toFixed(1)}` +
-  `  (no tastes, 2021-23: UD ${(100 * simLate0.dec.UD).toFixed(1)})`);
+  `  (2021-23 without the fight-level share: UD ${(100 * simLate0.dec.UD).toFixed(1)})`);
 
 // ------------------------------------------------------------------ engine-only damage terms vs the shared noise
 // simulated league-average decision rounds (Lightweight, 3 rounds, train-only priors): residual variance of
@@ -300,18 +343,20 @@ for (let i = 0; i < 4000; i++) {
   }
 }
 const beta = sxh / sxx, varH = sh2 / nr - (sh / nr) ** 2, resid = Math.max(0, varH - beta * beta * sxx / nr + 0);
-const sharedEngine = Math.sqrt(Math.max(0.5 * est.sharedSd ** 2, est.sharedSd ** 2 - resid));
+const vF = est.sharedFight * est.sharedSd ** 2, vR = Math.max(0.5 * (1 - est.sharedFight) * est.sharedSd ** 2, (1 - est.sharedFight) * est.sharedSd ** 2 - resid);
+const sharedEngine = Math.sqrt(vF + vR), sharedFightEngine = vF / (vF + vR);
 console.log(`\nengine-only damage terms in ${nr} simulated league-average rounds: sd ${Math.sqrt(varH).toFixed(3)}, beta on x ${beta.toFixed(3)}, ` +
-  `residual var ${resid.toFixed(3)} -> engine sharedSd ${sharedEngine.toFixed(3)} (data ${est.sharedSd.toFixed(3)})`);
+  `residual var ${resid.toFixed(3)} -> engine sharedSd ${sharedEngine.toFixed(3)}, sharedFight ${sharedFightEngine.toFixed(3)} (data ${est.sharedSd.toFixed(3)}, ${est.sharedFight.toFixed(3)})`);
 
 const tasteNote = { sameJudgeSameDir: pSame, sameJudgeOpposite: pOpp, differentJudges: pOther };
 const result = {
   meta: { tool: "tools/judgecal.js", built: new Date().toISOString(), data: "data/derived/judgerounds_rows.json, 2019-01-01..2023-12-31 rows only",
     rounds: rounds.length, fights: fights.size, complete_decisions: fullFights.size, weights: { head: J0.head, body: J0.body, leg: J0.leg, kd: J0.kd, td: J0.td, ctrlMin: J0.ctrlMin, sub: J0.sub },
-    model: "z_j = x + s + e_j; s ~ N(0, sharedSd^2) per round, e_j ~ N(0, (indSd exp(-indClose |x + s|))^2); 10-8 when |z_j| > t108 - t108kd x min(2, winner KD edge)" },
-  fit: { estimates: est, se: seLog, nll: fit.f, homoscedastic: { nll: fit0.f, sharedSd: Math.exp(fit0.x[0]), indSd: Math.exp(fit0.x[1]) }, dissentPersistence: tasteNote },
-  engine: { sharedSd: +sharedEngine.toFixed(4), indSd: +est.indSd.toFixed(4), indClose: +est.indClose.toFixed(4), t108: +est.t108_2021_2023.toFixed(4), t108kd: +est.t108kd.toFixed(4),
-    note: "t108 = the 2021-2023 threshold (latest train era); sharedSd reduced by the residual variance of the engine-only hurt / power terms",
+    model: "z_j = x + s_r + e_j; s_r = sharedSd (sqrt(sharedFight) F + sqrt(1 - sharedFight) u_r), F per fight, u_r per round, e_j ~ N(0, indSd^2); 10-8 when |z_j| > t108 - t108kd x min(2, winner KD edge)" },
+  fit: { estimates: est, se: seLog, nll_rounds: fit.f, nll_fights: nllF, nll_fights_rho0: nllF0, dissentPersistence: tasteNote,
+    note: "a heteroscedastic variant (individual sd x exp(-g |x + s|)) was tried and gave g = 0 with no likelihood gain (nll 5161.1 both)" },
+  engine: { sharedSd: +sharedEngine.toFixed(4), sharedFight: +sharedFightEngine.toFixed(4), indSd: +est.indSd.toFixed(4), t108: +est.t108_2021_2023.toFixed(4), t108kd: +est.t108kd.toFixed(4),
+    note: "t108 = the 2021-2023 threshold (latest train era); the round-level part of the shared variance reduced by the residual variance of the engine-only hurt / power terms (fight-level part kept)",
     damageTerms: { rounds: nr, sd: Math.sqrt(varH), betaOnX: beta, residualVar: resid } },
   checks: { data: { all: dataAll, late: dataLate, decisions: dataDec }, model: { all: simAll, late: simLateT, lateNoTaste: simLate0 } }
 };
@@ -321,7 +366,7 @@ console.log("wrote data/derived/judgecal.json");
 if (WRITE) {
   const pf = path.join(ROOT, "src/params3.js");
   let src = fs.readFileSync(pf, "utf8");
-  const vals = { sharedSd: result.engine.sharedSd, indSd: result.engine.indSd, indClose: result.engine.indClose, t108: result.engine.t108, t108kd: result.engine.t108kd };
+  const vals = { sharedSd: result.engine.sharedSd, sharedFight: result.engine.sharedFight, indSd: result.engine.indSd, t108: result.engine.t108, t108kd: result.engine.t108kd };
   for (const [k, v] of Object.entries(vals)) {
     const re = new RegExp("^(\\s*)" + k + ":\\s*[-0-9.eE]+(,?)(\\s*//\\s*\\[judgecal\\])", "m");
     if (!re.test(src)) throw new Error("judgecal: could not find [judgecal] entry " + k);

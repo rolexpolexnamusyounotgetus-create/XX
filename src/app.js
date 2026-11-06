@@ -85,8 +85,23 @@
   var OVR = readJSON("overrides-db", {}) || {};
   var SCOUTDB = readJSON("scouting-db", {}) || {};
   var SCOUT = SCOUTDB.scouting || {}, LIKE = SCOUTDB.likeness || {};
+  // verified models (research/model_moe.md, model_methodround.md, model_mlrates.md, model_ml.md)
+  var MOEJ = readJSON("moe-db", null), MLRJ = readJSON("mlrates-db", null), MRJ = readJSON("mr-db", null), MLPJ = readJSON("mlpage-db", null);
+  var MKTJ = readJSON("mkt-db", null), BENCH = readJSON("bench-db", null), VERS = readJSON("versions-db", null), FWD = readJSON("forward-db", null);
   var DB = null;
   try { DB = E.loadDB(DBJ); } catch (e) { fail("The fighter roster didn't load (" + e.message + "). Rebuild the page with python3 build.py."); return; }
+  var MOE = null, MLP = null, MR = null, MLR = { ok: false, native: false };
+  try { if (window.MoE && MOEJ && MOEJ.model) MOE = window.MoE.load(MOEJ); } catch (e) { MOE = null; }
+  try { if (window.MLPage && MLPJ) MLP = window.MLPage.load(MLPJ); } catch (e) { MLP = null; }
+  try { if (window.MethodRound && MRJ) MR = window.MethodRound.create(MRJ); } catch (e) { MR = null; }
+  if (MLRJ && window.MLRates) {
+    // engine v4 applies the learned rates itself (opts.ml === false turns them off); v3 takes them through the adapter
+    if (typeof E.loadMLRates === "function") { try { E.loadMLRates(MLRJ); MLR.native = true; MLR.ok = true; } catch (e) { MLR.native = false; } }
+    if (!MLR.native) { try { window.MLRates.load(MLRJ); MLR.ok = true; } catch (e) { MLR.ok = false; } }
+  }
+  MLRJ = null;   // the model keeps what it needs
+  var MKTR = (MKTJ && MKTJ.ratings) || {};
+  var ENGV = "v" + String(E.VERSION || "3").split(".")[0];
   var P0 = E.params ? E.params() : window.FightParams;
   var JP0 = P0 && P0.judge && P0.judge.power != null ? P0.judge.power : 0.25;
   (function applyOverrides() {
@@ -130,7 +145,7 @@
     DEFAULT = { a: top[0].slug, b: top[1].slug };
   }
   var S = { a: DEFAULT.a, b: DEFAULT.b, div: "Lightweight", rounds: 5, title: true,
-    adj: { A: {}, B: {} }, judgePower: JP0, scen: null, odds: { A: "", B: "" }, trust: null, tab: "A" };
+    adj: { A: {}, B: {} }, judgePower: JP0, scen: null, odds: { A: "", B: "" }, oddsSrc: null, line: true, ml: true, tab: "A" };
   var cur = { m: null, x: null, err: null };
 
   function prof(side) { return DB.fighters[side === "A" ? S.a : S.b]; }
@@ -165,7 +180,7 @@
     } else {
       S.div = defaultDivision(S.a, S.b); S.rounds = 3; S.title = false;
     }
-    S.adj = { A: {}, B: {} }; S.judgePower = JP0; S.scen = null; S.trust = null;
+    S.adj = { A: {}, B: {} }; S.judgePower = JP0; S.scen = null; S.oddsSrc = null; S.line = true;
     var mk = pd && pd.market && pd.market.odds;
     S.odds = { A: mk && mk[S.a] || "", B: mk && mk[S.b] || "" };
     var defId = pd && pd.default_scenario;
@@ -208,18 +223,49 @@
 
   /* ================================================================ matchup */
   function cleanAdj(a) { var o = {}; for (var k in a) if (a[k] != null && isFinite(a[k])) o[k] = +a[k]; return o; }
+  // ML stat-line prediction for the current pair (independent of the knobs, so cached per pair and bout settings)
+  var mlCache = { key: null, pred: null, err: null };
+  function mlPredict(pa, pb) {
+    if (!MLR.ok || !window.MLRates) return null;
+    var key = [slugOf("A"), slugOf("B"), S.div, S.rounds, S.title, todayISO()].join("|");
+    if (mlCache.key === key) return mlCache.pred;
+    mlCache.key = key; mlCache.pred = null; mlCache.err = null;
+    try {
+      var M = (E.mlModel && E.mlModel()) || window.MLRates.model();
+      var p = window.MLRates.predict(M, pa, pb, { division: S.div, rounds: S.rounds, title: S.title, date: todayISO(), priors: DB.priors });
+      mlCache.pred = { A: p.A, B: p.B, base: p.base };
+    } catch (e) { mlCache.err = e; }
+    return mlCache.pred;
+  }
+  // one matchup through whichever path this build has: engine v4 applies the learned rates itself (opts.ml), v3 through
+  // the MLRates adapter; with the toggle off both give the plain data-only tables
+  function makeMatchup(pa, pb, o) {
+    var pred = S.ml ? mlPredict(pa, pb) : null, m;
+    if (MLR.native) {
+      o.ml = S.ml ? (pred ? { pred: pred } : undefined) : false;
+      m = E.matchup(pa, pb, o);
+      if (!S.ml && m.mlApplied) m.mlStuck = true;
+      return m;
+    }
+    m = E.matchup(pa, pb, o);
+    if (pred) {
+      try { window.MLRates.applyToMatchup(m, pred, { engine: E }); m.mlPred = pred; m.mlApplied = true; }
+      catch (e) { m = E.matchup(pa, pb, o); m.mlApplied = false; m.mlError = e; }
+    } else m.mlApplied = false;
+    return m;
+  }
   function buildMatchup() {
     var pa = prof("A"), pb = prof("B");
     cur.err = null;
     try {
-      cur.m = E.matchup(pa, pb, { division: S.div, rounds: S.rounds, title: S.title, date: todayISO(),
+      cur.m = makeMatchup(pa, pb, { division: S.div, rounds: S.rounds, title: S.title, date: todayISO(),
         adjA: cleanAdj(S.adj.A), adjB: cleanAdj(S.adj.B), judges: { power: S.judgePower } });
     } catch (e) { cur.err = e; cur.m = null; }
     try { cur.x = cur.m ? E.explain(cur.m) : null; } catch (e) { cur.x = null; }
     // knob-neutral data values the slider labels quote (leg-kick share, takedown attempts)
     try {
       cur.m0 = (Object.keys(cleanAdj(S.adj.A)).length || Object.keys(cleanAdj(S.adj.B)).length) ?
-        E.matchup(pa, pb, { division: S.div, rounds: S.rounds, title: S.title, date: todayISO(), judges: { power: S.judgePower } }) : cur.m;
+        makeMatchup(pa, pb, { division: S.div, rounds: S.rounds, title: S.title, date: todayISO(), judges: { power: S.judgePower } }) : cur.m;
     } catch (e) { cur.m0 = cur.m; }
     return cur.m;
   }
