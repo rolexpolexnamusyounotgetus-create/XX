@@ -1764,6 +1764,133 @@ def stage_valid(args):
                                                           for k in ("bin7", "method_given_winner", "round_given_fin")}))
 
 
+# ====================================================================== export
+def _r(x, k=4):
+    import numpy as np
+    if isinstance(x, (list, tuple, np.ndarray)):
+        return [_r(v, k) for v in x]
+    if isinstance(x, dict):
+        return {kk: _r(v, k) for kk, v in x.items()}
+    if isinstance(x, (float, np.floating)):
+        return round(float(x), k)
+    if isinstance(x, (np.integer,)):
+        return int(x)
+    return x
+
+
+def _sha(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        h.update(fh.read())
+    return h.hexdigest()[:16]
+
+
+def _strip_boot(t):
+    """Keep means, CIs and paired differences; drop nothing else (the tables are small)."""
+    return t
+
+
+@stage("export")
+def stage_export(args):
+    import numpy as np
+    cvr = json.load(open(os.path.join(CACHE, "cv.json")))
+    dcv = json.load(open(os.path.join(CACHE, "debut_cv.json")))
+    pr = json.load(open(PREREG)) if os.path.exists(PREREG) else None
+    vfile = os.path.join(CACHE, "valid.json")
+    val = json.load(open(vfile)) if os.path.exists(vfile) and os.path.exists(VALID_DONE) else None
+    cells = pickle.load(open(os.path.join(CACHE, "cells.pkl"), "rb"))
+    win = pickle.load(open(os.path.join(CACHE, "winner.pkl"), "rb"))
+    ch = Spec.from_dict(cvr["selection"]["chosen"])
+    A = assemble(ch.rep_m, ch.rep_r)
+    # production parameters: the same spec refit on every development year with props (2021-2025), the
+    # pre-registered deployment procedure (never scored on 2024-25)
+    prod = ch.fit(A, (A["year"] >= 2021) & (A["year"] <= 2025))
+    Dd = debut_assembly()
+    dprod = debut_fit(Dd, dcv["mode"], (Dd["year"] >= 2021) & (Dd["year"] <= 2025) & Dd["hasM"]) if dcv.get("mode") else None
+    mk_meta = jload("market.json").get("meta", {})
+    out = {
+        "meta": {"tool": "tools/props.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                 "protocol": "every 2026+ row dropped at parse; choices by forward-chained CV %s (fit 2021..Y-1) on "
+                             "fights before 2024; 2024-25 scored once (valid); corner-symmetric pool (swap asserted); "
+                             "event-cluster bootstrap 2,000 resamples, paired" % (CV_YEARS,),
+                 "sources": {"bfo_event_pages": len(event_list()), "extract": "data/raw/odds/bfo_props_full.csv",
+                             "extract_sha16": _sha(EXTRACT), "market_json_built": mk_meta.get("built"),
+                             "ml2_json_built": jload("ml2.json")["meta"].get("built"),
+                             "methodround_json_built": jload("methodround.json")["meta"].get("built"),
+                             "user_agent": UA, "robots": "bestfightodds.com/robots.txt allows all but /cnadm/"},
+                 "reproduction": {"S2+ml2win cells vs ml2 method.json 2024-25 max |diff|": cells["repro_max_abs_vs_ml2"],
+                                  "W_ml2 vs ml2.json max |diff|": win["ml2_json_max_abs"],
+                                  "close stack weights [market, ml2] by fit year": win["weights"]},
+                 "families": {"m6": "method six-way [A KO, A SUB, A DEC, B KO, B SUB, B DEC] (draw leg in the de-vig "
+                                    "when quoted)", "gd": "goes to decision (two-way)",
+                              "er": "fight ends in round k + decision", "wr": "fighter wins in round k + decisions",
+                              "mr": "fighter wins by KO / SUB in round k + decisions", "itd": "inside the distance",
+                              "ou": "over k.5 rounds"},
+                 "devig": "power within each family per book (multiplicative when a book's family sums to <= 1); "
+                          "arithmetic mean over books; a book is dropped when its key scalar is > 0.15 from the "
+                          "median book (>= 3 books); legs >= 1 or implausible overrounds (OVER_MAX) are rejected",
+                 "timestamps": "historical props are BFO's closing prices (no per-book history; its line-history "
+                               "endpoint is obfuscated and not used). `capture` stamps forward snapshots."},
+        "coverage": cvr["coverage"], "consistency": cvr["consistency"], "families_tune_2021_2023": cvr["families_tune_2021_2023"],
+        "cv": {"selection": cvr["selection"], "tables": cvr["cv_tables"], "corner_swap_max_abs": cvr["corner_swap_max_abs"]},
+        "debut_cv": dcv, "prereg": pr, "valid": None,
+        "model": {"spec": ch.as_dict(), "params": cvr["params_fit_2021_2023"], "params_production": prod,
+                  "draw_c": A["draw_c"], "nb_ref_books": 4, "devig": "power", "outlier_max_dev": 0.15,
+                  "over_max": OVER_MAX,
+                  "degrade": "no method props -> S2 method | winner; no round props or round part not pooled -> S2 "
+                             "round shapes; no props at all -> the model package unchanged (identity)",
+                  "debut": {"mode": dcv.get("mode"), "params": dcv.get("params_fit_2021_2023"),
+                            "params_production": dprod, "experts": ["debut method model", "props"]}},
+        "fights": {}, "test_vectors": [],
+    }
+    if val:
+        out["valid"] = {k: v for k, v in val.items() if k not in ("pool_cells_2024_25", "debut_pool_2024_25", "prereg")}
+    # per-fight props (2021-2025) and pool cells (forward-chained 2022-2023; fit 2021-2023 for 2024-2025)
+    folds = fwd_folds(A)
+    M, R, _ = predict_folds(A, ch, folds)
+    te = (A["year"] >= 2024) & (A["year"] <= 2025)
+    if te.any():
+        m2, r2 = ch.predict(A, te, cvr["params_fit_2021_2023"])
+        M[te], R[te] = m2, r2
+    ok = ~np.isnan(M[:, 0, 0])
+    P = compose(A["W_close"], np.nan_to_num(M, nan=1 / 3), np.nan_to_num(R, nan=0.2), A["K"], A["draw_c"])
+    for i, fid in enumerate(A["ids"]):
+        rec = A["recs"][i]
+        e = {"date": str(A["date"][i]), "K": int(A["K"][i]), "seg": rec.get("seg"),
+             "set": "fit-only" if A["year"][i] == 2021 else ("cv" if A["year"][i] <= 2023 else "valid")}
+        if rec.get("has"):
+            e["props"] = {k: _r(rec[k]) for k in ("m6", "m6_draw", "gd", "er", "wr", "mr", "itd", "ou", "ml")
+                          if rec.get(k) is not None}
+            e["props"]["n_books"] = rec.get("n_books")
+        if ok[i]:
+            e["pool"] = _r(P[i], 5)
+        out["fights"][fid] = e
+    # test vectors for src/ml/propspool.js: raw book prices -> families -> pooled conditionals -> 23 cells
+    by_mu = load_extract()
+    rng = np.random.default_rng(5)
+    cand = [i for i in np.flatnonzero(A["hasM"]) if A["recs"][i].get("mu") in by_mu]
+    for i in rng.choice(cand, size=min(30, len(cand)), replace=False):
+        rec = A["recs"][i]
+        K = int(A["K"][i])
+        books = {bk: {k: v for k, v in r.items() if k in EXTRACT_KEYS or k.endswith("_no") or k in ("ml1", "ml2")}
+                 for bk, r in by_mu[rec["mu"]].items()}
+        rows = np.zeros(len(A["ids"]), bool)
+        rows[i] = True
+        for par, tag in ((prod, "production"), (cvr["params_fit_2021_2023"], "fit_2021_2023")):
+            m, r = ch.predict(A, rows, par)
+            cell = compose(A["W_close"][rows], m, r, A["K"][rows], A["draw_c"])[0]
+            out["test_vectors"].append({
+                "fid": A["ids"][i], "params": tag, "K": K, "swap": bool(rec["sw"]), "books": books,
+                "pA": float(A["W_close"][i]), "pModel": float(A["W_ml2"][i]),
+                "model": {"M": A["M"]["S2"][i].tolist(), "R": A["R"]["S2"][i].tolist()},
+                "expect": {"m6": rec.get("m6"), "m6_draw": rec.get("m6_draw"), "gd": rec.get("gd"), "er": rec.get("er"),
+                           "wr": rec.get("wr"), "mr": rec.get("mr"), "n_books": rec.get("n_books"),
+                           "M": m[0].tolist(), "R": r[0].tolist(), "cells": cell.tolist()}})
+    json.dump(out, open(OUT_JSON, "w"), separators=(",", ":"), default=float)
+    log("export: %s (%.0f KB; valid %s)" % (OUT_JSON, os.path.getsize(OUT_JSON) / 1024, "included" if val else "not run"))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=sorted(STAGES) + ["all"])
