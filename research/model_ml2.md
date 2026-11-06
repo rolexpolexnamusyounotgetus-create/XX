@@ -455,11 +455,10 @@ Other comparisons:
   - The logistic and the stage-2 and stack models have no intercept, and trees average both orientations.
   - The page model reproduces 1 - p under a swap (Node test, 40 pairs, 1e-12).
 - **Selection bias.** styles.py's published winner screen was chosen on 2019-2023. It is reported but not admissible here; the nested screen redoes the selection inside every fold (section 5).
-- **Truncation test (`python3 tools/ml2.py verify`).** Each rating system was rerun in one process with the data stream cut at 2024-06-01.
-  - On all 6,620 fights before the cut, the predictions are identical to the full run: max |diff| 0 for WHR-rounds, Glicko-2, Elo-full and TrueSkill-mov.
-  - The market rating built only from fights before the cut is identical on its 6,302 fights.
-- **Flipped results.** Every result from 2024-06-01 on was reversed. Earlier predictions did not move (max |diff| 0), while 69-70% of later Glicko-2 / Elo / TrueSkill predictions changed.
-  - WHR-rounds shows 0% because its round outcomes come from round statistics precomputed before the flip. The truncation test covers it.
+- **Perturbation tests (`python3 tools/ml2.py verify`, rewritten by the verifier).** The first version's tests could not see a leak in two of the five features:
+  - its "truncation" run only stopped evaluating at 2024-06-01. WHR keeps every later fight in its graph either way, and the market-rating stream comes mostly from nlbair rows the cut never touched;
+  - its result flip changed D.y / D.winner, which WHR-rounds never reads (0% of later predictions moved).
+  - Now the verify stage reverses, from the first fight day d0 on/after 2024-06-01, the encoded outcome (ratings.encode, which includes WHR-rounds' round shares) together with D.y / D.winner (TrueSkill reads the winner directly), and, for the market rating, the closing line and the result in both streams. Predictions up to and including d0 must not move; that covers the fight's own result and same-day results. Results are in the Verification log.
 - **Reproduction.** The rebuilt base logistic reproduces ml.json's `lr` on all 854 validation fights (0.60625, max difference 0) and on the 1,955 OOF fights. The rebuilt ratings and market rating match their files (see Sources).
 - **Pre-UFC presence rule.** A snapshot is used only when one of the fighter's first four UFC bouts is on/after 2015-01-01. That is preufc's own target rule, known before every later bout, so a veteran's record cannot appear just because he was still active in 2021+ (the roster).
 - **Pre-UFC network Elo.** The 4:44 pm ratings.json reads preufc.json's strict walk-forward `net_elo_h` (`meta.preufc_network_elo_column`). The earlier build read the leaky `net_elo`. The tables here are from the strict build, and the verify stage confirms that the current preufc.json gives identical rating features (max |diff| 0).

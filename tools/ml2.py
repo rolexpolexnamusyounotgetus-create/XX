@@ -2386,20 +2386,29 @@ def stage_verify(args):
     after = ev_all[D.day[ev_all] > d0]
     enc0 = RT.encode
     flip = (D.day >= d0)
+    y0, win0 = D.y.copy(), list(D.winner)
+    y_fl = np.where(flip, 1.0 - y0, y0)
+    win_fl = [{"A": "B", "B": "A"}.get(w, w) if f else w for w, f in zip(win0, flip)]
 
     def enc_flipped(D_, P_):
+        # the encoder reads D.y / D.winner (flipped below) and the round shares (flipped here, via its output)
+        D_.y, D_.winner = y0, win0
         y_, w_ = enc0(D_, P_)
+        D_.y, D_.winner = y_fl, win_fl
         return np.where(flip, 1.0 - y_, y_), w_
     out["d0"] = dt.date.fromordinal(d0).isoformat()
     for name in ("whr_rounds", "glicko2", "elo_full", "trueskill_mov"):
         Sy = J["systems"][name]
         pf, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False, eval_idx=ev_all)
         pt, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=cut.toordinal(), record=False, eval_idx=early)
+        # TrueSkill reads D.winner directly; the others read the encoder: flip both
         RT.encode = enc_flipped
+        D.y, D.winner = y_fl, win_fl
         try:
             px, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False, eval_idx=ev_all)
         finally:
             RT.encode = enc0
+            D.y, D.winner = y0, win0
         pc = cached["p"][name][[cidx[D.fid[i]] for i in ev_all]]
         out[name] = {"n_before_cut": int(len(early)), "n_on_d0": int(len(on_d0)),
                      "truncation_max_abs_diff": float(np.nanmax(np.abs(pt[early] - pf[early]))),
