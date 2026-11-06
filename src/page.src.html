@@ -164,7 +164,8 @@ h1 .hA { color: var(--ink); } h1 .hB { color: var(--ink); }
   .cp-label { letter-spacing: .07em; }
   .cp-win { font-size: 18px; }
   .cp-win small { display: none; }
-  .combo input { font-size: 17px; padding-right: 0; }
+  .combo input { font-size: clamp(14px, 4vw, 17px); padding-right: 0; }
+  .cp-label .cpw { display: none; }
   .swap { width: 34px; height: 34px; }
   .swap svg { width: 17px; height: 17px; }
   .combo-list, .cpick.B .combo-list { left: 0; right: 0; top: calc(100% + 6px); }
@@ -628,7 +629,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
   .th-card .initials, .th-card.B .initials { grid-column: 1; grid-row: auto; width: 40px; height: 40px; font-size: 18px; }
   .th-card.B .initials { justify-self: end; }
   .th-card.B > div { grid-column: 1; grid-row: auto; }
-  .th-name { font-size: clamp(15px, 4.7vw, 20px); overflow-wrap: break-word; }
+  .th-name { font-size: clamp(14px, 4vw, 20px); overflow-wrap: break-word; }
   .sp b { font-size: 30px; }
   .tape td, .tape th { padding: 7px 4px; }
   .tape { font-size: 13px; }
@@ -652,7 +653,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
   <section class="matchbar" aria-label="Choose the matchup">
     <div class="mb-corners">
       <div class="cpick A" id="cpA">
-        <div class="cp-top"><label class="cp-label" for="pickA">Blue corner</label><span class="cp-win" id="winA" aria-live="off">–<small>wins</small></span></div>
+        <div class="cp-top"><label class="cp-label" for="pickA">Blue<span class="cpw"> corner</span></label><span class="cp-win" id="winA" aria-live="off">–<small>wins</small></span></div>
         <div class="combo">
           <input id="pickA" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="listA" autocomplete="off" spellcheck="false" placeholder="Search fighters" aria-describedby="metaA">
           <span class="caret" aria-hidden="true"></span>
@@ -665,7 +666,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
         <span class="swap-vs" aria-hidden="true">VS</span>
       </div>
       <div class="cpick B" id="cpB">
-        <div class="cp-top"><label class="cp-label" for="pickB">Red corner</label><span class="cp-win" id="winB" aria-live="off">–<small>wins</small></span></div>
+        <div class="cp-top"><label class="cp-label" for="pickB">Red<span class="cpw"> corner</span></label><span class="cp-win" id="winB" aria-live="off">–<small>wins</small></span></div>
         <div class="combo">
           <input id="pickB" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="listB" autocomplete="off" spellcheck="false" placeholder="Search fighters" aria-describedby="metaB">
           <span class="caret" aria-hidden="true"></span>
