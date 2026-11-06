@@ -4,7 +4,6 @@ As of 2026-11-06. He/him. "Bon Gamin". Orthodox (switches often), 6 ft 4 in, 81 
 
 **Re-check, Nov 6, 2026:** status, ranking, record, injuries and appearance were re-verified on the open web (sources at the end). Rankings come from ufcalendar.com's mirror because ufc.com returned 403.
 
-
 ## Current status
 
 - **Title:** UFC heavyweight champion. He won the interim title by stopping Alex Pereira at 1:27 of round 2 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026); a counter jab put Pereira down, and Gane out-landed him 54-12 (ufcstats). When Tom Aspinall vacated the undisputed title on Sep 14, 2026, Dana White first said Gane "still got to fight", but the UFC 331 broadcast (Sep 19) confirmed that Gane is undisputed champion (Sherdog; theScore).
@@ -62,11 +61,11 @@ Decayed sums: 8.9 significant attempts and 5.7 landed per minute at 65% accuracy
 
 - http://ufcstats.com/fighter-details/787bb1f087ccff8a (snapshot 2026-10-31, data/raw)
 - http://ufcstats.com/fight-details/5727d5be8c373346 (Freedom 250), http://ufcstats.com/fight-details/6390c8e74630473e (UFC 321), http://ufcstats.com/fight-details/f706508c52f337a6 (UFC 310), http://ufcstats.com/fight-details/ea006bae605e2a6b, http://ufcstats.com/fight-details/636fd144716a3084, http://ufcstats.com/fight-details/810c9da07970c4a6, http://ufcstats.com/fight-details/e786542667fdecf0
-- https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title (cited in repo)
-- https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/ (cited in repo)
-- https://boxingnews.com/news/alex-pereira-vs-ciryl-gane-result-and-reaction (cited in repo)
-- https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/ (Hokit booking; cited in repo)
-- https://bloodyelbow.com/2026/09/07/alex-pereira-calls-out-ciryl-gane-for-heavyweight-rematch-and-claims-fight-is-going-to-happen/ (rematch call; cited in repo)
+- https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title (fetched Nov 6, 2026)
+- https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/ (fetched Nov 6, 2026)
+- https://boxingnews.com/news/alex-pereira-vs-ciryl-gane-result-and-reaction (fetched Nov 6, 2026)
+- https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/ (Hokit booking; fetched Nov 6, 2026)
+- https://bloodyelbow.com/2026/09/07/alex-pereira-calls-out-ciryl-gane-for-heavyweight-rematch-and-claims-fight-is-going-to-happen/ (rematch call; cited in repo, not re-fetched: the site returned 403)
 - data/derived/fighters.json
 - https://www.sherdog.com/news/news/Dana-White-said-Ciryl-Gane-wasnt-undisputed-champ-UFC-says-otherwise-202862 (promotion to undisputed)
 - https://www.thescore.com/mma/news/3603598/gane-hokit-harrison-nunes-set-for-ufc-334 (UFC 334 booking)
@@ -75,3 +74,4 @@ Decayed sums: 8.9 significant attempts and 5.7 landed per minute at 65% accuracy
 - https://www.ufcalendar.com/rankings/heavyweight and https://www.ufcalendar.com/rankings/mens-pound-for-pound
 - https://en.wikipedia.org/wiki/Ciryl_Gane (revision 1383916856)
 - https://a.espncdn.com/i/headshots/mma/players/full/4426000.png (Oct 2026), https://a.espncdn.com/i/headshots/mma/players/stance/left/4426000.png (Dec 2024), https://a.espncdn.com/i/headshots/mma/players/stance/right/4426000.png (Jun 2026)
+- https://www.azcentral.com/story/sports/ufc/2026/11/02/ufc-334-jorge-masvidal-prediction-ciryl-gane-vs-josh-hokit-heavyweight-title-fight/92561195007/ (summary: Hokit 10-0, 4-0 UFC)

@@ -3,25 +3,42 @@
   "name": "Jorge Masvidal",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Retired from MMA; no title or ranking. He announced his retirement in the cage after losing a unanimous decision to Gilbert Burns at UFC 287 in Miami (Apr 8, 2023), his fourth straight loss, and Sherdog's fight record (page fetched Nov 6, 2026) shows no MMA bout since (pro record 35-17). He lost a boxing match to Nate Diaz by majority decision (Jul 6, 2024) and founded the Gamebred bare-knuckle MMA promotion (both widely reported; not re-opened this session). On Nov 4, 2026 Sherdog reported that he is scheduled to meet Khamzat Chimaev in a submission-only grappling match on Dec 4, 2026 at The Agenda in Dubai; that is not an MMA bout. Age 41 (42 on Nov 12, 2026). No other booking or comeback was confirmed in the sources available this session (web search budget exhausted).",
+    "summary": "Retired from MMA; no title or ranking. He announced his retirement in the cage after losing a unanimous decision to Gilbert Burns at UFC 287 in Miami (Apr 8, 2023), his fourth straight loss, and has had no MMA bout since (pro record 35-17; Sherdog, Wikipedia, UFCalendar). He lost a boxing match to Nate Diaz by majority decision (Jul 6, 2024) and pulled out, for undisclosed reasons, of a submission-grappling match with Sharabutdin Magomedov at Hype Fighting Brazil in March 2026 (Wikipedia). In October 2026 he said he wants to fight in the UFC again and is talking to the promotion, hinting at a return next year, but no MMA bout is booked as of Nov 6, 2026. On Nov 2, 2026 ALF League announced him against Khamzat Chimaev in a submission-only grappling match headlining its first event on Dec 4, 2026 at The Agenda in Dubai (MMA Fighting); Sherdog notes the announcement post was later taken down. That is not an MMA bout. He founded the Gamebred Fighting Championship bare-knuckle MMA promotion in 2021. Age 41 (42 on Nov 12, 2026).",
     "title": null,
     "ranking": null,
     "active": false,
-    "next_fight": "Reported, not an MMA bout: submission-only grappling match vs Khamzat Chimaev, The Agenda, Dubai, Dec 4, 2026 (Sherdog, Nov 4, 2026)",
+    "next_fight": "Not MMA: submission-only grappling match vs Khamzat Chimaev, ALF League's first event, The Agenda, Dubai, Dec 4, 2026 (announced Nov 2, 2026; MMA Fighting; Sherdog says the announcement post was later removed)",
     "injuries": [],
     "sources": [
       "http://ufcstats.com/fighter-details/47b9e0e7703a4868",
       "http://ufcstats.com/fight-details/71ea7d7985dad804 (UFC 287 vs Burns)",
       "data/derived/fighters.json (last_fight 2023-04-08, snapshot 2026-10-31)",
       "https://www.sherdog.com/fighter/Jorge-Masvidal-7688 (pro record 35-17, last bout UFC 287; copy fetched 2026-11-06 at data/raw/sherdog_cache/fighter/Jorge-Masvidal-7688.html)",
-      "https://www.sherdog.com/news/news/Khamzat-Chimaev-vs-Jorge-Masvidal-grappling-match-reportedly-set-203461 (Nov 4, 2026; headline and teaser read from the cached fighter page, article not opened)",
-      "https://en.wikipedia.org/wiki/Jorge_Masvidal (reference for the retirement, the Diaz boxing match and Gamebred; not reachable this session)"
+      "https://en.wikipedia.org/wiki/Jorge_Masvidal (revision of Oct 29, 2026; retirement, Diaz boxing match, Gamebred FC, Mar 2026 grappling withdrawal)",
+      "https://www.ufcalendar.com/fighters/jorge-masvidal (no next fight booked, Nov 6, 2026)",
+      "https://www.mmafighting.com/ufc/519052/khamzat-chimaev-faces-jorge-masvidal-in-submission-only-grappling-match-for-alf-league (Nov 2, 2026)",
+      "https://www.sherdog.com/news/news/Khamzat-Chimaev-vs-Jorge-Masvidal-grappling-match-reportedly-set-203461 (Nov 2, 2026)",
+      "https://sports.yahoo.com/articles/jorge-masvidal-provides-latest-ufc-202205569.html (Oct 12, 2026)",
+      "https://mmasucka.com/news/next-year-jorge-masvidal-teases-ufc-return-after-revealing-white-house-card-fallout/ (Oct 19, 2026)"
     ]
   },
   "style": {
     "archetype": "boxer",
     "stance": "orthodox",
-    "tags": ["power", "counter", "body-work", "leg-kicks", "clinch", "dirty-boxing", "elbows", "knees", "flying-knee", "takedown-defense", "durable", "fades-late"],
+    "tags": [
+      "power",
+      "counter",
+      "body-work",
+      "leg-kicks",
+      "clinch",
+      "dirty-boxing",
+      "elbows",
+      "knees",
+      "flying-knee",
+      "takedown-defense",
+      "durable",
+      "fades-late"
+    ],
     "signature": [
       "flying knee: knocked out Ben Askren at 0:05 of round 1 (UFC 239, Jul 6, 2019), widely reported as the fastest KO in UFC history",
       "one-punch power at distance: knocked out Darren Till at 3:05 of round 2 in London (Mar 16, 2019); 0.46 knockdowns per 15 min career (welterweight median 0.35)",
@@ -52,21 +69,35 @@
     ]
   },
   "moves": {
-    "jab": 0.27, "cross": 0.27, "hook": 0.23, "overhand": 0.07, "upper": 0.12, "headkick": 0.04,
-    "bodykick": 0.45, "bodyhook": 0.35, "bodystraight": 0.2,
-    "calf": 0.55, "inside": 0.45, "spinning": 0.0, "knee": 0.3, "elbow": 0.2,
+    "jab": 0.27,
+    "cross": 0.27,
+    "hook": 0.23,
+    "overhand": 0.07,
+    "upper": 0.12,
+    "headkick": 0.04,
+    "bodykick": 0.45,
+    "bodyhook": 0.35,
+    "bodystraight": 0.2,
+    "calf": 0.55,
+    "inside": 0.45,
+    "spinning": 0.0,
+    "knee": 0.3,
+    "elbow": 0.2,
     "notes": "Group weights (head, body, leg) each sum to 1; the engine's target split should come from fighters.json. Career significant attempts go head 0.733 / body 0.156 / leg 0.111 and landed head 0.594 / body 0.240 / leg 0.166; recency-weighted attempts are 0.688 / 0.157 / 0.155 (landed 0.527 / 0.225 / 0.248), because his last three fights leaned on low kicks. League welterweight attempts are about 0.77 / 0.14 / 0.09, so he sends more than average to the body and legs. In the head group the jab, cross and hook lead: 69% of his landed significant strikes are at distance and the Till KO was a punch at distance (UFC Stats); the hook gets extra weight for his counter game, a judgment. Uppercut is 0.12 for his close-range and clinch punching (17% of landed strikes in the clinch). Head kick is small (0.04). Body accuracy is 76% career, high enough that a large share is kicks, so bodykick leads; bodyhook gets 0.35 for the punch finish of Cerrone (UFC Stats: punches to body). Leg strikes are mostly round kicks; calf slightly over inside is a judgment. Knee 0.3 covers the flying knee (Askren) and clinch knees; elbow 0.2 covers the clinch elbow KO of Ferreira and ground elbows. Spinning is 0. UFC Stats does not record technique types, so the within-group split is an analyst judgment from the bout stats in data/raw."
   },
   "appearance": {
-    "build": "lean, muscular welterweight: 5 ft 11 in with a 74-inch reach (fighters.json)",
-    "hair": "dark, usually buzzed or very short (from widely published photos; not re-checked this session)",
-    "facial_hair": "full dark beard in most photos from his late UFC career (from widely published photos; unconfirmed in text)",
+    "build": "lean, muscular welterweight with chest hair: 5 ft 11 in with a 74-inch reach (fighters.json)",
+    "hair": "very dark brown, in tight cornrow braids gathered into one long braid that hangs over the left shoulder, sides faded (ESPN headshot and cutout, Apr 2023); short and swept back without braids in the Jan 2019 ESPN cutout",
+    "facial_hair": "full beard of medium length, dark brown with reddish tones (ESPN headshot, Apr 2023)",
     "skin": "light-medium",
-    "tattoos": "unknown (no source opened this session)",
-    "kit": "unknown",
+    "tattoos": "a circular piece on the left upper chest below the collarbone: a black silhouette of a leaping figure over a faint tree inside a thin ring set with small red, green and blue gems; small script on the left side of the neck; a small script tattoo with a red detail on the inner right forearm (ESPN headshot and cutout, Apr 2023; none of these show in the Jan 2019 cutout)",
+    "kit": "UFC Venum shorts: red (ESPN cutout, Apr 2023) and black (Jan 2019). The corner colour wins in the sim",
+    "notes": "No likeness sheet exists for him. Checked on Nov 6, 2026 against the ESPN headshot and cutout (files dated Apr 6, 2023, the week of UFC 287) and the ESPN cutout of Jan 16, 2019. These are his last fight-era photos; no 2026 photo was checked, so his current look may differ. Meaning of the tattoos is not sourced.",
     "sources": [
       "data/derived/fighters.json (height, reach, stance)",
-      "general published fight photos (no written description could be opened this session)"
+      "https://a.espncdn.com/i/headshots/mma/players/full/2500857.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/2500857.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/2500857.png"
     ]
   },
   "engine_notes": [

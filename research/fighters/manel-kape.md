@@ -1,13 +1,13 @@
 # Manel Kape: scouting dossier
 
-As of 2026-11-06. He/him. Southpaw, 5 ft 5 in, 68 in reach, born 1993-11-14 (age 32). Nickname "StarBoy". Former RIZIN bantamweight champion. UFC record 8-3 (ufcstats); a 24-7 pro record cited from ESPN could not be re-checked.
+As of 2026-11-06. He/him. Southpaw, 5 ft 5 in, 68 in reach, born 1993-11-14 (age 32). Nickname "StarBoy". Former RIZIN bantamweight champion. Pro record 23-7 (ESPN, Wikipedia and ufcrankings.org agree; the 24-7 figure in the first draft was wrong). UFC record 8-3 (ufcstats). ESPN lists his gym as Xtreme Couture; Wikipedia still lists AKA Thailand.
 
 ## Current status
 
-- **Next:** Challenges Joshua Van for the flyweight title, headlining UFC 336 at Scotiabank Arena, Toronto, on Jan 30, 2027. His first UFC title shot; the Houston Chronicle notes he is the only top-four flyweight Van has not beaten. Kape says Van will be "put to sleep" in round 1 (AgentMMA headline).
+- **Next:** Challenges Joshua Van for the flyweight title, headlining UFC 336 at Scotiabank Arena, Toronto, on Sat Jan 30, 2027 (made official Oct 24, 2026; Wikipedia's UFC 336 page, rev. of Nov 5, 2026). His first UFC title shot; the Houston Chronicle notes he is the only top-four flyweight Van has not beaten. Kape says Van will be "put to sleep" in round 1 (AgentMMA headline). Sherdog reported the opening odds as near even (Oct 26).
 - **Last fight:** TKO of Kyoji Horiguchi at 2:42 of round 3, UFC Vegas 119 (Jun 20, 2026). His fourth straight knockout, it avenged a 2017 RIZIN submission loss to Horiguchi.
-- **Ranking:** #2 at flyweight on ufcrankings.org and #1 on ufcalendar.com (both Nov 3, 2026).
-- **Injuries:** None reported in the sources found.
+- **Ranking:** #2 at flyweight behind Alexandre Pantoja in the official UFC rankings last updated Nov 3, 2026 (read from the Nov 4 Wayback capture of ufc.com/rankings; the ufcrankings.org mirror of Nov 5 agrees). Not in the men's pound-for-pound top 15. The #1 on ufcalendar.com cited in the first draft is not the official list.
+- **Injuries:** None current. A broken foot in training forced him out of the Royval fight at UFC 317 (Jun 2025); it healed. Horiguchi checked a kick in round 3 of UFC Vegas 119 that affected his leg (MiddleEasy), with no lasting injury reported. In mid-October he said December would have been too early for the Van fight.
 
 ## Recent fights
 
@@ -61,4 +61,23 @@ Elo 1651, essentially level with Taira for 3rd-4th among active flyweights and 6
 - https://ufcrankings.org/ and https://www.ufcalendar.com/rankings
 - data/derived/fighters.json and data/raw (ufcstats snapshot to 2026-10-31); http://ufcstats.com/fighter-details/5d1b7e3dd9e11074
 
-Fact-check (2026-11-06): results and stats re-checked against ufcstats; the pro record and the "right hook" detail were softened because they could not be re-checked (search budget spent, sites unreachable). Appearance: build from ufcstats; skin tone from published photos; hair and facial hair unknown.
+## Appearance (checked Nov 6, 2026)
+
+No photo-based likeness sheet exists for him (data/likeness/manel-kape.json), so this comes from dated photos: the ESPN headshot (file dated Jun 18, 2026), ESPN full-body studio cutouts (files dated Dec 11, 2025 and Jun 18, 2026; the lettering reads correctly, so they are not mirrored) and the Cageside Press fight photo from UFC Vegas 119 (Jun 20, 2026).
+
+- **Build:** compact, lean and muscular; 5 ft 5 in, 68 in reach (ufcstats).
+- **Hair:** short braids (cornrows) running front to back on top, gathered into a small knot at the back on fight night; skin-faded sides.
+- **Facial hair:** short, neatly trimmed full black beard joined to a moustache.
+- **Skin:** dark.
+- **Tattoos:** none visible on the chest, abdomen, arms or legs; back not seen.
+- **Kit:** white UFC (Venum) shorts with a light-grey leaf pattern and black waistband in both ESPN cutouts and on fight night at UFC Vegas 119, with red wrist tape (red corner). The sim uses corner colours.
+
+## Update sources (Nov 6, 2026)
+
+- Rankings: https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings and https://ufcrankings.org/
+- UFC 336: https://en.wikipedia.org/w/index.php?title=UFC_336&oldid=1383965546 and https://mmajunkie.usatoday.com/story/sports/ufc/2026/10/24/ufc-336-joshua-van-vs-manel-kape-flyweight-title-grudge-match-official-toronto/92416130007/
+- Record: https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4236504 and https://en.wikipedia.org/w/index.php?title=Manel_Kape&oldid=1383801507
+- Injuries and timeline: https://middleeasy.com/mma-news/manel-kape-joshua-van-january-kai-kara-france/
+- Photos: https://a.espncdn.com/i/headshots/mma/players/full/4236504.png, https://a.espncdn.com/i/headshots/mma/players/stance/left/4236504.png, https://a.espncdn.com/i/headshots/mma/players/stance/right/4236504.png, https://cagesidepress.com/wp-content/uploads/2026/06/KapeGuchi.jpg
+
+Fact-check (2026-11-06): results and stats re-checked against ufcstats. Open-network update the same day: pro record corrected to 23-7, the official ranking (#2) and the UFC 336 booking confirmed, injuries and appearance filled in from the sources above. Still unconfirmed: whether the lead right that dropped Royval was a hook or a straight (reported only as "a right hand").

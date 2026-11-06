@@ -3,13 +3,26 @@
   "name": "Valentina Shevchenko",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Two-time UFC women's flyweight champion who, on the snapshot's evidence, no longer holds the belt: the dataset holds 13 flyweight title fights for her (11-1-1). She regained the belt from Alexa Grasso at UFC 306 (Sep 14, 2024, 50-45 x3), then beat Manon Fiorot at UFC 315 (May 10, 2025, 48-47 x3) and Zhang Weili at UFC 322 (Nov 15, 2025, 50-45 x3). The Zhang fight is still her last bout in the ufcstats snapshot through Oct 31, 2026. ufcstats records UFC 332 (Oct 3, 2026), Natalia Silva vs. Wang Cong, as a women's flyweight title bout and not an interim one (the snapshot labels interim bouts as such), so she no longer appears to hold the belt. How it left her (vacated, stripped or retired), and whether she is injured or booked, could not be checked on the web in this pass: the shared search budget was spent and direct page fetches were blocked. Treat current status as unknown.",
+    "summary": "Two-time UFC women's flyweight champion, now the No. 1 contender while injured. She regained the belt from Alexa Grasso at UFC 306 (Sep 14, 2024) and defended it against Manon Fiorot (UFC 315, May 10, 2025) and Zhang Weili (UFC 322, Nov 15, 2025, 50-45 x3), her last fight. She was due to defend against Natalia Silva at UFC 332 (Oct 3, 2026) but was injured and vacated the title on Sep 5, 2026: the UFC broadcast said she would be out for 'up to one year' and would try to reclaim the belt once healthy; her coach Pavel Fedotov cited ligament injuries in the shoulder and back and at least eight months of recovery. Silva won the vacant title against Wang Cong. Shevchenko told Ariel Helwani she plans to come back in 2027. Nothing is booked (sportsbooks have posted lines for a possible Silva fight). Pro record 26-4-1 (ESPN); UFC 15-3-1 in the dataset.",
     "title": null,
-    "ranking": null,
-    "active": null,
+    "ranking": "#1 women's flyweight contender and #1 women's pound-for-pound (official UFC media-panel rankings last updated Tue Nov 3, 2026, read from the Nov 4 Wayback capture of ufc.com/rankings; the ufcrankings.org mirror of Nov 5 has the same order)",
+    "active": true,
     "next_fight": null,
-    "injuries": null,
+    "injuries": [
+      {
+        "what": "ligament injury to the shoulder and back (coach Pavel Fedotov); undisclosed by the UFC, which said she would be out 'up to one year'. She withdrew from the UFC 332 title defence, vacated the belt on Sep 5, 2026, and plans to return in 2027",
+        "when": "2026-09",
+        "source": "https://heavy.com/sports/ufc/valentina-shevchenko-coach-explains-vacating-belt/"
+      }
+    ],
     "sources": [
+      "https://www.espn.co.uk/mma/story/_/id/49839558/shevchenko-injured-vacates-silva-wang-vie-belt-ufc-332",
+      "https://heavy.com/sports/ufc/valentina-shevchenko-coach-explains-vacating-belt/",
+      "https://heavy.com/sports/ufc/valentina-shevchenko-giving-up-flyweight-title/",
+      "https://www.sherdog.com/news/news/Natalia-Silva-vs-Valentina-Shevchenko-odds-UFC-champ-opens-as-underdog-203109",
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://ufcrankings.org/",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/2554705",
       "http://ufcstats.com/fighter-details/132deb59abae64b1",
       "http://ufcstats.com/fight-details/7606f6b6c19f2d73",
       "http://ufcstats.com/fight-details/9e9d1764a015f313",
@@ -22,7 +35,17 @@
   "style": {
     "archetype": "counter striker",
     "stance": "southpaw",
-    "tags": ["counter", "southpaw", "leg-kicks", "head-kicks", "top-control", "ground-and-pound", "takedown-defense", "durable", "late-surge"],
+    "tags": [
+      "counter",
+      "southpaw",
+      "leg-kicks",
+      "head-kicks",
+      "top-control",
+      "ground-and-pound",
+      "takedown-defense",
+      "durable",
+      "late-surge"
+    ],
     "signature": [
       "left head kick from southpaw (KO of Jessica Eye 26 s into round 2 at UFC 238; ufcstats logs it as 'Kick to Head At Distance')",
       "elbows and punches from the crucifix (TKO of Jessica Andrade at UFC 261, 'Elbows to Head From Crucifix'; TKO of Katlyn Cerminara at UFC 247, 'Punches to Head From Crucifix')",
@@ -34,7 +57,7 @@
       "low output: 5.1 significant attempts per minute (decayed) against a women's flyweight average of 9.2, so close fights can slip away (split draw with Grasso at Noche UFC 2023, out-landed 84-80)",
       "submitted once: Grasso took her back and choked her out at 4:34 of round 4 at UFC 285 while she led 87-59 in significant strikes",
       "body defence: 32% of the strikes that land on her (decayed) go to the body; Fiorot landed 35 of 37 body strikes and held 7:07 of control at UFC 315",
-      "age 38 (born 1988-03-07 per ufcstats) and no fight since Nov 15, 2025",
+      "age 38 (born 1988-03-07 per ufcstats), no fight since Nov 15, 2025, and a shoulder/back ligament injury that keeps her out until 2027",
       "lost both UFC fights with Amanda Nunes at bantamweight (UD 2016, split decision for the title 2017)"
     ],
     "summary": "A southpaw counter-striker who throws little but lands a lot (53% of significant strikes, decayed) and finishes with kicks and ground strikes from the crucifix. In her last three title fights she relied on takedowns and long top control, which kept Grasso and Zhang from doing anything. She has never been stopped by strikes in 19 UFC fights.",
@@ -69,22 +92,40 @@
   },
   "appearance": {
     "build": "5 ft 5 in with a 66 in reach (ufcstats); lean and athletic for flyweight",
-    "hair": "blonde, usually in tight braids for fights (not re-checked against photos in this pass)",
+    "hair": "blonde (honey to dark blonde), pulled back tight in braids into a ponytail for fights and photo shoots",
     "facial_hair": "none",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "a black handgun (pistol) on the left side of the lower abdomen; a dark round emblem above a line of script on the outer upper left arm; a black patterned band around the right ankle",
+    "kit": "Noche UFC/UFC 306 (Sep 2024): green Mexican-pattern sports bra and shorts with SHEVCHENKO down the left leg and gold gloves; latest ESPN cutout (file dated Oct 5, 2026, shoot date unknown): black-and-gold champion's walkout jersey over olive-grey shorts with gold tiger prints. Corner colour wins in the sim",
+    "notes": "Checked Nov 6, 2026 (open network) against dated photos, since no photo-based likeness sheet exists (data/likeness/valentina-shevchenko.json): ESPN headshot and full-body cutout (files dated Oct 5, 2026) and the Sep 12, 2024 ESPN cutout. Lettering on the shorts reads correctly, so left/right are her own. The script on the arm tattoo was not read. Build is from ufcstats.",
     "sources": [
-      "http://ufcstats.com/fighter-details/132deb59abae64b1",
-      "hair and skin from general familiarity with widely published fight photos; not re-checked against a URL in this pass (web access unavailable)"
+      "https://a.espncdn.com/i/headshots/mma/players/full/2554705.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/2554705.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/2554705.png",
+      "http://ufcstats.com/fighter-details/132deb59abae64b1"
     ]
   },
   "engine_notes": [
-    { "note": "In 5-round fights her landed rate relative to round 1 runs 1.00, 0.97, 1.34, 1.62 and 1.40 (minute weights 80/73/61/59/50). The women's flyweight norm is 1.00, 0.90, 1.01, 1.14 and 1.32, so her output rises more than most in rounds 3-5.", "source": "data/derived/fighters.json (pace, pace_w, priors)" },
-    { "note": "Grappling (decayed): 2.8 takedowns landed per 15 min at 60% accuracy (division 1.29 at 39%). Her control is 325 s per 15 min against a division 180, and opponents get 115 s.", "source": "data/derived/fighters.json" },
-    { "note": "Power: 0.46 knockdowns per 100 significant head strikes landed (decayed) against a division rate of 0.25. Chin: one knockdown absorbed in 19 UFC fights (Grasso, Sep 2023) and no KO/TKO losses.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/b395c89e19a3fec4" },
-    { "note": "Takedown defence is 82% decayed (opponents complete 2.4 of 13.3) and 76% career (13 of 55). The division average is about 61%.", "source": "data/derived/fighters.json" },
-    { "note": "Five of her 19 UFC fights were at bantamweight, all before 2018. Her decayed rates come almost entirely from flyweight title fights.", "source": "data/derived/fighters.json (divisions)" }
+    {
+      "note": "In 5-round fights her landed rate relative to round 1 runs 1.00, 0.97, 1.34, 1.62 and 1.40 (minute weights 80/73/61/59/50). The women's flyweight norm is 1.00, 0.90, 1.01, 1.14 and 1.32, so her output rises more than most in rounds 3-5.",
+      "source": "data/derived/fighters.json (pace, pace_w, priors)"
+    },
+    {
+      "note": "Grappling (decayed): 2.8 takedowns landed per 15 min at 60% accuracy (division 1.29 at 39%). Her control is 325 s per 15 min against a division 180, and opponents get 115 s.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Power: 0.46 knockdowns per 100 significant head strikes landed (decayed) against a division rate of 0.25. Chin: one knockdown absorbed in 19 UFC fights (Grasso, Sep 2023) and no KO/TKO losses.",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/b395c89e19a3fec4"
+    },
+    {
+      "note": "Takedown defence is 82% decayed (opponents complete 2.4 of 13.3) and 76% career (13 of 55). The division average is about 61%.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Five of her 19 UFC fights were at bantamweight, all before 2018. Her decayed rates come almost entirely from flyweight title fights.",
+      "source": "data/derived/fighters.json (divisions)"
+    }
   ],
   "confidence": "low"
 }

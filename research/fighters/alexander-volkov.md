@@ -4,7 +4,6 @@ As of 2026-11-06. He/him. "Drago". Orthodox, 6 ft 7 in, 80 in reach, listed 250 
 
 **Re-check, Nov 6, 2026:** status, ranking, record, injuries and appearance were re-verified on the open web (sources at the end). Rankings come from ufcalendar.com's mirror because ufc.com returned 403.
 
-
 ## Current status
 
 - **Form:** three straight wins, all in Abu Dhabi or Newark: Jailton Almeida (SD, UFC 321, Oct 25, 2025), Waldo Cortes Acosta (UD, UFC 328, May 9, 2026) and Rizvan Kuniev (UD, UFC 333, Oct 24, 2026). Before that he lost a split decision to Gane at UFC 310 that 19 of 20 media scorers gave to Volkov (MMA Decisions, as cited by Wikipedia).

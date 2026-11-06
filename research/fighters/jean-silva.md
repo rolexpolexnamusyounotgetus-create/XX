@@ -11,8 +11,8 @@
 - **W Arnold Allen, UD, UFC 324, Jan 2026.** Allen took the first round on volume; Silva's right hand, spinning attacks and body work won the rest. 74-56 significant strikes, 4 of 6 takedowns.
 - **L Diego Lopes, TKO R2 4:48, Noche UFC, Sep 2025.** Lopes took him down and mounted him in R1 (3 of 4 takedowns, 42 ground strikes over the fight), then a spinning back elbow and ground strikes ended it. This ended a 13-fight win streak.
 - **W Bryce Mitchell, sub R2, UFC 314, Apr 2025.** Stuffed 13 of 14 takedowns, dropped Mitchell with a left hook and right hand, then finished with a front-headlock "ninja choke" (official: guillotine).
-- Outside MMA: a submission-grappling match with Bryce Mitchell at Hype Fighting: Brazil (Mar 11, 2026) ended in a draw after 8 minutes (Wikipedia, citing Tapology; UFCalendar also lists a draw).
 - **W Melsik Baghdasaryan, KO R1, Feb 2025**: a right hand, then ground strikes. **W Drew Dober, doctor stoppage R3, Jul 2024**: a spinning elbow cut opened late in R2.
+- Outside MMA: a submission-grappling match with Bryce Mitchell at Hype Fighting: Brazil (Mar 11, 2026) ended in a draw after 8 minutes (Wikipedia, citing Tapology; UFCalendar also lists a draw).
 
 ## Style
 An orthodox counter-puncher who looks reckless. Fight Primer describes a low, looping lead hand held back to bait opponents forward into the counter left hook, with the right hand behind it. He walks forward, barks and points to the centre, throws spinning elbows, and punches the body hard (22 of 23 body strikes vs Allen). Against wrestlers he defends shots and attacks the neck.

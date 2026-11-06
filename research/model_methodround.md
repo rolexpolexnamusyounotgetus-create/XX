@@ -61,7 +61,7 @@ Negative = the first model is better. The differences are on the same fights, so
 | blend - market | -0.0019 [-0.0081, +0.0044] | -0.0011 [-0.0062, +0.0040] | -0.0016 [-0.0092, +0.0057] | -0.0037 [-0.0086, +0.0012] | -0.0002 [-0.0085, +0.0080] | -0.0050 [-0.0142, +0.0042] | -0.0068 [-0.0162, +0.0029] |
 | blend - SM | -0.0167 [-0.0259, -0.0078] | -0.0113 [-0.0181, -0.0046] | -0.0110 [-0.0225, +0.0003] | -0.0035 [-0.0118, +0.0047] | -0.0280 [-0.0404, -0.0162] | -0.0255 [-0.0389, -0.0126] | -0.0274 [-0.0413, -0.0139] |
 
-The market props come from `data/derived/market.json` (tools/market.py): per-book closing "wins by KO/TKO / submission / decision" prices, power-normalised and averaged over US books, spread over rounds with the books' "fight ends in round k" props. They exist from 2021 on.
+The market props come from `data/derived/market.json` (tools/market.py): per-book closing "wins by KO/TKO / submission / decision" prices, power-normalised and averaged over US books, spread over rounds with the books' "fight ends in round k" props. They exist from 2021 on. The market.json build used is not recorded in this JSON (older run); compare with tools/methodround_verify.py --score before relying on the market rows.
 
 ## Calibration (held out, model S)
 
@@ -249,7 +249,8 @@ Evidence behind the recommendations: method given the actual winner, S - base ra
    method given the winner the props beat SM clearly (see item 3), so this model's shares are the fallback
    for fights without props, not a replacement for them.
 3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta).
-   The props beat SM on the 3-class method (+0.0147 [+0.0001, +0.0302], barely significant) and clearly on method given the winner
+   The props beat SM on the 3-class method (+0.0147 [+0.0001, +0.0302], borderline: not robust to small changes in the props set)
+   and clearly on method given the winner
    (+0.0277 [+0.0078, +0.0480]); finish vs decision (+0.0101 [-0.0013, +0.0221]) and KO vs submission (+0.0093 [-0.0094, +0.0281]) lean the same way but neither is significant on its
    own (the props price in pre-UFC records, camp news and styles the stats do not see). The model matches them
    on the finishing round (-0.0002 [-0.0133, +0.0130]), and the blend is within noise of the props or better on every target (method
@@ -291,6 +292,7 @@ Adversarial review, 2026-11-06. The starting assumption was that the held-out re
 | Calibration precision | Event-cluster bootstrap of slopes and of calibration-in-the-large, from the stored cells. | Slopes: KO 1.18 [0.96, 1.45], SUB 0.92 [0.72, 1.14], DEC 0.96 [0.73, 1.21]. All include 1, so "not overconfident" holds, but the slopes are imprecise. Decisions are under-predicted by 3.6 points [0.4, 6.3]: real, and already disclosed. |
 | Plausibility of the by-product winner | Compared with an independent model. | S winner 0.6256 / 66.6% is in line with the styles analyst's separate skill logistic (2024+ 0.6272 / 65.9%). |
 | JS export | Node evaluation of Volkanovski vs Gaethje from fighters.json profiles. | Reproduces the Python matchup within 2e-4. |
+| Input drift (found on re-check) | Rescored against the market.json now on disk. It was rebuilt by tools/market.py at 11:20; this build used the 10:01 version (git 4fb78e5). | S and base rates are unaffected (they use no market data). In 2024+, 17 fights gained method props (subset 1,183 to 1,200), 1 gained a moneyline and 21 moneylines moved by under 2 points; no existing props changed. In 2019-2023 (SM training and blend tuning), 811 moneylines moved slightly (12 by more than 2 points) and 30 fights gained props. On the current file: SM - market on method +0.0135 [-0.0012, +0.0289], **no longer significant**; method given winner +0.0264 [+0.0066, +0.0463], still significant; blend - market method -0.0025 [-0.0086, +0.0039] and joint -0.0073 [-0.0173, +0.0020], still a tie; S - market method +0.0191 [+0.0034, +0.0349], still significant. |
 
 **Fixes made (in place):**
 1. `write_report` now keeps a `## Verification log` section across `--report` and full refits. Before this, any rebuild silently deleted it.
@@ -298,9 +300,11 @@ Adversarial review, 2026-11-06. The starting assumption was that the held-out re
 3. Recommendation 2 now says to take the conditional method/round shares from the SM + market blend when props exist. This model's shares are significantly worse than the props on method given the winner.
 4. The calibration note now says that a slope > 1 means underconfident (KO 1.18 and the win_* slopes of 1.13-1.25 lean that way).
 5. The "did not earn a place" paragraph now says those comparisons and the fixed settings are not executed by `run()`, and points to the verify tool. The report was regenerated with `--report` from the unchanged JSON.
+6. `run()` now records which market.json build it used (`meta.market_json_built`), and the report states it, warning when the file on disk is newer. This JSON predates the fix, so the report says the build is not recorded. Recommendation 3 now calls the SM-vs-market method gap borderline and not robust to small changes in the props set.
 
 **Residual caveats (not fixed; disclosed):**
 - Static profile fields (height, reach, stance, date of birth) come from the snapshot's fighter pages, not from the fight date. The canary cannot test them because they are the same in both runs. They are not outcome-derived, so the effect should be negligible.
 - `run()` computes 2024+ metrics on every invocation, so "scored once" cannot be proven from code. Part 4 finds no sign that it was exploited.
 - The stored 2019-2023 predictions are out-of-fold for the coefficients, but the hyperparameters were chosen on 2020-2023. A stacker trained on them inherits a little optimism.
-- The level CIs are wide (about ±0.025 on method LL). Only the paired differences are tight. The market comparisons rest on 1,183 fights, and SM vs market on method is borderline.
+- The level CIs are wide (about ±0.025 on method LL). Only the paired differences are tight. The market comparisons rest on 1,183-1,200 fights. SM vs market on method is borderline: significant in this build, not on the current market.json. Read it as "the market is at least as good on method, and clearly better on method given the winner".
+- **SM and the market rows are stale against the current market.json.** I did not rerun the full pipeline. The drift is small, market.json is still being rebuilt by its owner (four builds between 10:58 and 11:25; the 11:25 build gives the same held-out market numbers as the 11:20 one), and under the current machine load a full run would take an hour or more. Once market.json is final, rerun `python3 tools/methodround.py`; this log is preserved and the report will record the market build used. S, the yardstick for the simulator, does not change.

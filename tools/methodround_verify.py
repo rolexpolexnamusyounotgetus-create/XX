@@ -597,10 +597,11 @@ def main(argv=None):
         res["part2_leakage"] = part2(cuts)
         print("part 3/4: symmetry refit and forking-paths audit")
         res["part3_4"] = part3_4(quick=args.quick)
-    if os.path.exists(out_path):                      # keep part 5 from an earlier --ablations run
+    if os.path.exists(out_path):                      # keep parts not rerun this time (e.g. --score keeps 2-5)
         old = json.load(open(out_path))
-        if "part5_ablations" in old:
-            res["part5_ablations"] = old["part5_ablations"]
+        for k, v in old.items():
+            if k not in res and k.startswith(("part", "market_drift")):
+                res[k] = v
     json.dump(res, open(out_path, "w"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
     print("wrote", out_path)
 

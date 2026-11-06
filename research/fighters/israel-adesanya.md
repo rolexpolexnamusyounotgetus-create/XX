@@ -32,19 +32,20 @@ He has **three KO/TKO losses** (Pereira 2022, Imavov 2025, Pyfer 2026) and two U
 - Elo 1669. UFC record 13-6: 5 KO/TKO and 8 decision wins; losses are 3 KO/TKO, 1 submission and 2 decisions.
 
 ## Appearance (for the avatar)
-No photo-based likeness sheet exists yet. From the ESPN/UFC studio photos (headshot and left cutout of Mar 27, 2026; right cutout of Aug 2024) and the Mar 2026 face-off and fight photos in `assets/reference/israel-adesanya/`:
-- **Build:** very tall and slim, long limbs, narrow waist, visible abs.
-- **Hair:** short black hair, a short tight-curl crop on top with faded sides (same in 2024 and 2026).
-- **Facial hair:** essentially clean-shaven; at most a faint thin moustache and a little chin hair.
-- **Skin:** dark.
-- **Tattoos (visible in 2026):** "BROKEN NATIVE" in large letters across the upper chest; a map of Africa on the sternum; dark ink on both sides of the neck; heavy work on both arms (the right arm largely covered from shoulder to forearm); a piece on the abdomen. Write-ups identify a Kurama-seal yin-yang (abdomen), Deadpool (left ribs), Toph from Avatar (right inner forearm), Calvin and Hobbes (bicep) and a neck piece reported as Montu. The small 2024 face tattoos are described inconsistently and are not legible in the 2026 headshot, so leave them off.
-- **Kit:** vale tudo-cut compression shorts, not board shorts: a navy snakeskin-print UFC kit with gold lightning trim in both the 2024 and 2026 cutouts. Black UFC gloves in 2026 (gold for the 2024 title fight); red wrist tape at UFC Seattle. Small stud earring in the left ear at the Mar 2026 face-off.
+Copied from the photo-based likeness sheet `data/likeness/israel-adesanya.json` (7 photos, including the Mar 2026 ESPN studio headshot and cutout and the Mar 2026 face-off), which is the better source: it has colour hexes, face notes and morphs.
+- **Build:** very tall, slim and long-limbed: long neck, narrow waist and hips, lean definition without bulk. Keep him slim.
+- **Hair:** short tapered cut, a skin fade into about 1-1.5 cm of tight black coils on top, with a sharp line-up.
+- **Facial hair:** very light stubble: a thin moustache shadow and a small chin patch; no beard.
+- **Skin:** dark (deep brown, warm red-brown undertone).
+- **Tattoos (his own sides), photo-confirmed:** "BROKEN NATIVE" across the upper chest; an Africa silhouette (with Madagascar) over the sternum; a full black-grey sleeve on the right arm; a design on the left side of the neck ending in a bird with spread wings above the collarbone. Low confidence: a dark area on the right side of the neck, small shapes around the navel, a thin script line on the inner left upper arm. Write-ups also identify a Kurama-seal yin-yang (abdomen), Deadpool (left ribs), Toph from Avatar (right inner forearm), Calvin and Hobbes (bicep) and a neck piece reported as Montu; these are not legible in the photos. Leave the inconsistently described 2024 face tattoos off.
+- **Kit:** Venum-made vale tudo-cut compression shorts, navy with a grey snakeskin print and gold/white lightning bolts (2024 and 2026); black gloves in 2026. Red wrist tape at UFC Seattle. Diamond stud in the left ear lobe at the Mar 2026 face-off.
 
 ## Still unconfirmed
 - The Dec 5 Shara Magomedov fight (reported, not announced).
 - The exact makeup of his new team beyond the Freestyle MMA sessions.
 
 ## Sources
+- data/likeness/israel-adesanya.json (photo-based likeness sheet, Nov 6, 2026)
 - https://www.mmafighting.com/ufc/519612/israel-adesanya-ready-to-end-slump-after-city-kickboxing-departure-best-ive-felt-in-a-very-long-time (Nov 5, 2026)
 - https://www.sherdog.com/news/news/Israel-Adesanya-feels-better-than-ever-after-leaving-City-Kickboxing-203513
 - https://www.sherdog.com/fighter/Israel-Adesanya-56374 (upcoming: UFC Fight Night 295, Dec 5, 2026)

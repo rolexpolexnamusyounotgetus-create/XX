@@ -1662,7 +1662,8 @@
    }
   ],
   "max_abs_diff_vs_reported": 0.00041,
-  "seconds": 3.4
+  "seconds": 3.4,
+  "market_json_built": "2026-11-06T10:01:22+00:00 (git 4fb78e5; same props set as methodround.json: 1,183 held-out fights)"
  },
  "part2_leakage": {
   "n_table": 6296,
@@ -1877,5 +1878,1688 @@
   },
   "n_cv_fights": 1581,
   "seconds": 755.5
+ },
+ "part1_rescoring_current_market": {
+  "n_backtest_2024plus": 1238,
+  "excluded": {
+   "excluded_CNC": 8,
+   "excluded_DQ": 1
+  },
+  "n_scored": 1229,
+  "n_props_subset": 1200,
+  "metrics": {
+   "S": {
+    "method3": {
+     "mean": 0.94412,
+     "ci95": [
+      0.91808,
+      0.9695
+     ],
+     "n": 1229
+    },
+    "finish": {
+     "mean": 0.66024,
+     "ci95": [
+      0.64349,
+      0.67697
+     ],
+     "n": 1229
+    },
+    "round_given_fin": {
+     "mean": 1.04878,
+     "ci95": [
+      1.01439,
+      1.08407
+     ],
+     "n": 601
+    },
+    "ko_vs_sub": {
+     "mean": 0.5805,
+     "ci95": [
+      0.54957,
+      0.61138
+     ],
+     "n": 601
+    },
+    "bin7": {
+     "mean": 1.56423,
+     "ci95": [
+      1.53042,
+      1.59926
+     ],
+     "n": 1229
+    },
+    "joint": {
+     "mean": 2.07749,
+     "ci95": [
+      2.0205,
+      2.13435
+     ],
+     "n": 1229
+    },
+    "method_round": {
+     "mean": 1.45739,
+     "ci95": [
+      1.40449,
+      1.50791
+     ],
+     "n": 1229
+    },
+    "method_given_winner": {
+     "mean": 0.91124,
+     "ci95": [
+      0.88316,
+      0.93952
+     ],
+     "n": 1222
+    },
+    "winner": {
+     "mean": 0.62559,
+     "ci95": [
+      0.61319,
+      0.63843
+     ],
+     "n": 1222
+    },
+    "winner_acc": {
+     "mean": 0.66653,
+     "ci95": [
+      0.64246,
+      0.69017
+     ],
+     "n": 1222
+    }
+   },
+   "SM": {
+    "method3": {
+     "mean": 0.93878,
+     "ci95": [
+      0.91351,
+      0.96372
+     ],
+     "n": 1229
+    },
+    "finish": {
+     "mean": 0.65634,
+     "ci95": [
+      0.64099,
+      0.67208
+     ],
+     "n": 1229
+    },
+    "round_given_fin": {
+     "mean": 1.04864,
+     "ci95": [
+      1.01439,
+      1.0839
+     ],
+     "n": 601
+    },
+    "ko_vs_sub": {
+     "mean": 0.57756,
+     "ci95": [
+      0.54684,
+      0.6077
+     ],
+     "n": 601
+    },
+    "bin7": {
+     "mean": 1.52429,
+     "ci95": [
+      1.48702,
+      1.56348
+     ],
+     "n": 1229
+    },
+    "joint": {
+     "mean": 2.03755,
+     "ci95": [
+      1.97763,
+      2.09788
+     ],
+     "n": 1229
+    },
+    "method_round": {
+     "mean": 1.45207,
+     "ci95": [
+      1.3999,
+      1.50262
+     ],
+     "n": 1229
+    },
+    "method_given_winner": {
+     "mean": 0.91151,
+     "ci95": [
+      0.88531,
+      0.93837
+     ],
+     "n": 1222
+    },
+    "winner": {
+     "mean": 0.58534,
+     "ci95": [
+      0.56496,
+      0.60717
+     ],
+     "n": 1222
+    },
+    "winner_acc": {
+     "mean": 0.6964,
+     "ci95": [
+      0.66968,
+      0.72263
+     ],
+     "n": 1222
+    }
+   },
+   "base_division": {
+    "method3": {
+     "mean": 0.9886,
+     "ci95": [
+      0.96558,
+      1.0098
+     ],
+     "n": 1229
+    },
+    "finish": {
+     "mean": 0.68009,
+     "ci95": [
+      0.67373,
+      0.68644
+     ],
+     "n": 1229
+    },
+    "round_given_fin": {
+     "mean": 1.06833,
+     "ci95": [
+      1.03328,
+      1.10309
+     ],
+     "n": 601
+    },
+    "ko_vs_sub": {
+     "mean": 0.63087,
+     "ci95": [
+      0.60303,
+      0.6578
+     ],
+     "n": 601
+    },
+    "bin7": {
+     "mean": 1.71113,
+     "ci95": [
+      1.68309,
+      1.73783
+     ],
+     "n": 1229
+    },
+    "joint": {
+     "mean": 2.24118,
+     "ci95": [
+      2.18212,
+      2.29909
+     ],
+     "n": 1229
+    },
+    "method_round": {
+     "mean": 1.51865,
+     "ci95": [
+      1.46296,
+      1.57361
+     ],
+     "n": 1229
+    },
+    "method_given_winner": {
+     "mean": 0.99006,
+     "ci95": [
+      0.96695,
+      1.01131
+     ],
+     "n": 1222
+    },
+    "winner": {
+     "mean": 0.69315,
+     "ci95": [
+      0.69315,
+      0.69315
+     ],
+     "n": 1222
+    },
+    "winner_acc": {
+     "mean": 0.5,
+     "ci95": [
+      0.5,
+      0.5
+     ],
+     "n": 1222
+    }
+   },
+   "base_division_elo": {
+    "method3": {
+     "mean": 0.9886,
+     "ci95": [
+      0.96558,
+      1.0098
+     ],
+     "n": 1229
+    },
+    "finish": {
+     "mean": 0.68009,
+     "ci95": [
+      0.67373,
+      0.68644
+     ],
+     "n": 1229
+    },
+    "round_given_fin": {
+     "mean": 1.06833,
+     "ci95": [
+      1.03328,
+      1.10309
+     ],
+     "n": 601
+    },
+    "ko_vs_sub": {
+     "mean": 0.63087,
+     "ci95": [
+      0.60303,
+      0.6578
+     ],
+     "n": 601
+    },
+    "bin7": {
+     "mean": 1.69788,
+     "ci95": [
+      1.66852,
+      1.72587
+     ],
+     "n": 1229
+    },
+    "joint": {
+     "mean": 2.22793,
+     "ci95": [
+      2.16862,
+      2.28584
+     ],
+     "n": 1229
+    },
+    "method_round": {
+     "mean": 1.51865,
+     "ci95": [
+      1.46296,
+      1.57361
+     ],
+     "n": 1229
+    },
+    "method_given_winner": {
+     "mean": 0.99006,
+     "ci95": [
+      0.96695,
+      1.01131
+     ],
+     "n": 1222
+    },
+    "winner": {
+     "mean": 0.67982,
+     "ci95": [
+      0.67239,
+      0.68767
+     ],
+     "n": 1222
+    },
+    "winner_acc": {
+     "mean": 0.55033,
+     "ci95": [
+      0.52563,
+      0.57436
+     ],
+     "n": 1222
+    }
+   }
+  },
+  "paired": {
+   "S_minus_base_division": {
+    "method3": {
+     "diff": -0.04448,
+     "ci95": [
+      -0.06151,
+      -0.02684
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "finish": {
+     "diff": -0.01985,
+     "ci95": [
+      -0.03317,
+      -0.0062
+     ],
+     "p_ge_0": 0.0035,
+     "n": 1229
+    },
+    "round_given_fin": {
+     "diff": -0.01955,
+     "ci95": [
+      -0.03071,
+      -0.00729
+     ],
+     "p_ge_0": 0.0005,
+     "n": 601
+    },
+    "ko_vs_sub": {
+     "diff": -0.05036,
+     "ci95": [
+      -0.06925,
+      -0.03182
+     ],
+     "p_ge_0": 0.0,
+     "n": 601
+    },
+    "bin7": {
+     "diff": -0.1469,
+     "ci95": [
+      -0.1721,
+      -0.12136
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "joint": {
+     "diff": -0.1637,
+     "ci95": [
+      -0.1922,
+      -0.13453
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "method_round": {
+     "diff": -0.06126,
+     "ci95": [
+      -0.08137,
+      -0.04087
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "method_given_winner": {
+     "diff": -0.07882,
+     "ci95": [
+      -0.1002,
+      -0.05726
+     ],
+     "p_ge_0": 0.0,
+     "n": 1222
+    },
+    "winner": {
+     "diff": -0.06756,
+     "ci95": [
+      -0.07996,
+      -0.05472
+     ],
+     "p_ge_0": 0.0,
+     "n": 1222
+    },
+    "winner_acc": {
+     "diff": 0.16653,
+     "ci95": [
+      0.14246,
+      0.19017
+     ],
+     "p_ge_0": 1.0,
+     "n": 1222
+    }
+   },
+   "S_minus_base_division_elo": {
+    "method3": {
+     "diff": -0.04448,
+     "ci95": [
+      -0.06151,
+      -0.02684
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "finish": {
+     "diff": -0.01985,
+     "ci95": [
+      -0.03317,
+      -0.0062
+     ],
+     "p_ge_0": 0.0035,
+     "n": 1229
+    },
+    "round_given_fin": {
+     "diff": -0.01955,
+     "ci95": [
+      -0.03071,
+      -0.00729
+     ],
+     "p_ge_0": 0.0005,
+     "n": 601
+    },
+    "ko_vs_sub": {
+     "diff": -0.05036,
+     "ci95": [
+      -0.06925,
+      -0.03182
+     ],
+     "p_ge_0": 0.0,
+     "n": 601
+    },
+    "bin7": {
+     "diff": -0.13365,
+     "ci95": [
+      -0.15796,
+      -0.10838
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "joint": {
+     "diff": -0.15045,
+     "ci95": [
+      -0.17822,
+      -0.12207
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "method_round": {
+     "diff": -0.06126,
+     "ci95": [
+      -0.08137,
+      -0.04087
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "method_given_winner": {
+     "diff": -0.07882,
+     "ci95": [
+      -0.1002,
+      -0.05726
+     ],
+     "p_ge_0": 0.0,
+     "n": 1222
+    },
+    "winner": {
+     "diff": -0.05424,
+     "ci95": [
+      -0.06621,
+      -0.04203
+     ],
+     "p_ge_0": 0.0,
+     "n": 1222
+    },
+    "winner_acc": {
+     "diff": 0.1162,
+     "ci95": [
+      0.08758,
+      0.14788
+     ],
+     "p_ge_0": 1.0,
+     "n": 1222
+    }
+   },
+   "SM_minus_S": {
+    "method3": {
+     "diff": -0.00534,
+     "ci95": [
+      -0.00965,
+      -0.0012
+     ],
+     "p_ge_0": 0.0065,
+     "n": 1229
+    },
+    "finish": {
+     "diff": -0.0039,
+     "ci95": [
+      -0.00784,
+      3e-05
+     ],
+     "p_ge_0": 0.026,
+     "n": 1229
+    },
+    "round_given_fin": {
+     "diff": -0.00014,
+     "ci95": [
+      -0.00058,
+      0.00027
+     ],
+     "p_ge_0": 0.268,
+     "n": 601
+    },
+    "ko_vs_sub": {
+     "diff": -0.00294,
+     "ci95": [
+      -0.00859,
+      0.00215
+     ],
+     "p_ge_0": 0.127,
+     "n": 601
+    },
+    "bin7": {
+     "diff": -0.03994,
+     "ci95": [
+      -0.05359,
+      -0.02555
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "joint": {
+     "diff": -0.03994,
+     "ci95": [
+      -0.0536,
+      -0.02555
+     ],
+     "p_ge_0": 0.0,
+     "n": 1229
+    },
+    "method_round": {
+     "diff": -0.00532,
+     "ci95": [
+      -0.00963,
+      -0.00116
+     ],
+     "p_ge_0": 0.007,
+     "n": 1229
+    },
+    "method_given_winner": {
+     "diff": 0.00027,
+     "ci95": [
+      -0.00399,
+      0.00458
+     ],
+     "p_ge_0": 0.557,
+     "n": 1222
+    },
+    "winner": {
+     "diff": -0.04024,
+     "ci95": [
+      -0.05383,
+      -0.0259
+     ],
+     "p_ge_0": 0.0,
+     "n": 1222
+    },
+    "winner_acc": {
+     "diff": 0.02987,
+     "ci95": [
+      0.00694,
+      0.05287
+     ],
+     "p_ge_0": 0.9955,
+     "n": 1222
+    }
+   }
+  },
+  "props_subset": {
+   "S": {
+    "method3": {
+     "mean": 0.94369,
+     "ci95": [
+      0.91736,
+      0.97085
+     ],
+     "n": 1200
+    },
+    "finish": {
+     "mean": 0.66161,
+     "ci95": [
+      0.64538,
+      0.67858
+     ],
+     "n": 1200
+    },
+    "round_given_fin": {
+     "mean": 1.05111,
+     "ci95": [
+      1.01512,
+      1.08662
+     ],
+     "n": 586
+    },
+    "ko_vs_sub": {
+     "mean": 0.57763,
+     "ci95": [
+      0.54598,
+      0.60617
+     ],
+     "n": 586
+    },
+    "bin7": {
+     "mean": 1.56529,
+     "ci95": [
+      1.52937,
+      1.60012
+     ],
+     "n": 1200
+    },
+    "joint": {
+     "mean": 2.07871,
+     "ci95": [
+      2.02054,
+      2.13722
+     ],
+     "n": 1200
+    },
+    "method_round": {
+     "mean": 1.45713,
+     "ci95": [
+      1.40376,
+      1.51165
+     ],
+     "n": 1200
+    },
+    "method_given_winner": {
+     "mean": 0.91291,
+     "ci95": [
+      0.88454,
+      0.94192
+     ],
+     "n": 1193
+    },
+    "winner": {
+     "mean": 0.62448,
+     "ci95": [
+      0.6123,
+      0.63705
+     ],
+     "n": 1193
+    },
+    "winner_acc": {
+     "mean": 0.66681,
+     "ci95": [
+      0.64215,
+      0.6909
+     ],
+     "n": 1193
+    }
+   },
+   "SM": {
+    "method3": {
+     "mean": 0.93813,
+     "ci95": [
+      0.91246,
+      0.96476
+     ],
+     "n": 1200
+    },
+    "finish": {
+     "mean": 0.65794,
+     "ci95": [
+      0.64237,
+      0.67463
+     ],
+     "n": 1200
+    },
+    "round_given_fin": {
+     "mean": 1.05097,
+     "ci95": [
+      1.01502,
+      1.08632
+     ],
+     "n": 586
+    },
+    "ko_vs_sub": {
+     "mean": 0.57378,
+     "ci95": [
+      0.54265,
+      0.60157
+     ],
+     "n": 586
+    },
+    "bin7": {
+     "mean": 1.5248,
+     "ci95": [
+      1.48605,
+      1.56381
+     ],
+     "n": 1200
+    },
+    "joint": {
+     "mean": 2.03823,
+     "ci95": [
+      1.97765,
+      2.09972
+     ],
+     "n": 1200
+    },
+    "method_round": {
+     "mean": 1.4516,
+     "ci95": [
+      1.39806,
+      1.50647
+     ],
+     "n": 1200
+    },
+    "method_given_winner": {
+     "mean": 0.91298,
+     "ci95": [
+      0.88634,
+      0.93945
+     ],
+     "n": 1193
+    },
+    "winner": {
+     "mean": 0.58389,
+     "ci95": [
+      0.56247,
+      0.60482
+     ],
+     "n": 1193
+    },
+    "winner_acc": {
+     "mean": 0.69908,
+     "ci95": [
+      0.67365,
+      0.72642
+     ],
+     "n": 1193
+    }
+   },
+   "market": {
+    "method3": {
+     "mean": 0.92461,
+     "ci95": [
+      0.8962,
+      0.95343
+     ],
+     "n": 1200
+    },
+    "finish": {
+     "mean": 0.64862,
+     "ci95": [
+      0.62675,
+      0.67129
+     ],
+     "n": 1200
+    },
+    "round_given_fin": {
+     "mean": 1.05071,
+     "ci95": [
+      1.02103,
+      1.08007
+     ],
+     "n": 586
+    },
+    "ko_vs_sub": {
+     "mean": 0.56518,
+     "ci95": [
+      0.53165,
+      0.59737
+     ],
+     "n": 586
+    },
+    "bin7": {
+     "mean": 1.50563,
+     "ci95": [
+      1.46334,
+      1.54976
+     ],
+     "n": 1200
+    },
+    "joint": {
+     "mean": 2.01872,
+     "ci95": [
+      1.9594,
+      2.08106
+     ],
+     "n": 1200
+    },
+    "method_round": {
+     "mean": 1.43771,
+     "ci95": [
+      1.38524,
+      1.48759
+     ],
+     "n": 1200
+    },
+    "method_given_winner": {
+     "mean": 0.88654,
+     "ci95": [
+      0.85716,
+      0.91713
+     ],
+     "n": 1193
+    },
+    "winner": {
+     "mean": 0.59043,
+     "ci95": [
+      0.56981,
+      0.61179
+     ],
+     "n": 1193
+    },
+    "winner_acc": {
+     "mean": 0.69405,
+     "ci95": [
+      0.66695,
+      0.7213
+     ],
+     "n": 1193
+    }
+   },
+   "blend": {
+    "method3": {
+     "mean": 0.92214,
+     "ci95": [
+      0.8958,
+      0.94891
+     ],
+     "n": 1200
+    },
+    "finish": {
+     "mean": 0.64708,
+     "ci95": [
+      0.62835,
+      0.66608
+     ],
+     "n": 1200
+    },
+    "round_given_fin": {
+     "mean": 1.04716,
+     "ci95": [
+      1.01588,
+      1.07835
+     ],
+     "n": 586
+    },
+    "ko_vs_sub": {
+     "mean": 0.56327,
+     "ci95": [
+      0.53141,
+      0.59198
+     ],
+     "n": 586
+    },
+    "bin7": {
+     "mean": 1.50001,
+     "ci95": [
+      1.46054,
+      1.54162
+     ],
+     "n": 1200
+    },
+    "joint": {
+     "mean": 2.01142,
+     "ci95": [
+      1.95297,
+      2.07293
+     ],
+     "n": 1200
+    },
+    "method_round": {
+     "mean": 1.43348,
+     "ci95": [
+      1.38087,
+      1.48264
+     ],
+     "n": 1200
+    },
+    "method_given_winner": {
+     "mean": 0.88573,
+     "ci95": [
+      0.85928,
+      0.91324
+     ],
+     "n": 1193
+    },
+    "winner": {
+     "mean": 0.58594,
+     "ci95": [
+      0.56535,
+      0.60726
+     ],
+     "n": 1193
+    },
+    "winner_acc": {
+     "mean": 0.70495,
+     "ci95": [
+      0.68003,
+      0.73189
+     ],
+     "n": 1193
+    }
+   },
+   "base_division_elo": {
+    "method3": {
+     "mean": 0.98584,
+     "ci95": [
+      0.96304,
+      1.00898
+     ],
+     "n": 1200
+    },
+    "finish": {
+     "mean": 0.67984,
+     "ci95": [
+      0.6731,
+      0.6865
+     ],
+     "n": 1200
+    },
+    "round_given_fin": {
+     "mean": 1.06991,
+     "ci95": [
+      1.03351,
+      1.10725
+     ],
+     "n": 586
+    },
+    "ko_vs_sub": {
+     "mean": 0.62663,
+     "ci95": [
+      0.60012,
+      0.65345
+     ],
+     "n": 586
+    },
+    "bin7": {
+     "mean": 1.69629,
+     "ci95": [
+      1.66662,
+      1.72398
+     ],
+     "n": 1200
+    },
+    "joint": {
+     "mean": 2.22636,
+     "ci95": [
+      2.16533,
+      2.28756
+     ],
+     "n": 1200
+    },
+    "method_round": {
+     "mean": 1.51591,
+     "ci95": [
+      1.45796,
+      1.57417
+     ],
+     "n": 1200
+    },
+    "method_given_winner": {
+     "mean": 0.98734,
+     "ci95": [
+      0.96502,
+      1.01056
+     ],
+     "n": 1193
+    },
+    "winner": {
+     "mean": 0.68043,
+     "ci95": [
+      0.67255,
+      0.68848
+     ],
+     "n": 1193
+    },
+    "winner_acc": {
+     "mean": 0.54694,
+     "ci95": [
+      0.52291,
+      0.57082
+     ],
+     "n": 1193
+    }
+   }
+  },
+  "props_paired": {
+   "SM_minus_market": {
+    "method3": {
+     "diff": 0.01352,
+     "ci95": [
+      -0.00116,
+      0.02892
+     ],
+     "p_ge_0": 0.965,
+     "n": 1200
+    },
+    "finish": {
+     "diff": 0.00932,
+     "ci95": [
+      -0.0021,
+      0.02192
+     ],
+     "p_ge_0": 0.951,
+     "n": 1200
+    },
+    "round_given_fin": {
+     "diff": 0.00026,
+     "ci95": [
+      -0.01302,
+      0.01294
+     ],
+     "p_ge_0": 0.518,
+     "n": 586
+    },
+    "ko_vs_sub": {
+     "diff": 0.0086,
+     "ci95": [
+      -0.00948,
+      0.02651
+     ],
+     "p_ge_0": 0.8205,
+     "n": 586
+    },
+    "bin7": {
+     "diff": 0.01917,
+     "ci95": [
+      -0.00373,
+      0.04183
+     ],
+     "p_ge_0": 0.951,
+     "n": 1200
+    },
+    "joint": {
+     "diff": 0.0195,
+     "ci95": [
+      -0.00493,
+      0.04271
+     ],
+     "p_ge_0": 0.949,
+     "n": 1200
+    },
+    "method_round": {
+     "diff": 0.01389,
+     "ci95": [
+      -0.00174,
+      0.02972
+     ],
+     "p_ge_0": 0.962,
+     "n": 1200
+    },
+    "method_given_winner": {
+     "diff": 0.02644,
+     "ci95": [
+      0.00661,
+      0.04631
+     ],
+     "p_ge_0": 0.9935,
+     "n": 1193
+    },
+    "winner": {
+     "diff": -0.00654,
+     "ci95": [
+      -0.01293,
+      0.00037
+     ],
+     "p_ge_0": 0.0355,
+     "n": 1193
+    },
+    "winner_acc": {
+     "diff": 0.00503,
+     "ci95": [
+      -0.01291,
+      0.02158
+     ],
+     "p_ge_0": 0.7295,
+     "n": 1193
+    }
+   },
+   "S_minus_market": {
+    "method3": {
+     "diff": 0.01908,
+     "ci95": [
+      0.00335,
+      0.03486
+     ],
+     "p_ge_0": 0.99,
+     "n": 1200
+    },
+    "finish": {
+     "diff": 0.01299,
+     "ci95": [
+      0.00132,
+      0.02525
+     ],
+     "p_ge_0": 0.9835,
+     "n": 1200
+    },
+    "round_given_fin": {
+     "diff": 0.0004,
+     "ci95": [
+      -0.01286,
+      0.01325
+     ],
+     "p_ge_0": 0.526,
+     "n": 586
+    },
+    "ko_vs_sub": {
+     "diff": 0.01246,
+     "ci95": [
+      -0.00703,
+      0.03173
+     ],
+     "p_ge_0": 0.8815,
+     "n": 586
+    },
+    "bin7": {
+     "diff": 0.05966,
+     "ci95": [
+      0.03161,
+      0.08779
+     ],
+     "p_ge_0": 1.0,
+     "n": 1200
+    },
+    "joint": {
+     "diff": 0.05999,
+     "ci95": [
+      0.03187,
+      0.08826
+     ],
+     "p_ge_0": 1.0,
+     "n": 1200
+    },
+    "method_round": {
+     "diff": 0.01942,
+     "ci95": [
+      0.00396,
+      0.03476
+     ],
+     "p_ge_0": 0.9905,
+     "n": 1200
+    },
+    "method_given_winner": {
+     "diff": 0.02637,
+     "ci95": [
+      0.00624,
+      0.04687
+     ],
+     "p_ge_0": 0.994,
+     "n": 1193
+    },
+    "winner": {
+     "diff": 0.03405,
+     "ci95": [
+      0.01761,
+      0.05018
+     ],
+     "p_ge_0": 1.0,
+     "n": 1193
+    },
+    "winner_acc": {
+     "diff": -0.02724,
+     "ci95": [
+      -0.05764,
+      0.00247
+     ],
+     "p_ge_0": 0.0375,
+     "n": 1193
+    }
+   },
+   "blend_minus_market": {
+    "method3": {
+     "diff": -0.00247,
+     "ci95": [
+      -0.0086,
+      0.00388
+     ],
+     "p_ge_0": 0.229,
+     "n": 1200
+    },
+    "finish": {
+     "diff": -0.00154,
+     "ci95": [
+      -0.00645,
+      0.0037
+     ],
+     "p_ge_0": 0.2705,
+     "n": 1200
+    },
+    "round_given_fin": {
+     "diff": -0.00355,
+     "ci95": [
+      -0.00845,
+      0.00123
+     ],
+     "p_ge_0": 0.076,
+     "n": 586
+    },
+    "ko_vs_sub": {
+     "diff": -0.0019,
+     "ci95": [
+      -0.00906,
+      0.00532
+     ],
+     "p_ge_0": 0.3015,
+     "n": 586
+    },
+    "bin7": {
+     "diff": -0.00562,
+     "ci95": [
+      -0.01519,
+      0.00381
+     ],
+     "p_ge_0": 0.12,
+     "n": 1200
+    },
+    "joint": {
+     "diff": -0.00731,
+     "ci95": [
+      -0.01733,
+      0.00202
+     ],
+     "p_ge_0": 0.073,
+     "n": 1200
+    },
+    "method_round": {
+     "diff": -0.00423,
+     "ci95": [
+      -0.01067,
+      0.00231
+     ],
+     "p_ge_0": 0.1035,
+     "n": 1200
+    },
+    "method_given_winner": {
+     "diff": -0.00081,
+     "ci95": [
+      -0.00923,
+      0.00747
+     ],
+     "p_ge_0": 0.4385,
+     "n": 1193
+    },
+    "winner": {
+     "diff": -0.00449,
+     "ci95": [
+      -0.00709,
+      -0.00165
+     ],
+     "p_ge_0": 0.0005,
+     "n": 1193
+    },
+    "winner_acc": {
+     "diff": 0.0109,
+     "ci95": [
+      0.0,
+      0.02176
+     ],
+     "p_ge_0": 0.981,
+     "n": 1193
+    }
+   }
+  },
+  "corner": {
+   "A_win_share_decisive": 0.5516,
+   "n_decisive": 1222,
+   "A_win_share_ci95": [
+    0.5237,
+    0.5794
+   ],
+   "S_mean_pA": 0.5091,
+   "S_mean_pA_when_A_won": 0.554,
+   "S_mean_pA_when_B_won": 0.454,
+   "constant_corner_prior_ll": 0.6878,
+   "note": "S is symmetric by construction; a corner-aware intercept (A wins 55.2%) would have scored 0.6878 with no fighter information",
+   "A_win_share_2019_2023": 0.5708,
+   "S_winner_ll": 0.6256,
+   "S_plus_corner_intercept_winner_ll": 0.6229
+  },
+  "reported_vs_rescored": [
+   {
+    "model": "S",
+    "metric": "method3",
+    "reported": 0.94412,
+    "rescored": 0.94412,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "S",
+    "metric": "finish",
+    "reported": 0.66024,
+    "rescored": 0.66024,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "S",
+    "metric": "round_given_fin",
+    "reported": 1.04878,
+    "rescored": 1.04878,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "S",
+    "metric": "bin7",
+    "reported": 1.56426,
+    "rescored": 1.56423,
+    "abs_diff": 3e-05
+   },
+   {
+    "model": "S",
+    "metric": "joint",
+    "reported": 2.07752,
+    "rescored": 2.07749,
+    "abs_diff": 3e-05
+   },
+   {
+    "model": "S",
+    "metric": "winner",
+    "reported": 0.62559,
+    "rescored": 0.62559,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "S",
+    "metric": "winner_acc",
+    "reported": 0.66612,
+    "rescored": 0.66653,
+    "abs_diff": 0.00041
+   },
+   {
+    "model": "S",
+    "metric": "method_given_winner",
+    "reported": 0.91125,
+    "rescored": 0.91124,
+    "abs_diff": 1e-05
+   },
+   {
+    "model": "SM",
+    "metric": "method3",
+    "reported": 0.93879,
+    "rescored": 0.93878,
+    "abs_diff": 1e-05
+   },
+   {
+    "model": "SM",
+    "metric": "finish",
+    "reported": 0.65635,
+    "rescored": 0.65634,
+    "abs_diff": 1e-05
+   },
+   {
+    "model": "SM",
+    "metric": "round_given_fin",
+    "reported": 1.04864,
+    "rescored": 1.04864,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "SM",
+    "metric": "bin7",
+    "reported": 1.52432,
+    "rescored": 1.52429,
+    "abs_diff": 3e-05
+   },
+   {
+    "model": "SM",
+    "metric": "joint",
+    "reported": 2.03759,
+    "rescored": 2.03755,
+    "abs_diff": 4e-05
+   },
+   {
+    "model": "SM",
+    "metric": "winner",
+    "reported": 0.58534,
+    "rescored": 0.58534,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "SM",
+    "metric": "winner_acc",
+    "reported": 0.6964,
+    "rescored": 0.6964,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "SM",
+    "metric": "method_given_winner",
+    "reported": 0.91153,
+    "rescored": 0.91151,
+    "abs_diff": 2e-05
+   },
+   {
+    "model": "base_division",
+    "metric": "method3",
+    "reported": 0.9886,
+    "rescored": 0.9886,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division",
+    "metric": "finish",
+    "reported": 0.68009,
+    "rescored": 0.68009,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division",
+    "metric": "round_given_fin",
+    "reported": 1.06833,
+    "rescored": 1.06833,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division",
+    "metric": "bin7",
+    "reported": 1.71113,
+    "rescored": 1.71113,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division",
+    "metric": "joint",
+    "reported": 2.24118,
+    "rescored": 2.24118,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division",
+    "metric": "winner",
+    "reported": 0.69315,
+    "rescored": 0.69315,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division",
+    "metric": "winner_acc",
+    "reported": 0.5,
+    "rescored": 0.5,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division",
+    "metric": "method_given_winner",
+    "reported": 0.99006,
+    "rescored": 0.99006,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division_elo",
+    "metric": "method3",
+    "reported": 0.9886,
+    "rescored": 0.9886,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division_elo",
+    "metric": "finish",
+    "reported": 0.68009,
+    "rescored": 0.68009,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division_elo",
+    "metric": "round_given_fin",
+    "reported": 1.06833,
+    "rescored": 1.06833,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division_elo",
+    "metric": "bin7",
+    "reported": 1.69789,
+    "rescored": 1.69788,
+    "abs_diff": 1e-05
+   },
+   {
+    "model": "base_division_elo",
+    "metric": "joint",
+    "reported": 2.22794,
+    "rescored": 2.22793,
+    "abs_diff": 1e-05
+   },
+   {
+    "model": "base_division_elo",
+    "metric": "winner",
+    "reported": 0.67983,
+    "rescored": 0.67982,
+    "abs_diff": 1e-05
+   },
+   {
+    "model": "base_division_elo",
+    "metric": "winner_acc",
+    "reported": 0.55033,
+    "rescored": 0.55033,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "base_division_elo",
+    "metric": "method_given_winner",
+    "reported": 0.99006,
+    "rescored": 0.99006,
+    "abs_diff": 0.0
+   },
+   {
+    "model": "props_subset_S",
+    "metric": "method3",
+    "reported": 0.94225,
+    "rescored": 0.94369,
+    "abs_diff": 0.00144
+   },
+   {
+    "model": "props_subset_S",
+    "metric": "finish",
+    "reported": 0.65905,
+    "rescored": 0.66161,
+    "abs_diff": 0.00256
+   },
+   {
+    "model": "props_subset_S",
+    "metric": "round_given_fin",
+    "reported": 1.05383,
+    "rescored": 1.05111,
+    "abs_diff": 0.00272
+   },
+   {
+    "model": "props_subset_S",
+    "metric": "joint",
+    "reported": 2.07895,
+    "rescored": 2.07871,
+    "abs_diff": 0.00024
+   },
+   {
+    "model": "props_subset_SM",
+    "metric": "method3",
+    "reported": 0.93669,
+    "rescored": 0.93813,
+    "abs_diff": 0.00144
+   },
+   {
+    "model": "props_subset_SM",
+    "metric": "finish",
+    "reported": 0.65558,
+    "rescored": 0.65794,
+    "abs_diff": 0.00236
+   },
+   {
+    "model": "props_subset_SM",
+    "metric": "round_given_fin",
+    "reported": 1.05366,
+    "rescored": 1.05097,
+    "abs_diff": 0.00269
+   },
+   {
+    "model": "props_subset_SM",
+    "metric": "joint",
+    "reported": 2.03661,
+    "rescored": 2.03823,
+    "abs_diff": 0.00162
+   },
+   {
+    "model": "props_subset_market",
+    "metric": "method3",
+    "reported": 0.92198,
+    "rescored": 0.92461,
+    "abs_diff": 0.00263
+   },
+   {
+    "model": "props_subset_market",
+    "metric": "finish",
+    "reported": 0.64544,
+    "rescored": 0.64862,
+    "abs_diff": 0.00318
+   },
+   {
+    "model": "props_subset_market",
+    "metric": "round_given_fin",
+    "reported": 1.05389,
+    "rescored": 1.05071,
+    "abs_diff": 0.00318
+   },
+   {
+    "model": "props_subset_market",
+    "metric": "joint",
+    "reported": 2.01603,
+    "rescored": 2.01872,
+    "abs_diff": 0.00269
+   },
+   {
+    "model": "props_subset_blend",
+    "metric": "method3",
+    "reported": 0.92003,
+    "rescored": 0.92214,
+    "abs_diff": 0.00211
+   },
+   {
+    "model": "props_subset_blend",
+    "metric": "finish",
+    "reported": 0.6443,
+    "rescored": 0.64708,
+    "abs_diff": 0.00278
+   },
+   {
+    "model": "props_subset_blend",
+    "metric": "round_given_fin",
+    "reported": 1.05017,
+    "rescored": 1.04716,
+    "abs_diff": 0.00301
+   },
+   {
+    "model": "props_subset_blend",
+    "metric": "joint",
+    "reported": 2.00925,
+    "rescored": 2.01142,
+    "abs_diff": 0.00217
+   }
+  ],
+  "max_abs_diff_vs_reported": 0.00318,
+  "seconds": 2.2,
+  "market_json_built": "2026-11-06T11:25:11+00:00"
+ },
+ "market_drift": {
+  "methodround_used": "2026-11-06T10:01:22+00:00",
+  "on_disk": "2026-11-06T11:25:11+00:00",
+  "2024plus": {
+   "moneyline_added": 1,
+   "moneyline_changed": 21,
+   "moneyline_changed_gt_2pts": 0,
+   "method6_added": 17,
+   "method6_changed": 0
+  },
+  "2013_2023": {
+   "moneyline_added": 10,
+   "moneyline_changed": 811,
+   "moneyline_changed_gt_2pts": 12,
+   "method6_added": 30,
+   "method6_changed": 0
+  },
+  "note": "S and base rates do not use market data; SM and the market rows in methodround.json are pinned to the 10:01 build"
  }
 }

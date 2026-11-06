@@ -71,7 +71,7 @@ Decayed sums: 5.1 landed and 4.5 absorbed per minute, 49% accuracy. Of his attem
 - https://bloodyelbow.com/2025/06/21/jamahal-hill-vs-khalil-rountree-jr-ufc-baku-result-light-heavyweights-go-the-distance-on-sleepy-night-in-baku
 - https://bloodyelbow.com/2025/07/02/jamahal-hill-finally-breaks-his-silence-on-third-straight-ufc-loss-with-brutally-honest-self-criticism
 - https://www.cbssports.com/mma/news/ufc-311-results-highlights-jiri-prochazka-powers-past-jamahal-hill-with-late-tko-in-grueling-battle/
-- https://www.ufc.com/athlete/jamahal-hill
+- https://www.ufc.com/athlete/jamahal-hill (not fetched; ufc.com returns 403 to scripts)
 - http://ufcstats.com/fighter-details/5444c5a201d3ee5a; data/derived/fighters.json
 - https://heavy.com/sports/ufc/jamahal-hill-injury-update-return-date/ (knee cartilage transplant, return target)
 - https://mmajunkie.usatoday.com/story/sports/ufc/2025/10/28/ufc-jamahal-hill-knee-surgery-time-off/86941527007/ (headline only)

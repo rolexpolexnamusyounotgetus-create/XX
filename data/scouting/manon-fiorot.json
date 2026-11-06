@@ -3,18 +3,27 @@
   "name": "Manon Fiorot",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Top flyweight contender coming off a loss. She lost 28-29 x3 to Alexa Grasso at Noche UFC (Sep 12, 2026, Glendale) after being knocked down in R1. Before that she stopped Jasmine Jasudavicius with ground punches at 1:14 of R1 (Oct 18, 2025, Vancouver) and lost a 47-48 x3 decision to Valentina Shevchenko for the flyweight title (UFC 315, May 10, 2025, Montreal). Her UFC record is 8-2, and both losses are decisions. The dataset has Natalia Silva winning a women's flyweight title bout over Wang Cong at UFC 332 (Oct 3, 2026). Fiorot's ranking, next booking and any injuries could not be checked on the web this session.",
+    "summary": "No. 3 women's flyweight contender coming off a loss. She lost 28-29 x3 to Alexa Grasso in a bout billed as a title eliminator at Noche UFC (Sep 12, 2026, Glendale) after being knocked down in R1. Before that she stopped Jasmine Jasudavicius with ground punches at 1:14 of R1 (Oct 18, 2025, Vancouver) and lost a 47-48 x3 decision to Valentina Shevchenko for the flyweight title (UFC 315, May 10, 2025, Montreal). Natalia Silva won the vacant title over Wang Cong at UFC 332 (Oct 3, 2026). Nothing is booked and no injury has been reported as of Nov 6, 2026 (UFCalendar; no news item about her since the Grasso fight was found). Pro MMA record 13-3 (Wikipedia, ESPN, UFCalendar); UFC 8-2, both losses decisions. Age 36, from Nice, France.",
     "title": null,
-    "ranking": null,
+    "ranking": "#3 women's flyweight and #7 women's pound-for-pound (UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org on Nov 5-6; ufc.com itself not fetched). UFC's algorithmic Meta rankings (Oct 31, 2026) have her #4.",
     "active": true,
     "next_fight": null,
-    "injuries": null,
+    "injuries": [],
     "sources": [
       "http://ufcstats.com/fighter-details/34ff304266360297",
       "http://ufcstats.com/fight-details/d9712b45c094730e",
       "http://ufcstats.com/fight-details/c82acd7b17915591",
       "http://ufcstats.com/fight-details/9e9d1764a015f313",
       "http://ufcstats.com/fight-details/3f804eec9183e597",
+      "https://en.wikipedia.org/wiki/Manon_Fiorot (revision of Oct 18, 2026; record 13-3)",
+      "https://www.ufcalendar.com/fighters/manon-fiorot (no next fight booked, Nov 6, 2026)",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4608674 (record 13-3-0, stance Orthodox)",
+      "https://www.ufcalendar.com/rankings/womens-flyweight",
+      "https://ufcrankings.org/womens-flyweight/",
+      "https://www.ufcalendar.com/rankings/womens-pound-for-pound",
+      "https://ufcrankings.org/womens-pound-for-pound/",
+      "https://www.sherdog.com/news/articles/Matches-to-make-after-UFC-332-Natalia-Silva-vs-Alexa-Grasso-leads-the-list-203051 (Oct 3, 2026)",
+      "https://www.espn.com/mma/story/_/id/49921811/grasso-takes-fiorot-stay-ufc-title-picture-silva-taps-delgado",
       "data/derived/fighters.json"
     ]
   },
@@ -64,18 +73,22 @@
     "spinning": 0.0,
     "knee": 0.12,
     "elbow": 0.02,
-    "notes": "Weights follow the schema example and src/director.js: head moves sum to 1, body to 1, legs to 1; spinning, knee and elbow are separate rates for specials. Target split from fighters.json: time-decayed significant attempts are 83.6% head, 12.1% body, 4.2% legs (landed 67.1/24.2/8.7); career attempts 82.6/12.2/5.2 (landed 65.4/23.3/11.3); women's flyweight league 77.3/14.0/8.7. She throws to the head more than the division, but her body strikes land so often that they make up a quarter of what she lands. No web scouting source could be read this session, so the split inside each group is a judgment. The jab and straight lead the head group for a volume puncher. Her karate background (recalled, not verified) gives her head kicks a small share. Body kicks lead the body group as a judgment; vs Grasso at least 17 of her 19 body strikes came at distance (she landed only 2 in the clinch and none on the ground). knee 0.12 reflects the clinch body work vs Shevchenko (29 of 33 clinch strikes, 35 of 37 to the body), which ufcstats does not split by technique. Legs are split evenly because calf vs inside cannot be told apart. Medium-low confidence."
+    "notes": "Weights follow the schema example and src/director.js: head moves sum to 1, body to 1, legs to 1; spinning, knee and elbow are separate rates for specials. Target split from fighters.json: time-decayed significant attempts are 83.6% head, 12.1% body, 4.2% legs (landed 67.1/24.2/8.7); career attempts 82.6/12.2/5.2 (landed 65.4/23.3/11.3); women's flyweight league 77.3/14.0/8.7. She throws to the head more than the division, but her body strikes land so often that they make up a quarter of what she lands. No published technique breakdown was found (re-checked Nov 6, 2026), so the split inside each group is a judgment. The jab and straight lead the head group for a volume puncher. Her karate background (black belt and a French national-team place before MMA, per Wikipedia) gives her head kicks a small share. Body kicks lead the body group as a judgment; vs Grasso at least 17 of her 19 body strikes came at distance (she landed only 2 in the clinch and none on the ground). knee 0.12 reflects the clinch body work vs Shevchenko (29 of 33 clinch strikes, 35 of 37 to the body), which ufcstats does not split by technique. Legs are split evenly because calf vs inside cannot be told apart. Medium-low confidence."
   },
   "appearance": {
-    "build": "5 ft 7 in with a 65 in reach (ufcstats): tall for flyweight but short-armed for her height; visibly muscular (recalled; her ufcstats nickname is 'The Beast')",
-    "hair": "dark hair, usually tied back or braided for fights (recalled; check)",
+    "build": "5 ft 7 in with a 65 in reach (ufcstats): tall for flyweight but short-armed for her height; very lean and muscular, with sharply defined shoulders and abdominals in 2025-26 studio photos; nickname 'The Beast' (ufcstats)",
+    "hair": "long, wavy dark-blonde hair with a centre parting, worn loose in studio photos; for fights, tight braids gathered into two knots at the back (Noche UFC photo, Sep 2026)",
     "facial_hair": "none",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "notes": "Height, reach and nickname are from ufcstats. Build detail, hair and skin are recalled from widely published fight photos and were not re-checked this session (no web or image host was reachable). Tattoos and kit were not sourced.",
+    "tattoos": "none visible on the arms, shoulders, abdomen or legs (ESPN studio cutouts, May 2025 and Sep 2026)",
+    "kit": "black UFC Venum set with knee-length compression-style shorts (ESPN cutout, Sep 2026, and the Noche UFC fight photo); the white Venum studio set in May 2025. The corner colour wins in the sim",
+    "notes": "No likeness sheet exists for her. Checked on Nov 6, 2026 against the ESPN headshot and full-body cutout (files dated Sep 10, 2026), the earlier ESPN cutout (May 8, 2025) and ESPN's lead photo from the Grasso fight (Sep 13, 2026). The first pass recalled 'dark hair'; the photos show dark-blonde hair. Light skin with freckles.",
     "sources": [
-      "http://ufcstats.com/fighter-details/34ff304266360297"
+      "http://ufcstats.com/fighter-details/34ff304266360297",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4608674.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4608674.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4608674.png",
+      "https://a.espncdn.com/photo/2026/0913/r1715675_1296x729_16-9.jpg (Grasso vs Fiorot, lead image of the ESPN story)"
     ]
   },
   "engine_notes": [

@@ -1,12 +1,12 @@
 # Steve Garcia: scouting dossier
 
-As of 2026-11-06. He/him. Southpaw, 6 ft 0 in, 75 in reach, born 1992-05-22 (age 34). Fights out of Jackson-Wink MMA, Albuquerque, New Mexico. Nickname "Mean Machine". UFC record 8-3 (ufcstats); pro record 19-6.
+As of 2026-11-06. He/him. Southpaw, 6 ft 0 in, 75 in reach, born 1992-05-22 (age 34). Fights out of Jackson-Wink MMA, Albuquerque, New Mexico. Nickname "Mean Machine". UFC record 8-3 (ufcstats); pro record 19-6 (ESPN, UFCalendar, ufcrankings.org).
 
 ## Current status
 
 - **Last fight:** KO loss to Diego Lopes at 2:42 of round 2, UFC Freedom 250, on the White House South Lawn, Jun 14, 2026. It ended a seven-fight winning streak (six stoppages).
-- **Next:** vs former interim champion Yair Rodriguez at UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas. Garcia confirmed the bout on Instagram and MMA Mania reported it; no UFC release was found. Rodriguez has not fought since April 2025.
-- **Ranking:** #14 featherweight (cited by MMA Mania).
+- **Next:** vs former interim champion Yair Rodriguez at UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas. MMA Mania reported it on Nov 5 from Garcia's own Instagram, and Wikipedia's Rodriguez article lists it. As of Nov 6 it is not on the ESPN, Sherdog or UFCalendar UFC 335 cards and no UFC release was found, so treat it as likely but unconfirmed. Rodriguez has not fought since April 2025.
+- **Ranking:** No. 10 featherweight in the UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org (ufc.com returns 403 to scripts). He is No. 14 on the UFC's algorithmic Meta board of Oct 31, which is where MMA Mania's "No. 14" comes from.
 - **Injuries:** None reported in the sources found.
 
 ## Recent fights
@@ -46,6 +46,18 @@ Durability is the main question: six knockdowns in 68 UFC minutes. On cardio he 
 
 Elo 1620. Decayed significant strikes: 5.9 landed and 2.1 absorbed per minute. Target split of landed strikes: 73% head, 16% body, 12% leg. 79% of landed strikes come at distance and 17% on the ground. He knocks opponents down 1.7 times per 15 minutes and is knocked down 1.0 time per 15 minutes. Both numbers are high, so his fights should run short and swing either way.
 
+## Appearance
+
+Checked on Nov 6, 2026 against ESPN's headshot and right-stance cutout (files dated Jun 11, 2026) and left-stance cutout (Oct 30, 2025). No likeness sheet exists for him yet.
+
+- **Hair:** dark brown to black, a very short buzz cut with faded sides.
+- **Facial hair:** light stubble on the chin, jaw and upper lip.
+- **Skin:** light-medium (forehead #f0b8a2, nose bridge #e4a38d under studio light).
+- **Ears:** both heavily cauliflowered.
+- **Tattoos:** none visible on the chest, arms or legs (front view only).
+- **Kit:** black UFC (Venum) shorts with a grey-and-white slash pattern (2025 shoot); navy stars-and-stripes shorts and blue "Freedom 250" gloves for the White House card (one-off). In the sim the corner colour decides.
+- **Build:** 6 ft 0 in, 75 in reach; lean and long-limbed.
+
 ## Sources
 
 - ufcstats profile: http://ufcstats.com/fighter-details/97cf1a2c7c5e7889 (via data/derived/fighters.json, snapshot 2026-10-31)
@@ -62,3 +74,9 @@ Elo 1620. Decayed significant strikes: 5.9 landed and 2.1 absorbed per minute. T
 - https://en.wikipedia.org/wiki/Steve_Garcia
 - https://www.ufc.com/athlete/steve-garcia
 - https://www.pressreader.com/usa/albuquerque-journal/20200705/282291027517776
+- https://www.ufcalendar.com/rankings/featherweight and https://ufcrankings.org/featherweight/ (media panel Nov 3; Meta board Oct 31)
+- https://www.ufcalendar.com/fighters/steve-garcia (record; no booking listed yet)
+- https://www.espn.com/mma/fighter/_/id/3023804/steve-garcia (record)
+- https://www.sherdog.com/events/UFC-335-Oliveira-vs-Lopes-114294 and https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261212 (UFC 335 cards without the bout, Nov 6)
+- https://en.wikipedia.org/wiki/Yair_Rodr%C3%ADguez (lists the UFC 335 bout)
+- https://a.espncdn.com/i/headshots/mma/players/full/3023804.png, .../stance/left/3023804.png, .../stance/right/3023804.png (appearance)

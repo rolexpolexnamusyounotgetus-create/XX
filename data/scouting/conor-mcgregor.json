@@ -3,21 +3,30 @@
   "name": "Conor McGregor",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC featherweight and lightweight champion. He came back from a five-year layoff to fight Max Holloway at UFC 329 (Jul 11, 2026, Las Vegas; filed at welterweight) and lost by TKO at 1:09 of R1 after injuring his leg. ufcstats records the result as 'McGregor knee injury'; coverage cited in the Holloway dossier says he buckled his right leg throwing a kick. That was his first fight since he broke down at the end of R1 against Dustin Poirier at UFC 264 (Jul 10, 2021, doctor's stoppage). He has lost four of his last five UFC fights. The Holloway dossier cites UFCalendar saying both men have talked about a third fight; nothing is booked in the dataset. The diagnosis, treatment, retirement status and future plans could not be checked on the web this session.",
+    "summary": "Former UFC featherweight and lightweight champion, out injured until 2027. In his first fight in five years he tore the ACL and meniscus in his right knee landing from a jumping kick in the opening exchange against Max Holloway at UFC 329 (Jul 11, 2026, Las Vegas, filed at welterweight); the fight was stopped at 1:09 of R1 and goes down as a TKO loss. He had the knee repaired in early August 2026 (statement Aug 7), and Dana White put his likely return at about July 2027. On Nov 5, 2026 he said he has one fight left on his UFC contract, that it will be his last UFC fight, and that he then plans to move to bare-knuckle fighting (he bought a stake in BKFC in 2024) rather than retire. No opponent or date is booked; he and Holloway have both talked about a third fight. He is unranked. Earlier, an 18-month suspension for three missed anti-doping whereabouts filings in 2024 ran until March 2026. He has lost four of his last five UFC fights. Pro MMA record 22-7 (Wikipedia, UFCalendar); UFC 10-5. Age 38.",
     "title": null,
-    "ranking": null,
-    "active": null,
+    "ranking": "Unranked: not in the UFC welterweight or lightweight top 15 (media-panel rankings of Nov 3, 2026, as mirrored by ufcrankings.org on Nov 5; UFCalendar shows no ranking)",
+    "active": false,
     "next_fight": null,
     "injuries": [
-      { "what": "Right leg/knee injury throwing a kick early in R1 at UFC 329; the fight was stopped at 1:09 (ufcstats: 'McGregor knee injury'). Diagnosis, surgery and recovery timeline were not verified this session.", "when": "2026-07", "source": "http://ufcstats.com/fight-details/989760fa75321d69" },
-      { "what": "Leg injury at the end of R1 vs Poirier, ended by doctor's stoppage (ufcstats). Widely reported as a fractured left lower leg (recalled; not re-checked this session).", "when": "2021-07", "source": "http://ufcstats.com/fight-details/7d0ce28ce8a77eb1" }
+      { "what": "Torn ACL and meniscus, right knee, from a jumping kick early in R1 at UFC 329 (stopped at 1:09). He confirmed the diagnosis on Jul 19, had surgery in early Aug 2026 (statement Aug 7, Fox News) and is expected back around Jul 2027 (Dana White, via The Independent).", "when": "2026-07", "source": "https://sports.yahoo.com/articles/conor-mcgregor-confirms-injury-diagnosis-161428138.html" },
+      { "what": "Broken lower tibia after rolling his ankle at the end of R1 vs Poirier at UFC 264, ended by doctor's stoppage (Wikipedia; the side is not stated in the text read and is recalled as the left leg)", "when": "2021-07", "source": "https://en.wikipedia.org/wiki/Conor_McGregor" },
+      { "what": "Torn ACL in the first Holloway fight (UFC Fight Night 26), out about ten months; he says the 2026 injury is the same one on the opposite leg", "when": "2013-08", "source": "https://en.wikipedia.org/wiki/Conor_McGregor" }
     ],
     "sources": [
       "http://ufcstats.com/fighter-details/f4c49976c75c5ab2",
       "http://ufcstats.com/fight-details/989760fa75321d69",
       "http://ufcstats.com/fight-details/7d0ce28ce8a77eb1",
+      "https://en.wikipedia.org/wiki/Conor_McGregor (revision of Nov 4, 2026; record 22-7; suspension; injuries)",
+      "https://www.ufcalendar.com/fighters/conor-mcgregor (no next fight booked, Nov 6, 2026)",
+      "https://sports.yahoo.com/articles/conor-mcgregor-confirms-injury-diagnosis-161428138.html (Jul 19, 2026)",
+      "https://www.foxnews.com/sports/conor-mcgregor-surgery-torn-acl-vows-comeback-knee-repaired-thank-you-god (Aug 7, 2026)",
+      "https://www.independent.co.uk/sport/ufc/conor-mcgregor-next-fight-injury-record-2027-b3022382.html (Jul 27, 2026)",
+      "https://www.mmafighting.com/ufc/519031/conor-mcgregor-touts-star-power-promises-to-sell-final-fight-when-he-returns-from-injury (Nov 1, 2026)",
+      "https://www.sherdog.com/news/news/Conor-McGregor-plans-bareknuckle-move-after-final-UFC-contract-fight-203507 (Nov 5, 2026)",
+      "https://ufcrankings.org/welterweight/",
+      "https://ufcrankings.org/lightweight/",
       "https://www.espn.com/mma/story/_/id/49308315/ufc-329-live-results-analysis-conor-mcgregor-vs-max-holloway-2",
-      "https://athlonsports.com/mma/ufc-329-conor-mcgregor-max-holloway-fight-ends-devastating-injury-tko",
       "https://www.ufcalendar.com/fighters/max-holloway",
       "research/fighters/max-holloway.md",
       "data/derived/fighters.json"
@@ -28,17 +37,17 @@
     "stance": "southpaw",
     "tags": ["southpaw", "counter", "power", "fast-starter", "rangy"],
     "signature": [
-      "the counter left hand: knocked out Jose Aldo with one punch at 0:13 of R1 for the featherweight title (UFC 194, 2015); that it was a counter is recalled, and ufcstats records 'Punch to Head At Distance'",
+      "the left hand: knocked out Jose Aldo with a left hook at 0:13 of R1 for the featherweight title (UFC 194, 2015; Wikipedia, and ufcstats records 'Punch to Head At Distance'); that it was thrown as a counter is recalled",
       "one-punch power: 13 knockdowns in 15 UFC fights, including three each against Eddie Alvarez (UFC 205, lightweight title) and Nate Diaz (UFC 202)",
       "leg kicks to Diaz's lead leg in the rematch: 40 of 45 leg strikes landed (UFC 202)",
       "body work in the featherweight run: 15 of 30 body strikes vs Chad Mendes, 12 of 16 vs Dennis Siver",
-      "a 40-second finish of Donald Cerrone: 3 of 3 clinch strikes and a knockdown, then ground punches (the shoulder strikes and head kick are recalled from footage)"
+      "a 40-second finish of Donald Cerrone: 3 of 3 clinch strikes and a knockdown, then ground punches; the record lists it as TKO by head kick and punches (Wikipedia, citing Sherdog); the clinch shoulder strikes are recalled from footage"
     ],
     "weaknesses": [
       "wrestling and top control: Khabib Nurmagomedov landed 3 of 7 takedowns, held 12:14 of control and finished with a rear-naked choke in R4 (UFC 229); Mendes held 5:19 of control; opponents average 250 s of control per 15 min against him career (lightweight league 171)",
       "calf kicks: Poirier landed 18 of 21 leg strikes before the R2 KO at UFC 257 (2021)",
       "submitted twice by rear-naked choke (Diaz R2 2016, Khabib R4 2018)",
-      "two fight-ending leg injuries: the doctor's stoppage at UFC 264 (2021) and the knee injury at UFC 329 (2026)",
+      "two fight-ending leg injuries: a broken lower tibia at UFC 264 (2021) and a torn right ACL and meniscus at UFC 329 (2026), on top of a torn ACL in 2013",
       "inactivity and form: one fight (69 seconds) since Jul 2021, 1-4 in his last five UFC fights, age 38"
     ],
     "summary": "A southpaw counter-puncher with rare one-punch power. His left hand produced most of his eight UFC knockouts (which hand is recalled; ufcstats does not record it), five of them in the first round. His long reach and kicking range back it up. He has struggled whenever a fight turned into a wrestling match or a calf-kick battle. He has barely fought since 2021, and both of his last two fights ended with his own leg injuries.",
@@ -54,7 +63,8 @@
       "http://ufcstats.com/fight-details/eed6c9aff2234b7a",
       "http://ufcstats.com/fight-details/3eea92e7f26fb05b",
       "http://ufcstats.com/fight-details/3d3e7dc7b4bf2bc4",
-      "http://ufcstats.com/fight-details/4ace70bff9debdfb"
+      "http://ufcstats.com/fight-details/4ace70bff9debdfb",
+      "https://en.wikipedia.org/wiki/Conor_McGregor"
     ]
   },
   "moves": {
@@ -72,18 +82,22 @@
     "spinning": 0.05,
     "knee": 0.03,
     "elbow": 0.02,
-    "notes": "Weights follow the schema example and src/director.js: head moves sum to 1, body to 1, legs to 1; spinning, knee and elbow are separate rates for specials. He is a southpaw, so 'cross' here is the rear left straight and 'hook' the lead right hook. src/director.js MOVE_TXT names these 'right hand' and 'left hook', so the page text needs a stance flip. Target split from fighters.json: career significant attempts are 78.8% head, 13.1% body, 8.2% legs (landed 69.9/17.0/13.0), close to the lightweight league (76.6/14.7/8.7). The time-decayed split (80.6/12.0/7.4) rests on only 5.8 minutes. No web scouting source could be read this session. The cross gets the largest head share because his KOs are built on the left hand (Aldo, Mendes, Alvarez, Siver are all 'Punch to Head At Distance' in ufcstats; the hand is recalled). Head kick gets 0.10 because of the recalled head kick vs Cerrone. Body kicks lead the body group because front and teep kicks to the body are a recalled staple. The body straight reflects 15 of 30 body strikes vs Mendes. Legs are split evenly; ufcstats does not separate calf from inside kicks, and his recalled oblique kicks to the knee have no director move. spinning 0.05 reflects recalled spinning kicks; knee and elbow are small. Low confidence."
+    "notes": "Weights follow the schema example and src/director.js: head moves sum to 1, body to 1, legs to 1; spinning, knee and elbow are separate rates for specials. He is a southpaw, so 'cross' here is the rear left straight and 'hook' the lead right hook. src/director.js MOVE_TXT names these 'right hand' and 'left hook', so the page text needs a stance flip. Target split from fighters.json: career significant attempts are 78.8% head, 13.1% body, 8.2% legs (landed 69.9/17.0/13.0), close to the lightweight league (76.6/14.7/8.7). The time-decayed split (80.6/12.0/7.4) rests on only 5.8 minutes. The cross gets the largest head share because his KOs are built on the left hand (Aldo, Mendes, Alvarez, Siver are all 'Punch to Head At Distance' in ufcstats; Wikipedia gives the Aldo KO as a left hook, and the hand in the others is recalled). Head kick gets 0.10 because the Cerrone finish is recorded as TKO by head kick and punches (Wikipedia, citing Sherdog), and the UFC 329 injury came from a jumping kick. Body kicks lead the body group because front and teep kicks to the body are a recalled staple. The body straight reflects 15 of 30 body strikes vs Mendes. Legs are split evenly; ufcstats does not separate calf from inside kicks, and his recalled oblique kicks to the knee have no director move. spinning 0.05 reflects recalled spinning kicks; knee and elbow are small. Low confidence."
   },
   "appearance": {
-    "build": "5 ft 9 in with a 74 in reach (ufcstats), long-armed for his height; has fought at 145, 155 and 170 lb (UFC 329 was filed at welterweight)",
-    "hair": "short dark-brown hair; style varies (recalled; check)",
-    "facial_hair": "full reddish beard in most fights since the mid-2010s; length varies (recalled; check)",
+    "build": "5 ft 9 in with a 74 in reach (ufcstats), long-armed for his height; has fought at 145, 155 and 170 lb (UFC 329 was filed at welterweight); lean and muscular in Jul 2026 photos",
+    "hair": "short brown hair, faded at the sides and longer on top, swept back (ESPN headshot, Jul 2026); at UFC 329 the sides were clipped close under a short spiky top; receding at the temples",
+    "facial_hair": "full beard of medium length, reddish brown with lighter ginger tones (ESPN headshot and UFC 329 photo, Jul 2026)",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "notes": "Height and reach are from ufcstats. Hair, beard and skin are recalled from widely published fight photos and were not re-checked this session (no web or image host was reachable). Tattoos and kit were not sourced, so both are left unknown.",
+    "tattoos": "heavily tattooed torso: a large chest piece of a crowned gorilla eating a heart (black and grey with red, spiky black rays out to both shoulders); a crown at the base of the throat; McGREGOR in large capitals across the upper abdomen with a tiger below it on the stomach; on the left forearm a dagger through a heart with other traditional-style pieces and script (ESPN headshot and cutout, Jul 2026; ESPN cutout, Jul 2021)",
+    "kit": "custom green UFC Venum fight shorts, a long compression cut with a Celtic-knot print and green, white and orange Irish-tricolour stripes on one leg (ESPN cutout, Jul 2026; the green Celtic print shows in the UFC 329 fight photo); in 2021, green Venum shorts with CONOR on the leg. The corner colour wins in the sim",
+    "notes": "No likeness sheet exists for him. Checked on Nov 6, 2026 against the ESPN headshot and full-body cutout (files dated Jul 9, 2026), the ESPN cutout of Jul 8, 2021, and ESPN's lead photo from UFC 329 (Jul 12, 2026). McGREGOR reads correctly, so the cutouts are not mirrored and left/right are his own. Meaning of individual tattoos is not sourced; the back was not visible.",
     "sources": [
-      "http://ufcstats.com/fighter-details/f4c49976c75c5ab2"
+      "http://ufcstats.com/fighter-details/f4c49976c75c5ab2",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3022677.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3022677.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/3022677.png",
+      "https://a.espncdn.com/photo/2026/0712/r1688160_1296x729_16-9.jpg (UFC 329, lead image of the ESPN story above)"
     ]
   },
   "engine_notes": [
@@ -92,7 +106,7 @@
     { "note": "Time-decayed sums cover only 5.8 minutes, so his engine rates are mostly priors plus 2013-2021 career data. fighters.json files him at Welterweight because UFC 329 is his only fight in the 3 years before the snapshot; 7 of his 15 UFC fights were at featherweight and 4 each at lightweight and welterweight.", "source": "data/derived/fighters.json (S, divisions, division note)" },
     { "note": "Grappling defence: his takedown defence is 67% career (lightweight league 64%), but opponents average 250 s of control per 15 min against him (league 171). Elite wrestlers (Khabib, Mendes) controlled him for long spells.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
     { "note": "Chin: only 1 knockdown absorbed in 15 UFC fights (0.27 per 100 head strikes absorbed). His two KO/TKO losses in ko_losses are Poirier at UFC 257 (after 18 leg strikes) and the UFC 329 injury stoppage; the UFC 264 doctor's stoppage is excluded.", "source": "data/derived/fighters.json" },
-    { "note": "Form and health: 1-4 in his last five UFC fights, one 69-second fight since Jul 2021, and leg injuries ended both of his last two fights. The engine should discount his career rates heavily.", "source": "data/raw/ufc_fight_results.csv" }
+    { "note": "Form and health: 1-4 in his last five UFC fights and one 69-second fight since Jul 2021. Leg injuries ended both of his last two fights, and he had the right ACL and meniscus repaired in Aug 2026 with a return targeted for mid-2027, when he will be 39. The engine should discount his career rates heavily for any current or 2027 version.", "source": "data/raw/ufc_fight_results.csv; https://sports.yahoo.com/articles/conor-mcgregor-confirms-injury-diagnosis-161428138.html; https://www.independent.co.uk/sport/ufc/conor-mcgregor-next-fight-injury-record-2027-b3022382.html" }
   ],
   "confidence": "low"
 }

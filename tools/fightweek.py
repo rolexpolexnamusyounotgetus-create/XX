@@ -1224,7 +1224,8 @@ WEIGH_TRIG = re.compile(
     r"(?:pounds?|lbs?)\.? (?:\([^)]*\) )?over|overweight)", re.I)
 NEG_TRIG = re.compile(r"(?:successfully|eventually|later|subsequently|then) (?:made|make|hit|cut)|made (?:the )?weight|"
                       r"second attempt[^.]{0,40}(?:made|within|on weight)|on weight|within the limit|"
-                      r"made the (?:required |contracted )?(?:\w+ )?limit|on (?:his|her|their) second attempt", re.I)
+                      r"made the (?:required |contracted )?(?:\w+ )?limit|on (?:his|her|their) second attempt|"
+                      r"later,? (?:he |she )?(?:re-?)?weighed in (?:again )?at exactly", re.I)
 NUM = r"(\d+(?:\.\d+)?(?:\s?\u00bd)?|\u00bd)"
 W_RE = re.compile(r"(?:weighed in at|weighing in at|weighed at|weigh in at|came in at|coming in at|tipped the scales at|"
                   r"weighed in|weighing in|weighed)\s+(?:a\s+)?(\d{3}(?:\.\d+)?(?:\s?\u00bd)?)", re.I)
@@ -1447,7 +1448,8 @@ def date_cues(s, event_date):
         out.append((4, "fight week"))
     # explicit dates (not the event's own original date: "originally planned to take place on April 18")
     for m in re.finditer(r"\b(?:on |by |as of )?(%s) (\d{1,2})(?:st|nd|rd|th)?(?:,? (\d{4}))?\b" % MON_RE, k):
-        if EVENT_DATE_CTX.search(k[max(0, m.start() - 60):m.start()]) or \
+        ctx = k[max(0, m.start(1) - 60):m.start(1)]      # up to the month, so a leading "on" stays in the context
+        if EVENT_DATE_CTX.search(ctx) or EVENT_AT_DATE.search(ctx) or \
                 re.match(r"\s*(?:,\s*\d{4}\s*)?,?\s*(?:at|in) (?:ufc|the ufc|bellator|the event|ufc fight night|the ultimate)",
                          k[m.end():m.end() + 30]):
             continue                      # the date of an event, not of the change
@@ -1511,6 +1513,15 @@ REPL_NEAR = re.compile(r"replaced by|replace(?:d|s)? (?:him|her|them)\b|as (?:a 
                        r"(?:will|would) face|to face|faced|took on|against", re.I)
 WITHDRAW_RE = re.compile(r"\b(?:however|but|pulled out|withdr|forced|removed|out of the|injur|due to|scrapped|"
                          r"cancel|replaced|ruled out|was pulled|sidelined|illness|visa|suspend|tested positive)\b", re.I)
+EVENT_AT_DATE = re.compile(r"\b(?:at|for|to|from) (?:ufc|the ufc|ufc fight night|ufc on [a-z]+|the ultimate fighter|"
+                           r"bellator|strikeforce)\b[^,.;]{0,40}?\s+on\s*$", re.I)   # "... at UFC 151 on <date>"
+# the final pairing was moved to this event after the replacement: the change belongs to the earlier event
+# (UFC 182: Cormier replaced Gustafsson for UFC 178, then Jones-Cormier was rescheduled to UFC 182)
+MOVED_RE = re.compile(r"reschedul\w* (?:of )?the (?:pairing|bout|matchup|fight|contest)|"
+                      r"(?:pairing|bout|matchup|fight|contest) was (?:then |later |subsequently |eventually )?"
+                      r"(?:rescheduled|rebooked)\b(?! (?:to|for|on) the (?:main|prelim|preliminary|early|featured|co-main))|"
+                      r"(?:rescheduled|moved|rebooked|pushed back|shifted) (?:to|for) (?:this event|this card|the event\b|"
+                      r"ufc \d|ufc fight night|ufc on |a later (?:date|event)|the following)", re.I)
 EVENT_DATE_CTX = re.compile(r"(?:take place|took place|be held|was held|held|happen|occur|planned|scheduled|"
                             r"set|moved|postponed|rescheduled|originally|event)\s+(?:\w+\s+){0,3}(?:on|for|to)\s*$", re.I)
 
@@ -1646,6 +1657,12 @@ def parse_bout_changes(card, paras, event_date):
                     continue
                 roles = [(w, "opp_change" if booked_elsewhere(w, ib if w == ia else ia, pi) else "replacement")
                          for w in (ia, ib)]
+            newcomers = [w for w, r_ in roles if r_ == "replacement"] or [w for w, _ in roles if w not in mem]
+            fs_new = [first_sentence(info, w, txt, info["s0"] + (1 if w in mem else 0)) for w in newcomers]
+            fs_new = [x for x in fs_new if x is not None]
+            if fs_new and any(MOVED_RE.search(sents[si]) for si in range(min(fs_new) + 1, len(sents))):
+                handled = True
+                continue
             for who, role in roles:
                 if role == "opp_change" and who in mem:
                     other = ib if who == ia else ia

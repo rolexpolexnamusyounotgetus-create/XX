@@ -4,7 +4,6 @@ As of 2026-11-06. He/him. "Bones". Orthodox (switches stance), 6 ft 4 in, 84 in 
 
 **Re-check, Nov 6, 2026:** status, ranking, record, injuries and appearance were re-verified on the open web (sources at the end). Rankings come from ufcalendar.com's mirror because ufc.com returned 403.
 
-
 ## Current status
 
 - **Title:** none. He won the vacant heavyweight title at UFC 285 (Mar 4, 2023) and defended it once, at UFC 309 (Nov 16, 2024).
@@ -65,7 +64,7 @@ Career: 4.38 significant strikes landed per minute at 59% accuracy, and he absor
 - http://ufcstats.com/fight-details/8fcdfee81cc604e3 (UFC 239)
 - http://ufcstats.com/fight-details/5b9f545890407976 (UFC 235)
 - http://ufcstats.com/fight-details/ceaae1db8ccde29c (UFC 232)
-- https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/ and https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title (Freedom 250; cited in repo)
+- https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/ and https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title (Freedom 250; fetched Nov 6, 2026)
 - data/derived/fighters.json
 - https://www.mmamania.com/2025/6/21/24453444/breaking-dana-white-jon-jones-retired-tom-aspinall-now-ufc-undisputed-heavyweight-champion (retirement, Jun 21, 2025)
 - https://sports.yahoo.com/mma/breaking-news/article/jon-jones-requests-his-ufc-release-in-scathing-response-to-dana-white-no-more-spins-no-more-games-203859527.html (release request, Mar 9, 2026)

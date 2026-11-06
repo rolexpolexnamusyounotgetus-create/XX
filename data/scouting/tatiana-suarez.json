@@ -3,13 +3,30 @@
   "name": "Tatiana Suarez",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Strawweight contender who has won two straight since losing a five-round decision to Zhang Weili for the title at UFC 312 (Feb 8, 2025; 49-46, 49-46, 49-45). She beat Amanda Lemos 29-28 x3 at Noche UFC (Sep 13, 2025) and choked out Loopy Godinez with a rear-naked choke at 2:29 of round 2 at UFC 327 in Miami (Apr 11, 2026). She is 9-1 in the UFC, counting her TUF 23 final win. The strawweight champion is Mackenzie Dern (won at UFC 321, Oct 25, 2025; defended at UFC 330, Aug 15, 2026). Her ranking, next booking and injuries could not be checked on the web in this pass: the shared search budget was spent and direct page fetches were blocked.",
+    "summary": "Strawweight contender who fights Virna Jandiroba on Sat Nov 7, 2026, the day after this file's as_of date, in the co-main event of UFC Vegas 124 (UFC Fight Night 293: Cortes-Acosta vs. Walker) at Meta APEX, Las Vegas; it is their third booking after cancelled dates in 2023 (Jandiroba knee) and 2024 (Suarez health issue). She says a win should earn her a shot at champion Mackenzie Dern. She has won two straight since losing a five-round decision to Zhang Weili for the title at UFC 312 (Feb 8, 2025): a 29-28 x3 decision over Amanda Lemos at Noche UFC (Sep 13, 2025) and a second-round rear-naked choke of Loopy Godinez at UFC 327 (Apr 11, 2026). Pro record 12-1 (Wikipedia, MMA Junkie; ESPN and ufcrankings.org list 13-1); UFC 9-1 counting the TUF 23 final. No result from the Nov 6 weigh-ins was found at the time of this check (ufc.com returned 403 to scripts); no injury was reported this camp.",
     "title": null,
-    "ranking": null,
+    "ranking": "#2 women's strawweight and #8 women's pound-for-pound (official UFC media-panel rankings last updated Tue Nov 3, 2026, read from the Nov 4 Wayback capture of ufc.com/rankings; the ufcrankings.org mirror of Nov 5 has the same order)",
     "active": true,
-    "next_fight": null,
-    "injuries": null,
+    "next_fight": "vs Virna Jandiroba, UFC Vegas 124 (UFC Fight Night 293), Meta APEX, Las Vegas, Sat Nov 7, 2026 (strawweight, co-main event)",
+    "injuries": [
+      {
+        "what": "unspecified health issue; withdrew from the Virna Jandiroba fight at UFC 310 (Dec 2024)",
+        "when": "2024-10",
+        "source": "https://en.wikipedia.org/w/index.php?title=Tatiana_Suarez&oldid=1381271058"
+      },
+      {
+        "what": "injury that pulled her from a UFC 266 return bout (Sep 2021) during her Jun 2019 to Feb 2023 layoff; the nature of the injuries behind the layoff was not verified",
+        "when": "2021-07",
+        "source": "https://en.wikipedia.org/w/index.php?title=Tatiana_Suarez&oldid=1381271058"
+      }
+    ],
     "sources": [
+      "https://sports.yahoo.com/articles/tatiana-suarez-wants-mackenzie-dern-070140535.html",
+      "https://sports.yahoo.com/articles/virna-jandiroba-vs-tatiana-suarez-181014624.html",
+      "https://en.wikipedia.org/w/index.php?title=Tatiana_Suarez&oldid=1381271058",
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://ufcrankings.org/",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4020435",
       "http://ufcstats.com/fighter-details/b08012bbe542592a",
       "http://ufcstats.com/fight-details/f506977877074aa6",
       "http://ufcstats.com/fight-details/9474f64347aade7a",
@@ -22,7 +39,19 @@
   "style": {
     "archetype": "wrestler",
     "stance": "southpaw",
-    "tags": ["chain-wrestling", "cage-wrestling", "clinch", "top-control", "ground-and-pound", "submissions", "guillotine", "back-takes", "body-work", "southpaw", "durable"],
+    "tags": [
+      "chain-wrestling",
+      "cage-wrestling",
+      "clinch",
+      "top-control",
+      "ground-and-pound",
+      "submissions",
+      "guillotine",
+      "back-takes",
+      "body-work",
+      "southpaw",
+      "durable"
+    ],
     "signature": [
       "guillotine choke after dropping to guard (Montana De La Rosa, 2:51 of round 2, Feb 25, 2023; Jessica Andrade, 1:31 of round 2, Aug 5, 2023)",
       "rear-naked choke after taking the back (Alexa Grasso, round 1, May 19, 2018; Loopy Godinez, round 2, UFC 327, Apr 11, 2026)",
@@ -36,7 +65,7 @@
       "easy to hit at range: opponents land 61.5% of their significant strikes on her (decayed), against a strawweight norm of 45%; Lemos out-landed her 23-20 and Godinez 18-12",
       "low striking output: 1.5 significant strikes landed per minute (decayed) against a division 4.1, and 28% head accuracy",
       "little to fall back on when the takedown fails: Zhang out-landed her 53-12 and held 10:54 of control at UFC 312",
-      "a long layoff in the record: no UFC fight between Jun 8, 2019 and Feb 25, 2023 (cause not verified in this pass); age 35"
+      "a long layoff in the record: no UFC fight between Jun 8, 2019 and Feb 25, 2023 (injuries; pulled from a 2021 return bout), plus a 2024 withdrawal for a health issue; age 35"
     ],
     "summary": "A wrestler who shoots constantly, chains attempts against the fence and wins with control, ground strikes and chokes: 5 of her 9 UFC wins are submissions. Her striking is mostly a way into the clinch. When the takedown does not come, as against Zhang Weili, she has little else. She has never been knocked down in the UFC.",
     "sources": [
@@ -69,21 +98,37 @@
   },
   "appearance": {
     "build": "5 ft 5 in with a 66 in reach (ufcstats); stocky, strong wrestler's frame",
-    "hair": "dark brown to black, usually braided for fights (not re-checked against photos in this pass)",
+    "hair": "long, medium brown with lighter caramel ends; for fights two tight Dutch braids from a centre parting (ESPN headshot from UFC Vegas 124 fight week, Nov 2026); worn loose at the UFC 327 weigh-in face-off",
     "facial_hair": "none",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "a black-line mandala-style tattoo with green shading on the front and outer right thigh, mostly just below the shorts hem; a small dark tattoo on the inside of the left ankle (shape unclear)",
+    "kit": "royal-blue Venum kit (sports bra and shorts) in both ESPN cutouts, UFC 312 (Feb 2025) and UFC Vegas 124 (Nov 2026). Corner colour wins in the sim",
+    "notes": "Checked Nov 6, 2026 (open network) against dated photos, since no photo-based likeness sheet exists (data/likeness/tatiana-suarez.json): ESPN headshot and full-body cutout (files dated Nov 5, 2026, this fight week), the Feb 5, 2025 cutout and the Cageside Press UFC 327 face-off photo (Apr 2026). Lettering reads correctly, so left/right are her own. Build is from ufcstats.",
     "sources": [
-      "http://ufcstats.com/fighter-details/b08012bbe542592a",
-      "hair, skin and build from general familiarity with widely published fight photos; not re-checked against a URL in this pass (web access unavailable)"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4020435.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4020435.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4020435.png",
+      "https://cagesidepress.com/wp-content/uploads/2026/04/Tatiana-Suarez-vs.-Loopy-Godinez.jpg",
+      "http://ufcstats.com/fighter-details/b08012bbe542592a"
     ]
   },
   "engine_notes": [
-    { "note": "Takedowns (decayed): 9.5 attempted and 3.1 landed per 15 min, against a strawweight 1.38 landed. Accuracy has fallen to 33% decayed from 46% career. Control is 447 s per 15 min decayed and 536 career, against a division 185.", "source": "data/derived/fighters.json (S, C, priors)" },
-    { "note": "Defence at range is poor: opponents land 61.5% of significant strikes on her (decayed) and 56% career, against a strawweight norm of 45%. She has absorbed no knockdowns in 10 UFC fights and has scored none.", "source": "data/derived/fighters.json" },
-    { "note": "Submission threat: 0.61 attempts per 15 min decayed against a division 0.40. Five of her 9 UFC wins are submissions: two guillotines, two rear-naked chokes and a D'Arce.", "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv" },
-    { "note": "Her round-by-round pace in 3-round fights (1.00, 1.02, 1.55; minute weights 41.5/26.9/19.6) rests on few late-round minutes, because many of her fights end in round 2. In her one 5-round fight (Zhang) she landed 1 of 15 takedowns overall; in rounds 4-5 combined she landed 4 significant strikes and 0 of 5 takedowns.", "source": "data/derived/fighters.json (pace); http://ufcstats.com/fight-details/03c2a836d033be8f" }
+    {
+      "note": "Takedowns (decayed): 9.5 attempted and 3.1 landed per 15 min, against a strawweight 1.38 landed. Accuracy has fallen to 33% decayed from 46% career. Control is 447 s per 15 min decayed and 536 career, against a division 185.",
+      "source": "data/derived/fighters.json (S, C, priors)"
+    },
+    {
+      "note": "Defence at range is poor: opponents land 61.5% of significant strikes on her (decayed) and 56% career, against a strawweight norm of 45%. She has absorbed no knockdowns in 10 UFC fights and has scored none.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Submission threat: 0.61 attempts per 15 min decayed against a division 0.40. Five of her 9 UFC wins are submissions: two guillotines, two rear-naked chokes and a D'Arce.",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv"
+    },
+    {
+      "note": "Her round-by-round pace in 3-round fights (1.00, 1.02, 1.55; minute weights 41.5/26.9/19.6) rests on few late-round minutes, because many of her fights end in round 2. In her one 5-round fight (Zhang) she landed 1 of 15 takedowns overall; in rounds 4-5 combined she landed 4 significant strikes and 0 of 5 takedowns.",
+      "source": "data/derived/fighters.json (pace); http://ufcstats.com/fight-details/03c2a836d033be8f"
+    }
   ],
   "confidence": "medium"
 }

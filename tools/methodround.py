@@ -1619,6 +1619,8 @@ def run(args):
                               "and decision props from US books on BestFightOdds, 2021+); nlbair/ufc-data closing "
                               "ranges (data/raw/odds/nlbair_odds.csv) for 2013-2018 moneylines",
             "n_fights_table": int(len(T)), "n_backtest_fights": len(fights_out),
+            "market_json_built": (json.load(open(MARKET_JSON))["meta"].get("built")
+                                  if os.path.exists(MARKET_JSON) else None),
         },
         "tuning": {"cv": tune_log, "oof_2019_2023": oof},
         "test": {"period": [TEST_FROM.isoformat(), T["date"].max().isoformat()], "n": int(ev.sum()),
@@ -1871,6 +1873,23 @@ def _md_table(head, rows):
     return "\n".join(out)
 
 
+def _market_provenance(meta):
+    """Which market.json build the market numbers use, and a warning when the file on disk is newer."""
+    used = meta.get("market_json_built")
+    if not used:
+        return (" The market.json build used is not recorded in this JSON (older run); compare with "
+                "tools/methodround_verify.py --score before relying on the market rows.")
+    txt = " Built from market.json of %s." % used
+    try:
+        now = json.load(open(MARKET_JSON))["meta"].get("built")
+        if now and now != used:
+            txt += (" market.json on disk is now %s: rerun `python3 tools/methodround.py` to refresh SM and the "
+                    "market rows." % now)
+    except (OSError, ValueError, KeyError):
+        pass
+    return txt
+
+
 def write_report(o):
     te = o["test"]
     mt = te["metrics"]
@@ -1970,7 +1989,8 @@ def write_report(o):
                             "Method given winner", "7-bin", "Joint"], rows))
         L.append("\nThe market props come from `data/derived/market.json` (tools/market.py): per-book closing "
                  "\"wins by KO/TKO / submission / decision\" prices, power-normalised and averaged over US books, "
-                 "spread over rounds with the books' \"fight ends in round k\" props. They exist from 2021 on.\n")
+                 "spread over rounds with the books' \"fight ends in round k\" props. They exist from 2021 on.%s\n"
+                 % _market_provenance(o["meta"]))
     L.append("## Calibration (held out, model S)\n")
     cs = te["calibration"]["S"]
     rows = []
@@ -2152,7 +2172,8 @@ tools/methodround_verify.py` re-runs both checks on the same folds (see the Veri
     if sm["n"]:
         dm, db = sm["paired"]["SM_minus_market"], sm["paired"]["blend_minus_market"]
         L.append("""3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta).
-   The props beat SM on the 3-class method (%s, barely significant) and clearly on method given the winner
+   The props beat SM on the 3-class method (%s, borderline: not robust to small changes in the props set)
+   and clearly on method given the winner
    (%s); finish vs decision (%s) and KO vs submission (%s) lean the same way but neither is significant on its
    own (the props price in pre-UFC records, camp news and styles the stats do not see). The model matches them
    on the finishing round (%s), and the blend is within noise of the props or better on every target (method

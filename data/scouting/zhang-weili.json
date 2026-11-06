@@ -3,13 +3,20 @@
   "name": "Zhang Weili",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former two-time UFC strawweight champion: the dataset holds 8 strawweight title fights for her (6-2). She won the belt by KO of Jessica Andrade (Aug 31, 2019), lost it to Rose Namajunas (2021), regained it from Carla Esparza at UFC 281 (Nov 12, 2022) and defended it three times. She then moved up and lost a 50-45 x3 decision to Valentina Shevchenko for the flyweight title at UFC 322 (Nov 15, 2025). That is still her last fight in the ufcstats snapshot through Oct 31, 2026. The strawweight belt passed to Mackenzie Dern, who beat Virna Jandiroba for it at UFC 321 (Oct 25, 2025) and defended it against Gillian Robertson at UFC 330 (Aug 15, 2026). Her current division, booking, ranking and health could not be checked on the web in this pass: the shared search budget was spent and direct page fetches were blocked.",
+    "summary": "Former two-time UFC strawweight champion, now the No. 1 strawweight contender. She won the belt by KO of Jessica Andrade (Aug 31, 2019), lost it to Rose Namajunas (2021), regained it from Carla Esparza at UFC 281 (Nov 12, 2022) and defended it three times, then vacated it (Oct 2025) to challenge Valentina Shevchenko for the flyweight title and lost 50-45 x3 at UFC 322 (Nov 15, 2025). That is still her last fight. She said afterwards that she was moving back to strawweight; a title fight with champion Mackenzie Dern was discussed for 2026 but did not happen (Dern defended against Gillian Robertson at UFC 330, Aug 15, 2026, and said she did not know why). No booking, injury or explanation for the year-long layoff was found as of Nov 6, 2026. Her 2020 fight with Joanna Jedrzejczyk entered the UFC Hall of Fame (fight wing) in July 2026. Pro record 26-4 (ESPN, Wikipedia); UFC 10-3 (ufcstats).",
     "title": null,
-    "ranking": null,
-    "active": null,
+    "ranking": "#1 women's strawweight contender and #3 women's pound-for-pound (official UFC media-panel rankings last updated Tue Nov 3, 2026, read from the Nov 4 Wayback capture of ufc.com/rankings; the ufcrankings.org mirror of Nov 5 has the same order)",
+    "active": true,
     "next_fight": null,
-    "injuries": null,
+    "injuries": [],
     "sources": [
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://ufcrankings.org/",
+      "https://sports.yahoo.com/articles/mackenzie-dern-clarifies-why-zhang-011420664.html",
+      "https://sports.yahoo.com/mma/article/mackenzie-dern-rips-her-own-ufc-330-title-win-i-would-not-want-to-fight-zhang-weili-feeling-the-way-i-felt-212942101.html",
+      "https://heavy.com/sports/ufc/fatima-kline-calls-out-zhang-weili/",
+      "https://en.wikipedia.org/w/index.php?title=Zhang_Weili&oldid=1381412200",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4350762",
       "http://ufcstats.com/fighter-details/1ebe20ebbfa15e29",
       "http://ufcstats.com/fight-details/7606f6b6c19f2d73",
       "http://ufcstats.com/fight-details/03c2a836d033be8f",
@@ -23,7 +30,15 @@
   "style": {
     "archetype": "all-rounder",
     "stance": "switch",
-    "tags": ["power", "switch-stance", "spinning", "ground-and-pound", "top-control", "back-takes", "fast-starter"],
+    "tags": [
+      "power",
+      "switch-stance",
+      "spinning",
+      "ground-and-pound",
+      "top-control",
+      "back-takes",
+      "fast-starter"
+    ],
     "signature": [
       "spinning back fist (KO of Joanna Jedrzejczyk at 2:28 of round 2, UFC 275, Jun 11, 2022)",
       "fast punching finish (KO of Jessica Andrade 42 s into round 1 to win the title, Aug 31, 2019)",
@@ -68,21 +83,36 @@
   },
   "appearance": {
     "build": "5 ft 4 in with a 63 in reach (ufcstats); compact and muscular",
-    "hair": "black, usually braided or tied back for fights (not re-checked against photos in this pass)",
+    "hair": "short, dark brown to black, ear-length with a side-swept fringe (not braided)",
     "facial_hair": "none",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the arms, shoulders, chest, abdomen or legs in the ESPN cutouts (Feb 2025, Nov 2025)",
+    "kit": "red Venum kit with a black scale pattern and gold Chinese medallion emblems: sports bra and short Muay Thai-cut shorts (ESPN cutouts from UFC 312, Feb 2025, and UFC 322, Nov 2025). Corner colour wins in the sim",
+    "notes": "Checked Nov 6, 2026 (open network) against dated photos, since no photo-based likeness sheet exists (data/likeness/zhang-weili.json): ESPN headshot (file dated Nov 13, 2025) and full-body cutouts (files dated Feb 5, 2025 and Nov 13, 2025; lettering reads correctly, so not mirrored). The earlier 'braided or tied back' hair note was wrong: her hair is short. She has not fought since Nov 2025, so a later look is unverified. Build is from ufcstats. Birth date: ufcstats and ESPN give Aug 13, 1989; Wikipedia gives Sep 30, 1990.",
     "sources": [
-      "http://ufcstats.com/fighter-details/1ebe20ebbfa15e29",
-      "hair, skin and build from general familiarity with widely published fight photos; not re-checked against a URL in this pass (web access unavailable)"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4350762.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4350762.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4350762.png",
+      "http://ufcstats.com/fighter-details/1ebe20ebbfa15e29"
     ]
   },
   "engine_notes": [
-    { "note": "In 5-round fights her landed rate relative to round 1 runs 1.00, 0.76, 0.80, 0.75 and 0.81 (minute weights 37/31/30/30/30). The strawweight norm is 1.00, 0.88, 1.15, 1.21 and 1.15, so she is a front-loaded striker. Some of the later drop is time spent in top control.", "source": "data/derived/fighters.json (pace, pace_w, priors)" },
-    { "note": "Grappling (decayed): 1.65 takedowns per 15 min at 52% accuracy (strawweight 1.38). Her control is 279 s per 15 min, but opponents' control is also high at 226 s, driven by Shevchenko (804 s) and Suarez (356 s). Takedown defence is 61% decayed and 64% career (12 of 33 allowed).", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
-    { "note": "Power: 3 career knockdowns, 0.47 per 100 significant head strikes landed (decayed) against a strawweight rate of 0.33. Chin: 2 knockdowns absorbed and 1 KO/TKO loss (Namajunas head kick) in 13 UFC fights.", "source": "data/derived/fighters.json" },
-    { "note": "Only 1 of her 13 UFC fights was at flyweight, the 50-45 x3 loss to Shevchenko. Her rates come from strawweight, so flyweight inputs should lean on the division prior.", "source": "data/derived/fighters.json (divisions); http://ufcstats.com/fight-details/7606f6b6c19f2d73" }
+    {
+      "note": "In 5-round fights her landed rate relative to round 1 runs 1.00, 0.76, 0.80, 0.75 and 0.81 (minute weights 37/31/30/30/30). The strawweight norm is 1.00, 0.88, 1.15, 1.21 and 1.15, so she is a front-loaded striker. Some of the later drop is time spent in top control.",
+      "source": "data/derived/fighters.json (pace, pace_w, priors)"
+    },
+    {
+      "note": "Grappling (decayed): 1.65 takedowns per 15 min at 52% accuracy (strawweight 1.38). Her control is 279 s per 15 min, but opponents' control is also high at 226 s, driven by Shevchenko (804 s) and Suarez (356 s). Takedown defence is 61% decayed and 64% career (12 of 33 allowed).",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
+    },
+    {
+      "note": "Power: 3 career knockdowns, 0.47 per 100 significant head strikes landed (decayed) against a strawweight rate of 0.33. Chin: 2 knockdowns absorbed and 1 KO/TKO loss (Namajunas head kick) in 13 UFC fights.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Only 1 of her 13 UFC fights was at flyweight, the 50-45 x3 loss to Shevchenko. Her rates come from strawweight, so flyweight inputs should lean on the division prior.",
+      "source": "data/derived/fighters.json (divisions); http://ufcstats.com/fight-details/7606f6b6c19f2d73"
+    }
   ],
   "confidence": "low"
 }

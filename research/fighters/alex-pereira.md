@@ -47,14 +47,13 @@ Decayed sums in fighters.json: 8.0 significant attempts and 4.8 landed per minut
 
 ## Appearance (for the avatar)
 
-No photo-based likeness sheet exists yet. From the ESPN/UFC studio headshot and cutouts (left cutout and headshot shot at UFC Freedom 250 fight week, Jun 2026, going by the Freedom 250 gloves; right cutout Oct 2025, UFC 320) and the Wikimedia weigh-in photo of Jun 13, 2026 in `assets/reference/alex-pereira/`:
+Copied from the photo-based likeness sheet `data/likeness/alex-pereira.json` (14 photos, 11 from 2026), which is the better source: it has colour hexes, face notes, morphs and a light heavyweight body variant. Checked against the ESPN/UFC studio photos.
 
-- **Build:** tall, long-limbed, muscular shoulders and back; visibly fuller through the torso at heavyweight (listed 251 lb) than at 205 in Oct 2025.
-- **Hair:** short black hair with a tight curl, cropped close at the sides; a little fuller on top in 2026.
-- **Facial hair:** varies. A short full black beard joined to the moustache (about 1.5-2 cm) for Freedom 250; clean-shaven to light stubble for UFC 320. The earlier "thin mustache with a short chin beard" line was not current.
-- **Skin:** medium.
-- **Tattoos:** heavily tattooed, much of it in colour: a red-orange serpent/dragon from the right shoulder across the right collarbone; a black-and-grey dragon on the left upper chest and shoulder; a large red dragon/koi-style piece across the lower chest and upper abdomen; "Kickboxing" in script across the lower abdomen; a colour Japanese-style sleeve on the right upper arm; a feather on the right forearm; black-and-grey work on the left forearm; a large black-and-grey piece on the right thigh.
-- **Kit:** vale tudo-cut compression shorts to mid-thigh rather than board shorts in both cutouts: a multicolour Brazil/indigenous-print kit (Oct 2025) and a navy-and-red US-flag Freedom 250 kit with red gloves (Jun 2026). For a standard bout use corner-colour compression shorts and black UFC gloves. At ceremonial weigh-ins he has worn a feather headdress and red face paint (Jun 2026); that is not fight kit.
+- **Two looks.** For fight week and fight night he shaves his head to about 1 mm and his face to light stubble (Jun 12-14, 2026; Apr 2024). Between camps he has dense, tight black curls of 1.5-4 cm and a short full beard (1-2 cm) with a little grey; the 2026 ESPN studio headshot shows the off-camp look. Use the fight-night look for the avatar.
+- **Build:** tall, long-limbed and heavy-boned. At heavyweight (251 lb, Jun 2026) thick and solid with a smooth midsection and thick waist; at 205 lb (2025) lean with a clear six-pack.
+- **Skin:** medium tan, warm golden-olive.
+- **Tattoos (his own sides):** right-arm near-full sleeve (coiled colour dragon over sun rays on the outer upper arm, a hexagon outline, hanging boxing gloves on the inner forearm, a feather on the outer forearm); black-grey work on the left forearm and a cobblestone-like piece on the back of the left hand; a big black-and-grey dragon on the left pec curling over the left shoulder; a red-orange dragon tail/flame over the right collarbone; a red-orange dragon with a pearl across the upper abdomen (new or extended since 2025); a black-grey koi among peonies on the left flank; "kickboxing" in cursive just above the waistband; a black-grey portrait of an Indigenous man in a feather headdress on the front of the right thigh.
+- **Kit:** Venum-made UFC kit in vale tudo-cut compression shorts: royal-blue Freedom 250 shorts with red stripes and red gloves (Jun 2026); a multicolour leopard-and-geometric print (2025). For a standard bout use corner-colour compression shorts and black gloves. Ceremonial weigh-ins: feather headdress, red face paint and a tooth necklace, which are not fight kit.
 
 ## Still unconfirmed
 
@@ -62,6 +61,8 @@ No photo-based likeness sheet exists yet. From the ESPN/UFC studio headshot and 
 - Tattoos on his back.
 
 ## Sources
+
+- data/likeness/alex-pereira.json (photo-based likeness sheet, Nov 6, 2026)
 
 - https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261212 (UFC 335 card, fetched Nov 6, 2026)
 - https://www.sherdog.com/fighter/Alex-Pereira-224511 (upcoming: UFC 335, Dec 12, 2026)

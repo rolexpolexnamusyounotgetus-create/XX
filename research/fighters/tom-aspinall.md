@@ -4,7 +4,6 @@ As of 2026-11-06. He/him. Orthodox, 6 ft 5 in, 78 in reach, listed 256 lb, born 
 
 **Re-check, Nov 6, 2026:** status, ranking, record, injuries and appearance were re-verified on the open web (sources at the end). Rankings come from ufcalendar.com's mirror because ufc.com returned 403.
 
-
 ## Current status
 
 - **Title:** none since Sep 14, 2026. He won the interim belt by beating Pavlovich (UFC 295, Nov 11, 2023), defended it against Blaydes (UFC 304, Jul 27, 2024), and was promoted to undisputed champion when Jon Jones's retirement was announced on Jun 21, 2025.
@@ -68,7 +67,7 @@ The photo-based likeness sheet, data/likeness/tom-aspinall.json, is the better s
 - http://ufcstats.com/fight-details/ec434314c5438fc7 (UFC 304)
 - http://ufcstats.com/fight-details/db49619221b282af (UFC 295)
 - http://ufcstats.com/fight-details/90e46589a18064bc, http://ufcstats.com/fight-details/d0fb381cacbb0446, http://ufcstats.com/fight-details/06641a8c62e45661, http://ufcstats.com/fight-details/b977ffcc6428046f, http://ufcstats.com/fight-details/15b1c7ddc4415fdd
-- https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title (cited in repo)
+- https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title (fetched Nov 6, 2026)
 - https://bloodyelbow.com/2026/02/28/alexander-volkanovski-reveals-long-term-eye-issue-while-defending-tom-aspinall-from-harsh-backlash/ (headline only)
 - data/derived/fighters.json
 - https://www.sherdog.com/news/news/Tom-Aspinall-vacates-UFC-heavyweight-title-amid-ongoing-eye-issues-202801 (vacated title, Instagram statement quoted)

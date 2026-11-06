@@ -3,17 +3,26 @@
   "name": "Mackenzie Dern",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC women's strawweight champion per the ufcstats snapshot. She won the title bout over Virna Jandiroba by unanimous decision at UFC 321 (Oct 25, 2025, Abu Dhabi; 48-47, 48-47, 49-46) and defended it against Gillian Robertson at UFC 330 (Aug 15, 2026, Philadelphia; 49-46, 49-46, 48-47). The belt was open because Zhang Weili moved up to fight Valentina Shevchenko for the flyweight title (recalled; Zhang's Nov 15, 2025 flyweight title bout is in the dataset). The snapshot shows no bout after Aug 15, 2026. Her next booking, ranking and any injuries could not be checked on the web this session.",
+    "summary": "UFC women's strawweight champion. She won the vacant title over Virna Jandiroba at UFC 321 (Oct 25, 2025, Abu Dhabi; 48-47, 48-47, 49-46) after Zhang Weili moved up to flyweight (Zhang then lost to Valentina Shevchenko in Nov 2025), and made her first defence against Gillian Robertson at UFC 330 (Aug 15, 2026, Philadelphia; 49-46, 49-46, 48-47). Afterwards she said she was unhappy with the performance and her cardio. Nothing is booked as of Nov 6, 2026. No. 2 Tatiana Suarez meets No. 3 Jandiroba at UFC Vegas 124 (UFC Fight Night: Cortes Acosta vs Walker, Nov 7, 2026), and Suarez says a win should earn her the Dern fight. No injury reported. Pro MMA record 17-5 (Wikipedia, UFCalendar); UFC 12-5. Age 33.",
     "title": "UFC women's strawweight champion",
-    "ranking": null,
+    "ranking": "Champion at women's strawweight; #5 women's pound-for-pound (UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org on Nov 5-6; ufc.com itself not fetched)",
     "active": true,
     "next_fight": null,
-    "injuries": null,
+    "injuries": [],
     "sources": [
       "http://ufcstats.com/fighter-details/7447e9f28508106a",
       "http://ufcstats.com/fight-details/4700d42c9869674a",
       "http://ufcstats.com/fight-details/7d3da3c4153717de",
       "http://ufcstats.com/fight-details/7606f6b6c19f2d73",
+      "https://en.wikipedia.org/wiki/Mackenzie_Dern (revision of Nov 4, 2026; record 17-5)",
+      "https://www.ufcalendar.com/fighters/mackenzie-dern (no next fight booked, Nov 6, 2026)",
+      "https://www.ufcalendar.com/rankings/womens-strawweight",
+      "https://ufcrankings.org/womens-strawweight/",
+      "https://www.ufcalendar.com/rankings/womens-pound-for-pound",
+      "https://ufcrankings.org/womens-pound-for-pound/",
+      "https://sports.yahoo.com/mma/article/mackenzie-dern-rips-her-own-ufc-330-title-win-i-would-not-want-to-fight-zhang-weili-feeling-the-way-i-felt-212942101.html (Aug 2026; Zhang's move to flyweight and loss to Shevchenko)",
+      "https://heavy.com/sports/ufc/tatiana-suarez-mackenzie-dern-with-win/ (Nov 4, 2026)",
+      "https://www.ufcalendar.com/fighters/tatiana-suarez (Suarez vs Jandiroba, Nov 7, 2026)",
       "data/derived/fighters.json"
     ]
   },
@@ -63,18 +72,22 @@
     "spinning": 0.0,
     "knee": 0.02,
     "elbow": 0.02,
-    "notes": "Weights follow the schema example and src/director.js: head moves sum to 1, body to 1, legs to 1; spinning, knee and elbow are separate rates for specials. Target split from fighters.json: time-decayed significant attempts are 85.9% head, 8.6% body, 5.4% legs (landed 73.0/15.3/11.8); career attempts 87.0/8.1/5.0; women's strawweight league 75.6/15.2/9.2. So she throws to the head more than the division does, and her leg strikes are few but accurate (11 of 11 vs Robertson, 13 of 13 vs Jandiroba, 11 of 11 vs Ribas in 2025). Some of these may be kicks thrown from the floor, but ufcstats does not say, so calf and inside are split evenly. Fact-check (Nov 6, 2026): overhand was cut from 0.24 to 0.14, with the difference moved to cross (+0.05) and hook (+0.05), because the claim of a signature looping overhand right could not be sourced; 0.14 stays a little above the director default because she is short-armed (63 in reach at 5 ft 4 in, ufcstats). Body kicks lead the body group as a judgment. Knees and elbows are near zero: 7% of her decayed landed strikes are in the clinch, and her ground strikes are not split by technique. No web scouting source was read, so the within-group splits are judgments. Medium-low confidence."
+    "notes": "Weights follow the schema example and src/director.js: head moves sum to 1, body to 1, legs to 1; spinning, knee and elbow are separate rates for specials. Target split from fighters.json: time-decayed significant attempts are 85.9% head, 8.6% body, 5.4% legs (landed 73.0/15.3/11.8); career attempts 87.0/8.1/5.0; women's strawweight league 75.6/15.2/9.2. So she throws to the head more than the division does, and her leg strikes are few but accurate (11 of 11 vs Robertson, 13 of 13 vs Jandiroba, 11 of 11 vs Ribas in 2025). Some of these may be kicks thrown from the floor, but ufcstats does not say, so calf and inside are split evenly. Fact-check (Nov 6, 2026): overhand was cut from 0.24 to 0.14, with the difference moved to cross (+0.05) and hook (+0.05), because the claim of a signature looping overhand right could not be sourced; 0.14 stays a little above the director default because she is short-armed (63 in reach at 5 ft 4 in, ufcstats). Body kicks lead the body group as a judgment. Knees and elbows are near zero: 7% of her decayed landed strikes are in the clinch, and her ground strikes are not split by technique. No published technique breakdown was found (re-checked Nov 6, 2026), so the within-group splits are judgments. Medium-low confidence."
   },
   "appearance": {
-    "build": "5 ft 4 in with a 63 in reach (ufcstats), short-armed for her height; competes at 115 lb",
-    "hair": "long blonde hair, usually braided for fights (recalled; check)",
+    "build": "5 ft 4 in with a 63 in reach (ufcstats), short-armed for her height; competes at 115 lb; lean and muscular with defined abdominals in 2025-26 studio photos",
+    "hair": "long hair, light brown at the roots with dark-blonde lengths, worn loose in studio photos; in tight cornrow braids pulled back for fights (UFC 330 photo, Aug 2026)",
     "facial_hair": "none",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "notes": "Height and reach are from ufcstats. Hair and skin are recalled from widely published fight photos and were not re-checked this session (no web or image host was reachable). Tattoos and kit were not sourced.",
+    "tattoos": "a black-and-grey lion head framed by flowers on the outer right calf; a small bow on top of the right foot; a short cursive script on the inner right arm near the elbow, text not legible (ESPN cutouts, Oct 2025 and Aug 2026)",
+    "kit": "champion's UFC Venum kit: black with gold UFC lettering and a gold fleck print (ESPN cutout, Aug 2026; worn at UFC 330); earlier the white Venum studio set (Oct 2025). The corner colour wins in the sim",
+    "notes": "No likeness sheet exists for her. Checked on Nov 6, 2026 against the ESPN headshot and full-body cutout (files dated Aug 13, 2026), the earlier ESPN cutout (Oct 23, 2025) and the UFC 330 cage photo used as the lead image of Yahoo's Aug 2026 report (Getty, Aug 15, 2026). The UFC lettering reads correctly, so left and right are her own. 'Blonde' in the first pass was close but the roots are light brown. Meaning of the tattoos is not sourced.",
     "sources": [
-      "http://ufcstats.com/fighter-details/7447e9f28508106a"
+      "http://ufcstats.com/fighter-details/7447e9f28508106a",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4021217.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4021217.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4021217.png",
+      "https://d29szjachogqwa.cloudfront.net/images/2026-08/5cafe5e6-1670-43e9-8b2a-61ed766358f7 (UFC 330 photo, lead image of the Yahoo report above)"
     ]
   },
   "engine_notes": [

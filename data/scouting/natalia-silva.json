@@ -3,13 +3,20 @@
   "name": "Natalia Silva",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC women's flyweight champion. She beat Wang Cong by five-round unanimous decision (48-47, 48-47, 49-46) at UFC 332 in Salt Lake City (Oct 3, 2026). ufcstats records that bout as a women's flyweight title bout, not an interim one. She is 9-0 in the UFC. Her run includes decisions over Rose Namajunas (UFC 324, Jan 24, 2026), Alexa Grasso (UFC 315, May 10, 2025) and Jessica Andrade (Sep 7, 2024). Her ranking, first title defence and any injuries from the Wang fight could not be checked on the web in this pass: the shared search budget was spent and direct page fetches were blocked.",
-    "title": "UFC women's flyweight champion",
-    "ranking": null,
+    "summary": "UFC women's flyweight champion. She was due to challenge Valentina Shevchenko at UFC 332 in Salt Lake City (Oct 3, 2026); after Shevchenko vacated through injury on Sep 5, she beat Wang Cong for the vacant title by unanimous decision (48-47, 48-47, 49-46). She is 9-0 in the UFC and has won 15 straight; pro record 21-5-1 (ESPN, Wikipedia). Her run includes decisions over Rose Namajunas (UFC 324, Jan 24, 2026), Alexa Grasso (UFC 315, May 10, 2025) and Jessica Andrade (Sep 7, 2024). No first defence was booked as of Nov 6, 2026: she said she wants to be an 'active champion' and named no opponent, and has told Shevchenko to 'get in line'. No injury from the Wang fight was reported.",
+    "title": "UFC women's flyweight champion (won the vacant title Oct 3, 2026)",
+    "ranking": "women's flyweight champion and #4 women's pound-for-pound (official UFC media-panel rankings last updated Tue Nov 3, 2026, read from the Nov 4 Wayback capture of ufc.com/rankings; the ufcrankings.org mirror of Nov 5 has the same order)",
     "active": true,
     "next_fight": null,
-    "injuries": null,
+    "injuries": [],
     "sources": [
+      "https://sports.yahoo.com/articles/natalia-silva-crowned-women-flyweight-081224191.html",
+      "https://heavy.com/sports/ufc/natalia-silva-whats-next-ufc-332/",
+      "https://www.espn.co.uk/mma/story/_/id/49839558/shevchenko-injured-vacates-silva-wang-vie-belt-ufc-332",
+      "https://en.wikipedia.org/w/index.php?title=Nat%C3%A1lia_Silva_(fighter)&oldid=1380885438",
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://ufcrankings.org/",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4054605",
       "http://ufcstats.com/fighter-details/262d32ebda89efc4",
       "http://ufcstats.com/fight-details/3f804eec9183e597",
       "http://ufcstats.com/event-details/ad3fdba28a7540cf",
@@ -22,7 +29,15 @@
   "style": {
     "archetype": "kickboxer",
     "stance": "southpaw",
-    "tags": ["volume", "southpaw", "body-work", "spinning", "takedown-defense", "durable", "late-surge"],
+    "tags": [
+      "volume",
+      "southpaw",
+      "body-work",
+      "spinning",
+      "takedown-defense",
+      "durable",
+      "late-surge"
+    ],
     "signature": [
       "spinning back kick to the head (KO of Tereza Bleda at 1:27 of round 3, Nov 19, 2022)",
       "single punch at distance (KO of Victoria Leonardo at 2:58 of round 1, May 20, 2023)",
@@ -67,21 +82,36 @@
   },
   "appearance": {
     "build": "5 ft 4 in with a 65 in reach (ufcstats); compact flyweight",
-    "hair": "dark, tied back for fights (not re-checked against photos in this pass)",
+    "hair": "dark brown, long and curly with lighter caramel ends when worn loose (May 2025 shoot); for fights, tight cornrows running back into a bun at the crown (UFC 332, Oct 2026)",
     "facial_hair": "none",
-    "skin": "unknown",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "skin": "medium",
+    "tattoos": "none visible on the arms, shoulders, chest or abdomen in the ESPN cutouts (May 2025, Oct 2026)",
+    "kit": "UFC 315 fight week (May 2025): yellow-and-olive tiger-stripe Brazil kit with DA SILVA in green down the left leg; after UFC 332 (Oct 2026): black-and-gold champion's jersey over black shorts (her fight-night shorts colour was not checked). Corner colour wins in the sim",
+    "notes": "Checked Nov 6, 2026 (open network) against dated photos, since no photo-based likeness sheet exists (data/likeness/natalia-silva.json): ESPN headshot and full-body cutout taken with the belt after UFC 332 (files dated Oct 5, 2026) and the May 8, 2025 ESPN cutout; lettering reads correctly, so not mirrored. The post-fight photos show a small white tape strip under her right eye. Height: ufcstats and ESPN list 5 ft 4 in, Wikipedia 5 ft 5 in; build is from ufcstats.",
     "sources": [
-      "http://ufcstats.com/fighter-details/262d32ebda89efc4",
-      "hair from general familiarity with published fight photos; not re-checked against a URL in this pass (web access unavailable)"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4054605.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4054605.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4054605.png",
+      "http://ufcstats.com/fighter-details/262d32ebda89efc4"
     ]
   },
   "engine_notes": [
-    { "note": "Output climbs through 3-round fights: in full rounds she lands 18.7, 23.6 and 28.5 significant strikes per round in rounds 1-3 (7, 7 and 6 rounds). Her one 5-round fight runs 1.00, 0.81, 1.44, 1.50 and 2.06 of round 1, but that pace comes from one fight only.", "source": "data/raw/ufc_fight_stats.csv; data/derived/fighters.json (pace)" },
-    { "note": "Volume (decayed): 9.9 significant attempts and 4.5 landed per minute, against division norms of 9.2 and 4.0. She absorbs 2.9 per minute, and opponents land 38.5% on her.", "source": "data/derived/fighters.json (S, priors)" },
-    { "note": "Power: 0.84 knockdowns per 100 significant head strikes landed (decayed) against a women's flyweight rate of 0.25. That comes from three career knockdowns (Bleda, Leonardo and Wang Cong in round 2). Chin: she has absorbed no knockdowns in 9 UFC fights.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/3f804eec9183e597" },
-    { "note": "Takedown defence is 89% decayed and 90% career (opponents 3 of 31). Opponents still get 129 s of control per 15 min decayed, mostly Viviane Araujo's 6:01 in Feb 2024. Her own wrestling is light: 0.9 takedowns per 15 min decayed.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/7b1882dc76786d77" }
+    {
+      "note": "Output climbs through 3-round fights: in full rounds she lands 18.7, 23.6 and 28.5 significant strikes per round in rounds 1-3 (7, 7 and 6 rounds). Her one 5-round fight runs 1.00, 0.81, 1.44, 1.50 and 2.06 of round 1, but that pace comes from one fight only.",
+      "source": "data/raw/ufc_fight_stats.csv; data/derived/fighters.json (pace)"
+    },
+    {
+      "note": "Volume (decayed): 9.9 significant attempts and 4.5 landed per minute, against division norms of 9.2 and 4.0. She absorbs 2.9 per minute, and opponents land 38.5% on her.",
+      "source": "data/derived/fighters.json (S, priors)"
+    },
+    {
+      "note": "Power: 0.84 knockdowns per 100 significant head strikes landed (decayed) against a women's flyweight rate of 0.25. That comes from three career knockdowns (Bleda, Leonardo and Wang Cong in round 2). Chin: she has absorbed no knockdowns in 9 UFC fights.",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/3f804eec9183e597"
+    },
+    {
+      "note": "Takedown defence is 89% decayed and 90% career (opponents 3 of 31). Opponents still get 129 s of control per 15 min decayed, mostly Viviane Araujo's 6:01 in Feb 2024. Her own wrestling is light: 0.9 takedowns per 15 min decayed.",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/7b1882dc76786d77"
+    }
   ],
   "confidence": "medium"
 }
