@@ -26,7 +26,8 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
 - **Fixed-effects fits get the fatigue question backwards.** Within-fight fixed effects say each 100 attempts thrown
   cuts later output by 42%. A simulation with no fatigue at all reproduces that -0.42 (-0.40 to -0.44): it is pure
   mean reversion. The dynamic random-effects estimator, which conditions on earlier rounds through the
-  likelihood, recovers the true value in simulation (0 → -0.01 to -0.05; -0.15 → -0.12 to -0.19).
+  likelihood, recovers the true value in simulation (true 0 → -0.05 to +0.02 over five replicates; true -0.15 → -0.12 to
+  -0.19 over four).
 - **Fight-night form and pace are much larger and more persistent than the engine assumes.** After walk-forward
   profiles, the two fighters share a fight-level pace effect with sd 0.37 (engine `form.pace` 0.10). Each fighter's
   own round-to-round noise is an AR(1) process (sd 0.31, autocorrelation 0.68), where the engine uses iid noise.
@@ -55,17 +56,21 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
   round. Only non-knockdown stoppages lean on damage: +11% per 10 head strikes absorbed earlier (SE about 5%).
   Battered fighters are finished more often because they keep absorbing more per minute (head strikes absorbed
   per minute 2.2 → 6.2 across prior-damage bins), not because each strike gets more dangerous.
-- **The two directions of a fight do not share knockdown volatility.** The per-fight residual correlation of
-  knockdowns absorbed is -0.024 over 2,313 fights. Independent frailty predicts +0.002 (sd 0.019). The engine's
-  shared `form.vol` 0.6 structure predicts +0.074 (sd 0.020): rejected.
-- **Engine v3 check.** On the same 865 validation matchups, engine snapshot b50cadf (30 sims each) has:
+- **The engine has too much knockdown heterogeneity.** On the same matchups, its knockdown frailty (fight-level
+  variance of the per-strike rate) is 1.7 against 0.9 real. The engine check (section 7) cannot tell shared
+  from per-direction volatility: the per-fight residual correlation of the two directions is -0.015 in the
+  engine (with shared `vol` 0.6) and -0.024 real, because stopping hides the shared part. So the cut is sized to
+  the total. `research/model_durability.md` puts a quarter to a third of the variance in the shared part, so cut
+  `vol` 0.6 to 0.3 and keep power and chin at 0.45.
+- **Engine v3 check.** Two snapshots, b50cadf (09:46) and the current aabd475 (11:10), were run on the same 865
+  validation matchups, 30 sims each. Both have:
   - round-to-round output correlation 0.19 vs 0.53 real;
   - fight-level output sd 0.25 vs 0.50, and accuracy almost no fight-night spread;
   - knockdown frailty 1.7 vs 0.9;
-  - a per-strike knockdown hazard that barely falls after round 2. That gives 2-3x too many KO/TKO finishes in
-    rounds 3-5 of 5-round fights (0.12 vs 0.04-0.07 per round).
+  - a per-strike knockdown hazard that falls too little after round 2.
 
-  Section 8 lists the exact changes.
+  In 5-round fights the current engine finishes 0.11, 0.10 and 0.10 per round by KO/TKO in rounds 3-5 against
+  0.07, 0.05 and 0.04 real. Section 8 lists the exact changes.
 
 ## 1. Data, periods and estimators
 
@@ -458,17 +463,20 @@ real exposures), correlation between the two directions of the same fight:
 | | correlation |
 |---|---|
 | Observed (2,313 train fights) | -0.024 |
-| Simulated, independent frailty (variance 1) | +0.002 (sd 0.019) |
-| Simulated, engine structure (pow 0.45 x chin 0.45 per direction x shared vol 0.6) | +0.074 (sd 0.020) |
-| Simulated, shared frailty only | +0.183 (sd 0.028) |
+| Simulated with fixed exposures, independent frailty (variance 1) | +0.002 (sd 0.019) |
+| Simulated with fixed exposures, engine structure (pow 0.45 x chin 0.45 per direction x shared vol 0.6) | +0.074 (sd 0.020) |
+| Simulated with fixed exposures, shared frailty only | +0.183 (sd 0.028) |
 
-The engine check (section 7) repeats this on simulated fights with the engine's own stopping rules
-(`engine_check.kd_hazard.*.direction_residual_corr`).
+**This statistic does not discriminate.** The simulations above hold exposure fixed. With the engine's own
+stopping rules, its simulated fights give -0.015 over 24,662 fights, even with a shared `vol` 0.6. Fights with a
+high shared volatility end early, which removes the very rounds where both directions would show it. So the real
+-0.024 is consistent with the engine's shared structure. It is not evidence against a shared component.
 
-`research/model_durability.md` reports about a quarter to a third of per-fight knockdown variance shared by both
-men. The two results fit together if the sharing is in volume (wars have more strikes both ways) rather than in
-per-strike risk. Section 2.4 finds a large shared pace component (sd 0.37). In the engine, shared volatility
-belongs in `form.pace`, not in `form.vol`.
+What does discriminate is the total. The engine's cells-only knockdown frailty is 1.71 against 0.88 real on the
+same matchups. `research/model_durability.md` reports about a quarter to a third of per-fight knockdown variance
+shared by both men (sd 0.47). Section 2.4 adds that much shared volatility sits in volume: a shared pace with
+sd 0.37, against the engine's `form.pace` 0.10. Hence E2 and E7: more shared pace, less shared per-strike
+volatility (`vol` 0.6 to 0.3).
 
 ### 6.2 Knockdown → finish conversion, per knockdown
 
@@ -517,17 +525,25 @@ effect and partly through frailty selection. The rise comes from persistent expo
 keeps taking it. In the engine that persistence comes from fight-night form and pace (section 2.4), not from
 damage multipliers on knockdown probability.
 
-## 7. Engine v3 check (snapshot)
+## 7. Engine v3 check (snapshots)
 
 `tools/dynamics_engine.js` ran engine v3 on the 865 validation matchups (2024-2025, `backtest_dev.json`, walk-forward
 profiles and priors), 30 traced fights each. The same statistics were computed on the simulated rounds and on the
 real rounds of the same fights.
 
-The working tree's engine at the time of the run (commit b641e44, 09:49) was broken: every fight ended "LEG" in
-round 1 with NaN time, the Volkanovski-Gaethje default included. The check therefore used the previous commit,
-**b50cadf (09:46), params 3.0.0-selfcal-2026-11-06**, from a scratch copy. Rerun it with
-`node tools/dynamics_engine.js <csv> [--engine-dir src]` and `python3 tools/dynamics.py --engine-csv <csv>` once
-the calibrated engine lands.
+Two snapshots were checked, both from scratch copies, both with params 3.0.0-selfcal-2026-11-06:
+
+| Key | Snapshot |
+|---|---|
+| `engine_check` | b50cadf (09:46) |
+| `engine_check_current` | aabd475 (src/ at 11:10) |
+
+The commit between them (b641e44, 09:49) was broken: every fight ended "LEG" in round 1 with NaN time, the
+Volkanovski-Gaethje default included. Rerun the check with `node tools/dynamics_engine.js <csv> [--engine-dir src]`
+and then `python3 tools/dynamics.py --parts none --engine-csv <csv> --engine-key engine_check_current` once the
+calibrated engine lands.
+
+The table shows b50cadf. The current snapshot is identical to two decimals except for the 5-round rows below.
 
 | Statistic | Engine | Real |
 |---|---|---|
@@ -546,13 +562,23 @@ the calibrated engine lands.
 | Head absorbed per min by prior-damage bin (0 → 61+) | 2.1 → 4.6 | 1.2 → 5.7 |
 | Late-ratio total var (between-matchup part) | 0.53 (0.030) | 0.49 |
 | Output after being controlled earlier (octrl_m) | +0.055 | +0.001 |
+| KD residual correlation between directions | -0.015 (24,662 fights) | -0.024 |
+
+Current snapshot aabd475, 5-round rows (the rest as above):
+
+| Statistic | Engine | Real |
+|---|---|---|
+| KD per strike, round profile, 5 rounds | 1, 0.88, 0.72, 0.62, 0.59 | 1, 0.53, 0.39, 0.23, 0.12 |
+| KD per 100 standing head, 5-round R1 / R4 / R5 | 0.97 / 0.46 / 0.40 | 1.31 / 0.26 / 0.14 |
+| P(round ends KO/TKO), 5 rounds | 0.14, 0.13, 0.11, 0.10, 0.10 | 0.10, 0.10, 0.07, 0.05, 0.04 |
+| P(round ends by submission), 5 rounds R1 | 0.064 | 0.038 |
 
 The engine's damage terms are near zero in its own output (D10 +0.005), which matches the data. Its gaps are:
 
 1. too little persistent fight-night variation in output and accuracy, and no round-to-round persistence;
 2. a knockdown hazard that does not fall enough after round 2, so late-round finishes in 5-round fights run 2-3x
    too often;
-3. too much knockdown frailty (the shared `vol`);
+3. too much knockdown frailty, 1.7 vs 0.9;
 4. a 3-round pace curve that is too flat in realized terms.
 
 ## 8. Engine recommendation (v6)
@@ -619,10 +645,12 @@ with `outStam` small.
     kdRound5 = [1.79, 1.16, 0.73, 0.52, 0.52]   (= [1, 0.65, 0.405, 0.29, 0.29]; 2010-2023 fit, R4-5 pooled)
     kdStamAtt: 1.1 -> 0;   kdPaceExp: -1.2 -> 0   (the table replaces both)
     kdDmg: 800 -> off (1e9)
-    form.vol: 0.60 -> 0    (no shared per-strike volatility; shared volume lives in form.pace)
+    form.vol: 0.60 -> 0.30   (total KD frailty 1.7 vs 0.9 real; durability: shared sd about 0.47 of 0.8;
+                              shared volume moves to form.pace, E2)
     form.pow, form.chin: keep 0.45
 
-    Acceptance: engine-check KD frailty (cells only) about 0.9 (real 0.88 validation; 0.8-1.1 with profiles)
+    Acceptance: engine-check KD frailty (cells only) about 0.9 (real 0.88 validation; 0.8-1.1 with profiles).
+    If still above 1.1 after E2, lower form.vol further before touching form.pow / form.chin.
 
 **E8. Knockdown → finish conversion:**
 
@@ -665,7 +693,9 @@ with `outStam` small.
   as ±25%.
 - **Judges' labels** cover only fights that went the distance. Which round a 29-28 card gave away is inferred from
   stats.
-- **Engine check is a snapshot.** It ran against b50cadf, not the current src/, which was broken at run time.
+- **Engine check is a snapshot.** It ran against b50cadf and aabd475 with the self-calibrated parameter set,
+  before the walk-forward calibration finished. The residual-correlation test of shared knockdown volatility
+  turned out to be non-discriminating once stopping is simulated (section 6.1).
 - **The vault** (fights from 2026-01-01) was never scored. `cardio_by_slug` includes 2026 fights and must not be
   used for backtests.
 

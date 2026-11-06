@@ -17,8 +17,8 @@ protocol. Every number below is from the dev period (2006-2025) unless it says o
 | Totals vs ufcstats DETAILS | 99.41% of three-judge fights agree on all three totals (3,210 / 3,229); 99.38% of cards (9,627 / 9,687); partial panels 231 / 234 cards |
 | Two independent copies of MMA Decisions | 27,591 of 27,591 overlapping rounds identical (2,939 fights) |
 | Our fight matcher vs the other dataset's crosswalk | 3,229 of 3,229 same ufcstats fight |
-| 10-8 or wider | 3.62% of judge-rounds (deductions removed); 6.5% of rounds have at least one 10-8; 1.3% have three |
-| 10-10 | 0.10% of judge-rounds |
+| 10-8 or wider | 3.62% of the judge-rounds where deductions are known (N, 2013-2025); 3.54% of all judge-rounds with deductions removed where known (3.81% on published scores); 6.5% of three-judge rounds have at least one 10-8, 1.3% have three |
+| 10-10 | 0.09% of judge-rounds |
 | Round disagreement | 22.4% of three-judge rounds are not unanimous on the winner (22.2% 2-1 splits, 0.2% involve a 10-10); a random pair of judges disagrees on 14.95% of rounds |
 
 ## Where the data came from, and why not mmadecisions.com itself
@@ -102,15 +102,23 @@ meta      sources, checks (all numbers above), report_dev (summaries), split
 judges    {mmad_id: {name, ufcstats_names, fights, rounds, first, last, share_10_8_plus, share_10_10, dissent_rate}}
 fights    {ufcstats_fight_id: {date, event, loc, A, B, A_slug, B_slug, winner (A/B/D/NC), method, sched,
            end_round, end_time, title, wc, referee, src (N | N+D | D), mmad_id, raw_known, complete,
-           jurisdiction (N only), validation: {ufc, diffs?},
+           jurisdiction (N only), validation: {ufc, diffs?}, ufc_note?, ufc_deduction?,
            judges: [{name, id, rounds: [[a, b], ...], total: [a, b], raw?: [[a, b], ...]}]}}
 stoppage_unverified   44 partial cards from stoppage fights (D's hand-entered file), not in the rows
 ```
 `rounds` and `total` are published scores, after any point deduction, so they add up to the official
 totals. `raw` appears only when a deduction changed a round. It adds the point back, which gives the judge's
-own verdict on the round (68 dev fights). `raw_known: false` (the 385 D-only fights) means deductions cannot
-be separated from 10-8s. Slugs come from backtest.json (2019+) or from a unique roster name in fighters.json,
-and are null otherwise.
+own verdict on the round (69 dev fights, one of them from `DEDUCTION_PATCHES`, see the verification log).
+`raw_known: false` (the 385 D-only fights) means deductions cannot be separated from 10-8s. `ufc_note` is the
+note ufcstats glues onto the first judge's name in DETAILS (41 dev fights, e.g. "Point Deducted: Illegal Knee
+by Papazian", "Technical Decision - Eye Poke"), and `ufc_deduction` is the points per side that a deduction
+note names (18 fights; null side = unclear). ufcstats notes only a minority of deductions: 13 of the 69 N fights
+with deductions carry one, and every one of those 13 agrees with N's raw scores. Slugs come from backtest.json
+(2019+), then fightweek.json (build_db's per-bout person resolution, 2012+, which splits namesakes such as
+bruno-silva-bulldog and bruno-silva-blindado), then a unique name in the active roster (fighters.json), and
+are null otherwise: 3,165 of 3,388 fights have both slugs, most of the rest are 2006-2011 fighters. The
+`judges` aggregates span the whole dev period (2006-2025, validation years included), so they are descriptive
+only and not walk-forward safe as model inputs; use the `jp_*` columns below.
 
 `judgerounds_rows.json` (columnar; `pd.DataFrame(d["rounds"]["rows"], columns=d["rounds"]["cols"])`)
 - `rounds`: 10,692 rows, one per scored round, with 66 columns: fid, date, rnd, sched, mins (length actually
@@ -120,9 +128,20 @@ and are null otherwise.
   dist, clinch, ground, tot and td, each as `_l` landed and `_a` attempted, plus kd, sub (attempts), rev,
   ctrl (seconds).
 - `scores`: 31,319 rows, one per judge per round: ri (row index into rounds), jid (MMA Decisions id), pos,
-  A, B (published), A_raw, B_raw (before deductions; null when unknown).
+  A, B (published), A_raw, B_raw (before deductions; null when unknown), and the judge's walk-forward history
+  on dates strictly before the fight (same-day fights never see each other; null for unnamed judges):
+  jp_fights, jp_rounds, jp_wide (10-8 or wider), jp_even (10-10), jp_oa (rounds where the other two judges
+  agreed on a winner) and jp_dis (of those, rounds where this judge did not). A shrunk 10-8 propensity is then
+  e.g. (jp_wide + 3.6 * k / 100) / (jp_rounds + k). Dev rows only count earlier dev rounds.
+- Column roles (also in `meta.column_roles`): winner, nJ/nA/nB/nE, n_wide, ded_A/ded_B, complete and ufc_check
+  are computed from the scores themselves, so they are labels, never inputs to a model of the scores. The
+  A_/B_ round stats and mins are known only after the round. date, rnd, sched, title, women, wc, jid and the
+  jp_* columns are known before the fight.
+- A/B order: A (the first name in the ufcstats BOUT string) wins the majority in 56.8% of decisive three-judge
+  dev rounds, because ufcstats lists the winner first more often. Mirror A/B when training and evaluating
+  (docs/BACKLOG.md, evaluation rule).
 - Clean subset: `complete & ufc_check in {agree, agree_partial_panel, totals_agree_names_differ}` keeps
-  10,628 of 10,692 rounds. Per the protocol: train on 2019-2023 (3,911 clean rounds, 11,751 judge-rounds),
+  10,628 of 10,692 rounds. Per the protocol: train on 2019-2023 (3,911 clean rounds, 11,700 judge-rounds),
   validate on 2024-2025 (1,699 clean rounds).
 
 ## Coverage by year (decisions with round cards / ufcstats decisions)
@@ -144,14 +163,17 @@ is the source, not the matching.
 
 | 2011 | 2012 | 2013 | 2014 | 2015 | 2016 | 2017 | 2018 | 2019 | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 4.2% | 3.0% | 1.7% | 1.5% | 2.9% | 3.7% | 6.0% | 5.1% | 5.8% | 5.9% | 3.9% | 3.1% | 3.7% | 2.2% | 1.7% |
+| 4.2%* | 3.0%* | 1.7% | 1.5% | 2.9% | 3.7% | 6.0% | 5.1% | 5.8% | 5.9% | 3.9% | 3.1% | 3.6% | 2.2% | 1.7% |
+
+\* 2011-2012 come almost entirely from D, where deductions cannot be removed. Where they can (N), published
+scores overstate the 10-8 share by 0.30 points (3.91% vs 3.62%), so read 2011-2012 as roughly 3.9% and 2.7%.
 
 The 2017 scoring-criteria change (more permissive 10-8s) shows clearly. Since 2021 the rate has fallen back
 to 1.7-2.2%. That matches the 4.7% overall and roughly 2.5% for 2024-25 that officials.py inferred from card
 totals (docs/BACKLOG.md). The ufcstats-implied number was a little high for 2024-25, so the engine should use
 an era-dependent 10-8 rate, not one constant.
 
-**What goes with a 10-8.** Only 16.9% of judges' 10-8s go to a fighter with a knockdown advantage in the
+**What goes with a 10-8.** Only 17.0% of judges' 10-8s go to a fighter with a knockdown advantage in the
 round. A round winner with a knockdown advantage gets a 10-8 10.9% of the time, against 3.2% without one.
 The median significant-strike margin is 19 in 10-8 rounds and 6 in 10-9 rounds. 10-8s rise through the fight:
 at least one judge gives a 10-8 in 3.9% of round 1s, 6.4% of round 2s and 9.1% of round 3s (8.5% in rounds 4
@@ -192,8 +214,15 @@ Eric Colón 1,165, Tony Weeks 1,010.
 ## Caveats
 
 - The D-only fights (2006-2012 and 28 later ones) have no deduction information, so a deducted 10-9 shows up
-  as a 10-8 there (`raw_known: false`, `ded_A`/`ded_B` null). In N, 71 dev rounds carry a deduction.
-- 10-10 rounds are rare (0.10%). A few judge-rounds with a margin of 3 or more are real 10-7s or 10-8s after a
+  as a 10-8 there (`raw_known: false`, `ded_A`/`ded_B` null). In N, 72 dev rounds carry a deduction, and
+  deductions raise the published-score 10-8 share by 0.30 points. Five D-only fights carry a ufcstats deduction
+  note (`ufc_deduction`), for example Papazian vs. Elliott 2012, whose round-1 8-10 cards are a 10-9 plus a
+  deducted point (Wikipedia confirms it), not three 10-8s.
+- N itself can miss a deduction: Martinez vs. Saaiman (UFC 285) had none in N's raw columns although Byrd's
+  published round 1 was 9-9. It is patched from a cited source (`DEDUCTION_PATCHES`), and any N round whose
+  raw scores give nobody 10 now turns the fight to `raw_known: false` (none left after the patch). A deduction
+  from the round loser leaves no such trace and would still be missed.
+- 10-10 rounds are rare (0.09%). A few judge-rounds with a margin of 3 or more are real 10-7s or 10-8s after a
   deduction.
 - `stoppage_unverified` (44 matched fights) is D's hand-entered file with no cited source. One spot check
   agrees with the press: UFC 264, where two judges had Poirier 10-8 after round 1. The file is still excluded

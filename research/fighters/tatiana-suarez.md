@@ -1,15 +1,17 @@
 # Tatiana Suarez: scouting dossier
 
-As of Friday, Nov 6, 2026. She/her. Southpaw, 5'5" with a 66" reach, born Dec 19, 1990 (age 35). UFC record 9-1 (1 KO/TKO, 5 submissions, 3 decisions), counting her TUF 23 final win. "Dataset" means `data/derived/fighters.json` and the raw ufcstats CSVs, current through Oct 31, 2026.
+As of Friday, Nov 6, 2026. She/her. Southpaw, 5'5" with a 66" reach, born Dec 19, 1990 (age 35). Pro record 12-1 (Wikipedia, MMA Junkie; ESPN and ufcrankings.org list 13-1). UFC record 9-1 (1 KO/TKO, 5 submissions, 3 decisions), counting her TUF 23 final win. Millennia MMA; former Team USA wrestler. "Dataset" means `data/derived/fighters.json` and the raw ufcstats CSVs, current through Oct 31, 2026.
 
-**Limits of this pass.** The shared web-search budget ran out, and direct fetches to Wikipedia and UFC.com failed to resolve. Everything below comes from ufcstats data. Her ranking, next booking, injuries and appearance are not web-verified.
+**Update, Nov 6, 2026 (open network).** The first pass had no web access; status, ranking, booking, injury history and appearance below have now been checked on the web (sources at the end). The fight analysis still comes from ufcstats data.
 
 ## Current status
 
 - **Form:** a strawweight contender on a two-fight win streak since her title loss to Zhang Weili at UFC 312 (Feb 8, 2025).
 - **Last fight:** a rear-naked choke of Loopy Godinez at 2:29 of round 2 at UFC 327 in Miami (Apr 11, 2026).
+- **Next:** Virna Jandiroba in the co-main event of UFC Vegas 124 (UFC Fight Night 293: Cortes-Acosta vs. Walker) at Meta APEX, Las Vegas, on Sat Nov 7, 2026, the day after this dossier's date. Their third booking: Jandiroba's knee injury scrapped the 2023 date and Suarez's health issue the UFC 310 date in Dec 2024. Suarez says a win, ideally a finish, should earn her the next title shot (Heavy, via MMA Junkie). No Nov 6 weigh-in result was found at the time of this check.
+- **Ranking:** #2 strawweight (behind Zhang Weili) and #8 women's pound-for-pound in the official UFC rankings last updated Nov 3, 2026.
 - **Champion:** Mackenzie Dern (UFC 321, Oct 25, 2025; defended at UFC 330, Aug 15, 2026).
-- **Unknown:** ranking, next booking and any injury.
+- **Injuries:** none reported this camp. Past: an unspecified health issue (UFC 310 withdrawal, Oct 2024); an injury pulled her from a UFC 266 return bout in 2021, during the 2019-2023 layoff.
 
 ## Recent fights
 
@@ -42,7 +44,7 @@ A wrestler first and last.
 - **Takedown accuracy:** down to 33% decayed from 46% career.
 - **Defence at range:** opponents land 61.5% on her (decayed), against a norm of 45%, and both of her last two opponents out-landed her.
 - **No plan B:** against Zhang she had nothing once the takedown failed.
-- **Inactivity:** no UFC fight from Jun 2019 to Feb 2023 (cause not verified in this pass).
+- **Inactivity:** no UFC fight from Jun 2019 to Feb 2023 (injuries; Wikipedia records a 2021 injury withdrawal but not the details) and a 2024 health withdrawal.
 
 ## Durability and cardio
 
@@ -66,4 +68,22 @@ Decayed Elo is 1703. The engine should give her very high takedown attempt rates
   - [Esparza](http://ufcstats.com/fight-details/fd61e6146f3b2942)
   - [Grasso](http://ufcstats.com/fight-details/24f2d2dd9fea5d79)
   - [Dern vs. Robertson](http://ufcstats.com/fight-details/4700d42c9869674a)
-- No web sources could be consulted in this pass.
+
+## Appearance (checked Nov 6, 2026)
+
+No photo-based likeness sheet exists for her (data/likeness/tatiana-suarez.json). From the ESPN headshot and full-body cutout taken this fight week (files dated Nov 5, 2026), the Feb 5, 2025 cutout and the Cageside Press UFC 327 face-off photo (Apr 2026). The lettering reads correctly, so left and right are her own.
+
+- **Build:** stocky, strong wrestler's frame; 5 ft 5 in, 66 in reach (ufcstats).
+- **Hair:** long, medium brown with lighter caramel ends; two tight Dutch braids from a centre parting for fights; loose at weigh-ins.
+- **Skin:** light-medium.
+- **Tattoos:** a black-line mandala-style tattoo with green shading on the front and outer right thigh, mostly just below the shorts hem; a small dark tattoo inside the left ankle (shape unclear).
+- **Kit:** royal-blue Venum sports bra and shorts in both ESPN cutouts (UFC 312 and UFC Vegas 124). The sim uses corner colours.
+
+## Update sources (Nov 6, 2026)
+
+- Booking: https://sports.yahoo.com/articles/tatiana-suarez-wants-mackenzie-dern-070140535.html, https://sports.yahoo.com/articles/virna-jandiroba-vs-tatiana-suarez-181014624.html
+- Record and history: https://en.wikipedia.org/w/index.php?title=Tatiana_Suarez&oldid=1381271058 and https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4020435
+- Rankings: https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings and https://ufcrankings.org/
+- Photos: https://a.espncdn.com/i/headshots/mma/players/full/4020435.png, https://a.espncdn.com/i/headshots/mma/players/stance/left/4020435.png, https://a.espncdn.com/i/headshots/mma/players/stance/right/4020435.png, https://cagesidepress.com/wp-content/uploads/2026/04/Tatiana-Suarez-vs.-Loopy-Godinez.jpg
+
+Still unconfirmed: the Nov 6 weigh-in, the result of the Jandiroba fight (Nov 7), whether her pro record is 12-1 or 13-1, and what kept her out from 2019 to 2023.

@@ -103,14 +103,23 @@ def load_all():
     return fights, people, elo_pre
 
 
+# Judging weights for the 'judge' performance score. Verification fix (Nov 6): the first build used the EM
+# round-winner fit over ALL judges' cards (docs/BACKLOG.md), which includes 2024-2026 rounds, i.e. test-period
+# data shaped a feature. These are the same EM model fit only on decisions before 2023-01-01
+# (data/derived/baserates.json round_model.holdout.coef_train), converted to head-strike units.
+_JC = {"head_l": 0.173584, "body_l": 0.127844, "leg_l": 0.105156, "kd": 2.165398, "td_l": 0.264589,
+       "ctrl_min": 0.467659}
+JUDGE_W = {k: v / _JC["head_l"] for k, v in _JC.items()}   # body 0.74, leg 0.61, KD 12.5, TD 1.52, ctrl 2.69/min
+
+
 def perf_score(v, mode):
     """Per-fighter performance used by the margin-aware Elo: 'sig' = significant strikes landed;
-    'judge' = judging-weight score (head 1, body 0.74, leg 0.59, KD 13.5, TD 1.6, control 2.6 per minute;
-    weights from the EM round-winner fit in docs/BACKLOG.md)."""
+    'judge' = judging-weight score in head-strike units (JUDGE_W: pre-2023 EM round-winner fit)."""
     if mode == "sig":
         return float(v[SIG_L].sum())
-    return float(v[KI["h_lnd"]] + 0.74 * v[KI["b_lnd"]] + 0.59 * v[KI["l_lnd"]] + 13.5 * v[KI["kd"]]
-                 + 1.6 * v[KI["td_lnd"]] + 2.6 * v[KI["ctrl"]] / 60.0)
+    return float(v[KI["h_lnd"]] + JUDGE_W["body_l"] * v[KI["b_lnd"]] + JUDGE_W["leg_l"] * v[KI["l_lnd"]]
+                 + JUDGE_W["kd"] * v[KI["kd"]] + JUDGE_W["td_l"] * v[KI["td_lnd"]]
+                 + JUDGE_W["ctrl_min"] * v[KI["ctrl"]] / 60.0)
 
 
 def margin_elo(fights, K=40.0, w_share=0.3, mode="sig", boost=1.5):
@@ -437,7 +446,7 @@ def matchup_features(fa, fb, P):
     ea = fa["slpm"] * fb["sapm"] / sig_mu
     eb = fb["slpm"] * fa["sapm"] / sig_mu
     out["x_sig"] = ea - eb
-    out["x_sig_share"] = ea / (ea + eb) - 0.5
+    out["x_sig_share"] = 0.5 * (ea - eb) / (ea + eb)     # exactly antisymmetric in floating point
     ha = fa["head_pm"] * fb["ohead_pm"] / h_mu
     hb = fb["head_pm"] * fa["ohead_pm"] / h_mu
     out["x_head"] = ha - hb
@@ -668,9 +677,13 @@ def lr_design(df, specs=None, A="A_", Bp="B_"):
             v[a.isna() | b.isna()] = 0.0
             out[t["name"]] = v
         elif ty == "share":
+            # Verification fix (Nov 6): the first build used ea / (ea + eb + 1e-12) - 0.5, which is NOT exactly
+            # antisymmetric: when ea == eb (e.g. both men have no events of that kind and sit at the prior) it is
+            # -1e-12-ish in BOTH corner orders, so its sign told the trees which orientation a row was in, and
+            # A (first-named) wins 57% of training fights. This form is exactly antisymmetric (0 when ea == eb).
             ea = df[A + t["u"]] * df[Bp + t["v"]]
             eb = df[Bp + t["u"]] * df[A + t["v"]]
-            out[t["name"]] = ea / (ea + eb + 1e-12) - 0.5
+            out[t["name"]] = 0.5 * (ea - eb) / (ea + eb + 1e-12)
         elif ty == "stance":
             out[t["name"]] = ((df[A + "southpaw"] * df[Bp + "orthodox"]) - (df[Bp + "southpaw"] * df[A + "orthodox"]))
     X = pd.DataFrame(out, index=df.index)
@@ -743,10 +756,14 @@ def auc(p, y):
 
 
 def calib_slope(p, y):
-    """Logistic recalibration y ~ a + b * logit(p) (data orientation)."""
+    """Logistic recalibration y ~ a + b * logit(p), fit on BOTH corner orientations (each fight mirrored), as
+    docs/BACKLOG.md's evaluation rule requires. Verification fix (Nov 6): the first build fit it in data
+    orientation, where the intercept soaks up the first-named-fighter bias (A wins 55-57%) and the slope is
+    not corner-symmetric. Mirrored, the intercept is 0 by construction (kept in the output as a check)."""
     from scipy.optimize import minimize
     z = _logit(np.asarray(p))
     y = np.asarray(y, float)
+    z, y = np.r_[z, -z], np.r_[y, 1 - y]
 
     def f(w):
         t = w[0] + w[1] * z
@@ -780,13 +797,20 @@ def calib_table(p, y, nb=10):
     return out
 
 
+def acc_sym(p, y):
+    """Accuracy with p == 0.5 counted as half right (otherwise a tie is scored as a B pick, which the
+    first-named-fighter bias then marks wrong 55% of the time)."""
+    p, y = np.asarray(p, float), np.asarray(y, float)
+    return float(np.mean(np.where(p == 0.5, 0.5, ((p > 0.5) == (y > 0.5)).astype(float))))
+
+
 def win_metrics(p, y):
     p = np.asarray(p, float)
     y = np.asarray(y, float)
     a, b = calib_slope(p, y)
     return {"n": int(len(y)), "log_loss": round(log_loss(p, y), 5),
             "brier": round(float(np.mean((p - y) ** 2)), 5),
-            "accuracy": round(float(np.mean((p > 0.5) == (y > 0.5))), 4),
+            "accuracy": round(acc_sym(p, y), 4),
             "auc": round(auc(p, y), 4), "ece_sym": round(ece_sym(p, y), 4),
             "calib_intercept": round(a, 3), "calib_slope": round(b, 3)}
 
@@ -1920,7 +1944,7 @@ def evaluate(R):
     Lp = {k: np.clip(P[k][test_bt], 1e-6, 1 - 1e-6) for k in models_t}
     LL = {k: -(yt * np.log(Lp[k]) + (1 - yt) * np.log(1 - Lp[k])) for k in models_t}
     BR = {k: (Lp[k] - yt) ** 2 for k in models_t}
-    AC = {k: ((Lp[k] > 0.5) == (yt > 0.5)).astype(float) for k in models_t}
+    AC = {k: np.where(P[k][test_bt] == 0.5, 0.5, ((P[k][test_bt] > 0.5) == (yt > 0.5)).astype(float)) for k in models_t}
 
     def stat(idx):
         row = []
@@ -2034,7 +2058,7 @@ def evaluate(R):
                     pk = P[k][test_bt][m]
                     ok = ~np.isnan(pk)
                     row[k] = round(log_loss(pk[ok], yt[m][ok]), 4) if ok.sum() else None
-            row["acc_ml"] = round(float(np.mean((P["ml"][test_bt][m] > 0.5) == (yt[m] > 0.5))), 3)
+            row["acc_ml"] = round(acc_sym(P["ml"][test_bt][m], yt[m]), 3)
             sg[name][v] = row
     out["subgroups_test"] = sg
     R["eval"] = out
@@ -2122,7 +2146,7 @@ def eval_terms(terms, a, b):
         elif ty == "share":
             ea = a[t["u"]] * b[t["v"]]
             eb = b[t["u"]] * a[t["v"]]
-            x = ea / (ea + eb + 1e-12) - 0.5
+            x = 0.5 * (ea - eb) / (ea + eb + 1e-12)
         elif ty == "stance":
             x = a["southpaw"] * b["orthodox"] - b["southpaw"] * a["orthodox"]
         z += t["coef"] * x

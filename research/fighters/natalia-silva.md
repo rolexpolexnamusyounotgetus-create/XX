@@ -1,14 +1,16 @@
 # Natalia Silva: scouting dossier
 
-As of Friday, Nov 6, 2026. She/her. Southpaw, 5'4" with a 65" reach, born Feb 3, 1997 (age 29). UFC record 9-0 (2 KO/TKO, 7 decisions). "Dataset" means `data/derived/fighters.json` and the raw ufcstats CSVs, current through Oct 31, 2026.
+As of Friday, Nov 6, 2026. She/her. Southpaw, 5'4" with a 65" reach, born Feb 3, 1997 (age 29). Pro record 21-5-1, on a 15-fight win streak (ESPN, Wikipedia, The Independent); UFC record 9-0 (2 KO/TKO, 7 decisions). Team Borracha, Ipatinga, Brazil; taekwondo background. "Dataset" means `data/derived/fighters.json` and the raw ufcstats CSVs, current through Oct 31, 2026.
 
-**Limits of this pass.** The shared web-search budget ran out, and direct fetches to Wikipedia and UFC.com failed to resolve. Everything below comes from ufcstats data. Rankings, her next booking, injuries and appearance are not web-verified.
+**Update, Nov 6, 2026 (open network).** The first pass had no web access; status, ranking, booking, injury and appearance below have now been checked on the web (sources at the end). The fight analysis still comes from ufcstats data.
 
 ## Current status
 
-- **Title:** UFC women's flyweight champion. She beat Wang Cong by unanimous decision (48-47, 48-47, 49-46) at UFC 332 in Salt Lake City (Oct 3, 2026). ufcstats lists the bout as a women's flyweight title bout, not an interim one.
-- **Path to the title:** wins over Rose Namajunas (Jan 24, 2026), Alexa Grasso (May 10, 2025) and Jessica Andrade (Sep 7, 2024).
-- **Unknown:** first defence, ranking and any injuries.
+- **Title:** UFC women's flyweight champion. She was booked to challenge Valentina Shevchenko at UFC 332 in Salt Lake City (Oct 3, 2026); Shevchenko was injured and vacated on Sep 5, and Silva beat Wang Cong for the vacant title by unanimous decision (48-47, 48-47, 49-46).
+- **Path to the title:** wins over Rose Namajunas (Jan 24, 2026, as a replacement for Alexa Grasso), Alexa Grasso (May 10, 2025) and Jessica Andrade (Sep 7, 2024).
+- **Ranking:** champion and #4 women's pound-for-pound in the official UFC rankings last updated Nov 3, 2026.
+- **Next:** no first defence booked as of Nov 6, 2026. She said she wants to be an "active champion" and named no one (Heavy, via MMA Junkie); she has told Shevchenko to "get in line". Early odds favour Shevchenko (-190) in a possible fight and Silva (-300) against Grasso (Sherdog, Oct 7).
+- **Injuries:** none reported after UFC 332; post-fight photos show a small tape strip under her right eye.
 
 ## Recent fights
 
@@ -62,4 +64,22 @@ Decayed Elo is 1722, second in this batch behind Shevchenko. The engine should g
   - [Araujo](http://ufcstats.com/fight-details/7b1882dc76786d77)
   - [Bleda](http://ufcstats.com/fight-details/33719a2d9c69ed17)
   - [Leonardo](http://ufcstats.com/fight-details/744cbe6e49d4f41c)
-- No web sources could be consulted in this pass.
+
+## Appearance (checked Nov 6, 2026)
+
+No photo-based likeness sheet exists for her (data/likeness/natalia-silva.json). From the ESPN headshot and full-body cutout with the belt after UFC 332 (files dated Oct 5, 2026) and the May 8, 2025 ESPN cutout; the lettering reads correctly, so they are not mirrored.
+
+- **Build:** compact flyweight; 5 ft 4 in, 65 in reach (ufcstats and ESPN; Wikipedia lists 5 ft 5 in).
+- **Hair:** dark brown; long and curly with lighter caramel ends when loose; tight cornrows back into a bun at the crown for fights.
+- **Skin:** medium.
+- **Tattoos:** none visible on the arms, shoulders, chest or abdomen.
+- **Kit:** yellow-and-olive tiger-stripe Brazil kit with DA SILVA in green down the left leg (UFC 315 fight week, May 2025); black-and-gold champion's jersey over black shorts after UFC 332 (fight-night shorts colour not checked). The sim uses corner colours.
+
+## Update sources (Nov 6, 2026)
+
+- UFC 332 and title: https://www.espn.co.uk/mma/story/_/id/49839558/shevchenko-injured-vacates-silva-wang-vie-belt-ufc-332, https://sports.yahoo.com/articles/natalia-silva-crowned-women-flyweight-081224191.html, https://heavy.com/sports/ufc/natalia-silva-whats-next-ufc-332/, https://www.sherdog.com/news/news/Natalia-Silva-vs-Valentina-Shevchenko-odds-UFC-champ-opens-as-underdog-203109
+- Record and background: https://en.wikipedia.org/w/index.php?title=Nat%C3%A1lia_Silva_(fighter)&oldid=1380885438 and https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4054605
+- Rankings: https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings and https://ufcrankings.org/
+- Photos: https://a.espncdn.com/i/headshots/mma/players/full/4054605.png, https://a.espncdn.com/i/headshots/mma/players/stance/left/4054605.png, https://a.espncdn.com/i/headshots/mma/players/stance/right/4054605.png
+
+Still unconfirmed: her first title defence (none booked) and her fight-night kit at UFC 332.

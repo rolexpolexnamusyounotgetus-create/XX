@@ -1,12 +1,13 @@
 # Kai Kara-France: scouting dossier
 
-As of 2026-11-06. He/him. Orthodox, 5 ft 4 in, 69 in reach, born 1993-03-26 (age 33). Nickname "Don't Blink". New Zealander. UFC record 8-5 (ufcstats).
+As of 2026-11-06. He/him. Orthodox, 5 ft 4 in, 69 in reach, born 1993-03-26 (age 33). Nickname "Don't Blink". New Zealander, trains at City Kickboxing in Auckland. Pro record 25-12 (1 NC) (Wikipedia; ESPN 25-12); UFC record 8-5 (ufcstats).
 
 ## Current status
 
 - **Last fight:** Rear-naked-choke loss to Alexandre Pantoja at 1:55 of round 3 for the flyweight title, UFC 317 (Jun 28, 2025); CBS wrote that Pantoja submitted him "with ease". His second title shot, after the interim-title loss to Brandon Moreno (UFC 277, 2022).
-- **Since then:** No UFC fight in the ufcstats snapshot through Oct 31, 2026: a layoff of more than 16 months, after one fight a year since 2023.
-- **Not verified:** Bookings, injuries, ranking and any retirement talk could not be checked on the web, in the research pass or in the Nov 6 fact-check (search budget spent, sites unreachable). Treat his status as unknown. He is not in the top five of the Nov 3, 2026 flyweight lists that were checked.
+- **On a break since Nov 2025:** He told the UFC he would take at least a year off to pursue cultural and personal interests outside fighting. His team told Ariel Helwani he is "not retiring necessarily". He withdrew from the drug-testing pool, which took him out of the rankings on Nov 18, 2025 until he tells the UFC he is back (MMA Mania; Wikipedia).
+- **Now (Nov 6, 2026):** No report of a return, a booking or re-entry to the testing pool was found (Google News and Bing News searches). He is not in the official flyweight top 15 of Nov 3, 2026. Manel Kape named him as an opponent for after the Van fight (Oct 2026). The scouting file marks him inactive (`active: false`).
+- **Injury history:** a knee injury cost him a Feb 2023 fight (UFC 284) and a training concussion a Sep 2023 fight with Kape (UFC 293), per Wikipedia. No injury is linked to the current break.
 
 ## Recent fights (ufcstats)
 
@@ -34,7 +35,7 @@ The numbers describe a counter-punching striker with real power. He lands 40% of
 - Grappling exposure: two submission losses (Royval guillotine 2020, Pantoja RNC 2025), 11 submission attempts against him, and a close loss to control-heavy Albazi.
 - Low accuracy: volume does not always win rounds.
 - Knocked down 4 times in the UFC and stopped by a body kick once.
-- Inactivity since mid-2025, at 33.
+- Inactivity: no fight since Jun 2025 and on a self-imposed break, at 33.
 
 ## Durability and cardio
 
@@ -50,4 +51,23 @@ Elo 1582, 12th among flyweights active since 2025 in the snapshot. His decayed r
 - https://ufcrankings.org/ (Nov 3, 2026 flyweight top five, which does not include him)
 - data/derived/fighters.json and data/raw (ufcstats snapshot to 2026-10-31); http://ufcstats.com/fighter-details/853eb0dd5c0e2149
 
-Fact-check (2026-11-06): all fight results and figures re-checked against ufcstats; no errors found. Research gap: his 2025-26 status, gym and appearance still need a web check before the page shows them. Appearance: build from ufcstats; skin tone from published photos, unverified.
+## Appearance (checked Nov 6, 2026)
+
+No photo-based likeness sheet exists for him (data/likeness/kai-kara-france.json). From the ESPN headshot (file dated Jun 26, 2025) and full-body studio cutouts (files dated Aug 16, 2024 and Jun 26, 2025; the lettering reads correctly, so they are not mirrored). He has not fought since, so his current look is unverified.
+
+- **Build:** short and lean with long arms; 5 ft 4 in, 69 in reach (ufcstats).
+- **Hair:** very short dark-brown crop, faded short at the sides.
+- **Facial hair:** clean-shaven.
+- **Skin:** light-medium (revised from the first draft's "medium").
+- **Tattoos:** a black Polynesian-style (likely Maori) patterned piece on the right forearm, wrist to just below the elbow (Jun 2025); not visible in the Aug 2024 cutout, so it may be newer or on the inner forearm only. Chest, abdomen and left arm clean.
+- **Kit:** white Venum shorts with a grey tiger-stripe pattern and KARA-FRANCE down the left leg (UFC 317 fight week); black patterned shorts at UFC 305. The sim uses corner colours.
+
+## Update sources (Nov 6, 2026)
+
+- Break and rankings removal: https://www.mmamania.com/ufc-news/404236/top-flyweight-kai-kara-france-planning-to-take-a-year-off-immediately-dropped-from-rankings and https://mmajunkie.usatoday.com/story/sports/ufc/2025/11/18/kai-kara-france-removed-ufc-flyweight-rankings/87345692007/ (returned 402 to scripts; cited via Wikipedia)
+- Record, gym, injury history: https://en.wikipedia.org/w/index.php?title=Kai_Kara-France&oldid=1380877951 and https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4243885
+- Rankings: https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings and https://ufcrankings.org/
+- Kape callout: https://middleeasy.com/mma-news/manel-kape-joshua-van-january-kai-kara-france/
+- Photos: https://a.espncdn.com/i/headshots/mma/players/full/4243885.png, https://a.espncdn.com/i/headshots/mma/players/stance/left/4243885.png, https://a.espncdn.com/i/headshots/mma/players/stance/right/4243885.png
+
+Fact-check (2026-11-06): all fight results and figures re-checked against ufcstats; no errors found. Open-network update the same day: status (break since Nov 2025, unranked, not in the testing pool), record, gym and appearance filled in from the sources above. Still unconfirmed: whether and when he plans to return; no statement from him in 2026 was found.

@@ -23,13 +23,13 @@ An orthodox head-hunter (81% of attempts to the head) who trades willingly. His 
 **Durability:** never knocked down in 10 UFC fights; all three losses are decisions. **Cardio:** has gone 25 minutes twice and was still attacking late, but his landed rate fell in round 5 against Volkanovski both times.
 
 ## Appearance
-Checked on Nov 6, 2026 against ESPN's headshot and left-stance cutout (files dated Jun 11, 2026) and right-stance cutout (Jan 30, 2026). No likeness sheet exists for him yet.
-- **Hair:** dark brown undercut: sides clipped very short, a long top combed over to one side, and a long mullet tail at the back.
-- **Facial hair:** a thick dark moustache and no beard. The earlier "dark beard" entry was wrong.
-- **Skin:** light-medium (forehead #f0b9a5, nose bridge #db9781 under studio light).
-- **Tattoos:** script across the upper chest reading "DREAM BELIEVE / AND MAKE IT HAPPEN"; a small two-line Spanish script on the right ribs (partly legible: "...vida un sueño ... sueño una realidad"); a black-and-grey lion head on the right forearm under a word beginning "Persever..."; a small mark on the inner left forearm; a short script above the right knee that seems to begin "Isaiah" (partly legible).
-- **Kit:** white stars-and-stripes shorts and red "Freedom 250" gloves for the White House card (one-off); black UFC (Venum) shorts with a grey wave pattern in the Jan 2026 shoot. In the sim the corner colour decides.
-- **Build:** 5 ft 11 in, 72 in reach; lean and muscular, moving up to 155.
+From the photo-based likeness sheet `data/likeness/diego-lopes.json` (9 photos, Nov 6, 2026), which agrees with my own check of ESPN's headshot and cutouts (Jun 11, 2026 and Jan 30, 2026). Use the sheet for the avatar.
+- **Hair:** dark brown mullet with an undercut: skin-faded sides, a long top swept back and to his left, and a mullet to the neck and upper shoulders (tied into a short tail in the June 2026 studio shoot).
+- **Facial hair:** a thick, bushy dark-brown moustache with light stubble and no beard. The earlier "dark beard" entry was wrong.
+- **Skin:** light-medium, warm golden-tan (sheet tone #cc8f74).
+- **Tattoos:** "DREAM BELIEVE / AND MAKE IT HAPPEN" across the upper chest; small Spanish script on the right ribs ("...vida un sueño." / "...sueño una realidad"); a lion head under the word "Perseverar" on the right forearm; small cursive script on the outer left forearm (roughly "OML"); "Isaiah 6:8" above the right knee.
+- **Kit:** white stars-and-stripes shorts and red US-flag gloves for the White House card (one-off); black UFC-issued shorts with a grey wave pattern in January 2026. He often wears a black cowboy hat at events. In the sim the corner colour decides.
+- **Build:** 5 ft 11 in, 72 in reach; tall and lean for 145, moving up to 155.
 
 ## What the numbers say (fighters.json)
 Elo 1673. 3.95 significant strikes landed per minute at 47% accuracy. 6 knockdowns in 117 minutes; 0.90 takedowns per 15 at 47%; 1.02 submission attempts per 15. Five-round pace by round: 1, 1.01, 0.62, 0.91, 0.41.
@@ -47,6 +47,7 @@ Elo 1673. 3.95 significant strikes landed per minute at 47% accuracy. 6 knockdow
 - https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261212 and https://www.espn.com/mma/fightcenter/_/id/600061401 (UFC 335 card and odds)
 - https://www.sherdog.com/fighter/Diego-Lopes-112531 (record, upcoming UFC 335)
 - https://www.ufcalendar.com/fighters/diego-lopes
+- data/likeness/diego-lopes.json (appearance)
 - https://a.espncdn.com/i/headshots/mma/players/full/4881999.png, .../stance/left/4881999.png, .../stance/right/4881999.png (appearance)
 - http://ufcstats.com/fighter-details/f166e93d04a8c274
 - research/volkanovski.md; data/derived/fighters.json; data/raw/ufc_fight_stats.csv

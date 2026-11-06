@@ -81,7 +81,7 @@
     "hair": "very short dark-brown crop, faded short at the sides",
     "facial_hair": "clean-shaven",
     "skin": "light-medium",
-    "tattoos": "a black Maori-style patterned piece on the right forearm, wrist to just below the elbow, visible in the Jun 2025 ESPN cutout (not visible in the Aug 2024 cutout, so it may be newer or on the inner forearm only); chest, abdomen and left arm clean",
+    "tattoos": "a black Polynesian-style (likely Maori) patterned piece on the right forearm, wrist to just below the elbow, visible in the Jun 2025 ESPN cutout (not visible in the Aug 2024 cutout, so it may be newer or on the inner forearm only); chest, abdomen and left arm clean",
     "kit": "UFC 317 fight week (Jun 2025): white Venum shorts with a grey tiger-stripe pattern and KARA-FRANCE down the left leg; UFC 305 (Aug 2024): black patterned shorts. Corner colour wins in the sim",
     "notes": "Checked Nov 6, 2026 (open network) against dated photos, since no photo-based likeness sheet exists (data/likeness/kai-kara-france.json): ESPN headshot (file dated Jun 26, 2025) and full-body studio cutouts (files dated Aug 16, 2024 and Jun 26, 2025; lettering reads correctly, so not mirrored). He has not fought since Jun 2025, so his current look is unverified. The earlier 'medium' skin tone was revised to light-medium from these photos. Build is from ufcstats.",
     "sources": [

@@ -1,13 +1,15 @@
 # Valentina Shevchenko: scouting dossier
 
-As of Friday, Nov 6, 2026. She/her. "Bullet". Southpaw, 5'5" with a 66" reach, born Mar 7, 1988 (age 38). UFC record 15-3-1 (4 KO/TKO, 2 submissions, 9 decisions). "Dataset" means `data/derived/fighters.json` and the raw ufcstats CSVs, current through Oct 31, 2026.
+As of Friday, Nov 6, 2026. She/her. "Bullet". Southpaw, 5'5" with a 66" reach, born Mar 7, 1988 (age 38). Pro record 26-4-1 (ESPN); UFC record 15-3-1 (4 KO/TKO, 2 submissions, 9 decisions). ESPN lists her gym as Tiger Muay Thai; her coach is Pavel Fedotov. "Dataset" means `data/derived/fighters.json` and the raw ufcstats CSVs, current through Oct 31, 2026.
 
-**Limits of this pass.** The shared web-search budget ran out, and direct fetches to Wikipedia and UFC.com failed to resolve. Everything below comes from ufcstats data. Her current status, rankings, injuries and appearance are not web-verified.
+**Update, Nov 6, 2026 (open network).** The first pass had no web access; status, ranking, injury and appearance below have now been checked on the web (sources at the end). The fight analysis still comes from ufcstats data.
 
 ## Current status
 
-- **Title:** she appears to no longer hold it. She regained the flyweight belt at UFC 306 (Sep 14, 2024) and defended it twice, most recently against Zhang Weili at UFC 322 (Nov 15, 2025). ufcstats then records UFC 332 (Oct 3, 2026), Natalia Silva vs. Wang Cong, as a women's flyweight title bout, and not an interim one. Silva won.
-- **Unknown:** how the belt left her (vacated, stripped or retired), whether she is active, any booking or injury.
+- **Title:** vacated. She regained the flyweight belt at UFC 306 (Sep 14, 2024) and defended it twice, most recently against Zhang Weili at UFC 322 (Nov 15, 2025). She was due to defend against Natalia Silva at UFC 332 (Oct 3, 2026) but was injured, and the UFC announced on Sep 5, 2026 that she had vacated the belt and would be out "up to one year" (ESPN). Silva beat Wang Cong for the vacant title.
+- **Injury:** her coach Pavel Fedotov said she hurt the ligaments in her shoulder and back and needs at least eight months to recover (via Heavy). She texted Ariel Helwani that she "couldn't be 100% for October" and plans to come back in 2027.
+- **Ranking:** #1 women's flyweight contender and #1 women's pound-for-pound in the official UFC rankings last updated Nov 3, 2026 (Wayback capture of ufc.com/rankings; ufcrankings.org mirror). Being ranked means the UFC still counts her as active.
+- **Next:** nothing booked. BetOnline opened her at -190 against Silva (+165) for a possible rematch of the planned fight (Sherdog, Oct 7). She congratulated Silva and told her not to get "too comfortable".
 - **Title history:** 13 flyweight title fights (11-1-1) plus a 2017 bantamweight title loss to Amanda Nunes.
 
 ## Recent fights
@@ -40,7 +42,7 @@ A southpaw counter-striker: she throws 5.1 significant strikes per minute (decay
 - **Volume:** low output costs her close striking fights (the 2023 draw).
 - **Back exposure:** her one submission loss came when Grasso took her back.
 - **Body:** 32% of the strikes that land on her go to the body.
-- **Age and inactivity:** 38, with no fight in nearly a year.
+- **Age, inactivity and injury:** 38, no fight since Nov 2025, and out until 2027 with a shoulder and back injury.
 
 ## Durability and cardio
 
@@ -49,7 +51,7 @@ A southpaw counter-striker: she throws 5.1 significant strikes per minute (decay
 
 ## What the numbers say
 
-Decayed Elo is 1750, the highest of this batch. The engine should give her low volume, high accuracy, strong kicks, a real takedown-and-control threat and late-round improvement. Her rates come from 16 five-round fights, nearly all at flyweight. Status inputs (active, title) should stay unknown until a web pass confirms them.
+Decayed Elo is 1750, the highest of this batch. The engine should give her low volume, high accuracy, strong kicks, a real takedown-and-control threat and late-round improvement. Her rates come from 16 five-round fights, nearly all at flyweight. Status is now confirmed: no title, ranked #1, injured until 2027.
 
 ## Sources
 
@@ -61,4 +63,23 @@ Decayed Elo is 1750, the highest of this batch. The engine should give her low v
   - [Grasso 3](http://ufcstats.com/fight-details/6f83cfae0c800ef8), [Grasso 2](http://ufcstats.com/fight-details/b395c89e19a3fec4) and [Grasso 1](http://ufcstats.com/fight-details/a69afe4a88c0ca12)
   - [Eye](http://ufcstats.com/fight-details/4127b45c3d546eef) and [Andrade](http://ufcstats.com/fight-details/34d2632fd26e7078)
   - [Silva vs. Wang, UFC 332](http://ufcstats.com/fight-details/3f804eec9183e597)
-- No web sources could be consulted in this pass.
+
+## Appearance (checked Nov 6, 2026)
+
+No photo-based likeness sheet exists for her (data/likeness/valentina-shevchenko.json). From the ESPN headshot and full-body cutout (files dated Oct 5, 2026; the shoot date is unknown) and the Sep 12, 2024 ESPN cutout. The lettering on her shorts reads correctly, so left and right are her own.
+
+- **Build:** lean and athletic; 5 ft 5 in, 66 in reach (ufcstats; ESPN 66.5 in).
+- **Hair:** blonde (honey to dark blonde), pulled back tight in braids into a ponytail.
+- **Skin:** light.
+- **Tattoos:** a black handgun on the left side of the lower abdomen; a dark round emblem above a line of script on the outer upper left arm (script not read); a black patterned band around the right ankle.
+- **Kit:** green Mexican-pattern sports bra and shorts with SHEVCHENKO down the left leg and gold gloves (Noche UFC, Sep 2024); the newest cutout shows the black-and-gold champion's walkout jersey over olive-grey shorts with gold tiger prints. The sim uses corner colours.
+
+## Update sources (Nov 6, 2026)
+
+- Vacating and injury: https://www.espn.co.uk/mma/story/_/id/49839558/shevchenko-injured-vacates-silva-wang-vie-belt-ufc-332, https://heavy.com/sports/ufc/valentina-shevchenko-coach-explains-vacating-belt/, https://heavy.com/sports/ufc/valentina-shevchenko-giving-up-flyweight-title/
+- Silva result and reaction: https://sports.yahoo.com/articles/natalia-silva-crowned-women-flyweight-081224191.html and https://www.sherdog.com/news/news/Natalia-Silva-vs-Valentina-Shevchenko-odds-UFC-champ-opens-as-underdog-203109
+- Rankings: https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings and https://ufcrankings.org/
+- Record and gym: https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/2554705
+- Photos: https://a.espncdn.com/i/headshots/mma/players/full/2554705.png, https://a.espncdn.com/i/headshots/mma/players/stance/left/2554705.png, https://a.espncdn.com/i/headshots/mma/players/stance/right/2554705.png
+
+Still unconfirmed: the exact injury (the UFC called it undisclosed) and a return date beyond "2027".

@@ -51,7 +51,15 @@
    "lostJ": "share of judges who gave the previous round to the opponent (decisions only)"
   },
   "jackknife_groups": 10,
-  "secs": 376.997617
+  "secs": 376.997617,
+  "provenance": {
+   "state_models, comparison_estimators_out, form_decomposition, simulation_check, kd_momentum_descriptive, adaptation_judges, fighter_late_ratio": "full run with 10-group jackknife (python3 tools/dynamics.py --jack 10), started 2026-11-06 10:29 UTC; parts 1-4 and 2 saved incrementally",
+   "finish_hazard, engine_check": "python3 tools/dynamics.py --parts 5 --jack 10 --engine-csv <engine b50cadf sims>",
+   "engine_check_current": "python3 tools/dynamics.py --parts none --engine-csv <engine aabd475 sims> --engine-key engine_check_current",
+   "targets_by_round, round_correlations_train": "recomputed on every run (deterministic)",
+   "test_window": "2024-01-01..2025-12-31; fights from 2026-01-01 are the sealed vault (docs/BACKLOG.md) and are never scored",
+   "cardio_by_slug": "uses all fights to the snapshot (incl. 2026): forward predictions only, never backtests"
+  }
  },
  "finish_hazard": {
   "p0_kd_per_standing_head_train": 0.00882,

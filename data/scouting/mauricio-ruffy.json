@@ -3,20 +3,33 @@
   "name": "Mauricio Ruffy",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Active, coming off a loss. Arman Tsarukyan knocked him out with a standing elbow in the clinch at 4:56 of round 1 at UFC 331 in Los Angeles (Sep 19, 2026). That ended a two-fight win streak: TKO wins over Rafael Fiziev (UFC 325, Jan 31, 2026) and Michael Chandler (UFC Freedom 250, Washington, DC, Jun 14, 2026). UFC record 5-2 in fighters.json. He is No. 10 at lightweight on the Nov 3, 2026 media-panel list as mirrored by UFCalendar and ufcrankings.org (recorded in the project's market research; not checked on ufc.com). No booking or injury was found; web search was unavailable to the research pass and to the Nov 6 fact-check.",
+    "summary": "Active but coming off a knockout loss, and he says he will not fight again in 2026. Arman Tsarukyan knocked him out with an elbow in the clinch at 4:56 of round 1 in the five-round UFC 331 co-main event in Los Angeles (Sep 19, 2026). That ended a two-fight win streak: TKO wins over Rafael Fiziev (UFC 325, Sydney, Jan 31, 2026 US time / Feb 1 local) and Michael Chandler (UFC Freedom 250, White House South Lawn, Jun 14, 2026). Pro record 14-3-0 with 13 KO/TKO wins (ESPN, UFCalendar, ufcrankings.org); UFC 5-2. On Oct 15, 2026 he denied reports of a December fight with Salahdine Parnasse: 'I'm not going to fight now', and the news he had teased was about his own training space, where he said Alexander Volkanovski and Israel Adesanya are coming to train. ESPN and UFCalendar list no booking on Nov 6. Camp: he trained for UFC 325 at Volkanovski's Freestyle MMA in Sydney, and Bloody Elbow (May 8, 2026, search snippet only; the page returned 403) reported that he had officially left the Fighting Nerds. ESPN still lists Fighting Nerds as his team.",
     "title": null,
-    "ranking": "#10 lightweight (UFC media panel, Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org per research/matchup_market.md; not checked on ufc.com)",
+    "ranking": "#8 lightweight in the UFC media-panel rankings (Nov 3, 2026, per ufcalendar.com; ufcrankings.org, updated Nov 5, agrees) and #10 in the UFC/Meta algorithmic rankings (Oct 31, 2026 board, published Nov 3; ufcalendar.com and MMA Mania). ufc.com/rankings returned 403 to scripts. The earlier note that he was No. 10 on the media panel mixed up the two boards: No. 10 is his Meta position.",
     "active": true,
     "next_fight": null,
-    "injuries": [],
+    "injuries": [
+      {
+        "what": "cut near the right eye from the Tsarukyan knockout. The California commission suspended him 45 days (30 with no contact), plus 60 days unless a physician clears the cut. That runs to about Nov 18, 2026. No later medical news was found",
+        "when": "2026-09",
+        "source": "https://www.mmamania.com/ufc-medical-suspensions-and-injuries/474111/every-ufc-331-fighter-just-got-suspended-following-violent-los-angeles-card-thumb-less-menifield-slapped-with-six-month-sit"
+      }
+    ],
     "sources": [
       "data/derived/fighters.json (recent: 2026-09-19 L Tsarukyan KO R1 4:56, elbow in clinch; 2026-06-14 W Chandler TKO R1 4:29; 2026-01-31 W Fiziev TKO R2 4:30)",
-      "data/raw/ufc_event_details.csv (UFC 331 Los Angeles; UFC Freedom 250 Washington, DC; UFC 325 Sydney)",
-      "https://www.mmaweekly.com/news/arman-tsarukyan-lands-elbow-knockout-on-mauricio-ruffy-at-ufc-331 (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
-      "https://sports.yahoo.com/articles/arman-tsarukyan-knocks-mauricio-ruffy-061351913.html (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
-      "https://www.bjpenn.com/mma-news/arman-tsarukyan/ufc-331-results-arman-tsarukyan-kos-mauricio-ruffy-video/ (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
-      "https://www.tapology.com/fightcenter/bouts/1166249-ufc-331-arman-ahalkalakets-tsarukyan-vs-mauricio-ruffy (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
-      "research/matchup_market.md, section 3 (lightweight picture as of Nov 6, 2026: 'Ruffy is No. 10'), citing https://www.ufcalendar.com/rankings/lightweight and https://ufcrankings.org/ (not re-fetched)"
+      "https://www.mmaweekly.com/news/arman-tsarukyan-lands-elbow-knockout-on-mauricio-ruffy-at-ufc-331 (cited in data/scouting/arman-tsarukyan.json)",
+      "https://www.espn.com/mma/story/_/id/49986192/arman-tsarukyan-defeats-mauricio-ruffy-6th-straight-win",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/5122238 (ESPN athlete record 14-3-0, status Active, team Fighting Nerds; overview shows only a previous fight, UFC 331, read Nov 6, 2026)",
+      "https://www.ufcalendar.com/fighters/mauricio-ruffy (14-3-0, 13 KO/TKO; 'No next fight booked yet'; read Nov 6, 2026)",
+      "https://superfight.net/news/378684/Mauricio-Ruffy-denies-rumors-of-a-2026-return-and-projects-evolution--sending-a-message-to-the-category./ (Oct 15, 2026)",
+      "https://middleeasy.com/mma-news/mauricio-ruffy-michael-chandler-knockout-ufc-freedom-250-results/",
+      "https://en.wikipedia.org/wiki/Maur%C3%ADcio_Ruffy (revision of Oct 18, 2026, read via the API)",
+      "https://cagesidepress.com/2026/01/29/mauricio-ruffy-shuts-down-rumors-of-leaving-fighting-nerds-happy-to-have-a-home-in-australia-at-freestyle-mma/",
+      "https://bloodyelbow.com/2026/05/08/mauricio-ruffy-reveals-hes-officially-left-the-fighting-nerds-amid-fallout-with-jean-silva/ (search snippet only; 403 to scripts)",
+      "https://www.ufcalendar.com/rankings (Meta board of Oct 31 and media board of Nov 3, 2026)",
+      "https://ufcrankings.org/lightweight (media panel, updated Nov 5, 2026)",
+      "https://mmamania.com/ufc-mma-rankings/483818/tom-nolan-boots-renato-moicano-top-10-latest-ufc-rankings-update-jacobe-smith-top-15 (Meta board, Nov 3, 2026)",
+      "https://www.mmamania.com/ufc-medical-suspensions-and-injuries/474111/every-ufc-331-fighter-just-got-suspended-following-violent-los-angeles-card-thumb-less-menifield-slapped-with-six-month-sit"
     ]
   },
   "style": {
@@ -26,6 +39,7 @@
     "signature": [
       "spinning wheel kick (KO of King Green at 2:07 of R1, UFC 313)",
       "punches at distance into ground finishes: two knockdowns then ground punches vs Michael Chandler (R1 4:29); a knockdown then ground punches vs Rafael Fiziev (R2 4:30)",
+      "spinning kicks in exchanges: against Chandler a spinning kick hurt or dropped him before the finish. MiddleEasy calls it a spinning back kick, MMA Fighting a spinning heel kick and Wikipedia a spinning wheel kick, while UFC Stats logs the finish as ground punches",
       "punching KO at distance (Jamie Mullarkey, UFC 301, R1 4:42)",
       "head-hunting accuracy: 82% of landed significant strikes go to the head, and 56.5% of all significant attempts land"
     ],
@@ -39,7 +53,9 @@
     "sources": [
       "data/derived/fighters.json (career C and recency-weighted S sums; lightweight medians over 120 lightweights with 30+ UFC minutes)",
       "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (UFC 301, 309, 313, 325, 331, Freedom 250 and Paris 2025 bout stats and methods)",
-      "data/scouting/arman-tsarukyan.json and data/scouting/benoit-saint-denis.json (fight accounts)"
+      "data/scouting/arman-tsarukyan.json and data/scouting/benoit-saint-denis.json (fight accounts)",
+      "https://middleeasy.com/mma-news/mauricio-ruffy-michael-chandler-knockout-ufc-freedom-250-results/",
+      "https://www.mmafighting.com/ufc/494332/ufc-white-house-video-mauricio-ruffy-melts-michael-chandler-with-spinning-heel-kick-brutal-uppercut-knockout (headline only)"
     ]
   },
   "moves": {
@@ -50,13 +66,19 @@
   },
   "appearance": {
     "build": "long-limbed lightweight: 5'11\" with a 75-inch reach (fighters.json)",
-    "hair": "unknown (photos could not be checked in this pass)",
-    "facial_hair": "unknown",
-    "skin": "unknown",
-    "tattoos": "none confirmed",
-    "kit": "unknown",
+    "hair": "dark brown, short tapered sides with a longer top swept up and back (ESPN studio photos, Jun and Sep 2026; White House press photo, Jun 12, 2026)",
+    "facial_hair": "full dark-brown beard, about 2-3 cm, with a joined moustache and neat cheek lines (same photos)",
+    "skin": "light-medium",
+    "tattoos": "heavily tattooed on the chest and left arm. A large black-and-grey chest piece covers both pecs, with 'Ruffy' in gothic script in the centre and a grinning cartoon-style character over the left pec. That fits the One Piece origin of his nickname, but the theme is not confirmed. A full black-and-grey left sleeve: a woman's portrait under an owl on the shoulder, an elephant above the elbow, and a crowned skull and a clock on the forearm. No large tattoo shows on the right arm in the studio photos",
+    "kit": "no fixed colour seen. Both 2026 ESPN studio cutouts show white UFC shorts: a white, red and blue patriotic Freedom 250 version with red gloves (June) and white with a grey leaf pattern and a black waistband (September). The corner colour wins in the sim",
+    "notes": "No likeness sheet exists yet (data/likeness/mauricio-ruffy.json is absent). Checked Nov 6, 2026 against the ESPN headshot (file dated Sep 17, 2026), two ESPN full-body studio cutouts (files dated Jun 11 and Sep 17, 2026) and the public-domain White House photo from the Freedom 250 press conference at the Lincoln Memorial (Jun 12, 2026), which is the Wikipedia lead image. The 'Ruffy' chest script reads correctly in the cutouts, so they are not mirrored and left/right are his own. Skin is judged from studio and event light: light-medium with a warm tan. What the tattoos mean is not sourced.",
     "sources": [
-      "data/derived/fighters.json (height, reach)"
+      "data/derived/fighters.json (height, reach)",
+      "https://a.espncdn.com/i/headshots/mma/players/full/5122238.png (Last-Modified Sep 17, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/5122238.png (Last-Modified Jun 11, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/5122238.png (Last-Modified Sep 17, 2026)",
+      "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_press_conference_at_the_Lincoln_Memorial_in_Washington,_D.C.,_Friday,_June_12,_2026_-_22(cropped).jpg (Official White House Photo by Molly Riley, public domain)",
+      "https://en.wikipedia.org/wiki/Maur%C3%ADcio_Ruffy (nickname taken from One Piece)"
     ]
   },
   "engine_notes": [
