@@ -21,3 +21,6 @@ data/raw/sherdog_cache/
 
 # raw third-party pages cached by tools/*.py (regenerable)
 data/raw/web_cache/
+
+# agent worktrees (isolated component builds)
+.claude/worktrees/
