@@ -64,6 +64,18 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- crowd (lab 3, VERIFIED): NOT adopted. Public consensus panels (RotoWire, Money MMA; Tapology's robots.txt
+  disallows Claude crawlers, so it was not scraped) fail the forward-chained 2021-23 gate in every stack (0 of 60
+  variants pass; best gain -0.0003) and in the method model; 2024-25 agrees (all within +-0.0013, n.s.). Crowd
+  alone 0.6370 on 268 fights: beats Elo, loses to ML v2, level with the open. A permission-granted Tapology export
+  is the only route to a fuller test (tools/crowd.py import_csv).
+- linemove (lab 3, VERIFIED): NOT adopted; keep fwd-4.1 routing (any pre-lock consensus line, T-24h included ->
+  open-trained stack, multiplicative de-vig; true close -> close-trained, power). The consensus/T-k stack passed
+  CV but its pre-registered 2024-25 primary was contradicted (+0.0041 [+0.0017, +0.0066]). DO-NOT-DO: train stacks
+  on consensus/T-k lines; add movement or dispersion on top of the close. The stacks differ mainly in ML v2 weight
+  (open 0.58 / consensus 0.39 / close 0.33) and 2024-25 rewards ML v2 weight: a drift question, not line timing.
+  Opener CLV +0.060 [+0.046, +0.073]: the model leads the market early (descriptive, not a betting system). Future
+  data: archive timestamped consensus + per-book snapshots at T-7d/72h/24h/6h/close in the forward ledger.
 - calib (lab 3, VERIFIED ~23:00 UTC, research/model_calib.md): NO recalibration enters production (every spec
   {type: none}; Calib.apply is the identity; src/ml/calib.js + tests/test_calib.js ship as plumbing). No recency,
   per-card, annual-temperature or segment scheme beats the incumbents by > 0.0005 on the forward-chained 2021-23
