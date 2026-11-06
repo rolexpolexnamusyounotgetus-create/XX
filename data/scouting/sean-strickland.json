@@ -3,7 +3,7 @@
   "name": "Sean Strickland",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC middleweight champion for the second time. He took the belt from Khamzat Chimaev by split decision at UFC 328 (May 9, 2026). His first reign ran from beating Israel Adesanya (UFC 293, Sep 9, 2023) to losing to Dricus Du Plessis (UFC 297, Jan 20, 2024). Before the Chimaev fight he stopped Anthony Hernandez (TKO R3, Feb 21, 2026). UFC record 18-7. A rematch with Nassourdine Imavov for the title has been reported. A September report put it on UFC 335 (Dec 12, 2026), but that fell through over Strickland's pay dispute. MMA Junkie (Oct 27, 2026) now says February 2027 in Florida. It is not officially announced. These bout reports are carried from the Imavov research pass; web checks were blocked in this pass.",
+    "summary": "UFC middleweight champion for the second time. He took the belt from Khamzat Chimaev by split decision at UFC 328 (May 9, 2026). His first reign ran from beating Israel Adesanya (UFC 293, Sep 9, 2023) to losing to Dricus Du Plessis (UFC 297, Jan 20, 2024). Before the Chimaev fight he stopped Anthony Hernandez (TKO R3, Feb 21, 2026). UFC record 18-7. A rematch with Nassourdine Imavov for the title has been reported. A September report put it on UFC 335 (Dec 12, 2026), but that fell through over Strickland's pay dispute. MMA Junkie (Oct 27, 2026) now says February 2027 in Florida. It is not officially announced. These bout reports are carried from the Imavov research pass and match data/scouting/nassourdine-imavov.json; web checks were blocked in this pass and in the Nov 6 fact-check.",
     "title": "UFC middleweight champion",
     "ranking": null,
     "active": true,
@@ -18,7 +18,7 @@
       "https://bloodyelbow.com/2026/09/04/i-know-the-date-nassourdine-imavov-confirms-hell-face-sean-strickland-for-the-ufc-middleweight-title-next/",
       "https://mmasucka.com/news/sean-strickland-nassourdine-imavov-ufc-title-rematch-deal-florida/",
       "https://sports.yahoo.com/articles/report-sean-strickland-vs-nassourdine-151350283.html",
-      "data/scouting/nassourdine-imavov.json (web links above carried from that pass; not re-opened here)",
+      "data/scouting/nassourdine-imavov.json (web links above carried from that pass; re-read in the fact-check, wording matches)",
       "data/derived/fighters.json (last_fight 2026-05-09, snapshot 2026-10-31)"
     ]
   },
@@ -28,7 +28,7 @@
     "tags": ["pressure", "volume", "jab", "get-ups", "cardio", "late-surge"],
     "signature": [
       "walks forward behind constant punching: 14.4 sig attempts per minute decayed (middleweight average 8.1), 87% to the head, 96% of landed strikes at distance",
-      "out-throws champions over five rounds: 408 sig attempts vs Du Plessis (UFC 297), 312 vs Chimaev (UFC 328, none in R1), 402 vs Paulo Costa (UFC 302)",
+      "out-throws elite opponents over five rounds: 408 sig attempts to Du Plessis's 354 (UFC 297), 312 to Chimaev's 240 (UFC 328, none in R1), 402 to Paulo Costa's 266 (UFC 302)",
       "hurts and then pours it on: knocked Adesanya down in R1 on the way to 49-46 x3 (UFC 293); finished Abus Magomedov (R2, 2023) and Anthony Hernandez (R3, 2026) with ground punches, each time after a knockdown in the same round",
       "gets back up against wrestlers: Chimaev landed 7 takedowns after R1 but held him for only 2:29 across R2-R5"
     ],

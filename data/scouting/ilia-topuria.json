@@ -73,14 +73,15 @@
   },
   "appearance": {
     "build": "compact and heavily muscled: 5 ft 7 in with a 69 in reach (ufcstats); moved up from featherweight in 2025",
-    "hair": "short dark hair",
-    "facial_hair": "unknown",
+    "hair": "dark brown to black, short faded sides with a longer top swept back (Jun 2026 photo)",
+    "facial_hair": "full, short, neatly trimmed dark beard and mustache (Jun 2026 photo)",
     "skin": "light",
-    "tattoos": "unknown",
+    "tattoos": "visible in the Jun 13, 2026 weigh-in photo: a large chest piece across both pecs (big-cat imagery), a full sleeve on the left arm, ink on the right shoulder and upper arm, and 'El Matador' in script below the left pec",
     "kit": "unknown",
-    "notes": "Build is from ufcstats. Hair and skin follow widely published fight photos as recalled; they were not re-checked on the web this session (the search budget ran out and photo hosts were unreachable). Facial hair changes between fights, so it is left unknown.",
+    "notes": "Build is from ufcstats and matches the photo (very lean and heavily muscled). Hair, facial hair, skin and tattoos were checked by the fact-checker (Nov 6, 2026) against the Wikipedia lead photo, a public-domain US Army photo of the UFC Freedom 250 ceremonial weigh-in (Jun 13, 2026, Wikimedia Commons). The script reads correctly, so the image is not mirrored and the left/right sides are his own. Fight kit is not established by any source, so it stays unknown.",
     "sources": [
-      "http://ufcstats.com/fighter-details/54f64b5e283b0ce7"
+      "http://ufcstats.com/fighter-details/54f64b5e283b0ce7",
+      "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748627)(cropped).jpg"
     ]
   },
   "engine_notes": [

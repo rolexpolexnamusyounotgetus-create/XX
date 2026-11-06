@@ -70,14 +70,15 @@
   },
   "appearance": {
     "build": "tall, lean and long-limbed for lightweight: 5 ft 10 in with a 74 in reach (ufcstats); fought at featherweight until 2016",
-    "hair": "short dark hair",
-    "facial_hair": "unknown",
+    "hair": "short dark hair (as commonly photographed; hidden under a cap in the Commons photo)",
+    "facial_hair": "light stubble on the chin and upper lip in a Jun 2021 photo; varies between fights",
     "skin": "light-medium",
     "tattoos": "unknown",
     "kit": "unknown",
-    "notes": "Build is from ufcstats. Hair and skin follow widely published fight photos as recalled; they were not re-checked on the web this session (the search budget ran out and photo hosts were unreachable). Facial hair changes between fights, so it is left unknown.",
+    "notes": "Build is from ufcstats. Fact-check (Nov 6, 2026) viewed the Wikipedia lead photo (Wikimedia Commons, Jun 25, 2021, holding the UFC belt): lean face, tan light-medium skin and light stubble match; he wears a cap and glasses, so hair colour and length rest on general recall. Tattoos and fight kit are not established by any source, so they stay unknown.",
     "sources": [
-      "http://ufcstats.com/fighter-details/07225ba28ae309b6"
+      "http://ufcstats.com/fighter-details/07225ba28ae309b6",
+      "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_do_Bronxs.jpg"
     ]
   },
   "engine_notes": [

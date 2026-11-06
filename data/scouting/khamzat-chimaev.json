@@ -3,7 +3,7 @@
   "name": "Khamzat Chimaev",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC middleweight champion. He won the belt from Dricus Du Plessis (UD 50-44 x3, UFC 319, Aug 16, 2025) and lost it to Sean Strickland by split decision at UFC 328 (May 9, 2026; 48-47 Sanidad for Chimaev, 48-47 Colon and D'Amato for Strickland). UFC record 9-1. No fight in the snapshot since May 2026 and no booking found. Web checks were blocked in this pass, so ranking, any rematch talk and any injury news are unverified.",
+    "summary": "Former UFC middleweight champion. He won the belt from Dricus Du Plessis (UD 50-44 x3, UFC 319, Aug 16, 2025) and lost it to Sean Strickland by split decision at UFC 328 (May 9, 2026; 48-47 Sanidad for Chimaev, 48-47 Colon and D'Amato for Strickland). UFC record 9-1. No fight in the snapshot since May 2026 and no booking found. Web checks were blocked in both the research pass and the Nov 6 fact-check (search budget spent; news sites unreachable), so ranking, any rematch talk and any injury news are unverified.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -14,7 +14,7 @@
       "http://ufcstats.com/fight-details/70f1621080b3435c",
       "http://ufcstats.com/fight-details/12cedec11b37ddc0",
       "https://www.espn.com/mma/ufc/story/_/id/48728368/strickland-stuns-chimaev-ufc-middleweight-title",
-      "data/scouting/nassourdine-imavov.json (ESPN link above carried from that pass; not re-opened here)",
+      "data/scouting/nassourdine-imavov.json (ESPN link above carried from that pass; result and judges match ufcstats)",
       "data/derived/fighters.json (last_fight 2026-05-09, snapshot 2026-10-31)"
     ]
   },
@@ -23,7 +23,7 @@
     "stance": "orthodox",
     "tags": ["chain-wrestling", "top-control", "ground-and-pound", "submissions", "back-takes", "pressure", "power", "fast-starter", "fades-late"],
     "signature": [
-      "takedown chains from the first exchange: 12 of 17 vs Du Plessis (UFC 319), 9 of 13 vs Strickland (UFC 328), 2 of 2 with 4:47 control in R1 of both",
+      "takedown chains from the first exchange: 12 of 17 vs Du Plessis (UFC 319), 9 of 13 vs Strickland (UFC 328), with 4:47 of R1 control in both (1 of 1 in R1 vs Du Plessis, 2 of 2 vs Strickland)",
       "long top control: 21:40 of 25 minutes vs Du Plessis; 54% control share decayed",
       "chokes: D'Arce (John Phillips 2020, Kevin Holland 2022) and rear-naked choke (Li Jingliang 2021, Robert Whittaker R1 3:34, Oct 2024)",
       "ground strikes: TKO of Rhys McKee from mount (2020); 19 of 22 ground strikes in R3 vs Du Plessis",
@@ -31,8 +31,8 @@
       "body punching on the feet when the takedowns stop: 35 of 65 body strikes landed vs Strickland"
     ],
     "weaknesses": [
-      "output and control drop after R1 in three of his four UFC decisions: Burns out-landed him 101-81 over R2-R3 (2022), Usman 33-22 over R2-R3 (2023), and Strickland 123-98 over R2-R5 (2026)",
-      "lost the title to a pure boxer who stayed upright: after 4:47 of R1 control, he managed 0:04, 0:00 and 0:54 in R2-R4 vs Strickland",
+      "control drops after R1 and the opponent out-lands him on the feet in three of his four UFC decisions: Burns 101-81 over R2-R3 (2022; Chimaev's control fell from 1:44 to 0:10 and 0:29), Usman 33-22 over R2-R3 (2023), and Strickland 123-98 over R2-R5 (2026)",
+      "lost the title to a boxer who kept getting back up: after 4:47 of R1 control, he managed 0:04, 0:00 and 0:54 in R2-R4 vs Strickland, and his 6 takedowns in R5 bought only 1:31",
       "his striking defense is only average when he is kept standing: Burns landed 119 sig strikes on him in 15 minutes"
     ],
     "summary": "A heavy, forceful wrestler who chains takedowns from the opening exchange, holds top position and finishes with chokes or ground strikes. When the first takedown sticks he can control a whole fight, as he did against Du Plessis. His three closest decisions all turned the same way: the opponent survived R1 and out-landed him on the feet after that.",

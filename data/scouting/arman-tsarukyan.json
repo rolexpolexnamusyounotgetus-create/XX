@@ -67,14 +67,15 @@
   },
   "appearance": {
     "build": "short and stocky with a long reach for his height: 5 ft 7 in, 72 in reach (ufcstats)",
-    "hair": "short dark hair",
-    "facial_hair": "unknown",
+    "hair": "short black hair with faded sides (2019 photo)",
+    "facial_hair": "full, short dark beard and mustache in a 2019 photo; may differ now",
     "skin": "light",
     "tattoos": "unknown",
     "kit": "unknown",
-    "notes": "Build is from ufcstats. Hair and skin follow widely published fight photos as recalled; they were not re-checked on the web this session (the search budget ran out and photo hosts were unreachable). Facial hair changes between fights, so it is left unknown.",
+    "notes": "Build is from ufcstats. Hair, facial hair and skin (light, olive-toned) were checked by the fact-checker (Nov 6, 2026) against the Wikipedia lead photo, a Jun 23, 2019 interview still (inFocus media, CC BY 3.0, Wikimedia Commons). The photo is seven years old, so treat the beard as a default, not a certainty. Tattoos and fight kit are not established by any source, so they stay unknown.",
     "sources": [
-      "http://ufcstats.com/fighter-details/eae48ff31db420c2"
+      "http://ufcstats.com/fighter-details/eae48ff31db420c2",
+      "https://commons.wikimedia.org/wiki/File:Arman_Tsarukyan_2019.jpg"
     ]
   },
   "engine_notes": [

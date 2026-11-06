@@ -27,7 +27,7 @@ A pressure boxer with extreme output. The UFC described him walking Zhumagulov d
 
 ## Strengths
 
-- Output and accuracy together: 8.0 significant strikes landed per minute (decayed) at 59%, more than double the flyweight prior of 3.7 at 46%.
+- Output and accuracy: 8.0 significant strikes landed per minute (decayed) at 59%, against a flyweight prior of 3.7 at 46%.
 - Power from volume: 8 knockdowns in 170.8 UFC minutes (0.70 per 15 min, prior 0.32).
 - Took over after conceding early grappling in both five-round fights that went past round 1.
 - Takedown defense: 75% career (23 of 92 landed against him).
@@ -35,7 +35,7 @@ A pressure boxer with extreme output. The UFC described him walking Zhumagulov d
 ## Weaknesses
 
 - Gets hit: 5.7 significant strikes absorbed per minute (decayed), with 56% defense.
-- Early control against elite grapplers: Taira and Pantoja each banked more than 9 minutes of control on him.
+- Early control against elite grapplers: Taira and Pantoja each banked 9+ minutes of control.
 - Knocked out once, by Charles Johnson in round 3 (Jul 13, 2024), reported as a right uppercut.
 
 ## Durability and cardio
@@ -70,4 +70,4 @@ He has the highest Elo in the flyweight snapshot (1719; Pantoja 1675). Seven of 
 - data/derived/fighters.json and data/raw (ufcstats snapshot to 2026-10-31)
 - http://ufcstats.com/fighter-details/17e97649403ba428
 
-Fact-check (2026-11-06): UFC 331 cards corrected to ufcstats; an unsupported "R4 to Pantoja on all cards" claim removed. Appearance: build from ufcstats; hair and skin tone from published photos, not re-checked.
+Fact-check (2026-11-06): UFC 331 cards corrected to ufcstats; an unsupported "R4 to Pantoja on all cards" claim removed. Status not re-checked on the web (search budget spent). Appearance: build from ufcstats; hair and skin tone from published photos, not re-checked.

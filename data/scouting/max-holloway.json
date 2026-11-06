@@ -70,14 +70,15 @@
   },
   "appearance": {
     "build": "long-framed and lean: 5 ft 11 in with a 69 in reach (ufcstats); fought 27 of his 33 UFC bouts at featherweight",
-    "hair": "short dark hair",
-    "facial_hair": "unknown",
+    "hair": "black, short to medium length, curly and tousled on top (Aug 2022 photo)",
+    "facial_hair": "thin mustache and chin goatee over stubble in the Aug 2022 photo; varies between fights",
     "skin": "medium",
     "tattoos": "unknown",
     "kit": "unknown",
-    "notes": "Build is from ufcstats. Hair and skin follow widely published fight photos as recalled; they were not re-checked on the web this session (the search budget ran out and photo hosts were unreachable). Facial hair changes between fights, so it is left unknown.",
+    "notes": "Build is from ufcstats. Hair, facial hair and skin were checked by the fact-checker (Nov 6, 2026) against the Wikipedia lead photo, a public-domain US Marine Corps photo from Aug 12, 2022 (Wikimedia Commons). Facial hair changes between fights. Tattoos and fight kit are not established by any source, so they stay unknown.",
     "sources": [
-      "http://ufcstats.com/fighter-details/150ff4cc642270b9"
+      "http://ufcstats.com/fighter-details/150ff4cc642270b9",
+      "https://commons.wikimedia.org/wiki/File:Blue_Angels%27_VIP_Rider_Max_Holloway_(1)_(cropped).jpg"
     ]
   },
   "engine_notes": [

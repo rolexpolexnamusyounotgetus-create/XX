@@ -57,6 +57,10 @@ NK = B.NK
 TUNE = ("2019-01-01", "2023-12-31")
 TEST_FROM = "2024-01-01"
 HL_GRID = [365, 730, 1095, 1460, 2190]
+# ufcstats has no control time before 1999, so model rows start in 2001; rows before 2004 take the 2004
+# priors (window 1999-2003). Both are long before the first prediction date (2019).
+MODEL_FROM = dt.date(2001, 1, 1)
+PRIOR_YEAR0 = 2004
 
 
 # ------------------------------------------------------------------ engine parameters (single source: params3.js)
@@ -266,8 +270,7 @@ class Data:
         # walk-forward division priors per year: fights in [Jan 1 of Y - window, Jan 1 of Y). The backtest's
         # own priors_asof for 2019+; the same rule for older years (used only as baselines of training rows).
         pri = {}
-        y0 = min(f.date.year for f in fights if f.stats)
-        for y in range(max(y0, 1997), snap.year + 1):
+        for y in range(PRIOR_YEAR0, snap.year + 1):
             if str(y) in bt["priors_asof"]:
                 pri[y] = bt["priors_asof"][str(y)]
             else:
@@ -293,6 +296,10 @@ class Data:
             homes = (B.mode_recent(hist[a], f.day) if hist[a] else None,
                      B.mode_recent(hist[b], f.day) if hist[b] else None)
             if f.stats and not (a.startswith("amb:") or b.startswith("amb:")):
+                if f.date < MODEL_FROM:
+                    hist[a].append((f.day, f.division))
+                    hist[b].append((f.day, f.division))
+                    continue
                 yr = max(ymin, f.date.year)
                 e = bt_by_id.get(f.fid)
                 if e is not None:

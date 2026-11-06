@@ -442,7 +442,10 @@
     this.applyReact(P, dt);
     this.applySprings(P, dt);
     this.applyPose(P);
+    if (this.avatar) this.avatar.tick(dt);
   };
+  /* Blend a Mesh2Motion clip onto the skinned avatar (no-op on the primitive rig). */
+  Actor.prototype.clip = function (name, weight, fade, opts) { return this.avatar ? this.avatar.clip(name, weight, fade, opts) : null; };
 
   Actor.prototype.applyPose = function (P) {
     var rig = this.rig;
@@ -577,7 +580,32 @@
     this.rnd = Math.random;
     this.queue = []; this.rIdx = 0; this.clock = 0;
     this.R.snapMode("ref");
+    this.avatarsOn = !!(root.FightAvatar && opts.avatars !== false && root.FightAvatar.supported() && root.FightAvatar.webgl2(this.arena.renderer) && !lowEnd());
+    if (this.avatarsOn) this.setAppearance(opts.appearance || defaultAppearance());
   }
+
+  /* Phones with little memory keep the primitive figures. */
+  function lowEnd() {
+    var n = root.navigator || {};
+    return /Mobi|Android/i.test(n.userAgent || "") && ((n.deviceMemory && n.deviceMemory < 4) || (n.hardwareConcurrency && n.hardwareConcurrency < 4));
+  }
+  function defaultAppearance() {
+    var FA2 = root.FightAvatar, db = FA2.dbFromPage();
+    return { A: FA2.appearanceFor("alexander-volkanovski", db), B: FA2.appearanceFor("justin-gaethje", db), R: FA2.REFEREE };
+  }
+  /* appearance: { A, B, R } objects (FightAvatar.appearanceFor(slug) builds one from the roster).
+     Skinned avatars replace the primitive figures as they finish building. */
+  Show.prototype.setAppearance = function (app) {
+    if (!this.avatarsOn || !app) return;
+    var sc = this.arena.scene, self = this;
+    this.appearance = app;
+    [["A", this.A], ["B", this.B], ["R", this.R]].forEach(function (p) {
+      if (!app[p[0]]) return;
+      var a = p[1];
+      root.FightAvatar.attach(a, app[p[0]], sc).then(function (av) { if (av && self.phase === "live") av.setRound(self.rIdx); });
+    });
+  };
+  Show.prototype.avatars = function () { return [this.A.avatar, this.B.avatar, this.R.avatar].filter(Boolean); };
 
   Show.prototype.resize = function (w, h) { this.arena.resize(w, h); };
 
@@ -589,7 +617,7 @@
   Show.prototype.load = function (script) {
     this.script = script; this.rIdx = 0; this.queue = []; this.clock = 0; this.finished = false; this.result = null;
     var A = this.A, B = this.B, R = this.R;
-    [A, B, R].forEach(function (a) { a.act = null; a.react = null; for (var k in a.s) a.s[k].reset(); a.lunge = 0; });
+    [A, B, R].forEach(function (a) { a.act = null; a.react = null; for (var k in a.s) a.s[k].reset(); a.lunge = 0; if (a.avatar) a.avatar.resetDamage(); });
     this.cornerSpot("A", 0.9, A.pos); this.cornerSpot("B", 0.9, B.pos);
     A.yaw = Math.atan2(-A.pos.x, -A.pos.z); B.yaw = Math.atan2(-B.pos.x, -B.pos.z);
     A.snapMode("walk"); B.snapMode("walk");
@@ -622,6 +650,7 @@
     this.theta = Math.atan2(B.pos.z - A.pos.z, B.pos.x - A.pos.x);
     this.d = Math.hypot(B.pos.x - A.pos.x, B.pos.z - A.pos.z);
     A.setMode("stand", 0.45); B.setMode("stand", 0.45);
+    var ri = this.rIdx; [A, B].forEach(function (a) { if (a.avatar) a.avatar.setRound(ri); });
     this.state = "stand"; this.ctrlOwner = null;
     this.phase = "live"; this.phaseT = 0;
     if (this.hooks.onPhase) this.hooks.onPhase("live", this.rIdx);
@@ -999,6 +1028,7 @@
     else this.focus.copy(this.M);
     var th = this.phase === "live" ? this.theta : Math.atan2(B.pos.z - A.pos.z, B.pos.x - A.pos.x);
     this.cam.update(dt || 1 / 60, { focus: this.focus, theta: th, phase: this.phase, state: this.state, impact: this.impact, replayT: this.replayT, replayAz: this.replayAz, time: this.time, narrow: this.arena.camera.aspect < 1.25 });
+    if (A.avatar) A.avatar.sync(); if (B.avatar) B.avatar.sync(); if (this.R.avatar) this.R.avatar.sync();
     this.arena.render();
   };
 
@@ -1027,5 +1057,5 @@
     return false;
   };
 
-  root.FightShow = { Show: Show, SPECS: SPECS };
+  root.FightShow = { Show: Show, SPECS: SPECS, Actor: Actor };
 })(typeof window !== "undefined" ? window : globalThis);

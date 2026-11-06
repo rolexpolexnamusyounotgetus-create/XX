@@ -3,7 +3,7 @@
   "name": "Dricus Du Plessis",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC middleweight champion (won the belt from Sean Strickland at UFC 297 in Jan 2024, defended it twice, lost it to Khamzat Chimaev by unanimous decision at UFC 319 on Aug 16, 2025). Last fight: unanimous decision over Kamaru Usman (50-45, 49-46, 49-46) in a five-round non-title main event, UFC Fight Night Oklahoma City, Jul 18, 2026. UFC record 10-1. The belt is now with Strickland (beat Chimaev May 9, 2026). Brendan Allen called him out after beating Christian Leroy Duncan on Oct 10, 2026 (per the Allen research pass). No booking found. Web checks were blocked in this pass, so ranking and any post-July news are unverified.",
+    "summary": "Former UFC middleweight champion (won the belt from Sean Strickland at UFC 297 in Jan 2024, defended it twice, lost it to Khamzat Chimaev by unanimous decision at UFC 319 on Aug 16, 2025). Last fight: unanimous decision over Kamaru Usman (50-45, 49-46, 49-46) in a five-round non-title main event, UFC Fight Night Oklahoma City, Jul 18, 2026. UFC record 10-1. The belt is now with Strickland (beat Chimaev May 9, 2026). Brendan Allen called him out after beating Christian Leroy Duncan on Oct 10, 2026 (per the Allen research pass). No booking found. Web checks were blocked in both the research pass and the Nov 6 fact-check (search budget spent; news sites unreachable), so ranking and any post-July news are unverified; the Allen callout matches data/scouting/brendan-allen.json, which cites CBS, UFC.com and Yahoo.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -15,7 +15,7 @@
       "http://ufcstats.com/fight-details/12cedec11b37ddc0",
       "http://ufcstats.com/fight-details/70f1621080b3435c",
       "https://sports.yahoo.com/mma/article/ufc-vegas-122-results-brendan-allen-stops-christian-leroy-duncan-with-late-choke-calls-out-ex-champ-030151648.html",
-      "data/scouting/brendan-allen.json (callout after the Oct 10, 2026 win; not re-opened in this pass)",
+      "data/scouting/brendan-allen.json (callout after the Oct 10, 2026 win; re-read in the fact-check)",
       "data/derived/fighters.json (last_fight 2026-07-18, snapshot 2026-10-31)"
     ]
   },
@@ -68,7 +68,7 @@
   },
   "engine_notes": [
     { "note": "Output rises late: in five five-round fights his sig landed per minute by round is 1.00, 1.19, 1.40, 1.19 and 1.45 times R1.", "source": "data/derived/fighters.json (pace)" },
-    { "note": "Zero knockdowns absorbed and zero stoppage losses in 11 UFC fights, including 25 minutes with Strickland twice and 20 minutes with Adesanya.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)" },
+    { "note": "Zero knockdowns absorbed and zero stoppage losses in 11 UFC fights, including 25 minutes with Strickland twice and 18:38 with Adesanya (finished at 3:38 of R4).", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)" },
     { "note": "Takedown defense is the hole: 54.8% decayed and 50% career, with opponents shooting 3.4 times per 15 min. Chimaev went 12 of 17 at UFC 319.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/12cedec11b37ddc0" },
     { "note": "Usman went 0 for 7 on takedowns against him at middleweight in Jul 2026, so his defense is fine against wrestlers who cannot chain attempts.", "source": "http://ufcstats.com/fight-details/701c97405da76603" },
     { "note": "Highest Elo among active middleweights in the dataset (1769); Usman 1749, Chimaev 1737, Strickland 1734.", "source": "data/derived/fighters.json (elo)" }

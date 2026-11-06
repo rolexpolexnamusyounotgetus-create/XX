@@ -14,3 +14,4 @@ assets/reference/**/*.jpg
 assets/reference/**/*.jpeg
 assets/reference/**/*.png
 assets/reference/**/*.webp
+data/derived/backtest_dev.json

@@ -51,3 +51,11 @@ Findings from verified research that the next engine versions must use. Each lin
   can learn the ordering and inflate the score. Every evaluation must be symmetric: score each fight in
   both orientations (or randomly swap corners with a fixed seed), and fit stacking/blend/Elo-scale models
   without an intercept on mirrored data.
+
+## Hidden-data protocol (from v4 on)
+- Train/tune: 2019-01-01..2023-12-31. Validation (version selection only): 2024-01-01..2025-12-31.
+- Vault: every fight from 2026-01-01 (about 370), split out by tools/make_vault.py into a directory outside
+  the repo. Building/tuning agents use data/derived/backtest_dev.json and must never evaluate on 2026
+  fights; a separate auditor opens the vault only at milestones (v6 and v10) and reports once.
+- Forward test: before each upcoming UFC card, commit the current version's predictions to
+  data/predictions/ (git history is the timestamp); score them after the results land.

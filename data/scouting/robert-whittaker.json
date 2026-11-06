@@ -3,7 +3,7 @@
   "name": "Robert Whittaker",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC middleweight champion: he won the interim title from Yoel Romero at UFC 213 (Jul 2017) and lost the title to Israel Adesanya by KO at UFC 243 (Oct 2019). After a submission loss to Khamzat Chimaev (R1, Oct 2024) and a split-decision loss to Reinier de Ridder (Jul 26, 2025), he fought at light heavyweight and knocked out Nikita Krylov at 1:01 of R3 at UFC 329 (Jul 11, 2026), his first UFC fight at 205. UFC record 18-7. Web checks were blocked in this pass, so his ranking, his division plans and any next fight are unverified.",
+    "summary": "Former UFC middleweight champion: he won the interim title from Yoel Romero at UFC 213 (Jul 2017) and lost the title to Israel Adesanya by KO at UFC 243 (Oct 2019). After a submission loss to Khamzat Chimaev (R1, Oct 2024) and a split-decision loss to Reinier de Ridder (Jul 26, 2025), he fought at light heavyweight and knocked out Nikita Krylov at 1:01 of R3 at UFC 329 (Jul 11, 2026), his first UFC fight at 205. UFC record 18-7. Web checks were blocked in both the research pass and the Nov 6 fact-check (search budget spent; news sites unreachable), so his ranking, his division plans and any next fight are unverified.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -23,7 +23,7 @@
     "stance": "orthodox",
     "tags": ["power", "footwork", "head-kicks", "leg-kicks", "takedown-defense", "chin-concern"],
     "signature": [
-      "right-hand power at distance: KO of Nikita Krylov (R3, Jul 2026) and Ikram Aliskerov (R1 1:49, Jun 2024), both 'punch to head at distance'",
+      "punching power at distance: KO of Nikita Krylov (R3 1:01, Jul 2026) and Ikram Aliskerov (R1 1:49, Jun 2024), both 'punch to head at distance' (ufcstats does not say which hand)",
       "head kicks: KO of Derek Brunson (R1, 2016) and Jacare Souza (R2, 2017), both 'kick to head at distance'",
       "leg kicks when the opponent is flat-footed: 28 of 28 leg strikes landed vs Paulo Costa (UFC 298, Feb 2024)",
       "clinch knee: TKO of Clint Hester with a knee to the head in the clinch (2014)",
@@ -35,7 +35,7 @@
       "almost no body work: 4.6% of sig attempts to the body decayed (league about 14%); 0 body strikes vs Krylov",
       "output does not build: five-round pace is flat and dips in R5 (0.91x R1)"
     ],
-    "summary": "A compact, explosive striker who works from range, comes in with fast punches to the head and has finished fights with right hands, head kicks and knees. He has been hard to take down for most of his career. Heavy punchers have dropped him eight times in the UFC, and since 2024 the grapplers have caught up with him. His one UFC fight at light heavyweight, in Jul 2026, ended in a knockout win.",
+    "summary": "A compact, explosive striker who works from range, comes in with fast punches to the head and has finished fights with punches, head kicks and a knee. He has been hard to take down for most of his career. Heavy punchers have dropped him eight times in the UFC, and since 2024 the grapplers have caught up with him. His one UFC fight at light heavyweight, in Jul 2026, ended in a knockout win.",
     "sources": [
       "http://ufcstats.com/fight-details/7765e5e779dd7dc9",
       "http://ufcstats.com/fight-details/eba46dbf9cdd83c0",
@@ -54,7 +54,7 @@
     "jab": 0.24, "cross": 0.25, "hook": 0.2, "overhand": 0.19, "upper": 0.04, "headkick": 0.08,
     "bodykick": 0.5, "bodyhook": 0.25, "bodystraight": 0.25,
     "calf": 0.5, "inside": 0.5, "spinning": 0.02, "knee": 0.05, "elbow": 0.03,
-    "notes": "Group shares follow fighters.json decayed sums: sig attempts 87.8% head, 4.6% body, 7.6% leg (career 83.6/7.3/9.1). The middleweight league split is 77.2/14.0/8.8, so he is far more head-focused and throws about a third of the league share to the body. Leg work comes and goes: 28 of 28 vs Costa (Feb 2024), none vs Krylov or De Ridder. 90% of his landed sig is at distance. In the head group the cross and overhand are high because his recent finishes are right hands at distance (Krylov, Aliskerov). The jab and hook are close behind, as a judgment for a blitzing striker. Head kicks get 0.08 because two of his UFC KOs are head kicks at distance (Brunson 2016, Souza 2017), though both are old. The body group leans to kicks as a judgment, since his body attempts are rare and all at distance. Leg weights are an even split because no source in this pass separates calf from inside kicks. The knee gets 0.05 for the Hester clinch-knee TKO. The karate-based, in-and-out style behind the archetype comes from pre-2026 coverage that could not be re-opened in this pass."
+    "notes": "Group shares follow fighters.json decayed sums: sig attempts 87.8% head, 4.6% body, 7.6% leg (career 83.6/7.3/9.1). The middleweight league split is 77.2/14.0/8.8, so he is far more head-focused and throws about a third of the league share to the body. Leg work comes and goes: 28 of 28 vs Costa (Feb 2024), none vs Krylov or De Ridder. 90% of his landed sig is at distance. In the head group the cross and overhand are high as a judgment: his recent finishes are punches to the head at distance (Krylov, Aliskerov), though ufcstats does not name the punch. The jab and hook are close behind, as a judgment for a blitzing striker. Head kicks get 0.08 because two of his UFC KOs are head kicks at distance (Brunson 2016, Souza 2017), though both are old. The body group leans to kicks as a judgment, since his body attempts are rare and all at distance. Leg weights are an even split because no source in this pass separates calf from inside kicks. The knee gets 0.05 for the Hester clinch-knee TKO. The karate-based, in-and-out style behind the archetype comes from pre-2026 coverage that could not be re-opened in this pass."
   },
   "appearance": {
     "build": "6'0\" with a 73\" reach (dataset); compact and muscular, with shorter arms than most middleweights (judgment from widely published fight photos; not re-checked in this pass)",
