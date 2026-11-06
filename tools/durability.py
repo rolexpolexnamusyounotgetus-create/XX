@@ -404,8 +404,9 @@ def eb_walk(df, base_mu, alpha_c, alpha_p, hl_c=None, hl_p=None, use_c=True, use
 
 
 # ------------------------------------------------------------------ model specification
-DEFAULT_SPEC = {"level": 730, "knots": [30.0], "win": 730, "alpha_c": 4.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None,
-                "dmg": "full", "aexp": False}
+# the spec chosen by tune() on 2019-2023 (Nov 6, 2026 run); --quick uses it without re-tuning
+DEFAULT_SPEC = {"level": 730, "knots": [30.0], "win": 365, "alpha_c": 3.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None,
+                "dmg": "full", "aexp": True}
 DMG_VARIANTS = {
     "full": ["d_yrs", "d_lognp", "d_cumoh100", "d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o", "d_debut"],
     "no_okd": ["d_yrs", "d_lognp", "d_cumoh100", "d_kol_r", "d_kol_o", "d_debut"],      # KD history only via u_d
@@ -915,10 +916,8 @@ def ko_model(X, r_final, spec, fm_dates=(FIT_FROM, "2023-12-31")):
         ("K2 K1 + Elo difference", bl["div"] + ["k_lsched", "elo_diff"]),
         ("K3 K2 + trailing KD level", bl["div"] + ["k_lsched", "elo_diff", "k_lv"]),
         ("K4 composite: predicted KD rate + exposure + Elo", ["k_comp", "k_lexp", "k_lsched", "elo_diff"]),
-        ("K5 direct: K3 + age, damage, layoff, fighter effects", bl["div"] + ["k_lsched", "elo_diff", "k_lv", "k_lexp"]
-         + bl["age_d"] + bl["age_a"] + bl["dmg"] + bl["lay"] + ["k_lchin", "k_lpow"]),
-        ("K6 K5 + weight move", bl["div"] + ["k_lsched", "elo_diff", "k_lv", "k_lexp"] + bl["age_d"] + bl["age_a"]
-         + bl["dmg"] + bl["lay"] + ["k_lchin", "k_lpow"] + bl["move"]),
+        ("K5 direct: K3 + age, damage, layoff, fighter effects", ko_design_cols(spec, X)),
+        ("K6 K5 + weight move", ko_design_cols(spec, X) + bl["move"]),
         ("K7 K4 + direct damage and move terms", ["k_comp", "k_lexp", "k_lsched", "elo_diff", "d_kol_r", "d_kol_o",
                                                  "d_okd_r", "d_okd_o"] + bl["move"]),
     ]
@@ -951,6 +950,73 @@ def ko_model(X, r_final, spec, fm_dates=(FIT_FROM, "2023-12-31")):
                  "test_calibration_deciles": [{"n": int(a.n), "pred": round(float(a.pred), 4), "obs": round(float(a.obs), 4)}
                                               for a in cal.itertuples()],
                  "league_standing_head_per_min": round(Lsh, 4)}, preds
+
+
+def ko_design_cols(spec, X):
+    bl = blocks(spec, X)
+    return (bl["div"] + ["k_lsched", "elo_diff", "k_lv", "k_lexp"] + bl["age_d"] + bl["age_a"] + bl["dmg"] + bl["lay"]
+            + (bl["aexp"] if spec.get("aexp") else []) + ["k_lchin", "k_lpow"])
+
+
+def ko_live(X, r_live, spec, fit_from=FIT_FROM):
+    """Refit the direct KO/TKO-loss model (K5) on every fight since fit_from with the live fighter effects."""
+    base = ((X.has_stats == 1) & (X.amb == 0) & (X.date >= fit_from)).to_numpy()
+    usem = (X.use & (X.date >= fit_from)).to_numpy()
+    lexp, Lsh = exposure_rate(X, usem)
+    w = r_live["walk"]
+    lv_mean = float(np.log(X.lv[base]).mean())
+    Xk = X.assign(k_lexp=lexp, k_lsched=np.log(np.where(X.sched > 0, X.sched * 5.0, 15.0)) - math.log(15),
+                  k_lchin=np.log(w["chin"]), k_lpow=np.log(w["pow"]), k_lv=np.log(X.lv) - lv_mean)
+    cols = ko_design_cols(spec, X)
+    Z = np.column_stack([np.ones(len(Xk))] + [Xk[c].to_numpy(float) for c in cols])
+    b, cov, _ = logit_fit(Z[base], Xk.ko_loss.to_numpy(float)[base])
+    return {"cols": cols, "b": b, "cov": cov, "Lsh": Lsh, "lv_mean": lv_mean}
+
+
+def ko_matchup(kl, spec, roster, state, people, snap_date, fj, a_slug, b_slug, division, level_now, rounds=5,
+               k=15.0, n_draw=4000, seed=5):
+    """P(KO/TKO loss) for each man in a hypothetical fight from the live direct KO model."""
+    slug2p = {P.get("slug"): p for p, P in people.items() if P.get("slug")}
+    feats = {}
+    for s_ in (a_slug, b_slug):
+        p = slug2p[s_]
+        row, x = now_features(state[p], people[p], snap_date, division, spec)
+        # weight move for this fight (home vs fight division)
+        home = roster[s_]["home"]
+        row = row.copy()
+        rk_f, rk_h = CLASS_RANK.get(division), CLASS_RANK.get(home)
+        mv = (rk_f - rk_h) if (rk_f is not None and rk_h is not None) else 0
+        feats[s_] = (row, x, mv)
+    out = {"division": division, "rounds": rounds, "level_now": round(level_now, 6)}
+    rng = np.random.default_rng(seed)
+    draws = rng.multivariate_normal(kl["b"], kl["cov"], size=n_draw)
+    for att, de in ((a_slug, b_slug), (b_slug, a_slug)):
+        ra, xa, _ = feats[att]
+        rd, xd, mvd = feats[de]
+        v = {}
+        for c in kl["cols"]:
+            if c.startswith("div_"):
+                v[c] = 1.0 if c == "div_" + division else 0.0
+            elif c.startswith("d_"):
+                v[c] = float(rd[c])
+            elif c.startswith("a_"):
+                v[c] = float(ra[c])
+        eloa, elod = fj[att]["elo"], fj[de]["elo"]
+        v["elo_diff"] = (eloa - elod) / 400.0 * math.log(10)
+        v["k_lsched"] = math.log(rounds * 5.0 / 15.0)
+        v["k_lv"] = math.log(level_now) - kl["lv_mean"]
+        L = kl["Lsh"]
+        rate_a = (xa["dsh"] + k * L) / (xa["dmin"] + k)
+        rate_d = (xd["dosh"] + k * L) / (xd["dmin"] + k)
+        v["k_lexp"] = 0.5 * (math.log(rate_a) + math.log(rate_d)) - math.log(L)
+        v["k_lchin"] = math.log(roster[de]["chin_re"])
+        v["k_lpow"] = math.log(roster[att]["pow_re"])
+        z = np.array([1.0] + [v[c] for c in kl["cols"]])
+        pr = 1 / (1 + math.exp(-(z @ kl["b"])))
+        pd_ = 1 / (1 + np.exp(-(draws @ z)))
+        out[de + " KO/TKO loss"] = {"p": round(pr, 4), "p_q": [round(float(t), 4) for t in np.quantile(pd_, [0.05, 0.5, 0.95])],
+                                    "elo_diff_logit": round(v["elo_diff"], 4), "exposure_log_ratio": round(v["k_lexp"], 4)}
+    return out
 
 
 # ------------------------------------------------------------------ fighter-level outputs
@@ -1234,6 +1300,12 @@ def main():
     for lv_name, lv_val in (("trailing_730", level_now), ("trailing_365", level_365)):
         mu_live[lv_name] = matchup(r_live, spec, roster, ref, "alexander-volkanovski", "justin-gaethje", "Lightweight",
                                    lv_val)
+    fjson = json.load(open(os.path.join(ROOT, "data", "derived", "fighters.json")))["fighters"]
+    kl = ko_live(X, r_live, spec)
+    ko_mu = {}
+    for lv_name, lv_val in (("trailing_730", level_now), ("trailing_365", level_365)):
+        ko_mu[lv_name] = ko_matchup(kl, spec, roster, state, people, snap_date, fjson, "alexander-volkanovski",
+                                    "justin-gaethje", "Lightweight", lv_val)
     bt_mult = backtest_multipliers(X, res["F"], ref)
     series = kd_level_series(X)
 
@@ -1269,6 +1341,10 @@ def main():
         },
         "kd_level_series": series,
         "matchup_volkanovski_gaethje": mu_live,
+        "matchup_volkanovski_gaethje_ko_per_fight": ko_mu,
+        "ko_loss_model_live": {"terms": [{"term": t, "coef": round(float(b), 5), "se": round(float(se), 5)}
+                                         for t, b, se in zip(["const"] + kl["cols"], kl["b"], np.sqrt(np.diag(kl["cov"])))],
+                               "league_standing_head_per_min": round(kl["Lsh"], 4), "log_level_mean": round(kl["lv_mean"], 5)},
         "roster": roster,
         "backtest": bt_mult,
     }
@@ -1281,6 +1357,7 @@ def main():
                                          "chin_total_q", "kd_scored", "kd_scored_expected", "pow_re", "pow_re_q", "pow_cov",
                                          "pow_total_q")})
     print(" ", json.dumps(mu_live))
+    print(" ", json.dumps(ko_mu))
 
 
 if __name__ == "__main__":

@@ -1319,7 +1319,7 @@
     if (to === "ko") this.clip(pick, 1, 0.12, { restart: true });
     else if (to === "down") {
       var c = this.clipByName("fallBack");
-      this.clip("fallBack", 1, 0.12, { restart: true, speed: 1.45, stop: c ? c.dur * 0.62 : null });
+      this.clip("fallBack", 1, 0.12, { restart: true, speed: 1.5 });
     } else if (to === "stand" && (from === "down")) this.clip("getUp", 1, 0.08, { restart: true, speed: 1.55, t: 0.05 });
     else if (to === "celebrate") this.clip("fistPump", 0.85, 0.5, { mask: "upper", loop: true });
     else {
@@ -1388,7 +1388,7 @@
     this.clipW = clipW;
     // forward kinematics for the torso, then limbs
     this.fk(bi.Spine); this.fk(bi.Spine1); this.fk(bi.Spine2); this.fk(bi.Neck); this.fk(bi.Head); this.fk(bi.LeftShoulder); this.fk(bi.RightShoulder);
-    this.fk(bi.LeftUpLeg); this.fk(bi.RightUpLeg);
+    this.fk(bi.LeftUpLeg); this.fk(bi.RightUpLeg); this.fk(bi.LeftArm); this.fk(bi.RightArm);
     // shoulder shrug when the upper arm is raised
     for (i = 0; i < 2; i++) {
       var Ls = this.limbs[i], ks = i === 0 ? bi.LeftShoulder : bi.RightShoulder;

@@ -324,7 +324,7 @@
     // names everywhere
     ["A", "B"].forEach(function (s) {
       var sh = shortOf(s);
-      ["bugN", "fsN", "spN", "ktN", "oddN"].forEach(function (pre) { var n = $(pre + s); if (n) n.textContent = pre === "fsN" || pre === "ktN" || pre === "oddN" ? nameOf(s) : sh; });
+      ["bugN", "fsN", "spN", "ktN", "oddN"].forEach(function (pre) { var n = $(pre + s); if (n) n.textContent = pre === "fsN" || pre === "oddN" ? nameOf(s) : sh; });
       var dl = $("discL" + s); if (dl) dl.textContent = initials(nameOf(s));
     });
   }
@@ -572,8 +572,24 @@
     });
     renderScenNote();
   }
+  function modelTerms() {
+    var m = cur.m; if (!m || !m.fac) return null;
+    var parts = [];
+    ["A", "B"].forEach(function (s, i) {
+      var f = m.fac[i], bits = [];
+      if (Math.abs(f.ageChin - 1) > 0.005) bits.push("chin ×" + fx(f.ageChin) + " for age");
+      if (Math.abs(f.koChin - 1) > 0.005) bits.push("×" + fx(f.koChin) + " for " + f.koLosses + " KO loss" + (f.koLosses === 1 ? "" : "es"));
+      if (Math.abs(f.sizeChin - 1) > 0.005) bits.push("×" + fx(f.sizeChin) + " for moving up " + Math.round(f.lbsUp) + " lb");
+      if (Math.abs(f.agePow - 1) > 0.005) bits.push("power ×" + fx(f.agePow) + " for age");
+      if (Math.abs(f.sizePow - 1) > 0.005) bits.push("power ×" + fx(f.sizePow) + " for moving up");
+      if (bits.length) parts.push(shortOf(s) + " " + bits.join(", "));
+    });
+    return parts.length ? parts.join("; ") + "." : null;
+  }
   function renderScenNote() {
     var box = $("scenNote"); box.textContent = "";
+    var terms = modelTerms();
+    function termsLine() { if (!terms) return; var p = el("p", "small"); p.appendChild(el("b", null, "Already in the model from data: ")); p.appendChild(document.createTextNode(terms + " Chin above 1 means easier to drop; the knobs multiply on top.")); box.appendChild(p); }
     var sc = scenarioList().filter(function (x) { return x.id === S.scen; })[0];
     if (!sc) {
       var custom = Object.keys(cleanAdj(S.adj.A)).length + Object.keys(cleanAdj(S.adj.B)).length > 0 || Math.abs(S.judgePower - JP0) > 0.001;
@@ -582,12 +598,14 @@
         "Every knob sits at 1.00, so the engine runs on the UFC numbers, its age, weight-class and KO-loss terms, and the default judging."));
       box.appendChild(p);
       if (!pairData(S.a, S.b)) box.appendChild(el("p", null, "There are no hand-written scenarios for this pair yet; the dashed chips work for any matchup."));
+      termsLine();
       return;
     }
     var h = el("p"); h.appendChild(el("b", null, sc.label + ". ")); h.appendChild(document.createTextNode(sc.note || "")); box.appendChild(h);
     if (sc.id === "rust") { var ls = layoffSide(); if (ls) box.appendChild(el("p", null, "Applied to " + nameOf(ls) + ", whose last fight was " + fmtDate(prof(ls).last_fight) + ".")); }
     if (sc.research) { var r = el("p"); r.appendChild(el("b", null, "The research: ")); r.appendChild(document.createTextNode(sc.research)); box.appendChild(r); }
     var srcs = el("div", "srcs"); if (linkList(srcs, sc.sources)) box.appendChild(srcs);
+    termsLine();
   }
 
   var knobTimer = null;
@@ -888,7 +906,7 @@
       function f(label, v, inv, always) {
         if (v == null || !isFinite(v)) return;
         if (!always && label !== "base" && Math.abs(v - 1) < 0.005) return;
-        var span = el("span", "f" + (Math.abs(v - 1) < 0.02 ? "" : ((v > 1) !== !!inv ? " up" : " dn")));
+        var span = el("span", "f" + (label === "base" || Math.abs(v - 1) < 0.02 ? "" : ((v > 1) !== !!inv ? " up" : " dn")));
         span.appendChild(el("b", null, (label === "base" ? pct(v, 2) : "×" + fx(v)))); span.appendChild(document.createTextNode(" " + (label === "base" ? divl + " base" : label)));
         if (row.children.length) row.appendChild(el("span", "op", "·"));
         row.appendChild(span);
@@ -1529,7 +1547,7 @@
         $("bSub").textContent = detail + (dec ? " · " + cardsFor(sc.cards, w) : " · round " + sc.round + (m === "CORNER" || m === "DOC" ? "" : ", " + mmss(sc.t)));
       }
       bn.hidden = false;
-      if (H) { var f = H.f; for (var rr = H.r; rr < f.rounds.length; rr++) hudSync(rr, f.rounds[rr].fin ? f.rounds[rr].fin.t : 300); }
+      if (H) { var f = H.f; for (var rr = H.r; rr < f.rounds.length; rr++) hudSync(rr, f.rounds[rr].fin ? f.rounds[rr].fin.t : 300); renderStats(); }
       clearTimeout(autoNext);
       autoNext = setTimeout(function () { if (show && !show.paused && visible && !document.hidden) newFight(); }, 11000);
     }

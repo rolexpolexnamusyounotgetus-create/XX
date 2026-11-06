@@ -560,3 +560,506 @@ def build_table(fights, people, elo_pre, extra_ratings, prm=None, since=FEATURES
                 st.ntitle += 1
     df = pd.DataFrame(rows)
     return df, state, pri
+
+
+# ====================================================================== logistic design (antisymmetric, JS-exportable)
+# Every term is a function of the two fighters' per-fighter values only, so the page can evaluate it for any pair.
+#   logr:  log(xA + eps) - log(xB + eps)          logit: logit(xA) - logit(xB)
+#   lin:   (xA - xB) * scale                      hinge: max(xA - h, 0) - max(xB - h, 0)
+#   flag:  [xA > t] - [xB > t]                    share: uA vB / (uA vB + uB vA) - 0.5   (offence x opponent's allowed)
+#   stance: [A southpaw & B orthodox] - [B southpaw & A orthodox]
+# lin / hinge / flag terms on age, height, reach, ape, age_debut, log_layoff are 0 when either value is missing.
+LOGR_KEYS = ("slpm sapm satt osatt head_pm body_pm leg_pm ohead_pm obody_pm oleg_pm dist_pm clinch_pm ground_pm "
+             "odist_pm oclinch_pm oground_pm tot_pm otot_pm kd15 okd15 td15 tda15 otd15 otda15 ctrl octrl sub15 "
+             "osub15 rev15 power chin").split()
+LOGIT_KEYS = "acc def acc_head def_head acc_leg acc_dist def_dist td_acc td_def".split()
+LIN_KEYS = ("str_diff td_diff ctrl_diff form_str_diff form_ctrl_diff win_pct win_dec win_form last3_win last3_fin_l "
+            "last1_win last1_ko_l streak ko_w_rate sub_w_rate dec_w_rate ko_l_rate sub_l_rate dec_l_rate "
+            "finish_w_share finished_share ko_losses kd_absorbed_c sig_absorbed_c log_n log_mins_c min_per_fight n5 "
+            "ntitle ko_l_dec years_ufc wc_move new_class debut").split()
+ELO_KEYS = "elo elo_sig elo_judge elo_chg3 opp_elo_mean opp_elo_last3 beaten_elo_max beaten_elo_mean".split()
+PHYS_KEYS = "age height reach ape age_debut log_layoff".split()
+SHARE_PAIRS = [("slpm", "sapm"), ("head_pm", "ohead_pm"), ("kd15", "okd15"), ("td15", "otd15"), ("ctrl", "octrl"),
+               ("sub15", "osub15"), ("ground_pm", "oground_pm")]
+EPS_LOG = 1e-3
+
+GROUPS = {   # feature groups for ablation (term-name prefixes)
+    "striking rates": ["slpm", "sapm", "satt", "osatt", "head_pm", "body_pm", "leg_pm", "ohead_pm", "obody_pm",
+                       "oleg_pm", "dist_pm", "clinch_pm", "ground_pm", "odist_pm", "oclinch_pm", "oground_pm",
+                       "tot_pm", "otot_pm", "str_diff", "form_str_diff"],
+    "accuracy/defence": ["acc", "def", "acc_head", "def_head", "acc_leg", "acc_dist", "def_dist"],
+    "KD power/chin": ["kd15", "okd15", "power", "chin"],
+    "grappling": ["td15", "tda15", "otd15", "otda15", "ctrl", "octrl", "sub15", "osub15", "rev15", "td_acc", "td_def",
+                  "td_diff", "ctrl_diff", "form_ctrl_diff"],
+    "record/finishes": ["win_pct", "win_dec", "ko_w_rate", "sub_w_rate", "dec_w_rate", "ko_l_rate", "sub_l_rate",
+                        "dec_l_rate", "finish_w_share", "finished_share", "ko_losses", "kd_absorbed_c",
+                        "sig_absorbed_c", "ko_l_dec"],
+    "recent form": ["win_form", "last3_win", "last3_fin_l", "last1_win", "last1_ko_l", "streak", "elo_chg3"],
+    "experience": ["log_n", "log_mins_c", "min_per_fight", "n5", "ntitle", "years_ufc", "debut"],
+    "Elo": ["elo"],
+    "margin Elo": ["elo_sig", "elo_judge"],
+    "opponent quality": ["opp_elo_mean", "opp_elo_last3", "beaten_elo_max", "beaten_elo_mean"],
+    "age": ["age", "age30", "age34", "age_debut"],
+    "size/reach": ["height", "reach", "ape"],
+    "layoff/weight move": ["log_layoff", "lay_long", "wc_move", "new_class"],
+    "stance": ["st_south_vs_orth", "st_switch"],
+    "matchup shares": ["sh_" + u for u, _ in SHARE_PAIRS],
+}
+
+
+def lr_term_specs():
+    T = []
+    for k in LOGR_KEYS:
+        T.append({"name": k, "type": "logr", "key": k, "eps": EPS_LOG})
+    for k in LOGIT_KEYS:
+        T.append({"name": k, "type": "logit", "key": k})
+    for k in LIN_KEYS:
+        T.append({"name": k, "type": "lin", "key": k, "scale": 1.0})
+    for k in ELO_KEYS:
+        T.append({"name": k, "type": "lin", "key": k, "scale": 0.01})
+    for k in PHYS_KEYS:
+        T.append({"name": k, "type": "lin", "key": k, "scale": 1.0, "missing_zero": True})
+    for h in (30, 34):
+        T.append({"name": "age%d" % h, "type": "hinge", "key": "age", "h": float(h), "missing_zero": True})
+    T.append({"name": "lay_long", "type": "flag", "key": "layoff", "t": 450.0, "missing_zero": True})
+    for u, v in SHARE_PAIRS:
+        T.append({"name": "sh_" + u, "type": "share", "u": u, "v": v})
+    T.append({"name": "st_south_vs_orth", "type": "stance"})
+    T.append({"name": "st_switch", "type": "lin", "key": "switch", "scale": 1.0})
+    return T
+
+
+def _logit(p):
+    p = np.clip(p, 1e-4, 1 - 1e-4)
+    return np.log(p / (1 - p))
+
+
+def add_derived(df):
+    for s in ("A_", "B_"):
+        df[s + "log_mins_c"] = np.log1p(df[s + "mins_c"])
+        df[s + "orthodox"] = ((df[s + "southpaw"] == 0) & (df[s + "switch"] == 0) & df[s + "height"].notna()).astype(float)
+    return df
+
+
+def lr_design(df, specs=None, A="A_", Bp="B_"):
+    """Antisymmetric term matrix (n x terms) for the logistic model, A minus B."""
+    specs = specs or lr_term_specs()
+    out = {}
+    for t in specs:
+        ty = t["type"]
+        if ty == "logr":
+            out[t["name"]] = np.log(df[A + t["key"]] + t["eps"]) - np.log(df[Bp + t["key"]] + t["eps"])
+        elif ty == "logit":
+            out[t["name"]] = _logit(df[A + t["key"]]) - _logit(df[Bp + t["key"]])
+        elif ty == "lin":
+            v = (df[A + t["key"]] - df[Bp + t["key"]]) * t["scale"]
+            out[t["name"]] = v.fillna(0.0) if t.get("missing_zero") else v
+        elif ty == "hinge":
+            v = np.maximum(df[A + t["key"]] - t["h"], 0) - np.maximum(df[Bp + t["key"]] - t["h"], 0)
+            out[t["name"]] = v.fillna(0.0)
+        elif ty == "flag":
+            a, b = df[A + t["key"]], df[Bp + t["key"]]
+            v = (a > t["t"]).astype(float) - (b > t["t"]).astype(float)
+            v[a.isna() | b.isna()] = 0.0
+            out[t["name"]] = v
+        elif ty == "share":
+            ea = df[A + t["u"]] * df[Bp + t["v"]]
+            eb = df[Bp + t["u"]] * df[A + t["v"]]
+            out[t["name"]] = ea / (ea + eb + 1e-12) - 0.5
+        elif ty == "stance":
+            out[t["name"]] = ((df[A + "southpaw"] * df[Bp + "orthodox"]) - (df[Bp + "southpaw"] * df[A + "orthodox"]))
+    X = pd.DataFrame(out, index=df.index)
+    return X.astype(float).fillna(0.0)
+
+
+def term_group(name):
+    for g, names in GROUPS.items():
+        if name in names:
+            return g
+    return "other"
+
+
+# ====================================================================== GBM design (side, difference, matchup, context)
+GBM_SIDE = ("age n elo elo_sig log_layoff ko_losses kd_absorbed_c win_pct slpm sapm td15 ctrl sub15 power chin height "
+            "reach years_ufc last3_win wc_move debut").split()
+M_ANTI = ["x_sig", "x_sig_share", "x_head", "x_kd", "x_td", "x_ctrl", "x_sub", "x_gnp", "x_acc", "x_tdacc",
+          "st_south_vs_orth", "st_switch"]
+M_SYM = ["s_pace", "s_kd", "s_sub", "s_ctrl", "st_open"]
+CTX = ["lbs", "women", "title", "five", "catch"]
+
+
+def gbm_design(df, Xlr, flip=False):
+    a, b = ("B_", "A_") if flip else ("A_", "B_")
+    sg = -1.0 if flip else 1.0
+    F = {}
+    for k in GBM_SIDE:
+        F["a_" + k] = df[a + k].to_numpy(dtype=float)
+        F["b_" + k] = df[b + k].to_numpy(dtype=float)
+    for c in Xlr.columns:
+        F["d_" + c] = sg * Xlr[c].to_numpy(dtype=float)
+    for c in M_ANTI:
+        F["m_" + c] = sg * df["M_" + c].to_numpy(dtype=float)
+    for c in M_SYM:
+        F["m_" + c] = df["M_" + c].to_numpy(dtype=float)
+    for c in CTX:
+        F[c] = df[c].to_numpy(dtype=float)
+    return pd.DataFrame(F, index=df.index)
+
+
+# ====================================================================== metrics
+def log_loss(p, y):
+    p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
+    y = np.asarray(y, float)
+    return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+
+
+def auc(p, y):
+    p, y = np.asarray(p), np.asarray(y)
+    order = np.argsort(p)
+    ranks = np.empty(len(p))
+    ranks[order] = np.arange(1, len(p) + 1)
+    # average ranks for ties
+    s = pd.Series(p)
+    ranks = s.rank().to_numpy()
+    npos = y.sum()
+    nneg = len(y) - npos
+    return float((ranks[y == 1].sum() - npos * (npos + 1) / 2) / (npos * nneg)) if npos and nneg else float("nan")
+
+
+def calib_slope(p, y):
+    """Logistic recalibration y ~ a + b * logit(p) (data orientation)."""
+    from scipy.optimize import minimize
+    z = _logit(np.asarray(p))
+    y = np.asarray(y, float)
+
+    def f(w):
+        t = w[0] + w[1] * z
+        return np.sum(np.logaddexp(0, t) - y * t), np.array([np.sum(1 / (1 + np.exp(-t)) - y),
+                                                             np.sum((1 / (1 + np.exp(-t)) - y) * z)])
+    r = minimize(f, np.array([0.0, 1.0]), jac=True, method="BFGS")
+    return float(r.x[0]), float(r.x[1])
+
+
+def ece_sym(p, y, nb=10):
+    """Calibration error counting each fight from both sides (corner-symmetric), 10 equal-width bins."""
+    p = np.r_[p, 1 - np.asarray(p)]
+    y = np.r_[y, 1 - np.asarray(y)]
+    e = 0.0
+    for k in range(nb):
+        m = (p >= k / nb) & (p < (k + 1) / nb) if k < nb - 1 else (p >= k / nb)
+        if m.any():
+            e += m.sum() / len(p) * abs(p[m].mean() - y[m].mean())
+    return float(e)
+
+
+def calib_table(p, y, nb=10):
+    p = np.r_[p, 1 - np.asarray(p)]
+    y = np.r_[y, 1 - np.asarray(y)]
+    out = []
+    for k in range(nb):
+        m = (p >= k / nb) & (p < (k + 1) / nb) if k < nb - 1 else (p >= k / nb)
+        if m.any():
+            out.append({"lo": k / nb, "hi": (k + 1) / nb, "n_sides": int(m.sum()), "pred": round(float(p[m].mean()), 4),
+                        "obs": round(float(y[m].mean()), 4)})
+    return out
+
+
+def win_metrics(p, y):
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    a, b = calib_slope(p, y)
+    return {"n": int(len(y)), "log_loss": round(log_loss(p, y), 5),
+            "brier": round(float(np.mean((p - y) ** 2)), 5),
+            "accuracy": round(float(np.mean((p > 0.5) == (y > 0.5))), 4),
+            "auc": round(auc(p, y), 4), "ece_sym": round(ece_sym(p, y), 4),
+            "calib_intercept": round(a, 3), "calib_slope": round(b, 3)}
+
+
+def ll7(P, k):
+    P = np.clip(np.asarray(P, float), 1e-6, 1)
+    P = P / P.sum(1, keepdims=True)
+    return float(-np.mean(np.log(P[np.arange(len(k)), np.asarray(k, int)])))
+
+
+def cluster_boot(groups, stat_fn, n_boot=2000, seed=7):
+    """Event-cluster bootstrap. stat_fn(idx) -> float or array. Returns array of bootstrap stats."""
+    rng = np.random.default_rng(seed)
+    g = pd.Series(groups).astype("category").cat.codes.to_numpy()
+    G = g.max() + 1
+    members = [np.flatnonzero(g == i) for i in range(G)]
+    out = []
+    for _ in range(n_boot):
+        pick = rng.integers(0, G, G)
+        idx = np.concatenate([members[i] for i in pick])
+        out.append(stat_fn(idx))
+    return np.array(out)
+
+
+def ci(arr, lo=2.5, hi=97.5):
+    return [round(float(np.percentile(arr, lo)), 5), round(float(np.percentile(arr, hi)), 5)]
+
+
+# ====================================================================== models
+def fit_lr(X, y, lam, sw=None):
+    """L2 logistic regression without intercept (antisymmetric features => corner-symmetric model).
+    Loss = weighted mean log loss + lam/2 ||w||^2 on standardised columns."""
+    from scipy.optimize import minimize
+    n, d = X.shape
+    sw = np.ones(n) if sw is None else np.asarray(sw, float)
+    sw = sw / sw.sum()
+
+    def f(w):
+        z = X @ w
+        p = 1 / (1 + np.exp(-z))
+        return np.sum(sw * (np.logaddexp(0, z) - y * z)) + 0.5 * lam * w @ w, X.T @ (sw * (p - y)) + lam * w
+    r = minimize(f, np.zeros(d), jac=True, method="L-BFGS-B", options={"maxiter": 3000})
+    return r.x
+
+
+class LRModel:
+    def __init__(self, lam, recency=None):
+        self.lam, self.recency = lam, recency
+
+    def fit(self, X, y, years=None, ref_year=None):
+        X = np.asarray(X, float)
+        self.s = X.std(0) + 1e-9
+        sw = None
+        if self.recency and years is not None:
+            sw = 0.5 ** ((ref_year - np.asarray(years)) / self.recency)
+        self.w = fit_lr(X / self.s, np.asarray(y, float), self.lam, sw)
+        self.coef = self.w / self.s
+        return self
+
+    def predict(self, X):
+        return 1 / (1 + np.exp(-(np.asarray(X, float) @ self.coef)))
+
+
+def lgb_fit(params, G0, G1, y, rounds, sw=None):
+    import lightgbm as lgb
+    Xa = pd.concat([G0, G1], ignore_index=True)
+    ya = np.r_[y, 1 - y]
+    w = None if sw is None else np.r_[sw, sw]
+    p = dict(params)
+    p.update(objective="binary", verbose=-1, num_threads=1, max_bin=63, seed=p.get("seed", 1),
+             bagging_freq=1, deterministic=True, force_row_wise=True)
+    return lgb.train(p, lgb.Dataset(Xa, ya, weight=w), num_boost_round=rounds)
+
+
+def lgb_pred(m, G0, G1, it=None):
+    return 0.5 * (m.predict(G0, num_iteration=it) + 1 - m.predict(G1, num_iteration=it))
+
+
+def xgb_fit(params, G0, G1, y, rounds):
+    import xgboost as xgb
+    Xa = pd.concat([G0, G1], ignore_index=True)
+    ya = np.r_[y, 1 - y]
+    p = dict(params)
+    p.update(objective="binary:logistic", eval_metric="logloss", nthread=1, tree_method="hist", max_bin=63,
+             seed=1, verbosity=0)
+    return xgb.train(p, xgb.DMatrix(Xa, label=ya), num_boost_round=rounds)
+
+
+def xgb_pred(m, G0, G1, it=None):
+    import xgboost as xgb
+    r = (0, it) if it else (0, 0)
+    return 0.5 * (m.predict(xgb.DMatrix(G0), iteration_range=r) + 1 - m.predict(xgb.DMatrix(G1), iteration_range=r))
+
+
+# ====================================================================== 7-bin outcome models
+METHOD_SIDE_LOG = ["slpm", "sapm", "head_pm", "ohead_pm", "ground_pm", "oground_pm", "kd15", "okd15", "td15",
+                   "otd15", "ctrl", "octrl", "sub15", "osub15", "power", "chin", "leg_pm", "clinch_pm"]
+METHOD_SIDE_LOGIT = ["acc", "def", "td_acc", "td_def"]
+METHOD_SIDE_LIN = ["ko_w_rate", "sub_w_rate", "dec_w_rate", "ko_l_rate", "sub_l_rate", "dec_l_rate",
+                   "finish_w_share", "finished_share", "ko_losses", "kd_absorbed_c", "sig_absorbed_c", "log_n",
+                   "min_per_fight", "last1_ko_l", "ko_l_dec", "win_pct", "streak"]
+METHOD_SIDE_ELO = ["elo", "elo_sig"]
+
+
+def side_block(df, p):
+    """Per-fighter transformed features for the method / multinomial models (prefix p = 'A_' or 'B_')."""
+    F = {}
+    for k in METHOD_SIDE_LOG:
+        F["log_" + k] = np.log(df[p + k] + EPS_LOG)
+    for k in METHOD_SIDE_LOGIT:
+        F["lgt_" + k] = _logit(df[p + k])
+    for k in METHOD_SIDE_LIN:
+        F[k] = df[p + k]
+    for k in METHOD_SIDE_ELO:
+        F[k] = df[p + k] / 100.0
+    age = df[p + "age"]
+    F["age"] = age.fillna(30.0)
+    F["age30"] = np.maximum(age.fillna(30.0) - 30, 0)
+    F["reach"] = (df[p + "reach"] - df[p + "height"]).fillna(0.0)
+    return pd.DataFrame(F, index=df.index).astype(float)
+
+
+def ctx_block(df):
+    return pd.DataFrame({"lbs": df["lbs"].fillna(160.0) / 100.0, "women": df["women"], "five": df["five"],
+                         "title": df["title"], "catch": df["catch"]}, index=df.index).astype(float)
+
+
+def method_label(df, winner_side):
+    """0 KO/TKO, 1 SUB, 2 DEC from the fight's method (winner-oriented); -1 otherwise."""
+    m = df["method"].map({"KO": 0, "DOC": 0, "SUB": 1, "UD": 2, "SD": 2, "MD": 2}).fillna(-1).astype(int)
+    return m.to_numpy()
+
+
+def method_design(df, winner_is_a):
+    """Winner-oriented design: [winner side block, loser side block, context]."""
+    SA, SB = side_block(df, "A_"), side_block(df, "B_")
+    w = np.asarray(winner_is_a, bool)[:, None]
+    W = np.where(w, SA.to_numpy(), SB.to_numpy())
+    L = np.where(w, SB.to_numpy(), SA.to_numpy())
+    C = ctx_block(df).to_numpy()
+    cols = (["w_" + c for c in SA.columns] + ["l_" + c for c in SB.columns] + list(ctx_block(df.iloc[:1]).columns))
+    return np.hstack([W, L, C]), cols
+
+
+class SoftmaxLR:
+    """Multinomial logistic regression with L2 on standardised columns (sklearn lbfgs)."""
+
+    def __init__(self, C):
+        self.C = C
+
+    def fit(self, X, y, sw=None):
+        from sklearn.linear_model import LogisticRegression
+        self.mu = X.mean(0)
+        self.s = X.std(0) + 1e-9
+        self.m = LogisticRegression(C=self.C, max_iter=4000, tol=1e-6)
+        self.m.fit((X - self.mu) / self.s, y, sample_weight=sw)
+        self.classes = list(self.m.classes_)
+        return self
+
+    def predict(self, X, ncls):
+        P = np.zeros((len(X), ncls))
+        P[:, self.classes] = self.m.predict_proba((X - self.mu) / self.s)
+        return P
+
+    def export(self, cols):
+        """Raw-unit coefficients: logit_k = b_k + sum_j W_kj x_j."""
+        W = self.m.coef_ / self.s
+        b = self.m.intercept_ - (self.m.coef_ * (self.mu / self.s)).sum(1)
+        return {"classes": [int(c) for c in self.classes], "features": cols,
+                "intercept": [round(float(v), 6) for v in b],
+                "coef": [[round(float(v), 6) for v in row] for row in W]}
+
+
+def assemble7(pA, mA, mB, pD):
+    """7-bin from P(A wins | decisive), method-given-winner (rows: KO, SUB, DEC) for each side, draw rate."""
+    pA = np.asarray(pA)[:, None]
+    q = 1 - pD
+    out = np.zeros((len(pA), 7))
+    out[:, 0:3] = q * pA * mA
+    out[:, 3] = pD
+    out[:, 4] = q * (1 - pA[:, 0]) * mB[:, 2]
+    out[:, 5] = q * (1 - pA[:, 0]) * mB[:, 1]
+    out[:, 6] = q * (1 - pA[:, 0]) * mB[:, 0]
+    return out
+
+
+def direct7_design(df, flip=False):
+    a, b = ("B_", "A_") if flip else ("A_", "B_")
+    SA, SB = side_block(df, a), side_block(df, b)
+    C = ctx_block(df)
+    X = np.hstack([SA.to_numpy(), SB.to_numpy(), C.to_numpy()])
+    cols = ["a_" + c for c in SA.columns] + ["b_" + c for c in SB.columns] + list(C.columns)
+    return X, cols
+
+
+MIRROR7 = np.array([6, 5, 4, 3, 2, 1, 0])
+
+
+def base7(df_train, df_eval):
+    """Corner-symmetric base rates by (scheduled rounds, women): P(KO/SUB/DEC | decisive) and P(draw)."""
+    out = np.zeros((len(df_eval), 7))
+    tr = df_train[df_train["bin7"].notna()]
+    allm = _method_split(tr)
+    for i, (five, women) in enumerate(zip(df_eval["five"], df_eval["women"])):
+        g = tr[(tr["five"] == five) & (tr["women"] == women)]
+        ms = _method_split(g) if len(g) >= 150 else allm
+        out[i] = ms
+    return out
+
+
+def _method_split(g):
+    b = g["bin7"].astype(int).to_numpy()
+    c = np.bincount(b, minlength=7).astype(float) + 0.5
+    pD = c[3] / c.sum()
+    ko = c[0] + c[6]
+    sub = c[1] + c[5]
+    dec = c[2] + c[4]
+    t = ko + sub + dec
+    q = 1 - pD
+    return np.array([q * ko / t / 2, q * sub / t / 2, q * dec / t / 2, pD, q * dec / t / 2, q * sub / t / 2,
+                     q * ko / t / 2])
+
+
+def method_split_given_winner(base7row):
+    m = np.array([base7row[0], base7row[1], base7row[2]])
+    return m / m.sum()
+
+
+# ====================================================================== external inputs for stacking
+def load_external(ids):
+    """Per-fight probabilities (A wins | decisive) from other pipeline stages when their files exist."""
+    ext = {}
+    src = {}
+    p = os.path.join(DERIVED, "market.json")
+    if os.path.exists(p):
+        M = json.load(open(p))["fights"]
+        for key, field in (("mkt_close", "p_power_close"), ("mkt_close_mult", "p_novig_close"),
+                           ("mkt_open", "p_novig_open"), ("mkt_rating", "p_market_rating")):
+            ext[key] = {i: M[i][field] for i in ids if i in M and M[i].get(field) is not None}
+        src["market"] = "data/derived/market.json (tools/market.py): p_power_close = power de-vig of the consensus close; " \
+                        "p_novig_open = multiplicative de-vig of the opening line; p_market_rating = walk-forward " \
+                        "Kalman market rating from earlier closing lines (usable before a line exists)"
+    p = os.path.join(DERIVED, "moe_engine_bt.json")
+    if os.path.exists(p):
+        E = json.load(open(p))
+        F = E["fights"]
+        ext["engine"] = {i: F[i]["pA"] / max(F[i]["pA"] + F[i]["pB"], 1e-9) for i in ids if i in F}
+        src["engine"] = ("data/derived/moe_engine_bt.json (engine v%s via tools/moe_engine_bt.js, %d sims per corner "
+                         "order, pA/(pA+pB))" % (E["meta"].get("engine_version"), E["meta"].get("sims_per_orientation", 0)))
+    p = os.path.join(DERIVED, "calibration.json")
+    if os.path.exists(p):
+        try:
+            C = json.load(open(p))
+            F = C.get("fights") or C.get("predictions") or {}
+            got = {}
+            for i in ids:
+                r = F.get(i)
+                if isinstance(r, dict):
+                    v = r.get("pA") if r.get("pA") is not None else r.get("p")
+                    if v is not None:
+                        pb = r.get("pB")
+                        got[i] = v / (v + pb) if pb else v
+            if got:
+                ext["engine_cal"] = got
+                src["engine_cal"] = "data/derived/calibration.json per-fight engine probabilities"
+        except Exception:
+            pass
+    p = os.path.join(DERIVED, "ratings.json")
+    if os.path.exists(p):
+        try:
+            R = json.load(open(p))
+            F = R.get("fights") or R.get("backtest") or {}
+            best = R.get("best") or R.get("recommended")
+            got = {}
+            for i in ids:
+                r = F.get(i)
+                if isinstance(r, dict):
+                    v = None
+                    if isinstance(best, str) and isinstance(r.get(best), (int, float)):
+                        v = r[best]
+                    elif isinstance(r.get("p"), dict) and isinstance(best, str):
+                        v = r["p"].get(best)
+                    elif isinstance(r.get("p_best"), (int, float)):
+                        v = r["p_best"]
+                    if v is not None:
+                        got[i] = v
+            if got:
+                ext["ratings"] = got
+                src["ratings"] = "data/derived/ratings.json (%s)" % best
+        except Exception:
+            pass
+    return ext, src

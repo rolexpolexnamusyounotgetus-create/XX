@@ -204,8 +204,265 @@
   }
   function engineExpect(m) { return { A: engineSide(m, 0), B: engineSide(m, 1) }; }
 
+  // ------------------------------------------------------------------ model handle and evaluators
+  function load(json) {
+    var d = typeof json === "string" ? JSON.parse(json) : json;
+    if (!d || !d.targets) throw new Error("MLRates.load: expected mlrates.json");
+    var M = { meta: d.meta || {}, fc: d.fc || DEFAULT_FC, targets: d.targets, kinds: d.kinds, fnames: d.fnames,
+      glm: d.glm || null, gbm: d.gbm || null, mlp: d.mlp || null, stack: d.stack, raw: d };
+    if (M.glm) {
+      M.glm.forEach(function (g) { if (g) { g._mean = M.raw.glm_mean; g._sd = M.raw.glm_sd; } });
+    }
+    MODEL = M;
+    return M;
+  }
+
+  function glmEta(g, x, mean, sd) {
+    var z = new Array(x.length), s = g.b0, i;
+    for (i = 0; i < x.length; i++) { z[i] = (x[i] - mean[i]) / sd[i]; s += z[i] * g.b[i]; }
+    var pr = g.pairs, nb = x.length;
+    for (i = 0; i < pr.length; i++) s += z[pr[i][0]] * z[pr[i][1]] * g.b[nb + i];
+    return s;
+  }
+
+  // trees: {f: [...], t: [...], l: [...], r: [...], v: [...]}; child index < 0 means leaf ~idx
+  function gbmEta(trees, x) {
+    var s = 0;
+    for (var k = 0; k < trees.length; k++) {
+      var T = trees[k], node = 0;
+      if (T.f.length === 0) { s += T.v[0]; continue; }
+      while (node >= 0) node = x[T.f[node]] <= T.t[node] ? T.l[node] : T.r[node];
+      s += T.v[~node];
+    }
+    return s;
+  }
+
+  function geluT(x) { return 0.5 * x * (1 + Math.tanh(0.7978845608028654 * (x + 0.044715 * x * x * x))); }
+  function mlpOut(net, x) {
+    var h = new Array(x.length), i, j, k;
+    for (i = 0; i < x.length; i++) h[i] = (x[i] - net.mean[i]) / net.sd[i];
+    for (k = 0; k < net.W.length; k++) {
+      var W = net.W[k], b = net.b[k], o = new Array(W.length);
+      for (j = 0; j < W.length; j++) {
+        var s = b[j], row = W[j];
+        for (i = 0; i < row.length; i++) s += row[i] * h[i];
+        o[j] = k < net.W.length - 1 ? geluT(s) : s;
+      }
+      h = o;
+    }
+    return h;
+  }
+
+  function normSide(prof, ctx) {
+    var date = ctx.date || null, age = prof.age;
+    if ((age == null || !isFinite(age)) && prof.dob && date) age = (Date.parse(date) - Date.parse(prof.dob)) / (365.25 * 86400000);
+    var lay = prof.layoff;
+    if (lay == null && prof.last_fight && date) lay = Math.round((Date.parse(date) - Date.parse(prof.last_fight)) / 86400000);
+    var n = prof.n != null ? prof.n : (prof.n_fights != null ? prof.n_fights : null);
+    return { s: sumsOf(prof), age: age != null && isFinite(age) ? +age : null, n: n || 0, elo: prof.elo != null ? +prof.elo : 1500,
+      ko_losses: prof.ko_losses || 0, home: prof.home || prof.division || null,
+      height_in: prof.height_in != null ? +prof.height_in : null, reach_in: prof.reach_in != null ? +prof.reach_in : null,
+      stance: prof.stance || null, layoff: lay != null && isFinite(lay) && lay >= 0 ? +lay : null };
+  }
+
+  // linear predictor per target (log rate per minute, or logit) for X attacking Y
+  function etaSide(M, f, base) {
+    var nt = M.targets.length, out = new Array(nt), k, t;
+    var mo = null;
+    if (M.mlp) {
+      mo = new Array(nt); for (t = 0; t < nt; t++) mo[t] = 0;
+      for (k = 0; k < M.mlp.length; k++) { var o = mlpOut(M.mlp[k], f); for (t = 0; t < nt; t++) mo[t] += o[t] / M.mlp.length; }
+    }
+    for (t = 0; t < nt; t++) {
+      var kind = M.kinds[t], off = kind === "pois" ? Math.log(Math.max(base[t], 1e-9)) : lgt(base[t]);
+      var w = M.stack[t], eta = off;
+      if (w.glm && M.glm && M.glm[t]) eta += w.glm * (glmEta(M.glm[t], f, M.raw.glm_mean, M.raw.glm_sd));
+      if (w.gbm && M.gbm && M.gbm[t]) eta += w.gbm * gbmEta(M.gbm[t], f);
+      if (w.mlp && mo) eta += w.mlp * mo[t];
+      out[t] = eta;
+    }
+    return out;
+  }
+
+  function toRates(M, eta) {
+    var o = {};
+    for (var t = 0; t < M.targets.length; t++) o[M.targets[t]] = M.kinds[t] === "pois" ? Math.exp(eta[t]) : sigm(eta[t]);
+    return o;
+  }
+
+  // predict(model, profA, profB, ctx): ctx {division, prior_division?, rounds, title, date | year, priors}
+  function predict(M, profA, profB, ctx) {
+    M = M || MODEL;
+    if (!M) throw new Error("MLRates.predict: no model loaded");
+    var year = ctx.year != null ? +ctx.year : (ctx.date ? +String(ctx.date).slice(0, 4) : new Date().getFullYear());
+    var pdiv = ctx.prior_division || ctx.division;
+    var A = normSide(profA, ctx), B = normSide(profB, ctx);
+    if (!ctx.prior_division && (ctx.division === "Catch Weight" || ctx.division === "Open Weight")) {
+      var hs = [A.home, B.home].filter(function (h) { return LBS[h]; });
+      pdiv = hs.length ? hs.sort(function (a, b) { return LBS[b] - LBS[a]; })[0] : "ALL";
+    }
+    var P = priorFor(pdiv, ctx.priors);
+    var c2 = { rounds: ctx.rounds || (ctx.title ? 5 : 3), title: !!ctx.title, division: ctx.division || pdiv, prior_division: pdiv, year: year };
+    var base = M.targets.map(function (t) { return pget(P, BASE_KEY[t], 0); });
+    var fA = features(A, B, c2, P, M.fc), fB = features(B, A, c2, P, M.fc);
+    var eA = etaSide(M, fA, base), eB = etaSide(M, fB, base);
+    return { A: toRates(M, eA), B: toRates(M, eB), etaA: eA, etaB: eB, featA: fA, featB: fB, base: base, prior_division: pdiv };
+  }
+
+  // ------------------------------------------------------------------ adapter: ML rates -> engine matchup tables
+  function odds(p) { p = clip(p, 1e-6, 1 - 1e-6); return p / (1 - p); }
+  function wavg(occ, mult) { var s = 0; for (var i = 0; i < 5; i++) s += occ[i] * mult[i]; return s; }
+
+  function refitOccupancy(m, FE) {
+    var p = m.p, i;
+    var avgSweep = [wavg(m.occS[0], p.sweepPos), wavg(m.occS[1], p.sweepPos)];
+    var avgStand = [wavg(m.occS[0], p.standPos), wavg(m.occS[1], p.standPos)];
+    var q = { e: m.clE, pA: m.pCtl, x: m.clBreak, swap: m.clSwap, fc: p.standClinch, ftc: p.failTdClinch,
+      tdD: m.tdD, pD: [prob(m.tdO[0]), prob(m.tdO[1])], tdCC: m.tdCC, tdCU: m.tdCU, pC: [prob(m.tdOC[0]), prob(m.tdOC[1])],
+      up: m.up.slice(), rev: [m.sw[0] * avgSweep[1], m.sw[1] * avgSweep[0]] };
+    var occ = null, gT = [0, 0], clT = m.clT, ctrlT = m.ctrlT;
+    for (var it = 0; it < 60; it++) {
+      occ = FE.occupancy(q, 300);
+      var cl = occ[1] + occ[2];
+      q.e = clip(q.e * Math.pow(clT / Math.max(1e-6, cl), 0.8), 1e-5, 0.08);
+      gT[0] = Math.max(0.002, ctrlT[0] / 60 - occ[1]);
+      gT[1] = Math.max(0.002, ctrlT[1] / 60 - occ[2]);
+      q.up[1] = clip(q.up[1] * Math.pow(occ[3] / gT[0], 0.8), 1 / 3000, 1 / 6);
+      q.up[0] = clip(q.up[0] * Math.pow(occ[4] / gT[1], 0.8), 1 / 3000, 1 / 6);
+    }
+    m.occ = FE.occupancy(q, 300); m.clE = q.e; m.up = q.up.slice(); m.gTarget = gT;
+    for (i = 0; i < 2; i++) for (var k = 0; k < 5; k++) m.upPos[i * 5 + k] = m.up[1 - i] * p.standPos[k] / avgStand[i];
+  }
+
+  // pred: {A: rates, B: rates}. opts: {engine (FightEngine), parts: {...} to switch pieces off, maxRatio}
+  function applyToMatchup(m, pred, opts) {
+    opts = opts || {};
+    var FE = opts.engine || (typeof self !== "undefined" && self.FightEngine) || (typeof globalThis !== "undefined" && globalThis.FightEngine);
+    if (!FE || !FE.occupancy) throw new Error("MLRates.applyToMatchup: FightEngine needed (opts.engine)");
+    var parts = opts.parts || {}, on = function (k) { return parts[k] !== false; };
+    var RMAX = opts.maxRatio || 4, p = m.p, i, j, k, t, it;
+    function rr(a, b) { return clip(a / Math.max(b, 1e-9), 1 / RMAX, RMAX); }
+    // ML targets with the matchup's knobs layered on top (the knobs stay meaningful)
+    var tg = [{}, {}], sides = [pred.A, pred.B];
+    for (i = 0; i < 2; i++) {
+      j = 1 - i; var a = m.adj[i], aj = m.adj[j], src = sides[i];
+      for (k in src) tg[i][k] = src[k];
+      tg[i].d_att *= a.out; tg[i].c_att *= a.out; tg[i].g_att *= a.out;
+      tg[i].h_att *= a.out; tg[i].b_att *= a.out; tg[i].l_att *= a.out;
+      tg[i].td_att *= a.tdAtt; tg[i].sub_att *= a.sub;
+      tg[i].td_acc = prob(odds(tg[i].td_acc) / aj.tdDef);
+      ["acc_h", "acc_b", "acc_l", "acc_d", "acc_c", "acc_g"].forEach(function (q) { tg[i][q] = prob(odds(tg[i][q]) * a.acc); });
+      tg[i].kd_h *= a.pow * aj.chin;
+    }
+    var ratios = [{}, {}];
+    // 1) grappling: takedown attempts and success, sweeps, control targets; refit position occupancy
+    if (on("grappling")) {
+      var e0 = engineExpect(m), es = [e0.A, e0.B];
+      for (i = 0; i < 2; i++) {
+        var ro = odds(tg[i].td_acc) / odds(es[i].td_acc);
+        m.tdO[i] *= ro; m.tdOC[i] *= ro; ratios[i].tdOdds = ro;
+        var rv = rr(tg[i].rev, es[i].rev); m.sw[i] *= rv; ratios[i].rev = rv;
+        for (k = 0; k < 5; k++) m.swPos[(1 - i) * 5 + k] *= rv;
+      }
+      var cAllE = es[0].c_att + es[1].c_att, cAllT = tg[0].c_att + tg[1].c_att;
+      m.clT = clip(m.clT * Math.pow(rr(cAllT, cAllE), p.clinchTimeExp), 0.005, 0.3);
+      m.ctrlT = [tg[0].ctrl, tg[1].ctrl];
+      var xA = m.ctrlT[0] / Math.max(1e-6, m.ctrlT[0] + m.ctrlT[1]);
+      m.pCtl = 0.5 + p.clinchCtrlTemper * (xA - 0.5);
+      var tdr = [1, 1];
+      for (it = 0; it < 3; it++) {
+        refitOccupancy(m, FE);
+        var e1 = engineExpect(m), e1s = [e1.A, e1.B];
+        for (i = 0; i < 2; i++) {
+          var r1 = rr(tg[i].td_att, e1s[i].td_att);
+          m.tdD[i] *= r1; m.tdCC[i] *= r1; m.tdCU[i] *= r1; tdr[i] *= r1;
+        }
+      }
+      refitOccupancy(m, FE);
+      ratios[0].tdAtt = tdr[0]; ratios[1].tdAtt = tdr[1];
+    }
+    // 2) strike attempts by position, then the distance target mix
+    if (on("strikes")) {
+      var e2 = engineExpect(m), e2s = [e2.A, e2.B];
+      for (i = 0; i < 2; i++) {
+        var rd = rr(tg[i].d_att, e2s[i].d_att), rc = rr(tg[i].c_att, e2s[i].c_att), rg = rr(tg[i].g_att, e2s[i].g_att);
+        m.dRate[i] *= rd; m.cRate[i] *= rc; m.gRate[i] *= rg; m.gBot[i] *= rg;
+        for (k = 0; k < 5; k++) m.gPos[i * 5 + k] *= rg;
+        ratios[i].d = rd; ratios[i].c = rc; ratios[i].g = rg;
+      }
+      var e3 = engineExpect(m), e3s = [e3.A, e3.B];
+      for (i = 0; i < 2; i++) {
+        if (m.adj[i].leg != null) continue;                 // a leg-kick share knob overrides the learned mix
+        var Ai = e3s[i]._A, tot = 0, want = [tg[i].h_att, tg[i].b_att, tg[i].l_att], ws = want[0] + want[1] + want[2];
+        for (var pc = 0; pc < 4; pc++) for (t = 0; t < 3; t++) tot += Ai[pc][t];
+        var dAtt = Ai[0][0] + Ai[0][1] + Ai[0][2];
+        if (dAtt <= 0 || ws <= 0) continue;
+        var need = [0, 0, 0], sN = 0;
+        for (t = 0; t < 3; t++) { need[t] = Math.max(0.02 * dAtt, want[t] / ws * tot - (Ai[1][t] + Ai[2][t] + Ai[3][t])); sN += need[t]; }
+        var mix = [need[0] / sN, need[1] / sN, need[2] / sN];
+        m.mixD[i] = mix;
+        m.mixC[(i * 4) * 2] = mix[0]; m.mixC[(i * 4) * 2 + 1] = mix[0] + mix[1];
+        ratios[i].mixD = mix;
+      }
+    }
+    // 3) accuracy: logit shifts by target and by position so both margins match (IPF on the logit scale)
+    if (on("accuracy")) {
+      for (i = 0; i < 2; i++) {
+        var alpha = [0, 0, 0], beta = [0, 0, 0], wantT = [tg[i].acc_h, tg[i].acc_b, tg[i].acc_l], wantP = [tg[i].acc_d, tg[i].acc_c, tg[i].acc_g];
+        var e4 = engineSide(m, i), A4 = e4._A, z0 = [];
+        for (var pc2 = 0; pc2 < 4; pc2++) { z0.push([]); for (t = 0; t < 3; t++) z0[pc2].push(Math.log(m.accO[(i * 4 + pc2) * 3 + t])); }
+        var posOf = [0, 1, 2, 2];
+        for (it = 0; it < 25; it++) {
+          for (t = 0; t < 3; t++) {
+            var num = 0, den = 0;
+            for (pc2 = 0; pc2 < 4; pc2++) { num += A4[pc2][t] * sigm(z0[pc2][t] + alpha[t] + beta[posOf[pc2]]); den += A4[pc2][t]; }
+            if (den > 1e-9) alpha[t] += lgt(wantT[t]) - lgt(num / den);
+          }
+          for (var q = 0; q < 3; q++) {
+            var num2 = 0, den2 = 0;
+            for (pc2 = 0; pc2 < 4; pc2++) if (posOf[pc2] === q) for (t = 0; t < 3; t++) { num2 += A4[pc2][t] * sigm(z0[pc2][t] + alpha[t] + beta[q]); den2 += A4[pc2][t]; }
+            if (den2 > 1e-9) beta[q] += lgt(wantP[q]) - lgt(num2 / den2);
+          }
+        }
+        for (pc2 = 0; pc2 < 4; pc2++) for (t = 0; t < 3; t++) m.accO[(i * 4 + pc2) * 3 + t] = Math.exp(clip(z0[pc2][t] + alpha[t] + beta[posOf[pc2]], -8, 8));
+        ratios[i].accShiftTarget = alpha; ratios[i].accShiftPos = beta;
+      }
+    }
+    // 4) knockdown power x chin (and the TKO hazards built from the same product), submissions
+    var e5 = engineExpect(m), e5s = [e5.A, e5.B];
+    for (i = 0; i < 2; i++) {
+      j = 1 - i;
+      if (on("kd")) {
+        var rk = rr(tg[i].kd_h, e5s[i].kd_h);
+        m.kd[i] *= rk; m.gnp[i] *= Math.sqrt(rk); m.stko[i] *= Math.sqrt(rk); ratios[i].kd = rk;
+      }
+      if (on("subs")) {
+        var rs = rr(tg[i].sub_att, e5s[i].sub_att);
+        for (k = 0; k < 5; k++) { m.subTPos[i * 5 + k] *= rs; m.subBPos[j * 5 + k] *= rs; }
+        m.gillo[i] = clip(m.gillo[i] * rs, 0, 0.5); ratios[i].sub = rs;
+      }
+    }
+    m.ml = { targets: tg, ratios: ratios, after: engineExpect(m) };
+    return { ratios: ratios, targets: tg };
+  }
+
+  function mlMatchup(FE, profA, profB, opts) {
+    opts = opts || {};
+    var m = FE.matchup(profA, profB, opts);
+    var M = opts.model || MODEL;
+    if (!M) return m;
+    var pa = typeof profA === "string" ? FE.profile(profA) : profA, pb = typeof profB === "string" ? FE.profile(profB) : profB;
+    var pred = predict(M, pa, pb, { division: m.division, rounds: m.rounds, title: m.title, date: m.date,
+      priors: opts.priors || (FE.loadDB && opts.db ? opts.db.priors : null) || m.priors || { ALL: m.P, [m.division]: m.P } });
+    applyToMatchup(m, pred, { engine: FE, parts: opts.parts });
+    m.mlPred = pred;
+    return m;
+  }
+
   return {
     KEYS: KEYS, TNAMES: TNAMES, BASE_KEY: BASE_KEY, DEFAULT_FC: DEFAULT_FC, engineExpect: engineExpect,
+    load: load, setModel: load, predict: predict, applyToMatchup: applyToMatchup, matchup: mlMatchup,
+    model: function () { return MODEL; },
     features: features, priorFor: priorFor, sumsOf: sumsOf, league: league,
     _internal: { shr: shr, lr: lr, lgt: lgt, sigm: sigm, clip: clip }
   };

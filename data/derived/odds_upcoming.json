@@ -1,230 +1,22 @@
 {
  "meta": {
-  "built": "2026-11-06T09:52:45+00:00",
+  "built": "2026-11-06T09:57:04+00:00",
   "tool": "tools/odds_upcoming.py timeline",
   "snapshots": [
    "data/predictions/odds_snapshot_20261106-0950.json"
   ],
-  "orientation": "p_* = probability that A wins (A = first-named fighter in the card)",
-  "market_open": "fightodds.io per-book opening lines (sportsbooks), Shin no-vig, logit-mean (latest read; market_open_first_read keeps the first)",
+  "orientation": "a/b as in the first snapshot that listed the bout (cards_upcoming.json order); p_* = probability that A wins; captures taken with a/b swapped are flipped",
+  "market_open": "fightodds.io per-book opening lines (sportsbooks only), Shin no-vig, logit-mean (latest read; market_open_first_read keeps the first)",
   "first_capture": "first pre-start snapshot that had lines for the bout",
-  "last_pre_start": "last snapshot taken before the bout started: the closing-line proxy for the forward test (hours_before_start says how close to the bell it was)",
-  "archived_close": "first snapshot taken after the scheduled start: the books' archived closing lines as BFO/fightodds keep them (exchanges may be in-play or settled; use p_consensus / p_meandec_mult, which exclude exchanges)",
+  "last_pre_lock": "last snapshot before the event lock (earliest start_utc of the card): the market at prediction time, comparable with a prediction file committed before the lock",
+  "last_pre_start": "last snapshot before the bout started: the closing-line proxy (hours_before_start says how close to the bell it was)",
+  "archived_close": "first snapshot after the bout's start: the books' archived closing lines as BFO/fightodds keep them (exchanges may be in-play/settled; p_consensus, p_meandec_mult and bfo_p_a_novig exclude exchanges)",
+  "bfo_p_a_novig": "mean of BestFightOdds' sportsbook lines, multiplicative no-vig: the ledger's closing benchmark (data/predictions/README.md)",
   "use": "forward-test benchmark; never a training feature for 2026 fights"
  },
  "bouts": [
   {
-   "bout_key": "2026-11-07_andre-petroski__mantas-kondratavicius",
-   "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
-   "date": "2026-11-07",
-   "A": "Mantas Kondratavičius",
-   "B": "Andre Petroski",
-   "A_slug": "mantas-kondratavicius",
-   "B_slug": "andre-petroski",
-   "weight_class": "Middleweight",
-   "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
-     "phase": "pre_start",
-     "p_consensus": 0.7285,
-     "p_meandec_mult": 0.7189,
-     "p_sharp_shin": 0.7257,
-     "p_exchange_mult": 0.7209,
-     "n_books": 19,
-     "p_decision": 0.2044,
-     "hours_before_start": 36.8
-    }
-   ],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-07T22:40:00.000Z",
-   "market_open": {
-    "p_open": 0.7274,
-    "n_books": 17,
-    "books": {
-     "Bet105": [
-      -310,
-      254
-     ],
-     "BetAnything": [
-      -310,
-      240
-     ],
-     "BetMGM": [
-      -300,
-      240
-     ],
-     "BetOnline": [
-      -108,
-      -108
-     ],
-     "BetRivers": [
-      -286,
-      220
-     ],
-     "BetUS": [
-      -320,
-      261
-     ],
-     "Betway": [
-      -333,
-      250
-     ],
-     "Bookmaker": [
-      -270,
-      212
-     ],
-     "Bovada": [
-      -300,
-      250
-     ],
-     "Caesars": [
-      -290,
-      235
-     ],
-     "Circa": [
-      -320,
-      265
-     ],
-     "DraftKings": [
-      -278,
-      225
-     ],
-     "FanDuel": [
-      -310,
-      230
-     ],
-     "HardRock": [
-      -275,
-      220
-     ],
-     "MyBookie": [
-      -360,
-      260
-     ],
-     "Pinnacle": [
-      -288,
-      238
-     ],
-     "YouWager": [
-      -310,
-      254
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "market_open_first_read": {
-    "p_open": 0.7274,
-    "n_books": 17,
-    "books": {
-     "Bet105": [
-      -310,
-      254
-     ],
-     "BetAnything": [
-      -310,
-      240
-     ],
-     "BetMGM": [
-      -300,
-      240
-     ],
-     "BetOnline": [
-      -108,
-      -108
-     ],
-     "BetRivers": [
-      -286,
-      220
-     ],
-     "BetUS": [
-      -320,
-      261
-     ],
-     "Betway": [
-      -333,
-      250
-     ],
-     "Bookmaker": [
-      -270,
-      212
-     ],
-     "Bovada": [
-      -300,
-      250
-     ],
-     "Caesars": [
-      -290,
-      235
-     ],
-     "Circa": [
-      -320,
-      265
-     ],
-     "DraftKings": [
-      -278,
-      225
-     ],
-     "FanDuel": [
-      -310,
-      230
-     ],
-     "HardRock": [
-      -275,
-      220
-     ],
-     "MyBookie": [
-      -360,
-      260
-     ],
-     "Pinnacle": [
-      -288,
-      238
-     ],
-     "YouWager": [
-      -310,
-      254
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "actionnetwork_open": {
-    "ml": [
-     -300,
-     240
-    ],
-    "p_shin": 0.72794
-   },
-   "first_capture": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.7285,
-    "p_meandec_mult": 0.7189,
-    "p_sharp_shin": 0.7257,
-    "p_exchange_mult": 0.7209,
-    "n_books": 19,
-    "p_decision": 0.2044,
-    "hours_before_start": 36.8
-   },
-   "last_pre_start": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.7285,
-    "p_meandec_mult": 0.7189,
-    "p_sharp_shin": 0.7257,
-    "p_exchange_mult": 0.7209,
-    "n_books": 19,
-    "p_decision": 0.2044,
-    "hours_before_start": 36.8
-   },
-   "move_open_to_last_logit": 0.0056,
-   "move_open_to_last_pts": 0.0011,
-   "n_captures": 1
-  },
-  {
-   "bout_key": "2026-11-07_austin-bashi__carlos-calderon",
+   "bout_id": "2026-11-07:austin-bashi__carlos-calderon",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Austin Bashi",
@@ -232,162 +24,40 @@
    "A_slug": "austin-bashi",
    "B_slug": null,
    "weight_class": "Featherweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.8218,
      "p_meandec_mult": 0.8076,
      "p_sharp_shin": 0.828,
+     "p_pinnacle_shin": 0.81716,
      "p_exchange_mult": 0.8056,
      "n_books": 20,
-     "p_decision": null,
-     "hours_before_start": 37.2
+     "bfo_p_a_novig": 0.7998,
+     "bfo_odds": [
+      -522,
+      376
+     ],
+     "p_distance": null
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-07T23:00:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-07T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.8024,
     "n_books": 16,
-    "books": {
-     "Bet105": [
-      -486,
-      378
-     ],
-     "BetMGM": [
-      -550,
-      400
-     ],
-     "BetOnline": [
-      -275,
-      228
-     ],
-     "BetRivers": [
-      -476,
-      335
-     ],
-     "BetUS": [
-      -430,
-      327
-     ],
-     "Betway": [
-      -450,
-      333
-     ],
-     "Bookmaker": [
-      -525,
-      365
-     ],
-     "Bovada": [
-      -435,
-      340
-     ],
-     "Caesars": [
-      -600,
-      430
-     ],
-     "Circa": [
-      -450,
-      360
-     ],
-     "DraftKings": [
-      -550,
-      410
-     ],
-     "FanDuel": [
-      -500,
-      340
-     ],
-     "HardRock": [
-      -475,
-      325
-     ],
-     "MyBookie": [
-      -450,
-      310
-     ],
-     "Pinnacle": [
-      -486,
-      378
-     ],
-     "YouWager": [
-      -425,
-      337
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.8024,
     "n_books": 16,
-    "books": {
-     "Bet105": [
-      -486,
-      378
-     ],
-     "BetMGM": [
-      -550,
-      400
-     ],
-     "BetOnline": [
-      -275,
-      228
-     ],
-     "BetRivers": [
-      -476,
-      335
-     ],
-     "BetUS": [
-      -430,
-      327
-     ],
-     "Betway": [
-      -450,
-      333
-     ],
-     "Bookmaker": [
-      -525,
-      365
-     ],
-     "Bovada": [
-      -435,
-      340
-     ],
-     "Caesars": [
-      -600,
-      430
-     ],
-     "Circa": [
-      -450,
-      360
-     ],
-     "DraftKings": [
-      -550,
-      410
-     ],
-     "FanDuel": [
-      -500,
-      340
-     ],
-     "HardRock": [
-      -475,
-      325
-     ],
-     "MyBookie": [
-      -450,
-      310
-     ],
-     "Pinnacle": [
-      -486,
-      378
-     ],
-     "YouWager": [
-      -425,
-      337
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -399,34 +69,65 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.8218,
     "p_meandec_mult": 0.8076,
     "p_sharp_shin": 0.828,
+    "p_pinnacle_shin": 0.81716,
     "p_exchange_mult": 0.8056,
     "n_books": 20,
-    "p_decision": null,
-    "hours_before_start": 37.2
+    "bfo_p_a_novig": 0.7998,
+    "bfo_odds": [
+     -522,
+     376
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.8218,
     "p_meandec_mult": 0.8076,
     "p_sharp_shin": 0.828,
+    "p_pinnacle_shin": 0.81716,
     "p_exchange_mult": 0.8056,
     "n_books": 20,
-    "p_decision": null,
-    "hours_before_start": 37.2
+    "bfo_p_a_novig": 0.7998,
+    "bfo_odds": [
+     -522,
+     376
+    ],
+    "p_distance": null,
+    "hours_before_start": 36.2
    },
-   "move_open_to_last_logit": 0.1272,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.8218,
+    "p_meandec_mult": 0.8076,
+    "p_sharp_shin": 0.828,
+    "p_pinnacle_shin": 0.81716,
+    "p_exchange_mult": 0.8056,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.7998,
+    "bfo_odds": [
+     -522,
+     376
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": 0.0194,
+   "move_open_to_last_logit": 0.1272,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_billy-elekana__lucas-fernando",
+   "bout_id": "2026-11-07:billy-elekana__lucas-fernando",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Billy Elekana",
@@ -434,178 +135,49 @@
    "A_slug": "billy-elekana",
    "B_slug": "lucas-fernando",
    "weight_class": "Light Heavyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.2563,
      "p_meandec_mult": 0.2671,
      "p_sharp_shin": 0.2525,
+     "p_pinnacle_shin": 0.25178,
      "p_exchange_mult": 0.2609,
      "n_books": 20,
-     "p_decision": 0.3993,
-     "hours_before_start": 39.8
+     "bfo_p_a_novig": 0.2745,
+     "bfo_odds": [
+      246,
+      -323
+     ],
+     "p_distance": 0.4043,
+     "p_method": {
+      "a_ko": 0.0701,
+      "a_sub": 0.089,
+      "a_dec": 0.1094,
+      "b_ko": 0.3414,
+      "b_sub": 0.0948,
+      "b_dec": 0.2863,
+      "draw": 0.0089
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-08T01:40:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-08T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.2992,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      212,
-      -255
-     ],
-     "BetAnything": [
-      205,
-      -255
-     ],
-     "BetMGM": [
-      210,
-      -275
-     ],
-     "BetOnline": [
-      189,
-      -225
-     ],
-     "BetRivers": [
-      205,
-      -263
-     ],
-     "BetUS": [
-      210,
-      -255
-     ],
-     "Betway": [
-      200,
-      -250
-     ],
-     "Bookmaker": [
-      206,
-      -261
-     ],
-     "Bovada": [
-      205,
-      -245
-     ],
-     "Caesars": [
-      210,
-      -260
-     ],
-     "Circa": [
-      225,
-      -265
-     ],
-     "Cloudbet": [
-      205,
-      -278
-     ],
-     "DraftKings": [
-      210,
-      -258
-     ],
-     "FanDuel": [
-      240,
-      -330
-     ],
-     "HardRock": [
-      210,
-      -260
-     ],
-     "MyBookie": [
-      230,
-      -310
-     ],
-     "Pinnacle": [
-      212,
-      -255
-     ],
-     "YouWager": [
-      212,
-      -255
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.2992,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      212,
-      -255
-     ],
-     "BetAnything": [
-      205,
-      -255
-     ],
-     "BetMGM": [
-      210,
-      -275
-     ],
-     "BetOnline": [
-      189,
-      -225
-     ],
-     "BetRivers": [
-      205,
-      -263
-     ],
-     "BetUS": [
-      210,
-      -255
-     ],
-     "Betway": [
-      200,
-      -250
-     ],
-     "Bookmaker": [
-      206,
-      -261
-     ],
-     "Bovada": [
-      205,
-      -245
-     ],
-     "Caesars": [
-      210,
-      -260
-     ],
-     "Circa": [
-      225,
-      -265
-     ],
-     "Cloudbet": [
-      205,
-      -278
-     ],
-     "DraftKings": [
-      210,
-      -258
-     ],
-     "FanDuel": [
-      240,
-      -330
-     ],
-     "HardRock": [
-      210,
-      -260
-     ],
-     "MyBookie": [
-      230,
-      -310
-     ],
-     "Pinnacle": [
-      212,
-      -255
-     ],
-     "YouWager": [
-      212,
-      -255
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -617,34 +189,92 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.2563,
     "p_meandec_mult": 0.2671,
     "p_sharp_shin": 0.2525,
+    "p_pinnacle_shin": 0.25178,
     "p_exchange_mult": 0.2609,
     "n_books": 20,
-    "p_decision": 0.3993,
-    "hours_before_start": 39.8
+    "bfo_p_a_novig": 0.2745,
+    "bfo_odds": [
+     246,
+     -323
+    ],
+    "p_distance": 0.4043,
+    "p_method": {
+     "a_ko": 0.0701,
+     "a_sub": 0.089,
+     "a_dec": 0.1094,
+     "b_ko": 0.3414,
+     "b_sub": 0.0948,
+     "b_dec": 0.2863,
+     "draw": 0.0089
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.2563,
     "p_meandec_mult": 0.2671,
     "p_sharp_shin": 0.2525,
+    "p_pinnacle_shin": 0.25178,
     "p_exchange_mult": 0.2609,
     "n_books": 20,
-    "p_decision": 0.3993,
-    "hours_before_start": 39.8
+    "bfo_p_a_novig": 0.2745,
+    "bfo_odds": [
+     246,
+     -323
+    ],
+    "p_distance": 0.4043,
+    "p_method": {
+     "a_ko": 0.0701,
+     "a_sub": 0.089,
+     "a_dec": 0.1094,
+     "b_ko": 0.3414,
+     "b_sub": 0.0948,
+     "b_dec": 0.2863,
+     "draw": 0.0089
+    },
+    "hours_before_start": 39.2
    },
-   "move_open_to_last_logit": -0.2142,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.2563,
+    "p_meandec_mult": 0.2671,
+    "p_sharp_shin": 0.2525,
+    "p_pinnacle_shin": 0.25178,
+    "p_exchange_mult": 0.2609,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.2745,
+    "bfo_odds": [
+     246,
+     -323
+    ],
+    "p_distance": 0.4043,
+    "p_method": {
+     "a_ko": 0.0701,
+     "a_sub": 0.089,
+     "a_dec": 0.1094,
+     "b_ko": 0.3414,
+     "b_sub": 0.0948,
+     "b_dec": 0.2863,
+     "draw": 0.0089
+    }
+   },
    "move_open_to_last_pts": -0.0429,
+   "move_open_to_last_logit": -0.2142,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_davey-grant__elijah-smith",
+   "bout_id": "2026-11-07:davey-grant__elijah-smith",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Davey Grant",
@@ -652,178 +282,49 @@
    "A_slug": "davey-grant",
    "B_slug": "elijah-smith",
    "weight_class": "Bantamweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.2631,
      "p_meandec_mult": 0.2734,
      "p_sharp_shin": 0.2608,
+     "p_pinnacle_shin": 0.25986,
      "p_exchange_mult": 0.2668,
      "n_books": 20,
-     "p_decision": 0.4139,
-     "hours_before_start": 40.2
+     "bfo_p_a_novig": 0.2773,
+     "bfo_odds": [
+      243,
+      -316
+     ],
+     "p_distance": 0.4282,
+     "p_method": {
+      "a_ko": 0.1062,
+      "a_sub": 0.048,
+      "a_dec": 0.125,
+      "b_ko": 0.2855,
+      "b_sub": 0.1414,
+      "b_dec": 0.2853,
+      "draw": 0.0085
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-08T02:00:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-08T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.3208,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      186,
-      -221
-     ],
-     "BetAnything": [
-      180,
-      -215
-     ],
-     "BetMGM": [
-      200,
-      -250
-     ],
-     "BetOnline": [
-      169,
-      -200
-     ],
-     "BetRivers": [
-      175,
-      -238
-     ],
-     "BetUS": [
-      218,
-      -265
-     ],
-     "Betway": [
-      163,
-      -200
-     ],
-     "Bookmaker": [
-      198,
-      -250
-     ],
-     "Bovada": [
-      185,
-      -220
-     ],
-     "Caesars": [
-      235,
-      -290
-     ],
-     "Circa": [
-      185,
-      -215
-     ],
-     "Cloudbet": [
-      180,
-      -238
-     ],
-     "DraftKings": [
-      185,
-      -225
-     ],
-     "FanDuel": [
-      240,
-      -330
-     ],
-     "HardRock": [
-      175,
-      -240
-     ],
-     "MyBookie": [
-      216,
-      -290
-     ],
-     "Pinnacle": [
-      187,
-      -223
-     ],
-     "YouWager": [
-      185,
-      -225
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.3208,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      186,
-      -221
-     ],
-     "BetAnything": [
-      180,
-      -215
-     ],
-     "BetMGM": [
-      200,
-      -250
-     ],
-     "BetOnline": [
-      169,
-      -200
-     ],
-     "BetRivers": [
-      175,
-      -238
-     ],
-     "BetUS": [
-      218,
-      -265
-     ],
-     "Betway": [
-      163,
-      -200
-     ],
-     "Bookmaker": [
-      198,
-      -250
-     ],
-     "Bovada": [
-      185,
-      -220
-     ],
-     "Caesars": [
-      235,
-      -290
-     ],
-     "Circa": [
-      185,
-      -215
-     ],
-     "Cloudbet": [
-      180,
-      -238
-     ],
-     "DraftKings": [
-      185,
-      -225
-     ],
-     "FanDuel": [
-      240,
-      -330
-     ],
-     "HardRock": [
-      175,
-      -240
-     ],
-     "MyBookie": [
-      216,
-      -290
-     ],
-     "Pinnacle": [
-      187,
-      -223
-     ],
-     "YouWager": [
-      185,
-      -225
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -835,34 +336,92 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.2631,
     "p_meandec_mult": 0.2734,
     "p_sharp_shin": 0.2608,
+    "p_pinnacle_shin": 0.25986,
     "p_exchange_mult": 0.2668,
     "n_books": 20,
-    "p_decision": 0.4139,
-    "hours_before_start": 40.2
+    "bfo_p_a_novig": 0.2773,
+    "bfo_odds": [
+     243,
+     -316
+    ],
+    "p_distance": 0.4282,
+    "p_method": {
+     "a_ko": 0.1062,
+     "a_sub": 0.048,
+     "a_dec": 0.125,
+     "b_ko": 0.2855,
+     "b_sub": 0.1414,
+     "b_dec": 0.2853,
+     "draw": 0.0085
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.2631,
     "p_meandec_mult": 0.2734,
     "p_sharp_shin": 0.2608,
+    "p_pinnacle_shin": 0.25986,
     "p_exchange_mult": 0.2668,
     "n_books": 20,
-    "p_decision": 0.4139,
-    "hours_before_start": 40.2
+    "bfo_p_a_novig": 0.2773,
+    "bfo_odds": [
+     243,
+     -316
+    ],
+    "p_distance": 0.4282,
+    "p_method": {
+     "a_ko": 0.1062,
+     "a_sub": 0.048,
+     "a_dec": 0.125,
+     "b_ko": 0.2855,
+     "b_sub": 0.1414,
+     "b_dec": 0.2853,
+     "draw": 0.0085
+    },
+    "hours_before_start": 39.2
    },
-   "move_open_to_last_logit": -0.2798,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.2631,
+    "p_meandec_mult": 0.2734,
+    "p_sharp_shin": 0.2608,
+    "p_pinnacle_shin": 0.25986,
+    "p_exchange_mult": 0.2668,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.2773,
+    "bfo_odds": [
+     243,
+     -316
+    ],
+    "p_distance": 0.4282,
+    "p_method": {
+     "a_ko": 0.1062,
+     "a_sub": 0.048,
+     "a_dec": 0.125,
+     "b_ko": 0.2855,
+     "b_sub": 0.1414,
+     "b_dec": 0.2853,
+     "draw": 0.0085
+    }
+   },
    "move_open_to_last_pts": -0.0577,
+   "move_open_to_last_logit": -0.2798,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_gabriel-lourenco__thomas-petersen",
+   "bout_id": "2026-11-07:gabriel-lourenco__thomas-petersen",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Gabriel Lourenço",
@@ -870,162 +429,49 @@
    "A_slug": null,
    "B_slug": "thomas-petersen",
    "weight_class": "Heavyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.3904,
      "p_meandec_mult": 0.3957,
      "p_sharp_shin": 0.3867,
+     "p_pinnacle_shin": 0.38262,
      "p_exchange_mult": 0.3877,
      "n_books": 19,
-     "p_decision": 0.3655,
-     "hours_before_start": 38.2
+     "bfo_p_a_novig": 0.3972,
+     "bfo_odds": [
+      139,
+      -175
+     ],
+     "p_distance": 0.3639,
+     "p_method": {
+      "a_ko": 0.2455,
+      "a_sub": 0.0323,
+      "a_dec": 0.1228,
+      "b_ko": 0.2306,
+      "b_sub": 0.1202,
+      "b_dec": 0.2394,
+      "draw": 0.0091
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-08T00:00:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-07T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.3942,
     "n_books": 16,
-    "books": {
-     "Bet105": [
-      142,
-      -167
-     ],
-     "BetAnything": [
-      145,
-      -175
-     ],
-     "BetMGM": [
-      140,
-      -170
-     ],
-     "BetRivers": [
-      138,
-      -172
-     ],
-     "BetUS": [
-      138,
-      -165
-     ],
-     "Betway": [
-      140,
-      -175
-     ],
-     "Bookmaker": [
-      139,
-      -171
-     ],
-     "Bovada": [
-      142,
-      -168
-     ],
-     "Caesars": [
-      140,
-      -165
-     ],
-     "Circa": [
-      150,
-      -170
-     ],
-     "DraftKings": [
-      142,
-      -170
-     ],
-     "FanDuel": [
-      130,
-      -166
-     ],
-     "HardRock": [
-      140,
-      -170
-     ],
-     "MyBookie": [
-      127,
-      -163
-     ],
-     "Pinnacle": [
-      142,
-      -167
-     ],
-     "YouWager": [
-      142,
-      -167
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.3942,
     "n_books": 16,
-    "books": {
-     "Bet105": [
-      142,
-      -167
-     ],
-     "BetAnything": [
-      145,
-      -175
-     ],
-     "BetMGM": [
-      140,
-      -170
-     ],
-     "BetRivers": [
-      138,
-      -172
-     ],
-     "BetUS": [
-      138,
-      -165
-     ],
-     "Betway": [
-      140,
-      -175
-     ],
-     "Bookmaker": [
-      139,
-      -171
-     ],
-     "Bovada": [
-      142,
-      -168
-     ],
-     "Caesars": [
-      140,
-      -165
-     ],
-     "Circa": [
-      150,
-      -170
-     ],
-     "DraftKings": [
-      142,
-      -170
-     ],
-     "FanDuel": [
-      130,
-      -166
-     ],
-     "HardRock": [
-      140,
-      -170
-     ],
-     "MyBookie": [
-      127,
-      -163
-     ],
-     "Pinnacle": [
-      142,
-      -167
-     ],
-     "YouWager": [
-      142,
-      -167
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -1037,462 +483,92 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.3904,
     "p_meandec_mult": 0.3957,
     "p_sharp_shin": 0.3867,
+    "p_pinnacle_shin": 0.38262,
     "p_exchange_mult": 0.3877,
     "n_books": 19,
-    "p_decision": 0.3655,
-    "hours_before_start": 38.2
+    "bfo_p_a_novig": 0.3972,
+    "bfo_odds": [
+     139,
+     -175
+    ],
+    "p_distance": 0.3639,
+    "p_method": {
+     "a_ko": 0.2455,
+     "a_sub": 0.0323,
+     "a_dec": 0.1228,
+     "b_ko": 0.2306,
+     "b_sub": 0.1202,
+     "b_dec": 0.2394,
+     "draw": 0.0091
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.3904,
     "p_meandec_mult": 0.3957,
     "p_sharp_shin": 0.3867,
+    "p_pinnacle_shin": 0.38262,
     "p_exchange_mult": 0.3877,
     "n_books": 19,
-    "p_decision": 0.3655,
-    "hours_before_start": 38.2
+    "bfo_p_a_novig": 0.3972,
+    "bfo_odds": [
+     139,
+     -175
+    ],
+    "p_distance": 0.3639,
+    "p_method": {
+     "a_ko": 0.2455,
+     "a_sub": 0.0323,
+     "a_dec": 0.1228,
+     "b_ko": 0.2306,
+     "b_sub": 0.1202,
+     "b_dec": 0.2394,
+     "draw": 0.0091
+    },
+    "hours_before_start": 36.2
    },
-   "move_open_to_last_logit": -0.0159,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.3904,
+    "p_meandec_mult": 0.3957,
+    "p_sharp_shin": 0.3867,
+    "p_pinnacle_shin": 0.38262,
+    "p_exchange_mult": 0.3877,
+    "n_books": 19,
+    "bfo_p_a_novig": 0.3972,
+    "bfo_odds": [
+     139,
+     -175
+    ],
+    "p_distance": 0.3639,
+    "p_method": {
+     "a_ko": 0.2455,
+     "a_sub": 0.0323,
+     "a_dec": 0.1228,
+     "b_ko": 0.2306,
+     "b_sub": 0.1202,
+     "b_dec": 0.2394,
+     "draw": 0.0091
+    }
+   },
    "move_open_to_last_pts": -0.0038,
+   "move_open_to_last_logit": -0.0159,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_gabriella-fernandes__karine-silva",
-   "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
-   "date": "2026-11-07",
-   "A": "Karine Silva",
-   "B": "Gabriella Fernandes",
-   "A_slug": "karine-silva",
-   "B_slug": "gabriella-fernandes",
-   "weight_class": "Women's Flyweight",
-   "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
-     "phase": "pre_start",
-     "p_consensus": 0.6716,
-     "p_meandec_mult": 0.6642,
-     "p_sharp_shin": 0.6749,
-     "p_exchange_mult": 0.6699,
-     "n_books": 20,
-     "p_decision": 0.5588,
-     "hours_before_start": 37.8
-    }
-   ],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-07T23:40:00.000Z",
-   "market_open": {
-    "p_open": 0.6094,
-    "n_books": 18,
-    "books": {
-     "Bet105": [
-      -160,
-      136
-     ],
-     "BetAnything": [
-      -170,
-      140
-     ],
-     "BetMGM": [
-      -160,
-      130
-     ],
-     "BetOnline": [
-      -275,
-      228
-     ],
-     "BetRivers": [
-      -172,
-      138
-     ],
-     "BetUS": [
-      -170,
-      142
-     ],
-     "Betway": [
-      -175,
-      140
-     ],
-     "Bookmaker": [
-      -174,
-      141
-     ],
-     "Bovada": [
-      -160,
-      135
-     ],
-     "Caesars": [
-      -160,
-      135
-     ],
-     "Circa": [
-      -165,
-      145
-     ],
-     "Cloudbet": [
-      -168,
-      132
-     ],
-     "DraftKings": [
-      -162,
-      136
-     ],
-     "FanDuel": [
-      -225,
-      172
-     ],
-     "HardRock": [
-      -170,
-      140
-     ],
-     "MyBookie": [
-      -220,
-      169
-     ],
-     "Pinnacle": [
-      -160,
-      136
-     ],
-     "YouWager": [
-      -160,
-      136
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "market_open_first_read": {
-    "p_open": 0.6094,
-    "n_books": 18,
-    "books": {
-     "Bet105": [
-      -160,
-      136
-     ],
-     "BetAnything": [
-      -170,
-      140
-     ],
-     "BetMGM": [
-      -160,
-      130
-     ],
-     "BetOnline": [
-      -275,
-      228
-     ],
-     "BetRivers": [
-      -172,
-      138
-     ],
-     "BetUS": [
-      -170,
-      142
-     ],
-     "Betway": [
-      -175,
-      140
-     ],
-     "Bookmaker": [
-      -174,
-      141
-     ],
-     "Bovada": [
-      -160,
-      135
-     ],
-     "Caesars": [
-      -160,
-      135
-     ],
-     "Circa": [
-      -165,
-      145
-     ],
-     "Cloudbet": [
-      -168,
-      132
-     ],
-     "DraftKings": [
-      -162,
-      136
-     ],
-     "FanDuel": [
-      -225,
-      172
-     ],
-     "HardRock": [
-      -170,
-      140
-     ],
-     "MyBookie": [
-      -220,
-      169
-     ],
-     "Pinnacle": [
-      -160,
-      136
-     ],
-     "YouWager": [
-      -160,
-      136
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "actionnetwork_open": {
-    "ml": [
-     -162,
-     136
-    ],
-    "p_shin": 0.5973
-   },
-   "first_capture": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.6716,
-    "p_meandec_mult": 0.6642,
-    "p_sharp_shin": 0.6749,
-    "p_exchange_mult": 0.6699,
-    "n_books": 20,
-    "p_decision": 0.5588,
-    "hours_before_start": 37.8
-   },
-   "last_pre_start": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.6716,
-    "p_meandec_mult": 0.6642,
-    "p_sharp_shin": 0.6749,
-    "p_exchange_mult": 0.6699,
-    "n_books": 20,
-    "p_decision": 0.5588,
-    "hours_before_start": 37.8
-   },
-   "move_open_to_last_logit": 0.2706,
-   "move_open_to_last_pts": 0.0622,
-   "n_captures": 1
-  },
-  {
-   "bout_key": "2026-11-07_johnny-walker__waldo-cortes-acosta",
-   "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
-   "date": "2026-11-07",
-   "A": "Waldo Cortes-Acosta",
-   "B": "Johnny Walker",
-   "A_slug": "waldo-cortes-acosta",
-   "B_slug": "johnny-walker",
-   "weight_class": "Heavyweight",
-   "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
-     "phase": "pre_start",
-     "p_consensus": 0.6736,
-     "p_meandec_mult": 0.6664,
-     "p_sharp_shin": 0.6756,
-     "p_exchange_mult": 0.6683,
-     "n_books": 19,
-     "p_decision": 0.2146,
-     "hours_before_start": 40.8
-    }
-   ],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-08T02:40:00.000Z",
-   "market_open": {
-    "p_open": 0.6423,
-    "n_books": 17,
-    "books": {
-     "Bet105": [
-      -201,
-      170
-     ],
-     "BetAnything": [
-      -185,
-      155
-     ],
-     "BetMGM": [
-      -190,
-      160
-     ],
-     "BetOnline": [
-      -300,
-      247
-     ],
-     "BetRivers": [
-      -204,
-      150
-     ],
-     "BetUS": [
-      -205,
-      170
-     ],
-     "Betway": [
-      -188,
-      150
-     ],
-     "Bookmaker": [
-      -200,
-      158
-     ],
-     "Bovada": [
-      -185,
-      160
-     ],
-     "Caesars": [
-      -195,
-      165
-     ],
-     "Circa": [
-      -190,
-      165
-     ],
-     "DraftKings": [
-      -192,
-      160
-     ],
-     "FanDuel": [
-      -245,
-      186
-     ],
-     "HardRock": [
-      -200,
-      150
-     ],
-     "MyBookie": [
-      -204,
-      157
-     ],
-     "Pinnacle": [
-      -201,
-      170
-     ],
-     "YouWager": [
-      -195,
-      165
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "market_open_first_read": {
-    "p_open": 0.6423,
-    "n_books": 17,
-    "books": {
-     "Bet105": [
-      -201,
-      170
-     ],
-     "BetAnything": [
-      -185,
-      155
-     ],
-     "BetMGM": [
-      -190,
-      160
-     ],
-     "BetOnline": [
-      -300,
-      247
-     ],
-     "BetRivers": [
-      -204,
-      150
-     ],
-     "BetUS": [
-      -205,
-      170
-     ],
-     "Betway": [
-      -188,
-      150
-     ],
-     "Bookmaker": [
-      -200,
-      158
-     ],
-     "Bovada": [
-      -185,
-      160
-     ],
-     "Caesars": [
-      -195,
-      165
-     ],
-     "Circa": [
-      -190,
-      165
-     ],
-     "DraftKings": [
-      -192,
-      160
-     ],
-     "FanDuel": [
-      -245,
-      186
-     ],
-     "HardRock": [
-      -200,
-      150
-     ],
-     "MyBookie": [
-      -204,
-      157
-     ],
-     "Pinnacle": [
-      -201,
-      170
-     ],
-     "YouWager": [
-      -195,
-      165
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "actionnetwork_open": {
-    "ml": [
-     -190,
-     160
-    ],
-    "p_shin": 0.63528
-   },
-   "first_capture": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.6736,
-    "p_meandec_mult": 0.6664,
-    "p_sharp_shin": 0.6756,
-    "p_exchange_mult": 0.6683,
-    "n_books": 19,
-    "p_decision": 0.2146,
-    "hours_before_start": 40.8
-   },
-   "last_pre_start": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.6736,
-    "p_meandec_mult": 0.6664,
-    "p_sharp_shin": 0.6756,
-    "p_exchange_mult": 0.6683,
-    "n_books": 19,
-    "p_decision": 0.2146,
-    "hours_before_start": 40.8
-   },
-   "move_open_to_last_logit": 0.1392,
-   "move_open_to_last_pts": 0.0313,
-   "n_captures": 1
-  },
-  {
-   "bout_key": "2026-11-07_jonny-parsons__jose-henrique-souza",
+   "bout_id": "2026-11-07:jonny-parsons__jose-souza",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Jonny Parsons",
@@ -1500,178 +576,49 @@
    "A_slug": "jonny-parsons",
    "B_slug": "jose-souza",
    "weight_class": "Welterweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.321,
      "p_meandec_mult": 0.3288,
      "p_sharp_shin": 0.3189,
+     "p_pinnacle_shin": 0.31416,
      "p_exchange_mult": 0.3203,
      "n_books": 20,
-     "p_decision": 0.3813,
-     "hours_before_start": 36.2
+     "bfo_p_a_novig": 0.3273,
+     "bfo_odds": [
+      191,
+      -240
+     ],
+     "p_distance": 0.3797,
+     "p_method": {
+      "a_ko": 0.1539,
+      "a_sub": 0.0242,
+      "a_dec": 0.151,
+      "b_ko": 0.3547,
+      "b_sub": 0.0804,
+      "b_dec": 0.227,
+      "draw": 0.0088
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-07T22:00:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-07T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.3735,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      162,
-      -191
-     ],
-     "BetAnything": [
-      155,
-      -185
-     ],
-     "BetMGM": [
-      150,
-      -185
-     ],
-     "BetOnline": [
-      132,
-      -155
-     ],
-     "BetRivers": [
-      133,
-      -179
-     ],
-     "BetUS": [
-      150,
-      -180
-     ],
-     "Betway": [
-      150,
-      -188
-     ],
-     "Bookmaker": [
-      149,
-      -185
-     ],
-     "Bovada": [
-      150,
-      -175
-     ],
-     "Caesars": [
-      150,
-      -180
-     ],
-     "Circa": [
-      155,
-      -180
-     ],
-     "Cloudbet": [
-      157,
-      -202
-     ],
-     "DraftKings": [
-      150,
-      -180
-     ],
-     "FanDuel": [
-      186,
-      -245
-     ],
-     "HardRock": [
-      135,
-      -180
-     ],
-     "MyBookie": [
-      169,
-      -220
-     ],
-     "Pinnacle": [
-      162,
-      -191
-     ],
-     "YouWager": [
-      153,
-      -180
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.3735,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      162,
-      -191
-     ],
-     "BetAnything": [
-      155,
-      -185
-     ],
-     "BetMGM": [
-      150,
-      -185
-     ],
-     "BetOnline": [
-      132,
-      -155
-     ],
-     "BetRivers": [
-      133,
-      -179
-     ],
-     "BetUS": [
-      150,
-      -180
-     ],
-     "Betway": [
-      150,
-      -188
-     ],
-     "Bookmaker": [
-      149,
-      -185
-     ],
-     "Bovada": [
-      150,
-      -175
-     ],
-     "Caesars": [
-      150,
-      -180
-     ],
-     "Circa": [
-      155,
-      -180
-     ],
-     "Cloudbet": [
-      157,
-      -202
-     ],
-     "DraftKings": [
-      150,
-      -180
-     ],
-     "FanDuel": [
-      186,
-      -245
-     ],
-     "HardRock": [
-      135,
-      -180
-     ],
-     "MyBookie": [
-      169,
-      -220
-     ],
-     "Pinnacle": [
-      162,
-      -191
-     ],
-     "YouWager": [
-      153,
-      -180
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -1683,34 +630,92 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.321,
     "p_meandec_mult": 0.3288,
     "p_sharp_shin": 0.3189,
+    "p_pinnacle_shin": 0.31416,
     "p_exchange_mult": 0.3203,
     "n_books": 20,
-    "p_decision": 0.3813,
-    "hours_before_start": 36.2
+    "bfo_p_a_novig": 0.3273,
+    "bfo_odds": [
+     191,
+     -240
+    ],
+    "p_distance": 0.3797,
+    "p_method": {
+     "a_ko": 0.1539,
+     "a_sub": 0.0242,
+     "a_dec": 0.151,
+     "b_ko": 0.3547,
+     "b_sub": 0.0804,
+     "b_dec": 0.227,
+     "draw": 0.0088
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.321,
     "p_meandec_mult": 0.3288,
     "p_sharp_shin": 0.3189,
+    "p_pinnacle_shin": 0.31416,
     "p_exchange_mult": 0.3203,
     "n_books": 20,
-    "p_decision": 0.3813,
+    "bfo_p_a_novig": 0.3273,
+    "bfo_odds": [
+     191,
+     -240
+    ],
+    "p_distance": 0.3797,
+    "p_method": {
+     "a_ko": 0.1539,
+     "a_sub": 0.0242,
+     "a_dec": 0.151,
+     "b_ko": 0.3547,
+     "b_sub": 0.0804,
+     "b_dec": 0.227,
+     "draw": 0.0088
+    },
     "hours_before_start": 36.2
    },
-   "move_open_to_last_logit": -0.2319,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.321,
+    "p_meandec_mult": 0.3288,
+    "p_sharp_shin": 0.3189,
+    "p_pinnacle_shin": 0.31416,
+    "p_exchange_mult": 0.3203,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.3273,
+    "bfo_odds": [
+     191,
+     -240
+    ],
+    "p_distance": 0.3797,
+    "p_method": {
+     "a_ko": 0.1539,
+     "a_sub": 0.0242,
+     "a_dec": 0.151,
+     "b_ko": 0.3547,
+     "b_sub": 0.0804,
+     "b_dec": 0.227,
+     "draw": 0.0088
+    }
+   },
    "move_open_to_last_pts": -0.0525,
+   "move_open_to_last_logit": -0.2319,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_jose-mauro-delano__murtazali-magomedov",
+   "bout_id": "2026-11-07:jose-delano__murtazali-magomedov",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "José Mauro Delano",
@@ -1718,178 +723,49 @@
    "A_slug": "jose-delano",
    "B_slug": "murtazali-magomedov",
    "weight_class": "Featherweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.5176,
      "p_meandec_mult": 0.5168,
      "p_sharp_shin": 0.5154,
+     "p_pinnacle_shin": 0.51852,
      "p_exchange_mult": 0.5142,
      "n_books": 20,
-     "p_decision": 0.4075,
-     "hours_before_start": 37.5
+     "bfo_p_a_novig": 0.517,
+     "bfo_odds": [
+      -119,
+      -103
+     ],
+     "p_distance": 0.4181,
+     "p_method": {
+      "a_ko": 0.1561,
+      "a_sub": 0.1144,
+      "a_dec": 0.2362,
+      "b_ko": 0.1239,
+      "b_sub": 0.1926,
+      "b_dec": 0.1676,
+      "draw": 0.0092
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-07T23:20:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-07T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.5102,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      -120,
-      103
-     ],
-     "BetAnything": [
-      -120,
-      -110
-     ],
-     "BetMGM": [
-      -115,
-      -105
-     ],
-     "BetOnline": [
-      157,
-      -185
-     ],
-     "BetRivers": [
-      -128,
-      104
-     ],
-     "BetUS": [
-      -115,
-      -105
-     ],
-     "Betway": [
-      -125,
-      -100
-     ],
-     "Bookmaker": [
-      -119,
-      -103
-     ],
-     "Bovada": [
-      -112,
-      -108
-     ],
-     "Caesars": [
-      -115,
-      -105
-     ],
-     "Circa": [
-      -110,
-      -110
-     ],
-     "Cloudbet": [
-      -125,
-      -101
-     ],
-     "DraftKings": [
-      -115,
-      -105
-     ],
-     "FanDuel": [
-      -106,
-      -120
-     ],
-     "HardRock": [
-      -120,
-      -105
-     ],
-     "MyBookie": [
-      101,
-      -129
-     ],
-     "Pinnacle": [
-      -119,
-      102
-     ],
-     "YouWager": [
-      -113,
-      -103
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.5102,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      -120,
-      103
-     ],
-     "BetAnything": [
-      -120,
-      -110
-     ],
-     "BetMGM": [
-      -115,
-      -105
-     ],
-     "BetOnline": [
-      157,
-      -185
-     ],
-     "BetRivers": [
-      -128,
-      104
-     ],
-     "BetUS": [
-      -115,
-      -105
-     ],
-     "Betway": [
-      -125,
-      -100
-     ],
-     "Bookmaker": [
-      -119,
-      -103
-     ],
-     "Bovada": [
-      -112,
-      -108
-     ],
-     "Caesars": [
-      -115,
-      -105
-     ],
-     "Circa": [
-      -110,
-      -110
-     ],
-     "Cloudbet": [
-      -125,
-      -101
-     ],
-     "DraftKings": [
-      -115,
-      -105
-     ],
-     "FanDuel": [
-      -106,
-      -120
-     ],
-     "HardRock": [
-      -120,
-      -105
-     ],
-     "MyBookie": [
-      101,
-      -129
-     ],
-     "Pinnacle": [
-      -119,
-      102
-     ],
-     "YouWager": [
-      -113,
-      -103
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -1901,34 +777,239 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.5176,
     "p_meandec_mult": 0.5168,
     "p_sharp_shin": 0.5154,
+    "p_pinnacle_shin": 0.51852,
     "p_exchange_mult": 0.5142,
     "n_books": 20,
-    "p_decision": 0.4075,
-    "hours_before_start": 37.5
+    "bfo_p_a_novig": 0.517,
+    "bfo_odds": [
+     -119,
+     -103
+    ],
+    "p_distance": 0.4181,
+    "p_method": {
+     "a_ko": 0.1561,
+     "a_sub": 0.1144,
+     "a_dec": 0.2362,
+     "b_ko": 0.1239,
+     "b_sub": 0.1926,
+     "b_dec": 0.1676,
+     "draw": 0.0092
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.5176,
     "p_meandec_mult": 0.5168,
     "p_sharp_shin": 0.5154,
+    "p_pinnacle_shin": 0.51852,
     "p_exchange_mult": 0.5142,
     "n_books": 20,
-    "p_decision": 0.4075,
-    "hours_before_start": 37.5
+    "bfo_p_a_novig": 0.517,
+    "bfo_odds": [
+     -119,
+     -103
+    ],
+    "p_distance": 0.4181,
+    "p_method": {
+     "a_ko": 0.1561,
+     "a_sub": 0.1144,
+     "a_dec": 0.2362,
+     "b_ko": 0.1239,
+     "b_sub": 0.1926,
+     "b_dec": 0.1676,
+     "draw": 0.0092
+    },
+    "hours_before_start": 36.2
    },
-   "move_open_to_last_logit": 0.0296,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.5176,
+    "p_meandec_mult": 0.5168,
+    "p_sharp_shin": 0.5154,
+    "p_pinnacle_shin": 0.51852,
+    "p_exchange_mult": 0.5142,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.517,
+    "bfo_odds": [
+     -119,
+     -103
+    ],
+    "p_distance": 0.4181,
+    "p_method": {
+     "a_ko": 0.1561,
+     "a_sub": 0.1144,
+     "a_dec": 0.2362,
+     "b_ko": 0.1239,
+     "b_sub": 0.1926,
+     "b_dec": 0.1676,
+     "draw": 0.0092
+    }
+   },
    "move_open_to_last_pts": 0.0074,
+   "move_open_to_last_logit": 0.0296,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_keiichiro-nakamura__ollie-schmid",
+   "bout_id": "2026-11-07:karine-silva__gabriella-fernandes",
+   "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
+   "date": "2026-11-07",
+   "A": "Karine Silva",
+   "B": "Gabriella Fernandes",
+   "A_slug": "karine-silva",
+   "B_slug": "gabriella-fernandes",
+   "weight_class": "Women's Flyweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [
+    {
+     "snapshot": "20261106-0950",
+     "t": "2026-11-06T09:50:00Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6716,
+     "p_meandec_mult": 0.6642,
+     "p_sharp_shin": 0.6749,
+     "p_pinnacle_shin": 0.67207,
+     "p_exchange_mult": 0.6699,
+     "n_books": 20,
+     "bfo_p_a_novig": 0.6569,
+     "bfo_odds": [
+      -224,
+      177
+     ],
+     "p_distance": 0.5702,
+     "p_method": {
+      "a_ko": 0.0829,
+      "a_sub": 0.2314,
+      "a_dec": 0.3449,
+      "b_ko": 0.062,
+      "b_sub": 0.0607,
+      "b_dec": 0.2089,
+      "draw": 0.0091
+     }
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-07T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
+   "market_open": {
+    "p_open": 0.6094,
+    "n_books": 18,
+    "snapshot": "20261106-0950"
+   },
+   "market_open_first_read": {
+    "p_open": 0.6094,
+    "n_books": 18,
+    "snapshot": "20261106-0950"
+   },
+   "actionnetwork_open": {
+    "ml": [
+     -162,
+     136
+    ],
+    "p_shin": 0.5973
+   },
+   "first_capture": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6716,
+    "p_meandec_mult": 0.6642,
+    "p_sharp_shin": 0.6749,
+    "p_pinnacle_shin": 0.67207,
+    "p_exchange_mult": 0.6699,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.6569,
+    "bfo_odds": [
+     -224,
+     177
+    ],
+    "p_distance": 0.5702,
+    "p_method": {
+     "a_ko": 0.0829,
+     "a_sub": 0.2314,
+     "a_dec": 0.3449,
+     "b_ko": 0.062,
+     "b_sub": 0.0607,
+     "b_dec": 0.2089,
+     "draw": 0.0091
+    }
+   },
+   "last_pre_start": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6716,
+    "p_meandec_mult": 0.6642,
+    "p_sharp_shin": 0.6749,
+    "p_pinnacle_shin": 0.67207,
+    "p_exchange_mult": 0.6699,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.6569,
+    "bfo_odds": [
+     -224,
+     177
+    ],
+    "p_distance": 0.5702,
+    "p_method": {
+     "a_ko": 0.0829,
+     "a_sub": 0.2314,
+     "a_dec": 0.3449,
+     "b_ko": 0.062,
+     "b_sub": 0.0607,
+     "b_dec": 0.2089,
+     "draw": 0.0091
+    },
+    "hours_before_start": 36.2
+   },
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6716,
+    "p_meandec_mult": 0.6642,
+    "p_sharp_shin": 0.6749,
+    "p_pinnacle_shin": 0.67207,
+    "p_exchange_mult": 0.6699,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.6569,
+    "bfo_odds": [
+     -224,
+     177
+    ],
+    "p_distance": 0.5702,
+    "p_method": {
+     "a_ko": 0.0829,
+     "a_sub": 0.2314,
+     "a_dec": 0.3449,
+     "b_ko": 0.062,
+     "b_sub": 0.0607,
+     "b_dec": 0.2089,
+     "draw": 0.0091
+    }
+   },
+   "move_open_to_last_pts": 0.0622,
+   "move_open_to_last_logit": 0.2706,
+   "n_captures": 1
+  },
+  {
+   "bout_id": "2026-11-07:keiichiro-nakamura__ollie-schmid",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Keiichiro Nakamura",
@@ -1936,178 +1017,49 @@
    "A_slug": "keiichiro-nakamura",
    "B_slug": "ollie-schmid",
    "weight_class": "Featherweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.7567,
      "p_meandec_mult": 0.7454,
      "p_sharp_shin": 0.7637,
+     "p_pinnacle_shin": 0.76853,
      "p_exchange_mult": 0.7551,
      "n_books": 21,
-     "p_decision": 0.2485,
-     "hours_before_start": 38.5
+     "bfo_p_a_novig": 0.7411,
+     "bfo_odds": [
+      -350,
+      268
+     ],
+     "p_distance": 0.2594,
+     "p_method": {
+      "a_ko": 0.5396,
+      "a_sub": 0.0608,
+      "a_dec": 0.1311,
+      "b_ko": 0.1153,
+      "b_sub": 0.0292,
+      "b_dec": 0.1153,
+      "draw": 0.0087
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-08T00:20:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-07T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.7562,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      -370,
-      298
-     ],
-     "BetAnything": [
-      -365,
-      245
-     ],
-     "BetMGM": [
-      -350,
-      275
-     ],
-     "BetOnline": [
-      -325,
-      265
-     ],
-     "BetRivers": [
-      -345,
-      255
-     ],
-     "BetUS": [
-      -350,
-      279
-     ],
-     "Betway": [
-      -350,
-      260
-     ],
-     "Bookmaker": [
-      -360,
-      274
-     ],
-     "Bovada": [
-      -340,
-      275
-     ],
-     "Caesars": [
-      -350,
-      275
-     ],
-     "Circa": [
-      -360,
-      295
-     ],
-     "Cloudbet": [
-      -417,
-      290
-     ],
-     "DraftKings": [
-      -345,
-      275
-     ],
-     "FanDuel": [
-      -390,
-      280
-     ],
-     "HardRock": [
-      -350,
-      260
-     ],
-     "MyBookie": [
-      -340,
-      246
-     ],
-     "Pinnacle": [
-      -370,
-      298
-     ],
-     "YouWager": [
-      -350,
-      284
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.7562,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      -370,
-      298
-     ],
-     "BetAnything": [
-      -365,
-      245
-     ],
-     "BetMGM": [
-      -350,
-      275
-     ],
-     "BetOnline": [
-      -325,
-      265
-     ],
-     "BetRivers": [
-      -345,
-      255
-     ],
-     "BetUS": [
-      -350,
-      279
-     ],
-     "Betway": [
-      -350,
-      260
-     ],
-     "Bookmaker": [
-      -360,
-      274
-     ],
-     "Bovada": [
-      -340,
-      275
-     ],
-     "Caesars": [
-      -350,
-      275
-     ],
-     "Circa": [
-      -360,
-      295
-     ],
-     "Cloudbet": [
-      -417,
-      290
-     ],
-     "DraftKings": [
-      -345,
-      275
-     ],
-     "FanDuel": [
-      -390,
-      280
-     ],
-     "HardRock": [
-      -350,
-      260
-     ],
-     "MyBookie": [
-      -340,
-      246
-     ],
-     "Pinnacle": [
-      -370,
-      298
-     ],
-     "YouWager": [
-      -350,
-      284
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -2119,252 +1071,239 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.7567,
     "p_meandec_mult": 0.7454,
     "p_sharp_shin": 0.7637,
+    "p_pinnacle_shin": 0.76853,
     "p_exchange_mult": 0.7551,
     "n_books": 21,
-    "p_decision": 0.2485,
-    "hours_before_start": 38.5
+    "bfo_p_a_novig": 0.7411,
+    "bfo_odds": [
+     -350,
+     268
+    ],
+    "p_distance": 0.2594,
+    "p_method": {
+     "a_ko": 0.5396,
+     "a_sub": 0.0608,
+     "a_dec": 0.1311,
+     "b_ko": 0.1153,
+     "b_sub": 0.0292,
+     "b_dec": 0.1153,
+     "draw": 0.0087
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.7567,
     "p_meandec_mult": 0.7454,
     "p_sharp_shin": 0.7637,
+    "p_pinnacle_shin": 0.76853,
     "p_exchange_mult": 0.7551,
     "n_books": 21,
-    "p_decision": 0.2485,
-    "hours_before_start": 38.5
+    "bfo_p_a_novig": 0.7411,
+    "bfo_odds": [
+     -350,
+     268
+    ],
+    "p_distance": 0.2594,
+    "p_method": {
+     "a_ko": 0.5396,
+     "a_sub": 0.0608,
+     "a_dec": 0.1311,
+     "b_ko": 0.1153,
+     "b_sub": 0.0292,
+     "b_dec": 0.1153,
+     "draw": 0.0087
+    },
+    "hours_before_start": 36.2
    },
-   "move_open_to_last_logit": 0.0027,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.7567,
+    "p_meandec_mult": 0.7454,
+    "p_sharp_shin": 0.7637,
+    "p_pinnacle_shin": 0.76853,
+    "p_exchange_mult": 0.7551,
+    "n_books": 21,
+    "bfo_p_a_novig": 0.7411,
+    "bfo_odds": [
+     -350,
+     268
+    ],
+    "p_distance": 0.2594,
+    "p_method": {
+     "a_ko": 0.5396,
+     "a_sub": 0.0608,
+     "a_dec": 0.1311,
+     "b_ko": 0.1153,
+     "b_sub": 0.0292,
+     "b_dec": 0.1153,
+     "draw": 0.0087
+    }
+   },
    "move_open_to_last_pts": 0.0005,
+   "move_open_to_last_logit": 0.0027,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_ko-seok-hyeon__wellington-turman",
+   "bout_id": "2026-11-07:mantas-kondratavicius__andre-petroski",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
-   "A": "Ko Seok-hyeon",
-   "B": "Wellington Turman",
-   "A_slug": "seokhyeon-ko",
-   "B_slug": "wellington-turman",
-   "weight_class": "Welterweight",
+   "A": "Mantas Kondratavičius",
+   "B": "Andre Petroski",
+   "A_slug": "mantas-kondratavicius",
+   "B_slug": "andre-petroski",
+   "weight_class": "Middleweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
-     "p_consensus": 0.8524,
-     "p_meandec_mult": 0.8369,
-     "p_sharp_shin": 0.8519,
-     "p_exchange_mult": 0.8365,
-     "n_books": 20,
-     "p_decision": 0.4725,
-     "hours_before_start": 36.5
+     "pre_lock": true,
+     "p_consensus": 0.7285,
+     "p_meandec_mult": 0.7189,
+     "p_sharp_shin": 0.7257,
+     "p_pinnacle_shin": 0.72243,
+     "p_exchange_mult": 0.7209,
+     "n_books": 19,
+     "bfo_p_a_novig": 0.7209,
+     "bfo_odds": [
+      -312,
+      241
+     ],
+     "p_distance": 0.2205,
+     "p_method": {
+      "a_ko": 0.5727,
+      "a_sub": 0.0438,
+      "a_dec": 0.105,
+      "b_ko": 0.0744,
+      "b_sub": 0.0978,
+      "b_dec": 0.0978,
+      "draw": 0.0085
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-07T22:20:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-07T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
-    "p_open": 0.8344,
-    "n_books": 18,
-    "books": {
-     "Bet105": [
-      -807,
-      572
-     ],
-     "BetAnything": [
-      -600,
-      370
-     ],
-     "BetMGM": [
-      -550,
-      400
-     ],
-     "BetOnline": [
-      -350,
-      284
-     ],
-     "BetRivers": [
-      -588,
-      410
-     ],
-     "BetUS": [
-      -575,
-      415
-     ],
-     "Betway": [
-      -549,
-      400
-     ],
-     "Bookmaker": [
-      -572,
-      403
-     ],
-     "Bovada": [
-      -575,
-      425
-     ],
-     "Caesars": [
-      -550,
-      400
-     ],
-     "Circa": [
-      -535,
-      415
-     ],
-     "Cloudbet": [
-      -769,
-      470
-     ],
-     "DraftKings": [
-      -550,
-      410
-     ],
-     "FanDuel": [
-      -850,
-      500
-     ],
-     "HardRock": [
-      -600,
-      400
-     ],
-     "MyBookie": [
-      -847,
-      510
-     ],
-     "Pinnacle": [
-      -650,
-      482
-     ],
-     "YouWager": [
-      -575,
-      400
-     ]
-    },
+    "p_open": 0.7274,
+    "n_books": 17,
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
-    "p_open": 0.8344,
-    "n_books": 18,
-    "books": {
-     "Bet105": [
-      -807,
-      572
-     ],
-     "BetAnything": [
-      -600,
-      370
-     ],
-     "BetMGM": [
-      -550,
-      400
-     ],
-     "BetOnline": [
-      -350,
-      284
-     ],
-     "BetRivers": [
-      -588,
-      410
-     ],
-     "BetUS": [
-      -575,
-      415
-     ],
-     "Betway": [
-      -549,
-      400
-     ],
-     "Bookmaker": [
-      -572,
-      403
-     ],
-     "Bovada": [
-      -575,
-      425
-     ],
-     "Caesars": [
-      -550,
-      400
-     ],
-     "Circa": [
-      -535,
-      415
-     ],
-     "Cloudbet": [
-      -769,
-      470
-     ],
-     "DraftKings": [
-      -550,
-      410
-     ],
-     "FanDuel": [
-      -850,
-      500
-     ],
-     "HardRock": [
-      -600,
-      400
-     ],
-     "MyBookie": [
-      -847,
-      510
-     ],
-     "Pinnacle": [
-      -650,
-      482
-     ],
-     "YouWager": [
-      -575,
-      400
-     ]
-    },
+    "p_open": 0.7274,
+    "n_books": 17,
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
     "ml": [
-     -550,
-     410
+     -300,
+     240
     ],
-    "p_shin": 0.82504
+    "p_shin": 0.72794
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
-    "p_consensus": 0.8524,
-    "p_meandec_mult": 0.8369,
-    "p_sharp_shin": 0.8519,
-    "p_exchange_mult": 0.8365,
-    "n_books": 20,
-    "p_decision": 0.4725,
-    "hours_before_start": 36.5
+    "pre_lock": true,
+    "p_consensus": 0.7285,
+    "p_meandec_mult": 0.7189,
+    "p_sharp_shin": 0.7257,
+    "p_pinnacle_shin": 0.72243,
+    "p_exchange_mult": 0.7209,
+    "n_books": 19,
+    "bfo_p_a_novig": 0.7209,
+    "bfo_odds": [
+     -312,
+     241
+    ],
+    "p_distance": 0.2205,
+    "p_method": {
+     "a_ko": 0.5727,
+     "a_sub": 0.0438,
+     "a_dec": 0.105,
+     "b_ko": 0.0744,
+     "b_sub": 0.0978,
+     "b_dec": 0.0978,
+     "draw": 0.0085
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
-    "p_consensus": 0.8524,
-    "p_meandec_mult": 0.8369,
-    "p_sharp_shin": 0.8519,
-    "p_exchange_mult": 0.8365,
-    "n_books": 20,
-    "p_decision": 0.4725,
-    "hours_before_start": 36.5
+    "pre_lock": true,
+    "p_consensus": 0.7285,
+    "p_meandec_mult": 0.7189,
+    "p_sharp_shin": 0.7257,
+    "p_pinnacle_shin": 0.72243,
+    "p_exchange_mult": 0.7209,
+    "n_books": 19,
+    "bfo_p_a_novig": 0.7209,
+    "bfo_odds": [
+     -312,
+     241
+    ],
+    "p_distance": 0.2205,
+    "p_method": {
+     "a_ko": 0.5727,
+     "a_sub": 0.0438,
+     "a_dec": 0.105,
+     "b_ko": 0.0744,
+     "b_sub": 0.0978,
+     "b_dec": 0.0978,
+     "draw": 0.0085
+    },
+    "hours_before_start": 36.2
    },
-   "move_open_to_last_logit": 0.1364,
-   "move_open_to_last_pts": 0.018,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.7285,
+    "p_meandec_mult": 0.7189,
+    "p_sharp_shin": 0.7257,
+    "p_pinnacle_shin": 0.72243,
+    "p_exchange_mult": 0.7209,
+    "n_books": 19,
+    "bfo_p_a_novig": 0.7209,
+    "bfo_odds": [
+     -312,
+     241
+    ],
+    "p_distance": 0.2205,
+    "p_method": {
+     "a_ko": 0.5727,
+     "a_sub": 0.0438,
+     "a_dec": 0.105,
+     "b_ko": 0.0744,
+     "b_sub": 0.0978,
+     "b_dec": 0.0978,
+     "draw": 0.0085
+    }
+   },
+   "move_open_to_last_pts": 0.0011,
+   "move_open_to_last_logit": 0.0056,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_marcos-degli__mitch-raposo",
+   "bout_id": "2026-11-07:mitch-raposo__marcos-degli",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Mitch Raposo",
@@ -2372,178 +1311,49 @@
    "A_slug": "mitch-raposo",
    "B_slug": null,
    "weight_class": "Flyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.3178,
      "p_meandec_mult": 0.3261,
      "p_sharp_shin": 0.3152,
+     "p_pinnacle_shin": 0.31079,
      "p_exchange_mult": 0.3176,
      "n_books": 20,
-     "p_decision": 0.4535,
-     "hours_before_start": 39.2
+     "bfo_p_a_novig": 0.3308,
+     "bfo_odds": [
+      188,
+      -237
+     ],
+     "p_distance": 0.46,
+     "p_method": {
+      "a_ko": 0.1171,
+      "a_sub": 0.0587,
+      "a_dec": 0.1505,
+      "b_ko": 0.2224,
+      "b_sub": 0.1434,
+      "b_dec": 0.299,
+      "draw": 0.0089
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-08T01:00:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-08T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.3138,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      205,
-      -245
-     ],
-     "BetAnything": [
-      175,
-      -225
-     ],
-     "BetMGM": [
-      200,
-      -250
-     ],
-     "BetOnline": [
-      247,
-      -300
-     ],
-     "BetRivers": [
-      195,
-      -250
-     ],
-     "BetUS": [
-      202,
-      -245
-     ],
-     "Betway": [
-      200,
-      -250
-     ],
-     "Bookmaker": [
-      199,
-      -251
-     ],
-     "Bovada": [
-      195,
-      -235
-     ],
-     "Caesars": [
-      205,
-      -250
-     ],
-     "Circa": [
-      190,
-      -220
-     ],
-     "Cloudbet": [
-      195,
-      -263
-     ],
-     "DraftKings": [
-      200,
-      -245
-     ],
-     "FanDuel": [
-      186,
-      -245
-     ],
-     "HardRock": [
-      195,
-      -250
-     ],
-     "MyBookie": [
-      176,
-      -230
-     ],
-     "Pinnacle": [
-      199,
-      -238
-     ],
-     "YouWager": [
-      205,
-      -245
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.3138,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      205,
-      -245
-     ],
-     "BetAnything": [
-      175,
-      -225
-     ],
-     "BetMGM": [
-      200,
-      -250
-     ],
-     "BetOnline": [
-      247,
-      -300
-     ],
-     "BetRivers": [
-      195,
-      -250
-     ],
-     "BetUS": [
-      202,
-      -245
-     ],
-     "Betway": [
-      200,
-      -250
-     ],
-     "Bookmaker": [
-      199,
-      -251
-     ],
-     "Bovada": [
-      195,
-      -235
-     ],
-     "Caesars": [
-      205,
-      -250
-     ],
-     "Circa": [
-      190,
-      -220
-     ],
-     "Cloudbet": [
-      195,
-      -263
-     ],
-     "DraftKings": [
-      200,
-      -245
-     ],
-     "FanDuel": [
-      186,
-      -245
-     ],
-     "HardRock": [
-      195,
-      -250
-     ],
-     "MyBookie": [
-      176,
-      -230
-     ],
-     "Pinnacle": [
-      199,
-      -238
-     ],
-     "YouWager": [
-      205,
-      -245
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -2555,34 +1365,92 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.3178,
     "p_meandec_mult": 0.3261,
     "p_sharp_shin": 0.3152,
+    "p_pinnacle_shin": 0.31079,
     "p_exchange_mult": 0.3176,
     "n_books": 20,
-    "p_decision": 0.4535,
-    "hours_before_start": 39.2
+    "bfo_p_a_novig": 0.3308,
+    "bfo_odds": [
+     188,
+     -237
+    ],
+    "p_distance": 0.46,
+    "p_method": {
+     "a_ko": 0.1171,
+     "a_sub": 0.0587,
+     "a_dec": 0.1505,
+     "b_ko": 0.2224,
+     "b_sub": 0.1434,
+     "b_dec": 0.299,
+     "draw": 0.0089
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.3178,
     "p_meandec_mult": 0.3261,
     "p_sharp_shin": 0.3152,
+    "p_pinnacle_shin": 0.31079,
     "p_exchange_mult": 0.3176,
     "n_books": 20,
-    "p_decision": 0.4535,
+    "bfo_p_a_novig": 0.3308,
+    "bfo_odds": [
+     188,
+     -237
+    ],
+    "p_distance": 0.46,
+    "p_method": {
+     "a_ko": 0.1171,
+     "a_sub": 0.0587,
+     "a_dec": 0.1505,
+     "b_ko": 0.2224,
+     "b_sub": 0.1434,
+     "b_dec": 0.299,
+     "draw": 0.0089
+    },
     "hours_before_start": 39.2
    },
-   "move_open_to_last_logit": 0.0185,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.3178,
+    "p_meandec_mult": 0.3261,
+    "p_sharp_shin": 0.3152,
+    "p_pinnacle_shin": 0.31079,
+    "p_exchange_mult": 0.3176,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.3308,
+    "bfo_odds": [
+     188,
+     -237
+    ],
+    "p_distance": 0.46,
+    "p_method": {
+     "a_ko": 0.1171,
+     "a_sub": 0.0587,
+     "a_dec": 0.1505,
+     "b_ko": 0.2224,
+     "b_sub": 0.1434,
+     "b_dec": 0.299,
+     "draw": 0.0089
+    }
+   },
    "move_open_to_last_pts": 0.004,
+   "move_open_to_last_logit": 0.0185,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_nina-nikolija-milosevic__priscila-cachoeira",
+   "bout_id": "2026-11-07:priscila-cachoeira__nina-milosevic",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Priscila Cachoeira",
@@ -2590,178 +1458,49 @@
    "A_slug": "priscila-cachoeira",
    "B_slug": "nina-milosevic",
    "weight_class": "Women's Bantamweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.1872,
      "p_meandec_mult": 0.1998,
      "p_sharp_shin": 0.1843,
+     "p_pinnacle_shin": 0.18157,
      "p_exchange_mult": 0.1894,
      "n_books": 21,
-     "p_decision": 0.215,
-     "hours_before_start": 39.5
+     "bfo_p_a_novig": 0.2083,
+     "bfo_odds": [
+      356,
+      -501
+     ],
+     "p_distance": 0.225,
+     "p_method": {
+      "a_ko": 0.1202,
+      "a_sub": 0.0241,
+      "a_dec": 0.0598,
+      "b_ko": 0.317,
+      "b_sub": 0.317,
+      "b_dec": 0.1534,
+      "draw": 0.0087
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-08T01:20:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-08T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.2057,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      337,
-      -425
-     ],
-     "BetAnything": [
-      275,
-      -425
-     ],
-     "BetMGM": [
-      325,
-      -450
-     ],
-     "BetOnline": [
-      284,
-      -350
-     ],
-     "BetRivers": [
-      335,
-      -476
-     ],
-     "BetUS": [
-      336,
-      -445
-     ],
-     "Betway": [
-      350,
-      -500
-     ],
-     "Bookmaker": [
-      337,
-      -459
-     ],
-     "Bovada": [
-      350,
-      -450
-     ],
-     "Caesars": [
-      350,
-      -450
-     ],
-     "Circa": [
-      340,
-      -420
-     ],
-     "Cloudbet": [
-      325,
-      -476
-     ],
-     "DraftKings": [
-      350,
-      -455
-     ],
-     "FanDuel": [
-      350,
-      -520
-     ],
-     "HardRock": [
-      325,
-      -475
-     ],
-     "MyBookie": [
-      330,
-      -481
-     ],
-     "Pinnacle": [
-      337,
-      -425
-     ],
-     "YouWager": [
-      350,
-      -445
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.2057,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      337,
-      -425
-     ],
-     "BetAnything": [
-      275,
-      -425
-     ],
-     "BetMGM": [
-      325,
-      -450
-     ],
-     "BetOnline": [
-      284,
-      -350
-     ],
-     "BetRivers": [
-      335,
-      -476
-     ],
-     "BetUS": [
-      336,
-      -445
-     ],
-     "Betway": [
-      350,
-      -500
-     ],
-     "Bookmaker": [
-      337,
-      -459
-     ],
-     "Bovada": [
-      350,
-      -450
-     ],
-     "Caesars": [
-      350,
-      -450
-     ],
-     "Circa": [
-      340,
-      -420
-     ],
-     "Cloudbet": [
-      325,
-      -476
-     ],
-     "DraftKings": [
-      350,
-      -455
-     ],
-     "FanDuel": [
-      350,
-      -520
-     ],
-     "HardRock": [
-      325,
-      -475
-     ],
-     "MyBookie": [
-      330,
-      -481
-     ],
-     "Pinnacle": [
-      337,
-      -425
-     ],
-     "YouWager": [
-      350,
-      -445
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -2773,34 +1512,239 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.1872,
     "p_meandec_mult": 0.1998,
     "p_sharp_shin": 0.1843,
+    "p_pinnacle_shin": 0.18157,
     "p_exchange_mult": 0.1894,
     "n_books": 21,
-    "p_decision": 0.215,
-    "hours_before_start": 39.5
+    "bfo_p_a_novig": 0.2083,
+    "bfo_odds": [
+     356,
+     -501
+    ],
+    "p_distance": 0.225,
+    "p_method": {
+     "a_ko": 0.1202,
+     "a_sub": 0.0241,
+     "a_dec": 0.0598,
+     "b_ko": 0.317,
+     "b_sub": 0.317,
+     "b_dec": 0.1534,
+     "draw": 0.0087
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.1872,
     "p_meandec_mult": 0.1998,
     "p_sharp_shin": 0.1843,
+    "p_pinnacle_shin": 0.18157,
     "p_exchange_mult": 0.1894,
     "n_books": 21,
-    "p_decision": 0.215,
-    "hours_before_start": 39.5
+    "bfo_p_a_novig": 0.2083,
+    "bfo_odds": [
+     356,
+     -501
+    ],
+    "p_distance": 0.225,
+    "p_method": {
+     "a_ko": 0.1202,
+     "a_sub": 0.0241,
+     "a_dec": 0.0598,
+     "b_ko": 0.317,
+     "b_sub": 0.317,
+     "b_dec": 0.1534,
+     "draw": 0.0087
+    },
+    "hours_before_start": 39.2
    },
-   "move_open_to_last_logit": -0.1173,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.1872,
+    "p_meandec_mult": 0.1998,
+    "p_sharp_shin": 0.1843,
+    "p_pinnacle_shin": 0.18157,
+    "p_exchange_mult": 0.1894,
+    "n_books": 21,
+    "bfo_p_a_novig": 0.2083,
+    "bfo_odds": [
+     356,
+     -501
+    ],
+    "p_distance": 0.225,
+    "p_method": {
+     "a_ko": 0.1202,
+     "a_sub": 0.0241,
+     "a_dec": 0.0598,
+     "b_ko": 0.317,
+     "b_sub": 0.317,
+     "b_dec": 0.1534,
+     "draw": 0.0087
+    }
+   },
    "move_open_to_last_pts": -0.0185,
+   "move_open_to_last_logit": -0.1173,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-07_tatiana-suarez__virna-jandiroba",
+   "bout_id": "2026-11-07:seokhyeon-ko__wellington-turman",
+   "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
+   "date": "2026-11-07",
+   "A": "Ko Seok-hyeon",
+   "B": "Wellington Turman",
+   "A_slug": "seokhyeon-ko",
+   "B_slug": "wellington-turman",
+   "weight_class": "Welterweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [
+    {
+     "snapshot": "20261106-0950",
+     "t": "2026-11-06T09:50:00Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.8524,
+     "p_meandec_mult": 0.8369,
+     "p_sharp_shin": 0.8519,
+     "p_pinnacle_shin": 0.84662,
+     "p_exchange_mult": 0.8365,
+     "n_books": 20,
+     "bfo_p_a_novig": 0.8454,
+     "bfo_odds": [
+      -769,
+      518
+     ],
+     "p_distance": 0.4892,
+     "p_method": {
+      "a_ko": 0.3448,
+      "a_sub": 0.109,
+      "a_dec": 0.3843,
+      "b_ko": 0.0311,
+      "b_sub": 0.0382,
+      "b_dec": 0.0839,
+      "draw": 0.0088
+     }
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-07T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
+   "market_open": {
+    "p_open": 0.8344,
+    "n_books": 18,
+    "snapshot": "20261106-0950"
+   },
+   "market_open_first_read": {
+    "p_open": 0.8344,
+    "n_books": 18,
+    "snapshot": "20261106-0950"
+   },
+   "actionnetwork_open": {
+    "ml": [
+     -550,
+     410
+    ],
+    "p_shin": 0.82504
+   },
+   "first_capture": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.8524,
+    "p_meandec_mult": 0.8369,
+    "p_sharp_shin": 0.8519,
+    "p_pinnacle_shin": 0.84662,
+    "p_exchange_mult": 0.8365,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.8454,
+    "bfo_odds": [
+     -769,
+     518
+    ],
+    "p_distance": 0.4892,
+    "p_method": {
+     "a_ko": 0.3448,
+     "a_sub": 0.109,
+     "a_dec": 0.3843,
+     "b_ko": 0.0311,
+     "b_sub": 0.0382,
+     "b_dec": 0.0839,
+     "draw": 0.0088
+    }
+   },
+   "last_pre_start": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.8524,
+    "p_meandec_mult": 0.8369,
+    "p_sharp_shin": 0.8519,
+    "p_pinnacle_shin": 0.84662,
+    "p_exchange_mult": 0.8365,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.8454,
+    "bfo_odds": [
+     -769,
+     518
+    ],
+    "p_distance": 0.4892,
+    "p_method": {
+     "a_ko": 0.3448,
+     "a_sub": 0.109,
+     "a_dec": 0.3843,
+     "b_ko": 0.0311,
+     "b_sub": 0.0382,
+     "b_dec": 0.0839,
+     "draw": 0.0088
+    },
+    "hours_before_start": 36.2
+   },
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.8524,
+    "p_meandec_mult": 0.8369,
+    "p_sharp_shin": 0.8519,
+    "p_pinnacle_shin": 0.84662,
+    "p_exchange_mult": 0.8365,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.8454,
+    "bfo_odds": [
+     -769,
+     518
+    ],
+    "p_distance": 0.4892,
+    "p_method": {
+     "a_ko": 0.3448,
+     "a_sub": 0.109,
+     "a_dec": 0.3843,
+     "b_ko": 0.0311,
+     "b_sub": 0.0382,
+     "b_dec": 0.0839,
+     "draw": 0.0088
+    }
+   },
+   "move_open_to_last_pts": 0.018,
+   "move_open_to_last_logit": 0.1364,
+   "n_captures": 1
+  },
+  {
+   "bout_id": "2026-11-07:tatiana-suarez__virna-jandiroba",
    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
    "date": "2026-11-07",
    "A": "Tatiana Suarez",
@@ -2808,178 +1752,49 @@
    "A_slug": "tatiana-suarez",
    "B_slug": "virna-jandiroba",
    "weight_class": "Women's Strawweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.6503,
      "p_meandec_mult": 0.6434,
      "p_sharp_shin": 0.6497,
+     "p_pinnacle_shin": 0.64621,
      "p_exchange_mult": 0.642,
      "n_books": 20,
-     "p_decision": 0.7119,
-     "hours_before_start": 40.5
+     "bfo_p_a_novig": 0.6402,
+     "bfo_odds": [
+      -205,
+      165
+     ],
+     "p_distance": 0.7153,
+     "p_method": {
+      "a_ko": 0.0641,
+      "a_sub": 0.1052,
+      "a_dec": 0.4738,
+      "b_ko": 0.0235,
+      "b_sub": 0.0927,
+      "b_dec": 0.2321,
+      "draw": 0.0086
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-08T02:20:00.000Z",
+   "status": "official",
+   "start_utc": "2026-11-08T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.6298,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      -173,
-      147
-     ],
-     "BetAnything": [
-      -175,
-      145
-     ],
-     "BetMGM": [
-      -185,
-      150
-     ],
-     "BetOnline": [
-      -210,
-      177
-     ],
-     "BetRivers": [
-      -204,
-      163
-     ],
-     "BetUS": [
-      -185,
-      154
-     ],
-     "Betway": [
-      -200,
-      163
-     ],
-     "Bookmaker": [
-      -184,
-      149
-     ],
-     "Bovada": [
-      -175,
-      150
-     ],
-     "Caesars": [
-      -185,
-      155
-     ],
-     "Circa": [
-      -165,
-      145
-     ],
-     "Cloudbet": [
-      -192,
-      145
-     ],
-     "DraftKings": [
-      -192,
-      160
-     ],
-     "FanDuel": [
-      -210,
-      162
-     ],
-     "HardRock": [
-      -200,
-      165
-     ],
-     "MyBookie": [
-      -214,
-      164
-     ],
-     "Pinnacle": [
-      -168,
-      143
-     ],
-     "YouWager": [
-      -180,
-      153
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.6298,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      -173,
-      147
-     ],
-     "BetAnything": [
-      -175,
-      145
-     ],
-     "BetMGM": [
-      -185,
-      150
-     ],
-     "BetOnline": [
-      -210,
-      177
-     ],
-     "BetRivers": [
-      -204,
-      163
-     ],
-     "BetUS": [
-      -185,
-      154
-     ],
-     "Betway": [
-      -200,
-      163
-     ],
-     "Bookmaker": [
-      -184,
-      149
-     ],
-     "Bovada": [
-      -175,
-      150
-     ],
-     "Caesars": [
-      -185,
-      155
-     ],
-     "Circa": [
-      -165,
-      145
-     ],
-     "Cloudbet": [
-      -192,
-      145
-     ],
-     "DraftKings": [
-      -192,
-      160
-     ],
-     "FanDuel": [
-      -210,
-      162
-     ],
-     "HardRock": [
-      -200,
-      165
-     ],
-     "MyBookie": [
-      -214,
-      164
-     ],
-     "Pinnacle": [
-      -168,
-      143
-     ],
-     "YouWager": [
-      -180,
-      153
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "actionnetwork_open": {
@@ -2991,376 +1806,239 @@
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.6503,
     "p_meandec_mult": 0.6434,
     "p_sharp_shin": 0.6497,
+    "p_pinnacle_shin": 0.64621,
     "p_exchange_mult": 0.642,
     "n_books": 20,
-    "p_decision": 0.7119,
-    "hours_before_start": 40.5
+    "bfo_p_a_novig": 0.6402,
+    "bfo_odds": [
+     -205,
+     165
+    ],
+    "p_distance": 0.7153,
+    "p_method": {
+     "a_ko": 0.0641,
+     "a_sub": 0.1052,
+     "a_dec": 0.4738,
+     "b_ko": 0.0235,
+     "b_sub": 0.0927,
+     "b_dec": 0.2321,
+     "draw": 0.0086
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.6503,
     "p_meandec_mult": 0.6434,
     "p_sharp_shin": 0.6497,
+    "p_pinnacle_shin": 0.64621,
     "p_exchange_mult": 0.642,
     "n_books": 20,
-    "p_decision": 0.7119,
-    "hours_before_start": 40.5
+    "bfo_p_a_novig": 0.6402,
+    "bfo_odds": [
+     -205,
+     165
+    ],
+    "p_distance": 0.7153,
+    "p_method": {
+     "a_ko": 0.0641,
+     "a_sub": 0.1052,
+     "a_dec": 0.4738,
+     "b_ko": 0.0235,
+     "b_sub": 0.0927,
+     "b_dec": 0.2321,
+     "draw": 0.0086
+    },
+    "hours_before_start": 39.2
    },
-   "move_open_to_last_logit": 0.089,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6503,
+    "p_meandec_mult": 0.6434,
+    "p_sharp_shin": 0.6497,
+    "p_pinnacle_shin": 0.64621,
+    "p_exchange_mult": 0.642,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.6402,
+    "bfo_odds": [
+     -205,
+     165
+    ],
+    "p_distance": 0.7153,
+    "p_method": {
+     "a_ko": 0.0641,
+     "a_sub": 0.1052,
+     "a_dec": 0.4738,
+     "b_ko": 0.0235,
+     "b_sub": 0.0927,
+     "b_dec": 0.2321,
+     "draw": 0.0086
+    }
+   },
    "move_open_to_last_pts": 0.0205,
+   "move_open_to_last_logit": 0.089,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-14_amanda-nunes__kayla-harrison",
-   "event": "UFC 334: Gane vs. Hokit",
-   "date": "2026-11-14",
-   "A": "Kayla Harrison",
-   "B": "Amanda Nunes",
-   "A_slug": "kayla-harrison",
-   "B_slug": "amanda-nunes",
-   "weight_class": "Women's Bantamweight",
+   "bout_id": "2026-11-07:waldo-cortes-acosta__johnny-walker",
+   "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
+   "date": "2026-11-07",
+   "A": "Waldo Cortes-Acosta",
+   "B": "Johnny Walker",
+   "A_slug": "waldo-cortes-acosta",
+   "B_slug": "johnny-walker",
+   "weight_class": "Heavyweight",
+   "rounds": 5,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
-     "p_consensus": 0.6287,
-     "p_meandec_mult": 0.6228,
-     "p_sharp_shin": 0.6249,
-     "p_exchange_mult": 0.6161,
-     "n_books": 20,
-     "p_decision": 0.3691,
-     "hours_before_start": 202.2
+     "pre_lock": true,
+     "p_consensus": 0.6736,
+     "p_meandec_mult": 0.6664,
+     "p_sharp_shin": 0.6756,
+     "p_pinnacle_shin": 0.67207,
+     "p_exchange_mult": 0.6683,
+     "n_books": 19,
+     "bfo_p_a_novig": 0.6662,
+     "bfo_odds": [
+      -235,
+      185
+     ],
+     "p_distance": 0.225,
+     "p_method": {
+      "a_ko": 0.482,
+      "a_sub": 0.0385,
+      "a_dec": 0.1425,
+      "b_ko": 0.1973,
+      "b_sub": 0.0605,
+      "b_dec": 0.0702,
+      "draw": 0.0089
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-08T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
-    "p_open": 0.6436,
-    "n_books": 18,
-    "books": {
-     "Bet105": [
-      -188,
-      159
-     ],
-     "BetAnything": [
-      -200,
-      170
-     ],
-     "BetMGM": [
-      -190,
-      145
-     ],
-     "BetOnline": [
-      -300,
-      247
-     ],
-     "BetRivers": [
-      -204,
-      163
-     ],
-     "BetUS": [
-      -200,
-      166
-     ],
-     "Betway": [
-      -200,
-      163
-     ],
-     "Bookmaker": [
-      -200,
-      161
-     ],
-     "Bovada": [
-      -190,
-      163
-     ],
-     "Caesars": [
-      -190,
-      145
-     ],
-     "Circa": [
-      -200,
-      175
-     ],
-     "Cloudbet": [
-      -204,
-      157
-     ],
-     "DraftKings": [
-      -198,
-      164
-     ],
-     "FanDuel": [
-      -210,
-      162
-     ],
-     "HardRock": [
-      -200,
-      165
-     ],
-     "MyBookie": [
-      -218,
-      154
-     ],
-     "Pinnacle": [
-      -210,
-      177
-     ],
-     "YouWager": [
-      -200,
-      169
-     ]
-    },
+    "p_open": 0.6423,
+    "n_books": 17,
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
-    "p_open": 0.6436,
-    "n_books": 18,
-    "books": {
-     "Bet105": [
-      -188,
-      159
-     ],
-     "BetAnything": [
-      -200,
-      170
-     ],
-     "BetMGM": [
-      -190,
-      145
-     ],
-     "BetOnline": [
-      -300,
-      247
-     ],
-     "BetRivers": [
-      -204,
-      163
-     ],
-     "BetUS": [
-      -200,
-      166
-     ],
-     "Betway": [
-      -200,
-      163
-     ],
-     "Bookmaker": [
-      -200,
-      161
-     ],
-     "Bovada": [
-      -190,
-      163
-     ],
-     "Caesars": [
-      -190,
-      145
-     ],
-     "Circa": [
-      -200,
-      175
-     ],
-     "Cloudbet": [
-      -204,
-      157
-     ],
-     "DraftKings": [
-      -198,
-      164
-     ],
-     "FanDuel": [
-      -210,
-      162
-     ],
-     "HardRock": [
-      -200,
-      165
-     ],
-     "MyBookie": [
-      -218,
-      154
-     ],
-     "Pinnacle": [
-      -210,
-      177
-     ],
-     "YouWager": [
-      -200,
-      169
-     ]
-    },
+    "p_open": 0.6423,
+    "n_books": 17,
     "snapshot": "20261106-0950"
+   },
+   "actionnetwork_open": {
+    "ml": [
+     -190,
+     160
+    ],
+    "p_shin": 0.63528
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
-    "p_consensus": 0.6287,
-    "p_meandec_mult": 0.6228,
-    "p_sharp_shin": 0.6249,
-    "p_exchange_mult": 0.6161,
-    "n_books": 20,
-    "p_decision": 0.3691,
-    "hours_before_start": 202.2
-   },
-   "last_pre_start": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.6287,
-    "p_meandec_mult": 0.6228,
-    "p_sharp_shin": 0.6249,
-    "p_exchange_mult": 0.6161,
-    "n_books": 20,
-    "p_decision": 0.3691,
-    "hours_before_start": 202.2
-   },
-   "move_open_to_last_logit": -0.0644,
-   "move_open_to_last_pts": -0.0149,
-   "n_captures": 1
-  },
-  {
-   "bout_key": "2026-11-14_beatriz-mesquita__macy-chiasson",
-   "event": "UFC 334: Gane vs. Hokit",
-   "date": "2026-11-14",
-   "A": "Macy Chiasson",
-   "B": "Beatriz Mesquita",
-   "A_slug": "macy-chiasson",
-   "B_slug": "bia-mesquita",
-   "weight_class": "Women's Bantamweight",
-   "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
-     "phase": "pre_start",
-     "p_consensus": 0.3426,
-     "p_meandec_mult": 0.3493,
-     "p_sharp_shin": 0.3422,
-     "p_exchange_mult": 0.3361,
-     "n_books": 8,
-     "p_decision": null,
-     "hours_before_start": 202.2
+    "pre_lock": true,
+    "p_consensus": 0.6736,
+    "p_meandec_mult": 0.6664,
+    "p_sharp_shin": 0.6756,
+    "p_pinnacle_shin": 0.67207,
+    "p_exchange_mult": 0.6683,
+    "n_books": 19,
+    "bfo_p_a_novig": 0.6662,
+    "bfo_odds": [
+     -235,
+     185
+    ],
+    "p_distance": 0.225,
+    "p_method": {
+     "a_ko": 0.482,
+     "a_sub": 0.0385,
+     "a_dec": 0.1425,
+     "b_ko": 0.1973,
+     "b_sub": 0.0605,
+     "b_dec": 0.0702,
+     "draw": 0.0089
     }
-   ],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
-   "market_open": {
-    "p_open": 0.3429,
-    "n_books": 8,
-    "books": {
-     "BetOnline": [
-      169,
-      -200
-     ],
-     "BetUS": [
-      174,
-      -210
-     ],
-     "Betway": [
-      163,
-      -225
-     ],
-     "Bookmaker": [
-      172,
-      -215
-     ],
-     "Bovada": [
-      176,
-      -210
-     ],
-     "Caesars": [
-      180,
-      -220
-     ],
-     "MyBookie": [
-      161,
-      -230
-     ],
-     "YouWager": [
-      177,
-      -210
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "market_open_first_read": {
-    "p_open": 0.3429,
-    "n_books": 8,
-    "books": {
-     "BetOnline": [
-      169,
-      -200
-     ],
-     "BetUS": [
-      174,
-      -210
-     ],
-     "Betway": [
-      163,
-      -225
-     ],
-     "Bookmaker": [
-      172,
-      -215
-     ],
-     "Bovada": [
-      176,
-      -210
-     ],
-     "Caesars": [
-      180,
-      -220
-     ],
-     "MyBookie": [
-      161,
-      -230
-     ],
-     "YouWager": [
-      177,
-      -210
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "first_capture": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.3426,
-    "p_meandec_mult": 0.3493,
-    "p_sharp_shin": 0.3422,
-    "p_exchange_mult": 0.3361,
-    "n_books": 8,
-    "p_decision": null,
-    "hours_before_start": 202.2
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
-    "p_consensus": 0.3426,
-    "p_meandec_mult": 0.3493,
-    "p_sharp_shin": 0.3422,
-    "p_exchange_mult": 0.3361,
-    "n_books": 8,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "pre_lock": true,
+    "p_consensus": 0.6736,
+    "p_meandec_mult": 0.6664,
+    "p_sharp_shin": 0.6756,
+    "p_pinnacle_shin": 0.67207,
+    "p_exchange_mult": 0.6683,
+    "n_books": 19,
+    "bfo_p_a_novig": 0.6662,
+    "bfo_odds": [
+     -235,
+     185
+    ],
+    "p_distance": 0.225,
+    "p_method": {
+     "a_ko": 0.482,
+     "a_sub": 0.0385,
+     "a_dec": 0.1425,
+     "b_ko": 0.1973,
+     "b_sub": 0.0605,
+     "b_dec": 0.0702,
+     "draw": 0.0089
+    },
+    "hours_before_start": 39.2
    },
-   "move_open_to_last_logit": -0.0013,
-   "move_open_to_last_pts": -0.0003,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6736,
+    "p_meandec_mult": 0.6664,
+    "p_sharp_shin": 0.6756,
+    "p_pinnacle_shin": 0.67207,
+    "p_exchange_mult": 0.6683,
+    "n_books": 19,
+    "bfo_p_a_novig": 0.6662,
+    "bfo_odds": [
+     -235,
+     185
+    ],
+    "p_distance": 0.225,
+    "p_method": {
+     "a_ko": 0.482,
+     "a_sub": 0.0385,
+     "a_dec": 0.1425,
+     "b_ko": 0.1973,
+     "b_sub": 0.0605,
+     "b_dec": 0.0702,
+     "draw": 0.0089
+    }
+   },
+   "move_open_to_last_pts": 0.0313,
+   "move_open_to_last_logit": 0.1392,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-14_bilal-hasan__luis-gurule",
+   "bout_id": "2026-11-14:bilal-hasan__luis-gurule",
    "event": "UFC 334: Gane vs. Hokit",
    "date": "2026-11-14",
    "A": "Bilal Hasan",
@@ -3368,170 +2046,103 @@
    "A_slug": "bilal-hasan",
    "B_slug": "luis-gurule",
    "weight_class": "Flyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.8781,
      "p_meandec_mult": 0.8599,
      "p_sharp_shin": 0.8817,
+     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.8294,
      "n_books": 17,
-     "p_decision": null,
-     "hours_before_start": 202.2
+     "bfo_p_a_novig": 0.8588,
+     "bfo_odds": [
+      -923,
+      574
+     ],
+     "p_distance": null
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-15T02:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.8785,
     "n_books": 13,
-    "books": {
-     "BetAnything": [
-      -925,
-      510
-     ],
-     "BetOnline": [
-      -550,
-      420
-     ],
-     "BetRivers": [
-      -909,
-      575
-     ],
-     "BetUS": [
-      -950,
-      605
-     ],
-     "Betway": [
-      -1000,
-      600
-     ],
-     "Bookmaker": [
-      -965,
-      595
-     ],
-     "Bovada": [
-      -850,
-      575
-     ],
-     "Caesars": [
-      -1000,
-      650
-     ],
-     "DraftKings": [
-      -950,
-      625
-     ],
-     "FanDuel": [
-      -900,
-      520
-     ],
-     "HardRock": [
-      -900,
-      575
-     ],
-     "MyBookie": [
-      -1205,
-      540
-     ],
-     "YouWager": [
-      -950,
-      648
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.8785,
     "n_books": 13,
-    "books": {
-     "BetAnything": [
-      -925,
-      510
-     ],
-     "BetOnline": [
-      -550,
-      420
-     ],
-     "BetRivers": [
-      -909,
-      575
-     ],
-     "BetUS": [
-      -950,
-      605
-     ],
-     "Betway": [
-      -1000,
-      600
-     ],
-     "Bookmaker": [
-      -965,
-      595
-     ],
-     "Bovada": [
-      -850,
-      575
-     ],
-     "Caesars": [
-      -1000,
-      650
-     ],
-     "DraftKings": [
-      -950,
-      625
-     ],
-     "FanDuel": [
-      -900,
-      520
-     ],
-     "HardRock": [
-      -900,
-      575
-     ],
-     "MyBookie": [
-      -1205,
-      540
-     ],
-     "YouWager": [
-      -950,
-      648
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.8781,
     "p_meandec_mult": 0.8599,
     "p_sharp_shin": 0.8817,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.8294,
     "n_books": 17,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.8588,
+    "bfo_odds": [
+     -923,
+     574
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.8781,
     "p_meandec_mult": 0.8599,
     "p_sharp_shin": 0.8817,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.8294,
     "n_books": 17,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.8588,
+    "bfo_odds": [
+     -923,
+     574
+    ],
+    "p_distance": null,
+    "hours_before_start": 208.2
    },
-   "move_open_to_last_logit": -0.0037,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.8781,
+    "p_meandec_mult": 0.8599,
+    "p_sharp_shin": 0.8817,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.8294,
+    "n_books": 17,
+    "bfo_p_a_novig": 0.8588,
+    "bfo_odds": [
+     -923,
+     574
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": -0.0004,
+   "move_open_to_last_logit": -0.0037,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-14_caio-borralho__yousri-belgaroui",
+   "bout_id": "2026-11-14:caio-borralho__yousri-belgaroui",
    "event": "UFC 334: Gane vs. Hokit",
    "date": "2026-11-14",
    "A": "Caio Borralho",
@@ -3539,571 +2150,103 @@
    "A_slug": "caio-borralho",
    "B_slug": "yousri-belgaroui",
    "weight_class": "Middleweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.5844,
      "p_meandec_mult": 0.5804,
      "p_sharp_shin": 0.5853,
+     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.5863,
      "n_books": 17,
-     "p_decision": null,
-     "hours_before_start": 202.2
+     "bfo_p_a_novig": 0.5807,
+     "bfo_odds": [
+      -157,
+      127
+     ],
+     "p_distance": null
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-15T02:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.5612,
     "n_books": 13,
-    "books": {
-     "BetAnything": [
-      -150,
-      120
-     ],
-     "BetOnline": [
-      128,
-      -150
-     ],
-     "BetRivers": [
-      -137,
-      112
-     ],
-     "BetUS": [
-      -135,
-      114
-     ],
-     "Betway": [
-      -138,
-      110
-     ],
-     "Bookmaker": [
-      -148,
-      121
-     ],
-     "Bovada": [
-      -150,
-      130
-     ],
-     "Caesars": [
-      -160,
-      135
-     ],
-     "DraftKings": [
-      -135,
-      114
-     ],
-     "FanDuel": [
-      -164,
-      128
-     ],
-     "HardRock": [
-      -135,
-      110
-     ],
-     "MyBookie": [
-      -123,
-      -112
-     ],
-     "YouWager": [
-      -150,
-      128
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.5612,
     "n_books": 13,
-    "books": {
-     "BetAnything": [
-      -150,
-      120
-     ],
-     "BetOnline": [
-      128,
-      -150
-     ],
-     "BetRivers": [
-      -137,
-      112
-     ],
-     "BetUS": [
-      -135,
-      114
-     ],
-     "Betway": [
-      -138,
-      110
-     ],
-     "Bookmaker": [
-      -148,
-      121
-     ],
-     "Bovada": [
-      -150,
-      130
-     ],
-     "Caesars": [
-      -160,
-      135
-     ],
-     "DraftKings": [
-      -135,
-      114
-     ],
-     "FanDuel": [
-      -164,
-      128
-     ],
-     "HardRock": [
-      -135,
-      110
-     ],
-     "MyBookie": [
-      -123,
-      -112
-     ],
-     "YouWager": [
-      -150,
-      128
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.5844,
     "p_meandec_mult": 0.5804,
     "p_sharp_shin": 0.5853,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.5863,
     "n_books": 17,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.5807,
+    "bfo_odds": [
+     -157,
+     127
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.5844,
     "p_meandec_mult": 0.5804,
     "p_sharp_shin": 0.5853,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.5863,
     "n_books": 17,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.5807,
+    "bfo_odds": [
+     -157,
+     127
+    ],
+    "p_distance": null,
+    "hours_before_start": 208.2
    },
-   "move_open_to_last_logit": 0.0948,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.5844,
+    "p_meandec_mult": 0.5804,
+    "p_sharp_shin": 0.5853,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.5863,
+    "n_books": 17,
+    "bfo_p_a_novig": 0.5807,
+    "bfo_odds": [
+     -157,
+     127
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": 0.0232,
+   "move_open_to_last_logit": 0.0948,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-14_cesar-almeida__donte-johnson",
-   "event": "UFC 334: Gane vs. Hokit",
-   "date": "2026-11-14",
-   "A": "Donte Johnson",
-   "B": "César Almeida",
-   "A_slug": "donte-johnson",
-   "B_slug": "cesar-almeida",
-   "weight_class": "Middleweight",
-   "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
-     "phase": "pre_start",
-     "p_consensus": 0.617,
-     "p_meandec_mult": 0.6115,
-     "p_sharp_shin": 0.6156,
-     "p_exchange_mult": 0.5987,
-     "n_books": 10,
-     "p_decision": null,
-     "hours_before_start": 202.2
-    }
-   ],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
-   "market_open": {
-    "p_open": 0.5929,
-    "n_books": 8,
-    "books": {
-     "BetOnline": [
-      -250,
-      208
-     ],
-     "BetUS": [
-      -180,
-      150
-     ],
-     "Betway": [
-      -150,
-      110
-     ],
-     "Bookmaker": [
-      -163,
-      132
-     ],
-     "Bovada": [
-      -142,
-      122
-     ],
-     "Caesars": [
-      -155,
-      130
-     ],
-     "MyBookie": [
-      -148,
-      107
-     ],
-     "YouWager": [
-      -180,
-      153
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "market_open_first_read": {
-    "p_open": 0.5929,
-    "n_books": 8,
-    "books": {
-     "BetOnline": [
-      -250,
-      208
-     ],
-     "BetUS": [
-      -180,
-      150
-     ],
-     "Betway": [
-      -150,
-      110
-     ],
-     "Bookmaker": [
-      -163,
-      132
-     ],
-     "Bovada": [
-      -142,
-      122
-     ],
-     "Caesars": [
-      -155,
-      130
-     ],
-     "MyBookie": [
-      -148,
-      107
-     ],
-     "YouWager": [
-      -180,
-      153
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "first_capture": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.617,
-    "p_meandec_mult": 0.6115,
-    "p_sharp_shin": 0.6156,
-    "p_exchange_mult": 0.5987,
-    "n_books": 10,
-    "p_decision": null,
-    "hours_before_start": 202.2
-   },
-   "last_pre_start": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.617,
-    "p_meandec_mult": 0.6115,
-    "p_sharp_shin": 0.6156,
-    "p_exchange_mult": 0.5987,
-    "n_books": 10,
-    "p_decision": null,
-    "hours_before_start": 202.2
-   },
-   "move_open_to_last_logit": 0.1009,
-   "move_open_to_last_pts": 0.0241,
-   "n_captures": 1
-  },
-  {
-   "bout_key": "2026-11-14_charles-radtke__stephen-thompson",
-   "event": "UFC 334: Gane vs. Hokit",
-   "date": "2026-11-14",
-   "A": "Stephen Thompson",
-   "B": "Charles Radtke",
-   "A_slug": "stephen-thompson",
-   "B_slug": "charles-radtke",
-   "weight_class": "Welterweight",
-   "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
-     "phase": "pre_start",
-     "p_consensus": 0.5515,
-     "p_meandec_mult": 0.5469,
-     "p_sharp_shin": 0.5463,
-     "p_exchange_mult": 0.5291,
-     "n_books": 11,
-     "p_decision": null,
-     "hours_before_start": 202.2
-    }
-   ],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
-   "market_open": {
-    "p_open": 0.539,
-    "n_books": 9,
-    "books": {
-     "BetOnline": [
-      -150,
-      128
-     ],
-     "BetUS": [
-      -140,
-      118
-     ],
-     "Betway": [
-      -120,
-      -110
-     ],
-     "Bookmaker": [
-      -118,
-      -104
-     ],
-     "Bovada": [
-      -125,
-      105
-     ],
-     "Caesars": [
-      -125,
-      105
-     ],
-     "FanDuel": [
-      -130,
-      102
-     ],
-     "MyBookie": [
-      -131,
-      -105
-     ],
-     "YouWager": [
-      -140,
-      120
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "market_open_first_read": {
-    "p_open": 0.539,
-    "n_books": 9,
-    "books": {
-     "BetOnline": [
-      -150,
-      128
-     ],
-     "BetUS": [
-      -140,
-      118
-     ],
-     "Betway": [
-      -120,
-      -110
-     ],
-     "Bookmaker": [
-      -118,
-      -104
-     ],
-     "Bovada": [
-      -125,
-      105
-     ],
-     "Caesars": [
-      -125,
-      105
-     ],
-     "FanDuel": [
-      -130,
-      102
-     ],
-     "MyBookie": [
-      -131,
-      -105
-     ],
-     "YouWager": [
-      -140,
-      120
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "first_capture": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.5515,
-    "p_meandec_mult": 0.5469,
-    "p_sharp_shin": 0.5463,
-    "p_exchange_mult": 0.5291,
-    "n_books": 11,
-    "p_decision": null,
-    "hours_before_start": 202.2
-   },
-   "last_pre_start": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.5515,
-    "p_meandec_mult": 0.5469,
-    "p_sharp_shin": 0.5463,
-    "p_exchange_mult": 0.5291,
-    "n_books": 11,
-    "p_decision": null,
-    "hours_before_start": 202.2
-   },
-   "move_open_to_last_logit": 0.0504,
-   "move_open_to_last_pts": 0.0125,
-   "n_captures": 1
-  },
-  {
-   "bout_key": "2026-11-14_chris-duncan__drew-dober",
-   "event": "UFC 334: Gane vs. Hokit",
-   "date": "2026-11-14",
-   "A": "Drew Dober",
-   "B": "Chris Duncan",
-   "A_slug": "drew-dober",
-   "B_slug": "chris-duncan",
-   "weight_class": "Lightweight",
-   "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
-     "phase": "pre_start",
-     "p_consensus": 0.4029,
-     "p_meandec_mult": 0.4085,
-     "p_sharp_shin": 0.408,
-     "p_exchange_mult": 0.4138,
-     "n_books": 8,
-     "p_decision": null,
-     "hours_before_start": 202.2
-    }
-   ],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
-   "market_open": {
-    "p_open": 0.419,
-    "n_books": 8,
-    "books": {
-     "BetOnline": [
-      128,
-      -150
-     ],
-     "BetUS": [
-      138,
-      -165
-     ],
-     "Betway": [
-      105,
-      -138
-     ],
-     "Bookmaker": [
-      129,
-      -158
-     ],
-     "Bovada": [
-      125,
-      -145
-     ],
-     "Caesars": [
-      125,
-      -150
-     ],
-     "MyBookie": [
-      110,
-      -153
-     ],
-     "YouWager": [
-      140,
-      -165
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "market_open_first_read": {
-    "p_open": 0.419,
-    "n_books": 8,
-    "books": {
-     "BetOnline": [
-      128,
-      -150
-     ],
-     "BetUS": [
-      138,
-      -165
-     ],
-     "Betway": [
-      105,
-      -138
-     ],
-     "Bookmaker": [
-      129,
-      -158
-     ],
-     "Bovada": [
-      125,
-      -145
-     ],
-     "Caesars": [
-      125,
-      -150
-     ],
-     "MyBookie": [
-      110,
-      -153
-     ],
-     "YouWager": [
-      140,
-      -165
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "first_capture": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.4029,
-    "p_meandec_mult": 0.4085,
-    "p_sharp_shin": 0.408,
-    "p_exchange_mult": 0.4138,
-    "n_books": 8,
-    "p_decision": null,
-    "hours_before_start": 202.2
-   },
-   "last_pre_start": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.4029,
-    "p_meandec_mult": 0.4085,
-    "p_sharp_shin": 0.408,
-    "p_exchange_mult": 0.4138,
-    "n_books": 8,
-    "p_decision": null,
-    "hours_before_start": 202.2
-   },
-   "move_open_to_last_logit": -0.0665,
-   "move_open_to_last_pts": -0.0161,
-   "n_captures": 1
-  },
-  {
-   "bout_key": "2026-11-14_ciryl-gane__josh-hokit",
+   "bout_id": "2026-11-14:ciryl-gane__josh-hokit",
    "event": "UFC 334: Gane vs. Hokit",
    "date": "2026-11-14",
    "A": "Ciryl Gane",
@@ -4111,210 +2254,347 @@
    "A_slug": "ciryl-gane",
    "B_slug": "josh-hokit",
    "weight_class": "Heavyweight",
+   "rounds": 5,
+   "title": true,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.6891,
      "p_meandec_mult": 0.6804,
      "p_sharp_shin": 0.6811,
+     "p_pinnacle_shin": 0.67784,
      "p_exchange_mult": 0.668,
      "n_books": 20,
-     "p_decision": 0.3411,
-     "hours_before_start": 202.2
+     "bfo_p_a_novig": 0.6861,
+     "bfo_odds": [
+      -259,
+      203
+     ],
+     "p_distance": 0.3425,
+     "p_method": {
+      "a_ko": 0.3843,
+      "a_sub": 0.0795,
+      "a_dec": 0.2288,
+      "b_ko": 0.1194,
+      "b_sub": 0.0695,
+      "b_dec": 0.109,
+      "draw": 0.0094
+     }
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-15T02:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.6985,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      -256,
-      213
-     ],
-     "BetAnything": [
-      -270,
-      210
-     ],
-     "BetMGM": [
-      -295,
-      210
-     ],
-     "BetOnline": [
-      -230,
-      193
-     ],
-     "BetRivers": [
-      -238,
-      188
-     ],
-     "BetUS": [
-      -290,
-      238
-     ],
-     "Betway": [
-      -300,
-      225
-     ],
-     "Bookmaker": [
-      -230,
-      183
-     ],
-     "Bovada": [
-      -270,
-      220
-     ],
-     "Caesars": [
-      -260,
-      190
-     ],
-     "Circa": [
-      -290,
-      245
-     ],
-     "Cloudbet": [
-      -271,
-      204
-     ],
-     "DraftKings": [
-      -225,
-      185
-     ],
-     "FanDuel": [
-      -265,
-      200
-     ],
-     "HardRock": [
-      -240,
-      190
-     ],
-     "MyBookie": [
-      -300,
-      204
-     ],
-     "Pinnacle": [
-      -245,
-      205
-     ],
-     "YouWager": [
-      -265,
-      220
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.6985,
     "n_books": 18,
-    "books": {
-     "Bet105": [
-      -256,
-      213
-     ],
-     "BetAnything": [
-      -270,
-      210
-     ],
-     "BetMGM": [
-      -295,
-      210
-     ],
-     "BetOnline": [
-      -230,
-      193
-     ],
-     "BetRivers": [
-      -238,
-      188
-     ],
-     "BetUS": [
-      -290,
-      238
-     ],
-     "Betway": [
-      -300,
-      225
-     ],
-     "Bookmaker": [
-      -230,
-      183
-     ],
-     "Bovada": [
-      -270,
-      220
-     ],
-     "Caesars": [
-      -260,
-      190
-     ],
-     "Circa": [
-      -290,
-      245
-     ],
-     "Cloudbet": [
-      -271,
-      204
-     ],
-     "DraftKings": [
-      -225,
-      185
-     ],
-     "FanDuel": [
-      -265,
-      200
-     ],
-     "HardRock": [
-      -240,
-      190
-     ],
-     "MyBookie": [
-      -300,
-      204
-     ],
-     "Pinnacle": [
-      -245,
-      205
-     ],
-     "YouWager": [
-      -265,
-      220
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.6891,
     "p_meandec_mult": 0.6804,
     "p_sharp_shin": 0.6811,
+    "p_pinnacle_shin": 0.67784,
     "p_exchange_mult": 0.668,
     "n_books": 20,
-    "p_decision": 0.3411,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.6861,
+    "bfo_odds": [
+     -259,
+     203
+    ],
+    "p_distance": 0.3425,
+    "p_method": {
+     "a_ko": 0.3843,
+     "a_sub": 0.0795,
+     "a_dec": 0.2288,
+     "b_ko": 0.1194,
+     "b_sub": 0.0695,
+     "b_dec": 0.109,
+     "draw": 0.0094
+    }
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.6891,
     "p_meandec_mult": 0.6804,
     "p_sharp_shin": 0.6811,
+    "p_pinnacle_shin": 0.67784,
     "p_exchange_mult": 0.668,
     "n_books": 20,
-    "p_decision": 0.3411,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.6861,
+    "bfo_odds": [
+     -259,
+     203
+    ],
+    "p_distance": 0.3425,
+    "p_method": {
+     "a_ko": 0.3843,
+     "a_sub": 0.0795,
+     "a_dec": 0.2288,
+     "b_ko": 0.1194,
+     "b_sub": 0.0695,
+     "b_dec": 0.109,
+     "draw": 0.0094
+    },
+    "hours_before_start": 208.2
    },
-   "move_open_to_last_logit": -0.0443,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6891,
+    "p_meandec_mult": 0.6804,
+    "p_sharp_shin": 0.6811,
+    "p_pinnacle_shin": 0.67784,
+    "p_exchange_mult": 0.668,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.6861,
+    "bfo_odds": [
+     -259,
+     203
+    ],
+    "p_distance": 0.3425,
+    "p_method": {
+     "a_ko": 0.3843,
+     "a_sub": 0.0795,
+     "a_dec": 0.2288,
+     "b_ko": 0.1194,
+     "b_sub": 0.0695,
+     "b_dec": 0.109,
+     "draw": 0.0094
+    }
+   },
    "move_open_to_last_pts": -0.0094,
+   "move_open_to_last_logit": -0.0443,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-14_evan-elder__samuel-sanches",
+   "bout_id": "2026-11-14:donte-johnson__cesar-almeida",
+   "event": "UFC 334: Gane vs. Hokit",
+   "date": "2026-11-14",
+   "A": "Donte Johnson",
+   "B": "César Almeida",
+   "A_slug": "donte-johnson",
+   "B_slug": "cesar-almeida",
+   "weight_class": "Middleweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [
+    {
+     "snapshot": "20261106-0950",
+     "t": "2026-11-06T09:50:00Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.617,
+     "p_meandec_mult": 0.6115,
+     "p_sharp_shin": 0.6156,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.5987,
+     "n_books": 10,
+     "bfo_p_a_novig": 0.6182,
+     "bfo_odds": [
+      -184,
+      150
+     ],
+     "p_distance": null
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-15T00:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
+   "market_open": {
+    "p_open": 0.5929,
+    "n_books": 8,
+    "snapshot": "20261106-0950"
+   },
+   "market_open_first_read": {
+    "p_open": 0.5929,
+    "n_books": 8,
+    "snapshot": "20261106-0950"
+   },
+   "first_capture": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.617,
+    "p_meandec_mult": 0.6115,
+    "p_sharp_shin": 0.6156,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.5987,
+    "n_books": 10,
+    "bfo_p_a_novig": 0.6182,
+    "bfo_odds": [
+     -184,
+     150
+    ],
+    "p_distance": null
+   },
+   "last_pre_start": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.617,
+    "p_meandec_mult": 0.6115,
+    "p_sharp_shin": 0.6156,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.5987,
+    "n_books": 10,
+    "bfo_p_a_novig": 0.6182,
+    "bfo_odds": [
+     -184,
+     150
+    ],
+    "p_distance": null,
+    "hours_before_start": 206.2
+   },
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.617,
+    "p_meandec_mult": 0.6115,
+    "p_sharp_shin": 0.6156,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.5987,
+    "n_books": 10,
+    "bfo_p_a_novig": 0.6182,
+    "bfo_odds": [
+     -184,
+     150
+    ],
+    "p_distance": null
+   },
+   "move_open_to_last_pts": 0.0241,
+   "move_open_to_last_logit": 0.1009,
+   "n_captures": 1
+  },
+  {
+   "bout_id": "2026-11-14:drew-dober__chris-duncan",
+   "event": "UFC 334: Gane vs. Hokit",
+   "date": "2026-11-14",
+   "A": "Drew Dober",
+   "B": "Chris Duncan",
+   "A_slug": "drew-dober",
+   "B_slug": "chris-duncan",
+   "weight_class": "Lightweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [
+    {
+     "snapshot": "20261106-0950",
+     "t": "2026-11-06T09:50:00Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.4029,
+     "p_meandec_mult": 0.4085,
+     "p_sharp_shin": 0.408,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.4138,
+     "n_books": 8,
+     "bfo_p_a_novig": 0.4105,
+     "bfo_odds": [
+      133,
+      -161
+     ],
+     "p_distance": null
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-15T00:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
+   "market_open": {
+    "p_open": 0.419,
+    "n_books": 8,
+    "snapshot": "20261106-0950"
+   },
+   "market_open_first_read": {
+    "p_open": 0.419,
+    "n_books": 8,
+    "snapshot": "20261106-0950"
+   },
+   "first_capture": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.4029,
+    "p_meandec_mult": 0.4085,
+    "p_sharp_shin": 0.408,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.4138,
+    "n_books": 8,
+    "bfo_p_a_novig": 0.4105,
+    "bfo_odds": [
+     133,
+     -161
+    ],
+    "p_distance": null
+   },
+   "last_pre_start": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.4029,
+    "p_meandec_mult": 0.4085,
+    "p_sharp_shin": 0.408,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.4138,
+    "n_books": 8,
+    "bfo_p_a_novig": 0.4105,
+    "bfo_odds": [
+     133,
+     -161
+    ],
+    "p_distance": null,
+    "hours_before_start": 206.2
+   },
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.4029,
+    "p_meandec_mult": 0.4085,
+    "p_sharp_shin": 0.408,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.4138,
+    "n_books": 8,
+    "bfo_p_a_novig": 0.4105,
+    "bfo_odds": [
+     133,
+     -161
+    ],
+    "p_distance": null
+   },
+   "move_open_to_last_pts": -0.0161,
+   "move_open_to_last_logit": -0.0665,
+   "n_captures": 1
+  },
+  {
+   "bout_id": "2026-11-14:evan-elder__samuel-sanches",
    "event": "UFC 334: Gane vs. Hokit",
    "date": "2026-11-14",
    "A": "Evan Elder",
@@ -4322,130 +2602,103 @@
    "A_slug": "evan-elder",
    "B_slug": null,
    "weight_class": "Lightweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.515,
      "p_meandec_mult": 0.5144,
      "p_sharp_shin": 0.5126,
+     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.5276,
      "n_books": 10,
-     "p_decision": null,
-     "hours_before_start": 202.2
+     "bfo_p_a_novig": 0.516,
+     "bfo_odds": [
+      -120,
+      -105
+     ],
+     "p_distance": null
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-14T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.early_prelims",
    "market_open": {
     "p_open": 0.5169,
     "n_books": 8,
-    "books": {
-     "BetOnline": [
-      -185,
-      157
-     ],
-     "BetUS": [
-      -120,
-      100
-     ],
-     "Betway": [
-      -120,
-      -110
-     ],
-     "Bookmaker": [
-      -115,
-      -107
-     ],
-     "Bovada": [
-      -122,
-      102
-     ],
-     "Caesars": [
-      -110,
-      -110
-     ],
-     "MyBookie": [
-      -120,
-      -115
-     ],
-     "YouWager": [
-      -120,
-      103
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.5169,
     "n_books": 8,
-    "books": {
-     "BetOnline": [
-      -185,
-      157
-     ],
-     "BetUS": [
-      -120,
-      100
-     ],
-     "Betway": [
-      -120,
-      -110
-     ],
-     "Bookmaker": [
-      -115,
-      -107
-     ],
-     "Bovada": [
-      -122,
-      102
-     ],
-     "Caesars": [
-      -110,
-      -110
-     ],
-     "MyBookie": [
-      -120,
-      -115
-     ],
-     "YouWager": [
-      -120,
-      103
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.515,
     "p_meandec_mult": 0.5144,
     "p_sharp_shin": 0.5126,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.5276,
     "n_books": 10,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.516,
+    "bfo_odds": [
+     -120,
+     -105
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.515,
     "p_meandec_mult": 0.5144,
     "p_sharp_shin": 0.5126,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.5276,
     "n_books": 10,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.516,
+    "bfo_odds": [
+     -120,
+     -105
+    ],
+    "p_distance": null,
+    "hours_before_start": 204.2
    },
-   "move_open_to_last_logit": -0.0076,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.515,
+    "p_meandec_mult": 0.5144,
+    "p_sharp_shin": 0.5126,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.5276,
+    "n_books": 10,
+    "bfo_p_a_novig": 0.516,
+    "bfo_odds": [
+     -120,
+     -105
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": -0.0019,
+   "move_open_to_last_logit": -0.0076,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-14_jared-gordon__melquizael-costa",
+   "bout_id": "2026-11-14:jared-gordon__melquizael-costa",
    "event": "UFC 334: Gane vs. Hokit",
    "date": "2026-11-14",
    "A": "Jared Gordon",
@@ -4453,130 +2706,103 @@
    "A_slug": "jared-gordon",
    "B_slug": "melquizael-costa",
    "weight_class": "Lightweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.233,
      "p_meandec_mult": 0.2443,
      "p_sharp_shin": 0.2277,
+     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.2113,
      "n_books": 10,
-     "p_decision": null,
-     "hours_before_start": 202.2
+     "bfo_p_a_novig": 0.237,
+     "bfo_odds": [
+      300,
+      -412
+     ],
+     "p_distance": null
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-14T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.early_prelims",
    "market_open": {
     "p_open": 0.2329,
     "n_books": 8,
-    "books": {
-     "BetOnline": [
-      157,
-      -185
-     ],
-     "BetUS": [
-      282,
-      -355
-     ],
-     "Betway": [
-      300,
-      -450
-     ],
-     "Bookmaker": [
-      253,
-      -329
-     ],
-     "Bovada": [
-      325,
-      -415
-     ],
-     "Caesars": [
-      310,
-      -400
-     ],
-     "MyBookie": [
-      275,
-      -441
-     ],
-     "YouWager": [
-      291,
-      -360
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.2329,
     "n_books": 8,
-    "books": {
-     "BetOnline": [
-      157,
-      -185
-     ],
-     "BetUS": [
-      282,
-      -355
-     ],
-     "Betway": [
-      300,
-      -450
-     ],
-     "Bookmaker": [
-      253,
-      -329
-     ],
-     "Bovada": [
-      325,
-      -415
-     ],
-     "Caesars": [
-      310,
-      -400
-     ],
-     "MyBookie": [
-      275,
-      -441
-     ],
-     "YouWager": [
-      291,
-      -360
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.233,
     "p_meandec_mult": 0.2443,
     "p_sharp_shin": 0.2277,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.2113,
     "n_books": 10,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.237,
+    "bfo_odds": [
+     300,
+     -412
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.233,
     "p_meandec_mult": 0.2443,
     "p_sharp_shin": 0.2277,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.2113,
     "n_books": 10,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.237,
+    "bfo_odds": [
+     300,
+     -412
+    ],
+    "p_distance": null,
+    "hours_before_start": 204.2
    },
-   "move_open_to_last_logit": 0.0006,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.233,
+    "p_meandec_mult": 0.2443,
+    "p_sharp_shin": 0.2277,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.2113,
+    "n_books": 10,
+    "bfo_p_a_novig": 0.237,
+    "bfo_odds": [
+     300,
+     -412
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": 0.0001,
+   "move_open_to_last_logit": 0.0006,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-14_jim-miller__terrance-mckinney",
+   "bout_id": "2026-11-14:jim-miller__terrance-mckinney",
    "event": "UFC 334: Gane vs. Hokit",
    "date": "2026-11-14",
    "A": "Jim Miller",
@@ -4584,130 +2810,451 @@
    "A_slug": "jim-miller",
    "B_slug": "terrance-mckinney",
    "weight_class": "Lightweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.3373,
      "p_meandec_mult": 0.3459,
      "p_sharp_shin": 0.3431,
+     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.3414,
      "n_books": 10,
-     "p_decision": null,
-     "hours_before_start": 202.2
+     "bfo_p_a_novig": 0.3481,
+     "bfo_odds": [
+      172,
+      -222
+     ],
+     "p_distance": null
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-15T00:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "market_open": {
     "p_open": 0.3399,
     "n_books": 8,
-    "books": {
-     "BetOnline": [
-      208,
-      -250
-     ],
-     "BetUS": [
-      178,
-      -215
-     ],
-     "Betway": [
-      163,
-      -225
-     ],
-     "Bookmaker": [
-      168,
-      -210
-     ],
-     "Bovada": [
-      180,
-      -215
-     ],
-     "Caesars": [
-      180,
-      -220
-     ],
-     "MyBookie": [
-      156,
-      -222
-     ],
-     "YouWager": [
-      181,
-      -215
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.3399,
     "n_books": 8,
-    "books": {
-     "BetOnline": [
-      208,
-      -250
-     ],
-     "BetUS": [
-      178,
-      -215
-     ],
-     "Betway": [
-      163,
-      -225
-     ],
-     "Bookmaker": [
-      168,
-      -210
-     ],
-     "Bovada": [
-      180,
-      -215
-     ],
-     "Caesars": [
-      180,
-      -220
-     ],
-     "MyBookie": [
-      156,
-      -222
-     ],
-     "YouWager": [
-      181,
-      -215
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.3373,
     "p_meandec_mult": 0.3459,
     "p_sharp_shin": 0.3431,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.3414,
     "n_books": 10,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.3481,
+    "bfo_odds": [
+     172,
+     -222
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.3373,
     "p_meandec_mult": 0.3459,
     "p_sharp_shin": 0.3431,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.3414,
     "n_books": 10,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.3481,
+    "bfo_odds": [
+     172,
+     -222
+    ],
+    "p_distance": null,
+    "hours_before_start": 206.2
    },
-   "move_open_to_last_logit": -0.0116,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.3373,
+    "p_meandec_mult": 0.3459,
+    "p_sharp_shin": 0.3431,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.3414,
+    "n_books": 10,
+    "bfo_p_a_novig": 0.3481,
+    "bfo_odds": [
+     172,
+     -222
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": -0.0026,
+   "move_open_to_last_logit": -0.0116,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-14_kevin-holland__uros-medic",
+   "bout_id": "2026-11-14:kayla-harrison__amanda-nunes",
+   "event": "UFC 334: Gane vs. Hokit",
+   "date": "2026-11-14",
+   "A": "Kayla Harrison",
+   "B": "Amanda Nunes",
+   "A_slug": "kayla-harrison",
+   "B_slug": "amanda-nunes",
+   "weight_class": "Women's Bantamweight",
+   "rounds": 5,
+   "title": true,
+   "captures": [
+    {
+     "snapshot": "20261106-0950",
+     "t": "2026-11-06T09:50:00Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6287,
+     "p_meandec_mult": 0.6228,
+     "p_sharp_shin": 0.6249,
+     "p_pinnacle_shin": 0.63001,
+     "p_exchange_mult": 0.6161,
+     "n_books": 20,
+     "bfo_p_a_novig": 0.6272,
+     "bfo_odds": [
+      -193,
+      156
+     ],
+     "p_distance": 0.3736,
+     "p_method": {
+      "a_ko": 0.0958,
+      "a_sub": 0.3071,
+      "a_dec": 0.2337,
+      "b_ko": 0.1988,
+      "b_sub": 0.0234,
+      "b_dec": 0.1319,
+      "draw": 0.0093
+     }
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-15T02:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
+   "market_open": {
+    "p_open": 0.6436,
+    "n_books": 18,
+    "snapshot": "20261106-0950"
+   },
+   "market_open_first_read": {
+    "p_open": 0.6436,
+    "n_books": 18,
+    "snapshot": "20261106-0950"
+   },
+   "first_capture": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6287,
+    "p_meandec_mult": 0.6228,
+    "p_sharp_shin": 0.6249,
+    "p_pinnacle_shin": 0.63001,
+    "p_exchange_mult": 0.6161,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.6272,
+    "bfo_odds": [
+     -193,
+     156
+    ],
+    "p_distance": 0.3736,
+    "p_method": {
+     "a_ko": 0.0958,
+     "a_sub": 0.3071,
+     "a_dec": 0.2337,
+     "b_ko": 0.1988,
+     "b_sub": 0.0234,
+     "b_dec": 0.1319,
+     "draw": 0.0093
+    }
+   },
+   "last_pre_start": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6287,
+    "p_meandec_mult": 0.6228,
+    "p_sharp_shin": 0.6249,
+    "p_pinnacle_shin": 0.63001,
+    "p_exchange_mult": 0.6161,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.6272,
+    "bfo_odds": [
+     -193,
+     156
+    ],
+    "p_distance": 0.3736,
+    "p_method": {
+     "a_ko": 0.0958,
+     "a_sub": 0.3071,
+     "a_dec": 0.2337,
+     "b_ko": 0.1988,
+     "b_sub": 0.0234,
+     "b_dec": 0.1319,
+     "draw": 0.0093
+    },
+    "hours_before_start": 208.2
+   },
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6287,
+    "p_meandec_mult": 0.6228,
+    "p_sharp_shin": 0.6249,
+    "p_pinnacle_shin": 0.63001,
+    "p_exchange_mult": 0.6161,
+    "n_books": 20,
+    "bfo_p_a_novig": 0.6272,
+    "bfo_odds": [
+     -193,
+     156
+    ],
+    "p_distance": 0.3736,
+    "p_method": {
+     "a_ko": 0.0958,
+     "a_sub": 0.3071,
+     "a_dec": 0.2337,
+     "b_ko": 0.1988,
+     "b_sub": 0.0234,
+     "b_dec": 0.1319,
+     "draw": 0.0093
+    }
+   },
+   "move_open_to_last_pts": -0.0149,
+   "move_open_to_last_logit": -0.0644,
+   "n_captures": 1
+  },
+  {
+   "bout_id": "2026-11-14:macy-chiasson__bia-mesquita",
+   "event": "UFC 334: Gane vs. Hokit",
+   "date": "2026-11-14",
+   "A": "Macy Chiasson",
+   "B": "Beatriz Mesquita",
+   "A_slug": "macy-chiasson",
+   "B_slug": "bia-mesquita",
+   "weight_class": "Women's Bantamweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [
+    {
+     "snapshot": "20261106-0950",
+     "t": "2026-11-06T09:50:00Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.3426,
+     "p_meandec_mult": 0.3493,
+     "p_sharp_shin": 0.3422,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.3361,
+     "n_books": 8,
+     "bfo_p_a_novig": 0.3481,
+     "bfo_odds": [
+      172,
+      -222
+     ],
+     "p_distance": null
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-14T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.early_prelims",
+   "market_open": {
+    "p_open": 0.3429,
+    "n_books": 8,
+    "snapshot": "20261106-0950"
+   },
+   "market_open_first_read": {
+    "p_open": 0.3429,
+    "n_books": 8,
+    "snapshot": "20261106-0950"
+   },
+   "first_capture": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.3426,
+    "p_meandec_mult": 0.3493,
+    "p_sharp_shin": 0.3422,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.3361,
+    "n_books": 8,
+    "bfo_p_a_novig": 0.3481,
+    "bfo_odds": [
+     172,
+     -222
+    ],
+    "p_distance": null
+   },
+   "last_pre_start": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.3426,
+    "p_meandec_mult": 0.3493,
+    "p_sharp_shin": 0.3422,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.3361,
+    "n_books": 8,
+    "bfo_p_a_novig": 0.3481,
+    "bfo_odds": [
+     172,
+     -222
+    ],
+    "p_distance": null,
+    "hours_before_start": 204.2
+   },
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.3426,
+    "p_meandec_mult": 0.3493,
+    "p_sharp_shin": 0.3422,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.3361,
+    "n_books": 8,
+    "bfo_p_a_novig": 0.3481,
+    "bfo_odds": [
+     172,
+     -222
+    ],
+    "p_distance": null
+   },
+   "move_open_to_last_pts": -0.0003,
+   "move_open_to_last_logit": -0.0013,
+   "n_captures": 1
+  },
+  {
+   "bout_id": "2026-11-14:stephen-thompson__charles-radtke",
+   "event": "UFC 334: Gane vs. Hokit",
+   "date": "2026-11-14",
+   "A": "Stephen Thompson",
+   "B": "Charles Radtke",
+   "A_slug": "stephen-thompson",
+   "B_slug": "charles-radtke",
+   "weight_class": "Welterweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [
+    {
+     "snapshot": "20261106-0950",
+     "t": "2026-11-06T09:50:00Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.5515,
+     "p_meandec_mult": 0.5469,
+     "p_sharp_shin": 0.5463,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": 0.5291,
+     "n_books": 11,
+     "bfo_p_a_novig": 0.5347,
+     "bfo_odds": [
+      -129,
+      104
+     ],
+     "p_distance": null
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-15T00:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
+   "market_open": {
+    "p_open": 0.539,
+    "n_books": 9,
+    "snapshot": "20261106-0950"
+   },
+   "market_open_first_read": {
+    "p_open": 0.539,
+    "n_books": 9,
+    "snapshot": "20261106-0950"
+   },
+   "first_capture": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.5515,
+    "p_meandec_mult": 0.5469,
+    "p_sharp_shin": 0.5463,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.5291,
+    "n_books": 11,
+    "bfo_p_a_novig": 0.5347,
+    "bfo_odds": [
+     -129,
+     104
+    ],
+    "p_distance": null
+   },
+   "last_pre_start": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.5515,
+    "p_meandec_mult": 0.5469,
+    "p_sharp_shin": 0.5463,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.5291,
+    "n_books": 11,
+    "bfo_p_a_novig": 0.5347,
+    "bfo_odds": [
+     -129,
+     104
+    ],
+    "p_distance": null,
+    "hours_before_start": 206.2
+   },
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.5515,
+    "p_meandec_mult": 0.5469,
+    "p_sharp_shin": 0.5463,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.5291,
+    "n_books": 11,
+    "bfo_p_a_novig": 0.5347,
+    "bfo_odds": [
+     -129,
+     104
+    ],
+    "p_distance": null
+   },
+   "move_open_to_last_pts": 0.0125,
+   "move_open_to_last_logit": 0.0504,
+   "n_captures": 1
+  },
+  {
+   "bout_id": "2026-11-14:uros-medic__kevin-holland",
    "event": "UFC 334: Gane vs. Hokit",
    "date": "2026-11-14",
    "A": "Uroš Medić",
@@ -4715,170 +3262,103 @@
    "A_slug": "uros-medic",
    "B_slug": "kevin-holland",
    "weight_class": "Welterweight",
+   "rounds": 3,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.6128,
      "p_meandec_mult": 0.6069,
      "p_sharp_shin": 0.6039,
+     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.6146,
      "n_books": 17,
-     "p_decision": null,
-     "hours_before_start": 202.2
+     "bfo_p_a_novig": 0.6015,
+     "bfo_odds": [
+      -173,
+      138
+     ],
+     "p_distance": null
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-14T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-15T02:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.5942,
     "n_books": 13,
-    "books": {
-     "BetAnything": [
-      -160,
-      130
-     ],
-     "BetOnline": [
-      132,
-      -155
-     ],
-     "BetRivers": [
-      -161,
-      130
-     ],
-     "BetUS": [
-      -160,
-      134
-     ],
-     "Betway": [
-      -163,
-      130
-     ],
-     "Bookmaker": [
-      -163,
-      132
-     ],
-     "Bovada": [
-      -163,
-      138
-     ],
-     "Caesars": [
-      -160,
-      135
-     ],
-     "DraftKings": [
-      -162,
-      136
-     ],
-     "FanDuel": [
-      -174,
-      136
-     ],
-     "HardRock": [
-      -160,
-      130
-     ],
-     "MyBookie": [
-      -175,
-      125
-     ],
-     "YouWager": [
-      -160,
-      136
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.5942,
     "n_books": 13,
-    "books": {
-     "BetAnything": [
-      -160,
-      130
-     ],
-     "BetOnline": [
-      132,
-      -155
-     ],
-     "BetRivers": [
-      -161,
-      130
-     ],
-     "BetUS": [
-      -160,
-      134
-     ],
-     "Betway": [
-      -163,
-      130
-     ],
-     "Bookmaker": [
-      -163,
-      132
-     ],
-     "Bovada": [
-      -163,
-      138
-     ],
-     "Caesars": [
-      -160,
-      135
-     ],
-     "DraftKings": [
-      -162,
-      136
-     ],
-     "FanDuel": [
-      -174,
-      136
-     ],
-     "HardRock": [
-      -160,
-      130
-     ],
-     "MyBookie": [
-      -175,
-      125
-     ],
-     "YouWager": [
-      -160,
-      136
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.6128,
     "p_meandec_mult": 0.6069,
     "p_sharp_shin": 0.6039,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.6146,
     "n_books": 17,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.6015,
+    "bfo_odds": [
+     -173,
+     138
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.6128,
     "p_meandec_mult": 0.6069,
     "p_sharp_shin": 0.6039,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": 0.6146,
     "n_books": 17,
-    "p_decision": null,
-    "hours_before_start": 202.2
+    "bfo_p_a_novig": 0.6015,
+    "bfo_odds": [
+     -173,
+     138
+    ],
+    "p_distance": null,
+    "hours_before_start": 208.2
    },
-   "move_open_to_last_logit": 0.0777,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6128,
+    "p_meandec_mult": 0.6069,
+    "p_sharp_shin": 0.6039,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": 0.6146,
+    "n_books": 17,
+    "bfo_p_a_novig": 0.6015,
+    "bfo_odds": [
+     -173,
+     138
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": 0.0186,
+   "move_open_to_last_logit": 0.0777,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-21_aleksandre-topuria__santiago-luna",
+   "bout_id": "2026-11-21:aleksandre-topuria__santiago-luna",
    "event": "UFC Fight Night: Procházka vs. Stirling",
    "date": "2026-11-21",
    "A": "Aleksandre Topuria",
@@ -4886,41 +3366,17 @@
    "A_slug": "aleksandre-topuria",
    "B_slug": "santiago-luna",
    "weight_class": "Bantamweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-21T18:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-11-21_alessandro-costa__amir-albazi",
-   "event": "UFC Fight Night: Procházka vs. Stirling",
-   "date": "2026-11-21",
-   "A": "Amir Albazi",
-   "B": "Alessandro Costa",
-   "A_slug": "amir-albazi",
-   "B_slug": "alessandro-costa",
-   "weight_class": "Flyweight",
-   "captures": [],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
-   "n_captures": 0
-  },
-  {
-   "bout_key": "2026-11-21_alik-lorenz__diyar-nurgozhay",
-   "event": "UFC Fight Night: Procházka vs. Stirling",
-   "date": "2026-11-21",
-   "A": "Diyar Nurgozhay",
-   "B": "Alik Lorenz",
-   "A_slug": "diyar-nurgozhay",
-   "B_slug": null,
-   "weight_class": "Light Heavyweight",
-   "captures": [],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
-   "n_captures": 0
-  },
-  {
-   "bout_key": "2026-11-21_aljamain-sterling__kevin-vallejos",
+   "bout_id": "2026-11-21:aljamain-sterling__kevin-vallejos",
    "event": "UFC Fight Night: Procházka vs. Stirling",
    "date": "2026-11-21",
    "A": "Aljamain Sterling",
@@ -4928,27 +3384,35 @@
    "A_slug": "aljamain-sterling",
    "B_slug": "kevin-vallejos",
    "weight_class": "Featherweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-21T18:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-11-21_asu-almabayev__kyoji-horiguchi",
+   "bout_id": "2026-11-21:amir-albazi__alessandro-costa",
    "event": "UFC Fight Night: Procházka vs. Stirling",
    "date": "2026-11-21",
-   "A": "Kyoji Horiguchi",
-   "B": "Asu Almabayev",
-   "A_slug": "kyoji-horiguchi",
-   "B_slug": "asu-almabayev",
+   "A": "Amir Albazi",
+   "B": "Alessandro Costa",
+   "A_slug": "amir-albazi",
+   "B_slug": "alessandro-costa",
    "weight_class": "Flyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-21T15:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-11-21_brian-ortega__dan-hooker",
+   "bout_id": "2026-11-21:dan-hooker__brian-ortega",
    "event": "UFC Fight Night: Procházka vs. Stirling",
    "date": "2026-11-21",
    "A": "Dan Hooker",
@@ -4956,41 +3420,35 @@
    "A_slug": "dan-hooker",
    "B_slug": "brian-ortega",
    "weight_class": "Lightweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-21T18:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-11-21_dom-mar-fan__nikolas-motta",
+   "bout_id": "2026-11-21:diyar-nurgozhay__alik-lorenz",
    "event": "UFC Fight Night: Procházka vs. Stirling",
    "date": "2026-11-21",
-   "A": "Nikolas Motta",
-   "B": "Dom Mar Fan",
-   "A_slug": "nikolas-motta",
-   "B_slug": "dom-mar-fan",
-   "weight_class": "Lightweight",
+   "A": "Diyar Nurgozhay",
+   "B": "Alik Lorenz",
+   "A_slug": "diyar-nurgozhay",
+   "B_slug": null,
+   "weight_class": "Light Heavyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
+   "status": "reported",
+   "start_utc": "2026-11-21T15:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-11-21_ikram-aliskerov__jared-cannonier",
-   "event": "UFC Fight Night: Procházka vs. Stirling",
-   "date": "2026-11-21",
-   "A": "Jared Cannonier",
-   "B": "Ikram Aliskerov",
-   "A_slug": "jared-cannonier",
-   "B_slug": "ikram-aliskerov",
-   "weight_class": "Middleweight",
-   "captures": [],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
-   "n_captures": 0
-  },
-  {
-   "bout_key": "2026-11-21_jake-matthews__tahir-abdullayev",
+   "bout_id": "2026-11-21:jake-matthews__tahir-abdullayev",
    "event": "UFC Fight Night: Procházka vs. Stirling",
    "date": "2026-11-21",
    "A": "Jake Matthews",
@@ -4998,13 +3456,35 @@
    "A_slug": "jake-matthews",
    "B_slug": "tahir-abdullayev",
    "weight_class": "Welterweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-21T15:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-11-21_jiri-prochazka__navajo-stirling",
+   "bout_id": "2026-11-21:jared-cannonier__ikram-aliskerov",
+   "event": "UFC Fight Night: Procházka vs. Stirling",
+   "date": "2026-11-21",
+   "A": "Jared Cannonier",
+   "B": "Ikram Aliskerov",
+   "A_slug": "jared-cannonier",
+   "B_slug": "ikram-aliskerov",
+   "weight_class": "Middleweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-21T18:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
+   "n_captures": 0
+  },
+  {
+   "bout_id": "2026-11-21:jiri-prochazka__navajo-stirling",
    "event": "UFC Fight Night: Procházka vs. Stirling",
    "date": "2026-11-21",
    "A": "Jiří Procházka",
@@ -5012,114 +3492,139 @@
    "A_slug": "jiri-prochazka",
    "B_slug": "navajo-stirling",
    "weight_class": "Light Heavyweight",
+   "rounds": 5,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.4359,
      "p_meandec_mult": 0.4401,
      "p_sharp_shin": 0.4356,
+     "p_pinnacle_shin": null,
      "p_exchange_mult": null,
      "n_books": 6,
-     "p_decision": null,
-     "hours_before_start": 362.2
-    }
-   ],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
-   "market_open": {
-    "p_open": 0.4375,
-    "n_books": 6,
-    "books": {
-     "BetOnline": [
-      -108,
-      -108
-     ],
-     "BetUS": [
-      138,
-      -165
-     ],
-     "Betway": [
+     "bfo_p_a_novig": 0.4509,
+     "bfo_odds": [
       110,
       -138
      ],
-     "Bovada": [
-      122,
-      -142
-     ],
-     "MyBookie": [
-      111,
-      -153
-     ],
-     "YouWager": [
-      120,
-      -140
-     ]
-    },
+     "p_distance": null
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-21T18:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
+   "market_open": {
+    "p_open": 0.4375,
+    "n_books": 6,
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.4375,
     "n_books": 6,
-    "books": {
-     "BetOnline": [
-      -108,
-      -108
-     ],
-     "BetUS": [
-      138,
-      -165
-     ],
-     "Betway": [
-      110,
-      -138
-     ],
-     "Bovada": [
-      122,
-      -142
-     ],
-     "MyBookie": [
-      111,
-      -153
-     ],
-     "YouWager": [
-      120,
-      -140
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.4359,
     "p_meandec_mult": 0.4401,
     "p_sharp_shin": 0.4356,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": null,
     "n_books": 6,
-    "p_decision": null,
-    "hours_before_start": 362.2
+    "bfo_p_a_novig": 0.4509,
+    "bfo_odds": [
+     110,
+     -138
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.4359,
     "p_meandec_mult": 0.4401,
     "p_sharp_shin": 0.4356,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": null,
     "n_books": 6,
-    "p_decision": null,
-    "hours_before_start": 362.2
+    "bfo_p_a_novig": 0.4509,
+    "bfo_odds": [
+     110,
+     -138
+    ],
+    "p_distance": null,
+    "hours_before_start": 368.2
    },
-   "move_open_to_last_logit": -0.0065,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.4359,
+    "p_meandec_mult": 0.4401,
+    "p_sharp_shin": 0.4356,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": null,
+    "n_books": 6,
+    "bfo_p_a_novig": 0.4509,
+    "bfo_odds": [
+     110,
+     -138
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": -0.0016,
+   "move_open_to_last_logit": -0.0065,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-11-21_shamil-gaziev__tallison-teixeira",
+   "bout_id": "2026-11-21:kyoji-horiguchi__asu-almabayev",
+   "event": "UFC Fight Night: Procházka vs. Stirling",
+   "date": "2026-11-21",
+   "A": "Kyoji Horiguchi",
+   "B": "Asu Almabayev",
+   "A_slug": "kyoji-horiguchi",
+   "B_slug": "asu-almabayev",
+   "weight_class": "Flyweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-11-21T18:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
+   "n_captures": 0
+  },
+  {
+   "bout_id": "2026-11-21:nikolas-motta__dom-mar-fan",
+   "event": "UFC Fight Night: Procházka vs. Stirling",
+   "date": "2026-11-21",
+   "A": "Nikolas Motta",
+   "B": "Dom Mar Fan",
+   "A_slug": "nikolas-motta",
+   "B_slug": "dom-mar-fan",
+   "weight_class": "Lightweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [],
+   "last_seen": "20261106-0950",
+   "status": "reported",
+   "start_utc": "2026-11-21T15:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
+   "n_captures": 0
+  },
+  {
+   "bout_id": "2026-11-21:shamil-gaziev__tallison-teixeira",
    "event": "UFC Fight Night: Procházka vs. Stirling",
    "date": "2026-11-21",
    "A": "Shamil Gaziev",
@@ -5127,13 +3632,17 @@
    "A_slug": "shamil-gaziev",
    "B_slug": "tallison-teixeira",
    "weight_class": "Heavyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-11-21T12:00:00Z",
+   "status": "official",
+   "start_utc": "2026-11-21T15:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_abdul-hussein__hecher-sosa",
+   "bout_id": "2026-12-05:abdul-hussein__hecher-sosa",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Abdul Hussein",
@@ -5141,13 +3650,17 @@
    "A_slug": "abdul-hussein",
    "B_slug": "hecher-sosa",
    "weight_class": "Bantamweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_akbar-abdullaev__mairon-santos",
+   "bout_id": "2026-12-05:akbar-abdullaev__mairon-santos",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Akbar Abdullaev",
@@ -5155,13 +3668,17 @@
    "A_slug": null,
    "B_slug": "mairon-santos",
    "weight_class": "Lightweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_bruno-gustavo-da-silva__jafel-filho",
+   "bout_id": "2026-12-05:bruno-silva-bulldog__jafel-filho",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Bruno Gustavo da Silva",
@@ -5169,13 +3686,17 @@
    "A_slug": "bruno-silva-bulldog",
    "B_slug": "jafel-filho",
    "weight_class": "Flyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_ion-cutelaba__magomed-tuchalov",
+   "bout_id": "2026-12-05:ion-cutelaba__magomed-tuchalov",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Ion Cuțelaba",
@@ -5183,13 +3704,17 @@
    "A_slug": "ion-cutelaba",
    "B_slug": "magomed-tuchalov",
    "weight_class": "Light Heavyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_islam-dulatov__levan-chokheli",
+   "bout_id": "2026-12-05:islam-dulatov__levan-chokheli",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Islam Dulatov",
@@ -5197,13 +3722,17 @@
    "A_slug": "islam-dulatov",
    "B_slug": "levan-chokheli",
    "weight_class": "Welterweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_israel-adesanya__sharabutdin-magomedov",
+   "bout_id": "2026-12-05:israel-adesanya__shara-magomedov",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Israel Adesanya",
@@ -5211,13 +3740,17 @@
    "A_slug": "israel-adesanya",
    "B_slug": "shara-magomedov",
    "weight_class": "Middleweight",
+   "rounds": 5,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_ivan-gnizditskiy__uran-satybaldiev",
+   "bout_id": "2026-12-05:ivan-gnizditskiy__uran-satybaldiev",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Ivan Gnizditskiy",
@@ -5225,27 +3758,17 @@
    "A_slug": null,
    "B_slug": "uran-satybaldiev",
    "weight_class": "Light Heavyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_mahammadali-osmanli__pavel-andrusca",
-   "event": "UFC Fight Night 295",
-   "date": "2026-12-05",
-   "A": "Pavel Andrusca",
-   "B": "Mahammadali Osmanli",
-   "A_slug": "pavel-andrusca",
-   "B_slug": "mahammadali-osmanli",
-   "weight_class": "Bantamweight",
-   "captures": [],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-12-05T12:00:00Z",
-   "n_captures": 0
-  },
-  {
-   "bout_key": "2026-12-05_marco-tulio__park-jun-yong",
+   "bout_id": "2026-12-05:junyong-park__marco-tulio",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Park Jun-yong",
@@ -5253,13 +3776,17 @@
    "A_slug": "junyong-park",
    "B_slug": "marco-tulio",
    "weight_class": "Middleweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-05_matthieu-letho-duclos__modestino-rodrigues",
+   "bout_id": "2026-12-05:matthieu-duclos__modestino-rodrigues",
    "event": "UFC Fight Night 295",
    "date": "2026-12-05",
    "A": "Matthieu Letho Duclos",
@@ -5267,176 +3794,35 @@
    "A_slug": "matthieu-duclos",
    "B_slug": null,
    "weight_class": "Middleweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
+   "status": "reported",
    "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_alex-pereira__sergei-pavlovich",
-   "event": "UFC 335: Oliveira vs. Lopes",
-   "date": "2026-12-12",
-   "A": "Sergei Pavlovich",
-   "B": "Alex Pereira",
-   "A_slug": "sergei-pavlovich",
-   "B_slug": "alex-pereira",
-   "weight_class": "Heavyweight",
-   "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
-     "phase": "pre_start",
-     "p_consensus": 0.6424,
-     "p_meandec_mult": 0.6344,
-     "p_sharp_shin": 0.6436,
-     "p_exchange_mult": null,
-     "n_books": 15,
-     "p_decision": null,
-     "hours_before_start": 874.2
-    }
-   ],
+   "bout_id": "2026-12-05:pavel-andrusca__mahammadali-osmanli",
+   "event": "UFC Fight Night 295",
+   "date": "2026-12-05",
+   "A": "Pavel Andrusca",
+   "B": "Mahammadali Osmanli",
+   "A_slug": "pavel-andrusca",
+   "B_slug": "mahammadali-osmanli",
+   "weight_class": "Bantamweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
-   "market_open": {
-    "p_open": 0.6141,
-    "n_books": 12,
-    "books": {
-     "BetAnything": [
-      -210,
-      175
-     ],
-     "BetOnline": [
-      136,
-      -160
-     ],
-     "BetRivers": [
-      -172,
-      138
-     ],
-     "BetUS": [
-      -195,
-      162
-     ],
-     "Betway": [
-      -200,
-      163
-     ],
-     "Caesars": [
-      -140,
-      110
-     ],
-     "Circa": [
-      -180,
-      155
-     ],
-     "DraftKings": [
-      -135,
-      114
-     ],
-     "FanDuel": [
-      -205,
-      158
-     ],
-     "HardRock": [
-      -150,
-      120
-     ],
-     "MyBookie": [
-      -232,
-      163
-     ],
-     "YouWager": [
-      -195,
-      165
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "market_open_first_read": {
-    "p_open": 0.6141,
-    "n_books": 12,
-    "books": {
-     "BetAnything": [
-      -210,
-      175
-     ],
-     "BetOnline": [
-      136,
-      -160
-     ],
-     "BetRivers": [
-      -172,
-      138
-     ],
-     "BetUS": [
-      -195,
-      162
-     ],
-     "Betway": [
-      -200,
-      163
-     ],
-     "Caesars": [
-      -140,
-      110
-     ],
-     "Circa": [
-      -180,
-      155
-     ],
-     "DraftKings": [
-      -135,
-      114
-     ],
-     "FanDuel": [
-      -205,
-      158
-     ],
-     "HardRock": [
-      -150,
-      120
-     ],
-     "MyBookie": [
-      -232,
-      163
-     ],
-     "YouWager": [
-      -195,
-      165
-     ]
-    },
-    "snapshot": "20261106-0950"
-   },
-   "first_capture": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.6424,
-    "p_meandec_mult": 0.6344,
-    "p_sharp_shin": 0.6436,
-    "p_exchange_mult": null,
-    "n_books": 15,
-    "p_decision": null,
-    "hours_before_start": 874.2
-   },
-   "last_pre_start": {
-    "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
-    "phase": "pre_start",
-    "p_consensus": 0.6424,
-    "p_meandec_mult": 0.6344,
-    "p_sharp_shin": 0.6436,
-    "p_exchange_mult": null,
-    "n_books": 15,
-    "p_decision": null,
-    "hours_before_start": 874.2
-   },
-   "move_open_to_last_logit": 0.1212,
-   "move_open_to_last_pts": 0.0283,
-   "n_captures": 1
+   "status": "reported",
+   "start_utc": "2026-12-05T12:00:00Z",
+   "start_src": "event lock (estimate)",
+   "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_angela-hill__shanelle-dyer",
+   "bout_id": "2026-12-12:angela-hill__shanelle-dyer",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Angela Hill",
@@ -5444,13 +3830,17 @@
    "A_slug": "angela-hill",
    "B_slug": "shanelle-dyer",
    "weight_class": "Women's Strawweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "reported",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_baisangur-susurkaev__damian-pinas",
+   "bout_id": "2026-12-12:baisangur-susurkaev__damian-pinas",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Baisangur Susurkaev",
@@ -5458,13 +3848,17 @@
    "A_slug": "baisangur-susurkaev",
    "B_slug": "damian-pinas",
    "weight_class": "Middleweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "reported",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_brandon-moreno__charles-johnson",
+   "bout_id": "2026-12-12:brandon-moreno__charles-johnson",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Brandon Moreno",
@@ -5472,27 +3866,17 @@
    "A_slug": "brandon-moreno",
    "B_slug": "charles-johnson",
    "weight_class": "Flyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-12-13T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_carli-judice__maycee-barber",
-   "event": "UFC 335: Oliveira vs. Lopes",
-   "date": "2026-12-12",
-   "A": "Maycee Barber",
-   "B": "Carli Judice",
-   "A_slug": "maycee-barber",
-   "B_slug": "carli-judice",
-   "weight_class": "Women's Flyweight",
-   "captures": [],
-   "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
-   "n_captures": 0
-  },
-  {
-   "bout_key": "2026-12-12_charles-oliveira__diego-lopes",
+   "bout_id": "2026-12-12:charles-oliveira__diego-lopes",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Charles Oliveira",
@@ -5500,162 +3884,103 @@
    "A_slug": "charles-oliveira",
    "B_slug": "diego-lopes",
    "weight_class": "Lightweight",
+   "rounds": 5,
+   "title": false,
    "captures": [
     {
      "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:25Z",
+     "t": "2026-11-06T09:50:00Z",
      "phase": "pre_start",
+     "pre_lock": true,
      "p_consensus": 0.5755,
      "p_meandec_mult": 0.5717,
      "p_sharp_shin": 0.5708,
+     "p_pinnacle_shin": null,
      "p_exchange_mult": null,
      "n_books": 13,
-     "p_decision": null,
-     "hours_before_start": 874.2
+     "bfo_p_a_novig": 0.5767,
+     "bfo_odds": [
+      -156,
+      123
+     ],
+     "p_distance": null
     }
    ],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-12-13T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
    "market_open": {
     "p_open": 0.5849,
     "n_books": 12,
-    "books": {
-     "BetAnything": [
-      -145,
-      115
-     ],
-     "BetOnline": [
-      -165,
-      140
-     ],
-     "BetRivers": [
-      -172,
-      138
-     ],
-     "BetUS": [
-      -140,
-      118
-     ],
-     "Betway": [
-      -150,
-      120
-     ],
-     "Caesars": [
-      -190,
-      145
-     ],
-     "Circa": [
-      -140,
-      120
-     ],
-     "DraftKings": [
-      -192,
-      160
-     ],
-     "FanDuel": [
-      -162,
-      126
-     ],
-     "HardRock": [
-      -155,
-      125
-     ],
-     "MyBookie": [
-      -155,
-      112
-     ],
-     "YouWager": [
-      -148,
-      126
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "market_open_first_read": {
     "p_open": 0.5849,
     "n_books": 12,
-    "books": {
-     "BetAnything": [
-      -145,
-      115
-     ],
-     "BetOnline": [
-      -165,
-      140
-     ],
-     "BetRivers": [
-      -172,
-      138
-     ],
-     "BetUS": [
-      -140,
-      118
-     ],
-     "Betway": [
-      -150,
-      120
-     ],
-     "Caesars": [
-      -190,
-      145
-     ],
-     "Circa": [
-      -140,
-      120
-     ],
-     "DraftKings": [
-      -192,
-      160
-     ],
-     "FanDuel": [
-      -162,
-      126
-     ],
-     "HardRock": [
-      -155,
-      125
-     ],
-     "MyBookie": [
-      -155,
-      112
-     ],
-     "YouWager": [
-      -148,
-      126
-     ]
-    },
     "snapshot": "20261106-0950"
    },
    "first_capture": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.5755,
     "p_meandec_mult": 0.5717,
     "p_sharp_shin": 0.5708,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": null,
     "n_books": 13,
-    "p_decision": null,
-    "hours_before_start": 874.2
+    "bfo_p_a_novig": 0.5767,
+    "bfo_odds": [
+     -156,
+     123
+    ],
+    "p_distance": null
    },
    "last_pre_start": {
     "snapshot": "20261106-0950",
-    "t": "2026-11-06T09:50:25Z",
+    "t": "2026-11-06T09:50:00Z",
     "phase": "pre_start",
+    "pre_lock": true,
     "p_consensus": 0.5755,
     "p_meandec_mult": 0.5717,
     "p_sharp_shin": 0.5708,
+    "p_pinnacle_shin": null,
     "p_exchange_mult": null,
     "n_books": 13,
-    "p_decision": null,
-    "hours_before_start": 874.2
+    "bfo_p_a_novig": 0.5767,
+    "bfo_odds": [
+     -156,
+     123
+    ],
+    "p_distance": null,
+    "hours_before_start": 879.2
    },
-   "move_open_to_last_logit": -0.0386,
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.5755,
+    "p_meandec_mult": 0.5717,
+    "p_sharp_shin": 0.5708,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": null,
+    "n_books": 13,
+    "bfo_p_a_novig": 0.5767,
+    "bfo_odds": [
+     -156,
+     123
+    ],
+    "p_distance": null
+   },
    "move_open_to_last_pts": -0.0094,
+   "move_open_to_last_logit": -0.0386,
    "n_captures": 1
   },
   {
-   "bout_key": "2026-12-12_chase-hooper__chris-padilla",
+   "bout_id": "2026-12-12:chase-hooper__chris-padilla",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Chase Hooper",
@@ -5663,13 +3988,17 @@
    "A_slug": "chase-hooper",
    "B_slug": "chris-padilla",
    "weight_class": "Lightweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "reported",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_ian-machado-garry__yaroslav-amosov",
+   "bout_id": "2026-12-12:ian-machado-garry__yaroslav-amosov",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Ian Machado Garry",
@@ -5677,13 +4006,17 @@
    "A_slug": "ian-machado-garry",
    "B_slug": "yaroslav-amosov",
    "weight_class": "Welterweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "rumoured",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_jacqueline-cavalcanti__michelle-montague",
+   "bout_id": "2026-12-12:jacqueline-cavalcanti__michelle-montague",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Jacqueline Cavalcanti",
@@ -5691,13 +4024,35 @@
    "A_slug": "jacqueline-cavalcanti",
    "B_slug": "michelle-montague",
    "weight_class": "Women's Bantamweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "reported",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_junior-tafa__quentin-pasley",
+   "bout_id": "2026-12-12:maycee-barber__carli-judice",
+   "event": "UFC 335: Oliveira vs. Lopes",
+   "date": "2026-12-12",
+   "A": "Maycee Barber",
+   "B": "Carli Judice",
+   "A_slug": "maycee-barber",
+   "B_slug": "carli-judice",
+   "weight_class": "Women's Flyweight",
+   "rounds": 3,
+   "title": false,
+   "captures": [],
+   "last_seen": "20261106-0950",
+   "status": "doubtful",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
+   "n_captures": 0
+  },
+  {
+   "bout_id": "2026-12-12:quentin-pasley__junior-tafa",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Quentin Pasley",
@@ -5705,13 +4060,17 @@
    "A_slug": null,
    "B_slug": "junior-tafa",
    "weight_class": "Light Heavyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "official",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.prelims",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_nikolay-veretennikov__ronald-humphrey",
+   "bout_id": "2026-12-12:ronald-humphrey__nikolay-veretennikov",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Ronald Humphrey",
@@ -5719,13 +4078,17 @@
    "A_slug": null,
    "B_slug": "nikolay-veretennikov",
    "weight_class": "Welterweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "reported",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_nilson-rojas__roque-conceicao",
+   "bout_id": "2026-12-12:roque-conceicao__nilson-rojas",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Roque Conceição",
@@ -5733,13 +4096,121 @@
    "A_slug": null,
    "B_slug": "nilson-rojas",
    "weight_class": "Flyweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "reported",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   },
   {
-   "bout_key": "2026-12-12_steve-garcia__yair-rodriguez",
+   "bout_id": "2026-12-12:sergei-pavlovich__alex-pereira",
+   "event": "UFC 335: Oliveira vs. Lopes",
+   "date": "2026-12-12",
+   "A": "Sergei Pavlovich",
+   "B": "Alex Pereira",
+   "A_slug": "sergei-pavlovich",
+   "B_slug": "alex-pereira",
+   "weight_class": "Heavyweight",
+   "rounds": 5,
+   "title": false,
+   "captures": [
+    {
+     "snapshot": "20261106-0950",
+     "t": "2026-11-06T09:50:00Z",
+     "phase": "pre_start",
+     "pre_lock": true,
+     "p_consensus": 0.6424,
+     "p_meandec_mult": 0.6344,
+     "p_sharp_shin": 0.6436,
+     "p_pinnacle_shin": null,
+     "p_exchange_mult": null,
+     "n_books": 15,
+     "bfo_p_a_novig": 0.6354,
+     "bfo_odds": [
+      -203,
+      160
+     ],
+     "p_distance": null
+    }
+   ],
+   "last_seen": "20261106-0950",
+   "status": "official",
+   "start_utc": "2026-12-13T01:00:00Z",
+   "start_src": "cards_upcoming.json start_utc.main",
+   "market_open": {
+    "p_open": 0.6141,
+    "n_books": 12,
+    "snapshot": "20261106-0950"
+   },
+   "market_open_first_read": {
+    "p_open": 0.6141,
+    "n_books": 12,
+    "snapshot": "20261106-0950"
+   },
+   "first_capture": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6424,
+    "p_meandec_mult": 0.6344,
+    "p_sharp_shin": 0.6436,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": null,
+    "n_books": 15,
+    "bfo_p_a_novig": 0.6354,
+    "bfo_odds": [
+     -203,
+     160
+    ],
+    "p_distance": null
+   },
+   "last_pre_start": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6424,
+    "p_meandec_mult": 0.6344,
+    "p_sharp_shin": 0.6436,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": null,
+    "n_books": 15,
+    "bfo_p_a_novig": 0.6354,
+    "bfo_odds": [
+     -203,
+     160
+    ],
+    "p_distance": null,
+    "hours_before_start": 879.2
+   },
+   "last_pre_lock": {
+    "snapshot": "20261106-0950",
+    "t": "2026-11-06T09:50:00Z",
+    "phase": "pre_start",
+    "pre_lock": true,
+    "p_consensus": 0.6424,
+    "p_meandec_mult": 0.6344,
+    "p_sharp_shin": 0.6436,
+    "p_pinnacle_shin": null,
+    "p_exchange_mult": null,
+    "n_books": 15,
+    "bfo_p_a_novig": 0.6354,
+    "bfo_odds": [
+     -203,
+     160
+    ],
+    "p_distance": null
+   },
+   "move_open_to_last_pts": 0.0283,
+   "move_open_to_last_logit": 0.1212,
+   "n_captures": 1
+  },
+  {
+   "bout_id": "2026-12-12:yair-rodriguez__steve-garcia",
    "event": "UFC 335: Oliveira vs. Lopes",
    "date": "2026-12-12",
    "A": "Yair Rodríguez",
@@ -5747,9 +4218,13 @@
    "A_slug": "yair-rodriguez",
    "B_slug": "steve-garcia",
    "weight_class": "Featherweight",
+   "rounds": 3,
+   "title": false,
    "captures": [],
    "last_seen": "20261106-0950",
-   "start_utc": "2026-12-12T20:00:00Z",
+   "status": "reported",
+   "start_utc": "2026-12-12T22:00:00Z",
+   "start_src": "event lock (cards_upcoming.json)",
    "n_captures": 0
   }
  ]

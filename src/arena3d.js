@@ -1092,7 +1092,7 @@
     // seating bowl rows: floor seats, lower bowl, ribbon board, upper bowl
     var rows = [], i;
     for (i = 0; i < 8; i++) rows.push({ r: 9.2 + i * 0.95, y: FLOOR_Y + i * 0.07, sec: "floor", i: i });
-    var R0 = 16.4, Y0 = FLOOR_Y + 1.5;
+    var R0 = 16.4, Y0 = FLOOR_Y + 2.3;
     for (i = 0; i < 20; i++) rows.push({ r: R0 + 0.45 + i * 0.86, y: Y0 + i * 0.43, sec: "lower", i: i, tread: [R0 + i * 0.86, 0.86, Y0 + i * 0.43, 0.43] });
     var R1 = R0 + 20 * 0.86 + 1.3, Y1 = Y0 + 20 * 0.43 + 2.6;
     for (i = 0; i < 14; i++) rows.push({ r: R1 + 0.4 + i * 0.8, y: Y1 + i * 0.54, sec: "upper", tread: [R1 + i * 0.8, 0.8, Y1 + i * 0.54, 0.54] });
@@ -1169,7 +1169,7 @@
     }
     var ribTex = A.led.tex.clone(); ribTex.wrapS = T.RepeatWrapping; ribTex.needsUpdate = true; A.ribTex = ribTex;
     var ribMat = new T.MeshBasicMaterial({ map: ribTex, toneMapped: false, color: new T.Color(1.15, 1.15, 1.15), side: T.DoubleSide });
-    A.own(new T.Mesh(ribbon(R0 - 0.02, Y0 - 0.85, Y0 - 0.1, 9), ribMat));
+    A.own(new T.Mesh(ribbon(R0 - 0.02, Y0 - 1.0, Y0 - 0.15, 9), ribMat));
     A.own(new T.Mesh(ribbon(R1 - 0.05, Ytop + 0.9, Ytop + 2.1, 12), ribMat));
     A.ribMat = ribMat;
     // end-wall video boards above the upper bowl
@@ -1369,6 +1369,7 @@
     dt = Math.min(dt || 0, 0.1);
     show = show || this.show || (root.VGSim && root.VGSim.show) || null;
     this.t += dt;
+    this.trackActors(); this._tracked = true;
     var M = this.mood, U = this.U;
     // crowd mood from the show's phase, plus bursts on big moments
     var ph = show && show.phase, tE = 0.2, tS = 0.08, tP = 0.05;
@@ -1446,7 +1447,8 @@
   Arena.prototype.render = function () {
     var now = perfNow();
     this.renderer.info.reset();
-    this.trackActors();
+    if (!this._tracked) this.trackActors();
+    this._tracked = false;
     if (this.finish) this.finish.uniforms.uTime.value = (now / 1000) % 1000;
     var fovScale = this.cssH * this.renderer.getPixelRatio() / (2 * Math.tan(this.camera.fov * PI / 360));
     this.U.uScale.value = fovScale;

@@ -59,8 +59,9 @@ def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def shr_rate(x, mins, prior_rate, k=K_MIN):
-    """events per minute shrunk toward the prior rate with k pseudo-minutes"""
+def shr_rate(x, mins, prior_rate, k=None):
+    """events per minute shrunk toward the prior rate with k pseudo-minutes (default K_MIN)"""
+    k = K_MIN if k is None else k
     return (x + k * prior_rate) / (mins + k)
 
 

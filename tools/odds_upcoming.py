@@ -1293,7 +1293,10 @@ def props_summary(b):
     # method-of-victory market: per book, the 6 (or 7 with draw) mutually exclusive outcomes
     keys6 = ['ko_A', 'sub_A', 'dec_A', 'ko_B', 'sub_B', 'dec_B']
     per_book = {}
-    for bk in set().union(*[set(raw.get(k, {})) for k in keys6]) if any(k in raw for k in keys6) else []:
+    bks = set()
+    for k in keys6:
+        bks |= set(raw.get(k, {}))
+    for bk in sorted(bks):
         prices = [(raw.get(k, {}).get(bk) or [None])[0] for k in keys6]
         if not all(prices):
             continue
@@ -1306,26 +1309,89 @@ def props_summary(b):
             continue
         p_sh, z = devig_n(q, 'shin')
         p_mu, _ = devig_n(q, 'mult')
-        per_book[bk] = {'ovr': round(S - 1, 4), 'shin': [round(x, 4) for x in p_sh[:6]],
-                        'mult': [round(x, 4) for x in p_mu[:6]],
-                        'p_draw': round(p_sh[6], 4) if draw else None}
+        per_book[bk] = {'ovr': round(S - 1, 4), 'shin': [round(x, 4) for x in p_sh],
+                        'mult': [round(x, 4) for x in p_mu], 'has_draw': bool(draw)}
     if per_book:
-        meth = {}
-        for i, k in enumerate(keys6):
-            meth[k] = r4(median([v['shin'][i] for v in per_book.values()]))
-        s = sum(meth.values())
-        meth = {k: r4(v / s) for k, v in meth.items()}   # medians need not sum to 1
-        meth['p_A_from_method'] = r4(meth['ko_A'] + meth['sub_A'] + meth['dec_A'])
-        meth['p_decision'] = r4(meth['dec_A'] + meth['dec_B'])
-        meth['p_ko'] = r4(meth['ko_A'] + meth['ko_B'])
-        meth['p_sub'] = r4(meth['sub_A'] + meth['sub_B'])
-        out['method'] = {'consensus_shin': meth, 'n_books': len(per_book), 'books': per_book,
-                         'order': keys6}
+        med = [median([v['shin'][i] for v in per_book.values()]) for i in range(6)]
+        dr = [v['shin'][6] for v in per_book.values() if v['has_draw']]
+        d = median(dr) if dr else None
+        tot = sum(med) + (d or 0)
+        pm = {'a_ko': med[0], 'a_sub': med[1], 'a_dec': med[2], 'b_ko': med[3], 'b_sub': med[4],
+              'b_dec': med[5], 'draw': d}
+        pm = {k: (r4(v / tot) if v is not None else None) for k, v in pm.items()}
+        out['method'] = {
+            'p_method': pm,          # ledger keys (data/predictions/README.md), sums to 1
+            'p_a_from_method': r4(pm['a_ko'] + pm['a_sub'] + pm['a_dec']),
+            'p_decision_from_method': r4(pm['a_dec'] + pm['b_dec']),
+            'p_ko': r4(pm['a_ko'] + pm['b_ko']), 'p_sub': r4(pm['a_sub'] + pm['b_sub']),
+            'n_books': len(per_book), 'n_books_with_draw': len(dr),
+            'order': keys6 + ['draw'], 'books': per_book}
+    # goes the distance: two-way prop when offered, else the method market's decision share
+    if two.get('decision'):
+        out['p_distance'] = two['decision']['p']
+        out['p_distance_src'] = f"'Fight goes to decision' two-way prop, median Shin over {two['decision']['n']} books"
+    elif out.get('method'):
+        out['p_distance'] = out['method']['p_decision_from_method']
+        out['p_distance_src'] = 'method market: a_dec + b_dec'
     return out
 
 
-def build_bouts(bouts, events, fidx, snap_time):
+def ledger_market(b, books, obs):
+    """Market block in the forward-test ledger format: BFO mean of the sportsbooks' lines (exchanges out),
+    as the ledger README defines the closing benchmark; falls back to all books when BFO has none."""
+    bfo = {o['book']: o for o in obs if o['src'] == 'bestfightodds' and o['ok'] and o['class'] != 'exchange'}
+    use, src = bfo, 'bestfightodds'
+    if not use:
+        use = {k: v for k, v in books.items() if v['class'] != 'exchange'}
+        src = 'all-books consensus (no BFO lines)'
+    if not use:
+        return None
+    dA = sum(am_to_dec(v['ml'][0]) for v in use.values()) / len(use)
+    dB = sum(am_to_dec(v['ml'][1]) for v in use.values()) / len(use)
+    ts = sorted({v['t'] for v in use.values() if v.get('t')})
+    return {'source': src, 'captured_utc': ts[-1] if ts else None, 'odds_a': dec_to_am(dA), 'odds_b': dec_to_am(dB),
+            'p_a_novig': r4(devig_n([1 / dA, 1 / dB], 'mult')[0][0]),
+            'p_a_novig_shin': r4(devig_n([1 / dA, 1 / dB], 'shin')[0][0]),
+            'n_books': len(use), 'books': sorted(use)}
+
+
+def _iso(x):
+    """'2026-11-07T22:00Z' / '...000Z' -> aware datetime."""
+    if not x:
+        return None
+    x = x.replace('Z', '+00:00')
+    if re.search(r'T\d\d:\d\d\+', x):
+        x = x.replace('+', ':00+', 1)
+    try:
+        return dt.datetime.fromisoformat(x)
+    except ValueError:
+        return None
+
+
+def zstr(t):
+    return t.astimezone(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ') if t else None
+
+
+def event_lock(ev, an_starts):
+    """Earliest start of the event: cards_upcoming.json start_utc, else Action Network, else estimate."""
+    st = [t for t in (_iso(v) for v in (ev.get('start_utc') or {}).values()) if t]
+    if st:
+        return min(st), 'cards_upcoming.json'
+    if an_starts:
+        return min(an_starts), 'actionnetwork'
+    return event_start_estimate(ev), 'estimate'
+
+
+def build_bouts(bouts, events, fidx, snap_time, have_cards):
     ev_by_date = {e['date']: e for e in events}
+    an_by_date = defaultdict(list)
+    for b in bouts:
+        an = b['src'].get('actionnetwork')
+        if an and _iso(an.get('start_utc')):
+            an_by_date[b['date']].append(_iso(an['start_utc']))
+    for e in events:
+        lock, lsrc = event_lock(e, an_by_date.get(e['date']))
+        e['lock_utc'], e['lock_src'] = zstr(lock), lsrc
     out = []
     for b in bouts:
         ev = ev_by_date.get(b['date'], {'date': b['date']})
@@ -1334,53 +1400,71 @@ def build_bouts(bouts, events, fidx, snap_time):
         cons = consensus(books)
         op = opening(obs, b)
         an = b['src'].get('actionnetwork')
-        start = an.get('start_utc') if an else None
-        start_src = 'actionnetwork' if start else 'estimate'
-        if not start and ev.get('name'):
-            start = event_start_estimate(ev).isoformat().replace('+00:00', 'Z')
-        if start:
-            st_dt = dt.datetime.fromisoformat(start.replace('Z', '+00:00'))
-            phase = 'pre_start' if snap_time < st_dt else 'post_start'
+        an_start = _iso(an.get('start_utc')) if an else None
+        seg_start = _iso((ev.get('start_utc') or {}).get(b.get('segment') or ''))
+        lock = _iso(ev.get('lock_utc'))
+        if seg_start:
+            start, start_src = seg_start, f"cards_upcoming.json start_utc.{b.get('segment')}"
+        elif an_start:
+            start, start_src = an_start, 'actionnetwork (scheduled)'
         else:
-            phase = 'unknown'
-        rec = {
-            'bout_key': f"{b['date']}_{'__'.join(sorted([slugify(b['A']), slugify(b['B'])]))}",
-            'event': b.get('event'), 'date': b['date'], 'segment': b.get('segment'), 'order': b.get('order'),
-            'weight_class': b.get('weight_class') or norm_wc((an or {}).get('weight_class')),
-            'title_fight': bool(b.get('title_fight')), 'card_src': b.get('card_src'),
-            'start_utc': start, 'start_src': start_src, 'phase': phase,
-            'A': {'name': b['A']}, 'B': {'name': b['B']},
-        }
-        if b.get('bout_id'):
-            rec['bout_id'] = b['bout_id']
+            start, start_src = lock, f"event lock ({ev.get('lock_src')})"
+        phase = ('pre_start' if snap_time < start else 'post_start') if start else 'unknown'
+        rec = {}
+        slugs = {}
         for side in ('A', 'B'):
             given = b.get(f'{side}_slug')
-            hit = fidx.find(b[side], rec['weight_class'])
-            if given:
-                rec[side]['slug'] = given
-            elif hit:
-                rec[side]['slug'] = hit['slug']
-            if hit:
+            hit = fidx.find(b[side], b.get('weight_class'))
+            sl = given if have_cards else (hit or {}).get('slug')
+            slugs[side] = sl
+            rec[side] = {'name': b[side], 'slug': sl}
+            if hit and hit['slug'] == sl:
                 rec[side]['ufcstats_id'] = hit['ufcstats_id']
-                if hit['match'] < 1:
-                    rec[side]['db_name'] = hit['db_name']
+            elif hit and have_cards and not given and hit['match'] >= 0.95:
+                rec[side]['roster_match_suggestion'] = hit['slug']
+        bid = f"{b['date']}:{slugs['A'] or slugify(b['A'])}__{slugs['B'] or slugify(b['B'])}"
+        rec = {
+            'bout_id': bid,
+            'event': b.get('event'), 'date': b['date'], 'segment': b.get('segment'), 'order': b.get('order'),
+            'weight_class': b.get('weight_class') or norm_wc((an or {}).get('weight_class')),
+            'rounds': b.get('rounds'), 'title': bool(b.get('title_fight')), 'status': b.get('status'),
+            'card_src': b.get('card_src'),
+            'start_utc': zstr(start), 'start_src': start_src, 'start_utc_actionnetwork': zstr(an_start),
+            'phase': phase, 'pre_lock': bool(lock and snap_time < lock),
+            'A': rec['A'], 'B': rec['B'],
+        }
+        if b.get('belt'):
+            rec['belt'] = b['belt']
         rec['source_names'] = {s: ([x['n2'], x['n1']] if x['swapped'] else [x['n1'], x['n2']])
                                for s, x in b['src'].items()}
         rec['source_ids'] = {s: x['src_id'] for s, x in b['src'].items()}
+        rec['fetched_utc'] = {s: x.get('fetched') for s, x in b['src'].items()}
         if b.get('dups'):
             rec['duplicates_ignored'] = b['dups']
+        lm = ledger_market(b, books, obs)
+        if lm:
+            rec['market'] = lm
         rec['consensus'] = cons
         if op:
             rec['open'] = op
-        rec['books'] = {bk: {k: v[k] for k in ('src', 'class', 'ml', 'p_mult', 'p_shin', 'p_power', 'ovr', 't')
-                             if k in v} | ({'open': v['open']} if 'open' in v else {})
-                        | ({'best_worst': v['best_worst']} if 'best_worst' in v else {})
-                        | ({'src_disagree': v['src_disagree']} if 'src_disagree' in v else {})
-                        for bk, v in sorted(books.items())}
+        bk_out = {}
+        for bk, v in sorted(books.items()):
+            e = {'src': v['src'], 'cls': v['class'][0], 'ml': v['ml'], 'p_mult': r4(v['p_mult']),
+                 'p_shin': r4(v['p_shin']), 'ovr': r4(v['ovr'])}
+            if 'open' in v and v['class'] != 'exchange':
+                st = line_stats(*v['open'])
+                if st and OVR_MIN <= st['ovr'] <= OVR_MAX:
+                    e['open'] = v['open']
+            if 'best_worst' in v:
+                e['bw'] = v['best_worst']
+            if 'src_disagree' in v:
+                e['src_disagree'] = v['src_disagree']
+            bk_out[bk] = e
+        rec['books'] = bk_out
         rej = [{k: o[k] for k in ('src', 'book', 'ml', 'flag')} for o in obs if not o['ok']]
         if rej:
             rec['rejected_lines'] = rej
-        alt = [{k: o[k] for k in ('src', 'book', 'ml', 'p_mult')} for o in obs
+        alt = [[o['src'], o['book'], o['ml']] for o in obs
                if o['ok'] and books.get(o['book'], {}).get('src') != o['src']]
         if alt:
             rec['other_source_lines'] = alt
@@ -1397,6 +1481,24 @@ def build_bouts(bouts, events, fidx, snap_time):
 # ----------------------------------------------------------------------------------------------
 # snapshot
 # ----------------------------------------------------------------------------------------------
+
+def dump_compact(doc, fh, line_keys=('bouts', 'unmatched_source_bouts')):
+    """Readable header, one record per line for the big lists (small files, line-level git diffs)."""
+    keys = list(doc)
+    fh.write('{\n')
+    for i, k in enumerate(keys):
+        v = doc[k]
+        if k in line_keys and isinstance(v, list):
+            fh.write(f' {json.dumps(k)}: [\n')
+            for j, x in enumerate(v):
+                fh.write('  ' + json.dumps(x, ensure_ascii=False, separators=(',', ':')) +
+                         (',' if j < len(v) - 1 else '') + '\n')
+            fh.write(' ]')
+        else:
+            fh.write(f' {json.dumps(k)}: ' + json.dumps(v, ensure_ascii=False, indent=1).replace('\n', '\n '))
+        fh.write(',\n' if i < len(keys) - 1 else '\n')
+    fh.write('}\n')
+
 
 def new_snapshot_path(stamp):
     os.makedirs(PRED_DIR, exist_ok=True)
@@ -1508,11 +1610,10 @@ def cmd_snapshot(a):
         warnings.append('no events in the window (Wikipedia and fightodds both empty?)')
     unmatched = match_sources(events, bouts, src_bouts, add_missing=not cards_file[0])
     fidx = FighterIndex()
-    recs = build_bouts(bouts, events, fidx, now)
+    recs = build_bouts(bouts, events, fidx, now, have_cards=bool(cards_file[0]))
     for e in events:
         e['n_bouts'] = sum(1 for r in recs if r['date'] == e['date'])
         e['n_bouts_with_odds'] = sum(1 for r in recs if r['date'] == e['date'] and r['consensus'].get('n_books'))
-        e['start_utc_estimate'] = event_start_estimate(e).isoformat().replace('+00:00', 'Z')
     warnings += F.log
     snap = {
         'meta': {
@@ -1536,8 +1637,7 @@ def cmd_snapshot(a):
     }
     p = new_snapshot_path(stamp)
     with open(p, 'x') as fh:        # 'x': never overwrite an earlier snapshot
-        json.dump(snap, fh, indent=1, ensure_ascii=False)
-        fh.write('\n')
+        dump_compact(snap, fh)
     print(f'wrote {os.path.relpath(p, ROOT)}: {len(events)} events, {len(recs)} bouts, '
           f'{snap["meta"]["n_bouts_with_odds"]} with odds, {F.n_net} requests, {len(unmatched)} unmatched',
           flush=True)
@@ -1563,78 +1663,120 @@ def load_snapshots():
     return out
 
 
-def _cap(r, s):
+def _cap(r, s, flip=False):
     c = r.get('consensus') or {}
-    return {'snapshot': s['meta']['stamp'], 't': s['meta']['snapshot_utc'], 'phase': r.get('phase'),
-            'p_consensus': c.get('p_consensus'), 'p_meandec_mult': c.get('p_meandec_mult'),
-            'p_sharp_shin': c.get('p_sharp_shin'), 'p_exchange_mult': c.get('p_exchange_mult'),
-            'n_books': c.get('n_books'),
-            'p_decision': (((r.get('props') or {}).get('method') or {}).get('consensus_shin') or {}).get('p_decision')}
+    m = r.get('market') or {}
+    pr = r.get('props') or {}
+
+    def f(x):
+        return None if x is None else (round(1 - x, 4) if flip else x)
+    cap = {'snapshot': s['meta']['stamp'], 't': s['meta']['snapshot_utc'], 'phase': r.get('phase'),
+           'pre_lock': r.get('pre_lock'),
+           'p_consensus': f(c.get('p_consensus')), 'p_meandec_mult': f(c.get('p_meandec_mult')),
+           'p_sharp_shin': f(c.get('p_sharp_shin')), 'p_pinnacle_shin': f(c.get('p_pinnacle_shin')),
+           'p_exchange_mult': f(c.get('p_exchange_mult')), 'n_books': c.get('n_books'),
+           'bfo_p_a_novig': f(m.get('p_a_novig')) if m.get('source') == 'bestfightodds' else None,
+           'bfo_odds': ([m.get('odds_b'), m.get('odds_a')] if flip else [m.get('odds_a'), m.get('odds_b')])
+           if m.get('source') == 'bestfightodds' else None,
+           'p_distance': pr.get('p_distance')}
+    pm = (pr.get('method') or {}).get('p_method')
+    if pm:
+        if flip:
+            pm = {'a_ko': pm['b_ko'], 'a_sub': pm['b_sub'], 'a_dec': pm['b_dec'], 'b_ko': pm['a_ko'],
+                  'b_sub': pm['a_sub'], 'b_dec': pm['a_dec'], 'draw': pm.get('draw')}
+        cap['p_method'] = pm
+    return cap
 
 
 def cmd_timeline(a=None):
+    """Rebuild data/derived/odds_upcoming.json from every snapshot on disk (orientation of the first
+    capture is kept; later captures with a/b swapped are flipped)."""
     snaps = load_snapshots()
     bouts = {}
     for s in snaps:
         for r in s['bouts']:
-            k = r['bout_key']
-            # fall back to fuzzy matching when card names changed between snapshots
-            if k not in bouts:
+            pk = (r['date'], tuple(sorted([r['A'].get('slug') or slugify(r['A']['name']),
+                                           r['B'].get('slug') or slugify(r['B']['name'])])))
+            hit, flip = None, False
+            if pk in bouts:
+                hit = pk
+                flip = (bouts[pk]['A_key'] != (r['A'].get('slug') or slugify(r['A']['name'])))
+            else:   # names or slugs changed between snapshots: fuzzy fallback on the same date
                 for k2, t in bouts.items():
-                    if t['date'] == r['date'] and pair_score(t['A'], t['B'], r['A']['name'], r['B']['name'])[0] >= 0.85:
-                        sw = pair_score(t['A'], t['B'], r['A']['name'], r['B']['name'])[1]
-                        if not sw:
-                            k = k2
+                    if t['date'] != r['date']:
+                        continue
+                    sc, sw = pair_score(t['A'], t['B'], r['A']['name'], r['B']['name'])
+                    if sc >= 0.85:
+                        hit, flip = k2, sw
                         break
-            t = bouts.setdefault(k, {'bout_key': k, 'event': r['event'], 'date': r['date'], 'A': r['A']['name'],
-                                     'B': r['B']['name'], 'A_slug': r['A'].get('slug'), 'B_slug': r['B'].get('slug'),
-                                     'weight_class': r.get('weight_class'), 'captures': []})
+            if hit is None:
+                hit = pk
+                bouts[pk] = {'bout_id': r.get('bout_id'), 'event': r['event'], 'date': r['date'],
+                             'A': r['A']['name'], 'B': r['B']['name'], 'A_slug': r['A'].get('slug'),
+                             'B_slug': r['B'].get('slug'), 'weight_class': r.get('weight_class'),
+                             'rounds': r.get('rounds'), 'title': r.get('title'),
+                             'A_key': r['A'].get('slug') or slugify(r['A']['name']), 'captures': []}
+            t = bouts[hit]
             t['last_seen'] = s['meta']['stamp']
+            t['status'] = r.get('status')
             t['start_utc'] = r.get('start_utc')
-            if r.get('open', {}).get('p_open') is not None:
-                t['market_open'] = {'p_open': r['open']['p_open'], 'n_books': r['open']['n_books'],
-                                    'books': r['open'].get('books'), 'snapshot': s['meta']['stamp']}
-                t.setdefault('market_open_first_read', t['market_open'])
-            if r.get('open', {}).get('actionnetwork_open'):
-                t['actionnetwork_open'] = r['open']['actionnetwork_open']
+            t['start_src'] = r.get('start_src')
+            op = r.get('open') or {}
+            if op.get('p_open') is not None:
+                mo = {'p_open': round(1 - op['p_open'], 4) if flip else op['p_open'], 'n_books': op['n_books'],
+                      'snapshot': s['meta']['stamp']}
+                t['market_open'] = mo
+                t.setdefault('market_open_first_read', mo)
+            if op.get('actionnetwork_open'):
+                x = op['actionnetwork_open']
+                t['actionnetwork_open'] = {'ml': x['ml'][::-1] if flip else x['ml'],
+                                           'p_shin': round(1 - x['p_shin'], 4) if flip else x['p_shin']}
             if (r.get('consensus') or {}).get('n_books'):
-                t['captures'].append(_cap(r, s))
+                t['captures'].append(_cap(r, s, flip))
     out = []
     for t in bouts.values():
+        t.pop('A_key', None)
         caps = t['captures']
         pre = [c for c in caps if c['phase'] == 'pre_start']
         post = [c for c in caps if c['phase'] == 'post_start']
+        lock = [c for c in caps if c.get('pre_lock')]
         if pre:
             t['first_capture'] = pre[0]
-            t['last_pre_start'] = pre[-1]
-            if t.get('start_utc'):
-                st = dt.datetime.fromisoformat(t['start_utc'].replace('Z', '+00:00'))
-                lt = dt.datetime.fromisoformat(pre[-1]['t'].replace('Z', '+00:00'))
+            t['last_pre_start'] = dict(pre[-1])
+            st, lt = _iso(t.get('start_utc')), _iso(pre[-1]['t'])
+            if st and lt:
                 t['last_pre_start']['hours_before_start'] = round((st - lt).total_seconds() / 3600, 1)
+        if lock:
+            t['last_pre_lock'] = lock[-1]
         if post:
             t['archived_close'] = post[0]
         mo = (t.get('market_open') or {}).get('p_open')
         lp = (t.get('last_pre_start') or {}).get('p_consensus')
         if mo is not None and lp is not None:
-            t['move_open_to_last_logit'] = round(logit(lp) - logit(mo), 4)
             t['move_open_to_last_pts'] = round(lp - mo, 4)
+            t['move_open_to_last_logit'] = round(logit(lp) - logit(mo), 4)
         t['n_captures'] = len(caps)
         out.append(t)
-    out.sort(key=lambda t: (t['date'], t['bout_key']))
+    out.sort(key=lambda t: (t['date'], t.get('bout_id') or ''))
     doc = {
         'meta': {
             'built': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
             'tool': 'tools/odds_upcoming.py timeline',
             'snapshots': [s['_path'] for s in snaps],
-            'orientation': 'p_* = probability that A wins (A = first-named fighter in the card)',
-            'market_open': 'fightodds.io per-book opening lines (sportsbooks), Shin no-vig, logit-mean '
+            'orientation': 'a/b as in the first snapshot that listed the bout (cards_upcoming.json order); '
+                           'p_* = probability that A wins; captures taken with a/b swapped are flipped',
+            'market_open': 'fightodds.io per-book opening lines (sportsbooks only), Shin no-vig, logit-mean '
                            '(latest read; market_open_first_read keeps the first)',
             'first_capture': 'first pre-start snapshot that had lines for the bout',
-            'last_pre_start': 'last snapshot taken before the bout started: the closing-line proxy for the '
-                              'forward test (hours_before_start says how close to the bell it was)',
-            'archived_close': 'first snapshot taken after the scheduled start: the books\' archived closing '
-                              'lines as BFO/fightodds keep them (exchanges may be in-play or settled; use '
-                              'p_consensus / p_meandec_mult, which exclude exchanges)',
+            'last_pre_lock': 'last snapshot before the event lock (earliest start_utc of the card): the market '
+                             'at prediction time, comparable with a prediction file committed before the lock',
+            'last_pre_start': 'last snapshot before the bout started: the closing-line proxy '
+                              '(hours_before_start says how close to the bell it was)',
+            'archived_close': 'first snapshot after the bout\'s start: the books\' archived closing lines as '
+                              'BFO/fightodds keep them (exchanges may be in-play/settled; p_consensus, '
+                              'p_meandec_mult and bfo_p_a_novig exclude exchanges)',
+            'bfo_p_a_novig': 'mean of BestFightOdds\' sportsbook lines, multiplicative no-vig: the ledger\'s '
+                             'closing benchmark (data/predictions/README.md)',
             'use': 'forward-test benchmark; never a training feature for 2026 fights',
         },
         'bouts': out,
@@ -1662,12 +1804,12 @@ def cmd_show(a):
             print(f"\n== {r['date']} {cur}")
         c = r['consensus']
         p = c.get('p_consensus')
-        pm = ((r.get('props') or {}).get('method') or {}).get('consensus_shin', {}).get('p_decision')
+        pm = (r.get('props') or {}).get('p_distance')
         op = (r.get('open') or {}).get('p_open')
         fmt = lambda x: f'{x:.3f}' if x is not None else '  -  '
         print(f"  {r['A']['name'][:24]:>24} vs {r['B']['name'][:24]:<24} pA {fmt(p)} (open {fmt(op)}, "
               f"sharp {fmt(c.get('p_sharp_shin'))}, exch {fmt(c.get('p_exchange_mult'))}) "
-              f"books {c.get('n_books', 0):>2}  P(dec) {fmt(pm)}")
+              f"books {c.get('n_books', 0):>2}  P(dist) {fmt(pm)}  {r.get('status') or ''}")
 
 
 def main():

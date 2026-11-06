@@ -1064,8 +1064,9 @@ class Card:
                     continue
                 out.append((m.start(), m.end(), i, "last"))
             tk = x["tokens"]
-            if len(tk) == 2 and len(tk[0]) >= 4 and re.search(r"\b%s[\s.\-]+%s\b" % (re.escape(tk[1]), re.escape(tk[0])), pk):
-                for m in re.finditer(r"\b%s\b" % re.escape(tk[1]), k):
+            if len(tk) == 2 and len(tk[0]) >= 4 and re.search(r"\b%s[\s.\-]+%s\b" % (re.escape(tk[1]), re.escape(tk[0])), pk) \
+                    and not any(tk[0] in y["tokens"] for j, y in enumerate(self.f) if j != i):
+                for m in re.finditer(r"\b%s\b" % re.escape(tk[0]), k):
                     if any(a <= m.start() < b for a, b in taken) or any(o[0] == m.start() for o in out):
                         continue
                     out.append((m.start(), m.end(), i, "last"))
@@ -1430,6 +1431,8 @@ def parse_bout_changes(card, paras, event_date):
                         if any(x[2] == other for x in mm):
                             first_s = si
                             break
+                if first_s is None and info.get("fallback"):
+                    first_s = next((si for si in range(info["s0"], len(sents)) if info["fallback"] in sents[si]), None)
                 if first_s is None:
                     first_s = info["s0"]
                 days, basis, rel = None, None, None

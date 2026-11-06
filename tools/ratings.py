@@ -788,6 +788,23 @@ def run_trueskill(D, P, until=None, record=False):
 # =====================================================================================================
 # Whole-History Rating / Bayesian Bradley-Terry with Gaussian random-walk skill (walk-forward)
 # =====================================================================================================
+WHR_WINDOW = 6.0         # years of free nodes in the per-day re-solve (older nodes held fixed)
+WHR_FULL_EVERY = 8       # full re-solve over the whole history every n-th fight day
+
+try:
+    from sksparse.cholmod import cholesky as CHOLMOD   # optional, much faster than SuperLU
+except Exception:
+    CHOLMOD = None
+
+
+class _CholWrap:
+    def __init__(self, F):
+        self.F = F
+
+    def solve(self, b):
+        return self.F(b)
+
+
 class WHR:
     """Time-varying Bradley-Terry: each fighter has a skill node at every fight; consecutive nodes follow a
     Gaussian random walk x' ~ N(x + drift(age), w2 * years + vf); the first node has the newcomer prior
@@ -848,59 +865,77 @@ class WHR:
         self.x = x
         self.lu = None
 
-    def _system(self, N):
-        """Gradient and sparse Hessian of the negative log posterior on nodes [0, N)."""
+    def _system(self, N, lo=0):
+        """Gradient and sparse Hessian of the negative log posterior over the free nodes [lo, N); nodes before
+        lo are held at their current values (they enter only through the random-walk edges into the window)."""
         x = self.x
-        g = np.zeros(N)
-        fN = np.searchsorted(self.f_n, N)
-        f = self.f_n[:fN]
-        g[f] += (x[f] - self.f_m[:fN]) * self.f_c
-        eN = np.searchsorted(self.e_n, N)
-        en, ep, ec, ed = self.e_n[:eN], self.e_p[:eN], self.e_c[:eN], self.e_d[:eN]
+        M = N - lo
+        g = np.zeros(M)
+        f0, f1 = np.searchsorted(self.f_n, lo), np.searchsorted(self.f_n, N)
+        f = self.f_n[f0:f1]
+        g[f - lo] += (x[f] - self.f_m[f0:f1]) * self.f_c
+        e0, e1 = np.searchsorted(self.e_n, lo), np.searchsorted(self.e_n, N)
+        en, ep, ec, ed = self.e_n[e0:e1], self.e_p[e0:e1], self.e_c[e0:e1], self.e_d[e0:e1]
         r = ec * (x[en] - x[ep] - ed)
-        np.add.at(g, en, r)
-        np.add.at(g, ep, -r)
-        K = N // 2
-        za = np.arange(0, 2 * K, 2)
+        np.add.at(g, en - lo, r)
+        inside = ep >= lo
+        np.add.at(g, ep[inside] - lo, -r[inside])
+        k0, k1 = lo // 2, N // 2
+        za = np.arange(2 * k0, 2 * k1, 2)
         zb = za + 1
         z = x[za] - x[zb]
         p = expit(z)
-        wk = self.w[:K]
-        rr = wk * (p - self.y[:K])
-        g[za] += rr
-        g[zb] -= rr
+        wk = self.w[k0:k1]
+        rr = wk * (p - self.y[k0:k1])
+        g[za - lo] += rr
+        g[zb - lo] -= rr
         h = wk * p * (1 - p)
-        rows = np.concatenate([f, en, ep, en, ep, za, zb, za, zb])
-        cols = np.concatenate([f, en, ep, ep, en, za, zb, zb, za])
-        data = np.concatenate([np.full(fN, self.f_c), ec, ec, -ec, -ec, h, h, -h, -h])
-        H = sp.csc_matrix((data, (rows, cols)), shape=(N, N))
+        eni, epi, eci = en[inside] - lo, ep[inside] - lo, ec[inside]
+        enb, ecb = en[~inside] - lo, ec[~inside]
+        fl = f - lo
+        al, bl = za - lo, zb - lo
+        rows = np.concatenate([fl, enb, eni, epi, eni, epi, al, bl, al, bl])
+        cols = np.concatenate([fl, enb, eni, epi, epi, eni, al, bl, bl, al])
+        data = np.concatenate([np.full(len(fl), self.f_c), ecb, eci, eci, -eci, -eci, h, h, -h, -h])
+        H = sp.csc_matrix((data, (rows, cols)), shape=(M, M))
         return g, H
 
-    def solve(self, N, tol=1e-5, max_it=30):
-        if N == 0:
+    def _factor(self, H):
+        if CHOLMOD is not None:
+            return _CholWrap(CHOLMOD(H))
+        return spla.splu(H, permc_spec="MMD_AT_PLUS_A", diag_pivot_thresh=0.0, options={"SymmetricMode": True})
+
+    def solve(self, N, lo=0, tol=1e-5, max_it=30):
+        if N - lo <= 0:
             return
         for it in range(max_it):
-            g, H = self._system(N)
-            lu = spla.splu(H, permc_spec="MMD_AT_PLUS_A", diag_pivot_thresh=0.0,
-                           options={"SymmetricMode": True})
+            g, H = self._system(N, lo)
+            lu = self._factor(H)
             step = lu.solve(-g)
             mx = np.max(np.abs(step))
             if mx > 2.0:              # damping for the cold start
                 step *= 2.0 / mx
-            self.x[:N] += step
-            self.lu, self.luN = lu, N
+            self.x[lo:N] += step
+            self.lu, self.luN, self.lulo = lu, N, lo
             if mx < tol:
                 break
 
     def variances(self, nodes):
+        """Posterior variance (diagonal of the inverse Hessian) of nodes inside the last solved window; nodes
+        outside it (comebacks after more than the window length) get the newcomer variance."""
         nodes = np.asarray(nodes, int)
         if len(nodes) == 0:
             return np.zeros(0)
-        N = self.luN
-        E = np.zeros((N, len(nodes)))
-        E[nodes, np.arange(len(nodes))] = 1.0
-        X = self.lu.solve(E)
-        return X[nodes, np.arange(len(nodes))]
+        lo, N = self.lulo, self.luN
+        out = np.full(len(nodes), self.P["s0"] ** 2)
+        ins = (nodes >= lo) & (nodes < N)
+        if ins.any():
+            loc = nodes[ins] - lo
+            E = np.zeros((N - lo, len(loc)))
+            E[loc, np.arange(len(loc))] = 1.0
+            X = self.lu.solve(E)
+            out[ins] = X[loc, np.arange(len(loc))]
+        return out
 
     def run(self, eval_days, until=None, record=False):
         """Walk forward over fights; returns (p array over all D fights, rec)."""
@@ -919,6 +954,7 @@ class WHR:
         for k, i in enumerate(self.fobs):
             node_of_fight[i] = (2 * k, 2 * k + 1)
         fi = 0                    # next D fight to add to lastnode
+        nsolve = 0
         for dday in days:
             # add all fights before dday
             while fi < D.n and order_day[fi] < dday:
@@ -928,8 +964,14 @@ class WHR:
                     lastnode[D.ib[fi]] = nb
                 fi += 1
             N = int(np.searchsorted(self.node_day, dday))      # nodes strictly before dday
-            # warm start the nodes added since the previous solve
-            self.solve(N)
+            win = P.get("win_years", WHR_WINDOW)
+            nsolve += 1
+            if win and nsolve % WHR_FULL_EVERY != 1:
+                lo = int(np.searchsorted(self.node_day, dday - win * YEAR))
+                lo -= lo % 2
+            else:
+                lo = 0
+            self.solve(N, lo)
             # predict the day's fights
             j = fi
             todo = []
@@ -1443,3 +1485,287 @@ def specs(quick):
             if s["grid"]:
                 s["grid"] = s["grid"][:4]
     return S
+
+
+# =====================================================================================================
+# final runs, outputs
+# =====================================================================================================
+SHARED_KEYS = ("mu_new", "age_new", "dy", "do", "pre_on", "pre_wp", "pre_n", "pre_net", "pre_dwcs")
+MOV_KEYS = ("y_ud", "y_sd", "y_dq", "w_fin", "w_r1")
+
+
+def r5(x, d=4):
+    if x is None or (isinstance(x, float) and (math.isnan(x) or math.isinf(x))):
+        return None
+    return round(float(x), d)
+
+
+def roster_states(D, finals, DP, dim_state, ref_day):
+    """Current ratings (as of ref_day) of every fighter in fighters.json, keyed by slug."""
+    prof = json.load(open(FIGHTERS))["fighters"]
+    slug2p = {s: k for k, s in enumerate(D.slug)}
+    players = [slug2p[s] for s in prof if s in slug2p]
+    out = {}
+    whr_states = {}
+    for name, F in finals.items():
+        if F["kind"] == "whr":
+            whr_states[name] = F["model"].final_state(players, ref_day)
+    for s in prof:
+        p = slug2p.get(s)
+        if p is None:
+            continue
+        age = (ref_day - D.dob[p]) / YEAR if D.dob[p] == D.dob[p] else float("nan")
+        row = {"name": D.name[p], "division": prof[s].get("division"), "last_fight": prof[s].get("last_fight"),
+               "age": r5(age, 2)}
+        for name, F in finals.items():
+            P, st, kind = F["P"], F["state"], F["kind"]
+            dy, do = P.get("dy", 0.0), P.get("do", 0.0)
+            if kind == "elo":
+                if p not in st["r"]:
+                    continue
+                gap = (ref_day - st["last"][p]) / YEAR
+                m = st["r"][p] + (age_G(age, dy, do) - age_G(age - gap, dy, do) if (dy or do) else 0.0)
+                row[name] = {"mu": r5(m), "n": int(st["n"][p])}
+            elif kind == "glicko2":
+                if p not in st["mu"]:
+                    continue
+                gap = ref_day - st["last"][p]
+                m = st["mu"][p] + (age_G(age, dy, do) - age_G(age - gap / YEAR, dy, do) if (dy or do) else 0.0)
+                ph = min(P["phi0"], math.sqrt(st["phi"][p] ** 2 + st["sig"][p] ** 2 * gap / P["T"]))
+                row[name] = {"mu": r5(m), "sd": r5(ph), "vol": r5(st["sig"][p], 5),
+                             "elo_scale": r5(1500 + 173.7178 * m, 1)}
+            elif kind == "trueskill":
+                if p not in st["mu"]:
+                    continue
+                gap = (ref_day - st["last"][p]) / YEAR
+                m = st["mu"][p] + (age_G(age, dy, do) - age_G(age - gap, dy, do) if (dy or do) else 0.0)
+                v = min(P["s0"] ** 2, st["var"][p] + P["tau_y"] ** 2 * gap + P.get("gam", 0.0) ** 2)
+                row[name] = {"mu": r5(m), "sd": r5(math.sqrt(v))}
+            elif kind == "whr":
+                w = whr_states[name].get(p)
+                if w:
+                    row[name] = {"mu": r5(w[0]), "sd": r5(w[1]), "mu_last_fight": r5(w[2]), "sd_last_fight": r5(w[3])}
+        dims = {}
+        for dim in DIMS:
+            stt = dim_state.get((p, dim))
+            if stt is None:
+                continue
+            gap = (ref_day - stt[4]) / YEAR
+            q, v0 = DP[dim]["q"], DP[dim]["v0"]
+            dims[dim] = {"off": r5(stt[0]), "off_sd": r5(math.sqrt(min(v0, stt[1] + q * gap))),
+                         "def": r5(stt[2]), "def_sd": r5(math.sqrt(min(v0, stt[3] + q * gap)))}
+        if dims:
+            row["dims"] = dims
+        out[s] = row
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--quick", action="store_true", help="small tuning grids (smoke test)")
+    ap.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 1))
+    ap.add_argument("--skip-whr", action="store_true", help="leave the WHR systems out (fast run)")
+    ap.add_argument("--out", default=OUT_JSON)
+    args = ap.parse_args()
+    t0 = time.time()
+    logs = []
+
+    def log(s):
+        print(s, flush=True)
+        logs.append(s)
+
+    D = load_data()
+    log("loaded %d bouts, %d fighters; tuning fights %d (2019-2023), held-out fights %d (2024+)"
+        % (D.n, D.n_players, len(D.idx_tune), len(D.idx_test)))
+    prepare(D, log)
+    _G["D"] = D
+    pool = Pool(args.jobs) if args.jobs > 1 else None
+    S = specs(args.quick)
+    if args.skip_whr:
+        S = [s for s in S if s["kind"] != "whr"]
+    tuned, tune_res, hists, inner = {}, {}, {}, {}
+    for s in S:
+        P0 = dict(s["P"])
+        if s.get("from") in tuned:
+            base = dict(tuned[s["from"]])
+            base.update({k: v for k, v in P0.items() if k not in base or k in ("enc", "ordinal", "pre_on")})
+            P0 = base
+        if s.get("from_shared") in tuned:
+            P0.update({k: v for k, v in tuned[s["from_shared"]].items() if k in SHARED_KEYS})
+        if s.get("from_mov") in tuned:
+            P0.update({k: v for k, v in tuned[s["from_mov"]].items() if k in MOV_KEYS})
+        if s.get("from_whr") in tuned:
+            P0.update({k: v for k, v in tuned[s["from_whr"]].items() if k in SHARED_KEYS + ("w2", "vf", "s0")})
+        if s["kind"] == "trueskill" and s["name"] == "trueskill":
+            pass
+        ts = time.time()
+        log("tuning %s (%s)" % (s["name"], s["label"]))
+        if s["grid"]:
+            passes = 1 if args.quick else (2 if s["kind"] == "whr" else 3)
+            best, r, h = coord_descent(s["kind"], P0, s["grid"], pool, passes=passes, log=log)
+        else:
+            best, r, h = P0, _eval((s["kind"], P0)), []
+        tuned[s["name"]], tune_res[s["name"]], hists[s["name"]] = best, r, h
+        log("  -> %s tune log loss %.5f (2019-21 %.5f, 2022-23 %.5f) [%.0fs]"
+            % (s["name"], r["tune"], r["in_tr"], r["in_va"], time.time() - ts))
+        # time-ordered check: choose on 2019-2021 only, score the choice on 2022-2023
+        if s["grid"] and s["kind"] != "whr" and not args.quick:
+            b2, r2, _ = coord_descent(s["kind"], P0, s["grid"], pool, passes=2, objective="in_tr",
+                                      log=lambda *_: None)
+            inner[s["name"]] = {"chosen_on_2019_2021": {k: r5(v, 5) if isinstance(v, float) else v
+                                                        for k, v in b2.items()},
+                                "score_2022_2023": r2["in_va"], "score_2019_2021": r2["in_tr"]}
+            log("  time-ordered check: tuned on 2019-21 only -> 2022-23 log loss %.5f" % r2["in_va"])
+    # dimensional ratings
+    log("tuning dimensional ratings (predictive likelihood of each stat, 2019-2023)")
+    DP, dim_hist = dims_tune(D, args.quick, log)
+    if pool:
+        pool.close()
+
+    # ------------------------------------------------------------------ final walk-forward runs (2019-2026)
+    log("final runs with the tuned parameters (the only pass that reaches 2024+)")
+    finals, preds, recs = {}, {}, {}
+    for s in S:
+        P = tuned[s["name"]]
+        ts = time.time()
+        p, rec, st = run_system(D, s["kind"], P, record=True, eval_idx=D.bt_idx)
+        F = {"kind": s["kind"], "P": P, "state": st if s["kind"] != "whr" else None,
+             "model": st if s["kind"] == "whr" else None}
+        finals[s["name"]] = F
+        preds[s["name"]] = p
+        recs[s["name"]] = rec
+        log("  %s done [%.0fs]" % (s["name"], time.time() - ts))
+    dpre, dpred, dpll, dstate = run_dims(D, DP, record=True)
+    adv = dim_features(dpre, list(DIMS))                      # (n, n_dims)
+
+    # dimensional winner model: logistic (no intercept) on per-dim matchup advantages; L2 by time-ordered CV
+    it, ix = D.idx_tune, D.idx_test
+    ytr = D.y[it]
+    best_l2, best_cv = None, 9
+    Xd = np.nan_to_num(adv)
+    cv_table = {}
+    for l2 in (0.1, 1.0, 10.0, 100.0, 1000.0):
+        cvll, _ = cv_lr(D, Xd[it], l2, it)
+        cv_table[l2] = cvll
+        if cvll < best_cv:
+            best_l2, best_cv = l2, cvll
+    bd = fit_lr(Xd[it], ytr, best_l2)
+    p_dims = expit(Xd @ bd)
+    preds["dims"] = p_dims
+    log("dims winner model: CV(2020-23) log loss %.5f at l2=%g; coefficients %s"
+        % (best_cv, best_l2, dict(zip(DIMS, np.round(bd, 3)))))
+    dims_model = {"l2": best_l2, "cv_log_loss": best_cv, "cv_table": cv_table,
+                  "coef": dict(zip(DIMS, [float(b) for b in bd]))}
+    tune_res["dims"] = {"tune": score(D, p_dims, it), "cv": best_cv}
+
+    # ------------------------------------------------------------------ stacking (time-ordered CV, 2019-2023)
+    singles = [s["name"] for s in S if s["name"] != "elo_ref"] + ["dims"]
+    Z = {k: logit(preds[k]) for k in singles}
+    chosen, cur = [], 9.0
+    stack_path = []
+    while True:
+        best_add = None
+        for k in singles:
+            if k in chosen:
+                continue
+            X = np.c_[[Z[c][it] for c in chosen + [k]]].T
+            cvll, _ = cv_lr(D, X, 1.0, it)
+            if cvll < cur - 1e-4 and (best_add is None or cvll < best_add[1]):
+                best_add = (k, cvll)
+        if not best_add:
+            break
+        chosen.append(best_add[0])
+        cur = best_add[1]
+        stack_path.append({"add": best_add[0], "cv_log_loss": cur})
+    Xs = np.c_[[Z[c] for c in chosen]].T
+    bs = fit_lr(Xs[it], ytr, 1.0)
+    preds["stack"] = expit(Xs @ bs)
+    tune_res["stack"] = {"tune": score(D, preds["stack"], it), "cv": cur}
+    log("stack: %s weights %s, CV(2020-23) log loss %.5f" % (chosen, np.round(bs, 3), cur))
+
+    # ------------------------------------------------------------------ held-out evaluation (once)
+    names = [s["name"] for s in S] + ["dims", "stack"]
+    yte = D.y[ix]
+    test = {k: metrics(preds[k][ix], yte) for k in names}
+    tune_m = {k: metrics(preds[k][it], ytr) for k in names}
+    boot = bootstrap(D, {k: preds[k] for k in names}, ix, base="elo_ref")
+    calib = {k: calibration(preds[k][ix], yte) for k in names}
+    singles_rank = sorted([k for k in names if k != "stack"], key=lambda k: tune_res[k].get("cv", tune_res[k]["tune"]))
+    best = singles_rank[0]
+    log("held-out 2024+ (n=%d):" % len(ix))
+    for k in names:
+        log("  %-14s tune %.5f | test LL %.5f %s Brier %.5f acc %.3f ECE %.3f slope %.2f | dLL vs ref %+.5f (P<0 %.2f)"
+            % (k, tune_m[k]["log_loss"], test[k]["log_loss"], boot[k]["log_loss_ci95"], test[k]["brier"],
+               test[k]["accuracy"], calib[k]["ece"], calib[k]["slope_no_intercept"],
+               boot[k].get("d_log_loss_vs_elo_ref", 0), boot[k].get("p_better_than_elo_ref", 0)))
+    log("best single system by tuning-window score: %s" % best)
+
+    # ------------------------------------------------------------------ outputs
+    snap_day = D.day[-1]
+    roster = roster_states(D, finals, DP, dstate, snap_day)
+    pred_out = {}
+    for i in D.bt_idx:
+        fid = D.fid[i]
+        split = "test" if D.day[i] >= TEST_FROM else "tune"
+        e = {"date": D.fights[i].date.isoformat(), "A": D.slug[D.ia[i]], "B": D.slug[D.ib[i]],
+             "y": None if np.isnan(D.y[i]) else float(D.y[i]), "split": split,
+             "p": {k: r5(preds[k][i]) for k in names}}
+        rr = {}
+        for k in [s["name"] for s in S]:
+            if recs[k] is not None:
+                v = recs[k][i]
+                rr[k] = [r5(v[0]), r5(v[1]), r5(v[2]), r5(v[3])]
+        e["r"] = rr
+        e["dims"] = {side: {dim: [r5(dpre[i, si, j, 0], 3), r5(dpre[i, si, j, 2], 3)] for j, dim in enumerate(DIMS)}
+                     for si, side in enumerate(("A", "B"))}
+        pred_out[fid] = e
+    sys_out = {}
+    for s in S:
+        k = s["name"]
+        sys_out[k] = {"kind": s["kind"], "family": s["family"], "label": s["label"],
+                      "params": {a: (r5(b, 6) if isinstance(b, float) else b) for a, b in tuned[k].items()},
+                      "tune_2019_2023": tune_m[k], "inner_2019_2021": tune_res[k]["in_tr"],
+                      "inner_2022_2023": tune_res[k]["in_va"], "time_ordered_check": inner.get(k),
+                      "test_2024_plus": test[k], "bootstrap": boot[k], "calibration": calib[k],
+                      "trials": len(hists[k])}
+    for k, lab in (("dims", "Dimensional ratings (striking volume/accuracy/power, takedowns, control, submissions; "
+                             "offence and defence per fighter, Kalman updates) -> logistic winner model"),
+                   ("stack", "Logistic stack of the rating systems (forward selection by time-ordered CV)")):
+        sys_out[k] = {"kind": k, "family": "Dimensional" if k == "dims" else "Ensemble", "label": lab,
+                      "tune_2019_2023": tune_m[k], "cv_2020_2023": tune_res[k]["cv"],
+                      "test_2024_plus": test[k], "bootstrap": boot[k], "calibration": calib[k]}
+    sys_out["dims"]["model"] = dims_model
+    sys_out["dims"]["dim_params"] = DP
+    sys_out["dims"]["dim_tuning"] = dim_hist
+    sys_out["stack"]["members"] = chosen
+    sys_out["stack"]["weights"] = [float(b) for b in bs]
+    sys_out["stack"]["path"] = stack_path
+    out = {
+        "meta": {
+            "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+            "snapshot": D.snapshot.isoformat(), "tool": "tools/ratings.py", "quick": args.quick,
+            "n_bouts": D.n, "n_tune": len(it), "n_test": len(ix),
+            "protocol": "walk-forward over every UFC bout since 1994 in date order (bout order inside a card); "
+                        "parameters chosen by coordinate descent on 2019-2023 log loss with the data stream cut at "
+                        "2024-01-01; second-stage models by expanding-window CV by year inside 2019-2023; 2024+ "
+                        "scored once with the chosen settings; draws and no-contests excluded from winner metrics; "
+                        "event-clustered bootstrap (2000 resamples) for CIs",
+            "units": "all ratings in log-odds (logit) units except TrueSkill (probit units, performance noise "
+                     "beta = 1); P(A) = sigmoid(kappa * (mu_A - mu_B)) for Elo; Glicko-2 and WHR shrink the "
+                     "difference by the combined uncertainty",
+            "round_model": D.round_fit, "preufc_coverage_fighter_bouts": int(D.pre_cov),
+            "best_single_by_tuning": best, "ranking_by_tuning": singles_rank,
+            "log": logs,
+            "runtime_s": round(time.time() - t0),
+        },
+        "systems": sys_out,
+        "predictions": pred_out,
+        "roster": roster,
+    }
+    with open(args.out, "w") as fh:
+        json.dump(out, fh, separators=(",", ":"))
+    log("wrote %s (%.1f MB) in %.0fs" % (args.out, os.path.getsize(args.out) / 1e6, time.time() - t0))
+
+
+if __name__ == "__main__":
+    main()

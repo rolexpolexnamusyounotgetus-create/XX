@@ -613,7 +613,7 @@
     var p = m.p, K = m.k, F = p.form, J = p.judge, nR = m.rounds, i, j, k;
     var dRate = m.dRate, cRate = m.cRate, tdD = m.tdD, tdCC = m.tdCC, tdCU = m.tdCU, gPos = m.gPos, gBot = m.gBot, gEdge = m.gEdge;
     var swPos = m.swPos, upPos = m.upPos, subTPos = m.subTPos, subBPos = m.subBPos, subOPos = m.subOPos, subO = m.subO, gillo = m.gillo;
-    var clE = clE, pCtl = pCtl, clBreak = clBreak, clSwap = clSwap, subBotO = subBotO, subStandO = subStandO;
+    var clE = m.clE, pCtl = m.pCtl, clBreak = m.clBreak, clSwap = m.clSwap, subBotO = m.subBotO, subStandO = m.subStandO;
     // fight-night form (fixed draw order, independent of trace)
     // every multiplicative draw is a mean-1 lognormal: exp(sd * z - sd^2 / 2)
     var sharedPace = lnorm(rng, F.pace);

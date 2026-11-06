@@ -501,7 +501,7 @@
     function lens(mm) { return FA.lensFov ? FA.lensFov(mm, asp) : 2 * Math.atan(Math.tan(Math.atan(18 / mm)) / asp) * 180 / Math.PI; }
     var s = this.shot, creep = 1 - 0.05 * smooth(clamp(this.shotT / 9, 0, 1));
     if (s === "wide") { this.az += angDiff(tgtAz, this.az) * Math.min(1, dt * 0.5); at(this.az, 11.6 * creep, 5.7); l.set(F.x, 0.9, F.z); fov = lens(46); }
-    else if (s === "mid") { this.az += angDiff(tgtAz + 0.35, this.az) * Math.min(1, dt * 0.6); at(this.az, 8.4 * creep, 3.5); l.set(F.x, 1.0, F.z); fov = lens(55); k = 3; }
+    else if (s === "mid") { this.az += angDiff(tgtAz + 0.35, this.az) * Math.min(1, dt * 0.6); at(this.az, 8.4 * creep, 3.9); l.set(F.x, 1.0, F.z); fov = lens(55); k = 3; }
     else if (s === "cage") {
       this.az += angDiff(tgtAz - 0.25, this.az) * Math.min(1, dt * 0.6);
       var ca = Math.atan2(F.z + Math.sin(this.az) * 3, F.x + Math.cos(this.az) * 3);

@@ -722,7 +722,7 @@ class Calib:
             grid = np.linspace(0, 1, 201)
             c = ir.predict(grid)
             c = 0.5 * (c + 1 - c[::-1])                       # exact symmetry on the grid
-            self.x, self.y = grid, np.maximum.accumulate(c)
+            self.x, self.y = np.round(grid, 4), np.round(np.maximum.accumulate(c), 6)
         return self
 
     def __call__(self, p):
@@ -736,8 +736,7 @@ class Calib:
         if self.kind == "temperature":
             return {"type": "temperature", "a": float(self.a)}
         if self.kind == "isotonic":
-            return {"type": "isotonic", "x": [round(float(v), 4) for v in self.x],
-                    "y": [round(float(v), 6) for v in self.y]}
+            return {"type": "isotonic", "x": [float(v) for v in self.x], "y": [float(v) for v in self.y]}
         return {"type": "none"}
 
 
@@ -892,8 +891,12 @@ def cmd_fit(args):
                 if s and len(s) > 3 and s[3]:
                     snaps.add((slug, s[1]))
     G = gating_matrix(rows, None)
-    G[:, GATE_NAMES.index("preufc")] = [0.5 * ((r["slugA"], r["id"]) in snaps) + 0.5 * ((r["slugB"], r["id"]) in snaps)
-                                        for r in rows]
+    for r in rows:
+        r["puA"], r["puB"] = (r["slugA"], r["id"]) in snaps, (r["slugB"], r["id"]) in snaps
+    G[:, GATE_NAMES.index("preufc")] = [0.5 * r["puA"] + 0.5 * r["puB"] for r in rows]
+    # the page computes the gate vector from raw inputs (src/ml/moe.js gateVector): check the twin agrees
+    G2 = np.array([gate_vector(gate_inputs(r, None)) for r in rows])
+    assert np.allclose(G, G2, atol=1e-9), "gate_vector twin disagrees with gating_matrix"
     dec = np.isfinite(y)
     TR = dec & (dates >= TRAIN[0]) & (dates <= TRAIN[1])
     VA = dec & (dates >= VALID[0]) & (dates <= VALID[1])
@@ -1011,8 +1014,293 @@ def cmd_fit(args):
     report_and_export(args)
 
 
+def segment_masks(rows, P, idx):
+    """Symmetric segments over the rows idx (validation)."""
+    segs = {}
+    nmin = np.array([min(rows[i]["A"]["n"], rows[i]["B"]["n"]) for i in idx])
+    segs["newcomer bout (a side with <=2 prior UFC fights)"] = nmin <= 2
+    segs["middle experience (both 3-7)"] = (nmin >= 3) & (nmin <= 7)
+    segs["veterans (both >=8 prior UFC fights)"] = nmin >= 8
+    grp = np.array([DIV_GROUPS.get(rows[i]["prior_division"] or rows[i]["division"], "middle") for i in idx])
+    for g, lab in (("light", "men 125-145"), ("middle", "men 155-185"), ("heavy", "men 205-265"), ("women", "women")):
+        segs["division group: %s" % lab] = grp == g
+    div = np.array([rows[i]["prior_division"] or rows[i]["division"] for i in idx])
+    for d in DIVS:
+        if (div == d).sum() >= 40:
+            segs["division: %s" % d] = div == d
+    pm = P["market"][idx]
+    fav = np.maximum(pm, 1 - pm)
+    segs["pick'em (market favourite < 60%)"] = np.isfinite(pm) & (fav < 0.60)
+    segs["moderate favourite (60-75%)"] = np.isfinite(pm) & (fav >= 0.60) & (fav < 0.75)
+    segs["heavy favourite (>= 75%)"] = np.isfinite(pm) & (fav >= 0.75)
+    r5 = np.array([rows[i]["rounds"] == 5 for i in idx])
+    segs["5-round fights"] = r5
+    segs["3-round fights"] = ~r5
+    return segs
+
+
+def export_model(st, cal, experts, mu, sd, P_clip=PCLIP):
+    m = {"method": st.method, "experts": experts, "pclip": P_clip,
+         "gate": {"names": GATE_NAMES, "mu": [float(v) for v in mu], "sd": [float(v) for v in sd]},
+         "calibration": cal.export()}
+    if st.method == "gated":
+        m["V"] = [[float(v) for v in row] for row in st.g.V]
+        m["u"] = [float(v) for v in st.g.u]
+    if st.method in ("linear", "gbm_res"):
+        m["linear"] = {"+".join(e for e in experts if e in pat): {experts[i]: float(w) for i, w in zip(idx, lm.w)}
+                       for pat, (idx, lm) in st.lin.items()}
+    if st.method in ("gbm", "gbm_res"):
+        m["trees"] = export_trees(st.b.m)
+    return m
+
+
+def export_trees(booster):
+    """LightGBM trees as compact arrays: per tree [feature, threshold, left, right, default_left] per node
+    (children < 0 are leaves: leaf index = -child - 1) and leaf values. Missing values (NaN) follow
+    default_left as LightGBM does for missing_type NaN."""
+    d = booster.dump_model()
+    out = []
+    for t in d["tree_info"]:
+        nodes, leaves = [], []
+
+        def walk(n):
+            if "leaf_index" in n or "leaf_value" in n and "split_feature" not in n:
+                leaves.append(float(n["leaf_value"]))
+                return -len(leaves)
+            i = len(nodes)
+            nodes.append(None)
+            left = walk(n["left_child"])
+            right = walk(n["right_child"])
+            nodes[i] = [int(n["split_feature"]), float(n["threshold"]), left, right,
+                        1 if n.get("default_left") else 0, 1 if n.get("missing_type") == "NaN" else 0]
+            return i
+        root = walk(t["tree_structure"])
+        out.append({"nodes": nodes, "leaves": leaves, "root": root})
+    return out
+
+
 def report_and_export(args):
-    pass
+    with open(os.path.join(CACHE, "fit.pkl"), "rb") as fh:
+        F = pickle.load(fh)
+    R, P, y, rows, Gs, G = F["results"], F["P"], F["y"], F["rows"], F["Gs"], F["G"]
+    dates, TR, VA, singles = F["dates"], F["TR"], F["VA"], F["singles"]
+    clusters = np.array([r["date"] for r in rows])
+    rep = {"singles": singles, "sets": {}, "ext_notes": F["ext_notes"]}
+    va_idx = np.where(VA)[0]
+    for sname, res in R.items():
+        S = {"experts": res["experts"], "cv": res["cv"], "methods": {}}
+        for m, out in res["methods"].items():
+            mo = {"hp": out["hp"], "calibration": out["calibration"], "calibration_cv": out["calibration_cv"],
+                  "patterns": {}}
+            for key, pr in out["patterns"].items():
+                idx, p = pr["_idx"], pr["_p"]
+                ci = boot_ci(p, y[idx], clusters[idx])
+                d = {"raw": pr["raw"], "cal": pr["cal"], "cal_all": pr["cal_all"], "ci": ci}
+                if "market" in key.split("+"):
+                    okm = np.isfinite(P["market"][idx])
+                    d["vs_market"] = boot_ci(p[okm], y[idx][okm], clusters[idx][okm], ref=P["market"][idx][okm])
+                else:
+                    # vs the best single non-market expert of the set on the validation rows
+                    cands = [e for e in key.split("+") if np.isfinite(P[e][idx]).all()]
+                    best = min(cands, key=lambda e: ll(P[e][idx], y[idx])) if cands else None
+                    if best:
+                        d["vs_best_single"] = dict(boot_ci(p, y[idx], clusters[idx], ref=P[best][idx]), expert=best)
+                mo["patterns"][key] = d
+            S["methods"][m] = mo
+        rep["sets"][sname] = S
+
+    # ---- choose the exported model: page set, best forward-chained CV score (2021-2023), never 2024+
+    page = R["page"]
+    best_m = min(page["methods"], key=lambda m: page["cv"]["%s %s" % (m, page["methods"][m]["hp"])])
+    rep["chosen"] = {"set": "page", "method": best_m, "rule": "lowest forward-chained CV log loss (val years "
+                     "2021-2023, mean over the four availability patterns); 2024-2025 not used for the choice"}
+    log("chosen for export: page/%s" % best_m)
+    experts = page["experts"]
+    out = page["methods"][best_m]
+
+    # ---- segments for the chosen model (with and without market) vs single experts
+    segs = {}
+    key_full = "+".join(experts)
+    key_nm = "+".join(e for e in experts if e != "market")
+    pf, idx_f = out["patterns"][key_full]["_p"], out["patterns"][key_full]["_idx"]
+    pn, idx_n = out["patterns"][key_nm]["_p"], out["patterns"][key_nm]["_idx"]
+    full_alt = {}
+    for m2, o2 in R["full"]["methods"].items():
+        kf = "+".join(R["full"]["experts"])
+        full_alt[m2] = o2["patterns"][kf]
+    best_full = min(full_alt, key=lambda m2: R["full"]["cv"]["%s %s" % (m2, R["full"]["methods"][m2]["hp"])])
+    pfa_map = dict(zip(full_alt[best_full]["_idx"], full_alt[best_full]["_p"]))
+    common = np.array(sorted(set(idx_f) & set(idx_n)))
+    pf_map, pn_map = dict(zip(idx_f, pf)), dict(zip(idx_n, pn))
+    SM = segment_masks(rows, P, common)
+    for sgn, mask in SM.items():
+        ii = common[mask]
+        if len(ii) < 25:
+            continue
+        yy = y[ii]
+        cl = clusters[ii]
+        e = {"n": int(len(ii))}
+        e["moe_market"] = ll(np.array([pf_map[i] for i in ii]), yy)
+        e["moe_full_market"] = ll(np.array([pfa_map.get(i, np.nan) for i in ii]), yy) if all(i in pfa_map for i in ii) else None
+        e["moe_nomarket"] = ll(np.array([pn_map[i] for i in ii]), yy)
+        for k in ("market", "engine", experts[2], "elo", "feat_gbm", "glicko"):
+            if k in P and np.isfinite(P[k][ii]).all():
+                e[k] = ll(P[k][ii], yy)
+        e["d_moe_vs_market"] = boot_ci(np.array([pf_map[i] for i in ii]), yy, cl, ref=P["market"][ii], B=1000)
+        nm_single = min((k for k in ("engine", experts[2], "elo") if k in e), key=lambda k: e[k])
+        e["d_nomarket_vs_best_single"] = dict(boot_ci(np.array([pn_map[i] for i in ii]), yy, cl, ref=P[nm_single][ii], B=1000),
+                                              expert=nm_single)
+        segs[sgn] = e
+    rep["segments"] = segs
+    rep["calibration_valid"] = {
+        "moe_market": calib_table(np.array([pf_map[i] for i in common]), y[common]),
+        "moe_nomarket": calib_table(np.array([pn_map[i] for i in common]), y[common]),
+        "market": calib_table(P["market"][common], y[common])}
+
+    # gate weights on validation rows (how much each expert is trusted, by segment)
+    st = out["_model"]
+    L = np.column_stack([logit(np.clip(P[k], PCLIP, 1 - PCLIP)) for k in experts])
+    M = np.column_stack([np.isfinite(P[k]) for k in experts])
+    L = np.where(M, L, 0.0)
+    if best_m == "gated":
+        _ = st.g.logit(L[common], M[common], Gs[common])
+        PI, s = st.g.last_pi, st.g.last_s
+        gw = {}
+        for sgn, mask in SM.items():
+            if mask.sum() >= 25:
+                gw[sgn] = {"weights": {e: round(float(PI[mask, j].mean()), 4) for j, e in enumerate(experts)},
+                           "scale": round(float(s[mask].mean()), 4)}
+        Mn = M.copy()
+        Mn[:, experts.index("market")] = False
+        _ = st.g.logit(L[common], Mn[common], Gs[common])
+        PI2, s2 = st.g.last_pi, st.g.last_s
+        for sgn, mask in SM.items():
+            if mask.sum() >= 25:
+                gw[sgn]["no_market"] = {"weights": {e: round(float(PI2[mask, j].mean()), 4) for j, e in enumerate(experts)
+                                                    if e != "market"}, "scale": round(float(s2[mask].mean()), 4)}
+        rep["gate_weights_valid"] = gw
+
+    # ---- production refit on 2019-2025 (same hyper-parameters); calibration on forward-chained OOF 2021-2025
+    ALL = TR | VA
+    yr = years_of(dates)
+    hp = out["hp"]
+    oof = []
+    for Y in (2021, 2022, 2023, 2024, 2025):
+        tr = ALL & (yr < Y)
+        te = ALL & (yr == Y)
+        s_ = Stacker(best_m, experts, F["DROPS"], hp).fit(L[tr], M[tr], Gs[tr], y[tr])
+        for d in F["DROPS"]:
+            keep = np.array([e not in d for e in experts])
+            Md = M[te] & keep[None, :]
+            ok = Md.any(1)
+            oof.append((s_.logit(L[te][ok], Md[ok], Gs[te][ok]), y[te][ok]))
+    zc = np.concatenate([a for a, _ in oof])
+    yc = np.concatenate([b for _, b in oof])
+    cal_prod = Calib(out["calibration"]).fit(zc, yc)
+    st_prod = Stacker(best_m, experts, F["DROPS"], hp).fit(L[ALL], M[ALL], Gs[ALL], y[ALL])
+    model_prod = export_model(st_prod, cal_prod, experts, F["mu"], F["sd"])
+    model_val = export_model(st, out["_cal"], experts, F["mu"], F["sd"])
+
+    # alternative exports (all three families, page set) so the page can switch
+    alts = {}
+    for m2, o2 in page["methods"].items():
+        if m2 != best_m and m2 in ("linear", "gated"):
+            alts[m2] = export_model(o2["_model"], o2["_cal"], experts, F["mu"], F["sd"])
+
+    # ---- test vectors: Python predictions the JS evaluator must reproduce (validation rows, all patterns,
+    # both corner orders)
+    rng = np.random.default_rng(5)
+    tv = []
+    pick = rng.choice(np.where(VA)[0], size=min(60, VA.sum()), replace=False)
+    for j, i in enumerate(pick):
+        d = F["DROPS"][j % len(F["DROPS"])]
+        ex = {e: (None if (e in d or not np.isfinite(P[e][i])) else float(P[e][i])) for e in experts}
+        gate = gate_inputs(rows[i], G[i])
+        for sign in (1, -1):
+            exs = {e: (None if v is None else (v if sign == 1 else 1 - v)) for e, v in ex.items()}
+            gs = gate if sign == 1 else swap_gate(gate)
+            gv = gate_vector(gs)
+            tv.append({"experts": exs, "gate": gs,
+                       "p_prod": float(predict_py(model_prod, st_prod, cal_prod, exs, gv, experts, F["mu"], F["sd"])),
+                       "p_valid": float(predict_py(model_val, st, out["_cal"], exs, gv, experts, F["mu"], F["sd"]))})
+    doc = {
+        "meta": {"tool": "tools/moe.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                 "train": TRAIN, "valid": VALID, "vault_excluded_from": VAULT_FROM.isoformat(),
+                 "orientation": "every probability is P(first-named fighter A wins); the model is exactly symmetric "
+                                "(swap A/B -> 1 - p)",
+                 "experts": {
+                     "market": "de-vigged closing moneyline (power method) P(A); optional",
+                     "engine": "FightEngine.summarize pA / (pA + pB) (draws removed)",
+                     "ml": "ML expert P(A) (tools/ml.py page model when present, else the feature LR in moe.json 'feat')",
+                     "feat_lr": "feature logistic regression (moe.json 'feat'; computable from fighters.json profiles)",
+                     "elo": "1 / (1 + 10^((eloB - eloA) / 400)) with fighters.json elo"},
+                 "gate_inputs": {"nA/nB": "prior UFC fights", "cminA/cminB": "career UFC minutes",
+                                 "eloA/eloB": "Elo", "rounds": "3 or 5", "division": "fight division",
+                                 "layoffA/layoffB": "days since the fighter's previous UFC fight (null = debut-like, 365)",
+                                 "ageA/ageB": "age in years at the fight date (null = 30)",
+                                 "preufcA/preufcB": "true when tools/preufc.py has the fighter's pre-UFC record"},
+                 "notes": "Production model refit on 2019-2025 with the hyper-parameters chosen by forward-chained CV "
+                          "inside 2019-2023; model_validated is the 2019-2023 fit that produced the 2024-2025 report."},
+        "model": model_prod, "model_validated": model_val, "alternatives": alts,
+        "report": strip_private(rep), "test_vectors": tv}
+    wjson(os.path.join(DERIVED, "moe.json"), doc)
+    with open(os.path.join(CACHE, "report.json"), "w") as fh:
+        json.dump(strip_private(rep), fh, indent=1, default=float)
+    log("wrote data/derived/moe.json")
+
+
+def strip_private(o):
+    if isinstance(o, dict):
+        return {k: strip_private(v) for k, v in o.items() if not str(k).startswith("_")}
+    if isinstance(o, (list, tuple)):
+        return [strip_private(v) for v in o]
+    if isinstance(o, np.generic):
+        return o.item()
+    if isinstance(o, float) and not math.isfinite(o):
+        return None
+    return o
+
+
+def gate_inputs(r, g):
+    a, b = r["A"], r["B"]
+    def lay(x):
+        return None if not np.isfinite(x) else float(math.expm1(x))
+    return {"nA": int(a["n"]), "nB": int(b["n"]), "cminA": float(math.expm1(a["cmin"])), "cminB": float(math.expm1(b["cmin"])),
+            "eloA": float(a["elo"]), "eloB": float(b["elo"]), "rounds": int(r["rounds"]),
+            "division": r["prior_division"] or r["division"], "layoffA": lay(a["layoff"]), "layoffB": lay(b["layoff"]),
+            "ageA": None if not np.isfinite(a["age"]) else float(a["age"]),
+            "ageB": None if not np.isfinite(b["age"]) else float(b["age"]),
+            "preufcA": bool(r.get("puA", False)), "preufcB": bool(r.get("puB", False))}
+
+
+def swap_gate(g):
+    s = dict(g)
+    for a, b in (("nA", "nB"), ("cminA", "cminB"), ("eloA", "eloB"), ("layoffA", "layoffB"), ("ageA", "ageB"),
+                 ("preufcA", "preufcB")):
+        s[a], s[b] = g[b], g[a]
+    return s
+
+
+def gate_vector(gi):
+    """Python twin of MoE.gateVector in src/ml/moe.js (raw gating features from the page inputs)."""
+    def lay(x):
+        return math.log1p(min(x, 2000.0)) if x is not None else math.log1p(365)
+    grp = DIV_GROUPS.get(gi["division"], "middle")
+    ages = [gi["ageA"] if gi["ageA"] is not None else 30.0, gi["ageB"] if gi["ageB"] is not None else 30.0]
+    return np.array([math.log1p(min(gi["nA"], gi["nB"])), math.log1p(max(gi["nA"], gi["nB"])),
+                     min(math.log1p(gi["cminA"]), math.log1p(gi["cminB"])), abs(gi["eloA"] - gi["eloB"]) / 100.0,
+                     1.0 if gi["rounds"] == 5 else 0.0, 1.0 if grp == "women" else 0.0,
+                     1.0 if grp == "light" else 0.0, 1.0 if grp == "heavy" else 0.0,
+                     max(lay(gi["layoffA"]), lay(gi["layoffB"])), (ages[0] + ages[1]) / 2 - 30.0,
+                     abs(ages[0] - ages[1]), 0.5 * bool(gi["preufcA"]) + 0.5 * bool(gi["preufcB"])])
+
+
+def predict_py(model, st, cal, ex, g_raw, experts, mu, sd):
+    L = np.array([[logit(np.clip(ex[e], PCLIP, 1 - PCLIP)) if ex[e] is not None else 0.0 for e in experts]])
+    M = np.array([[ex[e] is not None for e in experts]])
+    Gs = np.hstack([[1.0], (g_raw - mu) / sd])[None, :]
+    z = st.logit(L, M, Gs)
+    return cal(sigm(z))[0]
 
 
 # ====================================================================== main

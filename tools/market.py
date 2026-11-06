@@ -1176,6 +1176,31 @@ def cmd_build(a):
     st['n'] = {'tune': len(gt), 'test': len(gs)}
     res['stacking'] = st
 
+    # ---------------- per book (and prediction markets) vs the consensus on the same fights ----------------
+    pb = {}
+    for per in ('tune', 'test'):
+        acc = defaultdict(lambda: {'p': [], 'c': [], 'y': [], 'ev': []})
+        for r in dec:
+            if r['period'] != per or 'p_close_mult' not in r:
+                continue
+            for bk, (a1, a2) in (r['rec'].get('bfo_books') or {}).items():
+                d = (am_to_dec(a1), am_to_dec(a2))
+                if not sane_pair(d, 0.95, 1.25):
+                    continue
+                acc[bk]['p'].append(devig(*d))
+                acc[bk]['c'].append(r['p_close_mult'])
+                acc[bk]['y'].append(r['y'])
+                acc[bk]['ev'].append(r['event'])
+        pb[per] = {}
+        for bk, v in sorted(acc.items()):
+            if len(v['y']) < 50:
+                continue
+            lb, lc = loss_arrays(v['p'], v['y'])[0], loss_arrays(v['c'], v['y'])[0]
+            bs = boot_event(v['ev'], {'b': lb, 'c': lc}, B=min(a.boot, 1000))
+            pb[per][bk] = {'n': len(v['y']), 'll_book': round(float(lb.mean()), 4), 'll_consensus': round(float(lc.mean()), 4),
+                           'diff_ci95': ci(bs['b'] - bs['c'])}
+    res['per_book'] = pb
+
     # ---------------- by year and by segment ----------------
     yrs = {}
     for yr in sorted({r['date'][:4] for r in dec}):
@@ -1528,9 +1553,14 @@ def write_market_json(R, res, best):
         'tool': 'tools/market.py',
         'orientation': 'every pair is [A, B] in backtest.json order (A = first ufcstats name); p_* = probability that A wins',
         'open': 'first line BFO lists for the fight (one book, often weeks out; may not have been bettable in size)',
-        'close': 'consensus closing line: BFO mean of the books\' closing decimal odds (last point of BFO\'s mean-odds '
-                 'series) when both fighter pages were read; else the mean of the per-book closes on the event page; '
-                 'else the decimal midpoint of the closing range (nlbair); else one book\'s close (Ultimate UFC Dataset)',
+        'close': 'consensus closing line (decimal odds [A, B] = mean over books, then American): (1) mean of >= 3 US '
+                 'sportsbooks\' closes on the BFO event page after dropping any book whose no-vig p is > 0.15 from the median '
+                 'book; (2) BFO\'s mean-odds series end point (mean of the books BFO tracked, read from both fighter pages) '
+                 'when the closing range is clean (spread <= 0.20); (3) 1-2 US books; (4) decimal midpoint of a clean closing '
+                 'range (nlbair); (5) one book\'s close (Ultimate UFC Dataset) when its overround is 0.99-1.15. `src` says which',
+        'close_range': '[[A low, A high], [B low, B high]] closing range across books (BFO), American',
+        'cleaning': 'a closing range wider than 0.20 in implied probability holds a stale or in-play price that leaks the '
+                    'result; such ranges and BFO means are not used (eval.cleaning)',
         'p_novig': 'multiplicative (proportional) margin removal: p_A = (1/dA) / (1/dA + 1/dB)',
         'devig_best_on_tune': best,
         'books': 'per-book closing lines from BFO event pages; covers only the US books BFO lists today (about 2021 on); '
@@ -1936,6 +1966,12 @@ def cmd_tables(a):
         else:
             t, s_ = v['tune_coef'][k], v['test_refit_coef'][k]
             L.append(f"| {k} | {t[0]:+.4f} ({t[1]:.4f}) | {s_[0]:+.4f} ({s_[1]:.4f}) | {v['test_ll_minus_close_slope'][0]:+.4f} {_ci(v['test_ll_minus_close_slope'][1], 4)} |")
+    L.append('\n### Each book (and prediction market) vs the consensus close on the same fights\n')
+    L.append('| Period | Book | n | LL book | LL consensus | Book - consensus (95% CI) |')
+    L.append('|---|---|---|---|---|---|')
+    for per, v in E.get('per_book', {}).items():
+        for bk, w in v.items():
+            L.append(f"| {per} | {bk} | {w['n']} | {w['ll_book']:.4f} | {w['ll_consensus']:.4f} | {_ci(w['diff_ci95'], 4)} |")
     L.append('\n### By year (closing line, all decisive fights with a close)\n')
     L.append('| Year | n | Close LL | Close acc | Open LL | Elo LL |')
     L.append('|---|---|---|---|---|---|')
