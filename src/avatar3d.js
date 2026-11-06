@@ -13,7 +13,17 @@
    clip layers per body part (falls, getting up, dizzy, celebration, breathing idle).
 
    FightAvatar.attach(actor, appearance, scene) builds asynchronously and swaps itself in when ready;
-   anything missing (WebGL2, DecompressionStream, assets) leaves the primitive rig in place. */
+   anything missing (WebGL2, DecompressionStream, assets) leaves the primitive rig in place.
+
+   Pass 2 (Nov 6, 2026): extra MPFB2 / community targets (ears incl. cauliflower and flap, jaw, nose,
+   lips, eyelids, head shapes, asymmetry, muscle groups) from mh-shapes-x; likeness sheets' morphs plus
+   their morphs_unavailable / morphs_not_in_embed / morphs_if_available values; ethnicity shape bases only
+   from a fitted "ethnicity_fit" block; strand-shell hair and beards over painted coverage maps; athletic
+   normal map, tiled pores and a roughness map on island-evened skins; MMA glove and board-shorts
+   proxies; Mixamo fight clips for strikes (timed to the driver's contact and pulled onto the target),
+   reactions, knockdowns, get-ups, the takedown entry and the referee; southpaw mirroring.
+   Credits: board shorts mesh "elvs_male_swim_shorts1" by Elvaerwyn, CC BY 2.5 SE (makehumancommunity.org);
+   MMA glove proxy by "learning" and Mindfront skin/normal maps, CC0; motion clips from Adobe Mixamo. */
 (function (root) {
   "use strict";
   var T = root.THREE;

@@ -22,7 +22,13 @@ Resolution of a ufcstats person to a Sherdog page:
 
 Raw HTML is cached under data/raw/sherdog_cache/ (gitignored) and never re-fetched.
 Walk-forward rule: a snapshot for a UFC bout counts only Sherdog pro fights dated before that bout's date
-(and not the same event), so every feature is known before the fight.
+(and not the same event), so every feature is known before the fight. Network features (net Elo, opponents'
+records) come from StrictNetwork: a bout in year Y sees only the pages of UFC debutants who debuted before
+Jan 1 of Y (since 2015, a complete set), so who-reached-the-UFC-later never leaks into a snapshot.
+
+Hidden-data protocol (docs/BACKLOG.md): eval tunes by time-ordered CV on 2015-2023, scores 2024-2025 once and
+never fits or scores fights from 2026-01-01 (the vault); their pre-fight predictions go to
+$PREUFC_VAULT_DIR/preufc_vault.json outside the repository. Report: research/model_preufc.md.
 """
 import argparse
 import datetime as dt
@@ -2086,7 +2092,7 @@ def ml_stack_eval(newc, fs, pick, Cs, taus):
     assert np.allclose(chk, d["y"].to_numpy()), "ml.json orientation differs"
     oof = d[(d["set"] == "oof") & (d["date"] < TEST_FROM)].copy()
     te = d[(d["set"] == "test") & (d["date"] >= TEST_FROM) & (d["date"] < VAULT_FROM)].copy()
-    res["rows"] = {"oof_2019_2023": int(len(oof)), "test_2024plus": int(len(te))}
+    res["rows"] = {"oof_2019_2023": int(len(oof)), "test_2024_2025": int(len(te))}
     yt = te["y"].to_numpy()
     cb = ClusterBoot(te["date"].tolist(), 2000, 21)
     years = [2020, 2021, 2022, 2023]
@@ -2459,8 +2465,8 @@ def report(args):
                 x["debut_sides_with_sherdog"], 100 * x["debut_sides_with_sherdog"] / max(1, x["debut_sides"])))
         P("")
         T = ev["test"]
-        P("### Winner, 2024+ newcomer bouts (held out, scored once)\n")
-        P("| Model | Log loss [95%% CI] | Brier | Accuracy | ECE |")
+        P("### Winner, 2024-2025 newcomer bouts (validation, scored once; the 2026 vault is excluded)\n")
+        P("| Model | Log loss [95% CI] | Brier | Accuracy | ECE |")
         P("|---|---|---|---|---|")
         for k, v in T["metrics_ci95"].items():
             P("| %s | %s | %.4f | %.3f | %.4f |" % (k, ci(v["log_loss"]), v["brier"][0], v["accuracy"][0],
@@ -2476,7 +2482,7 @@ def report(args):
         P("|---|---|" + "---|" * len(keys))
         for g, v in T["subgroups_log_loss"].items():
             P("| %s | %d | " % (g, v["n"]) + " | ".join(f4(v[k]) for k in keys) + " |")
-        P("\n### All 2024+ decisive bouts (does seeding hurt anyone?)\n")
+        P("\n### All 2024-2025 decisive bouts (does seeding hurt anyone?)\n")
         A = T["all_2024plus_bouts"]
         P("| Set | Model | n | Log loss | Brier | Accuracy |\n|---|---|---|---|---|---|")
         for k, v in A.items():
@@ -2550,7 +2556,7 @@ def report(args):
                         for g in sf[t]["test_rate_by_pre_tercile"]))
     au = ev.get("audit") if ev else None
     if au:
-        P("\n### Audit (each scored once on 2024+, settings by CV on 2015-2023)\n")
+        P("\n### Audit (each scored once on 2024-2025, settings by CV on 2015-2023)\n")
         fr = au["full_network_reference"]
         P("- full-network reference with the chosen settings: %.4f vs strict %.4f; full minus strict %+.4f [%+.4f, %+.4f], "
           "P(full better) %.2f" % (fr["base+pre full network"], fr["base+pre strict (main)"], *fr["full - strict"]))

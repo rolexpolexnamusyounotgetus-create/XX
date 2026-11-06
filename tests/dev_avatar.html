@@ -75,7 +75,7 @@ DEV.shoot = function () {
 DEV.lineupActors = function () { return [show.A, show.B, extras[0], extras[1], show.R].filter(Boolean); };
 DEV.pose = function (actors, mode, yaw, dt) {
   actors.forEach(function (a, i) {
-    var n = actors.length, x = (i - (n - 1) / 2) * 1.15;
+    var n = actors.length, x = (i - (n - 1) / 2) * (n > 5 ? 0.95 : 1.15);
     a.pos.set(x, 0, 0); a.yaw = yaw; a.vel.set(0, 0, 0); a.opp = null; a.act = null; a.react = null; a.walkTo = null;
     if (a.avatar && a.avatar.app && !a.isRef && a._profSlug !== a.avatar.app.slug && FightShow.stanceProfile) { a.setProfile(FightShow.stanceProfile(a.avatar.app)); a._profSlug = a.avatar.app.slug; }
     if (a.mode !== mode || a.tr) a.snapMode(mode); else a.replant(true);
@@ -94,7 +94,8 @@ DEV.pose = function (actors, mode, yaw, dt) {
 DEV.lineup = function (yaw, mode) {
   var actors = DEV.lineupActors();
   DEV.pose(actors, mode || "walk", yaw || 0);
-  cam.fov = 44; cam.aspect = W / H; cam.position.set(0, 1.2, 3.75); cam.lookAt(0, 0.95, 0); cam.updateProjectionMatrix();
+  var nA = actors.length, dz = nA > 5 ? 3.75 * (0.95 * nA) / (1.15 * 5) : 3.75;
+  cam.fov = 44; cam.aspect = W / H; cam.position.set(0, 1.2, dz); cam.lookAt(0, 0.95, 0); cam.updateProjectionMatrix();
   DEV.shoot();
 };
 DEV.head = function (i, yaw, mode) {

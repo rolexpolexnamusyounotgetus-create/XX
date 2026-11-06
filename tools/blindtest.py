@@ -206,6 +206,10 @@ class Ctx:
         self.win_ids = [i for i in self.order if WINDOW[0] <= self.date[i] <= WINDOW[1]]
         self._ml = None
         self._moe_rows = None
+        # input fingerprints at load time (other tools may rewrite these files while a replay runs)
+        self.inputs = {n: sha_files(os.path.join(DERIVED, n)) for n in
+                       ("backtest_dev.json", "ml.json", "market.json", "moe.json", "ratings.json", "methodround.json",
+                        "preufc.json", "ml2.json")}
 
     def json(self, name):
         if name not in self._json:
@@ -1486,9 +1490,7 @@ def build_doc(ctx, R, S, args, plugins):
             "keys": {"fights[id].p[model]": "[P(A), refit cutoff (null = frozen/sequential), fit_through]",
                      "fits[model]": "every refit: refit_at (the card date), fit_through, n_train"},
             "models": R["models"], "skipped": R["skipped"], "plugins": plugins,
-            "inputs": {n: sha_files(os.path.join(DERIVED, n)) for n in
-                       ("backtest_dev.json", "ml.json", "market.json", "moe.json", "ratings.json", "methodround.json",
-                        "preufc.json")}}
+            "inputs": ctx.inputs}
     return {"meta": meta, "events": R["events"], "fits": R["fits"], "fights": fights, "scores": S}
 
 
