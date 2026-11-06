@@ -1650,6 +1650,13 @@ def specs(quick):
               "grid": [("w_round", [0.15, 0.25, 0.4, 0.6]), ("kappa", [1.5, 2.0, 2.5, 3.0, 4.0]),
                        ("w2", [0.01, 0.02, 0.05, 0.1]), ("s0", [0.3, 0.5, 0.8]), ("w_fround", [1.0, 2.0, 3.0]),
                        ("w_rem", [0.0, 0.5, 1.0])]})
+    S.append({"name": "whr_hybrid", "kind": "whr", "family": "Round-level",
+              "label": "WHR on a blend of the fight result with margin of victory and every round as a game "
+                       "(lam x fight + (1 - lam) x rounds)",
+              "P": {"enc": "hybrid", "lam": 0.5, "pre_on": PRE_ON}, "from": "whr_rounds", "from_mov": "whr_mov",
+              "coarse": True,
+              "grid": [("lam", [0.2, 0.35, 0.5, 0.65, 0.8]), ("w_round", [0.15, 0.25, 0.4, 0.6, 1.0]),
+                       ("kappa", [1.0, 1.25, 1.5, 2.0, 2.5]), ("w2", [0.02, 0.05, 0.1]), ("s0", [0.5, 0.8, 1.1])]})
     if quick:
         for s in S:
             if s["grid"]:
@@ -2214,7 +2221,7 @@ def tables(path=OUT_JSON, top=10):
     S, M = J["systems"], J["meta"]
     rk = M.get("ranking_scores_2020_2023", {})
     order = [k for k in ["elo_ref", "elo_k", "elo_full", "glicko2", "trueskill", "trueskill_mov", "whr", "whr_mov",
-                         "elo_rounds", "whr_rounds", "dims", "stack", "ratings_plus"] if k in S]
+                         "elo_rounds", "whr_rounds", "whr_hybrid", "dims", "stack", "ratings_plus"] if k in S]
     print("### Results (decisive fights; tune = 2019-2023 prequential, rank = 2020-2023, test = 2024+ held out)\n")
     print("| System | Family | Tune LL | Rank LL 2020-23 | Test LL [95% CI] | Test Brier | Test acc | ECE | "
           "Slope | dLL vs elo_ref [95% CI] | P(better) |")

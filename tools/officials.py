@@ -330,6 +330,7 @@ def build_data():
     F["country"] = [r[0] for r in reg]
     F["region"] = [r[1] for r in reg]
     F["referee"] = F["REFEREE"].fillna("").str.strip()
+    EVENT_OF.update(dict(zip(F.fid, F.EVENT)))
     # ---- round differentials A - B (A = first name in BOUT)
     s = S.copy()
     s["ctrl_min"] = s.ctrl / 60.0
@@ -993,12 +994,13 @@ def round_metrics(rprob, dz, eps=1e-4):
     """Per judge-round outcome metrics on cards with observed round scores: 5-class log loss
     (B10-8, B10-9, 10-10, A10-9, A10-8), round-winner log loss and accuracy, 10-8 log loss."""
     starts = np.r_[0, np.cumsum([r["R"] for r in dz.rows])]
-    ll5, llw, acc, ll8, p8, y8 = [], [], [], [], [], []
+    ll5, llw, acc, ll8, p8, y8, g5, gw = [], [], [], [], [], [], [], []
     for f, r in enumerate(dz.rows):
         for j, c in enumerate(r["cards"]):
             if c[4] is None:
                 continue
             for k, o in enumerate(c[4]):
+                g5.append(EVENT_OF.get(r["fid"], r["fid"]))
                 P = np.clip(rprob[starts[f] + k, j], eps, 1)
                 P = P / P.sum()
                 ll5.append(-math.log(P[o]))
@@ -1008,6 +1010,7 @@ def round_metrics(rprob, dz, eps=1e-4):
                     q = min(max(pa / (pa + pb), eps), 1 - eps)
                     ya = o > 2
                     llw.append(-(math.log(q) if ya else math.log(1 - q)))
+                    gw.append(EVENT_OF.get(r["fid"], r["fid"]))
                     acc.append((q > 0.5) == ya)
                     # 10-8 given the winner
                     pw8 = (P[4] / pa) if ya else (P[0] / pb)
@@ -1019,7 +1022,7 @@ def round_metrics(rprob, dz, eps=1e-4):
     return {"judge_rounds": len(ll5), "outcome5_logloss": float(np.mean(ll5)), "winner_logloss": float(np.mean(llw)),
             "winner_acc": float(np.mean(acc)), "ten8_given_winner_logloss": float(np.mean(ll8)),
             "pred_ten8_rate": float(np.mean(p8)), "obs_ten8_rate": float(np.mean(y8)),
-            "_ll5": np.array(ll5), "_llw": np.array(llw)}
+            "_ll5": np.array(ll5), "_llw": np.array(llw), "_g5": g5, "_gw": gw}
 
 
 def actual_class(r):
@@ -1052,7 +1055,8 @@ def decision_metrics(probs, rows, eps=1e-4):
             "winner_acc": float(((q > 0.5) == (ya == 1)).mean()),
             "class7_logloss": float(ll7.mean()), "split_logloss": float(ll_nu.mean()),
             "pred_split_rate": float(pnu.mean()), "obs_split_rate": float(ynu.mean()),
-            "_ll_w": ll_w, "_ll7": ll7, "_ll_nu": ll_nu, "_q": q, "_ya": ya}
+            "_ll_w": ll_w, "_ll7": ll7, "_ll_nu": ll_nu, "_q": q, "_ya": ya,
+            "_g": ev_groups([r["fid"] for r in rows]), "_g_w": ev_groups([r["fid"] for r, k in zip(rows, nd) if k])}
 
 
 def calib_table(q, y, nb=10):
@@ -1062,12 +1066,28 @@ def calib_table(q, y, nb=10):
              "obs": float(y[bins == k].mean()) if (bins == k).any() else None} for k in range(nb)]
 
 
-def boot_diff(a, b, n=2000, seed=1):
-    """Mean of a - b with a bootstrap 95% interval over fights."""
+EVENT_OF = {}      # fid -> event name (filled by build_data): bootstrap clusters (a card shares its judges/referees)
+
+
+def ev_groups(fids):
+    return [EVENT_OF.get(f, f) for f in fids]
+
+
+def boot_diff(a, b, n=2000, seed=1, g=None):
+    """Mean of a - b with a 95% bootstrap interval; resampling whole events when g (cluster labels) is given."""
     rng = np.random.default_rng(seed)
-    d = np.asarray(a) - np.asarray(b)
-    bs = d[rng.integers(0, len(d), (n, len(d)))].mean(1)
-    return {"mean": float(d.mean()), "lo": float(np.percentile(bs, 2.5)), "hi": float(np.percentile(bs, 97.5))}
+    d = np.asarray(a, float) - np.asarray(b, float)
+    if g is None or len(g) != len(d):
+        bs = d[rng.integers(0, len(d), (n, len(d)))].mean(1)
+        return {"mean": float(d.mean()), "lo": float(np.percentile(bs, 2.5)), "hi": float(np.percentile(bs, 97.5)),
+                "boot": "fights"}
+    codes, gi = np.unique(np.asarray(g, dtype=object).astype(str), return_inverse=True)
+    sums = np.bincount(gi, weights=d, minlength=len(codes))
+    cnts = np.bincount(gi, minlength=len(codes)).astype(float)
+    pick = rng.integers(0, len(codes), (n, len(codes)))
+    bs = sums[pick].sum(1) / cnts[pick].sum(1)
+    return {"mean": float(d.mean()), "lo": float(np.percentile(bs, 2.5)), "hi": float(np.percentile(bs, 97.5)),
+            "boot": f"events ({len(codes)})"}
 
 
 # ================================================================================================
@@ -1670,10 +1690,12 @@ def ref_walkforward(units, tune=(2019, 2023), test_from=2024):
             lm[tau] = f["log_marginal"]
         tau_lm = max(lm, key=lm.get)
         # test with yearly refits
-        L0, L1, L2 = [], [], []
+        L0, L1, L2, GG = [], [], [], []
+        fids_u = df.fid.to_numpy()
         for ty in sorted(set(yr[yr >= test_from])):
             trw = yr < ty
             te = yr == ty
+            GG.extend(ev_groups(fids_u[te]))
             ot, oe = (None, None) if o is None else (o[trw], o[te])
             f0 = glmm_fit(y[trw], Xa[trw], g[trw], fam, ot, tau=0.0)
             f1 = glmm_fit(y[trw], Xa[trw], g[trw], fam, ot, tau=max(tau_star, 1e-9), disp=disp)
@@ -1686,8 +1708,8 @@ def ref_walkforward(units, tune=(2019, 2023), test_from=2024):
                      "tune_loss": losses, "tau_laplace_pre2024": tau_lm,
                      "test_n": int(len(L0)), "test_events": float(y[yr >= test_from].sum()),
                      "test_loss_league": float(L0.mean()), "test_loss_ref": float(L1.mean()),
-                     "test_delta": boot_diff(L1, L0), "test_loss_ref_laplace": float(L2.mean()),
-                     "test_delta_laplace": boot_diff(L2, L0), "family": fam}
+                     "test_delta": boot_diff(L1, L0, g=GG), "test_loss_ref_laplace": float(L2.mean()),
+                     "test_delta_laplace": boot_diff(L2, L0, g=GG), "family": fam}
         log(f"  ref {name}: n {len(y)}, events {y.sum():.0f}, tau* {tau_star} (Laplace {tau_lm}), "
             f"2024+ loss {L0.mean():.5f} -> {L1.mean():.5f}")
     return res
@@ -1870,20 +1892,34 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
         J["heldout_2024_on"][name.replace(sfx, "")] = strip_private(hm[name])
     L, Jm, JH, LH = hm["league"], hm["judges" + sfx], hm["judges_home" + sfx], hm["league_home"]
     evL, evJ, evJH = (test["models"][n]["eval"] for n in ("league", "judges" + sfx, "judges_home" + sfx))
+    assert list(evL["fids"]) == list(evJH["fids"]) == list(evJ["fids"])
+    ga, gw = L["_g"], L["_g_w"]
     J["heldout_2024_on"]["comparisons"] = {
-        "judges_vs_league": {"winner_logloss": boot_diff(Jm["_ll_w"], L["_ll_w"]),
-                             "class7_logloss": boot_diff(Jm["_ll7"], L["_ll7"]),
-                             "split_logloss": boot_diff(Jm["_ll_nu"], L["_ll_nu"]),
-                             "card_ll_per_fight": boot_diff(evJ["card_ll"], evL["card_ll"])},
-        "judges_home_vs_judges": {"winner_logloss": boot_diff(JH["_ll_w"], Jm["_ll_w"]),
-                                  "card_ll_per_fight": boot_diff(evJH["card_ll"], evJ["card_ll"])},
-        "league_home_vs_league": {"winner_logloss": boot_diff(LH["_ll_w"], L["_ll_w"]),
+        "judges_vs_league": {"winner_logloss": boot_diff(Jm["_ll_w"], L["_ll_w"], g=gw),
+                             "class7_logloss": boot_diff(Jm["_ll7"], L["_ll7"], g=ga),
+                             "split_logloss": boot_diff(Jm["_ll_nu"], L["_ll_nu"], g=ga),
+                             "card_ll_per_fight": boot_diff(evJ["card_ll"], evL["card_ll"], g=ga)},
+        "judges_home_vs_league": {"winner_logloss": boot_diff(JH["_ll_w"], L["_ll_w"], g=gw),
+                                  "class7_logloss": boot_diff(JH["_ll7"], L["_ll7"], g=ga),
+                                  "split_logloss": boot_diff(JH["_ll_nu"], L["_ll_nu"], g=ga),
+                                  "card_ll_per_fight": boot_diff(evJH["card_ll"], evL["card_ll"], g=ga)},
+        "judges_home_vs_league_home": {"winner_logloss": boot_diff(JH["_ll_w"], LH["_ll_w"], g=gw),
+                                       "class7_logloss": boot_diff(JH["_ll7"], LH["_ll7"], g=ga),
+                                       "split_logloss": boot_diff(JH["_ll_nu"], LH["_ll_nu"], g=ga),
+                                       "card_ll_per_fight": boot_diff(evJH["card_ll"],
+                                                                      test["models"]["league_home"]["eval"]["card_ll"], g=ga)},
+        "judges_home_vs_judges": {"winner_logloss": boot_diff(JH["_ll_w"], Jm["_ll_w"], g=gw),
+                                  "class7_logloss": boot_diff(JH["_ll7"], Jm["_ll7"], g=ga),
+                                  "card_ll_per_fight": boot_diff(evJH["card_ll"], evJ["card_ll"], g=ga)},
+        "league_home_vs_league": {"winner_logloss": boot_diff(LH["_ll_w"], L["_ll_w"], g=gw),
+                                  "class7_logloss": boot_diff(LH["_ll7"], L["_ll7"], g=ga),
                                   "card_ll_per_fight": boot_diff(test["models"]["league_home"]["eval"]["card_ll"],
-                                                                 evL["card_ll"])},
-        "league_vs_indep": {"winner_logloss": boot_diff(L["_ll_w"], hm["indep"]["_ll_w"]),
-                            "class7_logloss": boot_diff(L["_ll7"], hm["indep"]["_ll7"]),
-                            "split_logloss": boot_diff(L["_ll_nu"], hm["indep"]["_ll_nu"]),
-                            "card_ll_per_fight": boot_diff(evL["card_ll"], test["models"]["indep"]["eval"]["card_ll"])},
+                                                                 evL["card_ll"], g=ga)},
+        "league_vs_indep": {"winner_logloss": boot_diff(L["_ll_w"], hm["indep"]["_ll_w"], g=gw),
+                            "class7_logloss": boot_diff(L["_ll7"], hm["indep"]["_ll7"], g=ga),
+                            "split_logloss": boot_diff(L["_ll_nu"], hm["indep"]["_ll_nu"], g=ga),
+                            "card_ll_per_fight": boot_diff(evL["card_ll"], test["models"]["indep"]["eval"]["card_ll"],
+                                                           g=ga)},
         "note": "negative = better for log losses; positive = better for card log-likelihood"}
     pA_L = evL["probs"][:, :3].sum(1)
     pA_J = evJH["probs"][:, :3].sum(1)
@@ -1912,15 +1948,16 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
                                                       pred_card108_rate=float(a3.mean()),
                                                       obs_card108_rate=float(obs108.mean()))
         J["heldout_2024_on"]["comparisons"]["judges_home_vs_engine_v3"] = {
-            "winner_logloss": boot_diff(JH["_ll_w"], m3["_ll_w"]) if len(JH["_ll_w"]) == len(m3["_ll_w"]) else None,
-            "class7_logloss": boot_diff(JH["_ll7"], m3["_ll7"]) if len(JH["_ll7"]) == len(m3["_ll7"]) else None,
-            "round_outcome5_logloss": boot_diff(rl["judges_home"]["_ll5"], rl["engine_v3_rule"]["_ll5"])}
+            "winner_logloss": boot_diff(JH["_ll_w"], m3["_ll_w"], g=gw) if JH["_g_w"] == m3["_g_w"] else None,
+            "class7_logloss": boot_diff(JH["_ll7"], m3["_ll7"], g=ga) if JH["_g"] == m3["_g"] else None,
+            "round_outcome5_logloss": boot_diff(rl["judges_home"]["_ll5"], rl["engine_v3_rule"]["_ll5"],
+                                                g=rl["league"]["_g5"])}
     except Exception as e:      # the engine file is another agent's and may change shape
         J["heldout_2024_on"]["engine_v3_rule"] = {"error": repr(e)}
     J["heldout_2024_on"]["comparisons"]["round_judges_home_vs_league"] = {
-        "outcome5_logloss": boot_diff(rl["judges_home"]["_ll5"], rl["league"]["_ll5"]),
-        "winner_logloss": boot_diff(rl["judges_home"]["_llw"], rl["league"]["_llw"]),
-        "note": "bootstrap over judge-rounds (rounds of one fight are not independent: intervals are optimistic)"}
+        "outcome5_logloss": boot_diff(rl["judges_home"]["_ll5"], rl["league"]["_ll5"], g=rl["league"]["_g5"]),
+        "winner_logloss": boot_diff(rl["judges_home"]["_llw"], rl["league"]["_llw"], g=rl["league"]["_gw"]),
+        "note": "per judge-round; bootstrap resamples whole events"}
     J["heldout_2024_on"]["round_level"] = {k: strip_private(v) for k, v in rl.items()}
     J["heldout_2024_on"]["calibration_judges_home"] = calib_table(JH["_q"], JH["_ya"])
     J["heldout_2024_on"]["calibration_indep"] = calib_table(hm["indep"]["_q"], hm["indep"]["_ya"])
@@ -1938,14 +1975,16 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
             pr = np.vstack([e24["probs"][m24], e25["probs"]])
             fl = [f for f, k in zip(e24["fids"], m24) if k] + list(e25["fids"])
             mb = decision_metrics(pr, [by_fid[f] for f in fl])
-            yr_ref[name.replace(sfx, "")] = dict(strip_private(mb), card_ll=float(ll.mean()), _ll=ll, _w=mb["_ll_w"])
+            yr_ref[name.replace(sfx, "")] = dict(strip_private(mb), card_ll=float(ll.mean()), _ll=ll, _w=mb["_ll_w"],
+                                                 _gl=ev_groups(fl), _gw=mb["_g_w"])
         if "league" in yr_ref and "judges_home" in yr_ref:
             yr_ref["judges_home_vs_league"] = {
-                "card_ll_per_fight": boot_diff(yr_ref["judges_home"]["_ll"], yr_ref["league"]["_ll"]),
-                "winner_logloss": boot_diff(yr_ref["judges_home"]["_w"], yr_ref["league"]["_w"])}
+                "card_ll_per_fight": boot_diff(yr_ref["judges_home"]["_ll"], yr_ref["league"]["_ll"],
+                                               g=yr_ref["league"]["_gl"]),
+                "winner_logloss": boot_diff(yr_ref["judges_home"]["_w"], yr_ref["league"]["_w"], g=yr_ref["league"]["_gw"])}
         for v in yr_ref.values():
-            v.pop("_ll", None)
-            v.pop("_w", None)
+            for k_ in ("_ll", "_w", "_gl", "_gw"):
+                v.pop(k_, None)
         J["heldout_2024_on"]["yearly_refit"] = yr_ref
     yrs = np.array(evJH["years"])
     J["heldout_2024_on"]["by_year"] = {}
@@ -2038,8 +2077,10 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
                          "exp(wK*t)*K + exp(wG*t)*G (league weights, no home term); kappa < 0: lopsided rounds carry "
                          "more shared noise (heavier tails than logistic-normal)",
            "unknown_judge_sd": J["tau"],
-           "judge_cols": ["name", "n", "v", "p", "g", "c", "cards", "cards_2022_on"],
-           "judges": {j["key"]: [j["name"]] + [round(j["effects"][q], 4) for q in EFF] + [j["cards"], j["cards_2022_on"]]
+           "judge_cols": ["name", "n", "v", "p", "g", "c", "sd_n", "sd_v", "sd_p", "sd_g", "sd_c", "cards",
+                          "cards_2022_on"],
+           "judges": {j["key"]: [j["name"]] + [round(j["effects"][q], 4) for q in EFF] +
+                      [round(j["sd"][q], 4) for q in EFF] + [j["cards"], j["cards_2022_on"]]
                       for j in jt if j["years"] and j["years"][1] >= 2019},
            "judge_pools": {reg: [[x["key"], x["share"]] for x in pool["judges"]]
                            for reg, pool in J["region_pools"].items()},
@@ -2245,7 +2286,7 @@ def ten8_forecast_block(rows, nat, tune_fit, tune_years, test_fit, test_years, f
         th1["cy"] = cy_forecast(th["cy"], T, *best)
         blk = {"years": list(years), "n": int(dz.nF), "card_ll_last_level": float(lls[(0.0, 1)].mean()),
                "card_ll_forecast": float(lls[best].mean()),
-               "diff": boot_diff(lls[best], lls[(0.0, 1)]),
+               "diff": boot_diff(lls[best], lls[(0.0, 1)], g=ev_groups([r["fid"] for r in dz.rows])),
                "c_last": float(th["cy"][T]), "c_forecast": [float(th1["cy"][T + h]) for h in (1, 2)]}
         obs108 = np.array([[card_n108(c, r["R"]) > 0 for c in r["cards"]] for r in dz.rows])
         for nm, thx in (("last_level", th0), ("forecast", th1)):
@@ -2262,7 +2303,10 @@ def ten8_forecast_block(rows, nat, tune_fit, tune_years, test_fit, test_years, f
     T = 2025 - YEAR0
     cyf = cy_forecast(thf["cy"], T, *res["best"])
     out["engine_c_2025"] = float(thf["cy"][T])
-    out["engine_c_2026"] = float(cyf[T + 1])
+    out["engine_c_2026_trend"] = float(cyf[T + 1])
+    # ship the trend only if it beat the last level on the held-out years (roadmap rule)
+    out["validated"] = bool(out["heldout"]["diff"]["lo"] > 0)
+    out["engine_c_2026"] = out["engine_c_2026_trend"] if out["validated"] else out["engine_c_2025"]
     return out
 
 
@@ -2283,7 +2327,8 @@ def structure_block(rows, by_fid, test_base, test_new, sfx):
         blk = {"fold": nm}
         for m, v in S_.items():
             th = v["th"]
-            blk[m] = dict(v["metrics"], card_ll_vs_league_home=boot_diff(v["eval"]["card_ll"], base),
+            blk[m] = dict(v["metrics"], card_ll_vs_league_home=boot_diff(v["eval"]["card_ll"], base,
+                                                                         g=ev_groups(v["eval"]["fids"])),
                           round_unanimity=v["unanimity"], sigma_shared=float(np.exp(th["log_su"])),
                           kappa=float(th["kappa"]), sigma_fight=float(np.exp(th["log_sv"])) if m.endswith("fight") else 0.0)
         out[tag] = blk
@@ -2297,10 +2342,10 @@ def structure_block(rows, by_fid, test_base, test_new, sfx):
                 rws = [by_fid[f] for f in en["fids"]]
                 mb, mn = decision_metrics(eb["probs"], rws), decision_metrics(en["probs"], rws)
                 cmp_[m] = {"card_ll_base": float(eb["card_ll"].mean()), "card_ll_closeness": float(en["card_ll"].mean()),
-                           "card_ll": boot_diff(en["card_ll"], eb["card_ll"]),
-                           "winner_logloss": boot_diff(mn["_ll_w"], mb["_ll_w"]),
-                           "class7_logloss": boot_diff(mn["_ll7"], mb["_ll7"]),
-                           "split_logloss": boot_diff(mn["_ll_nu"], mb["_ll_nu"])}
+                           "card_ll": boot_diff(en["card_ll"], eb["card_ll"], g=mn["_g"]),
+                           "winner_logloss": boot_diff(mn["_ll_w"], mb["_ll_w"], g=mn["_g_w"]),
+                           "class7_logloss": boot_diff(mn["_ll7"], mb["_ll7"], g=mn["_g"]),
+                           "split_logloss": boot_diff(mn["_ll_nu"], mb["_ll_nu"], g=mn["_g"])}
         out["closeness_on_vs_off_heldout_2024_on"] = cmp_
     return out
 
@@ -2310,7 +2355,12 @@ def agreement_block(rows, nat, final_fit, test, sfx, by_fid, shifts=(0.0, 0.1, 0
     the 2025 split/majority rate with the final fit (an engine knob, not a validated parameter)."""
     out = {"by_year_heldout": {}}
     name = "judges_home" + sfx
-    ev = test["models"][name]["eval"]
+    ev = dict(test["models"][name]["eval"])
+    if "runan" not in ev:                     # older fold pickles: re-simulate the round unanimity
+        v = test["models"][name]
+        dzr = Design([by_fid[f] for f in ev["fids"]], v["jidx"], nat, test["test_year"] - 1)
+        simulate_decisions(sim_params(_fit_th(v), MODELS[v["model"]]), dzr, nsim=4000, seed=7)
+        ev["runan"] = simulate_decisions.last_runan
     yrs = np.array(ev["years"])
     for y in sorted(set(yrs)):
         idx = np.nonzero(yrs == y)[0]
