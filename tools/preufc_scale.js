@@ -52,10 +52,11 @@ const out = { meta: { tool: "tools/preufc_scale.js", sims: N, divisions: DIVS, p
 const G = { pow: [], sub: [], chin: [] };
 for (const div of DIVS) for (const nR of [3, 5]) {
   const base = run(div, nR, null, null).c;
+  const X = E.params().preufc.exp;
   const cases = [
-    ["pow", { pow: 0.6, sub: 0, chin: 0 }, "A", "aKO"],
-    ["sub", { pow: 0, sub: 0.63, chin: 0 }, "A", "aSUB"],
-    ["chin", { pow: 0, sub: 0, chin: 0.24 }, "A", "bKO"]   // A's chin multiplier moves B's KO-win odds
+    ["pow", { pow: X.pow, sub: 0, chin: 0 }, "A", "aKO"],
+    ["sub", { pow: 0, sub: X.sub, chin: 0 }, "A", "aSUB"],
+    ["chin", { pow: 0, sub: 0, chin: X.chin }, "A", "bKO"]   // A's chin multiplier moves B's KO-win odds
   ];
   for (const [kn, ex, side, key] of cases) for (const rec of [REC_HI, REC_LO]) {
     const pre = side === "A" ? { A: rec, B: null } : { A: null, B: rec };

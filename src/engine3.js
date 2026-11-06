@@ -1079,11 +1079,12 @@
   // research/model_preufc.md "Recommendation for the engine", item 3 (verified): a newcomer's regional (non-UFC pro) record
   // moves his finish odds. Per side with at most params.preufc.maxUfc (3) prior UFC fights, from the record entering the bout:
   //   KO rate = (ko_w + 0.3) / (n + 2),  sub rate = (sub_w + 0.2) / (n + 2),  KO-loss rate = (ko_l + 0.2) / (n + 2)
-  //   power  M_pow  = (KO rate / 0.343)^0.60       odds multiplier on his per-fight KO-win probability
-  //   subs   M_sub  = (sub rate / 0.247)^0.63      odds multiplier on his per-fight submission-win probability
-  //   chin   M_chin = (KO-loss rate / 0.044)^0.24  odds multiplier on his per-fight KO-loss probability (weak: the CI includes 0)
+  //   power  M_pow  = (KO rate / 0.3433)^0.601       odds multiplier on his per-fight KO-win probability
+  //   subs   M_sub  = (sub rate / 0.2466)^0.627      odds multiplier on his per-fight submission-win probability
+  //   chin   M_chin = (KO-loss rate / 0.0436)^0.244  odds multiplier on his per-fight KO-loss probability (weak: the CI includes 0)
   //   each faded to M^exp(-n_UFC / 8)
-  // (per-side finish models fit on 2015-2023 newcomer sides with time-ordered CV; reference rates = the training means). The
+  // (params.preufc; per-side finish models fit on 2015-2023 newcomer sides with time-ordered CV, preufc.json eval.side_finish;
+  // reference rates = the training means; the report rounds them to 0.343 / 0.247 / 0.044 and 0.60 / 0.63 / 0.24). The
   // engine works on per-strike / per-second hazards, so each multiplier enters as M^scale on the hazards of that finish: X's
   // knockdown, ground-and-pound and standing TKO hazards x M_pow,X^scale.pow x M_chin,Y^scale.chin, X's submission attempt
   // rates (top, bottom, standing guillotines) x M_sub,X^scale.sub. params.preufc.scale maps the per-fight odds multiplier to

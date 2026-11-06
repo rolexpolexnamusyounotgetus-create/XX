@@ -152,15 +152,16 @@
     // v5 merge step 4. For a side with at most maxUfc prior UFC fights: rates from the regional record entering the bout,
     // (count + smooth) / (n + 2); per-fight finish-odds multipliers (rate / ref)^exp (power: own KO-win odds; sub: own
     // submission-win odds; chin: own KO-loss odds), faded by exp(-n_UFC / tau). Recipe values (smooth, ref, exp, tau) from the
-    // per-side finish models fit on 2015-2023 newcomer sides with time-ordered CV (tau 8 = the top of its CV grid; the report
+    // per-side finish models fit on 2015-2023 newcomer sides with time-ordered CV (exact values from preufc.json; the report rounds
+    // them to 0.343 / 0.247 / 0.044 and 0.60 / 0.63 / 0.24; tau 8 = the top of its CV grid; the report
     // suggests trying 16 or no fade in the engine refit). scale: the hazard exponent that makes one unit of log odds multiplier
     // move the engine's simulated finish odds by one unit (tools/preufc_scale.js, league-average pairs on train priors).
     preufc: {
       maxUfc: 3,
       tau: 8,
       smooth: { ko: 0.3, sub: 0.2, kol: 0.2 },
-      ref: { ko: 0.343, sub: 0.247, kol: 0.044 },
-      exp: { pow: 0.60, sub: 0.63, chin: 0.24 },
+      ref: { ko: 0.3433, sub: 0.2466, kol: 0.0436 },   // data/derived/preufc.json eval.side_finish.mu_pre (pre_ko, pre_sub, pre_kol)
+      exp: { pow: 0.601, sub: 0.627, chin: 0.244 },    // eval.side_finish.{ko_win, sub_win, ko_loss} "ufc+pre" own coefficient at n = 0
       scale: { pow: 1.007, sub: 1.311, chin: 0.992 }
     },
 
