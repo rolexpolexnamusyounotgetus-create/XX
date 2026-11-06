@@ -34,12 +34,15 @@ What it does (research/model_ml.md has the results and the reasoning):
 Walk-forward discipline: features use only earlier fights; Elo is the walk-forward rating from
 tools/build_db.py (K and boost tuned on 2019-2023 there); nothing from 2024+ is used for any choice.
 """
+import os
+
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):   # the box is shared and busy:
+    os.environ.setdefault(_v, "1")                                         # multithreaded BLAS thrashes
 import argparse
 import datetime as dt
 import hashlib
 import json
 import math
-import os
 import pickle
 import sys
 import time
@@ -56,7 +59,7 @@ import build_db as B  # noqa: E402  (shared loaders: parse_fights, build_people,
 ROOT = os.path.dirname(HERE)
 DERIVED = os.path.join(ROOT, "data", "derived")
 OUT_JSON = os.path.join(DERIVED, "ml.json")
-CACHE_DIR = os.environ.get("ML_CACHE_DIR", os.path.join("/tmp", "ml_cache"))
+CACHE_DIR = os.environ.get("ML_CACHE_DIR", os.path.join(ROOT, "out", "ml_cache"))   # out/ is gitignored scratch
 
 warnings.filterwarnings("ignore")
 

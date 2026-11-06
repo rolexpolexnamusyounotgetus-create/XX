@@ -462,6 +462,177 @@ def cmd_engine(args):
         % (time.time() - t0, eo["params_version"], int(np.isnan(E).any(axis=1).sum())))
 
 
+# ------------------------------------------------------------------ deviances and links
+def logit_np(p):
+    p = np.clip(p, 1e-9, 1 - 1e-9)
+    return np.log(p / (1 - p))
+
+
+def sigm_np(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def pois_dev(y, mu):
+    mu = np.maximum(mu, 1e-12)
+    t = np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / mu), 0.0)
+    return 2.0 * (t - (y - mu))
+
+
+def binom_dev(y, n, p):
+    p = np.clip(p, 1e-9, 1 - 1e-9)
+    a = np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / np.maximum(n * p, 1e-12)), 0.0)
+    b = np.where(n - y > 0, (n - y) * np.log(np.maximum(n - y, 1e-12) / np.maximum(n * (1 - p), 1e-12)), 0.0)
+    return 2.0 * (a + b)
+
+
+def target_dev(t, y, e, eta):
+    """Deviance per row for target index t, linear predictor eta (log rate per exposure unit, or logit)."""
+    if TARGETS[t][1] == "pois":
+        return pois_dev(y, e * np.exp(eta))
+    return binom_dev(y, e, sigm_np(eta))
+
+
+def link(t, v):
+    return np.log(np.maximum(v, 1e-9)) if TARGETS[t][1] == "pois" else logit_np(v)
+
+
+def inv_link(t, eta):
+    return np.exp(eta) if TARGETS[t][1] == "pois" else sigm_np(eta)
+
+
+# ------------------------------------------------------------------ ridge GLM with interactions (IRLS)
+def glm_design(X, mean, sd, pairs):
+    Z = (X - mean) / sd
+    cols = [Z]
+    if len(pairs):
+        cols.append(Z[:, pairs[:, 0]] * Z[:, pairs[:, 1]])
+    return np.hstack(cols)
+
+
+def glm_fit(Z, y, e, off, kind, lam, w_extra=None, iters=30):
+    """Ridge-penalised GLM by IRLS. Poisson: E[y] = e exp(off + b0 + Z b); binomial: y ~ Bin(e, sigm(off + b0 + Z b)).
+    The intercept b0 is unpenalised. Returns (b0, b)."""
+    n, p = Z.shape
+    A = np.hstack([np.ones((n, 1)), Z])
+    beta = np.zeros(p + 1)
+    pen = np.full(p + 1, lam)
+    pen[0] = 0.0
+    for _ in range(iters):
+        eta = off + A @ beta
+        if kind == "pois":
+            mu = e * np.exp(np.clip(eta, -30, 30))
+            W = mu
+            z = (eta - off) + (y - mu) / np.maximum(mu, 1e-12)
+        else:
+            pr = sigm_np(eta)
+            W = e * pr * (1 - pr)
+            z = (eta - off) + (y - e * pr) / np.maximum(W, 1e-12)
+        if w_extra is not None:
+            W = W * w_extra
+        AW = A * W[:, None]
+        H = A.T @ AW + np.diag(pen)
+        new = np.linalg.solve(H, AW.T @ z)
+        if np.max(np.abs(new - beta)) < 1e-7:
+            beta = new
+            break
+        beta = new
+    return beta[0], beta[1:]
+
+
+def glm_predict(model, X, off):
+    Z = glm_design(X, model["mean"], model["sd"], model["pairs"])
+    return off + model["b0"] + Z @ model["b"]
+
+
+# ------------------------------------------------------------------ multi-task MLP (torch)
+def mlp_train(Xtr, Ytr, Etr, OFFtr, Xva=None, Yva=None, Eva=None, OFFva=None, hidden=(96, 48), drop=0.15,
+              wd=1e-3, lr=2e-3, epochs=200, seed=0, task_w=None, patience=20, fixed_epochs=None, threads=2):
+    import torch
+    torch.set_num_threads(threads)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    kinds = [k for _, k, _, _ in TARGETS]
+    pois_mask = torch.tensor([k == "pois" for k in kinds])
+    mean = Xtr.mean(0)
+    sd = Xtr.std(0) + 1e-6
+
+    def T(a):
+        return torch.tensor(a, dtype=torch.float32)
+
+    xtr, ytr, etr, otr = T((Xtr - mean) / sd), T(Ytr), T(Etr), T(OFFtr)
+    tw = T(task_w if task_w is not None else np.ones(len(kinds)))
+    layers, d_in = [], Xtr.shape[1]
+    for h in hidden:
+        layers += [torch.nn.Linear(d_in, h), torch.nn.GELU(approximate="tanh"), torch.nn.Dropout(drop)]
+        d_in = h
+    head = torch.nn.Linear(d_in, len(kinds))
+    torch.nn.init.zeros_(head.weight)
+    torch.nn.init.zeros_(head.bias)
+    net = torch.nn.Sequential(*layers, head)
+    opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=wd)
+
+    def loss_fn(out, y, e, o):
+        eta = torch.clamp(o + out, -30, 30)
+        valid = (e > 0).float()
+        # Poisson NLL with exposure (per row), binomial NLL; both up to constants
+        pl = e * torch.exp(eta) - y * eta
+        bl = e * torch.nn.functional.softplus(eta) - y * eta
+        l = torch.where(pois_mask[None, :], pl, bl) * valid
+        return (l.sum(0) * tw).sum() / y.shape[0]
+
+    have_val = Xva is not None
+    if have_val:
+        xva, yva, eva, ova = T((Xva - mean) / sd), T(Yva), T(Eva), T(OFFva)
+    best, best_state, bad, n = float("inf"), None, 0, xtr.shape[0]
+    n_ep = fixed_epochs or epochs
+    hist = []
+    for ep in range(n_ep):
+        net.train()
+        perm = torch.randperm(n)
+        for i in range(0, n, 256):
+            idx = perm[i:i + 256]
+            opt.zero_grad()
+            l = loss_fn(net(xtr[idx]), ytr[idx], etr[idx], otr[idx])
+            l.backward()
+            opt.step()
+        if have_val and fixed_epochs is None:
+            net.eval()
+            with torch.no_grad():
+                vl = float(loss_fn(net(xva), yva, eva, ova))
+            hist.append(vl)
+            if vl < best - 1e-5:
+                best, bad = vl, 0
+                best_state = ([p.detach().clone() for p in net.parameters()], ep + 1)
+            else:
+                bad += 1
+                if bad >= patience:
+                    break
+    if best_state is not None:
+        with torch.no_grad():
+            for p, b in zip(net.parameters(), best_state[0]):
+                p.copy_(b)
+    net.eval()
+    lin = [m for m in net if isinstance(m, torch.nn.Linear)]
+    return {"mean": mean, "sd": sd, "W": [m.weight.detach().numpy().astype(np.float64) for m in lin],
+            "b": [m.bias.detach().numpy().astype(np.float64) for m in lin],
+            "epochs": best_state[1] if best_state is not None else n_ep, "act": "gelu_tanh"}
+
+
+def gelu_np(x):
+    """tanh-approximate GELU (torch GELU(approximate="tanh")); the JS evaluator uses the same formula."""
+    return 0.5 * x * (1.0 + np.tanh(0.7978845608028654 * (x + 0.044715 * x ** 3)))
+
+
+def mlp_predict(model, X):
+    h = (X - model["mean"]) / model["sd"]
+    nl = len(model["W"])
+    for k in range(nl):
+        h = h @ model["W"][k].T + model["b"][k]
+        if k < nl - 1:
+            h = gelu_np(h)
+    return h            # add the offsets
+
+
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])

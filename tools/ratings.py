@@ -1296,3 +1296,150 @@ def coord_descent(kind, P0, grid, pool, passes=3, objective="tune", log=print, m
         if not improved:
             break
     return best, best_r, hist
+
+
+# =====================================================================================================
+# second-stage models (dimensional winner model, stacking): time-ordered CV inside 2019-2023
+# =====================================================================================================
+def logit(p):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
+def fit_lr(X, y, l2):
+    beta, _ = _logit_fit(X, y, l2=l2)
+    return beta
+
+
+def cv_lr(D, X, l2, idx):
+    """Expanding-window CV by year inside idx (2019-2023): train on years < y, predict year y, y = 2020..2023.
+    Returns pooled out-of-fold log loss."""
+    yrs = D.year[idx]
+    y = D.y[idx]
+    oof = np.full(len(idx), np.nan)
+    for yr in range(2020, 2024):
+        tr, va = yrs < yr, yrs == yr
+        if tr.sum() < 50 or va.sum() == 0:
+            continue
+        b = fit_lr(X[tr], y[tr], l2)
+        oof[va] = expit(X[va] @ b)
+    m = ~np.isnan(oof)
+    return float(ll_vec(oof[m], y[m]).mean()), oof
+
+
+def dims_tune(D, quick, log=print):
+    """Per-dim process noise / prior variance / dispersion by one-step-ahead predictive likelihood of the
+    stat itself on 2019-2023 fights (data stream cut at 2024-01-01)."""
+    DP = {k: dict(v) for k, v in DIM_DEFAULT.items()}
+    grids = {"q": [0.005, 0.01, 0.02, 0.05, 0.1, 0.2], "v0": [0.02, 0.05, 0.1, 0.2, 0.4, 0.8],
+             "k": [0.5, 1, 2, 4, 8, 16, 32]}
+    tune_mask = (D.day >= TUNE_FROM) & (D.day < TEST_FROM)
+    hist = {}
+    for j, dim in enumerate(DIMS):
+        def obj(prm):
+            _, _, pll, _ = run_dims(D, {dim: prm}, until=TEST_FROM, record=False, dims=[dim])
+            v = pll[tune_mask, 0]
+            return float(np.nanmean(v))
+        best = DP[dim]
+        bs = obj(best)
+        for ps in range(1 if quick else 2):
+            for name in ("k", "q", "v0"):
+                cands = grids[name] if ps == 0 else _refine(best[name], grids[name])
+                for c in cands:
+                    if c == best[name]:
+                        continue
+                    t = dict(best, **{name: c})
+                    s = obj(t)
+                    if s < bs - 1e-5:
+                        best, bs = t, s
+        DP[dim] = best
+        hist[dim] = {"params": best, "pred_nll_per_fight_2019_2023": bs}
+        log("    dim %-4s q=%.4f v0=%.3f k=%.2f  predictive NLL %.4f" % (dim, best["q"], best["v0"], best["k"], bs))
+    return DP, hist
+
+
+# =====================================================================================================
+# system specifications
+# =====================================================================================================
+def specs(quick):
+    LN = LN10_400
+    shared = [("mu_new", [-0.3, -0.2, -0.1, 0.0]), ("age_new", [-0.04, -0.02, 0.0, 0.02]),
+              ("dy", [0.0, 0.02, 0.05, 0.1]), ("do", [0.0, 0.01, 0.02, 0.04, 0.08]),
+              ("pre_wp", [0.0, 0.5, 1.0, 2.0]), ("pre_n", [0.0, 0.05, 0.1, 0.2]),
+              ("pre_net", [0.0, 0.1, 0.2, 0.4]), ("pre_dwcs", [0.0, 0.1, 0.2, 0.3]),
+              ("kappa", [0.8, 0.9, 1.0, 1.1, 1.2])]
+    mov = [("y_ud", [0.8, 0.9, 1.0]), ("y_sd", [0.5, 0.6, 0.7, 0.85, 1.0]), ("w_fin", [1.0, 1.2, 1.5, 2.0]),
+           ("w_r1", [1.0, 1.2, 1.5])]
+    rnd = [("w_fround", [0.5, 1.0, 2.0, 3.0, 5.0]), ("w_rem", [0.0, 0.25, 0.5, 1.0]),
+           ("kappa", [1.0, 1.5, 2.0, 2.5, 3.0, 4.0])]
+    S = []
+    S.append({"name": "elo_ref", "kind": "elo", "family": "Elo",
+              "label": "Elo K=44 (x1.5 for the first 5 UFC fights): the project's existing baseline",
+              "P": {"K": 44 * LN, "boost": 1.5, "boost_n": 5}, "grid": None})
+    S.append({"name": "elo_k", "kind": "elo", "family": "Elo",
+              "label": "Elo, K schedule tuned (newcomer boost decaying with fights, layoff boost)",
+              "P": {"K": 44 * LN, "kb": 0.5, "kn": 3.0},
+              "grid": [("K", [0.15, 0.2, 0.25, 0.3, 0.35, 0.45]), ("kb", [0.0, 0.25, 0.5, 1.0, 1.5]),
+                       ("kn", [1.0, 2.0, 4.0, 8.0]), ("kl", [0.0, 0.1, 0.25, 0.5])]})
+    S.append({"name": "elo_full", "kind": "elo", "family": "Elo",
+              "label": "Elo + margin of victory (method/round/decision type) + newcomer prior (age, pre-UFC "
+                       "record) + age drift",
+              "P": {"K": 44 * LN, "kb": 0.5, "kn": 3.0, "enc": "mov", "pre_on": True},
+              "from": "elo_k",
+              "grid": [("K", [0.15, 0.2, 0.25, 0.3, 0.35]), ("kb", [0.0, 0.25, 0.5, 1.0]),
+                       ("kn", [1.0, 2.0, 4.0, 8.0]), ("kl", [0.0, 0.1, 0.25])] + mov + shared})
+    S.append({"name": "elo_rounds", "kind": "elo", "family": "Round-level",
+              "label": "Round-level Elo: every round a game (judge-consensus round winners, stat model "
+                       "elsewhere), finishing round weighted, unplayed rounds to the finisher",
+              "P": {"K": 0.06, "enc": "rounds", "w_round": 1.0, "w_fround": 2.0, "w_rem": 0.5, "kappa": 2.5,
+                    "kb": 0.5, "kn": 3.0, "pre_on": True},
+              "grid": [("K", [0.03, 0.045, 0.06, 0.08, 0.1, 0.13]), ("kb", [0.0, 0.5, 1.0]),
+                       ("kn", [1.0, 3.0, 8.0])] + rnd + shared[:-1]})
+    S.append({"name": "glicko2", "kind": "glicko2", "family": "Glicko-2",
+              "label": "Glicko-2: rating deviation inflating with inactivity, volatility, newcomer prior, age "
+                       "drift, margin-weighted games",
+              "P": {"phi0": 1.2, "sig0": 0.06, "tau": 0.3, "T": 60.0, "enc": "mov", "pre_on": True},
+              "grid": [("phi0", [0.6, 0.9, 1.2, 1.6, 2.0]), ("sig0", [0.02, 0.04, 0.06, 0.1, 0.15]),
+                       ("tau", [0.1, 0.3, 0.6, 1.0]), ("T", [20.0, 40.0, 60.0, 120.0, 240.0])] + mov + shared})
+    S.append({"name": "trueskill", "kind": "trueskill", "family": "TrueSkill",
+              "label": "TrueSkill-like Gaussian (probit) ratings, binary outcome, skill variance growing with "
+                       "time and per fight",
+              "P": {"s0": 1.0, "tau_y": 0.3, "gam": 0.1, "pre_on": True},
+              "grid": [("s0", [0.5, 0.8, 1.0, 1.3, 1.7]), ("tau_y", [0.05, 0.1, 0.2, 0.3, 0.5]),
+                       ("gam", [0.0, 0.1, 0.2, 0.3])] + [(k, [round(1.5 * v, 4) for v in vals])
+                                                         if k in ("mu_new", "age_new", "dy", "do", "pre_wp",
+                                                                  "pre_n", "pre_net", "pre_dwcs") else (k, vals)
+                                                         for k, vals in shared]})
+    S.append({"name": "trueskill_mov", "kind": "trueskill", "family": "TrueSkill",
+              "label": "TrueSkill with method-aware (ordinal) outcomes: finishes and unanimous decisions "
+                       "truncate the performance gap further out, split decisions to a band near zero",
+              "P": {"s0": 1.0, "tau_y": 0.3, "gam": 0.1, "ordinal": True, "th_fin": 0.3, "th_ud": 0.2,
+                    "th_sd": 1.0, "pre_on": True},
+              "from": "trueskill",
+              "grid": [("th_fin", [0.0, 0.2, 0.4, 0.7, 1.0]), ("th_ud", [0.0, 0.1, 0.2, 0.4, 0.6]),
+                       ("th_sd", [0.3, 0.6, 1.0, 2.0, 1e10]), ("w_fin", [0.8, 1.0, 1.25, 1.5]),
+                       ("s0", [0.5, 0.8, 1.0, 1.3]), ("tau_y", [0.05, 0.1, 0.2, 0.3]),
+                       ("gam", [0.0, 0.1, 0.2, 0.3]), ("kappa", [0.8, 0.9, 1.0, 1.1, 1.2])]})
+    whr_core = [("w2", [0.01, 0.03, 0.06, 0.1, 0.2]), ("vf", [0.0, 0.01, 0.03, 0.06]),
+                ("s0", [0.4, 0.6, 0.8, 1.0])]
+    S.append({"name": "whr", "kind": "whr", "family": "WHR",
+              "label": "Whole-History Rating (Bayesian Bradley-Terry, Gaussian random-walk skill, full-history "
+                       "re-solve before every fight day), binary outcomes",
+              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "pre_on": True}, "from_shared": "elo_full",
+              "grid": whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2])]})
+    S.append({"name": "whr_mov", "kind": "whr", "family": "WHR",
+              "label": "WHR with margin of victory (fractional / weighted outcomes by method)",
+              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "enc": "mov", "pre_on": True}, "from": "whr",
+              "from_mov": "elo_full",
+              "grid": mov + whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2])]})
+    S.append({"name": "whr_rounds", "kind": "whr", "family": "Round-level",
+              "label": "Round-level WHR: every round a game (judge-consensus winners), finishing and unplayed "
+                       "rounds to the finisher",
+              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "enc": "rounds", "w_round": 0.3, "w_fround": 2.0,
+                    "w_rem": 0.5, "kappa": 2.0, "pre_on": True}, "from_whr": "whr",
+              "grid": [("w_round", [0.1, 0.2, 0.3, 0.5, 0.8])] + rnd + whr_core})
+    if quick:
+        for s in S:
+            if s["grid"]:
+                s["grid"] = s["grid"][:4]
+    return S

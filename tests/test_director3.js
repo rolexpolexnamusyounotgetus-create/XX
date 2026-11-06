@@ -4,12 +4,14 @@
 
      node tests/test_director3.js            # 200 matchups (3 and 5 rounds), two samples
      node tests/test_director3.js 1000 7     # 1000 matchups, seed 7
+     ENGINE_DIR=/path/to/dir node tests/test_director3.js   # engine3.js + params3.js from another folder
 */
 "use strict";
 var fs = require("fs"), path = require("path");
 var ROOT = path.join(__dirname, "..");
-global.FightParams = require(path.join(ROOT, "src/params3.js"));
-var E = require(path.join(ROOT, "src/engine3.js"));
+var ENG = process.env.ENGINE_DIR ? path.resolve(process.env.ENGINE_DIR) : path.join(ROOT, "src");
+global.FightParams = require(path.join(ENG, "params3.js"));
+var E = require(path.join(ENG, "engine3.js"));
 var D = require(path.join(ROOT, "src/director3.js"));
 
 var N = +(process.argv[2] || 200), SEED = +(process.argv[3] || 1);
@@ -59,6 +61,21 @@ function fighterOpts(slug, side) {
 }
 
 var fails = [], warns = [];
+
+// the director can only be as valid as the trace it is given: stop early, and say so, if the engine is broken
+(function () {
+  var m = E.matchup("alexander-volkanovski", "justin-gaethje", { division: "Lightweight", rounds: 5, title: true });
+  var bad = 0, n = 0;
+  for (var s = 1; s <= 5; s++) {
+    var f = E.simulate(m, E.makeRng(s), true);
+    f.rounds.forEach(function (rd) { rd.ev.forEach(function (e) { n++; if (!isFinite(e.t) || e.t < 0 || e.t > 300.01) bad++; }); });
+  }
+  if (bad) {
+    console.log("ENGINE TRACE INVALID: " + bad + " of " + n + " events have non-finite or out-of-range times (" + path.relative(ROOT, ENG) + "/engine3.js).");
+    console.log("This is an engine problem, not a director one. Rerun when the engine is fixed, or point ENGINE_DIR at a working copy.");
+    process.exit(2);
+  }
+})();
 function fail(id, msg) { if (fails.length < 60) fails.push(id + ": " + msg); else if (fails.length === 60) fails.push("..."); }
 
 var agg = { fights: 0, rounds: 0, beats: 0, strikes: 0, landed: 0, missShown: 0, missEngine: 0, lines: 0, notes: 0, scoutFights: 0, methods: {},

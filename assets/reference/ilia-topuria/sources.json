@@ -1,27 +1,5 @@
 [
   {
-    "file": "weighin-2026-a-cropped.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/UFC_Freedom_250_Ceremonial_Weigh_In_%289748627%29%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748627)(cropped).jpg",
-    "author": "U.S. Army photo by Sgt. 1st Class Brittany Primavera",
-    "license": "Public domain",
-    "date_taken": "Taken on 14 June 2026",
-    "use": "embed-ok",
-    "what": "body",
-    "note": "Fighter Ilia Topuria weighs in at the UFC Freedom 250 ceremonial weigh-in. Marines assigned to the U.S. Marine Corps Silent Drill Platoon supported the event at the Ellipse in Washington, D.C., June 1"
-  },
-  {
-    "file": "orbeliani-2024-cropped.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/6/61/Ilia_Topuria_at_the_Orbeliani_Palace_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Ilia_Topuria_at_the_Orbeliani_Palace_(cropped).jpg",
-    "author": "საქართველოს პრეზიდენტის ადმინისტრაცია",
-    "license": "CC BY 4.0",
-    "date_taken": "2024-03-21 15:17:35",
-    "use": "embed-ok",
-    "what": "headshot",
-    "note": "Ilia Topuria at the Orbeliani Palace"
-  },
-  {
     "file": "espn-headshot.png",
     "url": "https://a.espncdn.com/i/headshots/mma/players/full/4350812.png",
     "page": "https://www.espn.com/mma/fighter/_/id/4350812",
@@ -31,6 +9,42 @@
     "use": "reference-only",
     "what": "headshot",
     "note": "ESPN athlete headshot, transparent background, date unknown"
+  },
+  {
+    "file": "wm-2022-mmanytt.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/37/Ilia_Topuria.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Ilia_Topuria.jpg",
+    "author": "MMAnytt",
+    "license": "CC BY 3.0",
+    "date_taken": "2022-03-16",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Ilia Topuria in 2022",
+    "attribution": "MMAnytt, CC BY 3.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2024-03-21-orbeliani-cropped.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/61/Ilia_Topuria_at_the_Orbeliani_Palace_%28cropped%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Ilia_Topuria_at_the_Orbeliani_Palace_(cropped).jpg",
+    "author": "საქართველოს პრეზიდენტის ადმინისტრაცია",
+    "license": "CC BY 4.0",
+    "date_taken": "2024-03-21",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Ilia Topuria at the Orbeliani Palace",
+    "attribution": "საქართველოს პრეზიდენტის ადმინისტრაცია, CC BY 4.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2026-06-13-rogan-interview.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/c8/UFC_Freedom_250_Ceremonial_Weigh_In_%289748628%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748628).jpg",
+    "author": "U.S. Army photo by Sgt. 1st Class Brittany Primavera",
+    "license": "Public domain",
+    "date_taken": "2026-06-14",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Joe Rogan interviews UFC Fighter Ilia Topuria at the ceremonial UFC Freedom 250 weigh-ins on the Ellipse, Saturday, June 13, 2026. Marines assigned to the U.S. Marine Corps Silent Drill Platoon suppor",
+    "attribution": "U.S. Army photo by Sgt. 1st Class Brittany Primavera, Public domain, via Wikimedia Commons"
   },
   {
     "file": "espn-stance-left.png",
@@ -55,36 +69,27 @@
     "note": "ESPN full-body fight-stance cutout, date unknown"
   },
   {
-    "file": "wm-2022-mmanytt.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/3/37/Ilia_Topuria.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Ilia_Topuria.jpg",
-    "author": "MMAnytt",
-    "license": "CC BY 3.0",
-    "date_taken": "2022-03-16",
-    "use": "embed-ok",
-    "what": "headshot",
-    "note": "Ilia Topuria in 2022"
-  },
-  {
-    "file": "wm-2026-06-13-rogan-interview.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/c/c8/UFC_Freedom_250_Ceremonial_Weigh_In_%289748628%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748628).jpg",
+    "file": "wm-2026-06-13-weighin-cropped.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/UFC_Freedom_250_Ceremonial_Weigh_In_%289748627%29%28cropped%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748627)(cropped).jpg",
     "author": "U.S. Army photo by Sgt. 1st Class Brittany Primavera",
     "license": "Public domain",
-    "date_taken": "Taken on 14 June 2026",
+    "date_taken": "2026-06-14",
     "use": "embed-ok",
-    "what": "3q",
-    "note": "Joe Rogan interviews UFC Fighter Ilia Topuria at the ceremonial UFC Freedom 250 weigh-ins on the Ellipse, Saturday, June 13, 2026. Marines assigned to the U.S. Marine Corps Silent Drill Platoon suppor"
+    "what": "body",
+    "note": "Fighter Ilia Topuria weighs in at the UFC Freedom 250 ceremonial weigh-in. Marines assigned to the U.S. Marine Corps Silent Drill Platoon supported the event at the Ellipse in Washington, D.C., June 1",
+    "attribution": "U.S. Army photo by Sgt. 1st Class Brittany Primavera, Public domain, via Wikimedia Commons"
   },
   {
     "file": "wm-2026-06-14-whitehouse.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/9/98/UFC_Freedom_250%2C_the_mixed_martial_arts_event_produced_by_the_Ultimate_Fighting_Championship%2C_Sunday%2C_June_14%2C_2026%2C_in_the_Grand_Foyer_of_the_White_House_-_68_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/98/UFC_Freedom_250%2C_the_mixed_martial_arts_event_produced_by_the_Ultimate_Fighting_Championship%2C_Sunday%2C_June_14%2C_2026%2C_in_the_Grand_Foyer_of_the_White_House_-_68_%28cropped%29.jpg",
     "page": "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250,_the_mixed_martial_arts_event_produced_by_the_Ultimate_Fighting_Championship,_Sunday,_June_14,_2026,_in_the_Grand_Foyer_of_the_White_House_-_68_(cropped).jpg",
     "author": "The White House",
     "license": "Public domain",
-    "date_taken": "Taken on 15 June 2026 00:26:09",
+    "date_taken": "2026-06-15",
     "use": "embed-ok",
     "what": "action",
-    "note": "President Donald J. Trump attends UFC Freedom 250, the mixed martial arts event produced by the Ultimate Fighting Championship, Sunday, June 14, 2026, on the South Lawn of the White House. (Official W"
+    "note": "President Donald J. Trump attends UFC Freedom 250, the mixed martial arts event produced by the Ultimate Fighting Championship, Sunday, June 14, 2026, on the South Lawn of the White House. (Official W",
+    "attribution": "The White House, Public domain, via Wikimedia Commons"
   }
 ]

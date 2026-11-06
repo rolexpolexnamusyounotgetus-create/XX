@@ -11,15 +11,62 @@
     "note": "ESPN athlete headshot, transparent background, date unknown"
   },
   {
-    "file": "espn-stance-left.png",
-    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/2614933.png",
-    "page": "https://www.espn.com/mma/fighter/_/id/2614933",
-    "author": "ESPN / UFC (unknown photographer)",
-    "license": "All rights reserved (ESPN)",
-    "date_taken": null,
+    "file": "ref-lvsun-2026-03-05-ufc326-presser-front.jpg",
+    "url": "https://media.lasvegassun.com/media/img/photos/2026/03/05/20260305_sun_UFC326Presser05_t1280.JPG",
+    "page": "https://lasvegassun.com/photos/galleries/2026/mar/05/ufc-326-news-conference/",
+    "author": "Steve Marcus / Las Vegas Sun",
+    "license": "All rights reserved (Las Vegas Sun)",
+    "date_taken": "2026-03-05",
     "use": "reference-only",
-    "what": "body",
-    "note": "ESPN full-body fight-stance cutout, date unknown"
+    "what": "headshot",
+    "note": "UFC 326 news conference, near-frontal"
+  },
+  {
+    "file": "wm-2024-ufc300-interview.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/48/Max_Holloway_BMF.png",
+    "page": "https://commons.wikimedia.org/wiki/File:Max_Holloway_BMF.png",
+    "author": "Chamatkar Sandhu",
+    "license": "CC BY 3.0",
+    "date_taken": "2024-04-13",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Interview with Max Holloway after UFC 300",
+    "attribution": "Chamatkar Sandhu, CC BY 3.0, via Wikimedia Commons"
+  },
+  {
+    "file": "ref-asd-2026-07-10-ufc329-rogan.jpg",
+    "url": "https://aloha-state-daily-img.imgix.net/Articles/Max-Holloway-2-071026.jpeg?w=1280",
+    "page": "https://alohastatedaily.com/2026/07/10/waianaes-max-holloway-pearl-citys-kai-kamaka-iii-good-to-go-at-ufc-329/",
+    "author": "Christian Shimabuku / Aloha State Daily",
+    "license": "All rights reserved (Aloha State Daily)",
+    "date_taken": "2026-07-10",
+    "use": "reference-only",
+    "what": "3q",
+    "note": "UFC 329 ceremonial weigh-in, interview with Joe Rogan"
+  },
+  {
+    "file": "wm-2018-bagram-qa.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/26/Max_Holloway_180426-D-SW162-2177_%2841705852212%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Max_Holloway_180426-D-SW162-2177_(41705852212).jpg",
+    "author": "Chairman of the Joint Chiefs of Staff from Washington D.C, United States",
+    "license": "CC BY 2.0",
+    "date_taken": "2018-04-26",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "UFC Featherweight Champion Max \"Blessed\" Holloway answers questions during a show for troops at Bagram Air Field, Afghanistan; the fifth stop on the annual Vice Chairman’s USO Tour, April 26, 2018.  (",
+    "attribution": "Chairman of the Joint Chiefs of Staff from Washington D.C, United States, CC BY 2.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2022-blueangels-cropped.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/2b/Blue_Angels%27_VIP_Rider_Max_Holloway_%281%29_%28cropped%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Blue_Angels%27_VIP_Rider_Max_Holloway_(1)_(cropped).jpg",
+    "author": "Cpl. Samantha Sanchez",
+    "license": "Public domain",
+    "date_taken": "2022-08-11",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Max Holloway, UFC Featherweight champion and Hawaiian native, participates in a guest rider safety brief as part of the Blue Angels’ VIP Rider Program at Marine Corps Air Station Kaneohe Bay, Marine C",
+    "attribution": "Cpl. Samantha Sanchez, Public domain, via Wikimedia Commons"
   },
   {
     "file": "espn-stance-right.png",
@@ -33,39 +80,6 @@
     "note": "ESPN full-body fight-stance cutout, date unknown"
   },
   {
-    "file": "wm-2022-blueangels-cropped.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/2/2b/Blue_Angels%27_VIP_Rider_Max_Holloway_%281%29_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Blue_Angels%27_VIP_Rider_Max_Holloway_(1)_(cropped).jpg",
-    "author": "Cpl. Samantha Sanchez",
-    "license": "Public domain",
-    "date_taken": "2022-08-11 20:00:00",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "Max Holloway, UFC Featherweight champion and Hawaiian native, participates in a guest rider safety brief as part of the Blue Angels’ VIP Rider Program at Marine Corps Air Station Kaneohe Bay, Marine C"
-  },
-  {
-    "file": "wm-2018-bagram-qa.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/2/26/Max_Holloway_180426-D-SW162-2177_%2841705852212%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Max_Holloway_180426-D-SW162-2177_(41705852212).jpg",
-    "author": "Chairman of the Joint Chiefs of Staff from Washington D.C, United States",
-    "license": "CC BY 2.0",
-    "date_taken": "Taken on 26 April 2018, 20:17",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "UFC Featherweight Champion Max \"Blessed\" Holloway answers questions during a show for troops at Bagram Air Field, Afghanistan; the fifth stop on the annual Vice Chairman’s USO Tour, April 26, 2018.  ("
-  },
-  {
-    "file": "wm-2024-ufc300-interview.png",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/4/48/Max_Holloway_BMF.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Max_Holloway_BMF.png",
-    "author": "Chamatkar Sandhu",
-    "license": "CC BY 3.0",
-    "date_taken": "2024-04-13",
-    "use": "embed-ok",
-    "what": "headshot",
-    "note": "Interview with Max Holloway after UFC 300"
-  },
-  {
     "file": "ref-asd-2026-07-10-ufc329-weighin.jpg",
     "url": "https://aloha-state-daily-img.imgix.net/Articles/Max-Holloway-071026.jpeg?w=1280",
     "page": "https://alohastatedaily.com/2026/07/10/waianaes-max-holloway-pearl-citys-kai-kamaka-iii-good-to-go-at-ufc-329/",
@@ -75,16 +89,5 @@
     "use": "reference-only",
     "what": "body",
     "note": "UFC 329 official weigh-in, 170 lb, three-quarter view"
-  },
-  {
-    "file": "ref-asd-2026-07-10-ufc329-rogan.jpg",
-    "url": "https://aloha-state-daily-img.imgix.net/Articles/Max-Holloway-2-071026.jpeg?w=1280",
-    "page": "https://alohastatedaily.com/2026/07/10/waianaes-max-holloway-pearl-citys-kai-kamaka-iii-good-to-go-at-ufc-329/",
-    "author": "Christian Shimabuku / Aloha State Daily",
-    "license": "All rights reserved (Aloha State Daily)",
-    "date_taken": "2026-07-10",
-    "use": "reference-only",
-    "what": "3q",
-    "note": "UFC 329 ceremonial weigh-in, interview with Joe Rogan"
   }
 ]

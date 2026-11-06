@@ -1,0 +1,90 @@
+[
+  {
+    "file": "espn_headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/3093653.png",
+    "date_taken": "undated; CDN Last-Modified 2026-05-11",
+    "what": "headshot",
+    "note": "Best frontal face: studio light, neutral expression. Buzzed sandy hair, hazel eyes, wide nose, square jaw, cauliflower ears, light stubble. Holds the belt, so shot right after UFC 328 (May 2026).",
+    "page": "https://www.espn.com/mma/fighter/_/id/3093653/sean-strickland",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "espn_stance_left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/3093653.png",
+    "date_taken": "undated; CDN Last-Modified 2026-05-11",
+    "what": "body",
+    "note": "Full body front with the belt in black/gold champion shorts with Monster and crypto.com logos (May 2026). Chest and body hair, lean wiry build.",
+    "page": "https://www.espn.com/mma/fighter/_/id/3093653/sean-strickland",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "espn_stance_right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/3093653.png",
+    "date_taken": "undated; CDN Last-Modified 2026-05-07",
+    "what": "body",
+    "note": "Full body front in white Venum shorts with STRICKLAND in red (UFC 328 kit, May 2026). Shows chest hair pattern, abs outline, long legs.",
+    "page": "https://www.espn.com/mma/fighter/_/id/3093653/sean-strickland",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "01_headshot_press_houston_2026_reuters.jpg",
+    "url": "https://images2.minutemediacdn.com/image/upload/f_auto,q_auto,w_2000/images/ReutersImages/mmsport/mma_knockout/01m4q9h6xafgrzhvann7.jpg",
+    "page": "https://www.si.com/fannation/mma/news/ufc-champ-sean-strickland-torched-by-dana-white-over-potential-career-pivot",
+    "author": "Reuters / USA TODAY Sports via Imagn (photographer not captured)",
+    "license": "All rights reserved (Reuters / Imagn)",
+    "date_taken": "2026-02 (UFC Houston press event, Strickland vs Hernandez Feb 21 backdrop)",
+    "use": "reference-only",
+    "what": "headshot",
+    "note": "Large frontal face, talking: ears (cauliflower), nose shape, brow, eye colour, forehead marks."
+  },
+  {
+    "file": "02_commons_headshot_2022_mmanytt.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Sean_Strickland_2022.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Sean_Strickland_2022.jpg",
+    "author": "MMAnytt (YouTube still)",
+    "license": "CC BY 3.0",
+    "date_taken": "2022-02-04",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Frontal, slightly tilted, smiling, with a slightly longer buzz cut. Attribution: MMAnytt, CC BY 3.0, via Wikimedia Commons."
+  },
+  {
+    "file": "03_commons_3q_2022_mmanytt.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Sean_Strickland_at_UFN_200.png",
+    "page": "https://commons.wikimedia.org/wiki/File:Sean_Strickland_at_UFN_200.png",
+    "author": "MMAnytt (YouTube still)",
+    "license": "CC BY-SA 4.0",
+    "date_taken": "2022-02-04 (UFC Fight Night 200 media)",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Near-frontal, big smile, same session as 02: ear shape both sides, cheek and jaw width. Attribution: MMAnytt, CC BY-SA 4.0, via Wikimedia Commons."
+  },
+  {
+    "file": "04_3q_body_houston_2026_reuters.jpg",
+    "url": "https://images2.minutemediacdn.com/image/upload/f_auto,q_auto,w_2000/images/ReutersImages/mmsport/mma_knockout/01m3jpvpvfdtyba69sw3.jpg",
+    "page": "https://www.si.com/fannation/mma/news/ufc-champion-sean-strickland-teases-massive-end-of-year-fight-announcement",
+    "author": "Reuters / USA TODAY Sports via Imagn (photographer not captured)",
+    "license": "All rights reserved (Reuters / Imagn)",
+    "date_taken": "2026-02-21 (UFC Houston, Toyota Center)",
+    "use": "reference-only",
+    "what": "3q",
+    "note": "Three-quarter face of the left side and upper body with arms raised in the cage: skull shape, left ear, brow, body hair, white shorts."
+  },
+  {
+    "file": "05_profile_action_ufc328_imagn.jpg",
+    "url": "https://images2.minutemediacdn.com/image/upload/f_auto,q_auto,w_2000/images/ImagnImages/mmsport/mma_knockout/01krkbyqchvr451eac1x.jpg",
+    "page": "https://www.si.com/fannation/mma/news/ufc-champions-sean-strickland-joshua-van-handed-medical-suspensions-ufc-328",
+    "author": "Imagn Images (photographer not captured)",
+    "license": "All rights reserved (Imagn / USA TODAY Network)",
+    "date_taken": "2026-05-09 (UFC 328 vs Khamzat Chimaev, Newark)",
+    "use": "reference-only",
+    "what": "profile",
+    "note": "Right-side profile in a punching exchange: skull shape, brow, nose bridge and tip, chin, right ear; white Venum shorts."
+  }
+]

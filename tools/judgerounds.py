@@ -79,6 +79,9 @@ SOURCES = {
 EM_W = {"head": 0.179, "body": 0.133, "leg": 0.105, "kd": 2.42, "td": 0.286, "ctrl_min": 0.46, "sub": 0.85}
 
 
+vault_from_g = [dt.date(2026, 1, 1)]
+
+
 # ------------------------------------------------------------------ fetch
 def fetch(refresh=False):
     import requests
@@ -128,17 +131,22 @@ def norm(s):
 NICK = {"mike": "michael", "doug": "douglas", "dave": "david", "rich": "richard", "rick": "richard",
         "chris": "christopher", "tony": "anthony", "jim": "james", "bob": "robert", "sal": "salvatore",
         "jeff": "jeffrey", "ron": "ronald", "andy": "andrew", "pat": "patricia", "ben": "benjamin"}
+# ring names that share no token with the ufcstats name
+ALIASES = {"kimbo slice": "kevin ferguson"}
 
 
 @functools.lru_cache(maxsize=None)
 def name_sim(a, b):
     """0..1 similarity for person names written by different sites."""
     a, b = norm(a), norm(b)
+    a, b = ALIASES.get(a, a), ALIASES.get(b, b)
     if not a or not b:
         return 0.0
     if a == b:
         return 1.0
     ta, tb = a.split(), b.split()
+    if "".join(ta) == "".join(tb) or "".join(ta[::-1]) == "".join(tb) or sorted(ta) == sorted(tb):
+        return 0.95                                   # "Heili Alateng" / "Alatengheili", reordered names
     ca = [NICK.get(t, t) for t in ta]
     cb = [NICK.get(t, t) for t in tb]
     if ca == cb:
@@ -354,12 +362,17 @@ def load_davies(fights, by_date, log):
         if g is None:
             continue                                   # totals only on MMA Decisions
         judges = []
-        for pos, ((jname, jid), gj) in enumerate(g.groupby(["judge_name", g["judge_id"].fillna(-1)], sort=False)):
+        g = g.assign(pos=g.groupby("round_num").cumcount() + 1)
+        for pos, gj in g.groupby("pos", sort=True):
+            names = gj["judge_name"].unique()
+            if len(names) != 1:
+                log["D_judge_order_inconsistent"].append(did)
+            jid = gj["judge_id"].iloc[0]
             rounds = {}
             for r in gj.itertuples(index=False):
                 a, b = (int(r.score_f2), int(r.score_f1)) if swapped else (int(r.score_f1), int(r.score_f2))
                 rounds[int(r.round_num)] = (a, b, None, None)
-            judges.append(dict(jid=int(jid) if jid != -1 else None, name=jname, pos=pos + 1, rounds=rounds))
+            judges.append(dict(jid=None if pd.isna(jid) else int(jid), name=names[0], pos=int(pos), rounds=rounds))
         if fid in cards:
             log["D_duplicate_fight"].append((did, fid))
             continue
@@ -395,25 +408,25 @@ def load_davies_stoppage(fights, by_date, judge_ids):
 
 
 # ------------------------------------------------------------------ checks
-def best_perm(names_a, names_b):
-    """Assignment of names_a to names_b maximizing total similarity (<= 3 x 3)."""
-    best, bp = -1, None
-    k = min(len(names_a), len(names_b))
-    for perm in itertools.permutations(range(len(names_b)), k):
-        s = sum(name_sim(names_a[i], names_b[perm[i]]) for i in range(k))
-        if s > best:
-            best, bp = s, perm
-    return bp
+def best_perm(sim):
+    """Assignment rows -> columns maximizing the summed similarity matrix (at most 3 x 3)."""
+    best, bp = -1e9, None
+    nr, nc = len(sim), len(sim[0]) if sim else 0
+    for perm in itertools.permutations(range(nc), min(nr, nc)):
+        v = sum(sim[i][perm[i]] for i in range(len(perm)))
+        if v > best:
+            best, bp = v, perm
+    return bp or ()
 
 
 def oriented_ufc(f):
-    """ufcstats cards as (name, A, B); loser-first for decisions with a winner, unordered (None) otherwise."""
+    """ufcstats cards as (name, A, B, raw pair); loser-first when there is a winner, unordered (None) otherwise."""
     out = []
     for nm, x, y in f["ufc_cards"][-3:]:
         if f["winner"] == "A":
-            out.append((nm, y, x))
+            out.append((nm, y, x, (x, y)))
         elif f["winner"] == "B":
-            out.append((nm, x, y))
+            out.append((nm, x, y, (x, y)))
         else:
             out.append((nm, None, None, (x, y)))
     return out
@@ -424,52 +437,86 @@ def card_totals(j):
     return [sum(r[0] for r in rs), sum(r[1] for r in rs)]
 
 
+def same_total(t, c):
+    return (sorted(t) == sorted(c[3])) if c[1] is None else (t == [c[1], c[2]])
+
+
 def validate_ufc(f, judges, stats, name_votes):
+    """Compare each judge's published total with the ufcstats DETAILS card of the same judge."""
     uc = oriented_ufc(f)
-    if len(uc) < 3 or len(judges) != 3:
-        stats["fights_without_3_ufc_cards" if len(uc) < 3 else "fights_without_3_judges"] += 1
+    if len(uc) < 3:
+        stats["fights_without_3_ufcstats_cards"] += 1
         return {"ufc": "n/a"}
     tots = [card_totals(j) for j in judges]
-    # fight level: multiset of totals
-    if uc[0][1] is None:
-        fm = sorted(tuple(sorted(t)) for t in tots) == sorted(tuple(sorted(c[3])) for c in uc)
+    full = len(judges) == 3
+    fm = None
+    if full:
+        if uc[0][1] is None:
+            fm = sorted(tuple(sorted(t)) for t in tots) == sorted(tuple(sorted(c[3])) for c in uc)
+        else:
+            fm = sorted(map(tuple, tots)) == sorted((c[1], c[2]) for c in uc)
+            if not fm and sorted(tuple(t[::-1]) for t in tots) == sorted((c[1], c[2]) for c in uc):
+                stats["fight_totals_swapped"] += 1
+        stats["fights_checked"] += 1
+        stats["fight_totals_agree"] += int(fm)
     else:
-        fm = sorted(map(tuple, tots)) == sorted((c[1], c[2]) for c in uc)
-        if not fm and sorted(tuple(t[::-1]) for t in tots) == sorted((c[1], c[2]) for c in uc):
-            stats["fight_totals_swapped"] += 1
-    stats["fights_checked"] += 1
-    stats["fight_totals_agree"] += int(fm)
-    # card level: by judge name
-    perm = best_perm([j["name"] for j in judges], [c[0] for c in uc])
-    agree, named, diffs = 0, 0, []
+        stats["partial_panel_fights_checked"] += 1
+    known = lambda nm: bool(nm) and not norm(nm).startswith("unknown")
+    sim = [[(name_sim(j["name"], c[0]) if known(j["name"]) and known(c[0]) else 0.0)
+            + 0.01 * same_total(tots[i], c) for c in uc] for i, j in enumerate(judges)]
+    perm = best_perm(sim)
+    agree, diffs = 0, []
     for i, k in enumerate(perm):
         c = uc[k]
-        sim = name_sim(judges[i]["name"], c[0]) if c[0] else 0.0
-        if c[0]:
-            named += 1
-            if sim >= 0.7 and judges[i].get("jid") is not None:
+        ns = name_sim(judges[i]["name"], c[0]) if known(judges[i]["name"]) and known(c[0]) else None
+        if ns is not None:
+            stats["cards_both_named"] += 1
+            stats["cards_name_sim_ge_0.7"] += int(ns >= 0.7)
+            if ns >= 0.7 and judges[i].get("jid") is not None:
                 name_votes[judges[i]["jid"]][c[0]] += 1
-        t = tots[i]
-        ok = (sorted(t) == sorted(c[3])) if c[1] is None else (t == [c[1], c[2]])
+        ok = same_total(tots[i], c)
         agree += int(ok)
         if not ok:
-            diffs.append([judges[i]["name"], t, list(c[3]) if c[1] is None else [c[1], c[2]]])
-        stats["name_sim_ge_0.7"] += int(sim >= 0.7)
-    stats["cards_checked"] += len(perm)
-    stats["cards_agree"] += agree
-    stats["cards_named_on_ufcstats"] += named
-    v = {"ufc": "agree" if fm and agree == 3 else ("totals_agree" if fm else "differs")}
+            diffs.append([judges[i]["name"], tots[i], list(c[3]) if c[1] is None else [c[1], c[2]]])
+    key = "" if full else "partial_panel_"
+    stats[key + "cards_checked"] += len(perm)
+    stats[key + "cards_agree"] += agree
+    if full:
+        v = {"ufc": "agree" if fm and agree == 3 else ("totals_agree_names_differ" if fm else "differs")}
+    else:
+        v = {"ufc": "agree_partial_panel" if agree == len(perm) else "differs_partial_panel"}
     if diffs:
         v["diffs"] = diffs
     return v
 
 
+def completeness(f, judges):
+    """True when every judge scored the same contiguous rounds 1..R and R fits how the fight ended."""
+    sets = [sorted(j["rounds"]) for j in judges]
+    if not sets or not all(sets):
+        return False
+    same = len({tuple(x) for x in sets}) == 1
+    contiguous = all(x == list(range(1, len(x) + 1)) for x in sets)
+    R = max(len(x) for x in sets)
+    full_len = f["lengths"][f["rnd"] - 1] * 60 if f["lengths"] and f["rnd"] <= len(f["lengths"]) else None
+    went_distance = f["rnd"] == f["sched"] and f["time_s"] == full_len
+    r_ok = (R == f["sched"]) if went_distance else (R in (f["rnd"] - 1, f["rnd"]))
+    return bool(same and contiguous and r_ok)
+
+
 def compare_sources(cN, cD, stats, examples):
     """Round-by-round comparison of the two sources for one fight (judges matched by MMA Decisions id)."""
     dj = {j["jid"]: j for j in cD["judges"] if j["jid"] is not None}
+    d_unknown = [j for j in cD["judges"] if j["jid"] is None]
     same_fight = True
     for j in cN["judges"]:
         k = dj.get(j["jid"])
+        if k is None and j["jid"] is None and d_unknown:
+            # unnamed judges: pair with the unnamed D card whose rounds match best
+            key = lambda c: sum((c["rounds"].get(r, (0, 0))[:2] == v[:2]) for r, v in j["rounds"].items())
+            k = max(d_unknown, key=key)
+            d_unknown.remove(k)
+            stats["unnamed_judges_paired"] += 1
         if k is None:
             stats["judge_not_in_D"] += 1
             same_fight = False
@@ -507,6 +554,7 @@ def main():
     if a.fetch or a.refresh:
         fetch(refresh=a.refresh)
     vault_from = dt.date.fromisoformat(a.vault_from)
+    vault_from_g[0] = vault_from
 
     log = defaultdict(list)
     fights, by_date = load_ufcstats()
@@ -548,6 +596,9 @@ def main():
     synth = {}
     for c in merged.values():
         for j in c["judges"]:
+            if j["jid"] is None and norm(j["name"]).startswith("unknown"):
+                j["name"] = "Unknown Judge"
+                continue
             if j["jid"] is None:
                 k = by_norm.get(norm(j["name"]))
                 if k is None:
@@ -555,10 +606,11 @@ def main():
                     jname[k] = j["name"]
                 j["jid"] = k
 
-    # validation against ufcstats DETAILS (published totals; loser first)
+    # validation against ufcstats DETAILS (published totals; loser first) and card completeness
     vstats, name_votes = Counter(), defaultdict(Counter)
     for fid, c in merged.items():
         c["validation"] = validate_ufc(fights[fid], c["judges"], vstats, name_votes)
+        c["complete"] = completeness(fights[fid], c["judges"])
         if c["validation"]["ufc"] != "agree":
             log["ufc_disagreements"].append((fid, c["src"], c["validation"]))
     judge_ids_by_ufcname = {}
@@ -600,14 +652,15 @@ def main():
                    A_slug=sl[0], B_slug=sl[1], winner=f["winner"], method=f["method"], sched=f["sched"],
                    end_round=f["rnd"], end_time=f["time_s"], title=bool(f["title"]), wc=f["wc"],
                    referee=f["referee"], src=c["src"] + ("+D" if c.get("also_D") else ""),
-                   mmad_id=c["mmad_id"], raw_known=c["raw_known"], judges=js, validation=c["validation"])
+                   mmad_id=c["mmad_id"], raw_known=c["raw_known"], complete=c["complete"], judges=js,
+                   validation=c["validation"])
         if c.get("jurisdiction"):
             rec["jurisdiction"] = c["jurisdiction"]
         return rec
 
     def round_rows(fids):
         rcols = (["fid", "date", "rnd", "sched", "mins", "end_rnd", "title", "women", "wc", "winner", "src",
-                  "raw_known", "has_stats", "ded_A", "ded_B", "nJ", "nA", "nB", "nE", "n_wide"]
+                  "raw_known", "complete", "ufc_check", "has_stats", "ded_A", "ded_B", "nJ", "nA", "nB", "nE", "n_wide"]
                  + ["A_" + k for k in STAT_COLS] + ["B_" + k for k in STAT_COLS])
         scols = ["ri", "jid", "pos", "A", "B", "A_raw", "B_raw"]
         rows, srows = [], []
@@ -630,7 +683,7 @@ def main():
                 ri = len(rows)
                 rows.append([fid, f["date"].isoformat(), r, f["sched"], None if mins is None else round(mins, 3),
                              r == f["rnd"], bool(f["title"]), bool(f["women"]), f["wc"], f["winner"],
-                             c["src"], c["raw_known"], has, dA, dB, len(sc), sum(m > 0 for m in rawm),
+                             c["src"], c["raw_known"], c["complete"], c["validation"]["ufc"], has, dA, dB, len(sc), sum(m > 0 for m in rawm),
                              sum(m < 0 for m in rawm), sum(m == 0 for m in rawm), sum(abs(m) >= 2 for m in rawm)]
                             + (sa if sa else [None] * len(STAT_COLS)) + (sb if sb else [None] * len(STAT_COLS)))
                 for j, x in sc:
@@ -699,7 +752,11 @@ def main():
                   "fight ended in this round (technical decisions can end early). ded_A/ded_B = points "
                   "deducted from A/B in the round (null if unknown). nA/nB/nE = judges giving the round to "
                   "A/B/even before deductions (published when raw_known=false); n_wide = judges with a margin "
-                  ">= 2 (10-8 or wider).",
+                  ">= 2 (10-8 or wider). complete = every judge scored the same rounds 1..R and R fits how "
+                  "the fight ended; ufc_check = agreement of the fight's card totals with ufcstats (agree, "
+                  "agree_partial_panel, totals_agree_names_differ, differs, differs_partial_panel, n/a). "
+                  "A clean training subset: complete & ufc_check in (agree, agree_partial_panel, "
+                  "totals_agree_names_differ).",
         "scores": "one row per judge per round: ri = row index into rounds.rows, jid = MMA Decisions judge id "
                   "(negative = no id, matched by name), pos = card position on MMA Decisions, A/B = published "
                   "score, A_raw/B_raw = before deductions (null when unknown).",
@@ -764,6 +821,17 @@ def summarize(rounds, scores, fights, merged, dev, jname):
     rep["fights"] = len(dev)
     rep["fights_by_source"] = dict(Counter(merged[f]["src"] + ("+D" if merged[f].get("also_D") else "") for f in dev))
     rep["fights_by_year"] = dict(sorted(Counter(fights[f]["date"].year for f in dev).items()))
+    dev_set = set(dev)
+    ufc_dec = Counter(f["date"].year for f in fights.values()
+                      if f["method"].startswith("Decision") and f["date"] < vault_from_g[0])
+    have = Counter(fights[f]["date"].year for f in dev_set if fights[f]["method"].startswith("Decision"))
+    rep["coverage_of_ufcstats_decisions_by_year"] = {
+        y: "%d/%d" % (have.get(y, 0), n) for y, n in sorted(ufc_dec.items()) if y >= 2005}
+    rep["coverage_of_ufcstats_decisions_2013_2025"] = round(
+        sum(have.get(y, 0) for y in range(2013, 2026)) / max(sum(ufc_dec.get(y, 0) for y in range(2013, 2026)), 1), 4)
+    rep["fights_complete"] = int(sum(merged[f]["complete"] for f in dev))
+    rep["fights_by_ufc_check"] = dict(Counter(merged[f]["validation"]["ufc"] for f in dev))
+    rep["fights_with_3_judges"] = int(sum(len(merged[f]["judges"]) == 3 for f in dev))
     rep["rounds"] = len(R)
     rep["judge_rounds"] = len(S)
     rep["judges"] = int(S["jid"].nunique())

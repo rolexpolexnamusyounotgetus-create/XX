@@ -528,11 +528,12 @@ def make_model(dz, cfg, tau):
     return vg, ll_fn, unravel, np.asarray(flat0), jax.jit(slot_grad), data
 
 
-def fit_model(dz, cfg, tau, flat_init=None, maxiter=3000, verbose=True, fixed=None):
+def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, fixed=None):
     """MAP fit by L-BFGS. `fixed`: dict of parameter names held at their flat_init values."""
     from scipy.optimize import minimize
     vg, ll_fn, unravel, flat0, slot_grad, data = make_model(dz, cfg, tau)
     x0 = flat0 if flat_init is None else flat_init
+    maxiter = maxiter or int(__import__("os").environ.get("OFFICIALS_MAXITER", 3000))
     t0 = time.time()
 
     def f(x):
@@ -694,3 +695,146 @@ def boot_diff(a, b, n=2000, seed=1):
     d = np.asarray(a) - np.asarray(b)
     bs = d[rng.integers(0, len(d), (n, len(d)))].mean(1)
     return {"mean": float(d.mean()), "lo": float(np.percentile(bs, 2.5)), "hi": float(np.percentile(bs, 97.5))}
+
+
+# ================================================================================================
+# judge-model driver (walk-forward)
+# ================================================================================================
+CACHE = ROOT / "out" / "officials"
+MODELS = {"indep": {"shared": 0, "judges": 0, "home": 0},
+          "league": {"judges": 0, "home": 0},
+          "league_home": {"judges": 0},
+          "judges": {"home": 0},
+          "judges_home": {}}
+
+
+def remap(x_old, unravel_old, jidx_old, jidx_new):
+    """Warm start: carry every parameter over; judge rows by key (new judges start at 0)."""
+    from jax.flatten_util import ravel_pytree
+    import jax.numpy as jnp
+    th = to_np(unravel_old(x_old))
+    E = np.zeros((len(jidx_new), 5))
+    for k, i in jidx_new.items():
+        if k in jidx_old:
+            E[i] = th["E"][jidx_old[k]]
+    th["E"] = E
+    flat, _ = ravel_pytree({k: jnp.array(v, dtype=jnp.float64) for k, v in th.items()})
+    return np.asarray(flat)
+
+
+def fit_named(rows, nat, year_end, model, tau, init=None, init_jidx=None, init_unravel=None, eb_rounds=0):
+    """Fit on decisions dated before year_end (Jan 1). Returns a dict with params, judge index, design."""
+    tr = [r for r in rows if r["year"] < year_end]
+    jidx = judge_index(tr)
+    dz = Design(tr, jidx, nat, year_end - 1)
+    x0 = None
+    if init is not None:
+        x0 = remap(init, init_unravel, init_jidx, jidx)
+    cfg = MODELS[model]
+    log(f"fit {model} < {year_end}: {dz.nF} fights, {dz.nJ} judges, tau {tau}")
+    x, unravel, llf, sgf = fit_model(dz, cfg, tau, flat_init=x0)
+    cov = None
+    for k in range(eb_rounds):
+        cov, info = bhhh_sd(dz, x, sgf, tau)
+        ncards = np.bincount(dz.J[np.r_[0, np.cumsum([r["R"] for r in dz.rows])][:-1]].ravel(), minlength=dz.nJ + 1)[:dz.nJ]
+        tau = eb_tau(to_np(unravel(x))["E"], cov, ncards)
+        log(f"  EB tau -> {tau}")
+        x, unravel, llf, sgf = fit_model(dz, cfg, tau, flat_init=x)
+    if cfg.get("judges", 1):
+        cov, info = bhhh_sd(dz, x, sgf, tau)
+    return {"x": x, "unravel": unravel, "jidx": jidx, "tau": tau, "model": model, "year_end": year_end,
+            "train_ll": llf(x), "cov": cov, "nF": dz.nF}
+
+
+def evaluate(fit, rows, nat, years, nsim=20000, seed=7):
+    """Held-out: exact-card log-lik and decision metrics on decisions in `years` with frozen params."""
+    te = [r for r in rows if r["year"] in years]
+    dz = Design(te, fit["jidx"], nat, fit["year_end"] - 1)
+    vg, ll_fn, unravel, flat0, sg, data = make_model(dz, MODELS[fit["model"]], fit["tau"])
+    ll = np.asarray(ll_fn(fit["x"], data))
+    th = to_np(fit["unravel"](fit["x"]))
+    cfg = MODELS[fit["model"]]
+    th_sim = dict(th)
+    if not cfg.get("shared", 1):
+        th_sim["log_su"] = -30.0
+    if not cfg.get("judges", 1):
+        th_sim["E"] = np.zeros_like(th["E"])
+    if not cfg.get("home", 1):
+        th_sim["h"] = np.zeros(2)
+    if not cfg.get("trend", 1):
+        th_sim["w"] = np.zeros(3)
+    probs, cardp, any108 = simulate_decisions(th_sim, dz, nsim=nsim, seed=seed)
+    fids = [r["fid"] for r in dz.rows]
+    return {"fids": fids, "card_ll": ll, "probs": probs, "cardp": cardp, "any108": any108,
+            "years": [r["year"] for r in dz.rows]}
+
+
+def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home", "judges", "judges_home"),
+             tau_mults=(1.0,), years_eval=None):
+    """One walk-forward fold: fit every model on decisions before test_year, evaluate on years_eval.
+    Judge-effect variances: empirical Bayes on the training window, times each multiplier in tau_mults."""
+    import pickle
+    CACHE.mkdir(parents=True, exist_ok=True)
+    years_eval = years_eval or [test_year]
+    base = fit_named(rows, nat, test_year, "league", TAU_DEFAULT)
+    fits = {"league": base}
+    jf = fit_named(rows, nat, test_year, "judges", TAU_DEFAULT, init=base["x"], init_jidx=base["jidx"],
+                   init_unravel=base["unravel"], eb_rounds=2)
+    tau_eb = jf["tau"]
+    for m in models:
+        if m in ("league", "judges", "judges_home"):
+            continue
+        fits[m] = fit_named(rows, nat, test_year, m, tau_eb, init=base["x"], init_jidx=base["jidx"],
+                            init_unravel=base["unravel"])
+    for mult in tau_mults:
+        tau = {k: v * mult for k, v in tau_eb.items()}
+        sfx = "" if mult == 1.0 else f"@{mult:g}"
+        f = jf if mult == 1.0 else fit_named(rows, nat, test_year, "judges", tau, init=jf["x"], init_jidx=jf["jidx"],
+                                             init_unravel=jf["unravel"])
+        if "judges" in models:
+            fits["judges" + sfx] = f
+        if "judges_home" in models:
+            fits["judges_home" + sfx] = fit_named(rows, nat, test_year, "judges_home", tau, init=f["x"],
+                                                  init_jidx=f["jidx"], init_unravel=f["unravel"])
+    res = {}
+    for name, f in fits.items():
+        ev = evaluate(f, rows, nat, years_eval)
+        res[name] = {"eval": ev, "x": f["x"], "jidx": f["jidx"], "tau": f["tau"], "cov": f["cov"], "model": f["model"],
+                     "th": to_np(f["unravel"](f["x"])), "train_nF": f["nF"]}
+        log(f"  {name}: held-out card ll/fight {ev['card_ll'].mean():.4f} on {len(ev['fids'])} fights")
+    out = {"test_year": test_year, "years_eval": years_eval, "tau_eb": tau_eb, "tau_mults": list(tau_mults),
+           "models": res}
+    with open(CACHE / f"fold_{tag}.pkl", "wb") as fh:
+        pickle.dump(out, fh)
+    return out
+
+
+def load_all():
+    """Decisions plus nationality map (cached for the parallel fold processes)."""
+    F, S, D, rows, notes, data_max = build_data()
+    names = sorted({r["n0"] for r in rows} | {r["n1"] for r in rows})
+    T = br._load(RAW / "ufc_fighter_tott.csv")
+    T["dob"] = pd.to_datetime(T.DOB, format="%b %d, %Y", errors="coerce")
+    dup = T.FIGHTER.duplicated(keep=False)
+    dob = T[~dup].set_index("FIGHTER").dob.dropna().to_dict()
+    nat, info = load_nationality(names, dob)
+    return F, S, D, rows, nat, info, notes, data_max
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--stage", default="all")
+    ap.add_argument("--fetch-wikidata", action="store_true")
+    ap.add_argument("--test-year", type=int, default=2024)
+    ap.add_argument("--tau-mults", default="1")
+    ap.add_argument("--tag", default=None)
+    ap.add_argument("--eval-years", default=None)
+    ap.add_argument("--models", default="indep,league,league_home,judges,judges_home")
+    args = ap.parse_args()
+    if args.fetch_wikidata:
+        fetch_wikidata()
+    if args.stage == "fold":
+        F, S, D, rows, nat, info, notes, data_max = load_all()
+        ev = [int(y) for y in args.eval_years.split(",")] if args.eval_years else None
+        run_fold(rows, nat, args.test_year, args.tag or str(args.test_year), models=tuple(args.models.split(",")),
+                 tau_mults=tuple(float(m) for m in args.tau_mults.split(",")), years_eval=ev)

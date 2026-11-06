@@ -136,8 +136,8 @@ def load_ufcstats():
     ev["date"] = pd.to_datetime(ev["DATE"].str.strip(), format="%B %d, %Y").dt.date
     res = pd.read_csv(os.path.join(RAW, "ufc_fight_results.csv"))
     for c in res.columns:
-        if res[c].dtype == object:
-            res[c] = res[c].str.strip()
+        if not pd.api.types.is_numeric_dtype(res[c]):
+            res[c] = res[c].astype(str).str.strip()
     res["idx"] = range(len(res))
     known = set(ev["EVENT"])
     res["known"] = res["EVENT"].isin(known)
@@ -1063,6 +1063,12 @@ class Card:
                 if any(a <= m.start() < b for a, b in taken):
                     continue
                 out.append((m.start(), m.end(), i, "last"))
+            tk = x["tokens"]
+            if len(tk) == 2 and len(tk[0]) >= 4 and re.search(r"\b%s[\s.\-]+%s\b" % (re.escape(tk[1]), re.escape(tk[0])), pk):
+                for m in re.finditer(r"\b%s\b" % re.escape(tk[1]), k):
+                    if any(a <= m.start() < b for a, b in taken) or any(o[0] == m.start() for o in out):
+                        continue
+                    out.append((m.start(), m.end(), i, "last"))
         out.sort()
         return out, k
 
@@ -1319,7 +1325,11 @@ SCHED_RE = re.compile(r"\b(?:was|were|had been|is|are|has been|have been)\s+(?:o
                       r"(?:expected|scheduled|slated|set|booked|linked|rumou?red|planned|announced|targeted|due|"
                       r"supposed|tabbed to face|paired|pencil(?:l)?ed)\b|\bbout between\b|\bmatch-?up between\b|"
                       r"\bpairing (?:between|of)\b|\bcontest between\b|\bfight between\b|\brematch between\b|"
-                      r"\btrilogy (?:bout|fight) between\b|\bwas expected\b|\bwere expected\b", re.I)
+                      r"\btrilogy (?:bout|fight) between\b|\bwas expected\b|\bwere expected\b|"
+                      r"\bscheduled (?:\w+ ){0,2}(?:bout|fight|match-?up|contest|rematch|clash) (?:against|with|vs)|"
+                      r"\b(?:pulled out of|withdrew from|was removed from|was forced out of|exited) (?:a|his|her|their|the) "
+                      r"(?:scheduled |planned |booked )?(?:\w+ ){0,2}(?:bout|fight|match-?up|contest|rematch) "
+                      r"(?:against|with|vs)", re.I)
 REPL_RE = re.compile(r"replaced by|replacement|replacing|replace |stepped in|stepping in|step in|stepped up|"
                      r"filled in|fill in|took (?:the|his|her|their) (?:bout|fight|place|spot)|in (?:his|her) place|"
                      r"instead face|instead faced|instead fought|instead meet|will now face|now faces?|"
@@ -1375,18 +1385,28 @@ def parse_bout_changes(card, paras, event_date):
             names_here = set(x[2] for x in ms_all)
             if ia not in names_here and ib not in names_here:
                 continue
-            if not REPL_RE.search(txt):
+            if not (REPL_RE.search(txt) or WITHDRAW_RE.search(txt)):
                 continue
             mem = info["members"]
             if ia in mem and ib in mem:
                 continue       # the final pairing was the original booking in this paragraph
             if ia not in names_here or ib not in names_here:
-                # one side mentioned only: count it if the paragraph books him with someone else, and the
-                # other side is the replacement named in another paragraph ("In turn, ... will face X")
-                continue
+                # one side only: the other may appear under another name (marriage, transliteration):
+                # "replaced by Veronica Macedo" for ufcstats "Veronica Hardy" -> same first name
+                stay = ia if ia in names_here else ib
+                new = ib if stay == ia else ia
+                if stay not in mem:
+                    continue
+                rb = re.search(r"replaced by (?:(?:promotional |UFC |returning |fellow |former |the )?"
+                               r"(?:newcomer |veteran |prospect )?)?([A-Z][\w'.-]+)(?: [A-Z][\w'.-]+)+", txt)
+                if not rb or Card.key(rb.group(1)) != card.f[new]["tokens"][0]:
+                    continue
+                names_here = names_here | {new}
+                info = dict(info)
+                info["fallback"] = rb.group(0)
             for stay, new in ((ia, ib), (ib, ia)):
                 if stay in mem and new not in mem:
-                    roles = ((stay, "opp_change"), (new, "opp_change" if sched_members.get(new) - {pi} else "replacement"))
+                    roles = ((stay, "opp_change"), (new, "opp_change" if sched_members.get(new, set()) - {pi} else "replacement"))
                     break
             else:
                 if ia not in mem and ib not in mem:

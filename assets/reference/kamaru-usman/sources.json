@@ -1,0 +1,90 @@
+[
+  {
+    "file": "espn_headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/3088812.png",
+    "date_taken": "undated; CDN Last-Modified 2026-07-21",
+    "what": "headshot",
+    "note": "Best frontal face: studio light, neutral expression. Shaved head, broad face, short salt-and-pepper stubble. Uploaded just after UFC Oklahoma City (July 2026), so the most current face.",
+    "page": "https://www.espn.com/mma/fighter/_/id/3088812/kamaru-usman",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "espn_stance_left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/3088812.png",
+    "date_taken": "undated; CDN Last-Modified 2025-06-12",
+    "what": "body",
+    "note": "Full body, slightly turned, in grey/black tiger-stripe crypto.com UFC shorts (about 2025, before UFC Atlanta). Physique, limb length, calves.",
+    "page": "https://www.espn.com/mma/fighter/_/id/3088812/kamaru-usman",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "espn_stance_right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/3088812.png",
+    "date_taken": "undated; CDN Last-Modified 2026-07-21",
+    "what": "body",
+    "note": "Full body front in black Venum shorts with USMAN in green (UFC Oklahoma City kit, July 2026). Best current physique reference.",
+    "page": "https://www.espn.com/mma/fighter/_/id/3088812/kamaru-usman",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "01_headshot_ufc286_press_bjpenn.jpg",
+    "url": "https://www.bjpenn.com/wp-content/uploads/2025/01/Kamaru-Usman-3.jpg",
+    "page": "https://bjpenn.com/mma-news/kamaru-usman/kamaru-usman-issues-statement-after-ufc-atlanta-return-confirmed",
+    "author": "unknown (UFC 286 press event photo used by BJPenn.com)",
+    "license": "All rights reserved",
+    "date_taken": "about 2023-03 (UFC 286 backdrop at The O2, London)",
+    "use": "reference-only",
+    "what": "headshot",
+    "note": "Large frontal face, press-event lighting: brow, eyes, nose width, lips, short beard and moustache before the grey showed; red-pinstripe jacket and turtleneck."
+  },
+  {
+    "file": "02_3q_cage_reuters.jpg",
+    "url": "https://images2.minutemediacdn.com/image/upload/f_auto,q_auto,w_2000/images/ReutersImages/mmsport/mma_knockout/01kxrxc9dwpdehkny4h2.jpg",
+    "page": "https://www.si.com/fannation/mma/news/ufc-oklahoma-city-du-plessis-vs-usman-full-fight-card-picks-predictions",
+    "author": "Reuters / USA TODAY Sports via Imagn (photographer not captured)",
+    "license": "All rights reserved (Reuters / Imagn)",
+    "date_taken": "unknown; CDN upload 2026-07-17 (file photo in the cage)",
+    "use": "reference-only",
+    "what": "3q",
+    "note": "Three-quarter face and upper body in the cage: cheekbone and jaw width, ear set, chest and shoulder mass."
+  },
+  {
+    "file": "03_profile_action_ufc_atlanta_2025_imagn.jpg",
+    "url": "https://images2.minutemediacdn.com/image/upload/f_auto,q_auto,w_2000/images/ImagnImages/mmsport/mma_knockout/01jxtp0tvs9qvf3r0e4r.jpg",
+    "page": "https://www.si.com/fannation/mma/news/kamaru-usman-outlines-path-welterweight-title-ufc-atlanta",
+    "author": "Imagn Images (photographer not captured)",
+    "license": "All rights reserved (Imagn / USA TODAY Network)",
+    "date_taken": "2025-06-14 (UFC Atlanta vs Joaquin Buckley)",
+    "use": "reference-only",
+    "what": "profile",
+    "note": "Near profile while throwing a jab: skull length front-to-back, brow projection, nose and lip profile, jaw line; black shorts with green USMAN."
+  },
+  {
+    "file": "04_profile_faceoff_2026_gazettengr.jpg",
+    "url": "https://gazettengr.com/wp-content/uploads/HNXsHiwWkAAU3AE-e1784268751244.jpg",
+    "page": "https://gazettengr.com/south-africas-du-plessis-nigerias-usman-face-off-in-ufc-showdown-in-oklahoma/",
+    "author": "unknown (image from an X/Twitter post, used by Gazette Nigeria)",
+    "license": "All rights reserved",
+    "date_taken": "about 2026-07-15 (first face-off with Dricus du Plessis, UFC Oklahoma City fight week)",
+    "use": "reference-only",
+    "what": "profile",
+    "note": "Left-side profile in sunglasses: forehead slope, nose and lip projection, chin, short greying beard. Small and low resolution; sunglasses hide the eyes."
+  },
+  {
+    "file": "08_commons_press_2018_mmanytt.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/05/KamaruUsmanPress2018.png",
+    "page": "https://commons.wikimedia.org/wiki/File:KamaruUsmanPress2018.png",
+    "author": "MMAnytt (YouTube still)",
+    "license": "CC BY-SA 3.0",
+    "date_taken": "2018-09-09 (UFC 228)",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Only freely licensed photo found. Frontal, but a wide-brimmed hat and large sunglasses hide the skull and eyes, so it is useful only for the lower face (nose, lips, beard, jaw). Attribution: MMAnytt, CC BY-SA 3.0, via Wikimedia Commons."
+  }
+]

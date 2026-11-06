@@ -266,10 +266,18 @@ def name_sim(a, b):
     return s
 
 
+def best_sim(names, other):
+    """max similarity between any of a fighter's names (str or list of aliases) and another name."""
+    if isinstance(names, str):
+        names = [names]
+    return max((name_sim(n, other) for n in names if n), default=0.0)
+
+
 def pair_score(a1, a2, b1, b2):
-    """(score, swapped) for matching bout (a1 vs a2) to (b1 vs b2) in either orientation."""
-    s_st = (name_sim(a1, b1), name_sim(a2, b2))
-    s_sw = (name_sim(a1, b2), name_sim(a2, b1))
+    """(score, swapped) for matching bout (a1 vs a2) to (b1 vs b2) in either orientation.
+    a1/a2 may be lists of aliases (card name first)."""
+    s_st = (best_sim(a1, b1), best_sim(a2, b2))
+    s_sw = (best_sim(a1, b2), best_sim(a2, b1))
 
     def val(s):
         lo, hi = min(s), max(s)
@@ -890,19 +898,32 @@ def load_cards_upcoming():
         date = str(e.get('date') or e.get('event_date') or '')[:10]
         ev = {'name': e.get('name') or e.get('event') or e.get('title'), 'date': date,
               'venue': e.get('venue'), 'location': e.get('location') or e.get('city'),
-              'wiki': e.get('wiki') or e.get('url')}
+              'wiki': e.get('wiki') or e.get('url'), 'alt_names': e.get('alt_names') or [],
+              'start_utc': e.get('start_utc') if isinstance(e.get('start_utc'), dict) else None,
+              'event_status': e.get('event_status')}
+        rem = []
+        for r in e.get('removed') or []:
+            p = pair_of(r) if isinstance(r, dict) else None
+            if p:
+                rem.append({'A': nm(p[0]), 'B': nm(p[1]), 'reason': r.get('reason'), 'date': r.get('date')})
+        ev['removed'] = rem
         events.append(ev)
         for i, b in enumerate(e.get('bouts') or e.get('fights') or []):
             p = pair_of(b) if isinstance(b, dict) else None
             if not p:
                 continue
             A, B = p
+
+            def alts(x):
+                return [nm(x)] + [n for n in (x.get('alt_names') or []) if n] if isinstance(x, dict) else [nm(x)]
             bouts.append({'event': ev['name'], 'date': date, 'A': nm(A), 'B': nm(B),
+                          'A_alts': alts(A), 'B_alts': alts(B),
+                          'rounds': b.get('rounds'), 'status': b.get('status'), 'belt': b.get('belt'),
                           'A_slug': A.get('slug') if isinstance(A, dict) else b.get('A_slug'),
                           'B_slug': B.get('slug') if isinstance(B, dict) else b.get('B_slug'),
                           'weight_class': b.get('weight_class') or b.get('division'),
                           'segment': b.get('segment') or b.get('card'), 'order': b.get('order', i + 1),
-                          'title_fight': b.get('title_fight') or b.get('title'),
+                          'title_fight': bool(b.get('title_fight') or b.get('title') is True),
                           'bout_id': b.get('id') or b.get('bout_id'), 'card_src': 'cards_upcoming.json'})
     return (events, bouts) if bouts else (None, None)
 
@@ -1033,7 +1054,7 @@ def match_sources(events, bouts, src_bouts, add_missing):
                     continue
                 if ev is None and not sb.get('future_page'):
                     continue
-                s, sw = pair_score(b['A'], b['B'], sb['n1'], sb['n2'])
+                s, sw = pair_score(b.get('A_alts') or b['A'], b.get('B_alts') or b['B'], sb['n1'], sb['n2'])
                 need = 0.9 if sb.get('future_page') else 0.6
                 if s >= need:
                     nl = len(sb.get('lines') or {})
@@ -1070,8 +1091,15 @@ def match_sources(events, bouts, src_bouts, add_missing):
                 nb['src'][src] = dict(sb, swapped=False, match=1.0)
                 bouts.append(nb)
             else:
-                unmatched.append({k: sb.get(k) for k in ('src', 'src_id', 'event_title', 'date', 'n1', 'n2')}
-                                 | {'n_books': len(sb.get('lines') or {})})
+                u = {k: sb.get(k) for k in ('src', 'src_id', 'event_title', 'date', 'n1', 'n2')}
+                u['n_books'] = len(sb.get('lines') or {})
+                for r in ev.get('removed') or []:
+                    if pair_score(r['A'], r['B'], sb['n1'], sb['n2'])[0] >= 0.7:
+                        u['note'] = f"removed per cards_upcoming.json: {r.get('reason') or ''}".strip()
+                        break
+                else:
+                    u['note'] = 'not on the card file: new bout or a site-side stale listing; check before predicting'
+                unmatched.append(u)
     return unmatched
 
 

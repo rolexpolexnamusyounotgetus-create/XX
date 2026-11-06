@@ -11,6 +11,54 @@
     "note": "ESPN athlete headshot, transparent background, date unknown"
   },
   {
+    "file": "wm-2022-belt-cropped.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/25/Islam_Makhachev_2022_UFC_belt_%28cropped%29.png",
+    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2022_UFC_belt_(cropped).png",
+    "author": "Новости ННТ",
+    "license": "CC BY 3.0",
+    "date_taken": "2022-10-26",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Islam Makhachev in 2022, after first title win (UFC 280)",
+    "attribution": "Новости ННТ, CC BY 3.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2022-10-26-dagestan.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Islam_Makhachev_2022-10-26.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2022-10-26.jpg",
+    "author": "Head of the Respublic of Dagestan",
+    "license": "CC BY 3.0",
+    "date_taken": "2022-10-26",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Islam Makhachev in 2022, after first title win (UFC 280)",
+    "attribution": "Head of the Respublic of Dagestan, CC BY 3.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2023-dagestan.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Islam_Makhachev_2023.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2023.jpg",
+    "author": "Head of the Respublic of Dagestan",
+    "license": "CC BY 3.0",
+    "date_taken": "2023-02-16",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Islam Makhachev in 2023, after first Volkanovski win (UFC 284)",
+    "attribution": "Head of the Respublic of Dagestan, CC BY 3.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2025-melikov-cropped.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/95/Islam_Makhachev_and_Sergey_Melikov_2025_%28cropped%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_and_Sergey_Melikov_2025_(cropped).jpg",
+    "author": "Unknown author (uploader did not name the photographer)",
+    "license": "CC BY 3.0",
+    "date_taken": "2025-11-25",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Islam Makhachev and Head of the Republic of Dagestan Sergey Melikov",
+    "attribution": "Unknown author (uploader did not name the photographer), CC BY 3.0, via Wikimedia Commons"
+  },
+  {
     "file": "espn-stance-left.png",
     "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/3332412.png",
     "page": "https://www.espn.com/mma/fighter/_/id/3332412",
@@ -31,50 +79,6 @@
     "use": "reference-only",
     "what": "body",
     "note": "ESPN full-body fight-stance cutout, date unknown"
-  },
-  {
-    "file": "wm-2025-melikov-cropped.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/9/95/Islam_Makhachev_and_Sergey_Melikov_2025_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_and_Sergey_Melikov_2025_(cropped).jpg",
-    "author": "Unknown authorUnknown author",
-    "license": "CC BY 3.0",
-    "date_taken": "2025-11-25",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "Islam Makhachev and Head of the Republic of Dagestan Sergey Melikov"
-  },
-  {
-    "file": "wm-2022-belt-cropped.png",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/2/25/Islam_Makhachev_2022_UFC_belt_%28cropped%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2022_UFC_belt_(cropped).png",
-    "author": "Новости ННТ",
-    "license": "CC BY 3.0",
-    "date_taken": "2022-10-26",
-    "use": "embed-ok",
-    "what": "headshot",
-    "note": "Islam Makhachev in 2022, after first title win (UFC 280)"
-  },
-  {
-    "file": "wm-2023-dagestan.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Islam_Makhachev_2023.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2023.jpg",
-    "author": "Head of the Respublic of Dagestan",
-    "license": "CC BY 3.0",
-    "date_taken": "2023-02-16",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "Islam Makhachev in 2023, after first Volkanovski win (UFC 284)"
-  },
-  {
-    "file": "wm-2022-10-26-dagestan.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Islam_Makhachev_2022-10-26.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Islam_Makhachev_2022-10-26.jpg",
-    "author": "Head of the Respublic of Dagestan",
-    "license": "CC BY 3.0",
-    "date_taken": "2022-10-26",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "Islam Makhachev in 2022, after first title win (UFC 280)"
   },
   {
     "file": "ref-getty-2026-08-13-ufc330-weighin.jpg",

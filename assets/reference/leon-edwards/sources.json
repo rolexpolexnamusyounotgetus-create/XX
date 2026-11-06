@@ -1,0 +1,90 @@
+[
+  {
+    "file": "espn_headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/3152929.png",
+    "date_taken": "undated; CDN Last-Modified 2025-11-13",
+    "what": "headshot",
+    "note": "Best frontal face: studio light, neutral expression. Buzz cut with receded temples, dense short full beard, chest script tattoos. Uploaded during UFC 322 fight week (Nov 2025), the most current face.",
+    "page": "https://www.espn.com/mma/fighter/_/id/3152929/leon-edwards",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "espn_stance_left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/3152929.png",
+    "date_taken": "undated; CDN Last-Modified 2025-11-13",
+    "what": "body",
+    "note": "Full body, slightly turned, in black/grey patterned crypto.com UFC shorts (UFC 322 era, Nov 2025). Shows chest portrait tattoo, left-forearm tattoos, long legs and slim calves.",
+    "page": "https://www.espn.com/mma/fighter/_/id/3152929/leon-edwards",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "espn_stance_right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/3152929.png",
+    "date_taken": "undated; CDN Last-Modified 2022-08-18",
+    "what": "body",
+    "note": "Full body front in red Venum UFC shorts (2022). Shows 'Death Before Dishonour' chest script, vertical script down left ribs, left-forearm sleeve.",
+    "page": "https://www.espn.com/mma/fighter/_/id/3152929/leon-edwards",
+    "author": "UFC / ESPN official athlete portrait (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "use": "reference-only"
+  },
+  {
+    "file": "01_headshot_ufc322_media_cagesidepress.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2025/11/Leon-Edwards.jpg",
+    "page": "https://cagesidepress.com/2025/11/13/leon-edwards-on-carlos-prates-hype-hes-in-for-a-rude-awakening",
+    "author": "Cageside Press (photographer not captured)",
+    "license": "All rights reserved (Cageside Press)",
+    "date_taken": "about 2025-11-12/13 (UFC 322 media day, New York)",
+    "use": "reference-only",
+    "what": "headshot",
+    "note": "Recent frontal face in flash light, in a dark puffer jacket: hairline, brow, eye shape, nose width, beard edge."
+  },
+  {
+    "file": "02_3q_walkout_mmajunkie.jpg",
+    "url": "https://s.yimg.com/lo/mysterio/api/6e818df64b9969e89540cf1c14466100aa4162ba1cc60f51560780b1b2c5c20d/lightyear_networkapi/resizefill_w1200_h675%3Bquality_80%3Bformat_webp/https%3A%2F%2Fmedia.zenfs.com%2Fen%2Fmma_junkie_usa_today_articles_344%2F73a5a9b5a70a827990cc23f7c164651f",
+    "page": "https://au.sports.yahoo.com/sean-brady-continues-callout-leon-190028497.html",
+    "author": "MMA Junkie / USA TODAY Sports (photographer not captured)",
+    "license": "All rights reserved (USA TODAY Network)",
+    "date_taken": "unknown; champion-era gold-trim Venum walkout hoodie, about 2023-2024",
+    "use": "reference-only",
+    "what": "3q",
+    "note": "Three-quarter face in warm arena light: cheekbones, nose tip and nostrils, lips, beard density."
+  },
+  {
+    "file": "03_profile_ufc322_msg_bjpenn.jpg",
+    "url": "https://www.bjpenn.com/wp-content/uploads/2025/12/MixCollage-04-Dec-2025-02-22-PM-1989.jpg",
+    "page": "https://www.bjpenn.com/mma-news/leon-edwards/leon-edwards-breaks-social-media-silence-first-ko-loss-ufc-322",
+    "author": "unknown (UFC 322 photo used by BJPenn.com)",
+    "license": "All rights reserved",
+    "date_taken": "2025-11-15 (UFC 322, Madison Square Garden)",
+    "use": "reference-only",
+    "what": "profile",
+    "note": "Best recent profile (right side, slightly turned): forehead and hairline, brow ridge, nose length and tip, lip projection, beard line, ear."
+  },
+  {
+    "file": "04_profile_faceoff_ufc_london_2025_imagn.jpg",
+    "url": "https://images2.minutemediacdn.com/image/upload/f_auto,q_auto,w_2000/images/voltaxMediaLibrary/mmsport/mma_knockout/01jpzq2fdrg1sp80sads.jpg",
+    "page": "https://www.si.com/fannation/mma/news/sean-brady-stuns-ufc-london-crowd-submits-leon-edwards-manhandling-ex-champion",
+    "author": "unknown (SI media library; UFC/Zuffa face-off photo)",
+    "license": "All rights reserved",
+    "date_taken": "2025-03 (UFC London fight week, Edwards vs Sean Brady)",
+    "use": "reference-only",
+    "what": "profile",
+    "note": "Full right-side profile in the face-off: skull shape, nose and chin projection, beard, right ear, shoulder and arm."
+  },
+  {
+    "file": "07_commons_3q_2021.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/51/Leon_Edwards_2021.png",
+    "page": "https://commons.wikimedia.org/wiki/File:Leon_Edwards_2021.png",
+    "author": "James English (YouTube still)",
+    "license": "CC BY 3.0",
+    "date_taken": "2021-07-14",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Only freely licensed photo that is clearly him. Smiling three-quarter view, soft indoor light: hairline, beard, teeth, cheekbones. Attribution: James English, CC BY 3.0, via Wikimedia Commons."
+  }
+]

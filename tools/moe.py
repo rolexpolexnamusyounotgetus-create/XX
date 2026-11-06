@@ -490,6 +490,531 @@ def cmd_experts(args):
     log("experts done in %.0fs" % (time.time() - t0))
 
 
+# ====================================================================== stacking: inputs
+PCLIP = 0.01                     # expert probabilities are clipped to [PCLIP, 1 - PCLIP] before the logit
+GATE_NAMES = ["nmin", "nmax", "cmin_min", "elogap", "five", "women", "light", "heavy", "layoff_max",
+              "age_mean", "age_gap", "preufc"]
+
+
+def load_json(name):
+    p = os.path.join(DERIVED, name)
+    if not os.path.exists(p):
+        return None
+    try:
+        with open(p) as fh:
+            return json.load(fh)
+    except Exception as ex:          # another agent may be mid-write
+        log("could not read %s: %s" % (name, ex))
+        return None
+
+
+def ext_prob(v):
+    """Pull P(A wins) out of an external per-fight record (layouts differ between tools)."""
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, dict):
+        for k in ("p_oof", "oof", "p_stack_oof", "pA_oof", "p", "pA", "p_A", "p_win", "prob", "p_a"):
+            x = v.get(k)
+            if isinstance(x, (int, float)) and 0 <= x <= 1:
+                return float(x)
+    return None
+
+
+def external_experts(ids):
+    """Per-fight probabilities from other analysts' outputs when they exist (strictly out-of-fold for 2019-2023
+    is their contract; see research/model_moe.md for the recipe to plug a new one in)."""
+    out, notes = {}, {}
+    for key, files in (("ml", ["ml.json"]), ("ratings", ["ratings.json"]), ("methodround", ["methodround.json"]),
+                       ("oppadj", ["oppadj.json"])):
+        for fn in files:
+            d = load_json(fn)
+            if not d:
+                continue
+            table = None
+            for k in ("fights", "backtest", "predictions", "per_fight", "oof"):
+                if isinstance(d.get(k), dict):
+                    table = d[k]
+                    break
+            if table is None:
+                notes[key] = "%s present but no per-fight table recognised" % fn
+                continue
+            arr = np.array([ext_prob(table.get(i)) if ext_prob(table.get(i)) is not None else np.nan for i in ids])
+            cov = float(np.isfinite(arr).mean())
+            notes[key] = "%s: coverage %.3f" % (fn, cov)
+            if cov > 0.5:
+                out[key] = arr
+    return out, notes
+
+
+def gating_matrix(rows, preufc):
+    snaps = set()
+    if preufc:
+        for f in preufc.get("fighters", {}).values():
+            for s in f.get("snapshots") or []:
+                if s and len(s) > 3 and s[3]:            # n pro fights before the UFC bout > 0
+                    snaps.add((f.get("ufc_id"), s[1]))
+    G = []
+    for r in rows:
+        a, b = r["A"], r["B"]
+        div = r["prior_division"] or r["division"]
+        grp = DIV_GROUPS.get(div, "middle")
+        lay = [x if np.isfinite(x) else math.log1p(365) for x in (a["layoff"], b["layoff"])]
+        ages = [x if np.isfinite(x) else 30.0 for x in (a["age"], b["age"])]
+        pu = 0.0
+        if snaps:
+            pu = 0.5 * ((r.get("uidA"), r["id"]) in snaps) + 0.5 * ((r.get("uidB"), r["id"]) in snaps)
+        G.append([math.log1p(min(a["n"], b["n"])), math.log1p(max(a["n"], b["n"])), min(a["cmin"], b["cmin"]),
+                  abs(a["elo"] - b["elo"]) / 100.0, 1.0 if r["rounds"] == 5 else 0.0,
+                  1.0 if grp == "women" else 0.0, 1.0 if grp == "light" else 0.0, 1.0 if grp == "heavy" else 0.0,
+                  max(lay), (ages[0] + ages[1]) / 2 - 30.0, abs(ages[0] - ages[1]), pu])
+    return np.array(G, dtype=float)
+
+
+# ====================================================================== stacking: models
+def _nll(z, y, w):
+    # stable log loss on logits
+    return float(np.sum(w * (np.logaddexp(0, z) - y * z)))
+
+
+class LinStack:
+    """(a) p = sigmoid(sum_k w_k * logit(p_k)), w_k >= 0, no intercept (corner-symmetric by construction)."""
+    def __init__(self, l2=0.0):
+        self.l2 = l2
+
+    def fit(self, L, y, w=None):
+        from scipy.optimize import minimize
+        w = np.ones(len(y)) if w is None else w
+        K = L.shape[1]
+
+        def f(b):
+            z = L @ b
+            r = sigm(z) - y
+            return _nll(z, y, w) + self.l2 * np.sum(b ** 2), L.T @ (w * r) + 2 * self.l2 * b
+        res = minimize(f, np.full(K, 1.0 / K), jac=True, method="L-BFGS-B", bounds=[(0, None)] * K)
+        self.w = res.x
+        return self
+
+    def logit(self, L):
+        return L @ self.w
+
+    def predict(self, L):
+        return sigm(self.logit(L))
+
+
+class GatedStack:
+    """(b) mixture of experts in logit space: z = exp(u.g) * sum_k pi_k(g) * logit(p_k), with
+    pi = softmax(V g) over the experts that are present (mask). g is symmetric in the corners (bias first),
+    logit(p_k) antisymmetric, so z is antisymmetric: no intercept, exactly corner-symmetric."""
+    def __init__(self, lam=1.0, lam_u=None):
+        self.lam = lam
+        self.lam_u = lam if lam_u is None else lam_u
+
+    def _fwd(self, th, L, M, G):
+        K, D = L.shape[1], G.shape[1]
+        V = th[:K * D].reshape(K, D)
+        u = th[K * D:]
+        A = G @ V.T
+        A = np.where(M, A, -np.inf)
+        A = A - A.max(1, keepdims=True)
+        E = np.where(M, np.exp(A), 0.0)
+        PI = E / E.sum(1, keepdims=True)
+        Lm = np.where(M, L, 0.0)
+        h = (PI * Lm).sum(1)
+        s = np.exp(np.clip(G @ u, -5, 5))
+        return V, u, PI, Lm, h, s
+
+    def fit(self, L, M, G, y, w=None):
+        from scipy.optimize import minimize
+        w = np.ones(len(y)) if w is None else w
+        K, D = L.shape[1], G.shape[1]
+        n = w.sum()
+
+        def f(th):
+            V, u, PI, Lm, h, s = self._fwd(th, L, M, G)
+            z = s * h
+            r = w * (sigm(z) - y)
+            gu = G.T @ (r * s * h)
+            dA = (r * s)[:, None] * PI * (Lm - h[:, None])          # n x K
+            gV = dA.T @ G                                          # K x D
+            pen_V = V.copy()
+            pen_V[:, 0] = 0.0                                      # bias column unpenalised
+            pen_u = u.copy()
+            pen_u[0] = 0.0
+            loss = _nll(z, y, w) + n * (self.lam * np.sum(pen_V ** 2) + self.lam_u * np.sum(pen_u ** 2))
+            grad = np.concatenate([(gV + 2 * n * self.lam * pen_V).ravel(), gu + 2 * n * self.lam_u * pen_u])
+            return loss, grad
+        th0 = np.zeros(K * D + D)
+        res = minimize(f, th0, jac=True, method="L-BFGS-B", options={"maxiter": 3000})
+        self.th, self.K, self.D = res.x, K, D
+        self.V = res.x[:K * D].reshape(K, D)
+        self.u = res.x[K * D:]
+        return self
+
+    def logit(self, L, M, G):
+        _, _, PI, _, h, s = self._fwd(self.th, L, M, G)
+        self.last_pi, self.last_s = PI, s
+        return s * h
+
+    def predict(self, L, M, G):
+        return sigm(self.logit(L, M, G))
+
+
+class GBMStack:
+    """(c) LightGBM meta-learner on expert logits (NaN = absent) + gating features, mirrored rows, averaged
+    over both corner orders; optional base margin from a linear stack (boost the residual)."""
+    def __init__(self, leaves=4, rounds=200, lr=0.03, mdl=80):
+        self.params = dict(objective="binary", learning_rate=lr, num_leaves=leaves, min_data_in_leaf=mdl,
+                           feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=10.0,
+                           verbose=-1, num_threads=2, seed=11)
+        self.rounds = rounds
+
+    @staticmethod
+    def _x(L, M, G, sign=1.0):
+        return np.hstack([np.where(M, sign * L, np.nan), G])
+
+    def fit(self, L, M, G, y, base=None, w=None, valid=None):
+        import lightgbm as lgb
+        X = np.vstack([self._x(L, M, G), self._x(L, M, G, -1.0)])
+        yy = np.concatenate([y, 1 - y])
+        ww = None if w is None else np.concatenate([w, w])
+        init = None if base is None else np.concatenate([base, -base])
+        ds = lgb.Dataset(X, yy, weight=ww, init_score=init)
+        if valid is not None:
+            vL, vM, vG, vy, vb = valid
+            Xv = np.vstack([self._x(vL, vM, vG), self._x(vL, vM, vG, -1.0)])
+            dv = lgb.Dataset(Xv, np.concatenate([vy, 1 - vy]), reference=ds,
+                             init_score=None if vb is None else np.concatenate([vb, -vb]))
+            ev = {}
+            self.m = lgb.train(self.params, ds, self.rounds, valid_sets=[dv], callbacks=[lgb.record_evaluation(ev)])
+            self.curve = ev["valid_0"]["binary_logloss"]
+        else:
+            self.m = lgb.train(self.params, ds, self.rounds)
+        return self
+
+    def logit(self, L, M, G, base=None, rounds=None):
+        f1 = self.m.predict(self._x(L, M, G), num_iteration=rounds, raw_score=True)
+        f2 = self.m.predict(self._x(L, M, G, -1.0), num_iteration=rounds, raw_score=True)
+        z = 0.5 * (f1 - f2)
+        return z if base is None else z + base
+
+    def predict(self, L, M, G, base=None, rounds=None):
+        return sigm(self.logit(L, M, G, base, rounds))
+
+
+# ---- symmetric calibration
+class Calib:
+    """none | temperature (symmetric beta calibration: a = b, c = 0) | isotonic fit on mirrored data,
+    symmetrised c(p) = (c(p) + 1 - c(1 - p)) / 2."""
+    def __init__(self, kind):
+        self.kind = kind
+
+    def fit(self, z, y):
+        if self.kind == "temperature":
+            from scipy.optimize import minimize_scalar
+            self.a = minimize_scalar(lambda a: _nll(a * z, y, 1.0), bounds=(0.3, 3.0), method="bounded").x
+        elif self.kind == "isotonic":
+            from sklearn.isotonic import IsotonicRegression
+            p = sigm(z)
+            ir = IsotonicRegression(y_min=0.005, y_max=0.995, out_of_bounds="clip")
+            ir.fit(np.concatenate([p, 1 - p]), np.concatenate([y, 1 - y]))
+            grid = np.linspace(0, 1, 201)
+            c = ir.predict(grid)
+            c = 0.5 * (c + 1 - c[::-1])                       # exact symmetry on the grid
+            self.x, self.y = grid, np.maximum.accumulate(c)
+        return self
+
+    def __call__(self, p):
+        if self.kind == "none":
+            return p
+        if self.kind == "temperature":
+            return sigm(self.a * logit(p))
+        return np.interp(p, self.x, self.y)
+
+    def export(self):
+        if self.kind == "temperature":
+            return {"type": "temperature", "a": float(self.a)}
+        if self.kind == "isotonic":
+            return {"type": "isotonic", "x": [round(float(v), 4) for v in self.x],
+                    "y": [round(float(v), 6) for v in self.y]}
+        return {"type": "none"}
+
+
+# ====================================================================== metrics
+def metrics(p, y):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    acc = np.where(np.abs(p - 0.5) < 1e-12, 0.5, ((p > 0.5) == (y > 0.5)).astype(float))
+    # ECE on mirrored predictions (both corner orders), 10 equal-width bins
+    pm, ym = np.concatenate([p, 1 - p]), np.concatenate([y, 1 - y])
+    bins = np.minimum((pm * 10).astype(int), 9)
+    ece = sum(abs(pm[bins == b].mean() - ym[bins == b].mean()) * (bins == b).mean() for b in range(10) if (bins == b).any())
+    return {"n": int(len(y)), "log_loss": ll(p, y), "brier": float(np.mean((p - y) ** 2)),
+            "accuracy": float(acc.mean()), "ece": float(ece)}
+
+
+def calib_table(p, y, nb=10):
+    pm, ym = np.concatenate([p, 1 - p]), np.concatenate([y, 1 - y])
+    bins = np.minimum((pm * nb).astype(int), nb - 1)
+    out = []
+    for b in range(nb // 2, nb):                 # mirrored: the upper half carries all the information
+        s = bins == b
+        if s.sum():
+            out.append({"lo": b / nb, "hi": (b + 1) / nb, "n": int(s.sum()), "pred": round(float(pm[s].mean()), 4),
+                        "obs": round(float(ym[s].mean()), 4)})
+    return out
+
+
+def boot_ci(preds, y, clusters, ref=None, B=2000, seed=3):
+    """Cluster (event-date) bootstrap of log loss; with ref, of the paired difference model - ref."""
+    rng = np.random.default_rng(seed)
+    uc, inv = np.unique(clusters, return_inverse=True)
+    p = np.clip(preds, 1e-6, 1 - 1e-6)
+    li = -(y * np.log(p) + (1 - y) * np.log(1 - p))
+    if ref is not None:
+        r = np.clip(ref, 1e-6, 1 - 1e-6)
+        li = li + (y * np.log(r) + (1 - y) * np.log(1 - r))
+    S = np.bincount(inv, weights=li, minlength=len(uc))
+    N = np.bincount(inv, minlength=len(uc)).astype(float)
+    vals = []
+    for _ in range(B):
+        k = rng.integers(0, len(uc), len(uc))
+        c = np.bincount(k, minlength=len(uc))
+        vals.append((c * S).sum() / (c * N).sum())
+    lo, hi = np.percentile(vals, [2.5, 97.5])
+    return {"est": float(li.mean()), "lo": float(lo), "hi": float(hi),
+            "p_gt0": float(np.mean(np.array(vals) > 0)) if ref is not None else None}
+
+
+# ====================================================================== fit + evaluate
+def years_of(dates):
+    return np.array([int(d[:4]) for d in dates])
+
+
+class Stacker:
+    """One stacking method over a fixed expert list, trained with expert-dropout augmentation so that it can
+    be evaluated with any subset present (the page may lack the market line or the engine)."""
+    def __init__(self, method, experts, drops, hp=None):
+        self.method, self.experts, self.drops, self.hp = method, list(experts), drops, dict(hp or {})
+
+    def _aug(self, L, M, G, y):
+        Ls, Ms, Gs, ys = [], [], [], []
+        for d in self.drops:
+            keep = np.array([e not in d for e in self.experts])
+            Mm = M & keep[None, :]
+            ok = Mm.any(1)
+            Ls.append(L[ok]); Ms.append(Mm[ok]); Gs.append(G[ok]); ys.append(y[ok])
+        return np.vstack(Ls), np.vstack(Ms), np.vstack(Gs), np.concatenate(ys)
+
+    def fit(self, L, M, G, y):
+        if self.method == "linear":
+            self.lin = {}
+            for d in self.drops:                     # one weight vector per availability pattern
+                pat = frozenset(e for e in self.experts if e not in d)
+                self._fit_pat(pat, L, M, y)
+        elif self.method == "gated":
+            La, Ma, Ga, ya = self._aug(L, M, G, y)
+            self.g = GatedStack(self.hp.get("lam", 1e-3)).fit(La, Ma, Ga, ya)
+        elif self.method in ("gbm", "gbm_res"):
+            La, Ma, Ga, ya = self._aug(L, M, G, y)
+            base = None
+            if self.method == "gbm_res":
+                self.lin = {}
+                base = self._lin_logit(La, Ma, L, M, y)
+            self.b = GBMStack(self.hp.get("leaves", 4), self.hp.get("rounds", 200), self.hp.get("lr", 0.03),
+                              self.hp.get("mdl", 80)).fit(La, Ma, Ga[:, 1:], ya, base=base)
+        return self
+
+    def _fit_pat(self, pat, L, M, y):
+        idx = [self.experts.index(e) for e in self.experts if e in pat]
+        ok = M[:, idx].all(1)
+        self.lin[pat] = (idx, LinStack().fit(L[ok][:, idx], y[ok]))
+
+    def _lin_logit(self, Lq, Mq, Ltr=None, Mtr=None, ytr=None):
+        z = np.zeros(len(Lq))
+        for i in range(len(Lq)):
+            pat = frozenset(e for e, m in zip(self.experts, Mq[i]) if m)
+            if pat not in self.lin:
+                if Ltr is None:
+                    raise KeyError("pattern %s not fitted" % sorted(pat))
+                self._fit_pat(pat, Ltr, Mtr, ytr)
+            idx, m = self.lin[pat]
+            z[i] = Lq[i, idx] @ m.w
+        return z
+
+    def logit(self, L, M, G):
+        if self.method == "linear":
+            return self._lin_logit(L, M)
+        if self.method == "gated":
+            return self.g.logit(L, M, G)
+        base = self._lin_logit(L, M) if self.method == "gbm_res" else None
+        return self.b.logit(L, M, G[:, 1:], base=base)
+
+
+def cmd_fit(args):
+    t0 = time.time()
+    with open(os.path.join(CACHE, "experts.pkl"), "rb") as fh:
+        E = pickle.load(fh)
+    global FEAT_NAMES
+    FEAT_NAMES = E["feat_names"]
+    bt = load_json("backtest_dev.json")
+    btmap = {f["id"]: f for f in bt["fights"] if f["date"] < VAULT_FROM.isoformat()}
+    sel = [i for i, fid in enumerate(E["ids"]) if fid in btmap]
+    ids = [E["ids"][i] for i in sel]
+    rows = [E["rows"][i] for i in sel]
+    y = E["y"][sel]
+    dates = np.array([E["dates"][i] for i in sel])
+    yr = years_of(dates)
+    for r in rows:
+        f = btmap[r["id"]]
+        r["slugA"], r["slugB"], r["event"] = f["A"]["slug"], f["B"]["slug"], f["event"]
+    log("rows %d (backtest_dev %d)" % (len(rows), len(btmap)))
+
+    # ---- experts
+    P = {k: E["pred"][k][sel] for k in E["pred"]}
+    eng = load_json("moe_engine_bt.json")
+    P["engine"] = np.array([(lambda e: e["pA"] / max(1e-9, e["pA"] + e["pB"]) if e and "pA" in e else np.nan)
+                            (eng["fights"].get(i)) for i in ids])
+    mk = load_json("market.json")
+    mf = mk["fights"] if mk else {}
+    P["market"] = np.array([(mf.get(i) or {}).get("p_power_close") or (mf.get(i) or {}).get("p_novig_close") or np.nan
+                            for i in ids], dtype=float)
+    P["market_open"] = np.array([(mf.get(i) or {}).get("p_novig_open") or np.nan for i in ids], dtype=float)
+    ext, ext_notes = external_experts(ids)
+    P.update(ext)
+    log("external experts:", ext_notes or "none found")
+
+    pre = load_json("preufc.json")
+    snaps = set()
+    if pre:
+        for slug, f in pre.get("fighters", {}).items():
+            for s in f.get("snapshots") or []:
+                if s and len(s) > 3 and s[3]:
+                    snaps.add((slug, s[1]))
+    G = gating_matrix(rows, None)
+    G[:, GATE_NAMES.index("preufc")] = [0.5 * ((r["slugA"], r["id"]) in snaps) + 0.5 * ((r["slugB"], r["id"]) in snaps)
+                                        for r in rows]
+    dec = np.isfinite(y)
+    TR = dec & (dates >= TRAIN[0]) & (dates <= TRAIN[1])
+    VA = dec & (dates >= VALID[0]) & (dates <= VALID[1])
+    mu, sd = G[TR].mean(0), G[TR].std(0) + 1e-9
+    Gs = np.hstack([np.ones((len(G), 1)), (G - mu) / sd])
+
+    singles = {}
+    for k, v in P.items():
+        ok = np.isfinite(v)
+        singles[k] = {"train": metrics(v[TR & ok], y[TR & ok]), "valid": metrics(v[VA & ok], y[VA & ok]),
+                      "coverage_valid": float(ok[VA].mean())}
+        log("single %-12s train ll %.4f (n=%d)  valid ll %.4f (n=%d)" % (
+            k, singles[k]["train"]["log_loss"], singles[k]["train"]["n"], singles[k]["valid"]["log_loss"],
+            singles[k]["valid"]["n"]))
+
+    ml_key = "ml" if "ml" in P else "feat_lr"
+    SETS = {
+        "page": ["market", "engine", ml_key, "elo"],
+        "full": [k for k in ["market", "engine", "ml", "ratings", "feat_lr", "feat_gbm", "elo", "glicko"] if k in P],
+    }
+    DROPS = [set(), {"market"}, {"engine"}, {"market", "engine"}]
+
+    def LM(experts, mask=None):
+        L = np.column_stack([logit(np.clip(P[k], PCLIP, 1 - PCLIP)) for k in experts])
+        M = np.column_stack([np.isfinite(P[k]) for k in experts])
+        L = np.where(M, L, 0.0)
+        return L, M
+
+    def apply_drop(M, experts, d):
+        keep = np.array([e not in d for e in experts])
+        return M & keep[None, :]
+
+    # ---- forward-chaining CV inside 2019-2023: hyper-parameters + out-of-fold stacker logits for calibration
+    def cv(method, experts, hp, val_years=(2021, 2022, 2023), drops=DROPS):
+        L, M = LM(experts)
+        oof = {tuple(sorted(d)): np.full(len(y), np.nan) for d in drops}
+        for Y in val_years:
+            tr = dec & (yr < Y) & (yr >= 2019)
+            te = dec & (yr == Y)
+            st = Stacker(method, experts, drops, hp).fit(L[tr], M[tr], Gs[tr], y[tr])
+            for d in drops:
+                Md = apply_drop(M[te], experts, d)
+                ok = Md.any(1)
+                z = np.full(te.sum(), np.nan)
+                z[ok] = st.logit(L[te][ok], Md[ok], Gs[te][ok])
+                oof[tuple(sorted(d))][np.where(te)[0]] = z
+        return oof
+
+    def cv_score(oof, mask):
+        tot = 0.0
+        for d, z in oof.items():
+            ok = mask & np.isfinite(z)
+            tot += _nll(z[ok], y[ok], 1.0) / ok.sum()
+        return tot / len(oof)
+
+    cvmask = dec & (yr >= 2021) & (yr <= 2023)
+    results = {}
+    for set_name, experts in SETS.items():
+        log("=== expert set %s: %s" % (set_name, experts))
+        cand = {}
+        cand[("linear", ())] = cv("linear", experts, {})
+        for lam in ([1e-4, 1e-3, 1e-2] if not args.quick else [1e-3]):
+            cand[("gated", (("lam", lam),))] = cv("gated", experts, {"lam": lam})
+        for leaves, rounds in ([(3, 150), (3, 300), (7, 150)] if not args.quick else [(3, 150)]):
+            cand[("gbm", (("leaves", leaves), ("rounds", rounds)))] = cv("gbm", experts, {"leaves": leaves, "rounds": rounds})
+            cand[("gbm_res", (("leaves", leaves), ("rounds", rounds // 3)))] = cv(
+                "gbm_res", experts, {"leaves": leaves, "rounds": rounds // 3})
+        scores = {k: cv_score(v, cvmask) for k, v in cand.items()}
+        for k, v in sorted(scores.items(), key=lambda kv: kv[1]):
+            log("  cv %-8s %-28s %.4f" % (k[0], dict(k[1]), v))
+        best_by_method = {}
+        for (m, hp), s in scores.items():
+            if m not in best_by_method or s < scores[(m, best_by_method[m])]:
+                best_by_method[m] = hp
+        L, M = LM(experts)
+        res = {"experts": experts, "cv": {"%s %s" % (k[0], dict(k[1])): v for k, v in scores.items()}, "methods": {}}
+        for m, hp in best_by_method.items():
+            oof = cand[(m, hp)]
+            # calibration chosen on the forward-chained out-of-fold logits (2021-2023), all drop patterns pooled
+            zc = np.concatenate([oof[k][cvmask & np.isfinite(oof[k])] for k in oof])
+            yc = np.concatenate([y[cvmask & np.isfinite(oof[k])] for k in oof])
+            cal_scores = {}
+            cals = {}
+            for kind in ("none", "temperature", "isotonic"):
+                # nested: fit on 2021-2022 OOF, score on 2023 OOF, to choose the kind without touching 2024+
+                fit_m = np.concatenate([(yr[cvmask & np.isfinite(oof[k])] <= 2022) for k in oof])
+                c = Calib(kind).fit(zc[fit_m], yc[fit_m])
+                cal_scores[kind] = ll(c(sigm(zc[~fit_m])), yc[~fit_m])
+                cals[kind] = Calib(kind).fit(zc, yc)
+            kind = min(cal_scores, key=cal_scores.get)
+            st = Stacker(m, experts, DROPS, dict(hp)).fit(L[TR], M[TR], Gs[TR], y[TR])
+            out = {"hp": dict(hp), "calibration_cv": cal_scores, "calibration": kind, "patterns": {}}
+            for d in DROPS:
+                Md = apply_drop(M, experts, d)
+                ok = VA & Md.any(1)
+                z = st.logit(L[ok], Md[ok], Gs[ok])
+                p_raw = sigm(z)
+                p_cal = cals[kind](p_raw)
+                key = "+".join(e for e in experts if e not in d)
+                out["patterns"][key] = {"raw": metrics(p_raw, y[ok]), "cal": metrics(p_cal, y[ok]),
+                                        "cal_all": {k2: metrics(cals[k2](p_raw), y[ok])["log_loss"] for k2 in cals}}
+                out["patterns"][key]["_p"] = p_cal
+                out["patterns"][key]["_idx"] = np.where(ok)[0]
+                log("  valid %-8s %-40s raw %.4f cal(%s) %.4f  [none %.4f temp %.4f iso %.4f]" % (
+                    m, key, out["patterns"][key]["raw"]["log_loss"], kind, out["patterns"][key]["cal"]["log_loss"],
+                    *[out["patterns"][key]["cal_all"][k2] for k2 in ("none", "temperature", "isotonic")]))
+            out["_model"], out["_cal"], out["_cals"] = st, cals[kind], cals
+            res["methods"][m] = out
+        results[set_name] = res
+    with open(os.path.join(CACHE, "fit.pkl"), "wb") as fh:
+        pickle.dump({"results": results, "P": P, "y": y, "dates": dates, "ids": ids, "rows": rows, "G": G, "Gs": Gs,
+                     "mu": mu, "sd": sd, "singles": singles, "SETS": SETS, "DROPS": DROPS, "ext_notes": ext_notes,
+                     "TR": TR, "VA": VA}, fh)
+    log("fit done in %.0fs" % (time.time() - t0))
+    report_and_export(args)
+
+
+def report_and_export(args):
+    pass
+
+
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])

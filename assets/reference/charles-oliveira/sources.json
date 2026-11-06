@@ -11,15 +11,50 @@
     "note": "ESPN athlete headshot, transparent background, date unknown"
   },
   {
-    "file": "espn-stance-left.png",
-    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/2504169.png",
-    "page": "https://www.espn.com/mma/fighter/_/id/2504169",
-    "author": "ESPN / UFC (unknown photographer)",
-    "license": "All rights reserved (ESPN)",
-    "date_taken": null,
+    "file": "ref-lvsun-2026-03-05-ufc326-presser-front.jpg",
+    "url": "https://media.lasvegassun.com/media/img/photos/2026/03/05/20260305_sun_UFC326Presser06_t1280.JPG",
+    "page": "https://lasvegassun.com/photos/galleries/2026/mar/05/ufc-326-news-conference/",
+    "author": "Steve Marcus / Las Vegas Sun",
+    "license": "All rights reserved (Las Vegas Sun)",
+    "date_taken": "2026-03-05",
     "use": "reference-only",
-    "what": "body",
-    "note": "ESPN full-body fight-stance cutout, date unknown"
+    "what": "headshot",
+    "note": "UFC 326 news conference, near-frontal, bleached hair"
+  },
+  {
+    "file": "wm-2021-10-headshot-cropped.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/05/Charles_do_Bronxs_%28cropped%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Charles_do_Bronxs_(cropped).jpg",
+    "author": "Renan Silva",
+    "license": "CC0",
+    "date_taken": "2021-10-05",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Charles Oliveira, UFC Lightweight Champion, Charles Oliveira or Charles do Bronxs as he is popularly known in Brazil",
+    "attribution": "Renan Silva, CC0, via Wikimedia Commons"
+  },
+  {
+    "file": "ref-lvsun-2026-03-05-ufc326-presser-3q.jpg",
+    "url": "https://media.lasvegassun.com/media/img/photos/2026/03/05/20260305_sun_UFC326Presser01_t1280.JPG",
+    "page": "https://lasvegassun.com/photos/galleries/2026/mar/05/ufc-326-news-conference/",
+    "author": "Steve Marcus / Las Vegas Sun",
+    "license": "All rights reserved (Las Vegas Sun)",
+    "date_taken": "2026-03-05",
+    "use": "reference-only",
+    "what": "3q",
+    "note": "UFC 326 news conference, three-quarter, fist covers left eye"
+  },
+  {
+    "file": "wm-2023-04-champs.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Charles_Oliveira_do_Bronxs_Champs.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_do_Bronxs_Champs.jpg",
+    "author": "Jose Carlos Silva e Silva",
+    "license": "CC BY-SA 4.0",
+    "date_taken": "2023-04-30",
+    "use": "embed-ok",
+    "what": "3q",
+    "note": "Charles Oliveira from the Bronxs, UFC Champion 2021 Records",
+    "attribution": "Jose Carlos Silva e Silva, CC BY-SA 4.0, via Wikimedia Commons"
   },
   {
     "file": "espn-stance-right.png",
@@ -33,58 +68,27 @@
     "note": "ESPN full-body fight-stance cutout, date unknown"
   },
   {
-    "file": "wm-2021-10-headshot-cropped.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/0/05/Charles_do_Bronxs_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Charles_do_Bronxs_(cropped).jpg",
+    "file": "wm-2021-10-portrait-a.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Charles_Oliveira_UFC.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_UFC.jpg",
     "author": "Renan Silva",
     "license": "CC0",
     "date_taken": "2021-10-05",
     "use": "embed-ok",
-    "what": "headshot",
-    "note": "Charles Oliveira, UFC Lightweight Champion, Charles Oliveira or Charles do Bronxs as he is popularly known in Brazil"
-  },
-  {
-    "file": "wm-2021-10-portrait-a.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Charles_Oliveira_UFC.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_UFC.jpg",
-    "author": "Renan Silva",
-    "license": "CC0",
-    "date_taken": "2021-10-05 11:05:07",
-    "use": "embed-ok",
     "what": "body",
-    "note": "Charles Oliveira, UFC Lightweight Champion, Charles Oliveira or Charles do Bronxs as he is popularly known in Brazil"
-  },
-  {
-    "file": "wm-2021-10-landscape.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Charles_Oliveira.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Charles_Oliveira.jpg",
-    "author": "Renan Silva",
-    "license": "Public domain",
-    "date_taken": "2021-10-05 20:05:40",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "Charles Oliveira, UFC Lightweight Champion, Charles Oliveira or Charles do Bronxs as he is popularly known in Brazil"
-  },
-  {
-    "file": "wm-2023-04-champs.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Charles_Oliveira_do_Bronxs_Champs.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_do_Bronxs_Champs.jpg",
-    "author": "Jose Carlos Silva e Silva",
-    "license": "CC BY-SA 4.0",
-    "date_taken": "2023-04-30 09:30:37",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "Charles Oliveira from the Bronxs, UFC Champion 2021 Records"
+    "note": "Charles Oliveira, UFC Lightweight Champion, Charles Oliveira or Charles do Bronxs as he is popularly known in Brazil",
+    "attribution": "Renan Silva, CC0, via Wikimedia Commons"
   },
   {
     "file": "wm-2021-10-portrait-b.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Charles_Oliveira_UFC_%2851605790635%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Charles_Oliveira_UFC_%2851605790635%29.jpg",
     "page": "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_UFC_(51605790635).jpg",
     "author": "Renan Silva",
     "license": "CC0",
-    "date_taken": "2021-10-05 10:41",
+    "date_taken": "2021-10-05",
     "use": "embed-ok",
     "what": "body",
-    "note": "Charles Oliveira do Bronxs"
+    "note": "Charles Oliveira do Bronxs",
+    "attribution": "Renan Silva, CC0, via Wikimedia Commons"
   }
 ]
