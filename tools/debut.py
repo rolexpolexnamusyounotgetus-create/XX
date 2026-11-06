@@ -30,6 +30,9 @@ import pickle
 import re
 import sys
 import time
+import warnings
+
+warnings.filterwarnings("ignore")
 from collections import Counter, defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1199,7 +1202,7 @@ def cv(args):
         st[reg]["_preds"] = preds
         st[reg]["_gate"] = gate
         print("stack gate 2021-23 %-6s n %d: %s" % (reg, gate.sum(), {k: (v["ll"] if isinstance(v, dict) else v)
-                                                                       for k, v in out.items() if k != "n"}), flush=True)
+                                                                       for k, v in out.items() if k != "n" and not k.startswith("_")}), flush=True)
     # decisions (0.0005 rule; simpler wins ties)
     dec_out = {}
     nl = st["noline"]

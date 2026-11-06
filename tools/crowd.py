@@ -1049,11 +1049,19 @@ def decide(R, sel_min):
                              "n_passing_any_variant": sum(1 for r in res["cands"].values() if r["passes_gate"])}
         dec["summary"][key] = best if ok else None
     M = R.get("method") or {}
-    for k in ("S2c - S2", "S2c+ml2win - S2+ml2win"):
-        if k in M.get("cv_gate", {}):
-            g = M["cv_gate"][k]
-            dec["method"][k] = g
-            dec["summary"]["method: " + k.split(" - ")[0]] = k.split(" - ")[0] if g["passes_gate"] else None
+    if M.get("cv_gate"):
+        # ml2's own method rule (tools/ml2.py stage_method): the variant with the lowest CV joint loss wins, and a
+        # crowd variant must beat the best variant without the crowd by more than SEL_MIN. (A first draft compared
+        # each crowd variant only with its own twin, which let S2c pass against S2 although S2 is not the production
+        # variant and S2c is worse than S2+ml2win; corrected on the cv numbers, before the 2024-25 look.)
+        cvj = {k: v["joint"] for k, v in M["all"]["means"].items()}
+        best = min(cvj, key=cvj.get)
+        best_plain = min((k for k in cvj if "S2c" not in k), key=cvj.get)
+        adopt = "S2c" in best and cvj[best] < cvj[best_plain] - sel_min
+        dec["method"] = {"cv_joint": cvj, "lowest": best, "best_without_crowd": best_plain,
+                         "gain_vs_best_without_crowd": round(cvj[best] - cvj[best_plain], 5),
+                         "twin_comparisons": M["cv_gate"], "adopted": best if adopt else None}
+        dec["summary"]["method (S2 / S2+ml2win)"] = best if adopt else None
     dec["summary"]["adopted_anywhere"] = any(v for v in dec["summary"].values())
     return dec
 
@@ -1409,7 +1417,7 @@ def test_method(CF, stage):
             continue
         L = {k: MR.losses_on(Jk[msk], Dm, msk) for k, Jk in J.items()}
         bt, st = MR.cluster_bootstrap(L, T["event"].to_numpy()[msk], B=2000)
-        out[seg] = {"means": {k: {m: round(float(np.mean(L[k][m])), 5) for m in metrics if m in L[k]} for k in L},
+        out[seg] = {"means": {k: {m: round(float(np.nanmean(L[k][m])), 5) for m in metrics if m in L[k]} for k in L},
                     "S2c - S2": MR.paired_diff(L["S2c"], L["S2"], st, metrics),
                     "S2c+ml2win - S2+ml2win": MR.paired_diff(L["S2c+ml2win"], L["S2+ml2win"], st, metrics)}
         for k in ("S2c - S2", "S2c+ml2win - S2+ml2win"):
@@ -1427,58 +1435,128 @@ def test_method(CF, stage):
 
 
 # ====================================================================== forward capture (upcoming cards)
+FORWARD_START = "2026-11-07"       # first card of the forward ledger (data/predictions/); earlier 2026 cards = vault
+
+
+def _slugify(name):
+    return re.sub(r"[^a-z0-9]+", "-", norm_name(name)).strip("-")
+
+
+def _upcoming_event(date, name):
+    """The card in data/predictions/cards_upcoming.json on `date` (and matching `name` when several). -> (event, lock
+    datetime UTC or None)."""
+    try:
+        cu = json.load(open(os.path.join(ROOT, "data", "predictions", "cards_upcoming.json")))
+    except Exception:
+        return None, None
+    evs = [e for e in cu.get("events", []) if e.get("date") == date]
+    if len(evs) > 1:
+        evs = [e for e in evs if norm_name(name) in norm_name(e.get("name", "")) or
+               norm_name(e.get("name", "")) in norm_name(name)] or evs
+    if not evs:
+        return None, None
+    e = evs[0]
+    ts = [dt.datetime.fromisoformat(v.replace("Z", "+00:00")) for v in (e.get("start_utc") or {}).values() if v]
+    return e, (min(ts) if ts else None)
+
+
+def _orient(src_a, src_b, n_a, n_b, ev, date):
+    """Match a source bout to the card's bout; returns (bout_id, ledger a, ledger b, n for ledger a, n for ledger b)."""
+    if ev:
+        for b in ev.get("bouts", []):
+            ca, cb = b["a"]["name"], b["b"]["name"]
+            bid = "%s:%s__%s" % (date, b["a"].get("slug") or _slugify(ca), b["b"].get("slug") or _slugify(cb))
+            if _pair_score(src_a, src_b, ca, cb) >= 0.8:
+                return bid, ca, cb, n_a, n_b
+            if _pair_score(src_a, src_b, cb, ca) >= 0.8:
+                return bid, ca, cb, n_b, n_a
+    return None, src_a, src_b, n_a, n_b
+
+
 def cmd_capture(args):
-    """Capture the RotoWire panel for an upcoming card into data/predictions/crowd/ (write-once, like the ledger).
-    Money MMA publishes its consensus only after the card, so there is nothing of it to capture before the fights."""
-    ev = args.event.strip()
-    num = re.search(r"UFC\s*(\d{3})", ev, re.I)
-    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
-    if args.date < today and not args.vault:
-        raise SystemExit("capture is for upcoming cards; %s is in the past (2026 history belongs to the vault: "
-                         "pass --vault to write it outside the repo)" % args.date)
-    sm = fetch(RW_SITEMAP, refresh=True)
-    key = ("ufc-%s" % num.group(1)) if num else re.sub(r"[^a-z0-9]+", "-", ev.lower()).strip("-")
-    urls = [u for u in re.findall(r"<loc>(.*?)</loc>", sm) if re.search(r"staff-picks|expert-picks", u) and key in u]
-    rec = {"event": ev, "date": args.date, "captured_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-           "tool": TOOL_VERSION, "source": "rotowire", "url": None, "published": None, "bouts": [],
-           "note": "panel share for A = picks for A / picks; P(A) input to a stack = (n_a + 0.5) / (n + 1)"}
-    if urls:
-        u = sorted(urls, key=lambda x: int(x.rsplit("-", 1)[1]))[-1]
-        P = parse_rotowire(fetch(u, refresh=True))
-        rec["url"], rec["published"] = u, P["published"]
-        card = {}
-        try:
-            cu = json.load(open(os.path.join(ROOT, "data", "predictions", "cards_upcoming.json")))
-            for e in cu.get("events", []):
-                for b in e.get("bouts", []):
-                    a_, b_ = b.get("a") or {}, b.get("b") or {}
-                    # the ledger's bout_id: "<date>:<slug A>__<slug B>" (data/predictions/README.md)
-                    card[(e.get("date"), norm_name(a_.get("name", "")), norm_name(b_.get("name", "")))] = "%s:%s__%s" % (
-                        e.get("date"), a_.get("slug") or "null", b_.get("slug") or "null")
-        except Exception:
-            pass
-        for b in P["bouts"]:
-            na = sum(1 for t in b["picks"].values() if side_of_pick(t, b["a"], b["b"]) == "A")
-            nb = sum(1 for t in b["picks"].values() if side_of_pick(t, b["a"], b["b"]) == "B")
-            bid = None
-            for (d, ka, kb), v in card.items():
-                if d == args.date and (_pair_score(b["a"], b["b"], ka, kb) >= 0.8 or _pair_score(b["a"], b["b"], kb, ka) >= 0.8):
-                    bid = v
-            rec["bouts"].append({"a": b["a"], "b": b["b"], "bout_id": bid, "n_a": na, "n_b": nb,
-                                 "share_a": round(na / (na + nb), 4) if na + nb else None,
-                                 "p_a_input": round((na + RW_PRIOR) / (na + nb + 2 * RW_PRIOR), 4) if na + nb else None,
-                                 "picks": b["picks"]})
+    """Capture crowd shares for a card into data/predictions/crowd/ (write-once, like the ledger), oriented to the
+    ledger's a / b (cards_upcoming.json) and keyed by its bout_id.
+      --source rotowire (default): the RotoWire staff panel (pay-per-views; published 1-3 days before the card).
+         A capture made before the card's earliest start_utc is a valid pre-lock input ("before_lock": true).
+      --source moneymma: the Money MMA contest consensus. It is published only AFTER the card (the entries locked
+         before it), so it is recorded for evaluation only ("use": "evaluation only") and is never a pre-lock input.
+    Cards before the forward ledger's first card (FORWARD_START) are 2026 history: they go to the vault (--vault)."""
+    ev_name = args.event.strip()
+    now = dt.datetime.now(dt.timezone.utc)
+    if args.date < FORWARD_START and not args.vault:
+        raise SystemExit("%s is before the forward ledger (%s): 2026 history belongs to the vault (pass --vault to "
+                         "write it outside the repo)" % (args.date, FORWARD_START))
+    ev, lock = _upcoming_event(args.date, ev_name)
+    rec = {"event": ev_name, "date": args.date, "captured_utc": now.isoformat(timespec="seconds"), "tool": TOOL_VERSION,
+           "source": args.source, "url": None, "published": None, "card_lock_utc": lock.isoformat() if lock else None,
+           "bouts": []}
+    if args.source == "rotowire":
+        rec["before_lock"] = bool(lock and now < lock)
+        rec["use"] = "pre-lock stack input" if rec["before_lock"] else "evaluation only (captured after the card started)"
+        rec["note"] = "share_a = panel picks for ledger a / picks; P(a) stack input = (n_a + 0.5) / (n + 1)"
+        sm = fetch(RW_SITEMAP, refresh=True)
+        num = re.search(r"UFC\s*(\d{3})", ev_name, re.I)
+        key = ("ufc-%s" % num.group(1)) if num else _slugify(ev_name)
+        urls = [u for u in re.findall(r"<loc>(.*?)</loc>", sm) if re.search(r"staff-picks|expert-picks", u) and key in u]
+        if urls:
+            u = sorted(urls, key=lambda x: int(re.search(r"-(\d+)$", x).group(1)) if re.search(r"-(\d+)$", x) else 0)[-1]
+            P = parse_rotowire(fetch(u, refresh=True))
+            rec["url"], rec["published"] = u, P["published"]
+            for b in P["bouts"]:
+                na = sum(1 for t in b["picks"].values() if side_of_pick(t, b["a"], b["b"]) == "A")
+                nb = sum(1 for t in b["picks"].values() if side_of_pick(t, b["a"], b["b"]) == "B")
+                bid, la, lb, ka, kb = _orient(b["a"], b["b"], na, nb, ev, args.date)
+                rec["bouts"].append({"bout_id": bid, "a": la, "b": lb, "n_a": ka, "n_b": kb,
+                                     "share_a": round(ka / (ka + kb), 4) if ka + kb else None,
+                                     "p_a_input": round((ka + RW_PRIOR) / (ka + kb + 2 * RW_PRIOR), 4) if ka + kb else None,
+                                     "picks": b["picks"]})
+        else:
+            rec["note"] += "; no RotoWire panel article for this card yet (RotoWire covers pay-per-views only)"
     else:
-        rec["note"] += "; no RotoWire panel article for this card yet (RotoWire covers pay-per-views only)"
+        rec["before_lock"] = False
+        rec["use"] = "evaluation only: published after the card (entries locked before it, see 'contest')"
+        sm = fetch(MM_SITEMAP, refresh=True)
+        slug = args.mm_slug or ("ufc-%s" % re.search(r"UFC\s*(\d{3})", ev_name, re.I).group(1)
+                                if re.search(r"UFC\s*(\d{3})", ev_name, re.I) else _slugify(ev_name))
+        res = [u for u in re.findall(r"<loc>(.*?)</loc>", sm) if "pick-em-results" in u and slug in u]
+        con = [u for u in re.findall(r"<loc>(.*?)</loc>", sm) if "pick" in u and "results" not in u and slug in u]
+        if con:
+            c = parse_contest(fetch(con[0], refresh=True))
+            reg = None
+            if ev:
+                reg = event_region(ev.get("location", ""), ev_name)
+            rec["contest"] = {"url": con[0], "published": c["published"], "lock_text": c["lock_text"],
+                              "lock_h_et": c["lock_h"], "status": lock_status(c, args.date, reg)}
+        if res:
+            P = parse_moneymma(fetch(res[0], refresh=True))
+            rec["url"], rec["published"] = res[0], P["published"]
+            for name, pct in P["picks"]:
+                bid, la, lb = None, name, None
+                share = None
+                if ev:
+                    for b in ev.get("bouts", []):
+                        for side, nm in (("a", b["a"]["name"]), ("b", b["b"]["name"])):
+                            if _name_score(name, nm) >= 0.86:
+                                bid = "%s:%s__%s" % (args.date, b["a"].get("slug") or _slugify(b["a"]["name"]),
+                                                     b["b"].get("slug") or _slugify(b["b"]["name"]))
+                                la, lb = b["a"]["name"], b["b"]["name"]
+                                share = pct if side == "a" else 1 - pct
+                rec["bouts"].append({"bout_id": bid, "a": la, "b": lb, "consensus_pick": name, "pct_pick": pct,
+                                     "share_a": None if share is None else round(share, 4)})
+        else:
+            rec["note"] = "no Money MMA results post for this card yet (posted 1-2 days after the card)"
+    if args.dry_run:
+        print(json.dumps(rec, indent=1))
+        return rec
     outdir = VAULT_DIR if args.vault else os.path.join(ROOT, "data", "predictions", "crowd")
     os.makedirs(outdir, exist_ok=True)
-    slug = re.sub(r"[^a-z0-9]+", "-", ev.lower()).strip("-")
     stamp = rec["captured_utc"][:16].replace(":", "").replace("-", "")
-    path = os.path.join(outdir, "%s_%s_%s.json" % (args.date, slug, stamp))
+    path = os.path.join(outdir, "%s_%s_%s_%s.json" % (args.date, _slugify(ev_name), args.source, stamp))
     if os.path.exists(path):
         raise SystemExit("exists (write-once): %s" % path)
     json.dump(rec, open(path, "w"), indent=1)
-    log("captured %d bouts from %s -> %s" % (len(rec["bouts"]), rec["url"], path))
+    log("captured %d bouts from %s -> %s (%s)" % (len(rec["bouts"]), rec["url"], path, rec["use"]))
+    return rec
 
 
 # ====================================================================== licensed import (e.g. Tapology with permission)
@@ -1557,7 +1635,10 @@ def main():
     c = sp.add_parser("capture")
     c.add_argument("--event", required=True)
     c.add_argument("--date", required=True, help="event date YYYY-MM-DD")
-    c.add_argument("--vault", action="store_true", help="write outside the repo (past 2026 cards)")
+    c.add_argument("--source", choices=("rotowire", "moneymma"), default="rotowire")
+    c.add_argument("--mm-slug", help="Money MMA post slug stem when it is not 'ufc-NNN' (e.g. ufc-vegas-124)")
+    c.add_argument("--dry-run", action="store_true", help="print the record, write nothing")
+    c.add_argument("--vault", action="store_true", help="write outside the repo (2026 cards before the ledger)")
     sp.add_parser("selftest")
     args = ap.parse_args()
     {"fetch": cmd_fetch, "build": cmd_build, "eval": run_eval, "capture": cmd_capture, "selftest": cmd_selftest}[args.cmd](args)

@@ -753,7 +753,7 @@ def chain_pass(H, steps, NP, Ls, es):
     return aL + bL, ae + be
 
 
-def ep_snapshot(X, H, cut_day, init_sites=None, iters=8, damp=0.5, tol=2e-3, logf=None, newton_iter=3, key="main"):
+def ep_snapshot(X, H, cut_day, init_sites=None, iters=25, damp=0.8, tol=2e-3, logf=None, newton_iter=3, key="main"):
     """Expectation propagation over every fight before cut_day: each fight is a factor on both fighters' states at that
     fight (Laplace moments of the cavity x likelihood, projected to per-fighter Gaussian messages); fighter chains carry
     the random-walk dynamics. Parallel updates with damping, started from the ADF (filter) sites or from `init_sites`
@@ -1857,11 +1857,14 @@ def main():
     ap.add_argument("--variant", default="main")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--static-from", default=None)
+    ap.add_argument("--schedules", default="none,year,quarter,month")
+    ap.add_argument("--parts", default="oof2019,oof2020,oof2021,oof2022,oof2023,static,roll2025")
+    ap.add_argument("--jobs", type=int, default=1)
     args = ap.parse_args()
     STAGES[args.stage](args)
 
 
-STAGES = {"data": stage_data, "fit": stage_fit, "eval": stage_eval}
+STAGES = {"data": stage_data, "fit": stage_fit, "predict": stage_predict, "eval": stage_eval}
 
 if __name__ == "__main__":
     main()

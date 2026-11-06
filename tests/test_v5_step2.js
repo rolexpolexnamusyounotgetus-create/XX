@@ -17,6 +17,7 @@
         out-of-fold learned rates, the as-of priors and the durability walk-forward records + train NORM (the
         tools/evalv.js path).
    3. Both flags on: the trace format and the matchup API are unchanged (keys of fight, round, stats and totals objects).
+   4. dyn.arPhi / dyn.accArPhi outside their valid range [0, 1) are clipped (finite tables and fights); defaults unchanged.
      node tests/test_v5_step2.js [matchups per random group, default 150]   (about a minute) */
 "use strict";
 const fs = require("fs");

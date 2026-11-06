@@ -44,6 +44,10 @@ const oof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlrates_oof.json")
 const dyn = JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/dynamics.json"), "utf8"));
 const TN = oof.meta.targets, keys = bt.meta.keys;
 const extra = JSON.parse(opt("--params", "{}"));
+// v5 merge step 2: with the durability component on (the default), each backtest matchup gets its walk-forward record of
+// data/derived/durability.json and the train NORM (tools/durrec.js), as tools/evalv.js and tools/dynamics_bt.js do; the
+// paired "flag off" reference is then step 1 + durability (dynamics off)
+const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);
 
 const allTrain = bt.fights.filter((f) => f.date >= FROM && f.date <= TO && oof.fights[f.id]);
 const fights = bt.fights.filter((f, i) => f.date >= FROM && f.date <= TO && i % STRIDE === 0 && oof.fights[f.id]);
@@ -85,7 +89,9 @@ function run(params) {
     const PA = Object.assign({ keys }, f.A), PB = Object.assign({ keys }, f.B);
     for (const swap of [false, true]) {
       const o = optsFor(f, swap, params);
+      DR.apply(o, f.id, swap);   // v5: durability walk-forward record + train NORM when the component is on (tools/durrec.js)
       const m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
+      DR.assertApplied(m, f.id, params);
       const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
       for (let s = 0; s < SIMS; s++) {
         const fight = E.simulate(m, rng, true), nr = fight.rounds.length;
