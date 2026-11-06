@@ -477,7 +477,11 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
       engine_sha256: engineSha, params_sha256: paramsSha, mlrates_js_sha256: mlSha, ml: useML ? "out-of-fold rates (data/derived/mlrates_oof.json)" : "off",
       ml_applied_share: mlShare, sims_per_order: SIMS, seed: SEED, bootstrap: B, n_fights: pfs.length, n_decisive: nWin, n_outcome: nOut, failed: errs.length,
       wall_s: (Date.now() - t0) / 1000, main_cpu_s: (cpu.user + cpu.system) / 1e6,
-      priors: "data/derived/mlcal_priors_asof.json (walk-forward 5-year windows)" },
+      priors: "data/derived/mlcal_priors_asof.json (walk-forward 5-year windows)",
+      notes: "CIs: 2,000 event-cluster resamples (400 for ece and calSlope). ECE is biased upward under resampling (noise in 10 " +
+        "bins), so its interval is a spread, not a CI around the point estimate. Base-rate 'actual' 10-8 share is implied from " +
+        "card totals (19 x rounds - card sum; deductions count as 10-8s). Stat-line deviance: Poisson deviance of each fighter's " +
+        "actual fight total vs the simulated mean (unconditional on fight length), averaged over both fighters" },
     metrics: met, baseRates: br, methodround: mr, compare: cmp,
     fights: pfs.map((pf, i) => ({ id: pf.id, date: pf.date, pA: r4(pf.pA), b7: pf.b7.map(r4), finR: pf.finR.map(r4), L: roundObj(L[i]),
       sig: [r4(pf.stats.A.sig_lnd), r4(pf.stats.B.sig_lnd)] }))

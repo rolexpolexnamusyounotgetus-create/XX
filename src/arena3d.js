@@ -1372,6 +1372,15 @@
         prev = p;
       }
     });
+    // press photographers on the floor around the apron (their flashes are the first ones in buildFx)
+    var press = A.pressPos = [];
+    for (var pf = 0; pf < 24; pf++) {
+      var pa = (pf + 0.5) / 24 * TAU + (r() - 0.5) * 0.1;
+      if (Math.abs(Math.atan2(Math.sin(pa - PI / 2), Math.cos(pa - PI / 2))) < 0.3 || Math.abs(Math.atan2(Math.sin(pa + PI / 2), Math.cos(pa + PI / 2))) < 0.3) continue;   // the gate steps
+      var prr = RA + 0.55 + r() * 0.35, px2 = Math.cos(pa) * prr, pz2 = Math.sin(pa) * prr;
+      near.add(px2, FLOOR_Y, pz2, Math.atan2(-px2, -pz2), r, { shirt: r() < 0.7 ? 0x141519 : 0x2a2d33, pants: 0x121316, stand: -1, excite: 0.05, look: 1, sleeve: 1 });
+      press.push(px2 * 0.97, FLOOR_Y + 1.52, pz2 * 0.97);
+    }
     A.crowd = near.mesh(base, crowdMat); A.own(A.crowd);
     A.crowdCount = near.count();
     heads = near.heads.concat(heads);
@@ -1457,13 +1466,9 @@
   /* ---- camera flashes and phone screens ---- */
   function buildFx(A) {
     var heads = A.heads, nh = heads.length / 3, r = rng(23);
-    var NF = 380, NPRESS = A.nPress = 24, fpos = new Float32Array(NF * 3), fcol = new Float32Array(NF * 3);
+    var PP = A.pressPos || [], NF = 380, NPRESS = A.nPress = PP.length / 3, fpos = new Float32Array(NF * 3), fcol = new Float32Array(NF * 3);
     for (var f = 0; f < NF; f++) {
-      if (f < NPRESS) {   // photographers along the apron, cameras at head height
-        var pa = (f / NPRESS) * TAU + r() * 0.12, pr = RA + 0.45 + r() * 0.5;
-        fpos[f * 3] = Math.cos(pa) * pr; fpos[f * 3 + 1] = FLOOR_Y + 1.45 + r() * 0.35; fpos[f * 3 + 2] = Math.sin(pa) * pr;
-        continue;
-      }
+      if (f < NPRESS) { fpos[f * 3] = PP[f * 3]; fpos[f * 3 + 1] = PP[f * 3 + 1]; fpos[f * 3 + 2] = PP[f * 3 + 2]; continue; }   // the press, camera at the eye
       var h = Math.floor(r() * nh) * 3; fpos[f * 3] = heads[h]; fpos[f * 3 + 1] = heads[h + 1] + 0.25; fpos[f * 3 + 2] = heads[h + 2];
     }
     var fg = new T.BufferGeometry();

@@ -357,7 +357,30 @@
     "p90_abs_dP_winner": 0.024337,
     "max_abs_dP_winner": 0.175,
     "share_abs_dP_over_5pts": 0.052434,
-    "share_favorite_flips": 0.005618
+    "share_favorite_flips": 0.005618,
+    "median_abs_dP_split": 0.0055,
+    "p90_abs_dP_split": 0.0246,
+    "what": "judges + home vs league judge"
+   },
+   "effect_size_named_judges": {
+    "median_abs_dP_winner": 0.002,
+    "p90_abs_dP_winner": 0.009875,
+    "max_abs_dP_winner": 0.061875,
+    "share_abs_dP_over_5pts": 0.003745,
+    "share_favorite_flips": 0.005618,
+    "median_abs_dP_split": 0.004938,
+    "p90_abs_dP_split": 0.0158,
+    "what": "judges + home vs league + home"
+   },
+   "effect_size_home": {
+    "median_abs_dP_winner": 0.000625,
+    "p90_abs_dP_winner": 0.021888,
+    "max_abs_dP_winner": 0.17725,
+    "share_abs_dP_over_5pts": 0.046816,
+    "share_favorite_flips": 0.003745,
+    "median_abs_dP_split": 0.002,
+    "p90_abs_dP_split": 0.019875,
+    "what": "league + home vs league"
    },
    "engine_v3_rule": {
     "n": 534,
@@ -26251,6 +26274,7 @@
       "hi": 0.005385,
       "boot": "events (84)"
      },
+     "tau_laplace_pre2024": 0.1,
      "test_loss_ref_laplace": 0.634148,
      "test_delta_laplace": {
       "mean": 0.000904,
@@ -26293,6 +26317,7 @@
       "hi": 0.004866,
       "boot": "events (76)"
      },
+     "tau_laplace_pre2024": 0.05,
      "test_loss_ref_laplace": 0.651063,
      "test_delta_laplace": {
       "mean": -0.000401,
@@ -26335,6 +26360,7 @@
       "hi": 0.053242,
       "boot": "events (76)"
      },
+     "tau_laplace_pre2024": 0.05,
      "test_loss_ref_laplace": 4.170776,
      "test_delta_laplace": {
       "mean": -0.001412,
@@ -26376,6 +26402,7 @@
       "hi": 0.001055,
       "boot": "events (84)"
      },
+     "tau_laplace_pre2024": 0.05,
      "test_loss_ref_laplace": 0.033746,
      "test_delta_laplace": {
       "mean": 8e-06,
@@ -26417,6 +26444,7 @@
       "hi": -0.000297,
       "boot": "events (84)"
      },
+     "tau_laplace_pre2024": 0.05,
      "test_loss_ref_laplace": 0.138055,
      "test_delta_laplace": {
       "mean": -9.8e-05,
@@ -26457,6 +26485,7 @@
       "hi": 0.0,
       "boot": "events (84)"
      },
+     "tau_laplace_pre2024": 0.05,
      "test_loss_ref_laplace": 0.584796,
      "test_delta_laplace": {
       "mean": 0.000152,
@@ -26497,6 +26526,7 @@
       "hi": 0.000293,
       "boot": "events (84)"
      },
+     "tau_laplace_pre2024": 0.3,
      "test_loss_ref_laplace": 0.049621,
      "test_delta_laplace": {
       "mean": 0.000323,
@@ -26530,6 +26560,7 @@
       "hi": 0.000242,
       "boot": "events (84)"
      },
+     "tau_laplace_pre2024": 0.8,
      "test_loss_ref_laplace": 0.013264,
      "test_delta_laplace": {
       "mean": -0.000858,
