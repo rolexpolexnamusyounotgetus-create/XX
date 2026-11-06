@@ -1426,7 +1426,15 @@ def main():
     ap.add_argument("--k", type=int, default=8, help="number of archetypes (8)")
     ap.add_argument("--no-report", action="store_true")
     ap.add_argument("--no-shrink-tune", action="store_true", help="skip the prior-strength grid (use the defaults)")
+    ap.add_argument("--report-only", action="store_true", help="re-render the report from styles.json")
     args = ap.parse_args()
+    if args.report_only:
+        with open(OUT_JSON) as fh:
+            J = json.load(fh)
+        with open(OUT_MD, "w") as fh:
+            fh.write(render_report(J))
+        print("wrote %s" % OUT_MD)
+        return J
     t0 = dt.datetime.now()
     print("loading backtest and per-fight vectors ...")
     bt = load_backtest()
@@ -1579,8 +1587,462 @@ def main():
     return J
 
 
+FEATURE_DOCS = [
+    ("vol", "volume", "log( shr(sig_att) / prior_sig_att ), per minute", "pace / volume"),
+    ("press", "pressure proxy", "log( (d_att + K_MIN*p_d) / (od_att + K_MIN*p_d) )", "own distance attempts vs opponents' against him"),
+    ("opp_vol", "output invited", "log( shr(od_att) / p_d_att )", "how much opponents throw at distance against him"),
+    ("acc", "distance accuracy", "logit(shr(d_lnd/d_att; K_ATT)) - logit(p_acc_d)", "log-odds vs division"),
+    ("dfn", "distance defense", "logit(1 - shr(od_lnd/od_att; K_ATT)) - logit(1 - p_acc_d)", "log-odds vs division"),
+    ("sh_d, sh_c, sh_g", "position mix", "logit(shr(pos_att / sig_att; K_ATT)) - logit(prior share)", "distance / clinch / ground share of his attempts"),
+    ("sh_h, sh_b, sh_l", "target mix", "logit(shr(t_att / (h+b+l att); K_ATT)) - logit(prior share)", "head / body / leg share"),
+    ("osh_l", "gets leg-kicked", "same, for leg share of what he absorbs", ""),
+    ("td_int", "takedown intent", "log( shr(td_att) / p_td_att ), per minute", ""),
+    ("td_acc", "takedown success", "logit(shr(td_lnd/td_att; K_TD)) - logit(p_td_acc)", ""),
+    ("td_def", "takedown defense", "logit(1 - shr(otd_lnd/otd_att; K_TD)) - logit(1 - p_td_acc)", ""),
+    ("ctrl, octrl", "control propensity / time controlled", "log( shr(ctrl or octrl s/min) / prior )", "ufcstats control includes clinch control"),
+    ("ctrl_td, octrl_td", "control per takedown / stuck on bottom", "log( (ctrl + 3*c0)/(td_lnd + 3) / c0 )", "c0 = prior control seconds per takedown"),
+    ("sub_int, osub_int", "submission intent / exposure", "log( shr(sub_att) / prior ), per minute", ""),
+    ("kd_pow", "knockdown power", "log( shr(kd / h_lnd; K_HEAD) / p_kd )", "knockdowns per landed head strike"),
+    ("chin", "chin (higher = easier to drop)", "log( shr(okd / oh_lnd; K_HEAD) / p_kd )", ""),
+    ("d_rate, od_rate, td_rate, otd_rate", "per standing minute", "rates over st = min - (ctrl + octrl)/60", "exposure-correct position rates"),
+    ("g_rate", "ground-and-pound rate", "ground attempts per own control minute vs prior", ""),
+    ("late", "cardio", "minutes-weighted log of rounds 3-4 output ratio from the pace curve, shrunk with 30 pseudo-minutes", ""),
+    ("kick (derived)", "kicker", "(z_sh_l + z_sh_b) / sqrt(2)", "used as kick_x / kick_y"),
+]
+
+TERM_DOCS = {
+    "zy_kd_pow": "defender's knockdown power (z)", "zy_td_int": "defender's takedown intent (z)",
+    "zy_td_def": "defender's takedown defense (z)", "zy_press": "defender's pressure proxy (z)",
+    "zy_sub_int": "defender's submission intent (z)", "zy_vol": "defender's volume (z)",
+    "zx_ctrl*zy_octrl": "attacker's control propensity x defender's time-controlled propensity (z x z)",
+    "kick_y": "defender's kick share (z_sh_l + z_sh_b)/sqrt(2)", "kick_x": "attacker's kick share",
+    "open": "1 if one is southpaw and the other orthodox", "x_sp_vs_orth": "1 if attacker southpaw, defender orthodox",
+    "x_orth_vs_sp": "1 if attacker orthodox, defender southpaw",
+    "length_d": "length advantage: ((reach_X - reach_Y)/sd_reach + (height_X - height_Y)/sd_height) / 2",
+    "reach_net_d": "reach beyond height: ((reach_X - reach_Y)/sd_reach - (height_X - height_Y)/sd_height) / 2",
+    "reach_d": "(reach_X - reach_Y) / sd_reach", "height_d": "(height_X - height_Y) / sd_height",
+    "zy_ctrl": "defender's control propensity (z)", "zy_octrl_td": "defender stuck on bottom (z)",
+    "zy_kd_pow*": "", "zy_net": "defender's striking differential (z)",
+}
+
+RATE_ENGINE = {
+    "dist_att": "multiply X's distance strike-attempt rate (per standing minute)",
+    "leg_share": "add to the log-odds of X's leg-target share, then rescale head and body to fill the rest",
+    "body_share": "add to the log-odds of X's body-target share",
+    "td_att": "multiply X's takedown-attempt rate (per standing minute, distance and clinch)",
+    "td_acc": "add to the log-odds of X's takedown success",
+    "ctrl": "composition check only (total control per minute); do not apply on top of td_att and ctrl_per_td",
+    "ctrl_per_td": "multiply X's top-control duration per takedown (divide the bottom man's escape / stand-up hazard)",
+    "gnp_att": "multiply X's ground-strike rate per top-control minute",
+    "kd": "multiply knockdown probability per landed head strike",
+    "sub_att": "multiply submission-attempt rate",
+    "clinch_att": "multiply clinch strike rate",
+    "dist_acc": "add to the log-odds of distance accuracy",
+}
+
+
+def _f(x, d=3):
+    if x is None:
+        return "n/a"
+    if isinstance(x, (list, tuple)):
+        return "[" + ", ".join(_f(v, d) for v in x) + "]"
+    return ("%." + str(d) + "f") % x
+
+
+def _tbl(headers, rows):
+    out = ["| " + " | ".join(headers) + " |", "|" + "|".join("---" for _ in headers) + "|"]
+    for r in rows:
+        out.append("| " + " | ".join(str(c) for c in r) + " |")
+    return "\n".join(out)
+
+
 def render_report(J):
-    return "# placeholder\n"
+    m = J["meta"]
+    wl = J["winner_level"]
+    rl = J["rate_level"]
+    em = J["engine_modifiers"]
+    tr = J["transmission"]
+    mm = J["mismatch"]
+    sc = J["scouting"]
+    ar = J["archetypes"]
+    base = wl["skill_baseline"]
+    L = []
+    A = L.append
+    A("# Styles and matchups: style vectors, archetypes and interaction tests (engine v7 component)")
+    A("")
+    A("Built %s from the ufcstats snapshot through %s by `tools/styles.py`; machine-readable output in "
+      "`data/derived/styles.json`. Walk-forward throughout: every feature of a backtest fight comes from the two "
+      "sides' frozen pre-fight sums and the priors of fights before Jan 1 of the fight year; standardisation, "
+      "clusters, prior strengths, penalties and coefficients are fit on 2019-2023 only; 2024-01-01 onward "
+      "(%d decisive fights) is reported, never tuned on." % (m["built"][:10], m["snapshot"], m["n_test_decisive"]))
+    A("")
+    # ------------------------------------------------------------------ summary
+    surv_w = [k for k, c in wl["candidates"].items() if c["verdict"] == "survives"]
+    supp_w = [k for k, c in wl["candidates"].items() if c["verdict"] == "supported"]
+    n_w = len(wl["candidates"])
+    A("## Summary")
+    A("")
+    A("- **Style interactions do not move the winner prediction by a detectable amount.** On top of an engine-free "
+      "skill model (Elo, age, reach and %d shrunk skill and style main effects; 2024+ log loss %s, accuracy %s, vs "
+      "Elo alone %s), none of %d pre-registered matchup terms survives held-out validation "
+      "(%d survive, %d are consistent in sign but not significant: %s). The 8x8 archetype interaction matrix makes "
+      "held-out log loss worse (%+.4f). Adding every term that looked good in 2019-2023 at once raises 2024+ log "
+      "loss from %s to %s."
+      % (len(base["terms"]) - 3, _f(base["test"]["log_loss"], 4), _f(base["test"]["accuracy"]),
+         _f(wl["elo_only"]["test"]["log_loss"], 4), n_w, len(surv_w), len(supp_w), ", ".join(supp_w) or "none",
+         wl["candidates"]["archetype x archetype matrix"]["test_dll"],
+         _f(base["test"]["log_loss"], 4), _f(wl["screened_combined"].get("test", {}).get("log_loss"), 4)))
+    A("- **Inside the fight, matchups are real and measurable.** At the rate level (one row per fighter per fight, "
+      "X attacking Y, exposure-correct baselines that already contain the engine's log-linear / log5 main effects), "
+      "several style terms pass a tune-period screen and then improve 2024+ deviance with fight-level bootstrap "
+      "intervals that exclude zero. The blocks recommended on by default:")
+    for name, j in em["default_on"].items():
+        terms = ", ".join("%s %+.3f/sd" % (t["term"], t["coef_per_term_sd"]) for t in j["terms"])
+        A("  - `%s` (%s): %s; 2024+ deviance %+.2f%% (95%% CI of the change %s)."
+          % (name, j["desc"], terms, j["test_dev_change_pct"], _f(j["test_dev_ci"], 0)))
+    v = tr["variants"]
+    vd = v.get("default_on", {}).get("elo_plus_impact", {}).get("vs_none", {})
+    vc = v.get("tune_screened", {}).get("elo_plus_impact", {}).get("vs_none", {})
+    A("- **Applied mechanistically they help a little, and only through the fight.** Feeding the modifiers through "
+      "an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes win "
+      "probabilities by a median %.1f points (max %.1f) and moves 2024+ log loss of the Elo + scorecard model by "
+      "%+.4f (CI %s); the clean variant that uses only the tune-period screen moves it by %+.4f (CI %s). Neither is "
+      "significant: the gain shows up in realistic fight statistics, not in a measurable edge on who wins."
+      % (100 * vd.get("median_abs_dp", 0), 100 * vd.get("max_abs_dp", 0), vd.get("test_dll", 0),
+         _f(vd.get("ci"), 4), vc.get("test_dll", 0), _f(vc.get("ci"), 4)))
+    A("- **Recommendation:** apply styles as rate modifiers inside the engine (section 9, exact equations and values); "
+      "do not add archetype or interaction tweaks to the final win probability; use the archetypes for labels, the "
+      "director and the page.")
+    A("- **Archetypes are a continuum.** Silhouette is about %.2f for every k from 4 to 12, so there are no natural "
+      "clusters. k = %d is the most stable of the interpretable solutions (bootstrap adjusted Rand %.2f) and its "
+      "clusters match expert scouting on the grappling and kicking axes (tag AUCs: top-control %.2f, leg-kicks %.2f, "
+      "takedown-defense %.2f, volume %.2f), but the attempts-ratio pressure proxy does not match the scouts' "
+      "'pressure' or 'counter' tags (AUC %.2f and %.2f): ufcstats has no cage position."
+      % (np.mean([r["silhouette"] for r in ar["selection"]]), ar["k"],
+         [r for r in ar["selection"] if r["k"] == ar["k"]][0]["boot_ari_mean"],
+         sc["tag_auc"].get("top-control", {}).get("auc", float("nan")),
+         sc["tag_auc"].get("leg-kicks", {}).get("auc", float("nan")),
+         sc["tag_auc"].get("takedown-defense", {}).get("auc", float("nan")),
+         sc["tag_auc"].get("volume", {}).get("auc", float("nan")),
+         sc["tag_auc"].get("pressure", {}).get("auc", float("nan")),
+         sc["tag_auc"].get("counter", {}).get("auc", float("nan"))))
+    A("- **By-product for v9:** the engine-free skill logistic (2024+ log loss %s) is a far stronger benchmark than "
+      "Elo (%s) and a natural stacking input; its coefficients are in `styles.json` "
+      "(`winner_level.skill_baseline`)." % (_f(base["test"]["log_loss"], 4), _f(wl["elo_only"]["test"]["log_loss"], 4)))
+    A("")
+    # ------------------------------------------------------------------ data
+    A("## 1. Data and design")
+    A("")
+    A("- Fights: %d walk-forward backtest entries 2019-01-01 to %s (both men with a prior UFC fight), %d decisive; "
+      "tune 2019-2023, test 2024+ (%d decisive). Per-fight actual stats by position and target come from "
+      "`data/raw/ufc_fight_stats.csv` through `tools/build_db.py` (round rows summed per fighter)."
+      % (m["n_fights"], m["snapshot"], m["n_decisive"], m["n_test_decisive"]))
+    A("- Symmetry: winner models are antisymmetric (every feature is A minus B, no intercept), so the first-named "
+      "corner, which wins 56%% of the time, cannot leak; rate models have one row per side.")
+    A("- Uncertainty: held-out changes carry 95%% intervals from a paired bootstrap over test fights (%d replicates; "
+      "both sides of a fight resampled together in the rate models). 'z (tune)' is the Wald z on 2019-2023 "
+      "(quasi-likelihood dispersion for counts). 'z (test only)' refits on 2024+ as a diagnostic and is never used "
+      "for selection." % m["bootstrap"])
+    A("- Selection rule (fixed before looking at 2024+): a winner-level term is *screened in* if |z (tune)| >= 2 "
+      "(likelihood-ratio p < 0.05 for blocks) and leave-one-year-out CV log loss inside 2019-2023 improves; a "
+      "rate-level term if |z (tune)| >= 3 and CV deviance improves (the stricter bar allows for about 150 rate "
+      "tests). A screened term **survives** if its 2024+ change is negative with the 95% CI below zero, is "
+      "**supported** if the change is negative and the test-only refit has the same sign, else **fails held-out**.")
+    sh = m.get("shrinkage_tuning") or {}
+    A("- Prior strengths (pseudo-exposure toward the division prior) chosen by leave-one-year-out CV deviance of the "
+      "rate models on 2019-2023: " + ", ".join("%s = %g (grid %s)" % (k, v["chosen"], "/".join("%g" % g for g in v["grid"]))
+                                                 for k, v in sh.items()) + "; K_CTRLTD = %g takedowns." % m["shrinkage"]["K_CTRLTD"])
+    A("")
+    # ------------------------------------------------------------------ features
+    A("## 2. The style vector")
+    A("")
+    A("Each feature is a log rate ratio or a log-odds difference against the division prior of the fight year, so "
+      "heavyweights and flyweights sit on one scale; `shr(x)` adds the prior times the pseudo-exposure. Exact code: "
+      "`Side.features` in `tools/styles.py`. z-scores use the 2019-2023 side means and sds in `styles.json` "
+      "(`zscore`). Stance comes from the tale of the tape (orthodox, southpaw, switch); reach and height in inches.")
+    A("")
+    A(_tbl(["Feature", "Meaning", "Definition", "Note"], [("`%s`" % a, b, "`%s`" % c, d) for a, b, c, d in FEATURE_DOCS]))
+    A("")
+    A("Clustering uses the 15 style dimensions `%s`, weighted so each group (output, position, target, grappling, "
+      "power/precision) carries equal total weight." % ", ".join(m["style_dims"]))
+    A("")
+    # ------------------------------------------------------------------ archetypes
+    A("## 3. Archetypes")
+    A("")
+    A("k-means (k-means++ starts, %d restarts) on %d snapshots from 2019-2023 (latest per fighter and year, at least "
+      "%g decayed minutes). Selection table (bootstrap ARI = agreement of the full-sample solution with solutions "
+      "fit on bootstrap resamples):" % (30, ar["n_fit"], ar["min_minutes"]))
+    A("")
+    A(_tbl(["k", "silhouette", "bootstrap ARI mean", "ARI min"],
+           [(r["k"], _f(r["silhouette"]), _f(r["boot_ari_mean"]), _f(r["boot_ari_min"])) for r in ar["selection"]]))
+    A("")
+    A("Silhouettes near 0.09 mean styles form a continuum; archetypes are labels on it. k = %d is the most stable "
+      "solution beyond k = 4 (which only separates grapplers, counter-punchers and two striker types). Centroids "
+      "(z-scores) and the fighters with the most minutes in each:" % ar["k"])
+    A("")
+    dims = m["style_dims"]
+    rows_ = []
+    for nm, c, sz, ex in zip(ar["names"], ar["centroids_z"], ar["sizes"], ar["examples"]):
+        top = sorted(zip(dims, c), key=lambda t: -abs(t[1]))[:5]
+        rows_.append((nm, sz, ", ".join("%s %+.1f" % t for t in top), ", ".join(ex[:6])))
+    A(_tbl(["Archetype", "n", "Most distinctive dimensions (z)", "Examples (2019-2023)"], rows_))
+    A("")
+    A("Soft memberships use an isotropic Gaussian around each centroid (temperature %.3f in weighted z units); "
+      "every roster fighter's membership vector and style z-scores are in `styles.json` (`roster`)." % ar["temp"])
+    A("")
+    # ------------------------------------------------------------------ winner level
+    A("## 4. Winner-level tests: do style interactions predict who wins?")
+    A("")
+    A("Baseline: L2 logistic on A-minus-B differences of Elo, age, reach and the shrunk features `%s` "
+      "(ridge %g chosen by leave-one-year-out CV). Each matchup term is antisymmetrised, `u_A * v_B - u_B * v_A` "
+      "on z-scores, so its own main effects stay in the baseline; context terms multiply a skill edge by a "
+      "symmetric fight context; type terms use z thresholds (type = z > 1)."
+      % (", ".join(base["terms"][3:]), base["lam"]))
+    A("")
+    A(_tbl(["Model", "2019-2023 CV log loss", "2024+ log loss", "Brier", "Accuracy"],
+           [("Elo only", "", _f(wl["elo_only"]["test"]["log_loss"], 4), _f(wl["elo_only"]["test"]["brier"], 4),
+             _f(wl["elo_only"]["test"]["accuracy"])),
+            ("Skill baseline", _f(base["cv_tune"]["log_loss"], 4), _f(base["test"]["log_loss"], 4),
+             _f(base["test"]["brier"], 4), _f(base["test"]["accuracy"])),
+            ("Skill baseline + all tune-screened terms", "",
+             _f(wl["screened_combined"].get("test", {}).get("log_loss"), 4),
+             _f(wl["screened_combined"].get("test", {}).get("brier"), 4),
+             _f(wl["screened_combined"].get("test", {}).get("accuracy")))]))
+    A("")
+    A("Each term added alone to the skill baseline (log-loss changes x 1000; negative = better):")
+    A("")
+    rows_ = []
+    for k, c in wl["candidates"].items():
+        rows_.append((k, c["k"], _f(c["z_tune"][0], 2) if c["k"] == 1 else "LR %.1f" % c["lr_tune"],
+                      "%+.2f" % (1000 * c["cv_dll"]), "%+.2f" % (1000 * c["test_dll"]),
+                      "[%+.2f, %+.2f]" % (1000 * c["test_dll_ci"][0], 1000 * c["test_dll_ci"][1]),
+                      _f(c["z_test_only"][0], 2) if c["k"] == 1 else "", c["verdict"]))
+    A(_tbl(["Term", "cols", "z (tune)", "CV change", "2024+ change", "95% CI", "z (test only)", "Verdict"], rows_))
+    A("")
+    eo = wl["on_top_of_elo_only"]
+    A("On top of Elo alone (no skill controls), the terms that pass the screen are: " +
+      "; ".join("%s (2024+ %+.2f, CI [%+.2f, %+.2f], %s)" % (k, 1000 * c["test_dll"], 1000 * c["test_dll_ci"][0],
+                                                             1000 * c["test_dll_ci"][1], c["verdict"])
+                for k, c in eo["candidates"].items() if c["screen"]) +
+      ". Archetype main effects and the age-by-rounds context help Elo because they carry main effects Elo lacks "
+      "(style and age); once the skill controls are in, they add nothing.")
+    A("")
+    A("**Style-mismatch fights** (the v7 check in docs/ROADMAP.md). A fight is a mismatch when the weighted style "
+      "distance between the two men exceeds the 2019-2023 two-thirds quantile (%.2f); %d of %d test fights qualify. "
+      "Separately, %d test fights pair two different archetypes with both memberships above 0.5."
+      % (mm["threshold"], mm["n_test_mismatch"], mm["n_test"], mm.get("n_test_diff_archetype_confident", 0)))
+    A("")
+    A(_tbl(["Model (2024+ log loss)", "Mismatch fights", "Other fights", "Different confident archetypes"],
+           [(k, _f(v["mismatch"]["log_loss"], 4), _f(v["other"]["log_loss"], 4),
+             _f(v.get("diff_archetype", {}).get("log_loss"), 4)) for k, v in mm["models"].items()]))
+    A("")
+    A("Mismatch fights are not harder to call, and no interaction model does better on them than the skill baseline. "
+      "The scorecard models with rate modifiers are slightly better on mismatch fights than without (section 7), "
+      "within noise.")
+    A("")
+    # ------------------------------------------------------------------ rate level
+    A("## 5. Rate-level tests: what styles change inside the fight")
+    A("")
+    A("One row per fighter per fight (X attacking Y). Each model holds the engine-style main effects (X's own rate "
+      "and what Y allows, both as log ratios to the division prior; for proportions the log5 pair) with free "
+      "coefficients, plus one candidate at a time. Exposures are actual position time (standing minutes = fight "
+      "minutes minus both men's control time), which is what the engine conditions on. A first pass with "
+      "per-total-minute baselines produced spurious 'matchup' effects (opponent's wrestling or pressure 'raising' "
+      "distance output) that vanished once rates were per standing minute; exposure has to be right before "
+      "interactions mean anything.")
+    A("")
+    A("Base fits (coefficient per sd of the feature; 2024+ deviance explained relative to an intercept-only model):")
+    A("")
+    rows_ = []
+    for name, r in rl.items():
+        rows_.append((name, r["desc"], ", ".join("%s %s" % (t, _f(c, 3)) for t, c in zip(r["base_terms"], r["base_coef"][1:])),
+                      _f(r["dispersion"], 1), "%.1f%%" % (100 * (1 - r["test_dev_base"] / r["test_dev_null"]))))
+    A(_tbl(["Model", "Outcome", "Main effects (per sd)", "Dispersion", "2024+ deviance explained"], rows_))
+    A("")
+    A("Screened-in and other notable candidates (coefficient per sd of the term; deviance change on 2024+, sum over "
+      "fight sides; negative = better):")
+    A("")
+    rows_ = []
+    for name, r in rl.items():
+        for c in r["candidates"]:
+            if c["screen"] or (c["test_dev_ci"][1] < 0 and abs(c["z_tune"]) >= 2):
+                rows_.append((name, "`%s`" % c["term"], "%+.4f" % c["coef_per_sd"], _f(c["z_tune"], 2),
+                              "%+.1f" % c["cv_dev_change"], "%+.1f (%+.2f%%)" % (c["test_dev_change"], c["test_dev_change_pct"]),
+                              "[%+.1f, %+.1f]" % tuple(c["test_dev_ci"]), _f(c["z_test_only"], 2),
+                              c["verdict"] + ("" if is_matchup(c["term"]) else " (own-style, not a matchup)")))
+    A(_tbl(["Model", "Term", "Coef/sd", "z (tune)", "CV change", "2024+ change", "95% CI", "z (test only)", "Verdict"], rows_))
+    A("")
+    A("Everything else (%d candidates, listed in `styles.json`) failed the screen. Null results worth stating: "
+      "no style term changes distance accuracy, takedown success, knockdowns per landed head strike or submission "
+      "attempts beyond the main effects; the log5 / log-linear combination itself shows no interaction "
+      "(`zx_acc*zy_dfn`, `zx_td_acc*zy_td_def`, `zx_kd_pow*zy_chin`, `zx_d_rate*zy_od_rate` all near zero), so "
+      "the engine's multiplicative composition is adequate. Southpaw vs orthodox does not change accuracy or "
+      "knockdowns." % sum(1 for r in rl.values() for c in r["candidates"] if not c["screen"]))
+    A("")
+    # ------------------------------------------------------------------ modifiers
+    A("## 6. The modifier set and its size")
+    A("")
+    A("Per model, held-out survivors go in first; held-out-supported matchup terms are then added in order of tune z "
+      "only if they lower 2019-2023 CV deviance given what is already in (this resolves overlapping terms on tune "
+      "data). Terms built only from the attacker's own style are excluded: they are decomposition corrections, "
+      "not matchups. A block is **on by default** when its joint 2024+ deviance change has a CI below zero.")
+    A("")
+    for label, blk in (("On by default", em["default_on"]), ("Optional (knob, default off)", em["optional_off"])):
+        A("**%s**" % label)
+        A("")
+        rows_ = []
+        for name, j in blk.items():
+            for t in j["terms"]:
+                rows_.append((name, "`%s`" % t["term"], TERM_DOCS.get(t["term"], ""), t["tier"], "%+.4f" % t["coef_per_term_sd"],
+                              "%+.4f" % t["coef_per_unit"], _f(t["z_tune"], 2), "%.3f" % t["mult_at_plus1sd"]))
+            rows_.append((name, "*block*", "2024+ deviance %+.2f%%, CI %s" % (j["test_dev_change_pct"], _f(j["test_dev_ci"], 0)),
+                          "", "", "", "", ""))
+        A(_tbl(["Rate", "Term", "Definition", "Tier", "Coef per term sd", "Coef per unit", "z (tune, joint)", "exp(coef) at +1 sd"], rows_))
+        A("")
+    A("Tier 1 = survived alone; tier 2 = supported alone and kept by the tune-CV step. Joint z values are lower than "
+      "the single-term ones where terms share signal. How big the modifiers get across real 2024+ matchups (the "
+      "modifier part of the linear predictor, log scale for rates and log-odds for shares):")
+    A("")
+    rows_ = []
+    for name, j in list(em["default_on"].items()) + list(em["optional_off"].items()):
+        q = j["shift_pct_2024"]
+        rows_.append((name, _f(q["p5"]), _f(q["p25"]), _f(q["p50"]), _f(q["p75"]), _f(q["p95"]), _f(q["abs_median"])))
+    A(_tbl(["Rate", "p5", "p25", "median", "p75", "p95", "median |shift|"], rows_))
+    A("")
+    A("So a typical matchup moves a rate by 3-10% and the 5% most extreme by 10-25%. Examples (multipliers for "
+      "Poisson rates, log-odds shifts for shares, all blocks including optional ones):")
+    A("")
+    rows_ = []
+    for key, ex in J["examples"].items():
+        a, b = key.split(" vs ")
+        for who, opp in ((a, b), (b, a)):
+            mods = ex[who]
+            rows_.append(("%s vs %s" % (who, opp), ex["archetypes"][0 if who == a else 1],
+                          ", ".join(("%s x%.2f" % (k, v["mult"])) if "mult" in v else ("%s %+.2f" % (k, v["logit_shift"]))
+                                    for k, v in mods.items())))
+    A(_tbl(["Attacker vs defender", "Attacker archetype (live)", "Modifiers"], rows_))
+    A("")
+    # ------------------------------------------------------------------ transmission
+    A("## 7. Does the mechanism reach the outcome? (transmission test)")
+    A("")
+    A("A stand-in for the engine: fit every rate model on 2019-2023, predict each side's per-minute rates from "
+      "features only (control first, standing share = 1 - both men's control, then distance attempts x accuracy, "
+      "clinch and ground strikes at prior accuracy, target split, takedowns, knockdowns, submissions), turn them "
+      "into an expected judging impact per 15 minutes with the EM round-winner weights (head 0.179, body 0.133, "
+      "leg 0.105, KD 2.42, TD 0.286, control 0.46/min, sub attempt 0.85), and add the A-minus-B difference to a "
+      "winner model. Variants differ only in which modifiers the rate models carry.")
+    A("")
+    rows_ = []
+    for vn, vv in tr["variants"].items():
+        for lab, x in vv.items():
+            d = x.get("vs_none")
+            rows_.append((vn, lab.replace("_", " "), _f(x["test"]["log_loss"], 4), _f(x["test"]["accuracy"]),
+                          _f(x["z"], 2),
+                          ("%+.4f [%+.4f, %+.4f]" % (d["test_dll"], d["ci"][0], d["ci"][1])) if d else "",
+                          ("%.1f / %.1f" % (100 * d["median_abs_dp"], 100 * d["max_abs_dp"])) if d else ""))
+    A(_tbl(["Modifiers", "Model", "2024+ log loss", "Accuracy", "z of impact term", "Change vs none [95% CI]",
+            "Median / max |dp| (points)"], rows_))
+    A("")
+    A("Read: the scorecard alone lifts Elo from %s to %s (it is a real, if crude, mechanistic predictor). Modifiers "
+      "change the scorecard model's 2024+ log loss by a few thousandths with intervals that include zero; the "
+      "'tune_screened' row is the clean test (no 2024+ data used to pick terms) and is flat. On top of the full "
+      "skill baseline the scorecard adds nothing, as expected: the baseline already holds the same main effects. "
+      "The held-out period was used once to confirm each rate term, so the tier1 / default_on rows are consistency "
+      "checks rather than independent tests."
+      % (_f(wl["elo_only"]["test"]["log_loss"], 4), _f(tr["variants"]["none"]["elo_plus_impact"]["test"]["log_loss"], 4)))
+    A("")
+    A("Median relative change in the expected per-minute stats from the modifiers (2019-2026 sides): " +
+      "; ".join("%s: %s" % (vn, ", ".join("%s %.1f%%" % (k, 100 * v) for k, v in sh_.items()))
+                for vn, sh_ in tr["median_abs_rel_shift"].items()) + ".")
+    A("")
+    # ------------------------------------------------------------------ scouting
+    A("## 8. Scouting files versus the data")
+    A("")
+    A("%d fighters in `data/scouting/` have a live profile. The scouting tags are written in 2026 with hindsight, so "
+      "they cannot be used in a walk-forward backtest; they serve here to check what the data features mean. AUC = "
+      "chance that a tagged fighter scores higher on the data feature than an untagged one (signed so 1 = agreement)."
+      % sc["n_fighters"])
+    A("")
+    rows_ = [(t, "`%s`" % v["feature"], "+" if v["sign"] > 0 else "-", v["n_tagged"], _f(v["auc"], 2))
+             for t, v in sorted(sc["tag_auc"].items(), key=lambda x: -(x[1]["auc"] or 0))]
+    A(_tbl(["Tag", "Data feature", "Sign", "Tagged", "AUC"], rows_))
+    A("")
+    bf = sc["tag_best_features"]
+    A("What the weakly matched tags line up with instead (best three features by |AUC - 0.5|): " +
+      "; ".join("**%s**: %s" % (t, ", ".join("%s %.2f" % (x["feature"], x["auc"]) for x in bf[t]["top"]))
+                for t in ("pressure", "counter", "durable", "cardio", "ground-and-pound", "power") if t in bf) + ".")
+    A("")
+    A("Scouts' 'pressure' fighters kick the legs less and get fewer takedown attempts against them; nothing in "
+      "the attempt counts measures walking a man down. Treat `press` as an output-share feature, not as pressure "
+      "in the coaching sense, and keep the scouting tag for the director. Stance agrees with the tale of the tape "
+      "for every scouted fighter (%s)." % ", ".join("%s %d" % (k, v) for k, v in sc["stance_pairs"].items()))
+    A("")
+    A("Scouting archetype family (rows) against the data archetype (largest live membership):")
+    A("")
+    names = ar["names"]
+    rows_ = [(fam,) + tuple(ct.get(n, 0) for n in names) for fam, ct in sorted(sc["crosstab"].items())]
+    A(_tbl(["Scouting family"] + names, rows_))
+    A("")
+    # ------------------------------------------------------------------ recommendation
+    A("## 9. Exact recommendation for the engine")
+    A("")
+    A("1. **Inputs.** For each fighter use the live style z-scores in `styles.json` `roster[slug].z` (built from "
+      "fighters.json sums with the live division priors and standardised with `zscore.mu/sd` from 2019-2023), or "
+      "recompute them with `Side.features`. For a backtest fight, compute them from the frozen `S` with "
+      "`priors_asof[year]` (never the live priors). `kick = (z_sh_l + z_sh_b) / sqrt(2)`. Physical terms use "
+      "`sd_reach = %.3f` in and `sd_height = %.3f` in." % (J["zscore"]["sd"]["reach"], J["zscore"]["sd"]["height"]))
+    A("2. **Where they act.** For attacker X against defender Y, each block adds `s = sum_k c_k * t_k` "
+      "(`c_k` = 'coef per unit' above, `t_k` = term value) to the linear predictor of one engine rate, after the "
+      "engine has combined X's and Y's own rates (log-linear / log5):")
+    for name, j in list(em["default_on"].items()) + list(em["optional_off"].items()):
+        on = name in em["default_on"]
+        eq = " + ".join("(%+.4f) * %s" % (t["coef_per_unit"], t["term"]) for t in j["terms"])
+        A("   - `%s` (%s): %s, with `s = %s`." % (name, "on" if on else "knob, default off", RATE_ENGINE.get(name, ""), eq))
+    A("   For a Poisson rate: `rate *= exp(s)`. For a share: `logit(p) += s`. Products such as `zx_ctrl*zy_octrl` "
+      "are the product of the two z-scores. `open`, `x_sp_vs_orth` are 0/1 from the listed stances (switch counts "
+      "as neither).")
+    A("3. **Control.** Use `td_att` (attempts) and `ctrl_per_td` (duration per takedown) if `ctrl_per_td` is in the "
+      "on list; the total `ctrl` block is reported as a composition check and must not be applied on top, or the "
+      "wrestler-vs-wrestler and kicker effects are counted twice. If `ctrl_per_td` is not on, apply the `ctrl` "
+      "block to control duration and drop its `zy_td_int` term (that part is already carried by `td_att`).")
+    A("4. **Knob.** Expose one `styleMatchups` knob in [0, 1.5], default 1, that scales every `s`; 0 reproduces "
+      "the pure skill composition. Optional blocks get their own toggle, default off.")
+    A("5. **Do not** add archetype-pair or interaction terms to the final win probability; none survived held-out "
+      "validation and the combined set made 2024+ log loss worse. Do not use the scouting tags as numeric inputs "
+      "in backtests (hindsight); use them for the director's technique choices and the page.")
+    A("6. **Calibration order.** The modifiers were fit with free main-effect coefficients, so they are close to "
+      "orthogonal to the engine's own prior strengths and exponents; recheck the default-on blocks with the "
+      "engine's per-fight stat errors after v4 retunes those (expected change: small).")
+    A("7. **Validation target for v7.** With the modifiers on, the engine's simulated per-fight stats should "
+      "reproduce the 2024+ rate-level gains above (distance attempts, leg share, takedown attempts, control), and "
+      "its 2024+ winner log loss should be no worse than without them; that is the ship criterion, given that the "
+      "winner-level effect is below what %d fights can detect." % m["n_test_decisive"])
+    A("")
+    # ------------------------------------------------------------------ caveats
+    A("## 10. Caveats")
+    A("")
+    A("- Power: with %d held-out fights the paired bootstrap SE of a log-loss change is about 0.001-0.002, so "
+      "winner-level matchup effects smaller than about 0.003 are invisible. The rate-level tests have far more "
+      "information per fight, which is why they detect effects the winner tests cannot." % m["n_test_decisive"])
+    A("- ufcstats lacks cage position, feints, stance switches within fights, technique labels and per-target "
+      "attempts by position; pressure, counter-punching and kick types can only be proxied.")
+    A("- Control time includes clinch control; standing minutes are approximate (min minus both men's control).")
+    A("- Stance, reach and height are the current tale of the tape, applied to past fights.")
+    A("- The 2024+ period confirmed the rate terms and was then reused for the transmission and mismatch tables; "
+      "the 'tune_screened' variant is the only fully clean held-out test of the procedure.")
+    A("- The skill baseline's main effects are style features too (shares, intents); a model without them would "
+      "let interactions absorb main effects. The 'on top of Elo alone' table shows what that looks like.")
+    A("")
+    A("## 11. Reproduce")
+    A("")
+    A("```")
+    A("python3 tools/styles.py              # about 5 minutes on 4 cores (prior-strength grid, %d bootstrap draws)" % m["bootstrap"])
+    A("python3 tools/styles.py --report-only   # re-render this file from data/derived/styles.json")
+    A("```")
+    A("")
+    A("Needs numpy and pandas; reuses `tools/build_db.py` (parse_fights, build_vectors) for the per-fight vectors.")
+    A("")
+    return "\n".join(L)
 
 
 if __name__ == "__main__":

@@ -194,6 +194,21 @@ def parse_mmss(s):
 
 
 DETAIL_CARD = re.compile(r"\s*([^\d.]*?)\s*(\d+)\s*-\s*(\d+)\s*\.")
+PREFIX_HINT = re.compile(r":| by |ecision|Deducted|Drug|Illegal|Poke|foul|heads", re.I)
+
+
+def clean_judge(nm):
+    """ufcstats glues notes to the first judge's name: 'Point Deducted: Low Blow by WatsonRichard Bertrand'."""
+    nm = nm.strip()
+    if not PREFIX_HINT.search(nm):
+        return nm
+    cuts = [m.start() + 1 for m in re.finditer(r"[a-z](?=[A-Z])", nm)]
+    for c in reversed(cuts):
+        rest = nm[c:].strip()
+        if len(rest.split()) >= 2 and not PREFIX_HINT.search(rest):
+            return rest
+    nm = re.sub(r"^technical decision[\s:-]*", "", nm, flags=re.I).strip()
+    return "" if PREFIX_HINT.search(nm) else nm             # a note with no judge name after it
 
 
 def load_ufcstats():
@@ -221,7 +236,7 @@ def load_ufcstats():
         winner = {"W/L": "A", "L/W": "B", "D/D": "D", "NC/NC": "NC"}.get(r.OUTCOME, "NC")
         wc = r.WEIGHTCLASS
         tourn = "Tournament" in wc
-        cards = [(nm.strip(), int(x), int(y)) for nm, x, y in DETAIL_CARD.findall(r.DETAILS)]
+        cards = [(clean_judge(nm), int(x), int(y)) for nm, x, y in DETAIL_CARD.findall(r.DETAILS)]
         fights[fid] = dict(
             fid=fid, idx=int(r.idx), event=r.EVENT, date=date, loc=ev_loc.get(r.EVENT, ""),
             A=names[0].strip(), B=names[1].strip(), winner=winner, method=r.METHOD, wc=wc,

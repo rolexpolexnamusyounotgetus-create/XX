@@ -504,6 +504,7 @@
       docCap: p.docCap,
       drainPos: p.drainPos,
       drainTd: p.drainTd,
+      drainAtt: p.drainAtt,
       failTdClinch: p.failTdClinch,
       finStamAtt: p.finStamAtt,
       gnpDmg: p.gnpDmg,
@@ -734,7 +735,7 @@
             o = accO[(i * 4 + pc) * 3 + tg] * fAcc[i] * (1 - K.accSelfStam * (1 - S[i])) * (hj ? K.accHurt : 1) * (1 + K.accStam * (1 - S[j]));
             if (pc === 0) o *= 1 + K.accMob * (1 - mobj);
           }
-          st[so + I_SA]++; st[so + I_HA + 2 * tg]++;
+          st[so + I_SA]++; st[so + I_HA + 2 * tg]++; S[i] -= K.drainAtt;
           st[so + (pc === 0 ? I_DA : (pc === 1 ? I_CA : I_GA))]++;
           if (rng.u() >= o / (1 + o)) {
             if (trace) { var em = evObj(t, "miss", SIDE[i], state, pos, downed >= 0, D, G, S); em.tg = tg; em.loc = LOCN[pc]; ev.push(em); }

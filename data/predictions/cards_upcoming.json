@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-06T09:47:31Z",
+ "as_of": "2026-11-06T10:10:17Z",
  "window": {
   "from": "2026-11-07",
   "to": "2026-12-20"
@@ -439,7 +439,7 @@
      },
      "b": {
       "name": "Alvin Hines",
-      "slug": null
+      "slug": "alvin-hines"
      },
      "date": "2026-10-08",
      "reason": "Hines out (vertigo); replaced by Thomas Petersen",
@@ -457,7 +457,7 @@
      },
      "b": {
       "name": "Wes Schultz",
-      "slug": null
+      "slug": "wes-schultz"
      },
      "date": "2026-10-25",
      "reason": "Schultz out; replaced by Andre Petroski",
@@ -755,7 +755,8 @@
       "https://heavy.com/sports/ufc/ufc-lightweight-ufc-334-new-york/",
       "https://www.mmafighting.com/schedule",
       "https://agentmma.com/events/ufc-334"
-     ]
+     ],
+     "notes": "Costa's roster division is Featherweight (8 of 10 UFC bouts; last fight a featherweight loss to Arnold Allen, May 2026); this bout is at lightweight per ESPN."
     },
     {
      "order": 11,
@@ -853,7 +854,7 @@
      },
      "b": {
       "name": "Jefferson Nascimento",
-      "slug": null
+      "slug": "jefferson-nascimento"
      },
      "date": "2026-10-08",
      "reason": "Both fighters injured; bout cancelled",
@@ -907,7 +908,7 @@
     "https://agentmma.com/events/ufc-fight-night-qatar",
     "https://www.bestfightodds.com/events/ufc-doha-4440"
    ],
-   "card_note": "Bouts 1-9 announced by the UFC on Sep 29 (mmafighting); order and segments from ESPN (6-bout main card; mmafighting puts Topuria-Luna on the prelims). Motta-Fan and Nurgozhay-Lorenz were added later and have no slot yet. mmafighting and agentmma still list Cavalcanti vs. Montague here; it moved to UFC 335 (Nov 1).",
+   "card_note": "Bouts 1-9 announced by the UFC on Sep 29 (mmafighting); order and segments from ESPN (6-bout main card; mmafighting puts Topuria-Luna on the prelims). Motta-Fan and Nurgozhay-Lorenz were added later and have no slot yet. mmafighting and agentmma still list Cavalcanti vs. Montague here; it moved to UFC 335 (Nov 1). Start times are ESPN's (prelims 10 a.m. ET, main 1 p.m. ET); mmafighting's schedule says the main card starts at 2 p.m. ET (19:00Z). The lock time (15:00Z) is the same.",
    "bouts": [
     {
      "order": 1,
@@ -1224,7 +1225,7 @@
      },
      "b": {
       "name": "Magomed Zaynukov",
-      "slug": null
+      "slug": "magomed-zaynukov"
      },
      "date": "2026-09-28",
      "reason": "Reported only; Zaynukov denied signing and is out for 2026",
@@ -1515,11 +1516,12 @@
       ]
      },
      "status": "reported",
-     "notes": "Booked Nov 5 (MMA Junkie, confirmed by Heavy). Andrusca's roster division is Featherweight (debut win at 145); drops to 135 here.",
+     "notes": "Booked Nov 5 (MMA Junkie, confirmed by Heavy). Andrusca's roster division is Featherweight (debut win at 145); drops to 135 here. Osmanli is not a debutant in the data: his TUF 34 finale (DQ loss to Ilimbek Akylbek, illegal knee, Sept 26, 2026) is an official UFC bout on ufcstats and in the roster (0-1). Sherdog's Nov 6 headline calls Riyadh his 'UFC debut'; Heavy calls it his sophomore fight.",
      "sources": [
       "https://heavy.com/sports/ufc/ufc-books-talented-bantamweights-saudi-arabia/",
       "https://agentmma.com/events/ufc-riyadh-abdul-hussein-vs-hecher-sosa",
-      "https://en.wikipedia.org/wiki/UFC_Fight_Night_295"
+      "https://en.wikipedia.org/wiki/UFC_Fight_Night_295",
+      "https://www.sherdog.com/news/news/Mehemmedali-Osmanli-reportedly-books-UFC-debut-despite-TUF-34-loss-203515"
      ]
     }
    ],
@@ -1532,8 +1534,9 @@
    "date": "2026-12-12",
    "location": "T-Mobile Arena, Las Vegas (Paradise), Nevada, USA",
    "start_utc": {
-    "prelims": "2026-12-12T22:00Z",
-    "main": "2026-12-13T01:00Z"
+    "early_prelims": "2026-12-12T22:00Z",
+    "prelims": "2026-12-13T00:00Z",
+    "main": "2026-12-13T02:00Z"
    },
    "broadcast": "Paramount+ (US)",
    "event_status": "official",
@@ -1548,7 +1551,7 @@
     "https://agentmma.com/events/ufc-335",
     "https://www.bestfightodds.com/events/ufc-335-4394"
    ],
-   "card_note": "Five weeks out; only the top of the card has slots. Bouts 1-3 are the announced main card (ESPN, mmafighting); Pasley-Tafa is listed on the ESPN prelims; the rest are unslotted. ESPN, sherdog, mmafighting's schedule, agentmma and bestfightodds still carry Pyfer vs. Nickal, which moved to Feb 2027 in Cleveland. The start times are mmafighting's (ESPN's feed gives 22:00/00:00/02:00Z).",
+   "card_note": "Five weeks out; only the top of the card has slots. Bouts 1-3 are the announced main card (ESPN, mmafighting); Pasley-Tafa is ESPN's early-prelim opener; the rest are unslotted. Start times are ESPN's UFC-fed feed (early prelims 5 p.m. ET, prelims 7 p.m. ET, main card 9 p.m. ET, the same pattern as UFC 334); mmafighting's schedule shows 5 p.m./8 p.m. ET (22:00Z/01:00Z) with two blocks. The lock time (22:00Z) is the same either way. ESPN, sherdog, mmafighting's schedule, agentmma and bestfightodds still carry Pyfer vs. Nickal, which moved to Feb 2027 in Cleveland. ESPN, sherdog and mmafighting also still carry Barber vs. Judice, which Barber reportedly left on Nov 5 (see removed/open_slots).",
    "bouts": [
     {
      "order": 1,
@@ -1624,7 +1627,7 @@
     },
     {
      "order": 4,
-     "segment": "prelims",
+     "segment": "early_prelims",
      "weight_class": "Light Heavyweight",
      "rounds": 3,
      "title": false,
@@ -1638,7 +1641,7 @@
       "slug": "junior-tafa"
      },
      "status": "official",
-     "notes": "Pasley: UFC debut (2026 Contender Series winner).",
+     "notes": "Pasley: UFC debut (2026 Contender Series winner). ESPN lists this bout as the opening early-prelim fight (22:00Z block); mmafighting puts it on a single prelim block.",
      "sources": [
       "https://www.espn.com/mma/fightcenter/_/id/600061401/league/ufc",
       "https://www.sherdog.com/events/UFC-335-Oliveira-vs-Lopes-114294",
@@ -1674,31 +1677,6 @@
     {
      "order": 6,
      "segment": "unknown",
-     "weight_class": "Women's Flyweight",
-     "rounds": 3,
-     "title": false,
-     "a": {
-      "name": "Maycee Barber",
-      "slug": "maycee-barber"
-     },
-     "b": {
-      "name": "Carli Judice",
-      "slug": "carli-judice"
-     },
-     "status": "doubtful",
-     "notes": "Conflict: mmamania's Nov 5 card list shows \"Carli Judice vs. TBD\" (Barber out, no reason given; Wikipedia follows it), while mmafighting (Nov 2), ESPN, sherdog and agentmma still list Barber vs. Judice. No withdrawal report found. Treat as void-likely.",
-     "sources": [
-      "https://www.espn.com/mma/fightcenter/_/id/600061401/league/ufc",
-      "https://www.sherdog.com/events/UFC-335-Oliveira-vs-Lopes-114294",
-      "https://www.mmafighting.com/ufc/519170/ufc-releases-official-poster-for-ufc-335-and-the-charles-oliveira-vs-diego-lopes-bmf-title-fight",
-      "https://agentmma.com/events/ufc-335",
-      "https://heavy.com/sports/ufc/two-more-fights-added-ufc-335/",
-      "https://www.mmamania.com/ufc-fight-announcements/484091/violence-yair-rodriguez-returns-against-knockout-artist-steve-garcia-at-ufc-335"
-     ]
-    },
-    {
-     "order": 7,
-     "segment": "unknown",
      "weight_class": "Lightweight",
      "rounds": 3,
      "title": false,
@@ -1720,7 +1698,7 @@
      ]
     },
     {
-     "order": 8,
+     "order": 7,
      "segment": "unknown",
      "weight_class": "Middleweight",
      "rounds": 3,
@@ -1746,7 +1724,7 @@
      ]
     },
     {
-     "order": 9,
+     "order": 8,
      "segment": "unknown",
      "weight_class": "Welterweight",
      "rounds": 3,
@@ -1770,7 +1748,7 @@
      ]
     },
     {
-     "order": 10,
+     "order": 9,
      "segment": "unknown",
      "weight_class": "Women's Strawweight",
      "rounds": 3,
@@ -1793,7 +1771,7 @@
      ]
     },
     {
-     "order": 11,
+     "order": 10,
      "segment": "unknown",
      "weight_class": "Flyweight",
      "rounds": 3,
@@ -1821,7 +1799,7 @@
      ]
     },
     {
-     "order": 12,
+     "order": 11,
      "segment": "unknown",
      "weight_class": "Women's Bantamweight",
      "rounds": 3,
@@ -1847,7 +1825,7 @@
      ]
     },
     {
-     "order": 13,
+     "order": 12,
      "segment": "unknown",
      "weight_class": "Welterweight",
      "rounds": 3,
@@ -1869,8 +1847,41 @@
      ]
     }
    ],
-   "open_slots": [],
+   "open_slots": [
+    {
+     "weight_class": "Women's Flyweight",
+     "fighter": {
+      "name": "Carli Judice",
+      "slug": "carli-judice"
+     },
+     "note": "Opponent Maycee Barber reportedly withdrew (Nov 5). No replacement named as of Nov 6, 10:20Z. If the UFC re-confirms Barber, restore the bout from `removed`.",
+     "sources": [
+      "https://www.essentiallysports.com/ufc-mma-news-ufc-335-reportedly-faces-major-setback-as-female-fighter-pulls-out-due-to-unknown-reasons/",
+      "https://www.mmamania.com/ufc-fight-announcements/484091/violence-yair-rodriguez-returns-against-knockout-artist-steve-garcia-at-ufc-335",
+      "https://en.wikipedia.org/wiki/UFC_335"
+     ]
+    }
+   ],
    "removed": [
+    {
+     "weight_class": "Women's Flyweight",
+     "a": {
+      "name": "Maycee Barber",
+      "slug": "maycee-barber"
+     },
+     "b": {
+      "name": "Carli Judice",
+      "slug": "carli-judice"
+     },
+     "date": "2026-11-05",
+     "reason": "Barber reportedly out, reason undisclosed: MMA content creator Kevin (@realkevink) posted \"Maycee Barber is OUT of her #UFC335 fight ... per sources\" on Nov 5 (6:07 PM ET); mmamania's Nov 5 card list shows \"Carli Judice vs. TBD\"; Wikipedia updated Nov 6 (\"barber withdraws\"); EssentiallySports (Nov 6, 08:37Z) relays the report. No UFC statement yet, and no outlet has contradicted it since Nov 5. ESPN, sherdog and the mmafighting schedule still list Barber vs. Judice (stale, like Pyfer vs. Nickal).",
+     "sources": [
+      "https://www.essentiallysports.com/ufc-mma-news-ufc-335-reportedly-faces-major-setback-as-female-fighter-pulls-out-due-to-unknown-reasons/",
+      "https://www.mmamania.com/ufc-fight-announcements/484091/violence-yair-rodriguez-returns-against-knockout-artist-steve-garcia-at-ufc-335",
+      "https://en.wikipedia.org/wiki/UFC_335",
+      "https://www.espn.com/mma/fightcenter/_/id/600061401/league/ufc"
+     ]
+    },
     {
      "weight_class": "Middleweight",
      "a": {
@@ -1916,7 +1927,7 @@
      },
      "b": {
       "name": "Ryan Gandra",
-      "slug": null
+      "slug": "ryan-gandra"
      },
      "date": "2026-10-26",
      "reason": "Gandra withdrew; replaced by Damian Pinas",
@@ -1927,5 +1938,25 @@
     }
    ]
   }
- ]
+ ],
+ "verification": {
+  "verified_utc": "2026-11-06T10:10:17Z",
+  "previous_as_of": "2026-11-06T09:47:31Z",
+  "checked": "Every event date, venue, bout, weight class, round count and title flag against the ESPN fightcenter API (site.web.api.espn.com, UFC-fed; 4 of 5 events), Wikipedia event pages (wikitext and revision history as of Nov 6, 01:01Z), sherdog event pages, the mmafighting schedule, and news from the last 72 hours (sherdog, mmafighting, mmamania, bloodyelbow, heavy and cagesidepress feeds; web search). Every non-null slug was checked against the fighter's sherdog record: the last UFC fight (date and opponent) matches fighters.json for all 104 mapped fighters whose sherdog page was fetched, and the 7 others (Sousa, Andrusca, Osmanli, Rodríguez, Garcia, Garry, Amosov) match news reports of their last fights. The 11 null slugs have no UFC bouts on sherdog (true debuts). Prior UFC meetings recomputed from data/raw/ufc_fight_results.csv: only Albazi vs. Costa.",
+  "changes": [
+   "UFC 335: Barber vs. Judice moved from bouts (status doubtful) to removed; Carli Judice added to open_slots; bouts renumbered 1-12.",
+   "UFC 335: start_utc switched to the ESPN feed (22:00Z/00:00Z/02:00Z, three blocks) from mmafighting (22:00Z/01:00Z); Pasley-Tafa segment prelims -> early_prelims (ESPN).",
+   "UFC 334: note added that Melquizael Costa moves up from featherweight for the Gordon bout.",
+   "UFC Qatar: card_note records the ESPN vs. mmafighting main-card start conflict.",
+   "UFC Riyadh: Osmanli note clarifies his one recorded UFC bout (TUF 34 finale DQ loss), which some outlets ignore.",
+   "removed[]: roster slugs filled for fighters who are in fighters.json but were left null: Alvin Hines -> alvin-hines, Wes Schultz -> wes-schultz, Jefferson Nascimento -> jefferson-nascimento, Magomed Zaynukov -> magomed-zaynukov, Ryan Gandra -> ryan-gandra."
+  ],
+  "bout_counts": {
+   "total": 59,
+   "official": 39,
+   "reported": 19,
+   "rumoured": 1
+  },
+  "still_unreachable": "ufc.com, ufcstats.com, tapology.com (blocked); mmajunkie (DNS). Weigh-ins for Nov 7 are later on Nov 6 (after this check)."
+ }
 }

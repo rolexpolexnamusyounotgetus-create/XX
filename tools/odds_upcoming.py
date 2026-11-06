@@ -95,7 +95,8 @@ EXCHANGE = {'Polymarket', 'Kalshi', 'SXBet', 'ProphetX', '4casters', '4Cx', 'Nov
 SRC_PRIORITY = ['fightodds', 'bestfightodds', 'actionnetwork', 'covers']
 
 # Sanity limits for one two-way line: overround (sum of implied - 1).
-OVR_MIN, OVR_MAX = -0.01, 0.15
+OVR_MIN, OVR_MAX = -0.01, 0.15   # exchanges may quote near 0
+OVR_MIN_BOOK = 0.01              # a sportsbook moneyline under 1% margin is a parse error or stale (Circa ~3%)
 OVR_MAX_EXCH = 0.20          # illiquid exchange quotes can be wide; still bounded
 OUTLIER_LOGIT = 0.60         # drop a book whose no-vig logit is this far from the cross-book median
 LOW_TRUST = {'covers'}       # columns can carry other markets or stale lines: tighter band, no best price
@@ -898,11 +899,11 @@ def fetch_covers(F):
                 pairs.append(rows)
         for k, ((n1, c1), (n2, c2)) in enumerate(pairs):
             lines = {}
-            for j, col in enumerate(cols[1:]):       # cols[0] = Fighters; tds[0] = '+-' toggle
+            for j, col in enumerate(cols[1:]):       # cols[0] = Fighters (the row's <th>); tds[0] = Open
                 if col in ('Open', 'Fighters'):
                     continue
-                a1 = parse_am(c1[j + 1]) if j + 1 < len(c1) else None
-                a2 = parse_am(c2[j + 1]) if j + 1 < len(c2) else None
+                a1 = parse_am(c1[j]) if j < len(c1) else None
+                a2 = parse_am(c2[j]) if j < len(c2) else None
                 if a1 and a2:
                     lines[canon_book(col)] = {'ml': [a1, a2]}
             out.append({'src': 'covers', 'src_id': f'{slugify(title)}:{k}', 'event_title': title,
@@ -1205,10 +1206,10 @@ def assemble_lines(b):
                 o['open'] = orient(x['open'], sw)
             if x.get('best_worst'):
                 o['best_worst'] = orient(x['best_worst'], sw)
-            lim = OVR_MAX_EXCH if cls == 'exchange' else OVR_MAX
-            if not (OVR_MIN <= st['ovr'] <= lim):
+            lo, hi = (OVR_MIN, OVR_MAX_EXCH) if cls == 'exchange' else (OVR_MIN_BOOK, OVR_MAX)
+            if not (lo <= st['ovr'] <= hi):
                 o['ok'] = False
-                o['flag'] = f"overround {st['ovr']:+.3f} outside [{OVR_MIN}, {lim}]"
+                o['flag'] = f"overround {st['ovr']:+.3f} outside [{lo}, {hi}]"
             else:
                 o['ok'] = True
             obs.append(o)
@@ -1609,9 +1610,11 @@ METHODS_DOC = {
     'one_line_per_book': 'a book seen on several sites counts once; preferred source order '
                          'fightodds > bestfightodds > actionnetwork > covers; other copies are kept in '
                          'other_source_lines',
-    'sanity': f'a line is rejected when its overround is outside [{OVR_MIN}, {OVR_MAX}] '
-              f'({OVR_MAX_EXCH} for exchanges) or, with 4+ books, its no-vig logit is more than '
-              f'{OUTLIER_LOGIT} from the cross-book median; rejected lines are kept in rejected_lines',
+    'sanity': f'a line is rejected when its overround is outside [{OVR_MIN_BOOK}, {OVR_MAX}] for sportsbooks '
+              f'([{OVR_MIN}, {OVR_MAX_EXCH}] for exchanges) or, with 4+ books, its no-vig logit is more than '
+              f'{OUTLIER_LOGIT} from the cross-book median; low-trust sources ({sorted(LOW_TRUST)}) must sit within '
+              f'{OUTLIER_LOGIT_LOW} logit of the trusted books\' median and never set the best price; rejected '
+              f'lines are kept in rejected_lines',
     'open': 'market open: logit-mean of Shin no-vig over fightodds.io per-book opening lines (sportsbooks '
             'only; exchange openers are illiquid placeholders and are ignored); plus Action Network\'s opener',
     'props': 'bestfightodds props: two_way = median over books of Shin no-vig P(yes) when both sides are '

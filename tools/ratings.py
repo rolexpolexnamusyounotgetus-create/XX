@@ -2046,5 +2046,118 @@ def main():
     log("wrote %s (%.1f MB) in %.0fs" % (args.out, os.path.getsize(args.out) / 1e6, time.time() - t0))
 
 
+# =====================================================================================================
+# report tables (python3 tools/ratings.py tables) printed from ratings.json
+# =====================================================================================================
+def _f(x, d=4):
+    return "" if x is None else ("%.*f" % (d, x))
+
+
+def tables(path=OUT_JSON, top=10):
+    J = json.load(open(path))
+    S, M = J["systems"], J["meta"]
+    rk = M.get("ranking_scores_2020_2023", {})
+    order = [k for k in ["elo_ref", "elo_k", "elo_full", "glicko2", "trueskill", "trueskill_mov", "whr", "whr_mov",
+                         "elo_rounds", "whr_rounds", "dims", "stack"] if k in S]
+    print("### Results (decisive fights; tune = 2019-2023 prequential, rank = 2020-2023, test = 2024+ held out)\n")
+    print("| System | Family | Tune LL | Rank LL 2020-23 | Test LL [95% CI] | Test Brier | Test acc | ECE | "
+          "Slope | dLL vs elo_ref [95% CI] | P(better) |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|")
+    for k in order:
+        s = S[k]
+        t, b, c = s["test_2024_plus"], s["bootstrap"], s["calibration"]
+        tune = s["tune_2019_2023"]["log_loss"]
+        rkk = rk.get(k, s.get("cv_2020_2023"))
+        d = b.get("d_log_loss_vs_elo_ref")
+        print("| %s | %s | %s | %s | %s [%s, %s] | %s | %.1f%% | %s | %s | %s [%s, %s] | %s |" % (
+            k, s["family"], _f(tune), _f(rkk), _f(t["log_loss"]), _f(b["log_loss_ci95"][0]),
+            _f(b["log_loss_ci95"][1]), _f(t["brier"]), 100 * t["accuracy"], _f(c["ece"], 3),
+            _f(c["slope_no_intercept"], 2), ("%+.4f" % d) if d is not None else "",
+            ("%+.4f" % b["d_log_loss_ci95"][0]) if "d_log_loss_ci95" in b else "",
+            ("%+.4f" % b["d_log_loss_ci95"][1]) if "d_log_loss_ci95" in b else "",
+            _f(b.get("p_better_than_elo_ref"), 2)))
+    print("\nTest n = %d, tune n = %d. Best single system by the 2020-2023 rank score: **%s**.\n"
+          % (M["n_test"], M["n_tune"], M["best_single_by_tuning"]))
+    print("### Time-ordered check (parameters chosen on 2019-2021 only, scored on 2022-2023)\n")
+    print("| System | 2022-23 LL, tuned on 2019-23 (in-window) | 2022-23 LL, tuned on 2019-21 only |")
+    print("|---|---|---|")
+    for k in order:
+        s = S[k]
+        if s.get("time_ordered_check"):
+            print("| %s | %s | %s |" % (k, _f(s["inner_2022_2023"]), _f(s["time_ordered_check"]["score_2022_2023"])))
+    print("\n### Calibration on 2024+ (favourite orientation)\n")
+    best = M["best_single_by_tuning"]
+    for k in dict.fromkeys(["elo_ref", best, "stack"]):
+        c = S[k]["calibration"]
+        print("**%s**: ECE %s, slope (no intercept) %s, with intercept slope %s / A-side intercept %s\n"
+              % (k, _f(c["ece"], 3), _f(c["slope_no_intercept"], 3), _f(c["slope_with_intercept"], 3),
+                 _f(c["intercept_A_side"], 3)))
+        print("| Favourite p | n | Mean predicted | Observed |")
+        print("|---|---|---|---|")
+        for bb in c["bins_favourite"]:
+            print("| %.2f-%.2f | %d | %.3f | %.3f |" % (bb["lo"], bb["hi"], bb["n"], bb["pred"], bb["obs"]))
+        print()
+    print("### Tuned parameters\n")
+    for k in order:
+        if "params" in S[k]:
+            print("- **%s**: %s" % (k, ", ".join("%s=%s" % (a, b) for a, b in S[k]["params"].items())))
+    if "dims" in S:
+        print("- **dims** per-dimension (q per year, v0, dispersion): %s" % {d: (v["q"], v["v0"], v["k"])
+                                                                         for d, v in S["dims"]["dim_params"].items()})
+        print("- **dims** winner model: l2=%s, coefficients %s" % (S["dims"]["model"]["l2"],
+              {k: round(v, 3) for k, v in S["dims"]["model"]["coef"].items()}))
+    if "stack" in S:
+        print("- **stack**: members %s, weights %s" % (S["stack"]["members"], [round(w, 3) for w in S["stack"]["weights"]]))
+    A = J.get("analysis", {})
+    if A.get("residual_beyond_best"):
+        print("\n### Residual signal beyond %s (fit on 2019-2023; one feature at a time)\n" % best)
+        print("| Feature (A minus B) | Coef | SE | z | Test dLL vs rescaled rating |")
+        print("|---|---|---|---|---|")
+        for k, v in A["residual_beyond_best"].items():
+            print("| %s | %+.4f | %.4f | %+.1f | %s |" % (k, v["coef"], v["se"], v["coef"] / v["se"],
+                                                       ("%+.5f" % v["test_dll_vs_rating_rescaled"])
+                                                       if "test_dll_vs_rating_rescaled" in v else ""))
+    if A.get("test_by_min_prior_fights"):
+        print("\n### 2024+ log loss by the less experienced fighter's prior UFC fights\n")
+        print("| Prior fights | n | %s | elo_ref |" % best)
+        print("|---|---|---|---|")
+        for k, v in A["test_by_min_prior_fights"].items():
+            print("| %s | %d | %s | %s |" % (k, v["n"], _f(v[best]), _f(v["elo_ref"])))
+    mk = A.get("market_benchmark")
+    if mk and "test_market" in mk:
+        print("\n### Market benchmark (closing line; known only minutes before the bout)\n")
+        print("| On the same 2024+ fights (n=%d) | Log loss | Brier | Accuracy |" % mk["test_n"])
+        print("|---|---|---|---|")
+        for lab, key in (("Market close (power de-vig)", "test_market"), (best, "test_best_same_fights"),
+                         ("Market + %s (weights fit on 2019-2023)" % best, "test_market_plus_best")):
+            m = mk[key]
+            print("| %s | %s | %s | %.1f%% |" % (lab, _f(m["log_loss"]), _f(m["brier"]), 100 * m["accuracy"]))
+        print("\nStack weights (market logit, rating logit): %s; correlation of logits on test %s."
+              % (mk["stack_coef_market_rating"], mk.get("corr_logit_market_best")))
+    print("\n### Current ratings: top %d per division (WHR-family best system, mean - 1 sd ordering)\n" % top)
+    R = J["roster"]
+    key = next((k for k in ("whr_mov", "whr", "whr_rounds", "elo_full") if any(k in r for r in R.values())), None)
+    snap = dt.date.fromisoformat(M["snapshot"])
+    divs = defaultdict(list)
+    for slug, r in R.items():
+        if key in r and r.get("division") and r.get("last_fight"):
+            if (snap - dt.date.fromisoformat(r["last_fight"])).days <= 730:
+                v = r[key]
+                divs[r["division"]].append((v["mu"] - v.get("sd", 0), slug, r))
+    for dv in B.DIVISIONS:
+        if dv not in divs:
+            continue
+        rows = sorted(divs[dv], reverse=True)[:top]
+        print("**%s** (%s; active in the last 2 years): " % (dv, key) + "; ".join(
+            "%s %.2f +/- %.2f" % (r["name"], r[key]["mu"], r[key].get("sd", 0)) for _, _, r in rows) + "\n")
+    if J.get("matchups"):
+        print("### Matchups from current ratings\n")
+        for k, v in J["matchups"].items():
+            print("- %s: %s" % (k.replace("__", " vs "), v))
+
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "tables":
+        tables(sys.argv[2] if len(sys.argv) > 2 else OUT_JSON)
+    else:
+        main()

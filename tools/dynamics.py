@@ -1559,8 +1559,6 @@ def save(J, parts):
     os.replace(tmp, OUT_JSON)
 
 
-if __name__ == "__main__":
-    main()
 
 
 def vol_check(d, mnf, reps=30, seed=5):
@@ -1596,3 +1594,7 @@ def vol_check(d, mnf, reps=30, seed=5):
             cs.append(np.corrcoef(r[:, 0], r[:, 1])[0, 1])
         out[k] = {"mean": float(np.mean(cs)), "sd": float(np.std(cs))}
     return out
+
+
+if __name__ == "__main__":
+    main()

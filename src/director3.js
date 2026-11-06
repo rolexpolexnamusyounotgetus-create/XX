@@ -367,8 +367,9 @@
   }
 
   // ------------------------------------------------------------------ engine stats from the event stream
+  // same names as the engine's per-round stats (rd.st.A / B); h/b/l count every position, sh/sb/sl standing only
   var STAT_KEYS = ["sig_att", "sig_lnd", "h_att", "h_lnd", "b_att", "b_lnd", "l_att", "l_lnd", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd",
-    "kd", "td_att", "td_lnd", "ctrl", "sub_att", "rev", "pass", "up", "hurt"];
+    "sh_lnd", "sb_lnd", "sl_lnd", "kd", "td_att", "td_lnd", "ctrl", "sub_att", "rev", "pass", "up", "hurt"];
   var NK = STAT_KEYS.length, SI = {};
   for (var si = 0; si < NK; si++) SI[STAT_KEYS[si]] = si;
   var TGT_ATT = [SI.h_att, SI.b_att, SI.l_att], LOC_ATT = { dist: SI.d_att, clinch: SI.c_att, ground: SI.g_att };
@@ -378,7 +379,7 @@
       case "miss": case "hit": case "hurt": case "kd": case "fin":
         var land = e.k !== "miss", ta = TGT_ATT[e.tg != null ? e.tg : 0], la = LOC_ATT[e.loc] != null ? LOC_ATT[e.loc] : SI.d_att;
         v[o + SI.sig_att]++; v[o + ta]++; v[o + la]++;
-        if (land) { v[o + SI.sig_lnd]++; v[o + ta + 1]++; v[o + la + 1]++; }
+        if (land) { v[o + SI.sig_lnd]++; v[o + ta + 1]++; v[o + la + 1]++; if (e.loc !== "ground") v[o + [SI.sh_lnd, SI.sb_lnd, SI.sl_lnd][e.tg != null ? e.tg : 0]]++; }
         if (e.k === "kd" || (e.k === "fin" && e.how === "KO")) v[o + SI.kd]++;
         if (e.k === "hurt") v[o + SI.hurt]++;
         break;
@@ -964,7 +965,7 @@
         } else if (k === "up") {
           fc.up[w]++;
           c.n = ordinal(fc.up[w]);
-          if (r() < 0.85) txt = voice.say(b.st === 1 ? T.upClinch : T.up, c, ["{a} is back up for the {n} time."]);
+          txt = voice.say(b.st === 1 ? T.upClinch : T.up, c, ["{a} is back up for the {n} time."]);
         } else if (k === "reset") {
           fc.reset++; c.n = ordinal(fc.reset);
           txt = voice.say(T.reset, c, ["The referee's {n} restart of the fight."]);
@@ -1236,8 +1237,7 @@
     if (prev && NEXT[prev]) for (k in NEXT[prev]) if (w[k] != null) w[k] *= NEXT[prev][k];
     if (!prev && b.ci === 0) for (k in FIRST) if (w[k] != null) w[k] *= FIRST[k];
     if (b.counter && tg === 0) { if (w.hook != null) w.hook *= 1.4; if (w.cross != null) w.cross *= 1.25; if (w.jab != null) w.jab *= 0.7; }
-    if (b.kd || b.fin) for (k in w) w[k] *= KDP[k] != null ? KDP[k] : 1;
-    else if (b.hurt) for (k in w) w[k] *= Math.sqrt(KDP[k] != null ? KDP[k] : 1);
+    if (b.kd || b.fin || b.hurt) for (k in w) w[k] *= KDP[k] != null ? KDP[k] : 1;
     if (b.fin && b.how === "LEG" && w.calf != null) w.calf *= 1.5;
     if (b.fin && dt && dt.tgt === tg) {
       var f = {}, any = false;

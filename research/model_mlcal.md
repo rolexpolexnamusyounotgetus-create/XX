@@ -7,7 +7,61 @@ validation, bootstrap CIs), `tools/mlcal_spec_engine3.json` (which v3 parameters
 rating into the engine), `tests/test_mlcal.js` (23 checks), outputs `data/derived/mlcal_candidates.json`,
 `data/derived/mlcal_val_ledger.json`, `data/derived/mlcal_priors_asof.json`.
 
-__RESULTS__
+## Results (Nov 6, 2026)
+
+**Verdict.** The harness works end to end and tells the truth. In the requested small-budget run on
+engine v3, no candidate beat the current parameters on validation, so nothing should be adopted. The
+current v3 parameters beat the walk-forward Elo by 0.028 winner log loss [95% CI 0.010, 0.046] on 857
+validation fights and are well calibrated (symmetric ECE 0.015). Run 1 also showed why small tuning
+windows overfit (fight-sample noise, not Monte Carlo noise) and led to the wide-window defaults below.
+tools/calibrate.js did not exist when this was written (no tools/calibrate.js and no
+data/derived/calibration.json), so the comparison is against the parameter set it will replace:
+src/params3.js `3.0.0-selfcal-2026-11-06` (league-average self-calibration from tests/test_engine3.js),
+frozen at engine hash a6904fc06b98 / params hash 940478b62032.
+
+### Run 1: the requested small budget
+
+30 TPE trials + 32 CMA-ES evaluations (4 generations of 8, warm-started at the TPE incumbent), 16
+dimensions (combA, combB, kPM, kAcc, kKD, kTdPM, kTdAcc, strikeScale, kdScale, kdInstant, subConvScale,
+tdOddsScale, form.out, a joint form.pow/form.chin multiplier, form.vol, judge.sharedSd), 600-fight tuning
+window, rungs 15/30/60 sims, 2 workers. CPU: 165 s tuning, 229 s in all (1,112 s wall on a machine at
+load average ~40). Successive halving stopped 8 TPE trials at 15 sims and 11 at 30; 11 reached 60.
+CMA ranked 32 candidates at 30 sims and promoted 16 to 60.
+
+| set | tuning window (600, 60 sims) | confirmation (600 other train, 60 sims) | validation objective | validation winner LL [95% CI] | 7-bin LL | Brier | accuracy | sym. ECE | paired d winner LL vs current [95% CI] |
+|---|---|---|---|---|---|---|---|---|---|
+| current params3 | 1.6000 | 1.5654 | **1.4719** | **0.6486** [0.6316, 0.6657] | **1.6136** | **0.2284** | **0.621** | **0.015** | - |
+| rank 1 (cma3_6) | 1.5815 | 1.5604 | 1.4851 | 0.6507 [0.6334, 0.6691] | 1.6172 | 0.2293 | 0.616 | 0.044 | +0.0021 [-0.0052, +0.0102] |
+| rank 2 (cma2_7) | 1.5760 | 1.5622 | 1.4977 | 0.6540 [0.6398, 0.6683] | 1.6190 | 0.2309 | 0.607 | 0.028 | +0.0054 [-0.0024, +0.0138] |
+| rank 3 (tpe16) | 1.5756 | 1.5888 | 1.4861 | 0.6522 [0.6374, 0.6669] | 1.6269 | 0.2300 | 0.620 | 0.032 | +0.0036 [-0.0049, +0.0125] |
+| walk-forward Elo | | | | 0.6768 [0.6661, 0.6875] | | | | | |
+
+Validation: 857 fights, 2024-01-13..2025-12-13, both corner orders x 80 sims. Objective values are only
+comparable within a column (more sims means less Monte Carlo inflation).
+
+What happened:
+- The search found real improvements on the tuning window: -0.024 objective for the best three.
+- Confirmation on 600 other train fights cut that to -0.005 / -0.003 for the CMA candidates and reversed
+  it for tpe16 (+0.023). Validation agreed: all three were slightly worse than the current set, mostly
+  through the base-rate penalty (rank 1: KD per 15 term 0.012 vs 0.001).
+- Why: common random numbers remove the Monte Carlo noise from comparisons, but not the fight-sampling
+  noise. The per-fight paired difference between two parameter sets has sd 0.24, so on 600 fights a
+  candidate-vs-baseline comparison has SE about 0.010; picking the best of about 60 candidates buys about
+  two SEs of luck, which is the 0.02 that vanished. At 1,300 fights the SE falls to about 0.0066.
+- Era drift: the tuner raised kdScale to fit 2019-2023 (0.295 KD per 15 in train), but 2024-25 has 0.250,
+  so the change cost base-rate error on validation. Base-rate targets move by era; a future spec can weight
+  recent seasons or tune era-sensitive scales on 2022-2023 only.
+- TPE importance (fANOVA over the complete trials): kAcc 0.22, kdScale 0.18, form.powchin 0.08,
+  tdOddsScale 0.08, kKD 0.07, combB 0.06, kdInstant 0.06, judge.sharedSd 0.06; strikeScale and the sub
+  scales barely matter for this objective.
+- Current set on validation, simulated vs observed base rates: KO share 28.3% vs 29.1%, SUB 14.8% vs 16.9%,
+  decisions 55.5% vs 53.6%, R1 share of 3-round finishes 49.4% vs 52.4%, sig landed per 15 61.0 vs 58.0, KD
+  per 15 0.269 vs 0.250, TD per 15 1.39 vs 1.42, control per 15 169 vs 169 s, split/majority share of
+  decisions 17.7% vs 18.5%. Stat lines: sig landed MAE 25.6 per fighter, KD MAE 0.32, TD MAE 1.14,
+  correlation of predicted vs actual sig-landed differential 0.41.
+
+__RUNS23__
+
 
 ## What it does
 

@@ -597,6 +597,12 @@ def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, model=No
     return res.x, M
 
 
+def judge_index(rows, min_cards=1):
+    c = Counter(cd[0] for r in rows for cd in r["cards"] if cd[0] != "unknown")
+    keys = sorted(k for k, n in c.items() if n >= min_cards)
+    return {k: i for i, k in enumerate(keys)}
+
+
 def to_np(th):
     return {k: np.asarray(v) for k, v in th.items()}
 
@@ -856,6 +862,239 @@ def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home"
             pickle.dump({"test_year": test_year, "years_eval": years_eval, "tau_eb": tau_eb,
                          "tau_mults": list(tau_mults), "models": res}, fh)
     return res
+
+
+# ================================================================================================
+# referees
+# ================================================================================================
+SINGLE_RE = re.compile(r"^(Punch|Kick|Knee|Elbow|Spinning Back Fist|Spinning Back Kick|Flying Knee|Spinning Back Elbow|"
+                       r"Headbutt|Slam|Stomp) ")
+DIV_GROUP = {"Women's Strawweight": "W", "Women's Flyweight": "W", "Women's Bantamweight": "W",
+             "Women's Featherweight": "W", "Flyweight": "FLY-BW", "Bantamweight": "FLY-BW",
+             "Featherweight": "FW-LW", "Lightweight": "FW-LW", "Welterweight": "WW-MW", "Middleweight": "WW-MW",
+             "Light Heavyweight": "LHW-HW", "Heavyweight": "LHW-HW", "Catch Weight": "FW-LW", "Open Weight": "LHW-HW"}
+
+
+def referee_units(F, S):
+    """Fighter-round and fight-level tables for the referee models (fights with round stats)."""
+    Fh = F[F.has_stats].copy()
+    Fh["referee"] = Fh["REFEREE"].fillna("").str.strip()
+    Fh["dgrp"] = Fh.division.map(DIV_GROUP).fillna("FW-LW")
+    Fh["single"] = Fh.det.str.match(SINGLE_RE.pattern)
+    cols = ["fid", "referee", "dgrp", "year", "title", "five", "single", "DATE"]
+    U = S.merge(Fh[cols], on="fid", how="inner")
+    U["last"] = U.rnd == U.end_round
+    U["ko_fin"] = U["last"] & (U.winner == U.idx) & (U.cat == "KO/TKO") & (U.ko_kind == "strikes")
+    U["stand_l"] = U.dist_l + U.clinch_l
+    return Fh, U
+
+
+def design_fixed(df, kind):
+    """Fixed-effect design: division group, era, round, five-round, title (+ unit-specific terms)."""
+    cols = {}
+    for g in ["W", "FLY-BW", "WW-MW", "LHW-HW"]:
+        cols["div_" + g] = (df.dgrp == g).astype(float)
+    yr = (df.year - 2015) / 10.0
+    cols["yr"] = yr
+    cols["yr2"] = yr ** 2
+    if "rnd" in df:
+        cols["rnd"] = (df.rnd - 1).astype(float)
+    cols["five"] = df.five.astype(float)
+    cols["title"] = df.title.astype(float)
+    if kind == "kd":
+        cols["kd2"] = (df.kd >= 2).astype(float)
+        cols["okd"] = (df.o_kd >= 1).astype(float)
+        cols["log_stand"] = np.log1p(df.stand_l)
+    if kind in ("single", "follow"):
+        cols["kd2"] = (df.kd >= 2).astype(float)
+    X = pd.DataFrame(cols, index=df.index)
+    X.insert(0, "const", 1.0)
+    return X
+
+
+def glmm_fit(y, X, g, family, offset=None, tau=0.3, ref_levels=None, iters=60, ridge_b=1e-3):
+    """Random-intercept GLM by penalized Newton: eta = X b + u_g + offset, u ~ N(0, tau^2).
+    family: 'binomial' or 'poisson'. Returns dict with beta, u (per level), u_sd (Laplace), loglik."""
+    y = np.asarray(y, float)
+    X = np.asarray(X, float)
+    off = np.zeros(len(y)) if offset is None else np.asarray(offset, float)
+    levels = ref_levels if ref_levels is not None else sorted(set(g))
+    li = {k: i for i, k in enumerate(levels)}
+    gi = np.array([li.get(k, -1) for k in g])
+    p, G = X.shape[1], len(levels)
+    use_re = tau > 0
+    Z = np.zeros((len(y), G))
+    ok = gi >= 0
+    Z[np.nonzero(ok)[0], gi[ok]] = 1.0
+    A = np.hstack([X, Z]) if use_re else X
+    pen = np.r_[np.full(p, ridge_b), np.full(G, 1.0 / tau ** 2)] if use_re else np.full(p, ridge_b)
+    th = np.zeros(A.shape[1])
+    if family == "poisson":
+        th[0] = math.log(max(y.sum(), 0.5) / max(np.exp(off).sum(), 1e-9))
+    for _ in range(iters):
+        eta = A @ th + off
+        if family == "binomial":
+            mu = 1 / (1 + np.exp(-eta))
+            W = mu * (1 - mu)
+        else:
+            mu = np.exp(np.clip(eta, -30, 30))
+            W = mu
+        grad = A.T @ (y - mu) - pen * th
+        H = (A * W[:, None]).T @ A + np.diag(pen)
+        step = np.linalg.solve(H, grad)
+        th += step
+        if np.abs(step).max() < 1e-8:
+            break
+    eta = A @ th + off
+    if family == "binomial":
+        mu = 1 / (1 + np.exp(-eta))
+        ll = float(np.sum(y * np.log(mu + 1e-12) + (1 - y) * np.log(1 - mu + 1e-12)))
+    else:
+        mu = np.exp(eta)
+        ll = float(np.sum(y * eta - mu))
+    cov = np.linalg.inv(H)
+    out = {"beta": th[:p], "beta_sd": np.sqrt(np.diag(cov)[:p]), "levels": levels, "tau": tau, "loglik": ll,
+           "family": family, "cols": None}
+    if use_re:
+        out["u"] = th[p:]
+        out["u_sd"] = np.sqrt(np.diag(cov)[p:])
+        out["n"] = Z.sum(0)
+        out["events"] = (Z * y[:, None]).sum(0)
+        # Laplace log marginal likelihood (beta profiled)
+        Hbb = H[p:, p:]
+        sign, logdet = np.linalg.slogdet(Hbb)
+        out["log_marginal"] = float(ll - 0.5 * np.sum(th[p:] ** 2) / tau ** 2 - G * math.log(tau) - 0.5 * logdet)
+    return out
+
+
+def glmm_predict(fit, X, g, offset=None):
+    X = np.asarray(X, float)
+    eta = X @ fit["beta"] + (0 if offset is None else np.asarray(offset, float))
+    if "u" in fit:
+        li = {k: i for i, k in enumerate(fit["levels"])}
+        eta = eta + np.array([fit["u"][li[k]] if k in li else 0.0 for k in g])
+    return 1 / (1 + np.exp(-eta)) if fit["family"] == "binomial" else np.exp(eta)
+
+
+def unit_loss(fit, y, X, g, offset=None):
+    mu = glmm_predict(fit, X, g, offset)
+    y = np.asarray(y, float)
+    if fit["family"] == "binomial":
+        mu = np.clip(mu, 1e-9, 1 - 1e-9)
+        return -(y * np.log(mu) + (1 - y) * np.log(1 - mu))
+    from scipy.special import gammaln
+    return mu - y * np.log(np.maximum(mu, 1e-12)) + gammaln(y + 1)
+
+
+REF_UNITS = {
+    "kd_finish": "P(the knockdown scorer finishes by KO/TKO in the same round | fighter-round with >= 1 KD)",
+    "kd_single": "P(the finishing blow is a single strike, i.e. stopped on the knockdown blow | KD-round KO finish) "
+                 "- proxy for a quick stoppage (no follow-up flurry)",
+    "kd_follow": "ground strikes landed by the finisher in the KD-round KO finish (Poisson multiplier) - proxy for "
+                 "the time from knockdown to stoppage",
+    "stand_tko": "standing TKO without a knockdown: hazard per landed standing (distance + clinch) sig strike, "
+                 "rounds where the striker scored no KD",
+    "gnp_tko": "ground-and-pound stoppage without a knockdown: hazard per landed ground sig strike",
+    "any_ko": "P(fight ends by KO/TKO from strikes) per fight, controls for division/era/format (overall index)",
+    "doctor": "P(doctor stoppage) per fight",
+    "dq": "P(disqualification) per fight",
+}
+
+
+def ref_unit_frames(F, S):
+    Fh, U = referee_units(F, S)
+    out = {}
+    kd = U[U.kd >= 1].copy()
+    out["kd_finish"] = (kd, kd.ko_fin.astype(float), design_fixed(kd, "kd"), None, "binomial")
+    kf = kd[kd.ko_fin].copy()
+    out["kd_single"] = (kf, kf.single.astype(float), design_fixed(kf, "single"), None, "binomial")
+    out["kd_follow"] = (kf, kf.ground_l.astype(float), design_fixed(kf, "follow"), None, "poisson")
+    nk = U[(U.kd == 0) & (U.stand_l > 0)].copy()
+    y = (nk.ko_fin & nk.ko_pos.isin(["distance", "clinch"])).astype(float)
+    out["stand_tko"] = (nk, y, design_fixed(nk, "stand"), np.log(nk.stand_l), "poisson")
+    ng = U[(U.kd == 0) & (U.ground_l > 0)].copy()
+    y = (ng.ko_fin & (ng.ko_pos == "ground")).astype(float)
+    out["gnp_tko"] = (ng, y, design_fixed(ng, "gnp"), np.log(ng.ground_l), "poisson")
+    fx = Fh[Fh.five_min].copy()
+    fx["five"] = fx.five.astype(bool)
+    out["any_ko"] = (fx, ((fx.cat == "KO/TKO") & (fx.ko_kind == "strikes")).astype(float), design_fixed(fx, "fight"),
+                     None, "binomial")
+    out["doctor"] = (fx, (fx.ko_kind == "doctor").astype(float), design_fixed(fx, "fight"), None, "binomial")
+    out["dq"] = (fx, (fx.cat == "DQ").astype(float), design_fixed(fx, "fight")[["const", "yr"]], None, "binomial")
+    return out, Fh
+
+
+TAU_GRID = [0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8]
+
+
+def ref_walkforward(units, tune=(2019, 2023), test_from=2024):
+    """Tau per unit by held-out loss on 2019-2023 (fit before 2019); report 2024+ with yearly refits
+    (fit on everything before each test year) with and without referee effects."""
+    res = {}
+    for name, (df, y, X, off, fam) in units.items():
+        yr = df.year.to_numpy()
+        g = df.referee.to_numpy()
+        y = np.asarray(y, float)
+        Xa = X.to_numpy(float)
+        o = None if off is None else np.asarray(off, float)
+        tr = yr < tune[0]
+        va = (yr >= tune[0]) & (yr <= tune[1])
+        losses = {}
+        for tau in TAU_GRID:
+            f = glmm_fit(y[tr], Xa[tr], g[tr], fam, None if o is None else o[tr], tau=tau)
+            losses[tau] = float(unit_loss(f, y[va], Xa[va], g[va], None if o is None else o[va]).mean())
+        tau_star = min(losses, key=losses.get)
+        # Laplace marginal on the training window (< 2024) as a cross-check
+        trn = yr < test_from
+        lm = {}
+        for tau in TAU_GRID[1:]:
+            f = glmm_fit(y[trn], Xa[trn], g[trn], fam, None if o is None else o[trn], tau=tau)
+            lm[tau] = f["log_marginal"]
+        tau_lm = max(lm, key=lm.get)
+        # test with yearly refits
+        L0, L1, nt = [], [], 0
+        for ty in sorted(set(yr[yr >= test_from])):
+            trw = yr < ty
+            te = yr == ty
+            f0 = glmm_fit(y[trw], Xa[trw], g[trw], fam, None if o is None else o[trw], tau=0.0)
+            f1 = glmm_fit(y[trw], Xa[trw], g[trw], fam, None if o is None else o[trw], tau=max(tau_star, 1e-9))
+            L0.append(unit_loss(f0, y[te], Xa[te], g[te], None if o is None else o[te]))
+            L1.append(unit_loss(f1, y[te], Xa[te], g[te], None if o is None else o[te]))
+        L0, L1 = np.concatenate(L0), np.concatenate(L1)
+        res[name] = {"n_units": int(len(y)), "events": float(y.sum()), "tau_tuned": tau_star,
+                     "tune_loss": losses, "tau_laplace_pre2024": tau_lm,
+                     "test_n": int(len(L0)), "test_events": float(y[yr >= test_from].sum()),
+                     "test_loss_league": float(L0.mean()), "test_loss_ref": float(L1.mean()),
+                     "test_delta": boot_diff(L1, L0), "family": fam}
+        log(f"  ref {name}: n {len(y)}, events {y.sum():.0f}, tau* {tau_star} (Laplace {tau_lm}), "
+            f"2024+ loss {L0.mean():.5f} -> {L1.mean():.5f}")
+    return res
+
+
+def ref_final(units, taus, min_show=15, deductions=None):
+    """Final per-referee effects fit on all data (for the engine table)."""
+    out = {}
+    for name, (df, y, X, off, fam) in units.items():
+        tau = max(taus.get(name, 0.0), 0.0)
+        f = glmm_fit(np.asarray(y, float), X.to_numpy(float), df.referee.to_numpy(), fam,
+                     None if off is None else np.asarray(off, float), tau=max(tau, 1e-9))
+        f["cols"] = list(X.columns)
+        # league reference rate (mean prediction with u = 0 over the recent era)
+        rec = df.year.to_numpy() >= 2019
+        Xr = X.to_numpy(float)[rec]
+        o = None if off is None else np.asarray(off, float)[rec]
+        eta0 = Xr @ f["beta"] + (0 if o is None else o)
+        if fam == "binomial":
+            base = float((1 / (1 + np.exp(-eta0))).mean())
+        else:
+            base = float(np.exp(eta0).sum() / (np.exp(o).sum() if o is not None else len(eta0)))
+        f["league_recent"] = base
+        f["recent_n"] = {}
+        yrs = df.year.to_numpy()
+        for k in f["levels"]:
+            f["recent_n"][k] = int(((df.referee.to_numpy() == k) & (yrs >= 2019)).sum())
+        out[name] = f
+    return out
 
 
 def load_all():

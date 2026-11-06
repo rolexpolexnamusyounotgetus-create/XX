@@ -34,7 +34,7 @@ Built Nov 6, 2026.
   strikes absorbed, SE 7%), but that estimate is biased upward by careers that end on a KO. Treat it as an upper
   bound.
 - **Fight-night heterogeneity.** Per-fight knockdown rates vary beyond the model with a lognormal sd of
-  0.77-0.83. About a third of the variance is shared by both men (sd 0.47-0.48). The v3 engine's shared
+  0.77-0.83. About a quarter to a third of the variance is shared by both men (sd 0.47-0.48). The v3 engine's shared
   `form.vol` 0.60 is too high, and its direction-specific power x chin sd (0.64) is about right.
 - **The league knockdown level moves a lot, and the engine should track it.** Knockdowns per 1,000 standing head
   strikes were 5.95 during the UFC's 2024 glove trial (UFC 302 to UFC 309), against 8.25 before and 8.98 after.
@@ -42,9 +42,10 @@ Built Nov 6, 2026.
   the trailing 730 days and 11.71 over the trailing 365.
 - **KO/TKO loss per fight** (logistic, pre-fight features only): held-out log loss 0.4160, against 0.4378 for
   Elo + division. The improvement is 66 log-loss units (SE 11). Deciles are calibrated within a few points.
-- **Volkanovski vs Gaethje** (155 lb, 5 rounds): Gaethje drops Volkanovski about 1.8 times more often per landed
-  standing head strike than the reverse. Per fight, P(KO/TKO loss) is about 22% for each man. Numbers and
-  intervals are in section 8.
+- **Volkanovski vs Gaethje** (155 lb, 5 rounds, 730-day level): Gaethje drops Volkanovski 1.04 times per 100
+  landed standing head strikes (90%: 0.40-1.97). Volkanovski drops Gaethje 0.58 times (0.21-1.16), so Gaethje's
+  rate is 1.8 times higher. Per fight, P(KO/TKO loss) is 21.6% for Volkanovski (18.1-25.8) and 22.9% for Gaethje
+  (18.5-28.4).
 
 ## 1. Data and walk-forward features
 
@@ -123,7 +124,7 @@ Paired differences on 2024+:
 | F + body terms vs F | -11.2 (6.9); +1.4 on 2019-2023, so not adopted |
 | F without prior-KD covariates vs F | -5.2 (7.1); +21 on 2019-2023, so not adopted |
 
-On the backtest-eligible subset (both men had an earlier UFC fight, 2,379 rows), F beats M0L by 187.
+On the backtest-eligible subset (both men had an earlier UFC fight, 2,379 rows), F beats M0L by 187.8.
 
 **The test period runs hot.** Observed/expected under F is 0.81 in 2024, 1.25 in 2025 and 1.24 in 2026. The
 trailing level lags the 2025-26 surge (section 6). Every model shares that offset, so the comparisons stay fair.
@@ -231,7 +232,7 @@ power falls by exp(8 x (-0.028 - 0.021)) = **×0.68**.
 
 **Prior knockdowns absorbed enter twice.** They raise u_d by (alpha + Y + 1) / (alpha + Y) and lower the
 covariate term by ×0.86-0.91 each. The net effect of one more knockdown is ×1.21 for a fighter with none so far
-and 3 expected, and ×1.03 for one who has already absorbed 4. The evidence has diminishing returns.
+and 3 expected, and ×1.04 for one who has already absorbed 4. The evidence has diminishing returns.
 
 The negative prior-KD coefficients undo part of u's reaction. The version without them did worse on 2019-2023
 (+21 deviance) and slightly better on 2024+ (-5, SE 7). Its test chin slope is 1.19 instead of 1.41. A v9
@@ -366,7 +367,8 @@ November 2024, per press reports):
 | 12 months after | 532 | 8.98 (7.86-10.22) | 31.8% |
 | Nov 2025-Oct 2026 | 520 | 11.87 (10.53-13.32) | 40.0% |
 
-Our 2026 KO/TKO share (191 of 480 bouts) agrees with AgentMMA's count of 193 of 480 through Oct 31. No source I
+Our 2026 count is 191 KO/TKO of 480 bouts, or 193 with doctor stoppages, which matches AgentMMA's 193 of 480
+through Oct 31. No source I
 found names a 2026 rule or equipment change, so the 2026 surge is unexplained.
 
 The trailing 730-day level won the 2019-2023 tuning narrowly (4,343.1 against 4,346.3 for 365 days and 4,349.2
@@ -460,8 +462,8 @@ knockdowns absorbed and no KO losses, at home. Chin multipliers above 1 mean eas
 | **Chin total (90% interval)** | **1.07 (0.50-1.83)** | **0.81 (0.36-1.42)** |
 | KD scored vs expected | 6 vs 6.24 | 9 vs 6.25 |
 | Power effect v (90% interval) | 0.97 (0.51-1.56) | 1.30 (0.75-1.97) |
-| Power covariates (age, tenure) | POWCOV_V | POWCOV_G |
-| **Power total (90% interval)** | **POWTOT_V** | **POWTOT_G** |
+| Power covariates (age, tenure) | ×0.69 | ×0.70 |
+| **Power total (90% interval)** | **0.67 (0.33-1.09)** | **0.90 (0.52-1.39)** |
 
 Neither man has a weak chin for his history. Both have absorbed fewer knockdowns than a model of their
 opponents and exposure expects, Gaethje markedly so (4 against 8). But age and tenure push both totals back
@@ -473,11 +475,12 @@ the fighter-effect posteriors):
 
 | Direction | Trailing 730-day level | Trailing 365-day level |
 |---|---|---|
-| Volkanovski drops Gaethje | MU_VG_730 | MU_VG_365 |
-| Gaethje drops Volkanovski | MU_GV_730 | MU_GV_365 |
+| Volkanovski drops Gaethje | 0.58 per 100 (0.21-1.16) | 0.66 per 100 (0.23-1.32) |
+| Gaethje drops Volkanovski | 1.04 per 100 (0.40-1.97) | 1.19 per 100 (0.46-2.25) |
 
-A title fight multiplies both by 0.883. These intervals cover only the fighter effects; coefficient uncertainty
-adds about ±15%.
+A title fight multiplies both by 0.883. The two-fighter reference pair in this setting would be 1.07 per 100 at
+the 730-day level. These intervals cover only the fighter effects; coefficient uncertainty is small by comparison
+(the roster `chin_total_q` and `pow_total_q` include both).
 
 **Per-fight KO/TKO loss** (K5 refit on all data; 90% intervals cover coefficients only):
 
@@ -536,7 +539,7 @@ v_a = (3 + KD scored)   / (3 + expected KD scored)
   `durability.json`. For the backtest, `durability.json` `backtest[fight_id]` gives the walk-forward values for
   every one of the 3,237 entries (pre-2024 fit, leak-free for 2024+): side `chin_re`, `chin_cov`, `pow_re`,
   `pow_cov`, plus `p[side]`, the model's knockdown probability per standing head strike landed by that side.
-- **NORM.** With kd0_div = the division prior, NORM = norm_chin x norm_pow = NORM_CHIN x NORM_POW (the
+- **NORM.** With kd0_div = the division prior, NORM = norm_chin x norm_pow = 0.953 x 0.959 (the
   2024+ exposure-weighted means of C_d and P_a, `engine.norm_chin` and `engine.norm_pow`). This keeps the
   division average where `kd0` and `kdScale` put it.
 - **Absolute form.** Alternatively use p_ad = L x exp(terms_live const + division + ctx + ref_lin) x C_d x P_a

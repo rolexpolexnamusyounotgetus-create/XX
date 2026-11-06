@@ -1,0 +1,211 @@
+{
+ "slug": "paddy-pimblett",
+ "name": "Paddy Pimblett",
+ "as_of": "2026-11-06",
+ "age_at_as_of": 31,
+ "official": {
+  "height_cm": 177.8,
+  "reach_cm": 185.4,
+  "stance": "Orthodox",
+  "fight_weight_lb": 155,
+  "dob": "1995-01-03"
+ },
+ "photos_used": [
+  "espn-headshot.png",
+  "espn-stance-left.png",
+  "espn-stance-right.png",
+  "ref-cageside-ufc324-media-2026-01.jpg",
+  "ref-cageside-ufc324-weighin-2026-01-23.jpg",
+  "ref-imagn-ufc329-faceoff-2026-07-10.jpg",
+  "ref-zuffa-ufc314-celebrate-2025-04-12.jpg",
+  "ref-zuffa-ufc314-front-2025-04-12.jpg",
+  "ref-zuffa-ufc324-presser-faceoff-2026-01-22.jpg",
+  "wm-2021-interview.jpg"
+ ],
+ "face": {
+  "shape": "Long, narrow face with a long midface, slightly wider at the temples and tapering to a narrow chin (long oval to slightly inverted-triangle). Fuller and rounder between fights.",
+  "jaw": "Narrow with soft angles; little masseter bulk.",
+  "chin": "Narrow, moderately long, mild forward projection.",
+  "cheekbones": "Moderately defined, not wide; the cheeks are flat at fight weight.",
+  "brow_ridge": "Moderate; the brows sit low and close to the eyes.",
+  "forehead": "High and broad, fully visible when the hair is braided back (fight night).",
+  "eyes": {
+   "shape": "Almond, medium-small, slightly deep-set under low brows; outer corners level.",
+   "spacing": "Slightly close-set, a little under one eye width apart.",
+   "colour": "Light blue (grey-blue in arena light). Closest embed iris: blue."
+  },
+  "eyebrows": {
+   "thickness": "Thin to medium.",
+   "shape": "Straight and low, short tails.",
+   "colour": "Light brown to dark blond, lower contrast than the hair."
+  },
+  "nose": {
+   "length": "Long.",
+   "width": "Narrow bridge, moderately wide at the tip and nostrils.",
+   "bridge": "Straight and narrow.",
+   "hump": "None; straight line in the January 2026 profile.",
+   "tip": "Rounded, slightly broad, slightly upturned in profile.",
+   "fight_damage": "None obvious."
+  },
+  "mouth": "Medium width; thin upper lip, fuller lower lip, often a slight pout when neutral and a very wide grin when celebrating.",
+  "ears": {
+   "size": "Medium.",
+   "cauliflower": "No clear cauliflower ear in these photos (at most slight thickening on the upper helix). The ears protrude slightly and are usually hidden by hair except on fight night."
+  },
+  "notable_marks_scars": "None notable visible."
+ },
+ "hair": {
+  "style": "Long layered shag / mullet to the shoulders with a long side-swept fringe falling to the eyes, worn down in public (January and July 2026). On fight night (UFC 314, UFC 324, UFC 329) it is braided back in tight cornrows ending in short braids at the nape, which exposes the forehead and ears.",
+  "length_cm": {
+   "top": 18,
+   "sides": 22,
+   "back": 25
+  },
+  "colour": "Golden to strawberry blond with lighter, sun-bleached ends in July 2026; reads coppery or ginger under warm indoor light and darker honey-brown in shade.",
+  "colour_samples": {
+   "espn-headshot:hair-top": "#875f46",
+   "ref-cageside-ufc324-media-2026-01:hair-top": "#9c7356",
+   "ref-cageside-ufc324-media-2026-01:hair-side": "#644c38",
+   "ref-imagn-ufc329-faceoff-2026-07-10:hair-side": "#cfa560"
+  },
+  "colour_hex": "#a67d54",
+  "hairline": "High, fairly straight, slight recession at the temples.",
+  "texture": "Fine to medium, straight with a slight wave at the ends."
+ },
+ "facial_hair": {
+  "type": "stubble",
+  "colour": "Ginger-blond, lighter and redder than the hair in shade.",
+  "colour_samples": {
+   "espn-headshot:beard-chin": "#d2977b"
+  },
+  "colour_samples_note": "Sample mixes sparse stubble and skin; strand colour estimated as colour_hex.",
+  "colour_hex": "#b07a50",
+  "density": "Sparse and patchy on the cheeks, denser on the chin and moustache.",
+  "length_mm": "About 2-5 mm; close to clean-shaven at UFC 314 (April 2025), light stubble in January and July 2026.",
+  "shape": "Light stubble over the chin, upper lip and jaw; no defined beard line."
+ },
+ "skin": {
+  "tone_samples": [
+   {
+    "photo": "espn-headshot.png",
+    "spot": "cheek, image left (his right)",
+    "hex": "#eaa583",
+    "light": "studio, high key"
+   },
+   {
+    "photo": "espn-headshot.png",
+    "spot": "cheek, image right (his left)",
+    "hex": "#eba681",
+    "light": "studio, high key"
+   },
+   {
+    "photo": "espn-headshot.png",
+    "spot": "nose bridge",
+    "hex": "#f4bca6",
+    "light": "studio, high key"
+   },
+   {
+    "photo": "ref-zuffa-ufc314-front-2025-04-12.jpg",
+    "spot": "forehead",
+    "hex": "#f3cfc4",
+    "light": "arena light; forehead has a bright specular sheen",
+    "excluded_from_average": true
+   },
+   {
+    "photo": "ref-zuffa-ufc314-front-2025-04-12.jpg",
+    "spot": "cheek, image left (his right)",
+    "hex": "#d9927f",
+    "light": "arena light; forehead has a bright specular sheen"
+   },
+   {
+    "photo": "ref-zuffa-ufc314-front-2025-04-12.jpg",
+    "spot": "cheek, image right (his left)",
+    "hex": "#e09682",
+    "light": "arena light; forehead has a bright specular sheen"
+   }
+  ],
+  "tone_average_all": "#e9aa92",
+  "tone_average_excluding_specular": "#e7a389",
+  "tone_hex": "#e7a389",
+  "body_samples": {
+   "espn-stance-right:abdomen": "#e09d6f",
+   "espn-stance-right:pec": "#bf835e"
+  },
+  "body_note": "The pec sample is taken through light ginger chest hair.",
+  "undertone": "Very fair with a pink-peach undertone; flushes red on the face, chest and shoulders under exertion and stage light.",
+  "freckles_marks": "No distinct freckles in these photos. Light ginger chest hair in the centre of the chest and on the upper abdomen.",
+  "texture_pick": "young_caucasian_male tinted pinker toward tone_hex, with a light flush on the cheeks and nose."
+ },
+ "body": {
+  "build": "Tall for a lightweight, long-limbed and narrow-framed (reach 185 cm at 178 cm). At fight weight lean with modest muscle mass.",
+  "body_fat": "lean",
+  "body_fat_notes": "Lean with visible abs at fight weight (studio, UFC 324 and UFC 329 weigh-ins). He is widely reported to gain a lot of weight between fights; model fight-week shape.",
+  "shoulders": "Moderate width, slightly sloping.",
+  "chest": "Flat to moderately developed pecs with light ginger hair.",
+  "arms": "Long and lean, modest biceps.",
+  "waist": "Slim.",
+  "legs": "Long and lean, defined but not bulky thighs, bony knees.",
+  "posture": "Head slightly forward, shoulders slightly rounded; loose and relaxed.",
+  "notable_physique_traits": "Long limbs, narrow frame and the long blond hair are the main silhouette cues."
+ },
+ "tattoos": [],
+ "tattoos_note": "None visible on the torso, arms or legs in the studio stance photos, the 2025 cage photos or the 2026 weigh-ins.",
+ "accessories_seen": "Large gold wristwatch at weigh-ins; black gum shield with gold lettering (UFC 314).",
+ "kit": {
+  "typical_shorts": "Short, close-fitting Venum compression-style (\"vale tudo\") fight shorts rather than board shorts: orange with a black waistband and white \"PIMBLETT\" on his left thigh (2024-2026, also at UFC 329), red with black panels (about 2022). Weigh-in: black-and-white abstract-print board shorts.",
+  "gloves": "Standard black UFC 4 oz gloves with blue cuffs as the blue-corner fighter (UFC 324, UFC 329)."
+ },
+ "morphs": {
+  "macro/sexM": 1.0,
+  "macro/ageOldM": 0.1,
+  "macro/ageYoungM": 0.0,
+  "macro/muscleUpM": 0.4,
+  "macro/weightDownM": 0.15,
+  "macro/heightUpM": 0.0,
+  "macro/proportionsUpM": 0.5,
+  "head/head-oval": 0.3,
+  "head/head-invertedtriangular": 0.25,
+  "head/head-scale-horiz-decr": 0.15,
+  "head/head-scale-vert-incr": 0.2,
+  "head/head-fat-decr": 0.15,
+  "forehead/forehead-scale-vert-incr": 0.3,
+  "chin/chin-width-decr": 0.3,
+  "chin/chin-bones-decr": 0.2,
+  "chin/chin-height-incr": 0.15,
+  "chin/chin-prominent-incr": 0.05,
+  "cheek/l-cheek-volume-decr": 0.2,
+  "cheek/r-cheek-volume-decr": 0.2,
+  "eyes/l-eye-scale-decr": 0.1,
+  "eyes/r-eye-scale-decr": 0.1,
+  "eyes/l-eye-trans-in": 0.1,
+  "eyes/r-eye-trans-in": 0.1,
+  "eyebrows/eyebrows-trans-down": 0.2,
+  "eyebrows/eyebrows-trans-forward": 0.1,
+  "nose/nose-scale-vert-incr": 0.3,
+  "nose/nose-scale-depth-incr": 0.1,
+  "nose/nose-width1-decr": 0.1,
+  "nose/nose-point-width-incr": 0.15,
+  "nose/nose-point-up": 0.1,
+  "mouth/mouth-upperlip-volume-decr": 0.2,
+  "mouth/mouth-lowerlip-volume-incr": 0.1,
+  "neck/neck-scale-vert-incr": 0.15,
+  "neck/neck-scale-horiz-decr": 0.05,
+  "torso/measure-shoulder-dist-decr": 0.05,
+  "torso/torso-vshape-incr": 0.1,
+  "torso/measure-waist-circ-decr": 0.15,
+  "torso/measure-hips-circ-decr": 0.05
+ },
+ "morphs_not_in_embed": {
+  "_note": "assets/embed/mh-manifest.json has no ear targets. Estimates in case standard MakeHuman ear modifiers are added.",
+  "ears/l-ear-flap-incr": 0.25,
+  "ears/r-ear-flap-incr": 0.25
+ },
+ "render_hints": {
+  "iris": "blue",
+  "skin_base": "young_caucasian_male tinted pinker toward tone_hex",
+  "eyebrows": "eyebrow001 or eyebrow010 (thinner one), tinted #8a6446",
+  "hair": "Fight night: tight cornrows braided straight back from the hairline, as a scalp texture or low shell tinted #a67d54 with a slightly darker #7d5a3c between braids (this matches his look in the cage in 2025-2026). Walkouts/weigh-ins: long shoulder-length shag with fringe; no embed proxy fits (short01/02/04 are too short, ponytail01 is tied back), so a new proxy would be needed.",
+  "beard": "very light stubble tint only, colour #b07a50"
+ },
+ "notes": "Confidence: high for hair, eyes, skin and build; medium for face proportions; low-to-medium for exact morph values. Only one Commons photo exists (a 2021 CC BY interview still), so 9 of 10 photos are reference-only; 6 are from 2025-2026, including a clean left profile (January 2026) and a clean frontal face with the hair braided back (April 2025). What to watch: (1) hair is the main cue: cornrows on fight night, long golden shag otherwise. (2) Long narrow face, light-blue eyes, long straight nose, narrow chin. (3) Very fair, pink-toned skin. (4) Long-limbed, narrow, lean body; no tattoos. (5) His weight changes a lot between fights; use fight-week shape."
+}

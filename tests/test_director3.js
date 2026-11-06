@@ -98,8 +98,8 @@ for (var n = 0; n < N; n++) {
   try { sc = D.build(fight, seed, opts); } catch (e) { fail(id, "build threw: " + (e.stack || e)); continue; }
   check(sc, fight, m, id, opts);
   agg.fights++; agg.methods[fight.method] = (agg.methods[fight.method] || 0) + 1;
-  if (!samples.fin && fight.method !== "UD" && fight.method !== "SD" && fight.method !== "MD" && fight.method !== "DRAW" && fight.round >= 2 && (scouting[a] || scouting[b])) samples.fin = { sc: sc, id: id };
-  if (!samples.dec && /^(UD|SD)$/.test(fight.method) && rounds === 5 && sc.lines.length > 60) samples.dec = { sc: sc, id: id };
+  if (!samples.fin && !/^(UD|SD|MD|DRAW)$/.test(fight.method) && fight.round >= 2 && (scouting[a] || scouting[b])) samples.fin = { sc: sc, id: id };
+  if (!samples.dec && /^(UD|SD)$/.test(fight.method) && rounds === 5 && (scouting[a] || scouting[b])) samples.dec = { sc: sc, id: id };
 }
 
 // determinism: same fight and seed give the same script text
@@ -267,8 +267,9 @@ console.log("  play-by-play lines/round " + (agg.lines / agg.rounds).toFixed(1) 
 console.log("  key beats without text " + JSON.stringify(agg.keyMissing) + "; silent position changes on strikes " + agg.posJumps);
 console.log("  warp range " + agg.warpMin + "-" + agg.warpMax + ", quiet stretches " + (100 * agg.quietSecs / agg.sec).toFixed(0) + "% of fight time");
 console.log("  moves used " + JSON.stringify(agg.moveUse));
-if (samples.vg) printFight(samples.vg, samples.vg.id);
-if (samples.fin) printFight(samples.fin, "sample finish: " + samples.fin.id);
-if (samples.dec) printFight(samples.dec, "sample decision: " + samples.dec.id);
+// two sample fights: the page's default matchup, and a roster fight that ended the other way (decision vs finish)
+if (samples.vg) printFight(samples.vg, "sample 1: " + samples.vg.id);
+var vgDec = samples.vg && /^(UD|SD|MD|DRAW)$/.test(samples.vg.sc.method), second = vgDec ? (samples.fin || samples.dec) : (samples.dec || samples.fin);
+if (second) printFight(second, "sample 2: " + second.id);
 if (fails.length) { console.log("\nFAIL (" + fails.length + ")\n  " + fails.join("\n  ")); process.exit(1); }
 console.log("\nOK: every beat valid for the show, states and stats match the engine, no repeated lines.");

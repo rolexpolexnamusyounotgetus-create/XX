@@ -48,3 +48,14 @@ Not embedded: the Mixamo-derived three.js example characters (licence unclear) a
 | `mh-skin-young_caucasian_male.webp` | 127734 | https://raw.githubusercontent.com/abdulrehman043/humanforge/main/assets/human/skins/young_caucasian_male_1k.webp | MakeHuman system assets (skins) | CC0-1.0 | unchanged |
 
 Total: 3728323 bytes (about 4971097 bytes once base64-encoded in the page).
+
+## Arena (src/arena3d.js)
+
+The arena embeds no files and adds nothing to `assets/embed/`. Every arena texture is generated at runtime in the
+browser by our own code: the 2048 px canvas (mat) print and fabric grain, the plain-weave normal map, the chain-link
+alpha and normal maps, the canvas wear map (scuffs, sweat, blood), the LED ring and ribbon boards, the video
+boards, the post pads and the flash sprite. The lighting environment is a small procedural scene run through
+three.js's PMREMGenerator (RoomEnvironment from the r128 examples is an optional alternative). All branding is our
+own ("FIGHT LAB", the matchup names, the division and weight); there are no UFC or sponsor marks. Fonts come from
+the page's Google Fonts link (Big Shoulders Display and Archivo, SIL Open Font License 1.1); the dev page
+`tests/dev_arena.html` can use local copies served at `/fonts/` and is not part of the published build.

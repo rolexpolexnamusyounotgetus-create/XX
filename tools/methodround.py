@@ -945,3 +945,38 @@ def market_joint(T, m6, rd, draw_c):
         row[I_DRAW] = (a_dec + b_dec) * draw_c
         P[T.index.get_loc(i)] = row / row.sum()
     return P
+
+
+class FactorModel:
+    """Factorized who-and-how: P(X wins) by a symmetric binary logit, then P(KO, SUB, DEC | X wins) by a
+    3-class logit oriented on the winner. Lets the method part carry its own features and penalty."""
+
+    def __init__(self, win_cols, meth_cols, C_win=0.002, C_meth=0.002, hl_years=None):
+        self.wc, self.mc, self.Cw, self.Cm, self.hl = list(win_cols), list(meth_cols), C_win, C_meth, hl_years
+
+    def fit(self, T, FX, FY, y):
+        c = cells_to_c6(y)
+        ok = c >= 0
+        w0 = recency_weights(T["year"][ok], T["year"].max() + 1, self.hl)
+        a_won = np.isin(c[ok], [0, 1, 2])
+        Xw = np.vstack([FX[ok][self.wc].to_numpy(float), FY[ok][self.wc].to_numpy(float)])
+        yw = np.concatenate([a_won, ~a_won]).astype(int)
+        self.ws = StandardScaler().fit(Xw)
+        self.wl = LogisticRegression(C=self.Cw, fit_intercept=False).fit(self.ws.transform(Xw), yw,
+                                                                        sample_weight=np.concatenate([w0, w0]))
+        # method given the winner: rows oriented with X = winner
+        FW = np.where(a_won[:, None], FX[ok][self.mc].to_numpy(float), FY[ok][self.mc].to_numpy(float))
+        m3 = np.select([np.isin(c[ok], [0, 5]), np.isin(c[ok], [1, 4])], [0, 1], 2)
+        self.ms = StandardScaler().fit(FW)
+        self.ml = LogisticRegression(C=self.Cm).fit(self.ms.transform(FW), m3, sample_weight=w0)
+        return self
+
+    def _one(self, FX, FY):
+        pw = self.wl.predict_proba(self.ws.transform(FX[self.wc].to_numpy(float)))[:, 1]
+        ma = self.ml.predict_proba(self.ms.transform(FX[self.mc].to_numpy(float)))
+        mb = self.ml.predict_proba(self.ms.transform(FY[self.mc].to_numpy(float)))
+        return np.stack([pw * ma[:, 0], pw * ma[:, 1], pw * ma[:, 2], (1 - pw) * mb[:, 2], (1 - pw) * mb[:, 1],
+                         (1 - pw) * mb[:, 0]], 1)
+
+    def predict6(self, T, FX, FY):
+        return 0.5 * (self._one(FX, FY) + c6_mirror(self._one(FY, FX)))

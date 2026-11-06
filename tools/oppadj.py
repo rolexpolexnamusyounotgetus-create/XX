@@ -43,7 +43,9 @@ import sys
 import time
 from collections import defaultdict
 
-import numpy as np
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+import numpy as np  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -467,7 +469,7 @@ def _sides_by_date(D):
     return [np.array(x, dtype=int) for x in out]
 
 
-def walk_count(D, y, E, Lb, hl, ko, kd, mode="full", tol=2e-5, maxit=400, extra_T=None):
+def walk_count(D, y, E, Lb, hl, ko, kd, mode="full", tol=5e-5, maxit=400, extra_T=None):
     """Walk-forward Poisson-gamma two-way fit. Returns per backtest side: offense o, defense d, level c
     (from the fit on that fight's date using earlier rows only). mode: 'full' (opponent-adjusted),
     'nosos' (division/era baselines and level, opponents treated as average). extra_T: also fit at this
@@ -533,7 +535,7 @@ def walk_count(D, y, E, Lb, hl, ko, kd, mode="full", tol=2e-5, maxit=400, extra_
     return so, sd, sc, np.array(its), final
 
 
-def walk_binom(D, y, n, b, hl, ko, kd, mode="full", tol=2e-5, maxit=400, extra_T=None):
+def walk_binom(D, y, n, b, hl, ko, kd, mode="full", tol=5e-5, maxit=400, extra_T=None):
     """Walk-forward binomial-logit two-way fit with pseudo-attempt priors (k attempts at the fighter's own
     baseline). Same outputs as walk_count (a, g, c)."""
     X, Y, day, NP = D.X, D.Y, D.day, D.NP
@@ -766,20 +768,33 @@ def select(scores):
     return best, scores[best]
 
 
-def raw_scan(D, ev, p, hls, procs_note=""):
-    """Engine-form raw shrunk rates at other half-lives and prior strengths (separate offense / defense k).
+def raw_scan(D, ev, p, hls):
+    """Engine-form raw shrunk rates at other half-lives and prior strengths (separate offense / defense k):
+    a diagonal k scan at every half-life, then the full offense x defense grid at the best half-life.
     Returns {family: {(hl, ko, kd): score}} and the S arrays per hl."""
     out = {name: {} for name in FAMILIES}
-    Ss = {}
-    for hl in hls:
-        S = D.s_S if hl == 730 else D.side_sums(hl)
-        Ss[hl] = S
-        for name, (kind, (fo, fd), kname, _, _) in FAMILIES.items():
-            for ko, kd in kgrid_pairs(RAW_K_GRID[kname]):
-                R = fighter_rates(S, D.sL, p, k={kname: {fo: ko, fd: kd}})
-                sc = ev.score(name, ev.pred_raw(name, R))
-                sc.pop("dev")
-                out[name][(hl, ko, kd)] = sc
+    Ss = {hl: (D.s_S if hl == 730 else D.side_sums(hl)) for hl in hls}
+
+    def run(name, hl, ko, kd):
+        kind, (fo, fd), kname = FAMILIES[name][:3]
+        R = fighter_rates(Ss[hl], D.sL, p, k={kname: {fo: ko, fd: kd}})
+        sc = ev.score(name, ev.pred_raw(name, R))
+        sc.pop("dev")
+        out[name][(hl, ko, kd)] = sc
+
+    for name, (kind, fields, kname, _, _) in FAMILIES.items():
+        grid = RAW_K_GRID[kname]
+        for hl in hls:
+            for k in grid:
+                run(name, hl, k, k)
+        hb = min(out[name], key=lambda c: out[name][c]["tune"])[0]
+        for ko, kd in kgrid_pairs(grid):
+            if (hb, ko, kd) not in out[name]:
+                run(name, hb, ko, kd)
+        _, ko, kd = min(out[name], key=lambda c: out[name][c]["tune"])
+        for hl in hls:
+            if (hl, ko, kd) not in out[name]:
+                run(name, hl, ko, kd)
     return out, Ss
 
 
@@ -942,32 +957,60 @@ def main():
     print("raw scan done %.0f s" % (time.time() - t0))
 
     # ---- opponent-adjusted (full) and division/era-normalized without opponents (nosos)
+    # stage A: diagonal k (k_off = k_def) at every half-life, plus the no-opponent ablation (one pass each)
+    G = {}
     jobs = []
     for name in FAMILIES:
         for hl in hls:
-            for ko, kd in kgrid_pairs(kg[name]):
-                jobs.append((name, hl, ko, kd, "full"))
             for k in kg[name]:
+                jobs.append((name, hl, k, k, "full"))
                 jobs.append((name, hl, k, k, "nosos"))
-    print("running %d walk-forward fits on %d processes" % (len(jobs), args.procs))
-    G = run_grid(D, p, jobs, args.procs)
+    print("stage A: %d walk-forward fits on %d processes" % (len(jobs), args.procs))
+    G.update(run_grid(D, p, jobs, args.procs))
+    print("stage A done %.0f s" % (time.time() - t0))
+
+    def adj_score(name, cfg, mode="full"):
+        hl, ko, kd = cfg
+        if mode == "full":
+            so, sd, sc, _ = G[(name, hl, ko, kd, "full")]
+        else:
+            so = G[(name, hl, ko, ko, "nosos")][0]
+            sd = G[(name, hl, kd, kd, "nosos")][1]
+            sc = G[(name, hl, ko, ko, "nosos")][2]
+        s_ = ev.score(name, ev.pred_adj(name, so.astype(float), sd.astype(float), sc.astype(float)))
+        s_.pop("dev")
+        return s_
+
+    # stage B: full offense x defense k grid at each family's best stage-A half-life
+    best_hl = {}
+    jobs = []
+    for name in FAMILIES:
+        diag = {(hl, k, k): adj_score(name, (hl, k, k)) for hl in hls for k in kg[name]}
+        best_hl[name] = min(diag, key=lambda c: diag[c]["tune"])[0]
+        for ko, kd in kgrid_pairs(kg[name]):
+            if ko != kd:
+                jobs.append((name, best_hl[name], ko, kd, "full"))
+    print("stage B: %d fits" % len(jobs))
+    G.update(run_grid(D, p, jobs, args.procs))
+    print("stage B done %.0f s" % (time.time() - t0))
+    # stage C: the best (k_off, k_def) at every other half-life (half-life scan at the chosen k ratio)
+    jobs = []
+    for name in FAMILIES:
+        cand = {c: adj_score(name, c) for c in [(best_hl[name], a, b) for a, b in kgrid_pairs(kg[name])]}
+        _, ko, kd = min(cand, key=lambda c: cand[c]["tune"])
+        for hl in hls:
+            if (name, hl, ko, kd, "full") not in G:
+                jobs.append((name, hl, ko, kd, "full"))
+    print("stage C: %d fits" % len(jobs))
+    G.update(run_grid(D, p, jobs, args.procs))
     print("grid done %.0f s" % (time.time() - t0))
 
     chosen = {}
     for name, (kind, fields, kname, _, label) in FAMILIES.items():
-        full_sc, nosos_sc = {}, {}
-        for hl in hls:
-            for ko, kd in kgrid_pairs(kg[name]):
-                so, sd, sc, _ = G[(name, hl, ko, kd, "full")]
-                s_ = ev.score(name, ev.pred_adj(name, so.astype(float), sd.astype(float), sc.astype(float)))
-                s_.pop("dev")
-                full_sc[(hl, ko, kd)] = s_
-                so1 = G[(name, hl, ko, ko, "nosos")][0].astype(float)
-                sd1 = G[(name, hl, kd, kd, "nosos")][1].astype(float)
-                sc1 = G[(name, hl, ko, ko, "nosos")][2].astype(float)
-                s2 = ev.score(name, ev.pred_adj(name, so1, sd1, sc1))
-                s2.pop("dev")
-                nosos_sc[(hl, ko, kd)] = s2
+        full_sc = {(hl, ko, kd): adj_score(name, (hl, ko, kd)) for (n_, hl, ko, kd, m_) in G
+                   if n_ == name and m_ == "full"}
+        nosos_sc = {(hl, ko, kd): adj_score(name, (hl, ko, kd), "nosos")
+                    for hl in hls for ko, kd in kgrid_pairs(kg[name])}
         bf, bfs = select(full_sc)
         bn, bns = select(nosos_sc)
         br, brs = select(raw[name])
@@ -996,6 +1039,8 @@ def main():
                                 "raw_test": rnd(raw[name][r_]["test"], 6)}
         k_scan = {"%s,%s" % (k[1], k[2]): [rnd(v["tune"], 6), rnd(v["test"], 6)]
                   for k, v in full_sc.items() if k[0] == bf[0]}
+        hl_at_k = {str(k[0]): [rnd(v["tune"], 6), rnd(v["test"], 6)] for k, v in full_sc.items()
+                   if k[1] == bf[1] and k[2] == bf[2]}
         test_best_cfg = min(full_sc, key=lambda c: full_sc[c]["test"])
         n_te = int(te.sum())
         res["families"][name] = {
@@ -1029,6 +1074,7 @@ def main():
                                                "test": rnd(full_sc[test_best_cfg]["test"], 6)},
             "half_life_scan": hl_scan,
             "k_scan_at_chosen_half_life": k_scan,
+            "half_life_scan_at_chosen_k": hl_at_k,
         }
         chosen[name] = {"cfg": bf, "so": so, "sd": sd, "sc": sc, "cal_adj": bfs.get("scale", bfs.get("shift")),
                         "cal_eng": eng_sc[name].get("scale", eng_sc[name].get("shift")),

@@ -790,14 +790,14 @@
         .replace("#include <map_fragment>", [
           "#include <map_fragment>",
           "vec4 wear = texture2D(uWear, vUv);",
-          "diffuseColor.rgb *= 1.0 - 0.28 * wear.r;",
-          "diffuseColor.rgb *= 1.0 - 0.16 * wear.g;",
+          "diffuseColor.rgb *= 1.0 - 0.34 * sqrt(clamp(wear.r, 0.0, 1.0));",
+          "diffuseColor.rgb *= 1.0 - 0.2 * sqrt(clamp(wear.g, 0.0, 1.0));",
           "diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.02, 0.02), clamp(wear.b, 0.0, 1.0) * 0.85);",
           "float occl = 1.0;",
           "for (int ci = 0; ci < 16; ci++) { vec4 cc = uContact[ci]; if (cc.w > 0.0) { float dd = length(vWPos.xz - cc.xy) / cc.z; float f = clamp(1.0 - dd, 0.0, 1.0); occl *= 1.0 - cc.w * f * f * (3.0 - 2.0 * f); } }",
           "diffuseColor.rgb *= occl;"
         ].join("\n"))
-        .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness;\nroughnessFactor = mix(roughnessFactor, 0.3, clamp(wear.g, 0.0, 1.0) * 0.9);\nroughnessFactor = mix(roughnessFactor, 0.45, clamp(wear.b, 0.0, 1.0));")
+        .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness;\nroughnessFactor = mix(roughnessFactor, 0.28, sqrt(clamp(wear.g, 0.0, 1.0)) * 0.9);\nroughnessFactor = mix(roughnessFactor, 0.45, clamp(wear.b, 0.0, 1.0));")
         .replace("#include <normal_fragment_maps>", T.ShaderChunk.normal_fragment_maps.replace("texture2D( normalMap, vUv )", "texture2D( normalMap, vUv * uDetail )"));
       A.matShader = sh;
     };
@@ -1322,12 +1322,15 @@
       var rr = (0.18 + 0.25 * a) * k, g = ctx.createRadialGradient(px, py, 0, px, py, rr);
       g.addColorStop(0, "rgba(0," + Math.round(90 * a + 20) + ",0,1)"); g.addColorStop(1, "rgba(0,0,0,1)");
       ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(px, py, rr, rr * (0.6 + Math.random() * 0.4), Math.random() * PI, 0, TAU); ctx.fill();
+    } else if (kind === "drip") {
+      var dr0 = (0.015 + 0.03 * a) * k;
+      ctx.fillStyle = "rgb(0," + Math.round(70 + 120 * a) + ",0)"; ctx.beginPath(); ctx.arc(px, py, dr0, 0, TAU); ctx.fill();
     } else if (kind === "blood") {
       ctx.fillStyle = "rgba(0,0,0,1)";
       for (var i = 0; i < 6; i++) { var dr = (0.01 + Math.random() * 0.03) * k; ctx.fillStyle = "rgb(0,0," + Math.round(160 + 90 * a) + ")"; ctx.beginPath(); ctx.arc(px + (Math.random() - 0.5) * 0.25 * k, py + (Math.random() - 0.5) * 0.25 * k, dr, 0, TAU); ctx.fill(); }
     } else {
-      var ang = Math.random() * TAU, len = (0.05 + 0.12 * a) * k;
-      ctx.strokeStyle = "rgb(" + Math.round(10 + 22 * a) + ",0,0)"; ctx.lineWidth = Math.max(1, 0.035 * k); ctx.lineCap = "round";
+      var ang = Math.random() * TAU, len = (0.06 + 0.16 * a) * k;
+      ctx.strokeStyle = "rgb(" + Math.round(22 + 50 * a) + ",0,0)"; ctx.lineWidth = Math.max(1.2, (0.03 + 0.03 * Math.random()) * k); ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(px - Math.cos(ang) * len, py - Math.sin(ang) * len); ctx.lineTo(px + Math.cos(ang) * len, py + Math.sin(ang) * len); ctx.stroke();
     }
     ctx.restore();
@@ -1422,6 +1425,7 @@
         for (var j = 0; j < L.length; j += 4) {
           if (r() < 0.45) this.mark(L[j] + (r() - 0.5) * 0.06, L[j + 1] + (r() - 0.5) * 0.06, "scuff", 0.25 + r() * 0.3);
           if (L[j + 3] < 0.45 && r() < 0.5) this.mark(L[j], L[j + 1], "sweat", 0.12 + r() * 0.12);
+          else if (r() < 0.05) this.mark(L[j] + (r() - 0.5) * 0.5, L[j + 1] + (r() - 0.5) * 0.5, "drip", 0.5 + r() * 0.5);
         }
       }
     }
@@ -1437,6 +1441,11 @@
 
   Arena.prototype.burst = function (lvl) {
     this.flashLevel = Math.max(this.flashLevel, lvl);
+    var sh = this.show || (root.VGSim && root.VGSim.show), I = sh && sh.impact;
+    if (I && lvl >= 0.25 && Math.random() < 0.65) {
+      var n = 2 + Math.floor(Math.random() * (lvl >= 0.45 ? 6 : 3));
+      for (var i = 0; i < n; i++) this.mark(I.x + (Math.random() - 0.5) * 0.7, I.z + (Math.random() - 0.5) * 0.7, "blood", 0.3 + Math.random() * 0.5);
+    }
     var M = this.mood;
     M.be = Math.max(M.be, Math.min(1, 0.35 + lvl * 1.4));
     M.bs = Math.max(M.bs, Math.min(1, lvl * 1.6));

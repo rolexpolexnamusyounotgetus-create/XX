@@ -974,10 +974,12 @@ def base7(df_train, df_eval):
     out = np.zeros((len(df_eval), 7))
     tr = df_train[df_train["bin7"].notna()]
     allm = _method_split(tr)
+    cache = {}
     for i, (five, women) in enumerate(zip(df_eval["five"], df_eval["women"])):
-        g = tr[(tr["five"] == five) & (tr["women"] == women)]
-        ms = _method_split(g) if len(g) >= 150 else allm
-        out[i] = ms
+        if (five, women) not in cache:
+            g = tr[(tr["five"] == five) & (tr["women"] == women)]
+            cache[(five, women)] = _method_split(g) if len(g) >= 150 else allm
+        out[i] = cache[(five, women)]
     return out
 
 
@@ -1243,14 +1245,14 @@ GBM_SPACE = {"num_leaves": [4, 7, 11, 15], "min_data_in_leaf": [40, 80, 160, 320
 GBM_FIRST = {"num_leaves": 7, "min_data_in_leaf": 160, "feature_fraction": 0.4, "bagging_fraction": 0.85,
              "lambda_l2": 20.0, "min_gain_to_split": 0.0}
 GBM_LR = 0.04
-GBM_MAX = 1200
-GBM_CHECKS = list(range(100, GBM_MAX + 1, 50))
+GBM_MAX = 800
+GBM_CHECKS = list(range(50, GBM_MAX + 1, 25))
 
 XGB_SPACE = {"max_depth": [2, 3, 4], "min_child_weight": [5, 20, 60], "subsample": [0.7, 0.9],
              "colsample_bytree": [0.25, 0.4, 0.6], "lambda": [1.0, 10.0, 50.0]}
 XGB_FIRST = {"max_depth": 3, "min_child_weight": 20, "subsample": 0.85, "colsample_bytree": 0.4, "lambda": 10.0}
 XGB_ETA = 0.04
-XGB_MAX = 1200
+XGB_MAX = 800
 
 
 def tune_trees(kind, df, G0, G1, y, dec, evm, n_cfg):
@@ -1779,6 +1781,14 @@ def stacking(R):
         log("stack %-40s w=%s OOF-LOYO %.4f | test n=%d ll %.4f (first input alone %.4f)"
             % (name, out["variants"][-1]["weights"], out["variants"][-1]["oof_loyo_log_loss"], te.sum(),
                out["variants"][-1]["test"]["log_loss"], out["variants"][-1]["test_first_input_alone"]["log_loss"]))
+    # rows missing an input of a pre-line stack (e.g. no market rating yet) fall back to the elo+ml stack
+    base_key = "stack:elo+ml"
+    for v in out["variants"]:
+        if not any(k in ("mkt_open", "mkt_close") for k in v["inputs"]):
+            key = "stack:" + v["name"]
+            miss = np.isnan(P[key]) & ~np.isnan(P[base_key])
+            v["n_fallback_all_rows"] = int(miss.sum())
+            P[key] = np.where(miss, P[base_key], P[key])
     # recommended pre-line product stack: best OOF-LOYO among variants without opening/closing lines
     cands = [v for v in out["variants"] if not any(k in ("mkt_open", "mkt_close") for k in v["inputs"])]
     full_cov = [v for v in cands if all(k in ("elo", "ml", "lr", "lgb", "xgb", "mkt_rating") for k in v["inputs"])]
@@ -2105,6 +2115,26 @@ def page_model(R):
            "; ".join("%s-%s %.3f" % (e["A"], e["B"], e["pA"]) for e in examples)))
 
 
+def clean_json(o):
+    """numpy scalars -> python, NaN / inf -> None (strict JSON)."""
+    if isinstance(o, dict):
+        return {str(k): clean_json(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [clean_json(v) for v in o]
+    if isinstance(o, np.ndarray):
+        return [clean_json(v) for v in o.tolist()]
+    if isinstance(o, (np.bool_,)):
+        return bool(o)
+    if isinstance(o, (np.integer,)):
+        return int(o)
+    if isinstance(o, (float, np.floating)):
+        o = float(o)
+        return o if math.isfinite(o) else None
+    if isinstance(o, (dt.date,)):
+        return o.isoformat()
+    return o
+
+
 def write_outputs(R):
     C, P, S = R["_ctx"], R["_P"], R["_S"]
     df, y = C["df"], C["y"]
@@ -2172,7 +2202,7 @@ def write_outputs(R):
         "roster": R["roster_out"],
     }
     with open(OUT_JSON, "w") as fh:
-        json.dump(out, fh, separators=(",", ":"), default=lambda o: o.item() if hasattr(o, "item") else str(o))
+        json.dump(clean_json(out), fh, separators=(",", ":"), allow_nan=False)
     log("wrote %s (%.2f MB, %d fights, %d roster)" % (OUT_JSON, os.path.getsize(OUT_JSON) / 1e6, len(fights),
                                                     len(R["roster_out"])))
 

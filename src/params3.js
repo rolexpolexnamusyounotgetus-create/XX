@@ -71,25 +71,25 @@
     gBotRel: 0.12,           // bottom man's ground strike rate relative to the top man's (default)
 
     // ---------------- strikes ----------------
-    strikeScale: 1.063,        // [selfcal] global strike-attempt scale (absorbs exposure-estimate bias)
-    clinchScale: 1.063,        // [selfcal] clinch strike-rate scale
-    groundScale: 0.8183,        // [selfcal] ground strike-rate scale
+    strikeScale: 1.063,      // [selfcal] global strike-attempt scale (absorbs exposure-estimate bias)
+    clinchScale: 1.063,      // [selfcal] clinch strike-rate scale
+    groundScale: 0.8183,     // [selfcal] ground strike-rate scale
     clinchMix: [0.55, 0.33, 0.12],   // clinch target mix head/body/leg (default; leg = knees to the thigh)
     groundTopMix: [0.84, 0.15, 0.01], // top ground-strike target mix (default)
     groundBotMix: [0.6, 0.4, 0.0],    // bottom ground-strike target mix (default)
-    accScale: 0.9497,           // [selfcal] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
+    accScale: 0.9497,        // [selfcal] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
     botAccOdds: 0.6,         // accuracy odds multiplier for strikes thrown from the bottom (default)
     accHurt: 1.5,            // accuracy odds multiplier against a hurt defender (default)
-    accStam: 0.25,            // defender fatigue: odds x (1 + accStam (1 - S_def)) (default)
+    accStam: 0.25,           // defender fatigue: odds x (1 + accStam (1 - S_def)) (default)
     accMob: 1.2,             // defender leg damage: odds x (1 + accMob (1 - mobility)) (default)
-    accSelfStam: 0.2,       // attacker fatigue: odds x (1 - accSelfStam (1 - S_att)) (default)
+    accSelfStam: 0.2,        // attacker fatigue: odds x (1 - accSelfStam (1 - S_att)) (default)
     outStam: 0.12,           // attacker fatigue: output x (1 - outStam (1 - S)) (default)
     outHurt: 0.65,           // output multiplier while hurt (default)
     outMob: 0.15,            // output x (1 - outMob (1 - mobility)) (default)
 
     // ---------------- damage, knockdowns, finishes ----------------
-    kdScale: 1.232,            // [selfcal] global knockdown scale on p0 (division KD per landed standing head strike)
-    kdPos: [1.0, 2.769],       // KD multiplier for distance, clinch head strikes (baserates: clinch 12-13% of KOs on ~10% of landed)
+    kdScale: 1.232,          // [selfcal] global knockdown scale on p0 (division KD per landed standing head strike)
+    kdPos: [1.0, 2.769],     // [selfcal] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates; knees and elbows)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
     kdHurt: 1.8,             // KD multiplier while hurt (default)
@@ -113,20 +113,20 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.3763,         // [selfcal] P(knockdown is an immediate knockout), x damage and division factors
+    kdInstant: 0.3763,       // [selfcal] P(knockdown is an immediate knockout), x damage, fatigue and division factors; fit with kdRefStop so P(same-round finish | KD) = priors kd_fin
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
     kdPounce: 0.72,          // P(attacker follows him down) after a knockdown that isn't a KO (default)
-    kdRecover: 1 / 6.5,      // per second, the downed man recovers (to guard or his feet) (default; [selfcal] with kdRefStop)
+    kdRecover: 1 / 6.5,      // per second, the downed man recovers (to guard or his feet) (default; the follow-up length kdRefStop is fit against)
     kdRecoverStand: 0.45,    // share of recoveries that get back to the feet; the rest recover guard with the attacker on top (default)
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
-    kdRefStop: 0.1898,         // [selfcal] P(referee stops it) per landed follow-up head strike, x damage factor
+    kdRefStop: 0.1898,       // [selfcal] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
     refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
-    stko: 0.04461,             // [selfcal] standing TKO hazard per landed standing head strike while hurt, x D/100 (baserates: 0.00049 per standing head overall)
-    gnpTko: 0.032,          // [selfcal] GNP TKO hazard per landed top ground head strike (x sub-position, damage); baserates ground KO 0.0097 per ground landed incl. follow-ups
+    stko: 0.04461,           // [selfcal] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
+    gnpTko: 0.032,           // [selfcal] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
     stkoBase: 0.3,           // standing TKO hazard while hurt = stko x (stkoBase + D / 100) (default)
     gnpDmg: 600,             // GNP TKO x (1 + D / gnpDmg) (default)
     gnpHurt: 2.0,            // GNP TKO multiplier while hurt (default)
@@ -137,11 +137,11 @@
     bodyDrain: 0.0035,       // stamina drained by a landed body strike, x damage weight (default)
 
     // ---------------- stamina and pace ----------------
-    drain: 0.0011,          // base stamina drain per second at league-average cardio in a 3-round fight (S starts at 1; ~0.4 by the end of R3; shapes the finish hazard by round)
+    drain: 0.0011,           // base stamina drain per second at league-average cardio in a 3-round fight (S starts at 1; ~0.4 by the end of R3; shapes the finish hazard by round)
     r1Caution5: 0.75,        // round 1 of 5-round fights: knockdown, GNP TKO and submission conversion x this (baserates per-minute finish hazard R1 5-rd 0.0463 vs 3-rd 0.0576 = 0.80; main-event caution)
     drainSchedExp: 0.2,      // drain x (3 / scheduled rounds)^drainSchedExp: some pacing in 5-rounders (small: baserates 5-rd hazard falls to ~11% in R4-R5, so the championship rounds stay grueling)
     drainPos: [1.0, 1.5, 0.9, 1.6],   // drain multiplier at distance, clinch, ground top, ground bottom (default)
-    drainAtt: 0.00025,       // stamina per strike attempt thrown (default)
+    drainAtt: 0.0,           // stamina per strike attempt thrown (0: activity drain is carried by the pace term, drain x (0.6 + 0.4 x output); available for tuning)
     drainTd: 0.006,          // stamina per takedown attempt (shooter) (default)
     recover: 0.55,           // between rounds S += recover * (1 - S) (v2: 0.5)
     cardioExp: 1.5,          // drain x cardioIndex^-cardioExp, cardioIndex = shrunk late-round output ratio (default)
@@ -154,11 +154,11 @@
     tdAttStam: 0.0,          // attacker fatigue: takedown attempts x (1 - tdAttStam (1 - S)); 0 because attempts rise by round in the data (baserates pace curve)
     tdStam: 0.15,            // defender fatigue: takedown success odds x (1 + tdStam (1 - S_def)) (small: baserates TD accuracy falls by round in 5-rounders)
     standStam: 0.3,          // bottom man's fatigue: stand-up hazard x (1 - standStam (1 - S)) (default)
-    tdScale: 1.008,            // [selfcal] takedown attempt rate scale
-    tdOddsScale: 0.9044,        // [selfcal] takedown success odds scale
-    sweepScale: 1.0,         // [selfcal] sweep / reversal rate scale
-    subAttScale: 1.073,        // [selfcal] submission attempt rate scale
-    subConvScale: 1.385,       // [selfcal] submission conversion odds scale
+    tdScale: 1.008,          // [selfcal] takedown attempt rate scale
+    tdOddsScale: 0.9044,     // [selfcal] takedown success odds scale
+    sweepScale: 1.0,         // sweep / reversal rate scale (default; reversals come from each pair's data rates)
+    subAttScale: 1.073,      // [selfcal] submission attempt rate scale
+    subConvScale: 1.385,     // [selfcal] submission conversion odds scale
     gilloScale: 1.0,         // standing guillotine attempts on stuffed shots scale
 
     // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------
@@ -185,18 +185,18 @@
       sub: 1.342,                             // per submission attempt (same fit)
       hurt: 1.0,                              // per hurt/wobble scored (engine-only event; literature 12.5: between a head strike and a KD)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
-      sharedSd: 1.1,                          // [selfcal] sd of the round noise shared by the three judges (logits)
-      indSd: 1.206,                             // [selfcal] sd of each judge's own noise (logits)
+      sharedSd: 1.1,                          // sd of the round noise shared by the three judges (logits) (default; indSd is fit to the split-decision share)
+      indSd: 1.206,                           // [selfcal] sd of each judge's own noise (logits); fit so split decisions match priors dec3 (LW 16.5%)
       tasteSd: 0.2,                           // lognormal sd of each judge's fight-level taste for striking / grappling / damage (literature 12.5: 0.15-0.25)
-      t108: 6.136,                              // logit margin a 10-8 needs with a one-knockdown edge (ABC: damage required) [selfcal]
-      t108b: 9.136,                             // logit margin a 10-8 needs with no knockdown edge but 2+ hurts/KDs more [selfcal]
-      t108kd2: 3.136                          // logit margin a 10-8 needs with a two-knockdown edge [selfcal]
+      t108: 6.136,                            // [selfcal] logit margin a 10-8 needs with a one-knockdown edge (ABC: damage required); fit to ~3.5% of judge-rounds (4.7% 2015+, 2.5% 2024-25)
+      t108b: 9.136,                           // [selfcal] logit margin a 10-8 needs with no knockdown edge but 2+ more hurts (t108 + 3)
+      t108kd2: 3.136                          // [selfcal] logit margin a 10-8 needs with a two-knockdown edge (t108 - 3)
     },
 
     // ---------------- between rounds ----------------
-    doc: 0.012,              // [selfcal] doctor stoppage hazard between rounds: doc * (D/100)^2, capped (baserates: doctor 0.8-1.5 per 100 fights)
+    doc: 0.06,               // doctor stoppage hazard between rounds: doc * (D/100)^2, capped (sweep: ~0.7 per 100 league-average 3-round fights; baserates doctor 0.76 per 100 all, 1.5 LW, 1.55 in 5-rounders)
     docCap: 0.2,             // cap per interval
-    corner: 0.012,           // [selfcal] corner stoppage per KD absorbed beyond the first, plus corner * (D/120)^3 (baserates: corner 0.1-0.35 per 100 fights)
+    corner: 0.03,            // corner stoppage hazard: corner per KD absorbed beyond the first, plus corner * (D/120)^3 (sweep: ~0.1 per 100 3-round fights; baserates corner 0.13 all, 0.35 LW, 0.52 in 5-rounders)
 
     // ---------------- division self-calibration factors ([selfcal]; neutral = 1) ----------------
     // att: strike-attempt scale; kd: knockdown scale; ko: scales kdInstant and kdRefStop odds and the stko / gnpTko hazards;
