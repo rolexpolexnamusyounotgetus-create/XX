@@ -1,0 +1,282 @@
+{
+ "meta": {
+  "tool": "tools/judge_em_train.py",
+  "since": "2015-01-01",
+  "until": "2024-01-01",
+  "holdout_from": "2023-01-01",
+  "date_max_used": "2023-12-16",
+  "n_fights": 4409,
+  "notes": [
+   "25 fights appear twice under two event names (same fight URL); kept the copy whose event has a date, dropped the copies under ['UFC Fight Night: Grasso vs. Shevchenko 2', 'UFC Fight Night: Lopes vs. Silva']",
+   "1 event(s) missing from ufc_event_details.csv; dates imputed from the neighbouring event in results order: ['UFC - Road to UFC 4.6']",
+   "dropped 2 rows with duplicate (EVENT, BOUT): ['Kazushi Sakuraba vs. Marcus Silveira']",
+   "1 fights excluded from stats-based measures (round rows missing, unparsed numbers, unmatched names or non-5-minute rounds)"
+  ],
+  "source_code": "tools/baserates.py round_model_block (same EM as baserates.json round_model.em_all_cards)"
+ },
+ "em_all_cards": {
+  "n_cards": 5519,
+  "n_fights": 1975,
+  "definition": "all decision cards whose total implies only 10-9 rounds; latent round winners per judge, EM with a weighted no-intercept logistic M-step",
+  "target": {
+   "coef": {
+    "head_l": 0.174247,
+    "body_l": 0.127125,
+    "leg_l": 0.104249,
+    "kd": 2.163486,
+    "td_l": 0.277959,
+    "ctrl_min": 0.462332,
+    "sub": 0.846695
+   },
+   "head_equiv": {
+    "head_l": 1.0,
+    "body_l": 0.729568,
+    "leg_l": 0.598285,
+    "kd": 12.416219,
+    "td_l": 1.595205,
+    "ctrl_min": 2.653315,
+    "sub": 4.859172
+   },
+   "n_card_rounds": 17369
+  },
+  "position": {
+   "coef": {
+    "dist_l": 0.131605,
+    "clinch_l": 0.153442,
+    "ground_l": 0.276005,
+    "kd": 2.042941,
+    "td_l": 0.280078,
+    "ctrl_min": 0.412228,
+    "sub": 0.920738
+   },
+   "head_equiv": {
+    "dist_l": 1.0,
+    "clinch_l": 1.165927,
+    "ground_l": 2.097224,
+    "kd": 15.523261,
+    "td_l": 2.128173,
+    "ctrl_min": 3.13231,
+    "sub": 6.996217
+   },
+   "n_card_rounds": 17369
+  },
+  "extended": {
+   "coef": {
+    "head_l": 0.168829,
+    "body_l": 0.123999,
+    "leg_l": 0.10154,
+    "sig_miss": -0.005127,
+    "nonsig_l": 0.017913,
+    "kd": 2.149696,
+    "td_l": 0.348915,
+    "td_miss": -0.088458,
+    "ctrl_min": 0.467002,
+    "sub": 0.869555,
+    "rev": 0.374063
+   },
+   "head_equiv": {
+    "head_l": 1.0,
+    "body_l": 0.734464,
+    "leg_l": 0.601434,
+    "sig_miss": -0.030366,
+    "nonsig_l": 0.106099,
+    "kd": 12.73294,
+    "td_l": 2.066673,
+    "td_miss": -0.523946,
+    "ctrl_min": 2.766118,
+    "sub": 5.150492,
+    "rev": 2.215629
+   },
+   "n_card_rounds": 17369
+  }
+ },
+ "clean_subset_target": {
+  "coef": {
+   "head_l": 0.415233,
+   "body_l": 0.324068,
+   "leg_l": 0.304446,
+   "kd": 2.922197,
+   "td_l": 0.773574,
+   "ctrl_min": 0.87174,
+   "sub": 1.409583
+  },
+  "se": {
+   "head_l": 0.034957,
+   "body_l": 0.039996,
+   "leg_l": 0.037976,
+   "kd": 0.910274,
+   "td_l": 0.176683,
+   "ctrl_min": 0.12528,
+   "sub": 0.473533
+  },
+  "loglik": -174.633211,
+  "in_sample_round_accuracy": 0.937726,
+  "head_equiv": {
+   "head_l": 1.0,
+   "body_l": 0.780448,
+   "leg_l": 0.733193,
+   "kd": 7.037487,
+   "td_l": 1.862988,
+   "ctrl_min": 2.0994,
+   "sub": 3.394679
+  }
+ },
+ "holdout": {
+  "n_test_decisions": 240,
+  "accuracy": 0.833333,
+  "brier": 0.119852,
+  "log_loss": 0.359642,
+  "baseline_more_sig_landed_accuracy": 0.78125,
+  "calibration": [
+   {
+    "bin": "0.0-0.1",
+    "n": 59,
+    "mean_pred": 0.02062,
+    "observed": 0.050847
+   },
+   {
+    "bin": "0.1-0.2",
+    "n": 16,
+    "mean_pred": 0.149112,
+    "observed": 0.3125
+   },
+   {
+    "bin": "0.2-0.3",
+    "n": 9,
+    "mean_pred": 0.256709,
+    "observed": 0.333333
+   },
+   {
+    "bin": "0.3-0.4",
+    "n": 9,
+    "mean_pred": 0.350823,
+    "observed": 0.333333
+   },
+   {
+    "bin": "0.4-0.5",
+    "n": 5,
+    "mean_pred": 0.435,
+    "observed": 0.6
+   },
+   {
+    "bin": "0.5-0.6",
+    "n": 8,
+    "mean_pred": 0.553529,
+    "observed": 0.875
+   },
+   {
+    "bin": "0.6-0.7",
+    "n": 7,
+    "mean_pred": 0.656179,
+    "observed": 0.571429
+   },
+   {
+    "bin": "0.7-0.8",
+    "n": 21,
+    "mean_pred": 0.742971,
+    "observed": 0.52381
+   },
+   {
+    "bin": "0.8-0.9",
+    "n": 19,
+    "mean_pred": 0.858363,
+    "observed": 0.631579
+   },
+   {
+    "bin": "0.9-1.0",
+    "n": 87,
+    "mean_pred": 0.982635,
+    "observed": 0.977011
+   }
+  ],
+  "train_before": "2023-01-01",
+  "coef_train": {
+   "head_l": 0.173584,
+   "body_l": 0.127844,
+   "leg_l": 0.105156,
+   "kd": 2.165398,
+   "td_l": 0.264589,
+   "ctrl_min": 0.467659,
+   "sub": 0.887547
+  },
+  "clean_model": {
+   "n_test_decisions": 240,
+   "accuracy": 0.829167,
+   "brier": 0.137783,
+   "log_loss": 0.59482,
+   "baseline_more_sig_landed_accuracy": 0.78125,
+   "calibration": [
+    {
+     "bin": "0.0-0.1",
+     "n": 80,
+     "mean_pred": 0.009352,
+     "observed": 0.125
+    },
+    {
+     "bin": "0.1-0.2",
+     "n": 6,
+     "mean_pred": 0.143141,
+     "observed": 0.166667
+    },
+    {
+     "bin": "0.2-0.3",
+     "n": 7,
+     "mean_pred": 0.243472,
+     "observed": 0.571429
+    },
+    {
+     "bin": "0.3-0.4",
+     "n": 3,
+     "mean_pred": 0.353176,
+     "observed": 0.333333
+    },
+    {
+     "bin": "0.4-0.5",
+     "n": 3,
+     "mean_pred": 0.465244,
+     "observed": 0.666667
+    },
+    {
+     "bin": "0.5-0.6",
+     "n": 5,
+     "mean_pred": 0.537234,
+     "observed": 0.8
+    },
+    {
+     "bin": "0.6-0.7",
+     "n": 9,
+     "mean_pred": 0.645953,
+     "observed": 0.444444
+    },
+    {
+     "bin": "0.7-0.8",
+     "n": 2,
+     "mean_pred": 0.758704,
+     "observed": 0.5
+    },
+    {
+     "bin": "0.8-0.9",
+     "n": 6,
+     "mean_pred": 0.83328,
+     "observed": 0.5
+    },
+    {
+     "bin": "0.9-1.0",
+     "n": 119,
+     "mean_pred": 0.991092,
+     "observed": 0.890756
+    }
+   ],
+   "coef_train": {
+    "head_l": 0.423724,
+    "body_l": 0.33726,
+    "leg_l": 0.297706,
+    "kd": 2.587872,
+    "td_l": 0.699162,
+    "ctrl_min": 0.933982,
+    "sub": 1.616875
+   }
+  },
+  "note": "judges treated as independent given round stats; 10-8s ignored; baseline = fighter with more sig strikes landed (ties count half)"
+ }
+}

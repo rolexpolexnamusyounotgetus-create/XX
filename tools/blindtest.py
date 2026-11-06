@@ -206,6 +206,11 @@ class Ctx:
         self.win_ids = [i for i in self.order if WINDOW[0] <= self.date[i] <= WINDOW[1]]
         self._ml = None
         self._moe_rows = None
+        self.perturb_from = getattr(args, "perturb_from", None)   # selftest: outcomes on/after this date flipped
+        if self.perturb_from:
+            for i in self.y:
+                if self.date[i] >= self.perturb_from and self.y[i] is not None:
+                    self.y[i] = 1.0 - self.y[i]
         # input fingerprints at load time (other tools may rewrite these files while a replay runs)
         self.inputs = {n: sha_files(os.path.join(DERIVED, n)) for n in
                        ("backtest_dev.json", "ml.json", "market.json", "moe.json", "ratings.json", "methodround.json",
@@ -257,6 +262,9 @@ class Ctx:
                             lgb_best=c["lgb_best"], xgb_best=c["xgb_best"],
                             row={f: k for k, f in enumerate(df["fid"])}, sha=sha_files(path),
                             n_2026_dropped=int((~keep).sum()))
+            if self.perturb_from:
+                fl = (self._ml["dates"] >= self.perturb_from) & self._ml["dec"]
+                self._ml["y"] = np.where(fl, 1.0 - self._ml["y"], self._ml["y"])
             log("ML table: %d rows 2010-2025 (%d rows from 2026 dropped), %d logistic terms"
                 % (len(df), self._ml["n_2026_dropped"], X.shape[1]))
         return self._ml
@@ -419,6 +427,9 @@ class FeatLR(Model):
         self.y = np.array([r["y"] for r in rows])
         self.dates = np.array([r["date"] for r in rows])
         self.dec = np.isfinite(self.y)
+        if ctx.perturb_from:
+            fl = (self.dates >= ctx.perturb_from) & self.dec
+            self.y = np.where(fl, 1.0 - self.y, self.y)
         self.row = {r["id"]: k for k, r in enumerate(rows)}
         self.C = E["lr_page"]["C"]
         self.version = "tools/moe.py page feature LR, %d features, C %g, prep %s, refit per %s" % (
@@ -887,8 +898,8 @@ if _ENGK:
 def _moe_reg(key, regime, extra, desc, experimental=False, **kw):
     ex = dict(_MOE_BASE, **extra)
     register(key, group="stack", line={"market_close": "close", "market_open": "open"}.get(extra.get("market")),
-             refit="event", needs=tuple(sorted(set(ex.values()))), desc=desc, experimental=experimental)(
-        lambda ctx: MoEStack(ctx, ex, regime, **kw))
+             refit=kw.get("refit", "event"), needs=tuple(sorted(set(ex.values()))), desc=desc,
+             experimental=experimental)(lambda ctx: MoEStack(ctx, ex, regime, **kw))
 
 
 _moe_reg("moe_noline", "absent", {}, "the MoE stacker without a line (moe.json 'absent' config), refit before every card")
@@ -898,6 +909,10 @@ _moe_reg("moe_noline_plus", "absent", {"ratings": "ratings_whr", "mr": "mr_S"},
          "experiment: moe_noline + round-level WHR + method/round S as extra experts", experimental=True)
 _moe_reg("moe_close_plus", "present", {"market": "market_close", "ratings": "ratings_whr", "mr": "mr_S"},
          "experiment: moe_close + round-level WHR + method/round S as extra experts", experimental=True)
+_moe_reg("moe_noline_frozen", "absent", {}, "control: moe_noline fit once on 2019-2023 (refit 'once'), never updated",
+         experimental=True, refit="once")
+_moe_reg("moe_close_frozen", "present", {"market": "market_close"}, "control: moe_close fit once on 2019-2023",
+         experimental=True, refit="once")
 _moe_reg("moe_noline_pre", "absent", {"preufc": "preufc_elo"},
          "experiment: moe_noline + the pre-UFC-seeded Elo as an extra expert (newcomers)", experimental=True)
 _moe_reg("moe_noline_rt", "absent", {}, "experiment: moe_noline with its temperature fit on the last 730 days only",
@@ -944,6 +959,8 @@ def due(schedule, last, cutoff):
         return True
     if schedule == "event":
         return True
+    if schedule == "once":
+        return False
     if schedule == "month":
         return cutoff[:7] != last[:7]
     if schedule == "year":
@@ -953,8 +970,8 @@ def due(schedule, last, cutoff):
 
 class FitCache:
     """Per-model pickle of {cutoff: (fit info, {fid: p}, {fid: p swapped})} keyed by the model's version string."""
-    def __init__(self, key, version, enabled):
-        self.enabled = enabled
+    def __init__(self, key, version, enabled, write=True):
+        self.enabled, self.write = enabled, write
         os.makedirs(CACHE, exist_ok=True)
         self.path = os.path.join(CACHE, "%s_%s.pkl" % (key, hashlib.sha256(version.encode()).hexdigest()[:12]))
         self.d = {}
@@ -973,7 +990,7 @@ class FitCache:
         self.dirty = True
 
     def save(self):
-        if self.dirty:
+        if self.dirty and self.write:
             pickle.dump(self.d, open(self.path + ".tmp", "wb"))
             os.replace(self.path + ".tmp", self.path)
             self.dirty = False
@@ -1015,7 +1032,8 @@ def replay(ctx, keys):
     bins = {k: {} for k in order}
     fits = {k: [] for k in order}
     sym = {k: {"max_abs": 0.0, "n": 0} for k in order}
-    caches = {k: FitCache(k, models[k].version, not ctx.args.no_cache) for k in order}
+    caches = {k: FitCache(k, models[k].version, not ctx.args.no_cache and not ctx.perturb_from,
+                          write=not ctx.perturb_from) for k in order}
     last_fit = {k: None for k in order}         # cutoff of the fit in force
     fitted = {k: False for k in order}          # is the model object holding that fit in this process?
     fit_info = {k: None for k in order}
@@ -1026,8 +1044,8 @@ def replay(ctx, keys):
     for i in ctx.win_ids:
         by_date.setdefault(ctx.date[i], []).append(i)
     dates = sorted(by_date)
-    if ctx.args.quick:
-        dates = dates[:8]
+    if ctx.args.quick or getattr(ctx.args, "cards", None):
+        dates = dates[:getattr(ctx.args, "cards", None) or 8]
     for n_ev, d in enumerate(dates):
         fids = by_date[d]
         fset = set(fids)
@@ -1468,6 +1486,42 @@ def write_report(doc):
 
 
 # ====================================================================== main
+SELFTEST_MODELS = ["ml_lr", "feat_lr", "ml_lgb", "ml_xgb", "ml_blend", "stack_elo_ml_mr", "moe_noline", "moe_close"]
+
+
+def selftest(args):
+    """Look-ahead test of the harness's own refits: replay the first N cards twice, the second time with every outcome
+    dated on/after the middle card flipped (backtest labels, the ML table, the feature-LR table). Predictions for the
+    cards up to and including that card must be bit-identical; later cards must move (the flip took effect)."""
+    n = args.cards or 6
+    args.cards, args.no_cache = n, True
+    keys = [k.strip() for k in args.models.split(",")] if args.models else SELFTEST_MODELS
+    args.perturb_from = None
+    ctxA = Ctx(args)
+    RA = replay(ctxA, keys)
+    dates = [e["date"] for e in RA["events"]]
+    D = dates[n // 2]
+    args.perturb_from = D
+    ctxB = Ctx(args)
+    RB = replay(ctxB, keys)
+    bad, rows = [], []
+    for k in RA["order"]:
+        pre = [abs(RA["rec"][k][f][0] - RB["rec"][k][f][0]) for f in RA["rec"][k] if ctxA.date[f] <= D and f in RB["rec"][k]]
+        post = [abs(RA["rec"][k][f][0] - RB["rec"][k][f][0]) for f in RA["rec"][k] if ctxA.date[f] > D and f in RB["rec"][k]]
+        mp, mq = max(pre or [0.0]), max(post or [0.0])
+        rows.append((k, len(pre), mp, len(post), mq))
+        if mp > 1e-12:
+            bad.append(k)
+    print("selftest: outcomes flipped from %s (card %d of %d)" % (D, n // 2 + 1, n))
+    print("%-18s %6s %14s %6s %14s" % ("model", "n<=D", "max |dp| <=D", "n>D", "max |dp| >D"))
+    for r in rows:
+        print("%-18s %6d %14.3g %6d %14.3g" % r)
+    if bad:
+        raise SystemExit("LOOK-AHEAD: predictions up to %s changed when later outcomes were flipped: %s" % (D, bad))
+    print("selftest passed: no prediction depends on an outcome dated on or after its card")
+    return rows
+
+
 def build_doc(ctx, R, S, args, plugins):
     fights = {}
     for i in ctx.win_ids:
@@ -1496,7 +1550,7 @@ def build_doc(ctx, R, S, args, plugins):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["list", "replay", "score"])
+    ap.add_argument("cmd", choices=["list", "replay", "score", "selftest"])
     ap.add_argument("--models", default=None, help="comma-separated model keys (default: all registered)")
     ap.add_argument("--ml-refit", default="event", choices=["event", "month", "year"])
     ap.add_argument("--tree-refit", default="month", choices=["event", "month", "year"])
@@ -1505,6 +1559,7 @@ def main():
     ap.add_argument("--quick", action="store_true", help="first 8 cards only, 300 resamples, no outputs written "
                                                          "unless --out is given")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--cards", type=int, default=None, help="replay only the first N cards")
     args = ap.parse_args()
     plugins = load_plugins()
     if args.cmd == "list":
@@ -1512,7 +1567,10 @@ def main():
             print("%-18s %-9s refit=%-6s line=%-5s %s%s" % (k, s["group"], s["refit"], s["line"] or "-", s["desc"],
                                                          " [experimental]" if s["experimental"] else ""))
         return
-    out = args.out or (None if args.quick else OUT_JSON)
+    if args.cmd == "selftest":
+        selftest(args)
+        return
+    out = args.out or (None if args.quick or args.cards else OUT_JSON)
     if args.quick:
         args.boot = min(args.boot, 300)
     ctx = Ctx(args)
