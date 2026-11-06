@@ -871,7 +871,8 @@
       uPulse: { value: new T.Vector4(-99, 0, 0, 0) }, uFocus: { value: new T.Vector3(0, 1.2, 0) }, uHaze: { value: 0 }, uShaft: { value: 0.012 } };
     this.fx = { haze: 0, ca: 0, kick: 0, storm: 0, press: 0, replay: false };
 
-    this.env = buildEnvironment(renderer, opts.env === "room");
+    this.pmrem = T.PMREMGenerator ? new T.PMREMGenerator(renderer) : null;   // one for the arena's life (see buildEnvironment)
+    this.env = buildEnvironment(renderer, opts.env === "room", null, this.pmrem);
     if (this.env) scene.environment = this.env;
     this.envState = this.env ? "procedural" : "none";
 
@@ -900,7 +901,7 @@
       var t = new T.Texture(img);
       t.encoding = T.LinearEncoding; t.generateMipmaps = false; t.minFilter = T.LinearFilter; t.magFilter = T.LinearFilter;
       t.wrapS = T.RepeatWrapping; t.needsUpdate = true;
-      var env = buildEnvironment(self.renderer, false, t);
+      var env = buildEnvironment(self.renderer, false, t, self.pmrem);
       t.dispose();
       if (!env) { self.envState = "procedural"; return; }
       self.envProc = self.env;   // kept for useEnv("procedural")

@@ -1,0 +1,235 @@
+{
+  "slug": "caio-borralho",
+  "name": "Caio Borralho",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 33,
+  "official": { "dob": "1993-01-16", "height_cm": 185.4, "reach_cm": 190.5, "stance": "Southpaw", "division": "Middleweight", "fight_weight_lb": 185 },
+  "photos_used": [
+    "ref-espn-headshot-2026-03.png",
+    "ref-espn-stance-2026-03.png",
+    "ref-espn-stance-2025-09.png",
+    "ref-cagesidepress-ufc326-mediaday-2026-03.jpg",
+    "ref-metropoles-ufc326-ceremonial-2026-03-06.jpg",
+    "ref-metropoles-ufc326-studio-2026-03.jpg",
+    "ref-cagesidepress-ufc326-ceremonial-faceoff-2026-03-06.jpg",
+    "ref-middleeasy-ufc326-result-2026-03-07.jpg",
+    "ref-getty-ufc326-fight-a-2026-03-07.jpg",
+    "ref-getty-ufc326-fight-b-2026-03-07.jpg",
+    "ref-getty-ufc326-fight-c-2026-03-07.jpg",
+    "ref-lowkick-ufc326-postfight-presser-2026-03-07.png",
+    "wiki-sextoround-2025-09-04.jpg",
+    "ref-cagesidepress-paris-faceoff-2025-09.jpg",
+    "ref-cagesidepress-ufc319-weighin-2025-08.jpg",
+    "wiki-bda-futurefc8-2019-08-23.png"
+  ],
+  "photo_coverage": "16 photos. Most recent are from UFC 326 fight week (Mar 4-7, 2026); none from after March 2026 were found (he was out with a rib injury; UFC 334 fight week starts after this date). Frontal: UFC studio headshot (Mar 2026), media day and post-fight presser (Mar 2026, in glasses), arena weigh-in (Mar 2026, glasses), Commons webcam still (Sep 2025, glasses, dim). Three-quarter: two studio cutouts (Mar 2026 from his right, Sep 2025 from his left), 2019 Commons still. Profile: Sep 2025 face-off, left side, but white sunglasses hide the nose bridge. Body: two studio cutouts, four weigh-in/studio shots and the only back view (Mar 2026 face-off). Action: three Getty fight photos (Mar 2026). He wears glasses in nearly every non-studio face photo, so the bare face comes mainly from the two ESPN studio files.",
+  "face": {
+    "shape": "Long oval to slightly diamond face: widest at the high cheekbones, with flat-to-slightly-hollow cheeks below them, a moderately defined jaw and a long lower face.",
+    "jaw": "Moderately wide at the angles (just below the ears) with a clear line that tapers to the chin; defined at fight week, a little softer in the 2025 profile.",
+    "chin": "Medium width, rounded, of medium height; modest projection in profile (sits slightly behind the lower lip).",
+    "cheekbones": "High and prominent, the most distinctive feature of the face; they catch the light in every studio photo.",
+    "brow_ridge": "Moderate; the brows sit low and the upper lids fold under them.",
+    "forehead": "Medium height, smooth, a few small acne marks; hairline straight across.",
+    "eyes": {
+      "shape": "Narrow almond eyes with heavy, hooded upper lids that cover most of the lid crease, giving a calm, half-lidded look; outer corners level to slightly downturned. Slight puffiness under the lower lids.",
+      "spacing": "Average to slightly wide.",
+      "colour": "Dark brown.",
+      "size": "Medium-small aperture."
+    },
+    "eyebrows": {
+      "thickness": "Medium, neat.",
+      "shape": "Fairly straight and low, rising slightly toward a soft angle about two-thirds out, then tapering; inner ends low and close to the eyes.",
+      "colour": "Dark brown.",
+      "colour_samples": { "studio_right": "#7a3425 (warm studio grade)", "studio_left": "#4f1e15" },
+      "colour_hex": "#3e2119"
+    },
+    "nose": {
+      "length": "Medium.",
+      "width": "Medium bridge widening to a broad base; wider at the nostrils than the bridge suggests.",
+      "bridge": "Straight, medium height (profile hidden by sunglasses in the only side view).",
+      "hump": "None visible from the front.",
+      "tip": "Rounded, fairly full (slightly bulbous), pointing straight to slightly down.",
+      "nostrils": "Moderately wide, rounded alae with mild flare.",
+      "fight_damage": "No visible deviation or break."
+    },
+    "mouth": {
+      "width": "Medium to slightly wide.",
+      "upper_lip": "Medium-full with a defined cupid's bow.",
+      "lower_lip": "Full, the fuller of the two.",
+      "resting_expression": "Lips closed in a slight pout, corners turned a little down; serious, unbothered look in studio shots. Wide, open smile at weigh-ins and media days.",
+      "teeth": "Even and white when smiling."
+    },
+    "ears": {
+      "size": "Medium-large.",
+      "protrusion": "Clearly protruding, especially the upper halves; very visible with his short sides.",
+      "cauliflower_ear": "Mild, left ear only: the upper part of his left ear looks thickened, with the upper fold partly filled in (Mar 2026 headshot, Sep 2025 cutout). The right ear looks normal. Low-to-medium confidence at these resolutions.",
+      "piercing": "Possible small silver stud or ring on the upper rim (helix) of the left ear, a bright point in the same place in both the Sep 2025 and Mar 2026 studio files. Unconfirmed.",
+      "lobes": "Medium, attached to slightly free."
+    },
+    "notable_marks_scars": "Small dark-brown moles: one on his right cheek, about 2 cm out from the side of the nose at nostril level; one on his left cheek beside the smile line just below nostril level, with a smaller spot above it at the side of the nose. Scattered small acne marks and shallow pitted acne scarring on both lower cheeks and along the jaw, most visible on his right cheek near the jaw in the Mar 2026 three-quarter cutout. Fight-night redness on the right cheekbone (Mar 2026) is temporary."
+  },
+  "hair": {
+    "style": "Short wavy-to-curly hair: about 5-6 cm on top, worn tousled and swept forward and over to his left, with loose curls at the front edge; tapered sides and back at about 1.5-2 cm (scissor or clipper taper, not a skin fade), so the ears stand clear. In Sep 2025 the top was curlier and messier.",
+    "length_cm": { "top": 5.5, "sides": 1.8, "back": 2.0 },
+    "colour": "Very dark brown, nearly black-brown, with warm reddish-brown where studio light hits it.",
+    "colour_samples": { "studio_2026_top_mid": "#432420", "studio_2026_cutout_top_mid": "#33221e", "studio_2025_top_mid": "#34221e", "mediaday_2026_top_mid": "#544438" },
+    "colour_hex": "#3a2620",
+    "hairline": "Straight across with slightly higher temple corners; no thinning.",
+    "texture": "Wavy to loosely curly, medium-thick, with volume on top."
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "colour": "Very dark brown, like the hair; too sparse to sample cleanly.",
+    "colour_samples": { "note": "Chin and lip samples in the studio files return skin colour (#e28265) because the stubble is so light." },
+    "colour_hex": "#33221d",
+    "density": "Sparse, light: a faint shadow on the upper lip, chin and jaw; looks clean-shaven at normal viewing distance.",
+    "shape": "Even, very short shadow over the moustache area, chin and jaw, a little denser on the chin; no shaped beard.",
+    "length_mm": "0.5-1"
+  },
+  "skin": {
+    "tone_samples": [
+      { "photo": "ref-espn-headshot-2026-03.png", "spot": "right cheek", "hex": "#db6d50", "light": "studio, strong warm/orange grade" },
+      { "photo": "ref-espn-headshot-2026-03.png", "spot": "left cheek", "hex": "#e27a5c", "light": "studio, strong warm/orange grade" },
+      { "photo": "ref-espn-headshot-2026-03.png", "spot": "forehead", "hex": "#fbb396", "light": "studio highlight", "excluded": true },
+      { "photo": "ref-espn-stance-2026-03.png", "spot": "right cheek", "hex": "#aa6a50", "light": "studio, cheek turned into shadow", "excluded": true },
+      { "photo": "ref-espn-stance-2026-03.png", "spot": "left cheek", "hex": "#db8c6b", "light": "studio" },
+      { "photo": "ref-espn-stance-2026-03.png", "spot": "forehead", "hex": "#f5ba94", "light": "studio highlight", "excluded": true },
+      { "photo": "wiki-sextoround-2025-09-04.jpg", "spot": "right cheek", "hex": "#70402e", "light": "webcam, underexposed", "excluded": true },
+      { "photo": "wiki-sextoround-2025-09-04.jpg", "spot": "left cheek", "hex": "#683a2d", "light": "webcam, underexposed", "excluded": true },
+      { "photo": "wiki-sextoround-2025-09-04.jpg", "spot": "forehead", "hex": "#613324", "light": "webcam, underexposed", "excluded": true },
+      { "photo": "ref-metropoles-ufc326-ceremonial-2026-03-06.jpg", "spot": "right cheek", "hex": "#de887b", "light": "arena stage light" },
+      { "photo": "ref-metropoles-ufc326-ceremonial-2026-03-06.jpg", "spot": "left cheek", "hex": "#cf815d", "light": "arena stage light" },
+      { "photo": "ref-metropoles-ufc326-ceremonial-2026-03-06.jpg", "spot": "forehead", "hex": "#f7c5af", "light": "stage highlight", "excluded": true },
+      { "photo": "ref-metropoles-ufc326-studio-2026-03.jpg", "spot": "right cheek", "hex": "#ae8157", "light": "studio, dark teal grade" },
+      { "photo": "ref-metropoles-ufc326-studio-2026-03.jpg", "spot": "left cheek", "hex": "#b17f62", "light": "studio, dark teal grade" },
+      { "photo": "ref-metropoles-ufc326-studio-2026-03.jpg", "spot": "forehead", "hex": "#c09978", "light": "studio, dark teal grade", "excluded": true },
+      { "photo": "ref-cagesidepress-ufc326-mediaday-2026-03.jpg", "spot": "right cheek", "hex": "#e89b71", "light": "press-room light" },
+      { "photo": "ref-cagesidepress-ufc326-mediaday-2026-03.jpg", "spot": "left cheek", "hex": "#e1976b", "light": "press-room light" },
+      { "photo": "ref-cagesidepress-ufc326-mediaday-2026-03.jpg", "spot": "forehead", "hex": "#fecead", "light": "press-room highlight", "excluded": true }
+    ],
+    "sampling_method": "Median of a 7-21 px box per spot (source pixels), checked on an overlay sheet. Highlights, shadow and the underexposed webcam frame are listed but excluded.",
+    "tone_average_all": "#c68568",
+    "tone_average_kept": "#d38564",
+    "tone_average_by_light": "#d48665",
+    "tone_hex": "#d48665",
+    "tone_hex_recommended": "#c4825f",
+    "tone_note": "Light-medium to medium tan skin with a golden-olive warmth; clearly deeper and more golden than a fair-skinned fighter in the same studio light. The ESPN grade pushes it orange-red and the bright press and arena light lightens it; the dark-graded studio frame (#b0805c) sits below. #c4825f is the suggested render albedo.",
+    "undertone": "Warm golden to olive.",
+    "freckles_marks": "Small moles and acne marks on the cheeks (see face.notable_marks_scars). Torso even in tone. Light hair on the forearms and legs; chest smooth.",
+    "texture_pick": "middleage_caucasian_male (swatch #dab396) tinted down toward #c4825f; texture chosen only for its tone and pore detail."
+  },
+  "body": {
+    "build": "Lean, dense and very defined: muscular without bulk; 185 cm with a 190.5 cm reach. Long arms and legs for his height.",
+    "body_fat": "lean",
+    "body_fat_note": "Very low at fight week: sharp six-pack, visible obliques and serratus, veins on the forearms and lower abdomen.",
+    "shoulders": "Broad for the frame, round capped deltoids; shoulders carried slightly forward.",
+    "chest": "Well-developed, firm pecs with a clear lower edge and a defined split.",
+    "arms": "Muscular, defined biceps and triceps; strong forearms with visible veins; long.",
+    "waist": "Narrow; strong V-taper from the lats to a small waist.",
+    "legs_calves": "Lean, athletic thighs with visible separation, long lower legs, moderate calves.",
+    "neck": "Medium length, muscular, tattooed across the front.",
+    "posture": "Chin slightly tucked and head a little forward, shoulders rolled slightly forward; in the studio cutouts the elbows stay softly bent with the gloved fists in front of the hips or upper thighs, knuckles forward, weight on one leg. Relaxed, slightly cocky stance; big grin and flexing at weigh-ins.",
+    "notable_physique_traits": "Shredded abs and V-taper; black hand-lettered 'FREE SPIRIT' across the throat; columns of kanji on the right arm."
+  },
+  "stance_observed": {
+    "official": "Southpaw (dataset, ESPN).",
+    "from_photos": "UFC 326 (Mar 2026): right foot and right shoulder forward; hands carried low, near the waist, as he leans back away from a jab (Getty fight photo a); a knee from a single collar tie against the fence (photo c); in photo b he exchanges with his chin up and the right arm extended. Studio stance is relaxed with fists in front of the hips (see posture).",
+    "from_research": "research/fighters/caio-borralho.md: powerful southpaw all-rounder who leads with striking (one-twos, hooks, kicks to all levels), opportunistic wrestling, heavy ground-and-pound and back takes. A Superlutas report on the de Ridder fight (https://en.superlutas.com.br/noticias/349940/caio-borralho-usa-jabs-chutes-baixos-dominar-reinier-de-ridder-ufc-326/) describes a low guard with jabs and low kicks; this was read only as a search summary."
+  },
+  "tattoos": [
+    { "where": "Front of the neck (throat), from side to side", "description": "Black hand-lettered capitals 'FREE SPIRIT' in rough brush-style strokes across the throat, the words wrapping slightly onto both sides of the neck.", "size": "About 14 x 4 cm" },
+    { "where": "Right shoulder, front of the deltoid near the collarbone", "description": "Single black brush-style kanji 仁 (benevolence).", "size": "About 6 x 7 cm" },
+    { "where": "Right upper arm, front and inner side, shoulder to elbow", "description": "Vertical column of black brush-style kanji 武士道 (bushido) running down the arm.", "size": "About 6 x 20 cm" },
+    { "where": "Right arm, front of the lower arm", "description": "Single black brush-style kanji 義 (righteousness) below the elbow.", "size": "About 6 x 8 cm" },
+    { "where": "Right arm, back and outer side, shoulder to wrist", "description": "Second vertical column of black kanji: 勇 (courage) on the back of the shoulder, 名誉 (honour) on the back of the upper arm and 礼 (respect) on the back of the lower arm; with the front column it spells out bushido virtues. Partly visible from the front as characters on the outer arm, including 誠.", "size": "About 6 x 45 cm in total" },
+    { "where": "Right ribs and flank, armpit to waist", "description": "Block of about 15 short lines of small black handwritten script, stacked vertically down the right side of the torso; unreadable at these resolutions.", "size": "About 10 x 25 cm" },
+    { "where": "Left upper chest, under the collarbone", "description": "Two black brush-style kanji stacked vertically: 柔道 (judo).", "size": "About 5 x 11 cm" },
+    { "where": "Left upper arm, outer side", "description": "Black hand-lettered capitals 'FIGHT OR DIE' on three lines, plus kanji partly visible on the back of the left arm.", "size": "About 9 x 10 cm" },
+    { "where": "Upper back, across the base of the neck", "description": "One line of small black cursive script across the top of the back at the base of the neck; unreadable. The rest of the back is clear.", "size": "About 15 x 2 cm" },
+    { "where": "Fingers of the right hand", "description": "Small black letters and symbols on the fingers (part reads 'BE', and a small cross); not fully readable.", "size": "Small" },
+    { "where": "Legs", "description": "None clearly visible in the studio cutouts.", "size": "-" }
+  ],
+  "accessories_seen": "Glasses in almost every non-studio photo: thick black round frames at media days, press conferences and even in the cage after the fight (Mar 2026); white sunglasses at the Sep 2025 face-off; dark sunglasses at the UFC 319 weigh-in. Gold chain with a small cross pendant, gold watch on the right wrist (Mar 2026); a cord necklace with a square pendant (Sep 2025 webcam).",
+  "kit": {
+    "typical_shorts": "UFC-issued kit in the corner colour, two cuts. Mar 2026: white vale tudo-cut (short, fitted) shorts with a grey wave pattern, black-and-white checker waistband with a black UFC tab, crypto.com logo, green-and-yellow 'BORRALHO' down the left leg. Sep 2025: black/charcoal tiger-stripe board shorts with white slashes and 'BORRALHO' in yellow.",
+    "gloves": "Standard black UFC 4 oz gloves.",
+    "shorts_colours_hex": { "white_2026": "#e2e1ec", "white_2026_pattern": "#c2bdd2", "black_2025": "#0b0b10", "name_yellow_2025": "#b88300", "waistband_black": "#111111" }
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.123,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.7,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.05,
+    "macro/heightUpM": 0.18,
+    "macro/heightDownM": 0.0,
+    "macro/proportionsUpM": 0.5,
+
+    "head/head-oval": 0.3,
+    "head/head-scale-vert-incr": 0.1,
+    "head/head-fat-decr": 0.15,
+
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-bones-incr": 0.1,
+    "chin/chin-prominent-decr": 0.05,
+
+    "cheek/l-cheek-bones-incr": 0.35,
+    "cheek/r-cheek-bones-incr": 0.35,
+    "cheek/l-cheek-volume-decr": 0.15,
+    "cheek/r-cheek-volume-decr": 0.15,
+
+    "eyes/l-eye-height2-decr": 0.3,
+    "eyes/r-eye-height2-decr": 0.3,
+    "eyes/l-eye-scale-decr": 0.1,
+    "eyes/r-eye-scale-decr": 0.1,
+    "eyes/l-eye-corner1-down": 0.05,
+    "eyes/r-eye-corner1-down": 0.05,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1,
+    "eyes/l-eye-trans-out": 0.05,
+    "eyes/r-eye-trans-out": 0.05,
+
+    "eyebrows/eyebrows-trans-down": 0.1,
+    "eyebrows/eyebrows-angle-up": 0.05,
+
+    "nose/nose-scale-horiz-incr": 0.1,
+    "nose/nose-nostrils-width-incr": 0.2,
+    "nose/nose-point-width-incr": 0.2,
+    "nose/nose-flaring-incr": 0.1,
+    "nose/nose-point-down": 0.05,
+
+    "mouth/mouth-lowerlip-volume-incr": 0.25,
+    "mouth/mouth-upperlip-volume-incr": 0.1,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "mouth/mouth-cupidsbow-incr": 0.1,
+    "mouth/mouth-angles-down": 0.1,
+
+    "ears/l-ear-scale-incr": 0.15,
+    "ears/r-ear-scale-incr": 0.15,
+
+    "neck/neck-scale-horiz-incr": 0.2,
+
+    "torso/measure-shoulder-dist-incr": 0.2,
+    "torso/torso-vshape-incr": 0.3,
+    "torso/measure-waist-circ-decr": 0.15,
+    "torso/measure-hips-circ-decr": 0.05
+  },
+  "morphs_extra": {
+    "_note": "Outside the requested morph list but present in assets/embed/mh-shapes-x (src/avatar3d.js reads this block). Wing = ear protrusion; the left-ear depth stands in for the mild thickening; eyefold-down for the hooded lids.",
+    "head/head-diamond": 0.25,
+    "ears/l-ear-wing-incr": 0.3,
+    "ears/r-ear-wing-incr": 0.3,
+    "ears/l-ear-scale-depth-incr": 0.15,
+    "eyes/l-eye-eyefold-down": 0.2,
+    "eyes/r-eye-eyefold-down": 0.2
+  },
+  "render_hints": {
+    "iris": "brown",
+    "eyebrows": "eyebrow001 tinted #3e2119, medium, low and straight",
+    "skin_base": "middleage_caucasian_male tinted toward #c4825f",
+    "hair": "short wavy-curly top (about 5.5 cm) swept to his left over tapered sides, tinted #3a2620; faint stubble shadow tinted #33221d",
+    "glasses": "none in the cage during the fight (he wears glasses only outside fighting)"
+  },
+  "notes": "Confidence: high for hair, skin, build, eye colour and the tattoo layout; medium for face proportions (the bare face comes from two studio files; most other face photos have glasses); low-to-medium for exact morph values and for the mild left cauliflower ear and ear piercing. What to watch: (1) High, prominent cheekbones with flat cheeks beneath, a long oval-to-diamond face and a rounded medium chin. (2) Narrow, hooded dark-brown eyes under low, straight dark brows: the half-lidded look is key. (3) Broad-based nose with a rounded tip and full lips, the lower one fuller, corners slightly down. (4) Protruding ears; left upper ear slightly thickened. (5) Very short, sparse stubble: reads clean-shaven. (6) Dark-brown wavy/curly top swept to his left, tapered sides, ears clear. (7) Golden-olive light-medium tan skin, deeper than the fair fighters; small moles on both cheeks and light acne scarring. (8) Tattoos are all black lettering: 'FREE SPIRIT' across the throat; kanji columns on the front (仁 / 武士道 / 義) and back (勇 / 名誉 / 礼) of the right arm; 柔道 on the left upper chest; 'FIGHT OR DIE' on the left upper arm; a block of small script on the right ribs; one line of script across the base of the neck. No large back or leg pieces. Mirror-check sides (photos checked unmirrored via readable logos). (9) Shredded, V-tapered middleweight build, not bulky. Macro ageOldM 0.123 uses (33-25)/65. heightUpM 0.18 is a guess for 185 cm; the avatar scales to official height. Values symmetric except the left-ear thickening; l-/r- refer to the character's own sides."
+}

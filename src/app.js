@@ -803,7 +803,7 @@
   function knobsChanged(now) {
     clearTimeout(knobTimer);
     var run = function () {
-      buildMatchup(); syncKnobOutputs(); renderScenNote(); renderWhy(); renderForecast();
+      buildMatchup(); dropEngine(); syncKnobOutputs(); renderScenNote(); renderWhy(); renderForecast();
       Array.prototype.forEach.call($("chips").children, function (b) { b.setAttribute("aria-pressed", b.dataset.id === S.scen ? "true" : "false"); });
       queueTally(true);
     };
@@ -884,9 +884,12 @@
       if (i < N_TALLY) setTimeout(chunk, 4);
     })();
   }
+  // the simulator's numbers belong to one matchup and knob setting: drop them as soon as either changes, so the forecast
+  // drawn before the new tally's first chunk never quotes the old simulator
+  function dropEngine() { stack.engine = null; stack.engineN = 0; ENG = null; lastAgg = null; }
   function startTally() {
     tallyId++;
-    stack.engine = null; stack.engineN = 0; ENG = null; lastAgg = null;
+    dropEngine();
     var m = cur.m; if (!m) { $("runStatus").textContent = "This matchup can't be simulated" + (cur.err ? ": " + cur.err.message : "."); return; }
     $("runStatus").textContent = "Simulating " + nf.format(N_TALLY) + " fights";
     setProgress(0);
@@ -921,11 +924,11 @@
     ENG = { pA: pA, pB: pB, pD: pD, n: agg.n, done: done };
     stack.engine = agg.n >= ENGINE_MIN ? pA / Math.max(1e-9, pA + pB) : null; stack.engineN = agg.n;
     var mlOn = cur.m && cur.m.mlApplied;
-    $("runStatus").textContent = done ? nf.format(agg.n) + " simulated fights · " + scenarioName() + " · " + (mlOn ? "ML stat lines on" : "data-only rates") + " · " + (worker ? "background thread" : "main thread")
+    $("runStatus").textContent = done ? nf.format(agg.n) + " simulated fights · " + scenarioName() + " · " + (mlOn ? "learned stat lines" : "raw UFC rates")
       : "Simulating " + nf.format(agg.n) + " of " + nf.format(N_TALLY) + " fights";
     setProgress(agg.n / N_TALLY);
     renderForecast();
-    if (done && BL && BL.head) $("tallyLive").textContent = "Headline odds: " + nameOf("A") + " " + pct(BL.head.pA, 0) + ", " + nameOf("B") + " " + pct(BL.head.pB, 0) + ", draw " + pct(BL.head.pD, 0) + ".";
+    if (done && BL && BL.head) $("tallyLive").textContent = "Headline odds: " + nameOf("A") + " " + pctW(BL.head.pA) + ", " + nameOf("B") + " " + pctW(BL.head.pB) + ", draw " + pctD(BL.head.pD) + ".";
   }
 
   /* ================================================================ the blend (MoE) and the method-and-round model */
@@ -956,13 +959,21 @@
     else out.notes.mkt_rating = "no closing-line history for " + missing(function (s) { return !!MKTR[s]; });
     return out;
   }
+  // American odds as a number; "EV" / "even" / "evens" is +100, so every line goes through the same (power) de-vig
+  function oddsNum(s) {
+    s = String(s == null ? "" : s).trim().toLowerCase().replace(/[−–]/g, "-");
+    if (s === "ev" || s === "even" || s === "evens") return 100;
+    return /^[+-]?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : NaN;
+  }
+  var OVER_LO = -0.01, OVER_HI = 0.25;   // a two-way line whose margin falls outside this is a typo, not a price
   function marketLine() {
     var ia = parseOdds(S.odds.A), ib = parseOdds(S.odds.B);
     if (ia == null || ib == null || !isFinite(ia) || !isFinite(ib)) return { p: null, ia: ia, ib: ib };
-    var p = ia / (ia + ib);
-    var oa = String(S.odds.A).trim().toLowerCase().replace(/[−–]/g, "-"), ob = String(S.odds.B).trim().toLowerCase().replace(/[−–]/g, "-");
-    try { if (window.MoE && /^[+-]?\d/.test(oa) && /^[+-]?\d/.test(ob)) p = window.MoE.devig(parseFloat(oa), parseFloat(ob)); } catch (e) { /* proportional */ }
-    return { p: p, ia: ia, ib: ib, over: ia + ib - 1 };
+    var over = ia + ib - 1;
+    if (over < OVER_LO || over > OVER_HI) return { p: null, ia: ia, ib: ib, over: over, bad: true };
+    var p = ia / (ia + ib), oa = oddsNum(S.odds.A), ob = oddsNum(S.odds.B);
+    try { if (window.MoE && isFinite(oa) && isFinite(ob)) p = window.MoE.devig(oa, ob); } catch (e) { /* proportional */ }
+    return { p: p, ia: ia, ib: ib, over: over };
   }
   var mrCache = {};
   function mrFor(pMkt) {
@@ -1036,51 +1047,56 @@
     computeBlend();
     var H = BL.head, sc = BL.sc;
     if (H) {
-      $("pA").textContent = pct(H.pA); $("pB").textContent = pct(H.pB); $("pD").textContent = pct(H.pD);
-      $("winA").firstChild.nodeValue = pct(H.pA, 0); $("winB").firstChild.nodeValue = pct(H.pB, 0);
+      $("pA").textContent = pctW(H.pA); $("pB").textContent = pctW(H.pB); $("pD").textContent = pctD(H.pD);
+      $("winA").firstChild.nodeValue = pctW(H.pA); $("winB").firstChild.nodeValue = pctW(H.pB);
       $("segA").style.width = (H.pA * 100) + "%"; $("segD").style.width = Math.max(0.4, H.pD * 100) + "%"; $("segB").style.width = (H.pB * 100) + "%";
-      $("segAl").textContent = H.pA > 0.12 ? pct(H.pA, 0) : ""; $("segBl").textContent = H.pB > 0.12 ? pct(H.pB, 0) : "";
-      $("segbar").setAttribute("aria-label", "Headline odds: " + nameOf("A") + " " + pct(H.pA) + ", draw " + pct(H.pD) + ", " + nameOf("B") + " " + pct(H.pB));
+      $("segAl").textContent = H.pA > 0.12 ? pctW(H.pA) : ""; $("segBl").textContent = H.pB > 0.12 ? pctW(H.pB) : "";
+      $("segbar").setAttribute("aria-label", "Headline odds: " + nameOf("A") + " " + pctW(H.pA) + ", draw " + pctD(H.pD) + ", " + nameOf("B") + " " + pctW(H.pB));
     }
     // what the headline is made of, in one place
     var fc = $("fcNote"); fc.textContent = "";
     var l1 = el("span");
     if (BL.r) {
       var nUsed = BL.r.used.length;
-      l1.appendChild(el("b", null, "Who wins: the blend of " + nUsed + " models" + (BL.useLine ? ", market line included" : (BL.hasLine ? ", market line switched off" : ", no market line")) + ". "));
-    } else l1.appendChild(el("b", null, "Who wins: the simulator alone (the blend did not load). "));
-    if (ENG && !BL.engStale) l1.appendChild(document.createTextNode("The simulator by itself: " + shortOf("A") + " " + pct(ENG.pA) + ", " + shortOf("B") + " " + pct(ENG.pB) + ", draw " + pct(ENG.pD, 1) + " over " + nf.format(ENG.n) + " fights, " + (cur.m && cur.m.mlApplied ? "with ML stat lines." : "with data-only rates.")));
+      l1.appendChild(el("b", null, "Who wins: " + numWord(nUsed) + " models combined" + (BL.useLine ? ", the betting line included" : (BL.hasLine ? ", the betting line switched off" : ", no betting line")) + ". "));
+    } else l1.appendChild(el("b", null, "Who wins: the simulator alone (the combined model did not load). "));
+    if (ENG && !BL.engStale) l1.appendChild(document.createTextNode("The simulator by itself: " + shortOf("A") + " " + pctW(ENG.pA) + ", " + shortOf("B") + " " + pctW(ENG.pB) + ", draw " + pctD(ENG.pD) + " over " + nf.format(ENG.n) + " fights. The cage's winners follow the headline, not the simulator alone."));
     else l1.appendChild(document.createTextNode("The simulator is running."));
     fc.appendChild(l1);
     var l2 = el("span");
-    if (H && H.src === "mr") l2.textContent = "How it ends: the method-and-round model (" + (H.variant === "SM" ? "SM, which also reads the market line" : "S, stats only") + "), scaled to the blend's winner odds. The ticks show the simulator, rescaled the same way.";
-    else if (H && H.src === "engine") l2.textContent = "How it ends: the simulator, rescaled to the blend's winner odds (the method-and-round model is not available for this pair).";
+    if (H && H.src === "mr") l2.textContent = "How it ends: the finish model" + (H.variant === "SM" ? " (it also reads the betting line)" : "") + ", scaled to the headline odds.";
+    else if (H && H.src === "engine") l2.textContent = "How it ends: the simulator, scaled to the headline odds (the finish model is not available for this pair).";
     if (l2.textContent) fc.appendChild(l2);
     if (cur.m && cur.m.mlStuck) fc.appendChild(el("span", null, "This engine build keeps its learned rates even with the toggle off."));
     // legend for both charts
     var key = $("howKey"); key.textContent = "";
-    if (H && H.src === "mr") {
-      var k1 = el("span"); k1.appendChild(el("i", "k-bar")); k1.appendChild(document.createTextNode("Bars: method-and-round model × blend (the headline)")); key.appendChild(k1);
-      if (sc) { var k2 = el("span"); k2.appendChild(el("i", "k-tick")); k2.appendChild(document.createTextNode("Ticks: simulator, rescaled")); key.appendChild(k2); }
-    } else if (H) { var k3 = el("span"); k3.appendChild(el("i", "k-bar")); k3.appendChild(document.createTextNode("Simulator, rescaled to the blend")); key.appendChild(k3); }
+    if (H) { var k1 = el("span"); k1.appendChild(el("i", "k-bar")); k1.appendChild(document.createTextNode(H.src === "mr" ? "Finish model, scaled to the headline odds" : "Simulator, scaled to the headline odds")); key.appendChild(k1); }
     if (H && H.bins7) {
-      drawBins(H, sc); drawRounds(H, sc);
+      drawBins(H, null); drawRounds(H, null);
       var dist = H.bins7[2] + H.bins7[3] + H.bins7[4];
       $("tDistL").textContent = "Goes the full " + S.rounds * 5 + " minutes";
-      $("tDist").textContent = pct(dist, 0);
+      $("tDist").textContent = pctW(dist);
       $("tCardsL").textContent = shortOf("A") + " wins when it goes to the cards";
-      $("tCards").textContent = H.bins7[2] + H.bins7[4] > 0 ? pct(H.bins7[2] / (H.bins7[2] + H.bins7[4]), 0) : "–";
+      $("tCards").textContent = H.bins7[2] + H.bins7[4] > 0 ? pctW(H.bins7[2] / (H.bins7[2] + H.bins7[4])) : "–";
+      $("tKoL").textContent = "Ends by KO or TKO, either fighter";
+      $("tKo").textContent = pctW(H.bins7[0] + H.bins7[6]);
     }
+    var mnote = $("methodNote");
     if (lastAgg && !BL.engStale) {
       var decs = lastAgg.dec.UD + lastAgg.dec.SD + lastAgg.dec.MD;
-      $("tSplit").textContent = decs ? pct((lastAgg.dec.SD + lastAgg.dec.MD) / decs, 0) : "–";
       if (sc) renderMethodTable(sc);
       renderAvgTable(lastAgg);
+      if (mnote) mnote.textContent = "The simulator's finer methods, rescaled so its winner odds match the headline (its draw share and its mix of methods for each winner are kept)." +
+        (decs ? " Of its decisions, " + pct((lastAgg.dec.SD + lastAgg.dec.MD) / decs, 0) + " are split or majority." : "");
+    } else {
+      ["methodTbl", "avgTbl"].forEach(function (id) { $(id).textContent = ""; });
+      if (mnote) mnote.textContent = "The simulator is running.";
     }
     renderHowTable(H, sc, BL.engStale ? null : lastAgg);
     renderStack();
   }
 
+  function numWord(n) { return ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][n] || String(n); }
   function scenarioName() {
     var sc = scenarioList().filter(function (x) { return x.id === S.scen; })[0];
     if (sc) return sc.label + " settings";
@@ -1187,9 +1203,9 @@
     var note = $("howNote");
     if (!H || !H.bins7) { note.textContent = "Waiting for the models."; return; }
     var cols = [];
-    if (H.src === "mr") cols.push({ h: "Headline", sub: (H.variant === "SM" ? "model SM" : "model S") + " × blend", v: H.bins7 });
-    if (sc) cols.push({ h: "Simulator", sub: "rescaled", v: sc.bins.map(function (x) { return x / Math.max(1, sc.n); }) });
-    if (agg) cols.push({ h: "Simulator", sub: "alone", v: agg.bins.map(function (x) { return x / Math.max(1, agg.n); }) });
+    if (H.src === "mr") cols.push({ h: "Headline", sub: "finish model, scaled", v: H.bins7 });
+    if (sc) cols.push({ h: "Simulator", sub: "scaled to headline", v: sc.bins.map(function (x) { return x / Math.max(1, sc.n); }) });
+    if (agg) cols.push({ h: "Simulator", sub: "as played", v: agg.bins.map(function (x) { return x / Math.max(1, agg.n); }) });
     var th = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Outcome"));
     cols.forEach(function (c, i) { var x = el("th", i === 0 && H.src === "mr" ? "strong" : null); x.appendChild(document.createTextNode(c.h)); x.appendChild(el("br")); x.appendChild(el("small", null, c.sub)); hr.appendChild(x); });
     Array.prototype.forEach.call(hr.children, function (x) { x.scope = "col"; }); th.appendChild(hr); t.appendChild(th);
@@ -1204,8 +1220,8 @@
     row(shortOf("B") + " wins", function (v) { return v[4] + v[5] + v[6]; }, true);
     row("Goes the distance", function (v) { return v[2] + v[3] + v[4]; }, true);
     t.appendChild(tb);
-    note.textContent = (H.src === "mr" ? "The headline column is what the page leads with: the winner odds come from the blend, and how the fight ends comes from the method-and-round model (" + (H.variant === "SM" ? "SM, which also reads the market line" : "S, from stats only") + "), which beat division base rates on held-out fights from 2024 on. " : "") +
-      "The simulator columns show the same outcomes from " + nf.format(agg ? agg.n : 0) + " simulated fights, once rescaled so its winner odds match the blend (its draw share and its mix of methods for each winner kept) and once as played.";
+    note.textContent = (H.src === "mr" ? "The headline column is what the page leads with: the winner odds come from the combined models, and how the fight ends comes from the finish model" + (H.variant === "SM" ? " (which also reads the betting line)" : "") + ", which beat division base rates on held-out fights from 2024 on. " : "") +
+      (agg ? "The simulator columns show the same outcomes from " + nf.format(agg.n) + " simulated fights, once scaled so its winner odds match the headline (its draw share and its mix of methods for each winner kept) and once as played." : "The simulator is still running.");
   }
   function renderMethodTable(agg) {
     var t = $("methodTbl"), n = Math.max(1, agg.n), M = agg.methods; t.textContent = "";
