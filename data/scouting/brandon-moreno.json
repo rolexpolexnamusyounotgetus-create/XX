@@ -3,15 +3,20 @@
   "name": "Brandon Moreno",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former two-time UFC flyweight champion, now a contender. Snapped a two-fight skid with a split decision over Joseph Morales at Noche UFC (Sep 12, 2026; 28-29, 30-27, 30-27) after a five-round unanimous-decision loss to Lone'er Kavanagh in Mexico City (Feb 28, 2026) and his first career stoppage loss, a TKO from back control by Tatsuro Taira at UFC 323 (Dec 6, 2025). Booked against Charles Johnson at UFC 335 (Dec 12, 2026). Pro record 24-10-2; UFC 12-7-2.",
+    "summary": "Former two-time UFC flyweight champion, now a contender. Snapped a two-fight skid with a split decision over Joseph Morales at Noche UFC (Sep 12, 2026; 28-29, 30-27, 30-27) after a five-round unanimous-decision loss to Lone'er Kavanagh in Mexico City (Feb 28, 2026) and his first career stoppage loss, a TKO from back control by Tatsuro Taira at UFC 323 (Dec 6, 2025). Booked against Charles Johnson at UFC 335, T-Mobile Arena, Las Vegas (Dec 12, 2026), still listed on Nov 6, 2026. Pro record 24-10-2; UFC 12-7-2 (ufcstats).",
     "title": null,
-    "ranking": "#8 flyweight in the USA TODAY Sports/MMA Junkie media rankings (cited Oct 2026); other lists differ",
+    "ranking": "#8 flyweight in the official UFC rankings (media panel, released Nov 3, 2026; ufc.com/rankings via Wayback capture of Nov 4, 2026) and #9 in the Meta UFC (Elo-model) rankings released Oct 31, 2026 (per Wikipedia's UFC rankings tables, rev. of Nov 6, 2026)",
     "active": true,
     "next_fight": "vs Charles Johnson, UFC 335, T-Mobile Arena, Las Vegas, Dec 12, 2026",
     "injuries": [],
     "sources": [
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://en.wikipedia.org/w/index.php?title=UFC_rankings&oldid=1384021836",
+      "https://www.sherdog.com/fighter/Brandon-Moreno-80173",
+      "https://www.espn.com/mma/fighter/_/id/3027545/brandon-moreno",
+      "https://en.wikipedia.org/w/index.php?title=Brandon_Moreno&oldid=1382308362",
+      "https://www.mmafighting.com/ufc/509906/noche-ufc-results-brandon-moreno-shows-off-slick-striking-and-grappling-to-beat-joseph-morales",
       "https://sports.yahoo.com/articles/noche-ufc-results-brandon-moreno-235942495.html",
-      "https://x.com/MMAFighting/status/2098922657898983872",
       "https://sports.yahoo.com/articles/brandon-moreno-surprised-split-decision-134021217.html",
       "https://cagesidepress.com/2026/09/12/noche-ufc-brandon-moreno-back-in-win-column-care-of-decision-over-joseph-morales/",
       "https://www.ufc.com/news/ufc-mexico-official-scorecards-moreno-vs-kavanagh",
@@ -68,14 +73,18 @@
   },
   "appearance": {
     "build": "lean, average-framed flyweight: 5 ft 7 in with a 70 in reach (ufcstats)",
-    "hair": "dark; current style not verified in this pass",
-    "facial_hair": "unknown",
+    "hair": "short dark brown hair, cropped at the sides with a textured top (ESPN headshot and cutout, files dated Sep 10, 2026; Noche UFC weigh-in and fight photos, Sep 11-12, 2026)",
+    "facial_hair": "clean-shaven",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "a colour Aztec-style feathered serpent head (red, green and yellow) on the left chest, a black tribal piece over the right shoulder and collarbone, black-and-grey pieces on the right upper arm and right forearm, script down the left ribs and a small piece on the left forearm (ESPN headshot and studio cutout, Sep 2026; Noche UFC photos)",
+    "kit": "red-and-green Mexican-themed UFC (Venum) shorts with MORENO lettering (ESPN cutout dated Sep 10, 2026; worn from the red corner at Noche UFC, Sep 12, 2026, Getty photo via MMA Fighting); corner colour wins in the sim",
+    "notes": "Re-verified Nov 6, 2026 (open network) from dated photos, since no photo-based likeness sheet exists yet (data/likeness/brandon-moreno.json): ESPN headshot and full-body studio cutout (files dated Sep 10, 2026, Noche UFC fight week), the Cageside Press Noche UFC ceremonial weigh-in photo (Sep 11, 2026) and a Getty fight photo from Noche UFC (Sep 12, 2026). Text on the ESPN cutout reads correctly, so it is not mirrored and left/right are his own. Build is from ufcstats. The Noche UFC shorts were a Mexican Independence-weekend design, so other events may differ.",
     "sources": [
-      "http://ufcstats.com/fighter-details/792be9a24df82ed6",
-      "https://www.ufc.com/athlete/brandon-moreno"
+      "https://a.espncdn.com/i/headshots/mma/players/full/3027545.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3027545.png",
+      "https://cagesidepress.com/wp-content/uploads/2026/09/Brandon-Moreno-vs.-Joseph-Morales.jpg",
+      "https://www.mmafighting.com/ufc/509906/noche-ufc-results-brandon-moreno-shows-off-slick-striking-and-grappling-to-beat-joseph-morales",
+      "http://ufcstats.com/fighter-details/792be9a24df82ed6"
     ]
   },
   "engine_notes": [

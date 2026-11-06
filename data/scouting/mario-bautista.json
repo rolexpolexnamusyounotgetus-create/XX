@@ -3,19 +3,23 @@
   "name": "Mario Bautista",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Top-five UFC bantamweight on a two-fight streak: a rear-naked choke of Vinicius Oliveira in a Fight Night headliner (Feb 7, 2026) and a 29-28 x3 decision over Cory Sandhagen at UFC 329 (Jul 11, 2026), avenging his 2019 UFC debut loss. His only loss since March 2021 is a 30-27 x3 decision to Umar Nurmagomedov at UFC 321 (Oct 25, 2025). UFC record 12-3 per ufcstats. His next booking was not verified in this pass.",
+    "summary": "Top-five UFC bantamweight on a two-fight streak, with no fight booked as of Nov 6, 2026. He submitted Vinicius Oliveira (rear-naked choke, R2) in a Fight Night headliner (Feb 7, 2026) and beat Cory Sandhagen 29-28 x3 at UFC 329 (Jul 11, 2026), avenging his 2019 UFC debut loss; afterwards he asked for a title shot or a No. 1 contender fight. His only loss since March 2021 is a 30-27 x3 decision to Umar Nurmagomedov at UFC 321 (Oct 25, 2025). Pro record 18-3 (UFC 12-3). Fights out of MMA Lab in Arizona.",
     "title": null,
-    "ranking": "#4 bantamweight on ufcalendar.com's main list and #5 on ufcrankings.org (both updated Nov 3, 2026); official UFC rankings page not checked",
+    "ranking": "#5 bantamweight in the official UFC rankings (media panel, released Nov 3, 2026; ufc.com/rankings via Wayback capture of Nov 4, 2026) and #4 in the Meta UFC (Elo-model) rankings released Oct 31, 2026 (per Wikipedia's UFC rankings tables, rev. of Nov 6, 2026)",
     "active": true,
     "next_fight": null,
     "injuries": [],
     "sources": [
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://en.wikipedia.org/w/index.php?title=UFC_rankings&oldid=1384021836",
+      "https://www.sherdog.com/fighter/Mario-Bautista-128107",
+      "https://www.espn.com/mma/fighter/_/id/4410868/mario-bautista",
+      "https://en.wikipedia.org/wiki/Mario_Bautista",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/07/12/ufc-329-mario-bautista-wants-bantamweight-title-shot-top-contender-fight-cory-sandhagen-rematch-win/90895389007/",
+      "https://sports.betmgm.com/en/blog/ufc/when-is-mario-bautista-next-fight-bm05/",
       "https://sports.yahoo.com/mma/article/ufc-329-results-mario-bautista-grits-out-massive-revenge-win-over-cory-sandhagen-031722352.html",
       "https://cagesidepress.com/2026/07/11/ufc-329-mario-bautista-picks-up-win-over-hobbled-cory-sandhagen/",
       "https://www.bjpenn.com/mma-news/cory-sandhagen/ufc-329-results-mario-bautista-defeats-cory-sandhagen-highlights/",
-      "https://khelnow.com/ufc/ufc-329-results-mario-bautista-beats-cory-sandhagen-via-unanimous-decision-202607",
-      "https://www.ufcalendar.com/rankings/bantamweight",
-      "https://ufcrankings.org/",
       "http://ufcstats.com/fighter-details/bc711b6dd95c1af6",
       "http://ufcstats.com/fight-details/fb4b1754d510b0d0",
       "http://ufcstats.com/fight-details/e69f9b4b9cae12a4"
@@ -58,12 +62,19 @@
   },
   "appearance": {
     "build": "5'9\" (69 in) with a 69 in reach per ufcstats",
-    "hair": "unknown (not confirmed from a dated photo in this pass)",
-    "facial_hair": "unknown",
-    "skin": "unknown",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "sources": ["http://ufcstats.com/fighter-details/bc711b6dd95c1af6"]
+    "hair": "black hair: high skin fade, short at the sides, with a longer textured top (ESPN headshot and cutout, files dated Jul 9, 2026; UFC 329 weigh-in and fight photos, Jul 10-11, 2026)",
+    "facial_hair": "clean-shaven",
+    "skin": "light-medium",
+    "tattoos": "script across the upper chest reading 'Death Before Dishonor'; a large piece on the right forearm, a smaller one on the left forearm, and a large tattoo around the right knee and lower thigh (ESPN headshot and studio cutout, Jul 2026; UFC 329 photos). Back not seen.",
+    "kit": "UFC (Venum) shorts in blue with a darker wave pattern (ESPN cutout dated Jul 9, 2026); blue Venum shorts with BAUTISTA lettering from the blue corner at UFC 329 (Getty photo via MMA Fighting); corner colour wins in the sim",
+    "notes": "Re-verified Nov 6, 2026 (open network) from dated photos, since no photo-based likeness sheet exists yet (data/likeness/mario-bautista.json): ESPN headshot and full-body studio cutout (files dated Jul 9, 2026, UFC 329 fight week), the Cageside Press UFC 329 ceremonial weigh-in photo (Jul 10, 2026) and a Getty fight photo from UFC 329 (Jul 11, 2026). Text on the ESPN cutout reads correctly, so it is not mirrored and left/right are his own. Build is from ufcstats.",
+    "sources": [
+      "https://a.espncdn.com/i/headshots/mma/players/full/4410868.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4410868.png",
+      "https://cagesidepress.com/wp-content/uploads/2026/07/UFC-329-ceremonial-weigh-in-40.jpg",
+      "https://www.mmafighting.com/ufc/498837/ufc-329-results-mario-bautista-badly-damages-cory-sandhagens-leg-gets-his-revenge-with-unanimous-decision-win",
+      "http://ufcstats.com/fighter-details/bc711b6dd95c1af6"
+    ]
   },
   "engine_notes": [
     { "note": "Takedowns: 3.15 per 15 min time-decayed (2.49 career) at 38% accuracy, vs a 1.60 bantamweight average. Submission attempts: 1.28 per 15 min decayed vs 0.41 league. Control: 14.0 s/min.", "source": "data/derived/fighters.json" },

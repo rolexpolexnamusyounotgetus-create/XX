@@ -3,26 +3,33 @@
   "name": "Joshua Van",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC flyweight champion. Won the belt at UFC 323 (Dec 6, 2025) when Alexandre Pantoja hurt his arm 26 seconds in, retained it with a fifth-round TKO of Tatsuro Taira at UFC 328 (May 9, 2026), then beat Pantoja by unanimous decision in the UFC 331 rematch (Sep 19, 2026; 49-46, 48-47, 50-45 per ufcstats), a fight outlets called a Fight of the Year contender. UFC record 11-1. Next: title defence against Manel Kape headlining UFC 336 in Toronto (Jan 30, 2027).",
+    "summary": "UFC flyweight champion. Won the belt at UFC 323 (Dec 6, 2025) when Alexandre Pantoja dislocated his elbow 26 seconds in, retained it with a fifth-round TKO of Tatsuro Taira at UFC 328 (May 9, 2026) and beat Pantoja by unanimous decision in the UFC 331 rematch (Sep 19, 2026; 49-46, 48-47, 50-45 per ufcstats; Fight of the Night). Pro record 18-2 (UFC 11-1), eight wins in a row. Next: his third defence, against Manel Kape, headlining UFC 336 at Scotiabank Arena, Toronto, on Jan 30, 2027.",
     "title": "UFC flyweight champion",
-    "ranking": "Champion (UFC flyweight rankings, Nov 3, 2026, as listed by ufcrankings.org and ufcalendar.com); pound-for-pound position not verified",
+    "ranking": "Flyweight champion and #6 men's pound-for-pound in the official UFC rankings (media panel, released Nov 3, 2026; ufc.com/rankings via Wayback capture of Nov 4, 2026); champion in the Meta UFC (Elo-model) rankings released Oct 31, 2026 (per Wikipedia's UFC rankings tables, rev. of Nov 6, 2026)",
     "active": true,
     "next_fight": "vs Manel Kape, UFC 336, Scotiabank Arena, Toronto, Jan 30, 2027 (flyweight title, main event)",
     "injuries": [
-      { "what": "RotoWire listed him out with an undisclosed injury before the Taira defence, noting the Taira fight was pushed back to May 9, 2026; details not confirmed elsewhere", "when": "2026 (before May 9)", "source": "https://www.rotowire.com/mma/player/joshua-van-2437" }
+      {
+        "what": "Knee injury in camp: the UFC 327 (Apr 11, 2026) defence against Taira was pushed to UFC 328 (May 9). Van later said the knee was 'serious', that he could not run until the last two weeks of the rescheduled camp, and that he would have it checked. No later update found.",
+        "when": "2026-04",
+        "source": "https://heavy.com/sports/ufc/joshua-van-reveals-injury-fight-postponement/"
+      }
     ],
     "sources": [
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://en.wikipedia.org/w/index.php?title=UFC_rankings&oldid=1384021836",
+      "https://www.sherdog.com/fighter/Joshua-Van-365973",
+      "https://www.espn.com/mma/fighter/_/id/5120301/joshua-van",
+      "https://en.wikipedia.org/w/index.php?title=UFC_336&oldid=1383965546",
+      "https://heavy.com/sports/ufc/joshua-van-reveals-injury-fight-postponement/",
+      "https://www.espn.com/mma/story/_/id/49986556/joshua-van-dominates-alexandre-pantoja-rematch-retain-ufc-title",
       "https://sports.yahoo.com/mma/live/ufc-331-live-results-joshua-van-vs-alexandre-pantoja-2-updates-round-by-round-scoring-and-highlights-181500506.html",
       "https://www.sherdog.com/news/news/UFC-331-Van-vs-Pantoja-2-playbyplay-results-round-scoring-202850",
       "https://www.espn.com/mma/story/_/id/48728134/joshua-van-retains-ufc-flyweight-title-tko-tatsuro-taira",
-      "https://x.com/UFCNews/status/2053321406503616607",
       "https://www.cbssports.com/ufc/news/ufc-323-results-highlights-joshua-van-champion-alexandre-pantoja-injury/",
       "https://sports.yahoo.com/articles/joshua-van-vs-manel-kape-194327124.html",
       "https://www.houstonchronicle.com/sports/article/joshua-van-manel-kape-ufc-336-toronto-flyweight-22492787.php",
-      "https://en.wikipedia.org/wiki/UFC_336",
       "https://bloodyelbow.com/2026/10/30/joshua-van-highlights-petr-yan-as-future-opponent-as-he-opens-up-about-potential-ufc-double-champ-fight",
-      "https://ufcrankings.org/",
-      "https://www.ufcalendar.com/rankings",
       "http://ufcstats.com/fighter-details/17e97649403ba428"
     ]
   },
@@ -33,7 +40,7 @@
     "signature": [
       "high-volume, head-first boxing combinations (8.0 significant strikes landed per minute, decayed)",
       "right hand: dropped Taira late in round 2 at UFC 328 (ufcstats also credits him a second knockdown in round 3)",
-      "body shot to set up the finish: hurt Taira to the body at the start of round 5, then finished with a combination",
+      "body attack to set up the finish: hurt Taira to the body at the start of round 5, then finished with a combination (Sherdog and Wikipedia list the method as TKO, front kick to the body and punches; ufcstats logs the final strikes as punches to the head)",
       "standing his ground and beating opponents to the punch in exchanges (Royval, UFC 317)",
       "caught a Pantoja head kick and dumped him (UFC 323 finish)"
     ],
@@ -78,14 +85,21 @@
   },
   "appearance": {
     "build": "small, compact flyweight: 5 ft 5 in with a 65 in reach (ufcstats), reach equal to his height and about 3 in shorter than the flyweight roster average of 67.8 in (fighters.json)",
-    "hair": "dark; current style not verified in this pass",
-    "facial_hair": "unknown",
-    "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "hair": "short black hair, faded at the sides and short on top (ESPN headshot and cutout, files dated Sep 17, 2026; UFC 328 and UFC 331 weigh-in and fight photos, May and Sep 2026)",
+    "facial_hair": "thin moustache and light chin stubble",
+    "skin": "medium (tan)",
+    "tattoos": "black-and-grey work concentrated on his left side: a large piece over the left chest (with a winged design near the shoulder) that runs down the left ribs as florals, and a sleeve on the left arm (ESPN headshot and studio cutout, Sep 2026; UFC 328 photos). Right arm and back not clearly seen.",
+    "kit": "UFC (Venum) shorts as champion: red with a darker pattern and his name (ESPN cutout dated Sep 17, 2026; worn at UFC 331, Sep 19, 2026) and black-and-gold at UFC 328 (May 9, 2026); red corner in both defences; corner colour wins in the sim",
+    "notes": "Re-verified Nov 6, 2026 (open network) from dated photos, since no photo-based likeness sheet exists yet (data/likeness/joshua-van.json): ESPN headshot and full-body studio cutout (files dated Sep 17, 2026, UFC 331 fight week, posed with the belt), Cageside Press ceremonial weigh-in photos from UFC 328 (May 8, 2026) and UFC 331 (Sep 18, 2026), and Zuffa/Getty fight photos from UFC 328 (via ESPN and CBS) and UFC 331 (via ESPN). Text on the ESPN cutout reads correctly, so it is not mirrored and left/right are his own. Build is from ufcstats. An earlier pass logged his skin as light-medium; side by side with Pantoja in the UFC 331 photos he reads as medium.",
     "sources": [
-      "http://ufcstats.com/fighter-details/17e97649403ba428",
-      "https://www.ufc.com/athlete/joshua-van"
+      "https://a.espncdn.com/i/headshots/mma/players/full/5120301.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/5120301.png",
+      "https://cagesidepress.com/wp-content/uploads/2026/05/UFC-328-ceremonial-weigh-in-45.jpg",
+      "https://cagesidepress.com/wp-content/uploads/2026/09/IMG_3484.jpg",
+      "https://www.espn.com/mma/story/_/id/48728134/joshua-van-retains-ufc-flyweight-title-tko-tatsuro-taira",
+      "https://www.cbssports.com/ufc/news/ufc-328-results-joshua-van-tatsuro-taira-knockout/",
+      "https://www.espn.com/mma/story/_/id/49986556/joshua-van-dominates-alexandre-pantoja-rematch-retain-ufc-title",
+      "http://ufcstats.com/fighter-details/17e97649403ba428"
     ]
   },
   "engine_notes": [

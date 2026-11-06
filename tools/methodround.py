@@ -2080,6 +2080,7 @@ groups are roughly neutral for method (kept for the winner and for the page).
     oof = o["tuning"].get("oof_2019_2023")
     if oof:
         L.append("Walk-forward out-of-fold 2019-2023 (each year predicted by a fit through the previous Dec 31; "
+                 "the hyperparameters were chosen on 2020-2023, so these are tuning-period numbers, not held out; "
                  "n=%d): S method %.4f / joint %.4f / winner %.4f; base rates method %.4f / joint %.4f; base x Elo "
                  "winner %.4f.\n" % (oof["n"], oof["S"]["method3"], oof["S"]["joint"], oof["S"]["winner"],
                                      oof["base_division"]["method3"], oof["base_division"]["joint"],
@@ -2222,9 +2223,13 @@ def main(argv=None):
     ap.add_argument("--score", metavar="JSON", help="score another model's per-fight predictions against this "
                                                     "benchmark (see score()) instead of fitting")
     ap.add_argument("--score-from", default="2024-01-01", help="first fight date scored with --score")
+    ap.add_argument("--report", action="store_true", help="rewrite the markdown report from the existing JSON")
     args = ap.parse_args(argv)
     if args.score:
         score(args.score, args.score_from)
+    elif args.report:
+        write_report(json.load(open(OUT_JSON)))
+        print("wrote", OUT_MD)
     else:
         run(args)
 

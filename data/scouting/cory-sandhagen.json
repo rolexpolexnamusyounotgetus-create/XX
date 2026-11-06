@@ -3,26 +3,33 @@
   "name": "Cory Sandhagen",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Veteran top-10 UFC bantamweight on a two-fight skid. He lost a title challenge to Merab Dvalishvili at UFC 320 (Oct 4, 2025, UD 49-45, 49-45, 49-46). He then lost a 29-28 x3 decision to Mario Bautista at UFC 329 (Jul 11, 2026), where a Suloev stretch into a kneebar at the end of round 1 left him fearing a torn hamstring. In mid-July he said he was getting an MRI. No result, return date or booking was found.",
+    "summary": "Top-10 UFC bantamweight on a two-fight skid, with no fight booked. He lost a title challenge to Merab Dvalishvili at UFC 320 (Oct 4, 2025; UD 49-45, 49-45, 49-46), then a 29-28 x3 decision to Mario Bautista at UFC 329 (Jul 11, 2026), where a Suloev stretch/kneebar late in round 1 hyperextended his left leg and left him fearing a torn hamstring. He said he was getting an MRI that week; no diagnosis, return date or booking had been reported by Nov 6, 2026. Pro record 18-7 (UFC 11-6).",
     "title": null,
-    "ranking": "#6 bantamweight on ufcalendar.com's main list (updated Nov 3, 2026); a Wikipedia snippet also listed him #6 as of Aug 29, 2026",
+    "ranking": "#6 bantamweight in the official UFC rankings (media panel, released Nov 3, 2026; ufc.com/rankings via Wayback capture of Nov 4, 2026) and #6 in the Meta UFC (Elo-model) rankings released Oct 31, 2026 (per Wikipedia's UFC rankings tables, rev. of Nov 6, 2026)",
     "active": true,
     "next_fight": null,
     "injuries": [
       {
-        "what": "Feared torn hamstring from Bautista's Suloev stretch/kneebar late in round 1 at UFC 329. He fought the last two rounds hampered and posted photos of heavy bruising behind the leg. Diagnosis not found.",
+        "what": "Left hamstring: Bautista's Suloev stretch/kneebar hyperextended his left leg late in round 1 at UFC 329. He fought the last two rounds hampered, posted photos of heavy bruising behind the leg and wrote that he was 'pretty sure the kneebar tore my hamstring' and was getting an MRI. No diagnosis, surgery or return timeline found as of Nov 6, 2026 (the newest Sandhagen items on BJPenn's fighter news page date from Jul 13, 2026; Sherdog lists no upcoming bout).",
         "when": "2026-07",
-        "source": "https://www.mmamania.com/ufc-329-mcgregor-vs-holloway-2/457018/embarrassed-cory-sandhagen-issues-statement-after-ufc-329-loss-fears-torn-hamstring"
+        "source": "https://www.sherdog.com/news/news/Cory-Sandhagen-details-brutal-hamstring-injury-suffered-in-UFC-329-loss-201884"
       }
     ],
     "sources": [
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://en.wikipedia.org/w/index.php?title=UFC_rankings&oldid=1384021836",
+      "https://www.sherdog.com/fighter/Cory-Sandhagen-112869",
+      "https://www.espn.com/mma/fighter/_/id/4294504/cory-sandhagen",
+      "https://en.wikipedia.org/w/index.php?title=Cory_Sandhagen&oldid=1382101096",
+      "https://www.sherdog.com/news/news/Cory-Sandhagen-details-brutal-hamstring-injury-suffered-in-UFC-329-loss-201884",
+      "https://www.bjpenn.com/mma-news/cory-sandhagen/",
       "https://sports.yahoo.com/mma/article/ufc-329-results-mario-bautista-grits-out-massive-revenge-win-over-cory-sandhagen-031722352.html",
       "https://cagesidepress.com/2026/07/11/ufc-329-mario-bautista-picks-up-win-over-hobbled-cory-sandhagen/",
+      "https://www.mmamania.com/ufc-329-mcgregor-vs-holloway-2/457018/embarrassed-cory-sandhagen-issues-statement-after-ufc-329-loss-fears-torn-hamstring",
       "https://bloodyelbow.com/2026/07/13/cory-sandhagen-shows-off-injury-he-suffered-at-ufc-329-in-update-after-fight-changing-attack/",
       "https://www.bjjee.com/bjj-news/cory-sandhagen-shows-gnarly-hamstring-injury-after-kneebar-attempt-at-ufc-329/",
       "https://boxingnews.com/news/cory-sandhagen-torn-hamstring-ufc-329",
       "https://www.cbssports.com/mma/news/ufc-320-results-merab-dvalishvili-grinds-through-cory-sandhagen-to-retain-bantamweight-championship",
-      "https://www.ufcalendar.com/rankings/bantamweight",
       "http://ufcstats.com/fighter-details/65f09bacd3957381"
     ]
   },
@@ -62,14 +69,19 @@
   },
   "appearance": {
     "build": "tall and long-limbed for bantamweight: 5'11\" (71 in) with a 70 in reach per ufcstats",
-    "hair": "unknown (not confirmed from a dated photo in this pass)",
-    "facial_hair": "unknown",
-    "skin": "unknown",
-    "tattoos": "large religious back piece (angels and a cross) per EssentiallySports; read from a search summary, not re-verified at fact-check",
-    "kit": "unknown",
+    "hair": "short auburn-brown hair, faded at the sides with a longer top swept up (ESPN headshot and cutout, files dated Jul 9, 2026; UFC 329 weigh-in and fight photos, Jul 10-11, 2026)",
+    "facial_hair": "short ginger beard, kept trimmed",
+    "skin": "light (fair), with light chest hair",
+    "tattoos": "large black-and-grey back piece covering most of the back (UFC 329 weigh-in and fight photos); EssentiallySports describes it as angels, a cross and other religious artwork and quotes him calling it 'more or less like a religious piece'. Smaller pieces: an anchor-like design on the right shin and a small mark on the inside of the right arm (ESPN cutout), and a tattoo on the back of one calf in the UFC 329 fight photo. Chest, shoulders and the front of the arms are otherwise clean.",
+    "kit": "UFC (Venum) shorts, black with a grey geometric pattern and SANDHAGEN lettering (ESPN cutout dated Jul 9, 2026; worn from the red corner at UFC 329, Getty photo via MMA Fighting); corner colour wins in the sim",
+    "notes": "Re-verified Nov 6, 2026 (open network) from dated photos, since no photo-based likeness sheet exists yet (data/likeness/cory-sandhagen.json): ESPN headshot and full-body studio cutout (files dated Jul 9, 2026, UFC 329 fight week), the Cageside Press UFC 329 ceremonial weigh-in photo (Jul 10, 2026) and a Getty fight photo from UFC 329 (Jul 11, 2026). Text on the ESPN cutout reads correctly, so it is not mirrored and left/right are his own. Build is from ufcstats. The back piece was seen only in action and weigh-in photos, so its exact design is not confirmed from a clear image.",
     "sources": [
-      "http://ufcstats.com/fighter-details/65f09bacd3957381",
-      "https://www.essentiallysports.com/ufc-mma-news-what-is-cory-sandhagens-ethnicity-religion-and-nationality-exploring-his-family-roots-and-background/"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4294504.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4294504.png",
+      "https://cagesidepress.com/wp-content/uploads/2026/07/UFC-329-ceremonial-weigh-in-40.jpg",
+      "https://www.mmafighting.com/ufc/498837/ufc-329-results-mario-bautista-badly-damages-cory-sandhagens-leg-gets-his-revenge-with-unanimous-decision-win",
+      "https://www.essentiallysports.com/ufc-mma-news-what-is-cory-sandhagens-ethnicity-religion-and-nationality-exploring-his-family-roots-and-background/",
+      "http://ufcstats.com/fighter-details/65f09bacd3957381"
     ]
   },
   "engine_notes": [

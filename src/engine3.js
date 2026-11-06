@@ -480,7 +480,8 @@
     if (!curve) { curve = []; for (k = 0; k < nR; k++) curve.push(k < p.pace5.length ? p.pace5[k] : p.pace5[p.pace5.length - 1]); }
     var nb = Math.min(3, nR), cm0 = 0; for (k = 0; k < nb; k++) cm0 += curve[k]; cm0 /= nb;
     m.paceCurve = []; m.kdPace = []; m.pace = [[], []]; m.finR = [];
-    for (k = 0; k < nR; k++) m.finR.push(nR >= 5 && k === 0 ? p.r1Caution5 : 1);
+    var c5 = p.caution5 != null ? p.caution5 : 1;   // 5-round (main event / title) caution on knockdowns, GNP TKOs and submission conversion, every round
+    for (k = 0; k < nR; k++) m.finR.push(nR >= 5 ? (k === 0 ? p.r1Caution5 : 1) * c5 : 1);
     for (k = 0; k < nR; k++) { m.paceCurve.push(curve[k] / cm0); m.kdPace.push(Math.pow(curve[k] / cm0, p.kdPaceExp)); }
     m.drain = [0, 0]; m.cardio = [0, 0];
     for (i = 0; i < 2; i++) {

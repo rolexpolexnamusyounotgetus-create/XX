@@ -4,10 +4,11 @@ As of Nov 6, 2026. Stats are from `data/derived/fighters.json` (ufcstats snapsho
 
 ## Current status
 
-- **Former two-division champion, now the No. 1 lightweight contender** ([ufcrankings.org](https://ufcrankings.org/), Nov 3, 2026, a mirror of the media panel). He vacated the featherweight title in February 2025 to move up ([Bleacher Report](https://bleacherreport.com/articles/25159123-ilia-topuria-vacates-title-volkanovski-lopes-fight-belt-ufc-315-card-revealed)). He won the vacant lightweight title from Oliveira in June 2025.
+- **Former two-division champion, now the No. 1 lightweight contender** and No. 5 men's pound-for-pound on the UFC media-panel list of Nov 3, 2026 ([UFCalendar](https://www.ufcalendar.com/rankings/lightweight), [ufcrankings.org](https://ufcrankings.org/lightweight/); P4P from [UFCalendar](https://www.ufcalendar.com/rankings/mens-pound-for-pound) and [ufcrankings.org](https://ufcrankings.org/pound-for-pound/); two mirrors agree; ufc.com returned 403 to scripts). Pro record 17-1 ([UFCalendar](https://www.ufcalendar.com/fighters/ilia-topuria), [ufcrankings.org](https://ufcrankings.org/lightweight/)). He vacated the featherweight title in February 2025 to move up ([Bleacher Report](https://bleacherreport.com/articles/25159123-ilia-topuria-vacates-title-volkanovski-lopes-fight-belt-ufc-315-card-revealed)). He won the vacant lightweight title from Oliveira in June 2025.
 - **Lost the title** to Justin Gaethje at UFC Freedom 250 (White House South Lawn, Jun 14, 2026). His corner stopped it between rounds 4 and 5 ([CBS](https://www.cbssports.com/ufc/news/ufc-white-house-live-updates-results-freedom-250-highlights-ilia-topuria-justin-gaethje/live/), [ESPN](https://www.espn.com/mma/story/_/id/49068660/gaethje-bucks-odds-topples-topuria-ufc-lightweight-title)). It was his first pro loss.
-- **Injury:** fractures of both orbital bones, with no surgery needed ([LowKick](https://lowkickmma.com/ilia-topuria-injury-update-orbital-fracture-confirmed-after-justin-gaethje-loss), [MMA Mania](https://www.mmamania.com/ufc-white-house-2026-fight-card-start-time-full-results-dana-white-conor-mcgregor-cbs-mma/451314/ilia-topuria-orbital-fractures-both-eyes-in-ufc-white-house-loss-will-not-return-2026)). Suspension: 180 days or until cleared by an oral and maxillofacial surgeon, plus 60 days ([F4W](https://www.f4wonline.com/news/ufc/ufc-freedom-250-medical-suspensions/)).
-- **Next:** Dana White says "early 2027" and names no opponent ([MMA Mania](https://www.mmamania.com/ufc-news/484145/dana-white-confirms-ilia-topuria-will-return-in-early-2027)). Topuria wants the Gaethje rematch and has called for Paddy Pimblett in April ([Yahoo](https://sports.yahoo.com/articles/ilia-topuria-opens-loss-justin-012534441.html)). Age 29.
+- **Injury:** fractures of both orbital bones, with no surgery needed ([LowKick](https://lowkickmma.com/ilia-topuria-injury-update-orbital-fracture-confirmed-after-justin-gaethje-loss), [MMA Mania](https://www.mmamania.com/ufc-white-house-2026-fight-card-start-time-full-results-dana-white-conor-mcgregor-cbs-mma/451314/ilia-topuria-orbital-fractures-both-eyes-in-ufc-white-house-loss-will-not-return-2026)). Suspension: 180 days or until cleared by an oral and maxillofacial specialist, plus 60 days of mandatory rest ([Yahoo/LA Times](https://sports.yahoo.com/articles/justin-gaethje-ilia-topuria-receive-190008823.html); F4W, which reported the same list, now blocks scripts).
+- **Next:** nothing booked as of Nov 6 ([UFCalendar](https://www.ufcalendar.com/fighters/ilia-topuria)). On Nov 4 Dana White told Jim Rome he returns in early 2027 and named no opponent ([Sherdog](https://www.sherdog.com/news/news/Dana-White-targets-early-2027-UFC-return-for-Ilia-Topuria-after-loss-203506), [MMA Mania](https://www.mmamania.com/ufc-news/484145/dana-white-confirms-ilia-topuria-will-return-in-early-2027)). Topuria told Spain's ABC he is looking at "April onwards", called out Paddy Pimblett, and said "Maybe I'll even retire" ([Sherdog, Nov 6](https://www.sherdog.com/news/news/Ilia-Topuria-reveals-who-he-wants-to-fight-next-in-the-UFC-203511)). He has also said he wants the Gaethje rematch ([Yahoo](https://sports.yahoo.com/articles/ilia-topuria-opens-loss-justin-012534441.html)). Age 29.
+- **Freedom 250 cards:** Gaethje led 39-37 on all three cards (Cartlidge, Cleary, D'Amato) when the corner stopped it; Topuria won only R2 ([GiveMeSport](https://www.givemesport.com/judges-scorecards-ilia-topuria-justin-gaethje-ufc-freedom-250-white-house/), [Heavy](https://heavy.com/sports/ufc/scorecards-revealed-for-justin-gaethje-vs-ilia-topuria/)).
 - He stepped away in late 2025 for personal reasons, which is why Gaethje and Pimblett fought for an interim belt ([ESPN](https://africa.espn.com/mma/ufc/story/_/id/47122547/lightweights-justin-gaethje-paddy-pimblett-scheduled-fight)).
 
 ## Recent fights
@@ -36,6 +37,25 @@ Before 2026 he had absorbed one knockdown (Herbert, 2022). Gaethje never dropped
 
 His Elo of 1742 is fourth among lightweights in the file. UFC record 9-1: 6 KO/TKO, 1 submission, 2 decision wins. His decayed power is 2.27 knockdowns per 100 head strikes landed, more than double the league's 0.95. For the sim, his early rounds are among the most dangerous in the division, but a durable puncher makes him less certain.
 
+## Appearance (for the avatar)
+
+- **Build:** 5 ft 7 in, 69 in reach (ufcstats); compact and heavily muscled.
+- **Hair:** dark brown to black, short faded sides with a longer top swept back (Jun 2026 Commons photos; ESPN headshot, file dated Oct 5, 2026).
+- **Facial hair:** full, short, neatly trimmed dark beard and moustache.
+- **Skin:** light.
+- **Tattoos (Commons weigh-in photo, Jun 13, 2026, and ESPN cutouts; text reads correctly, so not mirrored):** a crowned "T" emblem at the top of the sternum below the throat; a large chest piece across both pecs (two tigers among trees); a full sleeve on the left arm (red script reading "Hasta la muerte" as far as legible, a wolf, a clock); ink on the right shoulder and upper arm; "El Matador" in script below the left pec.
+- **Kit:** UFC (Venum) vale-tudo shorts. The ESPN cutout posted Oct 5, 2026 shows navy shorts with red and white stripes and red gloves with US-flag cuffs, matching his navy UFC Freedom 250 walkout kit in the White House photo (that it is the exact fight kit is an inference); an older cutout (file dated Feb 15, 2024) shows red shorts with a darker red pattern and white stripes. The corner colour wins in the sim.
+- ESPN's CDN serves a Last-Modified date for each studio photo; that is when the file was posted, not necessarily when it was shot. No likeness sheet exists yet for him; photo references sit in `assets/reference/ilia-topuria/`.
+
+## Re-verification, Nov 6, 2026 (open network)
+
+- Status: return timeline updated with White's Nov 4 comments and Topuria's ABC interview (April 2027, Pimblett, retirement mention). Nothing booked.
+- Ranking: No. 1 lightweight contender and No. 5 P4P, media panel Nov 3, 2026, confirmed by two mirrors; ufc.com still blocks scripts.
+- Record: 17-1 (UFCalendar, ufcrankings.org).
+- Freedom 250 judges' cards added (39-37 x3 for Gaethje after R4).
+- Suspension source switched to a page that loads (Yahoo/LA Times); F4W blocks scripts.
+- Appearance: kit resolved from ESPN cutouts (previously "unknown"); tattoo list extended. Still unknown: how the orbital fractures affect him.
+
 ## Sources
 
 - http://ufcstats.com/fighter-details/54f64b5e283b0ce7
@@ -53,3 +73,17 @@ His Elo of 1742 is fourth among lightweights in the file. UFC record 9-1: 6 KO/T
 - https://bloodyelbow.com/2024/02/19/ufc-298-topuria-volkanovski-analysis/
 - https://evolve-mma.com/blog/analyzing-ilia-topurias-style-of-fighting/
 - https://ufcrankings.org/
+- https://ufcrankings.org/lightweight/
+- https://www.ufcalendar.com/rankings/lightweight
+- https://www.ufcalendar.com/rankings/mens-pound-for-pound
+- https://ufcrankings.org/pound-for-pound/
+- https://www.ufcalendar.com/fighters/ilia-topuria
+- https://www.sherdog.com/news/news/Dana-White-targets-early-2027-UFC-return-for-Ilia-Topuria-after-loss-203506
+- https://www.sherdog.com/news/news/Ilia-Topuria-reveals-who-he-wants-to-fight-next-in-the-UFC-203511
+- https://www.givemesport.com/judges-scorecards-ilia-topuria-justin-gaethje-ufc-freedom-250-white-house/
+- https://heavy.com/sports/ufc/scorecards-revealed-for-justin-gaethje-vs-ilia-topuria/
+- https://sports.yahoo.com/articles/justin-gaethje-ilia-topuria-receive-190008823.html
+- https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748627)(cropped).jpg
+- https://a.espncdn.com/i/headshots/mma/players/full/4350812.png
+- https://a.espncdn.com/i/headshots/mma/players/stance/left/4350812.png
+- https://a.espncdn.com/i/headshots/mma/players/stance/right/4350812.png

@@ -3,22 +3,25 @@
   "name": "Tatsuro Taira",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Top flyweight contender coming off a title loss. Challenged Joshua Van at UFC 328 (May 9, 2026), won the early grappling exchanges (10:38 of control, 8 takedowns) but was dropped late in round 2 and stopped by punches at 1:32 of round 5; he protested the stoppage. Before that he became the first man to stop Brandon Moreno (TKO from back control, UFC 323, Dec 6, 2025). UFC record 8-2. No booking found as of early Nov 2026.",
+    "summary": "Top flyweight contender coming off a title loss, with no fight booked as of Nov 6, 2026. Challenged Joshua Van at UFC 328 (May 9, 2026; moved from UFC 327 after Van hurt his knee), won the early grappling exchanges (10:38 of control, 8 takedowns) but was dropped late in round 2 and stopped at 1:32 of round 5 (Sherdog and Wikipedia list the method as a front kick to the body and punches); he protested the stoppage, and both men got Fight of the Night. Before that he became the first man to stop Brandon Moreno (TKO from back control, UFC 323, Dec 6, 2025). Pro record 18-2 (UFC 8-2).",
     "title": null,
-    "ranking": "#4 flyweight (UFC rankings as listed by ufcrankings.org and ufcalendar.com, Nov 3, 2026)",
+    "ranking": "#4 flyweight in both the official UFC rankings (media panel, released Nov 3, 2026; ufc.com/rankings via Wayback capture of Nov 4, 2026) and the Meta UFC (Elo-model) rankings released Oct 31, 2026 (per Wikipedia's UFC rankings tables, rev. of Nov 6, 2026)",
     "active": true,
     "next_fight": null,
     "injuries": [],
     "sources": [
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://en.wikipedia.org/w/index.php?title=UFC_rankings&oldid=1384021836",
+      "https://www.sherdog.com/fighter/Tatsuro-Taira-293975",
+      "https://www.espn.com/mma/fighter/_/id/4917772/tatsuro-taira",
+      "https://en.wikipedia.org/w/index.php?title=Tatsuro_Taira&oldid=1380884814",
+      "https://www.ufcalendar.com/fighters/tatsuro-taira",
       "https://www.espn.com/mma/story/_/id/48728134/joshua-van-retains-ufc-flyweight-title-tko-tatsuro-taira",
+      "https://www.cbssports.com/ufc/news/ufc-328-results-joshua-van-tatsuro-taira-knockout/",
       "https://bloodyelbow.com/2026/05/09/joshua-van-vs-tatsuro-taira-result-ufc-328-co-main-event-ends-in-5th-round-knockout/",
       "https://bleacherreport.com/articles/25426275-joshua-van-beats-tatsuro-taira-tko-ufc-328-retain-flyweight-title",
-      "https://x.com/UFCNews/status/2053321406503616607",
       "https://cagesidepress.com/2025/12/06/ufc-323-tatsuro-taira-becomes-first-to-stop-brandon-moreno-who-protests-stoppage",
-      "https://agentmma.com/fighters/3686-tatsuro-taira",
-      "https://www.tapology.com/fightcenter/fighters/145595-tatsuro-taira",
-      "https://ufcrankings.org/",
-      "https://www.ufcalendar.com/rankings",
+      "https://heavy.com/sports/ufc/joshua-van-reveals-injury-fight-postponement/",
       "http://ufcstats.com/fighter-details/4461d7e47375a895"
     ]
   },
@@ -66,19 +69,24 @@
   },
   "appearance": {
     "build": "lean, long-limbed flyweight: 5 ft 7 in with a 70 in reach (ufcstats)",
-    "hair": "short black; current style not verified in this pass",
-    "facial_hair": "unknown",
+    "hair": "medium-length light brown to dark blond (lightened) hair worn as a shaggy mop with a fringe over the forehead (ESPN headshot and cutout, files dated May 7, 2026; UFC 328 weigh-in and fight photos, May 8-9, 2026)",
+    "facial_hair": "clean-shaven",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the chest, abdomen, arms, legs or back (ESPN studio cutout, May 2026; UFC 328 photos)",
+    "kit": "UFC (Venum) shorts in white with a light grey pattern (ESPN cutout dated May 7, 2026); he fought UFC 328 from the blue corner; corner colour wins in the sim",
+    "notes": "Re-verified Nov 6, 2026 (open network) from dated photos, since no photo-based likeness sheet exists yet (data/likeness/tatsuro-taira.json): ESPN headshot and full-body studio cutout (files dated May 7, 2026, UFC 328 fight week), the Cageside Press UFC 328 ceremonial weigh-in photo (May 8, 2026) and Zuffa/Getty fight photos from UFC 328 (May 9, 2026, via ESPN and CBS). Text on the ESPN cutout reads correctly, so it is not mirrored and left/right are his own. Build is from ufcstats. In the fight photos under arena light the hair reads a darker brown than in the studio shots.",
     "sources": [
-      "http://ufcstats.com/fighter-details/4461d7e47375a895",
-      "https://www.ufc.com/athlete/tatsuro-taira"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4917772.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4917772.png",
+      "https://cagesidepress.com/wp-content/uploads/2026/05/UFC-328-ceremonial-weigh-in-45.jpg",
+      "https://www.espn.com/mma/story/_/id/48728134/joshua-van-retains-ufc-flyweight-title-tko-tatsuro-taira",
+      "https://www.cbssports.com/ufc/news/ufc-328-results-joshua-van-tatsuro-taira-knockout/",
+      "http://ufcstats.com/fighter-details/4461d7e47375a895"
     ]
   },
   "engine_notes": [
     { "note": "Spends 54% of his UFC fight time in control (career; 53% decayed) vs about 19% for the flyweight prior, with 3.57 takedowns per 15 min at 44%.", "source": "data/derived/fighters.json" },
-    { "note": "At UFC 328 he won round 1 with four takedowns and round 4 with ground control and submission hunting, yet lost by round-5 TKO after being hurt by a body shot: control does not protect him from late damage.", "source": "https://www.espn.com/mma/story/_/id/48728134/joshua-van-retains-ufc-flyweight-title-tko-tatsuro-taira" },
+    { "note": "At UFC 328 he won round 1 with four takedowns and round 4 with ground control and submission hunting, yet lost by round-5 TKO after being hurt to the body (Sherdog lists the method as a front kick to the body and punches): control does not protect him from late damage.", "source": "https://www.espn.com/mma/story/_/id/48728134/joshua-van-retains-ufc-flyweight-title-tko-tatsuro-taira" },
     { "note": "Both UFC losses went to strikers who out-landed him heavily (Royval 124-42; Van 131-55) despite his control time (12:13 and 10:38).", "source": "data/raw/ufc_fight_stats.csv (ufcstats)" }
   ],
   "confidence": "medium"

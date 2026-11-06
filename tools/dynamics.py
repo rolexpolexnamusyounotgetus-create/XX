@@ -24,12 +24,18 @@ initial-conditions problem). Naive within-fight fixed-effects fits are reported 
 mean-reversion bias they carry. A round-level simulator (null and fitted) checks that the fitted models
 reproduce the held-out auxiliary statistics.
 
+Also: walk-forward form decomposition (profile vs fight-night form), round-by-round targets for the v6 check,
+and an engine check (the same statistics on engine-simulated fights from tools/dynamics_engine.js).
+
 Inputs:  data/raw/*.csv (via tools/baserates.load_data and tools/build_db people resolution),
          data/derived/backtest.json (engine pace fields, for the kPace check)
-Outputs: data/derived/dynamics.json; tables printed; the report is research/model_dynamics.md
+Outputs: data/derived/dynamics.json; progress printed; the report is research/model_dynamics.md
 
-Usage:   python3 tools/dynamics.py            (about 2-4 minutes)
-         python3 tools/dynamics.py --quick    (skips bootstrap and simulation checks)
+Usage:   python3 tools/dynamics.py                 (about 15 minutes on an idle 4-core machine)
+         python3 tools/dynamics.py --quick         (no jackknife, no simulation check: about 8 minutes)
+         python3 tools/dynamics.py --parts 2,5     (a subset; merges into the existing JSON)
+         node tools/dynamics_engine.js /tmp/eng.csv --sims 30 [--engine-dir src]
+         python3 tools/dynamics.py --quick --parts 5 --engine-csv /tmp/eng.csv
 """
 import argparse
 import datetime as dt

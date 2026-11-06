@@ -1534,7 +1534,7 @@ def parse_bout_changes(card, paras, event_date):
         key = (fx["fid"], fx["side"])
         prev = out.get(key)
         rec = {"role": role, "days": days, "basis": basis, "short_notice_phrase": snp,
-               "booked_vs": clean_text(head)[:200], "text": txt[:600]}
+               "booked_vs": clean_text(head)[:160], "text": txt[:600]}
         if prev is None or (prev["role"] == "opp_change" and role == "replacement") or \
                 (prev["role"] == role and prev["days"] is None and days is not None):
             out[key] = rec
@@ -1674,9 +1674,26 @@ def event_type(name, date):
         return "numbered_ppv" if date.year <= 2025 else "numbered"
     if "ultimate fighter" in n or "tuf" in n:
         return "tuf_finale"
-    if re.match(r"ufc on (fox|abc|fx|fuel|espn|espn\+)", n) or "fight night" in n or "ufc on" in n:
+    if re.match(r"ufc on (fox|abc|fx|fuel|espn|espn\+)", n) or "fight night" in n or "ufc on" in n or \
+            n.startswith(("noche ufc", "ufc macao", "ufc macau")):
         return "fight_night"
-    return "other"
+    return "special"
+
+
+def card_segment(raw):
+    """Wikipedia results heading -> main_card | prelims | early_prelims | single_card."""
+    if not raw:
+        return None
+    t = raw.lower()
+    if "early" in t:
+        return "early_prelims"
+    if "prelim" in t:
+        return "prelims"
+    if "main" in t:
+        return "main_card"
+    if "fight card" in t or t.startswith("card"):
+        return "single_card"
+    return None
 
 
 def country_ref(fx, iso3):
@@ -1802,24 +1819,16 @@ GYMS = {
     "ufc gym costa mesa": ("Costa Mesa", "California", "USA"), "tiger muay thai": ("Phuket", None, "THA"),
     "team lloyd irvin": ("Camp Springs", "Maryland", "USA"), "mma factory": ("Paris", None, "FRA"),
     "team lakay": ("Baguio", "Cordillera", "PHL"), "evolve mma": ("Singapore", None, "SGP"),
-    "pitbull brothers": ("Natal", "Rio Grande do Norte", "BRA"), "black house": ("Los Angeles", "California", "USA"),
-    "gracie barra": ("Irvine", "California", "USA"), "kings mma huntington beach": ("Huntington Beach", "California", "USA"),
-    "lobo gym mma": ("Tijuana", "Baja California", "MEX"), "team sityodtong": ("Somerville", "Massachusetts", "USA"),
-    "jungle fight": ("Rio de Janeiro", "Rio de Janeiro", "BRA"), "astra fight team": ("Sao Paulo", "Sao Paulo", "BRA"),
+    "pitbull brothers": ("Natal", "Rio Grande do Norte", "BRA"), "kings mma huntington beach": ("Huntington Beach", "California", "USA"), "team sityodtong": ("Somerville", "Massachusetts", "USA"),
     "macaco gold team": ("Rio de Janeiro", "Rio de Janeiro", "BRA"), "grudge": ("Arvada", "Colorado", "USA"),
     "akhmat fight team": ("Grozny", "Chechnya", "RUS"), "berkut": ("Grozny", "Chechnya", "RUS"),
-    "dagestan national team": ("Makhachkala", "Dagestan", "RUS"), "gorilla fight team": ("Makhachkala", "Dagestan", "RUS"),
-    "fight spirit team": ("Saint Petersburg", None, "RUS"), "strela team": ("Moscow", None, "RUS"),
-    "team petrosyan": ("Rome", None, "ITA"), "next generation mma liverpool": ("Liverpool", "England", "GBR"),
-    "london shootfighters": ("London", "England", "GBR"), "team renegade": ("Las Vegas", "Nevada", "USA"),
+    "dagestan national team": ("Makhachkala", "Dagestan", "RUS"),
+    "fight spirit team": ("Saint Petersburg", None, "RUS"), "next generation mma liverpool": ("Liverpool", "England", "GBR"),
+    "london shootfighters": ("London", "England", "GBR"), "team renegade": ("Birmingham", "England", "GBR"),
     "xtreme couture mma": ("Las Vegas", "Nevada", "USA"), "drysdale jiu jitsu": ("Las Vegas", "Nevada", "USA"),
-    "extreme couture": ("Las Vegas", "Nevada", "USA"), "the treigning lab": ("Philadelphia", "Pennsylvania", "USA"),
+    "extreme couture": ("Las Vegas", "Nevada", "USA"),
     "longo and weidman mma": ("Garden City", "New York", "USA"), "longo & weidman mma": ("Garden City", "New York", "USA"),
-    "bad boy mma": ("Chicago", "Illinois", "USA"), "team bodyshop": ("Mexico City", None, "MEX"),
-    "silverback fight club": ("Houston", "Texas", "USA"), "metro fight club": ("Houston", "Texas", "USA"),
     "4oz. fight club": ("Coconut Creek", "Florida", "USA"), "combat club": ("Coconut Creek", "Florida", "USA"),
-    "mma sports center": ("Mexico City", None, "MEX"), "lion's den": ("Lakewood", "Colorado", "USA"),
-    "genesis training center": ("Tijuana", "Baja California", "MEX"),
 }
 
 
@@ -2063,11 +2072,12 @@ def cmd_build(args):
             rec["no_crowd"] = crowd == "none"
             rec["crowd"] = crowd
             rec["event_type"] = etype
-            rec["card_segment"] = seg.get("segment")
+            rec["card_segment"] = card_segment(seg.get("segment"))
             rec["bout_order"] = bi + 1           # 1 = main event (ufcstats lists the card top-down)
             rec["n_bouts"] = n_bouts
             rec["notes"] = notes
-            rec["sources"] = {"wiki": ev_meta[ename]["wiki"], "ufcstats_event": ev["ufcstats_event_id"]}
+            rec["sources"] = {"wiki": title_of(ev_meta[ename]["wiki"]) if ev_meta[ename]["wiki"] else None,
+                              "ufcstats_event": ev["ufcstats_event_id"]}
             chg = {s: {k: v for k, v in bc[(fid, s)].items() if k in ("role", "days", "basis", "booked_vs",
                                                                        "short_notice_phrase")}
                    for s in ("A", "B") if (fid, s) in bc}
@@ -2106,8 +2116,10 @@ def cmd_build(args):
             "venue.altitude_m": "venue city elevation (Open-Meteo geocoder / GeoNames)",
             "no_crowd": "event held behind closed doors (COVID-19 period)",
             "crowd": "none | limited | full",
-            "event_type": "numbered_ppv (UFC ### through 2025) | numbered (2026+, no PPV) | fight_night | tuf_finale",
-            "card_segment": "Wikipedia results-table heading (main card / preliminary card ...)",
+            "event_type": "numbered_ppv (UFC ### through 2025) | numbered (2026+, no PPV) | fight_night (incl. UFC on "
+                          "FOX/FX/Fuel/ESPN/ABC, Noche UFC, UFC Macao) | tuf_finale | special (UFC Freedom 250)",
+            "sources": "wiki = en.wikipedia.org/wiki/<title>; ufcstats_event = ufcstats event id",
+            "card_segment": "Wikipedia results-table heading: main_card | prelims | early_prelims | single_card",
             "bout_order": "1 = main event, ufcstats card order",
         },
         "walk_forward": "all fields are known before the fight; nationality and home point are a current snapshot",

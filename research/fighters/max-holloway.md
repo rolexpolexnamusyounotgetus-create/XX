@@ -6,8 +6,9 @@ As of Nov 6, 2026. Stats are from `data/derived/fighters.json` (ufcstats snapsho
 
 - **Last fight:** TKO win over Conor McGregor at UFC 329 (Jul 11, 2026, Las Vegas). McGregor buckled his right leg on a kick in the opening minute, tried to carry on, and was stopped at 1:09 of R1 ([ESPN](https://www.espn.com/mma/story/_/id/49308315/ufc-329-live-results-analysis-conor-mcgregor-vs-max-holloway-2), [Athlon](https://athlonsports.com/mma/ufc-329-conor-mcgregor-max-holloway-fight-ends-devastating-injury-tko)). ufcstats files the bout at welterweight. It avenged a 2013 decision loss ([CBS](https://www.cbssports.com/ufc/news/ufc-329-fight-results-conor-mcgregor-max-holloway-live-updates/live/)).
 - **Titles:** none. He lost the BMF belt to Oliveira at UFC 326 (Mar 7, 2026, 50-45 x3). Former UFC featherweight champion.
-- **Ranking:** No. 4 lightweight ([ufcrankings.org](https://ufcrankings.org/), Nov 3; [UFCalendar](https://www.ufcalendar.com/fighters/max-holloway), Oct 27 poll).
-- **Next fight:** none booked. Both he and McGregor have floated a trilogy (UFCalendar). Age 34. No injury reported.
+- **Ranking:** No. 4 lightweight on the UFC media-panel list of Nov 3, 2026; not in the men's pound-for-pound top 15 ([UFCalendar](https://www.ufcalendar.com/rankings/lightweight), [ufcrankings.org](https://ufcrankings.org/lightweight/); P4P from [UFCalendar](https://www.ufcalendar.com/rankings/mens-pound-for-pound) and [ufcrankings.org](https://ufcrankings.org/pound-for-pound/); two mirrors agree; ufc.com returned 403 to scripts).
+- **Pro record:** 28-9 ([Wikipedia](https://en.wikipedia.org/wiki/Max_Holloway) record table, [UFCalendar](https://www.ufcalendar.com/fighters/max-holloway)).
+- **Next fight:** none booked as of Nov 6 ([UFCalendar](https://www.ufcalendar.com/fighters/max-holloway)). On his Kick channel he said he would wait for a McGregor trilogy, but McGregor is headed for knee surgery with no timeline, and otherwise he wants a lightweight title shot, naming Justin Gaethje: "If it's not Conor, give your boy a title shot" ([Sportsnaut](https://sportsnaut.com/ufc/max-holloway-names-his-two-choices-for-next-ufc-fight)). Age 34. No injury reported.
 
 ## Recent fights
 
@@ -35,6 +36,23 @@ In 33 UFC fights he has absorbed 2 knockdowns, both in the last three years (Top
 
 His Elo of 1775 ranks second among lightweights in the file. UFC record 24-9: 12 KO/TKO wins and 7 decision losses. He has fought 19 five-round fights and 10 title fights. Decayed target split: 70% head, 19% body, 11% legs; of landed strikes, 28% go to the body. For the sim, he is a high-pace striker whose danger is late, and whose big risk is being held down.
 
+## Appearance (for the avatar)
+
+- **Build:** 5 ft 11 in, 69 in reach (ufcstats); long-framed and lean.
+- **Hair:** black, short, faded sides with a slightly longer, tousled top (ESPN headshot, file dated Jul 9, 2026; UFC 329 weigh-in, Jul 10, 2026).
+- **Facial hair:** thin moustache and chin goatee over light stubble; varies between fights.
+- **Skin:** medium.
+- **Tattoos (ESPN cutouts and the UFC 329 weigh-in photo; text reads correctly, so not mirrored):** a large Polynesian-style tribal piece across the chest and both shoulders, onto the upper arms; HOLLOWAY in gothic script across the lower abdomen; a fox-like creature with several tails on the outer left upper arm; a colour scene with a lantern and a building on the inner left upper arm; black-and-grey work on the right arm, with script on the right forearm beginning "Blessed be the Lord my strength" (Psalm 144:1 wording); a small winged, cherub-like figure on the right side of the abdomen below the chest piece. What the individual pieces mean is not sourced.
+- **Kit:** UFC (Venum) vale-tudo shorts, white with a red and blue hibiscus print and a black waistband (ESPN full-body cutouts, files dated Mar 9 and Jul 9, 2026). Fight kit changes by event and the corner colour wins in the sim.
+- ESPN's CDN serves a Last-Modified date for each studio photo; that is when the file was posted, not necessarily when it was shot. No likeness sheet exists yet for him; photo references sit in `assets/reference/max-holloway/`.
+
+## Re-verification, Nov 6, 2026 (open network)
+
+- Status: still no booking (UFCalendar, Nov 6). Added his stated options (McGregor trilogy or a title shot vs Gaethje).
+- Ranking: No. 4 lightweight, media panel Nov 3, 2026, confirmed by two mirrors; ufc.com still blocks scripts.
+- Record: 28-9, Wikipedia and UFCalendar.
+- Appearance: tattoos and kit resolved from 2026 studio and weigh-in photos (previously "unknown"). Still unconfirmed: his back.
+
 ## Sources
 
 - http://ufcstats.com/fighter-details/150ff4cc642270b9
@@ -50,3 +68,13 @@ His Elo of 1775 ranks second among lightweights in the file. UFC record 24-9: 12
 - https://facepunching.substack.com/p/max-holloway-death-by-three-quarters
 - https://www.fightprimer.com/the-tactical-guide-to-volkanovski-vs-holloway-ii-this-time-its-on-yas-island
 - https://medium.com/@arabi-masri/max-holloway-an-all-time-great-d4789ba9fcf3
+- https://en.wikipedia.org/wiki/Max_Holloway
+- https://ufcrankings.org/lightweight/
+- https://www.ufcalendar.com/rankings/lightweight
+- https://www.ufcalendar.com/rankings/mens-pound-for-pound
+- https://ufcrankings.org/pound-for-pound/
+- https://sportsnaut.com/ufc/max-holloway-names-his-two-choices-for-next-ufc-fight
+- https://a.espncdn.com/i/headshots/mma/players/full/2614933.png
+- https://a.espncdn.com/i/headshots/mma/players/stance/right/2614933.png
+- https://a.espncdn.com/i/headshots/mma/players/stance/left/2614933.png
+- https://alohastatedaily.com/2026/07/10/waianaes-max-holloway-pearl-citys-kai-kamaka-iii-good-to-go-at-ufc-329/

@@ -113,8 +113,8 @@ const args = process.argv.slice(2);
 const flag = (k) => args.includes(k);
 const opt = (k, d) => { const a = args.find((x) => x.startsWith(k + "=")); return a ? +a.split("=")[1] : d; };
 const QUICK = flag("--quick"), FINAL_ONLY = flag("--final-only"), NOWRITE = flag("--no-write");
-const BUDGET_MIN = opt("--budget", QUICK ? 3 : 55);         // tuning wall-clock budget (minutes); the final evaluation comes after
-const N_TUNE = opt("--n", QUICK ? 40 : 150);
+const BUDGET_MIN = opt("--budget", QUICK ? 3 : 42);         // tuning wall-clock budget (minutes); the final evaluation comes after
+const N_TUNE = opt("--n", QUICK ? 40 : 60);
 const N_FINAL = opt("--nfinal", QUICK ? 120 : 1000);
 const NW = opt("--workers", Math.max(1, Math.min(4, os.cpus().length)));
 const SALT_TUNE = 0x5eed2019, SALT_FINAL = 0x0f1a1000;
@@ -424,8 +424,9 @@ const X0 = {
   formOut: P0.form.out, formPC: 1, formVol: P0.form.vol, formAcc: P0.form.acc, formGrap: P0.form.grap,
   jShared: P0.judge.sharedSd, jInd: P0.judge.indSd,
   chinAge: P0.chinAge, powAge: P0.powAge, powExp: P0.powExp != null ? P0.powExp : 1, chinExp: P0.chinExp != null ? P0.chinExp : 1,
-  koConv: 1, stko: P0.stko, gnpTko: P0.gnpTko, subConv: P0.subConvScale, chinKO: P0.chinKO, sizeChin: P0.sizeChin,
-  r1c5: P0.r1Caution5, dse: P0.drainSchedExp,
+  stko: P0.stko, gnpTko: P0.gnpTko, chinKO: P0.chinKO, sizeChin: P0.sizeChin, r1c5: P0.r1Caution5, dse: P0.drainSchedExp,
+  // fixed-point fitted to train base rates
+  koAll: 1, subConv: P0.subConvScale, caution5: P0.caution5 != null ? P0.caution5 : 1,
   // moment-matched
   strikeScale: P0.strikeScale, accScale: P0.accScale, kdScale: P0.kdScale, tdScale: P0.tdScale, tdOddsScale: P0.tdOddsScale,
   ctrlScale: P0.ctrlScale != null ? P0.ctrlScale : 1, subAttScale: P0.subAttScale
@@ -435,9 +436,9 @@ function buildOver(x) {
     form: { out: x.formOut, pow: P0.form.pow * x.formPC, chin: P0.form.chin * x.formPC, vol: x.formVol, acc: x.formAcc, grap: x.formGrap },
     judge: { sharedSd: x.jShared, indSd: x.jInd },
     chinAge: x.chinAge, powAge: x.powAge, powExp: x.powExp, chinExp: x.chinExp,
-    kdInstant: probOf(oddsOf(P0.kdInstant) * x.koConv), kdRefStop: probOf(oddsOf(P0.kdRefStop) * x.koConv),
-    stko: x.stko, gnpTko: x.gnpTko, subConvScale: x.subConv, chinKO: x.chinKO, sizeChin: x.sizeChin,
-    r1Caution5: x.r1c5, drainSchedExp: x.dse,
+    kdInstant: probOf(oddsOf(P0.kdInstant) * x.koAll), kdRefStop: probOf(oddsOf(P0.kdRefStop) * x.koAll),
+    stko: x.stko * x.koAll, gnpTko: x.gnpTko * x.koAll, subConvScale: x.subConv, chinKO: x.chinKO, sizeChin: x.sizeChin,
+    r1Caution5: x.r1c5, drainSchedExp: x.dse, caution5: x.caution5,
     strikeScale: x.strikeScale, accScale: x.accScale, kdScale: x.kdScale, tdScale: x.tdScale, tdOddsScale: x.tdOddsScale,
     ctrlScale: x.ctrlScale, subAttScale: x.subAttScale
   };
@@ -445,18 +446,15 @@ function buildOver(x) {
 // coordinate-descent specs, roughly in order of expected effect on the train objective
 const SPECS = [
   { k: "formOut", kind: "mul", step: 1.5, lo: 0.02, hi: 0.6, sub: "all" },
-  { k: "formPC", kind: "mul", step: 1.3, lo: 0.2, hi: 2.2, sub: "all" },
   { k: "jShared", kind: "mul", step: 1.35, lo: 0.2, hi: 3, sub: "all" },
-  { k: "jInd", kind: "mul", step: 1.25, lo: 0.3, hi: 3, sub: "all" },
+  { k: "formPC", kind: "mul", step: 1.3, lo: 0.2, hi: 2.2, sub: "all" },
   { k: "powExp", kind: "add", step: 0.25, lo: 0.2, hi: 2.0, sub: "all" },
   { k: "chinExp", kind: "add", step: 0.25, lo: 0.2, hi: 2.0, sub: "all" },
   { k: "chinAge", kind: "add", step: 0.02, lo: 0, hi: 0.15, sub: "age" },
   { k: "formVol", kind: "mul", step: 1.3, lo: 0.1, hi: 1.2, sub: "all" },
-  { k: "koConv", kind: "mul", step: 1.3, lo: 0.3, hi: 3, sub: "all" },
-  { k: "subConv", kind: "mul", step: 1.25, lo: 0.4, hi: 4, sub: "all" },
+  { k: "formAcc", kind: "mul", step: 1.4, lo: 0.02, hi: 0.5, sub: "all" },
   { k: "stko", kind: "mul", step: 1.4, lo: 0.005, hi: 0.3, sub: "all" },
   { k: "gnpTko", kind: "mul", step: 1.3, lo: 0.005, hi: 0.2, sub: "all" },
-  { k: "formAcc", kind: "mul", step: 1.4, lo: 0.02, hi: 0.5, sub: "all" },
   { k: "powAge", kind: "add", step: 0.02, lo: 0, hi: 0.12, sub: "age" },
   { k: "r1c5", kind: "add", step: 0.1, lo: 0.4, hi: 1.2, sub: "r5" },
   { k: "dse", kind: "add", step: 0.25, lo: -0.6, hi: 1.2, sub: "r5" },
@@ -464,6 +462,7 @@ const SPECS = [
   { k: "sizeChin", kind: "add", step: 0.05, lo: 0, hi: 0.3, sub: "size" },
   { k: "formGrap", kind: "mul", step: 1.4, lo: 0.05, hi: 0.9, sub: "all" }
 ];
+const REANCHOR_EVERY = opt("--reanchor", 5);   // fixed-point re-anchor after this many coordinate-descent parameters
 function stepVal(s, x, dir) {
   const v = s.kind === "mul" ? (dir > 0 ? x * s.step : x / s.step) : x + dir * s.step;
   return clip(v, s.lo, s.hi);
@@ -480,6 +479,12 @@ function momentUpdate(x, s, a, damp) {
   y.tdOddsScale = x.tdOddsScale * Math.pow(oR(a.tdAcc, s.tdAcc), e);
   y.ctrlScale = x.ctrlScale * Math.pow(a.ctrl15 / s.ctrl15, e);
   y.subAttScale = x.subAttScale * Math.pow(a.sub15 / s.sub15, e);
+  // base-rate fixers: KO conversion (instant KO, referee stop, standing and GNP TKO together), submission conversion,
+  // individual judge noise (unanimous share of decisions), 5-round caution (5-round finish rate)
+  y.koAll = clip(x.koAll * Math.pow(a.ko / s.ko, 1.2 * e), 0.2, 5);
+  y.subConv = clip(x.subConv * Math.pow(oR(a.sub, s.sub), e), 0.2, 6);
+  y.jInd = clip(x.jInd * Math.pow((1 - a.ud) / Math.max(1e-3, 1 - s.ud), 0.6 * e), 0.2, 4);
+  if (s.fin5 != null && a.fin5 != null && s.fin5 > 0) y.caution5 = clip(x.caution5 * Math.pow(a.fin5 / s.fin5, 1.4 * e), 0.3, 2);
   return y;
 }
 
@@ -531,7 +536,16 @@ function ll7Of(idxs, qf) {
     const st = makeStore(); putResults(st, await pool.run(buildOver(xx), idxs, N, salt)); tuneInfo.evals++; return st;
   }
 
+  let beforeTest = null;
   if (!FINAL_ONLY) {
+    // ---------------- before tuning: a test read with the builder's parameters (reported only, never used for tuning)
+    {
+      const NB = QUICK ? 40 : 150, st = await evalFull(x, TEST, NB, SALT_FINAL);
+      const e = winnerMetrics(TEST, (g) => engineP(st, g)), e7 = ll7Of(TEST, (g) => engineQ7(st, g, NB)), ag = aggregates(st, TEST, NB), rs = rates(ag.sim), ra = rates(ag.act);
+      beforeTest = { n_sims: NB, params_version: BASE.version, log_loss: r4(e.log_loss), brier: r4(e.brier), accuracy: r4(e.accuracy), ece: r4(e.ece), slope: r3(e.slope),
+        outcome7_log_loss: r4(e7.log_loss), finish_sim: r4(rs.fin), finish_actual: r4(ra.fin), ko_sim: r4(rs.ko), sub_sim: r4(rs.sub), fin5_sim: r4(rs.fin5), fin5_actual: r4(ra.fin5) };
+      log(`before tuning (test, N=${NB}): LL ${e.log_loss.toFixed(4)} Brier ${e.brier.toFixed(4)} acc ${(100 * e.accuracy).toFixed(1)}% ECE ${(100 * e.ece).toFixed(2)}% slope ${e.slope.toFixed(2)} 7-bin ${e7.log_loss.toFixed(4)} fin ${(100 * rs.fin).toFixed(1)}/${(100 * ra.fin).toFixed(1)}`);
+    }
     // ---------------- baseline on train
     let cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE);
     let best = objective(cur, TRAIN, N_TUNE);
@@ -544,8 +558,8 @@ function ll7Of(idxs, qf) {
     show("baseline (train)", best);
     history.push({ t: +mins().toFixed(2), what: "baseline", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
 
-    // ---------------- moment matching (two dampened updates)
-    for (let mu = 0; mu < 2; mu++) {
+    // ---------------- moment matching and base-rate fixed point (three dampened updates)
+    for (let mu = 0; mu < 3; mu++) {
       x = momentUpdate(x, best.s, best.a, 0.85);
       cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE); best = objective(cur, TRAIN, N_TUNE); tuneInfo.moment_updates++;
       show(`moment update ${mu + 1}`, best);
@@ -554,11 +568,18 @@ function ll7Of(idxs, qf) {
 
     // ---------------- coordinate descent with shrinking steps
     const steps = {}; for (const s of SPECS) steps[s.k] = s.step;
-    const THR = 0.00015;
+    const THR = 0.0003;
     let stop = false;
     for (let pass = 0; pass < 6 && !stop; pass++) {
-      let improvedAny = false;
+      let improvedAny = false, sinceAnchor = 0;
       for (const s0 of SPECS) {
+        if (sinceAnchor >= REANCHOR_EVERY && mins() <= BUDGET_MIN) {
+          x = momentUpdate(x, best.s, best.a, 0.85);
+          cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE); best = objective(cur, TRAIN, N_TUNE); tuneInfo.moment_updates++; sinceAnchor = 0;
+          show("re-anchor", best);
+          history.push({ t: +mins().toFixed(2), what: "moment", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
+        }
+        sinceAnchor++;
         if (mins() > BUDGET_MIN) { stop = true; break; }
         const s = Object.assign({}, s0, { step: steps[s0.k] });
         const subIdx = s.sub === "all" ? TRAIN : TRAIN.filter((g) => SUBSET[s.sub].has(g));
@@ -609,7 +630,7 @@ function ll7Of(idxs, qf) {
   const tuneMin = mins();
 
   // ---------------- final evaluation: N_FINAL per fight on train and test, fresh seeds
-  log(`final evaluation: ${ALL_IDX.length} fights x ${N_FINAL} sims...`);
+  log(`final evaluation: ${TRAIN.length + TEST.length} fights x ${N_FINAL} sims...`);
   const over = buildOver(x);
   const fin = makeStore();
   putResults(fin, await pool.run(over, TRAIN.concat(TEST), N_FINAL, SALT_FINAL));
@@ -747,6 +768,7 @@ function ll7Of(idxs, qf) {
     tuning: FINAL_ONLY ? null : { info: tuneInfo, minutes: +tuneMin.toFixed(1), x: Object.fromEntries(Object.entries(x).map(([k, v]) => [k, +v.toPrecision(4)])), start_x: X0, history,
       objective: "winner log loss + 0.5 x 7-bin log loss + 0.02 x sum(((|dev| - tol) / tol)^2) for fin3 2 pts, fin5 4 pts, KO 2 pts, SUB 2 pts, UD share 4 pts, KD/100 10%" },
     tuned_params: tuned,
+    before_tuning_test: beforeTest,
     volk_gaethje: vg,
     caveats: [
       "Division correction factors (params.div) come from the league-average self-calibration against fighters.json priors, which include 2024+ fights: a small base-rate leak into the test set (rates only, no outcomes per fight).",
@@ -811,7 +833,7 @@ function writeParams(x, cal) {
     return text.slice(0, start) + body + text.slice(end);
   }
   const top = ["strikeScale", "accScale", "kdScale", "tdScale", "tdOddsScale", "ctrlScale", "subAttScale", "subConvScale", "kdInstant", "kdRefStop",
-    "stko", "gnpTko", "chinAge", "powAge", "powExp", "chinExp", "chinKO", "sizeChin", "r1Caution5", "drainSchedExp"];
+    "stko", "gnpTko", "chinAge", "powAge", "powExp", "chinExp", "chinKO", "sizeChin", "r1Caution5", "drainSchedExp", "caution5"];
   for (const k of top) src = rep(src, k, over[k]);
   src = repBlock(src, "form", { out: over.form.out, pow: over.form.pow, chin: over.form.chin, vol: over.form.vol, acc: over.form.acc, grap: over.form.grap });
   src = repBlock(src, "judge", { sharedSd: over.judge.sharedSd, indSd: over.judge.indSd });
