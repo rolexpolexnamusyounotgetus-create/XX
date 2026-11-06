@@ -334,7 +334,29 @@
     for (i = 0; i < 2; i++) for (var k = 0; k < 5; k++) m.upPos[i * 5 + k] = m.up[1 - i] * p.standPos[k] / avgStand[i];
   }
 
-  // pred: {A: rates, B: rates}. opts: {engine (FightEngine), parts: {...} to switch pieces off, maxRatio}
+  var PROB_T = { acc_h: 1, acc_b: 1, acc_l: 1, acc_d: 1, acc_c: 1, acc_g: 1, td_acc: 1, kd_h: 1 };
+  var EMPTY = { name: "league average", S: [], ko_losses: 0 };
+  var leagueCache = {};
+
+  // engine v3's static expectation for two league-average (no-data) fighters with the matchup's settings
+  function leagueExpect(m, FE) {
+    var o = m.opts || {}, key = [m.division, m.rounds, m.title, m.date, m.p.version, JSON.stringify(m.P && [m.P.d_att, m.P.ctrl, m.P.kd_per_h, m.P.td_acc])].join("|");
+    if (leagueCache[key]) return leagueCache[key];
+    var o2 = {}; for (var k in o) if (k !== "adjA" && k !== "adjB") o2[k] = o[k];
+    o2.division = m.division; o2.rounds = m.rounds; o2.title = m.title;
+    if (!o2.priors) { o2.priors = { ALL: m.P }; o2.priors[m.division] = m.P; }
+    var eL = engineSide(FE.matchup(EMPTY, EMPTY, o2), 0);
+    var keys = Object.keys(leagueCache); if (keys.length > 200) leagueCache = {};
+    leagueCache[key] = eL;
+    return eL;
+  }
+
+  // pred: MLRates.predict output. opts: {engine (FightEngine), level: "engine" (default) | "absolute", parts: {grappling,
+  // strikes, accuracy, kd, subs: false to keep the engine's own}, maxRatio (cap on any single multiplier, default 4)}.
+  // level "engine": the target for each stat is the engine's own league-average expectation x (ML / league rate), so the
+  // simulator keeps its calibrated league level (its in-fight modifiers, e.g. on knockdowns, stay balanced) and plays the
+  // ML's matchup-specific multipliers; probabilities combine on odds. level "absolute": the ML rates are imposed on the
+  // engine's static expectation directly (diagnostics only: the in-fight modifiers then shift the realised level).
   function applyToMatchup(m, pred, opts) {
     opts = opts || {};
     var FE = opts.engine || (typeof self !== "undefined" && self.FightEngine) || (typeof globalThis !== "undefined" && globalThis.FightEngine);
@@ -342,11 +364,34 @@
     var parts = opts.parts || {}, on = function (k) { return parts[k] !== false; };
     var RMAX = opts.maxRatio || 4, p = m.p, i, j, k, t, it;
     function rr(a, b) { return clip(a / Math.max(b, 1e-9), 1 / RMAX, RMAX); }
-    // ML targets with the matchup's knobs layered on top (the knobs stay meaningful)
+    var M = opts.model || MODEL, names = (M && M.targets) || TNAMES;
+    var level = opts.level || "engine", eL = null, base = {};
+    if (level === "engine") {
+      eL = opts.leagueExpect || leagueExpect(m, FE);
+      for (t = 0; t < names.length; t++) base[names[t]] = pred.base ? pred.base[t] : null;
+    }
+    // ML targets (re-levelled) with the matchup's knobs layered on top (the knobs stay meaningful)
     var tg = [{}, {}], sides = [pred.A, pred.B];
     for (i = 0; i < 2; i++) {
       j = 1 - i; var a = m.adj[i], aj = m.adj[j], src = sides[i];
-      for (k in src) tg[i][k] = src[k];
+      for (k in src) {
+        var v = src[k];
+        if (eL && base[k] != null && eL[k] != null && base[k] > 0) {
+          v = PROB_T[k] && k !== "kd_h" ? prob(odds(eL[k]) * odds(v) / odds(base[k])) : eL[k] * v / base[k];
+        }
+        tg[i][k] = v;
+      }
+      // position accuracies made coherent with the target accuracies (same attempt-weighted overall; the ML's
+      // relative position differences kept), so the two-margin fit below can match both exactly
+      var ovT = (tg[i].h_att * tg[i].acc_h + tg[i].b_att * tg[i].acc_b + tg[i].l_att * tg[i].acc_l) / Math.max(1e-9, tg[i].h_att + tg[i].b_att + tg[i].l_att);
+      var wP = [tg[i].d_att, tg[i].c_att, tg[i].g_att], zP = [lgt(tg[i].acc_d), lgt(tg[i].acc_c), lgt(tg[i].acc_g)], sh = 0;
+      for (it = 0; it < 30; it++) {
+        var num0 = 0, den0 = 0;
+        for (k = 0; k < 3; k++) { num0 += wP[k] * sigm(zP[k] + sh); den0 += wP[k]; }
+        if (den0 <= 0) break;
+        sh += lgt(ovT) - lgt(num0 / den0);
+      }
+      tg[i].acc_d = sigm(zP[0] + sh); tg[i].acc_c = sigm(zP[1] + sh); tg[i].acc_g = sigm(zP[2] + sh);
       tg[i].d_att *= a.out; tg[i].c_att *= a.out; tg[i].g_att *= a.out;
       tg[i].h_att *= a.out; tg[i].b_att *= a.out; tg[i].l_att *= a.out;
       tg[i].td_att *= a.tdAtt; tg[i].sub_att *= a.sub;
@@ -442,8 +487,8 @@
         m.gillo[i] = clip(m.gillo[i] * rs, 0, 0.5); ratios[i].sub = rs;
       }
     }
-    m.ml = { targets: tg, ratios: ratios, after: engineExpect(m) };
-    return { ratios: ratios, targets: tg };
+    m.ml = { targets: tg, ratios: ratios, league: eL, level: level };
+    return { ratios: ratios, targets: tg, league: eL, level: level };
   }
 
   function mlMatchup(FE, profA, profB, opts) {

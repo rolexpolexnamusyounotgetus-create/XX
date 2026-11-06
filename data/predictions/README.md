@@ -116,6 +116,8 @@ not claimed until the paired interval excludes zero.
   (sources conflict). The full definitions are in the file's `schema` block.
 - `open_slots` lists fighters still booked without an opponent, and `removed` keeps cancelled or moved
   pairings for the audit trail. `prior_ufc_meetings` flags rematches.
+- `verification` records the latest independent re-check of the snapshot: what was checked, what
+  changed, the bout counts by status, and the `as_of` it replaced.
 - `unreachable_sources` lists hosts that could not be fetched when the snapshot was taken
   (ufcstats.com, ufc.com and tapology.com were blocked in the Nov 6, 2026 session). Refresh the
   snapshot, ideally against ufc.com, before writing each event's prediction file.

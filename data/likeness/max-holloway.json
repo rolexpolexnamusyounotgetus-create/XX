@@ -1,0 +1,260 @@
+{
+  "slug": "max-holloway",
+  "name": "Max Holloway",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 34,
+  "official": {
+    "dob": "1991-12-04",
+    "height_cm": 180.3,
+    "reach_cm": 175.3,
+    "stance": "Orthodox",
+    "fight_weight_lb": 155,
+    "division_note": "Lightweight in 2025-26 (UFC 326, March 2026); fought Conor McGregor at welterweight (170 lb) at UFC 329, July 2026."
+  },
+  "photos_used": [
+    "ref-lvsun-2026-03-05-ufc326-presser-front.jpg",
+    "espn-headshot.png",
+    "wm-2022-blueangels-cropped.jpg",
+    "wm-2024-ufc300-interview.png",
+    "wm-2018-bagram-qa.jpg",
+    "ref-asd-2026-07-10-ufc329-rogan.jpg",
+    "ref-asd-2026-07-10-ufc329-weighin.jpg",
+    "espn-stance-right.png"
+  ],
+  "photo_coverage": "Good. Front: March 2026 press conference (Las Vegas Sun, reference-only), ESPN studio headshot, 2022 Marine Corps photo (PD) and an April 2024 post-fight interview (CC BY 3.0). Three-quarter: 2018 USO tour (CC BY 2.0) and July 2026 weigh-in photos (reference-only). Physique: ESPN full-body cutout and the July 2026 weigh-in. No true profile.",
+  "face": {
+    "shape": "Long and fairly narrow, with a high, broad forehead and wide cheekbones tapering to a narrow chin (inverted-triangular to long oval). Lean and angular; reads gaunt at fight weight.",
+    "jaw": "Slim and lightly defined; the jaw angles are not wide.",
+    "chin": "Narrow, slightly pointed and of medium height; covered by goatee stubble.",
+    "cheekbones": "High and prominent, with hollow cheeks under them, especially in 2026.",
+    "brow_ridge": "Moderate; brows sit low.",
+    "forehead": "High and broad, with several horizontal creases; the lined-up hairline makes it look taller.",
+    "eyes": {
+      "shape": "Almond, slightly narrow, with heavy lids and creased lower lids/eye bags; outer corners level to slightly down.",
+      "spacing": "Average.",
+      "colour": "Dark brown. Closest embed iris: brown.",
+      "size": "Medium-small."
+    },
+    "eyebrows": {
+      "thickness": "Medium",
+      "shape": "Low and nearly straight, heavier at the inner ends, tapering toward the temples with a slight downward tail.",
+      "colour": "Black to very dark brown.",
+      "colour_hex": "#231b18"
+    },
+    "nose": {
+      "length": "Medium",
+      "width": "Wide, especially at the tip and nostrils.",
+      "bridge": "Broad and slightly flattened at mid-bridge from the front.",
+      "hump": "None; flat to straight profile in three-quarter views.",
+      "tip": "Broad, rounded and fleshy, level to slightly down.",
+      "fight_damage": "The broad, slightly flattened bridge is consistent with old breaks but there is no obvious deviation."
+    },
+    "mouth_lips": "Medium-wide mouth; thin upper lip, medium lower lip. Resting expression closed with a faint smirk; big open-mouth laugh in casual photos.",
+    "ears": {
+      "size": "Medium-large",
+      "protrusion": "Clearly stick out from the head; one of the more recognisable features from the front.",
+      "cauliflower_ear": "No: the ear folds look normal in the 2022 and 2026 photos."
+    },
+    "notable_marks_scars": "A small dark mole on the right side of the nose (his right), visible in the studio headshot, the 2022 photo and March 2026. Small healed marks on the forehead and around the brows; no single large scar."
+  },
+  "hair": {
+    "style": "2025-2026: short crop, about 2 cm on top, tapered short at the sides, with a crisp straight lined-up hairline across the forehead. In 2022 he wore it grown out to about 6-8 cm with loose curls on top.",
+    "length_cm": {
+      "top": 2,
+      "sides": 0.8,
+      "back": 0.8,
+      "top_2022": 7
+    },
+    "colour": "Black.",
+    "colour_samples": {
+      "lvsun_2026_top_stage_light": "#333532",
+      "blueangels_2022_top": "#1b1816",
+      "espn_studio_top": "#1f1614"
+    },
+    "colour_hex": "#22201e",
+    "hairline": "Straight horizontal line (edged up) with squared corners, set high on a tall forehead.",
+    "texture": "Coarse and curly when grown; tight short waves when cropped."
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "colour": "Black.",
+    "colour_hex": "#1f1a17",
+    "density": "Sparse. Darkest on the moustache and chin, very light on the cheeks.",
+    "length_mm": "About 2-4 mm in 2026; about 5 mm moustache-and-goatee in 2018-2022.",
+    "shape": "Moustache-and-goatee pattern: a thin moustache joined at the mouth corners to a chin goatee, with light stubble along the jaw. Cheeks mostly clear.",
+    "colour_samples_note": "Stubble samples are mostly skin (lvsun chin box 330,560,420,600 gave #c8a478), so colour_hex is a judged black."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn-headshot.png",
+        "spot": "forehead",
+        "box": "275,110,330,135",
+        "hex": "#f7b498",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "right cheek (shadow side)",
+        "box": "245,195,265,218",
+        "hex": "#d08563",
+        "light": "studio"
+      },
+      {
+        "photo": "ref-lvsun-2026-03-05-ufc326-presser-front.jpg",
+        "spot": "forehead",
+        "box": "290,190,440,240",
+        "hex": "#dcbb97",
+        "light": "press-conference stage light"
+      },
+      {
+        "photo": "ref-lvsun-2026-03-05-ufc326-presser-front.jpg",
+        "spot": "right cheek",
+        "box": "240,380,290,430",
+        "hex": "#c59f71",
+        "light": "press-conference stage light"
+      },
+      {
+        "photo": "wm-2022-blueangels-cropped.jpg",
+        "spot": "forehead",
+        "box": "600,400,760,440",
+        "hex": "#e6c4a5",
+        "light": "indoor, flat daylight"
+      },
+      {
+        "photo": "wm-2022-blueangels-cropped.jpg",
+        "spot": "left cheek (shadow side)",
+        "box": "420,640,470,700",
+        "hex": "#b0855d",
+        "light": "indoor, flat daylight"
+      }
+    ],
+    "tone_average_all": "#d5a581",
+    "tone_average_used": "#d5a581",
+    "tone_hex": "#d5a581",
+    "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). Studio (ESPN/UFC) cutouts are high-key and warm-graded, so they read lighter and pinker than arena or daylight photos; the average mixes lighting on purpose.",
+    "tone_category": "tan",
+    "undertone": "Warm golden. Tanned, with olive-gold mid-tones and no pink flush.",
+    "freckles_marks": "Small mole on the right side of the nose; light forehead creases. Little body hair."
+  },
+  "body": {
+    "build": "Tall and rangy for his weight (180 cm), narrow-framed with long limbs. Reach (175 cm) is shorter than his height.",
+    "body_fat": "lean",
+    "body_fat_notes": "Low body fat but modest muscle mass; ab outline visible in the studio cutout. At 170 lb (July 2026) the chest and shoulders look a little fuller but he is still slim.",
+    "shoulders": "Moderate width, sloping, not bulky.",
+    "chest": "Flat and lean.",
+    "arms": "Long, lean and wiry.",
+    "waist": "Narrow; slim through the hips.",
+    "legs_calves": "Long legs with slim thighs and thin calves.",
+    "neck": "Medium thickness, fairly long.",
+    "posture": "Upright with the head slightly forward; loose and relaxed shoulders. Orthodox stance.",
+    "notable_physique_traits": "Long, slim silhouette, heavily tattooed torso and arms, prominent ears and lined-up hairline."
+  },
+  "tattoos": [
+    {
+      "where": "Chest, both pecs and both shoulders",
+      "description": "Large black Polynesian-style tribal piece with spiral and band patterns, forming a big downward-pointing spearhead/arrow at the centre of the sternum; a line of cursive script across the upper chest (not legible).",
+      "size": "About 40 cm wide x 30 cm tall"
+    },
+    {
+      "where": "Both deltoids and upper arms",
+      "description": "Tribal patterns continue from the chest piece over both shoulders and down the upper arms.",
+      "size": "Shoulder caps to mid upper arm"
+    },
+    {
+      "where": "Left upper arm (outer)",
+      "description": "Black-and-grey Japanese-style fox figure with several flowing tails and flame shapes (ESPN cutout). The July 2026 weigh-in also shows a newer colour piece with teal/blue tones (a lantern or building scene) on the lower part of that upper arm.",
+      "size": "Shoulder to elbow"
+    },
+    {
+      "where": "Right forearm, elbow to wrist",
+      "description": "Long script passage beginning 'Blessed be the Lord my strength which teacheth my hands to war' with ornamental framing (black ink).",
+      "size": "About 20 cm tall"
+    },
+    {
+      "where": "Upper abdomen, just above the navel",
+      "description": "'HOLLOWAY' in black Old English lettering across the stomach.",
+      "size": "About 20 cm wide x 5 cm tall"
+    },
+    {
+      "where": "Left pec, just below the nipple",
+      "description": "Small cursive script with a small flower motif.",
+      "size": "About 8 cm wide"
+    },
+    {
+      "where": "Lower sternum, centre",
+      "description": "Small black figure (looks like a bird or leaping figure) visible at the July 2026 weigh-in; not in the older ESPN cutout.",
+      "size": "About 6 cm",
+      "confidence": "medium"
+    }
+  ],
+  "accessories_seen": "Gold chain with a cross pendant (2018 and July 2026), ring on the left ring finger.",
+  "kit": {
+    "typical_shorts": "UFC-issued shorts with a Hawaiian theme: white shorts covered in red and blue hibiscus flowers, a white crotch panel, black-and-white patterned waistband with a white UFC tab, crypto.com logo (ESPN cutout; similar white-floral shorts visible at UFC 300, April 2024).",
+    "gloves": "Standard black UFC gloves in studio shots.",
+    "shorts_colours_hex": {
+      "white": "#f1f1f3",
+      "hibiscus_red": "#d8262e",
+      "hibiscus_blue": "#2d4fa8",
+      "waistband_black": "#141416"
+    }
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.14,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.4,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.2,
+    "macro/heightUpM": 0.1,
+    "macro/heightDownM": 0.0,
+    "macro/proportionsUpM": 0.4,
+    "head/head-oval": 0.3,
+    "head/head-invertedtriangular": 0.2,
+    "head/head-scale-vert-incr": 0.25,
+    "head/head-scale-horiz-decr": 0.1,
+    "head/head-fat-decr": 0.35,
+    "forehead/forehead-scale-vert-incr": 0.3,
+    "chin/chin-width-decr": 0.15,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-bones-incr": 0.1,
+    "chin/chin-prominent-incr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.35,
+    "cheek/r-cheek-bones-incr": 0.35,
+    "cheek/l-cheek-volume-decr": 0.4,
+    "cheek/r-cheek-volume-decr": 0.4,
+    "eyes/l-eye-scale-decr": 0.1,
+    "eyes/r-eye-scale-decr": 0.1,
+    "eyes/l-eye-height2-decr": 0.15,
+    "eyes/r-eye-height2-decr": 0.15,
+    "eyes/l-eye-bag-incr": 0.2,
+    "eyes/r-eye-bag-incr": 0.2,
+    "eyes/l-eye-corner1-down": 0.05,
+    "eyes/r-eye-corner1-down": 0.05,
+    "eyebrows/eyebrows-trans-down": 0.25,
+    "eyebrows/eyebrows-trans-forward": 0.2,
+    "eyebrows/eyebrows-angle-down": 0.05,
+    "nose/nose-scale-horiz-incr": 0.3,
+    "nose/nose-width1-incr": 0.3,
+    "nose/nose-point-width-incr": 0.35,
+    "nose/nose-nostrils-width-incr": 0.3,
+    "nose/nose-flaring-incr": 0.15,
+    "nose/nose-scale-depth-decr": 0.05,
+    "nose/nose-hump-decr": 0.1,
+    "nose/nose-point-down": 0.05,
+    "mouth/mouth-scale-horiz-incr": 0.1,
+    "mouth/mouth-upperlip-volume-decr": 0.2,
+    "neck/neck-scale-vert-incr": 0.1,
+    "torso/measure-shoulder-dist-incr": 0.1,
+    "torso/torso-vshape-incr": 0.15,
+    "torso/measure-waist-circ-decr": 0.25,
+    "torso/measure-hips-circ-decr": 0.15,
+    "buttocks/buttocks-volume-decr": 0.1
+  },
+  "morphs_not_in_embed": {
+    "_note": "assets/embed/mh-manifest.json has no ear targets; estimates for standard MakeHuman ear modifiers. The ears stick out noticeably; if an ear-protrusion target exists (e.g. ear-wing/flap), use about 0.4.",
+    "ears/l-ear-scale-incr": 0.25,
+    "ears/r-ear-scale-incr": 0.25
+  },
+  "notes": "Confidence: high for hair, skin, tattoos and build; medium-high for face proportions (three good fronts including March 2026); medium for morph values; no true profile, so nose projection and chin depth are estimates. 8 photos: 3 Commons (PD / CC BY 2.0 / CC BY 3.0), 5 reference-only (ESPN x2, Las Vegas Sun Mar 2026, Aloha State Daily Jul 2026 x2). What to watch: (1) Long narrow face, high forehead with a straight edged-up hairline, hollow cheeks and high cheekbones. (2) Broad, flat-bridged nose with a wide rounded tip, and the small mole on HIS RIGHT side of the nose. (3) Ears that stick out; the embed has no ear morphs, so this cue may be lost. (4) Sparse black moustache-goatee stubble, not a full beard. (5) Heavy Polynesian chest/shoulder tribal with the central spearhead, 'HOLLOWAY' across the stomach, script on the right forearm, fox on the left upper arm. (6) Body: tall (scale to 180.3 cm), slim, long limbs; do not bulk him up. ageOldM uses (years-25)/65 like src/avatar3d.js; l-/r- values are symmetric."
+}

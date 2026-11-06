@@ -627,8 +627,31 @@ def bfo_parse_event(html):
             'matchups': [mus[m] for m in order]}
 
 
-def fetch_bfo(F, since, until):
+def previous_snapshot():
+    """Latest snapshot on disk (or None)."""
+    ps = sorted(glob.glob(os.path.join(PRED_DIR, 'odds_snapshot_*.json')))
+    best = None
+    for p in ps:
+        try:
+            with open(p) as fh:
+                s = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        if best is None or s['meta']['snapshot_utc'] > best['meta']['snapshot_utc']:
+            best = s
+    return best
+
+
+def fetch_bfo(F, since, until, prev=None):
     evs, ts_home = bfo_event_list(F)
+    # BFO's home page drops an event once it has happened: re-read the pages earlier snapshots used, so a
+    # run after the card still finds the archived closing lines
+    known = {e['event_id'] for e in evs}
+    for e in ((prev or {}).get('meta', {}).get('sources', {}).get('bestfightodds', {}).get('event_pages') or []):
+        if e.get('event_id') not in known and e.get('date'):
+            evs.append({'url': f"{BFO}/events/{e['slug']}-{e['event_id']}", 'slug': e['slug'],
+                        'event_id': e['event_id'], 'title': e.get('title'), 'date': e['date']})
+            known.add(e['event_id'])
     picked = [e for e in evs if re.match(r'(noche-)?ufc', e['slug']) and not e['slug'].startswith('ufc-bjj')
               and e['date'] and since - dt.timedelta(days=1) <= dt.date.fromisoformat(e['date'])
               <= until + dt.timedelta(days=1)]
@@ -980,7 +1003,12 @@ def load_cards_upcoming():
                           'segment': b.get('segment') or b.get('card'), 'order': b.get('order', i + 1),
                           'title_fight': bool(b.get('title_fight') or b.get('title') is True),
                           'bout_id': b.get('id') or b.get('bout_id'), 'card_src': 'cards_upcoming.json'})
+    global CARD_AS_OF
+    CARD_AS_OF = d.get('as_of') if isinstance(d, dict) else None
     return (events, bouts) if bouts else (None, None)
+
+
+CARD_AS_OF = None
 
 
 class FighterIndex:
@@ -1658,6 +1686,7 @@ def cmd_snapshot(a):
     print(f'[{stamp}] window {since} .. {until}', flush=True)
     wiki_evs, wiki_cards = [], {}
     cards_file = load_cards_upcoming()
+    prev = None if a.replay else previous_snapshot()
     if not a.skip_wiki:
         def _wiki():
             evs, ts = wiki_events(F, since, until)
@@ -1678,7 +1707,7 @@ def cmd_snapshot(a):
             sources['fightodds']['event_list'] = fo_meta['events']
         print(f'  fightodds: {sources["fightodds"]}', flush=True)
     if 'bestfightodds' in sel:
-        r, bmeta = run('bestfightodds', lambda: fetch_bfo(F, since, until))
+        r, bmeta = run('bestfightodds', lambda: fetch_bfo(F, since, until, prev))
         src_bouts += r
         sources['bestfightodds']['event_pages'] = bmeta.get('events')
         print(f'  bestfightodds: {sources["bestfightodds"]["n_bouts"]} bouts', flush=True)
@@ -1693,6 +1722,22 @@ def cmd_snapshot(a):
 
     events, bouts, card_source = build_universe(wiki_evs, wiki_cards, cards_file, src_bouts,
                                                 fo_meta.get('events', []), since, until)
+    if prev:   # an event that already happened drops off Wikipedia's scheduled list (and maybe the cards file)
+        have = {e['date'] for e in events}
+        for e in prev.get('events', []):
+            if e['date'] in have or not (since <= dt.date.fromisoformat(e['date']) <= until):
+                continue
+            events.append({k: v for k, v in e.items() if k not in ('n_bouts', 'n_bouts_with_odds')})
+            for r in prev['bouts']:
+                if r['date'] == e['date']:
+                    bouts.append({'event': r['event'], 'date': r['date'], 'A': r['A']['name'], 'B': r['B']['name'],
+                                  'A_slug': r['A'].get('slug'), 'B_slug': r['B'].get('slug'),
+                                  'weight_class': r.get('weight_class'), 'segment': r.get('segment'),
+                                  'order': r.get('order'), 'rounds': r.get('rounds'), 'status': r.get('status'),
+                                  'title_fight': r.get('title'), 'card_src': f"previous snapshot {prev['meta']['stamp']}"})
+            warnings.append(f"{e['name']} ({e['date']}) is no longer on the card sources; bouts carried over "
+                            f"from snapshot {prev['meta']['stamp']}")
+        events.sort(key=lambda e: e['date'])
     if not events:
         warnings.append('no events in the window (Wikipedia and fightodds both empty?)')
     unmatched = match_sources(events, bouts, src_bouts, add_missing=not cards_file[0])
@@ -1707,6 +1752,7 @@ def cmd_snapshot(a):
             'snapshot_utc': now.isoformat(timespec='seconds').replace('+00:00', 'Z'), 'stamp': stamp,
             'tool': 'tools/odds_upcoming.py', 'version': VERSION, 'replayed_from_cache': bool(a.replay),
             'window': [since.isoformat(), until.isoformat()], 'card_source': card_source,
+            'card_as_of': CARD_AS_OF if cards_file[0] else None,
             'n_events': len(events), 'n_bouts': len(recs),
             'n_bouts_with_odds': sum(1 for r in recs if r['consensus'].get('n_books')),
             'sources': sources, 'raw_cache': f'data/raw/web_cache/<site>/{stamp}/',

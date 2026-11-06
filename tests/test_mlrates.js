@@ -3,7 +3,8 @@
    1. features: JS features from raw side profiles + priors equal the Python features (fixtures);
    2. model: JS linear predictors (GLM + LightGBM trees + MLP, stacked) equal the Python evaluation of the same JSON;
    3. symmetry: predict(A, B) and predict(B, A) swap exactly;
-   4. adapter: with FightEngine, applyToMatchup moves the engine's static expectation onto the ML targets
+   4. adapter: with FightEngine, applyToMatchup moves the engine's static expectation onto the targets (engine
+      league-average expectation x ML / league rate)
       (position attempts, target attempts, accuracies, KD, takedowns, control, submissions) and the matchup still
       simulates; corner swap still swaps the outcome.
    node tests/test_mlrates.js            (about 10 seconds) */
@@ -59,17 +60,25 @@ if (!FE) {
     const pr = ML.predict(model, f.A, f.B, ctx);
     const pa = Object.assign({ name: "A", division: f.A.home }, f.A), pb = Object.assign({ name: "B", division: f.B.home }, f.B);
     const m = FE.matchup(pa, pb, { division: f.prior_division, rounds: f.rounds, title: f.title, date: f.date, priors: priors });
-    ML.applyToMatchup(m, pr, { engine: FE });
+    const info = ML.applyToMatchup(m, pr, { engine: FE });
     const after = ML.engineExpect(m);
-    for (const [side, tag] of [[after.A, "A"], [after.B, "B"]]) {
+    for (const [side, tag, ti] of [[after.A, "A", 0], [after.B, "B", 1]]) {
+      const tgt = info.targets[ti];
       for (const k of names) {
-        const want = pr[tag][k], got = side[k];
+        const want = tgt[k], got = side[k];
         const rel = Math.abs(Math.log(Math.max(got, 1e-9) / Math.max(want, 1e-9)));
         errs[k] = Math.max(errs[k] || 0, rel);
       }
       // target attempts: shares
-      const tw = pr[tag].h_att + pr[tag].b_att + pr[tag].l_att, tg = side.h_att + side.b_att + side.l_att;
-      errs.h_share = Math.max(errs.h_share || 0, Math.abs(side.h_att / tg - pr[tag].h_att / tw));
+      const tw = tgt.h_att + tgt.b_att + tgt.l_att, tg = side.h_att + side.b_att + side.l_att;
+      errs.h_share = Math.max(errs.h_share || 0, Math.abs(side.h_att / tg - tgt.h_att / tw));
+      // re-levelling: target / engine league-average expectation equals ML / league rate
+      const eL = info.league;
+      if (eL) for (const k of ["d_att", "ctrl", "kd_h", "td_att"]) {
+        const t = ML.TNAMES.indexOf(k);
+        const rel = Math.abs(Math.log((tgt[k] / eL[k]) / (pr[tag][k] / pr.base[t])));
+        errs.relevel = Math.max(errs.relevel || 0, rel);
+      }
     }
     n++;
     const s = FE.summarize(m, 200, 99);
@@ -83,6 +92,7 @@ if (!FE) {
   }
   for (const k of ["td_att", "ctrl"]) ok(errs[k] < 0.15, "adapter approaches " + k + " (max log error " + errs[k].toFixed(4) + ")");
   ok(errs.h_share < 0.03, "adapter matches the head-strike share (max abs error " + errs.h_share.toFixed(4) + ")");
+  ok(errs.relevel < 1e-9, "targets keep the engine's league level x the ML matchup multiplier");
 
   // corner swap symmetry of the adapted simulation (Monte Carlo)
   const fx = FX.fixtures[3], f = fx.fight, priors = FX.priors[String(f.year)];

@@ -788,8 +788,9 @@ OOF_YEARS = [2020, 2021, 2022, 2023]          # time-ordered CV folds inside the
 ES_SPLIT = (2017, (2018, 2019))               # round / epoch selection: train <= 2017, stop on 2018-2019
 GLM_LAMS = [10.0, 50.0, 250.0, 1250.0]
 GLM_TOP = 12                                   # interactions among the top-k GBM features of each target
-MLP_CFG = dict(hidden=(96, 48), drop=0.15, wd=1e-3, lr=2e-3)
-MLP_SEEDS = 2
+MLP_CFG = dict(hidden=(96, 48), drop=0.15, wd=1e-3, lr=3e-3)
+MLP_SEEDS = 2                                  # seeds for round selection and the final fits (+1)
+FOLD_MLP_SEEDS = 1                             # seeds per CV fold (CPU budget)
 
 
 def recal_const(t, y, e, mu):
@@ -868,7 +869,7 @@ def cmd_fit(args):
     for t in range(nt):
         e = EX[:, t]
         a, b = es_tr & (e > 0), es_va & (e > 0)
-        bst, it = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], 30 if quick else 1500, X[b], Y[b, t], e[b], OFF[b, t])
+        bst, it = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], 30 if quick else 900, X[b], Y[b, t], e[b], OFF[b, t])
         it = max(it, 20)
         rounds.append(it)
         gain = bst.feature_importance("gain", iteration=it)
@@ -890,7 +891,7 @@ def cmd_fit(args):
     ep_list = []
     for s in range(MLP_SEEDS):
         net = mlp_train(X[es_tr], Y[es_tr], EX[es_tr], OFF[es_tr], X[es_va], Y[es_va], EX[es_va], OFF[es_va],
-                        seed=100 + s, task_w=tw, epochs=3 if quick else 150, **MLP_CFG)
+                        seed=100 + s, task_w=tw, epochs=3 if quick else 120, patience=12, **MLP_CFG)
         ep_list.append(net["epochs"])
     mlp_epochs = int(round(np.mean(ep_list)))
     report["mlp_epochs_es"] = ep_list
@@ -931,10 +932,10 @@ def cmd_fit(args):
             bst, _ = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], rounds[t])
             oof["gbm"][tem, t] = bst.predict(X[tem], raw_score=True)
         acc = np.zeros((tem.sum(), nt))
-        for s in range(MLP_SEEDS):
+        for s in range(FOLD_MLP_SEEDS):
             net = mlp_train(X[trm], Y[trm], EX[trm], OFF[trm], seed=200 + s, task_w=tw, fixed_epochs=mlp_epochs,
                             **MLP_CFG)
-            acc += mlp_predict(net, X[tem]) / MLP_SEEDS
+            acc += mlp_predict(net, X[tem]) / FOLD_MLP_SEEDS
         oof["mlp"][tem] = acc
         log("  fold %d done (%.0fs)" % (b, time.time() - t_start))
     oofM = np.isin(yr, OOF_YEARS)

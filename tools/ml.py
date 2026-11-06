@@ -1255,32 +1255,51 @@ XGB_ETA = 0.04
 XGB_MAX = 800
 
 
-def tune_trees(kind, df, G0, G1, y, dec, evm, n_cfg):
+_TREE_DATA = {}
+
+
+def _tree_cv_worker(item):
+    """CV one tree configuration over the blocks (runs in a forked worker; data in _TREE_DATA)."""
+    kind, cfg = item
+    D = _TREE_DATA
+    df, G0, G1, y, dec, evm = D["df"], D["G0"], D["G1"], D["y"], D["dec"], D["evm"]
+    t0 = time.time()
+    sums = np.zeros(len(GBM_CHECKS))
+    n = 0
+    per_block = []
+    for y0, y1, tr, va in block_iter(df, dec, evm):
+        if kind == "lgb":
+            m = lgb_fit(dict(cfg, learning_rate=GBM_LR), G0[tr], G1[tr], y[tr], GBM_MAX)
+            ls = [log_loss(lgb_pred(m, G0[va], G1[va], c), y[va]) for c in GBM_CHECKS]
+        else:
+            m = xgb_fit(dict(cfg, eta=XGB_ETA), G0[tr], G1[tr], y[tr], XGB_MAX)
+            ls = [log_loss(xgb_pred(m, G0[va], G1[va], c), y[va]) for c in GBM_CHECKS]
+        sums += np.array(ls) * va.sum()
+        n += va.sum()
+        per_block.append(ls)
+    mean = sums / n
+    k = int(np.argmin(mean))
+    return {"cfg": cfg, "rounds": GBM_CHECKS[k], "cv_log_loss": round(float(mean[k]), 5),
+            "blocks": [round(float(b[k]), 5) for b in per_block],
+            "curve": {str(c): round(float(v), 5) for c, v in zip(GBM_CHECKS[::4], mean[::4])},
+            "seconds": round(time.time() - t0)}
+
+
+def tune_trees(kind, df, G0, G1, y, dec, evm, n_cfg, jobs=1):
     space, first = (GBM_SPACE, GBM_FIRST) if kind == "lgb" else (XGB_SPACE, XGB_FIRST)
     cfgs = sample_configs(space, n_cfg, 11 if kind == "lgb" else 13, first)
-    results = []
-    for ci_, cfg in enumerate(cfgs):
-        t0 = time.time()
-        sums = np.zeros(len(GBM_CHECKS))
-        n = 0
-        per_block = []
-        for y0, y1, tr, va in block_iter(df, dec, evm):
-            if kind == "lgb":
-                m = lgb_fit(dict(cfg, learning_rate=GBM_LR), G0[tr], G1[tr], y[tr], GBM_MAX)
-                ls = [log_loss(lgb_pred(m, G0[va], G1[va], c), y[va]) for c in GBM_CHECKS]
-            else:
-                m = xgb_fit(dict(cfg, eta=XGB_ETA), G0[tr], G1[tr], y[tr], XGB_MAX)
-                ls = [log_loss(xgb_pred(m, G0[va], G1[va], c), y[va]) for c in GBM_CHECKS]
-            sums += np.array(ls) * va.sum()
-            n += va.sum()
-            per_block.append(ls)
-        mean = sums / n
-        k = int(np.argmin(mean))
-        results.append({"cfg": cfg, "rounds": GBM_CHECKS[k], "cv_log_loss": round(float(mean[k]), 5),
-                        "blocks": [round(float(b[k]), 5) for b in per_block],
-                        "curve": {str(c): round(float(v), 5) for c, v in zip(GBM_CHECKS[::4], mean[::4])}})
-        log("  %s cfg %d/%d %s -> rounds %d cv %.5f (%.0f s)" % (kind, ci_ + 1, len(cfgs), cfg, GBM_CHECKS[k],
-                                                                 mean[k], time.time() - t0))
+    _TREE_DATA.update(df=df, G0=G0, G1=G1, y=y, dec=dec, evm=evm)
+    items = [(kind, c) for c in cfgs]
+    if jobs > 1:
+        import multiprocessing as mp
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(jobs, mp_context=mp.get_context("fork")) as ex:
+            results = list(ex.map(_tree_cv_worker, items))
+    else:
+        results = [_tree_cv_worker(it) for it in items]
+    for i, r in enumerate(results):
+        log("  %s cfg %d/%d %s -> rounds %d cv %.5f (%d s)" % (kind, i + 1, len(cfgs), r["cfg"], r["rounds"],
+                                                              r["cv_log_loss"], r["seconds"]))
     best = min(results, key=lambda r: r["cv_log_loss"])
     return best, results
 
@@ -1315,6 +1334,7 @@ def main():
     ap.add_argument("--n-lgb", type=int, default=None)
     ap.add_argument("--n-xgb", type=int, default=None)
     ap.add_argument("--boot", type=int, default=2000)
+    ap.add_argument("--jobs", type=int, default=3, help="worker processes for the tree searches (3)")
     ap.add_argument("--stage2", action="store_true", help="reuse the cached stage-1 fits (out/ml_cache/stage1.pkl)")
     args = ap.parse_args()
     if args.stage2:
@@ -1405,13 +1425,13 @@ def main():
     # ---------------------------------------------------------- trees
     t0 = time.time()
     log("LightGBM search (%d configs x %d blocks)" % (n_lgb, len(BLOCKS)))
-    lgb_best, lgb_res = tune_trees("lgb", df, G0, G1, y, dec, evm, n_lgb)
+    lgb_best, lgb_res = tune_trees("lgb", df, G0, G1, y, dec, evm, n_lgb, args.jobs)
     log("LightGBM best %s rounds %d cv %.5f (%.0f s)" % (lgb_best["cfg"], lgb_best["rounds"], lgb_best["cv_log_loss"],
                                                        time.time() - t0))
     R["tuning"]["lgb"] = {"best": lgb_best, "search": lgb_res, "learning_rate": GBM_LR}
     t0 = time.time()
     log("XGBoost search (%d configs)" % n_xgb)
-    xgb_best, xgb_res = tune_trees("xgb", df, G0, G1, y, dec, evm, n_xgb)
+    xgb_best, xgb_res = tune_trees("xgb", df, G0, G1, y, dec, evm, n_xgb, args.jobs)
     log("XGBoost best %s rounds %d cv %.5f (%.0f s)" % (xgb_best["cfg"], xgb_best["rounds"], xgb_best["cv_log_loss"],
                                                       time.time() - t0))
     R["tuning"]["xgb"] = {"best": xgb_best, "search": xgb_res, "eta": XGB_ETA}
@@ -1506,7 +1526,7 @@ def main():
 # ====================================================================== stage two: 7-bin, stacking, evaluation, export
 METHOD_GBM_SPACE = {"num_leaves": [4, 7], "min_data_in_leaf": [80, 200], "feature_fraction": [0.4, 0.7],
                     "lambda_l2": [10.0]}
-SM_CS = [0.003, 0.01, 0.03, 0.1, 0.3]
+SM_CS = [0.0005, 0.001, 0.002, 0.004, 0.01, 0.03, 0.1]
 
 
 def _lgb_multi_fit(params, X, k, ncls, rounds, sw=None):

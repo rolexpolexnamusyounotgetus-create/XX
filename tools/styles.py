@@ -1685,7 +1685,7 @@ def render_report(J):
     A("- **Style interactions do not move the winner prediction by a detectable amount.** On top of an engine-free "
       "skill model (Elo, age, reach and %d shrunk skill and style main effects; 2024+ log loss %s, accuracy %s, vs "
       "Elo alone %s), none of %d pre-registered matchup terms survives held-out validation "
-      "(%d survive, %d are consistent in sign but not significant: %s). The 8x8 archetype interaction matrix makes "
+      "(%d survive; %d consistent in sign but not significant: %s). The 8x8 archetype interaction matrix makes "
       "held-out log loss worse (%+.4f). Adding every term that looked good in 2019-2023 at once raises 2024+ log "
       "loss from %s to %s."
       % (len(base["terms"]) - 3, _f(base["test"]["log_loss"], 4), _f(base["test"]["accuracy"]),
@@ -1738,7 +1738,7 @@ def render_report(J):
       "`data/raw/ufc_fight_stats.csv` through `tools/build_db.py` (round rows summed per fighter)."
       % (m["n_fights"], m["snapshot"], m["n_decisive"], m["n_test_decisive"]))
     A("- Symmetry: winner models are antisymmetric (every feature is A minus B, no intercept), so the first-named "
-      "corner, which wins 56%% of the time, cannot leak; rate models have one row per side.")
+      "corner, which wins 56% of the time, cannot leak; rate models have one row per side.")
     A("- Uncertainty: held-out changes carry 95%% intervals from a paired bootstrap over test fights (%d replicates; "
       "both sides of a fight resampled together in the rate models). 'z (tune)' is the Wald z on 2019-2023 "
       "(quasi-likelihood dispersion for counts). 'z (test only)' refits on 2024+ as a diagnostic and is never used "

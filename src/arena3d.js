@@ -899,7 +899,8 @@
     // LED ring boards around the apron
     var lc = makeCanvas(4096, 128), lctx = lc.getContext("2d");
     A.led = { c: lc, ctx: lctx, tex: canvasTex(lc, true, A.aniso), key: "" };
-    A.led.tex.generateMipmaps = true;
+    A.led.tex.wrapS = T.RepeatWrapping;   // shared by the skirt, the table fronts and the bowl ribbons
+
     drawLED(lctx, 4096, 128, A.info, A.board);
     var ledMat = new T.MeshBasicMaterial({ map: A.led.tex, toneMapped: false, color: new T.Color(1.5, 1.5, 1.5) });
     ledMat.onBeforeCompile = function (sh) {
@@ -1021,9 +1022,9 @@
     A.own(new T.Mesh(mergeGeos(spk), dark));
     A.own(new T.Mesh(mergeGeos(chains), housing));
     // centre-hung video board above the truss
-    var sc = makeCanvas(1024, 576), sctx = sc.getContext("2d");
+    var sc = makeCanvas(768, 432), sctx = sc.getContext("2d");
     A.screen = { c: sc, ctx: sctx, tex: canvasTex(sc, true, A.aniso) };
-    drawScreen(sctx, 1024, 576, A.info, A.board);
+    drawScreen(sctx, 768, 432, A.info, A.board);
     var scrMat = new T.MeshBasicMaterial({ map: A.screen.tex, toneMapped: false, fog: false, color: new T.Color(1.25, 1.25, 1.25) });
     var hub = new T.Group(); hub.position.y = 16.2; hub.userData.arena = true;
     var core = new T.Mesh(new T.BoxGeometry(6.2, 3.6, 6.2), dark); hub.add(core);
@@ -1161,16 +1162,17 @@
     A.own(new T.Mesh(geo(tp, tn), new T.MeshStandardMaterial({ color: 0x111317, roughness: 0.9, envMapIntensity: 0.03 })));
     A.own(new T.Mesh(geo(bp, bn), new T.MeshStandardMaterial({ color: 0x24121a, roughness: 0.8, envMapIntensity: 0.03, side: T.DoubleSide })));
     // LED ribbons: the front of the lower bowl and the fascia between the bowls
-    function ribbon(rr, y0, y1, reps) {
-      var p = [], u = [], ix = [], n = [];
+    function ribbon(rr, y0, y1) {
+      var p = [], u = [], ix = [], n = [], per = 0, q0 = sq(0, rr, [0, 0]);
+      for (var jj = 1; jj <= M; jj++) { var qq = sq(jj / M * TAU, rr, [0, 0]); per += Math.hypot(qq[0] - q0[0], qq[1] - q0[1]); q0 = qq; }
+      var reps = Math.max(1, Math.round(per / (8 * 4 * (y1 - y0))));   // keep each LED segment at its 4:1 shape
       for (var j = 0; j <= M; j++) { var a = j / M * TAU, q = sq(a, rr, [0, 0]); p.push(q[0], y1, q[1], q[0], y0, q[1]); u.push(j / M * reps, 1, j / M * reps, 0); n.push(-q[0], 0, -q[1], -q[0], 0, -q[1]); if (j < M) ix.push(j * 2, j * 2 + 1, j * 2 + 2, j * 2 + 1, j * 2 + 3, j * 2 + 2); }
       var g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(p, 3)); g.setAttribute("uv", new T.Float32BufferAttribute(u, 2)); g.setAttribute("normal", new T.Float32BufferAttribute(n, 3)); g.setIndex(ix);
       return g;
     }
-    var ribTex = A.led.tex.clone(); ribTex.wrapS = T.RepeatWrapping; ribTex.needsUpdate = true; A.ribTex = ribTex;
-    var ribMat = new T.MeshBasicMaterial({ map: ribTex, toneMapped: false, color: new T.Color(1.15, 1.15, 1.15), side: T.DoubleSide });
-    A.own(new T.Mesh(ribbon(R0 - 0.02, Y0 - 1.0, Y0 - 0.15, 9), ribMat));
-    A.own(new T.Mesh(ribbon(R1 - 0.05, Ytop + 0.9, Ytop + 2.1, 12), ribMat));
+    var ribMat = new T.MeshBasicMaterial({ map: A.led.tex, toneMapped: false, color: new T.Color(1.15, 1.15, 1.15), side: T.DoubleSide });
+    A.own(new T.Mesh(ribbon(R0 - 0.02, Y0 - 1.0, Y0 - 0.15), ribMat));
+    A.own(new T.Mesh(ribbon(R1 - 0.05, Ytop + 0.9, Ytop + 2.1), ribMat));
     A.ribMat = ribMat;
     // end-wall video boards above the upper bowl
     [-1, 1].forEach(function (s) {
@@ -1308,7 +1310,6 @@
     this.led.key = key;
     drawLED(this.led.ctx, this.led.c.width, this.led.c.height, this.info, b);
     this.led.tex.needsUpdate = true;
-    if (this.ribTex) { this.ribTex.image = this.led.c; this.ribTex.needsUpdate = true; }
     drawScreen(this.screen.ctx, this.screen.c.width, this.screen.c.height, this.info, b);
     this.screen.tex.needsUpdate = true;
   };
@@ -1408,7 +1409,7 @@
       if (inf) this.setMatchup(inf);
     }
     this._boardT = (this._boardT || 0) + dt;
-    if (this._boardT > 0.4) {
+    if (this._boardT > (this.tier === "low" ? 1.0 : 0.5)) {
       this._boardT = 0;
       if (show && typeof show.clock === "number") { this.board.round = (show.rIdx || 0) + 1; this.board.clock = fmtClock(300 - show.clock); }
       this.board.flash = M.flash;

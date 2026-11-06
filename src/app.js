@@ -757,7 +757,9 @@
   }
   function scenarioName() {
     var sc = scenarioList().filter(function (x) { return x.id === S.scen; })[0];
-    return sc ? sc.label + " settings" : "custom settings";
+    if (sc) return sc.label + " settings";
+    var custom = Object.keys(cleanAdj(S.adj.A)).length + Object.keys(cleanAdj(S.adj.B)).length > 0 || Math.abs(S.judgePower - JP0) > 0.001;
+    return custom ? "custom settings" : "data only";
   }
 
   // ---- charts
@@ -1097,12 +1099,44 @@
     if (!out.coin) out.coin = { log_loss: Math.log(2), brier: 0.25, accuracy: 0.5 };
     return out.engine || out.elo ? { models: out, n: test.n || (out.engine && out.engine.n) || (out.elo && out.elo.n) } : null;
   }
+  // fallback: score per-fight rows ({date, pA[, pB], y | winner, elo, blend}) on the held-out years ourselves
+  function modelsFromFights() {
+    var F = calibGet(["fights", "predictions"]); if (!F || typeof F !== "object") return null;
+    var rows = Array.isArray(F) ? F : Object.keys(F).map(function (k) { return F[k]; });
+    var acc = { engine: [], elo: [], blend: [] };
+    rows.forEach(function (r) {
+      if (!r || typeof r !== "object") return;
+      var d = r.date || r.d; if (!d || String(d) < "2024-01-01") return;
+      var y = r.y != null ? +r.y : (r.winner === "A" ? 1 : (r.winner === "B" ? 0 : (r.res === "W" ? 1 : (r.res === "L" ? 0 : null))));
+      if (y !== 0 && y !== 1) return;
+      var pe = r.pA != null ? (r.pB != null ? r.pA / Math.max(1e-9, r.pA + r.pB) : r.pA) : r.p;
+      if (pe != null && isFinite(pe)) acc.engine.push([+pe, y]);
+      var pl = r.elo != null ? r.elo : r.pElo; if (pl != null && isFinite(pl)) acc.elo.push([+pl, y]);
+      var pb = r.blend != null ? r.blend : r.pBlend; if (pb != null && isFinite(pb)) acc.blend.push([+pb, y]);
+    });
+    if (acc.engine.length < 20) return null;
+    function score(arr) {
+      if (!arr.length) return null;
+      var ll = 0, br = 0, ok = 0, bins = [];
+      for (var b = 0; b < 10; b++) bins.push({ lo: b / 10, hi: (b + 1) / 10, n: 0, ps: 0, ys: 0 });
+      arr.forEach(function (a) {
+        var p = clamp(a[0], 1e-6, 1 - 1e-6), y = a[1];
+        ll -= y ? Math.log(p) : Math.log(1 - p); br += (p - y) * (p - y); if ((p > 0.5) === (y === 1) && p !== 0.5) ok++;
+        // corner-symmetric bins: count each fight from both sides
+        [[p, y], [1 - p, 1 - y]].forEach(function (q) { var k = Math.min(9, Math.floor(q[0] * 10)); bins[k].n++; bins[k].ps += q[0]; bins[k].ys += q[1]; });
+      });
+      return { log_loss: ll / arr.length, brier: br / arr.length, accuracy: ok / arr.length, n: arr.length,
+        bins: bins.filter(function (x) { return x.n >= 10; }).map(function (x) { return { lo: x.lo, hi: x.hi, n: x.n, pred: x.ps / x.n, obs: x.ys / x.n }; }) };
+    }
+    var out = { engine: score(acc.engine), elo: score(acc.elo), blend: score(acc.blend), coin: { log_loss: Math.log(2), brier: 0.25, accuracy: 0.5 } };
+    return { models: out, n: acc.engine.length, derived: true };
+  }
   function metric(o, keys) { if (!o) return null; for (var i = 0; i < keys.length; i++) if (o[keys[i]] != null && isFinite(o[keys[i]])) return +o[keys[i]]; return null; }
   function renderBacktest() {
     var box = $("btBody"); box.textContent = "";
     var intro = el("p", "lede", "Every fight in the backtest is predicted with each fighter's profile frozen as it stood the day before, so the model never sees the result. Settings were tuned on 2019-2023 and scored on 2024 onward. This replaces v2's seven-fight backtest, which used career numbers that already included those fights.");
     box.appendChild(intro);
-    var mods = CALIB ? findModels() : null;
+    var mods = CALIB ? (findModels() || modelsFromFights()) : null;
     if (!CALIB || !mods) {
       var st = el("div", "status");
       var p1 = el("p"); p1.appendChild(el("b", null, CALIB ? "The calibration report is in an unexpected format. " : "Calibration is still running. "));
@@ -1128,6 +1162,7 @@
     box.appendChild(el("p", "small", "Log loss and Brier score: lower is better. Draws and no-contests are left out. Accuracy counts how often the model's favorite won."));
     // reliability chart
     var bins = calibGet(["calibration_bins", "calibration", "reliability", "test_calibration", "bins"]);
+    if (!bins && mods.derived) { bins = {}; ["engine", "elo", "blend"].forEach(function (k) { if (M[k] && M[k].bins && M[k].bins.length) bins[k] = M[k].bins; }); }
     var series = [];
     if (Array.isArray(bins)) series.push(["Fight engine", bins, "var(--ink)"]);
     else if (bins && typeof bins === "object") [["engine", "Fight engine", "var(--ink)"], ["elo", "Elo", "var(--neutral)"], ["blend", "Blend", "var(--gold)"]].forEach(function (k) { if (Array.isArray(bins[k[0]])) series.push([k[1], bins[k[0]], k[2]]); });

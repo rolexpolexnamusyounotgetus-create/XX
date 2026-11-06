@@ -25,11 +25,13 @@ symmetric (P(A) = 1 - P(B) when the corners are swapped), because ufcstats' firs
 
 Data: tools/build_db.py loaders (fights, people, aliases) + data/raw/ufc_fight_stats.csv round rows.
 """
+import os
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):   # one BLAS thread per process:
+    os.environ.setdefault(_v, "1")                                         # the workers already run in parallel
 import argparse
 import datetime as dt
 import json
 import math
-import os
 import sys
 import time
 from collections import defaultdict
@@ -982,6 +984,14 @@ class WHR:
             if mx < tol:
                 break
 
+    def _exact_factor(self, N, lo):
+        """With CHOLMOD available, factor the window Hessian at the solution so variances are exact (opponents'
+        uncertainty included); otherwise the pcg chain-block approximation is used."""
+        self.exact = None
+        if CHOLMOD is not None and self.P.get("solver", WHR_SOLVER) == "pcg" and self.P.get("var", "exact") == "exact":
+            _, H = self._system(N, lo)
+            self.exact = (_CholWrap(CHOLMOD(H)), N, lo)
+
     def variances(self, nodes):
         """Posterior variance of nodes inside the last solved window: exact diagonal of the inverse Hessian with
         a factorisation, or (pcg) the fighter's own chain block (opponents treated as known, as in Coulom's
@@ -990,12 +1000,19 @@ class WHR:
         if len(nodes) == 0:
             return np.zeros(0)
         lo, N = self.lulo, self.luN
+        ex = getattr(self, "exact", None)
+        if ex is not None:
+            lo, N = ex[2], ex[1]
         out = np.full(len(nodes), self.P["s0"] ** 2)
         ins = (nodes >= lo) & (nodes < N)
         if ins.any():
             loc = nodes[ins] - lo
             E = np.zeros((N - lo, len(loc)))
-            if self.P.get("solver", WHR_SOLVER) == "pcg":
+            if ex is not None:
+                E[loc, np.arange(len(loc))] = 1.0
+                X = ex[0].solve(E)
+                out[ins] = X[loc, np.arange(len(loc))]
+            elif self.P.get("solver", WHR_SOLVER) == "pcg":
                 from scipy.linalg import solve_banded
                 perm, inv, ab = self.tri
                 E[inv[loc], np.arange(len(loc))] = 1.0
@@ -1042,6 +1059,7 @@ class WHR:
             else:
                 lo = 0
             self.solve(N, lo)
+            self._exact_factor(N, lo)
             # predict the day's fights
             j = fi
             todo = []
@@ -1079,6 +1097,7 @@ class WHR:
     def final_state(self, players, ref_day):
         """Full-data posterior: mean and sd of every listed player's skill at ref_day."""
         self.solve(self.nn)
+        self._exact_factor(self.nn, 0)
         D, P = self.D, self.P
         w2, vf = P["w2"], P.get("vf", 0.0)
         dy, do = P.get("dy", 0.0), P.get("do", 0.0)

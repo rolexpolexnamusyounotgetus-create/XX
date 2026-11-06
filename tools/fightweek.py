@@ -1242,6 +1242,8 @@ def parse_weighins(card, paras, event):
                 continue
             negated = bool(NEG_TRIG.search(k)) and not re.search(r"no (?:further )?attempts?|made no|did not|"
                                                                   r"didn't|failed|elected|declined|chose not", k)
+            explicit = bool(re.search(r"missed|missing|\bover\b|heavy|failed|failing|above|overweight|fined|"
+                                      r"surrender|forfeit|did not make|didnt make|not make|catch ?weight", k))
             weights = [(m.start(), wnum(m.group(1))) for m in W_RE.finditer(k)]
             overs = [(m.start(), wnum(m.group(1))) for m in OVER_RE.finditer(k)] + \
                     [(m.start(), wnum(m.group(1))) for m in BY_RE.finditer(k)]
@@ -1277,9 +1279,11 @@ def parse_weighins(card, paras, event):
             for si in subj_here:
                 fx = card.f[si]
                 key = (fx["fid"], fx["side"])
-                rec = out.get(key) or {"lbs_over": None, "weighed": None, "text": [], "negated": False}
-                if negated and not wmap.get(si) and not omap.get(si):
+                rec = out.get(key) or {"lbs_over": None, "weighed": None, "text": [], "negated": False,
+                                       "explicit": False}
+                if negated:
                     rec["negated"] = True
+                rec["explicit"] = rec["explicit"] or explicit
                 if omap.get(si) is not None and rec["lbs_over"] is None:
                     rec["lbs_over"] = omap[si]
                 if wmap.get(si) is not None and rec["weighed"] is None:
@@ -1337,8 +1341,10 @@ def date_cues(s, event_date):
                  r"days prior to the event|days out from|during the week of|earlier in the week|days ahead of",
                  k):
         out.append((4, "fight week"))
-    # explicit dates
+    # explicit dates (not the event's own original date: "originally planned to take place on April 18")
     for m in re.finditer(r"\b(?:on |by |as of )?(%s) (\d{1,2})(?:st|nd|rd|th)?(?:,? (\d{4}))?\b" % MON_RE, k):
+        if EVENT_DATE_CTX.search(k[max(0, m.start() - 60):m.start()]):
+            continue
         d = _mkdate(event_date, MONTHS_FULL.index(m.group(1)) + 1, int(m.group(2)), m.group(3))
         if d is not None:
             out.append(((event_date - d).days, "dated"))
@@ -1380,74 +1386,132 @@ def _mkdate(event_date, month, day, year):
 
 SCHED_RE = re.compile(r"\b(?:was|were|had been|is|are|has been|have been)\s+(?:originally |initially |previously |"
                       r"briefly |tentatively |also |first |expected |once |reportedly |officially )?"
-                      r"(?:expected|scheduled|slated|set|booked|linked|rumou?red|planned|announced|targeted|due|"
-                      r"supposed|tabbed to face|paired|pencil(?:l)?ed)\b|\bbout between\b|\bmatch-?up between\b|"
+                      r"(?:expected|scheduled|slated|set|booked|linked|rumou?red|targeted|due|"
+                      r"supposed|tabbed to face|paired|pencil(?:l)?ed)\b(?! to (?:take place|be held|occur|happen))|"
+                      r"\bbout between\b|\bmatch-?up between\b|"
                       r"\bpairing (?:between|of)\b|\bcontest between\b|\bfight between\b|\brematch between\b|"
-                      r"\btrilogy (?:bout|fight) between\b|\bwas expected\b|\bwere expected\b|"
+                      r"\btrilogy (?:bout|fight) between\b|"
                       r"\bscheduled (?:\w+ ){0,2}(?:bout|fight|match-?up|contest|rematch|clash) (?:against|with|vs)|"
                       r"\b(?:pulled out of|withdrew from|was removed from|was forced out of|exited) (?:a|his|her|their|the) "
                       r"(?:scheduled |planned |booked )?(?:\w+ ){0,2}(?:bout|fight|match-?up|contest|rematch) "
                       r"(?:against|with|vs)", re.I)
-REPL_RE = re.compile(r"replaced by|replacement|replacing|replace |stepped in|stepping in|step in|stepped up|"
-                     r"filled in|fill in|took (?:the|his|her|their) (?:bout|fight|place|spot)|in (?:his|her) place|"
-                     r"instead face|instead faced|instead fought|instead meet|will now face|now faces?|"
-                     r"new opponent|was tabbed|was named as|was brought in|short notice|in turn|"
-                     r"faced [^.]{0,60} instead|will face [^.]{0,60} instead|instead|was announced as|"
-                     r"took on|was rebooked|was re-?booked|was moved to face|was paired with|opponent change|"
-                     r"subsequently|was rescheduled to face|was then expected to face|was then scheduled",
-                     re.I)
+# a sentence that names a fighter as the one who stepped in
+REPL_NEAR = re.compile(r"replaced by|replace(?:d|s)? (?:him|her|them)\b|as (?:a |his |her |the )?replacement|"
+                       r"(?:would|will|to) replace|stepped in|stepping in|step in|stepped up|filled in|fill in|"
+                       r"took (?:the|his|her|their) (?:bout|fight|place|spot)|in (?:his|her) place|instead|"
+                       r"new opponent|was tabbed|was named as|was brought in|short notice|in turn|"
+                       r"remain(?:ed)? on the card|will now face|now faces?|was rebooked|re-?booked|"
+                       r"was moved to face|was paired with|was then (?:expected|scheduled|set|booked) to face|"
+                       r"(?:will|would) face|to face|faced|took on|against", re.I)
+REPL_RE = REPL_NEAR
 WITHDRAW_RE = re.compile(r"\b(?:however|but|pulled out|withdr|forced|removed|out of the|injur|due to|scrapped|"
                          r"cancel|replaced|ruled out|was pulled|sidelined|illness|visa|suspend|tested positive)\b", re.I)
+EVENT_DATE_CTX = re.compile(r"(?:take place|took place|be held|was held|held|happen|occur|planned|scheduled|"
+                            r"set|moved|postponed|rescheduled|originally|event)\s+(?:\w+\s+){0,3}(?:on|for|to)\s*$", re.I)
 
 
 def parse_bout_changes(card, paras, event_date):
     """Per (fid, side): {"role": "replacement"|"opp_change", "days": int|None, "basis": str,
-    "short_notice_phrase": bool, "other": original opponent / replaced fighter text, "text": paragraph}."""
-    sched_members = defaultdict(set)      # fighter idx -> paragraphs where he is in the original booking
+    "short_notice_phrase": bool, "booked_vs": booking sentence, "text": paragraph}.
+
+    Unit of analysis is a paragraph: its first booking sentence (s0) names who was booked. For a final bout
+    (P, Q): P in the booking and Q named later -> P's opponent changed, Q stepped in (or also changed
+    opponent if Q was booked against someone else on this card). Neither booked but both named later in
+    replacement sentences -> both stepped in (a chain). Q may also be named in a separate paragraph
+    ("The UFC announced that X would be replaced by Q")."""
     para_info = []
     for pi, para in enumerate(paras):
         txt = para["text"]
-        if para.get("sec") == "note":
+        if para.get("sec") in ("note", "LEAD", "Reported payout"):
+            para_info.append(None)
             continue
         sents = split_sentences(txt)
-        s0 = None
-        for si, s in enumerate(sents):
-            if SCHED_RE.search(s):
-                s0 = si
-                break
+        s0 = next((si for si, s_ in enumerate(sents) if SCHED_RE.search(s_)), None)
         if s0 is None:
-            para_info.append(None)
+            para_info.append({"sents": sents, "s0": None, "members": set(), "head": ""})
             continue
         s0txt = sents[s0]
         sm = SCHED_RE.search(s0txt)
-        head = s0txt
-        wm = WITHDRAW_RE.search(s0txt, sm.end() if sm else 0)
-        if wm:
-            head = s0txt[:wm.start()]
+        wm = WITHDRAW_RE.search(s0txt, sm.end())
+        head = s0txt[:wm.start()] if wm else s0txt
         hm, _ = card.mentions(head, prefer=txt)
         members = set(x[2] for x in hm)
-        for i in members:
-            sched_members[i].add(pi)
-        para_info.append({"sents": sents, "s0": s0, "members": members, "head": head})
+        # mentions before the booking sentence mean the paragraph is about something else
+        pre = set()
+        for si in range(s0):
+            mm, _ = card.mentions(sents[si], prefer=txt)
+            pre |= set(x[2] for x in mm)
+        para_info.append({"sents": sents, "s0": s0, "members": members, "head": head, "pre": pre})
+
+    def booked_elsewhere(i, partner, skip):
+        """Is fighter i booked on this card against someone other than `partner` in another paragraph?"""
+        for pj, inf in enumerate(para_info):
+            if pj == skip or not inf or inf["s0"] is None:
+                continue
+            if i in inf["members"] and partner not in inf["members"]:
+                return True
+        return False
+
+    def first_sentence(info, who, txt, start, after_s0=True):
+        for si in range(start, len(info["sents"])):
+            mm, _ = card.mentions(info["sents"][si], prefer=txt)
+            if any(x[2] == who for x in mm):
+                return si
+        return None
+
+    def notice(info, first_s, lo):
+        sents = info["sents"]
+        days, basis, rel = None, None, None
+        for si in range(first_s, lo - 1, -1):
+            cues, r = date_cues(sents[si], event_date)
+            if r and rel is None and si == first_s:
+                rel = r
+            if cues:
+                days, basis = cues[0]
+                if rel and si < first_s and basis in ("dated", "part of month", "month"):
+                    n = int(rel[0]) if rel[0].isdigit() else NUMW.get(rel[0], 1)
+                    days = max(0, days - n * (7 if rel[1].startswith("week") else 1))
+                    basis += " + relative"
+                break
+        return days, basis
+
     out = {}
+
+    def put(who, role, days, basis, snp, head, txt):
+        fx = card.f[who]
+        key = (fx["fid"], fx["side"])
+        prev = out.get(key)
+        rec = {"role": role, "days": days, "basis": basis, "short_notice_phrase": snp,
+               "booked_vs": clean_text(head)[:200], "text": txt[:600]}
+        if prev is None or (prev["role"] == "opp_change" and role == "replacement") or \
+                (prev["role"] == role and prev["days"] is None and days is not None):
+            out[key] = rec
+
     bouts = defaultdict(list)
     for i, x in enumerate(card.f):
         bouts[x["fid"]].append(i)
-    for fid, (ia, ib) in bouts.items():
+    for fid, pair in bouts.items():
+        if len(pair) != 2:
+            continue
+        ia, ib = pair
+        handled = False
         for pi, info in enumerate(para_info):
-            if info is None:
+            if not info or info["s0"] is None:
                 continue
             txt = paras[pi]["text"]
             sents = info["sents"]
-            ms_all, k_all = card.mentions(txt, prefer=txt)
+            ms_all, _ = card.mentions(txt, prefer=txt)
             names_here = set(x[2] for x in ms_all)
             if ia not in names_here and ib not in names_here:
                 continue
-            if not (REPL_RE.search(txt) or WITHDRAW_RE.search(txt)):
+            if (ia in info["pre"] or ib in info["pre"]) and not (ia in info["members"] or ib in info["members"]):
+                continue
+            if not (REPL_NEAR.search(txt) or WITHDRAW_RE.search(txt)):
                 continue
             mem = info["members"]
             if ia in mem and ib in mem:
-                continue       # the final pairing was the original booking in this paragraph
+                continue       # the final pairing is the booking in this paragraph (maybe moved from elsewhere)
+            fallback = None
             if ia not in names_here or ib not in names_here:
                 # one side only: the other may appear under another name (marriage, transliteration):
                 # "replaced by Veronica Macedo" for ufcstats "Veronica Hardy" -> same first name
@@ -1459,63 +1523,72 @@ def parse_bout_changes(card, paras, event_date):
                                r"(?:newcomer |veteran |prospect )?)?([A-Z][\w'.-]+)(?: [A-Z][\w'.-]+)+", txt)
                 if not rb or Card.key(rb.group(1)) != card.f[new]["tokens"][0]:
                     continue
-                names_here = names_here | {new}
-                info = dict(info)
-                info["fallback"] = rb.group(0)
-            for stay, new in ((ia, ib), (ib, ia)):
-                if stay in mem and new not in mem:
-                    roles = ((stay, "opp_change"), (new, "opp_change" if sched_members.get(new, set()) - {pi} else "replacement"))
-                    break
+                fallback = rb.group(0)
+                roles = [(stay, "opp_change"), (new, "replacement")]
+            elif (ia in mem) != (ib in mem):
+                stay, new = (ia, ib) if ia in mem else (ib, ia)
+                roles = [(stay, "opp_change"),
+                         (new, "opp_change" if booked_elsewhere(new, stay, pi) else "replacement")]
             else:
-                if ia not in mem and ib not in mem:
-                    roles = ((ia, "replacement" if not (sched_members.get(ia, set()) - {pi}) else "opp_change"),
-                             (ib, "replacement" if not (sched_members.get(ib, set()) - {pi}) else "opp_change"))
-                else:
+                # neither booked here: both must be named in replacement sentences after the booking
+                ok = True
+                for who in (ia, ib):
+                    fs = first_sentence(info, who, txt, info["s0"] + 1)
+                    if fs is None or not re.search(r"replac|stepped|step in|instead|in turn|filled|took (?:his|her|the)",
+                                                   sents[fs], re.I):
+                        ok = False
+                if not ok:
                     continue
-            # notice: sentence where the later side first appears after the booking sentence
+                roles = [(w, "opp_change" if booked_elsewhere(w, ib if w == ia else ia, pi) else "replacement")
+                         for w in (ia, ib)]
             for who, role in roles:
-                first_s = None
-                for si in range(info["s0"], len(sents)):
-                    mm, _ = card.mentions(sents[si], prefer=txt)
-                    if any(x[2] == who for x in mm) and (si > info["s0"] or who not in mem):
-                        first_s = si
-                        break
-                if role == "opp_change":
-                    # when did his opponent change: the sentence naming the new opponent
+                if role == "opp_change" and who in mem:
                     other = ib if who == ia else ia
-                    for si in range(info["s0"], len(sents)):
-                        mm, _ = card.mentions(sents[si], prefer=txt)
-                        if any(x[2] == other for x in mm):
-                            first_s = si
-                            break
-                if first_s is None and info.get("fallback"):
-                    first_s = next((si for si in range(info["s0"], len(sents)) if info["fallback"] in sents[si]), None)
+                    first_s = first_sentence(info, other, txt, info["s0"] + (1 if other in mem else 0))
+                else:
+                    first_s = first_sentence(info, who, txt, info["s0"] + (1 if who in mem else 0))
+                if first_s is None and fallback:
+                    first_s = next((si for si in range(info["s0"], len(sents)) if fallback in sents[si]), None)
                 if first_s is None:
                     first_s = info["s0"]
-                days, basis, rel = None, None, None
-                for si in range(first_s, info["s0"] - 1, -1):
-                    cues, r = date_cues(sents[si], event_date)
-                    if r and rel is None and si == first_s:
-                        rel = r
-                    if cues:
-                        days, basis = cues[0]
-                        if rel and si < first_s and basis in ("dated", "part of month", "month"):
-                            n = int(rel[0]) if rel[0].isdigit() else NUMW.get(rel[0], 1)
-                            days = max(0, days - n * (7 if rel[1].startswith("week") else 1))
-                            basis += " + relative"
-                        break
-                rep_sent = sents[first_s]
-                snp = bool(re.search(r"short notice|late notice|last[- ]minute|late replacement", rep_sent, re.I)) or \
+                days, basis = notice(info, first_s, info["s0"])
+                snp = bool(re.search(r"short notice|late notice|last[- ]minute|late replacement", sents[first_s], re.I)) or \
                     bool(re.search(r"short notice|late notice|last[- ]minute", txt, re.I) and role == "replacement")
-                fx = card.f[who]
-                key = (fx["fid"], fx["side"])
-                prev = out.get(key)
-                rec = {"role": role, "days": days, "basis": basis, "short_notice_phrase": snp,
-                       "booked_vs": clean_text(info["head"])[:200], "text": txt[:600]}
-                # keep the strongest evidence: a replacement beats an opponent change; dated beats undated
-                if prev is None or (prev["role"] == "opp_change" and role == "replacement") or \
-                        (prev["role"] == role and prev["days"] is None and days is not None):
-                    out[key] = rec
+                put(who, role, days, basis, snp, info["head"], txt)
+            handled = True
+        if handled:
+            continue
+        # cross-paragraph: P booked (with a withdrawal) in one paragraph that never names Q; Q named as the
+        # replacement in another paragraph
+        for stay, new in ((ia, ib), (ib, ia)):
+            bp = [pi for pi, inf in enumerate(para_info) if inf and inf["s0"] is not None and stay in inf["members"]
+                  and new not in set(x[2] for x in card.mentions(paras[pi]["text"], prefer=paras[pi]["text"])[0])
+                  and WITHDRAW_RE.search(paras[pi]["text"])]
+            if not bp or booked_elsewhere(new, stay, -1):
+                continue
+            for pj, inf in enumerate(para_info):
+                if not inf or pj in bp:
+                    continue
+                txt = paras[pj]["text"]
+                for si, sen in enumerate(inf["sents"]):
+                    mm, kk = card.mentions(sen, prefer=txt)
+                    hit = [x for x in mm if x[2] == new]
+                    if not hit:
+                        continue
+                    if not re.search(r"replaced by|(?:would|will|to) replace|as (?:a |his |her |the )?replacement|"
+                                     r"stepped in|step in|stepping in|in (?:his|her) place|took (?:his|her) place",
+                                     kk):
+                        continue
+                    if any(x[2] == stay for x in mm) is False and not re.search(r"replaced by", kk):
+                        pass
+                    days, basis = notice(inf, si, 0)
+                    snp = bool(re.search(r"short notice|late notice|last[- ]minute", txt, re.I))
+                    head = para_info[bp[0]]["head"]
+                    put(new, "replacement", days, basis, snp, head, txt)
+                    put(stay, "opp_change", days, basis, False, head, txt)
+                    break
+                if (fid, card.f[new]["side"]) in out:
+                    break
     return out
 
 
@@ -1832,8 +1905,15 @@ def cmd_build(args):
             anymiss = False
             for side, pid in (("A", pa), ("B", pb)):
                 m = wi.get((fid, side))
-                if m and m["negated"] and m["lbs_over"] is None and m["weighed"] is None:
-                    m = None
+                if m and m["negated"] and not (m["lbs_over"] and m["explicit"] and
+                                               re.search(r"no (?:further )?attempt|made no", " ".join(m["text"]))):
+                    m = None             # "missed on his first attempt but made weight" -> not a miss
+                if m and not m["explicit"] and m["lbs_over"] is None:
+                    # only "weighed in at W": a miss only if W is over the limit
+                    limit0 = cw_lbs + (0 if title else 1) if (booked_cw and cw_lbs) else \
+                        (lim + (0 if title else 1) if lim else None)
+                    if not (m["weighed"] and limit0 and m["weighed"] > limit0):
+                        m = None
                 if not art:
                     rec["missed"][side] = None
                     rec["missed_weight"][side] = None

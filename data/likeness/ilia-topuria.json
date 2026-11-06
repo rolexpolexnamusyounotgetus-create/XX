@@ -1,0 +1,247 @@
+{
+  "slug": "ilia-topuria",
+  "name": "Ilia Topuria",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 29,
+  "official": {
+    "dob": "1997-01-21",
+    "height_cm": 170.2,
+    "reach_cm": 175.3,
+    "stance": "Orthodox",
+    "fight_weight_lb": 155
+  },
+  "photos_used": [
+    "wm-2024-03-21-orbeliani-cropped.jpg",
+    "wm-2026-06-13-weighin-cropped.jpg",
+    "wm-2026-06-13-rogan-interview.jpg",
+    "wm-2022-mmanytt.jpg",
+    "wm-2026-06-14-whitehouse.jpg",
+    "espn-headshot.png",
+    "espn-stance-right.png",
+    "espn-stance-left.png"
+  ],
+  "photo_coverage": "Good. Front: 2024 Georgian presidential ceremony (CC BY), June 2026 weigh-in (PD) and the ESPN studio headshot. Right-side profile: June 2026 weigh-in interview (PD, small in frame) and a soft 2022 video still. Physique: June 2026 weigh-in plus two ESPN full-body cutouts. Recent: four photos from June 2026.",
+  "face": {
+    "shape": "Oval-to-rectangular and fairly long. Widest at the cheekbones, with straight sides that run down into a squared jaw under the beard. The face reads lean, not wide.",
+    "jaw": "Well defined and moderately wide, with clear jaw angles below the ears. The beard follows and sharpens the jaw line (trimmed neckline).",
+    "chin": "Medium width, slightly squared, hidden under the beard. In the right profile (2026 interview) it sits roughly in line with the lower lip.",
+    "cheekbones": "Moderately prominent and high; the cheeks below are flat to slightly hollow at fight weight (2026 weigh-in), a little fuller in March 2024.",
+    "brow_ridge": "Moderately strong. The brows sit low on it, so the eyes look slightly deep-set, especially under stage light.",
+    "forehead": "Medium height, fairly broad, smooth with faint horizontal lines. Fully exposed by the slicked-back 2026 hair.",
+    "eyes": {
+      "shape": "Almond, with slightly heavy upper lids and outer corners that sit level to slightly down, giving a calm, slightly sleepy look. Mild under-eye shadows.",
+      "spacing": "Average, about one eye-width apart.",
+      "colour": "Medium-to-dark brown in every photo. Closest embed iris: brown.",
+      "size": "Medium."
+    },
+    "eyebrows": {
+      "thickness": "Thick and dense",
+      "shape": "Low and fairly straight with a soft angle about two-thirds out; the tails drop slightly. Groomed, with a clean gap between the brows.",
+      "colour": "Very dark brown to black, a touch darker than the head hair.",
+      "colour_hex": "#2c211c"
+    },
+    "nose": {
+      "length": "Medium-long",
+      "width": "Medium; the nostrils are a little wider than the bridge suggests.",
+      "bridge": "Straight and medium-narrow from the front.",
+      "hump": "None visible; the profile is straight (2026 interview, 2022 still).",
+      "tip": "Rounded and slightly full, pointing a little downward.",
+      "fight_damage": "No obvious breaks or flattening in these photos."
+    },
+    "mouth_lips": "Medium width. Thin upper lip mostly hidden by the moustache; fuller lower lip. Resting expression closed and neutral; often a slight pressed-lip set (2026 weigh-in).",
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Slightly out from the head; easy to see because the sides are faded to skin.",
+      "cauliflower_ear": "Possibly mild on the left ear: the upper part looks a little thick and smooth in the 2024 ceremony photo and the studio headshot. The right ear looks normal in the 2026 weigh-in. Not severe; model normal ears with slightly thick rims."
+    },
+    "notable_marks_scars": "None visible at these resolutions."
+  },
+  "hair": {
+    "style": "High skin fade on the sides and back. In June 2026 the top is grown out and combed straight back with a soft side part and some volume at the front (slick-back, styled with product). In March 2024 the top was a shorter textured crop.",
+    "length_cm": {
+      "top": 6,
+      "sides": 0.3,
+      "back": 0.3,
+      "top_2024": 3.5
+    },
+    "colour": "Very dark brown, near black. Under stage light the slicked top shows blue-grey highlights, which are reflections, not grey hair.",
+    "colour_samples": {
+      "orbeliani_2024_top": "#483127",
+      "espn_studio_top": "#413635",
+      "weighin_2026_top_highlight_excluded": "#636579"
+    },
+    "colour_hex": "#3a2a24",
+    "hairline": "Straight across with slightly squared corners and mild recession at the temples; dense on top.",
+    "texture": "Straight to slightly wavy, thick."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "colour": "Very dark brown, the same as the hair; warmer brown in the wood-panelled 2024 room.",
+    "colour_samples": {
+      "weighin_2026_chin": "#3c3023",
+      "orbeliani_2024_chin_warm_cast": "#724435"
+    },
+    "colour_hex": "#3c2e24",
+    "density": "Dense on the chin, moustache and jaw; slightly lighter on the upper cheeks.",
+    "length_mm": "About 8-12 mm on the chin, about 5 mm on the cheeks.",
+    "shape": "Full short beard joined to the moustache, carefully groomed: a crisp, fairly high cheek line, a sharp line along the jaw to the neck, and the neck shaved below the jaw. Same style in 2024 and 2026."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "wm-2024-03-21-orbeliani-cropped.jpg",
+        "spot": "forehead",
+        "box": "550,290,640,330",
+        "hex": "#e9ac92",
+        "light": "indoor, warm wood-panelled room"
+      },
+      {
+        "photo": "wm-2024-03-21-orbeliani-cropped.jpg",
+        "spot": "left cheek under eye",
+        "box": "480,420,520,455",
+        "hex": "#d8905f",
+        "light": "indoor, strong orange bounce from wood panelling",
+        "in_average": false
+      },
+      {
+        "photo": "wm-2026-06-13-weighin-cropped.jpg",
+        "spot": "forehead",
+        "box": "420,255,520,285",
+        "hex": "#d7b58d",
+        "light": "outdoor stage light, night"
+      },
+      {
+        "photo": "wm-2026-06-13-weighin-cropped.jpg",
+        "spot": "upper abdomen (untattooed)",
+        "box": "440,1120,600,1180",
+        "hex": "#c09f75",
+        "light": "outdoor stage light, night"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "forehead",
+        "box": "285,108,330,128",
+        "hex": "#f1beae",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "right cheek",
+        "box": "250,175,270,200",
+        "hex": "#e6967e",
+        "light": "studio, high key"
+      }
+    ],
+    "tone_average_all": "#dda685",
+    "tone_average_used": "#deaa8d",
+    "tone_hex": "#deaa8d",
+    "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). Studio (ESPN/UFC) cutouts are high-key and warm-graded, so they read lighter and pinker than arena or daylight photos; the average mixes lighting on purpose.",
+    "tone_category": "light-medium",
+    "undertone": "Warm, light olive. Tans to a golden-beige; no strong pink flush.",
+    "freckles_marks": "Smooth skin, no freckles visible. Dark body hair is minimal on the chest (mostly covered by tattoos)."
+  },
+  "body": {
+    "build": "Compact and very muscular for his height (170 cm); dense, heavy upper body. Looks like a strong featherweight/lightweight rather than a rangy one. Reach (175 cm) is 5 cm longer than his height.",
+    "body_fat": "lean",
+    "body_fat_notes": "Low body fat at fight week (June 2026): clear six-pack and obliques, visible veins on the forearms.",
+    "shoulders": "Broad and round with big deltoids; traps moderately developed.",
+    "chest": "Thick, full pecs (the tiger tattoos sit on a well-developed chest).",
+    "arms": "Large biceps and triceps for the weight class, thick forearms.",
+    "waist": "Narrow relative to the shoulders; a pronounced V-taper.",
+    "legs_calves": "Muscular thighs with clear quad definition; solid calves. Legs are of average length for his height.",
+    "neck": "Thick and muscular, nearly as wide as the jaw from the front.",
+    "posture": "Upright, chest out, chin level to slightly down; holds his hands high in a tight orthodox guard (weigh-in pose).",
+    "notable_physique_traits": "Short, powerful frame with a big chest and shoulders, tight waist and heavily tattooed chest and left arm. Should look stocky-muscular next to taller lightweights."
+  },
+  "tattoos": [
+    {
+      "where": "Chest, both pecs, running up over both shoulders",
+      "description": "Large black-and-grey piece: two roaring tiger heads (one on each pec, facing the centre) framed by pine-forest silhouettes that climb onto both shoulders; a small orange/red accent near the left nipple.",
+      "size": "About 40 cm wide x 25 cm tall"
+    },
+    {
+      "where": "Upper sternum / base of the throat, between the collarbones",
+      "description": "Crown above a capital 'T' inside a hexagonal frame, with small wings either side. Visible above an open shirt collar too.",
+      "size": "About 8-10 cm"
+    },
+    {
+      "where": "Left arm, full sleeve from shoulder to wrist, continuing onto the back of the left hand",
+      "description": "Black-and-grey sleeve with colour accents: classical columns/arches and a helmeted warrior on the shoulder; red block lettering beginning 'HASTA' on the upper arm (rest not legible); a wolf head; a small 'K' with a heart near the elbow; clock faces, roses and a woman's portrait on the forearm.",
+      "size": "Full sleeve"
+    },
+    {
+      "where": "Left side of the lower ribcage, below the left pec",
+      "description": "'El Matador' in cursive script. Visible at the June 2026 weigh-in but not in the older ESPN studio cutout, so it is a newer tattoo.",
+      "size": "About 12 cm wide x 3 cm tall"
+    },
+    {
+      "where": "Right arm",
+      "description": "No sleeve. Only the top of the right shoulder carries the edge of the chest piece (pine trees); the right upper arm and forearm look clear from the front.",
+      "size": "n/a"
+    }
+  ],
+  "accessories_seen": "Gold chain with a cross pendant and a medallion (weigh-in), large gold or steel watch, string bracelets on the left wrist.",
+  "kit": {
+    "typical_shorts": "UFC-issued fight shorts. ESPN cutout 1: red shorts with a darker red geometric print, white chevron stripes on both legs and a black waistband with a red UFC tab. ESPN cutout 2 (probably the June 2026 Freedom 250 kit): navy shorts with red and white curved stripes on his right leg, a white UFC wordmark, crypto.com logo; red gloves with US-flag cuffs. June 2026 weigh-in: navy track shorts with a red drawstring and a small white UFC logo.",
+    "walkout": "June 2026: navy zip jacket and track pants with a red-and-white stripe panel (UFC/Venum styling), white-and-navy trainers, red gloves.",
+    "shorts_colours_hex": {
+      "red": "#c8202a",
+      "navy": "#1d2a5a",
+      "white_stripe": "#f2f2f2"
+    }
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.06,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.75,
+    "macro/weightUpM": 0.1,
+    "macro/weightDownM": 0.0,
+    "macro/heightUpM": 0.0,
+    "macro/heightDownM": 0.15,
+    "macro/proportionsUpM": 0.35,
+    "head/head-oval": 0.35,
+    "head/head-square": 0.25,
+    "head/head-scale-vert-incr": 0.15,
+    "head/head-fat-decr": 0.2,
+    "forehead/forehead-scale-vert-incr": 0.05,
+    "chin/chin-bones-incr": 0.3,
+    "chin/chin-width-incr": 0.15,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-prominent-incr": 0.15,
+    "cheek/l-cheek-bones-incr": 0.25,
+    "cheek/r-cheek-bones-incr": 0.25,
+    "cheek/l-cheek-volume-decr": 0.2,
+    "cheek/r-cheek-volume-decr": 0.2,
+    "eyes/l-eye-height2-decr": 0.15,
+    "eyes/r-eye-height2-decr": 0.15,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15,
+    "eyebrows/eyebrows-trans-down": 0.3,
+    "eyebrows/eyebrows-trans-forward": 0.25,
+    "eyebrows/eyebrows-angle-down": 0.1,
+    "nose/nose-scale-vert-incr": 0.2,
+    "nose/nose-scale-horiz-incr": 0.1,
+    "nose/nose-scale-depth-incr": 0.1,
+    "nose/nose-width1-incr": 0.1,
+    "nose/nose-point-down": 0.15,
+    "nose/nose-point-width-incr": 0.2,
+    "nose/nose-nostrils-width-incr": 0.15,
+    "mouth/mouth-upperlip-volume-decr": 0.15,
+    "mouth/mouth-lowerlip-volume-incr": 0.15,
+    "neck/neck-scale-horiz-incr": 0.35,
+    "torso/measure-shoulder-dist-incr": 0.35,
+    "torso/torso-vshape-incr": 0.45,
+    "torso/measure-waist-circ-decr": 0.15,
+    "torso/measure-hips-circ-decr": 0.05,
+    "buttocks/buttocks-volume-incr": 0.1
+  },
+  "morphs_not_in_embed": {
+    "_note": "assets/embed/mh-manifest.json has no ear targets; estimates for standard MakeHuman ear modifiers if they are added.",
+    "ears/l-ear-scale-incr": 0.05,
+    "ears/r-ear-scale-incr": 0.05
+  },
+  "notes": "Confidence: high for hair, beard, skin, tattoos and build; medium-high for face proportions (two sharp frontal photos plus a studio headshot); medium for exact morph values. 8 photos: 5 Commons (CC BY / PD), 3 ESPN reference-only; 4 are from June 2026. The profile views are weak (one small in frame, one blurry video still), so nose depth and chin projection are estimates. What to watch: (1) The look depends on the groomed short dark beard with a crisp cheek line plus the high skin fade; in 2026 the top is long and slicked back, so short02/short04 alone will look too short on top. (2) Keep the brows thick, dark and low, close to the eyes. (3) The chest tattoo (two tigers + pines) and the crown-T at the throat are the strongest body cues; the sleeve is on HIS LEFT arm and the right arm is bare; 'El Matador' is on his left ribs (mirror-check: viewer's right when he faces camera). (4) Body: short (scale to 170.2 cm), very muscular, big chest and deltoids, tight waist; do not make him lanky. (5) Skin is warm light olive; avoid pink. Macro ageOldM uses (years-25)/65 like src/avatar3d.js. l-/r- morphs refer to the character's own left/right; values are symmetric."
+}

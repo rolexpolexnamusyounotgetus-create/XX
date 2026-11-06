@@ -1141,7 +1141,7 @@ class DiffModel:
     Side features are imputed with the training mean (missing -> 0 contribution), pre-UFC features are
     multiplied by exp(-n / tau) so they fade with UFC experience, then scaled (not centred)."""
 
-    def __init__(self, base, pre, C=1.0, tau=None, add_missing=True):
+    def __init__(self, base, pre, C=1.0, tau=None, add_missing=False):
         self.base, self.pre, self.C, self.tau, self.add_missing = list(base), list(pre), C, tau, add_missing
 
     def _side(self, df, tag, fit=False):
@@ -1327,7 +1327,8 @@ def evaluate(args):
             z = (v - mu) / sdv
             if miss and keys:
                 z[:len(keys)] = 0.0
-            Zrows.append(np.concatenate([z, [1.0 if (miss and keys) else 0.0]]))
+            # no missing-data term: before the crawl finished, being resolved tracked future success
+            Zrows.append(np.concatenate([z, [0.0]]))
             Zidx.append(E.idx[p])
         Z = np.array(Zrows) if Zrows else np.zeros((0, nk + 1))
         sel = df[(df["date"] >= fit_from) & (df["date"] < fit_to) & df["newc"]]
@@ -1402,7 +1403,7 @@ def evaluate(args):
             best[k] = row
     print("CV best:", json.dumps(best, default=str))
     # GBM
-    for fs_name, keys in (("gbm_base", BASE_KEYS), ("gbm_base+pre", BASE_KEYS + PRE_CORE + ["res"])):
+    for fs_name, keys in (("gbm_base", BASE_KEYS), ("gbm_base+pre", BASE_KEYS + PRE_CORE)):
         o = cv_eval(lambda: GBMDiff(keys), trainval)
         best[fs_name] = {"model": fs_name, "cv_ll": oof_ll(o, trainval)}
     print("CV gbm:", {k: round(v["cv_ll"], 4) for k, v in best.items() if k.startswith("gbm")})
@@ -1450,7 +1451,7 @@ def evaluate(args):
     m_ep = DiffModel(["elo"], fs_e, C=pick_e["C"], tau=pick_e["tau"]).fit(trainval)
     preds_test["elo+pre"] = m_ep.predict(test)
     g0 = GBMDiff(BASE_KEYS).fit(trainval)
-    g1 = GBMDiff(BASE_KEYS + PRE_CORE + ["res"]).fit(trainval)
+    g1 = GBMDiff(BASE_KEYS + PRE_CORE).fit(trainval)
     preds_test["gbm_base"] = g0.predict(test)
     preds_test["gbm_base+pre"] = g1.predict(test)
     seed_fits = {}
@@ -1588,7 +1589,8 @@ def evaluate(args):
                     "(sig landed/absorbed per min, accuracy, defense, TD/15, TD acc, TD def, sub att/15, KD/15 for "
                     "and against, control for and against)",
             "pre": "Sherdog pre-UFC features per side from snapshots dated strictly before the bout, imputed at the "
-                   "train mean when unresolved (plus a missing flag), faded by exp(-n_UFC/tau)",
+                   "train mean when unresolved (no missing-data flag: resolution order could leak), faded by "
+                   "exp(-n_UFC/tau)",
             "seeded_elo": "Elo whose debut rating is 1500 + beta . z(pre-UFC record at debut [+ age at debut]); beta "
                           "fit by minimizing Elo log loss on train newcomer bouts; every later bout uses the same "
                           "Elo updates",

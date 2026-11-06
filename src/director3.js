@@ -5,8 +5,10 @@
    fight = FightEngine.simulate(m, rng, true). opts (all optional):
      fighters  {A: {...}, B: {...}}  name, short, slug, nick, pronouns ("he" | "she" | "they" or {he, him, his, hes}),
                                      stance, height_in, reach_in, division, record, kd_absorbed, appearance, ...
-                                     (every field is copied to script.fighters, which the 3D show reads)
-     moves     {A: scoutingMoves, B}  data/scouting/<slug>.json "moves" weights
+                                     (every field is copied to script.fighters, which the 3D show reads).
+                                     Without pronouns: the fighter's division (UFC women's or men's), else they/them.
+     moves     {A: scoutingMoves, B}  data/scouting/<slug>.json "moves" weights (falls back to scouting.moves, then to
+                                     window.FightScouting[slug].moves if the page inlines it, then to the profile)
      scouting  {A: scoutingFile, B}   the whole scouting file (moves, style.tags, style.archetype)
      profiles  {A: prof, B}           fighters.json entries (for derived techniques and career context)
      matchup   m                      FightEngine.matchup(...) result (names, division, rates, power)
@@ -22,13 +24,16 @@
        lines+ [{r, t, txt, k, who, big}] (the whole play-by-play in order, intro and outro included),
        rounds: [{ r, beats, endT, judges, stoppage, fin, st (engine round stats), dHA, dHB, dLA, dLB, SA, SB,
                   base+ (fight stats before the round), end+ (fight stats after it), intro+, outro+,
-                  timeline+ [[t0, t1, s, ctl, pos]], density+ {...}, cum+ (for statsAt) }] }
+                  timeline+ [[t0, t1, s, controller, pos]], density+ {bin, n[], strikes[], ev[], act[], warp[],
+                  quiet [[t0, t1, s, controller]], quietSecs, beats}, cum+ (for statsAt) }] }
+     endT is the finish time (or 300); the engine rounds event times to 0.01 s, so endT covers the last event.
 
    Beat (every beat): t (exact engine time, s into the round), k (kind), who ("A" | "B" | null), st (engine state
      after the beat: 0 distance, 1 clinch, 2 A on top, 3 B on top; for a strike the state it was thrown in),
      pos (ground sub-position when st >= 2: guard | half | side | mount | back | down), ctl (clinch controller),
      pri (0 filler the show may drop when it lags, 1 normal strike, 2 key beat: never drop), stats (cumulative
-     engine stats for the fight after this beat: {A: {...STAT_KEYS}, B: {...}}), ev (the raw engine event),
+     engine stats for the fight after this beat: {A: {...STAT_KEYS}, B: {...}}, named as in the engine's round
+     stats; h/b/l_* count every position, sh/sb/sl_lnd standing only, ctrl in seconds), ev (the raw engine event),
      i (index of the event in the round's ev list, -1 for derived beats), txt (play-by-play line, optional).
    Kinds:
      strike   move (a name the show animates), tech (technique id; equals move unless the show lacks it),
@@ -45,8 +50,8 @@
      esc      who = bottom man; from, pos (new, lesser sub-position)
      sweep    who = bottom man who comes up on top; st, pos
      up       who = the man who stands; st 0 (free) or 1 (stood into a clinch: a clinch beat follows at the same t)
-     sub/subx who = attacker; name (engine name), sub (display name), pos, bottom (attacking from his back),
-              standing (guillotine on a stuffed shot)
+     sub/subx who = attacker; name (engine name), sub (display name), at (position it was tried from), pos (after;
+              a failed top submission can cost position), bottom (attacking from the bottom), standing (on a shot)
      pounce   who = attacker, after a knockdown (st 2/3, pos "down"); follow-up strikes have down: true
      recover  who = the downed man; st 0 (back to his feet) or 2/3 with pos "guard"
      reset    the referee restarts them standing
@@ -62,7 +67,12 @@
    Timing: beats keep their engine time. round.density gives 10 s bins (beats, strikes, engine events, activity,
    suggested clock warp) and the quiet stretches, so the show can run the clock faster through quiet spells
    without drifting from it; FightDirector.warpAt(round, t) interpolates the warp, statsAt(script, r, t) returns
-   the exact engine stats (control included) at any clock time.
+   the exact engine stats (control included) at any clock time, roundStatsAt the same for the round so far.
+
+   Play-by-play: short broadcast lines from template pools; a line never repeats within a fight (count-based
+   fallbacks keep key moments unique), optional lines wait for a quiet moment, and context comes only from the data
+   passed in (round and fight counts from the event stream, career counts from the profile's record and
+   kd_absorbed, judges' cards).
 
    RNG: a mulberry32 generator seeded from seed ^ 0x5bd1e995 (separate from the engine's generator, so the fight
    itself never depends on the director); technique choice and wording are deterministic for a seed. */
@@ -682,7 +692,8 @@
     var W = fight.winner, Lw = W === "A" || W === "B" ? other(W) : null;
     if (isDec) {
       script.decision = decisionText(fight, F, voice);
-      script.result = voice.take(W === "D" ? capSent(F.A.name + " and " + F.B.name + " fight to a " + ({ DRAW: "" }[fight.method] || "") + "draw.") :
+      var evenN = (fight.cards || []).filter(function (c) { return c[0] === c[1]; }).length;
+      script.result = voice.take(W === "D" ? capSent(F.A.name + " and " + F.B.name + " fight to a " + (evenN === 3 ? "unanimous" : (evenN === 2 ? "majority" : "split")) + " draw (" + cardsText(fight.cards, "A") + ").") :
         capSent(F[W].name + " def. " + F[Lw].name + " by " + METHOD_LONG[fight.method] + " (" + cardsText(fight.cards, W) + ")."));
       addLine(last.r, 300, script.decision.text, "decision", W === "D" ? null : W, true);
     } else if (W === "A" || W === "B") {
