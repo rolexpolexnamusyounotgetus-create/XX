@@ -9,8 +9,12 @@ half-life and per-stat prior strengths" (now merged into the v5 build). Files:
 - `tools/oppadj_engine.js`: engine v3 Monte Carlo check (plain, plain x factors, ML rates, ML x factors^beta);
   it loads `src/engine3.js` from its own text with one hook line added in memory. No file under `src/` is edited.
 - `data/derived/oppadj.json`: `snapshots[fight_id][A|B]` (3,237 backtest fights, pre-fight factors),
-  `roster[slug]` (1,229 fighters, factors at the Oct 31, 2026 snapshot plus a schedule diagnostic),
-  `results` (every number in this report), `meta` (semantics, units, engine k values used).
+  `roster[slug]` (1,229 fighters, factors at the Oct 31, 2026 snapshot plus a schedule diagnostic and, since the
+  verification pass, the division-free effects `eff`), `results` (every number in this report, plus
+  `roster_recipe`), `meta` (semantics, units, engine k values used). `backtest.json` now holds only the 2,864
+  dev fights (2019-2025); the 373 vault snapshots are carried over unchanged from the first build
+  (`meta.snapshots_carried_over`).
+- `tools/oppadj_verify.py`, `data/derived/oppadj_verify.json`: the adversarial review (Verification log).
 
 Factor names (task name -> fields in `oppadj.json`, each relative to the same field of `fighterRates`):
 att_adj -> dAtt, cAtt, gAtt (attempt rates at distance, in the clinch, on top); def_adj -> accAg[t] (accuracy
@@ -25,7 +29,11 @@ Reproduce (4 cores): `python3 tools/oppadj.py` (about 11 minutes; `--cache f.pkl
 periods; about 15 minutes on an idle machine) and `python3 tools/oppadj.py --engine-eval --engine-gated
 --engine-periods test --engine-sims-test 300` (recommended set, 2024-25, plus Volkanovski vs Gaethje).
 Each engine run copies `src/engine3.js`, `src/params3.js` and `src/ml/mlrates.js` to its scratch directory
-first and records their hashes, so edits to `src/` during a run cannot mix versions.
+first and records their hashes, so edits to `src/` during a run cannot mix versions; `--engine-src DIR` re-uses
+an existing frozen copy instead, and periods not re-run in a call keep their stored results when the factor and
+engine hashes match (the Volkanovski vs Gaethje re-run used `--engine-gated --engine-periods "" --engine-src
+<frozen copy>`). Verification: `python3 tools/oppadj_verify.py --part fresh` (about 4 minutes), `--part attrib
+--cache f.pkl`, `--part inner --cache f.pkl`, `--part vg`.
 
 ## Verdict
 
@@ -41,8 +49,9 @@ first and records their hashes, so edits to `src/` during a run cannot mix versi
    own formula with the half-life and both prior strengths re-tuned ("raw re-tuned"), it still wins on
    distance attempts (-2.5%), control (-4.7%) and takedown attempts (-3.2%). [Verified with like-for-like
    baselines that get the same half-life-averaging option: distance -2.5% [0.2, 4.9], control -4.7% [1.8, 7.5],
-   takedown attempts -3.1% [0.4, 5.8] (dyadic-robust 95%). For distance attempts the opponent part exists only
-   with the half-life average: one adjusted configuration vs one raw configuration is -0.2%, n.s.]
+   takedown attempts -3.1% [0.4, 5.8] (dyadic-robust 95%); against no-opp given the same averaging, distance
+   attempts -6.2% (not -9.4%). For distance attempts the opponent part exists only with the half-life average:
+   one adjusted configuration vs one raw configuration is -0.2%, n.s.]
 3. **Re-tuned prior strengths, more than the opponent adjustment, fix the engine's combination scale.**
    [Corrected by the verification pass.] With the engine's raw rates the log5 / log-linear combination (exponents
    1, 1) is mis-scaled: a free fit on 2019-2023 wants offense exponents of 1.23 (distance attempts), 0.71 (head
@@ -320,9 +329,10 @@ winner -0.0033 [-0.0079, +0.0015], 7-bin **-0.0090 [-0.0169, -0.0009]**; ML x f 
 entered the tuning, but it is the period the factor hyperparameters were chosen on for per-fight stats.)
 Walk-forward Elo: 0.6857 and 0.6769.
 
-Reading: the factors make the simulator more decisive (mean |logit P(A)| 0.36 -> 0.42) and it pays: winner log
-loss improves by 0.003 in every period, with and without the ML layer, and accuracy by about one point, but no
-single winner delta is significant. The method / outcome distribution improves with all families on (pooled
+Reading: the factors make the simulator more decisive (mean |logit P(A)| 0.36 -> 0.42). In the plain engine winner
+log loss improves by about 0.003 in both periods and accuracy by about one point; on top of the ML layer the gain is
+0.0000 on 2019-2023 and 0.002-0.003 on 2024-25 [corrected by the verification pass: the first version said "0.003 in
+every period, with and without the ML layer"]. No single winner delta is significant. The method / outcome distribution improves with all families on (pooled
 7-bin -0.009, significant) and is flat with the recommended set on 2024-25, which suggests the knockdown
 factors help the method mix even though they do not help per-fight knockdown counts; worth an ablation in the
 v5 merge. The per-fight stat gains are large and clear; how far they move the winner depends on the rest of
@@ -372,18 +382,28 @@ Roster factors at the Oct 31, 2026 snapshot (relative to the engine's raw rates 
 | schedule: opponents' control allowed | 0.742 | 0.881 | Volk's opponents were hard to hold down |
 | schedule: opponents' KD per head landed allowed | 0.765 | 0.921 | Volk hit tough chins |
 
-Engine v3 (params 4.0.0-selfcal-pre2024, no ML layer, `fighters.json` profiles, 5 x 5 lightweight title
-fight, 10,000 simulations per corner order, same seeds), plain rates vs the recommended factor set
-(`results.engine_backtest_recommended.volk_gaethje`):
+The table above is relative to each man's own division (Volkanovski: Featherweight). The bout is simulated at
+Lightweight, and the backtest factors were built and validated at the bout division, so the engine check now uses
+factors recomputed at Lightweight (`tools/oppadj.py factors_at_division`, verification pass). For Volkanovski that
+moves ground attempts x1.09, leg accuracy odds x1.09 (allowed x1.07), takedown attempts and control x1.03,
+takedown success odds x0.98 (e.g. takedown attempts 1.12 -> 1.16, control 1.33 -> 1.37, leg accuracy 0.866 ->
+0.943); Gaethje's do not change.
 
-| | plain | with factors |
-|---|---|---|
-| Volkanovski wins | 61.5% | 65.1% |
-| Volk KO / SUB / DEC | 14.6 / 4.2 / 42.7% | 14.7 / 2.6 / 47.8% |
-| Gaethje KO / SUB / DEC | 16.4 / 1.9 / 19.8% | 16.0 / 0.9 / 17.8% |
-| sig. strikes landed, Volk / Gaethje | 122.8 / 80.2 | 130.4 / 81.6 |
-| takedowns landed, Volk / Gaethje | 1.07 / 0.99 | 1.64 / 0.69 |
-| control seconds, Volk / Gaethje | 109 / 95 | 106 / 53 |
+Engine v3 (frozen copy: params 4.0.0-selfcal-pre2024, engine3 sha 6c661f68a4c41c1d; no ML layer, `fighters.json`
+profiles, 5 x 5 lightweight title fight, 10,000 simulations per corner order, same seeds), plain rates vs the
+recommended factor set (`results.engine_backtest_recommended.volk_gaethje`):
+
+| | plain | with factors (bout division) | first version (Volk at FW) |
+|---|---|---|---|
+| Volkanovski wins | 61.5% | 65.3% | 65.1% |
+| Volk KO / SUB / DEC | 14.6 / 4.2 / 42.7% | 15.4 / 2.7 / 47.2% | 14.7 / 2.6 / 47.8% |
+| Gaethje KO / SUB / DEC | 16.4 / 1.9 / 19.8% | 16.0 / 1.0 / 17.5% | 16.0 / 0.9 / 17.8% |
+| sig. strikes landed, Volk / Gaethje | 122.8 / 80.2 | 131.4 / 82.3 | 130.4 / 81.6 |
+| takedowns landed, Volk / Gaethje | 1.07 / 0.99 | 1.66 / 0.71 | 1.64 / 0.69 |
+| control seconds, Volk / Gaethje | 109 / 95 | 109 / 55 | 106 / 53 |
+
+The division fix is immaterial for this bout (+0.2 points; an earlier hand-patched run of the same correction gave
+64.9%, so changes of this size are within the paired Monte Carlo noise).
 
 The adjustment mostly changes the grappling exchange: Volkanovski's takedown success and control are
 credited for a tough schedule, Gaethje's control and takedown volume are cut. It moves the engine further from
@@ -393,7 +413,9 @@ winner probability on the page, so this is a "how" change more than a "who" chan
 ## Recommendation for the engine
 
 **1. Apply the factors** at the end of `fighterRates(prof, P, L, p, nR)` when the profile carries them
-(`prof.oppadj`, from `roster[slug]` for live profiles and `snapshots[id][A|B]` for backtest profiles):
+(`prof.oppadj`, from `snapshots[id][A|B]` for backtest profiles; for live profiles from `roster[slug]` when the
+bout is in his own division, otherwise recomputed for the bout's division from `roster[slug].eff` and
+`results.roster_recipe` with `tools/oppadj.py factors_at_division`, which is how the backtest factors were built):
 
     R.f       <- R.f * F.f        for f in dAtt dAttAg cAtt cAttAg gAtt gAttAg tdAtt tdAttAg ctrl octrl topSkill escWeak
     R.tdAcc   <- clip(sigm(logit(R.tdAcc)   + ln F.tdAcc),   0.03, 0.95)
@@ -473,11 +495,15 @@ all of this without either change, so this table is the fallback, not the recomm
 
 ## Caveats
 
-- Uncertainty is per family; no correction for testing 12 families. The strongest results (takedown
-  attempts, control, distance attempts) would survive any reasonable correction; clinch attempts would not.
+- Uncertainty is per family. [Verification pass: with a dyadic-robust variance (fighters appear in several
+  test fights) and a Holm correction over the 12 families, all eight families whose interval excludes zero
+  still do (z 2.8 to 6.6); fighter-level dependence barely matters (dyadic SE / fight SE 0.83-1.09).]
 - Validation is used for one thing beyond reporting: switching off the three families that lost on 2024-25
   (knockdowns, body accuracy, submissions). That is version selection, allowed by the protocol, but those
   three decisions are mildly optimistic. All hyperparameters, blends and level constants are 2019-2023 only.
+  [Verification pass: a tune-only rule (re-select on 2019-2021, score 2022-2023) agrees on 9 of 12 families but
+  would keep knockdowns (+0.04%) and submissions (+2.8%, significant on 2022-23) and drop ground attempts
+  (-0.45%), so those three switches depend on 2024-25.]
 - The 2019-2023 choices were conservative for 2024-25 (slopes above 1 for four families). A later recalibration
   on recent years (the BACKLOG's "every input became underconfident in 2024-25") should revisit lambda.
 - UFC fights only: opponents met before the UFC are invisible, so a newcomer's factor is close to 1 and his
@@ -497,7 +523,128 @@ all of this without either change, so this table is the fallback, not the recomm
   orientation on 2024-25); compare deltas, not levels.
 - Factors are computed against the rates of the fighter's own division priors (roster) or the fight's prior
   division (backtest). When a fighter moves division the engine's raw rate changes with the new priors while
-  the factor does not; a second-order effect.
+  the roster factor does not. [Fixed by the verification pass: `roster[slug].eff` holds the division-free
+  effects and `factors_at_division` rebuilds the factors at any bout division; the Volkanovski vs Gaethje check
+  uses Lightweight factors. Effect on that bout: +0.2 points.] The live priors (`priors.json`, pooled from
+  2018) also differ from the walk-forward priors the effects were fit against by 1-4% in level (Lightweight
+  control 11.39 vs 11.52 s/min); second-order.
 - The knockdown family is off on per-fight evidence, but the pooled 7-bin gain with every family on and its
   absence with the recommended set hint that pow / chin factors may still help the method mix. Re-test them in
   the v5 leave-one-out ablation together with the durability model, which also rescales chin and power.
+
+## Verification log
+
+Adversarial review, Nov 6, 2026 (afternoon), of `tools/oppadj.py`, `data/derived/oppadj.json` and this report.
+Starting assumption: the result is wrong until shown otherwise. Tool: `tools/oppadj_verify.py` (parts `fresh`,
+`attrib`, `inner`, `vg`); output: `data/derived/oppadj_verify.json`. Fixes went into `tools/oppadj.py` in place,
+and `oppadj.json` was regenerated from the analyst's cached grid (`--reuse`).
+
+**What happened to the data during the review.** At 3:21 pm another job rewrote `data/derived/backtest.json` to
+the 2,864-entry dev set (2019-2025; the 373 2026 vault fights are gone from it). The analyst's cached grid was
+built on 3,237 entries, so `--reuse` would have crashed or mis-aligned. Fix: the cache now stores the entry ids,
+and an old cache is mapped onto today's entries by fight id. The rerun reproduces every reported deviance,
+bootstrap and factor exactly (snapshot hash `20cd71444c6bb36d` unchanged; 13 of 24,580 roster values differ in
+the third significant digit because the warm-start path no longer passes through 2026 dates). The 373 vault
+snapshot factors are carried over from the first build only because every common snapshot is identical; they are
+pre-fight outputs and are never scored.
+
+### 1. Fresh re-implementation of the headline (independent code)
+
+Written from the engine's definitions without the analyst's classes: own fight-side rows from `build_db`'s parsed
+fights, own engine raw rates from the backtest S, own joint MAP fit (exact Newton steps on all offense and
+defense effects at once, Hessian solved by preconditioned conjugate gradients; the analyst used alternating
+proportional fitting), own scoring.
+
+- Joins: fighter order (backtest A = first-named person) 0 mismatches in 2,864 fights; the backtest's actual
+  stats match the round-stat vectors (takedown attempts, control, significant attempts) in every fight; backtest
+  S equals the 730-day decayed sum of rows strictly before the fight (max relative error 5e-4, rounding of the
+  stored S). NCs and draws do not enter the per-fight stat scores; the winner proxy uses decisive fights only.
+- Held-out 2024-25 deviance, final vs engine raw (fresh / analyst): takedown attempts 6,037.5 -> 5,341.3,
+  **-11.53% / -11.50%**; control 211,961 -> 195,216, **-7.90% / -7.90%**; distance attempts 16,116 -> 15,240
+  (five half-lives averaged, lambda 0.7), **-5.43% / -5.43%**. The fresh log-rate changes match the stored
+  snapshot factors with correlation 0.99998 (median absolute difference 0.0016, the factors' 3-digit rounding).
+- Leak placebo: refitting with each fight's own date included (rows with day <= T) drops the takedown-attempt
+  test deviance from 5,341 to 2,407. A same-fight leak would be impossible to miss; the walk-forward number is the
+  analyst's.
+- Level drift: with the level re-fit on 2024-25 itself (diagnostic only), the gains stay: takedown attempts
+  11.3%, control 8.1%, distance attempts 5.7%, head accuracy 4.2%. The gain is ranking, not a level correction.
+
+Verdict: **the headline per-fight result is correct.** No look-ahead in the fits, levels, priors or blend
+weights; nothing is fit on 2024-25 except the family on/off switch (item 4).
+
+### 2. Uncertainty
+
+- The fight-cluster bootstrap treats fights as independent, but a fighter appears in several test fights. A
+  dyadic-robust variance (all pairs of fights that share a fighter) gives standard errors 0.83-1.09 times the
+  fight-level ones: fighter dependence barely matters and the reported intervals stand. The pigeonhole bootstrap
+  (Poisson weight per fighter) is about 1.7-2x wider but conservative by construction here (it counts each fight's
+  own variance about three times); it is kept in the JSON as an upper bound only.
+- Multiplicity: with the dyadic standard errors and a Holm correction over the 12 families, all eight
+  significant gains survive (takedown attempts z 6.6, distance attempts 5.3, control 4.4, leg accuracy 4.2,
+  takedown success 3.7, control per takedown 3.6, head accuracy 2.9, ground attempts 2.8).
+- New in `oppadj.json`: `families.*.test_delta_fighter_dependence_95` (dyadic and pigeonhole intervals).
+
+### 3. Where the gain comes from (attribution)
+
+- Half-life averaging. The adjusted model may average five half-lives (chosen on 2019-2023 for distance
+  attempts, head and leg accuracy); the raw re-tuned and no-opp baselines could not. With the same option (each
+  half-life at its own best k, used only if it wins on 2019-2023; `families.*.like_for_like_baselines`, bootstrap
+  keys `*_same_averaging`): vs raw re-tuned, distance attempts -2.5% [0.2, 4.9] (averaging does not help the raw
+  formula, so this is unchanged), takedown attempts -3.1% (was -3.2%), control -4.7%, head accuracy -1.75%
+  [0.1, 3.4] (dyadic; borderline); vs no-opp, distance attempts -6.2% (was -9.4%). One adjusted configuration
+  against one raw configuration gains only 0.2% on distance attempts (n.s.): the opponent part of that family
+  needs the half-life average.
+- Combination exponents (verdict 3, corrected above). The raw rates with re-tuned half-life and k give
+  offense exponents 0.88-1.13 on 2019-2023, the same as the adjusted effects; the analyst compared adjusted
+  effects only with the untuned engine rates, and the 2019-2023 fit is circular (k tuned at exponents 1). On
+  2024-25 the adjusted exponents are 0.72-1.06 (offense) and 0.72-1.22 (defense).
+- On top of the ML rates. The stacked gain is not just re-tuning: adding the raw re-tuned rates to the ML model
+  gives -0.9% (distance attempts) and -0.5% (control, n.s.); adding the adjustment on top of ML plus raw re-tuned
+  still gives -1.7% [significant] and -2.9% [significant]. Verdict 5 stands.
+
+### 4. Selection on validation
+
+The recommended set switches off knockdowns, body accuracy and submissions because they lost on 2024-25. A
+tune-only rule (all hyperparameters re-selected on 2019-2021, final vs engine scored on 2022-2023, cached fits)
+agrees for 9 of 12 families but would keep knockdowns (+0.04%) and submissions (+2.8%, interval excluding zero
+on 2022-23) and would drop ground attempts (-0.45%). Those three switches therefore rest on 2024-25, so the
+recommended set's 2024-25 engine numbers are not fully held out. The protocol allows version selection on
+validation; the engine gain does not depend on it (all families on: -0.0032; recommended: -0.0028).
+
+### 5. Engine-level claims
+
+The stored Monte Carlo runs were checked for internal consistency, not re-simulated in full (the machine ran at
+load 35-44 on 4 cores). Two statements were wrong and are corrected in verdict 7 and the engine reading: the
+winner gain is not "0.003 in every period and setup" (on top of the ML rates it is 0.0000 on 2019-2023 and
+-0.0006 pooled), and the "significant" pooled 7-bin gain is one of two intervals out of 22 that exclude zero,
+neither surviving a multiplicity correction.
+
+### 6. Volkanovski vs Gaethje
+
+Volkanovski's roster factors were relative to Featherweight priors while the bout runs at Lightweight, unlike the
+backtest factors (built at the bout division). Fix: `roster[slug].eff` + `results.roster_recipe` +
+`factors_at_division()` (reproduces the stored roster factors exactly at a fighter's own division), and the
+engine check now uses Lightweight factors, re-run on the same frozen engine copy (`--engine-src`, hashes as
+recorded) with the same seeds: 61.5% -> 65.3% (was 65.1%). Immaterial, within the paired Monte Carlo noise.
+
+### 7. Checked and found sound
+
+Walk-forward cut (rows with day < T at every prediction date, warm starts only from earlier dates); priors for
+every row from the 5 years before its year; per-row baselines and the level c from rows before T; level
+constants, half-lives, k, averaging and lambda from 2019-2023 only (the `test_best_config_for_reference` field is
+reported, never used); the factor self-check; the `nosos` k mixing (valid because offense and defense do not
+interact there); symmetric winner proxy without intercept; no 2026 fight scored or simulated.
+
+### Not done
+
+- The full 2019-2025 engine Monte Carlo was not re-run.
+- Body accuracy's failure (worse even without opponents) was not diagnosed.
+- The live priors differ in level by 1-4% from the walk-forward priors the effects were fit against; not
+  corrected (second-order).
+
+### Net effect on the recommendation
+
+Unchanged: apply the factors of the nine families as specified. One addition: for a bout outside a fighter's
+home division, rebuild his factors at the bout's division with `factors_at_division`. Read the distance-attempt
+gain as needing the half-life average, and the combination-exponent finding as a reason to re-tune k, not as
+evidence specific to opponent adjustment.

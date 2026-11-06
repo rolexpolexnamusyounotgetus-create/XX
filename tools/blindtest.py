@@ -330,7 +330,7 @@ class MLLogistic(Model):
         w0 = None if self.coef is None else self.coef * s
         w = _fit_lr_warm(X / s, T["y"][tr], self.lam, w0)
         self.coef = w / s
-        return {"fit_through": str(T["dates"][tr].max()), "n_train": int(tr.sum())}
+        return {"fit_through": max(T["dates"][tr]), "n_train": int(tr.sum())}
 
     def _rows(self, fids):
         return [(f, self.T["row"][f]) for f in fids if f in self.T["row"]]
@@ -370,7 +370,7 @@ class MLTrees(Model):
         else:
             self.m = M.xgb_fit(dict(self.best["cfg"], eta=M.XGB_ETA), T["G0"][tr], T["G1"][tr], T["y"][tr],
                                self.best["rounds"])
-        return {"fit_through": str(T["dates"][tr].max()), "n_train": int(tr.sum())}
+        return {"fit_through": max(T["dates"][tr]), "n_train": int(tr.sum())}
 
     def predict(self, fids, P):
         T, M = self.T, self.T["M"]
@@ -429,7 +429,7 @@ class FeatLR(Model):
     def fit(self, cutoff, P):
         tr = (self.dates < cutoff) & self.dec
         self.m = self.MO.SymLR(self.C).fit(self.XA[tr], self.XB[tr], self.y[tr])
-        return {"fit_through": str(self.dates[tr].max()), "n_train": int(tr.sum())}
+        return {"fit_through": max(self.dates[tr]), "n_train": int(tr.sum())}
 
     def predict(self, fids, P):
         idx = [(f, self.row[f]) for f in fids if f in self.row]

@@ -2467,6 +2467,12 @@ def stage_extras(D, hp, cache, verbose=True):
     # merge into the outputs
     J = json.load(open(OUT_JSON))
     M = json.load(open(OUT_MODEL))
+    # guard (the chunk-2 quarter-index bug): each snapshot's refit must be the latest quarter before the fight
+    qT = [dt.date.fromisoformat(q["T"]).toordinal() for q in J["quarters"]]
+    dates = {e["id"]: dt.date.fromisoformat(e["date"]).toordinal() for e in json.load(open(BACKTEST_DEV))["fights"]}
+    badq = sum(1 for fid, r in J["snapshots"].items()
+               if not (qT[r["q"]] <= dates[fid] and (r["q"] + 1 >= len(qT) or dates[fid] < qT[r["q"] + 1])))
+    assert badq == 0, "%d snapshots point at the wrong quarterly refit" % badq
     J["validation"]["integration"] = integ
     J["validation"]["winner_segments"] = wseg
     J["validation"]["leak_check"] = leak

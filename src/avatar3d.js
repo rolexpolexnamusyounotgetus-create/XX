@@ -583,7 +583,8 @@
       L.hair = null; L.hairMode = "paint"; L.scalpCh = horseshoe || reced ? 3 : 4; L.scalp = 0.2;
     } else if ((top != null && top <= 1.3) || (top == null && /buzz|induction|clipper|very short|crew cut/.test(txt))) {
       L.hair = null; L.hairMode = "shell"; L.hairLen = Math.max(0.25, top || 0.6); L.scalpCh = reced ? 2 : (horseshoe ? 3 : (fade ? 1 : 0)); L.scalp = 0.9;
-    } else if (top != null && top <= 6.5 && /fade|taper|crop|crew|short|high and tight|buzz|textured|spiky|tapered|coil|curl/.test(txt) && !/long|ponytail|bun|braid|afro|mop|shoulder|mullet|fringe/.test(txt)) {
+    } else if (top != null && top <= 6.5 && /fade|taper|crop|crew|short|high and tight|buzz|textured|spiky|tapered|coil|curl/.test(txt) &&
+        !(/\blong\b|ponytail|\bbun\b|braid|afro|\bmop\b|shoulder|mullet/.test(txt) || (/fringe/.test(txt) && !/no fringe/.test(txt)))) {
       // crops and fades: painted hair colour on the scalp under a strand shell; the hair lies down, so the shell
       // carries at most ~2.6 cm of volume however long the top is
       L.hair = null; L.hairMode = "shell"; L.hairLen = Math.min(top, 2.6); L.scalpCh = reced ? 2 : (fade ? 1 : 0); L.scalp = 0.95;

@@ -58,6 +58,7 @@ VAULT_S = "2026-01-01"
 TEST_FROM, TEST_TO = 2024, 2025
 os.makedirs(CACHE, exist_ok=True)
 warnings.filterwarnings("ignore")
+STAGES = {}
 
 import build_db as B  # noqa: E402
 
@@ -311,6 +312,7 @@ def build_market_rating(df):
 
 PRE_CORE = ["pre_wpct", "pre_logn", "pre_fin", "pre_finl", "pre_streak", "pre_feed", "pre_grad", "pre_oppufc",
             "pre_netelo", "pre_dwcs", "pre_agedeb"]
+PRE_METHOD = ["pre_ko", "pre_sub", "pre_kol", "pre_subl"]        # finish profile, for the method model
 
 
 def build_preufc(df, k_dates, slug_of):
@@ -422,7 +424,7 @@ def stage_table(args):
     pre = build_preufc(df, base["k_dates"], base["people_slug"])
     for s_i, s in enumerate(("A_", "B_")):
         df[s + "pre_ok"] = [float(pre[f][s_i] is not None) for f in df["fid"]]
-        for k in PRE_CORE:
+        for k in PRE_CORE + PRE_METHOD:
             df[s + k] = [(pre[f][s_i] or {}).get(k, np.nan) for f in df["fid"]]
     fw = build_fightweek(df)
     for s_i, s in enumerate(("A_", "B_")):
@@ -1333,7 +1335,6 @@ STAGES["stack"] = stage_stack
 
 
 # ====================================================================== main
-STAGES = {}
 
 
 def main():
