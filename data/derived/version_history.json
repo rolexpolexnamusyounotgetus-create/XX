@@ -481,7 +481,9 @@
      "r108": {
       "sim": 0.0496,
       "actual": 0.0628,
-      "diff": -0.0132
+      "diff": -0.0132,
+      "actual_fixed": 0.0246,
+      "diff_fixed": 0.025
      },
      "sigLndPer15": {
       "sim": 63.883,
@@ -618,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-7,
-      "lo": -0.0000015272600814283089,
-      "hi": -2.5655151717160004e-7,
+      "est": -8.727629959482959e-07,
+      "lo": -1.5272600814283089e-06,
+      "hi": -2.5655151717160004e-07,
       "p_gt0": 0.002
      },
      "n": 845
@@ -630,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-7,
-      "lo": -1.8138076015023744e-7,
-      "hi": -1.882505288986469e-8,
+      "est": -1.0099141584613298e-07,
+      "lo": -1.8138076015023744e-07,
+      "hi": -1.882505288986469e-08,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -641,7 +643,8 @@
    },
    "notes": [
     "v3 as frozen before any v4 edit (versions/v3, params 3.0.0-wf-2026-11-06). Caveat: its [selfcal] values (clinchScale, groundScale, kdPos, judge t108, div.*) were fit to all-years league priors (fighters.json, 2018..2026-10, incl. 2024-25 and the vault; league averages only, no per-fight outcomes), and its walk-forward stage reported one look at 2024-2026 (docs/BACKLOG.md). Kept unchanged as the reference the v4 cycle is measured against.",
-    "2026-11-06T15:24 val: single validation look for v3 (reference for the v4 decision); run by the v4 measurement step"
+    "2026-11-06T15:24 val: single validation look for v3 (reference for the v4 decision); run by the v4 measurement step",
+    "2026-11-06T15:29 erratum (data side only, no re-simulation): tools/evalv.js counted judged rounds from the scheduled format, so a 2025 technical draw (cards over 2 rounds) and a 3-round card on fight b959e2c1d16ff832 (stored as 5 rounds) added 19-38 phantom points per card; baseRates.r108.actual for 2024-2025 was 0.0628 and is 0.0246 with judged rounds taken from the card totals (tools/evalv.js fixed). Train (0.0529) is unchanged. No metric, prediction or decision input changes."
    ],
    "validated_at": "2026-11-06T15:24:15.935Z"
   },
@@ -1206,7 +1209,9 @@
      "r108": {
       "sim": 0.0338,
       "actual": 0.0628,
-      "diff": -0.029
+      "diff": -0.029,
+      "actual_fixed": 0.0246,
+      "diff_fixed": 0.0092
      },
      "sigLndPer15": {
       "sim": 63.3076,
@@ -1449,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -0.0000016970353827425062,
-      "lo": -0.000002435549185916011,
-      "hi": -9.44685467941618e-7,
+      "est": -1.6970353827425062e-06,
+      "lo": -2.435549185916011e-06,
+      "hi": -9.44685467941618e-07,
       "p_gt0": 0
      },
      "n": 845
@@ -1462,7 +1467,8 @@
     "2026-11-06T15:14: frozen files changed before validation; train block refreshed",
     "2026-11-06T15:14 train: re-frozen after the train-only level step (tools/v4_levels.js); the earlier train block was for params before that step",
     "v4 = learned stat-line rates in the engine (out-of-fold rates in this evaluation: mlrates_oof.json), train-only priors (priors_dev.json) with the self-calibration re-run on them, EM judging with noise / fight-level share / 10-8 rule fit on 2019-2023 judges' rounds (tools/judgecal.js), mlcal global-scale search on TRAIN (--no-val; nothing adopted), train-only level matching (tools/v4_levels.js). Validation and blend: pending (node tools/evalv.js --version v4 --split val --compare v3, after v3's own val run).",
-    "2026-11-06T15:27 val: single validation look for v4, paired against v3's single look; run by the v4 measurement step"
+    "2026-11-06T15:27 val: single validation look for v4, paired against v3's single look; run by the v4 measurement step",
+    "2026-11-06T15:29 erratum (data side only, no re-simulation): tools/evalv.js counted judged rounds from the scheduled format, so a 2025 technical draw (cards over 2 rounds) and a 3-round card on fight b959e2c1d16ff832 (stored as 5 rounds) added 19-38 phantom points per card; baseRates.r108.actual for 2024-2025 was 0.0628 and is 0.0246 with judged rounds taken from the card totals (tools/evalv.js fixed). Train (0.0529) is unchanged. No metric, prediction or decision input changes."
    ],
    "validated_at": "2026-11-06T15:27:38.307Z"
   }
