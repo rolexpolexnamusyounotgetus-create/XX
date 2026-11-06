@@ -162,7 +162,7 @@
       smooth: { ko: 0.3, sub: 0.2, kol: 0.2 },
       ref: { ko: 0.3433, sub: 0.2466, kol: 0.0436 },   // data/derived/preufc.json eval.side_finish.mu_pre (pre_ko, pre_sub, pre_kol)
       exp: { pow: 0.601, sub: 0.627, chin: 0.244 },    // eval.side_finish.{ko_win, sub_win, ko_loss} "ufc+pre" own coefficient at n = 0
-      scale: { pow: 1.007, sub: 1.311, chin: 0.992 }
+      scale: { pow: 1.007, sub: 1.314, chin: 0.991 }
     },
 
     // ---------------- fight dynamics (component "dynamics"; research/model_dynamics.md section 8, data/derived/dynamics.json) ----------------

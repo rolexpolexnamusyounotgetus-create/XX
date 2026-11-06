@@ -1279,9 +1279,19 @@ def cv_loss_round(A, spec, folds, rows):
     return float(l.mean()), l, pars
 
 
-def select_stages(A_of, start, stages, metric_fn, rows_fn, log_name):
+def gate_round_marginal(A, spec, folds, rows):
+    """V6_V10_PLAN Cycle 2 gate metric: methodround's round given a finish (unsided, P(round r | finish) from the
+    composed joint with W_close), on the same CV rows."""
+    import numpy as np
+    M, R, _ = predict_folds(A, spec, folds)
+    P = compose(A["W_close"][rows], M[rows], R[rows], A["K"][rows], A["draw_c"])
+    return float(np.nanmean(losses(P, A["y"][rows])["round_given_fin"]))
+
+
+def select_stages(A_of, start, stages, metric_fn, rows_fn, log_name, gate_fn=None, gate_tol=None):
     """Staged forward selection: each stage builds alternatives from the current choice; the best alternative
-    replaces the current choice only if its CV loss is lower by more than SEL_MIN (0.0005, tools/ml2.py's rule)."""
+    replaces the current choice only if its CV loss is lower by more than SEL_MIN (0.0005, tools/ml2.py's rule) and,
+    when gate_fn is given, its gate metric is not worse than the current choice's by more than gate_tol."""
     table = []
 
     def run(spec):
@@ -1289,6 +1299,16 @@ def select_stages(A_of, start, stages, metric_fn, rows_fn, log_name):
         rows = rows_fn(A)
         loss, _, pars = metric_fn(A, spec, fwd_folds(A), rows)
         return loss, int(rows.sum()), pars
+
+    gates = {}
+
+    def gate(spec):
+        if gate_fn is None:
+            return None
+        if spec.name not in gates:
+            A = A_of(spec)
+            gates[spec.name] = gate_fn(A, spec, fwd_folds(A), rows_fn(A))
+        return gates[spec.name]
     l0, n0, p0 = run(start)
     cur = (start, l0)
     table.append({"stage": 0, "spec": start.name, "cv": round(l0, 5), "n": n0, "params_by_fold": p0,
@@ -1299,13 +1319,22 @@ def select_stages(A_of, start, stages, metric_fn, rows_fn, log_name):
         res = []
         for spec in alts:
             loss, n, pars = run(spec)
-            res.append((loss, spec))
-            table.append({"stage": k, "spec": spec.name, "cv": round(loss, 5), "n": n, "params_by_fold": pars,
-                          "vs_current": round(loss - cur[1], 5)})
-            log("%s %-40s CV %.5f n=%d (vs current %+.5f)" % (log_name, spec.name, loss, n, loss - cur[1]))
+            g, g0 = gate(spec), gate(cur[0])
+            ok = g is None or g <= g0 + gate_tol
+            res.append((loss, spec, ok))
+            row = {"stage": k, "spec": spec.name, "cv": round(loss, 5), "n": n, "params_by_fold": pars,
+                   "vs_current": round(loss - cur[1], 5)}
+            if g is not None:
+                row["gate"] = {"value": round(g, 5), "current": round(g0, 5), "diff": round(g - g0, 5), "pass": bool(ok)}
+            table.append(row)
+            log("%s %-40s CV %.5f n=%d (vs current %+.5f)%s" % (log_name, spec.name, loss, n, loss - cur[1],
+                "" if g is None else " gate %+.5f %s" % (g - g0, "pass" if ok else "FAIL")))
+        res = [r for r in res if r[2]]
         if not res:
+            table.append({"stage": k, "decision": "kept %s (no alternative passes the gate)" % cur[0].name})
+            log("%s stage %d: kept %s (gate)" % (log_name, k, cur[0].name))
             continue
-        lb, sb = min(res, key=lambda x: x[0])
+        lb, sb, _ = min(res, key=lambda x: x[0])
         if lb < cur[1] - SEL_MIN:
             table.append({"stage": k, "decision": "accepted %s (%.5f < %.5f - %.4f)" % (sb.name, lb, cur[1], SEL_MIN)})
             log("%s stage %d: accepted %s" % (log_name, k, sb.name))
@@ -1364,7 +1393,8 @@ def stage_cv(args):
         lambda c: [_clone(c, "S2+P[%s] %s" % (rep, md), r_exp=["S2", "P"], rep_r=rep, r_mode=md)
                    for rep in ("er", "wr", "best") for md in ("log", "lin")],
         lambda c: [_clone(c, c.name + " | delta", r_delta=True)] if c.r_mode == "log" and "P" in c.r_exp else []]
-    best, tab_r = select_stages(A_of, r_start, r_stages, cv_loss_round, rows_r, "round ")
+    best, tab_r = select_stages(A_of, r_start, r_stages, cv_loss_round, rows_r, "round ",
+                                gate_fn=gate_round_marginal, gate_tol=0.002)
     best = _clone(best, "pool: %s / %s" % (best_m.name, best.name))
     res["selection"] = {"method": tab_m, "round": tab_r, "comparators": comp, "chosen": best.as_dict()}
     log("cv: chosen %s (%.0f s)" % (best.as_dict(), time.time() - t0))
@@ -1438,6 +1468,161 @@ def joints_cache(A, spec, folds, wname):
     return compose(A[wname], np.nan_to_num(M, nan=1 / 3), np.nan_to_num(R, nan=0.2), A["K"], A["draw_c"])
 
 
+# ====================================================================== debut bouts: the debut method model + props
+def debut_assembly():
+    """Debut bouts (a side with 0 prior UFC bouts; tools/debut.py's universe, disjoint from the backtest universe):
+    the debut METHOD model's P(KO / SUB / DEC | winner) per side, annual forward-chained for 2021-2025 exactly as
+    tools/debut.py runs it (fit on decisive debut bouts 2012..Y-1, frozen CV choices), fed the line where there is
+    one (the adopted ledger setup: close, else the debut winner model's out-of-sample probability); props matched by
+    date and names to the BFO extract."""
+    import numpy as np
+    import debut as DB
+    import market as MK
+    fp = os.path.join(CACHE, "debut.pkl")
+    if os.path.exists(fp):
+        return pickle.load(open(fp, "rb"))
+    df, _ = DB.load_frame()
+    dec, RA, RB = DB.prep(df)
+    assert (dec["date"].astype(str) < VAULT_S).all()
+    C = DB.frozen_choices()
+    ch, lam = C["chosen"], C["method"]["chosen_lam"]
+    fights, _, _, _ = DB.load_universe_strict()
+    pclose = dec["p_close"].to_numpy(float)
+    pw_deb = DB.method_winner_input(dec, RA, RB, ch, dec["elo_p"].to_numpy(float), 2025)
+    pw = np.where(np.isnan(pclose), pw_deb, pclose)
+    yrs = [2021, 2022, 2023, 2024, 2025]
+    PA, PB, yk, okm = DB.method_eval(dec, RA, RB, pw, fights, yrs, lam)
+    yr = dec["year"].to_numpy()
+    keep = np.isin(yr, yrs) & okm & ~np.isnan(PA[:, 0])
+    by_mu = load_extract()
+    by_date = defaultdict(list)
+    for mu, rows in by_mu.items():
+        r0 = next(iter(rows.values()))
+        by_date[r0["date"]].append((mu, r0["t1"], r0["t2"], rows))
+    D = {"fid": [], "year": [], "event": [], "K": [], "side": [], "meth": [], "W": [], "pw": [], "Md": [], "rec": []}
+    for i in np.flatnonzero(keep):
+        d0 = dt.date.fromisoformat(str(dec["date"].iloc[i])[:10])
+        a, b = dec["nameA"].iloc[i], dec["nameB"].iloc[i]
+        best = None
+        for dd in (0, 1, -1, 2, -2):
+            for mu, t1, t2, rows in by_date.get((d0 + dt.timedelta(days=dd)).isoformat(), []):
+                sk = min(MK.name_sim(a, t1), MK.name_sim(b, t2))
+                ss = min(MK.name_sim(a, t2), MK.name_sim(b, t1))
+                s_ = max(sk, ss)
+                if s_ >= 0.8 and (best is None or s_ > best[0]):
+                    best = (s_, rows, ss > sk)
+            if best:
+                break
+        K = 5 if int(dec["rounds"].iloc[i]) == 5 else 3
+        rec = {}
+        if best:
+            rec = consensus({bk: book_families(r, K, best[2]) for bk, r in best[1].items()}, K)
+        D["fid"].append(dec["fid"].iloc[i])
+        D["year"].append(int(yr[i]))
+        D["event"].append(dec["event"].iloc[i])
+        D["K"].append(K)
+        D["side"].append(0 if dec["y"].iloc[i] == 1.0 else 1)
+        D["meth"].append(int(yk[i]))
+        D["W"].append(float(pclose[i]) if not np.isnan(pclose[i]) else float(pw[i]))
+        D["pw"].append(float(pw[i]))
+        D["Md"].append(np.stack([PA[i], PB[i]]))
+        D["rec"].append(rec)
+    out = {k: (np.array(v) if k not in ("rec", "Md") else v) for k, v in D.items()}
+    out["Md"] = np.array(D["Md"])
+    n = len(out["fid"])
+    Mp = np.full((n, 2, 3), np.nan)
+    for i, rec in enumerate(out["rec"]):
+        if rec.get("m6") is not None:
+            Mp[i] = props_cond(rec, int(out["K"][i]))[0]
+    out["Mp"] = Mp
+    out["hasM"] = ~np.isnan(Mp[:, 0, 0])
+    out["Wp"] = np.array([sum(r["m6"][:3]) / sum(r["m6"]) if r.get("m6") else 0.5 for r in out["rec"]])
+    out["nb"] = np.array([(r.get("n_books") or {}).get("m6", 0) for r in out["rec"]])
+    out["lam"], out["chosen"] = lam, ch
+    pickle.dump(out, open(fp, "wb"))
+    return out
+
+
+def debut_pool_predict(D, mode, par, rows, exps=("D", "P")):
+    import numpy as np
+    Ms = {"D": D["Md"], "P": D["Mp"]}
+    Ws = {"D": D["pw"], "P": D["Wp"]}
+    ext = {"lognb": np.log(np.maximum(D["nb"][rows], 1)), "p_idx": list(exps).index("P") if "P" in exps else None,
+           "Wsrc": [Ws[e][rows] for e in exps]}
+    return pool_method(mode, [Ms[e][rows] for e in exps], par, ext)
+
+
+def debut_fit(D, mode, rows, exps=("D", "P"), bias=()):
+    import numpy as np
+    Ms = {"D": D["Md"], "P": D["Mp"]}
+    Ws = {"D": D["pw"], "P": D["Wp"]}
+    ext = {"lognb": np.log(np.maximum(D["nb"][rows], 1)), "p_idx": list(exps).index("P") if "P" in exps else None,
+           "Wsrc": [Ws[e][rows] for e in exps]}
+    return fit_method(mode, [Ms[e][rows] for e in exps], D["side"][rows], D["meth"][rows], ext, bias)
+
+
+def debut_scores(D, M, rows):
+    """method given the winner, method3 (marginal with W) and who x how (6 cells with W) per bout."""
+    import numpy as np
+    ix = np.flatnonzero(rows)
+    s, m, W = D["side"][ix], D["meth"][ix], D["W"][ix]
+    Mi = M[ix] if len(M) == len(D["side"]) else M
+    mgw = -np.log(np.clip(Mi[np.arange(len(ix)), s, m], 1e-12, 1))
+    marg = W[:, None] * Mi[:, 0] + (1 - W[:, None]) * Mi[:, 1]
+    m3 = -np.log(np.clip(marg[np.arange(len(ix)), m], 1e-12, 1))
+    ws = np.where(s == 0, W, 1 - W)
+    wh = -np.log(np.clip(ws * Mi[np.arange(len(ix)), s, m], 1e-12, 1))
+    return {"method_given_winner": mgw, "method3": m3, "whohow6": wh}
+
+
+@stage("debut")
+def stage_debut(args):
+    """Forward-chained CV 2022-2023 (fit on 2021..Y-1) of the debut-bout pool; same 0.0005 rule."""
+    import numpy as np
+    D = debut_assembly()
+    yr = D["year"]
+    rows_all = np.isin(yr, CV_YEARS) & D["hasM"]
+    res = {"n_bouts": {str(y): int((yr == y).sum()) for y in sorted(set(yr.tolist()))},
+           "with_props": {str(y): int(((yr == y) & D["hasM"]).sum()) for y in sorted(set(yr.tolist()))}}
+    cands = [("debut alone", None, ("D",)), ("props alone", None, ("P",)), ("D+P log", "log", ("D", "P")),
+             ("D+P lin", "lin", ("D", "P")), ("D+P jlin", "jlin", ("D", "P"))]
+    preds, cvl = {}, {}
+    for name, mode, exps in cands:
+        M = np.full_like(D["Md"], np.nan)
+        pars = []
+        for Y in CV_YEARS:
+            tr = (yr >= 2021) & (yr < Y) & D["hasM"]
+            te = (yr == Y) & D["hasM"]
+            if mode is None:
+                M[te] = (D["Md"] if exps == ("D",) else D["Mp"])[te]
+                continue
+            par = debut_fit(D, mode, tr, exps)
+            M[te] = debut_pool_predict(D, mode, par, te, exps)
+            pars.append(par)
+        preds[name] = M
+        sc = debut_scores(D, M, rows_all)
+        cvl[name] = {k: round(float(v.mean()), 5) for k, v in sc.items()}
+        cvl[name]["params_by_fold"] = pars
+        log("debut CV %-14s n=%d %s" % (name, rows_all.sum(), {k: v for k, v in cvl[name].items() if k != "params_by_fold"}))
+    best = min(("D+P log", "D+P lin", "D+P jlin"), key=lambda k: cvl[k]["method_given_winner"])
+    chosen = best if cvl[best]["method_given_winner"] < cvl["debut alone"]["method_given_winner"] - SEL_MIN else "debut alone"
+    ev = D["event"][rows_all]
+    paired = {}
+    import methodround as MR
+    L = {k: debut_scores(D, preds[k], rows_all) for k in preds}
+    bt, st = MR.cluster_bootstrap(L, ev, B=args.boot)
+    for k in preds:
+        if k != "debut alone":
+            paired[k + " - debut alone"] = MR.paired_diff(L[k], L["debut alone"], st, ["method_given_winner", "method3", "whohow6"])
+    res.update({"cv": cvl, "paired": paired, "chosen": chosen, "n_cv": int(rows_all.sum())})
+    mode = {"D+P log": "log", "D+P lin": "lin", "D+P jlin": "jlin"}.get(chosen)
+    if mode:
+        res["params_fit_2021_2023"] = debut_fit(D, mode, (yr >= 2021) & (yr <= 2023) & D["hasM"])
+        res["mode"] = mode
+    json.dump(res, open(os.path.join(CACHE, "debut_cv.json"), "w"), indent=1, default=float)
+    log("debut CV: chosen %s; written out/props_cache/debut_cv.json" % chosen)
+
+
 # ====================================================================== pre-registration and the single 2024-25 look
 PREREG = os.path.join(CACHE, "prereg.json")
 VALID_DONE = os.path.join(CACHE, "valid.done")
@@ -1481,6 +1666,17 @@ def stage_prereg(args):
         "confirmation_look_note": "2024-25 was already used for the S2 / props / 40/60 comparisons in model_ml2 and "
                                   "model_methodround: the S2 and 40/60 numbers there are known, the pool's are not.",
     }
+    dcv = json.load(open(os.path.join(CACHE, "debut_cv.json")))
+    pr["debut_bouts"] = {"universe": "tools/debut.py debut bouts (a side with 0 prior UFC bouts), decisive, with method "
+                                     "props, 2024-01-01..2025-12-31",
+                         "frozen": {"chosen": dcv["chosen"], "mode": dcv.get("mode"),
+                                    "params": dcv.get("params_fit_2021_2023")},
+                         "experts": "debut METHOD model (annual walk-forward as tools/debut.py runs it, fed the close "
+                                    "where there is one) and the props' method | winner",
+                         "primary": "method given the winner, pool minus debut model alone (paired, event clusters)",
+                         "secondaries": ["method3 with W = the close (ledger p_a)", "who x how (6 cells)",
+                                         "pool minus props alone"],
+                         "cv_estimate": dcv["paired"].get(dcv["chosen"] + " - debut alone")}
     json.dump(pr, open(PREREG, "w"), indent=1, default=float)
     log("prereg written: %s" % PREREG)
 
@@ -1544,6 +1740,24 @@ def stage_valid(args):
                                                                                    "round_given_fin", "joint")}}
     out["pool_cells_2024_25"] = {A["ids"][i]: [round(float(x), 5) for x in joints_w["W_close"]["pool (chosen)"][i]]
                                  for i in np.flatnonzero(test)}
+    # debut bouts (secondary universe, pre-registered in prereg.debut_bouts)
+    import methodround as MR
+    Dd = debut_assembly()
+    fr = pr["debut_bouts"]["frozen"]
+    te = (Dd["year"] >= 2024) & (Dd["year"] <= 2025) & Dd["hasM"]
+    Md = {"debut alone": Dd["Md"][te], "props alone": Dd["Mp"][te]}
+    if fr.get("mode"):
+        Md["pool (chosen)"] = debut_pool_predict(Dd, fr["mode"], fr["params"], te)
+    Ld = {k: debut_scores(Dd, M, te) for k, M in Md.items()}
+    bt, st = MR.cluster_bootstrap(Ld, Dd["event"][te], B=args.boot)
+    out["debut_bouts"] = {"n": int(te.sum()), "means": bt, "paired": {
+        k + " - debut alone": MR.paired_diff(Ld[k], Ld["debut alone"], st, ["method_given_winner", "method3", "whohow6"])
+        for k in Ld if k != "debut alone"}}
+    if "pool (chosen)" in Ld:
+        out["debut_bouts"]["paired"]["pool (chosen) - props alone"] = MR.paired_diff(
+            Ld["pool (chosen)"], Ld["props alone"], st, ["method_given_winner", "method3", "whohow6"])
+    out["debut_pool_2024_25"] = {Dd["fid"][i]: {"A": [round(float(x), 5) for x in M[0]], "B": [round(float(x), 5) for x in M[1]]}
+                                 for i, M in zip(np.flatnonzero(te), Md.get("pool (chosen)", Md["debut alone"]))}
     json.dump(out, open(os.path.join(CACHE, "valid.json"), "w"), indent=1, default=float)
     t = out["tables"]["W_close | fights with method props"]
     log("valid (ONE look) n=%d: pool - S2 %s" % (t["n"], {k: t["paired_vs_S2 (cycle-1 cells)"]["pool (chosen)"][k]["diff"]

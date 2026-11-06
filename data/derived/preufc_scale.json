@@ -15,335 +15,335 @@
    "div": "Bantamweight",
    "rounds": 3,
    "knob": "pow",
-   "M": 1.5232,
+   "M": 1.5235,
    "p0": 0.1489,
    "p1": 0.2177,
+   "gamma": 1.1021
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "pow",
+   "M": 0.5,
+   "p0": 0.1489,
+   "p1": 0.0774,
+   "gamma": 1.0608
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "sub",
+   "M": 1.59,
+   "p0": 0.0977,
+   "p1": 0.1295,
+   "gamma": 0.6851
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "sub",
+   "M": 0.1846,
+   "p0": 0.0977,
+   "p1": 0.0264,
+   "gamma": 0.8194
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "chin",
+   "M": 1.7513,
+   "p0": 0.1481,
+   "p1": 0.2407,
+   "gamma": 1.0721
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 3,
+   "knob": "chin",
+   "M": 0.7909,
+   "p0": 0.1481,
+   "p1": 0.1191,
+   "gamma": 1.0734
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "pow",
+   "M": 1.5235,
+   "p0": 0.1776,
+   "p1": 0.2448,
+   "gamma": 0.9659
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "pow",
+   "M": 0.5,
+   "p0": 0.1776,
+   "p1": 0.1041,
+   "gamma": 0.8936
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "sub",
+   "M": 1.59,
+   "p0": 0.1103,
+   "p1": 0.1474,
+   "gamma": 0.7172
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "sub",
+   "M": 0.1846,
+   "p0": 0.1103,
+   "p1": 0.0308,
+   "gamma": 0.8056
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "chin",
+   "M": 1.7513,
+   "p0": 0.1752,
+   "p1": 0.2711,
+   "gamma": 0.9996
+  },
+  {
+   "div": "Bantamweight",
+   "rounds": 5,
+   "knob": "chin",
+   "M": 0.7909,
+   "p0": 0.1752,
+   "p1": 0.1468,
+   "gamma": 0.8973
+  },
+  {
+   "div": "Lightweight",
+   "rounds": 3,
+   "knob": "pow",
+   "M": 1.5235,
+   "p0": 0.1696,
+   "p1": 0.2452,
    "gamma": 1.1026
   },
   {
-   "div": "Bantamweight",
+   "div": "Lightweight",
    "rounds": 3,
    "knob": "pow",
-   "M": 0.5008,
-   "p0": 0.1489,
-   "p1": 0.0777,
-   "gamma": 1.0573
+   "M": 0.5,
+   "p0": 0.1696,
+   "p1": 0.0926,
+   "gamma": 1.0016
   },
   {
-   "div": "Bantamweight",
+   "div": "Lightweight",
    "rounds": 3,
    "knob": "sub",
-   "M": 1.5919,
-   "p0": 0.0977,
-   "p1": 0.129,
-   "gamma": 0.6743
+   "M": 1.59,
+   "p0": 0.0894,
+   "p1": 0.122,
+   "gamma": 0.7474
   },
   {
-   "div": "Bantamweight",
+   "div": "Lightweight",
    "rounds": 3,
    "knob": "sub",
-   "M": 0.183,
-   "p0": 0.0977,
-   "p1": 0.0264,
-   "gamma": 0.8156
+   "M": 0.1846,
+   "p0": 0.0894,
+   "p1": 0.0261,
+   "gamma": 0.7699
   },
   {
-   "div": "Bantamweight",
+   "div": "Lightweight",
    "rounds": 3,
    "knob": "chin",
-   "M": 1.7314,
-   "p0": 0.1481,
-   "p1": 0.2375,
-   "gamma": 1.0625
+   "M": 1.7513,
+   "p0": 0.167,
+   "p1": 0.2685,
+   "gamma": 1.0792
   },
   {
-   "div": "Bantamweight",
+   "div": "Lightweight",
    "rounds": 3,
    "knob": "chin",
-   "M": 0.7922,
-   "p0": 0.1481,
-   "p1": 0.1191,
-   "gamma": 1.078
+   "M": 0.7909,
+   "p0": 0.167,
+   "p1": 0.1369,
+   "gamma": 0.9957
   },
   {
-   "div": "Bantamweight",
+   "div": "Lightweight",
    "rounds": 5,
    "knob": "pow",
-   "M": 1.5232,
-   "p0": 0.1776,
-   "p1": 0.2445,
+   "M": 1.5235,
+   "p0": 0.1974,
+   "p1": 0.2694,
    "gamma": 0.9618
   },
   {
-   "div": "Bantamweight",
-   "rounds": 5,
-   "knob": "pow",
-   "M": 0.5008,
-   "p0": 0.1776,
-   "p1": 0.105,
-   "gamma": 0.8823
-  },
-  {
-   "div": "Bantamweight",
-   "rounds": 5,
-   "knob": "sub",
-   "M": 1.5919,
-   "p0": 0.1103,
-   "p1": 0.1494,
-   "gamma": 0.7502
-  },
-  {
-   "div": "Bantamweight",
-   "rounds": 5,
-   "knob": "sub",
-   "M": 0.183,
-   "p0": 0.1103,
-   "p1": 0.0304,
-   "gamma": 0.8088
-  },
-  {
-   "div": "Bantamweight",
-   "rounds": 5,
-   "knob": "chin",
-   "M": 1.7314,
-   "p0": 0.1752,
-   "p1": 0.2682,
-   "gamma": 0.9944
-  },
-  {
-   "div": "Bantamweight",
-   "rounds": 5,
-   "knob": "chin",
-   "M": 0.7922,
-   "p0": 0.1752,
-   "p1": 0.1462,
-   "gamma": 0.9251
-  },
-  {
-   "div": "Lightweight",
-   "rounds": 3,
-   "knob": "pow",
-   "M": 1.5232,
-   "p0": 0.1696,
-   "p1": 0.2453,
-   "gamma": 1.1033
-  },
-  {
-   "div": "Lightweight",
-   "rounds": 3,
-   "knob": "pow",
-   "M": 0.5008,
-   "p0": 0.1696,
-   "p1": 0.0921,
-   "gamma": 1.0131
-  },
-  {
-   "div": "Lightweight",
-   "rounds": 3,
-   "knob": "sub",
-   "M": 1.5919,
-   "p0": 0.0894,
-   "p1": 0.1231,
-   "gamma": 0.7679
-  },
-  {
-   "div": "Lightweight",
-   "rounds": 3,
-   "knob": "sub",
-   "M": 0.183,
-   "p0": 0.0894,
-   "p1": 0.025,
-   "gamma": 0.7894
-  },
-  {
-   "div": "Lightweight",
-   "rounds": 3,
-   "knob": "chin",
-   "M": 1.7314,
-   "p0": 0.167,
-   "p1": 0.2617,
-   "gamma": 1.0382
-  },
-  {
-   "div": "Lightweight",
-   "rounds": 3,
-   "knob": "chin",
-   "M": 0.7922,
-   "p0": 0.167,
-   "p1": 0.1366,
-   "gamma": 1.0137
-  },
-  {
    "div": "Lightweight",
    "rounds": 5,
    "knob": "pow",
-   "M": 1.5232,
+   "M": 0.5,
    "p0": 0.1974,
-   "p1": 0.2691,
-   "gamma": 0.9583
-  },
-  {
-   "div": "Lightweight",
-   "rounds": 5,
-   "knob": "pow",
-   "M": 0.5008,
-   "p0": 0.1974,
-   "p1": 0.1179,
-   "gamma": 0.8814
+   "p1": 0.117,
+   "gamma": 0.8922
   },
   {
    "div": "Lightweight",
    "rounds": 5,
    "knob": "sub",
-   "M": 1.5919,
+   "M": 1.59,
    "p0": 0.1034,
-   "p1": 0.1378,
-   "gamma": 0.7018
+   "p1": 0.1381,
+   "gamma": 0.71
   },
   {
    "div": "Lightweight",
    "rounds": 5,
    "knob": "sub",
-   "M": 0.183,
+   "M": 0.1846,
    "p0": 0.1034,
-   "p1": 0.031,
-   "gamma": 0.7554
+   "p1": 0.03,
+   "gamma": 0.7801
   },
   {
    "div": "Lightweight",
    "rounds": 5,
    "knob": "chin",
-   "M": 1.7314,
+   "M": 1.7513,
    "p0": 0.1996,
-   "p1": 0.2999,
-   "gamma": 0.986
+   "p1": 0.3026,
+   "gamma": 0.9886
   },
   {
    "div": "Lightweight",
    "rounds": 5,
    "knob": "chin",
-   "M": 0.7922,
+   "M": 0.7909,
    "p0": 0.1996,
-   "p1": 0.1663,
-   "gamma": 0.9599
+   "p1": 0.1661,
+   "gamma": 0.9562
   },
   {
    "div": "Middleweight",
    "rounds": 3,
    "knob": "pow",
-   "M": 1.5232,
+   "M": 1.5235,
    "p0": 0.1782,
-   "p1": 0.2509,
-   "gamma": 1.0339
+   "p1": 0.2514,
+   "gamma": 1.0388
   },
   {
    "div": "Middleweight",
    "rounds": 3,
    "knob": "pow",
-   "M": 0.5008,
+   "M": 0.5,
    "p0": 0.1782,
-   "p1": 0.0971,
-   "gamma": 1.0139
+   "p1": 0.0975,
+   "gamma": 1.0044
   },
   {
    "div": "Middleweight",
    "rounds": 3,
    "knob": "sub",
-   "M": 1.5919,
+   "M": 1.59,
    "p0": 0.1119,
-   "p1": 0.1495,
-   "gamma": 0.7165
+   "p1": 0.1505,
+   "gamma": 0.7353
   },
   {
    "div": "Middleweight",
    "rounds": 3,
    "knob": "sub",
-   "M": 0.183,
+   "M": 0.1846,
    "p0": 0.1119,
-   "p1": 0.0301,
-   "gamma": 0.826
+   "p1": 0.0303,
+   "gamma": 0.8254
   },
   {
    "div": "Middleweight",
    "rounds": 3,
    "knob": "chin",
-   "M": 1.7314,
+   "M": 1.7513,
    "p0": 0.1784,
-   "p1": 0.2792,
-   "gamma": 1.0548
+   "p1": 0.2824,
+   "gamma": 1.0612
   },
   {
    "div": "Middleweight",
    "rounds": 3,
    "knob": "chin",
-   "M": 0.7922,
+   "M": 0.7909,
    "p0": 0.1784,
-   "p1": 0.1447,
-   "gamma": 1.0694
+   "p1": 0.1449,
+   "gamma": 1.0559
   },
   {
    "div": "Middleweight",
    "rounds": 5,
    "knob": "pow",
-   "M": 1.5232,
+   "M": 1.5235,
    "p0": 0.1992,
-   "p1": 0.2761,
-   "gamma": 1.0147
+   "p1": 0.2758,
+   "gamma": 1.0116
   },
   {
    "div": "Middleweight",
    "rounds": 5,
    "knob": "pow",
-   "M": 0.5008,
+   "M": 0.5,
    "p0": 0.1992,
-   "p1": 0.1181,
-   "gamma": 0.8961
+   "p1": 0.1192,
+   "gamma": 0.8784
   },
   {
    "div": "Middleweight",
    "rounds": 5,
    "knob": "sub",
-   "M": 1.5919,
+   "M": 1.59,
    "p0": 0.127,
-   "p1": 0.1723,
-   "gamma": 0.7698
+   "p1": 0.1719,
+   "gamma": 0.7665
   },
   {
    "div": "Middleweight",
    "rounds": 5,
    "knob": "sub",
-   "M": 0.183,
+   "M": 0.1846,
    "p0": 0.127,
-   "p1": 0.0373,
-   "gamma": 0.7795
+   "p1": 0.0381,
+   "gamma": 0.7706
   },
   {
    "div": "Middleweight",
    "rounds": 5,
    "knob": "chin",
-   "M": 1.7314,
+   "M": 1.7513,
    "p0": 0.2014,
-   "p1": 0.3029,
-   "gamma": 0.9912
+   "p1": 0.3055,
+   "gamma": 0.9936
   },
   {
    "div": "Middleweight",
    "rounds": 5,
    "knob": "chin",
-   "M": 0.7922,
+   "M": 0.7909,
    "p0": 0.2014,
-   "p1": 0.1691,
-   "gamma": 0.9191
+   "p1": 0.1685,
+   "gamma": 0.9301
   }
  ],
  "gamma": {
-  "pow": 0.9932118469767769,
-  "sub": 0.7629480910314328,
-  "chin": 1.0076935066248736
+  "pow": 0.9928098664537747,
+  "sub": 0.7610442351534186,
+  "chin": 1.00857768787584
  },
  "scale": {
   "pow": 1.007,
-  "sub": 1.311,
-  "chin": 0.992
+  "sub": 1.314,
+  "chin": 0.991
  }
 }

@@ -1062,8 +1062,9 @@ def paired(base, rows, P, ref, B_=2000, seed=11):
 
 
 def stage_cv(args):
-    """Frozen tune choices; out-of-fold predictions for every fold 2016-2023 (each year fit on everything before it);
-    the 2020-2023 folds decide the model family and give the comparison with S2+ml2win (paired event-cluster CIs)."""
+    """The pre-specified route (kept for the record): the 2016-2019 tune choices frozen and scored on the 2020-2023
+    folds against S2+ml2win, with the model family (MNL / GBM / average) compared there. Its result (no gain: the
+    optimal penalty drifts across eras) is why the decision procedure is the nested selection in `nested`."""
     t0 = time.time()
     base, feats = load("base.pkl"), load("feats.pkl")
     tn = json.load(open(cpath("tune.json")))
@@ -1111,11 +1112,180 @@ def stage_cv(args):
         log("cv: %s: %s" % (k, {m: (v[m]["diff"], v[m]["ci95"]) for m in ("bin7", "joint", "method_given_winner",
                                                                             "round_given_fin") if m in v}))
     save({"P6": P6, "H": H, "P6_best": best, "fam_pick": fam_pick, "years": years}, "cv_oof.pkl")
-    json.dump(out, open(cpath("cv.json"), "w"), indent=1, default=float)
+    json.dump(out, open(cpath("cvfixed.json"), "w"), indent=1, default=float)
     log("cv: done in %.0f s" % (time.time() - t0))
 
 
-STAGES["cv"] = stage_cv
+STAGES["cvfixed"] = stage_cv
+
+
+# ====================================================================== stage: grid (OOF for every candidate, 2016-2023)
+GRID_SPECS = {"s2cond": ({"s2": True, "fin": ["win"]}, True),             # conditional structure, S2 design only
+              "core": ({"s2": True, "fin": ["win", "eb"]}, True),         # + EB finishing rates (pre-UFC prior on)
+              "core_nopre": ({"s2": True, "fin": ["win", "eb"]}, False),  # + EB rates without the pre-UFC prior
+              "core_filter": ({"s2": True, "fin": ["win", "eb", "filter"]}, True)}   # + opponent-adjusted filter
+GRID_START = (2008, 2012)
+GRID_HL = (8.0, None)
+GRID_C = (0.0005, 0.0007, 0.001, 0.0015, 0.002)
+GRID_YEARS = TUNE_YEARS + CV_YEARS
+
+
+def method_grid():
+    out = {}
+    for sn, (spec, pre) in GRID_SPECS.items():
+        for st in GRID_START:
+            for hl in GRID_HL:
+                for C in GRID_C:
+                    out["%s|st%d|hl%s|C%g" % (sn, st, "none" if hl is None else "%g" % hl, C)] = (
+                        {"spec": spec, "C": C, "start": st, "hl": hl}, pre)
+    return out
+
+
+def round_grid():
+    out = {"S2 shapes": None}
+    for name, rs in ROUND_SPECS.items():
+        for Cr in (0.003, 0.01, 0.03):
+            for slope in (True, False):
+                out["%s|C%g|slope%d" % (name, Cr, slope)] = {"spec": rs, "C": Cr, "slope": slope, "name": name}
+    return out
+
+
+def stage_grid(args):
+    """Out-of-fold predictions on every fold 2016-2023 (each fold year fit on everything before it) for every method
+    and round candidate; per-fight losses are stored so the nested selection never refits. 2024-2025 is not touched."""
+    t0 = time.time()
+    base, feats = load("base.pkl"), load("feats.pkl")
+    tn = json.load(open(cpath("tune.json")))
+    fcfg = tn["chosen"]["filter"]
+    FDs = {True: get_folds(base, feats, fcfg, True, GRID_YEARS), False: get_folds(base, feats, fcfg, False, GRID_YEARS)}
+    rows = rows_of(base, GRID_YEARS)
+    MG, RG = method_grid(), round_grid()
+    res = {"rows": rows, "method": {}, "round": {}, "P6": {}, "H": {}}
+    for i, (k, (cfg, pre)) in enumerate(MG.items()):
+        P6 = oof_method(base, FDs[pre], GRID_YEARS, cfg)
+        L = losses(base, joint(base, P6, base["H"], rows), rows)
+        res["method"][k] = {m: L[m] for m in ("bin7", "method_given_winner", "method3", "joint")}
+        res["P6"][k] = P6.astype(np.float32)
+        if (i + 1) % 10 == 0:
+            log("grid: method %d/%d (%.0f s)" % (i + 1, len(MG), time.time() - t0))
+    for k, rc in RG.items():
+        H = oof_round(base, FDs[True], GRID_YEARS, rc)
+        L = losses(base, joint(base, base["P6_S2w"], H, rows), rows)
+        res["round"][k] = {"sided": L["joint"] - L["bin7"], "round_given_fin": L["round_given_fin"]}
+        res["H"][k] = H.astype(np.float32)
+    log("grid: %d round candidates (%.0f s)" % (len(RG), time.time() - t0))
+    save(res, "grid.pkl")
+
+
+STAGES["grid"] = stage_grid
+
+
+# ====================================================================== stage: nested (the decision procedure)
+def nested_pick(scores, years_of, before, metric_rows):
+    """Candidate with the lowest mean loss over rows dated in [2016, before)."""
+    m = metric_rows & (years_of < before)
+    best = None
+    for k, v in scores.items():
+        s = float(np.nanmean(np.where(m, v, np.nan)))
+        if best is None or s < best[0]:
+            best = (s, k)
+    return best[1], best[0]
+
+
+def nested_predictions(base, G, years):
+    """For each year Y: the method candidate with the lowest 7-bin loss and the round candidate with the lowest sided
+    round loss over the folds before Y, and that candidate's out-of-fold prediction for Y."""
+    yr = base["T"]["year"].to_numpy()
+    rows = G["rows"]
+    n = len(yr)
+    P6 = np.full((n, 6), np.nan)
+    H = np.array(base["H"], copy=True)
+    picks = {}
+    mscore = {}
+    for k, L in G["method"].items():
+        v = np.full(n, np.nan)
+        v[rows] = L["bin7"]
+        mscore[k] = v
+    rscore = {}
+    for k, L in G["round"].items():
+        v = np.full(n, np.nan)
+        v[rows] = L["sided"]
+        rscore[k] = v
+    fin = rows & np.isin(base["y"], [i for i in range(NC_) if i < I_XDEC])
+    for Y in years:
+        mk, ms = nested_pick(mscore, yr, Y, rows)
+        rk, rs = nested_pick(rscore, yr, Y, fin)
+        va = yr == Y
+        P6[va] = G["P6"][mk][va]
+        H[va] = G["H"][rk][va]
+        picks[str(Y)] = {"method": mk, "method_bin7_before": round(ms, 5), "round": rk, "round_sided_before": round(rs, 5)}
+    return P6, H, picks
+
+
+def stage_nested(args):
+    """Nested forward-chained selection: year Y (2017-2023) is predicted by the candidates that did best on the folds
+    2016..Y-1, so the 2020-2023 numbers measure the whole procedure (choice included) out of sample. The production
+    choice for the 2024-2025 look is the best candidate over all folds 2016-2023."""
+    t0 = time.time()
+    base = load("base.pkl")
+    G = load("grid.pkl")
+    yr = base["T"]["year"].to_numpy()
+    years = tuple(range(2017, 2024))
+    P6n, Hn, picks = nested_predictions(base, G, years)
+    rows = rows_of(base, CV_YEARS)
+    fin_rows = rows_of(base, GRID_YEARS) & np.isin(base["y"], list(range(I_XDEC)))
+    prod_m = nested_pick({k: _full(base, G, L["bin7"]) for k, L in G["method"].items()}, yr, 2024, G["rows"])
+    prod_r = nested_pick({k: _full(base, G, L["sided"]) for k, L in G["round"].items()}, yr, 2024, fin_rows)
+    # descriptive: the candidate that is best on 2020-2023 itself (optimistic, never used)
+    orc = min(G["method"], key=lambda k: float(np.nanmean(np.where(rows, _full(base, G, G["method"][k]["bin7"]), np.nan))))
+    comp = {"S2+ml2win": (base["P6_S2w"], base["H"]),
+            "finishing (nested)": (P6n, Hn),
+            "finishing (nested method, S2 round shapes)": (P6n, base["H"]),
+            "oracle on 2020-23 (descriptive)": (G["P6"][orc].astype(float), base["H"]),
+            "s2cond nested (no EB block)": None}
+    # the same procedure restricted to the conditional-structure-only candidates: what the EB block adds
+    Gs = dict(G, method={k: v for k, v in G["method"].items() if k.startswith("s2cond|")})
+    P6s, _, picks_s = nested_predictions(base, Gs, years)
+    comp["s2cond nested (no EB block)"] = (P6s, base["H"])
+    Ge = dict(G, method={k: v for k, v in G["method"].items() if not k.startswith("s2cond|")})
+    P6e, _, picks_e = nested_predictions(base, Ge, years)
+    comp["EB candidates only, nested"] = (P6e, base["H"])
+    bt, pdif, L, st = paired(base, rows, comp, "S2+ml2win")
+    extra = {"EB candidates only, nested - s2cond nested (no EB block)":
+             MR.paired_diff(L["EB candidates only, nested"], L["s2cond nested (no EB block)"], st, METRICS)}
+    out = {"years": list(CV_YEARS), "n": int(rows.sum()), "picks": picks, "picks_s2cond": picks_s,
+           "picks_eb_only": picks_e, "oracle_2020_23": orc, "means": bt, "paired_vs_S2+ml2win": pdif, "paired_extra": extra}
+    out["production"] = {"method": prod_m[1], "method_mean_bin7_2016_2023": round(prod_m[0], 5),
+                         "round": prod_r[1], "round_mean_sided_2016_2023": round(prod_r[0], 5)}
+    out["by_year"] = {}
+    for v in CV_YEARS:
+        m = rows & (yr == v)
+        out["by_year"][str(v)] = {"n": int(m.sum()), **{k: summ(base, comp[k][0], comp[k][1], m)["bin7"]
+                                                        for k in ("S2+ml2win", "finishing (nested)")}}
+    r5 = base["T"]["rounds"].to_numpy() == 5
+    ti = base["T"]["title"].to_numpy().astype(bool)
+    out["by_segment"] = {}
+    for nm, m in (("3 rounds", rows & ~r5), ("5 rounds", rows & r5), ("title", rows & ti)):
+        out["by_segment"][nm] = {"n": int(m.sum()), **{k: {mm: summ(base, comp[k][0], comp[k][1], m)[mm]
+                                                           for mm in ("bin7", "joint", "round_given_fin")}
+                                                       for k in ("S2+ml2win", "finishing (nested)")}}
+    for k, v in list(pdif.items()) + list(extra.items()):
+        log("nested: %s: %s" % (k, {m: (v[m]["diff"], v[m]["ci95"]) for m in ("bin7", "joint", "method_given_winner",
+                                                                                "round_given_fin") if m in v}))
+    log("nested: picks %s" % {y: (p["method"], p["round"]) for y, p in picks.items()})
+    log("nested: production method %s, round %s" % (prod_m[1], prod_r[1]))
+    save({"P6": P6n, "H": Hn, "years": years}, "nested_oof.pkl")
+    json.dump(out, open(cpath("nested.json"), "w"), indent=1, default=float)
+    log("nested: done in %.0f s" % (time.time() - t0))
+
+
+def _full(base, G, v):
+    out = np.full(len(base["T"]), np.nan)
+    out[G["rows"]] = v
+    return out
+
+
+STAGES["nested"] = stage_nested
 
 
 def main():
