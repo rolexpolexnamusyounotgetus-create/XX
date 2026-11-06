@@ -1627,6 +1627,21 @@ def check_export(T, J, models, rows, tol=1e-6):
     return worst
 
 
+def finite_json(o):
+    """Replace non-finite floats (e.g. a rejected CV candidate's infinite log score) by None: strict JSON for JS."""
+    if isinstance(o, dict):
+        return {k: finite_json(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [finite_json(v) for v in o]
+    if isinstance(o, (float, np.floating)):
+        return float(o) if np.isfinite(o) else None
+    if isinstance(o, np.integer):
+        return int(o)
+    if isinstance(o, np.bool_):
+        return bool(o)
+    return o
+
+
 def g4(x):
     return None if x is None or not np.isfinite(x) else float("%.4g" % float(x))
 
@@ -1758,7 +1773,7 @@ def write_exports(T, cv, ch, J_dev, J_prod, R, ev, rte, wl_oof, wlv):
                              "mlrates OOF rates (no second stage), 2020 y2020 fold" % (DOM_SCALE, json.dumps(DOM_W)),
                     "rule": "2026 fights dropped at load; never fit or scored"},
            "fights": fights}
-    json.dump(oof, open(os.path.join(DER, "statlines_oof.json"), "w"), separators=(",", ":"))
+    json.dump(finite_json(oof), open(os.path.join(DER, "statlines_oof.json"), "w"), separators=(",", ":"), allow_nan=False)
     # ---------------------------------------------------------------- model + evaluation tables
     small = lambda blk: {k: v for k, v in blk.items() if k != "per_stat"}
     doc = {"meta": {"tool": TOOL_VERSION, "built": dt.datetime.utcnow().isoformat() + "Z", "inputs": T["inputs"],
@@ -1775,7 +1790,7 @@ def write_exports(T, cv, ch, J_dev, J_prod, R, ev, rte, wl_oof, wlv):
            "gate": gate,
            "cv_candidates": {st: {n: {k: v for k, v in r.items() if k in ("nll", "crps", "dev", "by_year")}
                                   for n, r in cv["per_stat"][st].items()} for st in STATS}}
-    json.dump(doc, open(os.path.join(DER, "statlines.json"), "w"), separators=(",", ":"), default=float)
+    json.dump(finite_json(doc), open(os.path.join(DER, "statlines.json"), "w"), separators=(",", ":"), allow_nan=False)
     log("wrote data/derived/statlines.json and statlines_oof.json (%d fights)" % len(fights))
 
 
