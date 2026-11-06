@@ -612,7 +612,10 @@
       L.hair = "hair-" + hp;
       if (RH.hair_cut_cm !== "none") L.hairCut = typeof RH.hair_cut_cm === "number" ? RH.hair_cut_cm / 100 : ((sides != null && sides <= 1.5) || fade ? 0.03 : null);
     } else if (!hp && L.hairMode === "shell" && top != null && top >= 3 && (sides == null || sides <= 1.5) && haveP("hair-short02")) {
-      L.hair = /curl|coil|wav/.test(txt) && haveP("hair-short01") ? "hair-short01" : "hair-short02"; L.hairCut = 0.03;
+      // swept back or pushed up (no fringe) -> short04, curls -> short01, else the forward crop short02
+      L.hair = /curl|coil|wav/.test(txt) ? "hair-short01" : (/slick|combed (straight )?back|swept back|pushed up|brushed up|no fringe|back and up|up and back/.test(txt) ? "hair-short04" : "hair-short02");
+      if (!haveP(L.hair)) L.hair = "hair-short02";
+      L.hairCut = 0.03;
     }
     if (L.hair && L.hairMode === "shell") L.hairLen = Math.min(L.hairLen, sides != null ? Math.max(0.3, sides) : 1.0);
     // facial hair: undercoat mask, strand length and density
@@ -1018,7 +1021,7 @@
           "  float lz = abs(vMask.w) * mix(uLeg.y, uLeg.x, step(0.0, vMask.w));\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.12, 0.6, 0.58), clamp(lz * (0.75 + 0.25 * vn(su * 60.0)), 0.0, 0.7));\n" +
           "  diffuseColor.rgb *= mix(vec3(1.0), vec3(1.06, 0.93, 0.92), uFlush * vMask2.z);\n" +
-          "  diffuseColor.rgb *= mix(vec3(1.0), vec3(0.8, 0.6, 0.58), clamp(vMask2.w, 0.0, 1.0) * 0.55);\n" +
+          "  diffuseColor.rgb *= mix(vec3(1.0), vec3(0.74, 0.52, 0.5), clamp(vMask2.w, 0.0, 1.0) * 0.85);\n" +
           "  if (uTatOn > 0.5) {\n" +
           "    vec2 d1 = vDecal.xy, d2 = vDecal.zw; float ink = 0.0;\n" +
           "    if (d1.x > 0.0 && d1.x < 1.0 && d1.y > 0.0 && d1.y < 1.0) ink = max(ink, texture2D(uTattoo, vec2(d1.x * 0.5, d1.y)).r);\n" +
