@@ -59,20 +59,20 @@
       "protrusion": "Clearly stick out from the head, the upper half especially. This is very visible from the front on the shaved head (ESPN headshot, media day) and is a key likeness cue.",
       "cauliflower_ear": "None obvious. In profile the right ear shows a normal, defined helix and lobe; possible mild thickening of the upper ear cannot be confirmed."
     },
-    "notable_marks_scars": "No permanent facial scar is clearly visible. Temporary marks are fight or training damage only: a red cut on his left cheekbone in Dec 2021 and red abrasions on his back in the UFC 333 action shot. Expression lines: forehead creases, nasolabial folds and crow's feet, which fit his age (38)."
+    "notable_marks_scars": "No permanent facial scar is clearly visible. Temporary marks are fight or training damage only: a red cut on his left cheekbone in Dec 2021 and red abrasions on his back in the UFC 333 action shot. Expression lines: forehead creases, nasolabial folds and crow's feet, which fit his age (38). A tiny dark spot sits on the centre of the upper-lip edge in the ESPN headshot (possibly a small scab or mole); it cannot be confirmed in other photos, so do not render it."
   },
   "hair": {
-    "style": "Clean-shaven head, kept shaved since about 2021. A faint shadow of regrowth along the sides and back follows a horseshoe (male-pattern) outline in the ESPN headshot. Before 2021 (2013, 2018 photos): very short fade with a short top, temples deeply receded.",
+    "style": "Clean-shaven head, shaved in every photo from Dec 2021 onward. A faint shadow of regrowth along the sides and back follows a horseshoe (male-pattern) outline in the ESPN headshot. Before 2021 (2013, 2018 photos): very short fade with a short top, temples deeply receded.",
     "length_cm": 0,
     "colour_hex": "#3e2c22",
     "colour_note": "Natural colour dark brown, from the 2013 and 2018 photos (raw sample #6c4b2e in warm light). On the shaved scalp render only a very faint grey-brown stubble tint on the sides and back, with the crown smooth.",
     "hairline": "Shaved, so not visible. The grown-out pattern was strongly receded temples with an M shape (2018).",
     "texture": "Straight, fine-to-medium (2013, 2018)",
-    "do_not_use": "The platinum-blond hairdo at the UFC 333 ceremonial weigh-in (Oct 23, 2026) was a wig for his Street Fighter film role; he fought bald the next night."
+    "do_not_use": "The platinum-blond hair at the UFC 333 ceremonial weigh-in face-off (Oct 23, 2026) is a wig worn in character as Joe, his role in the Street Fighter film (released Oct 16, 2026); reports also describe it at the UFC 333 press conference. He is bald in the Oct 21 media-day still and in the Oct 24 fight photo, so keep him bald."
   },
   "facial_hair": {
     "type": "short beard",
-    "colour_hex": "#785845",
+    "colour_hex": "#604535",
     "colour_samples": [
       {
         "photo": "espn_headshot.png",
@@ -95,9 +95,37 @@
         "hex": "#90654e"
       }
     ],
-    "colour_note": "Medium-dark brown with warm, slightly auburn lighter hairs mixed in at the chin. No obvious grey. Moustache colour matches the beard.",
+    "colour_note": "Medium-dark brown. colour_hex is the hair-strand colour (average of the darker-quartile beard pixels in five photos), for a beard texture or shell that blends over skin; colour_hex_blended (#785845) is how the beard reads as a whole with skin showing through, for a flat painted beard only. Review correction: the beard is not free of grey. The ESPN headshot shows a sprinkling of light ash/grey hairs on the chin and along the jaw toward the ears, and lighter hairs show at the chin at the Apr 2025 weigh-in. Overall it still reads brown; about 10% light hairs, mostly on the chin and sides. Moustache colour matches the beard.",
     "density": "Dense on the chin, moustache and jaw; moderately dense on the upper cheeks with skin showing through.",
-    "shape": "Full short beard joined to the moustache. Natural, fairly low cheek line; neckline trimmed just above the Adam's apple. Length changes by period: about 1-1.5 cm at the Apr 2025 weigh-in, the ESPN headshot and Jan 2026; trimmed to about 0.5-0.8 cm in Oct 2026; heavy stubble in 2018-2021. Default for the current look: 0.8-1 cm."
+    "shape": "Full short beard joined to the moustache. Natural, fairly low cheek line; neckline trimmed just above the Adam's apple. Length changes by period: about 1-1.5 cm at the Apr 2025 weigh-in, the ESPN headshot and Jan 2026; trimmed to about 0.5-0.8 cm in Oct 2026; heavy stubble in 2018-2021. Default for the current look: 0.8-1 cm.",
+    "colour_hex_blended": "#785845",
+    "strand_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "chin, darker quartile of beard pixels (studio)",
+        "hex": "#4b2e23"
+      },
+      {
+        "photo": "cageside_2025-04_ufc314_weighin_front.jpg",
+        "where": "chin, darker quartile (flash)",
+        "hex": "#5d503e"
+      },
+      {
+        "photo": "zuffa_2025-12_sydney_media_3q.jpg",
+        "where": "chin, darker quartile (daylight)",
+        "hex": "#6a4736"
+      },
+      {
+        "photo": "ufc_2026-10_ufc333_faceoff_profile_wig.webp",
+        "where": "jaw, darker quartile (warm arena light)",
+        "hex": "#6a4f38"
+      },
+      {
+        "photo": "ufc_2026-10_ufc333_mediaday_front.jpg",
+        "where": "chin, darker quartile (video still)",
+        "hex": "#644539"
+      }
+    ]
   },
   "skin": {
     "tone_samples": [
@@ -118,8 +146,8 @@
       },
       {
         "photo": "commons_2021_appearance.jpg",
-        "where": "left cheekbone, lit side (overcast daylight)",
-        "hex": "#be847c"
+        "where": "left cheek below the cheekbone, clear of the temporary red mark (overcast daylight, turned slightly away from the light)",
+        "hex": "#ae7e6f"
       },
       {
         "photo": "commons_2021_appearance.jpg",
@@ -142,12 +170,13 @@
         "hex": "#c77966"
       }
     ],
-    "tone_hex_average_all": "#cd9e88",
-    "tone_hex_average_face": "#cc9a87",
+    "tone_hex_average_all": "#cb9e87",
+    "tone_hex_average_face": "#c99985",
     "tone_hex_recommended": "#c99a82",
-    "tone_note": "Light-to-medium skin, tanned. Every source has a strong lighting cast (warm studio, flash, purple arena), so the recommended value leans on the two overcast-daylight photos (2021, Dec 2025). The face, scalp and forearms look slightly more sun-tanned and ruddy than the torso.",
+    "tone_note": "Light-to-medium skin, tanned. Every source has a strong lighting cast (warm studio, flash, purple arena), so the recommended value leans on the two overcast-daylight photos (2021, Dec 2025). The face, scalp and forearms look slightly more sun-tanned and ruddy than the torso. Review 2026-11-06: the earlier 2021 'left cheekbone' sample (#be847c) sat right beside the temporary red cut and was replaced with a clean cheek sample; the other samples re-measured within a few levels. The daylight-only average (#c69a88) supports the recommended value.",
     "undertone": "Warm/olive with a ruddy flush across the nose and cheeks",
-    "freckles_marks": "No prominent freckles or moles visible. Light, even chest hair on the upper chest and sternum (ESPN headshot, weigh-ins); light forearm hair."
+    "freckles_marks": "No prominent freckles or moles visible. Light, even chest hair on the upper chest and sternum (ESPN headshot, weigh-ins); light forearm hair. Dark hair on the shins and lower thighs in the ESPN stance-left cutout (less visible in stance-right, so it varies between shoots).",
+    "tone_hex_average_daylight": "#c69a88"
   },
   "body": {
     "build": "Compact, muscular featherweight: short (168 cm) but heavy-framed for the height, with long arms (180 cm reach, ape index about +12 cm).",
@@ -169,7 +198,7 @@
     },
     {
       "where": "Left arm, torso, back, legs",
-      "description": "None visible. The left arm and torso are clean in the weigh-in and ESPN cutouts.",
+      "description": "None clearly visible. The left arm and torso are clean in the weigh-in photos and ESPN cutouts, and the back is clean apart from the right-shoulder sleeve edge (UFC 333 action shot). Unconfirmed: the ESPN stance-left cutout shows a short dark curved mark on the inner left calf. It could be a small tattoo, a bruise or a vein, and no other photo shows that area clearly, so do not render it.",
       "size": "none"
     }
   ],
@@ -246,5 +275,18 @@
     "hair": "none (shaved); optional faint scalp-stubble tint on sides and back only",
     "beard": "short full-beard texture or shell, colour as facial_hair.colour_hex"
   },
-  "notes": "Confidence: medium-high for overall look (shaved head, short brown beard, long nose, heavy brow, protruding ears, right-arm dragon sleeve, compact muscular build), medium for exact morph values. There are plenty of photos, but only three are freely licensed (Commons 2013, 2018 and 2021); everything from 2025-2026 is reference-only. Watch for: (1) the blond hair in the Oct 2026 face-off is a film-role wig, so keep him bald; (2) every photo has a lighting cast, so trust the daylight samples for skin; (3) beard length changes from fight to fight (0.5-1.5 cm), so pick about 1 cm; (4) the ears stick out but the manifest has no ear morphs; (5) the eyes are deep-set under a heavy brow, and over-sized eyes or a weak brow will lose the likeness quickly; (6) the nose should be long, with a slightly down-pointing tip and a nearly straight bridge, not hooked; (7) the macro height mapping depends on the avatar code, so calibrate macro/heightDownM to a 168 cm standing height."
+  "notes": "Confidence: medium-high for overall look (shaved head, short brown beard, long nose, heavy brow, protruding ears, right-arm dragon sleeve, compact muscular build), medium for exact morph values. There are plenty of photos, but only three are freely licensed (Commons 2013, 2018 and 2021); everything from 2025-2026 is reference-only. Watch for: (1) the blond hair in the Oct 2026 face-off is a film-role wig, so keep him bald; (2) every photo has a lighting cast, so trust the daylight samples for skin; (3) beard length changes from fight to fight (0.5-1.5 cm), so pick about 1 cm; (4) the ears stick out but the manifest has no ear morphs; (5) the eyes are deep-set under a heavy brow, and over-sized eyes or a weak brow will lose the likeness quickly; (6) the nose should be long, with a slightly down-pointing tip and a nearly straight bridge, not hooked; (7) the macro height mapping depends on the avatar code, so calibrate macro/heightDownM to a 168 cm standing height. Review (2026-11-06): face, body, tattoo and morph estimates hold up against the photos; the main corrections were beard colour and grey hairs plus one contaminated skin sample. Beard texture: use colour_hex (strand colour) with skin blending, plus about 10% lighter hairs.",
+  "review": {
+    "date": "2026-11-06",
+    "by": "second-pass likeness review",
+    "checked": "Opened all 15 photos; morph names checked against assets/embed/mh-manifest.json (all 50 valid, all values 0..1); Commons licences re-checked via the Commons API; skin and beard samples re-measured.",
+    "changes": [
+      "Replaced the 2021 cheek skin sample, which sat next to a temporary cut, and recomputed the averages",
+      "Beard colour_hex now gives the strand colour (#604535); the old blended value moved to colour_hex_blended",
+      "Beard: noted scattered grey/ash hairs (the earlier text said no grey)",
+      "Wig note: identified as his Street Fighter character Joe; bald on Oct 21 and Oct 24",
+      "Noted an unconfirmed mark on the inner left calf and a tiny spot on the upper-lip edge, both do-not-render",
+      "sources.json: corrected the page URL for the two UFC 314 Cageside photos and added licence-check notes"
+    ]
+  }
 }

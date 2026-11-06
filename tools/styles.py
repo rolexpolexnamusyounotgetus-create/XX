@@ -960,7 +960,9 @@ def expected_scorecard(D, eta, rows):
     w = np.column_stack([hs * acc_h, bs * acc_b, ls * acc_l])
     w = w / w.sum(1, keepdims=True)
     h, b, l = sig * w[:, 0], sig * w[:, 1], sig * w[:, 2]
-    kd = np.exp(eta["kd"] - np.log(np.maximum(D.o_h_lnd.to_numpy(), 0.5))) * h      # strip the actual-exposure offset
+    # eta excludes every offset (exposures are actual-fight quantities): rebuild expectations from
+    # predicted exposures only. KD per landed head strike = prior rate x exp(eta).
+    kd = np.exp(eta["kd"]) * D.p_kd.to_numpy() * h
     td = np.exp(eta["td_att"]) * st_frac * sigmoid(eta["td_acc"] + logit(D.p_td_acc.to_numpy()))
     sub = np.exp(eta["sub_att"])
     imp = (JW["h"] * h + JW["b"] * b + JW["l"] * l + JW["kd"] * kd + JW["td"] * td

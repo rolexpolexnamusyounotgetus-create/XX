@@ -183,79 +183,82 @@ def method_class(m):
     return "other"
 
 
+def _txt(el):
+    return re.sub(r"\s+", " ", el.text_content()).strip() if el is not None else ""
+
+
 def parse_fighter(html):
-    """Bio + fight-history sections of one Sherdog fighter page."""
-    from bs4 import BeautifulSoup
+    """Bio + fight-history sections of one Sherdog fighter page (lxml; same output as the bs4 version)."""
+    import lxml.html
     if not html or html.startswith("<!-- 404"):
         return None
-    soup = BeautifulSoup(html, "lxml")
-    fn = soup.find("span", class_="fn")
+    doc = lxml.html.fromstring(html)
+    fn = doc.xpath('//span[contains(concat(" ", normalize-space(@class), " "), " fn ")]')
     if not fn:
         return None
-    bio = {"name": fn.get_text(strip=True)}
-    nk = soup.find("span", class_="nickname")
-    bio["nick"] = nk.get_text(strip=True).strip('"') if nk else None
-    bd = soup.find("span", itemprop="birthDate")
+    bio = {"name": _txt(fn[0])}
+    nk = doc.xpath('//span[contains(concat(" ", normalize-space(@class), " "), " nickname ")]')
+    bio["nick"] = _txt(nk[0]).strip('"') if nk else None
+    bd = doc.xpath('//span[@itemprop="birthDate"]')
     d = None
     if bd:
         try:
-            d = dt.datetime.strptime(bd.get_text(strip=True), "%b %d, %Y").date()
+            d = dt.datetime.strptime(_txt(bd[0]), "%b %d, %Y").date()
         except ValueError:
             d = None
     bio["dob"] = d.isoformat() if d else None
-    na = soup.find("strong", itemprop="nationality")
-    bio["nationality"] = na.get_text(strip=True) if na else None
-    loc = soup.find("span", class_="locality")
-    bio["locality"] = loc.get_text(strip=True) if loc else None
-    w = soup.find("b", itemprop="weight")
-    m = re.search(r"(\d+)", w.get_text()) if w else None
+    na = doc.xpath('//strong[@itemprop="nationality"]')
+    bio["nationality"] = _txt(na[0]) if na else None
+    loc = doc.xpath('//span[contains(concat(" ", normalize-space(@class), " "), " locality ")]')
+    bio["locality"] = _txt(loc[0]) if loc else None
+    w = doc.xpath('//b[@itemprop="weight"]')
+    m = re.search(r"(\d+)", _txt(w[0])) if w else None
     bio["lbs"] = int(m.group(1)) if m else None
-    h = soup.find("b", itemprop="height")
-    bio["height"] = h.get_text(strip=True) if h else None
-    asc = soup.find("a", class_="association")
-    bio["association"] = asc.get_text(strip=True) if asc else None
-    cls = soup.find("div", class_="association-class")
-    bio["class"] = None
-    if cls:
-        a = cls.find("a", href=re.compile(r"weightclass="))
-        bio["class"] = a.get_text(strip=True) if a else None
+    h = doc.xpath('//b[@itemprop="height"]')
+    bio["height"] = _txt(h[0]) if h else None
+    asc = doc.xpath('//a[contains(concat(" ", normalize-space(@class), " "), " association ")]')
+    bio["association"] = _txt(asc[0]) if asc else None
+    cls = doc.xpath('//div[contains(concat(" ", normalize-space(@class), " "), " association-class ")]'
+                    '//a[contains(@href, "weightclass=")]')
+    bio["class"] = _txt(cls[0]) if cls else None
     sections = {}
-    for title_div in soup.find_all("div", class_="slanted_title"):
-        t = title_div.find("div")
-        title = t.get_text(" ", strip=True).upper() if t else ""
+    for title_div in doc.xpath('//div[contains(concat(" ", normalize-space(@class), " "), " slanted_title ")]'):
+        t = title_div.xpath('./div')
+        title = _txt(t[0]).upper() if t else ""
         if not title.startswith("FIGHT HISTORY"):
             continue
         kind = title.replace("FIGHT HISTORY", "").strip(" -").lower() or "pro"
-        sec = title_div.find_parent("section")
-        tab = sec.find("table", class_="fighter") if sec else None
-        if tab is None:
+        sec = title_div.xpath('./ancestor::section[1]')
+        tab = sec[0].xpath('.//table[contains(concat(" ", normalize-space(@class), " "), " fighter ")]') if sec else []
+        if not tab:
             continue
         rows = []
-        for tr in tab.find_all("tr"):
-            if "table_head" in (tr.get("class") or []):
+        for tr in tab[0].xpath('.//tr'):
+            if "table_head" in (tr.get("class") or "").split():
                 continue
-            tds = tr.find_all("td")
+            tds = tr.xpath('./td')
             if len(tds) < 6:
                 continue
-            res = tds[0].get_text(strip=True).lower()
-            oa = tds[1].find("a")
-            ea = tds[2].find("a")
-            date = parse_sd_date(tds[2].get_text(" ", strip=True))
-            meth_b = tds[3].find("b")
-            method = meth_b.get_text(" ", strip=True) if meth_b else tds[3].get_text(" ", strip=True)
-            ref = tds[3].find("a", href=re.compile(r"^/referee/"))
-            rd = tds[4].get_text(strip=True)
+            res = _txt(tds[0]).lower()
+            oa = tds[1].xpath('.//a')
+            ea = tds[2].xpath('.//a')
+            date = parse_sd_date(_txt(tds[2]))
+            mb = tds[3].xpath('.//b')
+            method = _txt(mb[0]) if mb else _txt(tds[3])
+            ref = tds[3].xpath('.//a[starts-with(@href, "/referee/")]')
+            rd = _txt(tds[4])
+            ohref = oa[0].get("href", "") if oa else ""
             rows.append({
                 "res": {"win": "W", "loss": "L", "draw": "D", "nc": "NC"}.get(res, res.upper()[:3]),
-                "opp": oa.get_text(strip=True) if oa else tds[1].get_text(strip=True),
-                "opp_href": oa["href"] if oa and oa.get("href", "").startswith("/fighter/") else None,
-                "event": ea.get_text(" ", strip=True) if ea else tds[2].get_text(" ", strip=True),
-                "event_href": ea["href"] if ea else None,
+                "opp": _txt(oa[0]) if oa else _txt(tds[1]),
+                "opp_href": ohref if ohref.startswith("/fighter/") else None,
+                "event": _txt(ea[0]) if ea else _txt(tds[2]),
+                "event_href": ea[0].get("href") if ea else None,
                 "date": date.isoformat() if date else None,
                 "method": method, "mclass": method_class(method),
-                "ref": ref.get_text(strip=True) if ref else None,
+                "ref": _txt(ref[0]) if ref else None,
                 "rd": int(rd) if rd.isdigit() else None,
-                "time": tds[5].get_text(strip=True),
+                "time": _txt(tds[5]),
             })
         sections[kind] = sections.get(kind, []) + rows
     return {"bio": bio, "sections": sections}

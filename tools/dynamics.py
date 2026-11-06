@@ -535,3 +535,454 @@ def person_history(S, p0_kd):
     return FS
 
 
+# ================================================================================================
+# shared preparation
+# ================================================================================================
+def r6(x, d=4):
+    if x is None:
+        return None
+    if isinstance(x, dict):
+        return {k: r6(v, d) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [r6(v, d) for v in x]
+    if isinstance(x, (np.integer,)):
+        return int(x)
+    if isinstance(x, (float, np.floating)):
+        x = float(x)
+        if math.isnan(x) or math.isinf(x):
+            return None
+        return round(x, d)
+    return x
+
+
+def add_covariates(S):
+    S = S.copy()
+    for c in [c for c in S.columns if c.startswith("l_")]:
+        S[c] = S[c].fillna(0.0)
+    S["cell"] = S.R.astype(str) + "_" + S.rnd.astype(str)
+    S["partial"] = (~S.full).astype(float)
+    S["D10"] = S.c_ohl / 10                     # head sig strikes absorbed in earlier rounds, per 10
+    S["H10"] = S.c_hl / 10                      # head sig strikes landed on him in earlier rounds, per 10
+    S["K_lag"] = S.l_okd                        # knockdowns absorbed in the previous round
+    S["K_early"] = S.c_okd - S.l_okd            # knockdowns absorbed before the previous round
+    S["Ks_lag"] = S.l_kd                        # knockdowns scored in the previous round
+    S["Ks_early"] = S.c_kd - S.l_kd
+    S["A100"] = S.c_att / 100                   # own sig attempts in earlier rounds, per 100 (fatigue proxy)
+    S["oA100"] = S.c_oatt / 100
+    S["octrl_m"] = S.c_octrl / 60               # minutes controlled by the opponent in earlier rounds
+    S["ctrl_m"] = S.c_ctrl / 60                 # minutes in control in earlier rounds
+    S["otdl"] = S.c_otdl                        # takedowns absorbed in earlier rounds
+    S["tdl"] = S.c_tdl                          # takedowns landed in earlier rounds
+    first = S.rnd == 1
+    S["lost"] = np.where(first, 0.0, (S.l_sigl < S.l_osigl).astype(float) + 0.5 * (S.l_sigl == S.l_osigl))
+    # rounds lost minus rounds won (sig landed) before this round; desperation entering the final round
+    g = S.groupby(["fid", "idx"], sort=False)
+    w = (S.sig_l > S.o_sig_l).astype(float) - (S.sig_l < S.o_sig_l).astype(float)
+    S["_w"] = w
+    S["net_prev"] = g["_w"].cumsum() - S["_w"]
+    S = S.drop(columns="_w")
+    S["final"] = (S.rnd == S.R).astype(float)
+    S["behind2_final"] = ((S.net_prev <= -2) & (S.rnd == S.R)).astype(float)
+    S["ahead2_final"] = ((S.net_prev >= 2) & (S.rnd == S.R)).astype(float)
+    S["tfree"] = (S.rsec - S.ctrl - S.o_ctrl).clip(lower=0)
+    S["g"] = S.fid.astype(str) + ":" + S.idx.astype(str)
+    return S
+
+
+OUTCOMES = {
+    # name: (y, v, filter, description)
+    "out": ("sig attempts per minute (log)", lambda d: np.log((d.sig_a + 0.5) / d.mins),
+            lambda d: 1 / (d.sig_a + 0.5), lambda d: d.rsec >= 60),
+    "dist": ("distance sig attempts per minute of non-control time (log)",
+             lambda d: np.log((d.dist_a + 0.5) / (d.tfree / 60)), lambda d: 1 / (d.dist_a + 0.5),
+             lambda d: d.tfree >= 60),
+    "acc": ("sig accuracy (empirical logit)", lambda d: np.log((d.sig_l + 0.5) / (d.sig_a - d.sig_l + 0.5)),
+            lambda d: 1 / (d.sig_l + 0.5) + 1 / (d.sig_a - d.sig_l + 0.5), lambda d: (d.sig_a >= 5) & (d.rsec >= 60)),
+    "hacc": ("head sig accuracy (empirical logit)",
+             lambda d: np.log((d.head_l + 0.5) / (d.head_a - d.head_l + 0.5)),
+             lambda d: 1 / (d.head_l + 0.5) + 1 / (d.head_a - d.head_l + 0.5),
+             lambda d: (d.head_a >= 5) & (d.rsec >= 60)),
+}
+STATE_X = ["partial", "D10", "K_lag", "K_early", "A100", "oA100", "octrl_m", "ctrl_m", "otdl", "tdl", "H10",
+           "Ks_lag", "Ks_early", "lost", "behind2_final"]
+XDOC = {
+    "partial": "final round that ended early (rate in a short round incl. the finishing sequence)",
+    "D10": "head sig strikes absorbed in earlier rounds, per 10",
+    "K_lag": "knockdowns absorbed in the previous round",
+    "K_early": "knockdowns absorbed before the previous round",
+    "A100": "own sig attempts in earlier rounds, per 100 (fatigue proxy)",
+    "oA100": "opponent's sig attempts in earlier rounds, per 100",
+    "octrl_m": "minutes controlled by the opponent in earlier rounds",
+    "ctrl_m": "minutes in control of the opponent in earlier rounds",
+    "otdl": "takedowns absorbed in earlier rounds",
+    "tdl": "takedowns landed in earlier rounds",
+    "H10": "head sig strikes landed on the opponent in earlier rounds, per 10",
+    "Ks_lag": "knockdowns scored in the previous round",
+    "Ks_early": "knockdowns scored before the previous round",
+    "lost": "lost the previous round on sig strikes landed (tie 0.5)",
+    "behind2_final": "final scheduled round and down 2+ rounds on sig-landed rounds",
+    "lostJ": "share of judges who gave the previous round to the opponent (decisions only)",
+}
+
+
+def prep_outcome(S, name):
+    _, fy, fv, ff = OUTCOMES[name]
+    d = S[ff(S)].copy()
+    d["y"] = fy(d)
+    d["v"] = fv(d)
+    return d
+
+
+# ================================================================================================
+# part 1 + 3 + 4: dynamic RE models for output and accuracy, frailty Poisson for takedown attempts
+# ================================================================================================
+def fit_dynre_outcome(S, name, xcols, jack=0, label=""):
+    d = prep_outcome(S, name)
+    tr, te = d[d.period == "train"], d[d.period == "test"]
+    t0 = time.time()
+    m0 = DynRE(tr, "y", "v", ["partial"]).fit()
+    m1 = DynRE(tr, "y", "v", xcols, fixed_cells=m0.cells).fit(m0.p)
+    p0 = m0.predictive(DynRE(te, "y", "v", ["partial"], fixed_cells=m0.cells))
+    p1 = m1.predictive(DynRE(te, "y", "v", xcols, fixed_cells=m0.cells))
+    pt0 = m0.predictive(DynRE(tr, "y", "v", ["partial"], fixed_cells=m0.cells))
+    pt1 = m1.predictive(DynRE(tr, "y", "v", xcols, fixed_cells=m0.cells))
+    gam = m1.gamma()
+    if jack:
+        def ffit(df):
+            mm = DynRE(df, "y", "v", xcols, fixed_cells=m0.cells).fit(m1.p)
+            return {k: v["est"] for k, v in mm.gamma().items()}
+        _, jse = grouped_jackknife(ffit, tr, G=jack)
+        for k in gam:
+            gam[k]["se_jack"] = jse[k]
+    cells0 = {k[5:]: v for k, v in m0.est().items() if k.startswith("cell:")}
+    curve = {}
+    for R in (3, 5):
+        base = cells0.get(f"{R}_1")
+        if base is not None:
+            curve[str(R)] = [math.exp(cells0[f"{R}_{r}"] - base) for r in range(1, R + 1) if f"{R}_{r}" in cells0]
+    out = {
+        "outcome": OUTCOMES[name][0], "n_obs_train": m1.n_obs, "n_fights_train": m1.n_fights,
+        "n_obs_test": p1["n"] + 0, "gamma": gam, "var_components_null": m0.var_components(),
+        "var_components_full": m1.var_components(), "cells_null": cells0,
+        "round_curve_null_ratio_to_r1": curve,
+        "partial_null": m0.gamma()["partial"],
+        "heldout_one_step": {"null": p0, "full": p1,
+                             "dll_per_obs": (p1["ll"] - p0["ll"]) / max(p1["n"], 1),
+                             "mse_reduction_pct": 100 * (1 - p1["mse"] / p0["mse"])},
+        "train_one_step": {"null": pt0, "full": pt1, "dll_per_obs": (pt1["ll"] - pt0["ll"]) / max(pt1["n"], 1)},
+        "secs": time.time() - t0,
+    }
+    print(f"  [{label or name}] train n={m1.n_obs} test dLL/obs={out['heldout_one_step']['dll_per_obs']:+.4f} "
+          f"MSE -{out['heldout_one_step']['mse_reduction_pct']:.2f}%  ({out['secs']:.0f}s)", flush=True)
+    return out, m0, m1
+
+
+def comparison_estimators(S):
+    """Naive pooled OLS, lagged-DV OLS and within fighter-fight FE for log output on the cumulative state:
+    the bracket that motivates the dynamic RE estimator (full rounds, r >= 2 for pooled / LDV)."""
+    import statsmodels.api as sm
+    d = S[S.period == "train"].copy()
+    d["y"] = np.log((d.sig_a + 0.5) / d.mins)
+    g = d.groupby(["fid", "idx"])
+    d["ly"] = g.y.shift(1)
+    d["y1"] = g.y.transform("first")
+    O = d[["fid", "rnd", "idx", "ly", "y1"]].copy()
+    O["idx"] = 1 - O.idx
+    d = d.merge(O.rename(columns={"ly": "oly", "y1": "oy1"}), on=["fid", "rnd", "idx"], how="left")
+    X = ["D10", "K_lag", "K_early", "A100", "octrl_m", "ctrl_m", "otdl", "tdl", "Ks_lag", "Ks_early", "H10"]
+    res = {}
+    e = d[(d.rnd >= 2) & d.full]
+    cells = pd.get_dummies(e.cell).astype(float)
+    for lab, extra in [("pooled_ols", []), ("lagged_dv_ols", ["ly", "y1", "oly", "oy1"])]:
+        M = pd.concat([cells, e[X + extra]], axis=1)
+        m = sm.OLS(e.y, M).fit(cov_type="cluster", cov_kwds={"groups": pd.factorize(e.fid)[0]})
+        res[lab] = {k: {"est": float(m.params[k]), "se": float(m.bse[k])} for k in X}
+    f = d[d.full].copy()
+    f = f[f.groupby(["fid", "idx"]).rnd.transform("size") >= 2]
+    grp = (f.fid.astype(str) + ":" + f.idx.astype(str)).to_numpy()
+    Z = pd.concat([pd.get_dummies(f.cell).astype(float), f[X]], axis=1)
+    Zd = Z - Z.groupby(grp).transform("mean")
+    yd = f.y - f.y.groupby(grp).transform("mean")
+    Zd = Zd.loc[:, Zd.std() > 1e-9].drop(columns=["3_1", "5_1"], errors="ignore")
+    m = sm.OLS(yd, Zd).fit(cov_type="cluster", cov_kwds={"groups": pd.factorize(f.fid)[0]})
+    res["fixed_effects"] = {k: {"est": float(m.params[k]), "se": float(m.bse[k])} for k in X}
+    return res
+
+
+def sim_check(S, m0, reps=2, gam_true=(0.0,), seed=11):
+    """Simulate log output from the fitted null dynamic-RE model (no state effects), rebuild the
+    own-output fatigue proxy from the simulated counts, and refit by dynamic RE and by within-fight FE."""
+    d = prep_outcome(S, "out")
+    d = d[d.period == "train"].sort_values(["fid", "idx", "rnd"])
+    sa, rho, sb, se, phi = m0.th
+    mu = {k[5:]: v for k, v in m0.est().items() if k.startswith("cell:")}
+    part = m0.est()["partial"]
+    rng = np.random.default_rng(seed)
+    out = []
+    fids = d.fid.to_numpy(); idx = d.idx.to_numpy(); rnd = d.rnd.to_numpy(); mins = d.mins.to_numpy()
+    cellv = d.cell.map(mu).to_numpy(); pv = d.partial.to_numpy()
+    starts = np.r_[0, np.flatnonzero(fids[1:] != fids[:-1]) + 1, len(d)]
+    for gt in gam_true:
+        for rep in range(reps):
+            att = np.zeros(len(d)); cum = np.zeros(len(d))
+            for s0, s1 in zip(starts[:-1], starts[1:]):
+                a = rng.multivariate_normal([0, 0], [[sa ** 2, rho * sa ** 2], [rho * sa ** 2, sa ** 2]])
+                b = rng.normal(0, sb, 6)
+                for i in (0, 1):
+                    rows = [q for q in range(s0, s1) if idx[q] == i]
+                    e = 0.0; c = 0.0
+                    for k, q in enumerate(rows):
+                        e = phi * e + math.sqrt(1 - phi ** 2) * rng.normal(0, se) if k else rng.normal(0, se)
+                        lam = math.exp(cellv[q] + part * pv[q] + a[i] + b[rnd[q]] + e + gt * c / 100) * mins[q]
+                        att[q] = rng.poisson(lam); cum[q] = c; c += att[q]
+            D = pd.DataFrame({"fid": fids, "idx": idx, "rnd": rnd, "cell": d.cell.to_numpy(), "partial": pv,
+                              "mins": mins, "att": att, "A100": cum / 100})
+            D["y"] = np.log((D.att + 0.5) / D.mins); D["v"] = 1 / (D.att + 0.5)
+            m = DynRE(D, "y", "v", ["partial", "A100"]).fit(m0.p)
+            f = D[D.groupby(["fid", "idx"]).rnd.transform("size") >= 2]
+            grp = (f.fid.astype(str) + ":" + f.idx.astype(str)).to_numpy()
+            Z = pd.concat([pd.get_dummies(f.cell).astype(float), f[["partial", "A100"]]], axis=1)
+            Zd = Z - Z.groupby(grp).transform("mean"); yd = f.y - f.y.groupby(grp).transform("mean")
+            Zd = Zd.loc[:, Zd.std() > 1e-9].drop(columns=["3_1", "5_1"], errors="ignore")
+            bfe = np.linalg.lstsq(Zd.to_numpy(), yd.to_numpy(), rcond=None)[0]
+            out.append({"gamma_true": gt, "rep": rep, "dynre": m.gamma()["A100"]["est"],
+                        "fixed_effects": float(bfe[list(Zd.columns).index("A100")])})
+            print("   sim", out[-1], flush=True)
+    return out
+
+
+def fit_tda(S, xcols):
+    """Takedown attempts per round: Poisson with gamma frailty per fighter-fight, exposure = minutes."""
+    d = S[S.rsec >= 30].copy()
+    d = d.sort_values(["fid", "idx", "rnd"])
+    cells = sorted(d.cell.unique())
+    for c in cells:
+        d["c" + c] = (d.cell == c).astype(float)
+    cc = ["c" + c for c in cells]
+    tr, te = d[d.period == "train"], d[d.period == "test"]
+    m0 = FrailPois(tr, "td_a", "mins", cc + ["partial"]).fit()
+    m1 = FrailPois(tr, "td_a", "mins", cc + xcols).fit()
+    l0, _, _ = m0.score_other(FrailPois(te, "td_a", "mins", cc + ["partial"]))
+    l1, _, _ = m1.score_other(FrailPois(te, "td_a", "mins", cc + xcols))
+    co = m1.coef()
+    return {"outcome": "takedown attempts per minute (Poisson, gamma frailty per fighter-fight)",
+            "gamma": {k: v for k, v in co.items() if not k.startswith("c") or k in xcols},
+            "cells_null": {k[1:]: v["est"] for k, v in m0.coef().items() if k.startswith("c") and k[1] in "35"},
+            "frailty_var_null": m0.coef()["frailty_var"],
+            "heldout_ll": {"null": l0, "full": l1, "dll_per_fighter_fight": (l1 - l0) / te.g.nunique()},
+            "n_train": m1.n}
+
+
+# ================================================================================================
+# part 2: per-fighter late-round output ratios
+# ================================================================================================
+PACE_LND5 = [1.0, 1.2, 1.2, 1.23, 1.23]
+PACE_LND3 = [1.0, 1.11, 1.13]
+
+
+def late_ratio_table(S):
+    full = S[S.full].copy()
+    full["la"] = np.log((full.sig_a + 0.5) / 5)
+    full["ll"] = np.log((full.sig_l + 0.5) / 5)
+    tr = full[full.period == "train"]
+    cm = {v: tr.groupby("cell")[v].mean() for v in ("la", "ll")}
+    for v in ("la", "ll"):
+        full[v + "_c"] = full[v] - full.cell.map(cm[v])
+    full = full.sort_values(["fid", "idx", "rnd"])
+    g = full.groupby(["fid", "idx"], sort=False)
+    first = g.head(1).set_index(["fid", "idx"])
+    late = full[full.rnd >= 2].groupby(["fid", "idx"]).agg(alate=("la_c", "mean"), llate=("ll_c", "mean"),
+                                                           T=("rnd", "max"), nlate=("rnd", "size"))
+    FF = first[["pid", "slug", "DATE", "R", "period", "la_c", "ll_c", "age", "division"]].join(late, how="inner")
+    FF = FF[FF.nlate == FF["T"] - 1]           # consecutive full rounds from R1
+    FF["LRa"] = FF.alate - FF.la_c
+    FF["LRl"] = FF.llate - FF.ll_c
+    FF = FF.reset_index().sort_values(["DATE", "fid", "idx"]).reset_index(drop=True)
+    FF["pid"] = FF.pid.fillna("anon:" + FF.fid.astype(str) + ":" + FF.idx.astype(str))
+    return FF, {v: {k: float(x) for k, x in cm[v].items()} for v in cm}
+
+
+def tau2_mom(df, col):
+    d = df.copy()
+    m = d[col].mean()
+    d["e"] = d[col] - m
+    s = d.groupby("pid").e.agg(["sum", "count"])
+    s2 = d.groupby("pid").e.apply(lambda x: (x ** 2).sum())
+    cross = (s["sum"] ** 2 - s2) / 2
+    npair = s["count"] * (s["count"] - 1) / 2
+    t2 = cross.sum() / npair.sum()
+    # bootstrap over people for an interval
+    ids = s.index.to_numpy()
+    rng = np.random.default_rng(3)
+    bs = []
+    cr, npr = cross.to_numpy(), npair.to_numpy()
+    for _ in range(400):
+        q = rng.integers(0, len(ids), len(ids))
+        bs.append(cr[q].sum() / max(npr[q].sum(), 1))
+    return float(t2), float(d[col].var()), float(m), int(npair.sum()), [float(np.percentile(bs, 2.5)),
+                                                                     float(np.percentile(bs, 97.5))]
+
+
+def eb_walk(FF, col, t2, s2, m, decay_days=None):
+    """Walk-forward EB prediction of each fighter-fight's late ratio from the same person's earlier fights."""
+    FF = FF.sort_values(["DATE", "fid", "idx"])
+    preds = np.full(len(FF), m); nprev = np.zeros(len(FF))
+    hist = defaultdict(list)
+    for q, (pid, day, y) in enumerate(zip(FF.pid, FF.DATE, FF[col])):
+        h = hist[pid]
+        if h:
+            if decay_days:
+                w = np.array([0.5 ** ((day - d0).days / decay_days) for d0, _ in h])
+            else:
+                w = np.ones(len(h))
+            ys = np.array([y0 for _, y0 in h])
+            n_eff = w.sum()
+            prec = n_eff * t2 / s2
+            preds[q] = m + (prec / (1 + prec)) * ((w * ys).sum() / n_eff - m)
+            nprev[q] = len(h)
+        h.append((day, y))
+    out = pd.Series(preds, index=FF.index), pd.Series(nprev, index=FF.index)
+    return out
+
+
+def skill(y, p, m):
+    mse = float(((y - p) ** 2).mean()); mse0 = float(((y - m) ** 2).mean())
+    v = float(np.var(p - m, ddof=1)) if len(p) > 2 else 0.0
+    slope = float(np.cov(p - m, y - m)[0, 1] / v) if v > 1e-12 else None
+    corr = float(np.corrcoef(p, y)[0, 1]) if v > 1e-12 else None
+    return {"n": int(len(y)), "mse": mse, "mse_league": mse0, "skill_pct": 100 * (1 - mse / mse0),
+            "slope": slope, "corr": corr}
+
+
+def engine_pace_pred(pc, pw, T, kPace):
+    if pc is None or pw is None:
+        return 0.0
+    five = any(pc[r] is not None and pw[r] > 0 for r in (3, 4))
+    lc = PACE_LND5 if five else PACE_LND3
+    rho = [1.0] * 5
+    for r in range(1, 5):
+        if pc[r] is not None and pw[r] > 0 and r < len(lc):
+            ratio = min(max(pc[r] / lc[r], 0.3), 3)
+            rho[r] = (ratio * pw[r] + kPace) / (pw[r] + kPace)
+        else:
+            rho[r] = 1 + 0.5 * (rho[r - 1] - 1)
+    return float(np.mean([math.log(rho[r]) for r in range(1, min(T, 5))]))
+
+
+def part2(S):
+    FF, cellmeans = late_ratio_table(S)
+    pre = FF[FF.period.isin(["ext", "train"])]
+    res = {"definition": "LR = mean over full rounds 2..T of log(sig per min) minus round-1 log(sig per min), "
+                         "each relative to the league (format, round) mean from 2019-2023; fighter-fights with at "
+                         "least two full rounds; LRa = attempts, LRl = landed",
+           "n_fighter_fights": FF.groupby("period").size().to_dict()}
+    var = {}
+    for col in ("LRa", "LRl"):
+        t2, vt, m, npair, ci = tau2_mom(pre, col)
+        t2tr, vtr, mtr, nptr, citr = tau2_mom(FF[FF.period == "train"], col)
+        byT = FF[FF.period.isin(["ext", "train"])].groupby("T")[col].agg(["mean", "var", "size"])
+        var[col] = {"tau2_pretest": t2, "tau2_ci95": ci, "tau_pretest": math.sqrt(max(t2, 0)), "total_var": vt,
+                    "icc_one_fight": t2 / vt, "league_mean": m, "pairs": npair,
+                    "tau2_train_only": t2tr, "tau2_train_ci95": citr,
+                    "by_T": {int(k): {"mean": float(r["mean"]), "var": float(r["var"]), "n": int(r["size"])}
+                             for k, r in byT.iterrows()}}
+    res["variance"] = var
+    # walk-forward held-out: grid of tau2 (choose on train), plus time decay variants
+    grid = {}
+    for col in ("LRa", "LRl"):
+        m = var[col]["league_mean"]; s2 = var[col]["total_var"] - var[col]["tau2_pretest"]
+        rows = []
+        for t2 in (0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.075, 0.1):
+            for dec in (None, 1095):
+                pred, n = eb_walk(FF, col, t2, s2, m, dec)
+                row = {"tau2": t2, "decay_days": dec}
+                for per in ("train", "test"):
+                    sel = (FF.period == per) & (n >= 1)
+                    row[per] = skill(FF.loc[sel, col], pred[sel], m)
+                rows.append(row)
+        best = max([r for r in rows if r["decay_days"] is None], key=lambda r: r["train"]["skill_pct"])
+        bestd = max(rows, key=lambda r: r["train"]["skill_pct"])
+        grid[col] = {"rows": rows, "chosen_on_train": best, "chosen_on_train_any_decay": bestd}
+    res["eb_walkforward"] = grid
+    # systematic predictors of the late ratio (walk-forward safe: age, prior output rate, division, format)
+    import statsmodels.api as sm
+    H = person_history(S, 0.0088)[["fid", "idx", "h_attpm", "h_n"]]
+    X = FF.merge(H, on=["fid", "idx"], how="left")
+    X["age_c"] = (X.age - 30).fillna(0) / 5
+    X["lout"] = np.log(X.h_attpm / 8.0)
+    X["heavy"] = X.division.isin(["Light Heavyweight", "Heavyweight"]).astype(float)
+    X["women"] = X.division.astype(str).str.startswith("Women").astype(float)
+    X["five"] = (X.R == 5).astype(float)
+    cols = ["age_c", "lout", "heavy", "women", "five"]
+    sysres = {}
+    for col in ("LRa", "LRl"):
+        trn = X[X.period == "train"]
+        mm = sm.OLS(trn[col], sm.add_constant(trn[cols])).fit(cov_type="cluster",
+                                                              cov_kwds={"groups": pd.factorize(trn.pid)[0]})
+        tst = X[X.period == "test"]
+        p = mm.predict(sm.add_constant(tst[cols]))
+        sysres[col] = {"coef": {k: {"est": float(mm.params[k]), "se": float(mm.bse[k])} for k in ["const"] + cols},
+                       "test": skill(tst[col], p, var[col]["league_mean"])}
+    res["systematic"] = sysres
+    # the engine's current rule (backtest.json pace / pace_w, landed per round, kPace) vs realized LR
+    bt = json.load(open(os.path.join(ROOT, "data", "derived", "backtest.json")))
+    rows = []
+    for f in bt["fights"]:
+        for side, idx in (("A", 0), ("B", 1)):
+            x = f[side]
+            rows.append((f["id"], idx, x.get("pace"), x.get("pace_w")))
+    B = pd.DataFrame(rows, columns=["fkey", "idx", "pace", "pace_w"])
+    FF["fkey"] = FF.fid.map(bd.url_id)
+    J = FF.merge(B, on=["fkey", "idx"])
+    eng = []
+    for k in (5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240):
+        J["ep"] = [engine_pace_pred(pc, pw, T, k) for pc, pw, T in zip(J.pace, J.pace_w, J["T"])]
+        row = {"kPace": k}
+        for per in ("train", "test"):
+            d = J[J.period == per]
+            for col in ("LRl", "LRa"):
+                m = var[col]["league_mean"]
+                row[f"{per}_{col}"] = skill(d[col], m + d.ep, m)
+        eng.append(row)
+    best = max(eng, key=lambda r: r["train_LRl"]["skill_pct"])
+    res["engine_rule"] = {"rows": eng, "chosen_on_train": best, "n": J.groupby("period").size().to_dict()}
+    # opponent's predicted ratio: does it move my realized late ratio?
+    col = "LRa"
+    m = var[col]["league_mean"]; s2 = var[col]["total_var"] - var[col]["tau2_pretest"]
+    pred, n = eb_walk(FF, col, grid[col]["chosen_on_train"]["tau2"], s2, m)
+    FF["pred"] = pred
+    O = FF[["fid", "idx", "pred"]].copy(); O["idx"] = 1 - O.idx
+    Z = FF.merge(O.rename(columns={"pred": "opred"}), on=["fid", "idx"])
+    opp = {}
+    for per in ("train", "test"):
+        z = Z[Z.period == per]
+        mm = sm.OLS(z[col] - m, np.column_stack([z.pred - m, z.opred - m])).fit()
+        opp[per] = {"own": float(mm.params.iloc[0]), "own_se": float(mm.bse.iloc[0]),
+                    "opp": float(mm.params.iloc[1]), "opp_se": float(mm.bse.iloc[1]), "n": int(len(z))}
+    res["opponent_effect"] = opp
+    # current cardio estimates for everyone (all fights to the snapshot), with EB shrinkage
+    t2 = grid["LRa"]["chosen_on_train"]["tau2"]; s2 = var["LRa"]["total_var"] - var["LRa"]["tau2_pretest"]
+    m = var["LRa"]["league_mean"]
+    cur = FF.groupby("pid").agg(slug=("slug", "last"), n=("LRa", "size"), mean=("LRa", "mean"),
+                                last=("DATE", "max"))
+    cur["w"] = cur.n * t2 / (cur.n * t2 + s2)
+    cur["lr_hat"] = cur.w * (cur["mean"] - m)          # relative to the league mean
+    cur["cardio_ratio"] = np.exp(cur.lr_hat)
+    cur["sd_post"] = np.sqrt(t2 * (1 - cur.w))
+    active = cur[(cur["last"] >= "2024-01-01") & (cur.n >= 5) & cur.slug.notna()].sort_values("lr_hat")
+    res["current"] = {
+        "tau2_used": t2, "noise_var_used": s2,
+        "faders": [{"slug": r.slug, "n": int(r.n), "late_ratio": float(r.cardio_ratio), "post_sd": float(r.sd_post)}
+                   for r in active.head(12).itertuples()],
+        "surgers": [{"slug": r.slug, "n": int(r.n), "late_ratio": float(r.cardio_ratio), "post_sd": float(r.sd_post)}
+                    for r in active.tail(12).iloc[::-1].itertuples()],
+        "named": {sl: {"n": int(r.n), "late_ratio": float(r.cardio_ratio), "raw_mean_lr": float(r["mean"] - m),
+                       "weight": float(r.w)}
+                  for sl in ("alexander-volkanovski", "justin-gaethje")
+                  for _, r in cur[cur.slug == sl].iterrows()},
+        "spread_active_sd": float(active.lr_hat.std()),
+    }
+    res["cardio_by_slug"] = {r.slug: [round(float(r.cardio_ratio), 4), int(r.n)]
+                             for r in cur[cur.slug.notna() & (cur["last"] >= "2019-01-01")].itertuples()}
+    res["cellmeans_log_rate"] = cellmeans
+    return res
