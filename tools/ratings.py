@@ -1421,7 +1421,23 @@ def fit_lr(X, y, l2):
     return beta
 
 
-def cv_lr(D, X, l2, idx):
+def fit_lr_nonneg(X, y, l2):
+    """No-intercept logistic regression with non-negative weights (stacking: no system enters with a
+    negative weight, which only ever exploits the difference of two correlated ratings)."""
+    from scipy.optimize import minimize
+
+    def f(b):
+        z = X @ b
+        p = expit(z)
+        ll = -np.sum(y * np.log(p + 1e-12) + (1 - y) * np.log(1 - p + 1e-12)) + 0.5 * l2 * b @ b
+        g = X.T @ (p - y) + l2 * b
+        return ll, g
+    r = minimize(f, np.full(X.shape[1], 1.0 / X.shape[1]), jac=True, method="L-BFGS-B",
+                 bounds=[(0, None)] * X.shape[1])
+    return r.x
+
+
+def cv_lr(D, X, l2, idx, nonneg=False):
     """Expanding-window CV by year inside idx (2019-2023): train on years < y, predict year y, y = 2020..2023.
     Returns pooled out-of-fold log loss."""
     yrs = D.year[idx]
@@ -1431,7 +1447,7 @@ def cv_lr(D, X, l2, idx):
         tr, va = yrs < yr, yrs == yr
         if tr.sum() < 50 or va.sum() == 0:
             continue
-        b = fit_lr(X[tr], y[tr], l2)
+        b = fit_lr_nonneg(X[tr], y[tr], l2) if nonneg else fit_lr(X[tr], y[tr], l2)
         oof[va] = expit(X[va] @ b)
     m = ~np.isnan(oof)
     return float(ll_vec(oof[m], y[m]).mean()), oof
@@ -1441,7 +1457,7 @@ def dims_tune(D, quick, log=print):
     """Per-dim process noise / prior variance / dispersion by one-step-ahead predictive likelihood of the
     stat itself on 2019-2023 fights (data stream cut at 2024-01-01)."""
     DP = {k: dict(v) for k, v in DIM_DEFAULT.items()}
-    grids = {"q": [0.005, 0.01, 0.02, 0.05, 0.1, 0.2], "v0": [0.02, 0.05, 0.1, 0.2, 0.4, 0.8],
+    grids = {"q": [0.001, 0.0025, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2], "v0": [0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.8],
              "k": [0.5, 1, 2, 4, 8, 16, 32]}
     tune_mask = (D.day >= TUNE_FROM) & (D.day < TEST_FROM)
     hist = {}
@@ -1503,7 +1519,7 @@ def specs(quick):
                        "elsewhere), finishing round weighted, unplayed rounds to the finisher",
               "P": {"K": 0.06, "enc": "rounds", "w_round": 1.0, "w_fround": 2.0, "w_rem": 0.5, "kappa": 2.5,
                     "kb": 0.5, "kn": 3.0, "pre_on": True},
-              "grid": [("K", [0.03, 0.045, 0.06, 0.08, 0.1, 0.13]), ("kb", [0.0, 0.5, 1.0]),
+              "grid": [("K", [0.01, 0.015, 0.02, 0.03, 0.045, 0.06, 0.08]), ("kb", [0.0, 0.5, 1.0]),
                        ("kn", [1.0, 3.0, 8.0])] + rnd + shared[:-1]})
     S.append({"name": "glicko2", "kind": "glicko2", "family": "Glicko-2",
               "label": "Glicko-2: rating deviation inflating with inactivity, volatility, newcomer prior, age "
@@ -1553,6 +1569,158 @@ def specs(quick):
             if s["grid"]:
                 s["grid"] = s["grid"][:4]
     return S
+
+
+# =====================================================================================================
+# analysis: market benchmark, residual signal beyond the rating, experience buckets, matchups
+# =====================================================================================================
+MARKET = os.path.join(ROOT, "data", "derived", "market.json")
+
+
+def market_probs(D):
+    """Closing-line probability for A (power de-vig, else proportional) from tools/market.py output."""
+    p = np.full(D.n, np.nan)
+    if not os.path.exists(MARKET):
+        return p
+    try:
+        M = json.load(open(MARKET))["fights"]
+    except Exception:
+        return p
+    for fid, e in M.items():
+        i = D.fidx.get(fid)
+        if i is None:
+            continue
+        v = e.get("p_power_close", e.get("p_novig_close"))
+        if v is not None:
+            p[i] = v
+    return p
+
+
+def residual_features(D):
+    """Antisymmetric A-minus-B pre-fight features for residual checks (all known before the fight)."""
+    prof = {}
+    for i in range(D.n):
+        pass
+    age = np.nan_to_num(D.age_a - D.age_b)
+    ht = np.zeros(D.n)
+    rc = np.zeros(D.n)
+    for p, i in D.pid.items():
+        pass
+    H = {}
+    Rr = {}
+    for p, k in D.pid.items():
+        T = (D.people.get(p) or {}).get("tott") or {}
+        H[k], Rr[k] = T.get("height_in"), T.get("reach_in")
+    for i in range(D.n):
+        ha, hb = H.get(D.ia[i]), H.get(D.ib[i])
+        ra, rb = Rr.get(D.ia[i]), Rr.get(D.ib[i])
+        ht[i] = (ha - hb) if (ha and hb) else 0.0
+        rc[i] = (ra - rb) if (ra and rb) else 0.0
+    exp_ = np.log1p(D.nprior_a) - np.log1p(D.nprior_b)
+    # layoff (years since last UFC fight, capped at 3)
+    last = {}
+    lay = np.zeros(D.n)
+    for i in range(D.n):
+        la = min(3.0, (D.day[i] - last[D.ia[i]]) / YEAR) if D.ia[i] in last else 0.0
+        lb = min(3.0, (D.day[i] - last[D.ib[i]]) / YEAR) if D.ib[i] in last else 0.0
+        lay[i] = la - lb
+        last[D.ia[i]] = D.day[i]
+        last[D.ib[i]] = D.day[i]
+    old = np.nan_to_num(np.maximum(D.age_a - 34, 0) - np.maximum(D.age_b - 34, 0))
+    return {"age_gap_years": age, "years_past_34_gap": old, "reach_gap_in": rc, "height_gap_in": ht,
+            "log_ufc_fights_gap": exp_, "layoff_gap_years": lay}
+
+
+def analysis(D, preds, best, it, ix, no_test, log):
+    out = {}
+    y = D.y
+    zb = logit(preds[best])
+    # residual signal beyond the best rating: one feature at a time, fit on 2019-2023
+    feats = residual_features(D)
+    res = {}
+    for k, f in feats.items():
+        X = np.c_[zb, f]
+        b, Hh = _logit_fit(X[it], y[it], l2=1e-6)
+        se = np.sqrt(np.diag(np.linalg.inv(Hh)))
+        r = {"coef_rating": round(float(b[0]), 4), "coef": round(float(b[1]), 4), "se": round(float(se[1]), 4)}
+        if not no_test:
+            p1 = expit(X[ix] @ b)
+            b0, _ = _logit_fit(zb[it][:, None], y[it])
+            p0 = expit(zb[ix] * b0[0])
+            r["test_dll_vs_rating_rescaled"] = round(float(ll_vec(p1, y[ix]).mean() - ll_vec(p0, y[ix]).mean()), 5)
+        res[k] = r
+    out["residual_beyond_best"] = res
+    log("residual signal beyond %s (2019-2023 fit; coef per unit A-minus-B, se): %s"
+        % (best, {k: (v["coef"], v["se"]) for k, v in res.items()}))
+    # experience buckets
+    if not no_test:
+        mn = np.minimum(D.nprior_a, D.nprior_b)
+        buckets = [(1, 2), (3, 5), (6, 10), (11, 99)]
+        eb = {}
+        for lo_, hi_ in buckets:
+            m = ix[(mn[ix] >= lo_) & (mn[ix] <= hi_)]
+            eb["%d-%d" % (lo_, hi_)] = {"n": int(len(m)),
+                                        best: round(float(ll_vec(preds[best][m], y[m]).mean()), 5),
+                                        "elo_ref": round(float(ll_vec(preds["elo_ref"][m], y[m]).mean()), 5)}
+        out["test_by_min_prior_fights"] = eb
+        log("2024+ log loss by the less experienced man's prior UFC fights: %s" % eb)
+    # market benchmark (closing line, known only minutes before the bout: a benchmark, not a feature)
+    pm = market_probs(D)
+    if not np.isnan(pm[it]).all():
+        mt = it[~np.isnan(pm[it])]
+        zm = logit(pm)
+        bm, _ = _logit_fit(np.c_[zm, zb][mt], y[mt], l2=1e-6)
+        mk = {"tune_n": int(len(mt)), "tune_market": metrics(pm[mt], y[mt]), "stack_coef_market_rating": [
+            round(float(bm[0]), 4), round(float(bm[1]), 4)]}
+        if not no_test:
+            mx = ix[~np.isnan(pm[ix])]
+            mk["test_n"] = int(len(mx))
+            mk["test_market"] = metrics(pm[mx], y[mx])
+            mk["test_best_same_fights"] = metrics(preds[best][mx], y[mx])
+            mk["test_market_plus_best"] = metrics(expit(np.c_[zm, zb][mx] @ bm), y[mx])
+            mk["corr_logit_market_best"] = round(float(np.corrcoef(zm[mx], zb[mx])[0, 1]), 4)
+            log("market close 2024+ (n=%d): LL %.5f; %s on the same fights %.5f; market+%s stack %.5f"
+                % (len(mx), mk["test_market"]["log_loss"], best, mk["test_best_same_fights"]["log_loss"], best,
+                   mk["test_market_plus_best"]["log_loss"]))
+        out["market_benchmark"] = mk
+    return out
+
+
+def matchup_probs(roster, sys_params, a, b, stack=None, dims_coef=None):
+    """P(a beats b) from each system's current roster ratings (uncertainty included where the system has it)."""
+    A, Bb = roster.get(a), roster.get(b)
+    if not A or not Bb:
+        return None
+    out = {}
+    for name, P in sys_params.items():
+        ra, rb = A.get(name), Bb.get(name)
+        if not ra or not rb or ra.get("mu") is None or rb.get("mu") is None:
+            continue
+        kind = P["_kind"]
+        kap = P.get("kappa", 1.0)
+        d = ra["mu"] - rb["mu"]
+        if kind == "elo":
+            p = expit(kap * d)
+        elif kind == "glicko2":
+            g = 1.0 / math.sqrt(1.0 + 3.0 * (ra["sd"] ** 2 + rb["sd"] ** 2) / math.pi ** 2)
+            p = expit(kap * g * d)
+        elif kind == "trueskill":
+            p = float(ndtr(kap * d / math.sqrt(2.0 + ra["sd"] ** 2 + rb["sd"] ** 2)))
+        else:
+            vd = ra["sd"] ** 2 + rb["sd"] ** 2
+            p = expit(kap * d / math.sqrt(1.0 + math.pi * kap * kap * vd / 8.0))
+        out[name] = round(float(p), 4)
+    if dims_coef and A.get("dims") and Bb.get("dims"):
+        z = 0.0
+        for dim, c in dims_coef.items():
+            da, db = A["dims"].get(dim), Bb["dims"].get(dim)
+            if da and db:
+                z += c * ((da["off"] - db["def"]) - (db["off"] - da["def"]))
+        out["dims"] = round(float(expit(z)), 4)
+    if stack and all(m in out for m in stack[0]):
+        z = sum(w * float(logit(np.array([out[m]]))[0]) for m, w in zip(stack[0], stack[1]))
+        out["stack"] = round(float(expit(z)), 4)
+    return out
 
 
 # =====================================================================================================
@@ -1738,7 +1906,7 @@ def main():
             if k in chosen:
                 continue
             X = np.c_[[Z[c][it] for c in chosen + [k]]].T
-            cvll, _ = cv_lr(D, X, 1.0, it)
+            cvll, _ = cv_lr(D, X, 1.0, it, nonneg=True)
             if cvll < cur - 1e-4 and (best_add is None or cvll < best_add[1]):
                 best_add = (k, cvll)
         if not best_add:
@@ -1747,7 +1915,7 @@ def main():
         cur = best_add[1]
         stack_path.append({"add": best_add[0], "cv_log_loss": cur})
     Xs = np.c_[[Z[c] for c in chosen]].T
-    bs = fit_lr(Xs[it], ytr, 1.0)
+    bs = fit_lr_nonneg(Xs[it], ytr, 1.0)
     preds["stack"] = expit(Xs @ bs)
     tune_res["stack"] = {"tune": score(D, preds["stack"], it), "cv": cur}
     log("stack: %s weights %s, CV(2020-23) log loss %.5f" % (chosen, np.round(bs, 3), cur))
@@ -1772,6 +1940,7 @@ def main():
                test[k]["accuracy"], calib[k]["ece"], calib[k]["slope_no_intercept"],
                boot[k].get("d_log_loss_vs_elo_ref", 0), boot[k].get("p_better_than_elo_ref", 0)))
     log("best single system by tuning-window score: %s" % best)
+    extra = analysis(D, preds, best, it, ix if not args.no_test else it, args.no_test, log)
 
     # ------------------------------------------------------------------ outputs
     snap_day = D.day[-1]
@@ -1813,6 +1982,14 @@ def main():
     sys_out["stack"]["members"] = chosen
     sys_out["stack"]["weights"] = [float(b) for b in bs]
     sys_out["stack"]["path"] = stack_path
+    sys_params = {k: dict(tuned[k], _kind=finals[k]["kind"]) for k in finals}
+    match = {}
+    for a, b in (("alexander-volkanovski", "justin-gaethje"),):
+        mp = matchup_probs(roster, sys_params, a, b, stack=(chosen, [float(v) for v in bs]),
+                           dims_coef=dims_model["coef"])
+        if mp:
+            match["%s__%s" % (a, b)] = mp
+            log("current ratings, P(%s beats %s): %s" % (a, b, mp))
     out = {
         "meta": {
             "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
@@ -1832,6 +2009,8 @@ def main():
             "runtime_s": round(time.time() - t0),
         },
         "systems": sys_out,
+        "analysis": extra,
+        "matchups": match,
         "predictions": pred_out,
         "roster": roster,
     }

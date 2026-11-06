@@ -387,9 +387,10 @@ def load_davies_stoppage(fights, by_date, judge_ids):
     sc = pd.read_csv(CACHE / "davies/data/ufc_scorecards.csv", dtype={"decision_id": str})
     sc["date"] = pd.to_datetime(sc["event_date"], format="%B %d, %Y", errors="coerce").dt.date
     ev_date = {str(e): d for e, d in zip(sc["event_id"], sc["date"]) if pd.notna(d)}
+    title_date = {norm(f["event"]): f["date"] for f in fights.values()}
     out = {}
     for x in js:
-        d = ev_date.get(str(x["event_id"]))
+        d = title_date.get(norm(x["event_title"])) or ev_date.get(str(x["event_id"]))
         dates = [d + dt.timedelta(days=k) for k in (0, -1, 1)] if d else list(by_date)
         hit = match_fight(x["fighter_1"], x["fighter_2"], dates, by_date)
         if not hit or min(hit[2], hit[3]) < 0.6:

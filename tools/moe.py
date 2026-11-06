@@ -1359,8 +1359,10 @@ def strip_private(o):
         return {k: strip_private(v) for k, v in o.items() if not str(k).startswith("_")}
     if isinstance(o, (list, tuple)):
         return [strip_private(v) for v in o]
+    if isinstance(o, np.ndarray):
+        return [strip_private(v) for v in o.tolist()]
     if isinstance(o, np.generic):
-        return o.item()
+        o = o.item()
     if isinstance(o, float) and not math.isfinite(o):
         return None
     return o

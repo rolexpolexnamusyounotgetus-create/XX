@@ -45,16 +45,15 @@
     "note": "UFC 326 news conference, three-quarter, fist covers left eye"
   },
   {
-    "file": "wm-2023-04-champs.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Charles_Oliveira_do_Bronxs_Champs.jpg",
-    "page": "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_do_Bronxs_Champs.jpg",
-    "author": "Jose Carlos Silva e Silva",
-    "license": "CC BY-SA 4.0",
-    "date_taken": "2023-04-30",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "Charles Oliveira from the Bronxs, UFC Champion 2021 Records",
-    "attribution": "Jose Carlos Silva e Silva, CC BY-SA 4.0, via Wikimedia Commons"
+    "file": "espn-stance-left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/2504169.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/2504169",
+    "author": "ESPN / UFC (unknown photographer)",
+    "license": "All rights reserved (ESPN)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "note": "ESPN full-body fight-stance cutout, date unknown; shows leg tattoos and lower-chest portrait"
   },
   {
     "file": "espn-stance-right.png",

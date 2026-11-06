@@ -41,7 +41,10 @@ import sys
 import time
 from collections import Counter, defaultdict
 
-import numpy as np
+# single-threaded math: on a shared, oversubscribed machine OpenMP/BLAS thread pools spin and run ~10x slower
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+import numpy as np  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -546,7 +549,7 @@ def glm_predict(model, X, off):
 
 # ------------------------------------------------------------------ multi-task MLP (torch)
 def mlp_train(Xtr, Ytr, Etr, OFFtr, Xva=None, Yva=None, Eva=None, OFFva=None, hidden=(96, 48), drop=0.15,
-              wd=1e-3, lr=2e-3, epochs=200, seed=0, task_w=None, patience=20, fixed_epochs=None, threads=2):
+              wd=1e-3, lr=2e-3, epochs=200, seed=0, task_w=None, patience=20, fixed_epochs=None, threads=1):
     import torch
     torch.set_num_threads(threads)
     torch.manual_seed(seed)
@@ -635,7 +638,7 @@ def mlp_predict(model, X):
 
 # ------------------------------------------------------------------ LightGBM
 GBM_PARAMS = dict(learning_rate=0.06, num_leaves=7, min_data_in_leaf=50, feature_fraction=0.7, bagging_fraction=0.8,
-                  bagging_freq=1, lambda_l2=5.0, max_bin=63, verbose=-1, num_threads=2, seed=7,
+                  bagging_freq=1, lambda_l2=5.0, max_bin=63, verbose=-1, num_threads=1, seed=7,
                   min_sum_hessian_in_leaf=1e-3)
 
 
@@ -1285,6 +1288,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("cmd", choices=["build", "engine", "fit", "sim", "all"])
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--nsim", type=int, default=600, help="simulations per fight and config in `sim` (600)")
+    ap.add_argument("--procs", type=int, default=2, help="node worker processes for `sim` (<= 2)")
     args = ap.parse_args()
     if args.cmd in ("build", "all"):
         cmd_build(args)

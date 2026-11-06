@@ -1,0 +1,151 @@
+[
+  {
+    "file": "espn-headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/2504988.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/2504988",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "headshot",
+    "notes": "Official UFC studio headshot, front-on. Shows the scar on his left cheek, cauliflower ears and the top of the \"Blessed\" chest script. Date unknown (2024-2026)."
+  },
+  {
+    "file": "espn-stance-left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/2504988.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/2504988",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body studio cut-out, three-quarter from his right, black UFC shorts with tonal stars. Main physique and tattoo reference (rib text, \"ACE\", \"Blessed\")."
+  },
+  {
+    "file": "espn-stance-right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/2504988.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/2504988",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": "2026-06",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body studio cut-out, three-quarter from his left, red Venum stars-and-stripes shorts and blue \"Freedom 250\" gloves, so shot around June 2026. Recent physique."
+  },
+  {
+    "file": "wm-2026-06-14-redroom.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/UFC_Freedom_250%2C_the_mixed_martial_arts_event_produced_by_the_Ultimate_Fighting_Championship%2C_Sunday%2C_June_14%2C_2026%2C_in_the_Grand_Foyer_of_the_White_House_-_38.jpg/1280px-thumbnail.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250,_the_mixed_martial_arts_event_produced_by_the_Ultimate_Fighting_Championship,_Sunday,_June_14,_2026,_in_the_Grand_Foyer_of_the_White_House_-_38.jpg",
+    "author": "Abe McNatt / The White House",
+    "license": "Public domain (official White House photo)",
+    "date_taken": "2026-06-14",
+    "use": "embed-ok",
+    "what": "action",
+    "notes": "Warming up in the White House Red Room before his UFC Freedom 250 bout: three-quarter face looking down, flag over shoulders, white/blue walkout jersey, red shorts, blue gloves. Legs visible.",
+    "attribution": "Official White House Photo by Abe McNatt, public domain, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2026-06-12-lincoln-presser-crop.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/UFC_Freedom_250_Press_Conference_at_the_Lincoln_Memorial_in_Washington_on_June_12%2C_2026_-_27.jpg/3840px-UFC_Freedom_250_Press_Conference_at_the_Lincoln_Memorial_in_Washington_on_June_12%2C_2026_-_27.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Press_Conference_at_the_Lincoln_Memorial_in_Washington_on_June_12,_2026_-_27.jpg",
+    "author": "Sgt. 1st Class Brittany Primavera, U.S. Army (Flickr: usarmyband)",
+    "license": "Public domain (U.S. federal government work)",
+    "date_taken": "2026-06-12",
+    "use": "embed-ok",
+    "what": "3q",
+    "notes": "Crop (345 x 743 px) of a 3840 px Commons thumbnail: three-quarter view of his right side in a double-breasted black suit and tinted glasses, smiling. Recent hair (short sides, textured top).",
+    "attribution": "U.S. Army photo by Sgt. 1st Class Brittany Primavera, public domain, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2023-skidmore.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/MichaelChandler0523_%28cropped%29.jpg/1280px-MichaelChandler0523_%28cropped%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:MichaelChandler0523_(cropped).jpg",
+    "author": "Gage Skidmore",
+    "license": "CC BY-SA 2.0",
+    "date_taken": "2023-05-25",
+    "use": "embed-ok",
+    "what": "profile",
+    "notes": "Sharp, large near-profile of his right side (about 60-70 degrees), laughing. Best view of the right ear (cauliflower), temple recession, nose projection, stubble density and jaw.",
+    "attribution": "Gage Skidmore, CC BY-SA 2.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2021-skidmore.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Michael_Chandler_by_Gage_Skidmore_2021_%28cropped%29.jpg/1280px-Michael_Chandler_by_Gage_Skidmore_2021_%28cropped%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Michael_Chandler_by_Gage_Skidmore_2021_(cropped).jpg",
+    "author": "Gage Skidmore",
+    "license": "CC BY-SA 2.0",
+    "date_taken": "2021-12-20",
+    "use": "embed-ok",
+    "what": "3q",
+    "notes": "Speaking on stage, near-frontal, slightly turned, magenta stage light (colour cast; do not sample skin). Hair spiked up on top.",
+    "attribution": "Gage Skidmore, CC BY-SA 2.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2012-mtv.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Michael_Chandler_at_MTV_Movie_Awards_2012.jpg/1280px-Michael_Chandler_at_MTV_Movie_Awards_2012.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Michael_Chandler_at_MTV_Movie_Awards_2012.jpg",
+    "author": "The Hollywood Social Lounge (YouTube still)",
+    "license": "CC BY 3.0",
+    "date_taken": "2012-06-04",
+    "use": "embed-ok",
+    "what": "3q",
+    "notes": "Red-carpet video still, slight three-quarter, suit. Fourteen years old: fuller hairline, less ear damage.",
+    "attribution": "The Hollywood Social Lounge, CC BY 3.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2014-fortmeade-crop.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Michael_Chandler_%28Cropped%29.jpg/330px-Michael_Chandler_%28Cropped%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Michael_Chandler_(Cropped).jpg",
+    "author": "Nate Pesce (Fort Meade)",
+    "license": "CC BY 2.0",
+    "date_taken": "2014-02-06",
+    "use": "embed-ok",
+    "what": "3q",
+    "notes": "USO visit, smiling, three-quarter, black jacket. Small (330 px) and old.",
+    "attribution": "Nate Pesce, CC BY 2.0, via Wikimedia Commons"
+  },
+  {
+    "file": "wm-2022-walk.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Michael_Chandler_Walk.png/500px-Michael_Chandler_Walk.png",
+    "page": "https://commons.wikimedia.org/wiki/File:Michael_Chandler_Walk.png",
+    "author": "K22 (Commons uploader)",
+    "license": "CC BY-SA 4.0 (claimed)",
+    "date_taken": "2022-01-14",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Street photo in a fitted black T-shirt: arm size, posture, smile. Commons lists this as the uploader's \"own work\" under CC BY-SA 4.0, but it looks like professional event/promo photography, so the licence claim is doubtful. Treated as reference-only until the provenance is checked."
+  },
+  {
+    "file": "ref-cageside-f250-weighin-2026-06-13.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/06/UFC-Freedom-250-ceremonial-weigh-in-11.jpg",
+    "page": "https://cagesidepress.com/2026/06/14/mauricio-ruffy-delivers-highlight-reel-ko-against-chandler-at-ufc-white-house/",
+    "author": "Gabriel Gonzalez / Cageside Press",
+    "license": "All rights reserved",
+    "date_taken": "2026-06-13",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "UFC Freedom 250 ceremonial weigh-in face-off with Mauricio Ruffy, seen from behind: back muscles, the single-character tattoo on the back of the left shoulder, left profile edge. EXIF date 2026-06-13."
+  },
+  {
+    "file": "ref-cageside-presser-undated.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/06/Michael-Chandler.jpg",
+    "page": "https://cagesidepress.com/2026/06/11/ufc-freedom-250-michael-chandler-white-house/",
+    "author": "Cageside Press",
+    "license": "All rights reserved",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "3q",
+    "notes": "UFC press conference (crypto.com / RAM backdrop), slight three-quarter, grey jacket. Used in a June 2026 article; shoot date not captioned (2025-2026)."
+  },
+  {
+    "file": "ref-ufc-walkout-undated.webp",
+    "url": "https://mmasucka.com/api/media/file/Michael%20Chandler_20260627_000115_0000.webp",
+    "page": "https://mmasucka.com/news/michael-chandler-couples-heartwarming-message-with-snaps-from-ufc-freedom-250/",
+    "author": "UFC.com (as credited by MMA Sucka)",
+    "license": "All rights reserved",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "3q",
+    "notes": "Walkout with a US flag, three-quarter view of his left side, lips pursed. Sharp view of the left cauliflower ear, nose tip and nostrils, eyebrows and beard. Event not captioned (2025-2026)."
+  }
+]

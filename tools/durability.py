@@ -1026,7 +1026,8 @@ def ref_profile(X, fit_mask, knots):
     nd = X[fit_mask & (X.d_n_prior > 0).to_numpy()]
     ref = {"d_age_c": 0.0, "d_age_na": 0.0, "a_age_c": 0.0,
            "d_yrs": float(nd.d_yrs.median()), "d_lognp": float(nd.d_lognp.median()),
-           "d_cumoh100": float(nd.d_cumoh100.median()), "d_debut": 0.0}
+           "d_cumoh100": float(nd.d_cumoh100.median()), "d_debut": 0.0,
+           "a_yrs": float(nd.d_yrs.median()), "a_lognp": float(nd.d_lognp.median()), "a_debut": 0.0}
     for k in knots:
         ref["d_age_h%d" % int(k)] = 0.0
         ref["a_age_h%d" % int(k)] = 0.0
@@ -1135,9 +1136,12 @@ def matchup(r_live, spec, roster, ref, a_slug, b_slug, division, level_now, five
     """KD probability per landed standing head strike in each direction for a hypothetical fight."""
     names = ["const"] + r_live["cols"]
     b = r_live["b"]
+    # the roster's chin_cov / pow_cov are relative to the reference profile, so add the reference's own terms back
+    ref_lin = sum(b[i] * ref.get(n, 0.0) for i, n in enumerate(names) if n.startswith(("d_", "a_")))
     ctx = b[0] + (b[names.index("div_" + division)] if ("div_" + division) in names else 0.0) \
-        + five * b[names.index("five")] + title * b[names.index("title")]
-    out = {"division": division, "five": five, "title": title, "level_now": round(level_now, 6)}
+        + five * b[names.index("five")] + title * b[names.index("title")] + ref_lin
+    out = {"division": division, "five": five, "title": title, "level_now": round(level_now, 6),
+           "p_reference_pair": round(level_now * math.exp(ctx), 6)}
     rng = np.random.default_rng(seed)
     for att, de in ((a_slug, b_slug), (b_slug, a_slug)):
         A, Dd = roster[att], roster[de]
@@ -1336,6 +1340,7 @@ def main():
         "engine": {
             "level_now_trailing_730": round(level_now, 6), "level_now_trailing_365": round(level_365, 6),
             "terms_live": {n: round(float(b), 5) for n, b in zip(names_live, r_live["b"])},
+            "ref_lin": round(float(sum(b * ref.get(n, 0.0) for n, b in zip(names_live, r_live["b"]) if n.startswith(("d_", "a_")))), 5),
             "norm_chin": round(norm_chin, 4), "norm_pow": round(norm_pow, 4), "norm_joint": round(norm_joint, 4),
             "alpha_chin": spec["alpha_c"], "alpha_pow": spec["alpha_p"],
         },

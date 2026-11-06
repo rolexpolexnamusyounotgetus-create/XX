@@ -42,7 +42,7 @@ from __future__ import annotations
 import os
 
 for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
-    os.environ.setdefault(_v, "2")
+    os.environ.setdefault(_v, "1")
 
 import argparse
 import datetime as dt
@@ -320,6 +320,7 @@ class Fit:
         if warm is not None and warm["A"].shape[1] != K:
             raise ValueError("warm start with a different K")
         self.history = []
+        self._cP, self._ceta, self._parts = None, None, (None, None)
         self.run(max_sweeps, tol, verbose)
 
     # ---------------------------------------------------------------- pieces
@@ -338,34 +339,50 @@ class Fit:
         return P
 
     def eta(self, P):
-        return self.Zc @ P["C"].T + P["A"][self.x] @ P["W"].T + P["D"][self.y] @ P["V"].T
+        if self._cP is P:
+            return self._ceta
+        e = self.Zc @ P["C"].T + P["A"][self.x] @ P["W"].T + P["D"][self.y] @ P["V"].T
+        self._cP, self._ceta = P, e
+        return e
 
     def win_s(self, P):
         Aa, Ab, Da, Db = P["A"][self.fa], P["A"][self.fb], P["D"][self.fa], P["D"][self.fb]
         return ((Aa - Ab) @ P["ua"] + (Da - Db) @ P["ud"] + ((Aa @ P["M"]) * Db).sum(1)
                 - ((Ab @ P["M"]) * Da).sum(1))
 
-    def loss(self, P):
-        lam, lh = self.hp["lam"], self.hp.get("lam_head", 1.0)
-        L, _, _ = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc)
-        s = self.win_s(P)
-        L += (self.fw * (np.logaddexp(0, s) - self.fy * s)).sum()
-        L += 0.5 * lam * ((P["A"] ** 2).sum() + (P["D"] ** 2).sum() + (P["W"] ** 2).sum() + (P["V"] ** 2).sum())
-        L += 0.5 * lh * ((P["ua"] ** 2).sum() + (P["ud"] ** 2).sum() + (P["M"] ** 2).sum())
-        L += 0.5e-4 * (P["C"] ** 2).sum()
-        return L
+    def loss_stat(self, P):
+        return _glm_terms(self.eta(P), self.Yr, self.Er, self.wc)[0]
 
-    def _accept(self, P, new, L0, keys):
+    def loss_win(self, P):
+        s = self.win_s(P)
+        return (self.fw * (np.logaddexp(0, s) - self.fy * s)).sum()
+
+    def prior(self, P):
+        lam, lh = self.hp["lam"], self.hp.get("lam_head", 1.0)
+        return (0.5 * lam * ((P["A"] ** 2).sum() + (P["D"] ** 2).sum() + (P["W"] ** 2).sum() + (P["V"] ** 2).sum())
+                + 0.5 * lh * ((P["ua"] ** 2).sum() + (P["ud"] ** 2).sum() + (P["M"] ** 2).sum())
+                + 0.5e-4 * (P["C"] ** 2).sum())
+
+    def loss(self, P, parts=None):
+        """Full objective. parts = (stat, win) already known for P's unchanged components (None = compute)."""
+        ls = self.loss_stat(P) if parts is None or parts[0] is None else parts[0]
+        lw = self.loss_win(P) if parts is None or parts[1] is None else parts[1]
+        self._parts = (ls, lw)
+        return ls + lw + self.prior(P)
+
+    def _accept(self, P, new, L0, keys, stat_same=False, win_same=False):
         """Backtracking: take the step if it lowers the objective, else halve it (up to 6 times)."""
         step = 1.0
+        parts0 = self._parts
         for _ in range(7):
             trial = dict(P)
             for k in keys:
                 trial[k] = P[k] + step * (new[k] - P[k])
-            L1 = self.loss(trial)
+            L1 = self.loss(trial, (parts0[0] if stat_same else None, parts0[1] if win_same else None))
             if L1 <= L0:
                 return trial, L1
             step *= 0.5
+        self._parts = parts0
         return P, L0
 
     def step_loadings(self, P, L0):
@@ -386,7 +403,7 @@ class Fit:
                 d = np.linalg.lstsq(Hm, g, rcond=None)[0]
             th = th - d
             new["W"][t], new["V"][t], new["C"][t] = th[:K], th[K:2 * K], th[2 * K:]
-        return self._accept(P, new, L0, ("W", "V", "C"))
+        return self._accept(P, new, L0, ("W", "V", "C"), win_same=True)
 
     def step_fighters(self, P, L0):
         lam, K, F = self.hp["lam"], self.K, self.D.F
@@ -437,7 +454,7 @@ class Fit:
         Hm = (Phi * (self.fw * sg * (1 - sg))[:, None]).T @ Phi + lh * np.eye(len(th))
         th = th - np.linalg.solve(Hm, g)
         new = {"ua": th[:K], "ud": th[K:2 * K], "M": th[2 * K:].reshape(K, K)}
-        return self._accept(P, new, L0, ("ua", "ud", "M"))
+        return self._accept(P, new, L0, ("ua", "ud", "M"), stat_same=True)
 
     @staticmethod
     def _balance_mat(Ga, Gw):
@@ -463,7 +480,7 @@ class Fit:
         new["D"], new["V"] = P["D"] @ Q, P["V"] @ Qi
         new["ua"], new["ud"] = Si @ P["ua"], Qi @ P["ud"]
         new["M"] = Si @ P["M"] @ Qi
-        L1 = self.loss(new)
+        L1 = self.loss(new, self._parts)        # predictions unchanged: only the prior moves
         return (new, L1) if L1 < L0 else (P, L0)
 
     def run(self, max_sweeps, tol, verbose):

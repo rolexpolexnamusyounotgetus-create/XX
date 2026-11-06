@@ -1312,7 +1312,13 @@ def main():
     ap.add_argument("--n-lgb", type=int, default=None)
     ap.add_argument("--n-xgb", type=int, default=None)
     ap.add_argument("--boot", type=int, default=2000)
+    ap.add_argument("--stage2", action="store_true", help="reuse the cached stage-1 fits (out/ml_cache/stage1.pkl)")
     args = ap.parse_args()
+    if args.stage2:
+        R = pickle.load(open(os.path.join(CACHE_DIR, "stage1.pkl"), "rb"))
+        R["_ctx"]["args"] = args
+        stage_two(R)
+        return
     n_lgb = args.n_lgb or (3 if args.quick else 14)
     n_xgb = args.n_xgb or (2 if args.quick else 6)
     T0 = time.time()
@@ -1462,7 +1468,12 @@ def main():
                      lr_best=lr_best, lgb_best=lgb_best, xgb_best=xgb_best, lr_final=lr_final,
                      lgb_final=lgb_final, xgb_final=xgb_final, w_ml=w_ml, bt_by_id=bt_by_id,
                      roster_feats=roster_feats, margin_tun=margin_tun, tmeta=tmeta, args=args, T0=T0)
+    pickle.dump(R, open(os.path.join(CACHE_DIR, "stage1.pkl"), "wb"))
     stage_two(R)
+
+
+def stage_two(R):   # STUB-REPLACED-BELOW
+    log("stage two not written yet")
 
 
 if __name__ == "__main__":

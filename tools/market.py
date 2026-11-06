@@ -2059,6 +2059,11 @@ def cmd_tables(a):
     for k, v in E['checks'].items():
         L.append(f'- {k}: {v}')
     L.append(f"- diag: {E['diag']}")
+    k = 0
+    for i, line in enumerate(L):
+        if line.lstrip('\n').startswith('### '):
+            k += 1
+            L[i] = line.replace('### ', f'### 4.{k} ', 1)
     print('\n'.join(L))
 
 
