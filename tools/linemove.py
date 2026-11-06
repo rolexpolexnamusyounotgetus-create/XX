@@ -1788,6 +1788,137 @@ def stage_vault(a):
 STAGES["vault"] = stage_vault
 
 
+# ====================================================================== stage: tables (research/model_linemove.md)
+def stage_tables(a):
+    """Print every table of research/model_linemove.md from data/derived/linemove.json (no computation)."""
+    D = json.load(open(OUT_JSON))
+    f5 = lambda v: "%.4f" % v if isinstance(v, (int, float)) else str(v)
+    dci = lambda c: "%+.4f [%+.4f, %+.4f]" % (c["diff"], c["diff_ci"][0], c["diff_ci"][1])
+    sci = lambda s: "%.2f [%.2f, %.2f]" % (s["share"], s["share_ci"][0], s["share_ci"][1])
+
+    def table(title, head, rows):
+        print("\n### %s\n" % title)
+        print("| " + " | ".join(head) + " |")
+        print("|" + "---|" * len(head))
+        for r in rows:
+            print("| " + " | ".join(str(x) for x in r) + " |")
+    cov = D["data"]["coverage_by_year"]
+    table("T1 coverage (decisive dev evaluation fights)", ["year", "eval fights", "with a 10-point trajectory", "per-book closes"],
+          [[y, c["eval_rows"], c["trajectory_eval_rows"], c["per_book"]] for y, c in cov.items() if int(y) >= 2015])
+    ch = D["data"]["checks"]
+    tm = D["timing"]
+    table("T2 sparkline checks and timing", ["item", "value"], [
+        ["point 9 vs market.json power close, mean abs diff (n %d)" % ch["n"], ch["mean_abs(spark9_pow - market close_pow)"]],
+        ["point 0 identical to the parsed opener", ch["share opener identical (< 0.005)"]],
+        ["sampling test, Gaussian ll per step: time-uniform vs index-only (forward-chained 2016-2023, n %d)" %
+         tm["forward_chained_mean_ll"]["n"], "%s vs %s" % (tm["forward_chained_mean_ll"]["time_uniform"],
+                                                          tm["forward_chained_mean_ll"]["index_only"])],
+        ["matchup lead (days from BFO's first line to the event), quartiles", "%s / %s / %s" % (
+            tm["lead_days_quantiles"]["25"], tm["lead_days_quantiles"]["50"], tm["lead_days_quantiles"]["75"])],
+        ["lead estimator CV MAE / median abs error (days; %d short-notice anchors)" % tm["lead_estimator"]["anchors"],
+         "%s / %s" % (tm["lead_estimator"]["cv_mae_days_isotonic_capped"], tm["lead_estimator"]["cv_median_abs_err_days"])]])
+    q, qv = D["q1"]["move_regression"], D["validation_2024_2025"]["first_look"]["q1"]["move_regression"]
+    rows = []
+    for s in (0, 1, 4, 8):
+        k = "from point %d" % s
+        m, mv = q[k]["models"], qv[k]["oos_r2"]
+        rows.append([s, q[k]["sd_logit_move_to_close"], q[k]["corr(move, model gap)"], qv[k]["corr(move, model gap)"],
+                     m["M1 model gap"]["oos_r2_2019_2023"], mv["M1 model gap"],
+                     m["M2 + market rating + WHR gaps"]["oos_r2_2019_2023"], mv["M2 + market rating + WHR gaps"],
+                     m["M3 + line level (+ momentum)"]["oos_r2_2019_2023"], mv["M3 + line level (+ momentum)"]])
+    table("T3 how much of the move to the close is predictable (logit move; out-of-sample R^2, no intercept)",
+          ["from point", "sd of move (2019-23)", "corr(move, ML v2 gap) CV", "2024-25", "R2 M1 gap CV", "2024-25",
+           "R2 M2 +ratings CV", "2024-25", "R2 M3 +level CV", "2024-25"], rows)
+    cl, clv = D["q1"]["clv"], D["validation_2024_2025"]["first_look"]["q1"]["clv"]
+    rows = []
+    for s in (0, 1, 4, 8):
+        for t in (0.0, 0.03, 0.10):
+            c = cl["point %d | edge > %.2f | 2019-2023" % (s, t)]
+            o = cl.get("point %d | edge > %.2f | 2015-2018" % (s, t))
+            v = clv["point %d | edge > %.2f" % (s, t)]
+            fmt = lambda x, ci: "%+.3f [%+.3f, %+.3f]" % (x, ci[0], ci[1])
+            rows.append([s, t, c["bets"], fmt(c["clv_minus_both_sides"], c["clv_minus_both_sides_ci"]),
+                         fmt(c["roi"], c["roi_ci"]), fmt(o["roi"], o["roi_ci"]) if o else "-",
+                         fmt(v["clv_minus_both_sides"], v["clv_minus_both_sides_ci"]), fmt(v["roi"], v["roi_ci"])])
+    table("T4 betting ML v2's side at point s, at that point's price (point 0: one book's opener; 1-8: BFO mean odds)",
+          ["point", "edge >", "bets 2019-23", "CLV minus both sides 2019-23", "ROI 2019-23", "ROI 2015-18",
+           "CLV minus both sides 2024-25", "ROI 2024-25"], rows)
+    sh, shv = D["addendum"]["share_of_open_to_close_gain"], D["validation_2024_2025"]["addendum_look"]["share_of_open_to_close_gain"]
+    keys = [("open-trained stack (opener + ML v2 logistic)", "open-trained stack (static)"),
+            ("ML v2 logistic alone", "ML v2 logistic alone (static)")] + \
+           [("raw consensus point %d" % j, "raw consensus point %d" % j) for j in (1, 4, 8)] + \
+           [("consensus stack fed point %d" % j, "consensus stack fed point %d (static)" % j) for j in (1, 4, 8)]
+    table("T5 share of the opener -> close log-loss gain already in each forecast (1 = as good as the close)",
+          ["forecast", "CV 2021-23", "2024-25"], [[k, sci(sh[k]), sci(shv[kv])] for k, kv in keys])
+    rl, rlv = D["stacks"]["raw_lines"], D["validation_2024_2025"]["first_look"]["raw_lines"]
+    table("T6 raw lines, log loss (decisive fights with a full trajectory)", ["line", "2019-23", "CV years 2021-23", "2024-25"],
+          [[k, rl[k]["ll_2019_2023"], rl[k]["ll_cv_years"], rlv.get({"ml2lr": "ml2lr_static"}.get(k, k), "")] for k in rl])
+    xf = D["stacks"]["cross_feed_cv"]["rows_trained_on_snapshot_i_cols_fed_snapshot_j"]
+    table("T7 cross-feeding, CV 2021-23 log loss (row: training point of a line + ML v2 logistic stack; column: line fed)",
+          ["trained on \\ fed"] + [str(j) for j in range(NPTS)], [[i] + ["%.4f" % v for v in xf[i]] for i in range(NPTS)])
+    xv = D["validation_2024_2025"]["first_look"]["cross_feed"]
+    table("T7b the same on 2024-25 (fit 2019-2023, static)", ["trained on \\ fed"] + [str(j) for j in range(NPTS)],
+          [[k.split(" | ")[1]] + ["%.4f" % xv[k][str(j)] for j in range(NPTS)] for k in xv if k.startswith("static")])
+    cs = D["beyond"]["consensus_stack"]
+    table("T8 consensus training sets (CV 2021-23, mean log loss over fed points 4-9; h by the 0.0005 rule)",
+          ["set", "h", "mean fed 4-9", "weights (line, ML v2 lr) fit 2019-23"],
+          [[k, v["h"], v["by_h"][str(v["h"])]["mean_fed_4_9"], v["weights_fit_le_2023"]] for k, v in cs["sets"].items()])
+    gate = cs["gate_vs_open_trained"]
+    inc = D["addendum"]["incumbent_as_run"]
+    v1 = D["validation_2024_2025"]["first_look"]["paired"]
+    v2 = D["validation_2024_2025"]["addendum_look"]["incumbent_as_run"]
+    table("T9 the routing comparison (paired log-loss differences, 2,000 card resamples)", ["comparison", "CV 2021-23", "2024-25 (static)", "2024-25 (January refit)"], [
+        ["PRIMARY: consensus minus open-trained, both fed power, pooled fed 4-9",
+         dci(gate["pooled over fed points 4-9 (each fight counted once per point)"]),
+         dci(v1["static | PRIMARY consensus minus open-trained, pooled fed 4-9"]), dci(v1["roll | PRIMARY consensus minus open-trained, pooled fed 4-9"])],
+        ["consensus minus fwd-4.1 as run (open-trained fed multiplicative), pooled 4-9",
+         dci(inc["consensus minus open-trained fed MULT (fwd-4.1 as run), pooled fed 4-9"]),
+         dci(v2["static | consensus minus fwd-4.1 as run (open-trained fed MULT), pooled fed 4-9"]),
+         dci(v2["roll | consensus minus fwd-4.1 as run (open-trained fed MULT), pooled fed 4-9"])],
+        ["open-trained fed multiplicative minus fed power, pooled 4-9",
+         dci(inc["open-trained fed MULT minus open-trained fed POWER, pooled fed 4-9"]),
+         dci(v2["static | open-trained fed MULT minus fed POWER, pooled fed 4-9"]),
+         dci(v2["roll | open-trained fed MULT minus fed POWER, pooled fed 4-9"])],
+        ["close-trained minus consensus, fed point 8", dci(gate["close-trained minus chosen, fed point 8"]),
+         dci(v1["static | close-trained minus consensus, fed 8"]), dci(v1["roll | close-trained minus consensus, fed 8"])],
+        ["close-trained minus consensus, fed the close (point 9)", dci(gate["close-trained minus chosen, fed point 9"]),
+         dci(v1["static | close-trained minus consensus, fed 9"]), dci(v1["roll | close-trained minus consensus, fed 9"])],
+        ["consensus minus open-trained, fed the opener (point 0)", "%+.4f (T7: point-4-trained minus open-trained)" % (xf[4][0] - xf[0][0]),
+         dci(v1["static | consensus minus open-trained, fed 0"]), dci(v1["roll | consensus minus open-trained, fed 0"])],
+    ])
+    print("\nverdicts: PREREG primary %s; addendum as-run %s" % (
+        D["validation_2024_2025"]["first_look"]["primary_verdict"], D["validation_2024_2025"]["addendum_look"]["as_run_verdict"]))
+    syn = D["stacks"]["synthetic_tk"]
+    table("T10 synthetic T-k lines (Brownian bridge between bracketing sparkline points, time-uniform reading; CV 2021-23)",
+          ["k", "rows", "stack trained on T-k: CV", "weights fit 2019-23", "raw line", "open-trained fed T-k", "point-8-trained fed T-k"],
+          [[k, v["rows"], v["cv_by_h"][str(v["h"])], v["weights_fit_le_2023"], v["raw_line_ll_cv_years"],
+            v["snapshot_stacks_fed_this_line_cv"]["trained on snapshot 0"], v["snapshot_stacks_fed_this_line_cv"]["trained on snapshot 8"]]
+           for k, v in syn.items()])
+    w = D["beyond"]["winner_beyond_close"]["variants"]
+    table("T11 winner beyond the close (free signs, no intercept; CV 2021-23 fit 2019..Y-1; B8 CV 2022-23)",
+          ["variant", "CV log loss", "vs B0"], [[k, v["cv"], dci(v["vs_B0"])] for k, v in w.items()])
+    b3 = D["validation_2024_2025"]["first_look"]["beyond_close_B3_vs_B0"]["cmp"]
+    print("\nB3 minus B0 on 2024-25: %s (n %d)" % (dci(b3), b3["n"]))
+    dm = D["beyond"]["decision_beyond_props"]
+    table("T12 goes-to-decision beyond the decision prop (logistic with intercept; CV 2022-23, fit 2021..Y-1)",
+          ["variant", "CV log loss", "vs D0"], [[k, v["cv_2022_2023"], dci(v["vs_D0"]) if "vs_D0" in v else ""] for k, v in dm.items()])
+    pb, pbv = D["addendum"]["per_book_2021_2023"], D["validation_2024_2025"]["addendum_look"]["per_book"]
+    table("T13 per-book closes minus the consensus close (multiplicative both)", ["book", "n 2021-23", "2021-23", "n 2024-25", "2024-25"],
+          [[k, pb[k]["n"], dci(pb[k]), pbv[k]["n"] if k in pbv else "", dci(pbv[k]) if k in pbv else ""] for k in pb])
+    W = D["weights"]
+    table("T14 stack weights (logit p = w_line logit(line) + w_ml logit(ML v2 logistic); inputs clipped to [0.01, 0.99])",
+          ["stack", "training points", "line de-vig", "fit 2019-2023 (validation)", "production 2019-2025"],
+          [[k, v["training_points"], v["line_devig"], v["weights_fit_2019_2023"], v["weights_production_2019_2025"]] for k, v in W.items()])
+    smc, smv = D["addendum"]["stack_minus_close"], D["validation_2024_2025"]["addendum_look"]["stack_minus_close"]
+    table("T15 stacks minus the raw close", ["stack", "CV 2021-23", "2024-25"], [
+        ["open-trained fed the opener", dci(smc["open-trained fed point 0 minus the close"]), dci(smv["open-trained (static) fed point 0 minus the close"])]] +
+        [["consensus fed point %d" % j, dci(smc["consensus fed point %d minus the close" % j]),
+          dci(smv["consensus (static) fed point %d minus the close" % j])] for j in (1, 4, 8, 9)])
+
+
+STAGES["tables"] = stage_tables
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
