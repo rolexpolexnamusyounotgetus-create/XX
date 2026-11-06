@@ -379,7 +379,6 @@ def stage_lookahead(args):
     sys.path.insert(0, HERE)
     import bayes as BY
     X = BY.load_data()
-    J = load_out()
     res = {}
     # (1) predictions: OOF 2022 with the 2022 hyperparameters, monthly EP + filter; cut mid-June 2022
     cut = dt.date(2022, 6, 15).toordinal()
@@ -423,6 +422,7 @@ def stage_lookahead(args):
                                                  "sec": round(time.time() - t0)}
         log("fit look-ahead:", res["fit_2021_on_post2020_perturbed"])
         BY._SD.clear()
+    J = load_out()
     J["lookahead"] = res
     save_out(J)
 
