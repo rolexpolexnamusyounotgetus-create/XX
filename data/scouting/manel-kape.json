@@ -1,0 +1,87 @@
+{
+  "slug": "manel-kape",
+  "name": "Manel Kape",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Top flyweight contender and next challenger. Has won four straight UFC fights by KO/TKO, most recently a third-round TKO of Kyoji Horiguchi (Jun 20, 2026, UFC Vegas 119), which avenged a 2017 RIZIN submission loss, and a first-round KO of Brandon Royval (Dec 13, 2025). Former RIZIN bantamweight champion; pro record 24-7, UFC 8-3. Faces champion Joshua Van for the title at UFC 336 in Toronto (Jan 30, 2027).",
+    "title": null,
+    "ranking": "#2 flyweight (UFC rankings as listed by ufcrankings.org, Nov 3, 2026); ufcalendar.com lists him #1 the same day",
+    "active": true,
+    "next_fight": "vs Joshua Van, UFC 336, Scotiabank Arena, Toronto, Jan 30, 2027 (flyweight title, main event)",
+    "injuries": [],
+    "sources": [
+      "https://www.espn.com/mma/story/_/id/49131645/kape-topples-horiguchi-fourth-straight-knockout",
+      "https://sports.yahoo.com/mma/article/ufc-vegas-119-results-manel-kape-stuns-kyoji-horiguchi-with-revenge-knockout-newcomer-scores-fastest-twister-in-ufc-history-025716839.html",
+      "https://www.cbssports.com/ufc/news/ufc-fight-night-results-highlights-manel-kape-brandon-royval-knockout/",
+      "https://cagesidepress.com/2025/12/14/manel-kape-knocks-out-brandon-royval-in-first-round-shakes-up-flyweight-title-picture",
+      "https://sports.yahoo.com/articles/joshua-van-vs-manel-kape-194327124.html",
+      "https://www.houstonchronicle.com/sports/article/joshua-van-manel-kape-ufc-336-toronto-flyweight-22492787.php",
+      "https://en.wikipedia.org/wiki/UFC_336",
+      "https://ufcrankings.org/",
+      "https://www.ufcalendar.com/rankings",
+      "http://ufcstats.com/fighter-details/5d1b7e3dd9e11074"
+    ]
+  },
+  "style": {
+    "archetype": "power puncher",
+    "stance": "southpaw",
+    "tags": ["southpaw", "power", "counter", "flying-knee", "takedown-defense", "durable", "late-surge"],
+    "signature": [
+      "lead right hand (hook) from southpaw: dropped Royval for the first-round finish",
+      "counter right then ground strikes and an uppercut as Horiguchi tried to rise (UFC Vegas 119)",
+      "punches at distance: third-round TKOs of Bruno Silva and Asu Almabayev",
+      "flying knee: KO of Ode Osbourne (UFC 265, 2021)"
+    ],
+    "weaknesses": [
+      "can be out-pointed by movers and wrestlers: lost the first two rounds to Horiguchi (2 takedowns, 4:00 control) before the finish",
+      "low output in his decision losses: 20 of 48 significant strikes vs Muhammad Mokaev (2024), who took him down 3 times",
+      "all three UFC losses are decisions (Pantoja, Nicolau, Mokaev)",
+      "rarely wrestles himself: 3 takedowns from 10 attempts in 11 UFC fights"
+    ],
+    "summary": "A southpaw power striker who lands fight-ending shots, often after a slow start, and will counter or go shot for shot. He has never been knocked down in the UFC and stops most takedowns, but opponents who move and mix in wrestling have taken rounds and decisions from him.",
+    "sources": [
+      "https://www.espn.com/mma/story/_/id/49131645/kape-topples-horiguchi-fourth-straight-knockout",
+      "https://thebodylockmma.com/ufc/ufc-results/manel-kape-shocks-kyoji-horiguchi-with-devastating-third-round-knockout/",
+      "https://www.cbssports.com/ufc/news/ufc-fight-night-results-highlights-manel-kape-brandon-royval-knockout/",
+      "https://www.essentiallysports.com/ufc-mma-news-ufc-vegas-103-manel-kape-vs-asu-almabayev-prediction-stats-and-fight-breakdown/",
+      "https://cagesidepress.com/2021/02/02/welcome-to-the-ufc-manel-kape/",
+      "http://ufcstats.com/fighter-details/5d1b7e3dd9e11074"
+    ]
+  },
+  "moves": {
+    "jab": 0.24,
+    "cross": 0.28,
+    "hook": 0.24,
+    "overhand": 0.07,
+    "upper": 0.12,
+    "headkick": 0.05,
+    "bodykick": 0.5,
+    "bodyhook": 0.25,
+    "bodystraight": 0.25,
+    "calf": 0.45,
+    "inside": 0.55,
+    "spinning": 0.02,
+    "knee": 0.05,
+    "elbow": 0.0,
+    "notes": "Southpaw: 'jab' is his right jab, 'cross' his left straight, and 'hook' his lead right hook (the punch that dropped Royval). Groups follow his target split in fighters.json: decayed significant attempts 77% head, 13% body, 10% legs (career 77/13/9); landed 66% head, 19% body, 16% legs. The uppercut gets 0.12 because it ended the Horiguchi fight. Body kicks lead the body group as the open-stance body kick is the obvious southpaw weapon, but no source confirms this. Leg strikes are accurate (22/22 vs Silva, 6/6 vs Horiguchi); calf vs inside is a judgment. Knee 0.05 stands for the flying-knee KO of Osbourne. About 89% of his attempts come at distance. Sources: data/derived/fighters.json, data/raw ufcstats per-fight stats, ESPN and CBS recaps."
+  },
+  "appearance": {
+    "build": "compact flyweight: 5 ft 5 in with a 68 in reach (ufcstats)",
+    "hair": "unknown",
+    "facial_hair": "unknown",
+    "skin": "dark",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/5d1b7e3dd9e11074",
+      "https://www.ufc.com/athlete/manel-kape"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Knockdown power: 8 knockdowns in 124 UFC minutes (0.97 per 15 min vs flyweight prior 0.32); 6 of 8 UFC wins by KO/TKO.", "source": "data/derived/fighters.json" },
+    { "note": "Never knocked down or stopped in 11 UFC fights (kd_absorbed 0, ko_losses 0).", "source": "data/derived/fighters.json" },
+    { "note": "Three of his four straight KOs came in round 3 (Silva, Almabayev, Horiguchi), and Horiguchi controlled rounds 1-2 before being finished; fighters.json pace shows round-3 output at 2.6x round 1 in his 5-round fights (small sample: partial third rounds vs Almabayev and Horiguchi).", "source": "https://www.espn.com/mma/story/_/id/49131645/kape-topples-horiguchi-fourth-straight-knockout" },
+    { "note": "Takedown defense 79% career: opponents landed 9 of 42 attempts.", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "medium"
+}

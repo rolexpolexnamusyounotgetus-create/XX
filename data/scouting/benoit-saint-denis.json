@@ -1,0 +1,80 @@
+{
+  "slug": "benoit-saint-denis",
+  "name": "Benoit Saint Denis",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Paddy Pimblett submitted him in 52 seconds with a D'Arce / Peruvian-necktie choke at UFC 329 (Jul 11, 2026), ending a run of four straight finishes. He dropped three places in the rankings and is booked to headline UFC Fight Night Sydney against unbeaten Quillan Salkilld over five rounds (Feb 7, 2027 local time).",
+    "title": null,
+    "ranking": "#6-#8 UFC lightweight in early November 2026 (the lists disagree: ufcalendar.com #8 on Nov 3, Home of Fight #6 on Nov 5); he fell three places after UFC 329",
+    "active": true,
+    "next_fight": "vs Quillan Salkilld, UFC Fight Night: Salkilld vs. Saint Denis, Afterpay Arena, Sydney, Feb 7, 2027 local (Feb 6 US time), five-round main event",
+    "injuries": [],
+    "sources": [
+      "https://www.ufc.com/news/ufc-fight-night-sydney-main-event-set-quillan-salkilld-face-benoit-saint-denis",
+      "https://sports.yahoo.com/articles/quillan-salkilld-benoit-saint-denis-041919424.html",
+      "https://www.espn.com/mma/fightcenter/_/id/600062420/league/ufc",
+      "https://www.espn.com/mma/story/_/id/49339995/ufc-329-paddy-pimblett-superstar-moment-benoit-saint-denis",
+      "https://www.sherdog.com/fighter/Benoit-St-Denis-317103",
+      "https://lnt.ma/?p=553032",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "https://www.homeoffight.com/ufc-rankings"
+    ]
+  },
+  "style": {
+    "archetype": "wrestle-boxer",
+    "stance": "southpaw",
+    "tags": ["pressure", "southpaw", "power", "head-kicks", "body-work", "clinch", "chain-wrestling", "cage-wrestling", "top-control", "ground-and-pound", "back-takes", "submissions"],
+    "signature": [
+      "relentless takedown attempts (about 12 per 15 minutes) chained against the fence",
+      "mounted ground-and-pound (97 significant strikes, 67 of them on the ground, before a mount TKO of Dan Hooker at UFC 325)",
+      "rear-naked choke (Mauricio Ruffy) and arm-triangle from side control (Kyle Prepolec)",
+      "southpaw left hand (16-second KO of Beneil Dariush, UFC 322)",
+      "head kick (KO of Matt Frevola, UFC 295)",
+      "body kicks and clinch strikes (31 clinch strikes landed vs Dustin Poirier)"
+    ],
+    "weaknesses": [
+      "0-2 in five-round fights: KO'd by Poirier in round 2 at UFC 299 after leading in round 1, and stopped by the doctor after round 2 vs Renato Moicano",
+      "his shots expose his neck: Pimblett choked him off a stuffed takedown (UFC 329), and Poirier logged 4 submission attempts on him",
+      "hittable on the way in: significant-strike defence about 42% (fighters.json; lightweight median about 54%)",
+      "converts only about 35% of his takedown attempts"
+    ],
+    "summary": "A former French special-forces soldier who fights like a southpaw wrestle-boxer. He walks forward behind a heavy left hand and body kicks, then chains takedown attempts until he gets on top, where he either pounds or chokes. Nearly a third of his significant strikes land on the ground. Elite opponents have punished his entries: his 2024 losses came in round 2 of five-round fights, and he was submitted off a shot in 2026.",
+    "sources": [
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_stats.csv (UFC 295, 299, Paris 2024, UFC 315, Paris 2025, 322, 325, 329 bout stats)",
+      "https://www.thescore.com/mma/news/3399342/watch-saint-denis-flattens-dariush-for-16-second-ko",
+      "https://cagesidepress.com/2025/11/15/ufc-322-benoit-saint-denis-stuns-beneil-dariush-with-16-second-ko",
+      "https://sports.yahoo.com/articles/paddy-pimblett-quickly-submits-benoit-031630151.html",
+      "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Moicano_vs._Saint_Denis",
+      "https://www.sportskeeda.com/mma/was-benoit-saint-denis-in-the-army",
+      "https://en.wikipedia.org/wiki/Beno%C3%AEt_Saint_Denis"
+    ]
+  },
+  "moves": {
+    "jab": 0.2, "cross": 0.35, "hook": 0.25, "overhand": 0.07, "upper": 0.08, "headkick": 0.05,
+    "bodykick": 0.5, "bodyhook": 0.25, "bodystraight": 0.25,
+    "calf": 0.4, "inside": 0.6, "spinning": 0.0, "knee": 0.25, "elbow": 0.2,
+    "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json, where recency-weighted landed shares are head 0.67 / body 0.24 / leg 0.09 and attempt shares are head 0.76 / body 0.19 / leg 0.06 (career landed 0.63 / 0.26 / 0.11). His body share is above the lightweight median (about 0.22), so bodykick is weighted highest in that group. The cross stands for his rear left as a southpaw, the punch that knocked out Dariush. Few leg kicks: leg strikes are only 6% of his attempts, and the calf/inside split is a guess. About 19% of his landed strikes come in the clinch and 38% on the ground (recency-weighted), so knees and elbows carry real weight, but no source splits his ground-and-pound into punches and elbows (UFC Stats lists the Hooker finish as punches from mount). Spinning is 0."
+  },
+  "appearance": {
+    "build": "dense, muscular lightweight frame: 5'11\" with a 73-inch reach (fighters.json); former French Army special-forces soldier",
+    "hair": "very short or buzzed dark hair (as seen in widely published photos; no written description found)",
+    "facial_hair": "usually a full dark beard in published photos (unconfirmed in text)",
+    "skin": "light",
+    "tattoos": "has tattoos that coverage links to his military service; designs and placement not confirmed here",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json",
+      "https://essentiallysports.com/ufc-mma-news-benoit-saint-denis-tattoos-meaning-story-and-the-army-connection-behind-the-ufc-stars-inks",
+      "https://www.sportskeeda.com/mma/what-does-benoit-st-denis-tattoo-mean",
+      "https://www.aol.com/benoit-saint-denis-traded-fighting-070919685.html"
+    ]
+  },
+  "engine_notes": [
+    { "note": "One of the most ground-heavy strikers among the top 25 lightweights by Elo: 31% (career) and 38% (recency-weighted) of his significant strikes land on the ground, the highest recency-weighted share in that group (Grant Dawson is higher on career numbers); lightweight median about 9%. He controls 47-50% of fight time (median about 17%). He led round 1 vs Poirier 38-12 in significant strikes with 3:20 of control before being KO'd in round 2.", "source": "data/derived/fighters.json" },
+    { "note": "Very high takedown volume at low accuracy: about 12 attempts per 15 minutes at 34-35%. Each failed shot is a chance for front-headlock chokes against him (D'Arce loss to Pimblett; 4 Poirier submission attempts).", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv; https://sports.yahoo.com/articles/paddy-pimblett-quickly-submits-benoit-031630151.html" },
+    { "note": "No evidence past round 2 in five-round fights: pace exists only for rounds 1-2 (1.00 / 1.04), and both of his five-round fights ended in round 2 with him losing. Late-round output for the Salkilld main event is unknown.", "source": "data/derived/fighters.json (pace, recent)" },
+    { "note": "Power on the feet as well as on the ground: 0.73-0.86 knockdowns per 15 minutes (lightweight median about 0.31).", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "high"
+}

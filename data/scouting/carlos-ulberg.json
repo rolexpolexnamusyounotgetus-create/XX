@@ -1,0 +1,102 @@
+{
+  "slug": "carlos-ulberg",
+  "name": "Carlos Ulberg",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "UFC light heavyweight champion. He won the vacant title at UFC 327 in Miami (Apr 11, 2026) by knocking out Jiri Prochazka at 3:45 of round 1, minutes after tearing the ACL in his right knee. He had surgery in April 2026 and has said he is looking at early 2027 for his first defense. No bout is booked; the UFC has floated but not created an interim title, and Ulberg pushed back on the idea after Magomed Ankalaev's win over Bogdan Guskov (Jul 25, 2026). Pro record 15-1; ten straight UFC wins.",
+    "title": "UFC light heavyweight champion",
+    "ranking": "Champion (UFC light heavyweight list dated Oct 27, 2026, as mirrored by ufcalendar.com and kalshi.com)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      { "what": "torn right ACL suffered early in the Prochazka fight; his manager also reported bone bruising and tibia damage from fighting on it; surgery done, targeting an early-2027 return", "when": "2026-04", "source": "https://www.cbssports.com/ufc/news/carlos-ulberg-injury-surgery-torn-acl-ufc-327-title-jiri-prochazka/" }
+    ],
+    "sources": [
+      "https://www.espn.com/mma/story/_/id/48432076/ufc-327-live-results-analysis-ji%C5%99i-prochazka-vs-carlos-ulberg-light-heavyweight-championship",
+      "https://www.espn.com/mma/story/_/id/48463277/badly-hobbled-ulberg-stuns-prochazka-wild-ko-ufc-327",
+      "https://www.espn.com/mma/story/_/id/48463309/carlos-ulberg-blew-knee-jiri-prochazka-blew-title-chance-ufc-327",
+      "https://www.cbssports.com/ufc/news/carlos-ulberg-injury-surgery-torn-acl-ufc-327-title-jiri-prochazka/",
+      "https://bloodyelbow.com/2026/04/17/carlos-ulbergs-injury-finally-confirmed-after-ufc-327-led-to-surgery-he-snapped-it/",
+      "https://www.mmamania.com/latest-news/437205/carlos-ulberg-goes-under-the-knife-after-ufc-327-injury-knee-surgery-done",
+      "https://www.mmamania.com/ufc-news/438001/no-interim-yet-new-205-champ-carlos-ulberg-staying-at-ufc-pi-to-rehab-injured-knee",
+      "https://mmasucka.com/news/carlos-ulberg-sets-sights-on-first-title-defense-in-early-2027/",
+      "https://www.mmamania.com/latest-news/460292/carlos-ulberg-reacts-to-magomed-ankalaevs-ho-hum-ufc-abu-dhabi-win-saw-what-i-needed",
+      "https://mixedmartialarts.com/mma/ulberg-pushes-back-on-interim-title-chatter-offers-his-own-light-heavyweight-bracket",
+      "https://www.ufcalendar.com/rankings/light-heavyweight",
+      "https://kalshi.com/ufc/rankings/light-heavyweight",
+      "http://ufcstats.com/fight-details/a031f062b7ffefee",
+      "http://ufcstats.com/fighter-details/9014c02eff8b3d62"
+    ]
+  },
+  "style": {
+    "archetype": "kickboxer",
+    "stance": "orthodox",
+    "tags": ["counter", "power", "feints", "jab", "leg-kicks", "rangy", "range-control", "fast-starter"],
+    "signature": [
+      "left check hook / counter left hook (dropped Prochazka at UFC 327; a pre-fight breakdown credits it for every UFC knockout he had through 2025)",
+      "feints to draw a lead he can counter, left hand circling on each of the opponent's beats",
+      "jab and rear-leg low kicks at range (50 of 55 leg strikes landed vs Blachowicz, UFC London 2025)",
+      "kicks, including to the body, to set up the hook",
+      "follow-up ground strikes after a knockdown (UFC 327, Potieria)",
+      "rear-naked choke (Da Woon Jung, UFC 293, R3 4:49)"
+    ],
+    "weaknesses": [
+      "grappling largely untested; analysts note the UFC has rarely matched him with grapplers (opponents average 1.2 takedown attempts per 15 min against him)",
+      "knocked out in his UFC debut by Kennedy Nzechukwu in round 2 (UFC 259) after out-landing him 146-82",
+      "the Blachowicz win (29-28 x3) was a slow, close fight criticized for its pace, and he takes leg kicks: Oezdemir landed 28/28, Blachowicz 32/38",
+      "reconstructed right knee: how it holds up is unknown",
+      "only two five-round fights, both over in round 1"
+    ],
+    "summary": "A New Zealand kickboxer from City Kickboxing in Auckland. He keeps range with the jab and low kicks, feints to draw a lead, and times a left check hook that has started most of his knockouts; six of his ten UFC wins came in round 1. When an opponent will not lead, his fights can turn slow and close (Blachowicz), and nobody has yet tested him with sustained wrestling.",
+    "sources": [
+      "https://medium.com/@connellscombat24/ulberg-vs-reyes-short-pre-fight-breakdown-e61b4dedbb70",
+      "https://joannadangerfield.substack.com/p/how-carlos-ulberg-captured-a-dream-f0b",
+      "https://www.sherdog.com/news/articles/Top-5-Carlos-Ulberg-knockouts-200761",
+      "https://agentmma.com/news/19720-carlos-ulberg-scores-sixth-check-hook-knockout-in-12-fights-at-ufc-327",
+      "https://www.rotowire.com/mma/player/carlos-ulberg-2132",
+      "https://cagesidepress.com/2025/03/22/carlos-ulberg-scores-decision-win-over-blachowicz-calls-for-title-shot",
+      "https://www.lowkickmma.com/jan-blachowicz-vs-carlos-ulberg-ufc",
+      "https://www.ufc.com/athlete/carlos-ulberg",
+      "https://www.rnz.co.nz/news/sport/461195/live-sport",
+      "http://ufcstats.com/fighter-details/9014c02eff8b3d62"
+    ]
+  },
+  "moves": {
+    "jab": 0.3,
+    "cross": 0.22,
+    "hook": 0.3,
+    "overhand": 0.06,
+    "upper": 0.06,
+    "headkick": 0.06,
+    "bodykick": 0.55,
+    "bodyhook": 0.2,
+    "bodystraight": 0.25,
+    "calf": 0.55,
+    "inside": 0.45,
+    "spinning": 0.0,
+    "knee": 0.05,
+    "elbow": 0.0,
+    "notes": "Each group sums to 1; the engine's target split picks the group. Decayed sums in fighters.json: significant attempts 74% head, 10% body, 16% legs; landed 61% head, 13% body, 26% legs (leg accuracy 0.89, head 0.44). In the head group the jab and the left hook share the top weight: breakdowns name the counter left hook as his finishing punch, and the Blachowicz win was built on jabs and leg kicks. Body strikes are rare; breakdowns mention body kicks as set-ups, so bodykick leads that group. Leg kicks are split close to even between calf and inside because no source names his preferred target; 50/55 legs vs Blachowicz shows he can kick in volume. Knee and elbow are near zero: only 2% of his decayed attempts are in the clinch and 6% on the ground (ground strikes come after knockdowns). No spinning techniques recorded. Sources: data/derived/fighters.json; ufcstats per-fight totals; medium.com and substack breakdowns listed under style."
+  },
+  "appearance": {
+    "build": "tall and lean-muscular with long limbs; 6 ft 4 in with a 77 in reach (ufcstats)",
+    "hair": "short dark hair",
+    "facial_hair": "short trimmed beard; varies",
+    "skin": "medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/carlos-ulberg",
+      "https://www.espn.com/mma/fighter/_/id/4695736/carlos-ulberg",
+      "http://ufcstats.com/fighter-details/9014c02eff8b3d62"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Six of ten UFC wins came in round 1 (Nchukwi, Negumereanu, Potieria, Menifield at 0:12, Reyes, Prochazka); no five-round fight has gone past round 1, so there is no late-round pace data (fighters.json pace has only round 1).", "source": "data/derived/fighters.json (recent, pace)" },
+    { "note": "Power: 2.5 knockdowns per 100 significant head strikes landed (decayed), 2.1 career, against a light heavyweight league rate of 1.3 (fighters.json priors). Chin: one knockdown absorbed in 11 UFC fights, the Nzechukwu KO loss.", "source": "data/derived/fighters.json" },
+    { "note": "Highest striking volume of this group: 11.0 significant attempts and 5.9 landed per minute (decayed), absorbing 4.0. Leg strikes absorbed run 1.6 per minute decayed, his most-hit target after the head.", "source": "data/derived/fighters.json" },
+    { "note": "Fought most of UFC 327 on a torn ACL and still won; after reconstruction, his movement and kicking leg are unknowns for any 2027 fight.", "source": "https://www.espn.com/mma/story/_/id/48463277/badly-hobbled-ulberg-stuns-prochazka-wild-ko-ufc-327" },
+    { "note": "In three-round decisions his output rose: significant strikes landed by round went 15, 29, 31 vs Blachowicz and 24, 29, 45 vs Oezdemir.", "source": "ufcstats round totals (data/raw/ufc_fight_stats.csv): http://ufcstats.com/fight-details/6d9ea9f436ed354d, http://ufcstats.com/fight-details/02ec66f311dce539" }
+  ],
+  "confidence": "medium"
+}

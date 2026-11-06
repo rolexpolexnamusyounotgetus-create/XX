@@ -1,0 +1,92 @@
+{
+  "slug": "brian-ortega",
+  "name": "Brian Ortega",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Two-time featherweight title challenger (Holloway, UFC 231, 2018; Volkanovski, UFC 266, 2021). He is on a two-fight losing streak: a UD loss to Diego Lopes (UFC 306, Sep 14, 2024) and a 50-45 x3 loss to Aljamain Sterling (Aug 23, 2025, Shanghai). Ortega missed weight for the Sterling fight, which moved to a 153 lb catchweight, and he later said he was unconscious for about 30 minutes during the cut. A planned lightweight debut against Renato Moicano at UFC 326 (Mar 2026) was cancelled when he withdrew in January with nagging injuries. He reportedly withdrew again from a rebooked Moicano fight. He is booked for his lightweight debut against Dan Hooker at a UFC Fight Night at ABHA Arena, Doha, on Nov 21, 2026. Record 16-5 (1 NC).",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": "Dan Hooker, lightweight, UFC Fight Night, ABHA Arena, Doha, Qatar, Nov 21, 2026",
+    "injuries": [
+      { "what": "nagging injuries (body part not disclosed) needing rest and physical therapy but no surgery; withdrew from the UFC 326 bout with Renato Moicano", "when": "2026-01", "source": "https://www.espn.com/mma/story/_/id/47784076/brian-ortega-pulls-ufc-326-fight-vs-renato-moicano-due-nagging-injuries" },
+      { "what": "lost consciousness for about 30 minutes during the weight cut before the Sterling fight and woke up in the ER (his account)", "when": "2025-08", "source": "https://www.cbssports.com/mma/news/brian-ortega-says-he-was-unconscious-for-30-minutes-before-aljamain-sterling-fight-i-was-afraid" },
+      { "what": "shoulder injury that ended the Yair Rodriguez fight in round 1 (TKO loss)", "when": "2022-07", "source": "data/raw/ufc_fight_results.csv (ufcstats: 'Shoulder injury')" }
+    ],
+    "sources": [
+      "https://www.espn.com/mma/story/_/id/47784076/brian-ortega-pulls-ufc-326-fight-vs-renato-moicano-due-nagging-injuries",
+      "https://www.cbssports.com/ufc/news/ufc-326-fight-card-brian-ortega-renato-moicano/",
+      "https://www.sherdog.com/news/news/Brian-Ortega-Withdraws-from-Rematch-vs-Renato-Moicano-at-UFC-326-199959",
+      "https://mmasucka.com/news/not-meant-to-be-renato-moicano-reveals-ufc-offered-him-brian-ortega-again-but-he-refused/",
+      "https://www.ufcalendar.com/fights/dan-hooker-vs-brian-ortega",
+      "https://sports.yahoo.com/articles/ufc-analyst-dan-hooker-vs-170039364.html",
+      "https://agentmma.com/fighters/6293-brian-ortega",
+      "https://www.cbssports.com/mma/news/brian-ortega-says-he-was-unconscious-for-30-minutes-before-aljamain-sterling-fight-i-was-afraid",
+      "https://www.lowkickmma.com/sickly-brian-ortega-weight-cut-crisis-leads-to-last-minute-ufc-shanghai-changes/",
+      "https://www.ufc.com/athlete/brian-ortega",
+      "http://ufcstats.com/fighter-details/def8166ff24bd237"
+    ]
+  },
+  "style": {
+    "archetype": "grappler/BJJ",
+    "stance": "switch",
+    "tags": ["switch-stance", "guillotine", "submissions", "jab", "slow-starter", "late-surge", "durable"],
+    "signature": [
+      "guillotine choke: standing vs Cub Swanson (2017) and after a drop to guard vs Renato Moicano (2017)",
+      "arm-triangle from side control (Yair Rodriguez, R3, Feb 2024)",
+      "triangle choke (Diego Brandao, R3, 2016)",
+      "switch-stance jab-heavy boxing (two knockdowns of Chan Sung Jung in a 50-45 x3 win, Oct 2020)",
+      "late finishes: knee KO of Clay Guida (R3 4:40, 2016), punches in the clinch vs Frankie Edgar (R1, 2018)"
+    ],
+    "weaknesses": [
+      "low striking accuracy (37% career) and very high strikes absorbed (6.38 per minute career)",
+      "out-landed badly in his last two fights: 106-63 by Lopes and 124-55 by Sterling",
+      "weight-cut problems at 145 (missed weight and blacked out before Sterling); now moving to 155",
+      "inactivity and pull-outs: one fight since Sep 2024 and two withdrawals in 2026",
+      "takedown defence of 55% (career); Sterling landed 3 of 6 with 3:55 control"
+    ],
+    "summary": "A jiu-jitsu specialist who boxes from both stances behind a long jab. He historically won by surviving early and finishing late with guillotines, triangles or sudden strikes. His striking defence and output have been poor lately, and his recent fights were hurt by weight-cut problems and injuries before a move up to lightweight.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/def8166ff24bd237",
+      "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Moreno_vs._Royval_2",
+      "https://www.cbssports.com/mma/news/brian-ortega-says-he-was-unconscious-for-30-minutes-before-aljamain-sterling-fight-i-was-afraid",
+      "https://www.ufc.com/athlete/brian-ortega"
+    ]
+  },
+  "moves": {
+    "jab": 0.32,
+    "cross": 0.25,
+    "hook": 0.17,
+    "overhand": 0.1,
+    "upper": 0.1,
+    "headkick": 0.06,
+    "bodykick": 0.4,
+    "bodyhook": 0.3,
+    "bodystraight": 0.3,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.06,
+    "knee": 0.06,
+    "elbow": 0.08,
+    "notes": "Weights sum to about 1 within each target group; spinning/knee/elbow are separate propensities. fighters.json career split of significant attempts: 86% head, 9% body, 5% legs; landed 71/18/11 (decayed 85/10/5 attempted). He throws almost everything at the head, mostly as a switch-stance jabber, so the jab carries the head group. His body landed share is much higher than his attempted share (20 of 29 vs Sterling, 22 of 28 vs Jung), so body strikes are accurate but rare; with no source on kick vs punch, the body group is spread evenly. Leg strikes are rare (5%) and their type is unsourced, so calf/inside are 50/50. Knee 0.06 for the Guida knee KO; elbow and spinning are small, kept for reported spinning-elbow work that was not re-verified here. Sources: ufcstats sums and per-fight rows in data/raw."
+  },
+  "appearance": {
+    "build": "medium frame; 5 ft 8 in with a 69 in reach (ufcstats); now moving up to 155 lb after weight-cut problems at 145",
+    "hair": "very short dark hair or shaved",
+    "facial_hair": "unknown (varies)",
+    "skin": "light-medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/brian-ortega",
+      "http://ufcstats.com/fighter-details/def8166ff24bd237"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Five-round pace rises with time: landed rate by round is 1, 1.35, 1.49, 1.04, 1.54 of round 1 over seven 5-round fights. He was a classic late finisher: five of his eight UFC wins ended in round 3 (Tavares, Brandao, Guida, Moicano, Rodriguez).", "source": "data/derived/fighters.json (pace, pace_w); data/raw/ufc_fight_results.csv" },
+    { "note": "Decayed form is weak: 3.23 landed against 5.91 absorbed per minute at 36% accuracy; his Elo (1637) is the lowest of the featherweights in this batch.", "source": "data/derived/fighters.json (S sums, elo)" },
+    { "note": "Never knocked out by strikes in the UFC (ko_losses 1 counts only the 2022 shoulder injury; the 2018 Holloway loss was a doctor stoppage). Two knockdowns absorbed in 14 fights.", "source": "data/derived/fighters.json (ko_losses, okd)" },
+    { "note": "Submission threat at 0.93 attempts per 15 (career) but only 0.43 decayed. The guillotine and arm-triangle are the finishes the director should pick for him.", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "medium"
+}

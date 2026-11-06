@@ -1,0 +1,73 @@
+{
+  "slug": "quillan-salkilld",
+  "name": "Quillan Salkilld",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Unbeaten in the UFC (6-0, 13-1 pro). His latest win was a first-round rear-naked choke of Mateusz Gamrot in the UFC Vegas 120 main event (Aug 8, 2026). He is booked to headline UFC Fight Night Sydney against Benoit Saint Denis over five rounds (Feb 7, 2027 local time).",
+    "title": null,
+    "ranking": "#6 or #7 UFC lightweight in early November 2026 (the lists disagree: ufcalendar.com has him #6 on Nov 3, Home of Fight #7 on Nov 5; Wikipedia gives #7 as of Sep 12, 2026)",
+    "active": true,
+    "next_fight": "vs Benoit Saint Denis, UFC Fight Night: Salkilld vs. Saint Denis, Afterpay Arena, Sydney, Feb 7, 2027 local (Feb 6 US time), five-round main event",
+    "injuries": [],
+    "sources": [
+      "https://www.ufc.com/news/ufc-fight-night-sydney-main-event-set-quillan-salkilld-face-benoit-saint-denis",
+      "https://www.espn.com/mma/story/_/id/50302428/australia-quillan-salkilld-headline-ufc-fight-night-sydney-fight-benoit-saint-denis-february",
+      "https://sports.yahoo.com/articles/quillan-salkilld-benoit-saint-denis-041919424.html",
+      "https://cagesidepress.com/2026/10/27/quillan-salkilld-vs-benoit-saint-denis-set-to-headline-ufc-sydney-on-feb-6/",
+      "https://sports.yahoo.com/articles/quillan-salkilld-snatches-rear-naked-024819955.html",
+      "https://www.mmaweekly.com/news/quillan-salkilld-submits-mateusz-garrot-in-ufc-vegas-120-main-event",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "https://www.homeoffight.com/ufc-rankings",
+      "https://en.wikipedia.org/wiki/Quillan_Salkilld"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "orthodox",
+    "tags": ["power", "rangy", "head-kicks", "fast-starter", "takedown-defense", "top-control", "ground-and-pound", "back-takes", "submissions", "scrambles"],
+    "signature": [
+      "straight right hand (19-second KO of Anshul Jubli on his UFC debut, UFC 312)",
+      "head kick (KO of Nasrat Haqparast, UFC 321)",
+      "right hook into ground-and-pound (TKO of Beneil Dariush, UFC Perth)",
+      "back control and chokes: neck crank vs Jamie Mullarkey (UFC 325), rear-naked choke vs Mateusz Gamrot (UFC Vegas 120)",
+      "takedowns with long top-control rides when the fight goes long (8 of 23 takedowns, 7:35 control vs Yanal Ashmouz, UFC 316)"
+    ],
+    "weaknesses": [
+      "small UFC sample: 28.8 minutes over 6 fights, five of them finished in round 1, and never past three rounds",
+      "hurt early by a Dariush jab at UFC Perth (reported as a knockdown or scare by Low Kick MMA; UFC Stats did not score it as a knockdown)",
+      "striking defence around 50% (fighters.json), below the lightweight median of about 54%",
+      "low takedown accuracy: 11 of 33 in the UFC (33%)"
+    ],
+    "summary": "A tall (6'0\", 75-inch reach) Perth lightweight who finishes fights early with power punches, kicks and back-take submissions. He has stopped every UFC opponent except Ashmouz, and in that fight he showed he can also wrestle and ride on top for three rounds. What he has not shown yet is how he does over five rounds or against sustained damage.",
+    "sources": [
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_stats.csv (UFC 312, 316, 321, 325, Perth, Vegas 120 bout stats)",
+      "https://www.lowkickmma.com/quillan-salkilld-knocks-out-dariush/",
+      "https://cagesidepress.com/2026/05/02/quillan-salkilld-delivers-statement-win-over-dariush-at-ufc-perth/",
+      "https://www.espn.com/mma/fighter/_/id/5157667/quillan-salkilld",
+      "https://fightomic.com/quillan-salkilld-profile/"
+    ]
+  },
+  "moves": {
+    "jab": 0.3, "cross": 0.3, "hook": 0.2, "overhand": 0.05, "upper": 0.07, "headkick": 0.08,
+    "bodykick": 0.45, "bodyhook": 0.3, "bodystraight": 0.25,
+    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.15, "elbow": 0.1,
+    "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json, where recency-weighted landed shares are head 0.66 / body 0.23 / leg 0.12 and attempt shares are head 0.76 / body 0.17 / leg 0.08. Head group: jab and right hand lead, as in the Jubli KO (straight right) and the Gamrot fight, which opened with jabs and kicks (Yahoo Sports recap). Headkick is set above a typical lightweight because of the Haqparast head-kick KO. Body is weighted to kicks because 7 of his 14 landed strikes vs Haqparast went to the body, all at distance (raw bout stats), but no source breaks down kicks vs punches. Leg kicks are split evenly (no source says which). About 18% of his landed strikes come in the clinch, hence modest knee and elbow. The UFC sample is only 28.8 minutes, so these weights are low-confidence."
+  },
+  "appearance": {
+    "build": "tall, long-limbed lightweight: 6'0\" with a 75-inch reach (fighters.json)",
+    "hair": "unknown",
+    "facial_hair": "unknown",
+    "skin": "unknown",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": ["data/derived/fighters.json"]
+  },
+  "engine_notes": [
+    { "note": "Early finisher: 5 of 6 UFC wins came in round 1 (Jubli 0:19, Haqparast 2:30, Mullarkey 3:02, Dariush 3:29, Gamrot 4:25); knockdown rate 1.5 per 15 min (lightweight median about 0.31).", "source": "data/derived/fighters.json (recent, C sums)" },
+    { "note": "No five-round data: his only five-round booking (Gamrot) ended in round 1, so pace for rounds 2-5 is unknown. Cardio over 25 minutes should be treated as uncertain, not assumed.", "source": "data/derived/fighters.json (pace has R1 only)" },
+    { "note": "Takedown defence 77% (10 of 13 stopped) and 22% opponent control; held off repeated Dariush takedown attempts at UFC Perth, though Dariush did complete 2 of 5.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv; https://www.lowkickmma.com/quillan-salkilld-knocks-out-dariush/" },
+    { "note": "Takes little damage so far: 1.9-2.0 significant strikes absorbed per minute (lightweight median about 4.1), but over a very small sample.", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "medium"
+}

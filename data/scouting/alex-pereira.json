@@ -1,0 +1,96 @@
+{
+  "slug": "alex-pereira",
+  "name": "Alex Pereira",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC middleweight and two-time light heavyweight champion. He vacated the light heavyweight belt to move up and lost his heavyweight debut to Ciryl Gane for the interim heavyweight title at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026, TKO R2 1:27; Gane out-landed him 54-12). He is booked against Sergei Pavlovich in a five-round heavyweight co-main event at UFC 335 (Dec 12, 2026, T-Mobile Arena, Las Vegas), announced by Dana White on the UFC 332 broadcast (Oct 3, 2026). Pro record 13-4 per post-fight reports.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": "Sergei Pavlovich, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (heavyweight, 5 rounds, co-main event)",
+    "injuries": [],
+    "sources": [
+      "https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335",
+      "https://sports.yahoo.com/mma/article/alex-pereira-staying-at-heavyweight-as-dana-white-announces-his-next-fight-for-ufc-335-011052102.html",
+      "https://heavy.com/sports/ufc/the-return-alex-pereira-ufc-335/",
+      "https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title",
+      "https://www.ufc.com/video/157675",
+      "https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/",
+      "https://www.cbssports.com/ufc/news/alex-pereira-heavyweight-ciryl-gane-ufc-freedom-250/",
+      "https://www.thescore.com/news/3553975",
+      "https://boxingnews.com/news/alex-pereira-vs-ciryl-gane-result-and-reaction",
+      "https://bloodyelbow.com/2026/09/07/alex-pereira-calls-out-ciryl-gane-for-heavyweight-rematch-and-claims-fight-is-going-to-happen/",
+      "http://ufcstats.com/fight-details/5727d5be8c373346",
+      "http://ufcstats.com/fighter-details/e5549c82bfb5582d"
+    ]
+  },
+  "style": {
+    "archetype": "kickboxer",
+    "stance": "orthodox",
+    "tags": ["power", "counter", "leg-kicks", "calf-kicks", "head-kicks", "flying-knee", "elbows", "takedown-defense", "range-control", "late-surge"],
+    "signature": [
+      "left hook, often as a counter (finishes of Hill at UFC 300 and Rountree at UFC 307 are logged as single punches at distance)",
+      "rear-leg low kick to the outside of the lead leg and calf (48 of 55 leg strikes landed vs Ankalaev at UFC 313)",
+      "left head kick (knocked out Prochazka 13 s into round 2 at UFC 303)",
+      "flying knee (KO of Andreas Michailidis, UFC 268)",
+      "ground elbows and punches to finish a hurt opponent (Prochazka at UFC 295, Ankalaev from half guard at UFC 320)",
+      "jab and straight right behind a high guard"
+    ],
+    "weaknesses": [
+      "lost his only heavyweight fight: Gane out-landed him 54-12 and stopped him in round 2 after a counter jab put him down",
+      "can be held on the fence: Ankalaev logged 342 s of control and won a unanimous decision at UFC 313 despite 0 of 12 takedowns",
+      "two KO/TKO losses in the UFC (Adesanya at UFC 287 in round 2, Gane at UFC Freedom 250 in round 2)",
+      "almost no offensive wrestling (0.07 takedowns per 15 min decayed) and opponents control him about 170 s per 15 min decayed",
+      "age 39 (born 1987-07-07 per ufcstats) and new to heavyweight, where his size edge from 185 and 205 lb is gone"
+    ],
+    "summary": "A former Glory kickboxing champion at middleweight and light heavyweight who walks opponents down behind a high guard, chops the lead leg and ends fights with one shot: 8 of his 10 UFC wins are KO/TKO, including a left head kick and a flying knee. He rarely wrestles; his risk is being pinned to the fence by a control fighter, as in the first Ankalaev fight, or out-sped by a bigger man, as against Gane.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/e5549c82bfb5582d",
+      "http://ufcstats.com/fight-details/9e05fe95a4fc63bc",
+      "http://ufcstats.com/fight-details/0de1ef0b9f3a79c0",
+      "http://ufcstats.com/fight-details/bca5d01f8775f852",
+      "http://ufcstats.com/fight-details/385101e8ad828c39",
+      "http://ufcstats.com/fight-details/fe143cb868adfded",
+      "https://en.wikipedia.org/wiki/Alex_Pereira",
+      "https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title"
+    ]
+  },
+  "moves": {
+    "jab": 0.22,
+    "cross": 0.25,
+    "hook": 0.3,
+    "overhand": 0.05,
+    "upper": 0.08,
+    "headkick": 0.1,
+    "bodykick": 0.5,
+    "bodyhook": 0.3,
+    "bodystraight": 0.2,
+    "calf": 0.7,
+    "inside": 0.3,
+    "spinning": 0.0,
+    "knee": 0.15,
+    "elbow": 0.2,
+    "notes": "Each group (head, body, leg) sums to 1; the engine's target split picks the group. From the decayed sums in fighters.json his significant attempts go 60% head, 17% body, 22% legs, and his landed strikes 47% head, 22% body, 30% legs (leg accuracy 0.82, body 0.77, head 0.47), so the legs are his surest target. In the head group the left hook gets the top weight because his finishes of Hill (UFC 300) and Rountree (UFC 307) were single punches at distance and it is his best-known weapon; head kick 0.10 reflects the UFC 303 KO of Prochazka and his kickboxing base. Leg kicks lean to the outside rear-leg low kick and calf (48/55 legs landed vs Ankalaev at UFC 313; 26/36 vs Adesanya at UFC 287). Knee 0.15 covers the flying knee (UFC 268) and clinch knees; elbow 0.20 covers ground elbows (UFC 295, UFC 320). No spinning attacks appear in his UFC finishes. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw."
+  },
+  "appearance": {
+    "build": "tall and long-limbed, lean but muscular through the shoulders and back; 6 ft 4 in with a 79 in reach (ufcstats)",
+    "hair": "short dark hair",
+    "facial_hair": "often a thin mustache with a short chin beard; varies",
+    "skin": "medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/alex-pereira",
+      "https://www.espn.com/mma/fighter/_/id/4705658/alex-pereira",
+      "http://ufcstats.com/fighter-details/e5549c82bfb5582d"
+    ]
+  },
+  "engine_notes": [
+    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.09, 0.90, 1.32, 1.35 (minute-weighted): output rises in rounds 4-5. He finished Adesanya in round 5 (UFC 281) and Rountree in round 4 (UFC 307).", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "Power: 2.0 knockdowns per 100 significant head strikes landed (decayed), 2.15 career, against a light heavyweight league rate of 1.3 (fighters.json priors). Chin: 1.0 knockdowns absorbed per 100 head strikes taken (decayed), with 2 KO/TKO losses in 13 UFC fights.", "source": "data/derived/fighters.json" },
+    { "note": "Takedown defense 86% decayed (opponents about 2.3 of 16.7) and 80% career, but opponents' control time is 170 s per 15 min decayed, mostly cage clinch control by Ankalaev (342 s at UFC 313) and Adesanya (394 s at UFC 281).", "source": "data/derived/fighters.json; ufcstats per-fight totals" },
+    { "note": "Only one of his 13 UFC fights was at heavyweight (the Gane loss). His rates come from 185 and 205 lb fights, so heavyweight inputs should lean on the division prior.", "source": "data/derived/fighters.json (divisions)" },
+    { "note": "Against Gane he landed 12 of 33 significant strikes, 8 of them leg kicks, and absorbed 54 (39 to the head).", "source": "http://ufcstats.com/fight-details/5727d5be8c373346" }
+  ],
+  "confidence": "medium"
+}

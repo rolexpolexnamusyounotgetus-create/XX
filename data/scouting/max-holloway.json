@@ -1,0 +1,91 @@
+{
+  "slug": "max-holloway",
+  "name": "Max Holloway",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Beat Conor McGregor by first-round TKO at UFC 329 (Jul 11, 2026; 1:09, after McGregor hurt his right leg/knee throwing a kick). ufcstats files the bout at welterweight. Before that he lost the BMF belt to Charles Oliveira at UFC 326 (Mar 7, 2026; 50-45 x3). No. 4 at lightweight, no bout booked; he and McGregor have both talked about a trilogy. Former UFC featherweight champion.",
+    "title": null,
+    "ranking": "#4 lightweight (UFC media panel, Nov 3, 2026, as mirrored by ufcrankings.org; UFCalendar gives No. 4 as of the Oct 27, 2026 poll)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "https://www.espn.com/mma/story/_/id/49308315/ufc-329-live-results-analysis-conor-mcgregor-vs-max-holloway-2",
+      "https://www.cbssports.com/ufc/news/ufc-329-fight-results-conor-mcgregor-max-holloway-live-updates/live/",
+      "https://athlonsports.com/mma/ufc-329-conor-mcgregor-max-holloway-fight-ends-devastating-injury-tko",
+      "https://www.fightmag.com/ufc-329-mcgregor-vs-holloway-live-results/",
+      "https://www.ufc.com/news/ufc-326-official-scorecards-holloway-vs-oliveira-2",
+      "https://www.espn.com/mma/story/_/id/48091127/ufc-326-live-results-analysis-bmf-title-max-holloway-vs-charles-oliveira-2",
+      "https://www.ufcalendar.com/fighters/max-holloway",
+      "https://ufcrankings.org/",
+      "http://ufcstats.com/fighter-details/150ff4cc642270b9"
+    ]
+  },
+  "style": {
+    "archetype": "volume striker",
+    "stance": "orthodox",
+    "tags": ["volume", "jab", "body-work", "pressure", "cardio", "late-surge", "durable", "head-movement", "leg-kicks", "spinning", "wild-exchanges"],
+    "signature": [
+      "doubled jab, to the head and to the body, to walk opponents back and open combinations",
+      "body punching at volume: 64 of 80 body strikes landed vs Poirier at UFC 318; 22 body strikes in the final round vs Gaethje at UFC 300",
+      "output that climbs through five rounds (rounds 2-5 run 1.33-1.83 times his round-1 rate)",
+      "pointing to the center of the cage and trading in the final seconds: right-hand KO of Gaethje at 4:59 of R5, UFC 300",
+      "spinning back kick (broke Gaethje's nose at UFC 300)"
+    ],
+    "weaknesses": [
+      "almost never wrestles (0.4 takedown attempts per 15 min career), and takedown defense has slipped to 56% over the last 3 years; Oliveira took him down in all five rounds and held 20:49 of control at UFC 326",
+      "short reach for his height: 69 in at 5 ft 11 in",
+      "absorbs leg kicks: 1.03 leg strikes absorbed per minute career (lightweight league 0.64); breakdowns say calf kicks counter his jab-first game",
+      "trades in the pocket: first KO loss to Topuria (R3, UFC 308, 2024); dropped by Poirier in R2 at UFC 318 and caught in a guillotine he escaped"
+    ],
+    "summary": "A high-output boxer-kickboxer: 6.9 significant strikes landed per minute career, about 1.6 times the lightweight league. His game rests on a doubled jab, body punches and kicks, and a pace that rises round after round. He rarely wrestles. Topuria is the only man to knock him out, and a grappler who can take him down, as Oliveira did at UFC 326, can shut his offense off.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/150ff4cc642270b9",
+      "https://facepunching.substack.com/p/max-holloway-death-by-three-quarters",
+      "https://www.fightprimer.com/the-tactical-guide-to-volkanovski-vs-holloway-ii-this-time-its-on-yas-island",
+      "https://medium.com/@arabi-masri/max-holloway-an-all-time-great-d4789ba9fcf3",
+      "https://lasvegassun.com/news/2024/apr/13/ufc-300-live-coverage-historic-fight-card-off-to-f/",
+      "https://www.cbssports.com/mma/news/ufc-300-results-highlights-max-holloway-scores-brutal-last-second-knockout-of-justin-gaethje-in-bmf-fight",
+      "https://cagesidepress.com/2024/04/14/max-holloway-kos-justin-gaethje-in-final-second-of-ufc-300s-bmf-fight-in-electrifying-moment",
+      "https://bloodyelbow.com/2025/07/20/not-today-sir-max-holloway-reacts-to-dustin-poiriers-guillotine-scare-at-ufc-318",
+      "https://www.espn.com/mma/story/_/id/48091127/ufc-326-live-results-analysis-bmf-title-max-holloway-vs-charles-oliveira-2"
+    ]
+  },
+  "moves": {
+    "jab": 0.6,
+    "cross": 0.45,
+    "hook": 0.35,
+    "overhand": 0.12,
+    "upper": 0.2,
+    "headkick": 0.1,
+    "bodykick": 0.35,
+    "bodyhook": 0.3,
+    "bodystraight": 0.4,
+    "calf": 0.3,
+    "inside": 0.25,
+    "spinning": 0.12,
+    "knee": 0.04,
+    "elbow": 0.03,
+    "notes": "Target split from fighters.json: decayed significant attempts are 70% head, 19% body, 11% legs (landed 55/28/17). The last 3 years run 63/22/15 and his career 77/16/7, so body and leg weights are set above his career mix. Jab and body straight lead because breakdowns describe a jab-first game, with the jab often doubled and sent to the body (Face Punching, Fight Primer, Medium). Body hooks and kicks follow the body volume (64 of 80 vs Poirier). Spinning is small but not zero because of the spinning back kick at UFC 300 (Las Vegas Sun). Knees and elbows are near zero: 93% of his decayed landed strikes come at distance and 3% in the clinch. ufcstats does not record technique, so the split between punches and kicks inside each target is a judgment."
+  },
+  "appearance": {
+    "build": "long-framed and lean: 5 ft 11 in with a 69 in reach (ufcstats); fought 27 of his 33 UFC bouts at featherweight",
+    "hair": "short dark hair",
+    "facial_hair": "unknown",
+    "skin": "medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "notes": "Build is from ufcstats. Hair and skin follow widely published fight photos as recalled; they were not re-checked on the web this session (the search budget ran out and photo hosts were unreachable). Facial hair changes between fights, so it is left unknown.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/150ff4cc642270b9"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Pace rises through five-round fights: significant landed per minute relative to round 1 runs 1.00, 1.33, 1.58, 1.83, 1.39 (19 five-round bouts, minute-weighted). The lightweight league runs 1.00, 1.20, 1.08, 1.10, 1.31.", "source": "data/derived/fighters.json (pace); tools/fighter_report.py pace table" },
+    { "note": "Chin: 2 knockdowns absorbed in 33 UFC fights and one KO/TKO loss (Topuria). The career rate is 0.13 knockdowns per 100 significant head strikes absorbed, but 0.89 over the last 3 years (league 0.95), so the chin may be declining at 34.", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
+    { "note": "Grappling is close to absent: 48 s of control per 15 min decayed, while opponents hold him for 189 s per 15 min decayed (league 174). In 2026 Oliveira controlled him for 20:49 of 25 minutes.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Defense at range is good on volume: opponents land 33.6% of head strikes on him career (league 39.6%), but 42.5% over the last 3 years.", "source": "tools/fighter_report.py rates" },
+    { "note": "The McGregor win (1:09 of R1) came from an opponent's leg injury and says little about current form.", "source": "https://www.espn.com/mma/story/_/id/49308315/ufc-329-live-results-analysis-conor-mcgregor-vs-max-holloway-2" }
+  ],
+  "confidence": "medium"
+}

@@ -1,0 +1,98 @@
+{
+  "slug": "joshua-van",
+  "name": "Joshua Van",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "UFC flyweight champion. Won the belt at UFC 323 (Dec 6, 2025) when Alexandre Pantoja hurt his arm 26 seconds in, retained it with a fifth-round TKO of Tatsuro Taira at UFC 328 (May 9, 2026), then beat Pantoja by unanimous decision in the UFC 331 rematch (Sep 19, 2026; 49-46, 49-47, 50-45), a fight outlets called a Fight of the Year contender. UFC record 11-1. Next: title defence against Manel Kape headlining UFC 336 in Toronto (Jan 30, 2027).",
+    "title": "UFC flyweight champion",
+    "ranking": "Champion (UFC flyweight rankings, Nov 3, 2026, as listed by ufcrankings.org and ufcalendar.com); pound-for-pound position not verified",
+    "active": true,
+    "next_fight": "vs Manel Kape, UFC 336, Scotiabank Arena, Toronto, Jan 30, 2027 (flyweight title, main event)",
+    "injuries": [
+      { "what": "RotoWire listed him out with an undisclosed injury before the Taira defence, noting the Taira fight was pushed back to May 9, 2026; details not confirmed elsewhere", "when": "2026 (before May 9)", "source": "https://www.rotowire.com/mma/player/joshua-van-2437" }
+    ],
+    "sources": [
+      "https://sports.yahoo.com/mma/live/ufc-331-live-results-joshua-van-vs-alexandre-pantoja-2-updates-round-by-round-scoring-and-highlights-181500506.html",
+      "https://www.sherdog.com/news/news/UFC-331-Van-vs-Pantoja-2-playbyplay-results-round-scoring-202850",
+      "https://www.espn.com/mma/story/_/id/48728134/joshua-van-retains-ufc-flyweight-title-tko-tatsuro-taira",
+      "https://x.com/UFCNews/status/2053321406503616607",
+      "https://www.cbssports.com/ufc/news/ufc-323-results-highlights-joshua-van-champion-alexandre-pantoja-injury/",
+      "https://sports.yahoo.com/articles/joshua-van-vs-manel-kape-194327124.html",
+      "https://www.houstonchronicle.com/sports/article/joshua-van-manel-kape-ufc-336-toronto-flyweight-22492787.php",
+      "https://en.wikipedia.org/wiki/UFC_336",
+      "https://bloodyelbow.com/2026/10/30/joshua-van-highlights-petr-yan-as-future-opponent-as-he-opens-up-about-potential-ufc-double-champ-fight",
+      "https://ufcrankings.org/",
+      "https://www.ufcalendar.com/rankings",
+      "http://ufcstats.com/fighter-details/17e97649403ba428"
+    ]
+  },
+  "style": {
+    "archetype": "volume striker",
+    "stance": "orthodox",
+    "tags": ["volume", "pressure", "power", "body-work", "takedown-defense", "get-ups", "cardio", "late-surge", "slow-starter", "wild-exchanges"],
+    "signature": [
+      "high-volume, head-first boxing combinations (8.0 significant strikes landed per minute, decayed)",
+      "right hand: dropped Taira late in round 2 at UFC 328",
+      "body shot to set up the finish: hurt Taira to the body at the start of round 5, then finished with a combination",
+      "standing his ground and beating opponents to the punch in exchanges (Royval, UFC 317)",
+      "caught a Pantoja head kick and dumped him (UFC 323 finish)"
+    ],
+    "weaknesses": [
+      "only UFC loss is a third-round KO by Charles Johnson (Jul 13, 2024), reported as a right uppercut",
+      "gives up early takedowns and control to elite grapplers: Taira took him down 8 times in 21 attempts with 10:38 of control; Pantoja landed 5 of 18 with 9:11 control at UFC 331",
+      "absorbs a lot: 5.7 significant strikes per minute against (decayed), well above the flyweight average",
+      "started slowly in both title fights that went past round 1 (Taira's four R1 takedowns; Pantoja's R1 takedown to mount at UFC 331)"
+    ],
+    "summary": "A young, orthodox boxer-puncher who swarms opponents with straight punches and hooks at a pace few flyweights can match, mixing in hard body shots. Elite grapplers can bank early control against him, but he has stuffed most attempts, got back up and taken over in the later rounds of both five-round title fights.",
+    "sources": [
+      "https://www.ufc.com/news/prospect-to-watch-joshua-van-ufc-310",
+      "https://www.rotowire.com/mma/player/joshua-van-2437",
+      "https://agentmma.com/news/90917-joshua-van-holds-ufc-flyweight-title-with-record-breaking-57-4-strike-accuracy",
+      "https://mmasucka.com/news/joshua-van-flipped-dustin-poiriers-fight-footage-to-study-him-as-an-orthodox-fighter/",
+      "https://www.essentiallysports.com/ufc-mma-news-where-does-joshua-van-train-mma-coaches-gym-and-teammates-for-merab-dvalishvili-title-fight",
+      "https://bloodyelbow.com/2026/05/09/joshua-van-vs-tatsuro-taira-result-ufc-328-co-main-event-ends-in-5th-round-knockout/",
+      "https://www.espn.com/mma/story/_/id/48728134/joshua-van-retains-ufc-flyweight-title-tko-tatsuro-taira",
+      "https://africa.espn.com/mma/story/_/id/47230871/van-wins-flyweight-title-pantoja-injures-arm-ufc-323",
+      "https://www.cbssports.com/ufc/news/best-of-ufc-in-2025-fight-of-the-year-joshua-van-vs-brandon-royval",
+      "https://agentmma.com/news/86506-charles-johnson-ko-d-joshua-van-with-right-uppercut-at-ufc-fight-night-two-years",
+      "https://www.sherdog.com/news/news/UFC-331-Van-vs-Pantoja-2-playbyplay-results-round-scoring-202850",
+      "http://ufcstats.com/fighter-details/17e97649403ba428"
+    ]
+  },
+  "moves": {
+    "jab": 0.28,
+    "cross": 0.3,
+    "hook": 0.22,
+    "overhand": 0.07,
+    "upper": 0.12,
+    "headkick": 0.01,
+    "bodykick": 0.15,
+    "bodyhook": 0.45,
+    "bodystraight": 0.4,
+    "calf": 0.45,
+    "inside": 0.55,
+    "spinning": 0.0,
+    "knee": 0.02,
+    "elbow": 0.01,
+    "notes": "Groups follow his target split in fighters.json: decayed significant attempts 84% head, 11% body, 4% legs (career 83/12/5); landed 77% head, 16% body, 7% legs, against a flyweight prior of about 77/14/9 attempted. So within the head group, straight punches and hooks dominate, with uppercuts at 0.12 (the Johnson loss and his own inside exchanges show both men trading uppercuts) and head kicks near zero. Body work is punches rather than kicks (AgentMMA notes heavy body work; the UFC 328 finish began with a body shot), hence bodyhook and bodystraight over bodykick. Leg strikes are rare (1 of 2 vs Taira, 6 of 7 vs Pantoja at UFC 331), and the calf vs inside split is a judgment, not sourced. About 89% of his decayed attempts come at distance, so knees and elbows stay minimal. Sources: data/derived/fighters.json sums, data/raw ufcstats per-fight stats, ESPN and Bloody Elbow UFC 328 recaps."
+  },
+  "appearance": {
+    "build": "small, compact flyweight: 5 ft 5 in with a 65 in reach (ufcstats), short-limbed, the shortest reach of this group",
+    "hair": "dark; current style not verified in this pass",
+    "facial_hair": "unknown",
+    "skin": "light-medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/17e97649403ba428",
+      "https://www.ufc.com/athlete/joshua-van"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Pace in his three 5-round fights rises to 2.75x, 5.79x, 1.56x and 5.73x his round-1 output in rounds 2-5 (fighters.json 'pace'); round 1 is depressed by opponents' early grappling and the 26-second UFC 323 bout, so treat it as a late-surge signal on a small sample.", "source": "data/derived/fighters.json" },
+    { "note": "Won UFC 331 despite giving up 9:11 of control (Pantoja 5/18 takedowns) and UFC 328 despite 10:38 (Taira 8/21): control time against him has not converted into wins for grapplers.", "source": "data/raw/ufc_fight_stats.csv (ufcstats)" },
+    { "note": "Sherdog's UFC 331 round scoring had all three judges giving round 4 to Pantoja and round 5 to Van.", "source": "https://www.sherdog.com/news/news/UFC-331-Van-vs-Pantoja-2-playbyplay-results-round-scoring-202850" },
+    { "note": "Knockdown power from volume: 8 knockdowns in 170.8 UFC minutes (0.70 per 15 min vs flyweight prior 0.32), including 3 vs Bruno Silva and 2 vs Taira.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" }
+  ],
+  "confidence": "medium"
+}

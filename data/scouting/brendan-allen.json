@@ -1,0 +1,81 @@
+{
+  "slug": "brendan-allen",
+  "name": "Brendan Allen",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Ranked #4 at middleweight and on a four-fight win streak: Vettori (UD, Jul 2025), Reinier de Ridder (corner stoppage after R4, Oct 18, 2025), Edmen Shahbazyan (UD, Jun 6, 2026) and Christian Leroy Duncan (RNC, 2:46 of R5, UFC Vegas 122, Oct 10, 2026). He called out Sean Strickland after the Shahbazyan win and Dricus du Plessis after the Duncan win. No bout booked as of this date.",
+    "title": null,
+    "ranking": "#4 middleweight (UFC rankings per Wikipedia, as of Oct 10, 2026; also #4 on the Oct 24, 2026 board mirrored by ufcalendar.com)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "https://www.cbssports.com/ufc/news/ufc-fight-night-results-live-updates-brendan-allen-christian-leroy-duncan/live/",
+      "https://www.ufc.com/news/ufc-fight-night-allen-vs-duncan-official-scorecards",
+      "https://sports.yahoo.com/mma/article/ufc-vegas-122-results-brendan-allen-stops-christian-leroy-duncan-with-late-choke-calls-out-ex-champ-030151648.html",
+      "https://www.mmaweekly.com/news/brendan-allen-submits-christian-leroy-duncan-in-ufc-vegas-122-main-event",
+      "https://bloodyelbow.com/2026/10/11/nothing-changes-christian-leroy-duncan-breaks-his-silence-on-brendan-allen-loss-at-ufc-vegas-122/",
+      "https://cagesidepress.com/2026/06/06/brendan-allen-defeats-edmen-shahbazyan-calls-out-sean-strickland-at-ufc-vegas-118/",
+      "https://www.mmamania.com/ufc-results/448759/ufc-vegas-118-results-brendan-allens-gamble-pays-off-in-bloody-win-over-edmen-shahbazyan",
+      "https://africa.espn.com/mma/story/_/id/46643866/brendan-allen-upsets-reinier-de-ridder-ufc-main-event",
+      "https://en.wikipedia.org/wiki/Brendan_Allen",
+      "https://www.ufcalendar.com/rankings/middleweight",
+      "data/derived/fighters.json (last_fight 2026-10-10)"
+    ]
+  },
+  "style": {
+    "archetype": "grappler/BJJ",
+    "stance": "orthodox",
+    "tags": ["pressure", "clinch", "cage-wrestling", "top-control", "ground-and-pound", "back-takes", "submissions", "scrambles", "cardio"],
+    "signature": [
+      "body-lock takedowns in the clinch (vs Duncan, Oct 2026)",
+      "back take to rear-naked choke; most of his submission wins are RNCs (UFC.com profile), including Duncan in R5 and Paul Craig in 0:38 of R3",
+      "heavy top control and ground strikes: 11:39 control and 19 ground sig strikes before de Ridder's corner stopped it after R4",
+      "forward pressure on the feet with kicks, right hands and clinch work (vs Shahbazyan)"
+    ],
+    "weaknesses": [
+      "loses many striking exchanges: absorbs 3.96 sig/min vs 3.43 landed (decayed); Duncan outlanded him 106-51, and Shahbazyan edged the sig count 90-89 in a fight Allen won 30-27, 30-27, 29-28",
+      "takedown defense about 59% decayed; Anthony Hernandez held 10:22 of control on him in a Feb 2025 decision loss",
+      "his own wrestling can be stuffed by strong counter-wrestlers: 1 of 10 takedowns vs Imavov (Sep 2024 decision loss)",
+      "two early-career TKO losses: Sean Strickland (2020) and Chris Curtis (knees to the body, 2021)"
+    ],
+    "summary": "A BJJ black belt and finisher who lives in the clinch and on top, chaining body-lock takedowns into back takes and the rear-naked choke. He finishes late in long fights. His striking is serviceable and forward-moving but defensively loose, so he often loses the striking count before the grappling decides it.",
+    "sources": [
+      "https://www.ufc.com/athlete/brendan-allen",
+      "https://en.wikipedia.org/wiki/Brendan_Allen",
+      "https://www.mmaweekly.com/news/brendan-allen-submits-christian-leroy-duncan-in-ufc-vegas-122-main-event",
+      "https://www.lowkickmma.com/brendan-allens-ground-and-pound-forces-reinier-de-ridder-corner-to-throw-in-towel-ufc-vancouver-main-event-highlights/",
+      "https://www.aol.com/articles/ufc-fight-night-corner-stoppage-030616886.html",
+      "https://sports.yahoo.com/articles/allen-gamble-pays-off-bloody-021208492.html",
+      "https://www.fightersonlymag.com/latest-news/ufc-vegas-82-brendan-allen-submits-paul-craig-calls-for-number-one-contender-shot/",
+      "https://cagesidepress.com/2025/02/22/fluffys-revenge-anthony-hernandez-beats-brendan-allen-at-ufc-seattle",
+      "data/raw/ufc_fight_stats.csv",
+      "data/raw/ufc_fight_results.csv"
+    ]
+  },
+  "moves": {
+    "jab": 0.27, "cross": 0.3, "hook": 0.2, "overhand": 0.1, "upper": 0.08, "headkick": 0.05,
+    "bodykick": 0.45, "bodyhook": 0.3, "bodystraight": 0.25,
+    "calf": 0.45, "inside": 0.55, "spinning": 0.0, "knee": 0.15, "elbow": 0.05,
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 80.9% head, 12.1% body, 6.9% leg (career 79.0/13.6/7.4), slightly more head-heavy than the middleweight league (about 77/14/9). Within the head group the cross leads and hooks rank high, because Shahbazyan coverage describes him pressing with right hands and his strikes are mostly punches. Kicks open the body group: the same coverage says he pressed forward with kicks, and he landed 18 of 18 leg kicks vs Shahbazyan. The knee is set at 0.15 for his clinch work (12/16 clinch sig vs Duncan); elbows stay low. No spinning attacks are reported. His real threat is the takedown and choke, which the engine's grappling knobs carry rather than these weights."
+  },
+  "appearance": {
+    "build": "6'2\" (75\" reach per dataset), solid and square-shouldered middleweight frame",
+    "hair": "short brown hair",
+    "facial_hair": "brown beard, length varies (from widely published photos; not re-verified this session)",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/brendan-allen",
+      "data/derived/fighters.json (height_in 74, reach_in 75)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Spends 30.7% of fight time in control (decayed), against a middleweight league average of about 18%. He is controlled 21% of the time himself, so grappling exchanges swing both ways.", "source": "data/derived/fighters.json; priors.Middleweight ctrl" },
+    { "note": "Late finisher: corner stoppage after R4 vs de Ridder (Oct 2025) and RNC in R5 vs Duncan (Oct 2026) after trailing Duncan on strikes.", "source": "data/raw/ufc_fight_results.csv; data/raw/ufc_fight_stats.csv" },
+    { "note": "Takedowns: 1.74 landed per 15 min at 38.9% accuracy (league 1.37 at 35.7%); 0.82 submission attempts per 15 min (league 0.41).", "source": "data/derived/fighters.json; priors.Middleweight" },
+    { "note": "Defensive striking is weak: opponents' head accuracy is 47.7% against him, versus about 40% across the middleweight league.", "source": "data/derived/fighters.json; priors.Middleweight acc_h" }
+  ],
+  "confidence": "medium"
+}

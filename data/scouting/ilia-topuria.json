@@ -1,0 +1,94 @@
+{
+  "slug": "ilia-topuria",
+  "name": "Ilia Topuria",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Lost the undisputed lightweight title, and his unbeaten record, to Justin Gaethje at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026). His corner stopped the fight after round 4. He suffered fractures of both orbital bones, with no surgery needed. Dana White says he returns in early 2027 and has named no opponent; Topuria wants the Gaethje rematch and has also called for Paddy Pimblett in April. Still the No. 1 lightweight contender. Former UFC featherweight champion (vacated Feb 2025) and lightweight champion (Jun 2025 to Jun 2026).",
+    "title": null,
+    "ranking": "#1 lightweight contender (UFC media panel, Nov 3, 2026, as mirrored by ufcrankings.org and UFCalendar; not checked on ufc.com)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      { "what": "fractures of both orbital bones in the Gaethje loss; reports say no surgery needed", "when": "2026-06", "source": "https://lowkickmma.com/ilia-topuria-injury-update-orbital-fracture-confirmed-after-justin-gaethje-loss" },
+      { "what": "medical suspension: 180 days or until cleared by an oral and maxillofacial surgeon, plus 60 days for the TKO", "when": "2026-06", "source": "https://www.f4wonline.com/news/ufc/ufc-freedom-250-medical-suspensions/" }
+    ],
+    "sources": [
+      "https://www.cbssports.com/ufc/news/ufc-white-house-live-updates-results-freedom-250-highlights-ilia-topuria-justin-gaethje/live/",
+      "https://sports.yahoo.com/mma/live/ufc-freedom-250-results-justin-gaethje-shocks-ilia-topuria-pulls-off-ultimate-us-upset-on-white-house-lawn-060000480.html",
+      "https://www.espn.com/mma/story/_/id/49068660/gaethje-bucks-odds-topples-topuria-ufc-lightweight-title",
+      "https://www.mmamania.com/ufc-white-house-2026-fight-card-start-time-full-results-dana-white-conor-mcgregor-cbs-mma/451314/ilia-topuria-orbital-fractures-both-eyes-in-ufc-white-house-loss-will-not-return-2026",
+      "https://www.mmamania.com/ufc-news/484145/dana-white-confirms-ilia-topuria-will-return-in-early-2027",
+      "https://mmanews.com/article/dana-white-reveals-when-ilia-topuria-will-return-ufc",
+      "https://sports.yahoo.com/articles/ilia-topuria-opens-loss-justin-012534441.html",
+      "https://bleacherreport.com/articles/25159123-ilia-topuria-vacates-title-volkanovski-lopes-fight-belt-ufc-315-card-revealed",
+      "https://ufcrankings.org/",
+      "http://ufcstats.com/fighter-details/54f64b5e283b0ce7"
+    ]
+  },
+  "style": {
+    "archetype": "boxer",
+    "stance": "orthodox",
+    "tags": ["power", "pressure", "jab", "body-work", "head-movement", "takedown-defense", "submissions"],
+    "signature": [
+      "jab, straight right, left hook: his own description of the plan behind the Oliveira KO (R1 2:27, UFC 317)",
+      "body hooks in bunches: 24 of 29 body strikes landed in R2 vs Gaethje, dropping him",
+      "right hand at close range with the opponent near the fence: Volkanovski KO (R2 3:32, UFC 298)",
+      "forward pressure that cuts off the cage and forces exchanges",
+      "arm-triangle from side control (Bryce Mitchell, R2 2022)"
+    ],
+    "weaknesses": [
+      "his only loss came against a puncher who traded with him: Gaethje landed 79 head strikes, his eyes swelled shut, and his corner stopped it after R4",
+      "lately absorbs about as much as he lands: 5.31 significant strikes absorbed vs 5.36 landed per minute over the last 3 years (league 4.32)",
+      "short reach for lightweight: 69 in at 5 ft 7 in",
+      "after dropping Gaethje with body shots he took him down and hunted submissions, and Gaethje recovered",
+      "returns from fractures of both orbital bones and a layoff of at least 6 months; after-effects unknown"
+    ],
+    "summary": "A pressure boxer with knockout power and a grappling base. He walks opponents down, cuts off the cage and throws combinations to the head and body, and he finished Volkanovski, Holloway and Oliveira inside three rounds each. His first loss came when Gaethje stood and traded and broke both orbital bones. The open questions are how he returns from that injury and how he handles a puncher who will not back up.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/54f64b5e283b0ce7",
+      "https://www.aljazeera.com/sports/2025/6/29/topuria-beats-oliveira-to-win-ufc-lightweight-title-with-stunning-knockout",
+      "https://bloodyelbow.com/2024/02/19/ufc-298-topuria-volkanovski-analysis/",
+      "https://evolve-mma.com/blog/analyzing-ilia-topurias-style-of-fighting/",
+      "https://www.cbssports.com/ufc/news/ufc-white-house-live-updates-results-freedom-250-highlights-ilia-topuria-justin-gaethje/live/",
+      "https://sports.yahoo.com/mma/live/ufc-freedom-250-results-justin-gaethje-shocks-ilia-topuria-pulls-off-ultimate-us-upset-on-white-house-lawn-060000480.html",
+      "https://bleacherreport.com/articles/25440894-ilia-topuria-lost-sight-both-eyes-tko-loss-gaethje-ufc-white-house-wants-rematch-fight"
+    ]
+  },
+  "moves": {
+    "jab": 0.45,
+    "cross": 0.45,
+    "hook": 0.5,
+    "overhand": 0.15,
+    "upper": 0.2,
+    "headkick": 0.03,
+    "bodykick": 0.1,
+    "bodyhook": 0.5,
+    "bodystraight": 0.2,
+    "calf": 0.12,
+    "inside": 0.1,
+    "spinning": 0.0,
+    "knee": 0.12,
+    "elbow": 0.05,
+    "notes": "Target split from fighters.json: decayed significant attempts are 77% head, 17% body, 6% legs (landed 66/24/10; career 78/15/7). The lightweight league is 76/15/9, so kicks sit low. Hook and cross get the top head weights because the Oliveira KO was jab, right hand, left hook in his own words (Al Jazeera), and the Volkanovski and Holloway finishes were punches at distance (ufcstats). The body hook is high because his body work comes in bursts: 24 of 29 body strikes landed in R2 vs Gaethje put him down (CBS, Yahoo, ufcstats). Calf kicks get a little weight because he landed 15 of 16 leg strikes vs Holloway. Knee is small: clinch strikes are 10% of his landed decayed. ufcstats does not record technique, so the split inside each target is a judgment."
+  },
+  "appearance": {
+    "build": "compact and heavily muscled: 5 ft 7 in with a 69 in reach (ufcstats); moved up from featherweight in 2025",
+    "hair": "short dark hair",
+    "facial_hair": "unknown",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "notes": "Build is from ufcstats. Hair and skin follow widely published fight photos as recalled; they were not re-checked on the web this session (the search budget ran out and photo hosts were unreachable). Facial hair changes between fights, so it is left unknown.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/54f64b5e283b0ce7"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Power is elite: 1.15 knockdowns per 15 min career (league 0.39) and 2.33 per 100 significant head strikes landed (league 0.95; 1.77 after shrinkage). He has scored a knockdown in 8 of his 10 UFC fights.", "source": "data/derived/fighters.json; tools/fighter_report.py chin and power table" },
+    { "note": "Takedown defense is 95% career (20 of 21 stopped). Gaethje went 0 for 5.", "source": "tools/fighter_report.py rates; data/raw/ufc_fight_stats.csv" },
+    { "note": "Damage swing at UFC Freedom 250: he landed 44 significant strikes in R2 but only 7 in R3 after his eyes swelled. Topuria said he had lost sight in both eyes by the end of R2.", "source": "data/raw/ufc_fight_stats.csv; https://bleacherreport.com/articles/25440894-ilia-topuria-lost-sight-both-eyes-tko-loss-gaethje-ufc-white-house-wants-rematch-fight" },
+    { "note": "Chin before 2026: only 1 knockdown absorbed (Jai Herbert, 2022), and no knockdown recorded in the Gaethje loss either. The stoppage was for facial damage, so a durability penalty after the orbital fractures should be a judgment, not a measured chin drop.", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
+    { "note": "He stepped away in late 2025 for personal reasons, which led to the interim title fight between Gaethje and Pimblett at UFC 324.", "source": "https://africa.espn.com/mma/ufc/story/_/id/47122547/lightweights-justin-gaethje-paddy-pimblett-scheduled-fight" }
+  ],
+  "confidence": "medium"
+}

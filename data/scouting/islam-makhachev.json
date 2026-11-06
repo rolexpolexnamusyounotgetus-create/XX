@@ -1,0 +1,91 @@
+{
+  "slug": "islam-makhachev",
+  "name": "Islam Makhachev",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "UFC welterweight champion. Won the belt from Jack Della Maddalena at UFC 322 (Nov 15, 2025) and defended it with a unanimous decision over Ian Machado Garry at UFC 330 (Aug 15, 2026; 49-46, 49-46, 48-47), a UFC-record 17th straight win. Pro record 29-1. He verbally agreed to headline UFC 336 against Carlos Prates and then backed out, so Prates vs Michael Morales (Jan 30, 2027) is now for the interim belt, with the winner to face him later in 2027. He said on Oct 31, 2026 that his next fight will be 'one of the last' of his career.",
+    "title": "UFC welterweight champion",
+    "ranking": "#1 men's pound-for-pound per CBS Sports (updated Sep 15, 2026); one report says the UFC dropped its official P4P list when it moved to Elo-based 'Meta UFC Rankings' on Jun 20, 2026 (not confirmed)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "https://www.ufc.com/news/ufc-330-islam-makhachev-vs-ian-machado-garry-results",
+      "https://www.thenationalnews.com/sport/combat-sports/2026/08/16/ufc-330-islam-makhachev-clinches-ufc-welterweight-title-after-17th-win-in-a-row/",
+      "https://www.aljazeera.com/sports/2026/8/16/ufc-330-makhachev-secures-record-setting-win-against-machado-garry",
+      "https://sports.yahoo.com/articles/dana-white-islam-makhahev-verbally-045008414.html",
+      "https://www.fightful.com/mma/interim-welterweight-title-fight-set-for-ufc-336-flyweight-title-fight-to-headline/",
+      "https://sports.yahoo.com/articles/ufc-336-gets-massive-co-204308357.html",
+      "https://www.thescore.com/mma/news/3639613/makhachev-next-fight-will-be-one-of-the-last-in-my-career",
+      "https://www.aljazeera.com/sports/2026/10/31/islam-makhachev-ufc-welterweight-title-one-of-last-fight-prates-morales",
+      "https://www.cbssports.com/ufc/rankings/men/200/p4p/",
+      "http://ufcstats.com/fighter-details/275aca31f61ba28c"
+    ]
+  },
+  "style": {
+    "archetype": "chain wrestler (sambo/dagestani)",
+    "stance": "southpaw",
+    "tags": ["chain-wrestling", "trips", "cage-wrestling", "top-control", "back-takes", "submissions", "takedown-defense", "southpaw", "head-kicks", "counter"],
+    "signature": [
+      "body-lock and trip takedowns along the fence, chained until one lands (7 of 15 vs Machado Garry)",
+      "back take with body triangle (finished UFC 330's fifth round there)",
+      "D'Arce choke (Poirier R5, Moicano R1)",
+      "arm-triangle choke (Oliveira R2 for the lightweight title, Dober R3)",
+      "rear-naked choke (Moises, Kuntz) and kimura (Hooker)",
+      "southpaw left high kick (KO of Volkanovski at UFC 294; knockdown of Machado Garry in R2 of UFC 330)",
+      "rear-hand straight and body kicks at range"
+    ],
+    "weaknesses": [
+      "low striking volume: 3.4 significant attempts per minute (decayed), so he can lose standing minutes on output; Machado Garry out-landed him 29-22 at UFC 330",
+      "finishing rate dropped at 170: both welterweight title fights went 25 minutes",
+      "only loss is a first-round KO (Adriano Martins, UFC 192, 2015)",
+      "was cut and seemed to tire in round 3 at UFC 330, where Machado Garry won the round"
+    ],
+    "summary": "A southpaw grappler from a sambo background. He gets the fight to the fence, chains body locks and trips until one lands, then holds top or back control and hunts arm-triangles and D'Arce chokes. Standing, he keeps a low-volume, accurate southpaw game (rear straight, kicks to the body and legs, a left high kick) that sets up his wrestling. At welterweight he has won on control rather than finishes.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/275aca31f61ba28c",
+      "https://www.ufc.com/news/ufc-330-islam-makhachev-vs-ian-machado-garry-results",
+      "https://www.thescore.com/mma/news/3573068/ufc-330-makhachev-vs-garry-results-analysis",
+      "https://www.lowkickmma.com/islam-makhachev-gets-bloodied-but-seals-decision-win-to-defend-welterweight-title-at-ufc-330/",
+      "https://sports.yahoo.com/mma/live/ufc-330-live-results-islam-makhachev-vs-ian-machado-garry-updates-round-by-round-scoring-highlights-060000328.html",
+      "https://en.wikipedia.org/wiki/Islam_Makhachev"
+    ]
+  },
+  "moves": {
+    "jab": 0.35,
+    "cross": 0.45,
+    "hook": 0.15,
+    "overhand": 0.05,
+    "upper": 0.1,
+    "headkick": 0.12,
+    "bodykick": 0.35,
+    "bodyhook": 0.1,
+    "bodystraight": 0.15,
+    "calf": 0.25,
+    "inside": 0.25,
+    "spinning": 0.0,
+    "knee": 0.2,
+    "elbow": 0.15,
+    "notes": "Southpaw: 'cross' means his left straight, 'jab' his right. The weights follow his decayed target split in fighters.json: of significant attempts 79% head, 12.5% body, 8% legs; of landed 66% head, 20% body, 14% legs. Career body share of landed strikes is 23%, so body kicks and straights get weight above the hooks. Leg strikes went 10/10 vs both Della Maddalena and Machado Garry, so calf and inside kicks get moderate weight. Head kicks are rare but decisive (Volkanovski KO at UFC 294, Machado Garry knockdown at UFC 330), hence a small 0.12. Knees and elbows stand for clinch and top-position work: about 34% of his decayed landed strikes come in the clinch or on the ground. No spinning techniques appear in his recorded finishes. Sources: ufcstats sums in data/derived/fighters.json, UFC 330 recaps (ufc.com, thescore)."
+  },
+  "appearance": {
+    "build": "compact and thickly muscled; 5 ft 10 in with a 70 in reach (ufcstats), short-limbed for welterweight",
+    "hair": "short dark hair",
+    "facial_hair": "full dark beard",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/islam-makhachev",
+      "http://ufcstats.com/fighter-details/275aca31f61ba28c"
+    ]
+  },
+  "engine_notes": [
+    { "note": "In 5-round fights his significant output relative to round 1 runs 1.00, 1.24, 0.89, 0.67, 0.54 (minute-weighted, 9 five-round bouts). The fall after round 2 comes mostly from long control spells and finishes, not only from fatigue.", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "Takedown defense 91% career (opponents 2 of 23) and 93% decayed; opponents control him 36 s per 15 min decayed against 167 s for the welterweight league.", "source": "data/derived/fighters.json; tools/fighter_report.py rates" },
+    { "note": "Control 485 s per 15 min decayed (welterweight league 167). At 170: 19:10 of control vs Della Maddalena with 4/4 takedowns, and 12:30 vs Machado Garry with 7/15.", "source": "data/derived/fighters.json; ufcstats per-fight totals" },
+    { "note": "At UFC 330 Machado Garry out-landed him 29-22 in significant strikes and won round 3; Makhachev's wrestling and a round-2 head-kick knockdown decided it.", "source": "https://www.thescore.com/mma/news/3573068/ufc-330-makhachev-vs-garry-results-analysis" },
+    { "note": "Chin: 2 knockdowns absorbed in 19 UFC fights and 1 KO loss (2015). Decayed rate is 0.56 KD per 100 significant head strikes absorbed, against a league rate of 0.84.", "source": "data/derived/fighters.json; tools/fighter_report.py rates" }
+  ],
+  "confidence": "high"
+}

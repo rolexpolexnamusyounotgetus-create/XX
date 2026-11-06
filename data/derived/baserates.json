@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated": "2026-11-06 08:48",
+  "generated": "2026-11-06 08:52",
   "raw_dir": "/home/user/XX/data/raw",
   "since": "2015-01-01",
   "data_max_date": "2026-10-31",
@@ -8,7 +8,7 @@
   "n_fights_with_stats": 5927,
   "notes": [
    "25 fights appear twice under two event names (same fight URL); kept the copy whose event has a date, dropped the copies under ['UFC Fight Night: Grasso vs. Shevchenko 2', 'UFC Fight Night: Lopes vs. Silva']",
-   "1 events missing from ufc_event_details.csv; dates imputed from the neighbouring event in results order: ['UFC - Road to UFC 4.6']",
+   "1 event(s) missing from ufc_event_details.csv; dates imputed from the neighbouring event in results order: ['UFC - Road to UFC 4.6']",
    "dropped 2 rows with duplicate (EVENT, BOUT): ['Kazushi Sakuraba vs. Marcus Silveira']",
    "1 fights excluded from stats-based measures (round rows missing, unparsed numbers, unmatched names or non-5-minute rounds)"
   ],

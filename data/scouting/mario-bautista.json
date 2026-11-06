@@ -1,0 +1,75 @@
+{
+  "slug": "mario-bautista",
+  "name": "Mario Bautista",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Top-five UFC bantamweight on a two-fight streak: a rear-naked choke of Vinicius Oliveira in a Fight Night headliner (Feb 7, 2026) and a 29-28 x3 decision over Cory Sandhagen at UFC 329 (Jul 11, 2026), avenging his 2019 UFC debut loss. His only loss since March 2021 is a 30-27 x3 decision to Umar Nurmagomedov at UFC 321 (Oct 25, 2025). UFC record 12-3 per ufcstats. His next booking was not verified in this pass.",
+    "title": null,
+    "ranking": "#4 bantamweight on ufcalendar.com's main list and #5 on ufcrankings.org (both updated Nov 3, 2026); official UFC rankings page not checked",
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "https://sports.yahoo.com/mma/article/ufc-329-results-mario-bautista-grits-out-massive-revenge-win-over-cory-sandhagen-031722352.html",
+      "https://cagesidepress.com/2026/07/11/ufc-329-mario-bautista-picks-up-win-over-hobbled-cory-sandhagen/",
+      "https://www.bjpenn.com/mma-news/cory-sandhagen/ufc-329-results-mario-bautista-defeats-cory-sandhagen-highlights/",
+      "https://khelnow.com/ufc/ufc-329-results-mario-bautista-beats-cory-sandhagen-via-unanimous-decision-202607",
+      "https://www.ufcalendar.com/rankings/bantamweight",
+      "https://ufcrankings.org/",
+      "http://ufcstats.com/fighter-details/bc711b6dd95c1af6",
+      "http://ufcstats.com/fight-details/fb4b1754d510b0d0",
+      "http://ufcstats.com/fight-details/e69f9b4b9cae12a4"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "switch",
+    "tags": ["switch-stance", "volume", "body-work", "submissions", "back-takes", "leg-locks", "top-control"],
+    "signature": [
+      "Suloev stretch into a kneebar (badly hurt Sandhagen's hamstring at the end of round 1, UFC 329)",
+      "rear-naked choke (Vinicius Oliveira 2026, Guido Cannetti 2023, Brian Kelleher 2022)",
+      "triangle armbar from back control (Benito Lopez, 2022)",
+      "chain takedowns late in fights (7 of 11 in round 3 vs Sandhagen, after a knockdown)",
+      "high-volume body punching (58 of 66 body strikes landed vs Patchy Mix, 2025)",
+      "flying knee (KO of Miles Johns, 2020)"
+    ],
+    "weaknesses": [
+      "takedown defence 57% career and 52% time-decayed vs a 65.7% league average. Umar Nurmagomedov landed 11 of 14 with 10:46 control and swept the cards",
+      "absorbs 4.24 sig strikes per minute (decayed), above the 3.97 bantamweight average",
+      "one KO loss by strikes (Trevin Jones, 2021); also submitted by Sandhagen in his 2019 debut",
+      "little championship-distance experience: one 5-round booking in the dataset, which ended in round 2"
+    ],
+    "summary": "A high-output switch-stance all-rounder who pairs accurate volume boxing and heavy body work with chain takedowns and an opportunistic submission game (back takes, rear-naked chokes, leg locks). Elite wrestlers have controlled him, but his scrambles and late-round takedowns beat Sandhagen.",
+    "sources": [
+      "https://cagesidepress.com/2026/07/11/ufc-329-mario-bautista-picks-up-win-over-hobbled-cory-sandhagen/",
+      "https://www.lowkickmma.com/mario-bautista-gets-revenge-over-cory-sandhagen-in-ufc-329-rematch/",
+      "https://thebodylockmma.com/ufc/ufc-results/mario-bautista-destroys-sandhagens-leg-in-stunning-ufc-329-victory/",
+      "http://ufcstats.com/fight-details/c572daedf2012a49",
+      "http://ufcstats.com/fight-details/df5dac45fc585fb0",
+      "http://ufcstats.com/fight-details/3d7d82fff71e395a",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.25, "cross": 0.27, "hook": 0.2, "overhand": 0.08, "upper": 0.12, "headkick": 0.08,
+    "bodykick": 0.3, "bodyhook": 0.4, "bodystraight": 0.3,
+    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.05, "elbow": 0.0,
+    "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. fighters.json time-decayed attempt split is 74.9% head, 17.3% body and 7.8% leg (landed 60.1/27.0/12.9). Body share is above the 14.1% bantamweight average and leg share below 9.7%, so the engine should send more of his volume to the body than for an average 135er. No source in this pass broke down which punches or kicks he uses, so the within-group splits are a generic boxer split. Body hooks and straights lead because his body volume comes in punching exchanges (e.g. 58/66 body vs Patchy Mix with 0 takedowns attempted). Calf and inside are split evenly because nothing sourced favours one. knee 0.05 reflects the flying-knee KO of Miles Johns (ufcstats). No spinning attacks or elbows are documented. Confidence on these splits is low."
+  },
+  "appearance": {
+    "build": "5'9\" (69 in) with a 69 in reach per ufcstats",
+    "hair": "unknown (not confirmed from a dated photo in this pass)",
+    "facial_hair": "unknown",
+    "skin": "unknown",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": ["http://ufcstats.com/fighter-details/bc711b6dd95c1af6"]
+  },
+  "engine_notes": [
+    { "note": "Takedowns: 3.15 per 15 min time-decayed (2.49 career) at 38% accuracy, vs a 1.60 bantamweight average. Submission attempts: 1.28 per 15 min decayed vs 0.41 league. Control: 14.0 s/min.", "source": "data/derived/fighters.json" },
+    { "note": "Accurate volume: 52% sig accuracy time-decayed (league 45.6%) at 10.5 attempts per minute, with 5.49 landed per minute.", "source": "data/derived/fighters.json" },
+    { "note": "Late surge in his biggest win: in round 3 vs Sandhagen he landed 40 of 54 sig strikes, scored a knockdown and went 7 of 11 on takedowns. He also scored a round-2 knockdown in the Umar loss.", "source": "data/raw/ufc_fight_stats.csv (ufcstats)" },
+    { "note": "Takedown attempts do not always land against strong defenders: 0 of 10 vs Jose Aldo, though he still logged 7:15 of (mostly clinch) control and won a split decision.", "source": "http://ufcstats.com/fight-details/3d7d82fff71e395a" }
+  ],
+  "confidence": "medium"
+}

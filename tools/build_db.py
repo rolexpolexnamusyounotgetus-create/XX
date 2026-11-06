@@ -5,6 +5,7 @@ Run from the project root:
 
     python3 tools/build_db.py                  # default half-life 730 days
     python3 tools/build_db.py --half-life 540  # different time decay for the S sums
+    python3 tools/build_db.py --priors-window 4  # trailing years behind each backtest year's priors_asof
 
 Writes (see docs/ENGINE_V3_SPEC.md, "Profile format" and "Calibration and validation"):
 
@@ -206,15 +207,28 @@ def mode_recent(hist, ref_day, years=3):
 
 
 def pace_curve(m5, l5, m3, l3):
-    """Landed/min by round relative to round 1 (5-round fights; else 3-round fights for rounds 1-3)."""
-    if m5[0] > 0 and l5[0] > 0:
+    """Landed/min by round relative to round 1 (5-round fights; else 3-round fights for rounds 1-3).
+
+    5-round data is used only when some 5-round fight reached round 2: a lone 5-round fight that ended
+    in round 1 says nothing about pace and must not hide the 3-round curve."""
+    has3 = m3[0] > 0 and l3[0] > 0
+    if m5[0] > 0 and l5[0] > 0 and (m5[1] > 0 or not has3):
         base = l5[0] / m5[0]
         return ([rnd((l5[k] / m5[k]) / base, 3) if m5[k] > 0 else None for k in range(5)],
                 [rnd(m5[k], 3) for k in range(5)])
-    if m3[0] > 0 and l3[0] > 0:
+    if has3:
         base = l3[0] / m3[0]
         return ([rnd((l3[k] / m3[k]) / base, 3) if m3[k] > 0 else None for k in range(3)] + [None, None],
                 [rnd(m3[k], 3) for k in range(3)] + [0, 0])
+    return None, None
+
+
+def pace3_curve(m3, l3):
+    """The 3-round curve on its own (rounds 1-3), so a profile keeps it even when `pace` is 5-round."""
+    if m3[0] > 0 and l3[0] > 0:
+        base = l3[0] / m3[0]
+        return ([rnd((l3[k] / m3[k]) / base, 3) if m3[k] > 0 else None for k in range(3)],
+                [rnd(m3[k], 3) for k in range(3)])
     return None, None
 
 
@@ -293,9 +307,13 @@ def parse_fights(log):
             f.fight_s = sum(f.lengths[:f.rnd - 1]) * 60 + f.time_s
         else:
             f.fight_s = f.time_s
-        # judges' cards: ufcstats writes each card loser-first ("Judge 28 - 29."); store them as [A, B]
+        # judges' cards: ufcstats writes each card loser-first ("Judge 28 - 29."); store them as [A, B].
+        # No-contests (overturned decisions) are skipped: with no winner the orientation is unknown, and the
+        # raw order there is not loser-first (e.g. Argueta vs. Johns 2023 lists the original winner first).
+        # The raw text stays in `detail`.
         f.cards = None
-        if f.method in ("UD", "SD", "MD", "DRAW") or r.METHOD.startswith("Decision") or r.METHOD == "Overturned":
+        if f.winner != "NC" and (f.method in ("UD", "SD", "MD", "DRAW") or r.METHOD.startswith("Decision")
+                                 or r.METHOD == "Overturned"):
             pairs = [(int(a), int(b)) for a, b in re.findall(r"(\d+)\s*-\s*(\d+)\.", r.DETAILS)]
             if pairs:
                 if f.winner == "A":
@@ -401,13 +419,19 @@ def build_people(fights, log):
                 assign[(f.fid, s)] = "amb:" + slugify(n)
                 unresolved += 1
         per = Counter(assign[(f.fid, s)] for f, s in bouts)
-        amb_report.append({
+        item = {
             "name": n,
             "people": [{"id": i, "nick": info[i]["nick"], "lbs": weight(i),
                         "dob": iso_dob(i), "bouts": per.get(i, 0)} for i in cands],
             "unresolved_bouts": unresolved,
             "how": "per bout: nearest tott weight to the division limit (margin >= 10 lb), else the same "
-                   "person as the name's nearest confidently resolved bout within 4 years"})
+                   "person as the name's nearest confidently resolved bout within 4 years"}
+        blank = [i for i in cands if weight(i) is None]
+        if blank:
+            # the weight rule cannot rule such a person out; say so instead of merging silently
+            item["assumption"] = ("%s have no tott weight (no height, weight or date of birth on ufcstats) and "
+                                  "are assumed not to be the bout fighter" % ", ".join(blank))
+        amb_report.append(item)
     # names shared by several ufcstats people that never appear in a bout: listed for completeness
     for n in sorted(set(k for k, v in det_by_name.items() if len(v) > 1)
                     | set(k for k, v in tott_by_name.items() if len(v) > 1)):
@@ -441,6 +465,7 @@ def build_people(fights, log):
         for s in (0, 1):
             divcount[f.persons[s]][f.division] += 1
     distrusted = []
+    unverified = []
     for f in fights:
         for s in (0, 1):
             p = f.persons[s]
@@ -457,18 +482,30 @@ def build_people(fights, log):
         name = P["name"]
         row = None
         byname = tott_by_name.get(name, [])
-        if len(byname) == 1 and name not in amb_names:
+        real = [d for d in divcount[p] if LBS.get(d)]
+        home = max(real, key=lambda d: divcount[p][d]) if real else None
+        if len(byname) == 1 and name not in amb_names and byname[0] != p and p in tott_rows:
+            # crossed rows: this person's own tott row carries another name while the row carrying his name
+            # sits under another ufcstats id (Jose Montanha / Henrique Da Silva Lopes). Either row could be
+            # his, so trust neither.
+            own = tott_rows[p]
+            distrusted.append({"name": name, "tott_name": own["FIGHTER"], "tott_lbs": parse_lbs(own["WEIGHT"]),
+                               "home": home, "why": "crossed tott rows: own row names %s; the row named %s is "
+                                                    "under id %s" % (own["FIGHTER"], name, byname[0])})
+        elif len(byname) == 1 and name not in amb_names:
             row = tott_rows[byname[0]]
         elif p in tott_rows:
             row = tott_rows[p]
             if not (tokens(row["FIGHTER"]) & tokens(name)):
                 # the tott row under this URL carries another name; keep it only if the weight fits
-                real = [d for d in divcount[p] if LBS.get(d)]
-                home = max(real, key=lambda d: divcount[p][d]) if real else None
                 w = parse_lbs(row["WEIGHT"])
                 if home is None or w is None or abs(w - LBS[home]) > 20:
-                    distrusted.append({"name": name, "tott_name": row["FIGHTER"], "tott_lbs": w, "home": home})
+                    distrusted.append({"name": name, "tott_name": row["FIGHTER"], "tott_lbs": w, "home": home,
+                                       "why": "own tott row carries another name and its weight does not fit "
+                                              "the home division"})
                     row = None
+                else:
+                    unverified.append({"name": name, "tott_name": row["FIGHTER"], "tott_lbs": w, "home": home})
         if row:
             dob = parse_date(row["DOB"], "%b %d, %Y")
             P["tott"] = {"dob": dob, "height_in": parse_height(row["HEIGHT"]), "reach_in": parse_inches(row["REACH"]),
@@ -494,6 +531,7 @@ def build_people(fights, log):
     log["unmatched_names"] = unmatched
     log["ambiguous_names"] = amb_report
     log["tott_distrusted"] = distrusted
+    log["tott_unverified"] = unverified
     return people
 
 
@@ -703,17 +741,23 @@ def walk(fights, people, elo_pre, half_life):
                 pace, pace_w = pace_curve(stt["C"][[KI["r5_min_%d" % k] for k in range(1, 6)]],
                                           stt["C"][[KI["r5_lnd_%d" % k] for k in range(1, 6)]],
                                           stt["r3m"], stt["r3l"])
+                pace3, pace3_w = pace3_curve(stt["r3m"], stt["r3l"])
                 sides[tag] = {
                     "slug": P["slug"], "name": P["name"],
                     "age": rnd((f.date - dob).days / 365.25, 3) if dob else None,
                     "n": stt["n_all"], "ko_losses": stt["ko_losses"], "kd_absorbed": rnd(stt["C"][KI["okd"]]),
                     "elo": rnd(elo, 4), "home": mode_recent(stt["hist"], f.day),
                     "height_in": T.get("height_in"), "reach_in": T.get("reach_in"), "stance": T.get("stance"),
-                    "pace": pace, "pace_w": pace_w,
+                    "pace": pace, "pace_w": pace_w, "pace3": pace3, "pace3_w": pace3_w,
                     "S": rlist(stt["S"]),
                 }
             e = {"id": f.fid, "date": f.date.isoformat(), "event": f.event, "division": f.division,
                  "rounds": f.sched, "title": f.title}
+            if f.division in NON_DIV:
+                # catch / open weight priors mix men and women: point at the heavier pre-fight home division
+                homes = [sides[t]["home"] for t in ("A", "B") if LBS.get(sides[t]["home"])]
+                if homes:
+                    e["prior_division"] = max(homes, key=lambda d: LBS[d])
             if f.tourn:
                 e["tourn"] = True
             e["A"], e["B"] = sides["A"], sides["B"]
@@ -758,12 +802,17 @@ def walk(fights, people, elo_pre, half_life):
 
 
 # ------------------------------------------------------------------ priors
-def build_priors(fights, since):
+PRIOR_MIN_FIGHTS = 20                     # fewer stat fights than this in the window -> borrow another group
+PRIOR_FALLBACK = {"Women's Featherweight": "Women's Bantamweight"}   # else "ALL"
+
+
+def build_priors(fights, since, until=None):
+    """League rates from fights with since <= date (< until when given)."""
     G = defaultdict(lambda: {"v": np.zeros(NK), "r3m": np.zeros(3), "r3l": np.zeros(3), "nf": 0, "nstat": 0,
                              "kd_r": 0, "kd_fin": 0,
                              "fmt": {3: Counter(), 5: Counter()}, "mins": {3: [], 5: []}, "allmins": []})
     for f in fights:
-        if f.date < since:
+        if f.date < since or (until is not None and f.date >= until):
             continue
         for g in (f.division, "ALL"):
             X = G[g]
@@ -848,10 +897,18 @@ def build_priors(fights, since):
         P["pace5"] = p5
         P["pace3"] = p3[:3] if p3 else None
         out[g] = P
-    # divisions with no fights in the window (Open Weight since 2018): fall back to the league-wide rates
+    # divisions with no or too few fights in the window (Open Weight since 2018; Women's Featherweight in early
+    # backtest windows): borrow the rates of a related group, keeping the group's own counts for reference
     for g in DIVISIONS:
-        if g not in out and "ALL" in out:
-            out[g] = dict(out["ALL"], lbs=LBS.get(g), n_fights=0, n_stat_fights=0, fallback="ALL")
+        n_own = G[g]["nstat"] if g in G else 0
+        if g in out and n_own >= PRIOR_MIN_FIGHTS:
+            continue
+        fb = PRIOR_FALLBACK.get(g)
+        if not (fb in out and out[fb]["n_stat_fights"] >= PRIOR_MIN_FIGHTS and "fallback" not in out[fb]):
+            fb = "ALL"
+        if fb in out:
+            out[g] = dict(out[fb], lbs=LBS.get(g), n_fights=G[g]["nf"] if g in G else 0, n_stat_fights=n_own,
+                          fallback=fb)
     return {g: out[g] for g in DIVISIONS + ["ALL"] if g in out}
 
 
@@ -869,6 +926,7 @@ def fighter_profile(p, stt, people, elo_now, snap_day):
     divs = Counter(d for _, d in stt["hist"])
     pace, pace_w = pace_curve(stt["C"][[KI["r5_min_%d" % k] for k in range(1, 6)]],
                               stt["C"][[KI["r5_lnd_%d" % k] for k in range(1, 6)]], stt["r3m"], stt["r3l"])
+    pace3, pace3_w = pace3_curve(stt["r3m"], stt["r3l"])
     recent = []
     for f, s in reversed(stt["fights"][-6:]):
         res = {"A": "W" if s == 0 else "L", "B": "L" if s == 0 else "W"}.get(f.winner, f.winner)
@@ -890,7 +948,7 @@ def fighter_profile(p, stt, people, elo_now, snap_day):
         "ko_losses": stt["ko_losses"], "kd_absorbed": rnd(stt["C"][KI["okd"]]),
         "elo": int(round(elo_now[p])),
         "S": rlist(stt["S"]), "C": rlist(stt["C"]),
-        "pace": pace, "pace_w": pace_w,
+        "pace": pace, "pace_w": pace_w, "pace3": pace3, "pace3_w": pace3_w,
         "recent": recent,
     }
 
@@ -948,6 +1006,8 @@ def main():
     ap.add_argument("--half-life", type=float, default=730.0, help="decay half-life in days for S sums (730)")
     ap.add_argument("--roster-since", default="2021-01-01", help="fighters.json keeps fighters with a UFC fight on "
                                                                  "or after this date (2021-01-01)")
+    ap.add_argument("--priors-window", type=int, default=5,
+                    help="years of fights before Jan 1 of each backtest year used for backtest.json priors_asof (5)")
     args = ap.parse_args()
     t0 = time.time()
     os.makedirs(OUT, exist_ok=True)
@@ -981,7 +1041,13 @@ def main():
             stt["t"] = snap_day
 
     priors = build_priors(fights, PRIORS_FROM)
-    built = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    # walk-forward priors for the backtest: the live priors above include every fight up to the snapshot,
+    # 2024+ test fights among them, so a backtest that shrinks toward them would see the test period's
+    # league rates. priors_asof[Y] uses only fights in [Jan 1 of Y - window, Jan 1 of Y).
+    priors_asof = {}
+    for y in range(BACKTEST_FROM.year, snap.year + 1):
+        priors_asof[str(y)] = build_priors(fights, dt.date(y - args.priors_window, 1, 1), dt.date(y, 1, 1))
+    built =dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
     since = dt.date.fromisoformat(args.roster_since)
     roster = {}
     for p, stt in state.items():
@@ -1004,17 +1070,26 @@ def main():
             "results": "ko_* include doctor and corner stoppages; DQ wins and losses are in record.dq_w/dq_l only",
             "ko_losses": "career KO/TKO losses by strikes or corner stoppage (doctor stoppages excluded)",
             "pace": "sig landed per minute by round in 5-round fights relative to round 1, weights = minutes; "
-                    "3-round fights (rounds 1-3) when a fighter has no 5-round fights",
+                    "3-round fights (rounds 1-3) when no 5-round fight of his reached round 2. pace3/pace3_w: "
+                    "the 3-round curve on its own (shrink toward priors pace3 for 3-round bouts)",
             "r5_min_k": "extra keys beyond the spec list: minutes in round k of 5-round fights (pace denominators)",
             "division": "most frequent division (catch/open weight ignored) over the 3 years before the snapshot, "
                         "else career",
             "title": "championship bouts (undisputed, interim, superfight); TUF / Road to UFC tournament finals "
                      "are not titles",
+            "tott": "height/reach/stance/dob come from the tott row carrying the fighter's name, else the row under "
+                    "his ufcstats id; tott_distrusted rows were dropped (attributes null); tott_unverified rows carry "
+                    "another name and were kept only because the weight fits the fighter's division",
+            "priors": "live league rates from fights since %s; a group with fewer than %d stat fights borrows "
+                      "another group's rates (field `fallback`)" % (PRIORS_FROM.isoformat(), PRIOR_MIN_FIGHTS),
+            "eras": "pre-2001 weight-class names are ufcstats' labels as scraped (e.g. 1997-2000 'Lightweight' was "
+                    "170 lb or under); no roster or backtest fighter is affected",
         },
         "ambiguous_names": log["ambiguous_names"],
         "aliases": log["aliases"],
         "unmatched_names": log["unmatched_names"],
         "tott_distrusted": log["tott_distrusted"],
+        "tott_unverified": log["tott_unverified"],
         "excluded_fights": log["excluded_fights"],
     }
     size_f = write_json(os.path.join(OUT, "fighters.json"), {"meta": meta, "priors": priors, "fighters": roster})
@@ -1027,13 +1102,28 @@ def main():
                           "knockdown that the knockdown scorer finished by KO/TKO; finN/decN finish split by round "
                           "for N-round fights; paceN landed/min by round vs round 1; mpfN minutes per fight"},
         "priors": priors})
+    n_dec = sum(1 for e in entries if e["result"]["winner"] in ("A", "B"))
+    a_rate = sum(1 for e in entries if e["result"]["winner"] == "A") / max(n_dec, 1)
     size_b = write_json(os.path.join(OUT, "backtest.json"), {
         "meta": {"source": SOURCE, "snapshot": snap.isoformat(), "built": built, "half_life_days": args.half_life,
                  "from": BACKTEST_FROM.isoformat(), "n": len(entries), "keys": KEYS,
+                 "priors_window_years": args.priors_window,
                  "notes": "each side's S is decayed to the fight date and built only from earlier UFC fights; "
-                          "A is the first name in the ufcstats bout; elo is pre-fight (see elo_report.json); "
+                          "elo is pre-fight (see elo_report.json); "
                           "result.time_s is seconds into the final round, fight_s total elapsed; cards are "
-                          "[A, B] per judge (order unknown for draws)"},
+                          "[A, B] per judge (order unknown for draws; omitted for no-contests, whose raw text "
+                          "stays in detail)",
+                 "corner": "A is the first name in the ufcstats bout (usually the red corner). A won %.1f%% of "
+                           "the %d decisive entries, so the engine and the metrics must treat the corners "
+                           "symmetrically (or average over the swap); never use the A/B position as a feature"
+                           % (100 * a_rate, n_dec),
+                 "priors": "shrink toward priors_asof[date[:4]][prior_division or division]: division rates "
+                           "from fights in the %d years before Jan 1 of the entry's year, so no fight on or after "
+                           "that date leaks in. fighters.json / priors.json priors include every fight up to the "
+                           "snapshot (2024+ test fights among them) and are for live use only. prior_division is "
+                           "set for catch / open weight bouts: the heavier pre-fight home division of the two"
+                           % args.priors_window},
+        "priors_asof": priors_asof,
         "fights": entries})
     elo_report["built"] = built
     elo_report["snapshot"] = snap.isoformat()
@@ -1042,8 +1132,9 @@ def main():
 
     print("wrote data/derived/fighters.json: %d fighters, %s" % (len(roster), human(size_f)))
     print("wrote data/derived/priors.json: %d groups, %s" % (len(priors), human(size_p)))
-    print("wrote data/derived/backtest.json: %d entries (%d in 2024+), %s"
-          % (len(entries), sum(1 for e in entries if e["date"] >= "2024-01-01"), human(size_b)))
+    print("wrote data/derived/backtest.json: %d entries (%d in 2024+), priors_asof %s-%s, %s"
+          % (len(entries), sum(1 for e in entries if e["date"] >= "2024-01-01"), min(priors_asof),
+             max(priors_asof), human(size_b)))
     print("wrote data/derived/elo_report.json, %s" % human(size_e))
     print("data/overrides.json: %s" % ("created" if made else "exists, left alone"))
     print()

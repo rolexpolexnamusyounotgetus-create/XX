@@ -1,0 +1,79 @@
+{
+  "slug": "nassourdine-imavov",
+  "name": "Nassourdine Imavov",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Ranked #3 at middleweight and 5-0 (1 NC) since his Jan 2023 loss to Sean Strickland; last fought Sep 6, 2025 (unanimous decision over Caio Borralho, UFC Paris). Says the UFC promised him the next title shot after Strickland beat Khamzat Chimaev at UFC 328 (May 9, 2026); a Strickland rematch for the belt is reported for February 2027 in Florida but not officially announced.",
+    "title": null,
+    "ranking": "#3 middleweight (UFC media rankings, late Oct 2026, as reported by MMA Junkie via mmasucka and mirrored on ufcalendar.com)",
+    "active": true,
+    "next_fight": "Reported, not official: vs Sean Strickland for the UFC middleweight title, targeted for February 2027 in Florida (MMA Junkie, Oct 27, 2026). An earlier September report had it on UFC 335 (Dec 12, 2026); that fell through over Strickland's pay dispute.",
+    "injuries": [],
+    "sources": [
+      "https://bloodyelbow.com/2026/10/27/new-date-emerges-for-sean-strickland-vs-nassourdine-imavov-ufc-title-rematch-amid-pay-dispute/",
+      "https://bloodyelbow.com/2026/09/04/i-know-the-date-nassourdine-imavov-confirms-hell-face-sean-strickland-for-the-ufc-middleweight-title-next/",
+      "https://mmasucka.com/news/sean-strickland-nassourdine-imavov-ufc-title-rematch-deal-florida/",
+      "https://sports.yahoo.com/articles/report-sean-strickland-vs-nassourdine-151350283.html",
+      "https://sports.yahoo.com/articles/nassourdine-imavov-claims-ufc-promised-041300593.html",
+      "https://www.espn.com/mma/ufc/story/_/id/48728368/strickland-stuns-chimaev-ufc-middleweight-title",
+      "https://www.ufcalendar.com/rankings/middleweight",
+      "https://next-fight.com/en/fighter/nassourdine-imavov",
+      "data/derived/fighters.json (last_fight 2025-09-06, snapshot 2026-10-31)"
+    ]
+  },
+  "style": {
+    "archetype": "boxer",
+    "stance": "orthodox",
+    "tags": ["jab", "footwork", "range-control", "takedown-defense", "elbows", "durable", "late-surge"],
+    "signature": [
+      "springing jab off parallel-footed footwork (Wikipedia; Sherdog scouting report)",
+      "straight right hand: one-punch KO of Israel Adesanya at 0:30 of R2 (Feb 1, 2025)",
+      "short elbow in tight spaces (Sherdog scouting report, 2023)",
+      "head-position clinch defense against wrestlers, breaking off with an elbow (Wikipedia)",
+      "late punch combinations at distance: TKO of Jared Cannonier in R4 (Jun 8, 2024)"
+    ],
+    "weaknesses": [
+      "hunches forward to discourage takedowns, which has left him open to knees (Sherdog, 2023)",
+      "limited top control and submission threat: 0 UFC submission wins (dataset; Sherdog, 2023)",
+      "lost a five-round decision to Sean Strickland's pressure on short notice at 205 lb (Jan 2023); his cardio was cited as a factor then",
+      "lost R1 on all three cards to Adesanya's leg and body kicks before the KO (Feb 2025)",
+      "about 14 months out of the cage by Nov 2026 with no fight booked yet"
+    ],
+    "summary": "A tall, jab-first orthodox striker who controls range with footwork and fast straight punches, then wins the late rounds of five-round fights. His counter-wrestling has become a strength: he stuffed 9 of 10 Brendan Allen takedowns in 2024. He rarely uses his own wrestling to hold top position.",
+    "sources": [
+      "https://www.sherdog.com/news/articles/Scouting-Report-Nassourdine-Imavov-188857",
+      "https://en.wikipedia.org/wiki/Nassourdine_Imavov",
+      "https://au.sports.yahoo.com/israel-adesanya-vs-nassourdine-imavov-183049522.html",
+      "https://www.aljazeera.com/sports/2025/2/1/imavov-knocks-out-former-ufc-champ-adesanya-to-stake-ufc-title-claim",
+      "https://www.lowkickmma.com/nassourdine-imavov-knocks-out-israel-adesanya-in-the-second-round-ufc-results-highlights/",
+      "https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-sean-strickland-pieces-up-nassourdine-imavov-for-decision-win",
+      "https://cagesidepress.com/2024/09/28/ufc-paris-nassourdine-imavov-brendan-allen",
+      "data/raw/ufc_fight_stats.csv"
+    ]
+  },
+  "moves": {
+    "jab": 0.38, "cross": 0.3, "hook": 0.13, "overhand": 0.05, "upper": 0.09, "headkick": 0.05,
+    "bodykick": 0.35, "bodyhook": 0.3, "bodystraight": 0.35,
+    "calf": 0.45, "inside": 0.55, "spinning": 0.0, "knee": 0.1, "elbow": 0.15,
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 76.6% head, 14.7% body, 8.7% leg (career 77.5/14.7/7.8). The middleweight league split is about 77/14/9, so he is a near-typical head hunter who kicks the legs rarely. Inside the head group the jab leads, because Wikipedia and the Sherdog scouting report describe a footwork-and-jab game. The cross is second for the right hand that KO'd Adesanya. Hooks, uppercuts and head kicks stay small; no source highlights them. Body weights are split evenly because ufcstats does not separate punches from kicks. Leg kicks are rare but accurate (14/18 vs Borralho). Elbow 0.15 reflects the short elbow Sherdog calls his favourite close-range strike. Knee 0.1 reflects his 12% clinch share of sig landed. No spinning attacks are reported."
+  },
+  "appearance": {
+    "build": "tall (6'3\", 75\" reach per dataset), lean and long-limbed for middleweight",
+    "hair": "short dark hair",
+    "facial_hair": "full dark beard, kept trimmed (from widely published photos; not re-verified this session)",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/nassourdine-imavov",
+      "data/derived/fighters.json (height_in 75, reach_in 75)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Output climbs late in five-round fights: sig landed per minute is 1.18x R1 in R4 and 1.21x in R5 (pace array). He outlanded Borralho 24-12 in R4 and Cannonier 28-17 in R2 before the R4 stoppage.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "No knockdowns absorbed and no KO losses in 12 UFC fights.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)" },
+    { "note": "Takedown defense is 86.7% decayed (opponents 1.9 of 14.4) and 81% career; Allen went 1 of 10 against him.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Opponents still log control time against him: 22% of cage time decayed, clinch included (Cannonier 6:18, Allen 6:06). Expect clinch phases without much damage.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" }
+  ],
+  "confidence": "medium"
+}

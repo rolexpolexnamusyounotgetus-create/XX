@@ -1,0 +1,83 @@
+{
+  "slug": "yair-rodriguez",
+  "name": "Yair Rodriguez",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC interim featherweight champion (won it by submitting Josh Emmett at UFC 284, Feb 11, 2023; lost the unification bout to Alexander Volkanovski by R3 TKO at UFC 290, Jul 8, 2023). He has not fought since a 30-27 x3 decision over Patricio 'Pitbull' Freire at UFC 314 (Apr 12, 2025). He was to end the layoff against Jean Silva in the Noche UFC main event (Sep 12, 2026) but withdrew with an undisclosed injury (news broke Aug 19, 2026). He is reported booked against #14 Steve Garcia at UFC 335 (Dec 12, 2026, Las Vegas). Garcia confirmed it on Instagram; no UFC release was found.",
+    "title": null,
+    "ranking": "#6 featherweight on one board shown by UFCalendar (updated Nov 3, 2026); the page shows two boards and the official ufc.com list was not checked directly",
+    "active": true,
+    "next_fight": "Steve Garcia, featherweight, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (reported; not confirmed by a UFC release found here)",
+    "injuries": [
+      { "what": "undisclosed injury; he wrote that competing in that condition would not have been responsible and withdrew from the Noche UFC main event against Jean Silva", "when": "2026-08", "source": "https://www.cbssports.com/ufc/news/yair-rodriguez-noche-ufc-main-event-injury-withdrawal/" }
+    ],
+    "sources": [
+      "https://www.cbssports.com/ufc/news/yair-rodriguez-noche-ufc-main-event-injury-withdrawal/",
+      "https://www.mmamania.com/ufc-news/466032/yair-rodriguez-releases-statement-after-dropping-out-of-noche-ufc-fight-against-jean-silva",
+      "https://bloodyelbow.com/2026/08/01/yair-rodriguez-set-to-end-18-month-layoff-by-headlining-noche-ufc/",
+      "https://www.mmamania.com/ufc-fight-announcements/484091/violence-yair-rodriguez-returns-against-knockout-artist-steve-garcia-at-ufc-335",
+      "https://nyfights.com/featured/yair-rodriguez-steve-garcia-at-ufc-335/",
+      "https://www.ufcalendar.com/rankings",
+      "http://ufcstats.com/fighter-details/cbf5e6f231b55443"
+    ]
+  },
+  "style": {
+    "archetype": "kickboxer",
+    "stance": "orthodox",
+    "tags": ["head-kicks", "spinning", "leg-kicks", "body-work", "rangy", "elbows", "submissions", "durable", "cardio", "late-surge"],
+    "signature": [
+      "kicks to all three levels from long range: 57 of 64 leg strikes vs Max Holloway (Nov 2021)",
+      "switch kick to the head (KO of Andre Fili, UFC 197, Apr 2016)",
+      "last-second elbow at range that knocked out Chan Sung Jung at 4:59 of round 5 (Nov 2018)",
+      "triangle choke from the bottom (won the interim title vs Josh Emmett, R2 4:19, UFC 284)",
+      "ground strikes from top once an opponent is hurt or down (25 of his 70 significant strikes vs Pitbull were on the ground)"
+    ],
+    "weaknesses": [
+      "wrestling and top control: Volkanovski landed 7 of 12 takedowns with 7:13 control and stopped him with ground strikes; Ortega held him for 5:21 and finished him with an arm-triangle (Feb 2024)",
+      "takedown defence of 59% (career)",
+      "long layoffs and pull-outs: one fight since Feb 2024, then a 2026 withdrawal",
+      "can be out-worked by elite volume: Holloway out-landed him 230-159 over five rounds"
+    ],
+    "summary": "A long, unorthodox featherweight who fights at kicking range and mixes head, body and leg kicks with spinning techniques and sudden elbows. He is dangerous off his back too, with a triangle that won him the interim belt. Wrestlers who get him down and stay there have been his problem.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/cbf5e6f231b55443",
+      "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Moreno_vs._Royval_2",
+      "https://www.ufc.com/athlete/yair-rodriguez"
+    ]
+  },
+  "moves": {
+    "jab": 0.24,
+    "cross": 0.24,
+    "hook": 0.16,
+    "overhand": 0.08,
+    "upper": 0.07,
+    "headkick": 0.21,
+    "bodykick": 0.6,
+    "bodyhook": 0.2,
+    "bodystraight": 0.2,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.1,
+    "knee": 0.05,
+    "elbow": 0.08,
+    "notes": "Weights sum to about 1 within each target group; spinning/knee/elbow are separate propensities. fighters.json career split of significant attempts: 73% head, 13% body, 14% legs; landed 55/20/25 (decayed 71/15/14 attempted, 55/21/24 landed). His landed share to the legs and body is far above his attempted share, so kicks land well; head kicks get 0.21 of the head group, much more than a typical boxer-puncher. Body strikes are scored mainly as kicks (0.6) because his body landed share comes with high accuracy (18 of 23 vs Pitbull, 18 of 22 vs Emmett), typical of kicks at range; this split is a judgment, not sourced. No source splits his low kicks by type, so calf/inside are 50/50. Spinning 0.10 reflects his reputation for spinning techniques, which is not sourced in this session (lowered for that reason); elbow 0.08 for the Jung KO. Head-kick evidence: the Fili switch-kick KO (dataset). Sources: ufcstats sums and per-fight rows in data/raw."
+  },
+  "appearance": {
+    "build": "tall, long-limbed featherweight; 5 ft 11 in with a 71 in reach (ufcstats)",
+    "hair": "dark; style varies from fight to fight",
+    "facial_hair": "unknown (varies)",
+    "skin": "medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/yair-rodriguez",
+      "http://ufcstats.com/fighter-details/cbf5e6f231b55443"
+    ]
+  },
+  "engine_notes": [
+    { "note": "No knockdowns absorbed in 16 UFC fights with round stats (okd 0); his two KO/TKO losses were Volkanovski's ground strikes (2023) and a doctor stoppage for an eye injury after round 2 vs Frankie Edgar (2017).", "source": "data/derived/fighters.json (C sums, record)" },
+    { "note": "Across nine 5-round fights his landed rate by round is 1, 1.01, 0.85, 0.84, 1.19 of round 1: he dips in the middle and rises in round 5 (the Jung KO came at 4:59 of R5).", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "Rust risk: about 20 months out by Dec 2026, and his last booking fell through with an injury.", "source": "https://www.cbssports.com/ufc/news/yair-rodriguez-noche-ufc-main-event-injury-withdrawal/" }
+  ],
+  "confidence": "medium"
+}

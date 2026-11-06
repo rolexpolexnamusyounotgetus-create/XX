@@ -241,11 +241,16 @@ class DB:
         close = difflib.get_close_matches(name, list(names), n=6, cutoff=0.6)
         raise SystemExit(f"Fighter '{name}' not found. Closest: {sub[:6] or close}")
 
-    def bio(self, name: str) -> dict:
+    def bio(self, name: str, division: str | None = None) -> dict:
         t = self.tott[self.tott["FIGHTER"] == name]
+        if len(t) > 1 and division and DIV_LBS.get(division):
+            # shared name: take the ufcstats entry whose listed weight is closest to the division
+            wt = t["WEIGHT"].str.extract(r"(\d+)")[0].astype(float)
+            t = t.loc[[(wt - DIV_LBS[division]).abs().idxmin()]]
         d = self.details.assign(full=(self.details["FIRST"].fillna("") + " " + self.details["LAST"].fillna("")).str.strip())
         nick = d.loc[d["full"] == name, "NICKNAME"].dropna()
-        out = {"name": name, "nick": nick.iloc[0] if len(nick) else None, "ambiguous_name": bool(len(t) > 1)}
+        out = {"name": name, "nick": nick.iloc[0] if len(nick) else None,
+               "ambiguous_name": bool((self.tott["FIGHTER"] == name).sum() > 1)}
         if len(t):
             r = t.iloc[0]
             out.update(height_in=_inches(r["HEIGHT"]), reach_in=_inches(r["REACH"]),
@@ -620,16 +625,19 @@ def record(fx: pd.DataFrame) -> dict:
 
 
 def profile(db: DB, name: str, asof: pd.Timestamp | None = None, half_life: float = HALF_LIFE_DAYS,
-            prior_divisions: list[str] | None = None) -> dict:
+            prior_divisions: list[str] | None = None, only_divisions: list[str] | None = None) -> dict:
     name = db.find(name)
     asof = pd.Timestamp(asof) if asof is not None else db.snapshot
     fx = db.ff[(db.ff["fighter"] == name) & (db.ff["date"] <= asof)].copy()
+    if only_divisions:  # e.g. to separate two ufcstats fighters who share a name
+        fx = fx[fx["division"].isin(only_divisions)]
     if fx.empty:
         raise SystemExit(f"No UFC fights for {name} on or before {asof.date()}")
     days = (asof - fx["date"]).dt.days.astype(float)
     fx["w"] = 0.5 ** (days / half_life)
     one = pd.Series(1.0, index=fx.index)
-    bio = db.bio(name)
+    _d = fx["division"].value_counts()
+    bio = db.bio(name, _d.index[0] if len(_d) else None)
     if bio.get("dob"):
         dob = pd.Timestamp(bio["dob"])
         bio["age_asof"] = round((asof - dob).days / 365.2425, 2)
@@ -995,13 +1003,15 @@ def render_profile_md(p: dict) -> str:
     L.append("")
     L.append("## Fight log")
     L.append("")
+    L.append("Decision details are the three judges' cards with this fighter's score first.")
+    L.append("")
     L.append("| # | Date | Event | Opponent | Class | Res | Method | Detail | Rd | Time | Sched |")
     L.append("|---|---|---|---|---|---|---|---|---|---|---|")
     for i, f in enumerate(p["fights"], 1):
         cls = f["division"] + (" (title)" if f["title"] else "")
         det = (f["detail"] or "").replace("|", "/")
         if f["method"].endswith("DEC"):
-            det = _cards(det)
+            det = _cards(det, f["result"])
         L.append(f"| {i} | {f['date']} | {f['event']} | {f['opponent']} | {cls} | {f['result']} | {f['method']} | "
                  f"{det} | {f['round']} | {f['time']} | {f['sched_rounds']} |")
     L.append("")
@@ -1126,10 +1136,17 @@ def render_profile_md(p: dict) -> str:
     return "\n".join(L)
 
 
-def _cards(det: str) -> str:
-    """'Judge A 27 - 30.Judge B 28 - 29.' -> '27-30, 28-29' (scores only)."""
+def _cards(det: str, result: str = "") -> str:
+    """'Judge A 27 - 30.Judge B 28 - 29.' -> scores with this fighter's score first.
+
+    ufcstats lists each judge's card loser-first (e.g. a 30-27 win reads '27 - 30'; a dissenting card
+    in a split reads winner-high), so a winner's cards are flipped and a loser's kept."""
     sc = re.findall(r"(\d+)\s*-\s*(\d+)", det)
-    return ", ".join(f"{x}-{y}" for x, y in sc) if sc else det
+    if not sc:
+        return det
+    if result == "W":
+        sc = [(y, x) for x, y in sc]
+    return ", ".join(f"{x}-{y}" for x, y in sc)
 
 
 def render_matchup_md(m: dict, pa: dict, pb: dict) -> str:
@@ -1267,6 +1284,8 @@ def main(argv=None):
                     help="rate window for the matchup projection (tuned = each rate's walk-forward half-life)")
     ap.add_argument("--raw", default=str(RAW), help="directory with the ufcstats CSVs")
     ap.add_argument("--out", default=str(OUT), help="output directory for JSON and markdown")
+    ap.add_argument("--only-divisions", help="comma list; keep only bouts in these divisions (to split fighters "
+                                             "who share a name, e.g. 'Flyweight,Bantamweight')")
     ap.add_argument("--no-md", action="store_true", help="skip markdown output")
     ap.add_argument("--print", action="store_true", help="also print the markdown to stdout")
     args = ap.parse_args(argv)
@@ -1278,7 +1297,8 @@ def main(argv=None):
     names = [args.fighter] + ([args.vs] if args.vs else [])
     profs = []
     for nm in names:
-        p = profile(db, nm, asof, args.half_life)
+        only = [d.strip() for d in args.only_divisions.split(",")] if args.only_divisions else None
+        p = profile(db, nm, asof, args.half_life, only_divisions=only if nm == args.fighter else None)
         profs.append(p)
         jp = out / f"fighter_{p['slug']}.json"
         jp.write_text(json.dumps(_clean(p), indent=1, default=_json_default))

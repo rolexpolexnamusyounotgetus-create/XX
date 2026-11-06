@@ -1,0 +1,79 @@
+{
+  "slug": "magomed-ankalaev",
+  "name": "Magomed Ankalaev",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC light heavyweight champion. He won the belt from Alex Pereira by unanimous decision at UFC 313 (Mar 8, 2025) and lost it in the UFC 320 rematch (Oct 4, 2025; TKO at 1:20 of R1). He bounced back with a fifth-round TKO of late replacement Bogdan Guskov in the UFC Abu Dhabi main event (Jul 25, 2026). He is now the #1 contender to champion Carlos Ulberg, who won the vacant title at UFC 327 (Apr 11, 2026) but is reportedly out until early 2027 with a torn ACL. No bout booked.",
+    "title": null,
+    "ranking": "#1 light heavyweight contender (UFC media rankings per CBS Sports, updated Oct 27, 2026, and UFCTime, Oct 28, 2026)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "https://bloodyelbow.com/2026/07/25/magomed-ankalaev-vs-bogdan-guskov-former-champion-bounces-back-with-tko-win-at-ufc-abu-dhabi/",
+      "https://sports.yahoo.com/mma/live/ufc-abu-dhabi-live-results-magomed-ankalaev-vs-bogdan-guskov-updates-round-by-round-scoring-highlights-060000170.html",
+      "https://www.ufcalendar.com/events/ufc-2026-07-25/magomed-ankalaev-vs-bogdan-guskov",
+      "https://www.ufc.com/video/158638",
+      "https://fightsplit.com/news/ankalaev-grinds-past-guskov-but-is-a-ulberg",
+      "https://www.cbssports.com/ufc/rankings/men/",
+      "https://ufctime.com/rankings/light-heavyweight",
+      "https://www.si.com/fannation/mma/news/ufc-champ-carlos-ulberg-reveals-light-heavyweight-proposal-amid-injury",
+      "https://bloodyelbow.com/2026/07/26/carlos-ulberg-shares-latest-return-update-in-reserved-response-to-magomed-ankalaevs-win/",
+      "https://mmasucka.com/news/carlos-ulberg-names-ideal-next-fight-for-magomed-ankalaev-following-ufc-abu-dhabi/",
+      "https://www.ufc.com/news/carlos-ulberg-one-win-greatness-ufc-327-light-heavyweight-title",
+      "data/derived/fighters.json (last_fight 2026-07-25)"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "orthodox",
+    "tags": ["body-work", "pressure", "clinch", "cage-wrestling", "top-control", "ground-and-pound", "takedown-defense", "power"],
+    "signature": [
+      "heavy body work: 24% of decayed sig attempts go to the body; 26/39 body landed vs Guskov, 30/39 vs Pereira at UFC 313",
+      "clinch pressure on the fence: 19/21 clinch sig and 5:42 control vs Pereira at UFC 313",
+      "top control into ground strikes: 8:26 control and a R5 TKO from punches on the ground vs Guskov (Jul 2026)",
+      "right hand at distance: KO of Johnny Walker, R2 (Jan 2024)",
+      "kicks to the head: KOs of Marcin Prachnio (2019) and Dalcha Lungiambula (front kick, 2020)"
+    ],
+    "weaknesses": [
+      "absorbs heavy leg kicks: Pereira landed 48/55 at UFC 313, Guskov 34/38, Rakic 34/40",
+      "low takedown accuracy: 22% decayed, including 0 of 12 vs Pereira at UFC 313",
+      "stopped in R1 by Pereira in the rematch (elbows and punches from half guard, Oct 2025), his only KO loss",
+      "debut loss by triangle choke from bottom guard at 4:59 of R3 vs Paul Craig (2018)"
+    ],
+    "summary": "A well-rounded, physically strong orthodox light heavyweight who chops at the body, pushes opponents onto the fence and grinds through clinch and top control. He is very hard to take down, and his head defense is excellent (opponents land 24% to the head). He gives up a lot of leg kicks and finishes few takedowns from open space.",
+    "sources": [
+      "https://bloodyelbow.com/2026/07/25/magomed-ankalaev-vs-bogdan-guskov-former-champion-bounces-back-with-tko-win-at-ufc-abu-dhabi/",
+      "https://sports.yahoo.com/mma/live/ufc-abu-dhabi-live-results-magomed-ankalaev-vs-bogdan-guskov-updates-round-by-round-scoring-highlights-060000170.html",
+      "https://fightsplit.com/news/ankalaev-grinds-past-guskov-but-is-a-ulberg",
+      "data/raw/ufc_fight_stats.csv",
+      "data/raw/ufc_fight_results.csv",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.3, "cross": 0.3, "hook": 0.17, "overhand": 0.06, "upper": 0.07, "headkick": 0.1,
+    "bodykick": 0.6, "bodyhook": 0.25, "bodystraight": 0.15,
+    "calf": 0.45, "inside": 0.55, "spinning": 0.0, "knee": 0.12, "elbow": 0.05,
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 63.6% head, 24.1% body, 12.3% leg (career 69.3/20.8/9.9). The light heavyweight league split is about 75/14/11, so his body share is roughly 1.7x the league's. Kicks lead the body group as a judgment: his heavy body counts come in fights fought mostly at range (22/29 body vs Rakic, where 50 of his 55 sig landed at distance). ufcstats does not separate punches from kicks. Jab and cross share the head group equally, with the cross justified by the Walker KO. Head kick is set at 0.1 because two of his UFC KOs came from kicks to the head (dataset method details). The knee is set at 0.12 for his clinch work (10.6% clinch share of sig landed). No spinning attacks are recorded. No source reachable in this pass gives a technique-level breakdown."
+  },
+  "appearance": {
+    "build": "6'3\" (75\" reach per dataset), broad and heavy-framed light heavyweight with a thick torso",
+    "hair": "short dark hair (from widely published photos; not re-verified this session)",
+    "facial_hair": "full dark beard (from widely published photos; not re-verified this session)",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/magomed-ankalaev",
+      "data/derived/fighters.json (height_in 75, reach_in 75)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Opponents land 1.58 leg strikes per minute on him (decayed), against a light heavyweight league average of about 0.72. Leg kicks are the reliable way to score on him.", "source": "data/derived/fighters.json; priors['Light Heavyweight'] ol_lnd" },
+    { "note": "Head defense is elite: opponents land 23.9% of head strikes against him (decayed), against about 41% across the league.", "source": "data/derived/fighters.json; priors['Light Heavyweight'] acc_h" },
+    { "note": "Takedown defense is 92.5% decayed and 87.5% career. Opponents control him only 1.9% of the time, while he controls 27% of fight time.", "source": "data/derived/fighters.json" },
+    { "note": "His output dropped to 3 sig strikes in each of R4 and R5 vs Guskov while he held top control before the R5 finish. Low sig counts in late rounds can mean control, not fatigue.", "source": "data/raw/ufc_fight_stats.csv" }
+  ],
+  "confidence": "medium"
+}

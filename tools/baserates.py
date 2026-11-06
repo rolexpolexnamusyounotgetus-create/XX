@@ -203,7 +203,7 @@ def load_data(raw_dir, since):
         # results file is newest-first: borrow the date of the nearest newer event in file order
         R = R.sort_values("order")
         R["DATE"] = R["DATE"].ffill().bfill()
-        notes.append(f"{len(missing)} events missing from ufc_event_details.csv; dates imputed from the "
+        notes.append(f"{len(missing)} event(s) missing from ufc_event_details.csv; dates imputed from the "
                      f"neighbouring event in results order: {missing}")
     # duplicates on (EVENT, BOUT) cannot be joined to stats unambiguously; drop them
     dup = R.duplicated(["EVENT", "BOUT"], keep=False)
@@ -1124,7 +1124,7 @@ def render_md(J):
                        for k in keys if "rates" in G[k]]))
     L += ["", "## Knockdowns", ""]
     L.append(md_table(["Group", "KD", "KD/15", "per 100 standing head landed (range)", "per 100 head landed",
-                       "per 100 sig landed", "P(finish same round | KD)", "1 KD", "2+ KD", "P(scorer wins)",
+                       "per 100 sig landed", "P(finish same round given KD)", "1 KD", "2+ KD", "P(scorer wins)",
                        "KO-by-strikes with winner KD in final round"],
                       [[G[k]["label"], int(G[k]["knockdowns"]["knockdowns"]), num(G[k]["knockdowns"]["per15"], 3),
                         f"{num(G[k]['knockdowns']['per100_standing_head_landed'])} "
@@ -1297,7 +1297,7 @@ def render_md(J):
     # divisions
     L += ["", "## Divisions", ""]
     L.append(md_table(["Division", "Fights", "KO/TKO", "Sub", "Dec", "SLpM", "Sig acc", "Head/Body/Leg acc",
-                       "KD/15", "KD per 100 st. head", "P(fin | KD)", "TD/15", "TD acc", "CTRL s/15", "CTRL/TD",
+                       "KD/15", "KD per 100 st. head", "P(fin given KD)", "TD/15", "TD acc", "CTRL s/15", "CTRL/TD",
                        "Sub/15", "Sub conv"],
                       [[r["division"], r["n_fights"], pct(r["ko_tko"]), pct(r["sub"]), pct(r["decision"]),
                         num(r["slpm"]), pct(r["sig_acc"]),

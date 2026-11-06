@@ -1,0 +1,128 @@
+{
+  "slug": "paddy-pimblett",
+  "name": "Paddy Pimblett",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Ranked #5 at lightweight after choking out Benoit Saint Denis in 52 seconds at UFC 329 (Jul 11, 2026). That win came six months after his first UFC loss, a five-round decision to Justin Gaethje for the interim title at UFC 324 (Jan 24, 2026). No fight is booked: he had stem-cell injections in his left hand in October 2026 and is aiming to return in early 2027. Ilia Topuria has named him as the opponent he wants in April 2027.",
+    "title": null,
+    "ranking": "#5 UFC lightweight (UFC media rankings updated Nov 3, 2026, via ufcrankings.org; ufcalendar.com and Home of Fight also list #5)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      {
+        "what": "left hand: stem-cell injections that keep him out of hand-intensive training",
+        "when": "2026-10",
+        "source": "https://bloodyelbow.com/2026/10/29/paddy-pimblett-reveals-injury-delay-when-prioritizing-justin-gaethje-rematch-over-ilia-topuria-feud/"
+      },
+      {
+        "what": "scratched cornea during the UFC 324 loss (his own account)",
+        "when": "2026-01",
+        "source": "https://sports.yahoo.com/articles/paddy-pimblett-claims-suffered-scratched-031555458.html"
+      }
+    ],
+    "sources": [
+      "https://www.espn.com/mma/story/_/id/49339995/ufc-329-paddy-pimblett-superstar-moment-benoit-saint-denis",
+      "https://www.ufc.com/news/ufc-324-scorecards-judges-gaethje-vs-pimblett",
+      "https://bloodyelbow.com/2026/10/29/paddy-pimblett-reveals-injury-delay-when-prioritizing-justin-gaethje-rematch-over-ilia-topuria-feud/",
+      "https://bloodyelbow.com/2026/11/05/ilia-topuria-claims-he-will-eat-sausage-paddy-pimblett-as-he-offers-ufc-return-update/",
+      "https://nyfights.com/news/ilia-topuria-targets-paddy-pimblett/",
+      "https://ufcrankings.org/",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "https://next-fight.com/en/fighter/paddy-pimblett"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "orthodox",
+    "tags": [
+      "volume",
+      "pressure",
+      "wild-exchanges",
+      "leg-kicks",
+      "knees",
+      "submissions",
+      "guillotine",
+      "back-takes",
+      "top-control",
+      "ground-and-pound",
+      "elbows",
+      "durable"
+    ],
+    "signature": [
+      "D'Arce / Peruvian-necktie front-headlock choke off a sprawl (finished Saint Denis in 0:52, UFC 329)",
+      "rear-naked choke from back control (Kazula Vargas, Jordan Leavitt)",
+      "triangle choke from bottom guard (King Green, UFC 304)",
+      "knee in close and elbows from mount (opened a cut on Michael Chandler, then finished him with mount elbows at UFC 314)",
+      "low kicks to open fights (vs King Green and Chandler)",
+      "high-volume boxing: 156 significant strikes landed in five rounds vs Gaethje"
+    ],
+    "weaknesses": [
+      "hittable: significant-strike defence about 43% (fighters.json; lightweight median about 54%); dropped twice by Gaethje at UFC 324",
+      "takedown defence 46% career and 42% recent: Jared Gordon went 3 for 6, Chandler 4 for 7, Gaethje 3 for 3",
+      "low takedown accuracy (21% career; 0 for 5 vs Gaethje), so he rarely chooses where the fight goes",
+      "left-hand injury that needed stem-cell injections (Oct 2026)"
+    ],
+    "summary": "A heavy-handed volume puncher who walks forward and brawls, and the most dangerous submission threat in any scramble. Most of his UFC finishes are chokes, from the back, from guard and now from the front headlock. He gets hit and taken down more than a top-five fighter should, but he has never been stopped in the UFC and he finished a five-round fight with Gaethje still throwing.",
+    "sources": [
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_stats.csv (UFC 282, 296, 304, 314, 324, 329 bout stats)",
+      "https://sports.yahoo.com/articles/paddy-pimblett-quickly-submits-benoit-031630151.html",
+      "https://www.yardbarker.com/mma/articles/paddy_pimblett_explains_ufc_329_choke_that_put_saint_denis_to_sleep/s1_17349_44057735",
+      "https://www.cbssports.com/mma/news/ufc-314-results-highlights-paddy-pimblett-lives-up-to-his-moniker-with-thumping-tko-of-michael-chandler/",
+      "https://recapio.com/digest/paddy-pimblett-vs-michael-chandler-ufc-314-by-mma-classics",
+      "https://www.cbssports.com/ufc/news/ufc-324-fight-card-date-odds-news-justin-gaethje-paddy-pimblett/"
+    ]
+  },
+  "moves": {
+    "jab": 0.3,
+    "cross": 0.28,
+    "hook": 0.2,
+    "overhand": 0.06,
+    "upper": 0.11,
+    "headkick": 0.05,
+    "bodykick": 0.35,
+    "bodyhook": 0.3,
+    "bodystraight": 0.35,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.3,
+    "elbow": 0.25,
+    "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json, where recency-weighted landed shares are head 0.60 / body 0.20 / leg 0.19 and attempt shares are head 0.75 / body 0.14 / leg 0.11. He kicks the legs more than most lightweights (leg strikes are 19-21% of his landed strikes vs a median of about 15%). His body share (18-20%) is near or slightly below the median (about 22%), though he landed 48 body strikes vs Gaethje (raw bout stats). No source splits body kicks from body punches, so the body group is spread evenly. Leg kicks are split evenly; recaps say he opened with low kicks vs Green and Chandler but do not say whether they were calf or inside kicks. Knee and elbow are raised for the Chandler fight, where a knee opened the cut and elbows from mount ended it (CBS, UFC Stats). Spinning is 0. The head group is a judgment for a jab-and-cross volume boxer, not a published breakdown."
+  },
+  "appearance": {
+    "build": "thick-set, heavy-framed lightweight: 5'10\" with a 73-inch reach (fighters.json); said he was 190 lb in the cage vs 156 lb at the UFC 329 weigh-in",
+    "hair": "blond, shaggy mop-top worn long; often braided tight to the head for fights (he explained why in Aug 2026); AgentMMA reported a new look without the braids in Jul 2026",
+    "facial_hair": "unknown",
+    "skin": "light",
+    "tattoos": "has said he deliberately has no tattoos (older interview); not re-confirmed for 2026",
+    "kit": "unknown",
+    "sources": [
+      "https://www.sportskeeda.com/mma/5-ufc-fighters-sport-wacky-hairstyles",
+      "https://heavy.com/sports/ufc/paddy-pimblett-explains-braiding-his-hair/",
+      "https://agentmma.com/news/86353-paddy-pimblett-ditches-his-braids-debuts-new-look",
+      "https://www.sportskeeda.com/mma/news-paddy-pimblett-said-will-bigger-conor-mcgregor",
+      "https://heavy.com/sports/ufc/paddy-pimblett-reveals-weight-against-bsd/",
+      "data/derived/fighters.json"
+    ]
+  },
+  "engine_notes": [
+    {
+      "note": "Never stopped in the UFC (0 KO/TKO or submission losses in 9 bouts) despite absorbing 2 knockdowns from Gaethje; his chin and recovery should be treated as above average.",
+      "source": "data/derived/fighters.json (record, kd_absorbed)"
+    },
+    {
+      "note": "Five-round pace (2 fights, small sample): significant-strike rate by round relative to round 1 is 1.00 / 1.06 / 1.65 / 1.32 / 0.79, so output peaks in rounds 3-4 and dips in round 5.",
+      "source": "data/derived/fighters.json (pace)"
+    },
+    {
+      "note": "Submission threat in scrambles: 1.36 attempts per 15 min career (lightweight median about 0.28); his last two submissions came from bottom guard (triangle) and off a sprawl (D'Arce), so a failed shot by his opponent is a live finishing chance for him.",
+      "source": "data/derived/fighters.json; https://sports.yahoo.com/articles/paddy-pimblett-quickly-submits-benoit-031630151.html"
+    },
+    {
+      "note": "Opponents control him: 24-27% opponent control time vs 19-21% his own; wrestlers can bank rounds on him if they avoid his chokes.",
+      "source": "data/derived/fighters.json"
+    }
+  ],
+  "confidence": "high"
+}

@@ -1,0 +1,74 @@
+{
+  "slug": "dustin-poirier",
+  "name": "Dustin Poirier",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Retired. Former interim UFC lightweight champion who retired after losing a unanimous decision to Max Holloway at UFC 318 in Louisiana (Jul 19, 2025). In May 2026 he talked about returning for a Diaz fight; a July 2026 report headlined him as '95%' sure about staying retired. No fight booked.",
+    "title": null,
+    "ranking": null,
+    "active": false,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "https://en.wikipedia.org/wiki/Dustin_Poirier",
+      "https://en.wikipedia.org/wiki/UFC_318",
+      "https://bloodyelbow.com/2026/05/04/dustin-poirier-reveals-another-opponent-he-would-make-ufc-return-to-fight-after-justin-gaethje-call/",
+      "https://lasueur.com/dustin-poirier-de-retour-a-lufc-je-suis-sur-a-95-22-07-2026",
+      "https://next-fight.com/en/fighter/dustin-poirier",
+      "https://www.fox8live.com/2026/06/24/dustin-poirier-says-he-needs-help-after-airport-arrest-video-surfaces/",
+      "data/derived/fighters.json (recent: last bout 2025-07-19 vs Max Holloway, U-DEC loss)"
+    ]
+  },
+  "style": {
+    "archetype": "boxer",
+    "stance": "southpaw",
+    "tags": ["southpaw", "power", "pressure", "counter", "calf-kicks", "guillotine", "submissions", "wild-exchanges", "durable", "cardio"],
+    "signature": [
+      "southpaw left straight behind a right jab",
+      "right hook and short combinations in the pocket",
+      "calf kicks (18 leg strikes landed vs Conor McGregor at UFC 257, UFC Stats)",
+      "guillotine / front-headlock choke attempts off opponents' shots (4 submission attempts vs Benoit Saint Denis, UFC 299)",
+      "rear-naked choke (finished Michael Chandler, UFC 281)"
+    ],
+    "weaknesses": [
+      "submitted in both of his last two title fights: Charles Oliveira (RNC, UFC 269) and Islam Makhachev (D'Arce, UFC 302)",
+      "KO'd by a Justin Gaethje head kick (UFC 291, 2023)",
+      "absorbs a lot: 5.9 significant strikes per minute recency-weighted vs about 4.1 for the median lightweight (fighters.json)",
+      "struggles against elite control wrestling: opponents held 25% control time in his recent fights; Makhachev had 10:23 at UFC 302"
+    ],
+    "summary": "A southpaw boxer-puncher who goes looking for exchanges: 80% of his landed significant strikes go to the head and he scored knockdowns at twice the division rate. He backs his boxing with a dangerous front-headlock and guillotine game and has finished elite opponents both ways, but in his last years he took heavy damage and lost to the top grapplers and kickers of his era.",
+    "sources": [
+      "data/derived/fighters.json (career and recency-weighted UFC Stats sums)",
+      "data/raw/ufc_fight_stats.csv (UFC 257, 281, 291, 299, 302, 318 bout stats)",
+      "https://en.wikipedia.org/wiki/Dustin_Poirier",
+      "https://en.wikipedia.org/wiki/UFC_302",
+      "https://en.wikipedia.org/wiki/UFC_269"
+    ]
+  },
+  "moves": {
+    "jab": 0.24, "cross": 0.3, "hook": 0.25, "overhand": 0.06, "upper": 0.12, "headkick": 0.03,
+    "bodykick": 0.25, "bodyhook": 0.4, "bodystraight": 0.35,
+    "calf": 0.7, "inside": 0.3, "spinning": 0.0, "knee": 0.1, "elbow": 0.1,
+    "notes": "Group weights (head, body, leg) each sum to 1; the engine's target split should come from fighters.json, where recency-weighted landed shares are head 0.83 / body 0.10 / leg 0.07 and attempt shares are head 0.90 / body 0.06 / leg 0.04 (career landed 0.80/0.10/0.10). Head group leans on the southpaw left straight (cross) and hooks, as in his UFC 257, 299 and 318 bouts, which ended by punches or went the distance with 94 of 109 landed to the head vs Holloway (raw bout stats). Kicks to the head are rare; his leg work is mainly calf kicks (UFC 257: 18 leg strikes landed), so calf outweighs inside. Spinning is 0: none appears in his recent finishes. Knee and elbow are small: about 15% of his landed strikes come in the clinch (career). These weights are an analyst judgment from the bout stats above, not a published breakdown."
+  },
+  "appearance": {
+    "build": "compact, muscular lightweight: 5'9\" with a 72-inch reach (fighters.json)",
+    "hair": "short dark brown (as seen in widely published photos; no written description found)",
+    "facial_hair": "usually a trimmed dark beard in his later-career photos (from published photos; unconfirmed in text)",
+    "skin": "light",
+    "tattoos": "multiple tattoos; sourced details: his daughter's name 'Parker Noelle' on the right chest and a tiger-stripe design reading 'bushido' on the left chest",
+    "kit": "unknown",
+    "sources": [
+      "https://www.sportskeeda.com/mma/dustin-poirier-tattoos",
+      "https://www.essentiallysports.com/ufc-mma-news-the-stories-behind-dustin-poiriers-iconic-tattoos",
+      "data/derived/fighters.json"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Output holds or rises late: in 15 five-round UFC fights his significant-strike rate by round, relative to round 1, is 1.00 / 1.04 / 0.97 / 1.11 / 1.09.", "source": "data/derived/fighters.json (pace)" },
+    { "note": "Knockdown power: 0.65 knockdowns per 15 min across his UFC career vs a lightweight median of about 0.31; 11 KO/TKO wins in the UFC.", "source": "data/derived/fighters.json (C sums; division median computed over lightweights with 30+ UFC minutes)" },
+    { "note": "Submission threat is real, not decorative: 1.08 submission attempts per 15 min (lightweight median about 0.28); 4 attempts vs Saint Denis at UFC 299 and an RNC finish of Chandler.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Retired, so the fighter is a historical profile: use the career (C) sums for a 'prime' version and the recency-weighted (S) sums for his 2024-25 form, when his striking defence fell to about 47% and he absorbed about 5.9 significant strikes per minute.", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "high"
+}

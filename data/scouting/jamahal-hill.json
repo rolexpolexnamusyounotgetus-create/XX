@@ -1,0 +1,98 @@
+{
+  "slug": "jamahal-hill",
+  "name": "Jamahal Hill",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC light heavyweight champion (won the vacant title from Glover Teixeira at UFC 283, Jan 21, 2023; vacated it in July 2023 after rupturing his Achilles tendon). Since returning he has lost three straight: KO by Alex Pereira (UFC 300, Apr 13, 2024), TKO by Jiri Prochazka (UFC 311, Jan 18, 2025) and a unanimous decision to Khalil Rountree Jr. (UFC Baku, Jun 21, 2025). Inactive since then. In June 2026 he announced on his podcast that he is moving to heavyweight and called out Josh Hokit for his debut (Sergei Pavlovich as a fallback); no fight is booked as of early November 2026.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      { "what": "ruptured Achilles tendon (reported as suffered in a pickup basketball game during International Fight Week), surgery; vacated the title", "when": "2023-07", "source": "https://global.espn.com/mma/story/_/id/38008658/jamahal-hill-ruptures-achilles-relinquish-ufc-title" }
+    ],
+    "sources": [
+      "https://www.bjpenn.com/mma-news/jamahal-hill/jamahal-hill-heavyweight-move-calls-out-josh-hokit/",
+      "https://www.mmamania.com/latest-news/451365/video-former-champion-jamahal-hill-moving-to-heavyweight-calls-out-josh-hokit-come-get-some",
+      "https://sports.yahoo.com/articles/jamahal-hill-wants-josh-hokit-234017979.html",
+      "https://www.lowkickmma.com/jamahal-hill-targets-josh-hokit-after-heavyweight-move-i-actually-think-hes-funny/",
+      "https://www.ufc.com/athlete/jamahal-hill",
+      "https://global.espn.com/mma/story/_/id/38008658/jamahal-hill-ruptures-achilles-relinquish-ufc-title",
+      "https://www.cbssports.com/mma/news/ufc-light-heavyweight-champion-jamahal-hill-vacates-title-after-suffering-achilles-injury",
+      "https://www.fightful.com/?p=130194",
+      "https://www.cbssports.com/mma/news/ufc-fight-night-results-khalil-rountree-jr-bests-jamahal-hill-in-baku-remains-relevant-in-title-picture",
+      "https://bloodyelbow.com/2025/07/02/jamahal-hill-finally-breaks-his-silence-on-third-straight-ufc-loss-with-brutally-honest-self-criticism",
+      "http://ufcstats.com/fight-details/03bc32bdb5a33496",
+      "http://ufcstats.com/fighter-details/5444c5a201d3ee5a"
+    ]
+  },
+  "style": {
+    "archetype": "volume striker",
+    "stance": "southpaw",
+    "tags": ["southpaw", "volume", "jab", "body-work", "rangy", "range-control", "ground-and-pound", "chin-concern"],
+    "signature": [
+      "long southpaw jab and straight left at distance (90% of his decayed attempts come at range)",
+      "punches to the body: 23% of his career landed significant strikes, 42 of 49 vs Teixeira",
+      "five-round volume: 232 significant strikes landed vs Teixeira at UFC 283",
+      "ground elbows to finish (Thiago Santos, R4, Aug 2022)",
+      "single-punch KOs at distance (Johnny Walker R1 and Jimmy Crute R1, both in 2021-22)"
+    ],
+    "weaknesses": [
+      "chin under fire since the Achilles injury: KO'd in round 1 by Pereira, dropped twice and stopped by Prochazka, dropped repeatedly by Rountree (ufcstats logs one official knockdown, recaps describe three)",
+      "leg and body kicks: Rountree landed 30/36 to the legs and 42/54 to the body, and recaps say his compromised legs kept him from rallying",
+      "Hill himself said after Baku that an Achilles tear is a career-ender for an athlete",
+      "barely kicks (6% of decayed attempts go to the legs) and has no takedown offense (0 attempts in 11 UFC fights)",
+      "stopped from bottom guard by Paul Craig at UFC 263 (2021)",
+      "inactive since June 2025 and changing divisions"
+    ],
+    "summary": "A tall, long southpaw who fights at range behind the jab and straight left, mixes in body punches and throws a lot: he landed 232 significant strikes over five rounds to win the title from Teixeira. Since his 2023 Achilles rupture he has lost three straight, two by knockout, and recaps of the Rountree fight say kicks compromised his legs.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/5444c5a201d3ee5a",
+      "http://ufcstats.com/fight-details/dde7d29cc443e263",
+      "http://ufcstats.com/fight-details/a8bc6e005077bb0b",
+      "http://ufcstats.com/fight-details/03bc32bdb5a33496",
+      "http://ufcstats.com/fight-details/959fea398ffa5778",
+      "https://www.postwrestling.com/?p=117715",
+      "https://www.cbssports.com/mma/news/ufc-fight-night-results-khalil-rountree-jr-bests-jamahal-hill-in-baku-remains-relevant-in-title-picture",
+      "https://www.cbssports.com/mma/news/ufc-311-results-highlights-jiri-prochazka-powers-past-jamahal-hill-with-late-tko-in-grueling-battle/",
+      "https://www.essentiallysports.com/ufc-mma-news-what-is-jamahal-hills-fighting-style-is-the-ex-ufc-champ-a-bjj-black-belt"
+    ]
+  },
+  "moves": {
+    "jab": 0.32,
+    "cross": 0.32,
+    "hook": 0.18,
+    "overhand": 0.06,
+    "upper": 0.08,
+    "headkick": 0.04,
+    "bodykick": 0.25,
+    "bodyhook": 0.3,
+    "bodystraight": 0.45,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.05,
+    "elbow": 0.15,
+    "notes": "Southpaw: 'cross' is his straight left, 'jab' his right, 'hook' a lead right hook. Each group sums to 1; the engine's target split picks the group. Decayed sums in fighters.json: significant attempts 81% head, 13% body, 6% legs; landed 69% head, 21% body, 11% legs; career landed body share 23%. The head group is dominated by the jab and straight left, which is how sources describe a rangy striker using his height and reach; hooks and uppercuts get less. Body work is mostly punches by the 42/49 body landed vs Teixeira and his low kick rate, so straights and hooks to the body outweigh body kicks (no source details the mix). Leg kicks are rare and unspecified, so calf and inside split evenly. Elbow 0.15 for the ground elbows that finished Santos; knee small (6% of attempts in the clinch); no spinning techniques recorded. Sources: data/derived/fighters.json; ufcstats per-fight totals."
+  },
+  "appearance": {
+    "build": "tall and lanky with long arms and legs; 6 ft 4 in with a 79 in reach (ufcstats)",
+    "hair": "short dark hair",
+    "facial_hair": "full dark beard",
+    "skin": "dark",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/jamahal-hill",
+      "http://ufcstats.com/fighter-details/5444c5a201d3ee5a"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Chin: 2.3 knockdowns absorbed per 100 head strikes taken (decayed), the highest of this group and against a light heavyweight league rate of 1.3; 4 knockdowns absorbed and 3 KO/TKO losses in 11 UFC fights. Power per landed head strike is low: 0.44 knockdowns per 100 decayed, 0.88 career.", "source": "data/derived/fighters.json (S sums, priors)" },
+    { "note": "Volume: 10.5 significant attempts per minute decayed, 11.7 career; accuracy 49-50%. Opponents land 55-57% on him, above the 50% light heavyweight league rate in fighters.json priors.", "source": "data/derived/fighters.json" },
+    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.57, 0.96, 2.47, 0.92 (minute-weighted, mostly the Teixeira and Rountree fights).", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "No UFC fight since Jun 21, 2025, and he plans to debut at heavyweight. All his stats are from 205 lb; heavyweight inputs should lean on the division prior and a layoff discount.", "source": "data/derived/fighters.json (last_fight); https://www.bjpenn.com/mma-news/jamahal-hill/jamahal-hill-heavyweight-move-calls-out-josh-hokit/" },
+    { "note": "Takedown defense 71% career; Santos (6/20) and Teixeira (2/17) were the only sustained wrestling tests, and Teixeira matched his 206 s of control.", "source": "data/derived/fighters.json; ufcstats per-fight totals" }
+  ],
+  "confidence": "medium"
+}

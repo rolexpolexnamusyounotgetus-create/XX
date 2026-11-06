@@ -1,0 +1,89 @@
+{
+  "slug": "diego-lopes",
+  "name": "Diego Lopes",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "#2 featherweight and two-time title challenger. He lost unanimous decisions to Alexander Volkanovski for the vacant belt at UFC 314 (Apr 12, 2025; 49-46, 49-46, 48-47) and in the UFC 325 rematch (Jan 31, 2026; 49-46, 49-46, 50-45). Between those he stopped Jean Silva (Noche UFC, Sep 13, 2025, R2). He then rallied to knock out Steve Garcia with a counter left hook and follow-up punches at 2:42 of round 2 in the opening bout of UFC Freedom 250 on the White House lawn (Jun 14, 2026). Pro record 28-8 per ufcrankings.org (one results report says 29-8). Next he moves up to lightweight to challenge Charles Oliveira for the BMF title in the UFC 335 main event (Dec 12, 2026, Las Vegas).",
+    "title": null,
+    "ranking": "#2 featherweight per UFCalendar and ufcrankings.org (both updated Nov 3, 2026, after UFC 333); the official ufc.com page was not checked directly",
+    "active": true,
+    "next_fight": "Charles Oliveira for the BMF title (lightweight, his 155 lb debut), UFC 335 main event, Dec 12, 2026, T-Mobile Arena, Las Vegas",
+    "injuries": [],
+    "sources": [
+      "https://www.cbssports.com/ufc/news/ufc-335-fight-card-charles-oliveira-vs-diego-lopes-alex-pereira-sergei-pavlovich/",
+      "https://www.sherdog.com/news/news/Charles-OliveiraDiego-Lopes-BMF-title-fight-headlines-UFC-335-203059",
+      "https://combatpress.com/2026/10/charles-oliveira-defends-bmf-title-against-diego-lopes-at-ufc-335/",
+      "https://www.cbssports.com/ufc/news/ufc-freedom-250-white-house-results-highlights-diego-lopes-steve-garcia-knockout/",
+      "https://www.mmamania.com/ufc-white-house-2026-fight-card-start-time-full-results-dana-white-conor-mcgregor-cbs-mma/450586/ufc-white-house-results-diego-lopes-knocks-out-steve-garcia-in-second-round-rally",
+      "https://www.ufc.com/news/ufc-325-scorecards-judges-volkanovski-vs-lopes-2",
+      "https://cagesidepress.com/2025/04/13/alexander-volkanovski-becomes-two-time-champion-decisions-lopes",
+      "https://www.ufcalendar.com/rankings",
+      "https://ufcrankings.org/",
+      "http://ufcstats.com/fighter-details/f166e93d04a8c274"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "orthodox",
+    "tags": ["power", "spinning", "elbows", "wild-exchanges", "submissions", "ground-and-pound", "top-control", "durable", "slow-starter"],
+    "signature": [
+      "spinning back elbow (dropped and cut Jean Silva for the R2 stoppage, Sep 2025)",
+      "jab into overhand right (dropped Volkanovski late in R2 of UFC 314)",
+      "counter left hook (dropped Steve Garcia, Jun 2026)",
+      "takedowns and mounted ground strikes on strikers (3 of 4 takedowns and 42 ground strikes vs Silva)",
+      "triangle/armbar attacks off his back (triangle armbar on Gavin Tucker, Aug 2023; four submission attempts in his short-notice debut vs Evloev)",
+      "body and leg kicks against a champion (17 body and 20 leg strikes landed on Volkanovski in the rematch)"
+    ],
+    "weaknesses": [
+      "out-landed and out-pointed over 25 minutes by Volkanovski twice (158-63 and 98-70 significant strikes)",
+      "loose defence: absorbs 4.68 significant strikes per minute with 47% defence (career)",
+      "slow starts: Garcia won round 1 at Freedom 250 and landed 47 significant strikes to Lopes' 24, including 11 of 11 leg strikes",
+      "first fight at lightweight is untested"
+    ],
+    "summary": "A Brazilian with a dangerous submission game who fights like a power striker: he trades in the pocket, throws spinning elbows and overhand rights, and takes hurt or tired strikers down to finish with ground strikes. His guard is dangerous. He is hittable and gives away early rounds, but he has never been knocked down in the UFC.",
+    "sources": [
+      "https://www.cbssports.com/mma/news/noche-ufc-results-highlights-diego-lopes-knocks-out-jean-silva-with-spinning-elbow-that-causes-massive-gash",
+      "https://www.espn.com/mma/story/_/id/46249447/diego-lopes-rebounds-tko-red-hot-jean-silva-noche-ufc",
+      "https://cagesidepress.com/2025/04/13/alexander-volkanovski-becomes-two-time-champion-decisions-lopes",
+      "https://www.cbssports.com/ufc/news/ufc-freedom-250-white-house-results-highlights-diego-lopes-steve-garcia-knockout/",
+      "https://www.foxsports.com/articles/ufc/alexander-volkanovski-dominates-diego-lopes-for-unanimous-decision-win-at-ufc-325-in-australia",
+      "http://ufcstats.com/fighter-details/f166e93d04a8c274"
+    ]
+  },
+  "moves": {
+    "jab": 0.22,
+    "cross": 0.24,
+    "hook": 0.22,
+    "overhand": 0.18,
+    "upper": 0.08,
+    "headkick": 0.06,
+    "bodykick": 0.5,
+    "bodyhook": 0.3,
+    "bodystraight": 0.2,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.1,
+    "knee": 0.05,
+    "elbow": 0.12,
+    "notes": "Weights sum to about 1 within each target group; spinning/knee/elbow are separate propensities. fighters.json career split of significant attempts: 81% head, 10% body, 10% legs; landed 72/12/16 (decayed 80/10/10 attempted). He is head-hunting, so most of the weight sits in the head group, spread across jab, right hand, left hook and overhand right, the punches behind his knockdowns of Volkanovski (jab plus overhand right) and Garcia (counter left hook). Body and leg kicks were a real part of the Volkanovski rematch (17 of 33 body, 20 of 27 leg), so body kick leads the body group; no source splits his low kicks by type, so calf/inside are 50/50. Spinning 0.10 and elbow 0.12 reflect the spinning back elbow that stopped Silva. Sources: ufcstats sums and per-fight rows in data/raw, CBS, Cageside Press."
+  },
+  "appearance": {
+    "build": "tall and rangy for featherweight; 5 ft 11 in with a 72 in reach (ufcstats); moving up to 155 lb",
+    "hair": "short dark hair",
+    "facial_hair": "dark beard",
+    "skin": "light-medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/diego-lopes",
+      "http://ufcstats.com/fighter-details/f166e93d04a8c274"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Never knocked down in 10 UFC fights (okd 0) and no KO/TKO losses; all three UFC losses are decisions (Evloev, Volkanovski twice).", "source": "data/derived/fighters.json (C sums, record)" },
+    { "note": "Power: 6 knockdowns in 117 UFC minutes; 4 of 7 UFC wins by KO/TKO.", "source": "data/derived/fighters.json" },
+    { "note": "In his three 5-round fights his landed rate fell to 0.41 of round 1 by round 5 (pace 1, 1.01, 0.62, 0.91, 0.41). Both title fights were won by Volkanovski in the late rounds, and the round-5 rows include being taken down in the rematch.", "source": "data/derived/fighters.json (pace, pace_w); research/volkanovski.md" },
+    { "note": "Ground strikes are 23% of his landed significant strikes (career), unusually high for a striker; he finishes hurt opponents on the mat.", "source": "data/derived/fighters.json (g_lnd share)" }
+  ],
+  "confidence": "medium"
+}

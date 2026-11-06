@@ -1,0 +1,102 @@
+{
+  "slug": "jean-silva",
+  "name": "Jean Silva",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Top-five UFC featherweight contender on a two-fight win streak. He outpointed Arnold Allen at UFC 324 (Jan 24, 2026; 30-27, 29-28, 29-28) and submitted Jose Miguel Delgado with a one-arm rear-naked choke at 2:57 of round 3 in the Noche UFC main event (Sep 12, 2026, Glendale), after surviving an early scare. Pro record reported as 18-3. Since Volkanovski beat Evloev at UFC 333 (Oct 24, 2026) he has been campaigning for the title shot; Volkanovski's head coach said he has not earned it and prefers the Sterling vs Vallejos winner. No bout is booked.",
+    "title": null,
+    "ranking": "#5 featherweight per third-party trackers of the UFC rankings (ufcrankings.org update of Nov 3, 2026; Kalshi listing of the Oct 27, 2026 poll); the official ufc.com page was not checked directly",
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      { "what": "broke both hands in the Drew Dober fight (UFC Denver), by his own account early in the bout", "when": "2024-07", "source": "https://sportskeeda.com/mma/news-no-wonder-spamming-spinning-elbows-fans-react-jean-silva-reveals-breaking-hands-first-round-fight-drew-dober" }
+    ],
+    "sources": [
+      "https://www.ufcalendar.com/events/ufc-fight-night-2026-09-12/jean-silva-vs-jose-delgado",
+      "https://bloodyelbow.com/2026/09/12/jean-silva-vs-jose-delgado-result-submission-ends-exciting-noche-ufc-main-event/",
+      "https://www.mmamania.com/ufc-results/471845/noche-ufc-4-results-crazy-jean-silva-survives-early-scare-to-flatten-jose-delgado",
+      "https://www.cbssports.com/ufc/news/noche-ufc-results-live-updates-jean-silva-jose-delgado-highlights/live/",
+      "https://cagesidepress.com/2026/01/24/ufc-324-jean-silva-finishes-strong-in-decision-over-arnold-allen/",
+      "https://bloodyelbow.com/2026/10/29/jean-silva-fires-back-at-alexander-volkanovskis-coach-who-said-he-doesnt-deserve-title-shot/",
+      "https://www.bjpenn.com/mma-news/jean-silva/jean-silva-slams-alexander-volkanovski-coach-title-shot-dismissal/",
+      "https://www.espn.com/mma/story/_/id/50220522/ufc-333-results-volkanovski-evloev",
+      "https://ufcrankings.org/",
+      "https://kalshi.com/ufc/rankings/featherweight",
+      "http://ufcstats.com/fighter-details/52ef95b5860fb28c"
+    ]
+  },
+  "style": {
+    "archetype": "power puncher",
+    "stance": "orthodox",
+    "tags": ["power", "counter", "pressure", "spinning", "elbows", "body-work", "guillotine", "submissions", "takedown-defense", "wild-exchanges"],
+    "signature": [
+      "counter left hook, thrown as the opponent steps in (dropped Charles Jourdain this way, UFC 303)",
+      "left hook into straight right to finish (Baghdasaryan, Feb 2025; knockdown of Bryce Mitchell, Apr 2025)",
+      "spinning back elbow (opened Drew Dober's brow, Jul 2024; also thrown vs Mitchell and Allen)",
+      "front-headlock 'ninja choke' / guillotine off the opponent's takedown attempt (Mitchell, UFC 314)",
+      "one-arm rear-naked choke after a knockdown scramble (Delgado, Sep 2026)",
+      "accurate body punching and kicking (22 of 23 body strikes vs Allen)"
+    ],
+    "weaknesses": [
+      "opponents land leg kicks almost at will: 21 of 21 (Mitchell), 8 of 8 (Allen), 18 of 22 (Delgado)",
+      "hittable in exchanges: absorbs 4.2 significant strikes per minute, 55% significant-strike defence (career)",
+      "finished once: Diego Lopes took him down and mounted him in round 1, then a spinning elbow and ground strikes stopped him at 4:48 of round 2 (Sep 2025)",
+      "hurt early by Delgado's right hand in round 1 of the Noche UFC main event (reports; ufcstats records no knockdown)",
+      "missed weight once (147.5 lb for UFC 303, Jun 2024)"
+    ],
+    "summary": "A Fighting Nerds striker who invites exchanges and hits hardest on the counter, with a low, looping lead hand that sets up the left hook and a heavy right hand behind it. He pressures, taunts and throws spinning elbows, punches the body well, and punishes takedown attempts with front-headlock chokes. The cost is a lot of incoming fire, above all to the legs.",
+    "sources": [
+      "https://www.fightprimer.com/jean-silva-the-thoughtful-striking-of-a-madman",
+      "https://cagesidepress.com/2024/06/29/ufc-303-jean-silva-first-to-ko-charles-jourdain-after-weight-miss",
+      "https://cagesidepress.com/2024/07/14/ufc-denver-grotesque-cut-stops-drew-dober-vs-jean-silva-in-third",
+      "https://cagesidepress.com/2025/02/22/ufc-seattle-jean-silva-cracks-melsik-baghdasaryan-in-latest-stoppage-win",
+      "https://www.lowkickmma.com/watch-jean-silva-bryce-mitchell-perfect-ninja-choke-how-to",
+      "https://middleeasy.com/mma-news/bryce-mitchell-vs-jean-silva-ufc-314-results/",
+      "https://www.cbssports.com/mma/news/noche-ufc-results-highlights-diego-lopes-knocks-out-jean-silva-with-spinning-elbow-that-causes-massive-gash",
+      "https://www.espn.com/mma/story/_/id/46249447/diego-lopes-rebounds-tko-red-hot-jean-silva-noche-ufc",
+      "https://bjj.tv/jean-silva-taps-delgado-with-one-armed-choke-to-close-noche-ufc/",
+      "http://ufcstats.com/fighter-details/52ef95b5860fb28c"
+    ]
+  },
+  "moves": {
+    "jab": 0.16,
+    "cross": 0.27,
+    "hook": 0.32,
+    "overhand": 0.12,
+    "upper": 0.08,
+    "headkick": 0.05,
+    "bodykick": 0.4,
+    "bodyhook": 0.4,
+    "bodystraight": 0.2,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.12,
+    "knee": 0.05,
+    "elbow": 0.15,
+    "notes": "Weights sum to about 1 within each target group (head, body, leg); spinning/knee/elbow are separate propensities. Target split from fighters.json career sums: 78% of significant attempts to the head, 18% body, 4% legs (landed 65/27/7); the decayed sums are nearly the same (77/18/5). The left hook gets the top head weight because Fight Primer and the Jourdain, Baghdasaryan and Mitchell finishes centre on it; the right hand is second. Head kicks were noted vs Allen but are rare (0.05). Body work is accurate (22/23 vs Allen, 13/15 vs Mitchell, 15/19 vs Dober) but no source splits kicks from punches, so body kick and body hook are even. Leg kicks are only 4% of his attempts and their type is unsourced, so calf/inside are 50/50. Spinning 0.12 reflects spinning elbows in the Dober, Mitchell and Allen fights; elbow 0.15 for the Dober cut; two finishes (Wilson, Jourdain) came from punches in the clinch. Sources: ufcstats sums in data/derived/fighters.json, per-fight rows in data/raw, Fight Primer, Cageside Press, CBS."
+  },
+  "appearance": {
+    "build": "compact, muscular featherweight; 5 ft 7 in with a 69 in reach (ufcstats)",
+    "hair": "bald (shaved head)",
+    "facial_hair": "beard",
+    "skin": "light-medium",
+    "tattoos": "heavily tattooed: a large padlock over a diamond with his mother's name on the chest, 'LORD' across the stomach, a black-and-grey arm sleeve with a cross that flows into the chest piece; one outlet reports a barcode tattoo on the back of his head (single source)",
+    "kit": "unknown; after wins he and his team often wear the Fighting Nerds' lens-less taped glasses",
+    "sources": [
+      "https://www.ufc.com/news/jean-silva-never-backs-down-ufc-324",
+      "https://www.ufc.com/athlete/jean-silva",
+      "https://sportskeeda.com/mma/news-what-jean-silva-s-tattoos-mean-explaining-meaning-behind-ufc-star-s-barcode-lock-inks",
+      "https://www.essentiallysports.com/ufc-mma-news-what-is-the-meaning-behind-jean-silvas-tattoos-exploring-the-stories-and-origins-of-his-ink/",
+      "https://essentiallysports.com/ufc-mma-news-jean-silva-hitman-inspired-tattoo-meaning-behind-ufc-stars-insane-inks",
+      "https://www.sportskeeda.com/mma/news-what-story-behind-fighting-nerds-glasses-explaining-jean-silva-caio-borralho-others-sport-specs",
+      "http://ufcstats.com/fighter-details/52ef95b5860fb28c"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Six knockdowns in 72.9 UFC minutes (one about every 12 minutes) and 4 KO/TKO wins in 8 UFC fights; knockdown power well above division norms.", "source": "data/derived/fighters.json (C sums)" },
+    { "note": "Opponents' leg strikes land at a very high rate on him: 47 of 51 combined across Mitchell, Allen and Delgado. A kicking opponent should get a leg-strike accuracy bump.", "source": "data/raw/ufc_fight_stats.csv" },
+    { "note": "Takedown defence holds against wrestlers on the feet (Mitchell 1 of 14), but once Lopes got him down (3 of 4) he landed 42 ground strikes; Silva has 0:03 control in that fight.", "source": "data/raw/ufc_fight_stats.csv" },
+    { "note": "5-round pace in fighters.json (1, 4.4, 3.39 for rounds 1-3) comes from only two main events, in both of which he lost or struggled through round 1; treat it as noise, not a real late surge.", "source": "data/derived/fighters.json (pace, pace_w)" }
+  ],
+  "confidence": "high"
+}

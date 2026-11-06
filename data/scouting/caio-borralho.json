@@ -1,0 +1,76 @@
+{
+  "slug": "caio-borralho",
+  "name": "Caio Borralho",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Ranked #6 at middleweight. Lost for the first time in about a decade to Nassourdine Imavov (UD, UFC Paris, Sep 6, 2025), then beat Reinier de Ridder 30-27 on all cards at UFC 326 (Mar 7, 2026). A planned bout with Joe Pyfer was scrapped because of a Borralho rib injury. Listings show him scheduled to face Yousri Belgaroui at UFC 334 on Nov 14, 2026.",
+    "title": null,
+    "ranking": "#6 middleweight (UFC rankings board updated Oct 24, 2026, as mirrored by ufcalendar.com; the media poll lists the same top names)",
+    "active": true,
+    "next_fight": "vs Yousri Belgaroui, UFC 334, Nov 14, 2026 (per Wikipedia and combat-edge listings; not confirmed on UFC.com in this pass)",
+    "injuries": [
+      { "what": "rib injury that forced the cancellation of a planned bout with Joe Pyfer", "when": "2026 (month not confirmed)", "source": "https://en.wikipedia.org/wiki/Caio_Borralho" }
+    ],
+    "sources": [
+      "https://en.wikipedia.org/wiki/Caio_Borralho",
+      "https://combat-edge.com/fighter/caio-borralho-4736/",
+      "https://www.espn.com/mma/fighter/_/id/4835137/caio-borralho",
+      "https://www.tapology.com/fightcenter/bouts/1082878-ufc-326-caio-the-natural-borralho-vs-reinier-rdr-de-ridder",
+      "https://www.ufc.com/news/matchup-spotlight-caio-borralho-vs-reinier-de-ridder-ufc-326",
+      "https://www.ufc.com/news/official-judges-scorecards-ufc-fight-night-imavov-vs-borralho-paris",
+      "https://www.ufcalendar.com/rankings/middleweight",
+      "data/derived/fighters.json (last_fight 2026-03-07)"
+    ]
+  },
+  "style": {
+    "archetype": "all-rounder",
+    "stance": "southpaw",
+    "tags": ["southpaw", "body-work", "durable", "slow-starter", "late-surge", "top-control", "takedown-defense"],
+    "signature": [
+      "punches at distance from southpaw: TKO of Paul Craig, R2, UFC 301 (May 2024)",
+      "body and leg kicks: 17.6% body and 11.6% leg share of sig attempts (decayed), 16 of 17 leg strikes landed vs de Ridder",
+      "rear-naked choke: submitted Michal Oleksiejczuk, R2 (Apr 2023)",
+      "late-round surges in five-round fights: 50 sig landed in R5 vs Jared Cannonier (Aug 2024)"
+    ],
+    "weaknesses": [
+      "slow starts: landed only 6 and 7 sig strikes in R1-R2 vs Imavov and fell behind before rallying (Sep 2025)",
+      "lost the range battle to a taller, jab-first striker: Imavov outlanded him 81-66 and he went 0 of 5 on takedowns",
+      "low output: 6.7 sig attempts per minute (decayed) against about 8.1 for the middleweight league"
+    ],
+    "summary": "A southpaw who now leads with striking (86.5% of decayed sig landed comes at distance), mixing straight punches with body and leg kicks while keeping a grappling and top-control threat in reserve. He is very hard to hurt and builds momentum slowly, so he tends to win late rounds and sometimes gives away early ones.",
+    "sources": [
+      "https://www.lowkickmma.com/nassourdine-imavov-vs-caio-borralho-highlights/",
+      "https://www.thescore.com/mma/news/3339410/imavov-bests-borralho-in-ufc-paris-main-event",
+      "https://www.ufcalendar.com/de/events/ufc-fight-night-2025-09-06/caio-borralho-vs-nassourdine-imavov",
+      "https://www.espn.com/mma/fighter/_/id/4835137/caio-borralho",
+      "data/raw/ufc_fight_stats.csv",
+      "data/raw/ufc_fight_results.csv",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.25, "cross": 0.33, "hook": 0.17, "overhand": 0.07, "upper": 0.08, "headkick": 0.1,
+    "bodykick": 0.55, "bodyhook": 0.2, "bodystraight": 0.25,
+    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.05, "elbow": 0.03,
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 70.8% head, 17.6% body, 11.6% leg (career 71.4/17.5/11.0). The middleweight league split is about 77/14/9, so he works the body and legs more than average. No scouting source reachable in this pass broke down his individual techniques, so the within-group split is a southpaw default. The rear-hand straight leads the head group and the lead-hand jab follows. Body kicks lead the body group, assuming the open-side kick of a southpaw, though ufcstats does not separate punches from kicks. Leg kicks are split evenly. Knee and elbow are minimal because his clinch share is under 4% of sig landed. No spinning attacks are recorded. Treat these weights as low confidence."
+  },
+  "appearance": {
+    "build": "6'1\" (73\" height, 75\" reach per dataset), muscular middleweight frame",
+    "hair": "short dark hair (from widely published photos; not re-verified this session)",
+    "facial_hair": "dark beard in most published photos (not re-verified this session)",
+    "skin": "light-medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "https://www.ufc.com/athlete/caio-borralho",
+      "data/derived/fighters.json (height_in 73, reach_in 75)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Five-round output rises steeply across his two five-rounders: R3 is 2.57x R1 and R5 is 3.52x R1 (Cannonier, by round: 15, 21, 37, 30, 50; Imavov: 6, 7, 17, 12, 24). Small sample of two fights.", "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv" },
+    { "note": "No knockdowns absorbed and no KO losses in 9 UFC fights; opponents land 40.5% of sig strikes against him (decayed), versus a 47.9% middleweight league average.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0); priors.Middleweight acc_sig" },
+    { "note": "Takedown defense 77% decayed (de Ridder went 2 of 8 at UFC 326). Opponents control him only 7% of the time.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "He has shifted from grappling to striking: decayed ground share of sig landed is 9.9% against 13.9% career, and takedowns per 15 minutes are 0.75 decayed against 1.08 career.", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "low"
+}

@@ -1,0 +1,91 @@
+{
+  "slug": "charles-oliveira",
+  "name": "Charles Oliveira",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Holds the ceremonial BMF belt after a 50-45, 50-45, 50-45 decision over Max Holloway at UFC 326 (Mar 7, 2026), in which he took Holloway down in every round. No. 3 at lightweight. The UFC announced on Oct 4, 2026 that he defends the BMF belt against Diego Lopes, in Lopes's lightweight debut, in the UFC 335 main event on Dec 12, 2026 in Las Vegas. Former UFC lightweight champion (2021-22).",
+    "title": "BMF belt (ceremonial, not a UFC championship)",
+    "ranking": "#3 lightweight (UFC media panel, Nov 3, 2026, as mirrored by ufcrankings.org and UFCalendar; not checked on ufc.com)",
+    "active": true,
+    "next_fight": "vs Diego Lopes, UFC 335 main event, Dec 12, 2026, T-Mobile Arena, Las Vegas (lightweight, BMF belt)",
+    "injuries": [],
+    "sources": [
+      "https://www.ufc.com/news/ufc-326-official-scorecards-holloway-vs-oliveira-2",
+      "https://www.espn.com/mma/story/_/id/48091127/ufc-326-live-results-analysis-bmf-title-max-holloway-vs-charles-oliveira-2",
+      "https://bloodyelbow.com/2026/03/08/max-holloway-vs-charles-oliveira-2-ufc-326-result-nate-diaz-enraged-as-bmf-title-changes-hands-in-boring-clash/",
+      "https://www.ufc.com/news/oliveira-defends-bmf-title-against-lopes-pereira-faces-pavlovich-ufc-335",
+      "https://www.sherdog.com/events/UFC-335-Oliveira-vs-Lopes-114294",
+      "https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/",
+      "https://www.ufcalendar.com/fighters/charles-oliveira",
+      "https://ufcrankings.org/",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "http://ufcstats.com/fighter-details/07225ba28ae309b6"
+    ]
+  },
+  "style": {
+    "archetype": "grappler/BJJ",
+    "stance": "orthodox",
+    "tags": ["submissions", "back-takes", "guillotine", "top-control", "scrambles", "pressure", "clinch", "body-work", "rangy", "chin-concern"],
+    "signature": [
+      "takedown, back take and rear-naked choke: 7 of his 17 UFC submission wins (Gaethje R1 2022, Poirier R3 2021, Gamrot R2 2025)",
+      "guillotine, often after dropping to guard: 4 UFC wins (Kevin Lee, Guida, Jury, Lentz)",
+      "anaconda choke: 3 UFC wins (Brookins, Hioki, Teymur)",
+      "a takedown every round to ride top position: 5 of 13 with 20:49 of control vs Holloway at UFC 326",
+      "straight right hand at range to set up the finish: dropped Gaethje with a right before choking him at UFC 274"
+    ],
+    "weaknesses": [
+      "hittable: opponents landed 63% of their significant strikes on him over the last 3 years (lightweight league 48%)",
+      "5 UFC KO/TKO losses, the latest a first-round KO by Topuria (jab, right hand, left hook) at UFC 317, 2025",
+      "takedown defense 50% over the last 3 years; Tsarukyan took him down twice and held 8:41 of control in their split decision at UFC 300",
+      "low standing output: 3.6 significant attempts per minute over the last 3 years (league 9.0)",
+      "Michael Bisping (analyst) flagged his habit of walking forward with his chin high"
+    ],
+    "summary": "A submission grappler who strikes to get to the mat. He walks forward behind a long jab and right hand, wrestles in the clinch and shoots early, then hunts the back, the guillotine and the anaconda. He finishes from bad positions and scrambles, but he gets hit a lot standing and has been knocked out five times in the UFC.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/07225ba28ae309b6",
+      "https://www.espn.com/mma/ufc/story/_/id/46567043/oliveira-submits-gamrot-storybook-homecoming-ko-loss",
+      "https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-charles-oliveira-submits-mateusz-gamrot-in-raucous-homecoming-win",
+      "https://www.aljazeera.com/sports/2025/6/29/topuria-beats-oliveira-to-win-ufc-lightweight-title-with-stunning-knockout",
+      "https://cagesidepress.com/2022/05/08/ufc-274-results-justin-gaethje-vs-charles-oliveira",
+      "https://www.lowkickmma.com/charles-oliveira-fight-style-warning/",
+      "https://www.espn.com/mma/story/_/id/48091127/ufc-326-live-results-analysis-bmf-title-max-holloway-vs-charles-oliveira-2"
+    ]
+  },
+  "moves": {
+    "jab": 0.35,
+    "cross": 0.35,
+    "hook": 0.3,
+    "overhand": 0.1,
+    "upper": 0.15,
+    "headkick": 0.1,
+    "bodykick": 0.35,
+    "bodyhook": 0.2,
+    "bodystraight": 0.15,
+    "calf": 0.12,
+    "inside": 0.18,
+    "spinning": 0.0,
+    "knee": 0.35,
+    "elbow": 0.15,
+    "notes": "Target split from the decayed sums in fighters.json: of significant attempts 70% head, 20% body, 11% legs (landed 64/22/14); the lightweight league is 76/15/9. So body weapons (kicks, knees, hooks) sit above the league and leg kicks stay modest. Punches follow his recorded finishes, which are punches at distance (Chandler, Gordon, Lentz) plus the jab and right hand reported in recaps (Cageside on UFC 274). Knee and elbow stand for his clinch work: 18% of landed strikes in the clinch career and 11% decayed, against 9.5% for the league. ufcstats does not record technique, so the kick/knee split inside the body share is a judgment. Spinning: none in his record. His standing output is low (3.6 attempts per minute over 3 years) because he shoots early, so the director should give him less time standing, not lower weights."
+  },
+  "appearance": {
+    "build": "tall, lean and long-limbed for lightweight: 5 ft 10 in with a 74 in reach (ufcstats); fought at featherweight until 2016",
+    "hair": "short dark hair",
+    "facial_hair": "unknown",
+    "skin": "light-medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "notes": "Build is from ufcstats. Hair and skin follow widely published fight photos as recalled; they were not re-checked on the web this session (the search budget ran out and photo hosts were unreachable). Facial hair changes between fights, so it is left unknown.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/07225ba28ae309b6"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Submission threat far above the division: 2.6 submission attempts per 15 min career and 2.2 decayed, against 0.40 for the lightweight league; 17 of his 25 UFC wins are submissions.", "source": "data/derived/fighters.json; tools/fighter_report.py rates" },
+    { "note": "Takes the fight down often: 5.7 takedown attempts per 15 min at 40% (league 4.3 at 36%), with 485 s of control per 15 min decayed (league 174).", "source": "data/derived/fighters.json; tools/fighter_report.py rates" },
+    { "note": "Defense is the soft spot: opponents land 59% of significant strikes on him decayed and 63% over 3 years (league 48%). Decayed chin is 1.12 knockdowns per 100 significant head strikes absorbed (league 0.95); 6 knockdowns absorbed and 5 KO/TKO losses in 37 UFC fights.", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
+    { "note": "In five-round fights his landed rate falls to 0.67 and 0.62 of round 1 in rounds 4 and 5, but much of that is time spent controlling: at UFC 326 he held 4:30, 4:40, 4:29, 4:16 and 2:54 of control in rounds 1-5.", "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv" },
+    { "note": "Age 37 at the as-of date, with his last KO loss 16 months ago (Topuria, R1).", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "medium"
+}

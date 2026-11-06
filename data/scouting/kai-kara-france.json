@@ -1,0 +1,76 @@
+{
+  "slug": "kai-kara-france",
+  "name": "Kai Kara-France",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Veteran flyweight contender and two-time title challenger. His last UFC fight was a third-round rear-naked-choke loss to Alexandre Pantoja for the title at UFC 317 (Jun 28, 2025); the ufcstats snapshot through Oct 31, 2026 shows no fight since, a layoff of more than 16 months. UFC record 8-5. Current status (bookings, injuries, ranking) could not be verified on the web in this pass.",
+    "title": null,
+    "ranking": null,
+    "active": null,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "https://www.cbssports.com/mma/news/ufc-317-results-highlights-alexandre-pantoja-submits-kai-kara-france-with-ease-to-retain-flyweight-title",
+      "http://ufcstats.com/fighter-details/853eb0dd5c0e2149"
+    ]
+  },
+  "style": {
+    "archetype": "counter striker",
+    "stance": "orthodox",
+    "tags": ["power", "leg-kicks", "takedown-defense"],
+    "signature": [
+      "punches at distance: first-round KOs of Cody Garbrandt (UFC 269, 2021) and Steve Erceg (UFC 305, 2024)",
+      "punch in the clinch: KO of Rogerio Bontorin (UFC 259, 2021)",
+      "leg kicks: 26 of 35 leg strikes landed vs Moreno (UFC 277) and 22 of 29 vs Amir Albazi (2023)"
+    ],
+    "weaknesses": [
+      "submitted twice: guillotine by Brandon Royval (2020) and rear-naked choke by Pantoja (2025)",
+      "stopped by a Moreno body kick in the interim title fight (UFC 277, 2022)",
+      "knocked down 4 times in UFC fights (fighters.json)",
+      "low accuracy: 40% of significant strikes career",
+      "control time against him in close losses: Albazi 6:10 in a split decision; Pantoja 3 of 6 takedowns and 7:20 control",
+      "inactivity: one fight a year since 2023 and none since Jun 2025"
+    ],
+    "summary": "A compact orthodox striker with one-punch power (three UFC KO wins) whose numbers show good striking and takedown defense, low accuracy and an above-average share of leg kicks, the profile of a counter-puncher. His losses have come to grapplers who got him down or took his back, and to Moreno's body kick, and he has not fought since mid-2025.",
+    "sources": [
+      "https://www.cbssports.com/mma/news/ufc-317-results-highlights-alexandre-pantoja-submits-kai-kara-france-with-ease-to-retain-flyweight-title",
+      "http://ufcstats.com/fighter-details/853eb0dd5c0e2149"
+    ]
+  },
+  "moves": {
+    "jab": 0.22,
+    "cross": 0.3,
+    "hook": 0.25,
+    "overhand": 0.13,
+    "upper": 0.07,
+    "headkick": 0.03,
+    "bodykick": 0.45,
+    "bodyhook": 0.3,
+    "bodystraight": 0.25,
+    "calf": 0.55,
+    "inside": 0.45,
+    "spinning": 0.0,
+    "knee": 0.02,
+    "elbow": 0.0,
+    "notes": "Groups follow his target split in fighters.json: decayed significant attempts 78% head, 11% body, 11% legs (career 80/10/11); landed 62% head, 17% body, 22% legs, against a flyweight prior of about 77/14/9 attempted. Leg kicks are therefore a bigger share for him than for most flyweights, with calf slightly ahead of inside as a judgment (no source separates them). Head-group weights favour the cross and hook because his KO finishes are punches at distance; no technique-level scouting source was found in this pass, so within-group weights are judgments. 93% of decayed attempts are at distance and clinch strikes are 1%, so knees and elbows are near zero. Sources: data/derived/fighters.json, data/raw ufcstats per-fight stats."
+  },
+  "appearance": {
+    "build": "short, stocky flyweight: 5 ft 4 in with a 69 in reach (ufcstats), long arms for his height",
+    "hair": "dark; current style not verified in this pass",
+    "facial_hair": "unknown",
+    "skin": "medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": [
+      "http://ufcstats.com/fighter-details/853eb0dd5c0e2149",
+      "https://www.ufc.com/athlete/kai-kara-france"
+    ]
+  },
+  "engine_notes": [
+    { "note": "No UFC fight since Jun 28, 2025 (16+ months at the snapshot); status unverified, so treat current form as uncertain.", "source": "data/derived/fighters.json" },
+    { "note": "Power with low accuracy: 8 knockdowns in 159.6 UFC minutes (0.75 per 15 min vs flyweight prior 0.32) at 40% significant-strike accuracy; 64% striking defense.", "source": "data/derived/fighters.json" },
+    { "note": "Grappling exposure: opponents attempted 11 submissions on him across 13 UFC fights and he has attempted none; takedown defense is 84% (9 of 56) but Pantoja landed 3 of 6.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Output in his 5-round fights rises by round (pace 1.0, 1.71, 1.9, 2.61, 3.29 of round 1), but rounds 4-5 come from one fight (Albazi, 2023).", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "low"
+}

@@ -1,0 +1,77 @@
+{
+  "slug": "song-yadong",
+  "name": "Song Yadong",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Top-three UFC bantamweight contender. He submitted Deiveson Figueiredo with a guillotine in Macau (May 30, 2026) and knocked out a heavily favoured Umar Nurmagomedov in round 2 in Shanghai (Aug 29, 2026). He is in contention to face champion Petr Yan, who retained the title at UFC 333 (Oct 24, 2026). Dana White named Song and Sean O'Malley as the two contenders, but nothing was booked as of early November 2026. Pro record 24-9-1 per UFC Calendar; UFC record 13-4-1 per ufcstats.",
+    "title": null,
+    "ranking": "#2 bantamweight on ufcalendar.com's main list and #3 on ufcrankings.org (both updated Nov 3, 2026); official UFC rankings page not checked",
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "https://www.espn.com/mma/story/_/id/49762250/song-yadong-kos-umar-nurmagomedov-massive-ufc-upset-shanghai",
+      "https://www.cbssports.com/ufc/news/ufc-fight-night-results-live-updates-umar-nurmagomedov-song-yadong/live/",
+      "https://www.ufc.com/news/ufc-shanghai-results-nurmagomedov-vs-song",
+      "https://cagesidepress.com/2026/05/30/song-yadong-scores-career-biggest-win-with-submission-of-figueiredo/",
+      "https://bloodyelbow.com/2026/10/25/a-good-problem-dana-white-reveals-2-fighters-are-in-contention-to-face-petr-yan-next/",
+      "https://sports.yahoo.com/mma/article/ufc-333-petr-yan-conquers-merab-dvalishvili-with-thrilling-come-from-behind-win-in-trilogy-fight-221808640.html",
+      "https://www.ufcalendar.com/rankings/bantamweight",
+      "https://ufcrankings.org/",
+      "https://www.ufcalendar.com/fighters/song-yadong",
+      "http://ufcstats.com/fighter-details/efb96bf3e9ada36f"
+    ]
+  },
+  "style": {
+    "archetype": "boxer",
+    "stance": "orthodox",
+    "tags": ["power", "counter", "takedown-defense", "leg-kicks", "calf-kicks", "body-work", "guillotine", "durable"],
+    "signature": [
+      "right hand countering a level change (stuffed Umar Nurmagomedov's shot and KO'd him at 1:48 of R2; UFC's result line says right uppercut, other reports say a short right behind the ear)",
+      "guillotine off a stuffed takedown (Figueiredo from bottom guard, 2026; Bharat Kandare from front headlock, 2017)",
+      "low kicks to open fights (vs O'Malley; 19 of 33 leg strikes landed)",
+      "right hand and long right hooks to the body",
+      "sprawl and frame against wrestlers"
+    ],
+    "weaknesses": [
+      "modest volume: 3.76 sig landed/min time-decayed vs a 3.97 bantamweight average; outpointed by higher-output strikers (O'Malley 2026, Yan 2024, Kyler Phillips 2021)",
+      "opponents land 49% of their sig strikes on him (decayed) vs a 45.6% league average",
+      "a caught calf kick gave Umar Nurmagomedov his one takedown",
+      "lost to Sandhagen (2022) by doctor stoppage for a cut after round 4"
+    ],
+    "summary": "A compact, heavy-handed boxer who sets up his right hand with low kicks and body shots and is most dangerous countering opponents who come forward or shoot. His sprawl and guillotine punish takedown attempts. He lands less volume than the elite strikers who have outpointed him, but he has never been knocked down in 18 UFC fights.",
+    "sources": [
+      "https://www.ufc.com/athlete/song-yadong",
+      "https://www.sherdog.com/news/articles/Scouting-Report-Yadong-Song-187972",
+      "https://mmasucka.com/opinion/how-song-yadong-beat-umar-nurmagomedov-breaking-down-the-ufc-shanghai-main-event-knockout/",
+      "https://www.yardbarker.com/mma/articles/song_yadong_stops_umar_nurmagomedov_in_upset/s1_17349_44237829",
+      "https://cagesidepress.com/2026/01/24/ufc-324-sean-omalley-takes-close-decision-over-song-yadong",
+      "http://ufcstats.com/fight-details/228fefc6923c40a5",
+      "http://ufcstats.com/fight-details/423f32dd018ac218",
+      "http://ufcstats.com/fight-details/007e8e0d4a39d82c",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.2, "cross": 0.32, "hook": 0.18, "overhand": 0.1, "upper": 0.14, "headkick": 0.06,
+    "bodykick": 0.3, "bodyhook": 0.45, "bodystraight": 0.25,
+    "calf": 0.65, "inside": 0.35, "spinning": 0.0, "knee": 0.0, "elbow": 0.02,
+    "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body moves sum to 1, leg moves sum to 1. spinning, knee and elbow are separate rates for occasional specials. The engine picks the target. fighters.json time-decayed attempt split is 72.2% head, 12.0% body and 15.8% leg; landed split is 55.5/17.7/26.7. Legs are well above the 9.7% bantamweight average, so expect leg strikes about 1.6x as often as an average 135er. The head group leans on the right hand (cross 0.32, upper 0.14): the Umar KO was a right hand or right uppercut, and his UFC KOs of Moraes, Perez, Arce and Simon were all punches at distance (ufcstats). Sherdog calls boxing the cornerstone of his game and notes sudden head kicks (headkick 0.06). In the body group, hooks lead: Yardbarker and mmasucka describe right hands and long right hooks to the body, plus body kicks. In the leg group, calf leads: Umar caught a calf kick (mmasucka), and he opened vs O'Malley with low kicks. elbow 0.02 reflects one clinch-elbow KO (Felipe Arantes, 2018). No sources support spinning attacks or knees."
+  },
+  "appearance": {
+    "build": "compact bantamweight: 5'8\" (68 in) with a 67 in reach per ufcstats, so his reach is slightly shorter than his height",
+    "hair": "unknown (not confirmed from a dated 2026 photo in this pass)",
+    "facial_hair": "unknown",
+    "skin": "unknown",
+    "tattoos": "unknown (none described in sources checked)",
+    "kit": "unknown",
+    "sources": ["http://ufcstats.com/fighter-details/efb96bf3e9ada36f"]
+  },
+  "engine_notes": [
+    { "note": "Knockdowns: 8 in 227.7 UFC minutes (0.53 per 15 min) vs a 0.31 bantamweight prior. 0 knockdowns absorbed in 18 UFC fights.", "source": "data/derived/fighters.json" },
+    { "note": "Takedown defence is 73.5% career (18 of 68 allowed) and 76% time-decayed, vs a 65.7% league average. Umar landed 1 of 3 and Figueiredo 1 of 4.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "In his 5-round fights, output in rounds 2-5 runs 1.59x, 1.56x, 1.32x and 2.46x his round-1 pace, but the sample is small (30/26.5/20/15/6.2 minutes per round). Treat this as a mild slow-start signal.", "source": "data/derived/fighters.json (pace)" },
+    { "note": "Leg kicks land at 78% career. Throwing them against an elite wrestler risks a caught kick and a takedown, which is how Umar got his only takedown.", "source": "https://mmasucka.com/opinion/how-song-yadong-beat-umar-nurmagomedov-breaking-down-the-ufc-shanghai-main-event-knockout/" }
+  ],
+  "confidence": "medium"
+}

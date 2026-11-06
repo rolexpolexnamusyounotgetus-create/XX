@@ -1,0 +1,76 @@
+{
+  "slug": "alexandre-pantoja",
+  "name": "Alexandre Pantoja",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC flyweight champion. He won the title from Brandon Moreno at UFC 290 (Jul 8, 2023) and defended it four times: Royval, Erceg, Asakura and Kara-France. He lost the belt to Joshua Van at UFC 323 (Dec 6, 2025) when an arm injury stopped the fight 26 seconds in, then lost the UFC 331 rematch (Sep 19, 2026) by unanimous decision (ufcstats cards 49-46, 48-47, 50-45). Van defends against Manel Kape on Jan 30, 2027, per the project's Van scouting file. Pantoja's own ranking, plans and next booking were not verified in this pass because the shared search budget ran out.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      {
+        "what": "Arm injury that ended the UFC 323 title fight at 0:26 of round 1 (ufcstats: 'Arm injury to Pantoja'); he returned to fight a full five rounds at UFC 331",
+        "when": "2025-12",
+        "source": "http://ufcstats.com/fight-details/dfa692db6d39330c"
+      }
+    ],
+    "sources": [
+      "http://ufcstats.com/fighter-details/a0f0004aadf10b71",
+      "http://ufcstats.com/fight-details/568ec6af4008355a",
+      "http://ufcstats.com/fight-details/dfa692db6d39330c",
+      "https://www.cbssports.com/ufc/news/ufc-323-results-highlights-joshua-van-champion-alexandre-pantoja-injury/",
+      "https://www.sherdog.com/news/news/UFC-331-Van-vs-Pantoja-2-playbyplay-results-round-scoring-202850",
+      "https://sports.yahoo.com/mma/live/ufc-331-live-results-joshua-van-vs-alexandre-pantoja-2-updates-round-by-round-scoring-and-highlights-181500506.html",
+      "data/scouting/joshua-van.json",
+      "data/derived/fighters.json"
+    ]
+  },
+  "style": {
+    "archetype": "grappler/BJJ",
+    "stance": "orthodox",
+    "tags": ["back-takes", "submissions", "top-control", "wild-exchanges"],
+    "signature": [
+      "rear-naked choke (5 UFC wins: Neil Seery 2017, Yuta Sasaki 2018, Brandon Royval 2021, Kai Asakura 2024, Kai Kara-France 2025)",
+      "neck crank from standing back control (Alex Perez, 2022)",
+      "takedowns into long control phases (15:51 of control vs Royval in their 2023 title fight)"
+    ],
+    "weaknesses": [
+      "very hittable: opponents land 53% of head strikes on him (time-decayed) vs a 37.5% flyweight average, and he absorbs 5.15 sig per minute",
+      "lost the UFC 331 rematch on the feet: Van out-landed him 181-147 and scored a knockdown, despite Pantoja's 9:11 of control",
+      "takedown finishing has dipped: 5 of 18 vs Van in the rematch",
+      "age 36; two straight losses to Van"
+    ],
+    "summary": "A pressure grappler who wins by getting to the back. Six of his 14 UFC wins are submissions from back control, and he logs about twice the flyweight average of takedowns and control time. On the feet he is willing to trade and gets hit a lot, which is how Joshua Van beat him in their rematch.",
+    "sources": [
+      "data/derived/fighters.json",
+      "http://ufcstats.com/fighter-details/a0f0004aadf10b71",
+      "http://ufcstats.com/fight-details/8308464729ea7c40",
+      "http://ufcstats.com/fight-details/e761c5009c09b295",
+      "http://ufcstats.com/fight-details/568ec6af4008355a"
+    ]
+  },
+  "moves": {
+    "jab": 0.22, "cross": 0.26, "hook": 0.24, "overhand": 0.12, "upper": 0.1, "headkick": 0.06,
+    "bodykick": 0.4, "bodyhook": 0.35, "bodystraight": 0.25,
+    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.0, "elbow": 0.0,
+    "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. fighters.json time-decayed attempt split is 75.9% head, 13.6% body and 10.5% leg (landed 62.7/21.2/16.1), close to the flyweight averages of 76.7/13.8/9.1. His striking target mix is therefore ordinary, and the engine should lean on his grappling rates rather than strike selection. No web scouting source on his striking could be read in this pass, so the within-group splits are a generic brawler split (hooks and overhands a bit above a pure boxer's), matching the data's picture of a fighter who exchanges freely. The body and leg groups are not specifically sourced. No spinning attacks, knees or elbows are documented in his UFC finishes. Low confidence."
+  },
+  "appearance": {
+    "build": "small, compact flyweight: 5'5\" (65 in) with a 67 in reach per ufcstats",
+    "hair": "unknown (not verified in this pass)",
+    "facial_hair": "unknown",
+    "skin": "unknown",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "sources": ["http://ufcstats.com/fighter-details/a0f0004aadf10b71"]
+  },
+  "engine_notes": [
+    { "note": "Control: 19.6 s/min career and 23.8 time-decayed, vs an 11.3 flyweight average. Takedowns: 2.81 per 15 min career and 3.73 decayed, vs 1.65.", "source": "data/derived/fighters.json" },
+    { "note": "Submission attempts: 0.88 per 15 min career vs a 0.58 flyweight average. 6 submission wins: 5 rear-naked chokes and a neck crank, all from the back.", "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv" },
+    { "note": "Control does not guarantee rounds against elite strikers. At UFC 331 he had 9:11 of control but lost all three cards. Sherdog's round scoring gave him round 4 on every card and Van round 5.", "source": "http://ufcstats.com/fight-details/568ec6af4008355a; https://www.sherdog.com/news/news/UFC-331-Van-vs-Pantoja-2-playbyplay-results-round-scoring-202850" },
+    { "note": "Opponents land 56% of their sig strikes on him (time-decayed) vs a 45.6% flyweight average. Knockdowns absorbed: 2 career, including one from Van in the rematch. His only stoppage loss is the UFC 323 arm injury.", "source": "data/derived/fighters.json" },
+    { "note": "5-round pace by round, relative to round 1: 1.00, 0.92, 1.03, 0.56, 1.16. He held output to round 5 except for a round-4 dip, in a small sample.", "source": "data/derived/fighters.json (pace)" }
+  ],
+  "confidence": "low"
+}
