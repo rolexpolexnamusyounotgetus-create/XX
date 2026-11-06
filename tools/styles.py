@@ -26,6 +26,8 @@ import os
 import sys
 from collections import Counter, defaultdict
 
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")     # small dense fits: threaded BLAS only adds contention
 import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -834,3 +836,66 @@ def winner_tests(W, n_boot=2000, seed=SEED, lam_int=1.0):
             "test_dll_ci": [float(np.percentile(bd, 2.5)), hi], "z_test_only": [float(v) for v in zt],
             "share_nonzero": nz, "screen": bool(screen), "verdict": verdict}
     return out, Xb, pen_b
+
+
+def fit_archetypes(rows, mu, sd, k_final=8, k_grid=range(4, 13), seed=SEED, min_minutes=25.0):
+    """k-means on the weighted style z-vector of 2019-2023 snapshots (latest snapshot per fighter and year
+    with at least `min_minutes` decayed minutes, so shrinkage does not pile everyone at the centre)."""
+    Wt = dim_weights()
+    seen = {}
+    for r in rows:
+        if r["date"] >= TEST_FROM:
+            continue
+        for t in "AB":
+            f = r[t]
+            if f["mins"] < min_minutes:
+                continue
+            seen[(r["slug" + t], r["date"][:4])] = (r["date"], r["name" + t], f)
+    keys_ = sorted(seen)
+    Z = np.array([[(seen[k][2][d] - mu[d]) / sd[d] for d in STYLE_DIMS] for k in keys_]) * Wt
+    rng = np.random.default_rng(seed)
+    table = []
+    for k in k_grid:
+        inert, c, lab = kmeans(Z, k, seed=seed, n_init=10)
+        aris = []
+        for b in range(10):
+            idx = rng.choice(len(Z), len(Z))
+            _, cb, _ = kmeans(Z[idx], k, seed=seed + b + 1, n_init=4)
+            aris.append(ari(lab, ((Z[:, None, :] - cb[None]) ** 2).sum(-1).argmin(1)))
+        table.append({"k": k, "inertia": inert, "silhouette": silhouette(Z, lab), "boot_ari_mean": float(np.mean(aris)),
+                      "boot_ari_min": float(np.min(aris)), "sizes": np.bincount(lab).tolist()})
+    inert, cent, lab = kmeans(Z, k_final, seed=seed, n_init=30)
+    # order clusters by grappling then output for a stable presentation
+    cz = cent / Wt
+    order = np.argsort(-(cz[:, STYLE_DIMS.index("td_int")] + cz[:, STYLE_DIMS.index("ctrl")]))
+    cent, cz = cent[order], cz[order]
+    remap = {int(o): i for i, o in enumerate(order)}
+    lab = np.array([remap[int(l)] for l in lab])
+    temp = float(np.mean(((Z - cent[lab]) ** 2).sum(1)))
+    names, used = [], Counter()
+    for j in range(k_final):
+        nm = name_cluster(dict(zip(STYLE_DIMS, cz[j])))
+        used[nm] += 1
+        names.append(nm if used[nm] == 1 else nm + " (%d)" % used[nm])
+    examples = []
+    for j in range(k_final):
+        ex = [(seen[keys_[i]][2]["mins"], seen[keys_[i]][1]) for i in np.where(lab == j)[0]]
+        ex = [n for _, n in sorted(ex, reverse=True)]
+        uniq = []
+        for n in ex:
+            if n not in uniq:
+                uniq.append(n)
+        examples.append(uniq[:10])
+    return {"k": k_final, "weights": Wt.tolist(), "centroids_z": cz.tolist(), "centroids_w": cent.tolist(),
+            "temp": temp, "names": names, "examples": examples, "sizes": np.bincount(lab).tolist(),
+            "n_fit": len(Z), "selection": table, "min_minutes": min_minutes}
+
+
+def memberships(rows, mu, sd, arch):
+    Wt = np.array(arch["weights"])
+    cent = np.array(arch["centroids_w"])
+    out = []
+    for t in "AB":
+        Z = np.array([[(r[t][d] - mu[d]) / sd[d] for d in STYLE_DIMS] for r in rows]) * Wt
+        out.append(soft_membership(Z, cent, arch["temp"]))
+    return out

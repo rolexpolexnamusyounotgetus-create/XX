@@ -17,7 +17,8 @@
     "ref-thescore-ufc324-fence-2026-01-24.jpg",
     "ref-getty-ufc324-belt-2026-01-24.jpg",
     "wiki-whitehouse-2026-06-14-67.jpg",
-    "wiki-presser-2022-05-05.png"
+    "wiki-presser-2022-05-05.png",
+    "wiki-lincoln-2026-06-12.jpg"
   ],
   "face": {
     "shape": "Broad, square-to-rectangular face that reads short and wide. Widest at the cheekbones and jaw, with little taper to the chin. Above the ears the skull is rounded, and in profile the head is fairly long front to back.",
@@ -25,11 +26,11 @@
     "chin": "Broad, moderately projecting chin, hidden under the beard. In profile (CBS photo) it sits roughly in line with the lower lip, neither receding nor jutting.",
     "cheekbones": "Wide-set but not sharply defined. The cheeks are full and fleshy below the cheekbones, more so in the off-camp May 2026 photo than at fight weight.",
     "brow_ridge": "Moderately prominent and heavy. It shades the eyes and makes them look slightly deep-set, especially under top light (weigh-in, Oval Office group).",
-    "forehead": "Broad and medium-to-tall, with three or four deep horizontal creases (clear in the studio stance crop and the Oval Office group photo). The hairline recedes at the temples, which makes the forehead look taller at the sides.",
+    "forehead": "Broad and medium-to-tall, with three or four clear horizontal creases (moderate depth in the studio stance crop, deeper when he looks down in the Oval Office group photo). The hairline recedes at the temples, which makes the forehead look taller at the sides.",
     "eyes": {
       "shape": "Almond-shaped with a narrow vertical opening. The upper lids are heavy and hooded, and the lower lids are slightly puffy. Outer corners are level to slightly downturned.",
       "spacing": "Average, about one eye-width apart.",
-      "colour": "Light blue-grey (blue in the studio headshot, grey-blue in arena light).",
+      "colour": "Light blue-grey with a slight green tint (grey-green-blue in both studio portraits, grey-blue in arena light). Closest embed iris: mh-iris-grey or mh-iris-blue tinted toward grey-green.",
       "size": "Look small for the face because of the hooded lids and the broad surrounding face."
     },
     "eyebrows": {
@@ -60,7 +61,7 @@
       "cauliflower_ear": "Mild at most. The left ear shows some thickening and irregular folds in the upper concha and antihelix (studio headshot, 2022 presser) and had a small cut on the rim in fight-night photos. The right ear looks closer to normal (CBS profile). Neither ear is heavily swollen.",
       "notes": "None of the photos is sharp enough to model the ear cartilage in detail; treat the ears as normal with slightly thick rims."
     },
-    "notable_marks_scars": "No large permanent facial scars visible at these resolutions. There are deep horizontal forehead creases and some redness and rough texture over the nose and cheeks. Fight-night photos show temporary cuts on the nose bridge and left ear, which should not be modelled as permanent."
+    "notable_marks_scars": "No large permanent facial scars visible at these resolutions. A faint thin line runs across the left cheekbone in the Oval Office photo; it is not visible in the other photos, so it could be a skin crease or an old healed cut, and should not be modelled. The 2022 presser shows a small red spot inside the left ear (a scab or cut). There are deep horizontal forehead creases and some redness and rough texture over the nose and cheeks. Fight-night photos show temporary cuts on the nose bridge and left ear, which should not be modelled as permanent."
   },
   "hair": {
     "style": "Short tapered or faded cut. The sides and back are clipped very short, close to skin at the bottom and blending to about 1 cm higher up. The top is about 4-5 cm, textured, pushed up and forward with no strong part. The front is brushed up slightly; there is no fringe.",

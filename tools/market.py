@@ -1149,6 +1149,14 @@ def cmd_build(a):
     # ---------------- does anything beat the close? ----------------
     res['residual_features'] = residual_features(R, {f['id']: f for f in fights}, boot=min(a.boot, 1000))
 
+    # ---------------- market rating (walk-forward prior for fights with no line) ----------------
+    mr, mr_pred, mr_cur = market_rating(R, fights, boot=min(a.boot, 1000))
+    res['market_rating'] = mr
+    for r in R:
+        if r['id'] in mr_pred:
+            r['p_mrating'] = mr_pred[r['id']]
+    res['_ratings'] = mr_cur
+
     # ---------------- method props (event pages, if cached) ----------------
     if getattr(a, 'props', None):
         res['method_market'] = method_market(a, fights, recs)
@@ -1212,6 +1220,133 @@ def residual_features(R, fights_by_id, boot=1000):
     return out
 
 
+# ----------------------------------------------------------------------------------------------
+# market rating: a walk-forward Kalman filter on closing lines (and results)
+# ----------------------------------------------------------------------------------------------
+
+def rating_stream(R, fights):
+    """Chronological stream of UFC fights 2013+ with ufcstats fighter ids, closing p (fighter 1) and result.
+    Backtest fights use this tool's chosen close; the rest use nlbair's (range midpoint, multiplicative)."""
+    import pandas as pd
+    nl = pd.read_csv(os.path.join(ODDS_DIR, 'nlbair_odds.csv'), low_memory=False)
+    with open(os.path.join(ROOT, 'data', 'derived', 'fighters.json')) as fh:
+        slug_id = {k: v.get('id') for k, v in json.load(fh)['fighters'].items()}
+    mine = {r['id']: r for r in R}
+    stream, have = [], set()
+    for q in nl.itertuples():
+        pc = mine[q.fight_id]['p_close_mult'] if (q.fight_id in mine and 'p_close_mult' in mine[q.fight_id]) else (
+            q.f1_close_prob_novig if q.has_odds and not pd.isna(q.f1_close_prob_novig) else None)
+        y = {1.0: 1.0, 2.0: 0.0, 0.0: 0.5}.get(q.winner)
+        stream.append({'id': q.fight_id, 'date': q.event_date, 'i': q.f1_id, 'j': q.f2_id, 'p': pc, 'y': y})
+        have.add(q.fight_id)
+    for f in fights:  # backtest fights after nlbair's window
+        if f['id'] in have:
+            continue
+        i, j = slug_id.get(f['A']['slug']), slug_id.get(f['B']['slug'])
+        if not i or not j:
+            continue
+        r = mine[f['id']]
+        y = {'A': 1.0, 'B': 0.0, 'D': 0.5}.get(f['result']['winner'])
+        stream.append({'id': f['id'], 'date': f['date'], 'i': i, 'j': j, 'p': r.get('p_close_mult'), 'y': y})
+    stream.sort(key=lambda x: (x['date'], x['id']))
+    return stream, slug_id
+
+
+def run_rating(stream, sig_m=0.35, tau=0.35, v0=0.6, mu0=0.0, kappa=0.5, until=None, keep=None):
+    """-> (pre-fight predictions {fight_id: p_i}, state {fighter_id: [mu, var, last_date, n]})."""
+    mu, var, last, n = {}, {}, {}, {}
+    pred = {}
+    for e in stream:
+        if until and e['date'] > until:
+            break
+        d = dt.date.fromisoformat(e['date'])
+        for k in (e['i'], e['j']):
+            if k not in mu:
+                mu[k], var[k], n[k] = mu0, v0, 0
+            else:
+                gap = (d - last[k]).days / 365.25
+                var[k] = min(var[k] + tau * tau * max(gap, 0), v0 * 2)
+            last[k] = d
+        i, j = e['i'], e['j']
+        m = mu[i] - mu[j]
+        s2 = var[i] + var[j]
+        if keep is None or e['id'] in keep:
+            pred[e['id']] = 1 / (1 + math.exp(-m / math.sqrt(1 + math.pi * s2 / 8)))
+        if e['p'] is not None:
+            z = math.log(min(max(e['p'], 0.02), 0.98) / (1 - min(max(e['p'], 0.02), 0.98)))
+            S = s2 + sig_m * sig_m
+            r = z - m
+            ki, kj = var[i] / S, var[j] / S
+            mu[i] += ki * r
+            mu[j] -= kj * r
+            var[i] *= (1 - ki)
+            var[j] *= (1 - kj)
+        if e['y'] is not None and kappa > 0:
+            m2 = mu[i] - mu[j]
+            p2 = 1 / (1 + math.exp(-m2))
+            g, h = e['y'] - p2, p2 * (1 - p2)
+            den = 1 + kappa * h * (var[i] + var[j])
+            mu[i] += kappa * var[i] * g / den
+            mu[j] -= kappa * var[j] * g / den
+            var[i] *= 1 - kappa * var[i] * h / den
+            var[j] *= 1 - kappa * var[j] * h / den
+        n[i] += 1
+        n[j] += 1
+    return pred, {k: [mu[k], var[k], last[k].isoformat(), n[k]] for k in mu}
+
+
+def market_rating(R, fights, boot=1000):
+    np = _np()
+    stream, slug_id = rating_stream(R, fights)
+    dec = [r for r in R if r['y'] is not None]
+    keep = {r['id'] for r in R}
+    tune_ids = [r for r in dec if r['period'] == 'tune']
+    grid = []
+    for sig_m in (0.2, 0.35, 0.5):
+        for tau in (0.2, 0.35, 0.5):
+            for v0 in (0.3, 0.6, 1.0):
+                for kappa in (0.0, 0.25, 0.5, 1.0):
+                    pred, _ = run_rating(stream, sig_m, tau, v0, 0.0, kappa, until=TUNE[1], keep=keep)
+                    g = [r for r in tune_ids if r['id'] in pred]
+                    ll = float(np.mean(loss_arrays([pred[r['id']] for r in g], [r['y'] for r in g])[0]))
+                    grid.append(((sig_m, tau, v0, kappa), ll))
+    grid.sort(key=lambda x: x[1])
+    (sig_m, tau, v0, kappa), ll_t = grid[0]
+    pred, state = run_rating(stream, sig_m, tau, v0, 0.0, kappa, keep=keep)
+    out = {'params': {'sig_m': sig_m, 'tau_per_year': tau, 'v0': v0, 'mu0': 0.0, 'kappa_result': kappa},
+           'grid_best5': [[list(k), round(v, 4)] for k, v in grid[:5]],
+           'stream': {'fights': len(stream), 'with_close': sum(1 for e in stream if e['p'] is not None),
+                      'from': stream[0]['date'], 'to': stream[-1]['date']}}
+    for per in ('tune', 'test'):
+        g = [r for r in dec if r['period'] == per and r['id'] in pred and 'p_close_mult' in r and 'p_open' in r]
+        y = np.array([r['y'] for r in g])
+        mods = {'market_rating': [pred[r['id']] for r in g], 'elo': [r['elo'] for r in g],
+                'open': [r['p_open'] for r in g], 'close': [r['p_close_mult'] for r in g]}
+        out[per] = {k: metrics(v, y) for k, v in mods.items()}
+        arr = {k: loss_arrays(v, y)[0] for k, v in mods.items()}
+        bs = boot_event([r['event'] for r in g], arr, B=boot)
+        out[per]['rating_minus_elo_ll'] = [round(float(np.mean(arr['market_rating'] - arr['elo'])), 4), ci(bs['market_rating'] - bs['elo'])]
+        out[per]['rating_minus_open_ll'] = [round(float(np.mean(arr['market_rating'] - arr['open'])), 4), ci(bs['market_rating'] - bs['open'])]
+        zc = logit([r['p_close_mult'] for r in g])
+        zp = logit([pred[r['id']] for r in g])
+        zo = logit([r['p_open'] for r in g])
+        out[per]['predicts_close_logit'] = {'rmse_rating': round(float(np.sqrt(np.mean((zp - zc) ** 2))), 4),
+                                            'rmse_open': round(float(np.sqrt(np.mean((zo - zc) ** 2))), 4),
+                                            'corr_rating': round(float(np.corrcoef(zp, zc)[0, 1]), 4),
+                                            'corr_open': round(float(np.corrcoef(zo, zc)[0, 1]), 4)}
+    # current ratings (variance drifted to the snapshot) keyed by fighters.json slug
+    snap = dt.date.fromisoformat(stream[-1]['date'])
+    id_slug = {v: k for k, v in slug_id.items() if v}
+    cur = {}
+    for fid, (m, v, ld, nn) in state.items():
+        if fid not in id_slug:
+            continue
+        gap = (snap - dt.date.fromisoformat(ld)).days / 365.25
+        cur[id_slug[fid]] = [round(m, 4), round(math.sqrt(min(v + tau * tau * gap, 2 * v0)), 4), ld, nn]
+    out['n_rated_roster'] = len(cur)
+    return out, pred, cur
+
+
 def write_market_json(R, res, best):
     fights = {}
     for r in R:
@@ -1240,6 +1375,8 @@ def write_market_json(R, res, best):
             e['uud_close'] = list(rec['uud_close'])
         if rec.get('bfo_mu'):
             e['bfo'] = {'matchup': rec['bfo_mu'], 'event': rec.get('bfo_event')}
+        if 'p_mrating' in r:
+            e['p_market_rating'] = round(r['p_mrating'], 4)
         mm = (res.get('method_market') or {}).get('per_fight', {}).get(r['id'])
         if mm:
             e['method6'] = mm['method6']
@@ -1270,7 +1407,10 @@ def write_market_json(R, res, best):
         ],
         'periods': {'tune': list(TUNE), 'test': list(TEST)},
     }
-    ev = {k: v for k, v in res.items() if k not in ('coverage',)}
+    ev = {k: v for k, v in res.items() if k not in ('coverage', '_ratings')}
+    meta['p_market_rating'] = ('walk-forward pre-fight probability from the market rating (Kalman filter on earlier closing '
+                               'lines and results; eval.market_rating has the equations and parameters); usable before any line exists')
+    meta['ratings'] = 'current market ratings by fighters.json slug: [mu (log-odds), sd, last fight date, fights seen]'
     if 'method_market' in ev:
         ev['method_market'] = {k: v for k, v in ev['method_market'].items() if k != 'per_fight'}
         meta['method6'] = ('market method-of-victory distribution [A_KO, A_SUB, A_DEC, B_KO, B_SUB, B_DEC]: per book the six '
@@ -1279,7 +1419,7 @@ def write_market_json(R, res, best):
         meta['p_dec'] = 'P(fight goes to decision): two-way "goes to decision" prop, multiplicative no-vig, averaged over books'
         meta['round_dist'] = ('P(fight ends in round 1..K, decision), from "fight ends in round k" and "goes to decision" '
                               'yes prices, power-normalised, averaged over books')
-    out = {'meta': meta, 'coverage': res['coverage'], 'eval': ev, 'fights': fights}
+    out = {'meta': meta, 'coverage': res['coverage'], 'eval': ev, 'ratings': res.get('_ratings', {}), 'fights': fights}
     with open(OUT_JSON, 'w') as fh:
         json.dump(out, fh, separators=(',', ':'))
     print(f'wrote {OUT_JSON}: {len(fights)} fights, {os.path.getsize(OUT_JSON) / 1e6:.2f} MB')
@@ -1307,6 +1447,11 @@ def print_summary(res):
     rf = res['residual_features']
     for k, v in list(rf['single'].items()) + [('ALL', rf['all'])]:
         print(f"  resid {k:16s} tune {v['tune_coef']} | test refit {v['test_refit_coef']} | dLL {v['test_ll_minus_close_slope']}")
+    mr = res['market_rating']
+    print('mrating params', mr['params'], mr['grid_best5'][:3])
+    for per in ('tune', 'test'):
+        print('mrating', per, {k: (mr[per][k]['log_loss'], mr[per][k]['accuracy']) for k in ('market_rating', 'elo', 'open', 'close')},
+              mr[per]['rating_minus_elo_ll'], mr[per]['rating_minus_open_ll'], mr[per]['predicts_close_logit'])
     mm = res.get('method_market')
     if mm and 'eval' in mm:
         for per, v in mm['eval'].items():

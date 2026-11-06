@@ -30,7 +30,7 @@ Allen is a southpaw boxer. He works at range (89% of his landed significant stri
 
 ## Durability and cardio
 
-In 15 UFC fights he has never been knocked down or stopped, after absorbing 378 head strikes. His power is modest: 4 knockdowns, 0.71 per 100 head strikes landed (league 0.94). In five-round fights his output peaks in R3 (1.47 times R1) and falls to 1.12 and 0.99 in R4-R5, below the featherweight curve. In three-round fights his recent third rounds have been his best.
+In 15 UFC fights he has never been knocked down or stopped, after absorbing 378 head strikes. His power is modest: 4 knockdowns, 0.71 per 100 head strikes landed (league 0.94). In five-round fights his output peaks in R3 (1.47 times R1) and falls to 1.12 and 0.99 in R4-R5, below the featherweight curve. In three-round fights his 2024 third rounds were his best (29 landed vs Evloev, 32 vs Chikadze), but against Silva in 2026 R3 was his lowest (16), and his career three-round curve is 1.00, 0.79, 0.81 of R1.
 
 ## What fighters.json says
 

@@ -4,9 +4,9 @@ As of Nov 6, 2026. Stats come from `data/derived/fighters.json` and the round st
 
 ## Current status
 
-- **Booked:** Kevin Vallejos at featherweight, UFC Fight Night in Doha, Qatar, **Nov 21, 2026** (MMA Insight, Heavy). Vallejos is 24, 4-0 in the UFC with three KOs, most recently a R1 KO of Josh Emmett (Mar 14, 2026).
+- **Booked:** Kevin Vallejos at featherweight, UFC Fight Night 294, ABHA Arena, Doha, Qatar, **Nov 21, 2026** (MMA Insight, Heavy; event, venue and date match the Prochazka vs Stirling card sources in the Jiri Prochazka file). Not re-opened on Nov 6. Vallejos is 24, 4-0 in the UFC with three KOs, most recently a R1 KO of Josh Emmett (Mar 14, 2026).
 - **Title picture:** Volkanovski's head coach has said he wants the Sterling-Vallejos winner rather than Jean Silva (Bloody Elbow, Oct 29).
-- **Ranking:** No. 4 at featherweight after UFC 333, behind Evloev, Lopes and Murphy (UFCalendar, Nov 3).
+- **Ranking:** No. 4 at featherweight after UFC 333, behind Evloev, Lopes and Murphy (UFCalendar, Nov 3; consistent with the Lopes No. 2 and Jean Silva No. 5 listings in their own files).
 - **Titles:** none now. Former bantamweight champion: he beat Petr Yan by DQ (UFC 259, 2021), defended against Yan, TJ Dillashaw and Henry Cejudo, then lost to Sean O'Malley (TKO R2, UFC 292, Aug 19, 2023). Age 37. No injury reported.
 
 ## Recent fights

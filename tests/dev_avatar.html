@@ -119,6 +119,23 @@ DEV.step = function (sec) {
   return { t: DEV.t, phase: show.phase, state: show.state, clock: show.clock, cam: show.cam.label, A: show.A.mode, B: show.B.mode };
 };
 DEV.render = function () { show.render(1 / 30); };
+/* Step (rendering stubbed) until cond(show) is true or max seconds pass. */
+DEV.until = function (cond, max) {
+  var orig = show.arena.render; show.arena.render = function () {};
+  var n = Math.round((max || 60) * 30), i, ok = false;
+  for (i = 0; i < n; i++) { show.frame(1 / 30); DEV.t += 1 / 30; if (cond(show)) { ok = true; break; } }
+  show.arena.render = orig;
+  return { ok: ok, t: +DEV.t.toFixed(2), phase: show.phase, state: show.state, clock: +show.clock.toFixed(1), cam: show.cam.label, A: show.A.mode, B: show.B.mode,
+    clips: [show.A, show.B].map(function (a) { return a.avatar ? a.avatar.layers.map(function (l) { return l.clip.name + ":" + l.w.toFixed(2) + "@" + l.t.toFixed(2); }).join(",") : "-"; }) };
+};
+/* Fixed camera framing the pair from a side, for comparable shots. */
+DEV.frameCam = function (az, dist, h, fov) {
+  var A = show.A.pos, B = show.B.pos, mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2, th = Math.atan2(B.z - A.z, B.x - A.x) + Math.PI / 2 + (az || 0);
+  var c = show.arena.camera; c.position.set(mx + Math.cos(th) * (dist || 3.4), h || 1.35, mz + Math.sin(th) * (dist || 3.4)); c.lookAt(mx, 0.9, mz);
+  c.fov = fov || 40; c.updateProjectionMatrix();
+  [show.A, show.B, show.R].forEach(function (a) { if (a.avatar) a.avatar.sync(); });
+  show.arena.render();
+};
 DEV.info = function () {
   return DEV.lineupActors().map(function (a) {
     var av = a.avatar; if (!av) return { id: a.id, avatar: false };

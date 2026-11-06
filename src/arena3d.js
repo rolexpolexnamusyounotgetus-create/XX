@@ -26,7 +26,7 @@
   var RA = RV + 1.0, RAPO = RA * Math.cos(PI / 8);   // apron outer vertex radius and apothem
   var MESH_BOT = 0.12, MESH_TOP = 1.73, RAIL_Y = 1.79, POST_R = 0.125;
   var GATES = [1, 5];                        // fence sides with a gate (side k runs from vertex k to k + 1)
-  var TRUSS_Y = 9.5, TRUSS_APO = 5.4;
+  var TRUSS_Y = 10.4, TRUSS_APO = 5.4;
   var AX = 1.3, AZ = 1.0, SQN = 4.2;         // the bowl is a squircle, longer along X
 
   var QUALITY = {
@@ -455,7 +455,7 @@
     "  vec3 wn = vec3(cy * n.x + sy * n.z, n.y, -sy * n.x + cy * n.z);",
     "  vec3 toC = vec3(0.0, 7.0, 0.0) - wp; float d = length(toC);",
     "  float lam = max(dot(wn, toC / d), 0.0) * 0.85 + 0.15;",
-    "  float spill = uSpill / (1.0 + d * d * 0.010);",
+    "  float spill = uSpill / (1.0 + d * d * d * 0.00195);",
     "  float top = (0.55 + 0.45 * max(wn.y, 0.0)) * uHouse;",
     "  vec3 col = aPart < 0.5 ? aC0 : (aPart < 1.5 ? aC2 : (aPart < 2.5 ? aC1 : aC3));",
     "  vCol = col * (top + lam * spill) * (0.82 + 0.36 * fract(ph * 13.13));",
@@ -490,7 +490,7 @@
     "  gl_PointSize = clamp(uScale * aPar.y / -mvPosition.z, 1.0, 64.0);",
     "  gl_Position = projectionMatrix * mvPosition;",
     "  float d = length(p - vec3(0.0, 7.0, 0.0));",
-    "  float l = uHouse + uSpill / (1.0 + d * d * 0.010);",
+    "  float l = uHouse + uSpill / (1.0 + d * d * d * 0.00195);",
     "  l *= 0.8 + 0.4 * fract(aPar.x * 13.13);",
     "  vShirt = aC0 * l; vSkin = aC2 * l;",
     "  #include <fog_vertex>",
@@ -718,7 +718,7 @@
     this.cssW = Math.max(1, canvas.clientWidth || canvas.width || 300); this.cssH = Math.max(1, canvas.clientHeight || canvas.height || 150);
     this.contacts = []; for (var ci = 0; ci < 16; ci++) this.contacts.push(new T.Vector4(0, 0, 0, 0));
     this.lowPts = [];
-    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 0.42 }, uScale: { value: 600 }, uPhones: { value: 0.03 }, uFarHouse: { value: 0.045 } };
+    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 1.0 }, uScale: { value: 600 }, uPhones: { value: 0.03 }, uFarHouse: { value: 0.045 } };
 
     this.env = buildEnvironment(renderer, opts.env === "room");
     if (this.env) scene.environment = this.env;
@@ -742,12 +742,12 @@
     var Q = A.Q;
     A.own(new T.HemisphereLight(0x33435e, 0x060709, 0.22));
     // overhead key: one shadow-casting spot straight above the canvas, its frustum fitted to the octagon
-    var key = A.key = new T.SpotLight(0xfff5ea, 560, 0, 0.5, 0.55, 2);
-    key.position.set(0.25, 12.6, 0.45); key.target.position.set(0, 0, 0);
+    var key = A.key = new T.SpotLight(0xfff5ea, 615, 0, 0.48, 0.55, 2);
+    key.position.set(0.25, 13.2, 0.45); key.target.position.set(0, 0, 0);
     key.castShadow = true;
     key.shadow.mapSize.set(Q.shadow, Q.shadow);
-    key.shadow.camera.near = 8.6; key.shadow.camera.far = 13.4;
-    key.shadow.focus = 0.72;
+    key.shadow.camera.near = 9.2; key.shadow.camera.far = 14.0;
+    key.shadow.focus = 0.7;
     key.shadow.bias = -0.00018; key.shadow.normalBias = 0.022; key.shadow.radius = 3;
     A.own(key); A.own(key.target);
     // the truss ring: soft spots from every side so the fighters are lit all round
@@ -755,7 +755,7 @@
     var n = Q.spots, step = 8 / n;
     for (var i = 0; i < n; i++) {
       var a = (i * step + 1) * PI / 4, px = Math.cos(a) * TRUSS_APO, pz = Math.sin(a) * TRUSS_APO;
-      var sp = new T.SpotLight(0xfff1e2, 42 * step, 0, 0.52, 0.85, 2);
+      var sp = new T.SpotLight(0xfff1e2, 46 * step, 0, 0.5, 0.85, 2);
       sp.position.set(px, TRUSS_Y - 0.4, pz); sp.target.position.set(-Math.cos(a) * 1.4, 0.6, -Math.sin(a) * 1.4);
       A.own(sp); A.own(sp.target); A.ring.push(sp);
     }
@@ -1198,7 +1198,7 @@
       // cornermen wait on the apron behind the post
       for (var c = -1; c <= 1; c++) {
         var ca = va + c * 0.16, cx = Math.cos(ca) * (RV + 0.55), cz = Math.sin(ca) * (RV + 0.55);
-        corner.add(cx, 0, cz, Math.atan2(-cx, -cz), r, { shirt: c === 0 ? 0x111215 : s[2], stand: -1, excite: 0.1 });
+        corner.add(cx, 0, cz, Math.atan2(-cx, -cz), r, { shirt: c === 0 ? 0xd8dadd : s[2], stand: -1, excite: 0.1 });
       }
     });
     A.corner = corner.mesh(personGeometry(), A.crowdMat); A.corner.visible = false; A.own(A.corner);

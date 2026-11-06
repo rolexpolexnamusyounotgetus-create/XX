@@ -223,6 +223,273 @@ def cmd_prep(args):
     log("prep done in %.0fs -> %s" % (time.time() - t0, CACHE))
 
 
+# ====================================================================== features (internal experts)
+SIDE_NUM = ["age", "height_in", "reach_in", "n", "ko_losses", "kd_absorbed", "elo", "glicko", "glicko_rd",
+            "cmin", "w", "l", "streak", "last3", "n5", "titles", "fin_w", "fin_l", "opp_elo", "layoff"]
+RATE_DEFS = [  # name, numerator keys, prior-strength minutes
+    ("slpm", ["d_lnd", "c_lnd", "g_lnd"], 20), ("sapm", ["od_lnd", "oc_lnd", "og_lnd"], 20),
+    ("satt", ["d_att", "c_att", "g_att"], 20), ("oatt", ["od_att", "oc_att", "og_att"], 20),
+    ("head", ["h_lnd"], 20), ("ohead", ["oh_lnd"], 20), ("body", ["b_lnd"], 20), ("leg", ["l_lnd"], 20),
+    ("dist", ["d_lnd"], 20), ("clin", ["c_lnd"], 20), ("grnd", ["g_lnd"], 20), ("ogrnd", ["og_lnd"], 20),
+    ("kd", ["kd"], 45), ("okd", ["okd"], 45), ("tdl", ["td_lnd"], 30), ("tda", ["td_att"], 30),
+    ("otdl", ["otd_lnd"], 30), ("ctrl", ["ctrl"], 30), ("octrl", ["octrl"], 30), ("sub", ["sub_att"], 45),
+    ("osub", ["osub_att"], 45), ("rev", ["rev"], 45)]
+ACC_DEFS = [  # name, landed keys, attempted keys, prior attempts, invert (defence)
+    ("acc", ["d_lnd", "c_lnd", "g_lnd"], ["d_att", "c_att", "g_att"], 80, False),
+    ("dfn", ["od_lnd", "oc_lnd", "og_lnd"], ["od_att", "oc_att", "og_att"], 80, True),
+    ("hacc", ["h_lnd"], ["h_att"], 60, False), ("hdfn", ["oh_lnd"], ["oh_att"], 60, True),
+    ("tdacc", ["td_lnd"], ["td_att"], 8, False), ("tddef", ["otd_lnd"], ["otd_att"], 8, True)]
+REC_DEFS = ["ko_w", "sub_w", "dec_w", "ko_l", "sub_l", "dec_l"]
+
+
+def side_features(e, t, keys, priors_asof):
+    s = e[t]
+    S = dict(zip(keys, s["S"]))
+    div = e.get("prior_division") or e["division"]
+    yr = e["date"][:4]
+    PA = priors_asof.get(yr) or priors_asof[max(priors_asof)]
+    P = PA.get(div) or PA["ALL"]
+    out = {}
+    for k in SIDE_NUM:
+        v = s.get(k)
+        out[k] = float(v) if v is not None else np.nan
+    out["layoff"] = math.log1p(min(out["layoff"], 2000.0)) if np.isfinite(out["layoff"]) else np.nan
+    out["cmin"] = math.log1p(out["cmin"])
+    out["n_log"] = math.log1p(out["n"])
+    m = S["min"]
+    out["dmin"] = math.log1p(m)
+    out["dn"] = S["n"]
+    for name, ks, k0 in RATE_DEFS:
+        num = sum(S[k] for k in ks)
+        pr = sum(P.get(k, 0.0) for k in ks)
+        out[name] = (num + k0 * pr) / (m + k0)
+    for name, ls, as_, k0, inv in ACC_DEFS:
+        lnd, att = sum(S[k] for k in ls), sum(S[k] for k in as_)
+        pl, pa = sum(P.get(k, 0.0) for k in ls), sum(P.get(k, 0.0) for k in as_)
+        pr = pl / pa if pa > 0 else 0.4
+        a = (lnd + k0 * pr) / (att + k0)
+        out[name] = 1 - a if inv else a
+    nf = S["n"]
+    wins = S["ko_w"] + S["sub_w"] + S["dec_w"]
+    out["winr"] = (wins + 1.0) / (nf + 2.0)
+    for k in REC_DEFS:
+        out[k + "_r"] = (S[k] + 0.25) / (nf + 1.5)
+    out["wl_c"] = (out["w"] + 1.0) / (out["w"] + out["l"] + 2.0)
+    out["fin_wr"] = (out["fin_w"] + 0.5) / (out["w"] + out["l"] + 2.0)
+    out["fin_lr"] = (out["fin_l"] + 0.5) / (out["w"] + out["l"] + 2.0)
+    out["diff_sl"] = out["slpm"] - out["sapm"]
+    st = s.get("stance") or ""
+    out["southpaw"] = 1.0 if st == "Southpaw" else 0.0
+    out["switch"] = 1.0 if st == "Switch" else 0.0
+    return out
+
+
+def build_table(entries, keys, priors_asof):
+    """Rows for decisive fights: side features A, B, context, label y = 1 if A won."""
+    rows = []
+    for e in entries:
+        w = e["result"]["winner"]
+        fa = side_features(e, "A", keys, priors_asof)
+        fb = side_features(e, "B", keys, priors_asof)
+        rows.append({"id": e["id"], "date": e["date"], "division": e["division"],
+                     "prior_division": e.get("prior_division"), "rounds": e["rounds"] or 3,
+                     "title": bool(e["title"]), "y": 1.0 if w == "A" else (0.0 if w == "B" else np.nan),
+                     "A": fa, "B": fb})
+    return rows
+
+
+FEAT_NAMES = None
+
+
+def mats(rows):
+    """Side matrices XA, XB (same column order) and symmetric context C."""
+    global FEAT_NAMES
+    if FEAT_NAMES is None:
+        FEAT_NAMES = list(rows[0]["A"].keys())
+    XA = np.array([[r["A"][k] for k in FEAT_NAMES] for r in rows], dtype=float)
+    XB = np.array([[r["B"][k] for k in FEAT_NAMES] for r in rows], dtype=float)
+    C = np.array([[1.0 if r["rounds"] == 5 else 0.0, 1.0 if r["title"] else 0.0,
+                   1.0 if "Women" in (r["prior_division"] or r["division"]) else 0.0,
+                   float(DIVS.index(r["prior_division"] or r["division"])) if (r["prior_division"] or r["division"]) in DIVS else -1.0]
+                  for r in rows])
+    return XA, XB, C
+
+
+def logit(p):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
+def sigm(z):
+    return 1 / (1 + np.exp(-z))
+
+
+def ll(p, y):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+
+
+class SymLR:
+    """L2 logistic regression on antisymmetric differences (A - B), no intercept: exactly corner-symmetric."""
+    def __init__(self, C=0.05):
+        self.C = C
+
+    def _d(self, XA, XB):
+        D = XA - XB
+        D = np.where(np.isfinite(D), D, 0.0)
+        return D
+
+    def fit(self, XA, XB, y):
+        from sklearn.linear_model import LogisticRegression
+        D = self._d(XA, XB)
+        self.sd = D.std(0) + 1e-9          # scale only (no centring: keeps the antisymmetry)
+        Z = D / self.sd
+        Z = np.vstack([Z, -Z])
+        yy = np.concatenate([y, 1 - y])
+        self.m = LogisticRegression(C=self.C, fit_intercept=False, max_iter=2000).fit(Z, yy)
+        self.coef = self.m.coef_[0] / self.sd
+        return self
+
+    def predict(self, XA, XB):
+        return sigm(self._d(XA, XB) @ self.coef)
+
+
+class SymGBM:
+    """LightGBM on mirrored rows (side A, side B, differences, symmetric context), averaged over both orders."""
+    def __init__(self, params=None, rounds=300):
+        self.params = dict(objective="binary", learning_rate=0.03, num_leaves=15, min_data_in_leaf=60,
+                           feature_fraction=0.6, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0,
+                           verbose=-1, num_threads=2, seed=7)
+        if params:
+            self.params.update(params)
+        self.rounds = rounds
+
+    @staticmethod
+    def _x(XA, XB, C):
+        return np.hstack([XA, XB, XA - XB, C])
+
+    def fit(self, XA, XB, C, y, valid=None):
+        import lightgbm as lgb
+        X = np.vstack([self._x(XA, XB, C), self._x(XB, XA, C)])
+        yy = np.concatenate([y, 1 - y])
+        ds = lgb.Dataset(X, yy)
+        if valid is not None:
+            vA, vB, vC, vy = valid
+            Xv = np.vstack([self._x(vA, vB, vC), self._x(vB, vA, vC)])
+            dv = lgb.Dataset(Xv, np.concatenate([vy, 1 - vy]), reference=ds)
+            ev = {}
+            self.m = lgb.train(self.params, ds, self.rounds, valid_sets=[dv],
+                               callbacks=[lgb.record_evaluation(ev)])
+            self.curve = ev["valid_0"]["binary_logloss"]
+        else:
+            self.m = lgb.train(self.params, ds, self.rounds)
+        return self
+
+    def predict(self, XA, XB, C, rounds=None):
+        p1 = self.m.predict(self._x(XA, XB, C), num_iteration=rounds)
+        p2 = self.m.predict(self._x(XB, XA, C), num_iteration=rounds)
+        return 0.5 * (p1 + 1 - p2)
+
+
+def elo_p(XA, XB):
+    i = FEAT_NAMES.index("elo")
+    return 1 / (1 + 10 ** (-(XA[:, i] - XB[:, i]) / 400))
+
+
+def glicko_p(rows):
+    q = math.log(10) / 400
+    out = []
+    for r in rows:
+        a, b = r["A"], r["B"]
+        g = 1 / math.sqrt(1 + 3 * q * q * (a["glicko_rd"] ** 2 + b["glicko_rd"] ** 2) / math.pi ** 2)
+        out.append(1 / (1 + 10 ** (-g * (a["glicko"] - b["glicko"]) / 400)))
+    return np.array(out)
+
+
+def cmd_experts(args):
+    t0 = time.time()
+    with open(os.path.join(CACHE, "prep.pkl"), "rb") as fh:
+        prep = pickle.load(fh)
+    entries = [e for e in prep["entries"] if e["date"] < VAULT_FROM.isoformat()]
+    rows = build_table(entries, prep["keys"], prep["priors_asof"])
+    XA, XB, C = mats(rows)
+    y = np.array([r["y"] for r in rows])
+    dates = np.array([r["date"] for r in rows])
+    yr = np.array([int(d[:4]) for d in dates])
+    dec = np.isfinite(y)
+    log("table: %d rows, %d decisive, %d features per side" % (len(rows), dec.sum(), XA.shape[1]))
+
+    # ---- hyper-parameters chosen on 2016-2018 (train < 2016 .. validate year by year), never on 2019+
+    def inner_eval(make, years=(2016, 2017, 2018)):
+        tot, n = 0.0, 0
+        for Y in years:
+            tr = dec & (yr < Y)
+            va = dec & (yr == Y)
+            p = make(tr, va)
+            tot += ll(p, y[va]) * va.sum()
+            n += va.sum()
+        return tot / n
+
+    lr_grid = {}
+    for Cv in (0.003, 0.01, 0.03, 0.1, 0.3):
+        lr_grid[Cv] = inner_eval(lambda tr, va: SymLR(Cv).fit(XA[tr], XB[tr], y[tr]).predict(XA[va], XB[va]))
+    C_best = min(lr_grid, key=lr_grid.get)
+    log("LR C grid (2016-2018 inner):", {k: round(v, 4) for k, v in lr_grid.items()}, "->", C_best)
+
+    # GBM: rounds and leaves on the same inner years (one fit per year with a validation curve)
+    gbm_grid = {}
+    for leaves, mdl in ((7, 80), (15, 60), (31, 100)):
+        curves = []
+        wts = []
+        for Y in (2016, 2017, 2018):
+            tr = dec & (yr < Y)
+            va = dec & (yr == Y)
+            g = SymGBM({"num_leaves": leaves, "min_data_in_leaf": mdl}, rounds=800 if not args.quick else 300)
+            g.fit(XA[tr], XB[tr], C[tr], y[tr], valid=(XA[va], XB[va], C[va], y[va]))
+            curves.append(np.array(g.curve))
+            wts.append(va.sum())
+        curve = np.average(np.vstack(curves), axis=0, weights=wts)
+        r = int(np.argmin(curve)) + 1
+        gbm_grid[leaves] = (float(curve[r - 1]), r, mdl)
+    leaves = min(gbm_grid, key=lambda k: gbm_grid[k][0])
+    g_ll, g_rounds, g_mdl = gbm_grid[leaves]
+    g_rounds = max(100, g_rounds)
+    log("GBM grid (2016-2018 inner; mirrored-curve min):", gbm_grid, "->", leaves, g_rounds)
+
+    # ---- strictly out-of-fold predictions: expanding window by year for 2019-2023, <=2023 model for 2024-25
+    pred = {k: np.full(len(rows), np.nan) for k in ("feat_lr", "feat_gbm")}
+    folds = [(Y, yr == Y) for Y in range(2019, 2024)] + [(2024, (yr == 2024) | (yr == 2025))]
+    lr_coefs = {}
+    for Y, te in folds:
+        tr = dec & (yr < Y)
+        lr = SymLR(C_best).fit(XA[tr], XB[tr], y[tr])
+        pred["feat_lr"][te] = lr.predict(XA[te], XB[te])
+        lr_coefs[Y] = lr.coef.tolist()
+        g = SymGBM({"num_leaves": leaves, "min_data_in_leaf": g_mdl}, rounds=g_rounds).fit(XA[tr], XB[tr], C[tr], y[tr])
+        pred["feat_gbm"][te] = g.predict(XA[te], XB[te], C[te])
+        log("fold %d: train %d -> predict %d" % (Y, tr.sum(), te.sum()))
+    pred["elo"] = elo_p(XA, XB)
+    pred["glicko"] = glicko_p(rows)
+
+    keep = dates >= TRAIN[0]
+    out = {"ids": [r["id"] for r, k in zip(rows, keep) if k], "dates": dates[keep].tolist(), "y": y[keep],
+           "pred": {k: v[keep] for k, v in pred.items()}, "rows": [r for r, k in zip(rows, keep) if k],
+           "feat_names": FEAT_NAMES, "lr_C": C_best, "lr_grid": lr_grid, "gbm": {"leaves": leaves, "rounds": g_rounds,
+           "min_data_in_leaf": g_mdl, "grid": {str(k): v for k, v in gbm_grid.items()}},
+           "lr_coefs": lr_coefs, "glicko": prep["glicko"]}
+    # production fits on everything before 2026 (for live use / export)
+    tr = dec
+    lr_all = SymLR(C_best).fit(XA[tr], XB[tr], y[tr])
+    out["lr_all"] = {"coef": lr_all.coef.tolist(), "names": FEAT_NAMES}
+    with open(os.path.join(CACHE, "experts.pkl"), "wb") as fh:
+        pickle.dump(out, fh)
+    m = keep & dec
+    for k, v in pred.items():
+        for lab, sel in (("2019-23", m & (yr <= 2023)), ("2024-25", m & (yr >= 2024))):
+            print("  %-9s %s  n=%4d  log loss %.4f" % (k, lab, sel.sum(), ll(v[sel], y[sel])))
+    log("experts done in %.0fs" % (time.time() - t0))
+
+
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])

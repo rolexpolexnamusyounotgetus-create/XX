@@ -5,7 +5,7 @@
   "status": {
     "summary": "His unbeaten UFC run ended with a majority-decision loss to Movsar Evloev (46-48, 46-48, 47-47) in a five-round main event in London (Mar 21, 2026). He out-landed Evloev 89-86 in significant strikes but gave up 9 takedowns on 10 attempts, 8 of them in rounds 4-5. Before that he knocked out Aaron Pico with a spinning back elbow (R1 3:21, UFC 319, Chicago, Aug 16, 2025) and won five-round decisions over Josh Emmett (Apr 5, 2025) and Edson Barboza (May 18, 2024). UFC record 9-1-1. Listed No. 3 at featherweight. No booking was found in this pass (web search was unavailable), and no injury is reported. Age 35.",
     "title": null,
-    "ranking": "#3 featherweight (UFC rankings as summarised by UFCalendar after UFC 333, Nov 3, 2026; relayed from research/matchup_market.md, not re-checked in this pass)",
+    "ranking": "#3 featherweight (UFC rankings as summarised by UFCalendar after UFC 333, Nov 3, 2026, via research/matchup_market.md; consistent with the same Nov 3 boards as cited independently in data/scouting/diego-lopes.json (Lopes #2) and data/scouting/jean-silva.json (Silva #5); ufc.com could not be reached on Nov 6)",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -60,7 +60,7 @@
     "spinning": 0.12,
     "knee": 0.12,
     "elbow": 0.08,
-    "notes": "Target split from fighters.json: decayed significant attempts are 74% head, 16% body, 10% legs (landed 62/21/17), close to the featherweight league (76/14/9.5) but with more of his landed strikes going low. Leg weights follow the leg-strike counts against Emmett (30) and Barboza (21 of 22). Body kicks are weighted above body punches because 87% of decayed landed strikes come at distance. Spinning (0.12), knee (0.12) and elbow (0.08) are higher than for most featherweights because two of his three UFC KOs were a spinning back elbow (Pico) and a clinch knee (Amirkhani). The jab leads as a judgment for a long-reach range fighter; ufcstats does not record technique and no scouting breakdown could be opened this pass."
+    "notes": "Target split from fighters.json: decayed significant attempts are 74% head, 16% body, 10% legs (landed 62/21/17), close to the featherweight league (76/14/9.5) but with more of his landed strikes going low. Leg weights follow the leg-strike counts against Emmett (30) and Barboza (21 of 22). Body kicks are weighted above body punches as a judgment for a long-range kickboxer (87% of decayed landed strikes come at distance; ufcstats does not split punches from kicks). Spinning (0.12), knee (0.12) and elbow (0.08) are higher than for most featherweights because two of his three UFC KOs were a spinning back elbow (Pico) and a clinch knee (Amirkhani). The jab leads as a judgment for a long-reach range fighter; ufcstats does not record technique and no scouting breakdown could be opened this pass."
   },
   "appearance": {
     "build": "5 ft 9 in with a 73 in reach (ufcstats): long arms for a featherweight; has fought his whole UFC career at featherweight",

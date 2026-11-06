@@ -34,12 +34,14 @@ Outputs: data/derived/durability.json (coefficients, held-out metrics, engine pa
 walk-forward multipliers for every backtest entry) and research/model_durability.md (written by hand from the
 printed results and the JSON).
 """
+import os
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")          # small dense solves: threads only add contention
 import argparse
 import bisect
 import datetime as dt
 import json
 import math
-import os
 import sys
 import time
 from collections import Counter, defaultdict
@@ -742,3 +744,128 @@ def overdispersion(X, r, mask, spec):
         out[tag]["direction_lognormal_sd"] = round(math.sqrt(math.log1p(vd)), 4)
     return out
 
+
+
+def pairwise(X, res, mask, pairs):
+    out = []
+    for a, b in pairs:
+        da = pois_dev(res[a]["y"], res[a]["mu"])[mask]
+        db = pois_dev(res[b]["y"], res[b]["mu"])[mask]
+        d = fight_diff(X, mask, da, db)
+        out.append({"model": a, "vs": b, "dev_diff": round(d["total"], 2), "se": round(d["se_total"], 2)})
+    return out
+
+
+def ebslope(X, r, mask):
+    """Calibration slopes of the walk-forward fighter effects: free coefficients on log chin and log power."""
+    w = r["walk"]
+    Z = np.column_stack([np.ones(len(X)), np.log(w["chin"]), np.log(w["pow"])])
+    off = r["lin"] + np.log(np.where(r["E"] > 0, r["E"], 1)) + r["lv"] + r["xo"]
+    b, cov, _ = pois_fit(Z[mask], r["y"][mask], off[mask])
+    se = np.sqrt(np.diag(cov))
+    return {"intercept": round(float(b[0]), 4), "chin_slope": round(float(b[1]), 4), "chin_se": round(float(se[1]), 4),
+            "pow_slope": round(float(b[2]), 4), "pow_se": round(float(se[2]), 4)}
+
+
+def within_fighter(X, r, mask, zcols):
+    """Fixed-effects (conditional) Poisson on the defender: only within-fighter changes identify the terms.
+    Offsets hold the rest of the final model (level, division, context, attacker terms, attacker power)."""
+    D = r["D"]
+    names = ["const"] + r["cols"]
+    keep = [i for i, n in enumerate(names) if not n.startswith("d_")]
+    off = (D[:, keep] @ r["b"][keep] + np.log(np.where(r["E"] > 0, r["E"], 1)) + r["lv"] + r["xo"]
+           + np.log(r["walk"]["pow"]))
+    Z = np.column_stack([X[c].to_numpy(float) for c in zcols])
+    m = mask.copy()
+    grp = X["def"].to_numpy()
+    y = r["y"]
+    Ytot = pd.Series(y[m]).groupby(grp[m]).sum()
+    good = set(Ytot[Ytot > 0].index)
+    m &= np.array([g in good for g in grp])
+    Zm, ym, om, gm = Z[m], y[m], off[m], grp[m]
+    codes, uniq = pd.factorize(gm)
+    G = len(uniq)
+    g = np.zeros(Z.shape[1])
+    for _ in range(100):
+        eta = om + Zm @ g
+        mu = np.exp(eta)
+        S = np.bincount(codes, mu, G)
+        Yg = np.bincount(codes, ym, G)
+        pi = mu / S[codes]
+        resid = ym - Yg[codes] * pi
+        score = Zm.T @ resid
+        # conditional information: sum_i Y_i [ sum_j pi z z' - (sum_j pi z)(sum_j pi z)' ]
+        zbar = np.vstack([np.bincount(codes, pi * Zm[:, k], G) for k in range(Zm.shape[1])]).T
+        H = (Zm * (Yg[codes] * pi)[:, None]).T @ Zm - (zbar * Yg[:, None]).T @ zbar
+        st = np.linalg.solve(H, score)
+        g += st
+        if np.max(np.abs(st)) < 1e-9:
+            break
+    cov = np.linalg.inv(H)
+    sc = Zm * resid[:, None]
+    meat = np.zeros_like(H)
+    for k in range(G):
+        pass
+    sg = np.vstack([np.bincount(codes, sc[:, k], G) for k in range(Zm.shape[1])]).T
+    meat = sg.T @ sg
+    covc = cov @ meat @ cov * G / (G - 1)
+    return {"terms": [{"term": c, "coef": round(float(b), 5), "se": round(float(s), 5), "se_cluster": round(float(sc_), 5)}
+                      for c, b, s, sc_ in zip(zcols, g, np.sqrt(np.diag(cov)), np.sqrt(np.diag(covc)))],
+            "fighters": int(G), "rows": int(m.sum()), "kd": int(ym.sum()),
+            "cov_cluster": covc.tolist()}
+
+
+def claim_age(X, mask_all):
+    """Replicate research/volkanovski.md's league Poisson fit (KDs absorbed, offset log head strikes absorbed,
+    defender and attacker years past 30, all divisions) and its variants."""
+    out = {}
+    m = mask_all & (X.H.fillna(0).to_numpy() > 0)
+    y = X.y.fillna(0).to_numpy(float)
+    dh = np.clip(X.d_age.to_numpy(float) - 30, 0, None)
+    ah = np.clip(X.a_age.to_numpy(float) - 30, 0, None)
+    ok = m & np.isfinite(dh) & np.isfinite(ah)
+    for tag, expo in (("all_head", X.H.to_numpy(float)), ("standing_head", X.E.to_numpy(float))):
+        okk = ok & (expo > 0)
+        Z = np.column_stack([np.ones(okk.sum()), dh[okk], ah[okk]])
+        b, cov, _ = pois_fit(Z, y[okk], np.log(expo[okk]))
+        se = np.sqrt(np.diag(cov))
+        out[tag] = {"baseline": round(math.exp(b[0]), 5), "defender_past30": round(float(b[1]), 4),
+                    "defender_se": round(float(se[1]), 4), "attacker_past30": round(float(b[2]), 4),
+                    "attacker_se": round(float(se[2]), 4), "rows": int(okk.sum())}
+    return out
+
+
+def win_size_check(X, fit_mask):
+    """Win probability ~ Elo logit + class moves (one row per fight, both orientations averaged by symmetry):
+    replicates research/matchup_market.md's 'no size tax after Elo control' with the same and richer controls."""
+    one = X[fit_mask & (X.side_def == "B").to_numpy()].copy()     # row = A attacking B; outcome A wins
+    one = one[one.winner.isin(["A", "B"])]
+    y = (one.winner == "A").to_numpy(float)
+    elo = one.elo_diff.to_numpy(float)
+    mvA, mvB = one.a_mv_cls.to_numpy(float), one.d_mv_cls.to_numpy(float)
+    lbsA, lbsB = one.a_mv_lbs.to_numpy(float), one.d_mv_lbs.to_numpy(float)
+    ageA, ageB = one.a_age.fillna(30).to_numpy(float), one.d_age.fillna(30).to_numpy(float)
+    res = {}
+    # symmetric design: differences only, no intercept beyond a corner term
+    Z1 = np.column_stack([np.ones(len(y)), elo, mvA - mvB])
+    b, cov, _ = logit_fit(Z1, y)
+    se = np.sqrt(np.diag(cov))
+    res["elo_plus_class_move"] = {"elo": round(float(b[1]), 4), "class_move_up": round(float(b[2]), 4),
+                                  "se": round(float(se[2]), 4), "fights": int(len(y))}
+    sel = (np.abs(mvA - mvB) == 1)
+    Z2 = Z1[sel]
+    b2, cov2, _ = logit_fit(Z2, y[sel])
+    res["one_class_apart_only"] = {"class_move_up": round(float(b2[2]), 4), "se": round(float(np.sqrt(cov2[2, 2])), 4),
+                                   "fights": int(sel.sum())}
+    Z3 = np.column_stack([Z1, ageA - ageB, np.clip(ageA - 34, 0, None) - np.clip(ageB - 34, 0, None),
+                          (one.a_kol_r + one.a_kol_o - one.d_kol_r - one.d_kol_o).to_numpy(float)])
+    b3, cov3, _ = logit_fit(Z3, y)
+    se3 = np.sqrt(np.diag(cov3))
+    res["elo_move_age_kolosses"] = {"class_move_up": round(float(b3[2]), 4), "se": round(float(se3[2]), 4),
+                                    "age_diff": round(float(b3[3]), 4), "age_diff_se": round(float(se3[3]), 4),
+                                    "past34_diff": round(float(b3[4]), 4), "past34_se": round(float(se3[4]), 4),
+                                    "ko_losses_diff": round(float(b3[5]), 4), "ko_losses_se": round(float(se3[5]), 4)}
+    Z4 = np.column_stack([np.ones(len(y)), elo, lbsA - lbsB])
+    b4, cov4, _ = logit_fit(Z4, y)
+    res["elo_plus_lbs_move_per10"] = {"per_10lb_up": round(float(10 * b4[2]), 4), "se": round(float(10 * np.sqrt(cov4[2, 2])), 4)}
+    return res

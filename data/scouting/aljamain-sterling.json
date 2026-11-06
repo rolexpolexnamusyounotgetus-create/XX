@@ -3,11 +3,11 @@
   "name": "Aljamain Sterling",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC bantamweight champion. He won the belt from Petr Yan by DQ at UFC 259 (2021), defended it against Yan, TJ Dillashaw and Henry Cejudo, and lost it to Sean O'Malley by TKO at UFC 292 (Aug 19, 2023). At featherweight he is 3-1: UD over Calvin Kattar (UFC 300, Apr 13, 2024), UD loss to Movsar Evloev (UFC 310, Dec 7, 2024), 50-45 x3 over Brian Ortega at a 153 lb catchweight after Ortega missed weight (Shanghai, Aug 23, 2025) and 49-45 x3 over Youssef Zalal in a five-round main event (Las Vegas, Apr 25, 2026). He is reported booked against Kevin Vallejos in Doha on Nov 21, 2026, and Volkanovski's camp has named that winner as a possible title challenger. Age 37.",
+    "summary": "Former UFC bantamweight champion. He won the belt from Petr Yan by DQ at UFC 259 (2021), defended it against Yan, TJ Dillashaw and Henry Cejudo, and lost it to Sean O'Malley by TKO at UFC 292 (Aug 19, 2023). At featherweight he is 3-1: UD over Calvin Kattar (UFC 300, Apr 13, 2024), UD loss to Movsar Evloev (UFC 310, Dec 7, 2024), 50-45 x3 over Brian Ortega at a 153 lb catchweight after Ortega missed weight (Shanghai, Aug 23, 2025) and 49-45 x3 over Youssef Zalal in a five-round main event (Las Vegas, Apr 25, 2026). He is reported booked against Kevin Vallejos at UFC Fight Night 294 in Doha on Nov 21, 2026, and Volkanovski's camp has named that winner as a possible title challenger. Age 37.",
     "title": null,
-    "ranking": "#4 featherweight (UFC rankings as summarised by UFCalendar after UFC 333, Nov 3, 2026; relayed from research/matchup_market.md, not re-checked in this pass)",
+    "ranking": "#4 featherweight (UFC rankings as summarised by UFCalendar after UFC 333, Nov 3, 2026, via research/matchup_market.md; consistent with the same Nov 3 boards as cited independently in data/scouting/diego-lopes.json (Lopes #2) and data/scouting/jean-silva.json (Silva #5); ufc.com could not be reached on Nov 6)",
     "active": true,
-    "next_fight": "Kevin Vallejos, featherweight, UFC Fight Night, Doha, Qatar, Nov 21, 2026 (reported by MMA Insight and Heavy; not re-checked in this pass)",
+    "next_fight": "Kevin Vallejos, featherweight, UFC Fight Night 294, ABHA Arena, Doha, Qatar, Nov 21, 2026 (reported by MMA Insight and Heavy; the event number, venue and date match the UFC Fight Night 294 sources in data/scouting/jiri-prochazka.json; still reported as planned around Oct 30 per research/matchup_market.md; not re-opened on Nov 6)",
     "injuries": [],
     "sources": [
       "http://ufcstats.com/fighter-details/cb696ebfb6598724",
@@ -29,17 +29,17 @@
     "signature": [
       "back takes and back-control finishes: rear-naked choke on Cory Sandhagen at 1:28 of R1 (UFC 250, 2020), punches from back control on TJ Dillashaw (UFC 280, 2022), Suloev stretch from back control on Cody Stamann (UFC 228, 2018)",
       "chained takedown attempts into long rides: 8 of 13 takedowns and 10:43 of control vs Calvin Kattar (UFC 300); 6 of 11 and 13:49 vs Youssef Zalal (2026)",
-      "body and leg kicking at range: 50 body and 34 leg strikes landed vs Henry Cejudo (UFC 288); 26 of 26 leg strikes vs Brian Ortega (2025)",
+      "body and leg strikes at range: 50 body and 34 leg strikes landed vs Henry Cejudo (UFC 288); 26 of 26 leg strikes vs Brian Ortega (2025); ufcstats records the target, not whether it was a kick or a punch",
       "clinch work: 15% of his landed significant strikes come in the clinch (featherweight league 9%)"
     ],
     "weaknesses": [
       "no knockout power: 0 knockdowns in 23 UFC fights",
       "stopped twice by strikes: a Marlon Moraes knee (R1, 2017) and Sean O'Malley at UFC 292 (knockdown, then punches on the ground, R2 0:51)",
-      "takedown defense 45% career; Evloev took him down 4 of 5 times with 6:09 of control and out-struck him 136-45 in total strikes in a UD win (UFC 310)",
+      "takedown defense 45% career; Evloev took him down 4 of 5 times with 6:09 of control and out-struck him 136-45 in total strikes in a UD win (UFC 310), although Sterling also landed 6 of 8 takedowns and led significant strikes 12-8",
       "low stand-up output since moving up: 2.76 significant strikes landed per minute over the last 3 years (featherweight league 4.12)",
       "small frame for 145 (5 ft 7 in) and age 37"
     ],
-    "summary": "A wrestler who chains takedown attempts, takes the back and rides for long stretches; at range he kicks the body and legs far more than most featherweights (36% of attempts below the head, league 24%). He is very hard to hit cleanly (opponents land 29% of head strikes career, league 39%) but has never scored a UFC knockdown, so his wins come on control or from the back. Strong wrestlers who match him on the mat, like Evloev, can beat him on the cards.",
+    "summary": "A wrestler who chains takedown attempts, takes the back and rides for long stretches; at range he goes to the body and legs far more than most featherweights (36% of attempts below the head, league 24%). He is very hard to hit cleanly (opponents land 29% of head strikes career, league 39%) but has never scored a UFC knockdown, so his wins come on control or from the back. Strong wrestlers who match him on the mat, like Evloev, can beat him on the cards.",
     "sources": [
       "http://ufcstats.com/fighter-details/cb696ebfb6598724",
       "http://ufcstats.com/fight-details/c03b6b6ce5d03276",

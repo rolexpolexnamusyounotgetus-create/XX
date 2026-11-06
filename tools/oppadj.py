@@ -878,3 +878,395 @@ def boot_ll(a, b, nb=2000, seed=11):
     idx = rng.integers(0, len(d), size=(nb, len(d)))
     bs = d[idx].mean(1)
     return float(d.mean()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))
+
+
+def family_base(name, L):
+    """The engine-side league baseline each family's rate is expressed against (per row of L)."""
+    return {"dAtt": L.dAtt, "cAtt": L.P_c_att, "gAtt": L.gAtt, "tdAtt": L.tdAtt, "ctrl": L.P_ctrl,
+            "topSkill": np.ones(L.n), "sub": L.sub, "kd": L.P_kd_per_h, "tdAcc": logit(L.P_td_acc)}.get(name)
+
+
+def side_factors(name, o, d, c, R, L, cal):
+    """Adjustment factors relative to the engine's raw rates R (same sides): multiplicative for rates,
+    odds multipliers for probabilities. cal: calibration-neutral term (count: multiplier per side,
+    binomial: logit shift per side) so the engine's global scales tuned on raw rates stay valid."""
+    kind, (fo, fd) = FAMILIES[name][0], FAMILIES[name][1]
+    if name in ("accH", "accB", "accL"):
+        t = "HBL".index(name[-1])
+        return {"acc_" + str(t): np.exp(c / 2 + o - R["accSh"][:, t] + cal),
+                "accAg_" + str(t): np.exp(c / 2 + d - R["accAgSh"][:, t] + cal)}
+    base = family_base(name, L)
+    if name == "tdAcc":
+        lo = logit(R["tdAcc"])
+        ld = logit(R["tdAccAg"])
+        return {fo: np.exp(base + c / 2 + o + cal - lo), fd: np.exp(base + c / 2 + d + cal - ld)}
+    return {fo: base * np.exp(c / 2 + o) * cal / R[fo], fd: base * np.exp(c / 2 + d) * cal / R[fd]}
+
+
+FACTOR_FIELDS = ["dAtt", "dAttAg", "cAtt", "cAttAg", "gAtt", "gAttAg", "tdAtt", "tdAttAg", "tdAcc", "tdAccAg",
+                 "ctrl", "octrl", "topSkill", "escWeak", "sub", "subAg", "pow", "chin"]
+
+
+def pack_factors(F, j):
+    out = {k: rnd(F[k][j], 3) for k in FACTOR_FIELDS}
+    out["acc"] = [rnd(F["acc_%d" % t][j], 3) for t in range(3)]
+    out["accAg"] = [rnd(F["accAg_%d" % t][j], 3) for t in range(3)]
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--procs", type=int, default=max(1, (os.cpu_count() or 2)))
+    ap.add_argument("--quick", action="store_true", help="small grid (two half-lives, every other k)")
+    ap.add_argument("--boot", type=int, default=2000)
+    ap.add_argument("--out", default=os.path.join(OUT, "oppadj.json"))
+    args = ap.parse_args()
+    t0 = time.time()
+    p = engine_params()
+    D = Data(p)
+    D.sides_by_date = _sides_by_date(D)
+    ev = Evaluator(D, p)
+    hls = [730, 1460] if args.quick else HL_GRID
+    kg = {n: (g[::2] if args.quick else g) for n, (_, _, _, g, _) in FAMILIES.items()}
+
+    # ---- baselines: league-only and the engine's raw shrunk rates (backtest S, half-life 730, params3 k)
+    res = {"families": {}}
+    eng_sc, null_sc = {}, {}
+    for name in FAMILIES:
+        null_sc[name] = ev.score(name, ev.null_pred(name))
+        eng_sc[name] = ev.score(name, ev.pred_raw(name, ev.engine_R))
+    print("baselines done %.0f s" % (time.time() - t0))
+
+    # ---- raw shrunk rates re-tuned (half-life and separate offense/defense k), same engine formulas
+    raw, Ss = raw_scan(D, ev, p, hls)
+    print("raw scan done %.0f s" % (time.time() - t0))
+
+    # ---- opponent-adjusted (full) and division/era-normalized without opponents (nosos)
+    jobs = []
+    for name in FAMILIES:
+        for hl in hls:
+            for ko, kd in kgrid_pairs(kg[name]):
+                jobs.append((name, hl, ko, kd, "full"))
+            for k in kg[name]:
+                jobs.append((name, hl, k, k, "nosos"))
+    print("running %d walk-forward fits on %d processes" % (len(jobs), args.procs))
+    G = run_grid(D, p, jobs, args.procs)
+    print("grid done %.0f s" % (time.time() - t0))
+
+    chosen = {}
+    for name, (kind, fields, kname, _, label) in FAMILIES.items():
+        full_sc, nosos_sc = {}, {}
+        for hl in hls:
+            for ko, kd in kgrid_pairs(kg[name]):
+                so, sd, sc, _ = G[(name, hl, ko, kd, "full")]
+                s_ = ev.score(name, ev.pred_adj(name, so.astype(float), sd.astype(float), sc.astype(float)))
+                s_.pop("dev")
+                full_sc[(hl, ko, kd)] = s_
+                so1 = G[(name, hl, ko, ko, "nosos")][0].astype(float)
+                sd1 = G[(name, hl, kd, kd, "nosos")][1].astype(float)
+                sc1 = G[(name, hl, ko, ko, "nosos")][2].astype(float)
+                s2 = ev.score(name, ev.pred_adj(name, so1, sd1, sc1))
+                s2.pop("dev")
+                nosos_sc[(hl, ko, kd)] = s2
+        bf, bfs = select(full_sc)
+        bn, bns = select(nosos_sc)
+        br, brs = select(raw[name])
+        # held-out deviance arrays for the bootstrap
+        so, sd, sc, _ = G[(name,) + bf + ("full",)]
+        so, sd, sc = so.astype(float), sd.astype(float), sc.astype(float)
+        dv_full = ev.score(name, ev.pred_adj(name, so, sd, sc))
+        dv_eng = ev.score(name, ev.pred_raw(name, ev.engine_R))
+        Rr = fighter_rates(Ss[br[0]], D.sL, p, k={kname: {fields[0]: br[1], fields[1]: br[2]}})
+        dv_raw = ev.score(name, ev.pred_raw(name, Rr))
+        so1 = G[(name, bn[0], bn[1], bn[1], "nosos")][0].astype(float)
+        sd1 = G[(name, bn[0], bn[2], bn[2], "nosos")][1].astype(float)
+        sc1 = G[(name, bn[0], bn[1], bn[1], "nosos")][2].astype(float)
+        dv_nos = ev.score(name, ev.pred_adj(name, so1, sd1, sc1))
+        te = ev.fam[name]["test"]
+        boots = {"vs_engine_raw": boot_delta(D, dv_eng["dev"], dv_full["dev"], te, args.boot),
+                 "vs_raw_tuned": boot_delta(D, dv_raw["dev"], dv_full["dev"], te, args.boot),
+                 "vs_nosos_tuned": boot_delta(D, dv_nos["dev"], dv_full["dev"], te, args.boot)}
+        hl_scan = {}
+        for hl in hls:
+            c_ = min((k for k in full_sc if k[0] == hl), key=lambda k: full_sc[k]["tune"])
+            r_ = min((k for k in raw[name] if k[0] == hl), key=lambda k: raw[name][k]["tune"])
+            hl_scan[str(hl)] = {"full_best_k": [c_[1], c_[2]], "full_tune": rnd(full_sc[c_]["tune"], 6),
+                                "full_test": rnd(full_sc[c_]["test"], 6),
+                                "raw_best_k": [r_[1], r_[2]], "raw_tune": rnd(raw[name][r_]["tune"], 6),
+                                "raw_test": rnd(raw[name][r_]["test"], 6)}
+        k_scan = {"%s,%s" % (k[1], k[2]): [rnd(v["tune"], 6), rnd(v["test"], 6)]
+                  for k, v in full_sc.items() if k[0] == bf[0]}
+        test_best_cfg = min(full_sc, key=lambda c: full_sc[c]["test"])
+        n_te = int(te.sum())
+        res["families"][name] = {
+            "label": label, "kind": kind, "engine_fields": list(fields), "engine_k_param": kname,
+            "engine_k_value": p[kname],
+            "n_tune_sides": int(ev.fam[name]["tune"].sum()), "n_test_sides": n_te,
+            "chosen": {"half_life_days": bf[0], "k_offense": bf[1], "k_defense": bf[2],
+                       "k_unit": {"count": "exposure units (see k_unit_note)", "binom": "attempts"}[kind]},
+            "deviance": {
+                "league_only": {"tune": rnd(null_sc[name]["tune"], 6), "test": rnd(null_sc[name]["test"], 6)},
+                "engine_raw": {"tune": rnd(eng_sc[name]["tune"], 6), "test": rnd(eng_sc[name]["test"], 6),
+                               "cal": rnd(eng_sc[name].get("scale", eng_sc[name].get("shift")), 4),
+                               "test_obs_over_pred_uncal": rnd(eng_sc[name]["test_obs_over_pred_uncal"], 4)},
+                "raw_tuned": {"tune": rnd(brs["tune"], 6), "test": rnd(brs["test"], 6),
+                              "half_life_days": br[0], "k_offense": br[1], "k_defense": br[2],
+                              "k_unit": "engine parameter units (%s)" % kname},
+                "nosos_tuned": {"tune": rnd(bns["tune"], 6), "test": rnd(bns["test"], 6),
+                                "half_life_days": bn[0], "k_offense": bn[1], "k_defense": bn[2]},
+                "opp_adjusted": {"tune": rnd(bfs["tune"], 6), "test": rnd(bfs["test"], 6),
+                                 "cal": rnd(bfs.get("scale", bfs.get("shift")), 4),
+                                 "test_obs_over_pred_uncal": rnd(bfs["test_obs_over_pred_uncal"], 4)},
+            },
+            "test_delta_bootstrap_95": {k: {"delta": rnd(v[0], 5), "lo": rnd(v[1], 5), "hi": rnd(v[2], 5),
+                                            "n_fights": v[3],
+                                            "pct_of_baseline": rnd(100 * v[0] / max(
+                                                {"vs_engine_raw": eng_sc[name]["test"], "vs_raw_tuned": brs["test"],
+                                                 "vs_nosos_tuned": bns["test"]}[k], 1e-9), 3)}
+                                        for k, v in boots.items()},
+            "test_best_config_for_reference": {"half_life_days": test_best_cfg[0], "k_offense": test_best_cfg[1],
+                                               "k_defense": test_best_cfg[2],
+                                               "test": rnd(full_sc[test_best_cfg]["test"], 6)},
+            "half_life_scan": hl_scan,
+            "k_scan_at_chosen_half_life": k_scan,
+        }
+        chosen[name] = {"cfg": bf, "so": so, "sd": sd, "sc": sc, "cal_adj": bfs.get("scale", bfs.get("shift")),
+                        "cal_eng": eng_sc[name].get("scale", eng_sc[name].get("shift")),
+                        "raw_cfg": br, "R_raw": Rr, "cal_raw": brs.get("scale", brs.get("shift"))}
+        dl = res["families"][name]["test_delta_bootstrap_95"]["vs_engine_raw"]
+        print("%-9s hl %4d k %s/%s | test dev engine %.0f raw-tuned %.0f nosos %.0f adj %.0f | "
+              "adj vs engine %.1f%% [%.0f, %.0f]"
+              % (name, bf[0], bf[1], bf[2], eng_sc[name]["test"], brs["test"], bns["test"], bfs["test"],
+                 dl["pct_of_baseline"], dl["lo"], dl["hi"]))
+
+    # ---- composites: per-fight strikes / KD / TD conditional on the fight's time in each position
+    def parts_for(which):
+        o_ = ev.opp
+        P = {}
+        for name in ("dAtt", "cAtt", "gAtt", "tdAtt"):
+            f = ev.fam[name]
+            if which == "adj":
+                ch = chosen[name]
+                P[name] = ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"]) * ch["cal_adj"]
+            else:
+                R_ = ev.engine_R if which == "engine" else chosen[name]["R_raw"]
+                cal = chosen[name]["cal_eng"] if which == "engine" else chosen[name]["cal_raw"]
+                P[name] = ev.pred_raw(name, R_) * cal
+        sh = np.zeros((len(o_), 3))
+        for t, name in enumerate(("accH", "accB", "accL")):
+            f = ev.fam[name]
+            if which == "adj":
+                ch = chosen[name]
+                sh[:, t] = ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"]) - f["Lb"] + ch["cal_adj"]
+            else:
+                R_ = ev.engine_R if which == "engine" else chosen[name]["R_raw"]
+                cal = chosen[name]["cal_eng"] if which == "engine" else chosen[name]["cal_raw"]
+                sh[:, t] = ev.pred_raw(name, R_) - f["Lb"] + cal
+        fk = ev.fam["kd"]
+        if which == "adj":
+            ch = chosen["kd"]
+            kdf = np.exp(ch["sc"] + ch["so"] + ch["sd"][o_]) * ch["cal_adj"]
+            ch = chosen["tdAcc"]
+            tdz = ev.pred_adj("tdAcc", ch["so"], ch["sd"], ch["sc"]) + ch["cal_adj"]
+        else:
+            R_ = ev.engine_R if which == "engine" else chosen["kd"]["R_raw"]
+            cal = chosen["kd"]["cal_eng"] if which == "engine" else chosen["kd"]["cal_raw"]
+            kdf = R_["pow"] / fk["Lb"] * R_["chin"][o_] / fk["Lb"] * cal
+            R_ = ev.engine_R if which == "engine" else chosen["tdAcc"]["R_raw"]
+            cal = chosen["tdAcc"]["cal_eng"] if which == "engine" else chosen["tdAcc"]["cal_raw"]
+            tdz = ev.pred_raw("tdAcc", R_) + cal
+        return {"mu_d": P["dAtt"], "mu_c": P["cAtt"], "mu_g": P["gAtt"], "sh": sh, "kdf": kdf,
+                "mu_tdatt": P["tdAtt"], "td_z": tdz}
+
+    Vs = D.V[D.s_row]
+    actual = {"sig_att": Vs[:, KI["d_att"]] + Vs[:, KI["c_att"]] + Vs[:, KI["g_att"]],
+              "sig_lnd": Vs[:, KI["d_lnd"]] + Vs[:, KI["c_lnd"]] + Vs[:, KI["g_lnd"]],
+              "h_lnd": Vs[:, KI["h_lnd"]], "kd": Vs[:, KI["kd"]], "td_lnd": Vs[:, KI["td_lnd"]]}
+    okc = Vs[:, KI["min"]] >= 0.5
+    comp = {w: composites(D, ev, p, parts_for(w)) for w in ("engine", "raw_tuned", "adj")}
+    res["composites"] = {}
+    for k in actual:
+        y = actual[k]
+        row = {}
+        dvs = {}
+        for w in comp:
+            mu = comp[w][k]
+            tu, te = okc & D.s_tune, okc & D.s_test
+            s = y[tu].sum() / mu[tu].sum()          # one level constant per composite, fit on tune
+            dv = pois_dev(y, mu * s)
+            dvs[w] = dv
+            row[w] = {"test_dev": rnd(dv[te].sum(), 6), "test_mae": rnd(np.abs(y[te] - mu[te] * s).mean(), 4),
+                      "test_rmse": rnd(np.sqrt(((y[te] - mu[te] * s) ** 2).mean()), 4), "tune_scale": rnd(s, 4)}
+        te = okc & D.s_test
+        bd = boot_delta(D, dvs["engine"], dvs["adj"], te, args.boot)
+        br_ = boot_delta(D, dvs["raw_tuned"], dvs["adj"], te, args.boot)
+        # MAE bootstrap (by fight)
+        ae_e = np.abs(y - comp["engine"][k] * row["engine"]["tune_scale"])
+        ae_a = np.abs(y - comp["adj"][k] * row["adj"]["tune_scale"])
+        bm = boot_delta(D, ae_e, ae_a, te, args.boot)
+        row["adj_vs_engine_dev_95"] = [rnd(bd[0], 5), rnd(bd[1], 5), rnd(bd[2], 5)]
+        row["adj_vs_raw_tuned_dev_95"] = [rnd(br_[0], 5), rnd(br_[1], 5), rnd(br_[2], 5)]
+        row["adj_vs_engine_mae_per_side_95"] = [rnd(bm[0] / te.sum(), 4), rnd(bm[1] / te.sum(), 4),
+                                                rnd(bm[2] / te.sum(), 4)]
+        row["n_test_sides"] = int(te.sum())
+        res["composites"][k] = row
+        print("composite %-7s test dev engine %.0f raw-tuned %.0f adj %.0f | MAE %.2f / %.2f / %.2f"
+              % (k, row["engine"]["test_dev"], row["raw_tuned"]["test_dev"], row["adj"]["test_dev"],
+                 row["engine"]["test_mae"], row["raw_tuned"]["test_mae"], row["adj"]["test_mae"]))
+
+    # ---- winner proxy: pre-fight expected output differences only (symmetric, no intercept)
+    def rates_for(which):
+        P = parts_for(which)
+        out = {"sh": P["sh"], "kdf": P["kdf"], "td_z": P["td_z"]}
+        for name in ("dAtt", "cAtt", "gAtt", "tdAtt", "ctrl"):
+            f = ev.fam[name]
+            if which == "adj":
+                ch = chosen[name]
+                mu = ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"]) * ch["cal_adj"]
+            else:
+                R_ = ev.engine_R if which == "engine" else chosen[name]["R_raw"]
+                cal = chosen[name]["cal_eng"] if which == "engine" else chosen[name]["cal_raw"]
+                mu = ev.pred_raw(name, R_) * cal
+            out[name] = mu / np.maximum(f["E"], 1e-9)
+            bad = f["E"] <= 1e-9          # rate when this fight had no exposure: recompute from the linear form
+            if bad.any():
+                if which == "adj":
+                    ch = chosen[name]
+                    out[name][bad] = (f["Lb"] * np.exp(ch["sc"] + ch["so"] + ch["sd"][ev.opp]) * ch["cal_adj"])[bad]
+                else:
+                    E1 = dict(f)
+                    tmp = ev.fam[name]["E"].copy()
+                    ev.fam[name]["E"] = np.ones_like(tmp)
+                    R_ = ev.engine_R if which == "engine" else chosen[name]["R_raw"]
+                    cal = chosen[name]["cal_eng"] if which == "engine" else chosen[name]["cal_raw"]
+                    out[name][bad] = (ev.pred_raw(name, R_) * cal)[bad]
+                    ev.fam[name]["E"] = tmp
+        return out
+
+    feats = {w: winner_features(D, ev, p, rates_for(w)) for w in ("engine", "raw_tuned", "adj")}
+    wp = winner_proxy(D, {"engine": feats["engine"], "raw_tuned": feats["raw_tuned"], "adj": feats["adj"],
+                          "elo": feats["adj"], "engine+elo": feats["engine"], "adj+elo": feats["adj"]})
+    res["winner_proxy"] = {k: {kk: vv for kk, vv in v.items() if kk != "_ll"} for k, v in wp.items()}
+    for a_, b_ in (("engine", "adj"), ("raw_tuned", "adj"), ("engine+elo", "adj+elo"), ("elo", "adj+elo")):
+        m, lo, hi = boot_ll(wp[a_]["_ll"], wp[b_]["_ll"], args.boot)
+        res["winner_proxy"]["delta_%s_minus_%s" % (a_, b_)] = [rnd(m, 4), rnd(lo, 4), rnd(hi, 4)]
+    for k, v in res["winner_proxy"].items():
+        print("winner proxy", k, v if not isinstance(v, dict) else
+              "ll %.4f brier %.4f acc %.3f" % (v["log_loss"], v["brier"], v["accuracy"]))
+
+    # ---- per-snapshot factors (relative to the engine's raw rates from the same backtest S)
+    F = {}
+    for name, ch in chosen.items():
+        kind = FAMILIES[name][0]
+        if kind == "count":
+            cal = math.sqrt(ch["cal_adj"] / ch["cal_eng"])
+        else:
+            cal = (ch["cal_adj"] - ch["cal_eng"]) / 2
+        F.update(side_factors(name, ch["so"], ch["sd"], ch["sc"], ev.engine_R, D.sL, cal))
+    snaps = {}
+    for i, e in enumerate(D.entries):
+        snaps[e["id"]] = {"A": pack_factors(F, 2 * i), "B": pack_factors(F, 2 * i + 1)}
+    # factor spread summary (2024+ sides)
+    spread = {}
+    for k in sorted(F):
+        lf = np.log(F[k][D.s_test])
+        spread[k] = {"sd_log": rnd(lf.std(), 3), "p05": rnd(np.exp(np.percentile(lf, 5)), 3),
+                     "p50": rnd(np.exp(np.percentile(lf, 50)), 3), "p95": rnd(np.exp(np.percentile(lf, 95)), 3)}
+    res["factor_spread_test_sides"] = spread
+
+    # ---- roster factors: fit at the snapshot (every fight through it) and the engine's live raw rates
+    fj = json.load(open(os.path.join(OUT, "fighters.json")))
+    assert fj["meta"]["keys"] == KEYS
+    slugs = sorted(fj["fighters"])
+    inv = {s: i for i, s in D.pslug.items()}
+    divs = []
+    for s in slugs:
+        dv = fj["fighters"][s].get("division")
+        divs.append(("live", dv) if ("live", dv) in D.priors_by_key else ("live", "ALL"))
+    Lr = LTable(divs, D.priors_by_key, p)
+    Sr = np.array([fj["fighters"][s]["S"] for s in slugs], dtype=float)
+    Rr = fighter_rates(Sr, Lr, p)
+    T_snap = float(D.snapshot.toordinal() + 1)
+    pidx = np.array([inv.get(s, -1) for s in slugs])
+    FR = {}
+    sched = {}
+    for name, ch in chosen.items():
+        kind = FAMILIES[name][0]
+        hl, ko, kd = ch["cfg"]
+        y, E, Lb = family_arrays(name, D.V, D.L, p)
+        f = walk_count if kind == "count" else walk_binom
+        _, _, _, _, (o_all, d_all, c_all) = f(D, y, E, Lb, hl, ko, kd, "full", extra_T=T_snap)
+        has = pidx >= 0
+        o_r = np.where(has, o_all[np.maximum(pidx, 0)], 0.0)
+        d_r = np.where(has, d_all[np.maximum(pidx, 0)], 0.0)
+        cal = math.sqrt(ch["cal_adj"] / ch["cal_eng"]) if kind == "count" else (ch["cal_adj"] - ch["cal_eng"]) / 2
+        FR.update(side_factors(name, o_r, d_r, np.full(len(slugs), c_all), Rr, Lr, cal))
+        # schedule diagnostic: exposure-weighted mean opponent defense effect he faced (decayed)
+        w = np.exp(-math.log(2) / hl * (T_snap - D.day))
+        if kind == "count":
+            wt = w * E * Lb
+            num = np.bincount(D.X, wt * np.exp(d_all[D.Y]), D.NP)
+        else:
+            wt = w * E
+            num = np.bincount(D.X, wt * d_all[D.Y], D.NP)
+        den = np.bincount(D.X, wt, D.NP)
+        sc_ = np.where(den > 0, num / np.maximum(den, 1e-300), 1.0 if kind == "count" else 0.0)
+        if kind == "binom":
+            sc_ = np.exp(sc_)
+        sched[name] = np.where(has, sc_[np.maximum(pidx, 0)], 1.0)
+    roster = {}
+    for j, s in enumerate(slugs):
+        r_ = pack_factors(FR, j)
+        r_["sched"] = {k: rnd(sched[k][j], 3) for k in ("dAtt", "accH", "kd", "tdAtt", "tdAcc", "ctrl")}
+        roster[s] = r_
+
+    # ---- k in engine units (league-wide, latest priors) for the recommendation
+    Lall = league(D.live_priors["ALL"], p)
+    unit_div = {"dAtt": Lall["dist"], "gAtt": Lall["top"], "tdAtt": Lall["stand"], "sub": Lall["ground"]}
+    for name, fam in res["families"].items():
+        u = unit_div.get(name, 1.0)
+        fam["chosen"]["k_offense_engine_units"] = rnd(fam["chosen"]["k_offense"] / u, 3)
+        fam["chosen"]["k_defense_engine_units"] = rnd(fam["chosen"]["k_defense"] / u, 3)
+        fam["chosen"]["calibration_neutral_term"] = rnd(
+            math.sqrt(chosen[name]["cal_adj"] / chosen[name]["cal_eng"]) if fam["kind"] == "count"
+            else (chosen[name]["cal_adj"] - chosen[name]["cal_eng"]) / 2, 4)
+
+    meta = {
+        "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+        "snapshot": D.snapshot.isoformat(), "tool": "tools/oppadj.py", "report": "research/model_oppadj.md",
+        "tune": "%s..%s" % TUNE, "test_from": TEST_FROM, "grid": "quick" if args.quick else "full",
+        "half_life_grid": hls,
+        "engine_params_used": {k: p[k] for k in ("kPM", "kAcc", "kTdPM", "kTdAcc", "kKD", "kCtrlTD", "kTgt",
+                                                 "ctrlGroundShare")},
+        "model": ("counts: E[y] = E * L * exp(c + o_X + d_Y); probabilities: logit p = b + c + a_X + g_Y; "
+                  "fit walk-forward on every UFC fight with stats since %s before each prediction date, "
+                  "weights 0.5^(days/half_life), conjugate pseudo-data priors of k exposure units at the "
+                  "fighter's own baseline (exactly the engine's shr() when opponent effects are zero)"
+                  % MODEL_FROM.isoformat()),
+        "k_unit_note": ("count k are exposure units of each family: dAtt distance minutes, cAtt and ctrl fight "
+                        "minutes, gAtt top minutes, tdAtt standing minutes, sub ground minutes, kd landed head "
+                        "strikes, topSkill takedowns landed; binomial k are attempts. *_engine_units divide by "
+                        "the league position share the engine multiplies its k by (kPM * L.dist etc.)"),
+        "factors": ("per side, relative to src/engine3.js fighterRates on the same S (backtest S for snapshots, "
+                    "fighters.json S with live priors of his division for the roster), params3 k values above. "
+                    "Rates (dAtt dAttAg cAtt cAttAg gAtt gAttAg tdAtt tdAttAg ctrl octrl topSkill escWeak sub "
+                    "subAg pow chin) multiply R.<field>; tdAcc / tdAccAg multiply the odds of R.tdAcc / "
+                    "R.tdAccAg; acc / accAg (head, body, leg) multiply accuracy odds: R.accSh[t] += log(acc[t]), "
+                    "R.accAgSh[t] += log(accAg[t]). Factors include half the fitted level c per side and a "
+                    "calibration-neutral term so the engine's global scales tuned on raw rates stay valid. "
+                    "Task names: att_adj = dAtt (cAtt, gAtt), def_adj = accAg (and dAttAg), acc_adj = acc, "
+                    "kdpow_adj = pow, chin_adj = chin, td_adj = tdAtt and tdAcc, tddef_adj = tdAccAg."),
+        "sched": ("roster only: exposure-weighted mean of what his opponents allowed relative to average "
+                  "(> 1 = he faced leaky opponents, his raw numbers are inflated): dAtt attempts allowed, accH "
+                  "head-accuracy odds allowed, kd opponents' chin (KD per head landed allowed), tdAtt "
+                  "takedown attempts allowed, tdAcc takedown-success odds allowed, ctrl control allowed"),
+        "n_snapshots": len(snaps), "n_roster": len(roster),
+        "runtime_s": round(time.time() - t0, 1),
+    }
+    out = {"meta": meta, "results": res, "snapshots": snaps, "roster": roster}
+    n = B.write_json(args.out, out)
+    print("wrote %s (%s) in %.0f s" % (args.out, B.human(n), time.time() - t0))
+
+
+if __name__ == "__main__":
+    main()

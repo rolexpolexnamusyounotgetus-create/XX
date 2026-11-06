@@ -1370,9 +1370,9 @@
       var hand = rig.handPos(i === 0, _v3), sp = Wp[Ls.iu];
       var up = clamp((hand.y - sp.y) / (Ls.l1 + Ls.l2), -1, 1);
       if (up > 0.15) {
-        var ax = _v4.copy(Wp[Ls.iu]).sub(Wp[ks]).normalize().applyQuaternion(_q2.identity()), fwd = _v6.set(Math.sin(yaw), 0, Math.cos(yaw));
+        var ax = _v4.copy(Wp[Ls.iu]).sub(Wp[ks]).normalize();
         var axis = new V3().crossVectors(ax, YAX).normalize();
-        W[ks].premultiply(new Q().setFromAxisAngle(axis, -(up - 0.15) * 0.35));
+        W[ks].premultiply(new Q().setFromAxisAngle(axis, (up - 0.15) * 0.3));
         this.fk(Ls.iu);
       }
     }
