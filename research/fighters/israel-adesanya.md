@@ -1,13 +1,13 @@
 # Israel Adesanya ("The Last Stylebender")
 
-As of Nov 6, 2026. Switch-stance middleweight, age 37 (born Jul 22, 1989), 6'4" with an 80" reach. Dataset: `data/derived/fighters.json`, snapshot of Oct 31, 2026. Web claims come from search-result summaries, because direct page fetches were blocked in this session.
+As of Nov 6, 2026. Switch-stance middleweight, age 37 (born Jul 22, 1989), 6'4" with an 80" reach. Dataset: `data/derived/fighters.json`, snapshot of Oct 31, 2026. Re-checked on Nov 6, 2026 with direct page fetches (MMA Fighting, Sherdog, CBS Sports, NZ Herald, Wikipedia) and the ESPN/UFC studio photos.
 
 ## Current status
-- **Former two-time UFC middleweight champion**, now on a **four-fight losing streak**. His pro record is 24-6, and his last win was over Alex Pereira at UFC 287 in Apr 2023.
-- **Last fight:** Mar 28, 2026, a TKO loss to Joe Pyfer at 4:18 of R2 at UFC Seattle.
-- **After the loss:** He rejected retirement, saying he was not leaving the sport, left City Kickboxing, and now trains with a smaller camp in Sydney.
-- **Next:** He is reported (Ariel Helwani, Oct 15, 2026) to headline **UFC Saudi Arabia in Riyadh on Dec 5, 2026, against Shara Magomedov** over five rounds. No official UFC confirmation was found.
-- **Ranking:** inside the bottom half of the top 15 (#9-15 on the Oct 2026 media poll; exact spot unconfirmed).
+- **Former two-time UFC middleweight champion**, now on a **four-fight losing streak**. His pro record is 24-6 (ESPN, Sherdog, Wikipedia), and his last win was over Alex Pereira at UFC 287 in Apr 2023.
+- **Last fight:** Mar 28, 2026, a TKO loss to Joe Pyfer at 4:18 of R2 at UFC Seattle. **No injury reported.**
+- **Camp change:** He rejected retirement and split with City Kickboxing in July 2026, the gym he had trained at since 2009 (NZ Herald, Jul 10; he told Eugene Bareman in May). He now prepares with a smaller team built around him and was training at Freestyle MMA in Sydney with Alexander Volkanovski and Mauricio Ruffy in September (Sherdog, Sep 4). On Nov 5 he called it "the best I've felt in a very long time" (MMA Fighting).
+- **Next (reported, not confirmed by the UFC):** Ariel Helwani reported on Oct 15, 2026 that he will headline **UFC Fight Night 295 in Riyadh on Dec 5, 2026, against Sharabutdin "Shara Bullet" Magomedov (17-1)** over five rounds. Sherdog's fighter page and Wikipedia list it, but on Nov 5 both MMA Fighting and Sherdog still called it a rumor the promotion had not confirmed, and ESPN's UFC schedule does not list a Dec 5 card.
+- **Ranking:** **#9** at middleweight on the UFC media rankings updated Nov 3, 2026 (CBS Sports; ufcalendar.com mirror); #10 on the UFC/Meta rankings (Oct 31). Shara Magomedov is #15 on the media list.
 
 ## Recent fights
 - **L Pyfer (TKO R2, Mar 2026):** Adesanya won R1 with calf kicks, a knee to the head and body work (24-9 in sig strikes). In R2 Pyfer got him down and finished him with ground strikes; coverage describes a back take, and ufcstats lists the finish as punches from mount at 4:18. Pyfer landed 2 of 8 takedowns and 16 ground sig strikes.
@@ -20,7 +20,7 @@ As of Nov 6, 2026. Switch-stance middleweight, age 37 (born Jul 22, 1989), 6'4" 
 A **rangy kickboxer**. Analysts put feints at the core of his game. He hides a snappy jab behind a low lead hand and layers of feints, and counters opponents who over-commit. Footwork and distance management set up everything else. He chops the lead leg and calf and kicks to the body from range. 95% of his sig strikes land at distance. He offers almost no offensive wrestling.
 
 **Strengths:** distance, feints, counters, leg and body kicks, and early-round output.
-**Weaknesses:** He is taken down and controlled by strong grapplers (DDP, Pyfer). Pressure fighters can walk him down (Strickland). He has three straight stoppage losses, and his age and losing streak count against him.
+**Weaknesses:** He is taken down and controlled by strong grapplers (DDP, Pyfer). Pressure fighters can walk him down (Strickland). He has three straight stoppage losses, and his age and losing streak count against him. The new camp is untested in a fight.
 
 ## Durability and cardio
 He has **three KO/TKO losses** (Pereira 2022, Imavov 2025, Pyfer 2026) and two UFC knockdowns absorbed. Decayed opponent accuracy against him has risen to 48.5%, from 44.2% career. Cardio has historically been good. In his 15 five-round fights, output in R2-R5 runs 1.18-1.44x his R1 output, but his recent fights have ended in R2.
@@ -31,21 +31,38 @@ He has **three KO/TKO losses** (Pereira 2022, Imavov 2025, Pyfer 2026) and two U
 - Takedown defense 72% (76% career). Opponents control him 14% of the time; he lands about 0.06 takedowns per 15 minutes.
 - Elo 1669. UFC record 13-6: 5 KO/TKO and 8 decision wins; losses are 3 KO/TKO, 1 submission and 2 decisions.
 
-## Appearance note
-His tattoos are widely documented: "Broken Native" script and a map of Africa on the chest, a Kurama-seal yin-yang on the abdomen, Deadpool on the left ribs, Toph from Avatar on the forearm, a neck piece (reported as Montu), and small 2024 face tattoos near the eye and eyebrow whose placement sources describe inconsistently.
+## Appearance (for the avatar)
+No photo-based likeness sheet exists yet. From the ESPN/UFC studio photos (headshot and left cutout of Mar 27, 2026; right cutout of Aug 2024) and the Mar 2026 face-off and fight photos in `assets/reference/israel-adesanya/`:
+- **Build:** very tall and slim, long limbs, narrow waist, visible abs.
+- **Hair:** short black hair, a short tight-curl crop on top with faded sides (same in 2024 and 2026).
+- **Facial hair:** essentially clean-shaven; at most a faint thin moustache and a little chin hair.
+- **Skin:** dark.
+- **Tattoos (visible in 2026):** "BROKEN NATIVE" in large letters across the upper chest; a map of Africa on the sternum; dark ink on both sides of the neck; heavy work on both arms (the right arm largely covered from shoulder to forearm); a piece on the abdomen. Write-ups identify a Kurama-seal yin-yang (abdomen), Deadpool (left ribs), Toph from Avatar (right inner forearm), Calvin and Hobbes (bicep) and a neck piece reported as Montu. The small 2024 face tattoos are described inconsistently and are not legible in the 2026 headshot, so leave them off.
+- **Kit:** vale tudo-cut compression shorts, not board shorts: a navy snakeskin-print UFC kit with gold lightning trim in both the 2024 and 2026 cutouts. Black UFC gloves in 2026 (gold for the 2024 title fight); red wrist tape at UFC Seattle. Small stud earring in the left ear at the Mar 2026 face-off.
+
+## Still unconfirmed
+- The Dec 5 Shara Magomedov fight (reported, not announced).
+- The exact makeup of his new team beyond the Freestyle MMA sessions.
 
 ## Sources
+- https://www.mmafighting.com/ufc/519612/israel-adesanya-ready-to-end-slump-after-city-kickboxing-departure-best-ive-felt-in-a-very-long-time (Nov 5, 2026)
+- https://www.sherdog.com/news/news/Israel-Adesanya-feels-better-than-ever-after-leaving-City-Kickboxing-203513
+- https://www.sherdog.com/fighter/Israel-Adesanya-56374 (upcoming: UFC Fight Night 295, Dec 5, 2026)
+- https://www.sherdog.com/news/news/Israel-Adesanya-makes-major-training-change-amid-UFC-losing-skid-202662
+- https://www.nzherald.co.nz/sport/ufc-israel-adesanya-parts-ways-with-city-kickboxing-to-continue-mma-career/HT5TL4P6DFHNVNJONSSAKWYAAQ/
+- https://www.mmamania.com/latest-news/479374/report-israel-adesanya-vs-shara-bullet-targeted-for-ufc-saudi-arabia-main-event-on-dec-5
+- https://bloodyelbow.com/2026/10/15/israel-adesanyas-return-reportedly-set-for-ufc-saudi-arabia-main-event-against-17-1-middleweight/
+- https://www.cbssports.com/ufc/rankings/men/223/middleweight/ (updated Nov 3, 2026)
+- https://www.ufcalendar.com/rankings/middleweight (media Nov 3, Meta Oct 31, 2026)
+- https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard (ESPN UFC calendar: no Dec 5 card listed as of Nov 6, 2026)
+- https://en.wikipedia.org/wiki/Israel_Adesanya (revision of Oct 27, 2026)
 - https://www.espn.com/mma/story/_/id/48336336/pyfer-finishes-adesanya-career-best-win-ufc-fight-night
 - https://cagesidepress.com/2026/03/28/ufc-seattle-joe-pyfer-takes-next-step-with-tko-of-israel-adesanya
 - https://www.skysports.com/mma/news/13525789/ufc-israel-adesanya-in-no-mind-to-retire-after-defeat-to-joe-pyfer-hands-him-fourth-consecutive-loss
-- https://bjpenn.com/mma-news/israel-adesanya/israel-adesanya-touts-best-camp-years-city-kickboxing-split
-- https://sports.yahoo.com/articles/israel-adesanya-shara-magomedov-reportedly-035104810.html
-- https://www.mmamania.com/latest-news/479374/report-israel-adesanya-vs-shara-bullet-targeted-for-ufc-saudi-arabia-main-event-on-dec-5
-- https://heavy.com/sports/ufc/the-iron-turtle-ufc-saudi-arabia
-- https://kalshi.com/ufc/rankings/middleweight
 - https://www.aljazeera.com/sports/2025/2/1/imavov-knocks-out-former-ufc-champ-adesanya-to-stake-ufc-title-claim
 - https://mstg.sherdog.com/news/articles/The-Film-Room-Israel-Adesanya-162921
 - https://www.fightprimer.com/advanced-striking-20-israel-adesanya-bit-of-a-weeb-tho
+- Studio photos: https://a.espncdn.com/i/headshots/mma/players/full/4285679.png, .../stance/left/4285679.png, .../stance/right/4285679.png
 - https://www.sportskeeda.com/mma/map-africa-broken-native-naruto-seal-all-israel-adesanya-s-tattoos-explained
 - https://www.pulse.ng/story/ufc-israel-adesanyas-new-face-and-neck-tattoos-explained-2024072606131999573
 - Dataset: `data/derived/fighters.json`, `data/raw/ufc_fight_stats.csv`, `data/raw/ufc_fight_results.csv`

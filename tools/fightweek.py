@@ -967,7 +967,21 @@ def split_sentences(p):
     return [x.replace("\x00", ".").strip() for x in parts if x.strip()]
 
 
-def parse_event_article(html):
+def article_fragment(href, html=None):
+    """Section anchor an event lives under when it has no article of its own: the list row links
+    "2012_in_UFC#UFC_149:_Faber_vs._Barão" or "The_Ultimate_Fighter:_Live#The_Ultimate_Fighter_15_Finale",
+    or the event title redirects to such a section (canonical link carries the #fragment)."""
+    frag = urllib.parse.urlparse(href or "").fragment
+    if not frag and html:
+        m = re.search(r'<link rel="canonical" href="[^"#]*#([^"]+)"', html)
+        frag = m.group(1) if m else ""
+    return urllib.parse.unquote(frag).replace(" ", "_") if frag else ""
+
+
+def parse_event_article(html, fragment=""):
+    """Infobox, narrative paragraphs, results table and notes of one event article. With `fragment`, only the
+    section under that heading is read (year pages such as 2012_in_UFC and TUF season pages hold several events
+    or a whole season; reading the full page would pin other events' bout changes on this card)."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html, "lxml")
     body = soup.find("div", class_="mw-parser-output")
@@ -976,20 +990,54 @@ def parse_event_article(html):
     canon = soup.find("link", rel="canonical")
     out = {"canonical": canon.get("href") if canon else None, "infobox": {}, "paras": [], "results": [],
            "notes": {}, "fulltext": ""}
-    ib = body.find("table", class_="infobox")
+    root, scoped = body, None
+    if fragment:
+        h = body.find(id=fragment)
+        if h is None:       # anchors differ in accents / case now and then
+            want = norm(fragment.replace("_", " "))
+            h = next((x for x in body.find_all(["h2", "h3", "h4"]) if norm((x.get("id") or "").replace("_", " "))
+                      == want), None)
+        scoped = h.find_parent("section") if h is not None else None
+        if scoped is not None:
+            root = scoped
+            if out["canonical"]:
+                out["canonical"] = out["canonical"].split("#")[0] + "#" + fragment
+            out["section"] = fragment
+    ib = root.find("table", class_="infobox")
     if ib:
         for tr in ib.find_all("tr"):
             th, td = tr.find("th"), tr.find("td")
             if th and td:
                 out["infobox"][th.get_text(" ", strip=True)] = clean_text(td.get_text(" ", strip=True))
-    secs = body.find_all("section", recursive=False) or [body]
+    if scoped is not None:
+        secs = [None] + scoped.find_all("section", recursive=False)
+        # efn notes and citations live in the page-level reference lists: keep only those cited in this section
+        cited = {a.get("href", "")[1:] for a in scoped.select("sup a") if a.get("href", "").startswith("#")}
+        for d in body.find_all("div", class_=re.compile("references|reflist")):
+            for li in d.find_all("li"):
+                if li.get("id") in cited:
+                    out["notes"][li["id"]] = clean_text(li.get_text(" ", strip=True).lstrip("^↑ "))
+    else:
+        secs = body.find_all("section", recursive=False) or [body]
     full = []
     for sec in secs:
+        if sec is None:
+            # paragraphs directly under the event heading: the first is the lead, the rest (TUF 26 Finale has
+            # no Background sub-section) are background prose
+            direct = [el for el in scoped.find_all(["p", "li"]) if el.find_parent("section") is scoped
+                      and el.find_parent("table") is None
+                      and el.find_parent(class_=re.compile("references|reflist|navbox")) is None]
+            for j, el in enumerate(direct):
+                t = clean_text(el.get_text(" ", strip=True))
+                if len(t) > 20:
+                    out["paras"].append({"sec": "LEAD" if j == 0 else "Background", "text": t})
+                    full.append(t)
+            continue
         h = sec.find(class_="mw-heading") or sec.find(["h2", "h3"])
         title = clean_text(h.get_text(" ", strip=True)).replace("[edit]", "").strip() if h else "LEAD"
         tl = title.lower()
         # footnotes attached to the results table (efn notes) live in references wraps inside the section
-        for d in sec.find_all("div", class_=re.compile("references|reflist")):
+        for d in sec.find_all("div", class_=re.compile("references|reflist")) if scoped is None else ():
             for li in d.find_all("li"):
                 if li.get("id"):
                     out["notes"][li["id"]] = clean_text(li.get_text(" ", strip=True).lstrip("^\u2191 "))
@@ -1014,11 +1062,18 @@ def parse_event_article(html):
     return out
 
 
-def parse_event_article_cached(path):
-    """parse_event_article with a JSON memo next to the raw cache (keyed by size and mtime, parser version)."""
+def parse_event_article_cached(path, href=None):
+    """parse_event_article with a JSON memo next to the raw cache (keyed by size and mtime, parser version and
+    the section anchor when the event is one section of a larger page)."""
     st = os.stat(path)
-    memo = os.path.join(WIKI_DIR, "_parsed", os.path.basename(path)[:-5] + ".json")
-    key = "%d-%d-%s" % (st.st_size, int(st.st_mtime), PARSER_VERSION)
+    html = open(path, encoding="utf-8").read()
+    frag = article_fragment(href, html)
+    base = os.path.basename(path)[:-5]
+    if frag:
+        import hashlib
+        base += "__" + hashlib.md5(frag.encode("utf-8")).hexdigest()[:10]
+    memo = os.path.join(WIKI_DIR, "_parsed", base + ".json")
+    key = "%d-%d-%s" % (st.st_size, int(st.st_mtime), PARSER_VERSION) + ("-" + frag if frag else "")
     if os.path.exists(memo):
         try:
             d = json.load(open(memo, encoding="utf-8"))
@@ -1026,7 +1081,7 @@ def parse_event_article_cached(path):
                 return d
         except ValueError:
             pass
-    d = parse_event_article(open(path, encoding="utf-8").read())
+    d = parse_event_article(html, frag)
     if d is not None:
         d["_key"] = key
         os.makedirs(os.path.dirname(memo), exist_ok=True)
@@ -1929,7 +1984,7 @@ def cmd_build(args):
         if w and w.get("href"):
             p = wiki_path(title_of(w["href"]))
             if os.path.exists(p):
-                art = parse_event_article_cached(p)
+                art = parse_event_article_cached(p, w["href"])
         city, admin, country = split_location(ev["location"])
         iso3 = country_code(country)
         g = dict(geocode(gfx, city, admin, iso3) or {})
@@ -2073,7 +2128,9 @@ def cmd_build(args):
             rec["bout_order"] = bi + 1           # 1 = main event (ufcstats lists the card top-down)
             rec["n_bouts"] = n_bouts
             rec["notes"] = notes
-            rec["sources"] = {"wiki": title_of(ev_meta[ename]["wiki"]) if ev_meta[ename]["wiki"] else None,
+            wref = ev_meta[ename]["wiki"]
+            rec["sources"] = {"wiki": (title_of(wref) + ("#" + wref.split("#", 1)[1] if "#" in wref else ""))
+                              if wref else None,
                               "ufcstats_event": ev["ufcstats_event_id"]}
             chg = {s: {k: v for k, v in bc[(fid, s)].items() if k in ("role", "days", "basis", "booked_vs",
                                                                        "short_notice_phrase")}
@@ -2116,7 +2173,8 @@ def cmd_build(args):
             "crowd": "none | limited | full",
             "event_type": "numbered_ppv (UFC ### through 2025) | numbered (2026+, no PPV) | fight_night (incl. UFC on "
                           "FOX/FX/Fuel/ESPN/ABC, Noche UFC, UFC Macao) | tuf_finale | special (UFC Freedom 250)",
-            "sources": "wiki = en.wikipedia.org/wiki/<title>; ufcstats_event = ufcstats event id",
+            "sources": "wiki = en.wikipedia.org/wiki/<title>[#section when the event is one section of a year or "
+                       "TUF season page]; ufcstats_event = ufcstats event id",
             "card_segment": "Wikipedia results-table heading: main_card | prelims | early_prelims | single_card",
             "bout_order": "1 = main event, ufcstats card order",
         },

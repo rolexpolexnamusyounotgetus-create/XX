@@ -3,12 +3,13 @@
   "name": "Brian Ortega",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Two-time featherweight title challenger (Holloway, UFC 231, 2018; Volkanovski, UFC 266, 2021). He is on a two-fight losing streak: a UD loss to Diego Lopes (UFC 306, Sep 14, 2024) and a 50-45 x3 loss to Aljamain Sterling (Aug 23, 2025, Shanghai). Ortega missed weight for the Sterling fight, which moved to a 153 lb catchweight, and he later said he was unconscious for about 30 minutes during the cut. A planned lightweight debut against Renato Moicano at UFC 326 (Mar 2026) was cancelled when he withdrew in January with nagging injuries. He reportedly withdrew again from a rebooked Moicano fight. He is booked for his lightweight debut against Dan Hooker at a UFC Fight Night at ABHA Arena, Doha, on Nov 21, 2026. Record 16-5 (1 NC).",
+    "summary": "Two-time featherweight title challenger (Holloway, UFC 231, 2018; Volkanovski, UFC 266, 2021), pro record 16-5 (1 NC), still listed No. 13 at featherweight as he moves up to lightweight. He is on a two-fight losing streak: a UD loss to Diego Lopes (UFC 306, Sep 14, 2024) and a 50-45 x3 loss to Aljamain Sterling (Aug 23, 2025, Shanghai). Ortega missed weight for the Sterling fight, which moved to a 153 lb catchweight, and he later said he was unconscious for about 30 minutes during the cut. His lightweight debut against Renato Moicano has fallen through twice: he withdrew from UFC 326 (Mar 2026) in January with nagging injuries, and from the rebooked rematch at UFC 331 (Sep 19, 2026) days out with a cut he said came from a headbutt while training jiu-jitsu. He is booked against Dan Hooker at lightweight on Nov 21, 2026 (UFC Fight Night: Procházka vs. Stirling, ABHA Arena, Doha, Qatar), listed by ESPN, Sherdog and UFCalendar as of Nov 6.",
     "title": null,
-    "ranking": null,
+    "ranking": "#13 featherweight (UFC media-panel rankings of Nov 3, 2026, mirrored by UFCalendar and ufcrankings.org), although he now fights at lightweight; not in the top 15 of the UFC's algorithmic Meta featherweight board of Oct 31; ufc.com returned 403 to scripts",
     "active": true,
-    "next_fight": "Dan Hooker, lightweight, UFC Fight Night, ABHA Arena, Doha, Qatar, Nov 21, 2026",
+    "next_fight": "Dan Hooker, lightweight, UFC Fight Night: Procházka vs. Stirling (UFC Fight Night 294), ABHA Arena, Doha, Qatar, Nov 21, 2026; on ESPN's card, Sherdog and UFCalendar as of Nov 6",
     "injuries": [
+      { "what": "cut that forced his withdrawal days before the UFC 331 rematch with Renato Moicano (Sep 19); he told MMA Junkie it came from a headbutt in jiu-jitsu training (as cited on Wikipedia; MMA Junkie blocked scripts)", "when": "2026-09", "source": "https://cagesidepress.com/2026/09/14/brian-ortega-out-renato-moicano-gets-tom-nolan-in-ufc-vegas-123/" },
       { "what": "nagging injuries (body part not disclosed) needing rest and physical therapy but no surgery; withdrew from the UFC 326 bout with Renato Moicano", "when": "2026-01", "source": "https://www.espn.com/mma/story/_/id/47784076/brian-ortega-pulls-ufc-326-fight-vs-renato-moicano-due-nagging-injuries" },
       { "what": "lost consciousness for about 30 minutes during the weight cut before the Sterling fight and woke up in the ER (his account)", "when": "2025-08", "source": "https://www.cbssports.com/mma/news/brian-ortega-says-he-was-unconscious-for-30-minutes-before-aljamain-sterling-fight-i-was-afraid" },
       { "what": "shoulder injury that ended the Yair Rodriguez fight in round 1 (TKO loss)", "when": "2022-07", "source": "data/raw/ufc_fight_results.csv (ufcstats: 'Shoulder injury')" }
@@ -17,14 +18,22 @@
       "https://www.espn.com/mma/story/_/id/47784076/brian-ortega-pulls-ufc-326-fight-vs-renato-moicano-due-nagging-injuries",
       "https://www.cbssports.com/ufc/news/ufc-326-fight-card-brian-ortega-renato-moicano/",
       "https://www.sherdog.com/news/news/Brian-Ortega-Withdraws-from-Rematch-vs-Renato-Moicano-at-UFC-326-199959",
-      "https://mmasucka.com/news/not-meant-to-be-renato-moicano-reveals-ufc-offered-him-brian-ortega-again-but-he-refused/",
       "https://www.ufcalendar.com/fights/dan-hooker-vs-brian-ortega",
       "https://sports.yahoo.com/articles/ufc-analyst-dan-hooker-vs-170039364.html",
       "https://agentmma.com/fighters/6293-brian-ortega",
       "https://www.cbssports.com/mma/news/brian-ortega-says-he-was-unconscious-for-30-minutes-before-aljamain-sterling-fight-i-was-afraid",
       "https://www.lowkickmma.com/sickly-brian-ortega-weight-cut-crisis-leads-to-last-minute-ufc-shanghai-changes/",
       "https://www.ufc.com/athlete/brian-ortega",
-      "http://ufcstats.com/fighter-details/def8166ff24bd237"
+      "http://ufcstats.com/fighter-details/def8166ff24bd237",
+      "https://cagesidepress.com/2026/09/14/brian-ortega-out-renato-moicano-gets-tom-nolan-in-ufc-vegas-123/",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/09/16/brian-ortega-reveals-freak-accident-which-led-to-ufc-331-withdrawal/91787845007/",
+      "https://en.wikipedia.org/wiki/Brian_Ortega",
+      "https://cagesidepress.com/2026/09/29/full-ufc-qatar-card-revealed-for-november-21-event/",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261121",
+      "https://www.sherdog.com/fighter/Brian-Ortega-65310",
+      "https://www.ufcalendar.com/fighters/brian-ortega",
+      "https://www.ufcalendar.com/rankings/featherweight",
+      "https://ufcrankings.org/featherweight/"
     ]
   },
   "style": {
@@ -72,14 +81,18 @@
   },
   "appearance": {
     "build": "medium frame; 5 ft 8 in with a 69 in reach (ufcstats); now moving up to 155 lb after weight-cut problems at 145",
-    "hair": "very short dark hair or shaved",
-    "facial_hair": "unknown (varies)",
+    "hair": "dark brown, medium length, slicked straight back (Aug 2025 ESPN headshot and cutout; same in Feb 2024)",
+    "facial_hair": "light stubble (Aug 2025); close-shaved in Feb 2024",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the chest, arms or legs in the Aug 2025 and Feb 2024 ESPN studio cutouts (front view only; back not seen); a small bluish mark under the left jaw in the Aug 2025 headshot could not be identified",
+    "kit": "Aug 2025 shoot (UFC Shanghai): black UFC (Venum) shorts with a grey-and-white slash pattern; Feb 2024 shoot: black shorts with ORTEGA in red down the left leg; fight-night colour follows the corner",
+    "notes": "Build is from ufcstats. Re-verified Nov 6, 2026 from photos (no likeness sheet exists yet): ESPN headshot and left-stance cutout (files dated Aug 22, 2025) and right-stance cutout (Feb 22, 2024). These predate his move to 155, so he may carry more weight now. Text on the cutouts reads correctly, so they are not mirrored and left/right are his own. Skin samples from the 2025 headshot: forehead #f1a486, nose bridge #f6a17f, warmer and more tanned than the others in this batch; studio high-key light, so treat the hexes as approximate. Light chest hair.",
     "sources": [
       "https://www.ufc.com/athlete/brian-ortega",
-      "http://ufcstats.com/fighter-details/def8166ff24bd237"
+      "http://ufcstats.com/fighter-details/def8166ff24bd237",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3045737.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3045737.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/3045737.png"
     ]
   },
   "engine_notes": [

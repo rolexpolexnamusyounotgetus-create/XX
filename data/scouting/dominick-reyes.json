@@ -3,9 +3,9 @@
   "name": "Dominick Reyes",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC light heavyweight title challenger (lost a unanimous decision to Jon Jones at UFC 247, Feb 8, 2020, scored 48-47, 48-47, 49-46, and a KO to Jan Blachowicz for the vacant title at UFC 253). After four straight losses from 2020 to 2022 and a 19-month layoff, he is 5-1 since June 2024. Most recently he took a split decision over Johnny Walker at UFC 327 (Apr 11, 2026) and knocked out Azamat Murzakanov in round 1 at UFC 333 (Oct 24, 2026, Abu Dhabi), per the ufcstats snapshot. His only loss in that run is a first-round KO by Carlos Ulberg at UFC Perth (Sep 27, 2025). No next bout or current ranking was confirmed for this file.",
+    "summary": "Former UFC light heavyweight title challenger (lost a unanimous decision to Jon Jones at UFC 247, Feb 8, 2020, scored 48-47, 48-47, 49-46, and a TKO to Jan Blachowicz for the vacant title at UFC 253). After four straight losses from 2020 to 2022 and a 19-month layoff, he is 5-1 since June 2024. He has won his last two: a split decision over Johnny Walker at UFC 327 (Apr 11, 2026, Miami) and a first-round TKO of Azamat Murzakanov at UFC 333 (Oct 24, 2026, Abu Dhabi), where a head kick hurt Murzakanov, a straight left dropped him and ground strikes ended it at 2:40. His only loss in that run is a first-round KO by Carlos Ulberg at UFC Perth (Sep 27, 2025). After UFC 333 he spent the week publicly feuding with commentator Daniel Cormier over the broadcast. No next bout is booked as of Nov 6, 2026 (he is on no UFC card in the ESPN schedule through Feb 2027 or the Sherdog events list). Pro record 17-5. No injury reported.",
     "title": null,
-    "ranking": null,
+    "ranking": "#4 light heavyweight in the Meta UFC rankings (updated Oct 31, 2026) and #7 in the UFC media-panel rankings (updated Nov 3, 2026, up one), per ufcalendar.com; Wikipedia also lists #4 in the Meta rankings as of Oct 24, 2026",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -16,15 +16,32 @@
       "http://ufcstats.com/fighter-details/2e19380f34871c6a",
       "https://www.aljazeera.com/sports/2025/9/28/ulberg-dominates-reyes-with-first-round-ko-at-ufc-fight-night-in-perth",
       "https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-carlos-ulberg-blasts-dominick-reyes-for-first-round-ko-wants-title-shot",
-      "https://www.ufc.com/news/ufc-fight-night-ulberg-reyes-main-card-results-highlights-interviews-perth"
+      "https://www.ufc.com/news/ufc-fight-night-ulberg-reyes-main-card-results-highlights-interviews-perth",
+      "https://www.mmafighting.com/ufc/517408/ufc-333-video-dominick-reyes-rocks-azamat-murzakanov-with-head-kick-scores-1st-round-knockout",
+      "https://en.wikipedia.org/wiki/Dominick_Reyes (revision 1383654147; record 17-5, Murzakanov TKO by head kick and punches R1 2:40)",
+      "https://www.espn.com/mma/fighter/_/id/4233039/dominick-reyes (record 17-5 via the ESPN athlete API)",
+      "https://www.ufcalendar.com/rankings/light-heavyweight (mirror of the UFC Meta rankings, updated Oct 31, 2026, and the UFC media-panel rankings, updated Nov 3, 2026; read Nov 6, 2026)",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261101-20261231 (ESPN UFC schedule feed, read Nov 6, 2026)",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20270101-20270430 (ESPN UFC schedule feed, read Nov 6, 2026)",
+      "https://www.sherdog.com/organizations/Ultimate-Fighting-Championship-UFC-2 (upcoming UFC events, read Nov 6, 2026)"
     ]
   },
   "style": {
     "archetype": "power puncher",
     "stance": "southpaw",
-    "tags": ["southpaw", "power", "fast-starter", "body-work", "leg-kicks", "ground-and-pound", "takedown-defense", "chin-concern"],
+    "tags": [
+      "southpaw",
+      "power",
+      "fast-starter",
+      "body-work",
+      "leg-kicks",
+      "ground-and-pound",
+      "takedown-defense",
+      "chin-concern"
+    ],
     "signature": [
-      "first-round knockouts with punches at distance (Jacoby R1 2:00 with two knockdowns, Krylov R1 2:24, Murzakanov R1 2:40)",
+      "first-round knockouts at distance, usually with the straight left (Jacoby R1 2:00 with two knockdowns, Krylov R1 2:24)",
+      "head kick into the straight left: a head kick hurt Murzakanov and a left hand dropped him before ground strikes (UFC 333, R1 2:40)",
       "body attack from the southpaw stance: 48 of 55 body strikes landed vs Jon Jones at UFC 247",
       "low kicks in volume when the fight goes long (12/15 leg strikes in round 3 vs Walker; 25/27 vs Ovince Saint Preux)",
       "heavy top-position ground strikes once he gets on top (56 of 65 ground strikes vs Anthony Smith, TKO R2 at UFC 310)"
@@ -43,16 +60,17 @@
       "http://ufcstats.com/fight-details/2d12ae4683bbf433",
       "http://ufcstats.com/fight-details/b2d731415bd367df",
       "http://ufcstats.com/fight-details/394802bb096b403e",
-      "https://www.aljazeera.com/sports/2025/9/28/ulberg-dominates-reyes-with-first-round-ko-at-ufc-fight-night-in-perth"
+      "https://www.aljazeera.com/sports/2025/9/28/ulberg-dominates-reyes-with-first-round-ko-at-ufc-fight-night-in-perth",
+      "https://www.mmafighting.com/ufc/517408/ufc-333-video-dominick-reyes-rocks-azamat-murzakanov-with-head-kick-scores-1st-round-knockout"
     ]
   },
   "moves": {
     "jab": 0.25,
     "cross": 0.32,
     "hook": 0.18,
-    "overhand": 0.08,
+    "overhand": 0.06,
     "upper": 0.09,
-    "headkick": 0.08,
+    "headkick": 0.1,
     "bodykick": 0.5,
     "bodyhook": 0.2,
     "bodystraight": 0.3,
@@ -61,26 +79,43 @@
     "spinning": 0.0,
     "knee": 0.05,
     "elbow": 0.05,
-    "notes": "Southpaw: 'cross' is his straight left, 'jab' his right, 'hook' a lead right hook. Each group sums to 1; the engine's target split picks the group. Decayed sums in fighters.json: significant attempts 71% head, 14% body, 15% legs; landed 63% head, 16% body, 21% legs (head accuracy 0.51, legs 0.82); career landed body share 24%. No scouting source was gathered on his punch selection, so the head weights are a generic southpaw-power profile with the rear straight on top. Body kicks lead the body group on the Jones fight (48/55 body landed, mostly at distance). Leg kicks split evenly for lack of a source on the target. Clinch strikes are 6% of decayed attempts, so knee and elbow are small; ground work shows up as ground-and-pound, not elbows specifically. No spinning techniques recorded. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw."
+    "notes": "Southpaw: 'cross' is his straight left, 'jab' his right, 'hook' a lead right hook. Each group sums to 1; the engine's target split picks the group. Decayed sums in fighters.json: significant attempts 71% head, 14% body, 15% legs; landed 63% head, 16% body, 21% legs (head accuracy 0.51, legs 0.82); career landed body share 24%. No scouting article on his punch selection was found, so the head weights are a generic southpaw-power profile with the rear straight on top; recaps of his recent knockouts name the straight left (MMA Junkie on Murzakanov: 'snipes ... with straight left'), and the head kick was raised to 0.10 (overhand cut to 0.06) after a head kick set up the Murzakanov finish (MMA Fighting, Oct 24, 2026). Body kicks lead the body group on the Jones fight (48/55 body landed, mostly at distance). Leg kicks split evenly for lack of a source on the target. Clinch strikes are 6% of decayed attempts, so knee and elbow are small; ground work shows up as ground-and-pound, not elbows specifically. No spinning techniques recorded. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw."
   },
   "appearance": {
-    "build": "tall and broad-shouldered with a muscular frame; 6 ft 4 in with a 77 in reach (ufcstats)",
-    "hair": "short dark hair",
-    "facial_hair": "short dark beard; varies",
+    "build": "tall and broad-shouldered with a lean, muscular frame; 6 ft 4 in with a 77 in reach (ufcstats)",
+    "hair": "short dark-brown to black hair, a little longer on top and pushed back, receding at the temples (ESPN, Apr and Oct 2026)",
+    "facial_hair": "full short dark beard with moustache, kept tight on the cheeks (ESPN, Apr and Oct 2026)",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the chest, abdomen, arms or legs in ESPN full-body cutouts from Apr and Oct 2026 (back not shown)",
+    "kit": "black/charcoal UFC compression (vale tudo) shorts with a tonal leaf pattern, crypto.com logo and REYES in red down the left thigh (ESPN, Apr and Oct 2026); black UFC gloves",
     "sources": [
-      "https://www.ufc.com/athlete/dominick-reyes",
-      "http://ufcstats.com/fighter-details/2e19380f34871c6a"
+      "http://ufcstats.com/fighter-details/2e19380f34871c6a",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4233039.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4233039.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4233039.png"
     ]
   },
   "engine_notes": [
-    { "note": "Power: 2.7 knockdowns per 100 significant head strikes landed (decayed), 2.4 career, against a light heavyweight league rate of 1.3; the highest of this group.", "source": "data/derived/fighters.json (S, C, priors)" },
-    { "note": "Chin: 2.9 knockdowns absorbed per 100 head strikes taken (decayed), 1.9 career; 4 knockdowns absorbed and 4 KO/TKO losses in 16 UFC fights. He is hit less than most (2.9 absorbed per minute decayed), but what lands hurts him.", "source": "data/derived/fighters.json" },
-    { "note": "Takedown defense 91% decayed and 83% career; control against him is 26 s per 15 min decayed, far below the 154 s light heavyweight league rate.", "source": "data/derived/fighters.json (S, priors)" },
-    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.20, 1.29, 0.65, 1.05 (minute-weighted; only the Jones fight reached rounds 3-5, so those three values are one fight).", "source": "data/derived/fighters.json (pace, pace_w)" },
-    { "note": "Against Walker his output rose late and switched to the legs: 10, 9 and 15 significant strikes landed by round, with 12 of 15 leg strikes in round 3.", "source": "http://ufcstats.com/fight-details/c4d060cff018979a" }
+    {
+      "note": "Power: 2.7 knockdowns per 100 significant head strikes landed (decayed), 2.4 career, against a light heavyweight league rate of 1.3; the highest of this group.",
+      "source": "data/derived/fighters.json (S, C, priors)"
+    },
+    {
+      "note": "Chin: 2.9 knockdowns absorbed per 100 head strikes taken (decayed), 1.9 career; 4 knockdowns absorbed and 4 KO/TKO losses in 16 UFC fights. He is hit less than most (2.9 absorbed per minute decayed), but what lands hurts him.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Takedown defense 91% decayed and 83% career; control against him is 26 s per 15 min decayed, far below the 154 s light heavyweight league rate.",
+      "source": "data/derived/fighters.json (S, priors)"
+    },
+    {
+      "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.20, 1.29, 0.65, 1.05 (minute-weighted; only the Jones fight reached rounds 3-5, so those three values are one fight).",
+      "source": "data/derived/fighters.json (pace, pace_w)"
+    },
+    {
+      "note": "Against Walker his output rose late and switched to the legs: 10, 9 and 15 significant strikes landed by round, with 12 of 15 leg strikes in round 3.",
+      "source": "http://ufcstats.com/fight-details/c4d060cff018979a"
+    }
   ],
   "confidence": "low"
 }

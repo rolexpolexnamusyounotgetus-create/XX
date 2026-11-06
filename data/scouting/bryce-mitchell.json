@@ -3,9 +3,9 @@
   "name": "Bryce Mitchell",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Moved down to bantamweight after the Jean Silva loss (UFC 314, Apr 12, 2025) and is 2-0 there. He beat Said Nurmagomedov by decision (Jul 26, 2025; 29-28 x3) and submitted previously unbeaten Santiago Luna with an arm-triangle choke at 4:52 of round 3 at UFC Vegas 118 (Jun 6, 2026), with about eight seconds left. Luna was a late replacement for Victor Henry. His next listed booking was a featherweight grappling show match against Mikey Musumeci headlining UFC BJJ 11 (Sep 24, 2026); that result was not verified here. No MMA bout is booked.",
+    "summary": "No. 15 UFC bantamweight, pro MMA record 19-3 (Sherdog, UFCalendar; ESPN and ufcrankings.org list 19-4). He moved down to bantamweight after the Jean Silva loss (UFC 314, Apr 12, 2025) and is 2-0 there: a decision over Said Nurmagomedov (Jul 26, 2025; 29-28 x3) and an arm-triangle submission of previously unbeaten Santiago Luna at 4:52 of round 3 at UFC Vegas 118 (Jun 6, 2026), with about eight seconds left. Luna was a late replacement for Victor Henry. He then lost a 15-minute featherweight grappling show match to UFC BJJ bantamweight champion Mikey Musumeci by unanimous decision, headlining UFC BJJ 11 (Sep 24, 2026, Meta APEX); it does not count on his MMA record. No MMA bout is booked as of Nov 6, 2026 (UFCalendar; ESPN lists only the Luna fight).",
     "title": null,
-    "ranking": null,
+    "ranking": "#15 bantamweight (UFC media-panel rankings of Nov 3, 2026, mirrored by UFCalendar and ufcrankings.org); #13 on the UFC's algorithmic Meta board of Oct 31; ufc.com returned 403 to scripts",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -16,7 +16,15 @@
       "https://thebodylockmma.com/ufc/ufc-results/bryce-mitchell-defeats-santiago-luna-by-submission-at-ufc-vegas-118/",
       "https://combatpress.com/2026/09/ufc-bjj-11-mikey-musumeci-takes-on-bryce-mitchell-in-featherweight-show-match/",
       "https://www.mmamania.com/latest-news/457189/bryce-mitchell-moves-to-ufc-bjj-challenges-champion-mikey-musumeci-in-a-cross-over-extravaganza",
-      "http://ufcstats.com/fighter-details/d9c6f19f958643e9"
+      "http://ufcstats.com/fighter-details/d9c6f19f958643e9",
+      "https://bjj.tv/musumeci-decisions-mitchell-as-fowler-retains-via-split-draw-at-ufc-bjj-11/",
+      "https://www.ufcalendar.com/fighters/bryce-mitchell",
+      "https://www.sherdog.com/fighter/Bryce-Mitchell-151837",
+      "https://www.espn.com/mma/fighter/_/id/3953381/bryce-mitchell",
+      "https://www.ufcalendar.com/rankings/bantamweight",
+      "https://ufcrankings.org/bantamweight/",
+      "https://cagesidepress.com/2026/10/05/whats-next-ufc-332-losers/",
+      "https://en.wikipedia.org/wiki/Bryce_Mitchell"
     ]
   },
   "style": {
@@ -64,14 +72,18 @@
   },
   "appearance": {
     "build": "lean and long-limbed for the weight; 5 ft 10 in with a 70 in reach (ufcstats); now competing at 135 lb",
-    "hair": "brown; length and style vary",
-    "facial_hair": "unknown (varies)",
+    "hair": "short reddish-brown hair, cropped with a short textured fringe (Jun 2026 ESPN headshot and cutout; similar in Dec 2023)",
+    "facial_hair": "short ginger-brown full beard and moustache (Jun 2026 and Dec 2023 cutouts)",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the chest, arms or legs in the Jun 2026 and Dec 2023 ESPN studio cutouts (front view only; back not seen)",
+    "kit": "woodland-camouflage print UFC (Venum) shorts, cut longer than most, with MITCHELL down the left leg, in both the Dec 2023 and Jun 2026 studio shoots; fight-night colour follows the corner",
+    "notes": "Build is from ufcstats. Re-verified Nov 6, 2026 from photos (no likeness sheet exists yet): ESPN headshot and left-stance cutout (files dated Jun 4, 2026) and right-stance cutout (Dec 14, 2023). Text on the cutouts reads correctly, so they are not mirrored and left/right are his own. Skin samples from the 2026 headshot: forehead #f2b39d, nose bridge #e8a58c; studio high-key light, so treat the hexes as approximate.",
     "sources": [
       "https://www.ufc.com/athlete/bryce-mitchell",
-      "http://ufcstats.com/fighter-details/d9c6f19f958643e9"
+      "http://ufcstats.com/fighter-details/d9c6f19f958643e9",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3953381.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3953381.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/3953381.png"
     ]
   },
   "engine_notes": [

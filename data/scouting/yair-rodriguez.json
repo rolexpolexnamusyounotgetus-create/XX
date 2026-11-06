@@ -3,13 +3,13 @@
   "name": "Yair Rodriguez",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC interim featherweight champion (won it by submitting Josh Emmett at UFC 284, Feb 11, 2023; lost the unification bout to Alexander Volkanovski by R3 TKO at UFC 290, Jul 8, 2023). He has not fought since a 30-27 x3 decision over Patricio 'Pitbull' Freire at UFC 314 (Apr 12, 2025). He was to end the layoff against Jean Silva in the Noche UFC main event (Sep 12, 2026) but withdrew with an undisclosed injury (news broke Aug 19, 2026). He is reported booked against #14 Steve Garcia at UFC 335 (Dec 12, 2026, Las Vegas). Garcia confirmed it on Instagram; no UFC release was found.",
+    "summary": "Former UFC interim featherweight champion (won it by submitting Josh Emmett at UFC 284, Feb 11, 2023; lost the unification bout to Alexander Volkanovski by R3 TKO at UFC 290, Jul 8, 2023). No. 6 featherweight; pro record 20-5 with 1 no contest (Sherdog, Wikipedia, UFCalendar; ESPN and MMA Mania list 21-5). He has not fought since a 30-27 x3 decision over Patricio 'Pitbull' Freire at UFC 314 (Apr 12, 2025). He was to end the layoff against Jean Silva in the Noche UFC main event (Sep 12, 2026) but withdrew with an undisclosed injury (Aug 19-20, 2026). MMA Mania reported on Nov 5, 2026 that he returns against Steve Garcia at UFC 335 (Dec 12, 2026, Las Vegas), citing Garcia's Instagram, and Wikipedia lists the bout. As of Nov 6 it is not yet on the ESPN, Sherdog or UFCalendar UFC 335 cards, and no UFC announcement was found.",
     "title": null,
-    "ranking": "#6 featherweight on one board shown by UFCalendar (updated Nov 3, 2026); the page shows two boards and the official ufc.com list was not checked directly",
+    "ranking": "#6 featherweight (UFC media-panel rankings of Nov 3, 2026, mirrored by UFCalendar and ufcrankings.org); not in the top 15 of the UFC's algorithmic Meta board of Oct 31, which weighs activity; ufc.com returned 403 to scripts",
     "active": true,
-    "next_fight": "Steve Garcia, featherweight, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (reported; not confirmed by a UFC release found here)",
+    "next_fight": "vs Steve Garcia, featherweight, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (reported Nov 5 by MMA Mania from Garcia's Instagram and listed on Wikipedia; not yet on the ESPN, Sherdog or UFCalendar UFC 335 cards or in a UFC release as of Nov 6)",
     "injuries": [
-      { "what": "undisclosed injury; he wrote that competing in that condition would not have been responsible and withdrew from the Noche UFC main event against Jean Silva", "when": "2026-08", "source": "https://www.cbssports.com/ufc/news/yair-rodriguez-noche-ufc-main-event-injury-withdrawal/" }
+      { "what": "undisclosed injury; he wrote on Instagram that he tried to keep training but competing in that condition would not have been responsible, and withdrew from the Noche UFC main event against Jean Silva", "when": "2026-08", "source": "https://www.espn.com/mma/story/_/id/49667048/rodriguez-silva-bout-ufc-noche-replaced-delgado" }
     ],
     "sources": [
       "https://www.cbssports.com/ufc/news/yair-rodriguez-noche-ufc-main-event-injury-withdrawal/",
@@ -18,7 +18,16 @@
       "https://www.mmamania.com/ufc-fight-announcements/484091/violence-yair-rodriguez-returns-against-knockout-artist-steve-garcia-at-ufc-335",
       "https://nyfights.com/featured/yair-rodriguez-steve-garcia-at-ufc-335/",
       "https://www.ufcalendar.com/rankings",
-      "http://ufcstats.com/fighter-details/cbf5e6f231b55443"
+      "http://ufcstats.com/fighter-details/cbf5e6f231b55443",
+      "https://www.espn.com/mma/story/_/id/49667048/rodriguez-silva-bout-ufc-noche-replaced-delgado",
+      "https://en.wikipedia.org/wiki/Yair_Rodr%C3%ADguez",
+      "https://www.sherdog.com/fighter/Yair-Rodriguez-106305",
+      "https://www.ufcalendar.com/fighters/yair-rodriguez",
+      "https://www.ufcalendar.com/rankings/featherweight",
+      "https://ufcrankings.org/featherweight/",
+      "https://www.sherdog.com/events/UFC-335-Oliveira-vs-Lopes-114294",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261212",
+      "https://www.espn.com/mma/fighter/_/id/3155420/yair-rodriguez"
     ]
   },
   "style": {
@@ -64,14 +73,18 @@
   },
   "appearance": {
     "build": "tall, long-limbed featherweight; 5 ft 11 in with a 71 in reach (ufcstats)",
-    "hair": "dark; style varies from fight to fight",
-    "facial_hair": "unknown (varies)",
-    "skin": "medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "hair": "black, short, with faded sides and a little more length on top combed back and to the side (Apr 2025 ESPN headshot and cutout; similar in Jul 2023)",
+    "facial_hair": "short, neatly trimmed dark full beard with a moustache (Apr 2025 and Jul 2023 cutouts)",
+    "skin": "light-medium",
+    "tattoos": "none visible on the chest, arms or legs in the Apr 2025 and Jul 2023 ESPN studio cutouts (front view only; back not seen)",
+    "kit": "Apr 2025 shoot: black-and-grey UFC (Venum) shorts; Jul 2023 shoot (posed with the interim belt): green shorts with black and white slashes and gold lettering down the left leg; fight-night colour follows the corner",
+    "notes": "Build is from ufcstats. Re-verified Nov 6, 2026 from photos (no likeness sheet exists yet): ESPN headshot and left-stance cutout (files dated Apr 10, 2025) and right-stance cutout (Jul 6, 2023). These predate his long layoff, so hair and beard may have changed. Text on the cutouts reads correctly, so they are not mirrored and left/right are his own. Skin samples from the 2025 headshot: forehead #f8c4b2, nose bridge #f0ae99; studio high-key light, so treat the hexes as approximate. They sit with Lopes and Garcia, so the earlier 'medium' was lowered to light-medium; his tone reads olive and tanned.",
     "sources": [
       "https://www.ufc.com/athlete/yair-rodriguez",
-      "http://ufcstats.com/fighter-details/cbf5e6f231b55443"
+      "http://ufcstats.com/fighter-details/cbf5e6f231b55443",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3155420.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3155420.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/3155420.png"
     ]
   },
   "engine_notes": [

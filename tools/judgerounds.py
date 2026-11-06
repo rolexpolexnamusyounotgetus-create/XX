@@ -714,10 +714,9 @@ def main():
     stop = load_davies_stoppage(fights, by_date, {**{norm(v): k for k, v in jname.items()}, **judge_ids_by_ufcname})
 
     # slugs where the project already resolved people (backtest) or the roster name is unique
-    slug_of, roster_slugs = {}, set()
+    slug_of = {}
     try:
-        roster = json.load(open(DERIVED / "fighters.json"))["fighters"]
-        roster_slugs = set(roster)
+        roster = json.load(open(DERIVED / "fighters.json"))["fighters"]      # active roster (since 2021) only
         cnt = Counter(v["name"] for v in roster.values())
         slug_of = {v["name"]: s for s, v in roster.items() if cnt[v["name"]] == 1}
     except (OSError, KeyError, ValueError):
@@ -743,7 +742,7 @@ def main():
         for s, nm in ((0, f["A"]), (1, f["B"])):
             for src, tbl in (("backtest", bt_slugs), ("fightweek", fw_slugs)):
                 v = (tbl.get(fid) or (None, None))[s]
-                if v and (v in roster_slugs or not roster_slugs):
+                if v:                         # build_db slug namespace; retired fighters are not in fighters.json
                     out.append(v)
                     slug_src[src] += 1
                     break

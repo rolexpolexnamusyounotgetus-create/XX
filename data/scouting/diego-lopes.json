@@ -3,11 +3,11 @@
   "name": "Diego Lopes",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "#2 featherweight and two-time title challenger. He lost unanimous decisions to Alexander Volkanovski for the vacant belt at UFC 314 (Apr 12, 2025; 49-46, 49-46, 48-47) and in the UFC 325 rematch (Jan 31, 2026; 49-46, 49-46, 50-45). Between those he stopped Jean Silva (Noche UFC, Sep 13, 2025, R2). He then rallied to knock out Steve Garcia with a counter left hook and follow-up punches at 2:42 of round 2 in the opening bout of UFC Freedom 250 on the White House lawn (Jun 14, 2026). Pro record 28-8 per ufcrankings.org (one results report says 29-8). Next he moves up to lightweight to challenge Charles Oliveira for the BMF title in the UFC 335 main event (Dec 12, 2026, Las Vegas).",
+    "summary": "No. 2 featherweight and two-time title challenger, pro record 28-8 (Sherdog, ESPN, UFCalendar, ufcrankings.org). He lost unanimous decisions to Alexander Volkanovski for the vacant belt at UFC 314 (Apr 12, 2025; 49-46, 49-46, 48-47) and in the UFC 325 rematch (Jan 31, 2026; 49-46, 49-46, 50-45). Between those he stopped Jean Silva (Noche UFC, Sep 13, 2025, R2). He then rallied to knock out Steve Garcia with a counter left hook and follow-up punches at 2:42 of round 2 in the opening bout of UFC Freedom 250 on the White House lawn (Jun 14, 2026). Next he moves up to lightweight to challenge Charles Oliveira for the BMF title in the UFC 335 main event (Dec 12, 2026, Las Vegas), listed by ESPN, Sherdog and UFCalendar on Nov 6. No injuries reported.",
     "title": null,
-    "ranking": "#2 featherweight per UFCalendar and ufcrankings.org (both updated Nov 3, 2026, after UFC 333); the official ufc.com page was not checked directly",
+    "ranking": "#2 featherweight (UFC media-panel rankings of Nov 3, 2026, mirrored by UFCalendar and ufcrankings.org on Nov 5-6; also #2 on the algorithmic Meta board of Oct 31); ufc.com returned 403 to scripts",
     "active": true,
-    "next_fight": "Charles Oliveira for the BMF title (lightweight, his 155 lb debut), UFC 335 main event, Dec 12, 2026, T-Mobile Arena, Las Vegas",
+    "next_fight": "Charles Oliveira for the BMF title (lightweight, his 155 lb debut, five rounds), UFC 335 main event, Dec 12, 2026, T-Mobile Arena, Las Vegas; on ESPN's card, Sherdog and UFCalendar as of Nov 6",
     "injuries": [],
     "sources": [
       "https://www.cbssports.com/ufc/news/ufc-335-fight-card-charles-oliveira-vs-diego-lopes-alex-pereira-sergei-pavlovich/",
@@ -19,7 +19,14 @@
       "https://cagesidepress.com/2025/04/13/alexander-volkanovski-becomes-two-time-champion-decisions-lopes",
       "https://www.ufcalendar.com/rankings",
       "https://ufcrankings.org/",
-      "http://ufcstats.com/fighter-details/f166e93d04a8c274"
+      "http://ufcstats.com/fighter-details/f166e93d04a8c274",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261212",
+      "https://www.ufcalendar.com/fighters/diego-lopes",
+      "https://www.sherdog.com/fighter/Diego-Lopes-112531",
+      "https://www.espn.com/mma/fighter/_/id/4881999/diego-lopes",
+      "https://www.espn.com/mma/fightcenter/_/id/600061401",
+      "https://www.ufcalendar.com/rankings/featherweight",
+      "https://ufcrankings.org/featherweight/"
     ]
   },
   "style": {
@@ -69,14 +76,18 @@
   },
   "appearance": {
     "build": "tall and rangy for featherweight; 5 ft 11 in with a 72 in reach (ufcstats); moving up to 155 lb",
-    "hair": "short dark hair",
-    "facial_hair": "dark beard",
+    "hair": "dark brown undercut: sides clipped very short, a long top combed over to one side, and a long mullet tail at the back (Jun 2026 and Jan 2026 ESPN cutouts)",
+    "facial_hair": "thick dark moustache, otherwise clean-shaven (Jun 2026 and Jan 2026); the earlier 'dark beard' entry was wrong",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "script across the upper chest reading 'DREAM BELIEVE / AND MAKE IT HAPPEN'; a small two-line Spanish script on the right ribs (partly legible: '...vida un sueño ... sueño una realidad'); a black-and-grey lion head on the right forearm under a word beginning 'Persever...'; a small mark on the inner left forearm; a short script above the right knee that appears to begin 'Isaiah' (partly legible)",
+    "kit": "Jun 2026 shoot for UFC Freedom 250: white event shorts with stars-and-stripes trim and red 'Freedom 250' gloves (one-off); Jan 2026 shoot: black UFC (Venum) shorts with a grey wave pattern; fight-night colour follows the corner",
+    "notes": "Build is from ufcstats. Re-verified Nov 6, 2026 from photos (no likeness sheet exists yet): ESPN headshot and left-stance cutout (files dated Jun 11, 2026) and right-stance cutout (Jan 30, 2026). Text on the cutouts reads correctly, so they are not mirrored and left/right are his own. Skin samples from the 2026 headshot: forehead #f0b9a5, nose bridge #db9781; studio high-key light, so treat the hexes as approximate.",
     "sources": [
       "https://www.ufc.com/athlete/diego-lopes",
-      "http://ufcstats.com/fighter-details/f166e93d04a8c274"
+      "http://ufcstats.com/fighter-details/f166e93d04a8c274",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4881999.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4881999.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4881999.png"
     ]
   },
   "engine_notes": [

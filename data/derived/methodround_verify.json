@@ -1,6 +1,6 @@
 {
  "tool": "tools/methodround_verify.py",
- "built": "2026-11-06T10:50:49Z",
+ "built": "2026-11-06T10:52:56Z",
  "part1_rescoring": {
   "n_backtest_2024plus": 1238,
   "excluded": {
@@ -1662,6 +1662,171 @@
    }
   ],
   "max_abs_diff_vs_reported": 0.00041,
-  "seconds": 2.9
+  "seconds": 3.4
+ },
+ "part2_leakage": {
+  "n_table": 6296,
+  "duplicate_ids": 0,
+  "duplicate_date_pair": 0,
+  "duplicate_event_pair": 0,
+  "backtest_ids_in_table": 3237,
+  "backtest_ids_missing_from_table": 0,
+  "orientation_mismatch_vs_backtest": 0,
+  "label_mismatch_vs_backtest": 0,
+  "elo_max_abs_diff_vs_backtest": 0.5,
+  "n_fights_mismatch_vs_backtest": 0,
+  "ko_losses_mismatch_vs_backtest": 0,
+  "truncation_canary": [
+   {
+    "cut": "2024-01-13",
+    "fights_on_cut_day": 8,
+    "table_cols_checked": 79,
+    "max_abs_diff_table": 0.0,
+    "cols_differing": [],
+    "model_features_checked": 133,
+    "max_abs_diff_model_features": 0.0
+   },
+   {
+    "cut": "2024-07-13",
+    "fights_on_cut_day": 11,
+    "table_cols_checked": 79,
+    "max_abs_diff_table": 0.0,
+    "cols_differing": [],
+    "model_features_checked": 133,
+    "max_abs_diff_model_features": 0.0
+   },
+   {
+    "cut": "2025-03-01",
+    "fights_on_cut_day": 9,
+    "table_cols_checked": 79,
+    "max_abs_diff_table": 0.0,
+    "cols_differing": [],
+    "model_features_checked": 133,
+    "max_abs_diff_model_features": 0.0
+   },
+   {
+    "cut": "2025-10-04",
+    "fights_on_cut_day": 12,
+    "table_cols_checked": 79,
+    "max_abs_diff_table": 0.0,
+    "cols_differing": [],
+    "model_features_checked": 133,
+    "max_abs_diff_model_features": 0.0
+   },
+   {
+    "cut": "2026-06-27",
+    "fights_on_cut_day": 10,
+    "table_cols_checked": 79,
+    "max_abs_diff_table": 0.0,
+    "cols_differing": [],
+    "model_features_checked": 133,
+    "max_abs_diff_model_features": 0.0
+   }
+  ],
+  "seconds": 72.6
+ },
+ "part3_4": {
+  "refit_vs_stored_S_max_abs_diff": 0.000106,
+  "refit_S_heldout": {
+   "joint": 2.07752,
+   "method3": 0.94412,
+   "finish": 0.66024,
+   "bin7": 1.56426,
+   "method_round": 1.4574,
+   "round_given_fin": 1.04877,
+   "ko_vs_sub": 0.58051,
+   "winner": 0.62559,
+   "winner_brier": 0.21757,
+   "method_given_winner": 0.91125,
+   "winner_acc": 0.66612,
+   "method3_brier": 0.56745
+  },
+  "swap_refit_S_max_abs_cell_diff": 8.206961240656008e-05,
+  "swap_refit_S_metric_max_abs_diff": 1.85833128036883e-05,
+  "swap_refit_SM_max_abs_cell_diff": 9.013287325063124e-05,
+  "swap_refit_SM_metric_max_abs_diff": 1.8285223117642246e-05,
+  "swap_share": 0.508,
+  "forking_paths": {
+   "rows": [
+    {
+     "cv_method3": 0.96691,
+     "cv_joint": 2.17323,
+     "cv_winner": 0.64971,
+     "test_method3": 0.94412,
+     "test_joint": 2.0775,
+     "test_winner": 0.62559,
+     "setting": "shipped (hl 8, start 2012, k_min 15, with career sums)"
+    },
+    {
+     "cv_method3": 0.96771,
+     "cv_joint": 2.17429,
+     "cv_winner": 0.65001,
+     "test_method3": 0.94612,
+     "test_joint": 2.08052,
+     "test_winner": 0.62586,
+     "setting": "half-life 4 years"
+    },
+    {
+     "cv_method3": 0.96689,
+     "cv_joint": 2.17345,
+     "cv_winner": 0.64967,
+     "test_method3": 0.94264,
+     "test_joint": 2.07546,
+     "test_winner": 0.62537,
+     "setting": "no recency weighting"
+    },
+    {
+     "cv_method3": 0.9678,
+     "cv_joint": 2.1735,
+     "cv_winner": 0.64951,
+     "test_method3": 0.94291,
+     "test_joint": 2.0754,
+     "test_winner": 0.62539,
+     "setting": "train from 2008"
+    },
+    {
+     "cv_method3": 0.96849,
+     "cv_joint": 2.17765,
+     "cv_winner": 0.65206,
+     "test_method3": 0.94679,
+     "test_joint": 2.08328,
+     "test_winner": 0.62832,
+     "setting": "train from 2016"
+    },
+    {
+     "cv_method3": 0.9679,
+     "cv_joint": 2.17468,
+     "cv_winner": 0.64974,
+     "test_method3": 0.94656,
+     "test_joint": 2.08357,
+     "test_winner": 0.62759,
+     "setting": "without career-sum (cs_) features"
+    },
+    {
+     "cv_method3": 0.9677,
+     "cv_joint": 2.17405,
+     "cv_winner": 0.64981,
+     "test_method3": 0.94223,
+     "test_joint": 2.07563,
+     "test_winner": 0.62579,
+     "setting": "without year trend"
+    },
+    {
+     "cv_method3": 0.96749,
+     "cv_joint": 2.17477,
+     "cv_winner": 0.65096,
+     "test_method3": 0.94419,
+     "test_joint": 2.07755,
+     "test_winner": 0.62553,
+     "setting": "k_min = 30 minutes"
+    }
+   ],
+   "cv_best": "shipped (hl 8, start 2012, k_min 15, with career sums)",
+   "test_best": "train from 2008",
+   "shipped_cv_rank": 1,
+   "shipped_test_rank": 4,
+   "n_settings": 8
+  },
+  "seconds": 1559.8
  }
 }

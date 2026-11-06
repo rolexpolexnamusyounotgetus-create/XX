@@ -3,9 +3,9 @@
   "name": "Jean Silva",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Top-five UFC featherweight contender on a two-fight win streak. He outpointed Arnold Allen at UFC 324 (Jan 24, 2026; 30-27, 29-28, 29-28) and submitted Jose Miguel Delgado with a one-arm rear-naked choke at 2:57 of round 3 in the Noche UFC main event (Sep 12, 2026, Glendale), after surviving an early scare. Pro record reported as 18-3. Since Volkanovski beat Evloev at UFC 333 (Oct 24, 2026) he has been campaigning for the title shot; Volkanovski's head coach said he has not earned it and prefers the Sterling vs Vallejos winner. No bout is booked.",
+    "summary": "No. 5 UFC featherweight on a two-fight win streak, pro record 18-3. He outpointed Arnold Allen at UFC 324 (Jan 24, 2026; 30-27, 29-28, 29-28) and submitted Jose Miguel Delgado with a one-arm rear-naked choke at 2:57 of round 3 in the Noche UFC main event (Sep 12, 2026, Glendale), after surviving an early scare; Delgado had replaced an injured Yair Rodriguez. Since Volkanovski beat Evloev at UFC 333 (Oct 24, 2026) he has campaigned for the title shot. Volkanovski's head coach said he has not earned it and prefers the winner of Sterling vs Vallejos (set for Nov 21), while a Cageside Press column called Silva the front-runner. On Nov 5 Dana White said he is open to a Volkanovski vs Justin Gaethje super-fight, pending Gaethje's decision. No bout is booked as of Nov 6, 2026 (UFCalendar; ESPN lists only his previous fight).",
     "title": null,
-    "ranking": "#5 featherweight per third-party trackers of the UFC rankings (ufcrankings.org update of Nov 3, 2026; Kalshi listing of the Oct 27, 2026 poll); the official ufc.com page was not checked directly",
+    "ranking": "#5 featherweight (UFC media-panel rankings of Nov 3, 2026, mirrored by UFCalendar and ufcrankings.org on Nov 5-6; also #5 on the algorithmic Meta board of Oct 31); ufc.com returned 403 to scripts",
     "active": true,
     "next_fight": null,
     "injuries": [
@@ -21,8 +21,14 @@
       "https://www.bjpenn.com/mma-news/jean-silva/jean-silva-slams-alexander-volkanovski-coach-title-shot-dismissal/",
       "https://www.espn.com/mma/story/_/id/50220522/ufc-333-results-volkanovski-evloev",
       "https://ufcrankings.org/",
-      "https://kalshi.com/ufc/rankings/featherweight",
-      "http://ufcstats.com/fighter-details/52ef95b5860fb28c"
+      "http://ufcstats.com/fighter-details/52ef95b5860fb28c",
+      "https://www.espn.com/mma/story/_/id/49667048/rodriguez-silva-bout-ufc-noche-replaced-delgado",
+      "https://cagesidepress.com/2026/10/26/whats-next-ufc-333-winners/",
+      "https://cagesidepress.com/2026/11/05/white-open-volk-gaethje-waiting-lightweight-champs/",
+      "https://www.ufcalendar.com/fighters/jean-silva",
+      "https://www.ufcalendar.com/rankings/featherweight",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261121",
+      "https://www.espn.com/mma/fighter/_/id/5145766/jean-silva"
     ]
   },
   "style": {
@@ -77,11 +83,12 @@
   },
   "appearance": {
     "build": "compact, muscular featherweight; 5 ft 7 in with a 69 in reach (ufcstats)",
-    "hair": "bald (shaved head)",
-    "facial_hair": "beard",
+    "hair": "dark, buzzed very short with a receding, thinning hairline (Sep 2026 ESPN headshot); a little longer in the Sep 2025 cutout. Not shaved bald, as an earlier draft had it",
+    "facial_hair": "full brown beard of medium length with a moustache (Sep 2025 and Sep 2026 cutouts)",
     "skin": "light-medium",
-    "tattoos": "heavily tattooed: a large padlock over a diamond with his mother's name on the chest, 'LORD' across the stomach, a black-and-grey arm sleeve with a cross that flows into the chest piece; one outlet reports a barcode tattoo on the back of his head (single source)",
-    "kit": "unknown; after wins he and his team often wear the Fighting Nerds' lens-less taped glasses",
+    "tattoos": "heavily tattooed (checked against the Sep 2026 ESPN cutout): a padlock on the left upper chest and shoulder (outlets say it sits over a diamond with his mother's name), 'LORD' in large letters across the lower chest, and a black-and-grey sleeve on the left arm that joins the shoulder piece, including a date ending '12.96' and a round ornamental piece on the forearm (outlets also describe a cross in it); a fine-line floral piece on the right thigh. One outlet reports a barcode on the back of his head (single source; the back of his head is not visible in the photos used)",
+    "kit": "Sep 2026 shoot (Noche UFC): black UFC (Venum) shorts with a grey wave pattern and a Noche UFC patch; Sep 2025 shoot: green Noche UFC shorts with a red-white-green waistband and SILVA down the left leg; fight-night colour follows the corner. After wins he and his team often wear the Fighting Nerds' lens-less taped glasses",
+    "notes": "Build is from ufcstats. Re-verified Nov 6, 2026 from photos (no likeness sheet exists yet): ESPN headshot and left-stance cutout (files dated Sep 10, 2026) and right-stance cutout (Sep 11, 2025). Text on the cutouts reads correctly, so they are not mirrored and left/right are his own. Both ears are cauliflowered. Skin samples from the 2026 headshot: forehead #f2bb9c, nose bridge #dd9f82; studio high-key light, so treat the hexes as approximate.",
     "sources": [
       "https://www.ufc.com/news/jean-silva-never-backs-down-ufc-324",
       "https://www.ufc.com/athlete/jean-silva",
@@ -89,7 +96,10 @@
       "https://www.essentiallysports.com/ufc-mma-news-what-is-the-meaning-behind-jean-silvas-tattoos-exploring-the-stories-and-origins-of-his-ink/",
       "https://essentiallysports.com/ufc-mma-news-jean-silva-hitman-inspired-tattoo-meaning-behind-ufc-stars-insane-inks",
       "https://www.sportskeeda.com/mma/news-what-story-behind-fighting-nerds-glasses-explaining-jean-silva-caio-borralho-others-sport-specs",
-      "http://ufcstats.com/fighter-details/52ef95b5860fb28c"
+      "http://ufcstats.com/fighter-details/52ef95b5860fb28c",
+      "https://a.espncdn.com/i/headshots/mma/players/full/5145766.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/5145766.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/5145766.png"
     ]
   },
   "engine_notes": [

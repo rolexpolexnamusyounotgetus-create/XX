@@ -3,13 +3,17 @@
   "name": "Jiri Prochazka",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC light heavyweight champion (won the belt from Glover Teixeira at UFC 275, Jun 11, 2022; vacated it in November 2022 with a shoulder injury). He lost the vacant-title fight to Carlos Ulberg at UFC 327 (Apr 11, 2026, KO R1 3:45) after pressing a hobbled Ulberg into a left check hook. He headlines UFC Fight Night 294 in Doha, Qatar against unbeaten Navajo Stirling (11-0) on Nov 21, 2026 in a five-round light heavyweight main event. Pro record 32-6-1.",
+    "summary": "Former UFC light heavyweight champion (won the belt from Glover Teixeira at UFC 275, Jun 11, 2022; vacated it in November 2022 after hurting his right shoulder in wrestling practice). He lost the vacant-title fight to Carlos Ulberg at UFC 327 (Apr 11, 2026, Miami, KO R1 3:45) after pressing a hobbled Ulberg, who was later reported to have torn his ACL in the fight, into a left check hook. He headlines UFC Fight Night 294 in Doha, Qatar against unbeaten Navajo Stirling on Nov 21, 2026 in a five-round light heavyweight main event (still on the ESPN and Sherdog cards as of Nov 6, 2026). Pro record 32-6-1 (ESPN, Wikipedia). No current injury reported.",
     "title": null,
-    "ranking": "#3 light heavyweight (UFC list dated Oct 27, 2026, as mirrored by ufcalendar.com and kalshi.com; not checked on ufc.com)",
+    "ranking": "#3 light heavyweight in the Meta UFC rankings (the UFC's algorithmic list, updated Oct 31, 2026) and #2 in the UFC media-panel rankings (updated Nov 3, 2026), both as mirrored by ufcalendar.com; ufc.com itself returned 403",
     "active": true,
     "next_fight": "Navajo Stirling, UFC Fight Night 294 (UFC Qatar), Nov 21, 2026, ABHA Arena, Doha (light heavyweight, 5 rounds, main event)",
     "injuries": [
-      { "what": "shoulder injury that made him vacate the light heavyweight title (historical; he returned at UFC 295 in Nov 2023 per fighters.json, and no current injury is reported)", "when": "2022-11", "source": "https://www.cbssports.com/mma/news/ufc-light-heavyweight-champion-jamahal-hill-vacates-title-after-suffering-achilles-injury" }
+      {
+        "what": "right shoulder injury in wrestling practice at the UFC Performance Institute; withdrew from the UFC 282 rematch with Teixeira and vacated the title (historical: he returned at UFC 295 in Nov 2023, and no current injury is reported as of Nov 6, 2026)",
+        "when": "2022-11",
+        "source": "https://sports.yahoo.com/ufc-282-jiri-prochazka-injured-vacates-light-heavyweight-championship-blachowicz-ankalaev-title-bout-booked-212050487.html"
+      }
     ],
     "sources": [
       "https://www.espn.com/mma/story/_/id/50059407/jiri-prochazka-fight-navajo-stirling-ufc-fight-night-qatar",
@@ -19,16 +23,35 @@
       "https://next-fight.com/en/fighter/jiri-prochazka",
       "https://www.espn.com/mma/story/_/id/48463309/carlos-ulberg-blew-knee-jiri-prochazka-blew-title-chance-ufc-327",
       "https://www.espn.com/mma/story/_/id/48463277/badly-hobbled-ulberg-stuns-prochazka-wild-ko-ufc-327",
-      "https://www.ufcalendar.com/rankings/light-heavyweight",
-      "https://kalshi.com/ufc/rankings/light-heavyweight",
       "http://ufcstats.com/fight-details/a031f062b7ffefee",
-      "http://ufcstats.com/fighter-details/009341ed974bad72"
+      "http://ufcstats.com/fighter-details/009341ed974bad72",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261101-20261231 (ESPN UFC schedule feed, read Nov 6, 2026)",
+      "https://www.mmafighting.com/ufc/513140/jiri-prochazka-vs-navajo-stirling-8-other-fights-official-for-ufc-qatar",
+      "https://www.ufcalendar.com/rankings/light-heavyweight (mirror of the UFC Meta rankings, updated Oct 31, 2026, and the UFC media-panel rankings, updated Nov 3, 2026; read Nov 6, 2026)",
+      "https://en.wikipedia.org/wiki/Ji%C5%99%C3%AD_Proch%C3%A1zka (revision 1383898741)",
+      "https://www.espn.com/mma/fighter/_/id/3156612/jiri-prochazka (record 32-6-1 via the ESPN athlete API)",
+      "https://sports.yahoo.com/ufc-282-jiri-prochazka-injured-vacates-light-heavyweight-championship-blachowicz-ankalaev-title-bout-booked-212050487.html",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/04/17/ufc-327-carlos-ulberg-tore-acl-vs-jiri-prochazka-light-heavyweight-title-injury-surgery-interim/89661606007/ (headline only; Ulberg ACL report)"
     ]
   },
   "style": {
     "archetype": "pressure striker",
     "stance": "orthodox",
-    "tags": ["pressure", "volume", "power", "switch-stance", "feints", "head-movement", "wild-exchanges", "spinning", "knees", "elbows", "late-surge", "chin-concern", "rangy"],
+    "tags": [
+      "pressure",
+      "volume",
+      "power",
+      "switch-stance",
+      "feints",
+      "head-movement",
+      "wild-exchanges",
+      "spinning",
+      "knees",
+      "elbows",
+      "late-surge",
+      "chin-concern",
+      "rangy"
+    ],
     "signature": [
       "hands-low, wide stance with frequent stance switches and twitchy feints, defending with head movement and reflexes rather than a guard",
       "long punches thrown from odd angles off that stance; one-two and left hook combinations",
@@ -77,24 +100,41 @@
     "notes": "Each group sums to 1; the engine's target split picks the group. Decayed sums in fighters.json: significant attempts 79% head, 13% body, 8% legs; landed 72% head, 17% body, 11% legs; career head share of attempts 83%. He is a puncher first, so the head group carries most of the output; cross and hook lead because recaps describe a two-punch combination (left, then right hook) dropping Hill and a left hook or one-two finishing Rountree after an uppercut rocked him. Overhand and uppercut get above-average weight for his looping, odd-angle punches. Body attacks split evenly between kicks, hooks and straights for lack of a source naming one; knees to the body are covered by 'knee'. Leg kicks are rare (8% of attempts) and no source names a target, so calf and inside split evenly. Specials: spinning 0.15 for the spinning back elbow KO of Reyes; knee 0.25 and elbow 0.20 for the knees and elbows in the Rountree finish and his ground elbows. Sources: data/derived/fighters.json; ufcstats per-fight totals; theScore and CBS recaps of UFC 311 and UFC 320."
   },
   "appearance": {
-    "build": "tall, rangy and lean-muscular; 6 ft 3 in with an 80 in reach (ufcstats), long arms for his height",
-    "hair": "long dark hair, usually tied back or in a top knot",
-    "facial_hair": "beard and mustache, length varies",
+    "build": "tall, rangy and lean-muscular; 6 ft 3 in with an 80 in reach (ufcstats), long arms for his height; visible chest and body hair (ESPN cutouts)",
+    "hair": "short light-brown buzz cut all over (ESPN studio photos, Apr 2026). He shaved off his trademark style, a shaved head with a single top ponytail or knot, before UFC 311 in Jan 2025 (BBC); footage from 2022-2024 shows the top knot",
+    "facial_hair": "full brown beard and moustache of medium length, trimmed square at the jaw (ESPN, Jun 2024 and Apr 2026)",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the chest, abdomen, arms or legs in ESPN full-body cutouts from Jun 2024 and Apr 2026 (back not shown)",
+    "kit": "red UFC fight shorts in both ESPN photo shoots: red Venum shorts with a black-and-red waistband (Jun 2024, with gold title-fight gloves) and red UFC/crypto.com shorts with a dark-red wave pattern (Apr 2026). Corner colour sets the shorts in the sim",
     "sources": [
-      "https://www.ufc.com/athlete/jiri-prochazka",
-      "https://www.opro.com/blogs/news/who-is-jiri-prochazka-czech-samurai-ufc",
-      "http://ufcstats.com/fighter-details/009341ed974bad72"
+      "http://ufcstats.com/fighter-details/009341ed974bad72",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3156612.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3156612.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/3156612.png",
+      "https://www.bbc.com/sport/mixed-martial-arts/articles/cj3e0d6l6jmo"
     ]
   },
   "engine_notes": [
-    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.64, 2.24, 1.10, 0.35 (minute-weighted; rounds 3-5 come only from the Teixeira fight, the one five-rounder of his that passed round 2). Output peaks in rounds 2-3, which fits his third-round finishes of Hill and Rountree in three-round fights.", "source": "data/derived/fighters.json (pace, pace_w)" },
-    { "note": "Chin: 4 knockdowns absorbed and 3 KO/TKO losses in 9 UFC fights; 1.5 knockdowns absorbed per 100 head strikes taken (decayed), against a light heavyweight league rate of 1.3 (fighters.json priors). Power: 1.4 knockdowns per 100 head strikes landed (decayed), with 5 KO/TKO wins.", "source": "data/derived/fighters.json" },
-    { "note": "High-variance exchanges: 5.5 landed and 5.7 absorbed per minute (decayed); opponents land 52% of their significant strikes on him.", "source": "data/derived/fighters.json" },
-    { "note": "Comebacks: he trailed Rountree 20-18 on all three cards entering round 3 at UFC 320 before stopping him at 3:04 of round 3.", "source": "https://www.thescore.com/mma/news/3361094" },
-    { "note": "Control is balanced both ways (84 s for, 60 s against per 15 min decayed); Teixeira's 5 takedowns and 587 s of control at UFC 275 are the main grappling data against him.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/fd49f89b9d97566b" }
+    {
+      "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.64, 2.24, 1.10, 0.35 (minute-weighted; rounds 3-5 come only from the Teixeira fight, the one five-rounder of his that passed round 2). Output peaks in rounds 2-3, which fits his third-round finishes of Hill and Rountree in three-round fights.",
+      "source": "data/derived/fighters.json (pace, pace_w)"
+    },
+    {
+      "note": "Chin: 4 knockdowns absorbed and 3 KO/TKO losses in 9 UFC fights; 1.5 knockdowns absorbed per 100 head strikes taken (decayed), against a light heavyweight league rate of 1.3 (fighters.json priors). Power: 1.4 knockdowns per 100 head strikes landed (decayed), with 5 KO/TKO wins.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "High-variance exchanges: 5.5 landed and 5.7 absorbed per minute (decayed); opponents land 52% of their significant strikes on him.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Comebacks: he trailed Rountree 20-18 on all three cards entering round 3 at UFC 320 before stopping him at 3:04 of round 3.",
+      "source": "https://www.thescore.com/mma/news/3361094"
+    },
+    {
+      "note": "Control is balanced both ways (84 s for, 60 s against per 15 min decayed); Teixeira's 5 takedowns and 587 s of control at UFC 275 are the main grappling data against him.",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/fd49f89b9d97566b"
+    }
   ],
   "confidence": "medium"
 }

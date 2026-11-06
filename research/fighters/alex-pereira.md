@@ -1,12 +1,12 @@
 # Alex Pereira: scouting dossier
 
-As of 2026-11-06. He/him. "Poatan". Orthodox, 6 ft 4 in, 79 in reach, born 1987-07-07 (age 39). UFC record 10-3 (ufcstats); pro record 13-4 per post-fight reports.
+As of 2026-11-06. He/him. "Poatan". Orthodox, 6 ft 4 in, 79 in reach, born 1987-07-07 (age 39). UFC record 10-3 (ufcstats); pro record 13-4 (ESPN, Sherdog). Trains at Teixeira MMA & Fitness (ESPN, Sherdog). Re-checked on Nov 6, 2026 with direct page fetches (ESPN schedule, Sherdog, CBS Sports, MMA Mania) and the ESPN/UFC studio photos.
 
 ## Current status
 
 - **Title:** none. He vacated the light heavyweight belt, ending his second reign, to fight Ciryl Gane for the interim heavyweight title at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026). Gane stopped him at 1:27 of round 2.
-- **Next:** Sergei Pavlovich at UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas: a five-round heavyweight co-main event that Dana White announced on the UFC 332 broadcast (Oct 3, 2026). Pereira had pushed for an immediate Gane rematch, but Gane was booked against Josh Hokit instead. One report says Pereira would return to light heavyweight if he loses to Pavlovich.
-- **Ranking:** not confirmed for heavyweight.
+- **Next (booked):** Sergei Pavlovich at UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas: a five-round heavyweight co-main event under Oliveira vs Lopes, announced by Dana White on the UFC 332 broadcast (Oct 3, 2026) and on the ESPN and Sherdog schedules. Pereira had pushed for an immediate Gane rematch, but Gane was booked against Josh Hokit (UFC 334, Nov 14) instead. Pereira said in late October that he will go back to light heavyweight if he loses to Pavlovich (MMA Mania, Oct 22).
+- **Ranking:** the media panel still has him **#3 at light heavyweight** (UFC media rankings updated Nov 3, 2026, per CBS Sports and ufcalendar.com); he is not in the media heavyweight top 15. On the UFC/Meta algorithmic rankings (Oct 31) he is #1 at light heavyweight and #3 at heavyweight.
 - **Injuries:** none reported.
 
 ## Recent fights

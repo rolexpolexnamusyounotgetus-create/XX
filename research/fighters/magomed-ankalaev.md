@@ -1,14 +1,14 @@
 # Magomed Ankalaev
 
-As of Nov 6, 2026. Orthodox light heavyweight, age 34 (born Jun 2, 1992), 6'3" with a 75" reach. Dataset: `data/derived/fighters.json`, snapshot of Oct 31, 2026. Web claims come from search-result summaries, because page fetches were blocked in this session and the shared search budget ran out.
+As of Nov 6, 2026. Orthodox light heavyweight, age 34 (born Jun 2, 1992), 6'3" with a 75" reach. Dataset: `data/derived/fighters.json`, snapshot of Oct 31, 2026. Re-checked on Nov 6, 2026 with direct page fetches (Sherdog, ESPN, CBS Sports, Yahoo, Wikipedia) and the photo-based likeness sheet `data/likeness/magomed-ankalaev.json`.
 
 ## Current status
 - **Former UFC light heavyweight champion.** He won the belt from Alex Pereira at **UFC 313 (Mar 8, 2025)** by unanimous decision and lost it in the **UFC 320 rematch (Oct 4, 2025)**, stopped at 1:20 of R1.
 - **Last fight:** Jul 25, 2026, a **TKO of Bogdan Guskov at 2:41 of R5** in the UFC Abu Dhabi main event. Guskov had replaced the injured Khalil Rountree Jr. on late notice.
-- Record 22-2-1 (1 NC) per UFC Calendar; one other outlet lists 21-2-1.
-- **Ranked #1 contender** (CBS Sports, Oct 27, 2026; UFCTime, Oct 28).
-- **Champion:** Carlos Ulberg won the vacant title by knocking out Jiri Prochazka at UFC 327 (Apr 11, 2026). He is reported to have torn his ACL and is not expected back before early 2027. Ulberg has named Ankalaev as one of the next in line and suggested Ankalaev vs Prochazka in the meantime.
-- **Next:** none booked. Ankalaev has said he is open to fighting Paulo Costa. No injuries reported.
+- **Record:** **21-2-1 (1 NC)** per Sherdog and Wikipedia (11 KO/TKO and 10 decision wins). ESPN lists 22-2-1; the difference is unresolved.
+- **Ranked #1 contender** on the UFC media rankings updated Nov 3, 2026 (CBS Sports; ufcalendar.com mirror); #2 on the UFC/Meta rankings (Oct 31), behind Pereira.
+- **Champion:** Carlos Ulberg won the vacant title by knocking out Jiri Prochazka at UFC 327 (Apr 11, 2026). He tore his right ACL in that fight, had reconstructive surgery, and on Aug 27 said he hopes to defend "early next year" (ESPN). Ulberg has named Ankalaev as one of the next in line and suggested Ankalaev vs Prochazka in the meantime; Prochazka instead faces Navajo Stirling on Nov 21.
+- **Next:** none booked. In September he publicly challenged Paulo Costa, who is in a contract dispute with the UFC (Sherdog, MMA Fighting); mid-October coverage still called that fight "potential" (Yahoo, Oct 12). **No injuries reported.**
 
 ## Recent fights
 - **W Guskov (TKO R5, Jul 2026):** He pounded the body (26/39) and controlled Guskov for 8:26, finishing with punches on the ground in R5. Guskov's offense was almost all leg kicks: 34 of 38 landed.
@@ -18,7 +18,7 @@ As of Nov 6, 2026. Orthodox light heavyweight, age 34 (born Jun 2, 1992), 6'3" w
 - **W Johnny Walker (KO R2, Jan 2024)** with a punch at distance, after their first meeting ended in a no contest from an illegal knee in Oct 2023.
 
 ## Style
-A **strong, well-rounded pressure fighter**. He kicks and punches to the body far more than his peers: 24% of decayed attempts go to the body, against about 14% for the light heavyweight league. He walks opponents to the fence, grinds in the clinch, and finishes from top position when he gets there. Earlier knockouts came from kicks to the head (Prachnio, Sep 2018; a front kick on Lungiambula, Nov 2019) and a punch at distance (Walker, 2024).
+A **strong, well-rounded pressure fighter** with a combat sambo base (Wikipedia). He kicks and punches to the body far more than his peers: 24% of decayed attempts go to the body, against about 14% for the light heavyweight league. He walks opponents to the fence, grinds in the clinch, and finishes from top position when he gets there. Earlier knockouts came from kicks to the head (Prachnio, Sep 2018; a front kick on Lungiambula, Nov 2019) and a punch at distance (Walker, 2024).
 
 **Strengths:** takedown defense, head defense (opponents land only 24% to the head), body work, clinch and top control, and power.
 **Weaknesses:** leg kicks (he absorbs about 2x the league rate), low takedown accuracy in open space, and one bad R1 against Pereira's power.
@@ -34,16 +34,38 @@ His **only KO loss** and only knockdown absorbed came in the Pereira rematch. Hi
 - Target split 64% head, 24% body, 12% leg.
 - Elo 1738. UFC record 13-2-1 (1 NC): 7 KO/TKO and 6 decision wins.
 
+## Appearance (for the avatar)
+Copied from the photo-based likeness sheet `data/likeness/magomed-ankalaev.json` (9 photos, 2018-2026), which is the better source: it has colour hexes, face notes and morph values.
+- **Build:** tall, long-limbed and lean rather than bulky (190.5 cm, 205.5 lb at the Jul 2026 weigh-in); broad but slightly sloping shoulders, flat pecs, narrow waist, slim legs; visible dark body hair. The earlier "broad and heavy-framed" line was wrong.
+- **Hair:** very dark brown, near black, thick and straight, grown to 8-10 cm on top and brushed forward into a heavy fringe just above the brows (2025-2026). Not the short crop of 2018.
+- **Facial hair:** dense full beard, clearly auburn/reddish-brown and warmer than the hair, about 5-7 cm under the chin with a rounded-square bottom.
+- **Skin:** light (fair, neutral-to-warm with pink; light freckles; flushes red after exertion).
+- **Tattoos:** none visible in any photo.
+- **Kit:** red UFC-issued board shorts with a dark-red tiger-stripe print, white slashes and a black waistband (Mar 2025 and Jul 2026 ESPN cutouts); black shorts at weigh-ins.
+- Likeness-sheet warnings: keep the beard redder than the hair, keep the fringe over the forehead, keep him slim.
+
+## Still unconfirmed
+- Pro record: 21-2-1 (1 NC) on Sherdog and Wikipedia vs 22-2-1 on ESPN.
+- Whether a Paulo Costa fight or a title shot comes next.
+
 ## Sources
+- https://www.sherdog.com/fighter/Magomed-Ankalaev-170785
+- https://www.espn.com/mma/fighter/_/id/4273399/magomed-ankalaev
+- https://en.wikipedia.org/wiki/Magomed_Ankalaev (revision of Oct 24, 2026)
+- https://www.cbssports.com/ufc/rankings/men/ (updated Nov 3, 2026)
+- https://www.ufcalendar.com/rankings/light-heavyweight (media Nov 3, Meta Oct 31, 2026)
+- https://sports.yahoo.com/articles/alex-pereira-backs-paulo-costa-023011590.html (Oct 12, 2026)
+- https://www.sherdog.com/news/news/Magomed-Ankalaev-tells-Paulo-Costa-Im-your-getoutofjailfree-card-202904
+- https://www.mmafighting.com/ufc/511664/paulo-costa-offers-fair-option-in-ufc-ultimatum-magomed-ankalaev-responds
+- https://www.espn.com/mma/story/_/id/49743588/injured-ufc-champion-ulberg-hopes-return-early-next-year
+- https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261121 (Prochazka vs Stirling)
 - https://bloodyelbow.com/2026/07/25/magomed-ankalaev-vs-bogdan-guskov-former-champion-bounces-back-with-tko-win-at-ufc-abu-dhabi/
 - https://sports.yahoo.com/mma/live/ufc-abu-dhabi-live-results-magomed-ankalaev-vs-bogdan-guskov-updates-round-by-round-scoring-highlights-060000170.html
 - https://www.ufcalendar.com/events/ufc-2026-07-25/magomed-ankalaev-vs-bogdan-guskov
 - https://fightsplit.com/news/ankalaev-grinds-past-guskov-but-is-a-ulberg
-- https://www.cbssports.com/ufc/rankings/men/
-- https://ufctime.com/rankings/light-heavyweight
 - https://www.si.com/fannation/mma/news/ufc-champ-carlos-ulberg-reveals-light-heavyweight-proposal-amid-injury
 - https://bloodyelbow.com/2026/07/26/carlos-ulberg-shares-latest-return-update-in-reserved-response-to-magomed-ankalaevs-win/
 - https://mmasucka.com/news/carlos-ulberg-names-ideal-next-fight-for-magomed-ankalaev-following-ufc-abu-dhabi/
 - https://www.ufc.com/news/carlos-ulberg-one-win-greatness-ufc-327-light-heavyweight-title
-- https://www.ufc.com/athlete/magomed-ankalaev
+- `data/likeness/magomed-ankalaev.json`; `assets/reference/magomed-ankalaev/sources.json`
 - Dataset: `data/derived/fighters.json`, `data/raw/ufc_fight_stats.csv`, `data/raw/ufc_fight_results.csv`
