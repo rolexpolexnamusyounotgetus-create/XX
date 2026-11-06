@@ -620,9 +620,9 @@
      "logloss_with": 0.5788248485320001,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -8.727629959482959e-7,
-      "lo": -0.0000015272600814283089,
-      "hi": -2.5655151717160004e-7,
+      "est": -8.727629959482959e-07,
+      "lo": -1.5272600814283089e-06,
+      "hi": -2.5655151717160004e-07,
       "p_gt0": 0.002
      },
      "n": 845
@@ -632,9 +632,9 @@
      "logloss_with": 0.5930335681784208,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -1.0099141584613298e-7,
-      "lo": -1.8138076015023744e-7,
-      "hi": -1.882505288986469e-8,
+      "est": -1.0099141584613298e-07,
+      "lo": -1.8138076015023744e-07,
+      "hi": -1.882505288986469e-08,
       "p_gt0": 0.0105
      },
      "n": 845
@@ -1454,9 +1454,9 @@
      "logloss_with": 0.5930319721344538,
      "logloss_without": 0.5930336691698366,
      "diff": {
-      "est": -0.0000016970353827425062,
-      "lo": -0.000002435549185916011,
-      "hi": -9.44685467941618e-7,
+      "est": -1.6970353827425062e-06,
+      "lo": -2.435549185916011e-06,
+      "hi": -9.44685467941618e-07,
       "p_gt0": 0
      },
      "n": 845
@@ -1468,7 +1468,9 @@
     "2026-11-06T15:14 train: re-frozen after the train-only level step (tools/v4_levels.js); the earlier train block was for params before that step",
     "v4 = learned stat-line rates in the engine (out-of-fold rates in this evaluation: mlrates_oof.json), train-only priors (priors_dev.json) with the self-calibration re-run on them, EM judging with noise / fight-level share / 10-8 rule fit on 2019-2023 judges' rounds (tools/judgecal.js), mlcal global-scale search on TRAIN (--no-val; nothing adopted), train-only level matching (tools/v4_levels.js). Validation and blend: pending (node tools/evalv.js --version v4 --split val --compare v3, after v3's own val run).",
     "2026-11-06T15:27 val: single validation look for v4, paired against v3's single look; run by the v4 measurement step",
-    "2026-11-06T15:29 erratum (data side only, no re-simulation): tools/evalv.js counted judged rounds from the scheduled format, so a 2025 technical draw (cards over 2 rounds) and a 3-round card on fight b959e2c1d16ff832 (stored as 5 rounds) added 19-38 phantom points per card; baseRates.r108.actual for 2024-2025 was 0.0628 and is 0.0246 with judged rounds taken from the card totals (tools/evalv.js fixed). Train (0.0529) is unchanged. No metric, prediction or decision input changes."
+    "2026-11-06T15:29 erratum (data side only, no re-simulation): tools/evalv.js counted judged rounds from the scheduled format, so a 2025 technical draw (cards over 2 rounds) and a 3-round card on fight b959e2c1d16ff832 (stored as 5 rounds) added 19-38 phantom points per card; baseRates.r108.actual for 2024-2025 was 0.0628 and is 0.0246 with judged rounds taken from the card totals (tools/evalv.js fixed). Train (0.0529) is unchanged. No metric, prediction or decision input changes.",
+    "2026-11-06T19:15 contamination notes (v4 review, recorded after the fact; no re-simulation): (1) judge.head/body/leg/kd/td/ctrlMin/sub are the EM round-winner fit over ufcstats cards 2015-01-01..2026-10-31 (the older 7,495-card run; params comment says 7,550), i.e. validation years and the vault; only the noise / 10-8 terms (tools/judgecal.js) are train-only. Train-only refit (tools/judge_em_train.py, 5,519 cards before 2024): head 0.1742, body 0.1271, kd 2.164, td 0.278. Impact measured small: reviewer's train test +0.0005 winner log loss; v4.0.1 (pre-2024 weights plus other fixes) was not worse on validation (-0.0034 [-0.0073, +0.0008]). (2) The self-calibration's KO/TKO composition targets (ground 28%, clinch 12.5%, standing without a KD 7%) come from the all-years base-rate table. (3) Earlier looks: both main ingredients had been scored on 2024-2025 before v4's single look (research/model_mlrates.md: v3 + learned rates 0.6465 -> 0.6239; data/derived/mlcal_val_ledger.json entry 9087f41436d7d4b9 scored the train-only-selfcal params, 0.6441 vs 0.6486), so v4's validation number is not an untouched holdout for the bundle's composition; train alone supports it (-0.0081 [-0.0134, -0.0026], negative in all five years). (4) The mlMaxRatio cap applies per refit step: the takedown-attempt multiplier compounds past it on 20 of 3,998 train sides (up to x6.28). (5) Blend 'without a line': engine weight 0, so the stored with-minus-without CI (-1.7e-6 [-2.4e-6, -0.9e-6]) is optimizer tolerance, not an effect (tools/evalv_blend.py now reports 0).",
+    "2026-11-06T19:15: v4.0.1 (the review fixes) was rejected by the decision rule; v4 stays the current engine."
    ],
    "validated_at": "2026-11-06T15:27:38.307Z",
    "methodround_paired_vs_v3": {
@@ -2293,9 +2295,9 @@
      "logloss_with": 0.5788099923758476,
      "logloss_without": 0.5788257212949961,
      "diff": {
-      "est": -0.0000157289191484635,
-      "lo": -0.00003115957049440681,
-      "hi": -2.182334234371639e-7,
+      "est": -1.57289191484635e-05,
+      "lo": -3.115957049440681e-05,
+      "hi": -2.182334234371639e-07,
       "p_gt0": 0.0235
      },
      "n": 845
@@ -2310,9 +2312,9 @@
       "hi": 0,
       "p_gt0": null,
       "raw": {
-       "est": -2.947697791072808e-7,
-       "lo": -4.819442412118878e-7,
-       "hi": -1.0681580458083556e-7,
+       "est": -2.947697791072808e-07,
+       "lo": -4.819442412118878e-07,
+       "hi": -1.0681580458083556e-07,
        "p_gt0": 0.002
       },
       "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"
@@ -2323,9 +2325,20 @@
    },
    "notes": [
     "2026-11-06T16:43 train: v4.0.1 = v4 + the v4 review's fixes (train-only): EM judging weights refit on 2015-2023 cards (tools/judge_em_train.py; v4.0.0 used cards through 2026-10), judgecal refit + point deductions (judge.ded 0.00515/fighter-round, ded2 0.075), v4_levels re-run on all 1,999 train fights with learned-path levels for TD attempts, control and sub attempts (mlTdLevel, mlCtrlLevel, mlSubLevel), cumulative mlMaxRatio cap on TD multipliers",
-    "2026-11-06T16:45 val: single validation look for v4.0.1 (the v4 review fixes: train-only EM judging weights, point deductions, learned-path TD/control/sub-attempt levels, cumulative TD cap), paired against v4; decided by the decision rule"
+    "2026-11-06T16:45 val: single validation look for v4.0.1 (the v4 review fixes: train-only EM judging weights, point deductions, learned-path TD/control/sub-attempt levels, cumulative TD cap), paired against v4; decided by the decision rule",
+    "2026-11-06T19:15 decision: rejected by the decision rule (no validation CI excludes 0 in its favour); v4 (4.0.0) restored in src/; v4.0.1 kept at versions/v4.0.1-rejected/. Consequence: the current engine keeps v4's EM judging weights, which saw decision cards through 2026-10 (validation years and vault)."
    ],
-   "validated_at": "2026-11-06T16:45:19.279Z"
+   "validated_at": "2026-11-06T16:45:19.279Z",
+   "decision": {
+    "against": "v4",
+    "kept": false,
+    "rule": "keep if validation winner log loss beats the previous version with a paired 95% CI excluding 0, or is not worse and clearly better on 7-bin / method / stat-line deviance (CI excluding 0) without base-rate drift",
+    "basis": "validation winner log loss 0.6289 vs v4 0.6324, paired -0.0034 [-0.0073, +0.0008] (CI includes 0: branch 1 fails); 7-bin -0.0004 [-0.0232, +0.0149], method +0.0010 [-0.0046, +0.0063], stat-line deviance sig landed -0.05 [-0.21, +0.12], attempts -0.06 [-0.38, +0.26], TD -0.008 [-0.019, +0.004], control -0.41 [-1.52, +0.63], KD +0.001 [-0.003, +0.006]: none excludes 0 (branch 2 fails)",
+    "also": "Brier -0.0017 [-0.0038, +0.0002]; accuracy +0.9 pts [-1.2, +3.2]; MAE worse on TD +0.017 [+0.013, +0.021] and control +1.48 s [+0.96, +2.04]; who x how x when -0.0008 [-0.0248, +0.0184]; blend engine weight 0.002 with the line (diff -0.00002), 0 without",
+    "base_rate_drift": "10-8 share of decision judge-rounds 4.60% vs actual 2.46% (v4 3.38%): further off; TD per 15 1.40 vs 1.41 (v4 1.31) and control 173 vs 168 s (v4 163) closer; KD per 100 head 0.746 vs 0.684 (same as v4)",
+    "action": "2026-11-06T19:15: src/engine3.js, src/params3.js, src/ml/mlrates.js restored from versions/v4/ (hashes match the v4 entry); tests/test_engine3.js, data/derived/judgecal.json and data/derived/v4_levels.json restored to the v4 final commit 122c31a; the v4.0.1 work is kept in versions/v4.0.1-rejected/ (engine, params, adapter, its test file, its judgecal/v4_levels outputs, run logs); versions/v4.0.1 is a compatibility symlink to it. Current engine: v4 (4.0.0).",
+    "note": "train (tuning data, not a selection criterion): winner +0.0011 [-0.0017, +0.0038], 7-bin -0.0172 [-0.0330, -0.0034] (draws and majority decisions restored), ECE 0.010 vs 0.019; the review fixes it carried are hygiene (train-only EM judging weights, cumulative takedown cap) and level matching; they should be folded into v5 and measured with v5's one look"
+   }
   }
  ]
 }

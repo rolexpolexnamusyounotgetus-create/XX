@@ -1272,16 +1272,25 @@
     reads.textContent = ""; mir.textContent = ""; chain.textContent = "";
     if (!x || !m) { $("whyLede").textContent = "The engine could not explain this matchup."; return; }
     var A = x.A, B = x.B, nA = shortOf("A"), nB = shortOf("B"), L = m.L, P = m.P, divl = S.div.toLowerCase();
-    $("whySub").textContent = S.div + " priors (" + (P.lbs || "?") + " lb) · " + S.rounds + " rounds";
-    $("whyLede").textContent = "These are the rates the engine derived for this pair before any fight is played: each fighter's data combined with the opponent's, adjusted for age, size and your knob settings. Every simulated fight then adds fight-night form, fatigue and damage on top.";
+    $("whySub").textContent = S.div + " averages (" + (P.lbs || "?") + " lb) · " + S.rounds + " rounds";
+    $("whyLede").textContent = "These are the rates the simulator plays from for this pair, before any fight: each fighter's numbers combined with the opponent's, then the learned stat lines" + (m.mlApplied ? "" : " (switched off now)") + ", age, size and your knobs. Strike rates here count per minute spent in each position (at distance, in the clinch, on top). Every simulated fight then adds fight-night form, fatigue and damage on top.";
     function rel(v, base) { var r = v / base - 1; return Math.abs(r) < 0.03 ? "about the " + divl + " average" : Math.round(Math.abs(r) * 100) + "% " + (r > 0 ? "above" : "below") + " the " + divl + " average"; }
+    // the knockdown chance split into factors that multiply out exactly: one division base for both fighters, the learned
+    // stat lines' read of this pairing, then the puncher's power and the other fighter's resistance as the simulator uses them
+    function kdParts(i) {
+      var o = (i ? B : A).kd, j = 1 - i, fc = m.fac && m.fac[i], fo = m.fac && m.fac[j], aj = m.adj || [{}, {}];
+      var ml = m.ml && m.ml.ratios && m.ml.ratios[i] && isFinite(m.ml.ratios[i].kd) ? m.ml.ratios[i].kd : null;
+      var pw = fc ? fc.pow / Math.max(1e-9, fc.agePow * fc.sizePow * (aj[i].pow || 1)) : o.powerRatio;
+      var ch = fo ? fo.chin / Math.max(1e-9, fo.ageChin * fo.koChin * fo.sizeChin * (aj[j].chin || 1)) : o.oppChinRatio;
+      return { base: o.p0 / (ml || 1), ml: ml, pow: pw, chin: ch };
+    }
     var items = [];
     var dA = A.attPerMin.dist, dB = B.attPerMin.dist;
-    items.push(["Volume", nA + " throws " + fx(dA, 1) + " strikes a minute at distance, " + rel(dA, L.dAtt) + "; " + nB + " throws " + fx(dB, 1) + ", " + rel(dB, L.dAtt) + ". Those rates already account for how much each one's opponents usually throw at them."]);
+    items.push(["Volume", nA + " throws " + fx(dA, 1) + " strikes per minute spent at distance, " + rel(dA, L.dAtt) + "; " + nB + " throws " + fx(dB, 1) + ", " + rel(dB, L.dAtt) + ". Those rates already account for how much each one's opponents usually throw at them."]);
     var hA = A.accuracy.dist[0], hB = B.accuracy.dist[0];
     items.push(["Accuracy", "At distance " + nA + " lands " + pct(hA, 0) + " of head strikes on " + nB + " and " + nB + " lands " + pct(hB, 0) + " on " + nA + ". Per 15 minutes that comes to about " + fx(A.expectedPer15.sigLnd, 0) + " significant strikes landed for " + nA + " and " + fx(B.expectedPer15.sigLnd, 0) + " for " + nB + ", before pace and fatigue."]);
-    var kA = A.kd.perHeadLanded, kB = B.kd.perHeadLanded, p0 = A.kd.p0;
-    items.push(["Power", "A clean standing head shot from " + nA + " drops " + nB + " " + pct(kA, 2) + " of the time; one from " + nB + " drops " + nA + " " + pct(kB, 2) + " of the time. The " + divl + " baseline is " + pct(p0, 2) + ". " + (kB > kA * 1.3 ? nB + " needs far fewer clean shots to change the fight." : (kA > kB * 1.3 ? nA + " needs far fewer clean shots to change the fight." : "Neither has a big edge per shot."))]);
+    var kA = A.kd.perHeadLanded, kB = B.kd.perHeadLanded, kdb = [kdParts(0), kdParts(1)], p0 = kdb[0].base;
+    items.push(["Power", "A clean standing head shot from " + nA + " drops " + nB + " " + pct(kA, 2) + " of the time; one from " + nB + " drops " + nA + " " + pct(kB, 2) + " of the time. Both start from the " + divl + " base of " + pct(p0, 2) + " per clean head shot; the chains below show what moves each one. " + (kB > kA * 1.3 ? nB + " needs far fewer clean shots to change the fight." : (kA > kB * 1.3 ? nA + " needs far fewer clean shots to change the fight." : "Neither has a big edge per shot."))]);
     var tA = A.grappling.tdAttPer15Stand, tB = B.grappling.tdAttPer15Stand;
     items.push(["Wrestling", nA + " shoots about " + fx(tA, 1) + " times per 15 standing minutes and finishes " + pct(A.grappling.tdSuccess, 0) + "; " + nB + " shoots " + fx(tB, 1) + " and finishes " + pct(B.grappling.tdSuccess, 0) + " (league " + pct(P.td_acc, 0) + "). Once down, " + nB + " gets back up in about " + fx(B.grappling.standUpMeanSecWhenUnder, 0) + " seconds on average and " + nA + " in about " + fx(A.grappling.standUpMeanSecWhenUnder, 0) + "."]);
     var cA = A.cardio, cB = B.cardio;
@@ -1303,34 +1312,39 @@
     // knockdown chains
     chain.appendChild(el("h3", "mini", "Knockdown chance per clean head shot"));
     [["A", A, 0], ["B", B, 1]].forEach(function (s) {
-      var side = s[0], o = s[1].kd, row = el("div", "chain");
+      var side = s[0], o = s[1].kd, q = kdb[s[2]], row = el("div", "chain");
       row.setAttribute("aria-label", shortOf(side) + " drops " + shortOf(other(side)) + " " + pct(o.perHeadLanded, 2) + " of the time per clean standing head shot");
-      function f(label, v, inv, always) {
+      function f(label, v, always) {
         if (v == null || !isFinite(v)) return;
         if (!always && label !== "base" && Math.abs(v - 1) < 0.005) return;
-        var span = el("span", "f" + (label === "base" || Math.abs(v - 1) < 0.02 ? "" : ((v > 1) !== !!inv ? " up" : " dn")));
+        var dir = label === "base" || Math.abs(v - 1) < 0.02 ? 0 : (v > 1 ? 1 : -1);
+        var span = el("span", "f" + (dir > 0 ? " up" : (dir < 0 ? " dn" : "")));
+        if (dir) { var g = el("span", "g", dir > 0 ? "+" : "−"); g.setAttribute("aria-hidden", "true"); span.appendChild(g); }
         span.appendChild(el("b", null, (label === "base" ? pct(v, 2) : "×" + fx(v)))); span.appendChild(document.createTextNode(" " + (label === "base" ? divl + " base" : label)));
+        if (dir) span.appendChild(el("span", "vh", dir > 0 ? " (raises the chance)" : " (lowers the chance)"));
         if (row.children.length) row.appendChild(el("span", "op", "·"));
         row.appendChild(span);
       }
-      var opp = shortOf(other(side));
-      f("base", o.p0);
-      f(shortOf(side) + "'s power", o.powerRatio, false, true);
-      f(opp + "'s chin", o.oppChinRatio, false, true);
-      f(opp + "'s age", o.ageChinOpp);
-      f("own age", o.agePow);
-      f(opp + "'s " + o.oppKoLosses + " KO losses", o.koLossChinOpp);
-      f(opp + " moving up", o.sizeChinOpp);
-      f("own move up", o.sizePow);
-      if (Math.abs(o.knobPow - 1) > 0.005) f("power knob", o.knobPow);
-      if (Math.abs(o.knobChinOpp - 1) > 0.005) f("chin knob", o.knobChinOpp);
+      var me = shortOf(side), opp = shortOf(other(side));
+      f("base", q.base);
+      f("learned stat lines for this pairing", q.ml);
+      f(me + "'s power", q.pow, true);
+      f("how easily " + opp + " drops", q.chin, true);
+      f(opp + "'s age (easier to drop)", o.ageChinOpp);
+      f(me + "'s age (power)", o.agePow);
+      f(opp + "'s " + o.oppKoLosses + " KO loss" + (o.oppKoLosses === 1 ? "" : "es"), o.koLossChinOpp);
+      f(opp + " moving up (easier to drop)", o.sizeChinOpp);
+      f(me + " moving up (power)", o.sizePow);
+      if (Math.abs(o.knobPow - 1) > 0.005) f(me + "'s power knob", o.knobPow);
+      if (Math.abs(o.knobChinOpp - 1) > 0.005) f(opp + "'s easier-to-drop knob", o.knobChinOpp);
       row.appendChild(el("span", "op", "="));
       row.appendChild(el("span", "res-f " + side, pct(o.perHeadLanded, 2)));
       chain.appendChild(row);
     });
-    chain.appendChild(el("p", "small", "Each factor multiplies the base rate. Red borders raise the chance of a knockdown, green borders lower it. A knockdown is not a finish: the engine then plays out the follow-up, and the referee may stop it or the downed fighter may recover."));
+    chain.appendChild(el("p", "small", "Each factor multiplies the " + divl + " base. A + (red border) raises the chance of a knockdown, a − (green border) lowers it. A knockdown is not a finish: the simulator then plays out the follow-up, and the referee may stop it or the downed fighter may recover."));
 
     // mirrored bars
+    mir.appendChild(el("p", "small", "What the simulator plays: each fighter's numbers after the opponent adjustment, the learned stat lines and your knobs. Strike rates count per minute spent in that position."));
     var hd = el("div", "mir-h"); hd.appendChild(el("span", "A", nA)); hd.appendChild(el("span", "B", nB)); mir.appendChild(hd);
     function mrow(label, va, vb, ref, fmt, note) {
       var max = Math.max(va || 0, vb || 0, ref || 0) * 1.12 || 1;
@@ -1347,17 +1361,17 @@
       r.appendChild(b); mir.appendChild(r);
     }
     var f1 = function (v) { return fx(v, 1); }, f2 = function (v) { return fx(v, 2); }, fp = function (v) { return pct(v, 0); }, fp2 = function (v) { return pct(v, 2); };
-    mrow("Strike attempts / min at distance", A.attPerMin.dist, B.attPerMin.dist, L.dAtt, f1);
-    mrow("Strike attempts / min in the clinch", A.attPerMin.clinch, B.attPerMin.clinch, null, f1);
-    mrow("Ground strikes / min on top", A.attPerMin.groundTop, B.attPerMin.groundTop, L.gAtt, f1);
+    mrow("Strike attempts per minute spent at distance", A.attPerMin.dist, B.attPerMin.dist, L.dAtt, f1);
+    mrow("Strike attempts per minute spent in the clinch", A.attPerMin.clinch, B.attPerMin.clinch, null, f1);
+    mrow("Ground strikes per minute spent on top", A.attPerMin.groundTop, B.attPerMin.groundTop, L.gAtt, f1);
     mrow("Head accuracy at distance", A.accuracy.dist[0], B.accuracy.dist[0], null, fp);
     mrow("Body accuracy at distance", A.accuracy.dist[1], B.accuracy.dist[1], null, fp);
     mrow("Leg accuracy at distance", A.accuracy.dist[2], B.accuracy.dist[2], null, fp);
     mrow("Leg-kick share at distance", A.targetMixDist[2], B.targetMixDist[2], L.mixD[2], fp);
-    mrow("KD chance per clean head shot", A.kd.perHeadLanded, B.kd.perHeadLanded, A.kd.p0, fp2);
+    mrow("KD chance per clean head shot", A.kd.perHeadLanded, B.kd.perHeadLanded, p0, fp2);
     mrow("Takedown attempts / 15 standing min", A.grappling.tdAttPer15Stand, B.grappling.tdAttPer15Stand, L.tdAtt * 15, f1);
     mrow("Takedown success", A.grappling.tdSuccess, B.grappling.tdSuccess, P.td_acc, fp);
-    mrow("Control target, seconds / 15 min", A.grappling.ctrlTargetPer15, B.grappling.ctrlTargetPer15, P.ctrl * 15, function (v) { return fx(v, 0); });
+    mrow("Expected control time, seconds / 15 min", A.grappling.ctrlTargetPer15, B.grappling.ctrlTargetPer15, P.ctrl * 15, function (v) { return fx(v, 0); });
     mrow("Submission attempts / 10 ground min", A.subs.attemptsPerGroundMin * 10, B.subs.attemptsPerGroundMin * 10, L.sub * 10, f2);
     mrow("Submission conversion", A.subs.conversion, B.subs.conversion, P.sub_conv, fp);
     mrow("Cardio index (late-round output)", A.cardio.cardioIndex, B.cardio.cardioIndex, 1, f2, "higher holds pace");
@@ -1546,8 +1560,9 @@
     box.textContent = "";
     var pred = mlPredict(prof("A"), prof("B"));
     if (!pred) { lede.textContent = MLR.pending ? "Loading the stat-line model." : (MLR.ok ? "The stat-line model could not score this pair." : "The stat-line model is not in this build (or this browser can't unpack it)."); return; }
-    lede.textContent = "Per minute of fight time, each fighter against this opponent, from a learned model trained on 2010-2025 UFC fights. On 2024-25 fights it beat the simulator's own rates on 12 of 18 stats, and feeding it to the simulator improved its winner calls. " +
-      (cur.m && cur.m.mlApplied ? "The simulator is using these lines now." : "The ML stat lines toggle (in the odds panel above) has them switched off, so the simulator uses its data-only rates.") + " Avg is the " + S.div.toLowerCase() + " average.";
+    lede.textContent = "Per minute of fight time (all positions together), each fighter against this opponent, from a learned model trained on 2010-2025 UFC fights. On 2024-25 fights it beat the simulator's own rates on 12 of 18 stats, and feeding it to the simulator improved its winner calls. " +
+      "The simulator spreads these lines over the time it expects in each position, so its rates above, counted per minute spent at distance or on top, read higher. " +
+      (cur.m && cur.m.mlApplied ? "The simulator is using these lines now." : "The “Simulator uses learned stat lines” switch in the knobs panel is off, so the simulator plays from the raw UFC numbers.") + " Avg is the " + S.div.toLowerCase() + " average.";
     var base = {}; (pred.base || []).forEach(function (v, i) { base[(window.MLRates && window.MLRates.TNAMES[i]) || i] = v; });
     ["A", "B"].forEach(function (side) {
       var q = pred[side], card = el("div", "mlcard " + side);
@@ -1556,7 +1571,7 @@
       function row(label, v, avg) { var tr = el("tr"); tr.appendChild(el("td", null, label)); var td = el("td", "strong", v); tr.appendChild(td); var ta = el("td"); if (avg != null) ta.appendChild(el("small", null, "avg " + avg)); tr.appendChild(ta); tb.appendChild(tr); }
       function f1(x) { return fx(x, 1); } function f2(x) { return fx(x, 2); }
       var tot = q.d_att + q.c_att + q.g_att;
-      row("Significant strikes thrown / min", f1(tot), base.d_att != null ? f1(base.d_att + base.c_att + base.g_att) : null);
+      row("Significant strikes thrown / min of fight time", f1(tot), base.d_att != null ? f1(base.d_att + base.c_att + base.g_att) : null);
       row("Head · body · legs thrown / min", f1(q.h_att) + " · " + f1(q.b_att) + " · " + f1(q.l_att), base.h_att != null ? f1(base.h_att) + " · " + f1(base.b_att) + " · " + f1(base.l_att) : null);
       row("Head · body · legs landed / min", f1(q.h_att * q.acc_h) + " · " + f1(q.b_att * q.acc_b) + " · " + f1(q.l_att * q.acc_l), base.h_att != null ? f1(base.h_att * base.acc_h) + " · " + f1(base.b_att * base.acc_b) + " · " + f1(base.l_att * base.acc_l) : null);
       row("Accuracy: head · body · legs", pct(q.acc_h, 0) + " · " + pct(q.acc_b, 0) + " · " + pct(q.acc_l, 0), base.acc_h != null ? pct(base.acc_h, 0) + " · " + pct(base.acc_b, 0) + " · " + pct(base.acc_l, 0) : null);

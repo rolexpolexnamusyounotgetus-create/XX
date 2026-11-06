@@ -11,6 +11,9 @@ Run from the project root:
     python3 tools/ratings.py plus         # then: rating logits + pre-fight covariates (ratings_plus), added to the json
     python3 tools/ratings.py tables       # markdown tables for research/model_ratings.md
     python3 tools/ratings.py ablate       # one ingredient off at a time, tuning window only
+    python3 tools/ratings.py review       # checks + extra analyses -> ratings.json "review" (parts: describe,
+                                          # ablation, verify; e.g. `review describe,ablation`)
+    python3 tools/ratings.py review_whr 3 # WHR time-ordered check (choose on 2019-21, score 2022-23), 3 workers
     python3 tools/ratings.py --quick      # smaller tuning grids (smoke test)
     python3 tools/ratings.py --jobs 4     # parallel workers for the tuning grids (default: all cores)
 
@@ -2716,8 +2719,10 @@ def _save_review(path, part, value):
     J = json.load(open(path))
     J.setdefault("review", {})[part] = value
     J["review"]["updated"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
-    with open(path, "w") as fh:
+    tmp = path + ".tmp"
+    with open(tmp, "w") as fh:                    # atomic: other tools read ratings.json concurrently
         json.dump(J, fh, separators=(",", ":"))
+    os.replace(tmp, path)
 
 
 def review(path=OUT_JSON, parts=("describe", "ablation", "verify")):
