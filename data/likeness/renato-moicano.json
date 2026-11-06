@@ -1,0 +1,305 @@
+{
+  "slug": "renato-moicano",
+  "name": "Renato Moicano",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 37,
+  "official": {
+    "dob": "1989-05-21",
+    "height_cm": 180.3,
+    "reach_cm": 182.9,
+    "stance": "Orthodox",
+    "fight_weight_lb": 155,
+    "source": "data/derived/fighters.json (71 in height, 72 in reach, orthodox). Last fight: lost to Tom Nolan by TKO (R3 1:28) at UFC Vegas 123, Las Vegas, 2026-10-31 (Cageside Press, AgentMMA, Boxing News); before that a rear-naked-choke win over Chris Duncan at UFC Vegas 115 in April 2026."
+  },
+  "photos_used": [
+    "espn-full.png",
+    "wm-2026-sextoround-interview.jpg",
+    "ref-cageside-2026-04-b.jpg",
+    "ref-cageside-2026-10-weighin-b.jpg",
+    "ref-cageside-2026-04-faceoff.jpg",
+    "espn-stance-left.png",
+    "espn-stance-right.png",
+    "ref-cageside-2026-10-30-weighin-a.jpg",
+    "ref-cageside-2025-06-ufc317.jpg",
+    "ref-zuffa-2026-10-31-prefight.jpg",
+    "ref-zuffa-2026-10-31-action.jpg"
+  ],
+  "photo_coverage": "Good. Front: ESPN studio headshot and a Commons video still (CC BY 3.0, cap on). Three-quarter: two 2026 media-day stills (April, October), the ESPN full-body three-quarter and the Oct 31 2026 pre-fight frame. Profile: April 2026 face-off (left side, small). Physique: two ESPN full-body cutouts and the Oct 30 2026 weigh-in. Action: Oct 31 2026 vs Nolan. Only one free-licence photo is usable (the 2024 Commons still and a fan graphic did not download: Wikimedia returned HTTP 429 all session).",
+  "face": {
+    "shape": "Long and fairly narrow, close to rectangular: tall forehead, flat cheeks, angular jaw hidden under the beard. Reads lean and bony at fight weight.",
+    "jaw": "Medium width with defined angles; the beard squares it off further.",
+    "chin": "Medium height, slightly forward in profile, blunt; covered by the beard.",
+    "cheekbones": "Moderately high and visible, with flat to slightly hollow cheeks below.",
+    "brow_ridge": "Pronounced: the brows sit low on a forward brow, so the eyes look deep-set and shadowed.",
+    "forehead": "High and broad, with three or four deep horizontal creases and vertical frown lines between the brows; temples recede so the forehead looks taller at the corners.",
+    "eyes": {
+      "shape": "Almond, slightly narrow, heavy upper lids; outer corners level to slightly down, giving a tired or sceptical look in press photos.",
+      "spacing": "Average.",
+      "colour": "brown (dark brown in every photo)",
+      "size": "Medium-small, deep-set."
+    },
+    "eyebrows": {
+      "thickness": "Thick",
+      "shape": "Low and nearly straight, heavier at the inner ends, often drawn together in a frown; slight downward tail at the outer ends.",
+      "colour": "Dark brown",
+      "colour_hex": "#533123"
+    },
+    "nose": {
+      "length": "Long",
+      "width": "Narrow to medium bridge; the lower nose widens into a fleshy, rounded tip and medium nostrils.",
+      "bridge": "Straight and fairly high; no visible deviation from the front.",
+      "hump": "None to very slight; the profile is straight.",
+      "tip": "Bulbous and rounded, slightly drooping in profile (the tip sits a little below the nostrils' line).",
+      "fight_damage": "No clear deviation or flattening visible. A tiny bright dot at the edge of one nostril in the Oct 2026 media-day still may be a small stud or just a highlight; not seen in other photos, so ignore unless confirmed."
+    },
+    "mouth_lips": "Medium-wide mouth with a thin upper lip and medium lower lip; straight, closed resting line, often a slight downturned frown. Moustache covers the upper lip edge.",
+    "ears": {
+      "size": "Medium-large",
+      "protrusion": "Clearly stick out from the head, mostly at the top; prominent from the front because the sides are faded short.",
+      "cauliflower_ear": "Mild: his left ear shows a thick, rolled, slightly lumpy upper rim in the ESPN headshot; his right ear is slightly thickened at the top. Not the swollen kind."
+    },
+    "notable_marks_scars": "Deep forehead creases and frown lines; no large scar visible. Neck tattoo (tribal) up the left side of his neck to the jaw."
+  },
+  "hair": {
+    "style": "Short textured crop on top (about 3-4 cm, pushed forward and up) with a skin fade on the sides and back, fading from skin above the ears; receding temples. Same cut in April and October 2026 and in the ESPN cutouts.",
+    "length_cm": {
+      "top": 3.5,
+      "sides": 0.2,
+      "back": 0.3
+    },
+    "colour": "Dark brown, slightly lighter at the tips under studio light.",
+    "colour_samples": {
+      "espn_headshot_top": "#48332a"
+    },
+    "colour_hex": "#3a2a22",
+    "hairline": "Receding at both temples (an M shape with deep corners) and a central forelock area; the front sits high on a tall forehead.",
+    "texture": "Straight to slightly wavy, medium thickness."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "colour": "Dark brown with lighter brown and a few lighter hairs at the chin; the moustache is darker.",
+    "colour_hex": "#4a3226",
+    "colour_samples": {
+      "espn_headshot_chin_box_265,270,330,295": "#865642 (skin shows through, so colour_hex is darker than the raw sample)"
+    },
+    "density": "Dense on the moustache, chin and jawline; lighter and shorter on the upper cheeks.",
+    "length_mm": 9,
+    "shape": "Short boxed beard: a full moustache joined to a chin beard that runs along the jaw to the sideburns, neckline under the jaw, cheeks lightly stubbled. Kept at a similar length in 2025-2026."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn-full.png",
+        "spot": "forehead",
+        "box": "268,98,325,118",
+        "hex": "#fbbaa0",
+        "light": "studio high key, warm grade",
+        "in_average": false
+      },
+      {
+        "photo": "espn-full.png",
+        "spot": "right cheek",
+        "box": "243,186,265,206",
+        "hex": "#eb9d7d",
+        "light": "studio high key, warm grade"
+      },
+      {
+        "photo": "espn-full.png",
+        "spot": "left cheek",
+        "box": "332,186,352,206",
+        "hex": "#f4a782",
+        "light": "studio high key, warm grade"
+      },
+      {
+        "photo": "espn-stance-left.png",
+        "spot": "forehead",
+        "box": "250,75,320,100",
+        "hex": "#f5a583",
+        "light": "studio, warm grade"
+      },
+      {
+        "photo": "espn-stance-left.png",
+        "spot": "abdomen",
+        "box": "250,640,330,700",
+        "hex": "#be7857",
+        "light": "studio, body a stop darker than the face"
+      },
+      {
+        "photo": "ref-cageside-2026-04-b.jpg",
+        "spot": "forehead",
+        "box": "320,75,385,98",
+        "hex": "#c07568",
+        "light": "media-day stage light, pinkish"
+      },
+      {
+        "photo": "ref-cageside-2026-04-b.jpg",
+        "spot": "left cheek",
+        "box": "375,150,392,170",
+        "hex": "#bc7569",
+        "light": "media-day stage light, pinkish"
+      },
+      {
+        "photo": "ref-cageside-2026-10-weighin-b.jpg",
+        "spot": "forehead",
+        "box": "300,55,350,75",
+        "hex": "#9b5840",
+        "light": "dim media-day light"
+      },
+      {
+        "photo": "ref-cageside-2026-10-weighin-b.jpg",
+        "spot": "left cheek",
+        "box": "355,110,370,125",
+        "hex": "#905539",
+        "light": "dim media-day light"
+      },
+      {
+        "photo": "wm-2026-sextoround-interview.jpg",
+        "spot": "left cheek",
+        "box": "505,300,545,335",
+        "hex": "#bf877c",
+        "light": "warm indoor video light"
+      },
+      {
+        "photo": "wm-2026-sextoround-interview.jpg",
+        "spot": "nose bridge",
+        "box": "430,250,460,275",
+        "hex": "#b07c73",
+        "light": "warm indoor video light"
+      }
+    ],
+    "tone_average_all": "#c88168",
+    "tone_average_used": "#c48068",
+    "tone_hex": "#c48068",
+    "tone_note": "Each sample is the median of a box on lit skin (box in source pixels); the shadowed right cheek in the April 2026 still (#885545) was left out, and the over-bright studio forehead is not in the used average. Studio cutouts read lighter and pinker, media-day stills darker; the used average mixes them on purpose.",
+    "tone_category": "light-medium (light olive, tanned)",
+    "undertone": "Warm to neutral-olive; turns pinkish under stage light.",
+    "freckles_marks": "Visible skin texture and a few small marks on the cheeks; moderate body hair on the forearms and shins."
+  },
+  "body": {
+    "build": "Lean, athletic lightweight at 180 cm with a reach slightly longer than his height; medium frame, not bulky.",
+    "body_fat": "lean",
+    "body_fat_notes": "Visible abs and oblique lines at the Oct 2026 weigh-in and in both studio cutouts; defined but not shredded-dry.",
+    "shoulders": "Medium width, rounded delts, moderately sloping.",
+    "chest": "Moderately developed, flat pecs; chest fully covered by tattoos.",
+    "arms": "Lean and sinewy, medium biceps, defined forearms; fully sleeved.",
+    "waist": "Narrow, slim hips.",
+    "legs_calves": "Long, lean legs; slim thighs and moderate calves.",
+    "neck": "Medium thickness, medium length.",
+    "posture": "Upright, shoulders slightly forward, head level; at weigh-ins he stands square and loose.",
+    "notable_physique_traits": "Heavily tattooed torso and both arms, faded haircut with protruding ears, long narrow face with a short dark boxed beard."
+  },
+  "tattoos": [
+    {
+      "where": "Upper chest, across both pecs below the collarbones",
+      "description": "Large black ornate script reading 'Sagrada Familia' with swirl flourishes.",
+      "size": "About 35 cm wide x 10 cm tall"
+    },
+    {
+      "where": "Left arm sleeve (shoulder, chest edge, upper arm and forearm to the wrist), continuing up the left side of the neck",
+      "description": "Full black Polynesian/Maori-style tribal sleeve: bands, spearhead and shell patterns covering the left pec, deltoid, upper back of the shoulder and the whole arm; a tribal strip runs up the left neck to the jaw.",
+      "size": "Full sleeve plus left pec, shoulder and neck"
+    },
+    {
+      "where": "Right arm sleeve (shoulder to wrist)",
+      "description": "Full black-and-grey realism sleeve: clouds and a praying figure on the upper arm, a city skyline and numerals on the inner forearm, shading throughout; a sacred heart wrapped in a crown of thorns on the inner upper arm (UFC 317 photo).",
+      "size": "Full sleeve"
+    },
+    {
+      "where": "Right side of the ribcage, under the armpit",
+      "description": "Small black star/sun motif.",
+      "size": "About 5 cm"
+    },
+    {
+      "where": "Right shin and calf, knee to ankle",
+      "description": "Black-and-grey piece: a line of script below the knee, a statue figure with outstretched arms in the middle, and a skull near the ankle.",
+      "size": "About 35 cm tall"
+    }
+  ],
+  "accessories_seen": "Gold chain with a cross pendant (UFC 317 weigh-in 2025); clear in-ear monitors and a black UFC cap in his YouTube studio; gold wristwatch at April 2026 media day.",
+  "kit": {
+    "typical_shorts": "Yellow UFC shorts in every studio cutout and on fight night: yellow with black tiger-stripe pattern and a black waistband (older cutout); yellow with a dark leaf/chevron pattern and black waistband panel (newer cutout, crypto.com logo); Oct 31 2026: yellow with a dark scale pattern, black waistband and green 'MOICANO' lettering on the left leg. Black UFC gloves.",
+    "gloves": "Black UFC gloves; red tape seen on Nolan's gloves, Moicano's corner colour not confirmed.",
+    "shorts_colours_hex": {
+      "yellow_base": "#f2cf1d",
+      "pattern_black": "#1d1a12",
+      "lettering_green": "#1f8a3c",
+      "waistband_black": "#141414"
+    },
+    "brand_note": "Logos visible on the shorts: UFC, crypto.com (newer), Venum (older)."
+  },
+  "stance_and_guard": {
+    "official_stance": "Orthodox (data/derived/fighters.json).",
+    "seen_in_photos": "Oct 31 2026 vs Nolan: when hurt he shells up high with both gloves at the temples, elbows tight to the ribs, chin tucked and knees bent. No clean neutral-stance photo was found, so do not infer guard height or foot width from these images.",
+    "confidence": "low for guard details"
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "mh-skin-young_caucasian_male (closest swatch to the sampled tone) tinted toward #c48068",
+    "eyebrows": "eyebrow010 (thick) tinted #533123",
+    "hair": "short crop about 3.5 cm on top, skin fade on the sides and back, receding temples; colour #3a2a22",
+    "beard": "short boxed beard about 9 mm, #4a3226, densest on the moustache and chin",
+    "tattoos": "both arms sleeved (left tribal, right black-and-grey), chest script, left-neck tribal"
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.185,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.45,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.2,
+    "macro/heightUpM": 0.1,
+    "macro/heightDownM": 0.0,
+    "macro/proportionsUpM": 0.4,
+    "head/head-oval": 0.2,
+    "head/head-square": 0.15,
+    "head/head-scale-vert-incr": 0.2,
+    "head/head-scale-horiz-decr": 0.05,
+    "head/head-fat-decr": 0.3,
+    "forehead/forehead-scale-vert-incr": 0.25,
+    "forehead/forehead-trans-backward": 0.1,
+    "chin/chin-bones-incr": 0.15,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-prominent-incr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.2,
+    "cheek/r-cheek-bones-incr": 0.2,
+    "cheek/l-cheek-volume-decr": 0.3,
+    "cheek/r-cheek-volume-decr": 0.3,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-height2-decr": 0.15,
+    "eyes/r-eye-height2-decr": 0.15,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15,
+    "eyebrows/eyebrows-trans-down": 0.3,
+    "eyebrows/eyebrows-trans-forward": 0.25,
+    "nose/nose-scale-vert-incr": 0.2,
+    "nose/nose-scale-depth-incr": 0.15,
+    "nose/nose-width1-decr": 0.05,
+    "nose/nose-point-width-incr": 0.25,
+    "nose/nose-point-down": 0.15,
+    "nose/nose-nostrils-width-incr": 0.05,
+    "mouth/mouth-upperlip-volume-decr": 0.3,
+    "mouth/mouth-lowerlip-volume-decr": 0.05,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "neck/neck-scale-horiz-incr": 0.05,
+    "torso/measure-shoulder-dist-incr": 0.1,
+    "torso/torso-vshape-incr": 0.2,
+    "torso/measure-waist-circ-decr": 0.25,
+    "torso/measure-hips-circ-decr": 0.15,
+    "buttocks/buttocks-volume-decr": 0.1
+  },
+  "morphs_extra": {
+    "_note": "Targets from assets/embed/mh-shapes-x.bin.gz (read by src/avatar3d.js from this block). l- = the fighter's own left. Protruding ears and a thicker left upper rim; fleshy nose tip.",
+    "ears/l-ear-scale-incr": 0.2,
+    "ears/r-ear-scale-incr": 0.2,
+    "ears/l-ear-wing-incr": 0.35,
+    "ears/r-ear-wing-incr": 0.3,
+    "ears/l-ear-scale-depth-incr": 0.3,
+    "ears/r-ear-scale-depth-incr": 0.15,
+    "community/elvs_bulbous_nose_1": 0.2,
+    "head/head-rectangular": 0.15
+  },
+  "notes": "Confidence: high for hair, beard, tattoos, build and skin; medium-high for face proportions (one sharp studio front, a free-licence front with a cap, three 2026 three-quarters, one small profile); medium for morph values. What to watch: (1) long narrow face with a tall, creased forehead and receding temples; (2) thick low brows over deep-set, heavy-lidded brown eyes; (3) long straight nose ending in a fleshy rounded tip; (4) protruding ears on a skin-faded head, mild thickening on his left ear; (5) short dark boxed beard with a fuller moustache; (6) 'Sagrada Familia' chest script, left tribal sleeve up the neck, right black-and-grey sleeve, right-shin piece; (7) lean 180 cm frame, do not bulk him up. ageOldM uses (years-25)/65 like src/avatar3d.js. Only one embed-ok photo is in the folder (Commons rate limit); re-run the Commons download for File:Renato_Moicano_2024.png if a second free photo is needed."
+}

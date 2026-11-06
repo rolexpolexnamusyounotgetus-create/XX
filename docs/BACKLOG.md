@@ -129,7 +129,7 @@ Findings from verified research that the next engine versions must use. Each lin
   verifiers for dynamics, market, ml, fightweek; 3D reviews/fixes; page UI/QA reviews/fix; v3 calibrate/
   reviews/fix; asset clip conversion + verify; scouting and likeness checkers.
 
-## Engine v4 status (Nov 6, built and train-measured; validation not yet looked at)
+## Engine v4 status (Nov 6: validated once and kept)
 - v4 = learned stat-line rates inside the engine (FightEngine.loadMLRates / opts.ml), train-only priors
   (data/derived/priors_dev.json via tools/build_db.py --priors-until 2024-01-01) with the self-calibration re-run on
   them, EM judging with noise and 10-8 rule fit on 2019-2023 judges' rounds (tools/judgecal.js), train-only level
@@ -139,10 +139,26 @@ Findings from verified research that the next engine versions must use. Each lin
   -0.0026]), Brier -0.0040, accuracy +3.4 pts; 7-bin +0.0074 [-0.0092, +0.0254] and method -0.0018 (both n.s.);
   stat-line deviance better on landed, attempts, takedowns and control. Details: docs/CHANGELOG.md v4,
   data/derived/version_history.json.
-- NEXT (one look each, in this order): `node tools/evalv.js --version v3 --split val`, then
-  `node tools/evalv.js --version v4 --split val --compare v3` (runs the blend test: the MoE linear stacker refit with v4's
-  engine, validated engine weight, validation log loss with vs without the engine). v4 ships only if it beats v3 there
-  (ROADMAP rule) and should earn a non-zero blend weight (Prediction status above).
+- VALIDATION 2024-2025, one look per version (v3 first, then v4 paired against it). 853 decisive fights, symmetric,
+  300 sims per order, 2,000 event-cluster resamples.
+  - Winner log loss: v3 0.6424, v4 0.6324, paired -0.0100 [-0.0170, -0.0030]. **v4 kept** (decision rule branch 1).
+  - Brier -0.0046 [-0.0080, -0.0013]. Accuracy 65.7% vs 64.2% (+1.5 pts [-1.0, +3.9]).
+  - 7-bin -0.0171 [-0.0343, +0.0018] and who x how x when -0.0171 [-0.0368, +0.0043], both n.s.; method -0.0006 n.s.
+  - Stat-line deviance better on all five stats, CIs excluding 0 (sig landed -0.97, attempts -1.89, TD -0.145,
+    control -10.3, KD -0.016).
+  - Calibration slope 1.72 vs 1.57 and ECE 0.063 vs 0.054: both underconfident on 2024-25, v4 a little more.
+  - v4 still trails methodround model S: joint +0.029 [+0.0015, +0.0575], winner +0.011 [+0.002, +0.020].
+- Blend test: the engine's first non-zero validated weight, 0.037, with the closing line only. Blend log loss
+  0.5786 vs 0.5788 without the engine (-0.0002 [-0.0006, +0.0001], n.s.). Weight 0 without a line, where `ml` already
+  carries the learned rates. The engine still adds nothing measurable to the winner. v5 must earn this through
+  method/round, not through the winner. Details: docs/CHANGELOG.md v4, data/derived/version_history.json.
+- Validation base-rate drift (actual / v4):
+  - sig landed per 15: 58.1 / 63.3, +9.0%, out of the 6% tolerance; v3 is +9.9%. The league pace fell from 61.1 on
+    train, and the walk-forward priors lag it.
+  - KD per 100 head: 0.684 / 0.746 (+9.0%; v3 +4.8%). This is the 2024 glove-trial dip plus v4_levels' kdScale.
+  - 10-8 share: 2.46% / 3.38% (v3 4.96%). evalv's 'actual' was 6.28% until a judged-rounds fix. Fight
+    b959e2c1d16ff832 is stored as 5 rounds but judged over 3: check tools/build_db.py.
+  - A recency-weighted league level (durability's trailing 730-day level) is a v5 item.
 - Known gaps for v5/v6: 5-round finish timing (sim 14.5/12.8/10.4/9.3/5.4% by round vs 17.3/16.5/9.5/5.3/4.9% on
   train); simulated decisions UD 76-79% vs 80% in the judges' rounds (fight-level coherence beyond the shared
   fight-level noise); MD share 0.5% vs 2% (deductions are not modeled); hurt weight 0.8 in judging is a judgment call.

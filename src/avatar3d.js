@@ -2142,6 +2142,16 @@
       } else for (var k = 0; k < SNAP_L; k++) buf[b + k] = 0;
     }
   };
+  /* Live state around an instant replay: restore() rebuilds layers from snapshots (no fades or timers),
+     so the live layers are kept aside and put back when the replay ends. */
+  Avatar.prototype.stashLive = function () {
+    this._live = { layers: this.layers.map(function (L) { var c = Object.assign({}, L); c.anchor = Object.assign({}, L.anchor); if (L.prev) c.prev = Object.assign({}, L.prev); return c; }),
+      idleT: this.idleT, idleW: this.idleW, face: this.face ? Object.assign({}, this.face) : null };
+  };
+  Avatar.prototype.unstashLive = function () {
+    var S = this._live; if (!S) return;
+    this.layers = S.layers; this.idleT = S.idleT; this.idleW = S.idleW; if (S.face) this.face = S.face; this._live = null;
+  };
   Avatar.prototype.restore = function (A, oa, B, ob, f) {
     var list = this.base.clipList; if (!list || !list.length) return;
     var src = f < 0.5 ? A : B, o = f < 0.5 ? oa : ob;

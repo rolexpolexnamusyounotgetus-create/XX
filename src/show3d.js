@@ -1293,6 +1293,7 @@
   Show.prototype.startReplay = function (pr) {
     var span = this.replay.span(); if (!span) return;
     this.replay.stash();
+    this.avatars().forEach(function (av) { if (av.stashLive) av.stashLive(); });
     this.rp = { t0: Math.max(span[0], pr.t0), t1: Math.min(span[1], pr.t1), final: pr.final, prevPhase: this.phase };
     this.replayT = 0; this.phase = "replay";
     if (this.hooks.onReplay) this.hooks.onReplay(true);
@@ -1306,6 +1307,7 @@
   Show.prototype.endReplay = function () {
     var rp = this.rp; if (!rp) return;
     this.replay.unstash(); this.rp = null;
+    this.avatars().forEach(function (av) { if (av.unstashLive) av.unstashLive(); });
     this.phase = rp.prevPhase === "replay" ? "live" : rp.prevPhase;
     if (this.hooks.onReplay) this.hooks.onReplay(false);
     if (rp.final) this.toResult();

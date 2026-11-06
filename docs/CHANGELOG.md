@@ -5,10 +5,115 @@ Each engine version records its held-out numbers here (docs/ROADMAP.md). "Test" 
 
 ## v4 (2026-11-06): learned stat-line rates in the engine, train-only priors, EM judging, the standard evaluation
 
-Status: built and measured on TRAIN only (2019-2023). The single validation look (2024-2025) is the next step:
-`node tools/evalv.js --version v3 --split val` and then `node tools/evalv.js --version v4 --split val --compare v3`.
-That run also runs the blend test and fills `validation` / `blend` in data/derived/version_history.json. Frozen files:
-versions/v3/ (copied before any v4 edit) and versions/v4/ (engine3.js, params3.js, ml/mlrates.js).
+Status: **validated and kept** (Nov 6, about 10:25 am ET). Each version had exactly one validation look (2024-2025),
+v3 first and then v4 paired against it: `node tools/evalv.js --version v3 --split val` and
+`node tools/evalv.js --version v4 --split val --compare v3`. Both runs also ran the blend test.
+- On validation, v4 beats v3 on winner log loss with a paired 95% CI that excludes 0: -0.0100 [-0.0170, -0.0030].
+  That meets the first branch of the decision rule, so v4 keeps its number.
+- Results are in data/derived/version_history.json (`validation`, `blend`, `decision`) and data/derived/evalv/.
+- Frozen files: versions/v3/ (copied before any v4 edit) and versions/v4/ (engine3.js, params3.js, ml/mlrates.js).
+
+### Validation 2024-2025 (one look per version) and the decision
+
+Setup:
+- 865 fights: 853 decisive, 857 with an outcome (DQ and no contests are dropped).
+- Symmetric: both corner orders, 300 sims per order, common random numbers, walk-forward priors.
+- v4 uses the dev model's learned rates for 2024-2025 (trained 2010-2023; `src: dev` in mlrates_oof.json). v3 has no
+  learned rates.
+- CIs come from 2,000 event-cluster bootstrap resamples (400 for ECE and slope). Paired differences are on the same fights.
+
+| validation 2024-2025 | v3 | v4 | v4 - v3, paired [95% CI] |
+|---|---|---|---|
+| **Winner log loss** | 0.6424 [0.6272, 0.6577] | 0.6324 [0.6165, 0.6474] | **-0.0100 [-0.0170, -0.0030]** |
+| Brier | 0.2252 [0.2180, 0.2326] | 0.2206 [0.2130, 0.2277] | -0.0046 [-0.0080, -0.0013] |
+| Accuracy | 64.2% [60.7, 67.9] | 65.7% [62.2, 69.2] | +1.5 pts [-1.0, +3.9] |
+| ECE (10 bins, mirrored; resampling spread) | 0.054 [0.033, 0.088] | 0.063 [0.038, 0.097] | |
+| Calibration slope (mirrored, no intercept) | 1.57 [1.24, 1.95] | 1.72 [1.39, 2.09] | |
+| 7-bin log loss | 1.5883 [1.5484, 1.6299] | 1.5712 [1.5277, 1.6201] | -0.0171 [-0.0343, +0.0018] |
+| Method (KO/SUB/DEC) log loss | 0.9405 [0.9112, 0.9713] | 0.9399 [0.9103, 0.9702] | -0.0006 [-0.0108, +0.0097] |
+| Stat-line deviance per fighter: sig landed | 22.831 [21.130, 24.597] | 21.866 [20.272, 23.521] | -0.965 [-1.329, -0.621] |
+| Stat-line deviance per fighter: sig attempts | 45.310 [41.787, 49.121] | 43.422 [40.075, 46.940] | -1.889 [-2.778, -1.048] |
+| Stat-line deviance per fighter: takedowns | 1.951 [1.820, 2.099] | 1.806 [1.682, 1.949] | -0.145 [-0.198, -0.097] |
+| Stat-line deviance per fighter: control s | 164.39 [154.95, 174.45] | 154.12 [144.19, 164.46] | -10.27 [-14.00, -6.64] |
+| Stat-line deviance per fighter: knockdowns | 0.668 [0.623, 0.722] | 0.652 [0.612, 0.697] | -0.016 [-0.031, -0.003] |
+| MAE per fighter: sig landed / attempts / TD / control s / KD | 25.74 / 52.64 / 1.125 / 116.7 / 0.322 | 25.01 / 51.00 / 1.057 / 111.1 / 0.321 | -0.73 [-1.01, -0.46] / -1.64 [-2.20, -1.07] / -0.068 [-0.084, -0.052] / -5.57 [-7.04, -4.18] / -0.001 [-0.004, +0.002] |
+
+The methodround metrics are scored by `tools/methodround.py --score` on 857 fights. Each version's column shows the
+difference from model S. The v4 - v3 column comes from the same scoring code, paired (data/derived/evalv/v4_vs_v3_val_methodround_paired.json).
+
+| validation 2024-2025 | model S | v3 (vs S) | v4 (vs S) | v4 - v3 [95% CI] |
+|---|---|---|---|---|
+| who x how x when (joint) | 2.0418 | 2.0877 (+0.0460 [+0.0216, +0.0682]) | 2.0707 (+0.0289 [+0.0015, +0.0575]) | -0.0171 [-0.0368, +0.0043] |
+| method given winner | 0.9073 | 0.9192 (+0.0119 [-0.0019, +0.0260]) | 0.9107 (+0.0034 [-0.0108, +0.0182]) | -0.0085 [-0.0213, +0.0039] |
+| method x round | 1.4240 | 1.4329 (+0.0089 [-0.0074, +0.0235]) | 1.4327 (+0.0087 [-0.0092, +0.0253]) | -0.0002 [-0.0114, +0.0113] |
+| round given finish | 1.0601 | 1.0642 (+0.0041 [-0.0155, +0.0217]) | 1.0625 (+0.0023 [-0.0172, +0.0205]) | -0.0018 [-0.0131, +0.0105] |
+| finish vs decision | 0.6593 | 0.6603 (+0.0010 [-0.0090, +0.0110]) | 0.6617 (+0.0024 [-0.0089, +0.0134]) | +0.0014 [-0.0059, +0.0085] |
+| KO vs SUB | 0.6017 | 0.6095 (+0.0078 [-0.0069, +0.0236]) | 0.6052 (+0.0035 [-0.0126, +0.0205]) | -0.0043 [-0.0186, +0.0100] |
+| winner | 0.6213 | 0.6424 (+0.0211 [+0.0109, +0.0315]) | 0.6324 (+0.0111 [+0.0024, +0.0198]) | -0.0100 [-0.0173, -0.0029] |
+
+| base rate, validation | actual | v3 | v4 |
+|---|---|---|---|
+| finish rate | 46.0% | 48.2% | 48.5% |
+| KO/TKO share | 29.1% | 30.6% | 30.6% |
+| submission share | 16.9% | 17.7% | 17.9% |
+| decision share | 54.0% | 51.8% | 51.5% |
+| finish by round, 3-round fights (n=752) | 23.7/13.7/7.8 | 24.3/14.3/9.0 | 24.6/14.4/9.0 |
+| finish by round, 5-round fights (n=105) | 15.2/16.2/9.5/7.6/2.9 | 14.7/12.9/10.3/9.2/5.4 | 14.5/12.4/10.1/9.2/5.4 |
+| KD per 100 head landed | 0.684 | 0.717 (+4.8%) | 0.746 (+9.0%) |
+| decisions UD / SD / MD (n=459) | 81.5 / 18.1 / 0.4 | 79.6 / 19.0 / 1.4 | 79.4 / 20.1 / 0.5 |
+| 10-8 share of judge-rounds in decisions (cards) | 2.46% (6.28% before the fix below) | 4.96% | 3.38% |
+| sig landed per 15 (per fighter) | 58.1 | 63.9 (+9.9%) | 63.3 (+9.0%) |
+| takedowns per 15 | 1.41 | 1.35 | 1.31 |
+| control s per 15 | 168 | 167 | 163 |
+
+Checked against the mlcal objective tolerances (KO 2 pts, SUB 1.5 pts, R1 and R3 share of 3-round finishes 3 pts,
+SD+MD share 4 pts, KD 12%, TD 10%, control 10%), everything is in tolerance for both versions except sig landed per 15.
+That one is 9.0% high for v4 and 9.9% for v3, against a 6% tolerance.
+- The cause is a league-level shift: train 61.1 per 15, validation 58.1. The 5-year walk-forward priors lag it.
+- v4 is no further off than v3 on any rate in that list except two, both still inside tolerance: KD per 100 head
+  (+9.0% vs +4.8%; tools/v4_levels.js raised kdScale on train, and 2024 had the glove-trial KD dip) and TD per 15
+  (-7.1% vs -4.3%).
+
+**Blend test** (tools/evalv_blend.py):
+- Method: the MoE linear stacker, no intercept, was refit on 2019-2023 with each version's engine probabilities and
+  scored on 2024-2025. Both arms cover the same 845 fights.
+
+| blend pattern | v3 engine weight | v4 engine weight | v4: log loss with engine | without | with - without [95% CI] |
+|---|---|---|---|---|---|
+| with the closing line | 0.000 | 0.037 | 0.5786 | 0.5788 | -0.0002 [-0.0006, +0.0001] |
+| without a line | 0.000 | 0.000 | 0.5930 | 0.5930 | 0.0000 |
+
+- v4's weights with the line: market 0.863, market rating 0.106, ml 0.142, feature LR 0.039, engine 0.037, Elo 0.
+- Without a line: market rating 0.854, ml 0.555, feature LR 0.026, engine 0.
+
+**Decision: v4 is kept.**
+- Winner log loss improves on validation with a paired CI that excludes 0 (first branch of the rule).
+- Brier and all five stat-line deviances improve too, each with a CI that excludes 0.
+- 7-bin (-0.0171), who x how x when (-0.0171) and method (-0.0006) point the right way but are not significant.
+
+Read this honestly:
+1. **The engine still adds almost nothing to the blend.** It earns its first non-zero validated weight (0.037, with
+   the line only), but the blend's validation log loss does not move measurably (-0.0002, CI includes 0).
+   - The BACKLOG goal "earn a non-zero validated weight" is met only on paper.
+   - Without a line, the learned stat-line model enters through `ml` directly, and the engine is redundant with it.
+2. **v4 still trails methodround model S.** It is behind on who x how x when (+0.029, CI just excludes 0) and on the
+   winner (+0.011). The gap to S is smaller than v3's on both (v3: +0.046 and +0.021).
+3. **Calibration worsened slightly.**
+   - ECE 0.063 vs 0.054; calibration slope 1.72 vs 1.57.
+   - Both versions are underconfident on 2024-2025, as every input was (BACKLOG "Prediction status").
+   - v4 separates winners from losers better (lower log loss and Brier) but is more underconfident than v3. Its
+     probabilities need a recency temperature at release.
+4. **v3's validation numbers are flattered.** Its [selfcal] scales saw all-years league averages, 2024-2025 included,
+   so the real v4 margin is, if anything, a little larger.
+
+Evaluation fixes made after the look (data side only: no re-simulation, no metric or decision input changes):
+- **10-8 base rate.** tools/evalv.js computed the 'actual' 10-8 share from the scheduled number of rounds.
+  - A 2025 technical draw (08c04f18b0f58d71, cards over 2 rounds) added 19 phantom points per card.
+  - So did a fight stored as 5 rounds but judged over 3 (b959e2c1d16ff832, 2025-02-22), at 38 per card.
+  - Together they lifted the 2024-2025 'actual' from 2.46% to 6.28%. Judged rounds now come from each card's total.
+  - Train (5.29%) is unchanged. The stored files carry `r108.actual_fixed` and a note.
+- **Data issue, not fixed here.** b959e2c1d16ff832's `rounds: 5` looks wrong in backtest_dev.json (it is a 3-round
+  decision). tools/build_db.py should be checked. It is one fight and was simulated as a 5-round bout for both versions.
 
 ### What changed vs v3
 

@@ -8,9 +8,18 @@ The prediction engine is now v4 (src/engine3.js `VERSION` 4.0.0; frozen copy in 
 It plays the learned stat-line model's per-matchup rates (FightEngine.loadMLRates), uses priors and self-calibration
 from fights before 2024 only, and judges rounds with the EM weights plus noise fit to real judges' rounds. On the
 2019-2023 training fights it beats v3 on the winner: log loss 0.6635 vs 0.6716 (paired -0.0081 [-0.0134, -0.0026]),
-accuracy 60.5% vs 57.1%. The single 2024-2025 validation look and the blend test are still to run
-(`node tools/evalv.js --version v4 --split val --compare v3`, after the same for v3). Details: docs/CHANGELOG.md (v4),
-docs/BACKLOG.md ("Engine v4 status"), docs/ENGINE_V3_SPEC.md ("Engine v4").
+accuracy 60.5% vs 57.1%.
+- **Validation, 2024-2025, one look per version.** v4 beats v3 on winner log loss, 0.6324 vs 0.6424 (paired -0.0100
+  [-0.0170, -0.0030], 853 decisive fights), so v4 is kept.
+  - Brier and all five stat-line deviances also improve, each with a CI that excludes 0.
+  - 7-bin, method and who x how x when are level or slightly better, none significant.
+  - Both versions are underconfident on 2024-25 (calibration slope 1.57 for v3, 1.72 for v4).
+  - v4 still trails methodround model S: who x how x when +0.029, winner +0.011.
+- **Blend test.** The stacker gives the engine weight 0.037 with the closing line (v3: 0) and 0 without a line. The
+  blend's log loss moves by -0.0002 [-0.0006, +0.0001], which is not significant.
+
+Details: docs/CHANGELOG.md (v4), docs/BACKLOG.md ("Engine v4 status"), docs/ENGINE_V3_SPEC.md ("Engine v4"),
+data/derived/version_history.json.
 
 ## The question trail
 

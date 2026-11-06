@@ -235,7 +235,8 @@ def engine_raw(rows, name, p):
 
 def newton_fit(X, Y, w, y, EL, NP, a_o, a_d, o, d, tol=1e-9, maxit=50):
     """Joint MAP of y ~ Poisson(EL * exp(o_X + d_Y)) with pseudo-data priors a*(o - e^o) per effect: exact
-    Newton steps on all 2*NP effects at once (sparse Hessian), backtracking on the objective."""
+    Newton steps on all 2*NP effects at once (sparse Hessian solved by preconditioned CG), backtracking on the
+    objective."""
     import scipy.sparse as sp
     import scipy.sparse.linalg as spl
 
@@ -254,8 +255,11 @@ def newton_fit(X, Y, w, y, EL, NP, a_o, a_d, o, d, tol=1e-9, maxit=50):
         hoo = np.bincount(X, mu, NP) + a_o * np.exp(o)
         hdd = np.bincount(Y, mu, NP) + a_d * np.exp(d)
         off = sp.coo_matrix((mu, (X, Y + NP)), shape=(2 * NP, 2 * NP))
-        H = sp.diags(np.r_[hoo, hdd]) + off + off.T
-        step = spl.spsolve(H.tocsc(), g)
+        H = (sp.diags(np.r_[hoo, hdd]) + off + off.T).tocsr()
+        # exact Newton direction by preconditioned conjugate gradients (H is symmetric positive definite)
+        step, info = spl.cg(H, g, M=sp.diags(1.0 / H.diagonal()), rtol=1e-12, maxiter=20000)
+        if info != 0:
+            step = spl.spsolve(H.tocsc(), g)
         t = 1.0
         while t > 1e-6:
             on, dn = o + t * step[:NP], d + t * step[NP:]

@@ -1470,7 +1470,36 @@
     "2026-11-06T15:27 val: single validation look for v4, paired against v3's single look; run by the v4 measurement step",
     "2026-11-06T15:29 erratum (data side only, no re-simulation): tools/evalv.js counted judged rounds from the scheduled format, so a 2025 technical draw (cards over 2 rounds) and a 3-round card on fight b959e2c1d16ff832 (stored as 5 rounds) added 19-38 phantom points per card; baseRates.r108.actual for 2024-2025 was 0.0628 and is 0.0246 with judged rounds taken from the card totals (tools/evalv.js fixed). Train (0.0529) is unchanged. No metric, prediction or decision input changes."
    ],
-   "validated_at": "2026-11-06T15:27:38.307Z"
+   "validated_at": "2026-11-06T15:27:38.307Z",
+   "methodround_paired_vs_v3": {
+    "file": "data/derived/evalv/v4_vs_v3_val_methodround_paired.json",
+    "joint": {
+     "v3": 2.0877439344682043,
+     "v4": 2.070684806832696,
+     "diff": -0.01706,
+     "ci95": [
+      -0.03679,
+      0.00433
+     ]
+    },
+    "method_given_winner": {
+     "v3": 0.9192139169006794,
+     "v4": 0.9107052225583608,
+     "diff": -0.00851,
+     "ci95": [
+      -0.02126,
+      0.00391
+     ]
+    }
+   },
+   "decision": {
+    "against": "v3",
+    "kept": true,
+    "rule": "keep if validation winner log loss beats the previous version with a paired 95% CI excluding 0, or is not worse and clearly better on 7-bin / method / stat-line deviance without base-rate drift",
+    "basis": "validation winner log loss 0.6324 vs 0.6424, paired -0.0100 [-0.0170, -0.0030] (2,000 event-cluster resamples, 853 decisive fights)",
+    "also": "Brier -0.0046 [-0.0080, -0.0013]; stat-line deviance better on all five stats (CIs exclude 0); 7-bin -0.0171 [-0.0343, +0.0018] and method -0.0006 [-0.0108, +0.0097] n.s.; blend weight 0.037 with the line (log loss -0.0002 [-0.0006, +0.0001], n.s.) and 0 without",
+    "caveats": "ECE 0.063 vs 0.054 and calibration slope 1.72 vs 1.57 (both underconfident on 2024-25); KD per 100 head +9.0% vs actual (v3 +4.8%); sig landed per 15 +9.0% (v3 +9.9%), outside the 6% mlcal tolerance in both"
+   }
   }
  ]
 }

@@ -964,6 +964,19 @@ def pack_factors(F, j):
     return out
 
 
+def factors_at_division(roster_entry, recipe, S, P, p):
+    """One roster fighter's factors for a bout in the division whose priors are P (verification pass). Uses the
+    stored division-free effects roster_entry['eff'] and recipe = results['roster_recipe']['families']; S = his
+    fighters.json S. Same formula as the backtest snapshot factors (built at the bout division)."""
+    L = LTable([0], {0: P}, p)
+    R = fighter_rates(np.array([S], dtype=float), L, p)
+    F = {}
+    for nm, (eo, ed) in roster_entry["eff"].items():
+        rc = recipe[nm]
+        F.update(side_factors(nm, np.array([eo]), np.array([ed]), 0.0, R, L, rc["kappa"], rc["lambda"]))
+    return pack_factors(F, 0)
+
+
 LAM_GRID = [round(0.1 * i, 1) for i in range(11)]
 
 
@@ -1026,12 +1039,12 @@ def raw_terms(ev, name, R):
     return np.log(R[fo] / f["Lb"]), np.log(R[fd][o] / f["Lb"])
 
 
-def comb_fit(ev, name, terms):
-    """Fit log mu = log(E L) + c0 + a * offense + b * defense (or the logit analogue) on 2019-2023 sides:
-    a = b = 1 is the engine's pure log-linear / log5 combination. Returns a, b, c0 with standard errors
-    (quasi-likelihood)."""
+def comb_fit(ev, name, terms, mask=None):
+    """Fit log mu = log(E L) + c0 + a * offense + b * defense (or the logit analogue) on 2019-2023 sides
+    (or on `mask`): a = b = 1 is the engine's pure log-linear / log5 combination. Returns a, b, c0 with standard
+    errors (quasi-likelihood)."""
     f = ev.fam[name]
-    m = f["tune"]
+    m = f["tune"] if mask is None else mask
     X = np.column_stack([np.ones(m.sum()), terms[0][m], terms[1][m]])
     y = f["y"][m]
     if f["kind"] == "count":
@@ -1146,9 +1159,12 @@ def engine_eval(args):
     import shutil
     # freeze the engine sources for the whole run (other work may edit src/ meanwhile)
     frz = os.path.join(scratch, "engine_src")
-    os.makedirs(os.path.join(frz, "ml"), exist_ok=True)
-    for rel in ("engine3.js", "params3.js", os.path.join("ml", "mlrates.js")):
-        shutil.copyfile(os.path.join(ROOT, "src", rel), os.path.join(frz, rel))
+    if args.engine_src:
+        frz = args.engine_src           # reuse an existing frozen copy (e.g. the one an earlier run recorded)
+    else:
+        os.makedirs(os.path.join(frz, "ml"), exist_ok=True)
+        for rel in ("engine3.js", "params3.js", os.path.join("ml", "mlrates.js")):
+            shutil.copyfile(os.path.join(ROOT, "src", rel), os.path.join(frz, rel))
     env = dict(os.environ, OPPADJ_ENGINE_DIR=frz)
     sha = lambda rel: hashlib.sha256(open(os.path.join(frz, rel), "rb").read()).hexdigest()[:16]
     pv = subprocess.run(["node", "-e", "process.stdout.write(String(require(%s).version))"
@@ -1273,9 +1289,20 @@ def engine_eval(args):
         offr = [nm for nm, v in out["results"]["recommendation"]["families"].items() if v["engine_path_lambda"] == 0]
         vg = {"id": "volk_gaethje", "date": "2026-11-06", "division": "Lightweight", "prior_division": "Lightweight",
               "rounds": 5, "title": True, "ml": None, "hypothetical": True}
+        # factors at the bout division (verification pass): roster factors are relative to each fighter's own
+        # division, but this bout is simulated at Lightweight with Lightweight priors (Volkanovski's home is
+        # Featherweight); the backtest factors were built and validated at the bout division
+        recipe = out["results"].get("roster_recipe", {}).get("families")
+        Plw = dict(fj["priors"]["ALL"])
+        Plw.update({k: v for k, v in fj["priors"]["Lightweight"].items() if v is not None})
+        p_eng = engine_params()
         for t, slug in (("A", "alexander-volkanovski"), ("B", "justin-gaethje")):
             pr = dict(fj["fighters"][slug])
-            pr["oppadj"] = gate_factors(out["roster"][slug], offr)
+            if recipe and "eff" in out["roster"][slug]:
+                fac = factors_at_division(out["roster"][slug], recipe, fj["fighters"][slug]["S"], Plw, p_eng)
+            else:
+                fac = out["roster"][slug]
+            pr["oppadj"] = gate_factors(fac, offr)
             vg[t] = pr
         inp = os.path.join(scratch, "in_vg.json")
         with open(inp, "w") as fh:
@@ -1291,6 +1318,13 @@ def engine_eval(args):
                                            "fighters.json profiles and live priors; recommended factor set"}
         print("  Volk-Gaethje: plain pA %.4f pB %.4f | adj pA %.4f pB %.4f"
               % (rr["plain"]["pA"], rr["plain"]["pB"], rr["adj"]["pA"], rr["adj"]["pB"]))
+    # keep the stored results of periods not re-run in this call (same factors and engine copy only)
+    old_blk = out["results"].get(block) or {}
+    same = all(old_blk.get(k) == res_all.get(k) for k in ("factors_sha16", "engine3_sha16", "params3_sha16", "mlrates_js_sha16"))
+    if same:
+        for k, v in old_blk.items():
+            if k not in res_all:
+                res_all[k] = v
     out["results"][block] = res_all
     n = B.write_json(args.out, out)
     print("updated %s (%s)" % (args.out, B.human(n)))
@@ -1310,6 +1344,8 @@ def main():
     ap.add_argument("--engine-sims-test", type=int, default=1000)
     ap.add_argument("--engine-sims-tune", type=int, default=300)
     ap.add_argument("--engine-dir", default="", help="scratch directory for the engine check (default out/oppadj_engine)")
+    ap.add_argument("--engine-src", default="", help="use this frozen copy of engine3.js / params3.js / ml/mlrates.js "
+                                                     "instead of copying src/ (hashes are recorded either way)")
     ap.add_argument("--engine-gated", action="store_true",
                     help="engine check with the recommended factor set (families off, ML-path betas) only")
     ap.add_argument("--engine-sims-vg", type=int, default=10000)
@@ -1473,6 +1509,24 @@ def main():
         sd1 = G[(name, bn[0], bn[2], bn[2], "nosos")][1].astype(float)
         sc1 = G[(name, bn[0], bn[1], bn[1], "nosos")][2].astype(float)
         dv_nos = ev.score(name, ev.pred_adj(name, so1, sd1, sc1))
+        # like-for-like baselines (verification pass): when the adjusted model averages over half-lives, the raw
+        # re-tuned and no-opp baselines get the same option (each half-life at its own best k on 2019-2023, used
+        # only if the average beats their single best configuration on 2019-2023). Without this the "opponent
+        # part" of the gain also contains the averaging.
+        raw_hl = {hl: min((c for c in raw[name] if c[0] == hl), key=lambda c: raw[name][c]["tune"]) for hl in hls}
+        pr_avg = avg_preds(kind, [ev.pred_raw(name, fighter_rates(Ss[c[0]], D.sL, p, k={kname: {fields[0]: c[1], fields[1]: c[2]}}))
+                                  for c in raw_hl.values()])
+        s_rawavg = ev.score(name, pr_avg)
+        nos_hl = {hl: min((c for c in nosos_sc if c[0] == hl), key=lambda c: nosos_sc[c]["tune"]) for hl in hls}
+        nos_arrs = lambda c: (G[(name, c[0], c[1], c[1], "nosos")][0].astype(float),
+                              G[(name, c[0], c[2], c[2], "nosos")][1].astype(float),
+                              G[(name, c[0], c[1], c[1], "nosos")][2].astype(float))
+        s_nosavg = ev.score(name, avg_preds(kind, [ev.pred_adj(name, *nos_arrs(c)) for c in nos_hl.values()]))
+        raw_avg_used = len(hls) > 1 and s_rawavg["tune"] < brs["tune"]
+        nos_avg_used = len(hls) > 1 and s_nosavg["tune"] < bns["tune"]
+        dv_raw_l = s_rawavg if raw_avg_used else dv_raw
+        dv_nos_l = s_nosavg if nos_avg_used else dv_nos
+        dv_single = ev.score(name, pa_single)
         # blend weight on 2019-2023: factor^lambda (lambda 0 = engine raw, 1 = fully opponent-adjusted)
         lam_sc = {lam: ev.score(name, blend(kind, pa, pe, lam)) for lam in LAM_GRID}
         lam = min(lam_sc, key=lambda l_: lam_sc[l_]["tune"])
@@ -1481,9 +1535,16 @@ def main():
         boots = {"vs_engine_raw": boot_delta(D, dv_eng["dev"], dv_full["dev"], te, args.boot),
                  "vs_raw_tuned": boot_delta(D, dv_raw["dev"], dv_full["dev"], te, args.boot),
                  "vs_nosos_tuned": boot_delta(D, dv_nos["dev"], dv_full["dev"], te, args.boot),
-                 "final_vs_engine_raw": boot_delta(D, dv_eng["dev"], dv_fin["dev"], te, args.boot)}
+                 "final_vs_engine_raw": boot_delta(D, dv_eng["dev"], dv_fin["dev"], te, args.boot),
+                 "vs_raw_tuned_same_averaging": boot_delta(D, dv_raw_l["dev"], dv_full["dev"], te, args.boot),
+                 "vs_nosos_tuned_same_averaging": boot_delta(D, dv_nos_l["dev"], dv_full["dev"], te, args.boot),
+                 "single_config_vs_raw_tuned_single": boot_delta(D, dv_raw["dev"], dv_single["dev"], te, args.boot)}
         base_for = {"vs_engine_raw": dv_eng["test"], "vs_raw_tuned": brs["test"], "vs_nosos_tuned": bns["test"],
-                    "final_vs_engine_raw": dv_eng["test"]}
+                    "final_vs_engine_raw": dv_eng["test"], "vs_raw_tuned_same_averaging": dv_raw_l["test"],
+                    "vs_nosos_tuned_same_averaging": dv_nos_l["test"], "single_config_vs_raw_tuned_single": brs["test"]}
+        boots2 = {"final_vs_engine_raw": boot_delta_twoway(D, dv_eng["dev"], dv_fin["dev"], te, args.boot),
+                  "vs_raw_tuned_same_averaging": boot_delta_twoway(D, dv_raw_l["dev"], dv_full["dev"], te, args.boot),
+                  "vs_nosos_tuned_same_averaging": boot_delta_twoway(D, dv_nos_l["dev"], dv_full["dev"], te, args.boot)}
         hl_scan = {}
         for hl in hls:
             c_ = min((k for k in full_sc if k[0] == hl), key=lambda k: full_sc[k]["tune"])
@@ -1533,6 +1594,19 @@ def main():
                                             "n_fights": v[3],
                                             "pct_of_baseline": rnd(100 * v[0] / max(base_for[k], 1e-9), 3)}
                                         for k, v in boots.items()},
+            "test_delta_twoway_bootstrap_95": {k: {"delta": rnd(v[0], 5), "lo": rnd(v[1], 5), "hi": rnd(v[2], 5),
+                                                   "pct_lo": rnd(100 * v[1] / max(base_for[k], 1e-9), 3),
+                                                   "pct_hi": rnd(100 * v[2] / max(base_for[k], 1e-9), 3)}
+                                               for k, v in boots2.items()},
+            "like_for_like_baselines": {
+                "note": ("raw re-tuned and no-opp baselines with the same half-life-averaging option as the adjusted "
+                         "model (verification pass); *_same_averaging bootstrap keys compare against these"),
+                "raw_tuned_average_used": bool(raw_avg_used), "nosos_average_used": bool(nos_avg_used),
+                "raw_tuned_average": {"tune": rnd(s_rawavg["tune"], 6), "test": rnd(s_rawavg["test"], 6),
+                                      "configs": [list(c) for c in raw_hl.values()]},
+                "nosos_average": {"tune": rnd(s_nosavg["tune"], 6), "test": rnd(s_nosavg["test"], 6),
+                                  "configs": [list(c) for c in nos_hl.values()]},
+                "opp_adjusted_single_config": {"tune": rnd(dv_single["tune"], 6), "test": rnd(dv_single["test"], 6)}},
             "test_best_config_for_reference": {"half_life_days": test_best_cfg[0], "k_offense": test_best_cfg[1],
                                                "k_defense": test_best_cfg[2],
                                                "test": rnd(full_sc[test_best_cfg]["test"], 6)},
@@ -1542,7 +1616,14 @@ def main():
             "final_vs_engine_by_group": subgroups(D, dv_eng["dev"], dv_fin["dev"], te),
             "combination_exponents_tune": {
                 "opp_adjusted": comb_fit(ev, name, avg_terms([adj_terms(ev, *a) for a in CA])),
-                "engine_raw": comb_fit(ev, name, raw_terms(ev, name, ev.engine_R))},
+                "engine_raw": comb_fit(ev, name, raw_terms(ev, name, ev.engine_R)),
+                "raw_tuned": comb_fit(ev, name, raw_terms(ev, name, Rr))},
+            # diagnostic (verification pass): the tune-period fit is circular for models whose k was tuned on the
+            # same sides at exponent 1; the 2024-25 fit is not used for anything
+            "combination_exponents_test_diagnostic": {
+                "opp_adjusted": comb_fit(ev, name, avg_terms([adj_terms(ev, *a) for a in CA]), te),
+                "engine_raw": comb_fit(ev, name, raw_terms(ev, name, ev.engine_R), te),
+                "raw_tuned": comb_fit(ev, name, raw_terms(ev, name, Rr), te)},
         }
         chosen[name] = {"cfgs": cfgs, "CA": CA, "cal_adj": cal_of(bfs),
                         "cal_eng": cal_of(eng_sc[name]), "raw_cfg": br, "R_raw": Rr, "cal_raw": cal_of(brs),
@@ -1874,7 +1955,7 @@ def main():
     T_snap = float(D.snapshot.toordinal() + 1)
     pidx = np.array([inv.get(s, -1) for s in slugs])
     has = pidx >= 0
-    FR, sched = {}, {}
+    FR, sched, EFF = {}, {}, {}
     for name, ch in chosen.items():
         kind = FAMILIES[name][0]
         y, E, Lb = family_arrays(name, D.V, D.L, p)
@@ -1885,6 +1966,11 @@ def main():
             CR.append((np.where(has, o_all[np.maximum(pidx, 0)], 0.0), np.where(has, d_all[np.maximum(pidx, 0)], 0.0),
                        np.full(len(slugs), c_all)))
         FR.update(multi_factors(name, CR, Rr, Lr, cal_term(ch, kind), ch["lam"]))
+        # division-free effects (verification pass): mean over configs of c/2 + o and c/2 + d. The factor for a bout
+        # in any division D is side_factors(name, eff_o, eff_d, 0, R_D, L_D, kappa, lambda) with R_D, L_D the
+        # engine's raw rates and league table at D's priors (factors_at_division below), which is how the
+        # backtest factors were built (bout division) and validated.
+        EFF[name] = (np.mean([cr[2] / 2 + cr[0] for cr in CR], axis=0), np.mean([cr[2] / 2 + cr[1] for cr in CR], axis=0))
         # schedule diagnostic (last config's fit): exposure-weighted mean opponent defense effect he faced
         w = np.exp(-math.log(2) / hl * (T_snap - D.day))
         if kind == "count":
@@ -1902,7 +1988,16 @@ def main():
     for j, s in enumerate(slugs):
         r_ = pack_factors(FR, j)
         r_["sched"] = {k: rnd(sched[k][j], 3) for k in ("dAtt", "accH", "kd", "tdAtt", "tdAcc", "ctrl")}
+        r_["eff"] = {nm: [rnd(EFF[nm][0][j], 5), rnd(EFF[nm][1][j], 5)] for nm in EFF}
         roster[s] = r_
+    res["roster_recipe"] = {
+        "note": ("factors for a bout in division D (verification pass): F = side_factors(family, eff[0], eff[1], c=0, "
+                 "R_D, L_D, kappa, lambda), i.e. counts F_off = (Lbar_D exp(eff_off) / R_D.off)^lambda * kappa, "
+                 "probabilities F = exp(lambda (eff - shift_D) + kappa'); R_D, L_D = engine fighterRates / league at D's "
+                 "priors. roster[slug] factors use the fighter's own division; for a cross-division bout use "
+                 "tools/oppadj.py factors_at_division (the backtest factors are built at the bout division)."),
+        "families": {nm: {"lambda": chosen[nm]["lam"], "kappa": rnd(cal_term(chosen[nm], FAMILIES[nm][0]), 6)}
+                     for nm in chosen}}
 
     # ---- k in engine units (league-wide, latest priors) for the recommendation
     Lall = league(D.live_priors["ALL"], p)
@@ -1950,6 +2045,22 @@ def main():
         "n_snapshots": len(snaps), "n_roster": len(roster),
         "runtime_s": round(time.time() - t0, 1),
     }
+    # backtest.json lost its 2026 (vault) entries after the first build of this file. Their pre-fight factors from
+    # that build are kept when every common snapshot is identical (same fits, same data): they are pre-fight
+    # outputs only, never scored here, and the vault audit needs them.
+    if os.path.exists(args.out):
+        try:
+            old_s = json.load(open(args.out)).get("snapshots", {})
+            extra = [k for k in old_s if k not in snaps]
+            if extra and all(old_s.get(k) == v for k, v in snaps.items()):
+                merged = {k: (snaps[k] if k in snaps else old_s[k]) for k in old_s}
+                merged.update({k: v for k, v in snaps.items() if k not in merged})
+                snaps = merged
+                meta["snapshots_carried_over"] = ("%d snapshot entries (2026 vault fights, pre-fight factors only) carried "
+                                                  "over from the earlier build; every other snapshot is identical" % len(extra))
+                meta["n_snapshots"] = len(snaps)
+        except (OSError, ValueError):
+            pass
     out = {"meta": meta, "results": res, "snapshots": snaps, "roster": roster}
     meta["factors_sha16"] = snaps_sha(snaps)
     if os.path.exists(args.out):
