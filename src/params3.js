@@ -53,7 +53,12 @@
       // stat-line model carries: soft CE +0.0011 / +0.0005, control deviance +1.00%; on base tables they add nothing on top of
       // sos and lean worse on method); newcomer off. sos is a no-op until a caller passes opts.sos (backtest harnesses:
       // sos_wf.fights[id], A/B swapped with the corners) or loads a roster table (StylesSOS.loadSOS, release builds only).
-      styles_sos: { styles: false, sos: true, newcomer: false }
+      styles_sos: { styles: false, sos: true, newcomer: false },
+      // v5 merge step 3: named judges' tendencies + shared panel noise + 10-8 model, referee stoppage tendencies (block
+      // `officials` below; engine3.js officialsFor). OFF in the prediction path: no train metric improves, the league model is
+      // slightly worse on the decision outcome (+0.0092 [+0.0002, +0.0176]) and named-judge effects do not predict. Opt-in per
+      // call to show real officials: opts.params.components.officials = true with opts.judges / opts.referee.
+      officials: false
     },
 
     // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
@@ -404,6 +409,30 @@
       t108kd: -0.8585,                        // [judgecal; v401 a, v4.0.0 -1.087] threshold change per knockdown of edge; negative: z already carries the KD weight, and judges give a 10-8 to 13% of KD-edge round winners, not the 23% that z alone implies
       ded: 0.00515,                           // [judgecal; v401 b, off 0] point deduction (foul) per fighter per round, on all three cards; 2019-2023 decision rounds (v4.0.0 had none, so its draws and majority decisions came from 10-8s alone)
       ded2: 0.075                             // [judgecal; v401 b] share of deductions that cost 2 points
+    },
+
+    // ---------------- officials (components.officials; tools/officials_engine.py, data/derived/officials_engine.json) ----------------
+    // v5 merge step 3: code only, OFF in the prediction path (components.officials false; the prediction path keeps the judge
+    // block above). Opt-in for showing real officials: opts.params = { components: { officials: true } } with opts.judges =
+    // [names or keys] / opts.referee = name (FightEngine.loadOfficials(officials_engine.json) for the named tables).
+    // League judging model used when no table is loaded: the production table (fit on judges' rounds 2019-01-01..2023-12-31,
+    // 3,911 clean rounds / 11,696 judge-rounds, MMA Decisions via tools/judgerounds.py). Backtests must pass the year's
+    // walk-forward table (opts.officials or FightEngine.loadOfficials + the fight date), never these values.
+    officials: {
+      beta: { head: 0.30773, body: 0.23381, leg: 0.19532, kd: 4.11805, td: 0.45459, ctrlMin: 0.96699, sub: 1.4084, rev: 0.52713 }, // logit per landed differential (head-strike units: body 0.76, leg 0.63, KD 13.4, TD 1.5, control 3.1/min, sub 4.6)
+      sigmaU: 2.52843,        // sd of the round noise shared by the panel (logits; own noise is Logistic(0, 1), sd 1.81): near-even rounds unanimous 59% (model 61%) vs 26% for independent judges
+      sharedFight: 0.3,       // share of the shared variance drawn once per fight (profile likelihood +35.6 log-lik units over 0 on 2019-2023; 0.35-0.40 in earlier windows; judgecal 0.33)
+      ten8: { c0: -10.3952, thV: 0.64685, thK: 0.54528, thG: 1.05379, sigmaE: 2.0906 },   // 10-8 for the round winner: sigmoid(c0 + c_j + thV V_W + thK K_W + thG G_W + eps); c0 = the 2023 year effect (held-out choice: last window year beat 2-year and window means)
+      p1010: 0.00034,         // P(a judge scores 10-10) (2019-2023 judge-rounds)
+      tau: { n: 0.075, v: 0.075, k: 0.125, g: 0.1, c: 0.2 },               // population sds of judge effects (sharpness, volume, knockdown, grappling, 10-8): 0.5 x the pre-2019 EB sds, multiplier and 10-8 sd chosen by held-out 2019-2023 panel likelihood
+      refTau: { kdf: 0, stko: 0.3, gnp: 0 },                               // population sds of referee effects (log multipliers); held-out 2019-2023 deviance chose 0 for KD follow-up stoppage and ground-and-pound, 0.3 for standing TKO
+      hurtHS: null,           // engine-only hurts in head-strike units (null: judge.hurt / judge.head, the v4 ratio)
+      engAdj: { aH: 0.01802, aP: -0.09981, vHH: 0.37811, vHP: 0.49617, vPP: 33.75428 },   // engine-only terms' slopes on the count index and residual covariance (tools/officials_engcal.js --write; null = raw terms)
+      // v5: named-judge effects OFF (docs/BACKLOG.md OFFICIALS: they make decision-winner log loss worse in all three windows;
+      // component ablation jd - lg: winner -0.0001 [-0.0003, +0.0002], decision outcome +0.0006 [-0.0039, +0.0047]): every judge
+      // scores as the league judge; names are still drawn / recorded in fight.officials
+      perJudge: false,        // true: per-judge tendencies from the table (n, v, k, g, c); false: every judge is the league judge
+      referee: true           // false: referee multipliers 1 (only standing-TKO multipliers vary, 0.84-1.27; not centred, pool mean 1.01-1.05)
     },
 
     // ---------------- between rounds ----------------

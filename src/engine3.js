@@ -630,6 +630,7 @@
       tdStam: p.tdStam
     };
     m.dyn = dynOn(p) ? dynTables(m, p, R, nR) : null;
+    m.off = officialsFor(p, opts, m);           // officials component (null when params.components.officials is off)
     return m;
   }
 
@@ -1025,6 +1026,178 @@
     return n;
   }
 
+  // ------------------------------------------------------------------ officials (roadmap v8; params.components.officials)
+  // Named judges and referee with tendencies fit walk-forward on real rounds and stoppages (tools/officials_engine.py,
+  // data/derived/officials_engine.json; FightEngine.loadOfficials). Off (components.officials falsy): m.off = null and
+  // the engine is bit-for-bit the v4 engine. On: each judge j scores a round by
+  //   eta_j = exp(n_j) * (exp(v_j) V + exp(k_j) K + exp(g_j) G + u) + e_j,   u ~ N(0, sigmaU^2) shared by the panel (a share
+  //   sharedFight of its variance drawn once per fight, the rest per round), e_j ~ Logistic(0, 1)
+  //   V = head dHead + body dBody + leg dLeg;  G = td dTD + ctrlMin dCtrl/60 + sub dSubAtt + rev dRev;  x = V + kd dKD + G;
+  //   K = kd dKD + head (hurt (dHurt - aH x) + judgePower (dPow - aP x)): the engine-only hurt / power terms enter only as
+  //   their residual on the count index, and its variance comes out of the round part of u (the real panel's shared noise
+  //   already holds what judges see beyond the counts; params.officials.engAdj, tools/officials_engcal.js);
+  //   A - B differentials; 10-8 for the winner W with P = sigmoid(c0 + c_j + thV V_W + thK K_W +
+  //   thG G_W + eps), eps ~ N(0, sigmaE^2) shared; 10-10 with P = p1010. The referee multiplies the follow-up stoppage odds
+  //   after a knockdown (kdf), the standing-TKO hazard (stko) and the ground-and-pound TKO hazard (gnp).
+  // Officials: opts.judges = [names or keys] (or { names, power }), opts.referee = name; opts.judgePool = [[key, weight]...]
+  // to sample judges from (an event's judges); unknown or unnamed judges / referee are drawn from the table's recent
+  // pool, and a judge or referee not in the table gets effects drawn from the population (tau). opts.officials: a
+  // table set (officials_engine.json) to use instead of the loaded one, or false for league judging without tables.
+  // RNG: the main stream sees exactly the v4 draw count (9 + 1 normals at the start, 1 + 3 normals per judged round, the
+  // same stoppage draws), so flag-on and flag-off fights with one seed stay on the same path until officials differ;
+  // judge picks and 10-8 / 10-10 draws use a second stream seeded from the start-of-fight normals.
+  var OFFTAB = null;
+  function nameKey(s) { return String(s == null ? "" : s).toLowerCase().replace(/[^a-z]/g, ""); }
+  function loadOfficials(json) {
+    if (json == null) { OFFTAB = null; return null; }
+    var d = typeof json === "string" ? JSON.parse(json) : json;
+    if (!d || !d.tables) throw new Error("FightEngine.loadOfficials: expected officials_engine.json with tables");
+    OFFTAB = d;
+    return d;
+  }
+  // the table for a fight date: the latest table year <= the fight's year (table Y is fit only on fights before Y);
+  // null when the date precedes every table (no leak from later fits); no date -> the latest (production) table
+  function officialsTableFor(set, date) {
+    if (!set || !set.tables) return null;
+    var ys = Object.keys(set.tables).map(Number).filter(isFinite).sort(function (a, b) { return a - b; });
+    if (!ys.length) return null;
+    var y = date ? +String(date).slice(0, 4) : ys[ys.length - 1], pick = null;
+    for (var i = 0; i < ys.length; i++) if (ys[i] <= y) pick = ys[i];
+    return pick == null ? null : set.tables[String(pick)];
+  }
+  function officialsFor(p, opts, m) {
+    if (!(p.components && p.components.officials)) return null;
+    var O = p.officials || {}, set = opts.officials === false ? null : (opts.officials && opts.officials.tables ? opts.officials : OFFTAB);
+    var tab = opts.officials && opts.officials.league && opts.officials.judges ? opts.officials : officialsTableFor(set, m.date);
+    var lg = (tab && tab.league) || O, b = lg.beta || O.beta, t8 = lg.ten8 || O.ten8, tau = lg.tau || O.tau;
+    var perJ = O.perJudge !== false, useRef = O.referee !== false;
+    var aliases = (set && set.aliases) || {}, jt = (tab && tab.judges) || {}, rt = (tab && tab.referees) || {};
+    function jEff(key) { var r = jt[key]; return r ? [r[1], r[2], r[3], r[4], r[5]] : null; }
+    function jKey(nm) {
+      if (nm == null) return null;
+      var s = String(nm);
+      if (jt[s]) return s;
+      var k = aliases[nameKey(s)];
+      return k && jt[k] ? k : null;
+    }
+    var jl = Array.isArray(opts.judges) ? opts.judges : (opts.judges && Array.isArray(opts.judges.names) ? opts.judges.names : []);
+    var slots = [];
+    for (var i = 0; i < 3; i++) {
+      var nm = jl[i];
+      if (nm == null || nm === "") { slots.push(null); continue; }
+      var key = jKey(nm), eff = key ? jEff(key) : null;
+      slots.push({ name: key ? jt[key][0] : String(nm), key: key, eff: eff });     // eff null = not in the table: drawn from tau
+    }
+    // judge pool for unnamed slots: the given pool (an event's judges), else the table's recent pool
+    var pool = [], src = Array.isArray(opts.judgePool) && opts.judgePool.length ? opts.judgePool : ((tab && tab.pool) || []), wsum = 0;
+    for (i = 0; i < src.length; i++) {
+      var e = src[i], kk = Array.isArray(e) ? e[0] : e, w = Array.isArray(e) ? +e[1] : 1;
+      if (!(w > 0)) continue;
+      var k2 = kk === "_other" ? null : jKey(kk);
+      pool.push({ key: k2, name: k2 ? jt[k2][0] : (kk === "_other" ? null : String(kk)), eff: k2 ? jEff(k2) : null, w: w });
+      wsum += w;
+    }
+    // referee: named (table multipliers; unknown -> population draw), else the table's pool
+    var ref = null, rpool = [], rsum = 0, rnm = opts.referee;
+    if (rnm != null && rnm !== "") {
+      var rk = rt[rnm] ? rnm : null;
+      if (!rk) { var nk = nameKey(rnm); for (var rr in rt) if (nameKey(rr) === nk) { rk = rr; break; } }
+      ref = { name: rk || String(rnm), mult: rk ? [rt[rk][0], rt[rk][1], rt[rk][2]] : null };
+    } else if (tab && tab.ref_pool) {
+      for (i = 0; i < tab.ref_pool.length; i++) {
+        var re0 = tab.ref_pool[i], rk2 = re0[0] !== "_other" && rt[re0[0]] ? re0[0] : null;
+        rpool.push({ name: rk2, mult: rk2 ? [rt[rk2][0], rt[rk2][1], rt[rk2][2]] : null, w: +re0[1] });
+        rsum += +re0[1];
+      }
+    }
+    var rl = (tab && tab.ref_league) || {}, rtau = O.refTau || {};
+    // engine-only terms (hurts, power beyond the count) enter as their residual on the count index; their residual
+    // variance comes out of the round part of the shared noise and (x thK^2) out of the 10-8 shared noise
+    var sigU0 = lg.sigmaU != null ? lg.sigmaU : O.sigmaU, rhoF = clip(lg.sharedFight != null ? +lg.sharedFight : (O.sharedFight || 0), 0, 0.95);
+    var hurtHS = O.hurtHS != null ? O.hurtHS : p.judge.hurt / p.judge.head, ea = O.engAdj || null, aH = 0, aP = 0, varR = 0;
+    if (ea) {
+      aH = ea.aH || 0; aP = ea.aP || 0;
+      varR = b.head * b.head * (hurtHS * hurtHS * (ea.vHH || 0) + 2 * hurtHS * m.judgePower * (ea.vHP || 0) + m.judgePower * m.judgePower * (ea.vPP || 0));
+    }
+    var sigR = Math.sqrt(Math.max(0.05, (1 - rhoF) * sigU0 * sigU0 - varR)), sigF = Math.sqrt(rhoF) * sigU0;
+    var sigE = Math.sqrt(Math.max(0.05, t8.sigmaE * t8.sigmaE - t8.thK * t8.thK * varR));
+    function rtauOf(u) { return rl[u] && rl[u].tau != null ? +rl[u].tau : (rtau[u] || 0); }
+    return {
+      table: !!tab, perJudge: perJ, useRef: useRef,
+      beta: [b.head, b.body, b.leg, b.kd, b.td, b.ctrlMin, b.sub, b.rev || 0], sigU: sigU0, rhoF: rhoF, sigF: sigF, sigR: sigR,
+      hurtHS: hurtHS, jp: m.judgePower, aH: aH, aP: aP, varR: varR,
+      t8: [t8.c0, t8.thV, t8.thK, t8.thG, sigE], p1010: lg.p1010 != null ? lg.p1010 : (O.p1010 || 0),
+      tau: [tau.n || 0, tau.v || 0, tau.k || 0, tau.g || 0, tau.c || 0], slots: slots, pool: pool, wsum: wsum,
+      ref: ref, rpool: rpool, rsum: rsum, rtau: [rtauOf("kdf"), rtauOf("stko"), rtauOf("gnp")]
+    };
+  }
+  // one fight's officials: three judges' effects [n, v, k, g, c], referee multipliers [kdf odds, stko, gnp], second RNG
+  function officialsFight(off, zs) {
+    var h = 2166136261;
+    for (var q = 0; q < zs.length; q++) { h = Math.imul(h ^ ((Math.floor((zs[q] + 16) * 268435456) >>> 0)), 16777619) >>> 0; }
+    var r2 = makeRng(h), tau = off.tau, sel = [], names = [], used = {}, i;
+    function draw() { return [tau[0] * r2.normal(), tau[1] * r2.normal(), tau[2] * r2.normal(), tau[3] * r2.normal(), tau[4] * r2.normal()]; }
+    for (i = 0; i < 3; i++) {
+      var s = off.slots[i], eff = null, nm = null;
+      if (s) { eff = s.eff || draw(); nm = s.name; if (s.key) used[s.key] = 1; }
+      else if (off.pool.length && off.wsum > 0) {
+        for (var tries = 0; tries < 8; tries++) {
+          var u = r2.u() * off.wsum, e = 0;
+          while (e < off.pool.length - 1 && u >= off.pool[e].w) { u -= off.pool[e].w; e++; }
+          var pe = off.pool[e];
+          if (pe.key && used[pe.key] && tries < 7) continue;
+          if (pe.key) used[pe.key] = 1;
+          eff = pe.eff || draw(); nm = pe.name; break;
+        }
+      } else eff = draw();
+      if (!off.perJudge) eff = [0, 0, 0, 0, 0];
+      sel.push(eff); names.push(nm);
+    }
+    var mult = [1, 1, 1], rname = null;
+    if (off.ref) { rname = off.ref.name; mult = off.ref.mult || [Math.exp(off.rtau[0] * r2.normal()), Math.exp(off.rtau[1] * r2.normal()), Math.exp(off.rtau[2] * r2.normal())]; }
+    else if (off.rpool.length && off.rsum > 0) {
+      var ur = r2.u() * off.rsum, er = 0;
+      while (er < off.rpool.length - 1 && ur >= off.rpool[er].w) { ur -= off.rpool[er].w; er++; }
+      var rp = off.rpool[er];
+      rname = rp.name;
+      mult = rp.mult || [Math.exp(off.rtau[0] * r2.normal()), Math.exp(off.rtau[1] * r2.normal()), Math.exp(off.rtau[2] * r2.normal())];
+    }
+    if (!off.useRef) mult = [1, 1, 1];
+    return { sel: sel, names: names, ref: mult, refName: rname, r2: r2 };
+  }
+  // standard normal CDF (Cody-style rational erfc, |error| < 1.2e-7) and the exact Logistic(0, 1) draw from a normal
+  function ncdf(z) {
+    var x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.5 * x);
+    var y = t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 +
+      t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+    return z >= 0 ? 1 - 0.5 * y : 0.5 * y;
+  }
+  function logisticOf(z) { var u = clip(ncdf(z), 1e-15, 1 - 1e-15); return Math.log(u / (1 - u)); }
+  // one judged round under the officials model; draws 1 + 3 normals from rng (as judgeRound) and the rest from OF.r2
+  function officialsRound(off, OF, uF, dHL, dBL, dLL, dKd, dTd, dCtrl, dSub, dRev, dHu, dPow, rng, cards, js) {
+    var b = off.beta, t8 = off.t8;
+    var V = b[0] * dHL + b[1] * dBL + b[2] * dLL;
+    var G = b[4] * dTd + b[5] * dCtrl / 60 + b[6] * dSub + b[7] * dRev;
+    var x = V + b[3] * dKd + G;                                       // count index; engine-only terms enter as their residual on it
+    var Kx = b[3] * dKd + b[0] * (off.hurtHS * (dHu - off.aH * x) + off.jp * (dPow - off.aP * x));
+    var u = (uF || 0) + off.sigR * rng.normal(), r2 = OF.r2, eps = t8[4] * r2.normal(), n108 = 0;
+    for (var j = 0; j < 3; j++) {
+      var e = logisticOf(rng.normal()), ef = OF.sel[j];
+      var eta = Math.exp(ef[0]) * (Math.exp(ef[1]) * V + Math.exp(ef[2]) * Kx + Math.exp(ef[3]) * G + u) + e;
+      var scA, scB;
+      if (r2.u() < off.p1010) { scA = 10; scB = 10; }
+      else {
+        var sg = eta > 0 ? 1 : -1;
+        var big = r2.u() < sigm(t8[0] + ef[4] + sg * (t8[1] * V + t8[2] * Kx + t8[3] * G) + eps);
+        scA = sg > 0 ? 10 : (big ? 8 : 9); scB = sg > 0 ? (big ? 8 : 9) : 10;
+        if (big) n108++;
+      }
+      cards[j][0] += scA; cards[j][1] += scB;
+      if (js) js.push([scA, scB]);
+    }
+    return n108;
+  }
+
   // ------------------------------------------------------------------ simulate one fight
   function simulate(m, rng, trace) {
     var p = m.p, K = m.k, F = p.form, J = p.judge, nR = m.rounds, i, j, k;
@@ -1044,9 +1217,11 @@
       fSubO[i] = lnorm(rng, F.sub); fSubD[i] = lnorm(rng, F.sub);
     }
     var subK = [fSubO[0] * fSubD[1], fSubO[1] * fSubD[0]], subKs = [Math.sqrt(subK[0]), Math.sqrt(subK[1])];
-    var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1];
-    for (j = 0; j < 3; j++) { tS[j] = lnorm(rng, J.tasteSd); tG[j] = lnorm(rng, J.tasteSd); tP[j] = lnorm(rng, J.tasteSd); }
-    var jF = J.sharedSd * Math.sqrt(J.sharedFight || 0) * rng.normal();   // judges' fight-level shared view (always drawn: fixed draw order)
+    var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1], OF = null;
+    if (m.off) { var zs = []; for (j = 0; j < 9; j++) zs.push(rng.normal()); OF = officialsFight(m.off, zs); }   // officials: same 9 draws
+    else for (j = 0; j < 3; j++) { tS[j] = lnorm(rng, J.tasteSd); tG[j] = lnorm(rng, J.tasteSd); tP[j] = lnorm(rng, J.tasteSd); }
+    var zF = rng.normal(), jF = J.sharedSd * Math.sqrt(J.sharedFight || 0) * zF;   // judges' fight-level shared view (always drawn: fixed draw order)
+    var offUF = OF ? m.off.sigF * zF : 0;                                       // officials: the panel's fight-level shared view (same draw)
     var kdB = [m.kd[0] * fPow[0] * fChin[1] * vol, m.kd[1] * fPow[1] * fChin[0] * vol];
     var dw = [m.dw[0] * Math.pow(fPow[0], K.powDmgExp), m.dw[1] * Math.pow(fPow[1], K.powDmgExp)];
     var pcF = [Math.sqrt(fPow[0] * fChin[1] * vol), Math.sqrt(fPow[1] * fChin[0] * vol)];
@@ -1056,6 +1231,7 @@
     var gRs = [Math.sqrt(gR[0]), Math.sqrt(gR[1])];
     var tdO = [m.tdO[0] * gR[0], m.tdO[1] * gR[1]], tdOC = [m.tdOC[0] * gR[0], m.tdOC[1] * gR[1]];
     var instO = m.instO, refO = m.refO;
+    if (OF) { refO *= OF.ref[0]; stkoB[0] *= OF.ref[1]; stkoB[1] *= OF.ref[1]; gnpB[0] *= OF.ref[2]; gnpB[1] *= OF.ref[2]; }
     var kdGnpO = odds(K.kdGnpAcc);
     var mixC = m.mixC, accO = m.accO, pass = K.pass, retain = K.retain;
     var dmgPos = K.dmgPos, kdPos = K.kdPos, gnpTkoPos = K.gnpTkoPos, drainPos = K.drainPos;
@@ -1070,6 +1246,7 @@
       form: { A: { out: fOut[0], acc: fAcc[0], pow: fPow[0], chin: 1 / fChin[0], cardio: 1 / fCard[0], grap: fGrap[0], subOff: fSubO[0], subDef: 1 / fSubD[0] },
               B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
       rounds: rounds, fin: null, n108: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
+    if (OF) fight.officials = { judges: OF.names.slice(), referee: OF.refName, refMult: OF.ref.slice() };
     var po = [0, 0], fin = null;
     // dynamics state: fA = accuracy odds multiplier used by strikes (the fight-level form when off); dc / tdc = distance
     // output and takedown-attempt carry-over; arO / arA = AR(1) round noise on output / accuracy; mom* = knockdown momentum
@@ -1341,7 +1518,10 @@
       var a0 = 0, b0 = NS;
       var js = trace ? [] : null;
       var cpre = DY && DY.lostAcc !== 1 ? [cards[0][0] - cards[0][1], cards[1][0] - cards[1][1], cards[2][0] - cards[2][1]] : null;
-      n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
+      if (OF) n108 += officialsRound(m.off, OF, offUF, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
+        st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
+        st[a0 + I_REV] - st[b0 + I_REV], st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), rng, cards, js);
+      else n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
         st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
         st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), tS, tG, tP, jF, rng, cards, js);
       if (trace) rec.judges = js;
@@ -1624,6 +1804,7 @@
     loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
     loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound, deductions: deductions, loadDurability: loadDurability,
     durabilityCovariates: function (prof, age, dp) { return durCovariates(dp || (getParams() || {}).durability || {}, prof || {}, age, null); },
+    loadOfficials: loadOfficials, officialsTable: function () { return OFFTAB; }, officialsTableFor: officialsTableFor, officialsRound: officialsRound,
     summarize: summarize, explain: explain, manualProfile: manualProfile,
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,

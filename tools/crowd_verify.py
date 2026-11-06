@@ -23,6 +23,7 @@ import re
 import sys
 import unicodedata
 
+import lxml.html
 import numpy as np
 from scipy.optimize import minimize, minimize_scalar
 
