@@ -256,7 +256,7 @@ def stage_build(args):
     T["bt_ids"] = set(bt)
     # one cluster key per card: debut rows (not in the backtest set) take the event name of the backtest fights on their
     # date (one event per date in 2019-2025); the original build keyed them by the date string, which split 268 of 295
-    # cards into two clusters in the all-rows tables (verifier fix; CI widths change by under 10%, no conclusion changes;
+    # cards into two clusters in the all-rows tables (verifier fix; CI widths change by about 10% or less, no conclusion changes;
     # research/model_statlines.md, Verification log)
     ev_of_date = {f["date"]: f["event"] for f in bt.values()}
     T["event"] = np.array([bt[f]["event"] if f in bt else ev_of_date.get(d, d) for f, d in zip(T["fid"], T["date"])],

@@ -35,6 +35,11 @@
      -0.0503
     ],
     "dev_blend": 21.1535,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0657,
+     -0.0854,
+     -0.0475
+    ],
     "nb_t_minus_nb_base": [
      -0.0515,
      -0.0678,
@@ -61,6 +66,11 @@
      -0.0742
     ],
     "dev_blend": 11.8657,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0684,
+     -0.0859,
+     -0.0514
+    ],
     "nb_t_minus_nb_base": [
      -0.0546,
      -0.0698,
@@ -87,6 +97,11 @@
      -0.0769
     ],
     "dev_blend": 19.5421,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0725,
+     -0.0946,
+     -0.0533
+    ],
     "nb_t_minus_nb_base": [
      -0.0604,
      -0.0795,
@@ -113,6 +128,11 @@
      -0.1239
     ],
     "dev_blend": 10.8087,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0804,
+     -0.0991,
+     -0.0622
+    ],
     "nb_t_minus_nb_base": [
      -0.0683,
      -0.0861,
@@ -139,6 +159,11 @@
      0.0505
     ],
     "dev_blend": 5.5438,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0067,
+     -0.0149,
+     0.0015
+    ],
     "nb_t_minus_nb_base": [
      -0.0035,
      -0.0092,
@@ -165,6 +190,11 @@
      0.0293
     ],
     "dev_blend": 4.6213,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.007,
+     -0.0141,
+     0.0004
+    ],
     "nb_t_minus_nb_base": [
      -0.0029,
      -0.0083,
@@ -191,6 +221,11 @@
      -0.0191
     ],
     "dev_blend": 5.6506,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0255,
+     -0.0348,
+     -0.0157
+    ],
     "nb_t_minus_nb_base": [
      -0.0063,
      -0.0111,
@@ -217,6 +252,11 @@
      -0.0122
     ],
     "dev_blend": 5.0297,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0202,
+     -0.0289,
+     -0.0108
+    ],
     "nb_t_minus_nb_base": [
      -0.0036,
      -0.008,
@@ -243,6 +283,11 @@
      -0.0268
     ],
     "dev_blend": 23.4086,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.046,
+     -0.0605,
+     -0.031
+    ],
     "nb_t_minus_nb_base": [
      -0.0223,
      -0.0322,
@@ -269,6 +314,11 @@
      0.0311
     ],
     "dev_blend": 12.2487,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0364,
+     -0.0504,
+     -0.0226
+    ],
     "nb_t_minus_nb_base": [
      -0.0165,
      -0.0241,
@@ -295,6 +345,11 @@
      0.0149
     ],
     "dev_blend": 6.3127,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0336,
+     -0.0449,
+     -0.0228
+    ],
     "nb_t_minus_nb_base": [
      -0.0286,
      -0.0396,
@@ -321,6 +376,11 @@
      0.029
     ],
     "dev_blend": 5.157,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0263,
+     -0.0366,
+     -0.0165
+    ],
     "nb_t_minus_nb_base": [
      -0.0209,
      -0.0306,
@@ -347,6 +407,11 @@
      -0.8009
     ],
     "dev_blend": 12.8781,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0578,
+     -0.0759,
+     -0.0426
+    ],
     "nb_t_minus_nb_base": [
      -0.05,
      -0.0692,
@@ -373,6 +438,11 @@
      -0.5459
     ],
     "dev_blend": 9.4579,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0526,
+     -0.0685,
+     -0.0386
+    ],
     "nb_t_minus_nb_base": [
      -0.045,
      -0.0602,
@@ -399,6 +469,11 @@
      -0.2551
     ],
     "dev_blend": 0.9787,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.132,
+     -0.1493,
+     -0.1145
+    ],
     "nb_t_minus_nb_base": [
      -0.132,
      -0.1493,
@@ -425,6 +500,11 @@
      0.0101
     ],
     "dev_blend": 2.4689,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0294,
+     -0.038,
+     -0.0205
+    ],
     "nb_t_minus_nb_base": [
      0.0018,
      0.0002,
@@ -451,6 +531,11 @@
      0.0044
     ],
     "dev_blend": 1.5333,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0101,
+     -0.0162,
+     -0.0039
+    ],
     "nb_t_minus_nb_base": [
      0.0014,
      -0.0008,
@@ -477,6 +562,11 @@
      1.2816
     ],
     "dev_blend": 116.0291,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0951,
+     -0.1157,
+     -0.0724
+    ],
     "nll_chosen_exact_bin": 5.1238,
     "exact_bin_minus_nb_base": [
      -0.1154,
@@ -499,6 +589,11 @@
      -0.0792
     ],
     "dev_blend": 1.0022,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0433,
+     -0.0531,
+     -0.0328
+    ],
     "nb_t_minus_nb_base": [
      -0.038,
      -0.0477,
@@ -525,6 +620,11 @@
      0.0003
     ],
     "dev_blend": 0.5202,
+    "chosen_minus_nb_base_split_clusters": [
+     0.0,
+     0.0,
+     0.0
+    ],
     "nb_t_minus_nb_base": [
      0.0032,
      -0.0009,
@@ -553,6 +653,11 @@
      0.0855
     ],
     "dev_blend": 20.4135,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0705,
+     -0.0912,
+     -0.0502
+    ],
     "nb_t_minus_nb_base": [
      -0.047,
      -0.0667,
@@ -579,6 +684,11 @@
      -0.0579
     ],
     "dev_blend": 11.5311,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0781,
+     -0.1,
+     -0.0572
+    ],
     "nb_t_minus_nb_base": [
      -0.0596,
      -0.0794,
@@ -605,6 +715,11 @@
      0.1424
     ],
     "dev_blend": 19.1746,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0702,
+     -0.0931,
+     -0.0483
+    ],
     "nb_t_minus_nb_base": [
      -0.0529,
      -0.0748,
@@ -631,6 +746,11 @@
      -0.033
     ],
     "dev_blend": 10.7361,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0847,
+     -0.1098,
+     -0.0603
+    ],
     "nb_t_minus_nb_base": [
      -0.0723,
      -0.0958,
@@ -657,6 +777,11 @@
      0.0135
     ],
     "dev_blend": 5.4252,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0139,
+     -0.0216,
+     -0.0055
+    ],
     "nb_t_minus_nb_base": [
      -0.0017,
      -0.0074,
@@ -683,6 +808,11 @@
      0.0009
     ],
     "dev_blend": 4.4049,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0137,
+     -0.0203,
+     -0.0063
+    ],
     "nb_t_minus_nb_base": [
      -0.0039,
      -0.0096,
@@ -709,6 +839,11 @@
      -0.0389
     ],
     "dev_blend": 5.3431,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0446,
+     -0.0558,
+     -0.0335
+    ],
     "nb_t_minus_nb_base": [
      -0.0122,
      -0.0183,
@@ -735,6 +870,11 @@
      -0.0264
     ],
     "dev_blend": 4.6588,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0383,
+     -0.0479,
+     -0.0287
+    ],
     "nb_t_minus_nb_base": [
      -0.0101,
      -0.0152,
@@ -761,6 +901,11 @@
      0.1956
     ],
     "dev_blend": 22.6975,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0498,
+     -0.0647,
+     -0.0352
+    ],
     "nb_t_minus_nb_base": [
      -0.016,
      -0.0301,
@@ -787,6 +932,11 @@
      0.0358
     ],
     "dev_blend": 11.7908,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0485,
+     -0.0636,
+     -0.0342
+    ],
     "nb_t_minus_nb_base": [
      -0.0184,
      -0.0319,
@@ -813,6 +963,11 @@
      0.0494
     ],
     "dev_blend": 5.7737,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.04,
+     -0.0565,
+     -0.0258
+    ],
     "nb_t_minus_nb_base": [
      -0.0328,
      -0.0467,
@@ -839,6 +994,11 @@
      0.0176
     ],
     "dev_blend": 4.8288,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0302,
+     -0.0435,
+     -0.0187
+    ],
     "nb_t_minus_nb_base": [
      -0.0233,
      -0.0342,
@@ -865,6 +1025,11 @@
      -0.4593
     ],
     "dev_blend": 14.0354,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0531,
+     -0.0821,
+     -0.0296
+    ],
     "nb_t_minus_nb_base": [
      -0.036,
      -0.0599,
@@ -891,6 +1056,11 @@
      -0.3194
     ],
     "dev_blend": 10.3003,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0493,
+     -0.0732,
+     -0.028
+    ],
     "nb_t_minus_nb_base": [
      -0.0324,
      -0.053,
@@ -917,6 +1087,11 @@
      -0.2402
     ],
     "dev_blend": 0.9007,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.1323,
+     -0.1552,
+     -0.111
+    ],
     "nb_t_minus_nb_base": [
      -0.1323,
      -0.1546,
@@ -943,6 +1118,11 @@
      0.033
     ],
     "dev_blend": 2.5157,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0344,
+     -0.0457,
+     -0.0232
+    ],
     "nb_t_minus_nb_base": [
      0.0014,
      -0.0,
@@ -969,6 +1149,11 @@
      0.0022
     ],
     "dev_blend": 1.494,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0222,
+     -0.0291,
+     -0.0148
+    ],
     "nb_t_minus_nb_base": [
      -0.0005,
      -0.0026,
@@ -995,6 +1180,11 @@
      1.677
     ],
     "dev_blend": 112.5075,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.1297,
+     -0.1526,
+     -0.1052
+    ],
     "nll_chosen_exact_bin": 5.0752,
     "exact_bin_minus_nb_base": [
      -0.1528,
@@ -1017,6 +1207,11 @@
      -0.0669
     ],
     "dev_blend": 0.909,
+    "chosen_minus_nb_base_split_clusters": [
+     -0.0419,
+     -0.0552,
+     -0.0287
+    ],
     "nb_t_minus_nb_base": [
      -0.0371,
      -0.049,
@@ -1043,6 +1238,11 @@
      0.0001
     ],
     "dev_blend": 0.5408,
+    "chosen_minus_nb_base_split_clusters": [
+     0.0,
+     0.0,
+     0.0
+    ],
     "nb_t_minus_nb_base": [
      -0.0001,
      -0.0016,
@@ -2147,7 +2347,7 @@
  },
  "meta": {
   "tool": "tools/statlines_verify.py",
-  "built": "2026-11-06T23:09:59.692647Z",
+  "built": "2026-11-06T23:12:41.080042Z",
   "note": "verifier's independent checks of tools/statlines.py; see research/model_statlines.md, Verification log"
  }
 }

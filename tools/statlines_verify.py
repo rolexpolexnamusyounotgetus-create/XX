@@ -373,6 +373,8 @@ def part_repro(T, F):
     lt = np.log(np.maximum(t, 0.05))
     five = (R == 5).astype(float)
     cards = card_keys(T)
+    # the builder's original keys: backtest event name for backtest rows, the date string for every other row
+    split = np.array([c if f in T["bt_ids"] else d for c, f, d in zip(cards, T["fid"], T["date"])], dtype=object)
     folds = {str(y): ((yr >= 2019) & (yr < y), yr == y) for y in (2021, 2022, 2023)}
     folds["valid"] = ((yr >= 2019) & (yr <= 2023), (yr >= 2024) & (yr <= 2025))
     rng = np.random.default_rng(1)
@@ -438,7 +440,7 @@ def part_repro(T, F):
                     b, g = fit_nb(y[tr], off[tr], Xm[tr], Xk[tr], np.r_[np.zeros(5), np.full(GL.shape[1], float(lam))])
                     mu2, k2 = np.exp(off[te] + Xm[te] @ b), np.exp(np.clip(Xk[te] @ g, -6, 9))
                     lp["chosen"], mean["chosen"], pit["chosen"] = nb_ll(y[te], mu2, k2), mu2, pit_nb(y[te], mu2, k2, rng)
-            store[(name, st)] = {"lp": lp, "mean": mean, "pit": pit, "y": y[te], "grp": cards[te]}
+            store[(name, st)] = {"lp": lp, "mean": mean, "pit": pit, "y": y[te], "grp": cards[te], "grp_split": split[te]}
         print("  repro fold %s (%.0fs)" % (name, time.time() - t0), flush=True)
     pdev = lambda y, mu: 2 * (np.where(y > 0, y * np.log(np.maximum(y, 1e-300) / np.maximum(mu, 1e-10)), 0) - (y - mu))
     res = {}
@@ -458,7 +460,9 @@ def part_repro(T, F):
                  "chosen_minus_nb_base": boot_ci(L["chosen"] - L["nb_base"], g),
                  "in80_chosen": r4(((pit >= 0.1) & (pit <= 0.9)).mean()),
                  "dev_chosen_minus_blend": boot_ci(pdev(y, M["chosen"]) - pdev(y, M["pois"]), g),
-                 "dev_blend": r4(pdev(y, M["pois"]).mean())}
+                 "dev_blend": r4(pdev(y, M["pois"]).mean()),
+                 # same rows and seed with the builder's original keys (debut rows keyed by date): the clustering defect
+                 "chosen_minus_nb_base_split_clusters": boot_ci(L["chosen"] - L["nb_base"], np.concatenate([p["grp_split"] for p in P]))}
             if "nb_t" in L:
                 e["nb_t_minus_nb_base"] = boot_ci(L["nb_t"] - L["nb_base"], g)
                 e["chosen_minus_nb_t"] = boot_ci(L["chosen"] - L["nb_t"], g)

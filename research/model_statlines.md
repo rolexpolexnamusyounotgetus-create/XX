@@ -132,6 +132,11 @@ Every table below is printed by `python3 tools/statlines.py tables`. The full ou
      `{ enable: true }` is set, so an engine that calls it is unchanged by default;
    - a PIT / coverage reference for evalv's planned per-stat PIT diagnostic.
 
+   Verifier's qualification for the v8 use: treat these lines as candidate targets, not accepted ones. v8 must pass
+   its own train-only acceptance test, including the control and TD MAE criterion. The unconditional control mean
+   here already fails that criterion against engine v4 on 2021-23 (+2.18 s [+0.94, +3.38]). A retarget should
+   therefore move the spread (the TD-intent and control draws) more than the control level.
+
    `src/engine3.js` is not touched.
 
 ## What was built
@@ -250,6 +255,7 @@ nice -n 5 python3 tools/statlines.py final      # the one 2024-25 look + exports
 nice -n 5 python3 tools/statlines.py fixtures   # JS parity fixtures
 python3 tools/statlines.py tables               # every table in this note
 node tests/test_statdist.js
+nice -n 5 python3 tools/statlines_verify.py     # verifier: re-parse, input joins, independent refit, engine MAE, gate
 ```
 
 `statlines_oof.json` sets:
@@ -651,3 +657,103 @@ PIT histograms (10 bins, counts) for key stats:
 | open|page: open+ml2lr + statlines vs base (2024-2025, static fit <= 2023) | 843 | 0.58115 | 0.58115 | -0.00000 [-0.0000, -0.0000] | False |
 
 Expert alone 2024-2025: log loss 0.6262, accuracy 0.656 (n 854).
+
+## Verification log
+
+Adversarial verifier, Nov 6, 2026, about 11:15 pm UTC. Tool: `tools/statlines_verify.py`, written from scratch and
+not importing tools/statlines.py. Output: `data/derived/statlines_verify.json`. Every number below comes from
+`nice -n 5 python3 tools/statlines_verify.py`, which takes about 1 minute and needs the builder's caches in
+out/statlines_cache, out/mlrates_cache and out/ml2_cache.
+
+### Verdict
+
+- **Adopt** statlines as the distributional stat-line layer: the page's P10 / P50 / P90 lines, and stat-line PIT
+  references for evalv.
+- **Do not adopt** the winner expert in any stack. The rejection is confirmed exactly.
+- **Engine targets.** The v8 use is a candidate only, subject to v8's train-only acceptance test. The unconditional
+  control mean has worse MAE than engine v4 on 2021-23.
+- **The numbers are real.** An independent re-implementation reproduces every log score to four decimals, in CV and on
+  2024-25.
+- **Some headline claims overstate the result:**
+  - most of the gain over nb_base is the time terms;
+  - the conditional-mean comparison with the engine is not like-for-like.
+
+### What was checked and found clean
+
+| check | result |
+|---|---|
+| Targets re-parsed from data/raw CSVs (own parser; a fight listed under two event names counted once) | 7,098 fight-sides, 0 mismatches on all 20 stats, 0 minutes / rounds mismatches |
+| Match bias: 2019-2025 raw bouts missing from the table | 0 (the table holds every bout, so no join loss) |
+| Inputs recomputed from raw JSON: mlrates OOF, embedding eta from the quarter matrices, win logit, oppadj, S cells | 0 mismatches |
+| Input timing | Embedding snapshot = latest quarterly refit dated on or before the fight, for every row; S `fit_through` < fight date for every row |
+| Universe | both-prior = has embedding = backtest set = has S cells = has oppadj (5,728 sides) |
+| 2026 data | None in statlines.json, statlines_oof.json or the fixtures (the only 2026 date is the build stamp); 2026 rows of oppadj.json / methodround.json (373 each) are never read |
+| Timeline | All selection files (smoke CVs, grid10k, cv_v2 = cv.json, cvfit, gate) cover 2021-2023 only. prereg.json 10:49:17 pm, commit 09b4d2d 10:49:29 pm, `final` ran once 10:50:36-10:50:44 pm (single clean log), lock written. The engine run (10:11 pm) covers 2024-25 for the engine only. No sign of selection on it |
+| Independent second stage (statsmodels blend refit per fold; own NB2 with covariate shape and own ZI-Beta) | NLL identical to four decimals for all 20 stats, both periods (e.g. sig landed 4.3197 / 4.2957, control 5.1441 / 5.0983); coverage and deviance match |
+| Control log score | The builder's density x 1 s approximation is conservative: the exact 1-second bin mass gives -0.115 [-0.137, -0.094] (CV) and -0.153 [-0.178, -0.127] (2024-25) vs nb_base, against -0.095 / -0.130 reported |
+| Unconditional engine comparison from the committed OOF export | Reproduced: control 154.15 -> 147.90, sig landed 21.74 -> 20.99, TD landed 1.807 -> 1.749 |
+| Stack gate, re-run from the committed `p_dom` with ml2's `stack_predict` / `compare` / SEL_MIN | Identical: +0.00046 to +0.00093 in all six stacks, weight 0 when fit through 2023, rejected everywhere |
+| Corner order | No side input anywhere. The expert is antisymmetric. A free intercept on the expert alone (2019-23) takes 0.256 vs 0.285 without the expert (A-win share 0.571); the slope moves 0.622 -> 0.603. Stacks have no intercept. The builder's "data swap test" holds by construction, so it is not evidence; symmetry rests on the absence of side inputs |
+| JS | `node tests/test_statdist.js`: 3,059 / 3,059 |
+
+### Defects and corrections
+
+1. **Overstated: the gain over nb_base is mostly the time terms (report corrected, bottom line 2).**
+   - nb_base ignores the fight's length beyond exposure. The chosen models add log t, finished, finished x log t and
+     five rounds, plus a richer shape.
+   - On 2024-25 the time terms alone (nb_t - nb_base) give:
+
+     | stat | time terms alone | share of the total gain |
+     |---|---|---|
+     | sig landed | -0.060 | 76% |
+     | head landed | -0.072 | 85% |
+     | KD | -0.132 | 100% |
+     | submission attempts | -0.037 | 89% |
+
+   - The ridge GLM's own gain (chosen - nb_t) is real on most stats in both periods: sig landed -0.019 [-0.027, -0.010]
+     on 2024-25 and -0.014 [-0.021, -0.007] in CV; TD attempts -0.036 / -0.031; leg attempts -0.032 / -0.019; distance
+     attempts -0.034 / -0.024.
+   - It is inside the noise for submission attempts on 2024-25, and for body and clinch attempts in CV.
+2. **Not like-for-like: conditional means vs the engine (report corrected, bottom line 4).**
+   - This layer's conditional mean knows whether the fight was stopped. The engine's is its average rate x t.
+   - On fights that went the distance (same conditioning for both), 2024-25 shows a significant gain on 7 of 20 stats,
+     e.g. control -7.0 s [-14.0, -0.6], sig landed -0.61 [-1.08, -0.12], TD landed -0.094 [-0.144, -0.044].
+   - On CV 2021-23 only control (-5.8 s) and ground attempts (-0.67) are significant.
+3. **Recommendation risk: v8 targets vs MAE (report corrected, bottom line 4 and Use).**
+   - evalv's MAE of the unconditional mean, on CV 2021-23 (engine in-sample): control is worse than engine v4, +2.18 s
+     [+0.94, +3.38]. Reversals (+0.018) and submission attempts (+0.004) are also worse. TD is a tie.
+   - On 2024-25: control -0.78 [-2.15, +0.66], n.s.; strikes, TD and KD better.
+   - v8's acceptance test needs control and TD MAE not worse on 2019-23, so these lines are candidate targets for the
+     spread more than for the control level.
+   - The claim "targets reachable because 2024-25 exceeds the plan" argued from 2024-25 (plan §5). It is replaced by
+     the CV-year figures.
+   - Part of the unconditional gain is methodround S's fight-length distribution, which the engine does not share.
+4. **CI defect, minor (tool fixed).**
+   - The cluster key was the backtest event name for backtest rows and the date string for the other (debut) rows. In
+     the all-rows tables that split 268 of 295 cards into two clusters.
+   - Fixed in `tools/statlines.py` build: one key per card. The rebuilt table is otherwise identical.
+   - With card-level clusters, the width ratio (card / split) is 0.88-1.07 across 19 stats in both periods, on the same
+     rows and seed (`statlines_verify.json`, `chosen_minus_nb_base` vs `..._split_clusters`). For example, 2024-25
+     control vs nb_base goes from [-0.153, -0.105] to [-0.155, -0.104], and sig landed from [-0.100, -0.057] to
+     [-0.101, -0.059]. No conclusion changes.
+   - The committed statlines.json was not regenerated: `final` is locked and the look is spent. Its CIs use the old
+     clusters; the corrected ones are in statlines_verify.json.
+5. **Wording (report corrected, protocol bullet).** oppadj.json and methodround.json do contain 2026 rows. statlines
+   never reads them.
+6. **Inherited, second-order, CV years only (not fixable here; noted).**
+   - mlrates' 2019-2023 OOF rates use stack weights fit on all 2019-2023 folds pooled.
+   - The embedding and methodround hyperparameters were chosen with validation years that include 2021-2023.
+   - Both the chosen model and every baseline share these inputs, so paired CV differences are barely affected.
+     2024-25 is clean.
+7. **Minor.**
+   - "Reproduces version_history" should read "approximately" (21.74 vs 21.87 sig landed at 200 vs 300 simulations per
+     order).
+   - Ground attempts (0.771 on 2024-25) is below the pre-registered 0.78-0.82 band. The builder flagged it; it is not a
+     large count, so the pre-registered decision rule still passes.
+   - In fights that went the distance, TD attempts in80 is 0.769.
+
+### Not done
+
+- No new 2024-25 selection was made.
+- The verifier's re-scoring of 2024-25 replays the frozen, pre-registered models for audit only.
+- Nothing in the builder's committed outputs was changed.
