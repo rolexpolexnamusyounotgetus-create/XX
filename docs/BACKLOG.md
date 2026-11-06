@@ -3,6 +3,9 @@
 Findings from verified research that the next engine versions must use. Each line names its source.
 
 ## Judging (v4 or v8)
+- (v4 review) These all-cards fits run from 2015 through 2026-10, which includes the validation years and the vault.
+  For engine tuning use the train-only refit in data/derived/judge_em_train.json (5,519 cards 2015-2023, from
+  tools/judge_em_train.py): head 0.1742, body 0.1271, leg 0.1042, KD 2.164, TD 0.278, control 0.462/min, sub 0.847.
 - Use the EM round-winner fit over all 7,495 cards with only 10-9 rounds (research/data_baserates.md,
   data/derived/baserates.json): per landed differential head 0.179, body 0.133, leg 0.105, knockdown 2.42,
   takedown 0.286, control 0.46 per minute, submission attempt 0.85. In head-strike units: body 0.74,
@@ -67,6 +70,23 @@ Findings from verified research that the next engine versions must use. Each lin
   WebSearch budget runs out. Re-verify items flagged "unverified" in data/scouting/*.json this way.
 
 ## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
+
+**Current (Nov 6, 2:20 pm ET):**
+- **The current engine is v4 (4.0.0), in src/ and versions/v4/.** v4.0.1 (the v4 review's fixes) was validated
+  once and rejected by the decision rule. Its work is in versions/v4.0.1-rejected/; see docs/CHANGELOG.md v4.0.1.
+- Validation 2024-2025 winner log loss (853 decisive fights, symmetric, 300 sims per order):
+  - v3 0.6424; v4 0.6324 (vs v3 -0.0100 [-0.0170, -0.0030], kept).
+  - v4.0.1 0.6289 (vs v4 -0.0034 [-0.0073, +0.0008]). Its 7-bin (-0.0004), method (+0.0010) and all stat-line
+    deviances are n.s., so it was rejected.
+  - Brier: v4 0.2206, v4.0.1 0.2189. Calibration slope 1.72 / 1.77: still underconfident.
+- The engine trails methodround model S on validation:
+  - v4: who x how x when +0.029 [+0.0015, +0.0575], winner +0.011 [+0.002, +0.020].
+  - v4.0.1: who x how x when +0.028 [+0.008, +0.048], winner +0.008 [-0.001, +0.016].
+- Blend: the engine's validated weight is 0.037 with the closing line for v4 (0.002 for v4.0.1) and 0 without a line.
+  The blend's log loss does not move measurably (v4 -0.0002 [-0.0006, +0.0001]). The blend still decides the winner.
+- Known contamination in the current engine:
+  - v4's EM judging weights were fit on cards through 2026-10, which covers the validation years and the vault.
+  - The train-only refit is data/derived/judge_em_train.json. It was rejected along with v4.0.1, so v5 must carry it.
 - Final probability = stacked blend (research/model_moe.md, src/ml/moe.js, data/derived/moe_page.json):
   with the closing line it is level-to-slightly-better than the line (pooled 2021-2025 out-of-sample:
   -0.0019 log loss [-0.0042, +0.0004]; 2024-25 alone -0.0060 [-0.0088, -0.0035]); without a line it beats
@@ -157,11 +177,40 @@ Findings from verified research that the next engine versions must use. Each lin
     train, and the walk-forward priors lag it.
   - KD per 100 head: 0.684 / 0.746 (+9.0%; v3 +4.8%). This is the 2024 glove-trial dip plus v4_levels' kdScale.
   - 10-8 share: 2.46% / 3.38% (v3 4.96%). evalv's 'actual' was 6.28% until a judged-rounds fix. Fight
-    b959e2c1d16ff832 is stored as 5 rounds but judged over 3: check tools/build_db.py.
+    b959e2c1d16ff832 (Cejudo vs Song) is a 5-round bout that ended as a technical decision in round 3, so the data is
+    right and tools/build_db.py needs no change.
   - A recency-weighted league level (durability's trailing 730-day level) is a v5 item.
-- Known gaps for v5/v6: 5-round finish timing (sim 14.5/12.8/10.4/9.3/5.4% by round vs 17.3/16.5/9.5/5.3/4.9% on
-  train); simulated decisions UD 76-79% vs 80% in the judges' rounds (fight-level coherence beyond the shared
-  fight-level noise); MD share 0.5% vs 2% (deductions are not modeled); hurt weight 0.8 in judging is a judgment call.
+- Known gaps for v5/v6:
+  - 5-round finish timing: sim 14.5/12.8/10.4/9.3/5.4% by round vs 17.3/16.5/9.5/5.3/4.9% on train.
+  - 3-round finish timing is off too. On train, round 2 is 14.5% vs 16.7% (z -2.5) and round 3 is 9.1% vs 7.5%
+    (z +2.5). Add it to the v6 dynamics targets.
+  - Simulated decisions: UD 76-79% vs 80% in the judges' rounds (fight-level coherence beyond the shared
+    fight-level noise).
+  - Draws and MD:
+    - v4's t108 8.555 cut draws about 4x: train P(draw) 0.24% vs 1.01% actual, MD 0.5% vs 2.0%. v3 had 1.4% MD with no
+      deductions.
+    - v4.0.1's deductions plus t108 8.31 got 0.64% draws and 1.0% MD; it was rejected.
+    - Add draw and MD shares to the judging targets in v5.
+  - The hurt weight of 0.8 in judging is a judgment call.
+
+## Engine v4 review follow-ups (Nov 6, after v4.0.1 was rejected) -> v5
+- Carry v4.0.1's train-only fixes into v5 (versions/v4.0.1-rejected/), measured inside v5's single look:
+  - the EM judging weights refit on 2015-2023 cards (data/derived/judge_em_train.json; tools/judge_em_train.py);
+  - judgecal refit with point deductions;
+  - learned-path levels for TD attempts, control and sub attempts (mlTdLevel, mlCtrlLevel, mlSubLevel);
+  - the cumulative mlMaxRatio cap on the takedown multipliers (v4 compounds it past x4 on 20 of 3,998 train sides).
+- Take the self-calibration's KO/TKO composition targets (ground 28%, clinch 12.5%, standing without a KD 7%) from
+  pre-2024 fights. They come from the all-years base-rate table now.
+- Attribution: the reviewer's train ablation puts the whole v4 gain on the learned rates. EM judging, the priors_dev
+  self-calibration and v4_levels are neutral to slightly negative. Before v5's look, run a train-only leave-one-out of
+  each, plus a "v3 params + learned rates" arm, and keep only what helps on train.
+- Component work reports train/CV numbers only. Never choose components by their 2024-25 results: both v4 ingredients
+  had been scored on 2024-25 before v4's look.
+- Backtest sides take height, reach and stance from the current tale of the tape (tools/build_db.py, sides[tag]).
+  Stance is a learned-rate feature, so this is a tiny look-ahead. It is accepted and documented; freezing stance from
+  the earliest record is the cheap fix.
+- Volkanovski vs Gaethje with the production learned rates: the engine gives 69.4% Volk (61.3% with the rates off,
+  v3 62.8%), against about 37% in the no-vig openers. The page's final probability stays on the blend.
 - Hidden-data note: evalv drops every 2026 fight on load; methodround --score now takes --backtest
   data/derived/backtest_dev.json and a date window; tuning and the self-calibration used only pre-2024 data.
 

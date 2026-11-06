@@ -597,6 +597,11 @@
     "  vUv = position.xy + 0.5;",
     "  float d = -mv.z;",
     "  vA = uHaze * smoothstep(3.0, 10.0, d) * (1.0 - smoothstep(45.0, 80.0, d)) * (0.55 + 0.45 * smoothstep(1.5, 9.0, c.y));",
+    // haze only shows where light crosses it: bright in the key's cone over the canvas and up in the truss,
+    // dim down among the tables and the floor seats (so wide and overhead shots keep their blacks)
+    "  float rr = length(c.xz);",
+    "  float lit = max(exp(-rr * rr / 16.0) * smoothstep(-0.5, 4.0, c.y), smoothstep(4.5, 10.5, c.y) * exp(-max(rr - 6.0, 0.0) / 5.0));",
+    "  vA *= 0.3 + 1.05 * lit;",
     "  gl_Position = projectionMatrix * mv;",
     "}"
   ].join("\n");
@@ -1482,11 +1487,22 @@
     var fg = new T.BufferGeometry();
     fg.setAttribute("position", new T.BufferAttribute(fpos, 3));
     fg.setAttribute("color", new T.BufferAttribute(fcol, 3));
-    var sc = makeCanvas(64, 64), ctx = sc.getContext("2d"), g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(0.18, "rgba(255,255,255,0.8)"); g.addColorStop(0.45, "rgba(200,220,255,0.18)"); g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
+    // a flash as a lens sees it: a hot pinpoint, a faint bloom and thin star streaks (longer across, like the
+    // broadcast zooms' anamorphic flare), not a soft ball
+    var SS = 128, sc = makeCanvas(SS, SS), ctx = sc.getContext("2d"), hc = SS / 2;
+    function blob(sx, sy, rad, a0, a1, tint) {
+      ctx.save(); ctx.translate(hc, hc); ctx.scale(sx, sy);
+      var gg = ctx.createRadialGradient(0, 0, 0, 0, 0, rad);
+      gg.addColorStop(0, "rgba(" + tint + "," + a0 + ")"); gg.addColorStop(0.35, "rgba(" + tint + "," + a1 + ")"); gg.addColorStop(1, "rgba(" + tint + ",0)");
+      ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(0, 0, rad, 0, TAU); ctx.fill(); ctx.restore();
+    }
+    ctx.globalCompositeOperation = "lighter";
+    blob(1, 1, hc * 0.62, 0.16, 0.05, "190,210,255");      // bloom
+    blob(1, 0.035, hc, 0.75, 0.22, "220,232,255");         // streak across
+    blob(0.035, 1, hc * 0.62, 0.5, 0.12, "220,232,255");   // streak up and down
+    blob(1, 1, hc * 0.17, 1, 0.9, "255,255,255");          // the tube itself
     var spark = canvasTex(sc, true, 1);
-    A.flashes = new T.Points(fg, new T.PointsMaterial({ size: 0.7, map: spark, vertexColors: true, transparent: true, depthWrite: false, blending: T.AdditiveBlending, sizeAttenuation: true, toneMapped: false, fog: false }));
+    A.flashes = new T.Points(fg, new T.PointsMaterial({ size: 1.05, map: spark, vertexColors: true, transparent: true, depthWrite: false, blending: T.AdditiveBlending, sizeAttenuation: true, toneMapped: false, fog: false }));
     A.flashes.frustumCulled = false;
     A.own(A.flashes);
     var NP = Math.min(2600, nh), pp = new Float32Array(NP * 3), pr = new Float32Array(NP);

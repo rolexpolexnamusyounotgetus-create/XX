@@ -236,14 +236,14 @@ Leave the scales as tuned and check the slope on the vault and the forward ledge
 
 **Cumulative** (strip one after another):
 
-| Step | elo_full | glicko2 | trueskill_mov |
-|---|---|---|---|
-| tuned | 0.6501 | 0.6497 | 0.6500 |
-| - margin of victory | 0.6537 (+0.0036) | 0.6538 (+0.0041) | 0.6500 (n/a) |
-| - pre-UFC record | 0.6628 (+0.0091) | 0.6624 (+0.0086) | 0.6593 (+0.0094) |
-| - newcomer age prior | 0.6664 (+0.0036) | 0.6654 (+0.0030) | 0.6644 (+0.0051) |
-| - age curve and layoff drift | 0.6867 (+0.0204) | 0.6853 (+0.0199) | 0.6830 (+0.0186) |
-| for reference: elo_k (K tuned, nothing else) | 0.6858 | | |
+| Step | elo_full | glicko2 | trueskill_mov | whr_rounds |
+|---|---|---|---|---|
+| tuned | 0.6501 | 0.6497 | 0.6500 | 0.6445 |
+| - margin of victory / rounds (binary result) | 0.6537 (+0.0036) | 0.6538 (+0.0041) | 0.6500 (n/a) | 0.6524 (+0.0080) |
+| - pre-UFC record | 0.6628 (+0.0091) | 0.6624 (+0.0086) | 0.6593 (+0.0094) | 0.6620 (+0.0095) |
+| - newcomer age prior | 0.6664 (+0.0036) | 0.6654 (+0.0030) | 0.6644 (+0.0051) | 0.6659 (+0.0039) |
+| - age curve and layoff drift | 0.6867 (+0.0204) | 0.6853 (+0.0199) | 0.6830 (+0.0186) | 0.6841 (+0.0183) |
+| for reference: elo_k (K tuned, nothing else) | 0.6858 | | | |
 
 **The age curve is the single largest ingredient.** It is worth 0.012 alone and 0.020 once the priors are gone,
 since the newcomer age prior and the drift overlap.

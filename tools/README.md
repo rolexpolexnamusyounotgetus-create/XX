@@ -270,17 +270,19 @@ ESPN's scoreboard JSON as the second source), appends them to `results.json`, an
 ## ml2.py: ML v2 feature union (winner model, stacks, method/round refit)
 
 ```
-nice -n 5 python3 tools/ml2.py all --jobs 2   # table, cv, fit, stage2, stack, method, verify, export (~50 min busy box)
+nice -n 5 python3 tools/ml2.py all --jobs 2   # table, cv, fit, stage2, stack, method, verify, export (~8 min)
 nice -n 5 python3 tools/ml2.py <stage>        # one stage from the caches in out/ml2_cache/
 node tests/test_ml2.js                        # JS page evaluator (src/ml/ml2.js) against the Python reference
 ```
 
 - **Inputs.** ml.py's feature table (rebuilt), tools/ratings.py's systems (rerun with ratings.json's tuned parameters over
   2009-2025), tools/market.py's market rating (rebuilt from 2013), preufc.json, fightweek.json, and for a second-stage
-  test durability.json, oppadj.json, mlrates_oof.json, methodround.json. `build_db.parse_fights` is wrapped so every
-  fight dated 2026-01-01 or later is dropped right after parsing.
+  test durability.json, oppadj.json, mlrates_oof.json, methodround.json and tools/styles.py's walk-forward matchup terms
+  (built here from backtest.json with styles.json's archetypes; screen nested inside each CV fold). `build_db.parse_fights`
+  is wrapped so every fight dated 2026-01-01 or later is dropped right after parsing.
 - **Protocol.** Choices by time-ordered CV before 2024 (ml.py's blocks; stacks forward-chained 2021-2023), 2024-2025
   scored once, static (fit < 2024) and monthly-rolling refits, everything corner-symmetric.
 - **Outputs.** `data/derived/ml2.json` (CV, results, segments, stacks, method refit, verification, per-fight
   predictions, `page_model`) and `research/model_ml2.md`. Delete `out/ml2_cache/ratings_all.pkl` after ratings.json or
-  preufc.json changes (the table stage then reruns the rating systems, about 4 minutes).
+  preufc.json changes (the table stage then reruns the rating systems, about 75 seconds), and
+  `out/ml2_cache/styles_block.pkl` after backtest.json or styles.json changes.

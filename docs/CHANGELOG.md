@@ -3,6 +3,129 @@
 Each engine version records its held-out numbers here (docs/ROADMAP.md). "Test" means UFC fights from
 2024-01-01 to 2026-10-31 whose profiles were frozen before the fight and which no tuning step ever saw.
 
+## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored
+
+**Status: rejected by the decision rule.** The validation look ran once, at 11:45 am ET, paired against v4. The
+decision was made at 2:20 pm ET.
+- src/engine3.js, src/params3.js and src/ml/mlrates.js are back to versions/v4/; the hashes match the v4 entry.
+- tests/test_engine3.js, data/derived/judgecal.json and data/derived/v4_levels.json are back to the v4 final
+  commit 122c31a.
+- The work is kept in versions/v4.0.1-rejected/: engine, params, adapter, its test file, its fits and its run logs.
+  `versions/v4.0.1` is a symlink to it, because agents were still reading that path.
+- **The current engine is v4.**
+- Tests on the restored v4: `node tests/test_engine3.js 8000` gives 69 passed, 0 failed. `node tests/test_director3.js 200`
+  passes with the learned rates on (200 of 200 matchups applied) and with `NO_ML=1`.
+
+### What v4.0.1 changed (all fit on train data, 2019-2023)
+
+Each review issue was first reproduced on train data or file metadata. No new validation numbers were computed.
+
+1. **Judge weights were fit on cards through the vault.**
+   - Reproduced: v4's judge.head/body/leg/kd/td/ctrlMin/sub are the EM round-winner fit over ufcstats cards from 2015-01-01
+     through 2026-10-31 (data/derived/baserates.json meta), so they include the validation years and the 2026 vault.
+   - Fix: refit on the 5,519 cards of 2015-2023 only (tools/judge_em_train.py -> data/derived/judge_em_train.json,
+     last card 2023-12-16). New weights: head 0.1742, body 0.1271, leg 0.1042, KD 2.164, TD 0.278, control 0.462/min,
+     sub 0.847. Then tools/judgecal.js was re-run: shared sd 1.357, fight share 0.340, individual sd 1.053, t108kd -0.859.
+2. **Draws and majority decisions were too rare.**
+   - Reproduced on train: mean simulated P(draw) was 0.98% for v3 and 0.24% for v4, against an actual 1.01%. Majority
+     decisions were 0.5% for v4 against an actual 2.0%.
+   - Fix: point deductions (judge.ded 0.00515 per fighter-round, ded2 0.075 two-point share; judgecal on 2019-2023
+     decision rounds). They are drawn after the last round, so every fight is unchanged up to the cards, and t108 was
+     re-levelled to 8.31.
+   - Result on train: P(draw) 0.64%, MD 1.0%.
+3. **Takedowns and control ran low with the learned rates on.**
+   - Reproduced on train: TD per 15 was 1.225 against 1.306 actual (-6.2%), and control per 15 was 154.5 s against 163.0 s
+     (-5.2%).
+   - Fix: learned-path levels mlTdLevel 1.067, mlCtrlLevel 1.053 and mlSubLevel 1.083. tools/v4_levels.js was re-run on
+     all 1,999 train fights.
+   - Result on train: 1.306 and 163.3 s.
+4. **The mlMaxRatio cap compounded.**
+   - Reproduced on train: v4 caps each of three refit steps, so the takedown-attempt multiplier went past x4 on
+     20 of 3,998 sides, up to x6.28.
+   - Fix: the cap applies to the cumulative multiplier and to the TD-odds one. Result: 0 of 3,998 sides past the cap.
+
+### Validation 2024-2025 (one look)
+
+Setup: 865 fights (853 decisive), symmetric, 300 sims per order, 2,000 event-cluster resamples, paired against v4 on
+the same fights.
+
+| validation 2024-2025 | v4 | v4.0.1 | v4.0.1 - v4, paired [95% CI] |
+|---|---|---|---|
+| **Winner log loss** | 0.6324 [0.6165, 0.6474] | 0.6289 [0.6137, 0.6435] | **-0.0034 [-0.0073, +0.0008]** |
+| Brier | 0.2206 | 0.2189 [0.2118, 0.2257] | -0.0017 [-0.0038, +0.0002] |
+| Accuracy | 65.7% | 66.7% [63.5, 69.9] | +0.9 pts [-1.2, +3.2] |
+| ECE (resampling spread) / calibration slope | 0.063 / 1.72 | 0.071 [0.044, 0.106] / 1.77 [1.45, 2.18] | |
+| 7-bin log loss | 1.5712 | 1.5708 [1.5349, 1.6098] | -0.0004 [-0.0232, +0.0149] |
+| Method log loss | 0.9399 | 0.9409 [0.9130, 0.9707] | +0.0010 [-0.0046, +0.0063] |
+| who x how x when (methodround; model S 2.0418) | 2.0707 | 2.0699 (vs S +0.0281 [+0.0075, +0.0476]) | -0.0008 [-0.0248, +0.0184] |
+| Stat-line deviance: sig landed / attempts | 21.866 / 43.422 | 21.817 / 43.364 | -0.049 [-0.212, +0.117] / -0.058 [-0.384, +0.258] |
+| Stat-line deviance: TD / control s / KD | 1.806 / 154.12 / 0.652 | 1.798 / 153.71 / 0.653 | -0.008 [-0.019, +0.004] / -0.41 [-1.52, +0.63] / +0.001 [-0.003, +0.006] |
+| MAE per fighter: TD / control s | 1.057 / 111.1 | 1.074 / 112.6 | +0.017 [+0.013, +0.021] / +1.48 [+0.96, +2.04] |
+
+| base rate, validation | actual | v4 | v4.0.1 |
+|---|---|---|---|
+| finish / KO / SUB | 46.0 / 29.1 / 16.9% | 48.5 / 30.6 / 17.9% | 48.7 / 30.3 / 18.5% |
+| KD per 100 head landed | 0.684 | 0.746 | 0.746 |
+| decisions UD / SD / MD (n=459) | 81.5 / 18.1 / 0.4 | 79.4 / 20.1 / 0.5 | 79.6 / 19.5 / 0.9 |
+| 10-8 share of decision judge-rounds (cards) | 2.46% | 3.38% | 4.60% (deductions counted as on the cards) |
+| sig landed / TD per 15 | 58.1 / 1.41 | 63.3 / 1.31 | 63.4 / 1.40 |
+| control s per 15 | 168 | 163 | 173 |
+
+**Blend test:**
+- With the line: engine weight 0.002 (v4 had 0.037). Log loss 0.57881 vs 0.57883, a difference of -0.00002.
+- Without a line: weight 0. tools/evalv_blend.py now reports that case as exactly level.
+
+**Decision: rejected.**
+- Branch 1 fails: the winner log loss CI includes 0.
+- Branch 2 fails: no 7-bin, method or stat-line deviance CI excludes 0.
+- Base rates add nothing in its favour. The 10-8 share moves further from actual (4.60% vs 2.46%, v4 3.38%), while
+  TD and control move closer. The MAE on TD and control is worse with CIs that exclude 0, on both windows. The likely
+  reason is that matching the mean level lifts the prediction for these skewed counts further above their median.
+
+### Train 2019-2023 (tuning data, not a selection criterion)
+
+| train | v4 | v4.0.1 | paired [95% CI] |
+|---|---|---|---|
+| Winner log loss | 0.6635 | 0.6646 | +0.0011 [-0.0017, +0.0038] |
+| 7-bin log loss | 1.6710 | 1.6538 | **-0.0172 [-0.0330, -0.0034]** |
+| Method log loss | 0.9672 | 0.9685 | +0.0013 [-0.0019, +0.0047] |
+| who x how x when | 2.2031 | 2.1901 | -0.0130 [-0.0299, +0.0016] |
+| ECE / calibration slope | 0.019 / 1.06 | 0.010 / 1.01 | |
+| P(draw) (actual 1.01%) / MD share (actual 2.0%) | 0.24% / 0.5% | 0.64% / 1.0% | |
+| 10-8 share (cards 5.29%) / TD per 15 (1.306) / control per 15 (163.0) | 3.46% / 1.225 / 154.5 | 4.67% / 1.306 / 163.3 | |
+
+### Read this honestly
+
+1. **These were fixes, and the decision rule judges gains.**
+   - The 7-bin gain on train came almost entirely from draws. Validation has 4 draws in 857 fights, so it cannot show.
+   - Nothing else moved on either window.
+   - Rejecting v4.0.1 keeps v4's protocol flaw in the current engine: its EM judging weights saw decision cards through
+     2026-10, which covers the validation years and the vault.
+   - The measured effect of that flaw is small. The reviewer's train test with pre-2023 weights moved winner log loss
+     +0.0005. On validation, v4.0.1, which carries the clean weights, was not worse than v4.
+   - It still matters for the v6 vault audit. **v5 must start from v4 plus the train-only judging weights**
+     (data/derived/judge_em_train.json), the cumulative cap, deductions with draw and MD targets, and the
+     learned-path levels. They then get measured inside v5's one look, not with an extra look of their own.
+2. **v4.0.1 used one extra validation look.** It is recorded as its own entry in data/derived/version_history.json, with
+   a note.
+3. **Kept, because they do not change v4's behaviour:**
+   - tests/test_director3.js now loads the production learned rates (the page's path) and checks that the per-round
+     judges' scores add up to the cards. `NO_ML=1` runs the base tables.
+   - tools/evalv_blend.py reports a weight-0 engine as level, not as an optimizer-tolerance "effect".
+   - tools/evalv.js counts deductions in the simulated 10-8 share (engines without deductions are unaffected).
+   - src/director3.js and src/app.js pass through and show `rd.ded` when an engine provides it (inert on v4).
+   - The tools: tools/judge_em_train.py, tools/methodround_paired.py, and tools/judgecal.js and tools/v4_levels.js with
+     their deduction and learned-path levers. Running v4_levels.js now rewrites src/params3.js with the new levers, so
+     do that only for v5.
+4. **Review items left open (in docs/BACKLOG.md):**
+   - The self-calibration's KO/TKO composition targets come from the all-years base-rate table.
+   - The v4 gain is attributable to the learned rates alone. v5 needs a train-only leave-one-out of EM judging, the
+     priors_dev self-calibration and v4_levels, plus a "v3 params + learned rates" arm.
+   - 3-round finish timing is off: round 2 14.5% vs 16.7%, round 3 9.1% vs 7.5% on train.
+   - Backtest sides use the current stance, height and reach (accepted, documented).
+   - Volkanovski vs Gaethje is 69.4% Volk in the engine against about 37% in the market. The page's final probability
+     stays on the blend.
+
 ## v4 (2026-11-06): learned stat-line rates in the engine, train-only priors, EM judging, the standard evaluation
 
 Status: **validated and kept** (Nov 6, about 10:25 am ET). Each version had exactly one validation look (2024-2025),
@@ -105,6 +228,15 @@ Read this honestly:
      probabilities need a recency temperature at release.
 4. **v3's validation numbers are flattered.** Its [selfcal] scales saw all-years league averages, 2024-2025 included,
    so the real v4 margin is, if anything, a little larger.
+5. **Added after the v4 review: v4's own validation look was not fully clean.**
+   - Both main ingredients had been scored on 2024-2025 before the look:
+     - the learned rates in the simulator (research/model_mlrates.md: 0.6465 -> 0.6239);
+     - the train-only self-calibration (data/derived/mlcal_val_ledger.json entry 9087f41436d7d4b9).
+   - The EM judging weights and the self-calibration's KO/TKO composition targets come from all-years tables.
+   - The train window alone supports v4: -0.0081 [-0.0134, -0.0026], negative in all five years.
+   - The v6 vault audit is the first clean out-of-sample test of the v4 bundle.
+   - The reviewer's train-only ablation puts the whole gain on the learned rates. The other v4 changes are neutral to
+     slightly negative there and were never ablated.
 
 Evaluation fixes made after the look (data side only: no re-simulation, no metric or decision input changes):
 - **10-8 base rate.** tools/evalv.js computed the 'actual' 10-8 share from the scheduled number of rounds.
@@ -112,8 +244,9 @@ Evaluation fixes made after the look (data side only: no re-simulation, no metri
   - So did a fight stored as 5 rounds but judged over 3 (b959e2c1d16ff832, 2025-02-22), at 38 per card.
   - Together they lifted the 2024-2025 'actual' from 2.46% to 6.28%. Judged rounds now come from each card's total.
   - Train (5.29%) is unchanged. The stored files carry `r108.actual_fixed` and a note.
-- **Data issue, not fixed here.** b959e2c1d16ff832's `rounds: 5` looks wrong in backtest_dev.json (it is a 3-round
-  decision). tools/build_db.py should be checked. It is one fight and was simulated as a 5-round bout for both versions.
+- **Correction (v4 review): not a data issue.** b959e2c1d16ff832 is Cejudo vs Song: a 5-round bout that ended as a
+  technical decision after an eye poke in round 3 (raw ufcstats: 'Technical Decision - Eye Poke by Song', '5 Rnd').
+  `rounds: 5` is right, and tools/build_db.py needs no change. evalv now takes judged rounds from the card totals.
 
 ### What changed vs v3
 
@@ -138,14 +271,19 @@ Evaluation fixes made after the look (data side only: no re-simulation, no metri
 3. **Judging.**
    - EM round-winner weights: head 0.179, body 0.133, leg 0.105, KD 2.42, TD 0.286, control 0.46/min, sub attempt 0.85.
      The engine-only hurt weight is 0.8.
+     - Correction (v4 review): these come from the earlier 7,495-card run, not the 7,550-card fit cited in the params
+       comment. Both runs cover cards from 2015 through 2026-10, so they are **not train-only**: they include the
+       validation years and the vault. Only the noise and 10-8 terms below are train-only.
+     - The train-only refit (tools/judge_em_train.py) shipped in v4.0.1, which was rejected; see above.
    - tools/judgecal.js fit the noise and the 10-8 rule by maximum likelihood on the 3,883 judges' rounds of 2019-2023
      (data/derived/judgerounds_rows.json):
      - shared sd 1.53 and individual sd 1.08;
      - a fight-level share of the shared noise of 0.28 (LR 101: panel residuals correlate about 0.12 between rounds of a
        fight);
      - no fight-level judge tastes: a judge who dissents twice in a fight goes either way equally often (37 vs 40);
-     - 10-8 threshold 6.29 (2019-2020) / 7.07 (2021-2023), with -1.09 per KD of edge (a KD-edge round winner gets a
-       10-8 13% of the time, not the 23% the z margin alone implies).
+     - 10-8 threshold 6.29 (2019-2020) / 7.07 (2021-2023). The threshold rises by 1.087 per KD of edge: t108kd = -1.087
+       enters as t108 - t108kd x min(2, KD edge). A KD-edge round winner gets a 10-8 13% of the time, not the 23% the
+       z margin alone implies.
    - On the real rounds the fitted judges reproduce:
      - non-unanimous rounds 22.6% (data 21.3%);
      - pair disagreement 15.1% (14.2%);

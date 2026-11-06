@@ -78,7 +78,7 @@ Time-ordered CV results:
   - Without a line: ML v2 0.78 and market rating 0.49.
 - **On the page** (ML v2 logistic plus the inputs the page can compute):
   - the no-line stack scores 0.5890 static / **0.5862** rolling;
-  - with the line it scores 0.5757 / 0.5749, which is -0.0097 / -0.0105 against the close.
+  - with the line it scores 0.5757 / 0.5749, which is -0.0096 / -0.0104 against the close.
 
 **5. Method/round model S refit (methodround.py's model, same hyperparameters and round hazard).**
 
@@ -95,7 +95,9 @@ Time-ordered CV results:
 
 **6. Caveats that matter.**
 
-- **ratings.json** is used as published at 4:44 pm. That build reads preufc.json's strict walk-forward network Elo (`net_elo_h`), and the rebuilt ratings match it to 5e-5. Its verifier has not signed off yet: no report or verdict exists for it in research/ or docs/BACKLOG.md.
+- **ratings.json** is the 4:44 pm build. It reads preufc.json's strict walk-forward network Elo (`net_elo_h`), and the rebuilt ratings match it to 5e-5.
+  - It was re-saved at 7:19 pm with the same build stamp and parameters. Re-checked at 7:20 pm: the per-fight predictions match the ml2 table on all 2,864 dev fights (5e-5), and the page roster's 8,603 rating values are identical.
+  - Its builder's note (research/model_ratings.md, 7:15 pm) still has an empty verification section, so the verifier has not signed off.
 - **preufc.json** was rewritten at 4:49 pm (its meta still says built 4:07 pm). The verify stage recomputed the four rating systems on the current file: max |diff| 0 against the cached features. The table is current. preufc's own verifier was relaunched (BACKLOG, v5 verdicts).
 - **Every model is underconfident on 2024-25.** Calibration slopes are 1.40-1.45 for ML v2 and 1.11 for the close. Rolling refits help a little. No temperature was adopted, because the OOF slope is 1.00.
 
@@ -450,8 +452,8 @@ Other comparisons:
 
 ## Integration recipe
 
-**Page.** Inline `ml2.json`'s `page_model` (972 kB as written; the roster dominates, so a compact copy can drop fighters
-outside the page's selector) and `src/ml/ml2.js`:
+**Page.** Inline `ml2.json`'s `page_model` (about 1.1 MB as JSON; the 1,229-fighter roster dominates, so a compact copy can
+drop fighters outside the page's selector) and `src/ml/ml2.js`:
 
 ```js
 const h = ML2.load(pageModel);                 // ml2.json page_model
@@ -498,7 +500,7 @@ or reweight any 6-class output with ML v2's winner (`MR.reweight_winner`).
 **Rebuild.**
 
 ```
-nice -n 5 python3 tools/ml2.py all   # table, cv, fit, stage2, stack, method, verify, export (~10 min when the box is quiet)
+nice -n 5 python3 tools/ml2.py all   # table, cv, fit, stage2, stack, method, verify, export (about 8 minutes; the last full run took 7.5)
 node tests/test_ml2.js
 ```
 
@@ -508,7 +510,7 @@ preufc.json, backtest.json or styles.json changes, delete `out/ml2_cache/ratings
 
 ## Open threads
 
-1. **Ratings verifier.** When it signs off or changes parameters, rerun the tool. The table, the CV choices and every number above depend on those features.
+1. **Ratings verifier.** research/model_ratings.md's verification section is still empty. When it signs off with changes, or changes parameters, rerun the tool. The table, the CV choices and every number above depend on those features.
 2. **Underconfidence in 2024-25.** Slope 1.44 against 1.11 for the market. A temperature chosen on 2019-2023 would not help; the stack's recency weighting partly does. Re-check on the 2026 forward test.
 3. **Trees vs logistic.** The trees won the OOF years and lost the validation years. A blend weight chosen with recency weighting, or LR-only, might be the better production choice. Decide on the blind test, not on 2024-25 again.
 4. **Newcomers.** The pre-UFC block, the experience buckets and the market-rating gate all lost in CV once the market rating and the rating systems were in. The remaining newcomer gap to the close (+0.012) is information we do not have.
