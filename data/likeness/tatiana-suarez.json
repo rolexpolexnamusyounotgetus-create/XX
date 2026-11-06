@@ -1,0 +1,278 @@
+{
+  "slug": "tatiana-suarez",
+  "name": "Tatiana Suarez",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 35,
+  "tale_of_tape": {
+    "height_cm": 165.1,
+    "reach_cm": 167.6,
+    "stance": "Southpaw",
+    "fight_weight_lb": 115,
+    "source": "data/derived/fighters.json (65 in height, 66 in reach, Southpaw, born 1990-12-19); strawweight (115 lb). Last fight in the data: UFC 327, Apr 11, 2026 (submission win over Loopy Godinez). She is booked against Virna Jandiroba at UFC Vegas 124 on Nov 7, 2026, the day after this sheet; no fight-week photos were published yet."
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ref_cageside_ufc327_weighin_faceoff_2026-04.jpg",
+    "ref_cageside_ufc327_postfight_2026-04.jpg",
+    "ref_heavy_getty_2270915659.jpg",
+    "ref_lowkick_getty_ufc327_2270912836.jpg",
+    "ref_lowkick_getty_ufc327_2270912826.jpg",
+    "ref_lowkick_getty_ufc327_2270912966.jpg",
+    "c1_commons_ufc228_interview_2018.jpg"
+  ],
+  "photo_coverage": "Good. Frontal studio headshot and two full-body studio cut-outs (one with braids, one with a slicked-back ponytail that shows the hairline), a clean right-side profile from the UFC 327 ceremonial weigh-in (Apr 2026), a three-quarter post-fight press still and a high-resolution three-quarter fight-night photo (both Apr 2026), plus three small UFC 327 action photos. Only one freely licensed photo (a 2018 interview still with older blonde-highlighted hair).",
+  "face": {
+    "shape": "Oval to slightly long face: high cheekbones, cheeks tapering to a moderately narrow jaw and a rounded chin. Lower face a little long relative to the midface.",
+    "jaw": "Moderately defined, not wide; smooth jawline.",
+    "chin": "Rounded, medium width, average height; in the right profile it sits slightly behind the line of the lips.",
+    "cheekbones": "High and fairly prominent; slight hollow below them at fight weight.",
+    "brow_ridge": "Mild to moderate.",
+    "forehead": "Medium-high, smooth; with the ponytail the hairline is gently rounded with no recession.",
+    "eyes": {
+      "shape": "Almond, slightly deep-set with a visible lid crease and a little hooding at the outer corners; faint under-eye shadows.",
+      "spacing": "Average.",
+      "colour": "Dark brown. Closest MakeHuman iris: brown."
+    },
+    "eyebrows": {
+      "thickness": "Thick",
+      "shape": "Strongly arched with a defined, slightly angular peak about two-thirds out and tapering tails; groomed and dark: one of her strongest features.",
+      "colour": "Dark brown (sample #492e25 is skin-tinted; render about #2e1e17)."
+    },
+    "nose": {
+      "length": "Long",
+      "width": "Narrow-to-medium bridge, medium tip and nostrils",
+      "bridge": "High and straight; in the right profile straight with a very slight convexity near the top",
+      "hump": "Very slight",
+      "tip": "Defined, medium width, pointing level to very slightly down",
+      "fight_damage": "None visible."
+    },
+    "mouth_lips": "Medium-to-wide mouth; full lips, the upper lip notably full with a well-defined cupid's bow, lower lip full; at rest a slight pout with corners level or slightly down. Bright wide smile in press photos.",
+    "ears": {
+      "size": "Small-to-medium, close to the head, usually hidden by hair.",
+      "cauliflower_ear": "No obvious cauliflower ear on the visible left ear (UFC 327 close-up); the right ear is hidden in all photos."
+    },
+    "marks_scars": "Small dark tattoo just behind and below the left ear. No scars visible at this resolution, including on the front of the neck; do not model any."
+  },
+  "hair": {
+    "style": "Fight and studio: centre part with two Dutch/French braids running back from the hairline, ending in long loose lengths or in plaits down the back (ESPN headshot, UFC 327 fight). Weigh-ins and media: long, loose, straight-to-softly-wavy hair, centre or slightly off-centre part (UFC 327 weigh-in). Also slicked back into a ponytail (studio cut-out).",
+    "length_cm": 55,
+    "length_note": "Reaches the middle of the back when loose.",
+    "colour_hex": "#5e3f2c",
+    "colour_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "top near the part (studio)",
+        "hex": "#543626"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "braid (studio)",
+        "hex": "#634236"
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "loose lengths (studio)",
+        "hex": "#724930"
+      },
+      {
+        "photo": "ref_cageside_ufc327_weighin_faceoff_2026-04.jpg",
+        "where": "loose hair (stage light)",
+        "hex": "#614a32"
+      }
+    ],
+    "colour_note": "Medium-dark brown at the roots, warming to lighter caramel-brown through the lengths and ends. The 2018 photo shows blonde balayage that has since grown out or been coloured over.",
+    "hairline": "Gently rounded, full; no recession.",
+    "texture": "Straight to loosely wavy, thick.",
+    "avatar_choice": "Fight look: braid texture on the scalp plus two plaits (ponytail01 split or retinted #5e3f2c). Loose look: long straight proxy if available; none shipped, so ponytail01 is the fallback."
+  },
+  "facial_hair": {
+    "type": "none",
+    "colour_hex": null,
+    "density": "none",
+    "shape": "none"
+  },
+  "skin": {
+    "tone_hex": "#c68469",
+    "tone_hex_method": "Plain RGB mean of the samples marked in_average (well-lit cheek patches; specular, coloured-light and 2018 video patches excluded); each sample is the mean of the 15th-85th luma-percentile pixels of the patch.",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead",
+        "light": "studio flash",
+        "hex": "#f4b397",
+        "in_average": false
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek image-left",
+        "light": "studio flash",
+        "hex": "#b8745b",
+        "in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek image-right",
+        "light": "studio flash",
+        "hex": "#bd765b",
+        "in_average": true
+      },
+      {
+        "photo": "espn_stance_right.png",
+        "where": "cheek image-left",
+        "light": "studio flash",
+        "hex": "#d18e79",
+        "in_average": true
+      },
+      {
+        "photo": "espn_stance_left.png",
+        "where": "cheek image-right",
+        "light": "studio flash",
+        "hex": "#c67d60",
+        "in_average": true
+      },
+      {
+        "photo": "ref_cageside_ufc327_postfight_2026-04.jpg",
+        "where": "cheek image-left",
+        "light": "press-conference light",
+        "hex": "#e89e81",
+        "in_average": true
+      },
+      {
+        "photo": "ref_heavy_getty_2270915659.jpg",
+        "where": "cheek image-left",
+        "light": "arena light, red/magenta cast",
+        "hex": "#a56466",
+        "in_average": false
+      },
+      {
+        "photo": "c1_commons_ufc228_interview_2018.jpg",
+        "where": "cheek image-left",
+        "light": "warm video light (2018)",
+        "hex": "#ffd39a",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_ufc327_weighin_faceoff_2026-04.jpg",
+        "where": "cheek (profile)",
+        "light": "weigh-in stage light",
+        "hex": "#af8368",
+        "in_average": true
+      }
+    ],
+    "body_sample": {
+      "photo": "espn_stance_right.png",
+      "where": "abdomen (studio)",
+      "hex": "#d09477"
+    },
+    "tone_note": "Light-medium olive-tan skin. Studio cheek samples run #b8745b to #d18e79 and the press-conference still is brighter (#e89e81); the body reads a touch lighter than the shaded cheeks. Tint toward #c98a6e for neutral lighting.",
+    "undertone": "Warm-neutral (olive).",
+    "freckles_marks": "Faint freckles on the shoulders and chest in the studio cut-outs; no other marks."
+  },
+  "body": {
+    "build": "Athletic, strong wrestler's build for a strawweight and relatively tall for the division: broad, rounded shoulders, toned arms, solid thighs.",
+    "body_fat": "lean",
+    "body_fat_note": "Upper abdominals and obliques visible in the studio cut-outs; lower abdomen smooth.",
+    "shoulders": "Broad for 115 lb, rounded deltoids; visible trapezius.",
+    "chest": "Average, under a sports bra.",
+    "arms": "Toned and strong rather than bulky; defined deltoids and triceps.",
+    "waist": "Moderately narrow; mild V-taper.",
+    "legs_calves": "Solid, powerful thighs (wrestler), athletic calves; legs proportionate to slightly long.",
+    "posture": "Upright, square, calm, chin level; serious expression in face-offs.",
+    "notable": "Strong arched brows, long straight nose and full lips are the main face cues; long braided brown hair is the main fight-night cue."
+  },
+  "tattoos": [
+    {
+      "where": "Outer front of the right thigh, just below the shorts hem",
+      "description": "Mandala-style design: black linework with pointed petals and teal/green shading.",
+      "size": "medium, about 12-15 cm across"
+    },
+    {
+      "where": "Left lower shin just above the ankle, front/inner side",
+      "description": "Small outline heart with a looping line (ribbon-like), dark ink.",
+      "size": "small, about 3 cm"
+    },
+    {
+      "where": "Left side of the neck just behind/below the left ear",
+      "description": "Small dark (blue-black) tattoo; design not resolvable at this size.",
+      "size": "small, about 2 cm"
+    }
+  ],
+  "tattoos_note": "Thigh piece seen clearly in espn_stance_left.png (right leg, outer side); it is hidden by the shorts or the angle in the other cut-out. Ankle heart on the LEFT leg in the same cut-out. Neck tattoo only in the Apr 2026 Getty close-up.",
+  "kit": {
+    "fight_kit_recent": "Blue Venum sports bra and shorts with a darker blue wave print, black waistband with white UFC logo, 'SUAREZ' in red lettering on the shorts; red wrist tape (UFC 327, Apr 2026).",
+    "studio_kits": "Blue Venum/crypto.com set with a black wave print (cut-out 1) and blue Venum tiger-stripe set (cut-out 2).",
+    "weigh_in": "US flag draped over the shoulders at the UFC 327 ceremonial weigh-in.",
+    "gloves": "Black UFC 4-oz gloves.",
+    "colours": [
+      "#1f4fa8 blue",
+      "#0d2a6b dark blue",
+      "#111111 black",
+      "#c8102e red lettering"
+    ]
+  },
+  "stance_and_guard_observed": {
+    "stance": "Southpaw (fighters.json).",
+    "from_photos": "UFC 327 action photos show her extending both hands to frame and catch kicks and lifting opponents from a low level change; posture is wrestler-forward. Not enough frames to set guard values; leave those to the scouting-based stance block."
+  },
+  "morphs": {
+    "macro/sexF": 1.0,
+    "macro/ageOldF": 0.167,
+    "macro/ageYoungF": 0.0,
+    "macro/muscleUpF": 0.65,
+    "macro/weightDownF": 0.05,
+    "macro/proportionsUpF": 0.5,
+    "head/head-oval": 0.35,
+    "head/head-scale-vert-incr": 0.1,
+    "head/head-fat-decr": 0.15,
+    "forehead/forehead-scale-vert-incr": 0.05,
+    "chin/chin-width-decr": 0.05,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-prominent-decr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.3,
+    "cheek/r-cheek-bones-incr": 0.3,
+    "cheek/l-cheek-volume-decr": 0.1,
+    "cheek/r-cheek-volume-decr": 0.1,
+    "eyebrows/eyebrows-angle-up": 0.25,
+    "eyebrows/eyebrows-trans-down": 0.05,
+    "eyebrows/eyebrows-trans-forward": 0.1,
+    "eyes/l-eye-height2-decr": 0.05,
+    "eyes/r-eye-height2-decr": 0.05,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1,
+    "nose/nose-scale-vert-incr": 0.25,
+    "nose/nose-scale-depth-incr": 0.2,
+    "nose/nose-width1-decr": 0.05,
+    "nose/nose-hump-incr": 0.1,
+    "nose/nose-point-down": 0.1,
+    "nose/nose-point-width-decr": 0.05,
+    "mouth/mouth-upperlip-volume-incr": 0.3,
+    "mouth/mouth-lowerlip-volume-incr": 0.2,
+    "mouth/mouth-cupidsbow-incr": 0.2,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "mouth/mouth-angles-down": 0.05,
+    "neck/neck-scale-horiz-incr": 0.15,
+    "neck/neck-scale-vert-incr": 0.05,
+    "torso/measure-shoulder-dist-incr": 0.3,
+    "torso/torso-vshape-incr": 0.25,
+    "torso/measure-waist-circ-decr": 0.2,
+    "buttocks/buttocks-volume-incr": 0.15
+  },
+  "morphs_extra_macro": {
+    "note": "Outside the requested list but in the shipped manifest; neutral athletic values.",
+    "macro/cupDownF": 0.3,
+    "macro/firmUpF": 0.5
+  },
+  "morphs_if_available": {
+    "note": "Ear targets are not in assets/embed/mh-manifest.json. Ears are small and close to the head; no shaping needed."
+  },
+  "morphs_unavailable": "Height: no heightUpF/heightDownF given (the research/assets.md fit is for the male base); build at the female default and scale to 165.1 cm. Braids and the three tattoos need texture work.",
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "young_caucasian_female tinted toward #c68469",
+    "eyebrows": "eyebrow001 (thicker) tinted #2e1e17, raised arch",
+    "hair": "fight: two Dutch braids + plaits, #5e3f2c with lighter ends"
+  },
+  "notes": "Confidence: high for brows, nose, lips, hair, build and tattoos (studio cut-outs plus Apr 2026 photos); medium for exact morph values and chin depth. Watch for: (1) thick, high-arched dark brows; (2) long straight high-bridged nose; (3) full upper lip with a strong cupid's bow; (4) long brown hair with lighter ends, braided for fights; (5) mandala on the outer RIGHT thigh, heart above the LEFT ankle, small mark behind the LEFT ear; (6) do not use the 2018 Commons still for hair or skin colour."
+}
