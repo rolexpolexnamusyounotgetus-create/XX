@@ -331,7 +331,10 @@ function baseRates(pfs, fs_, simSide) {
       sW += pf.decN108 / pf.n; sR += 3 * pf.decRounds / pf.n;
       const cards = f.result && f.result.cards;
       if ((y.method === "UD" || y.method === "SD" || y.method === "MD" || y.method === "DRAW") && cards && cards.length === 3) {
-        for (const c of cards) { aW += Math.max(0, 19 * pf.rounds - (c[0] + c[1])); aR += pf.rounds; }
+        // judged rounds from the card total, not the scheduled format: technical decisions/draws and mislabelled formats
+        // carry fewer rounds (2025: a 2-round technical draw and a 3-round card on a fight stored as 5 rounds counted as
+        // 19-38 phantom 10-8 points per card and lifted the 2024-25 'actual' from 2.4% to 6.3%; fixed Nov 6 after v4's val look)
+        for (const c of cards) { const rj = Math.max(1, Math.round((c[0] + c[1]) / 19)); aW += Math.max(0, 19 * rj - (c[0] + c[1])); aR += rj; }
       }
     }
     if (f.actual && f.actual.A && f.actual.B) {

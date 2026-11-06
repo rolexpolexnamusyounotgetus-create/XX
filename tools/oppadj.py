@@ -728,6 +728,22 @@ def boot_delta(D, dv_a, dv_b, mask, nb=2000, seed=7):
     return float(pf.sum()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5)), int(has.sum())
 
 
+def boot_delta_twoway(D, dv_a, dv_b, mask, nb=2000, seed=13):
+    """Two-way (fighter) pigeonhole bootstrap of sum(dev_a - dev_b): Poisson(1) weight per person, each side
+    weighted by w_attacker * w_defender (both sides of a fight share the weight, so fight clustering is nested).
+    A fighter appears in several 2024-25 fights; the fight-cluster bootstrap treats those as independent.
+    Added by the verification pass (research/model_oppadj.md, Verification log). Returns delta, 2.5%, 97.5%."""
+    diff = np.where(mask, dv_a - dv_b, 0.0)
+    m = diff != 0
+    dX, dY, dd = D.s_person[m], D.s_opp[m], diff[m]
+    rng = np.random.default_rng(seed)
+    bs = np.empty(nb)
+    for b in range(nb):
+        w = rng.poisson(1.0, D.NP).astype(float)
+        bs[b] = np.sum(w[dX] * w[dY] * dd)
+    return float(diff.sum()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))
+
+
 # ------------------------------------------------------------------ grid runner (forked workers share D)
 _G = {}
 
@@ -1335,8 +1351,23 @@ def main():
     if args.reuse and os.path.exists(cache):
         import pickle
         with open(cache, "rb") as fh:
-            raw, Gc, hls_c, kg_c = pickle.load(fh)
+            pk = pickle.load(fh)
+        raw, Gc, hls_c, kg_c = pk[:4]
         assert hls_c == hls and kg_c == kg, "cache grid differs from the requested grid"
+        # the cached side arrays follow the backtest entries of the run that wrote the cache; map them onto
+        # today's entries by fight id (backtest.json lost its 2026 vault entries after the first build). Fits for
+        # 2019-2025 dates use rows before each date only, so they do not depend on which later entries exist.
+        ids_c = pk[4] if len(pk) > 4 else None
+        if ids_c is None and os.path.exists(args.out):
+            ids_c = list(json.load(open(args.out))["snapshots"].keys())
+        n_c = len(next(iter(Gc.values()))[0])
+        ids_now = [e["id"] for e in D.entries]
+        if n_c != 2 * len(ids_now) or (ids_c is not None and list(ids_c) != ids_now):
+            assert ids_c is not None and 2 * len(ids_c) == n_c, "cannot map the cached grid onto today's backtest"
+            pos = {fid: i for i, fid in enumerate(ids_c)}
+            sel = np.array([2 * pos[fid] + s for fid in ids_now for s in (0, 1)], dtype=int)
+            Gc = {k: (v[0][sel], v[1][sel], v[2][sel], v[3]) for k, v in Gc.items()}
+            print("cached grid mapped by fight id: %d -> %d sides" % (n_c, len(sel)))
         G.update(Gc)
         Ss = {hl: (D.s_S if hl == 730 else D.side_sums(hl)) for hl in hls}
         print("reused grid cache %s (%d fits)" % (cache, len(G)))
@@ -1410,7 +1441,7 @@ def main():
         if cache:
             import pickle
             with open(cache, "wb") as fh:
-                pickle.dump((raw, G, hls, kg), fh)
+                pickle.dump((raw, G, hls, kg, [e["id"] for e in D.entries]), fh)
 
     chosen = {}
     for name, (kind, fields, kname, _, label) in FAMILIES.items():

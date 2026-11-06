@@ -5,7 +5,11 @@ on 2024+.
 
 Run from the project root:
 
-    python3 tools/ratings.py              # full run: tune every system, score 2024+, write outputs (~25 min)
+    python3 tools/ratings.py --ckpt CK    # full run: tune every system, score 2024+, write outputs (~50 min on a
+                                          # loaded 4-core box; CK = checkpoint file so a cut-off run resumes)
+    python3 tools/ratings.py plus         # then: rating logits + pre-fight covariates (ratings_plus), added to the json
+    python3 tools/ratings.py tables       # markdown tables for research/model_ratings.md
+    python3 tools/ratings.py ablate       # one ingredient off at a time, tuning window only
     python3 tools/ratings.py --quick      # smaller tuning grids (smoke test)
     python3 tools/ratings.py --jobs 4     # parallel workers for the tuning grids (default: all cores)
 
@@ -14,7 +18,7 @@ Writes:
                                  calibration, pre-fight ratings + probabilities for every backtest fight
                                  (keyed by ufcstats fight id), current roster ratings with uncertainty
                                  (keyed by slug)
-    research/model_ratings.md    is written by hand from the numbers this script prints and stores
+    research/model_ratings.md    written by hand from the numbers this script prints and stores (`tables`)
 
 Discipline: every rating is updated strictly in date order (bout order inside a card); a fight's
 prediction uses only fights on earlier days. Tuning runs stop the data stream at 2024-01-01, so the
@@ -2186,6 +2190,16 @@ def main():
             "units": "all ratings in log-odds (logit) units except TrueSkill (probit units, performance noise "
                      "beta = 1); P(A) = sigmoid(kappa * (mu_A - mu_B)) for Elo; Glicko-2 and WHR shrink the "
                      "difference by the combined uncertainty",
+            "prediction_notes": "predictions[fid].p: rating systems are prequential (each fight predicted from fights on "
+                                "earlier days only; their few parameters were tuned on 2019-2023, so 2019-2023 rows are "
+                                "in-window); dims = out-of-fold for 2019-2023 (expanding window by year, 2008+ rows "
+                                "always in training), full 2008-2023 fit for 2024+; stack = out-of-fold for 2020-2023, "
+                                "in-sample for 2019, 2019-2023 fit for 2024+; ratings_plus = 2019-2023 fit everywhere "
+                                "(use it only on 2024+). predictions[fid].r: pre-fight [mu_A, sd_A, mu_B, sd_B] per system "
+                                "(sd null for Elo); predictions[fid].dims: pre-fight [offence, defence] per dimension and "
+                                "side, log-rate units relative to the division baseline",
+            "preufc_rule": "pre-UFC newcomer prior applied only to UFC debuts on or after 2015-01-01 (complete, "
+                           "outcome-independent Sherdog coverage); older debuts use the age-only prior",
             "round_model": D.round_fit, "preufc_coverage_fighter_bouts": int(D.pre_cov),
             "best_single_by_tuning": best, "ranking_by_tuning": singles_rank,
             "ranking_scores_2020_2023": {k: r5(v, 5) for k, v in rank_score.items()},
@@ -2337,7 +2351,7 @@ ABLATIONS = {
 }
 
 
-def ablate(path=OUT_JSON, systems=("elo_full", "glicko2", "trueskill_mov", "whr_mov", "whr_rounds")):
+def ablate(path=OUT_JSON, systems=("elo_full", "glicko2", "trueskill_mov", "whr_rounds")):
     J = json.load(open(path))
     D = load_data()
     prepare(D, log=lambda *a: None)
@@ -2436,6 +2450,39 @@ def plus(path=OUT_JSON):
     S["ratings_plus"] = res
     for fid, e in J["predictions"].items():
         e["p"]["ratings_plus"] = r5(p[D.fidx[fid]])
+    # current matchups: the members' current-roster probabilities plus the covariates as of the snapshot
+    prof = json.load(open(FIGHTERS))["fighters"]
+    snap = dt.date.fromisoformat(J["meta"]["snapshot"])
+    for key, mp in J.get("matchups", {}).items():
+        sa, sb = key.split("__")
+        fa, fb = prof.get(sa) or {}, prof.get(sb) or {}
+        Ra, Rb = J["roster"].get(sa) or {}, J["roster"].get(sb) or {}
+
+        def lay(f):
+            return min(3.0, (snap - dt.date.fromisoformat(f["last_fight"])).days / YEAR) if f.get("last_fight") else 0.0
+        cov = {"age_gap_years": (Ra.get("age") or 0) - (Rb.get("age") or 0),
+               "years_past_34_gap": max((Ra.get("age") or 0) - 34, 0) - max((Rb.get("age") or 0) - 34, 0),
+               "reach_gap_in": ((fa.get("reach_in") or 0) - (fb.get("reach_in") or 0))
+               if fa.get("reach_in") and fb.get("reach_in") else 0.0,
+               "height_gap_in": ((fa.get("height_in") or 0) - (fb.get("height_in") or 0))
+               if fa.get("height_in") and fb.get("height_in") else 0.0,
+               "log_ufc_fights_gap": math.log1p((Ra.get("elo_ref") or {}).get("n", 0))
+               - math.log1p((Rb.get("elo_ref") or {}).get("n", 0)),
+               "layoff_gap_years": lay(fa) - lay(fb)}
+        z, ok = 0.0, True
+        for k, w in zip(chosen, b):
+            if k.startswith("logit_"):
+                v = mp.get(k[6:])
+                if v is None:
+                    ok = False
+                    break
+                z += w * math.log(v / (1 - v))
+            else:
+                z += w * cov[k] / sd[k]
+        if ok:
+            mp["ratings_plus"] = r5(1.0 / (1.0 + math.exp(-z)))
+            print("current matchup %s: ratings_plus %.4f (covariates as of %s: %s)" % (key, mp["ratings_plus"], snap,
+                                                                                  {k: round(v, 3) for k, v in cov.items()}))
     J["meta"]["ratings_plus_added"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
     with open(path, "w") as fh:
         json.dump(J, fh, separators=(",", ":"))
