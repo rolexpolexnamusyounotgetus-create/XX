@@ -210,13 +210,13 @@
       sub: 0.8467,                              // [em pre-2024] per submission attempt (v4.0.0 0.85)
       hurt: 0.8,                              // per hurt/wobble scored (engine-only event, not in ufcstats: about 1/3 of a knockdown; judgment call)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
-      sharedSd: 1.416,                        // [judgecal] sd of the noise shared by the three judges (logits; ML on 2019-2023 rounds 1.531, less the engine-only hurt / power terms' residual variance)
-      sharedFight: 0.3303,                    // [judgecal] share of the shared variance drawn once per fight (persists across rounds; data 0.283 of 1.531^2, LR 101): panel residuals correlate ~0.12 between rounds of a fight
-      indSd: 1.079,                           // [judgecal] sd of each judge's own noise (logits)
+      sharedSd: 1.357,                        // [judgecal] sd of the noise shared by the three judges (logits; ML on 2019-2023 rounds 1.489 with the pre-2024 weights (v4.0.0: 1.531), less the engine-only hurt / power terms' residual variance)
+      sharedFight: 0.3402,                    // [judgecal] share of the shared variance drawn once per fight (persists across rounds; data 0.283 of 1.489^2, LR 101): panel residuals correlate ~0.12 between rounds of a fight
+      indSd: 1.053,                           // [judgecal] sd of each judge's own noise (logits)
       tasteSd: 0,                             // lognormal sd of each judge's fight-level taste for striking / grappling / damage; 0 in v4: a judge who dissents twice in a fight does so in either direction equally often (judgecal: no fight-level taste; v3 0.2 from literature 12.5)
-      t108: 8.555,                            // [judgecal] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge); judgecal fits it on real rounds (2021-2023 threshold; 2019-2020 lower, 10-8 share 3.6% vs 5.9%), then tools/v4_levels.js re-levels it so simulated decision rounds give the 2021-2023 3.6% share on train fights (the engine's rounds, with hurts, are more lopsided)
-      t108kd: -1.087,                         // [judgecal] threshold change per knockdown of edge; negative: z already carries the KD weight, and judges give a 10-8 to 13% of KD-edge round winners, not the 23% that z alone implies
-      ded: 0.0051,                            // [judgecal] point deduction (foul) per fighter per round, on all three cards; 2019-2023 decision rounds (v4.0.1; v4.0.0 had none, so its draws and majority decisions came from 10-8s alone)
+      t108: 6.912,                            // [judgecal] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge); judgecal fits it on real rounds (2021-2023 threshold; 2019-2020 lower, 10-8 share 3.6% vs 5.9%), then tools/v4_levels.js re-levels it so simulated decision rounds give the 2021-2023 3.6% share on train fights (the engine's rounds, with hurts, are more lopsided)
+      t108kd: -0.8585,                         // [judgecal] threshold change per knockdown of edge; negative: z already carries the KD weight, and judges give a 10-8 to 13% of KD-edge round winners, not the 23% that z alone implies
+      ded: 0.00515,                            // [judgecal] point deduction (foul) per fighter per round, on all three cards; 2019-2023 decision rounds (v4.0.1; v4.0.0 had none, so its draws and majority decisions came from 10-8s alone)
       ded2: 0.075                             // [judgecal] share of deductions that cost 2 points
     },
 

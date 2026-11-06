@@ -5,6 +5,11 @@
      node tests/test_director3.js            # 200 matchups (3 and 5 rounds), two samples
      node tests/test_director3.js 1000 7     # 1000 matchups, seed 7
      ENGINE_DIR=/path/to/dir node tests/test_director3.js   # engine3.js + params3.js from another folder
+     NO_ML=1 node tests/test_director3.js     # plain base tables: skip the learned stat-line rates
+   With an engine that has FightEngine.loadMLRates (v4+), the production learned-rate model (data/derived/mlrates.json)
+   is loaded first, as the page does, so every matchup goes through the learned-rate path (v4.0.1 review: the test used
+   to run the base tables only). Decisions also check that the per-round judges' scores add up to the fight's cards
+   (point deductions included, engine v4.0.1).
 */
 "use strict";
 var fs = require("fs"), path = require("path");
@@ -15,6 +20,9 @@ var E = require(path.join(ENG, "engine3.js"));
 var D = require(path.join(ROOT, "src/director3.js"));
 
 var N = +(process.argv[2] || 200), SEED = +(process.argv[3] || 1);
+var ML_FILE = path.join(ROOT, "data/derived/mlrates.json");
+var USE_ML = !process.env.NO_ML && typeof E.loadMLRates === "function" && fs.existsSync(ML_FILE);
+if (USE_ML) E.loadMLRates(JSON.parse(fs.readFileSync(ML_FILE, "utf8")));
 var db = E.loadDB(JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8")));
 var overrides = {};
 try { overrides = JSON.parse(fs.readFileSync(path.join(ROOT, "data/overrides.json"), "utf8")).fighters || {}; } catch (e) { overrides = {}; }
@@ -78,7 +86,7 @@ var fails = [], warns = [];
 })();
 function fail(id, msg) { if (fails.length < 60) fails.push(id + ": " + msg); else if (fails.length === 60) fails.push("..."); }
 
-var agg = { fights: 0, rounds: 0, beats: 0, strikes: 0, landed: 0, missShown: 0, missEngine: 0, lines: 0, notes: 0, scoutFights: 0, methods: {},
+var agg = { fights: 0, rounds: 0, beats: 0, strikes: 0, landed: 0, missShown: 0, missEngine: 0, lines: 0, notes: 0, scoutFights: 0, methods: {}, mlApplied: 0, deducted: 0,
   maxPer10: 0, warpMin: 9, warpMax: 0, quietSecs: 0, sec: 0, texted: {}, keyMissing: {}, v2stall: 0, posJumps: 0, moveUse: {} };
 var samples = { fin: null, dec: null };
 var R = rng(SEED * 7919 + 13);
@@ -90,6 +98,8 @@ for (var n = 0; n < N; n++) {
   var rounds = n % 2 === 0 ? 3 : 5, seed = (SEED * 100003 + n * 7 + 1) >>> 0;
   var m = E.matchup(a, b, { division: div, rounds: rounds, title: rounds === 5 });
   var fight = E.simulate(m, E.makeRng(seed), true);
+  if (m.mlApplied) agg.mlApplied++;
+  if (fight.nDed) agg.deducted++;
   var opts = { fighters: { A: fighterOpts(a, "A"), B: fighterOpts(b, "B") }, matchup: m, rounds: rounds, title: rounds === 5,
     profiles: { A: db.fighters[a], B: db.fighters[b] }, scouting: { A: scouting[a] || null, B: scouting[b] || null } };
   if (scouting[a] || scouting[b]) agg.scoutFights++;
@@ -247,6 +257,14 @@ function check(sc, fight, m, id, opts) {
   });
   if (!sc.result) fail(id, "no result line");
   if (/^(UD|SD|MD|DRAW)$/.test(fight.method) && (!sc.decision || !sc.decision.text)) fail(id, "decision without scorecards text");
+  if (/^(UD|SD|MD|DRAW)$/.test(fight.method)) {
+    // per-round judges' scores (after point deductions) add up to the fight's cards
+    for (var jj = 0; jj < 3; jj++) {
+      var ca = 0, cb = 0;
+      fight.rounds.forEach(function (rd) { if (rd.judges) { ca += rd.judges[jj][0]; cb += rd.judges[jj][1]; } });
+      if (ca !== fight.cards[jj][0] || cb !== fight.cards[jj][1]) fail(id, "judge " + jj + " round scores " + ca + "-" + cb + " vs card " + fight.cards[jj].join("-"));
+    }
+  }
 }
 
 function printFight(s, title) {
@@ -258,7 +276,9 @@ function printFight(s, title) {
   });
 }
 
-console.log("director v3: " + agg.fights + " fights, " + agg.rounds + " rounds (" + agg.scoutFights + " with a scouting file)");
+console.log("director v3: " + agg.fights + " fights, " + agg.rounds + " rounds (" + agg.scoutFights + " with a scouting file); engine " + E.VERSION +
+  ", learned stat-line rates " + (USE_ML ? "on (" + agg.mlApplied + " of " + agg.fights + " matchups applied)" : "off") + ", fights with a point deduction " + agg.deducted);
+if (USE_ML && agg.mlApplied < agg.fights) fail("learned rates", "model loaded but only " + agg.mlApplied + " of " + agg.fights + " matchups used it");
 console.log("  methods " + JSON.stringify(agg.methods));
 console.log("  beats/round " + (agg.beats / agg.rounds).toFixed(1) + ", strikes/round " + (agg.strikes / agg.rounds).toFixed(1) +
   ", misses shown " + agg.missShown + " of " + agg.missEngine + " (" + (100 * agg.missShown / Math.max(1, agg.missEngine)).toFixed(0) + "%), landed " + agg.landed +
