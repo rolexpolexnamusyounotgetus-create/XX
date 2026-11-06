@@ -29,6 +29,13 @@ predict
     says so explicitly, as the README requires) and p_a_noline the same stack without it; both are scored.
     Debutants (not in fighters.json): the stack never saw a debut, so p_a falls back to the line and p_a_noline to Elo
     with a 1500 debut rating; method from division base rates. The bout is flagged.
+  - Forward model v4.1 (data/predictions/README.md, "Forward model v4.1 (Nov 6, 2026)", pre-registered): every bout also
+    carries a "models" block (tools/forward_ledger.js: the benchmark line, both MoE stacks with the line and without,
+    the ML v2 logistic and its page stacks with weights fit 2019-2023 and with the page's production weights, whr_rounds,
+    the ratings stack, Elo and the simulator), and p_a is the PRIMARY entry of that block (PRIMARY below: the ML v2 open
+    stack fed the line captured at prediction time; FALLBACK when it cannot run). p_a_noline stays the MoE stack without
+    the line. Debutants: Elo seeded from the pre-UFC record (data/predictions/debutants_*.json, else preufc.json
+    roster_priors) replaces the 1500 fallback when a seed exists; the bout stays flagged.
 score
   - Results: for every ledger event whose date has passed, fetches ufcstats results through the Greco1899/scrape_ufc_stats
     CSVs on raw.githubusercontent.com (saved under out/forward_results/, never into data/raw/) and ESPN's public
@@ -39,6 +46,9 @@ score
     data/derived/odds_upcoming.json's last pre-start capture), walk-forward Elo and a coin: log loss, Brier, accuracy,
     paired differences with event-cluster bootstrap intervals, running totals event by event, method (7-way) log loss
     and distance Brier; per model version. Writes data/predictions/scores.json and scores.md (regenerated each time).
+  - Models block (v4.1 files on): every model in each bout's "models" block gets log loss, Brier and accuracy, and its
+    paired log-loss difference vs the market at prediction time and vs the close (event-cluster bootstrap), per model
+    version (scores.json "models").
 """
 import argparse
 import csv
@@ -64,7 +74,35 @@ GRECO = "https://raw.githubusercontent.com/Greco1899/scrape_ufc_stats/main/"
 ESPN = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=%s"
 UA = "Mozilla/5.0 (X11; Linux x86_64) forward-ledger/1.0"
 DEBUT_ELO = 1500.0                        # tools/build_db.py start rating
-TOOL = "tools/forward_ledger.py 1.0"
+TOOL = "tools/forward_ledger.py 1.1"
+# Forward model v4.1 (pre-registered in data/predictions/README.md): p_a = the first of these models-block entries that
+# exists for the bout, when a line was captured before the lock; the ML v2 open stack (weights fit 2019-2023 on opening
+# lines) is the primary, the rest are fallbacks for a fighter missing from the ML v2 roster.
+MODEL_VERSION = "fwd-4.1"
+PRIMARY = "ml2_stack_open"
+FALLBACK = ("stack_open", "stack_line")
+MODEL_DEFS = {
+    "market_novig": "benchmark: BestFightOdds mean line at prediction time, multiplicative no-vig (market.p_a_novig)",
+    "stack_line": "MoE stack, close-trained weights (blindtest_stack.json model), fed the power de-vig consensus line "
+                  "(fwd-1's p_a; = p_a_line)",
+    "stack_open": "MoE stack, open-trained weights (blindtest_stack.json model_open), fed the multiplicative de-vig "
+                  "consensus line",
+    "stack_noline": "MoE stack without a line (blindtest_stack.json model, absent block; = p_a_noline when no debutant)",
+    "ml2_lr": "ML v2 logistic page model (src/ml/ml2.js, ml2.json page_model, refit 2010-2025)",
+    "ml2_stack_close": "ML v2 page line stack, weights fit 2019-2023 on closing lines (market 0.7733 + ML v2 0.3397; "
+                       "forward_models.json), fed the power de-vig consensus line",
+    "ml2_stack_open": "PRIMARY. ML v2 page open stack, weights fit 2019-2023 on opening lines (open 0.6596 + ML v2 "
+                      "0.5825; forward_models.json), fed the multiplicative de-vig consensus line",
+    "ml2_stack_noline": "ML v2 page no-line stack, weights fit 2019-2023 (ML v2 0.7049 + market rating 0.5526, h 1.5)",
+    "ml2_stack_close_prod": "ml2_stack_close with the page's production weights (refit 2019-2025, ml2.json page_model.stack)",
+    "ml2_stack_open_prod": "ml2_stack_open with the page's production weights (refit 2019-2025)",
+    "ml2_stack_noline_prod": "ml2_stack_noline with the page's production weights (refit 2019-2025)",
+    "whr_rounds": "round-level WHR, ratings.json current roster ratings (kappa 1.1)",
+    "ratings_stack": "ratings.json rating stack: whr_rounds + glicko2 + dims, logit weights fit 2019-2023",
+    "elo": "walk-forward Elo (fighters.json); a debutant gets 1500 + his pre-UFC seed (debutants_*.json, else "
+           "preufc.json roster_priors), else 1500 (= p_elo)",
+    "simulator": "engine (src/engine3.js) summarize, both corner orders, learned stat-line rates, draws removed",
+}
 LEDGER_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})_([a-z0-9-]+?)(?:_v(\d+))?\.json$")
 
 
