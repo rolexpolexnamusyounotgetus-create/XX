@@ -376,18 +376,21 @@ def load_davies(fights, by_date, log):
         g = by_dec.get(did)
         if g is None:
             continue                                   # totals only on MMA Decisions
+        # a judge = MMA Decisions id, else name; unnamed judges are told apart by their table order within
+        # each round (D's parser writes the three tables in page order), so two "Unknown Judge" cards stay apart
+        unk = g["judge_id"].isna() & g["judge_name"].str.lower().str.startswith("unknown")
+        key = np.where(g["judge_id"].notna(), "id" + g["judge_id"].astype(str), "nm" + g["judge_name"])
+        key = pd.Series(key, index=g.index)
+        key[unk] = "unk" + (g[unk].groupby("round_num").cumcount() + 1).astype(str)
         judges = []
-        g = g.assign(pos=g.groupby("round_num").cumcount() + 1)
-        for pos, gj in g.groupby("pos", sort=True):
-            names = gj["judge_name"].unique()
-            if len(names) != 1:
-                log["D_judge_order_inconsistent"].append(did)
+        for pos, (_, gj) in enumerate(g.groupby(key, sort=False)):
             jid = gj["judge_id"].iloc[0]
             rounds = {}
             for r in gj.itertuples(index=False):
                 a, b = (int(r.score_f2), int(r.score_f1)) if swapped else (int(r.score_f1), int(r.score_f2))
                 rounds[int(r.round_num)] = (a, b, None, None)
-            judges.append(dict(jid=None if pd.isna(jid) else int(jid), name=names[0], pos=int(pos), rounds=rounds))
+            judges.append(dict(jid=None if pd.isna(jid) else int(jid), name=gj["judge_name"].iloc[0], pos=pos + 1,
+                               rounds=rounds))
         if fid in cards:
             log["D_duplicate_fight"].append((did, fid))
             continue
@@ -750,7 +753,6 @@ def main():
             "N_orientation_check": log["N_orientation_check"],
             "D_unmatched": len(unmatched_D), "D_unmatched_examples": unmatched_D[:40],
             "D_duplicate_fight": log["D_duplicate_fight"],
-            "D_judge_order_inconsistent": log["D_judge_order_inconsistent"],
             "N_fights_not_in_ufcstats": log["N_fight_not_in_ufcstats"],
         },
         "report_dev": report,

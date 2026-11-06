@@ -8,10 +8,11 @@ Built 2026-11-06 from the ufcstats snapshot through 2026-10-31 by `tools/styles.
 - **Inside the fight, matchups are real and measurable.** At the rate level (one row per fighter per fight, X attacking Y, exposure-correct baselines that already contain the engine's log-linear / log5 main effects), several style terms pass a tune-period screen and then improve 2024+ deviance with fight-level bootstrap intervals that exclude zero. The blocks recommended on by default:
   - `dist_att` (distance significant attempts per standing minute): zy_kd_pow -0.024/sd, length_d +0.039/sd, open -0.033/sd; 2024+ deviance -1.95% (95% CI of the change [-758, -73]).
   - `leg_share` (leg share of significant attempts): zy_td_int -0.042/sd, length_d -0.049/sd, zy_press +0.040/sd; 2024+ deviance -1.10% (95% CI of the change [-244, -18]).
-  - `td_att` (takedown attempts per standing minute): zy_td_int -0.102/sd, length_d -0.081/sd, zy_td_def -0.080/sd; 2024+ deviance -1.28% (95% CI of the change [-219, -12]).
-  - `ctrl` (control seconds per minute (quasi-Poisson)): kick_y +0.062/sd, zx_ctrl*zy_octrl -0.069/sd, zy_td_int -0.044/sd, length_d -0.046/sd; 2024+ deviance -1.81% (95% CI of the change [-8379, -2158]).
+  - `td_att` (takedown attempts per standing minute): zy_td_int -0.098/sd, length_d -0.080/sd, zy_td_def -0.079/sd, kick_y +0.038/sd (judgment); 2024+ deviance -1.77% (95% CI of the change [-264, -56]).
+  - `ctrl` (control seconds per minute (quasi-Poisson)): kick_y +0.062/sd, zx_ctrl*zy_octrl -0.069/sd, zy_td_int -0.044/sd, length_d -0.046/sd; 2024+ deviance -1.81% (95% CI of the change [-8379, -2158]); a composition check, not applied in the engine (section 9).
   - `ctrl_per_td` (control seconds per takedown landed (duration; quasi-Poisson)): zy_td_def -0.077/sd; 2024+ deviance -0.78% (95% CI of the change [-3243, -104]).
-- **Applied mechanistically they help a little, and only through the fight.** Feeding the modifiers through an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes win probabilities by a median 1.3 points (max 7.3) and moves 2024+ log loss of the Elo + scorecard model by -0.0016 (CI [-0.0040, 0.0006]); the clean variant that uses only the tune-period screen moves it by -0.0001 (CI [-0.0022, 0.0020]). Neither is significant: the gain shows up in realistic fight statistics, not in a measurable edge on who wins.
+  In words: fighters throw about 2.4% less at distance per sd of the opponent's knockdown power; the longer man throws more at distance, kicks the legs less and shoots less; open-stance fights see about 7% fewer distance attempts; everyone kicks the legs less and shoots less against wrestlers, and shoots less against good takedown defense, which also shortens control after a takedown; kickers get taken down more.
+- **Applied mechanistically they help a little, and only through the fight.** Feeding the modifiers through an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes win probabilities by a median 1.3 points (max 7.3) and moves 2024+ log loss of the Elo + scorecard model by -0.0016 (CI [-0.0040, 0.0007]); the clean variant that uses only the tune-period screen moves it by -0.0001 (CI [-0.0022, 0.0020]). Neither is significant: the gain shows up in realistic fight statistics, not in a measurable edge on who wins.
 - **Recommendation:** apply styles as rate modifiers inside the engine (section 9, exact equations and values); do not add archetype or interaction tweaks to the final win probability; use the archetypes for labels, the director and the page.
 - **Archetypes are a continuum.** Silhouette is about 0.09 for every k from 4 to 12, so there are no natural clusters. k = 8 is the most stable of the interpretable solutions (bootstrap adjusted Rand 0.53) and its clusters match expert scouting on the grappling and kicking axes (tag AUCs: top-control 0.98, leg-kicks 0.95, takedown-defense 0.95, volume 0.92), but the attempts-ratio pressure proxy does not match the scouts' 'pressure' or 'counter' tags (AUC 0.48 and 0.52): ufcstats has no cage position.
 - **By-product for v9:** the engine-free skill logistic (2024+ log loss 0.6272) is a far stronger benchmark than Elo (0.6805) and a natural stacking input; its coefficients are in `styles.json` (`winner_level.skill_baseline`).
@@ -144,8 +145,8 @@ On top of Elo alone (no skill controls), the terms that pass the screen are: con
 | elo+scorecard(none) | 0.6581 | 0.6615 | 0.6544 |
 | elo+scorecard(tune_screened) | 0.6581 | 0.6613 | 0.6553 |
 | elo+scorecard(tier1) | 0.6578 | 0.6615 | 0.6533 |
-| elo+scorecard(default_on) | 0.6565 | 0.6598 | 0.6532 |
-| elo+scorecard(all_recommended) | 0.6576 | 0.6606 | 0.6546 |
+| elo+scorecard(default_on) | 0.6567 | 0.6598 | 0.6533 |
+| elo+scorecard(all_recommended) | 0.6578 | 0.6606 | 0.6547 |
 
 Mismatch fights are not harder to call, and no interaction model does better on them than the skill baseline. The scorecard models with rate modifiers are slightly better on mismatch fights than without (section 7), within noise.
 
@@ -217,10 +218,11 @@ Per model, held-out survivors go in first; held-out-supported matchup terms are 
 | leg_share | `length_d` | length advantage: ((reach_X - reach_Y)/sd_reach + (height_X - height_Y)/sd_height) / 2 | 2 | -0.0490 | -0.0813 | -3.48 | 0.952 |
 | leg_share | `zy_press` | defender's pressure proxy (z) | 2 | +0.0402 | +0.0402 | 2.94 | 1.041 |
 | leg_share | *block* | 2024+ deviance -1.10%, CI [-244, -18] |  |  |  |  |  |
-| td_att | `zy_td_int` | defender's takedown intent (z) | 1 | -0.1023 | -0.1023 | -4.66 | 0.903 |
-| td_att | `length_d` | length advantage: ((reach_X - reach_Y)/sd_reach + (height_X - height_Y)/sd_height) / 2 | 2 | -0.0806 | -0.1336 | -3.58 | 0.923 |
-| td_att | `zy_td_def` | defender's takedown defense (z) | 2 | -0.0800 | -0.0800 | -3.84 | 0.923 |
-| td_att | *block* | 2024+ deviance -1.28%, CI [-219, -12] |  |  |  |  |  |
+| td_att | `zy_td_int` | defender's takedown intent (z) | 1 | -0.0980 | -0.0980 | -4.44 | 0.907 |
+| td_att | `length_d` | length advantage: ((reach_X - reach_Y)/sd_reach + (height_X - height_Y)/sd_height) / 2 | 2 | -0.0799 | -0.1325 | -3.55 | 0.923 |
+| td_att | `zy_td_def` | defender's takedown defense (z) | 2 | -0.0786 | -0.0786 | -3.77 | 0.924 |
+| td_att | `kick_y` | defender's kick share (z_sh_l + z_sh_b)/sqrt(2) | 3 | +0.0380 | +0.0346 | 1.78 | 1.039 |
+| td_att | *block* | 2024+ deviance -1.77%, CI [-264, -56] |  |  |  |  |  |
 | ctrl | `kick_y` | defender's kick share (z_sh_l + z_sh_b)/sqrt(2) | 1 | +0.0619 | +0.0565 | 3.75 | 1.064 |
 | ctrl | `zx_ctrl*zy_octrl` | attacker's control propensity x defender's time-controlled propensity (z x z) | 1 | -0.0694 | -0.0690 | -3.84 | 0.933 |
 | ctrl | `zy_td_int` | defender's takedown intent (z) | 1 | -0.0444 | -0.0444 | -2.65 | 0.957 |
@@ -239,13 +241,13 @@ Per model, held-out survivors go in first; held-out-supported matchup terms are 
 | gnp_att | `zy_kd_pow` | defender's knockdown power (z) | 2 | +0.0859 | +0.0859 | 3.58 | 1.090 |
 | gnp_att | *block* | 2024+ deviance -0.77%, CI [-487, 89] |  |  |  |  |  |
 
-Tier 1 = survived alone; tier 2 = supported alone and kept by the tune-CV step. Joint z values are lower than the single-term ones where terms share signal. How big the modifiers get across real 2024+ matchups (the modifier part of the linear predictor, log scale for rates and log-odds for shares):
+Tier 1 = survived alone; tier 2 = supported alone and kept by the tune-CV step; tier 3 = judgment term (kick_y on td_att): it missed the tune screen (z 2.42 < 3) but its 2024+ change has a CI below zero and it carries the total-control model's surviving kicker effect (a decomposition puts that effect on takedown attempts and takedowns landed, not on takedown accuracy, control duration or control without a takedown). Without it the td_att block's 2024+ deviance change is -1.28% (CI [-220, -7]); with it, -1.77%. Joint z values are lower than the single-term ones where terms share signal. How big the modifiers get across real 2024+ matchups (the modifier part of the linear predictor, log scale for rates and log-odds for shares):
 
 | Rate | p5 | p25 | median | p75 | p95 | median |shift| |
 |---|---|---|---|---|---|---|
 | dist_att | -0.117 | -0.057 | -0.015 | 0.020 | 0.066 | 0.037 |
 | leg_share | -0.142 | -0.064 | -0.008 | 0.054 | 0.142 | 0.060 |
-| td_att | -0.264 | -0.118 | -0.014 | 0.098 | 0.244 | 0.107 |
+| td_att | -0.278 | -0.119 | -0.013 | 0.101 | 0.257 | 0.111 |
 | ctrl | -0.190 | -0.074 | -0.004 | 0.070 | 0.185 | 0.072 |
 | ctrl_per_td | -0.123 | -0.051 | 0.000 | 0.048 | 0.119 | 0.049 |
 | body_share | 0.000 | 0.000 | 0.000 | 0.105 | 0.105 | 0.000 |
@@ -255,17 +257,17 @@ So a typical matchup moves a rate by 3-10% and the 5% most extreme by 10-25%. Ex
 
 | Attacker vs defender | Attacker archetype (live) | Modifiers |
 |---|---|---|
-| alexander-volkanovski vs justin-gaethje | counter striker | dist_att x0.96, leg_share +0.03, body_share +0.00, td_att x1.11, ctrl x1.00, ctrl_per_td x0.96, gnp_att x0.85 |
-| justin-gaethje vs alexander-volkanovski | counter striker | dist_att x1.07, leg_share -0.03, body_share +0.00, td_att x0.91, ctrl x0.86, ctrl_per_td x1.02, gnp_att x0.83 |
-| islam-makhachev vs alexander-volkanovski | clinch-control wrestle-boxer | dist_att x0.99, leg_share -0.02, body_share +0.10, td_att x0.93, ctrl x1.12, ctrl_per_td x1.02, gnp_att x0.83 |
+| alexander-volkanovski vs justin-gaethje | counter striker | dist_att x0.96, leg_share +0.03, body_share +0.00, td_att x1.08, ctrl x1.00, ctrl_per_td x0.96, gnp_att x0.85 |
+| justin-gaethje vs alexander-volkanovski | counter striker | dist_att x1.07, leg_share -0.03, body_share +0.00, td_att x0.90, ctrl x0.86, ctrl_per_td x1.02, gnp_att x0.83 |
+| islam-makhachev vs alexander-volkanovski | clinch-control wrestle-boxer | dist_att x0.99, leg_share -0.02, body_share +0.10, td_att x0.91, ctrl x1.12, ctrl_per_td x1.02, gnp_att x0.83 |
 | alexander-volkanovski vs islam-makhachev | counter striker | dist_att x0.89, leg_share -0.06, body_share +0.10, td_att x0.86, ctrl x0.95, ctrl_per_td x0.92, gnp_att x1.17 |
-| alex-pereira vs magomed-ankalaev | rangy kickboxer | dist_att x1.04, leg_share -0.05, body_share +0.00, td_att x0.82, ctrl x0.67, ctrl_per_td x0.93, gnp_att x1.10 |
-| magomed-ankalaev vs alex-pereira | clinch / body-kick all-rounder | dist_att x0.95, leg_share +0.12, body_share +0.00, td_att x1.20, ctrl x1.23, ctrl_per_td x0.89, gnp_att x1.04 |
-| merab-dvalishvili vs sean-o-malley | wrestler / top-control grappler | dist_att x0.93, leg_share +0.24, body_share +0.00, td_att x1.61, ctrl x1.24, ctrl_per_td x1.05, gnp_att x0.89 |
-| sean-o-malley vs merab-dvalishvili | rangy kickboxer | dist_att x1.15, leg_share -0.12, body_share +0.00, td_att x0.64, ctrl x0.51, ctrl_per_td x0.97, gnp_att x0.79 |
+| alex-pereira vs magomed-ankalaev | rangy kickboxer | dist_att x1.04, leg_share -0.05, body_share +0.00, td_att x0.87, ctrl x0.67, ctrl_per_td x0.93, gnp_att x1.10 |
+| magomed-ankalaev vs alex-pereira | clinch / body-kick all-rounder | dist_att x0.95, leg_share +0.12, body_share +0.00, td_att x1.27, ctrl x1.23, ctrl_per_td x0.89, gnp_att x1.04 |
+| merab-dvalishvili vs sean-o-malley | wrestler / top-control grappler | dist_att x0.93, leg_share +0.24, body_share +0.00, td_att x1.62, ctrl x1.24, ctrl_per_td x1.05, gnp_att x0.89 |
+| sean-o-malley vs merab-dvalishvili | rangy kickboxer | dist_att x1.15, leg_share -0.12, body_share +0.00, td_att x0.62, ctrl x0.51, ctrl_per_td x0.97, gnp_att x0.79 |
 | khamzat-chimaev vs dricus-du-plessis | wrestler / top-control grappler | dist_att x1.02, leg_share +0.01, body_share +0.00, td_att x1.07, ctrl x0.96, ctrl_per_td x1.06, gnp_att x0.97 |
-| dricus-du-plessis vs khamzat-chimaev | power brawler | dist_att x1.02, leg_share -0.10, body_share +0.00, td_att x0.83, ctrl x0.87, ctrl_per_td x0.97, gnp_att x1.01 |
-| ilia-topuria vs max-holloway | counter striker | dist_att x0.97, leg_share +0.20, body_share +0.00, td_att x1.39, ctrl x1.26, ctrl_per_td x0.99, gnp_att x0.89 |
+| dricus-du-plessis vs khamzat-chimaev | power brawler | dist_att x1.02, leg_share -0.10, body_share +0.00, td_att x0.85, ctrl x0.87, ctrl_per_td x0.97, gnp_att x1.01 |
+| ilia-topuria vs max-holloway | counter striker | dist_att x0.97, leg_share +0.20, body_share +0.00, td_att x1.43, ctrl x1.26, ctrl_per_td x0.99, gnp_att x0.89 |
 | max-holloway vs ilia-topuria | rangy kickboxer | dist_att x1.00, leg_share -0.07, body_share +0.00, td_att x0.81, ctrl x0.85, ctrl_per_td x0.84, gnp_att x1.12 |
 
 ## 7. Does the mechanism reach the outcome? (transmission test)
@@ -280,10 +282,10 @@ A stand-in for the engine: fit every rate model on 2019-2023, predict each side'
 | tune_screened | baseline plus impact | 0.6268 | 0.661 | 1.22 | +0.0001 [-0.0005, +0.0007] | 0.3 / 1.8 |
 | tier1 | elo plus impact | 0.6602 | 0.620 | 6.74 | -0.0001 [-0.0016, +0.0014] | 0.8 / 6.0 |
 | tier1 | baseline plus impact | 0.6268 | 0.666 | 1.20 | +0.0001 [-0.0003, +0.0005] | 0.2 / 1.6 |
-| default_on | elo plus impact | 0.6586 | 0.619 | 7.04 | -0.0016 [-0.0040, +0.0006] | 1.3 / 7.3 |
-| default_on | baseline plus impact | 0.6267 | 0.662 | 1.22 | -0.0001 [-0.0007, +0.0005] | 0.3 / 2.0 |
-| all_recommended | elo plus impact | 0.6595 | 0.616 | 7.01 | -0.0007 [-0.0029, +0.0014] | 1.2 / 6.6 |
-| all_recommended | baseline plus impact | 0.6268 | 0.661 | 1.19 | +0.0000 [-0.0006, +0.0006] | 0.3 / 2.0 |
+| default_on | elo plus impact | 0.6587 | 0.620 | 7.03 | -0.0016 [-0.0040, +0.0007] | 1.3 / 7.3 |
+| default_on | baseline plus impact | 0.6266 | 0.662 | 1.22 | -0.0001 [-0.0007, +0.0005] | 0.3 / 2.0 |
+| all_recommended | elo plus impact | 0.6596 | 0.615 | 7.00 | -0.0007 [-0.0029, +0.0015] | 1.2 / 6.6 |
+| all_recommended | baseline plus impact | 0.6267 | 0.661 | 1.19 | +0.0000 [-0.0006, +0.0006] | 0.3 / 2.0 |
 
 Read: the scorecard alone lifts Elo from 0.6805 to 0.6603 (it is a real, if crude, mechanistic predictor). Modifiers change the scorecard model's 2024+ log loss by a few thousandths with intervals that include zero; the 'tune_screened' row is the clean test (no 2024+ data used to pick terms) and is flat. On top of the full skill baseline the scorecard adds nothing, as expected: the baseline already holds the same main effects. The held-out period was used once to confirm each rate term, so the tier1 / default_on rows are consistency checks rather than independent tests.
 
@@ -344,17 +346,18 @@ Scouting archetype family (rows) against the data archetype (largest live member
 2. **Where they act.** For attacker X against defender Y, each block adds `s = sum_k c_k * t_k` (`c_k` = 'coef per unit' above, `t_k` = term value) to the linear predictor of one engine rate, after the engine has combined X's and Y's own rates (log-linear / log5):
    - `dist_att` (on): multiply X's distance strike-attempt rate (per standing minute), with `s = (-0.0238) * zy_kd_pow + (+0.0639) * length_d + (-0.0731) * open`.
    - `leg_share` (on): add to the log-odds of X's leg-target share, then rescale head and body to fill the rest, with `s = (-0.0417) * zy_td_int + (-0.0813) * length_d + (+0.0402) * zy_press`.
-   - `td_att` (on): multiply X's takedown-attempt rate (per standing minute, distance and clinch), with `s = (-0.1023) * zy_td_int + (-0.1336) * length_d + (-0.0800) * zy_td_def`.
-   - `ctrl` (on): composition check only (total control per minute); do not apply on top of td_att and ctrl_per_td, with `s = (+0.0565) * kick_y + (-0.0690) * zx_ctrl*zy_octrl + (-0.0444) * zy_td_int + (-0.0757) * length_d`.
+   - `td_att` (on): multiply X's takedown-attempt rate (per standing minute, distance and clinch), with `s = (-0.0980) * zy_td_int + (-0.1325) * length_d + (-0.0786) * zy_td_def + (+0.0346) * kick_y`.
+   - `ctrl` (on): composition check only (total control per minute): its zy_td_int and length_d parts are carried by td_att, its kick_y part by td_att's kick_y term, and its zx_ctrl*zy_octrl part is a time-ceiling effect (control cannot exceed the clock) that a finite-time position chain reproduces by itself; do not apply, with `s = (+0.0565) * kick_y + (-0.0690) * zx_ctrl*zy_octrl + (-0.0444) * zy_td_int + (-0.0757) * length_d`.
    - `ctrl_per_td` (on): multiply X's top-control duration per takedown (divide the bottom man's escape / stand-up hazard), with `s = (-0.0767) * zy_td_def`.
    - `body_share` (knob, default off): add to the log-odds of X's body-target share, with `s = (+0.1045) * open`.
    - `gnp_att` (knob, default off): multiply X's ground-strike rate per top-control minute, with `s = (+0.1041) * zy_sub_int + (+0.0859) * zy_kd_pow`.
    For a Poisson rate: `rate *= exp(s)`. For a share: `logit(p) += s`. Products such as `zx_ctrl*zy_octrl` are the product of the two z-scores. `open`, `x_sp_vs_orth` are 0/1 from the listed stances (switch counts as neither).
 3. **Control.** Use `td_att` (attempts) and `ctrl_per_td` (duration per takedown) if `ctrl_per_td` is in the on list; the total `ctrl` block is reported as a composition check and must not be applied on top, or the wrestler-vs-wrestler and kicker effects are counted twice. If `ctrl_per_td` is not on, apply the `ctrl` block to control duration and drop its `zy_td_int` term (that part is already carried by `td_att`).
 4. **Knob.** Expose one `styleMatchups` knob in [0, 1.5], default 1, that scales every `s`; 0 reproduces the pure skill composition. Optional blocks get their own toggle, default off.
-5. **Do not** add archetype-pair or interaction terms to the final win probability; none survived held-out validation and the combined set made 2024+ log loss worse. Do not use the scouting tags as numeric inputs in backtests (hindsight); use them for the director's technique choices and the page.
-6. **Calibration order.** The modifiers were fit with free main-effect coefficients, so they are close to orthogonal to the engine's own prior strengths and exponents; recheck the default-on blocks with the engine's per-fight stat errors after v4 retunes those (expected change: small).
-7. **Validation target for v7.** With the modifiers on, the engine's simulated per-fight stats should reproduce the 2024+ rate-level gains above (distance attempts, leg share, takedown attempts, control), and its 2024+ winner log loss should be no worse than without them; that is the ship criterion, given that the winner-level effect is below what 1223 fights can detect.
+5. **Labels.** Show the scouting archetype where a scouting file exists and the data archetype otherwise (with its membership); the data names describe centroids, and the attempts-ratio 'pressure' axis can label a forward-moving fighter who gets out-thrown (Gaethje) as a counter striker.
+6. **Do not** add archetype-pair or interaction terms to the final win probability; none survived held-out validation and the combined set made 2024+ log loss worse. Do not use the scouting tags as numeric inputs in backtests (hindsight); use them for the director's technique choices and the page.
+7. **Calibration order.** The modifiers were fit with free main-effect coefficients, so they are close to orthogonal to the engine's own prior strengths and exponents; recheck the default-on blocks with the engine's per-fight stat errors after v4 retunes those (expected change: small).
+8. **Validation target for v7.** With the modifiers on, the engine's simulated per-fight stats should reproduce the 2024+ rate-level gains above (distance attempts, leg share, takedown attempts, control), and its 2024+ winner log loss should be no worse than without them; that is the ship criterion, given that the winner-level effect is below what 1223 fights can detect.
 
 ## 10. Caveats
 

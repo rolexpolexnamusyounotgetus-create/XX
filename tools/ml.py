@@ -6,6 +6,11 @@ Run from the project root:
     python3 tools/ml.py                 # full run: features, time-ordered CV on 2010-2023, final fit, report
     python3 tools/ml.py --quick         # smaller GBM search (for development)
     python3 tools/ml.py --no-cache      # rebuild the feature table instead of reusing the scratch cache
+    python3 tools/ml.py --stage2        # redo stacking / 7-bin / evaluation / export from cached stage-1 fits
+    python3 tools/ml.py --jobs 3        # worker processes for the tree searches (default 3)
+
+Needs Python 3 with numpy, pandas, scipy, scikit-learn, lightgbm and xgboost. Full run about 30-60 minutes on a
+busy 4-core box (BLAS is pinned to one thread; tree searches use --jobs workers). Caches live in out/ml_cache/.
 
 What it does (research/model_ml.md has the results and the reasoning):
 
@@ -17,7 +22,8 @@ What it does (research/model_ml.md has the results and the reasoning):
    Shrinkage targets are division league rates from the 5 years before Jan 1 of the fight's year.
 2. Models, all symmetric in the corners (the A/B position is never a feature; every training fight is used
    in both orientations and predictions average the two):
-   - L2 logistic regression on antisymmetric difference and matchup features (no intercept),
+   - L2 logistic regression on antisymmetric difference and matchup features (no intercept), with backward
+     elimination of whole feature groups on the CV blocks,
    - LightGBM and XGBoost on side features, differences, matchup terms and context,
    - 7-bin outcome models (A KO, A sub, A dec, draw, B dec, B sub, B KO): direct multinomial logistic and
      LightGBM, plus a factorised winner x method-given-winner model.

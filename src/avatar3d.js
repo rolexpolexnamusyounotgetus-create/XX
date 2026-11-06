@@ -356,7 +356,7 @@
     if (/lean|lanky|long-limbed|rangy|slim|wiry|skinny/.test(fig)) muscleBias -= 0.06;
     var muscle = ref ? 0.55 : clamp(0.9 + muscleBias + (bmi - 24) * 0.012, 0.72, 1.0);
     if (female && !ref) muscle = clamp(muscle - 0.12, 0.6, 0.9);
-    var weight = clamp(0.5 + (bmi - 23.5) * 0.05 - (muscle - 0.5) * 0.3, 0.25, 0.95);
+    var weight = clamp(0.5 + (bmi - 23.5) * 0.06 - (muscle - 0.5) * 0.25, 0.25, 0.97);
     if (ref) weight = clamp(0.5 + (bmi - 24.5) * 0.05, 0.35, 0.8);
     var det = {};
     if (!ref) {
@@ -639,7 +639,7 @@
         var tx = clamp01(ax / Math.max(0.03, earX)), tm = clamp01((mouthHalf + 0.004) / Math.max(0.03, earX)), lineY;
         if (tx < tm) lineY = lerp(noseB + 0.001, lipTopY + 0.012, smooth(0, 1, tx / tm));
         else lineY = lerp(lipTopY + 0.012, sbY - 0.004, Math.pow((tx - tm) / (1 - tm), 1.35));
-        var top = 1 - smooth(lineY - 0.006, lineY + 0.004, p.y);
+        var top = 1 - smooth(lineY - 0.014, lineY + 0.005, p.y);
         var neck = smooth(neckLine - 0.02, neckLine + 0.004, p.y);
         var lips = (p.y < lipTopY + 0.001 && p.y > L.lipBot.y - 0.002 && ax < mouthHalf + 0.002 && p.z > L.lipBot.z - 0.02) ? 0 : 1;
         var back = smooth(earZ - 0.035, earZ - 0.005, p.z);
@@ -708,11 +708,11 @@
           "  float hfw = length(fwidth(su * 1400.0)); float hatt = 1.0 - smoothstep(0.35, 1.2, hfw);\n" +
           "  float hair = mix(0.5, vn(su * 1400.0), hatt); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
           "  float bd = clamp(vMask.x * uBeard, 0.0, 1.0);\n" +
-          "  float g2fw = length(fwidth(su * 420.0)); float g2 = mix(0.5, vn(su * 420.0), 1.0 - smoothstep(0.3, 1.0, g2fw));\n" +
-          "  float edge = smoothstep(0.0, 0.7, vMask.x);\n" +
-          "  float grain = 0.55 + 0.25 * smoothstep(0.25, 0.75, hair) + 0.2 * smoothstep(0.3, 0.7, g2);\n" +
-          "  float stub = bd * edge * grain;\n" +
-          "  diffuseColor.rgb = mix(diffuseColor.rgb, uBeardCol * (0.62 + 0.5 * g2 * hair), clamp(stub * (0.55 + 0.45 * bd) * 1.1, 0.0, 0.93));\n" +
+          "  float g2fw = length(fwidth(su * 900.0)); float g2 = mix(0.5, vn(su * 900.0) * 0.6 + vn(su * 2100.0) * 0.4, 1.0 - smoothstep(0.25, 0.9, g2fw));\n" +
+          "  float edge = smoothstep(0.0, 0.9, vMask.x);\n" +
+          "  float stub = bd * edge * (0.8 + 0.2 * g2);\n" +
+          "  vec3 bcol = uBeardCol * (0.78 + 0.35 * g2);\n" +
+          "  diffuseColor.rgb = mix(diffuseColor.rgb, bcol, clamp(stub * (0.5 + 0.42 * bd), 0.0, 0.9));\n" +
           "  float sc = vMask2.x * uScalp; float sst = sc * (0.55 + 0.45 * smoothstep(0.2, 0.9, hair));\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, uHairCol * 0.8, clamp(sst * 0.85, 0.0, 0.9));\n" +
           "  float sideL = step(0.0, vMask.y);\n" +
@@ -728,7 +728,7 @@
           "    vec2 d1 = vDecal.xy, d2 = vDecal.zw; float ink = 0.0;\n" +
           "    if (d1.x > 0.0 && d1.x < 1.0 && d1.y > 0.0 && d1.y < 1.0) ink = max(ink, texture2D(uTattoo, vec2(d1.x * 0.5, d1.y)).r);\n" +
           "    if (d2.x > 0.0 && d2.x < 1.0 && d2.y > 0.0 && d2.y < 1.0) ink = max(ink, texture2D(uTattoo, vec2(0.5 + d2.x * 0.5, d2.y)).r);\n" +
-          "    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.07, 0.085, 0.09), ink * 0.82);\n" +
+          "    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.025, 0.035, 0.04), ink * 0.88);\n" +
           "  }\n" +
           "}")
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.34, uSweat) + 0.12 * clamp(vMask.x * uBeard, 0.0, 1.0);")
@@ -784,9 +784,9 @@
       ctx.save(); ctx.translate(x0, 0); ctx.fillStyle = "#fff"; ctx.strokeStyle = "#fff";
       if (mk.text) {
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        var fs = 150; ctx.font = "900 " + fs + "px 'Arial Black', Impact, sans-serif";
-        while (ctx.measureText(mk.text).width > 470 && fs > 40) { fs -= 6; ctx.font = "900 " + fs + "px 'Arial Black', Impact, sans-serif"; }
-        ctx.fillText(mk.text, 256, 132);
+        var fs = 200; ctx.font = "900 " + fs + "px 'Arial Black', Impact, sans-serif";
+        while (ctx.measureText(mk.text).width > 492 && fs > 40) { fs -= 4; ctx.font = "900 " + fs + "px 'Arial Black', Impact, sans-serif"; }
+        ctx.lineWidth = fs * 0.06; ctx.lineJoin = "round"; ctx.strokeText(mk.text, 256, 132); ctx.fillText(mk.text, 256, 132);
       } else if (mk.shape === "cross") {
         ctx.fillRect(236, 30, 40, 196); ctx.fillRect(176, 80, 160, 36);
       } else if (mk.shape === "sleeve") {
@@ -796,7 +796,7 @@
       ctx.restore();
       // projection frame
       var c = new V3(), ax = new V3(), ay = new V3(), w = 0.3, h = 0.1, nrmDir = new V3(), boneSel = null;
-      if (mk.at === "upper back") { c.copy(J.Spine2.h).lerp(J.Neck.h, 0.55); c.z -= 0.2; ax.set(-1, 0, 0); ay.set(0, 1, 0); nrmDir.set(0, 0, -1); w = 0.3; h = 0.075; boneSel = ["Spine1", "Spine2", "Neck", "LeftShoulder", "RightShoulder"]; }
+      if (mk.at === "upper back") { c.copy(J.Spine2.h).lerp(J.Neck.h, 0.5); c.z -= 0.2; ax.set(-1, 0, 0); ay.set(0, 1, 0); nrmDir.set(0, 0, -1); w = 0.34; h = 0.17; boneSel = ["Spine1", "Spine2", "Neck", "LeftShoulder", "RightShoulder"]; }
       else if (mk.at === "right shoulder" || mk.at === "left shoulder") {
         var sd = mk.at === "right shoulder" ? "Right" : "Left";
         c.copy(J[sd + "Arm"].h).lerp(J[sd + "ForeArm"].h, 0.22); var out2 = sd === "Right" ? -1 : 1; ax.set(0, 0, out2 > 0 ? -1 : 1); ay.set(0, 1, 0); nrmDir.set(out2, 0, 0); w = 0.075; h = 0.075; boneSel = [sd + "Arm", sd + "Shoulder"];

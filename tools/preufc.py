@@ -1226,7 +1226,7 @@ class GBMDiff:
         X = np.vstack([self._X(df), self._X(df, swap=True)])
         y = np.concatenate([df["y"].to_numpy(), 1 - df["y"].to_numpy()])
         p = dict(n_estimators=300, learning_rate=0.02, num_leaves=7, min_child_samples=40, subsample=0.8,
-                 subsample_freq=1, colsample_bytree=0.7, reg_lambda=5.0, verbose=-1)
+                 subsample_freq=1, colsample_bytree=0.7, reg_lambda=5.0, verbose=-1, n_jobs=1)
         p.update(self.params)
         self.m = lgb.LGBMClassifier(**p)
         self.m.fit(X, y)
@@ -1345,7 +1345,7 @@ def evaluate(args):
         th0 = np.zeros(nk + 1 + int(fit_boost))
         if fit_boost:
             th0[-1] = boost
-        r = minimize(obj, th0, method="L-BFGS-B", options={"eps": 0.25, "maxiter": 200})
+        r = minimize(obj, th0, method="L-BFGS-B", options={"eps": 0.25, "maxiter": 3 if args.quick else 200})
         beta = r.x[:nk + 1]
         bo = r.x[nk + 1] if fit_boost else None
         return {"beta": beta, "boost": bo, "mu": mu, "sd": sdv, "keys": keys + (["age_debut"] if use_age else []),
@@ -1403,8 +1403,9 @@ def evaluate(args):
             best[k] = row
     print("CV best:", json.dumps(best, default=str))
     # GBM
+    gpar = {"n_estimators": 20} if args.quick else {}
     for fs_name, keys in (("gbm_base", BASE_KEYS), ("gbm_base+pre", BASE_KEYS + PRE_CORE)):
-        o = cv_eval(lambda: GBMDiff(keys), trainval)
+        o = cv_eval(lambda: GBMDiff(keys, gpar), trainval)
         best[fs_name] = {"model": fs_name, "cv_ll": oof_ll(o, trainval)}
     print("CV gbm:", {k: round(v["cv_ll"], 4) for k, v in best.items() if k.startswith("gbm")})
 
@@ -1450,8 +1451,8 @@ def evaluate(args):
     fs_e = PRE_CORE if pick_e["model"].endswith("core") else PRE_KEYS
     m_ep = DiffModel(["elo"], fs_e, C=pick_e["C"], tau=pick_e["tau"]).fit(trainval)
     preds_test["elo+pre"] = m_ep.predict(test)
-    g0 = GBMDiff(BASE_KEYS).fit(trainval)
-    g1 = GBMDiff(BASE_KEYS + PRE_CORE).fit(trainval)
+    g0 = GBMDiff(BASE_KEYS, gpar).fit(trainval)
+    g1 = GBMDiff(BASE_KEYS + PRE_CORE, gpar).fit(trainval)
     preds_test["gbm_base"] = g0.predict(test)
     preds_test["gbm_base+pre"] = g1.predict(test)
     seed_fits = {}
@@ -1466,7 +1467,7 @@ def evaluate(args):
 
     # ---------------- bootstrap CIs
     rng = np.random.default_rng(20261106)
-    B_ = 2000
+    B_ = 100 if args.quick else 2000
     nT = len(yt)
     idxs = rng.integers(0, nT, size=(B_, nT))
 

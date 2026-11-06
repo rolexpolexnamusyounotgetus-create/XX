@@ -590,8 +590,14 @@ def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, model=No
     x0 = ravel(init_params(dz.nJ)) if flat_init is None else flat_init
     maxiter = maxiter or int(os.environ.get("OFFICIALS_MAXITER", 3000))
     t0 = time.time()
-    res = minimize(lambda x: M.vg(x, cfg, tau), x0, jac=True, method="L-BFGS-B",
-                   options={"maxiter": maxiter, "maxcor": 30, "gtol": 1e-5})
+    it = [0]
+
+    def cb(xk):
+        it[0] += 1
+        if verbose and it[0] % 100 == 0:
+            log(f"    it {it[0]}  {time.time() - t0:.0f}s")
+    res = minimize(lambda x: M.vg(x, cfg, tau), x0, jac=True, method="L-BFGS-B", callback=cb,
+                   options={"maxiter": maxiter, "maxcor": 30, "gtol": 2e-3, "ftol": 1e-9})
     if verbose:
         log(f"  fit: {res.nit} it, obj {res.fun:.2f}, {time.time() - t0:.0f}s, {res.message}")
     return res.x, M
@@ -853,11 +859,12 @@ def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home"
             fits["judges_home" + sfx] = W.fit("judges_home", tau, init=f["x"])
     res = {}
     for name, f in fits.items():
-        ev = evaluate(f, rows, nat, years_eval)
+        ev = evaluate(f, rows, nat, years_eval) if any(r["year"] in years_eval for r in rows) else None
         res[name] = {"eval": ev, "x": f["x"], "jidx": f["jidx"], "tau": f["tau"], "cov": f["cov"], "model": f["model"],
                      "th": to_np(unravel(np.asarray(f["x"]), len(f["jidx"]))), "train_nF": f["nF"],
                      "ncards": W.ncards}
-        log(f"  {name}: held-out card ll/fight {ev['card_ll'].mean():.4f} on {len(ev['fids'])} fights")
+        if ev is not None:
+            log(f"  {name}: held-out card ll/fight {ev['card_ll'].mean():.4f} on {len(ev['fids'])} fights")
         with open(CACHE / f"fold_{tag}.pkl", "wb") as fh:
             pickle.dump({"test_year": test_year, "years_eval": years_eval, "tau_eb": tau_eb,
                          "tau_mults": list(tau_mults), "models": res}, fh)

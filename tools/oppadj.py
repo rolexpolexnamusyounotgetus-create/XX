@@ -80,7 +80,7 @@ def logit(p):
 
 
 def sigm(z):
-    return 1.0 / (1.0 + np.exp(-z))
+    return 1.0 / (1.0 + np.exp(-np.clip(z, -35.0, 35.0)))
 
 
 def shr(ev, ex, prior, k):
@@ -580,7 +580,7 @@ def walk_binom(D, y, n, b, hl, ko, kd, mode="full", tol=5e-5, maxit=400, extra_T
                 pr = sigm(bo + c + a)
                 G = Yo - np.bincount(Xa, wn * pp, NP) + ko * (sigm(bo + c) - pr)
                 H = np.bincount(Xa, wn * pp * (1 - pp), NP) + ko * pr * (1 - pr)
-                st = G / H
+                st = np.clip(G / H, -1.0, 1.0)
                 a += st
                 if np.abs(st).max() < tol:
                     break
@@ -590,7 +590,7 @@ def walk_binom(D, y, n, b, hl, ko, kd, mode="full", tol=5e-5, maxit=400, extra_T
                 pr = sigm(bd + c + g)
                 G = Yd - np.bincount(Ya, wn * pp, NP) + kd * (sigm(bd + c) - pr)
                 H = np.bincount(Ya, wn * pp * (1 - pp), NP) + kd * pr * (1 - pr)
-                st = G / H
+                st = np.clip(G / H, -1.0, 1.0)
                 g += st
                 if np.abs(st).max() < tol:
                     break
@@ -602,13 +602,13 @@ def walk_binom(D, y, n, b, hl, ko, kd, mode="full", tol=5e-5, maxit=400, extra_T
                 pr = sigm(bo + c + a)
                 G = Yo - np.bincount(Xa, wn * pp, NP) + ko * (sigm(bo + c) - pr)
                 H = np.bincount(Xa, wn * pp * (1 - pp), NP) + ko * pr * (1 - pr)
-                sta = G / H
+                sta = np.clip(G / H, -1.0, 1.0)
                 a = a + sta
                 pp = sigm(base + a[Xa] + g[Ya])
                 pr = sigm(bd + c + g)
                 G = Yd - np.bincount(Ya, wn * pp, NP) + kd * (sigm(bd + c) - pr)
                 H = np.bincount(Ya, wn * pp * (1 - pp), NP) + kd * pr * (1 - pr)
-                stg = G / H
+                stg = np.clip(G / H, -1.0, 1.0)
                 g = g + stg
                 if max(np.abs(sta).max(), np.abs(stg).max()) < tol:
                     break
