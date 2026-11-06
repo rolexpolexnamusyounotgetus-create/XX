@@ -1,7 +1,7 @@
 {
  "meta": {
   "tool": "tools/dynamics.py",
-  "built": "2026-11-06T14:56:47+00:00",
+  "built": "2026-11-06T15:05:57+00:00",
   "snapshot": "2026-10-31",
   "train": [
    "2019-01-01",
@@ -52,14 +52,16 @@
    "lostJinf": "legacy inferred version of lostJ from card totals and all-round stats (looks ahead; comparison only)"
   },
   "jackknife_groups": 10,
-  "secs": 540.984398,
+  "secs": 386.837565,
   "provenance": {
    "state_models, comparison_estimators_out, form_decomposition, simulation_check, kd_momentum_descriptive, adaptation_judges, fighter_late_ratio": "full run with 10-group jackknife (python3 tools/dynamics.py --jack 10), started 2026-11-06 10:29 UTC; parts 1-4 and 2 saved incrementally",
    "finish_hazard, engine_check": "python3 tools/dynamics.py --parts 5 --jack 10 --engine-csv <engine b50cadf sims>",
    "engine_check_current": "python3 tools/dynamics.py --parts none --engine-csv <engine aabd475 sims> --engine-key engine_check_current",
    "targets_by_round, round_correlations_train": "recomputed on every run (deterministic)",
    "test_window": "2024-01-01..2025-12-31; fights from 2026-01-01 are the sealed vault (docs/BACKLOG.md) and are never scored",
-   "cardio_by_slug": "uses all fights to the snapshot (incl. 2026): forward predictions only, never backtests"
+   "cardio_by_slug": "uses all fights to the snapshot (incl. 2026): forward predictions only, never backtests",
+   "verification_2026_11_06": "adversarial re-check (research/model_dynamics.md, Verification log): full rerun python3 tools/dynamics.py --jack 10 after the fixes (adaptation_judges now uses published per-round judges' scores; new test_refit / skip_round keys; part 2 reads backtest_dev.json). Independent re-derivation in data/derived/dynamics_audit.json (tools/dynamics_audit.py)",
+   "engine_check_v4dev_train, engine_check_v4dev_test": "python3 tools/dynamics.py --parts none --engine-csv <sims> --engine-period train|test; sims from node tools/dynamics_engine.js on a frozen copy of src/engine3.js + params3.js as of 14:22 UTC (params 4.0.0-dev), 2019-2023 matchups x 12 sims / 2024-2025 x 30 sims. Use the train key for tuning, the test key for version selection only"
   }
  },
  "finish_hazard": {
@@ -12177,5 +12179,858 @@
    }
   },
   "secs": 522.280249
+ },
+ "engine_check_v4dev_test": {
+  "engine_csv": "/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/audit/eng_test.csv",
+  "label": "engine3 + params 4.0.0-dev (src as of 14:22, frozen copy), 2024-2025 matchups, 30 sims",
+  "real_period": "test",
+  "n_engine_fights": 25950,
+  "n_matchups": 865,
+  "n_real_fights": 865,
+  "dynre": {
+   "out": {
+    "engine": {
+     "var_components_null": {
+      "sd_fighter_fight": 0.482271,
+      "corr_fighters": 0.466861,
+      "sd_round_shared": 0.406166,
+      "sd_round_own": 0.233254,
+      "ar1_round_own": 0.034982
+     },
+     "round_curve": {
+      "3": [
+       1.0,
+       1.058656,
+       1.0648
+      ],
+      "5": [
+       1.0,
+       1.111742,
+       1.103414,
+       1.129016,
+       1.175443
+      ]
+     },
+     "gamma": {
+      "partial": {
+       "est": 0.06028,
+       "se": 0.012522
+      },
+      "D10": {
+       "est": 0.004006,
+       "se": 0.005032
+      },
+      "K_lag": {
+       "est": 0.016144,
+       "se": 0.017429
+      },
+      "K_early": {
+       "est": 0.043778,
+       "se": 0.024659
+      },
+      "A100": {
+       "est": 0.094074,
+       "se": 0.018018
+      },
+      "oA100": {
+       "est": 0.091273,
+       "se": 0.018318
+      },
+      "octrl_m": {
+       "est": 0.127156,
+       "se": 0.004553
+      },
+      "ctrl_m": {
+       "est": 0.089595,
+       "se": 0.004209
+      },
+      "otdl": {
+       "est": -0.035507,
+       "se": 0.00783
+      },
+      "tdl": {
+       "est": -0.022257,
+       "se": 0.007122
+      },
+      "H10": {
+       "est": 0.010615,
+       "se": 0.005101
+      },
+      "Ks_lag": {
+       "est": -0.001237,
+       "se": 0.016726
+      },
+      "Ks_early": {
+       "est": 0.007181,
+       "se": 0.023711
+      },
+      "lost": {
+       "est": 0.007993,
+       "se": 0.006104
+      },
+      "behind2_final": {
+       "est": -0.014003,
+       "se": 0.010505
+      }
+     }
+    },
+    "real": {
+     "var_components_null": {
+      "sd_fighter_fight": 0.500103,
+      "corr_fighters": 0.799688,
+      "sd_round_shared": 0.359935,
+      "sd_round_own": 0.232319,
+      "ar1_round_own": 0.510961
+     },
+     "round_curve": {
+      "3": [
+       1.0,
+       1.179152,
+       1.14074
+      ],
+      "5": [
+       1.0,
+       1.185433,
+       1.200728,
+       1.239741,
+       1.28768
+      ]
+     },
+     "gamma": {
+      "partial": {
+       "est": 0.181821,
+       "se": 0.034113
+      },
+      "D10": {
+       "est": -0.042729,
+       "se": 0.019134
+      },
+      "K_lag": {
+       "est": 0.127065,
+       "se": 0.047593
+      },
+      "K_early": {
+       "est": 0.055351,
+       "se": 0.0757
+      },
+      "A100": {
+       "est": 0.173067,
+       "se": 0.077343
+      },
+      "oA100": {
+       "est": 0.156114,
+       "se": 0.073284
+      },
+      "octrl_m": {
+       "est": 0.001007,
+       "se": 0.013383
+      },
+      "ctrl_m": {
+       "est": -0.02421,
+       "se": 0.0128
+      },
+      "otdl": {
+       "est": -0.015835,
+       "se": 0.017135
+      },
+      "tdl": {
+       "est": -0.004809,
+       "se": 0.015214
+      },
+      "H10": {
+       "est": -0.025402,
+       "se": 0.017963
+      },
+      "Ks_lag": {
+       "est": -0.065993,
+       "se": 0.041598
+      },
+      "Ks_early": {
+       "est": -0.123152,
+       "se": 0.074656
+      },
+      "lost": {
+       "est": 0.016813,
+       "se": 0.013204
+      },
+      "behind2_final": {
+       "est": 0.015285,
+       "se": 0.026195
+      }
+     }
+    }
+   },
+   "acc": {
+    "engine": {
+     "var_components_null": {
+      "sd_fighter_fight": 0.426448,
+      "corr_fighters": -0.025592,
+      "sd_round_shared": 0.109637,
+      "sd_round_own": 0.102053,
+      "ar1_round_own": 0.603081
+     },
+     "round_curve": {
+      "3": [
+       1.0,
+       1.028684,
+       1.044941
+      ],
+      "5": [
+       1.0,
+       1.016923,
+       1.036709,
+       1.048265,
+       1.079545
+      ]
+     },
+     "gamma": {
+      "partial": {
+       "est": 0.086608,
+       "se": 0.00855
+      },
+      "D10": {
+       "est": -2.9e-05,
+       "se": 0.003624
+      },
+      "K_lag": {
+       "est": 0.006053,
+       "se": 0.012779
+      },
+      "K_early": {
+       "est": -0.002766,
+       "se": 0.018527
+      },
+      "A100": {
+       "est": -0.067895,
+       "se": 0.012822
+      },
+      "oA100": {
+       "est": 0.021586,
+       "se": 0.013591
+      },
+      "octrl_m": {
+       "est": -0.023258,
+       "se": 0.003261
+      },
+      "ctrl_m": {
+       "est": -0.049405,
+       "se": 0.003194
+      },
+      "otdl": {
+       "est": -0.002425,
+       "se": 0.005784
+      },
+      "tdl": {
+       "est": 0.009541,
+       "se": 0.005665
+      },
+      "H10": {
+       "est": 0.022,
+       "se": 0.003549
+      },
+      "Ks_lag": {
+       "est": -0.02993,
+       "se": 0.013023
+      },
+      "Ks_early": {
+       "est": -0.056878,
+       "se": 0.01679
+      },
+      "lost": {
+       "est": -0.012227,
+       "se": 0.007199
+      },
+      "behind2_final": {
+       "est": 0.008809,
+       "se": 0.011414
+      }
+     }
+    },
+    "real": {
+     "var_components_null": {
+      "sd_fighter_fight": 0.315093,
+      "corr_fighters": -0.133898,
+      "sd_round_shared": 0.0,
+      "sd_round_own": 0.229384,
+      "ar1_round_own": 0.579714
+     },
+     "round_curve": {
+      "3": [
+       1.0,
+       1.042445,
+       1.025192
+      ],
+      "5": [
+       1.0,
+       0.992051,
+       1.059541,
+       1.044309,
+       1.065682
+      ]
+     },
+     "gamma": {
+      "partial": {
+       "est": 0.159512,
+       "se": 0.02265
+      },
+      "D10": {
+       "est": -0.007601,
+       "se": 0.015154
+      },
+      "K_lag": {
+       "est": 0.007935,
+       "se": 0.03324
+      },
+      "K_early": {
+       "est": 0.039585,
+       "se": 0.072941
+      },
+      "A100": {
+       "est": 0.01666,
+       "se": 0.063308
+      },
+      "oA100": {
+       "est": -0.134493,
+       "se": 0.065413
+      },
+      "octrl_m": {
+       "est": 0.009771,
+       "se": 0.010464
+      },
+      "ctrl_m": {
+       "est": 0.015695,
+       "se": 0.01079
+      },
+      "otdl": {
+       "est": -0.013098,
+       "se": 0.010729
+      },
+      "tdl": {
+       "est": -0.00556,
+       "se": 0.011868
+      },
+      "H10": {
+       "est": 0.035961,
+       "se": 0.014774
+      },
+      "Ks_lag": {
+       "est": -0.058701,
+       "se": 0.034372
+      },
+      "Ks_early": {
+       "est": -0.03069,
+       "se": 0.072529
+      },
+      "lost": {
+       "est": 0.020884,
+       "se": 0.02256
+      },
+      "behind2_final": {
+       "est": -0.0095,
+       "se": 0.035367
+      }
+     }
+    }
+   }
+  },
+  "kd_hazard": {
+   "engine": {
+    "null": {
+     "frailty_var": {
+      "est": 1.555501,
+      "se_log": 0.041297
+     }
+    },
+    "round_profile": {
+     "3": [
+      1.0,
+      0.687536,
+      0.569101
+     ],
+     "5": [
+      1.0,
+      0.833753,
+      0.820207,
+      0.762641,
+      0.639923
+     ]
+    },
+    "r1_rate_3rd": 0.013755,
+    "damage": {
+     "D10": {
+      "est": -0.026361,
+      "se": 0.010427
+     },
+     "K_lag": {
+      "est": 0.001729,
+      "se": 0.049825
+     },
+     "K_early": {
+      "est": -0.027974,
+      "se": 0.072939
+     },
+     "frailty_var": {
+      "est": 1.525611,
+      "se_log": 0.054499
+     }
+    },
+    "fatigue": {
+     "A100": {
+      "est": -0.082745,
+      "se": 0.039143
+     },
+     "oA100": {
+      "est": -0.106233,
+      "se": 0.037521
+     },
+     "frailty_var": {
+      "est": 1.490652,
+      "se_log": 0.043575
+     }
+    },
+    "direction_residual_corr": 0.001026,
+    "direction_residual_n": 24586,
+    "by_prior_damage": {
+     "0 (R1)": {
+      "kd_per100_sh": 0.759686,
+      "p_stopped": 0.021038,
+      "head_absorbed_pm": 1.326353,
+      "rounds": 713
+     },
+     "1-20": {
+      "kd_per100_sh": 0.756579,
+      "p_stopped": 0.038819,
+      "head_absorbed_pm": 2.095171,
+      "rounds": 50388
+     },
+     "21-40": {
+      "kd_per100_sh": 0.586315,
+      "p_stopped": 0.054495,
+      "head_absorbed_pm": 3.373745,
+      "rounds": 19543
+     },
+     "41-60": {
+      "kd_per100_sh": 0.465917,
+      "p_stopped": 0.064961,
+      "head_absorbed_pm": 4.540329,
+      "rounds": 5942
+     },
+     "61+": {
+      "kd_per100_sh": 0.323247,
+      "p_stopped": 0.080186,
+      "head_absorbed_pm": 6.424475,
+      "rounds": 3442
+     }
+    }
+   },
+   "real": {
+    "null": {
+     "frailty_var": {
+      "est": 0.874813,
+      "se_log": 0.340406
+     }
+    },
+    "round_profile": {
+     "3": [
+      1.0,
+      0.498373,
+      0.420737
+     ],
+     "5": [
+      1.0,
+      0.531904,
+      0.392918,
+      0.231755,
+      0.122317
+     ]
+    },
+    "r1_rate_3rd": 0.013648,
+    "damage": {
+     "D10": {
+      "est": 0.013297,
+      "se": 0.063053
+     },
+     "K_lag": {
+      "est": 0.075981,
+      "se": 0.125198
+     },
+     "K_early": {
+      "est": -0.292476,
+      "se": 0.512274
+     },
+     "frailty_var": {
+      "est": 0.889269,
+      "se_log": 0.375449
+     }
+    },
+    "fatigue": {
+     "A100": {
+      "est": -0.242186,
+      "se": 0.353446
+     },
+     "oA100": {
+      "est": -0.130075,
+      "se": 0.310885
+     },
+     "frailty_var": {
+      "est": 0.795369,
+      "se_log": 0.378321
+     }
+    },
+    "direction_residual_corr": -0.024257,
+    "direction_residual_n": 810,
+    "by_prior_damage": {
+     "0 (R1)": {
+      "kd_per100_sh": 0.584795,
+      "p_stopped": 0.012987,
+      "head_absorbed_pm": 1.236326,
+      "rounds": 77
+     },
+     "1-20": {
+      "kd_per100_sh": 0.571168,
+      "p_stopped": 0.037409,
+      "head_absorbed_pm": 2.23154,
+      "rounds": 1791
+     },
+     "21-40": {
+      "kd_per100_sh": 0.499346,
+      "p_stopped": 0.050725,
+      "head_absorbed_pm": 3.65037,
+      "rounds": 552
+     },
+     "41-60": {
+      "kd_per100_sh": 0.428477,
+      "p_stopped": 0.088608,
+      "head_absorbed_pm": 4.473113,
+      "rounds": 158
+     },
+     "61+": {
+      "kd_per100_sh": 0.239378,
+      "p_stopped": 0.044118,
+      "head_absorbed_pm": 5.684567,
+      "rounds": 68
+     }
+    }
+   }
+  },
+  "targets_by_round": {
+   "engine": {
+    "3_1": {
+     "fighter_rounds": 45540,
+     "sig_att_pm": 8.379815,
+     "sig_lnd_pm": 4.052724,
+     "sig_acc": 0.483629,
+     "td_att_per15": 3.816819,
+     "ctrl_share": 0.186654,
+     "kd_per100_standing_head": 1.240606,
+     "p_round_ends_ko_tko": 0.152833,
+     "p_round_ends_sub": 0.085639,
+     "n_rounds": 22770,
+     "n_ko_tko": 3480,
+     "n_kd": 5441
+    },
+    "3_2": {
+     "fighter_rounds": 34538,
+     "sig_att_pm": 8.850515,
+     "sig_lnd_pm": 4.321004,
+     "sig_acc": 0.488221,
+     "td_att_per15": 3.826951,
+     "ctrl_share": 0.190035,
+     "kd_per100_standing_head": 0.770793,
+     "p_round_ends_ko_tko": 0.102843,
+     "p_round_ends_sub": 0.073021,
+     "n_rounds": 17269,
+     "n_ko_tko": 1776,
+     "n_kd": 2880
+    },
+    "3_3": {
+     "fighter_rounds": 28100,
+     "sig_att_pm": 8.861529,
+     "sig_lnd_pm": 4.353659,
+     "sig_acc": 0.491299,
+     "td_att_per15": 3.804248,
+     "ctrl_share": 0.192377,
+     "kd_per100_standing_head": 0.601046,
+     "p_round_ends_ko_tko": 0.08911,
+     "p_round_ends_sub": 0.061566,
+     "n_rounds": 14050,
+     "n_ko_tko": 1252,
+     "n_kd": 1867
+    },
+    "5_1": {
+     "fighter_rounds": 6360,
+     "sig_att_pm": 8.116513,
+     "sig_lnd_pm": 4.001549,
+     "sig_acc": 0.493013,
+     "td_att_per15": 3.50576,
+     "ctrl_share": 0.166358,
+     "kd_per100_standing_head": 0.606841,
+     "p_round_ends_ko_tko": 0.084277,
+     "p_round_ends_sub": 0.053145,
+     "n_rounds": 3180,
+     "n_ko_tko": 268,
+     "n_kd": 410
+    },
+    "5_2": {
+     "fighter_rounds": 5468,
+     "sig_att_pm": 9.298748,
+     "sig_lnd_pm": 4.618583,
+     "sig_acc": 0.496689,
+     "td_att_per15": 3.565418,
+     "ctrl_share": 0.168334,
+     "kd_per100_standing_head": 0.469617,
+     "p_round_ends_ko_tko": 0.080834,
+     "p_round_ends_sub": 0.058888,
+     "n_rounds": 2734,
+     "n_ko_tko": 221,
+     "n_kd": 313
+    },
+    "5_3": {
+     "fighter_rounds": 4642,
+     "sig_att_pm": 9.051735,
+     "sig_lnd_pm": 4.526329,
+     "sig_acc": 0.500051,
+     "td_att_per15": 3.554455,
+     "ctrl_share": 0.171654,
+     "kd_per100_standing_head": 0.440864,
+     "p_round_ends_ko_tko": 0.085739,
+     "p_round_ends_sub": 0.043947,
+     "n_rounds": 2321,
+     "n_ko_tko": 199,
+     "n_kd": 249
+    },
+    "5_4": {
+     "fighter_rounds": 3924,
+     "sig_att_pm": 9.145975,
+     "sig_lnd_pm": 4.57401,
+     "sig_acc": 0.500112,
+     "td_att_per15": 3.579485,
+     "ctrl_share": 0.170947,
+     "kd_per100_standing_head": 0.388906,
+     "p_round_ends_ko_tko": 0.071356,
+     "p_round_ends_sub": 0.037717,
+     "n_rounds": 1962,
+     "n_ko_tko": 140,
+     "n_kd": 190
+    },
+    "5_5": {
+     "fighter_rounds": 3356,
+     "sig_att_pm": 9.405513,
+     "sig_lnd_pm": 4.72842,
+     "sig_acc": 0.502729,
+     "td_att_per15": 3.619793,
+     "ctrl_share": 0.161993,
+     "kd_per100_standing_head": 0.316158,
+     "p_round_ends_ko_tko": 0.065554,
+     "p_round_ends_sub": 0.042312,
+     "n_rounds": 1678,
+     "n_ko_tko": 110,
+     "n_kd": 138
+    }
+   },
+   "real": {
+    "3_1": {
+     "fighter_rounds": 1518,
+     "sig_att_pm": 7.508978,
+     "sig_lnd_pm": 3.517828,
+     "sig_acc": 0.468483,
+     "td_att_per15": 3.739771,
+     "ctrl_share": 0.179765,
+     "kd_per100_standing_head": 1.331004,
+     "p_round_ends_ko_tko": 0.142292,
+     "p_round_ends_sub": 0.086957,
+     "n_rounds": 759,
+     "n_ko_tko": 108,
+     "n_kd": 160
+    },
+    "3_2": {
+     "fighter_rounds": 1154,
+     "sig_att_pm": 8.738529,
+     "sig_lnd_pm": 4.159311,
+     "sig_acc": 0.475974,
+     "td_att_per15": 3.986209,
+     "ctrl_share": 0.190584,
+     "kd_per100_standing_head": 0.609341,
+     "p_round_ends_ko_tko": 0.097054,
+     "p_round_ends_sub": 0.07279,
+     "n_rounds": 577,
+     "n_ko_tko": 56,
+     "n_kd": 76
+    },
+    "3_3": {
+     "fighter_rounds": 942,
+     "sig_att_pm": 8.860245,
+     "sig_lnd_pm": 4.130778,
+     "sig_acc": 0.466215,
+     "td_att_per15": 4.479938,
+     "ctrl_share": 0.207346,
+     "kd_per100_standing_head": 0.493827,
+     "p_round_ends_ko_tko": 0.080679,
+     "p_round_ends_sub": 0.042463,
+     "n_rounds": 471,
+     "n_ko_tko": 38,
+     "n_kd": 55
+    },
+    "5_1": {
+     "fighter_rounds": 212,
+     "sig_att_pm": 6.728101,
+     "sig_lnd_pm": 3.222278,
+     "sig_acc": 0.478928,
+     "td_att_per15": 2.794937,
+     "ctrl_share": 0.163325,
+     "kd_per100_standing_head": 1.307617,
+     "p_round_ends_ko_tko": 0.103774,
+     "p_round_ends_sub": 0.037736,
+     "n_rounds": 106,
+     "n_ko_tko": 11,
+     "n_kd": 20
+    },
+    "5_2": {
+     "fighter_rounds": 178,
+     "sig_att_pm": 7.986427,
+     "sig_lnd_pm": 3.820709,
+     "sig_acc": 0.4784,
+     "td_att_per15": 3.511053,
+     "ctrl_share": 0.173541,
+     "kd_per100_standing_head": 0.629831,
+     "p_round_ends_ko_tko": 0.101124,
+     "p_round_ends_sub": 0.05618,
+     "n_rounds": 89,
+     "n_ko_tko": 9,
+     "n_kd": 11
+    },
+    "5_3": {
+     "fighter_rounds": 144,
+     "sig_att_pm": 8.033189,
+     "sig_lnd_pm": 3.909073,
+     "sig_acc": 0.486615,
+     "td_att_per15": 3.800079,
+     "ctrl_share": 0.16823,
+     "kd_per100_standing_head": 0.457218,
+     "p_round_ends_ko_tko": 0.069444,
+     "p_round_ends_sub": 0.055556,
+     "n_rounds": 72,
+     "n_ko_tko": 5,
+     "n_kd": 7
+    },
+    "5_4": {
+     "fighter_rounds": 122,
+     "sig_att_pm": 8.800161,
+     "sig_lnd_pm": 4.15568,
+     "sig_acc": 0.472228,
+     "td_att_per15": 3.756693,
+     "ctrl_share": 0.174075,
+     "kd_per100_standing_head": 0.256822,
+     "p_round_ends_ko_tko": 0.04918,
+     "p_round_ends_sub": 0.04918,
+     "n_rounds": 61,
+     "n_ko_tko": 3,
+     "n_kd": 4
+    },
+    "5_5": {
+     "fighter_rounds": 106,
+     "sig_att_pm": 9.203999,
+     "sig_lnd_pm": 4.383772,
+     "sig_acc": 0.47629,
+     "td_att_per15": 4.902903,
+     "ctrl_share": 0.177915,
+     "kd_per100_standing_head": 0.136008,
+     "p_round_ends_ko_tko": 0.037736,
+     "p_round_ends_sub": 0.018868,
+     "n_rounds": 53,
+     "n_ko_tko": 2,
+     "n_kd": 2
+    }
+   }
+  },
+  "late_ratio": {
+   "engine_total_var": 0.54909,
+   "engine_between_matchup_var": 0.027703,
+   "engine_within_matchup_var": 0.5208,
+   "real_total_var": 0.493247,
+   "engine_mean": 0.024243,
+   "real_mean": -0.032585
+  },
+  "round_correlations": {
+   "engine": {
+    "own_r1_r2": 0.417311,
+    "own_r1_r3": 0.417293,
+    "fighters_same_round": 0.554704
+   },
+   "real": {
+    "own_r1_r2": 0.53416,
+    "own_r1_r3": 0.469847,
+    "fighters_same_round": 0.689882
+   }
+  },
+  "kd_skip_round": {
+   "engine": {
+    "n_control": 33068,
+    "scorer": {
+     "n": 1229,
+     "kd_round_vs_before": {
+      "est": 0.240993,
+      "se": 0.019505
+     },
+     "after_vs_kd_round": {
+      "est": -0.186939,
+      "se": 0.019837
+     },
+     "after_vs_before": {
+      "est": 0.054054,
+      "se": 0.022067
+     }
+    },
+    "dropped": {
+     "n": 1229,
+     "kd_round_vs_before": {
+      "est": 0.018368,
+      "se": 0.024254
+     },
+     "after_vs_kd_round": {
+      "est": 0.024886,
+      "se": 0.023327
+     },
+     "after_vs_before": {
+      "est": 0.043254,
+      "se": 0.024142
+     }
+    }
+   },
+   "real": {
+    "n_control": 1140,
+    "scorer": {
+     "n": 33,
+     "kd_round_vs_before": {
+      "est": 0.356692,
+      "se": 0.114208
+     },
+     "after_vs_kd_round": {
+      "est": -0.184157,
+      "se": 0.1101
+     },
+     "after_vs_before": {
+      "est": 0.172535,
+      "se": 0.124187
+     }
+    },
+    "dropped": {
+     "n": 33,
+     "kd_round_vs_before": {
+      "est": -0.017229,
+      "se": 0.13516
+     },
+     "after_vs_kd_round": {
+      "est": 0.310148,
+      "se": 0.110729
+     },
+     "after_vs_before": {
+      "est": 0.292919,
+      "se": 0.141574
+     }
+    }
+   }
+  },
+  "secs": 367.148669
  }
 }

@@ -1,0 +1,278 @@
+{
+  "slug": "umar-nurmagomedov",
+  "name": "Umar Nurmagomedov",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 30,
+  "official": {
+    "height_cm": 172.7,
+    "reach_cm": 175.3,
+    "stance": "Orthodox",
+    "fight_weight_lb": null,
+    "source": "data/derived/fighters.json (68 in height, 69 in reach, orthodox, born 1996-01-03; bantamweight, 135 lb limit). Weigh-in weight not looked up."
+  },
+  "photos_used": [
+    "ref-espn-headshot.png",
+    "ref-espn-stance-left.png",
+    "ref-espn-stance-right.png",
+    "ref-cagesidepress-shanghai-weighin-2026-08-28.jpg",
+    "ref-cagesidepress-ufc324-ceremonial-2026-01-23.jpg",
+    "ref-cagesidepress-ufc324-ceremonial-faceoff-2026-01-23.jpg",
+    "ref-cagesidepress-ufc321-ceremonial-2025-10-24.jpg",
+    "ref-getty-ufc321-fight-2025-10-25-a.jpg",
+    "ref-getty-ufc321-fight-2025-10-25-b.jpg",
+    "ref-getty-ufc321-fight-2025-10-25-c.jpg",
+    "ref-getty-ufc324-fight-2026-01-24-a.jpg",
+    "ref-getty-ufc324-fight-2026-01-24-b.jpg",
+    "ref-getty-ufc324-fight-2026-01-24-c.jpg",
+    "ref-getty-shanghai-fight-2026-08-29.jpg",
+    "ref-thenational-ufc321-2025-10.jpg",
+    "wiki-ntv-2022-11.png"
+  ],
+  "photo_coverage": "Good. 16 photos, 13 from Oct 2025 to Aug 2026. Frontal: ESPN studio headshot and stance cutout (Aug 2026), UFC 324 ceremonial (Jan 2026). Three-quarter: two clean fight-night three-quarters (UFC 321 from his left, UFC 324 from his right). Profile: right profile at the UFC Shanghai weigh-in (Aug 2026, video still). Body: two studio cutouts and many fight photos. Only one freely licensed file (CC BY 2022 video still); the rest are reference-only.",
+  "face": {
+    "shape": "Oval face that tapers to a narrower lower face, with prominent high cheekbones and lean, hollow cheeks. Medium length; looks compact and angular.",
+    "jaw": "Lean and defined, moderately wide at the angles, tapering to the chin; outlined by the short beard.",
+    "chin": "Medium width, slightly pointed under the chin beard, moderately projecting (right profile, Aug 2026). No cleft visible through the beard.",
+    "cheekbones": "High and prominent, the widest part of the face; clear hollows below them.",
+    "brow_ridge": "Strong; the eyes sit deep under it.",
+    "forehead": "Broad, medium height, smooth. Hairline straight with slight temple recession and a small forward point at the centre.",
+    "eyes": {
+      "shape": "Almond, deep-set, with heavy, hooded upper lids; an intense, narrowed look at rest.",
+      "spacing": "Average.",
+      "colour": "Dark brown.",
+      "size": "Medium, partly shadowed by the brow."
+    },
+    "eyebrows": {
+      "thickness": "Thick and dense",
+      "shape": "Straight and low, close to the eyes; the inner ends dip slightly toward the nose, giving a stern look.",
+      "colour": "Dark brown-black.",
+      "colour_hex": "#2a1d18"
+    },
+    "nose": {
+      "length": "Long",
+      "width": "Narrow bridge, medium base",
+      "bridge": "Straight and fairly high.",
+      "hump": "None to very slight.",
+      "tip": "Rounded, medium size, pointing straight ahead to slightly down.",
+      "nostrils": "Medium width, little flare.",
+      "fight_damage": "None obvious."
+    },
+    "mouth": {
+      "width": "Medium",
+      "upper_lip": "Thin, partly covered by the moustache",
+      "lower_lip": "Medium",
+      "resting_expression": "Closed, corners slightly down; a wide, easy smile in media and walkout photos (UFC 321, UFC 324)."
+    },
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Stand out moderately; obvious with the buzz cut.",
+      "cauliflower_ear": "Yes, both ears: thickened, lumpy upper ears with filled-in folds (right ear in the Aug 2026 profile, left ear in the UFC 321 three-quarter, both in the ESPN frontal).",
+      "lobes": "Small, attached"
+    },
+    "notable_marks_scars": "No large scars visible. Faint lines on the forehead."
+  },
+  "hair": {
+    "style": "Buzz cut, about 6-10 mm all over (Aug 2026); slightly longer, about 1.5 cm, in Jan 2025 and 2022.",
+    "length_cm": 0.8,
+    "colour": "Dark brown to black; the scalp shows through at this length.",
+    "colour_samples": {
+      "espn_top_with_scalp": "#64524b",
+      "espn_top_dark_pixels": "#503c34",
+      "getty321_top_lit_with_scalp": "#a88b79"
+    },
+    "colour_hex": "#2a1f1a",
+    "colour_method": "Strand colour estimated darker than the samples, which mix in scalp; the beard (#1c130f) is the closest clean read of his hair colour.",
+    "hairline": "Straight with slight temple recession and a small central point.",
+    "texture": "Straight, dense."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "detail": "Moustache joined to a chin beard that is the densest and longest part (about 2 cm), continuing along the jawline shorter and thinner (about 1 cm) to the ears. Cheeks above the jawline are bare, so from the front it reads goatee-heavy. Same shape on fight night (UFC 321, UFC 324) and in the Aug 2026 studio photos.",
+    "colour": "Dark brown-black.",
+    "colour_samples": {
+      "espn_chin": "#150e0c",
+      "espn_jaw_sparse": "#453025",
+      "getty321_beard": "#533328"
+    },
+    "colour_hex": "#1c130f",
+    "density": "Dense on the chin and moustache, thinner along the jaw.",
+    "shape": "Low cheek line following the jaw, trimmed neckline under the jaw, chin beard slightly pointed."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek",
+        "hex": "#e59e76",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek",
+        "hex": "#e49b73",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "right cheek",
+        "hex": "#e39b72",
+        "light": "studio"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "left cheek",
+        "hex": "#e89f79",
+        "light": "studio"
+      },
+      {
+        "photo": "ref-getty-ufc321-fight-2025-10-25-c.jpg",
+        "spot": "left cheek",
+        "hex": "#bf7758",
+        "light": "arena"
+      },
+      {
+        "photo": "ref-getty-ufc324-fight-2026-01-24-c.jpg",
+        "spot": "right cheek",
+        "hex": "#bd6b51",
+        "light": "arena"
+      },
+      {
+        "photo": "ref-getty-ufc324-fight-2026-01-24-c.jpg",
+        "spot": "forehead",
+        "hex": "#d99777",
+        "light": "arena"
+      },
+      {
+        "photo": "ref-cagesidepress-shanghai-weighin-2026-08-28.jpg",
+        "spot": "right cheek",
+        "hex": "#ae6249",
+        "light": "weigh-in video still"
+      },
+      {
+        "photo": "ref-cagesidepress-shanghai-weighin-2026-08-28.jpg",
+        "spot": "right temple",
+        "hex": "#b86e5b",
+        "light": "weigh-in video still"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "forehead",
+        "hex": "#f7bd9e",
+        "light": "studio specular highlight (excluded)"
+      },
+      {
+        "photo": "ref-getty-ufc321-fight-2025-10-25-c.jpg",
+        "spot": "forehead at hairline",
+        "hex": "#a87869",
+        "light": "shadow and hair mixed in (excluded)"
+      }
+    ],
+    "tone_hex_average_all": "#d08a6c",
+    "tone_hex": "#d08766",
+    "tone_hex_method": "Mean of the 9 samples not marked excluded (9x9-pixel medians). Studio samples alone average #e59d75; arena and weigh-in samples alone average #bf755a.",
+    "tone_hex_recommended": "#d4936f",
+    "tone_note": "Light-medium skin with a warm tan. The high-key studio photos read light and golden, arena light reads deeper and redder; the recommended value sits a little above the kept mean, toward the studio read. Slightly deeper and warmer than the Islam Makhachev sheet (#e3af95).",
+    "undertone": "Warm golden-olive.",
+    "freckles_marks": "None seen. Light chest and abdominal hair; hair on the forearms and shins.",
+    "texture_pick": "middleage_caucasian_male",
+    "texture_pick_reason": "Age 30 maps to middleage in avatar3d.js; swatch #e8ccb2 is lighter than the target, so the multiply tint can reach #d4936f."
+  },
+  "body": {
+    "build": "Compact bantamweight (173 cm, reach 175 cm), very lean and athletic; proportions close to average, arms slightly long.",
+    "body_fat": "lean",
+    "body_fat_notes": "Very low: deep six-pack, obliques and serratus visible, vascular forearms (Aug 2026 studio).",
+    "shoulders": "Medium-broad for his frame, round, well-defined deltoids.",
+    "chest": "Defined pecs with a clear lower edge and centre line.",
+    "arms": "Lean and muscular, defined biceps and triceps, vascular forearms.",
+    "waist": "Narrow; clear V-taper.",
+    "legs_calves": "Lean, defined thighs and calves; legs of average length.",
+    "neck": "Muscular but slim, narrower than the jaw.",
+    "posture": "Upright, square shoulders, chin level; gloves held loosely at the hips.",
+    "notable_physique_traits": "Very low body fat and an even, athletic build; no tattoos."
+  },
+  "fight_posture": {
+    "stance": "Orthodox (fighters.json).",
+    "observed": "UFC 324 (Jan 2026): upright guard with both hands high, blocking a high kick with the raised right arm and shoulder (Getty a); knees from the clinch (UFC 321, Getty a); heavy top pressure on the mat (UFC 321 Getty b, UFC 324 Getty b).",
+    "confidence": "Medium: several action stills from two fights."
+  },
+  "tattoos": [
+    {
+      "where": "none visible",
+      "description": "None: torso, arms and legs are clear in the 2025 and 2026 studio cutouts and the fight photos.",
+      "size": "n/a"
+    }
+  ],
+  "kit": {
+    "typical_shorts": "UFC Shanghai (Aug 2026): white shorts with a grey scalloped pattern and UFC SHANGHAI logo (studio; white also on fight night). UFC 324 fight (Jan 2026): red shorts with a white checker waistband and NURMAGOMEDOV lettering, Venum logo. UFC 321 fight (Oct 2025): black shorts. Weigh-ins: dark red and black patterned shorts. Jan 2025 studio: red shorts with dark-red and white slashes.",
+    "gloves": "Black UFC gloves with red cuffs (UFC 321, UFC 324).",
+    "walkout": "Dark red and black camouflage Venum tracksuit at the UFC 324 ceremonial weigh-in.",
+    "shorts_colours_hex": {
+      "white_2026_pattern_grey": "#b3a9be",
+      "red_ufc324": "#b0031f",
+      "red_ufc324_shadow": "#690410"
+    }
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "mh-skin-middleage_caucasian_male tinted toward #d4936f",
+    "eyebrows": "eyebrow010 (thick) tinted #2a1d18",
+    "hair": "no proxy: buzz cut as a dense dark scalp tint #2a1f1a",
+    "beard": "short beard with a low cheek line, densest on the chin and moustache (goatee-heavy), #1c130f"
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.077,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.65,
+    "macro/weightDownM": 0.1,
+    "macro/heightDownM": 0.18,
+    "macro/proportionsUpM": 0.45,
+    "head/head-oval": 0.35,
+    "head/head-invertedtriangular": 0.15,
+    "head/head-scale-horiz-decr": 0.05,
+    "head/head-scale-vert-incr": 0.1,
+    "head/head-fat-decr": 0.3,
+    "forehead/forehead-scale-vert-incr": 0.05,
+    "chin/chin-prominent-incr": 0.15,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-width-decr": 0.1,
+    "chin/chin-bones-incr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.45,
+    "cheek/r-cheek-bones-incr": 0.45,
+    "cheek/l-cheek-volume-decr": 0.35,
+    "cheek/r-cheek-volume-decr": 0.35,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-height2-decr": 0.2,
+    "eyes/r-eye-height2-decr": 0.2,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1,
+    "eyebrows/eyebrows-trans-down": 0.25,
+    "eyebrows/eyebrows-trans-forward": 0.3,
+    "eyebrows/eyebrows-angle-down": 0.1,
+    "nose/nose-scale-vert-incr": 0.3,
+    "nose/nose-width1-decr": 0.1,
+    "nose/nose-scale-depth-incr": 0.2,
+    "nose/nose-hump-incr": 0.05,
+    "nose/nose-point-width-incr": 0.1,
+    "nose/nose-point-down": 0.1,
+    "mouth/mouth-scale-horiz-decr": 0.05,
+    "mouth/mouth-upperlip-volume-decr": 0.3,
+    "mouth/mouth-lowerlip-volume-decr": 0.05,
+    "mouth/mouth-angles-down": 0.15,
+    "neck/neck-scale-horiz-incr": 0.3,
+    "torso/measure-shoulder-dist-incr": 0.2,
+    "torso/torso-vshape-incr": 0.35,
+    "torso/measure-waist-circ-decr": 0.25,
+    "torso/measure-hips-circ-decr": 0.1,
+    "buttocks/buttocks-volume-decr": 0.05
+  },
+  "morphs_not_in_embed": {
+    "_note": "assets/embed/mh-manifest.json has no ear targets. Estimates for standard MakeHuman ear modifiers in case they are added; both ears are cauliflowered.",
+    "ears/l-ear-big-incr": 0.15,
+    "ears/r-ear-big-incr": 0.15,
+    "ears/l-ear-rot-forward": 0.2,
+    "ears/r-ear-rot-forward": 0.2
+  },
+  "notes": "Confidence: high for hair, beard, skin range, no tattoos and build; medium-high for face proportions (sharp frontal, two clean three-quarters, one profile video still); low-to-medium for exact morph values. Watch for: (1) High, prominent cheekbones with hollow cheeks and a tapering lower face are the key structure. (2) Deep-set, hooded dark eyes under thick, low, straight brows give the stern look; he smiles widely when relaxed. (3) The beard is goatee-heavy: dense chin and moustache, thinner along the jaw, bare cheeks; it is not a full beard. (4) Buzz cut, so render as scalp tint, no hair proxy. (5) Cauliflower ears on both sides. (6) Very lean bantamweight: deep abs, narrow waist. macro/ageOldM 0.077 follows avatar3d.js (30-25)/65; heightDownM 0.18 matches the 172.7 cm Chandler sheet."
+}
