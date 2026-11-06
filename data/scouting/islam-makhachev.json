@@ -3,9 +3,9 @@
   "name": "Islam Makhachev",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC welterweight champion. Won the belt from Jack Della Maddalena at UFC 322 (Nov 15, 2025) and defended it with a unanimous decision over Ian Machado Garry at UFC 330 (Aug 15, 2026; 49-46, 49-46, 48-47), a UFC-record 17th straight win. Pro record 29-1. Dana White said he verbally agreed to headline UFC 336 against Carlos Prates and then backed out, so Prates vs Michael Morales (Jan 30, 2027) is now for the interim belt, with the winner to face him later in 2027. He said on Oct 31, 2026 that his next fight will be 'one of the last' of his career.",
+    "summary": "UFC welterweight champion, pro record 29-1. Won the belt from Jack Della Maddalena at UFC 322 (Nov 15, 2025) and defended it with a unanimous decision over Ian Machado Garry at UFC 330 (Aug 15, 2026; 49-46, 49-46, 48-47), a UFC-record 17th straight win. No fight is booked. Dana White said he verbally agreed to headline UFC 336 against Carlos Prates and then backed out, so Prates vs Michael Morales (Jan 30, 2027, Toronto) is for the interim belt, with the winner expected to face him later in 2027. MMA Fighting reports he will wait until after Ramadan. On Nov 4, 2026 White said 'I think it's money' and that two fights a year 'would be nice'; on Nov 5 Prates' manager said Makhachev gave the UFC no reason for turning down January. On Oct 31, 2026 Makhachev said his next fight will be 'one of the last' of his career. No injury reported.",
     "title": "UFC welterweight champion",
-    "ranking": "#1 men's pound-for-pound per CBS Sports (updated Sep 15, 2026); official UFC pound-for-pound position not checked",
+    "ranking": "#1 men's pound-for-pound in the UFC media-panel rankings (ufc.com, last updated Nov 3, 2026, read from the Nov 4 Wayback capture). The Meta UFC rankings (the UFC's Elo model since Jun 2026, last updated Oct 31, 2026) publish no pound-for-pound list. CBS Sports also had him #1 (Sep 15, 2026).",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -19,7 +19,14 @@
       "https://www.thescore.com/mma/news/3639613/makhachev-next-fight-will-be-one-of-the-last-in-my-career",
       "https://www.aljazeera.com/sports/2026/10/31/islam-makhachev-ufc-welterweight-title-one-of-last-fight-prates-morales",
       "https://www.cbssports.com/ufc/rankings/men/200/p4p/",
-      "http://ufcstats.com/fighter-details/275aca31f61ba28c"
+      "http://ufcstats.com/fighter-details/275aca31f61ba28c",
+      "https://www.mmafighting.com/ufc/519467/dana-white-on-islam-makhachev-being-the-champ-i-dont-really-expect-you-to-fight-3-times-a-year-but-twice-would-be-nice",
+      "https://www.sherdog.com/news/news/Islam-Makhachev-gave-UFC-no-reason-for-January-exit-Prates-manager-says-203503",
+      "https://www.mmafighting.com/ufc/518439/carlos-prates-manager-says-ufc-a-little-upset-with-islam-makhachev-after-ufc-336-withdrawal",
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://en.wikipedia.org/wiki/UFC_rankings",
+      "https://en.wikipedia.org/wiki/UFC_336",
+      "https://en.wikipedia.org/wiki/Islam_Makhachev"
     ]
   },
   "style": {
@@ -70,12 +77,17 @@
   },
   "appearance": {
     "build": "compact and thickly muscled; 5 ft 10 in with a 70 in reach (ufcstats), short-limbed for welterweight",
-    "hair": "short dark hair",
-    "facial_hair": "full dark beard",
+    "hair": "short dark brown-black hair, cropped close at the sides (ESPN headshot; UFC 330 photos, Aug 2026)",
+    "facial_hair": "full dark beard along the jaw, upper lip trimmed short (ESPN headshot; UFC 330, Aug 2026)",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the torso, arms or back in UFC 330 fight-night photos (Aug 15, 2026) or the ESPN headshot",
+    "kit": "black-and-white shorts (black waistband, white legs) at UFC 330 (Aug 15, 2026); one fight checked",
+    "notes": "No likeness sheet exists for him (data/likeness/islam-makhachev.json is absent). Hair, beard, skin, tattoos and kit were checked on Nov 6, 2026 against the current ESPN headshot and two UFC 330 photos: the Getty fight-night photo on theScore's recap and the Cageside Press ceremonial weigh-in photo. Build is from ufcstats.",
     "sources": [
+      "https://a.espncdn.com/i/headshots/mma/players/full/3332412.png",
+      "https://www.espn.com/mma/fighter/_/id/3332412/islam-makhachev",
+      "https://www.thescore.com/mma/news/3573068/ufc-330-makhachev-vs-garry-results-analysis",
+      "https://cagesidepress.com/2026/08/16/ufc-330-islam-makhachev-ian-machado-garry/",
       "https://www.ufc.com/athlete/islam-makhachev",
       "http://ufcstats.com/fighter-details/275aca31f61ba28c"
     ]

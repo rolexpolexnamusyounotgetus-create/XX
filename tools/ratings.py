@@ -2244,8 +2244,53 @@ def tables(path=OUT_JSON, top=10):
             print("- %s: %s" % (k.replace("__", " vs "), v))
 
 
+# =====================================================================================================
+# ablations on the tuning window (python3 tools/ratings.py ablate): one ingredient off at a time
+# =====================================================================================================
+ABLATIONS = {
+    "age curve off": {"dy": 0.0, "do": 0.0},
+    "age decline off": {"do": 0.0},
+    "early-career learning off": {"dl": 0.0},
+    "layoff drift off": {"lay": 0.0},
+    "newcomer prior flat (mu_new = age_new = 0)": {"mu_new": 0.0, "age_new": 0.0},
+    "pre-UFC record off": {"pre_on": False},
+    "margin of victory off (binary outcomes)": {"enc": "binary"},
+    "all trajectory terms off (age, learning, layoff)": {"dy": 0.0, "do": 0.0, "dl": 0.0, "lay": 0.0},
+}
+
+
+def ablate(path=OUT_JSON, systems=("elo_full", "glicko2", "trueskill_mov", "whr_mov", "whr_rounds")):
+    J = json.load(open(path))
+    D = load_data()
+    prepare(D, log=lambda *a: None)
+    out = {}
+    print("| System | Ablation | Tune LL (2019-2023) | Change |")
+    print("|---|---|---|---|")
+    for name in systems:
+        sd = J["systems"].get(name)
+        if not sd:
+            continue
+        P = dict(sd["params"])
+        kind = sd["kind"]
+        base = score(D, run_system(D, kind, P, until=TEST_FROM, eval_idx=D.idx_tune)[0], D.idx_tune)
+        print("| %s | (tuned) | %.5f | |" % (name, base))
+        out[name] = {"tuned": base}
+        for lab, ch in ABLATIONS.items():
+            if lab.startswith("margin") and P.get("enc") not in ("mov", "hybrid"):
+                continue
+            Q = dict(P, **ch)
+            if Q == P:
+                continue
+            v = score(D, run_system(D, kind, Q, until=TEST_FROM, eval_idx=D.idx_tune)[0], D.idx_tune)
+            out[name][lab] = v
+            print("| %s | %s | %.5f | %+.5f |" % (name, lab, v, v - base))
+    return out
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "tables":
         tables(sys.argv[2] if len(sys.argv) > 2 else OUT_JSON)
+    elif len(sys.argv) > 1 and sys.argv[1] == "ablate":
+        ablate(sys.argv[2] if len(sys.argv) > 2 else OUT_JSON)
     else:
         main()

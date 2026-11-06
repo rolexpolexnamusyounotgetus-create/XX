@@ -156,3 +156,27 @@ script never touches that file once it exists, so rebuilding the data keeps the 
   against the priors.
 - **New data**: replace the CSVs in `data/raw/` with a fresh scrape and rerun build_db.py, then
   tools/calibrate.js.
+
+## odds_upcoming.py: upcoming odds for the forward test
+
+```
+python3 -I tools/odds_upcoming.py snapshot     # all sources -> data/predictions/odds_snapshot_<YYYYMMDD-HHMM>.json
+python3 -I tools/odds_upcoming.py show | plan | timeline
+python3 -I tools/odds_upcoming.py snapshot --replay <STAMP>   # rebuild a capture from data/raw/web_cache/*/<STAMP>/
+```
+
+Stdlib only, about 90 polite requests (1.25 s apart, robots.txt checked) in 3-4 minutes.
+
+- **Sources:** fightodds.io (24 books, per-book openers, Pinnacle history), bestfightodds event pages
+  (moneylines and method/distance props), Action Network (next card), Covers (low trust, filtered)
+  and Wikipedia (fallback cards).
+- **Bouts:** `data/predictions/cards_upcoming.json` defines them, keeping its a/b order and the
+  ledger `bout_id`.
+- **Output per bout:** per-book lines with multiplicative, Shin and power no-vig; a consensus; the
+  ledger-format `market` block (BFO mean, multiplicative); the market open; and the 7-way method
+  market and P(distance).
+- **Snapshots are never overwritten.** Each run also rebuilds the open/close timeline
+  `data/derived/odds_upcoming.json`.
+
+Run it in fight week, at T-2h before each card's lock, and about 10 h after the card for the archived
+closing lines (`plan` prints the times). Details and caveats: `research/data_odds_upcoming.md`.

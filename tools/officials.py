@@ -996,7 +996,8 @@ def glmm_fit(y, X, g, family, offset=None, tau=0.3, ref_levels=None, iters=50, r
         out["u_sd"] = np.sqrt(1.0 / Duu + np.einsum("pk,pq,qk->k", Bk, Sinv, Bk))
         out["n"] = np.bincount(gi_ok, minlength=G).astype(float)
         out["events"] = np.bincount(gi_ok, weights=y[ok], minlength=G)
-        out["log_marginal"] = float(ll - 0.5 * np.sum(u ** 2) / tau ** 2 - G * math.log(tau)
+        # log p(y | tau) ~ l(beta, u) + log N(u; 0, tau^2) + G/2 log 2pi - 1/2 log det H  (beta integrated flat)
+        out["log_marginal"] = float(ll - 0.5 * np.sum(u ** 2) / tau ** 2
                                     - 0.5 * np.sum(np.log(Duu * tau ** 2)) - 0.5 * np.linalg.slogdet(S_)[1])
     else:
         out["beta_sd"] = np.sqrt(np.diag(np.linalg.inv(Hbb)))

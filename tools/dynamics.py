@@ -547,9 +547,10 @@ def person_history(S, p0_kd):
     FS = (S.groupby(["fid", "idx"], sort=False)
             .agg(pid=("pid", "first"), DATE=("DATE", "first"), mins=("mins", "sum"), sig_a=("sig_a", "sum"),
                  sig_l=("sig_l", "sum"), kd=("kd", "sum"), okd=("o_kd", "sum"), sh=("sh_l", "sum"),
-                 osh=("o_sh_l", "sum"), td_a=("td_a", "sum"), ctrl=("ctrl", "sum"), octrl=("o_ctrl", "sum"))
+                 osh=("o_sh_l", "sum"), td_a=("td_a", "sum"), ctrl=("ctrl", "sum"), octrl=("o_ctrl", "sum"),
+                 osig_a=("o_sig_a", "sum"), osig_l=("o_sig_l", "sum"))
             .reset_index().sort_values(["DATE", "fid", "idx"]))
-    cols = ["mins", "sig_a", "sig_l", "kd", "okd", "sh", "osh", "td_a", "ctrl", "octrl"]
+    cols = ["mins", "sig_a", "sig_l", "kd", "okd", "sh", "osh", "td_a", "ctrl", "octrl", "osig_a", "osig_l"]
     FS["pid"] = FS["pid"].fillna("anon:" + FS.fid.astype(str) + ":" + FS.idx.astype(str))
     g = FS.groupby("pid", sort=False)
     for c in cols:
@@ -702,6 +703,47 @@ def fit_dynre_outcome(S, name, xcols, jack=0, label=""):
     print(f"  [{label or name}] train n={m1.n_obs} test dLL/obs={out['heldout_one_step']['dll_per_obs']:+.4f} "
           f"MSE -{out['heldout_one_step']['mse_reduction_pct']:.2f}%  ({out['secs']:.0f}s)", flush=True)
     return out, m0, m1
+
+
+def form_decomposition(S, jack=0):
+    """Fight-night form vs profile: the dynamic-RE null for output and accuracy with the walk-forward pre-fight
+    expectation as a covariate (attacker's rate x defender's allowed rate, shrunk: 40 minutes / 150 attempts).
+    The residual fighter-in-fight effect is what the engine's form draws must supply (an upper bound: profile
+    noise stays in it); its correlation between the two fighters is the shared fight pace."""
+    d0 = S.copy()
+    tr0 = d0[d0.period == "train"]
+    L = tr0.sig_a.sum() / tr0.mins.sum()
+    La = tr0.sig_l.sum() / tr0.sig_a.sum()
+    H = person_history(d0, 0.0088)
+    H["attpm"] = (H.h_sig_a + 40 * L) / (H.h_mins + 40)
+    H["oattpm"] = (H.h_osig_a + 40 * L) / (H.h_mins + 40)
+    H["acc"] = (H.h_sig_l + 150 * La) / (H.h_sig_a + 150)
+    H["oacc"] = (H.h_osig_l + 150 * La) / (H.h_osig_a + 150)
+    O = H[["fid", "idx", "oattpm", "oacc"]].copy(); O["idx"] = 1 - O.idx
+    d0 = d0.merge(H[["fid", "idx", "attpm", "acc", "h_n"]], on=["fid", "idx"], how="left")
+    d0 = d0.merge(O.rename(columns={"oattpm": "opp_allow_att", "oacc": "opp_allow_acc"}), on=["fid", "idx"], how="left")
+    d0["x_out_att"] = np.log(d0.attpm / L)
+    d0["x_out_def"] = np.log(d0.opp_allow_att / L)
+    lg = math.log(La / (1 - La))
+    d0["x_acc_att"] = np.log(d0.acc / (1 - d0.acc)) - lg
+    d0["x_acc_def"] = np.log(d0.opp_allow_acc / (1 - d0.opp_allow_acc)) - lg
+    out = {"league_att_pm": L, "league_acc": La}
+    for name, xs in (("out", ["x_out_att", "x_out_def"]), ("acc", ["x_acc_att", "x_acc_def"])):
+        d = prep_outcome(d0, name)
+        tr = d[d.period == "train"]
+        te = d[d.period == "test"]
+        m0 = DynRE(tr, "y", "v", ["partial"]).fit()
+        m1 = DynRE(tr, "y", "v", ["partial"] + xs, fixed_cells=m0.cells).fit(m0.p)
+        p0 = m0.predictive(DynRE(te, "y", "v", ["partial"], fixed_cells=m0.cells))
+        p1 = m1.predictive(DynRE(te, "y", "v", ["partial"] + xs, fixed_cells=m0.cells))
+        vc = m1.var_components()
+        sa, rho = vc["sd_fighter_fight"], vc["corr_fighters"]
+        out[name] = {"null": m0.var_components(), "with_profile": vc, "gamma": m1.gamma(),
+                     "form_sd_individual": math.sqrt(max(sa ** 2 * (1 - rho), 0)),
+                     "form_sd_shared_fight": math.sqrt(max(sa ** 2 * rho, 0)) if rho > 0 else 0.0,
+                     "heldout_one_step_profile_vs_null_dll": (p1["ll"] - p0["ll"]) / max(p1["n"], 1)}
+        print(f"  [form {name}] {vc}", flush=True)
+    return out
 
 
 def comparison_estimators(S):
@@ -1522,6 +1564,7 @@ def main(argv=None):
         mods["tda"] = fit_tda(S, STATE_X)
         J["state_models"] = mods
         J["comparison_estimators_out"] = comparison_estimators(S)
+        J["form_decomposition"] = form_decomposition(S)
         if not a.quick:
             print("  simulation check of the estimator (null model, own-output fatigue proxy)", flush=True)
             J["simulation_check"] = sim_check(S, m0_out, reps=2, gam_true=(0.0, -0.15))

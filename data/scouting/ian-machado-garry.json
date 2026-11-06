@@ -3,11 +3,11 @@
   "name": "Ian Machado Garry",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Top welterweight contender, pro record 17-2 (UFC 10-2). Lost a unanimous decision to champion Islam Makhachev at UFC 330 (Aug 15, 2026; 46-49, 46-49, 47-48) after being knocked down by a head kick in round 2. Before that he beat Belal Muhammad (UD, Nov 22, 2025) and Carlos Prates (UD, Apr 26, 2025). A bout with Yaroslav Amosov at UFC 335 (Dec 12, 2026, Las Vegas) has been widely reported but not confirmed by the UFC in the sources found.",
+    "summary": "Top welterweight contender, pro record 17-2 (UFC 10-2). Lost a unanimous decision to champion Islam Makhachev at UFC 330 (Aug 15, 2026; 46-49, 46-49, 47-48) after being knocked down by a head kick in round 2. Before that he beat Belal Muhammad (UD, Nov 22, 2025) and Carlos Prates (UD, Apr 26, 2025). A bout with Yaroslav Amosov at UFC 335 (Dec 12, 2026, Las Vegas) was reported on Oct 24, 2026 (MMA Sucka, citing AgentMMA) and is listed on Wikipedia's UFC 335 page, but the only cited source is that report; no UFC announcement was found as of Nov 6, 2026. No injury reported.",
     "title": null,
-    "ranking": "#1 welterweight contender per CBS Sports; #2 per EventClock (both Nov 2026; not checked against ufc.com)",
+    "ranking": "#1 welterweight in the UFC media rankings (Nov 3, 2026); #2 in the Meta UFC rankings (Oct 31, 2026); per ufc.com (Nov 4 Wayback capture)",
     "active": true,
-    "next_fight": "Reported, not officially confirmed: vs Yaroslav Amosov, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas",
+    "next_fight": "Reported, not officially confirmed: vs Yaroslav Amosov, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (MMA Sucka/AgentMMA, Oct 24, 2026; no UFC announcement found as of Nov 6, 2026)",
     "injuries": [],
     "sources": [
       "https://www.ufc.com/news/ufc-330-islam-makhachev-vs-ian-machado-garry-results",
@@ -18,7 +18,12 @@
       "https://www.wrestling-world.com/news/news/other_sports/42257/ian-machado-garry-wants-michael-morales-next-/",
       "https://www.cbssports.com/ufc/rankings/",
       "https://eventclock.org/mma/ufc/rankings/welterweight",
-      "http://ufcstats.com/fighter-details/442c9011034ae1fd"
+      "http://ufcstats.com/fighter-details/442c9011034ae1fd",
+      "https://en.wikipedia.org/wiki/UFC_335",
+      "https://www.espn.com/mma/fighter/_/id/4738092/ian-machado-garry",
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://en.wikipedia.org/wiki/UFC_rankings",
+      "https://en.wikipedia.org/wiki/Ian_Machado_Garry"
     ]
   },
   "style": {
@@ -65,12 +70,17 @@
   },
   "appearance": {
     "build": "tall and lean for welterweight; 6 ft 3 in with a 74 in reach (ufcstats)",
-    "hair": "short light-brown to blond hair, usually styled up",
-    "facial_hair": "usually clean-shaven",
+    "hair": "very short light-brown to dark-blond hair, buzzed all over at UFC 330 (Aug 2026); slightly longer on top in the ESPN headshot",
+    "facial_hair": "clean-shaven, at most light stubble (ESPN headshot; UFC 310 and UFC 330 photos)",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "several small tattoos: a small winged design below each collarbone, a line of script along the left lower ribs (legible in a UFC 310 photo as '...future is unwritten'), small script on the inner left arm, and a small dark round piece on the back of the right upper arm (UFC 310, Dec 2024; UFC 330, Aug 2026)",
+    "kit": "green shorts with a white pattern at UFC 330 (Aug 15, 2026); dark blue-purple shorts at UFC 310 (Dec 7, 2024)",
+    "notes": "No likeness sheet exists for him. Hair, facial hair, skin, tattoos and kit were checked on Nov 6, 2026 against the current ESPN headshot, the Getty fight-night and Cageside Press weigh-in photos from UFC 330, and the Getty photo from UFC 310 on Yahoo Sports. The full wording of the rib script is not confirmed. Build is from ufcstats.",
     "sources": [
+      "https://a.espncdn.com/i/headshots/mma/players/full/4738092.png",
+      "https://www.thescore.com/mma/news/3573068/ufc-330-makhachev-vs-garry-results-analysis",
+      "https://cagesidepress.com/2026/08/16/ufc-330-islam-makhachev-ian-machado-garry/",
+      "https://sports.yahoo.com/ufc-310-results-shavkat-rakhmonov-survives-late-scare-beats-ian-machado-garry-but-loses-perfect-finish-rate-055842499.html",
       "https://www.ufc.com/athlete/ian-machado-garry",
       "http://ufcstats.com/fighter-details/442c9011034ae1fd"
     ]

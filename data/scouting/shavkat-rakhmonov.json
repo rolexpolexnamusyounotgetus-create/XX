@@ -3,13 +3,14 @@
   "name": "Shavkat Rakhmonov",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Unbeaten welterweight (pro 19-0, UFC 7-0) who has not fought since his unanimous decision over Ian Machado Garry at UFC 310 (Dec 7, 2024). A knee injury has needed several surgeries, most recently reported for Jan 31, 2026 with a 9-10 month recovery estimate. He was back in contact training by late May 2026, his physician said in July there was no medical bar to returning in early 2027, and his coach Eduard Bazrov named February 2027. On Oct 30, 2026 his manager, Daniel Rubenstein, denied a rumored January 2027 fight with Jack Della Maddalena. No bout is booked.",
+    "summary": "Unbeaten welterweight (pro 19-0, UFC 7-0) who has not fought since his unanimous decision over Ian Machado Garry at UFC 310 (Dec 7, 2024). A knee injury has needed several surgeries, most recently reported for Jan 31, 2026 with a 9-10 month recovery estimate. He was back in contact training by late May 2026, his physician said in July there was no medical bar to returning in early 2027, and coach Eduard Bazrov named February 2027. In a Sep 7, 2026 interview (Sherdog) he said he fought Machado Garry with a missing knee ligament and that a UFC return is 'far from guaranteed', though he has not retired. On Oct 30, 2026 his manager, Daniel Rubenstein, denied a rumored January 2027 fight with Jack Della Maddalena. No bout is booked as of Nov 6, 2026.",
     "title": null,
-    "ranking": "Unranked: reported removed from the UFC welterweight rankings in Feb 2026 for inactivity",
+    "ranking": "Unranked: not in the welterweight top 15 of the UFC media rankings (Nov 3, 2026) or the Meta UFC rankings (Oct 31, 2026), per ufc.com (Nov 4 Wayback capture). Wikipedia says he was removed from #2 after the January 2026 injury report.",
     "active": false,
     "next_fight": null,
     "injuries": [
-      { "what": "knee injury requiring several surgeries; latest surgery reported Jan 31, 2026 with a 9-10 month recovery estimate", "when": "2026-01", "source": "https://thebodylockmma.com/ufc/news-ufc/is-shavkat-rakhmonov-finally-ready-to-return-after-two-year-layoff/" }
+      { "what": "knee injury requiring several surgeries; latest surgery reported Jan 31, 2026 with a 9-10 month recovery estimate", "when": "2026-01", "source": "https://thebodylockmma.com/ufc/news-ufc/is-shavkat-rakhmonov-finally-ready-to-return-after-two-year-layoff/" },
+      { "what": "says he fought Machado Garry (Dec 2024) with a missing knee ligament and the damage worsened in that fight; return 'far from guaranteed'", "when": "2026-09", "source": "https://www.sherdog.com/news/news/Shavkat-Rakhmonov-admits-UFC-return-is-far-from-guaranteed-202693" }
     ],
     "sources": [
       "https://bloodyelbow.com/2026/10/30/shavkat-rakhmonovs-ufc-return-facing-another-delay-as-his-manager-shuts-down-rumored-fight/",
@@ -19,7 +20,12 @@
       "https://sports.yahoo.com/articles/return-injury-plagued-shavkat-rakhmonov-233747670.html",
       "https://thebodylockmma.com/ufc/news-ufc/is-shavkat-rakhmonov-finally-ready-to-return-after-two-year-layoff/",
       "https://bloodyelbow.com/2026/10/04/michael-morales-claims-hes-fighting-shavkat-rakhmonov-next-in-message-to-ufc-welterweight-division/",
-      "http://ufcstats.com/fighter-details/01afe0916a40c7c5"
+      "http://ufcstats.com/fighter-details/01afe0916a40c7c5",
+      "https://www.sherdog.com/news/news/Shavkat-Rakhmonov-admits-UFC-return-is-far-from-guaranteed-202693",
+      "https://kz.kursiv.media/en/2026-07-27/engk-nknk-shavkat-rakhmonov-not-expected-to-return-to-the-octagon-in-2026/",
+      "https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings",
+      "https://en.wikipedia.org/wiki/UFC_rankings",
+      "https://en.wikipedia.org/wiki/Shavkat_Rakhmonov"
     ]
   },
   "style": {
@@ -35,7 +41,7 @@
       "back takes and long top-control spells (9:06 vs Magny, 7:45 vs Thompson, 11:41 vs Machado Garry)"
     ],
     "weaknesses": [
-      "about 23 months out of competition with repeated knee surgeries; how he looks after the layoff is unknown",
+      "about 23 months out of competition with repeated knee surgeries and, by his own account, a missing ligament; how he looks after the layoff cannot be known until he fights",
       "low takedown accuracy: 7 of 27 career attempts",
       "hittable for a top fighter: opponents land 49.5% of significant strikes on him (league 47.7%), and Machado Garry out-landed him 42-37 at UFC 310 with 21 leg strikes",
       "rarely throws low kicks himself (2.7% of significant attempts)"
@@ -65,18 +71,22 @@
   },
   "appearance": {
     "build": "tall and long-limbed for welterweight; 6 ft 1 in with a 77 in reach (ufcstats)",
-    "hair": "short dark hair",
-    "facial_hair": "unknown",
-    "skin": "unknown",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "hair": "short black hair, a little longer on top and worn forward in a fringe (ESPN headshot; UFC 310, Dec 2024)",
+    "facial_hair": "clean-shaven (ESPN headshot; UFC 310, Dec 2024)",
+    "skin": "light-medium",
+    "tattoos": "none visible on the torso or arms in UFC 310 photos (Dec 7, 2024) or the ESPN headshot",
+    "kit": "black shorts at UFC 310 (Dec 7, 2024), his last fight",
+    "notes": "No likeness sheet exists for him. Hair, facial hair, skin, tattoos and kit were checked on Nov 6, 2026 against the current ESPN headshot and two Getty photos from UFC 310 (on Yahoo Sports' and Bleacher Report's recaps). He has not fought since, so no newer fight photos exist. Build is from ufcstats.",
     "sources": [
-      "http://ufcstats.com/fighter-details/01afe0916a40c7c5",
-      "https://www.ufc.com/athlete/shavkat-rakhmonov"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4020699.png",
+      "https://www.espn.com/mma/fighter/_/id/4020699/shavkat-rakhmonov",
+      "https://sports.yahoo.com/ufc-310-results-shavkat-rakhmonov-survives-late-scare-beats-ian-machado-garry-but-loses-perfect-finish-rate-055842499.html",
+      "https://bleacherreport.com/articles/10146323-ufc-310-shavkat-rakhmonov-wins-but-ian-machado-garrys-stock-just-went-higher",
+      "http://ufcstats.com/fighter-details/01afe0916a40c7c5"
     ]
   },
   "engine_notes": [
-    { "note": "Inactivity: last fight 2024-12-07 (about 23 months before as-of) plus repeated knee surgery. Any ring-rust or inactivity knob applies, and the decayed sums already down-weight his fights (decayed n = 1.86 fights).", "source": "data/derived/fighters.json; https://bloodyelbow.com/2026/10/30/shavkat-rakhmonovs-ufc-return-facing-another-delay-as-his-manager-shuts-down-rumored-fight/" },
+    { "note": "Inactivity: last fight 2024-12-07 (about 23 months before as-of) plus repeated knee surgery; in Sep 2026 he said he fought Machado Garry with a missing ligament. Any ring-rust or inactivity knob applies, and the decayed sums already down-weight his fights (decayed n = 1.86 fights).", "source": "data/derived/fighters.json; https://bloodyelbow.com/2026/10/30/shavkat-rakhmonovs-ufc-return-facing-another-delay-as-his-manager-shuts-down-rumored-fight/; https://www.sherdog.com/news/news/Shavkat-Rakhmonov-admits-UFC-return-is-far-from-guaranteed-202693" },
     { "note": "Never knocked down in the UFC (0 KD absorbed in 75 minutes).", "source": "data/derived/fighters.json" },
     { "note": "Finishing mostly via submission: 5 of 7 UFC wins, about 1.2 submission attempts per 15 min career. His ground time comes from clinch entries and scrambles, not clean shots (takedown accuracy 26% career).", "source": "data/derived/fighters.json; tools/fighter_report.py rates" },
     { "note": "His pace vector (1, 4.5, 5.5, 7, 0.5) comes from a single 5-round fight with a quiet round 1, so it is noise. Use the division prior.", "source": "data/derived/fighters.json (pace_w = 5 per round)" }

@@ -4,18 +4,28 @@
 Every run writes a NEW timestamped snapshot (never overwrites an earlier one) and rebuilds the
 open-vs-close timeline from all snapshots on disk:
 
-  data/predictions/odds_snapshot_<YYYYMMDD-HHMM>.json   one capture of every bout in the window
-  data/derived/odds_upcoming.json                       per-bout timeline: market open, first capture,
-                                                         last pre-start capture (closing proxy), archived close
+  data/predictions/odds_snapshot_<YYYYMMDD-HHMM>.json   one capture of every bout in the window (UTC stamp)
+  data/derived/odds_upcoming.json                       per-bout timeline: market open, first capture, last
+                                                         pre-lock capture (market at prediction time), last
+                                                         pre-start capture (closing proxy), archived close,
+                                                         Pinnacle open -> last
 
-Usage (from the project root; run it a few times a week and once more a few hours before each card,
-plus once after the card to capture the books' archived closing lines):
+Usage (from the project root). Run it in fight week, again at T-2h before each card's lock (the
+earliest start_utc in cards_upcoming.json), and about 10 h after the card for the archived closes:
 
   python3 -I tools/odds_upcoming.py snapshot                 # fetch all sources, write a snapshot + timeline
-  python3 -I tools/odds_upcoming.py snapshot --until 2026-12-20 --no-fight-detail
-  python3 -I tools/odds_upcoming.py snapshot --replay 20261106-0957   # rebuild from cached raw pages, no network
+  python3 -I tools/odds_upcoming.py snapshot --until 2026-12-20 --history none --no-fight-detail   # lighter
+  python3 -I tools/odds_upcoming.py snapshot --replay 20261106-1015   # rebuild from cached raw pages, no network
   python3 -I tools/odds_upcoming.py timeline                 # rebuild data/derived/odds_upcoming.json only
   python3 -I tools/odds_upcoming.py show [STAMP]             # print one snapshot as a table
+  python3 -I tools/odds_upcoming.py plan                     # recommended capture times per event
+
+Per bout: every book's line oriented to (a, b) with multiplicative / Shin / power no-vig P(a); sanity and
+outlier filters; consensus (headline = logit-mean of per-book Shin over sportsbooks), sharp-book,
+Pinnacle and exchange views; the ledger-format market block (mean of BestFightOdds' books, multiplicative
+no-vig, as data/predictions/README.md defines the benchmark); the market open (per-book openers); the
+7-way method-of-victory market and P(goes the distance) from BFO props. Method notes and caveats:
+research/data_odds_upcoming.md.
 
 Bout universe: data/predictions/cards_upcoming.json when it exists (A/B order kept); otherwise the cards
 are gathered from Wikipedia event pages plus any in-window bout an odds site lists.
@@ -25,7 +35,8 @@ overall; raw responses cached gzip'd under data/raw/web_cache/<site>/<stamp>/):
   bestfightodds   event pages: moneylines for the US books BFO lists + Polymarket/Kalshi, and props
                   (method of victory, goes the distance, rounds totals). robots: all but /cnadm/.
   fightodds       fightodds.io public GraphQL API (the site's own persisted queries): ~24 books incl.
-                  Pinnacle, Circa, Bookmaker, BetOnline and exchanges; per-book open/best/worst.
+                  Pinnacle, Circa, Bookmaker, BetOnline and exchanges; per-book open/best/worst;
+                  full timestamped line history for the --history books (default Pinnacle).
   actionnetwork   /ufc/odds page data (next card only; query strings are disallowed by robots.txt):
                   DK, FanDuel, BetMGM, bet365, Polymarket, AN's own opener; scheduled start per bout.
   covers          /sport/mma/ufc/odds (oddsshark.com/ufc/odds now redirects here). Low trust: several
