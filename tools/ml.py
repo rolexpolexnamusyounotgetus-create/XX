@@ -1763,9 +1763,12 @@ def stacking(R):
             pre.append(k)
     if "engine" in P:
         variants.append(("elo+engine", ["elo", "engine"]))
+    variants.append(("elo+lr", ["elo", "lr"]))
     if "mkt_rating" in P:
         variants.append(("pre-line: " + "+".join(pre + ["mkt_rating"]), pre + ["mkt_rating"]))
         variants.append(("elo+ml+mkt_rating", ["elo", "ml", "mkt_rating"]))
+        variants.append(("elo+lr+mkt_rating", ["elo", "lr", "mkt_rating"]))
+        variants.append(("mkt_rating", ["mkt_rating"]))
     if "mkt_open" in P:
         variants.append(("open", ["mkt_open"]))
         variants.append(("open+ml", ["mkt_open", "ml"]))
@@ -2084,6 +2087,19 @@ def page_model(R):
             r[k] = fx.get(k)
         roster[slug] = r
     snap = C["tmeta"]["snapshot"]
+    stk = {v["name"]: v for v in R["stacking"]["variants"]}
+    page_stack = {}
+    for nm in ("elo+lr+mkt_rating", "elo+lr"):
+        if nm in stk:
+            page_stack[nm] = {"inputs": stk[nm]["inputs"], "weights": stk[nm]["weights"],
+                              "oof_loyo_log_loss": stk[nm]["oof_loyo_log_loss"],
+                              "test_log_loss": stk[nm]["test"]["log_loss"]}
+    mpath = os.path.join(DERIVED, "market.json")
+    if os.path.exists(mpath):
+        mr = json.load(open(mpath)).get("ratings", {})
+        for slug, r in roster.items():
+            if slug in mr:
+                r["mr_mu"], r["mr_sd"] = mr[slug][0], mr[slug][1]
     model = {
         "snapshot": snap,
         "winner": {"terms": terms, "platt_slope": round(slope, 4),
@@ -2099,6 +2115,11 @@ def page_model(R):
                        context=["lbs/100", "women", "five", "title", "catch"],
                        eval="x = [side_block(winner), side_block(loser), context]; softmax(intercept + coef @ x) = "
                             "P(KO/TKO, SUB, DEC | that fighter wins)"),
+        "stack": dict(page_stack, eval="z = sum_i w_i * logit(p_i) over inputs; p = 1/(1+exp(-z)). p_elo = "
+                      "1/(1+10^((eloB-eloA)/400)); p_lr = the winner model WITHOUT platt_slope; p_mkt_rating = "
+                      "1/(1+exp(-(mr_muA-mr_muB)/sqrt(1+pi*(mr_sdA^2+mr_sdB^2)/8))) (tools/market.py Kalman market "
+                      "rating; use 'elo+lr' when either fighter has no rating). Weights fit on 2019-2023 "
+                      "out-of-fold predictions"),
         "draw_rate": round(pD, 5),
         "bins": ["A KO/TKO", "A SUB", "A DEC", "DRAW", "B DEC", "B SUB", "B KO/TKO"],
         "dynamic_keys": "age, layoff, log_layoff, years_ufc, wc_move, new_class are recomputed for the fight date and "

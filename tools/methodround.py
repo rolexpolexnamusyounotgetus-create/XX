@@ -980,3 +980,33 @@ class FactorModel:
 
     def predict6(self, T, FX, FY):
         return 0.5 * (self._one(FX, FY) + c6_mirror(self._one(FY, FX)))
+
+
+class Recalibrator:
+    """Symmetric post-hoc recalibration of a 6-class who-and-how distribution:
+    P'(c) proportional to P(c)^b * exp(a_method(c)), with a_DEC = 0 and the same a for X and Y; fit on
+    out-of-fold predictions from the tuning years only."""
+
+    def fit(self, P6, c6, w=None):
+        from scipy.optimize import minimize as _min
+        ok = c6 >= 0
+        L = np.log(np.clip(P6[ok], 1e-9, None))
+        y = c6[ok]
+        w = np.ones(ok.sum()) if w is None else w[ok]
+
+        def nll(th):
+            b, aK, aS = th
+            Z = b * L + np.array([aK, aS, 0, 0, aS, aK])
+            Z = Z - Z.max(1, keepdims=True)
+            lp = Z - np.log(np.exp(Z).sum(1, keepdims=True))
+            return -(w * lp[np.arange(len(y)), y]).sum() / w.sum()
+
+        r = _min(nll, np.array([1.0, 0.0, 0.0]), method="Nelder-Mead", options={"xatol": 1e-5, "fatol": 1e-8})
+        self.b, self.aK, self.aS = map(float, r.x)
+        return self
+
+    def apply(self, P6):
+        Z = self.b * np.log(np.clip(P6, 1e-9, None)) + np.array([self.aK, self.aS, 0, 0, self.aS, self.aK])
+        Z = Z - Z.max(1, keepdims=True)
+        E = np.exp(Z)
+        return E / E.sum(1, keepdims=True)

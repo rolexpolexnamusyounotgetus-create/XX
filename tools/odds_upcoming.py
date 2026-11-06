@@ -627,8 +627,8 @@ def bfo_parse_event(html):
             'matchups': [mus[m] for m in order]}
 
 
-def previous_snapshot():
-    """Latest snapshot on disk (or None)."""
+def previous_snapshot(before=None):
+    """Latest snapshot on disk taken before `before` (ISO 'YYYY-MM-DDTHH:MM:SSZ'), or None."""
     ps = sorted(glob.glob(os.path.join(PRED_DIR, 'odds_snapshot_*.json')))
     best = None
     for p in ps:
@@ -636,6 +636,8 @@ def previous_snapshot():
             with open(p) as fh:
                 s = json.load(fh)
         except (OSError, ValueError):
+            continue
+        if before and s['meta']['snapshot_utc'] >= before:
             continue
         if best is None or s['meta']['snapshot_utc'] > best['meta']['snapshot_utc']:
             best = s
@@ -1686,7 +1688,7 @@ def cmd_snapshot(a):
     print(f'[{stamp}] window {since} .. {until}', flush=True)
     wiki_evs, wiki_cards = [], {}
     cards_file = load_cards_upcoming()
-    prev = None if a.replay else previous_snapshot()
+    prev = previous_snapshot(before=zstr(now))
     if not a.skip_wiki:
         def _wiki():
             evs, ts = wiki_events(F, since, until)
