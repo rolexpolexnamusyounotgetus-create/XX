@@ -675,9 +675,10 @@
     renderer.setPixelRatio(this.baseDpr);
     renderer.outputEncoding = T.sRGBEncoding;
     renderer.toneMapping = T.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.92;
+    renderer.toneMappingExposure = 0.86;
     renderer.physicallyCorrectLights = true;
     renderer.shadowMap.enabled = true;
+    renderer.info.autoReset = false;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
     var caps = renderer.capabilities;
     this.aniso = Math.max(1, Math.min(Q.aniso, caps.getMaxAnisotropy ? caps.getMaxAnisotropy() : 1));
@@ -695,7 +696,7 @@
     this.cssW = Math.max(1, canvas.clientWidth || canvas.width || 300); this.cssH = Math.max(1, canvas.clientHeight || canvas.height || 150);
     this.contacts = []; for (var ci = 0; ci < 16; ci++) this.contacts.push(new T.Vector4(0, 0, 0, 0));
     this.lowPts = [];
-    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.03 }, uSpill: { value: 1.1 }, uScale: { value: 600 }, uPhones: { value: 0.05 } };
+    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 0.42 }, uScale: { value: 600 }, uPhones: { value: 0.05 } };
 
     this.env = buildEnvironment(renderer, opts.env === "room");
     if (this.env) scene.environment = this.env;
@@ -717,9 +718,9 @@
   /* ---- lights ---- */
   function buildLights(A) {
     var Q = A.Q;
-    A.own(new T.HemisphereLight(0x33435e, 0x060709, 0.4));
+    A.own(new T.HemisphereLight(0x33435e, 0x060709, 0.22));
     // overhead key: one shadow-casting spot straight above the canvas, its frustum fitted to the octagon
-    var key = A.key = new T.SpotLight(0xfff5ea, 540, 0, 0.5, 0.55, 2);
+    var key = A.key = new T.SpotLight(0xfff5ea, 430, 0, 0.5, 0.55, 2);
     key.position.set(0.25, 12.6, 0.45); key.target.position.set(0, 0, 0);
     key.castShadow = true;
     key.shadow.mapSize.set(Q.shadow, Q.shadow);
@@ -732,7 +733,7 @@
     var n = Q.spots, step = 8 / n;
     for (var i = 0; i < n; i++) {
       var a = (i * step + 1) * PI / 4, px = Math.cos(a) * TRUSS_APO, pz = Math.sin(a) * TRUSS_APO;
-      var sp = new T.SpotLight(0xfff1e2, 125 * step, 0, 0.52, 0.85, 2);
+      var sp = new T.SpotLight(0xfff1e2, 58 * step, 0, 0.52, 0.85, 2);
       sp.position.set(px, TRUSS_Y - 0.4, pz); sp.target.position.set(-Math.cos(a) * 1.4, 0.6, -Math.sin(a) * 1.4);
       A.own(sp); A.own(sp.target); A.ring.push(sp);
     }
@@ -756,7 +757,7 @@
     var wc = makeCanvas(512, 512), wctx = wc.getContext("2d");
     wctx.fillStyle = "#000"; wctx.fillRect(0, 0, 512, 512);
     A.wear = { c: wc, ctx: wctx, tex: canvasTex(wc, false, 1), dirty: false, upT: 0, stampT: 0, decayT: 0 };
-    var mat = new T.MeshStandardMaterial({ map: tex, normalMap: weave, normalScale: new T.Vector2(0.32, 0.32), roughness: 0.8, metalness: 0, envMapIntensity: 0.55 });
+    var mat = new T.MeshStandardMaterial({ map: tex, normalMap: weave, normalScale: new T.Vector2(0.32, 0.32), roughness: 0.8, metalness: 0, envMapIntensity: 0.22 });
     mat.onBeforeCompile = function (sh) {
       sh.uniforms.uWear = { value: A.wear.tex };
       sh.uniforms.uDetail = { value: 2 * RV / 0.1 };
@@ -786,7 +787,7 @@
   }
 
   /* ---- fence, posts, pads, gates ---- */
-  function vinyl(color, rough) { return new T.MeshStandardMaterial({ color: color, roughness: rough == null ? 0.42 : rough, metalness: 0, envMapIntensity: 1 }); }
+  function vinyl(color, rough) { return new T.MeshStandardMaterial({ color: color, roughness: rough == null ? 0.42 : rough, metalness: 0, envMapIntensity: 0.45 }); }
   function postTexture(base, stripe) {
     var c = makeCanvas(256, 512), ctx = c.getContext("2d");
     ctx.fillStyle = base; ctx.fillRect(0, 0, 256, 512);
@@ -806,7 +807,7 @@
     var g = A.fence = new T.Group(); A.own(g);
     var cl = chainLink(256, 4, A.aniso), meshH = MESH_TOP - MESH_BOT, cell = 0.05, tile = cell * 4;
     cl.normal.repeat.set(SIDE / tile, meshH / tile); cl.alpha.repeat.copy(cl.normal.repeat);
-    var fenceMat = new T.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.46, metalness: 0.05, alphaMap: cl.alpha, normalMap: cl.normal, normalScale: new T.Vector2(1.2, 1.2), transparent: true, depthWrite: false, side: T.DoubleSide, envMapIntensity: 1.2 });
+    var fenceMat = new T.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.46, metalness: 0.05, alphaMap: cl.alpha, normalMap: cl.normal, normalScale: new T.Vector2(1.2, 1.2), transparent: true, depthWrite: false, side: T.DoubleSide, envMapIntensity: 0.6 });
     fenceMat.onBeforeCompile = function (sh) {
       sh.fragmentShader = sh.fragmentShader.replace("#include <alphamap_fragment>", [
         "#ifdef USE_ALPHAMAP",
@@ -820,7 +821,7 @@
     };
     fenceMat.customProgramCacheKey = function () { return "fightlab-fence"; };
     A.fenceMat = fenceMat;
-    var padMat = vinyl(0x0e0f12, 0.38), metal = new T.MeshStandardMaterial({ color: 0x15161a, roughness: 0.4, metalness: 0.6 });
+    var padMat = vinyl(0x0a0b0d, 0.36), metal = new T.MeshStandardMaterial({ color: 0x121316, roughness: 0.4, metalness: 0.6, envMapIntensity: 0.5 });
     var railGeo = new T.CylinderGeometry(0.075, 0.075, SIDE - 0.1, 16, 1, true); railGeo.rotateZ(PI / 2);
     var baseGeo = new T.BoxGeometry(SIDE - 0.1, 0.13, 0.12);
     for (var k = 0; k < 8; k++) {
@@ -847,7 +848,7 @@
     var texBlack = postTexture("#101114", null), texBlue = postTexture("#123a8a", "#e9eef5"), texRed = postTexture("#8e1a22", "#111111");
     for (k = 0; k < 8; k++) {
       var va = vertexAngle(k), map = k === BLUE_K ? texBlue : (k === RED_K ? texRed : texBlack);
-      var post = new T.Mesh(postGeo, new T.MeshStandardMaterial({ map: map, roughness: 0.48, metalness: 0, envMapIntensity: 1 }));
+      var post = new T.Mesh(postGeo, new T.MeshStandardMaterial({ map: map, roughness: 0.46, metalness: 0, envMapIntensity: 0.45 }));
       post.position.set(Math.cos(va) * RV, 0, Math.sin(va) * RV); post.rotation.y = PI / 2 - va; post.castShadow = false; g.add(post);
       var cap = new T.Mesh(capGeo, k === BLUE_K ? vinyl(0x163f93, 0.4) : (k === RED_K ? vinyl(0x951c24, 0.4) : padMat));
       cap.position.copy(post.position); g.add(cap);
@@ -868,7 +869,7 @@
   /* ---- apron, LED skirt, steps ---- */
   function buildApron(A) {
     var shape = octShape(RA); shape.holes.push(octShape(RV, true));
-    var deck = new T.Mesh(new T.ShapeGeometry(shape), new T.MeshStandardMaterial({ color: 0x15171b, roughness: 0.72, metalness: 0, envMapIntensity: 0.5 }));
+    var deck = new T.Mesh(new T.ShapeGeometry(shape), new T.MeshStandardMaterial({ color: 0x0f1013, roughness: 0.7, metalness: 0, envMapIntensity: 0.2 }));
     deck.rotation.x = -PI / 2; deck.position.y = -0.004; deck.receiveShadow = true; A.own(deck);
     // LED ring boards around the apron
     var lc = makeCanvas(4096, 128), lctx = lc.getContext("2d");
@@ -905,12 +906,12 @@
     lg.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); lg.setAttribute("uv", new T.Float32BufferAttribute(uv, 2)); lg.setAttribute("normal", new T.Float32BufferAttribute(nor, 3)); lg.setIndex(idx);
     A.own(new T.Mesh(lg, ledMat));
     // skirt above and below the LEDs
-    var skirtMat = new T.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.85, side: T.DoubleSide });
+    var skirtMat = new T.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.85, side: T.DoubleSide, envMapIntensity: 0.1 });
     var sk = new T.Mesh(new T.CylinderGeometry(RA, RA, -FLOOR_Y, 8, 1, true, PI / 2 - PI / 8), skirtMat);
     sk.position.y = FLOOR_Y / 2; A.own(sk);
     var trim = new T.Mesh(new T.CylinderGeometry(RA + 0.012, RA + 0.012, 0.05, 8, 1, true, PI / 2 - PI / 8), vinyl(0x1a1c20, 0.35)); trim.position.y = -0.03; A.own(trim);
     // steps up to each gate, with safety edging
-    var stepMat = new T.MeshStandardMaterial({ color: 0x111215, roughness: 0.7 }), edge = new T.MeshStandardMaterial({ color: 0x8d9198, roughness: 0.5 });
+    var stepMat = new T.MeshStandardMaterial({ color: 0x0d0e10, roughness: 0.7, envMapIntensity: 0.1 }), edge = new T.MeshStandardMaterial({ color: 0x6d7178, roughness: 0.5, envMapIntensity: 0.2 });
     GATES.forEach(function (gk) {
       var m = sideMid(gk);
       for (var s = 0; s < 3; s++) {
@@ -948,7 +949,7 @@
     // fixtures: cans hanging under the truss, each aimed at the canvas, with a hot lens and a light shaft
     var fx = [], lens = [], shafts = [], housing = new T.MeshStandardMaterial({ color: 0x1a1b1e, roughness: 0.5, metalness: 0.5 });
     var lensMat = new T.MeshBasicMaterial({ color: new T.Color(1.0, 0.95, 0.88).multiplyScalar(7), toneMapped: false, fog: false });
-    var shaftMat = new T.ShaderMaterial({ uniforms: { uColor: { value: new T.Color(1.0, 0.94, 0.86) }, uIntensity: { value: 0.05 }, uTime: A.U.uTime, uLen: { value: 1 } }, vertexShader: SHAFT_VS, fragmentShader: SHAFT_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide });
+    var shaftMat = new T.ShaderMaterial({ uniforms: { uColor: { value: new T.Color(1.0, 0.94, 0.86) }, uIntensity: { value: 0.022 }, uTime: A.U.uTime, uLen: { value: 1 } }, vertexShader: SHAFT_VS, fragmentShader: SHAFT_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide });
     A.shaftMat = shaftMat;
     for (k = 0; k < 8; k++) {
       var amk = (k + 1) * PI / 4, tx = -Math.sin(amk), tz = Math.cos(amk);
@@ -991,7 +992,7 @@
       chains.push(cylBetween(new T.Vector3(sx, 12.5, sz), new T.Vector3(sx, 30, sz), 0.012, 4));
     }
     for (k = 0; k < 8; k++) { var cv = vertexAngle(k), crx = Math.cos(cv) * TRV, crz = Math.sin(cv) * TRV; chains.push(cylBetween(new T.Vector3(crx, TRUSS_Y + 0.23, crz), new T.Vector3(crx, 30, crz), 0.012, 4)); }
-    var dark = new T.MeshStandardMaterial({ color: 0x101114, roughness: 0.8 });
+    var dark = new T.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.8, envMapIntensity: 0.2 });
     A.own(new T.Mesh(mergeGeos(spk), dark));
     A.own(new T.Mesh(mergeGeos(chains), housing));
     // centre-hung video board above the truss
@@ -1013,7 +1014,7 @@
   /* ---- venue: floor, cage-side tables, officials, seating bowl, crowd, screens ---- */
   function buildVenue(A) {
     var Q = A.Q, r = rng(7);
-    var floor = new T.Mesh(new T.PlaneGeometry(220, 220), new T.MeshStandardMaterial({ color: 0x0a0b0e, roughness: 0.6, metalness: 0, envMapIntensity: 0.4 }));
+    var floor = new T.Mesh(new T.PlaneGeometry(220, 220), new T.MeshStandardMaterial({ color: 0x08090b, roughness: 0.55, metalness: 0, envMapIntensity: 0.05 }));
     floor.rotation.x = -PI / 2; floor.position.y = FLOOR_Y; floor.receiveShadow = false; A.own(floor);
     var crowdMat = A.crowdMat = new T.ShaderMaterial({
       uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, {}]), vertexShader: CROWD_VS, fragmentShader: CROWD_FS, fog: true
@@ -1023,7 +1024,7 @@
     var near = new CrowdBuilder(), far = [], farCol = [], farSkin = [], farPar = [], heads = [];
 
     // cage-side tables with officials, judges and the commentary desk
-    var tableMat = new T.MeshStandardMaterial({ color: 0x0d0e11, roughness: 0.9 }), bezel = new T.MeshStandardMaterial({ color: 0x0b0c0f, roughness: 0.4, metalness: 0.3 });
+    var tableMat = new T.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.9, envMapIntensity: 0.08 }), bezel = new T.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.45, metalness: 0.3, envMapIntensity: 0.15 });
     var monMat = new T.MeshBasicMaterial({ color: new T.Color(0.55, 0.66, 0.9).multiplyScalar(1.6), toneMapped: false });
     var tItems = [], mItems = [], sItems = [], fronts = [];
     var tables = [[0, 7.5, 4.8], [PI, 7.5, 4.8], [3 * PI / 4, 7.7, 3.6], [-PI / 4, 7.7, 3.6], [PI / 4, 7.7, 3.6], [-3 * PI / 4, 7.7, 3.6]];
@@ -1140,8 +1141,8 @@
     ringStrip(tp, tn, R0 + 20 * 0.86, R1, Ytop, Ytop, false);
     ringStrip(tp, tn, R1 + 14 * 0.8, 0, Y1 + 14 * 0.54, Y1 + 14 * 0.54 + 6, true);
     function geo(p, n) { var g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(p, 3)); g.setAttribute("normal", new T.Float32BufferAttribute(n, 3)); return g; }
-    A.own(new T.Mesh(geo(tp, tn), new T.MeshStandardMaterial({ color: 0x15171b, roughness: 0.9, envMapIntensity: 0.3 })));
-    A.own(new T.Mesh(geo(bp, bn), new T.MeshStandardMaterial({ color: 0x2a1418, roughness: 0.8, envMapIntensity: 0.3, side: T.DoubleSide })));
+    A.own(new T.Mesh(geo(tp, tn), new T.MeshStandardMaterial({ color: 0x111317, roughness: 0.9, envMapIntensity: 0.03 })));
+    A.own(new T.Mesh(geo(bp, bn), new T.MeshStandardMaterial({ color: 0x24121a, roughness: 0.8, envMapIntensity: 0.03, side: T.DoubleSide })));
     // LED ribbons: the front of the lower bowl and the fascia between the bowls
     function ribbon(rr, y0, y1, reps) {
       var p = [], u = [], ix = [], n = [];
@@ -1426,6 +1427,7 @@
 
   Arena.prototype.render = function () {
     var now = perfNow();
+    this.renderer.info.reset();
     this.trackActors();
     if (this.finish) this.finish.uniforms.uTime.value = (now / 1000) % 1000;
     var fovScale = this.cssH * this.renderer.getPixelRatio() / (2 * Math.tan(this.camera.fov * PI / 360));

@@ -3,7 +3,7 @@
   "name": "Jose Aldo",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC featherweight champion: the dataset holds 11 UFC featherweight title fights (one interim) from 2011 to 2017, 8 of them wins, plus a 2020 bantamweight title loss to Petr Yan. His last UFC bout was a 28-29 x3 decision loss to Aiemann Zahabi at featherweight at UFC 315 (May 10, 2025), after a split-decision loss to Mario Bautista at bantamweight (Oct 5, 2024). He has had no UFC fight through the Oct 31, 2026 ufcstats snapshot. Retirement, booking and injury status could not be verified on the web in this pass because the shared search budget ran out, so treat current status as unknown.",
+    "summary": "Former UFC featherweight champion: the dataset holds 11 UFC featherweight title fights (one interim) from 2011 to 2017, 8 of them wins, plus a 2020 bantamweight title loss to Petr Yan. His last UFC bout was a 28-29 x3 decision loss to Aiemann Zahabi at featherweight at UFC 315 (May 10, 2025), after a split-decision loss to Mario Bautista at bantamweight (Oct 5, 2024). He has had no UFC fight through the Oct 31, 2026 ufcstats snapshot. Retirement, booking and injury status could not be verified on the web (search budget spent; a fact-check retry on Nov 6 also could not reach the web), so treat current status as unknown.",
     "title": null,
     "ranking": null,
     "active": null,
@@ -58,7 +58,7 @@
     { "note": "Takedown defence is 91.6% career (9 of 107 allowed) and 96% time-decayed: the best TDD of anyone in this batch. Merab Dvalishvili went 0 for 16 and Bautista 0 for 10.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
     { "note": "5-round pace by round, relative to round 1: 1.00, 1.13, 1.07, 0.72, 0.56 (weights 60/55/54/42/38 minutes). A clear championship-round fade.", "source": "data/derived/fighters.json (pace)" },
     { "note": "He still has knockdown power: knockdowns on Rob Font (2 in 2021) and Aiemann Zahabi (round 3, 2025). His career rate is 0.28 per 15 min.", "source": "data/raw/ufc_fight_stats.csv (ufcstats)" },
-    { "note": "Decayed striking is negative: 4.07 landed vs 4.94 absorbed per minute. His opponents' accuracy against him is 45.6% decayed vs 41.6% career, so his defence has slipped with age.", "source": "data/derived/fighters.json" }
+    { "note": "Decayed striking is negative: 4.07 landed vs 4.94 absorbed per minute. His opponents' accuracy against him is 45.5% decayed vs 41.6% career, so his defence has slipped with age.", "source": "data/derived/fighters.json" }
   ],
   "confidence": "low"
 }

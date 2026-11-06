@@ -615,3 +615,126 @@ def logit_fit(Xm, y, ridge=1e-4, iters=100):
 def logloss(y, p):
     p = np.clip(p, 1e-9, 1 - 1e-9)
     return -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+
+# ------------------------------------------------------------------ analyses
+def ladder(X, spec):
+    """Fit every model on 2008-2023 and score Poisson deviance on 2024+ (never used for fitting or tuning)."""
+    bl = blocks(spec, X)
+    fm = window(X, FIT_FROM, "2023-12-31")
+    tm = window(X, TEST_FROM)
+    elig = (X.d_n_prior > 0).to_numpy() & (X.a_n_prior > 0).to_numpy()
+    v3o = v3_offset(X, fm)
+    claim = ["d_age_h30", "a_age_h30"]
+    if "d_age_h30" not in X.columns:
+        X["d_age_h30"] = np.clip(X.d_age.fillna(30) - 30, 0, None)
+        X["a_age_h30"] = np.clip(X.a_age.fillna(30) - 30, 0, None)
+    specs = [
+        ("M0 constant KD per standing head strike", [], dict(eb=False, use_level=False)),
+        ("M0L constant + trailing league level", [], dict(eb=False)),
+        ("M1 + division, 5-round, title", bl["div"] + bl["ctx"], dict(eb=False)),
+        ("C30 M1 + years past 30 (claim form)", bl["div"] + bl["ctx"] + claim, dict(eb=False)),
+        ("M2 + age splines (defender, attacker)", bl["div"] + bl["ctx"] + bl["age_d"] + bl["age_a"], dict(eb=False)),
+        ("M3 + damage history and layoff", final_cols(spec, X), dict(eb=False)),
+        ("V3 engine v3 hand-set structure", bl["div"], dict(eb=False, extra_off=v3o)),
+        ("E1 M1 + fighter chin effect only", bl["div"] + bl["ctx"], dict(eb=True, use_p=False)),
+        ("E2 M1 + fighter power effect only", bl["div"] + bl["ctx"], dict(eb=True, use_c=False)),
+        ("E3 M1 + chin and power effects", bl["div"] + bl["ctx"], dict(eb=True)),
+        ("F  final: M3 + chin and power effects", final_cols(spec, X), dict(eb=True)),
+        ("F+move final + weight move (classes)", final_cols(spec, X) + bl["move"], dict(eb=True)),
+        ("F+lbs final + weight move (pounds)", final_cols(spec, X) + bl["move_lbs"], dict(eb=True)),
+        ("F+body final + height, ape index, reach advantage", final_cols(spec, X) + bl["body"], dict(eb=True)),
+    ]
+    res, rows = {}, []
+    for name, cols, kw in specs:
+        r = fit_kd(X, cols, fm, spec, **kw)
+        res[name.split()[0]] = r
+    base0 = pois_dev(res["M0"]["y"], res["M0"]["mu"])
+    baseL = pois_dev(res["M0L"]["y"], res["M0L"]["mu"])
+    for name, cols, kw in specs:
+        key = name.split()[0]
+        r = res[key]
+        dv = pois_dev(r["y"], r["mu"])
+        ll = r["y"] * np.log(np.maximum(r["mu"], 1e-12)) - r["mu"] - special.gammaln(r["y"] + 1)
+        row = {"model": name, "k": len(cols) + 1, "dev_test": round(float(dv[tm].sum()), 2),
+               "loglik_test": round(float(ll[tm].sum()), 2), "kd_obs": int(r["y"][tm].sum()),
+               "kd_exp": round(float(r["mu"][tm].sum()), 1),
+               "dev_train": round(float(dv[fm].sum()), 2)}
+        d0 = fight_diff(X, tm, dv[tm], base0[tm])
+        dL = fight_diff(X, tm, dv[tm], baseL[tm])
+        row["vs_M0"] = {k: round(v, 2) if isinstance(v, float) else v for k, v in d0.items()}
+        row["vs_M0L"] = {k: round(v, 2) if isinstance(v, float) else v for k, v in dL.items()}
+        te = tm & elig
+        row["dev_test_eligible"] = round(float(dv[te].sum()), 2)
+        row["vs_M0L_eligible"] = round(float(dv[te].sum() - baseL[te].sum()), 2)
+        rows.append(row)
+    return res, rows, {"rows_test": int(tm.sum()), "fights_test": int(X.fid[tm].nunique()),
+                       "rows_fit": int(fm.sum()), "rows_test_eligible": int((tm & elig).sum())}
+
+
+def age_slopes(r, prefix, knots):
+    """Per-year slopes of the linear age spline by segment (log scale), with SEs."""
+    names = [prefix + "_age_c"] + [prefix + "_age_h%d" % int(k) for k in knots]
+    cuts = [None] + list(knots)
+    out = []
+    for i in range(len(names)):
+        est, se = linear_combo(r, names[:i + 1], [1.0] * (i + 1))
+        lo = cuts[i]
+        hi = knots[i] if i < len(knots) else None
+        out.append({"from": lo, "to": hi, "slope": round(est, 5), "se": round(se, 5),
+                    "pct_per_year": round(100 * (math.exp(est) - 1), 2)})
+    return out
+
+
+def overdispersion(X, r, mask, spec):
+    """Fight-level heterogeneity of the KD rate beyond the model (relative to walk-forward predictions and
+    to leave-one-out full-history fighter effects), and the share of it that both directions of a fight share."""
+    y, mu = r["y"][mask], r["mu"][mask]
+    v, se_lv, nll, nll0 = nb_dispersion(y, mu)
+    out = {"walk_forward": {"var": round(v, 4), "se_log_var": round(se_lv, 4), "lognormal_sd": round(math.sqrt(math.log1p(v)), 4),
+                            "lr_vs_poisson": round(2 * (nll0 - nll), 2)}}
+    # leave-one-out fighter effects from the full history (closer to pure fight-night form)
+    w = r["walk"]
+    base = np.exp(r["lin"] + np.log(np.where(r["E"] > 0, r["E"], 1)) + r["lv"] + r["xo"]) * (r["E"] > 0) * X.use.to_numpy()
+    yy = r["y"] * X.use.to_numpy()
+    de, at = X["def"].to_numpy(), X["att"].to_numpy()
+    Yc = pd.Series(yy).groupby(de).sum()
+    Yp = pd.Series(yy).groupby(at).sum()
+    chin_loo = np.ones(len(X))
+    pow_loo = np.ones(len(X))
+    for _ in range(6):     # alternate: chin given power, power given chin
+        Mc = pd.Series(base * pow_loo).groupby(de).sum()
+        chin_loo = ((spec["alpha_c"] + Yc.reindex(de).to_numpy() - yy) /
+                    (spec["alpha_c"] + Mc.reindex(de).to_numpy() - base * pow_loo))
+        Mp = pd.Series(base * chin_loo).groupby(at).sum()
+        pow_loo = ((spec["alpha_p"] + Yp.reindex(at).to_numpy() - yy) /
+                   (spec["alpha_p"] + Mp.reindex(at).to_numpy() - base * chin_loo))
+    mu_loo = base * chin_loo * pow_loo
+    # rescale to the same total as the data in the mask (LOO slightly biases the level)
+    s = y.sum() / mu_loo[mask].sum()
+    v2, se2, nll2, nll20 = nb_dispersion(y, mu_loo[mask] * s)
+    out["leave_one_out"] = {"var": round(v2, 4), "se_log_var": round(se2, 4), "lognormal_sd": round(math.sqrt(math.log1p(v2)), 4),
+                            "lr_vs_poisson": round(2 * (nll20 - nll2), 2), "level_rescale": round(float(s), 4)}
+    # shared component: cov(y_ab, y_ba) = mu_ab mu_ba var(shared)
+    for tag, m_all in (("walk_forward", r["mu"]), ("leave_one_out", mu_loo * s)):
+        d = pd.DataFrame({"fid": X.fid.to_numpy()[mask], "y": y, "mu": m_all[mask]})
+        g = d.groupby("fid")
+        pairs = g.filter(lambda t: len(t) == 2)
+        a = pairs.groupby("fid").nth(0)
+        b = pairs.groupby("fid").nth(1)
+        a = a.set_index("fid") if "fid" in a.columns else a
+        b = b.set_index("fid") if "fid" in b.columns else b
+        num = float(((a.y.to_numpy() - a.mu.to_numpy()) * (b.y.to_numpy() - b.mu.to_numpy())).sum())
+        den = float((a.mu.to_numpy() * b.mu.to_numpy()).sum())
+        prod = (a.y.to_numpy() - a.mu.to_numpy()) * (b.y.to_numpy() - b.mu.to_numpy())
+        se = float(prod.std(ddof=1) * math.sqrt(len(prod)) / den)
+        vs = num / den
+        vt = out[tag]["var"]
+        out[tag]["shared_var"] = round(vs, 4)
+        out[tag]["shared_var_se"] = round(se, 4)
+        out[tag]["shared_lognormal_sd"] = round(math.sqrt(math.log1p(max(vs, 0))), 4)
+        vd = max((1 + vt) / (1 + max(vs, 0)) - 1, 0)
+        out[tag]["direction_var"] = round(vd, 4)
+        out[tag]["direction_lognormal_sd"] = round(math.sqrt(math.log1p(vd)), 4)
+    return out
+
