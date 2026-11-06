@@ -779,7 +779,7 @@
       if (r[5]) self.addProxy(r[5], { color: looks.hairColor, hair: true });
       if (self.cfg.ref) self.makeRefKit(); else self.makeFightKit();
       if (looks.beardShell > 0) self.makeBeardShell(masks);
-      if (!self.cfg.ref || looks.hairMode === "shell") self.makeStrands();
+      if ((!self.cfg.ref || looks.hairMode === "shell") && !self.opts.noStrands) self.makeStrands();
       self.initRetarget();
       self.measure();
       self.group.traverse(function (o) { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = !o.userData.noShadow; o.frustumCulled = false; } });

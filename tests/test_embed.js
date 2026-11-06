@@ -62,6 +62,31 @@ for (const sl of Object.keys(model.nn_style_check || {})) {
 }
 assert.ok(Object.keys(model.nn_style_check || {}).length === 2, "style neighbour checks");
 
+// real-pipeline tie (verification, Nov 6 2026): the exported 2019-2025 snapshot vectors and quarterly refits in
+// embed.json, run through embed.js, reproduce the walk's own win logits (tools/embed.py build_table, unrounded) to
+// the 4-decimal export rounding, and swapping corners negates them.
+const full = path.join(__dirname, "..", "data", "derived", "embed.json");
+let nSnap = 0, maxSnap = 0;
+if (!process.env.EMBED_MODEL && fs.existsSync(full)) {
+  const J = JSON.parse(fs.readFileSync(full, "utf8"));
+  const byQ = {};
+  for (const id of Object.keys(J.snapshots)) {
+    const s = J.snapshots[id];
+    if (s.win_logit == null) continue;
+    let Eq = byQ[s.q];
+    if (!Eq) {
+      const q = J.quarters[s.q];
+      Eq = byQ[s.q] = FightEmbed.load(Object.assign({}, model, { C: q.C, W: q.W, V: q.V, ua: q.ua, ud: q.ud, M: q.M }));
+    }
+    const z = Eq.winLogit(s.A, s.B);
+    maxSnap = Math.max(maxSnap, Math.abs(z - s.win_logit));
+    assert.ok(Math.abs(z + Eq.winLogit(s.B, s.A)) < 1e-12, "snapshot swap symmetry " + id);
+    nSnap++;
+  }
+  assert.ok(nSnap >= 2800, "expected the 2019-2025 snapshots, got " + nSnap);
+  assert.ok(maxSnap < 0.01, "snapshot win logits drift from the pipeline: max " + maxSnap);
+}
+
 const vg = E.matchup("alexander-volkanovski", "justin-gaethje", { division: "Lightweight", rounds: 5 });
 console.log("embed.js: %d check matchups reproduce the Python outputs (max rel. error on rates %s)", n,
             maxRel.toExponential(1));
@@ -70,6 +95,8 @@ console.log("Volkanovski vs Gaethje (embedding head only): P(Volkanovski) = %s; 
             vg.ratesA.td_lnd.toFixed(3), vg.ratesB.td_lnd.toFixed(3));
 console.log("nearest to Volkanovski: " + nb.map(x => x[0] + " (" + x[1].toFixed(2) + ")").join(", "));
 console.log("blendMLRates: %d validation rows reproduce the Python recipe", nb2);
+if (nSnap) console.log("pipeline tie: %d backtest snapshots reproduce the walk's win logits (max abs diff %s, export rounding)",
+                       nSnap, maxSnap.toExponential(1));
 for (const sl of ["alexander-volkanovski", "justin-gaethje"])
   console.log("style twins of " + sl + ": " + E.styleNeighbours(sl, 5).map(x => x[0] + " (" + x[1].toFixed(2) + ")").join(", "));
 console.log("OK");

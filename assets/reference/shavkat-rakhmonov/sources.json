@@ -45,6 +45,18 @@
   "notes": "Phone photo the day after UFC 310, Rakhmonov on the right in a black jacket next to the uploader. Soft and dim; face small (about 120 px). Shows height and standing posture; not good enough for face detail."
  },
  {
+  "file": "wiki-sportsuz-2023-03-02.png",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Rahkmonov_2.png/330px-Rahkmonov_2.png",
+  "page": "https://commons.wikimedia.org/wiki/File:Rahkmonov_2.png",
+  "author": "SPORTS UZ (YouTube interview still)",
+  "license": "CC BY 3.0",
+  "date_taken": "2023-03-02",
+  "use": "embed-ok",
+  "what": "headshot",
+  "attribution": "SPORTS UZ, CC BY 3.0, via Wikimedia Commons",
+  "notes": "Selfie-style interview still (00:40 of https://youtube.com/watch?v=OODrru7vkpA), near-frontal and smiling, purple window cast, close wide-angle lens (slightly enlarges the nose). Saved as the 330 px Commons thumbnail because the 540 px original stayed rate-limited (HTTP 429) for over 30 minutes. Shape cues only; do not sample colour."
+ },
+ {
   "file": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg",
   "url": "https://cagesidepress.com/wp-content/uploads/2024/12/Shavkat-Rakhmonov-scaled-e1733363586859.jpg",
   "page": "https://cagesidepress.com/shavkat-rakhmonov-5/",

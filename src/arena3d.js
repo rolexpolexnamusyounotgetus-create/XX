@@ -812,7 +812,8 @@
         var key = keep(new T.Mesh(new T.CircleGeometry(1.3, 24), basic(0xffffff, 14 * fx))); key.position.y = 11.4; key.rotation.x = PI / 2; es.add(key);
         var led = keep(new T.Mesh(new T.CylinderGeometry(5.9, 5.9, 0.6, 32, 1, true), basic(0x4060b0, 0.6, T.BackSide))); led.position.y = -1.6; es.add(led);
         [-1, 1].forEach(function (s) { var sc = keep(new T.Mesh(new T.PlaneGeometry(14, 8), basic(0x90a6d8, 1.4))); sc.position.set(s * 40, 18, 0); sc.lookAt(0, 1, 0); es.add(sc); });
-        tex = pm.fromScene(es, 0.035, 0.1, 100).texture;
+        var rt = pm.fromScene(es, 0.035, 0.1, 100);
+        tex = rt.texture; tex.userData.rt = rt;
       }
     } catch (e) { tex = null; }
     pm.dispose();
