@@ -213,6 +213,7 @@ DEV.headShot = function (i, view, side, box, yawDeg) {
   var cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
   cam.setViewOffset(W, H, -(cx - 0.5) * W, -(cy - 0.5) * H, W, H);
   cam.updateProjectionMatrix();
+  if (av.face) { av.face.blink = 0; av.face.bt = -1; }   // no mid-blink frames in comparison shots
   var r = show.arena.renderer; r.info.reset(); a.avatar.sync(); r.render(show.arena.scene, cam);
   cam.clearViewOffset();
   actors.forEach(function (o) { if (o.avatar) o.avatar.group.visible = true; });
