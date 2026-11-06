@@ -95,6 +95,9 @@ log loss inside 2019-2023. Where train CV picks the base, the head's validated c
   deviance 0.750. The exported pre-fight vector gives 0.902. An honest walk-forward should show exactly this
   gap.
 - Every snapshot's refit is the latest quarter before its fight (guard in `--stage extras`).
+- Verification added a perturbation test: scrambling one 2025 card's stat lines and results leaves every snapshot
+  dated on or before that card bit-identical. Scrambling every row from 2024-07-01 on leaves that quarter's refit
+  identical to 6e-15.
 
 ## Method
 
