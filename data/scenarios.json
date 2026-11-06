@@ -1,0 +1,145 @@
+{
+  "_note": "Scenario presets for the page's knob panel (src/app.js). 'matchups' is keyed 'slugA|slugB' in either order; 'adj' inside a scenario is keyed by fighter slug, so a preset follows the fighter when corners are swapped. Knob names are the engine's adjA/adjB multipliers (docs/ENGINE_V3_SPEC.md, Knobs): out, acc, pow, chin (>1 = easier to drop), cardio (>1 = tires faster), tdAtt, tdDef (>1 = better defense), leg (leg-kick share 0..0.9, null = data), sub. 'judges.power' is the judges' extra credit for power. Every knob not named is neutral (1, or null). Generic scenarios apply to any pair: 'each' applies to both fighters, 'layoff' to the fighter with the longer layoff. The engine already applies age (past 34), weight-class moves and prior KO losses from data, so presets layer judgment on top of those terms, not on a fighter's raw career.",
+  "version": 1,
+  "as_of": "2026-11-06",
+  "generic": [
+    {
+      "id": "best",
+      "label": "Both fighters at their best",
+      "note": "A night where neither man is compromised: both throw a little more, land a little more, hit a little harder, take a shot better and tire a little slower. The engine still draws fight-night form on top, so upsets stay possible.",
+      "research": "The engine's form draws use a lognormal sd of 0.15 on output and 0.45 on power and chin (src/params3.js, from the between-fight spread in docs/BACKLOG.md). This preset shifts both centers by about a third of an output sd and a quarter of a chin sd. It is a stress test, not a fitted effect.",
+      "sources": [{ "label": "docs/BACKLOG.md: Variance", "url": null }],
+      "adj": { "each": { "out": 1.05, "acc": 1.08, "pow": 1.05, "chin": 0.9, "cardio": 0.9 } }
+    },
+    {
+      "id": "rust",
+      "label": "Ring rust/layoff",
+      "note": "Applies to whichever fighter has gone longer since his last fight: slightly less output and accuracy, and he tires a little faster.",
+      "research": "The data pipeline has not fit a layoff effect yet, so this is a labeled judgment call. Rating systems that model layoffs (Glicko variants) mostly widen uncertainty after time off rather than move the expected result (research/modeling_literature.md, section on rating baselines).",
+      "sources": [{ "label": "research/modeling_literature.md", "url": null }],
+      "adj": { "layoff": { "out": 0.95, "acc": 0.93, "cardio": 1.1 } }
+    },
+    {
+      "id": "war",
+      "label": "Five-round war of attrition",
+      "note": "Five rounds, both men push a higher pace and pay for it in the gas tank, and the judges lean toward damage.",
+      "research": "In five-round UFC fights that went the distance, strike attempts climb by round (1.00, 1.18, 1.20, 1.23, 1.26 times round 1) while knockdowns per head strike fall by about half late (docs/BACKLOG.md, Pace). This preset raises output 12%, makes both tire 25% faster and lifts the judges' power credit from 0.25 to 0.40.",
+      "sources": [{ "label": "docs/BACKLOG.md: Pace", "url": null }],
+      "rounds": 5,
+      "adj": { "each": { "out": 1.12, "cardio": 1.25 } },
+      "judges": { "power": 0.4 }
+    }
+  ],
+  "matchups": {
+    "alexander-volkanovski|justin-gaethje": {
+      "label": "Volkanovski vs Gaethje",
+      "defaults": { "division": "Lightweight", "rounds": 5, "title": true },
+      "default_scenario": "baseline",
+      "market": {
+        "odds": { "alexander-volkanovski": "+160", "justin-gaethje": "-180" },
+        "label": "BetOnline.ag opener, about Oct 25, 2026",
+        "range": "Openers posted Oct 24-25, 2026: Gaethje -180 to -200, Volkanovski +155 to +170. With the margin removed every opener puts Volkanovski between 34.9% and 37.9%, about 37% on average. No movement since.",
+        "sources": [
+          { "label": "Heavy: FightOdds.io opener -200/+170", "url": "https://heavy.com/sports/ufc/justin-gaethje-betting-favorite-alex-volkanovski/" },
+          { "label": "Sherdog: BetOnline -180/+160", "url": "https://www.sherdog.com/news/news/Petr-Yan-favored-in-2-rematches-Volkanovski-underdog-to-Gaethje-203356" },
+          { "label": "FightBook: Lucky Rebel -180/+155", "url": "https://www.fightbookmma.com/alexander-volkanovski-justin-gaethje-odds-superfight/" }
+        ]
+      },
+      "scenarios": [
+        {
+          "id": "baseline",
+          "label": "Baseline",
+          "note": "The data alone. The engine already makes Volkanovski about 5% easier to drop and 3% lighter-hitting for moving up 10 lb, ages both chins (both men are 38), and counts prior KO losses. Judges give power their default credit.",
+          "research": "v2's baseline hard-coded a 155-lb tax (Volk's chin x1.15, power x0.85, output x0.95). v3 replaces it with the engine's size and age terms (src/params3.js: sizeChin 0.05 and sizePow 0.03 per 10 lb, chinAge 0.04 and powAge 0.03 a year past 34), which are small because the league data shows little size penalty (research/matchup_market.md, section 7).",
+          "sources": [{ "label": "research/matchup_market.md, section 7", "url": null }],
+          "adj": {},
+          "judges": { "power": 0.25 }
+        },
+        {
+          "id": "tax",
+          "label": "155-lb tax",
+          "note": "Volkanovski as a featherweight fighting a natural lightweight: 10% less output, about 22% less knockdown power and about 29% easier to drop on top of the engine's small size term. Together that matches v2's tax (output x0.90, power x0.75, chin x1.35 against his featherweight self).",
+          "research": "Featherweight champions who fought elite lightweights went 4-8 where Elo expected 6.3 wins, and their significant-strike differential fell by about 1.4 a minute against their featherweight careers. Volkanovski is part of that record (0-2 against Makhachev at 155, KO'd in the rematch). Across all 383 one-class moves, though, the data shows no measurable penalty after an Elo control (+0.03 log-odds, se 0.10) and an unchanged knockdown rate per head strike (ratio 1.02). Treat this as the elite-level reading.",
+          "sources": [
+            { "label": "research/matchup_market.md, section 7", "url": null },
+            { "label": "UFC 294 result (Makhachev KO R1)", "url": "https://www.cbssports.com/ufc/news/ufc-333-alexander-volkanovski-featherweight-title-history-movsar-evloev/" }
+          ],
+          "adj": { "alexander-volkanovski": { "out": 0.9, "pow": 0.78, "chin": 1.29 } },
+          "judges": { "power": 0.25 }
+        },
+        {
+          "id": "mileage",
+          "label": "Gaethje's mileage",
+          "note": "Gaethje beyond his age: 7% less output, 8% less power from the hands, 15% easier to drop and 15% faster to tire. Age 38 is already in the engine, so this covers the injuries and the damage he has taken.",
+          "research": "1,381 significant strikes absorbed (766 to the head) in 202 UFC minutes. After UFC Freedom 250 (Jun 14, 2026) he drew a 180-day suspension pending MRIs on his right wrist and left knee. In August he said both hands still hurt and he wouldn't fight in 2026; in September he described a deep bone bruise in the knee since Christmas 2025. Since 2023, 39% of the strikes he absorbs land on the body (lightweight average 22%).",
+          "sources": [
+            { "label": "F4W: Freedom 250 medical suspensions", "url": "https://www.f4wonline.com/news/ufc/ufc-freedom-250-medical-suspensions/" },
+            { "label": "MiddleEasy: both hands still hurt", "url": "https://middleeasy.com/mma-news/justin-gaethje-both-hands-hurt-sit-out-2026" },
+            { "label": "AgentMMA: out for 2026, knee bruise", "url": "https://agentmma.com/news/90201-justin-gaethje-rules-out-fighting-for-remainder-of-2026-due-to-injuries" },
+            { "label": "research/gaethje.md, sections 0 and 5", "url": null }
+          ],
+          "adj": { "justin-gaethje": { "out": 0.93, "pow": 0.92, "chin": 1.15, "cardio": 1.15 } },
+          "judges": { "power": 0.25 }
+        },
+        {
+          "id": "wrestle",
+          "label": "Volk wrestles",
+          "note": "Volkanovski shoots two and a half times as often as his data says, mixing level changes into his striking the way he did against Evloev.",
+          "research": "In round 2 at UFC 333 he stuffed all three of Evloev's shots, landed his own takedown and held 86 seconds of control before the finish. Career he attempts 4.75 takedowns per 15 minutes at 34%. Gaethje stops about 73% of takedowns and has not been held down by a striker-wrestler since Khabib, but Fiziev went 2 for 2 in 2025. Four of Volkanovski's six UFC KO/TKO wins came from ground strikes.",
+          "sources": [
+            { "label": "research/volkanovski.md, sections 8 and 11", "url": null },
+            { "label": "research/gaethje.md, section 7", "url": null },
+            { "label": "MMA Sucka: UFC 333 grappling breakdown", "url": "https://mmasucka.com/news/volkanovski-vs-evloev-ufc-333-grappling-breakdown/" }
+          ],
+          "adj": { "alexander-volkanovski": { "tdAtt": 2.5 } },
+          "judges": { "power": 0.25 }
+        },
+        {
+          "id": "prime",
+          "label": "Prime Volk",
+          "note": "Volkanovski as he was in 2019-22: undoes the engine's age terms for him (chin x1.17, power x0.88 at 38) and his two KO losses since 2023, with a little more output.",
+          "research": "From 2019 to 2022 he beat Holloway three times, Ortega and Jung without a knockdown absorbed. Since 2023 he has been knocked out by Makhachev (head kick) and Topuria (right hand). He has scored no knockdowns in his last four fights (277 head strikes landed), and analysts call power his real disadvantage at 155. His output still climbs late: about 7.2 significant strikes a minute in fifth rounds.",
+          "sources": [
+            { "label": "research/volkanovski.md, sections 5, 11 and 13", "url": null },
+            { "label": "theScore: power at 155", "url": "https://www.thescore.com/mma/news/2338015" }
+          ],
+          "adj": { "alexander-volkanovski": { "out": 1.05, "pow": 1.12, "chin": 0.8, "cardio": 0.95 } },
+          "judges": { "power": 0.25 }
+        },
+        {
+          "id": "calves",
+          "label": "Gaethje chops calves",
+          "note": "Gaethje goes back to the leg kicks of his prime: 30% of his strikes at distance aimed at the legs, against the 9% or so his recent fights imply.",
+          "research": "Leg kicks were his signature, thrown harder and from closer range than almost anyone's, and they chewed up Poirier's lead leg in 2018. The volume has collapsed: 3.0 landed a minute in 2017-19, 0.33 in 2025-26 (6.5% of his landed strikes, against 23% career). Against Pimblett he landed 9 in 25 minutes and against Topuria 4 in 20. Part of that may be the knee.",
+          "sources": [
+            { "label": "research/gaethje.md, section 7", "url": null },
+            { "label": "Face Punching: the barely controlled chaos of Justin Gaethje", "url": "https://facepunching.substack.com/p/the-barely-controlled-chaos-of-justin" }
+          ],
+          "adj": { "justin-gaethje": { "leg": 0.3 } },
+          "judges": { "power": 0.25 }
+        },
+        {
+          "id": "power",
+          "label": "Judges reward power",
+          "note": "Judges give heavy shots much more credit than the strike count alone (power credit 0.60, default 0.25). The harder puncher wins more close rounds.",
+          "research": "The unified MMA criteria rank effective striking and grappling by impact and damage first, and a 10-8 requires significant damage. Bayesian models of UFC judging find each judge has personal tastes for different actions, and those tastes can decide a fight.",
+          "sources": [
+            { "label": "ABC MMA scoring criteria (2025)", "url": "https://www.abcboxing.com/wp-content/uploads/2025/08/ABC-MMA-Scoring-Criteira-Clarification-7.2025.pdf" },
+            { "label": "EJOR 2024: judging tastes", "url": "https://econpapers.repec.org/RePEc:eee:ejores:v:312:y:2024:i:2:p:733-745" }
+          ],
+          "adj": {},
+          "judges": { "power": 0.6 }
+        },
+        {
+          "id": "volume",
+          "label": "Volume-only judges",
+          "note": "Judges count landed strikes, knockdowns, takedowns and control, with no extra credit for how hard a shot lands (power credit 0). The busier fighter wins more close rounds.",
+          "research": "A round-winner model fit on 7,495 UFC rounds scored only 10-9 weights a head strike 0.18 in log-odds, a body strike 0.13 and a leg strike 0.11, with a knockdown worth about 13 head strikes. That fit uses counts, not impact, and it predicts 84% of held-out rounds.",
+          "sources": [{ "label": "docs/BACKLOG.md: Judging", "url": null }],
+          "adj": {},
+          "judges": { "power": 0 }
+        }
+      ]
+    }
+  }
+}

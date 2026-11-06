@@ -1,31 +1,31 @@
 # Sean Strickland
 
-As of Nov 6, 2026. Orthodox middleweight, age 35 (born Feb 27, 1991), 6'1" with a 76" reach. ufcstats lists no nickname. Dataset: `data/derived/fighters.json`, ufcstats snapshot of Oct 31, 2026.
+As of Nov 6, 2026. Orthodox middleweight, age 35 (born Feb 27, 1991), 6'1" with a 76" reach. Dataset: `data/derived/fighters.json`, ufcstats snapshot of Oct 31, 2026.
 
-**Research limits:** no web access in this pass (search budget spent; espn.com and wikipedia.org unreachable). Fight results come from the ufcstats snapshot. The booking reports below were carried over from the Imavov research pass and were not re-opened here.
+**Research limits:** no web access in the research pass or the Nov 6 fact-check. Fight results come from the ufcstats snapshot. The booking reports below come from `data/scouting/nassourdine-imavov.json`.
 
 ## Current status
-- **UFC middleweight champion, second reign.** He beat Khamzat Chimaev by split decision at UFC 328 on May 9, 2026. Eric Colon and Sal D'Amato scored it 48-47 for him; Sue Sanidad had 48-47 for Chimaev.
+- **UFC middleweight champion, second reign.** He beat Khamzat Chimaev by split decision at UFC 328 on May 9, 2026. Eric Colon and Sal D'Amato scored it 48-47 for him; Sue Sanidad had it for Chimaev.
 - **First reign:** he won the belt from Israel Adesanya (UD 49-46 x3, UFC 293, Sep 9, 2023) and lost it to Dricus Du Plessis (SD, UFC 297, Jan 20, 2024). Du Plessis beat him again in Feb 2025 (UD).
 - **Next (reported, not official):** a title rematch with Nassourdine Imavov. A September report put it on UFC 335 (Dec 12, 2026), but that fell through over Strickland's pay dispute. MMA Junkie reported on Oct 27, 2026 that it is targeted for **February 2027 in Florida**. Brendan Allen called him out in June 2026.
 - **UFC record 18-7** (5 KO/TKO, 1 SUB, 12 DEC).
 
 ## Recent fights
-- **W Chimaev (SD, May 2026):** He spent R1 under 4:47 of control and landed nothing. Over R2-R5 he out-landed Chimaev 123-98, with 118 of his 123 landed strikes going to the head. He logged 3:01 of top control himself in R2. Chimaev landed 7 more takedowns after R1 but held him for only 2:29 in total.
+- **W Chimaev (SD, May 2026):** He spent R1 under 4:47 of control and landed nothing. Over R2-R5 he out-landed Chimaev 123-98, with 118 of his 123 landed strikes going to the head. He logged 3:01 of control himself in R2. Chimaev landed 7 more takedowns after R1 but held him for only 2:29 in total.
 - **W Anthony Hernandez (TKO R3, Feb 2026):** He out-landed Hernandez 110-55. Hernandez kept scoring on the legs and body (26 of his 55). Strickland dropped him in R3 and finished with ground punches at 2:23.
 - **L Du Plessis 2 (UD, Feb 2025):** Out-landed 147-128. Du Plessis switched to kicks, landing 52 of 62 leg strikes and 45 of 59 body strikes.
 - **W Paulo Costa (SD, Jun 2024):** He threw 402 significant strikes to Costa's 266, while Costa landed 130 of his 158 to the body and legs.
 - **L Du Plessis 1 (SD, Jan 2024):** He out-landed Du Plessis 173-137 but conceded 6 takedowns.
 
 ## Style
-A forward-walking boxer with enormous volume: 14.4 significant strikes attempted per minute (the middleweight average is 8.1). 87% of those go to the head and 96% of what lands comes at distance. He almost never kicks the legs (2.3% of attempts) or shoots (0.41 attempts per 15 minutes). When an opponent is hurt he swarms: Adesanya was dropped in R1, and Abus Magomedov and Hernandez were both finished with ground punches after knockdowns. His high, jab-led guard is widely described in coverage before 2026; this pass could not open a film study to confirm the details.
+A forward-walking boxer with enormous volume: 14.4 significant strikes attempted per minute (the middleweight average is 8.1). 87% of those go to the head and 96% of what lands comes at distance. He almost never kicks the legs (2.3% of attempts) or shoots (0.41 attempts per 15 minutes). When an opponent is hurt he swarms: Adesanya was dropped in R1, and Abus Magomedov and Hernandez were finished with ground punches after knockdowns. His high, jab-led guard is widely described in pre-2026 coverage, not re-checked here.
 
 **Strengths:** relentless pace, the jab, output that rises every round, getting up quickly against wrestlers, and a five-round track record against champions.
 
 **Weaknesses:** kicks. Opponents land 59% of their strikes on his body and legs, against roughly 36% for a typical middleweight. His takedown defense is 47.6% decayed. He has been stopped twice: a wheel kick from Elizeu Zaleski dos Santos (2018) and punches from Alex Pereira (2022). His fights are close: five of his last 11 were split decisions (he is 3-2 in them).
 
 ## Durability and cardio
-He has absorbed three knockdowns in 25 UFC fights, none since Pereira in July 2022. His cardio is his calling card. Across 11 five-round fights his output in R2-R5 runs 1.42, 1.59, 1.67 and 1.86 times R1, well above the middleweight curve (1.26, 1.20, 1.28, 1.31).
+He has absorbed three knockdowns in 25 UFC fights, none since Pereira in July 2022. Cardio is his calling card: across 11 five-round fights his R2-R5 output runs 1.42, 1.59, 1.67 and 1.86 times R1, well above the middleweight curve (1.26, 1.20, 1.28, 1.31).
 
 ## What the numbers say (decayed, 2-year half-life)
 - 6.35 significant strikes landed and 4.89 absorbed per minute. His accuracy is 44.1% and opponents hit 42.8% against him.
@@ -47,5 +47,5 @@ He has absorbed three knockdowns in 25 UFC fights, none since Pereira in July 20
 - https://bloodyelbow.com/2026/09/04/i-know-the-date-nassourdine-imavov-confirms-hell-face-sean-strickland-for-the-ufc-middleweight-title-next/
 - https://mmasucka.com/news/sean-strickland-nassourdine-imavov-ufc-title-rematch-deal-florida/
 - https://cagesidepress.com/2026/06/06/brendan-allen-defeats-edmen-shahbazyan-calls-out-sean-strickland-at-ufc-vegas-118/
-- (web links carried from `data/scouting/nassourdine-imavov.json` and `data/scouting/brendan-allen.json`)
+- (web links carried from the Imavov and Allen scouting files)
 - Dataset: `data/derived/fighters.json`, `data/raw/ufc_fight_stats.csv`, `data/raw/ufc_fight_results.csv`

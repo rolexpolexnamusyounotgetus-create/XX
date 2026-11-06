@@ -1,8 +1,8 @@
 # Rafael Fiziev: scouting dossier
 
-*As of 2026-11-06. Switch stance (UFC Stats), 5'8", 71-inch reach, born 1993-03-05 (age 33). Nickname "Ataman". UFC record 8-5 in fighters.json. His two most recent wins and a 2025 win came in Baku, Azerbaijan.*
+*As of 2026-11-06. Switch stance (UFC Stats), 5'8", 71-inch reach, born 1993-03-05 (age 33). Nickname "Ataman". UFC record 8-5 in fighters.json. His last two wins (2025 and 2026) both came in Baku, Azerbaijan.*
 
-> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026). His background, ranking, appearance and any booking need a fact-check.
+> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026). A Nov 6 fact-check, also offline, could not confirm his ranking or any booking.
 
 ## Current status
 **Active, coming off a win.** On **Jun 27, 2026** he headlined a UFC Fight Night in **Baku** and stopped Manuel Torres with ground punches 15 seconds into round 2, after a knockdown. Before that, Mauricio Ruffy stopped him at UFC 325 in Sydney (**Jan 31, 2026**). He is 2-3 in his last five. No booking, current ranking or injury could be confirmed. His 2023 leg injury is the only injury the dataset records.

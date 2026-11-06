@@ -2,7 +2,7 @@
 
 *As of 2026-11-06. Orthodox, 5'8", 71-inch reach, born 1986-04-24 (age 40). Nickname "Iron". American. UFC record 2-6 in fighters.json (since his Jan 2021 debut). His earlier Bellator career is not in the dataset.*
 
-> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. Whether he has retired, is ranked or has a fight booked needs a fact-check.
+> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. A Nov 6 fact-check, also offline, found no retirement, booking or ranking in the project's other research files.
 
 ## Current status
 **Unclear: last fought Jun 14, 2026.** At UFC Freedom 250 in Washington, DC, Mauricio Ruffy knocked him down twice and stopped him with ground punches at 4:29 of round 1. That made four straight losses:

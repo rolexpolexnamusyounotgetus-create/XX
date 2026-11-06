@@ -157,7 +157,7 @@
     d = s.division || (s.matchup && s.matchup.division) || null;
     if (!a && root.FightDirector && root.FightDirector.NAMES) { a = root.FightDirector.NAMES.A; b = root.FightDirector.NAMES.B; }
     if (!a) return null;
-    return { a: a, b: b, weight: w, division: d, rounds: s.rounds ? (s.rounds.length > 3 || s.maxRounds === 5 ? 5 : s.maxRounds || 5) : 5 };
+    return { a: a, b: b, weight: w, division: d, rounds: s.maxRounds || s.scheduledRounds || (s.matchup && s.matchup.rounds) || 5 };
   }
 
   function fitFont(ctx, text, weight, family, maxW, maxH) {
@@ -688,11 +688,11 @@
     var cam = this.camera = new T.PerspectiveCamera(34, 1, 0.1, 170);
     cam.position.set(0, 4, 9);
 
-    this.info = normInfo(opts.matchup);
+    this.info = normInfo(opts.matchup); this._infoKey = JSON.stringify(this.info);
     this.board = { round: 1, clock: "5:00", shift: 0, flash: 0 };
     this.t = 0; this.flashLevel = 0.004; this.flashRng = rng(99);
     this.mood = { e: 0.2, s: 0.1, p: 0.05, be: 0, bs: 0, wave: 0, flash: 0 };
-    this.cssW = 1; this.cssH = 1;
+    this.cssW = Math.max(1, canvas.clientWidth || canvas.width || 300); this.cssH = Math.max(1, canvas.clientHeight || canvas.height || 150);
     this.contacts = []; for (var ci = 0; ci < 16; ci++) this.contacts.push(new T.Vector4(0, 0, 0, 0));
     this.lowPts = [];
     this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.03 }, uSpill: { value: 1.1 }, uScale: { value: 600 }, uPhones: { value: 0.05 } };
@@ -775,7 +775,7 @@
           "diffuseColor.rgb *= occl;"
         ].join("\n"))
         .replace("#include <roughnessmap_fragment>", "float roughnessFactor = roughness;\nroughnessFactor = mix(roughnessFactor, 0.3, clamp(wear.g, 0.0, 1.0) * 0.9);\nroughnessFactor = mix(roughnessFactor, 0.45, clamp(wear.b, 0.0, 1.0));")
-        .replace("vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;", "vec3 mapN = texture2D( normalMap, vUv * uDetail ).xyz * 2.0 - 1.0;");
+        .replace("#include <normal_fragment_maps>", T.ShaderChunk.normal_fragment_maps.replace("texture2D( normalMap, vUv )", "texture2D( normalMap, vUv * uDetail )"));
       A.matShader = sh;
     };
     mat.customProgramCacheKey = function () { return "fightlab-canvas"; };
@@ -899,7 +899,7 @@
       // the text reads left to right for someone outside looking in, so run u against the vertex order
       uv.push((8 - k) / 8, 1, (7 - k) / 8, 1, (7 - k) / 8, 0, (8 - k) / 8, 0);
       for (var q = 0; q < 4; q++) nor.push(nx, 0, nz);
-      idx.push(b, b + 2, b + 1, b, b + 3, b + 2);
+      idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
     }
     var lg = new T.BufferGeometry();
     lg.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); lg.setAttribute("uv", new T.Float32BufferAttribute(uv, 2)); lg.setAttribute("normal", new T.Float32BufferAttribute(nor, 3)); lg.setIndex(idx);
@@ -1145,7 +1145,7 @@
     // LED ribbons: the front of the lower bowl and the fascia between the bowls
     function ribbon(rr, y0, y1, reps) {
       var p = [], u = [], ix = [], n = [];
-      for (var j = 0; j <= M; j++) { var a = j / M * TAU, q = sq(a, rr, [0, 0]); p.push(q[0], y1, q[1], q[0], y0, q[1]); u.push(-j / M * reps, 1, -j / M * reps, 0); n.push(-q[0], 0, -q[1], -q[0], 0, -q[1]); if (j < M) ix.push(j * 2, j * 2 + 1, j * 2 + 2, j * 2 + 1, j * 2 + 3, j * 2 + 2); }
+      for (var j = 0; j <= M; j++) { var a = j / M * TAU, q = sq(a, rr, [0, 0]); p.push(q[0], y1, q[1], q[0], y0, q[1]); u.push(j / M * reps, 1, j / M * reps, 0); n.push(-q[0], 0, -q[1], -q[0], 0, -q[1]); if (j < M) ix.push(j * 2, j * 2 + 1, j * 2 + 2, j * 2 + 1, j * 2 + 3, j * 2 + 2); }
       var g = new T.BufferGeometry(); g.setAttribute("position", new T.Float32BufferAttribute(p, 3)); g.setAttribute("uv", new T.Float32BufferAttribute(u, 2)); g.setAttribute("normal", new T.Float32BufferAttribute(n, 3)); g.setIndex(ix);
       return g;
     }
@@ -1408,7 +1408,7 @@
     W.decayT += dt;
     if (W.decayT > 2) {   // sweat dries slowly; scuffs stay
       W.decayT = 0;
-      W.ctx.save(); W.ctx.globalCompositeOperation = "multiply"; W.ctx.fillStyle = "rgb(255,247,255)"; W.ctx.fillRect(0, 0, W.c.width, W.c.height); W.ctx.restore();
+      W.ctx.save(); W.ctx.globalCompositeOperation = "multiply"; W.ctx.fillStyle = "rgb(255,252,255)"; W.ctx.fillRect(0, 0, W.c.width, W.c.height); W.ctx.restore();
       W.dirty = true;
     }
     W.upT += dt;

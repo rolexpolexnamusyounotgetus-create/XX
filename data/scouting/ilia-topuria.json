@@ -55,21 +55,21 @@
     ]
   },
   "moves": {
-    "jab": 0.45,
-    "cross": 0.45,
-    "hook": 0.5,
-    "overhand": 0.15,
-    "upper": 0.2,
-    "headkick": 0.03,
-    "bodykick": 0.1,
-    "bodyhook": 0.5,
-    "bodystraight": 0.2,
-    "calf": 0.12,
-    "inside": 0.1,
+    "jab": 0.253,
+    "cross": 0.253,
+    "hook": 0.281,
+    "overhand": 0.084,
+    "upper": 0.112,
+    "headkick": 0.017,
+    "bodykick": 0.125,
+    "bodyhook": 0.625,
+    "bodystraight": 0.25,
+    "calf": 0.545,
+    "inside": 0.455,
     "spinning": 0.0,
     "knee": 0.12,
     "elbow": 0.05,
-    "notes": "Target split from fighters.json: decayed significant attempts are 77% head, 17% body, 6% legs (landed 66/24/10; career 78/15/7). The lightweight league is 76/15/9, so kicks sit low. Hook and cross get the top head weights because the Oliveira KO was jab, right hand, left hook in his own words (Al Jazeera), and the Volkanovski and Holloway finishes were punches at distance (ufcstats). The body hook is high because his body work comes in bursts: 24 of 29 body strikes landed in R2 vs Gaethje put him down (CBS, Yahoo, ufcstats). Calf kicks get a little weight because he landed 15 of 16 leg strikes vs Holloway. Knee is small: clinch strikes are 10% of his landed decayed. ufcstats does not record technique, so the split inside each target is a judgment."
+    "notes": "Weights are normalized to sum to 1 within the head, body and leg groups, as the director's picker expects (fact-check, Nov 6, 2026; ratios unchanged). Target split from fighters.json: decayed significant attempts are 77% head, 17% body, 6% legs (landed 66/24/10; career 78/15/7). The lightweight league is 76/15/9, so kicks sit low. Hook and cross get the top head weights because the Oliveira KO was jab, right hand, left hook in his own words (Al Jazeera), and the Volkanovski and Holloway finishes were punches at distance (ufcstats). The body hook is high because his body work comes in bursts: 24 of 29 body strikes landed in R2 vs Gaethje put him down (CBS, Yahoo, ufcstats). Calf kicks get a little weight because he landed 15 of 16 leg strikes vs Holloway. Knee is small: clinch strikes are 10% of his landed decayed. ufcstats does not record technique, so the split inside each target is a judgment."
   },
   "appearance": {
     "build": "compact and heavily muscled: 5 ft 7 in with a 69 in reach (ufcstats); moved up from featherweight in 2025",

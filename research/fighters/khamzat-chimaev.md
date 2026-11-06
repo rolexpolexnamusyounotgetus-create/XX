@@ -2,7 +2,7 @@
 
 As of Nov 6, 2026. Orthodox middleweight, age 32 (born May 1, 1994), 6'2" with a 75" reach. Dataset: `data/derived/fighters.json`, ufcstats snapshot of Oct 31, 2026.
 
-**Research limits:** no web access in this pass (search budget spent; espn.com and wikipedia.org unreachable). Results come from the ufcstats snapshot; ranking, rematch talk and health news after May 2026 are **unverified**.
+**Research limits:** no web access in the research pass or the Nov 6 fact-check. Results come from the ufcstats snapshot; ranking, rematch talk and health news after May 2026 are **unverified**.
 
 ## Current status
 - **Former UFC middleweight champion.** He won the title from Dricus Du Plessis (UD 50-44 on all three cards, UFC 319, Aug 16, 2025). He lost it to Sean Strickland by split decision at UFC 328 on May 9, 2026: Sue Sanidad scored it 48-47 for Chimaev, while Eric Colon and Sal D'Amato scored it 48-47 for Strickland.
@@ -10,7 +10,7 @@ As of Nov 6, 2026. Orthodox middleweight, age 32 (born May 1, 1994), 6'2" with a
 - The snapshot has no fight since May 2026, and I found no booking.
 
 ## Recent fights
-- **L Strickland (SD, May 2026):** R1 went to plan: 2 takedowns in 2 attempts and 4:47 of control. After that Strickland stayed up and out-landed him 123-98 overall, with 118 of Strickland's 123 landed strikes going to the head. Strickland even logged 3:01 of control in R2. Chimaev attempted no takedowns in R3. He went 6 for 7 in R5, but they gained him only 1:31 of control.
+- **L Strickland (SD, May 2026):** R1 went to plan: 2 takedowns in 2 attempts and 4:47 of control. After that Strickland kept getting back up and out-landed him 123-98 overall, with 118 of Strickland's 123 landed strikes going to the head. Strickland even logged 3:01 of control in R2. Chimaev attempted no takedowns in R3. He went 6 for 7 in R5, but they gained him only 1:31 of control.
 - **W Du Plessis (UD, Aug 2025):** 12 takedowns in 17 attempts and 21:40 of control. He out-landed Du Plessis 37-13 in significant strikes. R3 was the worst round for Du Plessis: Chimaev landed 19 of 22 ground strikes in it.
 - **W Robert Whittaker (RNC R1 3:34, Oct 2024):** 2 takedowns in 4 attempts, 3:20 of control and a submission inside four minutes.
 - **W Kamaru Usman (MD, Oct 2023):** R1 brought 4:35 of control and 15 ground strikes. Usman out-landed him 33-22 over R2-R3, and one judge scored it a draw.
@@ -21,7 +21,7 @@ A chain wrestler. He takes opponents down 5.8 times per 15 minutes at 62% accura
 
 **Strengths:** takedown entries and chains, top control, submissions, early pressure, and real power standing.
 
-**Weaknesses:** the pace he sets in R1 has not held in three of his four UFC decisions (Burns, Usman, Strickland). Each time the opponent survived the early wrestling and won exchanges on the feet. His standing defense is ordinary: Burns landed 119 significant strikes in 15 minutes.
+**Weaknesses:** the control he gets in R1 has not held in three of his four UFC decisions (Burns, Usman, Strickland). Each time the opponent survived the early wrestling and out-landed him on the feet. His standing defense is ordinary: Burns landed 119 significant strikes in 15 minutes.
 
 ## Durability and cardio
 He has **never been knocked down in 10 UFC fights** and has no stoppage losses. Cardio is the open question. His control fell from 4:47 in R1 to almost nothing in R2-R4 against Strickland. Against Du Plessis he held 4:26 or more of control through four rounds and faded only in R5 (2:54). The ufcstats pace curve (5.5x to 19x his R1 output in later rounds) is misleading. It reflects how little he strikes in a wrestling-heavy R1, not a late surge.

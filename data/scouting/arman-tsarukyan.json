@@ -49,21 +49,21 @@
     ]
   },
   "moves": {
-    "jab": 0.35,
-    "cross": 0.4,
-    "hook": 0.3,
-    "overhand": 0.2,
-    "upper": 0.15,
-    "headkick": 0.08,
-    "bodykick": 0.15,
-    "bodyhook": 0.12,
-    "bodystraight": 0.08,
-    "calf": 0.08,
-    "inside": 0.1,
+    "jab": 0.236,
+    "cross": 0.271,
+    "hook": 0.203,
+    "overhand": 0.135,
+    "upper": 0.101,
+    "headkick": 0.054,
+    "bodykick": 0.428,
+    "bodyhook": 0.343,
+    "bodystraight": 0.229,
+    "calf": 0.444,
+    "inside": 0.556,
     "spinning": 0.0,
     "knee": 0.15,
     "elbow": 0.25,
-    "notes": "Target split from fighters.json: decayed significant attempts are 79% head, 13% body, 8% legs (landed 71/18/11), close to the lightweight league's 76/15/9 but lighter on the body and legs, so kicks stay low. Much of his landed output is ground strikes: 35% of landed strikes decayed and 44% over the last 3 years, which these standing weights do not cover. Elbow is raised because the Ruffy KO was a standing elbow in the clinch (MMA Weekly, MMA Mania; ufcstats: 'Elbow to Head In Clinch'). The rear hand gets the top punch weight because the Dariush finish was a punch at distance in the first minute; the hand is not recorded, so this is a judgment. His striking mostly serves to set up his shots: 9.4 takedown attempts per 15 min career."
+    "notes": "Weights are normalized to sum to 1 within the head, body and leg groups, as the director's picker expects (fact-check, Nov 6, 2026; ratios unchanged). Target split from fighters.json: decayed significant attempts are 79% head, 13% body, 8% legs (landed 71/18/11), close to the lightweight league's 76/15/9 but lighter on the body and legs, so kicks stay low. Much of his landed output is ground strikes: 35% of landed strikes decayed and 44% over the last 3 years, which these standing weights do not cover. Elbow is raised because the Ruffy KO was a standing elbow in the clinch (MMA Weekly, MMA Mania; ufcstats: 'Elbow to Head In Clinch'). The rear hand gets the top punch weight because the Dariush finish was a punch at distance in the first minute; the hand is not recorded, so this is a judgment. His striking mostly serves to set up his shots: 9.4 takedown attempts per 15 min career."
   },
   "appearance": {
     "build": "short and stocky with a long reach for his height: 5 ft 7 in, 72 in reach (ufcstats)",

@@ -50,21 +50,21 @@
     ]
   },
   "moves": {
-    "jab": 0.35,
-    "cross": 0.3,
-    "hook": 0.2,
-    "overhand": 0.15,
-    "upper": 0.1,
-    "headkick": 0.08,
-    "bodykick": 0.12,
-    "bodyhook": 0.1,
-    "bodystraight": 0.1,
-    "calf": 0.05,
-    "inside": 0.06,
+    "jab": 0.297,
+    "cross": 0.254,
+    "hook": 0.169,
+    "overhand": 0.127,
+    "upper": 0.085,
+    "headkick": 0.068,
+    "bodykick": 0.376,
+    "bodyhook": 0.312,
+    "bodystraight": 0.312,
+    "calf": 0.455,
+    "inside": 0.545,
     "spinning": 0.0,
     "knee": 0.08,
     "elbow": 0.06,
-    "notes": "Target split from fighters.json: decayed significant attempts are 81% head, 14% body, 5% legs (landed 73/18/8). The lightweight league is 76/15/9, so leg kicks are near the floor. Ground strikes are 35% of his landed strikes decayed (league 10%) and are not covered by these standing weights. Standing, his strikes mostly lead into takedowns, so the straight punches lead and power shots stay modest (1 knockdown in 16 UFC fights). The head kick is small but not zero because an early head kick stunned Rebecki at UFC 328 (Cageside, BVM Sports). He is listed as switch stance by ufcstats; the split between stances is not recorded. Technique is not in ufcstats, so these weights within each target are judgments."
+    "notes": "Weights are normalized to sum to 1 within the head, body and leg groups, as the director's picker expects (fact-check, Nov 6, 2026; ratios unchanged). Target split from fighters.json: decayed significant attempts are 81% head, 14% body, 5% legs (landed 73/18/8). The lightweight league is 76/15/9, so leg kicks are near the floor. Ground strikes are 35% of his landed strikes decayed (league 10%) and are not covered by these standing weights. Standing, his strikes mostly lead into takedowns, so the straight punches lead and power shots stay modest (1 knockdown in 16 UFC fights). The head kick is small but not zero because an early head kick stunned Rebecki at UFC 328 (Cageside, BVM Sports). He is listed as switch stance by ufcstats; the split between stances is not recorded. Technique is not in ufcstats, so these weights within each target are judgments."
   },
   "appearance": {
     "build": "5 ft 10 in with a 72 in reach (ufcstats); his first three UFC fights were at featherweight before he settled at lightweight",

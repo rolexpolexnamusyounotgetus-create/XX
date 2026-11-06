@@ -15,3 +15,6 @@ assets/reference/**/*.jpeg
 assets/reference/**/*.png
 assets/reference/**/*.webp
 data/derived/backtest_dev.json
+
+# Sherdog fighter/search pages cached by tools/preufc.py (raw third-party HTML; regenerable)
+data/raw/sherdog_cache/

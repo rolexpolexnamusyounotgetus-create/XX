@@ -130,6 +130,19 @@ class Side:
         f["octrl_td"] = math.log(((g("octrl") + K_CTRLTD * c0) / (g("otd_lnd") + K_CTRLTD)) / c0)
         f["sub_int"] = math.log(shr_rate(g("sub_att"), m, P["sub_att"]) / P["sub_att"])
         f["osub_int"] = math.log(shr_rate(g("osub_att"), m, P["osub_att"]) / P["osub_att"])
+        # --- exposure-correct position rates: standing minutes = minutes minus control time either way
+        p_stand = max(1.0 - (P["ctrl"] + P["octrl"]) / 60.0, 0.3)       # league standing share of a minute
+        st = max(m - (g("ctrl") + g("octrl")) / 60.0, 0.3 * m)
+        f["st_share"] = math.log(((st + K_MIN * p_stand) / (m + K_MIN)) / p_stand)
+        f["d_rate"] = math.log(shr_rate(g("d_att"), st, P["d_att"] / p_stand) / (P["d_att"] / p_stand))
+        f["od_rate"] = math.log(shr_rate(g("od_att"), st, P["d_att"] / p_stand) / (P["d_att"] / p_stand))
+        f["td_rate"] = math.log(shr_rate(g("td_att"), st, P["td_att"] / p_stand) / (P["td_att"] / p_stand))
+        f["otd_rate"] = math.log(shr_rate(g("otd_att"), st, P["otd_att"] / p_stand) / (P["otd_att"] / p_stand))
+        top = g("ctrl") / 60.0
+        p_top = P["ctrl"] / 60.0
+        f["g_rate"] = math.log(shr_rate(g("g_att"), top, P["g_att"] / p_top, k=5.0) / (P["g_att"] / p_top))
+        f["c_rate"] = math.log(shr_rate(g("c_att"), m, P["c_att"]) / P["c_att"])
+        f["oc_rate"] = math.log(shr_rate(g("oc_att"), m, P["oc_att"]) / P["oc_att"])
         # --- power and chin (knockdowns per landed head strike)
         k0 = P["kd_per_h"]
         f["kd_pow"] = math.log(shr_prop(g("kd"), g("h_lnd"), k0, K_HEAD) / k0)

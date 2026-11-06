@@ -52,21 +52,21 @@
     ]
   },
   "moves": {
-    "jab": 0.35,
-    "cross": 0.35,
-    "hook": 0.3,
-    "overhand": 0.1,
-    "upper": 0.15,
-    "headkick": 0.1,
-    "bodykick": 0.35,
-    "bodyhook": 0.2,
-    "bodystraight": 0.15,
-    "calf": 0.12,
-    "inside": 0.18,
+    "jab": 0.26,
+    "cross": 0.259,
+    "hook": 0.222,
+    "overhand": 0.074,
+    "upper": 0.111,
+    "headkick": 0.074,
+    "bodykick": 0.5,
+    "bodyhook": 0.286,
+    "bodystraight": 0.214,
+    "calf": 0.4,
+    "inside": 0.6,
     "spinning": 0.0,
     "knee": 0.35,
     "elbow": 0.15,
-    "notes": "Target split from the decayed sums in fighters.json: of significant attempts 70% head, 20% body, 11% legs (landed 64/22/14); the lightweight league is 76/15/9. So body weapons (kicks, knees, hooks) sit above the league and leg kicks stay modest. Punches follow his recorded finishes, which are punches at distance (Chandler, Gordon, Lentz) plus the jab and right hand reported in recaps (Cageside on UFC 274). Knee and elbow stand for his clinch work: 18% of landed strikes in the clinch career and 11% decayed, against 9.5% for the league. ufcstats does not record technique, so the kick/knee split inside the body share is a judgment. Spinning: none in his record. His striking output is low (3.6 significant attempts per minute over 3 years, ground strikes included) because he shoots early, so the director should give him less time standing, not lower weights."
+    "notes": "Weights are normalized to sum to 1 within the head, body and leg groups, as the director's picker expects (fact-check, Nov 6, 2026; ratios unchanged). Target split from the decayed sums in fighters.json: of significant attempts 70% head, 20% body, 11% legs (landed 64/22/14); the lightweight league is 76/15/9. So body weapons (kicks, knees, hooks) sit above the league and leg kicks stay modest. Punches follow his recorded finishes, which are punches at distance (Chandler, Gordon, Lentz) plus the jab and right hand reported in recaps (Cageside on UFC 274). Knee and elbow stand for his clinch work: 18% of landed strikes in the clinch career and 11% decayed, against 9.5% for the league. ufcstats does not record technique, so the kick/knee split inside the body share is a judgment. Spinning: none in his record. His striking output is low (3.6 significant attempts per minute over 3 years, ground strikes included) because he shoots early, so the director should give him less time standing, not lower weights."
   },
   "appearance": {
     "build": "tall, lean and long-limbed for lightweight: 5 ft 10 in with a 74 in reach (ufcstats); fought at featherweight until 2016",

@@ -2,14 +2,14 @@
 
 *As of 2026-11-06. Orthodox, 5'11", 75-inch reach, born 1996-06-17 (age 30). Brazilian. UFC record 5-2 in fighters.json (7 fights since his May 2024 debut).*
 
-> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. His camp, nickname, pro record, ranking and appearance need a fact-check.
+> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. His camp, nickname, pro record and appearance remain unverified; a Nov 6 fact-check was also offline.
 
 ## Current status
 **Active, coming off a knockout loss.** On **Sep 19, 2026** at UFC 331 in Los Angeles, Arman Tsarukyan knocked him out with a standing elbow in the clinch at 4:56 of round 1. The Tsarukyan dossier cites MMA Weekly, Yahoo and BJPenn for the finish. The loss ended a two-fight win streak:
 - **W Rafael Fiziev**, UFC 325, Sydney (**Jan 31, 2026**)
 - **W Michael Chandler**, UFC Freedom 250, Washington, DC (**Jun 14, 2026**)
 
-No booking, current ranking or injury could be confirmed.
+He is **No. 10** at lightweight on the Nov 3, 2026 media-panel list as mirrored by UFCalendar and ufcrankings.org. No booking or injury was found.
 
 ## Recent fights
 - **L Tsarukyan, UFC 331 (Sep 2026), KO R1.** Tsarukyan went 1 of 10 on takedowns but held 3:00 of control, scored a knockdown and finished him with an elbow in the clinch. Ruffy landed 4 significant strikes.
@@ -47,3 +47,4 @@ Elo 1602, 25th among the 100 lightweights who have fought since May 2025. Career
 - https://sports.yahoo.com/articles/arman-tsarukyan-knocks-mauricio-ruffy-061351913.html (via data/scouting/arman-tsarukyan.json)
 - https://www.bjpenn.com/mma-news/arman-tsarukyan/ufc-331-results-arman-tsarukyan-kos-mauricio-ruffy-video/ (via data/scouting/arman-tsarukyan.json)
 - https://www.tapology.com/fightcenter/bouts/1166249-ufc-331-arman-ahalkalakets-tsarukyan-vs-mauricio-ruffy (via data/scouting/arman-tsarukyan.json)
+- https://www.ufcalendar.com/rankings/lightweight and https://ufcrankings.org/ (ranking; via research/matchup_market.md)

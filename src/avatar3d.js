@@ -333,7 +333,8 @@
     var years = app.age || ageAt(app.dob);
     var build = lower(app.build), fig = lower([app.build, app.notes].join(" "));
     var limit = DIV_LB[div] || 155;
-    var lb = app.weight_lb || (div === "Heavyweight" ? 238 + (hIn - 75) * 6 : limit * (limit <= 170 ? 1.08 : 1.065));
+    var listed = /(\d{3})\s*lb/.exec(lower(app.build));
+    var lb = app.weight_lb || (div === "Heavyweight" ? (listed ? +listed[1] : 238 + (hIn - 75) * 6) : limit * (limit <= 170 ? 1.08 : 1.065));
     if (ref) lb = app.weight_lb || 190;
     var bmi = 703 * lb / (hIn * hIn);
     var muscleBias = 0;

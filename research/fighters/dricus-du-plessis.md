@@ -2,12 +2,12 @@
 
 As of Nov 6, 2026. Switch-stance middleweight, age 32 (born Jan 14, 1994), 6'1" with a 76" reach. Dataset: `data/derived/fighters.json`, ufcstats snapshot of Oct 31, 2026.
 
-**Research limits:** no web access in this pass (search budget spent; espn.com and wikipedia.org unreachable). Results come from the ufcstats snapshot; the Brendan Allen callout is carried from the Allen research pass; ranking and post-July news are **unverified**.
+**Research limits:** no web access in the research pass or the Nov 6 fact-check. Results come from the ufcstats snapshot; the Brendan Allen callout comes from `data/scouting/brendan-allen.json`. Ranking and post-July news are **unverified**.
 
 ## Current status
 - **Former UFC middleweight champion.** He won the title from Sean Strickland (SD, UFC 297, Jan 20, 2024). He defended it against Israel Adesanya (RNC R4, UFC 305, Aug 17, 2024) and Strickland again (UD, UFC 312, Feb 8, 2025). He lost it to Khamzat Chimaev (UD 50-44 x3, UFC 319, Aug 16, 2025).
 - **Last fight:** a UD over Kamaru Usman (50-45, 49-46, 49-46), a five-round non-title main event at UFC Fight Night in Oklahoma City on Jul 18, 2026.
-- **The belt** now belongs to Strickland, who beat Chimaev on May 9, 2026. Brendan Allen called Du Plessis out after beating Christian Leroy Duncan on Oct 10, 2026. No bout is booked that I could confirm.
+- **The belt** now belongs to Strickland, who beat Chimaev on May 9, 2026. Brendan Allen called Du Plessis out after beating Christian Leroy Duncan on Oct 10, 2026. No booking confirmed.
 - **UFC record 10-1** (4 KO/TKO, 2 SUB, 4 DEC).
 
 ## Recent fights
@@ -26,7 +26,7 @@ He is a pressure fighter who switches stance, throws in volume and keeps coming 
 **Weaknesses:** sustained chain wrestling. His takedown defense is 54.8% decayed and 50% career, against a middleweight average near 64%. Opponents control him 19% of the time. He also absorbs about the league average of significant strikes (4.0 per minute).
 
 ## Durability and cardio
-He has **never been knocked down in 11 UFC fights** and has no stoppage losses. Over his five five-round fights, his output by round is 1.00, 1.19, 1.40, 1.19 and 1.45 times his R1 output, so he is busier in R5 than in R1. The middleweight curve for five-round fights runs 1.26, 1.20, 1.28 and 1.31 for R2-R5. His R3 and R5 sit above it and his R2 and R4 below.
+He has **never been knocked down in 11 UFC fights** and has no stoppage losses. Over his five five-round fights, his output by round is 1.00, 1.19, 1.40, 1.19 and 1.45 times R1. Against the middleweight curve (1.26, 1.20, 1.28, 1.31 for R2-R5), his R3 and R5 sit above it and his R2 and R4 below.
 
 ## What the numbers say (decayed, 2-year half-life)
 - 4.76 significant strikes landed and 4.03 absorbed per minute. Opponents hit 45.6% against him.

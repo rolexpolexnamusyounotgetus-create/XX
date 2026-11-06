@@ -52,21 +52,21 @@
     ]
   },
   "moves": {
-    "jab": 0.6,
-    "cross": 0.45,
-    "hook": 0.35,
-    "overhand": 0.12,
-    "upper": 0.2,
-    "headkick": 0.1,
-    "bodykick": 0.35,
-    "bodyhook": 0.3,
-    "bodystraight": 0.4,
-    "calf": 0.3,
-    "inside": 0.25,
+    "jab": 0.33,
+    "cross": 0.247,
+    "hook": 0.192,
+    "overhand": 0.066,
+    "upper": 0.11,
+    "headkick": 0.055,
+    "bodykick": 0.333,
+    "bodyhook": 0.286,
+    "bodystraight": 0.381,
+    "calf": 0.545,
+    "inside": 0.455,
     "spinning": 0.12,
     "knee": 0.04,
     "elbow": 0.03,
-    "notes": "Target split from fighters.json: decayed significant attempts are 70% head, 19% body, 11% legs (landed 55/28/17). The last 3 years run 63/22/15 and his career 77/16/7, so body and leg weights are set above his career mix. Jab and body straight lead because breakdowns describe a jab-first game, with the jab often doubled and sent to the body (Face Punching, Fight Primer, Medium). Body hooks and kicks follow the body volume (64 of 80 vs Poirier). Spinning is small but not zero because of the spinning back kick at UFC 300 (Las Vegas Sun). Knees and elbows are near zero: 93% of his decayed landed strikes come at distance and 3% in the clinch. ufcstats does not record technique, so the split between punches and kicks inside each target is a judgment."
+    "notes": "Weights are normalized to sum to 1 within the head, body and leg groups, as the director's picker expects (fact-check, Nov 6, 2026; ratios unchanged). Target split from fighters.json: decayed significant attempts are 70% head, 19% body, 11% legs (landed 55/28/17). The last 3 years run 63/22/15 and his career 77/16/7, so body and leg weights are set above his career mix. Jab and body straight lead because breakdowns describe a jab-first game, with the jab often doubled and sent to the body (Face Punching, Fight Primer, Medium). Body hooks and kicks follow the body volume (64 of 80 vs Poirier). Spinning is small but not zero because of the spinning back kick at UFC 300 (Las Vegas Sun). Knees and elbows are near zero: 93% of his decayed landed strikes come at distance and 3% in the clinch. ufcstats does not record technique, so the split between punches and kicks inside each target is a judgment."
   },
   "appearance": {
     "build": "long-framed and lean: 5 ft 11 in with a 69 in reach (ufcstats); fought 27 of his 33 UFC bouts at featherweight",

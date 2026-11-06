@@ -2,7 +2,7 @@
 
 *As of 2026-11-06. Listed southpaw by UFC Stats, 5'10", 70-inch reach, born 1990-12-11 (age 35). Nickname "Gamer". UFC record 9-5 in fighters.json; pro record not re-verified.*
 
-> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. A fact-checker should confirm his ranking and any booking.
+> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. A Nov 6 fact-check, also offline, could not confirm a ranking or booking.
 
 ## Current status
 **Active, coming off a loss.** On **Aug 8, 2026** Quillan Salkilld submitted him with a rear-naked choke at 4:25 of round 1 in a UFC Fight Night main event in Las Vegas. The Salkilld dossier cites reports that Salkilld opened with jabs and kicks, took him down late in the round, defended a leg-lock attempt in a scramble and took his back. Before that he submitted **Esteban Ribovics** with an arm-triangle from half guard at UFC 327 in Miami (**Apr 11, 2026**, R2 4:19). He is 2-2 in his last four fights. No booking, current ranking or injury could be confirmed.

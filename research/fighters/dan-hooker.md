@@ -2,7 +2,7 @@
 
 *As of 2026-11-06. Switch stance (UFC Stats), 6'0", 75-inch reach, born 1990-02-13 (age 36). Nickname "The Hangman". New Zealander. UFC record 14-11 in fighters.json (18 lightweight and 7 featherweight bouts).*
 
-> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. The Ortega booking and his ranking need a fact-check.
+> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. A Nov 6 fact-check, also offline, could not re-verify the Ortega booking or find a ranking.
 
 ## Current status
 **Active, on a three-fight losing streak, all by stoppage.**
@@ -10,7 +10,7 @@
 - **Jan 31, 2026:** Benoit Saint Denis stopped him with punches from mount (R2 4:45) at UFC 325 in Sydney.
 - **Sep 5, 2026:** Salahdine Parnasse knocked him out with a punch at 2:35 of round 1 in a Paris main event.
 
-The Brian Ortega dossier cites ufcalendar.com and Yahoo reports that he is booked against **Ortega** (Ortega's lightweight debut) at a UFC Fight Night in **Doha on Nov 21, 2026**. That booking was not re-verified here. No current ranking or injury could be confirmed.
+The Brian Ortega dossier cites ufcalendar.com and Yahoo reports that he is booked against **Ortega** (Ortega's lightweight debut) at ABHA Arena, **Doha, on Nov 21, 2026**. A broken hand forced him out of a UFC 313 fight with Gaethje (reported Feb 2025); no current injury was found.
 
 ## Recent fights
 - **L Parnasse (Sep 2026), KO R1.** He landed 12 of 19 leg strikes but none of 9 to the head, was dropped once and was stopped.
@@ -21,7 +21,7 @@ The Brian Ortega dossier cites ufcalendar.com and Yahoo reports that he is booke
 - **W Claudio Puelles, UFC 281 (Nov 2022), front kick to the body, R2.**
 
 ## Style
-He is a rangy kickboxer who switches stance. He leads with the jab and long straights, kicks the legs at volume (20% of his landed strikes career; median about 15%) and the body (24% recency-weighted), and throws knees in the clinch. Both of those knee KOs (Pearson, Miller) and the Puelles front kick are in UFC Stats. Off his back or a front headlock he hunts guillotines; two of his UFC wins came that way.
+He is a rangy kickboxer who switches stance. He leads with the jab and long straights, kicks the legs at volume (20% of his landed strikes career; median about 15%) and the body (24% recency-weighted), and throws knees in the clinch. UFC Stats records two clinch-knee KOs (Pearson, Miller). Off his back or a front headlock he hunts guillotines; two of his UFC wins came that way.
 
 ## Strengths
 - **Finishing power on the feet:** 9 knockdowns and 7 KO/TKO wins (0.55 knockdowns per 15 minutes; median about 0.31).
@@ -46,4 +46,4 @@ Elo 1589, 32nd among the 100 lightweights who have fought since May 2025, down a
 - data/scouting/arman-tsarukyan.json, data/scouting/benoit-saint-denis.json, data/scouting/brian-ortega.json
 - https://www.ufcalendar.com/fights/dan-hooker-vs-brian-ortega (via data/scouting/brian-ortega.json)
 - https://sports.yahoo.com/articles/ufc-analyst-dan-hooker-vs-170039364.html (via data/scouting/brian-ortega.json)
-- https://en.wikipedia.org/wiki/Dan_Hooker (reference; not fetched in this pass)
+- https://bloodyelbow.com/2025/02/26/justin-gaethjes-replacement-revealed-for-ufc-313-after-dan-hooker-pulls-out-of-fight-with-injury (hand injury; via research/gaethje.md)
