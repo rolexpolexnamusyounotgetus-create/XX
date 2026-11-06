@@ -244,18 +244,20 @@
       if (y <= F.cheek.y) return lerp(F.chin.z, F.cheek.z + 0.012 * sc, clamp((y - F.chin.y) / Math.max(0.01, F.cheek.y - F.chin.y), 0, 1));
       return lerp(F.cheek.z + 0.012 * sc, F.brow.z, clamp((y - F.cheek.y) / Math.max(0.01, F.brow.y - F.cheek.y), 0, 1));
     }
-    // rear glove: beside the chin, a little in toward the centre line
-    // a high guard sits on the temples, so the gloves part as they rise above the cheekbones
-    function hiK(v) { return clamp((v - 0.65) / 0.35, 0, 1); }
-    var ry = hy(rh) - 0.03 * op * sc, rx = -st * (cx * 1.05 + (0.012 + 0.03 * hiK(rh)) * sc + 0.02 * op * sc);
+    // rear glove: against the rear jaw and cheek, inner edge near the mouth corner at chin height; as the
+    // guard rises toward the brow the gloves move out to the temples, so the eyes stay open between them
+    // (owner review, Nov 6: gloves were covering the eyes and the lead arm was held out nearly straight)
+    function upK(y) { return clamp((y - F.chin.y) / Math.max(0.02, F.brow.y - F.chin.y), 0, 1); }
+    var ry = hy(rh) - 0.03 * op * sc, rk = upK(ry), rx = -st * (cx * (0.98 + 0.62 * rk) + 0.02 * op * sc);
     // offsets off the face run level in the world (the head is pitched down by th), not along the tucked face
     var th = P.pp + P.sp + P.cp + P.hp, cs = Math.cos(th), sn = Math.sin(th);
-    var rg = GR + (0.008 + 0.1 * (1 - G.rearTuck)) * sc;
+    var rg = GR + (0.005 + 0.1 * (1 - G.rearTuck)) * sc;
     _g1.set(rx, ry + rg * sn, fz(ry) + rg * cs);
     this.headToChest(P, _g1, P.hl[rear]);
-    // lead glove: out on the centre line toward the opponent, at its own height
-    var ly = hy(lh) - 0.03 * op * sc, reach = (0.07 + 0.3 * G.leadReach) * sc;
-    var lx = st * (cx * (1.0 - 0.5 * G.leadReach) + (0.04 * G.leadWidth + 0.03 * hiK(lh)) * sc + 0.02 * op * sc);
+    // lead glove: a little out front on the lead side of the face (lead_reach 0 at the face .. 1 about 30 cm
+    // off it), at its own height, its inner edge in line with the lead eye so he sees past it
+    var ly = hy(lh) - 0.03 * op * sc, lk = upK(ly), reach = (0.035 + 0.24 * G.leadReach) * sc;
+    var lx = st * (cx * (0.9 + 0.45 * lk) + (0.04 * G.leadWidth - 0.012 * G.leadReach) * sc + 0.02 * op * sc);
     var lg = GR + 0.012 * sc + reach;
     _g2.set(lx, ly + lg * sn - 0.06 * reach, fz(ly) + lg * cs);
     this.headToChest(P, _g2, P.hl[lead]);
@@ -367,8 +369,10 @@
         P.hl[lead].set(((0.035 + 0.035 * G.leadWidth) * H + lz * cyaw) * st, (0.045 + 0.13) * H, lz);
         P.hl[rear].set((-0.062 * H + rz * cyaw) * st, (0.035 + 0.13) * H, rz);
       }
+      // elbows down on the ribs, a little outside the gloves so the forearms angle in (elbow_flare wings them)
       var fl = 0.04 + 0.6 * G.elbowFlare;
-      P.hpl[lead].set((fl - 0.02) * st, -1, -0.18); P.hpl[rear].set((fl - 0.04) * -st, -1, -0.28);
+      if (cl) { P.hpl[lead].set((fl - 0.02) * st, -1, -0.18); P.hpl[rear].set((fl - 0.04) * -st, -1, -0.28); }
+      else { P.hpl[lead].set((0.22 + fl) * st, -1, -0.04); P.hpl[rear].set((0.42 + fl) * -st, -1, -0.12); }
       if (!cl) {
         var fe = this.feint;
         if (fe) {

@@ -256,17 +256,36 @@ class Ctx:
             dX = float(np.max(np.abs(X - c["X"][keep])))
             if dX > 1e-9:
                 raise SystemExit("ML design drift: current tools/ml.py lr_design differs from stage1 by %g" % dX)
+            # Real corner-swap guard (verification, Nov 6). MLLogistic.predict_swapped negates X and MLTrees swaps
+            # G0/G1, which only proves symmetry if the table with A and B swapped really gives -X and the flipped tree
+            # design. Rebuild both from the swapped table (as tools/ml.py's own guard does) and stop on any difference.
+            sw = {}
+            for col in df.columns:
+                if col.startswith("A_"):
+                    sw[col] = df["B_" + col[2:]]
+                elif col.startswith("B_"):
+                    sw[col] = df["A_" + col[2:]]
+                elif col.startswith("M_") and col[2:] not in M.M_SYM:
+                    sw[col] = -df[col]
+            dsw = df.assign(**sw)
+            dsym = float(np.max(np.abs(M.lr_design(dsw, specs)[c["cols"]].to_numpy() + X)))
+            g_ok = bool(np.array_equal(M.gbm_design(dsw, M.lr_design(dsw, M.lr_term_specs())).to_numpy(),
+                                       c["G1"][keep].to_numpy(), equal_nan=True))
+            if dsym > 1e-12 or not g_ok:
+                raise SystemExit("ML corner-swap guard: max |X + X_swapped| = %g, tree design flip ok = %s" % (dsym, g_ok))
             self._ml = dict(M=M, df=df, X=X, y=c["y"][keep], dec=c["dec"][keep], dates=dates[keep],
                             years=c["years"][keep], G0=c["G0"][keep].reset_index(drop=True),
                             G1=c["G1"][keep].reset_index(drop=True), cols=c["cols"], lr_best=c["lr_best"],
                             lgb_best=c["lgb_best"], xgb_best=c["xgb_best"],
                             row={f: k for k, f in enumerate(df["fid"])}, sha=sha_files(path),
-                            n_2026_dropped=int((~keep).sum()))
+                            n_2026_dropped=int((~keep).sum()), swap_guard={"max_abs_X_plus_Xswapped": dsym,
+                                                                           "tree_design_flip_exact": g_ok})
             if self.perturb_from:
                 fl = (self._ml["dates"] >= self.perturb_from) & self._ml["dec"]
                 self._ml["y"] = np.where(fl, 1.0 - self._ml["y"], self._ml["y"])
-            log("ML table: %d rows 2010-2025 (%d rows from 2026 dropped), %d logistic terms"
-                % (len(df), self._ml["n_2026_dropped"], X.shape[1]))
+            log("ML table: %d rows 2010-2025 (%d rows from 2026 dropped), %d logistic terms; true corner swap: "
+                "max |X + X_swapped| %g, tree design flip exact %s" % (len(df), self._ml["n_2026_dropped"], X.shape[1],
+                                                                      dsym, g_ok))
         return self._ml
 
     # ---- tools/moe.py rows (gating inputs, 2019-2025 backtest_dev fights)
@@ -1309,7 +1328,7 @@ def score(ctx, R, B_boot=2000):
         m["coverage"] = r4(len(ids) / len(win_dec))
         m["ci"] = boot.ci(lls(k, ids), [ctx.date[i] for i in ids])
         out["own_coverage"][k] = m
-    # common set: every non-experimental model with >= 95% coverage (the newcomer-only and partial models are left out)
+    # common set: every model (experiments included) with >= 95% window coverage; partial-coverage models are left out
     head = [k for k in order if k in out["own_coverage"] and out["own_coverage"][k]["coverage"] >= 0.95]
     common = [i for i in win_dec if all(i in rec[k] for k in head)]
     out["common"]["models"] = head
@@ -1756,8 +1775,11 @@ def main():
         doc["scores"] = score(ctx, R, args.boot)
         doc["meta"]["bootstrap"] = args.boot
         wjson(args.out or OUT_JSON, doc)
-        write_report(doc)
-        log("rescored -> %s, %s" % (args.out or OUT_JSON, REPORT_MD))
+        # the research note follows the stored replay only (verification fix: `score --out <scratch>` used to rewrite
+        # the note's scoreboard with the scratch file's numbers)
+        if (args.out or OUT_JSON) == OUT_JSON:
+            write_report(doc)
+        log("rescored -> %s%s" % (args.out or OUT_JSON, (", " + REPORT_MD) if (args.out or OUT_JSON) == OUT_JSON else ""))
         return
     keys = [k.strip() for k in args.models.split(",")] if args.models else list(REGISTRY)
     for k in keys:
