@@ -1432,7 +1432,7 @@
           "  float weave = 0.95 + 0.05 * fract(sin(dot(floor(vec2(vKit.y * 260.0, vKit.x * 420.0)), vec2(12.9898, 78.233))) * 43758.5453);\n" +
           "  diffuseColor.rgb = c * weave;\n" +
           "  if (slit > 0.5) discard;\n" +
-          "  if (!gl_FrontFacing) diffuseColor.rgb *= 0.3; }")
+          "  if (!gl_FrontFacing) diffuseColor.rgb *= 0.8; }")
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.85, smoothstep(1.0 - uBandW, 1.0 - uBandW + 0.02, vKit.x));");
     } });
     this.shortsMat = shorts;
