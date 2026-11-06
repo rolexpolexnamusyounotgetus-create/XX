@@ -30,21 +30,30 @@ Every table below is printed by `python3 tools/linemove.py tables` from linemove
      Circa), so a sharp-versus-recreational comparison is impossible here. (high)
 2. **(Q1) The model knows a real part of the move before the market makes it, but mostly before the first consensus
    snapshot.**
-   - From the opener: ML v2's gap to the opener correlates 0.44 with the logit move to the close (0.38 on 2024-25).
-     That gap alone explains 22% of the move out of sample (14% on 2024-25). With the line level and ratings added, it
-     explains 27% (33%).
+   - From the opener: ML v2's gap to the opener correlates 0.44 with the logit move to the close (pooled 2015-2023;
+     0.50 on 2019-23 alone; 0.38 on 2024-25). That gap alone explains 22% of the move out of sample (14% on
+     2024-25). With the line level and ratings added, it explains 27% (33%). It is not mean reversion of a noisy
+     opener: the line level alone explains 2% (10% on 2024-25) (verifier table V1).
    - From the first consensus snapshot, R^2 falls to 11% (6%). From point 8 it falls to 3% (1%).
    - In betting terms, backing ML v2's side at the opener earns closing-line value of +7.5% over a random side
      [+6.7%, +8.2%]; on 2024-25 it is +6.0% [+4.6%, +7.3%]. ROI is +3.9% [-1.1%, +9.1%] on 2019-23 and +9.6%
      [+1.9%, +17.3%] on 2024-25.
-   - At BFO's mean consensus odds the edge shrinks after vig: +2.7% CLV over a random side at point 1, with ROI not
-     significant on 2019-23. By point 8 it is gone: +0.2%, and -0.7% on 2024-25.
+   - At BFO's mean consensus odds the edge shrinks. **Corrected by the verifier:** T4's "minus both sides" measure is
+     not neutral. It scores a plain favourite rule at about +3% at every consensus point (+4-6% on 2024-25), so its
+     "+0.2%, and -0.7% on 2024-25 at point 8" is an artefact of the measure. On a de-vig-consistent fair CLV (table
+     V2), ML v2's side earns:
+     - at point 1: +2.6% against +0.5% for the favourite rule (2024-25: +2.0% against +1.8%);
+     - at point 8: +0.5% [+0.2%, +0.9%] (2024-25: +0.4% [-0.3%, +1.0%]), no better than the favourite rule (+0.6%,
+       and +0.9% on 2024-25).
+
+     ROI after the opener is not significant in either period.
    - Caveat: the opener is one book's first price, often small-limit. This is evidence that the model leads the market
      early. It is not a betting system. (high for the direction; medium for the ROI)
 3. **(Q2) A stack trained on a consensus snapshot was built and gated, and it failed the pre-registered look.**
-   - CV is flat across the training point. Stacks trained on any consensus point 1-9, or on synthetic T-6h, T-24h,
-     T-72h or T-7d lines, agree within 0.0005 and give weights within about 0.02 of each other: line about 0.78, ML v2
-     about 0.37.
+   - CV is flat across the training point. Stacks trained on any consensus point 1-8 agree within 0.0003 whatever
+     consensus point is fed (T7). The close-trained row adds up to 0.0008 when fed points 1-3. Stacks trained on
+     synthetic T-6h, T-24h, T-72h or T-7d lines score 0.6166-0.6172 in CV (a span of 0.0006). The line weight stays at 0.77-0.79; the
+     ML v2 weight ranges over 0.33-0.40 (corrected by the verifier from "within about 0.02").
    - The pooled points 4-8 stack beat the open-trained stack on consensus lines in CV: -0.0012 [-0.0033, +0.0009],
      and -0.0015 [-0.0035, +0.0005] against the forward ledger's incumbent as actually run.
    - On 2024-25 the pre-registered primary was **contradicted**: +0.0041 [+0.0017, +0.0066]. The as-run comparison
@@ -122,6 +131,13 @@ for 2024-25. There is no intercept.
 M1 uses ML v2's logit gap to the line. M2 adds the market-rating and WHR gaps. M3 adds the line level and the momentum
 since the opener.
 
+Verifier notes on T3:
+- The "corr ... CV" column is a plain correlation pooled over 2015-2023, not a cross-validated number. On 2019-23
+  alone it is 0.50, 0.35, 0.30 and 0.19.
+- Target and feature share the -z_s term, so part of a gap's power could be mean reversion of a noisy snapshot. Table
+  V1 rules that out: the line level alone explains 0.020, 0.020, 0.009 and 0.010 (CV). Adding ML v2 to the level
+  raises that to 0.268, 0.172, 0.134 and 0.075.
+
 T4 bets ML v2's side at point s, at that point's price. Point 0 is one book's opener; points 1-8 are BFO mean odds,
 vig included, not the best price.
 - CLV = p_close(side) x odds - 1, using the power no-vig close.
@@ -145,8 +161,20 @@ vig included, not the best price.
 | 8 | 0.1 | 721 | +0.004 [-0.001, +0.010] | +0.047 [-0.035, +0.128] | +0.193 [+0.027, +0.367] | -0.014 [-0.023, -0.004] | +0.160 [+0.004, +0.330] |
 
 Reading:
-- **CLV, measured against the close, is the cleaner signal: one outcome-free number per bet.** It is clearly positive
-  at the opener, smaller at the first consensus snapshot, and zero or negative by point 8. That holds in both periods.
+- **Correction (verifier): the "CLV minus both sides" column is not a neutral benchmark at points 1-8.** The close is
+  the power de-vig, which loads the vig onto the underdog, while the bet price carries the vig proportionally. So
+  backing the favourite scores about +0.03 at every consensus point on this measure, and backing the underdog about
+  -0.03. ML v2 backs the favourite in only 34-45% of its bets, so its column is biased down. Table V2 (end of this
+  note) gives a de-vig-consistent fair CLV: the multiplicative no-vig probability at point s and at the close.
+  - At the opener the edge is unchanged: +0.076 against -0.006 for the favourite rule (2024-25: +0.054 against
+    +0.010).
+  - At point 8 ML v2's side is +0.005 [+0.002, +0.009] (2024-25: +0.004 [-0.003, +0.010]). That is not "zero or
+    negative", but it is no better than backing the favourite: +0.006, and +0.009 on 2024-25.
+  - At the opener, ROI beats a favourite rule by +0.073 [+0.005, +0.142] on 2019-23 and +0.098 [-0.001, +0.201] on
+    2024-25.
+- **CLV, measured against the close, is the cleaner signal: one outcome-free number per bet.** On the fair measure it
+  is clearly positive at the opener, smaller at the first consensus snapshot, and by point 8 no larger than a
+  favourite rule's. That holds in both periods.
 - **ROI is noisy.** 2019-23 is not significant except at the opener with an edge over 3%. The 2015-18 ROIs are large
   but come from the partially covered years. 2024-25 is the year when ML v2 tied the close (T6).
 - **Multiplicity.** 4 points x 4 thresholds were tried, so treat any single cell as a lead.
@@ -189,6 +217,12 @@ T6 gives the raw lines' log loss:
 | 9 | 0.62324 | 0.61908 | 0.58397 |
 | close_market_json | 0.62338 | 0.61916 | 0.58487 |
 | ml2lr | 0.63601 | 0.6324 | 0.58395 |
+
+**Universe caveat (verifier, table V4).** The 2024-25 rows are the 833 of 854 decisive evaluation fights with a full
+trajectory. The 21 left out are not random: ML v2 scores 0.7748 on them against 0.5840 on the rest, and A wins 38%
+against 55%. Every paired stack comparison here is unaffected, because all arms use the same rows. The absolute "ML v2
+ties the close" on these 833 rows (0.58395 vs 0.58397) flatters ML v2, though. Use research/model_ml2.md's 854/845
+numbers for ML v2 against the close (0.5887 vs 0.5854). In 2019-23 only 4 rows are missing.
 
 T7 cross-feeds the stacks: log loss on CV 2021-23. Each row is the training point of a line + ML v2 logistic stack
 (fit on 2019..Y-1, no recency weighting, the 0.0005 rule's choice at every point). Each column is the line fed.
@@ -383,6 +417,10 @@ not add a capture-time switch. Reason: it passed CV by -0.0012 and was contradic
   weights at least as good, is what this look reproduces. The vault audit and the forward ledger are the clean tests.
 - **ML v2's OOF features were CV-chosen on years that include 2021-23**, so the CV numbers are slightly optimistic for
   every stack alike.
+- **ML v2 is computed as of fight day, not as of the opener** (verifier). The median opener is about 48 days before the
+  event. Rating systems that propagate other fighters' results (WHR, Glicko-2) can update in between, so the Q1 "model
+  leads the opener" numbers may include a little information the market did not have at the open. The fighters'
+  own records do not change in that window, so the effect should be small. It was not quantified.
 - **Open thread: real T-k data.** Archive timestamped consensus snapshots for every forward-ledger card: T-7d, T-72h,
   T-24h, T-6h and the close, with `captured_utc`, mean and per-book. That would let a matched regime be fit on genuine
   capture times once that data unseals after audit 2.
@@ -393,7 +431,8 @@ not add a capture-time switch. Reason: it passed CV by -0.0012 and was contradic
 
 ```
 nice -n 5 python3 tools/linemove.py all          # build timing q1 stacks beyond addendum export (pre-2024 + export)
-python3 tools/linemove.py tables                 # every table above
+nice -n 5 python3 tools/linemove.py verify       # verifier block (V1-V4) -> linemove.json "verification"
+python3 tools/linemove.py tables                 # every table above, V1-V4 at the end
 python3 tests/test_linemove.py                   # protocol, weights, test vectors, corner swap, verdict wiring
 python3 tools/blindtest.py list                  # plugin registration
 # the two 2024-25 looks (already run once each; listed for the record):
@@ -401,3 +440,130 @@ python3 tools/blindtest.py list                  # plugin registration
 #   python3 tools/linemove.py valid_addendum     (PREREG_ADDENDUM, 5a08703)
 nice -n 5 python3 tools/linemove.py vault        # 2026 trajectories -> the vault dir (outside the repo)
 ```
+
+## Verification log
+
+Adversarial verifier, Nov 6, 2026, about 11:15 pm UTC. Verdict: **the builder's decision stands. Nothing enters
+production (adopt = false), and fwd-4.1's routing is unchanged.**
+- Every gated and confirmed number reproduces from the raw CSVs with independent code.
+- No look-ahead, no 2026 data in any fit, and no selection on 2024-25 was found.
+- One measurement defect (T4's CLV benchmark) and four overstated claims were corrected in the text above.
+
+**What was re-done independently.** Scripts are in the session scratchpad (`vf_linemove/vf1_build.py` ..
+`vf4_clv.py`). They do not import tools/linemove.py or tools/market.py.
+
+1. **Parser and join.**
+   - Own reader of `data/raw/odds/bfo_fighter_lines.csv`: rows dated 2026+ and undated rows are skipped at read.
+   - Own name/date matcher against the ufcstats fights, and own power and multiplicative de-vig.
+   - Result: on the 4,000 fights both pipelines cover, the matchup id agrees in every case and every trajectory point is
+     identical (max abs diff 0).
+   - The 145 trajectories only linemove has come from market.py's nlbair crosswalk: name changes and reversed names
+     (Pennington/Torres, Chookagian/Cerminara, Zhang Weili, "King" Green, Jacare Souza ...).
+   - Those rows are correctly oriented. Their close correlates 0.9999 with market.json's close, and corr(logit close,
+     logit ML v2) is 0.754 against 0.802 for the rest.
+   - Matcher passes 2 and 3 (rescheduled and undated "Future Events" matchups) contribute 8 of 5,739 matches, so the
+     risk of attaching a cancelled booking's line is negligible.
+2. **Stack gate and both 2024-25 comparisons.** Own non-negative no-intercept logistic (no ridge) and own card
+   bootstrap (different seed):
+
+   | comparison | builder | verifier |
+   |---|---|---|
+   | CV gate: consensus S4-8 minus open-trained, fed power 4-9 | -0.0012 [-0.0033, +0.0009] | -0.0012 [-0.0034, +0.0009] |
+   | CV: consensus minus fwd-4.1 as run (open fed multiplicative) | -0.0015 [-0.0035, +0.0005] | -0.0015 [-0.0036, +0.0005] |
+   | CV: open fed multiplicative minus fed power | +0.0003 [-0.0006, +0.0011] | +0.0003 [-0.0006, +0.0011] |
+   | 2024-25 PRIMARY (static) | +0.0041 [+0.0017, +0.0066] | +0.0042 [+0.0017, +0.0065] |
+   | 2024-25 as run (static) | +0.0028 [-0.0001, +0.0059] | +0.0028 [-0.0001, +0.0059] |
+   | 2024-25 close-trained minus consensus, fed the close | +0.0020 [+0.0009, +0.0031] | +0.0020 [+0.0011, +0.0030] |
+   | weights 2019-23 (line, ML v2): open / consensus / close | 0.661, 0.579 / 0.788, 0.389 / 0.780, 0.331 | 0.662, 0.580 / 0.791, 0.389 / 0.782, 0.330 |
+
+   Both 2024-25 inputs are ML v2's annual-refit OOF for 2019-2023 (`lr|oof`, verified in tools/ml2.py
+   `expert_table`) and the static fit before 2024 for 2024-25. No stack weight sees a test-year outcome.
+3. **Protocol and timeline (git).**
+   - PREREG was committed in fb65a93 at 22:23:05 UTC; valid.json was written at 22:24:01.
+   - PREREG_ADDENDUM was committed in 5a08703 at 22:34:14; valid_addendum.json was written at 22:34:21.
+   - Both pre-registration texts in linemove.json are byte-identical to their commits.
+   - The tool's CV stages were not changed after the looks. Only export, vault and tables were added.
+   - `beyond.json` was re-written at 22:41:55, after the looks, but is byte-identical to the exported copy. It was a
+     deterministic re-run, and the chosen set (S4-8) did not change.
+   - linemove.json holds no 2026 date. The 2026 trajectories are only in the vault directory outside the repo.
+   - Pre-existing and not linemove's doing: the tracked CSVs `data/raw/odds/bfo_*.csv` contain 2026 rows from the
+     market workstream. Every linemove reader drops them at parse.
+4. **Corner order (free-intercept check, table V3).**
+   - A wins 56.7% of the CV fights.
+   - A free intercept (about +0.11 to +0.16) would lower CV log loss by about 0.0013 for every stack alike.
+   - The shipped stacks have no intercept and odd inputs, so the corner swap is exact (2.2e-16) and the ordering is not
+     exploited.
+5. **Matching bias (table V4).** Missing fights are dropped from every arm, so paired comparisons are unaffected. The
+   21 missing 2024-25 fights are hard for ML v2 (log loss 0.77), so absolute ML v2-versus-close numbers on the 833 rows
+   flatter ML v2. A caveat was added at T7.
+
+**Defects found and fixed:**
+- **T4 CLV benchmark (measurement defect, report-level).** "CLV minus both sides" prices the close with the power
+  de-vig and the bet with its proportional vig. A favourite rule therefore scores about +0.03 at points 1-8, and ML v2
+  (34-45% favourites) is biased down.
+  - The tool gained a `verify` stage (de-vig-consistent fair CLV and favourite baselines; table V2), and the readings
+    were corrected.
+  - The opener result stands. The "zero or negative by point 8" claim did not: ML v2's side there is small and positive,
+    and no better than backing the favourite.
+- **Overstatements corrected:**
+  - cross-feed spread "at most 0.0005": 0.0003 for training points 1-8, and 0.0008 with the close-trained row;
+  - weights "within about 0.02": the ML v2 weight spans 0.33-0.40;
+  - the T3 "corr ... CV" column is a pooled 2015-23 correlation;
+  - "after vig" was wrong: the measure nets out the vig.
+- **Q1 robustness added (table V1).** The model-gap R^2 is not opener mean reversion: level alone explains 0.020,
+  level plus ML v2 0.268.
+- **Caveat added.** ML v2 is computed as of fight day, not as of the opener, so a little post-open information may
+  reach it through rating propagation.
+- **Tool.** `export` now keeps the `verification` block on re-export, and `tables` prints V1-V4. No CV, gate or 2024-25
+  number changed. `python3 tests/test_linemove.py` still passes 14,238 checks.
+
+**Not verified.** The builder's statements that BFO's history endpoint is obfuscated, that fightodds.io's terms render
+only client-side, and the User-Agent used for the robots.txt and bfo.min.js fetches.
+- The cached robots.txt allows everything except /cnadm/. linemove.py itself makes no network requests.
+
+**Adopt decision: false.**
+- The consensus or T-k stack passed the pre-2024 gate only by the 0.0005 point rule; its CI included 0.
+- Its pre-registered 2024-25 primary was contradicted, and it fails the 6.3 "not worse" tolerance.
+- Movement and dispersion add nothing beyond the close.
+- The proposed do-not-do entry is supported: no consensus or T-k training, no capture-time switch, no movement or
+  dispersion on top of the close. So is archiving timestamped snapshots in the forward ledger.
+
+### Verifier tables (from `python3 tools/linemove.py tables`)
+
+V1 Q1 baseline, out-of-sample R^2 of the move to the close (CV 2019-23 / 2024-25):
+
+| from point | line level only | ML v2 gap only (M1) | level + ML v2 | corr(move, gap) pooled <= 2023 / 2019-23 |
+|---|---|---|---|---|
+| 0 | 0.020 / 0.102 | 0.222 / 0.142 | 0.268 / 0.315 | 0.443 / 0.502 |
+| 1 | 0.020 / 0.060 | 0.111 / 0.060 | 0.172 / 0.194 | 0.326 / 0.351 |
+| 4 | 0.009 / 0.048 | 0.082 / 0.033 | 0.134 / 0.148 | 0.284 / 0.301 |
+| 8 | 0.010 / 0.019 | 0.033 / 0.010 | 0.075 / 0.064 | 0.183 / 0.194 |
+
+V2 CLV neutrality. "T4" is the builder's CLV minus both sides. "Fair" uses multiplicative no-vig at point s and at the
+close.
+
+| period | point | ML v2 fav. share | ML v2 T4 | favourite T4 | ML v2 fair | favourite fair | ROI ML v2 minus favourite |
+|---|---|---|---|---|---|---|---|
+| 2019-23 | 0 | 0.45 | +0.075 [+0.067, +0.082] | +0.011 [+0.002, +0.019] | +0.076 [+0.068, +0.086] | -0.006 [-0.012, -0.000] | +0.073 [+0.005, +0.142] |
+| 2019-23 | 1 | 0.41 | +0.027 [+0.022, +0.033] | +0.029 [+0.024, +0.035] | +0.026 [+0.020, +0.032] | +0.005 [+0.001, +0.009] | +0.025 [-0.039, +0.089] |
+| 2019-23 | 4 | 0.41 | +0.017 [+0.012, +0.022] | +0.030 [+0.025, +0.035] | +0.017 [+0.011, +0.022] | +0.005 [+0.002, +0.008] | +0.004 [-0.060, +0.071] |
+| 2019-23 | 8 | 0.40 | +0.002 [-0.001, +0.006] | +0.031 [+0.028, +0.034] | +0.005 [+0.002, +0.009] | +0.006 [+0.004, +0.009] | +0.016 [-0.048, +0.077] |
+| 2024-25 | 0 | 0.41 | +0.060 [+0.046, +0.073] | +0.044 [+0.030, +0.056] | +0.054 [+0.040, +0.070] | +0.010 [+0.001, +0.019] | +0.098 [-0.001, +0.201] |
+| 2024-25 | 1 | 0.38 | +0.025 [+0.014, +0.036] | +0.057 [+0.046, +0.068] | +0.020 [+0.009, +0.031] | +0.018 [+0.011, +0.026] | +0.059 [-0.047, +0.167] |
+| 2024-25 | 4 | 0.36 | +0.016 [+0.007, +0.025] | +0.052 [+0.042, +0.061] | +0.013 [+0.004, +0.023] | +0.014 [+0.007, +0.021] | +0.053 [-0.046, +0.160] |
+| 2024-25 | 8 | 0.34 | -0.007 [-0.013, -0.000] | +0.043 [+0.036, +0.048] | +0.004 [-0.003, +0.010] | +0.009 [+0.005, +0.013] | +0.027 [-0.083, +0.141] |
+
+V3 free-intercept check, CV 2021-23, stacks fed point 8 (A wins 0.567):
+
+| stack | intercept by CV year (2021, 2022, 2023) | with intercept minus without |
+|---|---|---|
+| open-trained | 0.156, 0.120, 0.119 | -0.0014 [-0.0047, +0.0020] |
+| consensus | 0.147, 0.108, 0.114 | -0.0013 [-0.0044, +0.0017] |
+| close-trained | 0.143, 0.107, 0.117 | -0.0013 [-0.0044, +0.0017] |
+
+V4 decisive evaluation fights without a full trajectory:
+
+| period | missing / of | A wins missing / present | ML v2 LL missing / present | missing with a close |
+|---|---|---|---|---|
+| 2019-23 | 4 / 1955 | 0.500 / 0.571 | 0.4223 / 0.6360 | 4 |
+| 2024-25 | 21 / 854 | 0.381 / 0.545 | 0.7748 / 0.5840 | 12 |

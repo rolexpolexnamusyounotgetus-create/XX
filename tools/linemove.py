@@ -1928,7 +1928,7 @@ def stage_tables(a):
            ["%.3f / %.3f" % (qb[k]["corr(move, gap) pooled <= 2023"], qb[k]["corr(move, gap) 2019-2023"])] for k in qb])
     cn = VF["clv_neutrality"]
     table("V2 (verifier) CLV neutrality: T4's measure vs a de-vig-consistent fair CLV, ML v2's side and the favourite rule",
-          ["period | point", "ML v2 side fav. share", "ML v2 T4", "favourite T4", "ML v2 fair CLV", "favourite fair CLV",
+          ["period", "point", "ML v2 side fav. share", "ML v2 T4", "favourite T4", "ML v2 fair CLV", "favourite fair CLV",
            "ROI ML v2", "ROI favourite", "ROI ML v2 minus fav."],
           [[k, v["ML v2 side is the favourite (share of bets)"], ci3(v["ML v2 side | T4 CLV minus both sides"]),
             ci3(v["favourite | T4 CLV minus both sides"]), ci3(v["ML v2 side | fair CLV (mult both ends)"]),
