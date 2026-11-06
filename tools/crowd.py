@@ -331,6 +331,124 @@ def parse_moneymma(h):
     return {"published": _date_published(h), "title": title, "picks": picks}
 
 
+MONTHS = {m: i + 1 for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov",
+                                            "dec"))}
+# Earliest typical start of a card's MAIN CARD (the contest's five bouts are main-card bouts), Eastern time on the
+# ufcstats event date, by venue region. Approximate (no historical start-time source is used); a stated lock later
+# than this bound is treated as unsafe and the card is dropped. Only cards whose lock text is readable use it.
+LOCK_BOUND_ET = {"americas_ppv": 22.0, "americas": 19.0, "europe": 13.0, "middle_east": 12.0, "asia": 5.0,
+                 "oceania": 21.0}
+REGION = {
+    "americas": ("USA", "Canada", "Mexico", "Brazil", "Argentina", "Chile", "Uruguay", "Colombia", "Peru"),
+    "europe": ("United Kingdom", "England", "Scotland", "Ireland", "France", "Germany", "Sweden", "Poland", "Netherlands",
+               "Czech Republic", "Denmark", "Russia", "Spain", "Italy", "Croatia", "Switzerland", "Belgium", "Austria",
+               "Norway", "Portugal", "Azerbaijan", "Kazakhstan"),
+    "middle_east": ("United Arab Emirates", "Saudi Arabia", "Qatar", "Bahrain", "Israel"),
+    "asia": ("China", "Singapore", "Japan", "South Korea", "Korea", "Macau", "Philippines", "Thailand", "India"),
+    "oceania": ("Australia", "New Zealand"),
+}
+
+
+def parse_contest(h):
+    """Money MMA contest-entry post (published before the card). -> dict(published, lock_text, lock_md (month, day),
+    lock_h (hours ET, 24 h), paywalled). From 2025 the free part states 'All picks must be submitted by 6:00 PM
+    Eastern Sat, January 18th'; 2022-2024 posts are cut by the paywall before the rules."""
+    m = re.search(r'<div class="available-content">(.*?)</article>', h, re.S)
+    t = page_text(m.group(1) if m else h)
+    out = {"published": _date_published(h), "lock_text": None, "lock_md": None, "lock_h": None,
+           "paywalled": bool(re.search(r"Continue reading this post|Claim my free post", t))}
+    mm = re.search(r"submitted by\s+([0-9]{1,2})(?::([0-9]{2}))?\s*([ap])\.?\s*m\.?\s*(?:Eastern|ET|EST|EDT)[^,\n]*,?"
+                   r"\s*([A-Za-z]{3,9})\.?\s+([0-9]{1,2})", t, re.I)
+    if mm:
+        hh = int(mm.group(1)) % 12 + (12 if mm.group(3).lower() == "p" else 0)
+        out["lock_h"] = hh + int(mm.group(2) or 0) / 60.0
+        mon = MONTHS.get(mm.group(4)[:3].lower())
+        out["lock_md"] = (mon, int(mm.group(5))) if mon else None
+        out["lock_text"] = mm.group(0)
+    return out
+
+
+def event_region(location, event_name):
+    country = (location or "").split(",")[-1].strip()
+    for reg, cs in REGION.items():
+        if country in cs:
+            if reg == "americas" and re.match(r"UFC \d+:", event_name or ""):
+                return "americas_ppv"
+            return reg
+    return None
+
+
+def lock_status(c, event_date, region):
+    """'lock_verified' | 'lock_after_bound' (unsafe: drop) | 'lock_text_inconsistent' | 'paywalled'."""
+    if not c or c["lock_h"] is None or not c["lock_md"]:
+        return "paywalled"
+    ed = dt.date.fromisoformat(event_date)
+    try:
+        ld = dt.date(ed.year, *c["lock_md"])
+    except ValueError:
+        return "lock_text_inconsistent"
+    if not (0 <= (ed - ld).days <= 1):
+        return "lock_text_inconsistent"            # stale copy-paste (e.g. UFC 312's post repeats UFC 311's date)
+    if region is None:
+        return "lock_text_inconsistent"
+    return "lock_verified" if c["lock_h"] <= LOCK_BOUND_ET[region] + 1e-9 else "lock_after_bound"
+
+
+def load_event_locations():
+    import csv
+    out = {}
+    with open(os.path.join(ROOT, "data", "raw", "ufc_event_details.csv")) as fh:
+        for r in csv.DictReader(fh):
+            out[r["EVENT"].strip()] = r["LOCATION"].strip()
+    return out
+
+
+def map_contests(fights):
+    """Contest-entry post -> ufcstats event (the first card 0-10 days after the post whose name matches the slug).
+    Returns {event name: {slug, published, lock..., status}}."""
+    import glob
+    events = {}
+    for f in fights:
+        events.setdefault(f["event"], f["date"])
+    locs = load_event_locations()
+    out = {}
+    for fn in sorted(glob.glob(os.path.join(CACHE, "moneymma", "p_*.html"))):
+        slug = os.path.basename(fn)[2:-5]
+        if "results" in slug:
+            continue
+        c = parse_contest(open(fn, encoding="utf-8", errors="replace").read())
+        pub = _iso_day(c["published"])
+        if not pub:
+            continue
+        num = re.match(r"ufc-(\d{3})-pick", slug)
+        names = re.sub(r"^(ufc-fight-night-|noche-ufc-)", "", slug)
+        names = re.sub(r"-pick.*$", "", names).split("-vs-")
+        best = None
+        for ev, d in events.items():
+            gap = _days(pub, d)
+            if not (0 <= gap <= 10):
+                continue
+            evn = norm_name(ev)
+            if num:
+                ok = re.match(r"ufc %s\b" % num.group(1), evn) is not None
+            else:
+                ok = len(names) == 2 and all(norm_name(x.replace("-", " ")).split()[-1] in evn.split() for x in names
+                                             if x)
+            if ok and (best is None or gap < best[1]):
+                best = (ev, gap)
+        if not best:
+            continue
+        ev = best[0]
+        reg = event_region(locs.get(ev), ev)
+        st = lock_status(c, events[ev], reg)
+        rec = {"slug": slug, "published": c["published"], "days_before": best[1], "lock_text": c["lock_text"],
+               "lock_h_et": c["lock_h"], "region": reg, "status": st}
+        prev = out.get(ev)
+        if prev is None or (prev["status"] != "lock_verified" and st == "lock_verified"):
+            out[ev] = rec
+    return out
+
+
 # ====================================================================== fights (ufcstats ids; 2026 dropped at parse)
 def load_fights():
     import build_db as B
@@ -495,6 +613,11 @@ def build_rows(fights=None, verbose=True):
     st["n_unmatched"] = len(st["unmatched"])
     rep["rotowire"] = st
     # ---- Money MMA pick'em consensus
+    contests = map_contests(fights)
+    rep["moneymma_contests"] = {"posts_mapped": len(contests),
+                                "by_status": {k: sum(1 for c in contests.values() if c["status"] == k)
+                                              for k in sorted(set(c["status"] for c in contests.values()))},
+                                "cards": {ev: c for ev, c in sorted(contests.items(), key=lambda kv: kv[1]["published"])}}
     sm = dict(posts=0, posts_no_picks=0, picks=0, matched=0, unmatched=[], ambiguous_or_missing=0, no_date=0)
     for fn in sorted(glob.glob(os.path.join(CACHE, "moneymma", "p_*pick-em-results*.html"))):
         h = open(fn, encoding="utf-8", errors="replace").read()
@@ -520,9 +643,22 @@ def build_rows(fights=None, verbose=True):
                 continue
             f, side, score = m
             r = rows.setdefault(f["fid"], {"date": f["date"], "event": f["event"], "a": f["a"], "b": f["b"]})
+            c = contests.get(f["event"])
+            if c is None:
+                frz = "by_design"                 # no contest post found for the card: frozen by the contest's rules
+            elif c["status"] == "lock_verified":
+                frz = "lock_verified"
+            elif c["status"] == "lock_after_bound":
+                frz = "lock_after_bound"          # dropped (never fit or scored)
+            else:
+                frz = "contest_pre_event"         # contest post published before the card; lock text paywalled/stale
+            sm.setdefault("freeze", {})
+            sm["freeze"][frz] = sm["freeze"].get(frz, 0) + 1
             r["mm"] = {"pick": side, "pct_pick": pct, "share_a": round(pct if side == "A" else 1 - pct, 4),
                        "published": P["published"], "days_after": _days(f["date"], pub), "match_score": round(score, 3),
-                       "post": os.path.basename(fn)[2:-5]}
+                       "post": os.path.basename(fn)[2:-5], "freeze": frz,
+                       "contest": ({k: c[k] for k in ("slug", "published", "lock_text", "lock_h_et", "region", "status")}
+                                   if c else None)}
             sm["matched"] += 1
     sm["n_unmatched"] = len(sm["unmatched"])
     rep["moneymma"] = sm

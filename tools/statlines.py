@@ -27,8 +27,11 @@ Hidden-data protocol (docs/BACKLOG.md; docs/V6_V10_PLAN.md 5-6):
 Run from the project root (nice it; the box is shared):
     nice -n 5 python3 tools/statlines.py build      # assemble the row table (about 30 s)
     nice -n 5 python3 tools/statlines.py cv         # candidates x folds 2021-2023, selection (writes cv.json)
-    nice -n 5 python3 tools/statlines.py engine     # score the engine's realised lines (needs tools/statlines_engine.js output)
-    nice -n 5 python3 tools/statlines.py winner     # stat-line winner expert + forward-chained stack gate (2021-2023)
+    nice -n 5 python3 tools/statlines.py actuals    # actual lines of the backtest fights (input of the engine run)
+    nice -n 5 node tools/statlines_engine.js --actuals out/statlines_cache/actuals.json --out out/statlines_cache/engine_v4.json
+    nice -n 5 python3 tools/statlines.py cvfit      # CV-year evaluation (conditional, unconditional, engine) + winner OOF
+    nice -n 5 python3 tools/statlines.py gate       # stat-line winner expert: forward-chained stack gate (2021-2023)
+    nice -n 5 python3 tools/statlines.py prereg     # freeze the choices before the look
     nice -n 5 python3 tools/statlines.py final      # the ONE look at 2024-2025 + exports (statlines.json, statlines_oof.json)
     nice -n 5 python3 tools/statlines.py fixtures   # JS parity fixtures for tests/test_statdist.js
 """
@@ -920,17 +923,888 @@ def select(res, js_only):
     return cur
 
 
+# ====================================================================== stage: actuals (input of tools/statlines_engine.js)
+def stage_actuals(args):
+    """Actual stat lines of the backtest fights (2019-2025; 2026 dropped at load) for tools/statlines_engine.js."""
+    T = load_table()
+    out = {}
+    for i in range(len(T["fid"])):
+        f = T["fid"][i]
+        if f not in T["bt_ids"]:
+            continue
+        e = out.setdefault(f, {"minutes": float(T["t"][i]), "rounds": int(T["rounds"][i]), "date": T["date"][i]})
+        e["AB"[T["side"][i]]] = {st: float(T["Y"][i, SI[st]]) for st in STATS}
+    assert max(v["date"] for v in out.values()) < VAULT_FROM
+    p = os.path.join(CACHE, "actuals.json")
+    json.dump(out, open(p, "w"))
+    log("wrote %s (%d fights)" % (p, len(out)))
+
+
+# ====================================================================== fight-length mixture (unconditional lines)
+def length_grid(T, rows):
+    """Fight-length distribution per row from the methodround S cells (P(finish in round r by KO/TKO or submission,
+    either man), P(decision or draw)) and the fixed pre-2019 within-round finish-time table (10 bins of 30 s).
+    Returns {R: (row positions into `rows`, t grid P, weights n x P)} with P = 10 R + 1 (last point = the distance)."""
+    ft = T["finish_time"]
+    mids = (np.arange(10) + 0.5) * 0.5
+    out = {}
+    for R in (3, 5):
+        pos = [k for k, i in enumerate(rows) if T["rounds"][i] == R and T["fid"][i] in T["cells"]]
+        if not pos:
+            continue
+        tg = np.r_[np.concatenate([5.0 * r + mids for r in range(R)]), 5.0 * R]
+        W = np.zeros((len(pos), len(tg)))
+        for a, k in enumerate(pos):
+            S = np.asarray(T["cells"][T["fid"][rows[k]]]["S"], float)
+            assert len(S) == 4 * R + 3
+            S = S / S.sum()
+            for r in range(R):
+                ko, sb = S[r] + S[2 * R + r], S[R + r] + S[3 * R + r]
+                g = "r1" if r == 0 else "rN"
+                W[a, 10 * r:10 * r + 10] = ko * np.asarray(ft["KO|" + g]) + sb * np.asarray(ft["SUB|" + g])
+            W[a, -1] = S[4 * R:].sum()
+        out[R] = (np.array(pos), tg, W)
+    return out
+
+
+def mixture_scores(st, model, T, rows, y, rng, chunk=60):
+    """Unconditional predictive distribution of stat st for rows (mixture over the fight-length grid): per-row log
+    score, CRPS, randomized PIT, naive 10-90% band hit, mean, P10/P50/P90. Rows without S cells get nan."""
+    n = len(rows)
+    res = {k: np.full(n, np.nan) for k in ("lp", "crps", "pit", "band", "mean", "q10", "q50", "q90")}
+    G = length_grid(T, rows)
+    v = rng.random(n)
+    for R, (pos, tg, W) in G.items():
+        P = len(tg)
+        for a in range(0, len(pos), chunk):
+            pp = pos[a:a + chunk]
+            m = len(pp)
+            rr = np.repeat(np.asarray(rows)[pp], P)
+            tt = np.tile(tg, m)
+            d = model.dist(rr, tt)
+            w = W[a:a + chunk].reshape(-1)
+            yy = np.repeat(y[pp], P)
+            lp = d.logpmf(yy)
+            if d.kind == "zibeta":
+                lp = np.where(yy > d.p["cap"] + 0.5, -np.inf, lp)
+            with np.errstate(divide="ignore"):
+                lw = np.log(np.maximum(w, 0)) + lp
+            lw = lw.reshape(m, P)
+            mx = np.max(lw, 1, keepdims=True)
+            res["lp"][pp] = (mx[:, 0] + np.log(np.exp(lw - mx).sum(1)))
+            res["mean"][pp] = (w * d.mean()).reshape(m, P).sum(1)
+            J = grid_max(st, d) if d.kind != "zibeta" else int(60 * 5 * R + 2)
+            J = min(J, 4000)
+            g = np.arange(J + 1)[None, :]
+            F = (d.cdf(np.repeat(g, m * P, 0)) * w[:, None]).reshape(m, P, J + 1).sum(1)
+            F = np.minimum(F, 1.0)
+            yi = y[pp].astype(int)
+            ind = (g >= y[pp][:, None]).astype(float)
+            res["crps"][pp] = ((F - ind) ** 2).sum(1)
+            Fy = np.take_along_axis(F, np.clip(yi, 0, J)[:, None], 1)[:, 0]
+            Fm = np.where(yi >= 1, np.take_along_axis(F, np.clip(yi - 1, 0, J)[:, None], 1)[:, 0], 0.0)
+            res["pit"][pp] = np.clip(Fm + v[pp] * (Fy - Fm), 0, 1)
+            for q, key in ((0.1, "q10"), (0.5, "q50"), (0.9, "q90")):
+                res[key][pp] = (F >= q).argmax(1)
+            res["band"][pp] = (y[pp] >= res["q10"][pp]) & (y[pp] <= res["q90"][pp])
+    return res
+
+
+class PoisModel:
+    """Poisson at a per-minute base rate (mean only; the comparator 'the mean model with a Poisson spread')."""
+    def __init__(self, BR, j):
+        self.BR, self.j = BR, j
+
+    def dist(self, rows, t):
+        return Dist("pois", mu=np.maximum(self.BR[rows, self.j] * t, 1e-8))
+
+
+def raw_base(T):
+    """Per-minute base rates from the raw mlrates out-of-fold rates (no embedding blend, no recalibration)."""
+    return base_rates(np.maximum(T["ML"], 1e-9))
+
+
+def chosen_js(cv):
+    return cv["choice_js"]
+
+
+def cand_of(st, name):
+    for n, f, o in candidates(st):
+        if n == name:
+            return n, f, o
+    raise KeyError((st, name))
+
+
+def fit_set(T, Fd, rows_tr, choice):
+    return {st: StatModel(T, Fd, st, *cand_of(st, choice[st])).fit(rows_tr) for st in STATS}
+
+
+# ====================================================================== evaluation of one fold set
+EVAL_CANDS = ("chosen", "nb_base", "pois_base", "pois_mlraw")
+
+
+def eval_fold(T, Fd, models, nbb, rows, rng, mix=True):
+    """Per stat: conditional (actual t) scores for the chosen model and the comparators, plus the unconditional
+    mixture for the chosen model and the Poisson-blend comparator. Returns {st: {cand: {metric: array}}}."""
+    t = T["t"][rows]
+    RAW = raw_base(T)
+    out = {}
+    for st in STATS:
+        j = SI[st]
+        y = T["Y"][rows, j]
+        o = {}
+        for cn in EVAL_CANDS:
+            if cn == "chosen":
+                d = models[st].dist(rows, t)
+            elif cn == "nb_base":
+                d = nbb[st].dist(rows, t)
+            elif cn == "pois_base":
+                d = PoisModel(Fd.BR, j).dist(rows, t)
+            else:
+                d = PoisModel(RAW, j).dist(rows, t)
+            sc = score_rows(st, y, d, rng)
+            sc["dev"] = pois_dev(y, d.mean())
+            sc["mean"] = d.mean()
+            sc["ae_med"] = np.abs(y - median_of(d))
+            if cn == "chosen":
+                sc["par"] = {k: np.asarray(v, float) for k, v in d.p.items()}
+            o[cn] = sc
+        if mix:
+            o["chosen_mix"] = mixture_scores(st, models[st], T, rows, y, rng)
+            o["chosen_mix"]["dev"] = pois_dev(y, np.nan_to_num(o["chosen_mix"]["mean"], nan=1.0))
+            o["pois_base_mix"] = mixture_scores(st, PoisModel(Fd.BR, j), T, rows, y, rng)
+            o["pois_base_mix"]["dev"] = pois_dev(y, np.nan_to_num(o["pois_base_mix"]["mean"], nan=1.0))
+        out[st] = o
+    return out
+
+
+def median_of(d):
+    J = grid_max("x", d) if d.kind != "zibeta" else int(np.max(d.p["cap"]) + 2)
+    J = min(J, 4000)
+    med = np.zeros(len(d.mean()))
+    n = len(med)
+    for a in range(0, n, 300):
+        b = min(n, a + 300)
+        sub = Dist(d.kind, **{k: x[a:b] for k, x in d.p.items()})
+        F = sub.cdf(np.arange(J + 1)[None, :].repeat(b - a, 0))
+        med[a:b] = (F >= 0.5).argmax(1)
+    return med
+
+
+def summarize(sc, mask=None):
+    m = np.ones(len(sc["lp"]), bool) if mask is None else mask
+    m = m & np.isfinite(sc["lp"])
+    r = {"n": int(m.sum()), "nll": r5(-sc["lp"][m].mean()), "crps": r5(sc["crps"][m].mean()),
+         "dev": r5(sc["dev"][m].mean())}
+    if "ae_med" in sc:
+        r["mae_median"] = r5(sc["ae_med"][m].mean())
+    r["band80_naive"] = r5(sc["band"][m].mean())
+    ps = pit_summary(sc["pit"][m])
+    r["pit_in80"] = r5(ps["in80"])
+    r["pit_above90"] = r5(ps["above90"])
+    r["pit_below10"] = r5(ps["below10"])
+    r["pit_hist10"] = ps["hist10"]
+    return r
+
+
+# ====================================================================== engine comparison
+ENG_F = {"mean": 0, "var": 1, "pit": 2, "crps": 3, "in80": 4, "cmean": 5, "dmean": 6, "dvar": 7, "dpit": 8, "dcrps": 9,
+         "din80": 10}
+
+
+def load_engine(path):
+    E = json.load(open(path))
+    assert E["meta"]["until"] <= VAULT_FROM
+    return E
+
+
+def engine_compare(T, ev, rows, E, boot, years_note):
+    """Per stat on backtest fight-sides with an engine record: (a) conditional means at the actual length (engine's
+    rate-based mean vs ours), (b) went-the-distance fights, engine sims that went the distance vs our distribution at
+    t = 5R: CRPS, PIT, 80% coverage, (c) unconditional: engine's full simulated distribution vs our length mixture."""
+    F = E["fights"]
+    fid = T["fid"][rows]
+    side = T["side"][rows]
+    rec = [F.get(f) for f in fid]
+    ok = np.array([r is not None and r.get("err") is None and "A" in r for r in rec])
+    out = {"meta": {"engine": "%s / %s, %d sims per order" % (E["meta"]["engine_version"], E["meta"]["params_version"],
+                                                               E["meta"]["sims_per_order"]), "years": years_note}}
+    grp = T["event"][rows]
+    for st in STATS:
+        j = SI[st]
+        y = T["Y"][rows, j]
+        A = np.full((len(rows), 11), np.nan)
+        for k, r in enumerate(rec):
+            if ok[k]:
+                v = r["AB"[side[k]]][st]
+                A[k, :len(v)] = v
+        o = ev[st]
+        res = {}
+        # (a) conditional mean at the actual length
+        m = ok & np.isfinite(A[:, ENG_F["cmean"]])
+        de = pois_dev(y, np.maximum(A[:, ENG_F["cmean"]], 1e-6))
+        for cn in ("chosen", "pois_base", "pois_mlraw"):
+            res["cond_mean_dev|%s - engine" % cn] = ci_list(boot, o[cn]["dev"] - de, m, grp)
+        res["cond_mean_dev|engine"] = r5(de[m].mean())
+        res["cond_mean_dev|chosen"] = r5(o["chosen"]["dev"][m].mean())
+        res["cond_mean_dev|pois_base"] = r5(o["pois_base"]["dev"][m].mean())
+        res["n_cond"] = int(m.sum())
+        # (b) went the distance: engine's decision sims vs our conditional distribution (actual t = 5R)
+        md = ok & np.isfinite(A[:, ENG_F["dcrps"]])
+        res["dist"] = {"n": int(md.sum()),
+                       "engine": {"crps": r5(A[md, ENG_F["dcrps"]].mean()),
+                                  "dev": r5(pois_dev(y[md], np.maximum(A[md, ENG_F["dmean"]], 1e-6)).mean()),
+                                  "band80_naive": r5(A[md, ENG_F["din80"]].mean()),
+                                  **{("pit_" + k): r5(v) for k, v in pit_summary(A[md, ENG_F["dpit"]]).items()
+                                     if k in ("in80", "above90", "below10")},
+                                  "pit_hist10": pit_summary(A[md, ENG_F["dpit"]])["hist10"]},
+                       "chosen": {"crps": r5(o["chosen"]["crps"][md].mean()), "dev": r5(o["chosen"]["dev"][md].mean()),
+                                  "band80_naive": r5(o["chosen"]["band"][md].mean()),
+                                  **{("pit_" + k): r5(v) for k, v in pit_summary(o["chosen"]["pit"][md]).items()
+                                     if k in ("in80", "above90", "below10")},
+                                  "pit_hist10": pit_summary(o["chosen"]["pit"][md])["hist10"]},
+                       "crps|chosen - engine": ci_list(boot, o["chosen"]["crps"] - np.nan_to_num(A[:, ENG_F["dcrps"]]),
+                                                       md, grp)}
+        # (c) unconditional
+        if "chosen_mix" in o:
+            mu = ok & np.isfinite(o["chosen_mix"]["crps"])
+            deu = pois_dev(y, np.maximum(np.nan_to_num(A[:, ENG_F["mean"]], nan=1.0), 1e-6))
+            res["uncond"] = {"n": int(mu.sum()),
+                             "engine": {"crps": r5(A[mu, ENG_F["crps"]].mean()), "dev": r5(deu[mu].mean()),
+                                        "band80_naive": r5(A[mu, ENG_F["in80"]].mean()),
+                                        **{("pit_" + k): r5(v) for k, v in pit_summary(A[mu, ENG_F["pit"]]).items()
+                                           if k in ("in80", "above90", "below10")},
+                                        "pit_hist10": pit_summary(A[mu, ENG_F["pit"]])["hist10"]},
+                             "chosen_mix": {"crps": r5(o["chosen_mix"]["crps"][mu].mean()),
+                                            "dev": r5(o["chosen_mix"]["dev"][mu].mean()),
+                                            "nll": r5(-o["chosen_mix"]["lp"][mu].mean()),
+                                            "band80_naive": r5(o["chosen_mix"]["band"][mu].mean()),
+                                            **{("pit_" + k): r5(v) for k, v in pit_summary(o["chosen_mix"]["pit"][mu]).items()
+                                               if k in ("in80", "above90", "below10")},
+                                            "pit_hist10": pit_summary(o["chosen_mix"]["pit"][mu])["hist10"]},
+                             "pois_base_mix": {"crps": r5(o["pois_base_mix"]["crps"][mu].mean()),
+                                               "dev": r5(o["pois_base_mix"]["dev"][mu].mean()),
+                                               "nll": r5(-o["pois_base_mix"]["lp"][mu].mean()),
+                                               "pit_in80": r5(pit_summary(o["pois_base_mix"]["pit"][mu])["in80"])},
+                             "crps|chosen_mix - engine": ci_list(boot, np.nan_to_num(o["chosen_mix"]["crps"])
+                                                                 - np.nan_to_num(A[:, ENG_F["crps"]]), mu, grp),
+                             "dev|chosen_mix - engine": ci_list(boot, np.nan_to_num(o["chosen_mix"]["dev"]) - deu, mu, grp)}
+        out[st] = res
+    return out
+
+
+def ci_list(boot_maker, d, mask, grp):
+    """Event-cluster bootstrap mean and 95% CI of d over mask (fresh Boot on the masked groups, fixed seed)."""
+    if mask.sum() == 0:
+        return None
+    b = boot_maker(grp[mask])
+    m, lo, hi = b.mean_ci(d[mask])
+    return [r5(m), r5(lo), r5(hi)]
+
+
+_BOOTS = {}
+
+
+def boot_for(groups):
+    key = hashlib.md5("|".join(map(str, groups)).encode()).hexdigest()
+    if key not in _BOOTS:
+        _BOOTS[key] = Boot(groups, n=2000, seed=11)
+    return _BOOTS[key]
+
+
+# ====================================================================== winner expert (dominance from stat lines)
+DOM_SCALE = 0.05     # fixed logit per dominance point (set before any fit; the stack weight rescales it)
+
+
+def dominance(means):
+    """means: {stat: array} expected fight totals -> expected dominance points (DOM_W, engine judging defaults)."""
+    return sum(w * means[s] for s, w in DOM_W.items())
+
+
+def mix_means(T, rows, mean_fn):
+    """Unconditional expected totals per stat for rows with S cells: sum_p w_p E[stat | t_p]. mean_fn(st, rr, tt)."""
+    G = length_grid(T, rows)
+    out = {st: np.full(len(rows), np.nan) for st in DOM_W}
+    for R, (pos, tg, W) in G.items():
+        P = len(tg)
+        rr = np.repeat(np.asarray(rows)[pos], P)
+        tt = np.tile(tg, len(pos))
+        for st in DOM_W:
+            out[st][pos] = (mean_fn(st, rr, tt) * W.reshape(-1)).reshape(len(pos), P).sum(1)
+    return out
+
+
+def mix_means_all(T, rows, models):
+    """Unconditional expected totals of every stat (nan for rows without S cells)."""
+    G = length_grid(T, rows)
+    out = {st: np.full(len(rows), np.nan) for st in STATS}
+    for R, (pos, tg, W) in G.items():
+        P = len(tg)
+        rr = np.repeat(np.asarray(rows)[pos], P)
+        tt = np.tile(tg, len(pos))
+        for st in STATS:
+            out[st][pos] = (models[st].dist(rr, tt).mean() * W.reshape(-1)).reshape(len(pos), P).sum(1)
+    return out
+
+
+def winner_logits(T, rows_fight_sides, mean_fn):
+    """Per fight: DOM_SCALE x (dominance A - dominance B) from unconditional expected totals. Antisymmetric by
+    construction: each side is 'attacker X vs defender Y' and no corner input enters."""
+    rows = np.asarray(rows_fight_sides)
+    mm = mix_means(T, rows, mean_fn)
+    D = dominance(mm)
+    by = {}
+    for k, i in enumerate(rows):
+        by.setdefault(T["fid"][i], [np.nan, np.nan])[T["side"][i]] = D[k]
+    return {f: DOM_SCALE * (v[0] - v[1]) for f, v in by.items() if np.isfinite(v[0]) and np.isfinite(v[1])}
+
+
+# ====================================================================== stage: cvfit (CV-year evaluation, OOF, engine)
+def stage_cvfit(args):
+    T = load_table()
+    F = folds_of(T)
+    cv = json.load(open(os.path.join(CACHE, "cv.json")))
+    ch = chosen_js(cv)
+    rng = np.random.default_rng(SEED + 1)
+    E = load_engine(os.path.join(CACHE, "engine_v4.json"))
+    R = {"choice_js": ch, "choice_all": cv["choice"], "years": {}, "pooled": {}, "engine": {}}
+    store, wl = {}, {}
+    nb_base = {st: "nb_base" for st in STATS}
+    allrows, allev = [], {}
+    for Y in CV_YEARS:
+        tr, te = F[Y]
+        rtr, rte = np.flatnonzero(tr), np.flatnonzero(te)
+        Fd = Fold(T, tr)
+        models = fit_set(T, Fd, rtr, ch)
+        nbb = fit_set(T, Fd, rtr, nb_base)
+        ev = eval_fold(T, Fd, models, nbb, rte, rng)
+        store[Y] = {"rows": rte, "ev": ev}
+        allrows.append(rte)
+        wl.update(winner_logits(T, rte, lambda st, rr, tt: models[st].dist(rr, tt).mean()))
+        log("CV year %d: %d rows evaluated" % (Y, len(rte)))
+    rows = np.concatenate(allrows)
+    ev = {st: {cn: {k: np.concatenate([store[Y]["ev"][st][cn][k] for Y in CV_YEARS])
+                    for k in store[CV_YEARS[0]]["ev"][st][cn]} for cn in store[CV_YEARS[0]]["ev"][st]} for st in STATS}
+    R.update(report_block(T, rows, ev, "2021-2023 (forward-chained CV years; folds trained 2019..Y-1)"))
+    R["engine"] = engine_compare(T, ev, rows, E, boot_for,
+                                 "2021-2023; NOTE engine v4 params (selfcal-pre2024) were tuned on 2019-2023, so its "
+                                 "levels are in-sample here; 2024-2025 (final) is the clean comparison")
+    # winner-expert history: 2019 from the raw mlrates OOF rates (no second stage; no earlier row to fit one on),
+    # 2020 from the y2020 fold (trained on 2019), 2021-2023 from the CV folds above
+    RAW = raw_base(T)
+    r19 = np.flatnonzero(T["year"] == 2019)
+    wl.update(winner_logits(T, r19, lambda st, rr, tt: RAW[rr, SI[st]] * tt))
+    tr20, te20 = F["y2020"]
+    Fd20 = Fold(T, tr20)
+    m20 = fit_set(T, Fd20, np.flatnonzero(tr20), ch)
+    r20 = np.flatnonzero(te20)
+    wl.update(winner_logits(T, r20, lambda st, rr, tt: m20[st].dist(rr, tt).mean()))
+    ev20 = {}
+    mm20 = mix_means_all(T, r20, m20)
+    for st in STATS:
+        d = m20[st].dist(r20, T["t"][r20])
+        ev20[st] = {"chosen": {"par": {k: np.asarray(v, float) for k, v in d.p.items()}}, "chosen_mix": {"mean": mm20[st]}}
+    pickle.dump({"rows": rows, "ev": ev, "oof20": {"rows": r20, "ev": ev20}}, open(os.path.join(CACHE, "cvfit_store.pkl"), "wb"))
+    json.dump({f: r5(v) for f, v in wl.items()}, open(os.path.join(CACHE, "winner_oof.json"), "w"))
+    json.dump(R, open(os.path.join(CACHE, "cv_eval.json"), "w"), indent=1)
+    log("wrote cv_eval.json, winner_oof.json (%d fights)" % len(wl))
+    print_report(R)
+
+
+def report_block(T, rows, ev, label):
+    """Tables: per stat, conditional scores for each candidate (all rows and the backtest universe), paired CIs of the
+    chosen model vs the comparators, PIT / coverage; unconditional mixture summaries."""
+    grp = T["event"][rows]
+    bp = T["both_prior"][rows]
+    out = {"label": label, "n_rows": int(len(rows)), "n_both_prior": int(bp.sum()), "per_stat": {}}
+    for st in STATS:
+        o = ev[st]
+        r = {"all": {cn: summarize(o[cn]) for cn in EVAL_CANDS},
+             "backtest_universe": {cn: summarize(o[cn], bp) for cn in EVAL_CANDS}}
+        for cn in ("nb_base", "pois_base", "pois_mlraw"):
+            for met in ("lp", "crps", "dev"):
+                d = o["chosen"][met] - o[cn][met]
+                if met == "lp":
+                    d = -d       # NLL difference
+                r["chosen - %s|%s" % (cn, {"lp": "nll", "crps": "crps", "dev": "dev"}[met])] = ci_list(
+                    boot_for, d, np.ones(len(rows), bool), grp)
+        r["dev_rel|chosen vs pois_base"] = r5((o["chosen"]["dev"].mean() / o["pois_base"]["dev"].mean() - 1) * 100)
+        r["dev_rel|chosen vs pois_mlraw"] = r5((o["chosen"]["dev"].mean() / o["pois_mlraw"]["dev"].mean() - 1) * 100)
+        if "chosen_mix" in o:
+            mm = np.isfinite(o["chosen_mix"]["lp"])
+            r["uncond"] = {"chosen_mix": summarize(o["chosen_mix"], mm), "pois_base_mix": summarize(o["pois_base_mix"], mm)}
+            r["uncond"]["chosen_mix - pois_base_mix|nll"] = ci_list(
+                boot_for, -(o["chosen_mix"]["lp"] - o["pois_base_mix"]["lp"]), mm, grp)
+        out["per_stat"][st] = r
+    return out
+
+
+def print_report(R):
+    log("label: %s" % R.get("label"))
+    for st in STATS:
+        r = R["per_stat"][st]
+        a = r["all"]
+        log("%-8s chosen %-14s NLL %.4f (pois %.3f nb_base %.4f) dev %.3f (blend %.3f, raw %.3f; %+.2f%%) in80 %.3f "
+            ">P90 %.3f <P10 %.3f | vs nb_base NLL %s" % (
+                st, R["choice_js"][st], a["chosen"]["nll"], a["pois_base"]["nll"], a["nb_base"]["nll"],
+                a["chosen"]["dev"], a["pois_base"]["dev"], a["pois_mlraw"]["dev"], r["dev_rel|chosen vs pois_base"],
+                a["chosen"]["pit_in80"], a["chosen"]["pit_above90"], a["chosen"]["pit_below10"],
+                r["chosen - nb_base|nll"]))
+        e = R.get("engine", {}).get(st)
+        if e:
+            u = e.get("uncond", {})
+            log("         engine: cond-mean dev eng %.3f ours %.3f diff %s | distance-only CRPS eng %.3f ours %.3f in80 "
+                "eng %.3f ours %.3f | uncond CRPS eng %.3f ours %.3f in80 eng %.3f ours %.3f" % (
+                    e["cond_mean_dev|engine"], e["cond_mean_dev|chosen"], e["cond_mean_dev|chosen - engine"],
+                    e["dist"]["engine"]["crps"], e["dist"]["chosen"]["crps"], e["dist"]["engine"]["pit_in80"],
+                    e["dist"]["chosen"]["pit_in80"], u.get("engine", {}).get("crps", np.nan),
+                    u.get("chosen_mix", {}).get("crps", np.nan), u.get("engine", {}).get("pit_in80", np.nan),
+                    u.get("chosen_mix", {}).get("pit_in80", np.nan)))
+
+
+# ====================================================================== stage: gate (forward-chained stack CV)
+GATE_SETS = {
+    "line": [("market+ml2", ["market", "ml2"]), ("page: market+ml2lr", ["market", "ml2lr"])],
+    "noline": [("ml2+mkt_rating+feat_lr", ["ml2", "mkt_rating", "feat_lr"]), ("page: ml2lr+mkt_rating", ["ml2lr", "mkt_rating"])],
+    "open": [("open+ml2", ["open", "ml2"]), ("page: open+ml2lr", ["open", "ml2lr"])],
+}
+
+
+def M2():
+    """tools/ml2.py's stack code (stack_fit, zmat, rec_w, stack_predict, ll, compare, SEL_MIN); the statlines expert is
+    routed through ml2.col_for like ml2's own experts ('statlines_static' / 'statlines_roll')."""
+    import ml2 as m2
+    if not getattr(m2, "_statlines_patched", False):
+        orig = m2.col_for
+
+        def col_for(c, scheme):
+            if c == "statlines":
+                return c + "_" + scheme
+            return orig(c, scheme)
+        m2.col_for = col_for
+        m2._statlines_patched = True
+    return m2
+
+
+def expert_D(wl_oof, wl_valid=None):
+    D = pickle.load(open(os.path.join(ROOT, "out", "ml2_cache", "stack.pkl"), "rb"))["D"].copy()
+    assert D["date"].max() < VAULT_FROM
+    p = lambda f, src: (1 / (1 + math.exp(-src[f]))) if (src and f in src and src[f] is not None) else np.nan
+    yr = D["year"].to_numpy()
+    st = [p(f, wl_oof) if y <= 2023 else (p(f, wl_valid) if wl_valid else np.nan) for f, y in zip(D["fid"], yr)]
+    D["statlines_static"] = st
+    D["statlines_roll"] = st          # one static fit (2019-2023) for 2024-2025; no rolling refit
+    return D
+
+
+def stage_gate(args):
+    m2 = M2()
+    wl = json.load(open(os.path.join(CACHE, "winner_oof.json")))
+    D = expert_D(wl)
+    y, yr = D["y"].to_numpy(float), D["year"].to_numpy()
+    cov = np.isfinite(D["statlines_static"].to_numpy(float))
+    log("ml2 stack table: %d fights 2019-2025; statlines expert on %d of %d 2019-2023 fights" % (
+        len(D), int((cov & (yr <= 2023)).sum()), int((yr <= 2023).sum())))
+    rows_of = {"line": D["market"].notna().to_numpy(), "noline": np.ones(len(D), bool), "open": D["open"].notna().to_numpy()}
+    # symmetry: the expert is antisymmetric by construction; check its mirrored fit (no intercept) is well defined
+    m = cov & (yr <= 2023)
+    z = np.log(D["statlines_static"].to_numpy(float)[m] / (1 - D["statlines_static"].to_numpy(float)[m]))
+    alone = {"n": int(m.sum()), "ll": r5(m2.ll(1 / (1 + np.exp(-z)), y[m])), "acc": r5(float(np.mean((z > 0) == (y[m] == 1))))}
+    R = {"sets": {}, "gate": {}, "paired_cv_years": {}, "expert_alone_2019_2023": alone, "rule": (
+        "ml2's rule: the statlines expert enters a stack only if the forward-chained 2021-2023 stack CV log loss "
+        "(fit on 2019..Y-1, recency half-life chosen from {none, 3, 1.5} with the same 0.0005 penalty) improves by more "
+        "than SEL_MIN = %g" % m2.SEL_MIN)}
+    P = {}
+    for regime, sets in GATE_SETS.items():
+        allsets = list(sets) + [(nm + " + statlines", cols + ["statlines"]) for nm, cols in sets]
+        for nm, cols in allsets:
+            cvs, preds = {}, {}
+            for h in (None, 3.0, 1.5):
+                tot = nn = 0.0
+                pr = np.full(len(D), np.nan)
+                for Y in CV_YEARS:
+                    mm = rows_of[regime] & (yr == Y)
+                    pp, _ = m2.stack_predict(D, cols, "static", h, Y - 1, mm, rows_of[regime])
+                    pr[mm] = pp
+                    tot += m2.ll(pp, y[mm]) * mm.sum()
+                    nn += mm.sum()
+                cvs[str(h)] = round(tot / nn, 5)
+                preds[str(h)] = pr
+            hb = min(cvs, key=lambda k: cvs[k] + (0 if k == "None" else m2.SEL_MIN))
+            h = None if hb == "None" else float(hb)
+            _, b = m2.stack_predict(D, cols, "static", h, 2023, np.zeros(len(D), bool), rows_of[regime])
+            key = "%s|%s" % (regime, nm)
+            R["sets"][key] = {"cols": cols, "cv_by_h": cvs, "chosen_h": h, "cv": cvs[hb],
+                              "weights_fit_2019_2023": dict(zip(cols, np.round(b, 4).tolist()))}
+            P[key] = preds[hb]
+            log("stack CV %-6s %-38s CV %.5f (h %s) w<=2023 %s" % (regime, nm, cvs[hb], h, np.round(b, 3)))
+        for nm, cols in sets:
+            kb, kn = "%s|%s" % (regime, nm), "%s|%s + statlines" % (regime, nm)
+            gain = R["sets"][kn]["cv"] - R["sets"][kb]["cv"]
+            R["gate"][kn] = {"cv_base": R["sets"][kb]["cv"], "cv_plus": R["sets"][kn]["cv"], "gain": round(gain, 5),
+                             "enters": bool(gain < -m2.SEL_MIN),
+                             "statlines_weight": R["sets"][kn]["weights_fit_2019_2023"]["statlines"]}
+            mm = rows_of[regime] & (yr >= 2021) & (yr <= 2023)
+            R["paired_cv_years"][kn + " vs base"] = m2.compare(P[kn][mm], P[kb][mm], y[mm], D["event"].to_numpy()[mm])
+            log("GATE %-44s gain %+.5f -> %s %s" % (kn, gain, "ENTERS" if gain < -m2.SEL_MIN else "rejected",
+                                                    R["paired_cv_years"][kn + " vs base"]))
+    json.dump(R, open(os.path.join(CACHE, "gate.json"), "w"), indent=1, default=float)
+    log("wrote gate.json")
+
+
+# ====================================================================== export (JSON tables for src/ml/statdist.js)
+def export_set(Fd, models, fit_label):
+    blend = {}
+    for t in MLT:
+        b = Fd.B[t]
+        blend[t] = {"emb": None if b["emb"] is None else [r5(x) for x in b["emb"]], "noemb": [r5(x) for x in b["noemb"]],
+                    "task": EMB_TASK[t]}
+    st_out = {}
+    for st, m in models.items():
+        assert m.family in ("nb", "zibeta"), "only JS-evaluable families are exported"
+        o = m.opt
+        kind = "zibeta" if m.family == "zibeta" else ("zinb" if o.get("zi") else "nb")
+        st_out[st] = {"cand": m.name, "kind": kind, "t": bool(o.get("t", True)), "glm": bool(o.get("glm")),
+                      "b": [float(x) for x in m.b], "g": [float(x) for x in m.g],
+                      "d": [float(x) for x in m.d] if (m.d is not None and len(m.d)) else []}
+    return {"fit": fit_label, "blend": blend, "glm_mu": [float(x) for x in Fd.Gmu], "glm_sd": [float(x) for x in Fd.Gsd],
+            "stats": st_out}
+
+
+def py_eval(J, inp, st, t):
+    """Reference evaluator of an exported model set (mirrors src/ml/statdist.js): inp = {ml: [18] raw mlrates rates of
+    the attacker, mlo: the defender's, eta / etao: embedding task predictors or None, has_emb, win_logit (attacker's),
+    opp / oppo: {key: factor} or {}, rounds}. Returns (kind, params dict) at fight length t (minutes)."""
+    def blend(ml, eta):
+        out = np.zeros(len(MLT))
+        for k, tn in enumerate(MLT):
+            b = J["blend"][tn]
+            z0 = _link_ml(tn, np.array([ml[k]]))[0]
+            if b["emb"] is not None and inp["has_emb"] and eta is not None:
+                z = b["emb"][0] + b["emb"][1] * z0 + b["emb"][2] * eta[J["_ti"][b["task"]]]
+            else:
+                z = b["noemb"][0] + b["noemb"][1] * z0
+            if tn in ("acc_h", "acc_b", "acc_l", "acc_d", "acc_c", "acc_g", "td_acc"):
+                out[k] = expit(z)
+            elif tn == "kd_h":
+                out[k] = min(math.exp(z), 0.5)
+            elif tn == "ctrl":
+                out[k] = 60 * math.exp(z)
+            else:
+                out[k] = math.exp(z)
+        return base_rates(out[None, :])[0]
+    BR = blend(inp["ml"], inp.get("eta"))
+    BRo = blend(inp["mlo"], inp.get("etao"))
+    R = inp["rounds"]
+    lt = math.log(max(t, 0.05))
+    fin = 1.0 if t < 5 * R - 1.0 / 60 else 0.0
+    Xt = np.array([1.0, lt, fin, fin * lt, 1.0 if R == 5 else 0.0])
+    lmu0 = math.log(max(BR[SI[st]] * t, 1e-8))
+    S = J["stats"][st]
+    G = None
+    if S["glm"]:
+        raw = [math.log(BR[SI[s]]) for s in ("sig_att", "sig_lnd", "td_att", "ctrl", "sub_att", "kd")]
+        raw += [math.log(BRo[SI[s]]) for s in ("sig_att", "sig_lnd", "td_att", "ctrl", "sub_att", "kd")]
+        raw += [inp["win_logit"], 1.0 if inp["has_emb"] else 0.0]
+        raw += [math.log(max(float(inp["opp"].get(k, 1.0)), 1e-3)) for k in GLM_OPPADJ]
+        raw += [math.log(max(float(inp["oppo"].get(k, 1.0)), 1e-3)) for k in GLM_OPPADJ]
+        Z = (np.array(raw) - np.array(J["glm_mu"])) / np.array(J["glm_sd"])
+        wl, so, sp = Z[GLM_NAMES.index("win_logit")], Z[GLM_NAMES.index("own_sig_lnd")], Z[GLM_NAMES.index("opp_sig_lnd")]
+        G = np.r_[Z, fin * wl, fin * so, fin * sp]
+    b, g, d = np.array(S["b"]), np.array(S["g"]), np.array(S["d"])
+    if S["kind"] == "zibeta":
+        cap = 60.0 * t
+        sh = min(max(math.exp(lmu0) / cap, 1e-4), 0.98)
+        off = math.log(sh / (1 - sh))
+        Xm = Xt if G is None else np.r_[Xt, G]
+        m = expit(np.clip(off + Xm @ b, -15, 15))
+        phi = math.exp(np.clip(np.array([1.0, lt, fin]) @ g, -4, 8))
+        Xp = np.r_[np.array([1.0, np.clip(lmu0 - math.log(cap), -10, 2), lt, fin]), G if G is not None else []]
+        pi = expit(Xp @ d)
+        return "zibeta", {"pi": pi, "m": m, "phi": phi, "cap": cap}
+    Xm = Xt if S["t"] else Xt[:1]
+    if G is not None:
+        Xm = np.r_[Xm, G]
+    if not S["t"]:
+        Xk = np.array([1.0])
+    elif S["glm"]:
+        Xk = np.array([1.0, lt, fin, np.clip(lmu0, -8, 8), 1.0 if R == 5 else 0.0])
+    else:
+        Xk = np.array([1.0, lt, fin])
+    mu = math.exp(np.clip(lmu0 + Xm @ b, -20, 20))
+    k = math.exp(np.clip(Xk @ g, -6, 9))
+    if S["kind"] == "zinb":
+        pi = expit(np.array([1.0, np.clip(lmu0, -8, 8), lt, fin]) @ d)
+        return "zinb", {"mu": mu, "k": k, "pi": pi}
+    return "nb", {"mu": mu, "k": k}
+
+
+def row_input(T, i):
+    """The exported evaluator's input for table row i (attacker = side T['side'][i])."""
+    eta = T["ETA"][i] if T["has_emb"][i] else None
+    etao = T["ETAo"][i] if T["has_emb"][i] else None
+    oi = [OPP_KEYS.index(k) for k in GLM_OPPADJ]
+    return {"ml": T["ML"][i].tolist(), "mlo": T["MLo"][i].tolist(),
+            "eta": None if eta is None else eta.tolist(), "etao": None if etao is None else etao.tolist(),
+            "has_emb": bool(T["has_emb"][i]), "win_logit": float(T["WINL"][i]),
+            "opp": {k: float(np.exp(T["OPP"][i][j])) for k, j in zip(GLM_OPPADJ, oi)},
+            "oppo": {k: float(np.exp(T["OPPo"][i][j])) for k, j in zip(GLM_OPPADJ, oi)}, "rounds": int(T["rounds"][i])}
+
+
+def check_export(T, J, models, rows, tol=1e-6):
+    """The exported tables reproduce StatModel.dist (relative tolerance) on sample rows at their actual lengths."""
+    J = dict(J, _ti=T["TI"])
+    worst = 0.0
+    for i in rows:
+        inp = row_input(T, i)
+        for st in STATS:
+            kind, p = py_eval(J, inp, st, float(T["t"][i]))
+            d = models[st].dist(np.array([i]), np.array([T["t"][i]]))
+            for k, v in p.items():
+                ref = float(d.p[k][0])
+                worst = max(worst, abs(v - ref) / max(abs(ref), 1e-9))
+    assert worst < tol, "export mismatch %.3g" % worst
+    return worst
+
+
+def g4(x):
+    return None if x is None or not np.isfinite(x) else float("%.4g" % float(x))
+
+
+def par_list(kind, p, k):
+    if kind == "zibeta":
+        return [g4(p["m"][k]), g4(p["phi"][k]), g4(p["pi"][k])]
+    if kind == "zinb":
+        return [g4(p["mu"][k]), g4(p["k"][k]), g4(p["pi"][k])]
+    return [g4(p["mu"][k]), g4(p["k"][k])]
+
+
+# ====================================================================== stage: final (the ONE look at 2024-2025)
+def stage_final(args):
+    T = load_table()
+    F = folds_of(T)
+    cv = json.load(open(os.path.join(CACHE, "cv.json")))
+    ch = chosen_js(cv)
+    for need in ("gate.json", "prereg.json", "cvfit_store.pkl", "winner_oof.json", "cv_eval.json"):
+        assert os.path.exists(os.path.join(CACHE, need)), "final needs %s first (selection is finished before the look)" % need
+    pre = json.load(open(os.path.join(CACHE, "prereg.json")))
+    assert pre["choice_js"] == ch, "choice changed after pre-registration"
+    lock = os.path.join(CACHE, "final.lock")
+    if os.path.exists(lock) and not args.force_rewrite:
+        raise SystemExit("final already ran (%s); the 2024-2025 look is spent. --force-rewrite only re-exports the same "
+                         "numbers (same seeds, same code)" % open(lock).read().strip())
+    rng = np.random.default_rng(SEED + 2)
+    E = load_engine(os.path.join(CACHE, "engine_v4.json"))
+    tr, te = F["valid"]
+    rtr, rte = np.flatnonzero(tr), np.flatnonzero(te)
+    assert T["date"][rte].max() < VAULT_FROM and T["date"][rtr].max() < VALID[0]
+    Fd = Fold(T, tr)
+    models = fit_set(T, Fd, rtr, ch)
+    nbb = fit_set(T, Fd, rtr, {st: "nb_base" for st in STATS})
+    ev = eval_fold(T, Fd, models, nbb, rte, rng)
+    R = {"choice_js": ch, "prereg": pre}
+    R.update(report_block(T, rte, ev, "2024-2025 (scored once; models fit on 2019-2023)"))
+    R["engine"] = engine_compare(T, ev, rte, E, boot_for, "2024-2025 (engine v4 params tuned on 2019-2023; clean)")
+    print_report(R)
+    # winner expert on 2024-2025 (static: fit 2019-2023) and the gate stacks, reported as confirmation only
+    wl_oof = json.load(open(os.path.join(CACHE, "winner_oof.json")))
+    wlv = winner_logits(T, rte, lambda st, rr, tt: models[st].dist(rr, tt).mean())
+    gate = json.load(open(os.path.join(CACHE, "gate.json")))
+    m2 = M2()
+    D = expert_D(wl_oof, wlv)
+    y, yr = D["y"].to_numpy(float), D["year"].to_numpy()
+    rows_of = {"line": D["market"].notna().to_numpy(), "noline": np.ones(len(D), bool), "open": D["open"].notna().to_numpy()}
+    va = (yr >= 2024) & (yr <= 2025)
+    W = {}
+    for key, g in gate["gate"].items():
+        regime, nm = key.split("|", 1)
+        base = nm.replace(" + statlines", "")
+        mm = rows_of[regime] & va
+        pr = {}
+        for k2 in (regime + "|" + base, key):
+            s = gate["sets"][k2]
+            pr[k2], _ = m2.stack_predict(D, s["cols"], "static", s["chosen_h"], 2023, mm, rows_of[regime])
+        W[key + " vs base (2024-2025, static fit <= 2023)"] = dict(m2.compare(pr[key], pr[regime + "|" + base], y[mm],
+                                                                                D["event"].to_numpy()[mm]),
+                                                                     entered_by_cv=g["enters"])
+        log("2024-25 %-44s %s (entered by CV: %s)" % (key, W[key + " vs base (2024-2025, static fit <= 2023)"], g["enters"]))
+    zz = D["statlines_static"].to_numpy(float)
+    mv = va & np.isfinite(zz)
+    W["expert_alone_2024_2025"] = {"n": int(mv.sum()), "ll": r5(m2.ll(zz[mv], y[mv])),
+                                   "acc": r5(float(np.mean((zz[mv] > 0.5) == (y[mv] == 1))))}
+    R["winner"] = W
+    # exports: dev (fit 2019-2023) and production (fit 2019-2025, the same pre-registered procedure; deployment)
+    J_dev = export_set(Fd, models, "2019-01-01..2023-12-31")
+    smp = rte[np.random.default_rng(5).choice(len(rte), 40, replace=False)]
+    R["export_check_dev"] = check_export(T, J_dev, models, smp)
+    yrall = T["year"]
+    trp = (yrall >= FIRST_YEAR) & (yrall <= 2025)
+    Fdp = Fold(T, trp)
+    mp = fit_set(T, Fdp, np.flatnonzero(trp), ch)
+    J_prod = export_set(Fdp, mp, "2019-01-01..2025-12-31")
+    R["export_check_prod"] = check_export(T, J_prod, mp, smp)
+    write_exports(T, cv, ch, J_dev, J_prod, R, ev, rte, wl_oof, wlv)
+    json.dump(R, open(os.path.join(CACHE, "final_eval.json"), "w"), indent=1, default=float)
+    open(lock, "w").write("final ran %s UTC" % dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
+    log("final done")
+
+
+def write_exports(T, cv, ch, J_dev, J_prod, R, ev, rte, wl_oof, wlv):
+    cvs = pickle.load(open(os.path.join(CACHE, "cvfit_store.pkl"), "rb"))
+    cve = json.load(open(os.path.join(CACHE, "cv_eval.json")))
+    gate = json.load(open(os.path.join(CACHE, "gate.json")))
+    kinds = {st: J_dev["stats"][st]["kind"] for st in STATS}
+    # ---------------------------------------------------------------- OOF table
+    fights = {}
+
+    def put(rows, evd, set_name):
+        for k, i in enumerate(rows):
+            f = T["fid"][i]
+            e = fights.setdefault(f, {"date": T["date"][i], "set": set_name, "t": round(float(T["t"][i]), 4),
+                                      "R": int(T["rounds"][i])})
+            o = {}
+            for st in STATS:
+                p = evd[st]["chosen"]["par"]
+                um = evd[st].get("chosen_mix", {}).get("mean")
+                o[st] = par_list(kinds[st], p, k) + [g4(um[k]) if um is not None else None]
+            e["AB"[T["side"][i]]] = o
+    o20 = cvs["oof20"]
+    put(o20["rows"], o20["ev"], "cv2020")
+    put(cvs["rows"], cvs["ev"], "cv")
+    put(rte, ev, "valid")
+    for f, e in fights.items():
+        z = wl_oof.get(f) if e["set"] != "valid" else wlv.get(f)
+        e["p_dom"] = None if z is None else g4(1 / (1 + math.exp(-z)))
+    dates = {f: d for f, d in zip(T["fid"], T["date"])}
+    for f, z in wl_oof.items():           # 2019 fights: winner expert only (no second-stage distribution row)
+        if f not in fights and z is not None:
+            fights[f] = {"date": dates[f], "set": "raw2019", "p_dom": g4(1 / (1 + math.exp(-z)))}
+    assert max(e["date"] for e in fights.values()) < VAULT_FROM
+    oof = {"meta": {"tool": TOOL_VERSION, "built": dt.datetime.utcnow().isoformat() + "Z",
+                    "what": "walk-forward predictive stat-line distributions per fight-side (attacker = A or B) at the "
+                            "fight's ACTUAL length t, plus the unconditional mean (mixture over the methodround S "
+                            "fight-length distribution; backtest fights only)",
+                    "sets": {"cv2020": "2020 fights, second stage trained on 2019 only (blend refit on 2019)",
+                             "cv": "2021-2023 forward-chained CV folds (trained 2019..Y-1)",
+                             "valid": "2024-2025, trained 2019-2023 (dev model); scored once",
+                             "raw2019": "2019 fights: p_dom only (from raw mlrates OOF rates; no earlier row to fit on)"},
+                    "stats": STATS, "kinds": kinds,
+                    "fields": "per stat: nb -> [mu, k, uncond_mean]; zinb -> [mu, k, pi, uncond_mean]; zibeta (control "
+                              "seconds) -> [m, phi, pi, uncond_mean] with share s = y / (60 t) ~ Beta(m phi, (1 - m) phi) "
+                              "and P(0) = pi; NB2 variance mu + mu^2 / k; zinb P(0) = pi + (1 - pi) NB(0)",
+                    "p_dom": "statlines winner expert P(A wins) = sigmoid(%g x (dominance A - dominance B)), dominance "
+                             "from expected unconditional totals with the engine's judging weights %s; 2019 rows from raw "
+                             "mlrates OOF rates (no second stage), 2020 y2020 fold" % (DOM_SCALE, json.dumps(DOM_W)),
+                    "rule": "2026 fights dropped at load; never fit or scored"},
+           "fights": fights}
+    json.dump(oof, open(os.path.join(DER, "statlines_oof.json"), "w"), separators=(",", ":"))
+    # ---------------------------------------------------------------- model + evaluation tables
+    small = lambda blk: {k: v for k, v in blk.items() if k != "per_stat"}
+    doc = {"meta": {"tool": TOOL_VERSION, "built": dt.datetime.utcnow().isoformat() + "Z", "inputs": T["inputs"],
+                    "protocol": "fights dated 2026-01-01+ dropped at load; selection by forward-chained CV 2021-2023 "
+                                "(fit 2019..Y-1); 2024-2025 scored once (fit 2019-2023); production refit 2019-2025 by "
+                                "the same procedure (deployment, never scored)",
+                    "report": "research/model_statlines.md", "evaluator": "src/ml/statdist.js"},
+           "stats": STATS, "labels": LABEL, "mlrates_targets": MLT, "glm_names": GLM_NAMES, "glm_oppadj": GLM_OPPADJ,
+           "glm_extra": ["fin*win_logit", "fin*own_sig_lnd", "fin*opp_sig_lnd"],
+           "embed_tasks": T["tasks"], "finish_time": T["finish_time"], "dom": {"w": DOM_W, "scale": DOM_SCALE},
+           "choice_js": ch, "choice_all": cv["choice"], "selection_rule": cv["rule"],
+           "models": {"dev": J_dev, "prod": J_prod},
+           "eval": {"cv_2021_2023": cve, "valid_2024_2025": {k: v for k, v in R.items() if k not in ("prereg",)}},
+           "gate": gate,
+           "cv_candidates": {st: {n: {k: v for k, v in r.items() if k in ("nll", "crps", "dev", "by_year")}
+                                  for n, r in cv["per_stat"][st].items()} for st in STATS}}
+    json.dump(doc, open(os.path.join(DER, "statlines.json"), "w"), separators=(",", ":"), default=float)
+    log("wrote data/derived/statlines.json and statlines_oof.json (%d fights)" % len(fights))
+
+
+# ====================================================================== stage: fixtures (JS parity)
+def stage_fixtures(args):
+    T = load_table()
+    J = json.load(open(os.path.join(DER, "statlines.json")))
+    rng = np.random.default_rng(3)
+    cases = []
+    idx = list(rng.choice(len(T["fid"]), 24, replace=False))
+    idx += [int(np.flatnonzero(~T["has_emb"])[0]), int(np.flatnonzero(T["rounds"] == 5)[0])]
+    for which in ("dev", "prod"):
+        Jm = dict(J["models"][which], _ti={t: i for i, t in enumerate(J["embed_tasks"])})
+        for i in idx[:14] if which == "prod" else idx:
+            inp = row_input(T, i)
+            for t in (float(T["t"][i]), 2.5, 15.0 if T["rounds"][i] == 3 else 25.0):
+                out = {}
+                for st in STATS:
+                    kind, p = py_eval(Jm, inp, st, t)
+                    d = Dist(kind, **{k: np.array([v]) for k, v in p.items()})
+                    y = T["Y"][i, SI[st]]
+                    grid = np.array([[0, 1, 3, int(y), int(d.mean()[0])]])
+                    out[st] = {"kind": kind, "p": {k: float(v) for k, v in p.items()}, "mean": float(d.mean()[0]),
+                               "var": float(d.var()[0]), "y": float(y), "logpmf_y": float(d.logpmf(np.array([y]))[0]),
+                               "cdf": {str(int(g)): float(c) for g, c in zip(grid[0], d.cdf(grid)[0])}}
+                cases.append({"which": which, "row": int(i), "input": inp, "t": t, "out": out})
+    # mixture fixtures: unconditional mean / quantiles for a few backtest rows (dev models)
+    mixes = []
+    Jm = dict(J["models"]["dev"], _ti={t: i for i, t in enumerate(J["embed_tasks"])})
+    bt_rows = [i for i in idx if T["fid"][i] in T["cells"]][:6]
+    for i in bt_rows:
+        inp = row_input(T, i)
+        G = length_grid(T, [i])
+        R = int(T["rounds"][i])
+        pos, tg, W = G[R]
+        o = {}
+        for st in ("sig_lnd", "td_lnd", "ctrl", "kd"):
+            Fm, mean = None, 0.0
+            Jmax = 1502 if st == "ctrl" else 400
+            for tp, w in zip(tg, W[0]):
+                kind, p = py_eval(Jm, inp, st, float(tp))
+                d = Dist(kind, **{k: np.array([v]) for k, v in p.items()})
+                c = d.cdf(np.arange(Jmax)[None, :])[0] * w
+                Fm = c if Fm is None else Fm + c
+                mean += w * d.mean()[0]
+            o[st] = {"mean": float(mean), "q10": int((Fm >= 0.1).argmax()), "q50": int((Fm >= 0.5).argmax()),
+                     "q90": int((Fm >= 0.9).argmax())}
+        mixes.append({"row": int(i), "input": inp, "S": T["cells"][T["fid"][i]]["S"], "rounds": R, "out": o})
+    path = os.path.join(ROOT, "tests", "fixtures", "statdist_fixtures.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    json.dump({"meta": {"tool": TOOL_VERSION, "statlines_sha": sha_file(os.path.join(DER, "statlines.json"))},
+               "cases": cases, "mixtures": mixes}, open(path, "w"), separators=(",", ":"))
+    log("wrote %s (%d cases, %d mixtures)" % (path, len(cases), len(mixes)))
+
+
+# ====================================================================== stage: prereg (freeze choices before final)
+def stage_prereg(args):
+    cv = json.load(open(os.path.join(CACHE, "cv.json")))
+    gate = json.load(open(os.path.join(CACHE, "gate.json")))
+    p = os.path.join(CACHE, "prereg.json")
+    if os.path.exists(p):
+        raise SystemExit("prereg.json exists; the choices are frozen")
+    doc = {"written": dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"), "choice_js": cv["choice_js"],
+           "choice_all": cv["choice"], "selection_rule": cv["rule"],
+           "winner_expert_enters": {k: v["enters"] for k, v in gate["gate"].items()},
+           "primary": "per-stat conditional log score (NLL per fight-side) of the chosen model vs nb_base (the "
+                      "mlrates + embedding blend mean with one NB shape) and vs pois_base (the same mean, Poisson); "
+                      "Poisson deviance of the mean vs pois_base (blend) and pois_mlraw (mlrates alone); PIT in80 "
+                      "target 0.80 +- 0.02; engine v4 comparison (distance-only CRPS / PIT; unconditional CRPS / PIT; "
+                      "conditional-mean deviance) descriptive",
+           "decision": "the stat-line model ships as the distributional layer if its 2024-2025 conditional NLL is not "
+                       "worse than nb_base on any stat beyond the CI and PIT in80 stays within 0.78-0.82 on the large "
+                       "counts; nothing is re-selected on 2024-2025"}
+    json.dump(doc, open(p, "w"), indent=1)
+    log("wrote %s" % p)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("stage")
     ap.add_argument("--stats", default="")
     ap.add_argument("--tag", default="")
     ap.add_argument("--skip-gbm", action="store_true")
+    ap.add_argument("--force-rewrite", action="store_true")
     args = ap.parse_args()
     STAGES[args.stage](args)
 
 
-STAGES = {"build": stage_build, "cv": stage_cv}
+STAGES = {"build": stage_build, "cv": stage_cv, "actuals": stage_actuals, "cvfit": stage_cvfit, "gate": stage_gate,
+          "prereg": stage_prereg, "final": stage_final, "fixtures": stage_fixtures}
 
 if __name__ == "__main__":
     main()

@@ -753,15 +753,15 @@ def chain_pass(H, steps, NP, Ls, es):
     return aL + bL, ae + be
 
 
-def ep_snapshot(X, H, cut_day, init_sites=None, iters=8, damp=0.5, tol=2e-3, logf=None, newton_iter=3):
+def ep_snapshot(X, H, cut_day, init_sites=None, iters=8, damp=0.5, tol=2e-3, logf=None, newton_iter=3, key="main"):
     """Expectation propagation over every fight before cut_day: each fight is a factor on both fighters' states at that
     fight (Laplace moments of the cavity x likelihood, projected to per-fighter Gaussian messages); fighter chains carry
     the random-walk dynamics. Parallel updates with damping, started from the ADF (filter) sites or from `init_sites`
     (warm start; missing nodes get ADF sites from a filter pass). Returns the per-fighter state at the cut (the smoothed
     posterior at each fighter's last fight; run_filter's time update moves it to the next fight), the sites and a log."""
-    if "main" not in _SD:
-        _SD["main"] = static_design(X)
-    SD = _SD["main"]
+    if key not in _SD:
+        _SD[key] = static_design(X)
+    SD = _SD[key]
     nf, steps, lastn = chain_steps(X, cut_day)
     nn = 2 * nf
     NP = [node_params(X, H, nodes, prev) for nodes, prev in steps]
@@ -773,7 +773,7 @@ def ep_snapshot(X, H, cut_day, init_sites=None, iters=8, damp=0.5, tol=2e-3, log
         Ls[:m], es[:m], have[:m] = init_sites["L"][:m], init_sites["e"][:m], True
     if not have.all():                         # ADF sites (posterior / prior at each node) for the rest
         lo = int(np.argmin(have)) // 2
-        R = run_filter(X, H, cut_day, store=True)
+        R = run_filter(X, H, cut_day, store=True, key=key)
         f = np.arange(lo, nf)
         for s in (0, 1):
             P0i = np.linalg.inv(R["P0"][f, s])
@@ -1262,10 +1262,54 @@ def fit_year(X, Y, H0, em_iters=2, sweeps=2, stat_sweeps=2, logf=log):
     return H
 
 
-def predict_year(X, H, Y, years=None):
-    """Run the filter with H through Dec 31 of the last predicted year and record predictions for those years."""
+SCHEDULES = ("none", "year", "quarter", "month")      # EP refit cadence, simplest first
+_MONTHS = {"year": (1,), "quarter": (1, 4, 7, 10), "month": tuple(range(1, 13))}
+
+
+def adf_sites(R, f_lo, f_hi):
+    """Site messages implied by filter updates (posterior / prior at each node) for fights f_lo..f_hi-1."""
+    f = np.arange(f_lo, f_hi)
+    L = np.zeros((2 * len(f), K, K))
+    e = np.zeros((2 * len(f), K))
+    for s in (0, 1):
+        P0i = np.linalg.inv(R["P0"][f, s])
+        P1i = np.linalg.inv(R["P1"][f, s])
+        L[s::2] = P1i - P0i
+        e[s::2] = (P1i @ R["m1"][f, s][..., None])[..., 0] - (P0i @ R["m0"][f, s][..., None])[..., 0]
+    return L, e
+
+
+def run_schedule(X, H, years, schedule, logf=None, key="main"):
+    """Pre-fight states for every fight in `years`: an EP smoothing refit of all earlier fights at each cut of the
+    schedule (Jan 1 / quarter starts / month starts), ADF filter updates after every fight day in between. 'none' is the
+    plain filter from 1994. Hyperparameters H are fixed (fit on data before the first predicted year)."""
+    if schedule == "none":
+        return run_filter(X, H, jan1(max(years) + 1), key=key)
+    n = X["n"]
+    R = {"done": np.zeros(n, bool), "m0": np.full((n, 2, K), np.nan), "P0": np.full((n, 2, K, K), np.nan),
+         "new": np.zeros((n, 2), bool), "gap": np.zeros((n, 2)), "ep_iters": []}
+    cuts = [dt.date(Y, m, 1).toordinal() for Y in sorted(years) for m in _MONTHS[schedule]] + [jan1(max(years) + 1)]
+    sites = None
+    for a, b in zip(cuts[:-1], cuts[1:]):
+        S = ep_snapshot(X, H, a, init_sites=sites, key=key)
+        R["ep_iters"].append(len(S["iters"]))
+        Rr = run_filter(X, H, b, init=S, from_day=a, store=True, key=key)
+        m = Rr["done"]
+        for k in ("m0", "P0", "new", "gap"):
+            R[k][m] = Rr[k][m]
+        R["done"] |= m
+        f_lo, f_hi = S["nf"], int(np.searchsorted(X["day"], b, "left"))
+        Lx, ex = adf_sites(Rr, f_lo, f_hi)
+        sites = {"L": np.concatenate([S["sites"]["L"], Lx]), "e": np.concatenate([S["sites"]["e"], ex])}
+        if logf:
+            logf("    cut %s: EP iters %d, %d fights filtered" % (dt.date.fromordinal(a), len(S["iters"]) + 1, m.sum()))
+    return R
+
+
+def predict_year(X, H, Y, years=None, schedule="none", logf=None, key="main"):
+    """States for the predicted years (filter, or EP refits on a schedule + filter) and the predictions."""
     years = years or [Y]
-    R = run_filter(X, H, jan1(max(years) + 1))
+    R = run_schedule(X, H, years, schedule, logf=logf, key=key)
     idx = np.flatnonzero(np.isin(X["year"], years) & R["done"])
     C, pA, m, v = cells(X, R, H, idx)
     st = stat_pred(X, R, H, idx)
@@ -1335,6 +1379,86 @@ def stage_fit(args):
         pickle.dump({"H": H, "P": P, "variant": v, "years": list(range(Ys, y1 + 1))},
                     open(os.path.join(CACHE, "fit_%s_static%d.pkl" % (v, Ys)), "wb"))
         log("%s static fit through %d-12-31 predicted %s" % (v, Ys - 1, list(range(Ys, y1 + 1))))
+
+
+def pred_path(variant, schedule, part):
+    return os.path.join(CACHE, "pred_%s_%s_%s.pkl" % (variant, schedule, part))
+
+
+def _predict_job(job):
+    variant, schedule, part = job
+    p = pred_path(variant, schedule, part)
+    if os.path.exists(p):
+        return p
+    X = load_data()
+    t0 = time.time()
+    if part.startswith("oof"):              # one OOF year: hyperparameters fit on data before Jan 1 of that year
+        Y = int(part[3:])
+        H = pickle.load(open(year_path(variant, Y), "rb"))["H"]
+        P = predict_year(X, H, Y, schedule=schedule)
+    elif part == "static":                  # 2024-2025 with the hyperparameters fit before 2024-01-01
+        H = pickle.load(open(year_path(variant, 2024), "rb"))["H"]
+        P = predict_year(X, H, 2024, years=[2024, 2025], schedule=schedule)
+    elif part == "roll2025":                # 2025 with the hyperparameters refit on data before 2025-01-01
+        H = pickle.load(open(year_path(variant, 2025), "rb"))["H"]
+        P = predict_year(X, H, 2025, schedule=schedule)
+    P["H"] = H
+    pickle.dump(P, open(p, "wb"))
+    log("predict %s %s %s done (%.0f s)" % (variant, schedule, part, time.time() - t0))
+    return p
+
+
+def stage_predict(args):
+    """Walk-forward predictions per (variant, EP schedule): oof2019..oof2023 (yearly hyperparameter refits), static
+    (2024-2025 from the fit before 2024) and roll2025 (2025 from the fit before 2025). Validation parts are stored,
+    never scored here."""
+    variants = args.variant.split(",")
+    scheds = args.schedules.split(",")
+    parts = [p for p in args.parts.split(",")]
+    jobs = [(v, s, p) for v in variants for s in scheds for p in parts]
+    if args.jobs > 1:
+        import multiprocessing as mp
+        with mp.get_context("fork").Pool(args.jobs) as pool:
+            for r in pool.imap_unordered(_predict_job, jobs):
+                pass
+    else:
+        for j in jobs:
+            _predict_job(j)
+
+
+def load_preds(X, variant, schedule, scheme="static"):
+    """Per-fight predictions aligned to X: 2019-2023 OOF plus 2024-2025 static (or 'roll': 2024 static, 2025 roll)."""
+    n = X["n"]
+    G = {"pA": np.full(n, np.nan), "pA_plugin": np.full(n, np.nan), "m": np.full(n, np.nan), "v": np.full(n, np.nan),
+         "cells": np.full((n, 23), np.nan), "m0": np.full((n, 2, K), np.nan), "sd0": np.full((n, 2, K), np.nan),
+         "new": np.zeros((n, 2), bool), "stats": defaultdict(lambda: np.full(n, np.nan)), "H": {},
+         "part": np.array([""] * n, dtype=object)}
+    parts = ["oof%d" % Y for Y in range(2019, 2024)]
+    if scheme in ("static", "roll"):
+        parts.append("static")
+    if scheme == "roll":
+        parts.append("roll2025")
+    for part in parts:
+        p = pred_path(variant, schedule, part)
+        if not os.path.exists(p):
+            continue
+        P = pickle.load(open(p, "rb"))
+        idx = P["idx"]
+        if part == "static" and scheme == "roll":
+            idx = idx[X["year"][idx] == 2024]
+        sel = np.isin(P["idx"], idx)
+        for k in ("pA", "pA_plugin", "m", "v"):
+            G[k][idx] = P[k][sel]
+        G["cells"][idx] = P["cells"][sel]
+        G["m0"][idx] = P["m0"][sel]
+        G["sd0"][idx] = P["sd0"][sel]
+        G["new"][idx] = P["new"][sel]
+        for k, v in P["stats"].items():
+            G["stats"][k][idx] = v[sel]
+        G["part"][idx] = part
+        for Y in set(X["year"][idx].tolist()):
+            G["H"][Y] = P["H"]
+    return G
 
 
 def fit_year_nostats(X, Y, H0, sweeps=2, logf=log):

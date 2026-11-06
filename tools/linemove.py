@@ -1595,6 +1595,190 @@ def stage_valid_addendum(a):
 STAGES["valid_addendum"] = stage_valid_addendum
 
 
+# ====================================================================== stage: export (data/derived/linemove.json)
+ROUTING = {
+    "decision": "keep fwd-4.1's routing; do not add a capture-time switch",
+    "table": [
+        {"capture": "single-book opener (BFO's first price)", "stack": "open_trained", "line_devig": "multiplicative"},
+        {"capture": "consensus line (mean over books) captured any time before the lock, T-24h included",
+         "stack": "open_trained", "line_devig": "multiplicative (as fwd-4.1); feeding the power de-vig is a tie in CV "
+                                                "(+0.0003 [-0.0006, +0.0011] for multiplicative)"},
+        {"capture": "true closing line (backtests, results pages)", "stack": "close_trained", "line_devig": "power"},
+        {"capture": "no line", "stack": "the no-line stack (unchanged)", "line_devig": None},
+    ],
+    "why": [
+        "Training on a consensus snapshot passed the pre-2024 gate (consensus minus open-trained, both fed points 4-9: "
+        "-0.0012 [-0.0033, +0.0009]; against fwd-4.1 as run: -0.0015 [-0.0035, +0.0005]) but the pre-registered "
+        "2024-2025 primary was contradicted: +0.0041 [+0.0017, +0.0066]; as run +0.0028 [-0.0001, +0.0059]. Under "
+        "PREREG's failure rule the open-trained stack stays primary for consensus lines, and under docs/V6_V10_PLAN.md "
+        "6.3 the change also fails 'not worse' (CI upper > +0.002)",
+        "Among consensus snapshots the training point barely matters (cross-feed spread <= 0.0005 in CV; T-6h..T-7d "
+        "synthetic lines give the same weights within 0.02). The stacks differ mainly in the ML v2 weight (open-trained "
+        "0.58, consensus 0.39, close-trained 0.33), and 2024-2025 rewards ML v2 weight whatever line is fed (open-trained "
+        "beats close-trained even on the close there). That is a drift / calibration question for the calib "
+        "workstream, not a line-timing one",
+    ],
+    "not_actionable": "on 2024-2025 the open-trained stack fed the POWER de-vig beat it fed the multiplicative de-vig, "
+                      "+0.0014 [+0.0001, +0.0025] for multiplicative; CV says tie (+0.0003), so nothing changes "
+                      "(selection on 2024-2025 is not allowed); a candidate secondary column for the forward ledger",
+}
+
+
+def _r(v, k=5):
+    return None if v is None or (isinstance(v, float) and v != v) else round(float(v), k)
+
+
+def stage_export(a):
+    S = load_traj()
+    tmg = pickle.load(open(os.path.join(CACHE, "timing.pkl"), "rb"))
+    q1 = json.load(open(os.path.join(CACHE, "q1.json")))
+    st = json.load(open(os.path.join(CACHE, "stacks.json")))
+    by = json.load(open(os.path.join(CACHE, "beyond.json")))
+    ad = json.load(open(os.path.join(CACHE, "addendum.json")))
+    va = json.load(open(os.path.join(CACHE, "valid.json")))
+    vad = json.load(open(os.path.join(CACHE, "valid_addendum.json")))
+    adp = pickle.load(open(os.path.join(CACHE, "addendum.pkl"), "rb"))
+    vap = pickle.load(open(os.path.join(CACHE, "valid_addendum.pkl"), "rb"))
+    E, P, _ = stack_table()
+    Pm = snaps_E(E, "mult")
+    yrs = E["year"].to_numpy()
+    full = E["full"].to_numpy(bool)
+    fights = {}
+    for i in np.flatnonzero(full):
+        Y = int(yrs[i])
+        r = {"date": str(E["date"].iloc[i])[:10], "set": "valid" if Y >= 2024 else ("oof" if Y >= 2021 else "train"),
+             "traj": [_r(x, 5) for x in P[i]], "traj_mult": [_r(x, 5) for x in Pm[i]]}
+        if Y >= 2024:
+            r["p_cons8_static"] = _r(vap["PC"][("static", 8)][i], 6)
+            r["p_cons8_roll"] = _r(vap["PC"][("roll", 8)][i], 6)
+            r["p_open_fed8mult_static"] = _r(vap["PIM"][("static", 8)][i], 6)
+            r["p_open_fed8mult_roll"] = _r(vap["PIM"][("roll", 8)][i], 6)
+        elif Y >= 2021:
+            r["p_cons8_oof"] = _r(adp["pc"][8][i], 6)
+            r["p_open_fed8mult_oof"] = _r(adp["pim"][8][i], 6)
+        fights[E["fid"].iloc[i]] = r
+    assert all(v["date"] < VAULT_S for v in fights.values())
+    tres = dict(tmg["res"])
+    doc = json.load(open(OUT_JSON)) if os.path.exists(OUT_JSON) else {}
+    out = {
+        "meta": {"built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "tool": "tools/linemove.py",
+                 "report": "research/model_linemove.md",
+                 "source": "data/raw/odds/bfo_fighter_lines.csv (BFO fighter-page sparklines, parsed by tools/market.py), "
+                           "data/raw/odds/bfo_event_lines.csv (per-book closes, 2021+), data/derived/market.json, "
+                           "out/ml2_cache (ML v2 table, fits and stack table)",
+                 "sparkline": "10 points per bout and side, index-only (BFO's chart uses pointStart 1, no time axis): "
+                              "point 0 = the opener (one book's first price, multiplicative de-vig), points 1-8 = BFO "
+                              "mean odds in between, point 9 = mean of the books' closing odds (power de-vig of mean "
+                              "decimal odds, research/model_market.md)",
+                 "protocol": "rows dated >= 2026-01-01 dropped at parse; every choice by forward-chained CV <= 2023 "
+                             "(stack gate 2021-2023, fit 2019..Y-1, tools/ml2.py's 0.0005 rule); 2024-2025 scored once "
+                             "per pre-registration (prereg, prereg_addendum); 2,000 card-cluster bootstrap resamples, "
+                             "paired; no intercepts, corner swap asserted",
+                 "orientation": "A = the first ufcstats name; p = P(A wins)"},
+        "prereg": doc.get("prereg", PREREG), "prereg_addendum": doc.get("prereg_addendum", PREREG_ADDENDUM),
+        "data": {"coverage_by_year": S["coverage"], "checks": S["checks"], "matching": S["diag"],
+                 "rows_dropped_at_parse_2026": S["dropped_at_parse"]},
+        "timing": tres, "q1": q1, "stacks": st, "beyond": by, "addendum": ad,
+        "validation_2024_2025": {"first_look": {k: v for k, v in va.items() if k != "prereg"},
+                                 "addendum_look": {k: v for k, v in vad.items() if k != "prereg_addendum"}},
+        "routing": ROUTING,
+        "weights": ad["weights"],
+        "test_vectors": ad["test_vectors"],
+        "fights": fights,
+    }
+    wjson(OUT_JSON, out)
+    log("wrote %s (%d fights, %.0f KB)" % (OUT_JSON, len(fights), os.path.getsize(OUT_JSON) / 1024))
+
+
+STAGES["export"] = stage_export
+
+
+# ====================================================================== stage: vault (2026 trajectories, outside the repo)
+def load_bfo_matchups_vault():
+    """The 2026 rows only (dated >= 2026-01-01); exchange books dropped (their 2026 prices can encode results)."""
+    mus = {}
+    for r in MK.read_csv(os.path.join(ODDS, "bfo_event_lines.csv")):
+        if not (r["date"] and r["date"] >= VAULT_S):
+            continue
+        mu = int(r["mu"])
+        m = mus.setdefault(mu, {"mu": mu, "date": r["date"], "n1": r["t1_name"], "n2": r["t2_name"], "t1_url": r["t1_url"],
+                                "t2_url": r["t2_url"], "event": r["event_slug"], "books": {}, "pages": []})
+        a1, a2 = _int(r["a1"]), _int(r["a2"])
+        if r["book"] and a1 and a2 and r["book"] not in MK.EXCHANGES:
+            m["books"][r["book"]] = (a1, a2)
+    for r in MK.read_csv(os.path.join(ODDS, "bfo_fighter_lines.csv")):
+        if not (r["date"] and r["date"] >= VAULT_S):
+            continue
+        mu, t = _int(r["mu"]), _int(r["owner_team"])
+        if mu is None or t not in (1, 2):
+            continue
+        m = mus.get(mu)
+        if m is None:
+            own, opp = r["owner_name"], r["opp_name"]
+            m = mus[mu] = {"mu": mu, "date": r["date"], "n1": own if t == 1 else opp, "n2": opp if t == 1 else own,
+                           "t1_url": r["owner_url"] if t == 1 else r["opp_url"],
+                           "t2_url": r["opp_url"] if t == 1 else r["owner_url"],
+                           "event": (r["event_url"] or "").replace("/events/", ""), "books": {}, "pages": []}
+        o = {"open": (_int(r["open1"]), _int(r["open2"])), "lo": (_int(r["lo1"]), _int(r["lo2"])),
+             "hi": (_int(r["hi1"]), _int(r["hi2"]))}
+        if t == 2:
+            o = {k: (v[1], v[0]) for k, v in o.items()}
+        m["pages"].append(o)
+        if r["spark"]:
+            m["spark%d" % t] = [float(x) for x in r["spark"].split(";") if x]
+    return mus
+
+
+def stage_vault(a):
+    """2026 trajectories for the auditors: written ONLY to VAULT_DIR (outside the repo); only id, date and names are read
+    from the vault fight list (no result or stat field), and nothing here is scored or read back by any stage."""
+    bt = json.load(open(os.path.join(VAULT_DIR, "backtest_vault.json")))
+    fights = [{"id": f["id"], "date": f["date"], "A": {"name": f["A"]["name"]}, "B": {"name": f["B"]["name"]}}
+              for f in bt["fights"] if f["date"] >= VAULT_S]
+    del bt
+    mus = load_bfo_matchups_vault()
+    MK.load_bfo_matchups = lambda: mus
+    recs, diag = MK.assemble(fights)
+    out = {}
+    for f in fights:
+        rec = recs.get(f["id"], {})
+        mu = rec.get("bfo_mu")
+        row = {"date": f["date"], "A": f["A"]["name"], "B": f["B"]["name"], "mu": mu}
+        if mu is not None:
+            m = mus[mu]
+            sw = rec["bfo_swap"]
+            s1, s2 = m.get("spark1"), m.get("spark2")
+            sA, sB = (s2, s1) if sw else (s1, s2)
+            if sA and sB and len(sA) == len(sB) == NPTS:
+                row["traj_mult"] = [_r(devig_pair(x, y_, "mult"), 6) for x, y_ in zip(sA, sB)]
+                row["traj"] = [_r(devig_pair(x, y_, "power"), 6) for x, y_ in zip(sA, sB)]
+                row["traj"][0] = row["traj_mult"][0]
+                row["overround"] = [_r(1 / x + 1 / y_, 5) for x, y_ in zip(sA, sB)]
+            bk = {}
+            for name, (x, y_) in (rec.get("bfo_books") or {}).items():
+                if name in MK.EXCHANGES or not x or not y_:
+                    continue
+                dA, dB = MK.am_to_dec(x), MK.am_to_dec(y_)
+                if dA and dB and 0.98 <= 1 / dA + 1 / dB <= 1.25:
+                    bk[name] = _r(MK.devig(dA, dB, "mult"), 6)
+            if bk:
+                row["books_p_mult"] = bk
+        out[f["id"]] = row
+    os.makedirs(VAULT_DIR, exist_ok=True)
+    path = os.path.join(VAULT_DIR, "linemove_vault.json")
+    wjson(path, {"meta": {"built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "tool": "tools/linemove.py vault",
+                          "what": "BFO sparkline trajectories (traj: point 0 multiplicative, 1-9 power de-vig; traj_mult) "
+                                  "and per-book closes for the 2026 vault fights; same orientation as backtest_vault.json "
+                                  "(A first); exchange books dropped; open only at the v6/v10 audits",
+                          "matching": diag, "n": len(out), "with_trajectory": sum("traj" in v for v in out.values())},
+                 "fights": out})
+    log("wrote %s: %d vault fights, %d with a trajectory (outside the repo)" % (
+        path, len(out), sum("traj" in v for v in out.values())))
+
+
+STAGES["vault"] = stage_vault
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
