@@ -1686,66 +1686,173 @@ def stat_pit(X, G, H_by_year, rows, st, rng):
     return {"coverage_80": round(float(np.mean(np.concatenate(cov))), 4), "pit_deciles": np.round(hist, 4).tolist()}
 
 
-def stage_eval(args):
-    """Every number here is on 2019-2023 (walk-forward out-of-sample: each year's hyperparameters fit on earlier
-    years, states filtered fight by fight). 2024-2025 is scored once, by `confirm`."""
-    X = load_data()
-    years = list(range(2019, 2024))
-    G = gather(X, "main", years)
-    C = comparators(X)
-    E = {"window": "2019-2023 (walk-forward, yearly refits)"}
+SEL_MIN = 0.0005      # tools/ml2.py's rule: a more complex choice must beat the simpler one by more than this in CV
+
+
+def eval_rows(X, G, C, years, need=("whr_rounds", "glicko2", "ml2_static")):
     rows = np.flatnonzero(X["evalrow"] & np.isin(X["year"], years) & ~np.isnan(G["pA"]))
+    ok = np.all([~np.isnan(C[c][rows]) for c in need], 0)
+    return rows[ok]
+
+
+def config():
+    p = os.path.join(CACHE, "cv.json")
+    if not os.path.exists(p):
+        return {"variant": "main", "schedule": "none", "varaware": True}
+    return json.load(open(p))["chosen"]
+
+
+def pick(G, varaware):
+    return G["pA"] if varaware else G["pA_plugin"]
+
+
+def stage_cv(args):
+    """Choices on 2019-2023 walk-forward OOF only (each year's hyperparameters fit before Jan 1 of that year):
+    the EP refit schedule (stepwise from the plain filter; a more frequent refit must win by > SEL_MIN), the link
+    (plug-in vs variance-aware; the variance-aware link must win by > SEL_MIN), and the variant (the stat-free
+    dynamic Bradley-Terry 'nostats' vs the full model 'main'; main must win by > SEL_MIN)."""
+    X = load_data()
+    C = comparators(X)
+    years = list(range(2019, 2024))
+    out = {"window": "2019-2023 OOF", "rule": "stepwise, simpler choice kept unless the next beats it by > %g" % SEL_MIN,
+           "table": {}, "by_year": {}}
+    preds = {}
+    for v in ("nostats", "main"):
+        for sc in SCHEDULES:
+            if not all(os.path.exists(pred_path(v, sc, "oof%d" % Y)) for Y in years):
+                continue
+            preds[(v, sc)] = load_preds(X, v, sc, scheme="oof")
+    base = preds[("main", "none")] if ("main", "none") in preds else next(iter(preds.values()))
+    rows = eval_rows(X, base, C, years)
+    for G in preds.values():
+        rows = rows[~np.isnan(G["pA"][rows])]
     y = X["win"][rows]
     grp = np.array(X["event"])[rows]
-    ok = np.all([~np.isnan(C[c][rows]) for c in ("whr_rounds", "glicko2", "ml2_static")], 0)
-    rows, y, grp = rows[ok], y[ok], grp[ok]
-    log("eval rows %d" % len(rows))
-    models = {"bayes": G["pA"], "bayes_plugin": G["pA_plugin"], "whr_rounds": C["whr_rounds"], "glicko2": C["glicko2"],
-              "elo_full": C["elo_full"], "trueskill_mov": C["trueskill_mov"], "dims": C["dims"],
-              "ratings_stack": C["stack"], "ml2 (blend, OOF)": C["ml2_static"], "ml2 logistic (OOF)": C["ml2lr_static"],
-              "elo": C["elo"]}
-    for v in ("nostats", "r_only"):
-        try:
-            models["bayes_" + v] = gather(X, v, years)["pA"]
-        except FileNotFoundError:
-            pass
+    yr = X["year"][rows]
+    out["n"] = int(len(rows))
+    LL = {}
+    for (v, sc), G in preds.items():
+        for va in (False, True):
+            k = "%s|%s|%s" % (v, sc, "varaware" if va else "plugin")
+            lv = ll_vec(pick(G, va)[rows], y)
+            LL[k] = float(lv.mean())
+            out["table"][k] = {"ll": round(LL[k], 5), "acc": round(float(np.mean((pick(G, va)[rows] > 0.5) == (y > 0.5))), 4),
+                               "slope": round(calib_slope(pick(G, va)[rows], y), 3)}
+            out["by_year"][k] = {int(Y): round(float(lv[yr == Y].mean()), 5) for Y in years}
+            log("cv %-34s LL %.5f acc %.4f slope %.3f  by year %s" % (k, LL[k], out["table"][k]["acc"], out["table"][k]["slope"],
+                                                                     out["by_year"][k]))
+    for c in ("whr_rounds", "glicko2", "ml2lr_static", "ml2_static"):
+        lv = ll_vec(C[c][rows], y)
+        out["table"][c] = {"ll": round(float(lv.mean()), 5)}
+        out["by_year"][c] = {int(Y): round(float(lv[yr == Y].mean()), 5) for Y in years}
+        log("cv %-34s LL %.5f by year %s" % (c, lv.mean(), out["by_year"][c]))
+    steps = []
+
+    def stepwise(cands):
+        cur = cands[0]
+        for c in cands[1:]:
+            if c in LL and LL[c] < LL[cur] - SEL_MIN:
+                steps.append("%s -> %s (%.5f -> %.5f)" % (cur, c, LL[cur], LL[c]))
+                cur = c
+            elif c in LL:
+                steps.append("%s kept over %s (%.5f vs %.5f)" % (cur, c, LL[cur], LL[c]))
+        return cur
+    best = {}
+    for v in ("nostats", "main"):
+        for va in ("plugin", "varaware"):
+            best[(v, va)] = stepwise(["%s|%s|%s" % (v, sc, va) for sc in SCHEDULES if (v, sc) in preds])
+    for v in ("nostats", "main"):
+        best[v] = stepwise([best[(v, "plugin")], best[(v, "varaware")]])
+    final = stepwise([best["nostats"], best["main"]])
+    v, sc, lk = final.split("|")
+    out["steps"] = steps
+    out["chosen"] = {"variant": v, "schedule": sc, "varaware": lk == "varaware", "key": final, "cv_ll": round(LL[final], 5)}
+    Gc = preds[(v, sc)]
+    pc = pick(Gc, lk == "varaware")[rows]
+    out["paired_chosen_vs"] = {}
+    for k2, p2 in (("whr_rounds", C["whr_rounds"][rows]), ("glicko2", C["glicko2"][rows]),
+                   ("ml2lr_static (OOF)", C["ml2lr_static"][rows]),
+                   ("main|none|" + lk, pick(preds[("main", "none")], lk == "varaware")[rows] if ("main", "none") in preds else None),
+                   ("nostats|" + sc + "|" + lk, pick(preds[("nostats", sc)], lk == "varaware")[rows] if ("nostats", sc) in preds else None)):
+        if p2 is None:
+            continue
+        out["paired_chosen_vs"][k2] = paired(ll_vec(pc, y), ll_vec(p2, y), grp)
+        log("chosen - %-26s %+.5f %s" % (k2, out["paired_chosen_vs"][k2]["diff"], out["paired_chosen_vs"][k2]["diff_ci"]))
+    for st in steps:
+        log("  step: " + st)
+    log("CHOSEN %s (CV LL %.5f)" % (final, LL[final]))
+    json.dump(out, open(os.path.join(CACHE, "cv.json"), "w"), indent=1, default=float)
+
+
+def evaluate(X, G, C, years, varaware, label, extra_models=None):
+    """Standalone winner metrics, paired differences, uncertainty, method x round and stat lines on `years`."""
+    E = {"window": label}
+    rows = eval_rows(X, G, C, years)
+    y = X["win"][rows]
+    grp = np.array(X["event"])[rows]
+    pb = pick(G, varaware)
+    log("eval rows %d (%s)" % (len(rows), label))
+    models = {"bayes": pb, "bayes (plug-in link)" if varaware else "bayes (variance-aware link)": pick(G, not varaware),
+              "whr_rounds": C["whr_rounds"], "glicko2": C["glicko2"], "elo_full": C["elo_full"],
+              "trueskill_mov": C["trueskill_mov"], "dims": C["dims"], "ratings_stack": C["stack"],
+              "ml2 blend": C["ml2_static"],
+              "ml2 logistic": C["ml2lr_static"], "elo": C["elo"]}
+    models.update(extra_models or {})
     E["standalone"] = {k: win_metrics(a[rows], y, grp) for k, a in models.items() if not np.isnan(a[rows]).any()}
     for k, v in E["standalone"].items():
-        log("%-22s LL %.5f %s acc %.3f slope %.2f" % (k, v["log_loss"], v["log_loss_ci"], v["accuracy"], v["calib_slope"]))
-    lb = ll_vec(G["pA"][rows], y)
-    E["paired_vs_bayes"] = {}
+        log("%-28s LL %.5f %s acc %.3f slope %.2f" % (k, v["log_loss"], v["log_loss_ci"], v["accuracy"], v["calib_slope"]))
+    lb = ll_vec(pb[rows], y)
+    E["paired_bayes_minus"] = {}
     for k, a in models.items():
         if k == "bayes" or np.isnan(a[rows]).any():
             continue
-        E["paired_vs_bayes"][k] = paired(lb, ll_vec(a[rows], y), grp)
-        log("bayes - %-20s %+.5f %s" % (k, E["paired_vs_bayes"][k]["diff"], E["paired_vs_bayes"][k]["diff_ci"]))
-    # close (fights with a line)
+        E["paired_bayes_minus"][k] = paired(lb, ll_vec(a[rows], y), grp)
+        log("bayes - %-26s %+.5f %s" % (k, E["paired_bayes_minus"][k]["diff"], E["paired_bayes_minus"][k]["diff_ci"]))
     mk = ~np.isnan(C["market"][rows])
-    E["vs_close"] = paired(lb[mk], ll_vec(C["market"][rows][mk], y[mk]), grp[mk])
+    E["bayes_minus_close"] = paired(lb[mk], ll_vec(C["market"][rows][mk], y[mk]), grp[mk])
+    E["close"] = win_metrics(C["market"][rows][mk], y[mk], grp[mk])
+    log("bayes - close %+.5f %s (n %d)" % (E["bayes_minus_close"]["diff"], E["bayes_minus_close"]["diff_ci"], mk.sum()))
     E["by_year"] = {}
     for Y in years:
         m = X["year"][rows] == Y
         E["by_year"][Y] = {k: round(float(ll_vec(a[rows][m], y[m]).mean()), 5) for k, a in models.items()
                            if not np.isnan(a[rows][m]).any()}
         E["by_year"][Y]["n"] = int(m.sum())
-    log("by year %s" % json.dumps({Y: {k: E["by_year"][Y][k] for k in ("n", "bayes", "whr_rounds", "glicko2", "ml2 (blend, OOF)")} for Y in years}))
-    # uncertainty: does a larger posterior sd of the logit mean lower accuracy, and is it calibrated?
-    E["uncertainty"] = uncertainty_table(G, C, rows, y, grp, X)
-    # method x round
+    log("by year %s" % json.dumps({Y: {k: E["by_year"][Y].get(k) for k in ("n", "bayes", "whr_rounds", "glicko2", "ml2 logistic")}
+                                   for Y in years}))
+    Gu = dict(G)
+    Gu["pA"] = pb
+    E["uncertainty"] = uncertainty_table(Gu, C, rows, y, grp, X)
     E["method"] = method_eval(X, G, C, years)
-    # stats
     E["stats"] = stats_eval(X, G, years)
-    # newcomer split
     E["segments"] = {}
     npr = X["nprior"][rows].min(1)
     for name, m in (("newcomer bout (min prior UFC fights 1-2)", npr <= 2), ("3-7", (npr >= 3) & (npr <= 7)), ("8+", npr >= 8)):
         E["segments"][name] = {"n": int(m.sum()), "bayes": round(float(lb[m].mean()), 5),
                                "whr_rounds": round(float(ll_vec(C["whr_rounds"][rows][m], y[m]).mean()), 5),
                                "glicko2": round(float(ll_vec(C["glicko2"][rows][m], y[m]).mean()), 5),
-                               "ml2": round(float(ll_vec(C["ml2_static"][rows][m], y[m]).mean()), 5),
-                               "bayes - whr_rounds": paired(lb[m], ll_vec(C["whr_rounds"][rows][m], y[m]), grp[m], 1000)["diff_ci"]}
+                               "ml2 logistic": round(float(ll_vec(C["ml2lr_static"][rows][m], y[m]).mean()), 5),
+                               "bayes - whr_rounds": paired(lb[m], ll_vec(C["whr_rounds"][rows][m], y[m]), grp[m])}
+    log("segments %s" % json.dumps({k: {a: b for a, b in v.items() if a != "bayes - whr_rounds"} for k, v in E["segments"].items()}))
+    return E
+
+
+def stage_eval(args):
+    """Every number here is on 2019-2023 (walk-forward out-of-sample: each year's hyperparameters fit on earlier
+    years, states filtered fight by fight, EP refits on the CV-chosen schedule). 2024-2025 is scored once, by
+    `confirm`."""
+    X = load_data()
+    cfg = config()
+    G = load_preds(X, cfg["variant"], cfg["schedule"], scheme="oof")
+    C = comparators(X)
+    extra = {}
+    for v in ("main", "nostats"):
+        for sc in SCHEDULES:
+            if (v, sc) != (cfg["variant"], cfg["schedule"]) and os.path.exists(pred_path(v, sc, "oof2023")):
+                extra["bayes %s/%s" % (v, sc)] = pick(load_preds(X, v, sc, scheme="oof"), cfg["varaware"])
+    E = evaluate(X, G, C, list(range(2019, 2024)), cfg["varaware"], "2019-2023 OOF (yearly refits)", extra)
+    E["config"] = cfg
     json.dump(E, open(os.path.join(CACHE, "eval.json"), "w"), indent=1, default=float)
-    log("segments %s" % json.dumps(E["segments"]))
 
 
 def uncertainty_table(G, C, rows, y, grp, X, nb=3):
@@ -1821,7 +1928,7 @@ def stats_eval(X, G, years):
     rows = np.flatnonzero(np.array([f in bt for f in X["fid"]]) & np.isin(X["year"], years) & X["has"]
                           & ~np.isnan(G["stats"]["str_0"]) & ~np.isnan(MLR["str"][:, 0]))
     grp = np.array(X["event"])[rows]
-    H_by_year = {Y: pickle.load(open(year_path("main", Y), "rb"))["H"] for Y in years}
+    H_by_year = G["H"]
     rng = np.random.default_rng(11)
     out = {"n_fights": int(len(rows)), "what": "Poisson deviance per fighter-fight of expected counts given the "
            "actual minutes (KD given actual head strikes landed); baseline = division baseline rate only", "stats": {}}
@@ -1850,6 +1957,318 @@ def stats_eval(X, G, years):
     return out
 
 
+# ====================================================================== stack gate (ml2's forward-chained 2021-2023 stack CV)
+STACK_SETS = {
+    "line": [("market+ml2", ["market", "ml2"]), ("page: market+ml2lr", ["market", "ml2lr"]),
+             ("market+whr", ["market", "whr"]), ("market+bayes", ["market", "bayes"])],
+    "noline": [("ml2+mkt_rating+feat_lr", ["ml2", "mkt_rating", "feat_lr"]), ("page: ml2lr+mkt_rating", ["ml2lr", "mkt_rating"]),
+               ("ratings: whr+glicko2", ["whr", "glicko2"]), ("whr alone", ["whr"]), ("bayes alone", ["bayes"])],
+    "open": [("open+ml2", ["open", "ml2"]), ("page: open+ml2lr", ["open", "ml2lr"])],
+}
+GATE_PAIRS = {   # base set -> base + bayes (enters if the forward-chained CV gain beats SEL_MIN)
+    "line": ["market+ml2", "page: market+ml2lr", "market+whr"],
+    "noline": ["ml2+mkt_rating+feat_lr", "page: ml2lr+mkt_rating", "ratings: whr+glicko2", "whr alone"],
+    "open": ["open+ml2", "page: open+ml2lr"],
+}
+
+
+def M2():
+    """tools/ml2.py for its stack code (stack_fit, zmat, rec_w, stack_predict, ll, compare); the bayes and ratings
+    columns are routed through ml2.col_for like ml2's own experts ("<name>_static" / "<name>_roll")."""
+    import ml2 as m2
+    if not getattr(m2, "_bayes_patched", False):
+        orig = m2.col_for
+
+        def col_for(c, scheme):
+            if c in ("bayes", "whr", "glicko2"):
+                return c + "_" + scheme
+            return orig(c, scheme)
+        m2.col_for = col_for
+        m2._bayes_patched = True
+    return m2
+
+
+def expert_D(X, cfg):
+    """ml2's 2019-2025 expert table (out/ml2_cache/stack.pkl) plus bayes (OOF 2019-2023; 2024-2025 'static' = fit
+    before 2024, 'roll' = 2025 from the fit before 2025) and the ratings.py systems (sequential, same in both)."""
+    D = pickle.load(open(os.path.join(ROOT, "out", "ml2_cache", "stack.pkl"), "rb"))["D"].copy()
+    pos = {f: i for i, f in enumerate(X["fid"])}
+    ii = np.array([pos.get(f, -1) for f in D["fid"]])
+    assert (ii >= 0).all(), "ml2 table fight missing from bayes data"
+    assert np.all(X["win"][ii] == D["y"].to_numpy()), "label mismatch with ml2's table"
+    C = comparators(X)
+    for sch in ("static", "roll"):
+        G = load_preds(X, cfg["variant"], cfg["schedule"], scheme=sch)
+        D["bayes_" + sch] = pick(G, cfg["varaware"])[ii]
+        D["whr_" + sch] = C["whr_rounds"][ii]
+        D["glicko2_" + sch] = C["glicko2"][ii]
+    return D
+
+
+def stack_cv_one(m2, D, cols, rows_ok, y, yr):
+    cvs, preds = {}, {}
+    for h in (None, 3.0, 1.5):
+        tot = nn = 0.0
+        pr = np.full(len(D), np.nan)
+        for Y in (2021, 2022, 2023):
+            m = rows_ok & (yr == Y)
+            p, _ = m2.stack_predict(D, cols, "static", h, Y - 1, m, rows_ok)
+            pr[m] = p
+            tot += m2.ll(p, y[m]) * m.sum()
+            nn += m.sum()
+        cvs[str(h)] = round(tot / nn, 5)
+        preds[str(h)] = pr
+    hbest = min(cvs, key=lambda k: cvs[k] + (0 if k == "None" else SEL_MIN))
+    return cvs, hbest, preds[hbest]
+
+
+def rows_regime(D):
+    return {"line": D["market"].notna().to_numpy() & D["bayes_static"].notna().to_numpy(),
+            "noline": D["bayes_static"].notna().to_numpy(),
+            "open": D["open"].notna().to_numpy() & D["bayes_static"].notna().to_numpy()}
+
+
+def stage_stack(args):
+    """Forward-chained 2021-2023 stack CV (fit on 2019..Y-1 OOF rows, predict Y; recency half-life by the same CV with
+    ml2's SEL_MIN preference for no weighting). bayes enters a stack only if base + bayes beats base by > SEL_MIN."""
+    X = load_data()
+    cfg = config()
+    m2 = M2()
+    D = expert_D(X, cfg)
+    y, yr = D["y"].to_numpy(float), D["year"].to_numpy()
+    ev = D["event"].to_numpy()
+    RO = rows_regime(D)
+    R = {"config": cfg, "sets": {}, "gate": {}, "paired_cv_years": {}}
+    P = {}
+    for regime, sets in STACK_SETS.items():
+        allsets = list(sets) + [(nm + " + bayes", cols + ["bayes"]) for nm, cols in sets if nm in GATE_PAIRS[regime]]
+        for nm, cols in allsets:
+            cvs, hb, pr = stack_cv_one(m2, D, cols, RO[regime], y, yr)
+            h = None if hb == "None" else float(hb)
+            _, b = m2.stack_predict(D, cols, "static", h, 2023, np.zeros(len(D), bool), RO[regime])
+            R["sets"]["%s|%s" % (regime, nm)] = {"cols": cols, "cv_by_h": cvs, "chosen_h": h, "cv": cvs[hb],
+                                                 "weights_fit_2019_2023": dict(zip(cols, np.round(b, 4).tolist()))}
+            P["%s|%s" % (regime, nm)] = pr
+            log("stack CV %-6s %-34s CV %.5f (h %s) w<=2023 %s" % (regime, nm, cvs[hb], h, np.round(b, 3)))
+        for base in GATE_PAIRS[regime]:
+            kb, kn = "%s|%s" % (regime, base), "%s|%s + bayes" % (regime, base)
+            gain = R["sets"][kn]["cv"] - R["sets"][kb]["cv"]
+            m = RO[regime] & (yr >= 2021) & (yr <= 2023)
+            pc = paired(ll_vec(P[kn][m], y[m]), ll_vec(P[kb][m], y[m]), ev[m])
+            R["gate"][kn] = {"cv_base": R["sets"][kb]["cv"], "cv_plus": R["sets"][kn]["cv"], "gain": round(gain, 5),
+                             "enters": bool(gain < -SEL_MIN), "bayes_weight": R["sets"][kn]["weights_fit_2019_2023"]["bayes"],
+                             "paired_cv_years": pc}
+            log("GATE %-44s gain %+.5f %s -> %s (w %.3f)" % (kn, gain, pc["diff_ci"], "ENTERS" if gain < -SEL_MIN else "rejected",
+                                                            R["gate"][kn]["bayes_weight"]))
+    # bayes vs whr as the rating input (same partners): which rating carries more in the stack?
+    for regime, a_, b_ in (("noline", "bayes alone", "whr alone"), ("line", "market+bayes", "market+whr")):
+        m = RO[regime] & (yr >= 2021) & (yr <= 2023)
+        ka, kb = "%s|%s" % (regime, a_), "%s|%s" % (regime, b_)
+        R["paired_cv_years"][ka + " vs " + kb] = paired(ll_vec(P[ka][m], y[m]), ll_vec(P[kb][m], y[m]), ev[m])
+        log("CV years %-40s %s" % (ka + " vs " + kb, R["paired_cv_years"][ka + " vs " + kb]))
+    json.dump(R, open(os.path.join(CACHE, "stack.json"), "w"), indent=1, default=float)
+
+
+# ====================================================================== swap test
+def stage_swap(args):
+    """Corner symmetry: rerun the chosen configuration (2019 hyperparameters, EP refits + filter through 2019) on the
+    corner-swapped data; P(A wins) must mirror, the method x round cells must swap sides, the stat lines must swap."""
+    X = load_data()
+    cfg = config()
+    H = pickle.load(open(year_path(cfg["variant"], 2019), "rb"))["H"]
+    Y = swap_data(X)
+    P1 = predict_year(X, H, 2019, schedule=cfg["schedule"], key="main")
+    P2 = predict_year(Y, H, 2019, schedule=cfg["schedule"], key="swap")
+    assert np.array_equal(P1["idx"], P2["idx"])
+    sw = np.r_[np.arange(10, 20), np.arange(0, 10), 21, 20, 22]
+    out = {"n": int(len(P1["idx"])), "config": cfg,
+           "max|pA + pA_swapped - 1|": float(np.max(np.abs(P1["pA"] + P2["pA"] - 1))),
+           "max|plugin pA + swapped - 1|": float(np.max(np.abs(P1["pA_plugin"] + P2["pA_plugin"] - 1))),
+           "max|cells - swapped cells mirrored|": float(np.max(np.abs(P1["cells"] - P2["cells"][:, sw]))),
+           "max|stat A - stat B swapped|": float(max(np.nanmax(np.abs(P1["stats"]["%s_0" % k] - P2["stats"]["%s_1" % k]))
+                                                     for k in STATS)),
+           "max|skill A - skill B swapped|": float(np.nanmax(np.abs(P1["m0"][:, 0] - P2["m0"][:, 1])))}
+    log("swap test: %s" % out)
+    json.dump(out, open(os.path.join(CACHE, "swaptest.json"), "w"), indent=1)
+    assert out["max|pA + pA_swapped - 1|"] < 1e-6 and out["max|cells - swapped cells mirrored|"] < 1e-6, "corner symmetry violated"
+
+
+# ====================================================================== confirm: the one 2024-2025 look
+def stage_confirm(args):
+    """Scores 2024-01-01..2025-12-31 ONCE with every choice frozen by `cv` and `stack` (pre-2024 only). Refuses to run
+    again unless --force (a forced rerun is recorded in the output). Nothing is tuned on these numbers."""
+    p = os.path.join(CACHE, "confirm.json")
+    if os.path.exists(p) and not args.force:
+        log("confirm.json exists: the 2024-2025 look was already taken (use --force to recompute; it is recorded)")
+        return
+    X = load_data()
+    cfg = config()
+    stk = json.load(open(os.path.join(CACHE, "stack.json")))
+    C = comparators(X)
+    years = [2024, 2025]
+    out = {"window": "2024-01-01..2025-12-31, scored once", "config": cfg, "forced_rerun": bool(os.path.exists(p)),
+           "computed": dt.datetime.utcnow().isoformat(timespec="seconds") + "Z"}
+    Gs = load_preds(X, cfg["variant"], cfg["schedule"], scheme="static")
+    Gr = load_preds(X, cfg["variant"], cfg["schedule"], scheme="roll")
+    extra = {"bayes (roll: 2025 from the fit before 2025)": pick(Gr, cfg["varaware"])}
+    if cfg["schedule"] != "none" and os.path.exists(pred_path(cfg["variant"], "none", "static")):
+        extra["bayes filter only (no EP refits)"] = pick(load_preds(X, cfg["variant"], "none", scheme="static"), cfg["varaware"])
+    if os.path.exists(pred_path("nostats", cfg["schedule"], "static")):
+        extra["bayes nostats (same schedule)"] = pick(load_preds(X, "nostats", cfg["schedule"], scheme="static"), cfg["varaware"])
+    out["static"] = evaluate(X, Gs, C, years, cfg["varaware"], "2024-2025, hyperparameters fit before 2024 (static)", extra)
+    # stacks: the gate pairs, static (weights fit on 2019-2023 with the CV-chosen h) and rolling (refit each January)
+    m2 = M2()
+    D = expert_D(X, cfg)
+    y, yr = D["y"].to_numpy(float), D["year"].to_numpy()
+    ev = D["event"].to_numpy()
+    RO = rows_regime(D)
+    out["stacks"] = {}
+    for kn, g in stk["gate"].items():
+        regime = kn.split("|")[0]
+        kb = kn[:-len(" + bayes")]
+        res = {"enters_by_cv": g["enters"], "cv_gain": g["gain"]}
+        va = RO[regime] & (yr >= 2024) & (yr <= 2025)
+        for sch in ("static", "roll"):
+            pp = {}
+            for k in (kb, kn):
+                cols, h = stk["sets"][k]["cols"], stk["sets"][k]["chosen_h"]
+                if sch == "static":
+                    pr, _ = m2.stack_predict(D, cols, "static", h, 2023, va, RO[regime])
+                else:
+                    pr = np.full(len(D), np.nan)
+                    for Y in (2024, 2025):
+                        m = RO[regime] & (yr == Y)
+                        pr[m], _ = m2.stack_predict(D, cols, "roll", h, Y - 1, m, RO[regime])
+                    pr = pr[va]
+                pp[k] = pr
+            res[sch] = paired(ll_vec(pp[kn], y[va]), ll_vec(pp[kb], y[va]), ev[va])
+            mk = D["market"].notna().to_numpy()[va]
+            res[sch + " plus vs close"] = paired(ll_vec(pp[kn][mk], y[va][mk]), ll_vec(D["market"].to_numpy(float)[va][mk], y[va][mk]),
+                                                 ev[va][mk])
+            res[sch + " base vs close"] = paired(ll_vec(pp[kb][mk], y[va][mk]), ll_vec(D["market"].to_numpy(float)[va][mk], y[va][mk]),
+                                                 ev[va][mk])
+        out["stacks"][kn] = res
+        log("2024-25 %-44s (CV %s) static %+.5f %s | roll %+.5f %s" % (
+            kn, "enters" if g["enters"] else "rejected", res["static"]["diff"], res["static"]["diff_ci"],
+            res["roll"]["diff"], res["roll"]["diff_ci"]))
+    json.dump(out, open(p, "w"), indent=1, default=float)
+
+
+# ====================================================================== export
+def virtual_pair(X, H, S, pa, pb, day, five=True, div="Lightweight"):
+    """Pre-fight moments for a hypothetical fight between fighters pa and pb on `day` (time update from the snapshot S,
+    ages from date of birth), with P(A wins) and method x round cells."""
+    m0 = np.zeros((1, 2, K))
+    P0 = np.zeros((1, 2, K, K))
+    ages = []
+    for s, p in ((0, pa), (1, pb)):
+        i = np.flatnonzero((X["ia"] == p) | (X["ib"] == p))[-1]
+        side = 0 if X["ia"][i] == p else 1
+        gap = (day - S["last"][p]) / YEAR
+        age = X["age"][i, side] + (day - X["day"][i]) / YEAR
+        ages.append(age)
+        c, Q, _ = node_params({"age": np.array([[age, age]]), "day": np.array([day]), "pre_ok": np.zeros((1, 2), bool),
+                               "pre": np.zeros((1, 2, 7))} | {}, H, np.array([0]), np.array([0])) if False else (None, None, None)
+        dr = age_G(np.array([age]), H["dy"], H["do"], H["ay"], H["ao"]) - age_G(np.array([age - gap]), H["dy"], H["do"], H["ay"], H["ao"])
+        dr -= H["lay"] * max(0.0, min(gap, 4.0) - 0.75)
+        g6 = min(gap, 6.0)
+        drift = g6 * (H["drift_a"] + H["drift_b"] * (age - gap / 2.0 - 30.0))
+        drift[0] = dr[0]
+        m0[0, s] = S["M"][p] + drift
+        P0[0, s] = S["P"][p] + np.diag(H["qf"] + H["qy"] * g6)
+    R = {"m0": m0, "P0": P0}
+    mu, Sg = feat_moments(R, np.array([0]))
+    pA, m, v = win_prob(H["win"]["beta"], mu, Sg, H["win"]["varaware"])
+    return {"pA": float(pA[0]), "logit_mean": float(m[0]), "logit_sd": float(np.sqrt(v[0])), "ages": ages,
+            "m0": m0[0], "sd0": np.sqrt(np.einsum("skk->sk", P0[0]))}
+
+
+def stage_export(args):
+    """data/derived/bayes.json: config, CV, 2019-2023 evaluation, stack gate, the 2024-2025 confirmation, swap test,
+    per-fight predictions (2019-2025 backtest fights) and the production roster (hyperparameters fit on data before
+    2026-01-01, EP smoothing over every fight through 2025-12-31): skill means and sds per fighter, usable as simulator
+    inputs."""
+    X = load_data()
+    cfg = config()
+    rd = lambda a, d=4: None if a is None or not np.isfinite(a) else round(float(a), d)
+    J = {"meta": {"tool": "tools/bayes.py", "built": dt.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                  "data_through": str(dt.date.fromordinal(int(X["day"].max()))),
+                  "protocol": "fights dated 2026-01-01 or later dropped at parse; hyperparameters refit each Jan 1 on "
+                              "earlier fights (empirical Bayes); every choice by 2019-2023 OOF / forward-chained "
+                              "2021-2023 stack CV; 2024-2025 scored once by `confirm`",
+                  "dims": DIMS, "dim_label": DIM_LABEL, "config": cfg,
+                  "cells": "A KO r1..5, A SUB r1..5, B KO r1..5, B SUB r1..5, A DEC, B DEC, DRAW (A = first ufcstats name)"}}
+    for nm in ("cv", "eval", "stack", "confirm", "swaptest"):
+        pth = os.path.join(CACHE, nm + ".json")
+        J[nm] = json.load(open(pth)) if os.path.exists(pth) else None
+    Gs = load_preds(X, cfg["variant"], cfg["schedule"], scheme="static")
+    Gr = load_preds(X, cfg["variant"], cfg["schedule"], scheme="roll")
+    bt = set(e["id"] for e in json.load(open(os.path.join(DERIVED, "backtest_dev.json")))["fights"])
+    F = {}
+    for i in np.flatnonzero(~np.isnan(Gs["pA"]) & np.isin(X["year"], list(range(2019, 2026)))):
+        f = X["fid"][i]
+        if f not in bt:
+            continue
+        r = {"date": str(dt.date.fromordinal(int(X["day"][i]))), "set": "oof" if X["year"][i] <= 2023 else "valid",
+             "p": rd(pick(Gs, cfg["varaware"])[i]), "p_roll": rd(pick(Gr, cfg["varaware"])[i]),
+             "p_plugin": rd(Gs["pA_plugin"][i]), "logit_sd": rd(math.sqrt(max(Gs["v"][i], 0.0))),
+             "fit_through": Gs["H"][int(X["year"][i])].get("fit_through"),
+             "cells": [rd(c) for c in Gs["cells"][i]],
+             "skill_A": [rd(c, 3) for c in Gs["m0"][i, 0]], "skill_B": [rd(c, 3) for c in Gs["m0"][i, 1]],
+             "skill_sd_A": [rd(c, 3) for c in Gs["sd0"][i, 0]], "skill_sd_B": [rd(c, 3) for c in Gs["sd0"][i, 1]]}
+        F[f] = r
+    J["fights"] = F
+    # production roster
+    p26 = year_path(cfg["variant"], 2026)
+    H = pickle.load(open(p26, "rb"))["H"] if os.path.exists(p26) else pickle.load(open(year_path(cfg["variant"], 2025), "rb"))["H"]
+    S = ep_snapshot(X, H, jan1(2026)) if cfg["schedule"] != "none" else run_filter(X, H, jan1(2026))["state"]
+    roster = {}
+    lastdiv = {}
+    for i in range(X["n"]):
+        for s, p in ((0, X["ia"][i]), (1, X["ib"][i])):
+            lastdiv[p] = i
+    for p, i in lastdiv.items():
+        side = 0 if X["ia"][i] == p else 1
+        if X["day"][i] < jan1(2019):
+            continue
+        sd = np.sqrt(np.diag(S["P"][p]))
+        Lb = {k: float(X["L_" + k][i]) for k in STATS}
+        mm = S["M"][p]
+        roster[X["slug"][i][side] if isinstance(X["slug"][i], (list, tuple)) else str(p)] = {
+            "name": X["name"][i][side] if isinstance(X["name"][i], (list, tuple)) else None,
+            "last_fight": str(dt.date.fromordinal(int(X["day"][i]))), "division": X["division"][i],
+            "mean": {d: rd(mm[j], 3) for j, d in enumerate(DIMS)}, "sd": {d: rd(sd[j], 3) for j, d in enumerate(DIMS)},
+            "rates_vs_average": {"sig_landed_pm": rd(math.exp(Lb["str"] + mm[DI["so"]]), 3),
+                                 "sig_absorbed_pm": rd(math.exp(Lb["str"] - mm[DI["sd"]]), 3),
+                                 "td_per15": rd(math.exp(Lb["td"] + mm[DI["to"]]), 3),
+                                 "td_allowed_per15": rd(math.exp(Lb["td"] - mm[DI["tdd"]]), 3),
+                                 "ctl_sec_pm": rd(30 * math.exp(Lb["ctl"] + mm[DI["co"]]), 2),
+                                 "sub_att_per15": rd(math.exp(Lb["sub"] + mm[DI["su"]]), 3),
+                                 "kd_per_head_landed": rd(math.exp(Lb["kd"] + mm[DI["pw"]]), 4),
+                                 "kd_per_head_absorbed": rd(math.exp(Lb["kd"] - mm[DI["ch"]]), 4),
+                                 "output_trend_per_round": rd(math.exp(mm[DI["ca"]]), 4)}}
+    J["roster"] = roster
+    J["roster_meta"] = {"hyperparameters_fit_through": H.get("fit_through"), "states_through": "2025-12-31",
+                        "fighters": len(roster), "note": "fighters with a UFC fight in 2019-2025; rates are vs an average "
+                        "opponent at the division baseline of the fighter's last fight (exp(L + skill)); skills are log "
+                        "multipliers (r in logit units)"}
+    # the project's matchup
+    try:
+        sl = {}
+        for i in range(X["n"]):
+            for s in (0, 1):
+                sl[X["slug"][i][s]] = X["ia"][i] if s == 0 else X["ib"][i]
+        pa, pb = sl["alexander-volkanovski"], sl["justin-gaethje"]
+        V = virtual_pair(X, H, S, pa, pb, jan1(2026))
+        J["matchup"] = {"alexander-volkanovski__justin-gaethje": {"pA": rd(V["pA"]), "logit_mean": rd(V["logit_mean"]),
+                        "logit_sd": rd(V["logit_sd"]), "as_of": "2026-01-01 (states through 2025-12-31)"}}
+    except (KeyError, TypeError, IndexError) as e:
+        J["matchup"] = {"error": str(e)}
+    with open(OUT_JSON, "w") as fh:
+        json.dump(J, fh, separators=(",", ":"), default=float)
+    log("wrote %s: %d fights, %d roster fighters" % (OUT_JSON, len(F), len(roster)))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage")
@@ -1864,7 +2283,8 @@ def main():
     STAGES[args.stage](args)
 
 
-STAGES = {"data": stage_data, "fit": stage_fit, "predict": stage_predict, "eval": stage_eval}
+STAGES = {"data": stage_data, "fit": stage_fit, "predict": stage_predict, "cv": stage_cv, "eval": stage_eval,
+          "stack": stage_stack, "swap": stage_swap, "confirm": stage_confirm, "export": stage_export}
 
 if __name__ == "__main__":
     main()

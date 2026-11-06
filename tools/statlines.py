@@ -1849,6 +1849,128 @@ def stage_prereg(args):
     log("wrote %s" % p)
 
 
+# ====================================================================== stage: tables (markdown for the research note)
+def _ci(c, d=3):
+    return "n/a" if c is None else "%+.*f [%+.*f, %+.*f]" % (d, c[0], d, c[1], d, c[2])
+
+
+def _pct(x):
+    return "%.3f" % x if x is not None else "n/a"
+
+
+def md_tables(R, title):
+    L = ["### %s" % title, "",
+         "Conditional on the actual fight length t (all fight-sides in the window: %d; backtest universe, both men with a "
+         "prior UFC fight: %d). NLL = log score per fight-side (nats); dev = Poisson deviance of the mean; in80 = share "
+         "of randomized PITs inside [0.1, 0.9] (target 0.80); CIs: 2,000 event-cluster resamples, paired." % (
+             R["n_rows"], R["n_both_prior"]), "",
+         "| stat | chosen | NLL chosen | NLL nb_base | NLL Poisson(blend) | NLL diff vs nb_base | dev chosen | dev blend | dev mlrates | dev diff vs blend | dev % vs blend | in80 | >P90 | <P10 |",
+         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for st in STATS:
+        r = R["per_stat"][st]
+        a = r["all"]
+        L.append("| %s | %s | %.4f | %.4f | %.3f | %s | %.3f | %.3f | %.3f | %s | %+.2f%% | %.3f | %.3f | %.3f |" % (
+            st, R["choice_js"][st], a["chosen"]["nll"], a["nb_base"]["nll"], a["pois_base"]["nll"],
+            _ci(r["chosen - nb_base|nll"], 4), a["chosen"]["dev"], a["pois_base"]["dev"], a["pois_mlraw"]["dev"],
+            _ci(r["chosen - pois_base|dev"]), r["dev_rel|chosen vs pois_base"], a["chosen"]["pit_in80"],
+            a["chosen"]["pit_above90"], a["chosen"]["pit_below10"]))
+    L += ["", "Interval calibration of the comparators (same rows): in80 of Poisson(blend) / nb_base / chosen.", "",
+          "| stat | Poisson(blend) in80 | nb_base in80 | chosen in80 | chosen naive 10-90% band hit | chosen MAE of median | nb_base MAE of median |",
+          "|---|---|---|---|---|---|---|"]
+    for st in STATS:
+        a = R["per_stat"][st]["all"]
+        L.append("| %s | %.3f | %.3f | %.3f | %.3f | %.3f | %.3f |" % (st, a["pois_base"]["pit_in80"], a["nb_base"]["pit_in80"],
+                                                              a["chosen"]["pit_in80"], a["chosen"]["band80_naive"],
+                                                              a["chosen"]["mae_median"], a["nb_base"]["mae_median"]))
+    E = R.get("engine")
+    if E:
+        L += ["", "Engine %s (%s)." % (E["meta"]["engine"], E["meta"]["years"]), "",
+              "Conditional mean at the actual length (engine: rate-based mean, simulated totals / simulated minutes x t) "
+              "and fights that went the distance (engine: only its simulations that went the distance; ours at t = 5R):", "",
+              "| stat | n | dev engine | dev chosen | diff chosen - engine | distance n | CRPS engine | CRPS chosen | CRPS diff | in80 engine | in80 chosen | >P90 engine | >P90 chosen |",
+              "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        for st in STATS:
+            e = E[st]
+            dd = e["dist"]
+            L.append("| %s | %d | %.3f | %.3f | %s | %d | %.3f | %.3f | %s | %.3f | %.3f | %.3f | %.3f |" % (
+                st, e["n_cond"], e["cond_mean_dev|engine"], e["cond_mean_dev|chosen"], _ci(e["cond_mean_dev|chosen - engine"]),
+                dd["n"], dd["engine"]["crps"], dd["chosen"]["crps"], _ci(dd["crps|chosen - engine"]),
+                dd["engine"]["pit_in80"], dd["chosen"]["pit_in80"], dd["engine"]["pit_above90"], dd["chosen"]["pit_above90"]))
+        L += ["", "Unconditional lines (no length given): engine's full simulated distribution vs our mixture over the "
+                  "methodround S fight-length grid; dev is the evalv-style deviance of the unconditional mean:", "",
+              "| stat | n | CRPS engine | CRPS ours | CRPS diff | dev engine | dev ours | dev diff | in80 engine | in80 ours | >P90 engine | >P90 ours | <P10 engine | <P10 ours | NLL ours | NLL Poisson(blend) mix |",
+              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        for st in STATS:
+            u = E[st].get("uncond")
+            if not u:
+                continue
+            L.append("| %s | %d | %.3f | %.3f | %s | %.3f | %.3f | %s | %.3f | %.3f | %.3f | %.3f | %.3f | %.3f | %.4f | %.3f |" % (
+                st, u["n"], u["engine"]["crps"], u["chosen_mix"]["crps"], _ci(u["crps|chosen_mix - engine"]),
+                u["engine"]["dev"], u["chosen_mix"]["dev"], _ci(u["dev|chosen_mix - engine"]), u["engine"]["pit_in80"],
+                u["chosen_mix"]["pit_in80"], u["engine"]["pit_above90"], u["chosen_mix"]["pit_above90"],
+                u["engine"]["pit_below10"], u["chosen_mix"]["pit_below10"], u["chosen_mix"]["nll"], u["pois_base_mix"]["nll"]))
+        L += ["", "PIT histograms (10 bins, counts) for key stats:", "", "| stat | model | histogram |", "|---|---|---|"]
+        for st in ("sig_lnd", "sig_att", "td_att", "td_lnd", "ctrl", "kd", "sub_att"):
+            e = E[st]
+            L.append("| %s | ours, given t (all rows) | %s |" % (st, " ".join(map(str, R["per_stat"][st]["all"]["chosen"]["pit_hist10"]))))
+            L.append("| %s | Poisson(blend), given t | %s |" % (st, " ".join(map(str, R["per_stat"][st]["all"]["pois_base"]["pit_hist10"]))))
+            L.append("| %s | engine, distance only | %s |" % (st, " ".join(map(str, e["dist"]["engine"]["pit_hist10"]))))
+            L.append("| %s | ours, distance only | %s |" % (st, " ".join(map(str, e["dist"]["chosen"]["pit_hist10"]))))
+            if e.get("uncond"):
+                L.append("| %s | engine, unconditional | %s |" % (st, " ".join(map(str, e["uncond"]["engine"]["pit_hist10"]))))
+                L.append("| %s | ours, unconditional | %s |" % (st, " ".join(map(str, e["uncond"]["chosen_mix"]["pit_hist10"]))))
+    return "\n".join(L)
+
+
+def stage_tables(args):
+    cv = json.load(open(os.path.join(CACHE, "cv.json")))
+    L = ["### CV candidates (2021-2023 pooled NLL per fight-side; selection rule: %s)" % cv["rule"], "",
+         "| stat | " + " | ".join(["pois_base", "nb_base", "nb_t", "nb_glm_l30", "nb_glm_l300", "nb_glm_l3000",
+                                   "nb_glm_l10000", "nb_glm_l30000", "nb_gbm", "zinb_t", "zinb_glm_l300", "zibeta_t",
+                                   "zibeta_glm_l300"]) + " | chosen (JS) | chosen (any) |",
+         "|---" * 16 + "|"]
+    for st in STATS:
+        r = cv["per_stat"][st]
+        cells = []
+        for n in ("pois_base", "nb_base", "nb_t", "nb_glm_l30", "nb_glm_l300", "nb_glm_l3000", "nb_glm_l10000",
+                  "nb_glm_l30000", "nb_gbm", "zinb_t", "zinb_glm_l300", "zibeta_t", "zibeta_glm_l300"):
+            cells.append(("%.4f" % r[n]["nll"]) if n in r else "")
+        L.append("| %s | %s | %s | %s |" % (st, " | ".join(cells), cv["choice_js"][st], cv["choice"][st]))
+    print("\n".join(L) + "\n")
+    p = os.path.join(CACHE, "cv_eval.json")
+    if os.path.exists(p):
+        print(md_tables(json.load(open(p)), "Forward-chained CV years 2021-2023") + "\n")
+    p = os.path.join(CACHE, "gate.json")
+    if os.path.exists(p):
+        G = json.load(open(p))
+        L = ["### Winner expert: forward-chained stack gate (2021-2023)", "",
+             "Expert alone on 2019-2023 (walk-forward): log loss %.4f, accuracy %.3f (n %d)." % (
+                 G["expert_alone_2019_2023"]["ll"], G["expert_alone_2019_2023"]["acc"], G["expert_alone_2019_2023"]["n"]), "",
+             "| stack | CV base | CV + statlines | gain | enters (gain < -0.0005) | statlines weight (fit <= 2023) | paired CV-years diff [CI] |",
+             "|---|---|---|---|---|---|---|"]
+        for k, g in G["gate"].items():
+            pc = G["paired_cv_years"][k + " vs base"]
+            L.append("| %s | %.5f | %.5f | %+.5f | %s | %.3f | %+.5f [%+.4f, %+.4f] |" % (
+                k, g["cv_base"], g["cv_plus"], g["gain"], "yes" if g["enters"] else "no", g["statlines_weight"],
+                pc["diff"], pc["diff_ci"][0], pc["diff_ci"][1]))
+        print("\n".join(L) + "\n")
+    p = os.path.join(CACHE, "final_eval.json")
+    if os.path.exists(p):
+        F = json.load(open(p))
+        print(md_tables(F, "2024-2025 confirmation (scored once; fit 2019-2023)") + "\n")
+        L = ["### Winner expert on 2024-2025 (confirmation only)", "", "| comparison | n | a | b | diff [CI] | entered by CV |",
+             "|---|---|---|---|---|---|"]
+        for k, v in F["winner"].items():
+            if k.startswith("expert_alone"):
+                continue
+            L.append("| %s | %d | %.5f | %.5f | %+.5f [%+.4f, %+.4f] | %s |" % (k, v["n"], v["a"], v["b"], v["diff"],
+                                                                         v["diff_ci"][0], v["diff_ci"][1], v["entered_by_cv"]))
+        ea = F["winner"]["expert_alone_2024_2025"]
+        L.append("")
+        L.append("Expert alone 2024-2025: log loss %.4f, accuracy %.3f (n %d)." % (ea["ll"], ea["acc"], ea["n"]))
+        print("\n".join(L))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("stage")
@@ -1861,7 +1983,7 @@ def main():
 
 
 STAGES = {"build": stage_build, "cv": stage_cv, "actuals": stage_actuals, "cvfit": stage_cvfit, "gate": stage_gate,
-          "prereg": stage_prereg, "final": stage_final, "fixtures": stage_fixtures}
+          "prereg": stage_prereg, "final": stage_final, "fixtures": stage_fixtures, "tables": stage_tables}
 
 if __name__ == "__main__":
     main()

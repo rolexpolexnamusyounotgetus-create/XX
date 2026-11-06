@@ -53,6 +53,9 @@ function over(g) {
     stko: g.stko, kdPos: [eff.kdPos[0], g.kdClinch] };
 }
 function sim(params, n, seed) {
+  // v5 durability component (on by default): league-average pairs run it in relative mode (the priors' own division level),
+  // as tests/test_engine3.js simAvg does; no effect with the component off
+  params = Object.assign({}, params, { durability: Object.assign({}, params && params.durability, { level: null }) });
   const m = E.matchup(PA, PB, { division: DIV, rounds: 3, title: false, params, priors: PRI, ml: false });
   const s = E.summarize(m, n, seed), a = s.avg.A, b = s.avg.B;
   const kk = s.koKind, kt = Math.max(1, kk.KO + kk.TKO_followup + kk.TKO_standing + kk.GNP + kk.LEG);

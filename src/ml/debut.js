@@ -1,0 +1,112 @@
+/* debut.js: the debut-path model (tools/debut.py, research/model_debut.md) for bouts with a UFC debutant.
+
+   const Debut = require("./src/ml/debut.js");
+   const M = Debut.load(require("./data/derived/debut.json").model);
+   M.winner(sideA, sideB)                          -> P(A wins | decisive), corner-symmetric by construction
+   M.method(sideA, sideB, { division, rounds, pA }) -> { A: [ko, sub, dec] given A wins, B: [...], marginal: [...],
+                                                        whohow: { A: [...], B: [...] } }  (P(winner, method))
+   M.predict(sideA, sideB, bout)                   -> winner by regime + method, with the source of each number
+     bout = { division, rounds, p_close, p_open }  (lines optional: no-line / open / close regimes)
+
+   A side is a plain object in the model's side columns (data/derived/debut.json model.side_columns): elo (Elo / 100),
+   debut, logn, uwin, ufin, ufinl, age, lay, wcmove, g4.0_th / _sos / _sd, am_n, am_wpct, pre_tuf, short, repl,
+   miss, pre_* ...; _n = prior UFC bouts. A missing or null column is unknown and enters at the training mean (it
+   contributes 0), exactly as in tools/debut.py DebutLR. Method columns: pre_ko, pre_sub, pre_kol, pre_subl (pre-UFC
+   rates, used only when pav = 1, i.e. the pre-UFC page is known), uko_w, usub_w, uko_l, usub_l (UFC counts).
+
+   Regimes (frozen by forward-chained CV 2019-2023, tools/debut.py cv): no line -> the debut model (or its CV-chosen
+   stack); opening line -> stack [open, debut] only if CV admitted the debut model there; closing line -> the stack
+   [close, debut] if CV admitted it, else the close alone (the debut model never overrides a close it did not beat). */
+"use strict";
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.DebutModel = factory();
+})(typeof self !== "undefined" ? self : this, function () {
+  const DIV_LBS = { "Flyweight": 125, "Bantamweight": 135, "Featherweight": 145, "Lightweight": 155, "Welterweight": 170,
+    "Middleweight": 185, "Light Heavyweight": 205, "Heavyweight": 265, "Women's Strawweight": 115,
+    "Women's Flyweight": 125, "Women's Bantamweight": 135, "Women's Featherweight": 145 };
+  const fin = (x) => typeof x === "number" && isFinite(x);
+  const clip = (p, c) => Math.min(Math.max(p, c), 1 - c);
+  const logit = (p, c) => { const q = clip(p, c); return Math.log(q / (1 - q)); };
+  const sig = (z) => 1 / (1 + Math.exp(-z));
+
+  function load(model) {
+    const W = model.winner, Mm = model.method;
+    const faded = new Set(W.faded || []);
+    function sideVec(s) {
+      const n = fin(s._n) ? s._n : 0, f = Math.exp(-n / W.tau);
+      return W.cols.map((k, j) => {
+        const v = s[k];
+        let x = fin(v) ? v - W.mu[j] : 0;
+        if (faded.has(k)) x *= f;
+        return x;
+      });
+    }
+    function winner(a, b) {
+      const xa = sideVec(a), xb = sideVec(b);
+      let z = 0;
+      for (let j = 0; j < W.cols.length; j++) z += ((xa[j] - xb[j]) / W.sd[j]) * W.coef[j];
+      return sig(z);
+    }
+    function methodSide(s) {
+      const n = fin(s._n) ? s._n : 0, pav = fin(s.pav) ? s.pav : (s.debut ? 1 : 0);
+      const fade = Math.exp(-n / 4) * pav;
+      const nz = (v, d) => (fin(v) ? v : d);
+      return { ko: nz(s.pre_ko, 0.3) * fade, sub: nz(s.pre_sub, 0.15) * fade, kol: nz(s.pre_kol, 0.15) * fade,
+        subl: nz(s.pre_subl, 0.08) * fade, uko: (nz(s.uko_w, 0) + 0.3) / (n + 2), usub: (nz(s.usub_w, 0) + 0.2) / (n + 2),
+        ukol: (nz(s.uko_l, 0) + 0.2) / (n + 2), usubl: (nz(s.usub_l, 0) + 0.1) / (n + 2), debut: s.debut ? 1 : 0 };
+    }
+    function condMethod(w, l, bout, pW) {
+      const lbs = (DIV_LBS[bout.division] || 160) / 100;
+      const x = [w.ko, w.sub, w.uko, w.usub, l.kol, l.subl, l.ukol, l.usubl, Math.abs(logit(pW, 0.01)),
+        (bout.rounds || 3) >= 5 ? 1 : 0, lbs, String(bout.division || "").startsWith("Women") ? 1 : 0, w.debut, l.debut];
+      const base = (model.live_division_base[bout.division] || model.live_division_base._all);
+      const eta = [0, 0, 0].map((_, c) => Math.log(base[c]));
+      for (let c = 0; c < 2; c++) {
+        let e = Mm.W[c][0];
+        for (let j = 0; j < x.length; j++) e += ((x[j] - Mm.mu[j]) / Mm.sd[j]) * Mm.W[c][j + 1];
+        eta[c] += e;
+      }
+      const mx = Math.max(...eta), ex = eta.map((e) => Math.exp(e - mx)), S = ex[0] + ex[1] + ex[2];
+      return ex.map((e) => e / S);
+    }
+    function method(a, b, bout) {
+      const pA = fin(bout.pA) ? bout.pA : winner(a, b);
+      const sa = methodSide(a), sb = methodSide(b);
+      // the Python fit feeds |logit p(A)| to both rows (the mismatch is symmetric)
+      const A = condMethod(sa, sb, bout, pA), B = condMethod(sb, sa, bout, pA);
+      const marginal = A.map((v, c) => pA * v + (1 - pA) * B[c]);
+      return { A, B, marginal, whohow: { A: A.map((v) => pA * v), B: B.map((v) => (1 - pA) * v) }, pA,
+        classes: Mm.classes };
+    }
+    function stack(reg, ps) {
+      const st = model.stacks[reg];
+      let z = 0;
+      for (let j = 0; j < st.experts.length; j++) z += st.weights[j] * logit(ps[st.experts[j]], st.pclip);
+      return sig(z);
+    }
+    function predict(a, b, bout) {
+      bout = bout || {};
+      const sd = model.stack_decisions;
+      const pd = winner(a, b);
+      const out = { p_debut: pd, p_noline: pd, src_noline: "debut model" };
+      if (sd.noline && sd.noline !== "raw debut" && fin(bout.p_seeded)) {
+        out.p_noline = stack("noline", { debut: pd, seeded_elo: bout.p_seeded });
+        out.src_noline = "debut stack (" + sd.noline + ")";
+      }
+      if (fin(bout.p_open)) {
+        if (sd.open && sd.open.debut_enters) { out.p_open = stack("open", { open: bout.p_open, debut: pd }); out.src_open = "stack [open, debut]"; }
+        else { out.p_open = bout.p_open; out.src_open = "opening line alone (CV kept the debut model out)"; }
+      }
+      if (fin(bout.p_close)) {
+        if (sd.close && sd.close.debut_enters) { out.p_close = stack("close", { close: bout.p_close, debut: pd }); out.src_close = "stack [close, debut]"; }
+        else { out.p_close = bout.p_close; out.src_close = "closing line alone (CV kept the debut model out)"; }
+      }
+      const pBest = fin(out.p_close) ? out.p_close : fin(out.p_open) ? out.p_open : out.p_noline;
+      out.method = method(a, b, { division: bout.division, rounds: bout.rounds, pA: pBest });
+      return out;
+    }
+    return { winner, method, predict, stack, sideVec };
+  }
+  return { load, DIV_LBS };
+});

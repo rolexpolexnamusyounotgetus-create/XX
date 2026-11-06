@@ -673,6 +673,11 @@ def build(args):
                 r["g%s_sos_%s" % (hl, tag)] = sos if sos is not None else float("nan")
         print("global net h=%s: %d cutoffs fit (%.0f s); bouts per fit %s" % (
             hl, len(net.fits), time.time() - tg, [v["n_bouts"] for k, v in sorted(net.fits.items())][-3:]), flush=True)
+    roster_rows = {}
+    for p, ub in bouts.items():
+        if ub and max(t[0] for t in ub) >= dt.date(2023, 1, 1) and not p.startswith(("amb:", "name:")):
+            roster_rows[people[p]["slug"]] = own_rows(p, VAULT_FROM)
+    pickle.dump(roster_rows, open(os.path.join(OUTC, "own_rows.pkl"), "wb"))
     for r in recs:
         for tag in ("A", "B"):
             r.pop("own_rows_" + tag, None)
@@ -1118,6 +1123,17 @@ def method_eval(dec, RA, RB, pw, fights, years, lam, base_only=False):
     return PA, PB, yk, ok
 
 
+def method_winner_input(dec, RA, RB, ch, p_elo, last_year):
+    """Winner probability fed to the method model: annual out-of-sample debut-model predictions for 2013..last_year
+    (fit on 2012..Y-1), Elo for 2012 (no earlier debut rows)."""
+    import numpy as np
+    yr = dec["year"].to_numpy()
+    p = oof(dec, RA, RB, cfg_cols(ch["blocks"]), ch["C"], ch["tau"], list(range(2013, last_year + 1)))
+    p = np.where(np.isnan(p), p_elo, p)
+    p[yr > last_year] = np.nan
+    return p
+
+
 def method_scores(PA, PB, pw, yk, win_a, mask):
     import numpy as np
     pm = pw[:, None] * PA + (1 - pw[:, None]) * PB                 # marginal KO / SUB / DEC
@@ -1231,21 +1247,23 @@ def cv(args):
     fights, people, bouts, uni = load_universe_strict()
     win_a = y == 1.0
     mres = {}
+    pw_m = method_winner_input(dec, RA, RB, {"blocks": chosen, "C": best["C"], "tau": best["tau"]}, P["elo"],
+                               max(CV_YEARS))
     pw_s = np.where(np.isnan(P["seeded_elo"]), P["elo"], P["seeded_elo"])
-    PA0, PB0, yk, okm = method_eval(dec, RA, RB, p_deb, fights, CV_YEARS, 1.0, base_only=True)
+    PA0, PB0, yk, okm = method_eval(dec, RA, RB, pw_m, fights, CV_YEARS, 1.0, base_only=True)
     mm = cvm & okm
     s_base = method_scores(PA0, PB0, pw_s, yk, win_a, mm)
     best_lam = None
     for lam in (1.0, 10.0, 30.0, 100.0, 300.0):
-        PA, PB, _, _ = method_eval(dec, RA, RB, p_deb, fights, CV_YEARS, lam)
-        s = method_scores(PA, PB, p_deb, yk, win_a, mm)
+        PA, PB, _, _ = method_eval(dec, RA, RB, pw_m, fights, CV_YEARS, lam)
+        s = method_scores(PA, PB, pw_m, yk, win_a, mm)
         mres["lam=%g" % lam] = {k: round(float(v.mean()), 5) for k, v in s.items()}
         print("method CV lam %g: %s | base %s" % (lam, mres["lam=%g" % lam],
                                                   {k: round(float(v.mean()), 5) for k, v in s_base.items()}), flush=True)
         if best_lam is None or s["method3"].mean() < best_lam[1]:
             best_lam = (lam, s["method3"].mean(), s)
     s = best_lam[2]
-    s_bw = method_scores(PA0, PB0, p_deb, yk, win_a, mm)          # base-rate method with the debut winner prob
+    s_bw = method_scores(PA0, PB0, pw_m, yk, win_a, mm)          # base-rate method with the debut winner prob
     mres["chosen_lam"] = best_lam[0]
     mres["base_rates"] = {k: round(float(v.mean()), 5) for k, v in s_base.items()}
     mres["paired"] = {
@@ -1365,13 +1383,14 @@ def holdout(args):
     fights, people, bouts, uni = load_universe_strict()
     lam = C["method"]["chosen_lam"]
     win_a = y == 1.0
-    PA, PB, yk, okm = method_eval(dec, RA, RB, p_deb, fights, HOLD_YEARS, lam)
-    PA0, PB0, _, _ = method_eval(dec, RA, RB, p_deb, fights, HOLD_YEARS, lam, base_only=True)
+    pw_m = method_winner_input(dec, RA, RB, ch, P["elo"], max(HOLD_YEARS))
+    PA, PB, yk, okm = method_eval(dec, RA, RB, pw_m, fights, HOLD_YEARS, lam)
+    PA0, PB0, _, _ = method_eval(dec, RA, RB, pw_m, fights, HOLD_YEARS, lam, base_only=True)
     mm = hm & okm
     pw_fb = np.where(np.isnan(P["seeded_elo"]), P["elo"], P["seeded_elo"])
-    s = method_scores(PA, PB, p_deb, yk, win_a, mm)
+    s = method_scores(PA, PB, pw_m, yk, win_a, mm)
     s0 = method_scores(PA0, PB0, pw_fb, yk, win_a, mm)
-    s0d = method_scores(PA0, PB0, p_deb, yk, win_a, mm)
+    s0d = method_scores(PA0, PB0, pw_m, yk, win_a, mm)
     out["method"] = {"n": int(mm.sum()), "lam": lam,
                      "method3": paired_vals(ev[mm], s["method3"], s0["method3"]),
                      "method_given_winner": paired_vals(ev[mm], s["method_given_winner"], s0["method_given_winner"]),
@@ -1422,6 +1441,135 @@ def calib_slope(p, y, groups, B=1000):
     lo, hi = np.percentile(bs, [2.5, 97.5])
     return [round(float(s0), 3), round(float(lo), 3), round(float(hi), 3)]
 
+
+# ------------------------------------------------------------------ export (production refit through 2025: deployment)
+def export(args):
+    """data/derived/debut.json: CV + the single 2024-25 look (as scored), production coefficients refit on every
+    decisive debut bout 2012-2025 by the CV-frozen procedure (never scored), stack weights refit on 2019-2025
+    out-of-sample rows, promotion strengths and veterans' network ratings from the network fit at 2026-01-01."""
+    import numpy as np
+    C = frozen_choices()
+    ch = C["chosen"]
+    H = pickle.load(open(os.path.join(OUTC, "holdout.pkl"), "rb")) if os.path.exists(os.path.join(OUTC, "holdout.pkl")) else None
+    df, meta = load_frame()
+    dec, RA, RB = prep(df)
+    y = dec["y"].to_numpy(float)
+    yr = dec["year"].to_numpy()
+    cols = cfg_cols(ch["blocks"])
+    m = DebutLR(cols, ch["C"], ch["tau"]).fit(RA, RB, y)
+    sym = float(np.max(np.abs(m.predict(RA, RB) + m.predict(RB, RA) - 1)))
+    # production stacks: weights on 2019-2025 out-of-sample rows (CV OOF 2019-23 + annual walk-forward 2024-25)
+    p_oof = walk_preds(dec, RA, RB, ch, CV_YEARS + HOLD_YEARS)
+    P = {"debut": p_oof, "seeded_elo": dec["p_seeded"].to_numpy(float), "close": dec["p_close"].to_numpy(float),
+         "open": dec["p_open"].to_numpy(float)}
+    stacks = {}
+    for reg, cc in (("noline", ["debut", "seeded_elo"]), ("close", ["close", "debut"]), ("open", ["open", "debut"])):
+        ok = (yr >= 2019) & np.all([~np.isnan(P[c]) for c in cc], axis=0)
+        Z = np.vstack([zlogit(P[c]) for c in cc]).T
+        stacks[reg] = {"experts": cc, "weights": [round(float(x), 5) for x in stack_fit(Z[ok], y[ok])],
+                       "n": int(ok.sum()), "pclip": PCLIP}
+    sd = C["stack_decisions"]
+    # production method model (lam frozen by CV), fit on 2012-2025; live base rates from 2021-2025
+    fights, people, bouts, uni = load_universe_strict()
+    win_a = y == 1.0
+    yk = np.array([MCLS.index(c) if c in MCLS else -1 for c in dec["cat"]])
+    XA, XB = method_rows(dec, RA, RB, m.predict(RA, RB))
+    offs = np.zeros((len(dec), 3))
+    for Y in sorted(set(yr.tolist())):
+        br = division_rates(fights, Y)
+        sel = yr == Y
+        offs[sel] = np.log(np.array([br.get(d, br["_all"]) for d in dec["division"][sel]]))
+    Xw = np.where(win_a[:, None], XA, XB)
+    mm = MethodMN(C["method"]["chosen_lam"]).fit(Xw[yk >= 0], offs[yk >= 0], yk[yk >= 0])
+    live_base = division_rates(fights, 2026)
+    # promotion strengths + veterans' network ratings at the 2026-01-01 cutoff (chosen half-life, if gnet chosen)
+    hl = None
+    for b in ch["blocks"]:
+        if b.startswith("gnet"):
+            hl = float(b[4:])
+    promos, roster = {}, {}
+    if hl is not None:
+        g = pickle.load(open(os.path.join(OUTC, "gnet_bouts.pkl"), "rb"))["gbl"]
+        net = GlobalNet(g, half_life=hl)
+        F = net.fit(VAULT_FROM)
+        expo = Counter()
+        for t in g:
+            if t[0] < VAULT_FROM and t[5] < VAULT_FROM:
+                expo[t[4]] += 1
+        for k, v in sorted(F["mu"].items(), key=lambda kv: -expo[kv[0]])[:120]:
+            promos[k] = {"mu": round(v, 4), "bouts": expo[k]}
+        pickle.dump({"fit": F, "half_life": hl, "lam_u": net.lam_u, "lam_g": net.lam_g},
+                    open(os.path.join(OUTC, "gnet_fit_2026.pkl"), "wb"))
+        # veterans: every person with a UFC bout in 2023-2025, rating over own rows (UFC bouts + own page when known)
+        rows_by = pickle.load(open(os.path.join(OUTC, "own_rows.pkl"), "rb")) if os.path.exists(
+            os.path.join(OUTC, "own_rows.pkl")) else {}
+        for slug, rr in rows_by.items():
+            th, s_, mu_, sos = net.rate(rr, VAULT_FROM, F)
+            roster[slug] = [round(th, 4), round(s_, 4), None if sos is None else round(sos, 4)]
+    preds = H["preds"] if H else {}
+    out = {
+        "meta": {"tool": "tools/debut.py export", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                 "universe": "every UFC bout 2012-01-01..2025-12-31 (ufcstats) with at least one man at 0 prior UFC bouts;"
+                             " decisive bouts scored; 2026+ dropped at parse",
+                 "frame": C.get("frame_meta"), "protocol": "every choice by forward-chained CV 2019-2023 (fit on 2012..Y-1);"
+                 " stack gate forward-chained 2021-2023 with the 0.0005 rule; 2024-2025 scored once (holdout)",
+                 "production": "coefficients below are refit on 2012-2025 by the CV-frozen procedure (deployment; never "
+                               "scored)", "swap_test_production": sym},
+        "cv": {k: C[k] for k in ("rows", "steps", "chosen", "all_blocks", "cv_compare", "stacks", "stack_decisions",
+                                 "method", "swap_test_max_abs")},
+        "holdout": H["out"] if H else None,
+        "model": {"winner": m.export(), "method": mm.export(), "live_division_base": {k: [round(x, 4) for x in v]
+                                                                                       for k, v in live_base.items()},
+                  "stacks": stacks, "stack_decisions": sd,
+                  "side_columns": {
+                      "elo": "UFC walk-forward Elo / 100 (1500 for a debutant)", "debut": "1 if 0 prior UFC bouts",
+                      "logn": "log(1 + prior UFC bouts)", "uwin": "log((UFC W + 1.5) / (UFC L + 1.5))",
+                      "ufin": "(UFC KO+SUB wins + 0.5) / (n + 2)", "ufinl": "(UFC KO+SUB losses + 0.3) / (n + 2)",
+                      "age": "years at the bout", "lay": "log(1 + days since last pro bout)",
+                      "wcmove": "sign(this division's limit - previous UFC bout's limit); 0 for a debutant",
+                      "pre_*": "tools/preufc.py side_pre on the pre-UFC Sherdog snapshot (only when the page is known at the "
+                               "bout: debutants and 2012+ debutants)", "am_n": "log(1 + amateur bouts)",
+                      "am_wpct": "log((am W + 1) / (am L + 1))", "pre_tuf": "1 if pro exhibitions (TUF house)",
+                      "short": "1 if a replacement with <= 21 days notice", "repl": "1 if replacement for a withdrawn fighter",
+                      "miss": "1 if missed weight at the official weigh-in",
+                      "g<h>_th/_sos/_sd": "global network rating (logit units), decayed mean opponent rating, posterior sd",
+                      "_n": "prior UFC bouts (fades pre-UFC columns by exp(-n / tau))"}},
+        "promotions": promos, "roster_gnet": {"half_life": hl, "as_of": "2026-01-01", "fields": ["th", "sd", "sos"],
+                                              "fighters": roster},
+        "predictions": preds}
+    json.dump(out, open(os.path.join(DERIVED, "debut.json"), "w"), separators=(",", ":"), default=float)
+    print("wrote data/derived/debut.json: winner cols %s, %d promotions, %d roster ratings, %d predictions; swap %.1e" % (
+        cols, len(promos), len(roster), len(preds), sym))
+
+
+def features(args):
+    """One debutant's network columns for the forward ledger (debutants_*.json 'debut_model' block): his Sherdog pro
+    rows before the bout rated against the frozen network fit at 2026-01-01 (export writes it). Rows on or after
+    2026-01-01 are dropped unless --live (deployment only: a live card's debutant fought his last regional bouts in
+    2026; that is input, never fit or scored)."""
+    F = pickle.load(open(os.path.join(OUTC, "gnet_fit_2026.pkl"), "rb"))
+    net = GlobalNet([], half_life=F["half_life"], lam_u=F["lam_u"], lam_g=F["lam_g"])
+    D = dt.date.fromisoformat(args.date)
+    cap = D if args.live else min(D, VAULT_FROM)
+    patch_preufc()
+    fx = PU.Fetcher(offline=args.offline)
+    html = fx.get(PU.BASE + args.href, fighter_path(args.href))
+    P = PU.parse_fighter(html) if html else None
+    if not P:
+        raise SystemExit("no page for %s" % args.href)
+    rows, ex, am, _ = _parse_rows(P, None)
+    rr = [(r["_d"], r["_sid"], SC.get(r["res"]), r["_promo"]) for r in rows
+          if r["_d"] and r["_d"] < cap and not r["_ufc"] and r["_sid"] is not None and SC.get(r["res"]) is not None]
+    th, s_, mu_, sos = net.rate(rr, cap, F["fit"])
+    amr = [x for x in am if x["_d"] and x["_d"] < cap]
+    h = F["half_life"]
+    out = {"href": args.href, "date": args.date, "rows_before": len(rr), "rows_cap": cap.isoformat(),
+           "g%s_th" % h: round(th, 4), "g%s_sd" % h: round(s_, 4), "g%s_sos" % h: None if sos is None else round(sos, 4),
+           "am_n": round(math.log1p(len(amr)), 4),
+           "am_wpct": round(math.log((sum(x["res"] == "W" for x in amr) + 1.0) / (sum(x["res"] == "L" for x in amr) + 1.0)), 4),
+           "pre_tuf": 1.0 if any(x["_d"] and x["_d"] < cap for x in ex) else 0.0}
+    print(json.dumps(out))
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1436,7 +1584,19 @@ def main():
     h = sub.add_parser("holdout")
     h.add_argument("--force-rescore-same-choices", action="store_true",
                    help="recompute the spent look with the same frozen choices (bug fixes only; logged)")
+    sub.add_parser("export")
+    fe = sub.add_parser("features")
+    fe.add_argument("--href", required=True, help="Sherdog path, e.g. /fighter/First-Last-123456")
+    fe.add_argument("--date", required=True)
+    fe.add_argument("--live", action="store_true")
+    fe.add_argument("--offline", action="store_true")
     args = ap.parse_args()
+    if args.cmd == "export":
+        export(args)
+        return
+    if args.cmd == "features":
+        features(args)
+        return
     if args.cmd == "holdout":
         holdout(args)
         return

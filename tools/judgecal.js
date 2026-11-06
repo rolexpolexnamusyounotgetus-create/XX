@@ -366,7 +366,9 @@ function avgProfile(div, tag) {
   for (const k of E.KEYS) S[k] = (P[k] || 0) * 400;
   return { name: `${tag} ${div}`, division: div, S, age: 30, ko_losses: 0, pace: null, pace_w: null };
 }
-const mm = E.matchup(avgProfile("Lightweight", "A"), avgProfile("Lightweight", "B"), { division: "Lightweight", rounds: 3, priors: PRI, ml: false });
+// v5 durability component (on by default): league-average pairs in relative mode, as tests/test_engine3.js simAvg (no effect when off)
+const mm = E.matchup(avgProfile("Lightweight", "A"), avgProfile("Lightweight", "B"), { division: "Lightweight", rounds: 3, priors: PRI, ml: false,
+  params: { durability: { level: null } } });
 const rngE = E.makeRng(99);
 let sx2 = 0, sxh = 0, sh = 0, sh2 = 0, sxx = 0, nr = 0;
 for (let i = 0; i < 4000; i++) {
