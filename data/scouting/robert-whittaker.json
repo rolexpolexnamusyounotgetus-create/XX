@@ -1,0 +1,78 @@
+{
+  "slug": "robert-whittaker",
+  "name": "Robert Whittaker",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC middleweight champion: he won the interim title from Yoel Romero at UFC 213 (Jul 2017) and lost the title to Israel Adesanya by KO at UFC 243 (Oct 2019). After a submission loss to Khamzat Chimaev (R1, Oct 2024) and a split-decision loss to Reinier de Ridder (Jul 26, 2025), he fought at light heavyweight and knocked out Nikita Krylov at 1:01 of R3 at UFC 329 (Jul 11, 2026), his first UFC fight at 205. UFC record 18-7. Web checks were blocked in this pass, so his ranking, his division plans and any next fight are unverified.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/e1147d3d2dabe1ce",
+      "http://ufcstats.com/fight-details/7765e5e779dd7dc9",
+      "http://ufcstats.com/fight-details/6b8be0ee3e569ad2",
+      "http://ufcstats.com/fight-details/b8bf186f884678ea",
+      "http://ufcstats.com/fight-details/2556b7520536ce1d",
+      "data/derived/fighters.json (last_fight 2026-07-11, divisions Middleweight 19 / Welterweight 5 / Light Heavyweight 1, snapshot 2026-10-31)"
+    ]
+  },
+  "style": {
+    "archetype": "karate/point fighter",
+    "stance": "orthodox",
+    "tags": ["power", "footwork", "head-kicks", "leg-kicks", "takedown-defense", "chin-concern"],
+    "signature": [
+      "right-hand power at distance: KO of Nikita Krylov (R3, Jul 2026) and Ikram Aliskerov (R1 1:49, Jun 2024), both 'punch to head at distance'",
+      "head kicks: KO of Derek Brunson (R1, 2016) and Jacare Souza (R2, 2017), both 'kick to head at distance'",
+      "leg kicks when the opponent is flat-footed: 28 of 28 leg strikes landed vs Paulo Costa (UFC 298, Feb 2024)",
+      "clinch knee: TKO of Clint Hester with a knee to the head in the clinch (2014)",
+      "staying upright: Reinier de Ridder went 2 of 15 on takedowns (Jul 2025); 80% takedown defense career"
+    ],
+    "weaknesses": [
+      "eight knockdowns absorbed in 25 UFC fights (Adesanya three, Romero two, Du Plessis, Stephen Thompson, Colton Smith); KO/TKO losses to Thompson (2014), Adesanya (2019) and Du Plessis (2023)",
+      "grapplers get to him lately: submitted by Chimaev in 3:34 (Oct 2024); De Ridder held 9:06 of control (clinch included) on two takedowns; Krylov took him down 3 times in 5 attempts in R1 (Jul 2026); opponents shoot 5.2 times per 15 min decayed",
+      "almost no body work: 4.6% of sig attempts to the body decayed (league about 14%); 0 body strikes vs Krylov",
+      "output does not build: five-round pace is flat and dips in R5 (0.91x R1)"
+    ],
+    "summary": "A compact, explosive striker who works from range, comes in with fast punches to the head and has finished fights with right hands, head kicks and knees. He has been hard to take down for most of his career. Heavy punchers have dropped him eight times in the UFC, and since 2024 the grapplers have caught up with him. His one UFC fight at light heavyweight, in Jul 2026, ended in a knockout win.",
+    "sources": [
+      "http://ufcstats.com/fight-details/7765e5e779dd7dc9",
+      "http://ufcstats.com/fight-details/eba46dbf9cdd83c0",
+      "http://ufcstats.com/fight-details/6d04fbef6b8e4551",
+      "http://ufcstats.com/fight-details/0459297e86a14981",
+      "http://ufcstats.com/fight-details/01432891260084a4",
+      "http://ufcstats.com/fight-details/13c4251fb451f440",
+      "http://ufcstats.com/fight-details/6b8be0ee3e569ad2",
+      "http://ufcstats.com/fight-details/4ec5d9bd1442e6c1",
+      "http://ufcstats.com/fight-details/b8bf186f884678ea",
+      "data/raw/ufc_fight_stats.csv",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.24, "cross": 0.25, "hook": 0.2, "overhand": 0.19, "upper": 0.04, "headkick": 0.08,
+    "bodykick": 0.5, "bodyhook": 0.25, "bodystraight": 0.25,
+    "calf": 0.5, "inside": 0.5, "spinning": 0.02, "knee": 0.05, "elbow": 0.03,
+    "notes": "Group shares follow fighters.json decayed sums: sig attempts 87.8% head, 4.6% body, 7.6% leg (career 83.6/7.3/9.1). The middleweight league split is 77.2/14.0/8.8, so he is far more head-focused and throws about a third of the league share to the body. Leg work comes and goes: 28 of 28 vs Costa (Feb 2024), none vs Krylov or De Ridder. 90% of his landed sig is at distance. In the head group the cross and overhand are high because his recent finishes are right hands at distance (Krylov, Aliskerov). The jab and hook are close behind, as a judgment for a blitzing striker. Head kicks get 0.08 because two of his UFC KOs are head kicks at distance (Brunson 2016, Souza 2017), though both are old. The body group leans to kicks as a judgment, since his body attempts are rare and all at distance. Leg weights are an even split because no source in this pass separates calf from inside kicks. The knee gets 0.05 for the Hester clinch-knee TKO. The karate-based, in-and-out style behind the archetype comes from pre-2026 coverage that could not be re-opened in this pass."
+  },
+  "appearance": {
+    "build": "6'0\" with a 73\" reach (dataset); compact and muscular, with shorter arms than most middleweights (judgment from widely published fight photos; not re-checked in this pass)",
+    "hair": "short dark hair (not re-checked in this pass)",
+    "facial_hair": "varies; unknown for 2026",
+    "skin": "light-medium",
+    "tattoos": "unknown (no source in this pass)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height_in 72, reach_in 73, stance Orthodox)",
+      "http://ufcstats.com/fighter-details/e1147d3d2dabe1ce"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Chin: 8 knockdowns absorbed in UFC fights (0.81 decayed), the most of the five in this batch, and 3 KO/TKO losses. Opponents' sig accuracy against him is 45.6% decayed vs 40.8% career.", "source": "data/derived/fighters.json (kd_absorbed 8, ko_losses 3)" },
+    { "note": "Flat five-round pace across 10 fights: R2-R5 output is 1.04, 1.01, 1.09 and 0.91 times R1, against the middleweight curve of 1.26, 1.20, 1.28 and 1.31.", "source": "data/derived/fighters.json (pace; priors.Middleweight.pace5)" },
+    { "note": "Takedown defense is slipping under volume: 71.2% decayed vs 80.0% career, with opponents shooting 5.2 times per 15 min and holding 18% control share.", "source": "data/derived/fighters.json" },
+    { "note": "He fought at light heavyweight in Jul 2026, but his home division in fighters.json is still middleweight (19 of 25 UFC fights). If he is simulated at 205, the light heavyweight priors (7.8 sig attempts per minute, 50% accuracy) apply.", "source": "data/derived/fighters.json (division, divisions; priors.Light Heavyweight)" }
+  ],
+  "confidence": "low"
+}

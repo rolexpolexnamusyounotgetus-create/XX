@@ -1,6 +1,6 @@
 # Mateusz Gamrot: scouting dossier
 
-*As of 2026-11-06. Listed southpaw by UFC Stats, 5'10", 70-inch reach, born 1990-12-11 (age 35). Nickname "Gamer". UFC record 9-5 in fighters.json. His pro record could not be re-verified in this pass.*
+*As of 2026-11-06. Listed southpaw by UFC Stats, 5'10", 70-inch reach, born 1990-12-11 (age 35). Nickname "Gamer". UFC record 9-5 in fighters.json; pro record not re-verified.*
 
 > Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. A fact-checker should confirm his ranking and any booking.
 
@@ -17,7 +17,7 @@
 - **W Rafael Fiziev (Sep 2023), TKO R2.** Fiziev suffered a leg injury.
 
 ## Style
-He is a pressure wrestler. He chains takedown attempts (13.3 per 15 minutes; the lightweight median is about 3.6), then rides top position and works ground strikes and submissions (arm-triangle, kimura, a knee-on-the-ground TKO of Diego Ferreira). Standing, he mostly throws to the head (87% of recent attempts) at low volume. He mainly uses his striking to set up shots.
+He is a pressure wrestler. He chains takedown attempts (13.3 per 15 minutes; the lightweight median is about 3.6), then rides top position and works ground strikes and submissions (arm-triangle, kimura, a knee-on-the-ground TKO of Diego Ferreira). Standing, he mostly throws to the head (87% of recent attempts) at low volume.
 
 ## Strengths
 - **Wrestling volume and control:** 5.1 takedowns landed per 15 minutes and 32% control time over his career (median 17%).

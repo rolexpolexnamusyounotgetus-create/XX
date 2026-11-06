@@ -29,7 +29,7 @@
     "signature": [
       "walks forward behind constant punching: 14.4 sig attempts per minute decayed (middleweight average 8.1), 87% to the head, 96% of landed strikes at distance",
       "out-throws champions over five rounds: 408 sig attempts vs Du Plessis (UFC 297), 312 vs Chimaev (UFC 328, none in R1), 402 vs Paulo Costa (UFC 302)",
-      "hurts and then pours it on: knocked Adesanya down in R1 on the way to 49-46 x3 (UFC 293); stopped Abus Magomedov (R2, 2023) and Anthony Hernandez (R3, 2026) with ground punches after hurting them",
+      "hurts and then pours it on: knocked Adesanya down in R1 on the way to 49-46 x3 (UFC 293); finished Abus Magomedov (R2, 2023) and Anthony Hernandez (R3, 2026) with ground punches, each time after a knockdown in the same round",
       "gets back up against wrestlers: Chimaev landed 7 takedowns after R1 but held him for only 2:29 across R2-R5"
     ],
     "weaknesses": [
@@ -71,8 +71,8 @@
     ]
   },
   "engine_notes": [
-    { "note": "Strongest late surge of the five fighters in this batch: across 11 five-round fights his R2-R5 output is 1.42, 1.59, 1.67 and 1.86 times R1, against a middleweight curve of 1.26, 1.20, 1.28 and 1.31.", "source": "data/derived/fighters.json (pace; priors.Middleweight.pace5)" },
-    { "note": "Opponents' landed strikes on him split 40.6% head, 35.7% body and 23.7% leg (decayed). That is far less head and far more legs than the league, because his guard covers the head and he does not check or punish kicks with his own.", "source": "data/derived/fighters.json (oh/ob/ol landed)" },
+    { "note": "Strongest real late surge in this batch (Chimaev's larger ratios come from his near-zero R1 striking): across 11 five-round fights his R2-R5 output is 1.42, 1.59, 1.67 and 1.86 times R1, against a middleweight curve of 1.26, 1.20, 1.28 and 1.31.", "source": "data/derived/fighters.json (pace; priors.Middleweight.pace5)" },
+    { "note": "Opponents' landed strikes on him split 40.6% head, 35.7% body and 23.7% leg (decayed). The middleweight league's landed split is 63.9/20.8/15.4, so opponents score on his body and legs far more than usual and on his head far less.", "source": "data/derived/fighters.json (oh/ob/ol landed)" },
     { "note": "Against Chimaev he spent R1 under 4:47 of control and landed nothing, then out-landed Chimaev 123-98 over R2-R5. A get-up or escape knob for him should be high after the first takedown.", "source": "http://ufcstats.com/fight-details/70f1621080b3435c" },
     { "note": "Knockdowns: 1.67 landed decayed, 7 career; 3 absorbed career, none since Pereira in Jul 2022.", "source": "data/derived/fighters.json (kd, okd)" }
   ],

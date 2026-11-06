@@ -1,0 +1,90 @@
+{
+  "slug": "alexa-grasso",
+  "name": "Alexa Grasso",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC women's flyweight champion, now on a two-fight win streak. She won the belt from Valentina Shevchenko by rear-naked choke at UFC 285 (Mar 4, 2023), kept it with a split draw in the rematch (Sep 16, 2023), and lost it 45-50 x3 at UFC 306 (Sep 14, 2024). After a 27-30 x3 loss to Natalia Silva (UFC 315, May 10, 2025) she knocked out Maycee Barber at 2:42 of R1 (Mar 28, 2026, Seattle). She then beat Manon Fiorot 29-28 x3 at Noche UFC (Sep 12, 2026, Glendale), scoring a knockdown in R1. The dataset has Silva winning a women's flyweight title bout over Wang Cong at UFC 332 (Oct 3, 2026). Grasso's ranking, next booking and any injuries could not be checked on the web this session.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": null,
+    "sources": [
+      "http://ufcstats.com/fighter-details/e8b731feff72294b",
+      "http://ufcstats.com/fight-details/d9712b45c094730e",
+      "http://ufcstats.com/fight-details/9a0ecee6e8ca173f",
+      "http://ufcstats.com/fight-details/0f53eb509d0ffeb9",
+      "http://ufcstats.com/fight-details/6f83cfae0c800ef8",
+      "http://ufcstats.com/fight-details/a69afe4a88c0ca12",
+      "http://ufcstats.com/fight-details/3f804eec9183e597",
+      "data/derived/fighters.json"
+    ]
+  },
+  "style": {
+    "archetype": "boxer",
+    "stance": "orthodox",
+    "tags": ["durable", "leg-kicks", "clinch", "back-takes", "submissions"],
+    "signature": [
+      "punching combinations at range: 82% of her career landed significant strikes come at distance",
+      "rear-naked choke off a back take: Shevchenko at 4:34 of R4 (UFC 285, title) and Joanne Wood in R1 (2022)",
+      "clinch striking: 31 of 35 clinch strikes in the Shevchenko rematch",
+      "leg kicks as a second weapon: 19% of her time-decayed landed strikes go to the legs (division 16%)",
+      "recent knockdown power: KO of Maycee Barber (punch at distance, R1 2026) and a knockdown of Fiorot in R1 at Noche UFC 2026"
+    ],
+    "weaknesses": [
+      "wrestling: Shevchenko took her down 8 of 12 times with 16:04 of control in the 2024 title loss; takedown defence is 55% career and 47% time-decayed (division 61%)",
+      "almost no takedown offence: 0.31 takedowns per 15 min time-decayed (division 1.29)",
+      "below-division accuracy: 38.5% of significant attempts land, time-decayed (division 43%), with only 18 of 100 landed vs Shevchenko in 2024",
+      "can be out-pointed by a busier, more accurate striker: Silva out-landed her 65-45 for a 30-27 sweep (2025)",
+      "submitted once: rear-naked choke by Tatiana Suarez in R1 (2018)"
+    ],
+    "summary": "A boxer who has never been knocked down in the UFC. She works behind punching combinations, adds low kicks, and grabs the back when an opponent turns or overcommits, as Shevchenko did at UFC 285. Her weak points are wrestling and output. A strong wrestler can hold her down for long spells, and a sharper volume striker can beat her on points.",
+    "sources": [
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_stats.csv",
+      "http://ufcstats.com/fighter-details/e8b731feff72294b",
+      "http://ufcstats.com/fight-details/a69afe4a88c0ca12",
+      "http://ufcstats.com/fight-details/b395c89e19a3fec4",
+      "http://ufcstats.com/fight-details/6f83cfae0c800ef8",
+      "http://ufcstats.com/fight-details/1b650c76387c0f4b",
+      "http://ufcstats.com/fight-details/24f2d2dd9fea5d79"
+    ]
+  },
+  "moves": {
+    "jab": 0.3,
+    "cross": 0.28,
+    "hook": 0.22,
+    "overhand": 0.06,
+    "upper": 0.1,
+    "headkick": 0.04,
+    "bodykick": 0.35,
+    "bodyhook": 0.35,
+    "bodystraight": 0.3,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.05,
+    "elbow": 0.03,
+    "notes": "Weights follow the schema example and src/director.js: head moves sum to 1, body to 1, legs to 1; spinning, knee and elbow are separate rates for specials. Target split from fighters.json: time-decayed significant attempts are 79.2% head, 8.8% body, 12.1% legs (landed 67.4/13.3/19.3); career attempts 77.4/11.2/11.4; women's flyweight league 77.3/14.0/8.7. She kicks the legs more than the division and goes to the body less. No web scouting source could be read this session, so the split inside each group is a judgment from her boxing profile: jab and straight lead, then hooks, with head kicks rare. Calf vs inside cannot be told apart in ufcstats, so legs are split evenly. knee 0.05 and elbow 0.03 reflect clinch work (15% of career landed strikes in the clinch vs 11% for the division; 31 of 35 in the 2023 Shevchenko rematch), which ufcstats does not split by technique. Medium-low confidence."
+  },
+  "appearance": {
+    "build": "5 ft 5 in with a 66 in reach (ufcstats); flyweight (125 lb) since 2020, strawweight before",
+    "hair": "long dark-brown hair, usually tied or braided for fights (recalled; check)",
+    "facial_hair": "none",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "notes": "Height and reach are from ufcstats. Hair and skin are recalled from widely published fight photos and were not re-checked this session (no web or image host was reachable). Tattoos and kit were not sourced.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/e8b731feff72294b"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Chin: zero knockdowns absorbed and no KO/TKO loss in 16 UFC fights (239 minutes).", "source": "data/derived/fighters.json" },
+    { "note": "Power has risen recently. Career knockdowns are 0.19 per 15 min, 0.47 per 100 head strikes landed (division 0.25); time-decayed they are 0.48 per 15, because 2 of her 3 career knockdowns came in 2026 (Barber, Fiorot).", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Ground exposure: opponents average 199 s of control per 15 min against her, time-decayed (division 180), and 204 s career. Her own control is 63 s per 15, decayed.", "source": "data/derived/fighters.json" },
+    { "note": "Pace in 5-round fights (4 fights): 1.00, 1.07, 0.83, 0.85, 1.01 of round 1, against a division curve of 1.00, 0.90, 1.01, 1.14, 1.32. She does not build late the way the division does.", "source": "data/derived/fighters.json (pace)" },
+    { "note": "Elo 1652, sixth among flyweights who have fought since Nov 2024. Shevchenko is 1750, Silva 1722 and Fiorot 1672; she beat Fiorot despite the lower rating.", "source": "data/derived/fighters.json" }
+  ],
+  "confidence": "medium"
+}

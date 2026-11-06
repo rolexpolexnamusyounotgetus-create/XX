@@ -2,7 +2,7 @@
 
 *As of 2026-11-06. Switch stance (UFC Stats), 6'0", 75-inch reach, born 1990-02-13 (age 36). Nickname "The Hangman". New Zealander. UFC record 14-11 in fighters.json (18 lightweight and 7 featherweight bouts).*
 
-> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. A fact-checker should confirm the Ortega booking and his ranking.
+> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. The Ortega booking and his ranking need a fact-check.
 
 ## Current status
 **Active, on a three-fight losing streak, all by stoppage.**
@@ -35,7 +35,7 @@ He is a rangy kickboxer who switches stance. He leads with the jab and long stra
 - **Opponents shoot often** (7.7 attempts per 15 recency-weighted) and controlled him 29% of the time recently.
 
 ## Durability and cardio
-He has 5 KO/TKO losses (Barboza, Chandler, Arnold Allen, Saint Denis, Parnasse), two of them in 2026. Knockdowns absorbed per 15 minutes have risen from 0.18 career to 0.39 recency-weighted. His five-round pace (1.00 / 1.65 / 1.37 / 0.60 / 1.00) shows output rising after round 1, dipping in round 4 and recovering. He went the full 25 minutes twice (Felder, Poirier), so cardio is less of a worry than the recent damage.
+He has 5 KO/TKO losses (Barboza, Chandler, Arnold Allen, Saint Denis, Parnasse), two of them in 2026. Knockdowns absorbed per 15 minutes have risen from 0.18 career to 0.39 recency-weighted. His five-round pace (1.00 / 1.65 / 1.37 / 0.60 / 1.00) shows output rising after round 1, dipping in round 4 and recovering. He went 25 minutes twice (Felder, Poirier); recent damage is the bigger worry.
 
 ## What the numbers say
 Elo 1589, 32nd among the 100 lightweights who have fought since May 2025, down after three losses. His career rates: 4.8 significant strikes landed per minute at 49% accuracy (median about 4.1 at 47%) and 4.9 absorbed. The recency-weighted numbers are worse: 4.4 landed and 5.6 absorbed per minute. He attempts submissions at 1.26 per 15 minutes recency-weighted.

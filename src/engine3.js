@@ -430,7 +430,7 @@
         var posq = pc < 2 ? pc : 2;
         for (var t = 0; t < 3; t++) {
           var z = L.accA[t] + L.accB[posq] + a * R[i].accSh[t] + b * R[j].accAgSh[t];
-          m.accO[(i * 4 + pc) * 3 + t] = Math.exp(z) * (pc === 3 ? p.botAccOdds : 1) * adj[i].acc;
+          m.accO[(i * 4 + pc) * 3 + t] = Math.exp(z) * (pc === 3 ? p.botAccOdds : 1) * p.accScale * adj[i].acc;
         }
       }
       m.mixD = m.mixD || [null, null]; m.mixD[i] = mixD;
@@ -550,17 +550,20 @@
     var p = m.p, F = p.form, J = p.judge, nR = m.rounds, i, j, k;
     // fight-night form (fixed draw order, independent of trace)
     var sharedPace = Math.exp(F.pace * rng.normal());
-    var fOut = [1, 1], fAcc = [1, 1], fPow = [1, 1], fChin = [1, 1], fCard = [1, 1], fGrap = [1, 1];
+    var vol = Math.exp(F.vol * rng.normal() - 0.5 * F.vol * F.vol);   // shared fight volatility (mean 1): a war vs a tactical fight
+    var fOut = [1, 1], fAcc = [1, 1], fPow = [1, 1], fChin = [1, 1], fCard = [1, 1], fGrap = [1, 1], fSubO = [1, 1], fSubD = [1, 1];
     for (i = 0; i < 2; i++) {
       fOut[i] = Math.exp(F.out * rng.normal()); fAcc[i] = Math.exp(F.acc * rng.normal());
       fPow[i] = Math.exp(F.pow * rng.normal()); fChin[i] = Math.exp(F.chin * rng.normal());
       fCard[i] = Math.exp(F.cardio * rng.normal()); fGrap[i] = Math.exp(F.grap * rng.normal());
+      fSubO[i] = Math.exp(F.sub * rng.normal()); fSubD[i] = Math.exp(F.sub * rng.normal());
     }
+    var subK = [fSubO[0] * fSubD[1], fSubO[1] * fSubD[0]], subKs = [Math.sqrt(subK[0]), Math.sqrt(subK[1])];
     var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1];
     for (j = 0; j < 3; j++) { tS[j] = Math.exp(J.tasteSd * rng.normal()); tG[j] = Math.exp(J.tasteSd * rng.normal()); tP[j] = Math.exp(J.tasteSd * rng.normal()); }
-    var kdB = [m.kd[0] * fPow[0] * fChin[1], m.kd[1] * fPow[1] * fChin[0]];
+    var kdB = [m.kd[0] * fPow[0] * fChin[1] * vol, m.kd[1] * fPow[1] * fChin[0] * vol];
     var dw = [m.dw[0] * Math.pow(fPow[0], p.powDmgExp), m.dw[1] * Math.pow(fPow[1], p.powDmgExp)];
-    var pcF = [Math.sqrt(fPow[0] * fChin[1]), Math.sqrt(fPow[1] * fChin[0])];
+    var pcF = [Math.sqrt(fPow[0] * fChin[1] * vol), Math.sqrt(fPow[1] * fChin[0] * vol)];
     var gnpB = [m.gnp[0] * pcF[0], m.gnp[1] * pcF[1]], stkoB = [m.stko[0] * pcF[0], m.stko[1] * pcF[1]];
     var drain = [m.drain[0] * fCard[0], m.drain[1] * fCard[1]];
     var gR = [fGrap[0] / fGrap[1], fGrap[1] / fGrap[0]];
@@ -578,9 +581,9 @@
     var cards = [[0, 0], [0, 0], [0, 0]], n108 = 0;
     var rounds = trace ? [] : null;
     var fight = { winner: "D", method: "DRAW", detail: "", round: nR, t: 300, cards: cards, totals: null,
-      form: { A: { out: fOut[0], acc: fAcc[0], pow: fPow[0], chin: 1 / fChin[0], cardio: 1 / fCard[0], grap: fGrap[0] },
-              B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1] } },
-      rounds: rounds, fin: null, n108: 0, pace: sharedPace };
+      form: { A: { out: fOut[0], acc: fAcc[0], pow: fPow[0], chin: 1 / fChin[0], cardio: 1 / fCard[0], grap: fGrap[0], subOff: fSubO[0], subDef: 1 / fSubD[0] },
+              B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
+      rounds: rounds, fin: null, n108: 0, pace: sharedPace, vol: vol };
     var po = [0, 0], fin = null;
 
     for (var r = 0; r < nR; r++) {
@@ -628,8 +631,8 @@
             for (to = 0; to < pos; to++) if (rrow[to] > 0) { evT[n] = E_ESC; evW[n] = bot; evX[n] = to; evR[n++] = rrow[to] / (m.gEdge[top] * gTop); }
             evT[n] = E_SWEEP; evW[n] = bot; evX[n] = 0; evR[n++] = m.swPos[k5] / gTop;
             evT[n] = E_UP; evW[n] = bot; evX[n] = 0; evR[n++] = m.upPos[k5] / gTop * (0.6 + 0.4 * S[bot]) * (hb ? 0.5 : 1);
-            evT[n] = E_SUB; evW[n] = top; evX[n] = 2; evR[n++] = m.subTPos[k5] * gRs[top];
-            evT[n] = E_SUB; evW[n] = bot; evX[n] = 3; evR[n++] = m.subBPos[k5] * gRs[bot];
+            evT[n] = E_SUB; evW[n] = top; evX[n] = 2; evR[n++] = m.subTPos[k5] * gRs[top] * subKs[top];
+            evT[n] = E_SUB; evW[n] = bot; evX[n] = 3; evR[n++] = m.subBPos[k5] * gRs[bot] * subKs[bot];
             evT[n] = E_RESET; evW[n] = -1; evX[n] = 0; evR[n++] = p.groundReset;
           }
         }
@@ -681,10 +684,10 @@
               var uk = rng.u();
               if (uk < pk) kind = "kd";
               else if (uk < pk * (1 + p.hurtRatio)) kind = "hurt";
-              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * D[j] / 100) { kind = "fin"; finHow = "TKO"; } }
+              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (p.stkoBase + D[j] / 100)) { kind = "fin"; finHow = "TKO"; } }
             } else if (pc === 2) {
               if (follow) {
-                var ro = refO * chinM[j] * (1 + D[j] / 200);
+                var ro = refO * chinM[j] * (1 + D[j] / p.refDmg);
                 if (rng.u() < ro / (1 + ro)) { kind = "fin"; finHow = "TKO"; }
               } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / p.gnpDmg) * (hj ? p.gnpHurt : 1) * chinM[j]) { kind = "fin"; finHow = "GNP"; }
             }
@@ -748,11 +751,11 @@
             if (trace) { var et1 = evObj(t, "td", SIDE[i], state, pos, false, D, G, S); et1.loc = LOCN[x]; et1.from = fromState; ev.push(et1); }
           } else {
             if (trace) { var et2 = evObj(t, "tdx", SIDE[i], state, pos, false, D, G, S); et2.loc = LOCN[x]; ev.push(et2); }
-            if (rng.u() < m.gillo[j]) {
+            if (rng.u() < m.gillo[j] * subKs[j]) {
               // standing guillotine on the stuffed shot
               st[j * NS + I_SUB]++;
               var gname = pickName(SUBN.stand, rng.u());
-              var og = m.subO[j] * m.subStandO * gRs[j] * (1 + p.subStam * (1 - S[i]));
+              var og = m.subO[j] * m.subStandO * gRs[j] * subK[j] * (1 + p.subStam * (1 - S[i]));
               if (rng.u() < og / (1 + og)) {
                 fin = { by: SIDE[j], how: "SUB", t: t, loc: LOCN[x], name: gname, detail: gname, pos: null };
                 if (trace) { var eg = evObj(t, "sub", SIDE[j], state, pos, false, D, G, S); eg.name = gname; eg.loc = LOCN[x]; ev.push(eg); }
@@ -782,7 +785,7 @@
           st[i * NS + I_SUB]++;
           var fromTop = x === 2, hj3 = j === 0 ? h0 : h1;
           var sname = pickName(fromTop ? SUBN[POSN[pos]] : SUBN.bottom, rng.u());
-          var os = m.subO[i] * (fromTop ? m.subOPos[top * 5 + pos] : m.subBotO) * gRs[i] * (1 + p.subStam * (1 - S[j])) * (hj3 ? p.subHurt : 1);
+          var os = m.subO[i] * (fromTop ? m.subOPos[top * 5 + pos] : m.subBotO) * gRs[i] * subK[i] * (1 + p.subStam * (1 - S[j])) * (hj3 ? p.subHurt : 1);
           if (rng.u() < os / (1 + os)) {
             fin = { by: SIDE[i], how: "SUB", t: t, loc: "ground", name: sname, detail: sname, pos: POSN[pos] + (fromTop ? "" : " (bottom)") };
             if (trace) { var eu = evObj(t, "sub", SIDE[i], state, pos, false, D, G, S); eu.name = sname; eu.loc = "ground"; ev.push(eu); }

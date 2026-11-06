@@ -77,6 +77,7 @@
     clinchMix: [0.55, 0.33, 0.12],   // clinch target mix head/body/leg (default; leg = knees to the thigh)
     groundTopMix: [0.84, 0.15, 0.01], // top ground-strike target mix (default)
     groundBotMix: [0.6, 0.4, 0.0],    // bottom ground-strike target mix (default)
+    accScale: 1.0,           // [selfcal] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
     botAccOdds: 0.6,         // accuracy odds multiplier for strikes thrown from the bottom (default)
     accHurt: 1.5,            // accuracy odds multiplier against a hurt defender (default)
     accStam: 0.5,            // defender fatigue: odds x (1 + accStam (1 - S_def)) (default)
@@ -120,9 +121,11 @@
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
     kdRefStop: 0.12,         // [selfcal] P(referee stops it) per landed follow-up head strike, x damage factor
+    refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
     stko: 0.006,             // [selfcal] standing TKO hazard per landed standing head strike while hurt, x D/100 (baserates: 0.00049 per standing head overall)
     gnpTko: 0.0028,          // [selfcal] GNP TKO hazard per landed top ground head strike (x sub-position, damage); baserates ground KO 0.0097 per ground landed incl. follow-ups
+    stkoBase: 0.3,           // standing TKO hazard while hurt = stko x (stkoBase + D / 100) (default)
     gnpDmg: 200,             // GNP TKO x (1 + D / gnpDmg) (default)
     gnpHurt: 2.0,            // GNP TKO multiplier while hurt (default)
     legDmgScale: 120,        // leg damage units for a full mobility loss scale: mobility = 1 - G / legDmgScale, floored (default)
@@ -154,12 +157,14 @@
     // ---------------- fight-night form (sds) ----------------
     form: {
       out: 0.15,      // lognormal sd of each man's output (baserates form: between-fight resid 0.45, form upper bound 0.36, includes matchup effects)
+      vol: 0.40,      // lognormal sd (mean-1) of a shared fight volatility on both men's knockdown odds: wars vs tactical fights (stands in for matchup heterogeneity; baserates finish hazard falls by round)
       pace: 0.10,     // lognormal sd of a shared fight pace (both men; opponents' outputs correlate 0.43 within a round)
       acc: 0.12,      // logit-normal sd of accuracy (default)
       pow: 0.25,      // lognormal sd of power (v2 0.15; wider spreads finishes toward early rounds, baserates hazard falls R1 -> R3)
       chin: 0.25,     // lognormal sd of chin (v2 0.12; same reason)
       cardio: 0.15,   // lognormal sd of cardio (drain) (default)
-      grap: 0.30,     // lognormal sd of grappling (TD odds, control, passes, subs) (default; sub hazard falls 4:1 from R1 to R3)
+      grap: 0.30,     // lognormal sd of grappling (TD odds, control, passes, sub attempts) (default)
+      sub: 0.50,      // lognormal sd of submission offense and of submission defense (attempts x sqrt, conversion odds x); sub hazard falls ~2:1 from R1 to R3 (priors fin3)
       roundOut: 0.15, // lognormal sd of each man's output per round (round sig-landed var/mean 8.3; round-to-round corr 0.58)
       roundPace: 0.10 // lognormal sd of the shared pace per round (default)
     },

@@ -1,6 +1,6 @@
 # Merab Dvalishvili: scouting dossier
 
-As of Friday, Nov 6, 2026. "Dataset" means `data/derived/fighters.json`, the ufcstats snapshot through Oct 31, 2026. Web search was not available in this pass: the shared search budget was used up and page fetches failed. Results and stats below come from the dataset and raw ufcstats rows. Outside claims come from URLs already cited by other dossiers in this repo. Ranking, plans and appearance are unverified.
+As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). No web access this pass (search budget spent, fetches blocked), so stats come from the dataset and raw ufcstats rows, and outside claims reuse URLs cited by other repo dossiers. Unverified: ranking, plans, appearance.
 
 ## Current status
 
@@ -51,5 +51,5 @@ Decayed rates: he lands 4.68 sig strikes per minute and absorbs 3.66. He attempt
 
 ## Sources
 
-- Dataset: `data/derived/fighters.json`; `data/raw/ufc_fight_stats.csv`, `ufc_fight_results.csv`; ufcstats [fighter page](http://ufcstats.com/fighter-details/c03520b5c88ed6b4); fight pages: [UFC 333](http://ufcstats.com/fight-details/e262f5e588b149a6), [UFC 323](http://ufcstats.com/fight-details/4a0db214d9721d6e), [Sandhagen](http://ufcstats.com/fight-details/a8511df8285f5c91), [O'Malley 2](http://ufcstats.com/fight-details/e61d83e4e1f9c4d7), [Umar](http://ufcstats.com/fight-details/f39941b3743bf18c), [O'Malley 1](http://ufcstats.com/fight-details/3146e5a47a922976)
-- Cited via other repo dossiers (not opened in this pass): [CBS: UFC 320](https://www.cbssports.com/mma/news/ufc-320-results-merab-dvalishvili-grinds-through-cory-sandhagen-to-retain-bantamweight-championship); [Yahoo: UFC 333](https://sports.yahoo.com/mma/article/ufc-333-petr-yan-conquers-merab-dvalishvili-with-thrilling-come-from-behind-win-in-trilogy-fight-221808640.html)
+- Dataset: `data/derived/fighters.json`; `data/raw/` ufcstats CSVs; ufcstats [fighter page](http://ufcstats.com/fighter-details/c03520b5c88ed6b4); fight pages: [UFC 333](http://ufcstats.com/fight-details/e262f5e588b149a6), [UFC 323](http://ufcstats.com/fight-details/4a0db214d9721d6e), [Sandhagen](http://ufcstats.com/fight-details/a8511df8285f5c91), [O'Malley 2](http://ufcstats.com/fight-details/e61d83e4e1f9c4d7), [Umar](http://ufcstats.com/fight-details/f39941b3743bf18c), [O'Malley 1](http://ufcstats.com/fight-details/3146e5a47a922976)
+- Via other repo dossiers (not opened this pass): [CBS: UFC 320](https://www.cbssports.com/mma/news/ufc-320-results-merab-dvalishvili-grinds-through-cory-sandhagen-to-retain-bantamweight-championship); [Yahoo: UFC 333](https://sports.yahoo.com/mma/article/ufc-333-petr-yan-conquers-merab-dvalishvili-with-thrilling-come-from-behind-win-in-trilogy-fight-221808640.html)
