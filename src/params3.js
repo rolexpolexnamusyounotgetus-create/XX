@@ -30,8 +30,8 @@
     kTgt: 80,         // distance target-mix prior strength, attempts (default)
     combA: 1,         // log-linear exponent on the attacker's ratio (combine_fit: pure a=b=1 beat the free fit and averaging held-out)
     combB: 1,         // log-linear exponent on the defender's allowed ratio (same source)
-    powExp: 1.104,        // [walkfwd 2026-11-06; was 1] exponent on the shrunk power ratio (KD scored per landed head strike vs division) in the knockdown odds (default = combA)
-    chinExp: 0.5463,       // [walkfwd 2026-11-06; was 1] exponent on the shrunk chin ratio (KD absorbed per landed head strike absorbed vs division) (default = combB)
+    powExp: 1.104,        // [walkfwd 2026-11-06; was 1] exponent on the shrunk power ratio (KD scored per landed head strike vs division); same knockdown regression
+    chinExp: 0.5463,       // [walkfwd 2026-11-06; was 1] exponent on the shrunk chin ratio (KD absorbed per landed head strike absorbed vs division); Poisson regression of actual knockdowns on predicted (chin history predicts less than the raw ratio)
     ctrlScale: 1.004,     // [walkfwd 2026-11-06; was 1] global scale on each pair's control-time target (1 / get-up scale); moment-matched to control per minute in the walk-forward backtest
 
     // ---------------- positions ----------------
@@ -107,10 +107,10 @@
     kdRepeat: 1.15,          // each knockdown absorbed multiplies his KD susceptibility for the rest of the fight (default)
     chinAge0: 34,            // age where chin and power aging start (research/modeling_literature.md 3.3, 5)
     chinAge: 0.04109,           // [walkfwd 2026-11-06; was 0.04] chin x exp(chinAge * max(0, age - chinAge0)) (within-fighter x1.21 at 34-36, x1.35 at 37+; partly in the decayed stats already)
-    powAge: 0.1152,            // [walkfwd 2026-11-06; was 0.03] power x exp(-powAge * max(0, age - chinAge0)) (within-fighter KD scored x0.79 / x0.67, same caveat)
-    chinKO: 0.1238,            // [walkfwd 2026-11-06; was 0.04] chin x (1 + chinKO) ^ prior KO losses (literature 3.3: cap at x1.10-1.15 to avoid double counting)
+    powAge: 0.1152,            // [walkfwd 2026-11-06; was 0.03] power x exp(-powAge * max(0, age - chinAge0)); knockdown regression (older attackers score fewer knockdowns than predicted: -0.097 +- 0.028 per year at the start)
+    chinKO: 0.1238,            // [walkfwd 2026-11-06; was 0.04] chin x (1 + chinKO) ^ prior KO losses, capped by chinKOcap; knockdown regression
     chinKOcap: 1.15,         // cap on the prior-KO-loss chin multiplier
-    sizeChin: 0,          // [walkfwd 2026-11-06; was 0.05] chin x exp(sizeChin * (lbs_fight - lbs_home) / 10) when fighting above his home division (literature 6: small)
+    sizeChin: 0,          // [walkfwd 2026-11-06; was 0.05] chin x exp(sizeChin * (lbs_fight - lbs_home) / 10) when fighting above his home division; knockdown regression found no extra knockdowns for men moving up (-0.16 +- 0.08), so 0
     sizePow: 0.03,           // power x exp(-sizePow * (lbs_fight - lbs_home) / 10) for the man moving up (default, small)
     hurtRatio: 2.0,          // P(hurt | landed standing head strike, no KD) = hurtRatio * p_KD (default)
     hurtSecs: 14,            // seconds a non-KD hurt lasts (default)
@@ -121,7 +121,7 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.3175,       // [walkfwd 2026-11-06; was 0.3763] P(knockdown is an immediate knockout), x damage, fatigue and division factors; fit with kdRefStop so P(same-round finish | KD) = priors kd_fin
+    kdInstant: 0.3175,       // [walkfwd 2026-11-06; was 0.3763] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
@@ -148,7 +148,7 @@
     drain: 0.0011,           // base stamina drain per second at league-average cardio in a 3-round fight (S starts at 1; ~0.4 by the end of R3; shapes the finish hazard by round)
     r1Caution5: 0.75,        // [walkfwd 2026-11-06] round 1 of 5-round fights: knockdown, GNP TKO and submission conversion x this (baserates per-minute finish hazard R1 5-rd 0.0463 vs 3-rd 0.0576 = 0.80; main-event caution)
     drainSchedExp: 0.2,      // [walkfwd 2026-11-06] drain x (3 / scheduled rounds)^drainSchedExp: some pacing in 5-rounders (small: baserates 5-rd hazard falls to ~11% in R4-R5, so the championship rounds stay grueling)
-    caution5: 0.6258,             // [walkfwd 2026-11-06; was 1] 5-round fights: knockdown, GNP TKO and submission conversion x this in every round (on top of r1Caution5); walk-forward fit to the 5-round finish rate
+    caution5: 0.6258,             // [walkfwd 2026-11-06; was 1] 5-round fights: knockdown, GNP TKO and submission conversion x this in every round (on top of r1Caution5); fit to the 5-round finish rate (2019-2023: 53.5%)
     drainPos: [1.0, 1.5, 0.9, 1.6],   // drain multiplier at distance, clinch, ground top, ground bottom (default)
     drainAtt: 0.0,           // stamina per strike attempt thrown (0: activity drain is carried by the pace term, drain x (0.6 + 0.4 x output); available for tuning)
     drainTd: 0.006,          // stamina per takedown attempt (shooter) (default)
@@ -172,12 +172,12 @@
 
     // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------
     form: {
-      out: 0.3573,      // [walkfwd 2026-11-06; was 0.15] lognormal sd of each man's output (baserates form: between-fight resid 0.45, form upper bound 0.36, includes matchup effects)
+      out: 0.3573,      // [walkfwd 2026-11-06; was 0.15] lognormal sd of each man's output; fit so the per-fight landed-rate spread matches how far real fights fall from the engine mean (dispersion ratio 2.07 -> 1.00; includes model error, not just form)
       vol: 0.6,      // [walkfwd 2026-11-06] lognormal sd of a shared fight volatility on both men's knockdown odds: wars vs tactical fights (stands in for matchup heterogeneity; baserates finish hazard falls by round)
-      pace: 0.3287,     // [walkfwd 2026-11-06; was 0.1] lognormal sd of a shared fight pace (both men; opponents' outputs correlate 0.43 within a round)
-      acc: 0.4783,      // [walkfwd 2026-11-06; was 0.12] logit-normal sd of accuracy (default)
-      pow: 0.3162,      // [walkfwd 2026-11-06; was 0.45] lognormal sd of power (v2 0.15; wider spreads finishes toward early rounds: baserates hazard falls R1 -> R3)
-      chin: 0.3162,     // [walkfwd 2026-11-06; was 0.45] lognormal sd of chin (v2 0.12; same reason)
+      pace: 0.3287,     // [walkfwd 2026-11-06; was 0.1] lognormal sd of a shared fight pace (both men); fit to the A/B landed-rate residual covariance (data 0.117 vs sim 0.046 at the start)
+      acc: 0.4783,      // [walkfwd 2026-11-06; was 0.12] logit-normal sd of accuracy; fit to the per-fight accuracy spread vs the engine mean (dispersion ratio 2.44 -> 1.00)
+      pow: 0.3162,      // [walkfwd 2026-11-06; was 0.45] lognormal sd of power; fit to the round-1 share of 3-round finishes (falling hazard) on 2019-2023 fights
+      chin: 0.3162,     // [walkfwd 2026-11-06; was 0.45] lognormal sd of chin; tied to pow
       cardio: 0.15,   // lognormal sd of cardio (drain) (default)
       grap: 0.3,     // [walkfwd 2026-11-06] lognormal sd of grappling (TD odds, control, passes, sub attempts) (default)
       sub: 0.80,      // lognormal sd of submission offense and of submission defense (attempts x sqrt, conversion odds x); sub hazard falls ~2:1 from R1 to R3 (priors fin3)
@@ -195,7 +195,7 @@
       hurt: 1.0,                              // per hurt/wobble scored (engine-only event; literature 12.5: between a head strike and a KD)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
       sharedSd: 1.1,                          // [walkfwd 2026-11-06] sd of the round noise shared by the three judges (logits) (default; indSd is fit to the split-decision share)
-      indSd: 1.975,                           // [walkfwd 2026-11-06; was 1.206] sd of each judge's own noise (logits); fit so split decisions match priors dec3 (LW 16.5%)
+      indSd: 1.975,                           // [walkfwd 2026-11-06; was 1.206] sd of each judge's own noise (logits); fit to the unanimous share of decisions on 2019-2023 fights (78.6%)
       tasteSd: 0.2,                           // lognormal sd of each judge's fight-level taste for striking / grappling / damage (literature 12.5: 0.15-0.25)
       t108: 6.136,                            // [selfcal] logit margin a 10-8 needs with a one-knockdown edge (ABC: damage required); fit to ~3.5% of judge-rounds (4.7% 2015+, 2.5% 2024-25)
       t108b: 9.136,                           // [selfcal] logit margin a 10-8 needs with no knockdown edge but 2+ more hurts (t108 + 3)

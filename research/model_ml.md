@@ -467,7 +467,7 @@ function mlTerm(t, a, b) {
     case "lin": return (miss(a[t.key]) || miss(b[t.key])) ? 0 : (a[t.key] - b[t.key]) * t.scale;
     case "hinge": return (miss(a[t.key]) || miss(b[t.key])) ? 0 : Math.max(a[t.key] - t.h, 0) - Math.max(b[t.key] - t.h, 0);
     case "flag": return (miss(a[t.key]) || miss(b[t.key])) ? 0 : (a[t.key] > t.t) - (b[t.key] > t.t);
-    case "share": { const ea = a[t.u] * b[t.v], eb = b[t.u] * a[t.v]; return ea / (ea + eb + 1e-12) - 0.5; }
+    case "share": { const ea = a[t.u] * b[t.v], eb = b[t.u] * a[t.v]; return 0.5 * (ea - eb) / (ea + eb + 1e-12); }
     case "stance": return a.southpaw * b.orthodox - b.southpaw * a.orthodox;
   }
   throw new Error("unknown term " + t.type);

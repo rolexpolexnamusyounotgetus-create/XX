@@ -1272,13 +1272,17 @@ def parse_weighins(card, paras, event):
         for s in sents:
             ms, k = card.mentions(s, prefer=txt)
             trig = list(WEIGH_TRIG.finditer(k))
-            if trig and re.search(r"\b(?:scrapped|cancell?ed|called off|nixed|(?:weeks?|months?) earlier at)\b", k):
+            if trig and re.search(r"\b(?:scrapped|cancell?ed|called off|nixed|(?:weeks?|months?) earlier at|"
+                                  r"(?:pulled|removed) from the (?:card|event)|(?:did not|never) take place)\b", k):
                 prev_subj = []
                 continue
             subj_here = []
             if trig and not re.search(r"post-fight|in (?:his|her) (?:previous|last|next)|previously missed|"
-                                      r"(?:second|third|fourth|fifth|sixth) time|history", k):
+                                      r"(?:second|third|fourth|fifth|sixth) time|history of|(?:his|her|their) history", k):
                 for tm in trig:
+                    if re.match(r"\s*:", k[tm.end():]):
+                        subj_here.extend(m[2] for m in ms if m[0] >= tm.end())
+                        continue
                     before = [m for m in ms if m[1] <= tm.start()]
                     if before:
                         last = before[-1]
@@ -1338,7 +1342,8 @@ def parse_weighins(card, paras, event):
                     prev_subj = [ms[0][2]] if len(set(x[2] for x in ms)) == 1 else prev_subj
                 continue
             negated = bool(NEG_TRIG.search(k)) and not re.search(r"no (?:further )?attempts?|made no|did not|"
-                                                                  r"didn't|failed|elected|declined|chose not", k)
+                                                                  r"didn't|failed|elected|declined|chose not|"
+                                                                  r"miss\w* (?:\w+ )?again|again\b[^.]{0,30}(?:over|heavy)", k)
             explicit = bool(re.search(r"missed|missing|\bover\b|heavy|failed|failing|above|overweight|fined|"
                                       r"surrender|forfeit|did not make|didnt make|not make|catch ?weight", k))
             weights = [(m.start(), wnum(m.group(1))) for m in W_RE.finditer(k)]

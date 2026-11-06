@@ -581,7 +581,7 @@ def build_table(fights, people, elo_pre, extra_ratings, prm=None, since=FEATURES
 # Every term is a function of the two fighters' per-fighter values only, so the page can evaluate it for any pair.
 #   logr:  log(xA + eps) - log(xB + eps)          logit: logit(xA) - logit(xB)
 #   lin:   (xA - xB) * scale                      hinge: max(xA - h, 0) - max(xB - h, 0)
-#   flag:  [xA > t] - [xB > t]                    share: uA vB / (uA vB + uB vA) - 0.5   (offence x opponent's allowed)
+#   flag:  [xA > t] - [xB > t]                    share: (uA vB - uB vA) / 2(uA vB + uB vA)  (offence x opponent's allowed)
 #   stance: [A southpaw & B orthodox] - [B southpaw & A orthodox]
 # lin / hinge / flag terms on age, height, reach, ape, age_debut, log_layoff are 0 when either value is missing.
 LOGR_KEYS = ("slpm sapm satt osatt head_pm body_pm leg_pm ohead_pm obody_pm oleg_pm dist_pm clinch_pm ground_pm "

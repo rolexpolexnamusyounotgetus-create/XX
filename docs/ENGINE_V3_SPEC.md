@@ -96,8 +96,8 @@ dist clinch ground mins`); the engine converts it to pseudo-sums.
    This replaces v2's average of landed/min and absorbed/min.
 4. **Strikes are attempts times accuracy.** Each fighter gets attempt rates per position and accuracy
    per target (head, body, leg), so misses are real engine events.
-5. **Power and chin.** KD per landed head strike: `p = p0 * (kd_X / p0) * (chin_Y / p0)` with both
-   shrunk; chin is also aged (`exp(c_age * max(0, age - age0))`), worsened by prior KO losses
+5. **Power and chin.** KD per landed head strike: `p = p0 * (kd_X / p0)^powExp * (chin_Y / p0)^chinExp` with both
+   shrunk (exponents fit by the walk-forward knockdown regression); chin is also aged (`exp(c_age * max(0, age - age0))`), worsened by prior KO losses
    (`(1 + c_ko) ^ ko_losses`, capped), and taxed for size when the fight division is heavier than the
    fighter's home division (`exp(c_size * (lbs_fight - lbs_home) / 10)`; the same term boosts the bigger
    man's power). All coefficients come from data fits in tools/ (see calibration) with defaults in params.
@@ -212,6 +212,16 @@ v2 kinds keep their meanings, so the director's v2 mapping still applies.
   pick, and the engine-Elo blend.
 - **Tuned parameters:** strike-rate scale, KD scale, prior strengths, form sds, KD-to-finish follow-up,
   GNP TKO hazard, submission scales, getup scale, judge noise, age/size/KO-loss chin coefficients.
+- **Scheme (v3, tools/calibrate.js):** stage 1 is a dampened fixed point on train data targets:
+  - volume scales are moment-matched;
+  - KO share sets `koAll`, SUB share sets submission conversion, the 5-round finish rate sets `caution5`, and the
+    unanimous share sets individual judge noise;
+  - per-fight landed-rate and accuracy dispersion vs the engine's spread set `form.out`, `form.pace` and `form.acc`;
+  - the round-1 share of finishes sets the power/chin form spread;
+  - a Poisson regression of actual on predicted knockdowns sets `powExp`, `chinExp`, the age, KO-loss and size coefficients.
+
+  Stage 2 is coordinate descent with shrinking steps on the remaining levers, accepting a step only beyond 2 Monte
+  Carlo sd of the objective. `ctrlScale` (control-target scale) is the get-up scale.
 - **Output:** src/params3.js (values) and data/derived/calibration.json (metrics, calibration bins,
   base-rate table) for the page's backtest panel.
 

@@ -2103,9 +2103,9 @@
   "n": 20000,
   "seed": 20261106,
   "win": {
-   "volkanovski": 0.6269,
-   "gaethje": 0.3662,
-   "draw": 0.0069
+   "volkanovski": 0.6334,
+   "gaethje": 0.3592,
+   "draw": 0.0074
   },
   "bins": {
    "labels": [
@@ -2118,75 +2118,119 @@
     "Gaethje KO/TKO"
    ],
    "p": [
-    0.1458,
-    0.0434,
-    0.4377,
-    0.0069,
-    0.179,
-    0.0208,
-    0.1664
+    0.1486,
+    0.0398,
+    0.445,
+    0.0074,
+    0.1729,
+    0.022,
+    0.1643
    ]
   },
   "finishes_by_round": {
    "volkanovski": [
-    0.0382,
-    0.0408,
-    0.0459,
-    0.0396,
-    0.0246
+    0.0383,
+    0.0411,
+    0.0435,
+    0.0398,
+    0.0258
    ],
    "gaethje": [
-    0.0561,
+    0.0573,
     0.043,
-    0.0323,
-    0.0358,
-    0.0198
+    0.0318,
+    0.0362,
+    0.0182
    ],
    "ko_tko": [
-    0.0783,
-    0.0698,
-    0.0646,
-    0.0644,
-    0.0351
+    0.0811,
+    0.0693,
+    0.0621,
+    0.0657,
+    0.0348
    ],
    "sub": [
-    0.016,
-    0.014,
-    0.0137,
-    0.0109,
-    0.0094
+    0.0144,
+    0.0147,
+    0.0132,
+    0.0103,
+    0.0093
    ]
   },
-  "goes_distance": 0.6237,
+  "goes_distance": 0.6252,
   "decisions": {
-   "UD": 0.8097,
-   "SD": 0.1652,
-   "MD": 0.014,
-   "DRAW": 0.0111
+   "UD": 0.8149,
+   "SD": 0.16,
+   "MD": 0.0132,
+   "DRAW": 0.0118
   },
   "elo": {
    "volkanovski": 1802,
    "gaethje": 1737,
    "p_volkanovski": 0.5722
   },
-  "blend_p_volkanovski": 0.654,
+  "blend_p_volkanovski": 0.6596,
   "kd_per_standing_head": {
    "volkanovski": 0.0054,
    "gaethje": 0.0127
   },
   "avg": {
    "volkanovski": {
-    "sig_lnd": 123.446,
-    "td_lnd": 1.014,
-    "kd": 0.201,
-    "ctrl": 108.946
+    "sig_lnd": 124.81,
+    "td_lnd": 1.013,
+    "kd": 0.203,
+    "ctrl": 107.942
    },
    "gaethje": {
-    "sig_lnd": 81.241,
-    "td_lnd": 0.942,
-    "kd": 0.268,
-    "ctrl": 95.282
+    "sig_lnd": 81.082,
+    "td_lnd": 0.944,
+    "kd": 0.259,
+    "ctrl": 96.142
    }
+  },
+  "params_version": "3.0.0-wf-2026-11-06",
+  "methods": {
+   "A:UD": 0.3844,
+   "B:UD": 0.1252,
+   "B:TKO": 0.067,
+   "B:KO": 0.0573,
+   "A:SD": 0.056,
+   "A:TKO": 0.0545,
+   "A:KO": 0.0497,
+   "B:SD": 0.044,
+   "A:SUB": 0.0398,
+   "B:DOC": 0.0229,
+   "B:SUB": 0.022,
+   "A:DOC": 0.0209,
+   "A:GNP": 0.0185,
+   "B:GNP": 0.0121,
+   "D:DRAW": 0.0074,
+   "B:CORNER": 0.0049,
+   "A:MD": 0.0046,
+   "A:CORNER": 0.0037,
+   "B:MD": 0.0037,
+   "A:LEG": 0.0014,
+   "B:LEG": 0.0001
+  },
+  "note": "computed from src/params3.js as written (values rounded to 4 significant digits), current fighters.json profiles and priors",
+  "before_walk_forward": {
+   "params_version": "3.0.0-selfcal-2026-11-06",
+   "win": {
+    "volkanovski": 0.629,
+    "gaethje": 0.363,
+    "draw": 0.008
+   },
+   "goes_distance": 0.411,
+   "bins": [
+    0.247,
+    0.041,
+    0.341,
+    0.008,
+    0.062,
+    0.02,
+    0.281
+   ],
+   "source": "engine builder's report (20,000 fights)"
   }
  },
  "caveats": [
@@ -2194,5 +2238,10 @@
   "Engine probabilities carry Monte Carlo noise (N per fight); log loss is inflated by about 1/(2N).",
   "Profiles are snapshots of UFC fights only; debutants are excluded (both men need a prior UFC fight)."
  ],
- "compute_minutes": 37.7
+ "compute_minutes": 37.7,
+ "tests": {
+  "command": "node tests/test_engine3.js",
+  "result": "42 passed, 0 failed",
+  "date": "2026-11-06"
+ }
 }

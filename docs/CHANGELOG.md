@@ -171,26 +171,33 @@ minutes and compared with the division-average rate.
 - Significant strikes landed: MAE 18.2 against 20.3 for the division average; RMSE 25.1 against 27.8; correlation 0.45; bias +9.3%.
 - Takedowns landed: MAE 1.04 against 1.18; correlation 0.41; bias -4.5%.
 
-**Volkanovski vs Gaethje** (Lightweight, 5 rounds, title, 20,000 fights, current profiles, tuned values):
-- **Win:** Volkanovski 62.7%, Gaethje 36.6%, draw 0.7%. Elo alone gives 57.2% (1802 vs 1737); the blend gives 65.4%.
+**Volkanovski vs Gaethje** (Lightweight, 5 rounds, title, 20,000 fights, seed 20261106, current profiles, src/params3.js
+as written):
+- **Win:** Volkanovski 63.3%, Gaethje 35.9%, draw 0.7%. Elo alone gives 57.2% (1802 vs 1737); the blend gives 66.0%.
 - **Outcome bins:**
 
   | Volk KO/TKO | Volk sub | Volk dec | draw | Gaethje dec | Gaethje sub | Gaethje KO/TKO |
   |---|---|---|---|---|---|---|
-  | 14.6% | 4.3% | 43.8% | 0.7% | 17.9% | 2.1% | 16.6% |
+  | 14.9% | 4.0% | 44.5% | 0.7% | 17.3% | 2.2% | 16.4% |
 
 - **Finishes by round:**
 
   | | R1 | R2 | R3 | R4 | R5 |
   |---|---|---|---|---|---|
-  | Volkanovski | 3.8% | 4.1% | 4.6% | 4.0% | 2.5% |
-  | Gaethje | 5.6% | 4.3% | 3.2% | 3.6% | 2.0% |
+  | Volkanovski | 3.8% | 4.1% | 4.4% | 4.0% | 2.6% |
+  | Gaethje | 5.7% | 4.3% | 3.2% | 3.6% | 1.8% |
 
-- **Distance:** 62.4% go the distance (UD 81%, SD 17%).
+- **Distance:** 62.5% go the distance (UD 81%, SD 16%).
 - **Knockdowns:** per landed standing head strike, Gaethje 1.27% vs Volkanovski 0.54%.
+- **Doctor and corner stoppages:** 5.3% of fights. These run high in general: the sim gives 1.6% doctor + corner
+  stoppages on train fights vs 0.6% doctor stoppages in the data, where corner stoppages are filed under KO/TKO.
 - **Change from before:** before the walk-forward tuning the same matchup gave Volk 62.9%, but with only 41% going the distance. The tuned engine
   keeps the winner split and moves about 21 points from finishes to decisions, mostly through `caution5` (5-round
   fights) and the lower chin exponent.
+
+**Tests:** `node tests/test_engine3.js` passes 42 of 42 with the tuned values. That includes the league-average
+base-rate checks for all 8 checked divisions: Lightweight finish 52.3% vs 52.7% data, KO 34.1% vs 35.6%, SUB 18.1%
+vs 17.1%, KD/100 head landed 0.889 vs 0.875.
 
 ### Caveats (honest)
 

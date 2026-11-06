@@ -1,12 +1,14 @@
 # Aljamain Sterling ("Funk Master"): scouting dossier
 
-As of Nov 6, 2026. Stats come from `data/derived/fighters.json` and the round stats in `data/raw/` (ufcstats snapshot through Oct 31, 2026). Web search was used up for this pass, so status facts beyond the dataset are taken from other dossiers' cited links and were not re-opened.
+As of Nov 6, 2026. Stats come from `data/derived/fighters.json` and the round stats in `data/raw/` (ufcstats snapshot through Oct 31, 2026). Born Jul 31, 1989 in Uniondale, New York; trains with the Serra-Longo Fight Team (ESPN). Pro record 26-5-0 (ESPN, UFCalendar, ufcrankings.org).
+
+> Research note: this file was first written without web access. On Nov 6, 2026 the booking, ranking, record and appearance were checked on the web (ESPN fight center and athlete data, UFCalendar, ufcrankings.org, MMA Mania, Sherdog, Wikipedia via its API, ESPN studio photos and the reference photos in assets/reference/aljamain-sterling/). ufc.com returned 403 to scripts.
 
 ## Current status
 
-- **Booked:** Kevin Vallejos at featherweight, UFC Fight Night 294, ABHA Arena, Doha, Qatar, **Nov 21, 2026** (MMA Insight, Heavy; event, venue and date match the Prochazka vs Stirling card sources in the Jiri Prochazka file). Not re-opened on Nov 6. Vallejos is 24, 4-0 in the UFC with three KOs, most recently a R1 KO of Josh Emmett (Mar 14, 2026).
-- **Title picture:** Volkanovski's head coach has said he wants the Sterling-Vallejos winner rather than Jean Silva (Bloody Elbow, Oct 29).
-- **Ranking:** No. 4 at featherweight after UFC 333, behind Evloev, Lopes and Murphy (UFCalendar, Nov 3; consistent with the Lopes No. 2 and Jean Silva No. 5 listings in their own files).
+- **Booked:** Kevin Vallejos at featherweight, **UFC Fight Night 294: Procházka vs. Stirling**, ABHA Arena, Doha, Qatar, **Sat Nov 21, 2026**. ESPN's fight center (card start listed at 1:00 pm ET) and UFCalendar list it as scheduled on Nov 6, and Wikipedia has it too. The two were still trading barbs on Nov 3 (Sherdog), and Vallejos signed a new UFC contract before the fight (Sherdog, Oct 30). Vallejos is 18-1, No. 9 on the media panel and No. 11 on the Meta board, 4-0 in the UFC with three KOs, most recently a R1 KO of Josh Emmett (Mar 14, 2026).
+- **Title picture:** Volkanovski has said Sterling, not Jean Silva, should get the next shot if he beats Vallejos (NDTV headline, Oct 29), and Volkanovski's head coach said Silva does not deserve one (Bloody Elbow, Oct 29).
+- **Ranking:** **No. 4** at featherweight on both the UFC media-panel board (Nov 3, 2026, per UFCalendar; ufcrankings.org, updated Nov 5, agrees) and the UFC/Meta algorithmic board (Oct 31, 2026; UFCalendar, MMA Mania), behind Evloev, Lopes and Murphy.
 - **Titles:** none now. Former bantamweight champion: he beat Petr Yan by DQ (UFC 259, 2021), defended against Yan, TJ Dillashaw and Henry Cejudo, then lost to Sean O'Malley (TKO R2, UFC 292, Aug 19, 2023). Age 37. No injury reported.
 
 ## Recent fights
@@ -35,6 +37,21 @@ He was stopped by Marlon Moraes (knee, 2017) and O'Malley, and has absorbed 5 kn
 
 UFC record 18-5 (1 DQ win): 2 KO, 4 submissions, 11 decisions; losses are 2 KO/TKO and 3 decisions. Elo 1770, second among active featherweights behind Volkanovski (1802). Decayed target split is 66/20/14 head/body/legs (landed 52/28/20). For the sim, he wins on control and back takes, and needs a decision or a back-control finish.
 
+## Appearance (for the avatar)
+
+No likeness sheet exists yet; reference photos are in assets/reference/aljamain-sterling/. Checked against the ESPN headshot and left-stance cutout (files dated Apr 23, 2026), the right-stance cutout (Aug 22, 2025), the Apr 25, 2026 fight photo against Zalal and a weigh-in photo:
+
+- **Hair:** black, and the style changes. Short natural hair tapered at the sides in April 2026, both in the studio and in the Zalal fight. Short twists or braids with green-dyed tips in August 2025.
+- **Facial hair:** full, thick black beard (about 2-3 cm) with a joined moustache.
+- **Skin:** dark brown.
+- **Tattoos:** none visible on the chest, abdomen or arms; the back was not seen.
+- **Kit:** red shorts in April 2026 (studio and fight night) and blue shorts in the August 2025 studio photos. The corner colour wins in the sim.
+
+## Still unconfirmed
+
+- Fight-night hair for Nov 21 (he changes styles).
+- Whether Sterling-Vallejos is the co-main event; the card order was not confirmed.
+
 ## Sources
 
 - http://ufcstats.com/fighter-details/cb696ebfb6598724
@@ -48,3 +65,12 @@ UFC record 18-5 (1 DQ win): 2 KO, 4 submissions, 11 decisions; losses are 2 KO/T
 - https://bloodyelbow.com/2026/10/29/jean-silva-fires-back-at-alexander-volkanovskis-coach-who-said-he-doesnt-deserve-title-shot/
 - https://www.ufcalendar.com/rankings
 - https://www.cbssports.com/mma/news/brian-ortega-says-he-was-unconscious-for-30-minutes-before-aljamain-sterling-fight-i-was-afraid
+- https://www.espn.com/mma/fightcenter/_/id/600061665/league/ufc (Nov 21, 2026 card; Sterling vs Vallejos scheduled)
+- https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/3031559 (Active, 26-5-0; read Nov 6, 2026)
+- https://www.ufcalendar.com/fighters/aljamain-sterling (record, rank, next fight; read Nov 6, 2026)
+- https://ufcrankings.org/featherweight and https://mmamania.com/ufc-mma-rankings/483818/tom-nolan-boots-renato-moicano-top-10-latest-ufc-rankings-update-jacobe-smith-top-15 (rankings)
+- https://www.sherdog.com/news/news/Kevin-Vallejos-trolls-Aljamain-Sterling-with-Dan-Miragliotta-joke-203471
+- https://www.sherdog.com/news/news/Kevin-Vallejos-stunned-by-new-UFC-contract-pay-ahead-of-Aljamain-Sterling-fight-203423 (headline)
+- https://sports.ndtv.com/us/mma/alexander-volkanovski-backs-aljamain-sterling-over-jean-silva-for-title-shot-if-he-beats-kevin-vallejos-12251784 (headline)
+- https://en.wikipedia.org/wiki/Aljamain_Sterling (revision of Oct 18, 2026, via API)
+- Photos: https://a.espncdn.com/i/headshots/mma/players/full/3031559.png, https://a.espncdn.com/i/headshots/mma/players/stance/left/3031559.png, https://a.espncdn.com/i/headshots/mma/players/stance/right/3031559.png; assets/reference/aljamain-sterling/ (theScore/Getty fight photo Apr 25, 2026; BJPenn weigh-in photo)
