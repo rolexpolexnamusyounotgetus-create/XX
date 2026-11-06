@@ -245,7 +245,9 @@
       return lerp(F.cheek.z + 0.012 * sc, F.brow.z, clamp((y - F.cheek.y) / Math.max(0.01, F.brow.y - F.cheek.y), 0, 1));
     }
     // rear glove: beside the chin, a little in toward the centre line
-    var ry = hy(rh) - 0.03 * op * sc, rx = -st * (cx * 1.05 + 0.012 * sc + 0.02 * op * sc);
+    // a high guard sits on the temples, so the gloves part as they rise above the cheekbones
+    function hiK(v) { return clamp((v - 0.65) / 0.35, 0, 1); }
+    var ry = hy(rh) - 0.03 * op * sc, rx = -st * (cx * 1.05 + (0.012 + 0.03 * hiK(rh)) * sc + 0.02 * op * sc);
     // offsets off the face run level in the world (the head is pitched down by th), not along the tucked face
     var th = P.pp + P.sp + P.cp + P.hp, cs = Math.cos(th), sn = Math.sin(th);
     var rg = GR + (0.008 + 0.1 * (1 - G.rearTuck)) * sc;
@@ -253,7 +255,7 @@
     this.headToChest(P, _g1, P.hl[rear]);
     // lead glove: out on the centre line toward the opponent, at its own height
     var ly = hy(lh) - 0.03 * op * sc, reach = (0.07 + 0.3 * G.leadReach) * sc;
-    var lx = st * (cx * (1.0 - 0.5 * G.leadReach) + 0.04 * G.leadWidth * sc + 0.02 * op * sc);
+    var lx = st * (cx * (1.0 - 0.5 * G.leadReach) + (0.04 * G.leadWidth + 0.03 * hiK(lh)) * sc + 0.02 * op * sc);
     var lg = GR + 0.012 * sc + reach;
     _g2.set(lx, ly + lg * sn - 0.06 * reach, fz(ly) + lg * cs);
     this.headToChest(P, _g2, P.hl[lead]);

@@ -156,6 +156,12 @@ function fakeShow(appCalls) {
   m = mark(); show.hooks.onImpact({ k: "strike", who: "A", move: "hook", tgt: 0, landed: true, kd: true, power: 0.9 });
   assert.ok(played("pop", m) && played("headHeavy", m), "knockdown: heavy impact and crowd pop");
 
+  // technique sets the weight: an overhand lands louder than a jab
+  tickShow(480);
+  m = mark(); show.hooks.onImpact({ k: "strike", who: "A", move: "jab", tgt: 0, landed: true }); var gJab = since(m)[0].gain;
+  m = mark(); show.hooks.onImpact({ k: "strike", who: "A", move: "overhand", tgt: 0, landed: true }); var gOver = since(m)[0].gain;
+  assert.ok(gOver > gJab * 1.2, "overhand louder than jab (" + gOver + " vs " + gJab + ")");
+
   m = mark(); show.hooks.onBeat({ k: "td", who: "B" });
   var td = since(m).filter(function (e) { return /^td/.test(e.name); })[0];
   assert.ok(td && td.t >= 0.5, "takedown: thud scheduled for when he lands (" + (td && td.t) + ")");

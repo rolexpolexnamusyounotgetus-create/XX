@@ -1605,6 +1605,21 @@
           self.curl[nm] = { k: k, axis: localAxis, ang: ang };
         }
       });
+      // thumb: swing the first bone toward the palm about the hand's long axis, then fold the two outer
+      // bones over the curled fingers (a hinge tilted toward the knuckle line), so it closes the fist
+      // instead of sticking out at the face
+      var hd = J[s + "HandMiddle1"].h.clone().sub(J[s + "Hand"].h).normalize(), k1 = bi[s + "HandThumb1"];
+      if (k1 != null) {
+        var t1 = J[s + "HandThumb1"].t.clone().sub(J[s + "HandThumb1"].h).normalize(), ax1 = hd.clone();
+        if (new V3().crossVectors(ax1, t1).dot(pn) < 0) ax1.negate();
+        self.curl[s + "HandThumb1"] = { k: k1, axis: ax1.applyQuaternion(Rq[k1].clone().invert()), ang: 0.5 };
+        var across = J[s + "HandIndex1"].h.clone().sub(J[s + "HandPinky1"].h).normalize().multiplyScalar(s === "Left" ? 1 : -1);
+        [2, 3].forEach(function (j) {
+          var nm = s + "HandThumb" + j, kk = bi[nm]; if (kk == null) return;
+          var dir = J[nm].t.clone().sub(J[nm].h).normalize(), hinge = new V3().crossVectors(dir, pn).normalize().lerp(across, 0.5).normalize();
+          self.curl[nm] = { k: kk, axis: hinge.applyQuaternion(Rq[kk].clone().invert()), ang: j === 2 ? 1.0 : 0.8 };
+        });
+      }
     });
     this.fistAmt = this.cfg.ref ? 0.25 : 0.92;
     // clip reference rotations per clip set: align each rest bone to that set's source rest direction

@@ -465,8 +465,8 @@
     $("chkTitle").checked = S.title;
     // an honest flag when the pair is outside what the size data covers
     var hA = prof("A").division, hB = prof("B").division, la = divLbs(hA), lb = divLbs(hB), warn = "";
-    if (/^Women/.test(hA || "") !== /^Women/.test(hB || "")) warn = "These fighters compete in men's and women's divisions. The engine will run it, but nothing in the data speaks to this matchup.";
-    else if (la && lb && Math.abs(la - lb) > 20) warn = "Their home divisions are " + Math.abs(la - lb) + " lb apart. The engine's size term was fit on fighters moving up one weight class, so it understates a gap this large; read the numbers as a curiosity.";
+    if (/^Women/.test(hA || "") !== /^Women/.test(hB || "")) warn = "These fighters compete in men's and women's divisions. The simulator will run it, but nothing in the data speaks to this matchup.";
+    else if (la && lb && Math.abs(la - lb) > 20) warn = "Their home divisions are " + Math.abs(la - lb) + " lb apart. The simulator's size term was fit on fighters moving up one weight class, so it understates a gap this large; read the numbers as a curiosity.";
     $("mbNote").textContent = warn;
     $("h1A").textContent = shortOf("A"); $("h1B").textContent = shortOf("B");
     $("kicker").textContent = S.div + " · " + S.rounds + " × 5 min" + (S.title ? " · title fight" : "") + " · " + (divLbs(S.div) || "?") + " lb";
@@ -521,7 +521,7 @@
       card.appendChild(ini); card.appendChild(box); heads.appendChild(card);
     });
     var tb = $("tapeBody"); tb.textContent = "";
-    if (!cur.m) { var tr0 = el("tr"), td0 = el("td", null, "The engine could not build this matchup" + (cur.err ? ": " + cur.err.message : ".")); td0.colSpan = 3; tr0.appendChild(td0); tb.appendChild(tr0); return; }
+    if (!cur.m) { var tr0 = el("tr"), td0 = el("td", null, "The simulator could not build this matchup" + (cur.err ? ": " + cur.err.message : ".")); td0.colSpan = 3; tr0.appendChild(td0); tb.appendChild(tr0); return; }
     var pa = prof("A"), pb = prof("B"), ra = pa.record || {}, rb = pb.record || {}, ka = shrunk(0), kb = shrunk(1), L = ka.league;
     var now = todayISO();
     function row(label, va, vb, opt) {
@@ -583,7 +583,7 @@
       if (!(p.recent || []).length) ul.appendChild(el("li", "noscout", "No UFC fights in the data."));
       d.appendChild(ul);
       if (sc) d.appendChild(scoutBlock(sc));
-      else d.appendChild(el("p", "noscout", "No scouting file for " + p.name + " yet. The engine runs on the UFC numbers alone."));
+      else d.appendChild(el("p", "noscout", "No scouting file for " + p.name + " yet. The simulator runs on the UFC numbers alone."));
       box.appendChild(d);
     });
   }
@@ -1068,7 +1068,7 @@
     if (H && H.src === "mr") l2.textContent = "How it ends: the finish model" + (H.variant === "SM" ? " (it also reads the betting line)" : "") + ", scaled to the headline odds.";
     else if (H && H.src === "engine") l2.textContent = "How it ends: the simulator, scaled to the headline odds (the finish model is not available for this pair).";
     if (l2.textContent) fc.appendChild(l2);
-    if (cur.m && cur.m.mlStuck) fc.appendChild(el("span", null, "This engine build keeps its learned rates even with the toggle off."));
+    if (cur.m && cur.m.mlStuck) fc.appendChild(el("span", null, "This simulator build keeps its learned stat lines even with the switch off."));
     // legend for both charts
     var key = $("howKey"); key.textContent = "";
     if (H) { var k1 = el("span"); k1.appendChild(el("i", "k-bar")); k1.appendChild(document.createTextNode(H.src === "mr" ? "Finish model, scaled to the headline odds" : "Simulator, scaled to the headline odds")); key.appendChild(k1); }
@@ -1270,7 +1270,7 @@
   function renderWhy() {
     var x = cur.x, m = cur.m, reads = $("reads"), mir = $("mirror"), chain = $("kdChain");
     reads.textContent = ""; mir.textContent = ""; chain.textContent = "";
-    if (!x || !m) { $("whyLede").textContent = "The engine could not explain this matchup."; return; }
+    if (!x || !m) { $("whyLede").textContent = "The simulator could not explain this matchup."; return; }
     var A = x.A, B = x.B, nA = shortOf("A"), nB = shortOf("B"), L = m.L, P = m.P, divl = S.div.toLowerCase();
     $("whySub").textContent = S.div + " averages (" + (P.lbs || "?") + " lb) · " + S.rounds + " rounds";
     $("whyLede").textContent = "These are the rates the simulator plays from for this pair, before any fight: each fighter's numbers combined with the opponent's, then the learned stat lines" + (m.mlApplied ? "" : " (switched off now)") + ", age, size and your knobs. Strike rates here count per minute spent in each position (at distance, in the clinch, on top). Every simulated fight then adds fight-night form, fatigue and damage on top.";
@@ -2450,7 +2450,8 @@
 
   /* ================================================================ wiring */
   function matchupChanged(fightNow) {
-    buildMatchup();
+    buildMatchup(); dropEngine();
+    var fb = $("linkFb"); if (fb) fb.hidden = true;
     renderMatchbar(); renderTape(); renderChips(); renderKnobPanel(); renderWhy(); renderForecast(); renderMLCard(); renderResearch();
     renderCards();
     writeHash();
@@ -2462,15 +2463,25 @@
     $("btnSwap").addEventListener("click", swapCorners);
     $("selDiv").addEventListener("change", function () { S.div = this.value; matchupChanged(true); });
     Array.prototype.forEach.call($("segRounds").children, function (b) {
-      b.addEventListener("click", function () { var r = +b.dataset.r; if (r === S.rounds) return; S.rounds = r; matchupChanged(true); });
+      // a title fight is five rounds: picking three rounds makes it a non-title fight
+      b.addEventListener("click", function () { var r = +b.dataset.r; if (r === S.rounds) return; S.rounds = r; if (r === 3) S.title = false; matchupChanged(true); });
     });
     $("chkTitle").addEventListener("change", function () { S.title = this.checked; if (S.title) S.rounds = 5; matchupChanged(true); });
+    // inside the artifact frame location.href is the sandbox's address, not the artifact link, so copy only the matchup tag
+    // (#...) and show it in a read-only field, selected, with how to use it
     $("btnLink").addEventListener("click", function () {
       writeHash();
-      var url = location.href, btn = this;
-      function done(ok) { btn.textContent = ok ? "Link copied" : "Copy failed: " + url; setTimeout(function () { btn.textContent = "Copy link to this matchup"; }, ok ? 1800 : 6000); }
-      try { navigator.clipboard.writeText(url).then(function () { done(true); }, function () { done(false); }); } catch (e) { done(false); }
+      var tag = hashFor(), btn = this, fb = $("linkFb"), fin = $("linkFbIn"), lab = fb.querySelector("label");
+      function done(ok) {
+        btn.textContent = ok ? "Copied" : "Copy link to this matchup";
+        if (ok) setTimeout(function () { btn.textContent = "Copy link to this matchup"; }, 1800);
+        lab.textContent = ok ? "Copied. Add this to the end of the artifact link:" : "Copying didn't work here. Add this to the end of the artifact link:";
+        fin.value = tag; fb.hidden = false;
+        try { fin.focus(); fin.select(); } catch (e) { /* ignore */ }
+      }
+      try { navigator.clipboard.writeText(tag).then(function () { done(true); }, function () { done(false); }); } catch (e) { done(false); }
     });
+    $("btnDek").addEventListener("click", function () { $("dek").classList.add("open"); this.setAttribute("aria-expanded", "true"); });
     window.addEventListener("hashchange", function () { if (hashWriting) return; if (stateFromHash()) matchupChanged(true); });
     $("btnRun").addEventListener("click", function () { startTally(); });
     $("btnReset").addEventListener("click", function () {
@@ -2487,7 +2498,7 @@
     });
     $("lineTog").addEventListener("change", function () { S.line = this.checked; renderForecast(); });
     $("mlTog").checked = S.ml; $("mlTog").disabled = !MLR.ok && !MLR.pending;
-    $("mlTog").addEventListener("change", function () { S.ml = this.checked; buildMatchup(); renderWhy(); renderKnobPanel(); renderMLCard(); renderForecast(); queueTally(true); });
+    $("mlTog").addEventListener("change", function () { S.ml = this.checked; buildMatchup(); dropEngine(); renderWhy(); renderKnobPanel(); renderMLCard(); renderForecast(); queueTally(true); });
     $("soundTog").addEventListener("change", function () { audioUnlock(); AU.on = this.checked; audioApply(); });
     // live show controls
     $("btnNew").addEventListener("click", newFight);
@@ -2548,13 +2559,14 @@
   resetHud({ rounds: [], form: null }, null);
   writeHash();
   $("runStatus").textContent = "Starting the tally";
-  window.FightLab = { state: S, matchup: function () { return cur.m; }, tally: function () { return lastAgg; }, newFight: function () { newFight(); }, script: function () { return script; }, blend: function () { return BL; }, models: function () { return { moe: !!MOE, mlpage: !!MLP, methodround: !!MR, mlrates: MLR }; } };
+  window.FightLab = { state: S, matchup: function () { return cur.m; }, tally: function () { return lastAgg; }, newFight: function () { newFight(); }, script: function () { return script; }, blend: function () { return BL; }, models: function () { return { moe: !!MOE, mlpage: !!MLP, methodround: !!MR, mlrates: MLR }; },
+    hud: function () { return H ? { A: totals("A"), B: totals("B") } : null; }, lastPick: function () { return lastPick; } };
   // the compressed models arrive a few milliseconds after the first paint: re-render everything that reads them
   var started = false;
   function afterModels() {
     $("mlTog").disabled = !MLR.ok;
     if (!MLR.ok) $("mlTog").parentNode.title = "The stat-line model is not in this build";
-    buildMatchup(); renderKnobPanel(); renderWhy(); renderMLCard(); renderForecast(); renderForward();
+    buildMatchup(); if (started) dropEngine(); renderKnobPanel(); renderWhy(); renderMLCard(); renderForecast(); renderForward();
     if (started) queueTally(true);
   }
   // heavy work after the first frame: the tally (once the models are in), then the 3D cage
