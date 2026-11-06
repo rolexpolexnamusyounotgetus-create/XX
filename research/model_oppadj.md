@@ -69,9 +69,10 @@ machine).
   half-life averaging choice, blend weight and level calibration); validation = 2024-01-01..2025-12-31,
   used only to report and for the family on/off selection; the 2026 vault is never scored or simulated.
   Factors for the 2026 snapshots are written (they are pre-fight outputs the audit needs).
-- Engine reference: `src/engine3.js fighterRates()` with `src/params3.js` (version 4.0.0-dev at run time;
-  kPM 40, kAcc 150, kTdPM 45, kTdAcc 12, kKD 230, kCtrlTD 4, kTgt 80, ctrlGroundShare 0.84, read at run
-  time). Python replicas of `league()`, `distMix()`, `expAcc()` and `fighterRates()` are vectorized in the tool.
+- Engine reference: `src/engine3.js fighterRates()` with `src/params3.js`, read at run time (4.0.0-dev for
+  the grid, 4.0.0-selfcal-pre2024 for the final re-score; kPM 40, kAcc 150, kTdPM 45, kTdAcc 12, kKD 230,
+  kCtrlTD 4, kTgt 80, ctrlGroundShare 0.84 and the position mixes are identical in both, and the factors'
+  hash `meta.factors_sha16` did not change). Python replicas of `league()`, `distMix()`, `expAcc()` and `fighterRates()` are vectorized in the tool.
 - Scoring: Poisson deviance for counts, binomial deviance for probabilities, summed over held-out sides, each
   prediction multiplied by one level constant fit on 2019-2023 (so every model is judged on the same footing
   and nothing is fit on validation). Uncertainty: 2,000 fight-cluster bootstrap resamples of the per-fight
@@ -294,6 +295,15 @@ Each factor bundles three things, all validated together: the opponent adjustmen
 re-tuned prior strength, and era-normalized division baselines. The table's "raw re-tuned" and "no-opp"
 columns split them. `roster[slug].sched` isolates the schedule: the exposure-weighted average of what his
 opponents allowed relative to the league (> 1 = soft schedule, raw numbers inflated).
+
+Examples from the roster (438 fighters active since Jan 1, 2025 with 6+ UFC fights): the largest control
+factors go to Khamzat Chimaev 2.17, Erin Blanchfield 2.02, Merab Dvalishvili 1.93, Grant Dawson 1.77 and Umar
+Nurmagomedov 1.70; their opponents allowed only 0.51-0.69 of league control (sched.ctrl), and the engine's
+kPM 40 fight-minute prior also pulls their raw rate hard toward the league. The smallest takedown-attempt
+factors go to strikers who almost never shoot (Khalil Rountree Jr. 0.22, Shara Magomedov 0.31, CJ Vergara 0.32):
+mostly the weaker prior (8 standing minutes instead of the engine's 31, kTdPM 45 x L.stand 0.68), since their schedules were,
+if anything, soft for takedowns (sched 1.26-1.32). Chimaev also has the toughest takedown schedule on the roster
+(opponents allowed 0.56 of league attempts) and the largest attempt factor (2.09).
 
 ## Volkanovski and Gaethje
 

@@ -686,8 +686,10 @@ precision and code bugs; re-run the headline with fresh code; fix in place.
 
 **Rerun.** `python3 tools/ml.py --stage2` on the cached stage-1 fits (no stage-1 fit or choice for 2019-2025 depends
 on the changes: tuning and OOF fits end in 2023, the 2025 refit uses 2010-2024; only the 2026 predictions, now
-exported to the vault, came from fits that include 2025), plus a
-full `--quick` smoke run into a scratch cache to exercise the new stage-one path end to end (see the note below).
+exported to the vault, came from fits that include 2025). A full end-to-end `--quick` run into a scratch cache
+(feature table rebuilt from the raw files, logistic re-tuned, smaller tree searches) reproduces every per-fight
+Elo, strike-share Elo, logistic and logistic-refit value for 2019-2025 exactly (max difference 0), the 2024-2025
+logistic score (0.60625 on 854 fights), every page-model coefficient, and the 480-fight vault export.
 Files changed: tools/ml.py, data/derived/ml.json, research/model_ml.md, the ML line of docs/BACKLOG.md, and
 ml_vault.json in the vault directory. Not changed: docs/CHANGELOG.md and research/model_styles.md still quote
 2024-2026 ("2024+", 1,223 fights) numbers from other tools.

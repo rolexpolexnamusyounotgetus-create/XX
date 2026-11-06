@@ -1122,6 +1122,8 @@ def engine_eval(args):
 
     periods = {"tune_2019_2023": (TUNE[0], "2024-01-01", args.engine_sims_tune),
                "test_2024_2025": (TEST_FROM, VAULT_FROM, args.engine_sims_test)}
+    want = [x.strip() for x in args.engine_periods.split(",") if x.strip()]
+    periods = {k: v for k, v in periods.items() if k.split("_")[0] in want}
     strip = ("pace3", "pace3_w", "kd_absorbed")
     CFG = ("plain", "adj", "ml", "ml_adj")
     import hashlib
@@ -1233,14 +1235,15 @@ def engine_eval(args):
         for kk in ("adj_minus_plain_winner_log_loss_95", "ml_minus_plain_winner_log_loss_95",
                    "ml_adj_minus_ml_winner_log_loss_95", "ml_adj_minus_ml_outcome7_log_loss_95"):
             print("    %s %s" % (kk, a_[kk]))
-    pooled = [x for v in all_rec.values() for x in v]
-    res_all["pooled_2019_2025"] = {"ml_available_all_four": score(pooled, CFG),
-                                   "all_fights_plain_vs_adj": score(pooled, ("plain", "adj"))}
-    a_ = res_all["pooled_2019_2025"]["ml_available_all_four"]
-    print("  pooled (n=%d) winner ll plain %.4f adj %.4f ml %.4f ml_adj %.4f | adj-plain %s | ml_adj-ml %s"
-          % (a_["n_decisive"], a_["plain"]["winner_log_loss"], a_["adj"]["winner_log_loss"], a_["ml"]["winner_log_loss"],
-             a_["ml_adj"]["winner_log_loss"], a_["adj_minus_plain_winner_log_loss_95"],
-             a_["ml_adj_minus_ml_winner_log_loss_95"]))
+    if len(all_rec) == 2:
+        pooled = [x for v in all_rec.values() for x in v]
+        res_all["pooled_2019_2025"] = {"ml_available_all_four": score(pooled, CFG),
+                                       "all_fights_plain_vs_adj": score(pooled, ("plain", "adj"))}
+        a_ = res_all["pooled_2019_2025"]["ml_available_all_four"]
+        print("  pooled (n=%d) winner ll plain %.4f adj %.4f ml %.4f ml_adj %.4f | adj-plain %s | ml_adj-ml %s"
+              % (a_["n_decisive"], a_["plain"]["winner_log_loss"], a_["adj"]["winner_log_loss"], a_["ml"]["winner_log_loss"],
+                 a_["ml_adj"]["winner_log_loss"], a_["adj_minus_plain_winner_log_loss_95"],
+                 a_["ml_adj_minus_ml_winner_log_loss_95"]))
     res_all["note"] = ("engine v3 (frozen copy of src/engine3.js, params3.js, ml/mlrates.js at the start of the run; "
                        "hashes above) via tools/oppadj_engine.js; "
                        "plain = engine raw shrunk rates; adj = the same rates times this file's snapshot factors; "
@@ -1294,6 +1297,7 @@ def main():
     ap.add_argument("--engine-gated", action="store_true",
                     help="engine check with the recommended factor set (families off, ML-path betas) only")
     ap.add_argument("--engine-sims-vg", type=int, default=10000)
+    ap.add_argument("--engine-periods", default="tune,test", help="comma list of tune, test (empty: Volk-Gaethje only)")
     args = ap.parse_args()
     if args.engine_eval:
         engine_eval(args)

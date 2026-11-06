@@ -300,7 +300,7 @@
       var cyaw = cl ? 0 : 0.09 + 0.21 * bl, lz = (0.16 + 0.12 * G.leadReach) * H, rz = (0.12 + 0.08 * (1 - G.rearTuck)) * H;
       P.hl[lead].set(((0.035 + 0.035 * G.leadWidth + 0.02 * op) * H + lz * cyaw) * st, (0.112 + 0.115 * lh - 0.03 * op) * H, lz);
       P.hl[rear].set((-(0.062 + 0.02 * op) * H + rz * cyaw) * st, (0.098 + 0.11 * rh - 0.03 * op) * H, rz);
-      var fl = 0.12 + 0.75 * G.elbowFlare;
+      var fl = 0.04 + 0.6 * G.elbowFlare;
       P.hpl[lead].set(fl * st, -1, -0.3); P.hpl[rear].set(-fl * st, -1, -0.38);
       if (!cl) {
         // upper-body movement and head position off the centre line
