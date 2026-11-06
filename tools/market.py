@@ -727,7 +727,7 @@ def assemble(fights):
             best = None
             for mu, m in und:
                 e = est_date(mu)
-                if e is None or not (-45 <= (d0 - e).days <= 400):
+                if e is None or not (-45 <= (d0 - e).days <= 600):
                     continue
                 s1 = min(name_sim(f['A_name'], m['n1']), name_sim(f['B_name'], m['n2']))
                 s2 = min(name_sim(f['A_name'], m['n2']), name_sim(f['B_name'], m['n1']))

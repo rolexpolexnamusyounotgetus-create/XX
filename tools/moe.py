@@ -1466,6 +1466,8 @@ def report_and_export(args):
     comp_prod = Composite(experts, parts, cals)
     model_prod = export_composite(comp_prod, F["mu"], F["sd"])
     model_val = export_composite(comp_val, F["mu"], F["sd"])
+    rep["audit"] = audit_checks(page, chosen, experts, DROPS, P, y, yr, dates, rows, L, Lst, M, Gs, TR, VA,
+                                comp_val, comp_prod, clusters)
     alts = {}
     for m2, o2 in page["regimes"]["nomarket"]["methods"].items():
         if m2 in ("linear", "gated"):
@@ -1558,6 +1560,84 @@ def report_and_export(args):
     with open(os.path.join(CACHE, "report.json"), "w") as fh:
         json.dump(strip_private(rep), fh, indent=1)
     log("wrote data/derived/moe.json (%.0f kB)" % (os.path.getsize(os.path.join(DERIVED, "moe.json")) / 1024))
+
+
+def audit_checks(page, chosen, experts, DROPS, P, y, yr, dates, rows, L, Lst, M, Gs, TR, VA, comp_val, comp_prod,
+                 clusters):
+    """Adversarial-review checks (research/model_moe.md, Verification log), computed from the cached fit:
+    (1) the line-present headline on exactly the fights that have a closing line (the market's own n);
+    (2) the chosen line-present stacker against the line inside the forward-chained CV years 2021-2023 and pooled
+        over every out-of-sample year 2021-2025 (CV out-of-fold + static validation);
+    (3) the chosen no-line stacker against tools/ml.py's model in the CV years (raw logits: its temperature is
+        fit on these same out-of-fold years);
+    (4) production (2019-2025 refit) vs validated (2019-2023 fit) on 2019-2023 fights: what the production
+        stretch costs if 2026 fights look like 2019-2023 rather than 2024-2025."""
+    out = {}
+    full = 0                                     # DROPS[0] is the empty drop set: every expert present
+    assert not DROPS[0]
+    mpat = "+".join(experts)
+    npat = "+".join(e for e in experts if e != "market")
+    pm_ = page["regimes"]["market"]["methods"][chosen["market"]]["patterns"][mpat]
+    idx = pm_["_idx"]
+    okm = np.isfinite(P["market"][idx])
+    ii = idx[okm]
+    ps, pr = pm_["_ps"][okm], pm_["_pr"][okm]
+    out["line_present_same_fights"] = {
+        "n": int(okm.sum()), "n_dropped_no_line": int((~okm).sum()),
+        "moe_static": boot_ci(ps, y[ii], clusters[ii], B=2000), "moe_rolling": boot_ci(pr, y[ii], clusters[ii], B=2000),
+        "market": boot_ci(P["market"][ii], y[ii], clusters[ii], B=2000),
+        "moe_static_minus_market": boot_ci(ps, y[ii], clusters[ii], ref=P["market"][ii], B=2000),
+        "moe_rolling_minus_market": boot_ci(pr, y[ii], clusters[ii], ref=P["market"][ii], B=2000)}
+    oofs = page["_oofs"]
+    o = oofs[hp_key(chosen["market"], page["regimes"]["market"]["methods"][chosen["market"]]["hp"])]
+    zi = np.concatenate([o[Y][full][0] for Y in (2021, 2022, 2023)])
+    zz = np.concatenate([o[Y][full][1] for Y in (2021, 2022, 2023)])
+    keep = np.isfinite(P["market"][zi]) & M[zi].all(1)
+    zi, zz = zi[keep], zz[keep]
+    # raw logits: a calibrator fit on these same OOF years would be in-sample here (the chosen kind is 'none')
+    pcv = sigm(zz)
+    out_cal = page["regimes"]["market"]["methods"][chosen["market"]]["calibration"]
+    by = {}
+    for Y in (2021, 2022, 2023):
+        s = yr[zi] == Y
+        by[str(Y)] = {"n": int(s.sum()), "moe": ll(pcv[s], y[zi][s]), "market": ll(P["market"][zi][s], y[zi][s])}
+    out["line_present_cv_2021_2023"] = {"rule": "every expert present and a line; stacker trained 2019..Y-1; raw logits "
+                                                "(chosen calibration for this regime: %s)" % out_cal,
+                                        "by_year": by, "moe_minus_market": boot_ci(pcv, y[zi], clusters[zi],
+                                                                                   ref=P["market"][zi], B=2000)}
+    vk = M[ii].all(1)
+    pool_p = np.concatenate([pcv, ps[vk]])
+    pool_i = np.concatenate([zi, ii[vk]])
+    out["line_present_pooled_2021_2025"] = {"n": int(len(pool_i)), "moe_minus_market": boot_ci(
+        pool_p, y[pool_i], clusters[pool_i], ref=P["market"][pool_i], B=2000)}
+    pn_ = page["regimes"]["nomarket"]["methods"][chosen["nomarket"]]
+    o = oofs[hp_key(chosen["nomarket"], pn_["hp"])]
+    jn = [j for j, d in enumerate(DROPS) if d == {"market"}][0]
+    zi = np.concatenate([o[Y][jn][0] for Y in (2021, 2022, 2023)])
+    zz = np.concatenate([o[Y][jn][1] for Y in (2021, 2022, 2023)])
+    keep = np.all([np.isfinite(P[e][zi]) for e in experts if e != "market"], axis=0)
+    zi, zz = zi[keep], zz[keep]
+    out["no_line_cv_2021_2023"] = {"n": int(len(zi)), "note": "raw stacker logits (the temperature is fit on these years)",
+                                   "moe": ll(sigm(zz), y[zi]), "ml": ll(P["ml"][zi], y[zi]),
+                                   "moe_minus_ml": boot_ci(sigm(zz), y[zi], clusters[zi], ref=P["ml"][zi], B=2000)}
+    sens = {}
+    mi = experts.index("market")
+    for reg, Mx in (("line_present", M), ("no_line", drop_mask(M, experts, {"market"}))):
+        allx = Mx[:, [j for j in range(len(experts)) if not (reg == "no_line" and j == mi)]].all(1)
+        if reg == "line_present":
+            allx &= np.isfinite(P["market"])
+        for lab, sel in (("2019-2023", TR & allx), ("2024-2025", VA & allx)):
+            s = np.where(sel)[0]
+            Ls_ = Lst if lab == "2024-2025" else L
+            pp = comp_prod.predict(Ls_[s], Mx[s], Gs[s])
+            pv = comp_val.predict(Ls_[s], Mx[s], Gs[s])
+            sens["%s %s" % (reg, lab)] = {"n": int(len(s)), "production": ll(pp, y[s]), "validated": ll(pv, y[s]),
+                                          "production_mean_abs_p_minus_half": float(np.mean(np.abs(pp - 0.5))),
+                                          "validated_mean_abs_p_minus_half": float(np.mean(np.abs(pv - 0.5)))}
+    sens["note"] = ("production is fit on 2019-2025 (2024-2025 in-sample, so its 2024-2025 row is not a validation number); "
+                    "the 2019-2023 row shows the cost of the production stretch if future fights resemble 2019-2023")
+    out["production_vs_validated"] = sens
+    return out
 
 
 def strip_private(o):

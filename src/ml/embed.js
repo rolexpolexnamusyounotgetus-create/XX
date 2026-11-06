@@ -22,7 +22,7 @@
      r.ratesB      the same for B against A
      r.etaA/etaB   the raw task linear predictors (model.tasks order)
      E.embedding(slug)       {o, d, expo} (expo = decayed fight count behind it; 0 = no UFC data -> zeros)
-     E.neighbours(slug, k)   nearest roster fighters in the standardised 2K-dim space
+     E.neighbours(slug, k)   nearest roster fighters by distance between predicted-stat profiles (model.nn_Q)
      E.winLogit(ea, eb), E.eta(ex, ey, division, opts), E.rates(eta)   low-level pieces
 
    UMD: module.exports in Node, self.FightEmbed in a browser or Web Worker. */
@@ -139,14 +139,19 @@
       minExpo = minExpo == null ? m.nn_min_expo : minExpo;
       var me = m.roster[slug];
       if (!me) return [];
-      var out = [];
+      var out = [], Q = m.nn_Q, diff = new Array(2 * K);
       for (var s in m.roster) {
         if (s === slug) continue;
         var r = m.roster[s];
         if (r[1] < minExpo) continue;
-        var d2 = 0;
-        for (var i = 0; i < 2 * K; i++) { var q = r[0][i] - me[0][i]; d2 += q * q; }
-        out.push([s, Math.sqrt(d2)]);
+        var d2 = 0, i, j;
+        if (Q) {
+          for (i = 0; i < 2 * K; i++) diff[i] = r[0][i] - me[0][i];
+          for (i = 0; i < 2 * K; i++) for (j = 0; j < 2 * K; j++) d2 += diff[i] * Q[i][j] * diff[j];
+        } else {
+          for (i = 0; i < 2 * K; i++) { var q = r[0][i] - me[0][i]; d2 += q * q; }
+        }
+        out.push([s, Math.sqrt(Math.max(0, d2))]);
       }
       out.sort(function (x, y) { return x[1] - y[1]; });
       return out.slice(0, k);

@@ -41,7 +41,7 @@
   var BASE_KEY = { d_att: "d_att", c_att: "c_att", g_att: "g_att", h_att: "h_att", b_att: "b_att", l_att: "l_att",
     td_att: "td_att", sub_att: "sub_att", rev: "rev", ctrl: "ctrl", acc_h: "acc_h", acc_b: "acc_b", acc_l: "acc_l",
     acc_d: "acc_d", acc_c: "acc_c", acc_g: "acc_g", td_acc: "td_acc", kd_h: "kd_per_h" };
-  var DEFAULT_FC = { gs: 0.84, kPM: 40, kAcc: 150, kTdPM: 45, kTdAcc: 12, kKD: 230, kCtrlTD: 4, kRev: 40, kFin: 3, bot: 0.12 };
+  var DEFAULT_FC = { gs: 0.84, kPM: 40, kAcc: 150, kTdPM: 45, kTdAcc: 12, kKD: 230, kCtrlTD: 4, kRev: 40, kFin: 3, bot: 0.12, layMed: 168 };
   var MODEL = null;
 
   // ------------------------------------------------------------------ small math (mirrors tools/mlrates.py)
@@ -144,8 +144,16 @@
     var ax = X.age, ay = Y.age, ageNa = (ax == null || ay == null) ? 1 : 0;
     var rx = X.reach_in, ry = Y.reach_in, hx = X.height_in, hy = Y.height_in, reachNa = (rx == null || ry == null) ? 1 : 0;
     var sx = stanceCode(X.stance), sy = stanceCode(Y.stance), oppst = ((sx === 0 && sy === 1) || (sx === 1 && sy === 0)) ? 1 : 0;
-    function up(sd) { var hl = sd.home ? LBS[sd.home] : null; return (hl && lbsF) ? clip((lbsF - hl) / 10, -3, 3) : 0; }
-    function lay(sd) { return sd.layoff != null ? [Math.log1p(sd.layoff / 30.4), 0] : [0, 1]; }
+    // weight-class move: +-10 never binds on training rows (the models were trained on the unclipped value)
+    function up(sd) { var hl = sd.home ? LBS[sd.home] : null; return (hl && lbsF) ? clip((lbsF - hl) / 10, -10, 10) : 0; }
+    // unknown layoff for a fighter with UFC fights (e.g. backtest_dev sides) never occurs in training: impute the
+    // training median (FC.layMed days); debutants keep the unknown branch, as in training
+    var layMed = FC.layMed != null ? FC.layMed : DEFAULT_FC.layMed;
+    function lay(sd) {
+      var v = sd.layoff;
+      if (v == null && sd.n) v = layMed;
+      return v != null ? [Math.log1p(v / 30.4), 0] : [0, 1];
+    }
     var lx = lay(X), ly = lay(Y);
     f.push(ctx.rounds === 5 ? 1 : 0, ctx.title ? 1 : 0, women, Math.log(lbsF / 155), (ctx.year - 2018) / 10,
       ax != null ? (ax - 30) / 5 : 0, ay != null ? (ay - 30) / 5 : 0, ageNa,

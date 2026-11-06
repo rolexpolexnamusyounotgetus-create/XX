@@ -1,0 +1,80 @@
+[
+  {
+    "file": "espn_headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/3031559.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/3031559/aljamain-sterling",
+    "author": "UFC / Zuffa LLC official fighter portrait (served by the ESPN CDN; photographer not named)",
+    "license": "All rights reserved (UFC / Zuffa LLC)",
+    "date_taken": "unknown; CDN Last-Modified 2026-04-23",
+    "use": "reference-only",
+    "what": "headshot",
+    "notes": "Studio front headshot, neutral, shirtless. Uploaded UFC Vegas 116 fight week (April 2026). Short coily hair with a lined-up hairline and faded sides, full beard, cauliflower ears on both sides. Best frontal face reference."
+  },
+  {
+    "file": "espn_stance_left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/3031559.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/3031559/aljamain-sterling",
+    "author": "UFC / Zuffa LLC official fighter portrait (served by the ESPN CDN; photographer not named)",
+    "license": "All rights reserved (UFC / Zuffa LLC)",
+    "date_taken": "unknown; CDN Last-Modified 2026-04-23",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Studio full body, slight three-quarter, red compression-length UFC kit shorts with darker red scale pattern. Uploaded April 2026. Best physique reference."
+  },
+  {
+    "file": "espn_stance_right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/3031559.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/3031559/aljamain-sterling",
+    "author": "UFC / Zuffa LLC official fighter portrait (served by the ESPN CDN; photographer not named)",
+    "license": "All rights reserved (UFC / Zuffa LLC)",
+    "date_taken": "unknown; CDN Last-Modified 2025-08-22",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Studio full body, three-quarter, blue VENUM compression shorts with tiger-stripe pattern. Uploaded August 2025. Hair in cornrows with green braid extensions on top; beard fuller than in 2026."
+  },
+  {
+    "file": "commons_ufc228_2018-09-09.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/9a/Alijamain_Sterling_at_UFC_228.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Alijamain_Sterling_at_UFC_228.jpg",
+    "author": "MMAnytt (YouTube video, frame grab)",
+    "license": "CC BY 3.0",
+    "date_taken": "2018-09-09",
+    "use": "embed-ok",
+    "what": "headshot",
+    "attribution": "MMAnytt, CC BY 3.0, via Wikimedia Commons",
+    "notes": "UFC 228 post-fight interview, near-frontal smile. Eight years old: high-top hair and a short beard, so it shows the bare jaw and chin that the current full beard hides. Do not use for current hair or beard."
+  },
+  {
+    "file": "ref_vegas116_faceoff_profile_2026-04-24.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/04/UFC-Vegas-116-weigh-in-25.jpg",
+    "page": "https://cagesidepress.com/2026/04/25/aljamain-sterling-puts-on-grappling-masterclass-in-win-over-zalal/",
+    "author": "Jeff Bottari / Zuffa LLC (via Cageside Press)",
+    "license": "All rights reserved (Zuffa LLC)",
+    "date_taken": "2026-04-24",
+    "use": "reference-only",
+    "what": "profile",
+    "notes": "UFC Vegas 116 weigh-in face-off with Youssef Zalal (Sterling on the left holding a flag). Near-RIGHT profile of the face: beard projection, nose, brow, right ear, short hair with faded sides; also the upper body and shorts. Small (711x474)."
+  },
+  {
+    "file": "ref_vegas116_action_2026-04-25.jpg",
+    "url": "https://assets-cms.thescore.com/uploads/image/file/832244/w1280xh966_GettyImages-2273159478.jpg?ts=1777174113",
+    "page": "https://thescore.com/mma/news/3530409",
+    "author": "Zuffa LLC via Getty Images (photographer not named on page)",
+    "license": "All rights reserved (Zuffa LLC / Getty Images)",
+    "date_taken": "2026-04-25",
+    "use": "reference-only",
+    "what": "action",
+    "notes": "UFC Vegas 116 fight vs Zalal, Sterling (right) landing a straight left. Three-quarter view of his left side in motion: left ear, beard trimmed for the fight, shoulder and back muscles, red VENUM fight shorts with his name on the leg. Arena light makes the skin read darker and redder than in studio."
+  },
+  {
+    "file": "ref_ceremonial_weighin_braids_body.jpg",
+    "url": "https://www.bjpenn.com/wp-content/uploads/2026/04/Aljamain-Sterling-weighs-in.jpg",
+    "page": "https://www.bjpenn.com/mma-news/ufc/ufc-vegas-116-weigh-in-results-aljamain-sterling-and-youssef-zalal-on-point/",
+    "author": "Not credited on page (looks like a Zuffa LLC ceremonial weigh-in photo)",
+    "license": "All rights reserved",
+    "date_taken": "unknown, probably 2024-2025 (the page uses it as a file photo: it is a ceremonial weigh-in with cornrows and green braids, while the April 2026 weigh-in was a plain APEX weigh-in with short hair)",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Flexing on stage, shouting. Good for torso and arm definition, the right ear (cauliflower) and the braided look. Not current hair."
+  }
+]

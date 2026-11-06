@@ -75,6 +75,7 @@ FC = {
     "kRev": 40.0,     # reversals prior strength (minutes)
     "kFin": 3.0,      # finish rate per fight prior strength (fights)
     "bot": 0.12,      # bottom-man ground strike rate relative to the top man (engine gBotRel)
+    "layMed": 168.0,  # median layoff (days) of 2010-2023 training sides with a prior UFC fight: imputed when unknown
 }
 
 # targets: (name, kind, numerator key, exposure) ; exposure "min" = fight minutes, else a key (trials)
@@ -277,12 +278,20 @@ def features(X, Y, ctx, P):
     oppst = 1.0 if ((sx == 0 and sy == 1) or (sx == 1 and sy == 0)) else 0.0
 
     def up(side):
+        # reviewer fix (Nov 6): the exported models were trained on the unclipped value (range -8..+6 in the
+        # data); a later +-3 clip made the served feature differ from training for weight-class movers (e.g. light
+        # heavyweight -> heavyweight = +6). The +-10 bound never binds on training rows.
         h = side.get("home")
         hl = DIV_LBS.get(h) if h else None
-        return min(3.0, max(-3.0, (lbs_f - hl) / 10.0)) if (hl and lbs_f) else 0.0
+        return min(10.0, max(-10.0, (lbs_f - hl) / 10.0)) if (hl and lbs_f) else 0.0
 
     def lay(side):
+        # layoff unknown for a fighter with UFC fights (backtest_dev.json sides carry no layoff) never occurs in
+        # training (the unknown branch is only seen for debutants), so impute the training median instead of
+        # sending an out-of-distribution flag. Debutants keep the unknown branch, as in training.
         v = side.get("layoff")
+        if v is None and side.get("n"):
+            v = FC.get("layMed", 168.0)
         return (math.log1p(v / 30.4), 0.0) if v is not None else (0.0, 1.0)
 
     lx, lxn = lay(X)

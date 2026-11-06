@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Durability and power (engine v5 component): knockdown chin and power fit on walk-forward features.
 
-Run from the project root (about 1-2 minutes):
+Run from the project root (about 5-10 minutes with tuning; --quick about 4):
 
     python3 tools/durability.py            # fit, evaluate, write outputs
     python3 tools/durability.py --quick    # skip the hyperparameter grid (use the stored choices)
@@ -11,21 +11,23 @@ Model (one row per attacker -> defender direction of every UFC fight with round 
     KD_ad ~ Poisson(E_ad * p_ad),  E_ad = standing head strikes landed by a on d (ufcstats midpoint estimate)
     log p_ad = log L(t) + div + ctx + f_chin(x_d) + f_pow(x_a) + log u_d + log v_a
 
-    L(t)   trailing league KD per standing head strike over the 365 days before the fight (walk-forward level)
+    L(t)   trailing league KD per standing head strike over the 730 days before the fight (walk-forward level)
     div    division effect; ctx: five-round and title indicators
-    x_d    defender features frozen before the fight: age (linear spline), years in the UFC, UFC fights,
-           career sig head strikes absorbed, KO/TKO losses and knockdowns absorbed (recent vs old), layoff,
-           weight move (up / down, in classes and pounds), height and reach relative to the division,
-           last fight a KO loss, short turnaround after a KO loss
-    x_a    attacker features: age spline, weight move, height, reach advantage, experience
+    x_d    defender features frozen before the fight: age (linear spline, knot 30) always; optional blocks
+           (knockdowns absorbed recent / older, KO/TKO losses recent / older, tenure and experience, layoff,
+           last-fight KO and quick return) kept only if they survive the validation elimination below
+    x_a    attacker features: age spline and experience, same rule
     u_d    defender chin multiplier, v_a attacker power multiplier: Gamma(alpha, alpha) fighter effects whose
            posterior means are updated walk-forward: u = (alpha + KD absorbed) / (alpha + expected KD absorbed)
            over his earlier fights (expected under the rest of the model), optionally time-decayed
 
 Fixed effects are fit with the walk-forward fighter effects as offsets, iterating fit -> walk -> fit. Hyper-
-parameters (alpha, decay, windows, spline knots) are chosen by Poisson deviance on 2019-2023 with the model
-fit on 2008-2018; coefficients are then refit on 2008-2023 and reported on 2024-01-01 onward (never used for
-fitting or tuning). A final live fit on everything gives the roster's posterior chin and power multipliers.
+parameters (alpha, decay, windows, spline knots) and the covariate blocks are chosen by Poisson deviance on
+2019-2023 with the model fit on 2008-2018; blocks by a backward one-SE elimination, decay only if it beats no decay
+by one SE (verification pass, Nov 6, 2026: the first 36-parameter version overfit). Coefficients are then refit on
+2008-2023 and reported on 2024-01-01 onward (never used for fitting or tuning), with fight- and fighter-clustered
+SEs and a level-neutral diagnostic. A final live fit on everything gives the roster's chin and power multipliers;
+backtest entries get strict walk-forward values (expanding yearly refits for 2019-2023).
 
 A second model, KO/TKO loss per fight (logistic, pre-fight features only), uses the same feature set plus the
 pre-fight expected knockdown rate and an Elo control.

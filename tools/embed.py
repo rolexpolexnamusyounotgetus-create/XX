@@ -1493,9 +1493,29 @@ def auto_label(entry, side):
     return " / ".join(parts)
 
 
-def neighbours(emb, slugs, expo, slug, k=10, min_expo=2.0):
+def nn_metric(P, A, Dm, expo, min_expo=1.0):
+    """Q (2K x 2K) such that sqrt(de' Q de) is the distance between two fighters' predicted-stat profiles: the
+    21 offense effects W a and the 21 defense effects V d, each standardised by its sd over active fighters."""
+    ok = expo >= min_expo
+    so = (A[ok] @ P["W"].T).std(0) + 1e-9
+    sd = (Dm[ok] @ P["V"].T).std(0) + 1e-9
+    K = A.shape[1]
+    Bm = np.zeros((2 * NT, 2 * K))
+    Bm[:NT, :K] = P["W"] / so[:, None]
+    Bm[NT:, K:] = P["V"] / sd[:, None]
+    return Bm.T @ Bm, so, sd
+
+
+def profile(P, e, so, sd):
+    """Standardised predicted-stat profile of one fighter: offense effects then defense effects per task."""
+    K = P["W"].shape[1]
+    return np.r_[(P["W"] @ e[:K]) / so, (P["V"] @ e[K:]) / sd]
+
+
+def neighbours(emb, slugs, expo, slug, k=10, min_expo=2.0, Q=None):
     i = slugs.index(slug)
-    d = np.sqrt(((emb - emb[i]) ** 2).sum(1))
+    de = emb - emb[i]
+    d = np.sqrt(np.maximum(((de @ Q) * de).sum(1), 0.0)) if Q is not None else np.sqrt((de ** 2).sum(1))
     d[i] = np.inf
     d[expo < min_expo] = np.inf
     order = np.argsort(d)[:k]
@@ -1549,10 +1569,14 @@ def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs,
         for a in axes[side]:
             if not a["label"]:
                 a["label"] = auto_label(a, side)
-    nn = {}
+    Q, so, sdv = nn_metric(P, A, Dm, expo)
+    nn, signature = {}, {}
     for sl in ("alexander-volkanovski", "justin-gaethje"):
         if sl in D.slug_idx:
-            nn[sl] = neighbours(emb, slugs, expo, sl, 10, NN_MIN_EXPO)
+            nn[sl] = neighbours(emb, slugs, expo, sl, 10, NN_MIN_EXPO, Q)
+            pr = profile(P, emb[D.slug_idx[sl]], so, sdv)
+            order = np.argsort(-np.abs(pr))[:8]
+            signature[sl] = [[("off " if j < NT else "def ") + TN[j % NT], round(float(pr[j]), 2)] for j in order]
     roster = {}
     for i, sl in enumerate(slugs):
         if sl in roster_slugs and expo[i] > 0:
@@ -1586,6 +1610,7 @@ def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs,
              "M": r4(P["M"], 5), "noise": {"nb_k": {TN[i]: r4(noise["k"][i], 3) for i in range(NT) if IS_NB[i]},
                                            "bb_rho": {TN[i]: r4(noise["rho"][i], 4) for i in range(NT) if IS_BIN[i]}},
              "axes": {s: [[a["axis"], a["label"]] for a in axes[s]] for s in axes}, "nn_min_expo": NN_MIN_EXPO,
+             "nn_Q": r4(Q, 6),
              "roster": roster}
     # check block on the rounded model (what the browser evaluates)
     era = (dt.date(2026, 1, 1).toordinal() - dt.date(2015, 1, 1).toordinal()) / 3652.5
@@ -1624,7 +1649,7 @@ def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs,
                     "score": round(cv_score(c), 4)} for c in cv],
             "stitch": walk.get("stitch"), "runtime_s": round(secs)}
     out = {"meta": meta, "model": {k: model[k] for k in ("K", "tasks", "divs", "C", "W", "V", "ua", "ud", "M")},
-           "axes": axes, "neighbours": nn,
+           "axes": axes, "neighbours": nn, "signature": signature,
            "validation": {"winner": win_res, "stats": stat_res},
            "roster": roster, "snapshots": snaps, "train_snapshots": train_snaps, "quarters": quarters,
            "missing_snapshots": missing}
@@ -1640,6 +1665,7 @@ def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs,
             print("  %s %-60s %s | high: %s" % (a["axis"], a["label"][:60], a["loadings"][:4], ", ".join(a["high"][:5])))
     for sl, l in nn.items():
         print("  neighbours of %s: %s" % (sl, ", ".join("%s (%.2f)" % (x, d) for x, d in l)))
+        print("  signature of %s: %s" % (sl, signature[sl]))
     _save({"T": T, "win_preds": win_preds, "walk_final": fin}, _pk(cache, "eval_state.pkl"))
 
 

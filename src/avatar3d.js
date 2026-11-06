@@ -1480,8 +1480,9 @@
     var rig = this.rig; if (!rig) return;
     var W = this.W, Wp = this.Wp, Rq = this.restQ, Lp = this.restLocalP, par = this.parent, bi = this.bi, i, k;
     // driver segment world rotations
-    var qP = rig.pelvis.getWorldQuaternion(_q1), qS = rig.spine.getWorldQuaternion(new Q()), qC = rig.chest.getWorldQuaternion(new Q());
-    var qN = rig.neck.getWorldQuaternion(new Q()), qH = rig.head.getWorldQuaternion(new Q());
+    var tq = this._tq || (this._tq = [new Q(), new Q(), new Q(), new Q(), new Q(), new Q(), new Q(), new Q()]), tv = this._tv || (this._tv = [new V3(), new V3(), new V3()]);
+    var qP = rig.pelvis.getWorldQuaternion(_q1), qS = rig.spine.getWorldQuaternion(tq[0]), qC = rig.chest.getWorldQuaternion(tq[1]);
+    var qN = rig.neck.getWorldQuaternion(tq[2]), qH = rig.head.getWorldQuaternion(tq[3]);
     W[bi.Hips].copy(qP).multiply(Rq[bi.Hips]);
     W[bi.Spine].copy(qS).multiply(Rq[bi.Spine]);
     W[bi.Spine1].copy(qS).multiply(Rq[bi.Spine1]);
@@ -1492,14 +1493,14 @@
     W[bi.RightShoulder].copy(qC).multiply(Rq[bi.RightShoulder]);
     rig.pelvis.getWorldPosition(Wp[bi.Hips]);
     // idle breathing layer (additive, torso only)
-    var C = this.base.clips, yaw = this.actor ? this.actor.yaw : 0, qy = _q3.setFromAxisAngle(YAX, yaw), qyi = new Q().copy(qy).invert();
+    var C = this.base.clips, yaw = this.actor ? this.actor.yaw : 0, qy = _q3.setFromAxisAngle(YAX, yaw), qyi = tq[4].copy(qy).invert();
     if (C && this.idleW > 0.01) {
       var ic = C.clips.idle, t = this.idleT % ic.dur;
       for (var nm in IDLE_MASK) {
         var j = C.bones.indexOf(nm); if (j < 0) continue;
-        this.clipQuat(ic, t, j, _q2); _q4.copy(this.clipQuat(ic, 0, j, new Q())).invert(); _q2.multiply(_q4);
+        this.clipQuat(ic, t, j, _q2); this.clipQuat(ic, 0, j, tq[5]).invert(); _q2.multiply(tq[5]);
         _q2.premultiply(qy).multiply(qyi);
-        var dq = new Q().slerp(_q2, this.idleW * IDLE_MASK[nm]);
+        var dq = tq[6].identity().slerp(_q2, this.idleW * IDLE_MASK[nm]);
         W[bi[nm]].premultiply(dq);
       }
     }
@@ -1543,8 +1544,8 @@
       var up = clamp((hand.y - sp.y) / (Ls.l1 + Ls.l2), -1, 1);
       if (up > 0.15) {
         var ax = _v4.copy(Wp[Ls.iu]).sub(Wp[ks]).normalize();
-        var axis = new V3().crossVectors(ax, YAX).normalize();
-        W[ks].premultiply(new Q().setFromAxisAngle(axis, (up - 0.15) * 0.3));
+        var axis = tv[2].crossVectors(ax, YAX).normalize();
+        W[ks].premultiply(tq[7].setFromAxisAngle(axis, (up - 0.15) * 0.3));
         this.fk(Ls.iu);
       }
     }
@@ -1553,12 +1554,12 @@
       var L = this.limbs[i], s = Wp[L.iu], tgt, pole;
       if (L.L.arm) {
         var A = i === 0 ? drv.armL : drv.armR;
-        tgt = drv.handPos(i === 0, new V3());
-        el = A.el.getWorldPosition(new V3());
+        tgt = drv.handPos(i === 0, tv[0]);
+        el = A.el.getWorldPosition(tv[1]);
       } else {
         var G = i === 2 ? drv.legL : drv.legR;
-        tgt = G.foot.getWorldPosition(new V3());
-        el = G.knee.getWorldPosition(new V3());
+        tgt = G.foot.getWorldPosition(tv[0]);
+        el = G.knee.getWorldPosition(tv[1]);
       }
       this.solveLimb(L, s, tgt, el);
     }
@@ -1597,6 +1598,7 @@
     }
     this.group.updateMatrixWorld(true);
   };
+  var _qlo = new Q();
   var LIMB_BONE = { LeftArm: 1, LeftForeArm: 1, LeftHand: 1, RightArm: 1, RightForeArm: 1, RightHand: 1, LeftUpLeg: 1, LeftLeg: 1, LeftFoot: 1, LeftToeBase: 1, RightUpLeg: 1, RightLeg: 1, RightFoot: 1, RightToeBase: 1 };
 
   Avatar.prototype.fk = function (k) {
@@ -1620,7 +1622,7 @@
     var t = _v4.copy(s).addScaledVector(d, D);
     var up = _v5.copy(e).sub(s), lo = _v6.copy(t).sub(e);
     basisQuat(W[L.iu], up, pole).multiply(L.Cu);
-    var qlo = basisQuat(new Q(), lo, pole);
+    var qlo = basisQuat(_qlo, lo, pole);
     if (L.L.arm) {
       // pronation: palm turns down as the arm extends; split between forearm and hand
       var ext = clamp01((D / (l1 + l2) - 0.55) / 0.4), side = L.L.left ? 1 : -1;
