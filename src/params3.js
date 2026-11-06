@@ -125,7 +125,7 @@
 
     // ---------------- damage, knockdowns, finishes ----------------
     kdScale: 1.383,          // [v401 c: levels v4.0.1, tools/v4_levels.js on all 1,999 2019-2023 fights, learned rates on; off = levels v4 1.391; v3 walkfwd 1.246; v401 e: x koComp.kdScale] global knockdown scale on p0 (division KD per landed standing head strike)
-    kdPos: [1.0, 2.561],     // [selfcal v4: train-only priors_dev.json] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates; knees and elbows)
+    kdPos: [1.0, 2.561],     // [selfcal v4: train-only priors_dev.json; v401 e: [1] x koComp.kdClinch] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates all years; 2019-2023 fights: 7.1%, components.v401.koTargets)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
     kdHurt: 1.8,             // KD multiplier while hurt (default)
@@ -262,7 +262,7 @@
         mlLevels: { mlTdLevel: 1, mlCtrlLevel: 1, mlSubLevel: 1, kdScale: 1.391, kdInstant: 0.3673, kdRefStop: 0.184, stko: 0.03644, gnpTko: 0.03072, subConvScale: 1.847 }
       },
       koTargets: { ground: 0.2859, clinch: 0.0711, standNoKd: 0.0725 },   // (e) the self-calibration's composition targets (tests/test_engine3.js --fit uses them while the sub-flag is on; v4: 0.28 / 0.125 / 0.07)
-      koComp: { kdScale: 1, kdClinch: 1, gnpTko: 1, stko: 1, kdInstant: 1, kdRefStop: 1 }
+      koComp: { kdScale: 1.11, kdClinch: 0.4999, gnpTko: 1.023, stko: 1.051, kdInstant: 0.9877, kdRefStop: 0.9877 }   // (e) tools/v401_kocomp.js --n 30000 --iters 12 (data/derived/v401_kocomp.json): clinch share 12.7% -> 6.9% on league-average LW pairs, KD per head strike held, KO share +0.4 pt
     },
 
     // ---------------- division self-calibration factors ([selfcal v4]: train-only priors_dev.json; neutral = 1) ----------------
