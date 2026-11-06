@@ -113,6 +113,7 @@ function fakeShow(appCalls) {
   assert.strictEqual(C.contexts, 1, "one AudioContext");
   assert.strictEqual(st.buffers, Object.keys(FA.SOUNDS).length, "every sound decoded (" + st.buffers + ")");
   assert.strictEqual(C.loops, 2, "the crowd bed runs as two offset loops");
+  assert.ok(FA.unlock(), "unlock reports a running context");
   var ctxStarts = C.starts;
 
   function tickShow(n, sh) { sh = sh || show; for (var i = 0; i < n; i++) { sh.time += 1 / 60; sb.win._now += 1000 / 60; FA._tick(1 / 60); } }
@@ -228,6 +229,7 @@ function fakeShow(appCalls) {
   assert.strictEqual(FB.attach(s3), false, "attach is a no-op");
   assert.strictEqual(s3.hooks.onBeat, o3, "hooks untouched");
   assert.strictEqual(FB.setEnabled(true), false, "cannot enable");
+  assert.strictEqual(FB.unlock(), false, "unlock is a no-op");
   FB.setVolume(0.3); FB.detach(); FB._tick(0.1);
   assert.strictEqual(FB.state().context, null, "no context");
   console.log("without WebAudio: ok - silent no-op");

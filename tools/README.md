@@ -282,6 +282,12 @@ node tests/test_ml2.js                        # JS page evaluator (src/ml/ml2.js
   is wrapped so every fight dated 2026-01-01 or later is dropped right after parsing.
 - **Protocol.** Choices by time-ordered CV before 2024 (ml.py's blocks; stacks forward-chained 2021-2023), 2024-2025
   scored once, static (fit < 2024) and monthly-rolling refits, everything corner-symmetric.
+- **Stacks.** Three page regimes in `page_model.stack`: `noline` (ML v2 logistic + market rating), `line` (closing line
+  + ML v2 logistic) and `open` (opener + ML v2 logistic, added by the verifier). Odds typed in before fight night are an
+  opener: pass them to `ML2 predict(..., pClose, pOpen)` as `pOpen`, never as the closing line.
+- **Verify stage.** Reverses the encoded outcome (ratings.encode, so WHR-rounds' round shares too) and, for the market
+  rating, the closing line and result of every fight from the first fight day on/after 2024-06-01. Predictions up to
+  and including that day must not move.
 - **Outputs.** `data/derived/ml2.json` (CV, results, segments, stacks, method refit, verification, per-fight
   predictions, `page_model`) and `research/model_ml2.md`. Delete `out/ml2_cache/ratings_all.pkl` after ratings.json or
   preufc.json changes (the table stage then reruns the rating systems, about 75 seconds), and

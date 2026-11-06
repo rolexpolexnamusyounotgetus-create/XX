@@ -19,22 +19,25 @@ differences. n = 854 decisive validation fights, or 845 where the closing line i
 
 ## Bottom line
 
-**1. ML v2 is the best no-line predictor in the project, and its logistic part ties the closing line.**
+**1. ML v2 is the best no-line predictor in the project. Within noise it ties the closing line.**
 
 | 2024-2025 (854 fights) | log loss [CI] | accuracy | minus ML v1 logistic [CI] |
 |---|---|---|---|
 | ML v1 logistic (tools/ml.py, reproduced exactly) | 0.6062 [0.5902, 0.6230] | 67.9% | 0 |
-| **ML v2 logistic**, static (fit < 2024) | **0.5887** [0.5703, 0.6085] | **69.0%** | **-0.0176 [-0.0241, -0.0108]** |
-| ML v2 logistic, monthly rolling refit | 0.5882 [0.5693, 0.6090] | 69.2% | -0.0181 [-0.0253, -0.0105] |
-| ML v2 blend (LR 0.43 + LightGBM 0.40 + XGBoost 0.15), static | 0.5918 [0.5728, 0.6117] | 68.5% | -0.0145 [-0.0219, -0.0069] |
+| **ML v2 blend** (LR 0.43 + LightGBM 0.40 + XGBoost 0.15; the CV choice), static | **0.5918** [0.5728, 0.6117] | 68.5% | **-0.0145 [-0.0219, -0.0069]** |
 | ML v2 blend, monthly rolling | 0.5909 [0.5717, 0.6119] | 68.3% | -0.0153 [-0.0237, -0.0071] |
+| ML v2 logistic (the page model; not the CV choice), static (fit < 2024) | 0.5887 [0.5703, 0.6085] | 69.0% | -0.0176 [-0.0241, -0.0108] |
+| ML v2 logistic, monthly rolling refit | 0.5882 [0.5693, 0.6090] | 69.2% | -0.0181 [-0.0253, -0.0105] |
+| ML v1 stack (Elo + ML v1 + market rating) | 0.5958 | 68.4% | |
 | closing line (845 fights) | 0.5854 | 69.2% | |
 | opening line (843 fights) | 0.6094 | 66.8% | |
 
-- On the fights that have a line, the ML v2 logistic is level with the close: static +0.0003 [-0.0171, +0.0167], rolling -0.0001 [-0.0176, +0.0163].
-- It beats the opening line by 0.024 [0.009, 0.039].
+- **The CV choice is the blend** (OOF 2019-2023 0.6338 vs 0.6356 for the logistic). On the fights that have a line, the blend is +0.0037 [-0.0129, +0.0197] against the close (rolling +0.0029); the logistic is +0.0003 [-0.0171, +0.0167] (rolling -0.0001). Both are level with the close within noise.
+- The page runs the logistic because the JS cannot evaluate the trees. Its 2024-25 edge over the blend (-0.0031 [-0.0062, +0.0002]) is one look and is not a reason to prefer it (verifier's correction: the first version of this report led with the logistic).
+- Both beat the opening line: blend by 0.020 [0.006, 0.035], logistic by 0.024 [0.009, 0.039].
+- Against the v1 stack (Elo + ML v1 + market rating, 0.5958), which already used the market rating: blend -0.0041 [-0.0091, +0.0007], not significant; logistic -0.0072 [-0.0126, -0.0020]. Much of the gain over the v1 logistic was already available by stacking the market rating.
 - Compared with v1 (0.018 behind the close, tied with the open), the gap to the close is gone.
-- Out of fold on 2019-2023 (1,955 fights, annual refits), the blend scores 0.6338 against v1's 0.6479: -0.0141 [-0.0193, -0.0086].
+- Out of fold on 2019-2023 (1,955 fights, annual refits), the blend scores 0.6338 against v1's 0.6479: -0.0141 [-0.0193, -0.0086]. These years are not clean for either model: both chose their features by CV on them, and the rating and market-rating parameters were tuned on 2019-2023.
 - **Better than v1 in every year 2019-2025.**
 
 **2. Where the gain comes from.** Two verified sources that did not exist when v1 was built carry it. Both were rebuilt
@@ -70,15 +73,19 @@ Time-ordered CV results:
 | with line, static (845) | 0.5788 | **0.5766** | -0.0022 [-0.0043, +0.0001] | **-0.0087 [-0.0134, -0.0041]** |
 | with line, rolling (845) | 0.5778 | **0.5760** | -0.0018 [-0.0040, +0.0004] | -0.0094 [-0.0145, -0.0041] |
 
-- **Pooled out of sample 2021-2025** (2,069 fights; the 2021-2023 rows are forward-chained CV years):
-  - with the line, ML v2 beats the close by **-0.0045 [-0.0079, -0.0010]** and the current stack by **-0.0022 [-0.0040, -0.0003]**; the current stack alone is -0.0022 [-0.0046, +0.0002] against the close;
-  - without a line, ML v2 beats the current stack by **-0.0060 [-0.0092, -0.0027]**. The ML v2 stack is +0.0078 [-0.0021, +0.0175] against the close; the current one is +0.0138 [+0.0040, +0.0233].
+- With the line, the ML v2 stack's gain over the current stack is not significant on 2024-25 (-0.0022 [-0.0043, +0.0001] static, -0.0018 [-0.0040, +0.0004] rolling). Its gain over the close is.
+- **Pooled 2021-2025** (2,069 fights; the 2021-2023 rows are forward-chained stack CV years):
+  - with the line, ML v2 beats the close by -0.0045 [-0.0079, -0.0010] and the current stack by -0.0022 [-0.0040, -0.0003]; the current stack alone is -0.0022 [-0.0046, +0.0002] against the close;
+  - without a line, ML v2 beats the current stack by -0.0060 [-0.0092, -0.0027]. The ML v2 stack is +0.0078 [-0.0021, +0.0175] against the close; the current one is +0.0138 [+0.0040, +0.0233].
+  - **Caveat (verifier):** the 2021-2023 rows are out of sample for the stack weights only. ML v2's blocks, penalty, tree settings and blend weights were chosen by CV on years that include 2021-2023, and the rating and market-rating parameters were tuned on 2019-2023. So the pooled numbers lean on optimistic rows. On 2021-2023 alone, the with-line ML v2 stack is -0.0015 [-0.0061, +0.0030] against the close: the significant edge over the close comes from 2024-25 (-0.0087).
+- **Opening line (added by the verifier).** Before fight night the page has an opener or a moving line, never the close. The with-line stack's weights were fit on closing lines, and feeding it an opener costs +0.0099 [+0.0064, +0.0133] against a stack fit on the open (2024-25, 843 fights). The open stack (open + ML v2 logistic) scores 0.5812 static / 0.5800 rolling: -0.028 [-0.037, -0.020] against the open, -0.0041 [-0.0066, -0.0014] against the current experts on the open, and -0.0043 [-0.0157, +0.0067] against the close. The page gets it as `pStackOpen` (section 6, Integration recipe).
 - **What the stacks keep.**
   - With the line: market 0.75 and ML v2 0.37. Every other expert drops to 0: market rating, engine, ML v1, feature LR, Elo.
   - Without a line: ML v2 0.78 and market rating 0.49.
 - **On the page** (ML v2 logistic plus the inputs the page can compute):
-  - the no-line stack scores 0.5890 static / **0.5862** rolling;
-  - with the line it scores 0.5757 / 0.5749, which is -0.0096 / -0.0104 against the close.
+  - the no-line stack scores 0.5890 static / 0.5862 rolling. CV prefers the blend-based no-line stack (0.62854 vs 0.62984, a gap above the 0.0005 rule); the page variant is a JS constraint, and its better 2024-25 score is not evidence for it;
+  - with the closing line it scores 0.5757 / 0.5749, which is -0.0096 / -0.0104 against the close;
+  - with an opener it scores 0.5812 / 0.5800 (open 0.66 + ML v2 logistic 0.58, fit before 2024).
 
 **5. Method/round model S refit (methodround.py's model, same hyperparameters and round hazard).**
 
@@ -322,6 +329,14 @@ nothing. They remain useful for the simulator's stat lines (research/model_style
 | no line | page: ML v2 logistic + mkt_rating, h 1.5 | 0.62984 | ml2lr 0.70, mkt_rating 0.55 | 0.5890 | 0.5862 |
 | no line | ml2 alone | 0.63011 | 1.00 | 0.5917 | 0.5897 |
 | no line | ml2s + mkt_rating + feat_lr (not adopted, -0.00041) | 0.62813 | ml2s 0.79, mkt_rating 0.52 | 0.5895 | 0.5876 |
+| open (843) | current experts on the open | 0.62840 | open 0.74, ml 0.35, mkt_rating 0.22, feat_lr 0.11 | 0.5852 | 0.5838 |
+| open | open + ml2 | 0.62231 | open 0.63, ml2 0.63 | 0.5823 | 0.5812 |
+| open | **page: open + ML v2 logistic** | 0.62275 | open 0.66, ml2lr 0.58 | **0.5812** | **0.5800** |
+| open | page: open + ML v2 logistic + mkt_rating | 0.62275 | mkt_rating 0.004 | 0.5812 | 0.5800 |
+
+The open rows were added by the verifier (section 4). The opening line alone scores 0.6094 on these fights. The page
+open stack takes no market rating: CV gives it 0.004 weight. Production weights (refit 2019-2025, no recency
+weighting): open 0.61, ML v2 logistic 0.72.
 
 **By year.** The 2021-2023 rows are forward-chained, so they are out of sample too.
 
@@ -459,10 +474,17 @@ drop fighters outside the page's selector) and `src/ml/ml2.js`:
 const h = ML2.load(pageModel);                 // ml2.json page_model
 const r = h.predict("alexander-volkanovski", "justin-gaethje",
                     { date: "2026-12-12", lbs: 155, five: 1 },   // + fw: {A: {...}, B: {...}} optional
-                    pLineA);                   // optional de-vigged closing-line P(A) (MoE.devig)
+                    pCloseA,                   // optional de-vigged CLOSING-line P(A) (MoE.devig)
+                    pOpenA);                   // optional de-vigged opener or any line quoted before fight night
 // r.pA: ML v2 logistic; r.pMR: market rating; r.pStack: validated no-line stack (ML v2 + market rating);
-// r.pStackLine: with-line stack (market 0.71 + ML v2 0.48) when pLineA is given
+// r.pStackLine: with-line stack (market 0.71 + ML v2 0.48) when pCloseA is given;
+// r.pStackOpen: opening-line stack (open 0.61 + ML v2 0.72) when pOpenA is given
 ```
+
+- **Which line goes where.** Odds typed into the page before the event are an opener or a moving line: pass them as
+  `pOpenA` and show `pStackOpen`. Use `pCloseA` / `pStackLine` only with a true closing line (results pages, the
+  blind test). The close-trained weights lean harder on the line; fed an opener they cost +0.0099 [+0.0064, +0.0133]
+  log loss on 2024-25. MoE's with-line stack (src/ml/moe.js) has the same close-vs-open mismatch on the page today.
 
 - **Inputs.** The page model needs no other file:
   - ml.py's 76 base terms, from ml.json's roster values (live through Oct 31, 2026);
@@ -478,7 +500,8 @@ const r = h.predict("alexander-volkanovski", "justin-gaethje",
 
 **Replace MoE's ML expert.** For the final probability, use the page stacks above:
 
-- with the line, weights 0.71 / 0.48 on market / ML v2 logistic;
+- with the closing line, weights 0.71 / 0.48 on market / ML v2 logistic;
+- with an opener (or any pre-fight line), 0.61 / 0.72 on open / ML v2 logistic, no recency weighting;
 - without a line, 1.03 / 0.39 on ML v2 logistic / market rating, h 1.5, refit 2019-2025.
 
 They score better than moe's 7-expert stack in both regimes. Engine, ML v1, feature LR and both Elos get weight 0

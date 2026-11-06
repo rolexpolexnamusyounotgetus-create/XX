@@ -163,3 +163,18 @@ Models and judging:
 - Run Tsarukyan through the same engine to revisit the 65-35 call with the new machinery.
 - Phone performance tuning (shadow map size, crowd count) after testing on real devices.
 - If the fight gets booked, swap in the real line and fight-week news (injuries, weigh-in).
+
+## Page copy: where the plain-English source notes point (page review, Nov 6 evening)
+
+The page no longer shows project paths to visitors. Each plain description maps to these files:
+
+- "Our analysis of UFC results, 2010 to Oct 2026" (age card): research/volkanovski.md, section 2.
+- "Our analysis of UFC weight-class moves" (size card, Baseline and 155-lb tax scenarios): research/matchup_market.md, section 7.
+- "Rating systems that model layoffs (Glicko variants)" (Ring rust scenario): research/modeling_literature.md, rating baselines.
+- "Our analysis of UFC round-by-round data" (Five-round war scenario): docs/BACKLOG.md, Pace.
+- "Our analysis of UFC judges' scorecards" (Volume-only judges scenario): docs/BACKLOG.md, Judging.
+- Gaethje's mileage, Volk wrestles, Prime Volk, Gaethje chops calves: research/gaethje.md (sections 0, 5, 7) and research/volkanovski.md (sections 5, 8, 11, 13).
+- Backtest "Every simulator version": data/derived/version_history.json (tools/evalv.js). "Older check" table: data/derived/calibration.json.
+- Forward-test ledger rules: data/predictions/README.md.
+- Scouting text that cites research/*.md shows "our research notes" on the page (app.js scrubPaths).
+- Gaethje's "GAETHJE" upper-back lettering (data/overrides.json) is kept: Bloody Elbow (Feb 28, 2025 profile) and Sportskeeda's tattoo guide both describe it; the likeness sheet's photos never showed his back. Medium confidence (no back photo checked).

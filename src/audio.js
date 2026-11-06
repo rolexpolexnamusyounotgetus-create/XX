@@ -7,6 +7,7 @@
  *   FightAudio.setEnabled(bool)  sound on or off (off by default; remembered per viewer). The AudioContext is created
  *                                on the first user gesture after enabling, as browsers require.
  *   FightAudio.setVolume(x)      master volume 0..1
+ *   FightAudio.unlock()          call from a click: resumes the audio context if sound is on (also done automatically)
  *   FightAudio.state()           { supported, enabled, context, loaded, attached, voices, plays, log }
  *
  * The mix: a stereo crowd bed (one mono loop played twice, half a loop apart, panned wide) whose level and brightness
@@ -441,6 +442,8 @@
     isEnabled: function () { return !!(AC && S.wanted); },
     setVolume: setVolume,
     getVolume: function () { return S.volume; },
+    // the page may call this from its first click; it only wakes sound the viewer has turned on
+    unlock: function () { if (AC) onGesture(); return !!(S.ctx && S.ctx.state === "running"); },
     state: function () {
       return { supported: !!AC, enabled: S.enabled, wanted: S.wanted, context: S.ctx ? S.ctx.state : null, loaded: S.loaded, buffers: Object.keys(S.buf).length,
         attached: !!S.hooks, voices: S.voices, plays: S.plays, level: +S.level.toFixed(3), frozen: S.frozen, log: S.log.slice() };

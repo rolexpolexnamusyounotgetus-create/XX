@@ -601,6 +601,20 @@
     } else if (L.hair) { L.scalpCh = reced ? 2 : 0; L.scalp = 0.55; }
     else if (!L.hair && L.scalp > 0.5) { L.hairMode = "shell"; L.hairLen = 0.5; L.scalpCh = 0; }
     else if (!L.hair) { L.scalpCh = 4; }
+    // a longer top (3 cm and up) over clipped sides: a hair proxy mesh for the top, cut above the temples so
+    // the faded sides stay painted under a short strand shell. render_hints.hair_proxy names the mesh
+    // (e.g. "short02"), render_hints.hair_cut_cm moves the cut (cm above the temple line; "none" keeps the
+    // whole mesh). Shaved, buzzed and cropped heads keep the painted scalp and strand shell alone.
+    var RH = (LK && LK.render_hints) || {}, hp = RH.hair_proxy ? String(RH.hair_proxy).replace(/^hair-/, "") : null;
+    function haveP(id) { return base.man.proxies.some(function (p) { return p.kind + "-" + p.id === id; }); }
+    L.hairCut = null;
+    if (hp && hp !== "none" && haveP("hair-" + hp)) {
+      L.hair = "hair-" + hp;
+      if (RH.hair_cut_cm !== "none") L.hairCut = typeof RH.hair_cut_cm === "number" ? RH.hair_cut_cm / 100 : ((sides != null && sides <= 1.5) || fade ? 0.03 : null);
+    } else if (!hp && L.hairMode === "shell" && top != null && top >= 3 && (sides == null || sides <= 1.5) && haveP("hair-short02")) {
+      L.hair = /curl|coil|wav/.test(txt) && haveP("hair-short01") ? "hair-short01" : "hair-short02"; L.hairCut = 0.03;
+    }
+    if (L.hair && L.hairMode === "shell") L.hairLen = Math.min(L.hairLen, sides != null ? Math.max(0.3, sides) : 1.0);
     // facial hair: undercoat mask, strand length and density
     var ft = lower([FH.type, FH.shape, typeof FH.length_mm === "string" ? FH.length_mm : "", app.facial_hair].join(" "));
     var mm = firstNum(FH.length_mm);
@@ -779,7 +793,7 @@
       self.addProxy(r[1], { map: r[2], roughness: 0.12, eyes: true });
       self.addProxy(r[3], { color: mixHex(looks.beardColor === looks.hairColor ? looks.hairColor : mixHex(looks.hairColor, looks.beardColor, 0.4), "#a07a5c", 0.25), brows: true });
       self.addProxy(r[4], { lashes: true });
-      if (r[5]) self.addProxy(r[5], { color: looks.hairColor, hair: true });
+      if (r[5]) self.addProxy(r[5], { color: looks.hairColor, hair: true, cutY: looks.hairCut != null && self.maskL ? (self.maskL.sideburnR.y + self.maskL.sideburnL.y) / 2 + looks.hairCut : null });
       if (self.cfg.ref) self.makeRefKit(); else self.makeFightKit();
       if (looks.beardShell > 0) self.makeBeardShell(masks);
       if ((!self.cfg.ref || looks.hairMode === "shell") && !self.opts.noStrands) self.makeStrands();
@@ -1160,12 +1174,21 @@
       var a = r[i * 3] * 3, b = r[i * 3 + 1] * 3, c = r[i * 3 + 2] * 3, wa = w[i * 3], wb = w[i * 3 + 1], wc = w[i * 3 + 2];
       for (var k = 0; k < 3; k++) pos[i * 3 + k] = wa * P[a + k] + wb * P[b + k] + wc * P[c + k] + off[i * 3 + k] * s[k];
     }
-    var g = new T.BufferGeometry();
+    var g = new T.BufferGeometry(), index = px.prim.index;
+    if (o.cutY != null) {
+      // fade: keep only the hair above the cut line (the clipped sides and nape are painted and shelled)
+      var kept = [];
+      for (var q = 0; q < index.length; q += 3) {
+        var ya = pos[index[q] * 3 + 1], yb = pos[index[q + 1] * 3 + 1], yc = pos[index[q + 2] * 3 + 1];
+        if (Math.max(ya, yb, yc) > o.cutY && (ya + yb + yc) / 3 > o.cutY - 0.006) kept.push(index[q], index[q + 1], index[q + 2]);
+      }
+      index = new Uint32Array(kept);
+    }
     g.setAttribute("position", new T.BufferAttribute(pos, 3));
     g.setAttribute("uv", new T.BufferAttribute(px.uv, 2));
     g.setAttribute("skinIndex", new T.BufferAttribute(px.joints, 4));
     g.setAttribute("skinWeight", new T.BufferAttribute(px.weights, 4));
-    g.setIndex(new T.BufferAttribute(px.prim.index, 1));
+    g.setIndex(new T.BufferAttribute(index, 1));
     g.computeVertexNormals();
     var mat = new T.MeshStandardMaterial({ map: o.map || px.tex, roughness: o.roughness != null ? o.roughness : (o.hair ? 0.5 : 0.8), metalness: 0, skinning: true,
       side: meta.doubleSided ? T.DoubleSide : T.FrontSide });
