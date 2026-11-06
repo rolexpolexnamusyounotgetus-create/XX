@@ -116,6 +116,31 @@ Career numbers for Volkanovski and Gaethje should match ufcstats: Volkanovski 5.
 absorbed per minute, 34% takedown accuracy, 67% takedown defense; Gaethje 6.29 / 6.83, 27% / 73%.
 A random-entry recomputation of backtest snapshots from raw per-fight vectors matched to rounding.
 
+
+## Engine v4 tooling: train-only priors, judges' fit, standard evaluation
+
+- `python3 tools/build_db.py --priors-until 2024-01-01 --priors-only --priors-out data/derived/priors_dev.json`
+  writes the train-only league priors (fights 2018-01-01..2023-12-31; later fights are dropped right after parsing).
+  `--priors-until` without `--priors-only` restricts the priors inside a full rebuild; the default (no flag) keeps every
+  fight for production.
+- `node tests/test_engine3.js 8000 --fit --write --priors data/derived/priors_dev.json` re-fits the engine's [selfcal]
+  values (global scales, per-division factors) to those train-only priors. It does not touch the judges.
+- `node tools/judgecal.js [--write]` fits the judges' noise and 10-8 rule (sharedSd, sharedFight, indSd, t108, t108kd)
+  by maximum likelihood. It uses the 2019-2023 judges' rounds in data/derived/judgerounds_rows.json and checks the fit
+  with the engine's own `judgeRound`. Writes data/derived/judgecal.json; `--write` rewrites the [judgecal] entries of
+  src/params3.js. About 3 CPU minutes.
+- `python3 tools/mlcal.py tune --spec tools/mlcal_spec_engine4.json --no-val ...` re-tunes the global scales on TRAIN with
+  the learned rates on (hook tools/mlcal_hooks/ml_oof_v4.js passes the out-of-fold rates as `opts.ml`).
+- `node tools/evalv.js --version v<N> [--split train|val] [--sims 300] [--workers 3] [--compare v<M>]` is the standard
+  evaluation of the frozen copy in versions/v<N>/. It is symmetric, uses common random numbers and event-cluster
+  bootstrap CIs, and adds methodround `--score` and the base-rate table. Results go to data/derived/evalv/ and
+  data/derived/version_history.json. A validation run is a single look per version and also runs the blend test,
+  `tools/evalv_blend.py`. `--engine-dir src --dev` evaluates unfrozen code without touching the history.
+  `python3 tools/evalv_blend.py --engine-bt <file> --dry` checks the blend plumbing on train years only (fit 2019-2022,
+  score 2023).
+- `python3 tools/methodround.py --score cells.json --score-from D0 --score-until D1 --score-out out.json --backtest
+  data/derived/backtest_dev.json` adds JSON output and a date window to the method/round yardstick.
+
 ## Adding or overriding a fighter
 
 All hand edits go in `data/overrides.json`, keyed by the fighter's slug from fighters.json. The build

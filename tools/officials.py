@@ -2081,17 +2081,19 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
            "beta": lg["beta"], "w": lg["era_trend_per_decade"], "t_now": round((last_year - 2017) / 10, 2),
            "sigma_shared": lg["sigma_shared"], "home": lg["home"], "p_10_10": lg["p_10_10"],
            "ten_eight": {"c0": lg["ten_eight"]["c0"], "c_now": lg["ten_eight"]["c_by_year"][last_year],
-                         "theta": lg["ten_eight"]["theta"]},
+                         "theta": lg["ten_eight"]["theta"],
+                         "c_by_year": {y: c for y, c in lg["ten_eight"]["c_by_year"].items() if int(y) >= 2015}},
            "kappa": float(th["kappa"]) if STRUCT.get("closeness") else 0.0,
            "kappa_note": "shared-noise sd per round = sigma_shared * exp(-kappa * |core0|), core0 = exp(wV*t)*V + "
                          "exp(wK*t)*K + exp(wG*t)*G (league weights, no home term); kappa < 0: lopsided rounds carry "
                          "more shared noise (heavier tails than logistic-normal)",
            "unknown_judge_sd": J["tau"],
-           "judge_cols": ["name", "n", "v", "p", "g", "c", "sd_n", "sd_v", "sd_p", "sd_g", "sd_c", "cards",
-                          "cards_2022_on"],
-           "judges": {j["key"]: [j["name"]] + [round(j["effects"][q], 4) for q in EFF] +
-                      [round(j["sd"][q], 4) for q in EFF] + [j["cards"], j["cards_2022_on"]]
+           "judge_cols": ["name", "n", "v", "p", "g", "c", "cards", "cards_2022_on"],
+           "judges": {j["key"]: [j["name"]] + [round(j["effects"][q], 4) for q in EFF] + [j["cards"], j["cards_2022_on"]]
                       for j in jt if j["years"] and j["years"][1] >= 2019},
+           "judges_sd_cols": ["sd_n", "sd_v", "sd_p", "sd_g", "sd_c"],
+           "judges_sd": {j["key"]: [round(j["sd"][q], 4) for q in EFF]
+                         for j in jt if j["years"] and j["years"][1] >= 2019},
            "judge_pools": {reg: [[x["key"], x["share"]] for x in pool["judges"]]
                            for reg, pool in J["region_pools"].items()},
            "pool_note": "draw three distinct judges by share; '_other' = a judge not in the table: draw "
@@ -2459,9 +2461,12 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
         fc = ten8_forecast_block(rows, nat, t22["models"]["judges_home" + sfx], [2022, 2023],
                                  test["models"]["judges_home" + sfx], [2024, 2025], ff, by_fid)
         out["judging"]["ten_eight_forecast"] = fc
-        out["engine"]["ten_eight"]["c_2026_forecast"] = fc["engine_c_2026"]
-        out["engine"]["ten_eight"]["forecast_rule"] = fc["rule"] + f" with damp={fc['tuning']['best']['damp']}, " \
-                                                                   f"k={fc['tuning']['best']['k']} (tuned 2022-23)"
+        out["engine"]["ten_eight"]["c_2026"] = fc["engine_c_2026"]
+        out["engine"]["ten_eight"]["c_2026_note"] = (
+            ("damped-trend forecast " if fc["validated"] else "last level (c_now): the damped-trend forecast ") +
+            f"(damp={fc['tuning']['best']['damp']}, k={fc['tuning']['best']['k']}, tuned on 2022-23) " +
+            ("beat the last level on 2024-25" if fc["validated"] else
+             f"lost to it on 2024-25 (card ll {fc['heldout']['diff']['mean']:+.4f} per fight), so it is not used"))
         log(f"10-8 forecast: tuning best {fc['tuning']['best']}; held-out card ll "
             f"{fc['heldout']['card_ll_last_level']:.4f} -> {fc['heldout']['card_ll_forecast']:.4f}")
     except Exception as e:
@@ -2476,6 +2481,31 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
         out["judging"]["agreement"] = {"error": repr(e)}
     out["judging"]["fold_sources"] = dict(FOLD_SOURCES)
     out["meta"]["structure"] = dict(STRUCT)
+    # ---- knobs for the engine (labelled judgment calls, not validated parameters)
+    ag = out["judging"].get("agreement", {})
+    st = out["judging"].get("structure", {})
+    sv22 = st.get("s22", {}).get("lh_close_fight", {}).get("sigma_fight")
+    g25 = ag.get("final_fit_2025", {}).get("grid", {})
+    sh_round = None
+    if g25:
+        xs = sorted(g25, key=float)
+        ys = [g25[x]["round_unanimity_pred"] for x in xs]
+        obs_u = g25[xs[0]]["round_unanimity_obs"]
+        sh_round = float(np.interp(obs_u, ys, [float(x) for x in xs]))
+    out["engine"]["knobs"] = {
+        "panel_sharpness_shift": {
+            "default": 0.0, "range": [0.0, 0.3], "value_2025_round_unanimity": sh_round,
+            "value_2024_2025_split_rate": ag.get("final_fit_2024_2025", {}).get("sharpness_shift_matching_split"),
+            "note": "added to every judge's n (all judges more decisive). 2025 judges agreed more than any earlier year "
+                    "(round unanimity 0.808 vs 0.76-0.80 before; split/majority decisions 15.3% vs 18-27%); nothing "
+                    "before 2025 predicts it, so the default stays 0"},
+        "fight_level_judge_noise_sd": {
+            "default": 0.0, "fit_before_2022": sv22,
+            "note": "one N(0, sd^2) draw per fight added to every round's shared noise; improved 2022-23 but not "
+                    "2024-25 (section 3.2 of research/model_officials.md), so it is off by default"},
+        "home_effect": {"default": 1.0, "note": "multiplier on h (0 turns the home-country effect off)"},
+        "referee_table": {"default": "referees_eb", "alternative": "referees_tuned",
+                          "note": "referees_tuned (less shrinkage) did not improve 2024-25 overall; style knob only"}}
     OUT.write_text(json.dumps(to_jsonable(out), indent=1))
     log(f"wrote {OUT} ({OUT.stat().st_size / 1e3:.0f} KB)")
     with open(CACHE / "post.pkl", "wb") as fh:

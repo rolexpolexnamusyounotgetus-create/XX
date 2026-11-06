@@ -233,3 +233,51 @@ v2 kinds keep their meanings, so the director's v2 mapping still applies.
 - League-average vs league-average reproduces division base rates within tolerances.
 - Knobs move outcomes in the stated direction (more chin knob = more KO losses, and so on).
 - `simulate(trace=true)` and `simulate(trace=false)` produce the same fight for the same seed.
+
+## Engine v4 (Nov 6, 2026)
+
+v4 keeps the v3 contract above (API, trace format, profiles, buckets, summarize) and the file names
+(src/engine3.js, src/params3.js; `FightEngine.VERSION` is "4.0.0"). Frozen copies of every measured version live in
+versions/v<N>/ (engine3.js, params3.js and, from v4, ml/mlrates.js). Three changes:
+
+1. **Learned stat-line rates inside the engine.** `FightEngine.loadMLRates(json)` loads the mlrates model
+   (data/derived/mlrates.json; tools/mlrates.py, research/model_mlrates.md) through src/ml/mlrates.js (`MLRates`,
+   resolved as `self.MLRates` in a browser / worker or `require("./ml/mlrates.js")` in Node). When a model is loaded,
+   `matchup()` builds the v3 tables (`matchupBase()`) and then re-targets them with `MLRates.applyToMatchup` at the
+   engine's own league level: attempts by position and target, accuracy by target and position, KD per landed head
+   strike (and the TKO hazards built on it), takedown attempts and success, control (occupancy refit), submissions and
+   reversals. Knobs still act on top. Options:
+   - `opts.ml === false`: plain base tables (what every v3-style check and the self-calibration use);
+   - `opts.ml = { pred: { A, B, base? } }`: precomputed per-side rates in this call's corner order (leak-free backtests:
+     data/derived/mlrates_oof.json); `base` (league rates of the shrinkage division) is filled in from the matchup's
+     priors when missing;
+   - `opts.mlModel` / `opts.ml = { model }`: another model handle; `opts.mlParts`: adapter parts to switch off.
+   - params `mlWeight` (blend of learned vs base tables, 1 = learned) and `mlMaxRatio` (cap on any multiplier, 4).
+   The matchup carries `mlApplied`, `ml` (targets, ratios) and `mlPred`. No model loaded = base tables (Node default).
+   The page loads the production model; the adapter is part of the engine script, so the tally worker built from that
+   script's text has it, and the page posts the model JSON to the worker (it also receives each matchup with the
+   learned tables already applied).
+2. **Train-only priors.** `tools/build_db.py --priors-until DATE` restricts the live league priors to fights before DATE
+   (default: every fight, production); `--priors-only --priors-out FILE` writes just that file.
+   data/derived/priors_dev.json = fights 2018-01-01..2023-12-31. The `[selfcal]` values (global scales and the per-division
+   factors) were re-fit to it: `node tests/test_engine3.js 8000 --fit --write --priors data/derived/priors_dev.json`.
+   Backtest shrinkage keeps the walk-forward `priors_asof[year]` (data/derived/mlcal_priors_asof.json).
+3. **Judging.** `FightEngine.judgeRound` scores each round. Each judge's z = EM round-winner logit of the
+   differentials, using head 0.179, body 0.133, leg 0.105, KD 2.42, TD 0.286, control 0.46/min and sub attempt 0.85 (all 7,550 ufcstats cards).
+   Engine-only terms are added: hurt 0.8 and judges.power x head x power-weighted damage. Then come shared noise and individual noise.
+   - The shared noise has a fight-level part, `sharedFight`: one draw per fight that persists across rounds.
+   - Fight-level tastes are off (`tasteSd` 0). A judge who dissents twice in a fight does so in either direction equally often.
+   - A judge scores 10-8 when |z| > t108 - t108kd x min(2, winner's KD edge).
+   tools/judgecal.js fits sharedSd, indSd, sharedFight, t108 and t108kd by maximum likelihood. It uses the 2019-2023 rounds in data/derived/judgerounds_rows.json only (train years).
+   - The engine uses the 2021-2023 10-8 threshold, the latest train era.
+   - The engine's sharedSd is reduced by the residual variance of its hurt/power terms.
+   - The fit and its checks are in data/derived/judgecal.json.
+
+**Standard evaluation (from v4 on).** `node tools/evalv.js --version v<N>` evaluates versions/v<N>/ on
+backtest_dev.json. Fights are symmetric (both corner orders averaged), use common random numbers and walk-forward
+priors, and take out-of-fold learned rates when the engine has them.
+- TRAIN = 2019-2023, VALIDATION = 2024-2025.
+- Metrics: winner log loss, Brier, accuracy, ECE, calibration slope, 7-bin and method log loss, and methodround's
+  who x how x when (paired vs model S). Also per-fight stat-line deviance and a base-rate table, all with event-cluster bootstrap CIs.
+- The blend test (tools/evalv_blend.py) refits the MoE stacker with the version's engine probabilities.
+- Validation numbers are computed once per version (`--split val` refuses a second look) and stored in data/derived/version_history.json.

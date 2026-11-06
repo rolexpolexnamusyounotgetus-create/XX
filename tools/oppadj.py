@@ -1124,8 +1124,12 @@ def engine_eval(args):
                "test_2024_2025": (TEST_FROM, VAULT_FROM, args.engine_sims_test)}
     strip = ("pace3", "pace3_w", "kd_absorbed")
     CFG = ("plain", "adj", "ml", "ml_adj")
+    import hashlib
     res_all = {"ml_beta_used": {k: rnd(v, 4) for k, v in ml_beta.items()}, "families_off": off,
-               "factors_sha16": snaps_sha(out["snapshots"])}
+               "factors_sha16": snaps_sha(out["snapshots"]),
+               "engine3_sha16": hashlib.sha256(open(os.path.join(ROOT, "src", "engine3.js"), "rb").read()).hexdigest()[:16],
+               "params3_sha16": hashlib.sha256(open(os.path.join(ROOT, "src", "params3.js"), "rb").read()).hexdigest()[:16],
+               "mlrates_js_sha16": hashlib.sha256(open(os.path.join(ROOT, "src", "ml", "mlrates.js"), "rb").read()).hexdigest()[:16]}
     for per, (lo, hi, N) in periods.items():
         fights = []
         for e in bt["fights"]:
