@@ -3,7 +3,7 @@
   "name": "Mateusz Gamrot",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Active, coming off a loss. Quillan Salkilld submitted him with a rear-naked choke at 4:25 of round 1 in a UFC Fight Night main event in Las Vegas (Aug 8, 2026). Before that he submitted Esteban Ribovics with an arm-triangle at UFC 327 (Apr 11, 2026), and in Oct 2025 Charles Oliveira choked him out in Rio. He is 2-2 in his last four. UFC record 9-5 in fighters.json. No booking, current ranking or injury could be confirmed in this pass (web search was unavailable).",
+    "summary": "Active, coming off a loss. Quillan Salkilld submitted him with a rear-naked choke at 4:25 of round 1 in a UFC Fight Night main event in Las Vegas (Aug 8, 2026). Before that he submitted Esteban Ribovics with an arm-triangle at UFC 327 (Apr 11, 2026), and in Oct 2025 Charles Oliveira choked him out in Rio. He is 2-2 in his last four. UFC record 9-5 in fighters.json. No booking, current ranking or injury could be confirmed: web search was unavailable to the research pass and to the Nov 6, 2026 fact-check, and none of the project's other research files lists one. The Salkilld, Ribovics and Oliveira results were re-checked against fighters.json, the raw bout stats and the Salkilld and Oliveira dossiers' recap accounts.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -50,14 +50,15 @@
     "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json: recency-weighted landed shares are head 0.80 / body 0.13 / leg 0.07 and attempt shares are head 0.87 / body 0.09 / leg 0.04 (career landed 0.77 / 0.14 / 0.10). About a quarter of his recent landed strikes are ground strikes, which these standing weights do not cover. No published punch-by-punch breakdown could be fetched in this pass, so the head group is a generic straight-punch-first spread (with his southpaw listing the 'cross' is the rear left hand), with overhands, uppercuts and head kicks minor. UFC Stats does not split body or leg strikes into punches and kicks, so body weights are near even and calf/inside are split evenly. His landed leg strikes are few (5 of 5 vs Klein, 9 of 9 vs Turner, 14 of 15 vs Holtzman). Spinning is 0: none of his finishes used one. Knee is 0.15 for the ground-knee TKO of Ferreira; elbow is 0.05. These weights are analyst judgment from the bout stats above."
   },
   "appearance": {
-    "build": "stocky, square-built lightweight: 5'10\" with a 70-inch reach (fighters.json)",
+    "build": "lightweight whose reach equals his height: 5'10\" with a 70-inch reach (fighters.json); no written description of his build was found",
     "hair": "unknown (no written description found; photos could not be checked in this pass)",
     "facial_hair": "unknown",
     "skin": "light",
     "tattoos": "none confirmed",
     "kit": "unknown",
     "sources": [
-      "data/derived/fighters.json (height, reach)"
+      "data/derived/fighters.json (height, reach)",
+      "skin: unverified recall of widely published fight photos; not checked against a dated photo (web access unavailable in the research pass and the fact-check)"
     ]
   },
   "engine_notes": [

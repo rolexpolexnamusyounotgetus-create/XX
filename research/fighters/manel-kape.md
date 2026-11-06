@@ -13,8 +13,8 @@ As of 2026-11-06. He/him. Southpaw, 5 ft 5 in, 68 in reach, born 1993-11-14 (age
 
 | Date | Opponent | Result | How |
 |---|---|---|---|
-| 2026-06-20 | Kyoji Horiguchi | W TKO R3 2:42 | Horiguchi controlled the first two rounds (2 takedowns, 4:00 control). In R3 Kape forced phone-booth exchanges, wobbled him with a right hand and finished with ground strikes and an uppercut. Horiguchi protested. |
-| 2025-12-13 | Brandon Royval | W KO R1 3:18 | A right hand dropped Royval and Herb Dean stopped it after ground punches. His fifth UFC KO, which CBS said tied Joseph Benavidez's flyweight record at the time. |
+| 2026-06-20 | Kyoji Horiguchi | W TKO R3 2:42 | Horiguchi controlled R1-R2 (2 takedowns, 4:00 control). In R3 Kape forced phone-booth exchanges, wobbled him with a right hand and finished with ground strikes and an uppercut; Horiguchi protested. |
+| 2025-12-13 | Brandon Royval | W KO R1 3:18 | A right hand dropped Royval and Herb Dean stopped it after ground punches. His fifth UFC KO, reported as tying Joseph Benavidez's flyweight record. |
 | 2025-03-01 | Asu Almabayev | W TKO R3 2:16 | Punches at distance. Almabayev went 0 of 6 on takedowns. |
 | 2024-12-14 | Bruno Silva | W TKO R3 1:57 | 111 of 168 significant strikes, including 22 of 22 to the legs. |
 | 2024-07-27 | Muhammad Mokaev | L UD | 20 of 48 significant strikes; Mokaev landed 3 takedowns. |
@@ -22,7 +22,7 @@ As of 2026-11-06. He/him. Southpaw, 5 ft 5 in, 68 in reach, born 1993-11-14 (age
 
 ## Style breakdown
 
-A southpaw power striker. His finishes come from the lead or counter right hand (Royval, Horiguchi), punches at distance (Silva, Almabayev) and once a flying knee (Ode Osbourne, 2021). 89% of his decayed attempts come at distance. His target split is less head-heavy than most: 77% head, 13% body, 10% legs attempted; 19% body and 16% legs landed. He seldom wrestles (10 takedown attempts in 11 UFC fights) and relies on takedown defense to keep fights standing.
+A southpaw power striker. His finishes come from the lead or counter right hand (Royval, Horiguchi), punches at distance (Silva, Almabayev) and once a flying knee (Ode Osbourne, 2021). 89% of his decayed attempts come at distance. His target split is less head-heavy than most: 77% head, 13% body, 10% legs attempted; 19% body and 16% legs landed. He seldom wrestles (10 takedown attempts in 11 UFC fights) and relies on takedown defense.
 
 ## Strengths
 
@@ -38,11 +38,11 @@ A southpaw power striker. His finishes come from the lead or counter right hand 
 
 ## Durability and cardio
 
-No knockdowns absorbed in 11 UFC fights. He went 15 minutes in all three losses without being finished. In his five-round main events, his round-3 output is 2.6 times round 1 (small sample: the partial third rounds of the Almabayev and Horiguchi fights). He has not yet gone past round 3 in the UFC.
+No knockdowns absorbed in 11 UFC fights. He went the distance in all three losses. In his five-round main events, his round-3 output is 2.6 times round 1 (small sample: the partial third rounds of the Almabayev and Horiguchi fights). He has not yet gone past round 3 in the UFC.
 
 ## What the numbers say
 
-Elo 1651, essentially level with Taira for 3rd-4th among active flyweights and 68 points behind Van. Decayed: 4.38 landed per minute against 3.54 absorbed, 55% accuracy and 56% defense. The engine should read him as a high-variance striker: moderate output, but a high chance of a knockdown in any given exchange.
+Elo 1651, essentially level with Taira for 3rd-4th among active flyweights and 68 points behind Van. Decayed: 4.38 landed per minute against 3.54 absorbed, 55% accuracy and 56% defense. The engine should read him as a high-variance striker: moderate output, high knockdown chance per exchange.
 
 ## Sources
 
