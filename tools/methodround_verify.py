@@ -523,11 +523,67 @@ def part3_4(B=2000, quick=False):
     return out
 
 
+def part5_ablations():
+    """Reproduce the report's 'did not earn a place' claims on the tuning period only (expanding-window CV,
+    validation years 2020-2023; nothing from 2024+ is read). The shipped run() never calls C6GBM, FactorModel or
+    Recalibrator, so these claims were not reproducible from the pipeline."""
+    M = _mr()
+    t0 = time.time()
+    D = M.prepare()
+    T, y, FX, FY = D["T"], D["y"], D["FX"], D["FY"]
+    ch = json.load(open(MR))["meta"]["chosen"]
+    sc = D["stat_cols"]
+    vm = T["year"].isin(M.VALID_YEARS).to_numpy()
+    H = np.zeros((len(T), M.NC_))
+    P = {k: np.zeros((len(T), 6)) for k in ("logit", "lgbm", "factor")}
+    for v in M.VALID_YEARS:
+        trh = ((T["year"] < v) & (T["year"] >= M.HAZ_START)).to_numpy()
+        tr = ((T["year"] < v) & (T["year"] >= 2012)).to_numpy()
+        va = (T["year"] == v).to_numpy()
+        H[va] = M.HazardModel(M.HAZ_COLS, C=ch["C_haz"], C_dec=M.C_DEC).fit(T[trh], FX[trh], FY[trh], y[trh]) \
+            .predict(T[va], FX[va], FY[va])
+        P["logit"][va] = M.C6Logit(sc, C=ch["C6_S"], hl_years=M.HL_YEARS).fit(T[tr], FX[tr], FY[tr], y[tr]) \
+            .predict6(T[va], FX[va], FY[va])
+        P["lgbm"][va] = M.C6GBM(sc, hl_years=M.HL_YEARS).fit(T[tr], FX[tr], FY[tr], y[tr]).predict6(T[va], FX[va], FY[va])
+        P["factor"][va] = M.FactorModel(sc, sc, C_win=0.002, C_meth=0.002, hl_years=M.HL_YEARS) \
+            .fit(T[tr], FX[tr], FY[tr], y[tr]).predict6(T[va], FX[va], FY[va])
+        print("  part 5: fold %d (%.0fs)" % (v, time.time() - t0))
+    # recalibration of the logit OOF, leave-one-validation-year-out
+    c6 = M.cells_to_c6(y)
+    P["logit_recal"] = P["logit"].copy()
+    for v in M.VALID_YEARS:
+        fit_m = vm & (T["year"] != v).to_numpy()
+        va = (T["year"] == v).to_numpy()
+        rc = M.Recalibrator().fit(P["logit"][fit_m], np.where(fit_m, c6, -1)[fit_m])
+        P["logit_recal"][va] = rc.apply(P["logit"][va])
+    P["blend_30pct_lgbm"] = 0.7 * P["logit"] + 0.3 * P["lgbm"]
+    res = {}
+    for k, P6 in P.items():
+        s = M.summarize_losses(M.losses_on(M.joint_from_c6(P6[vm], H[vm], ch["draw_c"]), D, vm))
+        res[k] = {m: round(s[m], 5) for m in ("method3", "joint", "winner", "finish", "bin7")}
+    base = res["logit"]
+    for k in res:
+        res[k]["d_method3_vs_logit"] = round(res[k]["method3"] - base["method3"], 5)
+        res[k]["d_joint_vs_logit"] = round(res[k]["joint"] - base["joint"], 5)
+    res["n_cv_fights"] = int((vm & (y >= 0)).sum())
+    res["seconds"] = round(time.time() - t0, 1)
+    return res
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--score", action="store_true", help="part 1 only")
+    ap.add_argument("--ablations", action="store_true", help="part 5 only (tuning-period ablations), merged into "
+                                                                "the existing output")
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args(argv)
+    if args.ablations:
+        res = json.load(open(OUT)) if os.path.exists(OUT) else {}
+        print("part 5: tuning-period ablations (2020-2023 CV only)")
+        res["part5_ablations"] = part5_ablations()
+        json.dump(res, open(OUT, "w"), indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
+        print("wrote", OUT)
+        return
     res = {"tool": "tools/methodround_verify.py", "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     print("part 1: independent rescoring")
     res["part1_rescoring"] = part1(400 if args.quick else 2000)
