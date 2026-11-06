@@ -257,12 +257,15 @@ Findings from verified research that the next engine versions must use. Each lin
   worse on decision outcome). Opt-in for showing real officials.
 - styles_sos: builder recommends include with SOS on from "wf", style blocks OFF on the learned-rate path
   (they double-count), newcomer off until preufc verified; soft CE -0.0010 [-0.0018, -0.0001], stat lines -0.48%.
-  sosSource "oppadj" gives better stat lines (-0.8 to -3.3%) at +0.0011 soft CE; do not stack the two. Verifier
-  relaunched after the usage cap.
-- realism_sens: include as capability (sensitivity API + realism tool), prediction metrics null; verifier
-  relaunched.
+  sosSource "oppadj" gives better stat lines (-0.8 to -3.3%) at +0.0011 soft CE; do not stack the two.
+  VERIFIED (~20:00 UTC): INCLUDE SOS from "wf" only; style blocks OFF; newcomer sub-flag off. Harnesses pass
+  opts.sos from data/derived/sos_wf.json with the corners swapped for the mirrored order, and use meta.coef for
+  2024-25 (fit <= 2023).
+- realism_sens: VERIFIED (~20:00 UTC): INCLUDE as capability: FightEngine.sensitivity (tornado data, CRN),
+  tools/realism.js, the mlrates cache fix. The division/format factor layer stays OFF (no train gain).
 - dynamics: builder relaunched after the usage cap (use the corrected recipe).
-- preufc (built; verifier relaunched): seeded Elo for newcomers 0.6792 -> 0.6526 on 2024-25 newcomer bouts
+- preufc (VERIFIED 7:55 pm UTC; both gains reproduce with independent code, no leak; plan with the pooled
+  2019-2025 numbers, about 60% of the 2024-25 headline): seeded Elo for newcomers 0.6792 -> 0.6526 on 2024-25 newcomer bouts
   (-0.0266 [-0.0404, -0.0147]); UFC-stat logistic + pre-UFC block -0.0122 [-0.0204, -0.0042]; adds nothing on
   top of the closing line. Use seeded Elo in the blend, the faded pre-UFC block in ML models, and finish-odds
   multipliers as simulator newcomer priors.
