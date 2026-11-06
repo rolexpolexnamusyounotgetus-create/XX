@@ -1648,6 +1648,11 @@ def stitch_and_orient(w1, w2, D, hp, ref_date=dt.date(2019, 1, 1)):
     RA = procrustes(first["A"], ref["A"], wts)
     RD = procrustes(first["D"], ref["D"], wts)
     apply_walk(w2, RA, RD)
+    # chunk 2's fight records index its own quarter list; shift them to the merged list (w1 quarters first).
+    # (Bug fixed Nov 6 2026 pm: without the shift every 2018-2025 fight was scored with the loadings of the
+    # quarter eight years earlier. Not a look-ahead, but it degraded every downstream number.)
+    off = len(w1["quarters"])
+    w2 = dict(w2, fight={fid: [v[0] + off] + list(v[1:]) for fid, v in w2["fight"].items()})
     act = wts >= 1.0
     X1 = np.hstack([ref["A"], ref["D"]])[act]
     X2 = np.hstack([w2["quarters"][0]["A"], w2["quarters"][0]["D"]])[act]
@@ -1762,7 +1767,24 @@ def r4(x, nd=4):
 
 
 # ------------------------------------------------------------------------------------------------ outputs
-AXIS_LABELS = {}          # filled in by hand after reading the loadings (see research/model_embed.md)
+AXIS_LABELS = {           # hand labels after reading the loadings and axis leaders (research/model_embed.md)
+    "o0": "grappling offense: takedowns, control, submissions",
+    "o1": "distance head-strike volume (striker, not a submitter)",
+    "o2": "finishing striker: accuracy and KO power",
+    "o3": "leg-kick volume",
+    "o4": "body-strike volume",
+    "o5": "clinch volume and dirty boxing",
+    "o6": "top-position damage and finishing",
+    "o7": "efficient close-range and leg striking (weak axis)",
+    "d0": "anti-grappling: hard to take down, hold or submit",
+    "d1": "denies distance striking (fights end up on the mat; more reversals against)",
+    "d2": "hard to hit clean or finish",
+    "d3": "keeps fights out of the clinch (eats more leg kicks)",
+    "d4": "opponents rarely shoot on him",
+    "d5": "denies body and leg kicks (weak axis)",
+    "d6": "denies clinch accuracy (weak axis)",
+    "d7": "denies leg-kick accuracy (weak axis)",
+}
 NN_MIN_EXPO = 2.0         # neighbours / axis leaders need a decayed fight count of at least this
 CHECK_PAIRS = [("alexander-volkanovski", "justin-gaethje", "Lightweight", 5),
                ("islam-makhachev", "arman-tsarukyan", "Lightweight", 5),

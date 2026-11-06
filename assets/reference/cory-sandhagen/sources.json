@@ -1,0 +1,92 @@
+[
+  {
+    "file": "ref-espn-headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/4294504.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4294504",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "headshot",
+    "notes": "Official UFC studio headshot, frontal. Main face reference: ginger beard, hazel eyes, forehead lines, ears, hair. Date not stated (2024-25 session, same as stance-left)."
+  },
+  {
+    "file": "ref-espn-stance-left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/4294504.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4294504",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body studio cut-out in the black 2024-25 UFC Venum kit. Physique, chest hair, the anchor tattoo on the right shin and the edge of the inner right biceps tattoo."
+  },
+  {
+    "file": "ref-espn-stance-right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/4294504.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4294504",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body studio cut-out, frontal, older black Venum kit with SAND... lettering (probably 2023). Best view of the inner right biceps bird tattoo and the hanging boxing-glove tattoo on the left shin."
+  },
+  {
+    "file": "commons-2024-12-03-usaf-full.jpg",
+    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1c/UFC%27s_Corey_Sandhagen_brings_his_fighting_spirit_to_the_1st_SOW_%281%29.jpg/1280px-UFC%27s_Corey_Sandhagen_brings_his_fighting_spirit_to_the_1st_SOW_%281%29.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:UFC%27s_Corey_Sandhagen_brings_his_fighting_spirit_to_the_1st_SOW_(1).jpg",
+    "author": "Senior Airman Ty Pilgrim, U.S. Air Force",
+    "license": "Public domain (U.S. federal government work)",
+    "date_taken": "2024-12-03",
+    "use": "embed-ok",
+    "what": "3q",
+    "attribution": "U.S. Air Force photo by Senior Airman Ty Pilgrim (public domain), via Wikimedia Commons",
+    "notes": "Visit to the 1st Special Operations Wing: three-quarter view of his right side, smiling, warm indoor light (underexposed). Very short buzzed hair at the time, beard shape, ear, smile. 1280 px thumbnail of a 5704 px original."
+  },
+  {
+    "file": "commons-2019-01-mmanytt.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/db/Cory_Sandhagen_at_UFC_Fight_Night_143.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Cory_Sandhagen_at_UFC_Fight_Night_143.jpg",
+    "author": "MMAnytt",
+    "license": "CC BY 3.0",
+    "date_taken": "2019-01-19",
+    "use": "embed-ok",
+    "what": "profile",
+    "attribution": "MMAnytt, CC BY 3.0, via Wikimedia Commons",
+    "notes": "Near-profile of his right side at UFC Fight Night 143 media (2019, older). Nose profile (straight bridge, slightly drooping tip), beard projection, ear, forehead slope."
+  },
+  {
+    "file": "ref-cageside-ufc329-mediaday-2026-07.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/07/Cory-Sandhagen.jpg",
+    "page": "https://cagesidepress.com/2026/07/09/cory-sandhagen-says-mario-bautista-has-a-chip-on-his-shoulder-ahead-of-ufc-329/",
+    "author": "Gabriel Gonzalez / Cageside Press",
+    "license": "All rights reserved (Cageside Press)",
+    "date_taken": "2026-07-08",
+    "use": "reference-only",
+    "what": "3q",
+    "notes": "Most recent clear face: UFC 329 media day, slight three-quarter of his right side, even light. Current hair (short sides, longer swept top) and beard length."
+  },
+  {
+    "file": "ref-cageside-ufc329-faceoff-2026-07.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/07/UFC-329-ceremonial-weigh-in-40.jpg",
+    "page": "https://cagesidepress.com/2026/07/11/ufc-329-mario-bautista-picks-up-win-over-hobbled-cory-sandhagen/",
+    "author": "Gabriel Gonzalez / Cageside Press",
+    "license": "All rights reserved (Cageside Press)",
+    "date_taken": "2026-07-10",
+    "use": "reference-only",
+    "what": "profile",
+    "notes": "UFC 329 ceremonial weigh-in face-off with Mario Bautista (same file is in mario-bautista/). Right-side profile of head and torso: nose and beard profile, hair, long cord necklace, and the large black-and-grey tattoo on the right side of his back."
+  },
+  {
+    "file": "ref-zuffa-sandhagen-song-fight-2022-09-17.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2022/09/Song-Sandhagen.jpg",
+    "page": "https://cagesidepress.com/2022/09/17/ufc-vegas-60-cory-sandhagen-vs-song-yadong/",
+    "author": "Chris Unger / Zuffa LLC",
+    "license": "All rights reserved (Zuffa LLC / Getty Images)",
+    "date_taken": "2022-09-17",
+    "use": "reference-only",
+    "what": "action",
+    "notes": "Fight photo vs Song Yadong (older): left jab extended, right glove pressed to the right cheek, chin tucked. Shows the back tattoo wrapping onto the left side of his back as well, so it is a large back piece."
+  }
+]

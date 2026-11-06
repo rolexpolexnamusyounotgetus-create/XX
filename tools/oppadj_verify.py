@@ -62,9 +62,15 @@ def load_out():
         return {"meta": {"tool": "tools/oppadj_verify.py", "reviewed": "tools/oppadj.py"}}
 
 
-def save_out(o):
-    o["meta"]["updated"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
-    B.write_json(OUTF, o)
+def save_out(o, part=None):
+    """Write one part's block, merging with whatever other parts wrote meanwhile (parts run concurrently)."""
+    cur = load_out()
+    if part is None:
+        cur.update({k: v for k, v in o.items() if k != "meta"})
+    else:
+        cur[part] = o[part]
+    cur["meta"]["updated"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    B.write_json(OUTF, cur)
 
 
 def r(x, s=4):
@@ -424,7 +430,7 @@ def part_fresh(args):
                  fv["pct"], fv["fight_cluster_pct_95"], fv["dyadic_robust_pct_95"], fv["pigeonhole_conservative_pct_95"],
                  out["analyst"]["final_vs_engine_pct"]))
         o["fresh"] = res
-        save_out(o)
+        save_out(o, "fresh")
     # placebo: what a leak would look like (fit through the fight's own date) for takedown attempts
     if "tdAtt" in args.families.split(",") and not args.no_placebo:
         y_all, E_all, L_all = family(rows, "tdAtt", gs)
@@ -441,7 +447,7 @@ def part_fresh(args):
         print("placebo", res["placebo_leak_tdAtt"])
     res["runtime_s"] = round(time.time() - t0, 1)
     o["fresh"] = res
-    save_out(o)
+    save_out(o, "fresh")
 
 
 # ====================================================================== part 2: attribution with oppadj's own code
@@ -579,7 +585,7 @@ def part_attrib(args):
             out["comb_exponents"]["test"]["raw_tuned"]["a"], out["comb_exponents"]["test"]["opp_adjusted"]["a"],
             out["oracle_level_test"]["final_vs_engine_pct"], out["oracle_level_test"]["tune_level_final_vs_engine_pct"]))
         o["attrib"] = res
-        save_out(o)
+        save_out(o, "attrib")
 
     # ML stack: does the gain over the ML rates come from the opponent adjustment or from re-tuned/averaged raw
     # rates? Same protocol as oppadj.py (coefficient fit on 2019-2023, scored on 2024-25), x from either source.
@@ -661,7 +667,7 @@ def part_attrib(args):
     res["over_mlrates"] = mlres
     res["runtime_s"] = round(time.time() - t0, 1)
     o["attrib"] = res
-    save_out(o)
+    save_out(o, "attrib")
 
 
 # ====================================================================== part 2b: tune-only family on/off rule
@@ -711,7 +717,7 @@ def part_inner(args):
             res[nm]["inner_rule_on"], res[nm]["validation_rule_on"]))
     o = load_out()
     o["inner_onoff"] = {"note": "hyperparameters re-selected on 2019-2021, scored 2022-2023 (inside tune)", "families": res}
-    save_out(o)
+    save_out(o, "inner_onoff")
 
 
 # ====================================================================== part 3: Volkanovski vs Gaethje division mismatch
@@ -766,7 +772,7 @@ def part_vg(args):
         print(slug, home, {k: v["x_bout_division_correction"] for k, v in cmp_.items()})
     o = load_out()
     o["vg_division"] = out
-    save_out(o)
+    save_out(o, "vg_division")
 
 
 def main():

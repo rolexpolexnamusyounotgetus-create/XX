@@ -1,0 +1,90 @@
+[
+  {
+    "file": "ref-espn-headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/4410868.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4410868",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "headshot",
+    "notes": "Official UFC studio headshot, frontal. Main face reference: brows, nose, deep nasolabial lines, ears, fade, chest script."
+  },
+  {
+    "file": "ref-espn-stance-left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/4410868.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4410868",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body studio cut-out in the blue 2024-25 UFC Venum kit. Physique, chest script, the colour jaguar-headdress tattoo on the right thigh, ram tattoo on the right forearm."
+  },
+  {
+    "file": "ref-espn-stance-right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/4410868.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4410868",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body studio cut-out, frontal, blue kit with red BA... lettering. Best view of the ram-skull forearm tattoo and the thigh piece."
+  },
+  {
+    "file": "ref-cageside-ufc329-faceoff-2026-07.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/07/UFC-329-ceremonial-weigh-in-40.jpg",
+    "page": "https://cagesidepress.com/2026/07/11/ufc-329-mario-bautista-picks-up-win-over-hobbled-cory-sandhagen/",
+    "author": "Gabriel Gonzalez / Cageside Press",
+    "license": "All rights reserved (Cageside Press)",
+    "date_taken": "2026-07-10",
+    "use": "reference-only",
+    "what": "profile",
+    "notes": "UFC 329 ceremonial weigh-in face-off with Cory Sandhagen (same file is in cory-sandhagen/). Left-side profile of head and torso: nose and chin profile, the high-top cut with shaved sides, script on the left forearm."
+  },
+  {
+    "file": "ref-cageside-ufc329-mediaday-2026-07.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/07/Mario-Bautista.jpg",
+    "page": "https://cagesidepress.com/2026/07/09/mario-bautista-says-hes-a-completely-different-fighter-ahead-of-sandhagen-rematch/",
+    "author": "Gabriel Gonzalez / Cageside Press",
+    "license": "All rights reserved (Cageside Press)",
+    "date_taken": "2026-07-08",
+    "use": "reference-only",
+    "what": "3q",
+    "notes": "UFC 329 media day, slight three-quarter of his right side, even light. Current hair, brows, Battle / Born forearm script."
+  },
+  {
+    "file": "ref-cageside-ufc329-postfight-2026-07.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/07/Mario-Bautista1.jpg",
+    "page": "https://cagesidepress.com/2026/07/12/ufc-329-mario-bautista-dark-horse/",
+    "author": "Gabriel Gonzalez / Cageside Press",
+    "license": "All rights reserved (Cageside Press)",
+    "date_taken": "2026-07-11",
+    "use": "reference-only",
+    "what": "headshot",
+    "notes": "Most recent photo: UFC 329 post-fight press conference, frontal, shirtless, bright light. Fresh cuts and swelling around the right eye and brow from the fight (temporary). Forearm script Battle (right) and Born (left), chest and shoulder tattoos."
+  },
+  {
+    "file": "ref-cageside-ufc329-ceremonial-36-2026-07.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/07/UFC-329-ceremonial-weigh-in-36.jpg",
+    "page": "https://cagesidepress.com/2026/07/11/ufc-329-mario-bautista-picks-up-win-over-hobbled-cory-sandhagen/",
+    "author": "Gabriel Gonzalez / Cageside Press",
+    "license": "All rights reserved (Cageside Press)",
+    "date_taken": "2026-07-10",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "UFC 329 ceremonial weigh-in, frontal double-biceps pose at fight weight. Shoulder and arm size, chest script, current hair."
+  },
+  {
+    "file": "ref-zuffa-vegas113-fight-2026-02-07.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/02/BautistaOliveira.jpg",
+    "page": "https://cagesidepress.com/2026/02/07/ufc-vegas-113-mario-bautista-sets-up-slick-sub-of-vinicius-oliveira/",
+    "author": "Chris Unger / Zuffa LLC",
+    "license": "All rights reserved (Zuffa LLC / Getty Images)",
+    "date_taken": "2026-02-07",
+    "use": "reference-only",
+    "what": "action",
+    "notes": "Fight photo vs Vinicius Oliveira: right cross fully extended, left glove tight at the chin, chin down behind the lead shoulder. Shows the 2026 blue kit with red BAUTISTA lettering, the ram forearm tattoo and illustrative tattoos on the left upper chest and shoulder."
+  }
+]

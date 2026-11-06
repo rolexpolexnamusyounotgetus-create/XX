@@ -583,10 +583,10 @@
       L.hair = null; L.hairMode = "paint"; L.scalpCh = horseshoe || reced ? 3 : 4; L.scalp = 0.2;
     } else if ((top != null && top <= 1.3) || (top == null && /buzz|induction|clipper|very short|crew cut/.test(txt))) {
       L.hair = null; L.hairMode = "shell"; L.hairLen = Math.max(0.25, top || 0.6); L.scalpCh = reced ? 2 : (horseshoe ? 3 : (fade ? 1 : 0)); L.scalp = 0.9;
-    } else if (top != null && top <= 2.2 && /fade|taper|crop|crew|short|high and tight|buzz|textured|spiky|tapered/.test(txt) && !/long|ponytail|bun|braid|afro|curly mop|shoulder/.test(txt)) {
-      L.hair = null; L.hairMode = "shell"; L.hairLen = top; L.scalpCh = reced ? 2 : (fade ? 1 : 0); L.scalp = 0.9;
-    } else if (top != null && top <= 6.5 && /fade|taper|crop|crew|short|high and tight|textured|spiky|tapered/.test(txt) && !/long|ponytail|bun|braid|afro|curly mop|shoulder/.test(txt)) {
-      L.hair = /slick|swept back|combed back/.test(txt) ? "hair-short04" : "hair-short02"; L.hairMode = "mesh"; L.scalpCh = fade ? 1 : (reced ? 2 : 0); L.scalp = 0.85;
+    } else if (top != null && top <= 6.5 && /fade|taper|crop|crew|short|high and tight|buzz|textured|spiky|tapered|coil|curl/.test(txt) && !/long|ponytail|bun|braid|afro|mop|shoulder|mullet|fringe/.test(txt)) {
+      // crops and fades: painted hair colour on the scalp under a strand shell; the hair lies down, so the shell
+      // carries at most ~2.6 cm of volume however long the top is
+      L.hair = null; L.hairMode = "shell"; L.hairLen = Math.min(top, 2.6); L.scalpCh = reced ? 2 : (fade ? 1 : 0); L.scalp = 0.95;
     } else if (L.hair) { L.scalpCh = reced ? 2 : 0; L.scalp = 0.55; }
     else if (!L.hair && L.scalp > 0.5) { L.hairMode = "shell"; L.hairLen = 0.5; L.scalpCh = 0; }
     else if (!L.hair) { L.scalpCh = 4; }

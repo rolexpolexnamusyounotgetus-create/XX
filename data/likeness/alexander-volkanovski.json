@@ -220,10 +220,10 @@
     "macro/weightDownM": 0.15,
     "macro/heightDownM": 0.35,
     "macro/proportionsUpM": 0.2,
-    "head/head-oval": 0.5,
-    "head/head-square": 0.2,
+    "head/head-oval": 0.3,
+    "head/head-square": 0.35,
     "head/head-scale-vert-incr": 0.2,
-    "head/head-scale-horiz-decr": 0.15,
+    "head/head-scale-horiz-decr": 0.0,
     "head/head-fat-decr": 0.45,
     "forehead/forehead-scale-vert-incr": 0.3,
     "forehead/forehead-trans-backward": 0.15,
@@ -252,8 +252,8 @@
     "chin/chin-height-incr": 0.1,
     "chin/chin-width-decr": 0.1,
     "chin/chin-bones-incr": 0.15,
-    "cheek/l-cheek-bones-incr": 0.3,
-    "cheek/r-cheek-bones-incr": 0.3,
+    "cheek/l-cheek-bones-incr": 0.45,
+    "cheek/r-cheek-bones-incr": 0.45,
     "cheek/l-cheek-volume-decr": 0.35,
     "cheek/r-cheek-volume-decr": 0.35,
     "neck/neck-scale-horiz-incr": 0.4,
@@ -263,12 +263,17 @@
     "torso/measure-waist-circ-decr": 0.3,
     "torso/measure-hips-circ-decr": 0.15,
     "buttocks/buttocks-volume-incr": 0.1,
-    "ears/l-ear-flap-incr": 0.45,
-    "ears/r-ear-flap-incr": 0.45,
+    "ears/l-ear-flap-incr": 0.7,
+    "ears/r-ear-flap-incr": 0.7,
     "ears/l-ear-scale-incr": 0.2,
     "ears/r-ear-scale-incr": 0.2,
     "ears/l-ear-lobe-incr": 0.1,
-    "ears/r-ear-lobe-incr": 0.1
+    "ears/r-ear-lobe-incr": 0.1,
+    "eyes/l-eye-height1-decr": 0.3,
+    "eyes/r-eye-height1-decr": 0.3,
+    "eyes/l-eye-push1-in": 0.3,
+    "eyes/r-eye-push1-in": 0.3,
+    "community/elvs_flap_ears_2": 0.4
   },
   "morphs_unavailable": {
     "note": "Ear targets are now baked (assets/embed/mh-shapes-x.bin.gz); the values this note recommended (flap 0.45, scale 0.2, lobe 0.1, both sides) moved into morphs on 2026-11-06.",
@@ -292,7 +297,8 @@
       "Beard: noted scattered grey/ash hairs (the earlier text said no grey)",
       "Wig note: identified as his Street Fighter character Joe; bald on Oct 21 and Oct 24",
       "Noted an unconfirmed mark on the inner left calf and a tiny spot on the upper-lip edge, both do-not-render",
-      "sources.json: corrected the page URL for the two UFC 314 Cageside photos and added licence-check notes"
+      "sources.json: corrected the page URL for the two UFC 314 Cageside photos and added licence-check notes",
+      "2026-11-06 avatar pass 2: tuned with tests/likeness_compare.js against espn_headshot.png (front): head no longer narrowed, wider cheekbones, deeper-set eyes (eye-push1-in, eye-height1-decr), ears stand out further (ear-flap 0.7 plus community elvs_flap_ears_2 0.4)."
     ]
   }
 }

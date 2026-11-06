@@ -1342,7 +1342,7 @@ PREUFC = os.path.join(ROOT, "data", "derived", "preufc.json")
 # debuts on or after PRE_FROM, where its presence is outcome-independent; older debuts keep the age-only prior.
 PRE_ON = True
 PRE_FROM = dt.date(2015, 1, 1).toordinal()
-PRE_FEATS = ["win share (shrunk) - 0.8", "log1p(non-UFC pro fights) - 2.4", "Sherdog-network Elo: (net_elo - 1600)/100",
+PRE_FEATS = ["win share (shrunk) - 0.8", "log1p(non-UFC pro fights) - 2.4", "strict Sherdog-network Elo: (net_elo_h - 1600)/100",
              "Contender Series win - 0.28", "feeder promotion graduates' UFC win rate: (promo_grad - 0.5) x 10",
              "log1p(non-UFC wins over opponents with UFC experience)", "feeder promotion volume: promo_feed - 2.5"]
 PRE_KEYS = ["pre_wp", "pre_n", "pre_net", "pre_dwcs", "pre_grad", "pre_oppufc", "pre_feed"]
@@ -1366,6 +1366,11 @@ def attach_preufc(D):
     ci = {c: k for k, c in enumerate(cols)}
     slug2p = {s: k for k, s in enumerate(D.slug)}
     hit = 0
+    # strict walk-forward network Elo (tools/preufc.py StrictNetwork: a bout in year Y rates opponents only in the
+    # pages of debutants who reached the UFC before Jan 1 of Y); net_elo uses every cached page, whose selection
+    # depends on who reached the UFC later, so it is used only when the strict column is missing
+    NET = "net_elo_h" if "net_elo_h" in ci else "net_elo"
+    D.pre_net_col = NET
 
     def g(row, c, default=0.0):
         v = row[ci[c]] if c in ci else None
@@ -1383,7 +1388,7 @@ def attach_preufc(D):
                 continue
             w, n = g(row, "w"), g(row, "n")
             D.pre[i, side] = ((w + 1.4) / (n + 2.0) - 0.8, math.log1p(n) - 2.4,
-                              (g(row, "net_elo", 1600.0) - 1600.0) / 100.0,
+                              (g(row, NET, 1600.0) - 1600.0) / 100.0,
                               (1.0 if g(row, "dwcs_w") > 0 else 0.0) - 0.28,
                               (g(row, "promo_grad", 0.5) - 0.5) * 10.0,
                               math.log1p(g(row, "opp_ufc_w")),
@@ -1406,7 +1411,7 @@ def newcomer_i(D, P, i, side, age):
 # =====================================================================================================
 def prepare(D, log=print):
     attach_preufc(D)
-    log("pre-UFC snapshots attached: %d fighter-bouts" % D.pre_cov)
+    log("pre-UFC snapshots attached: %d fighter-bouts (network Elo column %s)" % (D.pre_cov, getattr(D, "pre_net_col", None)))
     beta, ncards, nrows = fit_round_model(D, TUNE_FROM)
     D.round_beta = beta
     agree = build_round_outcomes(D, beta)
@@ -2215,6 +2220,8 @@ def main():
             "preufc_rule": "pre-UFC newcomer prior applied only to UFC debuts on or after 2015-01-01 (complete, "
                            "outcome-independent Sherdog coverage); older debuts use the age-only prior",
             "round_model": D.round_fit, "preufc_coverage_fighter_bouts": int(D.pre_cov),
+            "preufc_features": PRE_FEATS, "preufc_network_elo_column": getattr(D, "pre_net_col", None),
+            "preufc_file_built": (json.load(open(PREUFC))["meta"].get("built") if os.path.exists(PREUFC) else None),
             "best_single_by_tuning": best, "ranking_by_tuning": singles_rank,
             "ranking_scores_2020_2023": {k: r5(v, 5) for k, v in rank_score.items()},
             "stack_cv_2020_2023": r5(cur, 5),

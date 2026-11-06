@@ -875,6 +875,463 @@ def tune_trees(T, X, y, cols, args):
 STAGES["cv"] = stage_cv
 
 
+# ====================================================================== stage: fit (OOF, static, rolling)
+LGB_SEEDS = [1, 2, 3, 4, 5]
+XGB_SEEDS = [1, 2, 3]
+LR_OOF_YEARS = list(range(2012, 2024))       # LR: annual expanding refits (feeds the method model too)
+TREE_OOF_YEARS = list(range(2019, 2024))
+
+
+def month_starts():
+    out = []
+    for y in (2024, 2025):
+        for m in range(1, 13):
+            out.append(dt.date(y, m, 1))
+    return out
+
+
+def windows():
+    """(name, train_until (exclusive date), predict mask builder) for every refit."""
+    W = []
+    for Y in LR_OOF_YEARS:
+        W.append(("oof%d" % Y, dt.date(Y, 1, 1), (dt.date(Y, 1, 1), dt.date(Y + 1, 1, 1)), "oof"))
+    W.append(("static", dt.date(2024, 1, 1), (dt.date(2024, 1, 1), dt.date(2026, 1, 1)), "static"))
+    ms = month_starts()
+    for k, d in enumerate(ms):
+        nxt = ms[k + 1] if k + 1 < len(ms) else dt.date(2026, 1, 1)
+        W.append(("roll%s" % d.isoformat()[:7], d, (d, nxt), "roll"))
+    return W
+
+
+def train_mask(T, until, lrcfg):
+    m = T["dec"].to_numpy() & (T["date"] < until).to_numpy()
+    if lrcfg.get("train_set") == "both_exp":
+        m &= T["both_exp"].to_numpy()
+    if lrcfg.get("since"):
+        m &= (T["year"] >= lrcfg["since"]).to_numpy()
+    return m
+
+
+def _fit_job(job):
+    kind, seed, wname, until, (d0, d1) = job
+    T, X, y, C = _G["T"], _G["X"], _G["y"], _G["C"]
+    tr = train_mask(T, until, C["lr"])
+    te = ((T["date"] >= d0) & (T["date"] < d1)).to_numpy()
+    if te.sum() == 0:
+        return (kind, seed, wname, np.array([], int), np.array([]), None)
+    yrs = T["year"].to_numpy()
+    ref = until.year if until.month == 1 else until.year + until.month / 12.0
+    if kind in ("lr", "lr_base"):
+        cols = C["lr"]["cols"] if kind == "lr" else _G["base_cols"]
+        lam = C["lr"]["lam"] if kind == "lr" else C["base"]["lam"]
+        rec = C["lr"].get("rec") if kind == "lr" else None
+        Xc = X[cols].to_numpy(float)
+        m = M.LRModel(lam, rec).fit(Xc[tr], y[tr], yrs[tr], ref)
+        p = m.predict(Xc[te])
+        return (kind, seed, wname, np.flatnonzero(te), p, m.coef)
+    G0, G1 = _G["G0"], _G["G1"]
+    tc = C["trees"][kind]
+    if kind == "lgb":
+        m = lgb_train(tc["cfg"], G0[tr], G1[tr], y[tr], tc["rounds"], seed, tc["mono"])
+        p = lgb_predict(m, G0[te], G1[te])
+    else:
+        m = xgb_train(tc["cfg"], G0[tr], G1[tr], y[tr], tc["rounds"], seed, tc["mono"])
+        p = xgb_predict(m, G0[te], G1[te])
+    return (kind, seed, wname, np.flatnonzero(te), p, None)
+
+
+def nonneg_blend(Z, y, lam=1e-3):
+    return M.fit_lr(Z, y, lam, nonneg=True)
+
+
+def stage_fit(args):
+    S = load_table()
+    T = S["df"]
+    C = json.load(open(os.path.join(CACHE, "cv.json")))
+    pm = C["pre_means"]
+    X = superset_matrix(T, pm)
+    y = T["y"].fillna(0.5).to_numpy(float)
+    G0, G1 = tree_mats(T, X, C["lr"]["cols"])
+    _G.update(T=T, X=X, y=y, C=C, G0=G0, G1=G1, base_cols=block_cols(X, [], None))
+    jobs = []
+    for wname, until, rng, kind_w in windows():
+        jobs.append(("lr", 0, wname, until, rng))
+        jobs.append(("lr_base", 0, wname, until, rng))
+        if kind_w == "oof" and until.year not in TREE_OOF_YEARS:
+            continue
+        for sd in LGB_SEEDS:
+            jobs.append(("lgb", sd, wname, until, rng))
+        for sd in XGB_SEEDS:
+            jobs.append(("xgb", sd, wname, until, rng))
+    log("fit: %d jobs" % len(jobs))
+    t0 = time.time()
+    res = run_jobs(_fit_job, jobs, args.jobs)
+    log("fit jobs done in %.0f s" % (time.time() - t0))
+    n = len(T)
+    P = {}
+    coefs = {}
+    for kind, seed, wname, idx, p, coef in res:
+        scheme = "oof" if wname.startswith("oof") else ("static" if wname == "static" else "roll")
+        key = (kind, scheme)
+        if key not in P:
+            P[key] = {}
+        acc = P[key].setdefault(seed, np.full(n, np.nan))
+        acc[idx] = p
+        if coef is not None:
+            coefs[(kind, wname)] = coef
+    preds = {}
+    for (kind, scheme), bys in P.items():
+        arr = np.vstack(list(bys.values()))
+        if kind in ("lgb", "xgb"):        # seed ensemble: average in logit space
+            preds[(kind, scheme)] = sig(np.nanmean(logit(arr, 1e-6), axis=0))
+        else:
+            preds[(kind, scheme)] = arr[0]
+        if kind in ("lgb", "xgb"):
+            preds[(kind + "_seed1", scheme)] = arr[0]
+    # blend weights on OOF 2019-2023 backtest rows (non-negative logit weights, no intercept)
+    ev = T["evalrow"].to_numpy()
+    yr = T["year"].to_numpy()
+    oo = ev & (yr >= 2019) & (yr <= 2023)
+    Z = np.c_[[logit(preds[(k, "oof")][oo], 1e-6) for k in ("lr", "lgb", "xgb")]].T
+    w = nonneg_blend(Z, y[oo])
+    log("blend weights lr/lgb/xgb on OOF 2019-2023: %s" % np.round(w, 3))
+    # leave-one-year-out check of the blend inside 2019-2023
+    loyo = []
+    for Y in range(2019, 2024):
+        a = oo & (yr != Y)
+        b = oo & (yr == Y)
+        Za = np.c_[[logit(preds[(k, "oof")][a], 1e-6) for k in ("lr", "lgb", "xgb")]].T
+        Zb = np.c_[[logit(preds[(k, "oof")][b], 1e-6) for k in ("lr", "lgb", "xgb")]].T
+        wy = nonneg_blend(Za, y[a])
+        loyo.append(ll(sig(Zb @ wy), y[b]) * b.sum())
+    blend_loyo = sum(loyo) / oo.sum()
+    for scheme in ("oof", "static", "roll"):
+        if (scheme == "oof"):
+            Zs = np.c_[[logit(np.nan_to_num(preds[(k, scheme)], nan=0.5), 1e-6) for k in ("lr", "lgb", "xgb")]].T
+        else:
+            Zs = np.c_[[logit(preds[(k, scheme)], 1e-6) for k in ("lr", "lgb", "xgb")]].T
+        b = sig(Zs @ w)
+        if scheme == "oof":
+            b[np.isnan(preds[("lgb", "oof")])] = np.nan
+        preds[("blend", scheme)] = b
+    F = {"preds": {"%s|%s" % k: v for k, v in preds.items()}, "blend_w": w.tolist(), "blend_loyo": blend_loyo,
+         "coefs": {"%s|%s" % k: v for k, v in coefs.items()}, "fid": T["fid"].tolist()}
+    pickle.dump(F, open(os.path.join(CACHE, "fit.pkl"), "wb"))
+    quick_report(T, F)
+
+
+def quick_report(T, F):
+    ev = T["evalrow"].to_numpy()
+    yr = T["year"].to_numpy()
+    y = T["y"].to_numpy(float)
+    oo = ev & (yr >= 2019) & (yr <= 2023)
+    va = ev & (yr >= 2024) & (yr <= 2025)
+    for k in ("lr_base|oof", "lr|oof", "lgb|oof", "xgb|oof", "blend|oof"):
+        p = F["preds"][k]
+        log("OOF 2019-23 %-12s %.5f" % (k, ll(p[oo], y[oo])))
+    for k in sorted(F["preds"]):
+        if k.endswith("static") or k.endswith("roll"):
+            p = F["preds"][k]
+            log("2024-25 %-18s %.5f  acc %.3f" % (k, ll(p[va], y[va]), metrics(p[va], y[va])["accuracy"]))
+
+
+STAGES["fit"] = stage_fit
+
+
+# ====================================================================== stage: stage2 (2019+-only sources on top)
+def late_blocks(T, late):
+    """Antisymmetric terms from the sources that exist only for 2019+ backtest fights. NaN where absent."""
+    n = len(T)
+    out = {}
+    fids = T["fid"].tolist()
+    du = np.full((n, 3), np.nan)
+    oa = np.full((n, 14), np.nan)
+    ml = np.full((n, 5), np.nan)
+    ms = np.full((n, 2), np.nan)
+    for i, f in enumerate(fids):
+        e = late.get(f)
+        if not e:
+            continue
+        if "du" in e:
+            cA, pA, cB, pB, kA, kB = e["du"]
+            du[i] = (cA - cB, pA - pB, kA - kB)
+        if "oa" in e:
+            oa[i] = np.array(e["oa"][0]) - np.array(e["oa"][1])
+        if "mlr" in e:
+            v = []
+            for side in (0, 1):
+                r = dict(zip(["d_att", "c_att", "g_att", "h_att", "b_att", "l_att", "td_att", "sub_att", "rev", "ctrl",
+                              "acc_h", "acc_b", "acc_l", "acc_d", "acc_c", "acc_g", "td_acc", "kd_h"], e["mlr"][side]))
+                land = r["h_att"] * r["acc_h"] + r["b_att"] * r["acc_b"] + r["l_att"] * r["acc_l"]
+                v.append([math.log(land + 1e-3), math.log(r["h_att"] * r["acc_h"] * r["kd_h"] + 1e-4),
+                          math.log(r["td_att"] * r["td_acc"] + 1e-3), math.log(r["ctrl"] + 1e-2),
+                          math.log(r["sub_att"] + 1e-3)])
+            ml[i] = np.array(v[0]) - np.array(v[1])
+        if "mr_s" in e:
+            pa, pb, pfin, pko, psub = e["mr_s"]
+            ms[i] = (float(logit(pa / (pa + pb), 1e-4)), 0.0)
+    out["du"] = pd.DataFrame(du, columns=["du_chin", "du_pow", "du_kdp"], index=T.index)
+    out["oa"] = pd.DataFrame(oa, columns=["oa_" + k for k in ["dAtt", "dAttAg", "tdAtt", "tdAttAg", "tdAcc",
+                             "tdAccAg", "ctrl", "octrl", "sub", "subAg", "pow", "chin", "acc", "accAg"]], index=T.index)
+    out["mlr"] = pd.DataFrame(ml, columns=["mlr_land", "mlr_kd", "mlr_td", "mlr_ctrl", "mlr_sub"], index=T.index)
+    out["mrs"] = pd.DataFrame(ms[:, :1], columns=["mrs_z"], index=T.index)
+    return out
+
+
+def resid_fit(z, Xe, y, lam, sw=None):
+    """No-intercept logistic on [z, Xe] with L2 on the Xe coefficients only (standardised), z unpenalised."""
+    from scipy.optimize import minimize
+    Xs = Xe / (Xe.std(0) + 1e-9) if Xe.shape[1] else Xe
+    s = Xe.std(0) + 1e-9 if Xe.shape[1] else np.ones(0)
+    A = np.c_[z, Xs]
+    sw = np.ones(len(y)) / len(y) if sw is None else sw / sw.sum()
+
+    def f(w):
+        q = A @ w
+        p = sig(q)
+        reg = 0.5 * lam * (w[1:] @ w[1:])
+        g = A.T @ (sw * (p - y))
+        g[1:] += lam * w[1:]
+        return np.sum(sw * (np.logaddexp(0, q) - y * q)) + reg, g
+    from scipy.optimize import minimize as _m
+    r = _m(f, np.r_[1.0, np.zeros(A.shape[1] - 1)], jac=True, method="L-BFGS-B")
+    return np.r_[r.x[0], r.x[1:] / s]
+
+
+def stage_stage2(args):
+    S = load_table()
+    T = S["df"]
+    F = pickle.load(open(os.path.join(CACHE, "fit.pkl"), "rb"))
+    L = late_blocks(T, S["late"])
+    ev = T["evalrow"].to_numpy()
+    yr = T["year"].to_numpy()
+    y = T["y"].to_numpy(float)
+    z = {sch: logit(F["preds"]["blend|" + sch], 1e-6) for sch in ("oof", "static", "roll")}
+    R = {}
+    base_rows = ev & (yr >= 2019) & (yr <= 2023)
+    combos = {"du": ["du"], "oa": ["oa"], "mlr": ["mlr"], "mrs": ["mrs"], "du+mlr": ["du", "mlr"],
+              "all four": ["du", "oa", "mlr", "mrs"]}
+    for name, bl in combos.items():
+        Xe = pd.concat([L[b] for b in bl], axis=1)
+        okc = Xe.notna().all(1).to_numpy()
+        rows = base_rows & okc
+        best = None
+        for lam in (0.003, 0.01, 0.03, 0.1, 0.3):
+            tot0 = tot1 = nn = 0.0
+            for Y in (2021, 2022, 2023):
+                tr = rows & (yr < Y)
+                te = rows & (yr == Y)
+                w0 = resid_fit(z["oof"][tr], np.zeros((tr.sum(), 0)), y[tr], lam)
+                w1 = resid_fit(z["oof"][tr], Xe.to_numpy(float)[tr], y[tr], lam)
+                p0 = sig(z["oof"][te] * w0[0])
+                p1 = sig(np.c_[z["oof"][te], Xe.to_numpy(float)[te]] @ w1)
+                tot0 += ll(p0, y[te]) * te.sum()
+                tot1 += ll(p1, y[te]) * te.sum()
+                nn += te.sum()
+            r = {"lam": lam, "cv_ml2_only": round(tot0 / nn, 5), "cv_with": round(tot1 / nn, 5),
+                 "gain": round((tot1 - tot0) / nn, 5), "n": int(nn)}
+            if best is None or r["cv_with"] < best["cv_with"]:
+                best = r
+        # one look at 2024-25 (static: fit 2019-2023), reported whatever the CV says
+        tr = rows
+        vrows = ev & (yr >= 2024) & (yr <= 2025) & okc
+        w1 = resid_fit(z["oof"][tr], Xe.to_numpy(float)[tr], y[tr], best["lam"])
+        w0 = resid_fit(z["oof"][tr], np.zeros((tr.sum(), 0)), y[tr], best["lam"])
+        p1 = sig(np.c_[z["static"][vrows], Xe.to_numpy(float)[vrows]] @ w1)
+        p0 = sig(z["static"][vrows] * w0[0])
+        cmpv = compare(p1, p0, y[vrows], T["event"].to_numpy()[vrows], 1000)
+        best.update({"valid_static": cmpv, "coef": dict(zip(["z_ml2"] + list(Xe.columns), np.round(w1, 4).tolist())),
+                     "adopt": best["gain"] < -SEL_MIN})
+        R[name] = best
+        log("stage2 %-9s CV gain %+.5f (lam %s) adopt=%s | 2024-25 %+.5f %s" % (name, best["gain"], best["lam"],
+            best["adopt"], cmpv["diff"], cmpv["diff_ci"]))
+    json.dump(R, open(os.path.join(CACHE, "stage2.json"), "w"), indent=1, default=float)
+
+
+STAGES["stage2"] = stage_stage2
+
+
+# ====================================================================== stage: stack
+def expert_table(T, F):
+    """Per backtest fight 2019-2025: every stack input as P(A wins), OOF for 2019-2023, static and rolling for
+    2024-2025 where the expert has a rolling version."""
+    ids = T["fid"].tolist()
+    idx = {f: i for i, f in enumerate(ids)}
+    mlj = dev_only(jload("ml.json")["fights"])
+    mk = dev_only(jload("market.json")["fights"])
+    eng = jload("moe_engine_bt.json")["fights"]
+    E = pickle.load(open(os.path.join(ROOT, "out", "moe_cache", "experts.pkl"), "rb"))
+    ev = T["evalrow"].to_numpy() & (T["year"] >= 2019).to_numpy() & (T["year"] <= 2025).to_numpy()
+    rows = np.flatnonzero(ev)
+    D = pd.DataFrame({"fid": [ids[i] for i in rows]})
+    D["i"] = rows
+    D["date"] = T["date"].to_numpy()[rows]
+    D["year"] = T["year"].to_numpy()[rows]
+    D["event"] = T["event"].to_numpy()[rows]
+    D["y"] = T["y"].to_numpy()[rows]
+    g = lambda d, k: [d.get(f, {}).get(k, np.nan) if d.get(f, {}).get(k) is not None else np.nan for f in D["fid"]]
+    D["market"] = g(mk, "p_power_close")
+    D["market_mult"] = g(mk, "p_novig_close")
+    D["open"] = g(mk, "p_novig_open")
+    D["mkt_rating"] = g(mk, "p_market_rating")
+    D["ml"] = g(mlj, "lr")
+    D["ml_roll"] = [mlj.get(f, {}).get("lr_refit", mlj.get(f, {}).get("lr")) for f in D["fid"]]
+    D["ml_stack"] = g(mlj, "stack")
+    D["elo_sig"] = g(mlj, "elo_sig")
+    D["elo"] = g(mlj, "elo")
+    D["engine"] = [(eng[f]["pA"] / (eng[f]["pA"] + eng[f]["pB"])) if f in eng else np.nan for f in D["fid"]]
+    eidx = {f: k for k, f in enumerate(E["ids"])}
+    fl_static = E["pred_static"]["feat_lr"]
+    fl_roll = E["pred"]["feat_lr"]
+    D["feat_lr"] = [fl_static[eidx[f]] if f in eidx else np.nan for f in D["fid"]]
+    D["feat_lr_roll"] = [fl_roll[eidx[f]] if f in eidx else np.nan for f in D["fid"]]
+    for sch in ("static", "roll"):
+        D["ml2_" + sch] = F["preds"]["blend|" + ("oof" if sch == "static" else sch)][rows]
+        D["ml2lr_" + sch] = F["preds"]["lr|" + ("oof" if sch == "static" else sch)][rows]
+        va = (D["year"] >= 2024).to_numpy()
+        D.loc[va, "ml2_" + sch] = F["preds"]["blend|" + sch][rows][va]
+        D.loc[va, "ml2lr_" + sch] = F["preds"]["lr|" + sch][rows][va]
+    D["nA"] = T["nA"].to_numpy()[rows]
+    D["nB"] = T["nB"].to_numpy()[rows]
+    D["division"] = T["division"].to_numpy()[rows]
+    D["five"] = T["five"].to_numpy()[rows]
+    D["women"] = T["women"].to_numpy()[rows]
+    D["lbs"] = T["lbs"].to_numpy()[rows]
+    return D
+
+
+def stack_fit(Z, y, w=None):
+    """Non-negative logit weights, no intercept (moe 'linear'); Z: n x k logits (0 where an expert is absent)."""
+    from scipy.optimize import minimize
+    n, k = Z.shape
+    w = np.ones(n) if w is None else w
+    w = w / w.sum()
+
+    def f(b):
+        q = Z @ b
+        p = sig(q)
+        return np.sum(w * (np.logaddexp(0, q) - y * q)) + 1e-4 * b @ b, Z.T @ (w * (p - y)) + 2e-4 * b
+    r = minimize(f, np.full(k, 0.3), jac=True, method="L-BFGS-B", bounds=[(0, None)] * k)
+    return r.x
+
+
+def zmat(D, cols, pclip=0.01):
+    return np.c_[[np.nan_to_num(logit(np.clip(D[c].to_numpy(float), pclip, 1 - pclip), 1e-6)) for c in cols]].T
+
+
+def rec_w(years, ref, h):
+    return np.ones(len(years)) if not h else 0.5 ** ((ref - np.asarray(years, float)) / h)
+
+
+STACKS = {
+    "line": {
+        "current": ["market", "mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo"],
+        "current+ml2": ["market", "mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo", "ml2"],
+        "market+ml2": ["market", "ml2"],
+        "market+ml2+mkt_rating+feat_lr": ["market", "ml2", "mkt_rating", "feat_lr"],
+    },
+    "noline": {
+        "current": ["mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo"],
+        "current+ml2": ["mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo", "ml2"],
+        "ml2 alone": ["ml2"],
+        "ml2+mkt_rating+feat_lr": ["ml2", "mkt_rating", "feat_lr"],
+    },
+}
+
+
+def col_for(c, scheme):
+    if c == "ml2":
+        return "ml2_" + scheme
+    if scheme == "roll" and c in ("ml", "feat_lr"):
+        return c + "_roll"
+    return c
+
+
+def stack_predict(D, cols, scheme, h, fit_until_year, pred_mask, rows_ok):
+    """Fit the stack on OOF/rolling-history rows with year <= fit_until_year, predict pred_mask."""
+    cc = [col_for(c, scheme if scheme == "roll" else "static") for c in cols]
+    tr = rows_ok & (D["year"] <= fit_until_year).to_numpy() & (D["year"] >= 2019).to_numpy()
+    Z = zmat(D, cc)
+    b = stack_fit(Z[tr], D["y"].to_numpy(float)[tr], rec_w(D["year"].to_numpy()[tr], fit_until_year + 1, h))
+    return sig(Z[pred_mask] @ b), b
+
+
+def stage_stack(args):
+    S = load_table()
+    T = S["df"]
+    F = pickle.load(open(os.path.join(CACHE, "fit.pkl"), "rb"))
+    D = expert_table(T, F)
+    y = D["y"].to_numpy(float)
+    yr = D["year"].to_numpy()
+    has_line = D["market"].notna().to_numpy()
+    R = {"cv": {}, "valid": {}, "weights": {}, "segments": {}}
+    out_preds = {}
+    for regime, sets in STACKS.items():
+        rows_ok = has_line if regime == "line" else np.ones(len(D), bool)
+        for name, cols in sets.items():
+            # forward-chained CV inside 2019-2023 for the recency half-life
+            cvs = {}
+            for h in (None, 3.0, 1.5):
+                tot = nn = 0.0
+                for Y in (2021, 2022, 2023):
+                    m = rows_ok & (yr == Y)
+                    p, _ = stack_predict(D, cols, "static", h, Y - 1, m, rows_ok)
+                    tot += ll(p, y[m]) * m.sum()
+                    nn += m.sum()
+                cvs[str(h)] = round(tot / nn, 5)
+            hbest = min(cvs, key=lambda k: cvs[k] + (0 if k == "None" else SEL_MIN))
+            h = None if hbest == "None" else float(hbest)
+            va = rows_ok & (yr >= 2024) & (yr <= 2025)
+            p_st, b = stack_predict(D, cols, "static", h, 2023, va, rows_ok)
+            # rolling: experts' rolling predictions; stack refit each January (2025 from <= 2024)
+            p_ro = np.full(len(D), np.nan)
+            for Y in (2024, 2025):
+                m = rows_ok & (yr == Y)
+                pp, _ = stack_predict(D, cols, "roll", h, Y - 1, m, rows_ok)
+                p_ro[m] = pp
+            key = "%s|%s" % (regime, name)
+            full_st = np.full(len(D), np.nan)
+            full_st[va] = p_st
+            out_preds[key + "|static"] = full_st
+            out_preds[key + "|roll"] = p_ro
+            R["cv"][key] = {"by_h": cvs, "chosen_h": h}
+            R["weights"][key] = dict(zip(cols, np.round(b, 4).tolist()))
+            R["valid"][key] = {"static": metrics(p_st, y[va]), "roll": metrics(p_ro[va], y[va])}
+            log("%-6s %-32s CV %.5f (h %s) | 2024-25 static %.5f roll %.5f | w %s" % (
+                regime, name, cvs[hbest], h, ll(p_st, y[va]), ll(p_ro[va], y[va]), np.round(b, 3)))
+    # paired comparisons
+    cmpd = {}
+    va_all = (yr >= 2024) & (yr <= 2025)
+    ev_grp = D["event"].to_numpy()
+    for regime in ("line", "noline"):
+        rows_ok = has_line if regime == "line" else np.ones(len(D), bool)
+        va = rows_ok & va_all
+        for sch in ("static", "roll"):
+            new = out_preds["%s|current+ml2|%s" % (regime, sch)][va]
+            cur = out_preds["%s|current|%s" % (regime, sch)][va]
+            cmpd["%s|%s|current+ml2 vs current" % (regime, sch)] = compare(new, cur, y[va], ev_grp[va])
+            mk = has_line & va_all
+            if regime == "noline":
+                vv = mk[va]
+                cmpd["%s|%s|current+ml2 vs close" % (regime, sch)] = compare(new[vv], D["market"].to_numpy()[va][vv],
+                                                                             y[va][vv], ev_grp[va][vv])
+                cmpd["%s|%s|current vs close" % (regime, sch)] = compare(cur[vv], D["market"].to_numpy()[va][vv],
+                                                                         y[va][vv], ev_grp[va][vv])
+            else:
+                cmpd["%s|%s|current+ml2 vs close" % (regime, sch)] = compare(new, D["market"].to_numpy()[va], y[va],
+                                                                             ev_grp[va])
+                cmpd["%s|%s|current vs close" % (regime, sch)] = compare(cur, D["market"].to_numpy()[va], y[va],
+                                                                         ev_grp[va])
+    for k, v in cmpd.items():
+        log("%-42s a %.5f b %.5f diff %+.5f %s" % (k, v["a"], v["b"], v["diff"], v["diff_ci"]))
+    R["paired"] = cmpd
+    pickle.dump({"D": D, "preds": out_preds}, open(os.path.join(CACHE, "stack.pkl"), "wb"))
+    json.dump(R, open(os.path.join(CACHE, "stack.json"), "w"), indent=1, default=float)
+
+
+STAGES["stack"] = stage_stack
+
+
 # ====================================================================== main
 STAGES = {}
 

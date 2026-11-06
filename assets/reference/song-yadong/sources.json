@@ -1,0 +1,92 @@
+[
+  {
+    "file": "ref-espn-headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/3151289.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/3151289",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "headshot",
+    "notes": "Official UFC studio headshot, frontal, high-key flash. Main frontal face reference: face proportions, eyes, brows, nose, ears, hair cut. Date not stated; same session as the stance shots (2024-25 Venum kit)."
+  },
+  {
+    "file": "ref-espn-stance-left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/3151289.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/3151289",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body studio cut-out, body turned to his left, black 2024-25 UFC Venum kit. Physique and the tattoo on the inner left shin."
+  },
+  {
+    "file": "ref-espn-stance-right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/3151289.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/3151289",
+    "author": "ESPN / UFC (photographer not credited)",
+    "license": "All rights reserved (ESPN/UFC)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body studio cut-out, near frontal, black 2024-25 UFC Venum kit. Best torso reference (abs, chest, small scar on upper left chest) and the tattoo above the left knee."
+  },
+  {
+    "file": "commons-2026-05-30-macau-bandysputed.jpg",
+    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Song_Yadong.jpg/1280px-Song_Yadong.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Song_Yadong.jpg",
+    "author": "Bandysputed",
+    "license": "CC BY 4.0",
+    "date_taken": "2026-05-30",
+    "use": "embed-ok",
+    "what": "action",
+    "attribution": "Bandysputed, CC BY 4.0, via Wikimedia Commons",
+    "notes": "Walking out of the cage after beating Figueiredo at UFC Fight Night Macau, wrapped in a flag, smiling and sweaty; 1280 px thumbnail of a 4032 px original. Face is near-frontal but soft. Hair length on the day."
+  },
+  {
+    "file": "commons-2026-macau-postfight-bandysputed.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/af/Song_Yadong_at_UFC_Macau.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Song_Yadong_at_UFC_Macau.jpg",
+    "author": "Bandysputed",
+    "license": "CC BY 4.0",
+    "date_taken": "2026-05-30 (post-fight press conference; the backdrop reads Song vs Figueiredo, May 30. The file metadata date says 2026-10-21, which looks like an export date)",
+    "use": "embed-ok",
+    "what": "3q",
+    "attribution": "Bandysputed, CC BY 4.0, via Wikimedia Commons",
+    "notes": "Three-quarter view of his right side, smiling, soft even indoor light. Best freely licensed face photo: cheekbone, ear position, hairline, smile."
+  },
+  {
+    "file": "ref-ufc-shanghai-weighin-2026-08.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/08/UmarYadong.jpg",
+    "page": "https://cagesidepress.com/2026/08/29/ufc-shanghai-song-yadong-shocks-stuns-fans-stops-umar-nurmagomedov/",
+    "author": "UFC (YouTube video still, via Cageside Press)",
+    "license": "All rights reserved (UFC)",
+    "date_taken": "2026-08-28 (UFC Shanghai ceremonial weigh-in face-off)",
+    "use": "reference-only",
+    "what": "profile",
+    "notes": "Most recent photo. Face-off with Umar Nurmagomedov: near-profile of his left side and torso at fight weight. Nose and chin profile, ear position, hair cut in Aug 2026 (high faded sides, longer top)."
+  },
+  {
+    "file": "ref-ufc-macau-faceoff-2026-05.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2026/05/SongFiggy.jpg",
+    "page": "https://cagesidepress.com/2026/05/28/ufc-macau-song-vs-figueiredo-weigh-in-results/",
+    "author": "UFC (via Cageside Press)",
+    "license": "All rights reserved (UFC)",
+    "date_taken": "2026-05-29 (approx., UFC Macau ceremonial weigh-in face-off)",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Face-off pose with both fists up at chest height, three-quarter left side. Shows his arms and shoulders in a guard-like pose, gold chain, and the red/black 2026 shorts. Page is the weigh-in results article for the event (photo found in the Cageside media library)."
+  },
+  {
+    "file": "ref-zuffa-gutierrez-fight-2023-12-09.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2023/12/Song-Gutierrez.jpg",
+    "page": "https://cagesidepress.com/2023/12/10/ufc-vegas-83-song-yadong-cruises-to-five-round-decision-over-chris-gutierrez/",
+    "author": "Jeff Bottari / Zuffa LLC via Getty Images",
+    "license": "All rights reserved (Zuffa LLC / Getty Images)",
+    "date_taken": "2023-12-09",
+    "use": "reference-only",
+    "what": "action",
+    "notes": "Fight photo vs Chris Gutierrez (older). Mid-exchange, left glove low at the hip, head tilted off line. Used for body in motion only."
+  }
+]

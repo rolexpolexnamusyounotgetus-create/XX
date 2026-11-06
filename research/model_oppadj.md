@@ -1,6 +1,8 @@
 # oppadj: opponent (strength-of-schedule) adjustment, walk-forward
 
-Status: built and validated Nov 6, 2026 (afternoon). Roadmap slot: v4 "opponent-adjusted skills, tuned
+Status: built and validated Nov 6, 2026 (afternoon); adversarial review the same afternoon (see "Verification
+log" at the end: the headline per-fight result reproduces exactly with independent code; verdicts 3 and 7 and the
+Volkanovski vs Gaethje numbers were corrected in place). Roadmap slot: v4 "opponent-adjusted skills, tuned
 half-life and per-stat prior strengths" (now merged into the v5 build). Files:
 
 - `tools/oppadj.py`: data, walk-forward two-way fits, grid search, held-out scoring, factors, report numbers.
@@ -37,12 +39,20 @@ first and records their hashes, so edits to `src/` during a run cannot mix versi
    at average ("no-opp"), the two-way fit wins on distance attempts (-9.4%), control (-4.8%), head accuracy
    (-3.7%), ground attempts (-2.8%) and takedown attempts (-2.7%), all CIs excluding zero. Against the engine's
    own formula with the half-life and both prior strengths re-tuned ("raw re-tuned"), it still wins on
-   distance attempts (-2.5%), control (-4.7%) and takedown attempts (-3.2%).
-3. **It fixes the engine's combination scale.** With raw rates, the log5 / log-linear combination the engine
-   uses (exponents 1, 1) is badly mis-scaled: a free fit on 2019-2023 wants offense exponents of 1.23
-   (distance attempts), 0.71 (head accuracy), 1.61 (takedown attempts), 1.32 (control), 0.39 (takedown
-   success), 0.49 (control per takedown). With adjusted effects the same fit returns 0.99, 0.99, 1.01, 0.89,
-   0.77 and 0.93: the engine's assumed form becomes approximately right.
+   distance attempts (-2.5%), control (-4.7%) and takedown attempts (-3.2%). [Verified with like-for-like
+   baselines that get the same half-life-averaging option: distance -2.5% [0.2, 4.9], control -4.7% [1.8, 7.5],
+   takedown attempts -3.1% [0.4, 5.8] (dyadic-robust 95%). For distance attempts the opponent part exists only
+   with the half-life average: one adjusted configuration vs one raw configuration is -0.2%, n.s.]
+3. **Re-tuned prior strengths, more than the opponent adjustment, fix the engine's combination scale.**
+   [Corrected by the verification pass.] With the engine's raw rates the log5 / log-linear combination (exponents
+   1, 1) is mis-scaled: a free fit on 2019-2023 wants offense exponents of 1.23 (distance attempts), 0.71 (head
+   accuracy), 1.61 (takedown attempts), 1.32 (control), 0.39 (takedown success), 0.49 (control per takedown).
+   With adjusted effects the same fit returns 0.99, 0.99, 1.01, 0.89, 0.77 and 0.93, but the raw rates with
+   re-tuned half-life and k (no opponent adjustment) also return 0.91, 0.93, 0.92, 0.93, 1.13 and 0.88. The fit
+   is circular on 2019-2023 (k was tuned on the same sides at exponents 1). On 2024-25 the adjusted offense
+   exponents are 0.72-1.06 and the defense exponents 0.72-1.22 (takedown attempts allowed 0.72, distance
+   attempts allowed 1.22). Exponent 1 is roughly right once the prior strengths are re-tuned, with or without
+   opponents; it is not exact.
 4. **Composite per-fight lines improve** (2024-25, conditional on each fight's time in each position):
    significant strikes attempted -5.1% deviance [-6.9, -3.3] (MAE 25.72 -> 25.01 per side), landed -3.4%
    [-5.1, -1.8], head landed -2.6% [-4.2, -1.1], takedowns landed -9.4% [-12.8, -6.2]. Knockdowns do not
@@ -53,12 +63,19 @@ first and records their hashes, so edits to `src/` during a run cannot mix versi
    takedown success -0.3%; head accuracy, takedown and clinch attempts are positive but n.s.
 6. **Where it does not help, switch it off:** knockdown power / chin (+0.7% deviance, held-out slope about 0),
    body accuracy (+1.1%) and submission attempts (+0.3%). Recommended set below.
-7. **In the simulator the effect is small but consistently in the right direction.** Engine v3 Monte Carlo,
-   same seeds: winner log loss -0.003 with the factors in every period and setup (2024-25 recommended set:
-   plain 0.6441 -> 0.6413; ML rates 0.6303 -> 0.6278, accuracy 66.9% -> 67.6%; pooled 2019-2025 with all families
-   -0.0033 [-0.0079, +0.0015]), none significant on its own; the 7-bin outcome improves pooled with all families
-   (-0.0090 [-0.0169, -0.0009]) and is flat with the recommended set on 2024-25. Volkanovski vs Gaethje: 61.5%
-   -> 65.1% Volkanovski in the plain engine, mostly through the grappling exchange.
+7. **In the simulator the effect is small and not significant anywhere.** [Corrected by the verification pass.]
+   Engine v3 Monte Carlo, same seeds. Plain engine: winner log loss falls by about 0.003 with the factors in
+   both periods (2019-2023 -0.0034, 2024-25 -0.0032 with all families, -0.0028 with the recommended set: 0.6441 ->
+   0.6413; pooled 2019-2025 -0.0033 [-0.0079, +0.0015]). On top of the ML rates the gain is 0.0000 on 2019-2023
+   and -0.0020 / -0.0026 on 2024-25 (0.6303 -> 0.6278, accuracy 66.9% -> 67.6%); pooled -0.0006. None of these
+   is significant. Of the 22 reported intervals that measure the factors (adj - plain and ML x f - ML; winner,
+   7-bin and finish; by period, pooled and for the recommended set), two exclude zero, both 7-bin and both on
+   data that include 2019-2023 (pooled all-family -0.0090 [-0.0169, -0.0009]; ML x f - ML on 2019-2023 -0.0073
+   [-0.0140, -0.0002]), about what chance gives, and neither survives a Holm correction; with the recommended
+   set the 7-bin is flat (plain) or worse (ML, +0.0053, n.s.) on 2024-25. The recommended set's 2024-25 engine numbers are not fully
+   held out: three on/off switches used 2024-25 (see the Verification log). Volkanovski vs Gaethje: 61.5% ->
+   65.3% Volkanovski in the plain engine with factors computed at the bout division (65.1% before the
+   verification fix), mostly through the grappling exchange.
 
 ## Data and protocol
 

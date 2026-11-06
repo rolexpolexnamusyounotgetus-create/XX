@@ -296,8 +296,7 @@ def _fit_lr_warm(X, y, lam, w0=None):
         z = X @ w
         p = 1 / (1 + np.exp(-z))
         return np.sum(sw * (np.logaddexp(0, z) - y * z)) + 0.5 * lam * w @ w, X.T @ (sw * (p - y)) + lam * w
-    r = minimize(f, np.zeros(d) if w0 is None else w0, jac=True, method="L-BFGS-B",
-                 options={"maxiter": 3000, "gtol": 1e-7, "ftol": 1e-12})
+    r = minimize(f, np.zeros(d) if w0 is None else w0, jac=True, method="L-BFGS-B", options={"maxiter": 3000})
     return r.x
 
 
@@ -483,17 +482,15 @@ class Stack(Model):
         return w * len(w) / w.sum()
 
     def fit(self, cutoff, P):
-        import moe as MO
         ids = [i for i in self.ctx.order if HIST_FROM <= self.ctx.date[i] < cutoff and self.ctx.y[i] is not None]
         L, M = self._matrix(ids, P)
         y = np.array([self.ctx.y[i] for i in ids])
         w = self._weights([self.ctx.date[i] for i in ids])
-        self._train = (L, M, y, w)
+        self._train = (L, M, y, w)          # kept: patterns first seen at prediction time are fit lazily on it
         self.fits = {}
         req = [self.experts.index(e) for e in self.required]
         ok = M[:, req].all(1)
         self._fit_pattern(tuple(range(len(self.experts))))
-        self._train = (L, M, y, w)
         return {"fit_through": max(self.ctx.date[i] for i, o in zip(ids, ok) if o), "n_train": int(ok.sum())}
 
     def _fit_pattern(self, idx):
@@ -520,6 +517,10 @@ class Stack(Model):
                 continue
             out[f] = float(sigm(L[i, list(idx)] @ wv))
         return out
+
+    def predict_swapped(self, fids, P):
+        fs = set(fids)
+        return self.predict(fids, {e: {f: 1 - v for f, v in P.get(e, {}).items() if f in fs} for e in self.experts})
 
     def weights(self):
         full = tuple(range(len(self.experts)))
@@ -654,7 +655,10 @@ class MoEStack(Model):
         for i, f in enumerate(fids):
             if not keep[i]:
                 continue
-            z = self._safe_logit(self.st, L[i:i + 1], M[i:i + 1], self._gs(G[i:i + 1]))
+            try:
+                z = self._safe_logit(self.st, L[i:i + 1], M[i:i + 1], self._gs(G[i:i + 1]))
+            except KeyError:                       # a required expert is missing for this fight
+                continue
             out[f] = float(self.cal(sigm(z))[0])
         return out
 
@@ -798,8 +802,9 @@ def _engine_factory(ver):
         if not any(WINDOW[0] <= ctx.date[i] <= WINDOW[1] for i in P):
             return None
         hist = {i: p for i, p in P.items() if ctx.date[i] < WINDOW[0]}
-        return Stored(P, history=hist, bins=B, version="evalv %s (engine %s, params sha %s, %s sims/order)" % (
-            ver, meta.get("engine_version"), str(meta.get("params_sha256", ""))[:12], meta.get("sims")),
+        return Stored(P, history=hist, bins=B, version="evalv %s (engine %s, params %s sha %s, %s sims/order, built %s)" % (
+            ver, meta.get("engine_version"), meta.get("params_version"), str(meta.get("params_sha256", ""))[:12],
+            meta.get("sims_per_order"), meta.get("built")),
             note="frozen engine (global scales self-calibrated on 2019-2023 train), walk-forward profiles, leak-free "
                  "learned stat-line rates; 2019-2023 rows are in-sample for those few scales",
             symmetric="by construction (both corner orders simulated and averaged)")
@@ -977,17 +982,17 @@ def replay(ctx, keys):
         log("skipped: %s" % skipped)
 
     # P[model][fid]: history (strictly out-of-sample 2019-2023) + replay predictions as they are made
-    P = {k: dict(models[k].history()) for k in order}
-    for k in order:
-        bad = [f for f in P[k] if f not in ctx.fights or ctx.date[f] >= WINDOW[0]]
-        if bad:
-            raise SystemExit("%s: history has %d rows outside 2019-2023 dev fights" % (k, len(bad)))
+    # (the harness keeps only history rows dated HIST_FROM..the day before the window: a plugin may pass its whole map)
+    P = {k: {f: v for f, v in models[k].history().items() if f in ctx.fights and HIST_FROM <= ctx.date[f] < WINDOW[0]}
+         for k in order}
     rec = {k: {} for k in order}                # fid -> [p, refit_at, fit_through]
     bins = {k: {} for k in order}
     fits = {k: [] for k in order}
     sym = {k: {"max_abs": 0.0, "n": 0} for k in order}
     caches = {k: FitCache(k, models[k].version, not ctx.args.no_cache) for k in order}
-    last_fit = {k: None for k in order}
+    last_fit = {k: None for k in order}         # cutoff of the fit in force
+    fitted = {k: False for k in order}          # is the model object holding that fit in this process?
+    fit_info = {k: None for k in order}
     leak = []
     events = []
     by_date = {}
@@ -998,57 +1003,52 @@ def replay(ctx, keys):
         dates = dates[:8]
     for n_ev, d in enumerate(dates):
         fids = by_date[d]
+        fset = set(fids)
         ev = {"date": d, "event": ctx.fights[fids[0]]["event"], "n": len(fids), "refit": []}
         for k in order:
             m = models[k]
             sched = getattr(m, "refit", "never") or "never"
-            info = None
-            if sched != "never" and due(sched, last_fit[k], d):
-                cached = caches[k].get(d)
-                if cached is not None and not REGISTRY[k]["group"] == "stack":
-                    info, pr, ps = cached
-                    m._cached_pred = (pr, ps)
-                else:
-                    info = m.fit(d, P) or {}
-                    m._cached_pred = None
-                last_fit[k] = d
-                ev["refit"].append(k)
-                fits[k].append(dict(info, refit_at=d))
-                if info.get("fit_through") and info["fit_through"] >= d:
-                    leak.append("%s fit through %s for the %s card" % (k, info["fit_through"], d))
-            elif sched == "never" and last_fit[k] is None:
-                last_fit[k] = WINDOW[0]
-            cached_pred = getattr(m, "_cached_pred", None)
-            if cached_pred is not None and sched != "never" and last_fit[k] == d:
-                pr, ps = cached_pred
-                pr = {f: v for f, v in pr.items() if f in set(fids)}
+            new_fit = sched != "never" and due(sched, last_fit[k], d)
+            if new_fit:
+                last_fit[k], fitted[k], fit_info[k] = d, False, None
+            cacheable = sched != "never" and REGISTRY[k]["group"] != "stack"
+            hit = caches[k].get((last_fit[k], d)) if cacheable else None
+            if hit is not None:
+                info, pr, ps = hit
+                fit_info[k] = fit_info[k] or info
             else:
+                if sched != "never" and not fitted[k]:
+                    fit_info[k] = m.fit(last_fit[k], P) or {}
+                    fitted[k] = True
                 pr = m.predict(fids, P)
                 ps = m.predict_swapped(fids, P) if hasattr(m, "predict_swapped") else None
-                if sched != "never" and last_fit[k] == d and REGISTRY[k]["group"] != "stack":
-                    caches[k].put(d, (fits[k][-1], pr, ps))
+                if cacheable:
+                    caches[k].put((last_fit[k], d), (fit_info[k], pr, ps))
+            if new_fit:
+                info = dict(fit_info[k] or {}, refit_at=d)
+                fits[k].append(info)
+                ev["refit"].append(k)
+                if info.get("fit_through") and info["fit_through"] >= d:
+                    leak.append("%s fit through %s for the %s card" % (k, info["fit_through"], d))
             if ps:
                 for f, v in ps.items():
                     if f in pr:
                         sym[k]["max_abs"] = max(sym[k]["max_abs"], abs(pr[f] + v - 1.0))
                         sym[k]["n"] += 1
-            # monthly models refit on the month's first card keep predicting later cards from the same fit
-            if sched not in ("never", "event") and last_fit[k] != d:
-                pr = m.predict(fids, P)
-            ft_fit = fits[k][-1].get("fit_through") if fits[k] else None
+            ft_fit = (fit_info[k] or {}).get("fit_through")
             for f, v in pr.items():
-                if f not in ctx.fights or ctx.date[f] != d:
+                if f not in fset:
                     continue
                 ft = m.fit_through_of(f) or ft_fit
                 if ft and ft >= d:
                     leak.append("%s fit through %s predicts %s (%s)" % (k, ft, f, d))
-                rec[k][f] = [float(v), last_fit[k] if sched != "never" else None, ft]
+                rec[k][f] = [float(v), last_fit[k], ft]
                 P[k][f] = float(v)
             for f, b in m.bins7(fids).items():
                 bins[k][f] = [float(x) for x in b]
         events.append(ev)
         if (n_ev + 1) % 10 == 0 or n_ev == len(dates) - 1:
-            log("event %d/%d %s (%.0f s)" % (n_ev + 1, len(dates), d, time.time() - t_start))
+            log("card %d/%d %s (%.0f s)" % (n_ev + 1, len(dates), d, time.time() - t_start))
             for c in caches.values():
                 c.save()
     for c in caches.values():
@@ -1164,9 +1164,9 @@ class Boot:
 def score(ctx, R, B_boot=2000):
     rec, order, models = R["rec"], R["order"], R["models"]
     close = {f: v[0] for f, v in rec.get("market_close", {}).items()}
-    win_dec = [i for i in ctx.win_ids if ctx.y[i] is not None and (not R.get("quick_dates") or ctx.date[i] in R["quick_dates"])]
-    if R.get("quick_dates"):
-        win_dec = [i for i in win_dec if ctx.date[i] in set(R["quick_dates"])]
+    qd = set(R["quick_dates"]) if R.get("quick_dates") else None
+    universe = [i for i in ctx.win_ids if qd is None or ctx.date[i] in qd]
+    win_dec = [i for i in universe if ctx.y[i] is not None]
     seg = {i: segments_of(ctx.fights[i], close.get(i)) for i in win_dec}
     boot = Boot([ctx.date[i] for i in win_dec], B_boot)
     yv = {i: ctx.y[i] for i in win_dec}
@@ -1261,11 +1261,9 @@ def score(ctx, R, B_boot=2000):
         ids = [i for i in common if ctx.date[i].startswith(yv_)]
         out["by_year"][yv_] = {k: r5(lls(k, ids).mean()) for k in head}
     # 7-bin (models that publish bins), on the fights where they all do
-    b7 = {i: bin7_of(ctx.fights[i]) for i in ctx.win_ids}
-    bk = [k for k in order if len([i for i in R["bins"].get(k, {}) if i in b7]) >= 0.95 * len(ctx.win_ids) * (0.0 if R.get("quick_dates") else 1.0) and R["bins"].get(k)]
-    ids7 = [i for i in ctx.win_ids if b7[i] is not None and all(i in R["bins"][k] for k in bk)]
-    if R.get("quick_dates"):
-        ids7 = [i for i in ids7 if ctx.date[i] in set(R["quick_dates"])]
+    b7 = {i: bin7_of(ctx.fights[i]) for i in universe}
+    bk = [k for k in order if sum(1 for i in universe if i in R["bins"].get(k, {})) >= 0.95 * len(universe)]
+    ids7 = [i for i in universe if b7[i] is not None and all(i in R["bins"][k] for k in bk)]
     if bk and ids7:
         cl7 = [ctx.date[i] for i in ids7]
         L7 = {}
