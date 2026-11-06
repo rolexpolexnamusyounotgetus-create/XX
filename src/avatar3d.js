@@ -955,7 +955,7 @@
       uDam: { value: new T.Vector2(0, 0) }, uLeg: { value: new T.Vector2(0, 0) }, uSweat: { value: 0 }, uFlush: { value: 0 },
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
       uMaskOn: { value: maskOn ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
-      uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 3 ? chan(looks.scalpCh) : new T.Vector4() }, uScalpCh2: { value: looks.scalpCh >= 3 ? chan(looks.scalpCh - 3) : new T.Vector4() },
+      uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 3 ? chan(looks.scalpCh) : new T.Vector4(0, 0, 0, 0) }, uScalpCh2: { value: looks.scalpCh >= 3 ? chan(looks.scalpCh - 3) : new T.Vector4(0, 0, 0, 0) },
       uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.55 : 0 }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
     };
     mat.onBeforeCompile = function (sh) {
