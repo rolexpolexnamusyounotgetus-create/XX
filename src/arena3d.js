@@ -8,9 +8,13 @@
  *   arena.mark(x, z, kind, amount)   kind: "scuff" | "sweat" | "blood"
  *   arena.setQuality(q), arena.quality, arena.stats()
  *   FightArena.{ APO, RV, vertexAngle, BLUE_K, RED_K, SIDE, FLOOR_Y, RAIL_Y, lensFov }
- * Everything is procedural; the page needs only three.js. Post-processing uses the r128 example add-ons when
- * they loaded (EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, SMAAPass, FXAAShader) and falls back
- * to a plain render when they did not.
+ * Everything has a procedural version, so the page needs only three.js. When window.FightAssets carries them, photo
+ * surfaces and a venue environment replace the stand-ins (all CC0; details in assets/LICENSES.md): the Poly Haven
+ * "Circus Arena" HDRI by Oliksiy Yakovlyev for image-based lighting, ambientCG Fence003 (chain-link opacity) and
+ * Fabric036 (canvas weave and slubs) by Lennart Demes, and Poly Haven "Leather White" grain by Rob Tuytel on the pads.
+ * Post-processing uses the r128 example add-ons when they loaded (EffectComposer, RenderPass, ShaderPass,
+ * UnrealBloomPass, SMAAPass, FXAAShader) and falls back to a plain render when they did not; a frame-time governor
+ * steps quality down (resolution, bloom, haze, AA, shadows, light shafts) when frames run long.
  */
 (function (root) {
   "use strict";

@@ -862,10 +862,22 @@ def _engine_factory(ver):
     return fac
 
 
+def _engine_rejected():
+    """Engine versions whose recorded validation decision says kept: false (data/derived/version_history.json)."""
+    try:
+        vh = json.load(open(os.path.join(DERIVED, "version_history.json")))
+    except Exception:
+        return set()
+    return {"engine_" + v["version"] for v in vh.get("versions", [])
+            if isinstance(v.get("decision"), dict) and v["decision"].get("kept") is False}
+
+
+_ENG_REJECTED = _engine_rejected()
 for _p in sorted(glob.glob(os.path.join(DERIVED, "evalv", "v*_val.json"))):
     _ver = os.path.basename(_p).split("_")[0]
-    register("engine_" + _ver, desc="simulator %s (tools/evalv.js validation run, %s)" % (_ver, os.path.basename(_p)))(
-        _engine_factory(_ver))
+    register("engine_" + _ver, desc="simulator %s (tools/evalv.js validation run, %s)%s" % (
+        _ver, os.path.basename(_p), "; REJECTED at its validation look (version_history.json), scored for the record"
+        if "engine_" + _ver in _ENG_REJECTED else ""))(_engine_factory(_ver))
 
 
 def _mr_cells_to(cells, R):
@@ -914,20 +926,10 @@ def _engine_vkey(k):
     return tuple(int(x) for x in k[len("engine_v"):].split(".") if x.isdigit())
 
 
-def _engine_rejected():
-    """Engine versions whose recorded validation decision says kept: false (data/derived/version_history.json)."""
-    try:
-        vh = json.load(open(os.path.join(DERIVED, "version_history.json")))
-    except Exception:
-        return set()
-    return {"engine_" + v["version"] for v in vh.get("versions", [])
-            if isinstance(v.get("decision"), dict) and v["decision"].get("kept") is False}
-
-
 _ENG = sorted([k for k in REGISTRY if k.startswith("engine_v")], key=_engine_vkey)
 # The MoE stackers use the newest engine version that has made its validation look and was not rejected (the page's
 # engine follows the same rule); BLINDTEST_MOE_ENGINE=engine_v4 pins another one.
-_ENG_OK = [k for k in _ENG if k not in _engine_rejected()]
+_ENG_OK = [k for k in _ENG if k not in _ENG_REJECTED]
 _ENGK = os.environ.get("BLINDTEST_MOE_ENGINE") or (_ENG_OK[-1] if _ENG_OK else None)
 if _ENGK and _ENGK not in REGISTRY:
     raise SystemExit("BLINDTEST_MOE_ENGINE=%s is not a registered engine (%s)" % (_ENGK, ", ".join(_ENG)))
@@ -1321,7 +1323,7 @@ def score(ctx, R, B_boot=2000):
         m["ci"] = boot.ci(lls(k, common), cl)
         out["common"]["metrics"][k] = m
         out["calibration"][k] = calib_table(p, y)
-    refs = [r for r in ("market_close", "market_open", "elo", "ml_lr", "moe_noline") if r in out["own_coverage"]]
+    refs = [r for r in ("market_close", "market_open", "elo", "ml_lr", "moe_noline", "moe_close") if r in out["own_coverage"]]
     for k in out["own_coverage"]:
         out["paired"][k] = {}
         for r in refs:
@@ -1448,14 +1450,16 @@ def write_report(doc):
             A("| `%s` | %d | %.0f%% | %s | %s |" % (k, m["n"], 100 * m["coverage"], fmt_ci(m["ci"]), fmt_d(pc) if pc else "-"))
         A("")
     if "ml_lr" in S["paired"]:
-        A("Paired against the replayed ML logistic (`ml_lr`) and the no-line MoE (`moe_noline`), same fights:")
+        A("Paired against the replayed ML logistic (`ml_lr`), the no-line MoE (`moe_noline`) and the MoE with the closing "
+          "line (`moe_close`), same fights:")
         A("")
-        A("| model | vs ml_lr | vs moe_noline |")
-        A("|---|---|---|")
+        A("| model | vs ml_lr | vs moe_noline | vs moe_close |")
+        A("|---|---|---|---|")
         for k, _ in rows:
             a = S["paired"].get(k, {}).get("ml_lr")
             b = S["paired"].get(k, {}).get("moe_noline")
-            A("| `%s` | %s | %s |" % (k, fmt_d(a) if a else "-", fmt_d(b) if b else "-"))
+            c = S["paired"].get(k, {}).get("moe_close")
+            A("| `%s` | %s | %s | %s |" % (k, fmt_d(a) if a else "-", fmt_d(b) if b else "-", fmt_d(c) if c else "-"))
         A("")
     cu = S["cumulative"]
     A("### Cumulative log loss over time (common set; checkpoints at the last card of each quarter)")

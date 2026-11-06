@@ -1093,10 +1093,19 @@ def ll(p, y):
     return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
 
 
+def acc_vec(p, y):
+    """Per-row accuracy, corner-symmetric: an exact 0.5 scores half (review fix, Nov 6 evening). The old rule
+    (p > 0.5) == y counted every tie as a pick for corner B; plain Elo has 26 exact ties on the 2024-2025 newcomer
+    bouts (two 1500-rated debutants), so its accuracy depended on the ufcstats corner order."""
+    import numpy as np
+    p, y = np.asarray(p, float), np.asarray(y, float)
+    return np.where(p == 0.5, 0.5, ((p > 0.5) == (y > 0.5)).astype(float))
+
+
 def scores(p, y):
     import numpy as np
     return {"n": int(len(y)), "log_loss": ll(p, y), "brier": float(np.mean((p - y) ** 2)),
-            "accuracy": float(np.mean((p > 0.5) == (y > 0.5)))}
+            "accuracy": float(np.mean(acc_vec(p, y)))}
 
 
 def ufc_walk(fights, people):
@@ -1766,7 +1775,7 @@ def evaluate(args):
         p = np.clip(p, 1e-6, 1 - 1e-6)
         lls = -(yt * np.log(p) + (1 - yt) * np.log(1 - p))
         br = (p - yt) ** 2
-        ac = ((p > 0.5) == (yt > 0.5)).astype(float)
+        ac = acc_vec(p, yt)
         out = {}
         for k, v in (("log_loss", lls), ("brier", br), ("accuracy", ac)):
             bs = cb.means(v)
@@ -1799,7 +1808,7 @@ def evaluate(args):
         for k in preds_test:
             sub[g][k] = round(float(lls_by[k][msk].mean()), 4)
     # accuracy differences with the same card bootstrap (review addition)
-    acc_by = {k: ((np.asarray(p) > 0.5) == (yt > 0.5)).astype(float) for k, p in preds_test.items()}
+    acc_by = {k: acc_vec(p, yt) for k, p in preds_test.items()}
     acc_deltas = {}
     for a_, b_ in (("base+pre", "base"), ("elo_seed_pre+age", "elo"), ("elo_seed_pre", "elo"), ("elo+pre", "elo")):
         dlt = acc_by[a_] - acc_by[b_]
@@ -1904,7 +1913,7 @@ def evaluate(args):
         bs = cbm.means(v)
         market["test"][nm] = {"log_loss": round(float(v.mean()), 4),
                               "ci95": [round(float(np.percentile(bs, 2.5)), 4), round(float(np.percentile(bs, 97.5)), 4)],
-                              "accuracy": round(float(np.mean((mp[nm] > 0.5) == (ytm > 0.5))), 4)}
+                              "accuracy": round(float(np.mean(acc_vec(mp[nm], ytm))), 4)}
     for nm in mp:
         if nm == "market_close":
             continue

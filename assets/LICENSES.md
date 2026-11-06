@@ -69,10 +69,10 @@ All CC0 1.0. Each one is optional: the procedural stand-in stays when its image 
 
 | File | Bytes | Source | Author | Licence | Changes |
 |---|---|---|---|---|---|
-| `arena-env-circus.jpg` | 28552 | https://polyhaven.com/a/circus_arena (`circus_arena_1k.hdr`) | Oliksiy Yakovlyev (Poly Haven) | CC0-1.0 | box-filtered to 512x256, log-encoded into 8 bits (value = log2(1 + 16 x) / log2(1 + 8192)), JPEG; decoded in a shader, the source venue's floor and seats dimmed, prefiltered by PMREM for image-based lighting (scratchpad arena2/hdr.py) |
+| `arena-env-circus.jpg` | 28552 | https://polyhaven.com/a/circus_arena (`circus_arena_1k.hdr`) | Oliksiy Yakovlyev (Poly Haven) | CC0-1.0 | box-filtered to 512x256, log-encoded into 8 bits (value = log2(1 + 16 x) / log2(1 + 8192), radiance clipped at 512), JPEG; decoded in a shader, the source venue's floor and seats dimmed, prefiltered by PMREM for image-based lighting (scratchpad arena2/hdr.py) |
 | `arena-fence-opacity.webp` | 24686 | https://ambientcg.com/a/Fence003 (`Fence003_1K-JPG_Opacity.jpg`) | ambientCG (Lennart Demes) | CC0-1.0 | 512 px, WebP; the wire is thickened slightly and its round-wire normal map is derived from it at load time |
-| `arena-mat-weave-normal.jpg` | 19296 | https://ambientcg.com/a/Fabric036 (`Fabric036_1K-JPG_NormalGL.jpg`) | ambientCG (Lennart Demes) | CC0-1.0 | one weave tile cut out, 128 px, JPEG; tiled under the procedural canvas print |
-| `arena-mat-slub.webp` | 23238 | https://ambientcg.com/a/Fabric036 (`Fabric036_1K-JPG_Color.jpg`) | ambientCG (Lennart Demes) | CC0-1.0 | greyscale high-pass of the colour map (the fabric's slubs), 256 px, WebP; modulates the print's brightness slightly |
+| `arena-mat-weave-normal.jpg` | 19296 | https://ambientcg.com/a/Fabric036 (`Fabric036_1K-JPG_NormalGL.jpg`) | ambientCG (Lennart Demes) | CC0-1.0 | a 128 px patch of the full-resolution 1K normal map, JPEG; tiled under the procedural canvas print |
+| `arena-mat-slub.webp` | 23238 | https://ambientcg.com/a/Fabric036 (`Fabric036_1K-JPG_Color.jpg`) | ambientCG (Lennart Demes) | CC0-1.0 | the colour map reduced to 256 px greyscale and contrast-normalised (the fabric's slubs), WebP; modulates the print's brightness and roughness slightly |
 | `arena-leather-normal.jpg` | 9828 | https://polyhaven.com/a/leather_white (`leather_white_nor_gl_1k.jpg`) | Rob Tuytel (Poly Haven) | CC0-1.0 | 256 px tile, grain amplified x4 (scaled back in the material), JPEG; on the fence pads, post pads and stools |
 
 Arena total: 105600 bytes.
