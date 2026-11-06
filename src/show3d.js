@@ -20,7 +20,7 @@
        "bladed": 0.6,         // hips and shoulders: 0 square to the opponent .. 1 fully side-on
        "guard": {
          "style": "standard",   // label only: standard | high | long | low | shell | peekaboo | hand-fighting
-         "height": 0.6,         // glove centres: 0 chest .. 0.5 chin/mouth .. 0.65 cheekbone .. 1 brow
+         "height": 0.6,         // glove tops: 0 chest .. 0.5 nose bottom .. 0.65 under the eyes .. 1 brow (eyes stay visible)
          "lead_reach": 0.35,    // lead hand: 0 by the face .. 1 extended, pawing or measuring
          "lead_height": 0.6,    // lead glove height relative to the guard height (0 low .. 1 high)
          "lead_width": 0.0,     // lead glove: -1 across the centre line .. 1 out wide
@@ -214,7 +214,8 @@
     if (!this._fr || this._frH !== H) {
       this._frH = H;
       this._fr = { chin: new V3(0, -0.004 * H, 0.06 * H), jaw: new V3(0.03 * H, 0.004 * H, 0.04 * H), cheek: new V3(0.03 * H, 0.03 * H, 0.052 * H),
-        brow: new V3(0.028 * H, 0.058 * H, 0.056 * H), nose: new V3(0, 0.032 * H, 0.072 * H) };
+        brow: new V3(0.028 * H, 0.058 * H, 0.056 * H), nose: new V3(0, 0.032 * H, 0.072 * H),
+        eyeLow: new V3(0.014 * H, 0.047 * H, 0.068 * H), eyeOut: new V3(0.022 * H, 0.05 * H, 0.066 * H), noseB: new V3(0, 0.024 * H, 0.08 * H) };
     }
     return this._fr;
   };
@@ -227,38 +228,42 @@
     _qh.setFromEuler(_eh.set(P.hp * 0.6, P.hy * 0.6, P.hr * 0.7, "YXZ"));
     return out.copy(p).applyQuaternion(_qh).add(r.head.position).applyQuaternion(_qn).add(r.neck.position);
   };
-  /* Guard glove targets (chest frame) from the stance profile, placed against the face:
-     rear glove: in front of the rear jaw and cheek, glove surface a finger off the skin (rear_tuck 1) or
-     held out ~10 cm (rear_tuck 0); lead glove: further out on the opponent's line by lead_reach, at the
-     lead cheekbone by default. Heights come from the face itself, so a tall guard tops out at the brow. */
+  /* Guard glove targets (chest frame) from the stance profile, placed against the face. Heights set the
+     TOP of the glove against the face: 0.5 at the bottom of the nose (glove centre about the chin), 0.65
+     just under the lower eyelid (centre at the mouth: cheekbone-and-jaw guard), 1 at the brow. Above 0.65 the
+     sheet value is compressed (0.8 -> 0.72) and the gloves slide out beside the eyes, so the eyes stay open
+     from the opponent's side (owner review, Nov 6: gloves were reading as covering the face). Rear glove:
+     against the rear jaw and cheek, a finger off the skin (rear_tuck 1) or ~10 cm out (rear_tuck 0); lead
+     glove: further out on the opponent's line by lead_reach, on the lead side of the face. */
   var _g1 = new V3(), _g2 = new V3();
   Actor.prototype.guardTargets = function (P, lh, rh, G, op, lead, rear, st) {
     var F = this.faceRef(), sc = this.H / 1.75, GR = 0.052 * sc;   // glove radius (4 oz MMA glove, closed fist)
     var cx = Math.abs(F.cheek.x);
-    function hy(v) {                     // head-local height of the glove centre for a guard height value
-      var y5 = lerp(F.chin.y, F.cheek.y, 0.45), y65 = lerp(F.cheek.y, F.brow.y, 0.3);
-      if (v <= 0.5) return y5 - (0.5 - v) / 0.5 * 0.2 * sc;
-      if (v <= 0.65) return lerp(y5, y65, (v - 0.5) / 0.15);
-      return lerp(y65, F.brow.y + 0.01 * sc, Math.min(1, (v - 0.65) / 0.35));
+    var eyeBot = (F.eyeLow ? F.eyeLow.y : lerp(F.cheek.y, F.brow.y, 0.5)) - 0.008 * sc;
+    var noseY = F.noseB ? F.noseB.y : lerp(F.chin.y, F.cheek.y, 0.75);
+    var eyeX = Math.max(F.eyeOut ? Math.abs(F.eyeOut.x) : 0, cx * 0.85);
+    function veff(v) { return v <= 0.65 ? v : 0.65 + (v - 0.65) * 0.45; }
+    function topY(v) {
+      v = veff(v);
+      if (v <= 0.5) return noseY - (0.5 - v) / 0.5 * 0.2 * sc;
+      if (v <= 0.65) return lerp(noseY, eyeBot, (v - 0.5) / 0.15);
+      return lerp(eyeBot, F.brow.y, (v - 0.65) / 0.35);
     }
+    function outK(top) { return smooth((top - eyeBot + 0.004 * sc) / (0.022 * sc)); }   // glove top over the lower lid: move out beside the eye
     function fz(y) {                     // face surface depth at height y (chin -> cheekbone -> brow)
       if (y <= F.cheek.y) return lerp(F.chin.z, F.cheek.z + 0.012 * sc, clamp((y - F.chin.y) / Math.max(0.01, F.cheek.y - F.chin.y), 0, 1));
       return lerp(F.cheek.z + 0.012 * sc, F.brow.z, clamp((y - F.cheek.y) / Math.max(0.01, F.brow.y - F.cheek.y), 0, 1));
     }
-    // rear glove: against the rear jaw and cheek, inner edge near the mouth corner at chin height; as the
-    // guard rises toward the brow the gloves move out to the temples, so the eyes stay open between them
-    // (owner review, Nov 6: gloves were covering the eyes and the lead arm was held out nearly straight)
-    function upK(y) { return clamp((y - F.chin.y) / Math.max(0.02, F.brow.y - F.chin.y), 0, 1); }
-    var ry = hy(rh) - 0.03 * op * sc, rk = upK(ry), rx = -st * (cx * (1.42 + 0.5 * rk) + 0.02 * op * sc);
     // offsets off the face run level in the world (the head is pitched down by th), not along the tucked face
     var th = P.pp + P.sp + P.cp + P.hp, cs = Math.cos(th), sn = Math.sin(th);
+    var rt = topY(rh) - 0.03 * op * sc, ry = rt - GR * 0.95;
+    var rx = -st * (lerp(cx * 1.36, Math.max(cx * 1.36, eyeX + GR * 0.92), outK(rt)) + 0.02 * op * sc);
     var rg = GR + (0.005 + 0.1 * (1 - G.rearTuck)) * sc;
     _g1.set(rx, ry + rg * sn, fz(ry) - 0.016 * sc + rg * cs);   // the face curves back toward the jaw
     this.headToChest(P, _g1, P.hl[rear]);
-    // lead glove: a little out front on the lead side of the face (lead_reach 0 at the face .. 1 about 30 cm
-    // off it), at its own height, its inner edge in line with the lead eye so he sees past it
-    var ly = hy(lh) - 0.03 * op * sc, lk = upK(ly), reach = (0.035 + 0.24 * G.leadReach) * sc;
-    var lx = st * (cx * (1.4 + 0.45 * lk) + (0.04 * G.leadWidth - 0.012 * G.leadReach) * sc + 0.02 * op * sc);
+    // lead glove: out front on the lead side of the face (lead_reach 0 at the face .. 1 about 30 cm off it)
+    var lt = topY(lh) - 0.03 * op * sc, ly = lt - GR * 0.95, reach = (0.035 + 0.24 * G.leadReach) * sc;
+    var lx = st * (lerp(cx * 1.36, Math.max(cx * 1.36, eyeX + GR * 0.92), outK(lt)) + (0.04 * G.leadWidth - 0.012 * G.leadReach) * sc + 0.02 * op * sc);
     var lg = GR + 0.012 * sc + reach;
     _g2.set(lx, ly + lg * sn - 0.06 * reach, fz(ly) + lg * cs);
     this.headToChest(P, _g2, P.hl[lead]);
@@ -363,7 +368,7 @@
         P.cp += hm * 0.025 * Math.sin(wv * 0.7 + 2);
         // guard, anchored on the face (landmarks measured on the skinned head when one is bound): rear glove
         // beside the chin and cheek, lead glove a little out front at cheekbone height, elbows down on the ribs,
-        // forearms angled in. Heights: 0 chest .. 0.5 chin .. 0.65 cheekbone .. 1 brow.
+        // forearms angled in. Heights (glove top): 0 chest .. 0.5 nose bottom .. 0.65 under the eyes .. 1 brow.
         this.guardTargets(P, lh, rh, G, op, lead, rear, st);
       } else {
         var cyaw = 0, lz = (0.16 + 0.12 * G.leadReach) * H, rz = (0.12 + 0.08 * (1 - G.rearTuck)) * H;
