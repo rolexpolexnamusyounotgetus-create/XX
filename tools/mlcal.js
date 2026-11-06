@@ -330,6 +330,7 @@ class Pool {
 function workerMain() {
   const { enginePath, paramsPath, hookPath, inject, priors, tasks } = workerData;
   const E = require(enginePath), P0 = require(paramsPath);
+  const DR = require(path.join(__dirname, "durrec.js"))(E, path.resolve(__dirname, ".."));
   const hook = hookPath ? require(hookPath) : null;
   let cacheKey = null, cache = null;
   function build(t, tree, hp) {
@@ -337,7 +338,10 @@ function workerMain() {
     let opts = { division: f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.year] };
     if (inject !== "mutate") opts.params = tree;
     if (hook && hook.matchupOpts) opts = hook.matchupOpts(opts, { fight: f, swap: t.swap, A, B, hookParams: hp, params: tree }) || opts;
-    return E.matchup(A, B, opts);
+    DR.apply(opts, f.id, t.swap);   // v5: durability walk-forward record + train NORM when the component is on (tools/durrec.js)
+    const m = E.matchup(A, B, opts);
+    DR.assertApplied(m, f.id, opts.params);
+    return m;
   }
   parentPort.on("message", (msg) => {
     if (msg.type !== "run") return;

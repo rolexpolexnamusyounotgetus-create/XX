@@ -43,6 +43,7 @@ function trainFights() {
 
 if (!isMainThread) {
   const E = require(path.join(ROOT, "src/engine3.js"));
+  const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);
   const fights = trainFights(), byId = new Map(fights.map((f) => [f.id, f]));
   const priors = readJSON("data/derived/mlcal_priors_asof.json"), OOF = readJSON("data/derived/mlrates_oof.json"), names = OOF.meta.targets;
   const rates = (a) => { const o = {}; names.forEach((n, i) => { o[n] = a[i]; }); return o; };
@@ -53,7 +54,9 @@ if (!isMainThread) {
       const A = swap ? f.B : f.A, B = swap ? f.A : f.B, ent = OOF.fights[id];
       const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.date.slice(0, 4)], params: msg.over };
       opts.ml = ent ? { pred: swap ? { A: rates(ent.B), B: rates(ent.A) } : { A: rates(ent.A), B: rates(ent.B) } } : false;
+      DR.apply(opts, id, swap);   // v5: durability walk-forward record + train NORM when the component is on (tools/durrec.js)
       const m = E.matchup(A, B, opts), rng = E.makeRng(mix(hash32(id), 7));
+      DR.assertApplied(m, id, msg.over);
       for (let i = 0; i < msg.sims; i++) {
         const s = E.simulate(m, rng, false), meth = s.method, dec = meth === "UD" || meth === "SD" || meth === "MD" || meth === "DRAW";
         acc.n++;

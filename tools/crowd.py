@@ -686,7 +686,7 @@ def test_alone(D, CF, M2, np):
                            ("open", "open"), ("close", "market")):
                 p = pc[m] if col is None else D[col].to_numpy(float)[m]
                 row[k] = round(M2.ll(p, y[m]), 5)
-                row[k + "_acc"] = round(float(np.mean((p > 0.5) == (y[m] > 0.5)) + 0.5 * np.mean(p == 0.5)), 4)
+                row[k + "_acc"] = round(float(np.mean(np.where(np.abs(p - 0.5) < 1e-9, 0.5, (p > 0.5) == (y[m] > 0.5)))), 4)
             for k, col in (("elo", "elo"), ("ml2", "ml2_static"), ("open", "open"), ("close", "market")):
                 row["crowd - " + k] = M2.compare(pc[m], D[col].to_numpy(float)[m], y[m], g)
             # raw majority-pick accuracy (ties = half) and the share of unanimous / split panels
@@ -699,6 +699,40 @@ def test_alone(D, CF, M2, np):
                 row["crowd - close"]["diff"], row["crowd - close"]["diff_ci"]))
         out[c] = res
     return out
+
+
+def _stack_fit_signed(Z, y, w, k_signed):
+    """ml2.stack_fit with the last k_signed weights unconstrained in sign (a negative crowd weight = fade the public
+    given the other experts); same objective, L2 and start."""
+    np, _ = _np()
+    from scipy.optimize import minimize
+    n, k = Z.shape
+    w = w / w.sum()
+
+    def f(b):
+        q = Z @ b
+        p = 1 / (1 + np.exp(-q))
+        return np.sum(w * (np.logaddexp(0, q) - y * q)) + 1e-4 * b @ b, Z.T @ (w * (p - y)) + 2e-4 * b
+    r = minimize(f, np.full(k, 0.3), jac=True, method="L-BFGS-B",
+                 bounds=[(0, None)] * (k - k_signed) + [(None, None)] * k_signed)
+    return r.x
+
+
+class _SignedM2:
+    """Wraps tools/ml2.py so stack_predict fits the crowd column with a free sign (everything else unchanged)."""
+    def __init__(self, M2):
+        self.M2 = M2
+        self.SEL_MIN, self.ll, self.compare = M2.SEL_MIN, M2.ll, M2.compare
+
+    def stack_predict(self, D, cols, scheme, h, fit_until_year, pred_mask, rows_ok):
+        M2 = self.M2
+        np, _ = _np()
+        cc = [M2.col_for(c, scheme if scheme == "roll" else "static") for c in cols]
+        tr = rows_ok & (D["year"] <= fit_until_year).to_numpy() & (D["year"] >= 2019).to_numpy()
+        Z = M2.zmat(D, cc)
+        ks = sum(1 for c in cols if c in CROWD_COLS)
+        b = _stack_fit_signed(Z[tr], D["y"].to_numpy(float)[tr], M2.rec_w(D["year"].to_numpy()[tr], fit_until_year + 1, h), ks)
+        return M2.sig(Z[pred_mask] @ b), b
 
 
 def _cv_set(D, M2, np, cols, rows_ok, y, yr):
@@ -742,12 +776,12 @@ def test_stack(D, M2, np, has, cov):
             for Y in (2024, 2025):
                 m = rows_ok & (yr == Y)
                 prb[m], _ = M2.stack_predict(D, bcols, "roll", hb, Y - 1, m, rows_ok)
-            for c in CROWD_COLS:
-                cols = bcols + [c]
-                cvc, hc, oofc = _cv_set(D, M2, np, cols, rows_ok, y, yr)
+            for c, MM in [(c, M2) for c in CROWD_COLS] + [(c + " (signed)", _SignedM2(M2)) for c in CROWD_COLS]:
+                cols = bcols + [c.split()[0]]
+                cvc, hc, oofc = _cv_set(D, MM, np, cols, rows_ok, y, yr)
                 gain = cvc[str(hc)] - cvb[str(hb)]
                 m_cv = rows_ok & cvy
-                m_cvc = m_cv & cov[c]
+                m_cvc = m_cv & cov[c.split()[0]]
                 r = {"cv_by_h": cvc, "h": hc, "cv": cvc[str(hc)], "cv_gain": round(gain, 6),
                      "passes_gate": bool(gain < -M2.SEL_MIN),
                      "cv_paired_all": M2.compare(oofc[m_cv], oofb[m_cv], y[m_cv], ev[m_cv]),
@@ -755,16 +789,16 @@ def test_stack(D, M2, np, has, cov):
                                            if m_cvc.sum() >= 10 else None),
                      "n_cv_covered": int(m_cvc.sum())}
                 # the one 2024-25 look (static: fit <= 2023; rolling: experts' rolling columns, stack refit each January)
-                pst, w = M2.stack_predict(D, cols, "static", hc, 2023, rows_ok & va, rows_ok)
+                pst, w = MM.stack_predict(D, cols, "static", hc, 2023, rows_ok & va, rows_ok)
                 r["w_le_2023"] = dict(zip(cols, np.round(w, 4).tolist()))
                 pc_full = np.full(len(D), np.nan)
                 pc_full[rows_ok & va] = pst
                 prc = np.full(len(D), np.nan)
                 for Y in (2024, 2025):
                     m = rows_ok & (yr == Y)
-                    prc[m], _ = M2.stack_predict(D, cols, "roll", hc, Y - 1, m, rows_ok)
+                    prc[m], _ = MM.stack_predict(D, cols, "roll", hc, Y - 1, m, rows_ok)
                 mv = rows_ok & va
-                mvc = mv & cov[c]
+                mvc = mv & cov[c.split()[0]]
                 r["valid_static_all"] = M2.compare(pc_full[mv], pb_full[mv], y[mv], ev[mv])
                 r["valid_roll_all"] = M2.compare(prc[mv], prb[mv], y[mv], ev[mv])
                 r["valid_static_covered"] = (M2.compare(pc_full[mvc], pb_full[mvc], y[mvc], ev[mvc])

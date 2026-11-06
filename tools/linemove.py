@@ -1157,6 +1157,186 @@ def stage_prereg(a):
 STAGES["prereg"] = stage_prereg
 
 
+# ====================================================================== stage: valid (2024-2025, scored once)
+def pooled_fit(ZS, Zml, y, yrs, rows, js, until, h=None, start=2019):
+    trm = rows & (yrs >= start) & (yrs <= until)
+    Zt = np.vstack([np.column_stack([ZS[trm, k], Zml[trm]]) for k in js])
+    return fit_w(Zt, np.tile(y[trm], len(js)), np.tile(yrs[trm], len(js)), until, h)
+
+
+def stage_valid(a):
+    E, P, tm = stack_table()
+    y = E["y"].to_numpy(float)
+    yrs = E["year"].to_numpy()
+    full = E["full"].to_numpy(bool)
+    g = cv_groups(E)
+    va = full & (yrs >= 2024) & (yrs <= 2025)
+    ZS = np.column_stack([zcol(P[:, j]) for j in range(NPTS)])
+    Zst = zcol(E["ml2lr_static"])
+    Zro = zcol(E["ml2lr_roll"])
+    Zc = zcol(E["market"])
+    BY = pickle.load(open(os.path.join(CACHE, "beyond.pkl"), "rb"))["R"]
+    chosen_set = BY["consensus_stack"]["chosen_set"]
+    SETS = {"S8": [8], "S678": [6, 7, 8], "S4-8": [4, 5, 6, 7, 8], "S1-9": list(range(1, NPTS))}
+    cjs = SETS[chosen_set]
+    V = {"prereg": PREREG, "n": int(va.sum()), "cards": int(len(set(g[va]))), "chosen_consensus_set": chosen_set}
+    log("2024-2025 look: %d fights on %d cards; consensus set %s" % (va.sum(), len(set(g[va])), chosen_set))
+    # A. raw lines
+    V["raw_lines"] = {str(j): round(ml2.ll(P[va, j], y[va]), 5) for j in range(NPTS)}
+    V["raw_lines"]["close_market_json"] = round(ml2.ll(E["market"].to_numpy(float)[va], y[va]), 5)
+    V["raw_lines"]["ml2lr_static"] = round(ml2.ll(sg(Zst[va]), y[va]), 5)
+    log("raw: %s" % V["raw_lines"])
+    # B. stacks: static (fit 2019-2023) and rolling (refit each January; ML v2 monthly-rolling logistic in 2024-2025)
+    def stack_preds(js, feed_j, scheme):
+        out = np.full(len(y), np.nan)
+        if scheme == "static":
+            b = pooled_fit(ZS, Zst, y, yrs, full, js, 2023)
+            out[va] = sg(np.column_stack([ZS[va, feed_j], Zst[va]]) @ b)
+            return out, b
+        Zr = np.where(yrs >= 2024, Zro, Zst)
+        for Y in (2024, 2025):
+            b = pooled_fit(ZS, Zr, y, yrs, full, js, Y - 1)
+            te = va & (yrs == Y)
+            out[te] = sg(np.column_stack([ZS[te, feed_j], Zr[te]]) @ b)
+        return out, b
+    trained = {"open-trained (point 0)": [0], "consensus (%s)" % chosen_set: cjs, "close-trained (point 9)": [9]}
+    XF = {}
+    PR = {}
+    W = {}
+    for sch in ("static", "roll"):
+        for tname, js in trained.items():
+            row = {}
+            for j in range(NPTS):
+                pr, b = stack_preds(js, j, sch)
+                PR[(sch, tname, j)] = pr
+                row[str(j)] = round(ml2.ll(pr[va], y[va]), 5)
+                W[(sch, tname)] = np.round(b, 4).tolist()
+            XF["%s | %s" % (sch, tname)] = row
+            log("%-6s %-26s fed 0..9: %s  w %s" % (sch, tname, " ".join("%.4f" % row[str(j)] for j in range(NPTS)), W[(sch, tname)]))
+    V["cross_feed"] = XF
+    V["weights"] = {"%s | %s" % k: v for k, v in W.items()}
+    cons = "consensus (%s)" % chosen_set
+    fed = list(range(4, NPTS))
+    pr_res = {}
+    for sch in ("static", "roll"):
+        a_ = np.concatenate([PR[(sch, cons, j)][va] for j in fed])
+        b_ = np.concatenate([PR[(sch, "open-trained (point 0)", j)][va] for j in fed])
+        c_ = np.concatenate([PR[(sch, "close-trained (point 9)", j)][va] for j in fed])
+        yy = np.tile(y[va], len(fed))
+        gg = np.tile(g[va], len(fed))
+        pr_res["%s | PRIMARY consensus minus open-trained, pooled fed 4-9" % sch] = ml2.compare(a_, b_, yy, gg, a.boot)
+        pr_res["%s | close-trained minus consensus, pooled fed 4-9" % sch] = ml2.compare(c_, a_, yy, gg, a.boot)
+        for j in fed + [0]:
+            pr_res["%s | consensus minus open-trained, fed %d" % (sch, j)] = ml2.compare(
+                PR[(sch, cons, j)][va], PR[(sch, "open-trained (point 0)", j)][va], y[va], g[va], a.boot)
+            pr_res["%s | close-trained minus consensus, fed %d" % (sch, j)] = ml2.compare(
+                PR[(sch, "close-trained (point 9)", j)][va], PR[(sch, cons, j)][va], y[va], g[va], a.boot)
+        for j in (8, 9):
+            pr_res["%s | consensus fed %d minus the raw line at %d" % (sch, j, j)] = ml2.compare(
+                PR[(sch, cons, j)][va], P[va, j], y[va], g[va], a.boot)
+            pr_res["%s | consensus fed %d minus market.json close" % (sch, j)] = ml2.compare(
+                PR[(sch, cons, j)][va], E["market"].to_numpy(float)[va], y[va], g[va], a.boot)
+    V["paired"] = pr_res
+    for k, v in pr_res.items():
+        log("  %-62s a %.5f b %.5f diff %+.5f %s" % (k, v["a"], v["b"], v["diff"], v["diff_ci"]))
+    prim = pr_res["static | PRIMARY consensus minus open-trained, pooled fed 4-9"]
+    V["primary_verdict"] = ("confirmed" if prim["diff_ci"][1] < 0 else
+                            ("contradicted" if prim["diff_ci"][0] > 0 else
+                             ("not confirmed (CI upper > +0.0005)" if prim["diff_ci"][1] > 0.0005 else "not confirmed")))
+    log("PRIMARY: %+.5f %s -> %s" % (prim["diff"], prim["diff_ci"], V["primary_verdict"]))
+    # by year
+    V["by_year"] = {}
+    for Y in (2024, 2025):
+        m = va & (yrs == Y)
+        V["by_year"][str(Y)] = {"n": int(m.sum()), "close": round(ml2.ll(E["market"].to_numpy(float)[m], y[m]), 5),
+                                "point8_raw": round(ml2.ll(P[m, 8], y[m]), 5),
+                                "consensus_fed8": round(ml2.ll(PR[("static", cons, 8)][m], y[m]), 5),
+                                "open_trained_fed8": round(ml2.ll(PR[("static", "open-trained (point 0)", 8)][m], y[m]), 5),
+                                "close_trained_fed9": round(ml2.ll(PR[("static", "close-trained (point 9)", 9)][m], y[m]), 5)}
+    log("by year: %s" % V["by_year"])
+    # C. winner beyond the close: B3 vs B0 (free signs, fit 2019-2023)
+    tr = full & (yrs <= 2023) & (yrs >= 2019)
+    X0 = np.column_stack([Zc, Zst])
+    X3 = np.column_stack([Zc, Zst, ZS[:, 1]])
+    b0 = lr_fit(X0[tr], y[tr])
+    b3 = lr_fit(X3[tr], y[tr])
+    V["beyond_close_B3_vs_B0"] = {"B0_coef": np.round(b0, 4).tolist(), "B3_coef": np.round(b3, 4).tolist(),
+                                  "cmp": ml2.compare(sg(X3[va] @ b3), sg(X0[va] @ b0), y[va], g[va], a.boot)}
+    log("B3 vs B0: %s" % V["beyond_close_B3_vs_B0"]["cmp"])
+    # D. Q1 on 2024-2025 with coefficients fit <= 2023
+    D = load_traj()["D"]
+    Pt, Pm, decA, decB = traj_matrix(D)
+    yrt = D["year"].to_numpy()
+    okt = (~np.isnan(Pt).any(1)) & D["evalrow"].to_numpy(bool) & D["ml2lr"].notna().to_numpy()
+    zt = lg(Pt)
+    zml = lg(D["ml2lr"].to_numpy(float))
+    zmr = np.nan_to_num(lg(D["mr"].astype(float).to_numpy()), nan=0.0)
+    hasmr = D["mr"].notna().to_numpy()
+    zwhr = np.nan_to_num(lg(D["whr"].astype(float).to_numpy()), nan=0.0)
+    yt = D["y"].to_numpy(float)
+    gt = D["event"].to_numpy()
+    q1 = {}
+    trq = okt & (yrt <= 2023)
+    teq = okt & (yrt >= 2024) & (yrt <= 2025)
+    for s_ in (0, 1, 4, 8):
+        tgt = zt[:, 9] - zt[:, s_]
+        feats = {"d_ml2lr": zml - zt[:, s_], "d_mr": np.where(hasmr, zmr - zt[:, s_], 0.0), "d_whr": zwhr - zt[:, s_],
+                 "z_line": zt[:, s_]}
+        if s_ >= 1:
+            feats["momentum (z_s - z_open)"] = zt[:, s_] - zt[:, 0]
+        out = {}
+        for name, cols in {"M1 model gap": ["d_ml2lr"], "M2 + market rating + WHR gaps": ["d_ml2lr", "d_mr", "d_whr"],
+                           "M3 + line level (+ momentum)": list(feats)}.items():
+            X = np.column_stack([feats[c] for c in cols])
+            b = ols0(X[trq], tgt[trq])
+            e = tgt[teq] - X[teq] @ b
+            out[name] = round(1 - float(e @ e) / float(tgt[teq] @ tgt[teq]), 4)
+        q1["from point %d" % s_] = {"oos_r2": out, "corr(move, model gap)": round(float(np.corrcoef(tgt[teq], feats["d_ml2lr"][teq])[0, 1]), 4)}
+    pc = Pt[:, 9]
+    clv = {}
+    for s_ in (0, 1, 4, 8):
+        e_ = sg(zml) - Pt[:, s_]
+        for t in (0.0, 0.03, 0.05, 0.10):
+            sA, sB = e_ > t, e_ < -t
+            m = teq & (sA | sB)
+            dec = np.where(sA, decA[:, s_], decB[:, s_])
+            pcs = np.where(sA, pc, 1 - pc)
+            won = np.where(sA, yt, 1 - yt)
+            c_ = pcs * dec - 1
+            r_ = won * dec - 1
+            both = 0.5 * ((pc * decA[:, s_] - 1) + ((1 - pc) * decB[:, s_] - 1))
+            bs = ml2.boot(gt[m], [c_[m], r_[m], c_[m] - both[m]], a.boot, 7)
+            q = lambda k: [round(float(np.percentile(bs[:, k], 2.5)), 4), round(float(np.percentile(bs[:, k], 97.5)), 4)]
+            clv["point %d | edge > %.2f" % (s_, t)] = {"bets": int(m.sum()), "mean_clv": round(float(c_[m].mean()), 4), "clv_ci": q(0),
+                                                       "clv_minus_both_sides": round(float((c_[m] - both[m]).mean()), 4),
+                                                       "clv_minus_both_sides_ci": q(2), "roi": round(float(r_[m].mean()), 4), "roi_ci": q(1)}
+    V["q1"] = {"rows": int(teq.sum()), "move_regression": q1, "clv": clv}
+    log("Q1 2024-25: %s" % q1)
+    for k, v in clv.items():
+        log("  CLV %-22s bets %4d clv %+.4f %s vs both %+.4f %s roi %+.4f %s" % (k, v["bets"], v["mean_clv"], v["clv_ci"],
+            v["clv_minus_both_sides"], v["clv_minus_both_sides_ci"], v["roi"], v["roi_ci"]))
+    # E. synthetic T-24h line (descriptive)
+    s_prof, v0 = tm["s"], tm["v0"]
+    L = E["lead_days"].to_numpy(float)
+    tau = np.array([[(9 - j) / 9.0 * l for j in range(NPTS)] for l in L])
+    rng = np.random.default_rng(20261106)
+    o = bridge_line(ZS, tau, s_prof, v0, 1.0, rng, 8)
+    okr = va & ~np.isnan(o[0])
+    bc = pooled_fit(ZS, Zst, y, yrs, full, cjs, 2023)
+    bo = pooled_fit(ZS, Zst, y, yrs, full, [0], 2023)
+    lc = [ml2.ll(sg(np.column_stack([o[d][okr], Zst[okr]]) @ bc), y[okr]) for d in range(8)]
+    lo = [ml2.ll(sg(np.column_stack([o[d][okr], Zst[okr]]) @ bo), y[okr]) for d in range(8)]
+    V["synthetic_T24h"] = {"rows": int(okr.sum()), "consensus": round(float(np.mean(lc)), 5),
+                           "open_trained": round(float(np.mean(lo)), 5), "diff": round(float(np.mean(lc) - np.mean(lo)), 5)}
+    log("synthetic T-24h: %s" % V["synthetic_T24h"])
+    V["scored_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    wjson(os.path.join(CACHE, "valid.json"), V)
+    pickle.dump({"V": V, "PR": PR}, open(os.path.join(CACHE, "valid.pkl"), "wb"))
+
+
+STAGES["valid"] = stage_valid
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])

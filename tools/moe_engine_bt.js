@@ -14,6 +14,7 @@ const path = require("path");
 const crypto = require("crypto");
 const ROOT = path.join(__dirname, "..");
 const E = require(path.join(ROOT, "src/engine3.js"));
+const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);   // v5 durability inputs (walk-forward records)
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const SIMS = +opt("--sims", 100), PART = +opt("--part", 0), PARTS = +opt("--parts", 1);
@@ -52,8 +53,10 @@ for (const f of fights) {
   const o = { division: div, rounds: f.rounds, title: f.title, date: f.date, priors };
   let s1, s2;
   try {
-    s1 = E.summarize(E.matchup(A, B, o), SIMS, seedOf(f.id, 1));
-    s2 = E.summarize(E.matchup(B, A, o), SIMS, seedOf(f.id, 2));
+    // v5: durability walk-forward record (corner order of each call) + train NORM when the component is on (tools/durrec.js)
+    const o1 = DR.apply(Object.assign({}, o), f.id, false), o2 = DR.apply(Object.assign({}, o), f.id, true);
+    s1 = E.summarize(E.matchup(A, B, o1), SIMS, seedOf(f.id, 1));
+    s2 = E.summarize(E.matchup(B, A, o2), SIMS, seedOf(f.id, 2));
   } catch (err) {
     res[f.id] = { err: String(err.message || err) };
     continue;

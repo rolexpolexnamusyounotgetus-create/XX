@@ -1166,6 +1166,381 @@ def fit_year_nostats(X, Y, H0, sweeps=2, logf=log):
     return H
 
 
+# ====================================================================== evaluation helpers
+def ll_vec(p, y):
+    p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
+    return -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+
+def boot(groups, arrays, n=2000, seed=7):
+    """Event-cluster bootstrap of per-fight means (same scheme as tools/ml2.py: resample cards)."""
+    rng = np.random.default_rng(seed)
+    _, g = np.unique(np.asarray(groups), return_inverse=True)
+    Gn = g.max() + 1
+    A = np.vstack([np.asarray(a, float) for a in arrays]).T
+    S = np.zeros((Gn, A.shape[1]))
+    np.add.at(S, g, A)
+    C = np.bincount(g, minlength=Gn).astype(float)
+    out = np.empty((n, A.shape[1]))
+    for b in range(n):
+        w = np.bincount(rng.integers(0, Gn, Gn), minlength=Gn).astype(float)
+        out[b] = (w @ S) / (w @ C)
+    return out
+
+
+def ci(v, d=4):
+    return [round(float(np.percentile(v, 2.5)), d), round(float(np.percentile(v, 97.5)), d)]
+
+
+def paired(la, lb, groups, n=2000):
+    la, lb = np.asarray(la, float), np.asarray(lb, float)
+    bs = boot(groups, [la, lb, la - lb], n)
+    return {"n": int(len(la)), "a": round(float(la.mean()), 5), "b": round(float(lb.mean()), 5),
+            "diff": round(float((la - lb).mean()), 5), "diff_ci": ci(bs[:, 2]), "a_ci": ci(bs[:, 0])}
+
+
+def calib_slope(p, y):
+    z = np.log(np.clip(p, 1e-6, 1 - 1e-6) / (1 - np.clip(p, 1e-6, 1 - 1e-6)))
+    z, yy = np.r_[z, -z], np.r_[y, 1 - y]
+    f = lambda b: np.sum(np.logaddexp(0, b[0] * z) - yy * b[0] * z)
+    return float(minimize(f, [1.0], method="L-BFGS-B").x[0])
+
+
+def win_metrics(p, y, groups=None):
+    p = np.asarray(p, float)
+    out = {"n": int(len(y)), "log_loss": round(float(ll_vec(p, y).mean()), 5),
+           "brier": round(float(np.mean((p - y) ** 2)), 5),
+           "accuracy": round(float(np.mean(np.where(np.abs(p - 0.5) < 1e-12, 0.5, (p > 0.5) == (y > 0.5)))), 4),
+           "calib_slope": round(calib_slope(p, y), 3)}
+    if groups is not None:
+        out["log_loss_ci"] = ci(boot(groups, [ll_vec(p, y)])[:, 0])
+    return out
+
+
+def gather(X, variant, years, static=None):
+    """Per-fight predictions (aligned to X) from the cached yearly fits (or one static fit for `static` years)."""
+    n = X["n"]
+    G = {"pA": np.full(n, np.nan), "pA_plugin": np.full(n, np.nan), "m": np.full(n, np.nan), "v": np.full(n, np.nan),
+         "cells": np.full((n, 23), np.nan), "m0": np.full((n, 2, K), np.nan), "sd0": np.full((n, 2, K), np.nan),
+         "new": np.zeros((n, 2), bool), "stats": defaultdict(lambda: np.full(n, np.nan)), "fit": {}}
+    packs = []
+    for Y in years:
+        if static and Y >= static:
+            continue
+        packs.append(pickle.load(open(year_path(variant, Y), "rb")))
+    if static:
+        packs.append(pickle.load(open(os.path.join(CACHE, "fit_%s_static%d.pkl" % (variant, static)), "rb")))
+    for pk in packs:
+        P = pk["P"]
+        keep = np.isin(X["year"][P["idx"]], years)
+        idx = P["idx"][keep]
+        for k in ("pA", "pA_plugin", "m", "v"):
+            G[k][idx] = P[k][keep]
+        G["cells"][idx] = P["cells"][keep]
+        G["m0"][idx] = P["m0"][keep]
+        G["sd0"][idx] = P["sd0"][keep]
+        G["new"][idx] = P["new"][keep]
+        for k, v in P["stats"].items():
+            G["stats"][k][idx] = v[keep]
+        G["fit"][str(pk.get("year", pk.get("years")))] = pk["H"].get("fit_through")
+    return G
+
+
+def comparators(X):
+    """Other models' pre-fight P(A) on the backtest fights: ratings.json systems, ml2 stack table columns."""
+    n = X["n"]
+    pos = {f: i for i, f in enumerate(X["fid"])}
+    C = {}
+    rj = json.load(open(os.path.join(DERIVED, "ratings.json")))["predictions"]
+    for sysn in ("whr_rounds", "glicko2", "elo_full", "trueskill_mov", "dims", "stack"):
+        a = np.full(n, np.nan)
+        for f, r in rj.items():
+            if f in pos and str(r.get("date", "")) < "2026-01-01" and r["p"].get(sysn) is not None:
+                a[pos[f]] = r["p"][sysn]
+        C[sysn] = a
+    S = pickle.load(open(os.path.join(ROOT, "out", "ml2_cache", "stack.pkl"), "rb"))
+    D = S["D"]
+    for c in ("ml2_static", "ml2lr_static", "ml2_roll", "ml2lr_roll", "market", "open", "mkt_rating", "elo"):
+        a = np.full(n, np.nan)
+        for f, v in zip(D["fid"], D[c]):
+            if f in pos:
+                a[pos[f]] = v
+        C[c] = a
+    return C
+
+
+def outcome_cell(X):
+    y = np.full(X["n"], -1)
+    for i in range(X["n"]):
+        c, w, r = X["cat"][i], X["win"][i], min(max(X["rnd"][i], 1), 5)
+        if c == 4:
+            y[i] = 22
+        elif c == 3:
+            y[i] = 20 if w == 1 else 21
+        elif c in (1, 2):
+            y[i] = (0 if w == 1 else 10) + (0 if c == 1 else 5) + r - 1
+    return y
+
+
+def methodround_cells(X, variant="S"):
+    n = X["n"]
+    pos = {f: i for i, f in enumerate(X["fid"])}
+    Cm = np.full((n, 23), np.nan)
+    mj = json.load(open(os.path.join(DERIVED, "methodround.json")))["fights"]
+    for f, r in mj.items():
+        if f not in pos or str(r.get("date", "")) >= "2026-01-01" or r.get(variant) is None:
+            continue
+        v = r[variant]
+        R = int(r["rounds"])
+        i = pos[f]
+        row = np.zeros(23)
+        row[0:R], row[5:5 + R], row[10:10 + R], row[15:15 + R] = v[0:R], v[R:2 * R], v[2 * R:3 * R], v[3 * R:4 * R]
+        row[20], row[21], row[22] = v[4 * R], v[4 * R + 1], v[4 * R + 2]
+        Cm[i] = row
+    return Cm
+
+
+def rescale_winner(Cl, pA):
+    """Keep a joint's method-given-winner shares and draw mass, take P(A wins | not a draw) from pA."""
+    C = Cl.copy()
+    a = C[:, list(range(0, 10)) + [20]].sum(1)
+    b = C[:, list(range(10, 20)) + [21]].sum(1)
+    tot = a + b
+    fa = tot * pA / np.maximum(a, 1e-12)
+    fb = tot * (1 - pA) / np.maximum(b, 1e-12)
+    C[:, list(range(0, 10)) + [20]] *= fa[:, None]
+    C[:, list(range(10, 20)) + [21]] *= fb[:, None]
+    return C
+
+
+def mlrates_stats(X):
+    """mlrates out-of-fold per-minute rates turned into expected per-fight counts given the actual minutes
+    (KD given the actual head strikes landed)."""
+    n = X["n"]
+    pos = {f: i for i, f in enumerate(X["fid"])}
+    J = json.load(open(os.path.join(DERIVED, "mlrates_oof.json")))
+    T = J["meta"]["targets"]
+    ti = {t: k for k, t in enumerate(T)}
+    out = {k: np.full((n, 2), np.nan) for k in ("str", "td", "ctl", "sub", "kd")}
+    src = np.array([""] * n, dtype=object)
+    for f, r in J["fights"].items():
+        if f not in pos or str(r.get("date", "")) >= "2026-01-01":
+            continue
+        i = pos[f]
+        src[i] = r.get("src", "")
+        for s, side in ((0, "A"), (1, "B")):
+            v = r[side]
+            g = lambda t: v[ti[t]]
+            mins = X["mins"][i]
+            sig_pm = g("d_att") * g("acc_d") + g("c_att") * g("acc_c") + g("g_att") * g("acc_g")
+            out["str"][i, s] = sig_pm * mins
+            out["td"][i, s] = g("td_att") * g("td_acc") * mins
+            out["sub"][i, s] = g("sub_att") * mins
+            out["ctl"][i, s] = g("ctrl") * mins / 30.0
+            out["kd"][i, s] = g("kd_h") * X["head"][i, s]
+    return out, src
+
+
+def pois_dev(y, mu):
+    mu = np.maximum(mu, 1e-9)
+    return 2 * (np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / mu), 0.0) - (y - mu))
+
+
+def stat_actual(X, st):
+    return {"str": X["sig"], "td": X["td"], "ctl": X["ctl"] / 30.0, "sub": X["sub"], "kd": X["kd"]}[st]
+
+
+def nb_cdf(y, mu, k):
+    from scipy.stats import nbinom
+    return nbinom.cdf(y, k, k / (k + mu))
+
+
+def stat_pit(X, G, H_by_year, rows, st, rng):
+    """Randomised PIT and central-80% coverage of the per-fight predictive (moment-matched NB with skill, pace and
+    form uncertainty) for one stat. For control (continuous 30 s units) the count is rounded."""
+    pits, cov = [], []
+    for s in (0, 1):
+        mu = G["stats"]["%s_%d" % (st, s)][rows]
+        lv = G["stats"]["%s_lv_%d" % (st, s)][rows]
+        k = np.array([H_by_year[X["year"][i]]["k"][st] for i in rows])
+        if st == "str":
+            k = k * 3.0      # fight total over ~3 rounds: round-level NB noise averages out (rough)
+        ke = 1.0 / (np.exp(np.minimum(lv, 5)) / k + np.exp(np.minimum(lv, 5)) - 1.0)
+        y = np.round(stat_actual(X, st)[rows, s])
+        F1 = nb_cdf(y, mu, ke)
+        F0 = np.where(y > 0, nb_cdf(y - 1, mu, ke), 0.0)
+        u = F0 + rng.random(len(y)) * (F1 - F0)
+        pits.append(u)
+        cov.append((u > 0.1) & (u < 0.9))
+    u = np.concatenate(pits)
+    hist = np.histogram(u, bins=10, range=(0, 1))[0] / len(u)
+    return {"coverage_80": round(float(np.mean(np.concatenate(cov))), 4), "pit_deciles": np.round(hist, 4).tolist()}
+
+
+def stage_eval(args):
+    """Every number here is on 2019-2023 (walk-forward out-of-sample: each year's hyperparameters fit on earlier
+    years, states filtered fight by fight). 2024-2025 is scored once, by `confirm`."""
+    X = load_data()
+    years = list(range(2019, 2024))
+    G = gather(X, "main", years)
+    C = comparators(X)
+    E = {"window": "2019-2023 (walk-forward, yearly refits)"}
+    rows = np.flatnonzero(X["evalrow"] & np.isin(X["year"], years) & ~np.isnan(G["pA"]))
+    y = X["win"][rows]
+    grp = np.array(X["event"])[rows]
+    ok = np.all([~np.isnan(C[c][rows]) for c in ("whr_rounds", "glicko2", "ml2_static")], 0)
+    rows, y, grp = rows[ok], y[ok], grp[ok]
+    log("eval rows %d" % len(rows))
+    models = {"bayes": G["pA"], "bayes_plugin": G["pA_plugin"], "whr_rounds": C["whr_rounds"], "glicko2": C["glicko2"],
+              "elo_full": C["elo_full"], "trueskill_mov": C["trueskill_mov"], "dims": C["dims"],
+              "ratings_stack": C["stack"], "ml2 (blend, OOF)": C["ml2_static"], "ml2 logistic (OOF)": C["ml2lr_static"],
+              "elo": C["elo"]}
+    for v in ("nostats", "r_only"):
+        try:
+            models["bayes_" + v] = gather(X, v, years)["pA"]
+        except FileNotFoundError:
+            pass
+    E["standalone"] = {k: win_metrics(a[rows], y, grp) for k, a in models.items() if not np.isnan(a[rows]).any()}
+    for k, v in E["standalone"].items():
+        log("%-22s LL %.5f %s acc %.3f slope %.2f" % (k, v["log_loss"], v["log_loss_ci"], v["accuracy"], v["calib_slope"]))
+    lb = ll_vec(G["pA"][rows], y)
+    E["paired_vs_bayes"] = {}
+    for k, a in models.items():
+        if k == "bayes" or np.isnan(a[rows]).any():
+            continue
+        E["paired_vs_bayes"][k] = paired(lb, ll_vec(a[rows], y), grp)
+        log("bayes - %-20s %+.5f %s" % (k, E["paired_vs_bayes"][k]["diff"], E["paired_vs_bayes"][k]["diff_ci"]))
+    # close (fights with a line)
+    mk = ~np.isnan(C["market"][rows])
+    E["vs_close"] = paired(lb[mk], ll_vec(C["market"][rows][mk], y[mk]), grp[mk])
+    E["by_year"] = {}
+    for Y in years:
+        m = X["year"][rows] == Y
+        E["by_year"][Y] = {k: round(float(ll_vec(a[rows][m], y[m]).mean()), 5) for k, a in models.items()
+                           if not np.isnan(a[rows][m]).any()}
+        E["by_year"][Y]["n"] = int(m.sum())
+    log("by year %s" % json.dumps({Y: {k: E["by_year"][Y][k] for k in ("n", "bayes", "whr_rounds", "glicko2", "ml2 (blend, OOF)")} for Y in years}))
+    # uncertainty: does a larger posterior sd of the logit mean lower accuracy, and is it calibrated?
+    E["uncertainty"] = uncertainty_table(G, C, rows, y, grp, X)
+    # method x round
+    E["method"] = method_eval(X, G, C, years)
+    # stats
+    E["stats"] = stats_eval(X, G, years)
+    # newcomer split
+    E["segments"] = {}
+    npr = X["nprior"][rows].min(1)
+    for name, m in (("newcomer bout (min prior UFC fights 1-2)", npr <= 2), ("3-7", (npr >= 3) & (npr <= 7)), ("8+", npr >= 8)):
+        E["segments"][name] = {"n": int(m.sum()), "bayes": round(float(lb[m].mean()), 5),
+                               "whr_rounds": round(float(ll_vec(C["whr_rounds"][rows][m], y[m]).mean()), 5),
+                               "glicko2": round(float(ll_vec(C["glicko2"][rows][m], y[m]).mean()), 5),
+                               "ml2": round(float(ll_vec(C["ml2_static"][rows][m], y[m]).mean()), 5),
+                               "bayes - whr_rounds": paired(lb[m], ll_vec(C["whr_rounds"][rows][m], y[m]), grp[m], 1000)["diff_ci"]}
+    json.dump(E, open(os.path.join(CACHE, "eval.json"), "w"), indent=1, default=float)
+    log("segments %s" % json.dumps(E["segments"]))
+
+
+def uncertainty_table(G, C, rows, y, grp, X, nb=3):
+    sdv = np.sqrt(G["v"][rows])
+    edges = np.quantile(sdv, np.linspace(0, 1, nb + 1))
+    out = {"what": "fights split into terciles of the posterior sd of the result logit (beta' Delta); log loss, "
+                   "accuracy and mirrored calibration slope of the variance-aware and plug-in predictions",
+           "bins": []}
+    pa, pp, pw = G["pA"][rows], G["pA_plugin"][rows], C["whr_rounds"][rows]
+    for b in range(nb):
+        m = (sdv >= edges[b]) & ((sdv <= edges[b + 1]) if b == nb - 1 else (sdv < edges[b + 1]))
+        r = {"sd_range": [round(float(edges[b]), 3), round(float(edges[b + 1]), 3)], "n": int(m.sum()),
+             "mean_abs_edge": round(float(np.mean(np.abs(pa[m] - 0.5))), 4),
+             "accuracy": round(float(np.mean((pa[m] > 0.5) == (y[m] > 0.5))), 4),
+             "ll_varaware": round(float(ll_vec(pa[m], y[m]).mean()), 5),
+             "ll_plugin": round(float(ll_vec(pp[m], y[m]).mean()), 5),
+             "slope_varaware": round(calib_slope(pa[m], y[m]), 3), "slope_plugin": round(calib_slope(pp[m], y[m]), 3),
+             "whr_rounds_ll": round(float(ll_vec(pw[m], y[m]).mean()), 5),
+             "whr_rounds_accuracy": round(float(np.mean((pw[m] > 0.5) == (y[m] > 0.5))), 4),
+             "share_newcomer_bouts": round(float(np.mean(X["nprior"][rows][m].min(1) <= 2)), 3),
+             "varaware_minus_plugin": paired(ll_vec(pa[m], y[m]), ll_vec(pp[m], y[m]), grp[m], 1000)}
+        out["bins"].append(r)
+        log("unc bin %d sd %s n %d edge %.3f acc %.3f LL va %.4f pl %.4f slope va %.2f pl %.2f | whr LL %.4f acc %.3f" % (
+            b, r["sd_range"], r["n"], r["mean_abs_edge"], r["accuracy"], r["ll_varaware"], r["ll_plugin"],
+            r["slope_varaware"], r["slope_plugin"], r["whr_rounds_ll"], r["whr_rounds_accuracy"]))
+    # accuracy at matched confidence: logistic of "correct" on |logit p| and the posterior sd
+    z = np.abs(np.log(pa / (1 - pa)))
+    corr = ((pa > 0.5) == (y > 0.5)).astype(float)
+    Xd = np.c_[np.ones(len(z)), z, sdv]
+    f = lambda b: np.sum(np.logaddexp(0, Xd @ b) - corr * (Xd @ b))
+    bb = minimize(f, np.zeros(3), method="BFGS")
+    se = np.sqrt(np.diag(bb.hess_inv))
+    out["correct_on_edge_and_sd"] = {"coef": np.round(bb.x, 4).tolist(), "se": np.round(se, 4).tolist(),
+                                     "terms": ["1", "|logit p| (variance-aware)", "posterior sd of the logit"]}
+    log("P(correct) ~ |logit p| + sd: %s se %s" % (np.round(bb.x, 3), np.round(se, 3)))
+    return out
+
+
+def method_eval(X, G, C, years):
+    import methodround as MRm
+    yc = outcome_cell(X)
+    S = methodround_cells(X, "S")
+    bt = set(e["id"] for e in json.load(open(os.path.join(DERIVED, "backtest_dev.json")))["fights"])
+    rows = np.flatnonzero(np.array([f in bt for f in X["fid"]]) & np.isin(X["year"], years) & (yc >= 0)
+                          & ~np.isnan(G["cells"][:, 0]) & ~np.isnan(S[:, 0]))
+    grp = np.array(X["event"])[rows]
+    y = yc[rows]
+    out = {"n": int(len(rows))}
+    arms = {"bayes": G["cells"][rows], "S (methodround, OOF)": S[rows]}
+    ml2w = C["ml2_static"][rows]
+    okw = ~np.isnan(ml2w)
+    arms["bayes + ml2 winner"] = np.where(okw[:, None], rescale_winner(G["cells"][rows], np.nan_to_num(ml2w, nan=0.5)), G["cells"][rows])
+    arms["S + ml2 winner"] = np.where(okw[:, None], rescale_winner(S[rows], np.nan_to_num(ml2w, nan=0.5)), S[rows])
+    L = {k: MRm.per_fight_losses(v, y, None) for k, v in arms.items()}
+    metr = ["joint", "method3", "bin7", "method_round", "round_given_fin", "ko_vs_sub", "winner", "method_given_winner"]
+    out["means"] = {k: {m: round(float(np.nanmean(L[k][m])), 5) for m in metr} for k in arms}
+    out["paired"] = {}
+    for a, b in (("bayes", "S (methodround, OOF)"), ("bayes + ml2 winner", "S + ml2 winner")):
+        for m in metr:
+            ok = ~np.isnan(L[a][m]) & ~np.isnan(L[b][m])
+            out["paired"]["%s - %s | %s" % (a, b, m)] = paired(L[a][m][ok], L[b][m][ok], grp[ok], 2000)
+    for k, v in out["means"].items():
+        log("method %-24s %s" % (k, v))
+    for k, v in out["paired"].items():
+        if any(m in k for m in ("| bin7", "| method3", "| method_given_winner", "| joint")):
+            log("  %-70s %+.5f %s" % (k, v["diff"], v["diff_ci"]))
+    return out
+
+
+def stats_eval(X, G, years):
+    MLR, src = mlrates_stats(X)
+    bt = set(e["id"] for e in json.load(open(os.path.join(DERIVED, "backtest_dev.json")))["fights"])
+    rows = np.flatnonzero(np.array([f in bt for f in X["fid"]]) & np.isin(X["year"], years) & X["has"]
+                          & ~np.isnan(G["stats"]["str_0"]) & ~np.isnan(MLR["str"][:, 0]))
+    grp = np.array(X["event"])[rows]
+    H_by_year = {Y: pickle.load(open(year_path("main", Y), "rb"))["H"] for Y in years}
+    rng = np.random.default_rng(11)
+    out = {"n_fights": int(len(rows)), "what": "Poisson deviance per fighter-fight of expected counts given the "
+           "actual minutes (KD given actual head strikes landed); baseline = division baseline rate only", "stats": {}}
+    for st in ("str", "td", "ctl", "sub", "kd"):
+        yv = stat_actual(X, st)[rows]
+        mb = np.stack([G["stats"]["%s_0" % st][rows], G["stats"]["%s_1" % st][rows]], 1)
+        mm = MLR[st][rows]
+        if st == "str":
+            base = np.stack([sum(X["rmins"][rows, j] * X["rmult"][rows, j] for j in range(5)) * np.exp(X["L_str"][rows])] * 2, 1)
+        elif st == "kd":
+            base = (X["head"][rows] + 1.0) * np.exp(X["L_kd"][rows])[:, None]
+        else:
+            ex = {"td": X["mins"][rows] / 15.0, "ctl": X["mins"][rows] * 2.0, "sub": X["mins"][rows] / 15.0}[st]
+            base = np.stack([ex * np.exp(X["L_" + st][rows])] * 2, 1)
+        db, dm, d0 = pois_dev(yv, mb).sum(1), pois_dev(yv, mm).sum(1), pois_dev(yv, base).sum(1)
+        r = {"bayes": round(float(db.mean() / 2), 4), "mlrates_oof": round(float(dm.mean() / 2), 4),
+             "baseline": round(float(d0.mean() / 2), 4),
+             "bayes - mlrates": paired(db / 2, dm / 2, grp), "bayes - baseline": paired(db / 2, d0 / 2, grp),
+             "mean_actual": round(float(yv.mean()), 3), "mean_bayes": round(float(mb.mean()), 3),
+             "mean_mlrates": round(float(mm.mean()), 3)}
+        r["calibration"] = stat_pit(X, G, H_by_year, rows, st, rng)
+        out["stats"][st] = r
+        log("stat %-4s dev bayes %.4f mlrates %.4f base %.4f | b-m %+.4f %s | mean act %.3f b %.3f m %.3f | cov80 %.3f" % (
+            st, r["bayes"], r["mlrates_oof"], r["baseline"], r["bayes - mlrates"]["diff"], r["bayes - mlrates"]["diff_ci"],
+            r["mean_actual"], r["mean_bayes"], r["mean_mlrates"], r["calibration"]["coverage_80"]))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage")
@@ -1177,7 +1552,7 @@ def main():
     STAGES[args.stage](args)
 
 
-STAGES = {"data": stage_data, "fit": stage_fit}
+STAGES = {"data": stage_data, "fit": stage_fit, "eval": stage_eval}
 
 if __name__ == "__main__":
     main()

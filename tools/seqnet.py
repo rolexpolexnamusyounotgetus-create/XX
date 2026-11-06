@@ -445,7 +445,8 @@ def build_arrays(d, maxlen=MAXLEN):
 
 # ====================================================================== the network
 DEFAULT_CFG = {"H": 64, "drop": 0.2, "lr": 2e-3, "wd": 1e-4, "bs": 256, "max_ep": 40, "lam_m": 0.3,
-               "lam_s": 0.3, "train_from": 2005, "maxlen": 16, "pool": "attn", "tok_drop": 0.0}
+               "lam_s": 0.3, "train_from": 2005, "maxlen": 16, "pool": "attn", "tok_drop": 0.0,
+               "patience": 8}
 
 
 def _torch():
@@ -464,7 +465,13 @@ def make_model(cfg, d_tok, d_side, d_ctx):
         def __init__(self):
             super().__init__()
             self.tok = nn.Sequential(nn.Linear(d_tok + D_DYN, H), nn.GELU(), nn.Dropout(p), nn.Linear(H, H), nn.GELU())
-            self.rnn = nn.GRU(H, H, batch_first=True)
+            self.enc = cfg.get("enc", "gru")
+            if self.enc == "tfm":
+                layer = nn.TransformerEncoderLayer(H, 4, 2 * H, dropout=p, batch_first=True, activation="gelu")
+                self.tfm = nn.TransformerEncoder(layer, 2, enable_nested_tensor=False)
+                self.pos = nn.Parameter(torch.zeros(64, H))
+            else:
+                self.rnn = nn.GRU(H, H, batch_first=True)
             self.att = nn.Linear(H, 1)
             self.empty = nn.Parameter(torch.zeros(2 * H))
             self.side = nn.Sequential(nn.Linear(2 * H + d_side + d_ctx, H), nn.GELU(), nn.Dropout(p),
@@ -479,11 +486,17 @@ def make_model(cfg, d_tok, d_side, d_ctx):
             N, L, _ = tok.shape
             e = self.tok(tok)
             l1 = lens.clamp(min=1)
-            packed = nn.utils.rnn.pack_padded_sequence(e, l1.cpu(), batch_first=True, enforce_sorted=False)
-            out, h = self.rnn(packed)
-            out, _ = nn.utils.rnn.pad_packed_sequence(out, batch_first=True, total_length=L)
-            hl = h[0]
             mask = torch.arange(L)[None, :] < l1[:, None]
+            if self.enc == "tfm":
+                # positions counted back from the latest fight (index 0 = most recent), plus the dt features
+                back = (l1[:, None] - 1 - torch.arange(L)[None, :]).clamp(min=0, max=63)
+                out = self.tfm(e + self.pos[back], src_key_padding_mask=~mask)
+                hl = out[torch.arange(N), l1 - 1]
+            else:
+                packed = nn.utils.rnn.pack_padded_sequence(e, l1.cpu(), batch_first=True, enforce_sorted=False)
+                out, h = self.rnn(packed)
+                out, _ = nn.utils.rnn.pad_packed_sequence(out, batch_first=True, total_length=L)
+                hl = h[0]
             if self.pool == "attn":
                 a = self.att(out).squeeze(-1).masked_fill(~mask, -1e9)
                 w = torch.softmax(a, 1)
@@ -690,6 +703,8 @@ def fit_one(A, cfg, seed, until_day, epochs=None, val=None, pred_idx=None):
             if llv < best[0]:
                 best = (llv, ep + 1)
                 best_state = {k: v.clone() for k, v in model.state_dict().items()}
+            elif epochs is None and ep + 1 - best[1] >= cfg.get("patience", 8):
+                break                      # no improvement for `patience` epochs
     if best_state is not None and epochs is None:
         model.load_state_dict(best_state)
     out = {"curve": curve, "best": best, "n_train": int(len(tr))}
@@ -770,6 +785,7 @@ HP_CONFIGS = {
     "long_hist": {"maxlen": 24},
     "from2010": {"train_from": 2010},
     "reg": {"drop": 0.35, "wd": 1e-3},
+    "transformer": {"enc": "tfm"},
 }
 HP_FOLDS = [2016, 2017, 2018]
 HP_SEEDS = [11, 12]
@@ -882,7 +898,8 @@ def stage_walk(args):
         run_pool(jobs, args.workers, save1)
     W["epochs"] = {}
     for Y in WALK_YEARS:
-        cur = np.mean([W["es"][(Y, s)]["curve"] for s in ES_SEEDS], 0)
+        cs = [W["es"][(Y, s)]["curve"] for s in ES_SEEDS]
+        cur = np.mean([c[:min(map(len, cs))] for c in cs], 0)     # patience stops curves at different lengths
         W["epochs"][Y] = int(np.argmin(cur)) + 1
         log("refit %d: early-stopping curve on %d, best epoch %d (val ll %.4f)" % (Y, Y - 1, W["epochs"][Y], cur.min()))
     jobs = []
@@ -1245,9 +1262,7 @@ def stat_eval(A, Ea, years_fit=(2019, 2023), years_score=None, cv=True):
         r["raw_seqnet_vs_mlrates"] = {"dev_ml": round(float(d_ml.mean()), 5), "dev_seq": round(float(d_sq.mean()), 5),
                                       "rel": round(dd / d_ml.mean(), 4), "ci": [round(c / d_ml.mean(), 4) for c in ci],
                                       "n": int(m.sum())}
-        full = np.zeros(int((scm if years_score else fitm).sum()))
         sel = (scm if years_score else fitm)
-        contrib["raw_ml"] += 0
         # recipes: time-ordered CV inside 2019-2023 (fit years < v, score v = 2020..2023)
         cvd = {}
         for rn, cs in RECIPES.items():

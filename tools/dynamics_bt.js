@@ -69,25 +69,8 @@ const priorsAsof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlcal_prior
 const oof = JSON.parse(fs.readFileSync(dataFile("data/derived/mlrates_oof.json"), "utf8"));
 const TN = oof.meta.targets;
 const keys = bt.meta.keys;
-// durability component (v5 merge step 2): leak-free walk-forward records, as in tools/evalv.js durOpts
-let DURJ = null;
-function durRec(id, swap) {
-  if (!DURJ) DURJ = JSON.parse(fs.readFileSync(dataFile("data/derived/durability.json"), "utf8"));
-  const d = DURJ.backtest[id];
-  if (!d) throw new Error("durability: no walk-forward record for fight " + id + " (refusing the live-fit fallback)");
-  const side = (x) => ({ chin_re: x.chin_re, chin_cov: x.chin_cov, pow_re: x.pow_re, pow_cov: x.pow_cov });
-  const bA = d.p.A / (d.B.chin_re * d.B.chin_cov * d.A.pow_re * d.A.pow_cov), bB = d.p.B / (d.A.chin_re * d.A.chin_cov * d.B.pow_re * d.B.pow_cov);
-  const base = Math.sqrt(bA * bB);
-  return swap ? { A: side(d.B), B: side(d.A), base } : { A: side(d.A), B: side(d.B), base };
-}
-function withDurNorm(cparams) {
-  if (!DURJ) DURJ = JSON.parse(fs.readFileSync(dataFile("data/derived/durability.json"), "utf8"));
-  const o = Object.assign({}, cparams || {});
-  o.durability = Object.assign({ normChin: DURJ.engine.norm_chin_backtest_2019_2023, normPow: DURJ.engine.norm_pow_backtest_2019_2023 }, (cparams && cparams.durability) || {});
-  return o;
-}
-const durOn = (cparams) => typeof E.loadDurability === "function" && typeof E.resolveParams === "function" &&
-  !!(E.resolveParams(cparams || {}).components || {}).durability;
+// durability component (v5 merge step 2): leak-free walk-forward records + train NORM (tools/durrec.js)
+const DR = require(path.join(ROOT, "tools/durrec.js"))(E, ROOT);
 
 const cfgArgs = optAll("--cfg");
 const CFGS = [];
@@ -148,10 +131,9 @@ for (const f of fights) {
       try {
         const o = optsFor(f, swap);
         o.params = cparams;
-        const useDur = durOn(cparams);
-        if (useDur) { o.dur = durRec(f.id, swap); o.params = withDurNorm(cparams); }
+        DR.apply(o, f.id, swap);
         m = swap ? E.matchup(PB, PA, o) : E.matchup(PA, PB, o);
-        if (useDur && !(m.dur && m.dur.baseFromRecord)) throw new Error("durability: walk-forward record not applied for " + f.id);
+        DR.assertApplied(m, f.id, cparams);
       } catch (e) { ok = false; nErr++; if (nErr < 4) console.error(String(e && e.stack || e)); break; }
       const rng = E.makeRng(seedOf(f.id, swap ? 2 : 1));
       for (let s = 0; s < SIMS; s++) {
