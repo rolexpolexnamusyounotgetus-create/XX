@@ -688,7 +688,9 @@
     }
     // E3: fatigue on output is small (distance -4.5% per 100 own attempts); the other stamina terms stay
     m.k.outStam = Y.outStam;
-    var arPhi = Y.arPhi, aaPhi = Y.accArPhi;
+    // AR(1) autocorrelations: valid range [0, 1) (phi >= 1 makes the innovation sd sqrt(1 - phi^2) NaN); a value outside
+    // it is clipped to [0, 0.999] (the defaults 0.85 / 0.73 pass through unchanged)
+    var arPhi = clip(+Y.arPhi, 0, 0.999), aaPhi = clip(+Y.accArPhi, 0, 0.999);
     return {
       formPace: Y.formPace, formOut: Y.formOut, formAcc: Y.formAcc, vol: Y.vol, roundPace: Y.roundPace,
       arPhi: arPhi, arSd: Y.arSd, arInn: Y.arSd * Math.sqrt(1 - arPhi * arPhi), arC: 0.5 * Y.arSd * Y.arSd,

@@ -212,5 +212,20 @@ for (const [REF, refName, OFF] of [[E1, "durability + dynamics off = step-1 engi
   check("both on: no new fight, round, stats, totals or trace-event keys vs step 1 (400 traced VG fights vs 1,500)", same, info);
 }
 
+// ------------------------------------------------------------------ 4. dyn.arPhi / accArPhi valid range [0, 1): clipped, never NaN
+{
+  const vg = { division: "Lightweight", rounds: 5, title: true, date: "2026-11-06", ml: false };
+  const bad = [], noNaN = (f) => !/null|NaN|Infinity/.test(JSON.stringify([f.winner, f.method, f.round, f.t, f.totals]));
+  for (const [ap, aa] of [[1, 1], [1.5, -0.3], [-1, 2]]) {
+    const m = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: { dyn: { arPhi: ap, accArPhi: aa } } }, vg));
+    for (let s = 0; s < 40; s++) { const f = E.simulate(m, E.makeRng(500 + s), s % 2 === 0); if (!noNaN(f)) { bad.push(ap + "/" + aa); break; } }
+    if (!(m.dyn.arPhi >= 0 && m.dyn.arPhi < 1 && isFinite(m.dyn.arInn) && isFinite(m.dyn.accArInn))) bad.push("table " + ap + "/" + aa);
+  }
+  const m0 = E.matchup("alexander-volkanovski", "justin-gaethje", vg), m1 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: { dyn: { arPhi: 0.85, accArPhi: 0.73 } } }, vg));
+  const same = JSON.stringify(E.simulate(m0, E.makeRng(9), true)) === JSON.stringify(E.simulate(m1, E.makeRng(9), true));
+  check("dyn.arPhi / accArPhi outside [0, 1) are clipped (finite tables and fights); the defaults pass through unchanged", bad.length === 0 && same,
+    bad.length ? "bad: " + bad.join(", ") : "arPhi 1 / 1.5 / -1, accArPhi 1 / -0.3 / 2: finite");
+}
+
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

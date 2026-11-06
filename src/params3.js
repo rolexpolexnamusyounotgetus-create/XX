@@ -76,12 +76,12 @@
       formPace: 0.45,                         // E2: lognormal sd of the shared fight-level pace (RE with profiles: 0.37; real fighters' corr 0.84 needs more)
       formOut: 0.21,                          // E2: lognormal sd of each man's fight-level output form (recipe 0.20; with the AR(1) the flag-off total 0.37)
       arSd: 0.32,                             // E2: stationary sd of each man's AR(1) round output noise (RE: 0.31)
-      arPhi: 0.85,                            // E2: its round-to-round autocorrelation (RE: 0.68; engine round noise attenuates the realised value to ~0.5)
+      arPhi: 0.85,                            // E2: its round-to-round autocorrelation (RE: 0.68; engine round noise attenuates the realised value to ~0.5); valid range [0, 1), the engine clips to [0, 0.999]
       roundPace: 0.10,                        // E2: lognormal sd of the shared round pace (engine already realises 0.41 vs 0.36 real)
       formAcc: 0.43,                          // E2: logit sd of each man's fight-level accuracy form (recipe 0.28; RE with profiles 0.29; with the AR(1) the
                                               // flag-off total 0.48; 0.31 matches the real accuracy dispersion but scores worse, see above)
       accArSd: 0.28,                          // accuracy AR(1) round noise, stationary logit sd (RE with profiles 0.244; 0.24 realised 0.19 vs 0.24 real)
-      accArPhi: 0.73,                         // its autocorrelation (RE with profiles: 0.727)
+      accArPhi: 0.73,                         // its autocorrelation (RE with profiles: 0.727); valid range [0, 1) as arPhi
       accProfA: 0.61,                         // attenuation of the attacker's profile accuracy shift (RE profile coefficient 0.61; no effect when ML rates re-target accuracy)
       accProfB: 0.50,                         // attenuation of the defender's allowed-accuracy shift (0.50)
       vol: 0.50,                              // E7: lognormal sd of the shared per-fight knockdown volatility (was 0.6). Recipe 0.30 was sized to 2024-25 (engine

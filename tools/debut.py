@@ -18,11 +18,14 @@ Sherdog (robots.txt: User-agent * Allow /): User-Agent "FightLabSim/1.0", one re
 cached under data/raw/debut_cache/ (gitignored); tools/preufc.py's cache (data/raw/sherdog_cache/) is read, never
 written. Compact extracts only are committed (data/derived/debut.json).
 """
+import os
+
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):   # shared box: no BLAS oversubscription
+    os.environ.setdefault(_v, "1")
 import argparse
 import datetime as dt
 import json
 import math
-import os
 import pickle
 import re
 import sys
@@ -1265,6 +1268,157 @@ def paired_vals(groups, a, b, B=2000):
     m, lo, hi = boot_ci(groups, a - b, B)[0]
     return {"diff": m, "ci": [lo, hi], "n": int(len(a)), "a": round(float(a.mean()), 5), "b": round(float(b.mean()), 5)}
 
+
+# ------------------------------------------------------------------ 2024-2025: one look with the frozen CV choices
+HOLD_YEARS = [2024, 2025]
+
+
+def frozen_choices():
+    C = json.load(open(os.path.join(OUTC, "cv.json")))
+    return C
+
+
+def walk_preds(dec, RA, RB, ch, years):
+    """Annual walk-forward debut-model predictions (fit on every decisive debut bout 2012..Y-1)."""
+    return oof(dec, RA, RB, cfg_cols(ch["blocks"]), ch["C"], ch["tau"], years)
+
+
+def holdout(args):
+    import numpy as np
+    t0 = time.time()
+    flag = os.path.join(OUTC, "holdout.done")
+    if os.path.exists(flag) and not args.force_rescore_same_choices:
+        raise SystemExit("2024-25 already scored once (%s); the look is spent" % flag)
+    C = frozen_choices()
+    ch = C["chosen"]
+    df, meta = load_frame()
+    dec, RA, RB = prep(df)
+    y = dec["y"].to_numpy(float)
+    yr = dec["year"].to_numpy()
+    ev = dec["event"].to_numpy()
+    # winner: CV years (for stack history) + 2024 + 2025, all annual forward-chained
+    p_deb = walk_preds(dec, RA, RB, ch, CV_YEARS + HOLD_YEARS)
+    m_st = DebutLR(cfg_cols(ch["blocks"]), ch["C"], ch["tau"]).fit(take(RA, yr < 2024), take(RB, yr < 2024),
+                                                                    y[yr < 2024])
+    p_static = np.full(len(dec), np.nan)
+    hm = np.isin(yr, HOLD_YEARS)
+    p_static[hm] = m_st.predict(take(RA, hm), take(RB, hm))
+    P = {"debut": p_deb, "debut_static": p_static, "elo": dec["elo_p"].to_numpy(float),
+         "seeded_elo": dec["p_seeded"].to_numpy(float), "close": dec["p_close"].to_numpy(float),
+         "open": dec["p_open"].to_numpy(float)}
+    # current fallback (tools/forward_ledger.py): the line when there is one, else Elo seeded from the pre-UFC record
+    P["fallback"] = np.where(np.isnan(P["close"]), P["seeded_elo"], P["close"])
+    out = {"n": int(hm.sum()), "by_year": {Y: int((yr == Y).sum()) for Y in HOLD_YEARS}, "standalone": {}, "paired": {}}
+    for k, p in P.items():
+        mm = hm & ~np.isnan(p)
+        out["standalone"][k] = {"n": int(mm.sum()), "ll": boot_ci(ev[mm], ll_vec(p[mm], y[mm]))[0],
+                                "acc": round(float(np.mean(np.where(p[mm] == 0.5, 0.5, (p[mm] > 0.5) == (y[mm] == 1)))), 4),
+                                "brier": round(float(np.mean((p[mm] - y[mm]) ** 2)), 5)}
+    for a, b in [("debut", "seeded_elo"), ("debut", "elo"), ("debut", "close"), ("debut", "open"),
+                 ("debut", "fallback"), ("debut_static", "seeded_elo"), ("seeded_elo", "elo")]:
+        mm = hm & ~np.isnan(P[a]) & ~np.isnan(P[b])
+        out["paired"]["%s vs %s" % (a, b)] = paired(ev[mm], P[a][mm], P[b][mm], y[mm])
+    # stacks with the CV-frozen structure: weights fit on 2019..Y-1 out-of-sample rows (annual), predict Y
+    sd = C["stack_decisions"]
+    stk = {}
+    for reg, cols in (("noline", ["debut", "seeded_elo"]), ("close", ["close", "debut"]), ("open", ["open", "debut"]),
+                      ("close_only", ["close"]), ("open_only", ["open"])):
+        ok = np.ones(len(dec), bool)
+        for c in cols + (["seeded_elo"] if reg == "noline" else []):
+            ok &= ~np.isnan(P[c])
+        pp = np.full(len(dec), np.nan)
+        ws = {}
+        Z = np.vstack([zlogit(P[c]) for c in cols]).T
+        for Y in HOLD_YEARS:
+            tr = ok & (yr >= 2019) & (yr < Y)
+            te = ok & (yr == Y)
+            b = stack_fit(Z[tr], y[tr])
+            pp[te] = 1 / (1 + np.exp(-(Z[te] @ b)))
+            ws[Y] = [round(float(x), 4) for x in b]
+        P["stack_" + reg] = pp
+        stk[reg] = {"cols": cols, "weights": ws}
+    for a, b in [("stack_close", "close"), ("stack_close", "stack_close_only"), ("stack_open", "open"),
+                 ("stack_open", "stack_open_only"), ("stack_noline", "seeded_elo"), ("stack_noline", "debut")]:
+        mm = hm & ~np.isnan(P[a]) & ~np.isnan(P[b])
+        out["paired"]["%s vs %s" % (a, b)] = paired(ev[mm], P[a][mm], P[b][mm], y[mm])
+    out["stacks"] = stk
+    out["stack_decisions_frozen"] = sd
+    # the production prediction by regime, as frozen by CV: no line -> CV's no-line choice; line -> stack if debut
+    # entered in CV, else the line alone
+    nl = sd["noline"]
+    p_nl = P["debut"] if nl == "raw debut" else (P["stack_noline"] if "seeded" in nl else P["debut"])
+    p_cl = np.where(np.isnan(P["close"]), p_nl, P["stack_close"] if sd["close"]["debut_enters"] else P["close"])
+    P["path_noline"], P["path_close"] = p_nl, p_cl
+    for a, b in [("path_noline", "seeded_elo"), ("path_close", "fallback")]:
+        mm = hm & ~np.isnan(P[a]) & ~np.isnan(P[b])
+        out["paired"]["%s vs %s" % (a, b)] = paired(ev[mm], P[a][mm], P[b][mm], y[mm])
+    # calibration (both corner orders pooled): no-intercept slope of y on logit p
+    cal = {}
+    for k in ("debut", "seeded_elo", "elo", "close"):
+        mm = hm & ~np.isnan(P[k])
+        cal[k] = calib_slope(P[k][mm], y[mm], ev[mm])
+    out["calibration_slope"] = cal
+    # method (frozen lam; annual forward-chained; winner prob = the debut model)
+    fights, people, bouts, uni = load_universe_strict()
+    lam = C["method"]["chosen_lam"]
+    win_a = y == 1.0
+    PA, PB, yk, okm = method_eval(dec, RA, RB, p_deb, fights, HOLD_YEARS, lam)
+    PA0, PB0, _, _ = method_eval(dec, RA, RB, p_deb, fights, HOLD_YEARS, lam, base_only=True)
+    mm = hm & okm
+    pw_fb = np.where(np.isnan(P["seeded_elo"]), P["elo"], P["seeded_elo"])
+    s = method_scores(PA, PB, p_deb, yk, win_a, mm)
+    s0 = method_scores(PA0, PB0, pw_fb, yk, win_a, mm)
+    s0d = method_scores(PA0, PB0, p_deb, yk, win_a, mm)
+    out["method"] = {"n": int(mm.sum()), "lam": lam,
+                     "method3": paired_vals(ev[mm], s["method3"], s0["method3"]),
+                     "method_given_winner": paired_vals(ev[mm], s["method_given_winner"], s0["method_given_winner"]),
+                     "whohow6 vs fallback (seeded Elo x division base)": paired_vals(ev[mm], s["whohow6"], s0["whohow6"]),
+                     "whohow6 method part only": paired_vals(ev[mm], s["whohow6"], s0d["whohow6"])}
+    out["built"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    out["frozen_from"] = {"cv_built": C["built"], "chosen": ch, "method_lam": lam}
+    preds = {}
+    for i in np.where(np.isin(yr, CV_YEARS + HOLD_YEARS))[0]:
+        f = dec["fid"].iloc[i]
+        r = {"date": dec["date"].iloc[i].isoformat(), "set": "valid" if yr[i] >= 2024 else "oof",
+             "nA": int(dec["nA"].iloc[i]), "nB": int(dec["nB"].iloc[i])}
+        for k in ("debut", "seeded_elo", "elo", "close", "open", "stack_close", "stack_noline"):
+            v = P[k][i]
+            r[k] = None if v != v else round(float(v), 5)
+        if yr[i] >= 2024 and okm[i]:
+            r["method_A"] = [round(float(x), 4) for x in PA[i]]
+            r["method_B"] = [round(float(x), 4) for x in PB[i]]
+        preds[f] = r
+    pickle.dump({"out": out, "preds": preds}, open(os.path.join(OUTC, "holdout.pkl"), "wb"))
+    json.dump(out, open(os.path.join(OUTC, "holdout.json"), "w"), indent=1, default=float)
+    open(flag, "w").write(out["built"] + "\n")
+    print(json.dumps(out, indent=1, default=float)[:6000])
+    print("wrote out/debut_cache/holdout.json (%.0f s)" % (time.time() - t0))
+
+
+def calib_slope(p, y, groups, B=1000):
+    """Mirrored no-intercept logistic slope of y on logit(p), with an event-cluster bootstrap CI."""
+    import numpy as np
+    from scipy.optimize import minimize_scalar
+    z = zlogit(p)
+    Zm = np.r_[z, -z]
+    Ym = np.r_[y, 1 - y]
+    Gm = np.r_[groups, groups]
+
+    def slope(idx):
+        zz, yy = Zm[idx], Ym[idx]
+        return minimize_scalar(lambda b: np.sum(np.logaddexp(0, b * zz) - yy * b * zz), bounds=(0.01, 5),
+                               method="bounded").x
+    s0 = slope(np.arange(len(Zm)))
+    ug = np.unique(groups)
+    pos = {g: np.where(Gm == g)[0] for g in ug}
+    rng = np.random.default_rng(3)
+    bs = []
+    for _ in range(B):
+        d = rng.choice(ug, len(ug))
+        bs.append(slope(np.concatenate([pos[g] for g in d])))
+    lo, hi = np.percentile(bs, [2.5, 97.5])
+    return [round(float(s0), 3), round(float(lo), 3), round(float(hi), 3)]
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1276,7 +1430,13 @@ def main():
     b.add_argument("--half-lives", type=float, nargs="+", default=[2.0, 4.0])
     b.add_argument("--opp-k", type=int, default=None, help="one-hop ranks to use (default: complete ranks)")
     sub.add_parser("cv")
+    h = sub.add_parser("holdout")
+    h.add_argument("--force-rescore-same-choices", action="store_true",
+                   help="recompute the spent look with the same frozen choices (bug fixes only; logged)")
     args = ap.parse_args()
+    if args.cmd == "holdout":
+        holdout(args)
+        return
     if args.cmd == "cv":
         cv(args)
         return
