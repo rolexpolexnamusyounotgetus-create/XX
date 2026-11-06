@@ -64,6 +64,15 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- PRE-REGISTERED (Nov 6 ~21:55 UTC, before vault audit 1 is read; docs/V6_V10_PLAN.md 6.5 and 7.1): the production
+  drift rule (no-line stack keeps h 1.5 and its temperature; switches to h 3, T 1 only if audit 1's mirrored slope
+  for the frozen production no-line stack is < 1.15 with a CI including 1, or the forward ledger's trailing-200
+  slope CI includes 1 for two consecutive quarters; nothing else reacts to audit 1); the audit-1 -> audit-2
+  contamination rule (full vault both times; anything chosen because of audit 1 is flagged "not clean on the
+  vault" in audit 2); AUDIT 1 SCOPE: v5 vs v4 paired; benchmarks close, open, Elo, ML v2 logistic, frozen ML v2
+  stacks (model, model_open, no-line) and S2 / S2+ml2win method cells as a descriptive side line; calibration
+  slopes; the close edge; base-rate table; and the list of known pre-seal 2026 exposures (V6_V10_PLAN 6.5.3).
+
 ## Research tooling note
 - Agents launched before the network opened hit DNS failures in WebFetch and a shared web-search cap
   (about 200 calls per turn). With unrestricted network, research agents should fetch pages with curl

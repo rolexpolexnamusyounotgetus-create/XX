@@ -14,6 +14,8 @@ Re-read sections 4 and 6 once both results are in, and before the v6 look is pre
 - the v5 component reports in `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/components/`.
   Below they are called `components/<name>.md`.
 
+docs/BACKLOG.md was re-read after its 9:38 pm UTC update, which marked dynamics verified and launched the v5 merge.
+
 It merges the planner outputs into one ranked list. Only two of the three planner outputs arrived, and the second
 was cut off partway (see Gaps). Numbers are quoted as the sources print them: paired difference [95% event-cluster
 bootstrap CI], negative = better for losses.
@@ -82,7 +84,15 @@ bootstrap CI], negative = better for losses.
 | styles_sos | Include, as SOS "wf" only. Soft CE -0.0012 [-0.0019, -0.0005]; TD attempts, TD landed and control stat lines better; style blocks off |
 | realism_sens | Include as a capability: sensitivity tornado and tools/realism.js. Factor layer off; only the 5-round KD factor (about 1.3) holds out of fold |
 | officials | Code only, off in the prediction path. League model +0.0092 worse on decision outcome |
-| dynamics | Builder: neutral for prediction, better structure (5-round finish-share error 11.6 to 6.4 points; KD deviance -0.076). Needs a joint level pass with durability. The independent verifier's ablation is still running (session task list). |
+| dynamics | Verified about 9:40 pm UTC, on an independent harness at 500 sims per fight: include, flag on, as structure and realism. On v4.0.0: soft CE -0.0017 [-0.0025, -0.0008] and KD deviance -0.059, both significant; 7-bin and who x how x when lean worse, n.s. Round-to-round correlation 0.54 (real 0.56); KD per head strike by round and 5-round finish timing now match. Weak spots: 3-round R2 KO hazard low, 5-round R1 KO high, late submissions high. Merge conditions: one joint KD level pass with durability, and blend_anchor cells rebuilt with the flag on. Source: docs/BACKLOG.md as of 9:38 pm UTC |
+
+The v5 merge was launched at about 9:45 pm UTC (docs/BACKLOG.md). Its steps, in order:
+1. five sequential, tested merge steps;
+2. a train leave-one-out ablation;
+3. a joint level pass, re-tune and freeze;
+4. the single validation look;
+5. review and decision;
+6. the first vault audit.
 
 **Forward ledger.** fwd-4.1 was pre-registered at about 9:15 pm UTC. Primary `p_a` = `ml2_stack_open` (open-trained
 weights for any line captured before the lock). Debutants get the line, seeded Elo, and division base rates for
@@ -139,9 +149,9 @@ from an observed paired CI of a comparable difference on these fights. For the v
 | rank | cycle | slot | pre-registered primary metric (protocol) | expected effect vs previous version | approx. power on 2024-25 | already scored on 2024-25? | cost |
 |---|---|---|---|---|---|---|---|
 | 1 | Prediction heads in predict() | v6 | Open-regime winner log loss (branch 1) | open -0.004 (about -0.014 if v5 feeds openers to close-trained weights); no line -0.005; close -0.002; 7-bin -0.005 to -0.012 | open ~0.85, no line ~0.8, close ~0.4, 7-bin ~0.25 | yes, every ingredient | 6-9 agent-h; ~1 CPU-h |
-| 2 | Market props for how and when | v7 | 7-bin in the close+props regime (branch 2); winner held fixed, so this is method given the winner | 7-bin -0.005 to -0.015; method -0.003 to -0.009 | 0.2-0.5 | partly (blend vs props on 830 fights) | 3-4 h; <15 CPU-min |
-| 3 | Stat-line fidelity | v8 | Control deviance (branch 2); attempts and landed secondary | control -1.5 to -4 s; attempts -0.4 to -1.0; landed -0.1 to -0.3 | >0.9 for control and attempts if the train gap transfers | embeddings yes; retarget and TD-intent draw no | 5-7 h; 1-2 CPU-h |
-| 4 | Levels, drift, walk-forward calibration, joint level pass by format | v9 | Sig-landed deviance plus the base-rate drift table (branch 2) | sig landed -0.2 to -0.4 if the +9% drift survives v5; no-line winner -0.001 to -0.003 | ~0.6-0.9 on sig landed; winner ~0.1 | per-card refits yes (blind replay); levels no | 6-8 h; ~1 CPU-h |
+| 2 | Market props for how and when | v7 | 7-bin in the close+props regime (branch 2); winner held fixed, so this is method given the winner | 7-bin -0.005 to -0.015; method -0.003 to -0.009 | 0.15-0.8 (about 0.5 at -0.010) | partly (blend vs props on 830 fights) | 3-4 h; <15 CPU-min |
+| 3 | Stat-line fidelity | v8 | Control deviance (branch 2); attempts and landed secondary | control -1.5 to -4 s; attempts -0.4 to -1.0; landed -0.1 to -0.3 | 0.7-1 for control and attempts if the train gap transfers | embeddings yes; retarget and TD-intent draw no | 5-7 h; 1-2 CPU-h |
+| 4 | Levels, drift, walk-forward calibration, joint level pass by format | v9 | Sig-landed deviance plus the base-rate drift table (branch 2) | sig landed -0.2 to -0.4 if the +9% drift survives v5; no-line winner -0.001 to -0.003 | 0.65-1 on sig landed; winner ~0.1 | per-card refits yes (blind replay); levels no | 6-8 h; ~1 CPU-h |
 | 5 | Newcomer path, explainer coherence, freeze | v10 | Capability rule: backtest-universe predictions bit-identical | debut bouts outside the scored universe (method vs base rates about -0.03 to -0.04 per debut bout); scored numbers unchanged | not measurable on the backtest or the vault | the pre-UFC numbers, yes | 8-12 h; ~1 CPU-h |
 
 **Why this order.**
@@ -392,7 +402,8 @@ embed snapshots, leave-one-out per sub-part. Keep a sub-part only if:
 | Validation drift (v4, actual vs simulated) | sig landed per 15 58.1 vs 63.3 (+9.0%); KD per 100 head 0.684 vs 0.746 (+9.0%); finish 46.0% vs 48.5%; decisions 54.0% vs 51.5% | CHANGELOG v4 |
 | Drift exists inside train | KD per 100 head 0.751 (2019-21) vs 0.822 (2022-23) while the simulation stays flat; period-fit division factors push it further off out of fold (\|gap\| +0.037) | components/realism_sens.md |
 | League KD level moves | 8.25 per 1,000 head strikes in the year before the 2024 glove trial, 5.95 during it, 8.98 after; L730 won tuning narrowly (4,339.1 vs 4,342.6 for L365) | research/model_durability.md §6 |
-| Judging drifts | KD weight up 79% per decade; 10-8 rate fell every year since 2019-20; the "last year" 10-8 level beat alternatives on held-out train years | research/model_officials.md |
+| Judging drifts | KD weight up 79% per decade. 10-8 rate per judge-round inside train: 5.9% (2019), 6.0% (2020), 4.0%, 3.1%, 3.6% (2023) | research/model_officials.md §3.4, §3.6 |
+| The "last year" 10-8 rule (train) | held-out 10-8 log lik: "last" beat "avg2" and "all" at every tau | components/officials.md, parameter table |
 | Recency helps the stack a little | rolling origin inside 2019-23: h=1 + temperature 0.6350 vs none 0.6365, -0.0014 [-0.0033, +0.0005]; the fitted temperature rose 0.94 → 0.98 → 1.05 | components/blend_anchor.md, Recalibration (c) |
 | Per-card refits (validation window, already seen) | no-line stack refit per card vs frozen: -0.0047 [-0.0113, +0.0025], slope 1.06 vs 1.31. ML v2 stacks rolling vs static: no line 0.5875 vs 0.5898 | model_blindtest, model_ml2 |
 | Production stretch risk | if 2026 looks like 2019-23, the sharp production no-line weights cost 0.013 (0.6556 vs 0.6425). Fit through T and scored on T+1, they under-stretched in 2023, 2024 and 2025 | research/model_moe.md |
@@ -732,7 +743,7 @@ data, with held-out numbers not worse.
 | look | primary | likely result, honestly |
 |---|---|---|
 | v6 | open-regime winner | passes if wired correctly (seen numbers) |
-| v7 | 7-bin, close+props | coin flip at best |
+| v7 | 7-bin, close+props | about a coin flip, even if the effect is mid-range and real |
 | v8 | control deviance | likely passes if the train gap transfers |
 | v9 | sig-landed deviance and drift | passes only if v5 left the +9% drift |
 | v10 | capability | identical numbers by construction |
@@ -783,6 +794,33 @@ data, with held-out numbers not worse.
 7. **ML v2 trees vs logistic.** Build a JS tree evaluator, or ship and score the logistic? CV prefers the blend by
    0.0013 in stack CV.
 
+
+### 7.1 Decisions taken (Nov 6, 2026, ~21:55 UTC, before vault audit 1 is read)
+
+Kira's standing instruction is to proceed without asking, so Claude took these; Kira can override any of them
+before the look it governs (an override after a look is read counts as selection and is recorded as such).
+
+1. **Primary regime and metric per look: the recommended set.** v6 open-regime winner log loss; v7 7-bin in
+   close+props; v8 control deviance; v9 sig-landed deviance (with the drift monitor); v10 capability (identical
+   scored numbers by construction). Everything else is a secondary, reported and never decisive.
+2. **Scored object: predict()'s package** is primary; summarize() is scored for stat lines and base rates.
+3. **Hygiene branch: yes.** A change whose stated purpose is removing a known contamination or leak (for example
+   train-only judging weights, stance frozen from the earliest record) is kept when it is "not worse" by 6.3 on the
+   look's primary metric and causes no base-rate drift. The look still counts; the entry is labelled "hygiene".
+4. **"Not worse" tolerances: as proposed in 6.3** (CI upper bound winner +0.002, 7-bin +0.005, method +0.003,
+   stat-line deviance +0.5% of level); branch 2 is decided on the pre-registered primary only.
+5. **Audit 1 side line: yes.** Audit 1 also scores the frozen, already-verified ML v2 stacks (close-trained
+   "model", open-trained "model_open", no-line) and the S2 / S2+ml2win method cells, fit through 2023 or through
+   2025 exactly as frozen, as a pre-registered descriptive side line. Nothing is tuned on it.
+6. **Vault: not split.** Both audits use the full sealed 2026 set; the 6.5 contamination rule applies (anything
+   chosen or changed because of an audit-1 number is flagged "not clean on the vault" in audit 2, and its clean
+   test is the forward ledger). Reason: at ~370 fights a half-vault cannot detect the expected 0.004-0.006 gain.
+7. **ML v2 trees vs logistic:** ship the logistic now (it is what the page can evaluate); v6 builds a JS tree
+   evaluator and, if the exported trees fit the page budget (<= 1 MB gzipped), the CV choice (the LR + LightGBM +
+   XGBoost blend) becomes the production winner head. The choice follows CV, never 2024-25.
+8. **Rules 6.5.1 (production drift rule) and 6.5.2 (contamination rule) are hereby pre-registered** exactly as
+   written in 6.5, together with the audit-1 scope in 6.5.3 plus item 5 above.
+
 ---
 
 ## 8. Considered, not in the five
@@ -809,8 +847,10 @@ data, with held-out numbers not worse.
   - whether it feeds openers to close-trained weights.
 
   Any of these changes cycle 1's expected effect by up to 0.01.
-- **The dynamics verification is unfinished.** The independent train ablation was still running (session task
-  list), so dynamics' inclusion in v5 rests on its builder's report.
+- **The dynamics verdict is known only through the backlog.** docs/BACKLOG.md marked dynamics verified at about
+  9:40 pm UTC, after this plan's first draft. Its 7-bin and joint scores lean worse (n.s.), and its weak spots (3-round
+  R2 KO low, 5-round R1 KO high, late submissions high) overlap cycle 4's format items. I did not read the
+  verifier's full write-up.
 - **evalv does not score predict() today.** That is blend_anchor's condition 2, and I found no `predict` call in
   tools/evalv.js. If v5 shipped without a predict harness, v5's look did not measure the package, and v6 must build
   the harness before its look.

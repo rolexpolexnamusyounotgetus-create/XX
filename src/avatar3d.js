@@ -1015,6 +1015,7 @@
     if (X.normal && !this.opts.noNormal) {
       // sculpted athletic relief (MakeHuman UV, glTF v convention so green is flipped); leaner fighters show more of it
       var ns = cfg.ref ? 0.35 : 0.4 + 0.85 * (cfg.lean != null ? cfg.lean : 0.5);
+      if (cfg.female) ns *= 0.8;
       mat.normalMap = X.normal; mat.normalScale = new T.Vector2(ns, -ns);
     }
     var maskOn = !!(X.maskHair && X.maskBeard && X.maskHair2);
@@ -1024,7 +1025,7 @@
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
       uMaskOn: { value: maskOn ? 1 : 0 }, uFadeOn: { value: looks.fade ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
       uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 3 ? chan(looks.scalpCh) : new T.Vector4(0, 0, 0, 0) }, uScalpCh2: { value: looks.scalpCh >= 3 ? chan(looks.scalpCh - 3) : new T.Vector4(0, 0, 0, 0) },
-      uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.4 : 0 }, uPoreF: { value: this.poreFreq() }, uDefK: { value: cfg.ref ? 0 : clamp01(0.2 + 1.0 * ((cfg.lean != null ? cfg.lean : 0.5) - 0.2)) }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
+      uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.4 : 0 }, uPoreF: { value: this.poreFreq() }, uNBias: { value: cfg.female ? 1.6 : 0.4 }, uDefK: { value: cfg.ref ? 0 : clamp01(0.2 + 1.0 * ((cfg.lean != null ? cfg.lean : 0.5) - 0.2)) }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
     };
     mat.onBeforeCompile = function (sh) {
       for (var k in U) sh.uniforms[k] = U[k];
@@ -1033,7 +1034,7 @@
         .replace("#include <begin_vertex>", "#include <begin_vertex>\nvMask = aMask; vMask2 = aMask2; vDecal = aDecal;\nfloat swl = max(aMask.z, 0.0) * uDam.x + max(-aMask.z, 0.0) * uDam.y;\ntransformed += objectNormal * swl * 0.0055;");
       sh.fragmentShader = sh.fragmentShader
         .replace("#include <common>", "#include <common>\nvarying vec4 vMask;\nvarying vec4 vMask2;\nvarying vec4 vDecal;\nuniform float uBeard; uniform float uBeardOp; uniform vec3 uBeardCol; uniform float uScalp; uniform vec3 uHairCol; uniform vec2 uDam; uniform vec2 uLeg; uniform float uSweat; uniform float uFlush;\nuniform sampler2D uTattoo; uniform float uTatOn;\n" +
-          "uniform float uMaskOn; uniform float uFadeOn; uniform sampler2D uMaskH; uniform sampler2D uMaskH2; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform vec2 uPoreF; uniform float uDefK; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
+          "uniform float uMaskOn; uniform float uFadeOn; uniform sampler2D uMaskH; uniform sampler2D uMaskH2; uniform sampler2D uMaskB; uniform vec4 uScalpCh; uniform vec4 uScalpCh2; uniform vec4 uBeardCh;\nuniform sampler2D uPores; uniform float uPoreAmt; uniform vec2 uPoreF; uniform float uDefK; uniform float uNBias; uniform sampler2D uSpec; uniform float uSpecOn;\nfloat gBeard; float gScalp;\n" +
           "float hh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\n" +
           "float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hh(i), hh(i + vec2(1,0)), f.x), mix(hh(i + vec2(0,1)), hh(i + vec2(1,1)), f.x), f.y); }")
         .replace("#include <map_fragment>", "#include <map_fragment>\n" +
@@ -1078,7 +1079,7 @@
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nif (uSpecOn > 0.5) roughnessFactor = 0.66 - 0.24 * texture2D(uSpec, vUv).g;\nroughnessFactor = mix(roughnessFactor, 0.42, clamp(vMask2.y, 0.0, 1.0) * 0.8);\nroughnessFactor *= 0.92 + 0.16 * vn(vUv * uPoreF.x * 0.4);\nroughnessFactor = mix(roughnessFactor, 0.28, uSweat * (1.0 - gBeard)) + 0.3 * gBeard + 0.2 * gScalp;")
         .replace("#include <lights_physical_fragment>", "#include <lights_physical_fragment>\n#ifdef CLEARCOAT\nmaterial.clearcoat *= 1.0 - 0.92 * max(gBeard, gScalp * 0.6);\n#endif")
         .replace("#include <normal_fragment_maps>", "#ifdef USE_NORMALMAP\n" +
-          "{ vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0; mapN.xy *= normalScale;\n" +
+          "{ vec3 mapN = texture2D( normalMap, vUv, uNBias ).xyz * 2.0 - 1.0; mapN.xy *= normalScale;\n" +
           "  float headIsl = smoothstep(0.615, 0.64, vUv.x) * smoothstep(0.02, 0.05, vUv.y) * (1.0 - smoothstep(0.88, 0.91, vUv.y)); mapN.xy *= 1.0 - 0.9 * headIsl;\n" +
           "  diffuseColor.rgb *= 1.0 - uDefK * 0.16 * smoothstep(0.04, 0.45, length(mapN.xy)) * (1.0 - headIsl);\n" +
           "  float pf = mix(uPoreF.y, uPoreF.x, headIsl);\n" +
@@ -1573,7 +1574,7 @@
     for (i = 0; i < n; i++) { var x0 = pos[i * 3], y0 = pos[i * 3 + 1], z0 = pos[i * 3 + 2]; if (y0 > J.Spine1.h.y && y0 < J.Neck.h.y && Math.abs(x0) < 0.15 && z0 > apZ) { apZ = z0; apY = y0; apX = Math.abs(x0); } }
     var shX = Math.abs(J.LeftArm.h.x), spZ = J.Spine2.h.z;
     var G = { bandY: apY - 0.085, scoopY: apY + 0.06, armY: apY + 0.075, sx0: shX * 0.4, sx1: shX * 0.66, rbY: apY + 0.005, topY: J.Neck.h.y + 0.04, spZ: spZ };
-    function inZone(i) { var y = pos[i * 3 + 1]; return y > G.bandY - 0.025 && y < G.topY && self.boneW(i, ARMS) < 0.35 && self.boneW(i, NECK) < 0.6; }
+    function inZone(i) { var y = pos[i * 3 + 1]; return y > G.bandY - 0.025 && y < G.topY + 0.03 && self.boneW(i, ARMS) < 0.35 && self.boneW(i, NECK) < 0.97; }
     var g = this.shell(inZone, function () { return 0.003; }, { name: "aKit", size: 4, fn: function (i, out, o) { out[o] = pos[i * 3]; out[o + 1] = pos[i * 3 + 1]; out[o + 2] = pos[i * 3 + 2]; out[o + 3] = 0; } });
     // bridge the chest: front vertices between the apexes come forward to the apex line at their height
     var P = g.attributes.position.array, nv = P.length / 3, zA = {}, kq;
@@ -1600,7 +1601,7 @@
           "  float halfW = mix(0.045, (uG2.x + uG2.y) * 0.5 + 0.012, t * t);\n" +
           "  float dB = max(uG1.w - y, halfW - ax);\n" +
           "  float d = mix(dB, dF, smoothstep(uG2.w - 0.03, uG2.w + 0.02, z));\n" +
-          "  d = min(d, y - uG1.x);\n" +
+          "  d = min(min(d, y - uG1.x), uG2.z - y);\n" +
           "  if (d < 0.0) discard;\n" +
           "  vec3 c = uMain;\n" +
           "  float band = 1.0 - smoothstep(0.034, 0.038, y - uG1.x);\n" +
