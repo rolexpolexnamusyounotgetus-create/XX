@@ -1407,17 +1407,21 @@ def evaluate(args):
 
     # 2) seeded Elo: CV per year (fit on [train_from, Y), score newcomer bouts of year Y)
     seed_cv = {}
+    seed_cache = {}
     for nm, keys, use_age in (("seed_age", [], True), ("seed_pre", PRE_CORE, False), ("seed_pre+age", PRE_CORE, True),
                               ("seed_small+age", seed_keys_all["pre_small"], True)):
         ps, ys = [], []
         for Y in CV_YEARS:
             sf = fit_seed(keys, use_age, dt.date(Y, 1, 1))
             pre_, _ = seeded_pre(sf)
+            seed_cache[(nm, Y)] = (sf, pre_)
             va = trainval[trainval["year"] == Y]
             ps.extend(pre_[f][2] for f in va["fid"])
             ys.extend(va["y"])
         seed_cv[nm] = ll(np.array(ps), np.array(ys))
         print("seed CV", nm, round(seed_cv[nm], 4), "%.0f s" % (time.time() - t0), flush=True)
+        print("   betas by year:", {Y: [round(float(x), 1) for x in seed_cache[(nm, Y)][0]["beta"]] for Y in CV_YEARS},
+              flush=True)
     va = trainval[trainval["year"] >= CV_YEARS[0]]
     seed_cv["elo_raw"] = ll(va["elo_p"].to_numpy(), va["y"].to_numpy())
     print("seed CV elo_raw", round(seed_cv["elo_raw"], 4))
@@ -1540,10 +1544,7 @@ def evaluate(args):
     predictions = {}
     oof_bp = cv_eval(lambda: DiffModel(BASE_KEYS, fs, C=pick["C"], tau=pick["tau"]), trainval)
     oof_b = cv_eval(lambda: DiffModel(BASE_KEYS, [], C=best["base"]["C"]), trainval)
-    seedY = {}
-    for Y in CV_YEARS:
-        sf = fit_seed(PRE_CORE, True, dt.date(Y, 1, 1))
-        seedY[Y], _ = seeded_pre(sf)
+    seedY = {Y: seed_cache[("seed_pre+age", Y)][1] for Y in CV_YEARS}
     pre_final, seed_final = seeded_pre(seed_fits["seed_pre+age"])
     for i, r in trainval[trainval["year"] >= CV_YEARS[0]].iterrows():
         predictions[r["fid"]] = {"date": r["date"].isoformat(), "split": "cv", "in_backtest": r["fid"] in btid,

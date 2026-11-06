@@ -7,6 +7,7 @@
    dynamics.py can measure the same round-level dynamics statistics on simulated fights as on real ones.
 
    Usage: node tools/dynamics_engine.js <out.csv> [--from 2024-01-01] [--to 2025-12-31] [--sims 30] [--max 0]
+          [--engine-dir src]   (a directory holding engine3.js and params3.js; default src/)
 */
 "use strict";
 const fs = require("fs");
@@ -17,8 +18,9 @@ const out = args[0];
 function opt(k, d) { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; }
 const FROM = opt("--from", "2024-01-01"), TO = opt("--to", "2025-12-31");
 const SIMS = +opt("--sims", "30"), MAX = +opt("--max", "0");
-const P = require(path.join(ROOT, "src", "params3.js"));
-const E = require(path.join(ROOT, "src", "engine3.js"));
+const EDIR = path.resolve(opt("--engine-dir", path.join(ROOT, "src")));
+const P = require(path.join(EDIR, "params3.js"));
+const E = require(path.join(EDIR, "engine3.js"));
 const bt = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "derived", "backtest_dev.json"), "utf8"));
 let priors = null;
 try { priors = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "derived", "mlcal_priors_asof.json"), "utf8")); } catch (e) { priors = null; }
@@ -66,4 +68,4 @@ for (const f of fights) {
 }
 fs.writeFileSync(out, lines.join("\n") + "\n");
 console.log(JSON.stringify({ fights: nf, sims: SIMS, errors: nerr, rows: lines.length - 1, secs: (Date.now() - t0) / 1000,
-  params_version: P.version || null }));
+  params_version: P.version || null, engine_dir: EDIR }));

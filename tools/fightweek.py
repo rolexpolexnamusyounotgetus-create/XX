@@ -570,6 +570,11 @@ def cmd_fetch_geo(args):
             bad.append(loc)
         else:
             log("%-45s %-8s %6s m  %s" % (loc[:45], iso3, g["elevation_m"], g["tz"]))
+    # one reference city per country (the city of its representative time zone) for travel distances
+    for iso3, row in COUNTRIES.items():
+        g = country_ref(fx, iso3)
+        if not g:
+            log("  no reference point for", iso3, row[3])
     # Sherdog birthplaces (for a fighter's home time zone), once the Sherdog pages are cached
     nat = load_sherdog_bios(offline=True)
     places = sorted(set((b["locality"], b["iso3"]) for b in nat.values() if b.get("locality") and b.get("iso3")))
@@ -1495,6 +1500,24 @@ def event_type(name, date):
     if re.match(r"ufc on (fox|abc|fx|fuel|espn|espn\+)", n) or "fight night" in n or "ufc on" in n:
         return "fight_night"
     return "other"
+
+
+def country_ref(fx, iso3):
+    """Geocoded reference city for a country: the city named by its representative IANA zone."""
+    if iso3 not in COUNTRIES:
+        return None
+    tz = COUNTRIES[iso3][3]
+    city = tz.rsplit("/", 1)[-1].replace("_", " ")
+    city = {"Kyiv": "Kyiv", "Port of Spain": "Port of Spain", "Port-au-Prince": "Port-au-Prince",
+            "Ho Chi Minh": "Ho Chi Minh City", "Efate": "Port Vila", "Pohnpei": "Palikir", "Hebron": "Ramallah",
+            "Tongatapu": "Nuku'alofa", "Guam": "Hagatna", "Macau": "Macau", "Hong Kong": "Hong Kong",
+            "Fiji": "Suva", "Apia": "Apia", "Mauritius": "Port Louis", "Cape Verde": "Praia",
+            "Bahrain": "Manama", "Kuwait": "Kuwait City", "Qatar": "Doha", "Curacao": "Willemstad",
+            "Panama": "Panama City", "Costa Rica": "San Jose", "El Salvador": "San Salvador",
+            "Guatemala": "Guatemala City", "Guyana": "Georgetown", "Jamaica": "Kingston",
+            "Grenada": "Saint George's", "Barbados": "Bridgetown", "Singapore": "Singapore",
+            "Montevideo": "Montevideo"}.get(city, city)
+    return geocode(fx, city, None, iso3)
 
 
 def locality_parts(pl):

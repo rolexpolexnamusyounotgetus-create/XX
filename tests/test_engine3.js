@@ -128,7 +128,7 @@ function divTable(div, n) {
   const sn = Object.entries(S3.subNames).sort((x, y) => y[1] - x[1]).slice(0, 4), st = sum(Object.values(S3.subNames));
   row("submission types", 0, null, "", 0, sn.map(([k, v]) => `${k} ${pct(v / st, 0)}%`).join(", ") + "  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)");
   const t5 = (T5.n >= 40) ? T5 : all5;
-  row("5 rounds: finish / KO / SUB", S5.fin, t5.fin, "%", 0, `KO ${pct(S5.ko)} vs ${pct(t5.ko)}, SUB ${pct(S5.sub)} vs ${pct(t5.sub)} (data ${T5.n >= 40 ? div + " 5-rd n=" + T5.n : "all 5-rd"}; pooled 5-rd finish ${pct(all5.fin)}%)`);
+  row("5 rounds: finish / KO / SUB", S5.fin, t5.fin, "%", 0, `KO ${pct(S5.ko)} vs ${pct(t5.ko)}, SUB ${pct(S5.sub)} vs ${pct(t5.sub)} (data ${T5.n >= 40 ? div + " 5-rd, n=" + T5.n + ", wide CI" : "pooled 5-rd of all divisions, mostly men"}; pooled 5-rd finish ${pct(all5.fin)}%)`);
   const h5 = cond(S5.koR.map((x, i) => x + S5.subR[i]));
   row("5 rounds: hazard per round", 0, null, "", 0, h5.map((x) => pct(x)).join(" / ") + "  vs all 5-rd 20.8 / 20.4 / 17.2 / 10.8 / 10.9");
   check(`${div}: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)`, ok);
@@ -350,6 +350,31 @@ console.log("\n=== Knob directions (Volk = A, Gaethje = B) ===");
   check("judges.power up -> decisions shift toward the harder hitter", (jp1.distB - jp0.distB) * Math.sign(mVG.dw[1] - mVG.dw[0]) > 0.005, `Gaethje's share of decisions ${pct(jp0.distB)} -> ${pct(jp1.distB)} (damage/head ${f2(mVG.dw[0])} vs ${f2(mVG.dw[1])})`);
 }
 
+console.log("\n=== Per-pair position calibration (simulated vs data-implied expectations) ===");
+{
+  // matchup() fits clinch entry and stand-up hazards so the expected occupancy reproduces each pair's data-implied control
+  // and clinch time; strike rates per position are per minute of that position. Check the simulation lands there on average.
+  const pairs = [["merab-dvalishvili", "sean-o-malley", "Bantamweight"], ["islam-makhachev", "belal-muhammad", "Welterweight"],
+    ["arman-tsarukyan", "charles-oliveira", "Lightweight"], ["khamzat-chimaev", "dricus-du-plessis", "Middleweight"],
+    ["tom-aspinall", "ciryl-gane", "Heavyweight"], ["zhang-weili", "tatiana-suarez", "Women's Strawweight"],
+    ["valentina-shevchenko", "alexa-grasso", "Women's Flyweight"], ["alexander-volkanovski", "justin-gaethje", "Lightweight"]];
+  const NP = Math.max(3000, Math.round(N / 4));
+  console.log("pair".padEnd(44) + "ctrl/15 sim vs target (A, B)".padEnd(34) + "clinch landed/15 sim vs exp".padEnd(30) + "ground landed/15 sim vs exp");
+  let worstC = 0, worstK = 0, worstG = 0;
+  for (const [a, b, d] of pairs) {
+    const mm = E.matchup(a, b, { division: d, rounds: 3, date: DATE }), s = E.summarize(mm, NP, 17), x = E.explain(mm);
+    const cA = s.avg.A.per15.ctrl, cB = s.avg.B.per15.ctrl, tA = mm.ctrlT[0] * 15, tB = mm.ctrlT[1] * 15;
+    const kS = s.avg.A.per15.c_lnd + s.avg.B.per15.c_lnd, kE = x.A.expectedPer15.clinchLnd + x.B.expectedPer15.clinchLnd;
+    const gS = s.avg.A.per15.g_lnd + s.avg.B.per15.g_lnd, gE = x.A.expectedPer15.groundLnd + x.B.expectedPer15.groundLnd;
+    const relC = Math.abs((cA + cB) / (tA + tB) - 1), relK = Math.abs(kS / kE - 1), relG = Math.abs(gS / gE - 1);
+    worstC = Math.max(worstC, relC); worstK = Math.max(worstK, relK); worstG = Math.max(worstG, relG);
+    console.log(`${mm.A.name} vs ${mm.B.name}`.padEnd(44) + `${f2(cA, 0)}/${f2(tA, 0)}, ${f2(cB, 0)}/${f2(tB, 0)}`.padEnd(34) + `${f2(kS, 1)} vs ${f2(kE, 1)}`.padEnd(30) + `${f2(gS, 1)} vs ${f2(gE, 1)}`);
+  }
+  check("simulated control per 15 within 25% of each pair's data-implied target", worstC < 0.25, `worst ${pct(worstC)}%`);
+  check("simulated clinch landed per 15 within 25% of each pair's expectation", worstK < 0.25, `worst ${pct(worstK)}%`);
+  check("simulated ground landed per 15 within 30% of each pair's expectation", worstG < 0.30, `worst ${pct(worstG)}%`);
+}
+
 console.log("\n=== manualProfile ===");
 {
   const mp = E.manualProfile({ name: "Manual Volk", slpm: 6.0, sapm: 3.3, acc: 0.57, def: 0.59, td15: 1.6, tdAcc: 0.34, tdDef: 0.68, sub15: 0.2, kd15: 0.3, head: 0.63, body: 0.11, leg: 0.26, mins: 313, age: 38.1, ko_losses: 2 }, { division: "Featherweight" });
@@ -366,9 +391,9 @@ if (!QUICK) {
 
 console.log("\n=== Volkanovski (A) vs Gaethje (B): Lightweight, 5 rounds, title, " + DATE + " ===");
 {
-  const t0 = Date.now();
+  const t0 = Date.now(), c0 = process.cpuUsage();
   const s = E.summarize(mVG, 20000, 20261106);
-  const ms = Date.now() - t0;
+  const cu = process.cpuUsage(c0), ms = Math.round((cu.user + cu.system) / 1000), wall = Date.now() - t0;
   console.log(`win: Volkanovski ${pct(s.pA)}%  Gaethje ${pct(s.pB)}%  draw ${pct(s.pD)}%   (MC se ${pct(s.se, 2)} pts)`);
   console.log(`bins [A KO/TKO, A sub, A dec, draw, B dec, B sub, B KO/TKO]: ${s.bins.map((x) => pct(x)).join(" / ")}`);
   console.log(`finishes by round, Volk: ${s.finA.map((x) => pct(x)).join(" / ")}   Gaethje: ${s.finB.map((x) => pct(x)).join(" / ")}`);
@@ -399,7 +424,8 @@ console.log("\n=== Volkanovski (A) vs Gaethje (B): Lightweight, 5 rounds, title,
     const va = absorbed ? s.avg.B.per15.sig_lnd : fs2(s.avg.A), vb = absorbed ? s.avg.A.per15.sig_lnd : fs2(s.avg.B);
     console.log(lab.padEnd(22) + f2(va).padStart(10) + f2(fc(cv)).padStart(9) + f2(fc(dvv)).padStart(9) + " |" + f2(vb).padStart(12) + f2(fc(cg)).padStart(9) + f2(fc(dg)).padStart(9));
   }
-  check("summarize(Volk vs Gaethje, 20000) under 6 s", ms < 6000, `${ms} ms`);
+  const load = require("os").loadavg()[0];
+  check("summarize(Volk vs Gaethje, 20000) under 6 s of CPU on one core", ms < 6000, `${ms} ms CPU, ${wall} ms wall, load average ${load.toFixed(1)} on ${require("os").cpus().length} cores`);
   check("Volk vs Gaethje probabilities sum to 1", Math.abs(s.pA + s.pB + s.pD - 1) < 1e-9 && Math.abs(sum(s.bins) - 1) < 1e-9);
 }
 

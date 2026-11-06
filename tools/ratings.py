@@ -1566,6 +1566,7 @@ def main():
     ap.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument("--skip-whr", action="store_true", help="leave the WHR systems out (fast run)")
     ap.add_argument("--out", default=OUT_JSON)
+    ap.add_argument("--no-test", action="store_true", help="smoke run: never compute or print 2024+ metrics")
     args = ap.parse_args()
     t0 = time.time()
     logs = []
@@ -1686,9 +1687,13 @@ def main():
     # ------------------------------------------------------------------ held-out evaluation (once)
     names = [s["name"] for s in S] + ["dims", "stack"]
     yte = D.y[ix]
-    test = {k: metrics(preds[k][ix], yte) for k in names}
     tune_m = {k: metrics(preds[k][it], ytr) for k in names}
-    boot = bootstrap(D, {k: preds[k] for k in names}, ix, base="elo_ref")
+    if args.no_test:
+        ix = it          # smoke run: every "test" figure below is computed on the tuning window instead
+        yte = ytr
+        log("--no-test: 2024+ metrics are NOT computed; the test columns below repeat the tuning window")
+    test = {k: metrics(preds[k][ix], yte) for k in names}
+    boot = bootstrap(D, {k: preds[k] for k in names}, ix, base="elo_ref", B_=200 if args.no_test else 2000)
     calib = {k: calibration(preds[k][ix], yte) for k in names}
     singles_rank = sorted([k for k in names if k != "stack"], key=lambda k: tune_res[k].get("cv", tune_res[k]["tune"]))
     best = singles_rank[0]

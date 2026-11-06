@@ -1201,6 +1201,33 @@ def cmd_build(a):
                            'diff_ci95': ci(bs['b'] - bs['c'])}
     res['per_book'] = pb
 
+    # ---------------- soft-label scoring: the close as a low-noise target for model selection ----------------
+    sl = {}
+    for per in ('tune', 'test'):
+        g = sub(per, ['p_close_power', 'p_open', 'p_mrating', 'p_mrating_adj'])
+        y = np.array([r['y'] for r in g])
+        t = np.array([r['p_close_power'] for r in g])
+        mods = {'elo': np.array([r['elo'] for r in g]), 'market_rating': np.array([r['p_mrating'] for r in g]),
+                'market_rating_adj': np.array([r['p_mrating_adj'] for r in g]), 'open': np.array([r['p_open'] for r in g])}
+        def xent(p_, lab):
+            p_ = np.clip(p_, 1e-6, 1 - 1e-6)
+            return -(lab * np.log(p_) + (1 - lab) * np.log(1 - p_))
+        arr = {}
+        for k, v in mods.items():
+            arr[k + '_hard'] = xent(v, y)
+            arr[k + '_soft'] = xent(v, t)
+        bs = boot_event([r['event'] for r in g], arr, B=min(a.boot, 1000))
+        pairs = {}
+        for m1, m2 in (('market_rating', 'elo'), ('market_rating_adj', 'market_rating'), ('open', 'market_rating_adj')):
+            dh = bs[m1 + '_hard'] - bs[m2 + '_hard']
+            ds = bs[m1 + '_soft'] - bs[m2 + '_soft']
+            pairs[f'{m1} - {m2}'] = {
+                'hard_diff': round(float(np.mean(arr[m1 + '_hard'] - arr[m2 + '_hard'])), 4), 'hard_se': round(float(np.std(dh)), 4),
+                'soft_diff': round(float(np.mean(arr[m1 + '_soft'] - arr[m2 + '_soft'])), 4), 'soft_se': round(float(np.std(ds)), 4),
+                'se_ratio_hard_over_soft': round(float(np.std(dh) / np.std(ds)), 2)}
+        sl[per] = {'n': len(g), 'pairs': pairs, 'soft_label': 'p_close (power no-vig)'}
+    res['soft_label_scoring'] = sl
+
     # ---------------- by year and by segment ----------------
     yrs = {}
     for yr in sorted({r['date'][:4] for r in dec}):
@@ -1972,6 +1999,14 @@ def cmd_tables(a):
     for per, v in E.get('per_book', {}).items():
         for bk, w in v.items():
             L.append(f"| {per} | {bk} | {w['n']} | {w['ll_book']:.4f} | {w['ll_consensus']:.4f} | {_ci(w['diff_ci95'], 4)} |")
+    sl = E.get('soft_label_scoring')
+    if sl:
+        L.append('\n### Soft-label scoring: model differences scored on outcomes (hard) vs on the closing line (soft)\n')
+        L.append('| Period | Pair | Hard diff (se) | Soft diff (se) | se ratio hard/soft |')
+        L.append('|---|---|---|---|---|')
+        for per, v in sl.items():
+            for k, w in v['pairs'].items():
+                L.append(f"| {per} (n {v['n']}) | {k} | {w['hard_diff']:+.4f} ({w['hard_se']:.4f}) | {w['soft_diff']:+.4f} ({w['soft_se']:.4f}) | {w['se_ratio_hard_over_soft']} |")
     L.append('\n### By year (closing line, all decisive fights with a close)\n')
     L.append('| Year | n | Close LL | Close acc | Open LL | Elo LL |')
     L.append('|---|---|---|---|---|---|')

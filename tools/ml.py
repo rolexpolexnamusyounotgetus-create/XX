@@ -1063,3 +1063,237 @@ def load_external(ids):
         except Exception:
             pass
     return ext, src
+
+
+# ====================================================================== roster snapshot (page model inputs)
+def roster_features(fights, people, state, R_elo, R_extra, prm, roster):
+    """Per-fighter side features as of the snapshot, shrunk toward each fighter's home-division league rates
+    from the 5 years before the snapshot. roster: fighters.json 'fighters' dict (slug -> profile)."""
+    prm = dict(FEAT_PARAMS, **(prm or {}))
+    snap = fights[-1].date
+    day = snap.toordinal()
+    pri_live = B.build_priors(fights, dt.date(snap.year - 5, snap.month, min(snap.day, 28)), None)
+    by_slug = {P.get("slug"): pid for pid, P in people.items() if P.get("slug")}
+    out = {}
+    for slug, prof in roster.items():
+        pid = by_slug.get(slug)
+        if pid is None or pid not in state:
+            continue
+        st = state[pid]
+        div = prof.get("division") or home_div(st, day) or "ALL"
+        P = prior_pack(pri_live, div)
+        flbs = LBS.get(div)
+        fx = side_features(st, day, P, prm, flbs)
+        fx["elo"] = R_elo[pid]
+        for k, R in R_extra.items():
+            fx[k] = R[pid]
+        fx["elo_chg3"] = elo_change(st, R_elo[pid])
+        T = people[pid]["tott"] or {}
+        dob = T.get("dob")
+        fx["age"] = (snap - dob).days / 365.25 if dob else None
+        fx["height"] = T.get("height_in")
+        fx["reach"] = T.get("reach_in")
+        fx["ape"] = (fx["reach"] - fx["height"]) if (fx["reach"] and fx["height"]) else None
+        stc = (T.get("stance") or "").lower()
+        fx["southpaw"] = float(stc == "southpaw")
+        fx["switch"] = float(stc == "switch")
+        fx["orthodox"] = float(stc not in ("southpaw", "switch") and T.get("height_in") is not None)
+        fx["age_debut"] = ((dt.date.fromordinal(int(st.first_day)) - dob).days / 365.25
+                           if (dob and st.first_day is not None) else fx["age"])
+        fx["log_mins_c"] = math.log1p(fx["mins_c"])
+        fx["_dob"] = dob.isoformat() if dob else None
+        fx["_last_fight"] = dt.date.fromordinal(int(st.days[-1])).isoformat() if st.days else None
+        fx["_division"] = div
+        prev = None
+        for d in reversed(st.div):
+            if LBS.get(d):
+                prev = LBS[d]
+                break
+        fx["_prev_lbs"] = prev
+        fx["_lbs_fought"] = sorted({LBS[d] for d in st.div if LBS.get(d)})
+        out[slug] = fx
+    return out
+
+
+# ====================================================================== pipeline helpers
+BLOCKS = [(2016, 2017), (2018, 2019), (2020, 2021), (2022, 2023)]
+
+
+def log(*a):
+    print(*a, flush=True)
+
+
+def table_cache_key():
+    h = hashlib.sha256()
+    for fn in sorted(os.listdir(B.RAW)):
+        if fn.endswith(".csv"):
+            st = os.stat(os.path.join(B.RAW, fn))
+            h.update(("%s:%d:%d" % (fn, st.st_size, int(st.st_mtime))).encode())
+    for fn in ("ml.py", "build_db.py"):
+        h.update(open(os.path.join(HERE, fn), "rb").read().split(b"# ====================================================================== logistic design")[0])
+    h.update(json.dumps(FEAT_PARAMS, sort_keys=True).encode())
+    return h.hexdigest()[:16]
+
+
+def get_table(use_cache=True):
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    path = os.path.join(CACHE_DIR, "table_%s.pkl" % table_cache_key())
+    if use_cache and os.path.exists(path):
+        log("feature table: cache %s" % path)
+        return pickle.load(open(path, "rb"))
+    t0 = time.time()
+    fights, people, elo_pre = load_all()
+    R_elo, _, _ = B.run_elo(fights, ELO_K, ELO_BOOST)
+    tun, xr, R_extra = {}, {}, {}
+    for mode, key in (("sig", "elo_sig"), ("judge", "elo_judge")):
+        t = tune_margin_elo(fights, mode)
+        tun[key] = t
+        xr[key], _, R_extra[key] = margin_elo(fights, t["K"], t["w_share"], mode)
+        log("margin Elo %s: K=%d w=%.2f log loss 2010-2023 %.4f" % (key, t["K"], t["w_share"], t["log_loss_2010_2023"]))
+    df, state, _ = build_table(fights, people, elo_pre, xr)
+    roster = json.load(open(os.path.join(DERIVED, "fighters.json")))["fighters"]
+    rost = roster_features(fights, people, state, R_elo, R_extra, None, roster)
+    meta = {"snapshot": fights[-1].date.isoformat(), "n_fights_parsed": len(fights)}
+    obj = (df, tun, rost, meta)
+    pickle.dump(obj, open(path, "wb"))
+    log("feature table built in %.0f s: %d rows, %d roster fighters" % (time.time() - t0, len(df), len(rost)))
+    return obj
+
+
+# ====================================================================== tuning (2010-2023 only)
+LR_LAMS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
+
+
+def block_iter(df, dec, evm, extra_train=None):
+    for y0, y1 in BLOCKS:
+        tr = ((df["year"] < y0) & dec).to_numpy()
+        if extra_train is not None:
+            tr &= extra_train
+        va = ((df["year"] >= y0) & (df["year"] <= y1) & dec & evm).to_numpy()
+        yield y0, y1, tr, va
+
+
+def tune_lr(df, X, y, dec, evm):
+    grid = []
+    years = df["year"].to_numpy()
+    for train_set in ("all", "both_exp"):
+        extra = df["both_exp"].to_numpy() if train_set == "both_exp" else None
+        for rec in (None, 8.0):
+            for lam in LR_LAMS:
+                tot, n, per = 0.0, 0, []
+                for y0, y1, tr, va in block_iter(df, dec, evm, extra):
+                    m = LRModel(lam, rec).fit(X[tr], y[tr], years[tr], y0)
+                    l = log_loss(m.predict(X[va]), y[va])
+                    tot += l * va.sum()
+                    n += va.sum()
+                    per.append(round(l, 5))
+                grid.append({"train_set": train_set, "recency_half_life_years": rec, "lam": lam,
+                             "cv_log_loss": round(tot / n, 5), "blocks": per, "n_val": int(n)})
+    best = min(grid, key=lambda g: g["cv_log_loss"])
+    return best, grid
+
+
+def lr_from_cfg(cfg):
+    return LRModel(cfg["lam"], cfg["recency_half_life_years"])
+
+
+def lr_train_mask(df, dec, cfg, tr):
+    return tr & (df["both_exp"].to_numpy() if cfg["train_set"] == "both_exp" else True)
+
+
+def ablate_lr(df, X, y, dec, evm, cfg, cols):
+    years = df["year"].to_numpy()
+    extra = df["both_exp"].to_numpy() if cfg["train_set"] == "both_exp" else None
+
+    def cv(idx):
+        tot, n = 0.0, 0
+        for y0, y1, tr, va in block_iter(df, dec, evm, extra):
+            m = lr_from_cfg(cfg).fit(X[tr][:, idx], y[tr], years[tr], y0)
+            tot += log_loss(m.predict(X[va][:, idx]), y[va]) * va.sum()
+            n += va.sum()
+        return tot / n
+    allidx = np.arange(X.shape[1])
+    base = cv(allidx)
+    res = []
+    groups = sorted({term_group(c) for c in cols})
+    for g in groups:
+        keep = np.array([i for i, c in enumerate(cols) if term_group(c) != g])
+        only = np.array([i for i, c in enumerate(cols) if term_group(c) == g])
+        res.append({"group": g, "n_terms": int(len(only)), "drop_delta": round(cv(keep) - base, 5),
+                    "alone": round(cv(only), 5)})
+    res.sort(key=lambda r: -r["drop_delta"])
+    return round(base, 5), res
+
+
+def sample_configs(space, n, seed, first=None):
+    rng = np.random.default_rng(seed)
+    out = [first] if first else []
+    while len(out) < n:
+        c = {k: v[rng.integers(len(v))] for k, v in space.items()}
+        if c not in out:
+            out.append(c)
+    return out
+
+
+GBM_SPACE = {"num_leaves": [4, 7, 11, 15], "min_data_in_leaf": [40, 80, 160, 320],
+             "feature_fraction": [0.25, 0.4, 0.6], "bagging_fraction": [0.7, 0.85, 1.0],
+             "lambda_l2": [0.0, 5.0, 20.0, 60.0], "min_gain_to_split": [0.0, 0.3]}
+GBM_FIRST = {"num_leaves": 7, "min_data_in_leaf": 160, "feature_fraction": 0.4, "bagging_fraction": 0.85,
+             "lambda_l2": 20.0, "min_gain_to_split": 0.0}
+GBM_LR = 0.04
+GBM_MAX = 1200
+GBM_CHECKS = list(range(100, GBM_MAX + 1, 50))
+
+XGB_SPACE = {"max_depth": [2, 3, 4], "min_child_weight": [5, 20, 60], "subsample": [0.7, 0.9],
+             "colsample_bytree": [0.25, 0.4, 0.6], "lambda": [1.0, 10.0, 50.0]}
+XGB_FIRST = {"max_depth": 3, "min_child_weight": 20, "subsample": 0.85, "colsample_bytree": 0.4, "lambda": 10.0}
+XGB_ETA = 0.04
+XGB_MAX = 1200
+
+
+def tune_trees(kind, df, G0, G1, y, dec, evm, n_cfg):
+    space, first = (GBM_SPACE, GBM_FIRST) if kind == "lgb" else (XGB_SPACE, XGB_FIRST)
+    cfgs = sample_configs(space, n_cfg, 11 if kind == "lgb" else 13, first)
+    results = []
+    for ci_, cfg in enumerate(cfgs):
+        t0 = time.time()
+        sums = np.zeros(len(GBM_CHECKS))
+        n = 0
+        per_block = []
+        for y0, y1, tr, va in block_iter(df, dec, evm):
+            if kind == "lgb":
+                m = lgb_fit(dict(cfg, learning_rate=GBM_LR), G0[tr], G1[tr], y[tr], GBM_MAX)
+                ls = [log_loss(lgb_pred(m, G0[va], G1[va], c), y[va]) for c in GBM_CHECKS]
+            else:
+                m = xgb_fit(dict(cfg, eta=XGB_ETA), G0[tr], G1[tr], y[tr], XGB_MAX)
+                ls = [log_loss(xgb_pred(m, G0[va], G1[va], c), y[va]) for c in GBM_CHECKS]
+            sums += np.array(ls) * va.sum()
+            n += va.sum()
+            per_block.append(ls)
+        mean = sums / n
+        k = int(np.argmin(mean))
+        results.append({"cfg": cfg, "rounds": GBM_CHECKS[k], "cv_log_loss": round(float(mean[k]), 5),
+                        "blocks": [round(float(b[k]), 5) for b in per_block],
+                        "curve": {str(c): round(float(v), 5) for c, v in zip(GBM_CHECKS[::4], mean[::4])}})
+        log("  %s cfg %d/%d %s -> rounds %d cv %.5f (%.0f s)" % (kind, ci_ + 1, len(cfgs), cfg, GBM_CHECKS[k],
+                                                                 mean[k], time.time() - t0))
+    best = min(results, key=lambda r: r["cv_log_loss"])
+    return best, results
+
+
+def tree_fit_pred(kind, best, G0, G1, y, tr, te):
+    if kind == "lgb":
+        m = lgb_fit(dict(best["cfg"], learning_rate=GBM_LR), G0[tr], G1[tr], y[tr], best["rounds"])
+        return lgb_pred(m, G0[te], G1[te]), m
+    m = xgb_fit(dict(best["cfg"], eta=XGB_ETA), G0[tr], G1[tr], y[tr], best["rounds"])
+    return xgb_pred(m, G0[te], G1[te]), m
+
+
+# ====================================================================== stacking
+def stack_fit(Z, y, lam=1e-3):
+    """No-intercept logistic on logit inputs (corner-symmetric). Returns weights."""
+    return fit_lr(np.asarray(Z, float), np.asarray(y, float), lam)
+
+
+def to_logit(p):
+    return _logit(np.asarray(p, float))

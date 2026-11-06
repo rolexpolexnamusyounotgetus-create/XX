@@ -214,7 +214,7 @@ def fit_round_logit(S, F, period):
           (F.DATE >= period[0]) & (F.DATE <= period[1])].copy()
     d["cards"] = d.det.map(br.parse_cards)
     d = d[d.cards.map(len) == 3]
-    d = d[[all(card_rounds_lost(c, int(R)) == [0, 0, 0]) and len(c) == 3 for c, R in zip(d.cards, d.sched)]]
+    d = d[[len(c) == 3 and card_rounds_lost(c, int(R)) == [0, 0, 0] for c, R in zip(d.cards, d.sched)]]
     feats = ["head_l", "body_l", "leg_l", "kd", "td_l", "ctrl_min", "sub"]
     s = S[S.fid.isin(d.fid)].copy()
     s["ctrl_min"] = s.ctrl / 60
@@ -1377,25 +1377,34 @@ def main(argv=None):
             print("  simulation check of the estimator (null model, own-output fatigue proxy)", flush=True)
             J["simulation_check"] = sim_check(S, m0_out, reps=2, gam_true=(0.0, -0.15))
         J["kd_momentum_descriptive"] = part4_descriptive(S)
+        save(J, parts | {"partial"})
     if "3" in parts:
         print("part 3: judges' labels", flush=True)
         J["adaptation_judges"] = part3_judges(F, S, STATE_X, jack=jack)
+        save(J, parts | {"partial"})
     if "2" in parts:
         print("part 2: per-fighter late-round ratios", flush=True)
         J["fighter_late_ratio"] = part2(S)
+        save(J, parts | {"partial"})
     J["targets_by_round"] = targets(S)
     J["round_correlations_train"] = round_corr(S)
     if "5" in parts:
         print("part 5: finish hazard", flush=True)
         J["finish_hazard"] = part5(S, F)
     J["meta"]["secs"] = time.time() - t0
+    save(J, parts)
+    print(f"wrote {OUT_JSON} ({time.time() - t0:.0f}s)")
+
+
+def save(J, parts):
     old = {}
     if os.path.exists(OUT_JSON) and parts != {"1", "2", "3", "4", "5"}:
         old = json.load(open(OUT_JSON))
     old.update(r6(J, 6))
-    with open(OUT_JSON, "w") as fh:
+    tmp = OUT_JSON + ".tmp"
+    with open(tmp, "w") as fh:
         json.dump(old, fh, indent=1)
-    print(f"wrote {OUT_JSON} ({time.time() - t0:.0f}s)")
+    os.replace(tmp, OUT_JSON)
 
 
 if __name__ == "__main__":

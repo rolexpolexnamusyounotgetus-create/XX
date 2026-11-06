@@ -646,7 +646,11 @@ def fetch_bfo(F, since, until):
 # source: fightodds.io (public GraphQL API used by the site; persisted query texts from its bundle)
 # ----------------------------------------------------------------------------------------------
 
-FO_QUERY_NAMES = ['EventsPromotionQuery', 'EventOfferTableQrQuery', 'FightOfferTableRefetchQuery']
+FO_QUERY_NAMES = ['EventsPromotionQuery', 'EventOfferTableQrQuery', 'FightOfferTableRefetchQuery', 'OddsChartQrQuery']
+
+
+def _js_unescape(t):
+    return re.sub(r'\\(n|t|"|\'|\\)', lambda m: {'n': '\n', 't': '\t'}.get(m.group(1), m.group(1)), t)
 
 
 def fo_queries(F):
@@ -660,7 +664,7 @@ def fo_queries(F):
     if os.path.exists(qcache):        # the bundle (6 MB) is fetched once per site deploy, not per run
         with open(qcache) as fh:
             q = json.load(fh)
-        if all(n in q for n in FO_QUERY_NAMES):
+        if all(n in q for n in FO_QUERY_NAMES[:3]):
             return q
     js, _ = F.get('fightodds', 'bundle', FO_SITE + m.group(1))
     if not js:
@@ -673,6 +677,10 @@ def fo_queries(F):
                 q[name] = json.loads('"' + mm.group(1) + '"')
             except ValueError:
                 pass
+        if name not in q:      # some query texts sit in single-quoted JS strings
+            mm = re.search(r"text:'(query " + name + r"\(.*?)',metadata", js, re.S)
+            if mm:
+                q[name] = _js_unescape(mm.group(1))
     if q:
         os.makedirs(os.path.dirname(qcache), exist_ok=True)
         with open(qcache, 'w') as fh:
@@ -696,7 +704,36 @@ def fo_post(F, name, query, variables):
     return d.get('data'), ts
 
 
-def fetch_fightodds(F, since, until, detail=True):
+def fo_history(F, q, slug, book, oids):
+    """Timestamped line history of one book on one fight (both sides merged): [[t, a1, a2], ...]."""
+    if not q.get('OddsChartQrQuery') and not F.replay:
+        return None
+    ser = []
+    for side, oid in enumerate(oids):
+        if not oid:
+            return None
+        d, _ = fo_post(F, f'hist_{slug}_{book}_{side + 1}', q.get('OddsChartQrQuery', ''), {'outcomeId': oid})
+        if not d or not d.get('odds'):
+            return None
+        for e in d['odds']['edges']:
+            n = e['node']
+            a = parse_am(n.get('odds'))
+            t = _iso(n.get('timestamp'))
+            if a and t:
+                ser.append((t, side, a))
+    ser.sort(key=lambda x: x[0])
+    out, cur, i = [], [None, None], 0
+    while i < len(ser):       # updates of both sides within 2 minutes are one book move
+        t0 = ser[i][0]
+        while i < len(ser) and (ser[i][0] - t0).total_seconds() <= 120:
+            cur[ser[i][1]] = ser[i][2]
+            i += 1
+        if cur[0] and cur[1] and (not out or out[-1][1:] != cur):
+            out.append([zstr(t0), cur[0], cur[1]])
+    return out
+
+
+def fetch_fightodds(F, since, until, detail=True, history=()):
     q = {} if F.replay else fo_queries(F)
     if F.replay:   # query texts are only needed to post; replay reads cached answers by name
         q = {n: '' for n in FO_QUERY_NAMES}
@@ -744,7 +781,7 @@ def fetch_fightodds(F, since, until, detail=True):
                         a1, a2 = parse_am(o1.get('odds')), parse_am(o2.get('odds'))
                         if not (a1 and a2):
                             continue
-                        x = {'ml': [a1, a2]}
+                        x = {'ml': [a1, a2], 'oid': [o1.get('id'), o2.get('id')]}
                         op = [parse_am(o1.get('oddsOpen')), parse_am(o2.get('oddsOpen'))]
                         if op[0] and op[1]:
                             x['open'] = op
@@ -756,6 +793,14 @@ def fetch_fightodds(F, since, until, detail=True):
                     if lines2:
                         rec['lines'] = lines2
                         rec['fetched'] = ts2
+                    hist = {}
+                    for bk in history:
+                        if bk in lines2:
+                            h = fo_history(F, q, n['slug'], bk, lines2[bk]['oid'])
+                            if h:
+                                hist[bk] = h
+                    if hist:
+                        rec['history'] = hist
             out.append(rec)
     return out, {'events': events}
 
@@ -1470,6 +1515,20 @@ def build_bouts(bouts, events, fidx, snap_time, have_cards):
             rec['other_source_lines'] = alt
         if an and an.get('an_consensus'):
             rec['actionnetwork_consensus'] = orient(an['an_consensus'], an['swapped'])
+        fo = b['src'].get('fightodds')
+        if fo and fo.get('history'):
+            hist = {}
+            for bk, ser in fo['history'].items():
+                pts = []
+                for t, a1, a2 in ser:
+                    aA, aB = orient([a1, a2], fo['swapped'])
+                    st = line_stats(aA, aB)
+                    if st and OVR_MIN <= st['ovr'] <= OVR_MAX:
+                        pts.append([t, aA, aB, r4(st['p_shin'])])
+                if pts:
+                    hist[bk] = pts
+            if hist:
+                rec['history'] = hist
         pr = props_summary(b)
         if pr:
             rec['props'] = pr
@@ -1585,7 +1644,9 @@ def cmd_snapshot(a):
     sel = set(a.sources.split(','))
     fo_meta = {}
     if 'fightodds' in sel:
-        r, fo_meta = run('fightodds', lambda: fetch_fightodds(F, since, until, detail=not a.no_fight_detail))
+        hist = [canon_book(x) for x in a.history.split(',') if x and x.lower() != 'none']
+        r, fo_meta = run('fightodds', lambda: fetch_fightodds(F, since, until, detail=not a.no_fight_detail,
+                                                              history=hist))
         src_bouts += r
         if fo_meta.get('events'):
             sources['fightodds']['event_list'] = fo_meta['events']
@@ -1731,6 +1792,14 @@ def cmd_timeline(a=None):
                 x = op['actionnetwork_open']
                 t['actionnetwork_open'] = {'ml': x['ml'][::-1] if flip else x['ml'],
                                            'p_shin': round(1 - x['p_shin'], 4) if flip else x['p_shin']}
+            for bk, pts in (r.get('history') or {}).items():
+                if flip:
+                    pts = [[x[0], x[2], x[1], round(1 - x[3], 4)] for x in pts]
+                pre = [x for x in pts if not t.get('start_utc') or _iso(x[0]) < _iso(t['start_utc'])]
+                if pre:
+                    t.setdefault('book_history', {})[bk] = {
+                        'open': pre[0], 'last_pre_start': pre[-1], 'n_moves': len(pre) - 1,
+                        'read_in': s['meta']['stamp'], 'format': '[t_utc, odds_a, odds_b, p_a_shin]'}
             if (r.get('consensus') or {}).get('n_books'):
                 t['captures'].append(_cap(r, s, flip))
     out = []
@@ -1821,6 +1890,9 @@ def main():
     s.add_argument('--sources', default='fightodds,bestfightodds,actionnetwork,covers')
     s.add_argument('--no-fight-detail', action='store_true',
                    help='skip the per-fight fightodds query (per-book open/best/worst)')
+    s.add_argument('--history', default='Pinnacle',
+                   help="books whose full timestamped line history is read from fightodds (2 requests per "
+                        "bout per book; 'none' to skip)")
     s.add_argument('--skip-wiki', action='store_true')
     s.add_argument('--replay', metavar='STAMP', help='rebuild from data/raw/web_cache/*/STAMP without network')
     s.add_argument('--delay', type=float, default=1.25, help='seconds between requests (>= 1.0)')

@@ -281,7 +281,14 @@ def side_features(e, t, keys, priors_asof):
     st = s.get("stance") or ""
     out["southpaw"] = 1.0 if st == "Southpaw" else 0.0
     out["switch"] = 1.0 if st == "Switch" else 0.0
+    out["streak6"] = float(max(-6, min(6, out["streak"]))) if np.isfinite(out["streak"]) else 0.0
     return out
+
+
+# The page-computable LR (exported in moe.json 'feat', evaluated by MoE.featLR in src/ml/moe.js) uses only
+# what a fighters.json profile carries: no Glicko, opponent Elo or title count; streak capped at +-6 (the
+# profile's 'recent' list holds the last 6 fights).
+PAGE_DROP = {"glicko", "glicko_rd", "opp_elo", "titles", "streak"}
 
 
 def build_table(entries, keys, priors_asof):
@@ -404,6 +411,69 @@ def glicko_p(rows):
         g = 1 / math.sqrt(1 + 3 * q * q * (a["glicko_rd"] ** 2 + b["glicko_rd"] ** 2) / math.pi ** 2)
         out.append(1 / (1 + 10 ** (-g * (a["glicko"] - b["glicko"]) / 400)))
     return np.array(out)
+
+
+def cmd_experts_lr_page(args):
+    """Adds the page-computable feature LR ('feat_lr') to experts.pkl (the full-feature LR is kept as
+    'feat_lr_full'): same protocol (C chosen on 2016-2018, expanding-window OOF 2019-2023, <=2023 model for
+    2024-2025, production fit on everything before 2026)."""
+    global FEAT_NAMES
+    t0 = time.time()
+    with open(os.path.join(CACHE, "prep.pkl"), "rb") as fh:
+        prep = pickle.load(fh)
+    with open(os.path.join(CACHE, "experts.pkl"), "rb") as fh:
+        E = pickle.load(fh)
+    entries = [e for e in prep["entries"] if e["date"] < VAULT_FROM.isoformat()]
+    rows = build_table(entries, prep["keys"], prep["priors_asof"])
+    FEAT_NAMES = None
+    XA, XB, C = mats(rows)
+    names = [n for n in FEAT_NAMES if n not in PAGE_DROP]
+    cols = [FEAT_NAMES.index(n) for n in names]
+    XA, XB = XA[:, cols], XB[:, cols]
+    y = np.array([r["y"] for r in rows])
+    dates = np.array([r["date"] for r in rows])
+    yr = years_of(dates)
+    dec = np.isfinite(y)
+    grid = {}
+    for Cv in (0.003, 0.01, 0.03, 0.1):
+        tot, n = 0.0, 0
+        for Y in (2016, 2017, 2018):
+            tr, va = dec & (yr < Y), dec & (yr == Y)
+            p = SymLR(Cv).fit(XA[tr], XB[tr], y[tr]).predict(XA[va], XB[va])
+            tot += ll(p, y[va]) * va.sum()
+            n += va.sum()
+        grid[Cv] = tot / n
+    Cb = min(grid, key=grid.get)
+    log("page LR C grid (2016-2018 inner):", {k: round(v, 4) for k, v in grid.items()}, "->", Cb)
+    pred = np.full(len(rows), np.nan)
+    for Y, te in [(Y, yr == Y) for Y in range(2019, 2024)] + [(2024, (yr == 2024) | (yr == 2025))]:
+        tr = dec & (yr < Y)
+        pred[te] = SymLR(Cb).fit(XA[tr], XB[tr], y[tr]).predict(XA[te], XB[te])
+    lr_all = SymLR(Cb).fit(XA[dec], XB[dec], y[dec])
+    lr_val = SymLR(Cb).fit(XA[dec & (yr < 2024)], XB[dec & (yr < 2024)], y[dec & (yr < 2024)])
+    keep = dates >= TRAIN[0]
+    ids_new = [r["id"] for r, k in zip(rows, keep) if k]
+    assert ids_new == E["ids"], "row order changed; rerun experts"
+    if "feat_lr_full" not in E["pred"]:
+        E["pred"]["feat_lr_full"] = E["pred"]["feat_lr"]
+    E["pred"]["feat_lr"] = pred[keep]
+    # sides of the kept rows for the JS test (raw side records) and the production coefficients
+    E["lr_page"] = {"names": names, "C": Cb, "grid": grid, "coef": lr_all.coef.tolist(), "coef_valid": lr_val.coef.tolist()}
+    # priors for live use: division rates from fights in 2021-01-01..2025-12-31 (= priors_asof["2026"])
+    import build_db as B
+    lg = {}
+    fights, _ = B.parse_fights(lg)
+    fights = [f for f in fights if f.date < VAULT_FROM]
+    people = B.build_people(fights, lg)
+    B.build_vectors(fights, lg)
+    E["priors_2026"] = B.build_priors(fights, dt.date(2021, 1, 1), dt.date(2026, 1, 1))
+    with open(os.path.join(CACHE, "experts.pkl"), "wb") as fh:
+        pickle.dump(E, fh)
+    m = keep & dec
+    yk = y
+    for lab, sel in (("2019-23", m & (yr <= 2023)), ("2024-25", m & (yr >= 2024))):
+        print("  feat_lr(page) %s n=%d log loss %.4f" % (lab, sel.sum(), ll(pred[sel], yk[sel])))
+    log("page LR done in %.0fs" % (time.time() - t0))
 
 
 def cmd_experts(args):
@@ -1306,7 +1376,7 @@ def predict_py(model, st, cal, ex, g_raw, experts, mu, sd):
 # ====================================================================== main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["prep", "experts", "fit", "all"])
+    ap.add_argument("cmd", choices=["prep", "experts", "lrpage", "fit", "report", "all"])
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args()
     warnings.filterwarnings("ignore")
@@ -1314,8 +1384,12 @@ def main():
         cmd_prep(args)
     if args.cmd in ("experts", "all"):
         cmd_experts(args)
+    if args.cmd in ("lrpage", "experts", "all"):
+        cmd_experts_lr_page(args)
     if args.cmd in ("fit", "all"):
         cmd_fit(args)
+    if args.cmd == "report":
+        report_and_export(args)
 
 
 if __name__ == "__main__":

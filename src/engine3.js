@@ -1055,7 +1055,8 @@
         topSkill: R[i].topSkill, oppEscapeWeakness: R[j].escWeak, passEdge: m.gEdge[i], standUpMeanSecWhenUnder: 1 / Math.max(1e-9, m.up[i]),
         sweepPerMinBottom: m.sw[i] * 60 };
       o.subs = { attemptsPerGroundMin: m.threat[i], conversion: m.subConv[i], careerConvShrunk: R[i].subConv, oppDefFailShrunk: R[j].subDefFail, guillotinePerStuffedShot: m.gillo[i] };
-      o.cardio = { paceByRound: m.pace[i].slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain };
+      o.cardio = { paceByRound: m.pace[i].slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain,
+        drainSchedule: Math.pow(3 / m.rounds, m.p.drainSchedExp), drainCardio: Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp) };
       o.knobs = m.adj[i];
       sides.push(o);
       lines.push("");
@@ -1072,7 +1073,9 @@
         "); control target " + f(o.grappling.ctrlTargetPer15, 0) + " s/15 (league " + f(P.ctrl * 15, 0) + "), top skill " + f(R[i].topSkill) + " x opp escape " + f(R[j].escWeak) + " -> pass edge " + f(m.gEdge[i]));
       lines.push("  When under: mean stand-up " + f(1 / m.up[i], 0) + " s, sweeps " + f(m.sw[i] * 60, 3) + "/min");
       lines.push("  Submissions: " + f(m.threat[i], 3) + " attempts per ground-minute (league " + f(L.sub, 3) + "), conversion " + pct(m.subConv[i]) + " (shrunk own " + pct(R[i].subConv) + " vs opp " + pct(R[j].subDefFail) + ", league " + pct(P.sub_conv) + ")");
-      lines.push("  Cardio: pace by round " + m.pace[i].map(function (x) { return f(x); }).join(" ") + "; cardio index " + f(m.cardio[i]) + ", drain x" + f(m.drain[i] / m.p.drain));
+      var schedF = Math.pow(3 / m.rounds, m.p.drainSchedExp), cardF = Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp);
+      lines.push("  Cardio: output by round " + m.pace[i].map(function (x) { return f(x); }).join(" ") + " (division curve x his late-round ratio); cardio index " + f(m.cardio[i]) +
+        "; stamina drain x" + f(m.drain[i] / m.p.drain) + " of the 3-round base (" + m.rounds + "-round pacing x" + f(schedF) + ", cardio x" + f(cardF) + ", knob x" + f(m.adj[i].cardio) + ")");
     }
     out.A = sides[0]; out.B = sides[1];
     out.pair = { occupancy: occ, clinchTarget: m.clT, ctrlTargetPer15: [m.ctrlT[0] * 15, m.ctrlT[1] * 15], clinchEntryPerMinDist: m.clE * 60, judgePower: m.judgePower };

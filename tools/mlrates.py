@@ -633,6 +633,512 @@ def mlp_predict(model, X):
     return h            # add the offsets
 
 
+# ------------------------------------------------------------------ LightGBM
+GBM_PARAMS = dict(learning_rate=0.06, num_leaves=7, min_data_in_leaf=50, feature_fraction=0.7, bagging_fraction=0.8,
+                  bagging_freq=1, lambda_l2=5.0, max_bin=63, verbose=-1, num_threads=2, seed=7,
+                  min_sum_hessian_in_leaf=1e-3)
+
+
+def gbm_fit(t, X, y, e, off, rounds, Xv=None, yv=None, ev=None, offv=None, patience=50, params=None):
+    import lightgbm as lgb
+    kind = TARGETS[t][1]
+    p = dict(GBM_PARAMS, **(params or {}))
+    p["objective"] = "poisson" if kind == "pois" else "cross_entropy"
+    if kind == "pois":
+        p["poisson_max_delta_step"] = 0.7
+    d = lgb.Dataset(X, y / e, weight=e, init_score=off, free_raw_data=True)
+    if Xv is not None:
+        dv = lgb.Dataset(Xv, yv / ev, weight=ev, init_score=offv, reference=d)
+        bst = lgb.train(p, d, rounds, valid_sets=[dv], callbacks=[lgb.early_stopping(patience, verbose=False)])
+        return bst, bst.best_iteration
+    bst = lgb.train(p, d, rounds)
+    return bst, rounds
+
+
+def gbm_trees(bst, n_iter=None):
+    """Compact export: per tree {f, t, l, r, v}; child < 0 means leaf ~idx."""
+    dm = bst.dump_model(num_iteration=n_iter)
+    out = []
+    for ti in dm["tree_info"]:
+        F, Tt, Lc, Rc, V = [], [], [], [], []
+
+        def walk(node):
+            if "leaf_index" in node or "split_index" not in node:
+                V.append(node.get("leaf_value", 0.0))
+                return ~(len(V) - 1)
+            k = len(F)
+            F.append(int(node["split_feature"]))
+            Tt.append(float(node["threshold"]))
+            Lc.append(0)
+            Rc.append(0)
+            assert node.get("decision_type", "<=") == "<="
+            Lc[k] = walk(node["left_child"])
+            Rc[k] = walk(node["right_child"])
+            return k
+
+        root = ti["tree_structure"]
+        if "split_index" not in root:
+            V.append(root.get("leaf_value", 0.0))
+        else:
+            walk(root)
+        out.append({"f": F, "t": Tt, "l": Lc, "r": Rc, "v": V})
+    return out
+
+
+def trees_eta(trees, X):
+    s = np.zeros(X.shape[0])
+    for T in trees:
+        if not T["f"]:
+            s += T["v"][0]
+            continue
+        f = np.array(T["f"])
+        th = np.array(T["t"])
+        L = np.array(T["l"])
+        R = np.array(T["r"])
+        V = np.array(T["v"])
+        node = np.zeros(X.shape[0], dtype=np.int64)
+        active = node >= 0
+        while active.any():
+            idx = np.where(active)[0]
+            nd = node[idx]
+            go_left = X[idx, f[nd]] <= th[nd]
+            node[idx] = np.where(go_left, L[nd], R[nd])
+            active = node >= 0
+        s += V[~node]
+    return s
+
+
+# ------------------------------------------------------------------ export helpers
+def sig(x, d=6):
+    if isinstance(x, (list, tuple)):
+        return [sig(v, d) for v in x]
+    if isinstance(x, np.ndarray):
+        return sig(x.tolist(), d)
+    if isinstance(x, (int, np.integer)):
+        return int(x)
+    x = float(x)
+    if x == 0 or not math.isfinite(x):
+        return 0
+    y = float("%.*g" % (d, x))
+    return int(y) if y.is_integer() and abs(y) < 1e15 else y
+
+
+def export_glm(g):
+    return {"b0": sig(g["b0"], 8), "b": sig(g["b"], 7), "pairs": [[int(a), int(b)] for a, b in g["pairs"]]}
+
+
+def export_mlp(net):
+    return {"mean": sig(net["mean"], 8), "sd": sig(net["sd"], 8), "W": [sig(w, 6) for w in net["W"]],
+            "b": [sig(b, 6) for b in net["b"]], "act": net["act"]}
+
+
+def export_trees(trees):
+    return [{"f": T["f"], "t": [float(repr(x)) for x in T["t"]], "l": T["l"], "r": T["r"], "v": sig(T["v"], 8)}
+            for T in trees]
+
+
+def load_mlp(d):
+    return {"mean": np.array(d["mean"], float), "sd": np.array(d["sd"], float), "W": [np.array(w, float) for w in d["W"]],
+            "b": [np.array(b, float) for b in d["b"]], "act": d["act"]}
+
+
+def model_eta(J, X, BASEv):
+    """Evaluate an exported model JSON (dict) on feature rows X with league bases BASEv -> eta per target (and the
+    per-component deltas). Mirrors src/ml/mlrates.js etaSide()."""
+    nt = len(J["targets"])
+    off = np.column_stack([link(t, BASEv[:, t]) for t in range(nt)])
+    comp = {}
+    if J.get("glm"):
+        mean = np.array(J["glm_mean"], float)
+        sd = np.array(J["glm_sd"], float)
+        g = np.zeros_like(off)
+        for t in range(nt):
+            G = J["glm"][t]
+            if G is None:
+                continue
+            pairs = np.array(G["pairs"], dtype=int).reshape(-1, 2)
+            Z = glm_design(X, mean, sd, pairs)
+            g[:, t] = G["b0"] + Z @ np.array(G["b"], float)
+        comp["glm"] = g
+    if J.get("gbm"):
+        g = np.zeros_like(off)
+        for t in range(nt):
+            if J["gbm"][t]:
+                g[:, t] = trees_eta(J["gbm"][t], X)
+        comp["gbm"] = g
+    if J.get("mlp"):
+        g = np.zeros_like(off)
+        for net in J["mlp"]:
+            g += mlp_predict(load_mlp(net), X) / len(J["mlp"])
+        comp["mlp"] = g
+    eta = off.copy()
+    for t in range(nt):
+        w = J["stack"][t]
+        for k in ("glm", "gbm", "mlp"):
+            if w.get(k) and k in comp:
+                eta[:, t] += w[k] * comp[k][:, t]
+    return eta, off, comp
+
+
+# ------------------------------------------------------------------ fit pipeline
+OOF_YEARS = [2020, 2021, 2022, 2023]          # time-ordered CV folds inside the training period
+ES_SPLIT = (2017, (2018, 2019))               # round / epoch selection: train <= 2017, stop on 2018-2019
+GLM_LAMS = [10.0, 100.0, 1000.0]
+GLM_TOP = 12                                   # interactions among the top-k GBM features of each target
+MLP_CFG = dict(hidden=(96, 48), drop=0.15, wd=1e-3, lr=2e-3)
+MLP_SEEDS = 2
+
+
+def recal_const(t, y, e, mu):
+    if TARGETS[t][1] == "pois":
+        return math.log(max(y.sum(), 1e-9) / max((mu * e).sum(), 1e-9))
+    z = logit_np(mu)
+    c = 0.0
+    for _ in range(40):
+        p = sigm_np(z + c)
+        c += (y - e * p).sum() / max((e * p * (1 - p)).sum(), 1e-9)
+    return c
+
+
+def boot_ci(diff_rows, rows_fight, reps=1000, seed=11):
+    """Cluster (fight) bootstrap of the mean of per-row values. Returns (mean, lo, hi)."""
+    rng = np.random.default_rng(seed)
+    uf, inv = np.unique(rows_fight, return_inverse=True)
+    sums = np.bincount(inv, weights=diff_rows)
+    cnt = np.bincount(inv)
+    nf = len(uf)
+    st = []
+    for _ in range(reps):
+        k = rng.integers(0, nf, nf)
+        st.append(sums[k].sum() / cnt[k].sum())
+    st = np.array(st)
+    return float(diff_rows.mean()), float(np.percentile(st, 2.5)), float(np.percentile(st, 97.5))
+
+
+def calib_table(t, y, e, eta, nb=10):
+    """Deciles of predicted rate/probability: predicted vs observed (sum y / sum e), and the calibration slope
+    (GLM of y on eta with eta as the only covariate plus intercept)."""
+    mu = inv_link(t, eta)
+    ok = e > 0
+    y, e, eta, mu = y[ok], e[ok], eta[ok], mu[ok]
+    q = np.quantile(mu, np.linspace(0, 1, nb + 1))
+    bins = []
+    for k in range(nb):
+        m = (mu >= q[k]) & ((mu < q[k + 1]) if k < nb - 1 else (mu <= q[k + 1]))
+        if m.sum() == 0:
+            continue
+        bins.append({"pred": sig((mu[m] * e[m]).sum() / e[m].sum(), 4), "obs": sig(y[m].sum() / e[m].sum(), 4),
+                     "n": int(m.sum())})
+    # slope: fit y ~ e * g^-1(a + b * eta)
+    Z = (eta - eta.mean())[:, None]
+    b0, b = glm_fit(Z, y, e, np.full(len(y), eta.mean()), TARGETS[t][1], 1e-6, iters=25)
+    return {"bins": bins, "slope": sig(b[0], 4), "intercept_shift": sig(b0, 4)}
+
+
+def cmd_fit(args):
+    import lightgbm  # noqa: F401
+    t_start = time.time()
+    d = load_dataset()
+    M = d["M"]
+    X, Y, EX, BASE = M["X"], M["Y"], M["E"], M["BASE"]
+    ENG = np.load(os.path.join(CACHE, "engine_expect.npy"))
+    eng_meta = json.load(open(os.path.join(CACHE, "engine_meta.json")))
+    yr, bp = M["year"], M["both_prior"]
+    fight = M["row"]
+    nt = len(TNAMES)
+    OFF = np.column_stack([link(t, BASE[:, t]) for t in range(nt)])
+    trainM = (yr >= TRAIN_FROM.year) & (yr < VAL_FROM.year)
+    valM = (yr >= VAL_FROM.year) & (yr < CUTOFF.year)
+    assert not (yr >= CUTOFF.year).any()
+    report = {"targets": TNAMES, "n_train_rows": int(trainM.sum()), "n_val_rows": int(valM.sum()),
+              "n_val_rows_both_prior": int((valM & bp).sum()), "engine": eng_meta}
+    log("rows: train %d, validation %d (both with a prior UFC fight: %d)" % (trainM.sum(), valM.sum(), (valM & bp).sum()))
+    quick = args.quick
+
+    # ---------------- 1) round selection for GBM (train <= 2017, early stop on 2018-2019)
+    es_tr = (yr >= TRAIN_FROM.year) & (yr <= ES_SPLIT[0])
+    es_va = (yr >= ES_SPLIT[1][0]) & (yr <= ES_SPLIT[1][1])
+    rounds, imp = [], []
+    for t in range(nt):
+        e = EX[:, t]
+        a, b = es_tr & (e > 0), es_va & (e > 0)
+        bst, it = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], 1500, X[b], Y[b, t], e[b], OFF[b, t])
+        it = max(it, 20)
+        rounds.append(it)
+        gain = bst.feature_importance("gain", iteration=it)
+        imp.append(gain / max(gain.sum(), 1e-12))
+        log("  gbm rounds %-8s %4d  (%.0fs)" % (TNAMES[t], it, time.time() - t_start))
+    report["gbm_rounds_es"] = dict(zip(TNAMES, rounds))
+    pairs_t = []
+    for t in range(nt):
+        top = np.argsort(-imp[t])[:GLM_TOP]
+        pairs_t.append(np.array([(int(top[i]), int(top[j])) for i in range(len(top)) for j in range(i + 1, len(top))]))
+
+    # ---------------- 2) MLP epochs (same split)
+    tw = np.ones(nt)
+    for t in range(nt):
+        e = EX[es_tr, t]
+        ok = e > 0
+        tw[t] = 1.0 / max(target_dev(t, Y[es_tr, t][ok], e[ok], OFF[es_tr, t][ok]).mean(), 1e-6)
+    tw = tw / tw.mean()
+    ep_list = []
+    for s in range(MLP_SEEDS):
+        net = mlp_train(X[es_tr], Y[es_tr], EX[es_tr], OFF[es_tr], X[es_va], Y[es_va], EX[es_va], OFF[es_va],
+                        seed=100 + s, task_w=tw, epochs=150, **MLP_CFG)
+        ep_list.append(net["epochs"])
+    mlp_epochs = int(round(np.mean(ep_list)))
+    report["mlp_epochs_es"] = ep_list
+    log("  mlp epochs %s -> %d (%.0fs)" % (ep_list, mlp_epochs, time.time() - t_start))
+
+    # ---------------- 3) time-ordered CV: out-of-fold predictions for 2020-2023
+    oof = {k: np.full((len(yr), nt), np.nan) for k in ("glm", "gbm", "mlp")}
+    oof_glm_lam = {lam: np.full((len(yr), nt), np.nan) for lam in GLM_LAMS}
+    for b in OOF_YEARS:
+        trm = (yr >= TRAIN_FROM.year) & (yr < b)
+        tem = yr == b
+        mean = X[trm].mean(0)
+        sd = X[trm].std(0) + 1e-6
+        for t in range(nt):
+            e = EX[:, t]
+            a = trm & (e > 0)
+            Za = glm_design(X[a], mean, sd, pairs_t[t])
+            Zt = glm_design(X[tem], mean, sd, pairs_t[t])
+            for lam in GLM_LAMS:
+                b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam, iters=15)
+                oof_glm_lam[lam][tem, t] = b0 + Zt @ bb
+            bst, _ = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], rounds[t])
+            oof["gbm"][tem, t] = bst.predict(X[tem], raw_score=True)
+        acc = np.zeros((tem.sum(), nt))
+        for s in range(MLP_SEEDS):
+            net = mlp_train(X[trm], Y[trm], EX[trm], OFF[trm], seed=200 + s, task_w=tw, fixed_epochs=mlp_epochs,
+                            **MLP_CFG)
+            acc += mlp_predict(net, X[tem]) / MLP_SEEDS
+        oof["mlp"][tem] = acc
+        log("  fold %d done (%.0fs)" % (b, time.time() - t_start))
+    oofM = np.isin(yr, OOF_YEARS)
+    lam_t = []
+    for t in range(nt):
+        e = EX[:, t]
+        m = oofM & (e > 0)
+        devs = [target_dev(t, Y[m, t], e[m], OFF[m, t] + oof_glm_lam[lam][m, t]).mean() for lam in GLM_LAMS]
+        k = int(np.argmin(devs))
+        lam_t.append(GLM_LAMS[k])
+        oof["glm"][:, t] = oof_glm_lam[GLM_LAMS[k]][:, t]
+    report["glm_lambda"] = dict(zip(TNAMES, lam_t))
+
+    # ---------------- 4) stacking weights on the out-of-fold predictions (no intercept; deltas over the offset)
+    from scipy.optimize import minimize
+    stack, cv_table = [], {}
+    for t in range(nt):
+        e = EX[:, t]
+        m = oofM & (e > 0)
+        y_, e_, o_ = Y[m, t], e[m], OFF[m, t]
+        Dm = np.column_stack([oof[k][m, t] for k in ("glm", "gbm", "mlp")])
+
+        def f(w):
+            return target_dev(t, y_, e_, o_ + Dm @ w).mean()
+
+        best = minimize(f, np.array([0.34, 0.33, 0.33]), method="L-BFGS-B", bounds=[(0, 1.5)] * 3)
+        w = best.x
+        stack.append({"glm": float(w[0]), "gbm": float(w[1]), "mlp": float(w[2])})
+        cv_table[TNAMES[t]] = {"league": float(target_dev(t, y_, e_, o_).mean()),
+                               "engine": float(target_dev(t, y_, e_, link(t, ENG[m, t])).mean()),
+                               "glm": float(f(np.array([1, 0, 0]))), "gbm": float(f(np.array([0, 1, 0]))),
+                               "mlp": float(f(np.array([0, 0, 1]))), "stack": float(best.fun),
+                               "weights": [round(float(x), 3) for x in w]}
+        log("  cv %-8s league %.4f engine %.4f glm %.4f gbm %.4f mlp %.4f stack %.4f  w=%s"
+            % (TNAMES[t], cv_table[TNAMES[t]]["league"], cv_table[TNAMES[t]]["engine"], cv_table[TNAMES[t]]["glm"],
+               cv_table[TNAMES[t]]["gbm"], cv_table[TNAMES[t]]["mlp"], best.fun, np.round(w, 2)))
+    report["cv_oof_2020_2023"] = cv_table
+
+    # ---------------- 5) fit on a period, export JSON; dev = 2010-2023, prod = 2010-2025
+    def fit_period(mask, label, scale_rounds):
+        mean = X[mask].mean(0)
+        sd = X[mask].std(0) + 1e-6
+        glm, gbm = [], []
+        for t in range(nt):
+            e = EX[:, t]
+            a = mask & (e > 0)
+            Za = glm_design(X[a], mean, sd, pairs_t[t])
+            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam_t[t], iters=20)
+            glm.append({"b0": b0, "b": bb, "pairs": pairs_t[t]})
+            nr = int(round(rounds[t] * scale_rounds))
+            bst, _ = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], nr)
+            gbm.append(gbm_trees(bst))
+        nets = []
+        for s in range(MLP_SEEDS + 1):
+            nets.append(mlp_train(X[mask], Y[mask], EX[mask], OFF[mask], seed=300 + s, task_w=tw,
+                                  fixed_epochs=mlp_epochs, **MLP_CFG))
+        J = {"meta": {"name": "mlrates", "label": label, "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                      "train_years": [int(yr[mask].min()), int(yr[mask].max())], "n_rows": int(mask.sum()),
+                      "half_life_days": HALF_LIFE, "prior_window_years": PRIOR_WINDOW,
+                      "offset": "league rate of the shrinkage division (priors of the fight year's 5-year window, or "
+                                "the live priors at prediction time): log rate per minute / logit",
+                      "symmetry": "no corner input: each side is predicted as attacker vs defender",
+                      "source": "tools/mlrates.py"},
+             "fc": FC, "fnames": FNAMES, "targets": TNAMES, "kinds": [k for _, k, _, _ in TARGETS],
+             "base_keys": [BASE_KEY[t] for t in TNAMES],
+             "glm_mean": sig(mean, 10), "glm_sd": sig(sd, 10),
+             "glm": [export_glm(g) for g in glm], "gbm": [export_trees(tr) for tr in gbm],
+             "mlp": [export_mlp(n) for n in nets], "stack": [{k: round(v, 4) for k, v in w.items()} for w in stack]}
+        log("  fit %s done (%.0fs)" % (label, time.time() - t_start))
+        return J
+
+    J_dev = fit_period(trainM, "dev: trained 2010-2023 (validation numbers and honest engine backtests)", 1.1)
+    J_dev = json.loads(json.dumps(J_dev))           # exactly what the file holds
+    eta_val, off_val, comp_val = model_eta(J_dev, X[valM], BASE[valM])
+
+    # ---------------- 6) validation 2024-2025
+    vf = fight[valM]
+    vbp = bp[valM]
+    val_tab = {}
+    eng_cal_c = []
+    for t in range(nt):
+        e_all = EX[:, t]
+        a = trainM & (e_all > 0)
+        eng_cal_c.append(recal_const(t, Y[a, t], e_all[a], ENG[a, t]))
+    for subset, msk in (("both_prior", vbp), ("all", np.ones(len(vbp), bool))):
+        tab = {}
+        for t in range(nt):
+            y = Y[valM, t]
+            e = EX[valM, t]
+            m = msk & (e > 0)
+            preds = {"league": off_val[:, t], "engine": link(t, ENG[valM, t]),
+                     "engine_cal": link(t, ENG[valM, t]) + eng_cal_c[t],
+                     "glm": off_val[:, t] + comp_val["glm"][:, t], "gbm": off_val[:, t] + comp_val["gbm"][:, t],
+                     "mlp": off_val[:, t] + comp_val["mlp"][:, t], "stack": eta_val[:, t]}
+            dv = {k: target_dev(t, y[m], e[m], v[m]) for k, v in preds.items()}
+            row = {k: float(v.mean()) for k, v in dv.items()}
+            row["n"] = int(m.sum())
+            row["skill_vs_league"] = {k: float(1 - row[k] / row["league"]) for k in preds}
+            if subset == "both_prior":
+                for ref in ("engine", "league"):
+                    mu, lo, hi = boot_ci(dv["stack"] - dv[ref], vf[m])
+                    row["stack_minus_" + ref] = {"mean": mu, "lo": lo, "hi": hi}
+                mu, lo, hi = boot_ci(dv["stack"] - dv["engine_cal"], vf[m])
+                row["stack_minus_engine_cal"] = {"mean": mu, "lo": lo, "hi": hi}
+                row["calibration_stack"] = calib_table(t, y[m], e[m], eta_val[m, t])
+                row["calibration_engine"] = calib_table(t, y[m], e[m], preds["engine"][m])
+            tab[TNAMES[t]] = row
+        val_tab[subset] = tab
+    report["validation_2024_2025"] = val_tab
+    report["engine_recal_consts"] = dict(zip(TNAMES, [float(c) for c in eng_cal_c]))
+    log("validation (both with a prior UFC fight), mean deviance per fight-side:")
+    log("  %-8s %9s %9s %9s %9s %9s %9s %9s   stack-engine [95%% CI]" % ("target", "league", "engine", "eng_cal",
+                                                                         "glm", "gbm", "mlp", "stack"))
+    for tn in TNAMES:
+        r = val_tab["both_prior"][tn]
+        ci = r["stack_minus_engine"]
+        log("  %-8s %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f   %+.4f [%+.4f, %+.4f]"
+            % (tn, r["league"], r["engine"], r["engine_cal"], r["glm"], r["gbm"], r["mlp"], r["stack"],
+               ci["mean"], ci["lo"], ci["hi"]))
+
+    # ---------------- 7) stat lines at the actual fight length (MAE per fight-side)
+    def stat_lines(etaM, idx):
+        R = {tn: inv_link(t, etaM[:, t]) for t, tn in enumerate(TNAMES)}
+        mins = EX[idx, 0]
+        sig_att = (R["d_att"] + R["c_att"] + R["g_att"]) * mins
+        sig_lnd = (R["d_att"] * R["acc_d"] + R["c_att"] * R["acc_c"] + R["g_att"] * R["acc_g"]) * mins
+        head_l = R["h_att"] * R["acc_h"] * mins
+        return {"sig_att": sig_att, "sig_lnd": sig_lnd, "td_att": R["td_att"] * mins,
+                "td_lnd": R["td_att"] * R["td_acc"] * mins, "ctrl": R["ctrl"] * mins, "kd": head_l * R["kd_h"],
+                "sub_att": R["sub_att"] * mins}
+
+    vidx = np.where(valM)[0]
+    actual = {"sig_att": Y[vidx, 0] + Y[vidx, 1] + Y[vidx, 2],
+              "sig_lnd": Y[vidx, TNAMES.index("acc_d")] + Y[vidx, TNAMES.index("acc_c")] + Y[vidx, TNAMES.index("acc_g")],
+              "td_att": Y[vidx, TNAMES.index("td_att")], "td_lnd": Y[vidx, TNAMES.index("td_acc")],
+              "ctrl": Y[vidx, TNAMES.index("ctrl")], "kd": Y[vidx, TNAMES.index("kd_h")],
+              "sub_att": Y[vidx, TNAMES.index("sub_att")]}
+    eng_eta = np.column_stack([link(t, ENG[valM, t]) for t in range(nt)])
+    eng_cal_eta = eng_eta + np.array(eng_cal_c)[None, :]
+    lines = {"stack": stat_lines(eta_val, vidx), "engine": stat_lines(eng_eta, vidx),
+             "engine_cal": stat_lines(eng_cal_eta, vidx), "league": stat_lines(off_val, vidx)}
+    sl = {}
+    for k in actual:
+        sl[k] = {}
+        for src in lines:
+            err = np.abs(lines[src][k] - actual[k])[vbp]
+            sl[k][src] = float(err.mean())
+        dif = (np.abs(lines["stack"][k] - actual[k]) - np.abs(lines["engine"][k] - actual[k]))[vbp]
+        mu, lo, hi = boot_ci(dif, vf[vbp])
+        sl[k]["stack_minus_engine"] = {"mean": mu, "lo": lo, "hi": hi}
+    report["stat_line_mae_2024_2025"] = sl
+    log("stat-line MAE per fight-side at the actual fight length (both prior):")
+    for k, v in sl.items():
+        log("  %-8s league %.3f engine %.3f eng_cal %.3f ML %.3f  (ML-engine %+.3f [%+.3f, %+.3f])"
+            % (k, v["league"], v["engine"], v["engine_cal"], v["stack"], v["stack_minus_engine"]["mean"],
+               v["stack_minus_engine"]["lo"], v["stack_minus_engine"]["hi"]))
+
+    # ---------------- 8) production fit 2010-2025, exports, fixtures
+    J_prod = fit_period(trainM | valM, "production: trained 2010-2025 (2026+ never read)", 1.15)
+    J_prod = json.loads(json.dumps(J_prod))
+    for J in (J_dev, J_prod):
+        J["meta"]["validation"] = {tn: {"engine": sig(val_tab["both_prior"][tn]["engine"], 5),
+                                        "ml": sig(val_tab["both_prior"][tn]["stack"], 5),
+                                        "league": sig(val_tab["both_prior"][tn]["league"], 5)} for tn in TNAMES}
+    pd_ = os.path.join(OUT, "mlrates.json")
+    dd_ = os.path.join(OUT, "mlrates_dev.json")
+    for path, J in ((pd_, J_prod), (dd_, J_dev)):
+        with open(path, "w") as fh:
+            json.dump(J, fh, separators=(",", ":"))
+        log("wrote %s (%.0f KB)" % (path, os.path.getsize(path) / 1e3))
+    write_fixtures(d, J_prod)
+    report["seconds"] = round(time.time() - t_start, 1)
+    with open(os.path.join(CACHE, "fit_report.json"), "w") as fh:
+        json.dump(report, fh, indent=1)
+    with open(os.path.join(CACHE, "fit_state.pkl"), "wb") as fh:
+        pickle.dump({"stack": stack, "rounds": rounds, "lam": lam_t, "epochs": mlp_epochs, "pairs": pairs_t,
+                     "eng_cal": eng_cal_c, "tw": tw}, fh)
+    log("fit done in %.0fs" % (time.time() - t_start))
+
+
+def write_fixtures(d, J, n=60):
+    """Fixture for tests/test_mlrates.js: raw side profiles + context + priors -> Python features and etas."""
+    rows = d["rows"]
+    pri = d["priors"]
+    rng = np.random.default_rng(5)
+    cand = [i for i, r in enumerate(rows) if r["year"] >= 2021]
+    pick = sorted(rng.choice(cand, n, replace=False).tolist())
+    # include a catch-weight bout and a debutant if present
+    for i, r in enumerate(rows):
+        if r["year"] >= 2015 and r["division"] in B.NON_DIV and i not in pick:
+            pick.append(i)
+            break
+    for i, r in enumerate(rows):
+        if r["year"] >= 2020 and r["sides"][0]["n"] == 0 and i not in pick:
+            pick.append(i)
+            break
+    fx = []
+    years_needed = set()
+    for i in pick:
+        r = rows[i]
+        P = prior_for(pri[str(r["year"])], r["prior_division"])
+        ctx = {"rounds": r["rounds"], "title": r["title"], "division": r["division"],
+               "prior_division": r["prior_division"], "year": r["year"]}
+        fj = fight_json(r)
+        prof = []
+        for tag in ("A", "B"):
+            sd = dict(fj[tag])
+            sd["S"] = np.array(sd["S"], float)
+            prof.append(side_profile(sd))
+        fa, base = features(prof[0], prof[1], ctx, P)
+        fb, _ = features(prof[1], prof[0], ctx, P)
+        Xf = np.array([fa, fb])
+        Bv = np.array([[base[t] for t in TNAMES]] * 2)
+        eta, _, _ = model_eta(J, Xf, Bv)
+        years_needed.add(str(r["year"]))
+        fx.append({"id": r["id"], "fight": fj, "featA": fa, "featB": fb,
+                   "etaA": eta[0].tolist(), "etaB": eta[1].tolist()})
+    out = {"note": "built by tools/mlrates.py fit; checked by tests/test_mlrates.js", "model": "data/derived/mlrates.json",
+           "priors": priors_json({y: pri[y] for y in sorted(years_needed)}), "fixtures": fx}
+    os.makedirs(os.path.join(ROOT, "tests", "fixtures"), exist_ok=True)
+    path = os.path.join(ROOT, "tests", "fixtures", "mlrates_fixtures.json")
+    with open(path, "w") as fh:
+        json.dump(out, fh, separators=(",", ":"))
+    log("wrote %s (%d fights)" % (path, len(fx)))
+
+
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
