@@ -44,7 +44,7 @@
       "guillotine choke: standing vs Cub Swanson (2017) and after a drop to guard vs Renato Moicano (2017)",
       "arm-triangle from side control (Yair Rodriguez, R3, Feb 2024)",
       "triangle choke (Diego Brandao, R3, 2016)",
-      "switch-stance jab-heavy boxing (two knockdowns of Chan Sung Jung in a 50-45 x3 win, Oct 2020)",
+      "switch-stance jab-heavy boxing (two knockdowns of Chan Sung Jung, a counter hook in R1 and a spinning back elbow at the end of R2, in a 50-45 x3 win, Oct 2020)",
       "late-round finishes: knee KO of Clay Guida (R3 4:40, 2016); punches in the clinch vs Frankie Edgar (R1 4:44, 2018)"
     ],
     "weaknesses": [
@@ -59,7 +59,8 @@
       "http://ufcstats.com/fighter-details/def8166ff24bd237",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Moreno_vs._Royval_2",
       "https://www.cbssports.com/mma/news/brian-ortega-says-he-was-unconscious-for-30-minutes-before-aljamain-sterling-fight-i-was-afraid",
-      "https://www.ufc.com/athlete/brian-ortega"
+      "https://www.ufc.com/athlete/brian-ortega",
+      "https://cagesidepress.com/2020/10/17/ufc-fight-island-6-results-brian-ortega/"
     ]
   },
   "moves": {
@@ -77,7 +78,7 @@
     "spinning": 0.06,
     "knee": 0.06,
     "elbow": 0.08,
-    "notes": "Weights sum to about 1 within each target group; spinning/knee/elbow are separate propensities. fighters.json career split of significant attempts: 86% head, 9% body, 5% legs; landed 71/18/11 (decayed 85/10/5 attempted). He throws almost everything at the head, mostly as a switch-stance jabber, so the jab carries the head group. His body landed share is much higher than his attempted share (20 of 29 vs Sterling, 22 of 28 vs Jung), so body strikes are accurate but rare; with no source on kick vs punch, the body group is spread evenly. Leg strikes are rare (5%) and their type is unsourced, so calf/inside are 50/50. Knee 0.06 for the Guida knee KO; elbow and spinning are small, kept for reported spinning-elbow work that was not re-verified here. Sources: ufcstats sums and per-fight rows in data/raw."
+    "notes": "Weights sum to about 1 within each target group; spinning/knee/elbow are separate propensities. fighters.json career split of significant attempts: 86% head, 9% body, 5% legs; landed 71/18/11 (decayed 85/10/5 attempted). He throws almost everything at the head, mostly as a switch-stance jabber, so the jab carries the head group. His body landed share is much higher than his attempted share (20 of 29 vs Sterling, 22 of 28 vs Jung), so body strikes are accurate but rare; with no source on kick vs punch, the body group is spread evenly. Leg strikes are rare (5%) and their type is unsourced, so calf/inside are 50/50. Knee 0.06 for the Guida knee KO; spinning 0.06 and elbow 0.08 are for his spinning back elbow, which dropped Chan Sung Jung at the end of R2 and was thrown again in R3 (Cageside, Oct 2020). Sources: ufcstats sums and per-fight rows in data/raw."
   },
   "appearance": {
     "build": "medium frame; 5 ft 8 in with a 69 in reach (ufcstats); now moving up to 155 lb after weight-cut problems at 145",

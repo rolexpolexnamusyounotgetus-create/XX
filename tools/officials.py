@@ -1085,6 +1085,22 @@ MODELS = {"indep": {"shared": 0, "judges": 0, "home": 0},
           "lh_probit_close": {"judges": 0, "probit": 1, "closeness": 1}}
 
 
+STRUCT = {}
+
+
+def apply_struct(opts):
+    """Structural options (probit / closeness / fightfx) added to every model of a run."""
+    STRUCT.clear()
+    for k in opts:
+        if k:
+            STRUCT[k] = 1
+    for m, cfg in MODELS.items():
+        if not m.startswith("lh_"):
+            for k in ("probit", "closeness", "fightfx"):
+                cfg.pop(k, None)
+            cfg.update(STRUCT)
+
+
 def remap(x_old, jidx_old, jidx_new):
     """Warm start: carry every parameter over; judge rows by key (new judges start at 0)."""
     th = unravel(np.asarray(x_old), len(jidx_old))
@@ -1212,7 +1228,7 @@ def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home"
             log(f"  {name}: held-out card ll/fight {ev['card_ll'].mean():.4f} on {len(ev['fids'])} fights")
         with open(CACHE / f"fold_{tag}.pkl", "wb") as fh:
             pickle.dump({"test_year": test_year, "years_eval": years_eval, "tau_eb": tau_eb,
-                         "tau_mults": list(tau_mults), "models": res}, fh)
+                         "tau_mults": list(tau_mults), "models": res, "struct": dict(STRUCT)}, fh)
     return res
 
 
@@ -2139,6 +2155,8 @@ def deduction_validation(x, cfg, rows, nat, jidx, year_max):
 def run_post(rows, nat, natinfo, F, S, data_max, notes):
     import pickle
     final = pickle.load(open(CACHE / "fold_final.pkl", "rb"))
+    apply_struct(list(final.get("struct", {}).keys()))
+    log(f"structural options: {STRUCT}")
     by_fid = {r["fid"]: r for r in rows}
     tc = tuning_choice()
     mult = tc["mult"]
@@ -2190,7 +2208,10 @@ if __name__ == "__main__":
     ap.add_argument("--eval-years", default=None)
     ap.add_argument("--models", default="indep,league,league_home,judges,judges_home")
     ap.add_argument("--init-tag", default=None)
+    ap.add_argument("--struct", default=__import__("os").environ.get("OFFICIALS_STRUCT", ""),
+                    help="structural options for every model: probit,closeness,fightfx")
     args = ap.parse_args()
+    apply_struct(args.struct.split(","))
     if args.fetch_wikidata:
         fetch_wikidata()
     if args.stage == "fold":

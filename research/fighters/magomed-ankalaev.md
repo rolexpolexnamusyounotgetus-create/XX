@@ -15,10 +15,10 @@ As of Nov 6, 2026. Orthodox light heavyweight, age 34 (born Jun 2, 1992), 6'3" w
 - **L Pereira (TKO R1, Oct 2025):** He was caught and finished with elbows and punches from half guard (28-4 sig).
 - **W Pereira (UD 49-46, 48-47, 48-47, Mar 2025):** He pinned Pereira on the fence (19/21 clinch sig, 5:42 control) and outlanded him 94-76, while absorbing 48 of 55 leg kicks and going 0 for 12 on takedowns.
 - **W Aleksandar Rakic (UD, Oct 2024):** 22/29 body, while Rakic landed 34 of 40 leg kicks.
-- **W Johnny Walker (KO R2, Jan 2024)** with a punch at distance, after their first meeting ended in a no contest from an illegal knee in Oct 2023.
+- **W Johnny Walker (KO R2, Jan 2024):** a right hook dropped Walker and an uppercut finished him (Cageside Press), after their first meeting ended in a no contest from an illegal knee in Oct 2023.
 
 ## Style
-A **strong, well-rounded pressure fighter** with a combat sambo base (Wikipedia). He kicks and punches to the body far more than his peers: 24% of decayed attempts go to the body, against about 14% for the light heavyweight league. He walks opponents to the fence, grinds in the clinch, and finishes from top position when he gets there. Earlier knockouts came from kicks to the head (Prachnio, Sep 2018; a front kick on Lungiambula, Nov 2019) and a punch at distance (Walker, 2024).
+A **strong, well-rounded pressure fighter** with a combat sambo base (Wikipedia). He kicks and punches to the body far more than his peers: 24% of decayed attempts go to the body, against about 14% for the light heavyweight league. He walks opponents to the fence, grinds in the clinch, and finishes from top position when he gets there. Earlier knockouts came from kicks to the head (Prachnio, Sep 2018; a front kick on Lungiambula, Nov 2019) and a right hook at distance followed by an uppercut (Walker, 2024).
 
 **Strengths:** takedown defense, head defense (opponents land only 24% to the head), body work, clinch and top control, and power.
 **Weaknesses:** leg kicks (he absorbs about 2x the league rate), low takedown accuracy in open space, and one bad R1 against Pereira's power.
@@ -67,5 +67,6 @@ Copied from the photo-based likeness sheet `data/likeness/magomed-ankalaev.json`
 - https://bloodyelbow.com/2026/07/26/carlos-ulberg-shares-latest-return-update-in-reserved-response-to-magomed-ankalaevs-win/
 - https://mmasucka.com/news/carlos-ulberg-names-ideal-next-fight-for-magomed-ankalaev-following-ufc-abu-dhabi/
 - https://www.ufc.com/news/carlos-ulberg-one-win-greatness-ufc-327-light-heavyweight-title
+- https://cagesidepress.com/2024/01/13/ufc-vegas-84-results-magomed-ankalaev-stops-johnny-walker-calls-for-title-shot/
 - `data/likeness/magomed-ankalaev.json`; `assets/reference/magomed-ankalaev/sources.json`
 - Dataset: `data/derived/fighters.json`, `data/raw/ufc_fight_stats.csv`, `data/raw/ufc_fight_results.csv`

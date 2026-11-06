@@ -1,14 +1,16 @@
 # Ciryl Gane: scouting dossier
 
-As of 2026-11-06. He/him. "Bon Gamin". Orthodox (switches often), 6 ft 4 in, 81 in reach, listed 245 lb, born 1990-04-12 (age 36). UFC record 11-2, 1 NC (ufcstats).
+As of 2026-11-06. He/him. "Bon Gamin". Orthodox (switches often), 6 ft 4 in, 81 in reach, listed 245 lb, born 1990-04-12 (age 36). UFC record 11-2, 1 NC (ufcstats); pro record 14-2 (1 NC) (ESPN, Wikipedia).
 
-**Research note:** web search was unavailable this session (search budget used up; Wikipedia and ESPN blocked). Fight facts are from the ufcstats snapshot of 2026-10-31; the Freedom 250 result and Hokit booking come from pages already cited in this repo, not re-fetched.
+**Re-check, Nov 6, 2026:** status, ranking, record, injuries and appearance were re-verified on the open web (sources at the end). Rankings come from ufcalendar.com's mirror because ufc.com returned 403.
+
 
 ## Current status
 
-- **Title:** UFC interim heavyweight champion. He stopped Alex Pereira at 1:27 of round 2 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026). A counter jab put Pereira down, and Gane out-landed him 54-12 (ufcstats).
-- **Context:** Tom Aspinall still holds the undisputed title. Their UFC 321 fight (Oct 25, 2025) was ruled a no contest at 4:35 of round 1 after Gane's eye poke.
-- **Next fight:** Josh Hokit, booking reported by ESPN in Oct 2026. The date, event and whether the interim belt is at stake were not confirmed in the sources I had. Pereira has publicly asked for a rematch.
+- **Title:** UFC heavyweight champion. He won the interim title by stopping Alex Pereira at 1:27 of round 2 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026); a counter jab put Pereira down, and Gane out-landed him 54-12 (ufcstats). When Tom Aspinall vacated the undisputed title on Sep 14, 2026, Dana White first said Gane "still got to fight", but the UFC 331 broadcast (Sep 19) confirmed that Gane is undisputed champion (Sherdog; theScore).
+- **Next fight:** Josh Hokit (10-0, 4-0 UFC) in the UFC 334 main event, Nov 14, 2026, Madison Square Garden, New York, for the undisputed heavyweight title over five rounds (theScore; ESPN schedule feed; Sherdog event page). Kayla Harrison vs Amanda Nunes is the co-main event.
+- **Context:** the UFC 321 title fight with Aspinall (Oct 25, 2025) was ruled a no contest at 4:35 of round 1 after Gane's eye poke. Pereira has publicly asked for a rematch.
+- **Ranking:** champion; tied #11 in the UFC men's pound-for-pound media rankings (Nov 3, 2026, per ufcalendar.com).
 - **Injuries:** none reported.
 
 ## Recent fights
@@ -48,6 +50,14 @@ No KO/TKO losses and one knockdown absorbed. His pace in five-round fights runs 
 
 Decayed sums: 8.9 significant attempts and 5.7 landed per minute at 65% accuracy; he absorbs 2.5 per minute, and opponents land 44%. Of his attempts, 60% go to the head, 20% to the body and 20% to the legs. On the ground he lands 0.63 takedowns per 15 min, while opponents control him about 92 s per 15 min. Elo 1755.
 
+## Appearance
+
+- **Hair:** head shaved or clipped to the scalp (ESPN, Dec 2024, Jun 2026 and Oct 2026).
+- **Facial hair:** short, neatly trimmed full beard with moustache, fuller on the chin.
+- **Skin:** medium-dark (warm brown in ESPN studio light; lighter than Jon Jones or Jamahal Hill). The earlier file said "dark".
+- **Tattoos:** a black tribal sun or medallion emblem on the right upper chest beside the sternum; BON GAMIN (his nickname) in block letters across the left thigh above the knee; vertical ornamental monogram-style designs on both shins, larger on the left (ESPN full-body cutouts, Dec 2024 and Jun 2026).
+- **Kit:** white UFC fight shorts in his recent shoots: white with a grey slash pattern and black waistband (Dec 2024), and white with red-white-blue stars-and-stripes trim for UFC Freedom 250 (Jun 2026). The sim uses corner colour.
+
 ## Sources
 
 - http://ufcstats.com/fighter-details/787bb1f087ccff8a (snapshot 2026-10-31, data/raw)
@@ -55,7 +65,13 @@ Decayed sums: 8.9 significant attempts and 5.7 landed per minute at 65% accuracy
 - https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title (cited in repo)
 - https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/ (cited in repo)
 - https://boxingnews.com/news/alex-pereira-vs-ciryl-gane-result-and-reaction (cited in repo)
-- https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335 and https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/ (Hokit booking; cited in repo)
+- https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/ (Hokit booking; cited in repo)
 - https://bloodyelbow.com/2026/09/07/alex-pereira-calls-out-ciryl-gane-for-heavyweight-rematch-and-claims-fight-is-going-to-happen/ (rematch call; cited in repo)
-- https://www.ufc.com/athlete/ciryl-gane (not fetched)
 - data/derived/fighters.json
+- https://www.sherdog.com/news/news/Dana-White-said-Ciryl-Gane-wasnt-undisputed-champ-UFC-says-otherwise-202862 (promotion to undisputed)
+- https://www.thescore.com/mma/news/3603598/gane-hokit-harrison-nunes-set-for-ufc-334 (UFC 334 booking)
+- https://www.sherdog.com/events/UFC-334-Gane-vs-Hokit-114293
+- https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261101-20261231 (ESPN schedule feed: Hokit vs Gane, 5 rounds, Madison Square Garden)
+- https://www.ufcalendar.com/rankings/heavyweight and https://www.ufcalendar.com/rankings/mens-pound-for-pound
+- https://en.wikipedia.org/wiki/Ciryl_Gane (revision 1383916856)
+- https://a.espncdn.com/i/headshots/mma/players/full/4426000.png (Oct 2026), https://a.espncdn.com/i/headshots/mma/players/stance/left/4426000.png (Dec 2024), https://a.espncdn.com/i/headshots/mma/players/stance/right/4426000.png (Jun 2026)

@@ -87,29 +87,29 @@
     "spinning": 0.06,
     "knee": 0.1,
     "elbow": 0.04,
-    "notes": "Target groups follow fighters.json decayed sums: sig attempts 67.7% head, 15.5% body, 16.8% leg (career 67.9/14.5/17.6). The middleweight league split is about 77/14/9, so he sends roughly twice the league share to the legs. He also lands 95% of his sig strikes at distance, so clinch and ground weights stay minimal. Inside the head group, sources stress the feinted jab and counter punching, which puts the jab first and the cross and hooks next. Head kicks get 0.18 because he is a kickboxer by trade, though no source in this pass counts them. Body is weighted to kicks because his body work comes from range (26/29 body landed vs Du Plessis, 38/60 vs Strickland; 92 of his 97 sig vs Du Plessis and all 94 vs Strickland landed at distance). Calf leads inside on the legs, since Pyfer coverage describes him 'battering' the calf. The knee is set at 0.1 for the knee to the head vs Pyfer. Spinning is a small 0.06 judgment, not sourced in this pass."
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 67.7% head, 15.5% body, 16.8% leg (career 67.9/14.5/17.6). The middleweight league split is about 77/14/9, so he sends roughly twice the league share to the legs. He also lands 95% of his sig strikes at distance, so clinch and ground weights stay minimal. Inside the head group, sources stress the feinted jab and counter punching, which puts the jab first and the cross and hooks next. Head kicks get 0.18 because he is a kickboxer by trade, though no source found counts them. Body is weighted to kicks because his body work comes from range (26/29 body landed vs Du Plessis, 38/60 vs Strickland; 92 of his 97 sig vs Du Plessis and all 94 vs Strickland landed at distance). Calf leads inside on the legs, since Pyfer coverage describes him 'battering' the calf. The knee is set at 0.1 for the knee to the head vs Pyfer. Spinning is a small 0.06 judgment, not sourced (no count found as of Nov 6, 2026)."
   },
   "appearance": {
-    "build": "very tall and slim (6'4\", 80\" reach per dataset): long limbs, narrow waist, lean torso with visible abs (ESPN cutouts, Aug 2024 and Mar 2026)",
-    "hair": "short black hair: a short tight-curl crop on top with faded sides (ESPN headshot and cutout dated Mar 27, 2026; UFC Seattle face-off and fight photos, Mar 2026). The Aug 2024 cutout shows the same short crop.",
-    "facial_hair": "essentially clean-shaven: at most a faint thin moustache and a little chin hair (ESPN headshot, Mar 2026; fight photo, Mar 28, 2026)",
+    "build": "very tall, slim and long-limbed (6'4\", 80\" reach per dataset; about 186 lb): long neck, narrow waist and hips with a clear V-taper, flat-to-moderate pecs, lean definition without bulk, long slim legs",
+    "hair": "short tapered cut: skin fade on the sides and back into about 1-1.5 cm of tight black coils on top, slightly higher at the crown, with a sharp line-up at the front and temples (2024 and 2026 studio photos); colour black (#1f1a1a)",
+    "facial_hair": "very light stubble: a thin, sparse moustache shadow and a small patch of short chin stubble; cheeks clean; no full beard in any recent photo",
     "skin": "dark",
-    "tattoos": "Seen in the Mar 2026 ESPN cutout and headshot: 'BROKEN NATIVE' in large letters across the upper chest under the collarbones; a map of Africa on the sternum; dark ink on both sides of the neck; heavy work on both arms (the right arm is largely covered from shoulder to forearm); a piece on the abdomen. Identifications from tattoo write-ups (not checked against photos piece by piece): Lagos highlighted on the Africa map, yin-yang inside a Kurama seal on the abdomen, Deadpool on the left ribcage, Toph Beifong (Avatar) on the right inner forearm, Calvin and Hobbes on a bicep, and a neck piece most reports identify as the Egyptian war god Montu. Small face tattoos near the eye and eyebrow were reported in 2024, but sources disagree on placement and none are legible in the Mar 2026 headshot, so leave them off the avatar.",
-    "kit": "Vale tudo-cut compression shorts to mid-thigh, not board shorts: a navy snakeskin-print UFC kit with gold lightning trim in both the Aug 2024 and Mar 2026 ESPN cutouts (gold gloves for the 2024 title fight, black UFC gloves in 2026). Red wrist tape at UFC Seattle (Mar 2026 fight photo). A small stud earring in the left ear at the Mar 2026 face-off.",
+    "tattoos": "Photo-confirmed (all sides are his own): 'BROKEN NATIVE' in black capital serif letters arcing across the upper chest below the collarbones; a solid dark silhouette of Africa (with Madagascar) over the sternum, slightly to his left, down to the upper abdomen; a full dense black-grey sleeve on the right arm, shoulder to wrist; a vertical black-grey design on the left side of the neck ending in a bird with spread wings above the left collarbone. Low confidence in photos: a dark shaded area on the right side of the neck, small shapes around the navel, a thin script line on the inner left upper arm. Identifications from tattoo write-ups, not legible in photos: a Kurama-seal yin-yang on the abdomen, Deadpool on the left ribs, Toph Beifong on the right inner forearm, Calvin and Hobbes on a bicep, a neck piece reported as Montu. The small 2024 face tattoos are described inconsistently and are not legible in the Mar 2026 headshot, so leave them off the avatar.",
+    "kit": "Venum-made UFC fight shorts in a vale tudo (compression) cut: navy with a grey snakeskin print, gold and white lightning bolts down both legs, white diagonal stripes on the right hip, black inner-thigh panel and black waistband (2024 and 2026 studio photos). Black gloves in 2026, gold in the 2024 title-era shoot. Red wrist tape at UFC Seattle (Mar 2026). Diamond stud in the left ear lobe at the Mar 2026 face-off.",
+    "notes": "Copied from the photo-based likeness sheet data/likeness/israel-adesanya.json (as of Nov 6, 2026; 7 photos), which is the better source for the avatar: it has colour hexes (skin tone #84503c, warm red-brown undertone), face notes and morphs. Its warnings: keep the very high, wide cheekbones, hollow cheeks and narrow chin; keep him slim with a long neck; the Aug 2024 cutout's angle makes the Africa map look as if it sits on his right pec, but it is the same central piece.",
     "sources": [
+      "data/likeness/israel-adesanya.json",
+      "assets/reference/israel-adesanya/",
       "https://a.espncdn.com/i/headshots/mma/players/full/4285679.png",
       "https://a.espncdn.com/i/headshots/mma/players/stance/left/4285679.png",
       "https://a.espncdn.com/i/headshots/mma/players/stance/right/4285679.png",
-      "assets/reference/israel-adesanya/ref-cagesidepress-ufc-seattle-faceoff-2026-03-27.jpg",
-      "assets/reference/israel-adesanya/ref-skysports-fence-pub-2026-03-29.jpg",
       "https://www.sportskeeda.com/mma/map-africa-broken-native-naruto-seal-all-israel-adesanya-s-tattoos-explained",
       "https://www.sportskeeda.com/mma/israel-adesanya-tattoos",
       "https://www.pulse.ng/story/ufc-israel-adesanyas-new-face-and-neck-tattoos-explained-2024072606131999573",
       "https://www.essentiallysports.com/ufc-mma-news-israel-adesanya-reveals-deep-meaning-behind-his-newly-inked-neck-tattoo/",
       "https://www.tmz.com/2018/11/03/israel-adesanya-avatar-naruto-tattoos/",
       "data/derived/fighters.json (height_in 76, reach_in 80)"
-    ],
-    "notes": "No photo-based likeness sheet exists for him (checked data/likeness on Nov 6, 2026). The hair, facial hair and kit lines come from viewing the ESPN/UFC studio photos (headshot and left cutout dated Mar 27, 2026; right cutout Aug 16, 2024) and the reference photos in assets/reference/israel-adesanya/ (Cageside Press face-off, Mar 27, 2026; Sky Sports fight photo, Mar 2026)."
+    ]
   },
   "engine_notes": [
     {

@@ -38,7 +38,8 @@ whole events (2,000 resamples), because fights on one card share news, lines and
 5. **A market rating gives a strong prior when no line exists.** It is a walk-forward Kalman filter on earlier
    closing lines and results, with parameters fit on tune. On 2024+ fights it scores **0.6336** before any line
    is posted, which beats Elo by 0.046 [0.032, 0.060]. With age and weight-move offsets fit on tune it scores
-   **0.6221**. That is still 0.021 behind the opening line. (high)
+   **0.6221**. The raw rating trails the opening line by 0.021 [0.009, 0.033]. With offsets the gap is 0.010
+   [-0.003, 0.023], which is not significant. (high)
 6. **The method and round markets set the bar for v6 and v10.** On 2024+ fights (1,193), the six-way
    method-of-victory market scores 1.476. A baseline of moneyline times walk-forward division base rates scores
    1.579; the difference is [-0.130, -0.075]. For round of finish the market scores 1.160 against 1.208. But
@@ -71,10 +72,16 @@ whole events (2,000 resamples), because fights on one card share news, lines and
 | nlbair/ufc-data v0.1.1 | BFO opening line and closing range for every UFC fight, keyed by the ufcstats fight id, with a crosswalk to BFO fighter pages | 2013-02-16 to 2026-10-10 | CC BY 4.0, doi:10.5281/zenodo.23458636 | shallow git clone |
 | Ultimate UFC Dataset (mdabbert, GitHub shortlikeafox) | one closing moneyline per fighter (it sits inside BFO's closing range 91% of the time, so it is one book's close) | 2010-03-21 to 2026-03-28 | CC BY 4.0 (Kaggle metadata) | shallow git clone |
 
-Also searched and not used: DanMcInerney/BestfightoddsScraper (a scraper, no data), several 2026 hobby repos
-with odds for upcoming cards only, Kaggle mirrors (need a login), fightodds.io (a JavaScript app; its
-robots.txt URL returns the app shell, and BFO already covers the same books). Only the two GitHub datasets above
-had historical lines for the whole backtest window.
+Also found and not used:
+
+- DanMcInerney/BestfightoddsScraper and similar repositories: scrapers, with no historical data committed.
+- About 30 hobby repositories from 2026 that mention UFC odds. I judged them by their descriptions only, which
+  point to models or upcoming cards; I did not inspect them in depth.
+- Kaggle: downloads need a login, and the Ultimate UFC Dataset there is the same as its GitHub repository.
+- fightodds.io: a JavaScript app (its robots.txt URL returns the app shell), and it covers the same books as
+  BFO.
+
+The two GitHub datasets above plus BFO itself cover the whole backtest window.
 
 **Matching.** nlbair rows join on the ufcstats fight id directly (3,183 backtest fights; its first fighter is
 always the backtest's A). BFO matchups and Ultimate UFC Dataset rows are matched on the event date (BFO often
@@ -109,7 +116,7 @@ test fights. There is an opening line for 1,999 and 1,227 of them.
 
 - **Per-book closes** (seven US books) exist for 1,199 tune fights, all in 2021-2023, and 1,223 test fights.
 - **2019-2020 closes** are BFO's mean of the books it tracked then, mostly offshore books. So the tune close
-  mixes two book sets. Where both exist, they agree to 0.003 in probability (table 4.5).
+  mixes two book sets. Where both exist, they agree to within 0.003 in probability on average (table 4.5).
 - **Missing entirely:** 9 undercard bouts of July 19, 2025. BFO never listed them, and nlbair and the Ultimate
   UFC Dataset have nothing either.
 - **Method and round props** cover 1,233 tune and 1,209 test fights (2021 on).
@@ -493,8 +500,8 @@ Ship rules this implies:
 
 ### 5.2 The market probability (whenever a line exists)
 
-1. Consensus decimal odds. Take each US sportsbook's two-way price and drop any book whose no-vig p is more
-   than 0.15 from the median book's. Then d_A = mean of the kept books' decimal odds for A, and the same for
+1. Consensus decimal odds. Take each US sportsbook's two-way price. Drop any book whose overround falls
+   outside 0.98-1.25, or whose no-vig p is more than 0.15 from the median book's. Then d_A = mean of the kept books' decimal odds for A, and the same for
    d_B. Never use Kalshi or Polymarket prices scraped after the event.
 2. Implied probabilities: q_A = 1/d_A and q_B = 1/d_B.
 3. Power no-vig. Solve q_A^k + q_B^k = 1 for k by bisection on [0.05, 20]. Then
@@ -516,8 +523,8 @@ Ship rules this implies:
 - **Keep b_e** only if it is positive on tune and the 2024+ log-loss gain has a 95% interval that excludes 0.
 - **Keep b_age** only if the engine's own age effect does not already absorb it.
 - **When only an opening line exists,** use the open in place of p_mkt. The test also supports adding the
-  market rating: logit p = 0.915 * logit(p_open) + 0.407 * logit(p_rating) scored 0.6071 against 0.6126 for
-  the open alone, a difference of [-0.0091, -0.0016] (fit on tune).
+  market rating: logit p = 0.915 * logit(p_open) + 0.407 * logit(p_rating) (fit on tune, se 0.107 and 0.126)
+  scored 0.6071 against 0.6126 for the open alone, a difference of -0.0055 [-0.0103, -0.0003].
 
 ### 5.4 No-line prior: the market rating (exact)
 
@@ -598,7 +605,7 @@ Do not tune toward the market where it is biased:
   but its out-of-sample log-loss gain is not significant, so treat it as a hypothesis for v5.
 - **Props need all six method prices** at one or more books (an average of 4.5-4.8 books). How books grade
   DQs and technical decisions can differ from the classes used here.
-- **Legal and terms.** BFO's robots.txt allows these pages. The fetch made 1,829 requests at one every 2-3
+- **Legal and terms.** BFO's robots.txt allows these pages. The fetch made about 1,840 requests at one every 2-3
   seconds with a desktop browser User-Agent. Raw pages stay in a local cache and are not committed. The
   compact extracts in data/raw/odds/ are factual prices with source credit.
 

@@ -75,7 +75,7 @@ The market props come from `data/derived/market.json` (tools/market.py): per-boo
 | win_SUB | 2458 | 0.095 | 0.085 | 0.017 | 1.13 | 0.13 |
 | win_DEC | 2458 | 0.234 | 0.253 | 0.028 | 1.20 | 0.33 |
 
-Slope = logistic recalibration slope of the outcome on logit(p) (1 = calibrated, < 1 = overconfident). win_* pool both corners (two rows per fight).
+Slope = logistic recalibration slope of the outcome on logit(p) (1 = calibrated, < 1 = overconfident, > 1 = underconfident). win_* pool both corners (two rows per fight).
 
 **P(KO) by decile:** 0.13→0.10 (n=123); 0.19→0.15 (n=123); 0.25→0.24 (n=123); 0.29→0.24 (n=123); 0.32→0.28 (n=123); 0.35→0.33 (n=123); 0.38→0.37 (n=123); 0.42→0.46 (n=123); 0.47→0.45 (n=123); 0.57→0.59 (n=122)
 
@@ -194,7 +194,10 @@ recency half-lives (3-4 years slightly worse); training from 2008 (slightly wors
 model); a factorized winner x method-given-winner model (better winner, worse method; its winner part is reused
 in SM). Feature-group ablations: grappling, submission, fight-length tendencies and division terms carry the
 method signal; striking volume, age/experience and Elo carry the winner signal; recent-form and durability
-groups are roughly neutral for method (kept for the winner and for the page).
+groups are roughly neutral for method (kept for the winner and for the page). These comparisons are not executed
+by `run()` (the LightGBM, factorized and recalibration classes are kept for reference only), and the fixed
+settings (half-life, training start, shrinkage, feature list) were set during development; `python3
+tools/methodround_verify.py` re-runs both checks on the same folds (see the Verification log).
 
 **Tuning (expanding window, validation years 2020-2023):**
 
@@ -241,11 +244,16 @@ Evidence behind the recommendations: method given the actual winner, S - base ra
 2. **Factorize the final forecast:** P(A wins) from the winner ensemble (market + Elo + engine + this model's
    winner), then P(method, round | winner) from this model's conditional shares (`methodGivenWin` in the JS
    output; the per-fight cells give the same). That keeps the winner question with the stack and uses this
-   model for what it was built for (the evidence line above gives its method-given-winner edge).
-3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta). The
-   props are sharper than the model on finish vs decision and KO vs submission (they price in pre-UFC records,
-   camp news and styles the stats do not see); the model matches them on the finishing round, and the blend is
-   within noise of the props or better on every target.
+   model for what it was built for (the evidence line above gives its method-given-winner edge over base
+   rates). When method props are posted, take the conditional shares from the SM + market blend instead: on
+   method given the winner the props beat SM clearly (see item 3), so this model's shares are the fallback
+   for fights without props, not a replacement for them.
+3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta).
+   The props beat SM on the 3-class method (+0.0147 [+0.0001, +0.0302], barely significant) and clearly on method given the winner
+   (+0.0277 [+0.0078, +0.0480]); finish vs decision (+0.0101 [-0.0013, +0.0221]) and KO vs submission (+0.0093 [-0.0094, +0.0281]) lean the same way but neither is significant on its
+   own (the props price in pre-UFC records, camp news and styles the stats do not see). The model matches them
+   on the finishing round (-0.0002 [-0.0133, +0.0130]), and the blend is within noise of the props or better on every target (method
+   -0.0019 [-0.0081, +0.0044], joint -0.0068 [-0.0162, +0.0029], winner -0.0045 [-0.0071, -0.0018]).
 4. **Without a line** (hypothetical matchups such as Volkanovski vs Gaethje before odds): use S.
 5. Natural next inputs: pre-UFC records (tools/preufc.py; Sherdog crawl was incomplete when this ran, so it is not
    used), opponent-adjusted rates (tools/oppadj.py) and the durability model's chin/power estimates
@@ -263,3 +271,36 @@ Evidence behind the recommendations: method given the actual winner, S - base ra
   prices; a single sharp book could be stronger.
 - Roster outputs are averages over the current division field with the stats-only model; they describe
   tendencies, not any particular matchup.
+
+## Verification log
+
+Adversarial review, 2026-11-06. The starting assumption was that the held-out result is inflated until shown otherwise. The reviewer's tool is `tools/methodround_verify.py` (`--score` runs part 1 in seconds; the full run takes about 25 minutes on a loaded machine; `--ablations` runs part 5). Its output is `data/derived/methodround_verify.json`.
+
+**Verdict: the held-out numbers stand.** I found no look-ahead leakage, no corner-order artefact, no join or label error, no duplicate fights and no tuning on 2024+. Independent code reproduces every headline number. The fixes below are wording, a report-preservation bug and documentation. No prediction, feature or held-out metric changed.
+
+| Check | How | Result |
+|---|---|---|
+| Independent rescoring | New code with no import of methodround.py. It reads only backtest.json (outcomes, A/B order, Elo, `priors_asof`), the stored per-fight cells and market.json props, then re-derives outcome cells, base rates, the market joint, every log loss and an event-cluster bootstrap (2,000 draws, new seed). | 1,229 fights (1,238 in 2024+ minus 8 no-contests and 1 DQ); 1,183 on the props subset. All 48 headline numbers match within 4e-5 (accuracy within 4e-4, from ties at 4-dp rounding). S - base on method: -0.0445 [-0.0615, -0.0268] vs reported [-0.0616, -0.0276]. |
+| Fresh refit | Refit the frozen through-2023 window from raw data. | Stored held-out S cells reproduced to 1.1e-4 (the JSON is rounded to 4 dp). |
+| Look-ahead canary | Delete every fight after a cut date, rebuild the walk-forward table and features, and compare the fights on the cut day with the full-data run. Cut dates: 2024-01-13, 2024-07-13, 2025-03-01, 2025-10-04, 2026-06-27 (50 fights). | All 79 table columns and all 133 model features match exactly (max difference 0). Nothing a fight sees depends on that fight or later ones: record, streak, layoff, Elo, decayed and career sums, finishing tendencies, priors. |
+| Data integrity | Ids, pairings, labels and orientation vs backtest.json. | 0 duplicate ids; 0 duplicate (date, pair) or (event, pair). All 3,237 backtest ids are present. 0 A/B orientation mismatches and 0 outcome-label mismatches. Elo within 0.5 (backtest.json rounding). Fight counts and KO losses match exactly. Decayed sums S match within 5.0e-4 relative. |
+| Corner order | A-win share; refit with A and B swapped for a random 50.8% of all fights (table, features, outcomes, market); JS model with swapped fighters. | A wins 55.2% [52.4, 57.9] of decisive 2024+ fights (57.1% in 2019-2023). That is a favourite/red-corner tilt, not a winner-first listing. The model is exactly symmetric: after the swap refit, held-out cells mirror within 8.2e-5 (S) and 9.0e-5 (SM), and every metric agrees within 1.9e-5. The JS model's 7 bins mirror exactly. Mean P(A) under S is 0.509. Adding the 2019-2023 corner share as an intercept would improve S winner LL from 0.6256 to 0.6229, so the symmetric evaluation leaves that edge unused: it is conservative, not inflated. |
+| Market join | market.json method props vs its own moneyline. | P(A) from the props vs from the moneyline: correlation 0.996, max gap 0.079, no orientation flips in 2,395 fights. No sign of in-play prices: the largest single 6-way cell is 0.80, and the realized outcome had a market probability above 0.6 in only 37 of 2,351 fights. |
+| Tuning on 2024+ | Code read; forking-paths audit (part 4); comparison with tuning-period out-of-fold results. | Every selection in `tune()` uses validation years 2020-2023, each trained on earlier years only. The frozen fits use years < 2024, the draw share uses < 2024 and the blend weight uses 2021-2023. The settings fixed in code (half-life, training start, minute shrinkage, career-sum features, year trend) were set during development, while every run printed 2024+ numbers. Of 8 alternatives, the shipped setting is best on 2020-2023 CV (joint 2.1732) but only 4th on 2024+ (2.0775; best 2.0754 from training from 2008; range 2.0754-2.0836). That pattern does not fit selection on the test years. The method gain over base rates is -0.0445 out-of-fold in 2019-2023 and -0.0445 held out: no held-out optimism. |
+| Dropped alternatives (part 5) | The report's "did not earn a place" list is not executed by `run()`; re-run on the same 2020-2023 folds only. | All are correctly dropped. Changes vs the logit: LightGBM method +0.0103, joint +0.0193 (report: about +0.008); recalibration joint +0.0003 (matches). Two details do not reproduce. The 30% LightGBM blend costs +0.0005 joint, where the report said it gained 0.001. The factorized model is worse on method (+0.0019) and also on winner (+0.0011), where the report said its winner was better (default C = 0.002). Neither changes a decision. |
+| Calibration precision | Event-cluster bootstrap of slopes and of calibration-in-the-large, from the stored cells. | Slopes: KO 1.18 [0.96, 1.45], SUB 0.92 [0.72, 1.14], DEC 0.96 [0.73, 1.21]. All include 1, so "not overconfident" holds, but the slopes are imprecise. Decisions are under-predicted by 3.6 points [0.4, 6.3]: real, and already disclosed. |
+| Plausibility of the by-product winner | Compared with an independent model. | S winner 0.6256 / 66.6% is in line with the styles analyst's separate skill logistic (2024+ 0.6272 / 65.9%). |
+| JS export | Node evaluation of Volkanovski vs Gaethje from fighters.json profiles. | Reproduces the Python matchup within 2e-4. |
+
+**Fixes made (in place):**
+1. `write_report` now keeps a `## Verification log` section across `--report` and full refits. Before this, any rebuild silently deleted it.
+2. Recommendation 3 said the props are sharper "on finish vs decision and KO vs submission". Neither difference is significant on its own (+0.0101 [-0.0013, +0.0221]; +0.0093 [-0.0094, +0.0281]). The significant gaps are the 3-class method (+0.0147 [+0.0001, +0.0302], borderline; this review's independent bootstrap gives [+0.0007, +0.0290]) and method given the winner (+0.0277 [+0.0078, +0.0480]). The text now quotes these from the JSON.
+3. Recommendation 2 now says to take the conditional method/round shares from the SM + market blend when props exist. This model's shares are significantly worse than the props on method given the winner.
+4. The calibration note now says that a slope > 1 means underconfident (KO 1.18 and the win_* slopes of 1.13-1.25 lean that way).
+5. The "did not earn a place" paragraph now says those comparisons and the fixed settings are not executed by `run()`, and points to the verify tool. The report was regenerated with `--report` from the unchanged JSON.
+
+**Residual caveats (not fixed; disclosed):**
+- Static profile fields (height, reach, stance, date of birth) come from the snapshot's fighter pages, not from the fight date. The canary cannot test them because they are the same in both runs. They are not outcome-derived, so the effect should be negligible.
+- `run()` computes 2024+ metrics on every invocation, so "scored once" cannot be proven from code. Part 4 finds no sign that it was exploited.
+- The stored 2019-2023 predictions are out-of-fold for the coefficients, but the hyperparameters were chosen on 2020-2023. A stacker trained on them inherits a little optimism.
+- The level CIs are wide (about ±0.025 on method LL). Only the paired differences are tight. The market comparisons rest on 1,183 fights, and SM vs market on method is borderline.

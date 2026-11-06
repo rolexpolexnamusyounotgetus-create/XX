@@ -51,7 +51,9 @@
     "sources": [
       "http://ufcstats.com/fighter-details/cbf5e6f231b55443",
       "https://en.wikipedia.org/wiki/UFC_Fight_Night:_Moreno_vs._Royval_2",
-      "https://www.ufc.com/athlete/yair-rodriguez"
+      "https://www.ufc.com/athlete/yair-rodriguez",
+      "https://cagesidepress.com/2023/02/12/ufc-284-yair-rodriguez-destroys-josh-emmetts-body-with-kicks-finishes-fight-with-triangle/",
+      "https://cagesidepress.com/2025/04/12/yair-rodriguez-dominates-pitbull-wants-title-shot-in-guadalajara/"
     ]
   },
   "moves": {
@@ -69,7 +71,7 @@
     "spinning": 0.1,
     "knee": 0.05,
     "elbow": 0.08,
-    "notes": "Weights sum to about 1 within each target group; spinning/knee/elbow are separate propensities. fighters.json career split of significant attempts: 73% head, 13% body, 14% legs; landed 55/20/25 (decayed 71/15/14 attempted, 55/21/24 landed). His landed share to the legs and body is far above his attempted share, so kicks land well; head kicks get 0.21 of the head group, much more than a typical boxer-puncher. Body strikes are scored mainly as kicks (0.6) because his body landed share comes with high accuracy (18 of 23 vs Pitbull, 18 of 22 vs Emmett), typical of kicks at range; this split is a judgment, not sourced. No source splits his low kicks by type, so calf/inside are 50/50. Spinning 0.10 reflects his reputation for spinning techniques, which is not sourced in this session (lowered for that reason); elbow 0.08 for the Jung KO. Head-kick evidence: the Fili switch-kick KO (dataset). Sources: ufcstats sums and per-fight rows in data/raw."
+    "notes": "Weights sum to about 1 within each target group; spinning/knee/elbow are separate propensities. fighters.json career split of significant attempts: 73% head, 13% body, 14% legs; landed 55/20/25 (decayed 71/15/14 attempted, 55/21/24 landed). His landed share to the legs and body is far above his attempted share, so kicks land well; head kicks get 0.21 of the head group, much more than a typical boxer-puncher. Body strikes are scored mainly as kicks (0.6) because his body landed share comes with high accuracy (18 of 23 vs Pitbull, 18 of 22 vs Emmett), typical of kicks at range; Cageside's UFC 284 recap has him kicking Emmett 'mostly to the body', with front kicks to the belly and a hurting round kick to the body thrown from southpaw, so kicks lead the group (the exact split is still a judgment). No source splits his low kicks by type, so calf/inside are 50/50. Spinning 0.10 reflects his reputation for spinning techniques; neither recap read on Nov 6 (UFC 284, UFC 314) mentions one, so it stays unsourced and lowered; elbow 0.08 for the Jung KO. Head-kick evidence: the Fili switch-kick KO (dataset) and repeated head kicks vs Pitbull, one landed off a hand feint (Cageside, UFC 314). Sources: ufcstats sums and per-fight rows in data/raw."
   },
   "appearance": {
     "build": "tall, long-limbed featherweight; 5 ft 11 in with a 71 in reach (ufcstats)",

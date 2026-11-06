@@ -357,7 +357,6 @@ def match_matchups(fights, cands, day_tol=2, min_sim=0.72):
         if c.get('date'):
             by_day[c['date']].append(c)
     out = {}
-    used = {}
     for f in fights:
         d0 = dt.date.fromisoformat(f['date'])
         best = None
@@ -913,7 +912,6 @@ def ece(p, y, width=0.05):
 
 
 def metrics(p, y):
-    np = _np()
     ll, br, acc = loss_arrays(p, y)
     return {'n': int(len(ll)), 'log_loss': round(float(ll.mean()), 4), 'brier': round(float(br.mean()), 4),
             'accuracy': round(float(acc.mean()), 4), 'ece': round(float(ece(p, y)), 4)}
@@ -1839,7 +1837,6 @@ def method_market(a, fights, recs):
     for r in read_csv(path):
         props[int(r['mu'])][r['book']] = {k: _int(r[k]) for k in PROP_FIELDS}
     out = {'classes': METHOD_CLASSES}
-    per_fight = {}
     rows = []
     for f in fights:
         rec = recs[f['id']]
@@ -1898,7 +1895,6 @@ def method_market(a, fights, recs):
         row['base_share'] = [ko / tot, sb / tot, de / tot]
         rr = [fin['KO'][k] + fin['SUB'][k] for k in range(K)] + [de]
         row['base_round'] = [x / sum(rr) for x in rr]
-        pm = rec.get('p_close_mult')
         rows.append(row)
     # attach market moneyline (multiplicative close) for the baseline
     ml = {}

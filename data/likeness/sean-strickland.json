@@ -31,7 +31,7 @@
     "eyes": {
       "shape": "Small-medium, deep-set and slightly hooded; the outer corners droop slightly, giving a squinting look",
       "spacing": "average",
-      "colour": "hazel / light green-brown (amber-green in the ESPN headshot)"
+      "colour": "hazel: olive green-brown in the Feb 2026 press photo (01); the warm ESPN grade makes the iris read amber-brown, so do not render it as plain brown or as green"
     },
     "eyebrows": {
       "thickness": "medium",
@@ -218,5 +218,5 @@
     "ears/r-ear-rot-forward": 0.35
   },
   "morphs_unavailable": "No ear targets at all in the shipped manifest, and no cauliflower target in any set. The large protruding cauliflower ears need a custom ear sculpt, a scale on the ear vertices, or at least a normal map (full-set stand-in values under morphs_if_available). No nose-damage target beyond width and tip. No body-hair control, so do it in the texture.",
-  "notes": "Confidence: high for the overall look (square heavy jaw, near-shaved sandy buzz, heavy low brow, deep-set hazel eyes, broad damaged nose, protruding cauliflower ears, fair ruddy skin, hairy lean build, no tattoos); medium for morph values. What to watch for: (1) the ears are a key cue: large, protruding and cauliflowered on both sides; (2) the nose is broad and fleshy, not narrow or straight; (3) do not give him tattoos; (4) keep the build lean and wiry, not bulky; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height."
+  "notes": "Confidence: high for the overall look (square heavy jaw, near-shaved sandy buzz, heavy low brow, deep-set hazel eyes, broad damaged nose, protruding cauliflower ears, fair ruddy skin, hairy lean build, no tattoos); medium for morph values. What to watch for: (1) the ears are a key cue: large, protruding and cauliflowered on both sides; (2) the nose is broad and fleshy, not narrow or straight; (3) do not give him tattoos; (4) keep the build lean and wiry, not bulky; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. Review (second pass, 2026-11-06): re-checked every photo; the description holds up (near-shaved buzz, light stubble, cauliflower ears on both sides, broad fleshy nose, body hair, no tattoos visible anywhere in the cutouts or fight photos). Eye colour wording tightened (olive hazel, amber-looking under the ESPN grade). Commons licences re-checked: Sean_Strickland_2022.jpg is CC BY 3.0 and Sean_Strickland_at_UFN_200.png is CC BY-SA 4.0 (both MMAnytt). Morph names and ranges validated against assets/embed/mh-manifest.json; values unchanged."
 }

@@ -1,9 +1,9 @@
 # Diego Lopes — scouting dossier (as of Nov 6, 2026)
 
 ## Current status
-- #2 featherweight on the UFCalendar and ufcrankings.org boards (Nov 3, 2026). Pro record 28-8 per ufcrankings.org (one results report says 29-8); UFC record in the dataset 7-3.
+- No. 2 featherweight in the UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org (ufc.com returns 403 to scripts). Also No. 2 on the UFC's algorithmic Meta board of Oct 31. Pro record 28-8 (Sherdog, ESPN, UFCalendar, ufcrankings.org); UFC record in the dataset 7-3.
 - Last fight: KO of Steve Garcia, R2 2:42, the opening bout of UFC Freedom 250 at the White House, Jun 14, 2026. This ended Garcia's seven-fight win streak.
-- Next: moves up to lightweight to challenge Charles Oliveira for the BMF title in the UFC 335 main event, Dec 12, 2026, T-Mobile Arena, Las Vegas. Oliveira won that belt from Max Holloway at UFC 326 in March.
+- Next: moves up to lightweight to challenge Charles Oliveira for the BMF title in the UFC 335 main event, Dec 12, 2026, T-Mobile Arena, Las Vegas. Oliveira won that belt from Max Holloway at UFC 326 in March. The bout is on ESPN's UFC 335 card, Sherdog and UFCalendar as of Nov 6; ESPN's fight center shows Oliveira -148, Lopes +124.
 - Injuries: none reported.
 
 ## Recent fights
@@ -22,6 +22,15 @@ An orthodox head-hunter (81% of attempts to the head) who trades willingly. His 
 
 **Durability:** never knocked down in 10 UFC fights; all three losses are decisions. **Cardio:** has gone 25 minutes twice and was still attacking late, but his landed rate fell in round 5 against Volkanovski both times.
 
+## Appearance
+Checked on Nov 6, 2026 against ESPN's headshot and left-stance cutout (files dated Jun 11, 2026) and right-stance cutout (Jan 30, 2026). No likeness sheet exists for him yet.
+- **Hair:** dark brown undercut: sides clipped very short, a long top combed over to one side, and a long mullet tail at the back.
+- **Facial hair:** a thick dark moustache and no beard. The earlier "dark beard" entry was wrong.
+- **Skin:** light-medium (forehead #f0b9a5, nose bridge #db9781 under studio light).
+- **Tattoos:** script across the upper chest reading "DREAM BELIEVE / AND MAKE IT HAPPEN"; a small two-line Spanish script on the right ribs (partly legible: "...vida un sueño ... sueño una realidad"); a black-and-grey lion head on the right forearm under a word beginning "Persever..."; a small mark on the inner left forearm; a short script above the right knee that seems to begin "Isaiah" (partly legible).
+- **Kit:** white stars-and-stripes shorts and red "Freedom 250" gloves for the White House card (one-off); black UFC (Venum) shorts with a grey wave pattern in the Jan 2026 shoot. In the sim the corner colour decides.
+- **Build:** 5 ft 11 in, 72 in reach; lean and muscular, moving up to 155.
+
 ## What the numbers say (fighters.json)
 Elo 1673. 3.95 significant strikes landed per minute at 47% accuracy. 6 knockdowns in 117 minutes; 0.90 takedowns per 15 at 47%; 1.02 submission attempts per 15. Five-round pace by round: 1, 1.01, 0.62, 0.91, 0.41.
 
@@ -33,6 +42,11 @@ Elo 1673. 3.95 significant strikes landed per minute at 47% accuracy. 6 knockdow
 - https://www.ufc.com/news/ufc-325-scorecards-judges-volkanovski-vs-lopes-2
 - https://www.cbssports.com/mma/news/noche-ufc-results-highlights-diego-lopes-knocks-out-jean-silva-with-spinning-elbow-that-causes-massive-gash
 - https://cagesidepress.com/2025/04/13/alexander-volkanovski-becomes-two-time-champion-decisions-lopes
-- https://www.ufcalendar.com/rankings
+- https://www.ufcalendar.com/rankings/featherweight (media panel Nov 3; Meta board Oct 31)
+- https://ufcrankings.org/featherweight/
+- https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261212 and https://www.espn.com/mma/fightcenter/_/id/600061401 (UFC 335 card and odds)
+- https://www.sherdog.com/fighter/Diego-Lopes-112531 (record, upcoming UFC 335)
+- https://www.ufcalendar.com/fighters/diego-lopes
+- https://a.espncdn.com/i/headshots/mma/players/full/4881999.png, .../stance/left/4881999.png, .../stance/right/4881999.png (appearance)
 - http://ufcstats.com/fighter-details/f166e93d04a8c274
 - research/volkanovski.md; data/derived/fighters.json; data/raw/ufc_fight_stats.csv

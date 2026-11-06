@@ -1,12 +1,14 @@
 # Arnold Allen ("Almighty"): scouting dossier
 
-As of Nov 6, 2026. Stats come from `data/derived/fighters.json` and the round stats in `data/raw/` (ufcstats snapshot through Oct 31, 2026). Web search was used up for this pass, so his ranking and any booking could not be checked.
+As of Nov 6, 2026. Stats come from `data/derived/fighters.json` and the round stats in `data/raw/` (ufcstats snapshot through Oct 31, 2026). Status, ranking, record and appearance were re-checked on the open web on Nov 6, 2026.
 
 ## Current status
 
+- **Ranking:** No. 7 featherweight in the UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org (ufc.com returns 403 to scripts). No. 6 on the UFC's algorithmic Meta board of Oct 31.
+- **Record:** 21-4 pro (Sherdog, UFCalendar); 12-3 in the UFC. Age 32.
 - **Last fight:** unanimous-decision win over Melquizael Costa (50-45, 50-45, 49-46), five-round main event, Las Vegas, **May 16, 2026**.
-- **Ranking:** not confirmed in this pass. Jean Silva, who beat him in January, is listed No. 5.
-- **Next fight:** none found. Nearly six months have passed, so a booking may exist that this pass could not see. No injury reported. Age 32.
+- **Injury and a cancelled booking:** he was booked against Aaron Pico at UFC 333 (Oct 24, 2026, Abu Dhabi) and was out by Sep 18. Cageside Press, crediting MMA Fighting, said he had been having ongoing treatment for past injuries and could not heal in time. No body part or return date was reported. Pico fought Losene Keita instead.
+- **Next fight:** none booked as of Nov 6 (UFCalendar shows no booking; ESPN lists only the Costa fight).
 
 ## Recent fights
 
@@ -36,6 +38,18 @@ In 15 UFC fights he has never been knocked down or stopped, after absorbing 378 
 
 UFC record 12-3: 2 KO, 2 submissions, 8 decisions; all three losses are decisions. Elo 1697, fifth among active featherweights in the file. Decayed target split is 82/12/6 head/body/legs (landed 74/16/10). For the sim, he is a hard-to-finish southpaw boxer who loses close rounds to busier opponents.
 
+## Appearance
+
+Checked on Nov 6, 2026 against ESPN's headshot and left-stance cutout (files dated May 14, 2026) and right-stance cutout (Apr 13, 2023). No likeness sheet exists for him yet.
+
+- **Hair:** light brown and short, cut with a heavy straight fringe across the forehead (2026). In 2023 it was shorter and swept up.
+- **Facial hair:** ginger moustache and a short beard on the chin and jaw, sparse on the cheeks (2026); lighter stubble in 2023.
+- **Skin:** light (nose-bridge sample #e1ac95 under studio light).
+- **Ears:** both heavily cauliflowered.
+- **Tattoos:** none visible on the chest, arms or legs (front view only).
+- **Kit:** red UFC (Venum) shorts in both studio shoots. In the sim the corner colour decides.
+- **Build:** 5 ft 8 in, 70 in reach; lean and defined, long-legged for his height.
+
 ## Sources
 
 - http://ufcstats.com/fighter-details/040a74bb0a465c54
@@ -47,4 +61,11 @@ UFC record 12-3: 2 KO, 2 submissions, 8 decisions; all three losses are decision
 - http://ufcstats.com/fight-details/ce3d94186567a684 (Hooker)
 - http://ufcstats.com/fight-details/a554a72bb0377213 (Kattar)
 - https://cagesidepress.com/2026/01/24/ufc-324-jean-silva-finishes-strong-in-decision-over-arnold-allen/
-- https://ufcrankings.org/ (Jean Silva's No. 5, via research/fighters/jean-silva.md)
+- https://cagesidepress.com/2026/09/18/with-arnold-allen-out-aaron-pico-gets-losene-keita-at-ufc-333/ (injury withdrawal)
+- https://cagesidepress.com/2026/10/22/ufc-333-aaron-pico-cook/
+- https://www.ufcalendar.com/rankings/featherweight (media panel Nov 3; Meta board Oct 31)
+- https://ufcrankings.org/featherweight/ (media panel, updated Nov 5)
+- https://www.ufcalendar.com/fighters/arnold-allen (record, no booking)
+- https://www.sherdog.com/fighter/Arnold-Allen-97499 (record)
+- https://www.espn.com/mma/fighter/_/id/3902098/arnold-allen
+- https://a.espncdn.com/i/headshots/mma/players/full/3902098.png, .../stance/left/3902098.png, .../stance/right/3902098.png (appearance)

@@ -2155,9 +2155,10 @@ tools/methodround_verify.py` re-runs both checks on the same folds (see the Veri
    The props beat SM on the 3-class method (%s, barely significant) and clearly on method given the winner
    (%s); finish vs decision (%s) and KO vs submission (%s) lean the same way but neither is significant on its
    own (the props price in pre-UFC records, camp news and styles the stats do not see). The model matches them
-   on the finishing round (%s), and the blend is within noise of the props on every target (method %s, joint
-   %s).""" % (_dci(dm.get("method3")), _dci(dm.get("method_given_winner")), _dci(dm.get("finish")), _dci(dm.get("ko_vs_sub")),
-       _dci(dm.get("round_given_fin")), _dci(db.get("method3")), _dci(db.get("joint"))))
+   on the finishing round (%s), and the blend is within noise of the props or better on every target (method
+   %s, joint %s, winner %s).""" % (_dci(dm.get("method3")), _dci(dm.get("method_given_winner")),
+                                    _dci(dm.get("finish")), _dci(dm.get("ko_vs_sub")), _dci(dm.get("round_given_fin")),
+                                    _dci(db.get("method3")), _dci(db.get("joint")), _dci(db.get("winner"))))
     else:
         L.append("3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in "
                  "the meta).")

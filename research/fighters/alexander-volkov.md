@@ -1,15 +1,17 @@
 # Alexander Volkov: scouting dossier
 
-As of 2026-11-06. He/him. "Drago". Orthodox, 6 ft 7 in, 80 in reach, listed 250 lb, born 1988-10-24 (age 38). UFC record 15-5 (ufcstats). UFC debut: a split decision over Timothy Johnson, Nov 19, 2016.
+As of 2026-11-06. He/him. "Drago". Orthodox, 6 ft 7 in, 80 in reach, listed 250 lb, born 1988-10-24 (age 38). UFC record 15-5 (ufcstats); pro record 41-11 (ESPN, Wikipedia). UFC debut: a split decision over Timothy Johnson, Nov 19, 2016.
 
-**Research note:** web search was unavailable this session (search budget used up; Wikipedia and ESPN blocked). Everything below is from the ufcstats snapshot of 2026-10-31; ranking and any post-UFC 333 booking are unverified.
+**Re-check, Nov 6, 2026:** status, ranking, record, injuries and appearance were re-verified on the open web (sources at the end). Rankings come from ufcalendar.com's mirror because ufc.com returned 403.
+
 
 ## Current status
 
-- **Form:** three straight wins, all in Abu Dhabi or Newark: Jailton Almeida (SD, UFC 321, Oct 25, 2025), Waldo Cortes Acosta (UD, UFC 328, May 9, 2026) and Rizvan Kuniev (UD, UFC 333, Oct 24, 2026).
-- **Title / ranking:** no title; ranking not verified.
-- **Next fight:** none found. He fought two weeks before this date, so a booking is unlikely to be public yet.
-- **Injuries:** none reported.
+- **Form:** three straight wins, all in Abu Dhabi or Newark: Jailton Almeida (SD, UFC 321, Oct 25, 2025), Waldo Cortes Acosta (UD, UFC 328, May 9, 2026) and Rizvan Kuniev (UD, UFC 333, Oct 24, 2026). Before that he lost a split decision to Gane at UFC 310 that 19 of 20 media scorers gave to Volkov (MMA Decisions, as cited by Wikipedia).
+- **Title / ranking:** no title. #2 heavyweight in both the Meta UFC rankings (Oct 31, 2026) and the UFC media-panel rankings (Nov 3, 2026), per ufcalendar.com; Wikipedia also lists #2 in the Meta rankings as of Oct 24.
+- **Title picture:** he lobbied Dana White for a title shot, including from the media seats at the UFC 333 press conference, but Gane vs Josh Hokit was booked for UFC 334. On The Ariel Helwani Show he then said, "I'm not hunting for this title and the belt. This belt doesn't define me" (BJPenn.com). Daniel Cormier called him the next contender unless Tom Aspinall returns or Alex Pereira, who fights Sergei Pavlovich at UFC 335 on Dec 12, wins spectacularly (MMA Sucka).
+- **Next fight:** none booked as of Nov 6, 2026 (on no UFC card in the ESPN schedule feed through Feb 2027).
+- **Injuries:** none current. A 2024 knee injury pushed his Gane rematch from UFC 308 to UFC 310 (Sherdog).
 
 ## Recent fights
 
@@ -48,10 +50,27 @@ Two knockdowns absorbed. His only KO loss came against Lewis with 11 seconds lef
 
 Decayed sums: 8.2 significant attempts and 4.6 landed per minute at 57% accuracy. He absorbs 3.0 per minute, and opponents land 49%. Of his attempts, 65% go to the head, 19% to the body and 17% to the legs, more body and leg work than his career split of 71/16/13. Takedown defense is 65% decayed and 71% career, and he takes opponents down only 0.4 times per 15 min. Elo 1738.
 
+## Appearance
+
+- **Hair:** light-brown to dark-blond hair, short at the sides with a longer top swept back and to one side (ESPN, Dec 2024 and Oct 2026).
+- **Facial hair:** light stubble.
+- **Skin:** light. Eyes blue.
+- **Tattoos:** a large Japanese-style black-and-grey piece over the right shoulder, upper arm and right pec, a tiger with cherry blossoms and waves; it appears in the Oct 2026 ESPN shoot and not in Dec 2024. Colour (red/orange) tattoo work on the side of the ribcage (both shoots; the design is unclear).
+- **Build:** long-limbed and lean rather than bulky, with little visible muscle definition.
+- **Kit:** red UFC compression (vale tudo) shorts with a dark-red pattern and crypto.com logo (Oct 2026); black-and-grey patterned UFC fight shorts (Dec 2024). The sim uses corner colour.
+
 ## Sources
 
 - http://ufcstats.com/fighter-details/279566840aa55bf2 (snapshot 2026-10-31, data/raw)
 - http://ufcstats.com/fight-details/8788a6dda6e64aff (UFC 333), http://ufcstats.com/fight-details/22ba4f1b0aafbf82 (UFC 328), http://ufcstats.com/fight-details/b42a3386a7dccb3d (UFC 321), http://ufcstats.com/fight-details/f706508c52f337a6 (UFC 310), http://ufcstats.com/fight-details/cd3bb8a2824fbf22, http://ufcstats.com/fight-details/e4ed294e16e16d81
 - http://ufcstats.com/fight-details/0c3622569cd8062a (Blaydes 2020), http://ufcstats.com/fight-details/397ace87deeb8697 (Lewis 2018), http://ufcstats.com/fight-details/ccfe7b0d29c5440c (Harris 2020), http://ufcstats.com/fight-details/e835e9a4564db497 (Werdum 2018), http://ufcstats.com/fight-details/06641a8c62e45661 (Aspinall 2022)
-- https://www.ufc.com/athlete/alexander-volkov (not fetched)
 - data/derived/fighters.json
+- https://www.bjpenn.com/mma-news/alexander-volkov/alexander-volkov-not-hunting-ufc-heavyweight-title/ (Oct 28, 2026)
+- https://mmasucka.com/news/daniel-cormier-names-alexander-volkov-as-next-heavyweight-title-contender-but-identifies-two-threats/
+- https://www.thescore.com/mma/news/3603598/gane-hokit-harrison-nunes-set-for-ufc-334
+- http://mmadecisions.com/decision/15157/Ciryl-Gane-vs-Alexander-Volkov (via Wikipedia; not fetched)
+- https://www.sherdog.com/news/news/Alexander-Volkov-Suffers-Knee-Injury-Withdraws-from-UFC-308-Rematch-vs-Ciryl-Gane-195041 (via Wikipedia; not fetched)
+- https://www.ufcalendar.com/rankings/heavyweight (Meta Oct 31 and media Nov 3, 2026)
+- https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261101-20261231 and ?dates=20270101-20270430 (ESPN schedule feed; no Volkov bout)
+- https://en.wikipedia.org/wiki/Alexander_Volkov_(fighter) (revision 1383802843; record 41-11)
+- https://a.espncdn.com/i/headshots/mma/players/full/2993650.png and https://a.espncdn.com/i/headshots/mma/players/stance/left/2993650.png (Oct 2026), https://a.espncdn.com/i/headshots/mma/players/stance/right/2993650.png (Dec 2024)

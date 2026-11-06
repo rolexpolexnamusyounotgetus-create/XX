@@ -24,7 +24,7 @@
       "https://www.ufcalendar.com/rankings/middleweight",
       "data/derived/fighters.json (last_fight 2026-03-07)",
       "https://www.essentiallysports.com/ufc-mma-news-ufc-330-loses-key-fight-as-middleweight-star-undergoes-surgery-for-dangerous-rib-injury/",
-      "https://bloodyelbow.com/2026/06/06/caio-borralho-reveals-hes-out-of-unannounced-ufc-330-matchup-due-to-significant-rib-injury/ (cited by Wikipedia; 403 to this session)",
+      "https://bloodyelbow.com/2026/06/06/caio-borralho-reveals-hes-out-of-unannounced-ufc-330-matchup-due-to-significant-rib-injury/ (cited by Wikipedia; returned 403 to direct fetch on Nov 6, 2026)",
       "https://www.sherdog.com/fighter/Caio-Borralho-188043",
       "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261114 (UFC 334 card) and ?dates=20261212 (UFC 335 card)",
       "https://www.cbssports.com/ufc/rankings/men/223/middleweight/",
