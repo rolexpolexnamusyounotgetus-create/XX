@@ -1659,6 +1659,7 @@ def evaluate(args):
 
     # ---------------- method (how): KO / SUB / DEC for newcomer bouts
     meth = method_eval(df_all, train_from)
+    side_fin = side_finish_eval(df_all, args)
 
     # ---------------- out-of-sample predictions for every newcomer bout 2019+ (CV years oof, 2024+ final)
     predictions = {}
@@ -1723,6 +1724,7 @@ def evaluate(args):
                                        "boost": sf["boost"]} for nm, sf in seed_fits.items()}},
         "method": meth,
         "market": market,
+        "side_finish": side_fin,
     }
     pre["eval"] = ev
     pre["predictions"] = predictions
@@ -1816,6 +1818,108 @@ def method_eval(df_all, train_from):
                             "ufc+pre_ll": round(ll(pf, yf), 4), "base_rate_ll": round(ll(np.full(len(yf), base_rate[:2].sum()), yf), 4)}
     print("method:", json.dumps({k: v for k, v in res.items() if not k.startswith("coef")}, default=str))
     return res
+
+
+def side_finish_eval(df_all, args):
+    """Per-side finish models for newcomer sides (0-3 prior UFC bouts): P(win by KO), P(win by SUB),
+    P(lose by KO) per bout, with and without the pre-UFC record. Engine use: power / sub-threat / chin
+    multipliers for newcomers. Train [train_from, 2024), CV years for C, test 2024+ once."""
+    import numpy as np
+    import pandas as pd
+    from sklearn.linear_model import LogisticRegression
+    d = df_all[df_all["winner"].isin(["A", "B"])].copy()
+    rows = []
+    for t, o in (("A", "B"), ("B", "A")):
+        sub = d[d["n" + t] <= 3]
+        won = sub["winner"] == t
+        r = pd.DataFrame({
+            "date": sub["date"], "year": sub["year"], "division": sub["division"], "rounds": sub["rounds"],
+            "n": sub["n" + t], "res": sub["res_" + t],
+            "ko_win": (won & sub["cat"].eq("ko")).astype(int), "sub_win": (won & sub["cat"].eq("sub")).astype(int),
+            "ko_loss": (~won & sub["cat"].eq("ko")).astype(int),
+            "uko": sub["uko_" + t], "usub": sub["usub_" + t], "ukol": sub["ukol_" + t], "usubl": sub["usubl_" + t],
+            "o_uko": sub["uko_" + o], "o_usub": sub["usub_" + o], "o_ukol": sub["ukol_" + o],
+            "o_usubl": sub["usubl_" + o], "o_n": sub["n" + o],
+            "pre_ko": sub["pre_ko_" + t], "pre_sub": sub["pre_sub_" + t], "pre_kol": sub["pre_kol_" + t],
+            "pre_subl": sub["pre_subl_" + t], "pre_logn": sub["pre_logn_" + t],
+            "o_pre_ko": sub["pre_ko_" + o], "o_pre_sub": sub["pre_sub_" + o], "o_pre_kol": sub["pre_kol_" + o],
+            "o_pre_subl": sub["pre_subl_" + o]})
+        rows.append(r)
+    S = pd.concat(rows, ignore_index=True)
+    divs = sorted(S["division"].unique())
+    tr = (S["date"] < TEST_FROM).to_numpy()
+    te = ~tr
+    pre_cols = {"ko_win": ["pre_ko", "o_pre_kol"], "sub_win": ["pre_sub", "o_pre_subl"],
+                "ko_loss": ["pre_kol", "o_pre_ko"]}
+    ufc_cols = {"ko_win": ["uko", "o_ukol"], "sub_win": ["usub", "o_usubl"], "ko_loss": ["ukol", "o_uko"]}
+    mu = {c: float(np.nanmean(S.loc[tr, c])) for c in ["pre_ko", "pre_sub", "pre_kol", "pre_subl",
+                                                       "o_pre_ko", "o_pre_sub", "o_pre_kol", "o_pre_subl"]}
+
+    def X(dd, target, with_pre):
+        cols = [(dd["division"] == dv).astype(float).to_numpy() for dv in divs]
+        cols.append((dd["rounds"] == 5).astype(float).to_numpy())
+        for c in ufc_cols[target]:
+            cols.append(np.log(dd[c].to_numpy(float)))
+        if with_pre:
+            for c in pre_cols[target]:
+                v = dd[c].to_numpy(float)
+                v = np.where(np.isnan(v), mu[c], v)
+                cols.append(np.log(v / mu[c]) * np.exp(-(dd["o_n" if c.startswith("o_") else "n"].to_numpy(float)) / 2.0))
+        return np.vstack(cols).T
+
+    out = {"n_train_sides": int(tr.sum()), "n_test_sides": int(te.sum()),
+           "sides_resolved_test": int(S.loc[te, "res"].sum())}
+    rng = np.random.default_rng(5)
+    idx = rng.integers(0, te.sum(), size=(2000 if not args.quick else 100, te.sum()))
+    for target in ("ko_win", "sub_win", "ko_loss"):
+        y = S[target].to_numpy()
+        res = {"train_rate": round(float(y[tr].mean()), 4), "test_rate": round(float(y[te].mean()), 4)}
+        P = {}
+        for nm, wp in (("ufc_only", False), ("ufc+pre", True)):
+            best = None
+            for C in (0.1, 0.3, 1.0, 3.0):
+                lls = []
+                for Y in CV_YEARS:
+                    a = tr & (S["date"] < dt.date(Y, 1, 1)).to_numpy()
+                    b = tr & (S["year"] == Y).to_numpy()
+                    if a.sum() < 100 or b.sum() == 0:
+                        continue
+                    m = LogisticRegression(C=C, max_iter=3000).fit(X(S[a], target, wp), y[a])
+                    lls.append((ll(m.predict_proba(X(S[b], target, wp))[:, 1], y[b]), b.sum()))
+                cvl = sum(l * n for l, n in lls) / sum(n for _, n in lls)
+                if best is None or cvl < best[0]:
+                    best = (cvl, C)
+            m = LogisticRegression(C=best[1], max_iter=3000).fit(X(S[tr], target, wp), y[tr])
+            P[nm] = m.predict_proba(X(S[te], target, wp))[:, 1]
+            res[nm] = {"cv_ll": round(best[0], 5), "C": best[1], "test_ll": round(ll(P[nm], y[te]), 5)}
+            if wp:
+                k = len(pre_cols[target])
+                res[nm]["coef_log_ratio (own, opponent), at n=0"] = [round(float(c), 3) for c in m.coef_[0][-k:]]
+        lv0 = -(y[te] * np.log(P["ufc_only"]) + (1 - y[te]) * np.log(1 - P["ufc_only"]))
+        lv1 = -(y[te] * np.log(P["ufc+pre"]) + (1 - y[te]) * np.log(1 - P["ufc+pre"]))
+        dl = lv1 - lv0
+        bs = dl[idx].mean(axis=1)
+        res["delta_ll [mean, lo, hi, P(<0)]"] = [round(float(dl.mean()), 5), round(float(np.percentile(bs, 2.5)), 5),
+                                                 round(float(np.percentile(bs, 97.5)), 5), round(float((bs < 0).mean()), 3)]
+        # calibration of the pre-UFC signal: test-side rate by tercile of the own pre-UFC rate (resolved sides)
+        c0 = pre_cols[target][0]
+        sel = te & S["res"].eq(1).to_numpy()
+        if sel.sum() > 30:
+            v = S.loc[sel, c0].to_numpy(float)
+            qs = np.quantile(v, [1 / 3, 2 / 3])
+            grp = np.digitize(v, qs)
+            res["test_rate_by_pre_tercile"] = [
+                {"tercile": int(g) + 1, "n": int((grp == g).sum()), "pre_rate_mean": round(float(v[grp == g].mean()), 3),
+                 "ufc_rate": round(float(y[sel][grp == g].mean()), 4),
+                 "pred_ufc_only": round(float(P["ufc_only"][S.loc[te, "res"].eq(1).to_numpy()][grp == g].mean()), 4),
+                 "pred_ufc+pre": round(float(P["ufc+pre"][S.loc[te, "res"].eq(1).to_numpy()][grp == g].mean()), 4)}
+                for g in range(3)]
+        out[target] = res
+    out["mu_pre"] = {k: round(v, 4) for k, v in mu.items()}
+    print("side finish:", json.dumps({k: (v if not isinstance(v, dict) else
+                                          {kk: vv for kk, vv in v.items() if kk != "test_rate_by_pre_tercile"})
+                                      for k, v in out.items()}, default=str), flush=True)
+    return out
 
 
 def roster_priors(pre, people, bouts, sfit, first_fid, age_at, fights, snaps):

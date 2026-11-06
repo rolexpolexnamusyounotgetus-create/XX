@@ -42,6 +42,13 @@
 <script src="../vendor/three-r128-examples/postprocessing/SMAAPass.js"></script>
 <script src="../vendor/three-r128-examples/environments/RoomEnvironment.js"></script>
 <!-- -->
+<script>
+// the roster blocks the built page inlines, so the avatars get each fighter's appearance
+["fighters-db:../data/derived/fighters.json", "overrides-db:../data/overrides.json"].forEach(function (p) {
+  var id = p.split(":")[0], url = p.slice(id.length + 1);
+  try { var x = new XMLHttpRequest(); x.open("GET", url, false); x.send(); if (x.status === 200) { var el = document.createElement("script"); el.type = "application/json"; el.id = id; el.textContent = x.responseText; document.head.appendChild(el); } } catch (e) { console.warn("dev roster", e); }
+});
+</script>
 <script src="fightassets_shim.js" data-base="../assets/embed/"></script>
 <script src="../src/engine2.js"></script>
 <script src="../src/rig3d.js"></script>

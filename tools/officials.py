@@ -435,7 +435,7 @@ class Design:
 
 
 YEAR0, NYEARS = 2001, 2027 - 2001
-NODES = 12
+NODES = 10
 TAU_DEFAULT = {"n": 0.15, "v": 0.15, "p": 0.25, "g": 0.2, "c": 0.4}
 EFF = ["n", "v", "p", "g", "c"]
 
@@ -449,6 +449,9 @@ def init_params(nJ):
 
 LAYOUT = [("beta", (8,)), ("w", (3,)), ("log_su", ()), ("h", (2,)), ("c0", ()), ("th", (4,)), ("cy", (NYEARS,)),
           ("lg_e10", ()), ("lpi", (3,))]
+
+
+N_GLOBAL = sum(int(np.prod(sh)) if sh else 1 for _, sh in LAYOUT)
 
 
 def ravel(th):
@@ -551,6 +554,11 @@ def _jax_fns():
         nfr = d["X"].shape[0]
         return jax.grad(lambda ex: jnp.sum(fight_ll(th, d, fl, nF, ex)))(jnp.zeros((nfr, 3, 5)))
     _JAX["sg"] = jax.jit(slot_grad, static_argnums=(3, 4))
+    NG = N_GLOBAL
+
+    def grad_g(xg, xE, d, fl, tau_v, nJ, nF):
+        return jax.grad(obj)(jnp.concatenate([xg, xE]), d, fl, tau_v, nJ, nF)[:NG]
+    _JAX["hg"] = jax.jit(jax.jacfwd(grad_g), static_argnums=(5, 6))
     _JAX["jnp"] = jnp
     return _JAX
 
@@ -577,30 +585,65 @@ class Model:
         jnp = self.fns["jnp"]
         return np.asarray(self.fns["ll"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ, self.dz.nF))
 
+    def hess_g(self, x, cfg, tau):
+        jnp = self.fns["jnp"]
+        x = jnp.asarray(x)
+        return np.asarray(self.fns["hg"](x[:N_GLOBAL], x[N_GLOBAL:], self.data, jnp.asarray(flags_of(cfg)),
+                                         jnp.asarray([tau[k] for k in EFF]), self.dz.nJ, self.dz.nF))
+
     def slot_grad(self, x, cfg):
         jnp = self.fns["jnp"]
         return np.asarray(self.fns["sg"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ, self.dz.nF))
 
 
-def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, model=None):
-    """MAP fit by L-BFGS-B. Returns (x, Model)."""
+def make_precond(M, x, cfg, tau):
+    """Linear preconditioner: exact Hessian of the global block (eigenvalues floored) and, for judge effects,
+    the per-judge information diagonal (outer product of per-fight scores) plus the prior precision."""
+    t0 = time.time()
+    H = M.hess_g(x, cfg, tau)
+    H = 0.5 * (H + H.T)
+    lam, Q = np.linalg.eigh(H)
+    lam = np.maximum(lam, max(1.0, 1e-4 * lam.max()))
+    Tg = Q / np.sqrt(lam)[None, :]                     # x_g = x0_g + Tg z_g
+    nJ = M.dz.nJ
+    dE = np.tile([1.0 / tau[k] ** 2 for k in EFF], (nJ, 1))
+    if float(cfg.get("judges", 1)):
+        _, info = bhhh_sd(M.dz, x, lambda z: M.slot_grad(z, cfg), tau)
+        dE = dE + np.einsum("jkk->jk", info)
+    log(f"  preconditioner built in {time.time() - t0:.0f}s (global eig {lam.min():.3g}..{lam.max():.3g})")
+    return {"Tg": Tg, "sE": 1.0 / np.sqrt(dE.ravel())}
+
+
+def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, model=None, precond=None):
+    """MAP fit by L-BFGS-B in preconditioned coordinates. Returns (x, Model)."""
     from scipy.optimize import minimize
     import os
     M = model or Model(dz)
-    x0 = ravel(init_params(dz.nJ)) if flat_init is None else flat_init
+    x0 = ravel(init_params(dz.nJ)) if flat_init is None else np.asarray(flat_init, float)
     maxiter = maxiter or int(os.environ.get("OFFICIALS_MAXITER", 3000))
     t0 = time.time()
+    if precond is None:
+        Tg, sE = np.eye(N_GLOBAL), np.ones(len(x0) - N_GLOBAL)
+    else:
+        Tg, sE = precond["Tg"], precond["sE"]
+
+    def to_x(z):
+        return x0 + np.concatenate([Tg @ z[:N_GLOBAL], sE * z[N_GLOBAL:]])
+
+    def f(z):
+        v, g = M.vg(to_x(z), cfg, tau)
+        return v, np.concatenate([Tg.T @ g[:N_GLOBAL], sE * g[N_GLOBAL:]])
     it = [0]
 
-    def cb(xk):
+    def cb(zk):
         it[0] += 1
-        if verbose and it[0] % 100 == 0:
+        if verbose and it[0] % 50 == 0:
             log(f"    it {it[0]}  {time.time() - t0:.0f}s")
-    res = minimize(lambda x: M.vg(x, cfg, tau), x0, jac=True, method="L-BFGS-B", callback=cb,
-                   options={"maxiter": maxiter, "maxcor": 30, "gtol": 2e-3, "ftol": 1e-9})
+    res = minimize(f, np.zeros(len(x0)), jac=True, method="L-BFGS-B", callback=cb,
+                   options={"maxiter": maxiter, "maxcor": 30, "gtol": 1e-3, "ftol": 1e-10})
     if verbose:
-        log(f"  fit: {res.nit} it, obj {res.fun:.2f}, {time.time() - t0:.0f}s, {res.message}")
-    return res.x, M
+        log(f"  fit: {res.nit} it, {res.nfev} evals, obj {res.fun:.2f}, {time.time() - t0:.0f}s, {res.message}")
+    return to_x(res.x), M
 
 
 def judge_index(rows, min_cards=1):
@@ -791,26 +834,31 @@ class Window:
         self.M = Model(self.dz)
         starts = np.r_[0, np.cumsum([r["R"] for r in self.dz.rows])][:-1]
         self.ncards = np.bincount(self.dz.J[starts].ravel(), minlength=self.dz.nJ + 1)[:self.dz.nJ]
+        self.pre = {}
 
     def fit(self, model, tau, init=None, init_jidx=None, eb_rounds=0):
-        x0 = None if init is None else remap(init, init_jidx or self.jidx, self.jidx)
+        x0 = ravel(init_params(self.dz.nJ)) if init is None else remap(init, init_jidx or self.jidx, self.jidx)
         cfg = MODELS[model]
         log(f"fit {model} < {self.year_end}: {self.dz.nF} fights, {self.dz.nJ} judges, tau "
             f"{ {k: round(v, 3) for k, v in tau.items()} }")
-        x, _ = fit_model(self.dz, cfg, tau, flat_init=x0, model=self.M)
+        key = "j" if cfg.get("judges", 1) else "l"
+        if key not in self.pre:
+            self.pre[key] = make_precond(self.M, x0, cfg, tau)
+        x, _ = fit_model(self.dz, cfg, tau, flat_init=x0, model=self.M, precond=self.pre[key])
         cov = None
         for k in range(eb_rounds):
             cov, info = bhhh_sd(self.dz, x, lambda z: self.M.slot_grad(z, cfg), tau)
             tau = eb_tau(unravel(x, self.dz.nJ)["E"], cov, self.ncards)
             log(f"  EB tau -> { {k: round(v, 3) for k, v in tau.items()} }")
-            x, _ = fit_model(self.dz, cfg, tau, flat_init=x, model=self.M)
+            self.pre[key] = make_precond(self.M, x, cfg, tau)
+            x, _ = fit_model(self.dz, cfg, tau, flat_init=x, model=self.M, precond=self.pre[key])
         if cfg.get("judges", 1):
             cov, info = bhhh_sd(self.dz, x, lambda z: self.M.slot_grad(z, cfg), tau)
         return {"x": x, "jidx": self.jidx, "tau": tau, "model": model, "year_end": self.year_end, "cov": cov,
                 "nF": self.dz.nF, "train_ll": self.M.ll(x, cfg)}
 
 
-def evaluate(fit, rows, nat, years, nsim=20000, seed=7):
+def evaluate(fit, rows, nat, years, nsim=8000, seed=7):
     """Held-out: exact-card log-lik and decision metrics on decisions in `years` with frozen params."""
     te = [r for r in rows if r["year"] in years]
     dz = Design(te, fit["jidx"], nat, fit["year_end"] - 1)
@@ -843,20 +891,18 @@ def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home"
     W = Window(rows, nat, test_year)
     base = W.fit("league", TAU_DEFAULT)
     fits = {"league": base}
-    jf = W.fit("judges", TAU_DEFAULT, init=base["x"], eb_rounds=2)
-    tau_eb = jf["tau"]
-    for m in models:
-        if m in ("league", "judges", "judges_home"):
-            continue
-        fits[m] = W.fit(m, tau_eb, init=base["x"])
+    jh = W.fit("judges_home", TAU_DEFAULT, init=base["x"], eb_rounds=1)
+    tau_eb = jh["tau"]
+    for m in ("indep", "league_home"):
+        if m in models:
+            fits[m] = W.fit(m, tau_eb, init=base["x"])
     for mult in tau_mults:
         tau = {k: v * mult for k, v in tau_eb.items()}
         sfx = "" if mult == 1.0 else f"@{mult:g}"
-        f = jf if mult == 1.0 else W.fit("judges", tau, init=jf["x"])
-        if "judges" in models:
-            fits["judges" + sfx] = f
         if "judges_home" in models:
-            fits["judges_home" + sfx] = W.fit("judges_home", tau, init=f["x"])
+            fits["judges_home" + sfx] = jh if mult == 1.0 else W.fit("judges_home", tau, init=jh["x"])
+        if "judges" in models:
+            fits["judges" + sfx] = W.fit("judges", tau, init=fits.get("judges_home" + sfx, jh)["x"])
     res = {}
     for name, f in fits.items():
         ev = evaluate(f, rows, nat, years_eval) if any(r["year"] in years_eval for r in rows) else None
@@ -1627,10 +1673,12 @@ if __name__ == "__main__":
     elif args.stage == "all":
         import subprocess
         procs = []
-        for tag, ty, ev, mults in (("tune", 2019, "2019,2020,2021,2022,2023", "0.5,1,2"),
-                                   ("test", 2024, "2024,2025,2026", "0.5,1,2"), ("final", 2027, "2027", "0.5,1,2")):
+        for tag, ty, ev, models in (("tune", 2019, "2019,2020,2021,2022,2023", "league,league_home,judges_home"),
+                                    ("test", 2024, "2024,2025,2026", "indep,league,league_home,judges,judges_home"),
+                                    ("final", 2027, "2027", "league,judges_home")):
             procs.append(subprocess.Popen([sys.executable, __file__, "--stage", "fold", "--test-year", str(ty),
-                                           "--tag", tag, "--eval-years", ev, "--tau-mults", mults]))
+                                           "--tag", tag, "--eval-years", ev, "--tau-mults", "0.5,1,2",
+                                           "--models", models]))
         for p_ in procs:
             p_.wait()
         F, S, D, rows, nat, info, notes, data_max = load_all()

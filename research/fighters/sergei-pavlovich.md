@@ -1,14 +1,15 @@
 # Sergei Pavlovich: scouting dossier
 
-As of 2026-11-06. He/him. Southpaw, 6 ft 3 in, 84 in reach, listed 257 lb, born 1992-05-13 (age 34). UFC record 9-3 (ufcstats). UFC debut: Nov 24, 2018, a TKO loss to Alistair Overeem.
+As of 2026-11-06. He/him. Southpaw, 6 ft 3 in, 84 in reach, listed 257 lb, born 1992-05-13 (age 34). Pro record 21-3 (16 KO/TKO, 5 decisions; ESPN, UFCalendar, Wikipedia), UFC record 9-3 (ufcstats). UFC debut: Nov 24, 2018, a TKO loss to Alistair Overeem.
 
-**Research note:** web search was unavailable this session (search budget used up; Wikipedia and ESPN blocked). Fight facts are from the ufcstats snapshot of 2026-10-31; the UFC 335 booking comes from UFC.com, ESPN, Yahoo and CBS pages already cited in this repo, not re-fetched.
+**Research note (updated Nov 6, 2026):** the network was open for this pass. Status, ranking, record, bookings, injuries and appearance were re-checked on the web (pages listed under Sources, all fetched on Nov 6 unless marked as a search summary). ufc.com returned 403, so the official rankings were read through two mirrors that agree. Fight numbers still come from the ufcstats snapshot of Oct 31, 2026.
 
 ## Current status
 
-- **Next fight:** Alex Pereira in the five-round heavyweight co-main event of UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas. Dana White announced it on the UFC 332 broadcast (Oct 3, 2026). Charles Oliveira vs Diego Lopes for the BMF belt headlines.
-- **Form:** three straight wins since the Volkov loss. The latest is a 39-second KO of Tallison Teixeira (May 30, 2026).
-- **Title / ranking:** no title; ranking not verified. **Injuries:** none reported.
+- **Next fight:** Alex Pereira in the five-round heavyweight co-main event of UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas. Dana White announced it on the UFC 332 broadcast (Oct 3, 2026). Charles Oliveira vs Diego Lopes for the BMF belt headlines. UFCalendar, ufcrankings.org and Wikipedia still list the bout on Nov 6.
+- **Form:** three straight wins since the Volkov loss. The latest is a 39-second KO of Tallison Teixeira at UFC Macau (May 30, 2026).
+- **Title / ranking:** no title. #3 heavyweight in the UFC media-panel rankings (Nov 3, 2026) and #4 in the UFC/Meta algorithmic rankings (Oct 31, 2026).
+- **Injuries:** none reported in the pages checked. A Pavlovich-specific injury search could not be run (search engine rate limit), so this is unconfirmed rather than ruled out.
 
 ## Recent fights
 
@@ -47,6 +48,16 @@ One knockdown absorbed in 12 fights, but stopped twice: by Overeem after a taked
 
 Decayed sums: 8.7 significant attempts and 3.8 landed per minute at 44% accuracy. He absorbs 3.2 per minute, and opponents land 42%. His attempts go 88% to the head, 8% to the body and 5% to the legs, while opponents target his legs 20% of the time. Career: 8 knockdowns in 63.4 minutes. Elo 1686, the lowest of this batch.
 
+## Appearance
+
+Read from ESPN's fight-week photos (headshot and stance shots, Last-Modified May 27, 2026; one stance shot from Dec 2022). No photo-based likeness sheet exists for him.
+
+- **Hair:** short crop, light brown to dark blond, with clipped sides and a short top. The earlier "short dark hair" was wrong.
+- **Facial hair:** light stubble only. The earlier "often a short dark beard" was not borne out.
+- **Skin:** light.
+- **Tattoos:** none visible on the chest, torso or arms (front views only; back not seen).
+- **Kit:** standard UFC fight-kit shorts: black in May 2026, white and grey with his name in Dec 2022. Corner colour wins in the sim.
+
 ## Sources
 
 - http://ufcstats.com/fighter-details/f14cf73e51b29254 (snapshot 2026-10-31, data/raw)
@@ -57,3 +68,5 @@ Decayed sums: 8.7 significant attempts and 3.8 landed per minute at 44% accuracy
 - https://www.cbssports.com/ufc/news/ufc-335-fight-card-charles-oliveira-vs-diego-lopes-alex-pereira-sergei-pavlovich/ (cited in repo)
 - https://www.ufc.com/athlete/sergei-pavlovich (not fetched)
 - data/derived/fighters.json
+- Nov 6 re-check: [UFCalendar profile](https://www.ufcalendar.com/fighters/sergei-pavlovich) (record, next fight); [UFCalendar rankings](https://www.ufcalendar.com/rankings/heavyweight) (media panel Nov 3, Meta Oct 31); [ufcrankings.org](https://ufcrankings.org/heavyweight/) (media panel, Nov 5); [ESPN profile](https://www.espn.com/mma/fighter/_/id/4217395/sergei-pavlovich) (21-3-0); [Wikipedia](https://en.wikipedia.org/wiki/Sergei_Pavlovich) (UFC 335 booking, record); [BJPenn, Oct 16](https://www.bjpenn.com/mma-news/sergey-pavlovich/sergei-pavlovich-teases-surprises-alex-pereira-ufc-335/)
+- Photos: [ESPN headshot](https://a.espncdn.com/i/headshots/mma/players/full/4217395.png), [stance left](https://a.espncdn.com/i/headshots/mma/players/stance/left/4217395.png), [stance right](https://a.espncdn.com/i/headshots/mma/players/stance/right/4217395.png)

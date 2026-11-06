@@ -161,7 +161,7 @@ def tpe_phase(ev, dims, rungs, eta, n_trials, seed, cpu_cap, history):
     pruner = optuna.pruners.SuccessiveHalvingPruner(min_resource=rungs[0], reduction_factor=eta, min_early_stopping_rate=0)
     study = optuna.create_study(direction="minimize", sampler=sampler, pruner=pruner)
     study.enqueue_trial({d["name"]: d["value"] for d in dims})          # trial 0 = current parameters
-    for t in range(n_trials):
+    for t in range(max(1, n_trials)):                                  # trial 0 (the baseline) always runs
         if ev.cpu() > cpu_cap:
             log("TPE: CPU cap reached after %d trials" % t)
             break
@@ -394,8 +394,8 @@ def cmd_tune(args):
         study, importance = tpe_phase(ev, dims, rungs, eta, args.trials, args.seed, cap_tpe, history)
         top = str(rungs[-1])
         base_rec = next(h for h in history if h["id"] == "tpe0")
-        complete = [h for h in history if h["complete"]]
-        best_tpe = min(complete, key=lambda h: h["rungs"][top])
+        complete = [h for h in history if h["complete"]] or [base_rec]
+        best_tpe = min(complete, key=lambda h: h["rungs"].get(top, 9e9))
         es = None
         if args.cma_evals > 0:
             x0 = best_tpe["x"] if args.cma_start == "best" else base_rec["x"]

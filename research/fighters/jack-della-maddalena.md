@@ -2,12 +2,15 @@
 
 As of 2026-11-06. He/him. Switch stance (ufcstats), 5 ft 11 in, 73 in reach, born 1996-09-10 (age 30). UFC record 8-2 (ufcstats). Former UFC welterweight champion.
 
-**Research limits.** Neither the research pass nor the fact-check pass (2026-11-06) had web access (search budget used up; key sites blocked). Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. The fact-check re-derived every date, method, score and per-fight number from data/raw, and all match. Bookings, rankings, injuries and appearance details are unverified.
+**Research limits (updated 2026-11-06).** The first research pass and the morning fact-check had no web access. This web re-check (network open) verified status, pro record, ranking, booking, injuries and appearance against the pages listed under Sources. Rankings: ufc.com/rankings returned 403, so they come from two mirrors of the official lists that agree (ufcrankings.org, media panel, Nov 5, 2026; ufcalendar.com, media panel Nov 3, 2026 and Meta UFC Rankings Oct 31, 2026). Since June 2026 the UFC publishes both lists. ufc.com (403), mmajunkie.usatoday.com (402) and bloodyelbow.com (403) could not be read directly, so anything resting only on them is marked. No photo-based likeness sheet (data/likeness/<slug>.json) exists for this fighter; appearance comes from an undated official UFC headshot (via ESPN) and dated 2026 fight photos, viewed directly. Fight numbers, style and the dataset sections below are unchanged from the earlier pass (ufcstats snapshot through 2026-10-31).
 
 ## Current status
 
-- **Two straight losses.** Islam Makhachev took his title at UFC 322 (Nov 15, 2025; 45-50 x3). Carlos Prates then stopped him in a five-round main event in Perth (May 2, 2026; TKO R3 3:17).
-- **Next:** nothing booked that this pass could find. A rumored January 2027 fight with Shavkat Rakhmonov was denied by Rakhmonov's manager on Oct 30, 2026. That comes from the Bloody Elbow report cited in the project's Rakhmonov file, not re-fetched here. Ranking not verified.
+- **Record:** 18-4 pro, 8-2 UFC (ESPN, Wikipedia, MMA Junkie). Two straight losses.
+- **Last two fights:** Islam Makhachev took his title at UFC 322 (Nov 15, 2025; 45-50 x3). Carlos Prates stopped him in the UFC Perth main event (May 2, 2026; TKO R3 3:17).
+- **Ranking:** #4 welterweight on the UFC media panel (Nov 3-5, 2026) and #4 in the Meta UFC Rankings (Oct 31, 2026). Not in the pound-for-pound top 15.
+- **Next:** nothing booked. In a Bedtime MMA interview (reported Nov 1-2, 2026 by MMA Mania and NY Fights) he said he turned down UFC Sydney (Feb 7, 2027 local) because the timeline was too short, would be "into" a fight with Mike Malott, and is "ready to go April, May next year" after time spent improving outside of camp. He may prefer to fight away from Australia. Shavkat Rakhmonov is also mentioned as an opponent; Bloody Elbow's Oct 30 report that Rakhmonov's manager shut down a rumored January fight could not be read (403).
+- **Injuries:** none reported in the coverage checked.
 
 ## Recent fights
 
@@ -44,6 +47,15 @@ Never knocked down in his first 105 UFC minutes, then dropped three times by Pra
 
 Elo 1690, ninth among welterweights who have fought since November 2024. Decayed: 4.31 significant landed and 4.24 absorbed per minute, close to even. Target split of landed strikes: 63% head, 26% body, 11% legs. The model should give him a strong boxing and body game that does well against strikers, a high risk of being controlled by wrestlers, and some extra caution on his chin after Prates.
 
+## Appearance (2026 photo check)
+
+- **Hair:** short ginger hair, short on the sides with a little length on top, slightly receding at the temples.
+- **Facial hair:** short ginger beard with moustache, trimmed close. The red-ginger beard is his most recognisable feature.
+- **Skin:** light (fair, freckled).
+- **Tattoos:** none visible on the chest, arms, neck or face in the photos checked; his back was not seen.
+- **Kit:** green UFC shorts with gold trim and a green-and-gold patterned panel at UFC Perth (red corner). The sim uses the corner colour.
+- **Photos:** official UFC headshot via ESPN (undated): https://a.espncdn.com/i/headshots/mma/players/full/4828707.png; UFC Perth, May 2, 2026 (Getty/Zuffa, Ed Mulholland): https://platform.mmamania.com/wp-content/uploads/sites/110/2026/05/gettyimages-2274153700.jpg
+
 ## Sources
 
 - ufcstats profile: http://ufcstats.com/fighter-details/6b453bc35a823c3f (via data/derived/fighters.json and tools/fighter_report.py, snapshot 2026-10-31)
@@ -51,3 +63,8 @@ Elo 1690, ninth among welterweights who have fought since November 2024. Decayed
 - Makhachev (UFC 322): http://ufcstats.com/fight-details/856f6ee049373843
 - Muhammad (UFC 315): http://ufcstats.com/fight-details/b873c116e39c9920
 - Rakhmonov rumor denied: https://bloodyelbow.com/2026/10/30/shavkat-rakhmonovs-ufc-return-facing-another-delay-as-his-manager-shuts-down-rumored-fight/ (cited in data/scouting/shavkat-rakhmonov.json)
+- ESPN profile and fight history: https://www.espn.com/mma/fighter/_/id/4828707/jack-della-maddalena, https://www.espn.com/mma/fighter/history/_/id/4828707/jack-della-maddalena
+- Wikipedia (revision of 2026-10-18): https://en.wikipedia.org/wiki/Jack_Della_Maddalena
+- Return plans: https://www.mmamania.com/ufc-news/483497/jack-della-maddalena-into-mike-malott-fight-but-on-his-own-timeline (Nov 1, 2026), https://nyfights.com/featured/jack-della-maddalena-ufc-sydney-return/, https://mmajunkie.usatoday.com/story/sports/ufc/2026/11/02/ufc-jack-della-maddalena-develop-skills-before-return-turned-down-sydney-fight/92560117007/ (snippet only; 402)
+- UFC Perth recap: https://www.mmamania.com/ufc-results/440631/ufc-perth-results-carlos-prates-destroys-jack-della-maddalena-in-bloody-demolition-job
+- Rankings (mirrors of the official UFC lists; ufc.com returned 403): https://ufcrankings.org/ and https://www.ufcalendar.com/rankings (division pages linked from both)

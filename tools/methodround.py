@@ -5,6 +5,7 @@ Run from the project root (about 3-6 minutes on 4 cores):
 
     python3 tools/methodround.py                 # build features, tune on 2019-2023, report on 2024+, write outputs
     python3 tools/methodround.py --quick         # fewer bootstrap draws and a smaller tuning grid (smoke test)
+    python3 tools/methodround.py --score sim.json    # score the simulator (or any model) on the same fights/metrics
 
 Reads   data/raw/*.csv (through tools/build_db.py's loaders, so people, aliases and Elo match the pipeline),
         data/derived/fighters.json (roster outputs), and, when present, the method-prop odds of the
@@ -543,7 +544,7 @@ def per_fight_losses(P, y, T):
     pa = M["pA"] / (M["pA"] + M["pB"])
     L["winner"] = np.where(dec_ok, -np.log(np.where(a_won, pa, 1 - pa)), np.nan)
     L["winner_brier"] = np.where(dec_ok, (pa - a_won) ** 2, np.nan)
-    L["winner_acc"] = np.where(dec_ok, ((pa > 0.5) == a_won) * 1.0 + (pa == 0.5) * 0.5, np.nan)
+    L["winner_acc"] = np.where(dec_ok, np.where(np.abs(pa - 0.5) < 1e-9, 0.5, ((pa > 0.5) == a_won) * 1.0), np.nan)
     # Brier for the 3-class method
     o3 = np.stack([is_ko, is_sub, is_dec], 1).astype(float)
     p3 = np.stack([M["KO"], M["SUB"], M["DEC"]], 1)
@@ -2133,11 +2134,76 @@ groups are roughly neutral for method (kept for the winner and for the page).
         fh.write("\n".join(L))
 
 
+def expand_cells(v, R):
+    """Compact per-fight list (A KO r1..R, A SUB r1..R, B KO r1..R, B SUB r1..R, A DEC, B DEC, DRAW) -> joint."""
+    P = np.zeros(NC_)
+    v = np.asarray(v, float)
+    P[I_XKO:I_XKO + R], P[I_XSUB:I_XSUB + R] = v[0:R], v[R:2 * R]
+    P[I_YKO:I_YKO + R], P[I_YSUB:I_YSUB + R] = v[2 * R:3 * R], v[3 * R:4 * R]
+    P[[I_XDEC, I_YDEC, I_DRAW]] = v[4 * R:4 * R + 3]
+    return P
+
+
+def score(path, period_from="2024-01-01"):
+    """Score another model (e.g. the simulator) on the same fights and metrics as this benchmark.
+    Input JSON: {fight_id: {"cells": [compact list as in methodround.json]}} or {fight_id: {"bins7": [A KO, A SUB,
+    A DEC, draw, B DEC, B SUB, B KO], "fin_round": [P(finish in r1..R), optional]}} with A/B as in backtest.json."""
+    bt = {f["id"]: f for f in json.load(open(BACKTEST))["fights"]}
+    mr = json.load(open(OUT_JSON))["fights"]
+    sub = json.load(open(path))
+    ids = [i for i in sub if i in bt and i in mr and bt[i]["date"] >= period_from and "S" in mr[i]]
+    rows = []
+    for i in ids:
+        f = bt[i]
+        res = f["result"]
+        cls = {"KO": "KO", "DOC": "KO", "SUB": "SUB", "UD": "DEC", "SD": "DEC", "MD": "DEC", "DRAW": "DRAW"}.get(
+            res["method"])
+        rows.append({"id": i, "rounds": 5 if f["rounds"] == 5 else 3, "cls": cls if res["winner"] in "ABD" else None,
+                     "winner": res["winner"], "rnd": res["round"], "event": f["event"]})
+    T = pd.DataFrame(rows)
+    y = outcome_cells(T)
+    Pm = np.stack([expand_cells(mr[i]["S"], R) for i, R in zip(T["id"], T["rounds"])])
+    Ps = np.zeros_like(Pm)
+    has_rounds = True
+    for k, (i, R) in enumerate(zip(T["id"], T["rounds"])):
+        e = sub[i]
+        if "cells" in e:
+            Ps[k] = expand_cells(e["cells"], R)
+            continue
+        b7 = np.asarray(e["bins7"], float)
+        if "fin_round" in e:
+            shape = np.asarray(e["fin_round"][:R], float)
+        else:
+            has_rounds = False
+            shape = Pm[k, I_XKO:I_XKO + R] + Pm[k, I_XSUB:I_XSUB + R] + Pm[k, I_YKO:I_YKO + R] + Pm[k, I_YSUB:I_YSUB + R]
+        shape = shape / max(shape.sum(), 1e-12)
+        Ps[k, I_XKO:I_XKO + R], Ps[k, I_XSUB:I_XSUB + R] = b7[0] * shape, b7[1] * shape
+        Ps[k, I_YKO:I_YKO + R], Ps[k, I_YSUB:I_YSUB + R] = b7[6] * shape, b7[5] * shape
+        Ps[k, [I_XDEC, I_DRAW, I_YDEC]] = b7[2], b7[3], b7[4]
+    ok = y >= 0
+    Ls = per_fight_losses(Ps[ok], y[ok], T[ok])
+    Lm = per_fight_losses(Pm[ok], y[ok], T[ok])
+    _, st = cluster_bootstrap({"x": Ls}, T["event"][ok].to_numpy(), B=2000)
+    d = paired_diff(Ls, Lm, st, METRICS)
+    keys = METRICS if has_rounds else [m for m in METRICS if m not in ("joint", "method_round", "round_given_fin")]
+    print("scored %d fights from %s (submission vs methodround model S, frozen through 2023)" % (ok.sum(), period_from))
+    for m in keys:
+        if m in d:
+            print("  %-16s submitted %.4f  model S %.4f  diff %+.4f [%+.4f, %+.4f]" % (
+                m, np.nanmean(Ls[m]), np.nanmean(Lm[m]), d[m]["diff"], d[m]["ci95"][0], d[m]["ci95"][1]))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--quick", action="store_true", help="small grids, no 2019-2023 out-of-fold fits, 400 bootstraps")
+    ap.add_argument("--score", metavar="JSON", help="score another model's per-fight predictions against this "
+                                                    "benchmark (see score()) instead of fitting")
+    ap.add_argument("--score-from", default="2024-01-01", help="first fight date scored with --score")
     args = ap.parse_args(argv)
-    run(args)
+    if args.score:
+        score(args.score, args.score_from)
+    else:
+        run(args)
 
 
 if __name__ == "__main__":

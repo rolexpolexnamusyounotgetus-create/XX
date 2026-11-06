@@ -92,19 +92,10 @@
     ]
   },
   "engine_notes": [
-    {
-      "note": "Control is his scoring engine: 23.0 s/min career and 21.9 decayed, about twice the 10.6 s/min league rate. He lands 3.9 takedowns per 15 min (decayed) at 47% accuracy.",
-      "source": "data/derived/fighters.json"
-    },
-    {
-      "note": "Hard to hit cleanly: opponents land only 26.9% of head attempts on him career (28.4% decayed) vs a 37.1% league average. He absorbs 1.97 sig strikes per minute decayed. Despite that, he has absorbed 3 knockdowns in 10 fights, so the low hit rate should not translate into a strong chin in the engine.",
-      "source": "data/derived/fighters.json"
-    },
+    { "note": "Control is his scoring engine: 23.0 s/min career and 21.9 decayed, about twice the 10.6 s/min league rate. He lands 3.9 takedowns per 15 min (decayed) at 47% accuracy.", "source": "data/derived/fighters.json" },
+    { "note": "Hard to hit cleanly: opponents land only 26.9% of head attempts on him career (28.4% decayed) vs a 37.1% league average. He absorbs 1.97 sig strikes per minute decayed. Despite that, he has absorbed 3 knockdowns in 10 fights, so the low hit rate should not translate into a strong chin in the engine.", "source": "data/derived/fighters.json" },
     { "note": "Takedown defence is 79% career and decayed (vs 65.7% league), and he gives up only 1.7 s/min of control.", "source": "data/derived/fighters.json" },
-    {
-      "note": "Five-round sample is three bouts (Sandhagen, Dvalishvili and the Song main event, which ended in round 2). Pace 1.00 / 1.75 / 1.46 / 1.91 / 1.12 rests on 10-15 minutes per round, so shrink it toward the prior.",
-      "source": "data/derived/fighters.json (pace, pace_w)"
-    }
+    { "note": "Five-round sample is three bouts (Sandhagen, Dvalishvili and the Song main event, which ended in round 2). Pace 1.00 / 1.75 / 1.46 / 1.91 / 1.12 rests on 10-15 minutes per round, so shrink it toward the prior.", "source": "data/derived/fighters.json (pace, pace_w)" }
   ],
   "confidence": "medium"
 }

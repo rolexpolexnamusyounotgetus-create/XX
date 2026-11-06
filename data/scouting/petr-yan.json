@@ -9,11 +9,7 @@
     "active": true,
     "next_fight": null,
     "injuries": [
-      {
-        "what": "lumbar (lower-back) surgery, nine hours under anaesthesia, after UFC 323; he returned to win at UFC 333",
-        "when": "2026-01",
-        "source": "https://www.cbssports.com/ufc/news/petr-yan-ufc-bantamweight-champion-back-surgery-injury-return-timetable/"
-      }
+      { "what": "lumbar (lower-back) surgery, nine hours under anaesthesia, after UFC 323; he returned to win at UFC 333", "when": "2026-01", "source": "https://www.cbssports.com/ufc/news/petr-yan-ufc-bantamweight-champion-back-surgery-injury-return-timetable/" }
     ],
     "sources": [
       "http://ufcstats.com/fighter-details/d661ce4da776fc20",
@@ -100,14 +96,8 @@
     ]
   },
   "engine_notes": [
-    {
-      "note": "Takedown defence is 87.7% career (28 of 227 opponent attempts landed) and 89.4% decayed, vs a 65.7% bantamweight average. Dvalishvili went 2 of 29 at UFC 323 and 5 of 58 at UFC 333 (0 of 39 in rounds 3-5).",
-      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/e262f5e588b149a6; http://ufcstats.com/fight-details/4a0db214d9721d6e"
-    },
-    {
-      "note": "Strong late surge in five-round fights: landed-per-minute pace by round is 1.00 / 1.29 / 1.58 / 2.03 / 2.42 of round 1 over 8 five-round fights (about 40 minutes per round in the sample). The bantamweight prior is 1.00 / 1.32 / 1.32 / 1.37 / 1.53.",
-      "source": "data/derived/fighters.json (pace, pace_w, priors.Bantamweight.pace5)"
-    },
+    { "note": "Takedown defence is 87.7% career (28 of 227 opponent attempts landed) and 89.4% decayed, vs a 65.7% bantamweight average. Dvalishvili went 2 of 29 at UFC 323 and 5 of 58 at UFC 333 (0 of 39 in rounds 3-5).", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/e262f5e588b149a6; http://ufcstats.com/fight-details/4a0db214d9721d6e" },
+    { "note": "Strong late surge in five-round fights: landed-per-minute pace by round is 1.00 / 1.29 / 1.58 / 2.03 / 2.42 of round 1 over 8 five-round fights (about 40 minutes per round in the sample). The bantamweight prior is 1.00 / 1.32 / 1.32 / 1.37 / 1.53.", "source": "data/derived/fighters.json (pace, pace_w, priors.Bantamweight.pace5)" },
     { "note": "He is hard to hit cleanly: opponents land 39.9% of sig attempts on him (career) vs a 45.6% league average, and 32.9% of head attempts vs 37.1%.", "source": "data/derived/fighters.json" },
     { "note": "Knocked down once in 17 UFC fights (John Dodson, 2019) and never stopped. All four losses went the distance or ended by DQ.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
     { "note": "Power has faded. He has 10 career knockdowns (0.49 per 15 min) but only 0.14 per 15 min decayed, and five straight decision wins since 2024.", "source": "data/derived/fighters.json" }

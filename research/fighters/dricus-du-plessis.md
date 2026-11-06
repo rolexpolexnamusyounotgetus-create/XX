@@ -2,13 +2,15 @@
 
 As of Nov 6, 2026. Switch-stance middleweight, age 32 (born Jan 14, 1994), 6'1" with a 76" reach. Dataset: `data/derived/fighters.json`, ufcstats snapshot of Oct 31, 2026.
 
-**Research limits:** no web access in the research pass or the Nov 6 fact-check. Results come from the ufcstats snapshot; the Brendan Allen callout comes from `data/scouting/brendan-allen.json`. Ranking and post-July news are **unverified**.
+**Research limits (updated 2026-11-06).** The first research pass and the morning fact-check had no web access. This web re-check (network open) verified status, pro record, ranking, booking, injuries and appearance against the pages listed under Sources. Rankings: ufc.com/rankings returned 403, so they come from two mirrors of the official lists that agree (ufcrankings.org, media panel, Nov 5, 2026; ufcalendar.com, media panel Nov 3, 2026 and Meta UFC Rankings Oct 31, 2026). Since June 2026 the UFC publishes both lists. ufc.com (403), mmajunkie.usatoday.com (402) and bloodyelbow.com (403) could not be read directly, so anything resting only on them is marked. No photo-based likeness sheet (data/likeness/<slug>.json) exists for this fighter; appearance comes from an undated official UFC headshot (via ESPN) and dated 2026 fight photos, viewed directly. Fight numbers, style and the dataset sections below are unchanged from the earlier pass (ufcstats snapshot through 2026-10-31).
 
 ## Current status
 - **Former UFC middleweight champion.** He won the title from Sean Strickland (SD, UFC 297, Jan 20, 2024). He defended it against Israel Adesanya (RNC R4, UFC 305, Aug 17, 2024) and Strickland again (UD, UFC 312, Feb 8, 2025). He lost it to Khamzat Chimaev (UD 50-44 x3, UFC 319, Aug 16, 2025).
-- **Last fight:** a UD over Kamaru Usman (50-45, 49-46, 49-46), a five-round non-title main event at UFC Fight Night in Oklahoma City on Jul 18, 2026.
-- **The belt** now belongs to Strickland, who beat Chimaev on May 9, 2026. Brendan Allen called Du Plessis out after beating Christian Leroy Duncan on Oct 10, 2026. No booking confirmed.
-- **UFC record 10-1** (4 KO/TKO, 2 SUB, 4 DEC).
+- **Last fight:** a UD over Kamaru Usman (50-45, 49-46, 49-46), the five-round main event of UFC Fight Night 281 in Oklahoma City on Jul 18, 2026 (Fight of the Night).
+- **Record:** 24-3 pro (ESPN, Wikipedia, MMA Junkie); UFC 10-1 (4 KO/TKO, 2 SUB, 4 DEC).
+- **Ranking:** #2 middleweight on the UFC media panel (Nov 3-5, 2026) and in the Meta UFC Rankings (Oct 31, 2026).
+- **Next:** nothing booked. His coach Morne Visser said in September 2026 that he will not fight again this year and plans to return early in 2027; Visser expects champion Strickland to beat Nassourdine Imavov and a Du Plessis-Strickland trilogy to follow, and also named Chimaev as an option (MMA Sucka, Sep 17; MMA Junkie via Yahoo, Sep 22). Brendan Allen called him out after beating Christian Leroy Duncan on Oct 10, 2026: "where's Dricus du Plessis? He's been running for a little while" (Yahoo).
+- **Injuries:** none reported in the coverage checked.
 
 ## Recent fights
 - **W Usman (UD, Jul 2026):** He out-landed Usman in four of five rounds and 136-92 overall, almost all of it at distance. Usman went 0 for 7 on takedowns. Usman's best work went to the body (37 of 58 landed).
@@ -34,6 +36,14 @@ He has **never been knocked down in 11 UFC fights** and has no stoppage losses. 
 - 1.39 takedowns per 15 minutes at 47% accuracy. Control share is 7% for him and 19% for his opponents.
 - Elo 1769, the top mark among active middleweights in the dataset.
 
+## Appearance (2026 photo check)
+- **Hair:** short dark brown hair with a fade: sides clipped close, a little textured length on top pushed up at the front.
+- **Facial hair:** short brown beard, between heavy stubble and a close-trimmed beard, with moustache.
+- **Skin:** light.
+- **Tattoos:** none visible on the chest, arms, neck or face in the photos checked; his back was not seen.
+- **Kit:** green UFC shorts with a South African flag-colour pattern and his name on the leg at UFC Oklahoma City (red corner). The sim uses the corner colour.
+- **Photos:** official UFC headshot via ESPN (undated): https://a.espncdn.com/i/headshots/mma/players/full/3166126.png; UFC Oklahoma City, Jul 18, 2026 (ESPN): https://a3.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0719%2Fr1691117_1296x729_16%2D9.jpg
+
 ## Sources
 - http://ufcstats.com/fighter-details/0d7b51c9d2649a6e
 - http://ufcstats.com/fight-details/701c97405da76603 (vs Usman)
@@ -44,5 +54,10 @@ He has **never been knocked down in 11 UFC fights** and has no stoppage losses. 
 - http://ufcstats.com/fight-details/4ec5d9bd1442e6c1 (vs Whittaker)
 - http://ufcstats.com/fight-details/ecab8b8b36727b8d (vs Till)
 - http://ufcstats.com/fight-details/70f1621080b3435c (Strickland vs Chimaev, title change)
-- https://sports.yahoo.com/mma/article/ufc-vegas-122-results-brendan-allen-stops-christian-leroy-duncan-with-late-choke-calls-out-ex-champ-030151648.html (carried from `data/scouting/brendan-allen.json`)
+- https://sports.yahoo.com/mma/article/ufc-vegas-122-results-brendan-allen-stops-christian-leroy-duncan-with-late-choke-calls-out-ex-champ-030151648.html (re-read 2026-11-06; callout quote confirmed)
 - Dataset: `data/derived/fighters.json`, `data/raw/ufc_fight_stats.csv`, `data/raw/ufc_fight_results.csv`
+- ESPN profile and fight history: https://www.espn.com/mma/fighter/_/id/3166126/dricus-du-plessis, https://www.espn.com/mma/fighter/history/_/id/3166126/dricus-du-plessis
+- Wikipedia (revision of 2026-11-05): https://en.wikipedia.org/wiki/Dricus_du_Plessis
+- Usman fight recap: https://www.espn.com/mma/story/_/id/49396454/du-plessis-dominates-usman-points-one-sided-ufc-main-event
+- Return plans: https://mmasucka.com/news/our-next-fight-will-be-sean-dricus-du-plessis-coach-drops-major-sean-strickland-trilogy-hint/, https://sports.yahoo.com/articles/dricus-du-plessis-coach-makes-120140737.html, https://bloodyelbow.com/2026/09/17/dricus-du-plessis-coach-confident-sean-strickland-trilogy-is-next-despite-plans-to-return-in-2027/ (snippet only; 403)
+- Rankings (mirrors of the official UFC lists; ufc.com returned 403): https://ufcrankings.org/ and https://www.ufcalendar.com/rankings (division pages linked from both)

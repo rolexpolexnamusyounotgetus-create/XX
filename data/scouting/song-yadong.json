@@ -94,18 +94,9 @@
   },
   "engine_notes": [
     { "note": "Knockdowns: 8 in 227.7 UFC minutes (0.53 per 15 min) vs a 0.31 bantamweight prior. 0 knockdowns absorbed in 18 UFC fights.", "source": "data/derived/fighters.json" },
-    {
-      "note": "Takedown defence is 73.5% career (18 of 68 allowed) and 76% time-decayed, vs a 65.7% league average. Umar landed 1 of 3 and Figueiredo 1 of 4.",
-      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
-    },
-    {
-      "note": "In his 5-round fights, output in rounds 2-5 runs 1.59x, 1.56x, 1.32x and 2.46x his round-1 pace, but the sample is small (30/26.5/20/15/6.2 minutes per round). Treat this as a mild slow-start signal.",
-      "source": "data/derived/fighters.json (pace)"
-    },
-    {
-      "note": "Leg kicks land at 78% career. Throwing them against an elite wrestler risks a caught kick and a takedown, which is how Umar got his only takedown.",
-      "source": "https://mmasucka.com/opinion/how-song-yadong-beat-umar-nurmagomedov-breaking-down-the-ufc-shanghai-main-event-knockout/"
-    }
+    { "note": "Takedown defence is 73.5% career (18 of 68 allowed) and 76% time-decayed, vs a 65.7% league average. Umar landed 1 of 3 and Figueiredo 1 of 4.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "In his 5-round fights, output in rounds 2-5 runs 1.59x, 1.56x, 1.32x and 2.46x his round-1 pace, but the sample is small (30/26.5/20/15/6.2 minutes per round). Treat this as a mild slow-start signal.", "source": "data/derived/fighters.json (pace)" },
+    { "note": "Leg kicks land at 78% career. Throwing them against an elite wrestler risks a caught kick and a takedown, which is how Umar got his only takedown.", "source": "https://mmasucka.com/opinion/how-song-yadong-beat-umar-nurmagomedov-breaking-down-the-ufc-shanghai-main-event-knockout/" }
   ],
   "confidence": "medium"
 }

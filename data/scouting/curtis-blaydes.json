@@ -9,11 +9,7 @@
     "active": true,
     "next_fight": null,
     "injuries": [
-      {
-        "what": "fractured orbital bone and broken nose in the Hokit fight (UFC 327); he was back to fight on Sep 12",
-        "when": "2026-04",
-        "source": "https://www.mmafighting.com/ufc/482403/curtis-blaydes-injuries-revealed-after-potential-fight-of-the-year-against-josh-hokit-at-ufc-327"
-      },
+      { "what": "fractured orbital bone and broken nose in the Hokit fight (UFC 327); he was back to fight on Sep 12", "when": "2026-04", "source": "https://www.mmafighting.com/ufc/482403/curtis-blaydes-injuries-revealed-after-potential-fight-of-the-year-against-josh-hokit-at-ufc-327" },
       { "what": "meniscus injury in the June 2025 Kuniev fight; surgery, out for the rest of 2025", "when": "2025-08", "source": "https://afrocombat.com/curtis-blaydes-sidelined-for-the-rest-of-2025-following-surgery/" }
     ],
     "sources": [
@@ -93,22 +89,10 @@
     ]
   },
   "engine_notes": [
-    {
-      "note": "Takedown rate is falling: 10.7 attempts and 5.0 landed per 15 min career, against 9.6 and 3.2 decayed (33% accuracy). Control fell from 26.3 to 17.0 s/min. Both are still far above the heavyweight averages of about 2.7 attempts, 1.1 landed and 10.7 s/min.",
-      "source": "data/derived/fighters.json"
-    },
-    {
-      "note": "Knocked down 5 times in 22 UFC fights (0.36 per 15 min career, 0.29 decayed, vs a 0.34 heavyweight prior). Every KO/TKO loss came in round 1 or 2 against a top heavyweight puncher.",
-      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
-    },
-    {
-      "note": "Striking volume has risen to 9.5 sig attempts per minute decayed (career 7.8, heavyweight 7.7), driven by the Hokit fight: 174 of 302 for him and 177 of 293 for Hokit.",
-      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/903552edaba48f4a"
-    },
-    {
-      "note": "The five-round pace vector (1.00 / 1.13 / 0.57 / 0.22 / 0.31) rests on one bout that went past round 2 (Volkov, 2020, five rounds). Do not read it as a real late fade; use the prior.",
-      "source": "data/derived/fighters.json (pace_w = 25.1 / 7.8 / 5 / 5 / 5 minutes)"
-    }
+    { "note": "Takedown rate is falling: 10.7 attempts and 5.0 landed per 15 min career, against 9.6 and 3.2 decayed (33% accuracy). Control fell from 26.3 to 17.0 s/min. Both are still far above the heavyweight averages of about 2.7 attempts, 1.1 landed and 10.7 s/min.", "source": "data/derived/fighters.json" },
+    { "note": "Knocked down 5 times in 22 UFC fights (0.36 per 15 min career, 0.29 decayed, vs a 0.34 heavyweight prior). Every KO/TKO loss came in round 1 or 2 against a top heavyweight puncher.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Striking volume has risen to 9.5 sig attempts per minute decayed (career 7.8, heavyweight 7.7), driven by the Hokit fight: 174 of 302 for him and 177 of 293 for Hokit.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/903552edaba48f4a" },
+    { "note": "The five-round pace vector (1.00 / 1.13 / 0.57 / 0.22 / 0.31) rests on one bout that went past round 2 (Volkov, 2020, five rounds). Do not read it as a real late fade; use the prior.", "source": "data/derived/fighters.json (pace_w = 25.1 / 7.8 / 5 / 5 / 5 minutes)" }
   ],
   "confidence": "medium"
 }

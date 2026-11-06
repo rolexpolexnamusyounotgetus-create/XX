@@ -662,25 +662,27 @@ class Evaluator:
         self.engine_R = fighter_rates(D.s_S, D.sL, p)
 
     # predictions on the natural scale: mu for counts, logit z for binomials
-    def pred_adj(self, name, so, sd, sc):
+    def pred_adj(self, name, so, sd, sc, unit=False):
         f = self.fam[name]
         lin = sc + so + sd[self.opp]
         if f["kind"] == "count":
-            return f["E"] * f["Lb"] * np.exp(lin)
+            return (1.0 if unit else f["E"]) * f["Lb"] * np.exp(lin)
         return f["Lb"] + lin
 
-    def pred_raw(self, name, R):
+    def pred_raw(self, name, R, unit=False):
+        """unit=True: the rate per unit of exposure (counts), independent of this fight's exposure."""
         f = self.fam[name]
         off, de = FAMILIES[name][1]
         o = self.opp
+        E = 1.0 if unit else f["E"]
         if name in ("accH", "accB", "accL"):
             t = "HBL".index(name[-1])
             return f["Lb"] + R["accSh"][:, t] + R["accAgSh"][o, t]
         if name == "tdAcc":
             return logit(R["tdAcc"]) + logit(R["tdAccAg"][o]) - f["Lb"]
         if name == "topSkill":
-            return f["E"] * f["Lb"] * R["topSkill"] * R["escWeak"][o]
-        return f["E"] * f["Lb"] * (R[off] / f["Lb"]) * (R[de][o] / f["Lb"])
+            return E * f["Lb"] * R["topSkill"] * R["escWeak"][o]
+        return E * f["Lb"] * (R[off] / f["Lb"]) * (R[de][o] / f["Lb"])
 
     def score(self, name, pred, calibrate=True):
         """Deviance on tune and test (sums), after an optional level calibration fit on tune only."""
@@ -901,21 +903,21 @@ def family_base(name, L):
             "topSkill": np.ones(L.n), "sub": L.sub, "kd": L.P_kd_per_h, "tdAcc": logit(L.P_td_acc)}.get(name)
 
 
-def side_factors(name, o, d, c, R, L, cal):
+def side_factors(name, o, d, c, R, L, cal, lam=1.0):
     """Adjustment factors relative to the engine's raw rates R (same sides): multiplicative for rates,
     odds multipliers for probabilities. cal: calibration-neutral term (count: multiplier per side,
     binomial: logit shift per side) so the engine's global scales tuned on raw rates stay valid."""
     kind, (fo, fd) = FAMILIES[name][0], FAMILIES[name][1]
     if name in ("accH", "accB", "accL"):
         t = "HBL".index(name[-1])
-        return {"acc_" + str(t): np.exp(c / 2 + o - R["accSh"][:, t] + cal),
-                "accAg_" + str(t): np.exp(c / 2 + d - R["accAgSh"][:, t] + cal)}
+        return {"acc_" + str(t): np.exp(lam * (c / 2 + o - R["accSh"][:, t]) + cal),
+                "accAg_" + str(t): np.exp(lam * (c / 2 + d - R["accAgSh"][:, t]) + cal)}
     base = family_base(name, L)
     if name == "tdAcc":
         lo = logit(R["tdAcc"])
         ld = logit(R["tdAccAg"])
-        return {fo: np.exp(base + c / 2 + o + cal - lo), fd: np.exp(base + c / 2 + d + cal - ld)}
-    return {fo: base * np.exp(c / 2 + o) * cal / R[fo], fd: base * np.exp(c / 2 + d) * cal / R[fd]}
+        return {fo: np.exp(lam * (base + c / 2 + o - lo) + cal), fd: np.exp(lam * (base + c / 2 + d - ld) + cal)}
+    return {fo: (base * np.exp(c / 2 + o) / R[fo]) ** lam * cal, fd: (base * np.exp(c / 2 + d) / R[fd]) ** lam * cal}
 
 
 FACTOR_FIELDS = ["dAtt", "dAttAg", "cAtt", "cAttAg", "gAtt", "gAttAg", "tdAtt", "tdAttAg", "tdAcc", "tdAccAg",

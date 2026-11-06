@@ -76,11 +76,11 @@
   "appearance": {
     "build": "compact and muscular: 5 ft 6 in with a 71 in reach (ufcstats); broad shoulders, thick neck and traps, narrow waist, visible abs at fight weight",
     "hair": "bald: head shaved clean in every photo since Dec 2021 (natural colour dark brown)",
-    "facial_hair": "short full beard joined to the moustache, about 1 cm, medium-dark brown with a few grey hairs on the chin",
+    "facial_hair": "short full beard, about 1 cm, medium-dark brown with a few scattered grey hairs",
     "skin": "light-medium",
     "tattoos": "one full black-and-grey sleeve on the right arm, shoulder to wrist: an Asian-style dragon on the upper arm and front of the shoulder reaching toward the collarbone, a geometric band at the elbow, scales, clouds and waves on the forearm; it extends over the top of the right trapezius. Left arm, chest, abdomen and back are clean",
     "kit": "2026 fights (UFC 325, UFC 333): dark green shorts with gold Greek-key trim and THE GREAT lettering; earlier Venum green shorts with VOLKANOVSKI in gold. Black UFC gloves, red wrist tape in the champion's corner",
-    "notes": "Copied from the photo-based likeness sheet data/likeness/alexander-volkanovski.json (15 photos, second-pass review Nov 6, 2026), which is the better source for the avatar: it has colour hexes (beard strand #604535, skin #c99a82, warm/olive undertone), face notes and morph values. Do not use the platinum-blond hair from the UFC 333 ceremonial weigh-in face-off: it was a wig for his Street Fighter film role (Joe); he was bald on Oct 21 and Oct 24, 2026. Beard length varies 0.5-1.5 cm between fights. An unconfirmed small mark on the inner left calf is marked do-not-render in the sheet.",
+    "notes": "Copied from the photo-based likeness sheet data/likeness/alexander-volkanovski.json (15 photos, second-pass review Nov 6, 2026), which is the better source for the avatar: it has colour hexes (beard strand #604535, skin #c99a82, warm/olive undertone), face notes and morph values. Do not use the platinum-blond hair from the UFC 333 ceremonial weigh-in face-off: it was a wig for his Street Fighter film role (Joe); he was bald on Oct 21 and Oct 24, 2026. The beard joins the moustache and its length varies 0.5-1.5 cm between fights; about 10% of the hairs are light or grey, mostly on the chin and sides. An unconfirmed small mark on the inner left calf is marked do-not-render in the sheet.",
     "sources": [
       "data/likeness/alexander-volkanovski.json",
       "assets/reference/alexander-volkanovski/sources.json",

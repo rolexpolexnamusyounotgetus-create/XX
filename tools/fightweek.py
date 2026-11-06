@@ -2191,6 +2191,7 @@ def cmd_eval(args):
             "altitude_adapted_at_altitude": (ea - eb) * hi,
             "elo_x_nocrowd": elo * float(r["no_crowd"]), "elo_x_altitude_km": elo * alt,
             "elo_x_catchweight": elo * float(r["catchweight"]["is"]),
+            "elo_x_any_replacement": elo * float(bool(rpa or rpb)),
         }
     data = [(f, feats(f, na, nb), 1.0 if f.winner == "A" else 0.0) for f, na, nb in rows]
     names = list(data[0][1].keys())
@@ -2247,7 +2248,13 @@ def cmd_eval(args):
     extra = [k for k in names if k not in base]
     for k in extra:
         summarize(base + [k], k)
-    full = summarize(names, "full: elo + debut + all context")
+    # opp_change is (almost) the mirror of replacement inside a bout (one side stepped in, the other kept his
+    # slot), so the two are collinear: the multi-feature models carry the replacement family only
+    curated = base + ["missed", "replacement", "repl_le14d", "home_x_fullcrowd", "home_x_nocrowd_or_apex"]
+    full = summarize(curated, "full: elo + debut + missed + replacement + repl_le14d + home x crowd")
+    summarize([k for k in names if not k.startswith("opp_change")], "full_all: every feature except opp_change")
+    summarize(base + ["replacement", "repl_le14d"], "pair: replacement + repl_le14d")
+    summarize(base + ["missed", "replacement", "repl_le14d"], "full_nohome: elo + debut + missed + replacement + repl_le14d")
     # report
     log("\nbase (elo + debut): coef %s; val log loss %.4f, Brier %.4f" % (
         {k: round(v, 3) for k, v in res["models"]["base: elo + debut"]["coef"].items()}, l0.mean(),
@@ -2261,10 +2268,48 @@ def cmd_eval(args):
         log("%-30s %8.3f [%7.3f, %7.3f] %7.2f %6d | %+9.5f [%+9.5f, %+9.5f] | %6.3f [%.2f, %.2f] n=%d" % (
             k, c["b"], c["ci95"][0], c["ci95"][1], c["z"] or 0, c["nonzero_train"], o["val_delta_logloss_vs_base"],
             o["val_delta_ci95"][0], o["val_delta_ci95"][1], vr["b"], vr["ci95"][0], vr["ci95"][1], vr["nonzero_val"]))
-    log("\nfull model: val log loss %.4f (base %.4f), delta %+.5f [%+.5f, %+.5f]" % (
-        full["val_logloss"], l0.mean(), full["val_delta_logloss_vs_base"], *full["val_delta_ci95"]))
-    for k, c in full["coef"].items():
-        log("   %-30s %8.3f [%7.3f, %7.3f]" % (k, c["b"], c["ci95"][0], c["ci95"][1]))
+    for lab, o in list(res["models"].items())[1:]:
+        log("\n%s: val log loss %.4f (base %.4f), delta %+.5f [%+.5f, %+.5f]" % (
+            lab, o["val_logloss"], l0.mean(), o["val_delta_logloss_vs_base"], *o["val_delta_ci95"]))
+        for k, c in o["coef"].items():
+            log("   %-30s %8.3f [%7.3f, %7.3f]" % (k, c["b"], c["ci95"][0], c["ci95"][1]))
+    # home advantage by period: fights with exactly one home fighter, full crowd, not the Apex
+    jh, je = names.index("home_x_fullcrowd"), names.index("elo")
+    per = {}
+    for lo, hi in ((2012, 2015), (2016, 2019), (2020, 2023), (2024, 2025)):
+        m = (yr >= lo) & (yr <= hi) & (X[:, jh] != 0)
+        won = np.where(X[m, jh] > 0, y[m], 1 - y[m])
+        ex = 1 / (1 + np.exp(-np.where(X[m, jh] > 0, X[m, je], -X[m, je]) * b0[0]))
+        per["%d-%d" % (lo, hi)] = {"n": int(m.sum()), "home_win": float(won.mean()) if m.sum() else None,
+                                   "elo_expected": float(ex.mean()) if m.sum() else None}
+    res["home_by_period"] = per
+    # home side by venue country group and period (which crowds carried the early home edge)
+    vc = np.array([F[d[0].fid]["venue"]["iso3"] or "" for d in data])
+    grp = {}
+    for g_name, sel in (("Brazil", vc == "BRA"), ("USA", vc == "USA"), ("other", (vc != "BRA") & (vc != "USA"))):
+        for lo, hi in ((2012, 2019), (2020, 2025)):
+            m = sel & (yr >= lo) & (yr <= hi) & (X[:, jh] != 0)
+            won = np.where(X[m, jh] > 0, y[m], 1 - y[m])
+            ex = 1 / (1 + np.exp(-np.where(X[m, jh] > 0, X[m, je], -X[m, je]) * b0[0]))
+            grp["%s %d-%d" % (g_name, lo, hi)] = {"n": int(m.sum()), "home_win": float(won.mean()) if m.sum() else None,
+                                                  "elo_expected": float(ex.mean()) if m.sum() else None}
+    res["home_by_country_period"] = grp
+    log("home side by venue country: " + json.dumps(
+        {k: {kk: (round(vv, 3) if isinstance(vv, float) else vv) for kk, vv in v.items()} for k, v in grp.items()}))
+    log("\nhome side (one home fighter, full crowd): " + json.dumps(
+        {k: {kk: (round(vv, 3) if isinstance(vv, float) else vv) for kk, vv in v.items()} for k, v in per.items()}))
+    # weight-miss size buckets (train years)
+    jm, jl = names.index("missed"), names.index("missed_lbs")
+    mb = {}
+    for lo, hi in ((0, 1.99), (2, 3.99), (4, 99)):
+        m = tr & (np.abs(X[:, jm]) == 1) & (np.abs(X[:, jl]) >= lo) & (np.abs(X[:, jl]) <= hi)
+        won = np.where(X[m, jm] > 0, y[m], 1 - y[m])
+        ex = 1 / (1 + np.exp(-np.where(X[m, jm] > 0, X[m, je], -X[m, je]) * b0[0]))
+        mb["%g-%g lb" % (lo, hi)] = {"n": int(m.sum()), "misser_win": float(won.mean()) if m.sum() else None,
+                                     "elo_expected": float(ex.mean()) if m.sum() else None}
+    res["missed_by_size_train"] = mb
+    log("weight miss by size (train, one misser): " + json.dumps(
+        {k: {kk: (round(vv, 3) if isinstance(vv, float) else vv) for kk, vv in v.items()} for k, v in mb.items()}))
     # descriptive base rates (train years): win rate of the side with the flag, symmetric
     desc = {}
     for k in ("missed", "replacement", "repl_le14d", "opp_change", "home", "home_x_fullcrowd"):

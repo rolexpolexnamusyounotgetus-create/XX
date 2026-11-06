@@ -9,11 +9,7 @@
     "active": true,
     "next_fight": "Not an MMA bout: freestyle wrestling match vs Marlon Moraes, RAF Abu Dhabi, Nov 14, 2026, Etihad Arena, Abu Dhabi (announced Nov 4, 2026). No UFC fight booked as of Nov 6.",
     "injuries": [
-      {
-        "what": "broken nose, fractured in two places by a knee in sparring; not surgically repaired, and he fought UFC 333 with it",
-        "when": "2026-04",
-        "source": "https://mmasucka.com/news/merab-dvalishvilis-coach-gives-concerning-update-on-his-nose-ahead-of-ufc-333/"
-      }
+      { "what": "broken nose, fractured in two places by a knee in sparring; not surgically repaired, and he fought UFC 333 with it", "when": "2026-04", "source": "https://mmasucka.com/news/merab-dvalishvilis-coach-gives-concerning-update-on-his-nose-ahead-of-ufc-333/" }
     ],
     "sources": [
       "http://ufcstats.com/fighter-details/c03520b5c88ed6b4",
@@ -100,22 +96,10 @@
     ]
   },
   "engine_notes": [
-    {
-      "note": "Takedown volume is far above the league: 18.3 attempts and 5.7 landed per 15 min career (20.6 and 4.95 decayed). The bantamweight league rate is about 4.7 attempts and 1.6 landed. Accuracy has dropped to 24% decayed, and Yan stopped 80 of 87 attempts over two fights.",
-      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
-    },
-    {
-      "note": "Pace rises late: five-round landed-per-minute pace is 1.00 / 1.47 / 1.15 / 1.83 / 1.71 of round 1 over 7 five-round fights, vs a bantamweight prior of 1.00 / 1.32 / 1.32 / 1.37 / 1.53.",
-      "source": "data/derived/fighters.json (pace, priors.Bantamweight.pace5)"
-    },
-    {
-      "note": "Very durable: one knockdown absorbed in 18 UFC fights (Marlon Moraes, R1, 2021) and no KO/TKO losses. His only stoppage loss is a 2018 technical submission (guillotine) by Ricky Simon at the final bell.",
-      "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv"
-    },
-    {
-      "note": "Control comes in short bursts rather than long rides: 20 s/min career, 15.9 decayed, vs about 10.6 for the league. He re-shoots rather than holding position: 10:03 vs O'Malley in 2024 but only 1:54 at UFC 333.",
-      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/3146e5a47a922976; http://ufcstats.com/fight-details/e262f5e588b149a6"
-    }
+    { "note": "Takedown volume is far above the league: 18.3 attempts and 5.7 landed per 15 min career (20.6 and 4.95 decayed). The bantamweight league rate is about 4.7 attempts and 1.6 landed. Accuracy has dropped to 24% decayed, and Yan stopped 80 of 87 attempts over two fights.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Pace rises late: five-round landed-per-minute pace is 1.00 / 1.47 / 1.15 / 1.83 / 1.71 of round 1 over 7 five-round fights, vs a bantamweight prior of 1.00 / 1.32 / 1.32 / 1.37 / 1.53.", "source": "data/derived/fighters.json (pace, priors.Bantamweight.pace5)" },
+    { "note": "Very durable: one knockdown absorbed in 18 UFC fights (Marlon Moraes, R1, 2021) and no KO/TKO losses. His only stoppage loss is a 2018 technical submission (guillotine) by Ricky Simon at the final bell.", "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv" },
+    { "note": "Control comes in short bursts rather than long rides: 20 s/min career, 15.9 decayed, vs about 10.6 for the league. He re-shoots rather than holding position: 10:03 vs O'Malley in 2024 but only 1:54 at UFC 333.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/3146e5a47a922976; http://ufcstats.com/fight-details/e262f5e588b149a6" }
   ],
   "confidence": "medium"
 }

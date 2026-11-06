@@ -89,23 +89,11 @@
     ]
   },
   "engine_notes": [
-    {
-      "note": "Front-loaded finishing: all 7 UFC KO/TKO wins in round 1 (average about 1:51). Since Nov 2023 he has gone 3 rounds three times (L Volkov, W Rozenstruik, W Cortes Acosta), landing 25 to 61 significant strikes in 15 minutes, with round-3 output at or above round 1 each time (Cortes Acosta 9/22/30, Volkov 15/15/16, Rozenstruik 11/3/11). No pace data beyond round 1 in 5-round fights; rounds 2-5 should lean on the heavyweight prior.",
-      "source": "data/derived/fighters.json (pace_w); ufcstats per-fight totals"
-    },
+    { "note": "Front-loaded finishing: all 7 UFC KO/TKO wins in round 1 (average about 1:51). Since Nov 2023 he has gone 3 rounds three times (L Volkov, W Rozenstruik, W Cortes Acosta), landing 25 to 61 significant strikes in 15 minutes, with round-3 output at or above round 1 each time (Cortes Acosta 9/22/30, Volkov 15/15/16, Rozenstruik 11/3/11). No pace data beyond round 1 in 5-round fights; rounds 2-5 should lean on the heavyweight prior.", "source": "data/derived/fighters.json (pace_w); ufcstats per-fight totals" },
     { "note": "Power: 8 knockdowns in 63.4 UFC minutes, 3.4 per 100 significant head strikes landed career (2.7 decayed).", "source": "data/derived/fighters.json" },
-    {
-      "note": "Chin: 1 knockdown absorbed and 2 KO/TKO losses (Overeem, ground strikes, 2018; Aspinall, punch, 2023) in 12 UFC fights.",
-      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/1c43b38c1f4bdbe2; http://ufcstats.com/fight-details/db49619221b282af"
-    },
-    {
-      "note": "Accuracy is low for a knockout artist: 44% of significant strikes overall and 39% to the head (decayed), while he absorbs 3.2 significant strikes per minute against 42% opponent accuracy.",
-      "source": "data/derived/fighters.json"
-    },
-    {
-      "note": "Takedown defense 90% decayed but on tiny numbers (opponents 1 of 4 career). He has a 5-round fight booked (UFC 335) with no 5-round minutes past round 1 in his record.",
-      "source": "data/derived/fighters.json; https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335"
-    }
+    { "note": "Chin: 1 knockdown absorbed and 2 KO/TKO losses (Overeem, ground strikes, 2018; Aspinall, punch, 2023) in 12 UFC fights.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/1c43b38c1f4bdbe2; http://ufcstats.com/fight-details/db49619221b282af" },
+    { "note": "Accuracy is low for a knockout artist: 44% of significant strikes overall and 39% to the head (decayed), while he absorbs 3.2 significant strikes per minute against 42% opponent accuracy.", "source": "data/derived/fighters.json" },
+    { "note": "Takedown defense 90% decayed but on tiny numbers (opponents 1 of 4 career). He has a 5-round fight booked (UFC 335) with no 5-round minutes past round 1 in his record.", "source": "data/derived/fighters.json; https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335" }
   ],
   "confidence": "medium"
 }

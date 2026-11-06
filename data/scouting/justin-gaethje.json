@@ -78,11 +78,11 @@
   "appearance": {
     "build": "compact, dense wrestler's frame: 5 ft 11 in with a 70 in reach (ufcstats); very thick neck and traps, thick trunk with only a mild V-taper, powerful legs",
     "hair": "short fade, 4-5 cm textured top, receding temples, mid-brown",
-    "facial_hair": "short full beard joined to the moustache, about 1 cm, copper-ginger, clearly redder than his hair",
+    "facial_hair": "short full beard, about 1 cm, copper-ginger, clearly redder than his hair",
     "skin": "light",
     "tattoos": "all on his right side except two small pieces: a large colour piece on the right ribs and flank (a winged warrior in a crested Spartan-style helmet with a sword, a second figure with a round shield, banners reading 'BEFORE' and 'DISHONOR') and an ornate gothic cross on the outer right upper arm; a small black line-work curl on the left ribs; a partly seen black outline tattoo on the back of the left shoulder",
     "kit": "black UFC shorts with two white diagonal stripes, a vertical UFC wordmark and the crypto.com logo on his right hip and thigh (studio portrait, UFC 324); at UFC Freedom 250, white shorts with thin light-blue lines and blue gloves",
-    "notes": "Copied from the photo-based likeness sheet data/likeness/justin-gaethje.json (14 photos, 12 from 2026, second-pass review Nov 6, 2026), which is the better source for the avatar: hair #5e4536, beard #8a4e38, skin #dc9b8b with a warm-pink, ruddy undertone, plus face notes and morph values. The red beard against brown hair and the right-side warrior and cross tattoos are the main recognition cues; mirror-check that both tattoos sit on his right. He often wears a white cap in public.",
+    "notes": "Copied from the photo-based likeness sheet data/likeness/justin-gaethje.json (14 photos, 12 from 2026, second-pass review Nov 6, 2026), which is the better source for the avatar: hair #5e4536, beard #8a4e38, skin #dc9b8b with a warm-pink, ruddy undertone, plus face notes and morph values. The red beard against brown hair and the right-side warrior and cross tattoos are the main recognition cues; mirror-check that both tattoos sit on his right. The beard joins the moustache, with a low cheek line and a low neckline. He often wears a white cap in public.",
     "sources": [
       "data/likeness/justin-gaethje.json",
       "assets/reference/justin-gaethje/sources.json",

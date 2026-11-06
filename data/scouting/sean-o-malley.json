@@ -9,16 +9,8 @@
     "active": true,
     "next_fight": null,
     "injuries": [
-      {
-        "what": "hip labrum surgery; he fought Dvalishvili at UFC 316 about seven months later and called that turnaround his biggest regret",
-        "when": "2024 (about seven months before Jun 2025)",
-        "source": "https://middleeasy.com/mma-news/sean-omalley-petr-yan-recovery-concern-ufc-333/"
-      },
-      {
-        "what": "lingering lower-back discomfort for about three years, improving with a regular exercise routine (his own account on his YouTube channel, Oct 19)",
-        "when": "2026-10",
-        "source": "https://middleeasy.com/mma-news/sean-omalley-petr-yan-recovery-concern-ufc-333/"
-      }
+      { "what": "hip labrum surgery; he fought Dvalishvili at UFC 316 about seven months later and called that turnaround his biggest regret", "when": "2024 (about seven months before Jun 2025)", "source": "https://middleeasy.com/mma-news/sean-omalley-petr-yan-recovery-concern-ufc-333/" },
+      { "what": "lingering lower-back discomfort for about three years, improving with a regular exercise routine (his own account on his YouTube channel, Oct 19)", "when": "2026-10", "source": "https://middleeasy.com/mma-news/sean-omalley-petr-yan-recovery-concern-ufc-333/" }
     ],
     "sources": [
       "http://ufcstats.com/fighter-details/b50a426a33da0012",
@@ -102,22 +94,10 @@
     ]
   },
   "engine_notes": [
-    {
-      "note": "Never knocked down in 16 UFC fights (0 knockdowns absorbed). He has scored 7 knockdowns (0.55 per 15 min career, 0.45 decayed) vs a 0.31 bantamweight prior.",
-      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
-    },
-    {
-      "note": "Opponents' best striking avenue is the legs: 19.4% of their career attempts and 23.8% decayed go there, and 42% of what lands on him (decayed) is leg strikes. His opponents' head accuracy is only 27.7% career vs 37.1% for the league.",
-      "source": "data/derived/fighters.json"
-    },
-    {
-      "note": "Offensive grappling is close to zero (0.12 takedown attempts per 15 min decayed). Opponents take him down 2.3 times per 15 min decayed and hold 11.4 s/min of control, above the 10.6 league rate.",
-      "source": "data/derived/fighters.json"
-    },
-    {
-      "note": "Five-round sample is small: 4 bouts (20 / 15.8 / 14.7 / 10 / 10 minutes per round). Pace 1.00 / 1.90 / 1.03 / 2.03 / 2.36 is driven by the 230-of-356 Vera fight, so shrink it toward the prior.",
-      "source": "data/derived/fighters.json (pace, pace_w)"
-    }
+    { "note": "Never knocked down in 16 UFC fights (0 knockdowns absorbed). He has scored 7 knockdowns (0.55 per 15 min career, 0.45 decayed) vs a 0.31 bantamweight prior.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Opponents' best striking avenue is the legs: 19.4% of their career attempts and 23.8% decayed go there, and 42% of what lands on him (decayed) is leg strikes. His opponents' head accuracy is only 27.7% career vs 37.1% for the league.", "source": "data/derived/fighters.json" },
+    { "note": "Offensive grappling is close to zero (0.12 takedown attempts per 15 min decayed). Opponents take him down 2.3 times per 15 min decayed and hold 11.4 s/min of control, above the 10.6 league rate.", "source": "data/derived/fighters.json" },
+    { "note": "Five-round sample is small: 4 bouts (20 / 15.8 / 14.7 / 10 / 10 minutes per round). Pace 1.00 / 1.90 / 1.03 / 2.03 / 2.36 is driven by the 230-of-356 Vera fight, so shrink it toward the prior.", "source": "data/derived/fighters.json (pace, pace_w)" }
   ],
   "confidence": "medium"
 }

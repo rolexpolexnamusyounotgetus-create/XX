@@ -18,14 +18,14 @@
       "https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/",
       "https://www.ufcalendar.com/fighters/charles-oliveira",
       "http://ufcstats.com/fighter-details/07225ba28ae309b6",
-      "https://www.ufcalendar.com/rankings/lightweight",
       "https://ufcrankings.org/lightweight/",
       "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
       "https://ufcrankings.org/pound-for-pound/",
       "https://en.wikipedia.org/wiki/Charles_Oliveira",
       "https://www.espn.com/mma/fightcenter/_/id/600061401",
       "https://nyfights.com/news/charles-oliveira-addresses-ufc-334-bmf/",
-      "https://www.mmafighting.com/ufc/513919/charles-oliveira-defends-bmf-title-against-diego-lopes-in-ufc-335-main-event"
+      "https://www.mmafighting.com/ufc/513919/charles-oliveira-defends-bmf-title-against-diego-lopes-in-ufc-335-main-event",
+      "https://www.ufcalendar.com/rankings/lightweight"
     ]
   },
   "style": {
@@ -98,6 +98,7 @@
     { "note": "Defense is the soft spot: opponents land 59% of significant strikes on him decayed and 63% over 3 years (league 48%). Decayed chin is 1.12 knockdowns per 100 significant head strikes absorbed (league 0.95); 6 knockdowns absorbed and 5 KO/TKO losses in 37 UFC fights (one of them, Holloway in 2015, an injury stoppage).", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
     { "note": "In five-round fights his landed rate falls to 0.67 and 0.62 of round 1 in rounds 4 and 5, but much of that is time spent controlling: at UFC 326 he held 4:30, 4:40, 4:29, 4:16 and 2:54 of control in rounds 1-5.", "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv" },
     { "note": "Age 37 at the as-of date, with his last KO loss 16 months ago (Topuria, R1).", "source": "data/derived/fighters.json" },
+    { "note": "Withdrew from a booked UFC 331 fight with Tsarukyan (Sep 2026) after a teammate's death in August, so UFC 335 comes nine months after UFC 326; the withdrawal was not injury-related.", "source": "https://nyfights.com/news/charles-oliveira-addresses-ufc-334-bmf/" },
     { "note": "Withdrew from a booked UFC 331 fight with Tsarukyan (Sep 2026) after a teammate's death in August, so UFC 335 comes nine months after UFC 326; the withdrawal was not injury-related.", "source": "https://nyfights.com/news/charles-oliveira-addresses-ufc-334-bmf/" }
   ],
   "confidence": "medium"
