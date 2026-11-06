@@ -63,7 +63,7 @@
     "spinning": 0.0,
     "knee": 0.15,
     "elbow": 0.25,
-    "notes": "Target split from fighters.json: decayed significant attempts are 79% head, 13% body, 8% legs (landed 71/18/11), close to the lightweight league's 76/15/9 but lighter on the body and legs, so kicks stay low. Most of his output is ground strikes: 35% of landed strikes decayed and 44% over the last 3 years, which these standing weights do not cover. Elbow is raised because the Ruffy KO was a standing elbow in the clinch (MMA Weekly, MMA Mania; ufcstats: 'Elbow to Head In Clinch'). The rear hand gets the top punch weight because the Dariush finish was a punch at distance in the first minute; the hand is not recorded, so this is a judgment. His striking mostly serves to set up his shots: 9.4 takedown attempts per 15 min career."
+    "notes": "Target split from fighters.json: decayed significant attempts are 79% head, 13% body, 8% legs (landed 71/18/11), close to the lightweight league's 76/15/9 but lighter on the body and legs, so kicks stay low. Much of his landed output is ground strikes: 35% of landed strikes decayed and 44% over the last 3 years, which these standing weights do not cover. Elbow is raised because the Ruffy KO was a standing elbow in the clinch (MMA Weekly, MMA Mania; ufcstats: 'Elbow to Head In Clinch'). The rear hand gets the top punch weight because the Dariush finish was a punch at distance in the first minute; the hand is not recorded, so this is a judgment. His striking mostly serves to set up his shots: 9.4 takedown attempts per 15 min career."
   },
   "appearance": {
     "build": "short and stocky with a long reach for his height: 5 ft 7 in, 72 in reach (ufcstats)",

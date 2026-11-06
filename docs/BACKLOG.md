@@ -44,3 +44,10 @@ Findings from verified research that the next engine versions must use. Each lin
 ## Market (v9)
 - Volk vs Gaethje openers Oct 24-25, 2026: FightOdds.io -200/+170, BetOnline -180/+160, Lucky Rebel
   -180/+155; no-vig Volk 37.2% average (34.9-37.9%).
+
+## Evaluation rule (all versions)
+- ufcstats lists the winner first more often than not: the first-named fighter (A) wins 56.3% of decisive
+  backtest fights (2019-2026; 53.8-58.5% by year). Any model with an intercept or an A/B-ordered feature
+  can learn the ordering and inflate the score. Every evaluation must be symmetric: score each fight in
+  both orientations (or randomly swap corners with a fixed seed), and fit stacking/blend/Elo-scale models
+  without an intercept on mirrored data.

@@ -13,8 +13,8 @@ As of Nov 6, 2026. Stats are from `data/derived/fighters.json` (ufcstats snapsho
 
 | Date | Opponent | Result | How |
 |---|---|---|---|
-| Mar 7, 2026 | Max Holloway | W UD 50-45 x3 | A takedown in every round (5 of 13), 20:49 of control, 4 submission attempts. Holloway landed 26 significant strikes in 25 minutes. Bloody Elbow called it the dullest BMF fight yet ([Bloody Elbow](https://bloodyelbow.com/2026/03/08/max-holloway-vs-charles-oliveira-2-ufc-326-result-nate-diaz-enraged-as-bmf-title-changes-hands-in-boring-clash/)) |
-| Oct 11, 2025 | Mateusz Gamrot | W RNC R2 2:48 | Had the back late in R1. In R2 he hit a quick takedown, took the back again and squeezed a choke across the jaw ([ESPN](https://www.espn.com/mma/ufc/story/_/id/46567043/oliveira-submits-gamrot-storybook-homecoming-ko-loss), [CBS](https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-charles-oliveira-submits-mateusz-gamrot-in-raucous-homecoming-win)) |
+| Mar 7, 2026 | Max Holloway | W UD 50-45 x3 | A takedown in every round (5 of 13), 20:49 of control, 4 submission attempts. Holloway landed 26 significant strikes in 25 minutes. Bloody Elbow called it boring ([Bloody Elbow](https://bloodyelbow.com/2026/03/08/max-holloway-vs-charles-oliveira-2-ufc-326-result-nate-diaz-enraged-as-bmf-title-changes-hands-in-boring-clash/)) |
+| Oct 11, 2025 | Mateusz Gamrot | W RNC R2 2:48 | Had the back late in R1; in R2 a quick takedown, the back again and a choke across the jaw ([ESPN](https://www.espn.com/mma/ufc/story/_/id/46567043/oliveira-submits-gamrot-storybook-homecoming-ko-loss), [CBS](https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-charles-oliveira-submits-mateusz-gamrot-in-raucous-homecoming-win)) |
 | Jun 28, 2025 | Ilia Topuria | L KO R1 2:27 | Vacant title. Jab, straight right, left hook ([Al Jazeera](https://www.aljazeera.com/sports/2025/6/29/topuria-beats-oliveira-to-win-ufc-lightweight-title-with-stunning-knockout)) |
 | Nov 16, 2024 | Michael Chandler | W UD (5 rds) | Dataset |
 | Apr 13, 2024 | Arman Tsarukyan | L SD | Tsarukyan took him down twice and held 8:41 of control. Oliveira threatened four submissions (dataset) |
@@ -25,11 +25,11 @@ He is a submission grappler who strikes to get the fight to the mat. Seventeen o
 
 **Strengths:** back takes, scrambles and finishing from bad spots. Submission attempts run at 2.6 per 15 minutes (league 0.40). Control lately is heavy: 485 seconds per 15 minutes decayed (league 174).
 
-**Weaknesses:** he gets hit. Over the last three years opponents landed 63% of their significant strikes on him (league 48%). Analyst Michael Bisping has flagged his forward walk with the chin up ([LowKick](https://www.lowkickmma.com/charles-oliveira-fight-style-warning/)). His takedown defense over three years is 50%. His standing output is low: 3.6 significant attempts per minute against a league 9.0.
+**Weaknesses:** he gets hit. Over the last three years opponents landed 63% of their significant strikes on him (league 48%). Analyst Michael Bisping has flagged his forward walk with the chin up ([LowKick](https://www.lowkickmma.com/charles-oliveira-fight-style-warning/)). His takedown defense over three years is 50%. His striking output is low: 3.6 significant attempts per minute, ground strikes included (league 9.0).
 
 ## Durability and cardio
 
-He has absorbed 6 knockdowns and lost 5 times by KO/TKO in 37 UFC fights. His decayed chin rate is 1.12 knockdowns per 100 head strikes absorbed (league 0.95). The Topuria knockout is the most recent. In five-round fights his landed rate falls to 0.67 and 0.62 of round 1 in rounds 4 and 5, but that is mostly control time. Against Holloway he held 4:16 or more of control in each of rounds 1-4 and 2:54 in round 5. In the two fights that went 25 minutes, he absorbed 4.5 significant strikes per minute in round 5, and opponents landed 80% of their attempts.
+He has absorbed 6 knockdowns and lost 5 times by KO/TKO in 37 UFC fights; one, Holloway in 2015, was an injury stoppage. His decayed chin rate is 1.12 knockdowns per 100 head strikes absorbed (league 0.95). The Topuria knockout is the most recent. In five-round fights his landed rate falls to 0.67 and 0.62 of round 1 in rounds 4 and 5, but that is mostly control time. Against Holloway he held 4:16 or more of control in each of rounds 1-4 and 2:54 in round 5. In the two fights that went 25 minutes, he absorbed 4.5 significant strikes per minute in round 5, and opponents landed 80% of their attempts.
 
 ## What fighters.json says
 

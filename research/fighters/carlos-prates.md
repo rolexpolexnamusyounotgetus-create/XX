@@ -2,7 +2,7 @@
 
 As of 2026-11-06. He/him. Switch stance (ufcstats), 6 ft 1 in, 78 in reach, born 1993-08-17 (age 33). UFC record 7-1, all seven wins by KO/TKO (ufcstats). Nickname "The Nightmare".
 
-**Research limits.** This pass had no web access: the shared search budget was used up, and en.wikipedia.org and www.ufc.com are blocked in this session. Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. The booking comes from reports another agent cited in the project's Morales and Makhachev scouting files; I did not re-fetch them. Ranking and appearance details are unverified.
+**Research limits.** Neither the research pass nor the fact-check pass (2026-11-06) had web access (search budget used up; key sites blocked). Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. The fact-check re-derived every date, method, score and per-fight number from data/raw, and all match. The booking comes from reports another agent cited in the project's Morales and Makhachev scouting files; I did not re-fetch them. Ranking and appearance details are unverified.
 
 ## Current status
 
@@ -41,11 +41,11 @@ A Muay Thai-style striker who fights long. 89% of his landed strikes come at dis
 
 ## Durability and cardio
 
-0 knockdowns absorbed in 77.4 UFC minutes and 182 head strikes absorbed. His only 25-minute fight was a decision loss, and his round-by-round pace data (two five-round fights) is too thin to read.
+0 knockdowns absorbed in 77.4 UFC minutes and 182 head strikes absorbed. His only 25-minute fight was a decision loss, and his five-round pace data (three scheduled five-rounders: Magny ended in R1, Della Maddalena in R3) is too thin to read.
 
 ## What the numbers in fighters.json say
 
-Elo 1694, eighth among active welterweights. The rating is held back by a short UFC career: 8 fights, the first in Feb 2024. Decayed: 4.63 significant landed and 4.14 absorbed per minute. Target split of landed strikes: 63% head, 17% body, 21% legs. His power numbers come from a small sample, so the engine should shrink them, but even heavily shrunk they stay the highest in this group.
+Elo 1694, eighth among welterweights who have fought since November 2024. The rating is held back by a short UFC career: 8 fights, the first in Feb 2024. Decayed: 4.63 significant landed and 4.14 absorbed per minute. Target split of landed strikes: 63% head, 17% body, 21% legs. His power numbers come from a small sample, so the engine should shrink them, but even heavily shrunk they stay the highest in this group.
 
 ## Sources
 

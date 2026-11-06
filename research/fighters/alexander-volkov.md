@@ -24,12 +24,12 @@ As of 2026-11-06. He/him. "Drago". Orthodox, 6 ft 7 in, 80 in reach, listed 250 
 
 ## Style breakdown
 
-A long-range kickboxer who makes his height count. He works behind a busy jab and straight right, chops the lead leg, kicks the body and uses front kicks to keep opponents at the end of his reach. Front kicks finished Walt Harris. He is comfortable in the clinch, where punches finished Werdum and Struve, and he occasionally finishes on the mat. His defensive wrestling has improved but is still the main way to beat him: Blaydes (14 takedowns in 2020) and Aspinall (two takedowns, then an armbar) both got him down.
+A long-range kickboxer who makes his height count. He works behind a busy jab and straight right, chops the lead leg, kicks the body and uses front kicks to keep opponents at the end of his reach. Front kicks finished Walt Harris. He is comfortable in the clinch, where punches finished Werdum and Struve, and he occasionally finishes on the mat. Wrestling is still the main way to beat him (Almeida landed 7 of 9 takedowns in 2025): Blaydes (14 takedowns in 2020) and Aspinall (two takedowns, then an armbar) both got him down.
 
 ## Strengths
 
-- High output at range: 6.5 significant strikes landed per minute (decayed).
-- Leg and body accuracy of 85% and 78% career.
+- High output at range: 4.6 significant strikes landed per minute decayed (heavyweight prior 3.8).
+- Leg and body accuracy of 84% and 78% career.
 - Durable: one KO loss in 20 UFC fights.
 - Experience: 20 UFC fights, 7 of them five-rounders.
 
@@ -46,7 +46,7 @@ Two knockdowns absorbed. His only KO loss came against Lewis with 11 seconds lef
 
 ## What the numbers say
 
-Decayed sums: 10.2 significant attempts and 6.5 landed per minute at 64% accuracy. He absorbs 3.5 per minute, and opponents land 52%. Of his attempts, 65% go to the head, 19% to the body and 17% to the legs, more body and leg work than his career split of 71/16/13. Takedown defense is 65% decayed and 71% career, and he takes opponents down only 0.4 times per 15 min. Elo 1738.
+Decayed sums: 8.2 significant attempts and 4.6 landed per minute at 57% accuracy. He absorbs 3.0 per minute, and opponents land 49%. Of his attempts, 65% go to the head, 19% to the body and 17% to the legs, more body and leg work than his career split of 71/16/13. Takedown defense is 65% decayed and 71% career, and he takes opponents down only 0.4 times per 15 min. Elo 1738.
 
 ## Sources
 

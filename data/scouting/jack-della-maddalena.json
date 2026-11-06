@@ -3,7 +3,7 @@
   "name": "Jack Della Maddalena",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC welterweight champion. He won the title from Belal Muhammad at UFC 315 in Montreal (May 10, 2025; 48-47, 48-47, 49-46). He lost it to Islam Makhachev at UFC 322 (Nov 15, 2025; 45-50 x3, controlled for 19:10). Carlos Prates then stopped him in a five-round main event in Perth (May 2, 2026; TKO R3 3:17, elbows to the body after three knockdowns). That is two straight losses. Nothing after May 2, 2026 is in the ufcstats snapshot (through Oct 31, 2026). Rakhmonov's manager denied a rumored January 2027 fight with Shavkat Rakhmonov on Oct 30, 2026, per the Bloody Elbow report cited in the project's Rakhmonov file. That report was not re-fetched here, and no booking or ranking could be checked (no web access).",
+    "summary": "Former UFC welterweight champion. He won the title from Belal Muhammad at UFC 315 in Montreal (May 10, 2025; 48-47, 48-47, 49-46). He lost it to Islam Makhachev at UFC 322 (Nov 15, 2025; 45-50 x3, controlled for 19:10). Carlos Prates then stopped him in a five-round main event in Perth (May 2, 2026; TKO R3 3:17, elbows to the body after three knockdowns). That is two straight losses. Nothing after May 2, 2026 is in the ufcstats snapshot (through Oct 31, 2026). Rakhmonov's manager denied a rumored January 2027 fight with Shavkat Rakhmonov on Oct 30, 2026, per the Bloody Elbow report cited in the project's Rakhmonov file. That report was not re-fetched here, and no booking or ranking could be checked (no web access). The fact-check pass (2026-11-06) had no web access either (search budget used up; news hosts unresolvable), so status is still unverified.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -21,7 +21,7 @@
   "style": {
     "archetype": "boxer",
     "stance": "switch",
-    "tags": ["power", "volume", "body-work", "switch-stance", "fast-starter", "late-surge", "cardio"],
+    "tags": ["power", "body-work", "switch-stance", "fast-starter", "late-surge", "cardio"],
     "signature": [
       "punches to the body: KO of Ramazan Emeev with a punch to the body, R1 2:32 (UFC 275; ufcstats 'Punch to Body At Distance')",
       "heavy body work: 19.5% of decayed significant attempts go to the body (division 13.9%); 47/65 body strikes landed against Muhammad",
@@ -61,13 +61,13 @@
   },
   "appearance": {
     "build": "athletic, medium frame; 5 ft 11 in with a 73 in reach (ufcstats)",
-    "hair": "short dark",
+    "hair": "dark; length and style not verified (unverified: recalled from widely published fight photos; no photo or written description checked in this pass)",
     "facial_hair": "unknown",
     "skin": "light",
     "tattoos": "unknown",
     "kit": "unknown",
     "sources": [
-      "http://ufcstats.com/fighter-details/6b453bc35a823c3f"
+      "http://ufcstats.com/fighter-details/6b453bc35a823c3f (height and reach only; hair and skin are not from a fetched source)"
     ]
   },
   "engine_notes": [
@@ -75,7 +75,7 @@
     { "note": "Five-round pace (1, 1.23, 1.06, 1.09, 1.72) comes from 2 fights that reached round 5 (Muhammad, Makhachev). The round-5 jump mostly comes from the Muhammad fight (53 landed in R5), so shrink it toward the prior.", "source": "data/derived/fighters.json (pace_w 15, 15, 13.3, 10, 10)" },
     { "note": "Grappling defense is the hole: controlled 331 s per 15 min over the last 3 years (division 167).", "source": "tools/fighter_report.py (snapshot 2026-10-31)" },
     { "note": "Chin: all 3 knockdowns he has absorbed in the UFC came in the Prates fight (1 in R2, 2 in R3). Before that he was never knocked down in 105 UFC minutes.", "source": "data/raw/ufc_fight_stats.csv; http://ufcstats.com/fight-details/eb6d9fef6c374830" },
-    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources.", "source": "research pass 2026-11-06" }
+    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources. Fact-check 2026-11-06: every date, method, score and per-fight number in this file was re-derived from data/raw/*.csv and tools/fighter_report.py and matches. The fact-check also had no web access, so status and appearance are still unverified. The 'volume' tag was dropped: decayed output is 8.33 significant attempts per minute vs 8.44 for the division (career 9.62).", "source": "research pass and fact-check 2026-11-06" }
   ],
   "confidence": "medium"
 }

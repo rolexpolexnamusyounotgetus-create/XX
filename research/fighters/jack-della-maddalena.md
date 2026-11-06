@@ -2,7 +2,7 @@
 
 As of 2026-11-06. He/him. Switch stance (ufcstats), 5 ft 11 in, 73 in reach, born 1996-09-10 (age 30). UFC record 8-2 (ufcstats). Former UFC welterweight champion.
 
-**Research limits.** This pass had no web access: the shared search budget was used up, and en.wikipedia.org and www.ufc.com are blocked in this session. Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. Bookings, rankings, injuries and appearance details are unverified.
+**Research limits.** Neither the research pass nor the fact-check pass (2026-11-06) had web access (search budget used up; key sites blocked). Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. The fact-check re-derived every date, method, score and per-fight number from data/raw, and all match. Bookings, rankings, injuries and appearance details are unverified.
 
 ## Current status
 
@@ -26,7 +26,7 @@ A switch-stance boxer. 88% of his landed strikes come at distance. He attacks th
 
 ## Strengths
 
-- Boxing volume and accuracy: 51.7% decayed (division 47.7%), with opponents landing only 42.7% on him.
+- Boxing accuracy: 51.7% decayed (division 47.7%), with opponents landing only 42.7% on him. His output is about division average on the decayed sums (8.33 attempts per minute vs 8.44), down from 9.62 career.
 - Body work, plus late-fight output.
 - Power early in his UFC run: 0.76 knockdowns per 15 min career. That has dropped to 0.19 over the last 3 years.
 
@@ -42,7 +42,7 @@ Never knocked down in his first 105 UFC minutes, then dropped three times by Pra
 
 ## What the numbers in fighters.json say
 
-Elo 1690, ninth among active welterweights. Decayed: 4.31 significant landed and 4.24 absorbed per minute, close to even. Target split of landed strikes: 63% head, 26% body, 11% legs. The model should give him a strong boxing and body game that does well against strikers, a high risk of being controlled by wrestlers, and some extra caution on his chin after Prates.
+Elo 1690, ninth among welterweights who have fought since November 2024. Decayed: 4.31 significant landed and 4.24 absorbed per minute, close to even. Target split of landed strikes: 63% head, 26% body, 11% legs. The model should give him a strong boxing and body game that does well against strikers, a high risk of being controlled by wrestlers, and some extra caution on his chin after Prates.
 
 ## Sources
 

@@ -27,7 +27,7 @@ A wide, hands-low stance by design: he told Joe Rogan that hands down is "your n
 ## Strengths
 
 - Volume and pressure: 9.9 significant attempts per minute decayed.
-- Gets stronger as fights go on: round-3 output was 2.24 times round 1 in his five-round fights. Both of his 2025 wins were third-round finishes.
+- Gets stronger as fights go on: in five-round fights his round-3 output was 2.24 times round 1, though rounds 3-5 of that curve come from the Teixeira fight alone. Both of his 2025 wins were third-round finishes of three-round fights.
 - Varied finishing: 5 KO/TKO and 1 submission in the UFC.
 
 ## Weaknesses

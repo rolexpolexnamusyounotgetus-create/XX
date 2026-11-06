@@ -88,7 +88,7 @@
     ]
   },
   "engine_notes": [
-    { "note": "Chin: 2.3 knockdowns absorbed per 100 head strikes taken (decayed), the highest of this group and against a light heavyweight league rate of 1.3; 4 knockdowns absorbed and 3 KO/TKO losses in 11 UFC fights. Power per landed head strike is low: 0.44 knockdowns per 100 decayed, 0.88 career.", "source": "data/derived/fighters.json (S sums, priors)" },
+    { "note": "Chin: 2.3 knockdowns absorbed per 100 head strikes taken (decayed), second in this group to Dominick Reyes (2.9) and against a light heavyweight league rate of 1.3; 4 knockdowns absorbed and 3 KO/TKO losses in 11 UFC fights. Power per landed head strike is low: 0.44 knockdowns per 100 decayed, 0.88 career.", "source": "data/derived/fighters.json (S sums, priors)" },
     { "note": "Volume: 10.5 significant attempts per minute decayed, 11.7 career; accuracy 49-50%. Opponents land 55-57% on him, above the 50% light heavyweight league rate in fighters.json priors.", "source": "data/derived/fighters.json" },
     { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.57, 0.96, 2.47, 0.92 (minute-weighted, mostly the Teixeira and Rountree fights).", "source": "data/derived/fighters.json (pace, pace_w)" },
     { "note": "No UFC fight since Jun 21, 2025, and he plans to debut at heavyweight. All his stats are from 205 lb; heavyweight inputs should lean on the division prior and a layoff discount.", "source": "data/derived/fighters.json (last_fight); https://www.bjpenn.com/mma-news/jamahal-hill/jamahal-hill-heavyweight-move-calls-out-josh-hokit/" },

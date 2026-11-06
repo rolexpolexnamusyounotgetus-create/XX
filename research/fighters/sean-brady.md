@@ -2,7 +2,7 @@
 
 As of 2026-11-06. He/him. Orthodox, 5 ft 10 in, 72 in reach, born 1992-11-23 (age 33). UFC record 9-2 (ufcstats). Welterweight.
 
-**Research limits.** This pass had no web access: the shared search budget was used up, and en.wikipedia.org and www.ufc.com are blocked in this session. Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. Bookings, rankings, injuries and appearance details are unverified.
+**Research limits.** Neither the research pass nor the fact-check pass (2026-11-06) had web access (search budget used up; key sites blocked). Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. The fact-check re-derived every date, method, score and per-fight number from data/raw, and all match. Bookings, rankings, injuries and appearance details are unverified.
 
 ## Current status
 

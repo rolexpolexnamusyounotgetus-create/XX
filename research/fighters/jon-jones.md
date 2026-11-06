@@ -8,7 +8,7 @@ As of 2026-11-06. He/him. "Bones". Orthodox (switches stance), 6 ft 4 in, 84 in 
 
 - **Title:** none. He won the vacant heavyweight title at UFC 285 (Mar 4, 2023) and defended it once, at UFC 309 (Nov 16, 2024).
 - **Retirement:** his retirement was announced in June 2025, and Tom Aspinall was promoted from interim to undisputed champion (widely reported; not re-verified this session).
-- **Since then:** he has had no UFC fight through the Oct 31, 2026 snapshot. He talked publicly about returning for the White House card, but UFC Freedom 250 (Jun 14, 2026) went ahead without him, with Ciryl Gane beating Alex Pereira for the interim heavyweight title.
+- **Since then:** he has had no UFC fight through the Oct 31, 2026 snapshot. He talked publicly about returning for the White House card (widely reported in 2025; not re-verified), but UFC Freedom 250 (Jun 14, 2026) went ahead without him, with Ciryl Gane beating Alex Pereira for the interim heavyweight title.
 - **Next fight:** none found. **Injuries:** none confirmed.
 
 ## Recent fights
@@ -16,7 +16,7 @@ As of 2026-11-06. He/him. "Bones". Orthodox (switches stance), 6 ft 4 in, 84 in 
 | Date | Opponent | Result | How |
 |---|---|---|---|
 | 2024-11-16 | Stipe Miocic | W TKO R3 4:29 (HW title) | Spinning back kick to the body, then ground strikes. He out-landed Miocic 96-37 in significant strikes, 40 of his 46 ground strikes landed, and he had 231 s of control. |
-| 2023-03-04 | Ciryl Gane | W SUB R1 2:04 (vacant HW title) | Clinch takedown, then a guillotine on the ground. He went 2 for 2 on takedowns. |
+| 2023-03-04 | Ciryl Gane | W SUB R1 2:04 (vacant HW title) | Takedown (2 of 2), then a guillotine on the ground. |
 | 2020-02-08 | Dominick Reyes | W UD (LHW title) | Close fight: Reyes out-landed him 116-104. Jones won on leg kicks (43/53) and late rounds. |
 | 2019-07-06 | Thiago Santos | W SD (LHW title) | 32 of his 59 significant strikes landed to the legs. |
 | 2019-03-02 | Anthony Smith | W UD (LHW title) | 778 s of control and 125-36 in significant strikes. |
@@ -45,7 +45,7 @@ No knockdowns absorbed in 356.8 UFC minutes. His pace in five-round fights runs 
 
 ## What the numbers say
 
-Career: 5.46 significant strikes landed per minute at 63% accuracy, and he absorbs 2.71 per minute. Of his attempts, 60% go to the head, 19% to the body and 21% to the legs. Takedowns: 1.89 per 15 min at 46%. The decayed sums (73% accuracy, 6.0 landed per minute) are inflated by the one-sided Miocic fight and should be shrunk toward career numbers. Elo 1891, the highest of the heavyweights in this batch.
+Career: 4.38 significant strikes landed per minute at 59% accuracy, and he absorbs 2.24 per minute. Of his attempts, 60% go to the head, 19% to the body and 21% to the legs. Takedowns: 1.89 per 15 min at 46%. The decayed sums (71% accuracy, 5.2 landed per minute) are inflated by the one-sided Miocic fight and should be shrunk toward career numbers. Elo 1891, the highest of the heavyweights in this batch.
 
 ## Sources
 

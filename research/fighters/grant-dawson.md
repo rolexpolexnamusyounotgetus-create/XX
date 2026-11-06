@@ -13,7 +13,7 @@ As of Nov 6, 2026. Stats are from `data/derived/fighters.json` (ufcstats snapsho
 | Date | Opponent | Result | How |
 |---|---|---|---|
 | Oct 24, 2026 | Nurullo Aliev | W UD 29-27 x3 | Lost R1 33-32 in significant strikes and was hurt (BVM Sports says dropped by a left; ufcstats has no knockdown). Then 4 of 4 takedowns and 5:37 of control in R2-R3 ([BVM](https://bvmsports.com/2026/10/24/ufc-333-grant-dawson-hands-nurullo-aliev-first-career-loss/)) |
-| May 9, 2026 | Mateusz Rebecki | W RNC R3 4:42 | Stunned Rebecki with a head kick in R1 and was dropped by a right hand in R2. When Rebecki shot early in R3, Dawson took his back and choked him with 18 seconds left. He made 4 submission attempts in the fight ([Cageside](https://cagesidepress.com/2026/05/09/ufc-328-grant-dawson-taps-out-mateusz-rebecki/)) |
+| May 9, 2026 | Mateusz Rebecki | W RNC R3 4:42 | Stunned Rebecki with a head kick in R1 and was dropped by a right hand in R2. When Rebecki shot early in R3, Dawson took his back and choked him with 18 seconds left (ufcstats credits the round's only takedown to Dawson). He made 4 submission attempts in the fight ([Cageside](https://cagesidepress.com/2026/05/09/ufc-328-grant-dawson-taps-out-mateusz-rebecki/)) |
 | Dec 6, 2025 | Manuel Torres | L TKO R1 2:25 | Dawson missed, Torres countered with a left, and ground strikes followed. Dawson was a big favorite ([Cageside](https://cagesidepress.com/2025/12/06/ufc-323-manuel-torres-stops-grant-dawson-in-yet-another-first-round-finish/)) |
 | Jan 18, 2025 | Diego Ferreira | W UD 30-27 x3 | 6 of 11 takedowns, 10:50 of control |
 | Oct 12, 2024 | Rafa Garcia | W TKO R2 1:42 | Punches from back control |

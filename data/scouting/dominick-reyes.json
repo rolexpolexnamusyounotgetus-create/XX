@@ -16,8 +16,7 @@
       "http://ufcstats.com/fighter-details/2e19380f34871c6a",
       "https://www.aljazeera.com/sports/2025/9/28/ulberg-dominates-reyes-with-first-round-ko-at-ufc-fight-night-in-perth",
       "https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-carlos-ulberg-blasts-dominick-reyes-for-first-round-ko-wants-title-shot",
-      "https://www.ufc.com/news/ufc-fight-night-ulberg-reyes-main-card-results-highlights-interviews-perth",
-      "https://cagesidepress.com/2025/03/22/carlos-ulberg-scores-decision-win-over-blachowicz-calls-for-title-shot"
+      "https://www.ufc.com/news/ufc-fight-night-ulberg-reyes-main-card-results-highlights-interviews-perth"
     ]
   },
   "style": {
@@ -80,7 +79,7 @@
     { "note": "Power: 2.7 knockdowns per 100 significant head strikes landed (decayed), 2.4 career, against a light heavyweight league rate of 1.3; the highest of this group.", "source": "data/derived/fighters.json (S, C, priors)" },
     { "note": "Chin: 2.9 knockdowns absorbed per 100 head strikes taken (decayed), 1.9 career; 4 knockdowns absorbed and 4 KO/TKO losses in 16 UFC fights. He is hit less than most (2.9 absorbed per minute decayed), but what lands hurts him.", "source": "data/derived/fighters.json" },
     { "note": "Takedown defense 91% decayed and 83% career; control against him is 26 s per 15 min decayed, far below the 154 s light heavyweight league rate.", "source": "data/derived/fighters.json (S, priors)" },
-    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.20, 1.29, 0.65, 1.05 (minute-weighted; Jones fight dominates rounds 4-5).", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.20, 1.29, 0.65, 1.05 (minute-weighted; only the Jones fight reached rounds 3-5, so those three values are one fight).", "source": "data/derived/fighters.json (pace, pace_w)" },
     { "note": "Against Walker his output rose late and switched to the legs: 10, 9 and 15 significant strikes landed by round, with 12 of 15 leg strikes in round 3.", "source": "http://ufcstats.com/fight-details/c4d060cff018979a" }
   ],
   "confidence": "low"

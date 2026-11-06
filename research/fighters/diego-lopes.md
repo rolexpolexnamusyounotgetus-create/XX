@@ -7,8 +7,8 @@
 - Injuries: none reported.
 
 ## Recent fights
-- **W Steve Garcia, KO R2, Jun 2026.** Lopes started slowly and Garcia won the first round (47-24 significant strikes over the fight, 11 of 11 leg strikes). In R2 a counter left hook dropped Garcia and punches from top finished it.
-- **L Alexander Volkanovski, UD (49-46, 49-46, 50-45), UFC 325, Jan 31, 2026.** Closer on the feet than the cards: 98-70 significant strikes, 77-67 through four rounds. Lopes landed 17 body and 20 leg strikes and took Volkanovski down twice. Volkanovski swept round 5 (21-3, two takedowns). Late in the fight Lopes tried a rear-naked choke and Volkanovski escaped.
+- **W Steve Garcia, KO R2, Jun 2026.** Lopes started slowly and Garcia won the first round (23-6 significant strikes in R1; 47-24 over the fight, 11 of 11 leg strikes). In R2 a counter left hook dropped Garcia and punches from top finished it.
+- **L Alexander Volkanovski, UD (49-46, 49-46, 50-45), UFC 325, Jan 31, 2026.** Closer on the feet than the cards: 98-70 significant strikes, 77-67 through four rounds. Lopes landed 17 body and 20 leg strikes and took Volkanovski down twice. Volkanovski swept round 5 (21-3, two takedowns). Reports mention a late rear-naked choke threat from Lopes, but ufcstats logs no submission attempt for him in this fight.
 - **W Jean Silva, TKO R2 4:48, Noche UFC, Sep 13, 2025.** Lopes took Silva down and mounted him in R1. Near the end of R2 a spinning back elbow dropped and cut Silva, and ground strikes finished it.
 - **L Volkanovski, UD (49-46, 49-46, 48-47), UFC 314, Apr 12, 2025**, for the vacant title. He dropped Volkanovski with a jab and overhand right late in R2 but was out-landed 158-63, with rounds 4-5 lopsided.
 - **W Brian Ortega, UD, UFC 306, Sep 2024** (106-63 significant strikes, 30-27 on two cards). Earlier UFC run: KOs of Sabatini and Yusuff, a triangle armbar on Tucker, and a decision over Ige.

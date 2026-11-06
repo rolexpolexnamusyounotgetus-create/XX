@@ -14,7 +14,7 @@ As of Nov 6, 2026. Stats are from `data/derived/fighters.json` (ufcstats snapsho
 
 | Date | Opponent | Result | How |
 |---|---|---|---|
-| Jun 14, 2026 | Justin Gaethje | L TKO (corner) after R4 | R1 close. In R2 (44-12 in significant strikes) body shots dropped Gaethje, and Topuria took him down and hunted submissions while Gaethje recovered ([Yahoo](https://sports.yahoo.com/mma/live/ufc-freedom-250-results-justin-gaethje-shocks-ilia-topuria-pulls-off-ultimate-us-upset-on-white-house-lawn-060000480.html)). In R3 an overhand right and uppercuts buckled him and he landed only 7. He said he had lost sight in both eyes by the end of R2 ([Bleacher Report](https://bleacherreport.com/articles/25440894-ilia-topuria-lost-sight-both-eyes-tko-loss-gaethje-ufc-white-house-wants-rematch-fight)) |
+| Jun 14, 2026 | Justin Gaethje | L TKO (corner) after R4 | R1 close. In R2 (44-12 in significant strikes) body shots dropped Gaethje; Topuria followed him to the mat and hunted submissions (ufcstats logs none) while Gaethje recovered ([Yahoo](https://sports.yahoo.com/mma/live/ufc-freedom-250-results-justin-gaethje-shocks-ilia-topuria-pulls-off-ultimate-us-upset-on-white-house-lawn-060000480.html)). In R3 an overhand right and uppercuts buckled him and he landed only 7. He said he lost sight in both eyes; accounts differ on whether by R2 or R4 ([Bleacher Report](https://bleacherreport.com/articles/25440894-ilia-topuria-lost-sight-both-eyes-tko-loss-gaethje-ufc-white-house-wants-rematch-fight)) |
 | Jun 28, 2025 | Charles Oliveira | W KO R1 2:27 | "Lots of jabs, right hand, left hook" ([Al Jazeera](https://www.aljazeera.com/sports/2025/6/29/topuria-beats-oliveira-to-win-ufc-lightweight-title-with-stunning-knockout)) |
 | Oct 26, 2024 | Max Holloway | W KO R3 1:34 | 2 of 2 takedowns and 15 of 16 leg strikes, then a knockdown and finish; Holloway's first KO loss |
 | Feb 17, 2024 | Alexander Volkanovski | W KO R2 3:32 | Right hand with Volk's back near the cage ([Bloody Elbow](https://bloodyelbow.com/2024/02/19/ufc-298-topuria-volkanovski-analysis/)) |
@@ -34,7 +34,7 @@ Before 2026 he had absorbed one knockdown (Herbert, 2022). Gaethje never dropped
 
 ## What fighters.json says
 
-His Elo of 1742 is fourth among lightweights in the file. UFC record 9-1: 6 KO/TKO, 1 submission, 2 decision wins. His decayed power is 2.27 knockdowns per 100 head strikes landed, more than double the league's 0.95. For the sim, his early rounds are among the most dangerous in the division. Against a durable puncher he is less certain than his record suggests.
+His Elo of 1742 is fourth among lightweights in the file. UFC record 9-1: 6 KO/TKO, 1 submission, 2 decision wins. His decayed power is 2.27 knockdowns per 100 head strikes landed, more than double the league's 0.95. For the sim, his early rounds are among the most dangerous in the division, but a durable puncher makes him less certain.
 
 ## Sources
 

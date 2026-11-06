@@ -10,7 +10,7 @@
    passes, escapes, sweeps and stand-ups, submissions, knockdowns with a follow-up sequence, hurt states,
    standing / ground-and-pound / leg TKOs, stamina and pace, three judges, and doctor / corner stoppages.
 
-   UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM, no Math.random. */
+   UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
   var FP = root && root.FightParams;
   if (!FP && typeof require === "function") { try { FP = require("./params3.js"); } catch (e) { FP = null; } }
@@ -54,6 +54,7 @@
   function log5(a, b, l) { return prob(odds(a) * odds(b) / odds(l)); }
   function shr(ev, ex, prior, k) { return (ev + k * prior) / (Math.max(0, ex) + k); }
   function pw(x, e) { return e === 1 ? x : Math.pow(x, e); }
+  function lnorm(rng, sd) { return sd > 0 ? Math.exp(sd * rng.normal() - 0.5 * sd * sd) : (rng.normal(), 1); }
   function getParams() { return FP0 || (root && root.FightParams) || null; }
 
   function mergeParams(base, over) {
@@ -519,8 +520,8 @@
     mount: [["Arm Triangle", 0.45], ["Armbar", 0.35], ["Americana", 0.1], ["Rear Naked Choke", 0.1]],
     side: [["Arm Triangle", 0.45], ["Kimura", 0.25], ["D'Arce Choke", 0.15], ["Armbar", 0.15]],
     half: [["Arm Triangle", 0.35], ["D'Arce Choke", 0.25], ["Kimura", 0.2], ["Anaconda Choke", 0.2]],
-    guard: [["Guillotine Choke", 0.35], ["Kimura", 0.25], ["D'Arce Choke", 0.2], ["Neck Crank", 0.2]],
-    bottom: [["Triangle Choke", 0.3], ["Armbar", 0.3], ["Guillotine Choke", 0.2], ["Kimura", 0.1], ["Heel Hook", 0.1]],
+    guard: [["Kimura", 0.3], ["Arm Triangle", 0.2], ["D'Arce Choke", 0.2], ["Guillotine Choke", 0.15], ["Neck Crank", 0.15]],
+    bottom: [["Guillotine Choke", 0.38], ["Triangle Choke", 0.24], ["Armbar", 0.22], ["Kimura", 0.08], ["Heel Hook", 0.08]],
     stand: [["Guillotine Choke", 0.8], ["D'Arce Choke", 0.1], ["Anaconda Choke", 0.1]]
   };
   function pickName(list, u) { var acc = 0; for (var i = 0; i < list.length; i++) { acc += list[i][1]; if (u < acc) return list[i][0]; } return list[list.length - 1][0]; }
@@ -549,18 +550,19 @@
   function simulate(m, rng, trace) {
     var p = m.p, F = p.form, J = p.judge, nR = m.rounds, i, j, k;
     // fight-night form (fixed draw order, independent of trace)
-    var sharedPace = Math.exp(F.pace * rng.normal());
-    var vol = Math.exp(F.vol * rng.normal() - 0.5 * F.vol * F.vol);   // shared fight volatility (mean 1): a war vs a tactical fight
+    // every multiplicative draw is a mean-1 lognormal: exp(sd * z - sd^2 / 2)
+    var sharedPace = lnorm(rng, F.pace);
+    var vol = lnorm(rng, F.vol);                 // shared fight volatility: a war vs a tactical fight
     var fOut = [1, 1], fAcc = [1, 1], fPow = [1, 1], fChin = [1, 1], fCard = [1, 1], fGrap = [1, 1], fSubO = [1, 1], fSubD = [1, 1];
     for (i = 0; i < 2; i++) {
-      fOut[i] = Math.exp(F.out * rng.normal()); fAcc[i] = Math.exp(F.acc * rng.normal());
-      fPow[i] = Math.exp(F.pow * rng.normal()); fChin[i] = Math.exp(F.chin * rng.normal());
-      fCard[i] = Math.exp(F.cardio * rng.normal()); fGrap[i] = Math.exp(F.grap * rng.normal());
-      fSubO[i] = Math.exp(F.sub * rng.normal()); fSubD[i] = Math.exp(F.sub * rng.normal());
+      fOut[i] = lnorm(rng, F.out); fAcc[i] = Math.exp(F.acc * rng.normal());   // accuracy: logit-normal (odds multiplier)
+      fPow[i] = lnorm(rng, F.pow); fChin[i] = lnorm(rng, F.chin);
+      fCard[i] = lnorm(rng, F.cardio); fGrap[i] = lnorm(rng, F.grap);
+      fSubO[i] = lnorm(rng, F.sub); fSubD[i] = lnorm(rng, F.sub);
     }
     var subK = [fSubO[0] * fSubD[1], fSubO[1] * fSubD[0]], subKs = [Math.sqrt(subK[0]), Math.sqrt(subK[1])];
     var tS = [1, 1, 1], tG = [1, 1, 1], tP = [1, 1, 1];
-    for (j = 0; j < 3; j++) { tS[j] = Math.exp(J.tasteSd * rng.normal()); tG[j] = Math.exp(J.tasteSd * rng.normal()); tP[j] = Math.exp(J.tasteSd * rng.normal()); }
+    for (j = 0; j < 3; j++) { tS[j] = lnorm(rng, J.tasteSd); tG[j] = lnorm(rng, J.tasteSd); tP[j] = lnorm(rng, J.tasteSd); }
     var kdB = [m.kd[0] * fPow[0] * fChin[1] * vol, m.kd[1] * fPow[1] * fChin[0] * vol];
     var dw = [m.dw[0] * Math.pow(fPow[0], p.powDmgExp), m.dw[1] * Math.pow(fPow[1], p.powDmgExp)];
     var pcF = [Math.sqrt(fPow[0] * fChin[1] * vol), Math.sqrt(fPow[1] * fChin[0] * vol)];
@@ -578,21 +580,21 @@
     var D = [0, 0], G = [0, 0], S = [1, 1], hurtEnd = [-1, -1], kdN = [0, 0], chinM = [1, 1];
     var st = new Float64Array(2 * NS), tot = new Float64Array(2 * NS);
     var evR = new Float64Array(24), evT = new Int8Array(24), evW = new Int8Array(24), evX = new Int8Array(24);
-    var cards = [[0, 0], [0, 0], [0, 0]], n108 = 0;
+    var cards = [[0, 0], [0, 0], [0, 0]], n108 = 0, kdr = 0, kdrf = 0;
     var rounds = trace ? [] : null;
     var fight = { winner: "D", method: "DRAW", detail: "", round: nR, t: 300, cards: cards, totals: null,
       form: { A: { out: fOut[0], acc: fAcc[0], pow: fPow[0], chin: 1 / fChin[0], cardio: 1 / fCard[0], grap: fGrap[0], subOff: fSubO[0], subDef: 1 / fSubD[0] },
               B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
-      rounds: rounds, fin: null, n108: 0, pace: sharedPace, vol: vol };
+      rounds: rounds, fin: null, n108: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
     var po = [0, 0], fin = null;
 
     for (var r = 0; r < nR; r++) {
       for (k = 0; k < 2 * NS; k++) st[k] = 0;
       var t = 0, state = 0, ctl = -1, pos = 0, downed = -1, kdLoc = 0;
       var ev = trace ? [] : null;
-      var rp = sharedPace * Math.exp(F.roundPace * rng.normal());
-      po[0] = m.pace[0][r] * fOut[0] * rp * Math.exp(F.roundOut * rng.normal());
-      po[1] = m.pace[1][r] * fOut[1] * rp * Math.exp(F.roundOut * rng.normal());
+      var rp = sharedPace * lnorm(rng, F.roundPace);
+      po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
+      po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
       var kdP = m.kdPace[r];
 
       while (true) {
@@ -710,7 +712,7 @@
           if (kind === "fin") {
             var locFin = follow ? kdLoc : pc;
             var du = rng.u();
-            fin = { by: SIDE[i], how: finHow, t: t, loc: LOCN[locFin], tg: tg, pos: state >= 2 ? (follow ? "down" : POSN[pos]) : null,
+            fin = { by: SIDE[i], how: finHow, t: t, loc: LOCN[locFin], tg: tg, pos: state >= 2 ? (follow ? "down" : POSN[pos]) : null, follow: follow,
               detail: koDetail(finHow === "TKO" && follow ? "TKO" : finHow, tg, locFin === 1 ? 1 : (locFin === 0 ? 0 : 2), pos, du) };
             if (trace) { var ef = evObj(t, "fin", SIDE[i], state, pos, downed >= 0, D, G, S); ef.tg = tg; ef.loc = LOCN[pc]; ef.how = finHow; ev.push(ef); }
             break;
@@ -806,6 +808,8 @@
       }
 
       for (k = 0; k < 2 * NS; k++) tot[k] += st[k];
+      for (i = 0; i < 2; i++) if (st[i * NS + I_KD] > 0 && st[(1 - i) * NS + I_KD] === 0) { kdr++; if (fin && fin.by === SIDE[i] && fin.how !== "SUB") kdrf++; }
+      fight.kdr = kdr; fight.kdrf = kdrf;
       var rec = null;
       if (trace) {
         var sA = statObj(st, 0), sB = statObj(st, 1);
@@ -895,7 +899,7 @@
     for (k = 0; k < nR; k++) { finA.push(0); finB.push(0); finKO.push(0); finSUB.push(0); }
     var methods = {}, dist = 0, distA = 0, distB = 0, dec = { UD: 0, SD: 0, MD: 0, DRAW: 0 }, n108 = 0, rndsJudged = 0, secs = 0;
     var sumA = new Float64Array(NS), sumB = new Float64Array(NS);
-    var koLoc = { dist: 0, clinch: 0, ground: 0, "between rounds": 0 }, subNames = {};
+    var koLoc = { dist: 0, clinch: 0, ground: 0, "between rounds": 0 }, subNames = {}, koKind = { KO: 0, TKO_followup: 0, TKO_standing: 0, GNP: 0, LEG: 0, DOC: 0, CORNER: 0 }, kdr = 0, kdrf = 0;
     var chunk = Math.max(1, Math.floor(N / 50));
     for (i = 0; i < N; i++) {
       var f = simulate(m, rng, false), b = bucket(f);
@@ -910,9 +914,12 @@
         secs += (f.round - 1) * 300 + f.t; rndsJudged += f.method === "CORNER" || f.method === "DOC" ? f.round : f.round - 1;
         if (f.winner === "A") finA[f.round - 1]++; else finB[f.round - 1]++;
         if (f.method === "SUB") { finSUB[f.round - 1]++; subNames[f.fin.detail] = (subNames[f.fin.detail] || 0) + 1; }
-        else { finKO[f.round - 1]++; koLoc[f.fin.loc] = (koLoc[f.fin.loc] || 0) + 1; }
+        else {
+          finKO[f.round - 1]++; koLoc[f.fin.loc] = (koLoc[f.fin.loc] || 0) + 1;
+          var kk = f.method === "TKO" ? (f.fin.follow ? "TKO_followup" : "TKO_standing") : f.method; koKind[kk] = (koKind[kk] || 0) + 1;
+        }
       }
-      n108 += f.n108;
+      n108 += f.n108; kdr += f.kdr; kdrf += f.kdrf;
       if (onProgress && i % chunk === 0) onProgress(i / N);
     }
     if (onProgress) onProgress(1);
@@ -937,7 +944,7 @@
       finKO: finKO.map(function (x) { return x / N; }), finSUB: finSUB.map(function (x) { return x / N; }),
       dist: dist / N, distA: dist ? distA / dist : 0, distB: dist ? distB / dist : 0,
       dec: { UD: dec.UD / Math.max(1, dist), SD: dec.SD / Math.max(1, dist), MD: dec.MD / Math.max(1, dist), DRAW: dec.DRAW / Math.max(1, dist) },
-      methods: methods, koLoc: koLoc, subNames: subNames, fins: fins / N,
+      methods: methods, koLoc: koLoc, koKind: koKind, subNames: subNames, fins: fins / N, kdFin: kdrf / Math.max(1, kdr), kdRounds: kdr,
       r108: n108 / Math.max(1, 3 * rndsJudged), avgMin: mins / N,
       avg: { A: avgA, B: avgB },
       kd15: (sumA[I_KD] + sumB[I_KD]) / 2 / mins * 15, ctrl15: (sumA[I_CTRL] + sumB[I_CTRL]) / 2 / mins * 15

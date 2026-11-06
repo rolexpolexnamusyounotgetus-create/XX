@@ -33,7 +33,7 @@
     "weaknesses": [
       "age 39 (born 1987-07-19) and no fight since Nov 16, 2024",
       "only two heavyweight fights in the dataset (Gane, Miocic); his rates come mostly from 205 lb",
-      "his last three light heavyweight title fights were close: split decision over Thiago Santos (UFC 239) and a unanimous decision over Dominick Reyes in which Reyes out-landed him 116-104 in significant strikes (UFC 247)",
+      "two of his last three light heavyweight title fights were close (Anthony Smith at UFC 235 was one-sided): split decision over Thiago Santos (UFC 239) and a unanimous decision over Dominick Reyes in which Reyes out-landed him 116-104 in significant strikes (UFC 247)",
       "career head accuracy 48%: at distance he relies on volume to the body and legs more than clean head shots"
     ],
     "summary": "A long, versatile all-rounder with an 84 in reach who controls range with kicks to the legs and body, then wins the clinch and the mat with trips, top control, elbows and chokes. He has never been knocked down or finished in 24 UFC fights; his only loss is a 2009 disqualification for illegal elbows. The open questions are age, a two-year layoff and a small heavyweight sample.",
@@ -81,7 +81,7 @@
     { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.10, 1.36, 1.16, 1.01 (minute-weighted, 17 five-round fights): output peaks in round 3 and does not fade in rounds 4-5.", "source": "data/derived/fighters.json (pace, pace_w)" },
     { "note": "Chin: 0 knockdowns absorbed and 0 KO/TKO losses in 24 UFC fights. His only loss is a DQ (illegal elbows vs Matt Hamill, 2009) and his UFC 214 win over Cormier was overturned to a no contest after a failed drug test.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/5ab286735ccee803" },
     { "note": "Takedown defense: opponents landed 2 of 40 career attempts (95%). He controls about 213 s per 15 min career and 200 s per 15 min decayed.", "source": "data/derived/fighters.json" },
-    { "note": "Decayed sums cover only 17.7 minutes, almost all from the Miocic fight (96 of 119 significant strikes, 40 of 46 on the ground), so decayed accuracy (73%) is well above career (63%). Shrink toward career numbers and the heavyweight prior, and apply a layoff discount for no fight since Nov 2024.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/b35e47f2f58ef026" },
+    { "note": "Decayed sums cover only 17.7 minutes, almost all from the Miocic fight (96 of 119 significant strikes, 40 of 46 on the ground), so decayed significant-strike accuracy (71%) is well above career (59%). Shrink toward career numbers and the heavyweight prior, and apply a layoff discount for no fight since Nov 2024.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/b35e47f2f58ef026" },
     { "note": "Power: 6 knockdowns in 24 UFC fights, 0.79 per 100 significant head strikes landed career. His finishes come more from accumulation, elbows and chokes than one-shot power: 6 KO/TKO, 6 submissions, 10 decisions.", "source": "data/derived/fighters.json" }
   ],
   "confidence": "low"

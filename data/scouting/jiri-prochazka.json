@@ -9,7 +9,7 @@
     "active": true,
     "next_fight": "Navajo Stirling, UFC Fight Night 294 (UFC Qatar), Nov 21, 2026, ABHA Arena, Doha (light heavyweight, 5 rounds, main event)",
     "injuries": [
-      { "what": "shoulder injury that made him vacate the light heavyweight title", "when": "2022-11", "source": "https://www.cbssports.com/mma/news/ufc-light-heavyweight-champion-jamahal-hill-vacates-title-after-suffering-achilles-injury" }
+      { "what": "shoulder injury that made him vacate the light heavyweight title (historical; he returned at UFC 295 in Nov 2023 per fighters.json, and no current injury is reported)", "when": "2022-11", "source": "https://www.cbssports.com/mma/news/ufc-light-heavyweight-champion-jamahal-hill-vacates-title-after-suffering-achilles-injury" }
     ],
     "sources": [
       "https://www.espn.com/mma/story/_/id/50059407/jiri-prochazka-fight-navajo-stirling-ufc-fight-night-qatar",
@@ -90,7 +90,7 @@
     ]
   },
   "engine_notes": [
-    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.64, 2.24, 1.10, 0.35 (minute-weighted; few round-5 minutes, all from the Teixeira fight). Output peaks in rounds 2-3, matching his third-round finishes of Hill and Rountree.", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.64, 2.24, 1.10, 0.35 (minute-weighted; rounds 3-5 come only from the Teixeira fight, the one five-rounder of his that passed round 2). Output peaks in rounds 2-3, which fits his third-round finishes of Hill and Rountree in three-round fights.", "source": "data/derived/fighters.json (pace, pace_w)" },
     { "note": "Chin: 4 knockdowns absorbed and 3 KO/TKO losses in 9 UFC fights; 1.5 knockdowns absorbed per 100 head strikes taken (decayed), against a light heavyweight league rate of 1.3 (fighters.json priors). Power: 1.4 knockdowns per 100 head strikes landed (decayed), with 5 KO/TKO wins.", "source": "data/derived/fighters.json" },
     { "note": "High-variance exchanges: 5.5 landed and 5.7 absorbed per minute (decayed); opponents land 52% of their significant strikes on him.", "source": "data/derived/fighters.json" },
     { "note": "Comebacks: he trailed Rountree 20-18 on all three cards entering round 3 at UFC 320 before stopping him at 3:04 of round 3.", "source": "https://www.thescore.com/mma/news/3361094" },

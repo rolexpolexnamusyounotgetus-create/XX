@@ -2,7 +2,7 @@
 
 As of 2026-11-06. He/him. Southpaw, 6 ft 2 in, 74 in reach, born 1991-08-25 (age 35). UFC record 14-5, 1 NC (ufcstats). Nickname "Rocky". Former UFC welterweight champion.
 
-**Research limits.** This pass had no web access: the shared search budget was used up, and en.wikipedia.org and www.ufc.com are blocked in this session. Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. Bookings, rankings, injuries, retirement plans and appearance details are unverified.
+**Research limits.** Neither the research pass nor the fact-check pass (2026-11-06) had web access (search budget used up; key sites blocked). Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. The fact-check re-derived every date, method, score and per-fight number from data/raw, and all match. Bookings, rankings, injuries, retirement plans and appearance details are unverified.
 
 ## Current status
 
@@ -15,7 +15,7 @@ As of 2026-11-06. He/him. Southpaw, 6 ft 2 in, 74 in reach, born 1991-08-25 (age
 | Date | Opponent | Result | How |
 |---|---|---|---|
 | 2025-11-15 | Carlos Prates | L KO R2 1:28 | Took Prates down 2/3 with 3:00 control in R1, then was dropped and stopped by a punch at distance. Out-landed 21-12 |
-| 2025-03-22 | Sean Brady | L SUB R4 1:39 | Won R1 standing (20 landed, 12/12 in the clinch), then controlled 11:10 and choked from mount |
+| 2025-03-22 | Sean Brady | L SUB R4 1:39 | Out-landed Brady 20-19 in R1 (12/12 in the clinch), then was taken down, controlled 11:10 in all and choked from mount |
 | 2024-07-27 | Belal Muhammad | L UD (title) | Muhammad landed 9/13 takedowns and controlled 12:02 |
 | 2023-12-16 | Colby Covington | W UD 49-46 x3 (title) | 22/25 leg strikes; Covington 2/10 on takedowns |
 | 2023-03-18 | Kamaru Usman | W MD (title) | 120-87 significant; 50/53 to the legs, 36/39 to the body |
@@ -44,7 +44,7 @@ A long southpaw kickboxer who scores at range and picks his shots. He throws onl
 
 ## What the numbers in fighters.json say
 
-Elo 1710, sixth among active welterweights. Decayed: 2.46 significant landed and 2.81 absorbed per minute (a negative differential), and 292 s controlled per 15 minutes. Target split of landed strikes: 47% head, 26% body, 27% legs, the most leg-and-body-heavy of this group. The model should give him a precise, low-volume kicking game whose main risk is wrestling, plus a decline adjustment for age and recent form.
+Elo 1710, sixth among welterweights who have fought since November 2024. Decayed: 2.46 significant landed and 2.81 absorbed per minute (a negative differential), and 292 s controlled per 15 minutes. Target split of landed strikes: 47% head, 26% body, 27% legs, the most leg-and-body-heavy of this group. The model should give him a precise, low-volume kicking game whose main risk is wrestling, plus a decline adjustment for age and recent form.
 
 ## Sources
 

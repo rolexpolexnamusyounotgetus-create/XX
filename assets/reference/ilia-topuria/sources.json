@@ -20,5 +20,38 @@
     "use": "embed-ok",
     "what": "headshot",
     "note": "Ilia Topuria at the Orbeliani Palace"
+  },
+  {
+    "file": "espn-headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/4350812.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4350812",
+    "author": "ESPN / UFC (unknown photographer)",
+    "license": "All rights reserved (ESPN)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "headshot",
+    "note": "ESPN athlete headshot, transparent background, date unknown"
+  },
+  {
+    "file": "espn-stance-left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/4350812.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4350812",
+    "author": "ESPN / UFC (unknown photographer)",
+    "license": "All rights reserved (ESPN)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "note": "ESPN full-body fight-stance cutout, date unknown"
+  },
+  {
+    "file": "espn-stance-right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/4350812.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4350812",
+    "author": "ESPN / UFC (unknown photographer)",
+    "license": "All rights reserved (ESPN)",
+    "date_taken": null,
+    "use": "reference-only",
+    "what": "body",
+    "note": "ESPN full-body fight-stance cutout, date unknown"
   }
 ]

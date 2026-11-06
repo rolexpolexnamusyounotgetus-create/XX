@@ -8,7 +8,7 @@
 ## Recent fights
 - **L Pimblett, UFC 329 (Jul 2026), D'Arce / Peruvian-necktie choke in round 1 at 0:52.** He threw a high kick and shot. Pimblett sprawled and choked him unconscious.
 - **W Dan Hooker, UFC 325 (Jan 31, 2026), TKO in round 2 at 4:45 by punches from mount.** He landed 97 of 127 significant strikes, 67 of them on the ground, with 6:14 of control.
-- **W Beneil Dariush, UFC 322 (Nov 2025), KO in 16 seconds** with a left hand after Dariush's calf kick had briefly dropped him.
+- **W Beneil Dariush, UFC 322 (Nov 2025), KO in 16 seconds** with a left hand after Dariush's calf kick had briefly put him down (UFC Stats scored no knockdown for Dariush).
 - **W Mauricio Ruffy (Sep 2025, rear-naked choke in round 2) and Kyle Prepolec (May 2025, arm triangle in round 2).**
 - **L Renato Moicano (Sep 2024), doctor stoppage after round 2** of a five-round main event. Moicano landed 33 ground strikes.
 - **L Dustin Poirier, UFC 299 (Mar 2024), KO in round 2.** He won round 1 clearly (38-12 in significant strikes, 3:20 of control) and was knocked out early in round 2.

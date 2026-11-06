@@ -3,7 +3,7 @@
   "name": "Sean Brady",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Welterweight contender, UFC 9-2 (ufcstats). Last fought at UFC 328 in Newark (May 9, 2026), beating Joaquin Buckley by unanimous decision (30-25, 30-25, 30-27) with 4 of 10 takedowns and 12:09 of control. That was a rebound from a first-round TKO loss to Michael Morales at UFC 322 (Nov 15, 2025). Nothing after May 9, 2026 is in the ufcstats snapshot (through Oct 31, 2026). This pass had no web access, so no booking, ranking or injury news could be checked.",
+    "summary": "Welterweight contender, UFC 9-2 (ufcstats). Last fought at UFC 328 in Newark (May 9, 2026), beating Joaquin Buckley by unanimous decision (30-25, 30-25, 30-27) with 4 of 10 takedowns and 12:09 of control. That was a rebound from a first-round TKO loss to Michael Morales at UFC 322 (Nov 15, 2025). Nothing after May 9, 2026 is in the ufcstats snapshot (through Oct 31, 2026). This pass had no web access, so no booking, ranking or injury news could be checked. The fact-check pass (2026-11-06) had no web access either (search budget used up; news hosts unresolvable), so status is still unverified.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -61,20 +61,20 @@
   },
   "appearance": {
     "build": "compact, stocky welterweight; 5 ft 10 in with a 72 in reach (ufcstats)",
-    "hair": "short dark brown",
+    "hair": "short dark brown (unverified: recalled from widely published fight photos; no photo or written description checked in this pass)",
     "facial_hair": "unknown",
     "skin": "light",
     "tattoos": "unknown",
     "kit": "unknown",
     "sources": [
-      "http://ufcstats.com/fighter-details/45f7cb591c3ab00b"
+      "http://ufcstats.com/fighter-details/45f7cb591c3ab00b (height and reach only; hair and skin are not from a fetched source)"
     ]
   },
   "engine_notes": [
     { "note": "Takedowns decide his fights: 7.96 attempts and 501 s of control per 15 min decayed (division 3.75 and 167). He landed 0 takedowns in both losses (0/5 Muhammad, 0/1 Morales) and was stopped standing both times. Any knob that lowers his takedown success should raise his KO risk.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/477af74ea3cbba8b" },
     { "note": "Chin: 2 KO/TKO losses in 11 UFC fights, both from punches at distance. 1 knockdown absorbed (Morales); Muhammad stopped him with no knockdown recorded.", "source": "data/derived/fighters.json (ko_losses 2, kd_absorbed 1)" },
     { "note": "Five-round sample is two fights: Burns (W 50-45, 50-45, 49-46) and Edwards (SUB R4). His pace vector (1, 1.24, 0.79, 1.04, 1.48) rests on 5 minutes of round 5. Treat it as noise and use the division prior.", "source": "data/derived/fighters.json (pace_w 10, 10, 10, 6.65, 5)" },
-    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources.", "source": "research pass 2026-11-06" }
+    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources. Fact-check 2026-11-06: every date, method, score and per-fight number in this file was re-derived from data/raw/*.csv and tools/fighter_report.py and matches. The fact-check also had no web access, so status and appearance are still unverified.", "source": "research pass and fact-check 2026-11-06" }
   ],
   "confidence": "medium"
 }

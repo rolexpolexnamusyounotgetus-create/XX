@@ -29,7 +29,7 @@ He is a volume boxer-kickboxer. He lands 6.9 significant strikes per minute care
 
 ## Durability and cardio
 
-In 33 UFC fights he has absorbed 2 knockdowns, both in the last three years (Topuria, Poirier). His career chin rate is 0.13 knockdowns per 100 head strikes absorbed. The 3-year rate is 0.89, close to the league's 0.95, which hints at decline. His cardio is the best of this group: across 19 five-round bouts his landed rate runs 1.33, 1.58, 1.83 and 1.39 times round 1 in rounds 2-5.
+In 33 UFC fights he has absorbed 2 knockdowns, both in the last three years (Topuria, Poirier). His career chin rate is 0.13 knockdowns per 100 head strikes absorbed. The 3-year rate is 0.89, close to the league's 0.95, which hints at decline. His cardio is a strength: across 19 five-round bouts his landed rate runs 1.33, 1.58, 1.83 and 1.39 times round 1 in rounds 2-5.
 
 ## What fighters.json says
 

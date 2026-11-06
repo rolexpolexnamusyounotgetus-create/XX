@@ -46,7 +46,7 @@ No knockdowns absorbed. Cardio is unknown, because he has not had to show it in 
 
 ## What the numbers say
 
-Career: 8.1 significant strikes landed per minute at 69% accuracy, and he absorbs 3.8 per minute. Of his attempts, 77% go to the head, 10% to the body and 13% to the legs. On the ground: 4 of 5 takedowns and about 200 s of control per 15 min. With so few minutes, and the decayed numbers dominated by the short Gane fight, every rate should be shrunk toward the heavyweight prior. Elo 1711.
+Career: 7.6 significant strikes landed per minute at 68% accuracy, and he absorbs 3.6 per minute. Of his attempts, 77% go to the head, 10% to the body and 13% to the legs. On the ground: 4 of 5 takedowns and about 200 s of control per 15 min. With so few minutes, and the decayed numbers dominated by the short Gane fight, every rate should be shrunk toward the heavyweight prior. Elo 1711.
 
 ## Sources
 

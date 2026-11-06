@@ -19,6 +19,13 @@ PyPI could be reached. Poly Haven, ambientCG, quaternius.com, itch.io, cdnjs, js
 mocap.cs.cmu.edu could not, from either Bash or WebFetch. The session's web-search budget ran out partway
 through, so some claims below rest on the searches already made. Each claim carries a confidence label.
 
+> **Fact-check update (same day, later session).** Reachability has changed: at verification time
+> quaternius.com, quaternius.itch.io, polyhaven.com, dl.polyhaven.org, api.polyhaven.com, ambientCG,
+> cdnjs, jsDelivr and unpkg all returned HTTP 200 from Bash (helpx.adobe.com resolved from Bash but not
+> from WebFetch). Statements below that say a host "could not be reached" describe the earlier session
+> only. Sizes in this file use 1 KB = 1,024 bytes, and "MB" is usually KiB/1,000 (so Xbot's 2,930,032 B
+> is listed as "2.86 MB"; it is 2.93 MB decimal or 2.79 MiB). See the **Verification log** at the end.
+
 ## 1. Recommendation (short version)
 
 1. **Fighters: generated MakeHuman bodies (CC0), rigged with MPFB2's `game_engine` skeleton.** These are
@@ -32,14 +39,19 @@ through, so some claims below rest on the searches already made. Each claim carr
    - Body shape is set per fighter at build time (MakeHuman sliders for height, muscle, weight, age and
      proportions). That suits an engine meant to take any two fighters.
 2. **Animation: 40 CC0 fight clips merged into one skeleton-only GLB (`ual_fight_clips.glb`).**
-   - Size: 792 KB with no extensions, or 648 KB with gltfpack.
+   - Size: 792 KB with no extensions, or 648 KB with gltfpack (the gltfpack file *requires*
+     `KHR_mesh_quantization` and `EXT_meshopt_compression`, so it needs the meshopt decoder; r128 handles
+     both).
    - Source: the Quaternius Universal Animation Library and Mesh2Motion clips.
    - Clips include: guard idle, jab, cross, hook and its recovery, front, side and roundhouse kicks, head
      and chest hits, knockback, four deaths/falls, dizzy, hurt idle, tired, lay-to-idle (getting up),
      dodges, strafes, walking backwards, crawl, roll, victory and fist pump.
-   - They play on the MakeHuman fighter through a ~90-line runtime retargeter (`tools/retarget.js`) that
-     matches bones by name. It was checked visually and on the CPU (largest edge stretch 1–2 cm). Your
-     own IK runs after the retargeter on every frame.
+   - They play on the MakeHuman fighter through a 60-line runtime retargeter (`tools/retarget.js`) that
+     matches bones by name. It was checked visually; the renders look plausible. **Correction:** the
+     original "largest edge stretch 1–2 cm" figure came from a check that measured only the glove
+     primitive. Measured on the body (`skin`) primitive, retargeted poses stretch edges by up to 4–11 cm,
+     mostly at `spine_03` (shoulders and armpits) and in the shorts. Of that, 4.5 cm already comes from the
+     A-pose to T-pose reference alone (see section 3). Your own IK runs after the retargeter on every frame.
 3. **Image-based lighting: no file at all.** Use three's `RoomEnvironment`, or better, a small arena
    environment scene: a dark box, a ring of overhead light panels and warm rim strips, fed through
    `PMREMGenerator.fromScene`. The code is in `assets_candidates/tools/env128.html`.
@@ -47,13 +59,15 @@ through, so some claims below rest on the searches already made. Each claim carr
      with r128's `EXRLoader` plus fflate.
 4. **Textures: keep the canvas mat, chain-link fence and padding procedural.**
    - I found no reachable, verifiably CC0 PBR set for canvas, chain-link or vinyl padding.
-   - For skin, use the CC0 MakeHuman skin textures (1k WebP, 28–45 KB each; 30 variants by age,
-     ethnicity and sex).
+   - For skin, use the CC0 MakeHuman skin textures (1k WebP, 28–45 KB each; **20** variants by age,
+     ethnicity and sex, each at 1k and 2k, so 40 files; corrected from "30").
 5. **three.js: upgrade to `three@0.186.1` (r186), shipped as one inlined esbuild bundle.** It is 856 KB
    minified (229 KB gzip) and includes GLTFLoader, MeshoptDecoder, RoomEnvironment, EXR and HDR loaders,
    EffectComposer, RenderPass, UnrealBloomPass, OutputPass and SkeletonUtils.
    - Verified: it loads and renders the retargeted fighter in Chrome.
-   - The fallback is an import map pointing at jsDelivr; the URLs are in section 6.
+   - The fallback is an import map pointing at jsDelivr; the URLs are in section 6. cdnjs (the preferred
+     host for artifacts) now carries `three.js/0.186.1/three.module.min.js` and `three.core.min.js`, but no
+     `examples/jsm` addons, so addons still need jsDelivr or the bundle.
    - Staying on r128 is possible: every asset above was verified there too. But r128 is from April 2021
      and lacks CapsuleGeometry, `OutputPass`, AgX/Neutral tone mapping and KTX2 PMREM.
 
@@ -73,14 +87,14 @@ Embedding budget, if everything is inlined as base64 (+33%):
 
 | Candidate | Licence (where the text is) | Size | Verts / tris | Skeleton | Verdict |
 |---|---|---|---|---|---|
-| **MakeHuman male, MPFB2 `game_engine` rig, `--fighter` kit** (`characters/mpfb_generated/mh_fighter_*.glb`) | Inputs CC0: MPFB2 `LICENSE.md` §C "These assets have been released under CC0 1.0 Universal"; §D on output: "no limitation on what you can do with this combined output" ([MPFB2 LICENSE.md](https://raw.githubusercontent.com/makehumancommunity/mpfb2/6ff1eb358f6c1959ced77e79e6dd2406d9a71f49/LICENSE.md)). Skin texture CC0 ([humanforge LICENSE.ASSETS.md](https://raw.githubusercontent.com/abdulrehman043/humanforge/2226df1f50a04c5a8e1c02ea33780d28337dfbb1/LICENSE.ASSETS.md)). MPFB2 code is GPL-3.0 but only runs as a build tool and is not shipped. High confidence. | 1.20 MB each; 280 KB gltfpack | 18,212 / 33,080 (body 13,380 verts + glove shells) | 53 bones, Unreal-style (list below) | **Use** |
+| **MakeHuman male, MPFB2 `game_engine` rig, `--fighter` kit** (`characters/mpfb_generated/mh_fighter_*.glb`) | Inputs CC0: MPFB2 `LICENSE.md` §C "These assets have been released under CC0 1.0 Universal"; §D on output: "no limitation on what you can do with this combined output" ([MPFB2 LICENSE.md](https://raw.githubusercontent.com/makehumancommunity/mpfb2/6ff1eb358f6c1959ced77e79e6dd2406d9a71f49/LICENSE.md)). Skin texture CC0 ([humanforge LICENSE.ASSETS.md](https://raw.githubusercontent.com/abdulrehman043/humanforge/2226df1f50a04c5a8e1c02ea33780d28337dfbb1/LICENSE.ASSETS.md)). MPFB2 code is GPL-3.0 but only runs as a build tool and is not shipped. High confidence. | 1.20 MB each; 280 KB gltfpack | 18,212 (tall) or 18,210 (stocky) / 33,080. Tall: `skin` 13,862 verts, `shorts` 746, `glove` 3,604 (corrected from "body 13,380") | 53 bones, Unreal-style (list below) | **Use** |
 | Same body without the kit (`mh_male_ge.glb`) | as above | 0.97 MB | 14,517 / 26,756 | 53 | Base for other kits |
-| **Quaternius UAL mannequin**, as shipped by Mesh2Motion (`characters/mesh2motion/model.glb`) | CC0: "The art assets (3d models, rigs, animations) are all licensed under CC0" ([Mesh2Motion README](https://raw.githubusercontent.com/scottpetrovic/mesh2motion-app/4f1316296660f2b9827ff46b4db10fb241ec2147/README.md), [LICENSE-CC0.MD](https://raw.githubusercontent.com/scottpetrovic/mesh2motion-app/4f1316296660f2b9827ff46b4db10fb241ec2147/LICENSE-CC0.MD)). The same mannequin is in Mesh2Motion's `Quaternius-human-packs.blend`, whose `License.txt` says CC0. High confidence. | 519 KB (one 499×500 palette PNG) | 7,399 / 13,757 | 66 bones, Unreal-style plus `_leaf` and `_04_leaf` bones | **Fallback and stylized option.** A wooden-mannequin look with no face; it is the native skeleton of the clips. |
+| **Quaternius UAL mannequin**, as shipped by Mesh2Motion (`characters/mesh2motion/model.glb`) | CC0: "The art assets (3d models, rigs, animations) are all licensed under CC0" ([Mesh2Motion README](https://raw.githubusercontent.com/scottpetrovic/mesh2motion-app/4f1316296660f2b9827ff46b4db10fb241ec2147/README.md), [LICENSE-CC0.MD](https://raw.githubusercontent.com/scottpetrovic/mesh2motion-app/4f1316296660f2b9827ff46b4db10fb241ec2147/LICENSE-CC0.MD)). The same mannequin is in `Quaternius-human-packs.blend` in the separate `Mesh2Motion/mesh2motion-assets` repo; the CC0 `License.txt` is a sibling file in that repo's `CC0-packs/Quaternius/` folder, not inside the .blend. **Caveat:** the README's "all CC0" is not literally true for every Mesh2Motion art asset: `src/lib/RigConfig.ts` marks the `jay`, `sintel` and `bunny` variations (and the fox `cat`) CC-BY and `sophia` "CC-SA 4.0". Variations with no entry, and `base` (attribution "Quaternius"), default to CC0. None of the exceptions were downloaded. High confidence for the files used here. | 519 KB (one 499×500 palette PNG) | 7,399 / 13,757 | 66 bones, Unreal-style plus `_leaf` and `_04_leaf` bones | **Fallback and stylized option.** A wooden-mannequin look with no face; it is the native skeleton of the clips. |
 | `skeleton.glb` (Mesh2Motion) | CC0 (as above) | 18 KB | none | 66 | Use as the retarget source |
 | Mesh2Motion `mannequin-female.glb` | CC0 (as above) | 1.32 MB | 24,037 / 14,244 | 66 | Not needed |
 | Mesh2Motion PSX characters (`psx-05/06/10/15/32.glb`) | CC0: "Characters PSX, Elbolilloduro … CC0" ([source.txt](https://raw.githubusercontent.com/Mesh2Motion/mesh2motion-assets/935cfb82d14223d7631d04ba2bb14e2feb8ca517/CC0-packs/psx-lowpoly/source.txt)). Medium confidence (second-hand). | 322–382 KB | ~750 / ~900 | 66 | Too low-poly |
 | Quaternius Modular Character Outfits, Fantasy (`Male_Peasant.gltf`, `Male_Ranger.gltf` + .bin + PNGs) | CC0 ([License_Standard.txt](https://raw.githubusercontent.com/Mesh2Motion/mesh2motion-assets/935cfb82d14223d7631d04ba2bb14e2feb8ca517/CC0-packs/Quaternius/Modular%20Character%20Outfits%20-%20Fantasy%5BStandard%5D/License_Standard.txt)). High confidence. | 0.7–1.7 MB .bin + 1–14 MB PNGs | 8,855 / 12,894 and 24,873 / 26,982 | 65 bones (same as the mannequin, but `Head` is capitalised and there is no `head_leaf`) | No head: the Readme says "only the head of the model is required" from Universal Base Characters. Clothing doesn't fit MMA. |
-| **Quaternius Universal Base Characters**: six base bodies with a humanoid rig, made to pair with the animation library | CC0 per [quaternius.com](https://quaternius.com/packs/universalbasecharacters.html) and [itch.io](https://quaternius.itch.io/universal-base-characters) (search results; medium confidence) | Standard zip 122 MB (itch.io) | unknown | Likely the same Unreal-style rig: the outfits above share it | **Not downloaded** (host unreachable). The best stylized-realistic CC0 option if someone fetches it by hand. |
+| **Quaternius Universal Base Characters**: six base bodies with a humanoid rig, made to pair with the animation library | CC0: the pack page, fetched directly at verification time, says "License CC0", 6 character models (Superhero, Regular, Teen; male and female), 26 models in total, formats FBX, OBJ, Blend and glTF ([quaternius.com](https://quaternius.com/packs/universalbasecharacters.html)). High confidence. | Standard zip "122 MB": unverified | unknown | Likely the same Unreal-style rig: the outfits above share it | **Not downloaded** (host was unreachable in the first session; it is reachable now). The best stylized-realistic CC0 option; worth fetching next. |
 | humanforge MakeHuman runtime (`body.glb` + `shapes.bin` + `manifest.json`) | Assets CC0, code MIT ([LICENSE.ASSETS.md](https://raw.githubusercontent.com/abdulrehman043/humanforge/2226df1f50a04c5a8e1c02ea33780d28337dfbb1/LICENSE.ASSETS.md)) | 513 KB body (298 KB gz) + 3.6 MB shapes (1.1 MB gz) | 14,517 / 26,756 | 52 bones, Mixamo names (MPFB2 `mixamo` rig) | Custom quantized format with sliders applied at runtime. v0.8.1 is from Oct 21, 2026 and has a single author. Possible later for in-browser body sliders, but too heavy and too new for now. |
 | three.js `Xbot.glb` | **Mixamo, not CC0.** The example page credits "model from mixamo.com" ([webgl_animation_skinning_additive_blending.html](https://raw.githubusercontent.com/mrdoob/three.js/84fde13820dbccbb1f6688f44a20c59c9c740dc9/examples/webgl_animation_skinning_additive_blending.html)). Adobe's FAQ: you can't "distribute the raw character and animation files", while use inside a project is allowed ([Adobe community FAQ, 2022](https://community.adobe.com/t5/mixamo-discussions/mixamo-faq-licensing-royalties-ownership-eula-and-tos/td-p/13234775); not the current terms page; medium confidence). A GLB shipped next to a public page can be downloaded as a raw file, which is a grey area. | 2.86 MB | 28,374 / 49,112 | 67 bones, `mixamorig:*` | Avoid |
 | three.js `Soldier.glb` | Mixamo (same page credit, [webgl_animation_skinning_blending.html](https://raw.githubusercontent.com/mrdoob/three.js/84fde13820dbccbb1f6688f44a20c59c9c740dc9/examples/webgl_animation_skinning_blending.html)) | 2.11 MB | 7,434 / 11,376 | 49 bones, `mixamorig:*`; mesh in centimetres (Y −22..22) | Avoid |
@@ -153,7 +167,9 @@ Settings used:
 | Tall | 1.89 m | muscle 0.85, weight 0.55, height 0.62, age 0.6 |
 
 MakeHuman's age slider puts 25 years at 0.5 and 90 at 1.0, so 0.6 is about 38. That mapping comes from my
-memory of MakeHuman, not something checked here; low confidence.
+memory of MakeHuman, not something checked here; low confidence. (Fact-check: MPFB2's own
+`humanproperties/age.json` defines only the anchors baby 0.0, child 0.1875, young 0.5, old 1.0, with no
+years; the years remain unverified.)
 
 Known rough edges:
 
@@ -161,8 +177,8 @@ Known rough edges:
 - The gloves look like mittens.
 - There is no hair or eyebrows: the MakeHuman system asset pack is hosted on files2.makehumancommunity.org,
   which wasn't tried. humanforge mirrors CC0 hair, but in its own custom format.
-- The skin texture is light. Tint it with `material.color`, or swap in another of the 30 CC0 skin
-  variants (`{young,middleage,old}_{african,asian,caucasian}_{male,female}[2]_{1k,2k}.webp` at
+- The skin texture is light. Tint it with `material.color`, or swap in another of the 20 CC0 skin
+  variants (40 files) (`{young,middleage,old}_{african,asian,caucasian}_{male,female}[2]_{1k,2k}.webp` at
   `https://raw.githubusercontent.com/abdulrehman043/humanforge/2226df1f50a04c5a8e1c02ea33780d28337dfbb1/assets/human/skins/`).
 
 Previews are in `assets_candidates/previews/`:
@@ -176,10 +192,12 @@ Previews are in `assets_candidates/previews/`:
 
 **Source.** The clips come from the Mesh2Motion app repo: `static/assets/human/animations/*.glb`, CC0,
 listed in `static/assets/manifest.json` (generated Oct 31, 2026, 24 fps). Clips tagged `quaternius` are
-from the Quaternius Universal Animation Library. Quaternius lists that library as CC0 with OBJ, FBX and
-glTF downloads ([quaternius.com](https://quaternius.com/packs/universalanimationlibrary.html); a second
-library, UAL2, came out in January 2026, [UAL2](https://quaternius.com/packs/universalanimationlibrary2.html);
-both from search results, medium confidence). The other clips were made by Mesh2Motion.
+from the Quaternius Universal Animation Library. Quaternius lists that library as "License CC0", 120+
+animations, formats FBX, GLB and Blend ([quaternius.com](https://quaternius.com/packs/universalanimationlibrary.html),
+fetched directly at verification time; high confidence). A second library, UAL2 (130+ animations, "melee and
+armed combos", also CC0), exists ([UAL2](https://quaternius.com/packs/universalanimationlibrary2.html)); its
+January 2026 release date is from a search result and was not re-verified. UAL2's melee combos may fill
+some of the gaps listed below. The other clips were made by Mesh2Motion.
 
 **Format.** Each source file is a skeleton-only GLB (about 60 KB) with one clip of 198 channels
 (translation, rotation and scale on 66 bones). Each requires `EXT_meshopt_compression`. r128's
@@ -188,7 +206,13 @@ both from search results, medium confidence). The other clips were made by Mesh2
 **Merged pack.** `animations/ual_fight_clips.glb` holds 40 clips on one skeleton.
 
 - Scale tracks were dropped; translation is kept for `root` and `pelvis` only; keys were resampled.
-- It needs no extensions. 792 KB plain, 648 KB with gltfpack, 715 KB with glTF-Transform meshopt.
+- The plain file needs no extensions (792 KB). The 648 KB gltfpack file requires `KHR_mesh_quantization`
+  and `EXT_meshopt_compression`. It resamples to 30 fps, which lengthens some clips by up to one frame
+  (Punch_Jab 1.042 s to 1.067 s). It also drops the constant `root` tracks and four finger-leaf rotation
+  tracks (2,480 tracks instead of 2,720). Sampled at the same absolute time, it gives the same retargeted
+  pose as the plain file (silhouette mismatch at most 0.21% in headless Chrome r128). The 715 KB glTF-Transform
+  meshopt file has **no skin** (the prune step removed it), so GLTFLoader makes plain `Object3D`s, not `Bone`s.
+  It works as a clip source for `skeleton.glb`, but it can't be the retarget source itself.
 - The merge keeps plain bone names. Duplicate skeletons would be renamed `pelvis_1` and so on by
   GLTFLoader and would break the tracks.
 - CPU check: retargeting from the merged pack gives the same pose as from the single-clip files.
@@ -201,7 +225,8 @@ both from search results, medium confidence). The other clips were made by Mesh2
 | Down and finish | Death_A 4.5, Death_B 1.88, Death_C 2.21, Death_D 2.17 (Q), LayToIdle 1.54 (Q; getting up), Sit_Ground_Idle 2.96, Sitting_Idle 2.04 (Q) |
 | After the fight | Victory 1.63, Victory Fist Pump 2.21, Rest Pose 0.33 |
 
-(Q) = tagged `quaternius` in the Mesh2Motion manifest.
+(Q) = tagged `quaternius` in the Mesh2Motion manifest. **Correction:** Idle_A, Idle_ShakeOff, Crouch_Idle,
+Roll and Walk are also tagged `quaternius` in that manifest but were left unmarked above.
 
 **Missing, so they stay procedural and IK-driven as in v2:** uppercut, elbow, knee, calf kick (use Kick
 Side or Roundhouse low), double-leg and single-leg takedowns, sprawl, clinch, cage work, top and bottom
@@ -218,8 +243,17 @@ Results:
 
 | Check | Largest edge stretch |
 |---|---|
-| Ordinary joint skinning on the fixed MakeHuman body (Blender, upper arm rotated 46°) | 1.3 cm |
-| Retargeted poses: Punch_Jab, Punch_Cross, Kick Roundhouse, Fighting Idle, Death_B (sampled at 45% of the clip) | 1.0–5.6 cm |
+| Ordinary joint skinning on the fixed MakeHuman body (Blender, upper arm rotated 46°) | 1.3 cm (node re-check: 1.4 cm; 86°: 2.3 cm) |
+| ~~Retargeted poses: Punch_Jab, Punch_Cross, Kick Roundhouse, Fighting Idle, Death_B (sampled at 45% of the clip)~~ | ~~1.0–5.6 cm~~: measured only the last SkinnedMesh, the glove shell |
+| **Re-measured** (tall build, per primitive): reference pose alone (`Rest Pose` clip) | body 4.5 cm (upperarm), shorts 2.1 cm |
+| **Re-measured**: the same five clips at 25%, 45% and 65% | body 4.0–10.7 cm (5.7–7.9 cm at 45%), mostly at `spine_03`; shorts 1.8–5.7 cm; gloves 0.3–2.0 cm. 0.5–1.8% of body edges stretch by more than 1 cm |
+
+So retargeted poses stretch the body several times more than a single-bone rotation does; "comparable to
+plain joint skinning" does not hold. Much of it is ordinary linear-blend-skinning stretch at the shoulders
+from the large A-to-T reference rotation. The renders still look acceptable, but check the armpits and the
+shorts border in close-ups. **Usage pitfall:** construct each `Retargeter` while its source skeleton is still
+in rest pose, and give each fighter its own source skeleton. The constructor records the source's current pose
+as "rest", so building one after a mixer has posed the source gives a wrong result.
 
 To layer your own IK, call `rt.update()`, then run the foot-lock and glove-target IK on the target bones.
 
@@ -237,7 +271,7 @@ To layer your own IK, call `rt.update()`, then run the foot-lock and glove-targe
 |---|---|---|---|---|
 | `RoomEnvironment` (`examples/js/environments/RoomEnvironment.js`, 3,425 B in three@0.128.0) | MIT (three.js) | 0 asset bytes | Renders | Neutral and bright; good default |
 | **Arena environment scene** (code in `assets_candidates/tools/env128.html`, `arenaScene()`) | own | 0 | Renders (`ibl_comparison_r128.png`, panel 2) | Moody top light, as in a real octagon. Needs an exposure tweak. **Recommended.** |
-| `@pmndrs/assets@1.7.0` `hdri/studio.exr` / `warehouse.exr` / `hall.exr` (base64 JS modules, decoded here) | CC0-1.0: package `LICENSE`; README says "A selection of Polyhaven HDRIs, resized to 512x512 and converted to EXR with DWAB compression" | 110,735 / 160,000 / 191,590 B (512×256, DWAB) | Decodes with `EXRLoader` + `fflate.min.js` (both in three@0.128.0 `examples/js`) | Ready-made data URIs: `https://registry.npmjs.org/@pmndrs/assets/-/assets-1.7.0.tgz` → `package/hdri/studio.exr.js` |
+| `@pmndrs/assets@1.7.0` `hdri/studio.exr` / `warehouse.exr` / `hall.exr` (base64 JS modules, decoded here) | CC0-1.0: package `LICENSE`; README says "A selection of Polyhaven HDRIs, resized to 512x512 and converted to EXR with DWAB compression" | 110,735 / 160,000 / 191,590 B (512×256, DWAB) | Decodes with `EXRLoader` + `fflate.min.js` (both in three@0.128.0 `examples/js`). About 0.5–0.6% of decoded samples are negative (studio min −13.6, warehouse min −7.3), probably DWAB ringing; clamp to ≥ 0 before PMREM | Ready-made data URIs: `https://registry.npmjs.org/@pmndrs/assets/-/assets-1.7.0.tgz` → `package/hdri/studio.exr.js` |
 | three.js repo `examples/textures/equirectangular/ferndale_studio_04_1k.hdr`, `monochrome_studio_02_1k.hdr` (also `venice_sunset_1k.hdr`, `moonless_golf_1k.hdr`) | Poly Haven originals, CC0 ([polyhaven.com/license](https://polyhaven.com/license)). The folder has no licence file. A sibling README credits `venice_sunset` to Poly Haven CC0 ([hdr-native/README.md](https://raw.githubusercontent.com/mrdoob/three.js/84fde13820dbccbb1f6688f44a20c59c9c740dc9/examples/textures/hdr-native/README.md)). Medium confidence for the two studio files. | 1.40–1.67 MB each | ferndale decoded (1024×512); colour artifacts in the 8-bit RGBE test path; monochrome inconclusive in software GL | Too big to inline |
 | three.js repo `examples/textures/pmrem/studio_small_09_2k.pmrem.ktx2` (also `brown_photostudio_02`, `ballroom`) | CC0: "All source HDRIs are CC0, provided by Poly Haven" ([pmrem/README.md](https://raw.githubusercontent.com/mrdoob/three.js/84fde13820dbccbb1f6688f44a20c59c9c740dc9/examples/textures/pmrem/README.md)) | 1.64 / 1.77 / 1.83 MB | r18x only | Needs `KTX2Loader` and the Basis transcoder WASM worker (`examples/jsm/libs/basis/`). Risky under artifact CSP. Not downloaded. |
 
@@ -256,7 +290,11 @@ To layer your own IK, call `rt.update()`, then run the foot-lock and glove-targe
 - **Skin:** CC0 MakeHuman diffuse textures (above) plus a small procedural pore normal map.
 - **Optional:** if Poly Haven or ambientCG becomes reachable (allow `dl.polyhaven.org` and `ambientcg.com`),
   search for "fabric", "canvas", "leather" and "chainlink" there. No asset IDs were verified here, so none
-  are listed.
+  are listed. **Update:** both hosts are reachable now. ambientCG's licence page says all its assets are CC0
+  ([docs.ambientcg.com/license](https://docs.ambientcg.com/license/)), and Poly Haven's says the same
+  ([polyhaven.com/license](https://polyhaven.com/license)). An ambientCG API search returns 122 "Fabric"
+  and 56 "Leather" results but none for "chainlink" or "ChainlinkFence". No specific asset was judged for
+  fit, so keep chain-link procedural.
 
 ## 6. three.js version: r128 vs r186
 
@@ -268,9 +306,14 @@ Versions and dates, from the npm registry:
 | `0.186.1` | Sep 24, 2026 | **Recommended** |
 | `0.187.0` | Oct 30, 2026 | **Too new** (under two weeks old) |
 
-cdnjs lists three.js up to 0.185.0, with `three.module.js` and `three.webgpu.js`
-([cdnjs](https://cdnjs.com/libraries/three.js); search result, medium confidence). Whether cdnjs carries
-`examples/jsm` addons is unknown, so use jsDelivr or a bundle for the addons.
+**Corrected:** cdnjs lists three.js up to **0.187.0**, and 0.186.1 is there. Each of those versions has 10
+files: `three.module.js`/`.min.js`, `three.core.js`/`.min.js`, `three.webgpu.js`/`.min.js`,
+`three.webgpu.nodes.js`/`.min.js` and `three.tsl.js`/`.min.js`. There are **no `examples/jsm` addons**
+([api.cdnjs.com/libraries/three.js](https://api.cdnjs.com/libraries/three.js?fields=versions),
+[0.186.1 file list](https://api.cdnjs.com/libraries/three.js/0.186.1?fields=files); high confidence). cdnjs's
+`three.module.min.js` (392 KB) still imports `./three.core.js`. jsDelivr also serves an auto-minified
+`build/three.module.min.js` for 0.186.1, although the npm tarball has none. Use jsDelivr or the bundle for the
+addons.
 
 | | r128 (stay) | r186 (upgrade) |
 |---|---|---|
@@ -300,8 +343,71 @@ cdnjs lists three.js up to 0.185.0, with `three.module.js` and `three.webgpu.js`
   far more realistic than v2's capsule rig, but still not game-quality. Quaternius Universal Base
   Characters (CC0, not reachable here) would look better, and its rig appears to match the clips.
 - **Retarget limits.** The retargeter doesn't correct twist or roll differences. Wrists may twist slightly
-  under the gloves.
+  under the gloves. Body edges stretch by up to 4–11 cm in retargeted poses (section 3), and the
+  `Retargeter` must be built while its source is at rest.
 - **Asset sources.** Mesh2Motion records the PSX characters as CC0 second-hand, and humanforge is a new
   single-author project. Neither is used in the recommended set except humanforge's CC0 MakeHuman skin
   JPEG/WebP, whose upstream (the MakeHuman system assets) is CC0 per MakeHuman's 2020 licence change
   ([MakeHuman FAQ](https://static.makehumancommunity.org/oldsite/faq/what_changed_regarding_the_license_in_2020.html)).
+
+## Verification log
+
+Adversarial fact-check, Friday, Nov 6, 2026. Every recommended licence was re-read from its primary source.
+GLBs were re-parsed with an independent Python parser that checks the header magic, the version, the length
+field and the JSON/BIN chunks. Loading was re-tested in node with the **npm** `three@0.128.0` files
+(`GLTFLoader`, `meshopt_decoder.js` "Built from meshoptimizer 0.14", `EXRLoader`, `fflate`), not the
+researcher's copies. Renders were checked in headless Chrome 153 (SwiftShader) driven over CDP. The check
+scripts are in `/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/factcheck_assets/`.
+
+**Files.** All 137 entries in `assets_candidates/manifest.json` exist and match their stated byte counts and
+sha256. Nothing is on disk that isn't listed. These match upstream byte for byte:
+
+- Mesh2Motion `skeleton.glb`, `model.glb`, `punch-jab.glb`, `death-d.glb`, `mannequin-female.glb`;
+- three.js `Xbot.glb`, `Soldier.glb`;
+- humanforge skins `middleage_{caucasian,african}_male_1k.webp`;
+- MPFB2 `LICENSE*.md` and `rig.game_engine.json`;
+- the `@pmndrs/assets@1.7.0` `studio`/`warehouse`/`hall` EXRs (decoded from the tarball's base64 modules);
+- Khronos CesiumMan `LICENSE.md`.
+
+All 41 Mesh2Motion clip GLBs, the three merged packs, all five MakeHuman GLBs, `model.glb` and `skeleton.glb`
+load in node r128 with no non-finite values and no unresolved track targets. Every clip has 66 bones and
+198 channels and requires `EXT_meshopt_compression`.
+
+| # | Claim | Verdict | Evidence / correction |
+|---|---|---|---|
+| 1 | Mesh2Motion art CC0, code MIT | **Corrected** | README (pinned commit) and `LICENSE-CC0.MD`/`LICENSE-MIT.MD` say so, but `src/lib/RigConfig.ts` marks `jay`/`sintel`/`bunny` CC-BY and `sophia` "CC-SA 4.0". Every file used here (model, skeleton, clips, base, mannequin-female, psx) is CC0, either by default or by attribution. High. |
+| 2 | MPFB2 assets CC0, output unrestricted, code GPL-3.0 | Confirmed | `LICENSE.md` §B (GPLv3 code), §C (base mesh, targets, rigs and JSON are CC0), §D (output is "your data"); identical to the local copies. High. |
+| 3 | `game_engine` 53 bones match the 66-bone UAL skeleton except root/Root and the leaves | Confirmed | Rig JSON has 53 keys. Set difference: only `Root` vs `root` plus the 13 `*_leaf` bones. High. |
+| 4 | 18,212 verts / 33,080 tris; 1.2 MB, 286 KB gltfpack; renders in r128 | Confirmed, minor fix | Tall 18,212, stocky 18,210 verts; 1,225,580 / 286,368 B. The gltfpack files need `KHR_mesh_quantization` + `EXT_meshopt_compression`. Chrome r128 renders of plain vs gltfpack under 5 retargeted poses differ in at most 0.07% of silhouette pixels. No separate "gltfpack render" PNG was saved in `previews/`. High. |
+| 5 | Clips need `EXT_meshopt_compression`; r128 meshopt 0.14 decodes all | Confirmed | 41/41 clips list it in `extensionsRequired` and decode in node r128. Chrome r128 also decodes the gltfpack 0.25 output. High. |
+| 6 | Retarget stretch at most about 1–5.6 cm, comparable to plain skinning | **Refuted** | `skin_check.js` keeps only the *last* SkinnedMesh, the glove shell. On the body primitive the same clips give 4.0–10.7 cm, and the reference pose alone 4.5 cm. A single 46° upper-arm rotation gives 1.4 cm. `tools/blend_skin_check.py` lives in `scratchpad/tools/`, not `assets_candidates/tools/`. Medium (metric is max edge elongation; visual quality still acceptable). |
+| 7 | Xbot/Soldier credited to mixamo.com; Mixamo forbids raw-file distribution | Confirmed | Both example pages read "(model from mixamo.com)". The community FAQ (TylerG, Sep 29, 2022; URL now redirects to `community.adobe.com/questions-696/...-589400`) says "the only thing you can't do is distribute the raw character and animation files". Adobe's official FAQ (helpx, last updated Sep 14, 2021) only says royalty-free for personal, commercial and non-profit projects. Neither page is the EULA. Medium. **Mixamo-restricted: Xbot, Soldier, and Michelle (assumed); keep "Avoid".** |
+| 8 | No Ybot at three.js 84fde13 | Confirmed | Tree has `Xbot.glb`, `Xbot.blend`; zero paths match "ybot". High. |
+| 9 | 0.186.1 npm has no min builds; module imports `./three.core.js`; `RGBELoader` is a deprecation shim (r180) | Confirmed | Tarball `build/` has no `*.min.js`. `RGBELoader.js` is 268 B with "// @deprecated, r180". Note: cdnjs and jsDelivr *do* serve minified files. High. |
+| 10 | 0.186.1 published Sep 24, 2026; 0.187.0 Oct 30, 2026 | Confirmed | Registry `time`: 2026-09-24T14:42:21Z and 2026-10-30T08:09:24Z (7 days before today). High. |
+| 11 | r128 `examples/js` has the listed files, no `KTX2Loader` | Confirmed | All 23 listed files present (`RoomEnvironment.js` 3,425 B; `three.min.js` 603,445 B, identical to `vendor/three.min.js`). `EXRLoader` handles `DWAB_COMPRESSION`. `KTX2Loader` exists only under `examples/jsm`. High. |
+| 12 | pmndrs HDRIs CC0 Poly Haven, 512×256 DWAB, sizes, decode in r128 | Confirmed, note | Package `LICENSE` and the npm `license` field are CC0-1.0. EXR headers: 512×256, DWAB, B/G/R. 110,735 and 160,000 B. They decode with the r128 `EXRLoader`, but 0.5–0.6% of samples are negative (clamp them). The README's "512x512" is wrong; the files are 512×256. High. |
+| 13 | emmelleppi/normal-maps has no licence | Confirmed | HEAD is faef0c8 (Feb 9, 2022). No LICENSE/COPYING file (raw `LICENSE` returns 404), and the README never mentions a licence. **Licence unclear: don't use.** High. |
+| 14 | cdnjs lists three.js up to 0.185.0 | **Refuted** | cdnjs API lists up to 0.187.0, including 0.186.1, with `.min.js` builds and no `examples/jsm`. High. |
+| 15 | Quaternius UBC and UAL are CC0 | Confirmed | Both pack pages (fetched directly) show "License CC0" and link CC0 1.0. `mesh2motion-assets` `CC0-packs/Quaternius/License.txt` says CC0. UAL formats are FBX, GLB and Blend, not "OBJ, FBX and glTF". High. |
+
+**Other fixes made in place:**
+
+- reachability note (hosts now reachable);
+- the retargeter is 60 lines, not ~90;
+- 20 skin variants, not 30;
+- per-primitive vertex counts;
+- the missing (Q) tags;
+- gltfpack and meshopt clip-pack caveats;
+- the `Retargeter` rest-pose pitfall;
+- UBC page details (the 122 MB zip size is still unverified);
+- ambientCG and Poly Haven licence pages and search counts;
+- a units note.
+
+**Not re-verified:**
+
+- UAL2's January 2026 date;
+- the build-time slider values in §2c;
+- MakeHuman age-to-years mapping;
+- CMU mocap licence;
+- whether `model/gltf-binary` is accepted as an artifact supporting file.

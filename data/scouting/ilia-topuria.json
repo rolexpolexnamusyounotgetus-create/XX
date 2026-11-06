@@ -40,7 +40,7 @@
       "his only loss came against a puncher who traded with him: Gaethje landed 79 head strikes, his eyes swelled shut, and his corner stopped it after R4",
       "lately absorbs about as much as he lands: 5.31 significant strikes absorbed vs 5.36 landed per minute over the last 3 years (league 4.32)",
       "short reach for lightweight: 69 in at 5 ft 7 in",
-      "after dropping Gaethje with body shots he took him down and hunted submissions, and Gaethje recovered",
+      "after dropping Gaethje with body shots in R2 he followed him to the mat and hunted submissions (per reports; ufcstats logs no takedown or submission attempt in that round), and Gaethje recovered",
       "returns from fractures of both orbital bones and a layoff of at least 6 months; after-effects unknown"
     ],
     "summary": "A pressure boxer with knockout power and a grappling base. He walks opponents down, cuts off the cage and throws combinations to the head and body, and he finished Volkanovski, Holloway and Oliveira inside three rounds each. His first loss came when Gaethje stood and traded and broke both orbital bones. The open questions are how he returns from that injury and how he handles a puncher who will not back up.",
@@ -86,7 +86,7 @@
   "engine_notes": [
     { "note": "Power is elite: 1.15 knockdowns per 15 min career (league 0.39) and 2.33 per 100 significant head strikes landed (league 0.95; 1.77 after shrinkage). He has scored a knockdown in 8 of his 10 UFC fights.", "source": "data/derived/fighters.json; tools/fighter_report.py chin and power table" },
     { "note": "Takedown defense is 95% career (20 of 21 stopped). Gaethje went 0 for 5.", "source": "tools/fighter_report.py rates; data/raw/ufc_fight_stats.csv" },
-    { "note": "Damage swing at UFC Freedom 250: he landed 44 significant strikes in R2 but only 7 in R3 after his eyes swelled. Topuria said he had lost sight in both eyes by the end of R2.", "source": "data/raw/ufc_fight_stats.csv; https://bleacherreport.com/articles/25440894-ilia-topuria-lost-sight-both-eyes-tko-loss-gaethje-ufc-white-house-wants-rematch-fight" },
+    { "note": "Damage swing at UFC Freedom 250: he landed 44 significant strikes in R2 but only 7 in R3 after his eyes swelled. Topuria said he lost sight in both eyes; accounts differ on when (by the end of R2 in one, by R4 in another).", "source": "data/raw/ufc_fight_stats.csv; https://bleacherreport.com/articles/25440894-ilia-topuria-lost-sight-both-eyes-tko-loss-gaethje-ufc-white-house-wants-rematch-fight" },
     { "note": "Chin before 2026: only 1 knockdown absorbed (Jai Herbert, 2022), and no knockdown recorded in the Gaethje loss either. The stoppage was for facial damage, so a durability penalty after the orbital fractures should be a judgment, not a measured chin drop.", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
     { "note": "He stepped away in late 2025 for personal reasons, which led to the interim title fight between Gaethje and Pimblett at UFC 324.", "source": "https://africa.espn.com/mma/ufc/story/_/id/47122547/lightweights-justin-gaethje-paddy-pimblett-scheduled-fight" }
   ],

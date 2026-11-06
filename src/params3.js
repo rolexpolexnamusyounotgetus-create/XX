@@ -64,20 +64,20 @@
     subBotOdds: 0.75,        // conversion odds multiplier for attempts from the bottom (default)
     subStandOdds: 0.9,       // conversion odds multiplier for standing guillotines on stuffed shots (default)
     subBotShare: 0.17,       // share of ground submission attempts thrown from the bottom (baserates: 16% bottom)
-    subStandShare: 0.04,     // share of submission attempts that are standing (guillotine on a shot) (baserates: standing 3.2%)
+    subStandShare: 0.05,     // share of submission attempts that are standing (guillotine on a shot) (baserates: standing 3.2% of finishes; guillotine 17% overall)
     subStam: 0.2,            // defender fatigue: conversion odds x (1 + subStam (1 - S)) (default)
     subHurt: 2.0,            // conversion odds multiplier while the defender is hurt (default)
     subFailLose: 0.22,       // a failed top submission costs the top man position (back to guard / half) this often (default)
     gBotRel: 0.12,           // bottom man's ground strike rate relative to the top man's (default)
 
     // ---------------- strikes ----------------
-    strikeScale: 1.0,        // [selfcal] global strike-attempt scale (absorbs exposure-estimate bias)
-    clinchScale: 1.0,        // [selfcal] clinch strike-rate scale
-    groundScale: 1.0,        // [selfcal] ground strike-rate scale
+    strikeScale: 1.052,        // [selfcal] global strike-attempt scale (absorbs exposure-estimate bias)
+    clinchScale: 1.05,        // [selfcal] clinch strike-rate scale
+    groundScale: 0.8584,        // [selfcal] ground strike-rate scale
     clinchMix: [0.55, 0.33, 0.12],   // clinch target mix head/body/leg (default; leg = knees to the thigh)
     groundTopMix: [0.84, 0.15, 0.01], // top ground-strike target mix (default)
     groundBotMix: [0.6, 0.4, 0.0],    // bottom ground-strike target mix (default)
-    accScale: 1.0,           // [selfcal] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
+    accScale: 0.9507,           // [selfcal] global accuracy odds scale (centers the fatigue / hurt / mobility modifiers on the data)
     botAccOdds: 0.6,         // accuracy odds multiplier for strikes thrown from the bottom (default)
     accHurt: 1.5,            // accuracy odds multiplier against a hurt defender (default)
     accStam: 0.25,            // defender fatigue: odds x (1 + accStam (1 - S_def)) (default)
@@ -88,7 +88,7 @@
     outMob: 0.15,            // output x (1 - outMob (1 - mobility)) (default)
 
     // ---------------- damage, knockdowns, finishes ----------------
-    kdScale: 1.0,            // [selfcal] global knockdown scale on p0 (division KD per landed standing head strike)
+    kdScale: 1.297,            // [selfcal] global knockdown scale on p0 (division KD per landed standing head strike)
     kdPos: [1.0, 1.1],       // KD multiplier for distance, clinch head strikes (baserates: clinch 12-13% of KOs on ~10% of landed)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
@@ -113,7 +113,7 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.26,         // [selfcal] P(knockdown is an immediate knockout), x damage and division factors
+    kdInstant: 0.535,         // [selfcal] P(knockdown is an immediate knockout), x damage and division factors
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
     kdPounce: 0.72,          // P(attacker follows him down) after a knockdown that isn't a KO (default)
@@ -121,7 +121,7 @@
     kdRecoverStand: 0.45,    // share of recoveries that get back to the feet; the rest recover guard with the attacker on top (default)
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
-    kdRefStop: 0.12,         // [selfcal] P(referee stops it) per landed follow-up head strike, x damage factor
+    kdRefStop: 0.3087,         // [selfcal] P(referee stops it) per landed follow-up head strike, x damage factor
     refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
     stko: 0.006,             // [selfcal] standing TKO hazard per landed standing head strike while hurt, x D/100 (baserates: 0.00049 per standing head overall)
@@ -152,17 +152,17 @@
     tdAttStam: 0.0,          // attacker fatigue: takedown attempts x (1 - tdAttStam (1 - S)); 0 because attempts rise by round in the data (baserates pace curve)
     tdStam: 0.15,            // defender fatigue: takedown success odds x (1 + tdStam (1 - S_def)) (small: baserates TD accuracy falls by round in 5-rounders)
     standStam: 0.3,          // bottom man's fatigue: stand-up hazard x (1 - standStam (1 - S)) (default)
-    tdScale: 1.0,            // [selfcal] takedown attempt rate scale
-    tdOddsScale: 1.0,        // [selfcal] takedown success odds scale
+    tdScale: 1.011,            // [selfcal] takedown attempt rate scale
+    tdOddsScale: 0.909,        // [selfcal] takedown success odds scale
     sweepScale: 1.0,         // [selfcal] sweep / reversal rate scale
-    subAttScale: 1.0,        // [selfcal] submission attempt rate scale
-    subConvScale: 1.0,       // [selfcal] submission conversion odds scale
+    subAttScale: 1.068,        // [selfcal] submission attempt rate scale
+    subConvScale: 0.8728,       // [selfcal] submission conversion odds scale
     gilloScale: 1.0,         // standing guillotine attempts on stuffed shots scale
 
-    // ---------------- fight-night form (sds) ----------------
+    // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------
     form: {
       out: 0.15,      // lognormal sd of each man's output (baserates form: between-fight resid 0.45, form upper bound 0.36, includes matchup effects)
-      vol: 0.60,      // lognormal sd (mean-1) of a shared fight volatility on both men's knockdown odds: wars vs tactical fights (stands in for matchup heterogeneity; baserates finish hazard falls by round)
+      vol: 0.60,      // lognormal sd of a shared fight volatility on both men's knockdown odds: wars vs tactical fights (stands in for matchup heterogeneity; baserates finish hazard falls by round)
       pace: 0.10,     // lognormal sd of a shared fight pace (both men; opponents' outputs correlate 0.43 within a round)
       acc: 0.12,      // logit-normal sd of accuracy (default)
       pow: 0.45,      // lognormal sd of power (v2 0.15; wider spreads finishes toward early rounds: baserates hazard falls R1 -> R3)
@@ -184,11 +184,11 @@
       hurt: 1.0,                              // per hurt/wobble scored (engine-only event; literature 12.5: between a head strike and a KD)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
       sharedSd: 1.1,                          // [selfcal] sd of the round noise shared by the three judges (logits)
-      indSd: 1.0,                             // [selfcal] sd of each judge's own noise (logits)
+      indSd: 1.27,                             // [selfcal] sd of each judge's own noise (logits)
       tasteSd: 0.2,                           // lognormal sd of each judge's fight-level taste for striking / grappling / damage (literature 12.5: 0.15-0.25)
-      t108: 4.5,                              // logit margin a 10-8 needs with a one-knockdown edge (ABC: damage required) [selfcal]
-      t108b: 7.5,                             // logit margin a 10-8 needs with no knockdown edge but 2+ hurts/KDs more [selfcal]
-      t108kd2: 1.5                            // logit margin a 10-8 needs with a two-knockdown edge [selfcal]
+      t108: 3.642,                              // logit margin a 10-8 needs with a one-knockdown edge (ABC: damage required) [selfcal]
+      t108b: 6.642,                             // logit margin a 10-8 needs with no knockdown edge but 2+ hurts/KDs more [selfcal]
+      t108kd2: 0.642                          // logit margin a 10-8 needs with a two-knockdown edge [selfcal]
     },
 
     // ---------------- between rounds ----------------
@@ -199,7 +199,20 @@
     // ---------------- division self-calibration factors ([selfcal]; neutral = 1) ----------------
     // att: strike-attempt scale; kd: knockdown scale; ko: scales kdInstant and kdRefStop odds and the stko / gnpTko hazards;
     // sub: submission conversion odds; ctrl: control target scale; td: takedown attempt scale.
-    div: {}
+    div: {
+      "Flyweight": { att: 0.994, kd: 0.961, ko: 0.549, sub: 1.234, ctrl: 1.004, td: 1.007 },
+      "Bantamweight": { att: 0.997, kd: 0.982, ko: 0.612, sub: 1.132, ctrl: 0.987, td: 1.008 },
+      "Featherweight": { att: 1.001, kd: 1.004, ko: 0.804, sub: 1.094, ctrl: 1, td: 1.006 },
+      "Lightweight": { att: 1.004, kd: 1.006, ko: 1.001, sub: 0.982, ctrl: 1.006, td: 1.003 },
+      "Welterweight": { att: 0.998, kd: 0.998, ko: 1.055, sub: 1.292, ctrl: 1.021, td: 1 },
+      "Middleweight": { att: 1.004, kd: 1.001, ko: 1.699, sub: 1.546, ctrl: 1.035, td: 1.003 },
+      "Light Heavyweight": { att: 1.005, kd: 1.028, ko: 1.385, sub: 1.357, ctrl: 1.043, td: 1 },
+      "Heavyweight": { att: 1.002, kd: 1.025, ko: 1.854, sub: 0.879, ctrl: 1.042, td: 0.995 },
+      "Women's Strawweight": { att: 0.991, kd: 0.95, ko: 1.327, sub: 1.023, ctrl: 1.029, td: 0.99 },
+      "Women's Flyweight": { att: 0.986, kd: 0.963, ko: 2.959, sub: 1.139, ctrl: 1.051, td: 0.984 },
+      "Women's Bantamweight": { att: 0.982, kd: 0.952, ko: 1.815, sub: 1.034, ctrl: 1.052, td: 0.975 },
+      "Women's Featherweight": { att: 0.962, kd: 0.946, ko: 1.132, sub: 1.322, ctrl: 1.229, td: 0.959 }
+    }
   };
   if (typeof module !== "undefined" && module.exports) module.exports = FightParams;
   else root.FightParams = FightParams;

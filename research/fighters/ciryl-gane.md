@@ -28,7 +28,7 @@ A Muay Thai-based striker who fights like a kickboxer in MMA. He circles, switch
 
 ## Strengths
 
-- Leg-kick accuracy of 89% career, and he lands 79% of his body strikes.
+- Leg-strike accuracy of 89% and body-strike accuracy of 77% career.
 - Movement and stance switches make him hard to hit cleanly. The one knockdown he absorbed in 14 fights came against Tuivasa.
 - Out-landed Spivac, Tuivasa, Lewis and Pereira by wide margins.
 - Five-round experience: 9 five-round fights.
@@ -46,7 +46,7 @@ No KO/TKO losses and one knockdown absorbed. His pace in five-round fights runs 
 
 ## What the numbers say
 
-Decayed sums: 9.2 significant attempts and 6.1 landed per minute at 66% accuracy; he absorbs 3.5 per minute, and opponents land 52%. Of his attempts, 60% go to the head, 20% to the body and 20% to the legs. On the ground he lands 0.63 takedowns per 15 min, while opponents control him about 92 s per 15 min. Elo 1755.
+Decayed sums: 8.9 significant attempts and 5.7 landed per minute at 65% accuracy; he absorbs 2.5 per minute, and opponents land 44%. Of his attempts, 60% go to the head, 20% to the body and 20% to the legs. On the ground he lands 0.63 takedowns per 15 min, while opponents control him about 92 s per 15 min. Elo 1755.
 
 ## Sources
 

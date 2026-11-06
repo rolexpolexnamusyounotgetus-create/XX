@@ -76,7 +76,7 @@
   },
   "engine_notes": [
     { "note": "No knockdowns absorbed in 16 UFC fights with round stats (okd 0); his two KO/TKO losses were Volkanovski's ground strikes (2023) and a doctor stoppage for an eye injury after round 2 vs Frankie Edgar (2017).", "source": "data/derived/fighters.json (C sums, record)" },
-    { "note": "Across nine 5-round fights his landed rate by round is 1, 1.01, 0.85, 0.84, 1.19 of round 1: he dips in the middle and rises in round 5 (the Jung KO came at 4:59 of R5).", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "Across nine 5-round fights his landed rate by round is 1, 1.01, 0.85, 0.84, 1.19 of round 1: he dips in the middle and rises in round 5 (the Jung KO came at 4:59 of R5). Rounds 4-5 rest on only three fights (Caceres 2016, Jung 2018, Holloway 2021).", "source": "data/derived/fighters.json (pace, pace_w)" },
     { "note": "Rust risk: about 20 months out by Dec 2026, and his last booking fell through with an injury.", "source": "https://www.cbssports.com/ufc/news/yair-rodriguez-noche-ufc-main-event-injury-withdrawal/" }
   ],
   "confidence": "medium"

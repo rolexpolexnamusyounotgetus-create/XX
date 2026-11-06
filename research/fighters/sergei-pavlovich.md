@@ -23,7 +23,7 @@ As of 2026-11-06. He/him. Southpaw, 6 ft 3 in, 84 in reach, listed 257 lb, born 
 
 ## Style breakdown
 
-A southpaw power puncher who comes forward and throws heavy straight punches and hooks in bunches at the head. His seven UFC knockouts all came in round 1, five inside 2:15, against Lewis, Tuivasa, Blaydes and others. His reach is unusually long for his height, so he can land from outside. After the Aspinall and Volkov losses he became more measured: he wrestled Rozenstruik for a decision and mixed in body and leg strikes against Cortes Acosta.
+A southpaw power puncher who comes forward and throws heavy straight punches and hooks in bunches at the head. His seven UFC knockouts all came in round 1, five of them inside 2:15 (Teixeira, Tuivasa, Lewis, Golm, Greene); Blaydes lasted 3:08. His reach is unusually long for his height, so he can land from outside. After the Aspinall and Volkov losses he became more measured: he wrestled Rozenstruik for a decision and mixed in body and leg strikes against Cortes Acosta.
 
 ## Strengths
 
@@ -45,7 +45,7 @@ One knockdown absorbed in 12 fights, but stopped twice: by Overeem after a taked
 
 ## What the numbers say
 
-Decayed sums: 11.8 significant attempts and 6.3 landed per minute at 53% accuracy. He absorbs 3.3 per minute, and opponents land 42%. His attempts go 88% to the head, 8% to the body and 5% to the legs, while opponents target his legs 20% of the time. Career: 8 knockdowns in 63.4 minutes. Elo 1686, the lowest of this batch.
+Decayed sums: 8.7 significant attempts and 3.8 landed per minute at 44% accuracy. He absorbs 3.2 per minute, and opponents land 42%. His attempts go 88% to the head, 8% to the body and 5% to the legs, while opponents target his legs 20% of the time. Career: 8 knockdowns in 63.4 minutes. Elo 1686, the lowest of this batch.
 
 ## Sources
 

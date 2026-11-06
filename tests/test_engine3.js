@@ -147,9 +147,9 @@ function divTable(div, n) {
 function writeParams(vals, div) {
   let src = fs.readFileSync(PARAMS_SRC, "utf8");
   for (const [k, v] of Object.entries(vals)) {
-    const re = new RegExp("^(\\s*)" + k + ":\\s*[-0-9.eE/ ]+,", "m");
+    const re = new RegExp("^(\\s*)" + k + ":\\s*[-0-9.eE/ ]+?(,?)(\\s*//)", "m");
     if (!re.test(src)) { console.log("  (could not find " + k + " in params3.js)"); continue; }
-    src = src.replace(re, (all, ind) => `${ind}${k}: ${+(+v).toPrecision(4)},`);
+    src = src.replace(re, (all, ind, comma, cm) => `${ind}${k}: ${+(+v).toPrecision(4)}${comma}${cm}`);
   }
   if (div) {
     const body = Object.entries(div).map(([d, o]) => `      ${JSON.stringify(d)}: { ${Object.entries(o).map(([k, v]) => `${k}: ${+v.toFixed(3)}`).join(", ")} }`).join(",\n");

@@ -3,7 +3,7 @@
 *As of 2026-11-06. Orthodox, 6'0", 75-inch reach, born 1999-12-28. Australian, fights out of Luistro Combat Academy in Perth. 13-1 pro, 6-0 in the UFC.*
 
 ## Current status
-**Unbeaten in the UFC and booked for a headliner.** On **Aug 8, 2026** he submitted Mateusz Gamrot with a rear-naked choke at 4:25 of round 1 in the UFC Vegas 120 main event. Reports describe him as the first man to submit Gamrot in the UFC. On **Oct 27, 2026** the UFC announced him against **Benoit Saint Denis** as the five-round main event of UFC Fight Night Sydney at Afterpay Arena on **Feb 7, 2027** (Feb 6 US time). Rankings in early November disagree: he is #6 on ufcalendar.com (Nov 3) and #7 on Home of Fight (Nov 5). He has no reported injuries.
+**Unbeaten in the UFC and booked for a headliner.** On **Aug 8, 2026** he submitted Mateusz Gamrot with a rear-naked choke at 4:25 of round 1 in the UFC Vegas 120 main event. He was the second man to submit Gamrot in the UFC, after Charles Oliveira (rear-naked choke, Oct 11, 2025, per fighters.json). On **Oct 27, 2026** the UFC announced him against **Benoit Saint Denis** as the five-round main event of UFC Fight Night Sydney at Afterpay Arena on **Feb 7, 2027** (Feb 6 US time). Rankings in early November disagree: he is #6 on ufcalendar.com (Nov 3) and #7 on Home of Fight (Nov 5). He has no reported injuries.
 
 ## Recent fights
 - **W Gamrot, Vegas 120 (Aug 2026), RNC in round 1.** He opened with jabs and kicks, took Gamrot down with about two minutes left in the round, defended a leg-lock attempt in a scramble and took the back.

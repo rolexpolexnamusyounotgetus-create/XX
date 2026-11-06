@@ -23,7 +23,7 @@ A southpaw grappler. He spends most of his fight time on top (55% control for hi
 **Durability:** a concern. Four knockdowns absorbed in 13 UFC fights despite little incoming volume; one KO loss and two submission losses that followed knockdowns. **Cardio:** he has fought hard 15-minute grappling fights, but his round-3 landed rate is 0.61 of round 1. That is partly because late rounds become control time. He has never had a scheduled 5-round fight.
 
 ## What the numbers say (fighters.json)
-Elo 1664. 3.12 takedowns per 15 minutes at 36% (career), 1.27 submission attempts per 15. Career takedown defence is 39%, but the decayed figure is 69%. The target split shows heavy body work (landed 57% head, 30% body, 13% legs career). The decayed leg share rises to 21% because of the Silva fight. He is a better fit at 135, where he is the bigger grappler, than he was against power punchers at 145.
+Elo 1664. 3.12 takedowns per 15 minutes at 36% (career), 1.27 submission attempts per 15. Career takedown defence is 38%, but the decayed figure is 68%. The target split shows heavy body work (landed 57% head, 30% body, 13% legs career). The decayed leg share rises to 21% because of the Silva fight. He is a better fit at 135, where he is the bigger grappler, than he was against power punchers at 145.
 
 ## Sources
 - https://cagesidepress.com/2026/06/06/ufc-vegas-118-bryce-mitchell-locks-up-late-sub-on-santiago-luna/

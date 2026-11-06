@@ -2,7 +2,7 @@
 
 As of 2026-11-06. He/him. Orthodox, 5 ft 11 in, 72 in reach, born 1988-07-09 (age 38). UFC record 15-6, 1 NC (ufcstats). Nickname "Remember the Name". Former UFC welterweight champion.
 
-**Research limits.** This pass had no web access: the shared search budget was used up, and en.wikipedia.org and www.ufc.com are blocked in this session. Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. Bookings, rankings, injuries, retirement plans and appearance details are unverified.
+**Research limits.** Neither the research pass nor the fact-check pass (2026-11-06) had web access (search budget used up; key sites blocked). Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. The fact-check re-derived every date, method, score and per-fight number from data/raw, and all match. Bookings, rankings, injuries, retirement plans and appearance details are unverified.
 
 ## Current status
 
@@ -45,7 +45,7 @@ A pressure wrestle-boxer. On the decayed sums he throws 10.2 significant strikes
 
 ## What the numbers in fighters.json say
 
-Elo 1701, seventh among active welterweights. Decayed: 4.11 significant landed and 4.42 absorbed per minute. Over the last 3 years his strike differential is -0.92 per minute (career +0.44). Target split of landed strikes: 78% head, 16% body, 6% legs. His five-round pace curve rests on 25 minutes per round and is one of the better-supported late-surge signals in the dataset. The model should treat him as a volume decision fighter with no knockout threat whose form is declining.
+Elo 1701, seventh among welterweights who have fought since November 2024. Decayed: 4.11 significant landed and 4.42 absorbed per minute. Over the last 3 years his strike differential is -0.92 per minute (career +0.44). Target split of landed strikes: 78% head, 16% body, 6% legs. His five-round pace curve rests on 25 minutes per round and is one of the better-supported late-surge signals in the dataset. The model should treat him as a volume decision fighter with no knockout threat whose form is declining.
 
 ## Sources
 

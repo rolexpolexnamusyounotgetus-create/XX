@@ -92,7 +92,7 @@
     ]
   },
   "engine_notes": [
-    { "note": "Six of ten UFC wins came in round 1 (Nchukwi, Negumereanu, Potieria, Menifield at 0:12, Reyes, Prochazka); no five-round fight has gone past round 1, so there is no late-round pace data (fighters.json pace has only round 1).", "source": "data/derived/fighters.json (recent, pace)" },
+    { "note": "Six of ten UFC wins came in round 1 (Nchukwi, Negumereanu, Potieria, Menifield at 0:12, Reyes, Prochazka); no five-round fight has gone past round 1, so there is no rounds 4-5 pace data (fighters.json pace falls back to his 3-round fights: 1.00, 1.14, 1.05 for rounds 1-3; rounds 4-5 are null).", "source": "data/derived/fighters.json (recent, pace)" },
     { "note": "Power: 2.5 knockdowns per 100 significant head strikes landed (decayed), 2.1 career, against a light heavyweight league rate of 1.3 (fighters.json priors). Chin: one knockdown absorbed in 11 UFC fights, the Nzechukwu KO loss.", "source": "data/derived/fighters.json" },
     { "note": "Highest striking volume of this group: 11.0 significant attempts and 5.9 landed per minute (decayed), absorbing 4.0. Leg strikes absorbed run 1.6 per minute decayed, his most-hit target after the head.", "source": "data/derived/fighters.json" },
     { "note": "Fought most of UFC 327 on a torn ACL and still won; after reconstruction, his movement and kicking leg are unknowns for any 2027 fight.", "source": "https://www.espn.com/mma/story/_/id/48463277/badly-hobbled-ulberg-stuns-prochazka-wild-ko-ufc-327" },

@@ -21,7 +21,7 @@
   "style": {
     "archetype": "kickboxer",
     "stance": "orthodox",
-    "tags": ["rangy", "range-control", "jab", "volume", "leg-kicks", "body-work", "knees", "clinch"],
+    "tags": ["rangy", "range-control", "jab", "volume", "leg-kicks", "body-work", "clinch"],
     "signature": [
       "long jab and straight right behind a 6 ft 7 in frame",
       "low kicks to the lead leg (43 of 44 leg strikes vs Cortes Acosta in May 2026, 32 of 42 vs Pavlovich, 56 of 62 vs Gane in 2021)",
@@ -67,7 +67,7 @@
     "spinning": 0.03,
     "knee": 0.2,
     "elbow": 0.1,
-    "notes": "Each group (head, body, leg) sums to 1. From the decayed sums in fighters.json his significant attempts go 65% head, 19% body, 17% legs (landed 49/26/25), and career attempts 71/16/13, so recent fights show more body and leg work. Body accuracy is 78% and leg accuracy 86% decayed, against 43% to the head. The head group leans on the jab and straight right (0.62 together), which are his range tools at 6 ft 7 in; the head kick (0.12) is a kickboxer's share. In the body group, bodystraight (0.40) stands in for his front kicks and straight punches to the body (the front kick finished Walt Harris), with roundhouse body kicks at 0.45. Leg kicks lean to the rear-leg outside/calf kick (43 of 44 vs Cortes Acosta). Knee 0.20 covers clinch knees and clinch work (8 of 10 clinch strikes vs Kuniev); no spinning finishes are on record. ufcstats does not record technique types, so the within-group splits are judgment. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw (snapshot 2026-10-31)."
+    "notes": "Each group (head, body, leg) sums to 1. From the decayed sums in fighters.json his significant attempts go 65% head, 19% body, 17% legs (landed 49/26/25), and career attempts 71/16/13, so recent fights show more body and leg work. Body accuracy is 78% and leg accuracy 86% decayed, against 43% to the head. The head group leans on the jab and straight right (0.62 together), which are his range tools at 6 ft 7 in; the head kick (0.12) is a kickboxer's share. In the body group, bodystraight (0.40) stands in for his front kicks and straight punches to the body (the front kick finished Walt Harris), with roundhouse body kicks at 0.45. Leg kicks lean to the rear-leg outside/calf kick (43 of 44 vs Cortes Acosta). Knee 0.20 stands in for his clinch work (8 of 10 clinch strikes vs Kuniev; ufcstats does not say whether these were knees or punches, so no 'knees' tag); no spinning finishes are on record. ufcstats does not record technique types, so the within-group splits are judgment. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw (snapshot 2026-10-31)."
   },
   "appearance": {
     "build": "very tall and long (6 ft 7 in, 80 in reach, listed 250 lb per ufcstats); long-limbed rather than bulky",
@@ -85,7 +85,7 @@
     { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.05, 0.94, 0.91, 0.64 (minute-weighted, 7 five-round fights): steady through round 4, then a drop in round 5.", "source": "data/derived/fighters.json (pace, pace_w)" },
     { "note": "Takedown defense 65% decayed and 71% career (opponents 30 of 102). Opponents' control is high: about 166 s per 15 min decayed and 194 s career, mostly from Blaydes (19:52 in 2020) and Almeida (647 s in 2025).", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/0c3622569cd8062a; http://ufcstats.com/fight-details/b42a3386a7dccb3d" },
     { "note": "Chin: 2 knockdowns absorbed and 1 KO/TKO loss (Lewis, 2018) in 20 UFC fights, 0.44 knockdowns absorbed per 100 head strikes taken career.", "source": "data/derived/fighters.json" },
-    { "note": "High volume: 10.2 significant attempts and 6.5 landed per minute decayed, and he absorbs 3.5 per minute. Power per strike is low (0.34 knockdowns per 100 head strikes landed decayed), so his wins come by decision more often than not.", "source": "data/derived/fighters.json" },
+    { "note": "Above-average volume: 8.2 significant attempts and 4.6 landed per minute decayed (heavyweight prior about 7.7 and 3.8), and he absorbs 3.0 per minute. Power per strike is low (0.34 knockdowns per 100 head strikes landed decayed), so his wins come by decision more often than not.", "source": "data/derived/fighters.json" },
     { "note": "91% of his significant attempts come at distance (decayed). He rarely takes opponents down himself: 0.40 takedowns per 15 min decayed.", "source": "data/derived/fighters.json" }
   ],
   "confidence": "medium"

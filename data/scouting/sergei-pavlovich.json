@@ -34,7 +34,7 @@
       "knocked out in 69 seconds by Tom Aspinall in his interim title shot (UFC 295), landing 1 of 7",
       "out-pointed at range by Alexander Volkov's length and leg kicks (46-83 in significant strikes, 32 of 42 leg kicks absorbed)",
       "TKO'd by ground strikes after Alistair Overeem took him down in his 2018 UFC debut",
-      "very head-heavy: 88% of significant attempts go to the head (decayed) at 38% head accuracy, with little leg or body work",
+      "very head-heavy: 88% of significant attempts go to the head (decayed) at 39% head accuracy, with little leg or body work",
       "when the early finish does not come his output is modest: 1.7 to 4.1 significant strikes landed per minute in his three decisions (Volkov, Rozenstruik, Cortes Acosta)"
     ],
     "summary": "A heavy-handed southpaw who walks forward and throws in bunches at the head, aiming to finish in the first round, as he did in all seven of his UFC knockouts. Since the Aspinall loss he has added patience and some wrestling to win decisions, but long, mobile strikers who kick the legs (Volkov) have given him problems.",
@@ -65,7 +65,7 @@
     "spinning": 0.0,
     "knee": 0.03,
     "elbow": 0.03,
-    "notes": "Each group (head, body, leg) sums to 1. From the decayed sums in fighters.json his significant attempts go 88% head, 8% body, 5% legs (landed 77/13/10), and career attempts 90/7/3, so the engine will mostly pick the head group. Inside it, power shots dominate: the rear straight ('cross', his left as a southpaw) 0.32, hook 0.26 and overhand 0.16, because his finishes are punches at distance thrown in flurries; the jab is secondary (0.18) and kicks to the head are near zero (no head-kick finish on record). The body group leans to punches (bodyhook 0.40, bodystraight 0.35) because his kicking volume is low (career 19 leg strike attempts in 12 fights). Leg weights are near neutral (calf 0.55, inside 0.45) on a tiny sample (14 of 15 vs Cortes Acosta). Knee and elbow are token weights: only 2-6% of his attempts come in the clinch or on the ground. ufcstats does not record technique types, so the within-group splits are judgment. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw (snapshot 2026-10-31)."
+    "notes": "Each group (head, body, leg) sums to 1. From the decayed sums in fighters.json his significant attempts go 88% head, 8% body, 5% legs (landed 77/13/10), and career attempts 90/7/3, so the engine will mostly pick the head group. Inside it, power shots dominate: the rear straight ('cross', his left as a southpaw) 0.32, hook 0.26 and overhand 0.16, because his finishes are punches at distance thrown in flurries; the jab is secondary (0.18) and kicks to the head are near zero (no head-kick finish on record). The body group leans to punches (bodyhook 0.40, bodystraight 0.35) because his kicking volume is low (career 19 leg strike attempts in 12 fights). Leg weights are near neutral (calf 0.55, inside 0.45) on a tiny sample (14 of 15 vs Cortes Acosta). Knee and elbow are token weights: only about 6% of his decayed attempts come in the clinch (2%) or on the ground (4%), 13% career. ufcstats does not record technique types, so the within-group splits are judgment. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw (snapshot 2026-10-31)."
   },
   "appearance": {
     "build": "broad and heavy through the chest, shoulders and midsection (6 ft 3 in, listed 257 lb per ufcstats), with very long arms for his height (84 in reach)",
@@ -83,7 +83,7 @@
     { "note": "Front-loaded finishing: all 7 UFC KO/TKO wins in round 1 (average about 1:51). Since Nov 2023 he has gone 3 rounds three times (L Volkov, W Rozenstruik, W Cortes Acosta), landing 25 to 61 significant strikes in 15 minutes, with round-3 output at or above round 1 each time (Cortes Acosta 9/22/30, Volkov 15/15/16, Rozenstruik 11/3/11). No pace data beyond round 1 in 5-round fights; rounds 2-5 should lean on the heavyweight prior.", "source": "data/derived/fighters.json (pace_w); ufcstats per-fight totals" },
     { "note": "Power: 8 knockdowns in 63.4 UFC minutes, 3.4 per 100 significant head strikes landed career (2.7 decayed).", "source": "data/derived/fighters.json" },
     { "note": "Chin: 1 knockdown absorbed and 2 KO/TKO losses (Overeem, ground strikes, 2018; Aspinall, punch, 2023) in 12 UFC fights.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/1c43b38c1f4bdbe2; http://ufcstats.com/fight-details/db49619221b282af" },
-    { "note": "Accuracy is low for a knockout artist: 53% overall and 38% to the head (decayed), while he absorbs 3.3 per minute against 42% opponent accuracy.", "source": "data/derived/fighters.json" },
+    { "note": "Accuracy is low for a knockout artist: 44% of significant strikes overall and 39% to the head (decayed), while he absorbs 3.2 significant strikes per minute against 42% opponent accuracy.", "source": "data/derived/fighters.json" },
     { "note": "Takedown defense 90% decayed but on tiny numbers (opponents 1 of 4 career). He has a 5-round fight booked (UFC 335) with no 5-round minutes past round 1 in his record.", "source": "data/derived/fighters.json; https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335" }
   ],
   "confidence": "medium"

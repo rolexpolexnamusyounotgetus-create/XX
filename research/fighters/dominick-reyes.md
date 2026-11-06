@@ -39,7 +39,7 @@ A rangy southpaw who fights at distance (77% of decayed attempts) and looks for 
 
 ## Durability and cardio
 
-He went five rounds with Jones, and his landed rate in rounds 2-3 of five-round fights ran above round 1 (1.20, 1.29), dipping in round 4 (0.65). His fights tend to end early either way: 12 of 16 UFC bouts ended inside the distance.
+He went five rounds with Jones, and his landed rate in rounds 2-3 of five-round fights ran above round 1 (1.20, 1.29), dipping in round 4 (0.65); rounds 3-5 of that curve come from the Jones fight alone. His fights tend to end early either way: 12 of 16 UFC bouts ended inside the distance.
 
 ## What the numbers say
 

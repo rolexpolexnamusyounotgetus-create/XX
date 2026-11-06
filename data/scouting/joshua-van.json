@@ -3,7 +3,7 @@
   "name": "Joshua Van",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC flyweight champion. Won the belt at UFC 323 (Dec 6, 2025) when Alexandre Pantoja hurt his arm 26 seconds in, retained it with a fifth-round TKO of Tatsuro Taira at UFC 328 (May 9, 2026), then beat Pantoja by unanimous decision in the UFC 331 rematch (Sep 19, 2026; 49-46, 49-47, 50-45), a fight outlets called a Fight of the Year contender. UFC record 11-1. Next: title defence against Manel Kape headlining UFC 336 in Toronto (Jan 30, 2027).",
+    "summary": "UFC flyweight champion. Won the belt at UFC 323 (Dec 6, 2025) when Alexandre Pantoja hurt his arm 26 seconds in, retained it with a fifth-round TKO of Tatsuro Taira at UFC 328 (May 9, 2026), then beat Pantoja by unanimous decision in the UFC 331 rematch (Sep 19, 2026; 49-46, 48-47, 50-45 per ufcstats), a fight outlets called a Fight of the Year contender. UFC record 11-1. Next: title defence against Manel Kape headlining UFC 336 in Toronto (Jan 30, 2027).",
     "title": "UFC flyweight champion",
     "ranking": "Champion (UFC flyweight rankings, Nov 3, 2026, as listed by ufcrankings.org and ufcalendar.com); pound-for-pound position not verified",
     "active": true,
@@ -32,7 +32,7 @@
     "tags": ["volume", "pressure", "power", "body-work", "takedown-defense", "get-ups", "cardio", "late-surge", "slow-starter", "wild-exchanges"],
     "signature": [
       "high-volume, head-first boxing combinations (8.0 significant strikes landed per minute, decayed)",
-      "right hand: dropped Taira late in round 2 at UFC 328",
+      "right hand: dropped Taira late in round 2 at UFC 328 (ufcstats also credits him a second knockdown in round 3)",
       "body shot to set up the finish: hurt Taira to the body at the start of round 5, then finished with a combination",
       "standing his ground and beating opponents to the punch in exchanges (Royval, UFC 317)",
       "caught a Pantoja head kick and dumped him (UFC 323 finish)"
@@ -77,7 +77,7 @@
     "notes": "Groups follow his target split in fighters.json: decayed significant attempts 84% head, 11% body, 4% legs (career 83/12/5); landed 77% head, 16% body, 7% legs, against a flyweight prior of about 77/14/9 attempted. So within the head group, straight punches and hooks dominate, with uppercuts at 0.12 (the Johnson loss and his own inside exchanges show both men trading uppercuts) and head kicks near zero. Body work is punches rather than kicks (AgentMMA notes heavy body work; the UFC 328 finish began with a body shot), hence bodyhook and bodystraight over bodykick. Leg strikes are rare (1 of 2 vs Taira, 6 of 7 vs Pantoja at UFC 331), and the calf vs inside split is a judgment, not sourced. About 89% of his decayed attempts come at distance, so knees and elbows stay minimal. Sources: data/derived/fighters.json sums, data/raw ufcstats per-fight stats, ESPN and Bloody Elbow UFC 328 recaps."
   },
   "appearance": {
-    "build": "small, compact flyweight: 5 ft 5 in with a 65 in reach (ufcstats), short-limbed, the shortest reach of this group",
+    "build": "small, compact flyweight: 5 ft 5 in with a 65 in reach (ufcstats), reach equal to his height and about 3 in shorter than the flyweight roster average of 67.8 in (fighters.json)",
     "hair": "dark; current style not verified in this pass",
     "facial_hair": "unknown",
     "skin": "light-medium",
@@ -91,7 +91,7 @@
   "engine_notes": [
     { "note": "Pace in his three 5-round fights rises to 2.75x, 5.79x, 1.56x and 5.73x his round-1 output in rounds 2-5 (fighters.json 'pace'); round 1 is depressed by opponents' early grappling and the 26-second UFC 323 bout, so treat it as a late-surge signal on a small sample.", "source": "data/derived/fighters.json" },
     { "note": "Won UFC 331 despite giving up 9:11 of control (Pantoja 5/18 takedowns) and UFC 328 despite 10:38 (Taira 8/21): control time against him has not converted into wins for grapplers.", "source": "data/raw/ufc_fight_stats.csv (ufcstats)" },
-    { "note": "Sherdog's UFC 331 round scoring had all three judges giving round 4 to Pantoja and round 5 to Van.", "source": "https://www.sherdog.com/news/news/UFC-331-Van-vs-Pantoja-2-playbyplay-results-round-scoring-202850" },
+    { "note": "UFC 331 official cards were 49-46, 48-47 and 50-45 for Van (ufcstats): one judge gave him all five rounds even though Pantoja banked 2:25 of control in round 1 and 3:58 in round 4, so judges here rewarded Van's striking volume over grappling control.", "source": "data/raw/ufc_fight_results.csv and ufc_fight_stats.csv (ufcstats)" },
     { "note": "Knockdown power from volume: 8 knockdowns in 170.8 UFC minutes (0.70 per 15 min vs flyweight prior 0.32), including 3 vs Bruno Silva and 2 vs Taira.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" }
   ],
   "confidence": "medium"

@@ -35,12 +35,12 @@
     ],
     "weaknesses": [
       "hittable: opponents landed 63% of their significant strikes on him over the last 3 years (lightweight league 48%)",
-      "5 UFC KO/TKO losses, the latest a first-round KO by Topuria (jab, right hand, left hook) at UFC 317, 2025",
+      "5 UFC KO/TKO losses (one, Holloway in 2015, an injury stoppage), the latest a first-round KO by Topuria (jab, right hand, left hook) at UFC 317, 2025",
       "takedown defense 50% over the last 3 years; Tsarukyan took him down twice and held 8:41 of control in their split decision at UFC 300",
-      "low standing output: 3.6 significant attempts per minute over the last 3 years (league 9.0)",
+      "low striking output: 3.6 significant strike attempts per minute over the last 3 years, ground strikes included (league 9.0)",
       "Michael Bisping (analyst) flagged his habit of walking forward with his chin high"
     ],
-    "summary": "A submission grappler who strikes to get to the mat. He walks forward behind a long jab and right hand, wrestles in the clinch and shoots early, then hunts the back, the guillotine and the anaconda. He finishes from bad positions and scrambles, but he gets hit a lot standing and has been knocked out five times in the UFC.",
+    "summary": "A submission grappler who strikes to get to the mat. He walks forward behind a long jab and right hand, wrestles in the clinch and shoots early, then hunts the back, the guillotine and the anaconda. He finishes from bad positions and scrambles, but he gets hit a lot standing and has lost five UFC fights by KO/TKO (one of them, Holloway in 2015, an injury stoppage).",
     "sources": [
       "http://ufcstats.com/fighter-details/07225ba28ae309b6",
       "https://www.espn.com/mma/ufc/story/_/id/46567043/oliveira-submits-gamrot-storybook-homecoming-ko-loss",
@@ -66,7 +66,7 @@
     "spinning": 0.0,
     "knee": 0.35,
     "elbow": 0.15,
-    "notes": "Target split from the decayed sums in fighters.json: of significant attempts 70% head, 20% body, 11% legs (landed 64/22/14); the lightweight league is 76/15/9. So body weapons (kicks, knees, hooks) sit above the league and leg kicks stay modest. Punches follow his recorded finishes, which are punches at distance (Chandler, Gordon, Lentz) plus the jab and right hand reported in recaps (Cageside on UFC 274). Knee and elbow stand for his clinch work: 18% of landed strikes in the clinch career and 11% decayed, against 9.5% for the league. ufcstats does not record technique, so the kick/knee split inside the body share is a judgment. Spinning: none in his record. His standing output is low (3.6 attempts per minute over 3 years) because he shoots early, so the director should give him less time standing, not lower weights."
+    "notes": "Target split from the decayed sums in fighters.json: of significant attempts 70% head, 20% body, 11% legs (landed 64/22/14); the lightweight league is 76/15/9. So body weapons (kicks, knees, hooks) sit above the league and leg kicks stay modest. Punches follow his recorded finishes, which are punches at distance (Chandler, Gordon, Lentz) plus the jab and right hand reported in recaps (Cageside on UFC 274). Knee and elbow stand for his clinch work: 18% of landed strikes in the clinch career and 11% decayed, against 9.5% for the league. ufcstats does not record technique, so the kick/knee split inside the body share is a judgment. Spinning: none in his record. His striking output is low (3.6 significant attempts per minute over 3 years, ground strikes included) because he shoots early, so the director should give him less time standing, not lower weights."
   },
   "appearance": {
     "build": "tall, lean and long-limbed for lightweight: 5 ft 10 in with a 74 in reach (ufcstats); fought at featherweight until 2016",
@@ -83,7 +83,7 @@
   "engine_notes": [
     { "note": "Submission threat far above the division: 2.6 submission attempts per 15 min career and 2.2 decayed, against 0.40 for the lightweight league; 17 of his 25 UFC wins are submissions.", "source": "data/derived/fighters.json; tools/fighter_report.py rates" },
     { "note": "Takes the fight down often: 5.7 takedown attempts per 15 min at 40% (league 4.3 at 36%), with 485 s of control per 15 min decayed (league 174).", "source": "data/derived/fighters.json; tools/fighter_report.py rates" },
-    { "note": "Defense is the soft spot: opponents land 59% of significant strikes on him decayed and 63% over 3 years (league 48%). Decayed chin is 1.12 knockdowns per 100 significant head strikes absorbed (league 0.95); 6 knockdowns absorbed and 5 KO/TKO losses in 37 UFC fights.", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
+    { "note": "Defense is the soft spot: opponents land 59% of significant strikes on him decayed and 63% over 3 years (league 48%). Decayed chin is 1.12 knockdowns per 100 significant head strikes absorbed (league 0.95); 6 knockdowns absorbed and 5 KO/TKO losses in 37 UFC fights (one of them, Holloway in 2015, an injury stoppage).", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
     { "note": "In five-round fights his landed rate falls to 0.67 and 0.62 of round 1 in rounds 4 and 5, but much of that is time spent controlling: at UFC 326 he held 4:30, 4:40, 4:29, 4:16 and 2:54 of control in rounds 1-5.", "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv" },
     { "note": "Age 37 at the as-of date, with his last KO loss 16 months ago (Topuria, R1).", "source": "data/derived/fighters.json" }
   ],

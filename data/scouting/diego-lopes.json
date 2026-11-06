@@ -25,7 +25,7 @@
   "style": {
     "archetype": "all-rounder",
     "stance": "orthodox",
-    "tags": ["power", "spinning", "elbows", "wild-exchanges", "submissions", "ground-and-pound", "top-control", "durable", "slow-starter"],
+    "tags": ["power", "spinning", "elbows", "wild-exchanges", "submissions", "ground-and-pound", "durable", "slow-starter"],
     "signature": [
       "spinning back elbow (dropped and cut Jean Silva for the R2 stoppage, Sep 2025)",
       "jab into overhand right (dropped Volkanovski late in R2 of UFC 314)",
@@ -37,7 +37,7 @@
     "weaknesses": [
       "out-landed and out-pointed over 25 minutes by Volkanovski twice (158-63 and 98-70 significant strikes)",
       "loose defence: absorbs 4.68 significant strikes per minute with 47% defence (career)",
-      "slow starts: Garcia won round 1 at Freedom 250 and landed 47 significant strikes to Lopes' 24, including 11 of 11 leg strikes",
+      "slow starts: Garcia out-landed him 23-6 in round 1 at Freedom 250 (47-24 over the fight, including 11 of 11 leg strikes)",
       "first fight at lightweight is untested"
     ],
     "summary": "A Brazilian with a dangerous submission game who fights like a power striker: he trades in the pocket, throws spinning elbows and overhand rights, and takes hurt or tired strikers down to finish with ground strikes. His guard is dangerous. He is hittable and gives away early rounds, but he has never been knocked down in the UFC.",
@@ -82,7 +82,7 @@
   "engine_notes": [
     { "note": "Never knocked down in 10 UFC fights (okd 0) and no KO/TKO losses; all three UFC losses are decisions (Evloev, Volkanovski twice).", "source": "data/derived/fighters.json (C sums, record)" },
     { "note": "Power: 6 knockdowns in 117 UFC minutes; 4 of 7 UFC wins by KO/TKO.", "source": "data/derived/fighters.json" },
-    { "note": "In his three 5-round fights his landed rate fell to 0.41 of round 1 by round 5 (pace 1, 1.01, 0.62, 0.91, 0.41). Both title fights were won by Volkanovski in the late rounds, and the round-5 rows include being taken down in the rematch.", "source": "data/derived/fighters.json (pace, pace_w); research/volkanovski.md" },
+    { "note": "In his 5-round fights his landed rate fell to 0.41 of round 1 by round 5 (pace 1, 1.01, 0.62, 0.91, 0.41); rounds 3-5 rest only on the two Volkanovski fights (pace_w 10 minutes each). Both title fights were won by Volkanovski in the late rounds, and the round-5 rows include being taken down in the rematch.", "source": "data/derived/fighters.json (pace, pace_w); research/volkanovski.md" },
     { "note": "Ground strikes are 23% of his landed significant strikes (career), unusually high for a striker; he finishes hurt opponents on the mat.", "source": "data/derived/fighters.json (g_lnd share)" }
   ],
   "confidence": "medium"

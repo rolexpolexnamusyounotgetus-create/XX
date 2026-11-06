@@ -4,9 +4,9 @@ As of 2026-11-06. He/him. Orthodox, 5 ft 7 in, 70 in reach, born 1993-12-07 (age
 
 ## Current status
 
-- **Former champion:** He has held the UFC flyweight title twice. He won it from Deiveson Figueiredo by rear-naked choke at UFC 263 (2021), lost it back at UFC 270, won the interim belt against Kai Kara-France at UFC 277 and won the undisputed belt again at UFC 283 (2023). He lost a split decision to Alexandre Pantoja at UFC 290 (2023).
-- **Last fight:** Split decision over Joseph Morales at Noche UFC in Glendale, Arizona (Sep 12, 2026; 28-29, 30-27, 30-27). It ended a two-fight losing streak. He said afterwards that the dissenting card surprised him.
-- **Next:** Charles Johnson, UFC 335, T-Mobile Arena, Las Vegas, Dec 12, 2026. It will be his third fight of 2026.
+- **Former champion:** Two-time UFC flyweight champion: won the title from Deiveson Figueiredo by rear-naked choke (UFC 263, 2021), lost it back at UFC 270, won the interim belt against Kai Kara-France (UFC 277) and the undisputed belt again at UFC 283 (2023), then lost a split decision to Alexandre Pantoja (UFC 290, 2023).
+- **Last fight:** Split decision over Joseph Morales at Noche UFC, Glendale, Arizona (Sep 12, 2026; 28-29, 30-27, 30-27), ending a two-fight skid. The dissenting card surprised him.
+- **Next:** Charles Johnson, UFC 335, T-Mobile Arena, Las Vegas, Dec 12, 2026 (his third fight of 2026).
 - **Ranking:** #8 in the USA TODAY Sports/MMA Junkie media flyweight rankings (cited Oct 2026). Other lists place him differently.
 - **Injuries:** None reported in the sources found.
 
@@ -15,15 +15,15 @@ As of 2026-11-06. He/him. Orthodox, 5 ft 7 in, 70 in reach, born 1993-12-07 (age
 | Date | Opponent | Result | How |
 |---|---|---|---|
 | 2026-09-12 | Joseph Morales | W SD | Yahoo credited "slick striking and grappling." He went 2 of 2 on takedowns and landed 22 of 26 body strikes. |
-| 2026-02-28 | Lone'er Kavanagh | L UD (48-47, 48-47, 49-46), 5 rds | Kavanagh replaced the injured Asu Almabayev and, per ESPN, hobbled Moreno with leg kicks through the first three rounds. Moreno went 0 of 8 on takedowns. |
-| 2025-12-06 | Tatsuro Taira | L TKO R2 2:24 | ESPN Deportes says Moreno took the initiative in R1 and hunted a submission. Taira took his back in R2 and finished with ground strikes. It was the first stoppage loss of his career, and he protested it. |
+| 2026-02-28 | Lone'er Kavanagh | L UD (48-47, 48-47, 49-46), 5 rds | Injury replacement Kavanagh hobbled him with leg kicks through three rounds (ESPN). Moreno went 0 of 8 on takedowns. |
+| 2025-12-06 | Tatsuro Taira | L TKO R2 2:24 | Moreno took the initiative in R1 and hunted a submission (ESPN Deportes). Taira took his back in R2 and finished with ground strikes: Moreno's first career stoppage loss, which he protested. |
 | 2025-03-29 | Steve Erceg | W UD, 5 rds | Erceg out-landed him 116-89, but Moreno swept the cards 49-46. |
 | 2024-11-02 | Amir Albazi | W UD, 5 rds | 132 to 63 in significant strikes. |
 | 2024-02-24 | Brandon Royval | L SD, 5 rds | Royval threw 510 significant strikes. |
 
 ## Style breakdown
 
-He leads with jab-first boxing at range: 93% of his decayed significant attempts come at distance, 82% go to the head and 12% to the body. He mixes in wrestling, scrambles and back takes when they are there. His biggest wins show the range: a body kick ended Kara-France, and a rear-naked choke won him the title from Figueiredo. He fights at a steady pace and has been 25 minutes many times.
+Jab-first boxing at range: 93% of his decayed significant attempts come at distance, 82% to the head and 12% to the body. He mixes in wrestling, scrambles and back takes when they are there. A body kick ended Kara-France and a rear-naked choke won him the title from Figueiredo. He fights at a steady pace.
 
 ## Strengths
 
@@ -39,11 +39,11 @@ He leads with jab-first boxing at range: 93% of his decayed significant attempts
 
 ## Durability and cardio
 
-He has been knocked down 5 times in UFC fights, 3 of them by Figueiredo at UFC 270, but Taira's TKO is his only UFC stoppage loss in 21 fights. Cardio is a strength: he has gone 25 minutes many times without his volume fading.
+Knocked down 5 times in UFC fights (3 by Figueiredo at UFC 270), but Taira's TKO is his only UFC stoppage loss in 21 fights. Cardio is a strength: his volume holds over 25 minutes.
 
 ## What the numbers say
 
-Elo 1621, 7th among active flyweights in the snapshot. He is 3-3 over his last six fights. His decayed numbers sit close to the division prior (3.99 landed per minute against 3.69; 46% accuracy against 46%). That fits a former champion who is now a gatekeeper. His position share is 15% control for him and 8% against him (decayed).
+Elo 1621, 7th among active flyweights in the snapshot. He is 3-3 over his last six fights. His decayed numbers sit close to the division prior (3.99 landed per minute against 3.69; 46% accuracy against 46%). That fits a former champion turned gatekeeper. Control share: 15% for him, 8% against (decayed).
 
 ## Sources
 
@@ -62,4 +62,4 @@ Elo 1621, 7th among active flyweights in the snapshot. He is 3-3 over his last s
 - https://sports.yahoo.com/articles/brandon-morenos-next-assignment-official-012020474.html
 - data/derived/fighters.json and data/raw (ufcstats snapshot to 2026-10-31); http://ufcstats.com/fighter-details/792be9a24df82ed6
 
-Appearance note: the build comes from ufcstats. Hair and skin tone come from general knowledge of his published photos and were not re-checked here.
+Fact-check (2026-11-06): results, scorecards, strike and takedown figures re-checked against ufcstats; no errors found. The UFC 335 booking and ranking could not be re-checked on the web (search budget spent, sites unreachable). Appearance: build from ufcstats; hair and skin tone from published photos, not re-checked.

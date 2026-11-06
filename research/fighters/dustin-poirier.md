@@ -3,7 +3,7 @@
 *As of 2026-11-06. Southpaw, 5'9", 72-inch reach, born 1989-01-19. UFC record 22-9 (1 NC) in fighters.json; 30-10 (1 NC) as a pro.*
 
 ## Current status
-**Retired.** The former interim UFC lightweight champion retired after his trilogy fight with Max Holloway at UFC 318 in Louisiana on **Jul 19, 2025**, which he lost by unanimous decision (46-49, 46-49, 47-48). In **May 2026** he said on a podcast that he would consider a return for a Diaz fight. A French report on **Jul 22, 2026** was headlined with his "95%" comment about not coming back, and said he and Justin Gaethje had agreed not to fight a trilogy. On **Jun 21, 2026** he was arrested at Atlanta's airport on a public-drunkenness charge and afterwards said publicly that he needed help. He has no fight booked and no ranking.
+**Retired.** The former interim UFC lightweight champion retired after his trilogy fight with Max Holloway at UFC 318 in Louisiana on **Jul 19, 2025**, which he lost by unanimous decision (46-49, 46-49, 47-48). In **May 2026** he said on a podcast that he would consider a return for a Diaz fight. A French report on **Jul 22, 2026** was headlined with a "95%" remark about a possible return (this check could not reopen the article to confirm which way he leaned), and said he and Justin Gaethje had agreed not to fight a trilogy. In **June 2026** he was arrested at Atlanta's airport (CBS News Atlanta, Fox 8) and afterwards said publicly that he needed help. He has no fight booked and no ranking.
 
 ## Recent fights
 - **L Holloway, UFC 318 (Jul 2025), decision.** Holloway outlanded him 198-109, including 64 body strikes. Each man scored one knockdown.

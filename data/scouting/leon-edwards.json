@@ -3,7 +3,7 @@
   "name": "Leon Edwards",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC welterweight champion. He won the title by head-kick KO of Kamaru Usman at UFC 278 (Aug 20, 2022), defended it against Usman (UFC 286, Mar 18, 2023) and Colby Covington (UFC 296, Dec 16, 2023), and lost it to Belal Muhammad at UFC 304 (Jul 27, 2024). He has lost three straight: Muhammad (UD), Sean Brady (guillotine R4, London, Mar 22, 2025) and Carlos Prates (KO R2 1:28, UFC 322, Nov 15, 2025). He has not fought since Nov 15, 2025, about 12 months, according to the ufcstats snapshot (through Oct 31, 2026). This pass had no web access, so no booking, ranking, injury or retirement news could be checked.",
+    "summary": "Former UFC welterweight champion. He won the title by head-kick KO of Kamaru Usman at UFC 278 (Aug 20, 2022), defended it against Usman (UFC 286, Mar 18, 2023) and Colby Covington (UFC 296, Dec 16, 2023), and lost it to Belal Muhammad at UFC 304 (Jul 27, 2024). He has lost three straight: Muhammad (UD), Sean Brady (guillotine R4, London, Mar 22, 2025) and Carlos Prates (KO R2 1:28, UFC 322, Nov 15, 2025). He has not fought since Nov 15, 2025, about 12 months, according to the ufcstats snapshot (through Oct 31, 2026). This pass had no web access, so no booking, ranking, injury or retirement news could be checked. The fact-check pass (2026-11-06) had no web access either (search budget used up; news hosts unresolvable), so status is still unverified.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -61,13 +61,13 @@
   },
   "appearance": {
     "build": "tall and long for welterweight; 6 ft 2 in with a 74 in reach (ufcstats)",
-    "hair": "short, close-cropped dark",
+    "hair": "short, close-cropped dark (unverified: recalled from widely published fight photos; no photo or written description checked in this pass)",
     "facial_hair": "unknown",
     "skin": "dark",
     "tattoos": "unknown",
     "kit": "unknown",
     "sources": [
-      "http://ufcstats.com/fighter-details/f1fac969a1d70b08"
+      "http://ufcstats.com/fighter-details/f1fac969a1d70b08 (height and reach only; hair and skin are not from a fetched source)"
     ]
   },
   "engine_notes": [
@@ -75,7 +75,7 @@
     { "note": "Grappling has become the hole: decayed takedown defense 53.9% (division 64.1%) and 292 s controlled per 15 min (division 167). Usman also controlled him 10:36 at UFC 278 before the head-kick KO.", "source": "data/derived/fighters.json; tools/fighter_report.py per-fight table (UFC 278 control); http://ufcstats.com/fight-details/ec5163539a133f17" },
     { "note": "Chin: 2 knockdowns absorbed in 20 UFC fights (Barberena 2017, Prates 2025) and 1 KO loss (Prates).", "source": "tools/fighter_report.py (snapshot 2026-10-31)" },
     { "note": "Inactivity: last fight 2025-11-15, about 12 months before the as-of date. Status after that is unverified.", "source": "data/derived/fighters.json" },
-    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources.", "source": "research pass 2026-11-06" }
+    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources. Fact-check 2026-11-06: every date, method, score and per-fight number in this file was re-derived from data/raw/*.csv and tools/fighter_report.py and matches. The fact-check also had no web access, so status and appearance are still unverified.", "source": "research pass and fact-check 2026-11-06" }
   ],
   "confidence": "medium"
 }

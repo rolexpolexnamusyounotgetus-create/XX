@@ -7,8 +7,8 @@
 
 ## Recent fights
 - **L Salkilld, UFC Perth (May 2026), TKO in round 1.** He hurt Salkilld early with a jab and completed 2 of 5 takedowns, then was dropped by a right hook and stopped by ground strikes.
-- **L Saint Denis, UFC 322 (Nov 2025), KO in 16 seconds.** His opening calf kick briefly dropped Saint Denis, who answered with a left hand that ended it.
-- **W Renato Moicano, UFC 317 (Jun 2025), unanimous decision (29-28 x3).** He returned from a two-year layoff, was knocked down, then went 5 for 5 on takedowns with 5:53 of control.
+- **L Saint Denis, UFC 322 (Nov 2025), KO in 16 seconds.** His opening calf kick briefly put Saint Denis down (UFC Stats scored no knockdown), and Saint Denis answered with a left hand that ended it.
+- **W Renato Moicano, UFC 317 (Jun 2025), unanimous decision (29-28 x3).** He returned from a 19-month layoff (Dec 2023 to Jun 2025), was knocked down, then went 5 for 5 on takedowns with 5:53 of control.
 - **L Arman Tsarukyan (Dec 2023) and L Charles Oliveira (Jun 2023), both first-round KO/TKOs.**
 - **W Mateusz Gamrot, UFC 280 (Oct 2022), unanimous decision.** He stopped 15 of Gamrot's 19 takedown attempts and outlanded him 59-33.
 

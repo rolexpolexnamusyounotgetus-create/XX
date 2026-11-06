@@ -3,7 +3,7 @@
   "name": "Carlos Prates",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Welterweight contender, 7-1 in the UFC with all seven wins by KO/TKO (ufcstats). Most recently he knocked Jack Della Maddalena down three times and stopped him with elbows to the body in round 3 of a five-round main event in Perth (May 2, 2026). Before that he knocked out Leon Edwards in round 2 at UFC 322 (Nov 15, 2025). The reports cited in the project's Morales and Makhachev scouting files say Islam Makhachev verbally agreed to face him at UFC 336 and then backed out. Prates is now booked against Michael Morales for the interim UFC welterweight title, as the UFC 336 co-main event (Jan 30, 2027, Scotiabank Arena, Toronto). Those reports were not re-fetched in this pass (no web access).",
+    "summary": "Welterweight contender, 7-1 in the UFC with all seven wins by KO/TKO (ufcstats). Most recently he knocked Jack Della Maddalena down three times and stopped him with elbows to the body in round 3 of a five-round main event in Perth (May 2, 2026). Before that he knocked out Leon Edwards in round 2 at UFC 322 (Nov 15, 2025). The reports cited in the project's Morales and Makhachev scouting files say Islam Makhachev verbally agreed to face him at UFC 336 and then backed out. Prates is now booked against Michael Morales for the interim UFC welterweight title, as the UFC 336 co-main event (Jan 30, 2027, Scotiabank Arena, Toronto). Those reports were not re-fetched in this pass (no web access). The fact-check pass (2026-11-06) could not fetch them either (heavy.com and bloodyelbow.com unresolvable), but the booking is consistent across michael-morales.json, islam-makhachev.json and ian-machado-garry.json, and with the slug of the Al Jazeera Oct 31, 2026 report cited there.",
     "title": null,
     "ranking": null,
     "active": true,
@@ -68,21 +68,21 @@
   },
   "appearance": {
     "build": "tall and very long-armed for welterweight; 6 ft 1 in with a 78 in reach (ufcstats)",
-    "hair": "short dark",
+    "hair": "dark; length and style not verified (unverified: recalled from widely published fight photos; no photo or written description checked in this pass)",
     "facial_hair": "unknown",
     "skin": "medium",
     "tattoos": "unknown",
     "kit": "unknown",
     "sources": [
-      "http://ufcstats.com/fighter-details/7ee0fd831c0fe7c3"
+      "http://ufcstats.com/fighter-details/7ee0fd831c0fe7c3 (height and reach only; hair and skin are not from a fetched source)"
     ]
   },
   "engine_notes": [
     { "note": "Knockdown power far above the division: 2.32 knockdowns per 15 min and 5.9 per 100 head strikes landed (division 0.84), but from only 77.4 UFC minutes. Shrink toward the prior; the report's empirical-Bayes power estimate exists for this.", "source": "tools/fighter_report.py chin-and-power table (snapshot 2026-10-31)" },
     { "note": "Never knocked down in the UFC: 0 knockdowns absorbed across 182 head strikes absorbed and 77.4 minutes.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)" },
-    { "note": "Five-round sample is the Machado Garry decision (25 min) and the Della Maddalena stoppage (13.3 min). His pace vector (1, 1.74, 2.45, 0.87, 1.59) is noise; use the division prior.", "source": "data/derived/fighters.json (pace_w 14.8, 10, 8.28, 5, 5)" },
+    { "note": "Five-round sample is three scheduled five-rounders: the Magny KO (R1 only, 4.8 min), the Machado Garry decision (25 min) and the Della Maddalena stoppage (13.3 min). His pace vector (1, 1.74, 2.45, 0.87, 1.59) is noise; use the division prior.", "source": "data/derived/fighters.json (pace_w 14.8, 10, 8.28, 5, 5)" },
     { "note": "Opponents try to wrestle him: 7.55 takedown attempts per 15 min, 79.5% defended. Machado Garry went 4/19, and Edwards went 2/3 with 3:00 of control in R1 before being knocked out in R2.", "source": "tools/fighter_report.py; http://ufcstats.com/fight-details/3c60884853766487" },
-    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). The UFC 336 booking comes from sources another agent cited in data/scouting/michael-morales.json and islam-makhachev.json. Ranking, hair/skin descriptions and technique labels have not been checked against outside sources.", "source": "research pass 2026-11-06" }
+    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). The UFC 336 booking comes from sources another agent cited in data/scouting/michael-morales.json and islam-makhachev.json. Ranking, hair/skin descriptions and technique labels have not been checked against outside sources. Fact-check 2026-11-06: every date, method, score and per-fight number in this file was re-derived from data/raw/*.csv and tools/fighter_report.py and matches. The fact-check also had no web access, so status and appearance are still unverified.", "source": "research pass and fact-check 2026-11-06" }
   ],
   "confidence": "medium"
 }
