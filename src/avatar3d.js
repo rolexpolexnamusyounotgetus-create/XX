@@ -931,7 +931,7 @@
         m1[o1 + 1] = cut * side; m1[o1 + 2] = sw * side;
         m2[o1 + 2] = 1;
         // lips (soft): between the lip lines, inside the mouth corners, on the front of the face
-        var lipC = (L.lipTop.y + L.lipBot.y) / 2, lipH = Math.max(0.004, (L.lipTop.y - L.lipBot.y) / 2 + 0.003);
+        var lipC = (L.lipTop.y + L.lipBot.y) / 2 - 0.001, lipH = Math.max(0.0085, (L.lipTop.y - L.lipBot.y) / 2 + 0.006);
         if (p.z > L.lipBot.z - 0.025 && ax < mouthHalf + 0.006) m2[o1 + 3] = (1 - smooth(lipH * 0.55, lipH * 1.25, Math.abs(p.y - lipC))) * (1 - smooth(mouthHalf * 0.75, mouthHalf + 0.004, ax));
       }
       // scalp (shaved or buzzed shading): above the brows, behind the hairline, above the ears' bottoms
@@ -1026,7 +1026,7 @@
           "    vec2 d1 = vDecal.xy, d2 = vDecal.zw; float ink = 0.0;\n" +
           "    if (d1.x > 0.0 && d1.x < 1.0 && d1.y > 0.0 && d1.y < 1.0) ink = max(ink, texture2D(uTattoo, vec2(d1.x * 0.5, d1.y)).r);\n" +
           "    if (d2.x > 0.0 && d2.x < 1.0 && d2.y > 0.0 && d2.y < 1.0) ink = max(ink, texture2D(uTattoo, vec2(0.5 + d2.x * 0.5, d2.y)).r);\n" +
-          "    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.025, 0.035, 0.04), ink * 0.88);\n" +
+          "    diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.16, 0.2, 0.25), clamp(ink, 0.0, 1.0) * 0.86);\n" +
           "  }\n" +
           "}")
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nif (uSpecOn > 0.5) roughnessFactor = 0.64 - 0.3 * texture2D(uSpec, vUv).g;\nroughnessFactor = mix(roughnessFactor, 0.3, uSweat * (1.0 - gBeard)) + 0.3 * gBeard + 0.2 * gScalp;")
@@ -1127,8 +1127,21 @@
       } else if (mk.shape === "cross") {
         ctx.fillRect(236, 30, 40, 196); ctx.fillRect(176, 80, 160, 36);
       } else if (mk.shape === "sleeve") {
-        for (var s = 0; s < 70; s++) { ctx.globalAlpha = 0.55 + 0.45 * ((s * 37) % 10) / 10; ctx.lineWidth = 6 + (s % 5) * 4; ctx.beginPath(); var yy = (s * 53) % 256, xx = (s * 97) % 512; ctx.arc(xx, yy, 14 + (s * 13) % 46, (s % 7), (s % 7) + 2.2 + (s % 3)); ctx.stroke(); }
-        ctx.globalAlpha = 1;
+        // grey-wash sleeve: shaded blobs, a few solid fills and fine line work, drawn at half width because
+        // the 512 px run wraps the whole arm (about twice the length the 256 px rows cover); seeded per slot
+        var seed = 9301 + slot * 4721 + (self.app.slug || "").length * 131;
+        function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+        ctx.save(); ctx.filter = "blur(1.2px)";
+        for (var s = 0; s < 34; s++) {
+          var bx = rnd() * 512, by = rnd() * 256, br = 16 + rnd() * 42, gr = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+          var a0 = 0.35 + rnd() * 0.55; gr.addColorStop(0, "rgba(255,255,255," + a0 + ")"); gr.addColorStop(0.7, "rgba(255,255,255," + (a0 * 0.5) + ")"); gr.addColorStop(1, "rgba(255,255,255,0)");
+          ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(bx, by, br * 0.5, br, rnd() * 3, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 0.95; ctx.fillStyle = "#fff";
+        for (s = 0; s < 6; s++) { ctx.beginPath(); var fx = rnd() * 512, fy = rnd() * 256; ctx.moveTo(fx, fy); for (var k2 = 0; k2 < 5; k2++) ctx.quadraticCurveTo(fx + (rnd() - 0.5) * 60, fy + (rnd() - 0.5) * 110, fx + (rnd() - 0.5) * 50, fy + (rnd() - 0.5) * 100); ctx.closePath(); ctx.fill(); }
+        ctx.filter = "none"; ctx.strokeStyle = "#fff";
+        for (s = 0; s < 40; s++) { ctx.globalAlpha = 0.6 + rnd() * 0.4; ctx.lineWidth = 1.5 + rnd() * 3; ctx.beginPath(); var lx0 = rnd() * 512, ly0 = rnd() * 256; ctx.moveTo(lx0, ly0); ctx.bezierCurveTo(lx0 + (rnd() - 0.5) * 70, ly0 + (rnd() - 0.5) * 120, lx0 + (rnd() - 0.5) * 70, ly0 + (rnd() - 0.5) * 120, lx0 + (rnd() - 0.5) * 60, ly0 + (rnd() - 0.5) * 140); ctx.stroke(); }
+        ctx.restore(); ctx.globalAlpha = 1;
       }
       ctx.restore();
       // projection frame
