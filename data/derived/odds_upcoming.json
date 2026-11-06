@@ -1,14 +1,11 @@
 {
  "meta": {
-  "built": "2026-11-06T10:46:46+00:00",
+  "built": "2026-11-06T10:49:20+00:00",
   "tool": "tools/odds_upcoming.py timeline",
   "snapshots": [
    "data/predictions/odds_snapshot_20261106-0950.json",
-   "data/predictions/odds_snapshot_20261106-0950_2.json",
    "data/predictions/odds_snapshot_20261106-1002.json",
-   "data/predictions/odds_snapshot_20261106-1002_2.json",
-   "data/predictions/odds_snapshot_20261106-1015.json",
-   "data/predictions/odds_snapshot_20261106-1015_2.json"
+   "data/predictions/odds_snapshot_20261106-1015.json"
   ],
   "orientation": "a/b as in the first snapshot that listed the bout (cards_upcoming.json order); p_* = probability that A wins; captures taken with a/b swapped are flipped",
   "market_open": "fightodds.io per-book opening lines (sportsbooks only), Shin no-vig, logit-mean (latest read; market_open_first_read keeps the first)",
@@ -41,24 +38,6 @@
      "p_meandec_mult": 0.809,
      "p_sharp_shin": 0.828,
      "p_pinnacle_shin": 0.81716,
-     "p_exchange_mult": 0.8056,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.7998,
-     "bfo_odds": [
-      -522,
-      376
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8233,
-     "p_meandec_mult": 0.809,
-     "p_sharp_shin": 0.828,
-     "p_pinnacle_shin": 0.81716,
      "p_exchange_mult": 0.8067,
      "n_books": 20,
      "bfo_p_a_novig": 0.7998,
@@ -77,43 +56,7 @@
      "p_meandec_mult": 0.809,
      "p_sharp_shin": 0.828,
      "p_pinnacle_shin": 0.81716,
-     "p_exchange_mult": 0.8056,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.7998,
-     "bfo_odds": [
-      -522,
-      376
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8233,
-     "p_meandec_mult": 0.809,
-     "p_sharp_shin": 0.828,
-     "p_pinnacle_shin": 0.81716,
      "p_exchange_mult": 0.8067,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.7998,
-     "bfo_odds": [
-      -522,
-      376
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8231,
-     "p_meandec_mult": 0.8088,
-     "p_sharp_shin": 0.828,
-     "p_pinnacle_shin": 0.81716,
-     "p_exchange_mult": 0.8056,
      "n_books": 20,
      "bfo_p_a_novig": 0.7998,
      "bfo_odds": [
@@ -190,7 +133,7 @@
     "p_meandec_mult": 0.809,
     "p_sharp_shin": 0.828,
     "p_pinnacle_shin": 0.81716,
-    "p_exchange_mult": 0.8056,
+    "p_exchange_mult": 0.8067,
     "n_books": 20,
     "bfo_p_a_novig": 0.7998,
     "bfo_odds": [
@@ -238,7 +181,7 @@
    },
    "move_open_to_last_pts": 0.0207,
    "move_open_to_last_logit": 0.1361,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:billy-elekana__lucas-fernando",
@@ -261,33 +204,6 @@
      "p_meandec_mult": 0.2669,
      "p_sharp_shin": 0.2525,
      "p_pinnacle_shin": 0.25178,
-     "p_exchange_mult": 0.2609,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2745,
-     "bfo_odds": [
-      246,
-      -323
-     ],
-     "p_distance": 0.4043,
-     "p_method": {
-      "a_ko": 0.0701,
-      "a_sub": 0.089,
-      "a_dec": 0.1094,
-      "b_ko": 0.3414,
-      "b_sub": 0.0948,
-      "b_dec": 0.2863,
-      "draw": 0.0089
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.256,
-     "p_meandec_mult": 0.2669,
-     "p_sharp_shin": 0.2525,
-     "p_pinnacle_shin": 0.25178,
      "p_exchange_mult": 0.259,
      "n_books": 21,
      "bfo_p_a_novig": 0.2745,
@@ -315,61 +231,7 @@
      "p_meandec_mult": 0.2669,
      "p_sharp_shin": 0.2525,
      "p_pinnacle_shin": 0.25178,
-     "p_exchange_mult": 0.2609,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2745,
-     "bfo_odds": [
-      246,
-      -323
-     ],
-     "p_distance": 0.4043,
-     "p_method": {
-      "a_ko": 0.0701,
-      "a_sub": 0.089,
-      "a_dec": 0.1094,
-      "b_ko": 0.3414,
-      "b_sub": 0.0948,
-      "b_dec": 0.2863,
-      "draw": 0.0089
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.256,
-     "p_meandec_mult": 0.2669,
-     "p_sharp_shin": 0.2525,
-     "p_pinnacle_shin": 0.25178,
      "p_exchange_mult": 0.259,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2745,
-     "bfo_odds": [
-      246,
-      -323
-     ],
-     "p_distance": 0.4043,
-     "p_method": {
-      "a_ko": 0.0701,
-      "a_sub": 0.089,
-      "a_dec": 0.1094,
-      "b_ko": 0.3414,
-      "b_sub": 0.0948,
-      "b_dec": 0.2863,
-      "draw": 0.0089
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.256,
-     "p_meandec_mult": 0.2669,
-     "p_sharp_shin": 0.2525,
-     "p_pinnacle_shin": 0.25178,
-     "p_exchange_mult": 0.2609,
      "n_books": 21,
      "bfo_p_a_novig": 0.2745,
      "bfo_odds": [
@@ -464,7 +326,7 @@
     "p_meandec_mult": 0.2669,
     "p_sharp_shin": 0.2525,
     "p_pinnacle_shin": 0.25178,
-    "p_exchange_mult": 0.2609,
+    "p_exchange_mult": 0.259,
     "n_books": 21,
     "bfo_p_a_novig": 0.2745,
     "bfo_odds": [
@@ -539,7 +401,7 @@
    },
    "move_open_to_last_pts": -0.0432,
    "move_open_to_last_logit": -0.2158,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:davey-grant__elijah-smith",
@@ -562,33 +424,6 @@
      "p_meandec_mult": 0.2734,
      "p_sharp_shin": 0.2608,
      "p_pinnacle_shin": 0.25986,
-     "p_exchange_mult": 0.2668,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2773,
-     "bfo_odds": [
-      243,
-      -316
-     ],
-     "p_distance": 0.4282,
-     "p_method": {
-      "a_ko": 0.1062,
-      "a_sub": 0.048,
-      "a_dec": 0.125,
-      "b_ko": 0.2855,
-      "b_sub": 0.1414,
-      "b_dec": 0.2853,
-      "draw": 0.0085
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.2631,
-     "p_meandec_mult": 0.2734,
-     "p_sharp_shin": 0.2608,
-     "p_pinnacle_shin": 0.25986,
      "p_exchange_mult": 0.2669,
      "n_books": 21,
      "bfo_p_a_novig": 0.2773,
@@ -616,61 +451,7 @@
      "p_meandec_mult": 0.2734,
      "p_sharp_shin": 0.2608,
      "p_pinnacle_shin": 0.25986,
-     "p_exchange_mult": 0.2668,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2773,
-     "bfo_odds": [
-      243,
-      -316
-     ],
-     "p_distance": 0.4282,
-     "p_method": {
-      "a_ko": 0.1062,
-      "a_sub": 0.048,
-      "a_dec": 0.125,
-      "b_ko": 0.2855,
-      "b_sub": 0.1414,
-      "b_dec": 0.2853,
-      "draw": 0.0085
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.2631,
-     "p_meandec_mult": 0.2734,
-     "p_sharp_shin": 0.2608,
-     "p_pinnacle_shin": 0.25986,
      "p_exchange_mult": 0.2669,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2773,
-     "bfo_odds": [
-      243,
-      -316
-     ],
-     "p_distance": 0.4282,
-     "p_method": {
-      "a_ko": 0.1062,
-      "a_sub": 0.048,
-      "a_dec": 0.125,
-      "b_ko": 0.2855,
-      "b_sub": 0.1414,
-      "b_dec": 0.2853,
-      "draw": 0.0085
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.2631,
-     "p_meandec_mult": 0.2734,
-     "p_sharp_shin": 0.2608,
-     "p_pinnacle_shin": 0.25986,
-     "p_exchange_mult": 0.2667,
      "n_books": 21,
      "bfo_p_a_novig": 0.2773,
      "bfo_odds": [
@@ -765,7 +546,7 @@
     "p_meandec_mult": 0.2734,
     "p_sharp_shin": 0.2608,
     "p_pinnacle_shin": 0.25986,
-    "p_exchange_mult": 0.2668,
+    "p_exchange_mult": 0.2669,
     "n_books": 21,
     "bfo_p_a_novig": 0.2773,
     "bfo_odds": [
@@ -840,7 +621,7 @@
    },
    "move_open_to_last_pts": -0.0577,
    "move_open_to_last_logit": -0.2798,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:gabriel-lourenco__thomas-petersen",
@@ -863,33 +644,6 @@
      "p_meandec_mult": 0.3966,
      "p_sharp_shin": 0.3867,
      "p_pinnacle_shin": 0.38262,
-     "p_exchange_mult": 0.3877,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.3972,
-     "bfo_odds": [
-      139,
-      -175
-     ],
-     "p_distance": 0.3639,
-     "p_method": {
-      "a_ko": 0.2455,
-      "a_sub": 0.0323,
-      "a_dec": 0.1228,
-      "b_ko": 0.2306,
-      "b_sub": 0.1202,
-      "b_dec": 0.2394,
-      "draw": 0.0091
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3914,
-     "p_meandec_mult": 0.3966,
-     "p_sharp_shin": 0.3867,
-     "p_pinnacle_shin": 0.38262,
      "p_exchange_mult": 0.3875,
      "n_books": 20,
      "bfo_p_a_novig": 0.3972,
@@ -917,61 +671,7 @@
      "p_meandec_mult": 0.3966,
      "p_sharp_shin": 0.3867,
      "p_pinnacle_shin": 0.38262,
-     "p_exchange_mult": 0.3877,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.3972,
-     "bfo_odds": [
-      139,
-      -175
-     ],
-     "p_distance": 0.3639,
-     "p_method": {
-      "a_ko": 0.2455,
-      "a_sub": 0.0323,
-      "a_dec": 0.1228,
-      "b_ko": 0.2306,
-      "b_sub": 0.1202,
-      "b_dec": 0.2394,
-      "draw": 0.0091
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3914,
-     "p_meandec_mult": 0.3966,
-     "p_sharp_shin": 0.3867,
-     "p_pinnacle_shin": 0.38262,
      "p_exchange_mult": 0.3875,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.3972,
-     "bfo_odds": [
-      139,
-      -175
-     ],
-     "p_distance": 0.3639,
-     "p_method": {
-      "a_ko": 0.2455,
-      "a_sub": 0.0323,
-      "a_dec": 0.1228,
-      "b_ko": 0.2306,
-      "b_sub": 0.1202,
-      "b_dec": 0.2394,
-      "draw": 0.0091
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3914,
-     "p_meandec_mult": 0.3966,
-     "p_sharp_shin": 0.3867,
-     "p_pinnacle_shin": 0.38262,
-     "p_exchange_mult": 0.3866,
      "n_books": 20,
      "bfo_p_a_novig": 0.3972,
      "bfo_odds": [
@@ -1066,7 +766,7 @@
     "p_meandec_mult": 0.3966,
     "p_sharp_shin": 0.3867,
     "p_pinnacle_shin": 0.38262,
-    "p_exchange_mult": 0.3877,
+    "p_exchange_mult": 0.3875,
     "n_books": 20,
     "bfo_p_a_novig": 0.3972,
     "bfo_odds": [
@@ -1141,7 +841,7 @@
    },
    "move_open_to_last_pts": -0.0028,
    "move_open_to_last_logit": -0.0117,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:jonny-parsons__jose-souza",
@@ -1164,33 +864,6 @@
      "p_meandec_mult": 0.3288,
      "p_sharp_shin": 0.3189,
      "p_pinnacle_shin": 0.31416,
-     "p_exchange_mult": 0.3203,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.3273,
-     "bfo_odds": [
-      191,
-      -240
-     ],
-     "p_distance": 0.3797,
-     "p_method": {
-      "a_ko": 0.1539,
-      "a_sub": 0.0242,
-      "a_dec": 0.151,
-      "b_ko": 0.3547,
-      "b_sub": 0.0804,
-      "b_dec": 0.227,
-      "draw": 0.0088
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.321,
-     "p_meandec_mult": 0.3288,
-     "p_sharp_shin": 0.3189,
-     "p_pinnacle_shin": 0.31416,
      "p_exchange_mult": 0.3197,
      "n_books": 20,
      "bfo_p_a_novig": 0.3273,
@@ -1218,61 +891,7 @@
      "p_meandec_mult": 0.3288,
      "p_sharp_shin": 0.3189,
      "p_pinnacle_shin": 0.31416,
-     "p_exchange_mult": 0.3203,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.3273,
-     "bfo_odds": [
-      191,
-      -240
-     ],
-     "p_distance": 0.3797,
-     "p_method": {
-      "a_ko": 0.1539,
-      "a_sub": 0.0242,
-      "a_dec": 0.151,
-      "b_ko": 0.3547,
-      "b_sub": 0.0804,
-      "b_dec": 0.227,
-      "draw": 0.0088
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.321,
-     "p_meandec_mult": 0.3288,
-     "p_sharp_shin": 0.3189,
-     "p_pinnacle_shin": 0.31416,
      "p_exchange_mult": 0.3197,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.3273,
-     "bfo_odds": [
-      191,
-      -240
-     ],
-     "p_distance": 0.3797,
-     "p_method": {
-      "a_ko": 0.1539,
-      "a_sub": 0.0242,
-      "a_dec": 0.151,
-      "b_ko": 0.3547,
-      "b_sub": 0.0804,
-      "b_dec": 0.227,
-      "draw": 0.0088
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.321,
-     "p_meandec_mult": 0.3288,
-     "p_sharp_shin": 0.3189,
-     "p_pinnacle_shin": 0.31416,
-     "p_exchange_mult": 0.3198,
      "n_books": 20,
      "bfo_p_a_novig": 0.3273,
      "bfo_odds": [
@@ -1367,7 +986,7 @@
     "p_meandec_mult": 0.3288,
     "p_sharp_shin": 0.3189,
     "p_pinnacle_shin": 0.31416,
-    "p_exchange_mult": 0.3203,
+    "p_exchange_mult": 0.3197,
     "n_books": 20,
     "bfo_p_a_novig": 0.3273,
     "bfo_odds": [
@@ -1442,7 +1061,7 @@
    },
    "move_open_to_last_pts": -0.0525,
    "move_open_to_last_logit": -0.2319,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:jose-delano__murtazali-magomedov",
@@ -1484,89 +1103,8 @@
      }
     },
     {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5179,
-     "p_meandec_mult": 0.517,
-     "p_sharp_shin": 0.5154,
-     "p_pinnacle_shin": 0.51852,
-     "p_exchange_mult": 0.5142,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.517,
-     "bfo_odds": [
-      -119,
-      -103
-     ],
-     "p_distance": 0.4181,
-     "p_method": {
-      "a_ko": 0.1561,
-      "a_sub": 0.1144,
-      "a_dec": 0.2362,
-      "b_ko": 0.1239,
-      "b_sub": 0.1926,
-      "b_dec": 0.1676,
-      "draw": 0.0092
-     }
-    },
-    {
      "snapshot": "20261106-1002",
      "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5173,
-     "p_meandec_mult": 0.5165,
-     "p_sharp_shin": 0.5154,
-     "p_pinnacle_shin": 0.51852,
-     "p_exchange_mult": 0.5142,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.517,
-     "bfo_odds": [
-      -119,
-      -103
-     ],
-     "p_distance": 0.4181,
-     "p_method": {
-      "a_ko": 0.1561,
-      "a_sub": 0.1144,
-      "a_dec": 0.2362,
-      "b_ko": 0.1239,
-      "b_sub": 0.1926,
-      "b_dec": 0.1676,
-      "draw": 0.0092
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5173,
-     "p_meandec_mult": 0.5165,
-     "p_sharp_shin": 0.5154,
-     "p_pinnacle_shin": 0.51852,
-     "p_exchange_mult": 0.5142,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.517,
-     "bfo_odds": [
-      -119,
-      -103
-     ],
-     "p_distance": 0.4181,
-     "p_method": {
-      "a_ko": 0.1561,
-      "a_sub": 0.1144,
-      "a_dec": 0.2362,
-      "b_ko": 0.1239,
-      "b_sub": 0.1926,
-      "b_dec": 0.1676,
-      "draw": 0.0092
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
      "phase": "pre_start",
      "pre_lock": true,
      "p_consensus": 0.5173,
@@ -1743,7 +1281,7 @@
    },
    "move_open_to_last_pts": 0.0071,
    "move_open_to_last_logit": 0.0284,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:karine-silva__gabriella-fernandes",
@@ -1757,33 +1295,6 @@
    "rounds": 3,
    "title": false,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.672,
-     "p_meandec_mult": 0.6645,
-     "p_sharp_shin": 0.6749,
-     "p_pinnacle_shin": 0.67207,
-     "p_exchange_mult": 0.6699,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6569,
-     "bfo_odds": [
-      -224,
-      177
-     ],
-     "p_distance": 0.5702,
-     "p_method": {
-      "a_ko": 0.0829,
-      "a_sub": 0.2314,
-      "a_dec": 0.3449,
-      "b_ko": 0.062,
-      "b_sub": 0.0607,
-      "b_dec": 0.2089,
-      "draw": 0.0091
-     }
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -1820,61 +1331,7 @@
      "p_meandec_mult": 0.6645,
      "p_sharp_shin": 0.6749,
      "p_pinnacle_shin": 0.67207,
-     "p_exchange_mult": 0.67,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6569,
-     "bfo_odds": [
-      -224,
-      177
-     ],
-     "p_distance": 0.5702,
-     "p_method": {
-      "a_ko": 0.0829,
-      "a_sub": 0.2314,
-      "a_dec": 0.3449,
-      "b_ko": 0.062,
-      "b_sub": 0.0607,
-      "b_dec": 0.2089,
-      "draw": 0.0091
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.672,
-     "p_meandec_mult": 0.6645,
-     "p_sharp_shin": 0.6749,
-     "p_pinnacle_shin": 0.67207,
      "p_exchange_mult": 0.6705,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6569,
-     "bfo_odds": [
-      -224,
-      177
-     ],
-     "p_distance": 0.5702,
-     "p_method": {
-      "a_ko": 0.0829,
-      "a_sub": 0.2314,
-      "a_dec": 0.3449,
-      "b_ko": 0.062,
-      "b_sub": 0.0607,
-      "b_dec": 0.2089,
-      "draw": 0.0091
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.672,
-     "p_meandec_mult": 0.6645,
-     "p_sharp_shin": 0.6749,
-     "p_pinnacle_shin": 0.67207,
-     "p_exchange_mult": 0.6699,
      "n_books": 21,
      "bfo_p_a_novig": 0.6569,
      "bfo_odds": [
@@ -1969,7 +1426,7 @@
     "p_meandec_mult": 0.6645,
     "p_sharp_shin": 0.6749,
     "p_pinnacle_shin": 0.67207,
-    "p_exchange_mult": 0.6699,
+    "p_exchange_mult": 0.6704,
     "n_books": 21,
     "bfo_p_a_novig": 0.6569,
     "bfo_odds": [
@@ -2044,7 +1501,7 @@
    },
    "move_open_to_last_pts": 0.0626,
    "move_open_to_last_logit": 0.2725,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:keiichiro-nakamura__ollie-schmid",
@@ -2067,33 +1524,6 @@
      "p_meandec_mult": 0.7455,
      "p_sharp_shin": 0.7637,
      "p_pinnacle_shin": 0.76853,
-     "p_exchange_mult": 0.7551,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.7411,
-     "bfo_odds": [
-      -350,
-      268
-     ],
-     "p_distance": 0.2594,
-     "p_method": {
-      "a_ko": 0.5396,
-      "a_sub": 0.0608,
-      "a_dec": 0.1311,
-      "b_ko": 0.1153,
-      "b_sub": 0.0292,
-      "b_dec": 0.1153,
-      "draw": 0.0087
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.7567,
-     "p_meandec_mult": 0.7455,
-     "p_sharp_shin": 0.7637,
-     "p_pinnacle_shin": 0.76853,
      "p_exchange_mult": 0.7548,
      "n_books": 21,
      "bfo_p_a_novig": 0.7411,
@@ -2121,61 +1551,7 @@
      "p_meandec_mult": 0.7455,
      "p_sharp_shin": 0.7637,
      "p_pinnacle_shin": 0.76853,
-     "p_exchange_mult": 0.7551,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.7411,
-     "bfo_odds": [
-      -350,
-      268
-     ],
-     "p_distance": 0.2594,
-     "p_method": {
-      "a_ko": 0.5396,
-      "a_sub": 0.0608,
-      "a_dec": 0.1311,
-      "b_ko": 0.1153,
-      "b_sub": 0.0292,
-      "b_dec": 0.1153,
-      "draw": 0.0087
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.7567,
-     "p_meandec_mult": 0.7455,
-     "p_sharp_shin": 0.7637,
-     "p_pinnacle_shin": 0.76853,
      "p_exchange_mult": 0.7548,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.7411,
-     "bfo_odds": [
-      -350,
-      268
-     ],
-     "p_distance": 0.2594,
-     "p_method": {
-      "a_ko": 0.5396,
-      "a_sub": 0.0608,
-      "a_dec": 0.1311,
-      "b_ko": 0.1153,
-      "b_sub": 0.0292,
-      "b_dec": 0.1153,
-      "draw": 0.0087
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.7567,
-     "p_meandec_mult": 0.7455,
-     "p_sharp_shin": 0.7637,
-     "p_pinnacle_shin": 0.76853,
-     "p_exchange_mult": 0.7551,
      "n_books": 21,
      "bfo_p_a_novig": 0.7411,
      "bfo_odds": [
@@ -2270,7 +1646,7 @@
     "p_meandec_mult": 0.7455,
     "p_sharp_shin": 0.7637,
     "p_pinnacle_shin": 0.76853,
-    "p_exchange_mult": 0.7551,
+    "p_exchange_mult": 0.7548,
     "n_books": 21,
     "bfo_p_a_novig": 0.7411,
     "bfo_odds": [
@@ -2345,7 +1721,7 @@
    },
    "move_open_to_last_pts": 0.0005,
    "move_open_to_last_logit": 0.0027,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:mantas-kondratavicius__andre-petroski",
@@ -2368,33 +1744,6 @@
      "p_meandec_mult": 0.7191,
      "p_sharp_shin": 0.7257,
      "p_pinnacle_shin": 0.72243,
-     "p_exchange_mult": 0.7209,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.7209,
-     "bfo_odds": [
-      -312,
-      241
-     ],
-     "p_distance": 0.2205,
-     "p_method": {
-      "a_ko": 0.5727,
-      "a_sub": 0.0438,
-      "a_dec": 0.105,
-      "b_ko": 0.0744,
-      "b_sub": 0.0978,
-      "b_dec": 0.0978,
-      "draw": 0.0085
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.7288,
-     "p_meandec_mult": 0.7191,
-     "p_sharp_shin": 0.7257,
-     "p_pinnacle_shin": 0.72243,
      "p_exchange_mult": 0.7212,
      "n_books": 20,
      "bfo_p_a_novig": 0.7209,
@@ -2422,61 +1771,7 @@
      "p_meandec_mult": 0.7191,
      "p_sharp_shin": 0.7257,
      "p_pinnacle_shin": 0.72243,
-     "p_exchange_mult": 0.7209,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.7209,
-     "bfo_odds": [
-      -312,
-      241
-     ],
-     "p_distance": 0.2205,
-     "p_method": {
-      "a_ko": 0.5727,
-      "a_sub": 0.0438,
-      "a_dec": 0.105,
-      "b_ko": 0.0744,
-      "b_sub": 0.0978,
-      "b_dec": 0.0978,
-      "draw": 0.0085
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.7288,
-     "p_meandec_mult": 0.7191,
-     "p_sharp_shin": 0.7257,
-     "p_pinnacle_shin": 0.72243,
      "p_exchange_mult": 0.7212,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.7209,
-     "bfo_odds": [
-      -312,
-      241
-     ],
-     "p_distance": 0.2205,
-     "p_method": {
-      "a_ko": 0.5727,
-      "a_sub": 0.0438,
-      "a_dec": 0.105,
-      "b_ko": 0.0744,
-      "b_sub": 0.0978,
-      "b_dec": 0.0978,
-      "draw": 0.0085
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.7288,
-     "p_meandec_mult": 0.7191,
-     "p_sharp_shin": 0.7257,
-     "p_pinnacle_shin": 0.72243,
-     "p_exchange_mult": 0.7209,
      "n_books": 20,
      "bfo_p_a_novig": 0.7209,
      "bfo_odds": [
@@ -2571,7 +1866,7 @@
     "p_meandec_mult": 0.7191,
     "p_sharp_shin": 0.7257,
     "p_pinnacle_shin": 0.72243,
-    "p_exchange_mult": 0.7209,
+    "p_exchange_mult": 0.7212,
     "n_books": 20,
     "bfo_p_a_novig": 0.7209,
     "bfo_odds": [
@@ -2646,7 +1941,7 @@
    },
    "move_open_to_last_pts": 0.0014,
    "move_open_to_last_logit": 0.0071,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:mitch-raposo__marcos-degli",
@@ -2669,33 +1964,6 @@
      "p_meandec_mult": 0.3266,
      "p_sharp_shin": 0.3152,
      "p_pinnacle_shin": 0.31079,
-     "p_exchange_mult": 0.3176,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.3308,
-     "bfo_odds": [
-      188,
-      -237
-     ],
-     "p_distance": 0.46,
-     "p_method": {
-      "a_ko": 0.1171,
-      "a_sub": 0.0587,
-      "a_dec": 0.1505,
-      "b_ko": 0.2224,
-      "b_sub": 0.1434,
-      "b_dec": 0.299,
-      "draw": 0.0089
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3183,
-     "p_meandec_mult": 0.3266,
-     "p_sharp_shin": 0.3152,
-     "p_pinnacle_shin": 0.31079,
      "p_exchange_mult": 0.3174,
      "n_books": 21,
      "bfo_p_a_novig": 0.3308,
@@ -2723,61 +1991,7 @@
      "p_meandec_mult": 0.3266,
      "p_sharp_shin": 0.3152,
      "p_pinnacle_shin": 0.31079,
-     "p_exchange_mult": 0.3176,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.3308,
-     "bfo_odds": [
-      188,
-      -237
-     ],
-     "p_distance": 0.46,
-     "p_method": {
-      "a_ko": 0.1171,
-      "a_sub": 0.0587,
-      "a_dec": 0.1505,
-      "b_ko": 0.2224,
-      "b_sub": 0.1434,
-      "b_dec": 0.299,
-      "draw": 0.0089
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3183,
-     "p_meandec_mult": 0.3266,
-     "p_sharp_shin": 0.3152,
-     "p_pinnacle_shin": 0.31079,
      "p_exchange_mult": 0.3174,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.3308,
-     "bfo_odds": [
-      188,
-      -237
-     ],
-     "p_distance": 0.46,
-     "p_method": {
-      "a_ko": 0.1171,
-      "a_sub": 0.0587,
-      "a_dec": 0.1505,
-      "b_ko": 0.2224,
-      "b_sub": 0.1434,
-      "b_dec": 0.299,
-      "draw": 0.0089
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3183,
-     "p_meandec_mult": 0.3266,
-     "p_sharp_shin": 0.3152,
-     "p_pinnacle_shin": 0.31079,
-     "p_exchange_mult": 0.3176,
      "n_books": 21,
      "bfo_p_a_novig": 0.3308,
      "bfo_odds": [
@@ -2872,7 +2086,7 @@
     "p_meandec_mult": 0.3266,
     "p_sharp_shin": 0.3152,
     "p_pinnacle_shin": 0.31079,
-    "p_exchange_mult": 0.3176,
+    "p_exchange_mult": 0.3174,
     "n_books": 21,
     "bfo_p_a_novig": 0.3308,
     "bfo_odds": [
@@ -2947,7 +2161,7 @@
    },
    "move_open_to_last_pts": 0.0045,
    "move_open_to_last_logit": 0.0208,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:priscila-cachoeira__nina-milosevic",
@@ -2970,33 +2184,6 @@
      "p_meandec_mult": 0.2022,
      "p_sharp_shin": 0.1843,
      "p_pinnacle_shin": 0.18157,
-     "p_exchange_mult": 0.1894,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2083,
-     "bfo_odds": [
-      356,
-      -501
-     ],
-     "p_distance": 0.225,
-     "p_method": {
-      "a_ko": 0.1202,
-      "a_sub": 0.0241,
-      "a_dec": 0.0598,
-      "b_ko": 0.317,
-      "b_sub": 0.317,
-      "b_dec": 0.1534,
-      "draw": 0.0087
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.188,
-     "p_meandec_mult": 0.2022,
-     "p_sharp_shin": 0.1843,
-     "p_pinnacle_shin": 0.18157,
      "p_exchange_mult": 0.1892,
      "n_books": 21,
      "bfo_p_a_novig": 0.2083,
@@ -3024,61 +2211,7 @@
      "p_meandec_mult": 0.2022,
      "p_sharp_shin": 0.1843,
      "p_pinnacle_shin": 0.18157,
-     "p_exchange_mult": 0.1894,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2083,
-     "bfo_odds": [
-      356,
-      -501
-     ],
-     "p_distance": 0.225,
-     "p_method": {
-      "a_ko": 0.1202,
-      "a_sub": 0.0241,
-      "a_dec": 0.0598,
-      "b_ko": 0.317,
-      "b_sub": 0.317,
-      "b_dec": 0.1534,
-      "draw": 0.0087
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.188,
-     "p_meandec_mult": 0.2022,
-     "p_sharp_shin": 0.1843,
-     "p_pinnacle_shin": 0.18157,
      "p_exchange_mult": 0.1892,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.2083,
-     "bfo_odds": [
-      356,
-      -501
-     ],
-     "p_distance": 0.225,
-     "p_method": {
-      "a_ko": 0.1202,
-      "a_sub": 0.0241,
-      "a_dec": 0.0598,
-      "b_ko": 0.317,
-      "b_sub": 0.317,
-      "b_dec": 0.1534,
-      "draw": 0.0087
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.188,
-     "p_meandec_mult": 0.2022,
-     "p_sharp_shin": 0.1843,
-     "p_pinnacle_shin": 0.18157,
-     "p_exchange_mult": 0.1894,
      "n_books": 21,
      "bfo_p_a_novig": 0.2083,
      "bfo_odds": [
@@ -3173,7 +2306,7 @@
     "p_meandec_mult": 0.2022,
     "p_sharp_shin": 0.1843,
     "p_pinnacle_shin": 0.18157,
-    "p_exchange_mult": 0.1894,
+    "p_exchange_mult": 0.1892,
     "n_books": 21,
     "bfo_p_a_novig": 0.2083,
     "bfo_odds": [
@@ -3248,7 +2381,7 @@
    },
    "move_open_to_last_pts": -0.0177,
    "move_open_to_last_logit": -0.112,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:seokhyeon-ko__wellington-turman",
@@ -3262,33 +2395,6 @@
    "rounds": 3,
    "title": false,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8527,
-     "p_meandec_mult": 0.8373,
-     "p_sharp_shin": 0.8519,
-     "p_pinnacle_shin": 0.84662,
-     "p_exchange_mult": 0.8365,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.8454,
-     "bfo_odds": [
-      -769,
-      518
-     ],
-     "p_distance": 0.4892,
-     "p_method": {
-      "a_ko": 0.3448,
-      "a_sub": 0.109,
-      "a_dec": 0.3843,
-      "b_ko": 0.0311,
-      "b_sub": 0.0382,
-      "b_dec": 0.0839,
-      "draw": 0.0088
-     }
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -3325,61 +2431,7 @@
      "p_meandec_mult": 0.8373,
      "p_sharp_shin": 0.8519,
      "p_pinnacle_shin": 0.84662,
-     "p_exchange_mult": 0.8367,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.8454,
-     "bfo_odds": [
-      -769,
-      518
-     ],
-     "p_distance": 0.4892,
-     "p_method": {
-      "a_ko": 0.3448,
-      "a_sub": 0.109,
-      "a_dec": 0.3843,
-      "b_ko": 0.0311,
-      "b_sub": 0.0382,
-      "b_dec": 0.0839,
-      "draw": 0.0088
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8527,
-     "p_meandec_mult": 0.8373,
-     "p_sharp_shin": 0.8519,
-     "p_pinnacle_shin": 0.84662,
      "p_exchange_mult": 0.836,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.8454,
-     "bfo_odds": [
-      -769,
-      518
-     ],
-     "p_distance": 0.4892,
-     "p_method": {
-      "a_ko": 0.3448,
-      "a_sub": 0.109,
-      "a_dec": 0.3843,
-      "b_ko": 0.0311,
-      "b_sub": 0.0382,
-      "b_dec": 0.0839,
-      "draw": 0.0088
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8527,
-     "p_meandec_mult": 0.8373,
-     "p_sharp_shin": 0.8519,
-     "p_pinnacle_shin": 0.84662,
-     "p_exchange_mult": 0.8367,
      "n_books": 21,
      "bfo_p_a_novig": 0.8454,
      "bfo_odds": [
@@ -3474,7 +2526,7 @@
     "p_meandec_mult": 0.8373,
     "p_sharp_shin": 0.8519,
     "p_pinnacle_shin": 0.84662,
-    "p_exchange_mult": 0.8365,
+    "p_exchange_mult": 0.8359,
     "n_books": 21,
     "bfo_p_a_novig": 0.8454,
     "bfo_odds": [
@@ -3549,7 +2601,7 @@
    },
    "move_open_to_last_pts": 0.0183,
    "move_open_to_last_logit": 0.1388,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:tatiana-suarez__virna-jandiroba",
@@ -3572,33 +2624,6 @@
      "p_meandec_mult": 0.6438,
      "p_sharp_shin": 0.6497,
      "p_pinnacle_shin": 0.64621,
-     "p_exchange_mult": 0.642,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6402,
-     "bfo_odds": [
-      -205,
-      165
-     ],
-     "p_distance": 0.7153,
-     "p_method": {
-      "a_ko": 0.0641,
-      "a_sub": 0.1052,
-      "a_dec": 0.4738,
-      "b_ko": 0.0235,
-      "b_sub": 0.0927,
-      "b_dec": 0.2321,
-      "draw": 0.0086
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6508,
-     "p_meandec_mult": 0.6438,
-     "p_sharp_shin": 0.6497,
-     "p_pinnacle_shin": 0.64621,
      "p_exchange_mult": 0.6422,
      "n_books": 21,
      "bfo_p_a_novig": 0.6402,
@@ -3626,61 +2651,7 @@
      "p_meandec_mult": 0.6438,
      "p_sharp_shin": 0.6497,
      "p_pinnacle_shin": 0.64621,
-     "p_exchange_mult": 0.642,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6402,
-     "bfo_odds": [
-      -205,
-      165
-     ],
-     "p_distance": 0.7153,
-     "p_method": {
-      "a_ko": 0.0641,
-      "a_sub": 0.1052,
-      "a_dec": 0.4738,
-      "b_ko": 0.0235,
-      "b_sub": 0.0927,
-      "b_dec": 0.2321,
-      "draw": 0.0086
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6508,
-     "p_meandec_mult": 0.6438,
-     "p_sharp_shin": 0.6497,
-     "p_pinnacle_shin": 0.64621,
      "p_exchange_mult": 0.6422,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6402,
-     "bfo_odds": [
-      -205,
-      165
-     ],
-     "p_distance": 0.7153,
-     "p_method": {
-      "a_ko": 0.0641,
-      "a_sub": 0.1052,
-      "a_dec": 0.4738,
-      "b_ko": 0.0235,
-      "b_sub": 0.0927,
-      "b_dec": 0.2321,
-      "draw": 0.0086
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6508,
-     "p_meandec_mult": 0.6438,
-     "p_sharp_shin": 0.6497,
-     "p_pinnacle_shin": 0.64621,
-     "p_exchange_mult": 0.641,
      "n_books": 21,
      "bfo_p_a_novig": 0.6402,
      "bfo_odds": [
@@ -3775,7 +2746,7 @@
     "p_meandec_mult": 0.6438,
     "p_sharp_shin": 0.6497,
     "p_pinnacle_shin": 0.64621,
-    "p_exchange_mult": 0.642,
+    "p_exchange_mult": 0.6422,
     "n_books": 21,
     "bfo_p_a_novig": 0.6402,
     "bfo_odds": [
@@ -3850,7 +2821,7 @@
    },
    "move_open_to_last_pts": 0.021,
    "move_open_to_last_logit": 0.0912,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-07:waldo-cortes-acosta__johnny-walker",
@@ -3864,33 +2835,6 @@
    "rounds": 5,
    "title": false,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6736,
-     "p_meandec_mult": 0.6663,
-     "p_sharp_shin": 0.6756,
-     "p_pinnacle_shin": 0.67207,
-     "p_exchange_mult": 0.6683,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.6662,
-     "bfo_odds": [
-      -235,
-      185
-     ],
-     "p_distance": 0.225,
-     "p_method": {
-      "a_ko": 0.482,
-      "a_sub": 0.0385,
-      "a_dec": 0.1425,
-      "b_ko": 0.1973,
-      "b_sub": 0.0605,
-      "b_dec": 0.0702,
-      "draw": 0.0089
-     }
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -3927,61 +2871,7 @@
      "p_meandec_mult": 0.6663,
      "p_sharp_shin": 0.6756,
      "p_pinnacle_shin": 0.67207,
-     "p_exchange_mult": 0.6682,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.6662,
-     "bfo_odds": [
-      -235,
-      185
-     ],
-     "p_distance": 0.225,
-     "p_method": {
-      "a_ko": 0.482,
-      "a_sub": 0.0385,
-      "a_dec": 0.1425,
-      "b_ko": 0.1973,
-      "b_sub": 0.0605,
-      "b_dec": 0.0702,
-      "draw": 0.0089
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6736,
-     "p_meandec_mult": 0.6663,
-     "p_sharp_shin": 0.6756,
-     "p_pinnacle_shin": 0.67207,
      "p_exchange_mult": 0.6675,
-     "n_books": 20,
-     "bfo_p_a_novig": 0.6662,
-     "bfo_odds": [
-      -235,
-      185
-     ],
-     "p_distance": 0.225,
-     "p_method": {
-      "a_ko": 0.482,
-      "a_sub": 0.0385,
-      "a_dec": 0.1425,
-      "b_ko": 0.1973,
-      "b_sub": 0.0605,
-      "b_dec": 0.0702,
-      "draw": 0.0089
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6736,
-     "p_meandec_mult": 0.6663,
-     "p_sharp_shin": 0.6756,
-     "p_pinnacle_shin": 0.67207,
-     "p_exchange_mult": 0.6682,
      "n_books": 20,
      "bfo_p_a_novig": 0.6662,
      "bfo_odds": [
@@ -4076,7 +2966,7 @@
     "p_meandec_mult": 0.6663,
     "p_sharp_shin": 0.6756,
     "p_pinnacle_shin": 0.67207,
-    "p_exchange_mult": 0.6683,
+    "p_exchange_mult": 0.6676,
     "n_books": 20,
     "bfo_p_a_novig": 0.6662,
     "bfo_odds": [
@@ -4151,7 +3041,7 @@
    },
    "move_open_to_last_pts": 0.0313,
    "move_open_to_last_logit": 0.1392,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:bilal-hasan__luis-gurule",
@@ -4165,24 +3055,6 @@
    "rounds": 3,
    "title": false,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8785,
-     "p_meandec_mult": 0.8599,
-     "p_sharp_shin": 0.8817,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.8294,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.8588,
-     "bfo_odds": [
-      -923,
-      574
-     ],
-     "p_distance": null
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -4210,43 +3082,7 @@
      "p_meandec_mult": 0.8599,
      "p_sharp_shin": 0.8817,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.8251,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.8588,
-     "bfo_odds": [
-      -923,
-      574
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8785,
-     "p_meandec_mult": 0.8599,
-     "p_sharp_shin": 0.8817,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.8343,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.8588,
-     "bfo_odds": [
-      -923,
-      574
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.8785,
-     "p_meandec_mult": 0.8599,
-     "p_sharp_shin": 0.8817,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.8251,
      "n_books": 16,
      "bfo_p_a_novig": 0.8588,
      "bfo_odds": [
@@ -4297,7 +3133,7 @@
     "p_meandec_mult": 0.8599,
     "p_sharp_shin": 0.8817,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.8294,
+    "p_exchange_mult": 0.8371,
     "n_books": 16,
     "bfo_p_a_novig": 0.8588,
     "bfo_odds": [
@@ -4345,7 +3181,7 @@
    },
    "move_open_to_last_pts": 0.0,
    "move_open_to_last_logit": 0.0,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:caio-borralho__yousri-belgaroui",
@@ -4359,24 +3195,6 @@
    "rounds": 3,
    "title": false,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5875,
-     "p_meandec_mult": 0.583,
-     "p_sharp_shin": 0.5853,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5863,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.5807,
-     "bfo_odds": [
-      -157,
-      127
-     ],
-     "p_distance": null
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -4404,43 +3222,7 @@
      "p_meandec_mult": 0.583,
      "p_sharp_shin": 0.5853,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5855,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.5807,
-     "bfo_odds": [
-      -157,
-      127
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5875,
-     "p_meandec_mult": 0.583,
-     "p_sharp_shin": 0.5853,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.5851,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.5807,
-     "bfo_odds": [
-      -157,
-      127
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5875,
-     "p_meandec_mult": 0.583,
-     "p_sharp_shin": 0.5853,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5855,
      "n_books": 16,
      "bfo_p_a_novig": 0.5807,
      "bfo_odds": [
@@ -4491,7 +3273,7 @@
     "p_meandec_mult": 0.583,
     "p_sharp_shin": 0.5853,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5863,
+    "p_exchange_mult": 0.5856,
     "n_books": 16,
     "bfo_p_a_novig": 0.5807,
     "bfo_odds": [
@@ -4539,7 +3321,7 @@
    },
    "move_open_to_last_pts": 0.0263,
    "move_open_to_last_logit": 0.1076,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:ciryl-gane__josh-hokit",
@@ -4553,33 +3335,6 @@
    "rounds": 5,
    "title": true,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.689,
-     "p_meandec_mult": 0.6802,
-     "p_sharp_shin": 0.6811,
-     "p_pinnacle_shin": 0.67784,
-     "p_exchange_mult": 0.668,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6861,
-     "bfo_odds": [
-      -259,
-      203
-     ],
-     "p_distance": 0.3425,
-     "p_method": {
-      "a_ko": 0.3843,
-      "a_sub": 0.0795,
-      "a_dec": 0.2288,
-      "b_ko": 0.1194,
-      "b_sub": 0.0695,
-      "b_dec": 0.109,
-      "draw": 0.0094
-     }
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -4616,61 +3371,7 @@
      "p_meandec_mult": 0.6802,
      "p_sharp_shin": 0.6811,
      "p_pinnacle_shin": 0.67784,
-     "p_exchange_mult": 0.6631,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6861,
-     "bfo_odds": [
-      -259,
-      203
-     ],
-     "p_distance": 0.3425,
-     "p_method": {
-      "a_ko": 0.3843,
-      "a_sub": 0.0795,
-      "a_dec": 0.2288,
-      "b_ko": 0.1194,
-      "b_sub": 0.0695,
-      "b_dec": 0.109,
-      "draw": 0.0094
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.689,
-     "p_meandec_mult": 0.6802,
-     "p_sharp_shin": 0.6811,
-     "p_pinnacle_shin": 0.67784,
      "p_exchange_mult": 0.6615,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6861,
-     "bfo_odds": [
-      -259,
-      203
-     ],
-     "p_distance": 0.3425,
-     "p_method": {
-      "a_ko": 0.3843,
-      "a_sub": 0.0795,
-      "a_dec": 0.2288,
-      "b_ko": 0.1194,
-      "b_sub": 0.0695,
-      "b_dec": 0.109,
-      "draw": 0.0094
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.689,
-     "p_meandec_mult": 0.6802,
-     "p_sharp_shin": 0.6811,
-     "p_pinnacle_shin": 0.67784,
-     "p_exchange_mult": 0.6507,
      "n_books": 21,
      "bfo_p_a_novig": 0.6861,
      "bfo_odds": [
@@ -4758,7 +3459,7 @@
     "p_meandec_mult": 0.6802,
     "p_sharp_shin": 0.6811,
     "p_pinnacle_shin": 0.67784,
-    "p_exchange_mult": 0.668,
+    "p_exchange_mult": 0.6657,
     "n_books": 21,
     "bfo_p_a_novig": 0.6861,
     "bfo_odds": [
@@ -4833,7 +3534,7 @@
    },
    "move_open_to_last_pts": -0.0095,
    "move_open_to_last_logit": -0.0447,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:donte-johnson__cesar-almeida",
@@ -4856,24 +3557,6 @@
      "p_meandec_mult": 0.6115,
      "p_sharp_shin": 0.6156,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5987,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.6182,
-     "bfo_odds": [
-      -184,
-      150
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.617,
-     "p_meandec_mult": 0.6115,
-     "p_sharp_shin": 0.6156,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.6215,
      "n_books": 10,
      "bfo_p_a_novig": 0.6182,
@@ -4892,43 +3575,7 @@
      "p_meandec_mult": 0.6115,
      "p_sharp_shin": 0.6156,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5987,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.6182,
-     "bfo_odds": [
-      -184,
-      150
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.617,
-     "p_meandec_mult": 0.6115,
-     "p_sharp_shin": 0.6156,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.6215,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.6182,
-     "bfo_odds": [
-      -184,
-      150
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.617,
-     "p_meandec_mult": 0.6115,
-     "p_sharp_shin": 0.6156,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5987,
      "n_books": 10,
      "bfo_p_a_novig": 0.6182,
      "bfo_odds": [
@@ -4979,7 +3626,7 @@
     "p_meandec_mult": 0.6115,
     "p_sharp_shin": 0.6156,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5987,
+    "p_exchange_mult": 0.6215,
     "n_books": 10,
     "bfo_p_a_novig": 0.6182,
     "bfo_odds": [
@@ -5027,7 +3674,7 @@
    },
    "move_open_to_last_pts": 0.0241,
    "move_open_to_last_logit": 0.1009,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:drew-dober__chris-duncan",
@@ -5044,42 +3691,6 @@
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.4029,
-     "p_meandec_mult": 0.4085,
-     "p_sharp_shin": 0.408,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.4138,
-     "n_books": 8,
-     "bfo_p_a_novig": 0.4105,
-     "bfo_odds": [
-      133,
-      -161
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.4029,
-     "p_meandec_mult": 0.4085,
-     "p_sharp_shin": 0.408,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.4145,
-     "n_books": 8,
-     "bfo_p_a_novig": 0.4105,
-     "bfo_odds": [
-      133,
-      -161
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
      "phase": "pre_start",
      "pre_lock": true,
      "p_consensus": 0.4029,
@@ -5105,24 +3716,6 @@
      "p_sharp_shin": 0.408,
      "p_pinnacle_shin": null,
      "p_exchange_mult": 0.4149,
-     "n_books": 8,
-     "bfo_p_a_novig": 0.4105,
-     "bfo_odds": [
-      133,
-      -161
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.4029,
-     "p_meandec_mult": 0.4085,
-     "p_sharp_shin": 0.408,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.4118,
      "n_books": 8,
      "bfo_p_a_novig": 0.4105,
      "bfo_odds": [
@@ -5173,7 +3766,7 @@
     "p_meandec_mult": 0.4085,
     "p_sharp_shin": 0.408,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.4138,
+    "p_exchange_mult": 0.4145,
     "n_books": 8,
     "bfo_p_a_novig": 0.4105,
     "bfo_odds": [
@@ -5221,7 +3814,7 @@
    },
    "move_open_to_last_pts": -0.0161,
    "move_open_to_last_logit": -0.0665,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:evan-elder__samuel-sanches",
@@ -5244,24 +3837,6 @@
      "p_meandec_mult": 0.5134,
      "p_sharp_shin": 0.5126,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5276,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.516,
-     "bfo_odds": [
-      -120,
-      -105
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5136,
-     "p_meandec_mult": 0.5134,
-     "p_sharp_shin": 0.5126,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.5311,
      "n_books": 10,
      "bfo_p_a_novig": 0.516,
@@ -5280,43 +3855,7 @@
      "p_meandec_mult": 0.5134,
      "p_sharp_shin": 0.5126,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5276,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.516,
-     "bfo_odds": [
-      -120,
-      -105
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5136,
-     "p_meandec_mult": 0.5134,
-     "p_sharp_shin": 0.5126,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.5311,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.516,
-     "bfo_odds": [
-      -120,
-      -105
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5136,
-     "p_meandec_mult": 0.5134,
-     "p_sharp_shin": 0.5126,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5276,
      "n_books": 10,
      "bfo_p_a_novig": 0.516,
      "bfo_odds": [
@@ -5367,7 +3906,7 @@
     "p_meandec_mult": 0.5134,
     "p_sharp_shin": 0.5126,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5276,
+    "p_exchange_mult": 0.5311,
     "n_books": 10,
     "bfo_p_a_novig": 0.516,
     "bfo_odds": [
@@ -5415,7 +3954,7 @@
    },
    "move_open_to_last_pts": -0.0033,
    "move_open_to_last_logit": -0.0132,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:jared-gordon__melquizael-costa",
@@ -5438,24 +3977,6 @@
      "p_meandec_mult": 0.2461,
      "p_sharp_shin": 0.2277,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.2113,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.237,
-     "bfo_odds": [
-      300,
-      -412
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.2342,
-     "p_meandec_mult": 0.2461,
-     "p_sharp_shin": 0.2277,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.2097,
      "n_books": 10,
      "bfo_p_a_novig": 0.237,
@@ -5474,43 +3995,7 @@
      "p_meandec_mult": 0.2461,
      "p_sharp_shin": 0.2277,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.2113,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.237,
-     "bfo_odds": [
-      300,
-      -412
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.2342,
-     "p_meandec_mult": 0.2461,
-     "p_sharp_shin": 0.2277,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.2097,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.237,
-     "bfo_odds": [
-      300,
-      -412
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.2342,
-     "p_meandec_mult": 0.2461,
-     "p_sharp_shin": 0.2277,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.2113,
      "n_books": 10,
      "bfo_p_a_novig": 0.237,
      "bfo_odds": [
@@ -5561,7 +4046,7 @@
     "p_meandec_mult": 0.2461,
     "p_sharp_shin": 0.2277,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.2113,
+    "p_exchange_mult": 0.2097,
     "n_books": 10,
     "bfo_p_a_novig": 0.237,
     "bfo_odds": [
@@ -5609,7 +4094,7 @@
    },
    "move_open_to_last_pts": 0.0013,
    "move_open_to_last_logit": 0.0073,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:jim-miller__terrance-mckinney",
@@ -5623,24 +4108,6 @@
    "rounds": 3,
    "title": false,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3371,
-     "p_meandec_mult": 0.3454,
-     "p_sharp_shin": 0.3431,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.3414,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.3481,
-     "bfo_odds": [
-      172,
-      -222
-     ],
-     "p_distance": null
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -5668,43 +4135,7 @@
      "p_meandec_mult": 0.3454,
      "p_sharp_shin": 0.3431,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.3444,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.3481,
-     "bfo_odds": [
-      172,
-      -222
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3371,
-     "p_meandec_mult": 0.3454,
-     "p_sharp_shin": 0.3431,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.3384,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.3481,
-     "bfo_odds": [
-      172,
-      -222
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3371,
-     "p_meandec_mult": 0.3454,
-     "p_sharp_shin": 0.3431,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.3397,
      "n_books": 10,
      "bfo_p_a_novig": 0.3481,
      "bfo_odds": [
@@ -5755,7 +4186,7 @@
     "p_meandec_mult": 0.3454,
     "p_sharp_shin": 0.3431,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.3414,
+    "p_exchange_mult": 0.3364,
     "n_books": 10,
     "bfo_p_a_novig": 0.3481,
     "bfo_odds": [
@@ -5803,7 +4234,7 @@
    },
    "move_open_to_last_pts": -0.0028,
    "move_open_to_last_logit": -0.0125,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:kayla-harrison__amanda-nunes",
@@ -5826,33 +4257,6 @@
      "p_meandec_mult": 0.6222,
      "p_sharp_shin": 0.6249,
      "p_pinnacle_shin": 0.63001,
-     "p_exchange_mult": 0.6161,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6272,
-     "bfo_odds": [
-      -193,
-      156
-     ],
-     "p_distance": 0.3736,
-     "p_method": {
-      "a_ko": 0.0958,
-      "a_sub": 0.3071,
-      "a_dec": 0.2337,
-      "b_ko": 0.1988,
-      "b_sub": 0.0234,
-      "b_dec": 0.1319,
-      "draw": 0.0093
-     }
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6281,
-     "p_meandec_mult": 0.6222,
-     "p_sharp_shin": 0.6249,
-     "p_pinnacle_shin": 0.63001,
      "p_exchange_mult": 0.6175,
      "n_books": 21,
      "bfo_p_a_novig": 0.6272,
@@ -5880,61 +4284,7 @@
      "p_meandec_mult": 0.6222,
      "p_sharp_shin": 0.6249,
      "p_pinnacle_shin": 0.63001,
-     "p_exchange_mult": 0.6161,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6272,
-     "bfo_odds": [
-      -193,
-      156
-     ],
-     "p_distance": 0.3736,
-     "p_method": {
-      "a_ko": 0.0958,
-      "a_sub": 0.3071,
-      "a_dec": 0.2337,
-      "b_ko": 0.1988,
-      "b_sub": 0.0234,
-      "b_dec": 0.1319,
-      "draw": 0.0093
-     }
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6281,
-     "p_meandec_mult": 0.6222,
-     "p_sharp_shin": 0.6249,
-     "p_pinnacle_shin": 0.63001,
      "p_exchange_mult": 0.6175,
-     "n_books": 21,
-     "bfo_p_a_novig": 0.6272,
-     "bfo_odds": [
-      -193,
-      156
-     ],
-     "p_distance": 0.3736,
-     "p_method": {
-      "a_ko": 0.0958,
-      "a_sub": 0.3071,
-      "a_dec": 0.2337,
-      "b_ko": 0.1988,
-      "b_sub": 0.0234,
-      "b_dec": 0.1319,
-      "draw": 0.0093
-     }
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6281,
-     "p_meandec_mult": 0.6222,
-     "p_sharp_shin": 0.6249,
-     "p_pinnacle_shin": 0.63001,
-     "p_exchange_mult": 0.6161,
      "n_books": 21,
      "bfo_p_a_novig": 0.6272,
      "bfo_odds": [
@@ -6022,7 +4372,7 @@
     "p_meandec_mult": 0.6222,
     "p_sharp_shin": 0.6249,
     "p_pinnacle_shin": 0.63001,
-    "p_exchange_mult": 0.6161,
+    "p_exchange_mult": 0.6175,
     "n_books": 21,
     "bfo_p_a_novig": 0.6272,
     "bfo_odds": [
@@ -6097,7 +4447,7 @@
    },
    "move_open_to_last_pts": -0.0155,
    "move_open_to_last_logit": -0.0669,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:macy-chiasson__bia-mesquita",
@@ -6111,24 +4461,6 @@
    "rounds": 3,
    "title": false,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3426,
-     "p_meandec_mult": 0.3493,
-     "p_sharp_shin": 0.3422,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.3361,
-     "n_books": 8,
-     "bfo_p_a_novig": 0.3481,
-     "bfo_odds": [
-      172,
-      -222
-     ],
-     "p_distance": null
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -6156,43 +4488,7 @@
      "p_meandec_mult": 0.3493,
      "p_sharp_shin": 0.3422,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.3346,
-     "n_books": 8,
-     "bfo_p_a_novig": 0.3481,
-     "bfo_odds": [
-      172,
-      -222
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3426,
-     "p_meandec_mult": 0.3493,
-     "p_sharp_shin": 0.3422,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.3451,
-     "n_books": 8,
-     "bfo_p_a_novig": 0.3481,
-     "bfo_odds": [
-      172,
-      -222
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.3426,
-     "p_meandec_mult": 0.3493,
-     "p_sharp_shin": 0.3422,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.3346,
      "n_books": 8,
      "bfo_p_a_novig": 0.3481,
      "bfo_odds": [
@@ -6243,7 +4539,7 @@
     "p_meandec_mult": 0.3493,
     "p_sharp_shin": 0.3422,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.3361,
+    "p_exchange_mult": 0.3461,
     "n_books": 8,
     "bfo_p_a_novig": 0.3481,
     "bfo_odds": [
@@ -6291,7 +4587,7 @@
    },
    "move_open_to_last_pts": -0.0003,
    "move_open_to_last_logit": -0.0013,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:stephen-thompson__charles-radtke",
@@ -6305,24 +4601,6 @@
    "rounds": 3,
    "title": false,
    "captures": [
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5538,
-     "p_meandec_mult": 0.5485,
-     "p_sharp_shin": 0.5463,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5291,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.5347,
-     "bfo_odds": [
-      -129,
-      104
-     ],
-     "p_distance": null
-    },
     {
      "snapshot": "20261106-0950",
      "t": "2026-11-06T09:50:32Z",
@@ -6350,43 +4628,7 @@
      "p_meandec_mult": 0.5485,
      "p_sharp_shin": 0.5463,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5266,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.5347,
-     "bfo_odds": [
-      -129,
-      104
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5538,
-     "p_meandec_mult": 0.5485,
-     "p_sharp_shin": 0.5463,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.5293,
-     "n_books": 10,
-     "bfo_p_a_novig": 0.5347,
-     "bfo_odds": [
-      -129,
-      104
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5538,
-     "p_meandec_mult": 0.5485,
-     "p_sharp_shin": 0.5463,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.5291,
      "n_books": 10,
      "bfo_p_a_novig": 0.5347,
      "bfo_odds": [
@@ -6437,7 +4679,7 @@
     "p_meandec_mult": 0.5485,
     "p_sharp_shin": 0.5463,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.5291,
+    "p_exchange_mult": 0.5309,
     "n_books": 10,
     "bfo_p_a_novig": 0.5347,
     "bfo_odds": [
@@ -6485,7 +4727,7 @@
    },
    "move_open_to_last_pts": 0.0148,
    "move_open_to_last_logit": 0.0597,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-14:uros-medic__kevin-holland",
@@ -6508,24 +4750,6 @@
      "p_meandec_mult": 0.6081,
      "p_sharp_shin": 0.6039,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.6146,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.6015,
-     "bfo_odds": [
-      -173,
-      138
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.614,
-     "p_meandec_mult": 0.6081,
-     "p_sharp_shin": 0.6039,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.621,
      "n_books": 16,
      "bfo_p_a_novig": 0.6015,
@@ -6544,43 +4768,7 @@
      "p_meandec_mult": 0.6081,
      "p_sharp_shin": 0.6039,
      "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.6146,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.6015,
-     "bfo_odds": [
-      -173,
-      138
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.614,
-     "p_meandec_mult": 0.6081,
-     "p_sharp_shin": 0.6039,
-     "p_pinnacle_shin": null,
      "p_exchange_mult": 0.621,
-     "n_books": 16,
-     "bfo_p_a_novig": 0.6015,
-     "bfo_odds": [
-      -173,
-      138
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.614,
-     "p_meandec_mult": 0.6081,
-     "p_sharp_shin": 0.6039,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": 0.6146,
      "n_books": 16,
      "bfo_p_a_novig": 0.6015,
      "bfo_odds": [
@@ -6631,7 +4819,7 @@
     "p_meandec_mult": 0.6081,
     "p_sharp_shin": 0.6039,
     "p_pinnacle_shin": null,
-    "p_exchange_mult": 0.6146,
+    "p_exchange_mult": 0.621,
     "n_books": 16,
     "bfo_p_a_novig": 0.6015,
     "bfo_odds": [
@@ -6679,7 +4867,7 @@
    },
    "move_open_to_last_pts": 0.0198,
    "move_open_to_last_logit": 0.0828,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-21:aleksandre-topuria__santiago-luna",
@@ -6838,62 +5026,8 @@
      "p_distance": null
     },
     {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.4359,
-     "p_meandec_mult": 0.4401,
-     "p_sharp_shin": 0.4356,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 6,
-     "bfo_p_a_novig": 0.4509,
-     "bfo_odds": [
-      110,
-      -138
-     ],
-     "p_distance": null
-    },
-    {
      "snapshot": "20261106-1002",
      "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.4359,
-     "p_meandec_mult": 0.4401,
-     "p_sharp_shin": 0.4356,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 6,
-     "bfo_p_a_novig": 0.4509,
-     "bfo_odds": [
-      110,
-      -138
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.4359,
-     "p_meandec_mult": 0.4401,
-     "p_sharp_shin": 0.4356,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 6,
-     "bfo_p_a_novig": 0.4509,
-     "bfo_odds": [
-      110,
-      -138
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
      "phase": "pre_start",
      "pre_lock": true,
      "p_consensus": 0.4359,
@@ -6999,7 +5133,7 @@
    },
    "move_open_to_last_pts": -0.0016,
    "move_open_to_last_logit": -0.0065,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-11-21:kyoji-horiguchi__asu-almabayev",
@@ -7320,62 +5454,8 @@
      "p_distance": null
     },
     {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5755,
-     "p_meandec_mult": 0.5717,
-     "p_sharp_shin": 0.5708,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 13,
-     "bfo_p_a_novig": 0.5767,
-     "bfo_odds": [
-      -156,
-      123
-     ],
-     "p_distance": null
-    },
-    {
      "snapshot": "20261106-1002",
      "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5755,
-     "p_meandec_mult": 0.5717,
-     "p_sharp_shin": 0.5708,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 13,
-     "bfo_p_a_novig": 0.5767,
-     "bfo_odds": [
-      -156,
-      123
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.5755,
-     "p_meandec_mult": 0.5717,
-     "p_sharp_shin": 0.5708,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 13,
-     "bfo_p_a_novig": 0.5767,
-     "bfo_odds": [
-      -156,
-      123
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
      "phase": "pre_start",
      "pre_lock": true,
      "p_consensus": 0.5755,
@@ -7481,7 +5561,7 @@
    },
    "move_open_to_last_pts": -0.0094,
    "move_open_to_last_logit": -0.0386,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-12-12:chase-hooper__chris-padilla",
@@ -7622,62 +5702,8 @@
      "p_distance": null
     },
     {
-     "snapshot": "20261106-0950",
-     "t": "2026-11-06T09:50:32Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6437,
-     "p_meandec_mult": 0.6377,
-     "p_sharp_shin": 0.6436,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 14,
-     "bfo_p_a_novig": 0.6354,
-     "bfo_odds": [
-      -203,
-      160
-     ],
-     "p_distance": null
-    },
-    {
      "snapshot": "20261106-1002",
      "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6437,
-     "p_meandec_mult": 0.6377,
-     "p_sharp_shin": 0.6436,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 14,
-     "bfo_p_a_novig": 0.6354,
-     "bfo_odds": [
-      -203,
-      160
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1002",
-     "t": "2026-11-06T10:02:12Z",
-     "phase": "pre_start",
-     "pre_lock": true,
-     "p_consensus": 0.6437,
-     "p_meandec_mult": 0.6377,
-     "p_sharp_shin": 0.6436,
-     "p_pinnacle_shin": null,
-     "p_exchange_mult": null,
-     "n_books": 14,
-     "bfo_p_a_novig": 0.6354,
-     "bfo_odds": [
-      -203,
-      160
-     ],
-     "p_distance": null
-    },
-    {
-     "snapshot": "20261106-1015",
-     "t": "2026-11-06T10:15:35Z",
      "phase": "pre_start",
      "pre_lock": true,
      "p_consensus": 0.6437,
@@ -7783,7 +5809,7 @@
    },
    "move_open_to_last_pts": 0.0296,
    "move_open_to_last_logit": 0.1269,
-   "n_captures": 6
+   "n_captures": 3
   },
   {
    "bout_id": "2026-12-12:yair-rodriguez__steve-garcia",

@@ -32,7 +32,6 @@ attributes (see research/data_fightweek.md).
 import argparse
 import datetime as dt
 import difflib
-import html as htmlmod
 import json
 import math
 import os
@@ -1456,7 +1455,6 @@ REPL_NEAR = re.compile(r"replaced by|replace(?:d|s)? (?:him|her|them)\b|as (?:a 
                        r"remain(?:ed)? on the card|will now face|now faces?|was rebooked|re-?booked|"
                        r"was moved to face|was paired with|was then (?:expected|scheduled|set|booked) to face|"
                        r"(?:will|would) face|to face|faced|took on|against", re.I)
-REPL_RE = REPL_NEAR
 WITHDRAW_RE = re.compile(r"\b(?:however|but|pulled out|withdr|forced|removed|out of the|injur|due to|scrapped|"
                          r"cancel|replaced|ruled out|was pulled|sidelined|illness|visa|suspend|tested positive)\b", re.I)
 EVENT_DATE_CTX = re.compile(r"(?:take place|took place|be held|was held|held|happen|occur|planned|scheduled|"
@@ -1632,8 +1630,6 @@ def parse_bout_changes(card, paras, event_date):
                                      r"stepped in|step in|stepping in|in (?:his|her) place|took (?:his|her) place",
                                      kk):
                         continue
-                    if any(x[2] == stay for x in mm) is False and not re.search(r"replaced by", kk):
-                        pass
                     days, basis = notice(inf, si, 0)
                     snp = bool(re.search(r"short notice|late notice|last[- ]minute", txt, re.I))
                     head = para_info[bp[0]]["head"]
@@ -1853,7 +1849,6 @@ def build_nationality(people, pids, items, wd, bios, gfx):
         q = wd.get(pid)
         it = items[q[0]] if q else None
         b = bios.get(pid)
-        votes = []
         src = {}
         if it:
             sc = [country_code(c) for c, _ in it["sc"].most_common()]
@@ -2023,6 +2018,8 @@ def cmd_build(args):
                             over = None
                     rec["missed"][side] = True
                     rec["missed_weight"][side] = over
+                    if limit:
+                        rec.setdefault("miss_limit", {})[side] = {"lbs": limit, "basis": limit_basis}
                     rec["weighed"][side] = m["weighed"]
                     notes.append("%s missed weight%s%s" % (side, " by %g lb" % over if over is not None else "",
                                                            " (weighed %g)" % m["weighed"] if m["weighed"] else ""))
@@ -2101,6 +2098,7 @@ def cmd_build(args):
                              "no article, or a miss whose size the article does not give)",
             "missed": "true if the Wikipedia event article reports the fighter missing weight",
             "weighed": "reported scale weight for a miss (lbs) when the article gives it",
+            "miss_limit": "for a miss: the scale limit it is measured against and where that came from",
             "catchweight": "is: booked at catchweight (ufcstats / Wikipedia weight class) or contested off-weight "
                            "after a miss; lbs: agreed limit when stated; why: booked | weight miss",
             "short_notice": "days of notice for a late replacement (who stepped in for a withdrawn fighter); null "

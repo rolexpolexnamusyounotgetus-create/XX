@@ -8,12 +8,20 @@ Run from the project root (Python 3.13 + numpy/pandas/scipy/scikit-learn/lightgb
     node tools/moe_engine_bt.js       # engine expert: FightEngine.summarize on every backtest_dev fight,
                                       # both corner orders -> data/derived/moe_engine_bt.json
     python3 tools/moe.py experts      # internal experts (feature LR, feature GBM, Glicko) with strictly
-                                      # out-of-fold predictions for 2019-2023 and <=2023-trained predictions
-                                      # for 2024-2025 -> out/moe_cache/experts.pkl
-    python3 tools/moe.py fit          # stackers (a) constrained logit-linear, (b) softmax-gated, (c) GBM
-                                      # meta-learner + calibration; evaluation on 2024-2025; export
-                                      # data/derived/moe.json (model + report numbers)
-    python3 tools/moe.py all          # prep + experts + fit (the engine step must have been run)
+                                      # out-of-fold predictions for 2019-2023, static (<=2023-trained) and rolling
+                                      # (January refit) predictions for 2024-2025, then the page-computable LR
+                                      # ('lrpage' alone reruns just that) -> out/moe_cache/experts.pkl
+    python3 tools/moe.py fit          # stackers (a) constrained logit-linear, (b) softmax-gated MoE, (c) GBM and
+                                      # residual-GBM meta-learners + calibration; forward-chained CV 2021-2023 for
+                                      # every choice; static and rolling evaluation on 2024-2025; exports
+                                      # data/derived/moe.json (full) and data/derived/moe_page.json (page copy)
+    python3 tools/moe.py report       # re-export from the cached fit (out/moe_cache/fit.pkl)
+    python3 tools/moe.py all          # prep + experts + fit (run the engine step after prep first)
+
+Set OMP_NUM_THREADS=1 on the shared machine (LightGBM/OpenBLAS threads oversubscribe badly).
+External experts are read when present: data/derived/ml.json (tools/ml.py), market.json (closing line and the
+walk-forward market rating), moe_engine_bt.json (engine), preufc.json (gate), and generic per-fight tables in
+ratings.json / methodround.json / oppadj.json.
 
 Protocol (docs/BACKLOG.md): fights dated 2026-01-01 or later are dropped before anything is computed.
 Train/tune = 2019-2023 (expert models also see 2010-2018 history as training data), validation =

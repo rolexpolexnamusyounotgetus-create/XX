@@ -4,6 +4,7 @@ Status: built, validated and exported Nov 6, 2026. Files: `tools/mlrates.py` (da
 export), `tools/mlrates_engine.js` (engine v3 expectations and the simulator check, called by the Python tool),
 `src/ml/mlrates.js` (dependency-free UMD evaluator plus the engine adapter), `tests/test_mlrates.js` (45 checks),
 `tests/fixtures/mlrates_fixtures.json`, `tools/mlrates_mlcal_hook.js` (hook for the mlcal tuner). Outputs:
+`data/derived/mlrates_eval.json` (all validation and simulator numbers in this report),
 `data/derived/mlrates.json` (production model, trained 2010-2025), `data/derived/mlrates_dev.json` (trained
 2010-2023: every validation number below, and honest engine backtests), `data/derived/mlrates_oof.json`
 (out-of-fold rates for 2019-2025 fights, for tuning engine couplings without leakage).
@@ -17,14 +18,19 @@ export), `tools/mlrates_engine.js` (engine v3 expectations and the simulator che
    attempts; head accuracy; and knockdowns per landed head strike. Deviance skill versus league average goes from
    0.26 to 0.32 for distance attempts, 0.23 to 0.32 for takedown attempts, 0.23 to 0.29 for control time and
    0.00 to 0.06 for takedown success. The other six (reversals; body, leg, distance, clinch and ground accuracy)
-   are inside the noise: body and leg accuracy are slightly worse than the engine's, the rest slightly better.
+   are inside the noise: body, leg and clinch accuracy slightly worse than the engine's, the rest slightly better.
 2. **The simulator plays better fights with them.** Engine v3 with the ML rates applied through the adapter,
-   on 865 validation fights (2024-2025, 400 simulations per fight and setup, paired seeds), versus the plain
-   engine: winner log loss **0.6465 -> 0.6239** (difference -0.0226, 95% CI [-0.0311, -0.0136]), Brier 0.2274 ->
-   0.2171, accuracy 63.8% -> 66.7%, 7-outcome log loss 1.5947 -> 1.5770 (-0.0177 [-0.0351, +0.0005]). Simulated
-   per-minute stat lines also moved closer to the real ones: sig. strikes landed, takedowns landed and control
-   time, all with CIs that exclude zero. Walk-forward Elo on the same fights: 0.6769. The 2019-2023 check with
-   out-of-fold rates and the recalibration result are in the simulator section below.
+   versus the plain engine (400 simulations per fight and setup, paired seeds):
+   - 2024-2025, 854 decisive fights, dev model trained 2010-2023: winner log loss **0.6465 -> 0.6239**
+     (-0.0226 [-0.0311, -0.0136]), Brier 0.2274 -> 0.2171, accuracy 63.8% -> 66.7%, 7-outcome log loss
+     1.5947 -> 1.5770 (-0.0177 [-0.0351, +0.0005]).
+   - 2019-2023, 1955 decisive fights, out-of-fold rates: 0.6747 -> 0.6690
+     (-0.0057 [-0.0123, +0.0012]), accuracy 56.5% -> 60.0%.
+   - Pooled 2019-2025 (2809 fights, all out of sample): **0.6661 -> 0.6553, -0.0108 [-0.0159, -0.0055]**,
+     better in every one of the seven years.
+   - Simulated per-minute stat lines (sig. landed, takedowns landed, control) move closer to the real ones in both
+     periods, all CIs excluding zero.
+   - Walk-forward Elo: 0.6769 (2024-2025), 0.6857 (2019-2023).
 3. **Ship it as the engine's rate layer.** In the integration recipe below, the engine keeps its calibrated league
    level and its in-fight dynamics. The ML model supplies each fighter's matchup-specific multipliers (attempts by
    position and target, accuracy, KD, takedowns, control, submissions, reversals). Knobs still work on top.
@@ -51,11 +57,12 @@ export), `tools/mlrates_engine.js` (engine v3 expectations and the simulator che
 
 ## Features (164, all pre-fight; `features()` in both ports)
 
-For each man, rates shrunk toward the division prior exactly as engine v3's `fighterRates` does (simplified, own
-constants stored in the model: kPM 40, kAcc 150, kTdPM 45, kTdAcc 12, kKD 230, kCtrlTD 4, kRev 40), as log
-ratios (counts) or logit differences (probabilities) to the league:
+For each man, rates shrunk toward the division prior the way engine v3's `fighterRates` does: same exposure
+estimates, simpler accuracy shrinkage, and the model's own constants (kPM 40, kAcc 150, kTdPM 45, kTdAcc 12, kKD
+230, kCtrlTD 4, kRev 40, stored in the JSON so params3.js changes cannot shift the features). Each is a log ratio
+(counts) or logit difference (probabilities) to the league:
 
-- offense (23): attempts per distance minute, per minute in the clinch, per top minute; head/body/leg/total
+- offense (23): attempts per distance minute, clinch attempts per fight minute, attempts per top minute; head/body/leg/total
   attempts per minute; accuracy by target (head, body, leg) and position (distance, clinch, ground); KD per
   landed head strike (power); takedown attempts per standing minute and success; control per minute and per
   takedown (top skill); submission attempts per ground minute and per minute; reversals per bottom minute; KO
@@ -226,7 +233,51 @@ component is reliably better across stats, so the stack is the safe choice.
 
 ## Simulator check: engine v3 plain vs engine v3 + ML rates
 
-SIMSECTION
+Setup: every fight where both men had a prior UFC fight. Each side's snapshot comes from the dataset above,
+priors are the year's 5-year window, and the engine is src/engine3.js with params `3.0.0-selfcal-2026-11-06`. There are
+400 simulations per fight and setup, with the same seed for plain and ML so the comparison is paired. "ML" is
+`FightEngine.matchup` followed by `MLRates.applyToMatchup` (level "engine", weight 1). 2024-2025 uses
+`mlrates_dev.json` (trained 2010-2023). 2019-2023 uses the out-of-fold rates (each year predicted by a model
+trained on 2010..year-1). No simulated fight's own year was ever in the training data of the rates it used.
+Winner metrics are scored on decisive fights in both corner orientations; the model has no corner input.
+
+| | 2024-2025 plain | 2024-2025 ML | 2019-2023 plain | 2019-2023 ML |
+|---|---|---|---|---|
+| fights (decisive) | 854 | | 1955 | |
+| winner log loss | 0.6465 | **0.6239** | 0.6747 | **0.6690** |
+| Brier | 0.2274 | **0.2171** | 0.2409 | **0.2379** |
+| accuracy | 0.638 | **0.667** | 0.564 | **0.600** |
+| 7-outcome log loss (winner x KO/SUB/DEC, draw) | 1.5947 | **1.5770** | 1.6754 | **1.6744** |
+| sig. landed / min, MAE of simulated vs actual | 1.920 | **1.898** | 1.977 | **1.955** |
+| takedowns landed / min, MAE | 0.1027 | **0.0951** | 0.1016 | **0.0941** |
+| control s / min, MAE | 9.265 | **8.774** | 9.252 | **8.765** |
+| walk-forward Elo winner log loss | 0.6769 | | 0.6857 | |
+
+Paired differences, ML minus plain, with fight-bootstrap 95% CIs:
+
+| | 2024-2025 | 2019-2023 |
+|---|---|---|
+| winner log loss | **-0.0226 [-0.0311, -0.0136]** | -0.0057 [-0.0123, +0.0012] |
+| 7-outcome log loss | -0.0177 [-0.0351, +0.0005] | -0.0011 [-0.0147, +0.0129] |
+| sig. landed / min MAE | **-0.0220 [-0.0443, -0.0017]** | **-0.0226 [-0.0378, -0.0063]** |
+| takedowns landed / min MAE | **-0.0076 [-0.0089, -0.0061]** | **-0.0074 [-0.0084, -0.0066]** |
+| control s / min MAE | **-0.4908 [-0.6255, -0.3603]** | **-0.4870 [-0.5838, -0.4004]** |
+
+**Pooled 2019-2025** (2809 decisive fights, all predictions out of sample): winner log loss
+0.6661 -> **0.6553**, difference **-0.0108 [-0.0159, -0.0055]**. By year (plain -> ML): 2019: 0.6729 -> 0.6581 (n 388) | 2020: 0.6875 -> 0.6818 (n 343) | 2021: 0.6541 -> 0.6518 (n 415) | 2022: 0.6814 -> 0.6772 (n 419) | 2023: 0.6801 -> 0.6782 (n 390) | 2024: 0.6475 -> 0.6218 (n 429) | 2025: 0.6455 -> 0.6260 (n 425).
+ML is better in all seven years. The gain is larger in 2024-2025 (and 2019) than in 2020-2023. Training size
+does not explain it (the 2019 fold had the least data), so treat the pooled number as the planning estimate:
+about -0.011 winner log loss.
+
+**Calibration of the simulated win probability** (symmetric, deciles of both orientations): 2019-2023 ECE 0.036
+plain -> 0.023 ML. 2024-2025 ECE 0.036 plain -> 0.048 ML: the ML version spreads its probabilities more, which
+helps the log loss, but on 2024-2025 both versions are still underconfident (in the 0.7-0.8 decile the ML says
+0.742 and 81.1% win). A logit-slope recalibration fit on the 2019-2023 simulations gives slopes 0.77 (plain) and
+0.75 (ML), meaning both were overconfident in that period. Applied to 2024-2025 it makes both worse (plain 0.6465
+-> 0.6513, ML 0.6239 -> 0.6325; the ML lead remains, at
+-0.0188 [-0.0254, -0.0119]). So do not ship a fixed recalibration from this. The engine's dispersion
+(form sds, shared volatility, judge noise) should be re-tuned with the ML rates on (mlcal hook), and a v9 stacking
+layer should own the final calibration.
 
 ## Integration recipe (exact)
 

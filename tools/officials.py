@@ -1735,36 +1735,50 @@ def load_all():
 
 
 def deduction_validation(x, cfg, rows, nat, jidx, year_max):
-    """Hide the deductions DETAILS records (almost all 2001-2015) and check that the model finds them."""
+    """Hide known deductions and check that the totals-only model finds them. Truth: MMA Decisions raw vs
+    published round scores (2013-2025, raw_known) plus the deductions DETAILS records (mostly 2001-2015).
+    Each validation fight is reduced to its three published card totals with the deduction latent."""
     import copy
-    era = [copy.copy(r) for r in rows if r["year"] <= 2015]
-    truth = []
-    for r in era:
-        truth.append(r["ded"])
-        r["ded"] = None
+    era, truth = [], []
+    for r in rows:
+        if r.get("ded_known") is not None:
+            t = r["ded_known"]
+        elif r["ded"] is not None:
+            t = (r["ded"][0], r["ded"][1])
+        else:
+            continue
+        q = copy.copy(r)
+        q["cards"] = [(c[0], c[1], c[2], c[3], None) for c in r["cards"]]
+        q["dfix"], q["ded"] = None, None
+        era.append(q)
+        truth.append(tuple(t))
     dz = Design(era, jidx, nat, year_max)
     post = deduction_posterior(x, dz, cfg)
     tmap = {r["fid"]: t for r, t in zip(era, truth)}
-    post["true"] = post.fid.map(lambda f: tmap.get(f) is not None)
-    post["true_side"] = post.fid.map(lambda f: None if tmap.get(f) is None else
-                                     ("A" if tmap[f][0] > 0 and tmap[f][1] == 0 else
-                                      "B" if tmap[f][1] > 0 and tmap[f][0] == 0 else "both"))
+    post["true"] = post.fid.map(lambda f: sum(tmap[f]) > 0)
+    post["true_side"] = post.fid.map(lambda f: "A" if tmap[f][0] > 0 and tmap[f][1] == 0 else
+                                     "B" if tmap[f][1] > 0 and tmap[f][0] == 0 else ("both" if sum(tmap[f]) else None))
     y = post.true.to_numpy()
     sc = post.p_any.to_numpy()
-    # AUC by ranks
     from scipy.stats import rankdata
     rk = rankdata(sc)
-    n1, n0 = y.sum(), (~y).sum()
+    n1, n0 = int(y.sum()), int((~y).sum())
     auc = float((rk[y].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)) if n1 and n0 else None
     rec = post[post.true]
     side_ok = [(row.p_A > row.p_B) == (row.true_side == "A") for row in rec.itertuples() if row.true_side in ("A", "B")]
-    top = post.sort_values("p_any", ascending=False).head(int(n1))
-    return {"decisions_2001_2015": int(len(post)), "recorded": int(n1), "sum_posterior": float(sc.sum()),
-            "posterior_mean_recorded": float(sc[y].mean()) if n1 else None,
-            "posterior_mean_unrecorded": float(sc[~y].mean()), "auc": auc,
-            "precision_at_n_recorded": float(top.true.mean()),
-            "side_correct_share": float(np.mean(side_ok)) if side_ok else None,
-            "excluded_unmatched": int(len(era) - len(post))}
+    top = post.sort_values("p_any", ascending=False).head(n1)
+    bins = [0, 0.05, 0.2, 0.5, 0.8, 1.01]
+    cal = []
+    for lo, hi in zip(bins[:-1], bins[1:]):
+        m = (sc >= lo) & (sc < hi)
+        cal.append({"bin": f"{lo:.2f}-{min(hi, 1):.2f}", "n": int(m.sum()),
+                    "pred": float(sc[m].mean()) if m.any() else None, "obs": float(y[m].mean()) if m.any() else None})
+    return {"fights": int(len(post)), "with_deduction": n1, "sum_posterior": float(sc.sum()),
+            "posterior_mean_true": float(sc[y].mean()) if n1 else None,
+            "posterior_mean_false": float(sc[~y].mean()), "auc": auc,
+            "precision_at_n_true": float(top.true.mean()) if n1 else None,
+            "side_correct_share": float(np.mean(side_ok)) if side_ok else None, "calibration": cal,
+            "excluded_too_many_patterns": int(len(era) - len(post))}
 
 
 def run_post(rows, nat, natinfo, F, S, data_max, notes):
@@ -1779,7 +1793,7 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
     best = max(cands, key=cands.get)
     mult = 1.0 if "@" not in best else float(best.split("@")[1])
     sfx = "" if mult == 1.0 else f"@{mult:g}"
-    W = Window(rows, nat, 2027)
+    W = Window(rows, nat, VAULT_FROM.year)
     if "judges_home" + sfx in final["models"]:
         ff = final["models"]["judges_home" + sfx]
     else:
@@ -1797,15 +1811,15 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
     except np.linalg.LinAlgError:
         se = np.full(N_GLOBAL, np.nan)
     ff["se_global"] = unravel(np.concatenate([se, np.zeros(5 * len(ff["jidx"]))]), len(ff["jidx"]))
-    ded = deduction_posterior(ff["x"], W.dz, cfg)
-    log(f"deductions: posterior sum {ded.p_any.sum():.1f} over {len(ded)} decisions")
-    dedval = deduction_validation(ff["x"], cfg, rows, nat, ff["jidx"], 2026)
-    dedval["posterior_by_year"] = ded.groupby("year").p_any.mean().round(4).to_dict()
-    dedval["likely_unrecorded_2016_on"] = [
-        {"fid": r.fid, "p_any": round(float(r.p_any), 3), "p_A": round(float(r.p_A), 3), "p_B": round(float(r.p_B), 3),
-         "bout": f"{by_fid[r.fid]['n0']} vs. {by_fid[r.fid]['n1']}", "year": int(r.year), "referee": r.referee}
-        for r in ded[(ded.year >= 2016) & (~ded.recorded)].sort_values("p_any", ascending=False).head(25).itertuples()]
-    log(f"deduction validation: {dedval}")
+    dedval = deduction_validation(ff["x"], cfg, rows, nat, ff["jidx"], 2025)
+    log(f"deduction validation: { {k: v for k, v in dedval.items() if k != 'calibration'} }")
+    # observed deductions per decision (MMA Decisions raw scores, 2013-2025) for the referee model
+    obs = [{"fid": r["fid"], "referee": r["referee"], "year": r["year"], "p_any": float(sum(r["ded_known"]) > 0)}
+           for r in rows if r.get("ded_known") is not None]
+    ded = pd.DataFrame(obs)
+    dedval["observed_rate_per_decision_by_year"] = ded.groupby("year").p_any.mean().round(4).to_dict()
+    dedval["observed_decisions"] = int(len(ded))
+    dedval["observed_with_deduction"] = int(ded.p_any.sum())
     refs = run_referees(F, S, ded)
     out = assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, ff, W)
     OUT.write_text(json.dumps(to_jsonable(out), indent=1))
@@ -1839,8 +1853,8 @@ if __name__ == "__main__":
         import subprocess
         procs = []
         for tag, ty, ev, models in (("tune", 2019, "2019,2020,2021,2022,2023", "league,league_home,judges_home"),
-                                    ("test", 2024, "2024,2025,2026", "indep,league,league_home,judges,judges_home"),
-                                    ("final", 2027, "2027", "league,judges_home")):
+                                    ("test", 2024, "2024,2025", "indep,league,league_home,judges,judges_home"),
+                                    ("final", 2026, "2026", "league,judges_home")):
             procs.append(subprocess.Popen([sys.executable, __file__, "--stage", "fold", "--test-year", str(ty),
                                            "--tag", tag, "--eval-years", ev, "--tau-mults", "0.5,1,2",
                                            "--models", models]))

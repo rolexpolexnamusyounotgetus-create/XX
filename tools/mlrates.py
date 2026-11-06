@@ -25,7 +25,9 @@ export is refit on 2010-2025 with the selected hyperparameters; data/derived/mlr
     python3 tools/mlrates.py build     # dataset (about 1 minute)
     python3 tools/mlrates.py engine    # engine v3 static expectations for every row (node)
     python3 tools/mlrates.py fit       # CV + validation + export
-    python3 tools/mlrates.py sim       # simulator with ML rates vs plain engine on validation fights
+    python3 tools/mlrates.py sim --period train   # simulator, 2019-2023, out-of-fold rates
+    python3 tools/mlrates.py sim --period val     # simulator, 2024-2025, dev model (+ recalibration check)
+    python3 tools/mlrates.py eval      # data/derived/mlrates_eval.json (validation + simulator summary)
     python3 tools/mlrates.py all
 """
 from __future__ import annotations
@@ -1384,10 +1386,59 @@ def cmd_sim(args):
         log(k, json.dumps({kk: vv for kk, vv in out[k].items() if kk != "calibration_mirrored"}))
 
 
+# ------------------------------------------------------------------ evaluation summary for the page / other tools
+def cmd_eval(args):
+    """Merge the fit report and the simulator reports into data/derived/mlrates_eval.json, with the per-year and
+    pooled 2019-2025 simulated winner log loss (every prediction out of sample)."""
+    rep = json.load(open(os.path.join(CACHE, "fit_report.json")))
+    out = {"meta": {"name": "mlrates evaluation", "source": "tools/mlrates.py eval",
+                    "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                    "protocol": "train 2010-2023 (time-ordered CV 2019-2023), validation 2024-2025, 2026+ never read"},
+           "stats": {k: rep[k] for k in ("targets", "n_train_rows", "n_val_rows", "n_val_rows_both_prior",
+                                         "validation_2024_2025", "cv_oof_2019_2023", "stat_line_mae_2024_2025",
+                                         "engine_recal_consts", "glm_lambda", "gbm_rounds_es", "mlp_epochs_es",
+                                         "engine") if k in rep}}
+    d = load_dataset()
+    date = {r["id"]: r["date"] for r in d["rows"]}
+    allrec = []
+    for period in ("train", "val"):
+        pth = os.path.join(CACHE, "sim_report_%s.json" % period)
+        if os.path.exists(pth):
+            sr = json.load(open(pth))
+            for k in ("plain", "ml"):
+                sr[k].pop("_llv_recal", None)
+            out["sim_" + period] = sr
+        rp = os.path.join(CACHE, "sim_recs_%s.json" % period)
+        if os.path.exists(rp):
+            allrec += [x for x in json.load(open(rp)) if x["winner"] in ("A", "B")]
+    if allrec:
+        def ll(p, y):
+            p = min(max(p, 1e-4), 1 - 1e-4)
+            return -(y * math.log(p) + (1 - y) * math.log(1 - p))
+        by = defaultdict(list)
+        for x in allrec:
+            y = 1.0 if x["winner"] == "A" else 0.0
+            by[date[x["id"]][:4]].append((ll(x["plain"], y), ll(x["ml"], y)))
+        out["sim_by_year"] = {yv: {"n": len(v), "plain": float(np.mean([a for a, _ in v])),
+                                   "ml": float(np.mean([b for _, b in v]))} for yv, v in sorted(by.items())}
+        a = np.array([v for yv in by for v in by[yv]])
+        dd = a[:, 1] - a[:, 0]
+        fid = np.array([x["id"] for x in allrec])
+        mu, lo, hi = boot_ci(dd, fid)
+        out["sim_pooled_2019_2025"] = {"n": int(len(dd)), "plain": float(a[:, 0].mean()), "ml": float(a[:, 1].mean()),
+                                       "ml_minus_plain": {"mean": mu, "lo": lo, "hi": hi}}
+    path = os.path.join(OUT, "mlrates_eval.json")
+    with open(path, "w") as fh:
+        json.dump(out, fh, separators=(",", ":"))
+    log("wrote %s (%.0f KB)" % (path, os.path.getsize(path) / 1e3))
+    if "sim_pooled_2019_2025" in out:
+        log(json.dumps(out["sim_pooled_2019_2025"]))
+
+
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["build", "engine", "fit", "sim", "all"])
+    ap.add_argument("cmd", choices=["build", "engine", "fit", "sim", "eval", "all"])
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--nsim", type=int, default=600, help="simulations per fight and config in `sim` (600)")
     ap.add_argument("--procs", type=int, default=2, help="node worker processes for `sim` (<= 2)")
@@ -1400,8 +1451,14 @@ def main():
         cmd_engine(args)
     if args.cmd in ("fit", "all"):
         cmd_fit(args)
-    if args.cmd in ("sim", "all"):
+    if args.cmd == "all":
+        for per in ("train", "val"):
+            args.period = per
+            cmd_sim(args)
+    elif args.cmd == "sim":
         cmd_sim(args)
+    if args.cmd in ("eval", "all"):
+        cmd_eval(args)
 
 
 if __name__ == "__main__":

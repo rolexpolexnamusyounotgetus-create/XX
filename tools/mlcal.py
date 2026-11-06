@@ -281,6 +281,39 @@ def per_fight_arrays(pf):
     return pA, y, q, eA, eB
 
 
+_ELO_SLOPE = None
+
+
+def elo_slope_train():
+    """Review fix (Nov 6): the Elo reference used the raw 400-point scale. This fits the slope of
+    p = sigmoid(s * (eloA - eloB) / 400) by maximum likelihood on 2019-2023 decisive train fights, mirrored
+    (no intercept, so corner order cannot be learned), and reports Elo with that slope as a second reference.
+    (On the Nov 6 data the fitted slope is close to ln 10 and the two references agree within 0.002.)"""
+    global _ELO_SLOPE
+    if _ELO_SLOPE is None:
+        bt = json.load(open(rel("data/derived/backtest_dev.json")))
+        xs, ys = [], []
+        for f in bt["fights"]:
+            if not ("2019-01-01" <= f["date"] < "2024-01-01"):
+                continue
+            r = f["result"]
+            if r["winner"] not in ("A", "B") or r["method"] in ("DQ", "NC", "CNC"):
+                continue
+            xs.append(((f["A"].get("elo") or 1500) - (f["B"].get("elo") or 1500)) / 400.0)
+            ys.append(1.0 if r["winner"] == "A" else 0.0)
+        x = np.concatenate([np.array(xs), -np.array(xs)])
+        y = np.concatenate([np.array(ys), 1 - np.array(ys)])
+        s = math.log(10)
+        for _ in range(50):
+            p = 1 / (1 + np.exp(-s * x))
+            step = float(np.sum((p - y) * x)) / float(np.sum(p * (1 - p) * x * x))
+            s -= step
+            if abs(step) < 1e-10:
+                break
+        _ELO_SLOPE = s
+    return _ELO_SLOPE
+
+
 def fight_losses(pf):
     pA, y, q, eA, eB = per_fight_arrays(pf)
     w = ~np.isnan(y)
@@ -289,7 +322,9 @@ def fight_losses(pf):
     acc = np.where(w, np.where(pA > 0.5, np.nan_to_num(y), np.where(pA < 0.5, 1 - np.nan_to_num(y), 0.5)), np.nan)
     pe = 1 / (1 + 10 ** ((eB - eA) / 400))
     elo = np.where(w, -(np.nan_to_num(y) * np.log(pe) + (1 - np.nan_to_num(y)) * np.log(1 - pe)), np.nan)
-    return {"winLL": ll, "brier": br, "accuracy": acc, "binLL": -np.log(q), "eloLL": elo}
+    pf_ = 1 / (1 + np.exp(-elo_slope_train() * (eA - eB) / 400))
+    elo_fit = np.where(w, -(np.nan_to_num(y) * np.log(pf_) + (1 - np.nan_to_num(y)) * np.log(1 - pf_)), np.nan)
+    return {"winLL": ll, "brier": br, "accuracy": acc, "binLL": -np.log(q), "eloLL": elo, "eloLL_fit": elo_fit}
 
 
 def boot(vals, B=2000, seed=11, paired=None):
@@ -360,6 +395,7 @@ def validate_set(ev, info, finalists, val_sims, seed, force=False, split="val"):
         L = fight_losses(pfs[label])
         ci = {k: rnd(boot(L[k]), 5) for k in ("winLL", "brier", "accuracy", "binLL")}
         ci["eloLL"] = rnd(boot(L["eloLL"]), 5)
+        ci["eloLL_fit"] = rnd(boot(L["eloLL_fit"]), 5)
         ci["obj_wb"] = rnd(boot(L["winLL"] + 0.5 * L["binLL"]), 5)
         e, rows = ece_sym(pfs[label])
         res[label]["ece_sym"] = round(e, 5)
@@ -370,7 +406,25 @@ def validate_set(ev, info, finalists, val_sims, seed, force=False, split="val"):
             res[label]["vs_baseline"]["obj_wb"] = rnd(boot(L["winLL"] + 0.5 * L["binLL"],
                                                            paired=base_l["winLL"] + 0.5 * base_l["binLL"]), 5)
         res[label]["vs_elo_winLL"] = rnd(boot(L["winLL"], paired=L["eloLL"]), 5)
+        res[label]["vs_elo_fit_winLL"] = rnd(boot(L["winLL"], paired=L["eloLL_fit"]), 5)
     return res
+
+
+def baseline_warnings(params_path):
+    """Review fix (Nov 6): flag a baseline whose values were fit to league rates that include the validation
+    years. src/params3.js 3.0.0-selfcal-2026-11-06 was self-calibrated (tests/test_engine3.js --fit) to
+    data/derived/fighters.json priors, which pool 2018-01-01..2026-10-31 (validation years and the 2026 vault),
+    so its validation score is optimistic relative to any candidate tuned on 2019-2023 only."""
+    try:
+        txt = open(rel(params_path)).read()
+    except OSError:
+        return []
+    out = []
+    if "[selfcal]" in txt and "selfcal-pre" not in txt:
+        out.append("%s carries [selfcal] values fit to all-years league priors (fighters.json, 2018..2026 incl. validation and "
+                   "the 2026 vault): its validation score is optimistic; compare candidates against a train-only baseline "
+                   "(node tools/mlcal_cleanbase.js, see research/model_mlcal.md Verification log)" % params_path)
+    return out
 
 
 # ------------------------------------------------------------------ tune
@@ -384,6 +438,9 @@ def cmd_tune(args):
     try:
         info = ev.call(cmd="spec")
         dims = info["dims"]
+        warnings = baseline_warnings(args.params or info["params"])
+        for w_ in warnings:
+            log("WARNING: " + w_)
         log("engine %s (%s), params %s (%s), %d dimensions, rungs %s, eta %d" % (
             info["engine"], info["engineVersion"], info["params"], info["paramsVersion"], len(dims), rungs, eta))
         st = ev.call(cmd="setup", split="train", nFights=args.n_fights, offset=0, sampleSeed=args.sample_seed,
@@ -445,7 +502,7 @@ def cmd_tune(args):
                 "engine": info["engine"], "engineVersion": info["engineVersion"], "engineHash": info["engineHash"],
                 "params": info["params"], "paramsVersion": info["paramsVersion"], "paramsHash": info["paramsHash"],
                 "spec": args.spec, "dims": dims, "objective": info.get("objective"), "hook": info.get("hook"),
-                "fixed": info.get("fixed"),
+                "fixed": info.get("fixed"), "warnings": warnings,
                 "budget": {"trials": args.trials, "cma_evals": args.cma_evals, "cma_pop": args.cma_pop, "n_fights": st["n"],
                            "rungs": rungs, "eta": eta, "confirm_fights": n_conf, "confirm_sims": args.confirm_sims,
                            "val_sims_per_order": args.val_sims, "workers": args.workers, "seed": args.seed,
@@ -490,6 +547,9 @@ def summary(out):
     if b.get("val") and b["val"].get("ci"):
         e = b["val"]["ci"]["eloLL"]
         print("Elo reference on the same validation fights: winner log loss %.4f [%.4f, %.4f]" % (e["mean"], e["lo"], e["hi"]))
+        ef = b["val"]["ci"].get("eloLL_fit")
+        if ef:
+            print("Elo with its slope fit on 2019-2023 train fights: winner log loss %.4f [%.4f, %.4f]" % (ef["mean"], ef["lo"], ef["hi"]))
 
 
 # ------------------------------------------------------------------ validate (stand-alone)

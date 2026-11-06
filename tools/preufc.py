@@ -844,6 +844,9 @@ def build(args):
             "snapshots": snaps,
             "fights": fl,
         }
+    roster_slugs = set(json.load(open(os.path.join(DERIVED, "fighters.json")))["fighters"])
+    cover["roster"] = len(roster_slugs)
+    cover["roster_resolved"] = sum(1 for sl in roster_slugs if out.get(sl, {}).get("status") == "ok")
     meta = {
         "source": "sherdog.com fighter pages (pro fight history), fetched by tools/preufc.py at <= 1 request/s; "
                   "raw HTML cached in data/raw/sherdog_cache/ (gitignored)",
@@ -1994,10 +1997,146 @@ def roster_priors(pre, people, bouts, sfit, first_fid, age_at, fights, snaps):
     return out
 
 
+
+# ------------------------------------------------------------------ report: markdown tables from preufc.json
+def report(args):
+    path = os.path.join(DERIVED, "preufc.json")
+    J = json.load(open(path))
+    m, ev = J["meta"], J.get("eval", {})
+    out = []
+    P = out.append
+
+    def f4(x):
+        return "%.4f" % x if isinstance(x, (int, float)) else str(x)
+
+    def ci(v):
+        return "%.4f [%.4f, %.4f]" % (v[0], v[1], v[2])
+    cov = m["coverage"]
+    P("### Coverage (Sherdog resolution)\n")
+    P("| Item | Count |\n|---|---|")
+    P("| Targets (roster + every fighter with 0-3 prior UFC bouts in a bout since %s) | %d |" %
+      (m["graduates_from"], cov["targets"]))
+    P("| Resolved to a verified Sherdog page | %d (%.1f%%) |" % (cov["resolved"], 100 * cov["resolved"] / cov["targets"]))
+    P("| Unresolved | %d |" % cov.get("unresolved", 0))
+    P("| ufcstats bouts of resolved fighters found in their Sherdog pro history | %d of %d (%.2f%%) |" %
+      (cov["ufc_bouts_matched"], cov["ufc_bouts"], 100 * cov["ufc_bouts_matched"] / cov["ufc_bouts"]))
+    P("| Date of birth on both sources / within 1 day | %d / %d (%.1f%%) |" %
+      (cov["dob_both"], cov["dob_agree"], 100 * cov["dob_agree"] / max(1, cov["dob_both"])))
+    if "roster" in cov:
+        P("| Roster fighters (fighters.json) resolved | %d of %d |" % (cov["roster_resolved"], cov["roster"]))
+    P("")
+    if ev:
+        c = ev["coverage"]
+        P("| Eval split | Newcomer bouts | Newcomer sides | with Sherdog record | Debut sides | with Sherdog record |")
+        P("|---|---|---|---|---|---|")
+        for k in ("train", "test"):
+            x = c[k]
+            P("| %s | %d | %d | %d (%.1f%%) | %d | %d (%.1f%%) |" % (
+                k, x["fights"], x["newcomer_sides"], x["newcomer_sides_with_sherdog"],
+                100 * x["newcomer_sides_with_sherdog"] / max(1, x["newcomer_sides"]), x["debut_sides"],
+                x["debut_sides_with_sherdog"], 100 * x["debut_sides_with_sherdog"] / max(1, x["debut_sides"])))
+        P("")
+        T = ev["test"]
+        P("### Winner, 2024+ newcomer bouts (held out, scored once)\n")
+        P("| Model | Log loss [95%% CI] | Brier | Accuracy | ECE |")
+        P("|---|---|---|---|---|")
+        for k, v in T["metrics_ci95"].items():
+            P("| %s | %s | %.4f | %.3f | %.4f |" % (k, ci(v["log_loss"]), v["brier"][0], v["accuracy"][0],
+                                                 T["calibration"][k]["ece"]))
+        P("\n### Paired log-loss differences (negative = better), event-cluster bootstrap\n")
+        P("| Comparison | Mean | 95% CI | P(better) |\n|---|---|---|---|")
+        for k, v in T["delta_log_loss_ci95 [mean, lo, hi, P(<0)]"].items():
+            if k.endswith(" - elo") or k.endswith(" - base"):
+                P("| %s | %+.4f | [%+.4f, %+.4f] | %.2f |" % (k, v[0], v[1], v[2], v[3]))
+        P("\n### Subgroups (test log loss)\n")
+        keys = list(T["metrics_ci95"].keys())
+        P("| Group | n | " + " | ".join(keys) + " |")
+        P("|---|---|" + "---|" * len(keys))
+        for g, v in T["subgroups_log_loss"].items():
+            P("| %s | %d | " % (g, v["n"]) + " | ".join(f4(v[k]) for k in keys) + " |")
+        P("\n### All 2024+ decisive bouts (does seeding hurt anyone?)\n")
+        A = T["all_2024plus_bouts"]
+        P("| Set | Model | n | Log loss | Brier | Accuracy |\n|---|---|---|---|---|---|")
+        for k, v in A.items():
+            if k == "n":
+                continue
+            if k.startswith("backtest_rule"):
+                for kk, vv in v.items():
+                    if kk != "n":
+                        P("| both >= 1 prior UFC bout (backtest rule) | %s | %d | %.4f | %.4f | %.3f |" %
+                          (kk, vv["n"], vv["log_loss"], vv["brier"], vv["accuracy"]))
+            else:
+                P("| all | %s | %d | %.4f | %.4f | %.3f |" % (k, v["n"], v["log_loss"], v["brier"], v["accuracy"]))
+        P("\n### Calibration (test, 10 bins): base+pre and seeded Elo\n")
+        for k in ("base+pre", "elo_seed_pre+age", "elo"):
+            if k in T["calibration"]:
+                P("%s: " % k + ", ".join("%.1f-%.1f n=%d pred %.3f obs %.3f" % (b["lo"], b["hi"], b["n"], b["pred"], b["obs"])
+                                         for b in T["calibration"][k]["bins"]))
+                P("")
+        M = ev["models"]
+        P("\n### Seeded Elo debut coefficients (Elo points per SD; fit on train only)\n")
+        for nm, sm in M["seeded_elo"].items():
+            P("%s: " % nm + ", ".join("%s %+.1f" % (k, b) for k, b in zip(sm["keys"], sm["beta_elo_points_per_sd"])
+                                      if k != "missing"))
+            P("")
+        P("\n### base+pre logistic coefficients (per SD of the side difference; C=%s, tau=%s)\n" %
+          (M["base+pre"]["C"], M["base+pre"]["tau"]))
+        P(", ".join("%s %+.3f" % kv for kv in M["base+pre"]["coef"].items()))
+        P("\n### CV (time-ordered, 2019-2023) log loss of the chosen settings\n")
+        for k, v in ev["cv"]["best"].items():
+            P("- %s: %.4f %s" % (k, v["cv_ll"], {kk: vv for kk, vv in v.items() if kk in ("C", "tau")}))
+        P("- seeded Elo CV: " + ", ".join("%s %.4f" % kv for kv in ev["cv"]["seeded_elo_cv_ll"].items()))
+        mk = ev.get("market")
+        if mk:
+            P("\n### Market benchmark (newcomer bouts with a clean BFO closing line)\n")
+            P("Coverage: %s\n" % mk["coverage"])
+            P("| Model | Log loss [95% CI] | Accuracy | Delta vs close [95% CI] |\n|---|---|---|---|")
+            for k, v in mk["test"].items():
+                if not isinstance(v, dict):
+                    continue
+                dd = v.get("delta_vs_market [mean, lo, hi, P(<0)]")
+                P("| %s | %.4f [%.4f, %.4f] | %.3f | %s |" % (k, v["log_loss"], v["ci95"][0], v["ci95"][1], v["accuracy"],
+                                                         "%+.4f [%+.4f, %+.4f]" % tuple(dd[:3]) if dd else "-"))
+            d2 = mk["test"]["delta mkt+pre_core - mkt_cal"]
+            P("\nmkt+pre_core minus mkt_cal: %+.4f [%+.4f, %+.4f], P(better) %.2f" % tuple(d2))
+        me = ev.get("method")
+        if me:
+            P("\n### Method (KO / SUB / DEC), newcomer bouts\n")
+            P("train shares KO/SUB/DEC %s; test n %d; base-rate log loss %.4f" % (me["train_shares"], me["n_test"],
+                                                                               me["test_ll_base_rate"]))
+            for k in ("ufc_only", "ufc+pre"):
+                P("- %s: test log loss %.4f [%.4f, %.4f] (CV %.4f, C %s)" % (k, me[k]["test_ll"], me[k]["ci95"][0],
+                                                                         me[k]["ci95"][1], me[k]["cv_ll"], me[k]["C"]))
+            P("- delta (ufc+pre - ufc_only): %+.4f [%+.4f, %+.4f], P(better) %.2f" % tuple(me["delta_ll (ufc+pre - ufc_only)"]))
+            P("- finish vs decision log loss: %s" % me["finish_binary"])
+        sf = ev.get("side_finish")
+        if sf:
+            P("\n### Per-side finish models, newcomer sides\n")
+            P("| Target | train rate | test rate | UFC-only test LL | + pre-UFC test LL | Delta [95% CI] | P(better) | pre coef (own, opp) |")
+            P("|---|---|---|---|---|---|---|---|")
+            for t in ("ko_win", "sub_win", "ko_loss"):
+                x = sf[t]
+                d_ = x["delta_ll [mean, lo, hi, P(<0)]"]
+                P("| %s | %.3f | %.3f | %.5f | %.5f | %+.5f [%+.5f, %+.5f] | %.2f | %s |" % (
+                    t, x["train_rate"], x["test_rate"], x["ufc_only"]["test_ll"], x["ufc+pre"]["test_ll"], d_[0], d_[1],
+                    d_[2], d_[3], x["ufc+pre"].get("coef_log_ratio (own, opponent), at n=0")))
+            for t in ("ko_win", "sub_win", "ko_loss"):
+                if "test_rate_by_pre_tercile" in sf[t]:
+                    P("\n%s by tercile of own pre-UFC rate (test, resolved sides): " % t + "; ".join(
+                        "T%d n=%d pre %.3f -> UFC %.3f (pred UFC-only %.3f, +pre %.3f)" % (
+                            g["tercile"], g["n"], g["pre_rate_mean"], g["ufc_rate"], g["pred_ufc_only"], g["pred_ufc+pre"])
+                        for g in sf[t]["test_rate_by_pre_tercile"]))
+    P("\n### Top feeder promotions (graduates since %s)\n" % m["graduates_from"])
+    P("| Promotion | UFC graduates | their first-3 UFC bouts | win rate (shrunk) |\n|---|---|---|---|")
+    for k, v in list(m["promotions"].items())[:25]:
+        P("| %s | %d | %d | %.3f |" % (k, v["graduates"], v["grad_bouts"], v["grad_win"]))
+    print("\n".join(out))
+
+
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["crawl", "build", "eval", "all"])
+    ap.add_argument("cmd", choices=["crawl", "build", "eval", "all", "report"])
     ap.add_argument("--since", default="2019-01-01", help="newcomer window start (bouts with <= 3 prior UFC fights)")
     ap.add_argument("--extra-since", default=None, help="widen the newcomer window (e.g. 2015-01-01)")
     ap.add_argument("--limit", type=int, default=0)
@@ -2013,6 +2152,8 @@ def main():
             evaluate(args)
     elif args.cmd == "eval":
         evaluate(args)
+    elif args.cmd == "report":
+        report(args)
 
 
 if __name__ == "__main__":

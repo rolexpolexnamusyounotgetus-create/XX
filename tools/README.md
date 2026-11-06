@@ -180,3 +180,24 @@ Stdlib only, about 90 polite requests (1.25 s apart, robots.txt checked) in 3-4 
 
 Run it in fight week, at T-2h before each card's lock, and about 10 h after the card for the archived
 closing lines (`plan` prints the times). Details and caveats: `research/data_odds_upcoming.md`.
+
+
+## fightweek.py: fight-week context (weigh-ins, bout changes, venue, home country)
+
+```
+python3 tools/fightweek.py fetch-wiki | fetch-geo | fetch-sherdog   # cached, <= 1 request/second per site
+python3 tools/fightweek.py all                                       # build + walk-forward eval (no network)
+python3 tools/fightweek.py report                                    # markdown tables for the research note
+```
+
+Needs requests, bs4/lxml, pandas, numpy (no scipy). Reads Wikipedia event articles (`/wiki/` pages;
+the API paths are disallowed by robots.txt), the Open-Meteo geocoder, `data/raw/wikidata_mma_people.csv`
+and Sherdog fighter pages (sharing tools/preufc.py's cache and keeping the combined Sherdog rate under
+1/s). Raw pages live in `data/raw/web_cache/{wikipedia,open-meteo,sherdog}/` (gitignored).
+
+- **Output:** `data/derived/fightweek.json` = `{meta, fights, fighters}`; per ufcstats fight id: weight
+  miss and size, catchweight, late replacement with days of notice, opponent change, venue (city,
+  country, altitude, Apex), home / nationality / time-zone shift / travel per side, crowd (COVID closed
+  doors), event type, card segment; per slug: nationality with sources and a home point.
+- **Eval:** train 2012-2023, validate 2024-2025, mirrored no-intercept logistic beyond Elo + debut; results
+  in `meta.eval`. Details, audit and caveats: `research/data_fightweek.md`.

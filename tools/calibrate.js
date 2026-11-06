@@ -58,7 +58,8 @@ const V_Z1 = 45, V_Z2 = 47;   // per side: sum and sum of squares of z = log((la
 const V_Q1 = 49, V_Q2 = 51;   // per side: sum and sum of squares of logit accuracy log((landed + 0.5) / (missed + 0.5))
 const V_QN = 63;          // per side: number of sims with >= 10 attempts (the accuracy sums only use those)
 const V_F = 53;           // matchup constants (not sums): log power ratio A, B; log chin ratio A, B; years past chinAge0 A, B; prior KO losses A, B; lbs up / 10 A, B
-const NV = 65;
+const V_ZAB = 65;         // sum of zA * zB (shared-pace covariance)
+const NV = 66;
 
 function fightSeed(id, salt) { return ((parseInt(String(id).slice(0, 8), 16) >>> 0) ^ (salt >>> 0)) >>> 0; }
 
@@ -92,7 +93,7 @@ function simFight(E, m, N, fseed, out, o) {
     const mn = meth === "UD" || meth === "SD" || meth === "MD" || meth === "DRAW" ? nR * 5 : (f.round - 1) * 5 + f.t / 60;
     const zA = Math.log((A.sig_lnd + 1) / (mn + 0.5)), zB = Math.log((B.sig_lnd + 1) / (mn + 0.5));
     const qA = Math.log((A.sig_lnd + 0.5) / (A.sig_att - A.sig_lnd + 0.5)), qB = Math.log((B.sig_lnd + 0.5) / (B.sig_att - B.sig_lnd + 0.5));
-    out[o + V_Z1] += zA; out[o + V_Z1 + 1] += zB; out[o + V_Z2] += zA * zA; out[o + V_Z2 + 1] += zB * zB;
+    out[o + V_Z1] += zA; out[o + V_Z1 + 1] += zB; out[o + V_Z2] += zA * zA; out[o + V_Z2 + 1] += zB * zB; out[o + V_ZAB] += zA * zB;
     if (A.sig_att >= 10) { out[o + V_Q1] += qA; out[o + V_Q2] += qA * qA; out[o + V_QN]++; }
     if (B.sig_att >= 10) { out[o + V_Q1 + 1] += qB; out[o + V_Q2 + 1] += qB * qB; out[o + V_QN + 1]++; }
   }
@@ -438,7 +439,7 @@ function objective(store, idxs, N) {
 // ------------------------------------------------------------------ parameter vector
 const P0 = JSON.parse(JSON.stringify(BASE));
 const X0 = {
-  formOut: P0.form.out, formPC: 1, formVol: P0.form.vol, formAcc: P0.form.acc, formGrap: P0.form.grap,
+  formOut: P0.form.out, formPace: P0.form.pace, formPC: 1, formVol: P0.form.vol, formAcc: P0.form.acc, formGrap: P0.form.grap,
   jShared: P0.judge.sharedSd, jInd: P0.judge.indSd, jScale: 1,
   chinAge: P0.chinAge, powAge: P0.powAge, powExp: P0.powExp != null ? P0.powExp : 1, chinExp: P0.chinExp != null ? P0.chinExp : 1,
   stko: P0.stko, gnpTko: P0.gnpTko, chinKO: P0.chinKO, sizeChin: P0.sizeChin, r1c5: P0.r1Caution5, dse: P0.drainSchedExp,
@@ -450,7 +451,7 @@ const X0 = {
 };
 function buildOver(x) {
   return {
-    form: { out: x.formOut, pow: P0.form.pow * x.formPC, chin: P0.form.chin * x.formPC, vol: x.formVol, acc: x.formAcc, grap: x.formGrap },
+    form: { out: x.formOut, pace: x.formPace, pow: P0.form.pow * x.formPC, chin: P0.form.chin * x.formPC, vol: x.formVol, acc: x.formAcc, grap: x.formGrap },
     judge: { sharedSd: x.jShared * x.jScale, indSd: x.jInd * x.jScale },
     chinAge: x.chinAge, powAge: x.powAge, powExp: x.powExp, chinExp: x.chinExp,
     kdInstant: probOf(oddsOf(P0.kdInstant) * x.koAll), kdRefStop: probOf(oddsOf(P0.kdRefStop) * x.koAll),
@@ -532,9 +533,14 @@ function ll7Of(idxs, qf) {
 // ------------------------------------------------------------------ stage-1 statistics
 // per-fight dispersion: how far the actual landed rate and accuracy fall from the engine's predictive mean, vs the engine's own spread
 function dispersion(store, idxs, N) {
-  let nz = 0, ez = 0, vz = 0, nq = 0, eq = 0, vq = 0;
+  let nz = 0, ez = 0, vz = 0, nq = 0, eq = 0, vq = 0, nc = 0, ec = 0, vc = 0;
   for (const g of idxs) {
     const f = F[g], mn = f.actual.minutes, o = g * NV; if (!(mn > 0)) continue;
+    {
+      const zaA = Math.log((f.actual.A.sig_lnd + 1) / (mn + 0.5)), zaB = Math.log((f.actual.B.sig_lnd + 1) / (mn + 0.5));
+      const mA = store[o + V_Z1] / N, mB = store[o + V_Z1 + 1] / N;
+      ec += (zaA - mA) * (zaB - mB); vc += store[o + V_ZAB] / N - mA * mB; nc++;
+    }
     for (let s = 0; s < 2; s++) {
       const ac = f.actual[s ? "B" : "A"], L = ac.sig_lnd, A = ac.sig_att;
       const za = Math.log((L + 1) / (mn + 0.5)), mu = store[o + V_Z1 + s] / N, v = Math.max(0, store[o + V_Z2 + s] / N - mu * mu);
@@ -546,7 +552,7 @@ function dispersion(store, idxs, N) {
       }
     }
   }
-  return { zRatio: ez / vz, zExcess: (ez - vz) / nz, qRatio: eq / vq, qExcess: (eq - vq) / nq, nz, nq };
+  return { zRatio: ez / vz, zExcess: (ez - vz) / nz, qRatio: eq / vq, qExcess: (eq - vq) / nq, covAct: ec / nc, covSim: vc / nc, covExcess: (ec - vc) / nc, nz, nq };
 }
 // calibration slope on train, raw and corrected for Monte Carlo noise in the engine probabilities (errors in variables)
 function slopeInfo(store, idxs) {
@@ -616,14 +622,13 @@ function objNoise(store, idxs, N, sub) {
 // stage-1 fixed-point update of every parameter with a data target (dampened by e)
 function fixedPoint(x, o, D, K, sh, e) {
   const y = momentUpdate(x, o.s, o.a, e);
-  // judges: the shared / individual split follows the unanimous share; the total base variance stays at the builder's value
-  // (anchored to the logistic round-winner fit); jScale (stage 2) scales both
-  const V0 = Math.hypot(X0.jShared, X0.jInd), r = Math.hypot(y.jShared, y.jInd);
-  y.jShared *= V0 / r; y.jInd *= V0 / r;
-  // per-fight dispersion: widen (or narrow) the output and accuracy form spreads to the engine's actual prediction error
-  const accL = clip(o.a.acc, 0.2, 0.8), qEx = e * D.qExcess;
+  // judges: momentUpdate moved the individual noise toward the unanimous share; jScale (stage 2) scales shared and individual together
+  // per-fight dispersion: widen (or narrow) the output and accuracy form spreads to the engine's actual prediction error;
+  // the part of the landed-rate error the two fighters share (covariance) goes to the shared fight pace, the rest to individual form
+  const accL = clip(o.a.acc, 0.2, 0.8), qEx = e * D.qExcess, cEx = e * D.covExcess;
   y.formAcc = Math.sqrt(clip(x.formAcc * x.formAcc + qEx, 0.03 * 0.03, 0.6 * 0.6));
-  y.formOut = Math.sqrt(clip(x.formOut * x.formOut + e * (D.zExcess - (1 - accL) * (1 - accL) * D.qExcess), 0.03 * 0.03, 0.6 * 0.6));
+  y.formPace = Math.sqrt(clip(x.formPace * x.formPace + cEx, 0.02 * 0.02, 0.5 * 0.5));
+  y.formOut = Math.sqrt(clip(x.formOut * x.formOut + e * (D.zExcess - (1 - accL) * (1 - accL) * D.qExcess) - (y.formPace * y.formPace - x.formPace * x.formPace), 0.03 * 0.03, 0.6 * 0.6));
   // finish-round shape: R1 share of 3-round finishes
   y.formPC = clip(x.formPC * Math.pow(oddsOf(sh.a1) / oddsOf(sh.s1), e), 0.3, 2.5);
   // knockdown regression, each coefficient shrunk by its precision
@@ -673,7 +678,7 @@ function fixedPoint(x, o, D, K, sh, e) {
       const D = dispersion(cur, TRAIN, N_TUNE), sl = slopeInfo(cur, TRAIN), K = kdRegression(cur, TRAIN);
       const sh = shapeStats(best);
       show(it === 0 ? "baseline (train)" : `fixed point ${it}`, best,
-        `slope ${sl.raw.toFixed(3)} (noise-corrected ${sl.corr.toFixed(3)}) | landed disp ${D.zRatio.toFixed(3)} acc disp ${D.qRatio.toFixed(3)} | R1 share 3rd ${(100 * sh.s1).toFixed(1)}/${(100 * sh.a1).toFixed(1)} | ` +
+        `slope ${sl.raw.toFixed(3)} (noise-corrected ${sl.corr.toFixed(3)}) | landed disp ${D.zRatio.toFixed(3)} acc disp ${D.qRatio.toFixed(3)} cov ${D.covAct.toFixed(4)}/${D.covSim.toFixed(4)} | R1 share 3rd ${(100 * sh.s1).toFixed(1)}/${(100 * sh.a1).toFixed(1)} | ` +
         `KD reg d(pow) ${K.d[1].toFixed(3)}+-${K.se[1].toFixed(3)} d(chin) ${K.d[2].toFixed(3)}+-${K.se[2].toFixed(3)} d(ageChin) ${K.d[3].toFixed(4)}+-${K.se[3].toFixed(4)} ` +
         `d(agePow) ${K.d[4].toFixed(4)}+-${K.se[4].toFixed(4)} d(koL) ${K.d[5].toFixed(3)}+-${K.se[5].toFixed(3)} d(up) ${K.d[6].toFixed(3)}+-${K.se[6].toFixed(3)}`);
       fpLog.push({ it, obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen), slope: r3(sl.raw), slope_corr: r3(sl.corr), landed_disp: r3(D.zRatio), acc_disp: r3(D.qRatio),
@@ -946,7 +951,7 @@ function writeParams(x, cal) {
   const top = ["strikeScale", "accScale", "kdScale", "tdScale", "tdOddsScale", "ctrlScale", "subAttScale", "subConvScale", "kdInstant", "kdRefStop",
     "stko", "gnpTko", "chinAge", "powAge", "powExp", "chinExp", "chinKO", "sizeChin", "r1Caution5", "drainSchedExp", "caution5"];
   for (const k of top) src = rep(src, k, over[k]);
-  src = repBlock(src, "form", { out: over.form.out, pow: over.form.pow, chin: over.form.chin, vol: over.form.vol, acc: over.form.acc, grap: over.form.grap });
+  src = repBlock(src, "form", { out: over.form.out, pace: over.form.pace, pow: over.form.pow, chin: over.form.chin, vol: over.form.vol, acc: over.form.acc, grap: over.form.grap });
   src = repBlock(src, "judge", { sharedSd: over.judge.sharedSd, indSd: over.judge.indSd });
   src = src.replace(/version: "[^"]*"/, `version: "3.0.0-wf-${TODAY}"`);
   // calibration note in the header

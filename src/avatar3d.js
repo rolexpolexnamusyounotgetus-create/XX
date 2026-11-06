@@ -709,11 +709,11 @@
           "  float hfw = length(fwidth(su * 1400.0)); float hatt = 1.0 - smoothstep(0.35, 1.2, hfw);\n" +
           "  float hair = mix(0.5, vn(su * 1400.0), hatt); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
           "  float bd = clamp(vMask.x * uBeard, 0.0, 1.0);\n" +
-          "  float g2fw = length(fwidth(su * 900.0)); float g2 = mix(0.5, vn(su * 900.0) * 0.6 + vn(su * 2100.0) * 0.4, 1.0 - smoothstep(0.25, 0.9, g2fw));\n" +
+          "  float g2fw = length(fwidth(su * 700.0)); float g2 = mix(0.5, vn(su * 700.0) * 0.55 + vn(su * 1700.0) * 0.45, 1.0 - smoothstep(0.35, 1.1, g2fw));\n" +
           "  float edge = smoothstep(0.0, 0.9, vMask.x);\n" +
-          "  float stub = bd * edge * (0.8 + 0.2 * g2);\n" +
-          "  vec3 bcol = uBeardCol * (0.78 + 0.35 * g2);\n" +
-          "  diffuseColor.rgb = mix(diffuseColor.rgb, bcol, clamp(stub * (0.5 + 0.42 * bd), 0.0, 0.9));\n" +
+          "  float stub = bd * edge * (0.5 + 0.5 * smoothstep(0.2, 0.8, g2));\n" +
+          "  vec3 bcol = uBeardCol * (0.55 + 0.75 * g2);\n" +
+          "  diffuseColor.rgb = mix(diffuseColor.rgb, bcol, clamp(stub * (0.62 + 0.38 * bd), 0.0, 0.92));\n" +
           "  float sc = vMask2.x * uScalp; float sst = sc * (0.55 + 0.45 * smoothstep(0.2, 0.9, hair));\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, uHairCol * 0.8, clamp(sst * 0.85, 0.0, 0.9));\n" +
           "  float sideL = step(0.0, vMask.y);\n" +

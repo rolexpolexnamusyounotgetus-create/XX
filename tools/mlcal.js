@@ -591,6 +591,12 @@ async function serve(args) {
 }
 
 async function evalCli(args) {
+  // Review fix (Nov 6): the ledger lives in mlcal.py, so a bare `eval --split val` could score the validation split
+  // any number of times without a trace. Validation goes through `python3 tools/mlcal.py validate` (ledger-guarded).
+  if ((args.split === "val" || args.split === "dev") && !args["unledgered-val"])
+    throw new Error("mlcal eval: --split " + args.split + " touches 2024-2025 validation fights outside the ledger; use python3 tools/mlcal.py validate " +
+      "(or pass --unledgered-val for a code check whose numbers are never used to select anything)");
+  if (args.split === "val" || args.split === "dev") console.error("mlcal eval: WARNING unledgered validation scoring; do not select on this");
   const spec = loadSpec(args.spec, args);
   const sess = new Session(spec, +(args.workers || 2));
   let x = {};

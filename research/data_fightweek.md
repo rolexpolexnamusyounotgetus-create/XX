@@ -68,7 +68,8 @@ __TABLE_COVERAGE__
   "notes": ["B late replacement (33 days, dated)", ...],
   "sources": {"wiki": "https://en.wikipedia.org/wiki/UFC_249", "ufcstats_event": id},
   "change_detail": {"B": {"role", "days", "basis", "short_notice_phrase", "booked_vs"}},   # when a change was found
-  "weighin_text": {"A": the sentence the miss came from}                                   # when a miss was found
+  "weighin_text": {"A": the sentence the miss came from},                                  # when a miss was found
+  "miss_limit": {"A": {"lbs": 156, "basis": "division named in the weigh-in text"}}         # limit used for the size
 }
 "fighters": {"justin-gaethje": {"name", "ufcstats_id", "iso3", "how", "countries", "country_name",
              "home_point": {"basis", "tz", "lat", "lon", "elevation_m"},
