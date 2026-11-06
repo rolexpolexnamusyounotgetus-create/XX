@@ -165,6 +165,22 @@ for (const [REF, refName, OFF] of [[E1, "durability + dynamics off = step-1 engi
   check(`${refName}: identity covers >= 300 random matchups incl. traced fights`, total >= 300, `${total} matchups`);
 }
 
+// the comparisons are not vacuous: each flag turned on changes fights against its reference engine
+{
+  const ON1 = { components: compOff(["durability"], ["dynamics"]) }, ON2 = { components: compOff(["durability", "dynamics"], []) };
+  E.loadMLRates(mlJson); E1.loadMLRates(mlJson); E2.loadMLRates(mlJson);
+  try {
+    for (const [REF, nm, ON, k] of [[E1, "durability on (dynamics off) vs step 1", ON1, "durability"], [E2, "dynamics on vs step 1 + durability", ON2, "dynamics"]]) {
+      let diff = 0, n = 0;
+      casesA.slice(0, 30).concat(casesC.slice(0, 30)).forEach((c) => {
+        const fr = fights(REF, REF.matchup(c.a, c.b, c.opts), c.seed), fc = fights(E, E.matchup(c.a, c.b, withParams(c.opts, ON)), c.seed);
+        for (let q = 0; q < fr.length; q++) { n++; if (fr[q] !== fc[q]) diff++; }
+      });
+      check(`flag ${k} on changes fights (${nm})`, diff > 0.5 * n, `${diff} of ${n} fights differ`);
+    }
+  } finally { E.loadMLRates(null); E1.loadMLRates(null); E2.loadMLRates(null); }
+}
+
 // ------------------------------------------------------------------ 3. both on: API and trace format unchanged
 {
   const vg = { division: "Lightweight", rounds: 5, title: true, date: "2026-11-06" };

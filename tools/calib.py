@@ -622,7 +622,7 @@ def scheme_grid():
         for sd_b in (0.05, 0.1, 0.2):
             for sd_a in (0.15, None):
                 G.append(("segment", {"segs": allseg, "half_life": hl, "sd_a": sd_a, "sd_b": sd_b}))
-    for sg in ("women", "heavy", "newcomer", "five", "bigfav"):
+    for sg in ("women", "heavy", "newcomer", "debut", "five", "bigfav"):
         for hl in (8.0, None):
             for sd_b in (0.1, 0.2):
                 G.append(("segment", {"segs": (sg,), "half_life": hl, "sd_a": 0.15, "sd_b": sd_b}))
@@ -825,6 +825,19 @@ def stage_cv(args):
                 rowY[fam] = [r5(ll(Pm, y[m])), round(calib_slope(Pm, y[m]), 3)]
             by[str(Y)] = rowY
         H["by_year"] = by
+        # descriptive: is any segment systematically mis-calibrated before 2024? (long base, 2016-2023 pooled)
+        S = seg_matrix(D, base)
+        mm = rows & (yr >= INNER[0]) & (yr <= GATE[1]) & np.isfinite(base)
+        segsl = {"all": {"n": int(mm.sum()), "slope": round(calib_slope(base[mm], y[mm]), 3),
+                         "slope_ci": Boot(ev[mm], 400, 3).slope_ci(base[mm], y[mm], 400)}}
+        for j, sname in enumerate(SEGMENTS):
+            for lab_, val in (("", 1.0), ("not ", 0.0)):
+                ms = mm & (S[:, j] == val)
+                if ms.sum() >= 80:
+                    segsl[lab_ + sname] = {"n": int(ms.sum()), "slope": round(calib_slope(base[ms], y[ms]), 3),
+                                           "slope_ci": Boot(ev[ms], 400, 3).slope_ci(base[ms], y[ms], 400)}
+        H["segment_slopes_2016_2023"] = segsl
+        log("%s segment slopes 2016-2023: %s" % (head, {k: v["slope"] for k, v in segsl.items()}))
         R["heads"][head] = H
         log("%s: chosen %s" % (head, H["chosen"]))
     json.dump(R, open(os.path.join(CACHE, "cv_%s.json" % args.universe), "w"), indent=1, default=float)
@@ -1042,7 +1055,168 @@ def stage_rule(args):
     json.dump(R, open(os.path.join(CACHE, "rule.json"), "w"), indent=1)
 
 
-STAGES = {"table": stage_table, "drift": stage_drift, "cv": stage_cv, "rule": stage_rule}
+# ====================================================================== stage: prereg / confirm (2024-2025 once)
+def stack_static(D, cols, h, rows_ok, fit_until, pred_years, hist_from):
+    M2 = ml2mod()
+    Z = zcols(D, cols)
+    y = D["y"].to_numpy(float)
+    yr = D["year"].to_numpy()
+    tr = rows_ok & (yr >= hist_from) & (yr <= fit_until)
+    assert yr[tr].max() <= fit_until
+    b = M2.stack_fit(Z[tr], y[tr], M2.rec_w(yr[tr], fit_until + 1, h))
+    P = np.full(len(D), np.nan)
+    m = rows_ok & np.isin(yr, list(pred_years))
+    P[m] = sig(Z[m] @ b)
+    return P, b
+
+
+def parse_cfg(lab):
+    fam, rest = lab.split("|", 1)
+    cfg = {}
+    for kv in rest.split(","):
+        if not kv:
+            continue
+        k, v = kv.split("=", 1)
+        if k == "segs":
+            cfg[k] = tuple(v.split("+"))
+        elif v == "None":
+            cfg[k] = None
+        else:
+            cfg[k] = int(v) if k == "last_n" else float(v)
+    return fam, cfg
+
+
+def stage_prereg(args):
+    """Freeze, BEFORE any 2024-2025 row is read, what the confirm stage scores and what it can decide (nothing)."""
+    R = json.load(open(os.path.join(CACHE, "cv_backtest.json")))
+    doc = {"meta": {"tool": TOOL, "written_utc": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                    "tools_calib_py_sha256_16": sha16(os.path.abspath(__file__)),
+                    "cv_backtest_json_sha256_16": sha16(os.path.join(CACHE, "cv_backtest.json")),
+                    "statement": "Written and committed to git before tools/calib.py confirm reads any 2024-2025 row. "
+                                 "The choice per head below follows the decision rule on <= 2023 data only. The "
+                                 "confirm stage scores it once on 2024-01-01..2025-12-31 (backtest universe, event-"
+                                 "cluster CIs). The descriptive rows (each scheme family's 2016-2020 choice, run "
+                                 "walk-forward through 2024-25) are reported for the record; by this pre-registration "
+                                 "no 2024-25 number can change the choice, the decision rule or the production spec."},
+           "decision_rule": R["decision_rule"], "heads": {}}
+    for head, H in R["heads"].items():
+        doc["heads"][head] = {
+            "chosen": H["chosen"],
+            "production_spec": {"type": "none"} if H["chosen"]["family"] == "none" else {"family": H["chosen"]["family"],
+                                                                                        "config": H["chosen"]["config"]},
+            "incumbent": H["incumbent"],
+            "descriptive": {f: v["inner_choice"] for f, v in H["families"].items()},
+            "primary_metric": "2024-25 log loss of the chosen scheme (= the incumbent when nothing passed), with "
+                              "calibration slope, Brier and accuracy; paired vs the incumbent and vs the close",
+        }
+    doc["also_reported"] = ["per-family calibration slopes by year for 2024 and 2025 (the drift table's continuation)",
+                            "ml2's own rolling page stacks (refit each January, monthly ML v2) as the deployed reference"]
+    with open(PREREG_JSON, "w") as fh:
+        json.dump(doc, fh, indent=1)
+        fh.write("\n")
+    log("wrote %s; chosen: %s" % (os.path.relpath(PREREG_JSON, ROOT), {h: v["chosen"]["family"]
+                                                                     for h, v in doc["heads"].items()}))
+
+
+def _prereg_committed():
+    import subprocess
+    rel = os.path.relpath(PREREG_JSON, ROOT)
+    try:
+        head = subprocess.run(["git", "-C", ROOT, "show", "HEAD:" + rel], capture_output=True, check=True).stdout
+    except Exception:
+        return False
+    return head == open(PREREG_JSON, "rb").read()
+
+
+def metrics(p, y):
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    return {"n": int(len(y)), "log_loss": r5(ll(p, y)), "brier": r5(float(np.mean((p - y) ** 2))),
+            "accuracy": round(float(np.mean(np.where(p == 0.5, 0.5, (p > 0.5) == (y > 0.5)))), 4),
+            "slope": round(calib_slope(p, y), 3)}
+
+
+def stage_confirm(args):
+    if not os.path.exists(PREREG_JSON) or not _prereg_committed():
+        raise SystemExit("refused: data/derived/calib_prereg.json must exist and be committed (unchanged) before the "
+                         "2024-2025 look (python3 tools/calib.py prereg, then git commit it)")
+    PR = json.load(open(PREREG_JSON))
+    D = load_table()
+    assert D["date"].max() < VAULT_S
+    y = D["y"].to_numpy(float)
+    yr = D["year"].to_numpy()
+    ev = D["event"].to_numpy()
+    va = (yr >= 2024) & (yr <= 2025)
+    pipe = Pipe(D, "backtest")
+    close = D["close"].to_numpy(float)
+    S2 = pickle.load(open(os.path.join(ML2_CACHE, "stack.pkl"), "rb"))
+    idx = {f: i for i, f in enumerate(D["fid"])}
+    roll_key = {"noline": "noline|page: ml2lr+mkt_rating|roll", "open": "open|page: open+ml2lr|roll",
+                "line": "line|page: market+ml2lr|roll"}
+    out = {"prereg": {"written_utc": PR["meta"]["written_utc"], "sha256_16": sha16(PREREG_JSON)}, "heads": {},
+           "drift_2024_2025": {}}
+    preds = {}
+    for head, P0 in PR["heads"].items():
+        rows = pipe.rows(head)
+        m = rows & va
+        if head == "ml2lr":
+            inc = D["ml2lr"].to_numpy(float).copy()
+            inc_roll = D["ml2lr_roll"].to_numpy(float)
+        else:
+            inc, b = stack_static(D, pipe.cols(head), pipe.h0(head), rows, 2023, (2024, 2025), 2019)
+            inc_roll = np.full(len(D), np.nan)
+            rp = S2["preds"][roll_key[head]]
+            for k, f in enumerate(S2["D"]["fid"]):
+                if f in idx and np.isfinite(rp[k]):
+                    inc_roll[idx[f]] = rp[k]
+        chosen = inc if P0["chosen"]["family"] == "none" else None
+        if chosen is None:
+            fam, cfg = parse_cfg(P0["chosen"]["config"])
+            chosen = pipe.scheme(head, fam, cfg, [2024, 2025])
+        H = {"n": int(m.sum()), "chosen": P0["chosen"], "incumbent_static": metrics(inc[m], y[m]),
+             "chosen_metrics": metrics(chosen[m], y[m]),
+             "chosen_vs_incumbent": paired(chosen[m], inc[m], y[m], ev[m], args.boot)}
+        mc = m & np.isfinite(close)
+        H["chosen_vs_close"] = paired(chosen[mc], close[mc], y[mc], ev[mc], args.boot)
+        mr = m & np.isfinite(inc_roll)
+        H["incumbent_rolling"] = metrics(inc_roll[mr], y[mr])
+        H["descriptive"] = {}
+        for fam, lab in P0["descriptive"].items():
+            f_, cfg = parse_cfg(lab)
+            P = pipe.scheme(head, f_, cfg, [2024, 2025])
+            P = np.where(np.isfinite(P), P, inc)
+            H["descriptive"][fam] = {"config": lab, "metrics": metrics(P[m], y[m]),
+                                     "vs_incumbent_static": paired(P[m], inc[m], y[m], ev[m], args.boot),
+                                     "vs_incumbent_rolling": paired(P[mr], inc_roll[mr], y[mr], ev[mr], args.boot)}
+            preds[(head, fam)] = P
+        preds[(head, "chosen")] = chosen
+        preds[(head, "incumbent")] = inc
+        out["heads"][head] = H
+        log("%s 2024-25 (n %d): chosen (%s) %.5f slope %.3f | vs close %+.5f %s | incumbent rolling %.5f" % (
+            head, H["n"], P0["chosen"]["family"], H["chosen_metrics"]["log_loss"], H["chosen_metrics"]["slope"],
+            H["chosen_vs_close"]["diff"], H["chosen_vs_close"]["diff_ci"], H["incumbent_rolling"]["log_loss"]))
+        for fam, v in H["descriptive"].items():
+            log("    descriptive %-12s %.5f slope %.3f vs static %+.5f %s vs rolling %+.5f %s" % (
+                fam, v["metrics"]["log_loss"], v["metrics"]["slope"], v["vs_incumbent_static"]["diff"],
+                v["vs_incumbent_static"]["diff_ci"], v["vs_incumbent_rolling"]["diff"], v["vs_incumbent_rolling"]["diff_ci"]))
+    ev_ = D["evalrow"].to_numpy()
+    for c in FAMILIES:
+        p = D[c].to_numpy(float)
+        out["drift_2024_2025"][c] = {}
+        for Y in (2024, 2025):
+            mm = ev_ & (yr == Y) & np.isfinite(p)
+            if mm.sum() >= 120:
+                out["drift_2024_2025"][c][str(Y)] = year_stats(p[mm], y[mm], ev[mm], args.boot_slope)
+        mm = ev_ & va & np.isfinite(p)
+        out["drift_2024_2025"][c]["pooled"] = {"n": int(mm.sum()), "slope": round(calib_slope(p[mm], y[mm]), 3)}
+        log("drift %-11s 2024 %.2f 2025 %.2f" % (c, out["drift_2024_2025"][c].get("2024", {}).get("slope", np.nan),
+                                                 out["drift_2024_2025"][c].get("2025", {}).get("slope", np.nan)))
+    json.dump(out, open(os.path.join(CACHE, "confirm.json"), "w"), indent=1)
+    pickle.dump(preds, open(os.path.join(CACHE, "confirm_preds.pkl"), "wb"))
+
+
+STAGES = {"table": stage_table, "drift": stage_drift, "cv": stage_cv, "rule": stage_rule,
+          "prereg": stage_prereg, "confirm": stage_confirm}
 
 
 def main():

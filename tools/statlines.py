@@ -590,14 +590,15 @@ def fit_nb(y, off, Xm, Xk, lam_m=None, Xp=None, w=None, init=None, maxiter=400):
     return unpack(r.x)
 
 
-def fit_zibeta(y, cap, off_m, Xm, Xphi, Xp, lam_m=None, maxiter=400):
+def fit_zibeta(y, cap, off_m, Xm, Xphi, Xp, lam_m=None, lam_p=None, maxiter=400):
     """Zero-inflated Beta on the share s = y / cap (control time): logit pi = Xp d; logit m = off_m + Xm b;
-    log phi = Xphi g. Returns (b, g, d)."""
+    log phi = Xphi g; ridge lam_m on b and lam_p on d (per column). Returns (b, g, d)."""
     s = np.clip(y / cap, 0.5 / cap, 1 - 0.5 / cap)
     z = y <= 0
     ls, l1s = np.log(s), np.log1p(-s)
     pm, pg, pp = Xm.shape[1], Xphi.shape[1], Xp.shape[1]
     lam = np.zeros(pm) if lam_m is None else np.asarray(lam_m, float)
+    lpp = np.zeros(pp) if lam_p is None else np.asarray(lam_p, float)
     n = len(y)
 
     def f(th):
@@ -614,10 +615,10 @@ def fit_zibeta(y, cap, off_m, Xm, Xphi, Xp, lam_m=None, maxiter=400):
         dphi = phi * (m * da + (1 - m) * db)
         dpi = np.where(z, 1 - pi, -pi)
         nz = (~z).astype(float)
-        val = -ll.sum() / n + 0.5 * (lam * b * b).sum() / n
+        val = -ll.sum() / n + 0.5 * (lam * b * b).sum() / n + 0.5 * (lpp * d * d).sum() / n
         gb = -(Xm.T @ (nz * dm_eta)) / n + lam * b / n
         gg = -(Xphi.T @ (nz * dphi)) / n
-        gd = -(Xp.T @ dpi) / n
+        gd = -(Xp.T @ dpi) / n + lpp * d / n
         return val, np.concatenate([gb, gg, gd])
 
     th0 = np.zeros(pm + pg + pp)
@@ -713,8 +714,9 @@ class StatModel:
             Xm = Xt if not o.get("glm") else np.c_[Xt, G]
             lam = np.r_[np.zeros(Xt.shape[1]), np.full(0 if G is None else G.shape[1], o.get("glm") or 0.0)]
             Xphi = np.c_[np.ones(len(t)), lt, fin]
-            Xp = np.c_[np.ones(len(t)), np.clip(lmu0 - np.log(cap), -10, 2), lt, fin]
-            self.b, self.g, self.d = fit_zibeta(y, cap, off, Xm, Xphi, Xp, lam)
+            Xp = self._zb_p(lmu0, cap, lt, fin, G)
+            lp = np.r_[np.zeros(4), np.full(0 if G is None else G.shape[1], o.get("glm") or 0.0)]
+            self.b, self.g, self.d = fit_zibeta(y, cap, off, Xm, Xphi, Xp, lam, lp)
             return self
         if self.family == "gbm":
             # LightGBM Poisson correction on top of nb_t (fit first, in-fold), rounds by early stopping on the last
@@ -753,6 +755,11 @@ class StatModel:
         self.b, self.g, self.d = fit_nb(y, lmu0, Xm, Xk, lam, Xp)
         return self
 
+    @staticmethod
+    def _zb_p(lmu0, cap, lt, fin, G):
+        X = np.c_[np.ones(len(lt)), np.clip(lmu0 - np.log(cap), -10, 2), lt, fin]
+        return X if G is None else np.c_[X, G]
+
     def _gbm_X(self, rows, t):
         T, Fd = self.T, self.Fd
         R = T["rounds"][rows]
@@ -772,7 +779,7 @@ class StatModel:
             Xm = Xt if not o.get("glm") else np.c_[Xt, G]
             m = expit(np.clip(off + Xm @ self.b, -15, 15))
             phi = np.exp(np.clip(np.c_[np.ones(len(t)), lt, fin] @ self.g, -4, 8))
-            pi = expit(np.c_[np.ones(len(t)), np.clip(lmu0 - np.log(cap), -10, 2), lt, fin] @ self.d)
+            pi = expit(self._zb_p(lmu0, cap, lt, fin, G) @ self.d)
             return Dist("zibeta", pi=pi, m=m, phi=phi, cap=cap)
         if self.family == "gbm":
             lm_b = np.log(self.base.dist(rows, t).p["mu"])

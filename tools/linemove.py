@@ -788,6 +788,115 @@ def stage_stacks(a):
 STAGES["stacks"] = stage_stacks
 
 
+# ====================================================================== stage: q1 (is the move predictable?)
+def traj_matrix(D):
+    """z (power, point 0 multiplicative) and decimal odds per point for side A and B (from mult p and overround)."""
+    P = snaps(D, "pow")
+    Pm = snaps(D, "mult")
+    ovr = np.full((len(D), NPTS), np.nan)
+    for i, v in enumerate(D["snap_ovr"]):
+        if isinstance(v, list):
+            ovr[i] = v
+    decA = 1.0 / (Pm * ovr)
+    decB = 1.0 / ((1 - Pm) * ovr)
+    return P, Pm, decA, decB
+
+
+def ols0(X, y):
+    """No-intercept least squares (antisymmetric targets and features keep the fit corner-symmetric)."""
+    b, *_ = np.linalg.lstsq(X, y, rcond=None)
+    return b
+
+
+def stage_q1(a):
+    D = load_traj()["D"]
+    P, Pm, decA, decB = traj_matrix(D)
+    yrs = D["year"].to_numpy()
+    ok = (~np.isnan(P).any(1)) & D["evalrow"].to_numpy(bool) & D["ml2lr"].notna().to_numpy() & (yrs <= 2023)
+    z = lg(P)
+    zml = lg(D["ml2lr"].to_numpy(float))
+    zmr = np.nan_to_num(lg(D["mr"].astype(float).to_numpy()), nan=0.0)
+    zwhr = np.nan_to_num(lg(D["whr"].astype(float).to_numpy()), nan=0.0)
+    hasmr = D["mr"].notna().to_numpy()
+    y = D["y"].to_numpy(float)
+    g = D["event"].to_numpy()
+    R = {"rows": int(ok.sum()), "rows_by_year": {int(k): int(v) for k, v in Counter(yrs[ok]).items()}}
+    models = {}
+    for s in (0, 1, 4, 8):
+        tgt = z[:, 9] - z[:, s]
+        feats = {"d_ml2lr": zml - z[:, s], "d_mr": np.where(hasmr, zmr - z[:, s], 0.0), "d_whr": zwhr - z[:, s],
+                 "z_line": z[:, s]}
+        if s >= 1:
+            feats["momentum (z_s - z_open)"] = z[:, s] - z[:, 0]
+        specs = {"M1 model gap": ["d_ml2lr"], "M2 + market rating + WHR gaps": ["d_ml2lr", "d_mr", "d_whr"],
+                 "M3 + line level (+ momentum)": list(feats)}
+        out = {}
+        for name, cols in specs.items():
+            X = np.column_stack([feats[c] for c in cols])
+            sse = ss0 = 0.0
+            per = {}
+            for Y in range(2017, 2024):
+                tr = ok & (yrs < Y)
+                te = ok & (yrs == Y)
+                if tr.sum() < 150 or te.sum() < 30:
+                    continue
+                b = ols0(X[tr], tgt[tr])
+                e = tgt[te] - X[te] @ b
+                sse_y, ss0_y = float(e @ e), float(tgt[te] @ tgt[te])
+                per[int(Y)] = round(1 - sse_y / ss0_y, 4)
+                if Y >= 2019:
+                    sse += sse_y
+                    ss0 += ss0_y
+            b_all = ols0(X[ok], tgt[ok])
+            out[name] = {"oos_r2_2019_2023": round(1 - sse / ss0, 4), "oos_r2_by_year": per,
+                         "coef_fit_le_2023": dict(zip(cols, np.round(b_all, 4).tolist()))}
+        sd_move = float(np.std(tgt[ok & (yrs >= 2019)]))
+        corr = float(np.corrcoef(tgt[ok], feats["d_ml2lr"][ok])[0, 1])
+        models["from point %d" % s] = {"sd_logit_move_to_close": round(sd_move, 4), "corr(move, model gap)": round(corr, 4),
+                                       "models": out}
+        log("point %d -> close: sd %.4f corr %.3f | %s" % (s, sd_move, corr, {k: (v["oos_r2_2019_2023"], v["coef_fit_le_2023"])
+                                                                         for k, v in out.items()}))
+    R["move_regression"] = models
+    # closing-line value (CLV) of betting the side ML v2 favours over the line at point s, at that point's price
+    # (point 0: the opener, one book; points 1-8: BFO's mean odds, not the best price). CLV = p_close(side) * dec_s - 1
+    # with p_close the power no-vig close; ROI = 1[side won] * dec_s - 1.
+    pc = P[:, 9]
+    clv = {}
+    for s in (0, 1, 4, 8):
+        e = sg(zml) - P[:, s]
+        for t in (0.0, 0.03, 0.05, 0.10):
+            for per_name, msk in (("2019-2023", ok & (yrs >= 2019)), ("2015-2018", ok & (yrs < 2019) & (yrs >= 2015))):
+                side_A = e > t
+                side_B = e < -t
+                m = msk & (side_A | side_B)
+                if m.sum() < 20:
+                    continue
+                dec = np.where(side_A, decA[:, s], decB[:, s])
+                pcs = np.where(side_A, pc, 1 - pc)
+                won = np.where(side_A, y, 1 - y)
+                c_ = pcs * dec - 1
+                r_ = won * dec - 1
+                both = 0.5 * ((pc * decA[:, s] - 1) + ((1 - pc) * decB[:, s] - 1))     # no-skill benchmark: both sides
+                bs = ml2.boot(g[m], [c_[m], r_[m], c_[m] - both[m]], a.boot, 7)
+                q = lambda k: [round(float(np.percentile(bs[:, k], 2.5)), 4), round(float(np.percentile(bs[:, k], 97.5)), 4)]
+                clv["point %d | edge > %.2f | %s" % (s, t, per_name)] = {
+                    "bets": int(m.sum()), "share_of_fights": round(float(m.sum() / msk.sum()), 3),
+                    "mean_clv": round(float(c_[m].mean()), 4), "clv_ci": q(0),
+                    "clv_minus_both_sides": round(float((c_[m] - both[m]).mean()), 4), "clv_minus_both_sides_ci": q(2),
+                    "roi": round(float(r_[m].mean()), 4), "roi_ci": q(1),
+                    "share_line_moved_toward_model": round(float(np.mean(np.sign(z[m, 9] - z[m, s]) == np.sign(zml[m] - z[m, s]))), 3)}
+    R["clv"] = clv
+    for k, v in clv.items():
+        if "2019-2023" in k:
+            log("CLV %-38s bets %4d clv %+.4f %s | vs both sides %+.4f %s | roi %+.4f %s | moved toward %.3f" % (
+                k, v["bets"], v["mean_clv"], v["clv_ci"], v["clv_minus_both_sides"], v["clv_minus_both_sides_ci"],
+                v["roi"], v["roi_ci"], v["share_line_moved_toward_model"]))
+    wjson(os.path.join(CACHE, "q1.json"), R)
+
+
+STAGES["q1"] = stage_q1
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])

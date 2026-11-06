@@ -982,7 +982,75 @@ def coord_search(X, H, Y, sweeps=2, logf=log, params=None):
     return H, best
 
 
-def fit_year(X, Y, H0, em_iters=3, sweeps=2, logf=log):
+STAT_GROUPS = {"str": (["so", "sd"], "str"), "td": (["to", "tdd"], "td"), "ctl": (["co"], "ctl"),
+               "sub": (["su", "sdf"], "sub"), "kd": (["pw", "ch"], "kd"), "ca": (["ca"], "str")}
+
+
+def stat_pred_ll(X, R, H, Y, back=7):
+    """Mean one-step-ahead predictive log-likelihood per stat (moment-matched NB) on the window before Y, and the
+    dispersions that maximise it. Their sum over fights is the marginal likelihood of the stats (prequential)."""
+    sel = (X["year"] >= Y - back) & (X["year"] < Y) & X["has"] & R["done"]
+    SD = _SD["main"]
+    ks = nb_dispersions(R, sel)
+    out = {}
+    for st, rr in NB_ROWS.items():
+        tot, nn = 0.0, 0
+        for r in rr:
+            ok = sel & (SD["m"][:, r] > 0)
+            tot += np.sum(nb_pred_ll(SD["y"][ok, r], R["eta0"][ok, r], R["v0"][ok, r], ks[st]))
+            nn += ok.sum()
+        out[st] = tot / max(nn, 1)
+    return out, ks
+
+
+def scale_group(H, dims, s0=1.0, sq=1.0):
+    H = copy.deepcopy(H)
+    ix = [DI[d] for d in dims]
+    f = np.ones(K)
+    f[ix] = math.sqrt(s0)
+    H["Sigma0"] = H["Sigma0"] * np.outer(f, f)
+    H["qf"][ix] *= sq
+    H["qy"][ix] *= sq
+    return H
+
+
+def stat_search(X, H, Y, sweeps=2, logf=log):
+    """Type-II ML of the stat side: per skill group, the prior-variance and process-noise scales (and, for strikes,
+    the pace and form sds) that maximise the group's one-step predictive likelihood; dispersions re-estimated each
+    trial."""
+    R = run_filter(X, H, jan1(Y), store=True)
+    cur, ks = stat_pred_ll(X, R, H, Y)
+    H = copy.deepcopy(H)
+    H["k"] = ks
+    for sw in range(sweeps):
+        moved = False
+        for g, (dims, st) in STAT_GROUPS.items():
+            trials = [("s0", 1.5), ("s0", 1 / 1.5), ("sq", 1.6), ("sq", 1 / 1.6)]
+            if g == "str":
+                trials += [("sig_u", 1.2), ("sig_u", 1 / 1.2), ("sig_e", 1.2), ("sig_e", 1 / 1.2)]
+            done = set()
+            for kind, f in trials:
+                if kind in done:
+                    continue
+                if kind in ("s0", "sq"):
+                    H2 = scale_group(H, dims, **{kind: f})
+                else:
+                    H2 = copy.deepcopy(H)
+                    H2[kind] *= f
+                R2 = run_filter(X, H2, jan1(Y), store=True)
+                ll2, ks2 = stat_pred_ll(X, R2, H2, Y)
+                if ll2[st] > cur[st] + 1e-5:
+                    logf("  stat %s %s x%.2f: %s %.5f -> %.5f" % (g, kind, f, st, cur[st], ll2[st]))
+                    H2["k"] = ks2
+                    H, cur = H2, ll2
+                    done.add(kind)
+                    moved = True
+        if not moved:
+            break
+    return H, cur
+
+
+def fit_year(X, Y, H0, em_iters=2, sweeps=2, stat_sweeps=2, logf=log):
     """Hyperparameters for predicting year Y from data before Jan 1 of Y."""
     seq = sequences(X)
     H = copy.deepcopy(H0)
@@ -994,11 +1062,15 @@ def fit_year(X, Y, H0, em_iters=3, sweeps=2, logf=log):
         H, ll = glm_step(X, R, H, Y)
         logf("  %d EM %d: win LL %.5f  k %s  sig_u %.3f sig_e %.3f  beta %s" % (
             Y, it, ll, {k: round(v, 2) for k, v in H["k"].items()}, H["sig_u"], H["sig_e"], np.round(H["win"]["beta"], 3)))
+    H, sll = stat_search(X, H, Y, sweeps=stat_sweeps, logf=logf)
+    logf("  %d stat predictive LL %s" % (Y, {k: round(v, 4) for k, v in sll.items()}))
     H, best = coord_search(X, H, Y, sweeps=sweeps, logf=logf)
     R = run_filter(X, H, jan1(Y), store=True)
-    H = em_update(X, R, H, Y, seq)
+    sll, ks = stat_pred_ll(X, R, H, Y)
+    H["k"] = ks
     R = run_filter(X, H, jan1(Y))
     H, ll = glm_step(X, R, H, Y)
+    H["stat_ll"] = sll
     logf("  %d final win LL %.5f (%.0f s)" % (Y, ll, time.time() - t0))
     H["fit_through"] = str(dt.date(Y - 1, 12, 31))
     H["train_win_ll"] = ll

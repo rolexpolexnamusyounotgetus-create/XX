@@ -787,3 +787,373 @@ def test_stack(D, M2, np, has, cov):
             res["adopted"] = best if res["cands"][best]["passes_gate"] else None
             out[key] = res
     return out
+
+
+def prior_counts(fights):
+    """Prior UFC appearances per fighter name before each fight (name-keyed; ufcstats names are unique enough)."""
+    # counts are updated after each card, so bouts on the same night never count each other
+    seen, out, by_date = {}, {}, {}
+    for f in fights:
+        by_date.setdefault(f["date"], []).append(f)
+    for d in sorted(by_date):
+        for f in by_date[d]:
+            out[f["fid"]] = (seen.get(norm_name(f["a"]), 0), seen.get(norm_name(f["b"]), 0))
+        for f in by_date[d]:
+            for k in (norm_name(f["a"]), norm_name(f["b"])):
+                seen[k] = seen.get(k, 0) + 1
+    return out
+
+
+def cmd_build(args):
+    fights, n_drop = load_fights()
+    rows, rep = build_rows(fights)
+    fmap = {f["fid"]: f for f in fights}
+    pc = prior_counts(fights)
+    bt = json.load(open(os.path.join(DERIVED, "backtest_dev.json")))
+    bt_ids = {f["id"] for f in bt["fights"] if f["date"] < VAULT_FROM}
+    out = {}
+    for fid, r in sorted(rows.items(), key=lambda kv: (kv[1]["date"], kv[0])):
+        if r["date"] >= VAULT_FROM:          # cannot happen (dropped at parse); belt and braces
+            continue
+        f = fmap[fid]
+        r["winner"] = f["winner"]
+        r["cat"] = f["cat"]
+        r["division"] = f["division"]
+        r["title"] = f["title"]
+        r["prior_ufc"] = list(pc[fid])
+        r["debut_bout"] = min(pc[fid]) == 0
+        r["in_backtest"] = fid in bt_ids
+        out[fid] = r
+    # coverage / match rates
+    cov = {}
+    for src in ("rw", "mm"):
+        yrs = {}
+        for r in out.values():
+            if src in r and (src != "rw" or r["rw"]["frozen"] == "pre_event"):
+                y = r["date"][:4]
+                yrs[y] = yrs.get(y, 0) + 1
+        cov[src] = dict(sorted(yrs.items()))
+    n_by_year = {}
+    for f in fights:
+        if f["date"] >= "2015-01-01":
+            n_by_year[f["date"][:4]] = n_by_year.get(f["date"][:4], 0) + 1
+    st, sm = rep["rotowire"], rep["moneymma"]
+    meta = {
+        "built": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "tool": TOOL_VERSION,
+        "orientation": "A = first ufcstats name (backtest order); share_a = share of the panel / contest entrants "
+                       "picking A; P(A) inputs: rw = (n_a + 0.5) / (n + 1), mm = clip(share_a, 0.03, 0.97), crowd = "
+                       "mean of the available logits",
+        "sources": {
+            "rw": "RotoWire staff / expert picks (rotowire.com/mma/article/...): 3-8 RotoWire MMA writers pick every "
+                  "main-card bout of each UFC pay-per-view; 2016 and 2019-2025 here. robots.txt allows every agent; "
+                  "llms.txt invites LLM use",
+            "mm": "Money MMA pick'em contest consensus (moneymma.substack.com, free part of each results post): the "
+                  "fighter most contest entrants picked and their share, for the contest's five main-card bouts; "
+                  "Feb 2022-Dec 2025. robots.txt allows every agent",
+        },
+        "not_used": {
+            "tapology.com": "the brief's primary source; robots.txt disallows the whole site for anthropic-ai, "
+                            "Claude-Web and ClaudeBot, so it was not fetched under any User-Agent (also 403 for "
+                            "another agent on Nov 6, data/predictions/cards_upcoming.json)",
+            "robots.txt names Anthropic agents": "mmajunkie.usatoday.com, mmafighting.com, mmamania.com, "
+                                                 "cagesidepress.com, espn.com, betmma.tips, bleacherreport.com, "
+                                                 "openml.org /api/ (fighters' predictions set)",
+            "refused or unusable": "bloodyelbow.com (403 to our User-Agent), sherdog.com staff pick'em (picks are an "
+                                   "image), verdictmma.com (picks load from /api/, disallowed), mmasucka.com (no "
+                                   "parseable staff-pick table found)",
+        },
+        "freeze": {
+            "rw": "JSON-LD datePublished must be at least one calendar day before the event (%d bouts); published "
+                  "on the event day = 'same_day', kept in the file but never fit or scored (%d bouts). Articles are "
+                  "re-saved after the event to strike through losing picks and add records; only cell text is read, "
+                  "and the strike marks agree with the results on %d of %d pick cells (the picks shown are the "
+                  "picks that were scored)" % (st["pre_event"], st["same_day"],
+                                                st.get("strike_audit", {}).get("consistent", 0),
+                                                st.get("strike_audit", {}).get("cells", 0)),
+            "mm": "contest entries are made in a contest post published before the card; the results post (1-9 days "
+                  "after) reports them. The lock rule sits behind the paywall and was not read: frozen by design, "
+                  "not verified per bout. Leak check in eval.freeze (consensus less accurate than the close)",
+        },
+        "match": {"rw_bouts": st["bouts"], "rw_matched": st["matched"], "rw_unmatched": st["unmatched"],
+                  "rw_match_rate": round(st["matched"] / max(1, st["bouts"]), 4),
+                  "rw_picks": st["picks"], "rw_picks_unresolved": st["picks_unresolved"],
+                  "mm_picks": sm["picks"], "mm_matched": sm["matched"], "mm_unmatched": sm["unmatched"],
+                  "mm_match_rate": round(sm["matched"] / max(1, sm["picks"]), 4),
+                  "rw_articles": st["articles"], "mm_posts": sm["posts"]},
+        "coverage_by_year": cov, "ufc_bouts_by_year": dict(sorted(n_by_year.items())),
+        "coverage_backtest": {src: sum(1 for r in out.values() if src in r and r["in_backtest"]
+                                       and (src != "rw" or r["rw"]["frozen"] == "pre_event")) for src in ("rw", "mm")},
+        "protocol": "fights dated 2026-01-01 or later dropped at parse (%d); no 2026 source page fetched; %d 2026 "
+                    "rows written outside the repo" % (n_drop, rep["vault_rows_written_outside_repo"]),
+        "method_round_shares": "none: neither permitted source publishes method or round shares in its free part "
+                               "(Tapology does, and is off limits), so test 3 could not be run",
+    }
+    doc = {"meta": meta, "fights": out}
+    old = json.load(open(OUT_JSON)) if os.path.exists(OUT_JSON) else {}
+    if old.get("eval"):
+        doc["eval_stale"] = "eval from an earlier build was dropped; rerun `tools/crowd.py eval`"
+    json.dump(doc, open(OUT_JSON, "w"), indent=1)
+    log("crowd.json: %d fights (rw %d pre-event, mm %d), match rates rw %.3f mm %.3f; written %s" % (
+        len(out), st["pre_event"], sm["matched"], meta["match"]["rw_match_rate"], meta["match"]["mm_match_rate"],
+        OUT_JSON))
+    log("coverage by year: %s" % cov)
+    return doc
+
+
+def test_debut(CF, M2, np):
+    """Bouts with a debutant (outside the backtest universe): crowd vs the closing line (nlbair BFO closing range,
+    multiplicative no-vig), and close + crowd vs close with the weight fit forward on every covered fight."""
+    import csv
+    close = {}
+    with open(os.path.join(ROOT, "data", "raw", "odds", "nlbair_odds.csv")) as fh:
+        for r in csv.DictReader(fh):
+            if r["event_date"] >= VAULT_FROM:       # dropped at parse
+                continue
+            try:
+                p = float(r["f1_close_prob_novig"])
+            except ValueError:
+                continue
+            close[r["fight_id"]] = (norm_name(r["f1_name"]), p)
+    rows = []
+    for fid, r in CF.items():
+        if r.get("winner") not in ("A", "B") or fid not in close:
+            continue
+        n1, p = close[fid]
+        if n1 == norm_name(r["b"]) and n1 != norm_name(r["a"]):
+            p = 1 - p
+        elif n1 != norm_name(r["a"]) and _name_score(n1, r["a"]) < _name_score(n1, r["b"]):
+            p = 1 - p
+        q = crowd_probs(r)
+        rows.append(dict(fid=fid, year=int(r["date"][:4]), event=r["event"], y=1.0 if r["winner"] == "A" else 0.0,
+                         close=min(max(p, 0.01), 0.99), debut=r["debut_bout"], **{c: q.get(c) for c in CROWD_COLS}))
+    out = {"n_covered_with_close": len(rows), "n_debut": sum(1 for r in rows if r["debut"])}
+    for c in CROWD_COLS:
+        R = [r for r in rows if r[c] is not None]
+        if not R:
+            continue
+        yrs = np.array([r["year"] for r in R]); y = np.array([r["y"] for r in R])
+        zc = logit_np([r[c] for r in R]); zm = logit_np([r["close"] for r in R])
+        deb = np.array([r["debut"] for r in R]); ev = np.array([r["event"] for r in R])
+        pc = np.full(len(R), np.nan); ps = np.full(len(R), np.nan)
+        for Y in sorted(set(yrs)):
+            tr = yrs < Y if Y <= 2023 else yrs <= 2023
+            if tr.sum() < 15:
+                continue
+            b = fit_slope(zc[tr], y[tr])
+            w = M2.stack_fit(np.c_[zm[tr], zc[tr]], y[tr])
+            m = yrs == Y
+            pc[m] = 1 / (1 + np.exp(-b * zc[m]))
+            ps[m] = 1 / (1 + np.exp(-(np.c_[zm[m], zc[m]] @ w)))
+        res = {}
+        for per, lo, hi in (("pre-2024 (forward)", 2017, 2023), ("2024-2025 (one look)", 2024, 2025)):
+            for seg, sm in (("debut bouts", deb), ("other bouts", ~deb)):
+                m = sm & (yrs >= lo) & (yrs <= hi) & ~np.isnan(pc)
+                if m.sum() < 8:
+                    res["%s | %s" % (per, seg)] = {"n": int(m.sum())}
+                    continue
+                pcl = 1 / (1 + np.exp(-zm[m]))
+                res["%s | %s" % (per, seg)] = {
+                    "n": int(m.sum()), "crowd": round(M2.ll(pc[m], y[m]), 5), "close": round(M2.ll(pcl, y[m]), 5),
+                    "close+crowd": round(M2.ll(ps[m], y[m]), 5),
+                    "crowd - close": M2.compare(pc[m], pcl, y[m], ev[m]),
+                    "close+crowd - close": M2.compare(ps[m], pcl, y[m], ev[m])}
+                q = res["%s | %s" % (per, seg)]
+                log("debut %-5s %-20s %-12s n %3d crowd %.4f close %.4f close+crowd %.4f (%+.4f %s)" % (
+                    c, per, seg, q["n"], q["crowd"], q["close"], q["close+crowd"], q["close+crowd - close"]["diff"],
+                    q["close+crowd - close"]["diff_ci"]))
+        out[c] = res
+    return out
+
+
+def freeze_checks(CF, D, np):
+    out = {}
+    rw_days = [r["rw"]["days_before"] for r in CF.values() if r.get("rw")]
+    mm_days = [r["mm"]["days_after"] for r in CF.values() if r.get("mm")]
+    hist = lambda v: {str(k): v.count(k) for k in sorted(set(v))}
+    out["rw_days_published_before_event"] = hist(rw_days)
+    out["mm_results_post_days_after_event"] = hist(mm_days)
+    # leak check (pre-2024 only): if shares had been taken after the fights they would beat the close by a mile
+    for c in ("rw", "mm"):
+        m = D[c].notna().to_numpy() & D["market"].notna().to_numpy() & (D["year"].to_numpy() <= 2023)
+        if m.sum() < 10:
+            continue
+        raw = D[c].to_numpy(float)[m]; y = D["y"].to_numpy(float)[m]; pm = D["market"].to_numpy(float)[m]
+        out["leak_check_" + c] = {
+            "n": int(m.sum()),
+            "crowd_majority_acc": round(float(np.mean(np.where(np.abs(raw - 0.5) < 1e-9, 0.5, (raw > 0.5) == (y > 0.5)))), 4),
+            "close_favourite_acc": round(float(np.mean((pm > 0.5) == (y > 0.5))), 4),
+            "agree_with_close_favourite": round(float(np.mean((raw > 0.5) == (pm > 0.5))), 4)}
+    return out
+
+
+def swap_test(D, M2, np, has):
+    """Corner symmetry: swap A and B on a random half of the rows (every expert p -> 1 - p, y -> 1 - y), refit the
+    stacks and check the predictions flip exactly; also check crowd_probs on a swapped record."""
+    rng = np.random.default_rng(11)
+    sw = rng.random(len(D)) < 0.5
+    D2 = D.copy()
+    pcols = ["market", "market_mult", "open", "mkt_rating", "ml", "ml_roll", "ml_stack", "elo_sig", "elo", "engine",
+             "feat_lr", "feat_lr_roll", "ml2_static", "ml2lr_static", "ml2_roll", "ml2lr_roll", "ml2s_static",
+             "ml2s_roll"] + list(CROWD_COLS)
+    for c in pcols:
+        if c in D2:
+            v = D2[c].to_numpy(float).copy()
+            v[sw] = 1 - v[sw]
+            D2[c] = v
+    D2["y"] = np.where(sw, 1 - D["y"].to_numpy(float), D["y"].to_numpy(float))
+    yr = D["year"].to_numpy()
+    out = {}
+    for regime, cols in (("line", ["market", "ml2", "crowd"]), ("noline", ["ml2", "mkt_rating", "feat_lr", "crowd"]),
+                         ("open", ["open", "ml2", "crowd"])):
+        m = has[regime] & (yr >= 2024)
+        p1, w1 = M2.stack_predict(D, cols, "static", 1.5, 2023, m, has[regime])
+        p2, w2 = M2.stack_predict(D2, cols, "static", 1.5, 2023, m, has[regime])
+        flip = np.where(sw[m], 1 - p2, p2)
+        out[regime] = {"max_abs_dp": float(np.max(np.abs(flip - p1))), "max_abs_dw": float(np.max(np.abs(w1 - w2)))}
+    rec = {"rw": {"n_a": 4, "n_b": 2, "n": 6, "frozen": "pre_event"}, "mm": {"share_a": 0.71}}
+    rsw = {"rw": {"n_a": 2, "n_b": 4, "n": 6, "frozen": "pre_event"}, "mm": {"share_a": 0.29}}
+    a, b = crowd_probs(rec), crowd_probs(rsw)
+    out["crowd_probs_max_abs(p + p_swapped - 1)"] = max(abs(a[k] + b[k] - 1) for k in a)
+    worst = max(v for k, v in [(k, max(d["max_abs_dp"], d["max_abs_dw"])) for k, d in out.items() if isinstance(d, dict)])
+    assert worst < 1e-5 and out["crowd_probs_max_abs(p + p_swapped - 1)"] < 1e-12, "corner symmetry broken: %s" % out
+    log("swap test: %s" % out)
+    return out
+
+
+# ====================================================================== forward capture (upcoming cards)
+def cmd_capture(args):
+    """Capture the RotoWire panel for an upcoming card into data/predictions/crowd/ (write-once, like the ledger).
+    Money MMA publishes its consensus only after the card, so there is nothing of it to capture before the fights."""
+    ev = args.event.strip()
+    num = re.search(r"UFC\s*(\d{3})", ev, re.I)
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    if args.date < today and not args.vault:
+        raise SystemExit("capture is for upcoming cards; %s is in the past (2026 history belongs to the vault: "
+                         "pass --vault to write it outside the repo)" % args.date)
+    sm = fetch(RW_SITEMAP, refresh=True)
+    key = ("ufc-%s" % num.group(1)) if num else re.sub(r"[^a-z0-9]+", "-", ev.lower()).strip("-")
+    urls = [u for u in re.findall(r"<loc>(.*?)</loc>", sm) if re.search(r"staff-picks|expert-picks", u) and key in u]
+    rec = {"event": ev, "date": args.date, "captured_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+           "tool": TOOL_VERSION, "source": "rotowire", "url": None, "published": None, "bouts": [],
+           "note": "panel share for A = picks for A / picks; P(A) input to a stack = (n_a + 0.5) / (n + 1)"}
+    if urls:
+        u = sorted(urls, key=lambda x: int(x.rsplit("-", 1)[1]))[-1]
+        P = parse_rotowire(fetch(u, refresh=True))
+        rec["url"], rec["published"] = u, P["published"]
+        card = {}
+        try:
+            cu = json.load(open(os.path.join(ROOT, "data", "predictions", "cards_upcoming.json")))
+            for e in cu.get("events", []):
+                for b in e.get("bouts", []):
+                    a_, b_ = b.get("a") or {}, b.get("b") or {}
+                    # the ledger's bout_id: "<date>:<slug A>__<slug B>" (data/predictions/README.md)
+                    card[(e.get("date"), norm_name(a_.get("name", "")), norm_name(b_.get("name", "")))] = "%s:%s__%s" % (
+                        e.get("date"), a_.get("slug") or "null", b_.get("slug") or "null")
+        except Exception:
+            pass
+        for b in P["bouts"]:
+            na = sum(1 for t in b["picks"].values() if side_of_pick(t, b["a"], b["b"]) == "A")
+            nb = sum(1 for t in b["picks"].values() if side_of_pick(t, b["a"], b["b"]) == "B")
+            bid = None
+            for (d, ka, kb), v in card.items():
+                if d == args.date and (_pair_score(b["a"], b["b"], ka, kb) >= 0.8 or _pair_score(b["a"], b["b"], kb, ka) >= 0.8):
+                    bid = v
+            rec["bouts"].append({"a": b["a"], "b": b["b"], "bout_id": bid, "n_a": na, "n_b": nb,
+                                 "share_a": round(na / (na + nb), 4) if na + nb else None,
+                                 "p_a_input": round((na + RW_PRIOR) / (na + nb + 2 * RW_PRIOR), 4) if na + nb else None,
+                                 "picks": b["picks"]})
+    else:
+        rec["note"] += "; no RotoWire panel article for this card yet (RotoWire covers pay-per-views only)"
+    outdir = VAULT_DIR if args.vault else os.path.join(ROOT, "data", "predictions", "crowd")
+    os.makedirs(outdir, exist_ok=True)
+    slug = re.sub(r"[^a-z0-9]+", "-", ev.lower()).strip("-")
+    stamp = rec["captured_utc"][:16].replace(":", "").replace("-", "")
+    path = os.path.join(outdir, "%s_%s_%s.json" % (args.date, slug, stamp))
+    if os.path.exists(path):
+        raise SystemExit("exists (write-once): %s" % path)
+    json.dump(rec, open(path, "w"), indent=1)
+    log("captured %d bouts from %s -> %s" % (len(rec["bouts"]), rec["url"], path))
+
+
+# ====================================================================== licensed import (e.g. Tapology with permission)
+def import_csv(path):
+    """Read a consensus export obtained with the source's permission. CSV columns: fight_id (ufcstats), share_a
+    (0-1, share picking the first ufcstats name), frozen_utc (when the shares were taken), event_start_utc,
+    optional ko_a, sub_a, dec_a, ko_b, sub_b, dec_b method shares. Rows with frozen_utc >= event_start_utc or a date
+    >= 2026-01-01 are dropped. Nothing in this tool fetches such a file."""
+    import csv
+    out = {}
+    for r in csv.DictReader(open(path)):
+        if r.get("frozen_utc", "") >= r.get("event_start_utc", "~") or r.get("event_start_utc", "") >= VAULT_FROM:
+            continue
+        out[r["fight_id"]] = {k: (float(v) if re.match(r"^-?[0-9.]+$", v or "") else v) for k, v in r.items()}
+    return out
+
+
+# ====================================================================== selftest
+def cmd_selftest(args):
+    ok = []
+    # 1. parser fixture (RotoWire layout with a struck losing pick)
+    fx = ('<script type="application/ld+json">{"datePublished": "2025-11-12T20:15:00-08:00"}</script><h1>x</h1>'
+          '<table><tr><th>MATCHUP</th><th>WEIGHT CLASS</th><th>JON</th><th>JAKE</th></tr>'
+          '<tr><td><a>Jack Della Maddalena</a> (+220) vs.<br><a>Islam Makhachev</a> (-270)</td><td>Welterweight</td>'
+          '<td><s>Della Maddalena</s></td><td>Makhachev</td></tr>'
+          '<tr><td>UFC 322 RECORD</td><td></td><td>4-1</td><td>3-2</td></tr></table>')
+    P = parse_rotowire(fx)
+    b = P["bouts"][0]
+    assert P["published"].startswith("2025-11-12") and b["a"] == "Jack Della Maddalena" and b["b"] == "Islam Makhachev"
+    assert side_of_pick(b["picks"]["JON"], b["a"], b["b"]) == "A" and side_of_pick(b["picks"]["JAKE"], b["a"], b["b"]) == "B"
+    ok.append("rotowire parser + pick sides (strike marks dropped from the text)")
+    # 2. Money MMA fixture
+    mm = ('<h1>UFC 306 Pick ‘Em Results</h1><div class="available-content"><p>Consensus Picks</p>'
+          '<p>Sean O’Malley – 71% </p><p>Daniel Zellhuber - 74%</p><p>Consensus Overall Record in 2024: 79-46</p>'
+          '</article>')
+    Q = parse_moneymma(mm)
+    assert Q["picks"] == [("Sean O’Malley", 0.71), ("Daniel Zellhuber", 0.74)], Q
+    ok.append("moneymma parser")
+    # 3. name matching
+    assert _pair_score("Ian Garry", "Neil Magny", "Ian Machado Garry", "Neil Magny") >= 0.8
+    assert _pair_score("Zhang Weili", "Valentina Shevchenko", "Weili Zhang", "Valentina Shevchenko") >= 0.8
+    assert _pair_score("Jon Jones", "Stipe Miocic", "Ciryl Gane", "Stipe Miocic") < 0.8
+    ok.append("name matching (aliases accepted, a different opponent rejected)")
+    # 4. corner symmetry of the inputs
+    a = crowd_probs({"rw": {"n_a": 5, "n_b": 1, "n": 6, "frozen": "pre_event"}, "mm": {"share_a": 0.64}})
+    bb = crowd_probs({"rw": {"n_a": 1, "n_b": 5, "n": 6, "frozen": "pre_event"}, "mm": {"share_a": 0.36}})
+    assert all(abs(a[k] + bb[k] - 1) < 1e-12 for k in a)
+    assert "rw" not in crowd_probs({"rw": {"n_a": 5, "n_b": 1, "n": 6, "frozen": "same_day"}})
+    ok.append("crowd_probs symmetric; same-day panels excluded")
+    # 5. refused hosts never fetched (checked before any network call)
+    try:
+        _robots_ok("https://www.tapology.com/fightcenter")
+        raise AssertionError("tapology not refused")
+    except SystemExit:
+        ok.append("tapology refused before any request")
+    # 6. vault guard on the fight list and on crowd.json
+    fights, n_drop = load_fights()
+    assert max(f["date"] for f in fights) < VAULT_FROM and n_drop > 0
+    if os.path.exists(OUT_JSON):
+        d = json.load(open(OUT_JSON))
+        assert all(r["date"] < VAULT_FROM for r in d["fights"].values())
+    ok.append("no fight dated 2026+ in the parse or in crowd.json (%d dropped at parse)" % n_drop)
+    for o in ok:
+        log("ok:", o)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    sp = ap.add_subparsers(dest="cmd", required=True)
+    f = sp.add_parser("fetch")
+    f.add_argument("--refresh-sitemaps", action="store_true")
+    sp.add_parser("build")
+    sp.add_parser("eval")
+    c = sp.add_parser("capture")
+    c.add_argument("--event", required=True)
+    c.add_argument("--date", required=True, help="event date YYYY-MM-DD")
+    c.add_argument("--vault", action="store_true", help="write outside the repo (past 2026 cards)")
+    sp.add_parser("selftest")
+    args = ap.parse_args()
+    {"fetch": cmd_fetch, "build": cmd_build, "eval": run_eval, "capture": cmd_capture, "selftest": cmd_selftest}[args.cmd](args)
+
+
+if __name__ == "__main__":
+    main()
