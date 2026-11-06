@@ -1063,33 +1063,59 @@ def _bucket7(res):
 
 
 def engine_eval(args):
-    """Simulate every pre-vault backtest fight with engine v3, plain vs with this tool's snapshot factors (same
-    seeds), and score winner / 7-bin / finish log loss by period. Folds the result into args.out."""
+    """Simulate every pre-vault backtest fight (2019-2025) with engine v3 in four configurations (same seeds): plain,
+    plain x oppadj factors, ML stat-line rates (the v4 core), ML x oppadj^beta. Scores winner / 7-bin / finish log
+    loss by period and folds the result into args.out. 2026 (vault) is never simulated."""
     out = json.load(open(args.out))
     snaps = out["snapshots"]
     bt = json.load(open(os.path.join(OUT, "backtest.json")))
     keys = bt["meta"]["keys"]
     scratch = args.engine_dir or os.path.join(ROOT, "out", "oppadj_engine")
     os.makedirs(scratch, exist_ok=True)
+    # ML rates: out-of-fold (cv<year>) for 2019-2023, dev model (trained 2010-2023) for 2024-25
+    ml_path = os.path.join(OUT, "mlrates_oof.json")
+    mo = json.load(open(ml_path)) if os.path.exists(ml_path) else {"fights": {}, "meta": {"targets": []}}
+    tg = mo["meta"]["targets"]
+    BASE_KEY = {"kd_h": "kd_per_h"}
+    om = out["results"].get("over_mlrates", {}).get("families", {})
+    # pre-declared rule: beta = clip(beta fit on 2019-2023, 0, 1); topSkill has no ML counterpart
+    ml_beta = {nm: float(min(1.0, max(0.0, om[nm]["beta_tune"]))) if nm in om else 0.0 for nm in FAMILIES}
+
+    def prior_for(py, div):
+        allp = py.get("ALL", {})
+        d = py.get(div) or allp
+        o = dict(allp)
+        o.update({k: v for k, v in d.items() if v is not None})
+        return o
+
     periods = {"tune_2019_2023": (TUNE[0], "2024-01-01", args.engine_sims_tune),
                "test_2024_2025": (TEST_FROM, VAULT_FROM, args.engine_sims_test)}
     strip = ("pace3", "pace3_w", "kd_absorbed")
-    res_all = {}
+    CFG = ("plain", "adj", "ml", "ml_adj")
+    res_all = {"ml_beta_used": {k: rnd(v, 4) for k, v in ml_beta.items()}}
     for per, (lo, hi, N) in periods.items():
         fights = []
         for e in bt["fights"]:
             if not (lo <= e["date"] < hi) or e["id"] not in snaps:
                 continue
+            assert e["date"] < VAULT_FROM
             f = {k: e[k] for k in ("id", "date", "division", "rounds", "title") if k in e}
             f["prior_division"] = e.get("prior_division")
             for t in ("A", "B"):
                 sd = {k: v for k, v in e[t].items() if k not in strip}
                 sd["oppadj"] = snaps[e["id"]][t]
                 f[t] = sd
+            me = mo["fights"].get(e["id"])
+            if me and "A" in me and "B" in me and tg:
+                P = prior_for(bt["priors_asof"][e["date"][:4]], f["prior_division"] or f["division"])
+                f["ml"] = {"A": me["A"], "B": me["B"]}
+                f["ml_base"] = [float(P.get(BASE_KEY.get(t, t), 0.0) or 0.0) for t in tg]
+            else:
+                f["ml"] = None
             fights.append(f)
         inp = os.path.join(scratch, "in_%s.json" % per)
         with open(inp, "w") as fh:
-            json.dump({"keys": keys, "priors": bt["priors_asof"], "fights": fights}, fh)
+            json.dump({"keys": keys, "priors": bt["priors_asof"], "ml_beta": ml_beta, "fights": fights}, fh)
         t1 = time.time()
         procs = []
         for part in range(args.procs):
@@ -1107,31 +1133,31 @@ def engine_eval(args):
         ent = {e["id"]: e for e in bt["fights"]}
         for fid, rr in rows.items():
             e = ent[fid]
-            if "err" in rr.get("plain", {}) or "err" in rr.get("adj", {}):
-                continue
             r = {"id": fid, "w": e["result"]["winner"], "b": _bucket7(e["result"]),
                  "both_n": e["A"]["n"] > 0 and e["B"]["n"] > 0,
                  "elo": 1 / (1 + 10 ** ((e["B"]["elo"] - e["A"]["elo"]) / 400))}
-            for k in ("plain", "adj"):
-                s_ = rr[k]
+            for k in CFG:
+                s_ = rr.get(k)
+                if not s_ or "err" in s_:
+                    continue
                 pa = s_["pA"] / max(1e-9, s_["pA"] + s_["pB"])
                 bins = np.array(s_["bins"]) * (1 - 7 * eps) + eps
                 r[k] = (pa, bins)
             rec.append(r)
 
-        def score(sub):
+        def score(sub, cfgs):
+            sub = [x for x in sub if all(c in x for c in cfgs)]
             dec = [x for x in sub if x["w"] in ("A", "B")]
             b7 = [x for x in sub if x["b"] is not None]
             o2 = {"n_decisive": len(dec), "n_bucketed": len(b7)}
             yv = np.array([1.0 if x["w"] == "A" else 0.0 for x in dec])
             lls = {}
-            for k in ("plain", "adj"):
+            for k in cfgs:
                 pa = np.clip(np.array([x[k][0] for x in dec]), 1e-4, 1 - 1e-4)
                 ll = -(yv * np.log(pa) + (1 - yv) * np.log(1 - pa))
                 l7 = np.array([-math.log(x[k][1][x["b"]]) for x in b7])
-                fin = np.array([x[k][1][[0, 1, 5, 6]].sum() for x in b7])
+                fin = np.clip(np.array([x[k][1][[0, 1, 5, 6]].sum() for x in b7]), 1e-4, 1 - 1e-4)
                 yf = np.array([1.0 if x["b"] in (0, 1, 5, 6) else 0.0 for x in b7])
-                fin = np.clip(fin, 1e-4, 1 - 1e-4)
                 lf = -(yf * np.log(fin) + (1 - yf) * np.log(1 - fin))
                 lls[k] = (ll, l7, lf)
                 o2[k] = {"winner_log_loss": rnd(ll.mean(), 5), "brier": rnd(((pa - yv) ** 2).mean(), 5),
@@ -1140,22 +1166,31 @@ def engine_eval(args):
                          "mean_abs_logit_A": rnd(float(np.abs(np.log(pa / (1 - pa))).mean()), 4)}
             pe = np.clip(np.array([x["elo"] for x in dec]), 1e-4, 1 - 1e-4)
             o2["elo_winner_log_loss"] = rnd(float((-(yv * np.log(pe) + (1 - yv) * np.log(1 - pe))).mean()), 5)
-            for j, nm in enumerate(("winner_log_loss", "outcome7_log_loss", "finish_log_loss")):
-                m, lo_, hi_ = boot_ll(lls["adj"][j], lls["plain"][j], args.boot)
-                o2["adj_minus_plain_" + nm + "_95"] = [rnd(m, 5), rnd(lo_, 5), rnd(hi_, 5)]
+            for a_, b_ in (("adj", "plain"), ("ml", "plain"), ("ml_adj", "ml"), ("ml_adj", "plain")):
+                if a_ not in cfgs or b_ not in cfgs:
+                    continue
+                for j, nm in enumerate(("winner_log_loss", "outcome7_log_loss", "finish_log_loss")):
+                    m, lo_, hi_ = boot_ll(lls[a_][j], lls[b_][j], args.boot)
+                    o2["%s_minus_%s_%s_95" % (a_, b_, nm)] = [rnd(m, 5), rnd(lo_, 5), rnd(hi_, 5)]
             return o2
 
-        res_all[per] = {"sims_per_orientation": N, "all": score(rec),
-                        "both_have_ufc_history": score([x for x in rec if x["both_n"]])}
-        a_ = res_all[per]["all"]
-        print("  %s winner ll plain %.4f adj %.4f  delta %s | 7-bin %.4f -> %.4f | elo %.4f"
-              % (per, a_["plain"]["winner_log_loss"], a_["adj"]["winner_log_loss"],
-                 a_["adj_minus_plain_winner_log_loss_95"], a_["plain"]["outcome7_log_loss"],
-                 a_["adj"]["outcome7_log_loss"], a_["elo_winner_log_loss"]))
+        res_all[per] = {"sims_per_orientation": N,
+                        "all_fights_plain_vs_adj": score(rec, ("plain", "adj")),
+                        "ml_available_all_four": score(rec, CFG),
+                        "ml_available_both_have_ufc_history": score([x for x in rec if x["both_n"]], CFG)}
+        a_ = res_all[per]["ml_available_all_four"]
+        print("  %s (n=%d) winner ll plain %.4f adj %.4f ml %.4f ml_adj %.4f | elo %.4f"
+              % (per, a_["n_decisive"], a_["plain"]["winner_log_loss"], a_["adj"]["winner_log_loss"],
+                 a_["ml"]["winner_log_loss"], a_["ml_adj"]["winner_log_loss"], a_["elo_winner_log_loss"]))
+        for kk in ("adj_minus_plain_winner_log_loss_95", "ml_minus_plain_winner_log_loss_95",
+                   "ml_adj_minus_ml_winner_log_loss_95", "ml_adj_minus_ml_outcome7_log_loss_95"):
+            print("    %s %s" % (kk, a_[kk]))
     res_all["note"] = ("engine v3 (src/engine3.js + src/params3.js as of the run) via tools/oppadj_engine.js; "
                        "plain = engine raw shrunk rates; adj = the same rates times this file's snapshot factors; "
-                       "same seeds for both, both corner orders averaged; winner log loss on decisive fights, "
-                       "symmetric; 7-bin = [A KO, A SUB, A DEC, DRAW, B DEC, B SUB, B KO]; 2026+ never simulated")
+                       "ml = mlrates out-of-fold / dev rates through src/ml/mlrates.js applyToMatchup; ml_adj = ML "
+                       "targets x (F_off,X F_def,Y)^beta (ml_beta_used); same seeds for every configuration, both "
+                       "corner orders averaged; winner log loss on decisive fights; 7-bin = [A KO, A SUB, A DEC, "
+                       "DRAW, B DEC, B SUB, B KO]; 2026+ never simulated")
     out["results"]["engine_backtest"] = res_all
     n = B.write_json(args.out, out)
     print("updated %s (%s)" % (args.out, B.human(n)))

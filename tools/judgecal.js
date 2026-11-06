@@ -100,7 +100,7 @@ function nelderMead(f, x0, step, iters) {
   const n = x0.length;
   let P = [x0.slice()];
   for (let i = 0; i < n; i++) { const x = x0.slice(); x[i] += step[i]; P.push(x); }
-  let F = P.map(f);
+  let F = P.map((x) => f(x));
   for (let it = 0; it < iters; it++) {
     const ord = F.map((v, i) => i).sort((a, b) => F[a] - F[b]); P = ord.map((i) => P[i]); F = ord.map((i) => F[i]);
     if (Math.abs(F[n] - F[0]) < 1e-7 * (1 + Math.abs(F[0]))) break;
