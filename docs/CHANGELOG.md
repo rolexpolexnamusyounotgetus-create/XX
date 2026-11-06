@@ -3,6 +3,91 @@
 Each engine version records its held-out numbers here (docs/ROADMAP.md). "Test" means UFC fights from
 2024-01-01 to 2026-10-31 whose profiles were frozen before the fight and which no tuning step ever saw.
 
+## v5 merge log
+
+Sequential, tested merge of the v5 components onto engine v4.0.0. Every component sits behind its own
+`params.components.<name>` flag, and with the flag off the engine reproduces the engine before that step for fixed seeds.
+No validation (2024-2025) number is computed in these steps; the Measure stage takes v5's single look.
+
+### Step 1 (Nov 6, 5:00 pm ET): v4.0.1's deferred train-only fixes, `components.v401`
+
+- **Base.** src/engine3.js, src/params3.js and src/ml/mlrates.js matched versions/v4/ by sha256 (the v4 entry in
+  data/derived/version_history.json) before any edit.
+- **Applied, ported by hand from versions/v4.0.1-rejected/, one sub-flag each (all default on until the Calibrate stage's
+  train leave-one-out):**
+  - (a) `emJudge`: EM judging weights refit on the 5,519 cards of 2015-2023 (data/derived/judge_em_train.json). The judges'
+    noise and 10-8 KD term refit on those weights go with them (data/derived/judgecal_v401.json), and so does the 10-8
+    threshold t108 8.31. t108 belongs here, not to (c), because it moved with the weight and noise scale.
+  - (b) `deductions`: judge.ded 0.00515 per fighter-round and ded2 0.075, drawn after the last round.
+  - (c) `mlLevels`: mlTdLevel 1.067, mlCtrlLevel 1.053 and mlSubLevel 1.083. The same tools/v4_levels.js run gave the
+    companion values: kdScale 1.383, kdInstant 0.3623, kdRefStop 0.1807, stko 0.03565, gnpTko 0.03005 and subConvScale
+    1.697 (data/derived/v4_levels_v401.json).
+  - (d) `tdCap`: mlMaxRatio caps the cumulative takedown-attempt multiplier and the takedown-odds one
+    (src/ml/mlrates.js `opts.cumCap`).
+  - (e) `koTargets`, new: the self-calibration's KO/TKO composition targets now come from 2019-2023 fights
+    (tools/ko_composition.py -> data/derived/ko_composition_pre2024.json).
+    - New targets: ground 28.6%, clinch 7.1%, standing stoppage without a KD 7.2%. The old ones were 28 / 12.5 / 7.
+    - The clinch target is the big move, and it is a labelling break, not a trend. ufcstats calls 22-26% of strike
+      KO/TKOs "In Clinch" in every year from 2015 to 2018, and 5-10% in every year from 2019 to 2023. 2015-2023 together
+      gives 14.4%. 2019-2023 was adopted because it is the train window and one labelling regime.
+    - tools/v401_kocomp.js turns the targets into factors (`params.v401.koComp`): kdScale x1.11, kdPos[1] (clinch) x0.50,
+      gnpTko x1.023, stko x1.051, kdInstant / kdRefStop odds x0.988. Method: refit only the KO block twice, once to the old
+      targets and once to the new ones, on league-average LW pairs (train priors, learned rates off, common random numbers).
+      KD per head strike and KD-to-finish are held fixed. Each factor is the ratio of the two fits.
+    - Train fights, learned rates on, 12 sims each: the clinch share of strike KO/TKOs moves 13.8% -> 8.5% (actual 7.1%).
+      Ground moves 25.3 -> 25.8% (actual 28.6), standing without a KD 8.2 -> 8.9% (actual 7.2), and KD per 100 head
+      0.790 -> 0.777 (actual 0.782). KO share stays 31.8% (actual 31.7).
+- **Mechanics.**
+  - The usual params fields hold the flag-on values, and `params.v401.off` holds v4.0.0's.
+  - `resolveParams` runs inside `matchupBase`. For each sub-flag that is off it puts v4.0.0's values back, before
+    `opts.params`, so an explicit override still wins. The koComp factors are applied after the overrides.
+  - New exports: `FightEngine.resolveParams` and `v401Flags`. `deductions` is exported as in v4.0.1.
+  - A fight carries `nDed`, and a summary carries `dedPerDecision`, only when deductions are on.
+  - The mlrates league-expectation cache key now includes the resolved components flags.
+  - Engine VERSION is "5.0.0-dev" and params version "5.0.0-dev.1-selfcal-pre2024"; the freeze sets 5.0.0.
+  - The trace format and the API are unchanged otherwise.
+- **Conflicts.** None. The step applies to the v4.0.0 base, and the v4.0.1 code was re-applied behind the flags. The
+  deductions function, its placement and the `levels` option keep v4.0.1's text. comp/dynamics was built on v4.0.1, so
+  this should keep its 3-way merge small.
+- **Tests (all pass).**
+  - New `node tests/test_v401.js`: 15 passed.
+    - v401 off reproduces versions/v4 bit for bit on 450 matchups: whole fight JSON including traces (4,500 fights) and
+      45 summaries. Three groups: random pairs with the production learned rates, random pairs on the plain tables, and
+      2019-2023 backtest fights in both corner orders with out-of-fold rates.
+    - Sub-flags a-d on (koTargets off) reproduce versions/v4.0.1-rejected on 1,000 fights.
+    - Every sub-flag changes fights on its own. emJudge and deductions leave each fight unchanged up to the cards.
+  - `node tests/test_engine3.js 8000`: 81 passed, 0 failed. The judge-weight check now checks the pre-2024 fit, and
+    v4.0.1's deduction, cap and level checks were added with flag-off variants.
+  - `node tests/test_director3.js 300`: OK; 300 of 300 matchups ran with learned rates, 8 fights had a deduction.
+    `NO_ML=1 ... 100`: OK.
+  - `node tests/test_mlrates.js`: 47 checks OK. `node tests/test_mlcal.js`: 33 passed.
+- **Draw and MD targets for (b), train 2019-2023, one corner order, 20 sims per fight.** Actual: draws 1.01% of fights,
+  MD 2.04% of decisions.
+
+  | config | draws | MD |
+  |---|---|---|
+  | v4 | 0.28% | 0.56% |
+  | (a) alone | 0.28% | 0.59% |
+  | (b) alone | 0.67% | 0.96% |
+  | all on | 0.60% | 0.95% |
+
+  - Deductions close about half of each gap. 10-10 rounds do not explain the rest: there is 1 in 11,652 judge-rounds in
+    2019-2023.
+  - Likely causes, for Calibrate: the 2019-2020 10-8 era (judgecal threshold 6.15 vs 6.91), and how 10-8s fall in close
+    fights.
+  - The card-implied 10-8 share is 4.5% with all on (cards 5.29% on train).
+- **Stance freeze: not done, not cheap.**
+  - data/raw/ufc_fighter_tott.csv is one current snapshot, with one stance per fighter (2,768 Orthodox, 609 Southpaw,
+    219 Switch, 1,023 blank). No earlier record exists in the repo to freeze from.
+  - The fix needs an archived tale-of-the-tape snapshot, then a rebuild of backtest_dev.json and of the learned-rate
+    tables (mlrates_oof.json, mlrates_dev.json), because stance is a feature.
+  - Until then, the small look-ahead stays accepted and documented.
+- **For the Calibrate stage.**
+  - Pass the sub-flags per arm through `opts.params.components.v401`, for example `{ emJudge: false }`.
+  - The tools that rewrite params in place write the usual (flag-on) fields: tools/v4_levels.js --write, tools/judgecal.js
+    --write and tests/test_engine3.js --fit --write. Run them with the sub-flag on, or drop a rejected sub-flag first.
+  - After a full `--fit --write` with koTargets on, set `params.v401.koComp` to 1.
+
 ## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored
 
 **Status: rejected by the decision rule.** The validation look ran once, at 11:45 am ET, paired against v4. The

@@ -280,6 +280,13 @@ Findings from verified research that the next engine versions must use. Each lin
 - v5 MERGE LAUNCHED ~21:45 UTC (scratchpad/wf_v5_merge.js, run wf_5a28d719-790): five sequential tested merge
   steps -> train leave-one-out ablation -> joint level pass + re-tune + freeze -> single validation look ->
   review -> decide -> first vault audit.
+  - Step 1 done (~22:00 UTC; docs/CHANGELOG.md "v5 merge log"): v4.0.1's fixes behind components.v401 sub-flags
+    emJudge / deductions / mlLevels / tdCap / koTargets, all on by default. Flag off = v4.0.0 bit for bit (tests/test_v401.js).
+  - New finding for (e): ufcstats labels 22-26% of strike KO/TKOs "In Clinch" in 2015-2018 and 5-10% from 2019 on, so the
+    clinch composition target drops from 12.5% to 7.1%.
+  - Train draws and MD are still about half of actual with deductions on: 0.60% vs 1.01% of fights, MD 0.95% vs 2.04% of
+    decisions.
+  - Stance freeze is not cheap: there is one tale-of-the-tape snapshot and no history.
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the
