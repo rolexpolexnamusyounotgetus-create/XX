@@ -591,10 +591,10 @@ def name_cluster(c):
     """plain-language archetype name from a centroid (dict of z-scores on STYLE_DIMS)"""
     grap = (c["td_int"] + c["ctrl"]) / 2
     kick = (c["sh_l"] + c["sh_b"]) / 2
+    if grap > 0.5 and c["sh_c"] > 0.4:
+        return "clinch-control wrestle-boxer"
     if grap > 0.8 and c["sh_g"] > 0.6:
         return "wrestler / top-control grappler"
-    if grap > 0.5 and c["sh_c"] > 0.4:
-        return "clinch wrestle-boxer"
     if c["press"] < -0.8:
         return "counter striker"
     if c["kd_pow"] > 0.7:
@@ -673,8 +673,8 @@ class WinData:
             fb &= b < hi
         return fa.astype(float), fb.astype(float)
 
-    def base(self):
-        X = np.column_stack([self.zd(c) for c in BASE_WIN])
+    def base(self, terms=None):
+        X = np.column_stack([self.zd(c) for c in (terms or BASE_WIN)])
         return X / X[self.tune].std(0)
 
 
@@ -758,9 +758,10 @@ def choose_lam(X, y, yr, tune, grid=(1, 3, 10, 20, 30, 50, 100, 300)):
     return best, scores
 
 
-def winner_tests(W, n_boot=2000, seed=SEED, lam_int=1.0):
+def winner_tests(W, n_boot=2000, seed=SEED, lam_int=1.0, base_terms=None):
     y, yr, tune, test = W.y, W.yr, W.tune, W.test
-    Xb = W.base()
+    base_terms = base_terms or BASE_WIN
+    Xb = W.base(base_terms)
     lam, lam_scores = choose_lam(Xb, y, yr, tune)
     pen_b = np.full(Xb.shape[1], float(lam))
     rng = np.random.default_rng(seed)
@@ -780,8 +781,8 @@ def winner_tests(W, n_boot=2000, seed=SEED, lam_int=1.0):
     ll_te0 = logloss_vec(pte0, y[test])
     elo_X = Xb[:, :1]
     be, _ = fit_logit(elo_X[tune], y[tune], 1.0, pen=np.array([1.0]))
-    out = {"baseline": {"terms": BASE_WIN, "lam": lam, "lam_cv": lam_scores,
-                        "coef": dict(zip(BASE_WIN, [float(v) for v in b0])),
+    out = {"baseline": {"terms": base_terms, "lam": lam, "lam_cv": lam_scores,
+                        "coef": dict(zip(base_terms, [float(v) for v in b0])),
                         "cv_tune": metrics(pcv0[tune], y[tune]), "test": metrics(pte0, y[test])},
            "elo_only": {"test": metrics(sigmoid(elo_X[test] @ be), y[test])},
            "candidates": {}}
@@ -871,7 +872,8 @@ def fit_archetypes(rows, mu, sd, k_final=8, k_grid=range(4, 13), seed=SEED, min_
     cent, cz = cent[order], cz[order]
     remap = {int(o): i for i, o in enumerate(order)}
     lab = np.array([remap[int(l)] for l in lab])
-    temp = float(np.mean(((Z - cent[lab]) ** 2).sum(1)))
+    # soft membership: isotropic Gaussian around each centroid, variance = mean within-cluster variance
+    temp = float(2.0 * np.mean(((Z - cent[lab]) ** 2).sum(1)) / Z.shape[1])
     names, used = [], Counter()
     for j in range(k_final):
         nm = name_cluster(dict(zip(STYLE_DIMS, cz[j])))

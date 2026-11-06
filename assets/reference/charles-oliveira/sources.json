@@ -31,5 +31,16 @@
     "use": "reference-only",
     "what": "body",
     "note": "ESPN full-body fight-stance cutout, date unknown"
+  },
+  {
+    "file": "wm-2021-10-headshot-cropped.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/05/Charles_do_Bronxs_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "page": "https://commons.wikimedia.org/wiki/File:Charles_do_Bronxs_(cropped).jpg",
+    "author": "Renan Silva",
+    "license": "CC0",
+    "date_taken": "2021-10-05",
+    "use": "embed-ok",
+    "what": "headshot",
+    "note": "Charles Oliveira, UFC Lightweight Champion, Charles Oliveira or Charles do Bronxs as he is popularly known in Brazil"
   }
 ]
