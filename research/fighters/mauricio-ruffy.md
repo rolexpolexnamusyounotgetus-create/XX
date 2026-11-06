@@ -17,7 +17,7 @@ No booking, current ranking or injury could be confirmed.
 - **W Fiziev, UFC 325 (Jan 2026), TKO R2 4:30.** He landed 55 of 88 significant strikes, 45 of them to the head, scored a knockdown and finished on the ground. Fiziev had answered with 15 body and 12 leg strikes.
 - **L Benoit Saint Denis, Paris (Sep 6, 2025), RNC R2 2:56.** Saint Denis went 3 of 10 on takedowns with 4:38 of control.
 - **W King Green, UFC 313 (Mar 2025), spinning wheel kick KO R1 2:07.**
-- **W James Llontop, UFC 309 (Nov 2024), 29-28 x3.** Llontop outlanded him 90-67 in volume, but Ruffy scored a knockdown and landed more cleanly.
+- **W James Llontop, UFC 309 (Nov 2024), 29-28 x3.** Llontop outlanded him 90-67, but Ruffy landed 53 head strikes to Llontop's 29 and scored a knockdown.
 - **W Jamie Mullarkey, UFC 301 (May 2024), KO R1 4:42.**
 
 ## Style
@@ -25,7 +25,7 @@ He is a rangy power striker. 86% of his significant attempts go to the head, he 
 
 ## Strengths
 - **Power:** 6 knockdowns in 48.7 minutes (1.85 per 15), about six times the lightweight median.
-- **Head defence at range:** opponents land only 37% of their significant strikes to his head. Overall he defends 59% of significant strikes (median about 54%).
+- **Head defence at range:** only 37% of the significant strikes opponents land on him go to the head (lightweight landed-head median about 62%). Overall he defends 59% of significant strikes (median about 54%).
 - **First-contact takedown defence:** 87% (26 of 30 stopped).
 
 ## Weaknesses
@@ -34,7 +34,7 @@ He is a rangy power striker. 86% of his significant attempts go to the head, he 
 - **Sample size:** all his rates rest on under 49 minutes.
 
 ## Durability and cardio
-Tsarukyan dropped him once and finished him with an elbow, his only KO loss and only knockdown absorbed in the UFC. His cardio is **unknown**: only the Llontop fight went 15 minutes, and he has never fought past round 3.
+Tsarukyan dropped him once and finished him with an elbow, his only KO loss and only knockdown absorbed in the UFC. His cardio is **unknown**: only the Llontop fight went 15 minutes, and he has never had a five-round fight.
 
 ## What the numbers say
 Elo 1602, 25th among the 100 lightweights who have fought since May 2025. Career: 3.7 significant strikes landed and 3.5 absorbed per minute. Opponents attempt 9.2 takedowns per 15 minutes against him (median about 4.2), which says how opponents plan for him. Treat every rate as provisional because of the small sample.

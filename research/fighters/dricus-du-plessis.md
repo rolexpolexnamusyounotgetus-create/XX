@@ -2,13 +2,13 @@
 
 As of Nov 6, 2026. Switch-stance middleweight, age 32 (born Jan 14, 1994), 6'1" with a 76" reach. Dataset: `data/derived/fighters.json`, ufcstats snapshot of Oct 31, 2026.
 
-**Research limits.** This pass had no web access. The run's shared web-search budget was used up, and direct fetches to espn.com and wikipedia.org did not resolve in this sandbox. Fight results below come from the ufcstats snapshot. Two status items are carried over from the Brendan Allen research pass and were not re-opened here. Ranking and any news after July 2026 are **unverified**.
+**Research limits:** no web access in this pass (search budget spent; espn.com and wikipedia.org unreachable). Results come from the ufcstats snapshot; ranking and post-July news are **unverified**.
 
 ## Current status
 - **Former UFC middleweight champion.** He won the title from Sean Strickland (SD, UFC 297, Jan 20, 2024). He defended it against Israel Adesanya (RNC R4, UFC 305, Aug 17, 2024) and Strickland again (UD, UFC 312, Feb 8, 2025). He lost it to Khamzat Chimaev (UD 50-44 x3, UFC 319, Aug 16, 2025).
 - **Last fight:** a UD over Kamaru Usman (50-45, 49-46, 49-46), a five-round non-title main event at UFC Fight Night in Oklahoma City on Jul 18, 2026.
 - **The belt** now belongs to Strickland, who beat Chimaev on May 9, 2026. Brendan Allen called Du Plessis out after beating Christian Leroy Duncan on Oct 10, 2026. No bout is booked that I could confirm.
-- **UFC record 10-1:** 4 KO/TKO, 2 submissions, 4 decisions; the one loss was a decision.
+- **UFC record 10-1** (4 KO/TKO, 2 SUB, 4 DEC).
 
 ## Recent fights
 - **W Usman (UD, Jul 2026):** He out-landed Usman in four of five rounds and 136-92 overall, almost all of it at distance. Usman went 0 for 7 on takedowns. Usman's best work went to the body (37 of 58 landed).
@@ -19,7 +19,7 @@ As of Nov 6, 2026. Switch-stance middleweight, age 32 (born Jan 14, 1994), 6'1" 
 - **W Robert Whittaker (KO R2, Jul 2023):** He dropped Whittaker and out-landed him 62-31.
 
 ## Style
-He is a pressure fighter who switches stance, throws in volume and keeps coming forward. He attempts 9.9 significant strikes per minute (the middleweight average is 8.1) at 48% accuracy. He adjusts his targets to the opponent. Against Usman he went mostly to the head. Against Strickland's high guard he kicked the legs and body. He also has a working wrestling and back-take game. He finished Darren Till with a neck crank from back control and Adesanya with a rear-naked choke.
+He is a pressure fighter who switches stance, throws in volume and keeps coming forward. He attempts 9.9 significant strikes per minute (the middleweight average is 8.1) at 48% accuracy. He adjusts his targets to the opponent. Against Usman he went mostly to the head. Against Strickland's high guard he kicked the legs and body. He also wrestles and takes the back: a neck crank from back control finished Darren Till, and a rear-naked choke finished Adesanya.
 
 **Strengths:** volume and pressure that rise late, punching power at distance (Perez, Giles and Whittaker were all finished by punches), changing targets mid-fight, back takes, durability.
 
@@ -32,7 +32,7 @@ He has **never been knocked down in 11 UFC fights** and has no stoppage losses. 
 - 4.76 significant strikes landed and 4.03 absorbed per minute. Opponents hit 45.6% against him.
 - Target split of attempts: 76.8% head, 11.8% body, 11.4% leg (middleweight average 77/14/9). 89% of his landed strikes come at distance.
 - 1.39 takedowns per 15 minutes at 47% accuracy. Control share is 7% for him and 19% for his opponents.
-- Elo 1769, the highest among active middleweights in the dataset.
+- Elo 1769, the top mark among active middleweights in the dataset.
 
 ## Sources
 - http://ufcstats.com/fighter-details/0d7b51c9d2649a6e
