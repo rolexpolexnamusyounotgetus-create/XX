@@ -514,3 +514,81 @@ node tests/test_calib.js
   close's 2013-2018 slopes sit on that source.
 - **The drift table's ML rows for 2012-2016 are early annual fits on small samples.** Their overconfidence is not
   evidence about 2026.
+
+## Verification log
+
+Adversarial verifier, Nov 6, 2026, 10:50-11:30 pm UTC. I assumed any gain was fake until my own code reproduced it
+from raw inputs. calib claims no gain, so I checked whether "nothing passes" is right, and whether any number or claim
+is wrong. Code: `tools/calib_verify.py`, which does not import tools/calib.py or tools/ml2.py. Output:
+`data/derived/calib_verify.json`.
+
+**Verdict: confirmed. No recalibration enters production.**
+- Every production spec stays `{type: none}`, so `Calib.apply` is the identity.
+- The `calib_*` plugin models are copies of the ML v2 incumbent stacks.
+- Nothing enters the stacks, the forward package or predict(). adopt = false.
+- `Calib.monitor` and `Calib.ruleB` are usable tooling for the pre-registered rule 6.5.1 (b), with no behaviour change.
+- I found no defect in the numbers. I corrected six statements in this note and one docstring in the plugin.
+
+### What I checked and how
+
+| check | result | command |
+|---|---|---|
+| Timeline | The decision rule and the cv stage first appear together in autosave 021fb79 (10:14 pm). No cv output existed before then: the earlier commits have only table and drift stages. cv_backtest.json was written at 10:35:23 pm. Its sha256-16 7d66a0ff3e97f20c equals the one recorded in calib_prereg.json. The prereg was committed at 10:36:20 pm (5878b25); confirm ran 10:36:31-10:37:00 pm. After the prereg, tools/calib.py changed only in test vectors and export notes, so the cv, confirm and rule stages are as pre-registered. drift and rule were re-run after the look; both read ≤ 2023 only, with unchanged code | `git log`, `git diff ee4f349 HEAD -- tools/calib.py` |
+| 2026 data | The ml2 table, the calib table and calib.json fights all end 2025-12-13. The only 2026 strings in calib.json are the constant "2026-01-01" and the build date. No 2026 rows were collected, so there was nothing for the vault | `python3 tools/calib_verify.py claims` (meta) and grep |
+| Look-ahead in inputs | ML v2 logistic 2012-2023 = annual expanding refits (train < Jan 1 of Y). ML v2 pre-UFC means fit < 2024. Market rating = walk-forward Kalman on earlier closes, stream cut at 2026 (ml2's perturbation test). Rating and market-rating scale parameters were tuned on 2019-2023; the note discloses this. No normalisation is fit on 2024+ | read tools/ml2.py |
+| Line join | nlbair f1 = table A on all 3,360 nlbair rows used (my builder asserts it), and winners agree 100%. The market.json and nlbair closes correlate 0.996 (MAD 0.012) on 2,785 shared fights. Close coverage in the backtest universe: 99.7-100% 2014-2024, 91% 2013, 97.9% 2025. The gate years are complete, so no match bias | `tools/calib_verify.py` (table build) |
+| Stack gate, own code | Own non-negative no-intercept stack fit, own temperature MAP, own event-cluster bootstrap (different seed). Incumbent gate 0.62984 / 0.62275 / 0.61624 / 0.63147 (slopes 1.077 / 1.046 / 1.051 / 0.985), which equals calib and ml2.json's stack CV | `nice -n 5 python3 tools/calib_verify.py gate` |
+| Temperature family | Over the full 26-config grid, the 2016-2020 choice is the same as calib's for every head (last 200, sd 0.15; open last 400). Gate vs incumbent: +0.00043 [-0.0007, +0.0017] no line, -0.00039 open, +0.00018 close, +0.0008 [+0.0001, +0.0016] ML v2 logistic. calib: +0.0004 / -0.0004 / +0.0002 / +0.0008 | same |
+| Recency and per-card | No line: h none +0.00028, h 0.5 -0.00083 [-0.0021, +0.0005] (calib's gate-best -0.0008), per-card h 1 -0.00057. Open: h 0.5 (inner choice) +0.0024 [+0.0001, +0.0047], significantly worse as calib says; h none -0.00075. Close: h none -0.00039 | same |
+| Odd and segment | No line +0.00024 / +0.00013, open -0.00037 / -0.00045 (calib +0.0003 / +0.0001 / -0.0004 / -0.0004) | `... calib_verify.py oddseg` |
+| Corner symmetry | My stack, per-card stack and per-card temperature, refit on swapped corners: max \|p + p_swapped - 1\| ≤ 1.1e-8 (optimizer tolerance; calib's exact fits 4.4e-16) | `... calib_verify.py confirm` |
+| Free-intercept check | ufcstats order is real on the gate: mean P(A) 0.524 against an A win rate of 0.566. A free intercept would gain -0.0038 (no line) and -0.0018 (close) in sample, more than any calib scheme. No calib scheme has an intercept or an ordered term, so none can use it | `... calib_verify.py claims` |
+| 2024-25, recomputed (not re-selected) | Every pre-registered object reproduces: 0.58940 / 0.58115 / 0.57574 / 0.58865. Close stack vs close -0.0096 [-0.0143, -0.0050]. No-line descriptive temp row -0.0047 [-0.0089, -0.0003]. A harness replay to a scratch file (calib_* + markets) matches the note's cross-check line by line | `... calib_verify.py confirm`; `BLINDTEST_CACHE=<scratch> nice -n 5 python3 tools/blindtest.py replay --models calib_noline,calib_noline_wf,calib_open,calib_open_wf,calib_line,calib_line_wf,market_close,market_open --out <scratch>.json` |
+| Plugin columns | Against my own incumbents: max \|diff\| 4e-5 (2021-2023 history) and 3e-5 (2024-25). There are no history rows before 2021 for the incumbents | `... calib_verify.py confirm` |
+| Rule stage | Sharpness k = 1.2172 (calib 1.217). The T4 claims in the bottom line match rule.json | same; `python3 tools/calib.py report` |
+| JS | `node tests/test_calib.js`: 14 of 14 pass | |
+
+### Corrections made (report only; no number in calib.json changes)
+
+1. **The cause of the 0.0004 no-line gap.** It is not a different market-rating source. The two ratings agree to
+   9e-5 wherever both exist. market.json lacks `p_market_rating` for 9 of the 854 2024-25 fights, and ml2's stack fed
+   those as logit 0. With them set to missing, my code gives ml2's 0.58899 / 1.371. Fixed in bottom line 3, the
+   Caveats and the plugin docstring.
+2. **"The 2024-25 shift was larger than anything in 2012-2023."** The note compared single-family pooled slopes with a
+   cross-family mean. Like-for-like, the 11-family mean log slope was +0.268 in 2024 and +0.310 in 2025, against at
+   most +0.124 (2022) before, so the cross-family claim holds. But single families had reached 2024-25 levels before
+   2024: the market rating was at 1.38 in 2022 and 1.55 [1.16, 1.98] in 2023. Fixed in bottom line 3.
+3. **2017 episode.** Plain Elo (0.71) and strike Elo (0.92) were not underconfident in 2017. Fixed in bottom line 2.
+4. **T2.** "Never helped" and "no family improves" now say "not significantly": the best point estimate is -0.0017
+   and every CI includes 0.
+5. **The trailing-temperature hedge.**
+   - Against ml2's rolling refits, only the ML v2 logistic's CI excludes 0. The other three heads are n.s.
+   - So most of the -0.0047 against the static incumbent comes from refitting on 2024-25 at all.
+   - The row is one of 24 descriptive rows, on an episode already in BACKLOG before this work began.
+   - Fixed in bottom line 4.
+6. **Segments.** Two of 24 segment-by-head CIs exclude 1, which is about chance: close-stack debut above 1, and
+   open-stack women below 1. Fixed in bottom line 5 and the segment reading. The "vs close" n in T5 is the fights with
+   a close (845 / 843 / 845 / 845).
+
+### Notes for v9 (not defects; no change made)
+
+- **The decision rule.**
+  - calib's two-part rule (2016-2020 choice AND gate-best both better by more than 0.0005) is stricter than ml2's
+    rule, which picks h on the gate. It was committed before any cv output.
+  - Under ml2's rule with h 0.5 added to ml2's grid {none, 3, 1.5}, the no-line stack would have moved to h 0.5:
+    -0.0008 [-0.0021, +0.0005], n.s.
+  - calib rejects it because the 2016-2020 origins prefer no recency (0.63605 vs 0.63679).
+  - I agree with the rejection: the gain is inside noise, and the inner years point the other way.
+- **Direction of drift rule 6.5.1.**
+  - Both clauses are read on the stretched production stack, and a slope near 1 there means the stretch is right.
+  - In T4, rule (a)'s switch probability peaks (0.84) at s = 1.2, where the production slope is 0.97 and switching is
+    neutral.
+  - This strengthens the note's findings (i)-(iii): as written, the rule switches most often when production is
+    already calibrated. Rule (b) switches almost regardless of the true slope.
+  - Changing the rule before audit 1 is not allowed. v9 should re-specify it on the validated scale or against the
+    break-even.
+- **The insurance arm.**
+  - A per-card trailing temperature is suggested by the 2024-25 look, so it is a 2024-25-informed idea. Its only clean
+    tests are the forward ledger and vault audit 2.
+  - If cycle 4 ships per-card stack refits, the do-not-do list already forbids a second temperature on top
+    (+0.0005 / -0.0001). The arm is relevant only while production keeps annual or static stacks.
