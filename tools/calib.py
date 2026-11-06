@@ -908,6 +908,45 @@ def slope_monitor(p, y, window=200, z_crit=1.96):
             "ci_includes_1": bool(lo <= 1 <= hi)}
 
 
+def quarter_ends(first_iso, as_of_iso):
+    """Calendar quarter ends (03-31, 06-30, 09-30, 12-31) from the quarter holding first_iso, strictly before as_of."""
+    y, m = int(first_iso[:4]), int(first_iso[5:7])
+    q = (m - 1) // 3
+    out = []
+    while True:
+        end = "%04d-%s" % (y, ("03-31", "06-30", "09-30", "12-31")[q])
+        if end >= as_of_iso:
+            return out
+        out.append(end)
+        q += 1
+        if q == 4:
+            y, q = y + 1, 0
+
+
+def drift_rule_b(rows, as_of, window=200, z_crit=1.96):
+    """Pre-registered production drift rule 6.5.1 (b) on the forward ledger (docs/V6_V10_PLAN.md 6.5.1; BACKLOG
+    PRE-REGISTERED): at every calendar quarter end before as_of, the trailing-`window` mirrored slope of the scored
+    production no-line stack (bouts dated on or before the quarter end, in date order, ties in input order) and its Wald
+    95% CI; the rule fires at the first quarter end whose check and the previous quarter's check are both ready and
+    both include 1. rows: [{date (ISO), p (the production no-line stack's P(A)), y (1 = A won; draws/NC left out)}].
+    Returns {checks, fired, fired_at, setting}: setting "h1.5" (default) or "h3_T1" once fired. Mirrors
+    src/ml/calib.js ruleB; the rule's operating characteristics are in calib.json rule (research/model_calib.md)."""
+    rs = sorted(((r["date"], i, float(r["p"]), float(r["y"])) for i, r in enumerate(rows)), key=lambda t: (t[0], t[1]))
+    if not rs:
+        return {"checks": [], "fired": False, "fired_at": None, "setting": "h1.5"}
+    checks, prev, fired_at = [], False, None
+    for q in quarter_ends(rs[0][0], as_of):
+        sel = [t for t in rs if t[0] <= q]
+        mon = slope_monitor([t[2] for t in sel], [t[3] for t in sel], window, z_crit)
+        inc = bool(mon.get("ready") and mon["ci_includes_1"])
+        checks.append({"quarter_end": q, **mon})
+        if inc and prev and fired_at is None:
+            fired_at = q
+        prev = inc
+    return {"checks": checks, "fired": fired_at is not None, "fired_at": fired_at,
+            "setting": "h3_T1" if fired_at else "h1.5"}
+
+
 def stage_rule(args):
     """(4) Consistency check of the pre-registered production drift rule (docs/V6_V10_PLAN.md 6.5.1, BACKLOG
     PRE-REGISTERED): (a) audit 1 switches the production no-line stack from h 1.5 (+ its temperature) to h 3, T 1 when
@@ -1289,6 +1328,17 @@ def test_vectors(seed=5):
         b, se = wald_slope(logit(p), y)
         V["slope"].append({"p": p.tolist(), "y": y.tolist(), "slope": b, "se": se})
         V["monitor"].append({"p": p.tolist(), "y": y.tolist(), "window": 200, "out": slope_monitor(p, y, 200)})
+    # rule 6.5.1 (b) on synthetic ledger streams (calibrated, strongly underconfident, and with same-date ties)
+    V["rule_b"] = []
+    for s_true, n, span in ((1.0, 700, 600), (2.2, 700, 600), (1.3, 450, 420)):
+        d0 = dt.date(2026, 2, 7).toordinal()
+        rows = []
+        for i in range(n):
+            p = float(sig(rng.normal(0, 1.0)))
+            rows.append({"date": dt.date.fromordinal(d0 + 7 * int(rng.integers(0, span // 7))).isoformat(), "p": p,
+                         "y": float(rng.random() < sig(s_true * logit(p)))})
+        V["rule_b"].append({"rows": rows, "as_of": "2027-10-01", "window": 200,
+                            "out": drift_rule_b(rows, "2027-10-01", 200)})
     return V
 
 

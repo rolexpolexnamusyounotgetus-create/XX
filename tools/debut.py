@@ -212,6 +212,9 @@ def _parse_rows(P, ub):
 
 
 SC = {"W": 1.0, "L": 0.0, "D": 0.5}
+DIV_LBS = {"Flyweight": 125, "Bantamweight": 135, "Featherweight": 145, "Lightweight": 155, "Welterweight": 170,
+           "Middleweight": 185, "Light Heavyweight": 205, "Heavyweight": 265, "Women's Strawweight": 115,
+           "Women's Flyweight": 125, "Women's Bantamweight": 135, "Women's Featherweight": 145}
 
 
 class GlobalNet:
@@ -609,6 +612,19 @@ def build(args):
                     r["home_" + tag] = 1.0 if (fwr.get("home") or {}).get(side) else 0.0
                     tk = (fwr.get("travel_km") or {}).get(side)
                     r["travel_" + tag] = tk
+            # page availability (a pre-UFC block counts only for pages known at D: 2012+ debutants), age fallback,
+            # weight-class move vs the previous UFC bout (veterans; debutants 0), previous UFC bout count
+            d0 = first_ufc.get(p)
+            r["pav_" + tag] = 1.0 if (p in rowsby and d0 is not None and d0 >= grad_from and d0 <= D) else 0.0
+            if not (r["age_" + tag] == r["age_" + tag]) and p in bio and bio[p].get("dob"):
+                r["age_" + tag] = (D - dt.date.fromisoformat(bio[p]["dob"])).days / 365.25
+            prev = [t for t in bouts.get(p, []) if t[0] < D]
+            if prev and f.division in DIV_LBS:
+                pd_ = max(prev, key=lambda t: t[0])[3].division
+                r["wcmove_" + tag] = (float(np.sign(DIV_LBS[f.division] - DIV_LBS[pd_]))
+                                      if pd_ in DIV_LBS else 0.0)
+            else:
+                r["wcmove_" + tag] = 0.0
             r["own_rows_" + tag] = own_rows(p, D)
             r["key_" + tag] = key_of_person(p)
             r["person_" + tag] = p

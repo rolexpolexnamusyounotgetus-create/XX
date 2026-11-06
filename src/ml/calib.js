@@ -189,6 +189,40 @@
     return { n: window, ready: true, slope: s.slope, ci: [lo, hi], ciIncludes1: lo <= 1 && 1 <= hi };
   }
 
+  /** Calendar quarter ends from the quarter holding firstIso, strictly before asOfIso. */
+  function quarterEnds(firstIso, asOfIso) {
+    var y = +firstIso.slice(0, 4), q = Math.floor((+firstIso.slice(5, 7) - 1) / 3), out = [];
+    var ends = ["03-31", "06-30", "09-30", "12-31"];
+    for (;;) {
+      var e = ("000" + y).slice(-4) + "-" + ends[q];
+      if (e >= asOfIso) return out;
+      out.push(e);
+      if (++q === 4) { y++; q = 0; }
+    }
+  }
+
+  /** Pre-registered drift rule 6.5.1 (b) on the forward ledger: rows [{date, p (production no-line stack P(A)), y}],
+      quarter-end checks of the trailing-`window` slope before asOf; fires when two consecutive checks are ready and
+      both CIs include 1. Same result as tools/calib.py drift_rule_b. */
+  function ruleB(rows, asOf, window) {
+    window = window || 200;
+    var rs = rows.map(function (r, i) { return { d: r.date, i: i, p: +r.p, y: +r.y }; })
+      .sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : a.i - b.i; });
+    if (!rs.length) return { checks: [], fired: false, firedAt: null, setting: "h1.5" };
+    var qs = quarterEnds(rs[0].d, asOf), checks = [], prev = false, firedAt = null;
+    for (var k = 0; k < qs.length; k++) {
+      var sel = rs.filter(function (t) { return t.d <= qs[k]; });
+      var m = monitor(sel.map(function (t) { return t.p; }), sel.map(function (t) { return t.y; }), window);
+      var inc = !!(m.ready && m.ciIncludes1);
+      m.quarterEnd = qs[k];
+      checks.push(m);
+      if (inc && prev && firedAt === null) firedAt = qs[k];
+      prev = inc;
+    }
+    return { checks: checks, fired: firedAt !== null, firedAt: firedAt, setting: firedAt ? "h3_T1" : "h1.5" };
+  }
+
   return { SEGMENTS: SEGMENTS, BIGFAV_P: BIGFAV_P, segFlags: segFlags, apply: apply, fit: fit, fitGLM: fitGLM,
-           fitFromHistory: fitFromHistory, slope: slope, monitor: monitor, logit: logit, sigm: sigm, VERSION: "1.0.0" };
+           fitFromHistory: fitFromHistory, slope: slope, monitor: monitor, quarterEnds: quarterEnds, ruleB: ruleB,
+           logit: logit, sigm: sigm, VERSION: "1.1.0" };
 });

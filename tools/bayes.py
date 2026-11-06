@@ -475,13 +475,13 @@ def lik(eta, y, w, k, both=True):
     return d1, W, ll
 
 
-def day_batches(X, until_day):
+def day_batches(X, until_day, from_day=None):
     """Fight indices grouped by day (walk-forward order); a fighter appearing twice on a day (1990s tournaments)
-    splits the day into sequential sub-batches."""
+    splits the day into sequential sub-batches. Fights are sorted by day (asserted in build_data)."""
     days = X["day"]
     n = X["n"]
     out = []
-    i = 0
+    i = 0 if from_day is None else int(np.searchsorted(days, from_day, "left"))
     while i < n and days[i] < until_day:
         j = i
         while j < n and days[j] == days[i]:
@@ -505,27 +505,98 @@ def day_batches(X, until_day):
 _SD = {}
 
 
-def run_filter(X, H, until_day, store=False, newton_iter=4, key="main"):
-    """Walk-forward filter over every fight with day < until_day. Returns per-fight pre-fight states (m0, P0),
-    posterior states (m1, P1) when store, the method / result rows used, and posterior fight effects."""
+def run_aux(X, H):
+    """Per-run constants of the observation model: NB dispersions, result-link and method rows, stat weights, and the
+    result-row targets / weights (ratings.py "rounds" encoder with this run's weights)."""
+    A = {"kv": kvec(H), "lrow": link_row(H), "mrows": [meth_rows(H, 0), meth_rows(H, 1)]}
+    ws = np.ones(NR)
+    ws[R_STR:R_KD + 2] = H["w_stat"]
+    A["ws"] = ws
+    wsum = X["rw_played"] + H["w_fround"] * X["rw_fin"] + H["w_rem"] * X["rw_rem"]
+    ysum = X["ry_played"] + H["w_fround"] * X["ry_fin"] + H["w_rem"] * X["ry_rem"]
+    A["yenc"] = np.where(wsum > 0, ysum / np.maximum(wsum, 1e-12), 0.5)
+    A["wenc"] = np.where(X["obs"], H["w_round"] * wsum, 0.0)
+    return A
+
+
+def fight_design(X, H, SD, A, idx):
+    """Observation rows (G, offsets, targets, weights) of fights idx under hyperparameters H."""
+    G = SD["G"][idx]
+    off = SD["off"][idx].copy()
+    yy = SD["y"][idx].copy()
+    ww = SD["m"][idx] * A["ws"][None, :]
+    G[:, R_ENC] = A["lrow"][None, :]
+    yy[:, R_ENC] = A["yenc"][idx]
+    ww[:, R_ENC] = A["wenc"][idx]
+    cat = X["cat"][idx]
+    win = X["win"][idx]
+    dec = np.isin(cat, (1, 2, 3)) & ~np.isnan(win)
+    for s in (0, 1):
+        sel = dec & (win == (1.0 if s == 0 else 0.0))
+        if sel.any():
+            G[sel, R_KO:R_SB + 1] = A["mrows"][s][None]
+    five = X["five"][idx]
+    moff = X["moff"][idx]
+    cko, csb = H["meth"]["ko"], H["meth"]["sub"]
+    off[:, R_KO] = moff[:, 0] + cko[0] + cko[1] * five
+    off[:, R_SB] = moff[:, 1] + csb[0] + csb[1] * five
+    yy[:, R_KO] = (cat == 1).astype(float)
+    yy[:, R_SB] = (cat == 2).astype(float)
+    ww[:, R_KO] = ww[:, R_SB] = np.where(dec, H["w_meth"], 0.0)
+    return G, off, yy, ww
+
+
+def prior_z(H, mA, LA, mB, LB):
+    """Joint prior mean and precision of z = [x_A, x_B, u, e_A, e_B] (independent blocks)."""
+    nb = len(mA)
+    M0 = np.zeros((nb, NZ))
+    M0[:, :K] = mA
+    M0[:, K:2 * K] = mB
+    L0 = np.zeros((nb, NZ, NZ))
+    L0[:, :K, :K] = LA
+    L0[:, K:2 * K, K:2 * K] = LB
+    L0[:, IU, IU] = 1.0 / H["sig_u"] ** 2
+    L0[:, IEA, IEA] = L0[:, IEB, IEB] = 1.0 / H["sig_e"] ** 2
+    return M0, L0
+
+
+def laplace(G, off, yy, ww, kv, M0, L0, newton_iter=4):
+    """Laplace approximation of p(z | rows) for a batch of fights: Newton mode Z, covariance C, log-likelihood at the
+    last iterate and the linear predictors at the mode."""
+    Z = M0.copy()
+    Gt = np.transpose(G, (0, 2, 1))
+    ll = None
+    for it in range(newton_iter):
+        eta = (G @ Z[..., None])[..., 0] + off
+        d1, W, ll = lik(eta, yy, ww, kv, both=(it == newton_iter - 1))
+        grad = -(L0 @ (Z - M0)[..., None])[..., 0] + (Gt @ d1[..., None])[..., 0]
+        Hs = -L0 + Gt @ (W @ G)
+        Z = Z - np.linalg.solve(Hs, grad[..., None])[..., 0]
+    eta = (G @ Z[..., None])[..., 0] + off
+    _, W, _ = lik(eta, yy, ww, kv, both=False)
+    Hs = -L0 + Gt @ (W @ G)
+    C = np.linalg.inv(-Hs)
+    C = 0.5 * (C + np.transpose(C, (0, 2, 1)))
+    return Z, C, ll, eta
+
+
+def run_filter(X, H, until_day, store=False, newton_iter=4, key="main", init=None, from_day=None):
+    """Walk-forward filter over every fight with from_day <= day < until_day (from the start when from_day is None),
+    starting from the per-fighter state `init` ({M, P, last}, e.g. an EP snapshot) when given. Returns per-fight
+    pre-fight states (m0, P0), posterior states (m1, P1) when store, and posterior fight effects."""
     if key not in _SD:
         _SD[key] = static_design(X)
     SD = _SD[key]
     n = X["n"]
     npl = X["n_players"]
-    M = np.zeros((npl, K))
-    P = np.zeros((npl, K, K))
-    last = np.full(npl, -1)
-    kv = kvec(H)
-    lrow = link_row(H)
-    mrows = [meth_rows(H, 0), meth_rows(H, 1)]
-    ws = np.ones(NR)
-    ws[R_STR:R_KD + 2] = H["w_stat"]
-    # result-row targets and weights (ratings.py "rounds" encoder with this run's weights)
-    wsum = X["rw_played"] + H["w_fround"] * X["rw_fin"] + H["w_rem"] * X["rw_rem"]
-    ysum = X["ry_played"] + H["w_fround"] * X["ry_fin"] + H["w_rem"] * X["ry_rem"]
-    yenc = np.where(wsum > 0, ysum / np.maximum(wsum, 1e-12), 0.5)
-    wenc = np.where(X["obs"], H["w_round"] * wsum, 0.0)
+    if init is None:
+        M = np.zeros((npl, K))
+        P = np.zeros((npl, K, K))
+        last = np.full(npl, -1)
+    else:
+        M, P, last = init["M"].copy(), init["P"].copy(), init["last"].copy()
+    AX = run_aux(X, H)
+    kv = AX["kv"]
     Sig0 = H["Sigma0"]
     qf, qy = H["qf"], H["qy"]
     rn = H["r_new"]
@@ -539,7 +610,7 @@ def run_filter(X, H, until_day, store=False, newton_iter=4, key="main"):
         out["eta0"] = np.zeros((n, NR))
         out["v0"] = np.zeros((n, NR))
     eyeK = np.eye(K)
-    for idx in day_batches(X, until_day):
+    for idx in day_batches(X, until_day, from_day):
         nb = len(idx)
         d = X["day"][idx[0]]
         pl = np.stack([X["ia"][idx], X["ib"][idx]], 1)            # (nb, 2)
@@ -576,53 +647,13 @@ def run_filter(X, H, until_day, store=False, newton_iter=4, key="main"):
         out["new"][idx] = new
         out["gap"][idx] = gap
         # Laplace update of z = [x_A, x_B, u, e_A, e_B]
-        G = SD["G"][idx]
-        off = SD["off"][idx].copy()
-        yy = SD["y"][idx].copy()
-        ww = SD["m"][idx] * ws[None, :]
-        G[:, R_ENC] = lrow[None, :]
-        yy[:, R_ENC] = yenc[idx]
-        ww[:, R_ENC] = wenc[idx]
-        cat = X["cat"][idx]
-        win = X["win"][idx]
-        dec = np.isin(cat, (1, 2, 3)) & ~np.isnan(win)
-        for s in (0, 1):
-            sel = dec & (win == (1.0 if s == 0 else 0.0))
-            if sel.any():
-                G[sel, R_KO:R_SB + 1] = mrows[s][None]
-        five = X["five"][idx]
-        moff = X["moff"][idx]
-        cko, csb = H["meth"]["ko"], H["meth"]["sub"]
-        off[:, R_KO] = moff[:, 0] + cko[0] + cko[1] * five
-        off[:, R_SB] = moff[:, 1] + csb[0] + csb[1] * five
-        yy[:, R_KO] = (cat == 1).astype(float)
-        yy[:, R_SB] = (cat == 2).astype(float)
-        ww[:, R_KO] = ww[:, R_SB] = np.where(dec, H["w_meth"], 0.0)
-        M0 = np.zeros((nb, NZ))
-        M0[:, :K] = m0[:, 0]
-        M0[:, K:2 * K] = m0[:, 1]
-        L0 = np.zeros((nb, NZ, NZ))
-        L0[:, :K, :K] = np.linalg.inv(P0[:, 0])
-        L0[:, K:2 * K, K:2 * K] = np.linalg.inv(P0[:, 1])
-        L0[:, IU, IU] = 1.0 / H["sig_u"] ** 2
-        L0[:, IEA, IEA] = L0[:, IEB, IEB] = 1.0 / H["sig_e"] ** 2
-        Z = M0.copy()
-        Gt = np.transpose(G, (0, 2, 1))
+        G, off, yy, ww = fight_design(X, H, SD, AX, idx)
+        M0, L0 = prior_z(H, m0[:, 0], np.linalg.inv(P0[:, 0]), m0[:, 1], np.linalg.inv(P0[:, 1]))
         if store:                      # prior predictive mean / variance of every row's linear predictor
             P0z = np.linalg.inv(L0)
             out["eta0"][idx] = (G @ M0[..., None])[..., 0] + off
             out["v0"][idx] = np.einsum("fod,fde,foe->fo", G, P0z, G)
-        for it in range(newton_iter):
-            eta = (G @ Z[..., None])[..., 0] + off
-            d1, W, ll = lik(eta, yy, ww, kv, both=(it == newton_iter - 1))
-            grad = -(L0 @ (Z - M0)[..., None])[..., 0] + (Gt @ d1[..., None])[..., 0]
-            Hs = -L0 + Gt @ (W @ G)
-            Z = Z - np.linalg.solve(Hs, grad[..., None])[..., 0]
-        eta = (G @ Z[..., None])[..., 0] + off
-        _, W, _ = lik(eta, yy, ww, kv, both=False)
-        Hs = -L0 + Gt @ (W @ G)
-        C = np.linalg.inv(-Hs)
-        C = 0.5 * (C + np.transpose(C, (0, 2, 1)))
+        Z, C, ll, eta = laplace(G, off, yy, ww, kv, M0, L0, newton_iter)
         m1 = np.stack([Z[:, :K], Z[:, K:2 * K]], 1)
         P1 = np.stack([C[:, :K, :K], C[:, K:2 * K, K:2 * K]], 1)
         M[pl] = m1
@@ -638,6 +669,160 @@ def run_filter(X, H, until_day, store=False, newton_iter=4, key="main"):
             out["eta1"][idx] = eta
     out["state"] = {"M": M, "P": P, "last": last}
     return out
+
+
+# ====================================================================== EP smoothing refit (TrueSkill-through-time style)
+def chain_steps(X, cut_day):
+    """Fighter chains over fights with day < cut_day. Node = 2 f + s (fight f, side s). Returns nf (number of fights
+    before the cut), steps (per career position t: node ids and their predecessor nodes, -1 at debut) and each fighter's
+    last node."""
+    nf = int(np.searchsorted(X["day"], cut_day, "left"))
+    seq = defaultdict(list)
+    for f in range(nf):
+        seq[int(X["ia"][f])].append(2 * f)
+        seq[int(X["ib"][f])].append(2 * f + 1)
+    T = max(len(v) for v in seq.values())
+    steps = []
+    for t in range(T):
+        cur = [(v[t], v[t - 1] if t else -1) for v in seq.values() if len(v) > t]
+        steps.append((np.array([c[0] for c in cur]), np.array([c[1] for c in cur])))
+    lastn = {p: v[-1] for p, v in seq.items()}
+    return nf, steps, lastn
+
+
+def node_params(X, H, nodes, prev):
+    """Transition (drift c, diagonal noise Q) into each node from its predecessor, and the newcomer prior mean for
+    debut nodes; the same formulas as run_filter's time update."""
+    f, s = nodes // 2, nodes % 2
+    new = prev < 0
+    age = X["age"][f, s]
+    gap = np.where(new, 0.0, (X["day"][f] - X["day"][np.maximum(prev, 0) // 2]) / YEAR)
+    dr = age_G(age, H["dy"], H["do"], H["ay"], H["ao"]) - age_G(age - gap, H["dy"], H["do"], H["ay"], H["ao"])
+    dr = np.where(np.isnan(age), 0.0, dr)
+    dr -= H["lay"] * np.maximum(0.0, np.minimum(gap, 4.0) - 0.75)
+    amid = np.where(np.isnan(age), 30.0, age - gap / 2.0)
+    g6 = np.minimum(gap, 6.0)
+    c = g6[:, None] * (H["drift_a"][None, :] + H["drift_b"][None, :] * (amid[:, None] - 30.0))
+    c[:, 0] = dr
+    Q = H["qf"][None, :] + H["qy"][None, :] * g6[:, None]
+    aa = np.clip(np.where(np.isnan(age), 29.0, age), 20.0, 42.0)
+    rn = H["r_new"]
+    rmean = rn["c0"] + rn["c_age"] * (aa - 29.0) + np.where(X["pre_ok"][f, s], X["pre"][f, s] @ rn["c_pre"], 0.0)
+    mnew = np.broadcast_to(H["mu0"], (len(nodes), K)).copy()
+    mnew[:, 0] = rmean
+    return c, Q, mnew
+
+
+def chain_pass(H, steps, NP, Ls, es):
+    """Forward (moment form) and backward (information form) passes over every fighter chain given the site messages
+    (Ls, es) in natural parameters. Returns the cavity (prior x backward message, i.e. everything except the node's own
+    site) in natural parameters for every node."""
+    nn = len(Ls)
+    aL = np.zeros((nn, K, K))
+    ae = np.zeros((nn, K))
+    fm = np.zeros((nn, K))
+    fP = np.zeros((nn, K, K))
+    for t, (nodes, prev) in enumerate(steps):
+        c, Q, mnew = NP[t]
+        if t == 0:
+            am = mnew
+            aP = np.broadcast_to(H["Sigma0"], (len(nodes), K, K))
+        else:
+            am = fm[prev] + c
+            aP = fP[prev] + Q[:, :, None] * np.eye(K)[None]
+        Li = np.linalg.inv(aP)
+        Li = 0.5 * (Li + np.transpose(Li, (0, 2, 1)))
+        aL[nodes] = Li
+        ae[nodes] = (Li @ am[..., None])[..., 0]
+        Pf = np.linalg.inv(Li + Ls[nodes])
+        Pf = 0.5 * (Pf + np.transpose(Pf, (0, 2, 1)))
+        fP[nodes] = Pf
+        fm[nodes] = (Pf @ (ae[nodes] + es[nodes])[..., None])[..., 0]
+    bL = np.zeros((nn, K, K))
+    be = np.zeros((nn, K))
+    eye = np.eye(K)[None]
+    for t in range(len(steps) - 1, 0, -1):
+        nodes, prev = steps[t]
+        c, Q, _ = NP[t]
+        Lc = bL[nodes] + Ls[nodes]
+        ec = be[nodes] + es[nodes]
+        Ai = np.linalg.inv(eye + Lc * Q[:, None, :])          # (I + Lc diag(Q))^-1
+        Lp = Ai @ Lc
+        bL[prev] = 0.5 * (Lp + np.transpose(Lp, (0, 2, 1)))
+        be[prev] = (Ai @ (ec - (Lc @ c[..., None])[..., 0])[..., None])[..., 0]
+    return aL + bL, ae + be
+
+
+def ep_snapshot(X, H, cut_day, init_sites=None, iters=8, damp=0.5, tol=2e-3, logf=None, newton_iter=3):
+    """Expectation propagation over every fight before cut_day: each fight is a factor on both fighters' states at that
+    fight (Laplace moments of the cavity x likelihood, projected to per-fighter Gaussian messages); fighter chains carry
+    the random-walk dynamics. Parallel updates with damping, started from the ADF (filter) sites or from `init_sites`
+    (warm start; missing nodes get ADF sites from a filter pass). Returns the per-fighter state at the cut (the smoothed
+    posterior at each fighter's last fight; run_filter's time update moves it to the next fight), the sites and a log."""
+    if "main" not in _SD:
+        _SD["main"] = static_design(X)
+    SD = _SD["main"]
+    nf, steps, lastn = chain_steps(X, cut_day)
+    nn = 2 * nf
+    NP = [node_params(X, H, nodes, prev) for nodes, prev in steps]
+    Ls = np.zeros((nn, K, K))
+    es = np.zeros((nn, K))
+    have = np.zeros(nn, bool)
+    if init_sites is not None:
+        m = min(len(init_sites["L"]), nn)
+        Ls[:m], es[:m], have[:m] = init_sites["L"][:m], init_sites["e"][:m], True
+    if not have.all():                         # ADF sites (posterior / prior at each node) for the rest
+        lo = int(np.argmin(have)) // 2
+        R = run_filter(X, H, cut_day, store=True)
+        f = np.arange(lo, nf)
+        for s in (0, 1):
+            P0i = np.linalg.inv(R["P0"][f, s])
+            P1i = np.linalg.inv(R["P1"][f, s])
+            Ls[2 * f + s] = P1i - P0i
+            es[2 * f + s] = (P1i @ R["m1"][f, s][..., None])[..., 0] - (P0i @ R["m0"][f, s][..., None])[..., 0]
+    AX = run_aux(X, H)
+    fids = np.arange(nf)
+    G, off, yy, ww = fight_design(X, H, SD, AX, fids)
+    hist = []
+    prev_mean = None
+    for it in range(iters):
+        Lc, ec = chain_pass(H, steps, NP, Ls, es)
+        Lm = Lc + Ls
+        mean = np.linalg.solve(Lm, (ec + es)[..., None])[..., 0]
+        if prev_mean is not None:
+            dmax = float(np.max(np.abs(mean[:, 0] - prev_mean[:, 0])))
+            hist.append(dmax)
+            if logf:
+                logf("    EP iter %d: max |d r| %.4f" % (it, dmax))
+            if dmax < tol:
+                break
+        prev_mean = mean
+        LA, LB = Lc[0::2], Lc[1::2]
+        mA = np.linalg.solve(LA, ec[0::2][..., None])[..., 0]
+        mB = np.linalg.solve(LB, ec[1::2][..., None])[..., 0]
+        M0, L0 = prior_z(H, mA, LA, mB, LB)
+        Z, C, _, _ = laplace(G, off, yy, ww, AX["kv"], M0, L0, newton_iter)
+        for s, Lcav, ecav in ((0, LA, ec[0::2]), (1, LB, ec[1::2])):
+            blk = slice(s * K, (s + 1) * K)
+            Pi = np.linalg.inv(C[:, blk, blk])
+            Pi = 0.5 * (Pi + np.transpose(Pi, (0, 2, 1)))
+            Ln = Pi - Lcav
+            en = (Pi @ Z[:, blk][..., None])[..., 0] - ecav
+            Ls[s::2] = (1 - damp) * Ls[s::2] + damp * Ln
+            es[s::2] = (1 - damp) * es[s::2] + damp * en
+    Lc, ec = chain_pass(H, steps, NP, Ls, es)
+    Lm = Lc + Ls
+    Pm = np.linalg.inv(Lm)
+    Pm = 0.5 * (Pm + np.transpose(Pm, (0, 2, 1)))
+    mm = (Pm @ (ec + es)[..., None])[..., 0]
+    npl = X["n_players"]
+    M = np.zeros((npl, K))
+    P = np.zeros((npl, K, K))
+    last = np.full(npl, -1)
+    for p, nd in lastn.items():
+        M[p], P[p], last[p] = mm[nd], Pm[nd], X["day"][nd // 2]
+    return {"M": M, "P": P, "last": last, "sites": {"L": Ls, "e": es}, "iters": hist, "nf": nf,
+            "smoothed_mean": mm, "smoothed_P": Pm}
 
 
 # ====================================================================== predictions from pre-fight states

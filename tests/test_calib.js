@@ -72,6 +72,35 @@ for (const t of V.monitor) {
 check("slope and Wald SE reproduce Python", dSl < 1e-8, "max |diff| " + dSl.toExponential(2));
 check("trailing-200 monitor reproduces Python (ready flag, slope, CI, includes-1)", monOk);
 
+// 4b. pre-registered drift rule 6.5.1 (b): quarterly trailing-200 checks, fire on two consecutive CIs including 1
+let rbOk = true, rbInfo = [];
+for (const t of V.rule_b || []) {
+  const o = Calib.ruleB(t.rows, t.as_of, t.window);
+  const e = t.out;
+  if (o.fired !== e.fired || o.firedAt !== e.fired_at || o.setting !== e.setting || o.checks.length !== e.checks.length) rbOk = false;
+  for (let k = 0; k < Math.min(o.checks.length, e.checks.length); k++) {
+    const a = o.checks[k], b = e.checks[k];
+    if (a.quarterEnd !== b.quarter_end || a.ready !== b.ready || a.n !== b.n) rbOk = false;
+    else if (a.ready && (!near(a.slope, b.slope, 1e-4) || a.ciIncludes1 !== b.ci_includes_1)) rbOk = false;
+  }
+  rbInfo.push((e.fired_at || "no fire") + " / " + e.checks.length + " checks");
+}
+check(`ruleB reproduces Python drift_rule_b on ${(V.rule_b || []).length} synthetic ledgers`, rbOk && (V.rule_b || []).length > 0,
+  rbInfo.join("; "));
+const qe = Calib.quarterEnds("2026-11-07", "2027-07-01");
+check("quarter ends", JSON.stringify(qe) === JSON.stringify(["2026-12-31", "2027-03-31", "2027-06-30"]), JSON.stringify(qe));
+const rbEmpty = Calib.ruleB([], "2027-01-01");
+check("ruleB with no scored bouts keeps the default setting", !rbEmpty.fired && rbEmpty.setting === "h1.5");
+// swapping corners on every ledger row (p -> 1 - p, y -> 1 - y) leaves the rule's state unchanged
+if (V.rule_b && V.rule_b.length) {
+  const t = V.rule_b[0];
+  const sw = t.rows.map((r) => ({ date: r.date, p: 1 - r.p, y: 1 - r.y }));
+  const a = Calib.ruleB(t.rows, t.as_of, t.window), b = Calib.ruleB(sw, t.as_of, t.window);
+  let symOk = a.firedAt === b.firedAt;
+  for (let k = 0; k < a.checks.length; k++) if (a.checks[k].ready && !near(a.checks[k].slope, b.checks[k].slope, 1e-9)) symOk = false;
+  check("ruleB is corner-symmetric (mirrored slope)", symOk);
+}
+
 // 5. production specs: today every head is the identity (nothing passed the CV gate)
 const heads = Object.keys(doc.production);
 let idOk = true;

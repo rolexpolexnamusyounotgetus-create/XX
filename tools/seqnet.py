@@ -309,7 +309,7 @@ def stage_data(args):
             pre.append({"elo": elo_pre[f.fid][s] if f.fid in elo_pre else 1500.0, "n": S["n"], "w": S["w"],
                         "l": S["l"], "finl": S["finl"], "gap": gap, "lbs": l_})
             ages.append(age)
-            info.append({"p": p, "hist": list(S["toks"]), "age": age, "gap": gap, "n": S["n"],
+            info.append({"p": p, "hist": list(S["toks"]), "age": age, "gap": gap, "n": S["n"], "elo": pre[s]["elo"],
                          "last_lbs": S["last_lbs"], "height": T.get("height_in"), "reach": T.get("reach_in"),
                          "stance": T.get("stance")})
         e = {"fid": f.fid, "date": f.date, "day": f.day, "year": f.date.year, "event": f.event,
@@ -371,7 +371,8 @@ def load_data():
 
 # ====================================================================== arrays for the network
 MAXLEN = 24
-SIDE_NAMES = ["age", "d_height", "d_reach", "d_ape", "south", "switch", "layoff", "debut", "logn", "lbs_move"]
+SIDE_NAMES = ["age", "d_height", "d_reach", "d_ape", "south", "switch", "layoff", "debut", "logn", "lbs_move",
+              "elo"]          # the last column (current pre-fight Elo) is used only by configs with side_elo
 CTX_NAMES = ["five", "title", "women", "catch", "lbs", "era"]
 
 
@@ -418,7 +419,8 @@ def build_arrays(d, maxlen=MAXLEN):
                           float(si["stance"] == "Southpaw"), float(si["stance"] == "Switch"),
                           math.log1p(si["gap"]) if si["gap"] is not None else 0.0, float(si["n"] == 0),
                           math.log1p(si["n"]),
-                          ((e["lbs"] - si["last_lbs"]) / 10.0) if si["last_lbs"] else 0.0]
+                          ((e["lbs"] - si["last_lbs"]) / 10.0) if si["last_lbs"] else 0.0,
+                          (si.get("elo", 1500.0) - 1500.0) / 200.0]
         if e["winner"] in ("A", "B"):
             YW[i] = 1.0 if e["winner"] == "A" else 0.0
             if e["cls"] is not None and e["cls"] >= 0:
@@ -533,7 +535,8 @@ class Prep:
         self.TOK = torch.tensor(np.vstack([T, np.zeros((1, T.shape[1]), np.float32)]))   # last row = pad
         self.pad = T.shape[0]
         tr_ex = A["DAY"] < cutoff_day
-        S = A["SIDE"][tr_ex].reshape(-1, A["SIDE"].shape[-1])
+        SIDE = A["SIDE"] if cfg.get("side_elo") else A["SIDE"][..., :-1]
+        S = SIDE[tr_ex].reshape(-1, SIDE.shape[-1])
         self.smu, self.ssd = S.mean(0), S.std(0) + 1e-6
         self.TOK_DAY = torch.tensor(np.r_[A["TOK_DAY"], 0])
         self.TOK_LBS = torch.tensor(np.r_[A["TOK_LBS"], 0.0].astype(np.float32))
@@ -552,7 +555,7 @@ class Prep:
         del Hh
         self.H = torch.tensor(np.where(H2 < 0, self.pad, H2))
         self.LEN = torch.tensor(LEN2)
-        self.SIDE = torch.tensor(((A["SIDE"] - self.smu) / self.ssd).astype(np.float32))
+        self.SIDE = torch.tensor(((SIDE - self.smu) / self.ssd).astype(np.float32))
         self.CTX = torch.tensor(A["CTX"])
         self.DAY = torch.tensor(A["DAY"])
         self.LBSx = torch.tensor(A["LBS"])
@@ -679,7 +682,7 @@ def fit_one(A, cfg, seed, until_day, epochs=None, val=None, pred_idx=None):
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
     prep = Prep(A, until_day, cfg)
-    model = make_model(cfg, A["TOK"].shape[1], A["SIDE"].shape[-1], A["CTX"].shape[1])
+    model = make_model(cfg, A["TOK"].shape[1], prep.SIDE.shape[-1], A["CTX"].shape[1])
     opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=cfg["wd"])
     tr = train_rows(A, cfg, until_day)
     n_ep = epochs if epochs is not None else cfg["max_ep"]
@@ -777,15 +780,18 @@ def ll_bin(z, y):
 
 
 # ====================================================================== stage: hyperparameter CV (2016-2018)
+# stage-1 grid (the first base runs overfit fast: best validation epoch 3-6, then the loss climbs), so it is weighted
+# toward regularisation: smaller width, lower learning rate, more dropout / weight decay
 HP_CONFIGS = {
     "base": {},
     "winner_only": {"lam_m": 0.0, "lam_s": 0.0},
-    "h128": {"H": 128},
-    "mean_pool": {"pool": "mean"},
+    "small": {"H": 32},
+    "slow": {"lr": 7e-4},
+    "slow_reg": {"lr": 7e-4, "drop": 0.35, "wd": 1e-2},
     "long_hist": {"maxlen": 24},
     "from2010": {"train_from": 2010},
-    "reg": {"drop": 0.35, "wd": 1e-3},
     "transformer": {"enc": "tfm"},
+    "side_elo": {"side_elo": True},
 }
 HP_FOLDS = [2016, 2017, 2018]
 HP_SEEDS = [11, 12]
@@ -1561,7 +1567,7 @@ def stage_confirm(args):
 def n_params():
     A = get_arrays()
     cfg = chosen_cfg()["cfg"]
-    m = make_model(cfg, A["TOK"].shape[1], A["SIDE"].shape[-1], A["CTX"].shape[1])
+    m = make_model(cfg, A["TOK"].shape[1], A["SIDE"].shape[-1] - (0 if cfg.get("side_elo") else 1), A["CTX"].shape[1])
     return int(sum(p.numel() for p in m.parameters()))
 
 
