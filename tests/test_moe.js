@@ -36,6 +36,15 @@ check(`reproduces Python production predictions on ${tv.length} vectors`, maxP <
 check(`reproduces Python validated-model predictions on ${tv.length} vectors`, maxV < 1e-9, "max |diff| " + maxV.toExponential(2));
 check("corner swap gives 1 - p", maxSym < 1e-9, "max |p(A,B) + p(B,A) - 1| " + maxSym.toExponential(2));
 
+// the compact page copy gives the same production predictions
+const pj = path.join(ROOT, "data/derived/moe_page.json");
+if (fs.existsSync(pj)) {
+  const pd = JSON.parse(fs.readFileSync(pj, "utf8")), pm = MoE.load(pd);
+  let mx = 0; for (const t of tv) mx = Math.max(mx, Math.abs(pm.predict(t).p - t.p_prod));
+  check("moe_page.json (page copy) reproduces the production predictions", mx < 1e-12 && !!pd.feat,
+    `max |diff| ${mx.toExponential(2)}, ${(fs.statSync(pj).size / 1024).toFixed(0)} kB`);
+}
+
 // alternatives (other stacker families) also evaluate
 for (const k of Object.keys(doc.alternatives || {})) {
   const m = MoE.load(doc, k);
@@ -74,13 +83,13 @@ if (r0.method !== "gbm") check("contributions sum to the logit", Math.abs(csum -
 // built-in ML expert (feature LR): reproduce Python on validation rows, symmetry, and a live profile matchup
 if (doc.feat) {
   let maxF = 0, maxFS = 0;
-  for (const t of doc.feat.test_vectors) {
+  for (const t of doc.feat_test_vectors) {
     const p = MoE.featLR(doc.feat, t.A, t.B, { division: t.division, priors: t.priors, coef: "coef_valid" });
     const q = MoE.featLR(doc.feat, t.B, t.A, { division: t.division, priors: t.priors, coef: "coef_valid" });
     maxF = Math.max(maxF, Math.abs(p - t.p_valid));
     maxFS = Math.max(maxFS, Math.abs(p + q - 1));
   }
-  check(`featLR reproduces Python on ${doc.feat.test_vectors.length} validation fights`, maxF < 1e-9, "max |diff| " + maxF.toExponential(2));
+  check(`featLR reproduces Python on ${doc.feat_test_vectors.length} validation fights`, maxF < 1e-9, "max |diff| " + maxF.toExponential(2));
   check("featLR corner swap gives 1 - p", maxFS < 1e-12, maxFS.toExponential(2));
   const fj = path.join(ROOT, "data/derived/fighters.json");
   if (fs.existsSync(fj)) {

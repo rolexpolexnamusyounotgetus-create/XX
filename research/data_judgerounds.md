@@ -63,7 +63,7 @@ dataset has the media scores that MMA Decisions shows, so the optional `media_sc
    totals. All 4,016 D decisions match. On the 3,229 that N also covers, the matched fight is N's fight
    every time. Each fighter's scores go to A or B by name, not by assuming D's fighter 1 is the winner.
 4. **Merge.** If N has the fight, N is used, because it records deductions. D fills the rest: mostly
-   2006-2012, plus 64 later fights. On the 2,939 overlapping dev fights, all 27,591 judge-rounds are
+   2006-2012, plus 28 from 2013 on (15 of them in 2013, where N starts on Feb 16). On the 2,939 overlapping dev fights, all 27,591 judge-rounds are
    identical in the two sources, judges matched by MMA Decisions id. Six unnamed judges were paired by
    their round sequence.
 5. **Judges.** Judges are identified by their MMA Decisions id, which is the same in N and D. Names follow
@@ -191,7 +191,7 @@ Eric Colón 1,165, Tony Weeks 1,010.
 
 ## Caveats
 
-- The D-only fights (2006-2012 and 64 later ones) have no deduction information, so a deducted 10-9 shows up
+- The D-only fights (2006-2012 and 28 later ones) have no deduction information, so a deducted 10-9 shows up
   as a 10-8 there (`raw_known: false`, `ded_A`/`ded_B` null). In N, 71 dev rounds carry a deduction.
 - 10-10 rounds are rare (0.10%). A few judge-rounds with a margin of 3 or more are real 10-7s or 10-8s after a
   deduction.

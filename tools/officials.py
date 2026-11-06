@@ -158,15 +158,14 @@ def region_of(location):
 
 
 def _nkey(s):
-    s = str(s).lower()
-    s = (s.replace("á", "a").replace("ã", "a").replace("é", "e").replace("í", "i").replace("ó", "o")
-         .replace("ú", "u").replace("ç", "c").replace("ñ", "n").replace("ö", "o").replace("ü", "u"))
+    import unicodedata
+    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z]", "", s)
 
 
 def load_nationality(people_names, dob=None):
-    """Map ufcstats fighter names to an ISO3 country: Wikidata country for sport, else citizenship, else
-    birth country. Matched by normalized English label or alias; a name shared by several Wikidata people
+    """Map ufcstats fighter names to a set of ISO3 home countries: Wikidata country for sport plus every
+    citizenship, else birth country. Matched by normalized English label or alias; a name shared by several Wikidata people
     is resolved by date of birth (ufcstats tale of the tape) or dropped. Fallback: same date of birth and
     same last name."""
     if not WIKIDATA.exists():
@@ -176,11 +175,12 @@ def load_nationality(people_names, dob=None):
     w["dob"] = pd.to_datetime(w["dob"].astype(str).str[:10], errors="coerce")
     country, wdob = {}, {}
     for item, g in w.groupby("item"):
-        for col in ("sc", "cc", "bc"):
-            vals = g[col].dropna()
-            if len(vals):
-                country[item] = vals.value_counts().index[0]
-                break
+        # home countries: country for sport plus every citizenship; birth country only when neither is listed
+        cs = set(g["sc"].dropna()) | set(g["cc"].dropna())
+        if not cs:
+            cs = set(g["bc"].dropna())
+        if cs:
+            country[item] = frozenset(cs)
         wdob[item] = set(g["dob"].dropna())
     keys = defaultdict(set)
     for item, nm in zip(w["item"], w["name"]):
@@ -383,7 +383,7 @@ class Design:
             X.append(r["X"])
             J.append(np.tile([jidx.get(c[0], nJ) for c in r["cards"]], (R, 1)))
             a, b = nat.get(r["n0"]), nat.get(r["n1"])
-            hd = (int(a == r["country"]) - int(b == r["country"])) if (a and b) else 0
+            hd = (int(r["country"] in a) - int(r["country"] in b)) if (a and b) else 0
             home.append(np.full(R, hd, float))
             us.append(np.full(R, float(r["country"] == "USA")))
             yr.append(np.full(R, min(r["year"], year_max_param) - YEAR0))

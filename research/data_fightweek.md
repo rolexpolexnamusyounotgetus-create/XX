@@ -145,7 +145,35 @@ moved camps gets today's camp for old fights; travel numbers are rough by design
 
 ## Validation (hand audit)
 
-__AUDIT__
+Two random samples of event articles were read against the extraction (seeds 11 and 23 in a scratch
+script; the sentences quoted below are from the cached articles).
+
+- **Weight misses, 45 events with weigh-in text, 54 misses on bouts that took place.** After the fixes below,
+  54 of 54 found, no false positives; every size the text gives (or implies through a scale weight) is
+  reproduced; two misses with no number in the text keep a null size. The first pass had one false
+  positive (UFC Fight Night: Vera vs. Cruz: "expected to meet at UFC on ESPN: Santos vs. Hill, but after Lipski
+  missed weight" was pinned on Angela Hill; fixed by masking event names and refusing a subject across
+  "but after") and one miss (ufcstats "Rongzhu" for Wikipedia "Zhu"; fixed by the alias table), plus three
+  sizes left empty (bouts that ufcstats or Wikipedia relabelled "Catchweight (189 lb)" after the miss, so
+  the catchweight was taken as the limit; fixed by measuring against the division named in the weigh-in
+  sentence) and one wrong size ("four pounds and one and a half pounds over ... respectively" read 1.0 for
+  1.5; fixed). Misses in bouts that were then cancelled (Ladd 2022, Ulanbekov 2024, Cummings 2014,
+  Penne 2019, Ansaroff 2015, Benitez 2021) correctly reach no bout. (high for 2015+, medium for 2012-2014,
+  when articles are terser: 8-15 misses a year then vs 25-37 since 2019)
+- **Bout changes, 13 events, 32 change sides (16 pairs) extracted.** All 16 pairings right (who stepped in,
+  whose opponent changed). Days: 1 wrong (Lemos vs. Granger, 35 days taken from the date of a different
+  event; fixed by skipping "<date> at UFC ..."), 1 an upper bound (Choi vs. Zalal: 22 days is the first
+  withdrawal of a two-step chain), the rest match the text. Missed: 2 (UFC 169 Faber for Cruz, introduced
+  only as "Stepping up to replace Cruz was Urijah Faber" with Barao outside the booking sentence; UFC 189
+  Mendes, never named in the paragraph). Recall about 16 of 18; precision of pairings about 100%.
+  Fighters moved from another bout on the same card are sometimes labelled `replacement` when the move is
+  told inside one paragraph (UFC 189 Thatch, UFC 150 Roberts). (medium)
+- **Spot checks of famous cases (high):** UFC 196 Diaz for dos Anjos 11 days; UFC 249 Gaethje for
+  Nurmagomedov 33 days (April 6 announcement, May 9 card), Cruz for Aldo 31 days; UFC 251 Masvidal for
+  Burns 8 days (ufcstats dates the Abu Dhabi card July 11); UFC Fight Night: Santos vs. Teixeira Birchak for
+  Colares in fight week (4); UFC 160 Hunt for Overeem 77 days, Nurmagomedov 158.5 lb at lightweight (2.5 over).
+- **Crowd (high):** every 2020-03-14 to 2021 Apex, Jacksonville and Fight Island card reads `none`; the
+  three January 2021 Etihad Arena cards read `limited`; UFC 261 (April 24, 2021) is the first `full` card.
 
 ## Walk-forward check: do these features predict results beyond Elo?
 

@@ -500,13 +500,24 @@ def promotion(event):
     for pat, name in PROMO_ALIASES:
         if re.search(pat, low) or re.search(pat, pre.lower()):
             return name
-    out = []
-    for t in pre.split():
-        if re.fullmatch(r"#?\d+[a-z]?|\d{4}|[IVX]{1,4}|season|week|episode|vol\.?|volume|night|day|\(.*", t,
-                        re.I):
-            break
-        out.append(t)
-    return " ".join(out) or pre or "?"
+    def cut(x):
+        out = []
+        for t in x.split():
+            if re.fullmatch(r"#?\d+[a-z]?:?|\d{4}|[IVX]{1,4}|season|week|episode|vol\.?|volume|night|day|\(.*", t,
+                            re.I):
+                break
+            out.append(t)
+        return " ".join(out).strip(" :")
+    key = cut(pre) or pre or "?"
+    # Sherdog prefixes are acronyms that collide (AFC = Aspera FC, Absolute FC, Australian FC ...): when the
+    # text after the dash reads like the organization's long name (no "vs", same initial), append it
+    parts = e.split(" - ", 1)
+    if len(parts) == 2 and re.fullmatch(r"[A-Z0-9&\-]{2,6}", key):
+        sub = cut(parts[1].split(":")[0])
+        if (" vs" not in parts[1].lower() and len(sub.split()) >= 2 and sub[:1].upper() == key[:1]
+                and len(sub) <= 50):
+            key = key + " | " + sub
+    return key
 
 
 def row_list(parsed):

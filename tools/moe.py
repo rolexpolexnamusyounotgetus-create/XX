@@ -1510,7 +1510,6 @@ def report_and_export(args):
             PA = prep["priors_asof"][e["date"][:4]]
             ftv.append({"A": sides[0], "B": sides[1], "division": div,
                         "priors": psub({div: PA.get(div) or PA["ALL"], "ALL": PA["ALL"]}), "p_valid": float(Ps["feat_lr"][i])})
-        feat["test_vectors"] = ftv
 
     doc = {
         "meta": {"tool": "tools/moe.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
@@ -1540,8 +1539,14 @@ def report_and_export(args):
                           "CV inside 2019-2023 (method 'switch': 'present' when a market line is given, else 'absent'); "
                           "model_validated = the 2019-2023 fit that produced the static 2024-2025 report."},
         "model": model_prod, "model_validated": model_val, "alternatives": alts, "feat": feat,
-        "report": strip_private(rep), "test_vectors": tv}
+        "report": strip_private(rep), "test_vectors": tv, "feat_test_vectors": ftv if feat else []}
     wjson(os.path.join(DERIVED, "moe.json"), doc)
+    # compact copy for the page: just what MoE.load / MoE.featLR need (no report, alternatives or test vectors)
+    page_doc = {"meta": {"tool": "tools/moe.py", "built": doc["meta"]["built"], "orientation": doc["meta"]["orientation"],
+                         "experts": doc["meta"]["experts"], "gate_inputs": doc["meta"]["gate_inputs"],
+                         "full": "data/derived/moe.json has the validation report, alternatives and test vectors"},
+                "model": model_prod, "feat": feat}
+    wjson(os.path.join(DERIVED, "moe_page.json"), page_doc)
     with open(os.path.join(CACHE, "report.json"), "w") as fh:
         json.dump(strip_private(rep), fh, indent=1)
     log("wrote data/derived/moe.json (%.0f kB)" % (os.path.getsize(os.path.join(DERIVED, "moe.json")) / 1024))

@@ -253,16 +253,18 @@ def add_columns(df, knots=(27.0, 31.0, 35.0), win=730):
         X[p + "_lay_12_24"] = ((lay >= 365) & (lay < 730)).astype(float)
         X[p + "_lay_24p"] = (lay >= 730).astype(float)
         X[p + "_ko_short"] = (X[p + "_last_ko_loss"] * ((lay < 180) & lay.notna())).astype(float)
-    # height / reach relative to the fight division (means over fighters in the division, all years; static)
-    hmean = pd.concat([X[["division", "d_height"]].rename(columns={"d_height": "h"})]).groupby("division").h.mean()
-    rmean = pd.concat([X[["division", "d_reach"]].rename(columns={"d_reach": "r"})]).groupby("division").r.mean()
+    # height / reach relative to the fight division (static means over pre-2024 rows only, so the 2024+ test rows
+    # do not inform their own centring; verification fix: the first version used all years)
+    pre = X[X["date"] < TEST_FROM] if ("date" in X.columns and (X["date"] < TEST_FROM).any()) else X
+    hmean = pre.groupby("division").d_height.apply(lambda s: s.astype(float).mean())
+    ape_pre = pre.d_reach.astype(float) - pre.d_height.astype(float)
+    ape_mu = float(ape_pre.mean()) if ape_pre.notna().any() else 0.0
     for p in ("d", "a"):
         h = X[p + "_height"].astype(float)
         r = X[p + "_reach"].astype(float)
         X[p + "_ht_rel"] = (h - X["division"].map(hmean)).fillna(0.0)
         ape = (r - h)
-        X[p + "_ape"] = ape.fillna(ape.mean() if ape.notna().any() else 0.0) - (ape.mean() if ape.notna().any() else 0.0)
-        X[p + "_ape"] = X[p + "_ape"].fillna(0.0)
+        X[p + "_ape"] = (ape - ape_mu).fillna(0.0)
         X[p + "_reach_na"] = r.isna().astype(float)
     ra = X["a_reach"].astype(float).fillna(X["a_height"].astype(float) + 1.5)
     rd = X["d_reach"].astype(float).fillna(X["d_height"].astype(float) + 1.5)
@@ -404,14 +406,17 @@ def eb_walk(df, base_mu, alpha_c, alpha_p, hl_c=None, hl_p=None, use_c=True, use
 
 
 # ------------------------------------------------------------------ model specification
-# the spec chosen by tune() on 2019-2023 (Nov 6, 2026 run); --quick uses it without re-tuning
+# Optional covariate blocks on top of division + context + defender age spline. The analyst's first version
+# carried all of them (36 parameters); the verification pass (Nov 6, 2026) found that several did not earn their
+# place on 2019-2023, so tune() now runs a backward one-SE elimination on the validation window (fit 2008-2018,
+# score 2019-2023): a block is dropped when removing it costs less than one fight-clustered SE of deviance.
+OPT_ORDER = ["exp_d", "okd", "kol", "lay3", "lastko", "age_a", "aexp"]
+ALL_BLOCKS = list(OPT_ORDER)
+# the spec chosen by tune() on 2019-2023 (Nov 6, 2026 verification run); --quick uses it without re-tuning
 DEFAULT_SPEC = {"level": 730, "knots": [30.0], "win": 365, "alpha_c": 3.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None,
-                "dmg": "full", "aexp": True}
-DMG_VARIANTS = {
-    "full": ["d_yrs", "d_lognp", "d_cumoh100", "d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o", "d_debut"],
-    "no_okd": ["d_yrs", "d_lognp", "d_cumoh100", "d_kol_r", "d_kol_o", "d_debut"],      # KD history only via u_d
-    "no_okd_cumoh": ["d_yrs", "d_lognp", "d_kol_r", "d_kol_o", "d_debut"],
-}
+                "blocks": ["okd", "kol"]}
+ANALYST_SPEC = {"level": 730, "knots": [30.0], "win": 365, "alpha_c": 3.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None,
+                "blocks": list(ALL_BLOCKS)}      # the original 36-parameter model, kept as a comparison row
 
 
 def prepare(df, spec):
@@ -433,9 +438,11 @@ def blocks(spec, X=None):
         "ctx": ["five", "title"],
         "age_d": ["d_age_c"] + ["d_age_h%d" % k for k in kn] + ["d_age_na"],
         "age_a": ["a_age_c"] + ["a_age_h%d" % k for k in kn],
-        "dmg": DMG_VARIANTS[spec.get("dmg", "full")],
-        "dmg_full": DMG_VARIANTS["full"],
-        "lay": ["d_lay_short", "d_lay_12_24", "d_lay_24p", "d_last_ko_loss", "d_ko_short"],
+        "exp_d": ["d_yrs", "d_lognp", "d_cumoh100", "d_debut"],
+        "okd": ["d_okd_r", "d_okd_o"],
+        "kol": ["d_kol_r", "d_kol_o"],
+        "lay3": ["d_lay_short", "d_lay_12_24", "d_lay_24p"],
+        "lastko": ["d_last_ko_loss", "d_ko_short"],
         "move": ["d_up_cls", "d_dn_cls", "a_up_cls", "a_dn_cls"],
         "move_lbs": ["d_up_lbs", "d_dn_lbs", "a_up_lbs", "a_dn_lbs"],
         "body": ["d_ht_rel", "d_ape", "ht_adv", "reach_adv"],
@@ -443,9 +450,14 @@ def blocks(spec, X=None):
     }
 
 
+def opt_cols(spec, X=None):
+    b = blocks(spec, X)
+    return [c for k in OPT_ORDER if k in spec.get("blocks", ALL_BLOCKS) for c in b[k]]
+
+
 def final_cols(spec, X=None):
     b = blocks(spec, X)
-    return b["div"] + b["ctx"] + b["age_d"] + b["age_a"] + b["dmg"] + b["lay"] + (b["aexp"] if spec.get("aexp") else [])
+    return b["div"] + b["ctx"] + b["age_d"] + opt_cols(spec, X)
 
 
 def fit_kd(X, cols, fit_mask, spec, eb=True, use_level=True, extra_off=None, iters=4, ridge=1e-4,
@@ -487,24 +499,42 @@ def dev_of(r, mask):
 
 
 def tune(df, verbose=True):
-    """Staged grid on 2019-2023 (fit 2008-2018). Returns the chosen spec and the grid."""
-    grid = []
-    best = dict(DEFAULT_SPEC)
-    cache = {}
+    """Staged grid on 2019-2023 (fit 2008-2018). Returns the chosen spec, the grid and diagnostics.
 
-    def score(spec):
+    Stages: level window, age knots, recent-history window and alphas with every optional block in; then a
+    backward one-SE elimination of the optional blocks (drop the block whose removal costs the least, measured in
+    fight-clustered SEs of the 2019-2023 deviance difference, while that cost is below one SE); then the alphas
+    and the decay half-lives again on the reduced model."""
+    grid = []
+    best = dict(ANALYST_SPEC)
+    cache = {}
+    rows_cache = {}
+
+    def key_of(spec):
+        return (spec["level"], tuple(spec["knots"]), spec["win"], spec["alpha_c"], spec["alpha_p"], spec["hl_c"],
+                spec["hl_p"], tuple(k for k in OPT_ORDER if k in spec["blocks"]))
+
+    def score_rows(spec):
+        k = key_of(spec)
+        if k in rows_cache:
+            return rows_cache[k]
         key = (spec["level"], tuple(spec["knots"]), spec["win"])
         if key not in cache:
             cache[key] = prepare(df, spec)
         X = cache[key]
         fm, em = window(X, *TUNE_FIT), window(X, *TUNE_EVAL)
         r = fit_kd(X, final_cols(spec, X), fm, spec)
-        d = dev_of(r, em)
-        grid.append({"spec": {k: spec[k] for k in ("level", "knots", "win", "alpha_c", "alpha_p", "hl_c", "hl_p", "dmg", "aexp")},
+        dv = pois_dev(r["y"], r["mu"])
+        d = float(dv[em].sum())
+        grid.append({"spec": {kk: spec[kk] for kk in ("level", "knots", "win", "alpha_c", "alpha_p", "hl_c", "hl_p", "blocks")},
                      "dev_2019_2023": round(d, 2)})
         if verbose:
-            print("  tune %-70s dev %.1f" % (grid[-1]["spec"], d))
-        return d
+            print("  tune %-110s dev %.1f" % (grid[-1]["spec"], d))
+        rows_cache[k] = (d, dv, X, em)
+        return rows_cache[k]
+
+    def score(spec):
+        return score_rows(spec)[0]
 
     def stage(key, values):
         nonlocal best
@@ -520,8 +550,27 @@ def tune(df, verbose=True):
     stage("win", [365, 730, 1095])
     stage("alpha_c", [2.0, 3.0, 4.0, 6.0, 10.0])
     stage("alpha_p", [2.0, 2.5, 3.0, 4.0, 6.0])
-    stage("dmg", ["full", "no_okd", "no_okd_cumoh"])
-    stage("aexp", [False, True])
+    # backward one-SE elimination of the optional covariate blocks
+    elim = []
+    while best["blocks"]:
+        d0, dv0, X, em = score_rows(best)
+        cands = []
+        for b in best["blocks"]:
+            s = dict(best)
+            s["blocks"] = [k for k in best["blocks"] if k != b]
+            d1, dv1, _, _ = score_rows(s)
+            fd = fight_diff(X, em, dv1[em], dv0[em])
+            cands.append({"block": b, "cost": round(d1 - d0, 2), "se": round(fd["se_total"], 2),
+                          "z": (d1 - d0) / max(fd["se_total"], 1e-9)})
+        c = min(cands, key=lambda t: t["z"])
+        elim.append({"blocks_in": list(best["blocks"]), "candidates": [{k: v for k, v in t.items() if k != "z"} for t in cands],
+                     "dropped": c["block"] if c["z"] < 1.0 else None})
+        if verbose:
+            print("  elimination: %s -> drop %s" % ([(t["block"], t["cost"], t["se"]) for t in cands],
+                                                    c["block"] if c["z"] < 1.0 else "none"))
+        if c["z"] >= 1.0:
+            break
+        best["blocks"] = [k for k in best["blocks"] if k != c["block"]]
     stage("alpha_c", [2.0, 3.0, 4.0, 6.0, 10.0])
     stage("alpha_p", [2.0, 2.5, 3.0, 4.0, 6.0])
     stage("hl_c", [None, 1825, 2920])
@@ -529,7 +578,8 @@ def tune(df, verbose=True):
     # validation diagnostics for the chosen spec: calibration slopes of the fighter effects on 2019-2023
     X = prepare(df, best)
     r = fit_kd(X, final_cols(best, X), window(X, *TUNE_FIT), best)
-    diag = {"eb_slopes_2019_2023": ebslope(X, r, window(X, *TUNE_EVAL)), "dev_2019_2023": round(dev_of(r, window(X, *TUNE_EVAL)), 2)}
+    diag = {"eb_slopes_2019_2023": ebslope(X, r, window(X, *TUNE_EVAL)), "dev_2019_2023": round(dev_of(r, window(X, *TUNE_EVAL)), 2),
+            "elimination": elim}
     return best, grid, diag
 
 
@@ -559,6 +609,33 @@ def fight_diff(X, mask, d1, d0):
     diff = pd.Series(d1 - d0).groupby(f).sum()
     n = len(diff)
     return {"total": float(diff.sum()), "se_total": float(diff.std(ddof=1) * math.sqrt(n)), "fights": int(n)}
+
+
+def se_fighter(X, mask, d):
+    """SE of a sum of per-row contributions clustered on fighters (multiway: each directed row belongs to both of
+    its fighters' clusters; pairs of rows sharing both fighters are counted once). Fight clustering ignores that the
+    same fighter's effect is shared across his test fights, so it understates the SE of model comparisons."""
+    t = np.asarray(d, float)[mask]
+    t = t - t.mean()
+    de, at = X["def"].to_numpy()[mask], X["att"].to_numpy()[mask]
+    s = pd.Series(np.concatenate([t, t])).groupby(np.concatenate([de, at])).sum()
+    pair = np.where(de < at, de + "|" + at, at + "|" + de)
+    q = pd.Series(t).groupby(pair).sum()
+    return float(math.sqrt(max(float((s ** 2).sum() - (q ** 2).sum()), 0.0)))
+
+
+def rescale_by_period(X, mu, mask):
+    """Diagnostic only (uses outcomes): scale predictions so each half-year's total matches the observed total.
+    Comparing models after this removes calibration-in-the-large, which in 2024+ is dominated by the unexplained
+    league-level swings that no model anticipated, and leaves the ranking (who gets dropped) skill."""
+    y = X.y.fillna(0).to_numpy(float)
+    per = (X.year.astype(str) + np.where(pd.to_datetime(X.date).dt.month <= 6, "a", "b")).to_numpy()
+    out = mu.copy()
+    for p in np.unique(per[mask]):
+        m = mask & (per == p)
+        if mu[m].sum() > 0:
+            out[m] = mu[m] * y[m].sum() / mu[m].sum()
+    return out
 
 
 def linear_combo(r, names, weights):
@@ -651,25 +728,25 @@ def ladder(X, spec):
     if "d_age_h30" not in X.columns:
         X["d_age_h30"] = np.clip(X.d_age.fillna(30) - 30, 0, None)
         X["a_age_h30"] = np.clip(X.a_age.fillna(30) - 30, 0, None)
+    F = final_cols(spec, X)
+    F36 = final_cols(ANALYST_SPEC, X)
     specs = [
         ("M0 constant KD per standing head strike", [], dict(eb=False, use_level=False)),
         ("M0L constant + trailing league level", [], dict(eb=False)),
         ("M1 + division, 5-round, title", bl["div"] + bl["ctx"], dict(eb=False)),
         ("C30 M1 + years past 30 (claim form)", bl["div"] + bl["ctx"] + claim, dict(eb=False)),
         ("M2 + age splines (defender, attacker)", bl["div"] + bl["ctx"] + bl["age_d"] + bl["age_a"], dict(eb=False)),
-        ("M3 + damage history and layoff", final_cols(spec, X), dict(eb=False)),
+        ("M3 final covariates, no fighter effects", F, dict(eb=False)),
+        ("M36 analyst's full 36-parameter covariate set, no fighter effects", F36, dict(eb=False)),
         ("V3 engine v3 hand-set structure", bl["div"], dict(eb=False, extra_off=v3o)),
         ("E1 M1 + fighter chin effect only", bl["div"] + bl["ctx"], dict(eb=True, use_p=False)),
         ("E2 M1 + fighter power effect only", bl["div"] + bl["ctx"], dict(eb=True, use_c=False)),
         ("E3 M1 + chin and power effects", bl["div"] + bl["ctx"], dict(eb=True)),
-        ("F  final: M3 + chin and power effects", final_cols(spec, X), dict(eb=True)),
-        ("F+move final + weight move (classes)", final_cols(spec, X) + bl["move"], dict(eb=True)),
-        ("F+lbs final + weight move (pounds)", final_cols(spec, X) + bl["move_lbs"], dict(eb=True)),
-        ("F+body final + height, ape index, reach advantage", final_cols(spec, X) + bl["body"], dict(eb=True)),
-        ("Ffull final with the full damage block (prior KDs absorbed as covariates)",
-         [c for c in final_cols(spec, X) if c not in bl["dmg"]] + bl["dmg_full"], dict(eb=True)),
-        ("Fnokd final without prior-KD covariates (KD history only through u_d)",
-         [c for c in final_cols(spec, X) if c not in bl["dmg"]] + DMG_VARIANTS["no_okd"], dict(eb=True)),
+        ("F  final: M3 + chin and power effects", F, dict(eb=True)),
+        ("F36 analyst's original model: 36-parameter covariate set + chin and power effects", F36, dict(eb=True)),
+        ("F+move final + weight move (classes)", F + bl["move"], dict(eb=True)),
+        ("F+lbs final + weight move (pounds)", F + bl["move_lbs"], dict(eb=True)),
+        ("F+body final + height, ape index, reach advantage", F + bl["body"], dict(eb=True)),
     ]
     res, rows = {}, []
     for name, cols, kw in specs:
@@ -677,10 +754,13 @@ def ladder(X, spec):
         res[name.split()[0]] = r
     base0 = pois_dev(res["M0"]["y"], res["M0"]["mu"])
     baseL = pois_dev(res["M0L"]["y"], res["M0L"]["mu"])
+    baseLr = pois_dev(res["M0L"]["y"], rescale_by_period(X, res["M0L"]["mu"], tm))
     for name, cols, kw in specs:
         key = name.split()[0]
         r = res[key]
         dv = pois_dev(r["y"], r["mu"])
+        dvr = pois_dev(r["y"], rescale_by_period(X, r["mu"], tm))
+        r["dev_rescaled"] = dvr
         ll = r["y"] * np.log(np.maximum(r["mu"], 1e-12)) - r["mu"] - special.gammaln(r["y"] + 1)
         row = {"model": name, "k": len(cols) + 1, "dev_test": round(float(dv[tm].sum()), 2),
                "loglik_test": round(float(ll[tm].sum()), 2), "kd_obs": int(r["y"][tm].sum()),
@@ -690,6 +770,10 @@ def ladder(X, spec):
         dL = fight_diff(X, tm, dv[tm], baseL[tm])
         row["vs_M0"] = {k: round(v, 2) if isinstance(v, float) else v for k, v in d0.items()}
         row["vs_M0L"] = {k: round(v, 2) if isinstance(v, float) else v for k, v in dL.items()}
+        row["vs_M0L"]["se_fighter"] = round(se_fighter(X, tm, dv - baseL), 2)
+        row["dev_test_halfyear_rescaled"] = round(float(dvr[tm].sum()), 2)
+        row["vs_M0L_halfyear_rescaled"] = {"total": round(float((dvr - baseLr)[tm].sum()), 2),
+                                           "se_fighter": round(se_fighter(X, tm, dvr - baseLr), 2)}
         te = tm & elig
         row["dev_test_eligible"] = round(float(dv[te].sum()), 2)
         row["vs_M0L_eligible"] = round(float(dv[te].sum() - baseL[te].sum()), 2)
@@ -769,10 +853,16 @@ def overdispersion(X, r, mask, spec):
 def pairwise(X, res, mask, pairs):
     out = []
     for a, b in pairs:
-        da = pois_dev(res[a]["y"], res[a]["mu"])[mask]
-        db = pois_dev(res[b]["y"], res[b]["mu"])[mask]
-        d = fight_diff(X, mask, da, db)
-        out.append({"model": a, "vs": b, "dev_diff": round(d["total"], 2), "se": round(d["se_total"], 2)})
+        da = pois_dev(res[a]["y"], res[a]["mu"])
+        db = pois_dev(res[b]["y"], res[b]["mu"])
+        d = fight_diff(X, mask, da[mask], db[mask])
+        row = {"model": a, "vs": b, "dev_diff": round(d["total"], 2), "se": round(d["se_total"], 2),
+               "se_fighter": round(se_fighter(X, mask, da - db), 2)}
+        if "dev_rescaled" in res[a] and "dev_rescaled" in res[b]:
+            dr = res[a]["dev_rescaled"] - res[b]["dev_rescaled"]
+            row["dev_diff_halfyear_rescaled"] = round(float(dr[mask].sum()), 2)
+            row["se_fighter_rescaled"] = round(se_fighter(X, mask, dr), 2)
+        out.append(row)
     return out
 
 
@@ -954,8 +1044,7 @@ def ko_model(X, r_final, spec, fm_dates=(FIT_FROM, "2023-12-31")):
 
 def ko_design_cols(spec, X):
     bl = blocks(spec, X)
-    return (bl["div"] + ["k_lsched", "elo_diff", "k_lv", "k_lexp"] + bl["age_d"] + bl["age_a"] + bl["dmg"] + bl["lay"]
-            + (bl["aexp"] if spec.get("aexp") else []) + ["k_lchin", "k_lpow"])
+    return bl["div"] + ["k_lsched", "elo_diff", "k_lv", "k_lexp"] + bl["age_d"] + opt_cols(spec, X) + ["k_lchin", "k_lpow"]
 
 
 def ko_live(X, r_live, spec, fit_from=FIT_FROM):

@@ -97,11 +97,14 @@ BOOK_ALIASES = {
     'betus': 'BetUS', 'youwager': 'YouWager', 'betanything': 'BetAnything', 'cloudbet': 'Cloudbet',
     'polymarket': 'Polymarket', 'kalshi': 'Kalshi', 'sxbet': 'SXBet', 'prophetx': 'ProphetX',
     '4casters': '4casters', '4cx': '4Cx', 'novig': 'Novig', 'betfair': 'Betfair',
+    'polymarket us': 'PolymarketUS', 'polymarketus': 'PolymarketUS',
 }
 # Low-margin books that take sharp action (MMA market makers); used for p_sharp.
 SHARP = {'Pinnacle', 'Circa', 'Bookmaker', 'BetOnline', 'Bet105'}
 # Exchanges and prediction markets: kept, reported separately, never in the sportsbook consensus.
-EXCHANGE = {'Polymarket', 'Kalshi', 'SXBet', 'ProphetX', '4casters', '4Cx', 'Novig', 'Betfair'}
+# Polymarket = the international book (fightodds, Action Network); PolymarketUS = the US app (BFO's column).
+# Kalshi on fightodds is the raw ask; BFO's Kalshi column adds Kalshi's taker fee (0.07 p (1-p)).
+EXCHANGE = {'Polymarket', 'PolymarketUS', 'Kalshi', 'SXBet', 'ProphetX', '4casters', '4Cx', 'Novig', 'Betfair'}
 # Source priority when the same book is seen on several sites (first = preferred).
 SRC_PRIORITY = ['fightodds', 'bestfightodds', 'actionnetwork', 'covers']
 
@@ -592,6 +595,14 @@ def bfo_parse_event(html):
     books = {}
     for bid, name in re.findall(r'<th scope="col" data-b="(\d+)"[^>]*>(?:<a[^>]*>|<span[^>]*>)([^<]+)', t):
         books[int(bid)] = canon_book(htmlmod.unescape(name))
+        # BFO's "Polymarket" column is the Polymarket US app (CFTC venue, its own order book; the header's
+        # disclosure says so), not the international Polymarket that fightodds and Action Network carry.
+        # Verified Nov 6, 2026 against the gamma-api.polymarket.com and Kalshi APIs: fightodds' Polymarket
+        # equals the international book's asks; BFO's column does not. Keep them apart.
+        if books[int(bid)] == 'Polymarket':
+            th = re.search(r'<th scope="col" data-b="' + bid + r'".*?</th>', t, re.S)
+            if th and 'Polymarket US' in th.group(0):
+                books[int(bid)] = 'PolymarketUS'
     mus, order = {}, []
     props = defaultdict(dict)    # (mu, pid, team) -> {'labels':[..], 'books':{book:[yes,no]}}
     for attrs, row in re.findall(r'<tr([^>]*)>(.*?)</tr>', t, re.S):
@@ -1133,25 +1144,40 @@ def event_for_date(events, d, lo=-1, hi=2):
     return best[1] if best else None
 
 
+def events_near_date(events, d, lo=-1, hi=2):
+    """Dates of every canonical event within [lo, hi] days of source date d. All of them are candidates:
+    BFO splits a card into pages by UTC date, so a main-card page can sit one day after its event and on
+    the day of a following event; the name match, not the nearest date, decides."""
+    if not d:
+        return set()
+    d = dt.date.fromisoformat(d)
+    return {e['date'] for e in events if lo <= (d - dt.date.fromisoformat(e['date'])).days <= hi}
+
+
 def match_sources(events, bouts, src_bouts, add_missing):
     """Attach source bouts to canonical bouts (one source bout per canonical bout per source; the best
     match wins, other claimants are kept as duplicates). Unmatched in-window source bouts are added as
-    new canonical bouts when add_missing (no cards file), else reported."""
+    new canonical bouts when add_missing (no cards file), else reported.
+    A listing that matches one of the event's removed pairings (cards_upcoming.json `removed`) at least as
+    well as the current bout is a stale listing of the old pairing (e.g. 'X vs old opponent' with a
+    similar surname) and is never attached to the current bout."""
     for b in bouts:
         b.setdefault('src', {})
         b.setdefault('dups', [])
+    removed_by_date = {e['date']: e.get('removed') or [] for e in events}
     unmatched = []
     for src in SRC_PRIORITY:
         cands = []
         for i, sb in enumerate([x for x in src_bouts if x['src'] == src]):
-            ev = event_for_date(events, sb.get('date')) if not sb.get('future_page') else None
+            near = events_near_date(events, sb.get('date')) if not sb.get('future_page') else None
             for j, b in enumerate(bouts):
-                if ev is not None and b['date'] != ev['date']:
-                    continue
-                if ev is None and not sb.get('future_page'):
+                if near is not None and b['date'] not in near:
                     continue
                 s, sw = pair_score(b.get('A_alts') or b['A'], b.get('B_alts') or b['B'], sb['n1'], sb['n2'])
                 need = 0.9 if sb.get('future_page') else 0.6
+                if s >= need and any(pair_score(r['A'], r['B'], sb['n1'], sb['n2'])[0] >= s
+                                     for r in removed_by_date.get(b['date'], [])):
+                    continue
                 if s >= need:
                     nl = len(sb.get('lines') or {})
                     cands.append((s, nl, j, id(sb), sw, sb))
@@ -1177,7 +1203,14 @@ def match_sources(events, bouts, src_bouts, add_missing):
         for sb in [x for x in src_bouts if x['src'] == src]:
             if id(sb) in taken_sb or sb.get('future_page'):
                 continue
-            ev = event_for_date(events, sb.get('date'))
+            near = events_near_date(events, sb.get('date'))
+            ev = None
+            for e in events:   # report against the event whose removed list explains it, else the nearest
+                if e['date'] in near and any(pair_score(r['A'], r['B'], sb['n1'], sb['n2'])[0] >= 0.7
+                                             for r in e.get('removed') or []):
+                    ev = e
+                    break
+            ev = ev or event_for_date(events, sb.get('date'))
             if ev is None:
                 continue
             if add_missing and sb.get('lines'):
@@ -1516,7 +1549,11 @@ def build_bouts(bouts, events, fidx, snap_time, have_cards):
             start, start_src = an_start, 'actionnetwork (scheduled)'
         else:
             start, start_src = lock, f"event lock ({ev.get('lock_src')})"
-        phase = ('pre_start' if snap_time < start else 'post_start') if start else 'unknown'
+        # phase and pre_lock use the LATEST fetch time of this bout's lines, not the run's start: a run takes
+        # ~4 minutes, so a line read after the lock must never count as "market at prediction time"
+        seen = [t for t in (_iso(x.get('fetched')) for x in b['src'].values()) if t]
+        t_obs = max(seen + [snap_time])
+        phase = ('pre_start' if t_obs < start else 'post_start') if start else 'unknown'
         rec = {}
         slugs = {}
         for side in ('A', 'B'):
@@ -1537,7 +1574,7 @@ def build_bouts(bouts, events, fidx, snap_time, have_cards):
             'rounds': b.get('rounds'), 'title': bool(b.get('title_fight')), 'status': b.get('status'),
             'card_src': b.get('card_src'),
             'start_utc': zstr(start), 'start_src': start_src, 'start_utc_actionnetwork': zstr(an_start),
-            'phase': phase, 'pre_lock': bool(lock and snap_time < lock),
+            'phase': phase, 'pre_lock': bool(lock and t_obs < lock),
             'A': rec['A'], 'B': rec['B'],
         }
         if b.get('belt'):
@@ -1647,7 +1684,8 @@ METHODS_DOC = {
     'p_sharp_shin': 'logit-mean of Shin no-vig over the sharp/low-margin books present '
                     '(Pinnacle, Circa, Bookmaker, BetOnline, Bet105)',
     'p_exchange_mult': 'logit-mean of multiplicative no-vig over exchanges / prediction markets '
-                       '(Polymarket, Kalshi, SXBet, ProphetX, 4casters, 4Cx)',
+                       '(Polymarket = international book, PolymarketUS = BFO\'s Polymarket US column, Kalshi, '
+                       'SXBet, ProphetX, 4casters, 4Cx)',
     'one_line_per_book': 'a book seen on several sites counts once; preferred source order '
                          'fightodds > bestfightodds > actionnetwork > covers; other copies are kept in '
                          'other_source_lines',
@@ -1661,9 +1699,10 @@ METHODS_DOC = {
     'props': 'bestfightodds props: two_way = median over books of Shin no-vig P(yes) when both sides are '
              'offered; method = per-book Shin devig of the 6-way (7 with draw) method market '
              '[ko_A, sub_A, dec_A, ko_B, sub_B, dec_B], median across books, renormalised',
-    'phase': 'pre_start when the snapshot was taken before the bout\'s start (Action Network schedule, '
-             'else a conservative early estimate per region); post_start lines are the books\' archived '
-             'closing lines (or in-play) and are never used as a pre-fight forecast',
+    'phase': 'pre_start when the latest fetch of the bout\'s lines came before the bout\'s start (its card '
+             'segment\'s start_utc in cards_upcoming.json, else Action Network\'s schedule, else the event lock); '
+             'pre_lock likewise against the event lock (earliest start_utc). post_start lines are the books\' '
+             'archived closing lines (or in-play) and are never used as a pre-fight forecast',
 }
 
 
@@ -1676,6 +1715,13 @@ def cmd_snapshot(a):
         if not cached:
             raise SystemExit(f'no cached pages under data/raw/web_cache/*/{a.replay}/')
         now = dt.datetime.fromtimestamp(min(os.path.getmtime(x) for x in cached), dt.timezone.utc)
+        orig = os.path.join(PRED_DIR, f'odds_snapshot_{a.replay}.json')
+        if os.path.exists(orig):   # keep the original capture's start time, so a replay is exact
+            try:
+                with open(orig) as fh:
+                    now = _iso(json.load(fh)['meta']['snapshot_utc']) or now
+            except (OSError, ValueError, KeyError):
+                pass
     since = dt.date.fromisoformat(a.since) if a.since else (now.date() - dt.timedelta(days=1))
     until = dt.date.fromisoformat(a.until) if a.until else (now.date() + dt.timedelta(days=45))
     F = Fetcher(stamp, replay=bool(a.replay), delay=a.delay)

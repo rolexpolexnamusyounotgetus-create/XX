@@ -1329,3 +1329,325 @@ def stitch_and_orient(w1, w2, D, hp, ref_date=dt.date(2019, 1, 1)):
     PD = np.eye(len(od))[:, od]
     apply_walk(merged, np.diag(sa / scA) @ PA, np.diag(sd / scD) @ PD)
     return merged
+
+
+# ------------------------------------------------------------------------------------------------ interpretation
+TASK_SHORT = {"d_att": "distance volume", "c_att": "clinch volume", "g_att": "ground-strike volume",
+              "h_att": "head-strike volume", "b_att": "body-strike volume", "l_att": "leg-kick volume",
+              "ns_att": "non-sig. (grappling) strikes", "d_acc": "distance accuracy", "c_acc": "clinch accuracy",
+              "g_acc": "ground accuracy", "h_acc": "head accuracy", "b_acc": "body accuracy",
+              "l_acc": "leg accuracy", "kd": "knockdown power", "td_att": "takedown attempts",
+              "td_acc": "takedown accuracy", "ctrl": "control time", "sub_att": "submission attempts",
+              "rev": "reversals", "ko_fin": "KO/TKO finishing", "sub_fin": "submission finishing"}
+
+
+def describe_axes(P, A, Dm, slugs, expo, names, min_expo=2.0, top=6):
+    """Top task loadings and top fighters per axis. Offense loading = change in the attacker's log-rate (or
+    logit) per unit of the axis; defense loading = change in what opponents achieve against him (axes are
+    oriented so that positive defense = opponents do less of the dominant task)."""
+    out = {"offense": [], "defense": []}
+    ok = expo >= min_expo
+    for side, L, X in (("offense", P["W"], A), ("defense", P["V"], Dm)):
+        for k in range(L.shape[1]):
+            order = np.argsort(-np.abs(L[:, k]))[:top]
+            loads = [[TN[t], round(float(L[t, k]), 3)] for t in order]
+            vals = np.where(ok, X[:, k], np.nan)
+            hi = [slugs[i] for i in np.argsort(-np.nan_to_num(vals, nan=-1e9))[:8]]
+            lo = [slugs[i] for i in np.argsort(np.nan_to_num(vals, nan=1e9))[:5]]
+            out[side].append({"axis": "%s%d" % (side[0], k), "label": names.get("%s%d" % (side[0], k), ""),
+                              "loadings": loads, "high": hi, "low": lo})
+    return out
+
+
+def auto_label(entry, side):
+    """A readable default name from the two largest loadings (hand labels override in AXIS_LABELS)."""
+    parts = []
+    for t, v in entry["loadings"][:2]:
+        word = TASK_SHORT[t]
+        if side == "offense":
+            parts.append(("+" if v > 0 else "-") + word)
+        else:
+            parts.append(("allows less " if v < 0 else "allows more ") + word)
+    return " / ".join(parts)
+
+
+def neighbours(emb, slugs, expo, slug, k=10, min_expo=2.0):
+    i = slugs.index(slug)
+    d = np.sqrt(((emb - emb[i]) ** 2).sum(1))
+    d[i] = np.inf
+    d[expo < min_expo] = np.inf
+    order = np.argsort(d)[:k]
+    return [[slugs[j], round(float(d[j]), 3)] for j in order]
+
+
+def r4(x, nd=4):
+    if isinstance(x, np.ndarray):
+        return np.round(x, nd).tolist()
+    return round(float(x), nd)
+
+
+# ------------------------------------------------------------------------------------------------ outputs
+AXIS_LABELS = {}          # filled in by hand after reading the loadings (see research/model_embed.md)
+NN_MIN_EXPO = 2.0         # neighbours / axis leaders need a decayed fight count of at least this
+CHECK_PAIRS = [("alexander-volkanovski", "justin-gaethje", "Lightweight", 5),
+               ("islam-makhachev", "arman-tsarukyan", "Lightweight", 5),
+               ("ilia-topuria", "charles-oliveira", "Lightweight", 5),
+               ("dricus-du-plessis", "khamzat-chimaev", "Middleweight", 5),
+               ("zhang-weili", "tatiana-suarez", "Women's Strawweight", 3)]
+
+
+def py_eval_compact(m, ea, eb, division, era, five):
+    """Python twin of src/ml/embed.js matchup() on the rounded compact model (for the Node test)."""
+    K, NDIV = m["K"], len(m["divs"])
+    C, W, V = np.array(m["C"]), np.array(m["W"]), np.array(m["V"])
+    dv = m["divs"].index(division) if division in m["divs"] else m["divs"].index(m["default_division"])
+    ea, eb = np.array(ea, float), np.array(eb, float)
+    def eta(x, y):
+        return C[:, dv] + C[:, NDIV] * era + C[:, NDIV + 1] * five + W @ x[:K] + V @ y[K:]
+    ua, ud, M = np.array(m["ua"]), np.array(m["ud"]), np.array(m["M"])
+    z = ua @ (ea[:K] - eb[:K]) + ud @ (ea[K:] - eb[K:]) + ea[:K] @ M @ eb[K:] - eb[:K] @ M @ ea[K:]
+    eA, eB = eta(ea, eb), eta(eb, ea)
+    rA = {k: float(v[0]) for k, v in stat_rates(eA[None, :]).items()}
+    rB = {k: float(v[0]) for k, v in stat_rates(eB[None, :]).items()}
+    return {"pA": float(1 / (1 + np.exp(-z))), "logit": float(z), "etaA": eA.tolist(), "etaB": eB.tolist(),
+            "ratesA": rA, "ratesB": rB}
+
+
+def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs):
+    fin = walk["final"]
+    P, A, Dm = fin["P"], fin["A"], fin["D"]
+    K = A.shape[1]
+    expo = exposure(D, fin["T"], hp["hl"])
+    emb = np.hstack([A, Dm])
+    slugs = D.slug
+    roster_slugs = set(json.load(open(os.path.join(DER, "fighters.json")))["fighters"])
+    axes = describe_axes(P, A, Dm, slugs, expo, AXIS_LABELS, NN_MIN_EXPO)
+    for side in ("offense", "defense"):
+        for a in axes[side]:
+            if not a["label"]:
+                a["label"] = auto_label(a, side)
+    nn = {}
+    for sl in ("alexander-volkanovski", "justin-gaethje"):
+        if sl in D.slug_idx:
+            nn[sl] = neighbours(emb, slugs, expo, sl, 10, NN_MIN_EXPO)
+    roster = {}
+    for i, sl in enumerate(slugs):
+        if sl in roster_slugs and expo[i] > 0:
+            roster[sl] = [r4(emb[i], 4), r4(expo[i], 3)]
+    # per-snapshot embeddings: backtest_dev ids (2019-2025) and every earlier 2010-2018 fight (for training)
+    dev_ids = [e["id"] for e in json.load(open(BACKTEST_DEV))["fights"]]
+    rowof = {fid: i for i, fid in enumerate(T["id"])}
+    snaps, train_snaps, missing = {}, {}, 0
+    for fid in dev_ids:
+        v = walk["fight"].get(fid)
+        if v is None:
+            missing += 1
+            continue
+        rec = {"A": r4(v[1]), "B": r4(v[2]), "xA": r4(v[3], 3), "xB": r4(v[4], 3), "q": int(v[0])}
+        j = rowof.get(fid)
+        if j is not None:
+            rec["win_logit"] = r4(T["s_win"][j])
+        snaps[fid] = rec
+    for e in T["entries"]:
+        if e["date"] < "2019-01-01":
+            v = walk["fight"][e["id"]]
+            train_snaps[e["id"]] = {"A": r4(v[1]), "B": r4(v[2]), "xA": r4(v[3], 3), "xB": r4(v[4], 3),
+                                    "date": e["date"], "a": e["A"]["slug"], "b": e["B"]["slug"],
+                                    "win_logit": r4(T["s_win"][rowof[e["id"]]])}
+    quarters = [{"T": dt.date.fromordinal(q["T"]).isoformat(), "C": r4(q["P"]["C"]), "W": r4(q["P"]["W"]),
+                 "V": r4(q["P"]["V"]), "ua": r4(q["P"]["ua"]), "ud": r4(q["P"]["ud"]), "M": r4(q["P"]["M"])}
+                for q in walk["quarters"]]
+    model = {"K": K, "tasks": [[t, k] for t, k, _ in TASKS], "task_labels": [lab for _, _, lab in TASKS],
+             "divs": D.divs, "default_division": "Lightweight", "era_date": "2026-01-01",
+             "C": r4(P["C"], 5), "W": r4(P["W"], 5), "V": r4(P["V"], 5), "ua": r4(P["ua"], 5), "ud": r4(P["ud"], 5),
+             "M": r4(P["M"], 5), "noise": {"nb_k": {TN[i]: r4(noise["k"][i], 3) for i in range(NT) if IS_NB[i]},
+                                           "bb_rho": {TN[i]: r4(noise["rho"][i], 4) for i in range(NT) if IS_BIN[i]}},
+             "axes": {s: [[a["axis"], a["label"]] for a in axes[s]] for s in axes}, "nn_min_expo": NN_MIN_EXPO,
+             "roster": roster}
+    # check block on the rounded model (what the browser evaluates)
+    era = (dt.date(2026, 1, 1).toordinal() - dt.date(2015, 1, 1).toordinal()) / 3652.5
+    checks = []
+    for a, b, div, rounds in CHECK_PAIRS:
+        if a in roster and b in roster:
+            checks.append({"a": a, "b": b, "division": div, "rounds": rounds,
+                           "out": py_eval_compact(model, roster[a][0], roster[b][0], div, era, 1.0 if rounds == 5 else 0.0)})
+    rng = np.random.default_rng(SEED)
+    rs = sorted(roster)
+    for _ in range(25):
+        a, b = rng.choice(len(rs), 2, replace=False)
+        div = D.divs[int(rng.integers(0, len(D.divs)))]
+        rounds = int(rng.choice([3, 5]))
+        checks.append({"a": rs[a], "b": rs[b], "division": div, "rounds": rounds,
+                       "out": py_eval_compact(model, roster[rs[a]][0], roster[rs[b]][0], div, era,
+                                              1.0 if rounds == 5 else 0.0)})
+    model["check"] = checks
+    meta = {"source": "tools/embed.py on data/raw via tools/build_db.py loaders; fights dated 2026-01-01 or later "
+                      "are dropped on load (hidden-data protocol)",
+            "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+            "last_fight_used": dt.date.fromordinal(int(D.f_day.max())).isoformat(),
+            "hyperparameters": hp, "K": K, "dims": 2 * K,
+            "noise": model["noise"], "tasks": [{"name": t, "kind": k, "label": lab} for t, k, lab in TASKS],
+            "refits": "quarterly full refits 2010-01-01..2025-10-01 (warm-started, Procrustes-chained), a light "
+                      "fighter-only Newton update after every event, final refit 2026-01-01 (roster)",
+            "orientation": "axes rotated to varimax of the 2019-01-01 refit's loadings, offense axes signed so the "
+                           "largest loading is positive, defense axes so that positive = opponents do less of the "
+                           "dominant task; each axis scaled to unit sd over fighters with a decayed fight count >= 1 "
+                           "at 2019-01-01 and ordered by its effect on predictions",
+            "embedding_layout": "[o0..o%d, d0..d%d]; xA / xB = decayed fight count (half-life %g days) behind the "
+                                "embedding (0 = no UFC stat fight: the vector is the division-average zero)"
+                                % (K - 1, K - 1, hp["hl"]),
+            "corner": "A / B as in backtest_dev.json (A = first-named); nothing in the model uses the order",
+            "cv": [{"hp": c["hp"], "mean_rel_dev": round(c["mean_rel"], 4), "win_logloss": round(c["win_ll"], 4),
+                    "score": round(cv_score(c), 4)} for c in cv],
+            "stitch": walk.get("stitch"), "runtime_s": round(secs)}
+    out = {"meta": meta, "model": {k: model[k] for k in ("K", "tasks", "divs", "C", "W", "V", "ua", "ud", "M")},
+           "axes": axes, "neighbours": nn,
+           "validation": {"winner": win_res, "stats": stat_res},
+           "roster": roster, "snapshots": snaps, "train_snapshots": train_snaps, "quarters": quarters,
+           "missing_snapshots": missing}
+    with open(OUT_JSON, "w") as fh:
+        json.dump(out, fh, separators=(",", ":"))
+    with open(OUT_MODEL, "w") as fh:
+        json.dump(model, fh, separators=(",", ":"))
+    print("wrote %s (%.1f MB) and %s (%.0f KB); %d snapshots (%d missing), %d train snapshots, %d roster" % (
+        OUT_JSON, os.path.getsize(OUT_JSON) / 1e6, OUT_MODEL, os.path.getsize(OUT_MODEL) / 1e3, len(snaps), missing,
+        len(train_snaps), len(roster)))
+    for side in ("offense", "defense"):
+        for a in axes[side]:
+            print("  %s %-60s %s | high: %s" % (a["axis"], a["label"][:60], a["loadings"][:4], ", ".join(a["high"][:5])))
+    for sl, l in nn.items():
+        print("  neighbours of %s: %s" % (sl, ", ".join("%s (%.2f)" % (x, d) for x, d in l)))
+    _save({"T": T, "win_preds": win_preds, "walk_final": fin}, os.path.join(os.environ.get("TMPDIR", "/tmp"),
+                                                                         "embed_cache", "eval_state.pkl"))
+
+
+# ------------------------------------------------------------------------------------------------ driver
+CV_GRID = [dict(lam=30.0, hl=730.0), dict(lam=15.0, hl=730.0), dict(lam=60.0, hl=730.0), dict(lam=30.0, hl=1460.0),
+           dict(lam=30.0, hl=730.0, lam_d=2.0), dict(lam=30.0, hl=730.0, win_w=4.0), dict(lam=30.0, hl=365.0)]
+HP_BASE = dict(K=8, win_w=1.0, lam_head=10.0)
+CHUNKS = {1: (dt.date(2010, 1, 1), dt.date(2018, 1, 1)), 2: (dt.date(2018, 1, 1), dt.date(2026, 1, 1))}
+
+
+def cv_score(rec):
+    """Selection score: mean relative deviance over the 21 tasks + win log loss / ln 2 (equal weight)."""
+    return rec["mean_rel"] + rec["win_ll"] / math.log(2)
+
+
+def _pk(cache, name):
+    return os.path.join(cache, name)
+
+
+def _load(path):
+    import pickle
+    with open(path, "rb") as fh:
+        return pickle.load(fh)
+
+
+def _save(obj, path):
+    import pickle
+    with open(path + ".tmp", "wb") as fh:
+        pickle.dump(obj, fh)
+    os.replace(path + ".tmp", path)
+
+
+def stage_noise(D, cache):
+    path = _pk(cache, "noise.pkl")
+    if os.path.exists(path):
+        return _load(path)
+    noise = {"k": np.where(IS_NB, 5.0, np.inf), "rho": np.where(IS_BIN, 0.01, 0.0)}
+    T0, T1 = dt.date(2016, 1, 1).toordinal(), dt.date(2017, 1, 1).toordinal()
+    for _ in range(2):        # fit at 2016-01-01, moment-match on 2016 fights, refit with the estimate, repeat
+        f = Fit(D, T0, dict(HP_BASE, lam=30.0, hl=730.0), noise, max_sweeps=15)
+        idx, _ = heldout_rows(D, T0, T1)
+        noise = estimate_noise(D, f.P, idx)
+    _save(noise, path)
+    return noise
+
+
+def stage_cv(D, noise, cache, grid, quick=False):
+    dates = refit_dates(TRAIN[0], TRAIN[1], "year" if quick else "half")
+    until = TRAIN[1].toordinal()
+    bpath = _pk(cache, "cv_base_%s.pkl" % ("q" if quick else "h"))
+    base = _load(bpath) if os.path.exists(bpath) else baseline_dev(D, noise, dates, until)
+    _save(base, bpath)
+    rpath = _pk(cache, "cv_results.jsonl")
+    done = {}
+    if os.path.exists(rpath):
+        for line in open(rpath):
+            r = json.loads(line)
+            done[r["key"]] = r
+    out = []
+    for g in grid:
+        hp = dict(HP_BASE, **g)
+        key = json.dumps(hp, sort_keys=True)
+        if key in done:
+            out.append(done[key])
+            continue
+        t = time.time()
+        r = walk_forward(D, hp, noise, dates, until, baseline=base, verbose=False,
+                         sweeps_warm=5 if quick else 10)
+        rel = r["dev"] / r["base"]
+        rec = {"key": key, "hp": hp, "mean_rel": float(rel.mean()), "rel": rel.round(4).tolist(),
+               "win_ll": float(r["win_ll"].mean()), "n_win": int(len(r["win_ll"])), "secs": round(time.time() - t)}
+        with open(rpath, "a") as fh:
+            fh.write(json.dumps(rec) + "\n")
+        print("CV %s mean_rel %.4f win_ll %.4f score %.4f (%ds)" % (key, rec["mean_rel"], rec["win_ll"],
+                                                                   cv_score(rec), rec["secs"]), flush=True)
+        out.append(rec)
+    return out
+
+
+def stage_walk(D, noise, hp, cache, chunk):
+    path = _pk(cache, "walk_%d.pkl" % chunk)
+    if os.path.exists(path):
+        w = _load(path)
+        if w["hp"] == hp:
+            return w
+    s, e = CHUNKS[chunk]
+    w = production_walk(D, hp, noise, s, e, tag="chunk%d" % chunk)
+    _save(w, path)
+    return w
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--cache", default=os.path.join(os.environ.get("TMPDIR", "/tmp"), "embed_cache"),
+                    help="directory for intermediate pickles (noise, CV, walks)")
+    ap.add_argument("--quick", action="store_true", help="yearly CV refits, 2-config grid")
+    ap.add_argument("--skip-cv", action="store_true", help="use the CV results already in the cache / embed.json")
+    ap.add_argument("--stage", default="all", choices=["noise", "cv", "walk", "eval", "all"],
+                    help="run up to this stage (walk with --chunk runs one chunk only, for two parallel processes)")
+    ap.add_argument("--chunk", type=int, default=0, help="1 = 2010-2017, 2 = 2018-2025 (default both)")
+    args = ap.parse_args()
+    os.makedirs(args.cache, exist_ok=True)
+    t0 = time.time()
+    D = load_data()
+    noise = stage_noise(D, args.cache)
+    print("noise: NB k %s | beta-binomial rho %s" % (
+        {TN[i]: round(float(noise["k"][i]), 2) for i in range(NT) if IS_NB[i]},
+        {TN[i]: round(float(noise["rho"][i]), 4) for i in range(NT) if IS_BIN[i]}), flush=True)
+    if args.stage == "noise":
+        return
+    grid = CV_GRID[:2] if args.quick else CV_GRID
+    cv = stage_cv(D, noise, args.cache, grid, args.quick)
+    best = min(cv, key=cv_score)
+    hp = best["hp"]
+    print("chosen hyperparameters: %s (score %.4f)" % (hp, cv_score(best)), flush=True)
+    if args.stage == "cv":
+        return
+    chunks = [args.chunk] if args.chunk else [1, 2]
+    walks = {c: stage_walk(D, noise, hp, args.cache, c) for c in chunks}
+    if args.stage == "walk" or args.chunk:
+        return
+    walk = stitch_and_orient(walks[1], walks[2], D, hp)
+    entries, priors = snapshot_table(D)
+    T = build_table(entries, priors, walk_lookup(walk), D)
+    print("downstream table: %d fights (%d train <= 2023, %d validation 2024-25)" % (
+        len(T["id"]), int((T["year"] <= 2023).sum()), int((T["year"] >= 2024).sum())), flush=True)
+    win_res, win_preds = eval_winner(T)
+    stat_res = eval_stats(T)
+    write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, time.time() - t0)
+
+
+if __name__ == "__main__":
+    main()

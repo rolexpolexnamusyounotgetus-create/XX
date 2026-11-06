@@ -56,8 +56,9 @@ const V_SHL = 43;         // standing head landed (both)
 const V_DOC = 44;         // doctor + corner stoppages
 const V_Z1 = 45, V_Z2 = 47;   // per side: sum and sum of squares of z = log((landed + 1) / (minutes + 0.5)) (per-fight output dispersion)
 const V_Q1 = 49, V_Q2 = 51;   // per side: sum and sum of squares of logit accuracy log((landed + 0.5) / (missed + 0.5))
+const V_QN = 63;          // per side: number of sims with >= 10 attempts (the accuracy sums only use those)
 const V_F = 53;           // matchup constants (not sums): log power ratio A, B; log chin ratio A, B; years past chinAge0 A, B; prior KO losses A, B; lbs up / 10 A, B
-const NV = 63;
+const NV = 65;
 
 function fightSeed(id, salt) { return ((parseInt(String(id).slice(0, 8), 16) >>> 0) ^ (salt >>> 0)) >>> 0; }
 
@@ -92,7 +93,8 @@ function simFight(E, m, N, fseed, out, o) {
     const zA = Math.log((A.sig_lnd + 1) / (mn + 0.5)), zB = Math.log((B.sig_lnd + 1) / (mn + 0.5));
     const qA = Math.log((A.sig_lnd + 0.5) / (A.sig_att - A.sig_lnd + 0.5)), qB = Math.log((B.sig_lnd + 0.5) / (B.sig_att - B.sig_lnd + 0.5));
     out[o + V_Z1] += zA; out[o + V_Z1 + 1] += zB; out[o + V_Z2] += zA * zA; out[o + V_Z2 + 1] += zB * zB;
-    out[o + V_Q1] += qA; out[o + V_Q1 + 1] += qB; out[o + V_Q2] += qA * qA; out[o + V_Q2 + 1] += qB * qB;
+    if (A.sig_att >= 10) { out[o + V_Q1] += qA; out[o + V_Q2] += qA * qA; out[o + V_QN]++; }
+    if (B.sig_att >= 10) { out[o + V_Q1 + 1] += qB; out[o + V_Q2 + 1] += qB * qB; out[o + V_QN + 1]++; }
   }
   const fc = m.fac, a0 = m.p.chinAge0;
   out[o + V_F] = Math.log(fc[0].powRaw); out[o + V_F + 1] = Math.log(fc[1].powRaw);
@@ -128,7 +130,8 @@ const flag = (k) => args.includes(k);
 const opt = (k, d) => { const a = args.find((x) => x.startsWith(k + "=")); return a ? +a.split("=")[1] : d; };
 const QUICK = flag("--quick"), FINAL_ONLY = flag("--final-only"), NOWRITE = flag("--no-write");
 const BUDGET_MIN = opt("--budget", QUICK ? 3 : 42);         // tuning wall-clock budget (minutes); the final evaluation comes after
-const N_TUNE = opt("--n", QUICK ? 40 : 60);
+const N_TUNE = opt("--n", QUICK ? 40 : 80);
+const N_CD = opt("--ncd", QUICK ? 60 : 150);
 const N_FINAL = opt("--nfinal", QUICK ? 120 : 1000);
 const NW = opt("--workers", Math.max(1, Math.min(4, os.cpus().length)));
 const SALT_TUNE = 0x5eed2019, SALT_FINAL = 0x0f1a1000;
@@ -436,7 +439,7 @@ function objective(store, idxs, N) {
 const P0 = JSON.parse(JSON.stringify(BASE));
 const X0 = {
   formOut: P0.form.out, formPC: 1, formVol: P0.form.vol, formAcc: P0.form.acc, formGrap: P0.form.grap,
-  jShared: P0.judge.sharedSd, jInd: P0.judge.indSd,
+  jShared: P0.judge.sharedSd, jInd: P0.judge.indSd, jScale: 1,
   chinAge: P0.chinAge, powAge: P0.powAge, powExp: P0.powExp != null ? P0.powExp : 1, chinExp: P0.chinExp != null ? P0.chinExp : 1,
   stko: P0.stko, gnpTko: P0.gnpTko, chinKO: P0.chinKO, sizeChin: P0.sizeChin, r1c5: P0.r1Caution5, dse: P0.drainSchedExp,
   // fixed-point fitted to train base rates
@@ -448,7 +451,7 @@ const X0 = {
 function buildOver(x) {
   return {
     form: { out: x.formOut, pow: P0.form.pow * x.formPC, chin: P0.form.chin * x.formPC, vol: x.formVol, acc: x.formAcc, grap: x.formGrap },
-    judge: { sharedSd: x.jShared, indSd: x.jInd },
+    judge: { sharedSd: x.jShared * x.jScale, indSd: x.jInd * x.jScale },
     chinAge: x.chinAge, powAge: x.powAge, powExp: x.powExp, chinExp: x.chinExp,
     kdInstant: probOf(oddsOf(P0.kdInstant) * x.koAll), kdRefStop: probOf(oddsOf(P0.kdRefStop) * x.koAll),
     stko: x.stko * x.koAll, gnpTko: x.gnpTko * x.koAll, subConvScale: x.subConv, chinKO: x.chinKO, sizeChin: x.sizeChin,
@@ -458,25 +461,15 @@ function buildOver(x) {
   };
 }
 // coordinate-descent specs, roughly in order of expected effect on the train objective
+// stage-2 coordinate descent: levers without a direct data target (everything else is fit to data in stage 1)
 const SPECS = [
-  { k: "formOut", kind: "mul", step: 1.5, lo: 0.02, hi: 0.6, sub: "all" },
-  { k: "jShared", kind: "mul", step: 1.35, lo: 0.2, hi: 3, sub: "all" },
-  { k: "formPC", kind: "mul", step: 1.3, lo: 0.2, hi: 2.2, sub: "all" },
-  { k: "powExp", kind: "add", step: 0.25, lo: 0.2, hi: 2.0, sub: "all" },
-  { k: "chinExp", kind: "add", step: 0.25, lo: 0.2, hi: 2.0, sub: "all" },
-  { k: "chinAge", kind: "add", step: 0.02, lo: 0, hi: 0.15, sub: "age" },
-  { k: "formVol", kind: "mul", step: 1.3, lo: 0.1, hi: 1.2, sub: "all" },
-  { k: "formAcc", kind: "mul", step: 1.4, lo: 0.02, hi: 0.5, sub: "all" },
-  { k: "stko", kind: "mul", step: 1.4, lo: 0.005, hi: 0.3, sub: "all" },
-  { k: "gnpTko", kind: "mul", step: 1.3, lo: 0.005, hi: 0.2, sub: "all" },
-  { k: "powAge", kind: "add", step: 0.02, lo: 0, hi: 0.12, sub: "age" },
-  { k: "r1c5", kind: "add", step: 0.1, lo: 0.4, hi: 1.2, sub: "r5" },
-  { k: "dse", kind: "add", step: 0.25, lo: -0.6, hi: 1.2, sub: "r5" },
-  { k: "chinKO", kind: "add", step: 0.03, lo: 0, hi: 0.2, sub: "ko" },
-  { k: "sizeChin", kind: "add", step: 0.05, lo: 0, hi: 0.3, sub: "size" },
-  { k: "formGrap", kind: "mul", step: 1.4, lo: 0.05, hi: 0.9, sub: "all" }
+  { k: "jScale", kind: "mul", step: 1.3, lo: 0.4, hi: 2.5, sub: "all" },      // total judge noise (the shared / individual split is fit to the unanimous share)
+  { k: "formVol", kind: "mul", step: 1.4, lo: 0.1, hi: 1.2, sub: "all" },     // shared fight volatility on knockdown odds
+  { k: "r1c5", kind: "add", step: 0.15, lo: 0.4, hi: 1.2, sub: "r5" },        // round-1 caution in 5-round fights
+  { k: "dse", kind: "add", step: 0.3, lo: -0.6, hi: 1.2, sub: "r5" },         // 5-round pacing (drain schedule exponent)
+  { k: "stko", kind: "mul", step: 1.5, lo: 0.005, hi: 0.3, sub: "all" },      // standing TKO hazard (koAll keeps the KO share)
+  { k: "gnpTko", kind: "mul", step: 1.4, lo: 0.005, hi: 0.2, sub: "all" }     // GNP TKO hazard
 ];
-const REANCHOR_EVERY = opt("--reanchor", 5);   // fixed-point re-anchor after this many coordinate-descent parameters
 function stepVal(s, x, dir) {
   const v = s.kind === "mul" ? (dir > 0 ? x * s.step : x / s.step) : x + dir * s.step;
   return clip(v, s.lo, s.hi);
@@ -536,6 +529,111 @@ function ll7Of(idxs, qf) {
   return { n, log_loss: ll / n };
 }
 
+// ------------------------------------------------------------------ stage-1 statistics
+// per-fight dispersion: how far the actual landed rate and accuracy fall from the engine's predictive mean, vs the engine's own spread
+function dispersion(store, idxs, N) {
+  let nz = 0, ez = 0, vz = 0, nq = 0, eq = 0, vq = 0;
+  for (const g of idxs) {
+    const f = F[g], mn = f.actual.minutes, o = g * NV; if (!(mn > 0)) continue;
+    for (let s = 0; s < 2; s++) {
+      const ac = f.actual[s ? "B" : "A"], L = ac.sig_lnd, A = ac.sig_att;
+      const za = Math.log((L + 1) / (mn + 0.5)), mu = store[o + V_Z1 + s] / N, v = Math.max(0, store[o + V_Z2 + s] / N - mu * mu);
+      ez += (za - mu) * (za - mu); vz += v; nz++;
+      const nqs = store[o + V_QN + s];
+      if (A >= 10 && nqs >= 5) {
+        const qa = Math.log((L + 0.5) / (A - L + 0.5)), mq = store[o + V_Q1 + s] / nqs, vv = Math.max(0, store[o + V_Q2 + s] / nqs - mq * mq);
+        eq += (qa - mq) * (qa - mq); vq += vv; nq++;
+      }
+    }
+  }
+  return { zRatio: ez / vz, zExcess: (ez - vz) / nz, qRatio: eq / vq, qExcess: (eq - vq) / nq, nz, nq };
+}
+// calibration slope on train, raw and corrected for Monte Carlo noise in the engine probabilities (errors in variables)
+function slopeInfo(store, idxs) {
+  const xs = [], ys = []; let nv = 0, sl = 0, sl2 = 0, n = 0;
+  for (const g of idxs) {
+    if (Y[g] === null) continue;
+    const o = g * NV, a = store[o] + store[o + 1] + store[o + 2], b = store[o + 4] + store[o + 5] + store[o + 6], p = (a + 0.5) / (a + b + 1);
+    xs.push(p); ys.push(Y[g]); const l = logit(p); sl += l; sl2 += l * l; n++; nv += 1 / ((a + b + 1) * p * (1 - p));
+  }
+  const raw = calSlope(xs, ys), vt = sl2 / n - (sl / n) ** 2, nm = nv / n;
+  return { raw, corr: vt > nm ? raw * vt / (vt - nm) : raw, vt, noise: nm };
+}
+// Poisson regression of actual knockdowns on the engine's predicted knockdowns (offset) and the power / chin factors
+function kdRegression(store, idxs) {
+  const names = ["intercept", "log power ratio", "log opp chin ratio", "opp years past chinAge0", "own years past chinAge0", "opp prior KO losses", "opp lbs up / 10"];
+  const rows = [];
+  for (const g of idxs) {
+    const f = F[g], mn = f.actual.minutes, o = g * NV; if (!(mn > 0) || !(store[o + V_MIN] > 0)) continue;
+    for (let i = 0; i < 2; i++) {
+      const j = 1 - i, y = f.actual[i ? "B" : "A"].kd, mu0 = (store[o + V_KD + i] + 0.02) / store[o + V_MIN] * mn;
+      rows.push({ y, off: Math.log(mu0), x: [1, store[o + V_F + i], store[o + V_F + 2 + j], store[o + V_F + 4 + j], store[o + V_F + 4 + i], Math.min(4, store[o + V_F + 6 + j]), store[o + V_F + 8 + j]] });
+    }
+  }
+  const d = 7; let w = new Array(d).fill(0), Hinv = null;
+  for (let it = 0; it < 40; it++) {
+    const gr = new Array(d).fill(0), H = Array.from({ length: d }, () => new Array(d).fill(0));
+    for (const r of rows) {
+      let z = r.off; for (let a = 0; a < d; a++) z += w[a] * r.x[a];
+      const mu = Math.exp(z);
+      for (let a = 0; a < d; a++) { gr[a] += (r.y - mu) * r.x[a]; for (let b = 0; b < d; b++) H[a][b] += mu * r.x[a] * r.x[b]; }
+    }
+    for (let a = 0; a < d; a++) H[a][a] += 1e-6;
+    const step = solve(H, gr); let mx = 0;
+    for (let a = 0; a < d; a++) { w[a] += step[a]; mx = Math.max(mx, Math.abs(step[a])); }
+    if (mx < 1e-9 || it === 39) { Hinv = invert(H); break; }
+  }
+  return { d: w, se: w.map((_, a) => Math.sqrt(Math.max(0, Hinv[a][a]))), names, n: rows.length };
+}
+function invert(A) {
+  const n = A.length, M = A.map((r, i) => r.concat(Array.from({ length: n }, (_, k) => (k === i ? 1 : 0))));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    [M[c], M[p]] = [M[p], M[c]];
+    const pv = M[c][c] || 1e-12; for (let k = 0; k < 2 * n; k++) M[c][k] /= pv;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; for (let k = 0; k < 2 * n; k++) M[r][k] -= f * M[c][k]; }
+  }
+  return M.map((r) => r.slice(n));
+}
+// share of 3-round finishes that happen in round 1 (sim, actual): the falling-hazard shape the power / chin form spread controls
+function shapeStats(o) {
+  const ss = sum(o.s.r3), as = sum(o.a.r3);
+  return { s1: o.s.r3[0] / ss, a1: o.a.r3[0] / as };
+}
+// Monte Carlo sd of the objective (binomial / multinomial noise of the per-fight estimates); sub = optional subset whose fights change
+function objNoise(store, idxs, N, sub) {
+  let nw = 0, n7 = 0, vw = 0, v7 = 0;
+  for (const g of idxs) {
+    const o = g * NV, inSub = !sub || sub.has(g);
+    if (Y[g] !== null) {
+      nw++;
+      if (inSub) { const a = store[o] + store[o + 1] + store[o + 2], b = store[o + 4] + store[o + 5] + store[o + 6], p = (a + 0.5) / (a + b + 1), nn = a + b + 1; vw += (Y[g] ? 1 / (p * p) : 1 / ((1 - p) * (1 - p))) * p * (1 - p) / nn; }
+    }
+    if (BIN[g] !== null) { n7++; if (inSub) { const q = engineQ7(store, g, N)[BIN[g]]; v7 += (1 - q) / (q * N); } }
+  }
+  return Math.sqrt(vw / (nw * nw) + 0.25 * v7 / (n7 * n7));
+}
+// stage-1 fixed-point update of every parameter with a data target (dampened by e)
+function fixedPoint(x, o, D, K, sh, e) {
+  const y = momentUpdate(x, o.s, o.a, e);
+  // judges: the shared / individual split follows the unanimous share; the total base variance stays at the builder's value
+  // (anchored to the logistic round-winner fit); jScale (stage 2) scales both
+  const V0 = Math.hypot(X0.jShared, X0.jInd), r = Math.hypot(y.jShared, y.jInd);
+  y.jShared *= V0 / r; y.jInd *= V0 / r;
+  // per-fight dispersion: widen (or narrow) the output and accuracy form spreads to the engine's actual prediction error
+  const accL = clip(o.a.acc, 0.2, 0.8), qEx = e * D.qExcess;
+  y.formAcc = Math.sqrt(clip(x.formAcc * x.formAcc + qEx, 0.03 * 0.03, 0.6 * 0.6));
+  y.formOut = Math.sqrt(clip(x.formOut * x.formOut + e * (D.zExcess - (1 - accL) * (1 - accL) * D.qExcess), 0.03 * 0.03, 0.6 * 0.6));
+  // finish-round shape: R1 share of 3-round finishes
+  y.formPC = clip(x.formPC * Math.pow(oddsOf(sh.a1) / oddsOf(sh.s1), e), 0.3, 2.5);
+  // knockdown regression, each coefficient shrunk by its precision
+  const dk = (k) => { const dd = K.d[k], se = K.se[k]; return e * dd * dd * dd / (dd * dd + se * se + 1e-12); };
+  y.powExp = clip(x.powExp + dk(1), 0.2, 2); y.chinExp = clip(x.chinExp + dk(2), 0.2, 2);
+  y.chinAge = clip(x.chinAge + dk(3), 0, 0.15); y.powAge = clip(x.powAge - dk(4), 0, 0.12);
+  y.chinKO = clip(Math.exp(Math.log(1 + x.chinKO) + dk(5)) - 1, 0, 0.2); y.sizeChin = clip(x.sizeChin + dk(6), 0, 0.3);
+  return y;
+}
+
 // ================================================================== run
 (async function main() {
   log(`engine ${E.VERSION}, params ${BASE.version}; backtest ${F.length} entries; train ${TRAIN.length}, test ${TEST.length} (val 2024-25 ${VAL.length}, 2026 ${Y2026.length}); ` +
@@ -590,9 +688,10 @@ function ll7Of(idxs, qf) {
 
     // ---------------- stage 2: coordinate descent (shrinking steps) on the train objective for levers without a direct data target;
     // a step is accepted only if it beats the Monte Carlo noise of the objective
-    noise = objNoise(cur, TRAIN, N_TUNE);
-    const THR = Math.max(0.0005, 1.0 * noise);
-    log(`objective Monte Carlo sd at N=${N_TUNE}: ${noise.toFixed(5)}; acceptance threshold ${THR.toFixed(5)}`);
+    cur = await evalFull(x, TRAIN, N_CD, SALT_TUNE); best = objective(cur, TRAIN, N_CD);
+    show(`stage 2 start (N=${N_CD})`, best);
+    noise = objNoise(cur, TRAIN, N_CD);
+    log(`objective Monte Carlo sd at N=${N_CD}: ${noise.toFixed(5)}; a step must beat 2 sd of the changed fights' noise`);
     const steps = {}; for (const s of SPECS) steps[s.k] = s.step;
     let stop = false;
     for (let pass = 0; pass < 3 && !stop; pass++) {
@@ -607,8 +706,9 @@ function ll7Of(idxs, qf) {
           const v = stepVal(s, x[s.k], dir);
           if (v === x[s.k]) continue;
           const xc = Object.assign({}, x, { [s.k]: v });
-          const st = new Float64Array(cur); putResults(st, await pool.run(buildOver(xc), subIdx, N_TUNE, SALT_TUNE)); tuneInfo.evals++;
-          const oc = objective(st, TRAIN, N_TUNE);
+          const st = new Float64Array(cur); putResults(st, await pool.run(buildOver(xc), subIdx, N_CD, SALT_TUNE)); tuneInfo.evals++;
+          const oc = objective(st, TRAIN, N_CD);
+          const THR = Math.max(0.0005, 2 * objNoise(cur, TRAIN, N_CD, s.sub === "all" ? null : SUBSET[s.sub]));
           const acc = oc.obj < best.obj - THR;
           log(`CD pass ${pass + 1} ${s.k} ${x[s.k].toPrecision(4)} -> ${v.toPrecision(4)} (${subIdx.length} fights): obj ${oc.obj.toFixed(5)} (best ${best.obj.toFixed(5)}) LLwin ${oc.llw.toFixed(5)} LL7 ${oc.ll7.toFixed(5)} pen ${oc.pen.toFixed(5)}${acc ? "  accepted" : ""}`);
           history.push({ t: +mins().toFixed(2), what: s.k, from: r4(x[s.k]), to: r4(v), obj: r4(oc.obj), llw: r4(oc.llw), ll7: r4(oc.ll7), pen: r4(oc.pen), accepted: acc });
@@ -621,9 +721,9 @@ function ll7Of(idxs, qf) {
     }
     // re-anchor the data-target scales once more if anything moved in stage 2
     if (history.some((h) => h.accepted)) {
-      const D = dispersion(cur, TRAIN, N_TUNE), K = kdRegression(cur, TRAIN), sh = shapeStats(best);
-      x = fixedPoint(x, best, D, K, sh, 0.6, true);
-      cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE); best = objective(cur, TRAIN, N_TUNE); tuneInfo.moment_updates++;
+      const D = dispersion(cur, TRAIN, N_CD), K = kdRegression(cur, TRAIN), sh = shapeStats(best);
+      x = fixedPoint(x, best, D, K, sh, 0.6);
+      cur = await evalFull(x, TRAIN, N_CD, SALT_TUNE); best = objective(cur, TRAIN, N_CD); tuneInfo.moment_updates++;
       show("final re-anchor", best);
       history.push({ t: +mins().toFixed(2), what: "fixed point", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
     }
@@ -772,6 +872,11 @@ function ll7Of(idxs, qf) {
     elo_baseline: { scale: +eloScale.toFixed(1), rule: "P(A) = 1 / (1 + 10^(-(Elo A - Elo B) / scale)), scale fit on train; Elo is the snapshot's pre-fight rating (data/derived/elo_report.json: K 44, boost 1.5 under 5 fights)" },
     naive_baseline: { rule: "the man with more prior UFC wins (raw results before the fight date); probability fit on train; ties 0.5", p: +naiveP.toFixed(4) },
     tuning: FINAL_ONLY ? null : { info: tuneInfo, minutes: +tuneMin.toFixed(1), x: Object.fromEntries(Object.entries(x).map(([k, v]) => [k, +v.toPrecision(4)])), start_x: X0, history,
+      fixed_point: fpLog, kd_regression_last: kdReg, objective_mc_sd: noise, n_sims_stage1: N_TUNE, n_sims_stage2: N_CD,
+      scheme: "stage 1 (fixed point on train data targets): volume scales by moment matching; KO share -> koAll (instant-KO and referee-stop odds, standing and GNP TKO hazards); SUB share -> subConvScale; " +
+        "5-round finish rate -> caution5; unanimous share -> judge shared/individual split (total base variance fixed); per-fight landed-rate and accuracy dispersion vs the engine's spread -> form.out, form.acc; " +
+        "R1 share of 3-round finishes -> power/chin form spread; Poisson regression of actual knockdowns on predicted -> powExp, chinExp, chinAge, powAge, chinKO, sizeChin (precision-shrunk). " +
+        "Stage 2: coordinate descent with shrinking steps on the remaining levers (judge noise scale, fight volatility, 5-round R1 caution and pacing, standing / GNP TKO hazards); a step is accepted only if it lowers the objective by more than 2 Monte Carlo sd.",
       objective: "winner log loss + 0.5 x 7-bin log loss + 0.02 x sum(((|dev| - tol) / tol)^2) for fin3 2 pts, fin5 4 pts, KO 2 pts, SUB 2 pts, UD share 4 pts, KD/100 10%" },
     tuned_params: tuned,
     before_tuning_test: beforeTest,
