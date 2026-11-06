@@ -53,7 +53,12 @@ first and records their hashes, so edits to `src/` during a run cannot mix versi
    takedown success -0.3%; head accuracy, takedown and clinch attempts are positive but n.s.
 6. **Where it does not help, switch it off:** knockdown power / chin (+0.7% deviance, held-out slope about 0),
    body accuracy (+1.1%) and submission attempts (+0.3%). Recommended set below.
-7. ENGINE_SUMMARY_TBD
+7. **In the simulator the effect is small but consistently in the right direction.** Engine v3 Monte Carlo,
+   same seeds: winner log loss -0.003 with the factors in every period and setup (2024-25 recommended set:
+   plain 0.6441 -> 0.6413; ML rates 0.6303 -> 0.6278, accuracy 66.9% -> 67.6%; pooled 2019-2025 with all families
+   -0.0033 [-0.0079, +0.0015]), none significant on its own; the 7-bin outcome improves pooled with all families
+   (-0.0090 [-0.0169, -0.0009]) and is flat with the recommended set on 2024-25. Volkanovski vs Gaethje: 61.5%
+   -> 65.1% Volkanovski in the plain engine, mostly through the grappling exchange.
 
 ## Data and protocol
 
@@ -267,7 +272,21 @@ targets x (F_off,X F_def,Y)^beta. 250 simulations per orientation for 2019-2023,
 loss on decisive fights (lower is better), deltas with 95% bootstrap intervals; 7-bin = A KO / SUB / DEC,
 draw, B DEC / SUB / KO.
 
-ENGINE_REC_TBD
+Recommended set (knockdowns, body accuracy and submissions off; ML betas from the recommendation table;
+`results.engine_backtest_recommended`; frozen engine copy, params 4.0.0-selfcal-pre2024; 2024-25, 300
+simulations per orientation; 854 decisive fights):
+
+| configuration | winner log loss | Brier | accuracy | 7-bin log loss | finish log loss |
+|---|---|---|---|---|---|
+| plain engine | 0.6441 | 0.2261 | 64.1% | 1.5823 | 0.6622 |
+| plain x factors | 0.6413 | 0.2248 | 65.1% | 1.5824 | 0.6656 |
+| ML rates | 0.6303 | 0.2197 | 66.9% | 1.5613 | 0.6598 |
+| ML x factors^beta | **0.6278** | **0.2184** | **67.6%** | 1.5666 | 0.6612 |
+| walk-forward Elo | 0.6769 | | | | |
+
+Deltas: factors - plain -0.0028 [-0.0114, +0.0058]; ML x f - ML -0.0026 [-0.0074, +0.0022]; ML x f - plain
+-0.0163 [-0.0248, -0.0078]. 7-bin: factors - plain +0.0000 [-0.0139, +0.0144], ML x f - ML +0.0053 [-0.0047,
++0.0153].
 
 First run (every family, ML betas clipped to [0, 1] with no on/off selection; `results.engine_backtest`; other
 work edited the engine's judging and calibration scales between its two periods, so only the paired deltas
@@ -278,12 +297,19 @@ within a period are meaningful):
 | 2019-2023 (1,955) | 0.6724 | 0.6691 | 0.6655 | 0.6655 | -0.0034 [-0.0091, +0.0024] | -0.0000 [-0.0033, +0.0033] | -0.0095 [-0.0195, +0.0002] | -0.0073 [-0.0140, -0.0002] |
 | 2024-2025 (854) | 0.6439 | 0.6407 | 0.6296 | 0.6276 | -0.0032 [-0.0110, +0.0047] | -0.0020 [-0.0058, +0.0017] | -0.0080 [-0.0225, +0.0051] | +0.0045 [-0.0027, +0.0121] |
 
-Walk-forward Elo: 0.6857 and 0.6769. The factors make the simulator more decisive (mean |logit P(A)| 0.37 ->
-0.40) and slightly better calibrated, by about 0.003 log loss in both periods without the ML layer; with the
-ML layer the winner is unchanged to slightly better and the 7-bin outcome is better in 2019-2023 and slightly
-worse in 2024-25. None of the winner deltas is significant: the per-fight stat gains above are large and
-clear, but how much they move the winner depends on the rest of the engine, and the ML layer already carries
-part of the schedule information.
+Pooled 2019-2025 paired deltas of that run (2,809 decisive fights; `pooled_2019_2025_paired`): factors - plain
+winner -0.0033 [-0.0079, +0.0015], 7-bin **-0.0090 [-0.0169, -0.0009]**; ML x f - ML winner -0.0006 [-0.0032,
++0.0020], 7-bin -0.0037 [-0.0091, +0.0017]. (2019-2023 is out of sample for winners and methods, which never
+entered the tuning, but it is the period the factor hyperparameters were chosen on for per-fight stats.)
+Walk-forward Elo: 0.6857 and 0.6769.
+
+Reading: the factors make the simulator more decisive (mean |logit P(A)| 0.36 -> 0.42) and it pays: winner log
+loss improves by 0.003 in every period, with and without the ML layer, and accuracy by about one point, but no
+single winner delta is significant. The method / outcome distribution improves with all families on (pooled
+7-bin -0.009, significant) and is flat with the recommended set on 2024-25, which suggests the knockdown
+factors help the method mix even though they do not help per-fight knockdown counts; worth an ablation in the
+v5 merge. The per-fight stat gains are large and clear; how far they move the winner depends on the rest of
+the engine, and the ML layer already carries part of the schedule information.
 
 ## Factor sizes
 
@@ -445,5 +471,16 @@ all of this without either change, so this table is the fallback, not the recomm
 - The factors depend on params3's k values (read at run time; params3 4.0.0-dev here) and on the backtest S
   (730-day half-life); regenerate both together.
 - The no-opp ablation for distance attempts is worse than the engine's raw rates, so part of the two-way gain
-  there replaces structure the engine's own formula already had; the "raw re-tuned" comparison (+2.5%) is the
+  there replaces structure the engine's own formula already had; the "raw re-tuned" comparison (-2.5%) is the
   conservative estimate of the opponent part.
+- Engine-level runs overlapped with other work editing `src/` (judging noise, calibration scales). The first
+  run's two periods ran on different engine versions (each delta is paired within one version); the
+  recommended-set run used a frozen copy (hashes in `results.engine_backtest_recommended`). Absolute log losses
+  differ slightly between the runs for that reason and because of the simulation counts (600 vs 300 per
+  orientation on 2024-25); compare deltas, not levels.
+- Factors are computed against the rates of the fighter's own division priors (roster) or the fight's prior
+  division (backtest). When a fighter moves division the engine's raw rate changes with the new priors while
+  the factor does not; a second-order effect.
+- The knockdown family is off on per-fight evidence, but the pooled 7-bin gain with every family on and its
+  absence with the recommended set hint that pow / chin factors may still help the method mix. Re-test them in
+  the v5 leave-one-out ablation together with the durability model, which also rescales chin and power.

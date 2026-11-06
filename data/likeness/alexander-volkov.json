@@ -240,7 +240,8 @@
     "skin_base": "mh-skin-middleage_caucasian_male tinted toward #d49b86",
     "eyebrows": "eyebrow001 (thinner) tinted #6e4a3a",
     "hair": "fight night: hair-ponytail01 (pulled back, closest to the braids) tinted #7a5e45; loose look would need a long straight proxy the embed does not have",
-    "beard": "light stubble, #7a5640"
+    "beard": "light stubble, #7a5640",
+    "tattoo_priority": "Most visible from the front: the RIGHT chest-shoulder tiger and right upper-arm half sleeve (parsed as a right-arm sleeve). From behind: the full back piece in black with red accents."
   },
   "morphs": {
     "macro/sexM": 1.0,

@@ -216,7 +216,8 @@
     "skin_base": "mh-skin-middleage_african_male tinted toward #aa684e",
     "eyebrows": "eyebrow010 tinted #1e1716",
     "hair": "hair-short04 tinted #1f1817 with a dense dark scalp tint on the tapered sides; hair-afro01 would be too tall",
-    "beard": "full dense beard about 5 cm, #141011, rounded-square bottom"
+    "beard": "full dense beard about 5 cm, #141011, rounded-square bottom",
+    "tattoo_priority": "Most visible: black tribal on the RIGHT deltoid (front and side views). The current keyword parser only produces a left-forearm mark from this sheet."
   },
   "morphs": {
     "macro/sexM": 1.0,

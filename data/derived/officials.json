@@ -318,21 +318,21 @@
     "note": "negative = better for log losses; positive = better for card log-likelihood",
     "judges_home_vs_engine_v3": {
      "winner_logloss": {
-      "mean": 0.006512,
-      "lo": -0.004172,
-      "hi": 0.016768,
+      "mean": 0.007466,
+      "lo": -0.003232,
+      "hi": 0.018143,
       "boot": "events (84)"
      },
      "class7_logloss": {
-      "mean": 0.005757,
-      "lo": -0.009685,
-      "hi": 0.02038,
+      "mean": 0.004066,
+      "lo": -0.017036,
+      "hi": 0.02246,
       "boot": "events (84)"
      },
      "round_outcome5_logloss": {
-      "mean": -0.014009,
-      "lo": -0.021526,
-      "hi": -0.007097,
+      "mean": -0.015647,
+      "lo": -0.026464,
+      "hi": -0.005486,
       "boot": "events (84)"
      }
     },
@@ -385,12 +385,12 @@
    "engine_v3_rule": {
     "n": 534,
     "n_nondraw": 531,
-    "winner_logloss": 0.332174,
-    "winner_brier": 0.106711,
+    "winner_logloss": 0.331221,
+    "winner_brier": 0.106473,
     "winner_acc": 0.851224,
-    "class7_logloss": 0.787236,
-    "split_logloss": 0.445585,
-    "pred_split_rate": 0.255352,
+    "class7_logloss": 0.788927,
+    "split_logloss": 0.444037,
+    "pred_split_rate": 0.251236,
     "obs_split_rate": 0.200375,
     "params": {
      "head": 0.179,
@@ -404,9 +404,9 @@
      "indSd": 1.079,
      "tasteSd": 0.0,
      "t108kd": -1.087,
-     "t108": 7.07
+     "t108": 8.555
     },
-    "pred_card108_rate": 0.093809,
+    "pred_card108_rate": 0.040548,
     "obs_card108_rate": 0.054931
    },
    "round_level": {
@@ -457,11 +457,11 @@
     },
     "engine_v3_rule": {
      "judge_rounds": 5064,
-     "outcome5_logloss": 0.473292,
-     "winner_logloss": 0.40159,
+     "outcome5_logloss": 0.474931,
+     "winner_logloss": 0.401588,
      "winner_acc": 0.828199,
-     "ten8_given_winner_logloss": 0.071602,
-     "pred_ten8_rate": 0.032603,
+     "ten8_given_winner_logloss": 0.073243,
+     "pred_ten8_rate": 0.013854,
      "obs_ten8_rate": 0.01955
     }
    },
@@ -54262,7 +54262,7 @@
  },
  "engine": {
   "version": "officials v8 (tools/officials.py)",
-  "judge_equation": "z = exp(n)*(exp(v+wV*t)*V + exp(p+wK*t)*K + exp(g+wG*t)*G + h*home + u) + Logistic(0,1); u ~ N(0, sigma_shared^2) per round, shared by the panel; A wins the round if z > 0; winner W gets 10-8 with P = sigmoid(c0 + c_now + c + thV*V_W + thK*K_W + thG*G_W + thU*u_W); 10-10 with P = p_10_10",
+  "judge_equation": "V = b_head*dHead + b_body*dBody + b_leg*dLeg (landed, A - B); K = b_kd*dKD; G = b_td*dTD + b_ctrl_min*dCtrlMin + b_sub*dSubAtt + b_rev*dRev; t = (year - 2017)/10; z = exp(n)*(exp(v+wV*t)*V + exp(p+wK*t)*K + exp(g+wG*t)*G + h*home + u) + Logistic(0,1); u ~ N(0, s^2) per round, shared by the panel, s = sigma_shared*exp(-kappa*|core0|), core0 = exp(wV*t)*V + exp(wK*t)*K + exp(wG*t)*G; A wins the round if z > 0; winner W gets 10-8 with P = sigmoid(c0 + c_year + c + thV*V_W + thK*K_W + thG*G_W + thU*u_W) (V_W, K_W, G_W, u_W = W's edge; c_year = ten_eight.c_2026 for new fights); 10-10 with P = p_10_10 (checked before the winner); home = [A from event country] - [B]",
   "beta": {
    "head_l": 0.317625,
    "body_l": 0.239759,
@@ -54279,6 +54279,7 @@
    "grappling": 0.003525
   },
   "t_now": 0.8,
+  "t_2026": 0.9,
   "sigma_shared": 2.081428,
   "home": {
    "usa_events": -0.158863,

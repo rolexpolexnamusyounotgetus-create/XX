@@ -465,6 +465,7 @@ summary { cursor: pointer; font: 600 13px/1.3 var(--font-ui); color: var(--ink-2
 .regimes .tile b { font: 700 21px/1 var(--font-ui); }
 .bt-grid { display: grid; gap: 22px; align-items: start; }
 .bt-col { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.bt-col > *, .stack-side > *, .xwrap { min-width: 0; }
 .proto { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: pr; }
 .proto li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; font-size: 13.5px; color: var(--ink-2); line-height: 1.45; counter-increment: pr; }
 .proto li::before { content: counter(pr); width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font: 700 11px/1 var(--font-ui); }

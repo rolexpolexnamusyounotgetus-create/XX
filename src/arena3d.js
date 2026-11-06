@@ -707,16 +707,18 @@
       }
     }
     function box(w, h, d) { return new T.BoxGeometry(w, h, d); }
-    var H2 = PI / 2, ico = new T.IcosahedronGeometry(1, 0);
+    // rounded limbs: open elliptical prisms (their ends hide inside the next part), a capped eight-sided torso
+    function limb(w, h, d, seg, cap) { var g = new T.CylinderGeometry(w / 2, w / 2, h, seg || 6, 1, !cap); g.scale(1, 1, d / w); return g; }
+    var H2 = PI / 2, ico = new T.IcosahedronGeometry(1, 0), head = new T.IcosahedronGeometry(1, 1);
     [-1, 1].forEach(function (sd) {
-      part(box(0.115, 0.46, 0.12), 2, 0, [sd * 0.1, 0.24, 0.44], [sd * 0.1, 0.24, 0.0], { noBottom: true });            // shin
-      part(box(0.14, 0.14, 0.45), 2, 0, [sd * 0.1, 0.53, 0.2], [sd * 0.1, 0.70, 0.0, H2], { noBottom: true });          // thigh
-      part(box(0.1, 0.31, 0.11), 0, sd < 0 ? 1 : 2, [sd * 0.23, 0.85, 0.0], [sd * 0.23, 1.25, 0.0], { noBottom: true });  // upper arm (sleeve)
-      part(box(0.08, 0.28, 0.08), 1, sd < 0 ? 1 : 2, [sd * 0.22, 0.64, 0.16, H2], [sd * 0.23, 0.95, 0.02], { noBottom: true });   // forearm and hand
+      part(limb(0.115, 0.46, 0.12), 2, 0, [sd * 0.1, 0.24, 0.44], [sd * 0.1, 0.24, 0.0], { noBottom: true });            // shin
+      part(limb(0.14, 0.45, 0.14).rotateX(H2), 2, 0, [sd * 0.1, 0.53, 0.2], [sd * 0.1, 0.70, 0.0, H2], { noBottom: true });   // thigh
+      part(limb(0.1, 0.31, 0.11), 0, sd < 0 ? 1 : 2, [sd * 0.23, 0.85, 0.0], [sd * 0.23, 1.25, 0.0], { noBottom: true });  // upper arm (sleeve)
+      part(limb(0.08, 0.28, 0.08, 6, true), 1, sd < 0 ? 1 : 2, [sd * 0.22, 0.64, 0.16, H2], [sd * 0.23, 0.95, 0.02], { noBottom: true });   // forearm and hand
     });
-    part(box(0.3, 0.53, 0.21), 0, 0, [0, 0.79, -0.02, -0.06], [0, 1.18, 0.0], { taper: 1.25, waist: 0.95, noBottom: true });  // torso, broad shoulders
-    part(box(0.07, 0.07, 0.07), 1, 0, [0, 1.07, -0.005, -0.04], [0, 1.465, 0.0], { noBottom: true });                       // neck
-    part(ico, 1, 0, [0, 1.155, 0.005, -0.04], [0, 1.55, 0.005], { scale: [0.088, 0.112, 0.1], hd: true });                             // head
+    part(limb(0.3, 0.53, 0.21, 8, true), 0, 0, [0, 0.79, -0.02, -0.06], [0, 1.18, 0.0], { taper: 1.25, waist: 0.95, noBottom: true });  // torso, broad shoulders
+    part(limb(0.07, 0.07, 0.07), 1, 0, [0, 1.07, -0.005, -0.04], [0, 1.465, 0.0], { noBottom: true });                       // neck
+    part(head, 1, 0, [0, 1.155, 0.005, -0.04], [0, 1.55, 0.005], { scale: [0.088, 0.112, 0.1], hd: true });                            // head
     part(ico, 3, 0, [0, 1.19, -0.012, -0.04], [0, 1.585, -0.01], { scale: [0.094, 0.085, 0.104], hd: true, keep: function (x, y, z) { return y > -0.2 || z < -0.3; } });   // hair or cap
     var g = new T.InstancedBufferGeometry();
     g.setIndex(IDX);
