@@ -2,10 +2,10 @@
 
 *As of 2026-11-06. He/him. "Gamebred". Orthodox, 5 ft 11 in, 74-inch reach, born 1984-11-12 (age 41). UFC record 12-10 in fighters.json (6 KO/TKO, 1 submission, 5 decisions).*
 
-**Research note:** web search was unavailable (budget used up; Wikipedia and ufc.com blocked). UFC facts come from the UFC Stats snapshot of 2026-10-31; later events are unverified coverage.
+**Research note:** web search was unavailable (budget used up; Wikipedia and ufc.com blocked). UFC facts come from the UFC Stats snapshot of 2026-10-31. Current status was checked against Sherdog's fight record and news list, fetched 2026-11-06 (cached in data/raw/sherdog_cache).
 
 ## Current status
-**Retired from MMA.** He announced his retirement in the cage after losing a unanimous decision to Gilbert Burns at UFC 287 in Miami on **Apr 8, 2023** (27-30, 27-30, 28-29). On **Jul 6, 2024** he lost a majority decision to Nate Diaz in a boxing match. He runs the Gamebred bare-knuckle MMA promotion. No MMA bout appears in the UFC data through Oct 31, 2026. I did not verify any comeback talk or 2025-26 bookings. He has no title, no ranking and no next fight.
+**Retired from MMA.** He announced his retirement in the cage after losing a unanimous decision to Gilbert Burns at UFC 287 in Miami on **Apr 8, 2023** (27-30, 27-30, 28-29). On **Jul 6, 2024** he lost a majority decision to Nate Diaz in a boxing match. He founded the Gamebred bare-knuckle MMA promotion (widely reported; not re-opened). Sherdog's record, fetched Nov 6, 2026, shows no MMA bout since UFC 287 (pro record 35-17). On **Nov 4, 2026** Sherdog reported that he is scheduled to face **Khamzat Chimaev in a submission-only grappling match on Dec 4, 2026** at The Agenda in Dubai. That is not an MMA fight. He has no title, no ranking and no MMA bout booked.
 
 ## Recent UFC fights
 - **L Gilbert Burns, UFC 287 (Apr 2023), decision.** Burns took him down 4 times in 6 attempts and controlled him for 5:41. His best work was leg kicks (17 of 19).
@@ -43,5 +43,7 @@ His Elo is 1606 (32nd of 149 welterweights), frozen at his 2023 form. The career
 - http://ufcstats.com/fight-details/ac0a63ad13897564 (UFC 244)
 - http://ufcstats.com/fight-details/70af72a72b31fe4d (UFC 239)
 - http://ufcstats.com/fight-details/c6dd17ab89437805 (vs Till)
+- https://www.sherdog.com/fighter/Jorge-Masvidal-7688 (pro record; fetched 2026-11-06, cached at data/raw/sherdog_cache/fighter/Jorge-Masvidal-7688.html)
+- https://www.sherdog.com/news/news/Khamzat-Chimaev-vs-Jorge-Masvidal-grappling-match-reportedly-set-203461 (Nov 4, 2026; headline and teaser only)
 - https://en.wikipedia.org/wiki/Jorge_Masvidal (reference for the retirement, the boxing match and Gamebred; not reachable this session)
 - data/derived/fighters.json; data/raw/ufc_fight_stats.csv (UFC Stats snapshot 2026-10-31)

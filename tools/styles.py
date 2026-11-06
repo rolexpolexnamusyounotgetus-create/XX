@@ -620,6 +620,7 @@ class WinData:
 
     def __init__(self, rows, mu, sd, memb=None):
         keep = [i for i, r in enumerate(rows) if r["winner"] in ("A", "B")]
+        self.keep = np.array(keep)
         self.rows = [rows[i] for i in keep]
         self.y = np.array([1.0 if r["winner"] == "A" else 0.0 for r in self.rows])
         self.yr = np.array([int(r["date"][:4]) for r in self.rows])
@@ -900,4 +901,123 @@ def memberships(rows, mu, sd, arch):
     for t in "AB":
         Z = np.array([[(r[t][d] - mu[d]) / sd[d] for d in STYLE_DIMS] for r in rows]) * Wt
         out.append(soft_membership(Z, cent, arch["temp"]))
+    return out
+
+
+# --------------------------------------------------------------------------------------------- transmission
+# judging weights per landed / event from the EM round-winner fit (docs/BACKLOG.md, baserates.json)
+JW = {"h": 0.179, "b": 0.133, "l": 0.105, "kd": 2.42, "td": 0.286, "ctrl_min": 0.46, "sub": 0.85}
+
+
+def predict_rates(D, terms_extra, n_rows):
+    """Fit every rate model on 2019-2023 sides with its base terms plus `terms_extra[model]` and return the
+    per-minute expected stats of each side (X) as arrays indexed by D row; used to build an expected
+    scorecard (a minimal mechanistic stand-in for the engine)."""
+    specs = rate_specs(D)
+    tune = D.tune.to_numpy()
+    eta = {}
+    for name, m in specs.items():
+        y = D[m["y"]].to_numpy(float)
+        n = D[m["n"]].to_numpy(float) if m.get("n") else None
+        off = m["off"](D) if callable(m["off"]) else (np.zeros(len(D)) if m["off"] is None else m["off"])
+        off = np.asarray(off, float)
+        ok = np.isfinite(off) & np.isfinite(y)
+        if n is not None:
+            ok &= n > 0
+        tr = tune & ok
+        terms = list(m["base"]) + list(terms_extra.get(name, []))
+        cols = [np.ones(len(D))]
+        for c in terms:
+            x = _col(D, c)
+            cols.append(x / (x[tr].std() or 1.0))
+        X = np.column_stack(cols)
+        b, _, _ = fit_glm(X[tr], y[tr], m["fam"], off[tr], None if n is None else n[tr])
+        eta[name] = X @ b
+    return eta
+
+
+def expected_scorecard(D, eta, rows):
+    """per-minute expected impact of each side from the predicted rates (no actual fight stats used)"""
+    fi = D.fi.to_numpy()
+    side = D.side.to_numpy()
+    acc_c = np.array([rows[i]["prior"]["acc_c"] for i in fi])
+    acc_g = np.array([rows[i]["prior"]["acc_g"] for i in fi])
+    acc_h = np.array([rows[i]["prior"]["acc_h"] for i in fi])
+    acc_b = np.array([rows[i]["prior"]["acc_b"] for i in fi])
+    acc_l = np.array([rows[i]["prior"]["acc_l"] for i in fi])
+    ctrl = np.exp(eta["ctrl"])                                  # control seconds per minute
+    # opponent's control: the other row of the same fight
+    key = {(f, s_): j for j, (f, s_) in enumerate(zip(fi, side))}
+    opp = np.array([key[(f, "B" if s_ == "A" else "A")] for f, s_ in zip(fi, side)])
+    st_frac = np.clip(1.0 - (ctrl + ctrl[opp]) / 60.0, 0.2, 1.0)
+    d_att = np.exp(eta["dist_att"]) * st_frac
+    acc = sigmoid(eta["dist_acc"] + logit(D.p_acc_d.to_numpy()))
+    c_lnd = np.exp(eta["clinch_att"]) * acc_c
+    g_lnd = np.exp(eta["gnp_att"]) * (ctrl / 60.0 + 0.025) * acc_g
+    sig = d_att * acc + c_lnd + g_lnd
+    ls, bs = sigmoid(eta["leg_share"]), sigmoid(eta["body_share"])
+    hs = np.clip(1.0 - ls - bs, 0.2, 1.0)
+    w = np.column_stack([hs * acc_h, bs * acc_b, ls * acc_l])
+    w = w / w.sum(1, keepdims=True)
+    h, b, l = sig * w[:, 0], sig * w[:, 1], sig * w[:, 2]
+    kd = np.exp(eta["kd"] - np.log(np.maximum(D.o_h_lnd.to_numpy(), 0.5))) * h      # strip the actual-exposure offset
+    td = np.exp(eta["td_att"]) * st_frac * sigmoid(eta["td_acc"] + logit(D.p_td_acc.to_numpy()))
+    sub = np.exp(eta["sub_att"])
+    imp = (JW["h"] * h + JW["b"] * b + JW["l"] * l + JW["kd"] * kd + JW["td"] * td
+           + JW["ctrl_min"] * ctrl / 60.0 + JW["sub"] * sub)
+    return imp, {"h": h, "b": b, "l": l, "kd": kd, "td": td, "ctrl": ctrl, "sub": sub, "st_frac": st_frac}
+
+
+def transmission_test(D, rows, W, Xb, pen_b, variants, n_boot=2000, seed=SEED):
+    """Does a set of rate modifiers, applied mechanistically, improve held-out winner prediction?
+    Each variant's expected-scorecard differential (A minus B) is added to the winner baseline."""
+    fi = D.fi.to_numpy()
+    side = D.side.to_numpy()
+    idx = {(f, s_): j for j, (f, s_) in enumerate(zip(fi, side))}
+    y, yr, tune, test = W.y, W.yr, W.tune, W.test
+    rng = np.random.default_rng(seed)
+    nT = int(test.sum())
+    boots = rng.integers(0, nT, (n_boot, nT))
+    feats, detail = {}, {}
+    for vname, extra in variants.items():
+        eta = predict_rates(D, extra, len(rows))
+        imp, parts = expected_scorecard(D, eta, rows)
+        dA = np.array([imp[idx[(i, "A")]] - imp[idx[(i, "B")]] for i in W.keep]) * 15.0
+        feats[vname] = dA
+        detail[vname] = parts
+    out = {"variants": {}, "note": "impact = expected judging impact per 15 minutes (EM round-winner weights) "
+                                   "from predicted rates only; added to the winner baseline as one feature"}
+    ref = None
+    for vname, f in feats.items():
+        fs = f / f[tune].std()
+        # alone with Elo, and on top of the full baseline
+        res = {}
+        for label, Xr, pr in (("elo_plus_impact", Xb[:, :1], np.array([1.0])), ("baseline_plus_impact", Xb, pen_b)):
+            X = np.column_stack([Xr, fs])
+            b, cov = fit_logit(X[tune], y[tune], 1.0, pen=np.append(pr, 1.0))
+            p = sigmoid(X[test] @ b)
+            res[label] = {"test": metrics(p, y[test]), "coef": float(b[-1]),
+                          "z": float(b[-1] / math.sqrt(cov[-1, -1])), "_ll": logloss_vec(p, y[test]),
+                          "_p": p}
+        out["variants"][vname] = res
+    base_name = list(feats)[0]
+    for vname in list(feats)[1:]:
+        for label in ("elo_plus_impact", "baseline_plus_impact"):
+            d = out["variants"][vname][label]["_ll"] - out["variants"][base_name][label]["_ll"]
+            bd = d[boots].mean(1)
+            dp = np.abs(out["variants"][vname][label]["_p"] - out["variants"][base_name][label]["_p"])
+            out["variants"][vname][label]["vs_" + base_name] = {
+                "test_dll": float(d.mean()), "ci": [float(np.percentile(bd, 2.5)), float(np.percentile(bd, 97.5))],
+                "median_abs_dp": float(np.median(dp)), "p90_abs_dp": float(np.percentile(dp, 90)),
+                "max_abs_dp": float(dp.max())}
+    for v in out["variants"].values():
+        for lab in v.values():
+            lab.pop("_ll", None)
+            lab.pop("_p", None)
+    # how much the modifiers move the expected stats (median absolute relative change, test fights)
+    shifts = {}
+    for vname in list(feats)[1:]:
+        shifts[vname] = {k: float(np.median(np.abs(detail[vname][k] / np.maximum(detail[base_name][k], 1e-9) - 1)))
+                         for k in ("h", "b", "l", "kd", "td", "ctrl")}
+    out["median_abs_rel_shift"] = shifts
     return out
