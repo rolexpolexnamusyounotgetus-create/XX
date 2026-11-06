@@ -880,6 +880,868 @@ def build(args):
     return obj
 
 
+
+# ------------------------------------------------------------------ evaluation (walk-forward)
+TEST_FROM = dt.date(2024, 1, 1)
+CV_YEARS = [2019, 2020, 2021, 2022, 2023]
+LN10_400 = math.log(10) / 400.0
+
+
+def ll(p, y):
+    import numpy as np
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+
+
+def scores(p, y):
+    import numpy as np
+    return {"n": int(len(y)), "log_loss": ll(p, y), "brier": float(np.mean((p - y) ** 2)),
+            "accuracy": float(np.mean((p > 0.5) == (y > 0.5)))}
+
+
+def ufc_walk(fights, people):
+    """Walk-forward UFC-only side features for every bout (before the bout), from ufcstats."""
+    import numpy as np
+    import build_db as B
+    log = {}
+    B.build_vectors(fights, log)
+    KI = B.KI
+    sig = [KI["d_lnd"], KI["c_lnd"], KI["g_lnd"]]
+    siga = [KI["d_att"], KI["c_att"], KI["g_att"]]
+    osig = [KI["od_lnd"], KI["oc_lnd"], KI["og_lnd"]]
+    osiga = [KI["od_att"], KI["oc_att"], KI["og_att"]]
+    # league rates from fights before 2019 (no test-era information)
+    tot = np.zeros(B.NK)
+    for f in fights:
+        if f.stats and f.date < dt.date(2019, 1, 1) and f.date >= dt.date(2010, 1, 1):
+            tot += f.stats["v"][0] + f.stats["v"][1]
+    m = tot[KI["min"]]
+    L = {"slpm": tot[sig].sum() / m, "acc": tot[sig].sum() / tot[siga].sum(),
+         "td": tot[KI["td_lnd"]] / m, "tdacc": tot[KI["td_lnd"]] / tot[KI["td_att"]],
+         "sub": tot[KI["sub_att"]] / m, "kd": tot[KI["kd"]] / m, "ctrl": tot[KI["ctrl"]] / m}
+    lam = math.log(2) / 730.0
+    st = {}
+    out = {}
+    M0, A0, T0 = 25.0, 100.0, 6.0
+    for f in fights:
+        a, b = f.persons
+        if a == b:
+            continue
+        sides = []
+        for s, p in ((0, a), (1, b)):
+            S = st.get(p)
+            if S is None:
+                S = st[p] = {"n": 0, "w": 0, "l": 0, "ko_w": 0, "sub_w": 0, "ko_l": 0, "sub_l": 0, "last": None,
+                             "S": np.zeros(B.NK), "t": f.day, "first": f.day}
+            if f.day > S["t"]:
+                S["S"] *= math.exp(-lam * (f.day - S["t"]))
+                S["t"] = f.day
+            v = S["S"]
+            mn = v[KI["min"]]
+            T = people[p].get("tott") or {}
+            dob = T.get("dob")
+            sides.append({
+                "n": S["n"], "w": S["w"], "l": S["l"], "ko_w": S["ko_w"], "sub_w": S["sub_w"],
+                "ko_l": S["ko_l"], "sub_l": S["sub_l"],
+                "layoff": (f.day - S["last"]) if S["last"] else None,
+                "age": (f.date - dob).days / 365.25 if dob else None,
+                "reach": T.get("reach_in"), "height": T.get("height_in"),
+                "slpm": (v[sig].sum() + M0 * L["slpm"]) / (mn + M0),
+                "sapm": (v[osig].sum() + M0 * L["slpm"]) / (mn + M0),
+                "acc": (v[sig].sum() + A0 * L["acc"]) / (v[siga].sum() + A0),
+                "sdef": 1 - (v[osig].sum() + A0 * L["acc"]) / (v[osiga].sum() + A0),
+                "td15": 15 * (v[KI["td_lnd"]] + M0 * L["td"]) / (mn + M0),
+                "tdacc": (v[KI["td_lnd"]] + T0 * L["tdacc"]) / (v[KI["td_att"]] + T0),
+                "tddef": 1 - (v[KI["otd_lnd"]] + T0 * L["tdacc"]) / (v[KI["otd_att"]] + T0),
+                "sub15": 15 * (v[KI["sub_att"]] + M0 * L["sub"]) / (mn + M0),
+                "kd15": 15 * (v[KI["kd"]] + M0 * L["kd"]) / (mn + M0),
+                "okd15": 15 * (v[KI["okd"]] + M0 * L["kd"]) / (mn + M0),
+                "ctrl": (v[KI["ctrl"]] + M0 * L["ctrl"]) / (mn + M0) / 60.0,
+                "octrl": (v[KI["octrl"]] + M0 * L["ctrl"]) / (mn + M0) / 60.0,
+            })
+        out[f.fid] = sides
+        for s, p in ((0, a), (1, b)):
+            S = st[p]
+            if f.stats:
+                S["S"] += f.stats["v"][s]
+            S["n"] += 1
+            S["last"] = f.day
+            won = f.winner == ("A" if s == 0 else "B")
+            lost = f.winner == ("B" if s == 0 else "A")
+            if won:
+                S["w"] += 1
+                if f.cat == "ko":
+                    S["ko_w"] += 1
+                elif f.cat == "sub":
+                    S["sub_w"] += 1
+            elif lost:
+                S["l"] += 1
+                if f.cat == "ko":
+                    S["ko_l"] += 1
+                elif f.cat == "sub":
+                    S["sub_l"] += 1
+    return out
+
+
+class EloRunner:
+    """Fast walk-forward Elo over every UFC bout, with optional per-person debut seeds."""
+
+    def __init__(self, fights, K, boost, boost_n=5):
+        self.K, self.boost, self.boost_n = K, boost, boost_n
+        idx = {}
+        self.seq = []
+        for f in fights:
+            a, b = f.persons
+            if a == b:
+                continue
+            ia = idx.setdefault(a, len(idx))
+            ib = idx.setdefault(b, len(idx))
+            sa = {"A": 1.0, "B": 0.0, "D": 0.5}.get(f.winner)
+            self.seq.append((ia, ib, sa, f.fid))
+        self.idx = idx
+        self.np = len(idx)
+
+    def run(self, seed=None, boost=None):
+        import numpy as np
+        R = np.full(self.np, 1500.0) if seed is None else seed.astype(float).copy()
+        N = np.zeros(self.np, dtype=int)
+        K = self.K
+        bo = self.boost if boost is None else boost
+        bn = self.boost_n
+        pre = {}
+        for ia, ib, sa, fid in self.seq:
+            ra, rb = R[ia], R[ib]
+            ea = 1.0 / (1.0 + 10.0 ** ((rb - ra) / 400.0))
+            pre[fid] = (ra, rb, ea)
+            if sa is not None:
+                ka = K * (bo if N[ia] < bn else 1.0)
+                kb = K * (bo if N[ib] < bn else 1.0)
+                R[ia] = ra + ka * (sa - ea)
+                R[ib] = rb - kb * (sa - ea)
+            N[ia] += 1
+            N[ib] += 1
+        return pre
+
+
+def side_pre(snap, n_prior):
+    """Per-side pre-UFC feature vector (dict) from a preufc snapshot; None when the fighter is unresolved."""
+    if snap is None:
+        return None
+    n, w, l = snap["n"], snap["w"], snap["l"]
+    fin_w = snap["ko_w"] + snap["sub_w"]
+    fin_l = snap["ko_l"] + snap["sub_l"]
+    return {
+        "pre_wpct": math.log((w + 1.5) / (l + 1.5)),
+        "pre_logn": math.log1p(n),
+        "pre_fin": (fin_w + 0.5) / (n + 2.0),
+        "pre_ko": (snap["ko_w"] + 0.3) / (n + 2.0),
+        "pre_sub": (snap["sub_w"] + 0.2) / (n + 2.0),
+        "pre_finl": (fin_l + 0.3) / (n + 2.0),
+        "pre_kol": (snap["ko_l"] + 0.2) / (n + 2.0),
+        "pre_subl": (snap["sub_l"] + 0.1) / (n + 2.0),
+        "pre_streak": math.log1p(snap["streak"]),
+        "pre_l5": (snap["l5_w"] + 1.0) / (snap["l5_n"] + 2.0),
+        "pre_yrs": min(snap["years_active"] or 0.0, 15.0),
+        "pre_agedeb": snap["age_pro_debut"] if snap["age_pro_debut"] is not None else float("nan"),
+        "pre_feed": snap["promo_feed"],
+        "pre_feedmax": snap["promo_feed_max"],
+        "pre_grad": (snap["promo_grad"] - 0.5) if snap["promo_grad"] is not None else 0.0,
+        "pre_oppw": snap["opp_wpct"] if snap["opp_wpct"] is not None else float("nan"),
+        "pre_oppufc": math.log1p(snap["opp_ufc_w"]),
+        "pre_netelo": ((snap["net_elo"] or 1500.0) - 1500.0) / 100.0,
+        "pre_dwcs": 1.0 if snap["dwcs_w"] > 0 else 0.0,
+        "pre_tuf": 1.0 if snap["exh_n"] > 0 else 0.0,
+        "pre_layoff": math.log1p(snap["layoff_days"]) if snap["layoff_days"] is not None else float("nan"),
+    }
+
+
+PRE_KEYS = ["pre_wpct", "pre_logn", "pre_fin", "pre_ko", "pre_sub", "pre_finl", "pre_kol", "pre_subl",
+            "pre_streak", "pre_l5", "pre_yrs", "pre_agedeb", "pre_feed", "pre_feedmax", "pre_grad", "pre_oppw",
+            "pre_oppufc", "pre_netelo", "pre_dwcs", "pre_tuf"]
+PRE_CORE = ["pre_wpct", "pre_logn", "pre_fin", "pre_finl", "pre_streak", "pre_feed", "pre_grad", "pre_oppufc",
+            "pre_netelo", "pre_dwcs", "pre_agedeb"]
+BASE_KEYS = ["elo", "age", "reach", "height", "logn", "uwin", "ufin", "ufinl", "layoff", "slpm", "sapm", "acc",
+             "sdef", "td15", "tdacc", "tddef", "sub15", "kd15", "okd15", "ctrl", "octrl"]
+
+
+def base_side(u, elo):
+    n = u["n"]
+    return {"elo": elo / 100.0, "age": u["age"] if u["age"] is not None else float("nan"),
+            "reach": u["reach"] if u["reach"] is not None else float("nan"),
+            "height": u["height"] if u["height"] is not None else float("nan"),
+            "logn": math.log1p(n), "uwin": math.log((u["w"] + 1.5) / (u["l"] + 1.5)),
+            "ufin": (u["ko_w"] + u["sub_w"] + 0.5) / (n + 2.0),
+            "ufinl": (u["ko_l"] + u["sub_l"] + 0.3) / (n + 2.0),
+            "layoff": math.log1p(u["layoff"]) if u["layoff"] is not None else float("nan"),
+            "slpm": u["slpm"], "sapm": u["sapm"], "acc": u["acc"], "sdef": u["sdef"], "td15": u["td15"],
+            "tdacc": u["tdacc"], "tddef": u["tddef"], "sub15": u["sub15"], "kd15": u["kd15"],
+            "okd15": u["okd15"], "ctrl": u["ctrl"], "octrl": u["octrl"]}
+
+
+def build_frame(fights, people, ufc, elo_pre, snaps, from_date):
+    """One row per decisive bout from from_date on: per-side base + pre-UFC features, outcome, flags."""
+    import numpy as np
+    rows = []
+    for f in fights:
+        a, b = f.persons
+        if a == b or f.date < from_date or f.fid not in ufc:
+            continue
+        if a.startswith(("amb:", "name:")) or b.startswith(("amb:", "name:")):
+            continue
+        ua, ub = ufc[f.fid]
+        ra, rb, ea = elo_pre[f.fid]
+        r = {"fid": f.fid, "date": f.date, "year": f.date.year, "winner": f.winner, "cat": f.cat,
+             "method": f.method, "division": f.division, "rounds": f.sched, "elo_p": ea,
+             "nA": ua["n"], "nB": ub["n"], "slugA": people[a]["slug"], "slugB": people[b]["slug"]}
+        for tag, u, el, p in (("A", ua, ra, a), ("B", ub, rb, b)):
+            bs = base_side(u, el)
+            for k, v in bs.items():
+                r[k + "_" + tag] = v
+            sp = side_pre(snaps.get((people[p]["slug"], f.fid)), u["n"])
+            r["res_" + tag] = 0.0 if sp is None else 1.0
+            for k in PRE_KEYS + ["pre_layoff"]:
+                r[k + "_" + tag] = (sp or {}).get(k, float("nan"))
+            r["uko_" + tag] = (u["ko_w"] + 0.3) / (u["n"] + 2.0)
+            r["usub_" + tag] = (u["sub_w"] + 0.2) / (u["n"] + 2.0)
+            r["ukol_" + tag] = (u["ko_l"] + 0.2) / (u["n"] + 2.0)
+            r["usubl_" + tag] = (u["sub_l"] + 0.1) / (u["n"] + 2.0)
+        rows.append(r)
+    import pandas as pd
+    df = pd.DataFrame(rows)
+    df["y"] = (df["winner"] == "A").astype(float)
+    df["decisive"] = df["winner"].isin(["A", "B"])
+    df["newc"] = (df[["nA", "nB"]].min(axis=1) <= 3)
+    return df
+
+
+class DiffModel:
+    """Symmetric logistic model on side differences: p(A) = sigma(w . (g(xA) - g(xB))), no intercept.
+
+    Side features are imputed with the training mean (missing -> 0 contribution), pre-UFC features are
+    multiplied by exp(-n / tau) so they fade with UFC experience, then scaled (not centred)."""
+
+    def __init__(self, base, pre, C=1.0, tau=None, add_missing=True):
+        self.base, self.pre, self.C, self.tau, self.add_missing = list(base), list(pre), C, tau, add_missing
+
+    def _side(self, df, tag, fit=False):
+        import numpy as np
+        cols = []
+        X = []
+        for k in self.base:
+            v = df[k + "_" + tag].to_numpy(float)
+            X.append(v)
+            cols.append(k)
+        w = np.ones(len(df))
+        if self.tau:
+            w = np.exp(-df["n" + tag].to_numpy(float) / self.tau)
+        for k in self.pre:
+            v = df[k + "_" + tag].to_numpy(float)
+            X.append(v)
+            cols.append(k)
+        X = np.vstack(X).T if X else np.zeros((len(df), 0))
+        return X, w, cols
+
+    def design(self, df, fit=False):
+        import numpy as np
+        XA, wA, cols = self._side(df, "A")
+        XB, wB, _ = self._side(df, "B")
+        if fit:
+            both = np.vstack([XA, XB])
+            self.mu = np.nanmean(both, axis=0)
+            self.mu = np.where(np.isnan(self.mu), 0.0, self.mu)
+        XA = np.where(np.isnan(XA), self.mu, XA)
+        XB = np.where(np.isnan(XB), self.mu, XB)
+        nb = len(self.base)
+        # pre-UFC block: centre at the mean, fade with experience
+        XA[:, nb:] = (XA[:, nb:] - self.mu[nb:]) * wA[:, None]
+        XB[:, nb:] = (XB[:, nb:] - self.mu[nb:]) * wB[:, None]
+        D = XA - XB
+        if self.pre and self.add_missing:
+            mA = (1 - df["res_A"].to_numpy(float)) * wA
+            mB = (1 - df["res_B"].to_numpy(float)) * wB
+            D = np.hstack([D, (mA - mB)[:, None]])
+        if fit:
+            self.sd = D.std(axis=0)
+            self.sd = np.where(self.sd < 1e-9, 1.0, self.sd)
+        return D / self.sd
+
+    def fit(self, df):
+        from sklearn.linear_model import LogisticRegression
+        D = self.design(df, fit=True)
+        self.m = LogisticRegression(C=self.C, fit_intercept=False, max_iter=2000)
+        self.m.fit(D, df["y"].to_numpy())
+        return self
+
+    def predict(self, df):
+        return self.m.predict_proba(self.design(df))[:, 1]
+
+    def coefs(self):
+        names = self.base + self.pre + (["pre_missing"] if self.pre and self.add_missing else [])
+        return {k: round(float(c), 4) for k, c in zip(names, self.m.coef_[0])}
+
+
+class GBMDiff:
+    """LightGBM on side features with swap augmentation; prediction averaged over both corner orders."""
+
+    def __init__(self, keys, params=None):
+        self.keys = list(keys)
+        self.params = params or {}
+
+    def _X(self, df, swap=False):
+        import numpy as np
+        a, b = ("B", "A") if swap else ("A", "B")
+        cols = []
+        for k in self.keys:
+            cols.append(df[k + "_" + a].to_numpy(float))
+            cols.append(df[k + "_" + b].to_numpy(float))
+            cols.append(df[k + "_" + a].to_numpy(float) - df[k + "_" + b].to_numpy(float))
+        cols.append(df["n" + a].to_numpy(float))
+        cols.append(df["n" + b].to_numpy(float))
+        return np.vstack(cols).T
+
+    def fit(self, df):
+        import numpy as np
+        import lightgbm as lgb
+        X = np.vstack([self._X(df), self._X(df, swap=True)])
+        y = np.concatenate([df["y"].to_numpy(), 1 - df["y"].to_numpy()])
+        p = dict(n_estimators=300, learning_rate=0.02, num_leaves=7, min_child_samples=40, subsample=0.8,
+                 subsample_freq=1, colsample_bytree=0.7, reg_lambda=5.0, verbose=-1)
+        p.update(self.params)
+        self.m = lgb.LGBMClassifier(**p)
+        self.m.fit(X, y)
+        return self
+
+    def predict(self, df):
+        p1 = self.m.predict_proba(self._X(df))[:, 1]
+        p2 = self.m.predict_proba(self._X(df, swap=True))[:, 1]
+        return 0.5 * (p1 + 1 - p2)
+
+
+def seed_design(people, deb, keys, mu, sd):
+    """Standardized debut pre-UFC features per person (zeros when unresolved), plus a missing flag."""
+    import numpy as np
+    Z = {}
+    for p, sp in deb.items():
+        if sp is None:
+            Z[p] = np.concatenate([np.zeros(len(keys)), [1.0]])
+        else:
+            v = np.array([sp[k] for k in keys], float)
+            v = np.where(np.isnan(v), mu, v)
+            Z[p] = np.concatenate([(v - mu) / sd, [0.0]])
+    return Z
+
+
+def evaluate(args):
+    import numpy as np
+    import pandas as pd
+    t0 = time.time()
+    path = os.path.join(DERIVED, "preufc.json")
+    pre = json.load(open(path))
+    cols = pre["meta"]["snapshot_columns"]
+    snaps = {}
+    for slug, v in pre["fighters"].items():
+        if v.get("status") != "ok":
+            continue
+        for row in v["snapshots"]:
+            snaps[(slug, row[1])] = dict(zip(cols, row))
+    fights, people, bouts = load_ufc()
+    train_from = dt.date.fromisoformat(args.extra_since or args.since)
+    rep = json.load(open(os.path.join(DERIVED, "elo_report.json")))
+    K, boost = rep["chosen"]["K"], rep["chosen"]["boost"]
+    E = EloRunner(fights, K, boost)
+    elo_pre = E.run()
+    ufc = ufc_walk(fights, people)
+    df_all = build_frame(fights, people, ufc, elo_pre, snaps, train_from)
+    # sanity: our Elo equals backtest.json's pre-fight Elo
+    bt = json.load(open(os.path.join(DERIVED, "backtest.json")))["fights"]
+    btid = {e["id"]: e for e in bt}
+    chk = [abs(elo_pre[e["id"]][0] - e["A"]["elo"]) for e in bt[:500] if e["id"] in elo_pre]
+    print("Elo check vs backtest.json: max |diff| %.4f over %d" % (max(chk), len(chk)))
+    df = df_all[df_all["decisive"]].copy()
+    tested = set(T for T in targets(fights, people, args.since, args.extra_since))
+    print("rows %d decisive since %s; newcomer rows %d; %.0f s" % (len(df), train_from, int(df["newc"].sum()),
+                                                                   time.time() - t0))
+    # coverage among newcomer sides
+    nc = df[df["newc"]]
+    cov = {}
+    for lab, sel in (("train", nc["date"] < TEST_FROM), ("test", nc["date"] >= TEST_FROM)):
+        sub = nc[sel]
+        sides = [(r["nA"], r["res_A"]) for _, r in sub.iterrows()] + [(r["nB"], r["res_B"]) for _, r in sub.iterrows()]
+        new_sides = [(n, rs) for n, rs in sides if n <= 3]
+        cov[lab] = {"fights": int(len(sub)), "newcomer_sides": len(new_sides),
+                    "newcomer_sides_with_sherdog": int(sum(rs for _, rs in new_sides)),
+                    "debut_sides": sum(1 for n, _ in new_sides if n == 0),
+                    "debut_sides_with_sherdog": int(sum(rs for n, rs in new_sides if n == 0))}
+    print("coverage", cov)
+
+    # ---------------- seeded Elo: debut rating = 1500 + beta . z(pre-UFC record at debut)
+    deb = {}
+    first_fid = {}
+    for p, ub in bouts.items():
+        if p.startswith(("amb:", "name:")):
+            continue
+        d, q, on, f = min(ub, key=lambda t: (t[0], -t[3].idx))
+        first_fid[p] = (f.fid, d)
+    for p, (fid, d) in first_fid.items():
+        if p not in tested:
+            continue                          # not crawled (debut long before the window): plain 1500
+        sp = side_pre(snaps.get((people[p]["slug"], fid)), 0)
+        deb[p] = sp
+    seed_keys_all = {"pre": PRE_CORE, "pre_small": ["pre_wpct", "pre_logn", "pre_feed", "pre_netelo", "pre_oppufc"]}
+
+    def age_at(p, d):
+        T = people[p].get("tott") or {}
+        return (d - T["dob"]).days / 365.25 if T.get("dob") else float("nan")
+
+    def fit_seed(keys, use_age, fit_to, fit_from=train_from, l2=1.0, fit_boost=False):
+        """Fit seed coefficients by minimizing Elo log loss on newcomer bouts in [fit_from, fit_to)."""
+        from scipy.optimize import minimize
+        ps = [p for p in deb if first_fid[p][1] < fit_to]
+        M = []
+        for p in ps:
+            sp = deb[p]
+            row = [sp[k] for k in keys] if sp else [float("nan")] * len(keys)
+            if use_age:
+                row.append(age_at(p, first_fid[p][1]))
+            M.append(row)
+        M = np.array(M, float) if M else np.zeros((0, len(keys) + use_age))
+        mu = np.nanmean(M, axis=0)
+        sdv = np.nanstd(M, axis=0)
+        sdv = np.where(sdv < 1e-9, 1.0, sdv)
+        nk = len(keys) + int(use_age)
+
+        def zmat(plist):
+            Z = np.zeros((E.np, nk + 1))
+            has = np.zeros(E.np, bool)
+            for p in plist:
+                if p not in E.idx:
+                    continue
+                sp = deb[p]
+                row = [sp[k] for k in keys] if sp else [float("nan")] * len(keys)
+                if use_age:
+                    row.append(age_at(p, first_fid[p][1]))
+                v = np.array(row, float)
+                miss = sp is None
+                v = np.where(np.isnan(v), mu, v)
+                z = (v - mu) / sdv
+                if miss and keys:
+                    z[:len(keys)] = 0.0
+                Z[E.idx[p], :nk] = z
+                Z[E.idx[p], nk] = 1.0 if (miss and keys) else 0.0
+                has[E.idx[p]] = True
+            return Z, has
+        Zall, _ = zmat(list(deb))
+        sel = df[(df["date"] >= fit_from) & (df["date"] < fit_to) & df["newc"]]
+        fids, yv = sel["fid"].tolist(), sel["y"].to_numpy()
+
+        def obj(theta):
+            beta = theta[:nk + 1]
+            bo = theta[nk + 1] if fit_boost else None
+            seed = 1500.0 + Zall @ beta
+            pre_ = E.run(seed, boost=bo)
+            p = np.array([pre_[f][2] for f in fids])
+            return ll(p, yv) + l2 * 1e-6 * float(beta @ beta)
+        th0 = np.zeros(nk + 1 + int(fit_boost))
+        if fit_boost:
+            th0[-1] = boost
+        r = minimize(obj, th0, method="Powell", options={"maxiter": 4000, "xtol": 0.5, "ftol": 1e-7})
+        beta = r.x[:nk + 1]
+        bo = r.x[nk + 1] if fit_boost else None
+        return {"beta": beta, "boost": bo, "mu": mu, "sd": sdv, "keys": keys + (["age_debut"] if use_age else []),
+                "Z": Zall, "loss": r.fun}
+
+    def seeded_pre(sfit):
+        seed = 1500.0 + sfit["Z"] @ sfit["beta"]
+        return E.run(seed, boost=sfit["boost"]), seed
+
+    # ---------------- model zoo
+    base_sets = {"elo": ["elo"], "base": BASE_KEYS}
+    results = {}
+    newc = df[df["newc"]].copy()
+
+    def cv_eval(make, data, years=CV_YEARS, extra=None):
+        """Time-ordered CV: for each year Y train on [train_from, Y), score Y. Returns pooled oof preds."""
+        oof = pd.Series(np.nan, index=data.index)
+        for Y in years:
+            tr = data[(data["date"] < dt.date(Y, 1, 1))]
+            va = data[(data["year"] == Y)]
+            if len(tr) < 50 or len(va) == 0:
+                continue
+            m = make().fit(tr)
+            oof.loc[va.index] = m.predict(va)
+        return oof
+
+    def oof_ll(oof, data):
+        s = oof.notna()
+        return ll(oof[s].to_numpy(), data.loc[s, "y"].to_numpy())
+
+    trainval = newc[newc["date"] < TEST_FROM]
+    test = newc[newc["date"] >= TEST_FROM]
+    cvlog = []
+    # 1) Elo calibrated, base logistic, base + pre logistic (C, tau grids)
+    best = {}
+    for name, mk in [("elo_cal", lambda C: DiffModel(["elo"], [], C=C))]:
+        for C in (1.0,):
+            o = cv_eval(lambda: mk(C), trainval)
+            cvlog.append({"model": name, "C": C, "cv_ll": oof_ll(o, trainval)})
+    for C in (0.01, 0.03, 0.1, 0.3, 1.0):
+        o = cv_eval(lambda: DiffModel(BASE_KEYS, [], C=C), trainval)
+        cvlog.append({"model": "base", "C": C, "cv_ll": oof_ll(o, trainval)})
+    for fs_name, fs in (("core", PRE_CORE), ("all", PRE_KEYS)):
+        for C in (0.01, 0.03, 0.1, 0.3):
+            for tau in (1.0, 2.0, 4.0, None):
+                o = cv_eval(lambda: DiffModel(BASE_KEYS, fs, C=C, tau=tau), trainval)
+                cvlog.append({"model": "base+pre_" + fs_name, "C": C, "tau": tau, "cv_ll": oof_ll(o, trainval)})
+                o = cv_eval(lambda: DiffModel(["elo"], fs, C=C, tau=tau), trainval)
+                cvlog.append({"model": "elo+pre_" + fs_name, "C": C, "tau": tau, "cv_ll": oof_ll(o, trainval)})
+    for row in cvlog:
+        k = row["model"]
+        if k not in best or row["cv_ll"] < best[k]["cv_ll"]:
+            best[k] = row
+    print("CV best:", json.dumps(best, default=str))
+    # GBM
+    for fs_name, keys in (("gbm_base", BASE_KEYS), ("gbm_base+pre", BASE_KEYS + PRE_CORE + ["res"])):
+        o = cv_eval(lambda: GBMDiff(keys), trainval)
+        best[fs_name] = {"model": fs_name, "cv_ll": oof_ll(o, trainval)}
+    print("CV gbm:", {k: round(v["cv_ll"], 4) for k, v in best.items() if k.startswith("gbm")})
+
+    # 2) seeded Elo: CV per year (fit on [train_from, Y), score newcomer bouts of year Y)
+    seed_cv = {}
+    for nm, keys, use_age in (("seed_age", [], True), ("seed_pre", PRE_CORE, False), ("seed_pre+age", PRE_CORE, True),
+                              ("seed_small+age", seed_keys_all["pre_small"], True)):
+        ps, ys = [], []
+        for Y in CV_YEARS:
+            sf = fit_seed(keys, use_age, dt.date(Y, 1, 1))
+            pre_, _ = seeded_pre(sf)
+            va = trainval[trainval["year"] == Y]
+            ps.extend(pre_[f][2] for f in va["fid"])
+            ys.extend(va["y"])
+        seed_cv[nm] = ll(np.array(ps), np.array(ys))
+        print("seed CV", nm, round(seed_cv[nm], 4), "%.0f s" % (time.time() - t0), flush=True)
+    va = trainval[trainval["year"] >= CV_YEARS[0]]
+    seed_cv["elo_raw"] = ll(va["elo_p"].to_numpy(), va["y"].to_numpy())
+    print("seed CV elo_raw", round(seed_cv["elo_raw"], 4))
+
+    # ---------------- final fits on [train_from, 2024) and one look at 2024+
+    final = {}
+    preds_test = {}
+    preds_test["elo"] = test["elo_p"].to_numpy()
+    b = best["elo_cal"]
+    m_elo = DiffModel(["elo"], [], C=b["C"]).fit(trainval)
+    preds_test["elo_cal"] = m_elo.predict(test)
+    b = best["base"]
+    m_base = DiffModel(BASE_KEYS, [], C=b["C"]).fit(trainval)
+    preds_test["base"] = m_base.predict(test)
+    pick = min((best["base+pre_core"], best["base+pre_all"]), key=lambda r: r["cv_ll"])
+    fs = PRE_CORE if pick["model"].endswith("core") else PRE_KEYS
+    m_bp = DiffModel(BASE_KEYS, fs, C=pick["C"], tau=pick["tau"]).fit(trainval)
+    preds_test["base+pre"] = m_bp.predict(test)
+    pick_e = min((best["elo+pre_core"], best["elo+pre_all"]), key=lambda r: r["cv_ll"])
+    fs_e = PRE_CORE if pick_e["model"].endswith("core") else PRE_KEYS
+    m_ep = DiffModel(["elo"], fs_e, C=pick_e["C"], tau=pick_e["tau"]).fit(trainval)
+    preds_test["elo+pre"] = m_ep.predict(test)
+    g0 = GBMDiff(BASE_KEYS).fit(trainval)
+    g1 = GBMDiff(BASE_KEYS + PRE_CORE + ["res"]).fit(trainval)
+    preds_test["gbm_base"] = g0.predict(test)
+    preds_test["gbm_base+pre"] = g1.predict(test)
+    seed_fits = {}
+    for nm, keys, use_age in (("seed_age", [], True), ("seed_pre+age", PRE_CORE, True),
+                              ("seed_pre", PRE_CORE, False)):
+        sf = fit_seed(keys, use_age, TEST_FROM)
+        seed_fits[nm] = sf
+        pre_, seed = seeded_pre(sf)
+        preds_test["elo_" + nm] = np.array([pre_[f][2] for f in test["fid"]])
+    print("final fits done %.0f s" % (time.time() - t0), flush=True)
+    yt = test["y"].to_numpy()
+
+    # ---------------- bootstrap CIs
+    rng = np.random.default_rng(20261106)
+    B_ = 2000
+    nT = len(yt)
+    idxs = rng.integers(0, nT, size=(B_, nT))
+
+    def boot(p):
+        p = np.clip(p, 1e-6, 1 - 1e-6)
+        lls = -(yt * np.log(p) + (1 - yt) * np.log(1 - p))
+        br = (p - yt) ** 2
+        ac = ((p > 0.5) == (yt > 0.5)).astype(float)
+        out = {}
+        for k, v in (("log_loss", lls), ("brier", br), ("accuracy", ac)):
+            bs = v[idxs].mean(axis=1)
+            out[k] = [float(v.mean()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))]
+        return out, lls
+
+    test_res = {}
+    lls_by = {}
+    for k, p in preds_test.items():
+        test_res[k], lls_by[k] = boot(p)
+    deltas = {}
+    for ref in ("elo", "elo_cal", "base"):
+        for k in preds_test:
+            if k == ref:
+                continue
+            dlt = lls_by[k] - lls_by[ref]
+            bs = dlt[idxs].mean(axis=1)
+            deltas["%s - %s" % (k, ref)] = [float(dlt.mean()), float(np.percentile(bs, 2.5)),
+                                           float(np.percentile(bs, 97.5)), float((bs < 0).mean())]
+    # subgroups
+    sub = {}
+    groups = {"debut (a side with 0 prior UFC bouts)": (test[["nA", "nB"]].min(axis=1) == 0).to_numpy(),
+              "1-3 prior (no debutant)": (test[["nA", "nB"]].min(axis=1) > 0).to_numpy(),
+              "both sides newcomers": (test[["nA", "nB"]].max(axis=1) <= 3).to_numpy(),
+              "newcomer vs veteran (4+)": (test[["nA", "nB"]].max(axis=1) >= 4).to_numpy(),
+              "both newcomer sides resolved": ((test["res_A"] + (test["nA"] > 3)).clip(0, 1) *
+                                              (test["res_B"] + (test["nB"] > 3)).clip(0, 1) > 0).to_numpy()}
+    for g, msk in groups.items():
+        sub[g] = {"n": int(msk.sum())}
+        for k in preds_test:
+            sub[g][k] = round(float(lls_by[k][msk].mean()), 4)
+    # calibration for the main candidates
+    def calib(p, y, nb=10):
+        out = []
+        for i in range(nb):
+            lo, hi = i / nb, (i + 1) / nb
+            m = (p >= lo) & ((p < hi) | ((i == nb - 1) & (p <= 1)))
+            if m.sum():
+                out.append({"lo": lo, "hi": hi, "n": int(m.sum()), "pred": round(float(p[m].mean()), 4),
+                            "obs": round(float(y[m].mean()), 4)})
+        return out
+
+    def ece(p, y, nb=10):
+        e = 0.0
+        for i in range(nb):
+            m = (p >= i / nb) & (p < (i + 1) / nb)
+            if m.sum():
+                e += m.sum() / len(p) * abs(p[m].mean() - y[m].mean())
+        return float(e)
+    calib_out = {k: {"bins": calib(preds_test[k], yt), "ece": round(ece(preds_test[k], yt), 4)}
+                 for k in preds_test}
+
+    # all 2024+ decisive bouts: does the seeded Elo hurt veterans?
+    allt = df[df["date"] >= TEST_FROM]
+    overall = {"n": int(len(allt)), "elo": scores(allt["elo_p"].to_numpy(), allt["y"].to_numpy())}
+    for nm, sf in seed_fits.items():
+        pre_, _ = seeded_pre(sf)
+        p = np.array([pre_[f][2] for f in allt["fid"]])
+        overall["elo_" + nm] = scores(p, allt["y"].to_numpy())
+    both_prior = allt[(allt["nA"] >= 1) & (allt["nB"] >= 1)]
+    overall["backtest_rule_subset (both >= 1 prior)"] = {"n": int(len(both_prior)),
+                                                         "elo": scores(both_prior["elo_p"].to_numpy(),
+                                                                       both_prior["y"].to_numpy())}
+    for nm, sf in seed_fits.items():
+        pre_, _ = seeded_pre(sf)
+        p = np.array([pre_[f][2] for f in both_prior["fid"]])
+        overall["backtest_rule_subset (both >= 1 prior)"]["elo_" + nm] = scores(p, both_prior["y"].to_numpy())
+
+    # ---------------- method (how): KO / SUB / DEC for newcomer bouts
+    meth = method_eval(df_all, train_from)
+
+    # ---------------- out-of-sample predictions for every newcomer bout 2019+ (CV years oof, 2024+ final)
+    predictions = {}
+    oof_bp = cv_eval(lambda: DiffModel(BASE_KEYS, fs, C=pick["C"], tau=pick["tau"]), trainval)
+    oof_b = cv_eval(lambda: DiffModel(BASE_KEYS, [], C=best["base"]["C"]), trainval)
+    seedY = {}
+    for Y in CV_YEARS:
+        sf = fit_seed(PRE_CORE, True, dt.date(Y, 1, 1))
+        seedY[Y], _ = seeded_pre(sf)
+    pre_final, seed_final = seeded_pre(seed_fits["seed_pre+age"])
+    for i, r in trainval[trainval["year"] >= CV_YEARS[0]].iterrows():
+        predictions[r["fid"]] = {"date": r["date"].isoformat(), "split": "cv", "in_backtest": r["fid"] in btid,
+                                 "nA": int(r["nA"]), "nB": int(r["nB"]),
+                                 "p_elo": round(float(r["elo_p"]), 4),
+                                 "p_seeded_elo": round(float(seedY[r["year"]][r["fid"]][2]), 4),
+                                 "p_base": round(float(oof_b[i]), 4), "p_base_pre": round(float(oof_bp[i]), 4)}
+    for j, (i, r) in enumerate(test.iterrows()):
+        predictions[r["fid"]] = {"date": r["date"].isoformat(), "split": "test", "in_backtest": r["fid"] in btid,
+                                 "nA": int(r["nA"]), "nB": int(r["nB"]),
+                                 "p_elo": round(float(r["elo_p"]), 4),
+                                 "p_seeded_elo": round(float(preds_test["elo_seed_pre+age"][j]), 4),
+                                 "p_base": round(float(preds_test["base"][j]), 4),
+                                 "p_base_pre": round(float(preds_test["base+pre"][j]), 4)}
+    # every backtest bout: seeded-Elo probability (walk-forward), for the ensemble
+    seeded_bt = {}
+    for e in bt:
+        Y = int(e["date"][:4])
+        src = seedY.get(Y, pre_final) if Y < 2024 else pre_final
+        if e["id"] in src:
+            seeded_bt[e["id"]] = round(float(src[e["id"]][2]), 4)
+
+    # ---------------- roster-level newcomer priors (live use, fit on everything before 2024 + refit to now)
+    roster = roster_priors(pre, people, bouts, seed_fits["seed_pre+age"], first_fid, age_at, fights, snaps)
+
+    ev = {
+        "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+        "design": {
+            "rows": "decisive UFC bouts (draws and no-contests excluded) where at least one side had 0-3 prior UFC "
+                    "bouts; train/tune [%s, 2024-01-01), time-ordered CV years %s (fit on all earlier years, score "
+                    "year Y); test 2024-01-01 to %s scored once" % (train_from, CV_YEARS, max(df["date"])),
+            "elo": "walk-forward Elo over every UFC bout since 1994, K=%d, boost %.1f for the first 5 UFC bouts "
+                   "(tools/build_db.py rule; reproduced exactly)" % (K, boost),
+            "base": "symmetric no-intercept logistic on side differences: Elo, age, reach, height, log(1+n UFC), "
+                    "UFC win log-odds, UFC finish win / finished-loss rates, layoff, shrunk decayed UFC rates "
+                    "(sig landed/absorbed per min, accuracy, defense, TD/15, TD acc, TD def, sub att/15, KD/15 for "
+                    "and against, control for and against)",
+            "pre": "Sherdog pre-UFC features per side from snapshots dated strictly before the bout, imputed at the "
+                   "train mean when unresolved (plus a missing flag), faded by exp(-n_UFC/tau)",
+            "seeded_elo": "Elo whose debut rating is 1500 + beta . z(pre-UFC record at debut [+ age at debut]); beta "
+                          "fit by minimizing Elo log loss on train newcomer bouts; every later bout uses the same "
+                          "Elo updates",
+        },
+        "coverage": cov,
+        "cv": {"best": best, "seeded_elo_cv_ll": seed_cv, "grid": cvlog},
+        "test": {"metrics_ci95": test_res, "delta_log_loss_ci95 [mean, lo, hi, P(<0)]": deltas,
+                 "subgroups_log_loss": sub, "calibration": calib_out, "all_2024plus_bouts": overall},
+        "models": {"base+pre": {"features": fs, "C": pick["C"], "tau": pick["tau"], "coef": m_bp.coefs()},
+                   "elo+pre": {"features": fs_e, "C": pick_e["C"], "tau": pick_e["tau"], "coef": m_ep.coefs()},
+                   "base": {"C": best["base"]["C"], "coef": m_base.coefs()},
+                   "seeded_elo": {nm: {"keys": sf["keys"] + ["missing"], "beta_elo_points_per_sd":
+                                       [round(float(x), 2) for x in sf["beta"]],
+                                       "mu": [round(float(x), 4) for x in sf["mu"]],
+                                       "sd": [round(float(x), 4) for x in sf["sd"]],
+                                       "boost": sf["boost"]} for nm, sf in seed_fits.items()}},
+        "method": meth,
+    }
+    pre["eval"] = ev
+    pre["predictions"] = predictions
+    pre["seeded_elo_backtest"] = seeded_bt
+    pre["roster_priors"] = roster
+    with open(path, "w") as fh:
+        json.dump(pre, fh, separators=(",", ":"), default=str)
+    print(json.dumps({"test": {k: [round(x, 4) for x in v["log_loss"]] for k, v in test_res.items()}}, indent=1))
+    print(json.dumps({k: [round(x, 4) for x in v] for k, v in deltas.items() if k.endswith("- elo") or
+                      k.endswith("- base")}, indent=1))
+    print(json.dumps(sub, indent=1))
+    print(json.dumps(overall, indent=1, default=str)[:3000])
+    print("done %.0f s" % (time.time() - t0))
+    return ev
+
+
+def method_eval(df_all, train_from):
+    """KO / SUB / DEC multinomial for decisive newcomer bouts: UFC-only finish rates vs + pre-UFC finish rates."""
+    import numpy as np
+    from sklearn.linear_model import LogisticRegression
+    d = df_all[df_all["decisive"] & df_all["newc"] & df_all["cat"].isin(["ko", "sub", "dec"])].copy()
+    lab = {"ko": 0, "sub": 1, "dec": 2}
+    y = d["cat"].map(lab).to_numpy()
+    divs = sorted(d["division"].unique())
+
+    def X(dd, with_pre, tau=2.0):
+        cols = []
+        for dv in divs:
+            cols.append((dd["division"] == dv).astype(float).to_numpy())
+        cols.append((dd["rounds"] == 5).astype(float).to_numpy())
+        for k in ("uko", "usub", "ukol", "usubl"):
+            cols.append(dd[k + "_A"].to_numpy() + dd[k + "_B"].to_numpy())
+        if with_pre:
+            for k in ("pre_ko", "pre_sub", "pre_kol", "pre_subl", "pre_fin", "pre_finl"):
+                tot = 0
+                for t in "AB":
+                    v = dd[k + "_" + t].to_numpy(float)
+                    mu = np.nanmean(d[k + "_A"].to_numpy(float))
+                    v = np.where(np.isnan(v), mu, v) - mu
+                    tot = tot + v * np.exp(-dd["n" + t].to_numpy(float) / tau)
+                cols.append(tot)
+        return np.vstack(cols).T
+
+    out = {}
+    tr = (d["date"] < TEST_FROM).to_numpy()
+    te = ~tr
+    base_rate = np.bincount(y[tr], minlength=3) / tr.sum()
+    res = {"n_train": int(tr.sum()), "n_test": int(te.sum()), "train_shares": base_rate.round(4).tolist()}
+    yt = y[te]
+
+    def mll(P, yy):
+        return float(-np.mean(np.log(np.clip(P[np.arange(len(yy)), yy], 1e-9, 1))))
+    res["test_ll_base_rate"] = mll(np.tile(base_rate, (te.sum(), 1)), yt)
+    rng = np.random.default_rng(7)
+    idx = rng.integers(0, te.sum(), size=(2000, te.sum()))
+    P = {}
+    for nm, wp in (("ufc_only", False), ("ufc+pre", True)):
+        best = None
+        for C in (0.03, 0.1, 0.3, 1.0):
+            # time-ordered CV inside train
+            lls = []
+            for Y in CV_YEARS:
+                a = tr & (d["date"] < dt.date(Y, 1, 1)).to_numpy()
+                b = tr & (d["year"] == Y).to_numpy()
+                if a.sum() < 50 or b.sum() == 0:
+                    continue
+                m = LogisticRegression(C=C, max_iter=3000).fit(X(d[a], wp), y[a])
+                lls.append((mll(m.predict_proba(X(d[b], wp)), y[b]), b.sum()))
+            cvl = sum(l * n for l, n in lls) / sum(n for _, n in lls)
+            if best is None or cvl < best[0]:
+                best = (cvl, C)
+        m = LogisticRegression(C=best[1], max_iter=3000).fit(X(d[tr], wp), y[tr])
+        P[nm] = m.predict_proba(X(d[te], wp))
+        lv = -np.log(np.clip(P[nm][np.arange(len(yt)), yt], 1e-9, 1))
+        bs = lv[idx].mean(axis=1)
+        res[nm] = {"cv_ll": round(best[0], 4), "C": best[1], "test_ll": round(float(lv.mean()), 4),
+                   "ci95": [round(float(np.percentile(bs, 2.5)), 4), round(float(np.percentile(bs, 97.5)), 4)]}
+        if wp:
+            res[nm]["coef_pre (KO,SUB,DEC rows; last 6 = pre_ko pre_sub pre_kol pre_subl pre_fin pre_finl)"] = \
+                np.round(m.coef_[:, -6:], 3).tolist()
+    l0 = -np.log(np.clip(P["ufc_only"][np.arange(len(yt)), yt], 1e-9, 1))
+    l1 = -np.log(np.clip(P["ufc+pre"][np.arange(len(yt)), yt], 1e-9, 1))
+    dl = l1 - l0
+    bs = dl[idx].mean(axis=1)
+    res["delta_ll (ufc+pre - ufc_only)"] = [round(float(dl.mean()), 4), round(float(np.percentile(bs, 2.5)), 4),
+                                            round(float(np.percentile(bs, 97.5)), 4), round(float((bs < 0).mean()), 3)]
+    # finish vs decision (binary) calibration of the + pre model
+    pf = P["ufc+pre"][:, 0] + P["ufc+pre"][:, 1]
+    yf = (yt < 2).astype(float)
+    res["finish_binary"] = {"ufc_only_ll": round(ll(P["ufc_only"][:, 0] + P["ufc_only"][:, 1], yf), 4),
+                            "ufc+pre_ll": round(ll(pf, yf), 4), "base_rate_ll": round(ll(np.full(len(yf), base_rate[:2].sum()), yf), 4)}
+    print("method:", json.dumps({k: v for k, v in res.items() if not k.startswith("coef")}, default=str))
+    return res
+
+
+def roster_priors(pre, people, bouts, sfit, first_fid, age_at, fights, snaps):
+    """Per roster fighter: the seeded-Elo debut shift and finish-propensity multipliers from the pre-UFC record."""
+    import numpy as np
+    out = {}
+    keys = sfit["keys"]
+    nk = len(keys)
+    beta = sfit["beta"]
+    slug2p = {P["slug"]: p for p, P in people.items()}
+    for slug, v in pre["fighters"].items():
+        p = slug2p.get(slug)
+        if p is None:
+            continue
+        item = {"n_ufc": len(bouts.get(p, []))}
+        if v.get("status") == "ok" and v.get("debut"):
+            sp = side_pre(v["debut"], 0)
+            row = [sp[k] for k in keys if k != "age_debut"]
+            if "age_debut" in keys:
+                row.append(age_at(p, first_fid[p][1]) if p in first_fid else float("nan"))
+            x = np.array(row, float)
+            x = np.where(np.isnan(x), sfit["mu"], x)
+            z = (x - sfit["mu"]) / sfit["sd"]
+            shift = float(z @ beta[:nk])
+            item["elo_debut_shift"] = round(shift, 1)
+            item["elo_debut_shift_pre_only"] = round(float(sum(z[i] * beta[i] for i, k in enumerate(keys)
+                                                               if k != "age_debut")), 1)
+            d = v["debut"]
+            nn = d["n"]
+            item["pre_record"] = "%d-%d-%d" % (d["w"], d["l"], d["d"])
+            item["pre_ko_rate"] = round((d["ko_w"] + 0.3) / (nn + 2.0), 3)
+            item["pre_sub_rate"] = round((d["sub_w"] + 0.2) / (nn + 2.0), 3)
+            item["pre_finished_rate"] = round((d["ko_l"] + d["sub_l"] + 0.3) / (nn + 2.0), 3)
+            c = v["current"]
+            item["current_nonufc_record"] = "%d-%d-%d" % (c["w"], c["l"], c["d"])
+        else:
+            item["elo_debut_shift"] = round(float(beta[nk]), 1)
+            item["status"] = v.get("status")
+        out[slug] = item
+    # finish multipliers relative to the roster mean (engine power / sub-threat priors for newcomers)
+    ko = np.array([o["pre_ko_rate"] for o in out.values() if "pre_ko_rate" in o])
+    sb = np.array([o["pre_sub_rate"] for o in out.values() if "pre_sub_rate" in o])
+    for o in out.values():
+        if "pre_ko_rate" in o:
+            o["ko_rate_vs_roster"] = round(o["pre_ko_rate"] / ko.mean(), 3)
+            o["sub_rate_vs_roster"] = round(o["pre_sub_rate"] / sb.mean(), 3)
+    return out
+
+
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
