@@ -225,6 +225,34 @@ v2 kinds keep their meanings, so the director's v2 mapping still applies.
 - **Output:** src/params3.js (values) and data/derived/calibration.json (metrics, calibration bins,
   base-rate table) for the page's backtest panel.
 
+## Component: realism_sens (params.components.realism_sens)
+
+Off reproduces the engine without it, bit for bit for the same seed (tests/test_realism_sens.js). Shipped OFF
+(verifier, Nov 6): on v4.0.1 final the learned-rate levels (mlTdLevel, mlCtrlLevel, mlSubLevel) already close the
+takedown / control / submission-attempt gaps these factors were built for, division KO / KD spreads do not carry
+across 2019-2021 vs 2022-2023, and only the 5-round KD factor (fmt["5"].kd ~1.3) holds out of fold. The flag gates the
+factors only; `sensitivity` and `rateSd` work either way. Refit (`tools/realism.js fit`) after any change to KO / SUB /
+KD / TD levels before turning it on.
+
+- **Realism factors.** `params.realism.div[division]` and `params.realism.fmt[rounds]` multiply the `[selfcal]`
+  division factors (`att kd ko sub ctrl td`) inside `matchup()`; they are fit on 2019-2023 walk-forward backtest
+  fights by `tools/realism.js fit` (empirical-Bayes shrunk toward 1). Because the learned-rate adapter re-levels its
+  targets to the engine's own league expectation, built with the same factors, they reach learned-rate matchups too.
+  `m.realism` holds the factors in effect; `FightEngine.realismFactors(p, division, rounds)` returns them.
+- **Sensitivity.** `FightEngine.sensitivity(m, opts)` returns tornado data: P(win) and the method shares at -z / +z sd
+  of each knob (`out acc pow chin cardio tdAtt tdDef sub` per fighter, judges' power) and of each fighter's key profile
+  rates (posterior sds from `FightEngine.rateSd(m, i)`), each variant rebuilt with the matchup's own options and replayed
+  on the same per-fight seeds (common random numbers). Items carry `lo`, `hi`, `dPA`, `dPWin` (signed to "good for
+  him"), `swing` and the paired Monte Carlo `se`, sorted by swing. Options: `n` (1000), `seed`, `z` (1), `kinds`,
+  `sides`, `keys`, `sd` overrides, `onProgress`. Knob sds: `params.realism.knobSd`, else the fight-night form sds.
+- **Profile-rate sds.** `rateSd`: sd(log rate) = sqrt(phi / I) with I = the fighter's events + the shrinkage prior's
+  pseudo-events; sd(logit p) = sqrt(phi / (n p (1 - p))); phi = `params.realism.disp` (per-fight over-dispersion
+  against the out-of-fold learned rates, `tools/realism.js disp`); pow / chin scaled by `powExp` / `chinExp`.
+- **v5 merge (step 3).** Re-applied by hand on the v5 tree (the re-issued patch is against v4.0.1 main 1f30636). The shipped
+  `div` / `fmt` factors were fit on v4.0.1, so the layer stays off until a refit on the v5 engine. `sensitivity` rebuilds its
+  variants through the public `matchup` (so styles_sos applies to them as to `m`) and keeps an officials name list.
+- **Matchup objects** carry the two resolved profiles as a non-enumerable `m._src` for the rebuilds.
+
 ## Invariants the tests check
 
 - Same seed, same matchup, same result (deterministic RNG; no Math.random in the engine).
@@ -233,6 +261,7 @@ v2 kinds keep their meanings, so the director's v2 mapping still applies.
 - League-average vs league-average reproduces division base rates within tolerances.
 - Knobs move outcomes in the stated direction (more chin knob = more KO losses, and so on).
 - `simulate(trace=true)` and `simulate(trace=false)` produce the same fight for the same seed.
+- `params.components.<name>` off reproduces the engine without that component (same seed, same fights).
 
 ## Engine v4 (Nov 6, 2026)
 

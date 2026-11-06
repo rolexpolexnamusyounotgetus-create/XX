@@ -75,10 +75,13 @@ function targets(div, nR) {
 }
 
 // ---------------------------------------------------------------- simulate a league-average pair
+// The [selfcal] division factors are defined on league-average pairs without the realism_sens layer, which is fit on top of
+// them from real matchups (tools/realism.js fit), so the self-calibration table and --fit run with that component off.
 function simAvg(div, nR, params, n, seed) {
   // durability component (v5): its absolute knockdown level tracks the trailing league level (params.durability.level),
   // not the priors' era, so the priors-era self-calibration runs it in relative mode (the priors' division level)
   params = Object.assign({}, params, { durability: Object.assign({}, params && params.durability, { level: null }) });
+  params.components = Object.assign({}, (params && params.components) || {}, { realism_sens: false });   // realism_sens (v5 merge step 3)
   const m = E.matchup(avgProfile(div, "A"), avgProfile(div, "B"), { division: div, rounds: nR, title: nR === 5, params, priors: PRI, ml: false });
   const s = E.summarize(m, n, seed);
   const a = s.avg.A, b = s.avg.B, p15 = (k) => (a.per15[k] + b.per15[k]) / 2;

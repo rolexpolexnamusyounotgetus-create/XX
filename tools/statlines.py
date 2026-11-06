@@ -254,7 +254,13 @@ def stage_build(args):
                    "embed_model.json": sha_file(os.path.join(DER, "embed_model.json"))}
     T["finish_time"] = finish_time_table(ds["rows"])
     T["bt_ids"] = set(bt)
-    T["event"] = np.array([bt[f]["event"] if f in bt else d for f, d in zip(T["fid"], T["date"])], dtype=object)
+    # one cluster key per card: debut rows (not in the backtest set) take the event name of the backtest fights on their
+    # date (one event per date in 2019-2025); the original build keyed them by the date string, which split 268 of 295
+    # cards into two clusters in the all-rows tables (verifier fix; CI widths change by under 10%, no conclusion changes;
+    # research/model_statlines.md, Verification log)
+    ev_of_date = {f["date"]: f["event"] for f in bt.values()}
+    T["event"] = np.array([bt[f]["event"] if f in bt else ev_of_date.get(d, d) for f, d in zip(T["fid"], T["date"])],
+                          dtype=object)
     assert max(T["date"]) < VAULT_FROM and n_q_bad == 0
     pickle.dump(T, open(os.path.join(CACHE, "table.pkl"), "wb"), protocol=4)
     n = len(T["fid"])

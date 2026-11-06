@@ -58,7 +58,12 @@
       // `officials` below; engine3.js officialsFor). OFF in the prediction path: no train metric improves, the league model is
       // slightly worse on the decision outcome (+0.0092 [+0.0002, +0.0176]) and named-judge effects do not predict. Opt-in per
       // call to show real officials: opts.params.components.officials = true with opts.judges / opts.referee.
-      officials: false
+      officials: false,
+      // v5 merge step 3: realism_sens per-division / per-format correction factors (block `realism` below; engine3.js
+      // realismFactors). OFF: the factors were fit on v4.0.1 final and gave no out-of-fold gain there (temporal 2-fold: winner
+      // -0.0011 [-0.0033, +0.0012], 7-bin +0.0049 [-0.0020, +0.0123], method +0.0029 [-0.0015, +0.0074]); refit on v5 first.
+      // FightEngine.sensitivity / rateSd (tornado data, common random numbers) work with it off or on.
+      realism_sens: false
     },
 
     // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
@@ -478,6 +483,41 @@
       "Women's Flyweight": { att: 0.956, kd: 0.949, ko: 0.806, sub: 1.045, ctrl: 1.066, td: 0.976 },
       "Women's Bantamweight": { att: 0.97, kd: 0.934, ko: 0.564, sub: 0.84, ctrl: 1.053, td: 0.975 },
       "Women's Featherweight": { att: 0.976, kd: 0.853, ko: 0.709, sub: 1.169, ctrl: 1.048, td: 0.986 }
+    },
+
+    // ---------------- realism_sens: walk-forward realism corrections and sensitivity sds (tools/realism.js) ----------------
+    // v5 merge step 3: the factor layer stays OFF (components.realism_sens false): these div / fmt factors were fit on v4.0.1 final
+    // (main 1f30636), not on the v5 engine, and gave no out-of-fold gain there; refit before any use. disp / knobSd serve
+    // FightEngine.sensitivity / rateSd with the flag off or on.
+    realism: {
+      // div[division] / fmt[rounds]: multipliers on top of the [selfcal] div factors (same keys); missing = 1.
+      // [realism 2026-11-06 v4.0.1 final, verifier refit] fit by tools/realism.js fit (with the verifier's continuity-corrected EB
+      // targets) on the 1,972 scored 2019-2023 walk-forward backtest fights (frozen snapshots, walk-forward priors, out-of-fold
+      // learned rates; 100 sims per fight per corner order, 4 damped fixed-point steps, seed 6262) on top of main 1f30636
+      // ([selfcal v4] + [levels v4.0.1], incl. mlTdLevel / mlCtrlLevel / mlSubLevel). EB between-division sd of log(real/sim):
+      // ko 0.060, sub 0.000, kd 0.101, td 0.032, ctrl 0.018, att 0.000. Default OFF (components.realism_sens = false): on the v4.0.1
+      // engine these factors give no out-of-fold base-rate gain and lean worse on 7-bin / method log loss (realism_sens verifier
+      // report). Refit last, after any other component that moves KO / SUB / KD / TD levels, before turning the flag on.
+      div: {
+        "Flyweight": { ko: 1.012, sub: 1.05, kd: 0.997, td: 0.988, ctrl: 0.999, att: 1.002 },
+        "Bantamweight": { ko: 1.042, sub: 1.021, kd: 0.974, td: 1.012, ctrl: 0.997, att: 0.999 },
+        "Featherweight": { ko: 0.993, sub: 1.013, kd: 0.984, td: 0.951, ctrl: 0.99, att: 0.995 },
+        "Lightweight": { ko: 1.003, sub: 1.02, kd: 0.987, td: 0.994, ctrl: 0.996, att: 0.999 },
+        "Welterweight": { ko: 1.004, sub: 0.971, kd: 0.891, td: 0.992, ctrl: 1.006, att: 0.996 },
+        "Middleweight": { ko: 0.945, sub: 0.986, kd: 0.896, td: 0.997, ctrl: 0.981, att: 0.994 },
+        "Light Heavyweight": { ko: 0.948, sub: 0.997, kd: 0.958, td: 0.975, ctrl: 0.99, att: 0.997 },
+        "Heavyweight": { ko: 1.124, sub: 1.048, kd: 0.974, td: 1.001, ctrl: 1.019, att: 1.003 },
+        "Women's Strawweight": { ko: 1.013, sub: 1.001, kd: 1.062, td: 0.994, ctrl: 1, att: 1.002 },
+        "Women's Flyweight": { ko: 1.013, sub: 1.015, kd: 0.99, td: 1.033, ctrl: 0.984, att: 0.998 },
+        "Women's Bantamweight": { ko: 0.97, sub: 1.015, kd: 0.975, td: 1.011, ctrl: 1.052, att: 1.01 },
+        "Women's Featherweight": { ko: 0.991, sub: 1.004, kd: 0.973, td: 1, ctrl: 0.966, att: 1.003 }
+      },
+      fmt: { "5": { ko: 0.881, sub: 1.023, kd: 1.327 } },
+      // disp: per-fight over-dispersion phi (Pearson, quasi-Poisson / quasi-binomial) of each stat against the out-of-fold
+      // learned rates on 2019-2023 fights (tools/realism.js disp; 1,972 fights): scales the profile-rate sds in FightEngine.rateSd
+      disp: { att: 20.5, acc: 4.42, kd: 1.96, td_att: 2.75, td_acc: 1.36, sub_att: 2.26 },
+      // knobSd: 1-sd knob sizes for FightEngine.sensitivity (missing = the fight-night form sds in form)
+      knobSd: {}
     }
   };
   if (typeof module !== "undefined" && module.exports) module.exports = FightParams;

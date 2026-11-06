@@ -8,8 +8,10 @@ realised lines). Outputs: `data/derived/statlines.json` (model tables, CV and 20
 Scratch caches: `out/statlines_cache/` (gitignored).
 
 Protocol (docs/BACKLOG.md, docs/V6_V10_PLAN.md 5-6):
-- Every fight dated 2026-01-01 or later is dropped at load. The inputs (mlrates dataset and OOF rates, embed
-  snapshots, oppadj snapshots, methodround S cells) were all built with 2026 dropped, and this is asserted again.
+- Every fight dated 2026-01-01 or later is dropped at load. The mlrates dataset, mlrates OOF rates and embed snapshots
+  were built with 2026 dropped. oppadj.json and methodround.json do hold rows for the 373 vault fights (pre-fight
+  outputs kept for the auditors); statlines drops them at load and never reads them, and this is asserted.
+  (Corrected by the verifier; see the Verification log.)
 - Every choice was made by forward-chained CV on 2021-2023, with folds fit on 2019..Y-1. That covers the model per
   stat, the ridge strength, zero-inflation, and whether the winner expert enters a stack. The stack gate uses
   tools/ml2.py's `stack_predict` and its 0.0005 rule.
@@ -35,6 +37,26 @@ Every table below is printed by `python3 tools/statlines.py tables`. The full ou
      example: sig landed -0.078 [-0.102, -0.058] nats; head landed -0.085; control -0.130 [-0.155, -0.105]; TD
      attempts -0.034 [-0.046, -0.023]; KD -0.132.
    - CV 2021-23: the same on 17 of 19 stats. Body attempts and body landed are -0.007, inside the noise. (high)
+   - **Verifier's correction: nb_base is a weak baseline for "given t".** Most of the gain over it comes from the
+     time terms, not from matchup information. The time terms are log t, finished, finished x log t and five rounds,
+     so they encode whether and when the fight ended. Against nb_t (the blend mean plus those time terms), the ridge
+     GLM's own gain is smaller but real on most stats:
+
+     | stat | 2024-25 nb_t - nb_base (time terms) | 2024-25 chosen - nb_t (GLM) | CV chosen - nb_t |
+     |---|---|---|---|
+     | sig landed | -0.060 [-0.079, -0.042] | -0.019 [-0.027, -0.010] | -0.014 [-0.021, -0.007] |
+     | head landed | -0.072 | -0.012 [-0.020, -0.006] | -0.012 |
+     | leg attempts | -0.012 | -0.032 [-0.043, -0.022] | -0.019 |
+     | distance attempts | -0.016 | -0.034 [-0.046, -0.021] | -0.024 |
+     | TD attempts | +0.001 | -0.036 [-0.045, -0.026] | -0.031 |
+     | TD landed | -0.000 | -0.022 [-0.028, -0.015] | -0.012 |
+     | ground landed | -0.032 | -0.017 [-0.024, -0.009] | -0.008 |
+     | KD | -0.132 | 0 (nb_t chosen) | 0 |
+     | sub attempts | -0.037 | -0.005 [-0.010, +0.001] | -0.005 |
+
+     Sources: `python3 tools/statlines_verify.py repro`, using card-level cluster CIs.
+     - For sig, head, clinch, ground, KD and submission counts, 65-100% of the headline gain is the time terms.
+     - For TD, legs and distance strikes, the GLM is the main source.
 3. **Means improve modestly on the verified blend.** Given the fight length, 2024-25:
    - Poisson deviance changes by -2.3% for sig landed, -2.0% head landed, -1.4% distance landed, -1.5% / -1.2% leg
      attempts / landed, -6% ground, -11% submission attempts and -32% knockdowns.
@@ -47,6 +69,16 @@ Every table below is printed by `python3 tools/statlines.py tables`. The full ou
    - Conditional means: better on all 20 stats in point estimate, with the CI excluding 0 on 19. The exception is
      clinch attempts, -0.138 [-0.282, +0.001]. Control -4.5 s [-8.4, -0.8]; sig landed -0.72 [-1.10, -0.37];
      ground attempts -0.71.
+   - **Verifier's correction: that row is not like-for-like.** This layer's mean uses the finished flag and the time
+     terms. The engine's "conditional mean" is its average rate x t, which ignores how its own finished simulations
+     differ.
+     - The one subset where both condition on the same information is fights that went the distance: the engine's
+       decision simulations vs this layer at t = 5R.
+     - On that subset, 2024-25, the gain holds for 7 of 20 stats: control -7.0 s [-14.0, -0.6], sig landed -0.61
+       [-1.08, -0.12], head landed -0.53, clinch landed -0.19, TD attempts -0.14, TD landed -0.09 and KD -0.02.
+     - The other 13 are inside the noise.
+     - On CV 2021-23 only control (-5.8 s) and ground attempts (-0.67) hold.
+     - Do not cite "20 of 20" as evidence about engine means. Source: `python3 tools/statlines_verify.py engine`.
    - Fights that went the distance, share of actual values inside the engine's own 80% band (target 0.80):
 
      | stat | engine | this layer |
@@ -58,8 +90,9 @@ Every table below is printed by `python3 tools/statlines.py tables`. The full ou
      | ground strikes | 0.64-0.66 | 0.78 |
      | sig landed (too wide) | 0.88 | 0.84 |
 
-     This confirms the unverified realism_sens note (TD attempts 74% inside, 16% above P90) and shows it is worse in
-     v4.
+     This is consistent with the unverified realism_sens note (TD attempts 74% inside, 16% above P90). Verifier's
+     note: the two figures are not directly comparable. realism_sens used a different engine and different
+     conditioning. The like-for-like v4 figure is the unconditional one: 0.67 inside and 0.17 above P90 on 2024-25.
    - Unconditional lines (evalv-style deviance of the unconditional mean):
 
      | stat | engine v4 | this layer | diff [CI] |
@@ -70,10 +103,23 @@ Every table below is printed by `python3 tools/statlines.py tables`. The full ou
      | TD landed | 1.807 | 1.749 | -0.058 [-0.089, -0.027] |
      | KD | 0.649 | 0.647 | tie |
 
-     The engine column reproduces version_history's v4 numbers: 154.1 / 21.87 / 43.42 / 1.806 / 0.652. That is the
-     ceiling for Cycle 3 (v8). The plan expects control -1.5 to -4 s, attempts -0.4 to -1.0 and landed -0.1 to -0.3
-     (V6_V10_PLAN section 3). This layer exceeds all three on 2024-25, so the targets are reachable if the engine
-     matches these lines. (high for the numbers; medium that an engine retarget can capture most of it)
+     The engine column approximately reproduces version_history's v4 numbers: 154.1 / 21.87 / 43.42 / 1.806 / 0.652.
+     The run used 200 simulations per order against 300 there. That is the ceiling for Cycle 3 (v8). The plan expects
+     control -1.5 to -4 s, attempts -0.4 to -1.0 and landed -0.1 to -0.3 (V6_V10_PLAN section 3).
+
+     **Verifier's correction.** The original text argued from 2024-25 that "the targets are reachable", which plan §5
+     rules out as a selection argument. The CV-year figures point the same way: control -4.8 s [-7.9, -1.8], sig
+     landed -0.74, TD landed -0.03, though the engine is in-sample there. Two caveats decide whether a v8 retarget can
+     use these lines:
+     - **Control MAE is worse.** On CV 2021-23 the MAE of the unconditional control mean (evalv's definition) is
+       worse than engine v4's: 112.5 vs 110.3 s, +2.18 s [+0.94, +3.38]. On 2024-25 it is -0.78 [-2.15, +0.66].
+       Reversals (+0.018) and submission attempts (+0.004) are also slightly worse on CV. v8's train-only acceptance
+       test needs TD and control MAE not worse beyond the CI on 2019-23, so retargeting the control mean to these
+       lines can fail it. This is the v4.0.1 lesson.
+     - **Part of the gain is fight length.** Some of the unconditional gain comes from the methodround S fight-length
+       distribution, which the engine does not share.
+
+     (high for the numbers; low-medium that an engine retarget can capture most of it without failing the MAE gate)
 5. **Winner: nothing.** A dominance expert was built from the expected lines, using the engine's judging weights.
    - Alone it scores 0.6728 on 2019-2023 and 0.6262 on 2024-25.
    - The stack gate rejects it in all six stacks: no line, open and close, each with two base sets. The CV changes

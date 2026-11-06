@@ -1,0 +1,11 @@
+{
+ "base_commit": null,
+ "note": "digest of the engine before the realism_sens change (tests/test_realism_sens.js digest(), 150 fights per case); rewrite with --ref-dir <dir> --write-fixture",
+ "digest": [
+  "Volk vs Gaethje (5-rd title, base tables):aa4609b0b4101c19050daa842aa89ad589241e12",
+  "Volk vs Gaethje (learned rates):6aa35e74302b6a13989396c357e317db1f42c3b1",
+  "Makhachev vs Oliveira (3-rd, learned rates):ff8200c554e37088ab48ae0de448169ffc19897d",
+  "league-average pair, W-SW 3-rd:325289584b3443accbcd7d68618a75cb744d901f"
+ ],
+ "base": "v5 merge step 3: the engine just before realism_sens (step-2 commit 8317287 + styles_sos + officials; current params3.js, step-2 mlrates.js)"
+}

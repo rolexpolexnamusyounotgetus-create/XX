@@ -378,3 +378,50 @@ tests/test_engine3.js simAvg, v401_kocomp.js and judgecal.js do.
   train-only engine ablation (both corner orders, common random numbers); `tools/styles_sos_score.py <out.json> <parts...>`
   scores it (winner log loss, soft CE vs the close, 7-bin, method, stat-line deviance, base rates; event-cluster bootstrap).
 
+## realism.js: realism validation, realism factors and the component ablation (realism_sens)
+
+```
+node tools/realism.js report  --years 2019-2023 --sims 200 [--flag on|off] [--md out.md --json out.json]
+node tools/realism.js fit     --years 2019-2023 --levers ko,sub,kd,td,ctrl,att --fmt --out factors.json
+node tools/realism.js compare --years 2019-2023 --sims 200 [--factors factors.json] [--perfight pf.json]
+node tools/realism.js pool    --in pf_2019.json,pf_2020.json,...      # pool leave-one-year-out folds, one bootstrap
+node tools/realism.js disp    --years 2019-2023                        # over-dispersion phi for FightEngine.rateSd
+```
+
+Works with any engine version (`--engine`, `--params`). Every backtest fight of the chosen years is simulated
+in both corner orders from leak-free inputs: frozen walk-forward snapshots (backtest_dev.json, gitignored:
+pass `--backtest` when it lives elsewhere), walk-forward division priors (mlcal_priors_asof.json) and the
+out-of-fold learned rates (mlrates_oof.json) when the engine takes them. Each simulated fight has its own
+seed (fight id x corner order x sim index), so configurations see common random numbers. At most 3
+worker threads.
+
+- **report:** real vs simulated per division and per format (3 rounds, 5-round non-title, title):
+  method shares (with 2-se flags), method by round, finish timing within the round, stat lines per
+  15 minutes (sig landed / attempted, accuracy, head share, KD per 100 landed head strikes, takedowns,
+  control, submission attempts), decision split, fight length, per-fighter output spread, and the PIT
+  calibration of each per-fight stat line (mean PIT and share inside the simulated 10-90% band).
+- **fit:** realism_sens factors (`params.realism.div[division]`, `fmt["5"]`), multipliers on top of the
+  `[selfcal]` division factors. Real / simulated ratios per division are shrunk by empirical Bayes
+  (DerSimonian-Laird between-division variance; format factors use a fixed prior sd of 0.2), then damped
+  multiplicative fixed-point steps move the levers (ko -> KO share, sub -> SUB share, kd -> KD per landed
+  head strike, att -> sig attempts per minute, td -> TD attempts per 15, ctrl -> control per 15).
+- **compare:** flag off vs on: winner log loss, soft-label cross-entropy against the closing line
+  (market.json `p_power_close`), 7-bin log loss, method log loss, Poisson stat-line deviance and the
+  base-rate table, with paired event-cluster bootstrap 95% CIs (cards resampled with replacement).
+- **Hidden data:** fights from 2026-01-01 are always dropped; years after 2023 need `--unledgered-val`.
+
+## sosrec.js: leak-free strength-of-schedule inputs for backtest tools (styles_sos, v5 merge step 3)
+
+```
+const SR = require("./sosrec.js")(E, ROOT);
+if (SR.on(params)) SR.apply(opts, f, swap);   // opts.sos = sos_wf.json fights[id] (A/B swapped with the corners) + coefficients
+const m = E.matchup(A, B, opts); SR.assertApplied(m, f.id, params);
+```
+
+The SOS sub-flag of components.styles_sos is on by default but does nothing until a caller passes `opts.sos`. Backtest tools
+take each fight's one-step walk-forward pair from data/derived/sos_wf.json and the coefficients: leave-one-year-out
+(`meta.coef_loyo[path][year]`) for fights before 2024-01-01, the 2019-2023 fit (`meta.coef`) for 2024-2025. Fights dated
+2026-01-01 or later are refused. tools/evalv.js keeps its own copy (sosOpts); tools/officials_engcal.js uses this module.
+Tools that still build backtest matchups without SOS inputs run SOS neutral (= step 2's engine): calibrate.js,
+statlines_engine.js, oppadj_engine.js, mlrates_engine.js, mlcal_verify.js, dynamics_bt.js, dynamics_calibrate.js, mlcal.js,
+moe_engine_bt.js, v4_levels.js. Pass the pairs through this module before using them to score or fit v5.
