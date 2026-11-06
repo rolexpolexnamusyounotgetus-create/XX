@@ -41,7 +41,16 @@
    A bout with a debutant gets no stack (the stacks never saw a debut; the ledger falls back to its debut prior).
    --debut-model data/derived/debut.json (off by default) adds r.debut_path for such bouts: tools/debut.py's debut model
    (src/ml/debut.js) by regime plus P(method | winner); input bouts may carry flags_a / flags_b = { repl, short, miss,
-   notice_days }. Nothing else in the output changes. */
+   notice_days }. Nothing else in the output changes.
+
+   --fwd 4.2 (forward model v4.2, data/predictions/README.md "Forward model v4.2"; default --fwd 4.1, whose output is
+   byte-identical to the tool before v4.2 existed, tests/test_forward_v42.js): additionally
+     - loads data/derived/debut.json (or --debut-model) and, for a bout with a debutant, writes r.debut_path, the models
+       entry "debut_model" (src/ml/debut.js winner(), the no-line debut model; null for other bouts) and r.debut_method:
+       P(KO, SUB, DEC | each winner) from the debut method model fed the ledger's winner probability pW = the line
+       (p_line) unless input.headline is "noline", else the seeded Elo (models.elo, rounded as the ledger reads it);
+     - adds per-round KO and SUB arrays (koA, subA, koB, subB) to the method-and-round heads, which the stat-line
+       fight-length grid needs (tools/forward_statlines.js; the ledger rescales them to p_a). */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -108,17 +117,27 @@ const DEBUT_ELO = 1500;                                // tools/build_db.py star
 // ---- debut path (tools/debut.py, research/model_debut.md), OFF unless --debut-model <debut.json> is given. With it on,
 // a bout with a debutant gets a separate r.debut_path block (winner by regime + method); the pre-registered models
 // block, p_a and every other field are unchanged (tests/test_debut.js checks this).
-const DEBUT_MODEL_PATH = opt("--debut-model", null);
+const FWD = opt("--fwd", "4.1");                          // forward model version of the output (README)
+if (FWD !== "4.1" && FWD !== "4.2") throw new Error("--fwd must be 4.1 or 4.2, got " + FWD);
+const FWD42 = FWD === "4.2";
+const DEBUT_MODEL_PATH = opt("--debut-model", FWD42 ? path.join("data", "derived", "debut.json") : null);
 const DMJ = DEBUT_MODEL_PATH ? JSON.parse(fs.readFileSync(path.resolve(ROOT, DEBUT_MODEL_PATH), "utf8")) : null;
 const DebutJS = DMJ ? require(path.join(ROOT, "src/ml/debut.js")) : null;
 const DMOD = DMJ ? DebutJS.load(DMJ.model) : null;
+function debutSide(slug, key, flags, ctx) {
+  if (slug && FJ.fighters[slug]) return { s: DebutJS.sideFromProfile(Object.assign({ slug }, FJ.fighters[slug]), ctx.date, ctx.division, DMJ, flags), src: "fighters.json + debut.json roster_gnet" };
+  if (key && DEBUT[key]) return { s: DebutJS.sideFromDebutant(DEBUT[key], ctx.date, DMJ, flags), src: DEBUT[key]._file };
+  return { s: { _n: 0, debut: 1, elo: 15, logn: 0, uwin: 0, ufin: 0.25, ufinl: 0.15, wcmove: 0 }, src: "debutant without an entry: unknown columns at the mean" };
+}
+// fwd-4.2 primary method for a bout with a debutant: P(KO, SUB, DEC | winner) fed the ledger's own winner probability
+function debutMethod42(b, ctx, ka, kb, pW, pWsrc) {
+  const A = debutSide(b.a, ka, b.flags_a, ctx), B = debutSide(b.b, kb, b.flags_b, ctx);
+  const m = DMOD.method(A.s, B.s, { division: ctx.division, rounds: ctx.rounds, pA: pW });
+  return { classes: m.classes, given_a: m.A, given_b: m.B, p_w_used: m.pA, p_w_source: pWsrc,
+    winner_debut_model: DMOD.winner(A.s, B.s), sides: { a: A.src, b: B.src } };
+}
 function debutPath(b, ctx, ka, kb, pSeeded) {
-  const side = (slug, key, flags) => {
-    if (slug && FJ.fighters[slug]) return { s: DebutJS.sideFromProfile(Object.assign({ slug }, FJ.fighters[slug]), ctx.date, ctx.division, DMJ, flags), src: "fighters.json + debut.json roster_gnet" };
-    if (key && DEBUT[key]) return { s: DebutJS.sideFromDebutant(DEBUT[key], ctx.date, DMJ, flags), src: DEBUT[key]._file };
-    return { s: { _n: 0, debut: 1, elo: 15, logn: 0, uwin: 0, ufin: 0.25, ufinl: 0.15, wcmove: 0 }, src: "debutant without an entry: unknown columns at the mean" };
-  };
-  const A = side(b.a, ka, b.flags_a), B = side(b.b, kb, b.flags_b);
+  const A = debutSide(b.a, ka, b.flags_a, ctx), B = debutSide(b.b, kb, b.flags_b, ctx);
   const pr = DMOD.predict(A.s, B.s, { division: ctx.division, rounds: ctx.rounds, p_close: fin(b.p_line) ? b.p_line : null,
     p_open: fin(b.p_open_in) ? b.p_open_in : null, p_seeded: fin(pSeeded) ? pSeeded : null });
   const missing = (s) => DMJ.model.winner.cols.filter((k) => !fin(s[k]));
@@ -177,6 +196,10 @@ function headFrom(p, mr, eng) {
     h.bins7 = [sum(c.A.ko) * fA, sum(c.A.sub) * fA, c.A.dec * fA, pD, c.B.dec * fB, sum(c.B.sub) * fB, sum(c.B.ko) * fB];
     h.finA = c.A.ko.map((v, i) => (v + c.A.sub[i]) * fA);
     h.finB = c.B.ko.map((v, i) => (v + c.B.sub[i]) * fB);
+    if (FWD42) {                  // per-round KO / SUB cells for the stat-line fight-length grid (fwd-4.2 only)
+      h.koA = c.A.ko.map((v) => v * fA); h.subA = c.A.sub.map((v) => v * fA);
+      h.koB = c.B.ko.map((v) => v * fB); h.subB = c.B.sub.map((v) => v * fB);
+    }
   } else if (eng) {
     const f = MoE.winnerFactors(eng.pA, eng.pB, eng.pD, p);
     h.src = "engine";
@@ -266,7 +289,7 @@ function ratingsModels(sa, sb) {
 
 const MODEL_KEYS = ["market_novig", "stack_line", "stack_open", "stack_noline", "ml2_lr", "ml2_stack_close", "ml2_stack_open",
   "ml2_stack_noline", "ml2_stack_close_prod", "ml2_stack_open_prod", "ml2_stack_noline_prod", "whr_rounds", "ratings_stack",
-  "elo", "simulator"];
+  "elo", "simulator"].concat(FWD42 ? ["debut_model"] : []);
 
 const out = { meta: {
   engine_dir: path.relative(ROOT, engineDir) || ".", engine_version: E.VERSION,
@@ -292,6 +315,8 @@ const out = { meta: {
   debutant_files: DEBUT_FILES.map((f) => ({ file: "data/predictions/" + f, sha256_16: sha(path.join(PRED_DIR, f)) }))
 }, bouts: [] };
 if (DMJ) out.meta.debut_model = { file: DEBUT_MODEL_PATH, built: DMJ.meta.built, sha256_16: sha(path.resolve(ROOT, DEBUT_MODEL_PATH)) };
+if (FWD42) out.meta.fwd = "4.2";
+const HEADLINE = input.headline === "noline" ? "noline" : "line";     // fwd-4.2: which winner probability p_a is
 
 for (const b of input.bouts) {
   const pa = b.a ? DB.fighters[b.a] : null, pb = b.b ? DB.fighters[b.b] : null;
@@ -309,6 +334,16 @@ for (const b of input.bouts) {
   if (!pa || !pb) {
     r.notes.push("debut: not in fighters.json, no stack");
     if (DMOD) { try { r.debut_path = debutPath(b, ctx, ka, kb, M.elo); } catch (e) { r.notes.push("debut path failed: " + (e.message || e)); } }
+    if (FWD42) {
+      // the ledger's winner probability for a debut bout (README v4.1 "Debutants"): the line, else the seeded Elo. The
+      // ledger reads models.elo rounded to 5 decimals, so the method is fed that same number unless --raw
+      const useLine = HEADLINE === "line" && fin(b.p_line);
+      const pW = useLine ? b.p_line : (RAW ? M.elo : r5(M.elo));
+      try {
+        r.debut_method = debutMethod42(b, ctx, ka, kb, pW, useLine ? "line (p_line, power de-vig consensus)" : "seeded Elo (models.elo)");
+        M.debut_model = r.debut_method.winner_debut_model;
+      } catch (e) { r.notes.push("debut method failed: " + (e.message || e)); }
+    }
     out.bouts.push(RAW ? r : roundObj(r)); continue;
   }
   const o = { keys: FJ.meta.keys, snapshot: FJ.meta.snapshot, halfLife: FJ.meta.half_life_days || 730 };
