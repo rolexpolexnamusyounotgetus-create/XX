@@ -1016,6 +1016,13 @@ class FitCache:
 
     def save(self):
         if self.dirty and self.write:
+            if not self.enabled and os.path.exists(self.path):     # --no-cache: refresh entries, never drop others
+                try:
+                    old = pickle.load(open(self.path, "rb"))
+                    old.update(self.d)
+                    self.d = old
+                except Exception:
+                    pass
             pickle.dump(self.d, open(self.path + ".tmp", "wb"))
             os.replace(self.path + ".tmp", self.path)
             self.dirty = False
