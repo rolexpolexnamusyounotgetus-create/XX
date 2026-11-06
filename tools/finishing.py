@@ -190,6 +190,338 @@ def stage_base(args):
 STAGES["base"] = stage_base
 
 
+# ====================================================================== stage: feats (walk-forward fighter state)
+DIVS = [d for d in B.DIVISIONS if d not in B.NON_DIV]
+EV_IND = ["w_ko", "w_sub", "w_dec", "l_ko", "l_sub", "l_dec", "dec_any", "w_r1", "l_r1", "w_late", "l_late"]
+# indicator -> exposure column ("n_ok" = every decisive or drawn bout; "reach3" = bouts that started round 3)
+EB_RATES = {"kow": ("w_ko", "n_ok"), "subw": ("w_sub", "n_ok"), "kol": ("l_ko", "n_ok"), "subl": ("l_sub", "n_ok"),
+            "dec": ("dec_any", "n_ok"), "r1w": ("w_r1", "n_ok"), "r1l": ("l_r1", "n_ok"),
+            "latew": ("w_late", "reach3"), "latel": ("l_late", "reach3")}
+PRE_MAP = {"kow": ("ko_w", "n"), "subw": ("sub_w", "n"), "kol": ("ko_l", "n"), "subl": ("sub_l", "n")}
+
+
+def stage_feats(args):
+    """One event row per person per UFC bout (every bout in the snapshot, 2026 dropped at parse), the pointer of
+    each methodround row side into its person's event list (events strictly before the fight day: same-day bouts
+    never see each other), the fight sequence for the online finishing filter, pre-UFC counts from preufc.json's
+    walk-forward snapshots (presence by preufc's own pre-fight target rule), and per-round output for cardio."""
+    t0 = time.time()
+    base = load("base.pkl")
+    T = base["T"]
+    lg_ = {}
+    fights, _ = B.parse_fights(lg_)
+    assert max(f.date for f in fights) < VAULT
+    people = B.build_people(fights, lg_)
+    B.build_vectors(fights, lg_)
+    pid_of = {}
+    ev = defaultdict(list)
+    ev_person = []
+    by_day = defaultdict(list)
+    for f in fights:
+        by_day[f.day].append(f)
+    ptr = {}                  # (fid, side) -> (pid, n_prior_events)
+    seq = []                  # fight sequence for the filter (day order)
+    rows_fid = set(T["id"])
+    snap_side = {}
+    ufc_dates = defaultdict(list)
+    for day in sorted(by_day):
+        card = by_day[day]
+        for f in card:
+            a, b = f.persons
+            if a == b:
+                continue
+            for p in (a, b):
+                if p not in pid_of:
+                    pid_of[p] = len(pid_of)
+            if f.fid in rows_fid:
+                for s, p in ((0, a), (1, b)):
+                    ptr[(f.fid, s)] = (pid_of[p], len(ev[pid_of[p]]))
+        for f in card:
+            a, b = f.persons
+            if a == b:
+                continue
+            cls = MR.ko_class(f)
+            for s, p in ((0, a), (1, b)):
+                pid = pid_of[p]
+                P = people[p]
+                dob = (P["tott"] or {}).get("dob")
+                age = (f.date - dob).days / 365.25 if dob else np.nan
+                won = f.winner == ("A" if s == 0 else "B")
+                lost = f.winner == ("B" if s == 0 else "A")
+                R = f.sched if f.sched in (3, 5) else (5 if (f.sched or 3) >= 5 else 3)
+                fin = cls in ("KO", "SUB")
+                ok = (f.winner in ("A", "B") and cls in ("KO", "SUB", "DEC")) or f.winner == "D"
+                rr = int(f.rnd or 1)
+                reach3 = ok and ((fin and rr >= 3) or (not fin and R >= 3))
+                e = {"pid": pid, "day": day, "year": f.date.year, "div": f.division, "age": age, "r5": float(R == 5),
+                     "title": float(bool(f.title)), "n_ok": float(ok), "reach3": float(reach3),
+                     "w_ko": float(won and cls == "KO"), "w_sub": float(won and cls == "SUB"),
+                     "w_dec": float(won and cls == "DEC"), "l_ko": float(lost and cls == "KO"),
+                     "l_sub": float(lost and cls == "SUB"), "l_dec": float(lost and cls == "DEC"),
+                     "dec_any": float(ok and (cls == "DEC" or f.winner == "D")),
+                     "w_r1": float(won and fin and rr == 1), "l_r1": float(lost and fin and rr == 1),
+                     "w_late": float(won and fin and rr >= 3), "l_late": float(lost and fin and rr >= 3)}
+                # per-round output (cardio): own and opponent landed / minutes in round 1 and in rounds 2+
+                c = [0.0] * 8
+                if f.stats:
+                    m3, l3 = f.stats["r3"][s]
+                    om3, ol3 = f.stats["r3"][1 - s]
+                    v, ov = f.stats["v"][s], f.stats["v"][1 - s]
+                    if R == 3:
+                        c = [m3[0], l3[0], m3[1:].sum(), l3[1:].sum(), om3[0], ol3[0], om3[1:].sum(), ol3[1:].sum()]
+                    else:
+                        mm = [v[B.KI["r5_min_%d" % k]] for k in range(1, 6)]
+                        ll = [v[B.KI["r5_lnd_%d" % k]] for k in range(1, 6)]
+                        ol = [ov[B.KI["r5_lnd_%d" % k]] for k in range(1, 6)]
+                        c = [mm[0], ll[0], sum(mm[1:]), sum(ll[1:]), mm[0], ol[0], sum(mm[1:]), sum(ol[1:])]
+                e.update({"c_m1": c[0], "c_l1": c[1], "c_mL": c[2], "c_lL": c[3], "c_om1": c[4], "c_ol1": c[5],
+                          "c_omL": c[6], "c_olL": c[7]})
+                ev[pid].append(len(ev_person))
+                ev_person.append(e)
+                ufc_dates[pid].append(f.date)
+            bh = {"KO": 1, "SUB": 2, "DEC": 0}.get(cls, -1) if f.winner in ("A", "B") else -1
+            seq.append((pid_of[a], pid_of[b], day, f.date.year, f.division, f.winner, bh, f.fid))
+    E = pd.DataFrame(ev_person)
+    # person-ordered layout for cumulative sums: order[pid] = the global event rows of that person in time order
+    order = np.concatenate([np.array(ev[p], int) for p in range(len(pid_of))])
+    start = np.zeros(len(pid_of) + 1, int)
+    start[1:] = np.cumsum([len(ev[p]) for p in range(len(pid_of))])
+    # methodround row sides -> (pid, k)
+    PA = np.array([ptr[(f, 0)] for f in T["id"]])
+    PB = np.array([ptr[(f, 1)] for f in T["id"]])
+    # pre-UFC counts (preufc.json snapshots, dated < 2026), presence by preufc's target rule (one of the first four
+    # UFC bouts on/after 2015-01-01, the current bout included), as tools/ml2.py build_preufc applies it
+    J = jload("preufc.json")
+    cols = J["meta"]["snapshot_columns"]
+    ci = {c: k for k, c in enumerate(cols)}
+    snaps = {}
+    for slug, rec in J["fighters"].items():
+        for row in rec.get("snapshots") or []:
+            if row[ci["date"]] >= VAULT_S:
+                continue
+            snaps[(row[ci["fid"]], slug)] = {c: row[ci[c]] for c in ("n", "ko_w", "sub_w", "dec_w", "ko_l", "sub_l",
+                                                                         "dec_l", "date")}
+    inv = {v: k for k, v in pid_of.items()}
+    cut = dt.date(2015, 1, 1)
+    pre = np.full((len(T), 2, 7), np.nan)
+    for i, (fid, sa, sb) in enumerate(zip(T["id"], T["A_slug"], T["B_slug"])):
+        for s, (pid, k), slug in ((0, PA[i], sa), (1, PB[i], sb)):
+            kd = sorted(ufc_dates[pid])
+            if not any(d >= cut for d in kd[:min(int(k), 3) + 1]):
+                continue
+            sn = snaps.get((fid, slug)) or snaps.get((fid, people[inv[pid]].get("slug")))
+            if sn:
+                pre[i, s] = [sn[c] for c in ("n", "ko_w", "sub_w", "dec_w", "ko_l", "sub_l", "dec_l")]
+    feats = {"E": E, "order": order, "start": start, "PA": PA, "PB": PB, "seq": seq, "pre": pre,
+             "n_persons": len(pid_of)}
+    save(feats, "feats.pkl")
+    log("feats: %d events, %d persons, %d sequence bouts; pre-UFC counts for %.1f%% of 2016+ row sides (%.0f s)" % (
+        len(E), len(pid_of), len(seq), 100 * np.mean(~np.isnan(pre[(T["year"] >= 2016).to_numpy(), :, 0])),
+        time.time() - t0))
+
+
+STAGES["feats"] = stage_feats
+
+
+# ====================================================================== (a) empirical-Bayes finishing rates
+def event_design(E):
+    """Baseline design of an event: division one-hot (catch / open weight -> the catch flag), era, age, format."""
+    X = np.zeros((len(E), len(DIVS) + 7))
+    dv = E["div"].to_numpy()
+    for j, d in enumerate(DIVS):
+        X[:, j] = dv == d
+    k = len(DIVS)
+    X[:, k] = np.isin(dv, list(B.NON_DIV))
+    X[:, k + 1] = (np.clip(E["year"].to_numpy(float), 2005, 2030) - 2015) / 10.0
+    age = E["age"].to_numpy(float)
+    miss = np.isnan(age)
+    a = np.where(miss, 30.0, age) - 30.0
+    X[:, k + 2] = a / 5.0
+    X[:, k + 3] = np.maximum(a - 5.0, 0.0) / 5.0
+    X[:, k + 4] = miss
+    X[:, k + 5] = E["r5"].to_numpy(float)
+    X[:, k + 6] = E["title"].to_numpy(float)
+    return X
+
+
+def fit_baselines(feats, v):
+    """Per-indicator baseline logit (division x era x age x format) on events dated before Jan 1 of v (2005+), and
+    each event's baseline probability. Returns {rate: p (n_events,)}."""
+    E = feats["E"]
+    X = event_design(E)
+    yr = E["year"].to_numpy()
+    out = {}
+    for rate, (ind, expo) in EB_RATES.items():
+        tr = (yr < v) & (yr >= 2005) & (E[expo].to_numpy() > 0)
+        lr = MR.LogisticRegression(C=50.0)
+        lr.fit(X[tr], E[ind].to_numpy()[tr].astype(int))
+        p = lr.predict_proba(X)[:, 1]
+        out[rate] = np.where(E[expo].to_numpy() > 0, p, 0.0)
+    return out
+
+
+def person_cumsum(feats, x):
+    """Cumulative sum of an event-level array over each person's events in time order; value(pid, k) = sum of his
+    first k events (events strictly before the bout day)."""
+    xo = np.asarray(x, float)[feats["order"]]
+    cs = np.concatenate([[0.0], np.cumsum(xo)])
+
+    def at(pid, k):
+        st = feats["start"][pid]
+        return cs[st + k] - cs[st]
+    return at
+
+
+def nb_strength(K, Ex):
+    """Gamma-Poisson (negative binomial) marginal likelihood of person totals K given expected Ex; returns the
+    prior strength m (prior: rate ratio ~ Gamma(m, m), mean 1)."""
+    ok = Ex > 0.05
+    K, Ex = K[ok], Ex[ok]
+
+    def nll(lm):
+        m = math.exp(lm)
+        return -np.sum(gammaln(K + m) - gammaln(m) + m * np.log(m / (m + Ex)) + K * np.log(Ex / (m + Ex)))
+    r = minimize_scalar(nll, bounds=(math.log(0.05), math.log(500.0)), method="bounded")
+    return float(math.exp(r.x))
+
+
+def eb_block(feats, base, v, lam_pre=0.5, m_pre=2.0, fixed_m=None):
+    """EB rate ratios for every methodround row side, from a baseline fit before v and prior strengths fit by
+    marginal likelihood on person totals before v. Returns ({rate: (n, 2) log ratio}, {rate: (n, 2) expected},
+    meta)."""
+    T = base["T"]
+    E = feats["E"]
+    pb = fit_baselines(feats, v)
+    yr = E["year"].to_numpy()
+    PA, PB = feats["PA"], feats["PB"]
+    n = len(T)
+    LR, EX, meta = {}, {}, {"m": {}, "mu_pre": {}}
+    pre = feats["pre"]
+    tr_rows = (T["year"] < v).to_numpy()
+    for rate, (ind, expo) in EB_RATES.items():
+        k_ev = E[ind].to_numpy(float)
+        cK, cE = person_cumsum(feats, k_ev), person_cumsum(feats, pb[rate])
+        # person totals at the cutoff (events before v) for the prior strength
+        cKv, cEv = person_cumsum(feats, k_ev * (yr < v)), person_cumsum(feats, pb[rate] * (yr < v))
+        ntot = np.diff(feats["start"])
+        Kp = np.array([cKv(p, ntot[p]) for p in range(len(ntot))])
+        Ep = np.array([cEv(p, ntot[p]) for p in range(len(ntot))])
+        m = fixed_m.get(rate) if fixed_m else None
+        m = m if m is not None else nb_strength(Kp, Ep)
+        meta["m"][rate] = round(m, 3)
+        K2 = np.zeros((n, 2))
+        E2 = np.zeros((n, 2))
+        for s, P in ((0, PA), (1, PB)):
+            K2[:, s] = [cK(pid, k) for pid, k in P]
+            E2[:, s] = [cE(pid, k) for pid, k in P]
+        rho0 = np.ones((n, 2))
+        if rate in PRE_MAP and lam_pre:
+            kc, nc = PRE_MAP[rate]
+            ki, ni = 1 + ["ko_w", "sub_w", "dec_w", "ko_l", "sub_l", "dec_l"].index(kc), 0
+            kk, nn = pre[:, :, ki], pre[:, :, ni]
+            okp = ~np.isnan(kk) & tr_rows[:, None]
+            mu = float(np.nansum(np.where(okp, kk, 0)) / max(1.0, np.nansum(np.where(okp, nn, 0))))
+            meta["mu_pre"][rate] = round(mu, 4)
+            rp = (np.nan_to_num(kk) + m_pre) / (np.nan_to_num(nn) * mu + m_pre)
+            rho0 = np.where(np.isnan(kk), 1.0, rp ** lam_pre)
+        LR[rate] = np.log((K2 + m * rho0) / (E2 + m))
+        EX[rate] = E2
+    return LR, EX, meta
+
+
+# ====================================================================== (b) online opponent-adjusted finishing filter
+def run_filter(feats, base, sigma0=0.6, tau=0.15):
+    """Diagonal-Gaussian online filter over every UFC bout (day order; the whole card is snapshotted before any
+    update). Each fighter has KO / submission offence o and vulnerability d (log-odds vs decision, given a win),
+    eta_m = b_m(division, era) + o_W,m + d_L,m, softmax over {DEC, KO, SUB}. Prior N(0, sigma0^2); variance grows by
+    tau^2 per year of inactivity (capped at sigma0^2). Returns per methodround row (n, 2 sides, 8):
+    [o_ko, o_sub, d_ko, d_sub, var o_ko, var o_sub, var d_ko, var d_sub] before the fight, and the filter's own
+    pre-fight method-given-winner predictions for its log loss."""
+    priors = base["priors"]
+    npers = feats["n_persons"]
+    mu = np.zeros((npers, 4))
+    var = np.full((npers, 4), sigma0 ** 2)
+    last = np.full(npers, -1)
+    rows = {f: i for i, f in enumerate(base["T"]["id"])}
+    out = np.zeros((len(rows), 2, 8))
+    s0 = sigma0 ** 2
+    t2 = tau ** 2
+    seq = feats["seq"]
+    pred_ll = []
+    bcache = {}
+
+    def bvec(year, div):
+        key = (year, div)
+        if key not in bcache:
+            pr = priors.get(max(min(year, max(k for k in priors if isinstance(k, int))), 2008))
+            P = pr.get(div) or pr["ALL"]
+            dec = max(P["dec_w"], 1e-9)
+            bcache[key] = (math.log(max(P["ko_w"], 1e-9) / dec), math.log(max(P["sub_w"], 1e-9) / dec))
+        return bcache[key]
+
+    i = 0
+    while i < len(seq):
+        day = seq[i][2]
+        j = i
+        while j < len(seq) and seq[j][2] == day:
+            j += 1
+        card = seq[i:j]
+        for a, b, _, _, _, _, _, fid in card:          # drift then snapshot
+            for p in (a, b):
+                if last[p] >= 0:
+                    var[p] = np.minimum(var[p] + t2 * (day - last[p]) / 365.25, s0)
+            r = rows.get(fid)
+            if r is not None:
+                out[r, 0] = np.concatenate([mu[a], var[a]])
+                out[r, 1] = np.concatenate([mu[b], var[b]])
+        for a, b, _, year, div, winner, bh, fid in card:
+            for p in (a, b):
+                last[p] = day
+            if bh < 0:
+                continue
+            W, L = (a, b) if winner == "A" else (b, a)
+            bk, bs = bvec(year, div)
+            eta = np.array([0.0, bk + mu[W, 0] + mu[L, 2], bs + mu[W, 1] + mu[L, 3]])
+            pz = np.exp(eta - eta.max())
+            pz /= pz.sum()
+            pred_ll.append((year, -math.log(pz[bh])))
+            yv = np.zeros(3)
+            yv[bh] = 1.0
+            for m, (io, idd) in ((1, (0, 2)), (2, (1, 3))):
+                g = yv[m] - pz[m]
+                h = pz[m] * (1 - pz[m])
+                vo, vd = var[W, io], var[L, idd]
+                den = 1.0 + (vo + vd) * h
+                mu[W, io] += vo * g / den
+                mu[L, idd] += vd * g / den
+                var[W, io] = vo - vo * vo * h / den
+                var[L, idd] = vd - vd * vd * h / den
+        i = j
+    return out, np.array(pred_ll)
+
+
+# ====================================================================== cardio (output in rounds 2+ vs round 1)
+def cardio_block(feats, base, c_min=15.0):
+    """Shrunk log ratio of landed per minute in rounds 2+ to round 1, own and opponent's (a fader lets the opponent
+    pick up late), over all prior bouts with round stats; league ratios from events before 2016 (constants)."""
+    E = feats["E"]
+    pre16 = E["year"].to_numpy() < 2016
+    r1 = E.loc[pre16, "c_l1"].sum() / max(1.0, E.loc[pre16, "c_m1"].sum())
+    rL = E.loc[pre16, "c_lL"].sum() / max(1.0, E.loc[pre16, "c_mL"].sum())
+    out = np.zeros((len(base["T"]), 2, 2))
+    cs = {k: person_cumsum(feats, E[k].to_numpy(float)) for k in ("c_m1", "c_l1", "c_mL", "c_lL", "c_om1", "c_ol1",
+                                                                  "c_omL", "c_olL")}
+    for s, P in ((0, feats["PA"]), (1, feats["PB"])):
+        for q, (m1, l1, mL, lL) in enumerate((("c_m1", "c_l1", "c_mL", "c_lL"),
+                                              ("c_om1", "c_ol1", "c_omL", "c_olL"))):
+            a1 = np.array([cs[l1](p, k) for p, k in P])
+            b1 = np.array([cs[m1](p, k) for p, k in P])
+            aL = np.array([cs[lL](p, k) for p, k in P])
+            bL = np.array([cs[mL](p, k) for p, k in P])
+            out[:, s, q] = np.log((aL + c_min * rL) / (bL + c_min)) - np.log((a1 + c_min * r1) / (b1 + c_min))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])

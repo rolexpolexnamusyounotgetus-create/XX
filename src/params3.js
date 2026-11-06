@@ -79,7 +79,12 @@
       // below; engine3.js oppadjTargets). OFF: it competes with styles_sos sos "wf" (both adjust for the schedule) and the
       // engine refuses the two together; the Calibrate ablation picks one by train soft CE + stat lines. Arm: { oppadj: true,
       // styles_sos: { sos: false } } with opts.oppadj (backtests: tools/mlpathrec.js, oppadj.json walk-forward snapshots).
-      oppadj: false
+      oppadj: false,
+      // v5 merge step 4: pre-UFC newcomer priors, research/model_preufc.md item 3 (block `preufc` below; engine3.js applyPreUFC):
+      // finish-odds multipliers from the regional record for fighters with 0-3 UFC fights. The verified recipe; styles_sos's
+      // newcomer sub-flag (the older stub) stays off and the engine refuses both. A no-op until a caller passes opts.preufc
+      // (backtests: tools/mlpathrec.js, preufc.json snapshots) or loads a roster (FightEngine.loadPreUFC(preufc.json)).
+      preufc: false
     },
 
     // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
@@ -135,6 +140,22 @@
     // src/styles_sos.js OA_ML_BETA (the sosSource "oppadj" approximation on the final tables, which this recipe replaces).
     oppadj: {
       beta: { dAtt: 0.932, cAtt: 0.988, gAtt: 0.17, accH: 0.548, accB: 0, accL: 0.262, kd: 0, tdAtt: 0.372, tdAcc: 0.119, ctrl: 0.621, sub: 0 }
+    },
+
+    // ---------------- pre-UFC newcomer priors (component "preufc"; research/model_preufc.md "Recommendation for the engine" 3) ----------------
+    // v5 merge step 4. For a side with at most maxUfc prior UFC fights: rates from the regional record entering the bout,
+    // (count + smooth) / (n + 2); per-fight finish-odds multipliers (rate / ref)^exp (power: own KO-win odds; sub: own
+    // submission-win odds; chin: own KO-loss odds), faded by exp(-n_UFC / tau). Recipe values (smooth, ref, exp, tau) from the
+    // per-side finish models fit on 2015-2023 newcomer sides with time-ordered CV (tau 8 = the top of its CV grid; the report
+    // suggests trying 16 or no fade in the engine refit). scale: the hazard exponent that makes one unit of log odds multiplier
+    // move the engine's simulated finish odds by one unit (tools/preufc_scale.js, league-average pairs on train priors).
+    preufc: {
+      maxUfc: 3,
+      tau: 8,
+      smooth: { ko: 0.3, sub: 0.2, kol: 0.2 },
+      ref: { ko: 0.343, sub: 0.247, kol: 0.044 },
+      exp: { pow: 0.60, sub: 0.63, chin: 0.24 },
+      scale: { pow: 1, sub: 1, chin: 1 }
     },
 
     // ---------------- fight dynamics (component "dynamics"; research/model_dynamics.md section 8, data/derived/dynamics.json) ----------------

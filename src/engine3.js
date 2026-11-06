@@ -1071,6 +1071,76 @@
     opts = opts || {};
     var m = matchupML(profA, profB, opts);
     if (m.p.components && m.p.components.durability) applyDurability(m, resolve(profA), resolve(profB), opts);
+    if (compOn(m.p, "preufc")) applyPreUFC(m, resolve(profA), resolve(profB), opts);   // v5 merge step 4
+    return m;
+  }
+
+  // ------------------------------------------------------------------ pre-UFC newcomer priors (engine v5 component: params.components.preufc)
+  // research/model_preufc.md "Recommendation for the engine", item 3 (verified): a newcomer's regional (non-UFC pro) record
+  // moves his finish odds. Per side with at most params.preufc.maxUfc (3) prior UFC fights, from the record entering the bout:
+  //   KO rate = (ko_w + 0.3) / (n + 2),  sub rate = (sub_w + 0.2) / (n + 2),  KO-loss rate = (ko_l + 0.2) / (n + 2)
+  //   power  M_pow  = (KO rate / 0.343)^0.60       odds multiplier on his per-fight KO-win probability
+  //   subs   M_sub  = (sub rate / 0.247)^0.63      odds multiplier on his per-fight submission-win probability
+  //   chin   M_chin = (KO-loss rate / 0.044)^0.24  odds multiplier on his per-fight KO-loss probability (weak: the CI includes 0)
+  //   each faded to M^exp(-n_UFC / 8)
+  // (per-side finish models fit on 2015-2023 newcomer sides with time-ordered CV; reference rates = the training means). The
+  // engine works on per-strike / per-second hazards, so each multiplier enters as M^scale on the hazards of that finish: X's
+  // knockdown, ground-and-pound and standing TKO hazards x M_pow,X^scale.pow x M_chin,Y^scale.chin, X's submission attempt
+  // rates (top, bottom, standing guillotines) x M_sub,X^scale.sub. params.preufc.scale maps the per-fight odds multiplier to
+  // that hazard multiplier (tools/preufc_scale.js: league-average pairs on the train priors, so that the simulated finish odds
+  // move by M); the Calibrate stage may refit them on 2019-2023 newcomer bouts. Inputs (first found wins): opts.preufc = { A, B }
+  // with { n, ko_w, sub_w, ko_l, n_ufc } per side (corner order of this call; null = no prior; backtests: preufc.json
+  // snapshots, tools/mlpathrec.js), else prof.preufc, else the roster registered with loadPreUFC(preufc.json) by slug (records
+  // as of its ufcstats snapshot: bouts dated on or after it only). n_ufc defaults to the profile's UFC fight count (prof.n).
+  // styles_sos's newcomer sub-flag is the older unimplemented stub: never both (refused).
+  var PREROSTER = null, PREASOF = null;
+  function loadPreUFC(json) {
+    if (json == null) { PREROSTER = null; PREASOF = null; return null; }
+    var d = typeof json === "string" ? JSON.parse(json) : json, out = {}, rp = d.roster_priors || {}, fs = d.fighters || {};
+    for (var s in rp) {
+      var c = fs[s] && fs[s].current;
+      if (c && rp[s].n_ufc != null) out[s] = { n: +c.n || 0, ko_w: +c.ko_w || 0, sub_w: +c.sub_w || 0, ko_l: +c.ko_l || 0, n_ufc: +rp[s].n_ufc };
+    }
+    PREROSTER = out;
+    PREASOF = (d.meta && d.meta.ufcstats_snapshot) || null;
+    return { n: Object.keys(out).length, asof: PREASOF };
+  }
+  function preufcMult(q, rec, prof) {
+    if (!rec) return null;
+    var nU = rec.n_ufc != null ? +rec.n_ufc : (prof && prof.n != null ? +prof.n : null);
+    if (nU == null || !isFinite(nU) || nU > (q.maxUfc != null ? +q.maxUfc : 3)) return null;
+    var sm = q.smooth || {}, rf = q.ref || {}, ex = q.exp || {}, n = Math.max(0, +rec.n || 0);
+    var f = Math.exp(-nU / (q.tau || 8));
+    var ko = ((+rec.ko_w || 0) + sm.ko) / (n + 2), su = ((+rec.sub_w || 0) + sm.sub) / (n + 2), kl = ((+rec.ko_l || 0) + sm.kol) / (n + 2);
+    return { pow: Math.pow(ko / rf.ko, ex.pow * f), sub: Math.pow(su / rf.sub, ex.sub * f), chin: Math.pow(kl / rf.kol, ex.chin * f),
+      n_ufc: nU, fade: f, rates: { ko: ko, sub: su, kol: kl } };
+  }
+  function applyPreUFC(m, pa, pb, opts) {
+    var p = m.p, q = p.preufc || {}, sc = q.scale || {}, ss = p.components.styles_sos, i, j, k;
+    if (ss && typeof ss === "object" && ss.newcomer === true) {
+      throw new Error("FightEngine: components.preufc (the verified pre-UFC recipe) and styles_sos newcomer (the unimplemented stub) are exclusive");
+    }
+    var op = opts.preufc || null, profs = [pa, pb], recs = [null, null], src = [null, null];
+    var rost = PREROSTER && (!PREASOF || !m.date || String(m.date) >= PREASOF);
+    for (i = 0; i < 2; i++) {
+      if (op) { recs[i] = op[SIDE[i]] || null; src[i] = recs[i] ? "opts" : null; }
+      else if (profs[i].preufc) { recs[i] = profs[i].preufc; src[i] = "profile"; }
+      else if (rost && profs[i].slug && PREROSTER[profs[i].slug]) { recs[i] = PREROSTER[profs[i].slug]; src[i] = "roster"; }
+    }
+    var mult = [preufcMult(q, recs[0], pa), preufcMult(q, recs[1], pb)], hz = [{ ko: 1, sub: 1 }, { ko: 1, sub: 1 }];
+    var sP = sc.pow != null ? +sc.pow : 1, sS = sc.sub != null ? +sc.sub : 1, sC = sc.chin != null ? +sc.chin : 1;
+    for (i = 0; i < 2; i++) {
+      j = 1 - i;
+      var ko = (mult[i] ? Math.pow(mult[i].pow, sP) : 1) * (mult[j] ? Math.pow(mult[j].chin, sC) : 1);
+      var su = mult[i] ? Math.pow(mult[i].sub, sS) : 1;
+      if (ko !== 1) { m.kd[i] *= ko; m.gnp[i] *= ko; m.stko[i] *= ko; }
+      if (su !== 1) {
+        for (k = 0; k < 5; k++) { m.subTPos[i * 5 + k] *= su; m.subBPos[j * 5 + k] *= su; }
+        m.gillo[i] = clip(m.gillo[i] * su, 0, 0.5);
+      }
+      hz[i].ko = ko; hz[i].sub = su;
+    }
+    m.preufc = { src: src, mult: mult, hazard: hz };
     return m;
   }
 
@@ -2097,7 +2167,8 @@
     VERSION: VERSION, KEYS: KEYS, STATS: STK,
     loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
     loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound, deductions: deductions, loadDurability: loadDurability,
-    loadEmbed: loadEmbed, embedBlend: embedBlendSide, oppadjSide: oppadjSide,   // v5 merge step 4: components.embed, .oppadj
+    loadEmbed: loadEmbed, embedBlend: embedBlendSide, oppadjSide: oppadjSide,   // v5 merge step 4: components.embed, .oppadj,
+    loadPreUFC: loadPreUFC, preufcMult: function (rec, prof, q) { return preufcMult(q || (getParams() || {}).preufc || {}, rec, prof); },   // .preufc
     durabilityCovariates: function (prof, age, dp) { return durCovariates(dp || (getParams() || {}).durability || {}, prof || {}, age, null); },
     loadOfficials: loadOfficials, officialsTable: function () { return OFFTAB; }, officialsTableFor: officialsTableFor, officialsRound: officialsRound,
     summarize: summarize, explain: explain, manualProfile: manualProfile,

@@ -198,9 +198,3 @@ def stage_fetch(args):
     log("fetch done: %d/%d pages, %d network requests" % (n_ok, len(evs), F.n_net))
 
 
-if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "fetch":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("stage")
-    ap.add_argument("--delay", type=float, default=2.5)
-    stage_fetch(ap.parse_args())
-    sys.exit(0)
