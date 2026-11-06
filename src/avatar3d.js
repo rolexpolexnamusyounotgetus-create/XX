@@ -590,7 +590,8 @@
     var reced = /reced|receding|m shape|m-shape|thinning|widow/.test(txt), horseshoe = /horseshoe|male-pattern|crown thinning|bald on top/.test(txt);
     // "slightly receded temple corners" on a dense hairline is a normal hairline, not the receding-buzz mask
     if (reced && /(slight|mild|minor|a little)\w*\s+(\w+\s+){0,2}(reced|recess)/.test(txt) && !/thinning|deeply|heavily|strongly|widow/.test(txt)) reced = false;
-    var fade = /fade|taper|high and tight|clipped very short|skin fade/.test(txt);
+    // "no skin fade" is not a fade; a plain taper keeps the buzz mask (the sides just run shorter)
+    var txtF = txt.replace(/\bno (skin |bald )?fade\b|\bnot (a )?fade/g, " "), fade = /fade|high and tight|clipped very short/.test(txtF);
     if (top === 0 || (top == null && /bald|clean-shaven head|shaved head|head shaved|shaven head/.test(txt))) {
       L.hair = null; L.hairMode = "paint"; L.scalpCh = horseshoe || reced ? 3 : 4; L.scalp = 0.2;
     } else if ((top != null && top <= 1.3) || (top == null && /buzz|induction|clipper|very short|crew cut/.test(txt))) {
@@ -1605,9 +1606,11 @@
         return out;
       };
       var stub = bl < 4, dB = looks.beardDensity || 0.9;
-      var bo = stub ? { offs: bl < 2 ? [0.55 * mm] : [0.5 * mm, 1.2 * mm], cell: 0.85 + 0.12 * bl, slen: 0.75 + 0.3 * bl, sw: 0.05, dens: 0.92 * dB, grids: 3, opac: 1.5 }
-        : (!full ? { offs: [0.6, 0.45, 0.72, 1].map(function (k, j) { return j === 0 ? 0.6 * mm : k * clamp(bl * 0.38, 2.4, 5.2) * mm; }), cell: 1.7 + 0.05 * bl, slen: 1.9 + 0.06 * bl, sw: 0.075, dens: 0.95 * dB, grids: 3, opac: 1.45 }
-          : { offs: [0.7, 0.2, 0.36, 0.52, 0.68, 0.84, 1].map(function (k, j) { return j === 0 ? 0.7 * mm : k * clamp(bl * 0.38, 6, 12) * mm; }), droop: clamp(bl * 0.22, 3, 9) * mm, cell: 2.3, slen: 2.8, sw: 0.085, dens: 0.95 * dB, grids: 3, opac: 1.45 });
+      // stroke length never exceeds the cell (a 3x3 cell search finds every stroke that reaches a pixel)
+      var bo = stub ? { offs: bl < 2 ? [0.55 * mm] : [0.5 * mm, 1.2 * mm], cell: 0.8 + 0.18 * bl, sw: 0.055, dens: 0.95 * dB, grids: 3, opac: 1.7 }
+        : (!full ? { offs: [0.6, 0.4, 0.6, 0.8, 1].map(function (k, j) { return j === 0 ? 0.6 * mm : k * clamp(bl * 0.38, 2.4, 5.2) * mm; }), cell: 1.5 + 0.04 * bl, sw: 0.085, dens: dB, grids: 3, opac: 2.0 }
+          : { offs: [0.7, 0.16, 0.28, 0.4, 0.52, 0.64, 0.76, 0.88, 1].map(function (k, j) { return j === 0 ? 0.7 * mm : k * clamp(bl * 0.3, 5, 10) * mm; }), droop: clamp(bl * 0.12, 2, 5) * mm, cell: 2.2, sw: 0.09, dens: dB, grids: 3, opac: 2.0 });
+      bo.slen = bo.cell;
       this.addCap("beard", covB, Object.assign(bo, { len: lenB, densV: densB, dir: bdir, color: looks.beardColor, grey: looks.beardGrey || 0, lenK: 0.7, edgeK: full ? 1 : 0.7, seed: 11, spec: 0.09, shin: 60 }));
     }
     if (looks.hairMode === "shell" && X.maskHair && X.maskHair2 && looks.scalpCh >= 0 && looks.scalpCh < 4) {
@@ -1630,8 +1633,10 @@
         return out;
       };
       var buzz = topmm <= 6.5;
-      var ho = buzz ? { offs: [0.5 * mm, Math.max(0.9, topmm * 0.32) * mm], cell: 0.9 + 0.08 * topmm, slen: Math.min(0.7 + topmm * 0.35, 2.4), sw: 0.045, dens: 0.95, grids: 3, opac: 1.55 }
-        : { offs: [0.55, 0.4, 0.7, 1].map(function (k, j) { return j === 0 ? 0.55 * mm : k * clamp(topmm * 0.28, 1.8, 7) * mm; }), cell: 1.6, slen: 2.2, sw: 0.06, dens: 0.95, grids: 3, opac: 1.5 };
+      // scalp hair grows about four times denser than a beard
+      var ho = buzz ? { offs: [0.45 * mm, Math.max(0.8, topmm * 0.25) * mm, Math.max(1.2, topmm * 0.4) * mm], cell: Math.min(0.75 + 0.1 * topmm, 1.3), sw: 0.06, dens: 1, grids: 3, opac: 2.4 }
+        : { offs: [0.5, 0.3, 0.5, 0.75, 1].map(function (k, j) { return j === 0 ? 0.5 * mm : k * clamp(topmm * 0.28, 1.8, 7) * mm; }), cell: 1.25, sw: 0.075, dens: 1, grids: 3, opac: 2.4 };
+      ho.slen = ho.cell;
       this.addCap("hair", covH, Object.assign(ho, { len: lenH, dir: hdir, color: looks.hairColor, grey: 0, lenK: 0.6, edgeK: 0.8, seed: 53, spec: 0.12, shin: 80, maskTex: maskT, maskCh: ch, maskSet: looks.scalpCh < 3 ? 0 : 1 }));
     }
   };
@@ -1665,7 +1670,7 @@
     "{ vec2 s = vCUv * uScale; vec2 f = normalize(vFlow + vec2(1e-5));\n" +
     "  float pw = max(length(fwidth(s)), 1e-4);\n" +
     "  float cov = vCap.y;\n" +
-    "  if (uMaskOn > 0.5) { vec2 hu = (vCUv - vec2(0.6, 0.03)) / vec2(0.3, 0.84); cov = min(cov * 1.6 + 0.08, dot(texture2D(uMaskT, clamp(hu, 0.0, 1.0)), uMaskCh)); }\n" +
+    "  if (uMaskOn > 0.5) { vec2 hu = (vCUv - vec2(0.6, 0.03)) / vec2(0.3, 0.84); cov = max(min(cov * 1.6 + 0.08, dot(texture2D(uMaskT, clamp(hu, 0.0, 1.0)), uMaskCh)), cov - 0.12); }\n" +
     "  float h = vCap.x;\n" +
     "  float dens = uDens * vCap.w * smoothstep(0.03 + 0.45 * h * uEdgeK, 0.5 + 0.4 * h * uEdgeK, cov) * (0.72 + 0.56 * cvn(s / 7.0)) * (1.0 - 0.3 * h);\n" +
     "  float slen = uSLen * mix(1.0, vCap.z, uLenK);\n" +

@@ -394,6 +394,10 @@ def cmd_predict(args):
             for k in ("b_ko", "b_sub", "b_dec"):
                 pm[k] = pm[k] * qb / max(sb_, 1e-12)
             pdist = pm["a_dec"] + pm["b_dec"] + pD
+            # the finishing-round cells get the same per-side factors, so sum(finA) = a_ko + a_sub stays true at p_a
+            fa, fb = qa / max(sa_, 1e-12), qb / max(sb_, 1e-12)
+            fin_round = {"a": None if fin_round["a"] is None else [round(v * fa, 5) for v in fin_round["a"]],
+                         "b": None if fin_round["b"] is None else [round(v * fb, 5) for v in fin_round["b"]]}
             msrc = head.get("src")
         else:
             ko, sub, dc, dr = division_method_prior(fj["priors"], b.get("weight_class"), bi["rounds"])

@@ -56,13 +56,24 @@ pick.push({ a: "alexander-volkanovski", b: "justin-gaethje", division: "Lightwei
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "fwd-models-"));
 const SEED = { name: "Test Seeded", elo_debut_shift: 60 };
 const SEEDF = { name: "Test Features", pre: { pre_netelo: 1.0084 + 0.3594, pre_logn: 2.4222 - 0.4751, pre_feed: 2.4836 + 1.2104 } };  // +1 / -1 / +1 sd
-fs.writeFileSync(path.join(tmp, "debutants_test.json"), JSON.stringify({ fighters: { "test-seeded": SEED, "test-features": SEEDF } }));
+// the card desk's preufc.json-shaped entries (data/predictions/debutants_vegas124.json): values nested under "derived";
+// an "also_upcoming" block is a fallback that never overrides a "fighters" entry
+const SEEDN = { name: "Test Nested", derived: { seeded_elo: { elo_debut_shift: 45 }, side_pre: { pre_netelo: 9 } } };
+const SEEDNP = { name: "Test Nested Pre", derived: { side_pre: { pre_netelo: 1.0084 + 0.3594 }, age_at_ufc_debut: 28.3939 + 3.4675 } };
+fs.writeFileSync(path.join(tmp, "debutants_test.json"), JSON.stringify({
+  fighters: { "test-seeded": SEED, "test-features": SEEDF, "test-nested": SEEDN, "test-nested-pre": SEEDNP },
+  also_upcoming: { "test-seeded": { name: "Test Seeded", elo_debut_shift: 999 }, "test-upcoming": { name: "Test Upcoming",
+    derived: { seeded_elo: { elo_debut_shift: 25 } } } } }));
+fs.writeFileSync(path.join(tmp, "debutants_a_test.json"), JSON.stringify({ also_upcoming: { "test-nested": { elo_debut_shift: -999 } } }));
 const debuts = [
   { a: pick[0].a, b: null, key_b: "test-seeded", name_b: "Test Seeded" },
   { a: null, b: pick[1].b, key_a: "test-features", name_a: "Test Features" },
   { a: pick[2].a, b: null, key_b: nonRoster, name_b: nonRoster },
   { a: null, b: null, key_a: "nobody-one", name_a: "Nobody One", key_b: "test-seeded", name_b: "Test Seeded" },
-  { a: pick[3].a, b: null, key_b: "nobody-two", name_b: "Nobody Two" }];
+  { a: pick[3].a, b: null, key_b: "nobody-two", name_b: "Nobody Two" },
+  { a: pick[4].a, b: null, key_b: "test-nested", name_b: "Test Nested" },
+  { a: null, b: pick[5].b, key_a: "test-nested-pre", name_a: "Test Nested Pre" },
+  { a: pick[6].a, b: null, key_b: "test-upcoming", name_b: "Test Upcoming" }];
 const lines = [0.31, 0.47, 0.55, 0.62, 0.68, 0.73, 0.8, 0.37, 0.58, 0.44, 0.52, 0.66, 0.29];
 const fwd = [], rev = [];
 const all = pick.map((p) => Object.assign({ division: p.division, rounds: p.rounds, title: p.title }, p))
@@ -127,6 +138,11 @@ check(Math.abs(sd[2].b.rating - (1500 + PU.roster_priors[nonRoster].elo_debut_sh
   "preufc roster_priors seed: " + JSON.stringify(sd[2].b));
 check(sd[3].a.rating === 1500 && sd[3].b.rating === 1560, "two debutants: " + JSON.stringify(sd[3]));
 check(sd[4].b.rating === 1500 && /no pre-UFC seed/.test(sd[4].b.source), "unseeded debutant: " + JSON.stringify(sd[4].b));
+check(sd[5].b.rating === 1545 && /derived\.seeded_elo/.test(sd[5].b.source), "nested derived.seeded_elo shift: " + JSON.stringify(sd[5].b));
+const shiftNP = 48.23 - 32.48;                                  // +1 sd net Elo, +1 sd age at UFC debut
+check(Math.abs(sd[6].a.rating - (1500 + shiftNP)) < 0.01 && /betas on 2\//.test(sd[6].a.source),
+  "nested derived.side_pre + age_at_ufc_debut: " + JSON.stringify(sd[6].a));
+check(sd[7].b.rating === 1525 && /also_upcoming/.test(sd[7].b.source), "also_upcoming fallback: " + JSON.stringify(sd[7].b));
 const eA = FJ[pick[0].a].elo;
 check(Math.abs(A.bouts[off].models.elo - 1 / (1 + Math.pow(10, (1560 - eA) / 400))) < 1e-12, "seeded Elo probability");
 for (const x of A.bouts.slice(off)) for (const k of keys) if (k !== "elo" && k !== "market_novig") check(x.models[k] == null, "debut bout ran " + k);
