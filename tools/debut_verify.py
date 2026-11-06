@@ -582,23 +582,31 @@ def cmd_checks(args):
     print("1. universe from raw CSVs (name identity): %d bouts; only mine %d, only the builder's %d %s" % (
         len(mine), len(mine - theirs), len(theirs - mine),
         [(str(r.date), r.nameA, r.nameB) for _, r in Fr[Fr.fid.isin(theirs - mine)].iterrows()]))
-    # 2. duplicate-row leak + 3. page resolution
+    # 2. duplicate-row leak, on the BUILDER's row flags (tools/debut.py _parse_rows: preufc.verify match or promotion
+    #    "UFC"; the verifier's own pages flag any row within 3 days as UFC, so they are immune by construction)
+    #    + 3. page resolution
+    import debut as DB
+    import preufc as PU
     fights, people, bouts = ufc_dev()
     pages = build_pages(bouts)
+    res = json.load(open(DB.DRESOLVE))
+    fx = PU.Fetcher(offline=True)
     near, full_res = [], 0
     deb = set(Fr.person_A[Fr.nA == 0]) | set(Fr.person_B[Fr.nB == 0])
     for p, pg in pages.items():
         ud = [t[0] for t in bouts[p]]
-        for x in pg["pro"]:
-            if x["ufc"]:
+        rows, _, _, _ = DB._parse_rows(PU.parse_fighter(fx.get(PU.BASE + res[p]["href"], DB.fighter_path(res[p]["href"]))),
+                                       bouts[p])
+        for x in rows:
+            if x["_ufc"] or not x["_d"]:
                 continue
             for u in ud:
-                if abs((u - x["d"]).days) <= 3:
-                    near.append((p, str(u), str(x["d"]), x["opp_name"], x["event"]))
+                if abs((u - x["_d"]).days) <= 3:
+                    near.append((p, str(u), x["date"], x["opp"], x["event"]))
         if p in deb and all(any(abs((x["d"] - u).days) <= 3 for x in pg["pro"]) for u in ud):
             full_res += 1
-    print("2. non-UFC page rows within 3 days of one of the man's UFC bouts (a shifted copy of a UFC result): %d %s"
-          % (len(near), near[:5]))
+    print("2. builder's non-UFC page rows within 3 days of one of the man's UFC bouts (a shifted copy of a UFC result): "
+          "%d %s" % (len(near), near[:5]))
     print("3. debutants whose page lists every one of their UFC bouts (date match): %d of %d" % (full_res, len(deb)))
     # 4. replacement vs the close
     d = Fr[Fr.winner.isin(["A", "B"])].copy()

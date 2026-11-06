@@ -19,11 +19,19 @@ Data: ufcstats snapshot through Oct 31, 2026 (2026 rows dropped at parse); Sherd
     and the UFC record.
   - CV 2019-2023: **0.6143 vs seeded Elo 0.6683, -0.054 [-0.085, -0.023]** (seeded Elo is the ledger's current
     no-line fallback). Against plain Elo the change is -0.060.
+  - About 0.005 of that is selection optimism: with nested selection (blocks, C and tau chosen only on years before
+    each scored year) the CV gain is -0.049 [-0.082, -0.016] (verifier, `tools/debut_verify.py cv --nested`).
   - The single 2024-25 look: **0.6402 vs 0.6371, +0.003 [-0.043, +0.049]**, so not confirmed. It led in 2024
     (0.659 vs 0.663) and trailed in 2025 (0.622 vs 0.612).
-  - Pooled 2019-2025 (674 bouts; a planning number, never a selection input): -0.039 [-0.066, -0.013].
+  - Pooled 2019-2025 (674 bouts; a planning number, never a selection input): -0.039 [-0.066, -0.013]; -0.037
+    [-0.063, -0.011] with nested selection.
+  - Part of the shortfall is the reference: seeded Elo beat plain Elo by only 0.006 in the CV years but by 0.036 on
+    the look. Against plain Elo the debut model is -0.060 in CV and -0.033 [-0.080, +0.012] on the look.
 - **With a line, the market stays.**
-  - CV admitted the stacks [open, debut] (-0.021) and [close, debut] (-0.0008, barely past the 0.0005 rule).
+  - CV admitted the stack [open, debut] (-0.021; robust: -0.018 nested, -0.020 on the verifier's rebuilt network).
+  - [close, debut] passed the 0.0005 rule by a hair (-0.0008) as built, but the admission does not survive nested
+    selection (+0.0004) or the verifier's independent network rebuild (-0.0004). Read it as rejected.
+  - Both stacks fail the plan's CV non-inferiority bound (stack vs line CI upper < +0.001): open +0.003, close +0.010.
   - On the look both are worse than the line alone, and neither difference is significant:
     - open: +0.018 [-0.012, +0.047];
     - close: +0.006 [-0.008, +0.021].
@@ -37,17 +45,28 @@ Data: ufcstats snapshot through Oct 31, 2026 (2026 rows dropped at parse); Sherd
   | who x how (6 cells) vs the fallback | -0.090 [-0.133, -0.047] | -0.079 [-0.147, -0.014] |
 
   The fallback in the last row is seeded Elo x division base rates.
-- **Decision.** I applied the project decision rule (docs/V6_V10_PLAN.md 6.3 / 7.1) to the pre-registered look.
+- **Decision** (rule corrected by the verifier; the outcome is unchanged). The CV gate decides and the pre-registered
+  look can only confirm, with the "not worse" bounds of docs/V6_V10_PLAN.md 6.3 / 7.1.
   - Adopt the debut method model for debut bouts, in place of division base rates. It is fed the ledger's own
-    winner probability.
-  - Keep the line, and seeded Elo without a line, for the winner.
+    winner probability. CV passes on method given the winner (-0.035 [-0.060, -0.009]); in the adopted setup, with
+    the ledger's line fed in, CV also passes on method3 (-0.025 [-0.049, -0.002]). The look confirms.
+  - Keep the line, and seeded Elo without a line, for the winner. The no-line model passed CV but the look did not
+    confirm it. Both line stacks fail the plan's CV non-inferiority bound, and the close stack fails the robust
+    0.0005 rule too.
   - Log the debut model's winner probability as a candidate.
   - `data/derived/debut.json` `model.adoption` records this, and the JS `adopted` block follows it.
-- **The biggest single signal in debut bouts is replacement status.**
+  - The builder's first adoption code keyed the method on the look's method3 CI. That was a pre-registered
+    secondary ("never decisive"), so it was selection on 2024-25. The verifier re-keyed it on CV.
+- **Replacement status is the largest raw gap, but it is not the model's largest signal.**
   - In 2012-2023, in the 398 bouts where exactly one man was a late replacement, the replacement won 28.1%.
+    The close gave him 34.3%. In 2024-25: 30.6% won against 34.3% priced (49 bouts).
   - 25.8% of debutants were replacements, against 5.3% of veterans.
-  - The flag is public before the bout, so it is not a leak. The ledger has to capture it live
-    (`flags_a` / `flags_b`); today's card files carry it only as notice text.
+  - Inside the model, dropping one column costs this much CV log loss:
+    - network rating +0.013, promotion level +0.009, amateur win log-odds +0.008, debut flag +0.006;
+    - missed weight +0.0045, replacement +0.004.
+  - The flag is public before the bout, so it is not a leak. It is parsed from the current revision of each event's
+    Wikipedia article, though. Whether that prose is complete regardless of the outcome cannot be tested.
+  - The ledger has to capture it live (`flags_a` / `flags_b`); today's card files carry it only as notice text.
 - **What I would not claim.**
   - The look is not clean: tools/preufc.py had already scored seeded Elo on these same 172 bouts.
   - The one-hop opponent pages are not in this model (see Open threads).
@@ -212,7 +231,11 @@ The stacker is tools/ml2.py's stack_fit, copied verbatim: non-negative logit wei
 | open | 279 | raw open 0.61587; stack open 0.61690; **stack open + debut 0.59458** | debut admitted (-0.0213) |
 | close | 282 | raw close 0.55149; stack close 0.54907; **stack close + debut 0.54830** | debut admitted (-0.00077) |
 
-- The close admission is marginal: 0.0008 against a 0.0005 threshold.
+- The close admission is marginal: 0.0008 against a 0.0005 threshold. It is not robust (verifier):
+  - The block selection read these same 2021-23 rows. With nested selection the close stack scores 0.54949, a gain of
+    +0.0004, so it is rejected.
+  - On the verifier's independently rebuilt network columns it scores 0.54863, a gain of -0.0004, also rejected.
+  - [open, debut] stays admitted in both runs: -0.0176 nested, -0.0200 on the rebuilt network.
 - The plan's non-inferiority check fails, because the CI is wide. That check asks for the paired CI upper bound of
   stack vs raw line to be at most +0.001:
   - close: -0.0032 [-0.0155, +0.0105];
@@ -286,20 +309,38 @@ The stacks' 2024 / 2025 weights:
 
 ## Decision and recommendation
 
-The rule is docs/V6_V10_PLAN.md 6.3 / 7.1: keep if the paired CI excludes 0, or if it is "not worse" (winner CI
-upper bound at most +0.002) and clearly better on method. My pre-registration did not restate the rule; it is the
-project's standing decision rule, applied here exactly as written.
+The rule (corrected by the verifier; same outcome):
+- **The CV gate decides.** It is the plan's cycle-5 acceptance test on forward-chained 2019-2023:
+  - no line: the CI against seeded Elo excludes 0;
+  - with a line: ml2's 0.0005 rule, and the stack-vs-line CI upper bound below +0.001;
+  - method: the CI against division base rates excludes 0 (method given the winner).
+- **The single look only confirms**, with the "not worse" bounds of docs/V6_V10_PLAN.md 6.3 / 7.1: winner CI upper
+  bound at most +0.002, method at most +0.003.
+- **History.** The pre-registration did not state a decision rule. The builder's first adoption code keyed the method
+  on the look's method3 CI, a pre-registered secondary that was "never decisive", and so selected on 2024-25. The
+  verifier moved the decision to CV (`tools/debut.py` export, `model.adoption.rule`). Every outcome is unchanged.
 
-- **Winner without a line:** keep seeded Elo. The look's upper bound is +0.049.
+- **Winner without a line:** keep seeded Elo. CV passed (-0.054, nested -0.049), but the look did not confirm: its
+  upper bound is +0.049.
+  - The project precedent is the same: linemove's B3 passed the CV rule, was not confirmed, and was not adopted.
   - The debut model is logged as a candidate in the ledger's `debut_path` block.
-  - The pooled 2019-2025 number (-0.039 [-0.066, -0.013]) is the planning figure if the forward ledger, or a
-    debut-inclusive vault, later gets to decide.
-- **Winner with a line:** keep the line, open or close. Both stacks failed the "not worse" bound on the look.
+  - The pooled 2019-2025 number (-0.039 [-0.066, -0.013]; nested -0.037 [-0.063, -0.011]) is the planning figure if
+    the forward ledger, or a debut-inclusive vault, later gets to decide.
+- **Winner with a line:** keep the line, open or close.
+  - Both stacks fail the CV non-inferiority bound: open +0.003, close +0.010.
+  - The close stack also fails the robust 0.0005 rule.
+  - Both were worse on the look, though neither difference is significant.
 - **Method:** adopt the debut method model for bouts with a debutant, replacing the division base rates. It is fed
   the ledger's adopted winner probability (the close, else the open, else seeded Elo).
-  - It passed CV (method given the winner) and the look (all three method metrics, with CIs excluding 0).
-  - It differs from the CV setup in one way: CV fed it the debut model's winner probability, and the ledger feeds
-    it the line. Only the mismatch feature sees that difference.
+  - CV, as built: method given the winner -0.035 [-0.060, -0.009] passes. Method3 -0.021 [-0.042, +0.002] does not.
+  - CV, as adopted (the ledger's winner probability fed in; verifier, `tools/debut_verify.py method`):
+    - method given the winner -0.033 [-0.059, -0.006];
+    - method3 -0.025 [-0.049, -0.002].
+  - The look confirms both setups (method given the winner -0.083 / -0.086; method3 -0.044 / -0.051, CIs excluding 0).
+  - The only difference between the setups is the mismatch feature: CV fed it the debut model's winner probability,
+    and the ledger feeds it the line.
+  - The production refit computes the mismatch feature from in-sample winner predictions, not out-of-fold ones. The
+    ledger replaces them with the line anyway.
 - **Making it primary needs a new forward version.** fwd-4.1's pre-registration fixes its debut fallback, so a new
   version (fwd-6 or later) has to pre-register "debut method = tools/debut.py" before a lock. Its debut seeding of
   Elo stays as it is; there is one debut path, not two.
@@ -330,6 +371,8 @@ project's standing decision rule, applied here exactly as written.
     write it.
   - Without `--live`, rows from 2026 on are dropped, under the hidden-data protocol. A live card's debutant
     usually had his last regional bouts in 2026; with `--live` those rows are inputs, never fit or scored.
+  - Verifier fix: without `--live`, the rows used to be decayed to 2026-01-01 instead of the bout date. They are now
+    decayed to the bout date, as in training.
 - **Today's limits:**
   - The current debutant entries lack the network columns and the amateur win-loss split, so those enter at the
     training mean until `features` runs.
@@ -344,9 +387,13 @@ project's standing decision rule, applied here exactly as written.
 
 - **2026.** Dropped at parse. The build asserts that no frame date is 2026 or later. No 2026 row was collected into
   the repo or the vault.
-- **Selection.** Every choice comes from forward-chained CV on 2019-2023 with fits on earlier years: blocks, C,
-  tau, half-lives, lambda, and the stack structure. The CV stage never fits a 2024-25 row; the swap-test fit was
+- **Selection.** Every model choice comes from forward-chained CV on 2019-2023 with fits on earlier years: blocks,
+  C, tau, half-lives, lambda, and the stack structure. The CV stage never fits a 2024-25 row; the swap-test fit was
   restricted to pre-2024 rows for this reason.
+  - The adoption decision was first written after the look and keyed the method on a look secondary. The verifier
+    re-keyed it on CV, with the same outcome.
+  - The CV design was iterated on the same CV years. The promo blocks were added after a first CV run. Nested
+    selection prices that at about 0.005 of log loss.
 - **The network.**
   - The fit at C uses bouts before C, and only from pages whose owner debuted before C.
   - The fighter's own rows are always strictly before the bout.
