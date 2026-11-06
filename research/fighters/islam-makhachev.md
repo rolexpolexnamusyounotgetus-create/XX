@@ -38,7 +38,7 @@ A sambo-based chain wrestler. He works opponents to the fence, ties up a body lo
 
 ## Durability and cardio
 
-Two knockdowns absorbed in 19 UFC fights. His one loss is a 2015 first-round KO by Adriano Martins. He has gone 25 minutes three times (Volkanovski 2023, Della Maddalena, Machado Garry) and finished Poirier in round 5. His 5-round output curve (1.00, 1.24, 0.89, 0.67, 0.54 of round 1) falls late, but most of that drop is control time, not fatigue.
+Two knockdowns absorbed in 19 UFC fights. His one loss is a 2015 first-round KO by Adriano Martins. He has gone 25 minutes three times (Volkanovski in Feb 2023, Della Maddalena, Machado Garry) and finished Poirier in round 5. His 5-round output curve (1.00, 1.24, 0.89, 0.67, 0.54 of round 1) falls late, but most of that drop is control time, not fatigue.
 
 ## What the numbers in fighters.json say
 

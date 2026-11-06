@@ -1,6 +1,6 @@
 # Mackenzie Dern: scouting dossier
 
-As of Nov 6, 2026. Stats are from `data/derived/fighters.json` and the per-round rows in `data/raw/` (ufcstats snapshot through Oct 31, 2026). **No web source could be read this session** (the shared search budget was used up and news hosts were blocked). Anything marked *recalled* comes from memory and needs a fact-check.
+As of Nov 6, 2026. Stats: `data/derived/fighters.json` and `data/raw/` (ufcstats snapshot to Oct 31, 2026). **No web source was reachable this session** (search budget spent, news hosts blocked). *Recalled* marks memory that needs a fact-check.
 
 ## Current status
 
@@ -42,10 +42,9 @@ She is a BJJ specialist; her pedigree as a world-level jiu-jitsu competitor is *
 
 ## What the numbers say
 
-Her Elo of 1657 is third among active strawweights, behind Zhang (1706) and Tatiana Suarez (1703). The engine should give her below-average striking volume and defence, a weak chin, low knockdown power (2 knockdowns, 0 KO wins), poor takedown accuracy and poor takedown defence. It should also give her an above-average control rate once a fight hits the mat and a high submission conversion. Her fights should split between grinding decisions and late submissions, and a hard-hitting striker should have a real KO path.
+Her Elo of 1657 is third among active strawweights, behind Zhang (1706) and Tatiana Suarez (1703). The engine should give her below-average striking volume and defence, a weak chin, low knockdown power (2 knockdowns, 0 KO wins), poor takedown accuracy and poor takedown defence. It should also give her an above-average control rate once a fight hits the mat and a high submission conversion. Expect grinding decisions and late submissions, with a real KO path for a hard-hitting striker.
 
 ## Sources
 
 - Dataset: `data/derived/fighters.json`; `data/raw/ufc_fight_results.csv`; `data/raw/ufc_fight_stats.csv`
 - ufcstats [fighter page](http://ufcstats.com/fighter-details/7447e9f28508106a); fight pages: [Robertson](http://ufcstats.com/fight-details/4700d42c9869674a), [Jandiroba](http://ufcstats.com/fight-details/7d3da3c4153717de), [Ribas 2025](http://ufcstats.com/fight-details/f46308108eb9261a), [Andrade](http://ufcstats.com/fight-details/6fd67582d8adb1c7), [Hill](http://ufcstats.com/fight-details/cb9654746447b934), [Shevchenko vs Zhang](http://ufcstats.com/fight-details/7606f6b6c19f2d73)
-- No web news source was reachable this session. Her title status after Aug 15, 2026 and her next booking need checking.

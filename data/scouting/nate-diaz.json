@@ -1,0 +1,76 @@
+{
+  "slug": "nate-diaz",
+  "name": "Nate Diaz",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Not under UFC contract. His last UFC fight was UFC 279 (Sep 10, 2022), a round-4 guillotine from bottom guard over Tony Ferguson that completed his UFC contract. He then boxed: a unanimous-decision loss to Jake Paul (Aug 5, 2023) and a majority-decision win over Jorge Masvidal (Jul 6, 2024). He was reported in early 2026 as booked against Mike Perry on a May 16, 2026 MMA card promoted by Most Valuable Promotions on Netflix. That booking and its result were NOT verified this session (web search budget used up; Wikipedia and ufc.com blocked). Age 41. He has never announced a retirement. No UFC bout appears in the UFC Stats snapshot of Oct 31, 2026.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/8355922d564b152c",
+      "http://ufcstats.com/fight-details/7e8fd03e070d0c25 (UFC 279 vs Ferguson)",
+      "data/derived/fighters.json (last_fight 2022-09-10, snapshot 2026-10-31)",
+      "https://bloodyelbow.com/2026/03/08/max-holloway-vs-charles-oliveira-2-ufc-326-result-nate-diaz-enraged-as-bmf-title-changes-hands-in-boring-clash/ (headline only, cited in this repo's charles-oliveira dossier; not opened by this agent)",
+      "https://en.wikipedia.org/wiki/Nate_Diaz (reference for the boxing bouts and the 2026 booking; not reachable this session, so unverified)"
+    ]
+  },
+  "style": {
+    "archetype": "volume striker",
+    "stance": "southpaw",
+    "tags": ["southpaw", "volume", "pressure", "jab", "dirty-boxing", "submissions", "guillotine", "cardio", "durable", "late-surge", "slow-starter"],
+    "signature": [
+      "constant southpaw jab-straight volume: 4.6 significant strikes landed per minute (lightweight median 4.1) plus heavy non-significant volume, 7.4 total strikes landed per minute (fighters.json career)",
+      "close-range punching in the clinch: 22% of his landed significant strikes come in the clinch; 77 clinch strikes landed vs Conor McGregor at UFC 202",
+      "guillotine from bottom: finished Tony Ferguson (UFC 279, R4), Melvin Guillard and Junior Assuncao from guard or half guard, and Jim Miller after a drop to the ground (UFC Stats)",
+      "triangles and armbar off his back (Alvin Robinson, Kurt Pellegrino, Takanori Gomi) and the rear-naked choke that finished McGregor at UFC 196 (UFC Stats)",
+      "late-round surges: 31 significant strikes in round 5 vs Leon Edwards at UFC 263, his best round of that fight; 49 in round 3 vs McGregor at UFC 202"
+    ],
+    "weaknesses": [
+      "leg kicks: opponents land 25% of their significant strikes on his legs (league lightweight about 15%); McGregor 40 of 45 at UFC 202, Ferguson 34 of 39 at UFC 279, Edwards 23 of 23 at UFC 263",
+      "weak takedown defence: 44% career (lightweight median 67%); Benson Henderson held him down for 16:58 (2012) and opponents controlled him for 29% of his UFC minutes",
+      "cuts: his loss to Masvidal at UFC 244 was a doctor stoppage for facial cuts after round 3",
+      "little one-punch power: 0.18 knockdowns per 15 min (lightweight median 0.31) and only 2 KO/TKO wins in 27 UFC fights",
+      "inactivity and age: no UFC bout since Sep 2022; age 41"
+    ],
+    "summary": "A long-armed southpaw who walks opponents down behind a busy jab and left straight, keeps punching in the clinch and gets stronger as the fight goes on. Off his back he is a dangerous Cesar Gracie-trained grappler with guillotines, triangles and chokes; ten of his 16 UFC wins are submissions. He is hard to stop (one KO loss by strikes in 27 UFC fights) but gives up leg kicks, takedowns and cuts.",
+    "sources": [
+      "data/derived/fighters.json (career C and recency-weighted S sums; division medians computed over lightweights with 30+ UFC minutes)",
+      "data/raw/ufc_fight_stats.csv and ufc_fight_results.csv (UFC 196, 202, 244, 263, 279 bout and round stats)",
+      "http://ufcstats.com/fight-details/648396cc751c730d (UFC 202)",
+      "http://ufcstats.com/fight-details/4ace70bff9debdfb (UFC 196)",
+      "http://ufcstats.com/fight-details/b070b8c2c489d838 (UFC 263)",
+      "http://ufcstats.com/fight-details/ac0a63ad13897564 (UFC 244)",
+      "http://ufcstats.com/fight-details/bc72dac46f0383f1 (Henderson, 2012)"
+    ]
+  },
+  "moves": {
+    "jab": 0.36, "cross": 0.32, "hook": 0.17, "overhand": 0.04, "upper": 0.09, "headkick": 0.02,
+    "bodykick": 0.15, "bodyhook": 0.45, "bodystraight": 0.4,
+    "calf": 0.4, "inside": 0.6, "spinning": 0.0, "knee": 0.1, "elbow": 0.05,
+    "notes": "Group weights (head, body, leg) each sum to 1; the engine's target split should come from fighters.json. Career significant attempts go head 0.835 / body 0.115 / leg 0.051 and landed head 0.742 / body 0.170 / leg 0.087; recency-weighted attempts are 0.816 / 0.134 / 0.050. League lightweight attempts are about 0.77 / 0.15 / 0.09, so he is more head-heavy and kicks far less than average. In the head group the jab and left straight lead because his output is mostly straight punching at range (73% of his landed significant strikes are at distance, career) with a lot of extra non-significant volume (7.4 total vs 4.6 significant landed per minute). Head kicks are rare (0.02). The body group leans on punches: 22% of his landed strikes come in the clinch and his body strikes cluster in close exchanges (50 body strikes landed vs McGregor at UFC 202, with 77 clinch strikes), so bodyhook and bodystraight outweigh bodykick. Leg strikes are only 5% of attempts; the calf/inside split is a judgment with low confidence. Spinning is 0. Knee and elbow are small and judged from his clinch share. UFC Stats does not record technique types, so the within-group split is an analyst judgment from the bout stats in data/raw, not a published breakdown."
+  },
+  "appearance": {
+    "build": "tall, lean and long-limbed for a lightweight or welterweight: 6 ft 0 in with a 76-inch reach (fighters.json)",
+    "hair": "short dark brown, usually cropped short (from widely published photos; not re-checked this session)",
+    "facial_hair": "varies between clean-shaven and light stubble across his career (from widely published photos; unconfirmed in text)",
+    "skin": "light-medium",
+    "tattoos": "unknown (no source opened this session)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height, reach, stance)",
+      "general published fight photos (no written description could be opened this session)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Output rises through the fight. Five-round pace relative to round 1 is 1.00 / 1.38 / 1.06 / 1.21 / 1.00, and the three-round curve is 1.00 / 1.18 / 1.37. Edwards (UFC 263) is the example: 10, 13, 3, 19 and 31 significant strikes landed by round.", "source": "data/derived/fighters.json (pace, pace3); data/raw/ufc_fight_stats.csv" },
+    { "note": "Submission threat off his back is far above average: 1.16 attempts per 15 min career (lightweight median 0.28, league 0.42) and 10 submission wins, five of them guillotines. A takedown by the opponent should not be treated as a safe position against him.", "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv" },
+    { "note": "Low knockdown power, high durability: 0.18 knockdowns scored per 15 min vs a median of 0.31, and one KO loss by strikes (Josh Thomson head kick, 2013) in 27 UFC fights, despite 9 knockdowns absorbed.", "source": "data/derived/fighters.json (kd, ko_losses, kd_absorbed)" },
+    { "note": "Leg-kick and takedown vulnerability: opponents' landed significant strikes go 57% head / 18% body / 25% legs against him, and he stops only 44% of takedowns. Opponents with a kicking game or wrestling should get a bonus.", "source": "data/derived/fighters.json (opponent sums)" },
+    { "note": "Division: fighters.json files him at lightweight (career-most), but his last five UFC fights (2016-2022) were all at welterweight. For a current matchup use 170 lb.", "source": "data/derived/fighters.json (divisions, recent)" },
+    { "note": "Layoff: no UFC fight since Sep 10, 2022, and only boxing bouts since have been confirmed. Apply an inactivity and age (41) discount, and use the career sums for a prime version.", "source": "data/derived/fighters.json (last_fight); status sources above" }
+  ],
+  "confidence": "low"
+}

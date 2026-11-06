@@ -32,8 +32,8 @@
       "heavy body work: 24% of decayed sig attempts go to the body; 26/39 body landed vs Guskov, 30/39 vs Pereira at UFC 313",
       "clinch pressure on the fence: 19/21 clinch sig and 5:42 control vs Pereira at UFC 313",
       "top control into ground strikes: 8:26 control and a R5 TKO from punches on the ground vs Guskov (Jul 2026)",
-      "right hand at distance: KO of Johnny Walker, R2 (Jan 2024)",
-      "kicks to the head: KOs of Marcin Prachnio (2019) and Dalcha Lungiambula (front kick, 2020)"
+      "punch at distance: KO of Johnny Walker, R2 (Jan 2024; ufcstats: 'Punch to Head At Distance', which hand not confirmed)",
+      "kicks to the head: KOs of Marcin Prachnio (Sep 2018) and Dalcha Lungiambula (front kick, Nov 2019), per ufcstats"
     ],
     "weaknesses": [
       "absorbs heavy leg kicks: Pereira landed 48/55 at UFC 313, Guskov 34/38, Rakic 34/40",
@@ -55,7 +55,7 @@
     "jab": 0.3, "cross": 0.3, "hook": 0.17, "overhand": 0.06, "upper": 0.07, "headkick": 0.1,
     "bodykick": 0.6, "bodyhook": 0.25, "bodystraight": 0.15,
     "calf": 0.45, "inside": 0.55, "spinning": 0.0, "knee": 0.12, "elbow": 0.05,
-    "notes": "Target groups follow fighters.json decayed sums: sig attempts 63.6% head, 24.1% body, 12.3% leg (career 69.3/20.8/9.9). The light heavyweight league split is about 75/14/11, so his body share is roughly 1.7x the league's. Kicks lead the body group as a judgment: his heavy body counts come in fights fought mostly at range (22/29 body vs Rakic, where 50 of his 55 sig landed at distance). ufcstats does not separate punches from kicks. Jab and cross share the head group equally, with the cross justified by the Walker KO. Head kick is set at 0.1 because two of his UFC KOs came from kicks to the head (dataset method details). The knee is set at 0.12 for his clinch work (10.6% clinch share of sig landed). No spinning attacks are recorded. No source reachable in this pass gives a technique-level breakdown."
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 63.6% head, 24.1% body, 12.3% leg (career 69.3/20.8/9.9). The light heavyweight league split is about 75/14/11, so his body share is roughly 1.7x the league's. Kicks lead the body group as a judgment: his heavy body counts come in fights fought mostly at range (22/29 body vs Rakic, where 50 of his 55 sig landed at distance). ufcstats does not separate punches from kicks. Jab and cross share the head group equally as a judgment; the Walker KO was a punch at distance, but which hand is not confirmed in this pass. Head kick is set at 0.1 because two of his UFC KOs came from kicks to the head (dataset method details). The knee is set at 0.12 for his clinch work (10.6% clinch share of sig landed). No spinning attacks are recorded. No source reachable in this pass gives a technique-level breakdown."
   },
   "appearance": {
     "build": "6'3\" (75\" reach per dataset), broad and heavy-framed light heavyweight with a thick torso",

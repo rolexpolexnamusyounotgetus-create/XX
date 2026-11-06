@@ -1,6 +1,6 @@
 # Manon Fiorot ("The Beast"): scouting dossier
 
-As of Nov 6, 2026. Stats are from `data/derived/fighters.json` and the per-round rows in `data/raw/` (ufcstats snapshot through Oct 31, 2026). **No web source could be read this session** (the shared search budget was used up and news hosts were blocked). Anything marked *recalled* comes from memory and needs a fact-check.
+As of Nov 6, 2026. Stats: `data/derived/fighters.json` and `data/raw/` (ufcstats snapshot to Oct 31, 2026). **No web source was reachable this session** (search budget spent, news hosts blocked). *Recalled* marks memory that needs a fact-check.
 
 ## Current status
 
@@ -50,4 +50,3 @@ Her Elo is 1672, fourth among active flyweights, behind Shevchenko (1750), Silva
 
 - Dataset: `data/derived/fighters.json`; `data/raw/ufc_fight_results.csv`; `data/raw/ufc_fight_stats.csv`
 - ufcstats [fighter page](http://ufcstats.com/fighter-details/34ff304266360297); fight pages: [Grasso](http://ufcstats.com/fight-details/d9712b45c094730e), [Jasudavicius](http://ufcstats.com/fight-details/c82acd7b17915591), [Shevchenko](http://ufcstats.com/fight-details/9e9d1764a015f313), [Blanchfield](http://ufcstats.com/fight-details/e6d4fdad2b3422d1), [Namajunas](http://ufcstats.com/fight-details/4eaf54ad3c82b6fa), [Silva vs Wang](http://ufcstats.com/fight-details/3f804eec9183e597)
-- No web news source was reachable this session. Her ranking and next booking need checking.

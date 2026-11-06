@@ -197,8 +197,8 @@
     corner: 0.012,           // [selfcal] corner stoppage per KD absorbed beyond the first, plus corner * (D/120)^3 (baserates: corner 0.1-0.35 per 100 fights)
 
     // ---------------- division self-calibration factors ([selfcal]; neutral = 1) ----------------
-    // ko: scales kdInstant, kdRefStop, stko and gnpTko on odds; sub: scales submission conversion odds;
-    // att: strike-attempt scale; ctrl: control target scale; td: takedown attempt scale.
+    // att: strike-attempt scale; kd: knockdown scale; ko: scales kdInstant and kdRefStop odds and the stko / gnpTko hazards;
+    // sub: submission conversion odds; ctrl: control target scale; td: takedown attempt scale.
     div: {}
   };
   if (typeof module !== "undefined" && module.exports) module.exports = FightParams;

@@ -1,0 +1,407 @@
+// Engine v3 tests: spec invariants, league-average base-rate self-calibration per division,
+// Volk vs Gaethje summary and explain(), speed.
+//
+// Usage:
+//   node tests/test_engine3.js [N]            run everything (N fights per Monte Carlo check, default 20000)
+//   node tests/test_engine3.js [N] --quick    invariants + Volk vs Gaethje only (no division table)
+//   node tests/test_engine3.js [N] --fit      self-calibrate the global scales (Lightweight) and the per-division
+//                                             factors to the division base rates, print the values
+//   node tests/test_engine3.js [N] --fit --write   same, and rewrite the [selfcal] values in src/params3.js
+"use strict";
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+const ROOT = path.join(__dirname, "..");
+const ENGINE_SRC = path.join(ROOT, "src/engine3.js"), PARAMS_SRC = path.join(ROOT, "src/params3.js");
+const E = require(ENGINE_SRC);
+const BASE = require(PARAMS_SRC);
+const dbJson = fs.readFileSync(path.join(ROOT, "data/derived/fighters.json"), "utf8");
+const DB = E.loadDB(dbJson);
+
+const args = process.argv.slice(2);
+const N = +(args.find((a) => /^\d+$/.test(a)) || 20000);
+const FIT = args.includes("--fit"), WRITE = args.includes("--write"), QUICK = args.includes("--quick");
+const DATE = "2026-11-06";
+
+let fails = 0, passes = 0;
+function check(name, ok, info) {
+  if (ok) passes++; else fails++;
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${info ? "  (" + info + ")" : ""}`);
+}
+const pct = (x, d = 1) => (100 * x).toFixed(d);
+const f2 = (x, d = 2) => (x == null || !isFinite(x) ? "-" : (+x).toFixed(d));
+const sum = (a) => a.reduce((x, y) => x + y, 0);
+
+// ---------------------------------------------------------------- synthetic league-average fighter
+function avgProfile(div, tag) {
+  const P = DB.priors[div], S = {};
+  for (const k of E.KEYS) S[k] = (P[k] || 0) * 400;   // 400 fight-minutes of exactly league-average fighting
+  return { name: `${tag || "Average"} ${div}`, division: div, S, age: 30, ko_losses: 0, pace: null, pace_w: null };
+}
+
+// ---------------------------------------------------------------- base-rate targets from the division priors (2018+)
+function targets(div, nR) {
+  const P = DB.priors[div];
+  const fin = nR === 5 ? P.fin5 : P.fin3, dec = nR === 5 ? P.dec5 : P.dec3;
+  const ko = sum(fin.KO), sub = sum(fin.SUB), d = fin.DEC + fin.DRAW, tot = ko + sub + d;  // renormalized without DQ/NC/other
+  const lnd = P.d_lnd + P.c_lnd + P.g_lnd, att = P.d_att + P.c_att + P.g_att;
+  return {
+    n: fin.n, fin: (ko + sub) / tot, ko: ko / tot, sub: sub / tot,
+    koR: fin.KO.map((x) => x / tot), subR: fin.SUB.map((x) => x / tot), dec,
+    sigL15: 15 * lnd, sigA15: 15 * att, acc: lnd / att,
+    hL15: 15 * P.h_lnd, hA15: 15 * P.h_att, bL15: 15 * P.b_lnd, bA15: 15 * P.b_att, lL15: 15 * P.l_lnd, lA15: 15 * P.l_att,
+    dL15: 15 * P.d_lnd, dA15: 15 * P.d_att, cL15: 15 * P.c_lnd, cA15: 15 * P.c_att, gL15: 15 * P.g_lnd, gA15: 15 * P.g_att,
+    kd100: 100 * P.kd_per_h, kd15: P.kd15, td15: P.td15, tdA15: 15 * P.td_att, tdAcc: P.td_acc, ctrl15: P.ctrl15, sub15: P.sub15,
+    kdFin: P.kd_fin, subConv: P.sub_conv
+  };
+}
+
+// ---------------------------------------------------------------- simulate a league-average pair
+function simAvg(div, nR, params, n, seed, wantTrace) {
+  const m = E.matchup(avgProfile(div, "A"), avgProfile(div, "B"), { division: div, rounds: nR, title: nR === 5, params });
+  const s = E.summarize(m, n, seed);
+  const a = s.avg.A, b = s.avg.B, p15 = (k) => (a.per15[k] + b.per15[k]) / 2;
+  const out = {
+    m, s, fin: s.fins, ko: sum(s.finKO), sub: sum(s.finSUB), koR: s.finKO, subR: s.finSUB, dec: s.dec, r108: s.r108,
+    sigL15: p15("sig_lnd"), sigA15: p15("sig_att"), acc: (a.sig_lnd + b.sig_lnd) / (a.sig_att + b.sig_att),
+    hL15: p15("h_lnd"), hA15: p15("h_att"), bL15: p15("b_lnd"), bA15: p15("b_att"), lL15: p15("l_lnd"), lA15: p15("l_att"),
+    dL15: p15("d_lnd"), dA15: p15("d_att"), cL15: p15("c_lnd"), cA15: p15("c_att"), gL15: p15("g_lnd"), gA15: p15("g_att"),
+    kd100: 100 * (a.kd + b.kd) / (a.h_lnd + b.h_lnd), kd100s: 100 * (a.kd + b.kd) / (a.sh_lnd + b.sh_lnd), kd15: s.kd15,
+    td15: p15("td_lnd"), tdA15: p15("td_att"), tdAcc: (a.td_lnd + b.td_lnd) / Math.max(1e-9, a.td_att + b.td_att),
+    ctrl15: s.ctrl15, sub15: p15("sub_att"), subConv: sum(s.finSUB) / Math.max(1e-9, (a.sub_att + b.sub_att)),
+    koLoc: s.koLoc, subNames: s.subNames, avgMin: s.avgMin
+  };
+  if (wantTrace) {
+    // P(same-round finish by the scorer | round with a one-sided knockdown), from traced fights
+    const rng = E.makeRng(seed + 99), nT = Math.min(4000, n);
+    let kr = 0, kf = 0;
+    for (let i = 0; i < nT; i++) {
+      const f = E.simulate(m, rng, true);
+      for (const r of f.rounds) for (const w of ["A", "B"]) {
+        const o = w === "A" ? "B" : "A";
+        if (r.st[w].kd > 0 && r.st[o].kd === 0) { kr++; if (r.fin && r.fin.by === w && r.fin.how !== "SUB") kf++; }
+      }
+    }
+    out.kdFin = kf / Math.max(1, kr); out.kdRounds = kr;
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- tolerances (task contract)
+const TOL = [
+  ["finish rate", "fin", "abs", 0.03], ["KO/TKO share", "ko", "abs", 0.03], ["SUB share", "sub", "abs", 0.03],
+  ["KD per 100 head landed", "kd100", "rel", 0.15], ["sig landed per 15", "sigL15", "rel", 0.08], ["control s per 15", "ctrl15", "rel", 0.15]
+];
+function within(sim, tgt, kind, tol) { return kind === "abs" ? Math.abs(sim - tgt) <= tol : Math.abs(sim / tgt - 1) <= tol; }
+
+function divTable(div, n) {
+  const T3 = targets(div, 3), S3 = simAvg(div, 3, null, n, 101, true);
+  const T5 = targets(div, 5), S5 = simAvg(div, 5, null, Math.round(n / 2), 202, false);
+  const all5 = targets("ALL", 5);
+  console.log(`\n--- ${div} (${DB.priors[div].lbs || "?"} lb): league-average vs league-average, ${n} 3-round fights (data: priors 2018+, n=${T3.n}) ---`);
+  console.log("metric".padEnd(30) + "sim".padStart(9) + "data".padStart(9) + "   tolerance");
+  let ok = true;
+  const row = (label, sim, tgt, scale, d, tolTxt, good) => {
+    console.log(label.padEnd(30) + (scale === "%" ? pct(sim) : f2(sim, d)).padStart(9) + (tgt == null ? "" : (scale === "%" ? pct(tgt) : f2(tgt, d))).padStart(9) +
+      (tolTxt ? "   " + tolTxt + (good === undefined ? "" : (good ? "  ok" : "  MISS")) : ""));
+  };
+  for (const [label, key, kind, tol] of TOL) {
+    const good = within(S3[key], T3[key], kind, tol);
+    if (!good) ok = false;
+    row(label, S3[key], T3[key], kind === "abs" ? "%" : "", key === "kd100" ? 3 : 1, kind === "abs" ? `+/-${pct(tol, 0)} pts` : `+/-${pct(tol, 0)}%`, good);
+  }
+  row("decision share", 1 - S3.fin, 1 - T3.fin, "%");
+  row("KO by round (share of fights)", 0, null, "", 0, S3.koR.map((x) => pct(x)).join(" / ") + "  vs data " + T3.koR.map((x) => pct(x)).join(" / "));
+  row("SUB by round", 0, null, "", 0, S3.subR.map((x) => pct(x)).join(" / ") + "  vs data " + T3.subR.map((x) => pct(x)).join(" / "));
+  const cond = (arr) => { let reach = 1; return arr.map((x) => { const c = x / reach; reach -= x; return c; }); };
+  const simH = cond(S3.koR.map((x, i) => x + S3.subR[i])), datH = cond(T3.koR.map((x, i) => x + T3.subR[i]));
+  row("finish hazard per round reached", 0, null, "", 0, simH.map((x) => pct(x)).join(" / ") + "  vs data " + datH.map((x) => pct(x)).join(" / "));
+  row("sig attempted per 15", S3.sigA15, T3.sigA15, "", 1, "info");
+  row("sig accuracy", S3.acc, T3.acc, "%");
+  row("head landed / att per 15", S3.hL15, T3.hL15, "", 1, `${f2(S3.hA15, 1)} att vs ${f2(T3.hA15, 1)}; acc ${pct(S3.hL15 / S3.hA15)}% vs ${pct(T3.hL15 / T3.hA15)}%`);
+  row("body landed / att per 15", S3.bL15, T3.bL15, "", 1, `${f2(S3.bA15, 1)} att vs ${f2(T3.bA15, 1)}; acc ${pct(S3.bL15 / S3.bA15)}% vs ${pct(T3.bL15 / T3.bA15)}%`);
+  row("leg landed / att per 15", S3.lL15, T3.lL15, "", 1, `${f2(S3.lA15, 1)} att vs ${f2(T3.lA15, 1)}; acc ${pct(S3.lL15 / S3.lA15)}% vs ${pct(T3.lL15 / T3.lA15)}%`);
+  row("distance landed / att per 15", S3.dL15, T3.dL15, "", 1, `${f2(S3.dA15, 1)} att vs ${f2(T3.dA15, 1)}; acc ${pct(S3.dL15 / S3.dA15)}% vs ${pct(T3.dL15 / T3.dA15)}%`);
+  row("clinch landed / att per 15", S3.cL15, T3.cL15, "", 1, `${f2(S3.cA15, 1)} att vs ${f2(T3.cA15, 1)}; acc ${pct(S3.cL15 / S3.cA15)}% vs ${pct(T3.cL15 / T3.cA15)}%`);
+  row("ground landed / att per 15", S3.gL15, T3.gL15, "", 1, `${f2(S3.gA15, 1)} att vs ${f2(T3.gA15, 1)}; acc ${pct(S3.gL15 / S3.gA15)}% vs ${pct(T3.gL15 / T3.gA15)}%`);
+  row("KD per 15", S3.kd15, T3.kd15, "", 3, `KD per 100 standing head ${f2(S3.kd100s, 3)}`);
+  row("P(finish same round | KD)", S3.kdFin, T3.kdFin, "%", 0, `traced, ${S3.kdRounds} one-sided KD rounds`);
+  row("TD landed per 15", S3.td15, T3.td15, "", 2, `attempts ${f2(S3.tdA15)} vs ${f2(T3.tdA15)}`);
+  row("TD accuracy", S3.tdAcc, T3.tdAcc, "%");
+  row("sub attempts per 15", S3.sub15, T3.sub15, "", 3, `conversion ${pct(S3.subConv)}% vs ${pct(T3.subConv)}%`);
+  row("decision UD / SD / MD", S3.dec.UD, T3.dec.UD, "%", 0, `SD ${pct(S3.dec.SD)} vs ${pct(T3.dec.SD)}, MD ${pct(S3.dec.MD)} vs ${pct(T3.dec.MD)}, draws ${pct(S3.dec.DRAW)}% of decisions (data ~1.7%)`);
+  row("10-8 per judge-round", S3.r108, 0.0469, "%", 0, "data 4.7% 2015+, ~2.5% 2024-25");
+  const kl = S3.koLoc, kt = kl.dist + kl.clinch + kl.ground + kl["between rounds"];
+  row("KO/TKO location", 0, null, "", 0, `distance ${pct(kl.dist / kt)}% clinch ${pct(kl.clinch / kt)}% ground ${pct(kl.ground / kt)}% between rounds ${pct(kl["between rounds"] / kt)}%  (data LW 58 / 13 / 28, doctor+corner ~1-3% of KOs)`);
+  const sn = Object.entries(S3.subNames).sort((x, y) => y[1] - x[1]).slice(0, 4), st = sum(Object.values(S3.subNames));
+  row("submission types", 0, null, "", 0, sn.map(([k, v]) => `${k} ${pct(v / st, 0)}%`).join(", ") + "  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)");
+  const t5 = (T5.n >= 40) ? T5 : all5;
+  row("5 rounds: finish / KO / SUB", S5.fin, t5.fin, "%", 0, `KO ${pct(S5.ko)} vs ${pct(t5.ko)}, SUB ${pct(S5.sub)} vs ${pct(t5.sub)} (data ${T5.n >= 40 ? div + " 5-rd n=" + T5.n : "all 5-rd"}; pooled 5-rd finish ${pct(all5.fin)}%)`);
+  const h5 = cond(S5.koR.map((x, i) => x + S5.subR[i]));
+  row("5 rounds: hazard per round", 0, null, "", 0, h5.map((x) => pct(x)).join(" / ") + "  vs all 5-rd 20.8 / 20.4 / 17.2 / 10.8 / 10.9");
+  check(`${div}: base rates within tolerance (finish, KO, SUB, KD/100, landed/15, ctrl/15)`, ok);
+  return { div, ok, S3, T3 };
+}
+
+// ---------------------------------------------------------------- self-calibration (--fit)
+function writeParams(vals, div) {
+  let src = fs.readFileSync(PARAMS_SRC, "utf8");
+  for (const [k, v] of Object.entries(vals)) {
+    const re = new RegExp("^(\\s*)" + k + ":\\s*[-0-9.eE/ ]+,", "m");
+    if (!re.test(src)) { console.log("  (could not find " + k + " in params3.js)"); continue; }
+    src = src.replace(re, (all, ind) => `${ind}${k}: ${+(+v).toPrecision(4)},`);
+  }
+  if (div) {
+    const body = Object.entries(div).map(([d, o]) => `      ${JSON.stringify(d)}: { ${Object.entries(o).map(([k, v]) => `${k}: ${+v.toFixed(3)}`).join(", ")} }`).join(",\n");
+    src = src.replace(/(\n    div: )[\s\S]*?(\n  \};)/, `$1{\n${body}\n    }$2`);
+  }
+  fs.writeFileSync(PARAMS_SRC, src);
+}
+
+function selfCalibrate(n) {
+  const P0 = JSON.parse(JSON.stringify(BASE));
+  const g = {
+    strikeScale: P0.strikeScale, accScale: P0.accScale, groundScale: P0.groundScale, clinchScale: P0.clinchScale, kdScale: P0.kdScale,
+    tdScale: P0.tdScale, tdOddsScale: P0.tdOddsScale, subAttScale: P0.subAttScale, subConvScale: P0.subConvScale,
+    kdInstant: P0.kdInstant, kdRefStop: P0.kdRefStop, indSd: P0.judge.indSd, t108: P0.judge.t108, doc: P0.doc
+  };
+  const ref = "Lightweight", T = targets(ref, 3);
+  const dmp = (x, e) => Math.pow(x, e === undefined ? 0.8 : e);
+  const asParams = (gv, divv) => ({ strikeScale: gv.strikeScale, accScale: gv.accScale, groundScale: gv.groundScale, clinchScale: gv.clinchScale,
+    kdScale: gv.kdScale, tdScale: gv.tdScale, tdOddsScale: gv.tdOddsScale, subAttScale: gv.subAttScale, subConvScale: gv.subConvScale,
+    kdInstant: gv.kdInstant, kdRefStop: gv.kdRefStop, doc: gv.doc, judge: { indSd: gv.indSd, t108: gv.t108, t108b: gv.t108 + 3, t108kd2: Math.max(0.5, gv.t108 - 3) }, div: divv || {} });
+  console.log(`\n=== Self-calibration: global scales on ${ref} (3 rounds), ${n} fights per iteration ===`);
+  for (let it = 0; it < 9; it++) {
+    const S = simAvg(ref, 3, asParams(g), n, 1000 + it, false);
+    console.log(`it ${it}: fin ${pct(S.fin)} (${pct(T.fin)}) KO ${pct(S.ko)} (${pct(T.ko)}) SUB ${pct(S.sub)} (${pct(T.sub)}) sigA ${f2(S.sigA15, 1)} (${f2(T.sigA15, 1)}) acc ${pct(S.acc)} (${pct(T.acc)}) ` +
+      `gA ${f2(S.gA15, 1)} (${f2(T.gA15, 1)}) cA ${f2(S.cA15, 1)} (${f2(T.cA15, 1)}) kd100 ${f2(S.kd100, 3)} (${f2(T.kd100, 3)}) tdA ${f2(S.tdA15)} (${f2(T.tdA15)}) tdAcc ${pct(S.tdAcc)} (${pct(T.tdAcc)}) ` +
+      `sub15 ${f2(S.sub15, 3)} (${f2(T.sub15, 3)}) ctrl ${f2(S.ctrl15, 0)} (${f2(T.ctrl15, 0)}) SD ${pct(S.dec.SD)} (${pct(T.dec.SD)}) 10-8 ${pct(S.r108, 2)}`);
+    // distance attempts drive strikeScale; clinch and ground are matched by their own scales
+    g.strikeScale *= dmp(T.dA15 / S.dA15);
+    g.groundScale *= dmp((T.gA15 / S.gA15) / (T.dA15 / S.dA15));
+    g.clinchScale *= dmp((T.cA15 / S.cA15) / (T.dA15 / S.dA15));
+    g.accScale *= dmp((T.acc / (1 - T.acc)) / (S.acc / (1 - S.acc)));
+    g.kdScale *= dmp(T.kd100 / S.kd100);
+    g.tdScale *= dmp(T.tdA15 / S.tdA15);
+    g.tdOddsScale *= dmp((T.tdAcc / (1 - T.tdAcc)) / (S.tdAcc / (1 - S.tdAcc)));
+    g.subAttScale *= dmp(T.sub15 / S.sub15);
+    const koNonKdOdds = dmp((T.ko / (1 - T.ko)) / (S.ko / (1 - S.ko)), 1.2);
+    g.kdInstant = E.prob(E.odds(g.kdInstant) * koNonKdOdds); g.kdRefStop = E.prob(E.odds(g.kdRefStop) * koNonKdOdds);
+    g.subConvScale *= dmp((T.sub / (1 - T.sub)) / (S.sub / (1 - S.sub)) / (T.sub15 / S.sub15), 1.0);
+    g.indSd *= dmp(T.dec.SD / Math.max(0.01, S.dec.SD), 0.6);
+    g.t108 *= dmp(S.r108 / 0.035, 0.35);
+  }
+  console.log("global:", JSON.stringify(g));
+  // per-division factors
+  const divs = Object.keys(DB.priors).filter((d) => !["ALL", "Catch Weight", "Open Weight"].includes(d));
+  const divF = {};
+  console.log(`\n=== Self-calibration: per-division factors (3 rounds), ${n} fights per iteration ===`);
+  for (const d of divs) {
+    const Td = targets(d, 3);
+    const f = { att: 1, kd: 1, ko: 1, sub: 1, ctrl: 1, td: 1 };
+    let S = null;
+    for (let it = 0; it < 6; it++) {
+      const dv = {}; dv[d] = f;
+      S = simAvg(d, 3, asParams(g, dv), n, 3000 + it, false);
+      f.att *= dmp(Td.sigL15 / S.sigL15);
+      f.kd *= dmp(Td.kd100 / S.kd100);
+      f.ko *= dmp((Td.ko / (1 - Td.ko)) / (S.ko / (1 - S.ko)), 1.1);
+      f.sub *= dmp((Td.sub / (1 - Td.sub)) / (S.sub / (1 - S.sub)), 1.0);
+      f.ctrl *= dmp(Td.ctrl15 / S.ctrl15);
+      f.td *= dmp(Td.tdA15 / S.tdA15);
+    }
+    for (const k in f) f[k] = +f[k].toFixed(3);
+    divF[d] = f;
+    console.log(`${d.padEnd(22)} ${JSON.stringify(f)}  last: fin ${pct(S.fin)} (${pct(Td.fin)}) KO ${pct(S.ko)} (${pct(Td.ko)}) SUB ${pct(S.sub)} (${pct(Td.sub)}) sigL ${f2(S.sigL15, 1)} (${f2(Td.sigL15, 1)}) kd100 ${f2(S.kd100, 3)} (${f2(Td.kd100, 3)}) ctrl ${f2(S.ctrl15, 0)} (${f2(Td.ctrl15, 0)})`);
+  }
+  if (WRITE) {
+    writeParams({ strikeScale: g.strikeScale, accScale: g.accScale, groundScale: g.groundScale, clinchScale: g.clinchScale, kdScale: g.kdScale,
+      tdScale: g.tdScale, tdOddsScale: g.tdOddsScale, subAttScale: g.subAttScale, subConvScale: g.subConvScale, kdInstant: g.kdInstant, kdRefStop: g.kdRefStop,
+      indSd: g.indSd, t108: g.t108, t108b: g.t108 + 3, t108kd2: Math.max(0.5, g.t108 - 3) }, divF);
+    console.log("\nwrote src/params3.js");
+  }
+}
+
+// ================================================================= main
+console.log(`Fight engine ${E.VERSION}, params ${BASE.version}; ${Object.keys(DB.fighters).length} fighters; N = ${N}`);
+if (FIT) { selfCalibrate(N); process.exit(0); }
+
+const VG_OPTS = { division: "Lightweight", rounds: 5, title: true, date: DATE };
+const mVG = E.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS);
+const strip = (f) => JSON.stringify({ w: f.winner, m: f.method, d: f.detail, r: f.round, t: f.t, c: f.cards, tot: f.totals, form: f.form, n108: f.n108 });
+
+console.log("\n=== API and determinism ===");
+check("API surface", ["loadDB", "profile", "matchup", "simulate", "bucket", "makeRng", "summarize", "explain", "manualProfile"].every((k) => typeof E[k] === "function") && E.VERSION === "3.0.0", "VERSION " + E.VERSION);
+check("engine source has no Math.random", !/Math\.random/.test(fs.readFileSync(ENGINE_SRC, "utf8")));
+{
+  const saved = Math.random; Math.random = () => { throw new Error("Math.random used"); };
+  let ok = true; try { E.simulate(mVG, E.makeRng(3), true); E.summarize(mVG, 200, 3); } catch (e) { ok = false; }
+  Math.random = saved;
+  check("engine runs with Math.random disabled", ok);
+}
+check("same seed, same fight", strip(E.simulate(mVG, E.makeRng(42), false)) === strip(E.simulate(mVG, E.makeRng(42), false)));
+{
+  const s1 = E.summarize(mVG, 2000, 9), s2 = E.summarize(mVG, 2000, 9);
+  check("same seed, same summary", JSON.stringify(s1.bins) === JSON.stringify(s2.bins) && s1.avg.A.sig_lnd === s2.avg.A.sig_lnd);
+}
+{
+  let ok = true, bad = -1;
+  for (let sd = 1; sd <= 400; sd++) {
+    const a = E.simulate(mVG, E.makeRng(sd), false), b = E.simulate(mVG, E.makeRng(sd), true);
+    if (strip(a) !== strip(b)) { ok = false; bad = sd; break; }
+  }
+  check("trace on/off gives the same fight (400 seeds)", ok, ok ? "" : "first mismatch at seed " + bad);
+}
+{
+  // a rng stream shared across fights must also stay in step with trace on/off
+  const r1 = E.makeRng(77), r2 = E.makeRng(77); let ok = true;
+  for (let i = 0; i < 200; i++) if (strip(E.simulate(mVG, r1, i % 2 === 0)) !== strip(E.simulate(mVG, r2, false))) { ok = false; break; }
+  check("trace parity holds over a shared rng stream", ok);
+}
+{
+  // browser / blob Web Worker: the concatenation params3.js + engine3.js runs with no module system
+  const src = fs.readFileSync(PARAMS_SRC, "utf8") + "\n" + fs.readFileSync(ENGINE_SRC, "utf8");
+  const ctx = { console, Math, Date, JSON, Float64Array, Int8Array, Object, Array, isFinite, Number, String, Error };
+  ctx.self = ctx; vm.createContext(ctx); vm.runInContext(src, ctx);
+  const W = ctx.FightEngine;
+  let ok = !!W && !!ctx.FightParams;
+  if (ok) {
+    W.loadDB(dbJson);
+    const mw = W.matchup("alexander-volkanovski", "justin-gaethje", VG_OPTS);
+    ok = strip(W.simulate(mw, W.makeRng(5), true)) === strip(E.simulate(mVG, E.makeRng(5), true));
+  }
+  check("worker-style concatenation (self.FightParams + self.FightEngine) reproduces Node results", ok);
+}
+
+console.log("\n=== Trace format ===");
+{
+  const f = E.simulate(mVG, E.makeRng(2024), true);
+  const kinds = new Set(), allowed = new Set(["miss", "hit", "hurt", "kd", "fin", "clinch", "break", "td", "tdx", "pass", "esc", "sweep", "up", "sub", "subx", "recover", "reset"]);
+  let okFields = true, okKinds = true, okTime = true;
+  for (const r of f.rounds) {
+    let last = 0;
+    for (const e of r.ev) {
+      kinds.add(e.k);
+      if (!allowed.has(e.k)) okKinds = false;
+      if (!(e.t >= 0 && e.t <= 300 && e.t >= last - 1e-9)) okTime = false; last = e.t;
+      if (!("dA" in e && "dB" in e && "gA" in e && "gB" in e && "sA" in e && "sB" in e && "s" in e && "w" in e)) okFields = false;
+      if ((e.k === "hit" || e.k === "miss" || e.k === "kd" || e.k === "hurt" || e.k === "fin") && (e.tg == null || !e.loc)) okFields = false;
+      if ((e.k === "sub" || e.k === "subx") && !e.name) okFields = false;
+      if (e.k === "fin" && !e.how) okFields = false;
+    }
+    if (!r.st || !r.st.A || !r.st.B || r.st.hA == null) okFields = false;
+    if (!r.fin && !r.stoppage && !(r.judges && r.judges.length === 3)) okFields = false;
+  }
+  check("event kinds are from the spec table (+ esc)", okKinds, [...kinds].join(" "));
+  check("events carry t, k, w, s, snapshots; strikes carry tg and loc; subs carry name; fin carries how", okFields);
+  check("event times are ordered within each round", okTime);
+  // a big sample for rare kinds
+  const seen = new Set(); const rr = E.makeRng(1);
+  for (let i = 0; i < 300; i++) for (const r of E.simulate(mVG, rr, true).rounds) for (const e of r.ev) seen.add(e.k);
+  check("all spec kinds occur over 300 traced fights", ["miss", "hit", "hurt", "kd", "fin", "clinch", "break", "td", "tdx", "pass", "sweep", "up", "subx", "recover"].every((k) => seen.has(k)), [...seen].join(" "));
+  const ex = f.rounds[0].ev.find((e) => e.k === "hit");
+  console.log("  sample event:", JSON.stringify(ex));
+  console.log("  result:", f.winner, f.method, "|", f.detail, "| round", f.round, "at", f2(f.t, 1), "s | cards", JSON.stringify(f.cards));
+}
+
+console.log("\n=== Symmetry and clones ===");
+const NS = Math.max(4000, N);
+{
+  const sAB = E.summarize(mVG, NS, 314);
+  const mBA = E.matchup("justin-gaethje", "alexander-volkanovski", VG_OPTS);
+  const sBA = E.summarize(mBA, NS, 2718);
+  const se = Math.sqrt(sAB.pA * (1 - sAB.pA) / NS + sBA.pB * (1 - sBA.pB) / NS);
+  check("swapping corners swaps the probabilities", Math.abs(sAB.pA - sBA.pB) < 4 * se + 0.003, `Volk ${pct(sAB.pA)}% as A vs ${pct(sBA.pB)}% as B; 4 se = ${pct(4 * se)}`);
+  const binDiff = Math.max(...sAB.bins.map((x, i) => Math.abs(x - sBA.bins[6 - i])));
+  check("swapping corners mirrors the 7 outcome bins", binDiff < 0.02, `max bin diff ${pct(binDiff)} pts`);
+}
+for (const slug of ["alexander-volkanovski", "justin-gaethje"]) {
+  const mc = E.matchup(slug, slug, VG_OPTS), s = E.summarize(mc, NS, 55);
+  const pAw = s.pA / (s.pA + s.pB), se = Math.sqrt(0.25 / (NS * (1 - s.pD)));
+  check(`${slug} vs his clone wins about 50%`, Math.abs(pAw - 0.5) < 4 * se + 0.003, `${pct(pAw)}% of non-draws, 4 se = ${pct(4 * se)}`);
+}
+{
+  const s = E.summarize(E.matchup(avgProfile("Lightweight"), avgProfile("Lightweight"), { division: "Lightweight", rounds: 3 }), NS, 66);
+  const pAw = s.pA / (s.pA + s.pB), se = Math.sqrt(0.25 / (NS * (1 - s.pD)));
+  check("league-average vs league-average wins about 50%", Math.abs(pAw - 0.5) < 4 * se + 0.003, `${pct(pAw)}%`);
+}
+
+console.log("\n=== Knob directions (Volk = A, Gaethje = B) ===");
+{
+  const NK = Math.max(6000, Math.round(N / 2));
+  const base = E.summarize(mVG, NK, 808);
+  const run = (o) => E.summarize(E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({}, VG_OPTS, o)), NK, 808);
+  const koA = (s) => s.bins[0], koB = (s) => s.bins[6];
+  let s;
+  s = run({ adjA: { chin: 1.6 } }); check("chin knob up on A -> more KO losses for A", koB(s) > koB(base) + 0.01, `${pct(koB(base))} -> ${pct(koB(s))}`);
+  s = run({ adjB: { chin: 0.6 } }); check("chin knob down on B -> fewer KO losses for B", koA(s) < koA(base) - 0.01, `${pct(koA(base))} -> ${pct(koA(s))}`);
+  s = run({ adjA: { pow: 1.6 } }); check("power knob up on A -> more KO wins for A", koA(s) > koA(base) + 0.01, `${pct(koA(base))} -> ${pct(koA(s))}`);
+  s = run({ adjA: { out: 1.3 } }); check("output knob up on A -> more attempts by A", s.avg.A.sig_att > base.avg.A.sig_att * 1.15, `${f2(base.avg.A.sig_att, 1)} -> ${f2(s.avg.A.sig_att, 1)}`);
+  s = run({ adjA: { acc: 1.5 } }); check("accuracy knob up on A -> higher accuracy for A", s.avg.A.acc > base.avg.A.acc + 0.03, `${pct(base.avg.A.acc)} -> ${pct(s.avg.A.acc)}`);
+  s = run({ adjA: { cardio: 2.5 } }); check("cardio knob up on A (tires faster) -> lower win share for A", s.pA < base.pA - 0.01, `${pct(base.pA)} -> ${pct(s.pA)}`);
+  s = run({ adjA: { tdAtt: 3 } }); check("takedown-attempt knob up on A -> more TD attempts and control for A", s.avg.A.td_att > 2 * base.avg.A.td_att && s.avg.A.ctrl > base.avg.A.ctrl, `TD att ${f2(base.avg.A.td_att)} -> ${f2(s.avg.A.td_att)}, ctrl ${f2(base.avg.A.ctrl, 0)} -> ${f2(s.avg.A.ctrl, 0)} s`);
+  s = run({ adjB: { tdDef: 2 } }); check("takedown-defense knob up on B -> lower TD success for A", s.avg.A.tdAcc < base.avg.A.tdAcc - 0.04, `${pct(base.avg.A.tdAcc)} -> ${pct(s.avg.A.tdAcc)}`);
+  s = run({ adjB: { leg: 0.4 } }); check("leg-kick share knob on B -> more leg kicks by B", s.avg.B.l_att / s.avg.B.sig_att > base.avg.B.l_att / base.avg.B.sig_att + 0.1, `${pct(base.avg.B.l_att / base.avg.B.sig_att)}% -> ${pct(s.avg.B.l_att / s.avg.B.sig_att)}% of attempts`);
+  s = run({ adjA: { sub: 3 } }); check("submission knob up on A -> more submission wins for A", s.bins[1] > base.bins[1] + 0.005, `${pct(base.bins[1])} -> ${pct(s.bins[1])}`);
+  const jp0 = run({ judges: { power: 0 } }), jp1 = run({ judges: { power: 1.5 } });
+  check("judges.power up -> decisions shift toward the harder hitter", (jp1.distB - jp0.distB) * Math.sign(mVG.dw[1] - mVG.dw[0]) > 0.005, `Gaethje's share of decisions ${pct(jp0.distB)} -> ${pct(jp1.distB)} (damage/head ${f2(mVG.dw[0])} vs ${f2(mVG.dw[1])})`);
+}
+
+console.log("\n=== manualProfile ===");
+{
+  const mp = E.manualProfile({ name: "Manual Volk", slpm: 6.0, sapm: 3.3, acc: 0.57, def: 0.59, td15: 1.6, tdAcc: 0.34, tdDef: 0.68, sub15: 0.2, kd15: 0.3, head: 0.63, body: 0.11, leg: 0.26, mins: 313, age: 38.1, ko_losses: 2 }, { division: "Featherweight" });
+  const mm = E.matchup(mp, "justin-gaethje", VG_OPTS), s = E.summarize(mm, 3000, 4);
+  const sl = s.avg.A.per15.sig_lnd / 15;
+  check("manual profile simulates with plausible output", sl > 4 && sl < 8 && s.pA > 0.2 && s.pA < 0.85, `landed/min ${f2(sl)}, win ${pct(s.pA)}%`);
+}
+
+let tableRes = [];
+if (!QUICK) {
+  console.log("\n=== League-average base rates by division (self-calibration check) ===");
+  for (const d of ["Lightweight", "Featherweight", "Welterweight", "Heavyweight", "Women's Flyweight", "Bantamweight", "Middleweight", "Women's Strawweight"]) tableRes.push(divTable(d, N));
+}
+
+console.log("\n=== Volkanovski (A) vs Gaethje (B): Lightweight, 5 rounds, title, " + DATE + " ===");
+{
+  const t0 = Date.now();
+  const s = E.summarize(mVG, 20000, 20261106);
+  const ms = Date.now() - t0;
+  console.log(`win: Volkanovski ${pct(s.pA)}%  Gaethje ${pct(s.pB)}%  draw ${pct(s.pD)}%   (MC se ${pct(s.se, 2)} pts)`);
+  console.log(`bins [A KO/TKO, A sub, A dec, draw, B dec, B sub, B KO/TKO]: ${s.bins.map((x) => pct(x)).join(" / ")}`);
+  console.log(`finishes by round, Volk: ${s.finA.map((x) => pct(x)).join(" / ")}   Gaethje: ${s.finB.map((x) => pct(x)).join(" / ")}`);
+  console.log(`goes the distance ${pct(s.dist)}% (Volk wins ${pct(s.distA)}% of decisions); decisions UD ${pct(s.dec.UD)} SD ${pct(s.dec.SD)} MD ${pct(s.dec.MD)} draw ${pct(s.dec.DRAW)}; 10-8 per judge-round ${pct(s.r108, 2)}%`);
+  console.log("methods:", Object.entries(s.methods).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${pct(v / s.n)}%`).join(", "));
+  console.log(`average fight ${f2(s.avgMin, 1)} min; KD per 15 per fighter ${f2(s.kd15, 3)}; control per 15 ${f2(s.ctrl15, 0)} s`);
+  const C = (slug) => { const f = DB.fighters[slug], c = {}; DB.meta.keys.forEach((k, i) => (c[k] = f.C[i])); return c; };
+  const SS = (slug) => { const f = DB.fighters[slug], c = {}; DB.meta.keys.forEach((k, i) => (c[k] = f.S[i])); return c; };
+  console.log("\nper fighter (sim per 15 min of fight time vs UFC career and decayed rates per 15):");
+  console.log("stat".padEnd(22) + "Volk sim".padStart(10) + "career".padStart(9) + "decayed".padStart(9) + " |" + "Gaethje sim".padStart(12) + "career".padStart(9) + "decayed".padStart(9));
+  const cv = C("alexander-volkanovski"), cg = C("justin-gaethje"), dvv = SS("alexander-volkanovski"), dg = SS("justin-gaethje");
+  const lines = [
+    ["sig landed", (a) => a.per15.sig_lnd, (c) => 15 * (c.d_lnd + c.c_lnd + c.g_lnd) / c.min],
+    ["sig attempted", (a) => a.per15.sig_att, (c) => 15 * (c.d_att + c.c_att + c.g_att) / c.min],
+    ["sig absorbed", null, (c) => 15 * (c.od_lnd + c.oc_lnd + c.og_lnd) / c.min, true],
+    ["accuracy %", (a) => 100 * a.acc, (c) => 100 * (c.d_lnd + c.c_lnd + c.g_lnd) / (c.d_att + c.c_att + c.g_att)],
+    ["head landed", (a) => a.per15.h_lnd, (c) => 15 * c.h_lnd / c.min],
+    ["body landed", (a) => a.per15.b_lnd, (c) => 15 * c.b_lnd / c.min],
+    ["leg landed", (a) => a.per15.l_lnd, (c) => 15 * c.l_lnd / c.min],
+    ["ground landed", (a) => a.per15.g_lnd, (c) => 15 * c.g_lnd / c.min],
+    ["knockdowns", (a) => a.per15.kd, (c) => 15 * c.kd / c.min],
+    ["TD landed", (a) => a.per15.td_lnd, (c) => 15 * c.td_lnd / c.min],
+    ["TD accuracy %", (a) => 100 * a.tdAcc, (c) => 100 * c.td_lnd / Math.max(1, c.td_att)],
+    ["control s", (a) => a.per15.ctrl, (c) => 15 * c.ctrl / c.min],
+    ["sub attempts", (a) => a.per15.sub_att, (c) => 15 * c.sub_att / c.min]
+  ];
+  for (const [lab, fs2, fc, absorbed] of lines) {
+    const va = absorbed ? s.avg.B.per15.sig_lnd : fs2(s.avg.A), vb = absorbed ? s.avg.A.per15.sig_lnd : fs2(s.avg.B);
+    console.log(lab.padEnd(22) + f2(va).padStart(10) + f2(fc(cv)).padStart(9) + f2(fc(dvv)).padStart(9) + " |" + f2(vb).padStart(12) + f2(fc(cg)).padStart(9) + f2(fc(dg)).padStart(9));
+  }
+  check("summarize(Volk vs Gaethje, 20000) under 6 s", ms < 6000, `${ms} ms`);
+  check("Volk vs Gaethje probabilities sum to 1", Math.abs(s.pA + s.pB + s.pD - 1) < 1e-9 && Math.abs(sum(s.bins) - 1) < 1e-9);
+}
+
+console.log("\n=== explain(Volkanovski vs Gaethje) ===");
+console.log(E.explain(mVG).text);
+
+console.log(`\n${passes} passed, ${fails} failed`);
+process.exit(fails ? 1 : 0);

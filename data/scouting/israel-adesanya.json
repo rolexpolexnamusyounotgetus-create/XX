@@ -37,7 +37,7 @@
       "right hand at distance: KO of Alex Pereira, R2, UFC 287 (Apr 2023)"
     ],
     "weaknesses": [
-      "grappling exchanges: submitted by Du Plessis (RNC, R4, Aug 2024) and finished by Pyfer's ground strikes after a back take (R2, Mar 2026)",
+      "grappling exchanges: submitted by Du Plessis (RNC, R4, Aug 2024) and finished by Pyfer on the ground in R2 (Mar 2026; reported as a back take, ufcstats lists punches from mount at 4:18)",
       "sustained forward pressure: Strickland dropped him in R1 and won 49-46 on all cards (Sep 2023)",
       "three straight stoppage losses; KO'd by Imavov's right hand 30 seconds into R2 (Feb 2025)",
       "age 37 with four straight losses",
@@ -59,14 +59,14 @@
     "jab": 0.28, "cross": 0.22, "hook": 0.17, "overhand": 0.04, "upper": 0.11, "headkick": 0.18,
     "bodykick": 0.6, "bodyhook": 0.15, "bodystraight": 0.25,
     "calf": 0.6, "inside": 0.4, "spinning": 0.06, "knee": 0.1, "elbow": 0.04,
-    "notes": "Target groups follow fighters.json decayed sums: sig attempts 67.7% head, 15.5% body, 16.8% leg (career 67.9/14.5/17.6). The middleweight league split is about 77/14/9, so he sends roughly twice the league share to the legs. He also lands 95% of his sig strikes at distance, so clinch and ground weights stay minimal. Inside the head group, sources stress the feinted jab and counter punching, which puts the jab first and the cross and hooks next. Head kicks get 0.18 because he is a kickboxer by trade, though no source in this pass counts them. Body is weighted to kicks because his body work comes from range (26/29 body landed vs Du Plessis, 38/60 vs Strickland, all at distance). Calf leads inside on the legs, since Pyfer coverage describes him 'battering' the calf. The knee is set at 0.1 for the knee to the head vs Pyfer. Spinning is a small 0.06 judgment, not sourced in this pass."
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 67.7% head, 15.5% body, 16.8% leg (career 67.9/14.5/17.6). The middleweight league split is about 77/14/9, so he sends roughly twice the league share to the legs. He also lands 95% of his sig strikes at distance, so clinch and ground weights stay minimal. Inside the head group, sources stress the feinted jab and counter punching, which puts the jab first and the cross and hooks next. Head kicks get 0.18 because he is a kickboxer by trade, though no source in this pass counts them. Body is weighted to kicks because his body work comes from range (26/29 body landed vs Du Plessis, 38/60 vs Strickland; 92 of his 97 sig vs Du Plessis and all 94 vs Strickland landed at distance). Calf leads inside on the legs, since Pyfer coverage describes him 'battering' the calf. The knee is set at 0.1 for the knee to the head vs Pyfer. Spinning is a small 0.06 judgment, not sourced in this pass."
   },
   "appearance": {
     "build": "very tall and slim (6'4\", 80\" reach per dataset), long limbs and a lean torso",
     "hair": "short dark hair; styling and colour vary from fight to fight (no confirmed 2026 description found)",
     "facial_hair": "light: a thin moustache and chin hair in many published photos; varies",
     "skin": "dark",
-    "tattoos": "Sourced: 'Broken Native' script and a map of Africa (Lagos highlighted) on the chest; yin-yang inside a Kurama seal on the abdomen; Deadpool on the left ribcage; Toph Beifong (Avatar) on the right inner forearm; Calvin and Hobbes on a bicep; Arabic 'Dragon' by an eyebrow (sources disagree on which side); a neck piece most reports identify as the Egyptian war god Montu; small feather marks reported beside the right eye.",
+    "tattoos": "Sourced: 'Broken Native' script and a map of Africa (Lagos highlighted) on the chest; yin-yang inside a Kurama seal on the abdomen; Deadpool on the left ribcage; Toph Beifong (Avatar) on the right inner forearm; Calvin and Hobbes on a bicep; a neck piece most reports identify as the Egyptian war god Montu; small face tattoos near the eye and eyebrow added in 2024 (reported as Arabic script for 'Dragon' plus small marks), but sources disagree on placement, so leave them off the avatar.",
     "kit": "unknown",
     "sources": [
       "https://www.sportskeeda.com/mma/map-africa-broken-native-naruto-seal-all-israel-adesanya-s-tattoos-explained",

@@ -10,7 +10,7 @@ As of Nov 6, 2026. Switch-stance middleweight, age 37 (born Jul 22, 1989), 6'4" 
 - **Ranking:** inside the bottom half of the top 15 (#9-15 on the Oct 2026 media poll; exact spot unconfirmed).
 
 ## Recent fights
-- **L Pyfer (TKO R2, Mar 2026):** Adesanya won R1 with calf kicks, a knee to the head and body work (24-9 in sig strikes). In R2 Pyfer took his back, flattened him out and finished with ground strikes. Pyfer landed 2 of 8 takedowns and 16 ground sig strikes.
+- **L Pyfer (TKO R2, Mar 2026):** Adesanya won R1 with calf kicks, a knee to the head and body work (24-9 in sig strikes). In R2 Pyfer got him down and finished him with ground strikes; coverage describes a back take, and ufcstats lists the finish as punches from mount at 4:18. Pyfer landed 2 of 8 takedowns and 16 ground sig strikes.
 - **L Imavov (KO R2 0:30, Feb 2025):** He won R1 on all cards with leg and body kicks (20-8 in sig strikes), then was knocked out by a straight right early in R2.
 - **L Dricus du Plessis (RNC R4, UFC 305, Aug 2024):** He outlanded DDP 97-90 in sig strikes but was taken down 4 times in 9 attempts and choked.
 - **L Sean Strickland (UD 49-46 x3, UFC 293, Sep 2023):** He was dropped in R1 and walked down all night, losing the sig count 137-94.
@@ -32,7 +32,7 @@ He has **three KO/TKO losses** (Pereira 2022, Imavov 2025, Pyfer 2026) and two U
 - Elo 1669. UFC record 13-6: 5 KO/TKO and 8 decision wins; losses are 3 KO/TKO, 1 submission and 2 decisions.
 
 ## Appearance note
-His tattoos are widely documented: "Broken Native" script and a map of Africa on the chest, a Kurama-seal yin-yang on the abdomen, Deadpool on the left ribs, Toph from Avatar on the forearm, an Arabic "Dragon" by an eyebrow, and a neck piece (reported as Montu).
+His tattoos are widely documented: "Broken Native" script and a map of Africa on the chest, a Kurama-seal yin-yang on the abdomen, Deadpool on the left ribs, Toph from Avatar on the forearm, a neck piece (reported as Montu), and small 2024 face tattoos near the eye and eyebrow whose placement sources describe inconsistently.
 
 ## Sources
 - https://www.espn.com/mma/story/_/id/48336336/pyfer-finishes-adesanya-career-best-win-ufc-fight-night

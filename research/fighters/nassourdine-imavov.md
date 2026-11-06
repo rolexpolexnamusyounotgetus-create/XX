@@ -16,7 +16,7 @@ As of Nov 6, 2026. Orthodox middleweight, age 30 (born Mar 1, 1996), 6'3" with a
 - **L Strickland (UD, Jan 2023):** a short-notice bout at 205 lb. Strickland's pressure took over in R4, and Imavov's cardio was cited.
 
 ## Style
-A **footwork-first boxer**. His feet stay parallel, and he springs in behind a fast jab rather than managing distance with kicks. The right hand is his finisher. In close he uses a short elbow, and against wrestlers he wins head position and breaks off with an elbow. He has some wrestling but rarely holds top position and has no UFC submission wins.
+A **footwork-first boxer**. His feet stay parallel, and he springs in behind a fast jab rather than managing distance with kicks. The right hand is his finisher. In close he uses a short elbow, and against wrestlers he wins head position and breaks off with an elbow. He has some wrestling, but his control time is below the division norm (14% vs about 18%), and he has no UFC submission wins.
 
 **Strengths:** range control, the jab, clean straight punching (55% sig accuracy against a 48% middleweight average), takedown defense and late-round output.
 **Weaknesses:** He leans forward to deter takedowns, which has exposed him to knees (Sherdog). He offers little top game. He can lose early rounds to a kicker, as he did in R1 against Adesanya. He is coming off a long layoff.

@@ -1,6 +1,6 @@
 # Brendan Allen ("All In")
 
-As of Nov 6, 2026. Orthodox middleweight, age 30 (born Dec 28, 1995), 6'2" with a 75" reach. He is a BJJ black belt under Daniel Wanderley (Wikipedia) and a two-time LFA middleweight champion. Dataset: `data/derived/fighters.json`, snapshot of Oct 31, 2026. Web claims come from search-result summaries, because direct page fetches were blocked in this session.
+As of Nov 6, 2026. Orthodox middleweight, age 30 (born Dec 28, 1995), 6'2" with a 75" reach. He is a BJJ black belt under Daniel Wanderley and a former LFA middleweight champion (reported as two-time); both per Wikipedia search summaries, not re-verified in the fact-check. Dataset: `data/derived/fighters.json`, snapshot of Oct 31, 2026. Web claims come from search-result summaries, because direct page fetches were blocked in this session.
 
 ## Current status
 - **Ranked #4** at middleweight (Wikipedia, as of Oct 10, 2026).

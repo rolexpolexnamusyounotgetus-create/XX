@@ -18,7 +18,7 @@ As of Nov 6, 2026. Orthodox light heavyweight, age 34 (born Jun 2, 1992), 6'3" w
 - **W Johnny Walker (KO R2, Jan 2024)** with a punch at distance, after their first meeting ended in a no contest from an illegal knee in Oct 2023.
 
 ## Style
-A **strong, well-rounded pressure fighter**. He kicks and punches to the body far more than his peers: 24% of decayed attempts go to the body, against about 14% for the light heavyweight league. He walks opponents to the fence, grinds in the clinch, and finishes from top position when he gets there. Earlier knockouts came from kicks to the head (Prachnio 2019; a front kick on Lungiambula in 2020) and a right hand (Walker).
+A **strong, well-rounded pressure fighter**. He kicks and punches to the body far more than his peers: 24% of decayed attempts go to the body, against about 14% for the light heavyweight league. He walks opponents to the fence, grinds in the clinch, and finishes from top position when he gets there. Earlier knockouts came from kicks to the head (Prachnio, Sep 2018; a front kick on Lungiambula, Nov 2019) and a punch at distance (Walker, 2024).
 
 **Strengths:** takedown defense, head defense (opponents land only 24% to the head), body work, clinch and top control, and power.
 **Weaknesses:** leg kicks (he absorbs about 2x the league rate), low takedown accuracy in open space, and one bad R1 against Pereira's power.

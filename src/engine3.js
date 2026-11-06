@@ -463,7 +463,7 @@
     m.kd = [0, 0]; m.dw = [0, 0]; m.gnp = [0, 0]; m.stko = [0, 0];
     for (i = 0; i < 2; i++) {
       j = 1 - i;
-      m.kd[i] = L.kd0 * p.kdScale * fac[i].pow * fac[j].chin;
+      m.kd[i] = L.kd0 * p.kdScale * dvf("kd") * fac[i].pow * fac[j].chin;
       m.dw[i] = Math.pow(fac[i].pow, p.powDmgExp);
       var pc2 = Math.sqrt(fac[i].pow * fac[j].chin);
       m.gnp[i] = p.gnpTko * pc2 * koF;
@@ -976,7 +976,7 @@
         ctrlSec: (topF[i] + occ[1 + i]) * 900 };
       o.career = { slpm: R[i].sums.min > 0 ? (R[i].sums.d_lnd + R[i].sums.c_lnd + R[i].sums.g_lnd) / R[i].sums.min : null,
         sapm: R[i].sums.min > 0 ? (R[i].sums.od_lnd + R[i].sums.oc_lnd + R[i].sums.og_lnd) / R[i].sums.min : null };
-      o.kd = { p0: L.kd0 * m.p.kdScale, perHeadLanded: m.kd[i], powerRatio: fc.powRaw, oppChinRatio: fo.chinRaw, ageChinOpp: fo.ageChin, agePow: fc.agePow,
+      o.kd = { p0: m.kd[i] / (fc.pow * fo.chin), perHeadLanded: m.kd[i], powerRatio: fc.powRaw, oppChinRatio: fo.chinRaw, ageChinOpp: fo.ageChin, agePow: fc.agePow,
         koLossChinOpp: fo.koChin, oppKoLosses: fo.koLosses, sizeChinOpp: fo.sizeChin, sizePow: fc.sizePow, knobPow: m.adj[i].pow, knobChinOpp: m.adj[j].chin,
         damagePerHead: m.dw[i], instantKO: prob(m.instO) };
       o.grappling = { tdAttPer15Stand: m.tdS[i] * 900, tdSuccess: m.pTd[i], tdSuccessClinch: prob(m.tdOC[i] * m.adj[j].tdDef), ctrlTargetPer15: m.ctrlT[i] * 15,

@@ -39,7 +39,7 @@
       "lost R1 on all three cards to Adesanya's leg and body kicks before the KO (Feb 2025)",
       "about 14 months out of the cage by Nov 2026 with no fight booked yet"
     ],
-    "summary": "A tall, jab-first orthodox striker who controls range with footwork and fast straight punches, then wins the late rounds of five-round fights. His counter-wrestling has become a strength: he stuffed 9 of 10 Brendan Allen takedowns in 2024. He rarely uses his own wrestling to hold top position.",
+    "summary": "A tall, jab-first orthodox striker who controls range with footwork and fast straight punches, then wins the late rounds of five-round fights. His counter-wrestling has become a strength: he stuffed 9 of 10 Brendan Allen takedowns in 2024. He uses his own wrestling for control less than most middleweights (13.7% control share decayed vs about 18% for the division).",
     "sources": [
       "https://www.sherdog.com/news/articles/Scouting-Report-Nassourdine-Imavov-188857",
       "https://en.wikipedia.org/wiki/Nassourdine_Imavov",
@@ -55,7 +55,7 @@
     "jab": 0.38, "cross": 0.3, "hook": 0.13, "overhand": 0.05, "upper": 0.09, "headkick": 0.05,
     "bodykick": 0.35, "bodyhook": 0.3, "bodystraight": 0.35,
     "calf": 0.45, "inside": 0.55, "spinning": 0.0, "knee": 0.1, "elbow": 0.15,
-    "notes": "Target groups follow fighters.json decayed sums: sig attempts 76.6% head, 14.7% body, 8.7% leg (career 77.5/14.7/7.8). The middleweight league split is about 77/14/9, so he is a near-typical head hunter who kicks the legs rarely. Inside the head group the jab leads, because Wikipedia and the Sherdog scouting report describe a footwork-and-jab game. The cross is second for the right hand that KO'd Adesanya. Hooks, uppercuts and head kicks stay small; no source highlights them. Body weights are split evenly because ufcstats does not separate punches from kicks. Leg kicks are rare but accurate (14/18 vs Borralho). Elbow 0.15 reflects the short elbow Sherdog calls his favourite close-range strike. Knee 0.1 reflects his 12% clinch share of sig landed. No spinning attacks are reported."
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 76.6% head, 14.7% body, 8.7% leg (career 77.5/14.7/7.8). The middleweight league split is about 77/14/9, so he is a near-typical head hunter who kicks the legs rarely. Inside the head group the jab leads, because Wikipedia and the Sherdog scouting report describe a footwork-and-jab game. The cross is second for the right hand that KO'd Adesanya. Hooks, uppercuts and head kicks stay small; no source highlights them. Body weights are split evenly because ufcstats does not separate punches from kicks. Leg kicks are rare but accurate (14/18 vs Borralho). Elbow 0.15 reflects the short close-range elbow highlighted in the Sherdog scouting report. Knee 0.1 reflects his 12% clinch share of sig landed. No spinning attacks are reported."
   },
   "appearance": {
     "build": "tall (6'3\", 75\" reach per dataset), lean and long-limbed for middleweight",
