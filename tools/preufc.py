@@ -21,8 +21,9 @@ Resolution of a ufcstats person to a Sherdog page:
   opponent with a similar name): at least min(2, n_ufc) of them and at least half.
 
 Raw HTML is cached under data/raw/sherdog_cache/ (gitignored) and never re-fetched.
-Walk-forward rule: a snapshot for a UFC bout counts only Sherdog pro fights dated before that bout's date
-(and not the same event), so every feature is known before the fight. Network features (net Elo, opponents'
+Walk-forward rule: a snapshot for a UFC bout counts only Sherdog pro fights dated strictly before that bout's
+ufcstats date, so every feature is known before the fight (Sherdog dates every matched UFC bout on the ufcstats date or
+one day later, never earlier, so the bout itself never enters its own snapshot; checked in the review). Network features (net Elo, opponents'
 records) come from StrictNetwork: a bout in year Y sees only the pages of UFC debutants who debuted before
 Jan 1 of Y (since 2015, a complete set), so who-reached-the-UFC-later never leaks into a snapshot.
 
@@ -1797,8 +1798,21 @@ def evaluate(args):
         sub[g] = {"n": int(msk.sum())}
         for k in preds_test:
             sub[g][k] = round(float(lls_by[k][msk].mean()), 4)
-    # calibration for the main candidates
-    def calib(p, y, nb=10):
+    # accuracy differences with the same card bootstrap (review addition)
+    acc_by = {k: ((np.asarray(p) > 0.5) == (yt > 0.5)).astype(float) for k, p in preds_test.items()}
+    acc_deltas = {}
+    for a_, b_ in (("base+pre", "base"), ("elo_seed_pre+age", "elo"), ("elo_seed_pre", "elo"), ("elo+pre", "elo")):
+        dlt = acc_by[a_] - acc_by[b_]
+        bs = cb.means(dlt)
+        acc_deltas["%s - %s" % (a_, b_)] = [float(dlt.mean()), float(np.percentile(bs, 2.5)),
+                                            float(np.percentile(bs, 97.5)), float((bs > 0).mean())]
+
+    # calibration for the main candidates. Corner A (the first-named fighter in ufcstats) wins about 57% of decisive
+    # bouts, so bins and ECE on p(A) mix the corner-order artefact into calibration. The primary numbers mirror every
+    # bout (p, y) -> (1 - p, 1 - y) and pool both orders (review fix); the corner-A versions are kept for reference.
+    def calib(p, y, nb=10, mirror=True):
+        if mirror:
+            p, y = np.concatenate([p, 1 - p]), np.concatenate([y, 1 - y])
         out = []
         for i in range(nb):
             lo, hi = i / nb, (i + 1) / nb
@@ -1808,15 +1822,30 @@ def evaluate(args):
                             "obs": round(float(y[m].mean()), 4)})
         return out
 
-    def ece(p, y, nb=10):
+    def ece(p, y, nb=10, mirror=True):
+        if mirror:
+            p, y = np.concatenate([p, 1 - p]), np.concatenate([y, 1 - y])
         e = 0.0
         for i in range(nb):
-            m = (p >= i / nb) & (p < (i + 1) / nb)
+            m = (p >= i / nb) & ((p < (i + 1) / nb) | ((i == nb - 1) & (p <= 1)))
             if m.sum():
                 e += m.sum() / len(p) * abs(p[m].mean() - y[m].mean())
         return float(e)
-    calib_out = {k: {"bins": calib(preds_test[k], yt), "ece": round(ece(preds_test[k], yt), 4)}
+    calib_out = {k: {"bins": calib(preds_test[k], yt), "ece": round(ece(preds_test[k], yt), 4),
+                     "bins_cornerA": calib(preds_test[k], yt, mirror=False),
+                     "ece_cornerA": round(ece(preds_test[k], yt, mirror=False), 4)}
                  for k in preds_test}
+    # ECE difference seeded Elo minus Elo, card bootstrap (ECE is noisy at n = 533)
+    rng_e = np.random.default_rng(5)
+    g_ = np.asarray([str(x) for x in test["date"]])
+    ug, ig = np.unique(g_, return_inverse=True)
+    members = [np.where(ig == j)[0] for j in range(len(ug))]
+    ed = []
+    for _ in range(200 if args.quick else 1000):
+        idx = np.concatenate([members[j] for j in rng_e.integers(0, len(ug), len(ug))])
+        ed.append(ece(preds_test["elo_seed_pre+age"][idx], yt[idx]) - ece(preds_test["elo"][idx], yt[idx]))
+    calib_out["ece seeded (pre+age) minus elo [mean, lo, hi]"] = [
+        round(float(np.mean(ed)), 4), round(float(np.percentile(ed, 2.5)), 4), round(float(np.percentile(ed, 97.5)), 4)]
 
     # all 2024+ decisive bouts: does the seeded Elo hurt veterans?
     allt = df[df["date"] >= TEST_FROM]
@@ -1964,6 +1993,7 @@ def evaluate(args):
         "coverage": cov,
         "cv": {"best": best, "seeded_elo_cv_ll": seed_cv, "grid": cvlog},
         "test": {"metrics_ci95": test_res, "delta_log_loss_ci95 [mean, lo, hi, P(<0)]": deltas,
+                 "delta_accuracy_ci95 [mean, lo, hi, P(>0)]": acc_deltas,
                  "subgroups_log_loss": sub, "calibration": calib_out, "all_2024plus_bouts": overall},
         "models": {"base+pre": {"features": fs, "C": pick["C"], "tau": pick["tau"], "coef": m_bp.coefs()},
                    "elo+pre": {"features": fs_e, "C": pick_e["C"], "tau": pick_e["tau"], "coef": m_ep.coefs()},
@@ -2192,7 +2222,7 @@ def method_eval(df_all, train_from):
                 tot = 0
                 for t in "AB":
                     v = dd[k + "_" + t].to_numpy(float)
-                    mu = np.nanmean(d[k + "_A"].to_numpy(float))
+                    mu = mu_tr[k]          # training-row mean over both corners (review fix: was all rows, corner A)
                     v = np.where(np.isnan(v), mu, v) - mu
                     tot = tot + v * np.exp(-dd["n" + t].to_numpy(float) / tau)
                 cols.append(tot)
@@ -2201,6 +2231,8 @@ def method_eval(df_all, train_from):
     out = {}
     tr = (d["date"] < TEST_FROM).to_numpy()
     te = ~tr
+    mu_tr = {k: float(np.nanmean(np.concatenate([d.loc[tr, k + "_A"].to_numpy(float), d.loc[tr, k + "_B"].to_numpy(float)])))
+             for k in ("pre_ko", "pre_sub", "pre_kol", "pre_subl", "pre_fin", "pre_finl")}
     base_rate = np.bincount(y[tr], minlength=3) / tr.sum()
     res = {"n_train": int(tr.sum()), "n_test": int(te.sum()), "train_shares": base_rate.round(4).tolist()}
     yt = y[te]
@@ -2467,7 +2499,7 @@ def report(args):
         P("")
         T = ev["test"]
         P("### Winner, 2024-2025 newcomer bouts (validation, scored once; the 2026 vault is excluded)\n")
-        P("| Model | Log loss [95% CI] | Brier | Accuracy | ECE |")
+        P("| Model | Log loss [95% CI] | Brier | Accuracy | ECE (mirrored) |")
         P("|---|---|---|---|---|")
         for k, v in T["metrics_ci95"].items():
             P("| %s | %s | %.4f | %.3f | %.4f |" % (k, ci(v["log_loss"]), v["brier"][0], v["accuracy"][0],
@@ -2476,6 +2508,11 @@ def report(args):
         P("| Comparison | Mean | 95% CI | P(better) |\n|---|---|---|---|")
         for k, v in T["delta_log_loss_ci95 [mean, lo, hi, P(<0)]"].items():
             if k.endswith(" - elo") or k.endswith(" - base"):
+                P("| %s | %+.4f | [%+.4f, %+.4f] | %.2f |" % (k, v[0], v[1], v[2], v[3]))
+        if "delta_accuracy_ci95 [mean, lo, hi, P(>0)]" in T:
+            P("\n### Paired accuracy differences (positive = better), event-cluster bootstrap\n")
+            P("| Comparison | Mean | 95% CI | P(better) |\n|---|---|---|---|")
+            for k, v in T["delta_accuracy_ci95 [mean, lo, hi, P(>0)]"].items():
                 P("| %s | %+.4f | [%+.4f, %+.4f] | %.2f |" % (k, v[0], v[1], v[2], v[3]))
         P("\n### Subgroups (test log loss)\n")
         keys = list(T["metrics_ci95"].keys())
@@ -2496,9 +2533,12 @@ def report(args):
                           (kk, vv["n"], vv["log_loss"], vv["brier"], vv["accuracy"]))
             else:
                 P("| all | %s | %d | %.4f | %.4f | %.3f |" % (k, v["n"], v["log_loss"], v["brier"], v["accuracy"]))
-        P("\n### Calibration (test, 10 bins): base+pre and seeded Elo\n")
+        P("\n### Calibration (test, 10 bins, both corner orders pooled): base+pre and seeded Elo\n")
+        if "ece seeded (pre+age) minus elo [mean, lo, hi]" in T["calibration"]:
+            P("Mirrored ECE, seeded Elo minus Elo: %+.4f [%+.4f, %+.4f]\n" % tuple(
+                T["calibration"]["ece seeded (pre+age) minus elo [mean, lo, hi]"]))
         for k in ("base+pre", "elo_seed_pre+age", "elo"):
-            if k in T["calibration"]:
+            if k in T["calibration"] and isinstance(T["calibration"][k], dict):
                 P("%s: " % k + ", ".join("%.1f-%.1f n=%d pred %.3f obs %.3f" % (b["lo"], b["hi"], b["n"], b["pred"], b["obs"])
                                          for b in T["calibration"][k]["bins"]))
                 P("")

@@ -45,7 +45,7 @@ if (!isMainThread) {
   const priors = readJSON("data/derived/mlcal_priors_asof.json"), OOF = readJSON("data/derived/mlrates_oof.json"), names = OOF.meta.targets;
   const rates = (a) => { const o = {}; names.forEach((n, i) => { o[n] = a[i]; }); return o; };
   parentPort.on("message", (msg) => {
-    const acc = { n: 0, ko: 0, sub: 0, kd: 0, hl: 0, w108: 0, jr: 0, ded: 0, td: 0, ctrl: 0, mins: 0, dec: 0, ud: 0, sd: 0, md: 0, draw: 0 };
+    const acc = { n: 0, ko: 0, sub: 0, kd: 0, hl: 0, w108: 0, jr: 0, ded: 0, td: 0, ctrl: 0, satt: 0, mins: 0, dec: 0, ud: 0, sd: 0, md: 0, draw: 0 };
     for (const id of msg.ids) {
       const f = byId.get(id), swap = (mix(hash32(id), 0x51ed) & 1) === 1;
       const A = swap ? f.B : f.A, B = swap ? f.A : f.B, ent = OOF.fights[id];
@@ -61,7 +61,7 @@ if (!isMainThread) {
           acc.w108 += s.n108 || 0; acc.jr += 3 * f.rounds; acc.ded += s.nDed || 0; acc.dec++;
           if (meth === "UD") acc.ud++; else if (meth === "SD") acc.sd++; else if (meth === "MD") acc.md++; else acc.draw++;
         }
-        acc.td += s.totals.A.td_lnd + s.totals.B.td_lnd; acc.ctrl += s.totals.A.ctrl + s.totals.B.ctrl;
+        acc.td += s.totals.A.td_lnd + s.totals.B.td_lnd; acc.ctrl += s.totals.A.ctrl + s.totals.B.ctrl; acc.satt += s.totals.A.sub_att + s.totals.B.sub_att;
         acc.mins += dec ? 5 * f.rounds : 5 * (s.round - 1) + s.t / 60;
       }
     }
@@ -77,21 +77,21 @@ const fights = trainFights();
 // targets: every train fight with an outcome (actual base rates), 10-8 from the judges' rounds
 const sample = fights.slice().sort((a, b) => hash32(a.id) - hash32(b.id)).slice(0, N).map((f) => f.id);
 const inSample = new Set(sample);
-let n = 0, ko = 0, sub = 0, kd = 0, hl = 0, td = 0, ctrl = 0, mins = 0, draws = 0, decs = 0, md = 0;
+let n = 0, ko = 0, sub = 0, kd = 0, hl = 0, td = 0, ctrl = 0, satt = 0, mins = 0, draws = 0, decs = 0, md = 0;
 for (const f of fights) {
   const m = f.result && f.result.method;
   if (["KO", "DOC", "SUB", "UD", "SD", "MD", "DRAW"].includes(m)) { n++; if (m === "SUB") sub++; else if (m === "KO" || m === "DOC") ko++; }
   if (f.actual && f.actual.A && f.actual.B) { kd += f.actual.A.kd + f.actual.B.kd; hl += f.actual.A.h_lnd + f.actual.B.h_lnd; }
   if (!inSample.has(f.id)) continue;
   // v4.0.1 targets on the simulated sample itself (with --n 2000 every train fight), like tools/evalv.js's base-rate table
-  if (f.actual && f.actual.A && f.actual.B) { td += f.actual.A.td_lnd + f.actual.B.td_lnd; ctrl += f.actual.A.ctrl + f.actual.B.ctrl; mins += f.actual.minutes || 0; }
+  if (f.actual && f.actual.A && f.actual.B) { td += f.actual.A.td_lnd + f.actual.B.td_lnd; ctrl += f.actual.A.ctrl + f.actual.B.ctrl; satt += f.actual.A.sub_att + f.actual.B.sub_att; mins += f.actual.minutes || 0; }
   if (["UD", "SD", "MD", "DRAW"].includes(m)) { decs++; if (m === "DRAW") draws++; if (m === "MD") md++; }
 }
 const jc = readJSON("data/derived/judgecal.json");
-const T = { ko: ko / n, sub: sub / n, kd100: 100 * kd / hl, r108: jc.checks.data.late.r108, td15: 15 * td / 2 / mins, ctrl15: 15 * ctrl / 2 / mins };
+const T = { ko: ko / n, sub: sub / n, kd100: 100 * kd / hl, r108: jc.checks.data.late.r108, td15: 15 * td / 2 / mins, ctrl15: 15 * ctrl / 2 / mins, sub15: 15 * satt / 2 / mins };
 const info = { drawShareOfDecisions: draws / Math.max(1, decs), mdShareOfDecisions: md / Math.max(1, decs - draws) };
 console.log(`targets (train): KO ${(100 * T.ko).toFixed(1)}%, SUB ${(100 * T.sub).toFixed(1)}%, KD/100 head ${T.kd100.toFixed(3)}, 10-8 ${(100 * T.r108).toFixed(2)}%, ` +
-  `TD/15 ${T.td15.toFixed(3)}, ctrl s/15 ${T.ctrl15.toFixed(1)} | info: draws ${(100 * info.drawShareOfDecisions).toFixed(2)}% and MD ${(100 * info.mdShareOfDecisions).toFixed(2)}% of decisions ` +
+  `TD/15 ${T.td15.toFixed(3)}, ctrl s/15 ${T.ctrl15.toFixed(1)}, sub att/15 ${T.sub15.toFixed(3)} | info: draws ${(100 * info.drawShareOfDecisions).toFixed(2)}% and MD ${(100 * info.mdShareOfDecisions).toFixed(2)}% of decisions ` +
   `| sample ${sample.length} fights x ${SIMS} sims, ${WORKERS} workers`);
 const workers = []; for (let k = 0; k < WORKERS; k++) workers.push(new Worker(__filename));
 function run(over) {
@@ -108,10 +108,10 @@ const over = () => ({ kdScale: g.kdScale, kdInstant: prob(odds(P0.kdInstant) * g
   let S = null;
   for (let it = 0; it <= ITERS; it++) {
     const a = await run(over());
-    S = { ko: a.ko / a.n, sub: a.sub / a.n, kd100: 100 * a.kd / a.hl, r108: a.w108 / a.jr, td15: 15 * a.td / 2 / a.mins, ctrl15: 15 * a.ctrl / 2 / a.mins,
+    S = { ko: a.ko / a.n, sub: a.sub / a.n, kd100: 100 * a.kd / a.hl, r108: a.w108 / a.jr, td15: 15 * a.td / 2 / a.mins, ctrl15: 15 * a.ctrl / 2 / a.mins, sub15: 15 * a.satt / 2 / a.mins,
       r108card: (a.w108 + 3 * a.ded) / a.jr, drawShareOfDecisions: a.draw / Math.max(1, a.dec), drawShareOfFights: a.draw / a.n,
       UD: a.ud / Math.max(1, a.dec - a.draw), SD: a.sd / Math.max(1, a.dec - a.draw), MD: a.md / Math.max(1, a.dec - a.draw) };
-    console.log(`it ${it}: KO ${(100 * S.ko).toFixed(1)} SUB ${(100 * S.sub).toFixed(1)} KD/100 ${S.kd100.toFixed(3)} 10-8 ${(100 * S.r108).toFixed(2)} TD/15 ${S.td15.toFixed(3)} ctrl/15 ${S.ctrl15.toFixed(1)}  ` +
+    console.log(`it ${it}: KO ${(100 * S.ko).toFixed(1)} SUB ${(100 * S.sub).toFixed(1)} KD/100 ${S.kd100.toFixed(3)} 10-8 ${(100 * S.r108).toFixed(2)} TD/15 ${S.td15.toFixed(3)} ctrl/15 ${S.ctrl15.toFixed(1)} subAtt/15 ${S.sub15.toFixed(3)}  ` +
       `| kdScale ${g.kdScale.toFixed(4)} koAll ${g.koAll.toFixed(4)} subConvScale ${g.subConvScale.toFixed(4)} t108 ${g.t108.toFixed(3)} mlTdLevel ${g.mlTdLevel.toFixed(4)} mlCtrlLevel ${g.mlCtrlLevel.toFixed(4)}  (${((Date.now() - t0) / 1000).toFixed(0)} s)\n` +
       `      info: card 10-8 ${(100 * S.r108card).toFixed(2)}%, draws ${(100 * S.drawShareOfDecisions).toFixed(2)}% of decisions (${(100 * S.drawShareOfFights).toFixed(2)}% of fights), UD/SD/MD ${(100 * S.UD).toFixed(1)}/${(100 * S.SD).toFixed(1)}/${(100 * S.MD).toFixed(1)}`);
     if (it === ITERS) break;

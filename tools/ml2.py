@@ -1119,7 +1119,7 @@ def stage_stage2(args):
         okc = Xe.notna().all(1).to_numpy()
         rows = base_rows & okc
         best = None
-        for lam in (0.003, 0.01, 0.03, 0.1, 0.3):
+        for lam in (0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0):
             tot0 = tot1 = nn = 0.0
             for Y in (2021, 2022, 2023):
                 tr = rows & (yr < Y)
@@ -1188,9 +1188,9 @@ def expert_table(T, F):
     fl_roll = E["pred"]["feat_lr"]
     D["feat_lr"] = [fl_static[eidx[f]] if f in eidx else np.nan for f in D["fid"]]
     D["feat_lr_roll"] = [fl_roll[eidx[f]] if f in eidx else np.nan for f in D["fid"]]
-    for sch in ("static", "roll"):
-        D["ml2_" + sch] = F["preds"]["blend|" + ("oof" if sch == "static" else sch)][rows]
-        D["ml2lr_" + sch] = F["preds"]["lr|" + ("oof" if sch == "static" else sch)][rows]
+    for sch in ("static", "roll"):            # 2019-2023 rows: OOF (annual refits) in both schemes
+        D["ml2_" + sch] = F["preds"]["blend|oof"][rows]
+        D["ml2lr_" + sch] = F["preds"]["lr|oof"][rows]
         va = (D["year"] >= 2024).to_numpy()
         D.loc[va, "ml2_" + sch] = F["preds"]["blend|" + sch][rows][va]
         D.loc[va, "ml2lr_" + sch] = F["preds"]["lr|" + sch][rows][va]
@@ -1328,6 +1328,58 @@ def stage_stack(args):
     for k, v in cmpd.items():
         log("%-42s a %.5f b %.5f diff %+.5f %s" % (k, v["a"], v["b"], v["diff"], v["diff_ci"]))
     R["paired"] = cmpd
+    # segments (2024-2025, static and rolling): no-line and with-line stacks, current vs + ML v2, vs the close
+    Tv = pd.DataFrame({"nA": D["nA"], "nB": D["nB"], "lbs": D["lbs"], "women": D["women"], "five": D["five"],
+                       "division": D["division"]})
+    close = D["market"].to_numpy(float)
+    segs = segments_of(Tv, np.flatnonzero(va_all), np.nan_to_num(close[va_all], nan=0.5))
+    SG = {}
+    for name, m in segs.items():
+        rows = np.flatnonzero(va_all)[m]
+        rl = rows[has_line[rows]]
+        if len(rl) < 25:
+            continue
+        r = {"n": int(len(rows)), "n_line": int(len(rl)), "close": round(ll(close[rl], y[rl]), 5)}
+        for sch in ("static", "roll"):
+            nl_new = out_preds["noline|current+ml2|" + sch]
+            nl_cur = out_preds["noline|current|" + sch]
+            ln_new = out_preds["line|current+ml2|" + sch]
+            ln_cur = out_preds["line|current|" + sch]
+            r[sch] = {"noline_current": round(ll(nl_cur[rows], y[rows]), 5),
+                      "noline_ml2": round(ll(nl_new[rows], y[rows]), 5),
+                      "noline_ml2_on_line_fights": round(ll(nl_new[rl], y[rl]), 5),
+                      "line_current": round(ll(ln_cur[rl], y[rl]), 5), "line_ml2": round(ll(ln_new[rl], y[rl]), 5),
+                      "noline ml2 - current": compare(nl_new[rows], nl_cur[rows], y[rows], ev_grp[rows], 1000),
+                      "noline ml2 - close": compare(nl_new[rl], close[rl], y[rl], ev_grp[rl], 1000),
+                      "line ml2 - current": compare(ln_new[rl], ln_cur[rl], y[rl], ev_grp[rl], 1000),
+                      "line ml2 - close": compare(ln_new[rl], close[rl], y[rl], ev_grp[rl], 1000)}
+        SG[name] = r
+        q = r["static"]
+        log("seg %-48s n %3d | noline cur %.4f ml2 %.4f (%+.4f) | close %.4f | line cur %.4f ml2 %.4f (%+.4f vs close)"
+            % (name, r["n"], q["noline_current"], q["noline_ml2"], q["noline ml2 - current"]["diff"], r["close"],
+               q["line_current"], q["line_ml2"], q["line ml2 - close"]["diff"]))
+    R["segments"] = SG
+    # by year, and the forward-chained CV years 2021-2023 for the recommended stacks (out of sample there too)
+    BY = {}
+    for Y in (2021, 2022, 2023):
+        for regime in ("line", "noline"):
+            rows_ok = has_line if regime == "line" else np.ones(len(D), bool)
+            m = rows_ok & (yr == Y)
+            for name in ("current", "current+ml2"):
+                p, _ = stack_predict(D, STACKS[regime][name], "static", R["cv"]["%s|%s" % (regime, name)]["chosen_h"],
+                                     Y - 1, m, rows_ok)
+                BY.setdefault(str(Y), {})["%s|%s" % (regime, name)] = round(ll(p, y[m]), 5)
+            mc = m & has_line
+            BY[str(Y)]["close"] = round(ll(close[mc], y[mc]), 5)
+    for Y in (2024, 2025):
+        m = yr == Y
+        BY[str(Y)] = {k + "|" + sch: round(ll(out_preds[k + "|" + sch][m & (has_line if k.startswith("line") else True)],
+                                              y[m & (has_line if k.startswith("line") else True)]), 5)
+                      for k in ("line|current", "line|current+ml2", "noline|current", "noline|current+ml2")
+                      for sch in ("static", "roll")}
+        BY[str(Y)]["close"] = round(ll(close[m & has_line], y[m & has_line]), 5)
+    R["by_year"] = BY
+    log("by year: %s" % json.dumps(BY))
     pickle.dump({"D": D, "preds": out_preds}, open(os.path.join(CACHE, "stack.pkl"), "wb"))
     json.dump(R, open(os.path.join(CACHE, "stack.json"), "w"), indent=1, default=float)
 
@@ -1404,7 +1456,7 @@ def stage_method(args):
     vmask = np.isin(yrs, MR.VALID_YEARS)
     # hazard (round shapes) per fold, methodround's chosen penalty; reused by every variant
     H = np.zeros((len(T), MR.NC_))
-    for v in MR.VALID_YEARS + [2024]:
+    for v in list(MR.VALID_YEARS) + [2024]:
         tr = ((T["year"] < v) & (T["year"] >= MR.HAZ_START)).to_numpy()
         va = (T["year"] == v).to_numpy() if v < 2024 else (T["year"] >= 2024).to_numpy()
         hz = MR.HazardModel(MR.HAZ_COLS, C=chosen["C_haz"], C_dec=MR.C_DEC).fit(T[tr], FX[tr], FY[tr], y[tr])
@@ -1413,7 +1465,7 @@ def stage_method(args):
 
     def run6(cols, C, start, fxx, fyy):
         P6 = np.full((len(T), 6), np.nan)
-        for v in MR.VALID_YEARS + [2024]:
+        for v in list(MR.VALID_YEARS) + [2024]:
             tr = ((T["year"] < v) & (T["year"] >= start)).to_numpy()
             va = (T["year"] == v).to_numpy() if v < 2024 else (T["year"] >= 2024).to_numpy()
             m = MR.C6Logit(cols, C=C, hl_years=MR.HL_YEARS).fit(T[tr], fxx[tr], fyy[tr], y[tr])
