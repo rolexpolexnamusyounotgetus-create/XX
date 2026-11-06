@@ -456,7 +456,7 @@
  },
  "meta": {
   "tool": "tools/bayes_verify.py",
-  "updated": "2026-11-06T23:24:06+00:00"
+  "updated": "2026-11-06T23:27:20+00:00"
  },
  "stack_gate": {
   "line|close+ml2 + bayes": {
@@ -726,6 +726,92 @@
    },
    "max": 0.0,
    "sec": 67
+  }
+ },
+ "swap_2023": {
+  "year": 2023,
+  "schedule": "month",
+  "n": 520,
+  "max|pA + pA_swapped - 1|": 7.771561172376096e-15,
+  "max|cells - mirrored swapped cells|": 4.413136522884997e-15
+ },
+ "damping_2019_nostats_yearly": {
+  "0.5": {
+   "ll": 0.66199,
+   "n": 388,
+   "ep_iters": 24
+  },
+  "0.8": {
+   "ll": 0.66201,
+   "n": 388,
+   "ep_iters": 18
+  },
+  "1.0": {
+   "ll": 0.66201,
+   "n": 388,
+   "ep_iters": 15
+  }
+ },
+ "method": {
+  "2019-2023": {
+   "n": 1972,
+   "joint": {
+    "bayes": 2.1577,
+    "S": 2.1523,
+    "bayes_minus_S": [
+     0.00538,
+     -0.0079,
+     0.019
+    ]
+   },
+   "method3": {
+    "bayes": 0.9676,
+    "S": 0.9569,
+    "bayes_minus_S": [
+     0.01075,
+     0.0031,
+     0.0194
+    ]
+   },
+   "round_given_fin": {
+    "bayes": 1.0709,
+    "S": 1.062,
+    "bayes_minus_S": [
+     0.00897,
+     0.0027,
+     0.0149
+    ]
+   }
+  },
+  "2024-2025": {
+   "n": 857,
+   "joint": {
+    "bayes": 2.0308,
+    "S": 2.0418,
+    "bayes_minus_S": [
+     -0.01097,
+     -0.0329,
+     0.011
+    ]
+   },
+   "method3": {
+    "bayes": 0.9199,
+    "S": 0.936,
+    "bayes_minus_S": [
+     -0.01605,
+     -0.029,
+     -0.0045
+    ]
+   },
+   "round_given_fin": {
+    "bayes": 1.0747,
+    "S": 1.0601,
+    "bayes_minus_S": [
+     0.0146,
+     0.007,
+     0.022
+    ]
+   }
   }
  }
 }
