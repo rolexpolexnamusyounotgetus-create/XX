@@ -3,41 +3,64 @@
   "name": "Caio Borralho",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Ranked #6 at middleweight. Lost for the first time in about a decade to Nassourdine Imavov (UD, UFC Paris, Sep 6, 2025), then beat Reinier de Ridder 30-27 on all cards at UFC 326 (Mar 7, 2026). A planned bout with Joe Pyfer was scrapped because of a Borralho rib injury. Listings show him scheduled to face Yousri Belgaroui at UFC 334 on Nov 14, 2026.",
+    "summary": "Ranked #5 at middleweight on the media rankings (#6 on the Meta list); pro record 18-2 (1 NC). He lost to Nassourdine Imavov (UD, UFC Paris, Sep 6, 2025), then beat Reinier de Ridder 30-27 on all cards at UFC 326 (Mar 7, 2026) despite fracturing a rib in training about two weeks before. The rib did not heal and was displaced, so he had surgery in June 2026 and pulled out of an unannounced UFC 330 bout with Joe Pyfer (Aug 15, 2026). He is booked against Yousri Belgaroui (11-3) in a three-round middleweight bout at UFC 334, Madison Square Garden, New York, on Nov 14, 2026.",
     "title": null,
-    "ranking": "#6 middleweight (UFC rankings board updated Oct 24, 2026, as mirrored by ufcalendar.com; the media poll lists the same top names)",
+    "ranking": "#5 middleweight on the UFC media rankings updated Nov 3, 2026 (CBS Sports; ufcalendar.com mirror); #6 on the UFC/Meta algorithmic rankings updated Oct 31, 2026 (ufcalendar.com)",
     "active": true,
-    "next_fight": "vs Yousri Belgaroui, UFC 334, Nov 14, 2026 (per Wikipedia and combat-edge listings; not confirmed on UFC.com in this pass)",
+    "next_fight": "vs Yousri Belgaroui, UFC 334, Madison Square Garden, New York, Nov 14, 2026 (middleweight, 3 rounds; on the ESPN schedule and Sherdog's fight card)",
     "injuries": [
-      { "what": "rib injury that forced the cancellation of a planned bout with Joe Pyfer", "when": "2026 (month not confirmed)", "source": "https://en.wikipedia.org/wiki/Caio_Borralho" }
+      {
+        "what": "rib fractured in training about two weeks before UFC 326, fought through; it did not heal and was displaced (risk of a punctured lung), so he had surgery and withdrew from a planned UFC 330 bout with Joe Pyfer. Booked again for Nov 14, 2026",
+        "when": "2026-02 (fracture); 2026-06 (surgery)",
+        "source": "https://www.essentiallysports.com/ufc-mma-news-ufc-330-loses-key-fight-as-middleweight-star-undergoes-surgery-for-dangerous-rib-injury/"
+      }
     ],
     "sources": [
       "https://en.wikipedia.org/wiki/Caio_Borralho",
-      "https://combat-edge.com/fighter/caio-borralho-4736/",
       "https://www.espn.com/mma/fighter/_/id/4835137/caio-borralho",
       "https://www.tapology.com/fightcenter/bouts/1082878-ufc-326-caio-the-natural-borralho-vs-reinier-rdr-de-ridder",
       "https://www.ufc.com/news/matchup-spotlight-caio-borralho-vs-reinier-de-ridder-ufc-326",
       "https://www.ufc.com/news/official-judges-scorecards-ufc-fight-night-imavov-vs-borralho-paris",
       "https://www.ufcalendar.com/rankings/middleweight",
-      "data/derived/fighters.json (last_fight 2026-03-07)"
+      "data/derived/fighters.json (last_fight 2026-03-07)",
+      "https://www.essentiallysports.com/ufc-mma-news-ufc-330-loses-key-fight-as-middleweight-star-undergoes-surgery-for-dangerous-rib-injury/",
+      "https://bloodyelbow.com/2026/06/06/caio-borralho-reveals-hes-out-of-unannounced-ufc-330-matchup-due-to-significant-rib-injury/ (cited by Wikipedia; 403 to this session)",
+      "https://www.sherdog.com/fighter/Caio-Borralho-188043",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261114 (UFC 334 card) and ?dates=20261212 (UFC 335 card)",
+      "https://www.cbssports.com/ufc/rankings/men/223/middleweight/",
+      "https://en.wikipedia.org/wiki/Caio_Borralho (revision of 2026-10-18)"
     ]
   },
   "style": {
     "archetype": "all-rounder",
     "stance": "southpaw",
-    "tags": ["southpaw", "body-work", "durable", "slow-starter", "late-surge", "top-control", "takedown-defense"],
+    "tags": [
+      "southpaw",
+      "body-work",
+      "durable",
+      "slow-starter",
+      "late-surge",
+      "top-control",
+      "ground-and-pound",
+      "back-takes",
+      "takedown-defense"
+    ],
     "signature": [
-      "punches at distance from southpaw: TKO of Paul Craig, R2, UFC 301 (May 2024)",
-      "body and leg kicks: 17.6% body and 11.6% leg share of sig attempts (decayed), 16 of 17 leg strikes landed vs de Ridder",
-      "rear-naked choke: submitted Michal Oleksiejczuk, R2 (Apr 2023)",
+      "hard one-twos and big hooks from southpaw (Sherdog UFC Paris preview, Sep 2025); punches at distance stopped Paul Craig in R2 (UFC 301, May 2024)",
+      "a variety of hard kicks to all levels (Sherdog preview): 17.6% body and 11.6% leg share of sig attempts (decayed), 16 of 17 leg strikes landed vs de Ridder",
+      "opportunistic takedowns, then heavy ground-and-pound while advancing position (Sherdog preview)",
+      "quick back takes into chokes: rear-naked choke of Michal Oleksiejczuk, R2 (Apr 2023)",
       "late-round surges in five-round fights: 50 sig landed in R5 vs Jared Cannonier (Aug 2024)"
     ],
     "weaknesses": [
+      "hittable head for an elite fighter, as Jared Cannonier showed (Sherdog preview, Sep 2025)",
+      "Sherdog's preview says his muscular build and pace leave him visibly slower from R3 on; note that his sig counts still rose late in both five-rounders (dataset)",
       "slow starts: landed only 6 and 7 sig strikes in R1-R2 vs Imavov and fell behind before rallying (Sep 2025)",
       "lost the range battle to a taller, jab-first striker: Imavov outlanded him 81-66 and he went 0 of 5 on takedowns",
-      "low output: 6.7 sig attempts per minute (decayed) against about 8.1 for the middleweight league"
+      "low output: 6.7 sig attempts per minute (decayed) against about 8.1 for the middleweight league",
+      "first fight since rib surgery (Jun 2026) and about eight months out of the cage by Nov 14, 2026"
     ],
-    "summary": "A southpaw who now leads with striking (86.5% of decayed sig landed comes at distance), mixing straight punches with body and leg kicks while keeping a grappling and top-control threat in reserve. He is very hard to hurt and builds momentum slowly, so he tends to win late rounds and sometimes gives away early ones.",
+    "summary": "A powerful, explosive southpaw who now leads with striking (86.5% of decayed sig landed comes at distance): hard one-twos, big hooks and kicks to all levels, with opportunistic wrestling, heavy ground-and-pound and quick back takes in reserve. He is very hard to hurt and builds momentum slowly, so he tends to win late rounds and sometimes gives away early ones.",
     "sources": [
       "https://www.lowkickmma.com/nassourdine-imavov-vs-caio-borralho-highlights/",
       "https://www.thescore.com/mma/news/3339410/imavov-bests-borralho-in-ufc-paris-main-event",
@@ -45,32 +68,61 @@
       "https://www.espn.com/mma/fighter/_/id/4835137/caio-borralho",
       "data/raw/ufc_fight_stats.csv",
       "data/raw/ufc_fight_results.csv",
-      "data/derived/fighters.json"
+      "data/derived/fighters.json",
+      "https://www.sherdog.com/news/articles/1/Preview-UFC-Paris-Imavov-vs-Borralho-198274"
     ]
   },
   "moves": {
-    "jab": 0.25, "cross": 0.33, "hook": 0.17, "overhand": 0.07, "upper": 0.08, "headkick": 0.1,
-    "bodykick": 0.55, "bodyhook": 0.2, "bodystraight": 0.25,
-    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.05, "elbow": 0.03,
-    "notes": "Target groups follow fighters.json decayed sums: sig attempts 70.8% head, 17.6% body, 11.6% leg (career 71.4/17.5/11.0). The middleweight league split is about 77/14/9, so he works the body and legs more than average. No scouting source reachable in this pass broke down his individual techniques, so the within-group split is a southpaw default. The rear-hand straight leads the head group and the lead-hand jab follows. Body kicks lead the body group, assuming the open-side kick of a southpaw, though ufcstats does not separate punches from kicks. Leg kicks are split evenly. Knee and elbow are minimal because his clinch share is under 4% of sig landed. No spinning attacks are recorded. Treat these weights as low confidence."
+    "jab": 0.22,
+    "cross": 0.3,
+    "hook": 0.25,
+    "overhand": 0.05,
+    "upper": 0.06,
+    "headkick": 0.12,
+    "bodykick": 0.55,
+    "bodyhook": 0.2,
+    "bodystraight": 0.25,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.05,
+    "elbow": 0.03,
+    "notes": "Target groups follow fighters.json decayed sums: sig attempts 70.8% head, 17.6% body, 11.6% leg (career 71.4/17.5/11.0). The middleweight league split is about 77/14/9, so he works the body and legs more than average. Within the head group (revised Nov 6, 2026): Sherdog's UFC Paris preview (Ben Duffy, Sep 4, 2025) describes 'hard one-twos, huge hooks and a variety of hard kicks to all levels', so the rear-hand straight leads (0.30), hooks are raised to 0.25, the jab follows at 0.22 and the head kick gets 0.12; overhand and uppercut stay small. Body kicks lead the body group (open-side kick of a southpaw, plus 'kicks to all levels'); ufcstats does not separate punches from kicks. Leg kicks are split evenly. Knee and elbow are minimal because his clinch share is under 4% of sig landed; ground strikes come after takedowns and are carried by the engine's grappling knobs. No spinning attacks are recorded. Medium-low confidence: one technique source."
   },
   "appearance": {
-    "build": "6'1\" (73\" height, 75\" reach per dataset), muscular middleweight frame",
-    "hair": "short dark hair (from widely published photos; not re-verified this session)",
-    "facial_hair": "dark beard in most published photos (not re-verified this session)",
+    "build": "6'1\"-6'2\" (dataset 73 in; Sherdog lists 6'2\"), 75\" reach; lean and very defined: sharp abs, muscular shoulders and arms (ESPN cutouts, Sep 2025 and Mar 2026)",
+    "hair": "short dark-brown hair, a little longer and textured on top, short at the sides (ESPN headshot and cutout dated Mar 5, 2026; similar in Sep 2025)",
+    "facial_hair": "clean-shaven in the Sep 2025 and Mar 2026 ESPN photos (the earlier 'dark beard' line was wrong for his current look)",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "Neck: 'FREE SPIRIT' in large capitals across the front of the throat. Right arm: a vertical column of Japanese kanji down the outer upper arm and forearm (仁, 武士道, 義: bushido virtues). Left upper chest: the kanji 柔道 ('judo'). Right ribs and flank: several lines of small script. Left upper arm: 'FIGHT OR DIE' in hand-lettered capitals, with more kanji partly visible on the left arm.",
+    "kit": "UFC-issued kit in the corner colour; he has worn both cuts: black tiger-stripe board shorts with BORRALHO in yellow (Sep 2025) and white vale tudo-cut compression shorts with a wave pattern (Mar 2026). Black UFC gloves.",
+    "notes": "No photo-based likeness sheet exists for him (checked data/likeness on Nov 6, 2026). These lines come from viewing the ESPN/UFC studio headshot and left cutout (CDN Last-Modified Mar 5, 2026) and the right cutout (Sep 4, 2025). Front views only. Light acne scarring on the cheeks is visible in the headshot.",
     "sources": [
-      "https://www.ufc.com/athlete/caio-borralho",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4835137.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4835137.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4835137.png",
+      "https://www.espn.com/mma/fighter/_/id/4835137/caio-borralho",
+      "https://www.sherdog.com/fighter/Caio-Borralho-188043",
       "data/derived/fighters.json (height_in 73, reach_in 75)"
     ]
   },
   "engine_notes": [
-    { "note": "Five-round output rises steeply across his two five-rounders: R3 is 2.57x R1 and R5 is 3.52x R1 (Cannonier, by round: 15, 21, 37, 30, 50; Imavov: 6, 7, 17, 12, 24). Small sample of two fights.", "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv" },
-    { "note": "No knockdowns absorbed and no KO losses in 9 UFC fights; opponents land 40.5% of sig strikes against him (decayed), versus a 47.9% middleweight league average.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0); priors.Middleweight acc_sig" },
-    { "note": "Takedown defense 77% decayed (de Ridder went 2 of 8 at UFC 326). Opponents control him only 7% of the time.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
-    { "note": "He has shifted from grappling to striking: decayed ground share of sig landed is 9.9% against 13.9% career, and takedowns per 15 minutes are 0.75 decayed against 1.08 career.", "source": "data/derived/fighters.json" }
+    {
+      "note": "Five-round output rises steeply across his two five-rounders: R3 is 2.57x R1 and R5 is 3.52x R1 (Cannonier, by round: 15, 21, 37, 30, 50; Imavov: 6, 7, 17, 12, 24). Small sample of two fights.",
+      "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv"
+    },
+    {
+      "note": "No knockdowns absorbed and no KO losses in 9 UFC fights; opponents land 40.5% of sig strikes against him (decayed), versus a 47.9% middleweight league average.",
+      "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0); priors.Middleweight acc_sig"
+    },
+    {
+      "note": "Takedown defense 77% decayed (de Ridder went 2 of 8 at UFC 326). Opponents control him only 7% of the time.",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
+    },
+    {
+      "note": "He has shifted from grappling to striking: decayed ground share of sig landed is 9.9% against 13.9% career, and takedowns per 15 minutes are 0.75 decayed against 1.08 career.",
+      "source": "data/derived/fighters.json"
+    }
   ],
-  "confidence": "low"
+  "confidence": "medium"
 }

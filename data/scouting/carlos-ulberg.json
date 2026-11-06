@@ -3,13 +3,17 @@
   "name": "Carlos Ulberg",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC light heavyweight champion. He won the vacant title at UFC 327 in Miami (Apr 11, 2026) by knocking out Jiri Prochazka at 3:45 of round 1, minutes after tearing the ACL in his right knee. He had surgery in April 2026 and has said he is looking at early 2027 for his first defense. No bout is booked; the UFC has floated but not created an interim title, and Ulberg pushed back on the idea after Magomed Ankalaev's win over Bogdan Guskov (Jul 25, 2026). Pro record 15-1; ten straight UFC wins.",
+    "summary": "UFC light heavyweight champion. He won the vacant title at UFC 327 in Miami (Apr 11, 2026) by knocking out Jiri Prochazka at 3:45 of R1, minutes after tearing the ACL in his right knee. He had reconstructive surgery about a week later for what he called a 'full rupture', and in his latest public update (Aug 27, 2026) said he hopes to defend 'early next year'. No bout is booked and no interim title has been created; Ankalaev is the #1 contender, and Prochazka faces Navajo Stirling on Nov 21, 2026. Pro record 15-1 per ESPN and the UFC (14-1 per Sherdog and Wikipedia); ten straight UFC wins.",
     "title": "UFC light heavyweight champion",
-    "ranking": "Champion (UFC light heavyweight list dated Oct 27, 2026, as mirrored by ufcalendar.com and kalshi.com)",
+    "ranking": "Champion (UFC media rankings updated Nov 3, 2026, per CBS Sports and the ufcalendar.com mirror; also champion on the UFC/Meta list of Oct 31, 2026)",
     "active": true,
     "next_fight": null,
     "injuries": [
-      { "what": "torn right ACL suffered early in the Prochazka fight; his manager also reported bone bruising and tibia damage from fighting on it; surgery done, targeting an early-2027 return", "when": "2026-04", "source": "https://www.cbssports.com/ufc/news/carlos-ulberg-injury-surgery-torn-acl-ufc-327-title-jiri-prochazka/" }
+      {
+        "what": "torn right ACL ('full rupture') suffered early in the Prochazka fight; his manager also reported bone bruising and tibia damage from fighting on it; reconstructive surgery about a week later; targeting an early-2027 return (latest update Aug 27, 2026)",
+        "when": "2026-04",
+        "source": "https://www.espn.com/mma/story/_/id/49743588/injured-ufc-champion-ulberg-hopes-return-early-next-year"
+      }
     ],
     "sources": [
       "https://www.espn.com/mma/story/_/id/48432076/ufc-327-live-results-analysis-ji%C5%99i-prochazka-vs-carlos-ulberg-light-heavyweight-championship",
@@ -23,15 +27,30 @@
       "https://www.mmamania.com/latest-news/460292/carlos-ulberg-reacts-to-magomed-ankalaevs-ho-hum-ufc-abu-dhabi-win-saw-what-i-needed",
       "https://mixedmartialarts.com/mma/ulberg-pushes-back-on-interim-title-chatter-offers-his-own-light-heavyweight-bracket",
       "https://www.ufcalendar.com/rankings/light-heavyweight",
-      "https://kalshi.com/ufc/rankings/light-heavyweight",
       "http://ufcstats.com/fight-details/a031f062b7ffefee",
-      "http://ufcstats.com/fighter-details/9014c02eff8b3d62"
+      "http://ufcstats.com/fighter-details/9014c02eff8b3d62",
+      "https://www.espn.com/mma/story/_/id/49743588/injured-ufc-champion-ulberg-hopes-return-early-next-year",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/08/26/carlos-ulberg-targets-early-2027-return-acl-injury/91484118007/",
+      "https://www.sherdog.com/fighter/Carlos-Ulberg-84291",
+      "https://www.espn.com/mma/fighter/_/id/4695736/carlos-ulberg",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261121 (UFC Fight Night: Prochazka vs. Stirling)",
+      "https://www.cbssports.com/ufc/rankings/men/",
+      "https://en.wikipedia.org/wiki/Carlos_Ulberg (revision of 2026-10-18)"
     ]
   },
   "style": {
     "archetype": "kickboxer",
     "stance": "orthodox",
-    "tags": ["counter", "power", "feints", "jab", "leg-kicks", "rangy", "range-control", "fast-starter"],
+    "tags": [
+      "counter",
+      "power",
+      "feints",
+      "jab",
+      "leg-kicks",
+      "rangy",
+      "range-control",
+      "fast-starter"
+    ],
     "signature": [
       "left check hook / counter left hook (dropped Prochazka at UFC 327; a pre-fight breakdown credits it for every UFC knockout he had through 2025)",
       "feints to draw a lead he can counter, left hand circling on each of the opponent's beats",
@@ -79,24 +98,42 @@
     "notes": "Each group sums to 1; the engine's target split picks the group. Decayed sums in fighters.json: significant attempts 74% head, 10% body, 16% legs; landed 61% head, 13% body, 26% legs (leg accuracy 0.89, head 0.44). In the head group the jab and the left hook share the top weight: breakdowns name the counter left hook as his finishing punch, and the Blachowicz win was built on jabs and leg kicks. Body strikes are rare; breakdowns mention body kicks as set-ups, so bodykick leads that group. Leg kicks are split close to even between calf and inside because no source names his preferred target; 50/55 legs vs Blachowicz shows he can kick in volume. Knee and elbow are near zero: only 2% of his decayed attempts are in the clinch and 6% on the ground (ground strikes come after knockdowns). No spinning techniques recorded. Sources: data/derived/fighters.json; ufcstats per-fight totals; medium.com and substack breakdowns listed under style."
   },
   "appearance": {
-    "build": "tall and lean-muscular with long limbs; 6 ft 4 in with a 77 in reach (ufcstats)",
-    "hair": "short dark hair",
-    "facial_hair": "short trimmed beard; varies",
+    "build": "tall and lean-muscular with long limbs, thick through the chest and shoulders; 6 ft 4 in with a 77 in reach (ufcstats)",
+    "hair": "short dark-brown to black hair with a tight curl: a buzz cut in Sep 2025, slightly longer on top with short sides by Apr-May 2026 (ESPN cutouts and headshot)",
+    "facial_hair": "varies: clean-shaven to light stubble in Sep 2025; a short stubble beard and moustache with some grey on the chin in the Apr and May 2026 ESPN photos",
     "skin": "medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "Right pec and shoulder: a large Japanese-style piece with red accents (a dragon) covering the right side of the chest up to the collarbone. Right arm: black-and-grey Japanese-style work on the forearm and upper arm (a big cat and a bird with waves are visible in different photos). Left forearm: a small turtle (honu)-style tattoo. Left chest, abdomen and legs clean in the ESPN front cutouts.",
+    "kit": "UFC-issued board-style shorts: black tiger-stripe (Sep 2025 cutout) and black wave-pattern with the Venum logo (Apr 2026 title-fight cutout). Black UFC gloves.",
+    "notes": "No photo-based likeness sheet exists for him (checked data/likeness on Nov 6, 2026). These lines come from viewing the ESPN/UFC studio headshot with the belt (CDN Last-Modified May 13, 2026) and the full-body cutouts (Apr 9, 2026 and Sep 25, 2025). Front views only.",
     "sources": [
-      "https://www.ufc.com/athlete/carlos-ulberg",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4695736.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4695736.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4695736.png",
       "https://www.espn.com/mma/fighter/_/id/4695736/carlos-ulberg",
       "http://ufcstats.com/fighter-details/9014c02eff8b3d62"
     ]
   },
   "engine_notes": [
-    { "note": "Six of ten UFC wins came in round 1 (Nchukwi, Negumereanu, Potieria, Menifield at 0:12, Reyes, Prochazka); no five-round fight has gone past round 1, so there is no rounds 4-5 pace data (fighters.json pace falls back to his 3-round fights: 1.00, 1.14, 1.05 for rounds 1-3; rounds 4-5 are null).", "source": "data/derived/fighters.json (recent, pace)" },
-    { "note": "Power: 2.5 knockdowns per 100 significant head strikes landed (decayed), 2.1 career, against a light heavyweight league rate of 1.3 (fighters.json priors). Chin: one knockdown absorbed in 11 UFC fights, the Nzechukwu KO loss.", "source": "data/derived/fighters.json" },
-    { "note": "Highest striking volume of this group: 11.0 significant attempts and 5.9 landed per minute (decayed), absorbing 4.0. Leg strikes absorbed run 1.6 per minute decayed, his most-hit target after the head.", "source": "data/derived/fighters.json" },
-    { "note": "Fought most of UFC 327 on a torn ACL and still won; after reconstruction, his movement and kicking leg are unknowns for any 2027 fight.", "source": "https://www.espn.com/mma/story/_/id/48463277/badly-hobbled-ulberg-stuns-prochazka-wild-ko-ufc-327" },
-    { "note": "In three-round decisions his output rose: significant strikes landed by round went 15, 29, 31 vs Blachowicz and 24, 29, 45 vs Oezdemir.", "source": "ufcstats round totals (data/raw/ufc_fight_stats.csv): http://ufcstats.com/fight-details/6d9ea9f436ed354d, http://ufcstats.com/fight-details/02ec66f311dce539" }
+    {
+      "note": "Six of ten UFC wins came in round 1 (Nchukwi, Negumereanu, Potieria, Menifield at 0:12, Reyes, Prochazka); no five-round fight has gone past round 1, so there is no rounds 4-5 pace data (fighters.json pace falls back to his 3-round fights: 1.00, 1.14, 1.05 for rounds 1-3; rounds 4-5 are null).",
+      "source": "data/derived/fighters.json (recent, pace)"
+    },
+    {
+      "note": "Power: 2.5 knockdowns per 100 significant head strikes landed (decayed), 2.1 career, against a light heavyweight league rate of 1.3 (fighters.json priors). Chin: one knockdown absorbed in 11 UFC fights, the Nzechukwu KO loss.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Highest striking volume of this group: 11.0 significant attempts and 5.9 landed per minute (decayed), absorbing 4.0. Leg strikes absorbed run 1.6 per minute decayed, his most-hit target after the head.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Fought most of UFC 327 on a torn ACL and still won; after reconstruction, his movement and kicking leg are unknowns for any 2027 fight.",
+      "source": "https://www.espn.com/mma/story/_/id/48463277/badly-hobbled-ulberg-stuns-prochazka-wild-ko-ufc-327"
+    },
+    {
+      "note": "In three-round decisions his output rose: significant strikes landed by round went 15, 29, 31 vs Blachowicz and 24, 29, 45 vs Oezdemir.",
+      "source": "ufcstats round totals (data/raw/ufc_fight_stats.csv): http://ufcstats.com/fight-details/6d9ea9f436ed354d, http://ufcstats.com/fight-details/02ec66f311dce539"
+    }
   ],
   "confidence": "medium"
 }

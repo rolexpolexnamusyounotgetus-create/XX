@@ -65,3 +65,26 @@ Findings from verified research that the next engine versions must use. Each lin
   (about 200 calls per turn). With unrestricted network, research agents should fetch pages with curl
   (generic User-Agent) and fall back to https://html.duckduckgo.com/html/?q=<query> for search when the
   WebSearch budget runs out. Re-verify items flagged "unverified" in data/scouting/*.json this way.
+
+## Prediction status after the ML-core round (verified, Nov 6 ~11:00 UTC)
+- Final probability = stacked blend (research/model_moe.md, src/ml/moe.js, data/derived/moe_page.json):
+  with the closing line it is level-to-slightly-better than the line (pooled 2021-2025 out-of-sample:
+  -0.0019 log loss [-0.0042, +0.0004]; 2024-25 alone -0.0060 [-0.0088, -0.0035]); without a line it beats
+  the best single model on both 2021-23 (-0.0071 [-0.0136, -0.0006]) and 2024-25 (-0.0124/-0.0138).
+- The simulator (engine v3) gets weight 0 in every validated blend pattern: for the winner it adds nothing
+  beyond the feature model + Elo + market. It beats Elo on 2024-25 (-0.030 [-0.048, -0.012]) but only
+  ~0.006 on 2019-23 and loses to Elo in 2020, 2022 and 2023. The plain parameter search (tools/mlcal) found
+  nothing better than self-calibration; the Elo-skill hook was the best lead (n.s.).
+- Architecture from here: the blend decides the winner; the simulator explains how and when, with its
+  method/round distribution rescaled to the blend (MoE.winnerFactors). Engine versions v4+ must (1) earn a
+  non-zero validated weight in the blend, and (2) beat the method/round benchmark (tools/methodround).
+  Most promising: feed the ML stat-line model (tools/mlrates) into the simulator's matchup rates, and the
+  Elo/ratings skill hook into accuracy/takedown odds.
+- Contamination to fix in v4: params3's [selfcal] scales were fit to league rates pooled 2018-01..2026-10
+  (includes validation years and the vault; averages only, no per-fight results). Build train-only priors
+  (2018-2023) for tuning; rebuild production priors on all data at release.
+- The v3 calibration stage was briefed before the vault split, so its report may include one look at
+  2024-2026. No tuning used it; from v4 on, selection uses 2024-2025 only and the vault stays shut until
+  the v6/v10 audits.
+- Every input became underconfident in 2024-25 (the market too: calibration slopes 1.1-1.7). Recalibrate
+  on recent data (temperature/recency weighting) at each release.

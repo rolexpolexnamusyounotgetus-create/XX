@@ -3,11 +3,11 @@
   "name": "Alex Pereira",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC middleweight and two-time light heavyweight champion. He vacated the light heavyweight belt to move up and lost his heavyweight debut to Ciryl Gane for the interim heavyweight title at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026, TKO R2 1:27; Gane out-landed him 54-12). He is booked against Sergei Pavlovich in a five-round heavyweight co-main event at UFC 335 (Dec 12, 2026, T-Mobile Arena, Las Vegas), announced by Dana White on the UFC 332 broadcast (Oct 3, 2026). Pro record 13-4 per post-fight reports.",
+    "summary": "Former UFC middleweight and two-time light heavyweight champion. He vacated the light heavyweight belt to move up and lost his heavyweight debut to Ciryl Gane for the interim heavyweight title at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026, TKO R2 1:27; Gane out-landed him 54-12). He is booked against Sergei Pavlovich in a five-round heavyweight co-main event at UFC 335 (Dec 12, 2026, T-Mobile Arena, Las Vegas), announced by Dana White on the UFC 332 broadcast (Oct 3, 2026) and on the ESPN and Sherdog schedules. He has said he will return to light heavyweight if he loses. The media panel still ranks him #3 at light heavyweight. Pro record 13-4 (ESPN, Sherdog). No injuries reported.",
     "title": null,
-    "ranking": null,
+    "ranking": "#3 light heavyweight on the UFC media rankings updated Nov 3, 2026 (CBS Sports; ufcalendar.com mirror); not in the media heavyweight top 15. UFC/Meta algorithmic rankings updated Oct 31, 2026: #1 light heavyweight, #3 heavyweight (ufcalendar.com)",
     "active": true,
-    "next_fight": "Sergei Pavlovich, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (heavyweight, 5 rounds, co-main event)",
+    "next_fight": "Sergei Pavlovich, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (heavyweight, 5 rounds, co-main event under Oliveira vs Lopes)",
     "injuries": [],
     "sources": [
       "https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335",
@@ -21,13 +21,31 @@
       "https://boxingnews.com/news/alex-pereira-vs-ciryl-gane-result-and-reaction",
       "https://bloodyelbow.com/2026/09/07/alex-pereira-calls-out-ciryl-gane-for-heavyweight-rematch-and-claims-fight-is-going-to-happen/",
       "http://ufcstats.com/fight-details/5727d5be8c373346",
-      "http://ufcstats.com/fighter-details/e5549c82bfb5582d"
+      "http://ufcstats.com/fighter-details/e5549c82bfb5582d",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261114 (UFC 334 card) and ?dates=20261212 (UFC 335 card)",
+      "https://www.sherdog.com/fighter/Alex-Pereira-224511",
+      "https://www.mmamania.com/ufc-news/480970/alex-pereira-leaving-heavyweight-ufc-335-loss-sergei-pavlovich-not-going-keep-trying",
+      "https://www.cbssports.com/ufc/rankings/men/",
+      "https://www.ufcalendar.com/rankings/light-heavyweight",
+      "https://www.ufcalendar.com/rankings/heavyweight",
+      "https://www.espn.com/mma/fighter/_/id/4705658/alex-pereira"
     ]
   },
   "style": {
     "archetype": "kickboxer",
     "stance": "orthodox",
-    "tags": ["power", "counter", "leg-kicks", "calf-kicks", "head-kicks", "flying-knee", "elbows", "takedown-defense", "range-control", "late-surge"],
+    "tags": [
+      "power",
+      "counter",
+      "leg-kicks",
+      "calf-kicks",
+      "head-kicks",
+      "flying-knee",
+      "elbows",
+      "takedown-defense",
+      "range-control",
+      "late-surge"
+    ],
     "signature": [
       "left hook, often as a counter (finishes of Hill at UFC 300 and Rountree at UFC 307 are logged as single punches at distance)",
       "rear-leg low kick to the outside of the lead leg and calf (48 of 55 leg strikes landed vs Ankalaev at UFC 313)",
@@ -73,24 +91,43 @@
     "notes": "Each group (head, body, leg) sums to 1; the engine's target split picks the group. From the decayed sums in fighters.json his significant attempts go 60% head, 17% body, 22% legs, and his landed strikes 47% head, 22% body, 30% legs (leg accuracy 0.82, body 0.77, head 0.47), so the legs are his surest target. In the head group the left hook gets the top weight because his finishes of Hill (UFC 300) and Rountree (UFC 307) were single punches at distance and it is his best-known weapon; head kick 0.10 reflects the UFC 303 KO of Prochazka and his kickboxing base. Leg kicks lean to the outside rear-leg low kick and calf (48/55 legs landed vs Ankalaev at UFC 313; 26/36 vs Adesanya at UFC 287). Knee 0.15 covers the flying knee (UFC 268) and clinch knees; elbow 0.20 covers ground elbows (UFC 295, UFC 320). No spinning attacks appear in his UFC finishes. Sources: data/derived/fighters.json; ufcstats per-fight totals in data/raw."
   },
   "appearance": {
-    "build": "tall and long-limbed, lean but muscular through the shoulders and back; 6 ft 4 in with a 79 in reach (ufcstats)",
-    "hair": "short dark hair",
-    "facial_hair": "often a thin mustache with a short chin beard; varies",
+    "build": "tall and long-limbed, lean but muscular through the shoulders and back; 6 ft 4 in with a 79 in reach (ufcstats); listed at 251 lb at heavyweight (ESPN, Sherdog), and visibly fuller through the torso in the Jun 2026 cutout than at 205 lb in Oct 2025",
+    "hair": "short black hair with a tight curl, cropped close at the sides; a little longer and fuller on top in Jun 2026 than in Oct 2025 (ESPN cutouts)",
+    "facial_hair": "varies: a short full black beard joined to the moustache (about 1.5-2 cm) for UFC Freedom 250 (Jun 2026 ESPN headshot and cutout); clean-shaven to light stubble for UFC 320 (Oct 2025 cutout)",
     "skin": "medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "Heavily tattooed, much of it in colour: a red-orange serpent/dragon running from the right shoulder across the right collarbone; a black-and-grey dragon on the left upper chest and shoulder; a large red dragon/koi-style piece across the lower chest and upper abdomen; 'Kickboxing' in script across the lower abdomen above the waistband; a colour Japanese-style sleeve on the right upper arm; a feather on the right forearm; black-and-grey work on the left forearm; a large black-and-grey piece on the right thigh. Subjects beyond what the photos show are not verified.",
+    "kit": "Vale tudo-cut compression shorts to mid-thigh rather than board shorts in both ESPN cutouts: a multicolour Brazil/indigenous-print UFC kit (Oct 2025) and a navy-and-red US-flag Freedom 250 kit with matching red gloves (Jun 2026). For a standard bout use corner-colour compression shorts and black UFC gloves. At ceremonial weigh-ins he has worn a feather headdress and red face paint (Jun 2026); that is not fight kit.",
+    "notes": "No photo-based likeness sheet exists for him yet (checked data/likeness on Nov 6, 2026). These lines come from viewing the ESPN/UFC studio headshot and left cutout (CDN Last-Modified Oct 5, 2026, but the Freedom 250 gloves date the shoot to Jun 2026), the right cutout (Oct 2, 2025), and the Wikimedia weigh-in photo of Jun 13, 2026 in assets/reference/alex-pereira/.",
     "sources": [
-      "https://www.ufc.com/athlete/alex-pereira",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4705658.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4705658.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4705658.png",
+      "assets/reference/alex-pereira/wiki-weighin-2026-06-13-07.jpg",
       "https://www.espn.com/mma/fighter/_/id/4705658/alex-pereira",
       "http://ufcstats.com/fighter-details/e5549c82bfb5582d"
     ]
   },
   "engine_notes": [
-    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.09, 0.90, 1.32, 1.35 (minute-weighted): output rises in rounds 4-5. He finished Adesanya in round 5 (UFC 281) and Rountree in round 4 (UFC 307).", "source": "data/derived/fighters.json (pace, pace_w)" },
-    { "note": "Power: 2.0 knockdowns per 100 significant head strikes landed (decayed), 2.15 career, against a light heavyweight league rate of 1.3 (fighters.json priors). Chin: 1.0 knockdowns absorbed per 100 head strikes taken (decayed), with 2 KO/TKO losses in 13 UFC fights.", "source": "data/derived/fighters.json" },
-    { "note": "Takedown defense 86% decayed (opponents about 2.3 of 16.7) and 80% career, but opponents' control time is 170 s per 15 min decayed, mostly cage clinch control by Ankalaev (342 s at UFC 313) and Adesanya (394 s at UFC 281).", "source": "data/derived/fighters.json; ufcstats per-fight totals" },
-    { "note": "Only one of his 13 UFC fights was at heavyweight (the Gane loss). His rates come from 185 and 205 lb fights, so heavyweight inputs should lean on the division prior.", "source": "data/derived/fighters.json (divisions)" },
-    { "note": "Against Gane he landed 12 of 33 significant strikes, 8 of them leg kicks, and absorbed 54 (39 to the head).", "source": "http://ufcstats.com/fight-details/5727d5be8c373346" }
+    {
+      "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.09, 0.90, 1.32, 1.35 (minute-weighted): output rises in rounds 4-5. He finished Adesanya in round 5 (UFC 281) and Rountree in round 4 (UFC 307).",
+      "source": "data/derived/fighters.json (pace, pace_w)"
+    },
+    {
+      "note": "Power: 2.0 knockdowns per 100 significant head strikes landed (decayed), 2.15 career, against a light heavyweight league rate of 1.3 (fighters.json priors). Chin: 1.0 knockdowns absorbed per 100 head strikes taken (decayed), with 2 KO/TKO losses in 13 UFC fights.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Takedown defense 86% decayed (opponents about 2.3 of 16.7) and 80% career, but opponents' control time is 170 s per 15 min decayed, mostly cage clinch control by Ankalaev (342 s at UFC 313) and Adesanya (394 s at UFC 281).",
+      "source": "data/derived/fighters.json; ufcstats per-fight totals"
+    },
+    {
+      "note": "Only one of his 13 UFC fights was at heavyweight (the Gane loss). His rates come from 185 and 205 lb fights, so heavyweight inputs should lean on the division prior.",
+      "source": "data/derived/fighters.json (divisions)"
+    },
+    {
+      "note": "Against Gane he landed 12 of 33 significant strikes, 8 of them leg kicks, and absorbed 54 (39 to the head).",
+      "source": "http://ufcstats.com/fight-details/5727d5be8c373346"
+    }
   ],
   "confidence": "medium"
 }

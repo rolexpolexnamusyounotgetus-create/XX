@@ -1,0 +1,299 @@
+{
+  "slug": "jon-jones",
+  "name": "Jon Jones",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 39,
+  "official": {
+    "height_cm": 193.0,
+    "reach_cm": 213.4,
+    "stance": "Orthodox",
+    "fight_weight_lb": 237.6,
+    "source": "data/derived/fighters.json (76 in height, 84 in reach); 237.6 lb at the UFC 309 official weigh-in (2024-11-15), his last fight. He has not fought since and has said he is retired, then unsure, through 2026."
+  },
+  "photos_used": [
+    "ref-espn-headshot.png",
+    "ref-espn-stance-left.png",
+    "ref-espn-stance-right.png",
+    "wiki-jonbonesjones-2024-04-28.jpg",
+    "ref-imagn-espys-2025-07-16.jpg",
+    "ref-getty-ufc309-octagon-2024-11-16.jpg",
+    "ref-getty-ufc309-octagon-2-2024-11-16.png",
+    "ref-cagesidepress-ufc309-weighin-2024-11-15.jpg",
+    "wiki-senate-2014-02-04-cropped.jpg",
+    "wiki-posing-2015-11-29.png"
+  ],
+  "photo_coverage": "Fair. 10 photos. Recent coverage is thin because he has been inactive since November 2024: the newest clear photo is the July 2025 ESPYs red carpet; nothing usable from 2026 was found (a UFC 327 cageside appearance in April 2026 was only seen on the broadcast). The face is driven by the 2024 ESPN headshot and a high-resolution 2023 studio portrait; three-quarter views come from UFC 309 and the ESPYs; the only profile is a soft 2015 video still. Only two photos are reliably free (2014 PD, 2015 CC BY 3.0), both old.",
+  "face": {
+    "shape": "Long oval face, tall from hairline to chin, broad at the cheekbones. The beard squares off and lengthens the lower face. Shaved, the skull is a smooth, high, rounded dome (UFC 309 octagon).",
+    "jaw": "Moderately wide with soft angles; hidden by the beard in most photos. With the beard short (ESPYs 2025) the jawline is fairly broad and a little full under the chin.",
+    "chin": "Medium width, rounded, moderately projecting; a long chin and lower face under the beard.",
+    "cheekbones": "Broad and moderately high; cheeks moderately full, without hollows.",
+    "brow_ridge": "Moderately prominent; the brows sit low and close over the eyes.",
+    "forehead": "Tall, broad and gently rounded, with a few horizontal creases and a vertical crease between the brows when frowning (2014). A short horizontal scar or dent sits in the centre of the forehead just above the brows, with a slightly darker patch higher up near the hairline (2024 headshot).",
+    "eyes": {
+      "shape": "Almond-shaped, with heavy, slightly hooded upper lids and a deep upper-lid crease; slight puffiness below. Outer corners level to slightly down, giving a relaxed, heavy-lidded look.",
+      "spacing": "Average.",
+      "colour": "Dark brown.",
+      "size": "Medium to small, deep-set"
+    },
+    "eyebrows": {
+      "thickness": "Medium to thick",
+      "shape": "Fairly straight and low with a gentle arch toward the outer third; a faint diagonal line runs off the outer end of the right brow toward the temple (possible old scar).",
+      "colour": "Black",
+      "colour_hex": "#1e1514"
+    },
+    "nose": {
+      "length": "Medium",
+      "width": "Broad, especially at the base",
+      "bridge": "Low to medium, straight",
+      "hump": "None",
+      "tip": "Broad, rounded and slightly bulbous",
+      "nostrils": "Wide, round, moderately flared",
+      "fight_damage": "None obvious; straight and centred."
+    },
+    "mouth": {
+      "width": "Medium-wide",
+      "upper_lip": "Full with a soft cupid's bow; the moustache covers the top edge",
+      "lower_lip": "Full, slightly fuller than the upper lip",
+      "resting_expression": "Closed, neutral to slightly down at the corners; smiles widely off duty (weigh-in, ESPYs)."
+    },
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Close to the head, slightly out at the top.",
+      "cauliflower_ear": "Yes, moderate on both ears: thickened, lumpy cartilage in the upper ear and antihelix, clearest in the 2023 studio portrait, more irregular on his right ear. The 2015 still shows less thickening.",
+      "accessory": "Small red stud in the left ear lobe (ESPYs 2025)."
+    },
+    "notable_marks_scars": "Forehead: short horizontal scar or dent above the brows and a darker patch near the hairline centre. Possible small scar off the outer right eyebrow. No other large scars visible."
+  },
+  "hair": {
+    "style": "Very short buzz cut (about 3 mm) with a sharp lined-up hairline in most photos (2023 portrait, 2024 headshot, 2024 weigh-in, 2025 ESPYs); shaved smooth on fight night at UFC 309. In 2014-2015 the top was a short curly crop about 2-3 cm.",
+    "length_cm": 0.3,
+    "colour": "Black",
+    "colour_hex": "#141212",
+    "hairline": "Lined up, with rounded corners and moderate recession at the temples; centre front intact.",
+    "texture": "Tightly coiled (visible when longer, 2014-2015)."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "detail": "Full beard joined to the moustache in every photo since 2023, with length varying: about 3-4 cm and dense at UFC 309 (Nov 2024), about 1.5 cm in the 2023 portrait, trimmed to about 5 mm at the ESPYs (Jul 2025). Natural cheek line at mid-cheek, low neckline. In 2014 it was a goatee and moustache only.",
+    "colour": "Black with grey and white hairs concentrated at the chin and the lower jaw corners; the grey is more visible in 2024-2025.",
+    "colour_samples": {
+      "espn_chin": "#131112",
+      "espn_cheek": "#0e0d0e"
+    },
+    "colour_hex": "#141112",
+    "grey_hex": "#9a958f",
+    "density": "Dense on the chin, moustache and jaw; slightly thinner on the upper cheeks.",
+    "shape": "Rounded full beard, slightly longer at the chin."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "wiki-jonbonesjones-2024-04-28.jpg",
+        "spot": "right cheek",
+        "hex": "#96583b",
+        "light": "studio, neutral grey background"
+      },
+      {
+        "photo": "wiki-jonbonesjones-2024-04-28.jpg",
+        "spot": "right cheek, inner",
+        "hex": "#936450",
+        "light": "studio, neutral grey background"
+      },
+      {
+        "photo": "wiki-jonbonesjones-2024-04-28.jpg",
+        "spot": "left cheek",
+        "hex": "#693922",
+        "light": "studio, shadow side"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc309-weighin-2024-11-15.jpg",
+        "spot": "right cheek",
+        "hex": "#965b39",
+        "light": "weigh-in stage"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc309-weighin-2024-11-15.jpg",
+        "spot": "left cheek",
+        "hex": "#aa6942",
+        "light": "weigh-in stage"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek",
+        "hex": "#99371f",
+        "light": "studio, warm saturated grade"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek",
+        "hex": "#973e27",
+        "light": "studio, warm saturated grade"
+      },
+      {
+        "photo": "wiki-senate-2014-02-04-cropped.jpg",
+        "spot": "right cheek",
+        "hex": "#b77e74",
+        "light": "indoor, flash"
+      },
+      {
+        "photo": "wiki-senate-2014-02-04-cropped.jpg",
+        "spot": "left cheek",
+        "hex": "#a16a57",
+        "light": "indoor, flash"
+      },
+      {
+        "photo": "wiki-senate-2014-02-04-cropped.jpg",
+        "spot": "forehead",
+        "hex": "#bf867d",
+        "light": "indoor, flash"
+      },
+      {
+        "photo": "ref-imagn-espys-2025-07-16.jpg",
+        "spot": "right cheek",
+        "hex": "#87545a",
+        "light": "magenta backdrop cast (excluded)"
+      },
+      {
+        "photo": "ref-imagn-espys-2025-07-16.jpg",
+        "spot": "left cheek",
+        "hex": "#703838",
+        "light": "magenta backdrop cast (excluded)"
+      },
+      {
+        "photo": "ref-getty-ufc309-octagon-2024-11-16.jpg",
+        "spot": "right cheek",
+        "hex": "#591d0f",
+        "light": "arena shadow (excluded)"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "forehead",
+        "hex": "#d88676",
+        "light": "studio specular highlight (excluded)"
+      }
+    ],
+    "tone_hex_average_all": "#975846",
+    "tone_hex": "#9c5c45",
+    "tone_hex_method": "Mean of the 10 samples not marked excluded (9x9-pixel medians). The magenta-cast ESPYs samples, the arena-shadow sample and the studio forehead highlight are left out.",
+    "tone_hex_recommended": "#93593e",
+    "tone_note": "Medium-deep brown. The flash-lit 2014 samples pull the average light and the ESPN grade pulls it red; the neutral 2023 studio portrait and the weigh-in cheeks (#96583b, #936450, #965b39) agree closely, so tone_hex_recommended follows them.",
+    "undertone": "Warm, red-brown.",
+    "freckles_marks": "No freckles. Moderate chest hair (2023 portrait); forehead marks noted above.",
+    "texture_pick": "middleage_african_male",
+    "texture_pick_reason": "Chosen only because its swatch (#875d4b) is the closest to the recommended tone."
+  },
+  "body": {
+    "build": "Very tall-looking and long-limbed: reach (84 in) is 8 in longer than his height, so the arms look strikingly long, with long legs and big hands and feet. Broad, deep frame.",
+    "body_fat": "average",
+    "body_fat_notes": "Heavyweight (2023-2024): solid and powerful but smooth, with little abdominal definition and a slightly rounded lower belly. Light heavyweight (before 2021, 2015): lean with a clear six-pack.",
+    "shoulders": "Broad, with rounded deltoids and moderately high trapezius.",
+    "chest": "Broad, thick pecs; fuller at heavyweight.",
+    "arms": "Very long, with long forearms; muscular but not bulky.",
+    "waist": "Thicker at heavyweight with only a mild V-taper; narrow in the light-heavyweight photos.",
+    "legs_calves": "Long legs with lean-to-medium thighs and relatively slim calves.",
+    "neck": "Long and thick.",
+    "posture": "Relaxed, slightly slouched shoulders and a forward head carriage; stands loose with long arms hanging. Fights orthodox.",
+    "notable_physique_traits": "Extreme arm length relative to height, long legs, and the 'Philippians 4:13' script on the right chest."
+  },
+  "tattoos": [
+    {
+      "where": "Right upper chest, below the collarbone",
+      "description": "Black cursive script 'Philippians' with '4:13' smaller beneath it, running from near the right shoulder toward the sternum.",
+      "size": "About 18 x 6 cm"
+    },
+    {
+      "where": "Left side of the ribcage, below the left pec",
+      "description": "Two black Chinese characters stacked vertically (the upper resembles 安).",
+      "size": "About 4 cm wide x 10 cm tall"
+    }
+  ],
+  "tattoos_note": "No other tattoos visible on the arms, legs or front of the body in any photo; his back is not shown.",
+  "accessories_seen": "Gold chain and small red stud in the left ear (ESPYs 2025).",
+  "kit": {
+    "typical_shorts": "UFC 309 (Nov 2024): black Venum fight shorts with a red brush-stroke pattern, gold script 'Philippians 4:13' on his right leg, vertical gold 'JONES' on his left leg, crypto.com logo low on the right leg, red Venum logo on the left hip, gold UFC on the black waistband. Light-heavyweight era: grey Reebok compression shorts.",
+    "gloves": "Black UFC gloves.",
+    "shorts_colours_hex": {
+      "black_base": "#141416",
+      "red_pattern": "#c41e2a",
+      "gold_text": "#c9a24a"
+    },
+    "brand_note": "Venum is the UFC outfitter; Reebok before 2021."
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "mh-skin-middleage_african_male (closest swatch) tinted toward #93593e",
+    "eyebrows": "eyebrow010 tinted #1e1514",
+    "hair": "very short buzz (about 3 mm) as a dark scalp tint #141212 with a lined-up hairline and receding temples; fully shaved on fight night",
+    "beard": "full short beard about 1.5-3 cm, #141112, with grey (#9a958f) at the chin"
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.215,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.5,
+    "macro/weightUpM": 0.25,
+    "macro/heightUpM": 0.32,
+    "macro/proportionsUpM": 0.5,
+    "head/head-oval": 0.4,
+    "head/head-scale-vert-incr": 0.2,
+    "head/head-scale-horiz-incr": 0.05,
+    "head/head-scale-depth-incr": 0.1,
+    "head/head-fat-incr": 0.05,
+    "forehead/forehead-scale-vert-incr": 0.25,
+    "forehead/forehead-trans-backward": 0.1,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-width-incr": 0.1,
+    "chin/chin-prominent-incr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.2,
+    "cheek/r-cheek-bones-incr": 0.2,
+    "cheek/l-cheek-volume-incr": 0.1,
+    "cheek/r-cheek-volume-incr": 0.1,
+    "eyes/l-eye-height2-decr": 0.25,
+    "eyes/r-eye-height2-decr": 0.25,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+    "eyebrows/eyebrows-trans-down": 0.2,
+    "eyebrows/eyebrows-trans-forward": 0.15,
+    "nose/nose-scale-horiz-incr": 0.35,
+    "nose/nose-width1-incr": 0.3,
+    "nose/nose-scale-depth-decr": 0.1,
+    "nose/nose-hump-decr": 0.2,
+    "nose/nose-point-width-incr": 0.4,
+    "nose/nose-point-up": 0.05,
+    "nose/nose-nostrils-width-incr": 0.45,
+    "nose/nose-flaring-incr": 0.25,
+    "mouth/mouth-scale-horiz-incr": 0.15,
+    "mouth/mouth-upperlip-volume-incr": 0.3,
+    "mouth/mouth-lowerlip-volume-incr": 0.35,
+    "mouth/mouth-cupidsbow-incr": 0.05,
+    "mouth/mouth-scale-depth-incr": 0.1,
+    "neck/neck-scale-horiz-incr": 0.3,
+    "neck/neck-scale-vert-incr": 0.15,
+    "torso/measure-shoulder-dist-incr": 0.4,
+    "torso/torso-vshape-incr": 0.15,
+    "torso/measure-waist-circ-incr": 0.2,
+    "torso/measure-hips-circ-incr": 0.1,
+    "buttocks/buttocks-volume-incr": 0.05
+  },
+  "morphs_variant_light_heavyweight": {
+    "_note": "Overrides for the lean 205 lb version (pre-2021 studio cutout, 2015 still). Apply on top of 'morphs'; keys set to 0 switch a target off.",
+    "macro/muscleUpM": 0.7,
+    "macro/weightUpM": 0.0,
+    "head/head-fat-incr": 0.0,
+    "cheek/l-cheek-volume-incr": 0.0,
+    "cheek/r-cheek-volume-incr": 0.0,
+    "torso/torso-vshape-incr": 0.35,
+    "torso/measure-waist-circ-incr": 0.0,
+    "torso/measure-hips-circ-incr": 0.0,
+    "neck/neck-scale-horiz-incr": 0.2
+  },
+  "morphs_not_in_embed": {
+    "_note": "assets/embed/mh-manifest.json has no ear targets. Estimates for standard MakeHuman ear modifiers in case they are added; the cauliflower thickening needs a sculpt or normal map, not a slider.",
+    "ears/l-ear-lobe-decr": 0.2,
+    "ears/r-ear-lobe-decr": 0.2
+  },
+  "notes": "Confidence: high for build, skin range, hair, beard and tattoos; medium for face proportions (good frontals from 2023-2024 and three-quarters from UFC 309 and the ESPYs; the only profile is a soft 2015 still); low-to-medium for exact morph values. Recent photos are scarce because he has not fought since November 2024; the newest clear one is July 2025. Watch for: (1) A long oval face with a tall, rounded forehead, low straight brows and heavy-lidded, deep-set eyes; default MakeHuman eyes look too open and alert. (2) Broad nose with a rounded tip and wide nostrils, full lips. (3) Beard: full and dense, black with grey at the chin; length 1.5-4 cm depending on the year (short beard is the middle value). (4) Head: very short buzz with a lined-up hairline and receding temples, shaved smooth on fight night. (5) Ears: moderate cauliflower thickening on both ears (needs a normal map). (6) Body: the defining trait is arm length (84 in reach at 76 in height) and long legs; at heavyweight keep the midsection smooth and slightly full, not shredded; use morphs_variant_light_heavyweight for his 205 lb years. (7) Tattoos are small: 'Philippians 4:13' script on the RIGHT upper chest and two Chinese characters on the LEFT ribs (his own sides). macro/ageOldM 0.215 follows avatar3d.js (39-25)/65; heightUpM 0.32 is interpolated from the other 188-196 cm sheets."
+}

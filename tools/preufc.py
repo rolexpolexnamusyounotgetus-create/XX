@@ -1084,6 +1084,50 @@ class EloRunner:
             N[ib] += 1
         return R, N, pre
 
+    def loss_grad(self, Zidx, Z, beta, target, until=None):
+        """Mean log loss over the bouts in `target` (fid -> 1 if A won) and its exact gradient w.r.t. the seed
+        coefficients beta (debut rating = 1500 + Z . beta), by forward-mode differentiation through every Elo
+        update (each rating carries d rating / d beta)."""
+        import numpy as np
+        nk = Z.shape[1]
+        R = list(self.R0)
+        N = list(self.N0)
+        dR = {}
+        for k, z in zip(Zidx, Z):
+            if self.N0[k] == 0:
+                R[k] = 1500.0 + float(z @ beta)
+                dR[k] = z.copy()
+        zero = np.zeros(nk)
+        K, bn, bo = self.K, self.boost_n, self.boost
+        c = math.log(10) / 400.0
+        L, G, n = 0.0, np.zeros(nk), 0
+        for ia, ib, sa, fid, d in self.tail:
+            if until is not None and d >= until:
+                break
+            ra, rb = R[ia], R[ib]
+            ea = 1.0 / (1.0 + 10.0 ** ((rb - ra) / 400.0))
+            ga, gb = dR.get(ia), dR.get(ib)
+            dd = None if (ga is None and gb is None) else (ga if ga is not None else zero) - (gb if gb is not None else zero)
+            y = target.get(fid)
+            if y is not None:
+                e = min(max(ea, 1e-6), 1 - 1e-6)
+                L -= y * math.log(e) + (1 - y) * math.log(1 - e)
+                n += 1
+                if dd is not None:
+                    G += (ea - y) * c * dd
+            if sa is not None:
+                ka = K * bo if N[ia] < bn else K
+                kb = K * bo if N[ib] < bn else K
+                R[ia] = ra + ka * (sa - ea)
+                R[ib] = rb - kb * (sa - ea)
+                if dd is not None:
+                    dea = (ea * (1 - ea) * c) * dd
+                    dR[ia] = (ga if ga is not None else zero) - ka * dea
+                    dR[ib] = (gb if gb is not None else zero) + kb * dea
+            N[ia] += 1
+            N[ib] += 1
+        return L / max(n, 1), G / max(n, 1)
+
     def run(self, seed=None, boost=None, until=None):
         """seed: {person index: debut rating} for people debuting on/after seed_from. Returns fid -> (ra, rb, ea)."""
         bo = self.boost if boost is None else boost
@@ -1428,19 +1472,15 @@ def evaluate(args):
         fids, yv = sel["fid"].tolist(), sel["y"].to_numpy()
         nfit = max(1, len(fids))
 
-        def obj(theta):
-            beta = theta[:nk + 1]
-            bo = theta[nk + 1] if fit_boost else None
-            sv = 1500.0 + Z @ beta
-            pre_ = E.run(dict(zip(Zidx, sv)), boost=bo, until=fit_to)
-            p = np.array([pre_[f][2] for f in fids])
-            return ll(p, yv) + float(beta @ beta) / (2 * sigma ** 2 * nfit)
-        th0 = np.zeros(nk + 1 + int(fit_boost))
-        if fit_boost:
-            th0[-1] = boost
-        r = minimize(obj, th0, method="L-BFGS-B", options={"eps": 0.25, "maxiter": 3 if args.quick else 200})
-        beta = r.x[:nk + 1]
-        bo = r.x[nk + 1] if fit_boost else None
+        target = dict(zip(fids, yv.tolist()))
+
+        def obj(beta):
+            L, G = E.loss_grad(Zidx, Z, beta, target, until=fit_to)
+            return L + float(beta @ beta) / (2 * sigma ** 2 * nfit), G + beta / (sigma ** 2 * nfit)
+        th0 = np.zeros(nk + 1)
+        r = minimize(obj, th0, jac=True, method="L-BFGS-B", options={"maxiter": 5 if args.quick else 300})
+        beta = r.x
+        bo = None
         return {"beta": beta, "boost": bo, "mu": mu, "sd": sdv, "keys": keys + (["age_debut"] if use_age else []),
                 "Z": Z, "Zidx": Zidx, "loss": r.fun, "nit": r.nit}
 
@@ -1478,13 +1518,13 @@ def evaluate(args):
         for C in (1.0,):
             o = cv_eval(lambda: mk(C), trainval)
             cvlog.append({"model": name, "C": C, "cv_ll": oof_ll(o, trainval)})
-    Cs = (0.1,) if args.quick else (0.01, 0.03, 0.1, 0.3, 1.0)
-    taus = (2.0,) if args.quick else (1.0, 2.0, 4.0, None)
+    Cs = (0.1,) if args.quick else (0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0)
+    taus = (2.0,) if args.quick else (1.0, 2.0, 4.0, 8.0, None)
     for C in Cs:
         o = cv_eval(lambda: DiffModel(BASE_KEYS, [], C=C), trainval)
         cvlog.append({"model": "base", "C": C, "cv_ll": oof_ll(o, trainval)})
     for fs_name, fs in (("core", PRE_CORE), ("all", PRE_KEYS)):
-        for C in Cs[:4]:
+        for C in Cs[:6]:
             for tau in taus:
                 o = cv_eval(lambda: DiffModel(BASE_KEYS, fs, C=C, tau=tau), trainval)
                 cvlog.append({"model": "base+pre_" + fs_name, "C": C, "tau": tau, "cv_ll": oof_ll(o, trainval)})
@@ -1505,8 +1545,7 @@ def evaluate(args):
     # 2) seeded Elo: CV per year (fit on [train_from, Y), score newcomer bouts of year Y)
     seed_cv = {}
     seed_cache = {}
-    seed_variants = (("seed_age", [], True), ("seed_pre", PRE_CORE, False), ("seed_pre+age", PRE_CORE, True),
-                     ("seed_small+age", seed_keys_all["pre_small"], True))
+    seed_variants = (("seed_age", [], True), ("seed_pre", PRE_CORE, False), ("seed_pre+age", PRE_CORE, True))
     if args.quick:
         seed_variants = seed_variants[2:3]
     for nm, keys, use_age in seed_variants:

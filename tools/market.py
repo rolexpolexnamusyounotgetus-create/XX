@@ -2025,6 +2025,8 @@ def cmd_tables(a):
                      f"{m['accuracy']:.3f} {_ci(m['accuracy_ci95'])} | {m['ece']:.4f} |")
         mr = E['market_rating'][per]['market_rating']
         L.append(f"| {per} | Market rating (no line needed) | {mr['n']} | {mr['log_loss']:.4f} | {mr['brier']:.4f} | {mr['accuracy']:.3f} | {mr['ece']:.4f} |")
+        ma = E['stacking']['market_rating_adj'][per]
+        L.append(f"| {per} | Market rating + age and weight-move offsets | {ma['n']} | {ma['log_loss']:.4f} | {ma['brier']:.4f} | {ma['accuracy']:.3f} | {ma['ece']:.4f} |")
     L.append('\n| Period | Close - Elo (LL) | Close - Open (LL) | Open - Elo (LL) | Rating - Elo (LL) | Rating - Open (LL) |')
     L.append('|---|---|---|---|---|---|')
     for per in ('tune', 'test'):
