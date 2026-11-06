@@ -901,6 +901,579 @@ def load_sherdog_bios(offline=True, fights=None, people=None):
     return out
 
 
+# ------------------------------------------------------------------ Wikipedia event article parsing
+SKIP_SECTIONS = ("see also", "references", "external links", "bonus awards", "aftermath", "records",
+                 "fighter payouts", "broadcast", "bout records", "notes and references", "further reading")
+MONTHS_FULL = ["january", "february", "march", "april", "may", "june", "july", "august", "september",
+               "october", "november", "december"]
+MON_RE = "|".join(MONTHS_FULL)
+NUMW = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+        "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+        "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20,
+        "several": None, "few": None, "couple": 2, "single": 1}
+ABBREV = ["vs", "jr", "sr", "st", "dr", "mr", "mrs", "ms", "no", "mt", "ft", "u.s", "inc", "approx", "e.g", "i.e"]
+
+
+def clean_text(s):
+    s = re.sub(r"\[\s*(?:\d+|[a-z]{1,2}|edit|note \d+|citation needed|nb \d+)\s*\]", "", s)
+    s = s.replace("\u00a0", " ").replace("\u2009", " ").replace("\u2013", "-").replace("\u2014", " - ")
+    s = s.replace("\u2019", "'").replace("\u2018", "'").replace("\u201c", '"').replace("\u201d", '"')
+    s = re.sub(r"\s+([.,;:!?)'])", r"\1", s)
+    s = re.sub(r"([(])\s+", r"\1", s)
+    s = re.sub(r"(\d)\s*\.\s+(\d)", r"\1.\2", s)       # "157. 5" artefacts
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def split_sentences(p):
+    t = p
+    for a in ABBREV:
+        t = re.sub(r"(?i)\b%s\.(?=\s)" % re.escape(a), lambda m: m.group(0)[:-1] + "\x00", t)
+    t = re.sub(r"\b([A-Z])\.(?=\s*[A-Z])", "\\1\x00", t)          # initials: "T. J. Grant", "C. Vergara"
+    parts = re.split(r'(?<=[.!?])\s+(?=["(]?[A-Z0-9])', t)
+    return [x.replace("\x00", ".").strip() for x in parts if x.strip()]
+
+
+def parse_event_article(html):
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "lxml")
+    body = soup.find("div", class_="mw-parser-output")
+    if body is None:
+        return None
+    canon = soup.find("link", rel="canonical")
+    out = {"canonical": canon.get("href") if canon else None, "infobox": {}, "paras": [], "results": [],
+           "notes": {}, "fulltext": ""}
+    ib = body.find("table", class_="infobox")
+    if ib:
+        for tr in ib.find_all("tr"):
+            th, td = tr.find("th"), tr.find("td")
+            if th and td:
+                out["infobox"][th.get_text(" ", strip=True)] = clean_text(td.get_text(" ", strip=True))
+    secs = body.find_all("section", recursive=False) or [body]
+    full = []
+    for sec in secs:
+        h = sec.find(class_="mw-heading") or sec.find(["h2", "h3"])
+        title = clean_text(h.get_text(" ", strip=True)).replace("[edit]", "").strip() if h else "LEAD"
+        tl = title.lower()
+        # footnotes attached to the results table (efn notes) live in references wraps inside the section
+        for d in sec.find_all("div", class_=re.compile("references|reflist")):
+            for li in d.find_all("li"):
+                if li.get("id"):
+                    out["notes"][li["id"]] = clean_text(li.get_text(" ", strip=True).lstrip("^\u2191 "))
+        if tl.startswith("results") or tl.startswith("fight card") or tl == "card":
+            out["results"] += parse_results_table(sec)
+        if any(tl.startswith(x) for x in SKIP_SECTIONS):
+            continue
+        for el in sec.find_all(["p", "li"]):
+            if el.find_parent("table") is not None or el.find_parent(class_=re.compile("references|reflist|navbox")):
+                continue
+            if el.name == "li" and el.find_parent(["p"]):
+                continue
+            t = clean_text(el.get_text(" ", strip=True))
+            if len(t) > 20:
+                out["paras"].append({"sec": title, "text": t})
+                full.append(t)
+    # notes referenced from the results table are narrative too (catchweight, missed weight)
+    for nid, t in out["notes"].items():
+        if re.search(r"weigh|weight|catchweight|pound|lb|replac|notice", t, re.I) and len(t) > 15:
+            out["paras"].append({"sec": "note", "text": t, "note_id": nid})
+    out["fulltext"] = " ".join(full)
+    return out
+
+
+def parse_results_table(sec):
+    rows = []
+    for t in sec.find_all("table"):
+        seg = None
+        for tr in t.find_all("tr"):
+            cells = tr.find_all(["td", "th"])
+            txt = [clean_text(c.get_text(" ", strip=True)) for c in cells]
+            if len(cells) == 1:
+                seg = txt[0]
+                continue
+            if len(txt) >= 4 and txt[2].lower() in ("def.", "vs.", "drew", "vs", "def"):
+                notes = [a.get("href", "").lstrip("#") for a in tr.select("sup a") if a.get("href", "").startswith("#")]
+                rows.append({"segment": seg, "wc": txt[0], "A": txt[1], "rel": txt[2], "B": txt[3],
+                             "method": txt[4] if len(txt) > 4 else None,
+                             "notes_txt": txt[7] if len(txt) > 7 else None, "note_ids": notes})
+    return rows
+
+
+class Card:
+    """Final bouts of one ufcstats event, with name matchers for the article text."""
+    SUFFIX = {"jr", "sr", "ii", "iii", "iv", "junior"}
+
+    def __init__(self, bouts):
+        self.f = []          # (name, fid, side)
+        for b in bouts:
+            for side in ("A", "B"):
+                self.f.append({"name": b[side], "fid": b["fid"], "side": side, "opp": b["B" if side == "A" else "A"]})
+        lastc = Counter()
+        for x in self.f:
+            tk = [t for t in norm(x["name"].replace("-", " ")).split() if t]
+            core = [t for t in tk if t not in self.SUFFIX] or tk
+            x["tokens"] = core
+            x["last"] = core[-1] if core else ""
+            lastc[x["last"]] += 1
+        for x in self.f:
+            pats = set()
+            tk = x["tokens"]
+            if len(tk) >= 2:
+                pats.add(" ".join(tk))
+                pats.add(" ".join([tk[-1]] + tk[:-1]))         # family name first (Zhang Weili)
+                for i in range(1, len(tk) - 1):
+                    pats.add(" ".join(tk[i:]))                 # "rogerio de lima", "de lima"
+                pats.add(tk[0] + " " + tk[-1])
+            J = r"[\s.\-]+"
+            x["full_re"] = re.compile(r"\b(?:%s)\b" % "|".join(
+                J.join(re.escape(t) for t in p.split()) for p in sorted(pats, key=len, reverse=True))) if pats else None
+            x["last_re"] = re.compile(r"\b%s\b" % re.escape(x["last"])) if x["last"] and len(x["last"]) >= 2 else None
+            x["last_unique"] = lastc[x["last"]] == 1
+
+    @staticmethod
+    def key(t):
+        """Accent-folded lower case; punctuation kept so numbers and phrases survive."""
+        return fold(t).lower().replace("'", "")
+
+    def mentions(self, text, prefer=None):
+        """[(start, end, idx, kind)] fighter mentions in text (positions in the normalized text).
+        Surname-only mentions count when the surname is unique on the card, or when that fighter's full name
+        appears in `prefer` (the paragraph)."""
+        k = self.key(text)
+        out = []
+        taken = []
+        for i, x in enumerate(self.f):
+            if x["full_re"]:
+                for m in x["full_re"].finditer(k):
+                    out.append((m.start(), m.end(), i, "full"))
+                    taken.append((m.start(), m.end()))
+        pk = self.key(prefer) if prefer else k
+        for i, x in enumerate(self.f):
+            if not x["last_re"]:
+                continue
+            ok = x["last_unique"] or (x["full_re"] and x["full_re"].search(pk))
+            if not ok:
+                continue
+            if not x["last_unique"]:
+                # another fighter with this surname also named in full in the paragraph -> ambiguous
+                rivals = [y for j, y in enumerate(self.f) if j != i and y["last"] == x["last"] and y["full_re"]
+                          and y["full_re"].search(pk)]
+                if rivals:
+                    continue
+            for m in x["last_re"].finditer(k):
+                if any(a <= m.start() < b for a, b in taken):
+                    continue
+                out.append((m.start(), m.end(), i, "last"))
+        out.sort()
+        return out, k
+
+
+WEIGH_TRIG = re.compile(
+    r"(weighed in|weighing in|weighed at|weigh in at|came in (?:heavy|over|overweight|at)|coming in (?:at|heavy|over)|"
+    r"tipped the scales|missed (?:the )?(?:required |contracted )?weight|missed (?:the |his |her )?[\w' -]{0,40}limit|"
+    r"failed to make (?:the )?(?:required )?weight|failing to make (?:the )?(?:required )?weight|"
+    r"did not make (?:the )?weight|missing weight|missed weight|failed to make the|"
+    r"(?:pounds?|lbs?)\.? (?:\([^)]*\) )?over|overweight)", re.I)
+NEG_TRIG = re.compile(r"(?:successfully|eventually|later|subsequently|then) (?:made|make|hit|cut)|made (?:the )?weight|"
+                      r"second attempt[^.]{0,40}(?:made|within|on weight)|on weight|within the limit|"
+                      r"made the (?:required |contracted )?(?:\w+ )?limit|on (?:his|her|their) second attempt", re.I)
+NUM = r"(\d+(?:\.\d+)?(?:\s?\u00bd)?|\u00bd)"
+W_RE = re.compile(r"(?:weighed in at|weighing in at|weighed at|weigh in at|came in at|coming in at|tipped the scales at|"
+                  r"weighed in|weighing in|weighed)\s+(?:a\s+)?(\d{3}(?:\.\d+)?(?:\s?\u00bd)?)", re.I)
+OVER_RE = re.compile(
+    r"((?:\d+(?:\.\d+)?(?:\s?\u00bd)?|\u00bd|half(?: of)? a|a half|one and a half|two and a half|three and a half|"
+    r"four and a half|five and a half|six and a half|seven and a half|eight and a half|nine and a half|"
+    r"ten and a half|eleven and a half|twelve and a half|a|an|one|two|three|four|five|six|seven|eight|nine|ten|"
+    r"eleven|twelve|thirteen|fourteen|fifteen)(?: and a half)?)[- ](?:full )?(?:pounds?|lbs?\.?|lb)\s*(?:\([^)]*\)\s*)?"
+    r"(?:over|above|heavy|too heavy|more than)", re.I)
+BY_RE = re.compile(r"missed (?:the )?weight by\s+((?:\d+(?:\.\d+)?|half a|a|one|two|three|four|five|six|seven|eight)"
+                   r"(?: and a half)?)\s*(?:pounds?|lbs?)", re.I)
+
+
+def wnum(s):
+    s = s.lower().strip().replace("\u00bd", ".5").replace(" .5", ".5")
+    if re.match(r"^\d+(\.\d+)?$", s):
+        return float(s)
+    if re.match(r"^\d+\.5$", s):
+        return float(s)
+    half = 0.5 if "half" in s else 0.0
+    if s in ("half a", "half of a", "a half"):
+        return 0.5
+    w = s.replace("and a half", "").strip()
+    if w in NUMW and NUMW[w] is not None:
+        return NUMW[w] + half
+    try:
+        return float(w) + half
+    except ValueError:
+        return None
+
+
+def parse_weighins(card, paras, event):
+    """{(fid, side): {"lbs_over": x|None, "weighed": W|None, "text": sentence}} for fighters who missed weight."""
+    out = {}
+    for para in paras:
+        txt = para["text"]
+        if not re.search(r"weigh|weight|pound|lb", txt, re.I):
+            continue
+        if re.search(r"post-fight (?:drug )?test|tested positive|metabolites", txt, re.I) and not WEIGH_TRIG.search(txt):
+            continue
+        sents = split_sentences(txt)
+        prev_subj = []
+        for s in sents:
+            ms, k = card.mentions(s, prefer=txt)
+            trig = list(WEIGH_TRIG.finditer(k))
+            subj_here = []
+            if trig and not re.search(r"post-fight|in (?:his|her) (?:previous|last|next)|previously missed|"
+                                      r"(?:second|third|fourth|fifth|sixth) time|history", k):
+                for tm in trig:
+                    before = [m for m in ms if m[1] <= tm.start()]
+                    if before:
+                        last = before[-1]
+                        group = [last]
+                        # "X and Y (both) missed weight", "X, Y and Z missed weight"
+                        j = len(before) - 2
+                        while j >= 0:
+                            gap = k[before[j][1]:group[0][0]]
+                            if re.fullmatch(r"\s*(?:,|and|, and)\s*(?:(?:former|undefeated|promotional newcomer|"
+                                            r"newcomer|the)\s[\w' -]{0,60}?)?", gap):
+                                group.insert(0, before[j])
+                                j -= 1
+                            else:
+                                break
+                        # the subject must not be the object of "surrender ... to X" / "opponent X"
+                        gap_after = k[last[1]:tm.start()]
+                        if re.search(r"\b(?:to|against|opponent|face|faced|facing)\s*$", k[max(0, last[0] - 30):last[0]]):
+                            continue
+                        if len(gap_after) > 160:
+                            continue
+                        subj_here.extend(g[2] for g in group)
+                    else:
+                        pron = re.search(r"\b(he|she|both fighters|both|the pair|they|the former|the latter)\b",
+                                         k[:tm.start()])
+                        if pron and prev_subj:
+                            w = pron.group(1)
+                            if w in ("he", "she") and len(prev_subj) == 1:
+                                subj_here.extend(prev_subj)
+                            elif w in ("both fighters", "both", "the pair", "they"):
+                                subj_here.extend(prev_subj)
+                            elif w == "the former":
+                                subj_here.append(prev_subj[0])
+                            elif w == "the latter":
+                                subj_here.append(prev_subj[-1])
+                        elif prev_subj and len(prev_subj) == 1 and re.match(r"^\s*(?:weighing|coming|missing)", k):
+                            subj_here.extend(prev_subj)
+            subj_here = list(dict.fromkeys(subj_here))
+            # fines without a weigh-in verb: "X was fined 20 percent of his purse for missing weight"
+            for m in re.finditer(r"(?:fined|forfeit\w*|surrender\w*)[^.]{0,80}(?:for (?:missing|failing to make|"
+                                 r"not making) (?:the )?(?:required )?weight|weight miss)", k):
+                before = [x for x in ms if x[1] <= m.start()]
+                if before and not re.search(r"\b(?:to|opponent)\s*$", k[max(0, before[-1][0] - 15):before[-1][0]]):
+                    subj_here.append(before[-1][2])
+            for m in re.finditer(r"\bwith ([a-z' .-]{3,60}?) (?:being )?(?:fined|forfeiting|surrendering)", k):
+                inside = [x for x in ms if m.start(1) <= x[0] < m.end(1)]
+                subj_here.extend(x[2] for x in inside)
+            subj_here = list(dict.fromkeys(subj_here))
+            if not subj_here:
+                if ms:
+                    prev_subj = [ms[0][2]] if len(set(x[2] for x in ms)) == 1 else prev_subj
+                continue
+            negated = bool(NEG_TRIG.search(k)) and not re.search(r"no (?:further )?attempts?|made no|did not|"
+                                                                  r"didn't|failed|elected|declined|chose not", k)
+            weights = [(m.start(), wnum(m.group(1))) for m in W_RE.finditer(k)]
+            overs = [(m.start(), wnum(m.group(1))) for m in OVER_RE.finditer(k)] + \
+                    [(m.start(), wnum(m.group(1))) for m in BY_RE.finditer(k)]
+            weights = [(p, w) for p, w in weights if w and 100 <= w <= 300]
+            overs = [(p, o) for p, o in overs if o is not None and 0 < o < 30]
+            respectively = "respectively" in k
+            pos = {}
+            for x in ms:
+                pos.setdefault(x[2], x[0])
+
+            def assign(vals):
+                res = {}
+                if not vals:
+                    return res
+                if respectively and len(vals) == len(subj_here) and len(subj_here) > 1:
+                    for i, si in enumerate(subj_here):
+                        res[si] = vals[i][1]
+                    return res
+                for p, v in vals:
+                    owners = [si for si in subj_here if pos.get(si, -1) <= p]
+                    if owners:
+                        o = max(owners, key=lambda si: pos.get(si, -1))
+                    elif len(subj_here) >= 1:
+                        o = subj_here[0] if len(subj_here) == 1 or all(si not in pos for si in subj_here) else None
+                        if o is None:
+                            continue
+                    res.setdefault(o, v)
+                if len(subj_here) > 1 and len(vals) == 1 and re.search(r"\bboth\b", k):
+                    for si in subj_here:
+                        res.setdefault(si, vals[0][1])
+                return res
+            wmap, omap = assign(weights), assign(overs)
+            for si in subj_here:
+                fx = card.f[si]
+                key = (fx["fid"], fx["side"])
+                rec = out.get(key) or {"lbs_over": None, "weighed": None, "text": [], "negated": False}
+                if negated and not wmap.get(si) and not omap.get(si):
+                    rec["negated"] = True
+                if omap.get(si) is not None and rec["lbs_over"] is None:
+                    rec["lbs_over"] = omap[si]
+                if wmap.get(si) is not None and rec["weighed"] is None:
+                    rec["weighed"] = wmap[si]
+                rec["text"].append(s[:300])
+                out[key] = rec
+            prev_subj = subj_here
+    return out
+
+
+CATCH_RE = re.compile(r"(\d{3})[- ](?:pound|lb)s?\.?[- ]catch ?weight|catch ?weight (?:bout )?(?:of|at) (\d{3})|"
+                      r"catch ?weight \((\d{3}) ?(?:lb|pounds?)|catch ?weight (?:limit )?of (\d{3})", re.I)
+
+
+def date_cues(s, event_date):
+    """Days before the event implied by one sentence, as [(days, basis)], most specific first."""
+    k = s.lower()
+    out = []
+    for m in re.finditer(r"(?:on|with|given|after|under|in)\s+(?:just |only |roughly |about |approximately |around |"
+                         r"barely |nearly |just over |just under |little more than |a little over |"
+                         r"less than |under |over |more than )?(?:(a|an|one|two|three|four|five|six|seven|eight|nine|"
+                         r"ten|eleven|twelve|thirteen|fourteen|\d+|a couple of|a few|several)[- ])?"
+                         r"(days?|weeks?|months?)'?(?:'s|s')?\s+notice", k):
+        lead = k[m.start():m.end()]
+        n = m.group(1)
+        unit = m.group(2)
+        val = NUMW.get(n, None) if n and not n.isdigit() else (int(n) if n else 1)
+        if n in ("a couple of",):
+            val = 2
+        if n in ("a few", "several"):
+            val = 3
+        if val is None:
+            val = 1
+        days = val * (1 if unit.startswith("day") else 7 if unit.startswith("week") else 30)
+        if "less than" in lead or "under" in lead or "barely" in lead:
+            days = max(0, days - (1 if unit.startswith("day") else 2))
+        if "over" in lead or "more than" in lead:
+            days += 1 if unit.startswith("day") else 2
+        out.append((days, "notice phrase"))
+    for m in re.finditer(r"(a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|"
+                         r"\d+|a couple of|a few|several)[- ](days?|weeks?|months?)\s+(?:before|prior to|ahead of|"
+                         r"out from|away from|from|until|out of)\s+(?:the\s+)?(?:event|fight|bout|card|contest|"
+                         r"scheduled|matchup|show|weigh-ins)", k):
+        n, unit = m.group(1), m.group(2)
+        val = int(n) if n.isdigit() else (2 if n == "a couple of" else 3 if n in ("a few", "several") else NUMW.get(n, 1))
+        days = val * (1 if unit.startswith("day") else 7 if unit.startswith("week") else 30)
+        out.append((days, "before the event"))
+    if re.search(r"day of the event|on fight night|fight day|hours before|on the night of the event|"
+                 r"day of the fight|morning of the event|hours prior", k):
+        out.append((0, "day of the event"))
+    if re.search(r"day (?:of|before) the weigh-?ins|at the weigh-?ins|during the weigh-?ins|day before the event|"
+                 r"on the eve of|eve of the event|the day before|weigh-?in day|day of weigh-?ins", k):
+        out.append((1, "weigh-in day"))
+    if re.search(r"fight week|the week of the event|week leading up to|days leading up|days before the event|"
+                 r"days prior to the event|days out from|during the week of|earlier in the week|days ahead of",
+                 k):
+        out.append((4, "fight week"))
+    # explicit dates
+    for m in re.finditer(r"\b(?:on |by |as of )?(%s) (\d{1,2})(?:st|nd|rd|th)?(?:,? (\d{4}))?\b" % MON_RE, k):
+        d = _mkdate(event_date, MONTHS_FULL.index(m.group(1)) + 1, int(m.group(2)), m.group(3))
+        if d is not None:
+            out.append(((event_date - d).days, "dated"))
+    for m in re.finditer(r"\b(\d{1,2}) (%s)(?: (\d{4}))?\b" % MON_RE, k):
+        d = _mkdate(event_date, MONTHS_FULL.index(m.group(2)) + 1, int(m.group(1)), m.group(3))
+        if d is not None:
+            out.append(((event_date - d).days, "dated"))
+    for m in re.finditer(r"\b(early|mid|late|the end of|end of|the beginning of|beginning of|the start of|"
+                         r"start of|the middle of|middle of)[- ](%s)(?:,? (\d{4}))?\b" % MON_RE, k):
+        day = {"early": 5, "mid": 15, "late": 25, "the end of": 28, "end of": 28, "the beginning of": 3,
+               "beginning of": 3, "the start of": 3, "start of": 3, "the middle of": 15, "middle of": 15}[m.group(1)]
+        d = _mkdate(event_date, MONTHS_FULL.index(m.group(2)) + 1, day, m.group(3))
+        if d is not None:
+            out.append(((event_date - d).days, "part of month"))
+    if not any(b in ("dated", "part of month") for _, b in out):
+        for m in re.finditer(r"\bin (%s)(?:,? (\d{4}))?\b" % MON_RE, k):
+            d = _mkdate(event_date, MONTHS_FULL.index(m.group(1)) + 1, 15, m.group(2))
+            if d is not None:
+                out.append((max(0, (event_date - d).days), "month"))
+    rel = re.search(r"\b(a|an|one|two|three|four|five|six|\d+) (days?|weeks?) later\b", k)
+    out = [(d, b) for d, b in out if d is not None and 0 <= d <= 400]
+    order = {"notice phrase": 0, "before the event": 1, "day of the event": 2, "weigh-in day": 3, "fight week": 4,
+             "dated": 5, "part of month": 6, "month": 7}
+    out.sort(key=lambda x: (order[x[1]], x[0]))
+    return out, (rel.group(1), rel.group(2)) if rel else None
+
+
+def _mkdate(event_date, month, day, year):
+    try:
+        if year:
+            return dt.date(int(year), month, day)
+        d = dt.date(event_date.year, month, min(day, 28) if month == 2 else day)
+        if d > event_date:
+            d = dt.date(event_date.year - 1, month, min(day, 28) if month == 2 else day)
+        return d
+    except ValueError:
+        return None
+
+
+SCHED_RE = re.compile(r"\b(?:was|were|had been|is|are|has been|have been)\s+(?:originally |initially |previously |"
+                      r"briefly |tentatively |also |first |expected |once |reportedly |officially )?"
+                      r"(?:expected|scheduled|slated|set|booked|linked|rumou?red|planned|announced|targeted|due|"
+                      r"supposed|tabbed to face|paired|pencil(?:l)?ed)\b|\bbout between\b|\bmatch-?up between\b|"
+                      r"\bpairing (?:between|of)\b|\bcontest between\b|\bfight between\b|\brematch between\b|"
+                      r"\btrilogy (?:bout|fight) between\b|\bwas expected\b|\bwere expected\b", re.I)
+REPL_RE = re.compile(r"replaced by|replacement|replacing|replace |stepped in|stepping in|step in|stepped up|"
+                     r"filled in|fill in|took (?:the|his|her|their) (?:bout|fight|place|spot)|in (?:his|her) place|"
+                     r"instead face|instead faced|instead fought|instead meet|will now face|now faces?|"
+                     r"new opponent|was tabbed|was named as|was brought in|short notice|in turn|"
+                     r"faced [^.]{0,60} instead|will face [^.]{0,60} instead|instead|was announced as|"
+                     r"took on|was rebooked|was re-?booked|was moved to face|was paired with|opponent change|"
+                     r"subsequently|was rescheduled to face|was then expected to face|was then scheduled",
+                     re.I)
+WITHDRAW_RE = re.compile(r"\b(?:however|but|pulled out|withdr|forced|removed|out of the|injur|due to|scrapped|"
+                         r"cancel|replaced|ruled out|was pulled|sidelined|illness|visa|suspend|tested positive)\b", re.I)
+
+
+def parse_bout_changes(card, paras, event_date):
+    """Per (fid, side): {"role": "replacement"|"opp_change", "days": int|None, "basis": str,
+    "short_notice_phrase": bool, "other": original opponent / replaced fighter text, "text": paragraph}."""
+    sched_members = defaultdict(set)      # fighter idx -> paragraphs where he is in the original booking
+    para_info = []
+    for pi, para in enumerate(paras):
+        txt = para["text"]
+        if para.get("sec") == "note":
+            continue
+        sents = split_sentences(txt)
+        s0 = None
+        for si, s in enumerate(sents):
+            if SCHED_RE.search(s):
+                s0 = si
+                break
+        if s0 is None:
+            para_info.append(None)
+            continue
+        s0txt = sents[s0]
+        sm = SCHED_RE.search(s0txt)
+        head = s0txt
+        wm = WITHDRAW_RE.search(s0txt, sm.end() if sm else 0)
+        if wm:
+            head = s0txt[:wm.start()]
+        hm, _ = card.mentions(head, prefer=txt)
+        members = set(x[2] for x in hm)
+        for i in members:
+            sched_members[i].add(pi)
+        para_info.append({"sents": sents, "s0": s0, "members": members, "head": head})
+    out = {}
+    bouts = defaultdict(list)
+    for i, x in enumerate(card.f):
+        bouts[x["fid"]].append(i)
+    for fid, (ia, ib) in bouts.items():
+        for pi, info in enumerate(para_info):
+            if info is None:
+                continue
+            txt = paras[pi]["text"]
+            sents = info["sents"]
+            ms_all, k_all = card.mentions(txt, prefer=txt)
+            names_here = set(x[2] for x in ms_all)
+            if ia not in names_here and ib not in names_here:
+                continue
+            if not REPL_RE.search(txt):
+                continue
+            mem = info["members"]
+            if ia in mem and ib in mem:
+                continue       # the final pairing was the original booking in this paragraph
+            if ia not in names_here or ib not in names_here:
+                # one side mentioned only: count it if the paragraph books him with someone else, and the
+                # other side is the replacement named in another paragraph ("In turn, ... will face X")
+                continue
+            for stay, new in ((ia, ib), (ib, ia)):
+                if stay in mem and new not in mem:
+                    roles = ((stay, "opp_change"), (new, "opp_change" if sched_members.get(new) - {pi} else "replacement"))
+                    break
+            else:
+                if ia not in mem and ib not in mem:
+                    roles = ((ia, "replacement" if not (sched_members.get(ia, set()) - {pi}) else "opp_change"),
+                             (ib, "replacement" if not (sched_members.get(ib, set()) - {pi}) else "opp_change"))
+                else:
+                    continue
+            # notice: sentence where the later side first appears after the booking sentence
+            for who, role in roles:
+                first_s = None
+                for si in range(info["s0"], len(sents)):
+                    mm, _ = card.mentions(sents[si], prefer=txt)
+                    if any(x[2] == who for x in mm) and (si > info["s0"] or who not in mem):
+                        first_s = si
+                        break
+                if role == "opp_change":
+                    # when did his opponent change: the sentence naming the new opponent
+                    other = ib if who == ia else ia
+                    for si in range(info["s0"], len(sents)):
+                        mm, _ = card.mentions(sents[si], prefer=txt)
+                        if any(x[2] == other for x in mm):
+                            first_s = si
+                            break
+                if first_s is None:
+                    first_s = info["s0"]
+                days, basis, rel = None, None, None
+                for si in range(first_s, info["s0"] - 1, -1):
+                    cues, r = date_cues(sents[si], event_date)
+                    if r and rel is None and si == first_s:
+                        rel = r
+                    if cues:
+                        days, basis = cues[0]
+                        if rel and si < first_s and basis in ("dated", "part of month", "month"):
+                            n = int(rel[0]) if rel[0].isdigit() else NUMW.get(rel[0], 1)
+                            days = max(0, days - n * (7 if rel[1].startswith("week") else 1))
+                            basis += " + relative"
+                        break
+                rep_sent = sents[first_s]
+                snp = bool(re.search(r"short notice|late notice|last[- ]minute|late replacement", rep_sent, re.I)) or \
+                    bool(re.search(r"short notice|late notice|last[- ]minute", txt, re.I) and role == "replacement")
+                fx = card.f[who]
+                key = (fx["fid"], fx["side"])
+                prev = out.get(key)
+                rec = {"role": role, "days": days, "basis": basis, "short_notice_phrase": snp,
+                       "booked_vs": clean_text(info["head"])[:200], "text": txt[:600]}
+                # keep the strongest evidence: a replacement beats an opponent change; dated beats undated
+                if prev is None or (prev["role"] == "opp_change" and role == "replacement") or \
+                        (prev["role"] == role and prev["days"] is None and days is not None):
+                    out[key] = rec
+    return out
+
+
+def crowd_status(info, event_date, venue, fulltext):
+    """'none' (behind closed doors), 'limited', or 'full'. Known before the fight from the announced policy."""
+    att = (info.get("Attendance") or "").lower()
+    t = fulltext.lower()
+    closed = bool(re.search(r"behind closed doors|without (?:any )?(?:fans|spectators|an audience|a live audience)|"
+                            r"no fans|closed to (?:the )?(?:public|fans)|empty arena|fans were not permitted|"
+                            r"no spectators|no audience|without a crowd|no crowd|absence of fans", t))
+    limited = bool(re.search(r"limited (?:number of )?(?:fans|crowd|capacity|attendance|audience)|reduced capacity|"
+                             r"capacity (?:was |of the arena was )?(?:limited|capped|reduced)|socially distanced|"
+                             r"\d+ ?(?:percent|%) capacity|limited fans", t))
+    covid = dt.date(2020, 3, 14) <= event_date <= dt.date(2021, 4, 23)
+    if att.startswith(("none", "0", "no ", "n/a")) and covid:
+        return "none", "infobox attendance %r" % info.get("Attendance")
+    if covid and closed and not limited:
+        return "none", "article text"
+    if covid and limited:
+        return "limited", "article text"
+    if covid and "apex" in (venue or "").lower():
+        return "none", "COVID period at the UFC Apex"
+    if covid and closed:
+        return "none", "article text"
+    return "full", "default"
+
+
+def event_type(name, date):
+    n = name.lower()
+    if re.match(r"ufc \d+\b", n):
+        return "numbered_ppv" if date.year <= 2025 else "numbered"
+    if "ultimate fighter" in n or "tuf" in n:
+        return "tuf_finale"
+    if re.match(r"ufc on (fox|abc|fx|fuel|espn|espn\+)", n) or "fight night" in n or "ufc on" in n:
+        return "fight_night"
+    return "other"
+
+
 def locality_parts(pl):
     parts = [p.strip() for p in pl.split(",") if p.strip()]
     return parts[0], (parts[1] if len(parts) > 1 else None)

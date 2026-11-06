@@ -2,8 +2,9 @@
 """
 dynamics.py - v6 FIGHT DYNAMICS fits from round-level UFC stats.
 
-Five studies, all walk-forward (fit on fights 2019-01-01..2023-12-31, report on 2024-01-01..snapshot;
-2010-2018 used only as a labeled robustness extension, never the test period):
+Five studies, all walk-forward (fit on fights 2019-01-01..2023-12-31, report on 2024-01-01..2025-12-31;
+2010-2018 used only as a labeled robustness extension; fights from 2026-01-01 are the sealed vault of the
+hidden-data protocol in docs/BACKLOG.md and are never evaluated here):
 
   1. state effects: output (sig attempts / min), accuracy, takedown attempts and control in round r as a
      function of what happened earlier in the same fight (head strikes and knockdowns absorbed, own output,
@@ -53,7 +54,8 @@ OUT_JSON = os.path.join(ROOT, "data", "derived", "dynamics.json")
 FMT3, FMT5 = br.FMT3, br.FMT5
 TRAIN = ("2019-01-01", "2023-12-31")
 EXT = ("2010-01-01", "2018-12-31")
-TEST = ("2024-01-01", "2099-12-31")
+TEST = ("2024-01-01", "2025-12-31")
+VAULT_FROM = "2026-01-01"   # docs/BACKLOG.md hidden-data protocol: never evaluated here
 RNG = np.random.default_rng(20261106)
 
 
@@ -127,8 +129,10 @@ def build_panel():
     for c, src in lag_src.items():
         S[c] = g[src].shift(1)
     S["year"] = S.DATE.dt.year
-    S["period"] = np.select([(S.DATE >= TRAIN[0]) & (S.DATE <= TRAIN[1]), (S.DATE >= TEST[0]),
-                             (S.DATE >= EXT[0]) & (S.DATE <= EXT[1])], ["train", "test", "ext"], "old")
+    S["period"] = np.select([(S.DATE >= TRAIN[0]) & (S.DATE <= TRAIN[1]),
+                             (S.DATE >= TEST[0]) & (S.DATE <= TEST[1]),
+                             S.DATE >= VAULT_FROM,
+                             (S.DATE >= EXT[0]) & (S.DATE <= EXT[1])], ["train", "test", "vault", "ext"], "old")
     slug = {k: v.get("slug") for k, v in people.items()}
     S["slug"] = S.pid.map(slug)
     dob = {k: (v.get("tott") or {}).get("dob") for k, v in people.items()}
@@ -1299,6 +1303,45 @@ def part5(S, F):
     return res
 
 
+
+def targets(S):
+    """Empirical round-by-round targets for the v6 check (simulated vs real fights): per format and round,
+    over all fighter-rounds started (partial final rounds included at their real length)."""
+    out = {}
+    for per in ("train", "test"):
+        x = S[S.period == per]
+        t = {}
+        for (R, r), g in x.groupby(["R", "rnd"]):
+            m = g.mins.sum()
+            t[f"{R}_{r}"] = {
+                "fighter_rounds": int(len(g)), "share_full": float(g.full.mean()),
+                "sig_att_pm": float(g.sig_a.sum() / m), "sig_lnd_pm": float(g.sig_l.sum() / m),
+                "sig_acc": float(g.sig_l.sum() / max(g.sig_a.sum(), 1)),
+                "head_share_landed": float(g.head_l.sum() / max(g.sig_l.sum(), 1)),
+                "leg_share_landed": float(g.leg_l.sum() / max(g.sig_l.sum(), 1)),
+                "td_att_per15": float(15 * g.td_a.sum() / m), "td_acc": float(g.td_l.sum() / max(g.td_a.sum(), 1)),
+                "ctrl_share": float(g.ctrl.sum() / g.rsec.sum()),
+                "kd_per100_standing_head": float(100 * g.kd.sum() / max(g.sh_l.sum(), 1)),
+                "p_round_ends_ko_tko": float(g.fin_ko_against.sum() / (len(g) / 2)),
+                "p_round_ends_sub": float(g.fin_sub_against.sum() / (len(g) / 2)),
+            }
+        out[per] = t
+    return out
+
+
+def round_corr(S):
+    """Correlation of a fighter's log sig attempts per minute between rounds of the same fight (full rounds),
+    and of the two fighters within a round: the shape the engine's form / pace / round noise must produce."""
+    x = S[S.full & S.period.isin(["train"])].copy()
+    x["y"] = np.log((x.sig_a + 0.5) / 5)
+    w = x.pivot_table(index=["fid", "idx"], columns="rnd", values="y")
+    out = {"own_r1_r2": float(w[[1, 2]].dropna().corr().iloc[0, 1]),
+           "own_r1_r3": float(w[[1, 3]].dropna().corr().iloc[0, 1]),
+           "own_r2_r3": float(w[[2, 3]].dropna().corr().iloc[0, 1])}
+    b = x.pivot_table(index=["fid", "rnd"], columns="idx", values="y").dropna()
+    out["fighters_same_round"] = float(b.corr().iloc[0, 1])
+    return out
+
 # ================================================================================================
 # main
 # ================================================================================================
@@ -1340,6 +1383,8 @@ def main(argv=None):
     if "2" in parts:
         print("part 2: per-fighter late-round ratios", flush=True)
         J["fighter_late_ratio"] = part2(S)
+    J["targets_by_round"] = targets(S)
+    J["round_correlations_train"] = round_corr(S)
     if "5" in parts:
         print("part 5: finish hazard", flush=True)
         J["finish_hazard"] = part5(S, F)

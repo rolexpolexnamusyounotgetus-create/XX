@@ -286,11 +286,12 @@ class Fit:
     and the other's defense, the win head adds Gauss-Newton cross terms), (3) the win head (logistic Newton).
     Each block step is backtracked on the full objective, so the MAP objective decreases monotonically."""
 
-    def __init__(self, D, T_day, hp, cw, warm=None, max_sweeps=60, tol=1e-7, verbose=False):
+    def __init__(self, D, T_day, hp, cw, warm=None, max_sweeps=40, tol=2e-6, verbose=False):
         self.D, self.T, self.hp, self.cw = D, T_day, hp, cw
         self.K = K = hp["K"]
         lam_hl = math.log(2) / hp["hl"]
-        ri = np.nonzero(D.r_day < T_day)[0]
+        win = hp.get("window", 4.0) * hp["hl"]          # rows older than `window` half-lives weigh < 1/16
+        ri = np.nonzero((D.r_day < T_day) & (D.r_day >= T_day - win))[0]
         self.ri = ri
         self.w = np.exp(-lam_hl * (T_day - D.r_day[ri]))
         self.x, self.y = D.r_x[ri], D.r_y[ri]
@@ -301,7 +302,7 @@ class Fit:
         F = D.F
         self.Sx = sparse.csr_matrix((np.ones(n), (self.x, np.arange(n))), shape=(F, n))
         self.Sy = sparse.csr_matrix((np.ones(n), (self.y, np.arange(n))), shape=(F, n))
-        fi = np.nonzero((D.f_day < T_day) & ~np.isnan(D.f_win))[0]
+        fi = np.nonzero((D.f_day < T_day) & (D.f_day >= T_day - win) & ~np.isnan(D.f_win))[0]
         self.fw = np.exp(-lam_hl * (T_day - D.f_day[fi])) * hp["win_w"]
         self.fa, self.fb, self.fy = D.f_a[fi], D.f_b[fi], D.f_win[fi]
         m = len(fi)
@@ -438,6 +439,33 @@ class Fit:
         new = {"ua": th[:K], "ud": th[K:2 * K], "M": th[2 * K:].reshape(K, K)}
         return self._accept(P, new, L0, ("ua", "ud", "M"))
 
+    @staticmethod
+    def _balance_mat(Ga, Gw):
+        """S minimising tr(S'GaS) + tr(S^-1 Gw S^-1) (symmetric S): the L2-balanced factor scaling."""
+        k = len(Ga)
+        ea, Ua = np.linalg.eigh(Ga + 1e-9 * np.eye(k))
+        ea = np.maximum(ea, 1e-9)
+        Gh = (Ua * np.sqrt(ea)) @ Ua.T
+        Gih = (Ua / np.sqrt(ea)) @ Ua.T
+        em, Um = np.linalg.eigh(Gh @ Gw @ Gh)
+        mid = (Um * np.sqrt(np.maximum(em, 1e-12))) @ Um.T
+        X = Gih @ mid @ Gih
+        ex, Ux = np.linalg.eigh((X + X.T) / 2)
+        ex = np.maximum(ex, 1e-12)
+        return (Ux * np.sqrt(ex)) @ Ux.T, (Ux / np.sqrt(ex)) @ Ux.T
+
+    def rebalance(self, P, L0):
+        """Rescale (A, W) and (D, V) to the L2-balanced point; predictions are unchanged, the prior shrinks."""
+        S, Si = self._balance_mat(P["A"].T @ P["A"], P["W"].T @ P["W"])
+        Q, Qi = self._balance_mat(P["D"].T @ P["D"], P["V"].T @ P["V"])
+        new = dict(P)
+        new["A"], new["W"] = P["A"] @ S, P["W"] @ Si
+        new["D"], new["V"] = P["D"] @ Q, P["V"] @ Qi
+        new["ua"], new["ud"] = Si @ P["ua"], Qi @ P["ud"]
+        new["M"] = Si @ P["M"] @ Qi
+        L1 = self.loss(new)
+        return (new, L1) if L1 < L0 else (P, L0)
+
     def run(self, max_sweeps, tol, verbose):
         P = self.P
         L = self.loss(P)
@@ -448,6 +476,7 @@ class Fit:
             P, L = self.step_loadings(P, L)
             P, L = self.step_fighters(P, L)
             P, L = self.step_head(P, L)
+            P, L = self.rebalance(P, L)
             self.history.append(L)
             if verbose:
                 print("  sweep %d  L=%.4f  (%.1fs)" % (it, L, time.time() - t0))

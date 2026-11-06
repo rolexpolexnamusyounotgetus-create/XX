@@ -108,6 +108,19 @@
     for (var i = 0; i < out.length; i++) out[i] = a.normalized && max !== 1 ? Math.max(-1, arr[i] / max) : arr[i];
     return out;
   }
+  /* Mean linear luminance of the opaque texels (hair textures are tinted relative to it). */
+  function meanLum(img) {
+    try {
+      var c = root.document.createElement("canvas"); c.width = c.height = 64;
+      var x = c.getContext("2d"); x.drawImage(img, 0, 0, 64, 64);
+      var d = x.getImageData(0, 0, 64, 64).data, sum = 0, n = 0;
+      for (var i = 0; i < d.length; i += 4) if (d[i + 3] > 128) {
+        var r = Math.pow(d[i] / 255, 2.2), g = Math.pow(d[i + 1] / 255, 2.2), b = Math.pow(d[i + 2] / 255, 2.2);
+        sum += 0.299 * r + 0.587 * g + 0.114 * b; n++;
+      }
+      return n ? Math.max(0.02, sum / n) : 0.2;
+    } catch (e) { return 0.2; }
+  }
   function toU16(a) { return a.array instanceof Uint16Array ? a.array : Uint16Array.from(a.array); }
 
   /* Undo HumanForge's wrapping delta coding + byte planes (runtime.ts, MIT). */
@@ -210,7 +223,7 @@
       if (!meta) return Promise.reject(new Error("FightAvatar: no proxy " + id));
       this.proxyCache[id] = Promise.all([loadBin(meta.file), meta.texture ? loadTexture(meta.texture, true) : null]).then(function (r) {
         var prim = readGlb(r[0]);
-        return { meta: meta, prim: prim, tex: r[1], refs: toU16(prim.attributes._REFS), refw: toFloat(prim.attributes._REFW), offs: toFloat(prim.attributes._OFFS),
+        return { meta: meta, prim: prim, tex: r[1], lum: r[1] && meta.kind === "hair" ? meanLum(r[1].image) : 0.2, refs: toU16(prim.attributes._REFS), refw: toFloat(prim.attributes._REFW), offs: toFloat(prim.attributes._OFFS),
           uv: toFloat(prim.attributes.TEXCOORD_0), joints: toU16(prim.attributes._JOINTS), weights: toFloat(prim.attributes._WEIGHTS) };
       });
       this.proxyCache[id].catch(function () { delete self.proxyCache[id]; });
@@ -837,8 +850,8 @@
     var mesh, extra = null;
     if (o.hair) {
       mat.alphaTest = 0.5; mat.side = T.DoubleSide;
-      hairShading(mat);
-      var tips = mat.clone(); hairShading(tips); tips.alphaTest = 0.04; tips.transparent = true; tips.depthWrite = false;
+      hairShading(mat, 1 / px.lum);
+      var tips = mat.clone(); hairShading(tips, 1 / px.lum); tips.alphaTest = 0.04; tips.transparent = true; tips.depthWrite = false;
       extra = new T.SkinnedMesh(g, tips); extra.renderOrder = 3; extra.castShadow = false;
       this.hairMats = [mat, tips];
       this.disposables.push(tips);
@@ -861,13 +874,14 @@
     this.meshes.push(mesh); this.disposables.push(g, mat);
     return mesh;
   };
-  function hairShading(m) {
+  function hairShading(m, k) {
+    k = (k || 4.5).toFixed(2);
     // texture luminance x hair colour (any colour), then HumanForge's darkening of near-white
     // transparent texels so strand tips fade instead of haloing
     m.onBeforeCompile = function (sh) {
-      sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n\tdiffuseColor.rgb = diffuse * clamp(dot(texelColor.rgb, vec3(0.299, 0.587, 0.114)) * 4.5, 0.0, 1.6);\n\tdiffuseColor.rgb *= mix(0.35, 1.0, smoothstep(0.05, 0.85, diffuseColor.a));");
+      sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n\tdiffuseColor.rgb = diffuse * clamp(dot(texelColor.rgb, vec3(0.299, 0.587, 0.114)) * " + k + ", 0.0, 2.2);\n\tdiffuseColor.rgb *= mix(0.35, 1.0, smoothstep(0.05, 0.85, diffuseColor.a));");
     };
-    m.customProgramCacheKey = function () { return "fight-hair"; };
+    m.customProgramCacheKey = function () { return "fight-hair-" + k; };
   }
 
   /* ------------------------------------------------------------ kit shells from the body itself */

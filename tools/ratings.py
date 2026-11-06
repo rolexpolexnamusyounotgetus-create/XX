@@ -583,9 +583,9 @@ def run_elo(D, P, until=None, record=False):
         a, b = ia[i], ib[i]
         rs = []
         ks = []
-        for p, age in ((a, aa[i]), (b, ab[i])):
+        for sd_, p, age in ((0, a, aa[i]), (1, b, ab[i])):
             if p not in r:
-                r[p] = newcomer(age, P)
+                r[p] = newcomer_i(D, P, i, sd_, age)
                 gap = 0.0
             else:
                 gap = (d - last[p]) / YEAR
@@ -633,9 +633,9 @@ def run_glicko2(D, P, until=None, record=False):
         if d >= until:
             break
         a, b = D.ia[i], D.ib[i]
-        for p, age in ((a, D.age_a[i]), (b, D.age_b[i])):
+        for sd_, p, age in ((0, a, D.age_a[i]), (1, b, D.age_b[i])):
             if p not in mu:
-                mu[p], phi[p], sig[p] = newcomer(age, P), phi0, sig0
+                mu[p], phi[p], sig[p] = newcomer_i(D, P, i, sd_, age), phi0, sig0
             else:
                 gap = (d - last[p])
                 if gap > 0:
@@ -744,9 +744,9 @@ def run_trueskill(D, P, until=None, record=False):
         if d >= until:
             break
         a, b = D.ia[i], D.ib[i]
-        for p, age in ((a, D.age_a[i]), (b, D.age_b[i])):
+        for sd_, p, age in ((0, a, D.age_a[i]), (1, b, D.age_b[i])):
             if p not in mu:
-                mu[p], var[p] = newcomer(age, P), s0 * s0
+                mu[p], var[p] = newcomer_i(D, P, i, sd_, age), s0 * s0
             else:
                 gap = (d - last[p]) / YEAR
                 var[p] = min(s0 * s0, var[p] + tau_y * tau_y * gap + gam * gam)
@@ -835,7 +835,8 @@ class WHR:
                              for n, m in zip(e, self.e_p)]) if (dy or do) else np.zeros(len(e))
         f = np.where(prev < 0)[0]
         self.f_n = f
-        self.f_m = np.array([newcomer(node_age[n], P) for n in f])
+        self.f_m = np.array([newcomer_i(D, P, obs[n // 2], n % 2, node_age[n]) for n in f])
+        self.f_mean = dict(zip(f, self.f_m))
         self.f_c = 1.0 / (s0 * s0)
         # initial values: newcomer mean propagated along the chain with the drift
         x = np.zeros(2 * K)
@@ -947,7 +948,7 @@ class WHR:
                                          if (dy or do) else 0.0)
                         v = V[n] + w2 * gap + vf
                     else:
-                        m, v = newcomer(age, P), s0 * s0
+                        m, v = newcomer_i(D, P, i, len(ms), age), s0 * s0
                     ms.append(m)
                     vs.append(v)
                 md, vd = ms[0] - ms[1], vs[0] + vs[1]
@@ -960,7 +961,7 @@ class WHR:
                     na, nb = node_of_fight[i]
                     for n in (na, nb):
                         pv = self.prev[n]
-                        self.x[n] = (self.x[pv] if pv >= 0 else newcomer(self.node_age[n], P))
+                        self.x[n] = (self.x[pv] if pv >= 0 else self.f_mean[n])
         return out, rec
 
     def final_state(self, players, ref_day):
@@ -1154,3 +1155,144 @@ def dim_features(pre, dims):
     dm = pre[:, :, :, 2]
     adv = (om[:, 0] - dm[:, 1]) - (om[:, 1] - dm[:, 0])
     return adv
+
+
+# =====================================================================================================
+# pre-UFC records (tools/preufc.py output, Sherdog, walk-forward per UFC bout) for newcomer priors
+# =====================================================================================================
+PREUFC = os.path.join(ROOT, "data", "derived", "preufc.json")
+
+
+def attach_preufc(D):
+    """D.pre[i, side] = (shrunk non-UFC win share - 0.7, log1p(non-UFC fights) - 2, net Elo / 400 - 3.75 in
+    logits, Contender Series win) as of the bout, from preufc.json snapshots; nan when not crawled."""
+    D.pre = np.full((D.n, 2, 4), np.nan)
+    D.pre_cov = 0
+    if not os.path.exists(PREUFC):
+        return
+    try:
+        J = json.load(open(PREUFC))
+    except Exception:
+        return
+    cols = J["meta"]["snapshot_columns"]
+    ci = {c: k for k, c in enumerate(cols)}
+    slug2p = {s: k for k, s in enumerate(D.slug)}
+    hit = 0
+    for slug, rec in J.get("fighters", {}).items():
+        p = slug2p.get(slug)
+        if p is None or not rec.get("snapshots"):
+            continue
+        for row in rec["snapshots"]:
+            i = D.fidx.get(row[ci["fid"]])
+            if i is None:
+                continue
+            side = 0 if D.ia[i] == p else (1 if D.ib[i] == p else -1)
+            if side < 0:
+                continue
+            w, n = row[ci["w"]] or 0, row[ci["n"]] or 0
+            net = row[ci["net_elo"]]
+            D.pre[i, side] = ((w + 1.4) / (n + 2.0) - 0.7, math.log1p(n) - 2.0,
+                              ((net if net is not None else 1500.0) - 1500.0) * LN10_400,
+                              1.0 if (row[ci["dwcs_w"]] or 0) > 0 else 0.0)
+            hit += 1
+    D.pre_cov = hit
+
+
+def newcomer_i(D, P, i, side, age):
+    m = newcomer(age, P)
+    if P.get("pre_on"):
+        f = D.pre[i, side]
+        if f[0] == f[0]:
+            m += P.get("pre_wp", 0.0) * f[0] + P.get("pre_n", 0.0) * f[1] + P.get("pre_net", 0.0) * f[2] \
+                + P.get("pre_dwcs", 0.0) * f[3]
+    return m
+
+
+# =====================================================================================================
+# preparation
+# =====================================================================================================
+def prepare(D, log=print):
+    attach_preufc(D)
+    log("pre-UFC snapshots attached: %d fighter-bouts" % D.pre_cov)
+    beta, ncards, nrows = fit_round_model(D, TUNE_FROM)
+    D.round_beta = beta
+    agree = build_round_outcomes(D, beta)
+    log("round model (EM on %d pre-2019 10-9 cards, %d card-rounds): %s; consensus round share picks the "
+        "decision winner in %.1f%% of decisions" % (ncards, nrows, dict(zip(RF, np.round(beta, 3))),
+                                                    100 * (agree or 0)))
+    D.round_fit = {"n_cards": ncards, "n_card_rounds": nrows, "coef": dict(zip(RF, [float(b) for b in beta])),
+                   "decision_winner_agreement": agree}
+    D.dim_obs = dim_obs(D)
+    # prior UFC fights per side (for the pre-2019 training rows of the second-stage models)
+    seen = defaultdict(int)
+    npa, npb = np.zeros(D.n, int), np.zeros(D.n, int)
+    for i in range(D.n):
+        npa[i], npb[i] = seen[D.ia[i]], seen[D.ib[i]]
+        seen[D.ia[i]] += 1
+        seen[D.ib[i]] += 1
+    D.nprior_a, D.nprior_b = npa, npb
+    elig = (npa >= 1) & (npb >= 1) & np.array([w in ("A", "B") for w in D.winner])
+    elig &= np.array([not (D.pids[a].startswith("amb:") or D.pids[b].startswith("amb:"))
+                      for a, b in zip(D.ia, D.ib)])
+    D.idx_pre = np.where(elig & (D.day >= dt.date(2008, 1, 1).toordinal()) & (D.day < TUNE_FROM))[0]
+
+
+# =====================================================================================================
+# tuning
+# =====================================================================================================
+RUNNERS = {"elo": run_elo, "glicko2": run_glicko2, "trueskill": run_trueskill}
+_G = {}
+
+
+def run_system(D, kind, P, until=None, record=False, eval_idx=None):
+    if kind == "whr":
+        p, rec, model = run_whr(D, P, until=until, record=record, eval_idx=eval_idx)
+        return p, rec, model
+    return RUNNERS[kind](D, P, until=until, record=record)
+
+
+def _eval(args):
+    kind, P = args
+    D = _G["D"]
+    try:
+        p, _, _ = run_system(D, kind, P, until=TEST_FROM, eval_idx=D.idx_tune)
+    except Exception as e:      # a bad parameter combination scores as a failure, not a crash
+        return {"tune": 9.0, "in_tr": 9.0, "in_va": 9.0, "err": repr(e)}
+    return {"tune": score(D, p, D.idx_tune), "in_tr": score(D, p, D.idx_in_tr),
+            "in_va": score(D, p, D.idx_in_va)}
+
+
+def _refine(v, cands):
+    if isinstance(v, bool) or isinstance(v, str):
+        return cands
+    if v == 0:
+        return cands
+    out = sorted({round(v * f, 6) for f in (0.6, 0.8, 0.9, 1.1, 1.25, 1.6)})
+    return out
+
+
+def coord_descent(kind, P0, grid, pool, passes=3, objective="tune", log=print, min_gain=2e-5):
+    """Coordinate descent over parameter grids; objective = mean log loss on 2019-2023 ('tune') or on
+    2019-2021 ('in_tr', for the time-ordered check). Data stream stops at 2024-01-01 in every trial."""
+    best = dict(P0)
+    r0 = _eval((kind, best)) if pool is None else pool.map(_eval, [(kind, best)])[0]
+    best_r = r0
+    hist = [{"params": dict(best), **r0}]
+    for ps in range(passes):
+        improved = False
+        for name, cands in grid:
+            cs = cands if ps == 0 else _refine(best.get(name, 0), cands)
+            trials = [dict(best, **{name: c}) for c in cs if c != best.get(name)]
+            if not trials:
+                continue
+            res = pool.map(_eval, [(kind, t) for t in trials]) if pool else [_eval((kind, t)) for t in trials]
+            for t, r in zip(trials, res):
+                hist.append({"params": {name: t[name]}, **r})
+                if r[objective] < best_r[objective] - min_gain:
+                    best, best_r, improved = t, r, True
+            log("    %-10s pass %d  %-9s -> %-10s %s %.5f (2019-21 %.5f, 2022-23 %.5f)"
+                % (kind, ps + 1, name, best.get(name), objective, best_r[objective], best_r["in_tr"],
+                   best_r["in_va"]))
+        if not improved:
+            break
+    return best, best_r, hist

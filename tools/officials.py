@@ -317,7 +317,7 @@ def card_patterns(R, a, b, dA, dB, draw):
     return np.unique(np.concatenate(out))
 
 
-def fight_triples(r, cap=100000):
+def fight_triples(r, cap=100000, prune=2000):
     """Joint (card1, card2, card3) round-outcome patterns consistent with a fight's three cards.
     Returns (codes [n, R] of o1*25+o2*5+o3, dopt [n]) or None. Deduction options are tried in stages:
     none/one point per side first; two points and 10-10 rounds only when nothing else fits."""
@@ -353,6 +353,9 @@ def fight_triples(r, cap=100000):
             codes.append(c)
             dcode.append(np.full(len(c), 6 if recorded else DED_OPTS.index((dA, dB)), np.int8))
         if codes:
+            if n > prune and len(codes) > 1 and dcode[0][0] == 0:
+                # heavy fight: the no-deduction branch is feasible; drop the rare deduction branches
+                return codes[0], dcode[0]
             return np.vstack(codes), np.concatenate(dcode)
     return None
 
@@ -361,11 +364,11 @@ class Design:
     """Flat arrays for a set of decisions. Judges not in `jidx` (and unnamed cards) map to the zero row.
     Only the (round, outcome-triple) combinations some consistent pattern uses are kept; fights are put in
     buckets by their number of joint patterns and padded, so the likelihood is dense array work."""
-    BUCKETS = (8, 32, 128, 512, 2048, 8192, 20000)
+    BUCKETS = (8, 32, 128, 512, 2048, 6200)
 
-    def __init__(self, rows, jidx, nat, year_max_param, cap=20000):
+    def __init__(self, rows, jidx, nat, year_max_param, cap=6200):
         self.rows = []
-        X, J, home, us, yr, tt, trips = [], [], [], [], [], [], []
+        X, J, home, us, yr, tt, trips, frf = [], [], [], [], [], [], [], []
         nJ = len(jidx)
         nfr = 0
         for r in rows:
@@ -385,8 +388,10 @@ class Design:
             us.append(np.full(R, float(r["country"] == "USA")))
             yr.append(np.full(R, min(r["year"], year_max_param) - YEAR0))
             tt.append(np.full(R, (r["year"] - 2017) / 10.0))
+            frf.append(np.full(R, len(self.rows) - 1))
             nfr += R
         self.nF, self.nfr, self.nJ = len(self.rows), nfr, nJ
+        self.fr_f = np.concatenate(frf).astype(np.int32)
         self.X = np.vstack(X)
         self.J = np.vstack(J).astype(np.int32)
         self.home = np.concatenate(home)
@@ -543,3 +548,149 @@ def judge_index(rows, min_cards=1):
     c = Counter(cd[0] for r in rows for cd in r["cards"] if cd[0] != "unknown")
     keys = sorted(k for k, n in c.items() if n >= min_cards)
     return {k: i for i, k in enumerate(keys)}
+def to_np(th):
+    return {k: np.asarray(v) for k, v in th.items()}
+
+
+def bhhh_sd(dz, th_flat, slot_grad_fn, tau):
+    """Per-judge posterior covariance of (n, v, p, g, c): (sum_f g_f g_f' + diag(1/tau^2))^-1, where g_f is
+    fight f's score with respect to that judge's effects (outer product of per-fight gradients)."""
+    G = slot_grad_fn(th_flat)                         # nfr x 3 x 5
+    nJ = dz.nJ
+    key = (dz.fr_f[:, None].astype(np.int64) * (nJ + 1) + dz.J).ravel()
+    gg = G.reshape(-1, 5)
+    df = pd.DataFrame(gg, columns=EFF)
+    df["key"] = key
+    agg = df.groupby("key")[EFF].sum()
+    jid = (agg.index.to_numpy() % (nJ + 1))
+    A = agg.to_numpy()
+    info = np.zeros((nJ + 1, 5, 5))
+    np.add.at(info, jid, A[:, :, None] * A[:, None, :])
+    prec = info[:nJ] + np.diag([1.0 / tau[k] ** 2 for k in EFF])[None]
+    cov = np.linalg.inv(prec)
+    return cov, info[:nJ]
+
+
+def eb_tau(E, cov, ncards, min_cards=1, floor=0.02):
+    """Empirical-Bayes update tau_k^2 = mean over judges of (E_jk^2 + Var_jk)."""
+    m = ncards >= min_cards
+    t2 = (E[m] ** 2 + np.einsum("jkk->jk", cov[m])).mean(0)
+    return {k: float(max(floor, math.sqrt(v))) for k, v in zip(EFF, t2)}
+
+
+DECISION_CLASSES = ["A_UD", "A_SD", "A_MD", "DRAW", "B_MD", "B_SD", "B_UD"]
+
+
+def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
+    """Monte Carlo decision outcome probabilities for every fight in a Design (round stats and judges given).
+    Returns probs [nF, 7] over DECISION_CLASSES, P(card A > B / A < B / =) per judge [nF, 3, 3] and
+    P(any 10-8 on a card) [nF, 3]."""
+    rng = np.random.default_rng(seed)
+    b, E = th["beta"], th["E"]
+    Ez = np.vstack([E, np.zeros((1, 5))])
+    if judge_mask is not None:
+        Ez = Ez * judge_mask
+    su = float(np.exp(th["log_su"]))
+    e10 = 1 / (1 + np.exp(-th["lg_e10"]))
+    pi = np.exp(th["lpi"])
+    pd_ = np.array([1 - 2 * pi[0] - 2 * pi[1] - pi[2], pi[0], pi[0], pi[1], pi[1], pi[2]])
+    out = np.zeros((dz.nF, 7))
+    cardp = np.zeros((dz.nF, 3, 3))
+    any108 = np.zeros((dz.nF, 3))
+    starts = np.r_[0, np.cumsum([r["R"] for r in dz.rows])]
+    for f in range(dz.nF):
+        sl = slice(starts[f], starts[f + 1])
+        X = dz.X[sl]
+        R = X.shape[0]
+        V, K, G = X[:, :3] @ b[:3], X[:, 3] * b[3], X[:, 4:] @ b[4:]
+        tt, hm, us, yr = dz.t[sl][0], dz.home[sl][0], dz.us[sl][0], dz.yr[sl][0]
+        hh = (th["h"][0] * us + th["h"][1] * (1 - us)) * hm
+        u = rng.normal(0, su, (nsim, R))
+        totA = np.zeros((nsim, 3))
+        totB = np.zeros((nsim, 3))
+        n108 = np.zeros((nsim, 3))
+        lin = th["th"][0] * V + th["th"][1] * K + th["th"][2] * G
+        for j in range(3):
+            e = Ez[dz.J[sl][0, j]]
+            core = (np.exp(e[1] + th["w"][0] * tt) * V + np.exp(e[2] + th["w"][1] * tt) * K +
+                    np.exp(e[3] + th["w"][2] * tt) * G + hh)
+            eta = np.exp(e[0]) * (core[None, :] + u)
+            aw = rng.random((nsim, R)) < 1 / (1 + np.exp(-eta))
+            cc = th["c0"] + th["cy"][yr] + e[4]
+            zW = np.where(aw, cc + lin[None, :] + th["th"][3] * u, cc - lin[None, :] - th["th"][3] * u)
+            big = rng.random((nsim, R)) < 1 / (1 + np.exp(-zW))
+            tie = rng.random((nsim, R)) < e10
+            sa = np.where(tie, 10, np.where(aw, 10, np.where(big, 8, 9)))
+            sb = np.where(tie, 10, np.where(~aw, 10, np.where(big, 8, 9)))
+            totA[:, j] = sa.sum(1)
+            totB[:, j] = sb.sum(1)
+            n108[:, j] = (big & ~tie).sum(1)
+        dopt = rng.choice(6, size=nsim, p=pd_)
+        dA = np.array([d[0] for d in DED_OPTS])[dopt]
+        dB = np.array([d[1] for d in DED_OPTS])[dopt]
+        totA -= dA[:, None]
+        totB -= dB[:, None]
+        ca = (totA > totB).sum(1)
+        cb = (totB > totA).sum(1)
+        cd = 3 - ca - cb
+        cls = np.full(nsim, 3)
+        cls[(ca == 3)] = 0
+        cls[(ca == 2) & (cb == 1)] = 1
+        cls[(ca == 2) & (cd == 1)] = 2
+        cls[(cb == 2) & (cd == 1)] = 4
+        cls[(cb == 2) & (ca == 1)] = 5
+        cls[(cb == 3)] = 6
+        out[f] = np.bincount(cls, minlength=7) / nsim
+        for j in range(3):
+            cardp[f, j] = [(totA[:, j] > totB[:, j]).mean(), (totA[:, j] < totB[:, j]).mean(),
+                           (totA[:, j] == totB[:, j]).mean()]
+            any108[f, j] = (n108[:, j] > 0).mean()
+    return out, cardp, any108
+
+
+def actual_class(r):
+    """Observed decision class with A = first name in BOUT."""
+    if r["winner"] == -1:
+        return 3
+    cat = r["cat"]
+    k = {"U-DEC": 0, "S-DEC": 1, "M-DEC": 2}[cat]
+    return k if r["winner"] == 0 else 6 - k
+
+
+def decision_metrics(probs, rows, eps=1e-4):
+    y = np.array([actual_class(r) for r in rows])
+    pA = probs[:, :3].sum(1)
+    pB = probs[:, 4:].sum(1)
+    nd = y != 3
+    q = np.clip(pA[nd] / np.maximum(pA[nd] + pB[nd], 1e-12), eps, 1 - eps)
+    ya = (y[nd] < 3).astype(float)
+    ll_w = -(ya * np.log(q) + (1 - ya) * np.log(1 - q))
+    P7 = np.clip(probs, eps, 1)
+    P7 = P7 / P7.sum(1, keepdims=True)
+    ll7 = -np.log(P7[np.arange(len(y)), y])
+    # split-or-majority vs unanimous (orientation-free): P(not unanimous) incl draws
+    pnu = 1 - probs[:, 0] - probs[:, 6]
+    ynu = ~np.isin(y, [0, 6])
+    pnu_c = np.clip(pnu, eps, 1 - eps)
+    ll_nu = -(ynu * np.log(pnu_c) + (~ynu) * np.log(1 - pnu_c))
+    return {"n": int(len(y)), "n_nondraw": int(nd.sum()),
+            "winner_logloss": float(ll_w.mean()), "winner_brier": float(((q - ya) ** 2).mean()),
+            "winner_acc": float(((q > 0.5) == (ya == 1)).mean()),
+            "class7_logloss": float(ll7.mean()), "split_logloss": float(ll_nu.mean()),
+            "pred_split_rate": float(pnu.mean()), "obs_split_rate": float(ynu.mean()),
+            "_ll_w": ll_w, "_ll7": ll7, "_ll_nu": ll_nu, "_q": q, "_ya": ya}
+
+
+def calib_table(q, y, nb=10):
+    bins = np.clip((q * nb).astype(int), 0, nb - 1)
+    return [{"bin": f"{k / nb:.1f}-{(k + 1) / nb:.1f}", "n": int((bins == k).sum()),
+             "pred": float(q[bins == k].mean()) if (bins == k).any() else None,
+             "obs": float(y[bins == k].mean()) if (bins == k).any() else None} for k in range(nb)]
+
+
+def boot_diff(a, b, n=2000, seed=1):
+    """Mean of a - b with a bootstrap 95% interval over fights."""
+    rng = np.random.default_rng(seed)
+    d = np.asarray(a) - np.asarray(b)
+    bs = d[rng.integers(0, len(d), (n, len(d)))].mean(1)
+    return {"mean": float(d.mean()), "lo": float(np.percentile(bs, 2.5)), "hi": float(np.percentile(bs, 97.5))}

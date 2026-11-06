@@ -1103,17 +1103,19 @@ def cmd_build(a):
     res['calibration'] = cal
 
     # ---------------- market rating (walk-forward prior for fights with no line) ----------------
-    mr, mr_pred, mr_cur = market_rating(R, fights, boot=min(a.boot, 1000))
+    mr, mr_pred, mr_cur, mr_adj = market_rating(R, fights, boot=min(a.boot, 1000))
     res['market_rating'] = mr
     for r in R:
         if r['id'] in mr_pred:
             r['p_mrating'] = mr_pred[r['id']]
+        if r['id'] in mr_adj:
+            r['p_mrating_adj'] = mr_adj[r['id']]
     res['_ratings'] = mr_cur
 
     # ---------------- recalibration and stacking: fit on tune, score on test ----------------
     st = {}
-    gt = sub('tune', ['p_close_mult', 'p_open', 'p_mrating'])
-    gs = sub('test', ['p_close_mult', 'p_open', 'p_mrating'])
+    gt = sub('tune', ['p_close_mult', 'p_open', 'p_mrating', 'p_mrating_adj'])
+    gs = sub('test', ['p_close_mult', 'p_open', 'p_mrating', 'p_mrating_adj'])
     yt = np.array([r['y'] for r in gt])
     ys = np.array([r['y'] for r in gs])
     def feats(g, keys):
@@ -1133,6 +1135,8 @@ def cmd_build(a):
         'open+elo': (['p_open', 'elo'], 'fit'),
         'elo': (['elo'], None),
         'market_rating': (['p_mrating'], None),
+        'market_rating_adj': (['p_mrating_adj'], None),
+        'market_rating_adj+elo': (['p_mrating_adj', 'elo'], 'fit'),
         'market_rating_slope': (['p_mrating'], 'fit'),
         'market_rating+elo': (['p_mrating', 'elo'], 'fit'),
         'close+market_rating': (['p_close_mult', 'p_mrating'], 'fit'),
@@ -1407,6 +1411,63 @@ def market_rating(R, fights, boot=1000):
                                             'rmse_open': round(float(np.sqrt(np.mean((zo - zc) ** 2))), 4),
                                             'corr_rating': round(float(np.corrcoef(zp, zc)[0, 1]), 4),
                                             'corr_open': round(float(np.corrcoef(zo, zc)[0, 1]), 4)}
+    # what the closing line adds beyond the rating: weight-class moves and age (for cross-division hypotheticals)
+    with open(BACKTEST) as fh:
+        pri = json.load(fh)['priors_asof']
+    fb = {f['id']: f for f in fights}
+    def lbs(yr, dv):
+        return (pri.get(yr, {}).get(dv) or {}).get('lbs')
+    def mv(f, side):
+        s_ = f[side]
+        if f['division'] in ('Catch Weight', 'Open Weight') or not s_.get('home'):
+            return 0, 0
+        a_, b_ = lbs(f['date'][:4], f['division']), lbs(f['date'][:4], s_['home'])
+        if not a_ or not b_ or a_ == b_:
+            return 0, 0
+        return (1, 0) if a_ > b_ else (0, 1)
+    adj = {}
+    for per in ('tune', 'test'):
+        g = [r for r in R if r['period'] == per and r['id'] in pred and 'p_close_mult' in r]
+        X, z, yy = [], [], []
+        for r in g:
+            f = fb[r['id']]
+            ua, da = mv(f, 'A')
+            ub, db = mv(f, 'B')
+            X.append([ua - ub, da - db, ((f['A'].get('age') or 30) - (f['B'].get('age') or 30)) / 5])
+            z.append(float(logit([r['p_close_mult']])[0] - logit([pred[r['id']]])[0]))
+            yy.append(r['y'])
+        adj[per] = (np.array(X), np.array(z), [r['id'] for r in g], yy)
+    Xt, zt, _, _ = adj['tune']
+    bt_, *_ = np.linalg.lstsq(Xt, zt, rcond=None)
+    res_t = zt - Xt @ bt_
+    cov = np.linalg.inv(Xt.T @ Xt) * float(np.var(res_t))
+    Xs, zs, ids_s, ys_ = adj['test']
+    bs_, *_ = np.linalg.lstsq(Xs, zs, rcond=None)
+    rm0 = float(np.sqrt(np.mean(zs ** 2)))
+    rm1 = float(np.sqrt(np.mean((zs - Xs @ bt_) ** 2)))
+    names = ['moved_up', 'moved_down', 'age_per_5y']
+    # outcome log loss of the adjusted rating on test (decisive fights)
+    pr0, pr1, yv = [], [], []
+    for x, i, y in zip(Xs, ids_s, ys_):
+        if y is None:
+            continue
+        l0 = float(logit([pred[i]])[0])
+        pr0.append(pred[i])
+        pr1.append(1 / (1 + math.exp(-(l0 + float(x @ bt_)))))
+        yv.append(y)
+    pred_adj = {}
+    for per in ('tune', 'test'):
+        X_, _, ids_, _ = adj[per]
+        for x, i in zip(X_, ids_):
+            pred_adj[i] = 1 / (1 + math.exp(-(float(logit([pred[i]])[0]) + float(x @ bt_))))
+    out['close_minus_rating'] = {
+        'what': 'OLS of logit(p_close) - logit(p_rating) on A-minus-B features, no intercept; fit on tune',
+        'coef_tune': {k: [round(float(b), 4), round(float(math.sqrt(cov[i, i])), 4)] for i, (k, b) in enumerate(zip(names, bt_))},
+        'coef_test_refit': {k: round(float(b), 4) for k, b in zip(names, bs_)},
+        'n_movers_tune': int(np.sum(np.abs(Xt[:, 0]) + np.abs(Xt[:, 1]) > 0)),
+        'test_rmse_close_logit': {'rating': round(rm0, 4), 'rating+adj': round(rm1, 4)},
+        'test_ll': {'rating': metrics(pr0, yv)['log_loss'], 'rating+adj': metrics(pr1, yv)['log_loss'], 'n': len(yv)}}
+
     # current ratings (variance drifted to the snapshot) keyed by fighters.json slug
     snap = dt.date.fromisoformat(stream[-1]['date'])
     id_slug = {v: k for k, v in slug_id.items() if v}
@@ -1417,7 +1478,8 @@ def market_rating(R, fights, boot=1000):
         gap = (snap - dt.date.fromisoformat(ld)).days / 365.25
         cur[id_slug[fid]] = [round(m, 4), round(math.sqrt(min(v + tau * tau * gap, 2 * v0)), 4), ld, nn]
     out['n_rated_roster'] = len(cur)
-    return out, pred, cur
+    out['adj_coef'] = {k: round(float(b), 4) for k, b in zip(names, bt_)}
+    return out, pred, cur, pred_adj
 
 
 def write_market_json(R, res, best):
@@ -1450,6 +1512,8 @@ def write_market_json(R, res, best):
             e['bfo'] = {'matchup': rec['bfo_mu'], 'event': rec.get('bfo_event')}
         if 'p_mrating' in r:
             e['p_market_rating'] = round(r['p_mrating'], 4)
+        if 'p_mrating_adj' in r:
+            e['p_market_rating_adj'] = round(r['p_mrating_adj'], 4)
         mm = (res.get('method_market') or {}).get('per_fight', {}).get(r['id'])
         if mm:
             e['method6'] = mm['method6']
@@ -1484,6 +1548,9 @@ def write_market_json(R, res, best):
     meta['p_market_rating'] = ('walk-forward pre-fight probability from the market rating (Kalman filter on earlier closing '
                                'lines and results; eval.market_rating has the equations and parameters); usable before any line exists')
     meta['ratings'] = 'current market ratings by fighters.json slug: [mu (log-odds), sd, last fight date, fights seen]'
+    meta['p_market_rating_adj'] = ('p_market_rating plus the tune-fit offsets the closing line adds beyond the rating: '
+                                   'logit += c_up (up_A - up_B) + c_down (down_A - down_B) + c_age (age_A - age_B) / 5; '
+                                   'coefficients in eval.market_rating.adj_coef')
     if 'method_market' in ev:
         ev['method_market'] = {k: v for k, v in ev['method_market'].items() if k != 'per_fight'}
         meta['method6'] = ('market method-of-victory distribution [A_KO, A_SUB, A_DEC, B_KO, B_SUB, B_DEC]: per book the six '
@@ -1803,6 +1870,17 @@ def cmd_tables(a):
         L.append(f"| {per} | {d['close_minus_elo_ll'][0]:+.4f} {_ci(d['close_minus_elo_ll'][1], 4)} | {d['close_minus_open_ll'][0]:+.4f} {_ci(d['close_minus_open_ll'][1], 4)} | "
                  f"{d['open_minus_elo_ll'][0]:+.4f} {_ci(d['open_minus_elo_ll'][1], 4)} | {r['rating_minus_elo_ll'][0]:+.4f} {_ci(r['rating_minus_elo_ll'][1], 4)} | "
                  f"{r['rating_minus_open_ll'][0]:+.4f} {_ci(r['rating_minus_open_ll'][1], 4)} |")
+    mr = E['market_rating']
+    L.append('\n### Market rating\n')
+    L.append(f"Parameters (chosen on tune): {mr['params']}. Stream: {mr['stream']}. Best five grid points: {mr['grid_best5']}.\n")
+    L.append('| Period | Predicting the close (logit RMSE / corr): rating | opening line |')
+    L.append('|---|---|---|')
+    for per in ('tune', 'test'):
+        q = mr[per]['predicts_close_logit']
+        L.append(f"| {per} | {q['rmse_rating']:.3f} / {q['corr_rating']:.3f} | {q['rmse_open']:.3f} / {q['corr_open']:.3f} |")
+    cm = mr['close_minus_rating']
+    L.append(f"\nWhat the close adds beyond the rating ({cm['what']}): tune coef [b, se] {cm['coef_tune']}; test refit {cm['coef_test_refit']}; "
+             f"movers in tune {cm['n_movers_tune']}; test logit RMSE vs close {cm['test_rmse_close_logit']}; test outcome LL {cm['test_ll']}.\n")
     L.append('\n### No-vig method (closing and opening lines; same fights as the headline)\n')
     L.append('| Method | Close LL tune | Close LL test | Open LL tune | Open LL test |')
     L.append('|---|---|---|---|---|')

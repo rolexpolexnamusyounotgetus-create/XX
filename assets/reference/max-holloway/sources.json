@@ -66,25 +66,25 @@
     "note": "Interview with Max Holloway after UFC 300"
   },
   {
-    "file": "wm-2018-rota.jpg",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/b/be/Max_Holloway_180428-D-SW162-1532_%2827918239868%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
-    "page": "https://commons.wikimedia.org/wiki/File:Max_Holloway_180428-D-SW162-1532_(27918239868).jpg",
-    "author": "Chairman of the Joint Chiefs of Staff from Washington D.C, United States",
-    "license": "CC BY 2.0",
-    "date_taken": "2018-04-28 17:58",
-    "use": "embed-ok",
-    "what": "3q",
-    "note": "Entertainers visit troops at Rota Naval Station, Spain; the seventh stop on the annual Vice Chairman’s USO Tour, April 28, 2018.  (DoD Photo by U.S. Army Sgt. James K. McCann)"
-  },
-  {
-    "file": "ref-cageside-2024-04-ufc300-weighin.jpg",
-    "url": "https://cagesidepress.com/wp-content/uploads/2024/04/UFC-300-ceremonial-weigh-in-37.jpg",
-    "page": "https://cagesidepress.com/2026/03/06/ufc-326-holloway-vs-oliveira-2-weigh-in-results",
-    "author": "Gabriel Gonzalez / Cageside Press",
-    "license": "All rights reserved (Cageside Press)",
-    "date_taken": "2024-04",
+    "file": "ref-asd-2026-07-10-ufc329-weighin.jpg",
+    "url": "https://aloha-state-daily-img.imgix.net/Articles/Max-Holloway-071026.jpeg?w=1280",
+    "page": "https://alohastatedaily.com/2026/07/10/waianaes-max-holloway-pearl-citys-kai-kamaka-iii-good-to-go-at-ufc-329/",
+    "author": "Christian Shimabuku / Aloha State Daily",
+    "license": "All rights reserved (Aloha State Daily)",
+    "date_taken": "2026-07-10",
     "use": "reference-only",
     "what": "body",
-    "note": "UFC 300 ceremonial weigh-in"
+    "note": "UFC 329 official weigh-in, 170 lb, three-quarter view"
+  },
+  {
+    "file": "ref-asd-2026-07-10-ufc329-rogan.jpg",
+    "url": "https://aloha-state-daily-img.imgix.net/Articles/Max-Holloway-2-071026.jpeg?w=1280",
+    "page": "https://alohastatedaily.com/2026/07/10/waianaes-max-holloway-pearl-citys-kai-kamaka-iii-good-to-go-at-ufc-329/",
+    "author": "Christian Shimabuku / Aloha State Daily",
+    "license": "All rights reserved (Aloha State Daily)",
+    "date_taken": "2026-07-10",
+    "use": "reference-only",
+    "what": "3q",
+    "note": "UFC 329 ceremonial weigh-in, interview with Joe Rogan"
   }
 ]
