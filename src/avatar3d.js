@@ -618,6 +618,8 @@
       L.hairCut = 0.03;
     }
     if (L.hair && L.hairMode === "shell") L.hairLen = Math.min(L.hairLen, sides != null ? Math.max(0.3, sides) : 1.0);
+    // a big rounded mass of curls reads as the afro proxy rather than a short crop
+    if (!hp && L.hairMode !== "shell" && /afro|mass of (loose |tight )?curls|rounded mass|big curls/.test(txt) && (top == null || top >= 6) && haveP("hair-afro01")) L.hair = "hair-afro01";
     // facial hair: undercoat mask, strand length and density
     var ft = lower([FH.type, FH.shape, typeof FH.length_mm === "string" ? FH.length_mm : "", app.facial_hair].join(" "));
     var mm = firstNum(FH.length_mm);
