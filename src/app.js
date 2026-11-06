@@ -86,20 +86,37 @@
   var SCOUTDB = readJSON("scouting-db", {}) || {};
   var SCOUT = SCOUTDB.scouting || {}, LIKE = SCOUTDB.likeness || {};
   // verified models (research/model_moe.md, model_methodround.md, model_mlrates.md, model_ml.md)
-  var MOEJ = readJSON("moe-db", null), MLRJ = readJSON("mlrates-db", null), MRJ = readJSON("mr-db", null), MLPJ = readJSON("mlpage-db", null);
+  var MOEJ = readJSON("moe-db", null);
   var MKTJ = readJSON("mkt-db", null), BENCH = readJSON("bench-db", null), VERS = readJSON("versions-db", null), FWD = readJSON("forward-db", null);
   var DB = null;
   try { DB = E.loadDB(DBJ); } catch (e) { fail("The fighter roster didn't load (" + e.message + "). Rebuild the page with python3 build.py."); return; }
-  var MOE = null, MLP = null, MR = null, MLR = { ok: false, native: false };
+  var MOE = null, MLP = null, MR = null, MLR = { ok: false, native: false, pending: true };
   try { if (window.MoE && MOEJ && MOEJ.model) MOE = window.MoE.load(MOEJ); } catch (e) { MOE = null; }
-  try { if (window.MLPage && MLPJ) MLP = window.MLPage.load(MLPJ); } catch (e) { MLP = null; }
-  try { if (window.MethodRound && MRJ) MR = window.MethodRound.create(MRJ); } catch (e) { MR = null; }
-  if (MLRJ && window.MLRates) {
-    // engine v4 applies the learned rates itself (opts.ml === false turns them off); v3 takes them through the adapter
-    if (typeof E.loadMLRates === "function") { try { E.loadMLRates(MLRJ); MLR.native = true; MLR.ok = true; } catch (e) { MLR.native = false; } }
-    if (!MLR.native) { try { window.MLRates.load(MLRJ); MLR.ok = true; } catch (e) { MLR.ok = false; } }
+  // the stat-line, ML page and method-and-round models ship gzip-compressed (build.py); inflate them off the first paint
+  function readGz(id) {
+    var n = $(id), txt = n ? n.textContent.trim() : "";
+    if (!txt || txt === "null" || !window.DecompressionStream || !window.Response || !window.atob) return Promise.resolve(null);
+    try {
+      var bin = atob(txt), u = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      n.textContent = "";
+      return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text()
+        .then(function (t) { return JSON.parse(t); }, function () { return null; });
+    } catch (e) { return Promise.resolve(null); }
   }
-  MLRJ = null;   // the model keeps what it needs
+  function installModels(arr) {
+    var mlr = arr[0], mlp = arr[1], mr = arr[2];
+    try { if (window.MLPage && mlp) MLP = window.MLPage.load(mlp); } catch (e) { MLP = null; }
+    try { if (window.MethodRound && mr) MR = window.MethodRound.create(mr); } catch (e) { MR = null; }
+    if (mlr && window.MLRates) {
+      // engine v4 applies the learned rates itself (opts.ml === false turns them off); v3 takes them through the adapter
+      if (typeof E.loadMLRates === "function") { try { E.loadMLRates(mlr); MLR.native = true; MLR.ok = true; } catch (e) { MLR.native = false; } }
+      if (!MLR.native) { try { window.MLRates.load(mlr); MLR.ok = true; } catch (e) { MLR.ok = false; } }
+    }
+    MLR.pending = false; mlCache.key = null; mrCache = {};
+  }
+  var modelsReady = Promise.all([readGz("mlrates-gz"), readGz("mlpage-gz"), readGz("mr-gz")])
+    .then(installModels, function () { MLR.pending = false; });
   var MKTR = (MKTJ && MKTJ.ratings) || {};
   var ENGV = "v" + String(E.VERSION || "3").split(".")[0];
   var P0 = E.params ? E.params() : window.FightParams;
@@ -681,7 +698,7 @@
   function knobsChanged(now) {
     clearTimeout(knobTimer);
     var run = function () {
-      buildMatchup(); syncKnobOutputs(); renderScenNote(); renderWhy(); renderStack();
+      buildMatchup(); syncKnobOutputs(); renderScenNote(); renderWhy(); renderForecast();
       Array.prototype.forEach.call($("chips").children, function (b) { b.setAttribute("aria-pressed", b.dataset.id === S.scen ? "true" : "false"); });
       queueTally(true);
     };
@@ -758,6 +775,7 @@
   }
   function startTally() {
     tallyId++;
+    stack.engine = null; stack.engineN = 0; ENG = null; lastAgg = null;
     var m = cur.m; if (!m) { $("runStatus").textContent = "This matchup can't be simulated" + (cur.err ? ": " + cur.err.message : "."); return; }
     $("runStatus").textContent = "Simulating " + nf.format(N_TALLY) + " fights";
     setProgress(0);
@@ -2090,7 +2108,43 @@
     var spd = $("speedSeg").querySelector('[aria-pressed="true"]'); if (spd) show.speed = +spd.dataset.speed;
     show.replays = $("replayTog").checked;
     window.VGSim = { show: show, newFight: newFight };
+    audioAttach();
   }
+
+  /* ---- broadcast sound (src/audio.js, FightAudio): muted until the viewer turns it on; the first click anywhere
+     unlocks the audio context, as browsers require a user gesture before any sound */
+  var AU = { api: null, on: false, unlocked: false };
+  function audioAttach() {
+    var FA = window.FightAudio;
+    AU.api = null;
+    if (FA && typeof FA.attach === "function" && show && !textMode) {
+      try { AU.api = FA.attach(show) || FA; } catch (e) { AU.api = null; }
+    }
+    $("sndWrap").hidden = !AU.api;
+    if (AU.api) audioApply();
+  }
+  function audioApply() {
+    var a = AU.api, muted = !AU.on; if (!a) return;
+    try {
+      if (typeof a.setMuted === "function") a.setMuted(muted);
+      else if (typeof a.mute === "function" && typeof a.unmute === "function") { if (muted) a.mute(); else a.unmute(); }
+      else if (typeof a.setEnabled === "function") a.setEnabled(!muted);
+      else if ("muted" in a) a.muted = muted;
+      else if ("enabled" in a) a.enabled = !muted;
+    } catch (e) { /* sound is optional */ }
+  }
+  function audioUnlock() {
+    if (AU.unlocked || !AU.api) return;
+    AU.unlocked = true;
+    var a = AU.api, FA = window.FightAudio;
+    try {
+      if (typeof a.unlock === "function") a.unlock();
+      else if (typeof a.resume === "function") a.resume();
+      else if (FA && typeof FA.unlock === "function") FA.unlock();
+    } catch (e) { /* ignore */ }
+    audioApply();
+  }
+  document.addEventListener("pointerdown", function first() { if (!AU.api) return; document.removeEventListener("pointerdown", first, true); audioUnlock(); }, true);
   function newFight() {
     clearTimeout(autoNext);
     if (!show || !cur.m) return;
@@ -2101,6 +2155,7 @@
     try { show.load(script); } catch (e) {
       // a show that can't take this script: fall back to the play-by-play
       show = new TextShow(hooks); textMode = true; $("noGl").hidden = false; $("camLabel").hidden = true; show.load(script);
+      $("sndWrap").hidden = true;
     }
     if (window.VGSim) window.VGSim.show = show;
   }
@@ -2122,7 +2177,7 @@
   /* ================================================================ wiring */
   function matchupChanged(fightNow) {
     buildMatchup();
-    renderMatchbar(); renderTape(); renderChips(); renderKnobPanel(); renderWhy(); renderStack(); renderResearch();
+    renderMatchbar(); renderTape(); renderChips(); renderKnobPanel(); renderWhy(); renderForecast(); renderMLCard(); renderResearch();
     renderCards();
     writeHash();
     queueTally(true);
@@ -2154,9 +2209,12 @@
       $("ktab" + s).addEventListener("keydown", function (e) {
         if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); S.tab = other(S.tab); renderKnobPanel(); $("ktab" + S.tab).focus(); }
       });
-      $("odd" + s).addEventListener("input", function () { S.odds[s] = this.value.trim(); renderStack(); });
+      $("odd" + s).addEventListener("input", function () { S.odds[s] = this.value.trim(); S.oddsSrc = null; renderForecast(); });
     });
-    $("k-trust").addEventListener("input", function () { S.trust = +this.value; renderStack(); });
+    $("lineTog").addEventListener("change", function () { S.line = this.checked; renderForecast(); });
+    $("mlTog").checked = S.ml; $("mlTog").disabled = !MLR.ok && !MLR.pending;
+    $("mlTog").addEventListener("change", function () { S.ml = this.checked; buildMatchup(); renderWhy(); renderKnobPanel(); renderMLCard(); renderForecast(); queueTally(true); });
+    $("sndTog").addEventListener("change", function () { audioUnlock(); AU.on = this.checked; audioApply(); });
     // live show controls
     $("btnNew").addEventListener("click", newFight);
     $("btnAgain").addEventListener("click", newFight);
@@ -2203,7 +2261,7 @@
     var chartW = 0, redrawT = null;
     if (window.ResizeObserver) new ResizeObserver(function (es) {
       var w = Math.round(es[0].contentRect.width);
-      if (Math.abs(w - chartW) > 8) { chartW = w; clearTimeout(redrawT); redrawT = setTimeout(function () { if (lastAgg) { drawBins(lastAgg); drawRounds(lastAgg); } renderStack(); }, 120); }
+      if (Math.abs(w - chartW) > 8) { chartW = w; clearTimeout(redrawT); redrawT = setTimeout(function () { renderForecast(); }, 120); }
     }).observe($("binsChart"));
   }
 
@@ -2211,20 +2269,31 @@
   if (!stateFromHash()) applyPairDefaults();
   wire();
   buildMatchup();
-  renderMatchbar(); renderTape(); renderChips(); renderKnobPanel(); renderWhy(); renderStack(); renderBacktest(); renderResearch();
+  renderMatchbar(); renderTape(); renderChips(); renderKnobPanel(); renderWhy(); renderForecast(); renderMLCard(); renderBacktest(); renderForward(); renderResearch();
   resetHud({ rounds: [], form: null }, null);
   writeHash();
   $("runStatus").textContent = "Starting the tally";
   window.FightLab = { state: S, matchup: function () { return cur.m; }, tally: function () { return lastAgg; }, newFight: function () { newFight(); }, script: function () { return script; } };
-  // heavy work after the first frame: the tally, then the 3D cage
+  // the compressed models arrive a few milliseconds after the first paint: re-render everything that reads them
+  var started = false;
+  function afterModels() {
+    $("mlTog").disabled = !MLR.ok;
+    if (!MLR.ok) $("mlTog").parentNode.title = "The stat-line model is not in this build";
+    buildMatchup(); renderKnobPanel(); renderWhy(); renderMLCard(); renderForecast(); renderForward();
+    if (started) queueTally(true);
+  }
+  // heavy work after the first frame: the tally (once the models are in), then the 3D cage
   requestAnimationFrame(function () {
-    setTimeout(function () {
+    function go() {
+      if (started) return; started = true;
       startTally();
       setTimeout(function () {
         initShow(); newFight();
         if (reduce && show) { show.paused = true; $("btnPlay").textContent = "Play"; try { show.frame(0.016); } catch (e) { /* ignore */ } }
         if (!loopOn) { loopOn = true; requestAnimationFrame(loop); }
       }, 30);
-    }, 0);
+    }
+    modelsReady.then(function () { afterModels(); go(); }, go);
+    setTimeout(go, 4000);
   });
 })();

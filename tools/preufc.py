@@ -1902,6 +1902,9 @@ def evaluate(args):
                                  "p_seeded_elo": round(float(preds_test["elo_seed_pre+age"][j]), 4),
                                  "p_base": round(float(preds_test["base"][j]), 4),
                                  "p_base_pre": round(float(preds_test["base+pre"][j]), 4)}
+    for f_, v_ in (audit.get("ml_stack", {}).pop("pred", {}) or {}).items():
+        if f_ in predictions:
+            predictions[f_].update(v_)
     # every backtest bout: seeded-Elo probability (walk-forward), for the ensemble
     seeded_bt = {}
     for e in bt:
@@ -1911,7 +1914,10 @@ def evaluate(args):
             seeded_bt[e["id"]] = round(float(src[e["id"]][2]), 4)
 
     # ---------------- roster-level newcomer priors (live use, fit on everything before 2024 + refit to now)
-    roster = roster_priors(pre, people, bouts, seed_fits["seed_pre+age"], first_fid, age_at, fights, snaps)
+    # live coefficients: the same seeded Elo refit on every debut through the snapshot (2015-2026); the held-out
+    # numbers above come from the fit on [2015, 2024) only
+    sf_live = fit_seed(PRE_CORE, True, dt.date.today() + dt.timedelta(days=1))
+    roster = roster_priors(pre, people, bouts, sf_live, first_fid, age_at, fights, snaps, side_fin, train_from)
 
     ev = {
         "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
@@ -1943,7 +1949,10 @@ def evaluate(args):
                                        [round(float(x), 2) for x in sf["beta"]],
                                        "mu": [round(float(x), 4) for x in sf["mu"]],
                                        "sd": [round(float(x), 4) for x in sf["sd"]],
-                                       "boost": sf["boost"]} for nm, sf in seed_fits.items()}},
+                                       "boost": sf["boost"]} for nm, sf in seed_fits.items()},
+                   "seeded_elo_live (roster_priors; refit on every debut 2015 to the snapshot)": {
+                       "keys": sf_live["keys"], "beta_elo_points_per_sd": [round(float(x), 2) for x in sf_live["beta"][:-1]],
+                       "mu": [round(float(x), 4) for x in sf_live["mu"]], "sd": [round(float(x), 4) for x in sf_live["sd"]]}},
         "method": meth,
         "market": market,
         "side_finish": side_fin,
@@ -2087,6 +2096,16 @@ def ml_stack_eval(newc, fs, pick, Cs, taus):
                         bestv = (v, C, tau)
             m = DiffModel(["l" + src], prek, C=bestv[1], tau=bestv[2]).fit(oof)
             cands[nm] = m.predict(te)
+            if prek:
+                pf = res.setdefault("pred", {})
+                for Y in years:
+                    trn = oof[oof["date"] < dt.date(Y, 1, 1)]
+                    va = oof[oof["year"] == Y]
+                    pv = DiffModel(["l" + src], prek, C=bestv[1], tau=bestv[2]).fit(trn).predict(va)
+                    for f_, v_ in zip(va["fid"], pv):
+                        pf.setdefault(f_, {})["p_%s_pre" % src] = round(float(v_), 4)
+                for f_, v_ in zip(te["fid"], cands[nm]):
+                    pf.setdefault(f_, {})["p_%s_pre" % src] = round(float(v_), 4)
             r[nm] = {"cv_ll": round(bestv[0], 4), "C": bestv[1], "tau": bestv[2],
                      "test_ll": round(float(_lls(cands[nm], yt).mean()), 4)}
             if prek:
@@ -2142,23 +2161,25 @@ def method_eval(df_all, train_from):
     for nm, wp in (("ufc_only", False), ("ufc+pre", True)):
         best = None
         for C in (0.03, 0.1, 0.3, 1.0):
-            # time-ordered CV inside train
-            lls = []
-            for Y in CV_YEARS:
-                a = tr & (d["date"] < dt.date(Y, 1, 1)).to_numpy()
-                b = tr & (d["year"] == Y).to_numpy()
-                if a.sum() < 50 or b.sum() == 0:
-                    continue
-                m = LogisticRegression(C=C, max_iter=3000).fit(X(d[a], wp), y[a])
-                lls.append((mll(m.predict_proba(X(d[b], wp)), y[b]), b.sum()))
-            cvl = sum(l * n for l, n in lls) / sum(n for _, n in lls)
-            if best is None or cvl < best[0]:
-                best = (cvl, C)
-        m = LogisticRegression(C=best[1], max_iter=3000).fit(X(d[tr], wp), y[tr])
-        P[nm] = m.predict_proba(X(d[te], wp))
+            for tau in ((1.0, 2.0, 4.0, 8.0) if wp else (2.0,)):
+                # time-ordered CV inside train
+                lls = []
+                for Y in CV_YEARS:
+                    a = tr & (d["date"] < dt.date(Y, 1, 1)).to_numpy()
+                    b = tr & (d["year"] == Y).to_numpy()
+                    if a.sum() < 50 or b.sum() == 0:
+                        continue
+                    m = LogisticRegression(C=C, max_iter=3000).fit(X(d[a], wp, tau), y[a])
+                    lls.append((mll(m.predict_proba(X(d[b], wp, tau)), y[b]), b.sum()))
+                cvl = sum(l * n for l, n in lls) / sum(n for _, n in lls)
+                if best is None or cvl < best[0]:
+                    best = (cvl, C, tau)
+        m = LogisticRegression(C=best[1], max_iter=3000).fit(X(d[tr], wp, best[2]), y[tr])
+        P[nm] = m.predict_proba(X(d[te], wp, best[2]))
         lv = -np.log(np.clip(P[nm][np.arange(len(yt)), yt], 1e-9, 1))
         bs = cbx.means(lv)
-        res[nm] = {"cv_ll": round(best[0], 4), "C": best[1], "test_ll": round(float(lv.mean()), 4),
+        res[nm] = {"cv_ll": round(best[0], 4), "C": best[1], "tau": best[2] if wp else None,
+                   "test_ll": round(float(lv.mean()), 4),
                    "ci95": [round(float(np.percentile(bs, 2.5)), 4), round(float(np.percentile(bs, 97.5)), 4)]}
         if wp:
             res[nm]["coef_pre (KO,SUB,DEC rows; last 6 = pre_ko pre_sub pre_kol pre_subl pre_fin pre_finl)"] = \
@@ -2213,7 +2234,7 @@ def side_finish_eval(df_all, args):
     mu = {c: float(np.nanmean(S.loc[tr, c])) for c in ["pre_ko", "pre_sub", "pre_kol", "pre_subl",
                                                        "o_pre_ko", "o_pre_sub", "o_pre_kol", "o_pre_subl"]}
 
-    def X(dd, target, with_pre):
+    def X(dd, target, with_pre, tau=2.0):
         cols = [(dd["division"] == dv).astype(float).to_numpy() for dv in divs]
         cols.append((dd["rounds"] == 5).astype(float).to_numpy())
         for c in ufc_cols[target]:
@@ -2222,7 +2243,7 @@ def side_finish_eval(df_all, args):
             for c in pre_cols[target]:
                 v = dd[c].to_numpy(float)
                 v = np.where(np.isnan(v), mu[c], v)
-                cols.append(np.log(v / mu[c]) * np.exp(-(dd["o_n" if c.startswith("o_") else "n"].to_numpy(float)) / 2.0))
+                cols.append(np.log(v / mu[c]) * np.exp(-(dd["o_n" if c.startswith("o_") else "n"].to_numpy(float)) / tau))
         return np.vstack(cols).T
 
     out = {"n_train_sides": int(tr.sum()), "n_test_sides": int(te.sum()),
@@ -2235,22 +2256,24 @@ def side_finish_eval(df_all, args):
         for nm, wp in (("ufc_only", False), ("ufc+pre", True)):
             best = None
             for C in (0.1, 0.3, 1.0, 3.0):
-                lls = []
-                for Y in CV_YEARS:
-                    a = tr & (S["date"] < dt.date(Y, 1, 1)).to_numpy()
-                    b = tr & (S["year"] == Y).to_numpy()
-                    if a.sum() < 100 or b.sum() == 0:
-                        continue
-                    m = LogisticRegression(C=C, max_iter=3000).fit(X(S[a], target, wp), y[a])
-                    lls.append((ll(m.predict_proba(X(S[b], target, wp))[:, 1], y[b]), b.sum()))
-                cvl = sum(l * n for l, n in lls) / sum(n for _, n in lls)
-                if best is None or cvl < best[0]:
-                    best = (cvl, C)
-            m = LogisticRegression(C=best[1], max_iter=3000).fit(X(S[tr], target, wp), y[tr])
-            P[nm] = m.predict_proba(X(S[te], target, wp))[:, 1]
+                for tau in ((1.0, 2.0, 4.0, 8.0) if wp else (2.0,)):
+                    lls = []
+                    for Y in CV_YEARS:
+                        a = tr & (S["date"] < dt.date(Y, 1, 1)).to_numpy()
+                        b = tr & (S["year"] == Y).to_numpy()
+                        if a.sum() < 100 or b.sum() == 0:
+                            continue
+                        m = LogisticRegression(C=C, max_iter=3000).fit(X(S[a], target, wp, tau), y[a])
+                        lls.append((ll(m.predict_proba(X(S[b], target, wp, tau))[:, 1], y[b]), b.sum()))
+                    cvl = sum(l * n for l, n in lls) / sum(n for _, n in lls)
+                    if best is None or cvl < best[0]:
+                        best = (cvl, C, tau)
+            m = LogisticRegression(C=best[1], max_iter=3000).fit(X(S[tr], target, wp, best[2]), y[tr])
+            P[nm] = m.predict_proba(X(S[te], target, wp, best[2]))[:, 1]
             res[nm] = {"cv_ll": round(best[0], 5), "C": best[1], "test_ll": round(ll(P[nm], y[te]), 5)}
             if wp:
                 k = len(pre_cols[target])
+                res[nm]["tau"] = best[2]
                 res[nm]["coef_log_ratio (own, opponent), at n=0"] = [round(float(c), 3) for c in m.coef_[0][-k:]]
         lv0 = -(y[te] * np.log(P["ufc_only"]) + (1 - y[te]) * np.log(1 - P["ufc_only"]))
         lv1 = -(y[te] * np.log(P["ufc+pre"]) + (1 - y[te]) * np.log(1 - P["ufc+pre"]))
@@ -2279,14 +2302,24 @@ def side_finish_eval(df_all, args):
     return out
 
 
-def roster_priors(pre, people, bouts, sfit, first_fid, age_at, fights, snaps):
-    """Per roster fighter: the seeded-Elo debut shift and finish-propensity multipliers from the pre-UFC record."""
+def roster_priors(pre, people, bouts, sfit, first_fid, age_at, fights, snaps, side_fin=None, window_from=None):
+    """Per fighter: the seeded-Elo debut shift (live refit) and newcomer finish multipliers from the pre-UFC
+    record. Promotion-quality features are undefined for debuts before the graduate window (no complete
+    debutant set): they sit at the mean for those fighters."""
     import numpy as np
     out = {}
     keys = sfit["keys"]
     nk = len(keys)
     beta = sfit["beta"]
     slug2p = {P["slug"]: p for p, P in people.items()}
+    promo_keys = {"pre_feed", "pre_grad"}
+    sfc = {}
+    if side_fin:
+        for t in ("ko_win", "sub_win", "ko_loss"):
+            x = side_fin.get(t, {}).get("ufc+pre", {})
+            if "coef_log_ratio (own, opponent), at n=0" in x:
+                sfc[t] = (x["coef_log_ratio (own, opponent), at n=0"], x.get("tau", 2.0))
+        mu_pre = side_fin.get("mu_pre", {})
     for slug, v in pre["fighters"].items():
         p = slug2p.get(slug)
         if p is None:
@@ -2294,12 +2327,15 @@ def roster_priors(pre, people, bouts, sfit, first_fid, age_at, fights, snaps):
         item = {"n_ufc": len(bouts.get(p, []))}
         if v.get("status") == "ok" and v.get("debut"):
             sp = side_pre(v["debut"], 0)
-            row = [sp[k] for k in keys if k != "age_debut"]
+            old_debut = window_from is not None and p in first_fid and first_fid[p][1] < window_from
+            row = [sp[k] if not (old_debut and k in promo_keys) else float("nan") for k in keys if k != "age_debut"]
             if "age_debut" in keys:
                 row.append(age_at(p, first_fid[p][1]) if p in first_fid else float("nan"))
             x = np.array(row, float)
             x = np.where(np.isnan(x), sfit["mu"], x)
             z = (x - sfit["mu"]) / sfit["sd"]
+            if old_debut:
+                item["promo_quality"] = "n/a: UFC debut before %s (feeder features at the mean)" % window_from
             shift = float(z @ beta[:nk])
             item["elo_debut_shift"] = round(shift, 1)
             item["elo_debut_shift_pre_only"] = round(float(sum(z[i] * beta[i] for i, k in enumerate(keys)
@@ -2312,6 +2348,18 @@ def roster_priors(pre, people, bouts, sfit, first_fid, age_at, fights, snaps):
             item["pre_finished_rate"] = round((d["ko_l"] + d["sub_l"] + 0.3) / (nn + 2.0), 3)
             c = v["current"]
             item["current_nonufc_record"] = "%d-%d-%d" % (c["w"], c["l"], c["d"])
+            # engine newcomer multipliers on odds (KO win ~ power, SUB win ~ sub threat, KO loss ~ chin), from the
+            # per-side finish models at n = 0, faded by exp(-n / tau) toward 1 as UFC bouts accumulate
+            if sfc and mu_pre:
+                n_now = item["n_ufc"]
+                mult = {}
+                for t, rate, mk in (("ko_win", item["pre_ko_rate"], "pre_ko"), ("sub_win", item["pre_sub_rate"], "pre_sub"),
+                                    ("ko_loss", (d["ko_l"] + 0.2) / (nn + 2.0), "pre_kol")):
+                    if t in sfc and mu_pre.get(mk):
+                        b, tau = sfc[t][0][0], sfc[t][1]
+                        m0 = (rate / mu_pre[mk]) ** b
+                        mult[t] = {"at_debut": round(m0, 3), "now": round(m0 ** math.exp(-n_now / tau), 3)}
+                item["finish_odds_multipliers"] = mult
         else:
             item["elo_debut_shift"] = round(float(beta[nk]), 1)
             item["status"] = v.get("status")
@@ -2455,6 +2503,29 @@ def report(args):
                         "T%d n=%d pre %.3f -> UFC %.3f (pred UFC-only %.3f, +pre %.3f)" % (
                             g["tercile"], g["n"], g["pre_rate_mean"], g["ufc_rate"], g["pred_ufc_only"], g["pred_ufc+pre"])
                         for g in sf[t]["test_rate_by_pre_tercile"]))
+    au = ev.get("audit") if ev else None
+    if au:
+        P("\n### Audit (each scored once on 2024+, settings by CV on 2015-2023)\n")
+        fr = au["full_network_reference"]
+        P("- full-network reference with the chosen settings: %.4f vs strict %.4f; full minus strict %+.4f [%+.4f, %+.4f], "
+          "P(full better) %.2f" % (fr["base+pre full network"], fr["base+pre strict (main)"], *fr["full - strict"]))
+        P("\n| Ablation | CV LL | C | tau | Test LL | minus base [95% CI] | minus main [95% CI] |\n|---|---|---|---|---|---|---|")
+        for k, v in au["ablations"].items():
+            P("| %s | %.4f | %s | %s | %.4f | %+.4f [%+.4f, %+.4f] | %+.4f [%+.4f, %+.4f] |" % (
+                k, v["cv_ll"], v["C"], v["tau"], v["test_ll"], *v["minus base"][:3], *v["minus base+pre (main)"][:3]))
+        sr = au["seed_record+age"]
+        P("\n- seeded Elo, own record + age only: test %.4f; minus Elo %+.4f [%+.4f, %+.4f]; minus seed_pre+age %+.4f "
+          "[%+.4f, %+.4f]" % (sr["test_ll"], *sr["minus elo"][:3], *sr["minus seed_pre+age (main)"][:3]))
+        ms = au.get("ml_stack", {})
+        if "ml" in ms:
+            P("\n### Stacking on tools/ml.py probabilities (backtest bouts with a 1-3 fight side; rows %s)\n" % ms["rows"])
+            P("| Source | raw test LL | calibrated (CV LL / test LL) | + pre-UFC (CV LL / test LL, C, tau) | +pre minus cal [95% CI], P |")
+            P("|---|---|---|---|---|")
+            for src in ("ml", "stack"):
+                x = ms[src]
+                P("| %s | %.4f | %.4f / %.4f | %.4f / %.4f, %s, %s | %+.4f [%+.4f, %+.4f], %.2f |" % (
+                    src, x["raw_test_ll"], x["cal"]["cv_ll"], x["cal"]["test_ll"], x["+pre"]["cv_ll"], x["+pre"]["test_ll"],
+                    x["+pre"]["C"], x["+pre"]["tau"], *x["+pre minus cal"]))
     P("\n### Top feeder promotions (graduates since %s)\n" % m["graduates_from"])
     P("| Promotion | UFC graduates | their first-3 UFC bouts | win rate (shrunk) |\n|---|---|---|---|")
     for k, v in list(m["promotions"].items())[:25]:

@@ -23,7 +23,7 @@ var SLUGS = (Q.get("slugs") || "alexander-volkanovski,justin-gaethje,sergei-pavl
 var db = { fighters: fighters.fighters, overrides: overrides.fighters || {}, scouting: {} };
 db.likeness = {};
 SLUGS.forEach(function (s) {
-  var sc = getJSON("../data/scouting/" + s + ".json"); if (sc && sc.appearance) db.scouting[s] = sc.appearance;
+  var sc = getJSON("../data/scouting/" + s + ".json"); if (sc && sc.appearance) db.scouting[s] = sc.appearance; if (sc && sc.style) { db.style = db.style || {}; db.style[s] = sc.style; }
   if (Q.get("likeness") !== "0") { var lk = getJSON("../data/likeness/" + s + ".json"); if (lk) db.likeness[s] = lk; }
 });
 var APP = SLUGS.map(function (s) { return FightAvatar.appearanceFor(s, db); });
@@ -71,6 +71,7 @@ DEV.pose = function (actors, mode, yaw, dt) {
   actors.forEach(function (a, i) {
     var n = actors.length, x = (i - (n - 1) / 2) * 1.15;
     a.pos.set(x, 0, 0); a.yaw = yaw; a.vel.set(0, 0, 0); a.opp = null; a.act = null; a.react = null; a.walkTo = null;
+    if (a.avatar && a.avatar.app && !a.isRef && a._profSlug !== a.avatar.app.slug && FightShow.stanceProfile) { a.setProfile(FightShow.stanceProfile(a.avatar.app)); a._profSlug = a.avatar.app.slug; }
     if (a.mode !== mode || a.tr) a.snapMode(mode); else a.replant(true);
     for (var k = 0; k < (dt ? 1 : 6); k++) a.update(dt || 1 / 30);
     if (mode === "walk") { // lineup: arms hanging relaxed

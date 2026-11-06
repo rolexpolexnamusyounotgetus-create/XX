@@ -623,7 +623,7 @@
     "  vec3 c = (exp2(texture2D(uMap, vec2(u, 1.0 - v)).rgb * uL) - 1.0) / uK;",
     "  float up = smoothstep(-0.04, 0.38, d.y);",
     "  float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));",
-    "  c = mix(vec3(lum), c, mix(0.3, 1.0, up));",
+    "  c = mix(vec3(lum), c, mix(0.3, 0.82, up));",
     "  c *= mix(0.07, 1.0, up);",
     "  gl_FragColor = vec4(c * uGain, 1.0);",
     "}"

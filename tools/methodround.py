@@ -2225,14 +2225,17 @@ def expand_cells(v, R):
     return P
 
 
-def score(path, period_from="2024-01-01"):
+def score(path, period_from="2024-01-01", period_until=None, out=None, backtest=None):
     """Score another model (e.g. the simulator) on the same fights and metrics as this benchmark.
     Input JSON: {fight_id: {"cells": [compact list as in methodround.json]}} or {fight_id: {"bins7": [A KO, A SUB,
-    A DEC, draw, B DEC, B SUB, B KO], "fin_round": [P(finish in r1..R), optional]}} with A/B as in backtest.json."""
-    bt = {f["id"]: f for f in json.load(open(BACKTEST))["fights"]}
+    A DEC, draw, B DEC, B SUB, B KO], "fin_round": [P(finish in r1..R), optional]}} with A/B as in backtest.json.
+    period_until (exclusive) bounds the scored dates; out writes the metrics as JSON (tools/evalv.js); backtest
+    points at another backtest file (tools/evalv.js passes backtest_dev.json, which never holds a 2026 fight)."""
+    bt = {f["id"]: f for f in json.load(open(backtest or BACKTEST))["fights"]}
     mr = json.load(open(OUT_JSON))["fights"]
     sub = json.load(open(path))
-    ids = [i for i in sub if i in bt and i in mr and bt[i]["date"] >= period_from and "S" in mr[i]]
+    ids = [i for i in sub if i in bt and i in mr and bt[i]["date"] >= period_from and "S" in mr[i]
+           and (period_until is None or bt[i]["date"] < period_until)]
     rows = []
     for i in ids:
         f = bt[i]
@@ -2267,11 +2270,18 @@ def score(path, period_from="2024-01-01"):
     _, st = cluster_bootstrap({"x": Ls}, T["event"][ok].to_numpy(), B=2000)
     d = paired_diff(Ls, Lm, st, METRICS)
     keys = METRICS if has_rounds else [m for m in METRICS if m not in ("joint", "method_round", "round_given_fin")]
-    print("scored %d fights from %s (submission vs methodround model S, frozen through 2023)" % (ok.sum(), period_from))
+    print("scored %d fights from %s%s (submission vs methodround model S, walk-forward)" % (
+        ok.sum(), period_from, (" to " + period_until) if period_until else ""))
     for m in keys:
         if m in d:
             print("  %-16s submitted %.4f  model S %.4f  diff %+.4f [%+.4f, %+.4f]" % (
                 m, np.nanmean(Ls[m]), np.nanmean(Lm[m]), d[m]["diff"], d[m]["ci95"][0], d[m]["ci95"][1]))
+    if out:
+        res = {"n": int(ok.sum()), "from": period_from, "until": period_until, "has_rounds": has_rounds,
+               "metrics": {m: {"submitted": float(np.nanmean(Ls[m])), "model_S": float(np.nanmean(Lm[m])),
+                               "diff": d[m]["diff"], "ci95": d[m]["ci95"]} for m in keys if m in d}}
+        with open(out, "w") as fh:
+            json.dump(res, fh, indent=1)
 
 
 def main(argv=None):
@@ -2280,10 +2290,13 @@ def main(argv=None):
     ap.add_argument("--score", metavar="JSON", help="score another model's per-fight predictions against this "
                                                     "benchmark (see score()) instead of fitting")
     ap.add_argument("--score-from", default="2024-01-01", help="first fight date scored with --score")
+    ap.add_argument("--score-until", default=None, help="scored dates are before this (exclusive; default: no bound)")
+    ap.add_argument("--score-out", default=None, help="write the --score metrics to this JSON file")
+    ap.add_argument("--backtest", default=None, help="backtest file for --score (default data/derived/backtest.json)")
     ap.add_argument("--report", action="store_true", help="rewrite the markdown report from the existing JSON")
     args = ap.parse_args(argv)
     if args.score:
-        score(args.score, args.score_from)
+        score(args.score, args.score_from, args.score_until, args.score_out, args.backtest)
     elif args.report:
         write_report(json.load(open(OUT_JSON)))
         print("wrote", OUT_MD)

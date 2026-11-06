@@ -280,9 +280,6 @@ def forward_block():
 
 DERIVED = {
     "/*__MOE_JSON__*/": moe_block,
-    "/*__MLRATES_JSON__*/": mlrates_block,
-    "/*__MR_JSON__*/": methodround_block,
-    "/*__MLPAGE_JSON__*/": mlpage_block,
     "/*__MKT_JSON__*/": market_block,
     "/*__BENCH_JSON__*/": bench_block,
     "/*__VERSIONS_JSON__*/": versions_block,
@@ -299,6 +296,28 @@ def no_nan(o):
     if isinstance(o, list):
         return [no_nan(v) for v in o]
     return o
+
+
+# the three big model files ship gzip-compressed and base64-encoded (about half the bytes); the page inflates them
+# with the browser's DecompressionStream, like the avatar assets
+DERIVED_GZ = {
+    "/*__MLRATES_GZ__*/": mlrates_block,
+    "/*__MLPAGE_GZ__*/": mlpage_block,
+    "/*__MR_GZ__*/": methodround_block,
+}
+
+
+def derived_gz(fn):
+    import gzip
+    try:
+        data = no_nan(fn())
+    except Exception as e:
+        print("warning: " + fn.__name__ + " failed (" + repr(e) + "); building without it", file=sys.stderr)
+        data = None
+    if data is None:
+        return ""
+    raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+    return base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode("ascii")
 
 
 def derived_json(fn):
@@ -347,6 +366,9 @@ def main():
     for marker, fn in DERIVED.items():
         if page.count(marker) == 1:
             page = page.replace(marker, derived_json(fn))
+    for marker, fn in DERIVED_GZ.items():
+        if page.count(marker) == 1:
+            page = page.replace(marker, derived_gz(fn))
 
     if page.count(SCOUTING_MARKER) == 1:
         page = page.replace(SCOUTING_MARKER, scouting_json())

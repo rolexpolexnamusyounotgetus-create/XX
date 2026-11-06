@@ -30,17 +30,22 @@ What it does (research/model_ml.md has the results and the reasoning):
      with --direct7-gbm, a direct 7-class LightGBM), plus factorised P(win) x P(method | winner) models with a
      softmax or LightGBM method model and P(win) from the logistic, the blend, LightGBM or the stack.
 3. Time-ordered CV inside 2010-2023 only (expanding window, validation years 2015-2023); out-of-fold
-   predictions for 2019-2023 feed Platt / isotonic recalibration and the stacking layer. 2024+ is
-   scored once by the models trained on 2010-2023.
+   predictions for 2019-2023 feed Platt / isotonic recalibration and the stacking layer. The validation years
+   2024-2025 are scored once by the models trained on 2010-2023. Fights from 2026-01-01 are the sealed vault
+   (docs/BACKLOG.md hidden-data protocol): they are never scored and never fit on; stage two moves them out of
+   every evaluation and fit, and only their pre-fight predictions are written, without results, to
+   <vault dir>/ml_vault.json outside the repository for the milestone auditor.
 4. Stacking: logit-linear, no intercept, weights fit on 2019-2023 out-of-fold predictions. Inputs: Elo,
    ML probabilities, and (when present) the simulator's per-fight probabilities
    (data/derived/calibration.json) and the de-vigged market (data/derived/market.json).
-5. Outputs: data/derived/ml.json with per-fight predictions keyed by backtest fight id, the GBM's 2024+
+5. Outputs: data/derived/ml.json with per-fight predictions keyed by backtest fight id, the GBM's 2024-2025
    predictions, and a page model: logistic coefficients + feature definitions + per-fighter feature values
    for the current roster, so the page can evaluate any matchup in JS.
 
 Walk-forward discipline: features use only earlier fights; Elo is the walk-forward rating from
-tools/build_db.py (K and boost tuned on 2019-2023 there); nothing from 2024+ is used for any choice.
+tools/build_db.py (K and boost tuned on 2019-2023 there); nothing from 2024+ is used for any choice. The page
+model's coefficients are refit on every fight before 2026; only the roster's per-fighter values (live state for
+the page) run through the snapshot.
 """
 import os
 
@@ -66,7 +71,7 @@ import build_db as B  # noqa: E402  (shared loaders: parse_fights, build_people,
 
 ROOT = os.path.dirname(HERE)
 DERIVED = os.path.join(ROOT, "data", "derived")
-OUT_JSON = os.path.join(DERIVED, "ml.json")
+OUT_JSON = os.environ.get("ML_OUT_JSON", os.path.join(DERIVED, "ml.json"))
 CACHE_DIR = os.environ.get("ML_CACHE_DIR", os.path.join(ROOT, "out", "ml_cache"))   # out/ is gitignored scratch
 
 warnings.filterwarnings("ignore")
@@ -74,6 +79,10 @@ warnings.filterwarnings("ignore")
 FEATURES_FROM = dt.date(2010, 1, 1)       # first fight that gets a training row
 TUNE_END = 2023                            # last year used for any choice
 TEST_FROM = 2024
+TEST_TO = 2025                             # last validation year; docs/BACKLOG.md hidden-data protocol
+VAULT_FROM = dt.date(2026, 1, 1)           # sealed vault: never scored or fit on here (verification fix, Nov 6)
+VAULT_DIR = os.environ.get("ML_VAULT_DIR",   # = tools/make_vault.py / tools/market.py default, outside the repo
+                           "/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault")
 CV_VAL_YEARS = list(range(2015, 2024))     # expanding-window validation years inside 2010-2023
 OOF_YEARS = list(range(2019, 2024))        # out-of-fold years used for recalibration and stacking
 ELO_K, ELO_BOOST = 44, 1.5                 # build_db.py's choice (tuned on 2019-2023)
@@ -1394,7 +1403,9 @@ def main():
     df, margin_tun, roster_feats, tmeta = get_table(not args.no_cache)
     df = df[(df["year"] >= FEATURES_FROM.year) & (~df["amb"])].reset_index(drop=True)
     df = add_derived(df)
-    bt = json.load(open(os.path.join(DERIVED, "backtest.json")))
+    # backtest_dev.json = backtest.json without the 2026 vault (tools/make_vault.py); 2026 rows are therefore never
+    # `in_bt`, and stage two moves them out of every fit and score (split_vault)
+    bt = json.load(open(os.path.join(DERIVED, "backtest_dev.json")))
     bt_ids = {e["id"] for e in bt["fights"]}
     bt_by_id = {e["id"]: e for e in bt["fights"]}
     df["in_bt"] = df["fid"].isin(bt_ids)
@@ -1439,7 +1450,8 @@ def main():
     test = df["year"] >= TEST_FROM
     oof_bt = (oof & df["in_bt"] & dec).to_numpy()
     test_bt = (test & df["in_bt"] & dec).to_numpy()
-    log("OOF (2019-2023) decisive backtest rows %d; test (2024+) decisive backtest rows %d" % (oof_bt.sum(), test_bt.sum()))
+    log("OOF (2019-2023) decisive backtest rows %d; validation (2024-%d) decisive backtest rows %d"
+        % (oof_bt.sum(), TEST_TO, test_bt.sum()))
 
     R = {"meta": {}, "tuning": {"symmetry_check": sym}, "oof": {}, "test": {}}
 
@@ -1516,7 +1528,8 @@ def main():
     P["lr"][te], lr_final = lr_fp(tr, te)
     P["lgb"][te], lgb_final = tree_fit_pred("lgb", lgb_best, G0, G1, y, tr, te)
     P["xgb"][te], xgb_final = tree_fit_pred("xgb", xgb_best, G0, G1, y, tr, te)
-    # production-style annual refit (fixed hyperparameters): 2024 from <=2023, 2025 from <=2024, 2026 from <=2025
+    # production-style annual refit (fixed hyperparameters): 2024 from <=2023, 2025 from <=2024. The 2026 (vault)
+    # rows get predictions from <=2025 fits here; stage two exports them without results and never scores them.
     for Y in sorted(df.loc[test, "year"].unique()):
         trY = ((df["year"] < Y) & dec).to_numpy()
         teY = (df["year"] == Y).to_numpy()
@@ -1960,9 +1973,12 @@ def evaluate(R):
                                                         "rolling": round(log_loss(pr[o20], y[o20]), 5)},
                    "test": {"raw": round(log_loss(P[k][test_bt], y[test_bt]), 5),
                             "rolling": round(log_loss(pr[test_bt], y[test_bt]), 5)}}
-        roll[k]["adopt"] = bool(roll[k]["oof_2020_2023"]["rolling"] < roll[k]["oof_2020_2023"]["raw"])
+        # adopt only on a material OOF gain (same SEL_MIN as group selection); verification fix, Nov 6: the flag
+        # read True for the logistic on a 0.00005 gain that the report calls a wash and does not adopt
+        roll[k]["adopt"] = bool(roll[k]["oof_2020_2023"]["rolling"] < roll[k]["oof_2020_2023"]["raw"] - SEL_MIN)
         main_models.append(k + "_roll")
     out_roll = roll
+    # "test_2024_plus" keeps its key name for build.py / app.js; since the vault fix it covers 2024-01-01..2025-12-31
     out = {"oof_2019_2023": {}, "test_2024_plus": {}, "rolling_temperature": out_roll}
     for k in main_models:
         if k in P and not np.isnan(P[k][oof_bt]).any():
@@ -2304,9 +2320,10 @@ def page_model(R):
     model = {
         "snapshot": snap,
         "winner": {"terms": terms, "platt_slope": round(slope, 4),
-                   "fit": "L2 logistic, no intercept, every decisive UFC fight 2010-01-01..%s (%d fights), lam=%s, "
-                          "train_set=%s; held-out numbers are for the same specification fit on 2010-2023 only"
-                          % (snap, int(tr.sum()), cfg["lam"], cfg["train_set"]),
+                   "fit": "L2 logistic, no intercept, every decisive UFC fight 2010-01-01..2025-12-31 (%d fights; the "
+                          "2026 vault is never fit on), lam=%s, train_set=%s; held-out numbers are for the same "
+                          "specification fit on 2010-2023 only. Roster values are live state as of %s"
+                          % (int(tr.sum()), cfg["lam"], cfg["train_set"], snap),
                    "eval": "p(A wins) = 1 / (1 + exp(-platt_slope * sum_j coef_j * term_j(A, B))); exactly "
                            "antisymmetric, so p(B beats A) = 1 - p(A beats B)"},
         "method": dict(mm.export(mcols), classes_meaning=["KO/TKO", "SUB", "DEC"],
@@ -2421,11 +2438,14 @@ def write_outputs(R):
             "protocol": "features for each fight use only earlier fights (walk-forward); time-ordered CV on 2010-2023 "
                         "(expanding window, validation blocks 2016-17, 2018-19, 2020-21, 2022-23) for every choice; "
                         "out-of-fold 2019-2023 predictions from annual expanding refits feed recalibration and stacking; "
-                        "2024+ scored once by models trained on 2010-2023 (refit variants marked *_refit retrain each "
-                        "January with frozen hyperparameters). Draws and no-contests are excluded from winner metrics; "
-                        "DQ and NC are excluded from 7-bin metrics. Every model is corner-symmetric.",
-            "eval_sets": {"oof": "backtest.json fights 2019-2023 (both men had a prior UFC fight)",
-                          "test": "backtest.json fights 2024-01-01..%s" % C["tmeta"]["snapshot"]},
+                        "2024-2025 (the hidden-data protocol's validation years) scored once by models trained on "
+                        "2010-2023 (refit variants marked *_refit retrain each January with frozen hyperparameters). "
+                        "Fights from 2026-01-01 (the vault) are never scored or fit on; their pre-fight predictions go "
+                        "to ml_vault.json outside the repository. Draws and no-contests are excluded from winner "
+                        "metrics; DQ and NC are excluded from 7-bin metrics. Every model is corner-symmetric.",
+            "eval_sets": {"oof": "backtest_dev.json fights 2019-2023 (both men had a prior UFC fight)",
+                          "test": "backtest_dev.json fights 2024-01-01..2025-12-31 (results key test_2024_plus)",
+                          "vault": "fights from %s: excluded (ml_vault.json outside the repo)" % VAULT_FROM},
             "feature_params": FEAT_PARAMS,
             "keys": {"fights": "per backtest fight id: set (oof|test), y (1 = A won, 0 = B won, null = draw/NC), "
                                "bin7 (0..6), elo, elo_sig (strike-share Elo), lr, gbm (LightGBM), xgb, ml (blend), "
@@ -2433,7 +2453,7 @@ def write_outputs(R):
                                "(annual-refit variants, test only), bins7 (recommended 7-bin model: A KO, A SUB, "
                                "A DEC, draw, B DEC, B SUB, B KO); all probabilities are P(A wins | decisive) with "
                                "A = first ufcstats name",
-                     "gbm_test": "LightGBM P(A wins) for every 2024+ backtest fight (trained on 2010-2023)",
+                     "gbm_test": "LightGBM P(A wins) for every 2024-2025 backtest fight (trained on 2010-2023)",
                      "page_model": "logistic winner model + method-given-winner softmax that the page can evaluate "
                                    "in JS for any two roster fighters (see research/model_ml.md)",
                      "roster": "per-fighter feature values as of the snapshot, keyed by fighters.json slug"},
@@ -2453,13 +2473,90 @@ def write_outputs(R):
                                                     len(R["roster_out"])))
 
 
+def split_vault(R):
+    """Hidden-data protocol (docs/BACKLOG.md; verification fix, Nov 6): move every row dated >= VAULT_FROM out of
+    the working arrays before anything in stage two (blend, recalibration, stacking, 7-bin, evaluation, page-model
+    fit) can see it. The first build scored 2024-01-01..2026-10-31 and fit the page model through the snapshot, so
+    373 vault fights were read. Their pre-fight predictions (frozen <=2023 fits and <=2025 annual refits) are kept
+    in R['_vault'] for the export outside the repo; their results are dropped. Idempotent."""
+    C, P = R["_ctx"], R["_P"]
+    df = C["df"]
+    n = len(df)
+    vault = (df["year"] >= VAULT_FROM.year).to_numpy()
+    if not vault.any():
+        return
+    keep = ~vault
+    R["_vault"] = {"fid": df.loc[vault, "fid"].tolist(), "date": [str(d) for d in df.loc[vault, "date"]],
+                   "event": df.loc[vault, "event"].tolist(), "slug_a": df.loc[vault, "slug_a"].tolist(),
+                   "slug_b": df.loc[vault, "slug_b"].tolist(),
+                   "P": {k: np.asarray(v)[vault] for k, v in P.items() if np.ndim(v) == 1 and len(v) == n}}
+    C["df"] = df[keep].reset_index(drop=True)
+    C.pop("bt_by_id", None)
+    for k, v in list(C.items()):
+        if isinstance(v, np.ndarray) and v.ndim >= 1 and len(v) == n:
+            C[k] = v[keep]
+        elif isinstance(v, pd.DataFrame) and len(v) == n and k != "df":
+            C[k] = v[keep].reset_index(drop=True)
+    for D in (P, R.get("_S") or {}, R.get("_loyo") or {}):
+        for k, v in list(D.items()):
+            if isinstance(v, np.ndarray) and len(v) == n:
+                D[k] = v[keep]
+    log("vault: %d rows dated >= %s moved out of every fit and score (pre-fight predictions kept for the export)"
+        % (int(vault.sum()), VAULT_FROM))
+
+
+def write_vault(R):
+    """Pre-fight predictions for the vault fights, no results, written outside the repository (VAULT_DIR)."""
+    V = R.get("_vault")
+    if not V:
+        return
+    C = R["_ctx"]
+    P = V["P"]
+    w = C.get("w_ml")
+    if w is not None:
+        for out_k, parts in (("ml", ("lr", "lgb", "xgb")), ("ml_refit", ("lr_refit", "lgb_refit", "xgb_refit"))):
+            if all(k in P for k in parts):
+                Z = np.column_stack([to_logit(P[k]) for k in parts])
+                P[out_k] = 1 / (1 + np.exp(-(Z @ w)))
+    stk = {v["name"]: v for v in R.get("stacking", {}).get("variants", [])}
+    fights = {}
+    for i, f in enumerate(V["fid"]):
+        o = {"date": V["date"][i], "event": V["event"][i], "A": V["slug_a"][i], "B": V["slug_b"][i]}
+        for k, nm in (("elo", "elo"), ("elo_sig", "elo_sig"), ("elo_judge", "elo_judge"), ("lr", "lr"), ("lgb", "gbm"),
+                      ("xgb", "xgb"), ("ml", "ml"), ("lr_refit", "lr_refit"), ("lgb_refit", "gbm_refit"),
+                      ("xgb_refit", "xgb_refit"), ("ml_refit", "ml_refit")):
+            if k in P and not np.isnan(P[k][i]):
+                o[nm] = r4(P[k][i])
+        fights[f] = o
+    out = {"meta": {"tool": "tools/ml.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                    "what": "pre-fight P(A wins | decisive) for every fight dated >= %s (A = first ufcstats name); no "
+                            "results. lr / gbm / xgb / ml: models fit on 2010-2023 (frozen); *_refit: the same "
+                            "specification refit on every fight before 2026 (the January-refit policy). Never scored "
+                            "by tools/ml.py; for the milestone auditor only." % VAULT_FROM,
+                    "ml_blend_weights_lr_lgb_xgb": [r4(v) for v in (w if w is not None else [])],
+                    "stack_weights": {nm: {"inputs": stk[nm]["inputs"], "weights": stk[nm]["weights"]}
+                                      for nm in ("elo+ml", "elo+lr", "elo+ml+mkt_rating", "elo+lr+mkt_rating",
+                                                 "open+ml", "close+ml") if nm in stk}},
+           "fights": fights}
+    try:
+        os.makedirs(VAULT_DIR, exist_ok=True)
+        path = os.path.join(VAULT_DIR, "ml_vault.json")
+        with open(path, "w") as fh:
+            json.dump(clean_json(out), fh, separators=(",", ":"), allow_nan=False)
+        log("vault export: %d fights -> %s" % (len(fights), path))
+    except OSError as e:
+        log("vault export skipped (%s)" % e)
+
+
 def stage_two(R, page_only=False):
     path = os.path.join(CACHE_DIR, "stage2.pkl")
+    split_vault(R)
     if page_only:
         R2 = pickle.load(open(path, "rb"))
         R2["_ctx"]["args"] = R["_ctx"]["args"]
         R2["_ctx"]["T0"] = R["_ctx"]["T0"]
         R = R2
+        split_vault(R)
     else:
         blend_and_calibrate(R)
         stacking(R)
@@ -2469,6 +2566,7 @@ def stage_two(R, page_only=False):
         pickle.dump(R, open(path, "wb"))
     page_model(R)
     write_outputs(R)
+    write_vault(R)
     log("done in %.0f s" % (time.time() - R["_ctx"]["T0"]))
 
 
