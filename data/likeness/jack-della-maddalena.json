@@ -279,5 +279,47 @@
     "hair": "strand shell about 3-4 cm textured top with a low fade, tinted #64412f",
     "beard": "short beard shell 10-15 mm tinted #7f4630, clearly redder than the hair"
   },
-  "notes": "Confidence: high for hair and beard colours, freckled fair skin, eye colour, ears and build; medium for face proportions; low-to-medium for exact morph values. 7 photos, all reference-only: Wikimedia Commons has no photo of him (Commons search and the English Wikipedia article checked Nov 6, 2026), so nothing here is embed-ok. 3 are from 2026 (April 2026 studio headshot and stance, May 2026 fight and ceremonial weigh-in). One true left profile (May 2025, under a cap) and no right profile. What to watch: (1) The likeness rests on the broad, square face, the copper-red short beard that is redder than the auburn-brown hair, the freckled ruddy skin and the large stand-out ears. (2) Keep the eyes small and hooded under low, light brows; default eyes look too open. (3) Hair is a short textured top with faded sides and slightly receding temples, not a long proxy. (4) Body: compact and muscular with a thick neck and full chest; do not make him rangy. (5) His stance is listed as Switch on ufcstats. Macro values: ageOldM uses MakeHuman's 25-years-at-0.5, 90-years-at-1.0 mapping (age 30). heightUpM 0.1 matches other 180.3 cm fighters. l-/r- morphs are the character's own left and right."
+  "notes": "Confidence: high for hair and beard colours, freckled fair skin, eye colour, ears and build; medium for face proportions; low-to-medium for exact morph values. 7 photos, all reference-only: Wikimedia Commons has no photo of him (Commons search and the English Wikipedia article checked Nov 6, 2026), so nothing here is embed-ok. 3 are from 2026 (April 2026 studio headshot and stance, May 2026 fight and ceremonial weigh-in). One true left profile (May 2025, under a cap) and no right profile. What to watch: (1) The likeness rests on the broad, square face, the copper-red short beard that is redder than the auburn-brown hair, the freckled ruddy skin and the large stand-out ears. (2) Keep the eyes small and hooded under low, light brows; default eyes look too open. (3) Hair is a short textured top with faded sides and slightly receding temples, not a long proxy. (4) Body: compact and muscular with a thick neck and full chest; do not make him rangy. (5) His stance is listed as Switch on ufcstats. Macro values: ageOldM uses MakeHuman's 25-years-at-0.5, 90-years-at-1.0 mapping (age 30). heightUpM 0.1 matches other 180.3 cm fighters. l-/r- morphs are the character's own left and right.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.0,
+    "depth": 1.1,
+    "crouch": 0.3,
+    "lean": 0.15,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 48,
+    "weight_front": 0.48,
+    "bladed": 0.6,
+    "guard": {
+      "style": "long",
+      "height": 0.6,
+      "lead_reach": 0.55,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.85,
+      "elbow_flare": 0.15,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.45,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.5,
+      "rate": 1.05
+    },
+    "switch_per_min": 0.5,
+    "feints": 0.45,
+    "hand_fighting": 0.4,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "lateral"
+    ],
+    "notes": "Boxer: long active lead hand (jab and pawing), sharp counters, steady pressure with lateral steps.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/jack-della-maddalena.json where present) and the reference photos in assets/reference/jack-della-maddalena/ (espn-stance-left.png / espn-stance-right.png (posed): used for posture and build only). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }

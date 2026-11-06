@@ -1,274 +1,318 @@
 {
- "slug": "cory-sandhagen",
- "name": "Cory Sandhagen",
- "as_of": "2026-11-06",
- "age_at_as_of": 34,
- "tale_of_tape": {
-  "height_cm": 180.3,
-  "reach_cm": 177.8,
-  "stance": "Switch",
-  "fight_weight_lb": 135,
-  "source": "data/derived/fighters.json (71 in height, 70 in reach, born 1992-04-20); fight weight = bantamweight limit 135 lb"
- },
- "photos_used": [
-  "ref-espn-headshot.png",
-  "ref-espn-stance-left.png",
-  "ref-espn-stance-right.png",
-  "ref-cageside-ufc329-mediaday-2026-07.jpg",
-  "ref-cageside-ufc329-faceoff-2026-07.jpg",
-  "commons-2024-12-03-usaf-full.jpg",
-  "commons-2019-01-mmanytt.jpg",
-  "ref-zuffa-sandhagen-song-fight-2022-09-17.jpg"
- ],
- "photo_coverage": "Good. Official studio headshot and two full-body cut-outs (two different shoots, about 2023 and 2024-25), UFC 329 media day and weigh-in face-off photos from July 2026 (the most recent: three-quarter right side and right-side profile), a public-domain U.S. Air Force photo from Dec 2024 (three-quarter right side, smiling), a CC BY 3.0 right-side near-profile from 2019, and a 2022 fight photo that shows his left side and guard.",
- "face": {
-  "shape": "Long, narrow oval face; the forehead is tall and the lower face looks fuller and squarer only because of the beard. Lean cheeks.",
-  "jaw": "Hidden under the beard; the beard outline gives a squared, moderately wide lower face. Underlying jaw looks average width (2019 near-profile, when the beard was similar).",
-  "chin": "Medium, rounded, moderate projection under about 1.5 cm of beard; the beard makes the chin look a little longer and squarer.",
-  "cheekbones": "Moderate, not wide; cheeks flat and lean with slight hollows above the beard line.",
-  "brow_ridge": "Moderate; brows sit close over slightly hooded upper lids.",
-  "forehead": "Tall and broad with clear horizontal lines (three or four) at rest in the studio headshot.",
-  "eyes": {
-   "shape": "Medium-sized almond eyes with slightly hooded upper lids and a faintly drooping outer corner; a little under-eye darkness, faint pinkish lower lid rims in studio light.",
-   "spacing": "Average.",
-   "colour": "Hazel / olive: greenish-brown iris with a darker outer ring (studio headshot zoom). Closest MakeHuman iris: brownlight, or green at low strength."
+  "slug": "cory-sandhagen",
+  "name": "Cory Sandhagen",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 34,
+  "tale_of_tape": {
+    "height_cm": 180.3,
+    "reach_cm": 177.8,
+    "stance": "Switch",
+    "fight_weight_lb": 135,
+    "source": "data/derived/fighters.json (71 in height, 70 in reach, born 1992-04-20); fight weight = bantamweight limit 135 lb"
   },
-  "eyebrows": {
-   "thickness": "Medium",
-   "shape": "Gently arched, rising slightly at the inner third and sloping down toward the outer ends, which gives a slightly earnest, raised-brow look.",
-   "colour": "Medium auburn-brown, between the hair and the beard in tone (patch sample #774e3e includes skin; render near #5e3a2c)"
-  },
-  "nose": {
-   "length": "Long",
-   "width": "Narrow bridge, medium tip and nostrils",
-   "bridge": "Straight and fairly high in profile",
-   "hump": "None",
-   "tip": "Rounded, slightly bulbous and angled a little downward (2019 near-profile)",
-   "fight_damage": "None obvious; straight in the frontal headshot."
-  },
-  "mouth_lips": "Medium-narrow mouth; thin upper lip mostly under the moustache, medium lower lip. Neutral to slightly pursed at rest; broad smile showing upper teeth (USAF photo).",
-  "ears": {
-   "size": "Medium-large, standing out from the head moderately in frontal photos.",
-   "cauliflower_ear": "No; both ears look smooth in the studio headshot and the 2019 near-profile."
-  },
-  "marks_scars": "No obvious facial scars. Light freckling on the shoulders and upper chest."
- },
- "hair": {
-  "style": "Short on the back and sides (tapered, close but not skin in the studio headshot; higher, tighter fade in July 2026), longer top about 5-6 cm swept up and to his left with a little volume at the front. In Dec 2024 he wore a very short buzz cut all over.",
-  "length_cm": 5.5,
-  "colour_hex": "#34241c",
-  "colour_samples": [
-   {
-    "photo": "ref-espn-headshot.png",
-    "where": "top of head (studio)",
-    "hex": "#3f2b21"
-   },
-   {
-    "photo": "ref-cageside-ufc329-mediaday-2026-07.jpg",
-    "where": "top of head (media day)",
-    "hex": "#251a15"
-   }
+  "photos_used": [
+    "ref-espn-headshot.png",
+    "ref-espn-stance-left.png",
+    "ref-espn-stance-right.png",
+    "ref-cageside-ufc329-mediaday-2026-07.jpg",
+    "ref-cageside-ufc329-faceoff-2026-07.jpg",
+    "commons-2024-12-03-usaf-full.jpg",
+    "commons-2019-01-mmanytt.jpg",
+    "ref-zuffa-sandhagen-song-fight-2022-09-17.jpg"
   ],
-  "colour_note": "Medium-dark brown with a warm, slightly auburn cast; clearly darker and less red than the beard.",
-  "hairline": "Moderately high with mild temple recession; the tall forehead is part of the look.",
-  "texture": "Straight to slightly wavy, medium thickness."
- },
- "facial_hair": {
-  "type": "short beard",
-  "colour_hex": "#9f624c",
-  "colour_samples": [
-   {
-    "photo": "ref-espn-headshot.png",
-    "where": "chin and lower cheeks (studio)",
-    "hex": "#975e49"
-   },
-   {
-    "photo": "ref-cageside-ufc329-mediaday-2026-07.jpg",
-    "where": "chin (media day)",
-    "hex": "#a76650"
-   }
+  "photo_coverage": "Good. Official studio headshot and two full-body cut-outs (two different shoots, about 2023 and 2024-25), UFC 329 media day and weigh-in face-off photos from July 2026 (the most recent: three-quarter right side and right-side profile), a public-domain U.S. Air Force photo from Dec 2024 (three-quarter right side, smiling), a CC BY 3.0 right-side near-profile from 2019, and a 2022 fight photo that shows his left side and guard.",
+  "face": {
+    "shape": "Long, narrow oval face; the forehead is tall and the lower face looks fuller and squarer only because of the beard. Lean cheeks.",
+    "jaw": "Hidden under the beard; the beard outline gives a squared, moderately wide lower face. Underlying jaw looks average width (2019 near-profile, when the beard was similar).",
+    "chin": "Medium, rounded, moderate projection under about 1.5 cm of beard; the beard makes the chin look a little longer and squarer.",
+    "cheekbones": "Moderate, not wide; cheeks flat and lean with slight hollows above the beard line.",
+    "brow_ridge": "Moderate; brows sit close over slightly hooded upper lids.",
+    "forehead": "Tall and broad with clear horizontal lines (three or four) at rest in the studio headshot.",
+    "eyes": {
+      "shape": "Medium-sized almond eyes with slightly hooded upper lids and a faintly drooping outer corner; a little under-eye darkness, faint pinkish lower lid rims in studio light.",
+      "spacing": "Average.",
+      "colour": "Hazel / olive: greenish-brown iris with a darker outer ring (studio headshot zoom). Closest MakeHuman iris: brownlight, or green at low strength."
+    },
+    "eyebrows": {
+      "thickness": "Medium",
+      "shape": "Gently arched, rising slightly at the inner third and sloping down toward the outer ends, which gives a slightly earnest, raised-brow look.",
+      "colour": "Medium auburn-brown, between the hair and the beard in tone (patch sample #774e3e includes skin; render near #5e3a2c)"
+    },
+    "nose": {
+      "length": "Long",
+      "width": "Narrow bridge, medium tip and nostrils",
+      "bridge": "Straight and fairly high in profile",
+      "hump": "None",
+      "tip": "Rounded, slightly bulbous and angled a little downward (2019 near-profile)",
+      "fight_damage": "None obvious; straight in the frontal headshot."
+    },
+    "mouth_lips": "Medium-narrow mouth; thin upper lip mostly under the moustache, medium lower lip. Neutral to slightly pursed at rest; broad smile showing upper teeth (USAF photo).",
+    "ears": {
+      "size": "Medium-large, standing out from the head moderately in frontal photos.",
+      "cauliflower_ear": "No; both ears look smooth in the studio headshot and the 2019 near-profile."
+    },
+    "marks_scars": "No obvious facial scars. Light freckling on the shoulders and upper chest."
+  },
+  "hair": {
+    "style": "Short on the back and sides (tapered, close but not skin in the studio headshot; higher, tighter fade in July 2026), longer top about 5-6 cm swept up and to his left with a little volume at the front. In Dec 2024 he wore a very short buzz cut all over.",
+    "length_cm": 5.5,
+    "colour_hex": "#34241c",
+    "colour_samples": [
+      {
+        "photo": "ref-espn-headshot.png",
+        "where": "top of head (studio)",
+        "hex": "#3f2b21"
+      },
+      {
+        "photo": "ref-cageside-ufc329-mediaday-2026-07.jpg",
+        "where": "top of head (media day)",
+        "hex": "#251a15"
+      }
+    ],
+    "colour_note": "Medium-dark brown with a warm, slightly auburn cast; clearly darker and less red than the beard.",
+    "hairline": "Moderately high with mild temple recession; the tall forehead is part of the look.",
+    "texture": "Straight to slightly wavy, medium thickness."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "colour_hex": "#9f624c",
+    "colour_samples": [
+      {
+        "photo": "ref-espn-headshot.png",
+        "where": "chin and lower cheeks (studio)",
+        "hex": "#975e49"
+      },
+      {
+        "photo": "ref-cageside-ufc329-mediaday-2026-07.jpg",
+        "where": "chin (media day)",
+        "hex": "#a76650"
+      }
+    ],
+    "colour_note": "Ginger / copper-red, much redder and lighter than the head hair. The single biggest likeness cue.",
+    "density": "Dense on the chin, moustache and jaw; full but a little lighter on the upper cheeks; natural low cheek line.",
+    "shape": "Short full beard about 1-1.5 cm, kept tidy, rounded at the chin, moustache connected and covering the top of the upper lip; neckline under the jaw. Same style in 2019, 2024 and July 2026."
+  },
+  "skin": {
+    "tone_hex": "#e4a590",
+    "tone_hex_method": "Plain RGB mean of the samples marked in_average (well-lit cheeks and a media-day forehead; the specular studio forehead, a shadow-side cheek and the underexposed warm-light USAF photo excluded); each sample is the mean of the 15th-85th luma-percentile pixels of the patch.",
+    "tone_samples": [
+      {
+        "photo": "ref-espn-headshot.png",
+        "where": "forehead, centre",
+        "light": "studio flash (specular)",
+        "hex": "#f2af9b",
+        "in_average": false
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "where": "upper cheek above the beard, image-left (his right)",
+        "light": "studio flash",
+        "hex": "#e8aa93",
+        "in_average": true
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "where": "upper cheek above the beard, image-right (his left)",
+        "light": "studio flash",
+        "hex": "#e4a68e",
+        "in_average": true
+      },
+      {
+        "photo": "ref-cageside-ufc329-mediaday-2026-07.jpg",
+        "where": "upper right cheek",
+        "light": "even media-day light",
+        "hex": "#e5ada3",
+        "in_average": true
+      },
+      {
+        "photo": "ref-cageside-ufc329-mediaday-2026-07.jpg",
+        "where": "forehead",
+        "light": "even media-day light",
+        "hex": "#eaaea3",
+        "in_average": true
+      },
+      {
+        "photo": "ref-espn-stance-right.png",
+        "where": "upper cheek, image-left",
+        "light": "studio flash (warmer grade)",
+        "hex": "#db8e6a",
+        "in_average": true
+      },
+      {
+        "photo": "ref-espn-stance-right.png",
+        "where": "upper cheek, image-right (shadow side)",
+        "light": "studio flash, shadow",
+        "hex": "#c67d5d",
+        "in_average": false
+      },
+      {
+        "photo": "commons-2024-12-03-usaf-full.jpg",
+        "where": "right cheek",
+        "light": "dim warm indoor light (underexposed)",
+        "hex": "#965e4b",
+        "in_average": false
+      },
+      {
+        "photo": "commons-2024-12-03-usaf-full.jpg",
+        "where": "forehead",
+        "light": "dim warm indoor light (underexposed)",
+        "hex": "#9f6655",
+        "in_average": false
+      }
+    ],
+    "body_sample": {
+      "photo": "ref-espn-stance-right.png",
+      "where": "abdomen (studio)",
+      "hex": "#c3947f"
+    },
+    "tone_note": "Fair skin with a pink-peach flush, redder on the cheeks, nose and chest.",
+    "undertone": "Warm-pink (ruddy).",
+    "freckles_marks": "Light freckles on the shoulders, upper back and arms; medium-density reddish-brown hair on the chest, sternum and a line down the abdomen, light hair on arms and legs."
+  },
+  "body": {
+    "build": "Tall, long-limbed and lean for a bantamweight (180 cm); wiry rather than muscular-bulky.",
+    "body_fat": "lean",
+    "body_fat_note": "Abs and obliques visible but softer edges than the most shredded bantamweights; ribs and serratus show when he stretches (July 2026 weigh-in).",
+    "shoulders": "Moderate width for his height, sloping slightly; deltoids lean.",
+    "chest": "Flat, lean pectorals with chest hair.",
+    "arms": "Long and lean with visible forearm veins; reach (178 cm) slightly shorter than height.",
+    "waist": "Narrow; little taper because the shoulders are not wide.",
+    "legs_calves": "Long, lean legs; thighs and calves slim and wiry.",
+    "posture": "Upright and slightly stiff in studio shots, head carried a little forward, shoulders relaxed and slightly rounded; arms hang straight close to the body.",
+    "notable": "Strongest cues: ginger beard under darker brown hair, tall lined forehead, long narrow face and nose, and a tall, slim, long-limbed frame with chest hair and tattoos on the right inner biceps, both shins and the back."
+  },
+  "stance_and_guard": {
+    "stance": "Switch (fighters.json): fights from both orthodox and southpaw.",
+    "observed": "2022 fight photo (orthodox at that moment): long left jab fully extended, right glove pressed against the right cheek, chin tucked behind the lead shoulder, torso bladed. Studio: weight even, arms hanging straight.",
+    "animation_hint": "Tall bladed stance with a long lead arm reaching or pawing and the rear glove high, pinned at the cheek; should switch between orthodox and southpaw during a fight. Use his length: longer stance and longer straight strikes than the shorter bantamweights."
+  },
+  "tattoos": [
+    {
+      "where": "Right upper arm, inner side of the biceps facing the torso",
+      "description": "Traditional-style black-and-grey bird of prey (head and wing feathers) with a small red accent.",
+      "size": "about 15 x 7 cm"
+    },
+    {
+      "where": "Back, wrapping onto both sides of the ribcage/lats",
+      "description": "Large black-and-grey piece with what look like mountain, tree or landscape forms; seen on the left side in 2022 and on the right side in July 2026, so it is a large back piece. The full design was not seen (no back-view photo).",
+      "size": "large, most of the upper back and both lats"
+    },
+    {
+      "where": "Right shin, front and outer side",
+      "description": "Anchor hanging from a rope, black and grey with small red accents at the flukes.",
+      "size": "about 18 x 6 cm"
+    },
+    {
+      "where": "Left shin, outer side",
+      "description": "Red boxing glove hanging by its laces from a nail.",
+      "size": "about 15 x 6 cm"
+    }
   ],
-  "colour_note": "Ginger / copper-red, much redder and lighter than the head hair. The single biggest likeness cue.",
-  "density": "Dense on the chin, moustache and jaw; full but a little lighter on the upper cheeks; natural low cheek line.",
-  "shape": "Short full beard about 1-1.5 cm, kept tidy, rounded at the chin, moustache connected and covering the top of the upper lip; neckline under the jaw. Same style in 2019, 2024 and July 2026."
- },
- "skin": {
-  "tone_hex": "#e4a590",
-  "tone_hex_method": "Plain RGB mean of the samples marked in_average (well-lit cheeks and a media-day forehead; the specular studio forehead, a shadow-side cheek and the underexposed warm-light USAF photo excluded); each sample is the mean of the 15th-85th luma-percentile pixels of the patch.",
-  "tone_samples": [
-   {
-    "photo": "ref-espn-headshot.png",
-    "where": "forehead, centre",
-    "light": "studio flash (specular)",
-    "hex": "#f2af9b",
-    "in_average": false
-   },
-   {
-    "photo": "ref-espn-headshot.png",
-    "where": "upper cheek above the beard, image-left (his right)",
-    "light": "studio flash",
-    "hex": "#e8aa93",
-    "in_average": true
-   },
-   {
-    "photo": "ref-espn-headshot.png",
-    "where": "upper cheek above the beard, image-right (his left)",
-    "light": "studio flash",
-    "hex": "#e4a68e",
-    "in_average": true
-   },
-   {
-    "photo": "ref-cageside-ufc329-mediaday-2026-07.jpg",
-    "where": "upper right cheek",
-    "light": "even media-day light",
-    "hex": "#e5ada3",
-    "in_average": true
-   },
-   {
-    "photo": "ref-cageside-ufc329-mediaday-2026-07.jpg",
-    "where": "forehead",
-    "light": "even media-day light",
-    "hex": "#eaaea3",
-    "in_average": true
-   },
-   {
-    "photo": "ref-espn-stance-right.png",
-    "where": "upper cheek, image-left",
-    "light": "studio flash (warmer grade)",
-    "hex": "#db8e6a",
-    "in_average": true
-   },
-   {
-    "photo": "ref-espn-stance-right.png",
-    "where": "upper cheek, image-right (shadow side)",
-    "light": "studio flash, shadow",
-    "hex": "#c67d5d",
-    "in_average": false
-   },
-   {
-    "photo": "commons-2024-12-03-usaf-full.jpg",
-    "where": "right cheek",
-    "light": "dim warm indoor light (underexposed)",
-    "hex": "#965e4b",
-    "in_average": false
-   },
-   {
-    "photo": "commons-2024-12-03-usaf-full.jpg",
-    "where": "forehead",
-    "light": "dim warm indoor light (underexposed)",
-    "hex": "#9f6655",
-    "in_average": false
-   }
-  ],
-  "body_sample": {
-   "photo": "ref-espn-stance-right.png",
-   "where": "abdomen (studio)",
-   "hex": "#c3947f"
+  "kit": {
+    "fight_shorts_recent": "Black UFC Venum kits: the 2024-25 black kit with grey scale/wave pattern and crypto.com logo (stance-left), and an older black kit with grey and white slash stripes and SANDHAGEN lettering on the left leg (stance-right). Black Venum shorts at the July 2026 weigh-in.",
+    "gloves": "Black UFC gloves.",
+    "weigh_in_media": "Long dark cord necklace with a square gold pendant (July 2026), light wristband; striped navy-and-white polo and a gold watch at media day.",
+    "colours": [
+      "#111111 black",
+      "#5a5a5a dark grey",
+      "#ffffff white"
+    ]
   },
-  "tone_note": "Fair skin with a pink-peach flush, redder on the cheeks, nose and chest.",
-  "undertone": "Warm-pink (ruddy).",
-  "freckles_marks": "Light freckles on the shoulders, upper back and arms; medium-density reddish-brown hair on the chest, sternum and a line down the abdomen, light hair on arms and legs."
- },
- "body": {
-  "build": "Tall, long-limbed and lean for a bantamweight (180 cm); wiry rather than muscular-bulky.",
-  "body_fat": "lean",
-  "body_fat_note": "Abs and obliques visible but softer edges than the most shredded bantamweights; ribs and serratus show when he stretches (July 2026 weigh-in).",
-  "shoulders": "Moderate width for his height, sloping slightly; deltoids lean.",
-  "chest": "Flat, lean pectorals with chest hair.",
-  "arms": "Long and lean with visible forearm veins; reach (178 cm) slightly shorter than height.",
-  "waist": "Narrow; little taper because the shoulders are not wide.",
-  "legs_calves": "Long, lean legs; thighs and calves slim and wiry.",
-  "posture": "Upright and slightly stiff in studio shots, head carried a little forward, shoulders relaxed and slightly rounded; arms hang straight close to the body.",
-  "notable": "Strongest cues: ginger beard under darker brown hair, tall lined forehead, long narrow face and nose, and a tall, slim, long-limbed frame with chest hair and tattoos on the right inner biceps, both shins and the back."
- },
- "stance_and_guard": {
-  "stance": "Switch (fighters.json): fights from both orthodox and southpaw.",
-  "observed": "2022 fight photo (orthodox at that moment): long left jab fully extended, right glove pressed against the right cheek, chin tucked behind the lead shoulder, torso bladed. Studio: weight even, arms hanging straight.",
-  "animation_hint": "Tall bladed stance with a long lead arm reaching or pawing and the rear glove high, pinned at the cheek; should switch between orthodox and southpaw during a fight. Use his length: longer stance and longer straight strikes than the shorter bantamweights."
- },
- "tattoos": [
-  {
-   "where": "Right upper arm, inner side of the biceps facing the torso",
-   "description": "Traditional-style black-and-grey bird of prey (head and wing feathers) with a small red accent.",
-   "size": "about 15 x 7 cm"
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.14,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.4,
+    "macro/weightDownM": 0.3,
+    "macro/heightUpM": 0.04,
+    "macro/proportionsUpM": 0.5,
+    "head/head-oval": 0.45,
+    "head/head-scale-vert-incr": 0.2,
+    "head/head-scale-horiz-decr": 0.15,
+    "head/head-fat-decr": 0.4,
+    "forehead/forehead-scale-vert-incr": 0.25,
+    "eyebrows/eyebrows-angle-down": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.1,
+    "eyes/l-eye-height2-decr": 0.1,
+    "eyes/r-eye-height2-decr": 0.1,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15,
+    "eyes/l-eye-corner1-down": 0.1,
+    "eyes/r-eye-corner1-down": 0.1,
+    "nose/nose-scale-vert-incr": 0.3,
+    "nose/nose-width1-decr": 0.15,
+    "nose/nose-point-down": 0.15,
+    "nose/nose-point-width-incr": 0.05,
+    "nose/nose-scale-depth-incr": 0.15,
+    "mouth/mouth-upperlip-volume-decr": 0.25,
+    "mouth/mouth-scale-horiz-decr": 0.05,
+    "chin/chin-width-decr": 0.1,
+    "chin/chin-height-incr": 0.1,
+    "cheek/l-cheek-volume-decr": 0.3,
+    "cheek/r-cheek-volume-decr": 0.3,
+    "cheek/l-cheek-bones-incr": 0.1,
+    "cheek/r-cheek-bones-incr": 0.1,
+    "neck/neck-scale-vert-incr": 0.1,
+    "neck/neck-scale-horiz-incr": 0.1,
+    "torso/torso-vshape-incr": 0.1,
+    "torso/measure-waist-circ-decr": 0.3,
+    "torso/measure-hips-circ-decr": 0.15,
+    "buttocks/buttocks-volume-decr": 0.1
   },
-  {
-   "where": "Back, wrapping onto both sides of the ribcage/lats",
-   "description": "Large black-and-grey piece with what look like mountain, tree or landscape forms; seen on the left side in 2022 and on the right side in July 2026, so it is a large back piece. The full design was not seen (no back-view photo).",
-   "size": "large, most of the upper back and both lats"
+  "morphs_height_note": "macro/heightUpM 0.04 from the research/assets.md male fit heightUpM = 2 * (H - 1.785 m) / 0.875 with H = 1.803 m; drop it if the avatar code scales to the tale of the tape directly. ageOldM = (34 - 25) / 65. eyebrows-angle-up/down are used here to mean the outer end of the brow goes up/down; flip if the target does the opposite. The beard shell should add the lower-face fullness; do not widen the jaw morphs for it.",
+  "morphs_if_available": {
+    "note": "Ear targets are not in assets/embed/mh-manifest.json. If added: ears/l-ear-scale-incr and ears/r-ear-scale-incr about 0.1, ears/l-ear-rot-forward and ears/r-ear-rot-forward about 0.15. No cauliflower."
   },
-  {
-   "where": "Right shin, front and outer side",
-   "description": "Anchor hanging from a rope, black and grey with small red accents at the flukes.",
-   "size": "about 18 x 6 cm"
+  "render_hints": {
+    "iris": "brownlight (hazel/olive); green at low strength is the alternative",
+    "skin_base": "mh-skin-young_caucasian_male tinted toward #e4a590, extra pink-red on cheeks, nose and upper chest, light freckles on the shoulders",
+    "eyebrows": "eyebrow001 tinted #5e3a2c, gently arched with the outer ends sloping down",
+    "hair": "short02 with the back and sides tapered short and about 5-6 cm on top swept up and to his left, tinted #34241c",
+    "beard": "short full-beard texture or shell #9f624c (ginger/copper), clearly redder than the hair; moustache covering the upper lip line"
   },
-  {
-   "where": "Left shin, outer side",
-   "description": "Red boxing glove hanging by its laces from a nail.",
-   "size": "about 15 x 6 cm"
+  "notes": "Confidence: high for beard colour, hair, eyes, forehead, nose and build (clear studio photos, July 2026 photos and two freely licensed photos). Medium for jaw and chin shape, which are always under the beard. Tattoo sides were checked across photos: biceps bird on the right arm, anchor on the right shin, glove on the left shin, back piece visible from both sides. Watch for: (1) ginger-copper beard against darker brown hair; (2) tall forehead with horizontal lines; (3) long narrow face, long straight nose; (4) 180 cm and slim: he should read as the tallest, lankiest of these bantamweights, not muscular; (5) fair, ruddy skin with chest hair.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 0.95,
+    "depth": 1.15,
+    "crouch": 0.3,
+    "lean": 0.15,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 50,
+    "weight_front": 0.45,
+    "bladed": 0.65,
+    "guard": {
+      "style": "standard",
+      "height": 0.65,
+      "lead_reach": 0.45,
+      "lead_height": 0.6,
+      "lead_width": 0.0,
+      "rear_height": 0.7,
+      "rear_tuck": 0.85,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.55,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.75,
+      "rate": 1.2
+    },
+    "switch_per_min": 3.0,
+    "feints": 0.6,
+    "hand_fighting": 0.25,
+    "posture": "closed",
+    "footwork": [
+      "stance-switch",
+      "in-and-out",
+      "lateral",
+      "circling"
+    ],
+    "notes": "Rangy switch-stance mover: constant stance changes, bouncy in-and-out footwork, kicks and knees from range.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/cory-sandhagen.json where present) and the reference photos in assets/reference/cory-sandhagen/ (ref-zuffa-sandhagen-song-fight-2022-09-17.jpg: rear glove held high at the cheek, bladed shoulders). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
   }
- ],
- "kit": {
-  "fight_shorts_recent": "Black UFC Venum kits: the 2024-25 black kit with grey scale/wave pattern and crypto.com logo (stance-left), and an older black kit with grey and white slash stripes and SANDHAGEN lettering on the left leg (stance-right). Black Venum shorts at the July 2026 weigh-in.",
-  "gloves": "Black UFC gloves.",
-  "weigh_in_media": "Long dark cord necklace with a square gold pendant (July 2026), light wristband; striped navy-and-white polo and a gold watch at media day.",
-  "colours": [
-   "#111111 black",
-   "#5a5a5a dark grey",
-   "#ffffff white"
-  ]
- },
- "morphs": {
-  "macro/sexM": 1.0,
-  "macro/ageOldM": 0.14,
-  "macro/ageYoungM": 0.0,
-  "macro/muscleUpM": 0.4,
-  "macro/weightDownM": 0.3,
-  "macro/heightUpM": 0.04,
-  "macro/proportionsUpM": 0.5,
-  "head/head-oval": 0.45,
-  "head/head-scale-vert-incr": 0.2,
-  "head/head-scale-horiz-decr": 0.15,
-  "head/head-fat-decr": 0.4,
-  "forehead/forehead-scale-vert-incr": 0.25,
-  "eyebrows/eyebrows-angle-down": 0.15,
-  "eyebrows/eyebrows-trans-forward": 0.1,
-  "eyes/l-eye-height2-decr": 0.1,
-  "eyes/r-eye-height2-decr": 0.1,
-  "eyes/l-eye-bag-incr": 0.15,
-  "eyes/r-eye-bag-incr": 0.15,
-  "eyes/l-eye-corner1-down": 0.1,
-  "eyes/r-eye-corner1-down": 0.1,
-  "nose/nose-scale-vert-incr": 0.3,
-  "nose/nose-width1-decr": 0.15,
-  "nose/nose-point-down": 0.15,
-  "nose/nose-point-width-incr": 0.05,
-  "nose/nose-scale-depth-incr": 0.15,
-  "mouth/mouth-upperlip-volume-decr": 0.25,
-  "mouth/mouth-scale-horiz-decr": 0.05,
-  "chin/chin-width-decr": 0.1,
-  "chin/chin-height-incr": 0.1,
-  "cheek/l-cheek-volume-decr": 0.3,
-  "cheek/r-cheek-volume-decr": 0.3,
-  "cheek/l-cheek-bones-incr": 0.1,
-  "cheek/r-cheek-bones-incr": 0.1,
-  "neck/neck-scale-vert-incr": 0.1,
-  "neck/neck-scale-horiz-incr": 0.1,
-  "torso/torso-vshape-incr": 0.1,
-  "torso/measure-waist-circ-decr": 0.3,
-  "torso/measure-hips-circ-decr": 0.15,
-  "buttocks/buttocks-volume-decr": 0.1
- },
- "morphs_height_note": "macro/heightUpM 0.04 from the research/assets.md male fit heightUpM = 2 * (H - 1.785 m) / 0.875 with H = 1.803 m; drop it if the avatar code scales to the tale of the tape directly. ageOldM = (34 - 25) / 65. eyebrows-angle-up/down are used here to mean the outer end of the brow goes up/down; flip if the target does the opposite. The beard shell should add the lower-face fullness; do not widen the jaw morphs for it.",
- "morphs_if_available": {
-  "note": "Ear targets are not in assets/embed/mh-manifest.json. If added: ears/l-ear-scale-incr and ears/r-ear-scale-incr about 0.1, ears/l-ear-rot-forward and ears/r-ear-rot-forward about 0.15. No cauliflower."
- },
- "render_hints": {
-  "iris": "brownlight (hazel/olive); green at low strength is the alternative",
-  "skin_base": "mh-skin-young_caucasian_male tinted toward #e4a590, extra pink-red on cheeks, nose and upper chest, light freckles on the shoulders",
-  "eyebrows": "eyebrow001 tinted #5e3a2c, gently arched with the outer ends sloping down",
-  "hair": "short02 with the back and sides tapered short and about 5-6 cm on top swept up and to his left, tinted #34241c",
-  "beard": "short full-beard texture or shell #9f624c (ginger/copper), clearly redder than the hair; moustache covering the upper lip line"
- },
- "notes": "Confidence: high for beard colour, hair, eyes, forehead, nose and build (clear studio photos, July 2026 photos and two freely licensed photos). Medium for jaw and chin shape, which are always under the beard. Tattoo sides were checked across photos: biceps bird on the right arm, anchor on the right shin, glove on the left shin, back piece visible from both sides. Watch for: (1) ginger-copper beard against darker brown hair; (2) tall forehead with horizontal lines; (3) long narrow face, long straight nose; (4) 180 cm and slim: he should read as the tallest, lankiest of these bantamweights, not muscular; (5) fair, ruddy skin with chest hair."
 }

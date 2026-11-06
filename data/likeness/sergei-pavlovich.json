@@ -262,5 +262,47 @@
     "ears/l-ear-rot-forward": 0.2,
     "ears/r-ear-rot-forward": 0.2
   },
-  "notes": "Confidence: high for hair, skin, no tattoos and build; medium for face proportions (one sharp frontal, one sharp three-quarter, profiles only from video stills); low-to-medium for exact morph values. Watch for: (1) Broad, full face with a wide, soft jaw and a neck as wide as the jaw; a narrow or angular face will look wrong. (2) Small, slightly hooded hazel eyes and thin, sparse light-brown brows. (3) Fair, ruddy skin: do not tan it. (4) The arms are much longer than his height suggests (reach 213 cm); make sure the reach-driven arm stretch is applied. (5) Southpaw: the right side leads, opposite to most of the roster. macro/ageOldM 0.138 follows avatar3d.js (34-25)/65; heightUpM 0.27 matches the 190.5 cm Ankalaev sheet."
+  "notes": "Confidence: high for hair, skin, no tattoos and build; medium for face proportions (one sharp frontal, one sharp three-quarter, profiles only from video stills); low-to-medium for exact morph values. Watch for: (1) Broad, full face with a wide, soft jaw and a neck as wide as the jaw; a narrow or angular face will look wrong. (2) Small, slightly hooded hazel eyes and thin, sparse light-brown brows. (3) Fair, ruddy skin: do not tan it. (4) The arms are much longer than his height suggests (reach 213 cm); make sure the reach-driven arm stretch is applied. (5) Southpaw: the right side leads, opposite to most of the roster. macro/ageOldM 0.138 follows avatar3d.js (34-25)/65; heightUpM 0.27 matches the 190.5 cm Ankalaev sheet.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.1,
+    "depth": 1.0,
+    "crouch": 0.3,
+    "lean": 0.25,
+    "lead_foot_deg": 12,
+    "rear_foot_deg": 45,
+    "weight_front": 0.55,
+    "bladed": 0.45,
+    "guard": {
+      "style": "standard",
+      "height": 0.55,
+      "lead_reach": 0.35,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.8,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.2,
+      "chin_tuck": 0.55
+    },
+    "bounce": {
+      "amp": 0.25,
+      "rate": 0.85
+    },
+    "switch_per_min": 0,
+    "feints": 0.2,
+    "hand_fighting": 0.15,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "flat-footed"
+    ],
+    "notes": "Heavyweight power puncher: plants and walks forward flat-footed, short straight right hands and hooks, little head movement.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/sergei-pavlovich.json where present) and the reference photos in assets/reference/sergei-pavlovich/ (ref-getty-shanghai-fight-2025-08-23.jpg: chin tucked behind the shoulder in the exchange). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }

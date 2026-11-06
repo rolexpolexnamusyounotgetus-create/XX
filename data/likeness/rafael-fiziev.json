@@ -248,5 +248,47 @@
     "beard": "long full beard 6-9 cm at the chin, colour #63432f; it defines the lower half of the head",
     "accessories": "optional weigh-in look: grey astrakhan papakha and a long dark bead necklace"
   },
-  "notes": "Confidence: high for hair, beard, eye colour, build and the lack of tattoos; medium for face proportions (the beard hides the jaw and chin); low-to-medium for exact morph values. 11 photos (1 Commons CC BY 3.0 phone-video frame from 2023, 10 reference-only, 6 of them from 2026). Three right-side profiles exist (Baku 2025, Baku 2026, UFC 325 weigh-ins), all with hat or tied hair; no left profile. What to watch: (1) His look changes a lot: buzz cut and short beard in 2023, long loose ringlets and a long beard in 2026. Use the 2026 look (studio cutouts, June 2026). (2) The long curly hair and long beard are the recognition cues; a short-hair proxy will not read as him. (3) Broad face, heavy brow, deep-set light blue eyes and a wide nose. (4) Short, thick, muscular frame with long arms (reach 7.6 cm over height); the bulkiest upper body in this batch. (5) No tattoos at all. (6) Switch stance. Macro values: ageOldM uses avatar3d.js's (age-25)/65 mapping (age 33). heightDownM 0.05 is a guess for 172.7 cm; scale to the official height. MakeHuman l-/r- morphs refer to the character's own left and right."
+  "notes": "Confidence: high for hair, beard, eye colour, build and the lack of tattoos; medium for face proportions (the beard hides the jaw and chin); low-to-medium for exact morph values. 11 photos (1 Commons CC BY 3.0 phone-video frame from 2023, 10 reference-only, 6 of them from 2026). Three right-side profiles exist (Baku 2025, Baku 2026, UFC 325 weigh-ins), all with hat or tied hair; no left profile. What to watch: (1) His look changes a lot: buzz cut and short beard in 2023, long loose ringlets and a long beard in 2026. Use the 2026 look (studio cutouts, June 2026). (2) The long curly hair and long beard are the recognition cues; a short-hair proxy will not read as him. (3) Broad face, heavy brow, deep-set light blue eyes and a wide nose. (4) Short, thick, muscular frame with long arms (reach 7.6 cm over height); the bulkiest upper body in this batch. (5) No tattoos at all. (6) Switch stance. Macro values: ageOldM uses avatar3d.js's (age-25)/65 mapping (age 33). heightDownM 0.05 is a guess for 172.7 cm; scale to the official height. MakeHuman l-/r- morphs refer to the character's own left and right.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.0,
+    "depth": 1.05,
+    "crouch": 0.2,
+    "lean": 0.05,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 45,
+    "weight_front": 0.42,
+    "bladed": 0.4,
+    "guard": {
+      "style": "standard",
+      "height": 0.55,
+      "lead_reach": 0.4,
+      "lead_height": 0.5,
+      "lead_width": 0.1,
+      "rear_height": 0.6,
+      "rear_tuck": 0.7,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.4
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.6,
+      "chin_tuck": 0.5
+    },
+    "bounce": {
+      "amp": 0.5,
+      "rate": 1.0
+    },
+    "switch_per_min": 1.0,
+    "feints": 0.5,
+    "hand_fighting": 0.3,
+    "posture": "open",
+    "footwork": [
+      "lateral",
+      "in-and-out"
+    ],
+    "notes": "Muay Thai striker: upright, weight back over the rear leg ready to kick, slips and rolls behind a medium guard, spinning attacks.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/rafael-fiziev.json where present) and the reference photos in assets/reference/rafael-fiziev/ (ref-espn-stance-left.png / ref-espn-stance-right.png (posed): used for posture and build only). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }

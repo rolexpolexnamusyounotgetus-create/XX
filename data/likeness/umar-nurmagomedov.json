@@ -274,5 +274,48 @@
     "ears/l-ear-rot-forward": 0.2,
     "ears/r-ear-rot-forward": 0.2
   },
-  "notes": "Confidence: high for hair, beard, skin range, no tattoos and build; medium-high for face proportions (sharp frontal, two clean three-quarters, one profile video still); low-to-medium for exact morph values. Watch for: (1) High, prominent cheekbones with hollow cheeks and a tapering lower face are the key structure. (2) Deep-set, hooded dark eyes under thick, low, straight brows give the stern look; he smiles widely when relaxed. (3) The beard is goatee-heavy: dense chin and moustache, thinner along the jaw, bare cheeks; it is not a full beard. (4) Buzz cut, so render as scalp tint, no hair proxy. (5) Cauliflower ears on both sides. (6) Very lean bantamweight: deep abs, narrow waist. macro/ageOldM 0.077 follows avatar3d.js (30-25)/65; heightDownM 0.18 matches the 172.7 cm Chandler sheet."
+  "notes": "Confidence: high for hair, beard, skin range, no tattoos and build; medium-high for face proportions (sharp frontal, two clean three-quarters, one profile video still); low-to-medium for exact morph values. Watch for: (1) High, prominent cheekbones with hollow cheeks and a tapering lower face are the key structure. (2) Deep-set, hooded dark eyes under thick, low, straight brows give the stern look; he smiles widely when relaxed. (3) The beard is goatee-heavy: dense chin and moustache, thinner along the jaw, bare cheeks; it is not a full beard. (4) Buzz cut, so render as scalp tint, no hair proxy. (5) Cauliflower ears on both sides. (6) Very lean bantamweight: deep abs, narrow waist. macro/ageOldM 0.077 follows avatar3d.js (30-25)/65; heightDownM 0.18 matches the 172.7 cm Chandler sheet.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.05,
+    "depth": 1.1,
+    "crouch": 0.25,
+    "lean": 0.15,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 48,
+    "weight_front": 0.45,
+    "bladed": 0.6,
+    "guard": {
+      "style": "standard",
+      "height": 0.6,
+      "lead_reach": 0.4,
+      "lead_height": 0.6,
+      "lead_width": 0.0,
+      "rear_height": 0.65,
+      "rear_tuck": 0.85,
+      "elbow_flare": 0.15,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.4,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.6,
+      "rate": 1.1
+    },
+    "switch_per_min": 1.0,
+    "feints": 0.5,
+    "hand_fighting": 0.25,
+    "posture": "closed",
+    "footwork": [
+      "in-and-out",
+      "lateral",
+      "stance-switch"
+    ],
+    "notes": "Upright kicker-wrestler: long range kicks from both stances, quick in-and-out movement, level-change threat behind the strikes.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/umar-nurmagomedov.json where present) and the reference photos in assets/reference/umar-nurmagomedov/ (ref-getty-ufc324-fight-2026-01-24-a.jpg: upright posture, gloves at the cheeks while a high kick lands). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }

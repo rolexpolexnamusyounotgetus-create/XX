@@ -264,6 +264,14 @@ Findings from verified research that the next engine versions must use. Each lin
 - realism_sens: VERIFIED (~20:00 UTC): INCLUDE as capability: FightEngine.sensitivity (tornado data, CRN),
   tools/realism.js, the mlrates cache fix. The division/format factor layer stays OFF (no train gain).
 - dynamics: builder relaunched after the usage cap (use the corrected recipe).
+- blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
+  replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
+  (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the
+  simulator from either stack changes log loss by only +0.0005 to +0.0009. Real corner-swap guard, gated-stacker
+  fold fix and cache-key fixes added; blindtest_stack.json re-exported with an open-trained `model_open` block
+  (fed-open control: a close-trained stack fed an opener costs +0.0102 [+0.0057, +0.0145]). Gaps: newcomers (the
+  no-line stack is overconfident on debut-heavy bouts), and the forward ledger must choose model vs model_open by
+  how close to the bell the line was captured.
 - ratings (VERIFIED ~20:55 UTC, research/model_ratings.md; two tiny defects fixed, four write-up claims corrected):
   round-level WHR is the best single system on 2024-25, 0.6170 [0.6015, 0.6332] (Elo 0.6769); stack (WHR rounds +
   Glicko-2 + dims) 0.6112; ratings_plus 0.6043 (keep OFF the page: negative weights on correlated Elo logits).

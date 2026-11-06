@@ -285,5 +285,47 @@
     "beard": "full beard shell 30-40 mm at the chin, black #141011, tight curl, cheek line about level with the nose tip",
     "body_hair": "dense dark hair on chest, abdomen, forearms and legs if a body-hair layer exists"
   },
-  "notes": "Confidence: high for hair, beard, eye colour, skin range, build and the absence of tattoos; medium for face proportions; low-to-medium for exact morph values. 8 photos: 1 freely licensed (Commons, December 2023, CC BY-SA 4.0), 7 reference-only, 4 of them from 2026 (June 2026 studio headshot and stance, June 2026 weigh-in and fight). Two right profiles (May 2025 with sunglasses, June 2026 small) and no sharp left profile. What to watch: (1) The likeness rests on the long face with a tall, receding-hairline forehead, the long straight nose and the very dense black full beard about 3-4 cm at the chin; a short or sparse beard, or a full head of hair, stops it looking like him. (2) Keep the hair as a near-skin fade with a very short dark top; no hair proxy. (3) Eyes are medium brown and slightly hooded under a moderate brow; avoid wide-open default eyes. (4) Body: lean and long-armed with visible abs, not bulky; dense dark body hair on the chest, arms and legs is a strong cue if a body-hair layer exists. (5) Ears: close to the head with thickened folds (mild cauliflower), not protruding. Macro values: ageOldM uses MakeHuman's 25-years-at-0.5, 90-years-at-1.0 mapping (age 38). heightUpM 0.1 is the same estimate used for other 180.3 cm fighters; the avatar scales to the exact height anyway. MakeHuman l-/r- morphs refer to the character's own left and right; values here are symmetric except the ear depth."
+  "notes": "Confidence: high for hair, beard, eye colour, skin range, build and the absence of tattoos; medium for face proportions; low-to-medium for exact morph values. 8 photos: 1 freely licensed (Commons, December 2023, CC BY-SA 4.0), 7 reference-only, 4 of them from 2026 (June 2026 studio headshot and stance, June 2026 weigh-in and fight). Two right profiles (May 2025 with sunglasses, June 2026 small) and no sharp left profile. What to watch: (1) The likeness rests on the long face with a tall, receding-hairline forehead, the long straight nose and the very dense black full beard about 3-4 cm at the chin; a short or sparse beard, or a full head of hair, stops it looking like him. (2) Keep the hair as a near-skin fade with a very short dark top; no hair proxy. (3) Eyes are medium brown and slightly hooded under a moderate brow; avoid wide-open default eyes. (4) Body: lean and long-armed with visible abs, not bulky; dense dark body hair on the chest, arms and legs is a strong cue if a body-hair layer exists. (5) Ears: close to the head with thickened folds (mild cauliflower), not protruding. Macro values: ageOldM uses MakeHuman's 25-years-at-0.5, 90-years-at-1.0 mapping (age 38). heightUpM 0.1 is the same estimate used for other 180.3 cm fighters; the avatar scales to the exact height anyway. MakeHuman l-/r- morphs refer to the character's own left and right; values here are symmetric except the ear depth.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.05,
+    "depth": 1.0,
+    "crouch": 0.4,
+    "lean": 0.3,
+    "lead_foot_deg": 12,
+    "rear_foot_deg": 45,
+    "weight_front": 0.55,
+    "bladed": 0.45,
+    "guard": {
+      "style": "high",
+      "height": 0.7,
+      "lead_reach": 0.3,
+      "lead_height": 0.65,
+      "lead_width": 0.0,
+      "rear_height": 0.7,
+      "rear_tuck": 0.9,
+      "elbow_flare": 0.15,
+      "shoulder_roll": 0.7
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.45,
+      "chin_tuck": 0.7
+    },
+    "bounce": {
+      "amp": 0.45,
+      "rate": 1.05
+    },
+    "switch_per_min": 0.3,
+    "feints": 0.35,
+    "hand_fighting": 0.35,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "cage-cutting"
+    ],
+    "notes": "Volume pressure wrestle-boxer: high tight guard, constant forward pressure and cage-cutting, jab-to-takedown entries.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/belal-muhammad.json where present) and the reference photos in assets/reference/belal-muhammad/ (espn-stance-left.png / espn-stance-right.png (posed): used for posture and build only). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }

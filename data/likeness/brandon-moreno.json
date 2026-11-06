@@ -312,5 +312,47 @@
     "ears/r-ear-rot-forward": 0.15
   },
   "morphs_unavailable": "Cauliflower ear cannot be made with a MakeHuman target: sculpt or normal-map both ears (right a little worse). No target for the skin fade, crow's feet or smile folds (use the middle-age skin texture or a normal map).",
-  "notes": "Confidence: high for hair, clean-shaven face, ears, tattoos and build; medium-high for face proportions (studio frontal, two right profiles and a three-quarter); medium for morph values; low for guard. Watch for: (1) recognition cues are the high cheekbones with hollow cheeks, the low straight dark brows, slightly narrow almond eyes with crow's feet, the rounded nose tip and the cauliflower ears; (2) he is clean-shaven now; do not give him the 2021 moustache; (3) tattoo sides: colour serpent on the LEFT chest, black-and-grey on the RIGHT shoulder, upper arm and forearm, sword on the LEFT forearm; (4) lean but softer-edged than Taira or Van, with longer legs than Van; (5) macro/heightDownM 0.19 comes from heightUpM = 2 * (H - 1.785 m) / 0.875 (research/assets.md); some other 170 cm sheets use 0.27, so measure the mesh and nudge it to 170 cm. ageOldM 0.122 follows avatar3d.js (32.9 - 25) / 65. The ethnicity_fit block is opt-in for avatar3d.js; drop it if the orchestrator wants the neutral thirds kept."
+  "notes": "Confidence: high for hair, clean-shaven face, ears, tattoos and build; medium-high for face proportions (studio frontal, two right profiles and a three-quarter); medium for morph values; low for guard. Watch for: (1) recognition cues are the high cheekbones with hollow cheeks, the low straight dark brows, slightly narrow almond eyes with crow's feet, the rounded nose tip and the cauliflower ears; (2) he is clean-shaven now; do not give him the 2021 moustache; (3) tattoo sides: colour serpent on the LEFT chest, black-and-grey on the RIGHT shoulder, upper arm and forearm, sword on the LEFT forearm; (4) lean but softer-edged than Taira or Van, with longer legs than Van; (5) macro/heightDownM 0.19 comes from heightUpM = 2 * (H - 1.785 m) / 0.875 (research/assets.md); some other 170 cm sheets use 0.27, so measure the mesh and nudge it to 170 cm. ageOldM 0.122 follows avatar3d.js (32.9 - 25) / 65. The ethnicity_fit block is opt-in for avatar3d.js; drop it if the orchestrator wants the neutral thirds kept.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.0,
+    "depth": 1.0,
+    "crouch": 0.4,
+    "lean": 0.25,
+    "lead_foot_deg": 12,
+    "rear_foot_deg": 45,
+    "weight_front": 0.5,
+    "bladed": 0.5,
+    "guard": {
+      "style": "standard",
+      "height": 0.6,
+      "lead_reach": 0.35,
+      "lead_height": 0.6,
+      "lead_width": 0.0,
+      "rear_height": 0.65,
+      "rear_tuck": 0.85,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.6
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.65,
+      "chin_tuck": 0.65
+    },
+    "bounce": {
+      "amp": 0.55,
+      "rate": 1.1
+    },
+    "switch_per_min": 0.3,
+    "feints": 0.4,
+    "hand_fighting": 0.25,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "lateral"
+    ],
+    "notes": "Boxing-based pressure: busy hands, lots of head movement behind a standard guard, angles off after combinations.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/brandon-moreno.json where present) and the reference photos in assets/reference/brandon-moreno/ (espn_stance_left.png / espn_stance_right.png (posed): used for posture and build only). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }

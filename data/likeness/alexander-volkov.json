@@ -300,5 +300,47 @@
     "ears/l-ear-lobe-decr": 0.2,
     "ears/r-ear-lobe-decr": 0.2
   },
-  "notes": "Confidence: high for hair states, tattoos, eye colour and build; medium-high for face proportions (good frontal plus both profiles); low-to-medium for exact morph values. Watch for: (1) The long, narrow face is the main likeness cue: keep the long nose, long chin, hollow cheeks and high forehead; a wide or round head stops reading as him. (2) Fight night is braided, slicked-back hair close to the skull, not short hair; a short crop is his 2016-2024 look. (3) Thin lips with slightly down-turned corners and low, straight brows give the stern expression. (4) Tattoo sides are his own: tiger on the RIGHT chest, shoulder and arm (new in 2026), full back piece, red-and-grey piece on the LEFT flank. (5) Very tall and lean: use the full 201 cm and long legs; the body should not look thick. macro/ageOldM 0.2 follows avatar3d.js (38-25)/65; heightUpM 0.5 extrapolates the other sheets' cm-to-slider line (193 cm about 0.32), so scale the mesh to 201 cm if supported."
+  "notes": "Confidence: high for hair states, tattoos, eye colour and build; medium-high for face proportions (good frontal plus both profiles); low-to-medium for exact morph values. Watch for: (1) The long, narrow face is the main likeness cue: keep the long nose, long chin, hollow cheeks and high forehead; a wide or round head stops reading as him. (2) Fight night is braided, slicked-back hair close to the skull, not short hair; a short crop is his 2016-2024 look. (3) Thin lips with slightly down-turned corners and low, straight brows give the stern expression. (4) Tattoo sides are his own: tiger on the RIGHT chest, shoulder and arm (new in 2026), full back piece, red-and-grey piece on the LEFT flank. (5) Very tall and lean: use the full 201 cm and long legs; the body should not look thick. macro/ageOldM 0.2 follows avatar3d.js (38-25)/65; heightUpM 0.5 extrapolates the other sheets' cm-to-slider line (193 cm about 0.32), so scale the mesh to 201 cm if supported.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 0.95,
+    "depth": 1.2,
+    "crouch": 0.15,
+    "lean": 0.05,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 50,
+    "weight_front": 0.42,
+    "bladed": 0.6,
+    "guard": {
+      "style": "long",
+      "height": 0.55,
+      "lead_reach": 0.6,
+      "lead_height": 0.5,
+      "lead_width": 0.1,
+      "rear_height": 0.6,
+      "rear_tuck": 0.75,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.4
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.25,
+      "chin_tuck": 0.45
+    },
+    "bounce": {
+      "amp": 0.35,
+      "rate": 0.9
+    },
+    "switch_per_min": 0.2,
+    "feints": 0.35,
+    "hand_fighting": 0.35,
+    "posture": "closed",
+    "footwork": [
+      "in-and-out",
+      "circling"
+    ],
+    "notes": "Tall range kickboxer: upright, long jab and front kicks, keeps distance with in-and-out steps and circles off the fence.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/alexander-volkov.json where present) and the reference photos in assets/reference/alexander-volkov/ (ref-getty-ufc321/328 fight photos: tall upright frame at range). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }

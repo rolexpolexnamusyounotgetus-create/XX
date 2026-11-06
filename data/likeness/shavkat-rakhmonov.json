@@ -3,7 +3,14 @@
   "name": "Shavkat Rakhmonov",
   "as_of": "2026-11-06",
   "age_at_as_of": 32,
-  "official": { "dob": "1994-10-23", "height_cm": 185.4, "reach_cm": 195.6, "stance": "Orthodox", "division": "Welterweight", "fight_weight_lb": 170 },
+  "official": {
+    "dob": "1994-10-23",
+    "height_cm": 185.4,
+    "reach_cm": 195.6,
+    "stance": "Orthodox",
+    "division": "Welterweight",
+    "fight_weight_lb": 170
+  },
   "photos_used": [
     "espn_headshot.png",
     "espn_stance_left.png",
@@ -65,9 +72,19 @@
   },
   "hair": {
     "style": "Fight week (2023-2024): short blunt crop. Sides and back clipped short (about 1 cm) but not faded to skin; the top is about 3-4 cm, combed forward into a straight, heavy fringe cut level across the forehead. Oct 2025 (off camp): grown out to about 5-6 cm on top, swept to his right with a side part, sides still short.",
-    "length_cm": { "top": 3.5, "sides": 1.0, "back": 1.0, "top_oct_2025": 5.5 },
+    "length_cm": {
+      "top": 3.5,
+      "sides": 1.0,
+      "back": 1.0,
+      "top_oct_2025": 5.5
+    },
     "colour": "Very dark brown to black, no grey visible.",
-    "colour_samples": { "studio_top": "#1a0e0d", "studio_side": "#3e1f1b", "flash_mediaday_top": "#211b13", "indoor_2025_top": "#30271b" },
+    "colour_samples": {
+      "studio_top": "#1a0e0d",
+      "studio_side": "#3e1f1b",
+      "flash_mediaday_top": "#211b13",
+      "indoor_2025_top": "#30271b"
+    },
     "colour_hex": "#2a1c16",
     "hairline": "Straight across and full, no temple recession; usually hidden under the fringe.",
     "texture": "Straight, thick and coarse; the fringe lies flat and spiky at the ends.",
@@ -83,17 +100,72 @@
   },
   "skin": {
     "tone_samples": [
-      { "photo": "espn_headshot.png", "spot": "right cheek", "hex": "#faa48a", "light": "studio, high key" },
-      { "photo": "espn_headshot.png", "spot": "left cheek", "hex": "#faa98d", "light": "studio, high key" },
-      { "photo": "espn_headshot.png", "spot": "forehead", "hex": "#fdb9a1", "light": "studio, high key (near highlight)" },
-      { "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg", "spot": "right cheek", "hex": "#eca383", "light": "on-camera flash" },
-      { "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg", "spot": "left cheek", "hex": "#f0a083", "light": "on-camera flash" },
-      { "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg", "spot": "forehead", "hex": "#f7b394", "light": "on-camera flash" },
-      { "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg", "spot": "right cheek", "hex": "#bf7e69", "light": "soft indoor, slightly underexposed" },
-      { "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg", "spot": "left cheek", "hex": "#c5826c", "light": "soft indoor, slightly underexposed" },
-      { "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg", "spot": "forehead", "hex": "#e79c80", "light": "soft indoor" },
-      { "photo": "ref-cagesidepress-ufc296-mediaday-2023-12-13.jpg", "spot": "right cheek", "hex": "#fcb68d", "light": "warm stage light" },
-      { "photo": "ref-cagesidepress-ufc296-mediaday-2023-12-13.jpg", "spot": "left cheek", "hex": "#f8b088", "light": "warm stage light" }
+      {
+        "photo": "espn_headshot.png",
+        "spot": "right cheek",
+        "hex": "#faa48a",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "spot": "left cheek",
+        "hex": "#faa98d",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "espn_headshot.png",
+        "spot": "forehead",
+        "hex": "#fdb9a1",
+        "light": "studio, high key (near highlight)"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg",
+        "spot": "right cheek",
+        "hex": "#eca383",
+        "light": "on-camera flash"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg",
+        "spot": "left cheek",
+        "hex": "#f0a083",
+        "light": "on-camera flash"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc310-mediaday-2024-12-04.jpg",
+        "spot": "forehead",
+        "hex": "#f7b394",
+        "light": "on-camera flash"
+      },
+      {
+        "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg",
+        "spot": "right cheek",
+        "hex": "#bf7e69",
+        "light": "soft indoor, slightly underexposed"
+      },
+      {
+        "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg",
+        "spot": "left cheek",
+        "hex": "#c5826c",
+        "light": "soft indoor, slightly underexposed"
+      },
+      {
+        "photo": "ref-tengrinews-akorda-award-2025-10-24.jpg",
+        "spot": "forehead",
+        "hex": "#e79c80",
+        "light": "soft indoor"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc296-mediaday-2023-12-13.jpg",
+        "spot": "right cheek",
+        "hex": "#fcb68d",
+        "light": "warm stage light"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc296-mediaday-2023-12-13.jpg",
+        "spot": "left cheek",
+        "hex": "#f8b088",
+        "light": "warm stage light"
+      }
     ],
     "sampling_method": "Median of a 7-13 px box per spot (9x9 in the studio headshot); boxes checked on an overlay sheet to sit on lit cheek or forehead skin, away from stubble and highlights.",
     "tone_average_all": "#eca385",
@@ -119,14 +191,24 @@
     "notable_physique_traits": "Long arms and legs on a lean frame, light chest hair, wide jaw on a medium neck. Silhouette reads tall and wiry, not thick."
   },
   "tattoos": [
-    { "where": "none visible", "description": "None visible on the torso, arms, legs or neck in any photo (studio cutouts front and three-quarter, weigh-ins).", "size": "n/a" }
+    {
+      "where": "none visible",
+      "description": "None visible on the torso, arms, legs or neck in any photo (studio cutouts front and three-quarter, weigh-ins).",
+      "size": "n/a"
+    }
   ],
   "accessories_seen": "Large white/cream fox-fur hat with long fur flaps (weigh-ins, face-offs, post-fight press). A light-blue wristband on one wrist at the UFC 310 ceremonial weigh-in (side unclear).",
   "kit": {
     "typical_shorts": "UFC-issued Venum fight shorts. Dec 2024 studio kit: black with a grey and white tiger-stripe slash pattern, UFC on the waistband, crypto.com on his right thigh, a small yellow tag at the side of his left leg. 2023 studio kit: royal blue and black Venum shorts with RAKHMONOV in yellow. Weigh-ins: plain brown or khaki trunks.",
     "gloves": "Standard black UFC 4 oz gloves.",
     "walkout": "Black or brown Venum fight-week jacket with tiger-stripe pattern and the Kazakhstan flag patch on the sleeve; fur hat.",
-    "shorts_colours_hex": { "black_base": "#16171a", "grey_stripe": "#4a4d52", "white_stripe": "#e9e9e9", "blue_2023": "#1f4f99", "name_yellow": "#f2c418" },
+    "shorts_colours_hex": {
+      "black_base": "#16171a",
+      "grey_stripe": "#4a4d52",
+      "white_stripe": "#e9e9e9",
+      "blue_2023": "#1f4f99",
+      "name_yellow": "#f2c418"
+    },
     "brand_note": "Venum logo visible on the 2023 shorts."
   },
   "morphs": {
@@ -139,25 +221,20 @@
     "macro/heightUpM": 0.2,
     "macro/heightDownM": 0.0,
     "macro/proportionsUpM": 0.5,
-
     "head/head-square": 0.3,
     "head/head-oval": 0.15,
     "head/head-scale-vert-incr": 0.2,
     "head/head-scale-horiz-incr": 0.05,
-
     "forehead/forehead-scale-vert-incr": 0.15,
     "forehead/forehead-trans-backward": 0.1,
-
     "chin/chin-height-incr": 0.3,
     "chin/chin-width-incr": 0.2,
     "chin/chin-bones-incr": 0.3,
     "chin/chin-prominent-decr": 0.1,
-
     "cheek/l-cheek-bones-incr": 0.35,
     "cheek/r-cheek-bones-incr": 0.35,
     "cheek/l-cheek-volume-decr": 0.1,
     "cheek/r-cheek-volume-decr": 0.1,
-
     "eyes/l-eye-height2-decr": 0.35,
     "eyes/r-eye-height2-decr": 0.35,
     "eyes/l-eye-scale-decr": 0.1,
@@ -168,9 +245,7 @@
     "eyes/r-eye-trans-out": 0.1,
     "eyes/l-eye-bag-incr": 0.1,
     "eyes/r-eye-bag-incr": 0.1,
-
     "eyebrows/eyebrows-trans-down": 0.1,
-
     "nose/nose-scale-horiz-incr": 0.25,
     "nose/nose-width1-incr": 0.15,
     "nose/nose-scale-depth-decr": 0.15,
@@ -178,19 +253,15 @@
     "nose/nose-point-width-incr": 0.25,
     "nose/nose-nostrils-width-incr": 0.3,
     "nose/nose-flaring-incr": 0.15,
-
     "mouth/mouth-lowerlip-volume-incr": 0.25,
     "mouth/mouth-upperlip-volume-incr": 0.1,
     "mouth/mouth-cupidsbow-incr": 0.15,
     "mouth/mouth-scale-horiz-incr": 0.05,
     "mouth/mouth-scale-depth-incr": 0.1,
-
     "ears/l-ear-scale-incr": 0.1,
     "ears/r-ear-scale-incr": 0.1,
-
     "neck/neck-scale-vert-incr": 0.1,
     "neck/neck-scale-horiz-incr": 0.05,
-
     "torso/measure-shoulder-dist-incr": 0.15,
     "torso/torso-vshape-incr": 0.15,
     "torso/measure-waist-circ-decr": 0.1,
@@ -208,5 +279,47 @@
     "skin_base": "middleage_asian_male tinted toward #d49072",
     "hair": "short02 tinted #2a1c16, cut to a blunt forward fringe if possible; sides short but not faded to skin"
   },
-  "notes": "Confidence: high for hair, skin, lack of tattoos and overall build; medium for face proportions; low-to-medium for exact morph values. The weak points are the profile (one face-off shot, under the fur hat) and recency: he has been out injured since Dec 2024, and the only 2025-2026 photo is the Oct 2025 award ceremony, where he is clean-shaven, fuller in the face and has longer side-swept hair. For a fight-ready look use the Dec 2024 photos. What to watch: (1) The likeness rests on the long rectangular face, wide jaw and broad cheekbones; a short or round head stops looking like him. (2) Eyes must be narrow with a full upper lid and an inner-corner fold; default MakeHuman eyes are too open and too creased. (3) Nose is broad at the base with a straight, low-to-medium bridge, and the lower lip is full; do not narrow the nose. (4) Blunt straight fringe over a tall forehead is a strong recognition cue in fight week. (5) Body is lean and long-limbed with light chest hair and no tattoos; keep the arms long (+10 cm ape index) and the chest modest. (6) Skin is warm golden-olive; avoid pink. Macro ageOldM 0.108 uses the avatar3d.js mapping (32-25)/65. heightUpM 0.2 is a guess for 185 cm; the avatar scales the mesh to the official height anyway. MakeHuman l-/r- morphs refer to the character's own left and right; all values here are symmetric."
+  "notes": "Confidence: high for hair, skin, lack of tattoos and overall build; medium for face proportions; low-to-medium for exact morph values. The weak points are the profile (one face-off shot, under the fur hat) and recency: he has been out injured since Dec 2024, and the only 2025-2026 photo is the Oct 2025 award ceremony, where he is clean-shaven, fuller in the face and has longer side-swept hair. For a fight-ready look use the Dec 2024 photos. What to watch: (1) The likeness rests on the long rectangular face, wide jaw and broad cheekbones; a short or round head stops looking like him. (2) Eyes must be narrow with a full upper lid and an inner-corner fold; default MakeHuman eyes are too open and too creased. (3) Nose is broad at the base with a straight, low-to-medium bridge, and the lower lip is full; do not narrow the nose. (4) Blunt straight fringe over a tall forehead is a strong recognition cue in fight week. (5) Body is lean and long-limbed with light chest hair and no tattoos; keep the arms long (+10 cm ape index) and the chest modest. (6) Skin is warm golden-olive; avoid pink. Macro ageOldM 0.108 uses the avatar3d.js mapping (32-25)/65. heightUpM 0.2 is a guess for 185 cm; the avatar scales the mesh to the official height anyway. MakeHuman l-/r- morphs refer to the character's own left and right; all values here are symmetric.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.0,
+    "depth": 1.15,
+    "crouch": 0.25,
+    "lean": 0.1,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 50,
+    "weight_front": 0.45,
+    "bladed": 0.6,
+    "guard": {
+      "style": "long",
+      "height": 0.55,
+      "lead_reach": 0.55,
+      "lead_height": 0.55,
+      "lead_width": 0.1,
+      "rear_height": 0.6,
+      "rear_tuck": 0.75,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.45
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.25,
+      "chin_tuck": 0.55
+    },
+    "bounce": {
+      "amp": 0.35,
+      "rate": 0.9
+    },
+    "switch_per_min": 1.5,
+    "feints": 0.4,
+    "hand_fighting": 0.4,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "stance-switch"
+    ],
+    "notes": "Tall, patient switch-stance pressure fighter: long lead hand measuring distance, kicks from both stances, walks opponents to the fence.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/shavkat-rakhmonov.json where present) and the reference photos in assets/reference/shavkat-rakhmonov/ (espn_stance_left.png / espn_stance_right.png (posed): tall, long-limbed frame used for posture only). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }

@@ -274,5 +274,47 @@
     "ears/l-ear-rot-backward": 0.1,
     "ears/r-ear-rot-backward": 0.1
   },
-  "notes": "Confidence: high for beard, hair, skin range, tattoos and build; medium for face proportions (sharp frontal and one clean left profile, no right profile); low-to-medium for exact morph values. Watch for: (1) The full, dense black beard defines the lower face; with it the head should read broad and square-bottomed. (2) Heavy brow, hooded dark-brown eyes, a broad nose with a large rounded tip and wide alae, and very full lips. (3) Hair is short and coily with a crisp line-up and shaved lines, not an afro. (4) Tattoo sides are his own: black tribal on the RIGHT shoulder, red-and-black piece on top of the LEFT shoulder, long design down the LEFT arm. (5) Body is heavy with a soft belly; do not give him abs. (6) Skin texture: middleage_african_male lands a touch deep; if it reads too dark, nudge the tint toward #b06d52. macro/ageOldM 0.154 follows avatar3d.js (35-25)/65; heightUpM 0.32 matches the other 193 cm sheets."
+  "notes": "Confidence: high for beard, hair, skin range, tattoos and build; medium for face proportions (sharp frontal and one clean left profile, no right profile); low-to-medium for exact morph values. Watch for: (1) The full, dense black beard defines the lower face; with it the head should read broad and square-bottomed. (2) Heavy brow, hooded dark-brown eyes, a broad nose with a large rounded tip and wide alae, and very full lips. (3) Hair is short and coily with a crisp line-up and shaved lines, not an afro. (4) Tattoo sides are his own: black tribal on the RIGHT shoulder, red-and-black piece on top of the LEFT shoulder, long design down the LEFT arm. (5) Body is heavy with a soft belly; do not give him abs. (6) Skin texture: middleage_african_male lands a touch deep; if it reads too dark, nudge the tint toward #b06d52. macro/ageOldM 0.154 follows avatar3d.js (35-25)/65; heightUpM 0.32 matches the other 193 cm sheets.",
+  "stance": {
+    "schema": "stance/1",
+    "width": 1.15,
+    "depth": 1.05,
+    "crouch": 0.45,
+    "lean": 0.3,
+    "lead_foot_deg": 12,
+    "rear_foot_deg": 42,
+    "weight_front": 0.55,
+    "bladed": 0.4,
+    "guard": {
+      "style": "hand-fighting",
+      "height": 0.5,
+      "lead_reach": 0.5,
+      "lead_height": 0.5,
+      "lead_width": 0.1,
+      "rear_height": 0.6,
+      "rear_tuck": 0.7,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.5
+    },
+    "head": {
+      "offset": 0,
+      "movement": 0.25,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.25,
+      "rate": 0.85
+    },
+    "switch_per_min": 0.1,
+    "feints": 0.45,
+    "hand_fighting": 0.5,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "flat-footed"
+    ],
+    "notes": "Heavyweight wrestler: wide low base, hand-fighting lead, level-change feints, walks forward flat-footed behind the jab.",
+    "confidence": "low",
+    "source": "Set 2026-11-06 (avatar pass v4) from his documented fighting style (data/scouting/curtis-blaydes.json where present) and the reference photos in assets/reference/curtis-blaydes/ (ref-getty-noche-fight-2026-09-12-a.jpg: low, wide wrestling base in the exchange). The base stance (orthodox/southpaw) is left to the roster data. Fight footage would sharpen these values."
+  }
 }
