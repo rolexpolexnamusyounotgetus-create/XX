@@ -63,7 +63,8 @@ APP.slice(2).forEach(function (app, i) {
   var a = new FightShow.Actor({ H: app.height_in * 0.0254, build: 1, skin: 0xd9a383, shorts: 0x444444, glove: 0x16181c, hair: 0x231710 }, "X" + i, /south/i.test(app.stance) ? -1 : 1, scene);
   a.snapMode("walk");
   extras.push(a);
-  FightAvatar.attach(a, Object.assign({ shorts: i ? "#1f8a4c" : "#d0d3d8", trim: i ? "#f2f2f2" : "#111111" }, app), scene);
+  var KIT = [["#d0d3d8", "#111111"], ["#1f8a4c", "#f2f2f2"], ["#1b1d22", "#d4af37"], ["#6d2bb3", "#f2f2f2"], ["#c7a12a", "#111111"], ["#0f6f8f", "#f2f2f2"]][i % 6];
+  FightAvatar.attach(a, Object.assign({ shorts: KIT[0], trim: KIT[1] }, app), scene);
 });
 DEV.ready = waitAvatars().then(function (ok) { L("avatars ready: " + ok); DEV.ok = ok; return ok; });
 
@@ -93,6 +94,7 @@ DEV.pose = function (actors, mode, yaw, dt) {
 };
 DEV.lineup = function (yaw, mode) {
   var actors = DEV.lineupActors();
+  if (Q.get("noref")) { show.R.rig.root.visible = false; if (show.R.avatar) show.R.avatar.group.visible = false; }
   DEV.pose(actors, mode || "walk", yaw || 0);
   var nA = actors.length, dz = nA > 5 ? 3.75 * (0.95 * nA) / (1.15 * 5) : 3.75;
   cam.fov = 44; cam.aspect = W / H; cam.position.set(0, 1.2, dz); cam.lookAt(0, 0.95, 0); cam.updateProjectionMatrix();
