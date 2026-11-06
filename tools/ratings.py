@@ -1316,11 +1316,13 @@ def run_dims(D, DP, until=None, record=True, dims=None):
                 att[1] = max(att[1], 1e-5)
                 dfn[3] = max(dfn[3], 1e-5)
             pll[i, j] = lls
-            # update the baseline after the fight
-            for s_ in (0, 1):
-                k, ex = o[s_]
-                base[(div, dim)][0] = base[(div, dim)][0] * rho + k
-                base[(div, dim)][1] = base[(div, dim)][1] * rho + ex
+            # update the baseline after the fight. Review fix (Nov 6, 2026): the earlier per-side loop decayed once per
+            # side, A first (base*rho^2 + rho*k_A + k_B), so the league baseline depended on the corner order (A, the
+            # first-named man, wins 56%) and dims was not exactly swap-symmetric (features off by up to 0.02, P by
+            # 3e-5). Same total decay (rho^2) and total weight (1 + rho) per fight, both sides weighted equally.
+            hw = 0.5 * (1.0 + rho)
+            base[(div, dim)][0] = base[(div, dim)][0] * rho * rho + hw * (o[0][0] + o[1][0])
+            base[(div, dim)][1] = base[(div, dim)][1] * rho * rho + hw * (o[0][1] + o[1][1])
     rates = {}
     for (div, dim), (bc, be) in base.items():
         if DIMS[dim][1] == "bin":
@@ -1352,6 +1354,7 @@ PREUFC = os.path.join(ROOT, "data", "derived", "preufc.json")
 # debuts on or after PRE_FROM, where its presence is outcome-independent; older debuts keep the age-only prior.
 PRE_ON = True
 PRE_FROM = dt.date(2015, 1, 1).toordinal()
+OPPUFC_CLEAN = True        # review fix: survivor-free recount of opp_ufc_w (see attach_preufc)
 PRE_FEATS = ["win share (shrunk) - 0.8", "log1p(non-UFC pro fights) - 2.4", "strict Sherdog-network Elo: (net_elo_h - 1600)/100",
              "Contender Series win - 0.28", "feeder promotion graduates' UFC win rate: (promo_grad - 0.5) x 10",
              "log1p(non-UFC wins over opponents with UFC experience)", "feeder promotion volume: promo_feed - 2.5"]
@@ -1385,6 +1388,22 @@ def attach_preufc(D):
     def g(row, c, default=0.0):
         v = row[ci[c]] if c in ci else None
         return default if v is None else v
+    # Review fix (Nov 6, 2026): preufc.json's opp_ufc_w counts non-UFC wins over opponents recognised as UFC fighters
+    # through crawled pages; pre-2015 UFC debutants were crawled only if they were still fighting in a 0-3-prior bout
+    # from 2015 on or are on the 2026 roster, so whether an old opponent counted depended on his later career (survivor
+    # look-ahead). Recount over opponents whose first UFC bout is on/after PRE_FROM (every such debut was crawled, so
+    # membership uses only facts known before the bout) and before the bout date. The effect is small: with the stored
+    # parameters it moves 2024-2025 log loss by +0.0001 to +0.0004 (ratings.json review.reviewer_oppufc_new).
+    import re as _re
+    first_ufc = {}
+    if OPPUFC_CLEAN:
+        for v in J.get("fighters", {}).values():
+            m = _re.search(r"-(\d+)$", ((v.get("sherdog") or {}).get("url") or "").rstrip("/"))
+            if m and v.get("snapshots"):
+                first_ufc[int(m.group(1))] = v["snapshots"][0][ci["date"]]
+    lo_iso = dt.date.fromordinal(PRE_FROM).isoformat()
+    D.pre_oppufc_rule = ("wins over opponents whose first UFC bout is in [%s, bout date)" % lo_iso if OPPUFC_CLEAN
+                         else "preufc.json opp_ufc_w")
     for slug, rec in J.get("fighters", {}).items():
         p = slug2p.get(slug)
         if p is None or not rec.get("snapshots"):
@@ -1397,11 +1416,17 @@ def attach_preufc(D):
             if side < 0:
                 continue
             w, n = g(row, "w"), g(row, "n")
+            if OPPUFC_CLEAN:
+                d0 = row[ci["date"]]
+                opp_w = sum(1 for r in rec.get("fights") or [] if not r[7] and r[0] and r[0] < d0 and r[1] == "W"
+                            and r[5] in first_ufc and lo_iso <= first_ufc[r[5]] < d0)
+            else:
+                opp_w = g(row, "opp_ufc_w")
             D.pre[i, side] = ((w + 1.4) / (n + 2.0) - 0.8, math.log1p(n) - 2.4,
                               (g(row, NET, 1600.0) - 1600.0) / 100.0,
                               (1.0 if g(row, "dwcs_w") > 0 else 0.0) - 0.28,
                               (g(row, "promo_grad", 0.5) - 0.5) * 10.0,
-                              math.log1p(g(row, "opp_ufc_w")),
+                              math.log1p(opp_w),
                               g(row, "promo_feed", 2.5) - 2.5)
             hit += 1
     D.pre_cov = hit
@@ -2231,6 +2256,11 @@ def main():
                            "outcome-independent Sherdog coverage); older debuts use the age-only prior",
             "round_model": D.round_fit, "preufc_coverage_fighter_bouts": int(D.pre_cov),
             "preufc_features": PRE_FEATS, "preufc_network_elo_column": getattr(D, "pre_net_col", None),
+            "preufc_oppufc_rule": getattr(D, "pre_oppufc_rule", None),
+            "review_fixes": ["Nov 6, 2026 adversarial review: (1) opp_ufc_w recounted over opponents whose first UFC "
+                             "bout is on/after 2015-01-01 (survivor look-ahead removed); (2) dims league baseline "
+                             "updated symmetrically per fight (exact corner-swap symmetry). Tuned parameters restored "
+                             "from the 2019-2023 tuning checkpoint (not re-tuned)."],
             "preufc_file_built": (json.load(open(PREUFC))["meta"].get("built") if os.path.exists(PREUFC) else None),
             "best_single_by_tuning": best, "ranking_by_tuning": singles_rank,
             "ranking_scores_2020_2023": {k: r5(v, 5) for k, v in rank_score.items()},
