@@ -1,0 +1,297 @@
+{
+  "slug": "israel-adesanya",
+  "name": "Israel Adesanya",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 37,
+  "official": {
+    "height_cm": 193.0,
+    "reach_cm": 203.2,
+    "stance": "Switch",
+    "fight_weight_lb": 186,
+    "source": "data/derived/fighters.json (76 in height, 80 in reach); 186 lb at the UFC Seattle official weigh-in (2026-03-27, non-title middleweight)."
+  },
+  "photos_used": [
+    "ref-espn-headshot.png",
+    "ref-espn-stance-left.png",
+    "ref-espn-stance-right.png",
+    "ref-skysports-fence-pub-2026-03-29.jpg",
+    "ref-cagesidepress-ufc-seattle-faceoff-2026-03-27.jpg",
+    "wiki-ufc271-presser-2022-02-11.jpg",
+    "wiki-ufc230-2018-11-02.jpg"
+  ],
+  "photo_coverage": "Adequate for the face, good for the body. 7 photos: the March 2026 ESPN studio headshot and full-body cutout (current), the Aug 2024 cutout, a three-quarter fence photo and a true left profile from the March 2026 face-off (video still), and two CC BY 3.0 Commons video stills (2022, 2018). Commons has no recent free photo of him and no right profile; the only freely licensed images are small video stills, so the embed-ok set is weak.",
+  "face": {
+    "shape": "Long oval that narrows to the chin, close to an inverted triangle: widest at the very prominent cheekbones, with hollow cheeks below and a narrow, slightly pointed chin. The forehead is tall and broad. The head is long front to back with a smooth, rounded crown.",
+    "jaw": "Narrow to medium and lean, with clean, defined angles set well back; the jawline runs at a steep angle down to the small chin. No fullness under the jaw.",
+    "chin": "Narrow, slightly pointed and modestly projecting (behind the lower lip in profile). A few millimetres of stubble on the chin.",
+    "cheekbones": "Very high, wide and prominent; the most distinctive bone feature. Clear hollows sit below them.",
+    "brow_ridge": "Moderate. Brows sit fairly low, and the eyes are slightly shadowed under strong top light.",
+    "forehead": "Tall, broad and gently convex (rounded forward in the profile and fence photos). Smooth, with a few small darker spots.",
+    "eyes": {
+      "shape": "Almond-shaped, medium-sized, with slightly hooded upper lids and a fairly straight lower lid. Outer corners level to very slightly raised. Often an intense, slightly narrowed stare.",
+      "spacing": "Average to slightly wide.",
+      "colour": "Dark brown.",
+      "size": "Medium"
+    },
+    "eyebrows": {
+      "thickness": "Thin to medium",
+      "shape": "Short and fairly straight with a gentle rise toward the outer third; set low over the eyes.",
+      "colour": "Black",
+      "colour_hex": "#231a18"
+    },
+    "nose": {
+      "length": "Medium",
+      "width": "Broad at the base",
+      "bridge": "Low and flat, fairly wide between the eyes",
+      "hump": "None",
+      "tip": "Broad and rounded, tilted very slightly up in profile",
+      "nostrils": "Wide and flared, roundish openings",
+      "fight_damage": "None obvious in any photo."
+    },
+    "mouth": {
+      "width": "Medium",
+      "upper_lip": "Full and slightly everted, with a sharply defined, peaked cupid's bow",
+      "lower_lip": "Full, about as full as the upper lip",
+      "resting_expression": "Lips closed in a slight pout; the mouth area projects forward in profile. Corners level."
+    },
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Stand slightly out from the head, visible from the front because the sides are faded short.",
+      "cauliflower_ear": "None visible.",
+      "accessory": "Small diamond stud in the left ear lobe (March 2026 face-off)."
+    },
+    "notable_marks_scars": "Small mole below the left corner of the mouth (his left; studio 2026 neck crop). A few small darker spots on the forehead and cheeks. No large scars visible."
+  },
+  "hair": {
+    "style": "Short tapered cut: skin fade on the sides and back blending into about 1-1.5 cm of tight coils on top, slightly higher at the crown, with a sharp line-up at the front and temples (2024 and 2026 studio). In 2018 the top was longer (about 3 cm).",
+    "length_cm": 1.2,
+    "colour": "Black",
+    "colour_samples": {
+      "espn_top": "#221c1c"
+    },
+    "colour_hex": "#1f1a1a",
+    "hairline": "Lined up; rounded corners with mild recession at the temples, centre front intact.",
+    "texture": "Tightly coiled, dense."
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "detail": "Very light: a thin, sparse moustache shadow and a small patch of short stubble on the chin; cheeks clean. Not a full beard in any recent photo.",
+    "colour_hex": "#1c1716",
+    "density": "Sparse",
+    "shape": "Thin moustache line plus a small chin patch"
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek, lower",
+        "hex": "#94563d",
+        "light": "studio"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek",
+        "hex": "#8b4e34",
+        "light": "studio, shadow side"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek, lower",
+        "hex": "#6a3a27",
+        "light": "studio, shadow side"
+      },
+      {
+        "photo": "ref-skysports-fence-pub-2026-03-29.jpg",
+        "spot": "right cheek",
+        "hex": "#9c4936",
+        "light": "arena, warm"
+      },
+      {
+        "photo": "ref-skysports-fence-pub-2026-03-29.jpg",
+        "spot": "forehead",
+        "hex": "#82514c",
+        "light": "arena, warm"
+      },
+      {
+        "photo": "wiki-ufc271-presser-2022-02-11.jpg",
+        "spot": "right cheek",
+        "hex": "#835d48",
+        "light": "press room, even"
+      },
+      {
+        "photo": "wiki-ufc271-presser-2022-02-11.jpg",
+        "spot": "left cheek",
+        "hex": "#653f2c",
+        "light": "press room, even"
+      },
+      {
+        "photo": "wiki-ufc271-presser-2022-02-11.jpg",
+        "spot": "forehead",
+        "hex": "#8e6b55",
+        "light": "press room, even"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek, upper",
+        "hex": "#c1724f",
+        "light": "studio key-light highlight (excluded)"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "forehead",
+        "hex": "#d49a8c",
+        "light": "studio specular highlight (excluded)"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc-seattle-faceoff-2026-03-27.jpg",
+        "spot": "left cheek",
+        "hex": "#64392d",
+        "light": "dim video still (excluded)"
+      },
+      {
+        "photo": "wiki-ufc230-2018-11-02.jpg",
+        "spot": "left cheek",
+        "hex": "#f08b64",
+        "light": "overexposed (excluded)"
+      }
+    ],
+    "tone_hex_average_all": "#965c47",
+    "tone_hex": "#84503c",
+    "tone_hex_method": "Mean of the 8 samples not marked excluded (9x9-pixel medians). Studio highlights, the dim video still and the overexposed 2018 still are left out.",
+    "tone_note": "Deep brown skin. The studio key light makes one cheek much brighter than the other, so samples were taken on both sides and on the evenly lit 2022 press-conference still.",
+    "undertone": "Warm, red-brown.",
+    "freckles_marks": "A few small darker spots on the forehead and cheeks; mole below the left mouth corner. Very little visible body hair.",
+    "texture_pick": "middleage_african_male",
+    "texture_pick_reason": "Chosen only because its swatch (#875d4b) is the closest base that is at or above the sampled tone in every channel, so the multiply tint can reach it without brightening."
+  },
+  "body": {
+    "build": "Tall, slim and long-limbed; a lean, wiry striker's frame rather than a bulky one. At 186 lb and 193 cm he is noticeably slender for his height.",
+    "body_fat": "lean",
+    "body_fat_notes": "Clear abdominal outline and visible serratus in both studio shots; very little fat on the face (hollow cheeks).",
+    "shoulders": "Moderately broad, with defined but not bulky deltoids; long collarbones.",
+    "chest": "Flat to moderately developed pecs.",
+    "arms": "Long and lean with long forearms; muscular definition without bulk.",
+    "waist": "Narrow, giving a clear V-taper from the shoulders.",
+    "legs_calves": "Long, slim legs with lean thighs and slender calves; long shins.",
+    "neck": "Long and slender.",
+    "posture": "Upright with the chin slightly raised, shoulders loose and slightly dropped, arms hanging relaxed. Light, bouncy stance; fights from orthodox and southpaw.",
+    "notable_physique_traits": "Long neck and limbs, narrow waist and hips, lean definition, and the 'BROKEN NATIVE' chest script."
+  },
+  "tattoos": [
+    {
+      "where": "Right arm, full sleeve from shoulder to wrist",
+      "description": "Dense black-grey shaded sleeve that joins the start of the chest script at the shoulder. The imagery is too dark at photo resolution to identify.",
+      "size": "Whole arm"
+    },
+    {
+      "where": "Upper chest, in an arc from the right shoulder to the left shoulder just below the collarbones",
+      "description": "Text 'BROKEN NATIVE' in black capital serif letters.",
+      "size": "About 40 cm wide, letters about 5 cm tall"
+    },
+    {
+      "where": "Centre of the chest over the sternum, slightly to his left, down to the upper abdomen",
+      "description": "Solid dark silhouette of the African continent, with a small island shape (Madagascar) to the lower left (his left).",
+      "size": "About 25 cm tall x 15 cm wide"
+    },
+    {
+      "where": "Left side of the neck, ending above the left collarbone",
+      "description": "Vertical black-grey design on the side of the neck finishing in a bird with spread wings at the base of the neck.",
+      "size": "About 15 cm tall x 8 cm wide"
+    },
+    {
+      "where": "Right side of the neck, from under the jaw toward the collarbone",
+      "description": "Large dark shaded area seen in the 2026 studio photo; the design cannot be made out.",
+      "size": "About 12 x 8 cm",
+      "confidence": "low"
+    },
+    {
+      "where": "Abdomen, around and to the left of the navel (his left)",
+      "description": "Smaller dark shaded shapes below the Africa map; partly hidden by the waistband and not legible.",
+      "size": "Unknown",
+      "confidence": "low"
+    },
+    {
+      "where": "Left upper arm, inner side",
+      "description": "Thin vertical line of script or a slim design.",
+      "size": "About 12 x 2 cm",
+      "confidence": "low"
+    }
+  ],
+  "accessories_seen": "Diamond stud in the left ear lobe (2026 face-off); pearl necklace, gold watch and ring at the 2022 press conference.",
+  "kit": {
+    "typical_shorts": "Venum UFC fight shorts in navy blue with a grey snakeskin print, gold and white lightning bolts down both legs, white diagonal stripes on the front of his right hip, black inner-thigh panel and black UFC waistband (2024 and 2026 studio). Gloves: black (2026), gold (2024 studio, from his title era).",
+    "shorts_colours_hex": {
+      "navy": "#2c3256",
+      "snakeskin_grey": "#8d8fa3",
+      "lightning_gold": "#e2b04a",
+      "white": "#f2f2f2",
+      "waistband": "#141416"
+    },
+    "brand_note": "Venum is the UFC outfitter."
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "mh-skin-middleage_african_male (closest swatch at or above the sampled tone) tinted toward #84503c",
+    "eyebrows": "eyebrow001 (thin) tinted #231a18",
+    "hair": "very short tight-coil cap with faded sides, #1f1a1a",
+    "beard": "sparse stubble on the chin and a thin moustache, #1c1716"
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.185,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.45,
+    "macro/weightDownM": 0.35,
+    "macro/heightUpM": 0.32,
+    "macro/proportionsUpM": 0.7,
+    "head/head-oval": 0.3,
+    "head/head-invertedtriangular": 0.35,
+    "head/head-scale-vert-incr": 0.2,
+    "head/head-scale-horiz-decr": 0.05,
+    "head/head-scale-depth-incr": 0.1,
+    "head/head-fat-decr": 0.3,
+    "forehead/forehead-scale-vert-incr": 0.3,
+    "forehead/forehead-trans-forward": 0.15,
+    "chin/chin-width-decr": 0.3,
+    "chin/chin-bones-decr": 0.1,
+    "chin/chin-prominent-decr": 0.05,
+    "chin/chin-height-incr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.5,
+    "cheek/r-cheek-bones-incr": 0.5,
+    "cheek/l-cheek-volume-decr": 0.35,
+    "cheek/r-cheek-volume-decr": 0.35,
+    "eyes/l-eye-height2-decr": 0.1,
+    "eyes/r-eye-height2-decr": 0.1,
+    "eyes/l-eye-trans-out": 0.05,
+    "eyes/r-eye-trans-out": 0.05,
+    "eyebrows/eyebrows-trans-down": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.1,
+    "nose/nose-scale-horiz-incr": 0.35,
+    "nose/nose-width1-incr": 0.2,
+    "nose/nose-scale-depth-decr": 0.15,
+    "nose/nose-scale-vert-decr": 0.05,
+    "nose/nose-hump-decr": 0.25,
+    "nose/nose-point-up": 0.1,
+    "nose/nose-point-width-incr": 0.35,
+    "nose/nose-nostrils-width-incr": 0.5,
+    "nose/nose-flaring-incr": 0.35,
+    "mouth/mouth-upperlip-volume-incr": 0.55,
+    "mouth/mouth-lowerlip-volume-incr": 0.45,
+    "mouth/mouth-cupidsbow-incr": 0.3,
+    "mouth/mouth-scale-depth-incr": 0.25,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "neck/neck-scale-vert-incr": 0.3,
+    "neck/neck-scale-horiz-decr": 0.05,
+    "torso/measure-shoulder-dist-incr": 0.15,
+    "torso/torso-vshape-incr": 0.3,
+    "torso/measure-waist-circ-decr": 0.35,
+    "torso/measure-hips-circ-decr": 0.2,
+    "buttocks/buttocks-volume-decr": 0.1
+  },
+  "morphs_not_in_embed": {
+    "_note": "assets/embed/mh-manifest.json has no ear targets. Estimates for standard MakeHuman ear modifiers in case they are added.",
+    "ears/l-ear-rot-forward": 0.15,
+    "ears/r-ear-rot-forward": 0.15
+  },
+  "notes": "Confidence: high for build, hair, skin range and the main tattoos; medium for face proportions (one sharp current frontal, one soft true profile, one three-quarter); low-to-medium for exact morph values. Few freely licensed photos: the two Commons images are small video stills from 2018 and 2022. Watch for: (1) The likeness rests on very high, wide cheekbones with hollow cheeks above a narrow, slightly pointed chin; a square or full lower face loses him. (2) Full lips with a sharp cupid's bow and a forward mouth area in profile; a low, flat nose bridge with a broad, flared base. (3) Tall, gently convex forehead and a sharp line-up with mild temple recession; hair is a short coil cap with faded sides. (4) Body is slim and long-limbed: keep the waist narrow, the neck long and the muscle lean; do not bulk the chest or arms. (5) Tattoos: 'BROKEN NATIVE' over the upper chest, Africa silhouette over the sternum, full RIGHT-arm sleeve, bird at the base of the LEFT side of the neck (sides are his own). The Aug 2024 cutout shows the chest pieces at an angle, so the Africa map there looks like it sits on his right pec; it is the same central piece. macro/ageOldM 0.185 follows avatar3d.js (37-25)/65; heightUpM 0.32 is interpolated from the other 188-196 cm sheets."
+}

@@ -878,6 +878,7 @@ def main():
                "_note": "48 partial cards for fights that ended inside the distance, hand-entered in source D "
                         "(data/stoppage_scorecards.json) with no cited source. Not verified, not in the rows.",
                **{k: v for k, v in stop.items() if dt.date.fromisoformat(v["date"]) < vault_from}}}
+    meta["checks"]["slug_sources_dev"] = dict(slug_src)      # per fighter side; filled while building out["fights"]
     rows_out = {"meta": {
         "built": meta["built"], "tool": "tools/judgerounds.py", "split": meta["split"],
         "orientation": meta["orientation"],

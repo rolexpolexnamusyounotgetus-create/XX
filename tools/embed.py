@@ -214,42 +214,6 @@ def load_data(verbose=True):
 
 
 # ------------------------------------------------------------------------------------------------ model
-class Model:
-    """Parameter layout and the MAP objective."""
-
-    def __init__(self, F, NDIV, K):
-        self.F, self.NDIV, self.K = F, NDIV, K
-        shapes = [("A", (F, K)), ("D", (F, K)), ("W", (NT, K)), ("V", (NT, K)), ("mu", (NT, NDIV)),
-                  ("be", (NT,)), ("g5", (NT,)), ("ua", (K,)), ("ud", (K,)), ("M", (K, K))]
-        self.sl = {}
-        o = 0
-        for name, shp in shapes:
-            n = int(np.prod(shp))
-            self.sl[name] = (o, o + n, shp)
-            o += n
-        self.n = o
-
-    def unpack(self, th):
-        return {k: th[a:b].reshape(s) for k, (a, b, s) in self.sl.items()}
-
-    def pack(self, P):
-        th = np.zeros(self.n)
-        for k, (a, b, s) in self.sl.items():
-            th[a:b] = np.asarray(P[k]).ravel()
-        return th
-
-
-def eta_rows(P, x, y, div, era, five):
-    return (P["mu"][:, div].T + np.outer(era, P["be"]) + np.outer(five, P["g5"])
-            + P["A"][x] @ P["W"].T + P["D"][y] @ P["V"].T)
-
-
-def win_logit(P, a, b):
-    Aa, Ab, Da, Db = P["A"][a], P["A"][b], P["D"][a], P["D"][b]
-    return ((Aa - Ab) @ P["ua"] + (Da - Db) @ P["ud"]
-            + np.einsum("nk,kl,nl->n", Aa, P["M"], Db) - np.einsum("nk,kl,nl->n", Ab, P["M"], Da))
-
-
 def task_mean(eta, E):
     """Expected count (Poisson tasks) or expected successes (binomial tasks)."""
     out = np.empty_like(eta)
@@ -859,9 +823,6 @@ def side_feats(sd, pri):
     return f
 
 
-BASE_FEATS = None
-
-
 def prior_for(priors, e):
     py = priors[e["date"][:4]]
     g = e.get("prior_division") or e["division"]
@@ -1168,6 +1129,134 @@ def eval_ml_stack(T, verbose=True):
                                                                              v["valid_ece"]))
         for k, v in out["deltas"].items():
             print("  delta %-34s %+.4f [%+.4f, %+.4f]" % (k, v["mean"], v["ci95"][0], v["ci95"][1]))
+    return out
+
+
+MLR_MAP = {"d_att": "d_att", "c_att": "c_att", "g_att": "g_att", "h_att": "h_att", "b_att": "b_att", "l_att": "l_att",
+           "td_att": "td_att", "sub_att": "sub_att", "rev": "rev", "ctrl": "ctrl", "acc_h": "h_acc",
+           "acc_b": "b_acc", "acc_l": "l_acc", "acc_d": "d_acc", "acc_c": "c_acc", "acc_g": "g_acc",
+           "td_acc": "td_acc", "kd_h": "kd"}
+
+
+def _glm_newton(Z, y, n, binom, iters=50, ridge=1e-6):
+    """Tiny GLM (log link Poisson with exposure n, or logit binomial with trials n) by Newton."""
+    b = np.zeros(Z.shape[1])
+    if not binom:
+        b[0] = math.log(max(y.sum(), 1e-9) / max(n.sum(), 1e-9))
+    for _ in range(iters):
+        e = Z @ b
+        if binom:
+            pr = 1 / (1 + np.exp(-e))
+            g = Z.T @ (n * pr - y) + ridge * b
+            H = (Z * (n * pr * (1 - pr))[:, None]).T @ Z + ridge * np.eye(len(b))
+        else:
+            mu = n * np.exp(np.clip(e, -30, 20))
+            g = Z.T @ (mu - y) + ridge * b
+            H = (Z * mu[:, None]).T @ Z + ridge * np.eye(len(b))
+        step = np.linalg.solve(H, g)
+        b -= step
+        if np.abs(step).max() < 1e-10:
+            break
+    return b
+
+
+def _dev1(y, n, eta, binom):
+    if binom:
+        mu = n / (1 + np.exp(-eta))
+        t1 = np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / np.maximum(mu, 1e-12)), 0.0)
+        t2 = np.where(n - y > 0, (n - y) * np.log(np.maximum(n - y, 1e-12) / np.maximum(n - mu, 1e-12)), 0.0)
+        return 2 * (t1 + t2)
+    mu = n * np.exp(np.clip(eta, -30, 20))
+    return 2 * (np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / np.maximum(mu, 1e-12)), 0.0) - (y - mu))
+
+
+def eval_mlrates_stack(T, D, verbose=True):
+    """Incremental value over the mlrates stat-line model (data/derived/mlrates_oof.json, when present): per
+    target, link(mu) = b0 + b1 link(mlrates) [+ b2 link(embedding)] fit on its 2019-2023 out-of-fold rows and
+    scored on 2024-2025 (its dev model, trained 2010-2023). Rows: both sides of every backtest_dev fight."""
+    path = os.path.join(DER, "mlrates_oof.json")
+    if not os.path.exists(path):
+        return None
+    mo = json.load(open(path))
+    targets = mo["meta"]["targets"]
+    fights = mo["fights"]
+    dev_ids = {e["id"] for e in json.load(open(BACKTEST_DEV))["fights"]}
+    rowof = {fid: i for i, fid in enumerate(T["id"])}
+    # directed rows of D by (fight id, side)
+    drow = {}
+    for r in range(len(D.r_fight)):
+        drow[(D.f_id[D.r_fight[r]], int(D.r_side[r]))] = r
+    R = []
+    for fid, v in fights.items():
+        if fid not in dev_ids or fid not in rowof:
+            continue
+        j = rowof[fid]
+        for side, tag in ((0, "A"), (1, "B")):
+            r = drow.get((fid, side))
+            if r is None:
+                continue
+            R.append((j, r, v[tag], T["eta_ab"][j] if side == 0 else T["eta_ba"][j]))
+    jj = np.array([x[0] for x in R])
+    rr = np.array([x[1] for x in R])
+    ML = np.array([x[2] for x in R], float)
+    ETA = np.array([x[3] for x in R])
+    yrs = T["year"][jj]
+    tr, va = yrs <= 2023, (yrs >= 2024) & (yrs <= 2025)
+    days = T["day"][jj]
+    out = {"n_rows_oof": int(tr.sum()), "n_rows_valid": int(va.sum()), "targets": {}}
+    contrib = defaultdict(lambda: np.zeros(int(va.sum())))
+    for ti_, tname in enumerate(targets):
+        task = MLR_MAP[tname]
+        t = TI[task]
+        binom = bool(IS_BIN[t])
+        y, n = D.Y[rr, t], D.E[rr, t]
+        ok = n > 0
+        if tname == "ctrl":
+            lm = np.log(np.maximum(ML[:, ti_] / 60.0, 1e-6))
+        elif binom:
+            pm = np.clip(ML[:, ti_], 1e-6, 1 - 1e-6)
+            lm = np.log(pm / (1 - pm))
+        else:
+            lm = np.log(np.maximum(ML[:, ti_], 1e-9))
+        le = ETA[:, t]
+        if tname == "kd_h":          # mlrates: binomial P(kd | landed head); embedding: Poisson rate per landed head
+            pm = np.clip(ML[:, ti_], 1e-6, 1 - 1e-6)
+            lm = np.log(pm)
+            binom = False
+        one = np.ones(len(y))
+        Z1 = np.c_[one, lm]
+        Z2 = np.c_[one, lm, le]
+        m_tr, m_va = tr & ok, va & ok
+        b1 = _glm_newton(Z1[m_tr], y[m_tr], n[m_tr], binom)
+        b2 = _glm_newton(Z2[m_tr], y[m_tr], n[m_tr], binom)
+        d_raw = _dev1(y[va], n[va], lm[va], binom)
+        d1 = _dev1(y[va], n[va], Z1[va] @ b1, binom)
+        d2 = _dev1(y[va], n[va], Z2[va] @ b2, binom)
+        d_emb = _dev1(y[va], n[va], le[va], binom)
+        okv = ok[va]
+        d_raw, d1, d2, d_emb = (np.where(okv, d, 0.0) for d in (d_raw, d1, d2, d_emb))
+        mu, lo, hi = boot_ci(d2 - d1, days[va])
+        base = d1.mean()
+        rec = {"task": task, "raw_dev": round(float(d_raw.sum()), 2), "recal_dev": round(float(d1.sum()), 2),
+               "plus_emb_dev": round(float(d2.sum()), 2), "emb_only_dev": round(float(d_emb.sum()), 2),
+               "coef_recal": [round(float(x), 4) for x in b1], "coef_plus_emb": [round(float(x), 4) for x in b2],
+               "rel_change": round(mu / base, 4), "ci95": [round(lo / base, 4), round(hi / base, 4)]}
+        out["targets"][tname] = rec
+        contrib["plus_emb - recal"] += (d2 - d1) / d1.sum() / len(targets)
+        contrib["recal - raw"] += (d1 - d_raw) / d_raw.sum() / len(targets)
+        contrib["emb_only - raw"] += (d_emb - d_raw) / d_raw.sum() / len(targets)
+        if verbose:
+            print("  mlrates %-7s raw %.1f recal %.1f +emb %.1f (emb alone %.1f) change %+.2f%% [%+.2f, %+.2f] b_emb %+.3f"
+                  % (tname, d_raw.sum(), d1.sum(), d2.sum(), d_emb.sum(), 100 * mu / base, 100 * lo / base,
+                     100 * hi / base, b2[2]))
+    out["mean_rel_change"] = {}
+    for k, c in contrib.items():
+        mu, lo, hi = boot_ci(c, days[va])
+        nn_ = len(c)
+        out["mean_rel_change"][k] = {"mean": round(mu * nn_, 4), "ci95": [round(lo * nn_, 4), round(hi * nn_, 4)]}
+        if verbose:
+            print("  mlrates, mean relative deviance change %-18s %+.2f%% [%+.2f, %+.2f]" % (
+                k, 100 * mu * nn_, 100 * lo * nn_, 100 * hi * nn_))
     return out
 
 
@@ -1814,6 +1903,7 @@ def main():
         win_res, win_preds = eval_winner(T)
         win_res["ml_stack"] = eval_ml_stack(T)
         stat_res = eval_stats(T)
+        stat_res["mlrates_stack"] = eval_mlrates_stack(T, D)
         _save((win_res, win_preds, stat_res), epath)
     write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, time.time() - t0, args.cache)
 

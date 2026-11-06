@@ -1357,14 +1357,15 @@ def main():
     ap.add_argument("--page-only", action="store_true", help="with --stage2: redo only the page model and the export "
                                                              "from out/ml_cache/stage2.pkl")
     args = ap.parse_args()
+    T0 = time.time()
     if args.stage2:
         R = pickle.load(open(os.path.join(CACHE_DIR, "stage1.pkl"), "rb"))
         R["_ctx"]["args"] = args
+        R["_ctx"]["T0"] = T0
         stage_two(R, page_only=args.page_only)
         return
     n_lgb = args.n_lgb or (3 if args.quick else 8)
     n_xgb = args.n_xgb or (2 if args.quick else 4)
-    T0 = time.time()
 
     df, margin_tun, roster_feats, tmeta = get_table(not args.no_cache)
     df = df[(df["year"] >= FEATURES_FROM.year) & (~df["amb"])].reset_index(drop=True)
@@ -2401,6 +2402,7 @@ def stage_two(R, page_only=False):
     if page_only:
         R2 = pickle.load(open(path, "rb"))
         R2["_ctx"]["args"] = R["_ctx"]["args"]
+        R2["_ctx"]["T0"] = R["_ctx"]["T0"]
         R = R2
     else:
         blend_and_calibrate(R)
