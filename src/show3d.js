@@ -206,6 +206,54 @@
     this.bounce = 0.4 + 1.4 * this.prof.bounce.amp;
     this.swT = this.prof.switchRate > 0 ? 8 + Math.random() * 40 / this.prof.switchRate : 1e9;
   };
+  /* Face landmarks in the head's local frame (origin at the head joint, +z forward, +x his left):
+     measured on the skinned head when an avatar is bound, else the primitive head's proportions. */
+  Actor.prototype.faceRef = function () {
+    if (this.avatar && this.avatar.faceRef) return this.avatar.faceRef;
+    var H = this.H;
+    if (!this._fr || this._frH !== H) {
+      this._frH = H;
+      this._fr = { chin: new V3(0, -0.004 * H, 0.06 * H), jaw: new V3(0.03 * H, 0.004 * H, 0.04 * H), cheek: new V3(0.03 * H, 0.03 * H, 0.052 * H),
+        brow: new V3(0.028 * H, 0.058 * H, 0.056 * H), nose: new V3(0, 0.032 * H, 0.072 * H) };
+    }
+    return this._fr;
+  };
+  /* A point in the head's local frame -> the chest frame, with the neck and head rotations setTorso will
+     apply for pose P (neck 0.4/0.4/0.3, head 0.6/0.6/0.7 of hp/hy/hr). */
+  var _eh = new T.Euler(), _qn = new T.Quaternion(), _qh = new T.Quaternion();
+  Actor.prototype.headToChest = function (P, p, out) {
+    var r = this.rig;
+    _qn.setFromEuler(_eh.set(P.hp * 0.4, P.hy * 0.4, P.hr * 0.3, "YXZ"));
+    _qh.setFromEuler(_eh.set(P.hp * 0.6, P.hy * 0.6, P.hr * 0.7, "YXZ"));
+    return out.copy(p).applyQuaternion(_qh).add(r.head.position).applyQuaternion(_qn).add(r.neck.position);
+  };
+  /* Guard glove targets (chest frame) from the stance profile, placed against the face:
+     rear glove: in front of the rear jaw and cheek, glove surface a finger off the skin (rear_tuck 1) or
+     held out ~10 cm (rear_tuck 0); lead glove: further out on the opponent's line by lead_reach, at the
+     lead cheekbone by default. Heights come from the face itself, so a tall guard tops out at the brow. */
+  var _g1 = new V3(), _g2 = new V3();
+  Actor.prototype.guardTargets = function (P, lh, rh, G, op, lead, rear, st) {
+    var F = this.faceRef(), sc = this.H / 1.75, GR = 0.052 * sc;   // glove radius (4 oz MMA glove, closed fist)
+    var cx = Math.abs(F.cheek.x);
+    function hy(v) {                     // head-local height for a guard height value
+      if (v <= 0.5) return F.chin.y - (0.5 - v) / 0.5 * 0.2 * sc;
+      if (v <= 0.65) return lerp(F.chin.y, F.cheek.y, (v - 0.5) / 0.15);
+      return lerp(F.cheek.y, F.brow.y, Math.min(1, (v - 0.65) / 0.35));
+    }
+    function fz(y) {                     // face surface depth at height y (chin -> cheekbone -> brow)
+      if (y <= F.cheek.y) return lerp(F.chin.z, F.cheek.z + 0.012 * sc, clamp((y - F.chin.y) / Math.max(0.01, F.cheek.y - F.chin.y), 0, 1));
+      return lerp(F.cheek.z + 0.012 * sc, F.brow.z, clamp((y - F.cheek.y) / Math.max(0.01, F.brow.y - F.cheek.y), 0, 1));
+    }
+    // rear glove: beside the chin, a little in toward the centre line
+    var ry = hy(rh) - 0.03 * op * sc, rx = -st * (cx * 0.62 + 0.01 * sc + 0.02 * op * sc);
+    _g1.set(rx, ry, fz(ry) + GR + (0.006 + 0.1 * (1 - G.rearTuck)) * sc);
+    this.headToChest(P, _g1, P.hl[rear]);
+    // lead glove: out on the centre line toward the opponent, at its own height
+    var ly = hy(lh) - 0.03 * op * sc, reach = (0.07 + 0.3 * G.leadReach) * sc;
+    var lx = st * (cx * (0.55 - 0.45 * G.leadReach) + 0.04 * G.leadWidth * sc + 0.02 * op * sc);
+    _g2.set(lx, ly - 0.25 * reach * 0.3, fz(ly) + GR + 0.01 * sc + reach);
+    this.headToChest(P, _g2, P.hl[lead]);
+  };
   Actor.prototype.local = function (x, z, out) {
     var c = Math.cos(this.yaw), s = Math.sin(this.yaw);
     return out.set(this.pos.x + x * c + z * s, 0, this.pos.z - x * s + z * c);
@@ -293,23 +341,28 @@
       P.py = (cl ? 0.452 : 0.478 - 0.038 * cr) * H + (cl ? 0 : bob); P.pp = cl ? 0.34 : 0.05 + 0.13 * cr + 0.05 * ln; P.pyaw = (cl ? -0.3 : -(0.25 + 0.6 * bl)) * st; P.pr = 0;
       P.sp = cl ? 0.16 : 0.02 + 0.07 * ln + 0.03 * cr; P.sy = (cl ? 0.12 : 0.1 + 0.25 * bl) * st; P.sr = 0;
       P.cp = cl ? 0.14 : 0.03 + 0.05 * ln + 0.05 * G.shoulderRoll; P.cy = (cl ? 0.1 : 0.06 + 0.14 * bl) * st; P.cr = 0;
-      P.hp = cl ? 0.15 : 0.02 + 0.16 * hd.chinTuck + 0.04 * cr; P.hy = (cl ? 0.08 : 0.1 + 0.25 * bl) * st; P.hr = 0;
-      // guard: elbows down on the ribs, gloves at cheek/brow height, lead hand a little out front, rear glove by the chin
+      // chin down, eyes on the opponent: the face's pitch is set in world terms (the torso already leans
+      // forward, so the neck only adds what the lean leaves of the chin tuck)
+      P.hp = cl ? 0.15 : (0.07 + 0.2 * hd.chinTuck) - 0.9 * (P.pp + P.sp + P.cp); P.hy = (cl ? 0.08 : 0.1 + 0.25 * bl) * st; P.hr = 0;
       var op = pf.open, gh = G.height, lh = clamp(gh + (G.leadHeight - 0.6) * 0.6, 0, 1), rh = clamp(gh + (G.rearHeight - 0.6) * 0.6, 0, 1);
-      // positions are in the chest frame, which is turned with the bladed stance: swing them back onto the opponent's line
-      var cyaw = cl ? 0 : 0.09 + 0.21 * bl, lz = (0.16 + 0.12 * G.leadReach) * H, rz = (0.12 + 0.08 * (1 - G.rearTuck)) * H;
-      // glove height: 0 lower chest .. 0.5 chin .. 0.6 cheekbone .. 1 brow (relative to the upper chest joint)
-      function gy(v, base) { return base + 0.25 * Math.min(v, 0.5) + 0.12 * Math.max(0, v - 0.5); }
-      P.hl[lead].set(((0.035 + 0.035 * G.leadWidth + 0.02 * op) * H + lz * cyaw) * st, (gy(lh, 0.045) - 0.03 * op) * H, lz);
-      P.hl[rear].set((-(0.062 + 0.02 * op) * H + rz * cyaw) * st, (gy(rh, 0.035) - 0.03 * op) * H, rz);
-      var fl = 0.04 + 0.6 * G.elbowFlare;
-      P.hpl[lead].set(fl * st, -1, -0.3); P.hpl[rear].set(-fl * st, -1, -0.38);
       if (!cl) {
         // upper-body movement and head position off the centre line
         var hm = hd.move, wv = this.phase * TAU * 0.42;
         P.cr += (hm * 0.06 * Math.sin(wv) + hd.offset * 0.07) * st; P.sr += hm * 0.035 * Math.sin(wv + 0.7) * st;
         P.hr += (hm * 0.04 * Math.sin(wv * 1.3 + 1.1) - hd.offset * 0.05) * st; P.px += hm * 0.012 * H * Math.sin(wv + 0.3);
         P.cp += hm * 0.025 * Math.sin(wv * 0.7 + 2);
+        // guard, anchored on the face (landmarks measured on the skinned head when one is bound): rear glove
+        // beside the chin and cheek, lead glove a little out front at cheekbone height, elbows down on the ribs,
+        // forearms angled in. Heights: 0 chest .. 0.5 chin .. 0.65 cheekbone .. 1 brow.
+        this.guardTargets(P, lh, rh, G, op, lead, rear, st);
+      } else {
+        var cyaw = 0, lz = (0.16 + 0.12 * G.leadReach) * H, rz = (0.12 + 0.08 * (1 - G.rearTuck)) * H;
+        P.hl[lead].set(((0.035 + 0.035 * G.leadWidth) * H + lz * cyaw) * st, (0.045 + 0.13) * H, lz);
+        P.hl[rear].set((-0.062 * H + rz * cyaw) * st, (0.035 + 0.13) * H, rz);
+      }
+      var fl = 0.04 + 0.6 * G.elbowFlare;
+      P.hpl[lead].set((fl - 0.02) * st, -1, -0.18); P.hpl[rear].set((fl - 0.04) * -st, -1, -0.28);
+      if (!cl) {
         var fe = this.feint;
         if (fe) {
           var fb = bell(fe.t / fe.dur);

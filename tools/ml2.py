@@ -1085,6 +1085,9 @@ STY_SCREENED = ["submission threat vs submission exposure", "clinch fighter vs d
                 "leg kicker vs opponent who gets leg-kicked"]     # styles.py's own 2019-2023 (tune-only) screen
 
 
+STY_SIDE_KEYS = ["sub_int", "osub_int", "td_int", "td_def", "ctrl", "octrl", "kd_pow", "chin", "vol", "late"]
+
+
 def styles_block(T):
     """tools/styles.py's walk-forward style terms for every dev backtest fight, as antisymmetric A-minus-B columns:
     sty3 = the three matchup crosses styles.py's tune-only screen kept; styx = all 31 non-archetype candidates
@@ -1129,7 +1132,9 @@ def styles_block(T):
         asym = float(max(np.abs(X + X2).max(), np.abs(Xb + Xb2).max()))
         assert asym < 1e-9, asym
         St = {"fid": [r["id"] for r in W.rows], "X": X, "names": names, "Xb": Xb, "base_names": list(SY.BASE_WIN),
-              "asym": asym, "n": len(W.rows)}
+              "asym": asym, "n": len(W.rows),
+              # per-side z-scores (A, B) for the method model's side-oriented columns
+              "Zside": {k: (W.Z[k][0].copy(), W.Z[k][1].copy()) for k in STY_SIDE_KEYS}}
         pickle.dump(St, open(path, "wb"))
         log("styles block: %d decisive dev fights, %d style columns, %d skill columns; max |X + X_swapped| %.1e"
             % (St["n"], X.shape[1], Xb.shape[1], asym))
@@ -1678,6 +1683,42 @@ def method_new_cols(MT, T2, F, tau, pm):
     return pd.DataFrame(FXn, index=MT.index), pd.DataFrame(FYn, index=MT.index), pwin, ok
 
 
+def method_late_cols(MT, late, T2):
+    """Side-oriented 2019+ columns for methodround's FX (X = A) / FY (X = B): durability's log chin, log power and
+    log KD-per-strike for X and Y, styles.py's per-side z-scores for X and Y, and a symmetric presence flag."""
+    Ls, St = styles_block(T2)
+    pos = {f: i for i, f in enumerate(St["fid"])}
+    n = len(MT)
+    du = np.zeros((n, 6))
+    du_ok = np.zeros(n)
+    sz = {k: np.zeros((n, 2)) for k in STY_SIDE_KEYS}
+    st_ok = np.zeros(n)
+    for i, f in enumerate(MT["id"]):
+        if str(MT["date"].iloc[i]) >= VAULT_S:
+            continue
+        e = late.get(f)
+        if e and "du" in e:
+            du[i] = e["du"]
+            du_ok[i] = 1.0
+        j = pos.get(f)
+        if j is not None:
+            for k in STY_SIDE_KEYS:
+                sz[k][i] = (St["Zside"][k][0][j], St["Zside"][k][1][j])
+            st_ok[i] = 1.0
+    cA, pA, cB, pB, kA, kB = du.T
+    FX, FY = {}, {}
+    for nm, a, b in (("du_chin", cA, cB), ("du_pow", pA, pB), ("du_kdp", kA, kB)):
+        FX["x_" + nm], FX["y_" + nm] = a, b
+        FY["x_" + nm], FY["y_" + nm] = b, a
+    for k in STY_SIDE_KEYS:
+        a, b = sz[k][:, 0], sz[k][:, 1]
+        FX["x_sz_" + k], FX["y_sz_" + k] = a, b
+        FY["x_sz_" + k], FY["y_sz_" + k] = b, a
+    FX["late_ok"] = FY["late_ok"] = np.maximum(du_ok, st_ok)
+    cov = {"durability_rows": int(du_ok.sum()), "styles_rows": int(st_ok.sum()), "rows": n}
+    return pd.DataFrame(FX, index=MT.index), pd.DataFrame(FY, index=MT.index), cov
+
+
 def stage_method(args):
     import methodround as MR
     S = load_table()
@@ -1729,8 +1770,27 @@ def stage_method(args):
     variants["S2"] = best[2]
     variants["S+ml2win"] = MR.reweight_winner(variants["S"], pwin)
     variants["S2+ml2win"] = MR.reweight_winner(variants["S2"], pwin)
+    # S3: S2 + the 2019+ side sources (durability chin / power / KD-per-strike, styles.py per-side z), zero-filled
+    # where absent (before 2019 and non-backtest fights) with a presence flag; S2's grid, chosen by the same CV
+    lX, lY, lcov = method_late_cols(T, S["late"], T2)
+    FX3 = pd.concat([FX2, lX], axis=1)
+    FY3 = pd.concat([FY2, lY], axis=1)
+    cvres3 = {}
+    best3 = None
+    for Cc in (0.001, 0.002, 0.004):
+        P6 = run6(stat + new + list(lX.columns), Cc, 2012, FX3, FY3)
+        Pj = MR.joint_from_c6(P6, H, draw_c)
+        s_ = MR.summarize_losses(MR.losses_on(Pj[vmask], D, vmask))
+        cvres3[str(Cc)] = {k: round(v, 5) for k, v in s_.items()}
+        log("  S3 C6=%g CV joint %.5f method3 %.5f bin7 %.5f" % (Cc, s_["joint"], s_["method3"], s_["bin7"]))
+        if best3 is None or s_["joint"] < best3[0]:
+            best3 = (s_["joint"], Cc, P6)
+    variants["S3"] = best3[2]
+    variants["S3+ml2win"] = MR.reweight_winner(variants["S3"], pwin)
     J = {k: MR.joint_from_c6(v, H, draw_c) for k, v in variants.items()}
-    out = {"chosen_C6_S2": best[1], "cv_grid_S2": cvres, "cv": {}, "test": {}, "paired_cv": {}, "paired_test": {}}
+    out = {"chosen_C6_S2": best[1], "cv_grid_S2": cvres, "chosen_C6_S3": best3[1], "cv_grid_S3": cvres3,
+           "S3_columns": list(lX.columns), "S3_coverage": lcov,
+           "cv": {}, "test": {}, "paired_cv": {}, "paired_test": {}}
     for k, P in J.items():
         out["cv"][k] = {m: round(v, 5) for m, v in MR.summarize_losses(MR.losses_on(P[vmask], D, vmask)).items()}
     test = (T["date"] >= dt.date(2024, 1, 1)).to_numpy() & (y >= 0)
@@ -1739,12 +1799,19 @@ def stage_method(args):
     bt, st = MR.cluster_bootstrap(L, T["event"].to_numpy()[test], B=2000)
     btc, stc = MR.cluster_bootstrap(Lcv, T["event"].to_numpy()[vmask], B=1000)
     out["test"] = bt
-    for k in ("S2", "S+ml2win", "S2+ml2win"):
+    for k in ("S2", "S+ml2win", "S2+ml2win", "S3", "S3+ml2win"):
         out["paired_test"][k + " - S"] = MR.paired_diff(L[k], L["S"], st, METHOD_METRICS)
         out["paired_cv"][k + " - S"] = MR.paired_diff(Lcv[k], Lcv["S"], stc, METHOD_METRICS)
-    # selection rule: the variant with the lowest CV joint loss (2020-2023), if better than S by > 0.0005
+    for k in ("S3", "S3+ml2win"):
+        k2 = k.replace("S3", "S2")
+        out["paired_test"][k + " - " + k2] = MR.paired_diff(L[k], L[k2], st, METHOD_METRICS)
+        out["paired_cv"][k + " - " + k2] = MR.paired_diff(Lcv[k], Lcv[k2], stc, METHOD_METRICS)
+    # selection rule: the variant with the lowest CV joint loss (2020-2023), if better than S by > 0.0005; an S3
+    # variant must also beat its S2 counterpart by > 0.0005 (the 2019+ sources enter only if they earn it)
     cvj = {k: out["cv"][k]["joint"] for k in J}
     pick = min(cvj, key=cvj.get)
+    if pick.startswith("S3") and not cvj[pick] < cvj[pick.replace("S3", "S2")] - SEL_MIN:
+        pick = min((k for k in cvj if not k.startswith("S3")), key=cvj.get)
     out["chosen"] = pick if cvj[pick] < cvj["S"] - SEL_MIN else "S"
     out["n_test"] = int(test.sum())
     out["n_cv"] = int((vmask & (y >= 0)).sum())

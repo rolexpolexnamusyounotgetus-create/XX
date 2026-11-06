@@ -41,12 +41,11 @@ were already done. This run added:
   at least one man had 0-3 prior UFC fights. These were scored once, after every setting was chosen by
   time-ordered CV on 2015-2023:
   - UFC-stat logistic: log loss goes from 0.6498 to **0.6376**, a change of **-0.0122 [-0.0204, -0.0042]**.
-    Accuracy goes from 60.4% to 63.8%.
+    Accuracy goes from 60.4% to 63.8%, a change of +3.4 points [+0.6, +6.3].
   - Elo with each debutant's starting rating set by his pre-UFC record: log loss goes from 0.6792 to
     **0.6526**, a change of **-0.0266 [-0.0404, -0.0147]**. Accuracy goes from 55.5% to 59.8%, a change of
     +4.3 points [+0.5, +8.7]. Age at debut alone accounts for only -0.0045 [-0.0163, +0.0080] of the log-loss
     gain.
-  - Accuracy gain for the UFC-stat logistic: +3.4 points [+0.6, +6.3].
   - **Calibration is about level across these models.** With both corner orders pooled, each model's
     calibration slope lies within the others' 95% intervals, and every interval contains 1. Seeded Elo's ECE
     minus plain Elo's ECE is +0.012 [-0.030, +0.057]. The first draft called seeded Elo the best-calibrated
@@ -193,6 +192,10 @@ the feeder promotion, Contender Series wins and a long current streak.
   - Rows: decisive UFC bouts (draws and no-contests out) with at least one side at 0-3 prior UFC bouts.
   - Train and tune on 2015-2023 (2,569 bouts). Every choice of features, penalty and fade uses time-ordered
     CV over the years 2019-2023: fit on every earlier year, then score year Y.
+    - The 2015-2018 rows are only ever fit on, never scored, so every tuning score comes from the 2019-2023
+      window the brief and docs/BACKLOG.md set.
+    - They are the training set for the 2019 CV fold, and they add debut bouts to the fit of the seeding
+      betas.
   - Validation: 2024-01-01 to 2025-12-31 (533 bouts), scored once.
   - The vault (fights from 2026-01-01, 480 bouts) is never fit or scored here. Its pre-fight predictions,
     without results, are in `$PREUFC_VAULT_DIR/preufc_vault.json` outside the repo for the milestone auditor.
@@ -231,16 +234,23 @@ the feeder promotion, Contender Series wins and a long current streak.
 
 ## Results: who wins (2024-2025 newcomer bouts, 533)
 
-| Model | Log loss [95% CI] | Brier | Accuracy | Calibration error |
+ECE below is the 10-bin calibration error with both corner orders pooled. The corner-A version, which the
+first draft reported, is in brackets.
+
+| Model | Log loss [95% CI] | Brier | Accuracy | ECE (corner A) |
 |---|---|---|---|---|
-| Elo | 0.6792 [0.6678, 0.6908] | 0.2432 | 55.5% | 0.046 |
-| Elo seeded with age at debut | 0.6747 [0.6558, 0.6948] | 0.2407 | 58.2% | 0.043 |
-| Elo seeded with pre-UFC record | 0.6508 [0.6337, 0.6671] | 0.2298 | 60.0% | 0.039 |
-| **Elo seeded with pre-UFC record + age** (chosen by CV) | **0.6526 [0.6340, 0.6703]** | 0.2306 | 59.8% | **0.035** |
-| Elo + pre-UFC (logistic) | 0.6529 [0.6379, 0.6668] | 0.2305 | 60.0% | 0.046 |
-| UFC-stat logistic (`base`) | 0.6498 [0.6309, 0.6685] | 0.2293 | 60.4% | 0.054 |
-| **base + pre-UFC** | **0.6376 [0.6172, 0.6561]** | **0.2237** | **63.8%** | 0.053 |
-| LightGBM base / + pre-UFC | 0.6644 / 0.6516 | 0.2344 / 0.2289 | 60.4% / 62.3% | 0.056 / 0.042 |
+| Elo | 0.6792 [0.6678, 0.6908] | 0.2432 | 55.5% | 0.016 (0.046) |
+| Elo seeded with age at debut | 0.6747 [0.6558, 0.6948] | 0.2407 | 58.2% | 0.015 (0.043) |
+| Elo seeded with pre-UFC record | 0.6508 [0.6337, 0.6671] | 0.2298 | 60.0% | 0.036 (0.039) |
+| **Elo seeded with pre-UFC record + age** (chosen by CV) | **0.6526 [0.6340, 0.6703]** | 0.2306 | 59.8% | 0.029 (0.035) |
+| Elo + pre-UFC (logistic) | 0.6529 [0.6379, 0.6668] | 0.2305 | 60.0% | 0.042 (0.046) |
+| UFC-stat logistic (`base`) | 0.6498 [0.6309, 0.6685] | 0.2293 | 60.4% | 0.035 (0.054) |
+| **base + pre-UFC** | **0.6376 [0.6172, 0.6561]** | **0.2237** | **63.8%** | 0.026 (0.053) |
+| LightGBM base / + pre-UFC | 0.6644 / 0.6516 | 0.2344 / 0.2289 | 60.4% / 62.3% | 0.040 / 0.024 |
+
+Plain Elo's low ECE comes mostly from its predictions sitting near 0.5, not from better calibration: 874 of
+its 1,066 mirrored rows fall in 0.4-0.6. ECE favours flat models, so compare calibration with the slopes in
+the Calibration paragraph below.
 
 Paired differences (negative = better):
 
@@ -254,8 +264,17 @@ Paired differences (negative = better):
 | seeded Elo (pre + age) minus base | +0.0029 [-0.0131, +0.0195] | 0.36 |
 | LightGBM + pre-UFC minus LightGBM base | -0.0127 | |
 
+Paired accuracy differences (positive = better; same card bootstrap):
+
+| Comparison | Mean [95% CI] | P(better) |
+|---|---|---|
+| base + pre-UFC minus base | **+3.4 points [+0.6, +6.3]** | 0.99 |
+| seeded Elo (pre + age) minus Elo | **+4.3 points [+0.5, +8.7]** | 0.98 |
+| seeded Elo (pre only) minus Elo | +4.5 points [+0.8, +8.1] | 0.99 |
+| Elo + pre-UFC minus Elo | +4.5 points [+0.8, +8.3] | 0.99 |
+
 With one rating per fighter and nothing else, the seeded Elo comes within noise of the full UFC-stat logistic
-on newcomer bouts. It is also the best-calibrated model here.
+on newcomer bouts. Its calibration is level with plain Elo's (next paragraph).
 
 Subgroups (test log loss):
 
@@ -276,14 +295,33 @@ Every decisive 2024-2025 bout (does seeding hurt anyone?):
 | All decisive 2024-2025 bouts | 1,026 | 0.6762 (55.8%) | 0.6686 | 0.6532 | 0.6538 (59.8%) |
 | Backtest rule (both men >= 1 prior UFC bout) | 854 | 0.6769 (55.0%) | 0.6701 | 0.6557 | 0.6572 (59.1%) |
 
-Calibration on 2024-2025 (10 bins, predicted / observed, n):
-- **Seeded Elo:** 0.256/0.250 (12), 0.363/0.314 (51), 0.458/0.529 (136), 0.551/0.561 (173), 0.649/0.687 (115),
-  0.746/0.750 (44).
-- **base + pre:** 0.256/0.393 (28), 0.360/0.304 (69), 0.450/0.482 (112), 0.548/0.593 (162), 0.643/0.683 (101),
-  0.739/0.816 (49), 0.831/1.000 (11).
+**Calibration on 2024-2025.** Each bout is counted in both corner orders (1,066 rows from 533 bouts), so the
+bins are symmetric.
 
-The logistic is underconfident at the top, as every input in the project is on 2024-2025 (docs/BACKLOG.md).
-A temperature fit on recent years is part of the release recalibration.
+Calibration slopes come from a no-intercept logit refit on the mirrored rows; 1 is perfect and above 1 means
+underconfident. Intervals are 1,000 card resamples, computed in this relaunch from the stored
+`predictions[fid]`, which reproduce every validation log loss above to 4 decimals.
+
+| Model | Slope [95% CI] | ECE, mirrored |
+|---|---|---|
+| Elo | 1.04 [0.63, 1.49] | 0.016 |
+| Seeded Elo (pre + age) | 1.16 [0.84, 1.49] | 0.029 |
+| base | 1.17 [0.85, 1.51] | 0.035 |
+| base + pre | 1.23 [0.99, 1.52] | 0.026 |
+
+- Seeded Elo's ECE minus plain Elo's ECE: +0.012 [-0.030, +0.057]. No model is measurably better or worse
+  calibrated than another at this sample size.
+- The three sharper models lean underconfident (slopes 1.16-1.23), as every input in the project does on
+  2024-2025 (docs/BACKLOG.md). Plain Elo sits near 1 because its predictions barely move from 0.5. A
+  temperature fit on recent years is part of the release recalibration.
+
+Bins (predicted / observed, n), both corner orders pooled:
+- **Seeded Elo (pre + age):** 0.255/0.250 (56), 0.354/0.313 (166), 0.453/0.479 (309), 0.547/0.521 (309),
+  0.645/0.687 (166), 0.745/0.750 (56); plus 2 rows at each tail.
+- **base + pre:** 0.171/0.000 (12), 0.259/0.260 (77), 0.358/0.312 (170), 0.451/0.438 (274), 0.549/0.562 (274),
+  0.642/0.688 (170), 0.741/0.740 (77), 0.829/1.000 (12).
+- **Elo:** 0.272/0.167 (12), 0.365/0.417 (84), 0.455/0.462 (411), 0.540/0.533 (463), 0.635/0.583 (84),
+  0.728/0.833 (12).
 
 **What carries the weight.**
 - **base + pre**, coefficients per SD of the side difference: feeder strength +0.115, finish-win rate +0.089,
@@ -345,7 +383,10 @@ test bouts. CV chose C and tau.
 |---|---|---|
 | Division base rates | | 1.0193 |
 | UFC finish rates | 1.0083 | 0.9890 [0.9568, 1.0239] |
-| + pre-UFC finish rates (C 0.3, tau 8) | 0.9928 | 0.9776 [0.9404, 1.0162] |
+| + pre-UFC finish rates (C 0.3, tau 8) | 0.9929 | 0.9776 [0.9405, 1.0162] |
+
+These are the numbers after the review fix: the pre-UFC rates are now centred on training rows over both
+corners. The fix moved the CV score by 0.0001 and left the test score unchanged.
 
 - The difference is -0.0114 [-0.0250, +0.0019], P 0.96.
 - Finish vs decision alone: 0.6754 goes to 0.6688 (base rate 0.6933).
@@ -407,6 +448,27 @@ Each check below was scored once on 2024-2025, with settings chosen by CV on 201
   - The Elo here reproduces backtest_dev.json's pre-fight Elo to rounding (max 0.5 points).
   - Corner symmetry holds by construction: no intercept, and features enter as side differences.
   - Newcomer sides have 100% coverage in both train and test, so missing newcomer records cannot leak.
+
+### Independent checks (final relaunch, Nov 6, about 7:10 pm UTC)
+
+These checks were written from scratch in a scratch directory and do not reuse tools/preufc.py's parser or
+feature code. None of them refits or rescores a model.
+
+| Check | Result |
+|---|---|
+| Every backtest.json side with fewer than 4 prior UFC fights (2019-2025) has a preufc snapshot for that exact fight id | **1,740 of 1,740**; the prior-UFC-fight count agrees on all |
+| Roster (fighters.json) fighters in `fighters` and in `roster_priors` | 1,229 of 1,229 |
+| Walk-forward recount: for every snapshot, count non-UFC W/L/D rows dated strictly before the bout | **12,178 of 12,178** snapshots match on n, w and l |
+| Non-UFC rows dated on the same day as a UFC bout of the same fighter | 0 |
+| Independent BeautifulSoup re-parse of 82 cached pages (80 random, seed 7, plus Volkanovski and Gaethje): totals by W/L/D/NC, and the record, KO and sub wins entering the UFC | 82 of 82 identical |
+| Volkanovski / Gaethje entering the UFC | 13-1 (8 KO, 3 sub), 10-fight streak / 17-0 (14 KO, 1 sub), both match their Sherdog pages |
+| Stored `predictions[fid]` (split = test) against ufcstats winners | Elo 0.6792, seeded 0.6526, base 0.6498, base + pre 0.6376: identical to the tables |
+| Dates in `predictions` | 2019-01-19 to 2025-12-13; no 2026 fight |
+| Vault export | `preufc_vault.json` in the session vault directory outside the repo (pre-fight probabilities only), written by the same 4:49 pm UTC eval |
+| Raw cache in git | `data/raw/sherdog_cache/` matched by .gitignore line 20; 0 tracked files |
+| Sherdog robots.txt (re-fetched Nov 6, 7 pm UTC) | `User-agent: * / Allow: /` |
+
+Scripts: `check_parse.py` and `calib_slope.py` in this session's scratchpad. They are not part of the repo.
 
 ## Recommendation for the engine and the ensemble
 

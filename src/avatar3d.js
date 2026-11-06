@@ -1679,6 +1679,9 @@
       });
     }
     rig.avatar = this;
+    // face landmarks in the head joint's frame, for the guard (Actor.guardTargets puts the gloves against this face)
+    var LMk = this.maskL, hj = this.J.Head.h;
+    if (LMk) this.faceRef = { chin: LMk.chin.clone().sub(hj), jaw: LMk.jawAngL.clone().sub(hj), cheek: LMk.cheekBoneL.clone().sub(hj), brow: LMk.browL.clone().sub(hj), nose: LMk.noseTip.clone().sub(hj) };
     actor.feet.forEach(function (f) { f.p.y = D.ankle; f.to.y = D.ankle; f.from.y = D.ankle; });
     if (!actor._avOrigTakeHit) {
       actor._avOrigTakeHit = actor.takeHit;
