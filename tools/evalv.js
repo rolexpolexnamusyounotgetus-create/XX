@@ -115,7 +115,9 @@ if (!isMainThread) {
             acc.n108 += s.n108 || 0;
             const jr = isDec ? R : (meth === "CORNER" || meth === "DOC" ? s.round : s.round - 1);
             acc.judged += jr;
-            if (isDec) { acc.decRounds += R; acc.decN108 += s.n108 || 0; }
+            // card-implied 10-8 points, comparable with the 'actual' from card totals: judges' 10-8s plus every point
+            // deduction on all three cards (engine v4.0.1+; earlier engines have no deductions, so nothing changes for them)
+            if (isDec) { acc.decRounds += R; acc.decN108 += (s.n108 || 0) + 3 * (s.nDed || 0); }
             acc.mins += isDec ? R * 5 : (s.round - 1) * 5 + s.t / 60;
             const TA = o === 0 ? s.totals.A : s.totals.B, TB = o === 0 ? s.totals.B : s.totals.A;
             for (let k = 0; k < NSTAT; k++) { acc.stats[k] += TA[STATK[k]]; acc.stats[NSTAT + k] += TB[STATK[k]]; }
@@ -483,7 +485,8 @@ function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && ty
       priors: "data/derived/mlcal_priors_asof.json (walk-forward 5-year windows)",
       notes: "CIs: 2,000 event-cluster resamples (400 for ece and calSlope). ECE is biased upward under resampling (noise in 10 " +
         "bins), so its interval is a spread, not a CI around the point estimate. Base-rate 'actual' 10-8 share is implied from " +
-        "card totals (19 x rounds - card sum; deductions count as 10-8s). Stat-line deviance: Poisson deviance of each fighter's " +
+        "card totals (19 x judged rounds - card sum; deductions count as 10-8s); the simulated share counts judges' 10-8s plus " +
+        "3 x deduction points (engines with deductions, v4.0.1+). Stat-line deviance: Poisson deviance of each fighter's " +
         "actual fight total vs the simulated mean (unconditional on fight length), averaged over both fighters" },
     metrics: met, baseRates: br, methodround: mr, compare: cmp,
     fights: pfs.map((pf, i) => ({ id: pf.id, date: pf.date, pA: r4(pf.pA), b7: pf.b7.map(r4), finR: pf.finR.map(r4), L: roundObj(L[i]),

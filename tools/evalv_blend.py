@@ -117,6 +117,12 @@ def main():
         idx = np.where(both)[0]
         yy = y[idx]
         d = moe.boot_ci(pw[idx], yy, events[idx], ref=po[idx], B=args.boot)
+        ew = (out["with_engine"]["weights"] or {}).get("engine")
+        if ew is None or abs(ew) < 1e-6:
+            # engine weight 0: the two arms are the same blend up to the optimizer's tolerance (differences ~1e-6 whose
+            # bootstrap CI can exclude 0 and read as 'significant'); report the comparison as exactly level (v4.0.1 fix)
+            d = {"est": 0.0, "lo": 0.0, "hi": 0.0, "p_gt0": None, "raw": d,
+                 "note": "engine weight 0: with and without are the same blend; raw optimizer-tolerance difference kept under 'raw'"}
         res["patterns"][reg] = {
             "n": int(len(idx)), "experts_with": with_e, "experts_without": without_e,
             "engine_weight": (out["with_engine"]["weights"] or {}).get("engine"),

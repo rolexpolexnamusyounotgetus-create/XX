@@ -220,6 +220,7 @@ stats. Split = split or majority vs unanimous.
 | League + home | -3.8796 | 0.3383 | 0.1095 | 85.5% | 0.7950 | 0.4429 | 0.261 / 0.200 | 0.089 / 0.055 |
 | Named judges, no home | -3.8819 | 0.3417 | 0.1106 | 85.1% | 0.8038 | 0.4475 | 0.258 / 0.200 | 0.088 / 0.055 |
 | **Named judges + home (published)** | **-3.8672** | 0.3387 | 0.1095 | 85.3% | 0.7930 | **0.4409** | 0.256 / 0.200 | 0.088 / 0.055 |
+| Engine default after verification (published parameters, judge effects 0) | n/a | 0.3368 | | | 0.7933 | 0.4435 | 0.264 / 0.200 | |
 | Engine v3 rule (params3.js, same stats) | n/a | 0.3322 | 0.1067 | 85.1% | 0.7872 | 0.4456 | 0.255 / 0.200 | 0.094 / 0.055 |
 
 | Paired difference (2024-25) | Card LL / fight | Winner LL | 7-class LL | Split LL |
@@ -477,7 +478,8 @@ unanimity 0.77-0.81, 10-8 rounds about 2% of judge-rounds (2024-25), 10-10 0.1%.
   carry much less information. Judges new to the UFC get the prior (the five-year fold shows old judge estimates
   age badly; refit yearly).
 - Nationality coverage is 80% (Wikidata); dual citizenships count as home in both countries. Event country is
-  from ufcstats' location string.
+  from ufcstats' location string. Wikidata coverage is higher for winners (verification log), but symmetrically for locals and visitors;
+  with the 99.9%-coverage nationality of data/derived/fightweek.json the held-out home gain is slightly larger.
 - Referee outcomes are proxies: ufcstats has no knockdown timestamps, so "time from knockdown to stoppage" is
   measured by whether the stoppage came on the knockdown blow (DETAILS singular strike) and by the follow-up ground
   strikes in that round.

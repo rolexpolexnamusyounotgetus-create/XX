@@ -316,28 +316,39 @@ Setup:
 - **base** is the inputs alone, recalibrated by that fit.
 - **+head** adds the embedding head logit.
 - **+head x exp** also adds head x g, with g = x_min / (1 + x_min) and x_min the smaller decayed fight count.
-- The variant to keep was chosen by leave-one-year-out log loss inside 2019-2023; it chose +head everywhere.
+- The variant to keep (base, +head or +head x exp) is chosen by time-ordered expanding-window CV log loss inside
+  2019-2023: fit on years before y, score y, for y = 2020..2023. Leave-one-year-out is reported as a diagnostic and
+  agrees in every set.
+  - Verification fix: the first version compared only +head with +head x exp, never with base, and reported that
+    it "chose +head everywhere". With base in the comparison, train CV keeps the head for the ML logistic and the
+    opening line only.
 - Inputs: `ml.json` (`lr` = the 0.6062 logistic; `stack` = Elo + ML + market rating), `ratings.json`
   (`stack`), and `market.json` (power no-vig close, no-vig open).
 
-| inputs | n train / valid | base | + head | + head x exp | + head - base, 95% CI | slope base / + head |
-|---|---|---|---|---|---|---|
-| ML logistic | 1955 / 854 | 0.6087 (raw 0.6062) | 0.6063 | 0.6069 | -0.0025 [-0.0060, +0.0011] | 1.64 / 1.61 |
-| no-line stack (Elo + ML + market rating) | 1955 / 854 | 0.5952 (raw 0.5958) | 0.5941 | 0.5946 | -0.0012 [-0.0028, +0.0005] | 1.45 / 1.46 |
-| no-line stack + ratings stack | 1955 / 854 | 0.5913 | 0.5907 | 0.5913 | -0.0006 [-0.0015, +0.0003] | 1.40 / 1.40 |
-| opening line | 1955 / 843 | 0.6064 (raw 0.6094) | 0.5976 | 0.5969 | **-0.0088 [-0.0143, -0.0036]** | 1.15 / 1.20 |
-| closing line | 1955 / 845 | 0.5849 (raw 0.5854) | 0.5836 | 0.5834 | -0.0013 [-0.0026, -0.0001] | 1.07 / 1.09 |
-| closing line + no-line stack | 1955 / 845 | 0.5784 | 0.5788 | 0.5789 | +0.0004 [-0.0003, +0.0011] | 1.14 / 1.13 |
+| inputs | n train / valid | time-CV 2020-23 base / + head / + head x exp | chosen | base | + head | + head x exp | + head - base, 95% CI | slope base / + head |
+|---|---|---|---|---|---|---|---|---|
+| ML logistic | 1955 / 854 | 0.6463 / **0.6455** / 0.6457 | + head | 0.6087 (raw 0.6062) | 0.6063 | 0.6069 | -0.0025 [-0.0060, +0.0011] | 1.64 / 1.61 |
+| no-line stack (Elo + ML + market rating) | 1955 / 854 | **0.6332** / 0.6347 / 0.6350 | base | 0.5952 (raw 0.5958) | 0.5941 | 0.5946 | -0.0012 [-0.0028, +0.0005] | 1.45 / 1.46 |
+| no-line stack + ratings stack | 1955 / 854 | **0.6306** / 0.6321 / 0.6323 | base | 0.5913 | 0.5907 | 0.5913 | -0.0006 [-0.0015, +0.0003] | 1.40 / 1.40 |
+| opening line | 1955 / 843 | 0.6341 / **0.6329** / 0.6331 | + head | 0.6064 (raw 0.6094) | 0.5976 | 0.5969 | **-0.0088 [-0.0143, -0.0036]** | 1.15 / 1.20 |
+| closing line | 1955 / 845 | **0.6211** / 0.6218 / 0.6222 | base | 0.5849 (raw 0.5854) | 0.5836 | 0.5834 | -0.0013 [-0.0026, -0.0001] | 1.07 / 1.09 |
+| closing line + no-line stack | 1955 / 845 | **0.6193** / 0.6209 / 0.6213 | base | 0.5784 | 0.5788 | 0.5789 | +0.0004 [-0.0003, +0.0011] | 1.14 / 1.13 |
 
+- `validation.integration.sets[*].deltas["chosen - base"]` is 0 where base is chosen. The "+ head - base" column is
+  the diagnostic delta for every set.
 - Stack weights on the head logit: 0.27 on top of the ML logistic, 0.13 on top of the no-line stack, 0.07 with
   the ratings stack added, 0.35 on the open, 0.09 on the close, and -0.05 on close + stack.
+- Train-window caveats, which do not touch validation: `ratings.json` marks its stack in-sample for 2019, and
+  `ml.json`'s stack weights were fit on the same 2019-2023 out-of-fold rows. Both make the base look slightly better
+  on the training rows than it will out of sample, which works against the head in the CV.
 - Side result: on these rows the ratings stack improves the no-line stack by about 0.004, from 0.5952 to
   0.5913. That is outside this tool's scope; it is flagged here for whoever owns the stack.
 
 ### Segments (`validation.winner_segments`, `validation.integration.segments`)
 
 Segments are by fight. "min UFC fights" counts prior UFC fights of the less experienced man; the backtest
-requires at least 1 for both. Favourite terciles use the base model's |p - 0.5|.
+requires at least 1 for both. Favourite terciles use the base model's |p - 0.5|. The "no-line best + head" and
+"close + head" columns are diagnostics: train CV does not select the head for those inputs.
 
 | segment | n | logistic + emb vs base | head vs Elo | ML logistic + head | no-line best + head | close + head |
 |---|---|---|---|---|---|---|
@@ -402,33 +413,40 @@ recipe). Per mlrates target:
 - The comparison is with the recalibrated mlrates (b2 = 0), so the gain is the embedding's alone.
 - The recalibration itself changes nothing: +0.01% [-0.13, +0.15].
 
-| target | LOYO CV 2019-23 | validation, 95% CI | b2 | target | LOYO CV 2019-23 | validation, 95% CI | b2 |
-|---|---|---|---|---|---|---|---|
-| distance att. | -1.01% | -2.13% [-3.47, -0.78] | 0.32 | head acc. | -1.69% | -2.86% [-4.12, -1.60] | 0.52 |
-| clinch att. | -0.55% | -0.44% [-1.65, +0.80] | 0.41 | body acc. | -0.42% | -2.57% [-3.40, -1.76] | 0.39 |
-| ground att. | -0.56% | -0.72% [-2.05, +0.62] | 0.37 | leg acc. | -0.73% | -3.63% [-5.25, -1.97] | 0.51 |
-| head att. | -1.39% | -2.58% [-3.94, -1.18] | 0.36 | distance acc. | -1.74% | -5.11% [-6.72, -3.59] | 0.50 |
-| body att. | -0.74% | -2.03% [-3.08, -0.96] | 0.33 | clinch acc. | -0.44% | -2.33% [-3.77, -0.92] | 0.56 |
-| leg att. | -0.22% | -0.45% [-1.11, +0.24] | 0.20 | ground acc. | +0.01% | -0.13% [-0.77, +0.51] | 0.25 |
-| TD att. | -1.41% | -2.00% [-3.26, -0.64] | 0.43 | TD acc. | -0.00% | -0.04% [-0.41, +0.36] | 0.19 |
-| sub. att. | -0.09% | +0.17% [-0.71, +0.96] | 0.23 | KD per landed head | +0.11% | -0.00% | 0.00 |
-| reversals | +0.01% | -0.00% | 0.00 | control | -1.92% | -3.30% [-5.02, -1.59] | 0.46 |
+The keep rule is time-ordered expanding-window CV inside 2019-2023 (fit on years before y, score y, for y =
+2020..2023). Leave-one-year-out is the diagnostic. The validation column fits b2 for every target; the exported b2 is 0
+where the CV rejected the term.
 
-| rows | n | all 18 targets | CV-selected (b2 = 0 for the 3 the CV rejected) |
+| target | time CV 2020-23 | LOYO 2019-23 | validation, 95% CI | exported b2 | target | time CV 2020-23 | LOYO 2019-23 | validation, 95% CI | exported b2 |
+|---|---|---|---|---|---|---|---|---|---|
+| distance att. | -0.55% | -1.01% | -2.13% [-3.47, -0.78] | 0.32 | head acc. | -1.83% | -1.69% | -2.86% [-4.12, -1.60] | 0.52 |
+| clinch att. | -0.72% | -0.55% | -0.44% [-1.65, +0.80] | 0.41 | body acc. | -0.42% | -0.42% | -2.57% [-3.40, -1.76] | 0.39 |
+| ground att. | -0.62% | -0.56% | -0.72% [-2.05, +0.62] | 0.37 | leg acc. | -0.36% | -0.73% | -3.63% [-5.25, -1.97] | 0.51 |
+| head att. | -1.28% | -1.39% | -2.58% [-3.94, -1.18] | 0.36 | distance acc. | -1.92% | -1.74% | -5.11% [-6.72, -3.59] | 0.50 |
+| body att. | -0.63% | -0.74% | -2.03% [-3.08, -0.96] | 0.33 | clinch acc. | -0.29% | -0.44% | -2.33% [-3.77, -0.92] | 0.56 |
+| leg att. | -0.25% | -0.22% | -0.45% [-1.11, +0.24] | 0.20 | ground acc. | +0.10% | +0.01% | -0.13% [-0.77, +0.51] | **0** |
+| TD att. | -1.63% | -1.41% | -2.00% [-3.26, -0.64] | 0.43 | TD acc. | +0.03% | -0.00% | -0.04% [-0.41, +0.36] | **0** |
+| sub. att. | -0.02% | -0.09% | +0.17% [-0.71, +0.96] | 0.23 | KD per landed head | +0.16% | +0.11% | -0.00% | **0** |
+| reversals | +0.04% | +0.01% | -0.00% | **0** | control | -1.90% | -1.92% | -3.30% [-5.02, -1.59] | 0.46 |
+
+| rows | n | exported recipe (CV-selected, 14 targets keep b2) | all 18 targets (reference) |
 |---|---|---|---|
-| all | 1730 | **-1.68% [-2.13, -1.23]** | -1.67% [-2.11, -1.23] |
-| attacker 1-2 UFC fights | 326 | -1.57% [-2.36, -0.75] | -1.54% [-2.36, -0.73] |
-| attacker 3-5 | 383 | -1.41% [-2.20, -0.57] | -1.38% [-2.18, -0.54] |
-| attacker 6+ | 1021 | -1.81% [-2.29, -1.33] | -1.81% [-2.30, -1.33] |
-| fight with a 1-2 fight newcomer | 536 | -1.26% [-2.01, -0.42] | -1.24% [-1.99, -0.38] |
-| 2024 | 866 | -1.47% [-2.00, -0.93] | -1.47% [-1.99, -0.94] |
-| 2025 | 864 | -1.90% [-2.61, -1.23] | -1.88% [-2.61, -1.23] |
+| all | 1730 | **-1.67% [-2.11, -1.24]** | -1.68% [-2.13, -1.23] |
+| attacker 1-2 UFC fights | 326 | -1.51% [-2.31, -0.69] | -1.57% [-2.36, -0.75] |
+| attacker 3-5 | 383 | -1.37% [-2.17, -0.55] | -1.41% [-2.20, -0.57] |
+| attacker 6+ | 1021 | -1.82% [-2.31, -1.35] | -1.81% [-2.29, -1.33] |
+| fight with a 1-2 fight newcomer | 536 | -1.22% [-1.96, -0.37] | -1.26% [-2.01, -0.42] |
+| 2024 | 866 | -1.47% [-1.99, -0.95] | -1.47% [-2.00, -0.93] |
+| 2025 | 864 | -1.88% [-2.57, -1.24] | -1.90% [-2.61, -1.23] |
 
-- Leave-one-year-out CV inside 2019-2023 kept the term for 15 of 18 targets. The three it rejected
-  (reversals, ground accuracy, knockdowns) move validation by 0.13% or less.
-- The exported recipe (`embed_model.json` `mlrates_blend.targets`) keeps all 18 targets.
-- The CV-selected variant is exported too (`targets_cv_selected`). The two are identical to 0.01%.
-- Knockdowns and reversals get b2 of about 0: the embedding adds nothing to mlrates' knockdown model.
+- Time-ordered CV inside 2019-2023 keeps the term for 14 of 18 targets. It rejects reversals, ground accuracy,
+  takedown accuracy and knockdowns per landed head strike. LOYO also kept TD accuracy, at -0.00%.
+- The exported recipe (`embed_model.json` `mlrates_blend.targets`, the `blendMLRates` default) is the CV-selected
+  one. `targets_all` keeps b2 everywhere and is a reference only.
+  - Verification fix: the builder had exported all 18 targets because the CV-selected recipe "scored worse on
+    validation" (by 0.01%). That was a choice made on validation, so it was reversed.
+- Knockdowns and reversals get b2 of about 0 even when it is fitted: the embedding adds nothing to mlrates'
+  knockdown model.
 - The embedding helps most where it is opponent-adjusted by construction: accuracy, the defender's share of
   it, and grappling control.
 
@@ -449,7 +467,8 @@ is relative to the defender-only prediction:
 - Snapshot refits: each is the latest quarterly refit before the fight (asserted on every run of
   `--stage extras`).
 - Hyperparameters, noise shapes, varimax orientation, per-task calibration, winner and stat model tuning, blend
-  coefficients and variant selection all use data before 2024. Validation was read once per build.
+  coefficients and variant selection all use data before 2024. Validation was read once per build. The
+  verification corrected two selection rules that did not follow this (see the log at the end).
 
 ## What the dimensions mean
 
@@ -544,26 +563,31 @@ Reading them:
   - `win_logit`: calibrated head logit, P(A) = sigmoid(win_logit).
 - `train_snapshots[fight_id]` holds the same fields for 2010-2018 fights, plus `date`, `a`, `b` slugs.
 - `quarters[q]` holds `C`, `W`, `V`, `ua`, `ud` and `M`, already calibrated. Task predictors for a backtest
-  fight are therefore exact: `eta_t = C[t][0] + C[t][1 + div] + C[t][14] * era + C[t][15] * five +
-  W[t] . o_X + V[t] . d_Y`. Here `era` is (date - 2015-01-01) / 3652.5 days, `div` indexes `model.divs`
+  fight are therefore exact up to the 4-decimal export rounding (the head logit moves by at most 0.0024):
+  `eta_t = C[t][0] + C[t][1 + div] + C[t][14] * era + C[t][15] * five + W[t] . o_X + V[t] . d_Y`. Here `era` is (date - 2015-01-01) / 3652.5 days, `div` indexes `model.divs`
   (13 divisions), and `C` has 16 columns. In JS, `FightEmbed.load({...embed_model, C, W, V, ua, ud, M})`
   with a quarter's matrices gives the same numbers.
 - **Roster** (`roster[slug] = [16 floats, expo]`) is the fit at 2026-01-01. Its last fight used is 2025-12-13.
   1,098 roster fighters have UFC stat fights. Unknown fighters get the zero vector, the division average.
 
-**Winner stack (MoE / no-line stack).** Add `win_logit` as one more logit input to the mirrored no-intercept
-stack. Use nothing else from the embedding. The 16 raw dimensions and the predicted-rate differences overfit
-on top of ML (see the table above). Its validated contribution is small and not significant on top of the
-current no-line stacks (-0.0006 to -0.0025), and about 0 once the closing line and the ML stack are both
-present. Give it a slot so the stacker can use it, and expect a weight of 0.07-0.13 without the line and
-about 0 with it.
+**Winner stack (MoE / no-line stack).** The only embedding input worth offering is `win_logit`, as one more logit
+in the mirrored no-intercept stack. The 16 raw dimensions and the predicted-rate differences overfit on top of ML
+(+0.016 to +0.018, see above).
+- By this tool's train-only rule (time-ordered CV inside 2019-2023), the head is **rejected** on top of the no-line
+  stack, the ratings stack, the closing line and the close + stack. Its validated contribution there is 0.
+- It is kept only on top of a single model (ML logistic, -0.0025, n.s.) and the opening line (-0.0088
+  [-0.0143, -0.0036]).
+- So: offer it to the stacker as a candidate. Let the stacker's own time-ordered CV on 2019-2023 decide, and expect
+  it to be dropped wherever the no-line stack or the close is present. Do not quote the -0.0006 to -0.0013 diagnostic
+  deltas as gains.
 
 **Stat-line model (mlrates -> engine v4+).** This is where the embedding earns its place. Per side:
 
     MLRates prediction for X vs Y  ->  FightEmbed.blendMLRates(mlSide, etaXY)
 
-The per-target coefficients are in `embed_model.json` `mlrates_blend.targets`. They were fit on mlrates'
-2019-2023 out-of-fold rows and validated once on 2024-2025. In the browser:
+The per-target coefficients are in `embed_model.json` `mlrates_blend.targets`, the CV-selected recipe: b2 = 0 for
+reversals, ground accuracy, takedown accuracy and knockdowns. They were fit on mlrates' 2019-2023 out-of-fold rows and
+validated on 2024-2025. In the browser:
 
     var E = FightEmbed.load(embedModel), m = E.matchup(a, b, {division, rounds: 5});
     var blendedA = E.blendMLRates(mlratesSideA, m.etaA), blendedB = E.blendMLRates(mlratesSideB, m.etaB);
@@ -590,6 +614,9 @@ blend, not the embedding head on its own.
   - Profile neighbours are sorted.
   - 12 real 2024-25 validation rows through `blendMLRates`.
   - Style neighbours for both men, in order, with cosines.
+  - Added in verification, a tie to the real pipeline rather than a Python twin: all 2,864 2019-2025 snapshots in
+    `embed.json`, run through `embed.js` with their quarter's matrices, reproduce the walk's own unrounded win logits
+    to the export rounding (max 2.4e-3). Swapping corners negates each logit exactly.
 
 ## Reproduce
 
@@ -621,3 +648,118 @@ Runtime on the shared machine (load average about 80):
    method and round with `tools/evalv.js`. That is the engine cycle's call and is not done here.
 5. **K sweep.** K = 8 per side was fixed in the CV. Sizes 6 and 12 were not tried. The nuclear-norm-like prior
    leaves 4 of the 16 axes weak, so a larger K is unlikely to help.
+
+## Verification log
+
+Adversarial review, Nov 6, 2026, about 4:05-4:45 pm UTC. The reviewer assumed every validation gain was fake until
+shown otherwise. It used fresh code and its own scripts (scratchpad `embed_verify/`), with `nice -n 5`, one thread
+per process and no more than two processes at a time.
+
+**Verdict.** No leakage found:
+- no 2026 data;
+- no look-ahead in the walk;
+- no corner exploitation;
+- clean joins;
+- every exported number reproduces.
+
+Two selection rules broke the hidden-data protocol. Both are fixed, and the fixes change the winner-side conclusions:
+- the head no longer earns a validated slot next to the no-line stack or the close;
+- the stat-line gain stands at -1.67% [-2.11, -1.24].
+
+### What was checked
+
+1. **Hidden data.**
+   - `load_data` drops fights from 2026-01-01 on before any fit. The last fight used is 2025-12-13.
+   - `embed.json` and `embed_model.json` hold no date in 2026 other than the build timestamp and the 2026-01-01
+     roster/era date.
+   - Every snapshot id is a `backtest_dev.json` id (2019-01-19..2025-12-13), and the training snapshots end on
+     2018-12-29.
+   - `ml.json` `lr`/`stack` are out-of-fold for 2019-2023 (`set: oof`) and trained on 2010-2023 for 2024-25
+     (`set: test`).
+   - `mlrates_oof.json` holds time-ordered folds (`cv<year>`) for 2019-2023 and the 2010-2023 dev model for 2024-25.
+   - `ratings.json` (built 3:44 pm, unchanged since) is read for backtest ids only. Its stack is in-sample for 2019.
+     That affects the training rows only.
+   - The closing and opening lines are stacking inputs only and never a feature of the embedding.
+   - The Elo hyperparameters (`elo_report.json`) were tuned on 2019-2023.
+   - The five-round flag is the scheduled format (`parse_format`), not the rounds fought.
+2. **Walk-forward look-ahead.** This is the decisive test.
+   - The current code reproduces the cached 2025-01-01 quarterly refit to 6e-15. Replaying the 132 light updates of
+     that quarter reproduces every cached snapshot bit for bit (max difference 0).
+   - Scrambling the stat lines of the 2025-02-22 card (24 directed rows; counts multiplied by U(0, 3)) and flipping
+     its 12 results leaves every snapshot dated on or before that day **bit-identical**. The perturbed men's later
+     fight moves (by up to 0.22 sd).
+   - Scrambling every row and result from 2024-07-01 on (1,526 rows, 755 results) leaves that quarter's refit
+     identical to 6e-15.
+   - The tool's own pre- vs post-fight check (0.902 vs 0.750) and exposure check (0 of 2,074) reproduce.
+3. **Fresh rebuild.** `--skip-cv` and `--stage extras` were rerun with the current code on a copy of the cached
+   walks, into a scratch directory.
+   - Every number in `embed.json` (meta, model, quarters, snapshots, roster, validation.winner, validation.stats)
+     matches the published file to 1e-9.
+   - The core code at walk time matches the current code except for two unused local variables.
+   - After the fixes, the published `embed.json` and `embed_model.json` equal that fresh rebuild apart from
+     timestamps.
+4. **Independent re-scoring from the JSON alone** (own code, no `tools/embed.py` model code):
+   - head 0.6336 vs Elo 0.6769, -0.0433 [-0.0595, -0.0262];
+   - all six integration rows to 1e-4, with the same head weights (0.27, 0.13, 0.07, 0.35, 0.09, -0.05);
+   - the mlrates blend from the rounded exported snapshots and quarters: -1.68% (all targets) and -1.67%
+     (CV-selected), with the same segments and the same rejected targets.
+5. **Joins.**
+   - All 2,864 snapshot-table entries match `backtest_dev.json`: S sums, Elo, slugs and winners, with 0 differences.
+   - Orientation is asserted against `ml.json` `y` and the `ratings.json` slugs.
+6. **Corner symmetry.**
+   - The factor model has no corner input, and the win head is antisymmetric with no intercept.
+   - All winner models and stacks are mirrored with no intercept, and the GBMs average both orientations.
+   - JS: swapping corners negates every snapshot logit exactly.
+7. **JS vs Python.**
+   - `node tests/test_embed.js` passes.
+   - Verification added a tie to the real pipeline instead of the Python twin: all 2,864 snapshots run through
+     `embed.js` reproduce the walk's own win logits to the 4-decimal export rounding (max 2.4e-3).
+
+### Problems found and fixed
+
+1. **Winner integration: the head was never compared with the base.**
+   - `eval_integration` chose between +head and +head x exp by leave-one-year-out, and the report said it "chose
+     +head everywhere".
+   - With the base in the comparison, train CV (time-ordered, and LOYO too) prefers the base on top of the no-line
+     stack (time CV +0.0015 for the head), the ratings stack (+0.0015), the close (+0.0006) and the close + stack
+     (+0.0016).
+   - The reported close gain, -0.0013 [-0.0026, -0.0001], is a validation-only delta.
+   - Fixed: time-ordered CV over all three variants, `chosen - base` = 0 where the base wins, and both CV scores
+     stored per variant.
+   - Now kept: ML logistic alone (-0.0025, n.s.) and the opening line (-0.0088 [-0.0143, -0.0036]).
+   - The integration recipe no longer says to "expect a weight of 0.07-0.13".
+2. **Stat-line recipe chosen on validation.**
+   - `embed_model.json` exported the all-18-target recipe. Its note said the CV-selected one "scored worse on
+     validation" (by 0.01%).
+   - The keep rule was also leave-one-year-out, which trains on later years. The protocol asks for time-ordered CV.
+   - Fixed:
+     - The keep rule is time-ordered expanding-window CV. It rejects reversals, ground accuracy, TD accuracy and
+       knockdowns.
+     - `mlrates_blend.targets` (the `blendMLRates` default) is the CV-selected recipe, and `targets_all` is
+       reference only.
+     - `blend_check` is regenerated.
+   - Headline: -1.67% [-2.11, -1.24], with attackers on 1-2 UFC fights at -1.51% [-2.31, -0.69] (was -1.68% and
+     -1.57%).
+   - The rule was switched because the protocol requires it. The resulting validation number was not consulted
+     first. Both recipes had already been seen, and they differ by 0.01%.
+3. **Report wording.** "Task predictors are exact" now says exact up to the 4-decimal export rounding.
+
+### Caveats left as they are (no validation impact)
+
+- **Validation reads.** 2024-25 has now been read three times: the bugged build, the fix, and this verification.
+  The verification made no selection on it.
+- **"Division-average zero" is only nearly true.** A fighter with no stat fight before a refit keeps his seeded
+  N(0, 0.1) initial vector, because his Newton step is masked. That vector also enters the scale rebalancing.
+  - It carries no outcome information.
+  - Exposure is above 0 on both sides of every 2019-2025 snapshot.
+  - Only 4 sides of 2010-2018 training snapshots have exposure 0 (|v| at most 0.15 sd).
+  - Fixing it would mean re-running the walks. Zero the initial vectors at the next rebuild.
+- **Train-only fits on their own rows.**
+  - The per-task calibration and the head slope (fit on 2010-2023 walk-forward rows) are applied to the same
+    training rows the downstream models train on.
+  - `ml.json`'s and `ratings.json`'s 2019-2023 stacks are partly in-sample (see above).
+  - None of this reaches 2024-25.
+- **Grid edge.** The winner logistic with embedding features picks C = 0.003, the smallest value in its grid. That
+  is not a leak, but a smaller C was never tried.
+- **Five-round segment.** -0.025 for the feature models remains a post-hoc hypothesis found among 12 segments.
+  Check it at the next audit.
