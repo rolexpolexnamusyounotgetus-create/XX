@@ -517,6 +517,7 @@ def build_table(fights, people, elo_pre, extra_ratings, prm=None, since=FEATURES
                 stc = (T.get("stance") or "").lower()
                 fx["southpaw"] = float(stc == "southpaw")
                 fx["switch"] = float(stc == "switch")
+                fx["orthodox"] = float(stc == "orthodox")
                 fx["age_debut"] = ((dt.date.fromordinal(int(st.first_day)) - dob).days / 365.25
                                    if (dob and st.first_day is not None) else fx["age"])
             mx = matchup_features(fa, fb, P)
@@ -643,7 +644,6 @@ def _logit(p):
 def add_derived(df):
     for s in ("A_", "B_"):
         df[s + "log_mins_c"] = np.log1p(df[s + "mins_c"])
-        df[s + "orthodox"] = ((df[s + "southpaw"] == 0) & (df[s + "switch"] == 0) & df[s + "height"].notna()).astype(float)
     return df
 
 
@@ -686,8 +686,13 @@ def term_group(name):
 
 
 # ====================================================================== GBM design (side, difference, matchup, context)
-GBM_SIDE = ("age n elo elo_sig log_layoff ko_losses kd_absorbed_c win_pct slpm sapm td15 ctrl sub15 power chin height "
-            "reach years_ufc last3_win wc_move debut").split()
+# No absolute height / reach / raw-NaN age here: those tale-of-the-tape fields come from the current ufcstats
+# snapshot, and a missing value marks fighters who were cut before ufcstats recorded it (in 2010-2018 rows the side
+# with a missing reach lost 94.5% of fights). Trees route NaN to a learned branch, which turns that into a leak.
+# Differences (0 when either value is missing) carry no direction, so the size information stays in d_height,
+# d_reach, d_ape.
+GBM_SIDE = ("age n elo elo_sig log_layoff ko_losses kd_absorbed_c win_pct slpm sapm td15 ctrl sub15 power chin "
+            "years_ufc last3_win wc_move debut").split()
 M_ANTI = ["x_sig", "x_sig_share", "x_head", "x_kd", "x_td", "x_ctrl", "x_sub", "x_gnp", "x_acc", "x_tdacc",
           "st_south_vs_orth", "st_switch"]
 M_SYM = ["s_pace", "s_kd", "s_sub", "s_ctrl", "st_open"]
@@ -699,8 +704,14 @@ def gbm_design(df, Xlr, flip=False):
     sg = -1.0 if flip else 1.0
     F = {}
     for k in GBM_SIDE:
-        F["a_" + k] = df[a + k].to_numpy(dtype=float)
-        F["b_" + k] = df[b + k].to_numpy(dtype=float)
+        va = df[a + k].to_numpy(dtype=float)
+        vb = df[b + k].to_numpy(dtype=float)
+        if k == "age":                      # a missing DOB takes the opponent's age (no NaN branch)
+            va, vb = np.where(np.isnan(va), vb, va), np.where(np.isnan(vb), va, vb)
+            va = np.where(np.isnan(va), 30.0, va)
+            vb = np.where(np.isnan(vb), 30.0, vb)
+        F["a_" + k] = va
+        F["b_" + k] = vb
     for c in Xlr.columns:
         F["d_" + c] = sg * Xlr[c].to_numpy(dtype=float)
     for c in M_ANTI:
@@ -895,7 +906,6 @@ def side_block(df, p):
     age = df[p + "age"]
     F["age"] = age.fillna(30.0)
     F["age30"] = np.maximum(age.fillna(30.0) - 30, 0)
-    F["reach"] = (df[p + "reach"] - df[p + "height"]).fillna(0.0)
     return pd.DataFrame(F, index=df.index).astype(float)
 
 
@@ -1106,7 +1116,7 @@ def roster_features(fights, people, state, R_elo, R_extra, prm, roster):
         stc = (T.get("stance") or "").lower()
         fx["southpaw"] = float(stc == "southpaw")
         fx["switch"] = float(stc == "switch")
-        fx["orthodox"] = float(stc not in ("southpaw", "switch") and T.get("height_in") is not None)
+        fx["orthodox"] = float(stc == "orthodox")
         fx["age_debut"] = ((dt.date.fromordinal(int(st.first_day)) - dob).days / 365.25
                            if (dob and st.first_day is not None) else fx["age"])
         fx["log_mins_c"] = math.log1p(fx["mins_c"])
@@ -2100,7 +2110,7 @@ def side_block_dict(v):
     for k in METHOD_SIDE_ELO:
         F.append(v[k] / 100.0)
     age = v["age"] if v.get("age") is not None else 30.0
-    F += [age, max(age - 30, 0), (v["reach"] - v["height"]) if (v.get("reach") and v.get("height")) else 0.0]
+    F += [age, max(age - 30, 0)]
     return F
 
 
@@ -2214,8 +2224,8 @@ def page_model(R):
                            "antisymmetric, so p(B beats A) = 1 - p(A beats B)"},
         "method": dict(mm.export(mcols), classes_meaning=["KO/TKO", "SUB", "DEC"],
                        side_block={"log(x+eps)": METHOD_SIDE_LOG, "logit(x)": METHOD_SIDE_LOGIT, "x": METHOD_SIDE_LIN,
-                                   "x/100": METHOD_SIDE_ELO, "then": ["age (30 if missing)", "max(age-30,0)",
-                                                                      "reach-height (0 if missing)"], "eps": EPS_LOG},
+                                   "x/100": METHOD_SIDE_ELO, "then": ["age (30 if missing)", "max(age-30,0)"],
+                                   "eps": EPS_LOG},
                        context=["lbs/100", "women", "five", "title", "catch"],
                        eval="x = [side_block(winner), side_block(loser), context]; softmax(intercept + coef @ x) = "
                             "P(KO/TKO, SUB, DEC | that fighter wins)"),

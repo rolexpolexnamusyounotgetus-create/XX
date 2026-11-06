@@ -114,6 +114,9 @@
     var raw = gateVector((inputs && inputs.gate) || {}), g = standardise(model, raw);
     var z, weights = {}, contrib = {}, scale = 1;
     if (model.method === "gated") {
+      (model.presence_groups || []).forEach(function (gr) {
+        g.push(gr.every(function (e) { return e in L; }) ? 1 : 0);
+      });
       var a = [], mx = -Infinity;
       for (i = 0; i < E.length; i++) {
         if (!(E[i] in L)) { a.push(null); continue; }

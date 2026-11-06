@@ -919,6 +919,13 @@ class Stacker:
     half-life in years for the training weights (None = equal weights)."""
     def __init__(self, method, experts, drops, hp=None):
         self.method, self.experts, self.drops, self.hp = method, list(experts), drops, dict(hp or {})
+        self.groups = make_drops(self.experts)[2]
+
+    def presence(self, M):
+        """Gate inputs for the gated model: one 0/1 column per optional expert group (is it present?), so the
+        softmax weights and the scale can depend on which experts the page has."""
+        cols = [M[:, [self.experts.index(e) for e in g]].all(1).astype(float) for g in self.groups]
+        return np.column_stack(cols) if cols else np.zeros((len(M), 0))
 
     def _aug(self, L, M, G, y, w):
         Ls, Ms, Gs, ys, ws = [], [], [], [], []
@@ -945,7 +952,7 @@ class Stacker:
                 self._fit_pat(frozenset(e for e in self.experts if e not in d))
         elif self.method == "gated":
             La, Ma, Ga, ya, wa = self._aug(L, M, G, y, w)
-            self.g = GatedStack(self.hp.get("lam", 1e-2)).fit(La, Ma, Ga, ya, wa)
+            self.g = GatedStack(self.hp.get("lam", 1e-2)).fit(La, Ma, np.hstack([Ga, self.presence(Ma)]), ya, wa)
         elif self.method in ("gbm", "gbm_res"):
             La, Ma, Ga, ya, wa = self._aug(L, M, G, y, w)
             base = None
@@ -980,7 +987,7 @@ class Stacker:
         if self.method == "linear":
             return self._lin_logit(L, M)
         if self.method == "gated":
-            return self.g.logit(L, M, G)
+            return self.g.logit(L, M, np.hstack([G, self.presence(M)]))
         base = self._lin_logit(L, M) if self.method == "gbm_res" else None
         return self.b.logit(L, M, G[:, 1:], base=base)
 
@@ -1206,7 +1213,13 @@ def cmd_fit(args):
                         reg, m, key, out["patterns"][key]["static"]["log_loss"],
                         out["patterns"][key]["static_raw"]["log_loss"], kind, out["patterns"][key]["rolling"]["log_loss"]))
                 R["methods"][m] = out
-            R["chosen"] = min(R["methods"], key=lambda m: R["methods"][m]["cv"])
+            # parsimony: the simplest family wins unless a more complex one beats it by > 0.0005 CV log loss
+            order = ["linear", "gated", "gbm_res", "gbm"]
+            ch = "linear"
+            for m in order[1:]:
+                if m in R["methods"] and R["methods"][m]["cv"] < R["methods"][ch]["cv"] - 0.0005:
+                    ch = m
+            R["chosen"] = ch
             log("  chosen for %s regime: %s %s" % (reg, R["chosen"], R["methods"][R["chosen"]]["hp"]))
             res["regimes"][reg] = R
         res["_oofs"] = oofs
@@ -1253,6 +1266,7 @@ def export_model(st, cal, experts, mu, sd, P_clip=PCLIP):
     if st.method == "gated":
         m["V"] = [[float(v) for v in row] for row in st.g.V]
         m["u"] = [float(v) for v in st.g.u]
+        m["presence_groups"] = st.groups          # extra gate inputs after the standardised features
     if st.method in ("linear", "gbm_res"):
         m["linear"] = {"+".join(e for e in experts if e in pat): {experts[i]: float(w) for i, w in zip(idx, lm.w)}
                        for pat, (idx, lm) in st.lin.items()}
@@ -1410,7 +1424,7 @@ def report_and_export(args):
         st = gm["_model"]
         gw = {}
         for label, Mx in (("with_market", M), ("no_market", drop_mask(M, experts, {"market"}))):
-            _ = st.g.logit(Lst[common], Mx[common], Gs[common])
+            _ = st.logit(Lst[common], Mx[common], Gs[common])
             PI, s_ = st.g.last_pi, st.g.last_s
             for sgn, mask in SM.items():
                 if mask.sum() >= 25:
@@ -1418,7 +1432,7 @@ def report_and_export(args):
                                                                  for j, e in enumerate(experts) if Mx[common][mask][:, j].any()},
                                                      "scale": round(float(s_[mask].mean()), 4)}
         rep["gate_weights_valid"] = gw
-        rep["gate_coefficients"] = {"experts": experts, "gate": ["bias"] + GATE_NAMES,
+        rep["gate_coefficients"] = {"experts": experts, "gate": ["bias"] + GATE_NAMES + ["has:" + "+".join(g) for g in st.groups],
                                     "V": [[round(float(v), 4) for v in row] for row in st.g.V],
                                     "u": [round(float(v), 4) for v in st.g.u]}
 

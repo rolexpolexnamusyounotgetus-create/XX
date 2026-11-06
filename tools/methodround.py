@@ -544,6 +544,10 @@ def per_fight_losses(P, y, T):
     pa = M["pA"] / (M["pA"] + M["pB"])
     L["winner"] = np.where(dec_ok, -np.log(np.where(a_won, pa, 1 - pa)), np.nan)
     L["winner_brier"] = np.where(dec_ok, (pa - a_won) ** 2, np.nan)
+    # method given the actual winner (decisive fights): what a winner ensemble would take from this model
+    p_cell_m = np.where(is_dec, np.where(a_won, M["XDEC"], M["YDEC"]),
+                        np.where(is_ko, np.where(a_won, M["XKO"], M["YKO"]), np.where(a_won, M["XSUB"], M["YSUB"])))
+    L["method_given_winner"] = np.where(dec_ok, -np.log(p_cell_m / np.where(a_won, M["pA"], M["pB"])), np.nan)
     L["winner_acc"] = np.where(dec_ok, np.where(np.abs(pa - 0.5) < 1e-9, 0.5, ((pa > 0.5) == a_won) * 1.0), np.nan)
     # Brier for the 3-class method
     o3 = np.stack([is_ko, is_sub, is_dec], 1).astype(float)
@@ -1239,8 +1243,8 @@ def calibration_report(P, y, T):
 
 
 # ============================================================== 7. pipeline
-METRICS = ["joint", "method3", "finish", "bin7", "method_round", "round_given_fin", "ko_vs_sub", "winner",
-           "winner_brier", "winner_acc", "method3_brier"]
+METRICS = ["joint", "method3", "finish", "bin7", "method_round", "round_given_fin", "ko_vs_sub", "method_given_winner",
+           "winner", "winner_brier", "winner_acc", "method3_brier"]
 
 
 class Window:
@@ -1878,7 +1882,8 @@ def write_report(o):
     met_cols = [("method3", "Method 3-class LL"), ("finish", "Finish vs decision LL"), ("bin7", "7-bin LL"),
                 ("method_round", "Method x round LL"), ("joint", "Who x how x when LL"),
                 ("round_given_fin", "Round given finish LL"), ("ko_vs_sub", "KO vs SUB given finish LL"),
-                ("winner", "Winner LL"), ("winner_acc", "Winner accuracy")]
+                ("method_given_winner", "Method given winner LL"), ("winner", "Winner LL"),
+                ("winner_acc", "Winner accuracy")]
     L = []
     L.append("# Method-and-round model (methodround)\n")
     L.append("Built %s by `tools/methodround.py` from the ufcstats snapshot through %s. Outputs: "
@@ -1936,8 +1941,9 @@ def write_report(o):
                    ("SM_minus_base_division_elo", "SM - base rates x Elo")):
         pdd = te["paired"][k]
         rows.append([lab] + [_dci(pdd.get(m)) for m in ("method3", "finish", "bin7", "joint", "round_given_fin",
-                                                       "winner")])
-    L.append(_md_table(["Paired difference", "Method", "Finish", "7-bin", "Joint", "Round | finish", "Winner"], rows))
+                                                       "method_given_winner", "winner")])
+    L.append(_md_table(["Paired difference", "Method", "Finish", "7-bin", "Joint", "Round given finish",
+                        "Method given winner", "Winner"], rows))
     L.append("\nNegative = the first model is better. The differences are on the same fights, so their CIs are "
              "much tighter than the CIs of the levels.\n")
     if sm["n"]:
@@ -1949,18 +1955,18 @@ def write_report(o):
                        ("SM_market_blend", "SM + market blend (a=%.1f)" % ch["a_market"]),
                        ("SM_refit_market_blend", "SM refit + market blend")):
             rows.append([lab] + [_ci(mm[k].get(m)) for m in ("method3", "finish", "ko_vs_sub", "round_given_fin",
-                                                             "bin7", "joint", "winner")])
-        L.append(_md_table(["Model", "Method", "Finish", "KO vs SUB", "Round | finish", "7-bin", "Joint", "Winner"],
-                           rows))
+                                                             "method_given_winner", "bin7", "joint", "winner")])
+        L.append(_md_table(["Model", "Method", "Finish", "KO vs SUB", "Round given finish", "Method given winner",
+                            "7-bin", "Joint", "Winner"], rows))
         L.append("")
         rows = []
         for k, lab in (("SM_minus_market", "SM - market"), ("S_minus_market", "S - market"),
                        ("blend_minus_market", "blend - market"), ("blend_minus_SM", "blend - SM")):
             pdd = sm["paired"][k]
             rows.append([lab] + [_dci(pdd.get(m)) for m in ("method3", "finish", "ko_vs_sub", "round_given_fin",
-                                                           "bin7", "joint")])
-        L.append(_md_table(["Paired difference", "Method", "Finish", "KO vs SUB", "Round | finish", "7-bin",
-                            "Joint"], rows))
+                                                           "method_given_winner", "bin7", "joint")])
+        L.append(_md_table(["Paired difference", "Method", "Finish", "KO vs SUB", "Round given finish",
+                            "Method given winner", "7-bin", "Joint"], rows))
         L.append("\nThe market props come from `data/derived/market.json` (tools/market.py): per-book closing "
                  "\"wins by KO/TKO / submission / decision\" prices, power-normalised and averaged over US books, "
                  "spread over rounds with the books' \"fight ends in round k\" props. They exist from 2021 on.\n")
@@ -2104,6 +2110,15 @@ groups are roughly neutral for method (kept for the winner and for the page).
              % ("verified" if jc.get("ok") else "CHECK FAILED", jc.get("cases"), jc.get("max_abs_diff")))
     L.append("")
     L.append("## Recommendation for the final ensemble\n")
+    mgw = te["paired"]["S_minus_base_division_elo"].get("method_given_winner", {})
+    rnd_txt = "n/a"
+    if sm["n"]:
+        dm = sm["paired"]["SM_minus_market"]
+        rnd_txt = ("SM - market on the 2024+ props subset: method %s, KO vs SUB %s, round given finish %s, method "
+                   "given winner %s" % (_dci(dm.get("method3")), _dci(dm.get("ko_vs_sub")),
+                                        _dci(dm.get("round_given_fin")), _dci(dm.get("method_given_winner"))))
+    L.append("Evidence behind the recommendations: method given the actual winner, S - base rates %s; %s.\n"
+             % (_dci(mgw), rnd_txt))
     L.append("""1. **Use this model as the method/round prior and as the yardstick for the simulator.** The v3+ engine's
    simulated method distribution should be scored on the same held-out fights with the same metrics (method
    3-class LL, finish LL, round-given-finish LL, 7-bin and joint LL, plus the calibration tables above). If the
@@ -2113,16 +2128,24 @@ groups are roughly neutral for method (kept for the winner and for the page).
    winner), then P(method, round | winner) from this model's conditional shares (`methodGivenWin` in the JS
    output; the per-fight cells give the same). Method given winner is where this model adds the most, and it
    leaves the winner question to the stack.
-3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta); the
-   props are sharp on KO vs submission, while the model is sharper on the finishing round.
+3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta). The
+   props are sharper than the model on finish vs decision and KO vs submission (they price in pre-UFC records,
+   camp news and styles the stats do not see); the model matches them on the finishing round, and the blend is
+   at least as good as the props on every target.
 4. **Without a line** (hypothetical matchups such as Volkanovski vs Gaethje before odds): use S.
 5. Natural next inputs: pre-UFC records (tools/preufc.py; Sherdog crawl was incomplete when this ran, so it is not
    used), opponent-adjusted rates (tools/oppadj.py) and the durability model's chin/power estimates
    (data/derived/durability.json) as extra features; refit with `python3 tools/methodround.py`.
 """)
     L.append("## Limitations\n")
-    L.append("""- Method and round are noisy targets: even the market's props reach a method log loss of only about 0.95
-  against 1.01 for base rates. Gains of 0.01-0.05 in log loss are what good looks like here.
+    if sm["n"]:
+        L.append("- Method and round are noisy targets: on the held-out props subset the market's method log loss is "
+                 "%.3f against %.3f for base rates x Elo (uniform over three classes: 1.099). Gains of 0.01-0.05 "
+                 "in log loss are what good looks like here." % (sm["metrics"]["market_props"]["method3"]["mean"],
+                                                                 sm["metrics"]["base_division_elo"]["method3"]["mean"]))
+    L.append("""- The stats-only variant knows nothing about weight-class moves, injuries, camp changes or pre-UFC
+  records; for Volkanovski vs Gaethje it favours Volkanovski on his UFC numbers while the market makes Gaethje a
+  clear favourite. Use SM (or the winner ensemble) whenever a line exists.
 - Draws are a fixed share of decision outcomes; DQ and no-contests are not modelled (excluded from scoring).
 - The SM variant needs the closing line; scored on 2024+ it is a live model, not a fight-week forecast.
 - The market props benchmark covers fights with US-book props (2021+) and uses averaged, power-normalised

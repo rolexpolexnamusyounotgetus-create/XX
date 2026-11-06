@@ -2,7 +2,7 @@
 
 As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). Fight numbers re-checked against raw ufcstats rows on Nov 6.
 
-**Research note (updated Nov 6, 2026):** the network was open for this pass. Status, ranking, record, bookings, injuries and appearance were re-checked on the web (pages listed under Sources, all fetched on Nov 6 unless marked as a search summary). ufc.com returned 403, so the official rankings were read through two mirrors that agree. Fight numbers still come from the ufcstats snapshot of Oct 31, 2026. Still unverified: gym.
+**Research note (updated Nov 6, 2026):** the network was open for this pass. Status, ranking, record, bookings, injuries and appearance were re-checked on the web. The pages on the "Nov 6 re-check" and "Photos" lines under Sources were fetched on Nov 6 unless marked as a search summary; older source lines are as the earlier pass left them. ufc.com returned 403, so the official rankings were read through two mirrors that agree. Fight numbers still come from the ufcstats snapshot of Oct 31, 2026. Still unverified: gym.
 
 ## Current status
 

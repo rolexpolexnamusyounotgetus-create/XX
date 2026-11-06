@@ -2,7 +2,7 @@
 
 As of 2026-11-06. He/him. Southpaw, 6 ft 3 in, 84 in reach, listed 257 lb, born 1992-05-13 (age 34). Pro record 21-3 (16 KO/TKO, 5 decisions; ESPN, UFCalendar, Wikipedia), UFC record 9-3 (ufcstats). UFC debut: Nov 24, 2018, a TKO loss to Alistair Overeem.
 
-**Research note (updated Nov 6, 2026):** the network was open for this pass. Status, ranking, record, bookings, injuries and appearance were re-checked on the web (pages listed under Sources, all fetched on Nov 6 unless marked as a search summary). ufc.com returned 403, so the official rankings were read through two mirrors that agree. Fight numbers still come from the ufcstats snapshot of Oct 31, 2026.
+**Research note (updated Nov 6, 2026):** the network was open for this pass. Status, ranking, record, bookings, injuries and appearance were re-checked on the web. The pages on the "Nov 6 re-check" and "Photos" lines under Sources were fetched on Nov 6 unless marked as a search summary; older source lines are as the earlier pass left them. ufc.com returned 403, so the official rankings were read through two mirrors that agree. Fight numbers still come from the ufcstats snapshot of Oct 31, 2026.
 
 ## Current status
 

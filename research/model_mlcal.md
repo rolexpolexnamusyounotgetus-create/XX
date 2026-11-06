@@ -139,13 +139,13 @@ loss are invariant under relabeling, and the calibration table counts each fight
 are compared on identical random draws and their difference has far less Monte Carlo noise than either
 value (tests/test_mlcal.js checks the same candidate gives a bit-identical objective).
 
-**Successive halving.** Rungs are cumulative sims per fight (default 15, 30, 60). Every trial starts at
-15; Optuna's SuccessiveHalvingPruner (reduction factor 2) promotes the better half to 30 and the best
-quarter to 60. A promotion only adds the new sims (rung r draws with seed offset r and its counts are
+**Successive halving.** Rungs are cumulative sims per fight (default 10, 20, 40; run 1 used 15, 30, 60).
+Every trial starts at the first rung; Optuna's SuccessiveHalvingPruner (reduction factor = rung ratio, 2)
+promotes the better half to the second rung and the best quarter to the top rung. A promotion only adds the new sims (rung r draws with seed offset r and its counts are
 added to the earlier rungs'), and matchups are cached per trial inside each worker.
 
 **Monte Carlo floor.** With N sims per fight the expected log-loss inflation is about 1/(2N) for the
-winner (0.033 at 15, 0.008 at 60, 0.003 at 160) and about 6/(2N) for 7 bins before smoothing. It is close
+winner (0.05 at 10, 0.033 at 15, 0.0125 at 40, 0.008 at 60, 0.003 at 160) and about 6/(2N) for 7 bins before smoothing. It is close
 to constant across candidates, so comparisons within a rung are fair; never compare values across rungs.
 
 **Optimizers.**
@@ -157,9 +157,11 @@ to constant across candidates, so comparisons within a rung are fair; never comp
    members on the same CRN, so ranks are valid), then the best half is promoted to the top rung so its
    score is comparable with complete TPE trials.
 3. Confirmation: the best 3 distinct candidates (normalized RMS distance > 0.03) plus the baseline are
-   re-scored on a disjoint window of 600 other train fights with fresh seeds. This removes the winner's
+   re-scored on a disjoint window of train fights with fresh seeds (default: every train fight outside the
+   tuning window, 672 with the default 1,300-fight window; run 1 used 600). This removes the winner's
    curse of the tuning sample and of the specific random draws; finalists are re-ranked by it.
-4. Validation 2024-01-01..2025-12-31 (all 865 usable fights, both corner orders, 80 sims per order): each
+4. Validation 2024-01-01..2025-12-31 (all 857 fights with a decisive result or a draw; NC and DQ dropped;
+   both corner orders, 80 sims per order): each
    finalist and the baseline once. `data/derived/mlcal_val_ledger.json` stores the hash (engine file,
    params file, overrides, hook values) of every set ever scored there; a set already in the ledger is never
    re-run, its stored result is reused. 2,000-resample bootstrap over fights gives 95% CIs and paired CIs
@@ -233,13 +235,14 @@ becomes an engine feature with a params entry in the next cycle.
    on the objective (or winner log loss) excludes zero or the version adds a capability without making
    validation worse (ROADMAP rule).
 5. `node tools/mlcal.js export --cand data/derived/mlcal_candidates.json --rank 1 --out <file.js>` writes a
-   full params file (the header lists every changed value). The owner of src/params3.js copies the values in,
+   full params file (the header lists every changed value and the hook weights, and warns when the live
+   params file has changed since the candidate was tuned; it refuses to write src/params3.js). The owner of src/params3.js copies the values in,
    re-runs tests/test_engine3.js, and records the numbers in docs/CHANGELOG.md. mlcal never writes src/.
 6. Re-validating a set that is already in the ledger returns the stored result. Do not delete ledger
    entries to get a second look; the 2026 vault stays for the milestone audits.
 
 Quick one-off evaluation of any parameter file or candidate: `node tools/mlcal.js eval --split train
---n-fights 600 --sims 60 [--x candidate.json] [--detail]` (prints the objective, components, base rates
+--n-fights 600 --sims 60 [--x <json with an "x" or "overrides" object>] [--engine/--params/--hook/--fixed] [--detail]` (prints the objective, components, base rates
 and stat-line errors as JSON).
 
 ## Nothing runs in the browser
