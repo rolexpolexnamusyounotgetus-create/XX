@@ -133,9 +133,9 @@
       uko_w: rec.ko_w || 0, usub_w: rec.sub_w || 0, uko_l: rec.ko_l || 0, usub_l: rec.sub_l || 0, pav: 0 };
     const rg = (model.roster_gnet || {});
     const row = rg.fighters && prof.slug ? rg.fighters[prof.slug] : null;
-    if (row && rg.half_life != null) {
-      const h = String(rg.half_life.toFixed(1));
-      s["g" + h + "_th"] = row[0]; s["g" + h + "_sd"] = row[1]; s["g" + h + "_sos"] = row[2];
+    if (row) for (const h in row) {                 // { "<half-life>": [th, sd, sos, m] } as of 2026-01-01
+      const v = row[h];
+      s["g" + h + "_th"] = v[0]; s["g" + h + "_sd"] = v[1]; s["g" + h + "_sos"] = v[2]; s["g" + h + "_m"] = v[3];
     }
     return Object.assign(s, flagsFrom(null, flags));
   }
@@ -153,7 +153,7 @@
       pre_tuf: fin(dm.pre_tuf) ? dm.pre_tuf : (fin(deb.exh_n) ? (deb.exh_n > 0 ? 1 : 0) : (fin(sp.pre_tuf) ? sp.pre_tuf : null)),
       uko_w: 0, usub_w: 0, uko_l: 0, usub_l: 0, pav: 1 };
     for (const k in sp) if (/^pre_/.test(k) && !(k in s)) s[k] = sp[k];
-    for (const k in dm) if (/^g[0-9.]+_(th|sd|sos)$/.test(k)) s[k] = dm[k];
+    for (const k in dm) if (/^g[0-9.]+_(th|sd|sos|m)$/.test(k)) s[k] = dm[k];
     return Object.assign(s, flagsFrom(entry, flags));
   }
   return { load, DIV_LBS, sideFromProfile, sideFromDebutant, flagsFrom };

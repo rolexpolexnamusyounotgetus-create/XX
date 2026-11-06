@@ -294,6 +294,12 @@ Findings from verified research that the next engine versions must use. Each lin
   - Train draws and MD are still about half of actual with deductions on: 0.60% vs 1.01% of fights, MD 0.95% vs 2.04% of
     decisions.
   - Stance freeze is not cheap: there is one tale-of-the-tape snapshot and no history.
+  - Step 2 done (~23:00 UTC; docs/CHANGELOG.md "v5 merge log"): components.durability and components.dynamics, both on, each
+    flag off = the engine before it bit for bit (tests/test_v5_step2.js).
+    - First joint KD / finish check, train only (tools/v5_joint_levels.py): KD per 15 is 0.612 vs 0.611 actual (3 rounds) and
+      0.519 vs 0.500 (5 rounds). Conversion is 0.510 vs 0.512 per KD; the 3-round KO share is 30.7% vs 30.7%.
+    - So the one joint level pass is within noise; no level was moved.
+    - League-average plain-table KO shares run 0.4-3.1 pts low, so the selfcal re-fit is a job for Calibrate.
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the

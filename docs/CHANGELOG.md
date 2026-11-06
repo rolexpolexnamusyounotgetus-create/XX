@@ -88,6 +88,113 @@ No validation (2024-2025) number is computed in these steps; the Measure stage t
     --write and tests/test_engine3.js --fit --write. Run them with the sub-flag on, or drop a rejected sub-flag first.
   - After a full `--fit --write` with koTargets on, set `params.v401.koComp` to 1.
 
+### Step 2 (Nov 6, 6:00 pm ET): durability, then dynamics (`components.durability`, `components.dynamics`)
+
+- **Base.** The step-1 commit 9656818 (src/engine3.js sha256 271b9b42...). A first run of this step was killed by a container
+  restart at ~22:22 UTC after merging both components (autosaves 69b949c..3b7967e). This run re-did the merge independently and
+  got the same result: engine3.js byte for byte; params3.js differs only where the earlier run resolved the duplicate key (below).
+- **Durability** (scratchpad/components/durability_v4main.patch + durability_evalv_v4main.patch).
+  - Merged as a 3-way merge: base versions/v4, ours = step 1, theirs = v4 + the patch, which applies to v4 with no offsets.
+  - One conflict, the export line: kept step 1's `deductions` and added `loadDurability`.
+  - In params3.js the patch brings its own `components: { durability }` object. Left as is, it would be a second `components`
+    key and would silently drop `v401`. It is folded into step 1's `components` block.
+  - Settings as verified: flag on, `engineWeight` 0.5, absolute tracked league level (`durability.level` 0.010274, trailing
+    730 days), `kdCal` 1.1639618.
+  - tools/evalv.js: the walk-forward records plus the train NORM. The evalv patch's hunk is identical to the main patch's.
+- **Dynamics** (scratchpad/components/dynamics_v4.0.0_port.patch), applied on top as a 3-way merge with no conflicts.
+  - `dyn.stkoHurtGate` stays false.
+  - New: the AR(1) autocorrelations `dyn.arPhi` / `dyn.accArPhi` are clipped to [0, 0.999] in `dynTables`. Their valid range
+    is [0, 1); phi >= 1 made sqrt(1 - phi^2) NaN. The defaults 0.85 / 0.73 pass through unchanged.
+- **Tests adapted to the merge order.**
+  - test_durability compares flag off with tests/fixtures/engine3_pre_durability.js, which is the step-1 engine. It switches the
+    later components off, and its pure-hazard cases use the resolved kdScale (koComp x1.11).
+  - test_dynamics' fixture tests/fixtures/engine3_pre_dynamics.js is step 1 + durability.
+  - test_engine3's league-average `simAvg` runs durability in relative mode, so the priors-era self-calibration keeps the
+    priors' division level.
+- **Leak-free durability inputs in the backtest tools.**
+  - New tools/durrec.js, used by tools/dynamics_bt.js, dynamics_calibrate.js, mlcal.js, moe_engine_bt.js and v4_levels.js.
+    It gives each backtest matchup its durability.json walk-forward record plus the train NORM, and throws rather than fall back
+    to the live fit (2008..2026-10).
+  - tools/v401_kocomp.js and judgecal.js run their league-average pairs in relative mode.
+  - Other tools still build backtest matchups without records: calibrate.js, statlines_engine.js, oppadj_engine.js,
+    mlrates_engine.js and mlcal_verify.js. Before using them with durability on, pass the records through tools/durrec.js.
+- **Joint knockdown / finish level check** (TRAIN 2019-2023 only; first look, no parameter changed).
+  - Setup: 1,999 fights, both corner orders, 50 sims each (100 per fight per configuration), common random numbers. Leak-free
+    inputs throughout: frozen profiles, as-of priors, OOF learned rates, durability walk-forward records + train NORM.
+  - Tools: tools/dynamics_bt.js with four configurations, then the new tools/v5_joint_levels.py. Tables are in
+    data/derived/v5_joint_levels_step2.json.
+  - Actual ranges are 95% event-cluster bootstrap intervals.
+  - Configurations: s1 = both off (step 1), dur = durability only, dyn = dynamics only, both = the step-2 defaults.
+
+  | train 2019-2023 | actual [95% CI] | s1 | dur | dyn | both |
+  |---|---|---|---|---|---|
+  | KD per 15 min, 3 rounds (1,752 fights) | 0.611 [0.562, 0.663] | 0.656 | 0.665 | 0.598 | **0.612** |
+  | KD per 15 min, 5 rounds (247) | 0.500 [0.408, 0.602] | 0.384 | 0.378 | 0.513 | **0.519** |
+  | KD per fight, all | 0.445 [0.416, 0.476] | 0.458 | 0.460 | 0.438 | **0.445** |
+  | KD per 100 head landed, all | 0.782 [0.721, 0.848] | 0.774 | 0.785 | 0.747 | 0.765 |
+  | strike finish per KD, same round (data 0.512) | | 0.467 | 0.469 | 0.508 | **0.510** |
+  | KD per 100 standing head by round, 3 rds (real 1.47 / 0.74 / 0.44) | | 1.35 / 0.84 / 0.64 | 1.38 / 0.85 / 0.65 | 1.41 / 0.70 / 0.43 | **1.45 / 0.72 / 0.44** |
+  | same, 5 rds (real 1.22 / 1.01 / 0.54 / 0.28 / 0.42) | | 0.70 / 0.59 / 0.47 / 0.39 / 0.37 | 0.68 / 0.57 / 0.47 / 0.40 / 0.36 | 1.19 / 0.94 / 0.50 / 0.32 / 0.31 | **1.19 / 0.92 / 0.50 / 0.32 / 0.35** |
+
+  The real by-round rates come from dynamics.json targets_by_round.train, which covers all UFC rounds 2019-2023.
+
+  | finish share by round, train | actual | s1 | dur | dyn | both |
+  |---|---|---|---|---|---|
+  | 3 rds, any finish (1,729) | 24.4 / 16.7 / 7.5 = 48.6 | 25.1 / 14.5 / 9.1 | 25.6 / 14.4 / 9.1 | 25.6 / 13.8 / 8.9 | 25.8 / 13.8 / 9.0 = 48.7 |
+  | 3 rds, KO class | 16.1 / 10.3 / 4.2 = 30.7 | 16.4 / 9.2 / 5.5 | 16.7 / 9.1 / 5.5 | 17.1 / 8.4 / 4.7 | 17.5 / 8.5 / 4.8 = 30.7 |
+  | 3 rds, SUB | 8.3 / 6.4 / 3.3 = 18.0 | 8.7 / 5.3 / 3.6 | 8.8 / 5.3 / 3.7 | 8.5 / 5.5 / 4.2 | 8.3 / 5.4 / 4.3 = 18.0 |
+  | 5 rds, any finish (243) | 17.3 / 16.5 / 9.5 / 5.3 / 4.9 = 53.5 | 14.4 / 12.9 / 9.9 / 9.2 / 5.4 | 14.3 / 12.8 / 10.5 / 9.5 / 5.4 | 19.5 / 15.4 / 9.7 / 8.1 / 4.4 | 19.5 / 15.9 / 9.8 / 8.0 / 4.8 = 58.0 |
+  | 5 rds, KO class | 11.9 / 13.6 / 6.2 / 3.3 / 4.5 = 39.5 [33.2, 46.0] | 37.4 | 37.9 | 42.5 | 15.3 / 12.2 / 7.1 / 5.8 / 3.0 = 43.5 |
+  | 5 rds, SUB | 5.3 / 2.9 / 3.3 / 2.1 / 0.4 = 14.0 | 14.3 | 14.6 | 14.6 | 4.2 / 3.7 / 2.7 / 2.1 / 1.8 = 14.5 |
+
+  - **The knockdown levels hold jointly on train.** Both on, the implied single re-match factor is x0.999 for 3 rounds
+    [0.918, 1.084 from the actuals' CI] and x0.964 for 5 rounds [0.786, 1.161]. Matched by kdLevel alone, kdLevel3 stays 0.655
+    and kdLevel5 goes 0.559 -> ~0.539. Matched by kdCal alone, kdCal goes 1.164 -> ~1.156 overall.
+    - Why: dynamics' kdLevel3/5 were matched to these actuals with durability off. Durability moves knockdowns by only -2% to
+      +2% (dur vs s1, both vs dyn, by format), inside the noise.
+    - This is no reason to re-scale now. Calibrate still runs the one joint pass.
+  - **Conversion is on target**: 0.510 per KD against 0.512. The 3-round KO share matches the data (30.7 vs 30.7), and overall
+    both equals dur within 0.2 pts, so the dynamics rule "KO share = the flag-off engine" still holds. convLevel and the
+    stko/gnp scales need no provisional change.
+  - **Known misfits persist with both on**, as dynamics.md reported:
+    - 3-round R2 KO hazard 0.114 vs 0.136 real; R3 0.079 vs 0.072.
+    - 5-round R1 KO hazard 0.153 vs 0.119; 5-round KO share 43.5% vs 39.5% (inside the actuals' CI).
+    - Late submissions: 3-round R3 SUB hazard 0.071 vs 0.056; 5-round R5 0.038 vs 0.008.
+    - Non-knockdown stoppages are a smaller share of strike KO/TKOs than the step-1 targets: standing 6.5% vs 7.2%, ground
+      (no KD) 18.4% vs all ground 28.6%. The definitions differ, so read these as descriptive.
+- **League-average self-calibration (tests/test_engine3.js).**
+  - With both on, the plain-table league-average pairs run low on the KO share by 0.4-3.1 pts per division (mean -1.65). Step 1
+    alone is -0.79 and step 1 + durability -1.11.
+  - Heavyweight is at 39.9% vs 43.0%, 0.1 pt past the old +/-3 pts.
+  - Real fights with the learned rates are on target (table above), so the levels were not moved for the league-average check.
+    Instead, the share checks (finish / KO / SUB) now allow the larger of +/-3 pts and the target's own sampling SE,
+    sqrt(p(1-p)/n). Heavyweight's n of 186 gives an SE of 3.6 pts on the KO share. Of the checked divisions, only HW (KO,
+    finish) and the women's FLY and STRAW (finish) get more than 3 pts.
+  - This follows the v4 precedent of the KD tolerance, documented in the test. The Calibrate stage should re-fit the
+    self-calibration (`--fit`) with both components on, and can restore a flat +/-3.
+- **Tests (all pass).**
+  - `node tests/test_v5_step2.js`: 16 passed (new).
+    - Durability + dynamics off reproduce the step-1 engine bit for bit. Dynamics off reproduces step 1 + durability bit for
+      bit. Each covers 450 matchups: whole fight JSON incl. traces, 4,500 fights, 45 summaries and explain() outputs. Three
+      groups: random pairs with the production learned rates and the live roster, plain tables, and 2019-2023 backtest fights in
+      both corner orders with OOF rates + durability records.
+    - Each flag changes fights. Both on keep the matchup keys and the trace format.
+    - Out-of-range arPhi is clipped.
+  - `node tests/test_engine3.js` (N 20,000): __E3__.
+  - `node tests/test_director3.js 300`: OK, and `NO_ML=1 ... 100`: OK.
+  - `node tests/test_mlrates.js`: 47 OK. `node tests/test_v401.js`: 15 passed.
+  - `node tests/test_durability.js`: 34 OK. `node tests/test_dynamics.js`: 23 passed. `node tests/test_mlcal.js`: __MLCAL__.
+- **For the Calibrate stage.**
+  - Run ONE joint knockdown level pass: kdCal or kdLevel3/5, never both as free scales. This check says the current pair is
+    already within noise on train.
+  - Re-fit the league-average self-calibration with both components on.
+  - Re-check the 5-round between-round doctor/corner stoppages, a base-engine issue. Consider `durability.caution5`, null by
+    default, against the 5-round R1 KO excess.
+  - blend_anchor's method x round cells must be rebuilt with dynamics on.
+  - Page copy quoting engine numbers is refreshed only after the levels are final. On v4.0.0, dynamics alone moved Volk vs
+    Gaethje from 69.3% to 63.9%.
+  - Nothing from 2024-25 was scored, and no 2026 fight was read.
+
 ## v4.0.1 (2026-11-06): the v4 review's fixes, REJECTED; v4 (4.0.0) restored
 
 **Status: rejected by the decision rule.** The validation look ran once, at 11:45 am ET, paired against v4. The

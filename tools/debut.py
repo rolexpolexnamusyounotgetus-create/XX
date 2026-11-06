@@ -1512,30 +1512,25 @@ def export(args):
     Xw = np.where(win_a[:, None], XA, XB)
     mm = MethodMN(C["method"]["chosen_lam"]).fit(Xw[yk >= 0], offs[yk >= 0], yk[yk >= 0])
     live_base = division_rates(fights, 2026)
-    # promotion strengths + veterans' network ratings at the 2026-01-01 cutoff (chosen half-life, if gnet chosen)
-    hl = None
-    for b in ch["blocks"]:
-        if b.startswith("gnet"):
-            hl = float(b[4:])
-    promos, roster = {}, {}
-    if hl is not None:
+    # promotion strengths + veterans' network columns at the 2026-01-01 cutoff, for every half-life the model uses
+    hls = sorted({float(b[4:]) for b in ch["blocks"] if b.startswith("gnet")} |
+                 {float(b[5:]) for b in ch["blocks"] if b.startswith("promo")})
+    promos, roster, fits = {}, {}, {}
+    if hls:
         g = pickle.load(open(os.path.join(OUTC, "gnet_bouts.pkl"), "rb"))["gbl"]
-        net = GlobalNet(g, half_life=hl)
-        F = net.fit(VAULT_FROM)
-        expo = Counter()
-        for t in g:
-            if t[0] < VAULT_FROM and t[5] < VAULT_FROM:
-                expo[t[4]] += 1
-        for k, v in sorted(F["mu"].items(), key=lambda kv: -expo[kv[0]])[:120]:
-            promos[k] = {"mu": round(v, 4), "bouts": expo[k]}
-        pickle.dump({"fit": F, "half_life": hl, "lam_u": net.lam_u, "lam_g": net.lam_g},
-                    open(os.path.join(OUTC, "gnet_fit_2026.pkl"), "wb"))
-        # veterans: every person with a UFC bout in 2023-2025, rating over own rows (UFC bouts + own page when known)
-        rows_by = pickle.load(open(os.path.join(OUTC, "own_rows.pkl"), "rb")) if os.path.exists(
-            os.path.join(OUTC, "own_rows.pkl")) else {}
-        for slug, rr in rows_by.items():
-            th, s_, mu_, sos = net.rate(rr, VAULT_FROM, F)
-            roster[slug] = [round(th, 4), round(s_, 4), None if sos is None else round(sos, 4)]
+        rows_by = pickle.load(open(os.path.join(OUTC, "own_rows.pkl"), "rb"))
+        expo = Counter(t[4] for t in g if t[0] < VAULT_FROM and t[5] < VAULT_FROM)
+        for hl in hls:
+            net = GlobalNet(g, half_life=hl)
+            F = net.fit(VAULT_FROM)
+            fits[str(hl)] = {"fit": F, "half_life": hl, "lam_u": net.lam_u, "lam_g": net.lam_g}
+            promos[str(hl)] = {k: {"mu": round(v, 4), "bouts": expo[k]}
+                               for k, v in sorted(F["mu"].items(), key=lambda kv: -expo[kv[0]])[:120]}
+            for slug, rr in rows_by.items():
+                th, s_, mu_, sos = net.rate(rr, VAULT_FROM, F)
+                roster.setdefault(slug, {})[str(hl)] = [round(th, 4), round(s_, 4), None if sos is None else round(sos, 4),
+                                                        round(mu_, 4)]
+        pickle.dump(fits, open(os.path.join(OUTC, "gnet_fit_2026.pkl"), "wb"))
     preds = H["preds"] if H else {}
     # fixtures for tests/test_debut.js: 30 bouts (seeded draw), sides in the model's columns, Python's production output
     rng = np.random.default_rng(11)
@@ -1585,8 +1580,11 @@ def export(args):
                       "miss": "1 if missed weight at the official weigh-in",
                       "g<h>_th/_sos/_sd": "global network rating (logit units), decayed mean opponent rating, posterior sd",
                       "_n": "prior UFC bouts (fades pre-UFC columns by exp(-n / tau))"}},
-        "promotions": promos, "roster_gnet": {"half_life": hl, "as_of": "2026-01-01", "fields": ["th", "sd", "sos"],
-                                              "fighters": roster},
+        "promotions": promos, "roster_gnet": {"half_lives": [str(h) for h in hls], "as_of": "2026-01-01",
+                                              "fields": ["th", "sd", "sos", "m"], "fighters": roster,
+                                              "note": "network columns g<h>_th/_sd/_sos/_m of every man with a UFC bout in "
+                                                      "2023-2025, over his rows before 2026-01-01 (UFC bouts + his own "
+                                                      "page when he debuted in 2012 or later)"},
         "predictions": preds, "fixtures": fixtures}
     json.dump(out, open(os.path.join(DERIVED, "debut.json"), "w"), separators=(",", ":"), default=float)
     print("wrote data/derived/debut.json: winner cols %s, %d promotions, %d roster ratings, %d predictions; swap %.1e" % (
@@ -1603,11 +1601,10 @@ def _rounds(v):
 
 def features(args):
     """One debutant's network columns for the forward ledger (debutants_*.json 'debut_model' block): his Sherdog pro
-    rows before the bout rated against the frozen network fit at 2026-01-01 (export writes it). Rows on or after
-    2026-01-01 are dropped unless --live (deployment only: a live card's debutant fought his last regional bouts in
-    2026; that is input, never fit or scored)."""
-    F = pickle.load(open(os.path.join(OUTC, "gnet_fit_2026.pkl"), "rb"))
-    net = GlobalNet([], half_life=F["half_life"], lam_u=F["lam_u"], lam_g=F["lam_g"])
+    rows before the bout rated against the frozen network fits at 2026-01-01 (export writes them), for every half-life
+    the model uses. Rows on or after 2026-01-01 are dropped unless --live (deployment only: a live card's debutant
+    fought his last regional bouts in 2026; that is input, never fit or scored)."""
+    fits = pickle.load(open(os.path.join(OUTC, "gnet_fit_2026.pkl"), "rb"))
     D = dt.date.fromisoformat(args.date)
     cap = D if args.live else min(D, VAULT_FROM)
     patch_preufc()
@@ -1619,15 +1616,19 @@ def features(args):
     rows, ex, am, _ = _parse_rows(P, None)
     rr = [(r["_d"], r["_sid"], SC.get(r["res"]), r["_promo"]) for r in rows
           if r["_d"] and r["_d"] < cap and not r["_ufc"] and r["_sid"] is not None and SC.get(r["res"]) is not None]
-    th, s_, mu_, sos = net.rate(rr, cap, F["fit"])
+    out = {"href": args.href, "date": args.date, "rows_before": len(rr), "rows_cap": cap.isoformat()}
+    for h, F in sorted(fits.items()):
+        net = GlobalNet([], half_life=F["half_life"], lam_u=F["lam_u"], lam_g=F["lam_g"])
+        th, s_, mu_, sos = net.rate(rr, cap, F["fit"])
+        out.update({"g%s_th" % h: round(th, 4), "g%s_sd" % h: round(s_, 4),
+                    "g%s_sos" % h: None if sos is None else round(sos, 4), "g%s_m" % h: round(mu_, 4)})
     amr = [x for x in am if x["_d"] and x["_d"] < cap]
-    h = F["half_life"]
-    out = {"href": args.href, "date": args.date, "rows_before": len(rr), "rows_cap": cap.isoformat(),
-           "g%s_th" % h: round(th, 4), "g%s_sd" % h: round(s_, 4), "g%s_sos" % h: None if sos is None else round(sos, 4),
-           "am_n": round(math.log1p(len(amr)), 4),
-           "am_wpct": round(math.log((sum(x["res"] == "W" for x in amr) + 1.0) / (sum(x["res"] == "L" for x in amr) + 1.0)), 4),
-           "pre_tuf": 1.0 if any(x["_d"] and x["_d"] < cap for x in ex) else 0.0}
+    out["am_n"] = round(math.log1p(len(amr)), 4)
+    out["am_wpct"] = round(math.log((sum(x["res"] == "W" for x in amr) + 1.0) / (sum(x["res"] == "L" for x in amr) + 1.0)), 4)
+    out["pre_tuf"] = 1.0 if any(x["_d"] and x["_d"] < cap for x in ex) else 0.0
     print(json.dumps(out))
+    return out
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
