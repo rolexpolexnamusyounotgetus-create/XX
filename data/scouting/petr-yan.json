@@ -3,12 +3,18 @@
   "name": "Petr Yan",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC bantamweight champion. He took the title from Merab Dvalishvili at UFC 323 (Dec 6, 2025; 49-46, 49-46, 48-47) and kept it in the trilogy at UFC 333 in Abu Dhabi (Oct 24, 2026; 48-47 on all three cards). Yahoo's headline called it a come-from-behind win. He has won five straight since 2024. On Oct 25, 2026 Dana White named Song Yadong and Sean O'Malley as the contenders. Betting headlines had Yan favoured in an O'Malley rematch. On Oct 30, 2026, flyweight champion Joshua Van named Yan as a possible future opponent. No booking appeared in the late-October reports cited here. UFC record 13-4 per ufcstats; one of the losses is a 2021 DQ.",
+    "summary": "UFC bantamweight champion and #3 in the UFC men's pound-for-pound media rankings (Nov 3, 2026, up one). He took the title from Merab Dvalishvili at UFC 323 (Dec 6, 2025; 49-46, 49-46, 48-47), had nine-hour lumbar (lower-back) surgery on Jan 26, 2026, and returned to keep the belt in the trilogy at UFC 333 in Abu Dhabi (Oct 24, 2026; 48-47 on all three cards). Yahoo's headline called it a come-from-behind win. He has won five straight since 2024. On Oct 25, 2026 Dana White named Song Yadong and Sean O'Malley as the contenders, and O'Malley says the rematch is 'happening next' (MMA Fighting, Oct 28). Nothing is booked as of Nov 6: UFCalendar lists no next fight, and ufcrankings.org lists no upcoming bout for any ranked bantamweight. Betting headlines had Yan favoured in an O'Malley rematch, and flyweight champion Joshua Van named Yan as a possible future opponent (Oct 30). Pro record 21-5; UFC record 13-4 per ufcstats, one of the losses a 2021 DQ.",
     "title": "UFC bantamweight champion",
-    "ranking": null,
+    "ranking": "Champion; #3 men's pound-for-pound in the UFC media-panel rankings (Nov 3, 2026, up one, per ufcalendar.com; ufcrankings.org updated Nov 5 agrees). ufc.com/rankings returned 403 to this pass, so the official page itself was not read.",
     "active": true,
     "next_fight": null,
-    "injuries": [],
+    "injuries": [
+      {
+        "what": "lumbar (lower-back) surgery, nine hours under anaesthesia, after UFC 323; he returned to win at UFC 333",
+        "when": "2026-01",
+        "source": "https://www.cbssports.com/ufc/news/petr-yan-ufc-bantamweight-champion-back-surgery-injury-return-timetable/"
+      }
+    ],
     "sources": [
       "http://ufcstats.com/fighter-details/d661ce4da776fc20",
       "http://ufcstats.com/fight-details/e262f5e588b149a6",
@@ -18,7 +24,15 @@
       "https://boxingnews.com/news/yan-favored-omalley-rematch-volkanovski-underdog",
       "https://www.sherdog.com/news/news/Petr-Yan-favored-in-2-rematches-Volkanovski-underdog-to-Gaethje-203356",
       "https://bloodyelbow.com/2026/10/30/joshua-van-highlights-petr-yan-as-future-opponent-as-he-opens-up-about-potential-ufc-double-champ-fight",
-      "data/derived/fighters.json"
+      "data/derived/fighters.json",
+      "https://www.ufcalendar.com/fighters/petr-yan",
+      "https://www.ufcalendar.com/rankings/bantamweight",
+      "https://ufcrankings.org/bantamweight/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
+      "https://ufcrankings.org/",
+      "https://www.cbssports.com/ufc/news/petr-yan-ufc-bantamweight-champion-back-surgery-injury-return-timetable/",
+      "https://www.mmafighting.com/ufc/518097/sean-omalley-theres-no-debate-or-an-argument-rematch-against-petr-yan-is-happening-next",
+      "https://en.wikipedia.org/wiki/Petr_Yan"
     ]
   },
   "style": {
@@ -52,26 +66,48 @@
     ]
   },
   "moves": {
-    "jab": 0.26, "cross": 0.26, "hook": 0.2, "overhand": 0.08, "upper": 0.14, "headkick": 0.06,
-    "bodykick": 0.4, "bodyhook": 0.35, "bodystraight": 0.25,
-    "calf": 0.5, "inside": 0.5, "spinning": 0.02, "knee": 0.06, "elbow": 0.02,
+    "jab": 0.26,
+    "cross": 0.26,
+    "hook": 0.2,
+    "overhand": 0.08,
+    "upper": 0.14,
+    "headkick": 0.06,
+    "bodykick": 0.4,
+    "bodyhook": 0.35,
+    "bodystraight": 0.25,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.02,
+    "knee": 0.06,
+    "elbow": 0.02,
     "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. fighters.json time-decayed attempt split is 80.8% head, 10.8% body and 8.4% leg (landed 70.9/16.1/13.0). The bantamweight average is 76.2/14.1/9.7, so he is head-heavy, a little light to the body and about average to the legs. The head group is spread across straight punches, hooks and uppercuts for a switch-stance boxer. ufcstats shows 83% of his career attempts at distance, which keeps overhand low. headkick 0.06 reflects the Faber head-kick KO (ufcstats). knee 0.06 reflects documented knee use (the 2021 DQ for a knee to a grounded Sterling). The body and leg internal splits, spinning 0.02 and elbow 0.02 are unsourced defaults, not scouting findings. Web scouting pages could not be opened in this pass."
   },
   "appearance": {
     "build": "compact and stocky for bantamweight: 5'7\" (67 in) with a 67 in reach per ufcstats",
-    "hair": "short dark hair, usually cropped close (unverified: from widely published pre-2026 fight photos; no photo was checked in this pass)",
-    "facial_hair": "usually clean-shaven or light stubble (unverified, as above)",
+    "hair": "short crop, dark brown, with clipped tapered sides and a short top; it reads lighter and reddish under arena light (ESPN fight-week photos, Oct 2026; Kremlin award photo, Apr 22, 2026; UFC 323 action photo, Dec 2025)",
+    "facial_hair": "short trimmed beard, reddish-brown (ESPN headshot, Oct 2026; Kremlin photo, Apr 2026; UFC 323, Dec 2025)",
     "skin": "light",
-    "tattoos": "unknown (no source checked)",
-    "kit": "unknown",
+    "tattoos": "none visible on the chest, torso or arms in ESPN front stance photos (Oct 2026 and Dec 2025) or the UFC 323 action photo; back not seen",
+    "kit": "black UFC fight-kit shorts (UFC 323 photo, Dec 2025; ESPN Dec 2025 set); in the Oct 2026 ESPN title set the shorts are black with a Russian-tricolour panel; corner colour wins in the sim",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",
-      "skin, hair and facial hair: unverified recall of widely published pre-2026 photos; a fact-check against a dated photo is needed"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4293517.png (Last-Modified Oct 22, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4293517.png (Last-Modified Oct 22, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4293517.png (Last-Modified Dec 4, 2025)",
+      "https://commons.wikimedia.org/wiki/File:Vladimir_Putin_at_award_ceremonies_(2026-04-22)_24(cropped).jpg (Wikipedia infobox photo, Apr 22, 2026)",
+      "assets/reference/merab-dvalishvili/ref_mmasucka_ufc323_action.webp (Yan in black shorts, UFC 323, Dec 6, 2025)",
+      "No likeness sheet (data/likeness/petr-yan.json) exists; these photos were read on Nov 6, 2026 and replace the earlier unverified recall"
     ]
   },
   "engine_notes": [
-    { "note": "Takedown defence is 87.7% career (28 of 227 opponent attempts landed) and 89.4% decayed, vs a 65.7% bantamweight average. Dvalishvili went 2 of 29 at UFC 323 and 5 of 58 at UFC 333 (0 of 39 in rounds 3-5).", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/e262f5e588b149a6; http://ufcstats.com/fight-details/4a0db214d9721d6e" },
-    { "note": "Strong late surge in five-round fights: landed-per-minute pace by round is 1.00 / 1.29 / 1.58 / 2.03 / 2.42 of round 1 over 8 five-round fights (about 40 minutes per round in the sample). The bantamweight prior is 1.00 / 1.32 / 1.32 / 1.37 / 1.53.", "source": "data/derived/fighters.json (pace, pace_w, priors.Bantamweight.pace5)" },
+    {
+      "note": "Takedown defence is 87.7% career (28 of 227 opponent attempts landed) and 89.4% decayed, vs a 65.7% bantamweight average. Dvalishvili went 2 of 29 at UFC 323 and 5 of 58 at UFC 333 (0 of 39 in rounds 3-5).",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/e262f5e588b149a6; http://ufcstats.com/fight-details/4a0db214d9721d6e"
+    },
+    {
+      "note": "Strong late surge in five-round fights: landed-per-minute pace by round is 1.00 / 1.29 / 1.58 / 2.03 / 2.42 of round 1 over 8 five-round fights (about 40 minutes per round in the sample). The bantamweight prior is 1.00 / 1.32 / 1.32 / 1.37 / 1.53.",
+      "source": "data/derived/fighters.json (pace, pace_w, priors.Bantamweight.pace5)"
+    },
     { "note": "He is hard to hit cleanly: opponents land 39.9% of sig attempts on him (career) vs a 45.6% league average, and 32.9% of head attempts vs 37.1%.", "source": "data/derived/fighters.json" },
     { "note": "Knocked down once in 17 UFC fights (John Dodson, 2019) and never stopped. All four losses went the distance or ended by DQ.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
     { "note": "Power has faded. He has 10 career knockdowns (0.49 per 15 min) but only 0.14 per 15 min decayed, and five straight decision wins since 2024.", "source": "data/derived/fighters.json" }

@@ -3,11 +3,11 @@
   "name": "Sergei Pavlovich",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Heavyweight contender booked against Alex Pereira in the five-round co-main event of UFC 335 (Dec 12, 2026, T-Mobile Arena, Las Vegas); Dana White announced it on the UFC 332 broadcast (Oct 3, 2026). He is on a three-fight win streak after back-to-back losses to Tom Aspinall (KO R1 1:09, interim title, UFC 295, Nov 11, 2023) and Alexander Volkov (UD, Jun 22, 2024). The wins: unanimous decisions over Jairzinho Rozenstruik (Feb 1, 2025) and Waldo Cortes Acosta (Aug 23, 2025), then a 39-second KO of Tallison Teixeira (May 30, 2026). UFC record 9-3.",
+    "summary": "Heavyweight contender, #3 in the UFC media-panel rankings (Nov 3, 2026), booked against Alex Pereira in the five-round co-main event of UFC 335 (Dec 12, 2026, T-Mobile Arena, Las Vegas). Dana White announced it on the UFC 332 broadcast (Oct 3, 2026), and UFCalendar and Wikipedia still list it on Nov 6. He is on a three-fight win streak after back-to-back losses to Tom Aspinall (KO R1 1:09, interim title, UFC 295, Nov 11, 2023) and Alexander Volkov (UD, Jun 22, 2024). The wins: unanimous decisions over Jairzinho Rozenstruik (Feb 1, 2025) and Waldo Cortes Acosta (Aug 23, 2025), then a 39-second KO of Tallison Teixeira at UFC Macau (May 30, 2026). Pro record 21-3 (ESPN, UFCalendar, Wikipedia); UFC record 9-3 per ufcstats. No injury was reported in the pages checked on Nov 6, but a Pavlovich-specific injury search could not be completed (search engine rate limit), so injuries are unconfirmed rather than ruled out.",
     "title": null,
-    "ranking": null,
+    "ranking": "#3 heavyweight in the UFC media-panel rankings (Nov 3, 2026, per ufcalendar.com; the ufcrankings.org mirror updated Nov 5 agrees) and #4 in the UFC/Meta algorithmic rankings (Oct 31, 2026, per ufcalendar.com). ufc.com/rankings returned 403 to this pass, so the official page itself was not read.",
     "active": true,
-    "next_fight": "Alex Pereira, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (heavyweight, 5 rounds, co-main event)",
+    "next_fight": "Alex Pereira, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (heavyweight, 5 rounds, co-main event); still listed on Nov 6 by UFCalendar, ufcrankings.org and Wikipedia",
     "injuries": [],
     "sources": [
       "http://ufcstats.com/fighter-details/f14cf73e51b29254",
@@ -17,7 +17,13 @@
       "https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335",
       "https://sports.yahoo.com/mma/article/alex-pereira-staying-at-heavyweight-as-dana-white-announces-his-next-fight-for-ufc-335-011052102.html",
       "https://www.ufc.com/news/oliveira-defends-bmf-title-against-lopes-pereira-faces-pavlovich-ufc-335",
-      "https://www.cbssports.com/ufc/news/ufc-335-fight-card-charles-oliveira-vs-diego-lopes-alex-pereira-sergei-pavlovich/"
+      "https://www.cbssports.com/ufc/news/ufc-335-fight-card-charles-oliveira-vs-diego-lopes-alex-pereira-sergei-pavlovich/",
+      "https://www.ufcalendar.com/fighters/sergei-pavlovich",
+      "https://www.ufcalendar.com/rankings/heavyweight",
+      "https://ufcrankings.org/heavyweight/",
+      "https://www.espn.com/mma/fighter/_/id/4217395/sergei-pavlovich",
+      "https://en.wikipedia.org/wiki/Sergei_Pavlovich",
+      "https://www.bjpenn.com/mma-news/sergey-pavlovich/sergei-pavlovich-teases-surprises-alex-pereira-ufc-335/"
     ]
   },
   "style": {
@@ -69,22 +75,37 @@
   },
   "appearance": {
     "build": "broad and heavy through the chest, shoulders and midsection (6 ft 3 in, listed 257 lb per ufcstats), with very long arms for his height (84 in reach)",
-    "hair": "short dark hair",
-    "facial_hair": "often a short dark beard",
+    "hair": "short crop, light brown to dark blond: clipped sides and a short top (ESPN fight-week photos, May 2026)",
+    "facial_hair": "light stubble only (ESPN headshot and stance photos, May 2026)",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the chest, torso or arms in ESPN front stance photos (May 2026 and Dec 2022); back not seen",
+    "kit": "standard UFC fight-kit shorts: black in the May 2026 ESPN set, white and grey with his name in the Dec 2022 set; corner colour wins in the sim",
     "sources": [
       "http://ufcstats.com/fighter-details/f14cf73e51b29254",
-      "https://www.ufc.com/athlete/sergei-pavlovich"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4217395.png (Last-Modified May 27, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4217395.png (Last-Modified May 27, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4217395.png (Last-Modified Dec 1, 2022)",
+      "No likeness sheet (data/likeness/sergei-pavlovich.json) exists; hair, stubble, skin, tattoos and kit were read from the ESPN photos above on Nov 6, 2026"
     ]
   },
   "engine_notes": [
-    { "note": "Front-loaded finishing: all 7 UFC KO/TKO wins in round 1 (average about 1:51). Since Nov 2023 he has gone 3 rounds three times (L Volkov, W Rozenstruik, W Cortes Acosta), landing 25 to 61 significant strikes in 15 minutes, with round-3 output at or above round 1 each time (Cortes Acosta 9/22/30, Volkov 15/15/16, Rozenstruik 11/3/11). No pace data beyond round 1 in 5-round fights; rounds 2-5 should lean on the heavyweight prior.", "source": "data/derived/fighters.json (pace_w); ufcstats per-fight totals" },
+    {
+      "note": "Front-loaded finishing: all 7 UFC KO/TKO wins in round 1 (average about 1:51). Since Nov 2023 he has gone 3 rounds three times (L Volkov, W Rozenstruik, W Cortes Acosta), landing 25 to 61 significant strikes in 15 minutes, with round-3 output at or above round 1 each time (Cortes Acosta 9/22/30, Volkov 15/15/16, Rozenstruik 11/3/11). No pace data beyond round 1 in 5-round fights; rounds 2-5 should lean on the heavyweight prior.",
+      "source": "data/derived/fighters.json (pace_w); ufcstats per-fight totals"
+    },
     { "note": "Power: 8 knockdowns in 63.4 UFC minutes, 3.4 per 100 significant head strikes landed career (2.7 decayed).", "source": "data/derived/fighters.json" },
-    { "note": "Chin: 1 knockdown absorbed and 2 KO/TKO losses (Overeem, ground strikes, 2018; Aspinall, punch, 2023) in 12 UFC fights.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/1c43b38c1f4bdbe2; http://ufcstats.com/fight-details/db49619221b282af" },
-    { "note": "Accuracy is low for a knockout artist: 44% of significant strikes overall and 39% to the head (decayed), while he absorbs 3.2 significant strikes per minute against 42% opponent accuracy.", "source": "data/derived/fighters.json" },
-    { "note": "Takedown defense 90% decayed but on tiny numbers (opponents 1 of 4 career). He has a 5-round fight booked (UFC 335) with no 5-round minutes past round 1 in his record.", "source": "data/derived/fighters.json; https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335" }
+    {
+      "note": "Chin: 1 knockdown absorbed and 2 KO/TKO losses (Overeem, ground strikes, 2018; Aspinall, punch, 2023) in 12 UFC fights.",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/1c43b38c1f4bdbe2; http://ufcstats.com/fight-details/db49619221b282af"
+    },
+    {
+      "note": "Accuracy is low for a knockout artist: 44% of significant strikes overall and 39% to the head (decayed), while he absorbs 3.2 significant strikes per minute against 42% opponent accuracy.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Takedown defense 90% decayed but on tiny numbers (opponents 1 of 4 career). He has a 5-round fight booked (UFC 335) with no 5-round minutes past round 1 in his record.",
+      "source": "data/derived/fighters.json; https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335"
+    }
   ],
   "confidence": "medium"
 }

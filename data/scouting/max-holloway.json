@@ -3,9 +3,9 @@
   "name": "Max Holloway",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Beat Conor McGregor by first-round TKO at UFC 329 (Jul 11, 2026; 1:09, after McGregor hurt his right leg/knee throwing a kick). ufcstats files the bout at welterweight. Before that he lost the BMF belt to Charles Oliveira at UFC 326 (Mar 7, 2026; 50-45 x3). No. 4 at lightweight, no bout booked; he and McGregor have both talked about a trilogy. Former UFC featherweight champion.",
+    "summary": "Beat Conor McGregor by first-round TKO at UFC 329 (Jul 11, 2026; 1:09, after McGregor hurt his right leg/knee throwing a kick). ufcstats files the bout at welterweight. Before that he lost the BMF belt to Charles Oliveira at UFC 326 (Mar 7, 2026; 50-45 x3). No. 4 at lightweight; nothing booked as of Nov 6. He has said he would wait for a McGregor trilogy (McGregor needs knee surgery) and otherwise wants a lightweight title shot, naming Justin Gaethje. Pro record 28-9. Former UFC featherweight champion.",
     "title": null,
-    "ranking": "#4 lightweight (UFC media panel, Nov 3, 2026, as mirrored by ufcrankings.org; UFCalendar gives No. 4 as of the Oct 27, 2026 poll)",
+    "ranking": "#4 lightweight (UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org on Nov 5-6; not in the men's pound-for-pound top 15; ufc.com itself returned 403 to scripts)",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -17,8 +17,13 @@
       "https://www.ufc.com/news/ufc-326-official-scorecards-holloway-vs-oliveira-2",
       "https://www.espn.com/mma/story/_/id/48091127/ufc-326-live-results-analysis-bmf-title-max-holloway-vs-charles-oliveira-2",
       "https://www.ufcalendar.com/fighters/max-holloway",
-      "https://ufcrankings.org/",
-      "http://ufcstats.com/fighter-details/150ff4cc642270b9"
+      "http://ufcstats.com/fighter-details/150ff4cc642270b9",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://en.wikipedia.org/wiki/Max_Holloway",
+      "https://sportsnaut.com/ufc/max-holloway-names-his-two-choices-for-next-ufc-fight"
     ]
   },
   "style": {
@@ -70,15 +75,19 @@
   },
   "appearance": {
     "build": "long-framed and lean: 5 ft 11 in with a 69 in reach (ufcstats); fought 27 of his 33 UFC bouts at featherweight",
-    "hair": "black, short to medium length, curly and tousled on top (Aug 2022 photo)",
-    "facial_hair": "thin mustache and chin goatee over stubble in the Aug 2022 photo; varies between fights",
+    "hair": "black, short, faded sides with a slightly longer, tousled top (Jul 2026 photos)",
+    "facial_hair": "thin moustache and chin goatee over light stubble (Jul 2026 photos); varies between fights",
     "skin": "medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "notes": "Build is from ufcstats. Hair, facial hair and skin were checked by the fact-checker (Nov 6, 2026) against the Wikipedia lead photo, a public-domain US Marine Corps photo from Aug 12, 2022 (Wikimedia Commons). Facial hair changes between fights. Tattoos and fight kit are not established by any source, so they stay unknown.",
+    "tattoos": "heavily tattooed: a large Polynesian-style tribal piece across the chest and both shoulders, running onto the upper arms; HOLLOWAY in gothic script across the lower abdomen; a fox-like creature with several tails on the outer left upper arm and a colour scene (a lantern and a building) on the inner left upper arm; black-and-grey work on the right arm with script on the right forearm beginning 'Blessed be the Lord my strength' (Psalm 144:1 wording); a small figure tattoo on the left side of the abdomen",
+    "kit": "UFC (Venum) vale-tudo shorts, white with a red and blue hibiscus print and a black waistband (ESPN studio cutouts; files dated Mar and Jul 2026)",
+    "notes": "Build is from ufcstats. Hair, facial hair and skin were checked by the fact-checker (Nov 6, 2026) against the Wikipedia lead photo (US Marine Corps, Aug 12, 2022), then re-verified the same day from the ESPN headshot (file dated Jul 9, 2026), two ESPN full-body studio cutouts (files dated Mar 9 and Jul 9, 2026) and the UFC 329 weigh-in photo (Aloha State Daily, Jul 10, 2026), since no likeness sheet exists yet. The 'HOLLOWAY' and forearm script read correctly, so the cutouts are not mirrored and left/right are his own. The meaning of individual tattoos is not sourced. Kit varies by fight and the corner colour wins in the sim.",
     "sources": [
       "http://ufcstats.com/fighter-details/150ff4cc642270b9",
-      "https://commons.wikimedia.org/wiki/File:Blue_Angels%27_VIP_Rider_Max_Holloway_(1)_(cropped).jpg"
+      "https://commons.wikimedia.org/wiki/File:Blue_Angels%27_VIP_Rider_Max_Holloway_(1)_(cropped).jpg",
+      "https://a.espncdn.com/i/headshots/mma/players/full/2614933.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/2614933.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/2614933.png",
+      "https://alohastatedaily.com/2026/07/10/waianaes-max-holloway-pearl-citys-kai-kamaka-iii-good-to-go-at-ufc-329/"
     ]
   },
   "engine_notes": [

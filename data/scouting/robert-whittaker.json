@@ -3,25 +3,41 @@
   "name": "Robert Whittaker",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC middleweight champion: he won the interim title from Yoel Romero at UFC 213 (Jul 2017) and lost the title to Israel Adesanya by KO at UFC 243 (Oct 2019). After a submission loss to Khamzat Chimaev (R1, Oct 2024) and a split-decision loss to Reinier de Ridder (Jul 26, 2025), he fought at light heavyweight and knocked out Nikita Krylov at 1:01 of R3 at UFC 329 (Jul 11, 2026), his first UFC fight at 205. UFC record 18-7. Web checks were blocked in both the research pass and the Nov 6 fact-check (search budget spent; news sites unreachable), so his ranking, his division plans and any next fight are unverified.",
+    "summary": "Former UFC middleweight champion (interim title over Yoel Romero at UFC 213, Jul 2017; lost the title to Israel Adesanya by KO at UFC 243, Oct 2019). After a submission loss to Khamzat Chimaev (Oct 2024) and a split-decision loss to Reinier de Ridder (Jul 26, 2025), he moved to light heavyweight and stopped Nikita Krylov at 1:01 of R3 at UFC 329 (Jul 11, 2026): Krylov turned away clutching his jaw after a combination and the referee stepped in (CBS Sports). Pro record 27-9 (Wikipedia, Sherdog, MMA Fighting, MMA Junkie; ESPN shows 28-9, which does not match the fight-by-fight record), UFC 18-7. Ranked #11 at light heavyweight on both UFC lists. Booked: vs Bogdan Guskov (18-4-1) in the co-main event of UFC Fight Night 298 at Afterpay Arena, Sydney, on Feb 6, 2027 (US date; Feb 7 local), headlined by Quillan Salkilld vs Benoit Saint Denis. It is his first fight in Australia since UFC 243 and his first in Sydney since 2014. He says other opponents turned the fight down before Guskov accepted. Age 35. No injury reported in the coverage checked.",
     "title": null,
-    "ranking": null,
+    "ranking": "#11 light heavyweight (UFC media panel, Nov 3-5, 2026; also #11 in the Meta UFC Rankings of Oct 31, 2026; read from ufcrankings.org and ufcalendar.com mirrors because ufc.com returned 403). MMA Fighting's own global rankings put him #12.",
     "active": true,
-    "next_fight": null,
+    "next_fight": "vs Bogdan Guskov (light heavyweight), co-main event of UFC Fight Night 298 (UFC Sydney; main event Quillan Salkilld vs Benoit Saint Denis), Feb 6, 2027 US date / Feb 7 local, Afterpay Arena, Sydney (officially announced; MMA Fighting, Fox Sports Australia, Wikipedia)",
     "injuries": [],
     "sources": [
       "http://ufcstats.com/fighter-details/e1147d3d2dabe1ce",
       "http://ufcstats.com/fight-details/7765e5e779dd7dc9",
       "http://ufcstats.com/fight-details/6b8be0ee3e569ad2",
       "http://ufcstats.com/fight-details/b8bf186f884678ea",
-      "http://ufcstats.com/fight-details/2556b7520536ce1d",
-      "data/derived/fighters.json (last_fight 2026-07-11, divisions Middleweight 19 / Welterweight 5 / Light Heavyweight 1, snapshot 2026-10-31)"
+      "https://www.espn.com/mma/fighter/_/id/3009717/robert-whittaker",
+      "https://www.espn.com/mma/fighter/history/_/id/3009717/robert-whittaker",
+      "https://en.wikipedia.org/wiki/Robert_Whittaker_(fighter)",
+      "https://www.sherdog.com/fighter/Robert-Whittaker-45132",
+      "https://www.cbssports.com/ufc/news/ufc-329-robert-whittaker-nikita-krylov-results-knockout/",
+      "https://www.mmafighting.com/ufc/519086/robert-whittaker-fights-bogdan-guskov-in-ufc-sydney-co-main-event",
+      "https://www.foxsports.com.au/ufc/mma-news-robert-whittaker-vs-bogdan-guskov-confirmed-for-ufc-sydney-2027-comain-event/news-story/7412fa8bc0290e3120647ae6fec91fe0 (search snippet)",
+      "https://www.mmafighting.com/ufc/519152/robert-whittaker-says-there-were-other-names-thrown-in-the-hat-before-bogdan-guskov-at-ufc-sydney (search snippet)",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/11/02/ufc-sydney-robert-whittaker-reveals-bogdan-guskov-only-one-who-accepted-fight/92562969007/ (search snippet only; page returned 402)",
+      "https://ufcrankings.org/light-heavyweight/",
+      "https://www.ufcalendar.com/rankings/light-heavyweight"
     ]
   },
   "style": {
     "archetype": "karate/point fighter",
     "stance": "orthodox",
-    "tags": ["power", "footwork", "head-kicks", "leg-kicks", "takedown-defense", "chin-concern"],
+    "tags": [
+      "power",
+      "footwork",
+      "head-kicks",
+      "leg-kicks",
+      "takedown-defense",
+      "chin-concern"
+    ],
     "signature": [
       "punching power at distance: KO of Nikita Krylov (R3 1:01, Jul 2026) and Ikram Aliskerov (R1 1:49, Jun 2024), both 'punch to head at distance' (ufcstats does not say which hand)",
       "head kicks: KO of Derek Brunson (R1, 2016) and Jacare Souza (R2, 2017), both 'kick to head at distance'",
@@ -51,28 +67,61 @@
     ]
   },
   "moves": {
-    "jab": 0.24, "cross": 0.25, "hook": 0.2, "overhand": 0.19, "upper": 0.04, "headkick": 0.08,
-    "bodykick": 0.5, "bodyhook": 0.25, "bodystraight": 0.25,
-    "calf": 0.5, "inside": 0.5, "spinning": 0.02, "knee": 0.05, "elbow": 0.03,
+    "jab": 0.24,
+    "cross": 0.25,
+    "hook": 0.2,
+    "overhand": 0.19,
+    "upper": 0.04,
+    "headkick": 0.08,
+    "bodykick": 0.5,
+    "bodyhook": 0.25,
+    "bodystraight": 0.25,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.02,
+    "knee": 0.05,
+    "elbow": 0.03,
     "notes": "Group shares follow fighters.json decayed sums: sig attempts 87.8% head, 4.6% body, 7.6% leg (career 83.6/7.3/9.1). The middleweight league split is 77.2/14.0/8.8, so he is far more head-focused and throws about a third of the league share to the body. Leg work comes and goes: 28 of 28 vs Costa (Feb 2024), none vs Krylov or De Ridder. 90% of his landed sig is at distance. In the head group the cross and overhand are high as a judgment: his recent finishes are punches to the head at distance (Krylov, Aliskerov), though ufcstats does not name the punch. The jab and hook are close behind, as a judgment for a blitzing striker. Head kicks get 0.08 because two of his UFC KOs are head kicks at distance (Brunson 2016, Souza 2017), though both are old. The body group leans to kicks as a judgment, since his body attempts are rare and all at distance. Leg weights are an even split because no source in this pass separates calf from inside kicks. The knee gets 0.05 for the Hester clinch-knee TKO. The karate-based, in-and-out style behind the archetype comes from pre-2026 coverage that could not be re-opened in this pass."
   },
   "appearance": {
-    "build": "6'0\" with a 73\" reach (dataset); compact and muscular, with shorter arms than most middleweights (judgment from widely published fight photos; not re-checked in this pass)",
-    "hair": "short dark hair (not re-checked in this pass)",
-    "facial_hair": "varies; unknown for 2026",
+    "build": "compact and muscular, with shorter arms than most at 185 or 205; carried more muscle at light heavyweight in 2026 (UFC 329 photos); 6 ft 0 in with a 73 in reach (ufcstats, ESPN)",
+    "hair": "short black hair with a fade: sides clipped close, a little length on top (UFC headshot; UFC 329 photos, Jul 2026)",
+    "facial_hair": "dark moustache and chin goatee with the cheeks shaved or stubbled; fuller and darker on the chin than the jaw (UFC headshot; UFC 329 photos, Jul 2026)",
     "skin": "light-medium",
-    "tattoos": "unknown (no source in this pass)",
-    "kit": "unknown",
+    "tattoos": "Samoan/Polynesian tribal tattoo over his right shoulder and upper arm, and a small Southern Cross (five stars) on his left chest, which he taps before fights (news.com.au; EssentiallySports; both visible in the UFC 329 photos and the headshot)",
+    "kit": "white UFC shorts with a grey tonal pattern, green trim and his name in green at UFC 329 (Jul 11, 2026, blue corner); corner colour wins in the sim",
+    "notes": "No photo-based likeness sheet exists for this fighter (data/likeness/robert-whittaker.json checked 2026-11-06, absent). Hair, facial hair, skin, tattoos and kit below come from the 2026 web re-check: an undated official UFC studio headshot served by ESPN plus dated 2026 fight-night photos, all viewed directly (URLs in sources). Describe-don't-guess rule: anything not visible in those photos or stated in a cited article is marked. Skin reads olive or lightly tanned rather than fair.",
     "sources": [
-      "data/derived/fighters.json (height_in 72, reach_in 73, stance Orthodox)",
-      "http://ufcstats.com/fighter-details/e1147d3d2dabe1ce"
+      "https://a.espncdn.com/i/headshots/mma/players/full/3009717.png (official UFC studio headshot via ESPN; undated)",
+      "https://sportshub.cbsistatic.com/i/r/2026/07/12/245f889d-1cbe-4d72-ac4d-4ae867db6062/thumbnail/1200x675/84b5ffb2e1e63375ede9e6e6ccfb17e8/robert-whittaker-nikita-krylov-ufc-329.jpg (CBS Sports lead photo, UFC 329, Jul 11, 2026; https://www.cbssports.com/ufc/news/ufc-329-robert-whittaker-nikita-krylov-results-knockout/)",
+      "https://platform.mmamania.com/wp-content/uploads/sites/110/2026/07/gettyimages-2285698547.jpg (Getty/Zuffa, UFC 329, Jul 11, 2026; lead photo of https://www.mmamania.com/ufc-329-mcgregor-vs-holloway-2/456461/highlights-robert-whittaker-cracks-nikita-krylovs-jaw-in-successful-205-pound-debut-ufc-329)",
+      "https://platform.mmafighting.com/wp-content/uploads/sites/109/2026/11/gettyimages-2286106042.jpg (Getty, used by MMA Fighting on Nov 1, 2026; https://www.mmafighting.com/ufc/519086/robert-whittaker-fights-bogdan-guskov-in-ufc-sydney-co-main-event)",
+      "https://www.news.com.au/sport/ufc/ufc-champion-robert-whittaker-on-fatherhood-and-family/news-story/7c634f723cae12503b9307312f7d9874 (Southern Cross chest tattoo; snippet)",
+      "https://www.essentiallysports.com/ufc-mma-news-why-does-robert-whittaker-have-a-samoan-tattoo-is-it-connected-to-the-ufc-stars-ethnicity/ (Samoan design on the right arm; snippet)",
+      "http://ufcstats.com/fighter-details/e1147d3d2dabe1ce (height and reach)"
     ]
   },
   "engine_notes": [
-    { "note": "Chin: 8 knockdowns absorbed in UFC fights (0.81 decayed), the most of the five in this batch, and 3 KO/TKO losses. Opponents' sig accuracy against him is 45.6% decayed vs 40.8% career.", "source": "data/derived/fighters.json (kd_absorbed 8, ko_losses 3)" },
-    { "note": "Flat five-round pace across 10 fights: R2-R5 output is 1.04, 1.01, 1.09 and 0.91 times R1, against the middleweight curve of 1.26, 1.20, 1.28 and 1.31.", "source": "data/derived/fighters.json (pace; priors.Middleweight.pace5)" },
-    { "note": "Takedown defense is slipping under volume: 71.2% decayed vs 80.0% career, with opponents shooting 5.2 times per 15 min and holding 18% control share.", "source": "data/derived/fighters.json" },
-    { "note": "He fought at light heavyweight in Jul 2026, but his home division in fighters.json is still middleweight (19 of 25 UFC fights). If he is simulated at 205, the light heavyweight priors (7.8 sig attempts per minute, 50% accuracy) apply.", "source": "data/derived/fighters.json (division, divisions; priors.Light Heavyweight)" }
+    {
+      "note": "Chin: 8 knockdowns absorbed in UFC fights (0.81 decayed), the most of the five in this batch, and 3 KO/TKO losses. Opponents' sig accuracy against him is 45.6% decayed vs 40.8% career.",
+      "source": "data/derived/fighters.json (kd_absorbed 8, ko_losses 3)"
+    },
+    {
+      "note": "Flat five-round pace across 10 fights: R2-R5 output is 1.04, 1.01, 1.09 and 0.91 times R1, against the middleweight curve of 1.26, 1.20, 1.28 and 1.31.",
+      "source": "data/derived/fighters.json (pace; priors.Middleweight.pace5)"
+    },
+    {
+      "note": "Takedown defense is slipping under volume: 71.2% decayed vs 80.0% career, with opponents shooting 5.2 times per 15 min and holding 18% control share.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "He fought at light heavyweight in Jul 2026, but his home division in fighters.json is still middleweight (19 of 25 UFC fights). If he is simulated at 205, the light heavyweight priors (7.8 sig attempts per minute, 50% accuracy) apply.",
+      "source": "data/derived/fighters.json (division, divisions; priors.Light Heavyweight)"
+    },
+    {
+      "note": "Web re-check 2026-11-06 (network open; curl via DuckDuckGo lite, ESPN, Wikipedia API, MMA Fighting, MMA Mania, Yahoo/MMA Junkie syndication, Sherdog, ranking mirrors). Status, pro record, ranking, booking, injuries and appearance were checked against the pages listed in status.sources and appearance.sources. ufc.com (403), mmajunkie.usatoday.com (402) and bloodyelbow.com (403) could not be read directly; items that rest only on those hosts are marked. Style, moves and the numeric engine notes were not changed in this pass. ufc.com/rankings returned 403, so rankings come from two mirrors of the official UFC lists that agree: ufcrankings.org (media panel, updated Nov 5, 2026) and ufcalendar.com (media panel Nov 3, 2026; Meta UFC Rankings Oct 31, 2026). Since June 2026 the UFC publishes both the media-panel list and the algorithmic Meta UFC Rankings.",
+      "source": "web re-check 2026-11-06 (see status.sources and appearance.sources)"
+    }
   ],
   "confidence": "low"
 }

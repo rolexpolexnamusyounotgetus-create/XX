@@ -3,11 +3,11 @@
   "name": "Charles Oliveira",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Holds the ceremonial BMF belt after a 50-45, 50-45, 50-45 decision over Max Holloway at UFC 326 (Mar 7, 2026), in which he took Holloway down in every round. No. 3 at lightweight. The UFC announced on Oct 4, 2026 that he defends the BMF belt against Diego Lopes, in Lopes's lightweight debut, in the UFC 335 main event on Dec 12, 2026 in Las Vegas. Former UFC lightweight champion (2021-22).",
+    "summary": "Holds the ceremonial BMF belt after a 50-45, 50-45, 50-45 decision over Max Holloway at UFC 326 (Mar 7, 2026), in which he took Holloway down in every round. No. 3 at lightweight. He was booked against Arman Tsarukyan for UFC 331 but withdrew in August 2026 after the death of his teammate Allan Nascimento (not an injury). The UFC announced on Oct 4, 2026 that he defends the BMF belt against Diego Lopes, in Lopes's lightweight debut, in the UFC 335 main event on Dec 12, 2026 in Las Vegas; still listed as of Nov 6. Pro record 37-11 with 1 no contest. Former UFC lightweight champion (2021-22).",
     "title": "BMF belt (ceremonial, not a UFC championship)",
-    "ranking": "#3 lightweight (UFC media panel, Nov 3, 2026, as mirrored by ufcrankings.org and UFCalendar; not checked on ufc.com)",
+    "ranking": "#3 lightweight (UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org on Nov 5-6; not in the men's pound-for-pound top 15; ufc.com itself returned 403 to scripts)",
     "active": true,
-    "next_fight": "vs Diego Lopes, UFC 335 main event, Dec 12, 2026, T-Mobile Arena, Las Vegas (lightweight, BMF belt)",
+    "next_fight": "vs Diego Lopes, UFC 335 main event, Dec 12, 2026, T-Mobile Arena, Las Vegas (lightweight, five rounds, BMF belt); confirmed on UFCalendar, ufcrankings.org and ESPN's fight center on Nov 6",
     "injuries": [],
     "sources": [
       "https://www.ufc.com/news/ufc-326-official-scorecards-holloway-vs-oliveira-2",
@@ -17,9 +17,15 @@
       "https://www.sherdog.com/events/UFC-335-Oliveira-vs-Lopes-114294",
       "https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/",
       "https://www.ufcalendar.com/fighters/charles-oliveira",
-      "https://ufcrankings.org/",
+      "http://ufcstats.com/fighter-details/07225ba28ae309b6",
       "https://www.ufcalendar.com/rankings/lightweight",
-      "http://ufcstats.com/fighter-details/07225ba28ae309b6"
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://en.wikipedia.org/wiki/Charles_Oliveira",
+      "https://www.espn.com/mma/fightcenter/_/id/600061401",
+      "https://nyfights.com/news/charles-oliveira-addresses-ufc-334-bmf/",
+      "https://www.mmafighting.com/ufc/513919/charles-oliveira-defends-bmf-title-against-diego-lopes-in-ufc-335-main-event"
     ]
   },
   "style": {
@@ -70,14 +76,19 @@
   },
   "appearance": {
     "build": "tall, lean and long-limbed for lightweight: 5 ft 10 in with a 74 in reach (ufcstats); fought at featherweight until 2016",
-    "hair": "short dark hair (as commonly photographed; hidden under a cap in the Commons photo)",
-    "facial_hair": "light stubble on the chin and upper lip in a Jun 2021 photo; varies between fights",
+    "hair": "short, bleached platinum blond with faded sides (Mar 2026 photos)",
+    "facial_hair": "light stubble on the jaw, chin and upper lip (Mar 2026 photos); varies between fights",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "notes": "Build is from ufcstats. Fact-check (Nov 6, 2026) viewed the Wikipedia lead photo (Wikimedia Commons, Jun 25, 2021, holding the UFC belt): lean face, tan light-medium skin and light stubble match; he wears a cap and glasses, so hair colour and length rest on general recall. Tattoos and fight kit are not established by any source, so they stay unknown.",
+    "tattoos": "heavily tattooed: script on both sides of the neck; large black-and-grey portraits across the chest (two adult portraits on the right side, a laughing child over the name 'Tayla' on the left) and a baby portrait over the name 'Dominic' on the abdomen; full sleeves on both arms, with a horse head on the left shoulder; the right leg tattooed from thigh to shin with cartoon-style figures, and a piece on the left shin",
+    "kit": "UFC (Venum) shorts in a multicoloured red, blue, orange and black brushstroke print with a red UFC waistband tab and OLIVEIRA down the left leg (ESPN studio cutouts; files dated Jun 2025 and Mar 2026)",
+    "notes": "Build is from ufcstats. Re-verified Nov 6, 2026 (open network) from photos, since no likeness sheet exists yet: the ESPN headshot (file dated Mar 9, 2026), two ESPN full-body studio cutouts (files dated Jun 26, 2025 and Mar 5, 2026) and the Las Vegas Sun UFC 326 press-conference photos (Mar 5, 2026) all show bleached platinum hair; the 2021 Commons photos show his natural short dark brown hair, so the bleach may not last. Text on the cutouts reads correctly, so they are not mirrored and left/right are his own. Whose portraits the chest pieces show is not sourced. Kit varies by fight and the corner colour wins in the sim.",
     "sources": [
       "http://ufcstats.com/fighter-details/07225ba28ae309b6",
+      "https://a.espncdn.com/i/headshots/mma/players/full/2504169.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/2504169.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/2504169.png",
+      "https://lasvegassun.com/photos/galleries/2026/mar/05/ufc-326-news-conference/",
+      "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_UFC.jpg",
       "https://commons.wikimedia.org/wiki/File:Charles_Oliveira_do_Bronxs.jpg"
     ]
   },
@@ -86,7 +97,8 @@
     { "note": "Takes the fight down often: 5.7 takedown attempts per 15 min at 40% (league 4.3 at 36%), with 485 s of control per 15 min decayed (league 174).", "source": "data/derived/fighters.json; tools/fighter_report.py rates" },
     { "note": "Defense is the soft spot: opponents land 59% of significant strikes on him decayed and 63% over 3 years (league 48%). Decayed chin is 1.12 knockdowns per 100 significant head strikes absorbed (league 0.95); 6 knockdowns absorbed and 5 KO/TKO losses in 37 UFC fights (one of them, Holloway in 2015, an injury stoppage).", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
     { "note": "In five-round fights his landed rate falls to 0.67 and 0.62 of round 1 in rounds 4 and 5, but much of that is time spent controlling: at UFC 326 he held 4:30, 4:40, 4:29, 4:16 and 2:54 of control in rounds 1-5.", "source": "data/derived/fighters.json (pace); data/raw/ufc_fight_stats.csv" },
-    { "note": "Age 37 at the as-of date, with his last KO loss 16 months ago (Topuria, R1).", "source": "data/derived/fighters.json" }
+    { "note": "Age 37 at the as-of date, with his last KO loss 16 months ago (Topuria, R1).", "source": "data/derived/fighters.json" },
+    { "note": "Withdrew from a booked UFC 331 fight with Tsarukyan (Sep 2026) after a teammate's death in August, so UFC 335 comes nine months after UFC 326; the withdrawal was not injury-related.", "source": "https://nyfights.com/news/charles-oliveira-addresses-ufc-334-bmf/" }
   ],
   "confidence": "medium"
 }

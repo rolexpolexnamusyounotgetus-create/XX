@@ -3,12 +3,23 @@
   "name": "Sean O'Malley",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC bantamweight champion, 2-0 since losing the belt and in contention for another shot. He won the title by KO of Aljamain Sterling at UFC 292 (Aug 19, 2023) and defended it against Marlon Vera at UFC 299 (Mar 9, 2024). He then lost twice to Merab Dvalishvili: a decision at UFC 306 (Sep 14, 2024) and a round-3 guillotine at UFC 316 (Jun 7, 2025). Since then he has beaten Song Yadong (UFC 324, Jan 24, 2026; 29-28 x3) and knocked out Aiemann Zahabi in round 2 at UFC Freedom 250 in Washington, DC (Jun 14, 2026). On Oct 25, 2026 Dana White named O'Malley and Song as the contenders for champion Petr Yan. Betting headlines had Yan favoured in that rematch (O'Malley beat Yan by split decision in 2022). No booking appeared in the late-October reports cited here. UFC record 12-3 (1 NC) per ufcstats.",
+    "summary": "Former UFC bantamweight champion, #2 in the UFC media-panel rankings (Nov 3, 2026), 2-0 since losing the belt and in contention for a title shot. He won the title by KO of Aljamain Sterling at UFC 292 (Aug 19, 2023) and defended it against Marlon Vera at UFC 299 (Mar 9, 2024). He then lost twice to Merab Dvalishvili: a decision at UFC 306 (Sep 14, 2024) and a round-3 guillotine at UFC 316 (Jun 7, 2025), the second about seven months after hip labrum surgery. Since then he has beaten Song Yadong (UFC 324, Jan 24, 2026; 29-28 x3) and knocked out Aiemann Zahabi in round 2 at UFC Freedom 250 in Washington, DC (Jun 14, 2026). On Oct 25, 2026 Dana White named O'Malley and Song as the contenders for champion Petr Yan. O'Malley says 'me versus Petr is happening next' (MMA Fighting, Oct 28), but no bout is booked as of Nov 6 (UFCalendar). Betting headlines had Yan favoured in that rematch (O'Malley beat Yan by split decision in 2022). In October he described about three years of lingering lower-back discomfort that has been improving. Pro record 20-3 (1 NC) per Wikipedia (UFCalendar: 20-3); UFC record 12-3 (1 NC) per ufcstats.",
     "title": null,
-    "ranking": null,
+    "ranking": "#2 bantamweight in the UFC media-panel rankings (Nov 3, 2026, per ufcalendar.com; ufcrankings.org updated Nov 5 agrees) and #3 in the UFC/Meta algorithmic rankings (Oct 31, 2026, per ufcalendar.com). ufc.com/rankings returned 403 to this pass, so the official page itself was not read.",
     "active": true,
     "next_fight": null,
-    "injuries": [],
+    "injuries": [
+      {
+        "what": "hip labrum surgery; he fought Dvalishvili at UFC 316 about seven months later and called that turnaround his biggest regret",
+        "when": "2024 (about seven months before Jun 2025)",
+        "source": "https://middleeasy.com/mma-news/sean-omalley-petr-yan-recovery-concern-ufc-333/"
+      },
+      {
+        "what": "lingering lower-back discomfort for about three years, improving with a regular exercise routine (his own account on his YouTube channel, Oct 19)",
+        "when": "2026-10",
+        "source": "https://middleeasy.com/mma-news/sean-omalley-petr-yan-recovery-concern-ufc-333/"
+      }
+    ],
     "sources": [
       "http://ufcstats.com/fighter-details/b50a426a33da0012",
       "http://ufcstats.com/fight-details/60de0423ae6ed097",
@@ -19,7 +30,13 @@
       "https://bloodyelbow.com/2026/10/25/a-good-problem-dana-white-reveals-2-fighters-are-in-contention-to-face-petr-yan-next/",
       "https://boxingnews.com/news/yan-favored-omalley-rematch-volkanovski-underdog",
       "https://www.sherdog.com/news/news/Petr-Yan-favored-in-2-rematches-Volkanovski-underdog-to-Gaethje-203356",
-      "data/derived/fighters.json"
+      "data/derived/fighters.json",
+      "https://www.ufcalendar.com/fighters/sean-omalley",
+      "https://www.ufcalendar.com/rankings/bantamweight",
+      "https://ufcrankings.org/bantamweight/",
+      "https://www.mmafighting.com/ufc/518097/sean-omalley-theres-no-debate-or-an-argument-rematch-against-petr-yan-is-happening-next",
+      "https://middleeasy.com/mma-news/sean-omalley-petr-yan-recovery-concern-ufc-333/",
+      "https://en.wikipedia.org/wiki/Sean_O%27Malley_(fighter)"
     ]
   },
   "style": {
@@ -52,28 +69,55 @@
     ]
   },
   "moves": {
-    "jab": 0.22, "cross": 0.3, "hook": 0.14, "overhand": 0.04, "upper": 0.14, "headkick": 0.16,
-    "bodykick": 0.6, "bodyhook": 0.1, "bodystraight": 0.3,
-    "calf": 0.5, "inside": 0.5, "spinning": 0.04, "knee": 0.05, "elbow": 0.0,
+    "jab": 0.22,
+    "cross": 0.3,
+    "hook": 0.14,
+    "overhand": 0.04,
+    "upper": 0.14,
+    "headkick": 0.16,
+    "bodykick": 0.6,
+    "bodyhook": 0.1,
+    "bodystraight": 0.3,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.04,
+    "knee": 0.05,
+    "elbow": 0.0,
     "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. fighters.json time-decayed attempt split is 71.5% head, 22.4% body and 6.1% leg (landed 63.6/26.9/9.5), against a bantamweight average of 76.2/14.1/9.7. Its body share is the 4th-highest of 51 bantamweights with at least 30 decayed minutes. 96% of his career attempts are at distance, which pushes the head group toward straight punches (jab and cross) and away from overhands. It also pushes the body group toward kicks and straights rather than hooks, since body hooks are an inside weapon. headkick 0.16 and bodykick 0.60 are judgments for a rangy kicker and are not confirmed by a scouting page; no web page could be opened in this pass. The leg split, spinning 0.04 and knee 0.05 are unsourced low defaults."
   },
   "appearance": {
     "build": "tall, lean and long-limbed for bantamweight: 5'11\" (71 in) with a 72 in reach per ufcstats",
-    "hair": "frequently dyed in bright, changing colours; current colour unknown (unverified: from widely published pre-2026 coverage; no photo was checked in this pass)",
-    "facial_hair": "often a moustache (unverified, as above)",
+    "hair": "dyed bright magenta-pink, curly, with red on his right side and blue on his left (ESPN headshot, Jun 11, 2026; weigh-in, Jun 13, 2026), worn in tight magenta and blue cornrows on fight night (UFC Freedom 250, Jun 14, 2026). He changes the colour between fights; nothing after June 2026 was checked.",
+    "facial_hair": "moustache and short chin beard (goatee) over light stubble (Jun 2026 photos)",
     "skin": "light",
-    "tattoos": "unknown (no source checked)",
-    "kit": "unknown",
+    "tattoos": "heavily tattooed: a large winged bird across the chest, 'doingwell' script below the collarbones, full sleeves on both arms, script on the ribs, neck pieces and small face tattoos (a star beside the left eye, a heart and 'love' on the right cheek, script at the hairline) (ESPN headshot and stance photo, Jun 2026; White House cageside photo, Jun 14, 2026)",
+    "kit": "compression-length white UFC Freedom 250 shorts with blue pinstripes and red-and-white stripes at the White House card (Jun 14, 2026); navy shorts at the weigh-in; corner colour wins in the sim",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",
-      "skin, hair and facial hair: unverified recall of widely published pre-2026 photos; a fact-check against a dated photo is needed"
+      "assets/reference/sean-o-malley/espn_headshot.png = https://a.espncdn.com/i/headshots/mma/players/full/4205093.png (Last-Modified Jun 11, 2026)",
+      "assets/reference/sean-o-malley/espn_stance_left.png = https://a.espncdn.com/i/headshots/mma/players/stance/left/4205093.png (Last-Modified Jun 11, 2026)",
+      "assets/reference/sean-o-malley/commons_2026-06-14_whitehouse_29.jpg (Wikimedia Commons, UFC Freedom 250, Jun 14, 2026; also the Wikipedia infobox photo)",
+      "assets/reference/sean-o-malley/ref_cagesidepress_weighin_2026-06-13.jpg (weigh-in, Jun 13, 2026)",
+      "No likeness sheet (data/likeness/sean-o-malley.json) exists; these photos were read on Nov 6, 2026 and replace the earlier unverified recall"
     ]
   },
   "engine_notes": [
-    { "note": "Never knocked down in 16 UFC fights (0 knockdowns absorbed). He has scored 7 knockdowns (0.55 per 15 min career, 0.45 decayed) vs a 0.31 bantamweight prior.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
-    { "note": "Opponents' best striking avenue is the legs: 19.4% of their career attempts and 23.8% decayed go there, and 42% of what lands on him (decayed) is leg strikes. His opponents' head accuracy is only 27.7% career vs 37.1% for the league.", "source": "data/derived/fighters.json" },
-    { "note": "Offensive grappling is close to zero (0.12 takedown attempts per 15 min decayed). Opponents take him down 2.3 times per 15 min decayed and hold 11.4 s/min of control, above the 10.6 league rate.", "source": "data/derived/fighters.json" },
-    { "note": "Five-round sample is small: 4 bouts (20 / 15.8 / 14.7 / 10 / 10 minutes per round). Pace 1.00 / 1.90 / 1.03 / 2.03 / 2.36 is driven by the 230-of-356 Vera fight, so shrink it toward the prior.", "source": "data/derived/fighters.json (pace, pace_w)" }
+    {
+      "note": "Never knocked down in 16 UFC fights (0 knockdowns absorbed). He has scored 7 knockdowns (0.55 per 15 min career, 0.45 decayed) vs a 0.31 bantamweight prior.",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
+    },
+    {
+      "note": "Opponents' best striking avenue is the legs: 19.4% of their career attempts and 23.8% decayed go there, and 42% of what lands on him (decayed) is leg strikes. His opponents' head accuracy is only 27.7% career vs 37.1% for the league.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Offensive grappling is close to zero (0.12 takedown attempts per 15 min decayed). Opponents take him down 2.3 times per 15 min decayed and hold 11.4 s/min of control, above the 10.6 league rate.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Five-round sample is small: 4 bouts (20 / 15.8 / 14.7 / 10 / 10 minutes per round). Pace 1.00 / 1.90 / 1.03 / 2.03 / 2.36 is driven by the 230-of-356 Vera fight, so shrink it toward the prior.",
+      "source": "data/derived/fighters.json (pace, pace_w)"
+    }
   ],
   "confidence": "medium"
 }

@@ -3,9 +3,9 @@
   "name": "Jack Della Maddalena",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC welterweight champion. He won the title from Belal Muhammad at UFC 315 in Montreal (May 10, 2025; 48-47, 48-47, 49-46). He lost it to Islam Makhachev at UFC 322 (Nov 15, 2025; 45-50 x3, controlled for 19:10). Carlos Prates then stopped him in a five-round main event in Perth (May 2, 2026; TKO R3 3:17, elbows to the body after three knockdowns). That is two straight losses. Nothing after May 2, 2026 is in the ufcstats snapshot (through Oct 31, 2026). Rakhmonov's manager denied a rumored January 2027 fight with Shavkat Rakhmonov on Oct 30, 2026, per the Bloody Elbow report cited in the project's Rakhmonov file. That report was not re-fetched here, and no booking or ranking could be checked (no web access). The fact-check pass (2026-11-06) had no web access either (search budget used up; news hosts unresolvable), so status is still unverified.",
+    "summary": "Former UFC welterweight champion (won the title from Belal Muhammad at UFC 315, May 10, 2025; lost it to Islam Makhachev at UFC 322, Nov 15, 2025, UD). Carlos Prates then stopped him in the UFC Perth main event (May 2, 2026; TKO R3 3:17), his second straight loss. Pro record 18-4, UFC 8-2 (ESPN, Wikipedia, MMA Junkie). Ranked #4 at welterweight on both UFC lists. No fight is booked: he turned down a spot on UFC Sydney (Feb 7, 2027 local) because the turnaround was too short, said he would be into a fight with Mike Malott, and is targeting April or May 2027 after time spent developing his game (Bedtime MMA interview, reported Nov 1-2, 2026 by MMA Mania and NY Fights). Shavkat Rakhmonov has also been mentioned as an opponent; a Bloody Elbow report (Oct 30, 2026) that Rakhmonov's manager shut down a rumored January fight could not be read directly (403). No injury reported in the coverage checked.",
     "title": null,
-    "ranking": null,
+    "ranking": "#4 welterweight (UFC media panel, Nov 3-5, 2026; also #4 in the Meta UFC Rankings of Oct 31, 2026; read from ufcrankings.org and ufcalendar.com mirrors because ufc.com returned 403). Not in the men's pound-for-pound top 15.",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -14,14 +14,31 @@
       "http://ufcstats.com/fight-details/eb6d9fef6c374830",
       "http://ufcstats.com/fight-details/856f6ee049373843",
       "http://ufcstats.com/fight-details/b873c116e39c9920",
-      "http://ufcstats.com/event-details/872b018076f831b0",
-      "https://bloodyelbow.com/2026/10/30/shavkat-rakhmonovs-ufc-return-facing-another-delay-as-his-manager-shuts-down-rumored-fight/"
+      "https://www.espn.com/mma/fighter/_/id/4828707/jack-della-maddalena",
+      "https://www.espn.com/mma/fighter/history/_/id/4828707/jack-della-maddalena",
+      "https://en.wikipedia.org/wiki/Jack_Della_Maddalena",
+      "https://www.mmamania.com/ufc-news/483497/jack-della-maddalena-into-mike-malott-fight-but-on-his-own-timeline",
+      "https://nyfights.com/featured/jack-della-maddalena-ufc-sydney-return/",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/11/02/ufc-jack-della-maddalena-develop-skills-before-return-turned-down-sydney-fight/92560117007/ (search snippet only; page returned 402)",
+      "https://www.mmamania.com/ufc-results/440631/ufc-perth-results-carlos-prates-destroys-jack-della-maddalena-in-bloody-demolition-job",
+      "https://bloodyelbow.com/2026/10/30/shavkat-rakhmonovs-ufc-return-facing-another-delay-as-his-manager-shuts-down-rumored-fight/ (not readable: 403)",
+      "https://ufcrankings.org/welterweight/",
+      "https://www.ufcalendar.com/rankings/welterweight",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound"
     ]
   },
   "style": {
     "archetype": "boxer",
     "stance": "switch",
-    "tags": ["power", "body-work", "switch-stance", "fast-starter", "late-surge", "cardio"],
+    "tags": [
+      "power",
+      "body-work",
+      "switch-stance",
+      "fast-starter",
+      "late-surge",
+      "cardio"
+    ],
     "signature": [
       "punches to the body: KO of Ramazan Emeev with a punch to the body, R1 2:32 (UFC 275; ufcstats 'Punch to Body At Distance')",
       "heavy body work: 19.5% of decayed significant attempts go to the body (division 13.9%); 47/65 body strikes landed against Muhammad",
@@ -60,22 +77,44 @@
     "notes": "Target split from the fighters.json S sums: decayed significant attempts go 73.3% head, 19.5% body, 7.2% legs, and landed strikes 63.1% head, 25.7% body, 11.2% legs. Career attempts are 73.8/19.5/6.7. His body share is about 1.4x the welterweight rate (13.9%), and a punch to the body finished Emeev, so the body moves total 0.9. They lean to punches (body hook 0.4, body straight 0.3) over kicks (0.2). Leg attempts are below the division rate (9.3%), so low kicks are small. 88% of his decayed landed strikes come at distance and 7.8% in the clinch, so knees and elbows are small. His elbow finish of Burns was on the ground. ufcstats does not split jab, cross, hook and uppercut. That split follows his boxing style as a judgment, not a count. No outside scouting source could be fetched this pass."
   },
   "appearance": {
-    "build": "athletic, medium frame; 5 ft 11 in with a 73 in reach (ufcstats)",
-    "hair": "dark; length and style not verified (unverified: recalled from widely published fight photos; no photo or written description checked in this pass)",
-    "facial_hair": "unknown",
+    "build": "athletic, medium frame, lean and defined at fight weight; 5 ft 11 in with a 73 in reach (ufcstats, ESPN)",
+    "hair": "short ginger hair, short on the sides with a little length on top, hairline slightly receding at the temples (UFC headshot; UFC Perth photo, May 2026)",
+    "facial_hair": "short ginger beard with moustache, trimmed close (UFC headshot and UFC Perth photo, May 2026)",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "none visible on the chest, arms, neck or face in the UFC headshot or the UFC Perth fight photo; back not seen in the photos checked",
+    "kit": "green UFC shorts with gold trim and a green-and-gold patterned panel at UFC Perth (May 2, 2026, red corner); corner colour wins in the sim",
+    "notes": "No photo-based likeness sheet exists for this fighter (data/likeness/jack-della-maddalena.json checked 2026-11-06, absent). Hair, facial hair, skin, tattoos and kit below come from the 2026 web re-check: an undated official UFC studio headshot served by ESPN plus dated 2026 fight-night photos, all viewed directly (URLs in sources). Describe-don't-guess rule: anything not visible in those photos or stated in a cited article is marked. Skin is fair with freckles; eyes light. The red-ginger beard is the most recognisable feature.",
     "sources": [
-      "http://ufcstats.com/fighter-details/6b453bc35a823c3f (height and reach only; hair and skin are not from a fetched source)"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4828707.png (official UFC studio headshot via ESPN; undated)",
+      "https://platform.mmamania.com/wp-content/uploads/sites/110/2026/05/gettyimages-2274153700.jpg (Getty/Zuffa, Ed Mulholland, UFC Perth, May 2, 2026; lead photo of https://www.mmamania.com/ufc-results/440631/ufc-perth-results-carlos-prates-destroys-jack-della-maddalena-in-bloody-demolition-job)",
+      "http://ufcstats.com/fighter-details/6b453bc35a823c3f (height and reach)"
     ]
   },
   "engine_notes": [
-    { "note": "Fast starts in three-round fights: 6.89 significant landed per minute in round 1 across 7 three-round fights, with 4 first-round finishes.", "source": "tools/fighter_report.py pace table (snapshot 2026-10-31)" },
-    { "note": "Five-round pace (1, 1.23, 1.06, 1.09, 1.72) comes from 2 fights that reached round 5 (Muhammad, Makhachev). The round-5 jump mostly comes from the Muhammad fight (53 landed in R5), so shrink it toward the prior.", "source": "data/derived/fighters.json (pace_w 15, 15, 13.3, 10, 10)" },
-    { "note": "Grappling defense is the hole: controlled 331 s per 15 min over the last 3 years (division 167).", "source": "tools/fighter_report.py (snapshot 2026-10-31)" },
-    { "note": "Chin: all 3 knockdowns he has absorbed in the UFC came in the Prates fight (1 in R2, 2 in R3). Before that he was never knocked down in 105 UFC minutes.", "source": "data/raw/ufc_fight_stats.csv; http://ufcstats.com/fight-details/eb6d9fef6c374830" },
-    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). Status after the snapshot, ranking, hair/skin descriptions and technique labels have not been checked against outside sources. Fact-check 2026-11-06: every date, method, score and per-fight number in this file was re-derived from data/raw/*.csv and tools/fighter_report.py and matches. The fact-check also had no web access, so status and appearance are still unverified. The 'volume' tag was dropped: decayed output is 8.33 significant attempts per minute vs 8.44 for the division (career 9.62).", "source": "research pass and fact-check 2026-11-06" }
+    {
+      "note": "Fast starts in three-round fights: 6.89 significant landed per minute in round 1 across 7 three-round fights, with 4 first-round finishes.",
+      "source": "tools/fighter_report.py pace table (snapshot 2026-10-31)"
+    },
+    {
+      "note": "Five-round pace (1, 1.23, 1.06, 1.09, 1.72) comes from 2 fights that reached round 5 (Muhammad, Makhachev). The round-5 jump mostly comes from the Muhammad fight (53 landed in R5), so shrink it toward the prior.",
+      "source": "data/derived/fighters.json (pace_w 15, 15, 13.3, 10, 10)"
+    },
+    {
+      "note": "Grappling defense is the hole: controlled 331 s per 15 min over the last 3 years (division 167).",
+      "source": "tools/fighter_report.py (snapshot 2026-10-31)"
+    },
+    {
+      "note": "Chin: all 3 knockdowns he has absorbed in the UFC came in the Prates fight (1 in R2, 2 in R3). Before that he was never knocked down in 105 UFC minutes.",
+      "source": "data/raw/ufc_fight_stats.csv; http://ufcstats.com/fight-details/eb6d9fef6c374830"
+    },
+    {
+      "note": "Fact-check 2026-11-06: every date, method, score and per-fight number in this file was re-derived from data/raw/*.csv and tools/fighter_report.py and matches. The 'volume' tag was dropped: decayed output is 8.33 significant attempts per minute vs 8.44 for the division (career 9.62).",
+      "source": "fact-check 2026-11-06"
+    },
+    {
+      "note": "Web re-check 2026-11-06 (network open; curl via DuckDuckGo lite, ESPN, Wikipedia API, MMA Fighting, MMA Mania, Yahoo/MMA Junkie syndication, Sherdog, ranking mirrors). Status, pro record, ranking, booking, injuries and appearance were checked against the pages listed in status.sources and appearance.sources. ufc.com (403), mmajunkie.usatoday.com (402) and bloodyelbow.com (403) could not be read directly; items that rest only on those hosts are marked. Style, moves and the numeric engine notes were not changed in this pass. ufc.com/rankings returned 403, so rankings come from two mirrors of the official UFC lists that agree: ufcrankings.org (media panel, updated Nov 5, 2026) and ufcalendar.com (media panel Nov 3, 2026; Meta UFC Rankings Oct 31, 2026). Since June 2026 the UFC publishes both the media-panel list and the algorithmic Meta UFC Rankings.",
+      "source": "web re-check 2026-11-06 (see status.sources and appearance.sources)"
+    }
   ],
   "confidence": "medium"
 }

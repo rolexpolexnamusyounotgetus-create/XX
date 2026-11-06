@@ -3,14 +3,14 @@
   "name": "Ilia Topuria",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Lost the undisputed lightweight title, and his unbeaten record, to Justin Gaethje at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026). His corner stopped the fight after round 4. He suffered fractures of both orbital bones, with no surgery needed. Dana White says he returns in early 2027 and has named no opponent; Topuria wants the Gaethje rematch and has also called for Paddy Pimblett in April. Still the No. 1 lightweight contender. Former UFC featherweight champion (vacated Feb 2025) and lightweight champion (Jun 2025 to Jun 2026).",
+    "summary": "Lost the undisputed lightweight title, and his unbeaten record, to Justin Gaethje at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026). His corner stopped the fight after round 4, with Gaethje ahead 39-37 on all three cards. He suffered fractures of both orbital bones, with no surgery needed. On Nov 4, 2026 Dana White said he returns in early 2027 and named no opponent; Topuria told ABC (Spain) he is aiming for April 2027, called out Paddy Pimblett and said 'maybe I'll even retire'. Nothing is booked. No. 1 lightweight contender and No. 5 pound-for-pound. Pro record 17-1. Former UFC featherweight champion (vacated Feb 2025) and lightweight champion (Jun 2025 to Jun 2026).",
     "title": null,
-    "ranking": "#1 lightweight contender (UFC media panel, Nov 3, 2026, as mirrored by ufcrankings.org and UFCalendar; not checked on ufc.com)",
+    "ranking": "#1 lightweight contender and #5 men's pound-for-pound (UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org on Nov 5-6; ufc.com itself returned 403 to scripts)",
     "active": true,
     "next_fight": null,
     "injuries": [
       { "what": "fractures of both orbital bones in the Gaethje loss; reports say no surgery needed", "when": "2026-06", "source": "https://lowkickmma.com/ilia-topuria-injury-update-orbital-fracture-confirmed-after-justin-gaethje-loss" },
-      { "what": "medical suspension: 180 days or until cleared by an oral and maxillofacial surgeon, plus 60 days for the TKO", "when": "2026-06", "source": "https://www.f4wonline.com/news/ufc/ufc-freedom-250-medical-suspensions/" }
+      { "what": "medical suspension: 180 days or until cleared by an oral and maxillofacial specialist, plus 60 days of mandatory rest", "when": "2026-06", "source": "https://sports.yahoo.com/articles/justin-gaethje-ilia-topuria-receive-190008823.html" }
     ],
     "sources": [
       "https://www.cbssports.com/ufc/news/ufc-white-house-live-updates-results-freedom-250-highlights-ilia-topuria-justin-gaethje/live/",
@@ -21,8 +21,16 @@
       "https://mmanews.com/article/dana-white-reveals-when-ilia-topuria-will-return-ufc",
       "https://sports.yahoo.com/articles/ilia-topuria-opens-loss-justin-012534441.html",
       "https://bleacherreport.com/articles/25159123-ilia-topuria-vacates-title-volkanovski-lopes-fight-belt-ufc-315-card-revealed",
-      "https://ufcrankings.org/",
-      "http://ufcstats.com/fighter-details/54f64b5e283b0ce7"
+      "http://ufcstats.com/fighter-details/54f64b5e283b0ce7",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://www.ufcalendar.com/fighters/ilia-topuria",
+      "https://www.sherdog.com/news/news/Dana-White-targets-early-2027-UFC-return-for-Ilia-Topuria-after-loss-203506",
+      "https://www.sherdog.com/news/news/Ilia-Topuria-reveals-who-he-wants-to-fight-next-in-the-UFC-203511",
+      "https://heavy.com/sports/ufc/scorecards-revealed-for-justin-gaethje-vs-ilia-topuria/",
+      "https://sports.yahoo.com/articles/justin-gaethje-ilia-topuria-receive-190008823.html"
     ]
   },
   "style": {
@@ -41,7 +49,7 @@
       "lately absorbs about as much as he lands: 5.31 significant strikes absorbed vs 5.36 landed per minute over the last 3 years (league 4.32)",
       "short reach for lightweight: 69 in at 5 ft 7 in",
       "after dropping Gaethje with body shots in R2 he followed him to the mat and hunted submissions (per reports; ufcstats logs no takedown or submission attempt in that round), and Gaethje recovered",
-      "returns from fractures of both orbital bones and a layoff of at least 6 months; after-effects unknown"
+      "returns from fractures of both orbital bones and a layoff of about 10 months if he fights in April 2027; after-effects not yet known, and he has publicly mentioned retirement"
     ],
     "summary": "A pressure boxer with knockout power and a grappling base. He walks opponents down, cuts off the cage and throws combinations to the head and body, and he finished Volkanovski, Holloway and Oliveira inside three rounds each. His first loss came when Gaethje stood and traded and broke both orbital bones. The open questions are how he returns from that injury and how he handles a puncher who will not back up.",
     "sources": [
@@ -76,12 +84,16 @@
     "hair": "dark brown to black, short faded sides with a longer top swept back (Jun 2026 photo)",
     "facial_hair": "full, short, neatly trimmed dark beard and mustache (Jun 2026 photo)",
     "skin": "light",
-    "tattoos": "visible in the Jun 13, 2026 weigh-in photo: a large chest piece across both pecs (big-cat imagery), a full sleeve on the left arm, ink on the right shoulder and upper arm, and 'El Matador' in script below the left pec",
-    "kit": "unknown",
-    "notes": "Build is from ufcstats and matches the photo (very lean and heavily muscled). Hair, facial hair, skin and tattoos were checked by the fact-checker (Nov 6, 2026) against the Wikipedia lead photo, a public-domain US Army photo of the UFC Freedom 250 ceremonial weigh-in (Jun 13, 2026, Wikimedia Commons). The script reads correctly, so the image is not mirrored and the left/right sides are his own. Fight kit is not established by any source, so it stays unknown.",
+    "tattoos": "visible in the Jun 13, 2026 weigh-in photo and ESPN cutouts: a crowned 'T' emblem at the top of the sternum below the throat; a large chest piece across both pecs (two tigers among trees); a full sleeve on the left arm (red script reading 'Hasta la muerte' as far as legible, a wolf, a clock); ink on the right shoulder and upper arm; 'El Matador' in script below the left pec",
+    "kit": "UFC (Venum) vale-tudo shorts. ESPN cutout (file dated Oct 5, 2026): navy with red and white stripes and red gloves with US-flag cuffs, matching his navy UFC Freedom 250 walkout kit; older cutout (file dated Feb 2024): red with a darker red pattern and white stripes",
+    "notes": "Build is from ufcstats and matches the photos (very lean and heavily muscled). Hair, facial hair, skin and tattoos were checked by the fact-checker (Nov 6, 2026) against the Wikipedia lead photo, a public-domain US Army photo of the UFC Freedom 250 ceremonial weigh-in (Jun 13, 2026, Wikimedia Commons); the script reads correctly, so the image is not mirrored and the left/right sides are his own. Re-verified the same day (open network) against the ESPN headshot (file dated Oct 5, 2026), ESPN full-body cutouts (files dated Feb 15, 2024 and Oct 5, 2026) and the White House photo of Jun 14, 2026; hair and beard are unchanged. That the navy cutout kit is the exact Freedom 250 fight kit is an inference from the matching walkout set and the red Freedom gloves. Kit varies by fight and the corner colour wins in the sim.",
     "sources": [
       "http://ufcstats.com/fighter-details/54f64b5e283b0ce7",
-      "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748627)(cropped).jpg"
+      "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250_Ceremonial_Weigh_In_(9748627)(cropped).jpg",
+      "https://commons.wikimedia.org/wiki/File:UFC_Freedom_250,_the_mixed_martial_arts_event_produced_by_the_Ultimate_Fighting_Championship,_Sunday,_June_14,_2026,_in_the_Grand_Foyer_of_the_White_House_-_68_(cropped).jpg",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4350812.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4350812.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4350812.png"
     ]
   },
   "engine_notes": [

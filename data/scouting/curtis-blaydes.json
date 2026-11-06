@@ -3,20 +3,33 @@
   "name": "Curtis Blaydes",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Veteran heavyweight contender, aged 35, 1-1 in 2026. He lost a 28-29 x3 decision to Josh Hokit at UFC 327 in Miami (Apr 11, 2026), a slugfest with 351 sig strikes landed between them. He then beat Waldo Cortes Acosta by 29-28 x3 at Noche UFC in Glendale, Arizona (Sep 12, 2026). His last title fight was a 60-second KO loss to Tom Aspinall for the interim belt at UFC 304 (Jul 27, 2024). Hokit has since been booked against interim champion Ciryl Gane (ESPN, Oct 2026). UFC record 15-6 (1 NC) per ufcstats. Booking, ranking and injury news for Blaydes could not be web-checked (no search access in the research or Nov 6 fact-check passes).",
+    "summary": "Veteran heavyweight contender, aged 35, #5 in the UFC media-panel rankings (Nov 3, 2026). He went 1-1 in 2026. He lost a 28-29 x3 decision to Josh Hokit at UFC 327 in Miami (Apr 11, 2026), a Fight of the Night slugfest with 351 sig strikes landed between them that left him with a fractured orbital bone and a broken nose. He then beat Waldo Cortes Acosta 29-28 x3 at Noche UFC in Glendale, Arizona (Sep 12, 2026) and said he wants a top-5 opponent next (BJPenn, Sep 15). No bout is booked as of Nov 6: his UFCalendar page says no next fight, and ufcrankings.org's list of upcoming fights for ranked heavyweights does not include him. His last title fight was a 60-second KO loss to Tom Aspinall for the interim belt at UFC 304 (Jul 27, 2024). Hokit now faces champion Ciryl Gane for the heavyweight title at UFC 334 (Nov 14, 2026). Pro record 20-6 (1 NC) per UFCalendar and Wikipedia; UFC record 15-6 (1 NC) per ufcstats.",
     "title": null,
-    "ranking": null,
+    "ranking": "#5 heavyweight in the UFC media-panel rankings (Nov 3, 2026, per ufcalendar.com; the ufcrankings.org mirror updated Nov 5 agrees) and #6 in the UFC/Meta algorithmic rankings (Oct 31, 2026, per ufcalendar.com; Wikipedia also gives #6 Meta as of Oct 24). ufc.com/rankings returned 403 to this pass, so the official page itself was not read.",
     "active": true,
     "next_fight": null,
-    "injuries": [],
+    "injuries": [
+      {
+        "what": "fractured orbital bone and broken nose in the Hokit fight (UFC 327); he was back to fight on Sep 12",
+        "when": "2026-04",
+        "source": "https://www.mmafighting.com/ufc/482403/curtis-blaydes-injuries-revealed-after-potential-fight-of-the-year-against-josh-hokit-at-ufc-327"
+      },
+      { "what": "meniscus injury in the June 2025 Kuniev fight; surgery, out for the rest of 2025", "when": "2025-08", "source": "https://afrocombat.com/curtis-blaydes-sidelined-for-the-rest-of-2025-following-surgery/" }
+    ],
     "sources": [
       "http://ufcstats.com/fighter-details/fa6796c55d6c5440",
       "http://ufcstats.com/fight-details/606639bf387f60e2",
       "http://ufcstats.com/fight-details/903552edaba48f4a",
       "http://ufcstats.com/fight-details/8e5744c664fec3e9",
       "http://ufcstats.com/fight-details/ec434314c5438fc7",
-      "https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335",
-      "data/derived/fighters.json"
+      "data/derived/fighters.json",
+      "https://www.ufcalendar.com/fighters/curtis-blaydes",
+      "https://www.ufcalendar.com/rankings/heavyweight",
+      "https://ufcrankings.org/heavyweight/",
+      "https://en.wikipedia.org/wiki/Curtis_Blaydes",
+      "https://www.bjpenn.com/mma-news/curtis-blaydes/curtis-blaydes-talks-about-his-mma-future-after-noche-ufc-victory/",
+      "https://www.mmafighting.com/ufc/482403/curtis-blaydes-injuries-revealed-after-potential-fight-of-the-year-against-josh-hokit-at-ufc-327",
+      "https://afrocombat.com/curtis-blaydes-sidelined-for-the-rest-of-2025-following-surgery/"
     ]
   },
   "style": {
@@ -48,28 +61,54 @@
     ]
   },
   "moves": {
-    "jab": 0.34, "cross": 0.28, "hook": 0.14, "overhand": 0.1, "upper": 0.1, "headkick": 0.04,
-    "bodykick": 0.4, "bodyhook": 0.3, "bodystraight": 0.3,
-    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.04, "elbow": 0.08,
+    "jab": 0.34,
+    "cross": 0.28,
+    "hook": 0.14,
+    "overhand": 0.1,
+    "upper": 0.1,
+    "headkick": 0.04,
+    "bodykick": 0.4,
+    "bodyhook": 0.3,
+    "bodystraight": 0.3,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.04,
+    "elbow": 0.08,
     "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. fighters.json time-decayed attempt split is 84.4% head, 5.9% body and 9.7% leg (landed 74.2/9.7/16.1), against a heavyweight average of 77.5/12.9/9.6. He is very head-heavy, rarely goes to the body and is average to the legs. That changed in his last fight: 15 of 19 leg strikes landed vs Cortes Acosta. With 79% of decayed attempts at distance and a reach of 80 in, the head group leans on the jab and straight right. His KOs at distance were punches (dos Santos, Daukaus), so overhand and hook sit at modest values. elbow 0.08 reflects three elbow finishes from top in ufcstats. knee 0.04 is a clinch default (15% of decayed attempts come in the clinch). The body and leg internal splits are unsourced defaults. No scouting page could be opened in this pass."
   },
   "appearance": {
     "build": "tall and long for a heavyweight, broad-shouldered: 6'4\" (76 in) with an 80 in reach per ufcstats",
-    "hair": "shaved or very short (unverified: from widely published pre-2026 fight photos; no photo was checked in this pass)",
-    "facial_hair": "beard (unverified, as above)",
-    "skin": "medium-dark",
-    "tattoos": "unknown (no source checked)",
-    "kit": "unknown",
+    "hair": "short black hair: a close-cropped textured top with faded sides (ESPN fight-week photos, Apr and Sep 2026)",
+    "facial_hair": "full, thick black beard (ESPN headshot and stance photos, Apr and Sep 2026)",
+    "skin": "dark",
+    "tattoos": "large black tribal tattoo over the right shoulder and upper arm; a red-and-black design on the left shoulder; faint linework on the right arm (ESPN stance photos, Apr and Sep 2026; detail too small to describe further)",
+    "kit": "long, compression-length black or charcoal UFC fight-kit shorts in both 2026 ESPN photo sets (UFC 327, Noche UFC); corner colour wins in the sim",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",
-      "skin, hair and facial hair: unverified recall of widely published pre-2026 photos; a fact-check against a dated photo is needed"
+      "https://a.espncdn.com/i/headshots/mma/players/full/3922557.png (Last-Modified Sep 10, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3922557.png (Last-Modified Apr 9, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/3922557.png (Last-Modified Sep 10, 2026)",
+      "No likeness sheet (data/likeness/curtis-blaydes.json) exists; hair, beard, skin, tattoos and kit were read from the ESPN photos above on Nov 6, 2026"
     ]
   },
   "engine_notes": [
-    { "note": "Takedown rate is falling: 10.7 attempts and 5.0 landed per 15 min career, against 9.6 and 3.2 decayed (33% accuracy). Control fell from 26.3 to 17.0 s/min. Both are still far above the heavyweight averages of about 2.7 attempts, 1.1 landed and 10.7 s/min.", "source": "data/derived/fighters.json" },
-    { "note": "Knocked down 5 times in 22 UFC fights (0.36 per 15 min career, 0.29 decayed, vs a 0.34 heavyweight prior). Every KO/TKO loss came in round 1 or 2 against a top heavyweight puncher.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
-    { "note": "Striking volume has risen to 9.5 sig attempts per minute decayed (career 7.8, heavyweight 7.7), driven by the Hokit fight: 174 of 302 for him and 177 of 293 for Hokit.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/903552edaba48f4a" },
-    { "note": "The five-round pace vector (1.00 / 1.13 / 0.57 / 0.22 / 0.31) rests on one bout that went past round 2 (Volkov, 2020, five rounds). Do not read it as a real late fade; use the prior.", "source": "data/derived/fighters.json (pace_w = 25.1 / 7.8 / 5 / 5 / 5 minutes)" }
+    {
+      "note": "Takedown rate is falling: 10.7 attempts and 5.0 landed per 15 min career, against 9.6 and 3.2 decayed (33% accuracy). Control fell from 26.3 to 17.0 s/min. Both are still far above the heavyweight averages of about 2.7 attempts, 1.1 landed and 10.7 s/min.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Knocked down 5 times in 22 UFC fights (0.36 per 15 min career, 0.29 decayed, vs a 0.34 heavyweight prior). Every KO/TKO loss came in round 1 or 2 against a top heavyweight puncher.",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
+    },
+    {
+      "note": "Striking volume has risen to 9.5 sig attempts per minute decayed (career 7.8, heavyweight 7.7), driven by the Hokit fight: 174 of 302 for him and 177 of 293 for Hokit.",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/903552edaba48f4a"
+    },
+    {
+      "note": "The five-round pace vector (1.00 / 1.13 / 0.57 / 0.22 / 0.31) rests on one bout that went past round 2 (Volkov, 2020, five rounds). Do not read it as a real late fade; use the prior.",
+      "source": "data/derived/fighters.json (pace_w = 25.1 / 7.8 / 5 / 5 / 5 minutes)"
+    }
   ],
-  "confidence": "low"
+  "confidence": "medium"
 }

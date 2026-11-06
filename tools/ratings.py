@@ -2227,9 +2227,10 @@ def tables(path=OUT_JSON, top=10):
             print("| %s | %s | %s | %.1f%% |" % (lab, _f(m["log_loss"]), _f(m["brier"]), 100 * m["accuracy"]))
         print("\nStack weights (market logit, rating logit): %s; correlation of logits on test %s."
               % (mk["stack_coef_market_rating"], mk.get("corr_logit_market_best")))
-    print("\n### Current ratings: top %d per division (WHR-family best system, mean - 1 sd ordering)\n" % top)
     R = J["roster"]
-    key = next((k for k in ("whr_mov", "whr", "whr_rounds", "elo_full") if any(k in r for r in R.values())), None)
+    key = next((k for k in M.get("ranking_by_tuning", []) if any(k in r for r in R.values())), "elo_full")
+    print("\n### Current ratings: top %d per division (%s, the best-ranked rating system; ordered by mean - 1 sd)\n"
+          % (top, key))
     snap = dt.date.fromisoformat(M["snapshot"])
     divs = defaultdict(list)
     for slug, r in R.items():

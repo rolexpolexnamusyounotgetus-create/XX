@@ -3,9 +3,9 @@
   "name": "Grant Dawson",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Two straight wins. At UFC 328 (May 9, 2026) he was dropped in R2 and then choked out Mateusz Rebecki at 4:42 of R3. At UFC 333 (Oct 24, 2026, Abu Dhabi) he beat the previously unbeaten Nurullo Aliev 29-27 x3: he lost R1 and was hurt early, then took over with takedowns, and Aliev lost a point for strikes to the back of the head. Ranked about No. 11 at lightweight. No bout booked.",
+    "summary": "Two straight wins. At UFC 328 (May 9, 2026) he was dropped in R2 and then choked out Mateusz Rebecki at 4:42 of R3. At UFC 333 (Oct 24, 2026, Abu Dhabi) he beat the previously unbeaten Nurullo Aliev 29-27 x3: he lost R1 and was hurt early, then took over with takedowns, and Aliev lost a point for strikes to the back of the head. Pro record 25-3-1 (UFC 13-2-1). Unranked in the media-panel top 15 at lightweight (Nov 3, 2026) but No. 11 in the UFC's algorithmic Meta rankings (Oct 31, 2026). No bout booked as of Nov 6.",
     "title": null,
-    "ranking": "#11 lightweight (Meta UFC rankings as of Oct 24, 2026, per Wikipedia; a later MMA Mania rankings update lists him at 11 or 12)",
+    "ranking": "unranked in the UFC media-panel lightweight top 15 (Nov 3, 2026, per UFCalendar and ufcrankings.org); #11 in the Meta UFC lightweight rankings, the UFC's algorithmic list introduced in Jun 2026 (Oct 31, 2026 update per UFCalendar; also #11 as of Oct 24 per Wikipedia)",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -17,8 +17,11 @@
       "https://cagesidepress.com/2026/05/09/ufc-328-grant-dawson-taps-out-mateusz-rebecki/",
       "https://x.com/UFCNews/status/2053266096371949682",
       "https://en.wikipedia.org/wiki/Grant_Dawson",
-      "https://mmamania.com/ufc-mma-rankings/483818/tom-nolan-boots-renato-moicano-top-10-latest-ufc-rankings-update-jacobe-smith-top-15",
-      "http://ufcstats.com/fighter-details/99bd51917728c25d"
+      "http://ufcstats.com/fighter-details/99bd51917728c25d",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/fighters/grant-dawson",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/10/14/ufc-333-grant-dawson-primed-tundefeated-opponent/92168048007/"
     ]
   },
   "style": {
@@ -68,14 +71,17 @@
   },
   "appearance": {
     "build": "5 ft 10 in with a 72 in reach (ufcstats); his first three UFC fights were at featherweight before he settled at lightweight",
-    "hair": "unknown",
-    "facial_hair": "unknown",
-    "skin": "unknown",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "notes": "Only build is sourced (ufcstats). No photo description could be checked this session (the search budget ran out and photo hosts were unreachable), so hair, facial hair and skin are left unknown.",
+    "hair": "buzzed very short, light brown (2026 ESPN headshot)",
+    "facial_hair": "short light reddish-brown stubble beard and moustache (2026 ESPN headshot)",
+    "skin": "light",
+    "tattoos": "a black-and-grey tattoo covering most of the right forearm; none visible on the chest, abdomen, left arm or legs in ESPN studio cutouts (files dated Jun 2023 and Oct 2026); back not seen",
+    "kit": "UFC shorts: black with a grey scale pattern and the crypto.com logo (ESPN cutout, file dated Oct 2026); white and grey Venum shorts with black stripes and his name in red (cutout dated Jun 2023)",
+    "notes": "Build is from ufcstats. Hair, facial hair, skin, tattoos and kit were resolved on Nov 6, 2026 (open network) from ESPN's studio photos: the headshot and the stance-left cutout (files dated Oct 22, 2026) and the stance-right cutout (file dated Jun 29, 2023). The logos read correctly, so the cutouts are not mirrored; he faces the camera, so the forearm tattoo is on his own right arm. No likeness sheet or freely licensed photo exists (the Wikipedia infobox has no image). Eyes look blue or blue-grey. Kit varies by fight and the corner colour wins in the sim.",
     "sources": [
-      "http://ufcstats.com/fighter-details/99bd51917728c25d"
+      "http://ufcstats.com/fighter-details/99bd51917728c25d",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3931156.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3931156.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/3931156.png"
     ]
   },
   "engine_notes": [

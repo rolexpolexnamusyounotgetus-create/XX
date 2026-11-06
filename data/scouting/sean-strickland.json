@@ -3,29 +3,49 @@
   "name": "Sean Strickland",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC middleweight champion for the second time. He took the belt from Khamzat Chimaev by split decision at UFC 328 (May 9, 2026). His first reign ran from beating Israel Adesanya (UFC 293, Sep 9, 2023) to losing to Dricus Du Plessis (UFC 297, Jan 20, 2024). Before the Chimaev fight he stopped Anthony Hernandez (TKO R3, Feb 21, 2026). UFC record 18-7. A rematch with Nassourdine Imavov for the title has been reported. A September report put it on UFC 335 (Dec 12, 2026), but that fell through over Strickland's pay dispute. MMA Junkie (Oct 27, 2026) now says February 2027 in Florida. It is not officially announced. These bout reports are carried from the Imavov research pass and match data/scouting/nassourdine-imavov.json; web checks were blocked in this pass and in the Nov 6 fact-check.",
+    "summary": "UFC middleweight champion for the second time: he took the belt from Khamzat Chimaev by split decision at UFC 328 (May 9, 2026). His first reign ran from beating Israel Adesanya (UFC 293, Sep 9, 2023) to losing to Dricus Du Plessis (UFC 297, Jan 20, 2024). Before Chimaev he stopped Anthony Hernandez (TKO R3 2:23, Feb 21, 2026). Pro record 31-7, UFC 18-7 (ESPN, Wikipedia, MMA Junkie). #7 men's pound-for-pound. He hurt his right shoulder in the Chimaev fight and has been out since; he targeted a December return in June. A rematch with Nassourdine Imavov was planned for UFC 335 (Dec 12, 2026) but fell through over a pay dispute (Wikipedia; Yahoo). On Oct 27-28, 2026 MMA Junkie's Mike Bohn reported the rematch is targeted for February 2027 in Florida and 'may even be signed or close to being signed'; Yahoo names UFC 337 as a possible card. It is not officially announced as of Nov 6, 2026.",
     "title": "UFC middleweight champion",
-    "ranking": null,
+    "ranking": "Champion (middleweight); #7 men's pound-for-pound (UFC media panel, Nov 3-5, 2026; read from ufcrankings.org and ufcalendar.com mirrors because ufc.com returned 403).",
     "active": true,
-    "next_fight": "Reported, not official: vs Nassourdine Imavov for the UFC middleweight title, targeted for February 2027 in Florida (MMA Junkie, Oct 27, 2026, via Bloody Elbow); an earlier Dec 12, 2026 (UFC 335) target fell through over Strickland's pay dispute.",
-    "injuries": [],
+    "next_fight": "Reported, not official: vs Nassourdine Imavov for the UFC middleweight title, targeted for February 2027 in Florida, possibly UFC 337 (Mike Bohn/MMA Junkie via MMA Mania Oct 28 and Yahoo, 2026). An earlier Dec 12, 2026 (UFC 335) plan fell through over his pay dispute.",
+    "injuries": [
+      {
+        "what": "Right shoulder injury in the Chimaev fight (he threw few right hands late); kept him out for several months. He targeted a December 2026 return, which has not happened.",
+        "when": "2026-05",
+        "source": "https://www.mmamania.com/latest-news/453118/sean-strickland-reveals-return-timeline-targets-third-fight-in-2026"
+      }
+    ],
     "sources": [
       "http://ufcstats.com/fighter-details/0d8011111be000b2",
       "http://ufcstats.com/fight-details/70f1621080b3435c",
       "http://ufcstats.com/fight-details/8d740c844353ae0e",
+      "https://www.espn.com/mma/fighter/_/id/3093653/sean-strickland",
+      "https://www.espn.com/mma/fighter/history/_/id/3093653/sean-strickland",
+      "https://en.wikipedia.org/wiki/Sean_Strickland",
       "https://www.espn.com/mma/ufc/story/_/id/48728368/strickland-stuns-chimaev-ufc-middleweight-title",
-      "https://bloodyelbow.com/2026/10/27/new-date-emerges-for-sean-strickland-vs-nassourdine-imavov-ufc-title-rematch-amid-pay-dispute/",
-      "https://bloodyelbow.com/2026/09/04/i-know-the-date-nassourdine-imavov-confirms-hell-face-sean-strickland-for-the-ufc-middleweight-title-next/",
+      "https://www.mmamania.com/ufc-news/482340/sean-strickland-vs-nassourdine-imavov-rematch-ufc-card-february",
+      "https://sports.yahoo.com/articles/sean-strickland-vs-nassourdine-imavov-064013493.html",
+      "https://www.mmamania.com/latest-news/453118/sean-strickland-reveals-return-timeline-targets-third-fight-in-2026",
+      "https://sports.yahoo.com/articles/sean-stricklands-next-fight-rematch-233812554.html (search snippet)",
+      "https://bloodyelbow.com/2026/10/27/new-date-emerges-for-sean-strickland-vs-nassourdine-imavov-ufc-title-rematch-amid-pay-dispute/ (carried from the Imavov file; 403 here)",
       "https://mmasucka.com/news/sean-strickland-nassourdine-imavov-ufc-title-rematch-deal-florida/",
-      "https://sports.yahoo.com/articles/report-sean-strickland-vs-nassourdine-151350283.html",
-      "data/scouting/nassourdine-imavov.json (web links above carried from that pass; re-read in the fact-check, wording matches)",
-      "data/derived/fighters.json (last_fight 2026-05-09, snapshot 2026-10-31)"
+      "https://ufcrankings.org/middleweight/",
+      "https://www.ufcalendar.com/rankings/middleweight",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound"
     ]
   },
   "style": {
     "archetype": "pressure striker",
     "stance": "orthodox",
-    "tags": ["pressure", "volume", "jab", "get-ups", "cardio", "late-surge"],
+    "tags": [
+      "pressure",
+      "volume",
+      "jab",
+      "get-ups",
+      "cardio",
+      "late-surge"
+    ],
     "signature": [
       "walks forward behind constant punching: 14.4 sig attempts per minute decayed (middleweight average 8.1), 87% to the head, 96% of landed strikes at distance",
       "out-throws elite opponents over five rounds: 408 sig attempts to Du Plessis's 354 (UFC 297), 312 to Chimaev's 240 (UFC 328, none in R1), 402 to Paulo Costa's 266 (UFC 302)",
@@ -53,28 +73,59 @@
     ]
   },
   "moves": {
-    "jab": 0.5, "cross": 0.3, "hook": 0.1, "overhand": 0.03, "upper": 0.06, "headkick": 0.01,
-    "bodykick": 0.3, "bodyhook": 0.2, "bodystraight": 0.5,
-    "calf": 0.3, "inside": 0.7, "spinning": 0.0, "knee": 0.02, "elbow": 0.02,
+    "jab": 0.5,
+    "cross": 0.3,
+    "hook": 0.1,
+    "overhand": 0.03,
+    "upper": 0.06,
+    "headkick": 0.01,
+    "bodykick": 0.3,
+    "bodyhook": 0.2,
+    "bodystraight": 0.5,
+    "calf": 0.3,
+    "inside": 0.7,
+    "spinning": 0.0,
+    "knee": 0.02,
+    "elbow": 0.02,
     "notes": "Group shares follow fighters.json decayed sums: sig attempts 87.0% head, 10.7% body, 2.3% leg (career 88.1/9.1/2.8), against a middleweight league split of 77.2/14.0/8.8. He goes to the head far more than average and almost never kicks the legs. 95.6% of his landed sig is at distance, so clinch weights are minimal. In the head group the jab leads and the cross is second: he throws 14.4 sig attempts per minute at 44% accuracy, which fits a jab-heavy volume game, and his jab-led, high-guard boxing is widely described in pre-2026 coverage. No scouting page was opened in this pass to confirm that, so these in-group weights are data-led judgments. The overhand and head kick are near zero because nothing in the data points to looping punches or high kicks. The body straight leads the body group as a judgment; ufcstats does not split body punches from kicks. Leg weights are tiny either way. Spinning is 0."
   },
   "appearance": {
-    "build": "6'1\" with a 76\" reach (dataset); long-limbed with a lean, muscular frame (judgment from widely published fight photos; not re-checked in this pass)",
-    "hair": "short hair, usually cut close (colour and current style not re-checked in this pass)",
-    "facial_hair": "unknown for 2026; varies across published photos",
+    "build": "long-limbed with a lean, muscular frame and visible chest hair (UFC headshot; UFC 328 photos, May 2026); 6 ft 1 in with a 76 in reach (ufcstats, ESPN)",
+    "hair": "buzzed very short light brown hair, receding at the temples; clipped almost to the skin at UFC 328 (UFC headshot; UFC 328 photos, May 2026)",
+    "facial_hair": "clean-shaven, at most light stubble (UFC headshot; UFC 328 photos, May 2026)",
     "skin": "light",
-    "tattoos": "unknown (no source in this pass)",
-    "kit": "unknown",
+    "tattoos": "none: none visible on the chest, arms or left side in the UFC headshot or the UFC 328 photos, and fan and tattoo sites describe him as untattooed",
+    "kit": "white UFC shorts with a black patterned waist trim at UFC 328 (May 9, 2026, blue corner); corner colour wins in the sim",
+    "notes": "No photo-based likeness sheet exists for this fighter (data/likeness/sean-strickland.json checked 2026-11-06, absent). Hair, facial hair, skin, tattoos and kit below come from the 2026 web re-check: an undated official UFC studio headshot served by ESPN plus dated 2026 fight-night photos, all viewed directly (URLs in sources). Describe-don't-guess rule: anything not visible in those photos or stated in a cited article is marked. Both ears are visibly cauliflowered in the headshot. The headshot shows him holding the UFC belt, so it dates from one of his reigns (2023 or 2026).",
     "sources": [
-      "data/derived/fighters.json (height_in 73, reach_in 76, stance Orthodox)",
-      "http://ufcstats.com/fighter-details/0d8011111be000b2"
+      "https://a.espncdn.com/i/headshots/mma/players/full/3093653.png (official UFC studio headshot via ESPN; undated, with belt)",
+      "https://a3.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0510%2Fr1656082_1024x576_16%2D9.jpg (ESPN lead photo, UFC 328, May 9, 2026; https://www.espn.com/mma/ufc/story/_/id/48728368/strickland-stuns-chimaev-ufc-middleweight-title)",
+      "https://platform.mmamania.com/wp-content/uploads/sites/110/2026/10/gettyimages-2275390890.jpg (Getty/Zuffa, UFC 328, May 9, 2026; lead photo of https://www.mmamania.com/ufc-news/482158/khamzat-chimaev-ready-to-chase-sean-strickland-to-heavyweight-for-rematch)",
+      "https://intotheskintattoos.com/does-sean-strickland-have-tattoos.html (no tattoos; low-weight source, consistent with the photos)",
+      "http://ufcstats.com/fighter-details/0d8011111be000b2 (height and reach)"
     ]
   },
   "engine_notes": [
-    { "note": "Strongest real late surge in this batch (Chimaev's larger ratios come from his near-zero R1 striking): across 11 five-round fights his R2-R5 output is 1.42, 1.59, 1.67 and 1.86 times R1, against a middleweight curve of 1.26, 1.20, 1.28 and 1.31.", "source": "data/derived/fighters.json (pace; priors.Middleweight.pace5)" },
-    { "note": "Opponents' landed strikes on him split 40.6% head, 35.7% body and 23.7% leg (decayed). The middleweight league's landed split is 63.9/20.8/15.4, so opponents score on his body and legs far more than usual and on his head far less.", "source": "data/derived/fighters.json (oh/ob/ol landed)" },
-    { "note": "Against Chimaev he spent R1 under 4:47 of control and landed nothing, then out-landed Chimaev 123-98 over R2-R5. A get-up or escape knob for him should be high after the first takedown.", "source": "http://ufcstats.com/fight-details/70f1621080b3435c" },
-    { "note": "Knockdowns: 1.67 landed decayed, 7 career; 3 absorbed career, none since Pereira in Jul 2022.", "source": "data/derived/fighters.json (kd, okd)" }
+    {
+      "note": "Strongest real late surge in this batch (Chimaev's larger ratios come from his near-zero R1 striking): across 11 five-round fights his R2-R5 output is 1.42, 1.59, 1.67 and 1.86 times R1, against a middleweight curve of 1.26, 1.20, 1.28 and 1.31.",
+      "source": "data/derived/fighters.json (pace; priors.Middleweight.pace5)"
+    },
+    {
+      "note": "Opponents' landed strikes on him split 40.6% head, 35.7% body and 23.7% leg (decayed). The middleweight league's landed split is 63.9/20.8/15.4, so opponents score on his body and legs far more than usual and on his head far less.",
+      "source": "data/derived/fighters.json (oh/ob/ol landed)"
+    },
+    {
+      "note": "Against Chimaev he spent R1 under 4:47 of control and landed nothing, then out-landed Chimaev 123-98 over R2-R5. A get-up or escape knob for him should be high after the first takedown.",
+      "source": "http://ufcstats.com/fight-details/70f1621080b3435c"
+    },
+    {
+      "note": "Knockdowns: 1.67 landed decayed, 7 career; 3 absorbed career, none since Pereira in Jul 2022.",
+      "source": "data/derived/fighters.json (kd, okd)"
+    },
+    {
+      "note": "Web re-check 2026-11-06 (network open; curl via DuckDuckGo lite, ESPN, Wikipedia API, MMA Fighting, MMA Mania, Yahoo/MMA Junkie syndication, Sherdog, ranking mirrors). Status, pro record, ranking, booking, injuries and appearance were checked against the pages listed in status.sources and appearance.sources. ufc.com (403), mmajunkie.usatoday.com (402) and bloodyelbow.com (403) could not be read directly; items that rest only on those hosts are marked. Style, moves and the numeric engine notes were not changed in this pass. ufc.com/rankings returned 403, so rankings come from two mirrors of the official UFC lists that agree: ufcrankings.org (media panel, updated Nov 5, 2026) and ufcalendar.com (media panel Nov 3, 2026; Meta UFC Rankings Oct 31, 2026). Since June 2026 the UFC publishes both the media-panel list and the algorithmic Meta UFC Rankings.",
+      "source": "web re-check 2026-11-06 (see status.sources and appearance.sources)"
+    }
   ],
   "confidence": "medium"
 }

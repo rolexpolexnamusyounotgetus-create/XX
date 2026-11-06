@@ -3,30 +3,61 @@
   "name": "Carlos Prates",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Welterweight contender, 7-1 in the UFC with all seven wins by KO/TKO (ufcstats). Most recently he knocked Jack Della Maddalena down three times and stopped him with elbows to the body in round 3 of a five-round main event in Perth (May 2, 2026). Before that he knocked out Leon Edwards in round 2 at UFC 322 (Nov 15, 2025). The reports cited in the project's Morales and Makhachev scouting files say Islam Makhachev verbally agreed to face him at UFC 336 and then backed out. Prates is now booked against Michael Morales for the interim UFC welterweight title, as the UFC 336 co-main event (Jan 30, 2027, Scotiabank Arena, Toronto). Those reports were not re-fetched in this pass (no web access). The fact-check pass (2026-11-06) could not fetch them either (heavy.com and bloodyelbow.com unresolvable), but the booking is consistent across michael-morales.json, islam-makhachev.json and ian-machado-garry.json, and with the slug of the Al Jazeera Oct 31, 2026 report cited there.",
+    "summary": "Welterweight contender, ranked #2 by the UFC media panel and #1 in the Meta UFC Rankings. Pro record 24-7 (ESPN, Wikipedia, Yahoo), UFC 7-1 with all seven wins by KO/TKO. He stopped Jack Della Maddalena in the UFC Perth main event (May 2, 2026; TKO R3 3:17) after knocking out Leon Edwards at UFC 322 (Nov 15, 2025). He was promised a title shot and agreed to face champion Islam Makhachev in January, but on Oct 20, 2026 the UFC told his manager Makhachev would not be ready, without giving a reason (MMA Fighting, Nov 5, 2026). He is now officially booked against Michael Morales for the interim UFC welterweight title in the co-main event of UFC 336 (Jan 30, 2027, Scotiabank Arena, Toronto), announced during the UFC 333 broadcast; Joshua Van vs Manel Kape headlines. Injuries: he said he went into the Della Maddalena fight with a partial ligament tear in his right shoulder (Sherdog, May 18, 2026), and Bloody Elbow headlines from May 2026 report a leg injury from the Perth fight and daily pain from a long career (those pages returned 403 and were not read). Age 33.",
     "title": null,
-    "ranking": null,
+    "ranking": "#2 welterweight (UFC media panel, Nov 3-5, 2026); #1 in the Meta UFC Rankings (Oct 31, 2026). Read from ufcrankings.org and ufcalendar.com mirrors because ufc.com returned 403. Not in the men's pound-for-pound top 15.",
     "active": true,
-    "next_fight": "vs Michael Morales for the interim UFC welterweight title, UFC 336 co-main event, Jan 30, 2027, Scotiabank Arena, Toronto (per reports cited in data/scouting/michael-morales.json; not re-verified this pass)",
-    "injuries": [],
+    "next_fight": "vs Michael Morales for the interim UFC welterweight title, UFC 336 co-main event, Jan 30, 2027, Scotiabank Arena, Toronto (official; announced during the UFC 333 broadcast; confirmed by UFC.com.br, Yahoo/Uncrowned and MMA Fighting, Nov 5, 2026)",
+    "injuries": [
+      {
+        "what": "Partial tear of a ligament in the right shoulder going into the Della Maddalena fight; he said he could not raise the arm above his head (his own account on the Podpah podcast).",
+        "when": "2026-05",
+        "source": "https://www.sherdog.com/news/news/Carlos-Prates-reveals-injury-suffered-prior-to-UFC-Perth-shares-dream-superfight-201236"
+      },
+      {
+        "what": "Leg injury in the UFC Perth win; reportedly wheeled to the hotel lobby in a shopping cart. Headline and search snippet only (page returned 403); severity not known, and he was later booked for Jan 2027.",
+        "when": "2026-05",
+        "source": "https://bloodyelbow.com/2026/05/03/carlos-prates-wheeled-down-to-hotel-lobby-in-a-shopping-cart-after-injuring-leg-during-ufc-perth-win/"
+      },
+      {
+        "what": "Says roughly 140 Muay Thai and MMA fights leave him with daily pain ('I cannot even walk well'); plans to fight until about 35. Headline and snippet only (403); the age-35 plan matches the Sherdog interview.",
+        "when": "2026-05",
+        "source": "https://bloodyelbow.com/2026/05/20/carlos-prates-lays-out-retirement-plan-after-revealing-daily-pain-issues-i-cannot-even-walk-well/"
+      }
+    ],
     "sources": [
       "http://ufcstats.com/fighter-details/7ee0fd831c0fe7c3",
       "http://ufcstats.com/fight-details/eb6d9fef6c374830",
       "http://ufcstats.com/fight-details/3c60884853766487",
-      "http://ufcstats.com/fight-details/42585ce706c086de",
-      "http://ufcstats.com/fight-details/633f4b5ec767769d",
-      "http://ufcstats.com/event-details/872b018076f831b0",
-      "https://heavy.com/sports/ufc/interim-title-fight-headlines-ufc-336/",
-      "https://sports.yahoo.com/articles/ufc-336-gets-massive-co-204308357.html",
-      "https://www.f4wonline.com/news/ufc/ufc-336-title-fights-confirmed-nterim-welterweight-champion/",
-      "https://www.fightful.com/mma/interim-welterweight-title-fight-set-for-ufc-336-flyweight-title-fight-to-headline/",
-      "https://sports.yahoo.com/articles/dana-white-islam-makhahev-verbally-045008414.html"
+      "https://www.espn.com/mma/fighter/_/id/4294832/carlos-prates",
+      "https://www.espn.com/mma/fighter/history/_/id/4294832/carlos-prates",
+      "https://en.wikipedia.org/wiki/Carlos_Prates",
+      "https://www.ufc.com.br/news/carlos-prates-disputa-titulo-interino-michael-morales-ufc-336 (search snippet)",
+      "https://www.ufc.com/news/two-electric-title-fights-announced-ufc-336 (search snippet; ufc.com returned 403)",
+      "https://sports.yahoo.com/mma/article/ufc-336-carlos-prates-vs-michael-morales-interim-title-fight-set-joshua-van-vs-manel-kape-to-headline-195415364.html",
+      "https://www.mmafighting.com/ufc/518439/carlos-prates-manager-says-ufc-a-little-upset-with-islam-makhachev-after-ufc-336-withdrawal",
+      "https://www.sherdog.com/news/news/Carlos-Prates-reveals-injury-suffered-prior-to-UFC-Perth-shares-dream-superfight-201236",
+      "https://www.mmamania.com/ufc-results/440631/ufc-perth-results-carlos-prates-destroys-jack-della-maddalena-in-bloody-demolition-job",
+      "https://ufcrankings.org/welterweight/",
+      "https://www.ufcalendar.com/rankings/welterweight",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound"
     ]
   },
   "style": {
     "archetype": "muay thai",
     "stance": "switch",
-    "tags": ["power", "switch-stance", "rangy", "knees", "elbows", "spinning", "leg-kicks", "takedown-defense", "durable"],
+    "tags": [
+      "power",
+      "switch-stance",
+      "rangy",
+      "knees",
+      "elbows",
+      "spinning",
+      "leg-kicks",
+      "takedown-defense",
+      "durable"
+    ],
     "signature": [
       "punch KOs at range: Trevin Giles (R2), Li Jingliang (R2, 3 knockdowns), Neil Magny (R1, 2 knockdowns) and Leon Edwards (R2)",
       "spinning back elbow (KO of Geoff Neal at 4:59 of R1, UFC 319, Aug 2025)",
@@ -67,22 +98,45 @@
     "notes": "Target split from the fighters.json S sums: decayed significant attempts go 74.8% head, 12.2% body, 13.0% legs, and landed strikes 62.9% head, 16.5% body, 20.7% legs. Career attempts are 72.1/13.7/14.2. Body attempts are at the welterweight rate (13.9%), and his body finishes were a knee (Radtke) and ground elbows (Della Maddalena), so body kicks and knees take most of the body weight and body punches stay small. Leg attempts are 1.4x the division rate (9.3%), so calf and inside kicks get 0.5 together. ufcstats does not split calf from inside kicks. 89% of his decayed landed strikes come at distance and about 1% in the clinch, so the knee weight (0.25) is mainly distance knees, and elbow (0.15) covers the spinning back elbow and ground elbows. Spinning is 0.12 because one of his seven KOs was a spinning back elbow. The head punches favour the cross and hook, which scored four punch KOs, but ufcstats does not record which punch landed, so that split is a judgment. No outside scouting source could be fetched this pass."
   },
   "appearance": {
-    "build": "tall and very long-armed for welterweight; 6 ft 1 in with a 78 in reach (ufcstats)",
-    "hair": "dark; length and style not verified (unverified: recalled from widely published fight photos; no photo or written description checked in this pass)",
-    "facial_hair": "unknown",
+    "build": "tall and very long-armed for welterweight, lean and wiry; 6 ft 1 in with a 78 in reach (ufcstats; ESPN lists 6 ft 1 in)",
+    "hair": "short black curly hair, tight on top with faded sides (UFC headshot; UFC Perth photo, May 2026)",
+    "facial_hair": "thin black moustache and small chin goatee with light stubble on the jaw (UFC headshot)",
     "skin": "medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "tattoos": "heavily tattooed: full sleeves on both arms (left: skull, female figure, flowers; right: winged baby with halo, 'one life no choice', playing cards, Japanese oni), 'Muay Thai' script across the chest, 'Nothing can stop me' and other pieces on the neck and throat, 'Predestinado' on the head, a full back piece of four Joker-style clown portraits under 'The Nightmare', and 'danger' down the left shin (EssentiallySports, Mar 2025). Neck, chest script and right sleeve are visible in the UFC headshot and the UFC Perth photo.",
+    "kit": "white UFC shorts with a light grey tonal pattern at UFC Perth (May 2, 2026, blue corner); corner colour wins in the sim",
+    "notes": "No photo-based likeness sheet exists for this fighter (data/likeness/carlos-prates.json checked 2026-11-06, absent). Hair, facial hair, skin, tattoos and kit below come from the 2026 web re-check: an undated official UFC studio headshot served by ESPN plus dated 2026 fight-night photos, all viewed directly (URLs in sources). Describe-don't-guess rule: anything not visible in those photos or stated in a cited article is marked. The head tattoo is not visible under his current hair in the photos checked.",
     "sources": [
-      "http://ufcstats.com/fighter-details/7ee0fd831c0fe7c3 (height and reach only; hair and skin are not from a fetched source)"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4294832.png (official UFC studio headshot via ESPN; undated)",
+      "https://platform.mmamania.com/wp-content/uploads/sites/110/2026/05/gettyimages-2274153700.jpg (Getty/Zuffa, Ed Mulholland, UFC Perth, May 2, 2026; lead photo of https://www.mmamania.com/ufc-results/440631/ufc-perth-results-carlos-prates-destroys-jack-della-maddalena-in-bloody-demolition-job)",
+      "https://www.essentiallysports.com/ufc-mma-news-carlos-prates-tattoos-and-the-shocking-meaning-behind-them-back-head-neck-ink-and-more/ (tattoo list)",
+      "http://ufcstats.com/fighter-details/7ee0fd831c0fe7c3 (height and reach)"
     ]
   },
   "engine_notes": [
-    { "note": "Knockdown power far above the division: 2.32 knockdowns per 15 min and 5.9 per 100 head strikes landed (division 0.84), but from only 77.4 UFC minutes. Shrink toward the prior; the report's empirical-Bayes power estimate exists for this.", "source": "tools/fighter_report.py chin-and-power table (snapshot 2026-10-31)" },
-    { "note": "Never knocked down in the UFC: 0 knockdowns absorbed across 182 head strikes absorbed and 77.4 minutes.", "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)" },
-    { "note": "Five-round sample is three scheduled five-rounders: the Magny KO (R1 only, 4.8 min), the Machado Garry decision (25 min) and the Della Maddalena stoppage (13.3 min). His pace vector (1, 1.74, 2.45, 0.87, 1.59) is noise; use the division prior.", "source": "data/derived/fighters.json (pace_w 14.8, 10, 8.28, 5, 5)" },
-    { "note": "Opponents try to wrestle him: 7.55 takedown attempts per 15 min, 79.5% defended. Machado Garry went 4/19, and Edwards went 2/3 with 3:00 of control in R1 before being knocked out in R2.", "source": "tools/fighter_report.py; http://ufcstats.com/fight-details/3c60884853766487" },
-    { "note": "This research pass had no web access (search budget used up; en.wikipedia.org and www.ufc.com blocked). The UFC 336 booking comes from sources another agent cited in data/scouting/michael-morales.json and islam-makhachev.json. Ranking, hair/skin descriptions and technique labels have not been checked against outside sources. Fact-check 2026-11-06: every date, method, score and per-fight number in this file was re-derived from data/raw/*.csv and tools/fighter_report.py and matches. The fact-check also had no web access, so status and appearance are still unverified.", "source": "research pass and fact-check 2026-11-06" }
+    {
+      "note": "Knockdown power far above the division: 2.32 knockdowns per 15 min and 5.9 per 100 head strikes landed (division 0.84), but from only 77.4 UFC minutes. Shrink toward the prior; the report's empirical-Bayes power estimate exists for this.",
+      "source": "tools/fighter_report.py chin-and-power table (snapshot 2026-10-31)"
+    },
+    {
+      "note": "Never knocked down in the UFC: 0 knockdowns absorbed across 182 head strikes absorbed and 77.4 minutes.",
+      "source": "data/derived/fighters.json (kd_absorbed 0, ko_losses 0)"
+    },
+    {
+      "note": "Five-round sample is three scheduled five-rounders: the Magny KO (R1 only, 4.8 min), the Machado Garry decision (25 min) and the Della Maddalena stoppage (13.3 min). His pace vector (1, 1.74, 2.45, 0.87, 1.59) is noise; use the division prior.",
+      "source": "data/derived/fighters.json (pace_w 14.8, 10, 8.28, 5, 5)"
+    },
+    {
+      "note": "Opponents try to wrestle him: 7.55 takedown attempts per 15 min, 79.5% defended. Machado Garry went 4/19, and Edwards went 2/3 with 3:00 of control in R1 before being knocked out in R2.",
+      "source": "tools/fighter_report.py; http://ufcstats.com/fight-details/3c60884853766487"
+    },
+    {
+      "note": "Fact-check 2026-11-06: every date, method, score and per-fight number in this file was re-derived from data/raw/*.csv and tools/fighter_report.py and matches.",
+      "source": "fact-check 2026-11-06"
+    },
+    {
+      "note": "Web re-check 2026-11-06 (network open; curl via DuckDuckGo lite, ESPN, Wikipedia API, MMA Fighting, MMA Mania, Yahoo/MMA Junkie syndication, Sherdog, ranking mirrors). Status, pro record, ranking, booking, injuries and appearance were checked against the pages listed in status.sources and appearance.sources. ufc.com (403), mmajunkie.usatoday.com (402) and bloodyelbow.com (403) could not be read directly; items that rest only on those hosts are marked. Style, moves and the numeric engine notes were not changed in this pass. ufc.com/rankings returned 403, so rankings come from two mirrors of the official UFC lists that agree: ufcrankings.org (media panel, updated Nov 5, 2026) and ufcalendar.com (media panel Nov 3, 2026; Meta UFC Rankings Oct 31, 2026). Since June 2026 the UFC publishes both the media-panel list and the algorithmic Meta UFC Rankings.",
+      "source": "web re-check 2026-11-06 (see status.sources and appearance.sources)"
+    }
   ],
   "confidence": "medium"
 }

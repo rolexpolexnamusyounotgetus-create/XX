@@ -1389,6 +1389,137 @@ def run_referees(F, S, ded=None):
     return out
 
 
+def metrics_block(ev, rows_by_fid):
+    rows = [rows_by_fid[f] for f in ev["fids"]]
+    m = decision_metrics(ev["probs"], rows)
+    m["card_ll"] = float(np.mean(ev["card_ll"]))
+    # 10-8: predicted vs observed share of cards with an implied 10-8 (or deduction)
+    obs108 = np.array([[max(0, 19 * r["R"] - a - b) > 0 for (_, _, a, b) in r["cards"]] for r in rows])
+    m["pred_card108_rate"] = float(ev["any108"].mean())
+    m["obs_card108_rate"] = float(obs108.mean())
+    return m
+
+
+def strip_private(m):
+    return {k: v for k, v in m.items() if not k.startswith("_")}
+
+
+def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final_fit, final_W):
+    import pickle
+    by_fid = {r["fid"]: r for r in rows}
+    tune = pickle.load(open(CACHE / "fold_tune.pkl", "rb"))
+    test = pickle.load(open(CACHE / "fold_test.pkl", "rb"))
+    J = {"tuning_2019_2023": {}, "heldout_2024_on": {}}
+    # ---- tuning: choose the tau multiplier by the exact-card log-likelihood on 2019-2023
+    tm = {}
+    for name, v in tune["models"].items():
+        mb = metrics_block(v["eval"], by_fid)
+        J["tuning_2019_2023"][name] = strip_private(mb)
+        tm[name] = mb
+    cands = {name: tm[name]["card_ll"] for name in tm if name.startswith("judges_home")}
+    best = max(cands, key=cands.get)
+    mult = 1.0 if "@" not in best else float(best.split("@")[1])
+    J["tau_multiplier"] = mult
+    J["tau_eb_pre2019"] = tune["tau_eb"]
+    log(f"tuning picks {best} (tau x {mult})")
+    sfx = "" if mult == 1.0 else f"@{mult:g}"
+    # ---- held-out 2024+
+    hm = {}
+    for name in ("indep", "league", "league_home", "judges" + sfx, "judges_home" + sfx):
+        v = test["models"][name]
+        hm[name] = metrics_block(v["eval"], by_fid)
+        J["heldout_2024_on"][name.replace(sfx, "")] = strip_private(hm[name])
+    L, Jm, JH, LH = hm["league"], hm["judges" + sfx], hm["judges_home" + sfx], hm["league_home"]
+    evL, evJ, evJH = (test["models"][n]["eval"] for n in ("league", "judges" + sfx, "judges_home" + sfx))
+    J["heldout_2024_on"]["comparisons"] = {
+        "judges_vs_league": {"winner_logloss": boot_diff(Jm["_ll_w"], L["_ll_w"]),
+                             "class7_logloss": boot_diff(Jm["_ll7"], L["_ll7"]),
+                             "split_logloss": boot_diff(Jm["_ll_nu"], L["_ll_nu"]),
+                             "card_ll_per_fight": boot_diff(evJ["card_ll"], evL["card_ll"])},
+        "judges_home_vs_judges": {"winner_logloss": boot_diff(JH["_ll_w"], Jm["_ll_w"]),
+                                  "card_ll_per_fight": boot_diff(evJH["card_ll"], evJ["card_ll"])},
+        "league_home_vs_league": {"winner_logloss": boot_diff(LH["_ll_w"], L["_ll_w"]),
+                                  "card_ll_per_fight": boot_diff(test["models"]["league_home"]["eval"]["card_ll"],
+                                                                 evL["card_ll"])},
+        "league_vs_indep": {"winner_logloss": boot_diff(L["_ll_w"], hm["indep"]["_ll_w"]),
+                            "class7_logloss": boot_diff(L["_ll7"], hm["indep"]["_ll7"]),
+                            "split_logloss": boot_diff(L["_ll_nu"], hm["indep"]["_ll_nu"]),
+                            "card_ll_per_fight": boot_diff(evL["card_ll"], test["models"]["indep"]["eval"]["card_ll"])},
+        "note": "negative = better for log losses; positive = better for card log-likelihood"}
+    pA_L = evL["probs"][:, :3].sum(1)
+    pA_J = evJH["probs"][:, :3].sum(1)
+    dp = np.abs(pA_J - pA_L)
+    J["heldout_2024_on"]["judge_effect_size"] = {
+        "median_abs_dP_winner": float(np.median(dp)), "p90_abs_dP_winner": float(np.percentile(dp, 90)),
+        "max_abs_dP_winner": float(dp.max()), "share_abs_dP_over_5pts": float((dp > 0.05).mean()),
+        "share_favorite_flips": float(((pA_J > 0.5) != (pA_L > 0.5)).mean())}
+    J["heldout_2024_on"]["calibration_judges_home"] = calib_table(JH["_q"], JH["_ya"])
+    J["heldout_2024_on"]["calibration_indep"] = calib_table(hm["indep"]["_q"], hm["indep"]["_ya"])
+    yrs = np.array(evJH["years"])
+    J["heldout_2024_on"]["by_year"] = {}
+    for y in sorted(set(yrs)):
+        msk = yrs == y
+        J["heldout_2024_on"]["by_year"][int(y)] = {
+            "n": int(msk.sum()), "card_ll_league": float(evL["card_ll"][msk].mean()),
+            "card_ll_judges_home": float(evJH["card_ll"][msk].mean())}
+    # ---- final fit: league params and judge table
+    th = final_fit["th"]
+    J["tau"] = final_fit["tau"]
+    J["league"] = {
+        "features": FEATS, "groups": {g: [f for f in FEATS if GROUP[f] == i] for i, g in enumerate(GROUP_NAMES)},
+        "beta": dict(zip(FEATS, map(float, th["beta"]))),
+        "head_strike_units": {f: float(b / th["beta"][0]) for f, b in zip(FEATS, th["beta"])},
+        "era_trend_per_decade": dict(zip(GROUP_NAMES, map(float, th["w"]))),
+        "era_t": "t = (year - 2017) / 10; group weight x exp(w_group * t)",
+        "sigma_shared": float(np.exp(th["log_su"])),
+        "home": {"usa_events": float(th["h"][0]), "outside_usa": float(th["h"][1])},
+        "ten_eight": {"c0": float(th["c0"]), "c_by_year": {int(YEAR0 + i): float(c) for i, c in enumerate(th["cy"])
+                                                            if YEAR0 + i <= data_max.year},
+                      "theta": dict(zip(["V", "K", "G", "u"], map(float, th["th"])))},
+        "p_10_10": float(1 / (1 + np.exp(-th["lg_e10"]))),
+        "deduction_prior": dict(zip(["one_point_per_fighter", "two_points_per_fighter", "both_one_point"],
+                                    map(float, np.exp(th["lpi"]))))}
+    jt, league_idx, league108 = judge_table(final_fit, rows, {})
+    jt.sort(key=lambda d: -d["cards"])
+    J["league_canonical"] = {"round_prob": league_idx, "p108_dominant": league108}
+    J["judges"] = jt
+    J["region_pools"] = region_pools(rows, jt)
+    act = [j for j in jt if j["cards_2022_on"] >= 30]
+    act.sort(key=lambda d: -d["power_index"]["logit_vs_league"])
+    J["power_friendly"] = {"definition": "logit P(judge gives the round to the fighter with +1 KD and +3 head strikes "
+                                         "over one with a takedown and 2.5 min control) minus the league judge's; "
+                                         "judges with 30+ cards since 2022",
+                           "most": [{k: j[k] for k in ("name", "cards", "cards_2022_on", "power_index")} for j in act[:8]],
+                           "least": [{k: j[k] for k in ("name", "cards", "cards_2022_on", "power_index")} for j in act[-8:]]}
+    J["deductions"] = dedval
+    out = {"meta": {"source": "ufcstats snapshot data/raw (DETAILS judges' totals, loser-first; REFEREE); Wikidata "
+                              "nationality (CC0) for the home effect", "snapshot": str(data_max.date()),
+                    "built": dt.date.today().isoformat(), "tool": "tools/officials.py",
+                    "n_decisions": len(rows), "n_cards": 3 * len(rows),
+                    "nationality": natinfo, "notes": notes,
+                    "walk_forward": "tau multiplier tuned on 2019-2023 (fit before 2019); held-out 2024-01-01 on "
+                                    "(fit before 2024, frozen); final tables fit on all data"},
+           "judging": J, "referees": refs}
+    return out
+
+
+def to_jsonable(o):
+    if isinstance(o, dict):
+        return {str(k): to_jsonable(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [to_jsonable(v) for v in o]
+    if isinstance(o, (np.floating, float)):
+        v = float(o)
+        return None if not math.isfinite(v) else round(v, 6)
+    if isinstance(o, (np.integer,)):
+        return int(o)
+    if isinstance(o, np.ndarray):
+        return to_jsonable(o.tolist())
+    if isinstance(o, (np.bool_,)):
+        return bool(o)
+    return o
+
+
 def load_all():
     """Decisions plus nationality map (cached for the parallel fold processes)."""
     F, S, D, rows, notes, data_max = build_data()
@@ -1399,6 +1530,78 @@ def load_all():
     dob = T[~dup].set_index("FIGHTER").dob.dropna().to_dict()
     nat, info = load_nationality(names, dob)
     return F, S, D, rows, nat, info, notes, data_max
+
+
+def deduction_validation(x, cfg, rows, nat, jidx, year_max):
+    """Hide the deductions DETAILS records (almost all 2001-2015) and check that the model finds them."""
+    import copy
+    era = [copy.copy(r) for r in rows if r["year"] <= 2015]
+    truth = []
+    for r in era:
+        truth.append(r["ded"])
+        r["ded"] = None
+    dz = Design(era, jidx, nat, year_max)
+    post = deduction_posterior(x, dz, cfg)
+    tmap = {r["fid"]: t for r, t in zip(era, truth)}
+    post["true"] = post.fid.map(lambda f: tmap.get(f) is not None)
+    post["true_side"] = post.fid.map(lambda f: None if tmap.get(f) is None else
+                                     ("A" if tmap[f][0] > 0 and tmap[f][1] == 0 else
+                                      "B" if tmap[f][1] > 0 and tmap[f][0] == 0 else "both"))
+    y = post.true.to_numpy()
+    sc = post.p_any.to_numpy()
+    # AUC by ranks
+    from scipy.stats import rankdata
+    rk = rankdata(sc)
+    n1, n0 = y.sum(), (~y).sum()
+    auc = float((rk[y].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)) if n1 and n0 else None
+    rec = post[post.true]
+    side_ok = [(row.p_A > row.p_B) == (row.true_side == "A") for row in rec.itertuples() if row.true_side in ("A", "B")]
+    top = post.sort_values("p_any", ascending=False).head(int(n1))
+    return {"decisions_2001_2015": int(len(post)), "recorded": int(n1), "sum_posterior": float(sc.sum()),
+            "posterior_mean_recorded": float(sc[y].mean()) if n1 else None,
+            "posterior_mean_unrecorded": float(sc[~y].mean()), "auc": auc,
+            "precision_at_n_recorded": float(top.true.mean()),
+            "side_correct_share": float(np.mean(side_ok)) if side_ok else None,
+            "excluded_unmatched": int(len(era) - len(post))}
+
+
+def run_post(rows, nat, natinfo, F, S, data_max, notes):
+    import pickle
+    final = pickle.load(open(CACHE / "fold_final.pkl", "rb"))
+    tune = pickle.load(open(CACHE / "fold_tune.pkl", "rb"))
+    cands = {}
+    by_fid = {r["fid"]: r for r in rows}
+    for name, v in tune["models"].items():
+        if name.startswith("judges_home"):
+            cands[name] = float(np.mean(v["eval"]["card_ll"]))
+    best = max(cands, key=cands.get)
+    mult = 1.0 if "@" not in best else float(best.split("@")[1])
+    sfx = "" if mult == 1.0 else f"@{mult:g}"
+    W = Window(rows, nat, 2027)
+    if "judges_home" + sfx in final["models"]:
+        ff = final["models"]["judges_home" + sfx]
+    else:
+        tau = {k: v * mult for k, v in final["tau_eb"].items()}
+        f = W.fit("judges_home", tau, init=final["models"]["judges_home"]["x"])
+        ff = {"x": f["x"], "jidx": f["jidx"], "tau": f["tau"], "cov": f["cov"], "model": "judges_home",
+              "th": to_np(unravel(np.asarray(f["x"]), len(f["jidx"])))}
+    cfg = MODELS["judges_home"]
+    ded = deduction_posterior(ff["x"], W.dz, cfg)
+    log(f"deductions: posterior sum {ded.p_any.sum():.1f} over {len(ded)} decisions")
+    dedval = deduction_validation(ff["x"], cfg, rows, nat, ff["jidx"], 2026)
+    dedval["posterior_by_year"] = ded.groupby("year").p_any.mean().round(4).to_dict()
+    dedval["likely_unrecorded_2016_on"] = [
+        {"fid": r.fid, "p_any": round(float(r.p_any), 3), "p_A": round(float(r.p_A), 3), "p_B": round(float(r.p_B), 3),
+         "bout": f"{by_fid[r.fid]['n0']} vs. {by_fid[r.fid]['n1']}", "year": int(r.year), "referee": r.referee}
+        for r in ded[(ded.year >= 2016) & (~ded.recorded)].sort_values("p_any", ascending=False).head(25).itertuples()]
+    log(f"deduction validation: {dedval}")
+    refs = run_referees(F, S, ded)
+    out = assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, ff, W)
+    OUT.write_text(json.dumps(to_jsonable(out), indent=1))
+    log(f"wrote {OUT} ({OUT.stat().st_size / 1e3:.0f} KB)")
+    with open(CACHE / "post.pkl", "wb") as fh:
+        pickle.dump({"ded": ded, "dedval": dedval, "refs": refs, "out": out}, fh)
+    return out
 
 
 if __name__ == "__main__":
@@ -1418,3 +1621,17 @@ if __name__ == "__main__":
         ev = [int(y) for y in args.eval_years.split(",")] if args.eval_years else None
         run_fold(rows, nat, args.test_year, args.tag or str(args.test_year), models=tuple(args.models.split(",")),
                  tau_mults=tuple(float(m) for m in args.tau_mults.split(",")), years_eval=ev)
+    elif args.stage == "post":
+        F, S, D, rows, nat, info, notes, data_max = load_all()
+        run_post(rows, nat, info, F, S, data_max, notes)
+    elif args.stage == "all":
+        import subprocess
+        procs = []
+        for tag, ty, ev, mults in (("tune", 2019, "2019,2020,2021,2022,2023", "0.5,1,2"),
+                                   ("test", 2024, "2024,2025,2026", "0.5,1,2"), ("final", 2027, "2027", "0.5,1,2")):
+            procs.append(subprocess.Popen([sys.executable, __file__, "--stage", "fold", "--test-year", str(ty),
+                                           "--tag", tag, "--eval-years", ev, "--tau-mults", mults]))
+        for p_ in procs:
+            p_.wait()
+        F, S, D, rows, nat, info, notes, data_max = load_all()
+        run_post(rows, nat, info, F, S, data_max, notes)

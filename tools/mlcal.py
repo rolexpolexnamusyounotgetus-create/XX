@@ -19,9 +19,11 @@ Fights dated 2026-01-01 or later are never loaded (mlcal.js drops them; the prio
 
 Usage
   python3 tools/mlcal.py priors                                  # one-time: data/derived/mlcal_priors_asof.json
-  python3 tools/mlcal.py tune --spec tools/mlcal_spec_engine3.json --trials 30 --cma-evals 32 \\
-        --n-fights 600 --rungs 15,30,60 --workers 2 --top 3 --val-sims 80 \\
-        --out data/derived/mlcal_candidates.json
+  python3 tools/mlcal.py tune --spec tools/mlcal_spec_engine3.json --trials 30 --cma-evals 24 \\
+        --n-fights 1300 --rungs 10,20,40 --workers 2 --top 3 --val-sims 80 \\
+        --out data/derived/mlcal_candidates_<tag>.json                         # defaults shown
+  python3 tools/mlcal.py tune --spec tools/mlcal_spec_engine3_elo.json --fixed data/derived/mlcal_candidates.json#1 ...
+                                                                 # stage 2 on top of a saved candidate
   python3 tools/mlcal.py validate --cand data/derived/mlcal_candidates.json --ranks 1,2,3   # ledger-guarded
   node tools/mlcal.js export --cand data/derived/mlcal_candidates.json --rank 1 --out /tmp/params_r1.js
 """
@@ -407,8 +409,9 @@ def cmd_tune(args):
 
         # confirmation on a disjoint train window with fresh seeds
         conf = {}
-        if args.confirm_fights > 0:
-            cs = ev.call(cmd="setup", split="train", nFights=args.confirm_fights, offset=st["n"], sampleSeed=args.sample_seed,
+        n_conf = args.confirm_fights if args.confirm_fights >= 0 else st["nSplit"] - st["n"]
+        if n_conf > 0:
+            cs = ev.call(cmd="setup", split="train", nFights=n_conf, offset=st["n"], sampleSeed=args.sample_seed,
                          seed=args.seed + 101, mirror="swap")
             log("confirmation sample: %d other train fights, fresh seeds" % cs["n"])
             for label, x in [("baseline", base_rec["x"])] + [(h["id"], h["x"]) for h in finalists]:
@@ -444,7 +447,7 @@ def cmd_tune(args):
                 "spec": args.spec, "dims": dims, "objective": info.get("objective"), "hook": info.get("hook"),
                 "fixed": info.get("fixed"),
                 "budget": {"trials": args.trials, "cma_evals": args.cma_evals, "cma_pop": args.cma_pop, "n_fights": st["n"],
-                           "rungs": rungs, "eta": eta, "confirm_fights": args.confirm_fights, "confirm_sims": args.confirm_sims,
+                           "rungs": rungs, "eta": eta, "confirm_fights": n_conf, "confirm_sims": args.confirm_sims,
                            "val_sims_per_order": args.val_sims, "workers": args.workers, "seed": args.seed,
                            "sample_seed": args.sample_seed},
                 "cpu_seconds": {"tuning": round(tune_cpu, 1), "total": round(total_cpu, 1)},
@@ -523,14 +526,15 @@ def main():
     p.add_argument("--cma-sigma", type=float, default=0.15, help="initial CMA step in the normalized box (0.15)")
     p.add_argument("--cma-start", choices=["best", "current"], default="best")
     p.add_argument("--cma-rung", type=int, default=-1, help="rung CMA ranks on (-1 = second to last)")
-    p.add_argument("--n-fights", type=int, default=600, help="train fights in the tuning window (600)")
+    p.add_argument("--n-fights", type=int, default=1300, help="train fights in the tuning window (1300 of 1972; "
+                   "600 overfit the fight sample in the Nov 6 runs)")
     p.add_argument("--sample-seed", type=int, default=1)
-    p.add_argument("--rungs", default="15,30,60", help="cumulative sims per fight at each rung (15,30,60)")
+    p.add_argument("--rungs", default="10,20,40", help="cumulative sims per fight at each rung (10,20,40)")
     p.add_argument("--seed", type=int, default=20261106, help="common-random-number seed")
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--top", type=int, default=3, help="finalists confirmed and validated (3)")
-    p.add_argument("--confirm-fights", type=int, default=600)
-    p.add_argument("--confirm-sims", type=int, default=60)
+    p.add_argument("--confirm-fights", type=int, default=-1, help="disjoint train fights for confirmation (-1 = all the rest)")
+    p.add_argument("--confirm-sims", type=int, default=40)
     p.add_argument("--val-sims", type=int, default=80, help="sims per corner order on validation (80)")
     p.add_argument("--no-val", action="store_true")
     p.add_argument("--val-split", default="val", choices=["val", "train"], help=argparse.SUPPRESS)

@@ -31,8 +31,23 @@ His chin is the defining issue. He has absorbed 9 knockdowns in UFC bouts, and h
 ## What the numbers say
 His Elo is 1669 (10th among recently active lightweights). The numbers describe a low-output (3.4-3.7 significant strikes per minute), high-control grappler with excellent takedown defence, whose results now depend on whether he survives the first exchanges. Any simulation of him should carry a well-below-average durability setting.
 
+## Appearance
+There is no likeness sheet for him (data/likeness/beneil-dariush.json does not exist). His look has changed: the previous version of this file had "short dark hair" and "a full dark beard", but 2026 photos show him greying.
+- **Hair:** short salt-and-pepper hair, now mostly grey at the front and sides (ESPN headshot file dated Apr 30, 2026; UFC Perth press-conference photo, Apr 30, 2026).
+- **Facial hair:** a short, close-trimmed salt-and-pepper beard.
+- **Skin:** light-medium.
+- **Tattoos:** none visible on his chest, shoulders or back in the 2026 headshot or in weigh-in photos from UFC 317 (Jun 2025), UFC 322 (Nov 2025) and UFC Perth (May 2026). His arms and legs were not fully checked.
+- **Kit:** blue shorts with a black-and-white patterned side panel at UFC Perth (May 2, 2026).
+
 ## Sources
 - https://bloodyelbow.com/2026/11/03/beneil-dariush-uninterested-in-ufc-offers-after-taking-on-new-role-unless-something-big-happens/
+- https://en.wikipedia.org/wiki/Beneil_Dariush (record 23-8-1; UFC 327 cancellation; UFC 322 weight miss)
+- https://www.espn.com/mma/fighter/_/id/3085551/beneil-dariush and https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/3085551/overview
+- https://ufcrankings.org/lightweight/ ; https://www.ufcalendar.com/rankings/lightweight (media and Meta lists)
+- https://sports.yahoo.com/articles/common-opponent-predicts-quillan-salkilld-144020233.html (Nov 4, 2026)
+- https://a.espncdn.com/i/headshots/mma/players/full/3085551.png (headshot, file dated Apr 30, 2026)
+- https://www.bjpenn.com/mma-news/beneil-dariush/beneil-dariush-reveals-he-doesnt-have-plans-to-fight-as-he-becomes-a-head-coach-my-goal-is-coaching/ (lead photo: UFC Perth press conference)
+- https://cagesidepress.com/2026/05/02/quillan-salkilld-delivers-statement-win-over-dariush-at-ufc-perth/ (weigh-in photo)
 - https://www.bjpenn.com/mma-news/beneil-dariush/beneil-dariush-reveals-he-doesnt-have-plans-to-fight-as-he-becomes-a-head-coach-my-goal-is-coaching/
 - https://www.sherdog.com/news/news/Beneil-Dariush-says-next-UFC-fight-could-be-his-last-200134
 - https://www.bjpenn.com/mma-news/beneil-dariush/beneil-dariush-coach-long-absence-due-repeated-head-trauma/

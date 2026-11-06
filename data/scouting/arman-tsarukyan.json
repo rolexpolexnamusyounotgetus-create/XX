@@ -3,9 +3,9 @@
   "name": "Arman Tsarukyan",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Six straight UFC wins, the latest a first-round KO of Mauricio Ruffy with a standing elbow in the clinch at UFC 331 (Sep 19, 2026; 4:56 of R1). No. 2 at lightweight and widely seen as next for champion Justin Gaethje. Gaethje has named him as the opponent if he fights again but has not decided whether to retire. Nothing is booked. Tsarukyan says he would also fight Alexander Volkanovski for the belt and expects the UFC's answer by the end of November.",
+    "summary": "Six straight UFC wins, the latest a first-round KO of Mauricio Ruffy with a standing elbow in the clinch at UFC 331 (Sep 19, 2026; 4:56 of R1), a fight he got after Charles Oliveira withdrew. No. 2 at lightweight and No. 13 pound-for-pound, widely seen as next for champion Justin Gaethje. Gaethje has named him as the opponent if he fights again but has not decided whether to retire. Nothing is booked as of Nov 6. On Nov 2 Tsarukyan said his next fight is a title fight, Gaethje or, if Gaethje retires, someone else; he would fight Alexander Volkanovski only with the belt at stake, and expects the UFC's answer by the end of November. Pro record 24-3.",
     "title": null,
-    "ranking": "#2 lightweight (UFC media panel, Nov 3, 2026, as mirrored by ufcrankings.org and UFCalendar; not checked on ufc.com)",
+    "ranking": "#2 lightweight and #13 men's pound-for-pound (UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org on Nov 5-6; ufc.com itself returned 403 to scripts)",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -17,9 +17,15 @@
       "https://mmasucka.com/news/volkanovski-vs-tsarukyan-ufc-lightweight-wrestling-feud-makhachev/",
       "https://www.mmamania.com/latest-news/474425/justin-gaethje-weighs-retirement-ahead-of-possible-arman-tsarukyan-title-defense-i-want-to-keep-my-faculties",
       "https://bloodyelbow.com/2026/11/05/justin-gaethje-vs-alexander-volkanovski-dana-white-reveals-whats-holding-up-superfight/",
-      "https://ufcrankings.org/",
+      "http://ufcstats.com/fighter-details/eae48ff31db420c2",
       "https://www.ufcalendar.com/rankings/lightweight",
-      "http://ufcstats.com/fighter-details/eae48ff31db420c2"
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://www.sherdog.com/news/news/Arman-Tsarukyan-sets-one-condition-for-fighting-Alexander-Volkanovski-203451",
+      "https://www.sherdog.com/news/news/Dana-White-awaits-Justin-Gaethje-decision-on-Alexander-Volkanovski-fight-203509",
+      "https://www.ufcalendar.com/fighters/arman-tsarukyan",
+      "https://nyfights.com/news/charles-oliveira-addresses-ufc-334-bmf/"
     ]
   },
   "style": {
@@ -67,15 +73,19 @@
   },
   "appearance": {
     "build": "short and stocky with a long reach for his height: 5 ft 7 in, 72 in reach (ufcstats)",
-    "hair": "short black hair with faded sides (2019 photo)",
-    "facial_hair": "full, short dark beard and mustache in a 2019 photo; may differ now",
+    "hair": "dark brown, a longer top swept back with short sides (Sep 2026 photos)",
+    "facial_hair": "full, thick dark brown beard with moustache, about 3-4 cm, neatly shaped (Sep 2026 photos)",
     "skin": "light",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "notes": "Build is from ufcstats. Hair, facial hair and skin (light, olive-toned) were checked by the fact-checker (Nov 6, 2026) against the Wikipedia lead photo, a Jun 23, 2019 interview still (inFocus media, CC BY 3.0, Wikimedia Commons). The photo is seven years old, so treat the beard as a default, not a certainty. Tattoos and fight kit are not established by any source, so they stay unknown.",
+    "tattoos": "none visible on the chest, abdomen, arms or legs in two ESPN full-body studio cutouts (files dated Jan 2025 and Sep 2026) or the UFC 331 weigh-in photo; his back was not fully seen, so a back tattoo cannot be ruled out",
+    "kit": "UFC (Venum) shorts: black with a grey geometric pattern and the crypto.com logo (ESPN cutout, file dated Sep 2026); red with dark-red and white stripes and his name in yellow down the left leg (cutout dated Jan 2025)",
+    "notes": "Build is from ufcstats. The fact-checker first checked hair, beard and skin (light, olive-toned) against the 2019 Wikipedia photo; re-verified Nov 6, 2026 (open network) from current photos, since no likeness sheet exists yet: the ESPN headshot (file dated Sep 17, 2026), ESPN full-body cutouts (files dated Jan 16, 2025 and Sep 17, 2026) and Cageside Press photos from UFC 331 fight week (Sep 2026). The 2026 look matches the 2019 photo in kind, with a fuller beard and a longer, swept-back top. Light body hair on the chest and legs. Kit varies by fight and the corner colour wins in the sim.",
     "sources": [
       "http://ufcstats.com/fighter-details/eae48ff31db420c2",
-      "https://commons.wikimedia.org/wiki/File:Arman_Tsarukyan_2019.jpg"
+      "https://commons.wikimedia.org/wiki/File:Arman_Tsarukyan_2019.jpg",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4419372.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4419372.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4419372.png",
+      "https://cagesidepress.com/"
     ]
   },
   "engine_notes": [
@@ -83,7 +93,8 @@
     { "note": "Wrestling volume: 9.4 takedown attempts per 15 min career (10.6 decayed) at 35%, against a league 4.3 at 36%. Control is 387 s per 15 min career and 462 decayed (league 174).", "source": "data/derived/fighters.json; tools/fighter_report.py rates" },
     { "note": "Power: 1.63 knockdowns per 100 significant head strikes landed decayed (league 0.95); 4 knockdowns scored in 13 UFC fights.", "source": "tools/fighter_report.py chin and power table" },
     { "note": "Opponents threaten submissions against him far more than the league norm: 3.0 per 15 min over the last 3 years (0.40 league), over a small sample (4 fights). Oliveira threw 4 of them at UFC 300 in a fight where Tsarukyan held 8:41 of control.", "source": "tools/fighter_report.py rates; data/raw/ufc_fight_stats.csv (UFC 300, Hooker)" },
-    { "note": "Gaethje has said that if he fights again it will be against Tsarukyan (late Sep 2026). The UFC is reportedly working on that fight, per an unnamed insider (low-medium confidence).", "source": "https://www.mmamania.com/latest-news/474425/justin-gaethje-weighs-retirement-ahead-of-possible-arman-tsarukyan-title-defense-i-want-to-keep-my-faculties; https://mmasucka.com/news/alexander-volkanovski-vs-justin-gaethje-possibility-appears-to-have-disappeared-amidst-talks-about-j/" }
+    { "note": "Gaethje has said that if he fights again it will be against Tsarukyan (late Sep 2026). The UFC is reportedly working on that fight, per an unnamed insider (low-medium confidence).", "source": "https://www.mmamania.com/latest-news/474425/justin-gaethje-weighs-retirement-ahead-of-possible-arman-tsarukyan-title-defense-i-want-to-keep-my-faculties; https://mmasucka.com/news/alexander-volkanovski-vs-justin-gaethje-possibility-appears-to-have-disappeared-amidst-talks-about-j/" },
+    { "note": "Background injury: he withdrew from a UFC 311 title fight with Islam Makhachev the day before the event (Jan 2025) with a back injury; Renato Moicano replaced him.", "source": "https://sports.yahoo.com/arman-tsarukyan-ufc-311-back-185031460.html" }
   ],
   "confidence": "medium"
 }

@@ -592,13 +592,14 @@ def main():
     log["D_matcher_vs_N_crosswalk"] = dict(mstat)
 
     # merge: N first, D for the rest; cross-check overlap
-    cmp_stats, cmp_examples = Counter(), []
+    cmp_stats, cmp_vault, cmp_examples = Counter(), Counter(), []
     merged = {}
     for fid in set(cN) | set(cD):
         if fid in cN:
             merged[fid] = dict(cN[fid], also_D=fid in cD)
             if fid in cD:
-                compare_sources(cN[fid], cD[fid], cmp_stats, cmp_examples)
+                compare_sources(cN[fid], cD[fid], cmp_stats if fights[fid]["date"] < vault_from else cmp_vault,
+                                cmp_examples)
         else:
             merged[fid] = dict(cD[fid], also_D=False)
 
@@ -626,9 +627,10 @@ def main():
                 j["jid"] = k
 
     # validation against ufcstats DETAILS (published totals; loser first) and card completeness
-    vstats, name_votes = Counter(), defaultdict(Counter)
+    vstats, vstats_vault, name_votes = Counter(), Counter(), defaultdict(Counter)
     for fid, c in merged.items():
-        c["validation"] = validate_ufc(fights[fid], c["judges"], vstats, name_votes)
+        c["validation"] = validate_ufc(fights[fid], c["judges"],
+                                       vstats if fights[fid]["date"] < vault_from else vstats_vault, name_votes)
         c["complete"] = completeness(fights[fid], c["judges"])
         if c["validation"]["ufc"] != "agree":
             log["ufc_disagreements"].append((fid, c["src"], c["validation"]))
@@ -745,6 +747,7 @@ def main():
                   "vault_files": [os.path.join(a.vault_dir, "judgerounds_vault.json"),
                                   os.path.join(a.vault_dir, "judgerounds_rows_vault.json")]},
         "checks": {
+            "_period": "dev fights only (before %s); vault-period counts are in the vault file" % a.vault_from,
             "ufcstats_totals": dict(vstats),
             "source_overlap_N_vs_D": dict(cmp_stats),
             "source_overlap_examples_mmad_ids": cmp_examples,
@@ -790,7 +793,9 @@ def main():
     os.makedirs(a.vault_dir, exist_ok=True)
     rounds_v, scores_v = round_rows(vault)
     write_json(Path(a.vault_dir) / "judgerounds_vault.json",
-               {"meta": dict(meta, report_dev=None), "fights": {fid: fight_record(fid, merged[fid]) for fid in vault},
+               {"meta": dict(meta, report_dev=None, checks_vault={"ufcstats_totals": dict(vstats_vault),
+                                                                  "source_overlap_N_vs_D": dict(cmp_vault)}),
+                "fights": {fid: fight_record(fid, merged[fid]) for fid in vault},
                 "stoppage_unverified": {k: v for k, v in stop.items()
                                         if dt.date.fromisoformat(v["date"]) >= vault_from}})
     write_json(Path(a.vault_dir) / "judgerounds_rows_vault.json",

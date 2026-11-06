@@ -3,12 +3,18 @@
   "name": "Merab Dvalishvili",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Former UFC bantamweight champion on a two-fight losing streak, both losses to Petr Yan. He won the title from Sean O'Malley at UFC 306 (Sep 14, 2024) and defended it three times in 2025: Umar Nurmagomedov (UFC 311), O'Malley again by guillotine (UFC 316) and Cory Sandhagen (UFC 320). He then lost the belt to Yan at UFC 323 (Dec 6, 2025; 46-49, 46-49, 47-48). He lost the trilogy at UFC 333 in Abu Dhabi (Oct 24, 2026; 47-48 on all three cards). Yahoo called it a come-from-behind win for Yan, and the ufcstats rounds fit Merab taking R1-R2 (5 of 19 takedowns) before going 0 of 39 in R3-R5. He is 35, and his UFC record is 14-4 per ufcstats. Booking, ranking and injury news could not be web-checked (no search access in the research or Nov 6 fact-check passes).",
+    "summary": "Former UFC bantamweight champion, still ranked #1 at bantamweight and #9 pound-for-pound in the UFC media-panel rankings (Nov 3, 2026), on a two-fight losing streak, both losses to Petr Yan. He won the title from Sean O'Malley at UFC 306 (Sep 14, 2024) and defended it three times in 2025: Umar Nurmagomedov (UFC 311), O'Malley again by guillotine (UFC 316) and Cory Sandhagen (UFC 320). He lost the belt to Yan at UFC 323 (Dec 6, 2025; 46-49, 46-49, 47-48) and lost the trilogy at UFC 333 in Abu Dhabi (Oct 24, 2026; 47-48 on all three cards). Yahoo called it a come-from-behind win for Yan, and the ufcstats rounds fit Merab taking R1-R2 (5 of 19 takedowns) before going 0 of 39 in R3-R5. He fought UFC 333 on a nose broken in sparring in April 2026 that he chose not to have repaired. On Oct 26 he said he is healthy and will be back soon. No MMA bout is booked; his next outing is a freestyle wrestling match (not MMA) against Marlon Moraes at RAF Abu Dhabi on Nov 14, 2026, his fourth Real American Freestyle match (he beat Frankie Edgar and Henry Cejudo, then lost the Cejudo rematch on Aug 22, 2026). He is 35. Pro record 21-6 (UFCalendar, Wikipedia, MMA Junkie Nov 2); UFC record 14-4 per ufcstats.",
     "title": null,
-    "ranking": null,
+    "ranking": "#1 bantamweight in the UFC media-panel rankings (Nov 3, 2026, per ufcalendar.com; ufcrankings.org updated Nov 5 agrees) and #1 in the UFC/Meta algorithmic rankings (Oct 31, 2026); #9 men's pound-for-pound (media panel, Nov 3, 2026). ufc.com/rankings returned 403 to this pass, so the official page itself was not read.",
     "active": true,
-    "next_fight": null,
-    "injuries": [],
+    "next_fight": "Not an MMA bout: freestyle wrestling match vs Marlon Moraes, RAF Abu Dhabi, Nov 14, 2026, Etihad Arena, Abu Dhabi (announced Nov 4, 2026). No UFC fight booked as of Nov 6.",
+    "injuries": [
+      {
+        "what": "broken nose, fractured in two places by a knee in sparring; not surgically repaired, and he fought UFC 333 with it",
+        "when": "2026-04",
+        "source": "https://mmasucka.com/news/merab-dvalishvilis-coach-gives-concerning-update-on-his-nose-ahead-of-ufc-333/"
+      }
+    ],
     "sources": [
       "http://ufcstats.com/fighter-details/c03520b5c88ed6b4",
       "http://ufcstats.com/fight-details/e262f5e588b149a6",
@@ -18,7 +24,17 @@
       "http://ufcstats.com/fight-details/f39941b3743bf18c",
       "http://ufcstats.com/fight-details/3146e5a47a922976",
       "https://sports.yahoo.com/mma/article/ufc-333-petr-yan-conquers-merab-dvalishvili-with-thrilling-come-from-behind-win-in-trilogy-fight-221808640.html",
-      "data/derived/fighters.json"
+      "data/derived/fighters.json",
+      "https://www.ufcalendar.com/fighters/merab-dvalishvili",
+      "https://www.ufcalendar.com/rankings/bantamweight",
+      "https://ufcrankings.org/bantamweight/",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
+      "https://www.mmafighting.com/raf-wrestling/519373/merab-dvalishvili-vs-marlon-moraes-set-for-raf-abu-dhabi",
+      "https://mmasucka.com/news/merab-dvalishvili-return/",
+      "https://sports.yahoo.com/articles/merab-dvalishvili-books-marlon-moraes-144147114.html",
+      "https://middleeasy.com/mma-news/merab-dvalishvili-healthy-motivated-return-update/",
+      "https://mmasucka.com/news/merab-dvalishvilis-coach-gives-concerning-update-on-his-nose-ahead-of-ufc-333/",
+      "https://en.wikipedia.org/wiki/Merab_Dvalishvili"
     ]
   },
   "style": {
@@ -51,28 +67,55 @@
     ]
   },
   "moves": {
-    "jab": 0.26, "cross": 0.24, "hook": 0.18, "overhand": 0.2, "upper": 0.08, "headkick": 0.04,
-    "bodykick": 0.35, "bodyhook": 0.4, "bodystraight": 0.25,
-    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.03, "elbow": 0.0,
+    "jab": 0.26,
+    "cross": 0.24,
+    "hook": 0.18,
+    "overhand": 0.2,
+    "upper": 0.08,
+    "headkick": 0.04,
+    "bodykick": 0.35,
+    "bodyhook": 0.4,
+    "bodystraight": 0.25,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.03,
+    "elbow": 0.0,
     "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. fighters.json time-decayed attempt split is 82.6% head, 9.1% body and 8.3% leg (landed 70.3/15.1/14.5), against a bantamweight average of 76.2/14.1/9.7. He is clearly head-heavy and throws few body and leg strikes. With 85.5% of decayed attempts at distance and 18.3 takedown attempts per 15 min career, the head group favours jabs, crosses and overhands thrown as entries to level changes. That is a judgment from the data; no scouting page could be opened in this pass. The body and leg internal splits are unsourced defaults. knee 0.03 is a low clinch default (8% of decayed attempts come in the clinch). No spinning or elbow finishes appear in his ufcstats record."
   },
   "appearance": {
     "build": "short and compact, heavily muscled: 5'6\" (66 in) with a 68 in reach per ufcstats",
-    "hair": "short dark-brown hair (UFC 316 photos, Jun 7, 2025)",
-    "facial_hair": "short full beard, reddish-brown, lighter than his hair (UFC 316 photos, Jun 7, 2025)",
+    "hair": "short dark-brown hair, faded sides with a slightly longer top (UFC 316 photos, Jun 2025; ESPN headshot, Oct 2026)",
+    "facial_hair": "short full beard, reddish-brown, lighter than his hair (UFC 316 photos, Jun 2025; ESPN headshot, Oct 2026)",
     "skin": "light",
-    "tattoos": "unknown (no written source; none visible on the chest or arms in the two UFC 316 photos)",
-    "kit": "white shorts with red trim at UFC 316 (photo); corner colour wins in the sim",
+    "tattoos": "map of Georgia filled with the Georgian flag (white with red crosses) on the left upper chest (ESPN stance photos, Dec 2025 and Oct 2026); no other tattoos visible on the chest or arms",
+    "kit": "white shorts with red trim and Georgian crosses (UFC 316 and UFC 323 photos; ESPN UFC 333 fight-week set, Oct 2026); an earlier ESPN set shows red shorts; corner colour wins in the sim",
     "sources": [
       "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",
-      "skin, hair, beard and kit: assets/reference/merab-dvalishvili/commons_ufc316_cropped.jpg and commons_ufc316_with_trump.jpg (Wikimedia Commons per filename; taken cageside after his UFC 316 win at the Prudential Center, Newark, Jun 7, 2025), checked by the fact-checker on 2026-11-06"
+      "skin, hair, beard and kit: assets/reference/merab-dvalishvili/commons_ufc316_cropped.jpg and commons_ufc316_with_trump.jpg (Wikimedia Commons per filename; taken cageside after his UFC 316 win at the Prudential Center, Newark, Jun 7, 2025), checked by the fact-checker on 2026-11-06",
+      "assets/reference/merab-dvalishvili/espn_headshot.png = https://a.espncdn.com/i/headshots/mma/players/full/3948572.png (Last-Modified Oct 22, 2026)",
+      "assets/reference/merab-dvalishvili/espn_stance_right.png = https://a.espncdn.com/i/headshots/mma/players/stance/right/3948572.png (Last-Modified Oct 22, 2026); espn_stance_left.png = https://a.espncdn.com/i/headshots/mma/players/stance/left/3948572.png (Last-Modified Dec 8, 2025): Georgia-flag chest tattoo and kit",
+      "assets/reference/merab-dvalishvili/ref_mmasucka_ufc323_action.webp (UFC 323, Dec 6, 2025): kit",
+      "No likeness sheet (data/likeness/merab-dvalishvili.json) exists; the photos above were re-checked on Nov 6, 2026"
     ]
   },
   "engine_notes": [
-    { "note": "Takedown volume is far above the league: 18.3 attempts and 5.7 landed per 15 min career (20.6 and 4.95 decayed). The bantamweight league rate is about 4.7 attempts and 1.6 landed. Accuracy has dropped to 24% decayed, and Yan stopped 80 of 87 attempts over two fights.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
-    { "note": "Pace rises late: five-round landed-per-minute pace is 1.00 / 1.47 / 1.15 / 1.83 / 1.71 of round 1 over 7 five-round fights, vs a bantamweight prior of 1.00 / 1.32 / 1.32 / 1.37 / 1.53.", "source": "data/derived/fighters.json (pace, priors.Bantamweight.pace5)" },
-    { "note": "Very durable: one knockdown absorbed in 18 UFC fights (Marlon Moraes, R1, 2021) and no KO/TKO losses. His only stoppage loss is a 2018 technical submission (guillotine) by Ricky Simon at the final bell.", "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv" },
-    { "note": "Control comes in short bursts rather than long rides: 20 s/min career, 15.9 decayed, vs about 10.6 for the league. He re-shoots rather than holding position: 10:03 vs O'Malley in 2024 but only 1:54 at UFC 333.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/3146e5a47a922976; http://ufcstats.com/fight-details/e262f5e588b149a6" }
+    {
+      "note": "Takedown volume is far above the league: 18.3 attempts and 5.7 landed per 15 min career (20.6 and 4.95 decayed). The bantamweight league rate is about 4.7 attempts and 1.6 landed. Accuracy has dropped to 24% decayed, and Yan stopped 80 of 87 attempts over two fights.",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
+    },
+    {
+      "note": "Pace rises late: five-round landed-per-minute pace is 1.00 / 1.47 / 1.15 / 1.83 / 1.71 of round 1 over 7 five-round fights, vs a bantamweight prior of 1.00 / 1.32 / 1.32 / 1.37 / 1.53.",
+      "source": "data/derived/fighters.json (pace, priors.Bantamweight.pace5)"
+    },
+    {
+      "note": "Very durable: one knockdown absorbed in 18 UFC fights (Marlon Moraes, R1, 2021) and no KO/TKO losses. His only stoppage loss is a 2018 technical submission (guillotine) by Ricky Simon at the final bell.",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv"
+    },
+    {
+      "note": "Control comes in short bursts rather than long rides: 20 s/min career, 15.9 decayed, vs about 10.6 for the league. He re-shoots rather than holding position: 10:03 vs O'Malley in 2024 but only 1:54 at UFC 333.",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/3146e5a47a922976; http://ufcstats.com/fight-details/e262f5e588b149a6"
+    }
   ],
   "confidence": "medium"
 }

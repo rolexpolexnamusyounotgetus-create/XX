@@ -962,7 +962,8 @@ def fit_lr(X, y, C):
     sd = Xm.std(0) + 1e-9
     m = LogisticRegression(C=C, fit_intercept=False, max_iter=2000)
     m.fit(Xm / sd, ym)
-    return lambda Z: m.predict_proba(np.nan_to_num(Z) / sd)[:, 1] if False else 1 / (1 + np.exp(-(np.nan_to_num(Z) / sd) @ m.coef_[0])), (m.coef_[0] / sd)
+    coef = m.coef_[0] / sd
+    return (lambda Z: 1 / (1 + np.exp(-np.nan_to_num(Z) @ coef))), coef
 
 
 GBM_PARAMS = {"objective": "binary", "learning_rate": 0.03, "num_leaves": 7, "min_data_in_leaf": 60,
@@ -1065,3 +1066,139 @@ def eval_winner(T, verbose=True):
         for k, v in res["deltas"].items():
             print("  delta %-22s %+.4f [%+.4f, %+.4f]" % (k, v["mean"], v["ci95"][0], v["ci95"][1]))
     return res, preds
+
+
+# ------------------------------------------------------------------------------------------------ downstream: stat lines
+# stat -> (attacker feature, defender "allowed" feature, prior per fighter-minute or None)
+STAT_LOG5 = {"sig_att": ("satt", "osatt"), "sig_lnd": ("slpm", "sapm"), "h_lnd": ("h_lpm", "oh_lpm"),
+             "b_lnd": ("b_lpm", "ob_lpm"), "l_lnd": ("l_lpm", "ol_lpm"), "td_att": ("td_apm", "otd_apm"),
+             "td_lnd": ("td_lpm", "otd_lpm"), "ctrl": ("ctrl", "octrl"), "sub_att": ("sub", "osub"),
+             "kd": ("h_lpm", "oh_lpm")}
+
+
+def prior_rate(pri, stat):
+    g = lambda k: pri[k]
+    return {"sig_att": g("d_att") + g("c_att") + g("g_att"), "sig_lnd": g("d_lnd") + g("c_lnd") + g("g_lnd"),
+            "h_lnd": g("h_lnd"), "b_lnd": g("b_lnd"), "l_lnd": g("l_lnd"), "td_att": g("td_att"),
+            "td_lnd": g("td_lnd"), "ctrl": g("ctrl"), "sub_att": g("sub_att"),
+            "kd": g("h_lnd") * g("kd_per_h")}[stat]
+
+
+def stat_rows(T):
+    """Directed rows (attacker, defender) for every snapshot fight with an actual stat line."""
+    out = {"i": [], "side": [], "y": [], "min": []}
+    for i, a in enumerate(T["actual"]):
+        if a is None:
+            continue
+        for side, (x, z) in enumerate((("A", "B"), ("B", "A"))):
+            out["i"].append(i)
+            out["side"].append(side)
+            out["y"].append([float(a[x][k]) for k in STATS])
+            out["min"].append(float(a["minutes"]))
+    return {k: np.array(v) for k, v in out.items()}
+
+
+def stat_design(T, R, stat, kind):
+    """Feature matrix for one stat. kind: glm_base, gbm_base, glm_emb, gbm_emb."""
+    i, side = R["i"], R["side"]
+    FX = np.where(side[:, None] == 0, T["FA"][i], T["FB"][i])
+    FY = np.where(side[:, None] == 0, T["FB"][i], T["FA"][i])
+    fn = T["fnames"]
+    ox, oy = STAT_LOG5[stat]
+    pr = np.array([prior_rate(T["prior"][j], stat) for j in i])
+    xo = FX[:, fn.index(ox)]
+    ya = FY[:, fn.index(oy)]
+    if stat == "kd":
+        # knockdowns per minute = head landed per minute x knockdowns per landed head strike (power vs chin)
+        xo = xo * FX[:, fn.index("pow")]
+        ya = ya * FY[:, fn.index("chin")]
+    log5 = np.log(xo + 1e-6) + np.log(ya + 1e-6) - np.log(pr + 1e-6)
+    ctx = np.c_[T["five"][i], T["women"][i], T["era"][i]]
+    cols = [log5[:, None], np.log(xo + 1e-6)[:, None], np.log(ya + 1e-6)[:, None], np.log(pr + 1e-6)[:, None], ctx]
+    if kind.startswith("gbm"):
+        cols += [np.nan_to_num(FX, nan=-1.0), np.nan_to_num(FY, nan=-1.0)]
+    if kind.endswith("emb"):
+        K = T["EA"].shape[1] // 2
+        EX = np.where(side[:, None] == 0, T["EA"][i], T["EB"][i])
+        EY = np.where(side[:, None] == 0, T["EB"][i], T["EA"][i])
+        eta = np.where(side[:, None] == 0, T["eta_ab"][i], T["eta_ba"][i])
+        rates = stat_rates(eta)
+        cols += [np.log(rates[stat] + 1e-6)[:, None], EX[:, :K], EY[:, K:]]
+        if kind.startswith("gbm"):
+            cols += [np.log(rates[k] + 1e-6)[:, None] for k in STATS if k != stat]
+    return np.hstack(cols)
+
+
+def emb_direct_rate(T, R, stat):
+    eta = np.where(R["side"][:, None] == 0, T["eta_ab"][R["i"]], T["eta_ba"][R["i"]])
+    return stat_rates(eta)[stat]
+
+
+def pois_dev(y, mu):
+    mu = np.maximum(mu, 1e-9)
+    return 2 * (np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / mu), 0.0) - (y - mu))
+
+
+STAT_GBM = {"objective": "poisson", "learning_rate": 0.04, "num_leaves": 15, "min_data_in_leaf": 80,
+            "feature_fraction": 0.7, "bagging_fraction": 0.8, "bagging_freq": 1, "lambda_l2": 5.0,
+            "verbose": -1, "num_threads": 1, "seed": SEED}
+
+
+def eval_stats(T, verbose=True):
+    from sklearn.linear_model import PoissonRegressor
+    lgb = _lgb()
+    R = stat_rows(T)
+    yrs = T["year"][R["i"]]
+    tr = yrs <= 2023
+    va = (yrs >= 2024) & (yrs <= 2025)
+    es_tr, es_va = tr & (yrs <= 2020), tr & (yrs >= 2021)
+    fight = R["i"]
+    res = {"n_train_rows": int(tr.sum()), "n_valid_rows": int(va.sum()), "stats": {}}
+    all_dev = defaultdict(lambda: np.zeros(int(va.sum())))
+    for si, stat in enumerate(STATS):
+        y = R["y"][:, si]
+        m = R["min"]
+        rate = y / m
+        out = {}
+        preds = {}
+        preds["emb_direct"] = emb_direct_rate(T, R, stat) * m
+        for kind in ("glm_base", "glm_emb", "gbm_base", "gbm_emb"):
+            X = stat_design(T, R, stat, kind)
+            if kind.startswith("glm"):
+                mu_, sd_ = X[tr].mean(0), X[tr].std(0) + 1e-9
+                g = PoissonRegressor(alpha=1e-4, max_iter=1000)
+                g.fit((X[tr] - mu_) / sd_, rate[tr], sample_weight=m[tr])
+                preds[kind] = g.predict((X - mu_) / sd_) * m
+            else:
+                b = lgb.train(STAT_GBM, lgb.Dataset(X[es_tr], rate[es_tr], weight=m[es_tr]), num_boost_round=2000,
+                              valid_sets=[lgb.Dataset(X[es_va], rate[es_va], weight=m[es_va])],
+                              callbacks=[lgb.early_stopping(100, verbose=False)])
+                n_it = max(50, b.best_iteration)
+                b = lgb.train(STAT_GBM, lgb.Dataset(X[tr], rate[tr], weight=m[tr]), num_boost_round=n_it)
+                preds[kind] = b.predict(X) * m
+                out[kind + "_iters"] = n_it
+        devs = {k: pois_dev(y[va], p[va]) for k, p in preds.items()}
+        base = devs["glm_base"].sum()
+        for k, d in devs.items():
+            out[k] = {"dev": round(float(d.sum()), 2), "rel": round(float(d.sum() / base), 4)}
+            all_dev[k] += d / max(base, 1e-9)
+        # per-fight paired bootstrap for the embedding gain over the best baseline
+        best_base = min(("glm_base", "gbm_base"), key=lambda k: devs[k].sum())
+        best_emb = min(("glm_emb", "gbm_emb"), key=lambda k: devs[k].sum())
+        fv = fight[va]
+        _, inv = np.unique(fv, return_inverse=True)
+        dfight = np.bincount(inv, weights=devs[best_emb] - devs[best_base])
+        bfight = np.bincount(inv, weights=devs[best_base])
+        mu, lo, hi = boot_ci(dfight)
+        tot = bfight.mean()
+        out["gain"] = {"best_base": best_base, "best_emb": best_emb,
+                       "rel_change": round(mu / tot, 4), "ci95": [round(lo / tot, 4), round(hi / tot, 4)]}
+        res["stats"][stat] = out
+        if verbose:
+            print("  stat %-8s rel dev vs glm_base: gbm_base %.4f | emb_direct %.4f glm_emb %.4f gbm_emb %.4f | "
+                  "best emb vs best base %+.2f%% [%+.2f, %+.2f]" % (
+                      stat, out["gbm_base"]["rel"], out["emb_direct"]["rel"], out["glm_emb"]["rel"],
+                      out["gbm_emb"]["rel"], 100 * out["gain"]["rel_change"], 100 * out["gain"]["ci95"][0],
+                      100 * out["gain"]["ci95"][1]))
+    res["mean_rel"] = {k: round(float(v.sum() / len(STATS)), 4) for k, v in all_dev.items()}
+    return res

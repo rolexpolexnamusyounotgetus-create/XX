@@ -65,9 +65,16 @@ def toks(s):
     return set(t for t in norm(s).split() if len(t) >= 2)
 
 
+SUFFIX = {"jr", "sr", "ii", "iii", "iv", "junior"}
+
+
+def core_name(s):
+    return " ".join(t for t in norm(s).split() if t not in SUFFIX)
+
+
 def name_sim(a, b):
-    """0..1 similarity between two person names (order-insensitive, tolerant of middle names)."""
-    na, nb = norm(a), norm(b)
+    """0..1 similarity between two person names (order-insensitive, tolerant of middle names and suffixes)."""
+    na, nb = core_name(a), core_name(b)
     if not na or not nb:
         return 0.0
     if na == nb:
@@ -309,9 +316,15 @@ def verify(parsed, ub):
             if i in used or not r["date"]:
                 continue
             rd = dt.date.fromisoformat(r["date"])
-            if abs((rd - d).days) > 3:
+            dd = abs((rd - d).days)
+            if dd > 3:
                 continue
             s = name_sim(oname, r["opp"])
+            on, ro = core_name(oname).split(), core_name(r["opp"]).split()
+            if on and ro and on[-1] == ro[-1]:
+                s = max(s, 0.8)            # same surname on the same card (RJ / Richard Harris)
+            if dd <= 1 and s >= 0.4 and promotion(r["event"]) == "UFC":
+                s = max(s, 0.73)           # a UFC row on the bout date with a loosely similar opponent
             if s >= 0.72 and (best is None or s > best[0]):
                 best = (s, i)
         if best:
@@ -371,8 +384,10 @@ def crawl(args):
         T_ = P.get("tott") or {}
         lbs = T_.get("lbs")
         nick = P.get("nick")
-        tk = norm(name).split()
+        tk = core_name(name).split()
         queries = [name]
+        if core_name(name) != norm(name):
+            queries.append(" ".join(tk))
         if len(tk) > 2:
             queries.append(tk[0] + " " + tk[-1])
         if len(tk) >= 2:

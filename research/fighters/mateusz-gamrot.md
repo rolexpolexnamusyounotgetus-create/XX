@@ -1,16 +1,23 @@
 # Mateusz Gamrot: scouting dossier
 
-*As of 2026-11-06. Listed southpaw by UFC Stats, 5'10", 70-inch reach, born 1990-12-11 (age 35). Nickname "Gamer". UFC record 9-5 in fighters.json; pro record not re-verified.*
+*As of 2026-11-06. Listed southpaw by UFC Stats, 5'10", 70-inch reach, born 1990-12-11 (age 35). Nickname "Gamer". Pole; trains with Czerwony Smok in Poland and at American Top Team. UFC record 9-5 in fighters.json; 26-5 (1 NC) as a pro (Wikipedia, Polsat Sport; ESPN and MMA Junkie show 26-5).*
 
-> Research note: web search was unavailable for this pass (budget used up, and Wikipedia/ufc.com could not be reached). Status comes from the UFC Stats snapshot (through Oct 31, 2026) and from sourced sibling dossiers. A Nov 6 fact-check, also offline, could not confirm a ranking or booking.
+> Research note: the earlier offline pass could not confirm a ranking, booking or injury. All three were re-checked on the web on Nov 6, 2026 (Polish and English outlets, ESPN, Wikipedia, ranking mirrors) and are filled in below.
 
 ## Current status
-**Active, coming off a loss.** On **Aug 8, 2026** Quillan Salkilld submitted him with a rear-naked choke at 4:25 of round 1 in a UFC Fight Night main event in Las Vegas. The Salkilld dossier cites reports that Salkilld opened with jabs and kicks, took him down late in the round, defended a leg-lock attempt in a scramble and took his back. Before that he submitted **Esteban Ribovics** with an arm-triangle from half guard at UFC 327 in Miami (**Apr 11, 2026**, R2 4:19). He is 2-2 in his last four fights. No booking, current ranking or injury could be confirmed.
+**Active, coming off a loss, with an unannounced bout lined up for early 2027.**
+- **Aug 8, 2026:** Quillan Salkilld submitted him with a rear-naked choke at 4:25 of round 1 in the UFC Vegas 120 main event. Salkilld opened with jabs and kicks, took him down late in the round, defended a leg-lock attempt in a scramble and took his back. Afterwards Gamrot posted that "this defeat doesn't end my story."
+- **Sep 12, 2026:** at the ADCC World Championships in Krakow he lost his opening-round match in the -77 kg division to Elijah Dorsey, who also took his back and finished with a rear-naked choke.
+- **Ranking:** **#10** in the UFC's official media-panel rankings (updated Nov 3, 2026; ufcrankings.org Nov 5) and **#9** in the UFC's Meta algorithmic rankings (Oct 31, 2026).
+- **Next fight:** none announced. On Oct 26 he told Polsat Sport's "Klatka po klatce" that the UFC had offered him a fight, with a named opponent and date, for the first quarter of 2027, and that he had accepted. He would not say who or when, and denied a social-media rumour that he would face Axel Sola in January. He plans two months of camp in Poland, then American Top Team from January. On Nov 5 he answered Tom Nolan's call-out (after Nolan beat Renato Moicano at UFC Vegas 123) with "Bierzemy" ("we'll take it"). Lowking.pl says that either the earlier offer fell through or he is open to Nolan as well; neither is confirmed.
+- **Injury:** he says a cut on his nose, picked up before the Salkilld fight, reopens with almost any contact in training and is "probably not healing inside" (Polsat Sport, Oct 26).
+
+Before Salkilld he submitted **Esteban Ribovics** with an arm-triangle from half guard at UFC 327 in Miami (**Apr 11, 2026**, R2 4:19). He is 2-2 in his last four fights.
 
 ## Recent fights
 - **L Salkilld (Aug 2026), RNC R1.** He landed 3 of 10 significant strikes, missed his one takedown and tried two submissions.
 - **W Ribovics, UFC 327 (Apr 2026), arm-triangle R2.** Went 4 of 6 on takedowns with 6:50 of control, and 14 of his 18 landed strikes came on the ground.
-- **L Charles Oliveira, Rio (Oct 11, 2025), RNC R2 2:48.** He outlanded Oliveira 18-11, but Oliveira had 3:35 of control and took his back twice.
+- **L Charles Oliveira, Rio (Oct 11, 2025), RNC R2 2:48** (UFC Stats; Wikipedia lists it as a face crank). He outlanded Oliveira 18-11, but Oliveira had 3:35 of control and took his back twice.
 - **W Ludovit Klein (May 2025), 30-27 x3.** Outlanded him 65-24, with 6 of 11 takedowns and 8:45 of control.
 - **L Dan Hooker, UFC 305 (Aug 2024), split decision.** Went 5 of 15 on takedowns. Hooker landed 24 body strikes to his 6.
 - **W Rafael Dos Anjos, UFC 299 (Mar 2024), decision.** Went 11 of 19 on takedowns with 7:01 of control, despite being knocked down once.
@@ -25,7 +32,7 @@ He is a pressure wrestler. He chains takedown attempts (13.3 per 15 minutes; the
 - **Finishes from top:** two submissions and three TKOs among his nine UFC wins.
 
 ## Weaknesses
-- **Scrambles and back exposure:** both of his recent submission losses came after the opponent took his back.
+- **Scrambles and back exposure:** both of his recent MMA submission losses came after the opponent took his back, and Elijah Dorsey did the same to him at ADCC 2026.
 - **Low accuracy on shots:** 38% career. Dariush stopped 15 of his 19 attempts at UFC 280.
 - **Low striking output:** 3.1 significant strikes landed per minute (median about 4.1), so he can lose rounds when his shots fail (Hooker).
 
@@ -35,11 +42,29 @@ He has been knocked down 5 times in 159.5 UFC minutes (0.47 per 15; median about
 ## What the numbers say
 Elo 1647, 12th among the 100 lightweights who have fought since May 2025. His recency-weighted numbers: significant strikes 3.0 landed and 2.4 absorbed per minute, 11.8 takedown attempts per 15 minutes at 42%, and 0.71 submission attempts per 15. Takedown defence has fallen from 77% career to 53% recency-weighted, on a small number of attempts against him.
 
+## Appearance
+There is no likeness sheet for him (data/likeness/mateusz-gamrot.json does not exist). These come from his Aug 2026 ESPN headshot and a Getty fight photo; the earlier file had hair and facial hair as unknown and skin as unverified recall.
+- **Hair:** very short, buzzed dark brown hair.
+- **Facial hair:** a short-to-medium dark brown beard, neatly trimmed. It looks fuller in the fight photo than in the headshot.
+- **Skin:** light.
+- **Tattoos:** none visible on his face, neck, chest or shoulders. His arms, back and legs were not checked.
+- **Kit:** not confirmed; no full-length 2026 fight photo was checked.
+
 ## Sources
+- https://www.polsatsport.pl/wiadomosc/2026-10-26/mateusz-gamrot-poznal-date-kolejnej-walki-w-ufc-jest-cel-jest-motywacja/ (Q1 2027 offer, nose injury, record 26-5 (1 NC), ATT camp)
+- https://www.lowking.pl/walka-wieczoru-ufc-fight-night-w-styczniu-z-axelem-sola-mateusz-gamrot-jednoznacznie-chcialbym-zdementowac-plotki/ (denies the Sola rumour)
+- https://www.lowking.pl/konkretnie-mateusz-gamrot-zareagowal-na-wyzwanie-ze-strony-toma-nolana/ ("Bierzemy")
+- https://www.sherdog.com/news/news/Tom-Nolan-eyes-Mateusz-Gamrot-after-Moicano-win-wants-tougher-test-203444
+- https://sports.yahoo.com/articles/elijah-dorsey-submits-ufc-veteran-114511115.html (ADCC 2026)
+- https://heavy.com/sports/ufc/mateusz-gamrot-statement-ufc-vegas-120/ (post-fight statement; lead photo)
+- https://sports.yahoo.com/articles/quillan-salkilld-submits-mateusz-gamrot-023732640.html
+- https://en.wikipedia.org/wiki/Mateusz_Gamrot
+- https://www.espn.com/mma/fighter/_/id/3068125/mateusz-gamrot and https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/3068125/overview (no upcoming fight)
+- https://ufcrankings.org/lightweight/ ; https://www.ufcalendar.com/rankings/lightweight (media and Meta lists)
+- https://a.espncdn.com/i/headshots/mma/players/full/3068125.png (headshot, file dated Aug 7, 2026)
 - data/derived/fighters.json (record, recent fights, C/S sums, pace, Elo)
 - data/raw/ufc_fight_stats.csv, ufc_fight_results.csv, ufc_event_details.csv
-- https://www.mmaweekly.com/news/quillan-salkilld-submits-mateusz-garrot-in-ufc-vegas-120-main-event (via data/scouting/quillan-salkilld.json)
+- https://www.mmaweekly.com/news/quillan-salkilld-submits-mateusz-garrot-in-ufc-vegas-120-main-event
 - https://www.espn.com/mma/ufc/story/_/id/46567043/oliveira-submits-gamrot-storybook-homecoming-ko-loss (via data/scouting/charles-oliveira.json)
 - https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-charles-oliveira-submits-mateusz-gamrot-in-raucous-homecoming-win (via data/scouting/charles-oliveira.json)
 - https://mmasucka.com/game-over-how-beneil-dariush-shut-down-mateusz-gamrot/ (via data/scouting/beneil-dariush.json)
-- https://en.wikipedia.org/wiki/Mateusz_Gamrot (reference; not fetched in this pass)

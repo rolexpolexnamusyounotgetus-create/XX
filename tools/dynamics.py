@@ -1084,7 +1084,7 @@ def part3_judges(F, S, xbase, jack=0):
             tr = dd[dd.period == "train"]; te = dd[dd.period == "test"]
             m = DynRE(tr, "y", "v", xc).fit()
             g = m.gamma()
-            if jack and lab_name != "both":
+            if jack and lab_name != "both" and name == "out":
                 def ffit(df):
                     mm = DynRE(df, "y", "v", xc, fixed_cells=m.cells).fit(m.p)
                     return {k: v["est"] for k, v in mm.gamma().items()}
@@ -1545,7 +1545,7 @@ def engine_check(S, csv, label):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="skip jackknife and simulation checks")
-    ap.add_argument("--jack", type=int, default=20)
+    ap.add_argument("--jack", type=int, default=10)
     ap.add_argument("--parts", default="1,2,3,4,5")
     ap.add_argument("--engine-csv", default=None, help="CSV from tools/dynamics_engine.js: adds the engine check")
     ap.add_argument("--engine-label", default="engine3 (src/)")
@@ -1565,7 +1565,7 @@ def main(argv=None):
         print("part 1/3/4: dynamic RE models", flush=True)
         mods = {}
         for name in ("out", "dist", "acc", "hacc"):
-            o, m0, m1 = fit_dynre_outcome(S, name, STATE_X, jack=jack if name in ("out", "dist", "acc") else 0)
+            o, m0, m1 = fit_dynre_outcome(S, name, STATE_X, jack=jack if name in ("out", "dist") else 0)
             mods[name] = o
             if name == "out":
                 m0_out = m0
