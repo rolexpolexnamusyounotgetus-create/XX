@@ -42,7 +42,7 @@ He has been knocked down three times in the UFC (Chairez once, Van twice), and h
 
 ## What the numbers say
 
-Elo 1652, 3rd among active flyweights in the snapshot, behind Van and Pantoja. Grappling dominates his rates: 53% control (decayed) against 7% for his opponents. His striking differential is negative: he lands 2.72 significant strikes per minute and absorbs 3.76 (decayed). He has 3 KO/TKO wins (one is Perez's injury) and 3 submissions in 8 UFC wins. At 26, he is the youngest top-ten flyweight by Elo after Van.
+Elo 1652, 3rd among active flyweights in the snapshot, behind Van and Pantoja. Grappling dominates: 53% control (decayed) against 7% for opponents. His striking differential is negative: he lands 2.72 significant strikes per minute and absorbs 3.76 (decayed). He has 3 KO/TKO wins (one is Perez's injury) and 3 submissions in 8 UFC wins. At 26, he is the youngest top-ten flyweight by Elo after Van.
 
 ## Sources
 

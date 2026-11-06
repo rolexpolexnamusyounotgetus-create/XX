@@ -251,3 +251,61 @@ def metrics(p, y):
     ll = logloss_vec(p, y)
     return {"n": int(len(y)), "log_loss": float(ll.mean()), "brier": float(np.mean((p - y) ** 2)),
             "accuracy": float(np.mean((p > 0.5) == (y > 0.5)))}
+
+
+def fit_glm(X, y, family, offset=None, n_trials=None, lam=1e-4, iters=50):
+    """IRLS for Poisson (log link) or Binomial (logit link, y successes of n_trials) with an intercept
+    in column 0 of X (unpenalised) and a small ridge on the rest. Returns beta, cov (unscaled), dispersion."""
+    n, p = X.shape
+    off = np.zeros(n) if offset is None else offset
+    b = np.zeros(p)
+    if family == "poisson":
+        b[0] = math.log(max(y.sum(), 1e-9) / max(np.exp(off).sum(), 1e-9))
+    pen = np.full(p, lam)
+    pen[0] = 0.0
+    for _ in range(iters):
+        eta = X @ b + off
+        if family == "poisson":
+            mu = np.exp(np.clip(eta, -30, 30))
+            W, g = mu, X.T @ (y - mu)
+        else:
+            pr = sigmoid(eta)
+            mu = n_trials * pr
+            W, g = n_trials * pr * (1 - pr), X.T @ (y - mu)
+        g = g - pen * b
+        H = (X * W[:, None]).T @ X + np.diag(pen)
+        step = np.linalg.solve(H + 1e-10 * np.eye(p), g)
+        b += step
+        if np.max(np.abs(step)) < 1e-10:
+            break
+    eta = X @ b + off
+    if family == "poisson":
+        mu = np.exp(eta)
+        var = mu
+    else:
+        pr = sigmoid(eta)
+        mu = n_trials * pr
+        var = n_trials * pr * (1 - pr)
+    W = var
+    H = (X * W[:, None]).T @ X + np.diag(pen)
+    cov = np.linalg.inv(H + 1e-10 * np.eye(p))
+    ok = var > 1e-9
+    disp = float(np.sum((y[ok] - mu[ok]) ** 2 / var[ok]) / max(ok.sum() - p, 1))
+    return b, cov, disp
+
+
+def glm_dev(X, b, y, family, offset=None, n_trials=None):
+    """per-row deviance contributions (Poisson or Binomial)"""
+    off = np.zeros(len(y)) if offset is None else offset
+    eta = X @ b + off
+    if family == "poisson":
+        mu = np.exp(eta)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t = np.where(y > 0, y * np.log(y / mu), 0.0)
+        return 2 * (t - (y - mu))
+    pr = np.clip(sigmoid(eta), 1e-9, 1 - 1e-9)
+    n = n_trials
+    with np.errstate(divide="ignore", invalid="ignore"):
+        t1 = np.where(y > 0, y * np.log(y / (n * pr)), 0.0)
+        t2 = np.where(n - y > 0, (n - y) * np.log((n - y) / (n * (1 - pr))), 0.0)
+    return 2 * (t1 + t2)

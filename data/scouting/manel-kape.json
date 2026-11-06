@@ -3,7 +3,7 @@
   "name": "Manel Kape",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Top flyweight contender and next challenger. Has won four straight UFC fights by KO/TKO, most recently a third-round TKO of Kyoji Horiguchi (Jun 20, 2026, UFC Vegas 119), which avenged a 2017 RIZIN submission loss, and a first-round KO of Brandon Royval (Dec 13, 2025). Former RIZIN bantamweight champion; pro record 24-7, UFC 8-3. Faces champion Joshua Van for the title at UFC 336 in Toronto (Jan 30, 2027).",
+    "summary": "Top flyweight contender and next challenger. Has won four straight UFC fights by KO/TKO, most recently a third-round TKO of Kyoji Horiguchi (Jun 20, 2026, UFC Vegas 119), which avenged a 2017 RIZIN submission loss, and a first-round KO of Brandon Royval (Dec 13, 2025). Former RIZIN bantamweight champion; UFC record 8-3 (ufcstats; a 24-7 pro record cited from ESPN could not be re-checked). Faces champion Joshua Van for the title at UFC 336 in Toronto (Jan 30, 2027).",
     "title": null,
     "ranking": "#2 flyweight (UFC rankings as listed by ufcrankings.org, Nov 3, 2026); ufcalendar.com lists him #1 the same day",
     "active": true,
@@ -27,7 +27,7 @@
     "stance": "southpaw",
     "tags": ["southpaw", "power", "counter", "flying-knee", "takedown-defense", "durable", "late-surge"],
     "signature": [
-      "lead right hand (hook) from southpaw: dropped Royval for the first-round finish",
+      "lead right hand from southpaw: dropped Royval for the first-round finish (CBS: a right hand; ufcstats: punches on the ground)",
       "counter right then ground strikes and an uppercut as Horiguchi tried to rise (UFC Vegas 119)",
       "punches at distance: third-round TKOs of Bruno Silva and Asu Almabayev",
       "flying knee: KO of Ode Osbourne (UFC 265, 2021)"
@@ -63,7 +63,7 @@
     "spinning": 0.02,
     "knee": 0.05,
     "elbow": 0.0,
-    "notes": "Southpaw: 'jab' is his right jab, 'cross' his left straight, and 'hook' his lead right hook (the punch that dropped Royval). Groups follow his target split in fighters.json: decayed significant attempts 77% head, 13% body, 10% legs (career 77/13/9); landed 66% head, 19% body, 16% legs. The uppercut gets 0.12 because it ended the Horiguchi fight. Body kicks lead the body group as the open-stance body kick is the obvious southpaw weapon, but no source confirms this. Leg strikes are accurate (22/22 vs Silva, 6/6 vs Horiguchi); calf vs inside is a judgment. Knee 0.05 stands for the flying-knee KO of Osbourne. About 89% of his attempts come at distance. Sources: data/derived/fighters.json, data/raw ufcstats per-fight stats, ESPN and CBS recaps."
+    "notes": "Southpaw: 'jab' is his right jab, 'cross' his left straight, and 'hook' his lead right hook; the lead right that dropped Royval is reported only as 'a right hand', so its jab/hook split is a judgment. Groups follow his target split in fighters.json: decayed significant attempts 77% head, 13% body, 10% legs (career 77/13/9); landed 66% head, 19% body, 16% legs. The uppercut gets 0.12 because it ended the Horiguchi fight. Body kicks lead the body group as the open-stance body kick is the obvious southpaw weapon, but no source confirms this. Leg strikes are accurate (22/22 vs Silva, 6/6 vs Horiguchi); calf vs inside is a judgment. Knee 0.05 stands for the flying-knee KO of Osbourne. About 89% of his attempts come at distance. Sources: data/derived/fighters.json, data/raw ufcstats per-fight stats, ESPN and CBS recaps."
   },
   "appearance": {
     "build": "compact flyweight: 5 ft 5 in with a 68 in reach (ufcstats)",
