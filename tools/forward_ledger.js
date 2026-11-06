@@ -92,10 +92,10 @@ const PUJ = rdOpt("data/derived/preufc.json");
 const PRED_DIR = path.resolve(ROOT, opt("--pred-dir", path.join("data", "predictions")));   // where debutants_*.json live
 const DEBUT_FILES = fs.existsSync(PRED_DIR) ? fs.readdirSync(PRED_DIR).filter((f) => /^debutants_.*\.json$/.test(f)).sort() : [];
 const DEBUT = {};                                     // later files (sorted by name) override earlier ones
-for (const f of DEBUT_FILES) {
-  const d = JSON.parse(fs.readFileSync(path.join(PRED_DIR, f), "utf8"));
-  for (const k in (d.fighters || {})) DEBUT[k] = Object.assign({ _file: f }, d.fighters[k]);
-}
+const DEBUT_DOCS = DEBUT_FILES.map((f) => [f, JSON.parse(fs.readFileSync(path.join(PRED_DIR, f), "utf8"))]);
+// a file's "also_upcoming" block (next card's debutants, same entry shape) is a fallback only: any "fighters" entry wins
+for (const [f, d] of DEBUT_DOCS) for (const k in (d.also_upcoming || {})) DEBUT[k] = Object.assign({ _file: f + " also_upcoming" }, d.also_upcoming[k]);
+for (const [f, d] of DEBUT_DOCS) for (const k in (d.fighters || {})) DEBUT[k] = Object.assign({ _file: f }, d.fighters[k]);
 const SEED_LIVE = (() => {                            // preufc.json: production seeding betas (refit 2015-2025 debuts)
   const ms = ((PUJ || {}).eval || {}).models || {};
   for (const k in ms) if (/^seeded_elo_live/.test(k)) return Object.assign({ name: k }, ms[k]);
@@ -169,7 +169,12 @@ function seedShift(rec) {
   // a debutants_*.json entry: elo_debut_shift (Elo points) as given, or computed from the standardized pre-UFC record
   // with preufc.json's live betas (missing features at the mean, i.e. z = 0, as preufc imputes them)
   if (fin(rec.elo_debut_shift)) return { shift: +rec.elo_debut_shift, how: "elo_debut_shift as given" };
-  const x = rec.pre || rec.features;
+  // the card desk's preufc.json-shaped entries nest the same values: derived.seeded_elo.elo_debut_shift (tools/preufc.py
+  // seeded_elo with age at UFC debut), else derived.side_pre + derived.age_at_ufc_debut
+  const dv = rec.derived || {};
+  if (dv.seeded_elo && fin(dv.seeded_elo.elo_debut_shift)) return { shift: +dv.seeded_elo.elo_debut_shift,
+    how: "derived.seeded_elo.elo_debut_shift as given" };
+  const x = rec.pre || rec.features || (dv.side_pre ? Object.assign({ age_debut: dv.age_at_ufc_debut }, dv.side_pre) : null);
   if (x && SEED_LIVE) {
     let s = 0, used = 0;
     SEED_LIVE.keys.forEach((k, i) => { if (fin(x[k])) { s += SEED_LIVE.beta_elo_points_per_sd[i] * (x[k] - SEED_LIVE.mu[i]) / SEED_LIVE.sd[i]; used++; } });
