@@ -503,8 +503,18 @@
     return {
       gender: female ? 0 : 1, years: years, muscle: muscle, weight: weight, heightRaw: 0.5, proportions: ref ? 0.5 : (propFromSheet != null ? Math.max(propFromSheet, 0.6) : 0.75), targets: targets,
       cupSize: female ? 0.4 : 0.5, firmness: 0.6, detail: det, H: H, reach: (+app.reach_in || hIn) * 0.0254, bmi: bmi, female: female, ref: ref, ethnic: ethnic,
-      lean: ref ? 0 : clamp01(0.55 + (muscle - 0.85) * 2 - Math.max(0, bmi - 27) * 0.08 + (/lean|shredded|six-pack|visible abs|defined/.test(lower(LK && LK.body && (LK.body.body_fat + " " + (LK.body.body_fat_note || LK.body.body_fat_notes || "")))) ? 0.25 : 0))
+      lean: ref ? 0 : leanFrom(LK, muscle, weight, bmi)
     };
+  }
+  /* Visible definition (0 smooth .. 1 shredded): the sheet's body-fat call and notes when there is one, else
+     low fat (the weight macro) and muscle from the build; heavy BMIs soften it. */
+  function leanFrom(LK, muscle, weight, bmi) {
+    var B = LK && LK.body ? LK.body : null, cat = lower(B && B.body_fat), note = lower(B && (B.body_fat_note || B.body_fat_notes || "")), v = null;
+    if (cat) v = /shred|very lean|extremely lean|ripped/.test(cat) ? 0.95 : (/lean|low|defined/.test(cat) ? 0.78 : (/average|moderate|medium/.test(cat) ? 0.4 : (/high|soft|heavy|thick/.test(cat) ? 0.15 : null)));
+    if (v == null) v = clamp01(0.5 + (0.5 - weight) * 1.2 + (muscle - 0.8) * 0.8 - Math.max(0, bmi - 27) * 0.1);
+    if (/six-pack|visible abs|oblique|shredded|vascular/.test(note)) v += 0.08;
+    if (/not shredded|smooth|soft|roll|flanks|no visible abs/.test(note)) v -= 0.12;
+    return clamp01(v - Math.max(0, bmi - 29) * 0.04);
   }
   var TARGET_ALIAS = { "ears/l-ear-big-incr": "ears/l-ear-scale-incr", "ears/r-ear-big-incr": "ears/r-ear-scale-incr" };
   function addT(t, name, v) { if (Math.abs(v) > 1e-3) t[name] = (t[name] || 0) + v; }
@@ -671,7 +681,8 @@
     if (hx.test(tone || "") && L.skin && L.skin.swatch) {
       // multiply tint so the texture's average lands on the sampled tone (no brightening)
       // ratio in linear light; stored as an sRGB hex because the material converts tints to linear
-      var t = new T.Color(tone).convertSRGBToLinear(), sw = new T.Color(L.skin.swatch).convertSRGBToLinear();
+      var t = new T.Color(tone).convertSRGBToLinear(), sw = new T.Color(L.skin.swatch).convertSRGBToLinear(), tl = 0.2126 * t.r + 0.7152 * t.g + 0.0722 * t.b;
+      t.lerp(new T.Color(tl, tl, tl), 0.22);
       var tc = new T.Color(Math.min(1, t.r / sw.r), Math.min(1, t.g / sw.g), Math.min(1, t.b / sw.b));
       tc.lerp(new T.Color(1, 1, 1), 0.15);            // photos carry arena and flash casts: go 85% of the way
       L.tint = "#" + tc.convertLinearToSRGB().getHexString();
@@ -1003,7 +1014,7 @@
     function chan(i) { return new T.Vector4(i === 0 ? 1 : 0, i === 1 ? 1 : 0, i === 2 ? 1 : 0, i === 3 ? 1 : 0); }
     if (X.normal && !this.opts.noNormal) {
       // sculpted athletic relief (MakeHuman UV, glTF v convention so green is flipped); leaner fighters show more of it
-      var ns = cfg.ref ? 0.35 : 0.45 + 0.75 * (cfg.lean || 0.5);
+      var ns = cfg.ref ? 0.35 : 0.4 + 0.85 * (cfg.lean != null ? cfg.lean : 0.5);
       mat.normalMap = X.normal; mat.normalScale = new T.Vector2(ns, -ns);
     }
     var maskOn = !!(X.maskHair && X.maskBeard && X.maskHair2);
@@ -1013,7 +1024,7 @@
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 },
       uMaskOn: { value: maskOn ? 1 : 0 }, uFadeOn: { value: looks.fade ? 1 : 0 }, uMaskH: { value: X.maskHair || null }, uMaskH2: { value: X.maskHair2 || null }, uMaskB: { value: X.maskBeard || null },
       uScalpCh: { value: looks.scalpCh >= 0 && looks.scalpCh < 3 ? chan(looks.scalpCh) : new T.Vector4(0, 0, 0, 0) }, uScalpCh2: { value: looks.scalpCh >= 3 ? chan(looks.scalpCh - 3) : new T.Vector4(0, 0, 0, 0) },
-      uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.4 : 0 }, uPoreF: { value: this.poreFreq() }, uDefK: { value: cfg.ref ? 0 : clamp01(0.35 + 0.9 * ((cfg.lean || 0.5) - 0.3)) }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
+      uBeardCh: { value: (function () { var v = chan(looks.beardCh || 0); v.w = looks.beardCh === 2 ? 0 : (looks.moustache === false ? 0 : 1); return v; })() }, uPores: { value: X.pores || null }, uPoreAmt: { value: X.pores ? 0.4 : 0 }, uPoreF: { value: this.poreFreq() }, uDefK: { value: cfg.ref ? 0 : clamp01(0.2 + 1.0 * ((cfg.lean != null ? cfg.lean : 0.5) - 0.2)) }, uSpec: { value: X.spec || null }, uSpecOn: { value: X.spec ? 1 : 0 }
     };
     mat.onBeforeCompile = function (sh) {
       for (var k in U) sh.uniforms[k] = U[k];
@@ -1205,7 +1216,7 @@
         var u, v;
         if (axis) { // wrap around the forearm: angle around the bone, position along it
           var rel = p.clone().sub(ctr), along = rel.dot(axis), rad = rel.addScaledVector(axis, -along);
-          var ang = Math.atan2(rad.dot(ax), rad.dot(nrmDir.clone().cross(axis).normalize().negate()));
+          var ang = Math.atan2(rad.dot(ax), rad.dot(_v5.crossVectors(axis, ax).normalize()));
           u = 0.5 + ang / (2 * Math.PI); v = 0.5 + along / h;
         } else {
           if (nn.dot(nrmDir) < 0.15) continue;
