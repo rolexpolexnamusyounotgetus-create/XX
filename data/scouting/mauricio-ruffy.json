@@ -63,7 +63,7 @@
     { "note": "Accuracy and defence at range: 56.5% significant accuracy (median about 47%) and 59% defence (median about 54%), absorbing 3.5 per minute career.", "source": "data/derived/fighters.json (C sums)" },
     { "note": "Takedown defence is good on first contact (26 of 30 stopped, 87%) but grapplers keep shooting: 9.2 attempts against him per 15 min, and 166-187 seconds of opponent control per 15. Both losses followed sustained clinch or wrestling pressure.", "source": "data/derived/fighters.json (otd, octrl); data/raw/ufc_fight_stats.csv" },
     { "note": "No offensive grappling recorded: 0 of 1 on takedowns and 0 submission attempts in the UFC.", "source": "data/derived/fighters.json" },
-    { "note": "No five-round data and little beyond round 2 (only the Llontop decision went 15 minutes), so cardio and late-round output are unknown and should carry wide uncertainty.", "source": "data/derived/fighters.json (pace has round 1 only)" }
+    { "note": "Almost no late-round data: his only five-round booking (Tsarukyan, UFC 331) ended in round 1, and only the Llontop decision went 15 minutes. Cardio and late-round output are unknown and should carry wide uncertainty.", "source": "data/derived/fighters.json (pace has round 1 only; n_5rd 1); data/raw/ufc_fight_results.csv (time formats)" }
   ],
   "confidence": "medium"
 }

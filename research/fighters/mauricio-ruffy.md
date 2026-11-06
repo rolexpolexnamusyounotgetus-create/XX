@@ -34,7 +34,7 @@ He is a rangy power striker. 86% of his significant attempts go to the head, he 
 - **Sample size:** all his rates rest on under 49 minutes.
 
 ## Durability and cardio
-Tsarukyan dropped him once and finished him with an elbow, his only KO loss and only knockdown absorbed in the UFC. His cardio is **unknown**: only the Llontop fight went 15 minutes, and he has never had a five-round fight.
+Tsarukyan dropped him once and finished him with an elbow, his only KO loss and only knockdown absorbed in the UFC. His cardio is **unknown**: only the Llontop fight went 15 minutes, and his only five-round booking (Tsarukyan, UFC 331) ended in round 1.
 
 ## What the numbers say
 Elo 1602, 25th among the 100 lightweights who have fought since May 2025. Career: 3.7 significant strikes landed and 3.5 absorbed per minute. Opponents attempt 9.2 takedowns per 15 minutes against him (median about 4.2), which says how opponents plan for him. Treat every rate as provisional because of the small sample.

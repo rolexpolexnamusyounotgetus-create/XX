@@ -1,0 +1,75 @@
+{
+  "slug": "kamaru-usman",
+  "name": "Kamaru Usman",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Former UFC welterweight champion (won the belt from Tyron Woodley at UFC 235 in Mar 2019, five defenses, lost it to Leon Edwards by R5 head-kick KO in Aug 2022). Age 39. After beating Joaquin Buckley (UD, five-round welterweight main event, Jun 14, 2025), he moved up and lost a unanimous decision to Dricus Du Plessis (50-45, 49-46, 49-46) at middleweight, UFC Fight Night Oklahoma City, Jul 18, 2026. UFC record 16-4; 0-2 at middleweight. Web checks were blocked in this pass, so ranking, retirement talk and any next fight are unverified.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/f1b2aa7853d1ed6e",
+      "http://ufcstats.com/fight-details/701c97405da76603",
+      "http://ufcstats.com/fight-details/d75b3d3c2b209b75",
+      "http://ufcstats.com/fight-details/f70c817388602681",
+      "data/derived/fighters.json (last_fight 2026-07-18, snapshot 2026-10-31)"
+    ]
+  },
+  "style": {
+    "archetype": "wrestle-boxer",
+    "stance": "switch",
+    "tags": ["pressure", "power", "body-work", "clinch", "cage-wrestling", "top-control", "takedown-defense", "cardio", "durable"],
+    "signature": [
+      "body attack: 20% of sig attempts go to the body (middleweight and welterweight average about 14%); 41 of 50 body strikes vs Colby Covington (UFC 268), 37 of 58 vs Du Plessis (Jul 2026)",
+      "fence and top control: 10:36 of control vs Leon Edwards (UFC 278) and 12:57 vs Joaquin Buckley (Jun 2025); 40% control share career",
+      "right-hand power at distance: KO of Jorge Masvidal at 1:02 of R2 (UFC 261), TKO of Covington in R5 (UFC 245), two knockdowns of Covington at UFC 268",
+      "takedown defense: 90% career; Covington went 0 for 11 at UFC 268 and Du Plessis 0 for 2",
+      "five-round pressure: 12 UFC five-round fights, output in R2-R5 runs 1.21-1.49x R1"
+    ],
+    "weaknesses": [
+      "takedowns no longer land: 27.6% accuracy decayed vs 42% career; 4 of 13 vs Buckley and 0 of 7 vs Du Plessis",
+      "smaller at 185: 18 of 20 UFC fights at welterweight, 0-2 at middleweight (Chimaev MD 2023, Du Plessis UD 2026)",
+      "leg kicks and kicks in general: Edwards landed 50 of 53 leg strikes at UFC 286 and finished him with a head kick at 4:04 of R5 at UFC 278",
+      "age 39 (born May 11, 1987) and only three fights since Mar 2023"
+    ],
+    "summary": "A strong wrestle-boxer who wore welterweights down with pressure, body punching, fence work and long spells on top, and who has the right-hand power to finish. Lately the takedowns have stopped landing (4 of 20 across his last two fights), which leaves him boxing bigger or longer men on even terms. He lost that kind of fight to Du Plessis at middleweight in Jul 2026.",
+    "sources": [
+      "http://ufcstats.com/fight-details/31b3ae9352d9389b",
+      "http://ufcstats.com/fight-details/6a5eb525331fa1fc",
+      "http://ufcstats.com/fight-details/c483ac06b1e33c3b",
+      "http://ufcstats.com/fight-details/f70c817388602681",
+      "http://ufcstats.com/fight-details/f23e9729b2b73c27",
+      "http://ufcstats.com/fight-details/d75b3d3c2b209b75",
+      "http://ufcstats.com/fight-details/701c97405da76603",
+      "data/raw/ufc_fight_stats.csv",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.36, "cross": 0.3, "hook": 0.14, "overhand": 0.1, "upper": 0.08, "headkick": 0.02,
+    "bodykick": 0.25, "bodyhook": 0.3, "bodystraight": 0.45,
+    "calf": 0.4, "inside": 0.6, "spinning": 0.0, "knee": 0.12, "elbow": 0.06,
+    "notes": "Group shares follow fighters.json decayed sums: sig attempts 77.1% head, 19.9% body, 3.0% leg (career 76.3/19.2/4.5). League welterweight is 77.1/13.7/9.3 and middleweight 77.2/14.0/8.8, so he sends about 1.4x the league share to the body and a third of it to the legs. 74% of his landed sig is at distance decayed (60% career), with 16% in the clinch and 24% on the ground career; the knee weight of 0.12 reflects that clinch share. In the head group the jab and cross lead because his finishes are punches at distance (Masvidal KO, Covington TKO). His jab is widely praised in pre-2026 coverage, but no source was opened in this pass to confirm that. In the body group the straight leads as a judgment; ufcstats does not split body punches from kicks. Leg weights are small and judged. Spinning is 0. Stance is set to switch because ufcstats lists him as Switch."
+  },
+  "appearance": {
+    "build": "6'0\" with a 76\" reach (dataset); very muscular and broad-shouldered for a former welterweight, thick through the chest and arms (widely published fight photos; not re-checked in this pass)",
+    "hair": "shaved head in most published fight photos (not re-checked in this pass)",
+    "facial_hair": "short trimmed beard in many published photos; varies",
+    "skin": "dark",
+    "tattoos": "unknown (no source in this pass)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height_in 72, reach_in 76, stance Switch)",
+      "http://ufcstats.com/fighter-details/f1b2aa7853d1ed6e"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Takedown accuracy has collapsed: 27.6% decayed vs 42.0% career, and decayed control share is 25.8% vs 40.5% career. A wrestling knob should use the decayed rate, not the title-era rate.", "source": "data/derived/fighters.json" },
+    { "note": "Only one knockdown absorbed in 20 UFC fights (the Edwards head kick, R5, Aug 2022); one KO/TKO loss.", "source": "data/derived/fighters.json (kd_absorbed 1, ko_losses 1); http://ufcstats.com/fight-details/f70c817388602681" },
+    { "note": "Five-round pace across 12 fights: R2-R5 output is 1.49, 1.25, 1.41 and 1.21 times R1, above the welterweight curve of 1.27, 1.15, 1.16 and 1.08.", "source": "data/derived/fighters.json (pace; priors.Welterweight.pace5)" },
+    { "note": "Late-round output slipped in his 2025 fight: Buckley out-landed him 20-10 in R5 while Usman went 0 for 6 on takedowns in that round.", "source": "http://ufcstats.com/fight-details/d75b3d3c2b209b75" }
+  ],
+  "confidence": "low"
+}

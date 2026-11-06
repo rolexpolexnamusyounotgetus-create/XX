@@ -1,0 +1,86 @@
+{
+  "slug": "renato-moicano",
+  "name": "Renato Moicano",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Lost a five-round main event to Tom Nolan by TKO (elbows from half guard) at 1:28 of round 3 (UFC Fight Night: Moicano vs. Nolan, Las Vegas, Oct 31, 2026). He controlled 7:09 of the first two rounds, then Nolan dropped him in round 2 and finished him from the top. Before that he submitted Chris Duncan with a rear-naked choke in round 2 (Apr 4, 2026), and lost to Islam Makhachev for the lightweight title (D'Arce choke, R1, UFC 311, Jan 18, 2025) and to Beneil Dariush (UD, UFC 317, Jun 28, 2025). A planned Brian Ortega fight at UFC 326 fell through when Ortega withdrew in January 2026. No bout booked. Age 37.",
+    "title": null,
+    "ranking": "Unconfirmed; probably outside the lightweight top 10 after the post-Oct 31 update. An MMA Mania rankings article is headlined as Tom Nolan booting Moicano from the top 10 (headline only; it was found in another fighter's research and not opened in this pass)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/b6452706b373eea1",
+      "http://ufcstats.com/fight-details/6d7244be5589953c",
+      "http://ufcstats.com/event-details/0a66de3a797cf73a",
+      "http://ufcstats.com/fight-details/d69bd8e53ec858dc",
+      "http://ufcstats.com/fight-details/1ea9ad3b6e1cba79",
+      "http://ufcstats.com/fight-details/daef1691c7d6b1e4",
+      "https://mmamania.com/ufc-mma-rankings/483818/tom-nolan-boots-renato-moicano-top-10-latest-ufc-rankings-update-jacobe-smith-top-15",
+      "https://www.espn.com/mma/story/_/id/47784076/brian-ortega-pulls-ufc-326-fight-vs-renato-moicano-due-nagging-injuries",
+      "https://cagesidepress.com/2025/06/28/beneil-dariush-dominates-moicano-in-return-from-2-year-layoff"
+    ]
+  },
+  "style": {
+    "archetype": "grappler/BJJ",
+    "stance": "orthodox",
+    "tags": ["back-takes", "submissions", "top-control", "ground-and-pound", "chin-concern"],
+    "signature": [
+      "rear-naked choke: all 7 of his UFC submission wins (Niinimaki 2014, Swanson 2018, Hadzovic 2020, Herbert 2021, Hernandez 2022, Riddell 2022, Duncan 2026)",
+      "takedown into heavy top pressure at lightweight: 33 ground strikes and 4:53 of control on Benoit Saint Denis before the doctor stopped it after R2 (Sep 2024); TKO of Jalin Turner from mount in R2 at UFC 300 after Turner had dropped him",
+      "head-first punching: 82-85% of his significant attempts go to the head (lightweight league 76%)",
+      "leg kicks were a bigger weapon at featherweight: 38 leg strikes landed on Calvin Kattar (UFC 223, 2018); now 5-6% of his attempts"
+    ],
+    "weaknesses": [
+      "chin: 4 KO/TKO losses (Aldo 2019, Jung 2019 in 58 s, Fiziev 2020, Nolan 2026) and 5 knockdowns absorbed; 1.30 knockdowns per 100 head strikes absorbed, time-decayed (lightweight league 0.95)",
+      "takedown defense: 47% decayed and 33% over the last 3 years; Dariush went 5 for 5 with 5:53 of control at UFC 317",
+      "low stand-up output at 155: 2.45 significant strikes landed per minute over the last 3 years (league 4.32)",
+      "loses badly when the grappling turns: submitted by Makhachev in R1 and finished from the top by Nolan (38 ground strikes absorbed)",
+      "age 37"
+    ],
+    "summary": "A submission-first lightweight who punches behind a head-heavy mix, then looks for the takedown, the back and the rear-naked choke; all seven of his UFC submissions are RNCs. At 155 his output on the feet is low and more of his damage is done on the ground (40% of landed significant strikes over three years). His chin is the main risk: four KO/TKO losses, the latest to Tom Nolan in October 2026.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/b6452706b373eea1",
+      "http://ufcstats.com/fight-details/7ca4c91bab696b89",
+      "http://ufcstats.com/fight-details/18824fa5c15c212f",
+      "http://ufcstats.com/fight-details/6d7244be5589953c",
+      "data/derived/fighters.json; data/raw/ufc_fight_stats.csv; tools/fighter_report.py"
+    ]
+  },
+  "moves": {
+    "jab": 0.5,
+    "cross": 0.42,
+    "hook": 0.3,
+    "overhand": 0.15,
+    "upper": 0.12,
+    "headkick": 0.05,
+    "bodykick": 0.12,
+    "bodyhook": 0.12,
+    "bodystraight": 0.12,
+    "calf": 0.1,
+    "inside": 0.1,
+    "spinning": 0.0,
+    "knee": 0.05,
+    "elbow": 0.04,
+    "notes": "Target split from fighters.json: decayed significant attempts are 85% head, 9% body, 6% legs (landed 78/13/9); career attempts 82/8/10, with leg kicks heavier in his featherweight years (38 leg strikes landed vs Kattar). So head punches carry most of the weight, and body and leg weights are low and roughly equal. Jab and cross lead as a judgment: ufcstats records target and position, not technique, and no scouting breakdown could be opened this pass (web search budget exhausted). Spinning is zero (none in his UFC finishes or records). Knees and elbows are small: 4.5% of decayed landed strikes come in the clinch, and his ground damage is filed by ufcstats as ground strikes without technique."
+  },
+  "appearance": {
+    "build": "5 ft 11 in with a 72 in reach (ufcstats); fought at featherweight until 2019 and at lightweight since 2020",
+    "hair": "dark (as recalled from fight photos; style not re-checked)",
+    "facial_hair": "unknown",
+    "skin": "light-medium",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "notes": "Build is from ufcstats. Hair colour and skin tone follow widely published fight photos as recalled; they were not re-checked on the web this session (search budget exhausted; wikipedia and ufc.com unreachable). Facial hair varies between fights and is left unknown.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/b6452706b373eea1"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Chin: 5 knockdowns absorbed and 4 KO/TKO losses in 21 UFC fights; 1.30 knockdowns per 100 significant head strikes absorbed, time-decayed (shrunk 1.09), against a lightweight league rate of 0.95.", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
+    { "note": "Control without safety: 345 s of control per 15 min decayed (league 174), yet takedown defense is 47% decayed. Against Nolan he held 7:09 of control in R1-R2 and still lost: Nolan dropped him in R2 and landed 30 ground strikes in R3.", "source": "http://ufcstats.com/fight-details/6d7244be5589953c" },
+    { "note": "Output rises within three-round fights (landed per minute 1.00, 1.40, 1.45 of R1 over 15 bouts). The five-round curve is noise: only the 2022 dos Anjos loss reached round 5.", "source": "tools/fighter_report.py pace table" },
+    { "note": "Every UFC submission win is a rear-naked choke, so the director should route his finishes through back takes.", "source": "data/raw/ufc_fight_results.csv" }
+  ],
+  "confidence": "medium"
+}
