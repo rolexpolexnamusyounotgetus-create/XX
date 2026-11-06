@@ -1247,7 +1247,7 @@
     if (this.downed) target = Math.max(target, 1.15);
     var striking = (A.act && (A.act.type === "punch" || A.act.type === "kick")) || (B.act && (B.act.type === "punch" || B.act.type === "kick"));
     // a strike may close to about a step inside the usual minimum (the attacker steps in behind the punch)
-    this.d += (Math.max(clinch ? 0.5 : (striking ? 0.66 : 0.98), target) - this.d) * Math.min(1, dt * (striking ? 20 : 7));
+    this.d += (Math.max(clinch ? 0.5 : (striking ? 0.66 : 0.98), target) - this.d) * Math.min(1, dt * (striking ? 45 : 7));
     ax = Math.cos(this.theta); az = Math.sin(this.theta);
     var nax = this.M.x - ax * this.d / 2, naz = this.M.z - az * this.d / 2, nbx = this.M.x + ax * this.d / 2, nbz = this.M.z + az * this.d / 2;
     A.vel.set((nax - A.pos.x) / Math.max(dt, 1e-3), 0, (naz - A.pos.z) / Math.max(dt, 1e-3));

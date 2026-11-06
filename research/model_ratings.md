@@ -287,7 +287,19 @@ glicko2), so picking whr_rounds as the best single system does not depend on in-
 
 ## Leakage and correctness checks
 
-<!--VERIFY-->
+| Check | Result |
+|---|---|
+| **Reproducibility.** Rerun all 11 rating systems with the stored parameters; compare to the stored pre-fight probabilities on the 2,864 backtest fights (2019-2025) | Identical: max difference 0.0000 for 10 systems, 0.0001 for elo_ref (4-decimal rounding) |
+| **Corner-swap symmetry.** Swap A and B on every bout since 1994 (fighters, ages, results, round stats, judges' cards), rebuild the round outcomes, rerun | P_swap(A) = 1 - P(A) to machine precision for all 11 systems (max 4.4e-16). The ratings cannot learn ufcstats' winner-first ordering (A wins 56%). dims, stack and ratings_plus are no-intercept logistics on antisymmetric features, so they are symmetric too |
+| **No future data.** ml2 independently truncated the data after 2024-06-01, and separately flipped every result after it (ml2.json `verify`) | whr_rounds, glicko2, elo_full, trueskill_mov: predictions before the cut unchanged (max difference 0.0) |
+| **Same-day information** | No fighter has two bouts on one day after 1999-11-19. In the online systems, a card's earlier bouts therefore never inform a later bout of the same fighter |
+| **WHR solver** | Each day's solve uses only nodes dated before that day. The day's new nodes are initialised from predictive means after the predictions are made |
+| **Pre-UFC inputs** | Strict walk-forward Sherdog snapshots (fights before the bout date). The strict network Elo rates opponents only from pages of debutants who reached the UFC before Jan 1 of the bout year. The prior is applied only to 2015+ debuts, where coverage is complete and outcome-independent (see Systems) |
+| **Age** | Every one of the 2,809 decisive tuning and test fights has both dates of birth, so missingness cannot carry information |
+| **Round model** | Fit on pre-2019 cards only, and used only to update ratings after a fight |
+| **Vault** | 2026 bouts are predicted (for the sealed export) but never scored. `test_2024_plus` and every number here stop at 2025-12-31 |
+
+Stored in `ratings.json` under `review.verify` (rerun: `python3 tools/ratings.py review verify`, about 3 min idle).
 
 ## Market benchmark
 
@@ -451,4 +463,11 @@ python3 tools/ratings.py plus                          # ratings_plus, added to 
 python3 tools/ratings.py tables                        # the tables above
 python3 tools/ratings.py ablate                        # one-at-a-time ablations (tuning window)
 python3 tools/ratings.py review                        # this session's checks and extra analyses -> ratings.json "review"
+                                                       #   (parts: describe, ablation, verify; e.g. `review verify`)
+python3 tools/ratings.py review_whr 3                  # WHR time-ordered check, 3 workers (~15 min idle)
 ```
+
+`ratings.json["review"]` holds: `describe` (by-year log loss, calibration slopes, paired differences, close+rating
+blends), `ablation_one_at_a_time`, `ablation_cumulative`, `whr_time_ordered` and `verify`. The `describe`/`ablation`
+parts were written by `review`; `verify` and `whr_time_ordered` came from scratch copies of the same procedures, run
+in parallel under load.
