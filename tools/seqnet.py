@@ -364,7 +364,460 @@ def load_data():
     return pickle.load(open(os.path.join(CACHE, "data.pkl"), "rb"))
 
 
-STAGES = {"data": stage_data}
+
+# ====================================================================== arrays for the network
+MAXLEN = 24
+SIDE_NAMES = ["age", "age_na", "height", "height_na", "reach", "reach_na", "ape", "south", "switch", "orth",
+              "stance_na", "layoff", "debut", "logn", "lbs_move"]
+CTX_NAMES = ["five", "title", "women", "catch", "lbs", "era"]
+
+
+def build_arrays(d, maxlen=MAXLEN):
+    """Per example: history token indices (last maxlen, chronological, left-aligned, -1 pad), lengths, side and
+    context features, labels. Everything here is known before the fight."""
+    ex = d["ex"]
+    n = len(ex)
+    H = np.full((n, 2, maxlen), -1, np.int64)
+    LEN = np.zeros((n, 2), np.int64)
+    SIDE = np.zeros((n, 2, len(SIDE_NAMES)), np.float32)
+    CTX = np.zeros((n, len(CTX_NAMES)), np.float32)
+    YW = np.full(n, np.nan, np.float32)
+    CLS = np.full(n, -1, np.int64)
+    SY = np.zeros((n, 2, 18), np.float32)
+    SN = np.zeros((n, 2, 18), np.float32)
+    DAY = np.zeros(n, np.int64)
+    YEAR = np.zeros(n, np.int64)
+    LBS = np.zeros(n, np.float32)
+    SCHED = np.zeros(n, np.int64)
+    AMB = np.zeros(n, bool)
+    NPRIOR = np.zeros((n, 2), np.int64)
+    for i, e in enumerate(ex):
+        DAY[i], YEAR[i], LBS[i] = e["day"], e["year"], e["lbs"]
+        SCHED[i] = 5 if e["five"] else 3
+        AMB[i] = e["amb"]
+        CTX[i] = [float(e["five"]), float(e["title"]), float(e["women"]), float(e["catch"]),
+                  (e["lbs"] - 160.0) / 40.0, (e["year"] - 2015) / 10.0]
+        for s in (0, 1):
+            si = e["sides"][s]
+            h = si["hist"][-maxlen:]
+            H[i, s, :len(h)] = h
+            LEN[i, s] = len(h)
+            NPRIOR[i, s] = si["n"]
+            age, ht, rc, stc = si["age"], si["height"], si["reach"], si["stance"]
+            SIDE[i, s] = [((age - 30.0) / 5.0) if age is not None else 0.0, float(age is None),
+                          ((ht - 70.0) / 3.0) if ht else 0.0, float(not ht),
+                          ((rc - 72.0) / 4.0) if rc else 0.0, float(not rc),
+                          ((rc - ht) / 3.0) if (rc and ht) else 0.0,
+                          float(stc == "Southpaw"), float(stc == "Switch"), float(stc == "Orthodox"),
+                          float(stc not in ("Southpaw", "Switch", "Orthodox")),
+                          math.log1p(si["gap"]) if si["gap"] is not None else 0.0, float(si["n"] == 0),
+                          math.log1p(si["n"]),
+                          ((e["lbs"] - si["last_lbs"]) / 10.0) if si["last_lbs"] else 0.0]
+        if e["winner"] in ("A", "B"):
+            YW[i] = 1.0 if e["winner"] == "A" else 0.0
+            if e["cls"] is not None and e["cls"] >= 0:
+                CLS[i] = e["cls"]
+        if e.get("sy") is not None:
+            SY[i], SN[i] = e["sy"], e["sn"]
+    TOK = d["TOK"].copy()
+    nm = d["tok_names"]
+    TOK[:, nm.index("dur")] = np.clip(TOK[:, nm.index("dur")], 0, 2)
+    TOK[:, nm.index("end_rnd")] = np.clip(TOK[:, nm.index("end_rnd")], 0, 1.5)
+    for r in range(1, 6):
+        TOK[:, nm.index("r%d_sig" % r)] = np.clip(TOK[:, nm.index("r%d_sig" % r)], -4, 4)
+        TOK[:, nm.index("r%d_td" % r)] = np.clip(TOK[:, nm.index("r%d_td" % r)], -4, 4)
+        TOK[:, nm.index("r%d_kd" % r)] = np.clip(TOK[:, nm.index("r%d_kd" % r)], -2, 2)
+    TOK[:, nm.index("card_mg")] = np.clip(TOK[:, nm.index("card_mg")], -1.5, 1.5)
+    # draw share by format (for the 23-cell joint); computed per refit from training rows
+    DRAW = np.array([e["winner"] == "D" for e in ex])
+    return {"H": H, "LEN": LEN, "SIDE": SIDE, "CTX": CTX, "YW": YW, "CLS": CLS, "SY": SY, "SN": SN, "DAY": DAY,
+            "YEAR": YEAR, "LBS": LBS, "SCHED": SCHED, "AMB": AMB, "NPRIOR": NPRIOR, "TOK": TOK,
+            "TOK_DAY": d["tok_day"].astype(np.int64), "TOK_LBS": d["tok_lbs"], "DRAW": DRAW,
+            "FID": np.array([e["fid"] for e in ex]), "EVENT": np.array([e["event"] for e in ex]),
+            "WINNER": np.array([e["winner"] for e in ex])}
+
+
+# ====================================================================== the network
+DEFAULT_CFG = {"H": 64, "drop": 0.2, "lr": 2e-3, "wd": 1e-4, "bs": 256, "max_ep": 40, "lam_m": 0.3,
+               "lam_s": 0.3, "train_from": 2005, "maxlen": 16, "pool": "attn", "tok_drop": 0.0}
+
+
+def _torch():
+    import torch
+    torch.set_num_threads(1)
+    return torch
+
+
+def make_model(cfg, d_tok, d_side, d_ctx):
+    torch = _torch()
+    nn = torch.nn
+    H, p = cfg["H"], cfg["drop"]
+    D_DYN = 3
+
+    class SeqNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.tok = nn.Sequential(nn.Linear(d_tok + D_DYN, H), nn.GELU(), nn.Dropout(p), nn.Linear(H, H), nn.GELU())
+            self.rnn = nn.GRU(H, H, batch_first=True)
+            self.att = nn.Linear(H, 1)
+            self.empty = nn.Parameter(torch.zeros(2 * H))
+            self.side = nn.Sequential(nn.Linear(2 * H + d_side + d_ctx, H), nn.GELU(), nn.Dropout(p),
+                                      nn.Linear(H, H), nn.GELU())
+            self.g = nn.Sequential(nn.Linear(2 * H + d_ctx, H), nn.GELU(), nn.Dropout(p), nn.Linear(H, 1))
+            self.q = nn.Sequential(nn.Linear(2 * H + d_ctx, H), nn.GELU(), nn.Dropout(p), nn.Linear(H, 11))
+            self.st = nn.Sequential(nn.Linear(2 * H + d_ctx, H), nn.GELU(), nn.Dropout(p), nn.Linear(H, 18))
+            self.pool = cfg.get("pool", "attn")
+
+        def encode(self, tok, lens):
+            """tok: [N, L, d_tok + D_DYN]; lens: [N] (0 allowed). Returns [N, 2H]."""
+            N, L, _ = tok.shape
+            e = self.tok(tok)
+            l1 = lens.clamp(min=1)
+            packed = nn.utils.rnn.pack_padded_sequence(e, l1.cpu(), batch_first=True, enforce_sorted=False)
+            out, h = self.rnn(packed)
+            out, _ = nn.utils.rnn.pad_packed_sequence(out, batch_first=True, total_length=L)
+            hl = h[0]
+            mask = torch.arange(L)[None, :] < l1[:, None]
+            if self.pool == "attn":
+                a = self.att(out).squeeze(-1).masked_fill(~mask, -1e9)
+                w = torch.softmax(a, 1)
+                hp = (w.unsqueeze(-1) * out).sum(1)
+            else:
+                hp = (out * mask.unsqueeze(-1)).sum(1) / l1[:, None]
+            r = torch.cat([hl, hp], 1)
+            empty = (lens == 0).unsqueeze(-1)
+            return torch.where(empty, self.empty.expand(N, -1), r)
+
+        def forward(self, tokA, lenA, tokB, lenB, sideA, sideB, ctx):
+            B_ = tokA.shape[0]
+            r = self.encode(torch.cat([tokA, tokB], 0), torch.cat([lenA, lenB], 0))
+            rA, rB = r[:B_], r[B_:]
+            sA = self.side(torch.cat([rA, sideA, ctx], 1))
+            sB = self.side(torch.cat([rB, sideB, ctx], 1))
+            ab, ba = torch.cat([sA, sB, ctx], 1), torch.cat([sB, sA, ctx], 1)
+            z = self.g(ab).squeeze(-1) - self.g(ba).squeeze(-1)
+            return z, self.q(ab), self.q(ba), self.st(ab), self.st(ba)
+
+    return SeqNet()
+
+
+class Prep:
+    """Standardisation (training-period tokens and sides only) and batch assembly for one refit."""
+
+    def __init__(self, A, cutoff_day, cfg):
+        torch = _torch()
+        self.A, self.cfg = A, cfg
+        tr_tok = A["TOK_DAY"] < cutoff_day
+        mu = A["TOK"][tr_tok].mean(0)
+        sd = A["TOK"][tr_tok].std(0) + 1e-6
+        T = np.clip((A["TOK"] - mu) / sd, -5, 5).astype(np.float32)
+        self.TOK = torch.tensor(np.vstack([T, np.zeros((1, T.shape[1]), np.float32)]))   # last row = pad
+        self.pad = T.shape[0]
+        tr_ex = A["DAY"] < cutoff_day
+        S = A["SIDE"][tr_ex].reshape(-1, A["SIDE"].shape[-1])
+        self.smu, self.ssd = S.mean(0), S.std(0) + 1e-6
+        self.TOK_DAY = torch.tensor(np.r_[A["TOK_DAY"], 0])
+        self.TOK_LBS = torch.tensor(np.r_[A["TOK_LBS"], 0.0].astype(np.float32))
+        L = cfg["maxlen"]
+        Hh = A["H"][:, :, -L:] if A["H"].shape[2] >= L else A["H"]
+        # keep the most recent L tokens (H is left-aligned: re-slice per row)
+        n = len(A["DAY"])
+        H2 = np.full((n, 2, L), -1, np.int64)
+        LEN2 = np.minimum(A["LEN"], L)
+        for s in (0, 1):
+            for i in np.flatnonzero(A["LEN"][:, s] > L):
+                h = A["H"][i, s, :A["LEN"][i, s]][-L:]
+                H2[i, s, :L] = h
+            m = A["LEN"][:, s] <= L
+            H2[m, s, :] = A["H"][m, s, :L]
+        del Hh
+        self.H = torch.tensor(np.where(H2 < 0, self.pad, H2))
+        self.LEN = torch.tensor(LEN2)
+        self.SIDE = torch.tensor(((A["SIDE"] - self.smu) / self.ssd).astype(np.float32))
+        self.CTX = torch.tensor(A["CTX"])
+        self.DAY = torch.tensor(A["DAY"])
+        self.LBSx = torch.tensor(A["LBS"])
+        self.YW = torch.tensor(A["YW"])
+        self.CLS = torch.tensor(A["CLS"])
+        self.SY = torch.tensor(A["SY"])
+        self.SN = torch.tensor(A["SN"])
+        five = torch.tensor(A["SCHED"] == 5)
+        m = torch.zeros(len(A["DAY"]), 11, dtype=torch.bool)
+        m[:, [3, 4, 8, 9]] = True
+        self.CLSMASK = m & (~five)[:, None]
+        # stat base rates (training rows): log rate per minute or logit of accuracy
+        sy, sn = A["SY"][tr_ex].reshape(-1, 18), A["SN"][tr_ex].reshape(-1, 18)
+        base = np.zeros(18, np.float32)
+        bdev = np.zeros(18, np.float32)
+        for t in range(18):
+            ok = sn[:, t] > 0
+            r = sy[ok, t].sum() / sn[ok, t].sum()
+            if t < N_POIS:
+                base[t] = math.log(max(r, 1e-6))
+                mu_ = sn[ok, t] * r
+                yy = sy[ok, t]
+                dv = 2 * (np.where(yy > 0, yy * np.log(np.maximum(yy, 1e-12) / mu_), 0) - (yy - mu_))
+            else:
+                r = min(max(r, 1e-6), 1 - 1e-6)
+                base[t] = math.log(r / (1 - r))
+                yy, nn_ = sy[ok, t], sn[ok, t]
+                ph = np.clip(yy / nn_, 1e-12, 1 - 1e-12)
+                dv = 2 * (yy * np.log(ph / r) + (nn_ - yy) * np.log(np.maximum(1 - ph, 1e-12) / (1 - r)))
+                dv = np.where(np.isfinite(dv), dv, 0)
+            bdev[t] = max(dv.mean(), 1e-3)
+        self.base = torch.tensor(base)
+        self.sw = torch.tensor(1.0 / bdev)
+        self.draw = {}
+        for sch in (3, 5):
+            mm = tr_ex & (A["SCHED"] == sch) & (A["YEAR"] >= 2005) & ((A["WINNER"] == "A") | (A["WINNER"] == "B")
+                                                                      | (A["WINNER"] == "D"))
+            self.draw[sch] = float(A["DRAW"][mm].mean()) if mm.any() else 0.01
+
+    def batch(self, idx):
+        torch = _torch()
+        idx = torch.as_tensor(idx)
+        out = []
+        for s in (0, 1):
+            h = self.H[idx, s]                          # [B, L]
+            tok = self.TOK[h]
+            dt_ = (self.DAY[idx][:, None] - self.TOK_DAY[h]).float() / 365.25
+            dl = (self.LBSx[idx][:, None] - self.TOK_LBS[h]) / 10.0
+            pad = (h == self.pad)
+            dyn = torch.stack([dt_ / 5.0, torch.log1p(dt_.clamp(min=0)), dl], -1).masked_fill(pad.unsqueeze(-1), 0.0)
+            out.append((torch.cat([tok, dyn], -1), self.LEN[idx, s], self.SIDE[idx, s]))
+        return out, self.CTX[idx]
+
+
+def losses(model, prep, idx, cfg, train=True):
+    torch = _torch()
+    F = torch.nn.functional
+    (ta, la, sa), (tb, lb, sb_), ctx = prep.batch(idx)
+    idx_t = torch.as_tensor(idx)
+    z, qa, qb, ea, eb = model(ta, la, tb, lb, sa, sb_, ctx)
+    yw = prep.YW[idx_t]
+    dm = ~torch.isnan(yw)
+    lw = F.binary_cross_entropy_with_logits(z[dm], yw[dm]) if dm.any() else z.sum() * 0
+    cls = prep.CLS[idx_t]
+    cm = cls >= 0
+    lm = z.sum() * 0
+    if cm.any() and cfg["lam_m"] > 0:
+        mask = prep.CLSMASK[idx_t]
+        qa = qa.masked_fill(mask, -1e9)
+        qb = qb.masked_fill(mask, -1e9)
+        qw = torch.where((yw == 1).unsqueeze(-1), qa, qb)
+        lm = F.cross_entropy(qw[cm], cls[cm])
+    ls = z.sum() * 0
+    if cfg["lam_s"] > 0:
+        tot, cnt = 0.0, 0.0
+        for s, e in ((0, ea), (1, eb)):
+            eta = e + prep.base
+            y, n = prep.SY[idx_t, s], prep.SN[idx_t, s]
+            ok = (n > 0).float()
+            nll_p = n[:, :N_POIS] * torch.exp(eta[:, :N_POIS].clamp(max=8)) - y[:, :N_POIS] * eta[:, :N_POIS]
+            nll_b = n[:, N_POIS:] * F.softplus(eta[:, N_POIS:]) - y[:, N_POIS:] * eta[:, N_POIS:]
+            nll = torch.cat([nll_p, nll_b], 1) * ok * prep.sw
+            tot = tot + nll.sum()
+            cnt = cnt + ok.sum()
+        ls = tot / cnt.clamp(min=1)
+    return lw + cfg["lam_m"] * lm + cfg["lam_s"] * ls, lw
+
+
+def predict(model, prep, idx, bs=1024):
+    torch = _torch()
+    model.eval()
+    Z, PA, PB, EA, EB = [], [], [], [], []
+    with torch.no_grad():
+        for k in range(0, len(idx), bs):
+            b = idx[k:k + bs]
+            (ta, la, sa), (tb, lb, sb_), ctx = prep.batch(b)
+            z, qa, qb, ea, eb = model(ta, la, tb, lb, sa, sb_, ctx)
+            mask = prep.CLSMASK[torch.as_tensor(b)]
+            PA.append(torch.softmax(qa.masked_fill(mask, -1e9), 1).numpy())
+            PB.append(torch.softmax(qb.masked_fill(mask, -1e9), 1).numpy())
+            Z.append(z.numpy())
+            EA.append((ea + prep.base).numpy())
+            EB.append((eb + prep.base).numpy())
+    return {"z": np.concatenate(Z), "pa": np.concatenate(PA), "pb": np.concatenate(PB),
+            "ea": np.concatenate(EA), "eb": np.concatenate(EB)}
+
+
+def train_rows(A, cfg, until_day, from_day=None):
+    m = (A["DAY"] < until_day) & (A["YEAR"] >= cfg["train_from"]) & (~A["AMB"])
+    m &= (~np.isnan(A["YW"])) | (A["SN"].sum((1, 2)) > 0)
+    if from_day is not None:
+        m &= A["DAY"] >= from_day
+    return np.flatnonzero(m)
+
+
+def val_rows(A, y0_day, y1_day):
+    return np.flatnonzero((A["DAY"] >= y0_day) & (A["DAY"] < y1_day) & (~A["AMB"]) & (~np.isnan(A["YW"])))
+
+
+def fit_one(A, cfg, seed, until_day, epochs=None, val=None, pred_idx=None):
+    """Train on rows before until_day. With val (indices), record the validation winner log loss per epoch and
+    keep the best-epoch weights (early stopping). With epochs, train exactly that many epochs."""
+    torch = _torch()
+    torch.manual_seed(seed)
+    rng = np.random.default_rng(seed)
+    prep = Prep(A, until_day, cfg)
+    model = make_model(cfg, A["TOK"].shape[1], A["SIDE"].shape[-1], A["CTX"].shape[1])
+    opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=cfg["wd"])
+    tr = train_rows(A, cfg, until_day)
+    n_ep = epochs if epochs is not None else cfg["max_ep"]
+    curve, best, best_state = [], (1e9, -1), None
+    for ep in range(n_ep):
+        model.train()
+        perm = rng.permutation(tr)
+        for k in range(0, len(perm), cfg["bs"]):
+            b = perm[k:k + cfg["bs"]]
+            loss, _ = losses(model, prep, b, cfg)
+            opt.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+            opt.step()
+        if val is not None and len(val):
+            pv = predict(model, prep, val)
+            y = A["YW"][val]
+            p = np.clip(sig(pv["z"]), 1e-6, 1 - 1e-6)
+            llv = float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+            curve.append(llv)
+            if llv < best[0]:
+                best = (llv, ep + 1)
+                best_state = {k: v.clone() for k, v in model.state_dict().items()}
+    if best_state is not None and epochs is None:
+        model.load_state_dict(best_state)
+    out = {"curve": curve, "best": best, "n_train": int(len(tr))}
+    if pred_idx is not None:
+        out["pred"] = predict(model, prep, pred_idx)
+        out["draw"] = prep.draw
+    out["model"] = model
+    out["prep_stats"] = (prep.base.numpy(), prep.sw.numpy())
+    return out
+
+
+def day_of(y, m=1, d_=1):
+    return dt.date(y, m, d_).toordinal()
+
+
+_A_CACHE = {}
+
+
+def get_arrays():
+    if "A" not in _A_CACHE:
+        d = load_data()
+        _A_CACHE["A"] = build_arrays(d)
+    return _A_CACHE["A"]
+
+
+def _job(job):
+    """Worker: one training run. job = dict(kind, cfg, seed, Y, epochs)."""
+    A = get_arrays()
+    cfg = dict(DEFAULT_CFG, **job["cfg"])
+    Y = job["Y"]
+    t0 = time.time()
+    if job["kind"] == "es":            # train < Jan 1 (Y-1), early stop on year Y-1, predict year(s) job["pred_years"]
+        val = val_rows(A, day_of(Y - 1), day_of(Y))
+        pidx = np.flatnonzero(np.isin(A["YEAR"], job.get("pred_years", [Y + 1])))
+        r = fit_one(A, cfg, job["seed"], day_of(Y - 1), val=val, pred_idx=pidx)
+    else:                              # full refit: train < Jan 1 Y for a fixed number of epochs, predict
+        pidx = np.flatnonzero(np.isin(A["YEAR"], job["pred_years"]))
+        r = fit_one(A, cfg, job["seed"], day_of(Y), epochs=job["epochs"], pred_idx=pidx)
+    r.pop("model")
+    r["pidx"] = pidx
+    r["job"] = {k: v for k, v in job.items()}
+    r["secs"] = round(time.time() - t0, 1)
+    return r
+
+
+def run_pool(jobs, workers):
+    if workers <= 1:
+        return [_job(j) for j in jobs]
+    import multiprocessing as mp
+    ctx = mp.get_context("fork")
+    with ctx.Pool(workers, initializer=lambda: os.nice(0)) as pool:
+        return pool.map(_job, jobs, chunksize=1)
+
+
+def ll_bin(z, y):
+    p = np.clip(sig(z), 1e-6, 1 - 1e-6)
+    return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+
+
+# ====================================================================== stage: hyperparameter CV (2016-2018)
+HP_CONFIGS = {
+    "base": {},
+    "winner_only": {"lam_m": 0.0, "lam_s": 0.0},
+    "h128": {"H": 128},
+    "mean_pool": {"pool": "mean"},
+    "long_hist": {"maxlen": 24},
+    "from2010": {"train_from": 2010},
+    "reg": {"drop": 0.35, "wd": 1e-3},
+}
+HP_FOLDS = [2016, 2017, 2018]
+HP_SEEDS = [11, 12]
+
+
+def eval_mask(A, years):
+    """ml2-like evaluation rows: decisive, not ambiguous, both men with a prior UFC fight."""
+    return (np.isin(A["YEAR"], years) & (~A["AMB"]) & (~np.isnan(A["YW"])) & (A["NPRIOR"].min(1) >= 1))
+
+
+def stage_hpcv(args):
+    A = get_arrays()
+    names = args.configs.split(",") if args.configs else list(HP_CONFIGS)
+    path = os.path.join(CACHE, "hpcv.json")
+    R = json.load(open(path)) if os.path.exists(path) else {}
+    jobs = []
+    for nm in names:
+        for Y in HP_FOLDS:
+            for s in HP_SEEDS:
+                if "%s|%d|%d" % (nm, Y, s) in R.get("runs", {}):
+                    continue
+                jobs.append({"kind": "es", "cfg": HP_CONFIGS[nm], "seed": s, "Y": Y, "pred_years": [Y],
+                             "name": nm})
+    # es jobs train < Jan 1 (Y-1) and stop on Y-1; here the fold predicts Y with that model
+    for j in jobs:
+        j["Y"] = j["Y"]          # validation year = Y-1, prediction year = Y
+    log("hpcv: %d jobs" % len(jobs))
+    t0 = time.time()
+    res = run_pool(jobs, args.workers)
+    R.setdefault("runs", {})
+    for r in res:
+        j = r["job"]
+        pidx = r["pidx"]
+        R["runs"]["%s|%d|%d" % (j["name"], j["Y"], j["seed"])] = {
+            "best": r["best"], "curve": [round(c, 5) for c in r["curve"]], "secs": r["secs"],
+            "fid": A["FID"][pidx].tolist(), "z": np.round(r["pred"]["z"], 5).tolist()}
+    # summary: seed-averaged logit per fold, scored on eval rows of the fold year
+    summ = {}
+    for nm in HP_CONFIGS:
+        tot, nn_, per = 0.0, 0, {}
+        okall = True
+        for Y in HP_FOLDS:
+            zs = [R["runs"].get("%s|%d|%d" % (nm, Y, s)) for s in HP_SEEDS]
+            if any(z is None for z in zs):
+                okall = False
+                break
+            pos = {f: i for i, f in enumerate(A["FID"])}
+            fids = zs[0]["fid"]
+            z = np.mean([np.array(q["z"]) for q in zs], 0)
+            ii = np.array([pos[f] for f in fids])
+            m = eval_mask(A, [Y])[ii]
+            y = A["YW"][ii][m]
+            l_ = ll_bin(z[m], y)
+            per[str(Y)] = {"n": int(m.sum()), "ll": round(l_, 5), "best_ep": [q["best"][1] for q in zs]}
+            tot += l_ * m.sum()
+            nn_ += m.sum()
+        if okall:
+            summ[nm] = {"cv_ll": round(tot / nn_, 5), "n": int(nn_), "folds": per}
+    R["summary"] = summ
+    json.dump(R, open(path, "w"))
+    for nm, v in sorted(summ.items(), key=lambda kv: kv[1]["cv_ll"]):
+        log("hpcv %-12s CV %.5f  %s" % (nm, v["cv_ll"], {k: (q["ll"], q["best_ep"]) for k, q in v["folds"].items()}))
+    log("hpcv done in %.0f s" % (time.time() - t0))
+
+
+STAGES = {"data": stage_data, "hpcv": stage_hpcv}
 
 
 def main():

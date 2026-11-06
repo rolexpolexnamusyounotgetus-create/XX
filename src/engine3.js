@@ -68,6 +68,9 @@
   function pw(x, e) { return e === 1 ? x : Math.pow(x, e); }
   function lnorm(rng, sd) { return sd > 0 ? Math.exp(sd * rng.normal() - 0.5 * sd * sd) : (rng.normal(), 1); }
   function getParams() { return FP0 || (root && root.FightParams) || null; }
+  // fight-dynamics component (research/model_dynamics.md E1-E11): on when params.components.dynamics is true and the
+  // params carry the dyn block; off reproduces the engine before the component bit for bit
+  function dynOn(p) { return !!(p && p.components && p.components.dynamics && p.dyn); }
   function getML() { return MLR0 || (root && root.MLRates) || null; }
 
   function mergeParams(base, over) {
@@ -282,10 +285,11 @@
     if (pc && pwt) for (r = 3; r < 5; r++) if (pc[r] != null && pwt[r] > 0) five = true;
     var lc = five ? p.paceLnd5 : p.paceLnd3;
     var rho = [1, 1, 1, 1, 1], rw = [0, 0, 0, 0, 0];
+    var kP = dynOn(p) ? p.dyn.kPace : p.kPace;     // dynamics E10: per-round pace ratio prior strength (train-chosen 45)
     for (r = 1; r < 5; r++) {
       if (pc && pwt && pc[r] != null && pwt[r] > 0 && r < lc.length) {
         var ratio = clip(pc[r] / lc[r], 0.3, 3);
-        rho[r] = (ratio * pwt[r] + p.kPace) / (pwt[r] + p.kPace); rw[r] = pwt[r];
+        rho[r] = (ratio * pwt[r] + kP) / (pwt[r] + kP); rw[r] = pwt[r];
       } else if (r >= 1) { rho[r] = 1 + 0.5 * (rho[r - 1] - 1); }
     }
     R.rho = rho; R.rhoW = rw;
@@ -499,7 +503,8 @@
         m.mixC[(i * 4 + pc) * 2] = mx[0]; m.mixC[(i * 4 + pc) * 2 + 1] = mx[0] + mx[1];
         var posq = pc < 2 ? pc : 2;
         for (var t = 0; t < 3; t++) {
-          var z = L.accA[t] + L.accB[posq] + a * R[i].accSh[t] + b * R[j].accAgSh[t];
+          var z = dynOn(p) ? L.accA[t] + L.accB[posq] + a * p.dyn.accProfA * R[i].accSh[t] + b * p.dyn.accProfB * R[j].accAgSh[t]
+            : L.accA[t] + L.accB[posq] + a * R[i].accSh[t] + b * R[j].accAgSh[t];
           m.accO[(i * 4 + pc) * 3 + t] = Math.exp(z) * (pc === 3 ? p.botAccOdds : 1) * p.accScale * adj[i].acc;
         }
       }
@@ -621,7 +626,78 @@
       tdLand: p.tdLand,
       tdStam: p.tdStam
     };
+    m.dyn = dynOn(p) ? dynTables(m, p, R, nR) : null;
     return m;
+  }
+
+  // ------------------------------------------------------------------ fight dynamics (component "dynamics")
+  // research/model_dynamics.md section 8, recipe E1-E11, fit on 2019-2023 round data (data/derived/dynamics.json);
+  // level factors re-fit on 2019-2023 backtest fights (tools/dynamics_calibrate.js). Per-round tables used by simulate():
+  //   pace[i][r]  output multiplier: league distance pace curve (E1) x own cardio ratio (kPace 45) x opponent's^paceMutual
+  //               (E10), normalised over the first rounds, x outLevel
+  //   kdP[r]      knockdown multiplier per landed standing strike: kdRound table by format x kdLevel (E7; replaces the
+  //               stamina, pace and damage terms and the 5-round caution on knockdowns)
+  //   conv[r]     odds multiplier on the instant-KO and follow-up stoppage chances after a knockdown: convLevel x
+  //               exp(convRound (r - 1)) (E8; replaces damage and stamina terms)
+  //   stkoR[r], gnpR[r]  non-knockdown stoppage hazards: scale x exp(noKdRound (r - 1)), with damage slopes
+  //               stkoBase / gnpDmg (E9; replaces attacker stamina)
+  //   tdR[r]      takedown-attempt round curve (tdRound3 / tdRound5, normalised like pace), the marginal round shape the E6
+  //               carry-over multipliers act within (real attempts rise by round; carry-over alone made them fall)
+  function dynTables(m, p, R, nR) {
+    var Y = p.dyn, i, j, k, r;
+    var curve = nR === 5 ? Y.pace5 : (nR === 3 ? Y.pace3 : null);
+    if (!curve) { curve = []; for (k = 0; k < nR; k++) curve.push(Y.pace5[Math.min(k, Y.pace5.length - 1)]); }
+    var nb = Math.min(3, nR), cm0 = 0;
+    for (k = 0; k < nb; k++) cm0 += curve[k];
+    cm0 /= nb;
+    var rel = [[], []], pace = [[], []];
+    for (i = 0; i < 2; i++) {
+      var rho = R[i].rho, rm = 0;
+      for (k = 0; k < nb; k++) rm += rho[k];
+      rm /= nb;
+      for (k = 0; k < nR; k++) rel[i].push(rho[Math.min(4, k)] / rm);
+    }
+    for (i = 0; i < 2; i++) {
+      j = 1 - i;
+      var raw = [], s = 0;
+      for (k = 0; k < nR; k++) { raw.push(rel[i][k] * Math.pow(rel[j][k], Y.paceMutual)); if (k < nb) s += raw[k]; }
+      s /= nb;
+      for (k = 0; k < nR; k++) pace[i].push(curve[k] / cm0 * raw[k] / s * Y.outLevel);
+    }
+    var kdTab = nR === 5 ? Y.kdRound5 : (nR === 3 ? Y.kdRound3 : null);
+    if (!kdTab) { kdTab = []; for (k = 0; k < nR; k++) kdTab.push(Y.kdRound5[Math.min(k, Y.kdRound5.length - 1)]); }
+    var kdL = nR >= 5 ? Y.kdLevel5 : Y.kdLevel3;
+    // takedown-attempt round curve (marginal round shape that the carry-over terms act within), normalised like pace
+    var tdCurve = nR === 5 ? Y.tdRound5 : (nR === 3 ? Y.tdRound3 : null), tdR = [];
+    if (!tdCurve) { tdCurve = []; for (k = 0; k < nR; k++) tdCurve.push(Y.tdRound5 ? Y.tdRound5[Math.min(k, Y.tdRound5.length - 1)] : 1); }
+    var tm0 = 0;
+    for (k = 0; k < nb; k++) tm0 += tdCurve[k];
+    tm0 /= nb;
+    for (k = 0; k < nR; k++) tdR.push(tdCurve[k] / tm0);
+    var kdP = [], conv = [], stkoR = [], gnpR = [];
+    for (r = 0; r < nR; r++) {
+      var kdT = kdTab[Math.min(r, kdTab.length - 1)];
+      kdP.push(kdT * kdL);
+      conv.push(Y.convLevel * Math.exp(Y.convRound * r));
+      // E9 is a hazard per standing head strike absorbed. A standing TKO needs the hurt state, whose incidence already
+      // follows kdRound (hurts are drawn with the knockdown chance), so the realised standing TKO per strike decays as
+      // kdRound x exp(noKdRound r). Knob stkoHurtGate (verifier; default off, it did not score better on train) divides the
+      // hurt gate's round decline back out so that it decays as exp(noKdRound r) alone
+      stkoR.push(Y.stkoScale * Math.exp(Y.noKdRound * r) * (Y.stkoHurtGate ? kdTab[0] / kdT : 1));
+      gnpR.push(Y.gnpScale * Math.exp(Y.noKdRound * r));
+    }
+    // E3: fatigue on output is small (distance -4.5% per 100 own attempts); the other stamina terms stay
+    m.k.outStam = Y.outStam;
+    var arPhi = Y.arPhi, aaPhi = Y.accArPhi;
+    return {
+      formPace: Y.formPace, formOut: Y.formOut, formAcc: Y.formAcc, vol: Y.vol, roundPace: Y.roundPace,
+      arPhi: arPhi, arSd: Y.arSd, arInn: Y.arSd * Math.sqrt(1 - arPhi * arPhi), arC: 0.5 * Y.arSd * Y.arSd,
+      accArPhi: aaPhi, accArSd: Y.accArSd, accArInn: Y.accArSd * Math.sqrt(1 - aaPhi * aaPhi), accLevel: Y.accLevel,
+      pace: pace, kdP: kdP, conv: conv, stkoR: stkoR, gnpR: gnpR, stkoBase: Y.stkoBase, gnpDmg: Y.gnpDmg,
+      momScOut: Y.momScorerOut, momScAcc: Y.momScorerAcc, momScTd: Y.momScorerTd, momDrOut: Y.momDroppedOut, momDrTd: Y.momDroppedTd,
+      tdCtrlOpp: Y.tdCtrlOpp, tdTdl: Y.tdTdl, tdCtrlOwn: Y.tdCtrlOwn, distCtrlOpp: Y.distCtrlOpp, lostAcc: Y.lostAcc,
+      tdLevel: Y.tdLevel != null ? Y.tdLevel : 1, tdR: tdR
+    };
   }
 
   // ------------------------------------------------------------------ matchup (v4): base tables + learned stat-line rates
@@ -950,13 +1026,14 @@
     var dRate = m.dRate, cRate = m.cRate, tdD = m.tdD, tdCC = m.tdCC, tdCU = m.tdCU, gPos = m.gPos, gBot = m.gBot, gEdge = m.gEdge;
     var swPos = m.swPos, upPos = m.upPos, subTPos = m.subTPos, subBPos = m.subBPos, subOPos = m.subOPos, subO = m.subO, gillo = m.gillo;
     var clE = m.clE, pCtl = m.pCtl, clBreak = m.clBreak, clSwap = m.clSwap, subBotO = m.subBotO, subStandO = m.subStandO;
+    var DY = m.dyn;                              // fight-dynamics tables (component "dynamics"), null when off
     // fight-night form (fixed draw order, independent of trace)
     // every multiplicative draw is a mean-1 lognormal: exp(sd * z - sd^2 / 2)
-    var sharedPace = lnorm(rng, F.pace);
-    var vol = lnorm(rng, F.vol);                 // shared fight volatility: a war vs a tactical fight
+    var sharedPace = lnorm(rng, DY ? DY.formPace : F.pace);
+    var vol = lnorm(rng, DY ? DY.vol : F.vol);   // shared fight volatility: a war vs a tactical fight
     var fOut = [1, 1], fAcc = [1, 1], fPow = [1, 1], fChin = [1, 1], fCard = [1, 1], fGrap = [1, 1], fSubO = [1, 1], fSubD = [1, 1];
     for (i = 0; i < 2; i++) {
-      fOut[i] = lnorm(rng, F.out); fAcc[i] = Math.exp(F.acc * rng.normal());   // accuracy: logit-normal (odds multiplier)
+      fOut[i] = lnorm(rng, DY ? DY.formOut : F.out); fAcc[i] = Math.exp((DY ? DY.formAcc : F.acc) * rng.normal());   // accuracy: logit-normal (odds multiplier)
       fPow[i] = lnorm(rng, F.pow); fChin[i] = lnorm(rng, F.chin);
       fCard[i] = lnorm(rng, F.cardio); fGrap[i] = lnorm(rng, F.grap);
       fSubO[i] = lnorm(rng, F.sub); fSubD[i] = lnorm(rng, F.sub);
@@ -989,15 +1066,38 @@
               B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
       rounds: rounds, fin: null, n108: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
     var po = [0, 0], fin = null;
+    // dynamics state: fA = accuracy odds multiplier used by strikes (the fight-level form when off); dc / tdc = distance
+    // output and takedown-attempt carry-over; arO / arA = AR(1) round noise on output / accuracy; mom* = knockdown momentum
+    var fA = DY ? [fAcc[0], fAcc[1]] : fAcc, dc = [1, 1], tdc = [1, 1];
+    var arO = [0, 0], arA = [0, 0], momO = [1, 1], momA = [1, 1], momT = [1, 1];
 
     for (var r = 0; r < nR; r++) {
       for (k = 0; k < 2 * NS; k++) st[k] = 0;
       var t = 0, state = 0, ctl = -1, pos = 0, downed = -1, kdLoc = 0;
       var ev = trace ? [] : null;
-      var rp = sharedPace * lnorm(rng, F.roundPace);
-      po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
-      po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
-      var fr = m.finR[r], kdP = m.kdPace[r] * fr;
+      var rp = sharedPace * lnorm(rng, DY ? DY.roundPace : F.roundPace);
+      if (DY) {
+        // E2: each man's round output noise is AR(1) (stationary sd arSd, autocorrelation arPhi); the same two normals
+        // the plain engine spends on its iid round noise, then two more for the accuracy AR(1)
+        var zo0 = rng.normal(), zo1 = rng.normal(), za0 = rng.normal(), za1 = rng.normal();
+        if (r === 0) { arO[0] = DY.arSd * zo0; arO[1] = DY.arSd * zo1; arA[0] = DY.accArSd * za0; arA[1] = DY.accArSd * za1; }
+        else {
+          arO[0] = DY.arPhi * arO[0] + DY.arInn * zo0; arO[1] = DY.arPhi * arO[1] + DY.arInn * zo1;
+          arA[0] = DY.accArPhi * arA[0] + DY.accArInn * za0; arA[1] = DY.accArPhi * arA[1] + DY.accArInn * za1;
+        }
+        for (i = 0; i < 2; i++) {
+          po[i] = DY.pace[i][r] * fOut[i] * rp * Math.exp(arO[i] - DY.arC) * momO[i];
+          fA[i] = fAcc[i] * Math.exp(arA[i]) * DY.accLevel * momA[i];
+          // E6: grappling carry-over from earlier rounds (minutes controlled by the opponent, takedowns landed, own control)
+          var oc = tot[(1 - i) * NS + I_CTRL] / 60, ocw = tot[i * NS + I_CTRL] / 60, otl = tot[i * NS + I_TDL];
+          dc[i] = Math.exp(DY.distCtrlOpp * oc);
+          tdc[i] = Math.exp(DY.tdCtrlOpp * oc + DY.tdTdl * otl + DY.tdCtrlOwn * ocw) * momT[i] * DY.tdLevel * DY.tdR[r];
+        }
+      } else {
+        po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
+        po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
+      }
+      var fr = m.finR[r], kdP = DY ? DY.kdP[r] : m.kdPace[r] * fr;
 
       while (true) {
         var h0 = t < hurtEnd[0], h1 = t < hurtEnd[1];
@@ -1007,20 +1107,20 @@
         var out1 = po[1] * (1 - K.outStam * (1 - S[1])) * (h1 ? K.outHurt : 1) * (1 - K.outMob * (1 - mob1));
         var n = 0, top = -1, bot = -1, k5 = 0;
         if (state === 0) {
-          evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 0; evR[n++] = dRate[0] * out0;
-          evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 0; evR[n++] = dRate[1] * out1;
+          evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 0; evR[n++] = dRate[0] * out0 * dc[0];
+          evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 0; evR[n++] = dRate[1] * out1 * dc[1];
           evT[n] = E_CLINCH; evW[n] = 0; evX[n] = 0; evR[n++] = clE * pCtl;
           evT[n] = E_CLINCH; evW[n] = 1; evX[n] = 0; evR[n++] = clE * (1 - pCtl);
-          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = tdD[0] * (1 - K.tdAttStam * (1 - S[0])) * (h0 ? 0.5 : 1);
-          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = tdD[1] * (1 - K.tdAttStam * (1 - S[1])) * (h1 ? 0.5 : 1);
+          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = tdD[0] * (1 - K.tdAttStam * (1 - S[0])) * (h0 ? 0.5 : 1) * tdc[0];
+          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = tdD[1] * (1 - K.tdAttStam * (1 - S[1])) * (h1 ? 0.5 : 1) * tdc[1];
         } else if (state === 1) {
           var cs = K.clinchCtrlStrike;
           evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 1; evR[n++] = cRate[0] * out0 * (ctl === 0 ? cs : 2 - cs);
           evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 1; evR[n++] = cRate[1] * out1 * (ctl === 1 ? cs : 2 - cs);
           evT[n] = E_BREAK; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = clBreak;
           evT[n] = E_SWAP; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = clSwap * 2 * (ctl === 0 ? 1 - pCtl : pCtl);
-          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = tdCC[ctl] * (1 - K.tdAttStam * (1 - S[ctl]));
-          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = tdCU[1 - ctl] * (1 - K.tdAttStam * (1 - S[1 - ctl]));
+          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = tdCC[ctl] * (1 - K.tdAttStam * (1 - S[ctl])) * tdc[ctl];
+          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = tdCU[1 - ctl] * (1 - K.tdAttStam * (1 - S[1 - ctl])) * tdc[1 - ctl];
         } else {
           top = state - 2; bot = 1 - top; k5 = top * 5 + pos;
           if (downed === bot) {
@@ -1067,7 +1167,7 @@
           else {
             var mb = (i * 4 + pc) * 2;
             tg = ut < mixC[mb] ? 0 : (ut < mixC[mb + 1] ? 1 : 2);
-            o = accO[(i * 4 + pc) * 3 + tg] * fAcc[i] * (1 - K.accSelfStam * (1 - S[i])) * (hj ? K.accHurt : 1) * (1 + K.accStam * (1 - S[j]));
+            o = accO[(i * 4 + pc) * 3 + tg] * fA[i] * (1 - K.accSelfStam * (1 - S[i])) * (hj ? K.accHurt : 1) * (1 + K.accStam * (1 - S[j]));
             if (pc === 0) o *= 1 + K.accMob * (1 - mobj);
           }
           st[so + I_SA]++; st[so + I_HA + 2 * tg]++; S[i] -= K.drainAtt;
@@ -1083,23 +1183,26 @@
             D[j] += dw[i] * dmgPos[pc]; st[so + I_DMG] += dw[i];
             if (pc <= 1) {
               st[so + I_SHL]++;
-              var pk = kdB[i] * kdPos[pc] * chinM[j] * (1 + D[j] / K.kdDmg) * (hj ? K.kdHurt : 1) * (1 + K.kdStamDef * (1 - S[j])) *
+              // dynamics E7/E11: per-strike knockdown risk by round only (no damage, stamina or pace terms)
+              var pk = DY ? kdB[i] * kdPos[pc] * chinM[j] * (hj ? K.kdHurt : 1) * kdP * (0.75 + 0.25 * mobi)
+                : kdB[i] * kdPos[pc] * chinM[j] * (1 + D[j] / K.kdDmg) * (hj ? K.kdHurt : 1) * (1 + K.kdStamDef * (1 - S[j])) *
                 Math.max(0.05, 1 - K.kdStamAtt * (1 - S[i])) * kdP * (0.75 + 0.25 * mobi);
               var uk = rng.u();
               if (uk < pk) kind = "kd";
               else if (uk < pk * (1 + K.hurtRatio)) kind = "hurt";
-              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (K.stkoBase + D[j] / 100)) { kind = "fin"; finHow = "TKO"; } }
+              else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (DY ? (DY.stkoBase + D[j] / 100) * DY.stkoR[r] : (K.stkoBase + D[j] / 100))) { kind = "fin"; finHow = "TKO"; } }
             } else if (pc === 2) {
               if (follow) {
-                var ro = refO * chinM[j] * (1 + D[j] / K.refDmg) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
+                var ro = DY ? refO * chinM[j] * DY.conv[r] : refO * chinM[j] * (1 + D[j] / K.refDmg) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
                 if (rng.u() < ro / (1 + ro)) { kind = "fin"; finHow = "TKO"; }
-              } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]))) { kind = "fin"; finHow = "GNP"; }
+              } else if (rng.u() < (DY ? gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / DY.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * DY.gnpR[r]
+                : gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i])))) { kind = "fin"; finHow = "GNP"; }
             }
           } else if (tg === 1) {
             S[j] -= K.bodyDrain * dw[i]; if (S[j] < 0.05) S[j] = 0.05;
             if (pc <= 1) {
               st[so + I_SBL]++;
-              if (rng.u() < kdB[i] * K.kdBodyRatio * kdPos[pc] * (1 + K.kdStamDef * (1 - S[j])) * kdP) kind = "kd";
+              if (rng.u() < (DY ? kdB[i] * K.kdBodyRatio * kdPos[pc] * kdP : kdB[i] * K.kdBodyRatio * kdPos[pc] * (1 + K.kdStamDef * (1 - S[j])) * kdP)) kind = "kd";
             }
           } else {
             G[j] += dw[i];
@@ -1108,7 +1211,7 @@
           }
           if (kind === "kd") {
             st[so + I_KD]++; kdN[j]++; D[j] += K.dmgKD; chinM[j] *= K.kdRepeat;
-            var io = instO * (1 + D[j] / K.kdInstantDmg) * (1 - K.instStam * (1 - S[i]));
+            var io = DY ? instO * DY.conv[r] : instO * (1 + D[j] / K.kdInstantDmg) * (1 - K.instStam * (1 - S[i]));
             if (rng.u() < io / (1 + io)) { kind = "fin"; finHow = "KO"; }
           }
           if (kind === "fin") {
@@ -1232,6 +1335,7 @@
       // ---- judges: EM round-winner weights (data fit), shared + individual noise, fight-level tastes, margin 10-8 rule
       var a0 = 0, b0 = NS;
       var js = trace ? [] : null;
+      var cpre = DY && DY.lostAcc !== 1 ? [cards[0][0] - cards[0][1], cards[1][0] - cards[1][1], cards[2][0] - cards[2][1]] : null;
       n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
         st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
         st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), tS, tG, tP, jF, rng, cards, js);
@@ -1239,6 +1343,22 @@
 
       // ---- between rounds: recovery, doctor and corner stoppages
       if (r < nR - 1) {
+        if (DY) {
+          // dynamics E4: knockdown momentum for the next round only (the scorer eases off, the dropped man does not slow);
+          // E5 (knob, default off): accuracy odds x lostAcc after a round lost on the majority of cards
+          momO[0] = momO[1] = momA[0] = momA[1] = momT[0] = momT[1] = 1;
+          for (i = 0; i < 2; i++) {
+            if (st[i * NS + I_KD] > 0) {
+              momO[i] *= DY.momScOut; momA[i] *= DY.momScAcc; momT[i] *= DY.momScTd;
+              momO[1 - i] *= DY.momDrOut; momT[1 - i] *= DY.momDrTd;
+            }
+          }
+          if (cpre) {
+            var wA = 0;
+            for (j = 0; j < 3; j++) if (cards[j][0] - cards[j][1] > cpre[j]) wA++;
+            momA[wA >= 2 ? 1 : 0] *= DY.lostAcc;
+          }
+        }
         for (i = 0; i < 2; i++) { S[i] += K.recover * (1 - S[i]); D[i] *= 1 - K.dmgHeal; hurtEnd[i] = -1; }
         var stop = [false, false], kindS = ["", ""];
         for (i = 0; i < 2; i++) {
@@ -1385,7 +1505,7 @@
         topSkill: R[i].topSkill, oppEscapeWeakness: R[j].escWeak, passEdge: m.gEdge[i], standUpMeanSecWhenUnder: 1 / Math.max(1e-9, m.up[i]),
         sweepPerMinBottom: m.sw[i] * 60 };
       o.subs = { attemptsPerGroundMin: m.threat[i], conversion: m.subConv[i], careerConvShrunk: R[i].subConv, oppDefFailShrunk: R[j].subDefFail, guillotinePerStuffedShot: m.gillo[i] };
-      o.cardio = { paceByRound: m.pace[i].slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain,
+      o.cardio = { paceByRound: (m.dyn ? m.dyn.pace[i] : m.pace[i]).slice(), cardioIndex: m.cardio[i], drainPerSec: m.drain[i], drainVsLeague: m.drain[i] / m.p.drain,
         drainSchedule: Math.pow(3 / m.rounds, m.p.drainSchedExp), drainCardio: Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp) };
       o.knobs = m.adj[i];
       sides.push(o);
@@ -1411,7 +1531,9 @@
       lines.push("  When under: mean stand-up " + f(1 / m.up[i], 0) + " s, sweeps " + f(m.sw[i] * 60, 3) + "/min");
       lines.push("  Submissions: " + f(m.threat[i], 3) + " attempts per ground-minute (league " + f(L.sub, 3) + "), conversion " + pct(m.subConv[i]) + " (shrunk own " + pct(R[i].subConv) + " vs opp " + pct(R[j].subDefFail) + ", league " + pct(P.sub_conv) + ")");
       var schedF = Math.pow(3 / m.rounds, m.p.drainSchedExp), cardF = Math.pow(clip(m.cardio[i], 0.5, 1.6), -m.p.cardioExp);
-      lines.push("  Cardio: output by round " + m.pace[i].map(function (x) { return f(x); }).join(" ") + " (division curve x his late-round ratio); cardio index " + f(m.cardio[i]) +
+      lines.push("  Cardio: output by round " + (m.dyn ? m.dyn.pace[i] : m.pace[i]).map(function (x) { return f(x); }).join(" ") +
+        (m.dyn ? " (dynamics: league pace curve x his late-round ratio x opponent's^" + m.p.dyn.paceMutual + "; knockdown risk by round " +
+          m.dyn.kdP.map(function (x) { return f(x); }).join(" ") + ")" : " (division curve x his late-round ratio)") + "; cardio index " + f(m.cardio[i]) +
         "; stamina drain x" + f(m.drain[i] / m.p.drain) + " of the 3-round base (" + m.rounds + "-round pacing x" + f(schedF) + ", cardio x" + f(cardF) + ", knob x" + f(m.adj[i].cardio) + ")");
     }
     out.A = sides[0]; out.B = sides[1];

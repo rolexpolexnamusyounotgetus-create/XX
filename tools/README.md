@@ -321,3 +321,24 @@ node tests/test_ml2.js                        # JS page evaluator (src/ml/ml2.js
   predictions, `page_model`) and `research/model_ml2.md`. Delete `out/ml2_cache/ratings_all.pkl` after ratings.json or
   preufc.json changes (the table stage then reruns the rating systems, about 75 seconds), and
   `out/ml2_cache/styles_block.pkl` after backtest.json or styles.json changes.
+
+## Fight-dynamics component (params.components.dynamics): calibration, acceptance check, ablation
+
+Train-only tools for the engine's dynamics component (research/model_dynamics.md E1-E11). All three refuse fights dated
+2024-01-01 or later unless `DYN_ALLOW_VALIDATION=1` (reserved for the v5 validation measurement) and never read 2026.
+
+```
+node tools/dynamics_calibrate.js [--iters 5] [--sims 16] [--stride 2]      # re-fit the [dyncal] level factors in params3.js dyn
+node tools/dynamics_bt.js --out run.json [--sims 150] [--part k --parts n] [--cfg name='{params}' ...] [--csv eng_{cfg}.csv]
+node tools/dynamics_bt.js --merge run.json part0.json part1.json ...
+python3 tools/dynamics_ablation.py run.json [--on on --off off]           # paired event-cluster bootstrap scores + base rates
+python3 tools/dynamics_check_train.py --out check.json on=eng_on.csv       # tools/dynamics.py engine check on 2019-2023 rounds
+```
+
+Inputs are leak-free: frozen pre-fight profiles (backtest_dev.json), walk-forward priors (mlcal_priors_asof.json) and
+out-of-fold learned rates (mlrates_oof.json). Large gitignored inputs are read from the main checkout when missing.
+`dynamics_calibrate.js` targets: volume, accuracy, takedown attempts and the KO/TKO share of the flag-off engine on the same
+fights and seeds (so an ablation measures structure at equal level), knockdowns per fight-minute of the 2019-2023 actuals by
+format, and the data's knockdown conversion (0.512). `dynamics_check_train.py` runs `tools/dynamics.py`'s
+`engine_check(..., real_period="train")` (output / accuracy dynamic-RE decomposition, knockdown frailty and round profile,
+round targets, round correlations, the skip-round knockdown-momentum contrast) against real 2019-2023 rounds only.

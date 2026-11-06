@@ -99,17 +99,30 @@ def sha16(path):
 #   temperature  z' = a z                          (symmetric beta calibration: a = b, c = 0)
 #   odd          z' = a z + b z |z|                (lets big favourites stretch differently from pick'ems)
 #   segment      z' = (a + sum_k d_k s_k) z        (s_k in {0,1}: women, heavy, newcomer, five, bigfav)
-SEGMENTS = ("women", "heavy", "newcomer", "five", "bigfav")
+SEGMENTS = ("women", "heavy", "newcomer", "debut", "five", "bigfav")
 BIGFAV_P = 0.75                   # bigfav flag: the raw (pre-recalibration) favourite is at 75% or more
 
 
 def seg_flags(women, lbs, n_min, five, p_raw):
     """Corner-symmetric segment flags for one fight. heavy = men 205 lb and up; newcomer = the less experienced man has
-    at most 2 prior UFC fights (0 = debut); five = scheduled five rounds; bigfav = max(p, 1 - p) >= 0.75 (raw)."""
+    1-2 prior UFC fights; debut = one man has none (never set in the backtest universe, which excludes debut bouts);
+    five = scheduled five rounds; bigfav = the raw (pre-recalibration) favourite is at 75% or more."""
     w = 1.0 if women else 0.0
+    n = None if n_min is None else float(n_min)
     return {"women": w, "heavy": 1.0 if (not women and lbs is not None and lbs >= 205) else 0.0,
-            "newcomer": 1.0 if (n_min is not None and n_min <= 2) else 0.0, "five": 1.0 if five else 0.0,
-            "bigfav": 1.0 if max(p_raw, 1 - p_raw) >= BIGFAV_P else 0.0}
+            "newcomer": 1.0 if (n is not None and 1 <= n <= 2) else 0.0, "debut": 1.0 if n == 0 else 0.0,
+            "five": 1.0 if five else 0.0, "bigfav": 1.0 if max(p_raw, 1 - p_raw) >= BIGFAV_P else 0.0}
+
+
+def seg_matrix(D, p_raw):
+    """n x len(SEGMENTS) flag matrix for table rows (bigfav from the raw prediction p_raw; NaN p -> 0)."""
+    nm = D["n_min"].to_numpy(float)
+    pr = np.nan_to_num(np.asarray(p_raw, float), nan=0.5)
+    cols = {"women": D["women"].to_numpy(float),
+            "heavy": ((D["women"].to_numpy(float) == 0) & (D["lbs"].to_numpy(float) >= 205)).astype(float),
+            "newcomer": ((nm >= 1) & (nm <= 2)).astype(float), "debut": (nm == 0).astype(float),
+            "five": D["five"].to_numpy(float), "bigfav": (np.maximum(pr, 1 - pr) >= BIGFAV_P).astype(float)}
+    return np.c_[tuple(cols[s] for s in SEGMENTS)]
 
 
 def design(kind, z, S=None, segs=SEGMENTS):

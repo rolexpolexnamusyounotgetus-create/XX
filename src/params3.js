@@ -38,7 +38,98 @@
       v401: { emJudge: true, deductions: true, mlLevels: true, tdCap: true, koTargets: true },
       // v5 merge step 2: knockdown chin / power block of research/model_durability.md (engine3.js applyDurability;
       // values: durability below)
-      durability: true
+      durability: true,
+      // v5 merge step 2: fight dynamics, research/model_dynamics.md E1-E11 (block `dyn` below; dyn.stkoHurtGate stays off)
+      dynamics: true
+    },
+
+    // ---------------- fight dynamics (component "dynamics"; research/model_dynamics.md section 8, data/derived/dynamics.json) ----------------
+    // Recipe values were fit on 2019-2023 ufcstats round data (train) by tools/dynamics.py and re-checked against the same JSON;
+    // [dyncal v4.0.1] values are level factors re-fit by tools/dynamics_calibrate.js on 2019-2023 backtest fights (out-of-fold
+    // learned rates) on top of engine v4.0.1: 1,000 train fights, 16 sims per corner order, 5 damped iterations plus one final
+    // update step from the last iteration (train only; scratchpad dyn/cal10.log). Volume, accuracy and takedown attempts follow
+    // the flag-off engine; knockdowns per fight-minute the 2019-2023 actuals by format; conversion the data's 0.512 per knockdown;
+    // the KO/TKO share the flag-off engine.
+    dyn: {
+      // E1 pace curves. RM 2.1: output per minute of position rises more steeply than per round-minute because control time rises
+      // by round, so a position-based engine starts from the distance curve [1, 1.15, 1.26] / [1, 1.22, 1.23, 1.31, 1.37]. With the
+      // takedown round curve below, the engine's control share rises by round as in real fights, and the recipe curves realised
+      // [1, 1.072, 1.072] / [1, 1.103, 1.054, 1.056, 1.013] per round-minute on train matchups (survivor selection is stronger
+      // with persistent fight-night output: high-output fights end early). Inputs = recipe x target / realised (5 rounds damped):
+      pace3: [1, 1.16, 1.34],                 // E1: output multiplier by round, 3 rounds (train realised target [1, 1.083, 1.141] per round-minute)
+      pace5: [1, 1.28, 1.30, 1.42, 1.52],     // E1: same, 5 rounds (target [1, 1.176, 1.130, 1.187, 1.185])
+      outStam: 0.05,                          // E1/E3: output x (1 - outStam (1 - S)); own earlier output costs at most -4.5% per 100 attempts (was 0.12)
+      // E2 form and persistence. Recipe: pace 0.35, out 0.20, AR(1) 0.30 / 0.68 (corrected E2: pace ~0.40, out 0.18-0.20, phi ~0.6,
+      // acc ~0.30). The first builder's train check (tools/dynamics_check_train.py on 2019-2023 rounds; real own-round corr R1-R2
+      // 0.570, R1-R3 0.474, fighters 0.656) found the recipe realising 0.468 / 0.424 / 0.553 because the engine's other round noise
+      // attenuates persistence; pace 0.45 and AR 0.32 / 0.85 fit best of four. Realised on v4.0.1 train matchups (same estimators,
+      // run abl402; real / flag off / these values): own-round corr R1-R2 0.570 / 0.462 / 0.540, AR(1) 0.63 / 0.01 / 0.49, sd
+      // fighter-fight 0.44 / 0.51 / 0.56, fighters' corr 0.85 / 0.50 / 0.63. A sensitivity run with formOut 0.12, formPace 0.43
+      // (abl403) gave 0.514 / 0.47 / 0.53 / 0.67 and no better scores (stat-line deviance +0.44, n.s.; control deviance worse).
+      // The individual form sds (formOut, formAcc) also carry the matchup model's error,
+      // not only true fight-night form: on the v4.0.1 train ablation (abl401) the narrow alternative (formOut 0, formAcc 0.31, the
+      // real accuracy dispersion) scored worse than these values on method (+0.0055) and method x round (+0.0108 [+0.0001, +0.0214]).
+      formPace: 0.45,                         // E2: lognormal sd of the shared fight-level pace (RE with profiles: 0.37; real fighters' corr 0.84 needs more)
+      formOut: 0.21,                          // E2: lognormal sd of each man's fight-level output form (recipe 0.20; with the AR(1) the flag-off total 0.37)
+      arSd: 0.32,                             // E2: stationary sd of each man's AR(1) round output noise (RE: 0.31)
+      arPhi: 0.85,                            // E2: its round-to-round autocorrelation (RE: 0.68; engine round noise attenuates the realised value to ~0.5)
+      roundPace: 0.10,                        // E2: lognormal sd of the shared round pace (engine already realises 0.41 vs 0.36 real)
+      formAcc: 0.43,                          // E2: logit sd of each man's fight-level accuracy form (recipe 0.28; RE with profiles 0.29; with the AR(1) the
+                                              // flag-off total 0.48; 0.31 matches the real accuracy dispersion but scores worse, see above)
+      accArSd: 0.28,                          // accuracy AR(1) round noise, stationary logit sd (RE with profiles 0.244; 0.24 realised 0.19 vs 0.24 real)
+      accArPhi: 0.73,                         // its autocorrelation (RE with profiles: 0.727)
+      accProfA: 0.61,                         // attenuation of the attacker's profile accuracy shift (RE profile coefficient 0.61; no effect when ML rates re-target accuracy)
+      accProfB: 0.50,                         // attenuation of the defender's allowed-accuracy shift (0.50)
+      vol: 0.50,                              // E7: lognormal sd of the shared per-fight knockdown volatility (was 0.6). Recipe 0.30 was sized to 2024-25 (engine
+                                              // frailty 1.7 vs 0.9 real); on 2019-2023 matchups real frailty is 1.49 (flag off 1.65, vol 0.30 1.09), so 0.50
+      // E4 knockdown momentum (corrected recipe, research/model_dynamics.md section 5 and its verification log): engine multipliers on
+      // the baseline rate must match the skip-round contrast (next round vs the round before the knockdown round; 2010-2023: scorer
+      // -5.9% SE 4.8%, dropped -2.6% SE 4.9%), not the dynamic-RE coefficients (-8.8% / +6%, relative to the knockdown round itself)
+      momScorerOut: 0.92,                     // E4: next-round output of a man who scored a knockdown (removes the engine's +6.5% over baseline)
+      momScorerAcc: 0.94,                     // E4: his accuracy odds (-0.058 logit)
+      momScorerTd: 0.88,                      // E4: his takedown attempts (-12%)
+      momDroppedOut: 0.95,                    // E4: next-round output of the man who was dropped (corrected: x0.95, not x1.05)
+      momDroppedTd: 1.12,                     // E4: his takedown attempts (+11-12%)
+      lostAcc: 1,                             // E5 knob, default off: accuracy odds x this after a round lost on the cards (published round scores: -0.079
+                                              // logit, SE 0.015, i.e. x0.92; may be form information the stats miss, not a choice, so off)
+      tdCtrlOpp: -0.104,                      // E6: takedown attempts x exp(tdCtrlOpp x minutes controlled by the opponent in earlier rounds) (z = 6.5)
+      tdTdl: -0.063,                          // E6: x exp(tdTdl x own takedowns landed in earlier rounds)
+      tdCtrlOwn: 0,                           // E6 optional: x exp(tdCtrlOwn x own minutes in control earlier) (data +0.048, may be style persistence; off)
+      distCtrlOpp: -0.013,                    // E6: distance output x exp(distCtrlOpp x minutes controlled by the opponent earlier)
+      // E6 companion: the carry-over coefficients are conditional effects inside a model with round cells; real takedown attempts
+      // RISE by round (targets_by_round.train, per 15 min: 3 rounds 3.58 / 3.75 / 4.30; 5 rounds 2.64 / 2.76 / 3.41 / 3.28 / 3.62,
+      // smoothed log-linear +8% per round) and so does control (18.4% -> 20.5% of round time). Without a round curve the carry-over
+      // made the engine's attempts FALL by round (abl401: 4.01 / 3.68 / 3.41) and worsened takedown-attempt deviance on train.
+      // Inputs = target shape / realised shape, two fixed-point steps on train matchups (flat curve realised 3 rounds [1, .919, .850],
+      // 5 rounds [1, .933, .891, .844, .801]; first step [1, 1.14, 1.41] / [1, 1.16, 1.31, 1.50, 1.72] realised [1, 1.02, 1.07] /
+      // [1, 1.04, 1.11, 1.14, 1.21]). The steep inputs say the carry-over bites harder in the engine than in the data (the
+      // controlled-minutes term was weaker, -0.040, on the 2024-25 refit); the marginal round shape is what is matched here.
+      tdRound3: [1, 1.17, 1.58],              // E6: takedown-attempt multiplier by round, 3 rounds (normalised over the first rounds; tdLevel sets the level)
+      tdRound5: [1, 1.20, 1.38, 1.65, 1.95],  // E6: same, 5 rounds
+      kdRound3: [1.50, 0.85, 0.56],           // E7: knockdown risk per landed standing strike by round, 3 rounds ([1, .57, .37] with frailty, train)
+      kdRound5: [1.445, 1.27, 0.737, 0.535, 0.535], // E7: 5 rounds = [1, .88, .51, .37, .37], the train-only (2019-2023) frailty fit with R4-5
+                                              // pooled (the recipe's [1, .65, .405, .29, .29] is a 2010-2023 fit, outside the tuning window; on the
+                                              // first builder's runs it and a geometric-mean compromise over-predicted 5-round round-1 KO/TKO)
+      kdLevel3: 0.655,                           // [dyncal v4.0.1] knockdown level in 3-round fights (replaces kdStamAtt, kdPaceExp, kdDmg, kdStamDef)
+      kdLevel5: 0.559,                           // [dyncal v4.0.1] knockdown level in 5-round fights (replaces caution5 / r1Caution5 on knockdowns)
+      convLevel: 1.045,                           // [dyncal v4.0.1] odds scale on the instant-KO and follow-up stoppage chances after a knockdown (per-KD conversion 0.512 train)
+      convRound: -0.155,                      // E8: conversion odds x exp(convRound (r - 1)) (SE 0.077); replaces kdInstantDmg, refDmg, instStam, finStamAtt
+      stkoBase: 0.9,                          // E9: standing TKO while hurt = stko x (stkoBase + D / 100) (was 0.3; data slope +0.0104 per head strike absorbed)
+      gnpDmg: 100,                            // E9: ground TKO x (1 + D / gnpDmg) (was 600)
+      noKdRound: -0.17,                       // E9: non-knockdown stoppage hazards x exp(noKdRound (r - 1)) (standing -0.18, ground -0.17)
+      stkoHurtGate: false,                    // E9 knob (verifier, default off): a standing TKO needs the hurt state, whose incidence follows kdRound, so the
+                                              // realised standing TKO per standing head absorbed decays as kdRound x exp(noKdRound r) ([1, .54, .37] in 3-round
+                                              // train fights vs E9 [1, .84, .70]; E9 round SE 0.24). true divides the stop chance per hurt strike by
+                                              // kdRound[r] / kdRound[0] (refit: stkoScale 0.700, gnpScale 0.459). Train ablation, gate on vs off: n.s. on every metric
+                                              // (7-bin +0.0041, method +0.0018); 3-round R3 KO hazard 0.087 vs 0.072 real (0.079 gate off), so not adopted
+      stkoScale: 0.733,                       // [dyncal v4.0.1] standing TKO scale; with gnpScale one joint factor (data ratio of the two hazards kept) so the
+                                              // KO/TKO share matches the flag-off engine (data: 0.00045 per landed standing head absorbed, no-KD rounds)
+      gnpScale: 0.481,                        // [dyncal v4.0.1] ground TKO scale (data: 0.0067 per ground sig strike absorbed, no-KD rounds)
+      kPace: 45,                              // E10: per-round pace ratio prior strength (train-best 45; was 15; verified: 30-45 supported, 45 vs 15 n.s. held out)
+      paceMutual: 0.4,                        // E10: pace partly mutual: x opponent's late-round ratio^paceMutual (0.39 train)
+      outLevel: 1.039,                           // [dyncal v4.0.1] output level (keeps the realised attempts per minute)
+      accLevel: 0.998,                            // [dyncal v4.0.1] accuracy odds level (keeps the realised accuracy)
+      tdLevel: 1.126                              // [dyncal v4.0.1] takedown-attempt level (keeps the realised takedown volume; E4 / E6 shift attempts between rounds)
     },
 
     // ---------------- learned stat-line rates (engine v4) ----------------
