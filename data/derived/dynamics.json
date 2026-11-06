@@ -1,7 +1,7 @@
 {
  "meta": {
   "tool": "tools/dynamics.py",
-  "built": "2026-11-06T10:29:56+00:00",
+  "built": "2026-11-06T11:08:30+00:00",
   "snapshot": "2026-10-31",
   "train": [
    "2019-01-01",
@@ -50,7 +50,8 @@
    "behind2_final": "final scheduled round and down 2+ rounds on sig-landed rounds",
    "lostJ": "share of judges who gave the previous round to the opponent (decisions only)"
   },
-  "jackknife_groups": 10
+  "jackknife_groups": 10,
+  "secs": 849.773583
  },
  "finish_hazard": {
   "p0_kd_per_standing_head_train": 0.00882,
@@ -9577,6 +9578,8 @@
       "se_log": 0.045702
      }
     },
+    "direction_residual_corr": -0.014655,
+    "direction_residual_n": 24662,
     "by_prior_damage": {
      "0 (R1)": {
       "kd_per100_sh": 0.831117,
@@ -9664,6 +9667,8 @@
       "se_log": 0.378321
      }
     },
+    "direction_residual_corr": -0.024257,
+    "direction_residual_n": 810,
     "by_prior_damage": {
      "0 (R1)": {
       "kd_per100_sh": 0.584795,
@@ -9900,7 +9905,7 @@
     "fighters_same_round": 0.689882
    }
   },
-  "secs": 367.863179
+  "secs": 487.08856
  },
  "form_decomposition": {
   "league_att_pm": 8.628933,

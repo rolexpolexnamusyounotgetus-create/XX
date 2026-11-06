@@ -1,13 +1,13 @@
 # Carlos Ulberg: scouting dossier
 
-As of 2026-11-06. He/him. "Black Jag". Orthodox, 6 ft 4 in, 77 in reach, born 1990-11-07 (age 35). UFC record 10-1 (ufcstats); pro record 15-1. Fights out of City Kickboxing, Auckland, New Zealand.
+As of 2026-11-06. He/him. "Black Jag". Orthodox, 6 ft 4 in, 77 in reach, born 1990-11-07 per ufcstats and ESPN (Sherdog and Wikipedia say 1990-11-17; age 35 either way). UFC record 10-1 (ufcstats); pro record 15-1 per ESPN and CBS Sports, 14-1 per Sherdog and Wikipedia (the gap is unresolved). Fights out of City Kickboxing, Auckland, New Zealand. Re-checked on Nov 6, 2026 with direct page fetches (ESPN, MMA Junkie, Sherdog, CBS Sports, Wikipedia) and the ESPN/UFC studio photos.
 
 ## Current status
 
 - **Title:** UFC light heavyweight champion since UFC 327, Miami, Apr 11, 2026 (KO of Jiri Prochazka, R1 3:45), for the belt Alex Pereira vacated.
-- **Injury:** tore the ACL in his right knee in the opening minute of that fight. His manager Ash Belcastro said "He snapped it" and reported bone bruising and tibia damage from fighting on it. Surgery was done in April 2026. Reports on the return date differ (late 2026 vs early 2027). His latest public line, after Magomed Ankalaev beat Bogdan Guskov in Abu Dhabi (Jul 25, 2026), was "We're looking at early 2027, I feel."
-- **Next:** no bout booked. Dana White said in April that no interim title had been decided, and Ulberg himself pushed back on interim-title talk.
-- **Ranking:** listed as champion on the Oct 27, 2026 list (ufcalendar.com, kalshi.com mirrors).
+- **Injury:** tore the ACL in his right knee in the opening minute of that fight. His manager Ash Belcastro said "He snapped it" and reported bone bruising and tibia damage from fighting on it. He had reconstructive surgery about a week later for what he called a "full rupture." Early reports on the return date differed (late 2026 vs early 2027). His latest public update, on Aug 27, 2026 at UFC Shanghai, was that he is still rehabbing and wants to "defend my title early next year" (ESPN; MMA Junkie, Aug 26). No newer update was found as of Nov 6.
+- **Next:** no bout booked (not on the ESPN or Sherdog schedules). Dana White said in April that no interim title had been decided, Ulberg pushed back on interim-title talk, and no interim belt has been created. Ankalaev is the #1 contender; Prochazka faces Navajo Stirling on Nov 21, 2026.
+- **Ranking:** champion on the UFC media rankings updated Nov 3, 2026 (CBS Sports; ufcalendar.com mirror) and on the UFC/Meta list of Oct 31.
 
 ## Recent fights
 
@@ -46,8 +46,32 @@ One KO loss (2021), none since. In his three-round decisions his output rose: si
 
 Decayed sums: 5.9 landed per minute at 54% accuracy, 4.0 absorbed. Of his attempts, 74% go to the head, 10% to the body and 16% to the legs. 92% of his attempts come at distance. Opponents try 1.2 takedowns per 15 min on him (decayed) and he has defended 86% across his career. Elo 1719, the highest of these five.
 
+## Appearance (for the avatar)
+
+No photo-based likeness sheet exists yet. From the ESPN/UFC studio headshot with the belt (May 2026) and full-body cutouts (Apr 2026, title-fight week; Sep 2025), front views only:
+
+- **Build:** tall and lean-muscular, long limbs, thick through the chest and shoulders.
+- **Hair:** short dark-brown to black hair with a tight curl: a buzz cut in Sep 2025, slightly longer on top with short sides in Apr-May 2026.
+- **Facial hair:** varies. Clean-shaven to light stubble in Sep 2025; a short stubble beard and moustache with some grey on the chin in Apr-May 2026.
+- **Skin:** medium.
+- **Tattoos:** a large Japanese-style piece with red accents (a dragon) over the right pec and shoulder up to the collarbone; black-and-grey Japanese-style work on the right forearm and upper arm (a big cat and a bird with waves show in different photos); a small turtle (honu)-style tattoo on the left forearm. Left chest, abdomen and legs clean.
+- **Kit:** UFC-issued board-style shorts, black in both cutouts (tiger-stripe in Sep 2025; wave pattern with the Venum logo for UFC 327). Black UFC gloves.
+
+## Still unconfirmed
+
+- A return date or first-defense opponent.
+- Pro record (15-1 vs 14-1) and birth date (Nov 7 vs Nov 17, 1990).
+- Tattoos on his back.
+
 ## Sources
 
+- https://www.espn.com/mma/story/_/id/49743588/injured-ufc-champion-ulberg-hopes-return-early-next-year (Aug 27, 2026)
+- https://mmajunkie.usatoday.com/story/sports/ufc/2026/08/26/carlos-ulberg-targets-early-2027-return-acl-injury/91484118007/
+- https://www.sherdog.com/fighter/Carlos-Ulberg-84291
+- https://www.espn.com/mma/fighter/_/id/4695736/carlos-ulberg and studio photos https://a.espncdn.com/i/headshots/mma/players/full/4695736.png, .../stance/left/4695736.png, .../stance/right/4695736.png
+- https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261121 (Prochazka vs Stirling)
+- https://www.cbssports.com/ufc/rankings/men/ (updated Nov 3, 2026)
+- https://en.wikipedia.org/wiki/Carlos_Ulberg (revision of Oct 18, 2026)
 - https://www.espn.com/mma/story/_/id/48463277/badly-hobbled-ulberg-stuns-prochazka-wild-ko-ufc-327
 - https://www.espn.com/mma/story/_/id/48463309/carlos-ulberg-blew-knee-jiri-prochazka-blew-title-chance-ufc-327
 - https://www.cbssports.com/ufc/news/carlos-ulberg-injury-surgery-torn-acl-ufc-327-title-jiri-prochazka/

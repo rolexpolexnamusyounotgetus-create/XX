@@ -557,7 +557,7 @@ def init_params(nJ):
     return {"beta": np.array([0.18, 0.13, 0.10, 2.4, 0.28, 0.46, 0.84, 0.3]), "w": np.zeros(3),
             "log_su": np.array(0.0), "h": np.zeros(2), "c0": np.array(-3.0), "th": np.array([0.3, 0.3, 0.3, 0.3]),
             "cy": np.zeros(NYEARS), "lg_e10": np.array(-6.0), "lpi": np.log(np.array([0.01, 0.002, 0.001])),
-            "E": np.zeros((nJ, 5))}
+            "E": np.zeros((nJ, 5)), "kappa": np.array(0.0), "log_sv": np.array(math.log(0.5))}
 
 
 LAYOUT = [("beta", (8,)), ("w", (3,)), ("log_su", ()), ("h", (2,)), ("c0", ()), ("th", (4,)), ("cy", (NYEARS,)),
@@ -567,8 +567,12 @@ LAYOUT = [("beta", (8,)), ("w", (3,)), ("log_su", ()), ("h", (2,)), ("c0", ()), 
 N_GLOBAL = sum(int(np.prod(sh)) if sh else 1 for _, sh in LAYOUT)
 
 
+EXTRA = [("kappa", 0.0), ("log_sv", math.log(0.5))]    # appended after E (older fits lack them: defaults)
+
+
 def ravel(th):
-    return np.concatenate([np.ravel(np.asarray(th[k], float)) for k, _ in LAYOUT] + [np.ravel(th["E"])])
+    return np.concatenate([np.ravel(np.asarray(th[k], float)) for k, _ in LAYOUT] + [np.ravel(th["E"])] +
+                          [np.ravel(np.asarray(th.get(k, d), float)) for k, d in EXTRA])
 
 
 def unravel(flat, nJ):
@@ -578,6 +582,10 @@ def unravel(flat, nJ):
         out[k] = flat[i:i + n].reshape(shp)
         i += n
     out["E"] = flat[i:i + nJ * 5].reshape((nJ, 5))
+    i += nJ * 5
+    for k, d in EXTRA:
+        out[k] = flat[i] if flat.shape[0] > i else (np.array(d) if isinstance(flat, np.ndarray) else d + 0 * flat[0])
+        i += 1
     return out
 
 
@@ -604,8 +612,8 @@ def _jax_fns():
     xq = np.asarray(xq * np.sqrt(2.0))
     wq = np.asarray(wq / np.sqrt(np.pi))
 
-    def fr_logP(th, d, fl, extra=None):
-        use_sh, use_j, use_h, use_tr = fl[0], fl[1], fl[2], fl[3]
+    def fr_logP(th, d, fl, nv, extra=None):
+        use_sh, use_j, use_h, use_tr, use_pb, use_cl, use_fx = (fl[k] for k in range(7))
         X, tt, home, us, yr = d["X"], d["t"], d["home"], d["us"], d["yr"]
         b = th["beta"]
         V = X[:, :3] @ b[:3]
@@ -616,35 +624,54 @@ def _jax_fns():
         if extra is not None:
             eff = eff + extra
         w = th["w"] * use_tr
+        hh = use_h * (th["h"][0] * us + th["h"][1] * (1 - us)) * home
+        core0 = jnp.exp(w[0] * tt) * V + jnp.exp(w[1] * tt) * K + jnp.exp(w[2] * tt) * G
         core = (jnp.exp(eff[..., 1] + w[0] * tt[:, None]) * V[:, None] +
                 jnp.exp(eff[..., 2] + w[1] * tt[:, None]) * K[:, None] +
-                jnp.exp(eff[..., 3] + w[2] * tt[:, None]) * G[:, None] +
-                use_h * (th["h"][0] * us + th["h"][1] * (1 - us))[:, None] * home[:, None])
-        su = jnp.exp(th["log_su"]) * use_sh
-        u = su * xq
-        eta = jnp.exp(eff[..., 0])[..., None] * (core[..., None] + u[None, None, :])
+                jnp.exp(eff[..., 3] + w[2] * tt[:, None]) * G[:, None] + hh[:, None])
+        # shared round noise; its sd can grow in close rounds (closeness option)
+        su = jnp.exp(th["log_su"]) * use_sh * jnp.exp(-use_cl * th["kappa"] * jnp.abs(core0))       # nfr
+        u = su[:, None] * xq[None, :]                                                               # nfr x G
+        if nv > 1:
+            xv, wv = np.polynomial.hermite.hermgauss(nv)
+            vq = jnp.exp(th["log_sv"]) * use_fx * jnp.asarray(xv * np.sqrt(2.0))
+        else:
+            vq = jnp.zeros(1)
+        lat = core[:, :, None, None] + u[:, None, :, None] + vq[None, None, None, :]               # nfr x 3 x G x V
+        eta = jnp.exp(eff[..., 0])[..., None, None] * lat
         lin = th["th"][0] * V + th["th"][1] * K + th["th"][2] * G
         cc = th["c0"] + th["cy"][yr]
-        zA = (cc[:, None] + eff[..., 4] + lin[:, None])[..., None] + th["th"][3] * u[None, None, :]
-        zB = (cc[:, None] + eff[..., 4] - lin[:, None])[..., None] - th["th"][3] * u[None, None, :]
+        uu = (th["th"][3] * u)[:, None, :, None]
+        zA = (cc[:, None] + eff[..., 4] + lin[:, None])[..., None, None] + uu
+        zB = (cc[:, None] + eff[..., 4] - lin[:, None])[..., None, None] - uu
         ls = jax.nn.log_sigmoid
+        lwin = use_pb * jax.scipy.special.log_ndtr(eta) + (1 - use_pb) * ls(eta)
+        llos = use_pb * jax.scipy.special.log_ndtr(-eta) + (1 - use_pb) * ls(-eta)
         e10 = jax.nn.sigmoid(th["lg_e10"])
         l1 = jnp.log1p(-e10)
-        return jnp.stack([l1 + ls(-eta) + ls(zB), l1 + ls(-eta) + ls(-zB), jnp.log(e10) + 0 * eta,
-                          l1 + ls(eta) + ls(-zA), l1 + ls(eta) + ls(zA)], -1)
+        return jnp.stack([l1 + llos + ls(zB), l1 + llos + ls(-zB), jnp.log(e10) + 0 * eta,
+                          l1 + lwin + ls(-zA), l1 + lwin + ls(zA)], -1)          # nfr x 3 x G x V x 5
 
-    def fight_ll(th, d, fl, nF, extra=None):
-        P = jnp.exp(fr_logP(th, d, fl, extra))
+    def fight_ll(th, d, fl, nF, nv=1, extra=None):
+        P = jnp.exp(fr_logP(th, d, fl, nv, extra))
         ufr = d["ufr"]
-        Q = jnp.sum(wq[None, :] * P[ufr, 0, :, d["ua"]] * P[ufr, 1, :, d["ub"]] * P[ufr, 2, :, d["uc"]], 1)
-        logQ = jnp.concatenate([jnp.log(Q + 1e-300), jnp.zeros(1)])
+        Q = jnp.sum(wq[None, :, None] * P[ufr, 0, :, :, d["ua"]] * P[ufr, 1, :, :, d["ub"]] *
+                    P[ufr, 2, :, :, d["uc"]], 1)                                     # n_u x V
+        logQ = jnp.concatenate([jnp.log(Q + 1e-300), jnp.zeros((1, Q.shape[1]))], 0)
         pi = jnp.exp(th["lpi"])
         p00 = 1 - 2 * pi[0] - 2 * pi[1] - pi[2]
         lprior = jnp.log(jnp.stack([p00, pi[0], pi[0], pi[1], pi[1], pi[2], jnp.array(1.0)]))
+        if nv > 1:
+            _, wv = np.polynomial.hermite.hermgauss(nv)
+            lwv = jnp.asarray(np.log(wv / np.sqrt(np.pi)))
+        else:
+            lwv = jnp.zeros(1)
         out = jnp.zeros(nF)
         for fi, idx, dd, mask in d["buckets"]:
-            tl = jnp.where(mask, logQ[idx].sum(-1) + lprior[dd], -jnp.inf)
-            out = out.at[fi].set(jax.scipy.special.logsumexp(tl, axis=1))
+            tl = logQ[idx].sum(-2) + lprior[dd][..., None]                           # nb x M x V
+            tl = jnp.where(mask[..., None], tl, -jnp.inf)
+            lv = jax.scipy.special.logsumexp(tl, axis=1) + lwv[None, :]
+            out = out.at[fi].set(jax.scipy.special.logsumexp(lv, axis=1))
         return out
 
     def penalty(th, fl, tau_v):
@@ -653,35 +680,42 @@ def _jax_fns():
         pen += 0.5 * 1e-2 * (jnp.sum(th["w"] ** 2) + jnp.sum(th["h"] ** 2) + jnp.sum(th["th"] ** 2))
         pen += 0.5 * 1e-4 * jnp.sum(th["beta"] ** 2)
         pen += 0.5 * (th["log_su"] / 2.0) ** 2
+        pen += 0.5 * (th["kappa"] / 1.0) ** 2 + 0.5 * ((th["log_sv"] - math.log(0.5)) / 2.0) ** 2
         return pen
 
-    def obj(flat, d, fl, tau_v, nJ, nF):
+    def obj(flat, d, fl, tau_v, nJ, nF, nv):
         th = unravel(flat, nJ)
-        return -jnp.sum(fight_ll(th, d, fl, nF)) + penalty(th, fl, tau_v)
+        return -jnp.sum(fight_ll(th, d, fl, nF, nv)) + penalty(th, fl, tau_v)
 
-    _JAX["vg"] = jax.jit(jax.value_and_grad(obj), static_argnums=(4, 5))
-    _JAX["ll"] = jax.jit(lambda flat, d, fl, nJ, nF: fight_ll(unravel(flat, nJ), d, fl, nF), static_argnums=(3, 4))
+    _JAX["vg"] = jax.jit(jax.value_and_grad(obj), static_argnums=(4, 5, 6))
+    _JAX["ll"] = jax.jit(lambda flat, d, fl, nJ, nF, nv: fight_ll(unravel(flat, nJ), d, fl, nF, nv),
+                         static_argnums=(3, 4, 5))
 
-    def slot_grad(flat, d, fl, nJ, nF):
+    def slot_grad(flat, d, fl, nJ, nF, nv):
         th = unravel(flat, nJ)
         nfr = d["X"].shape[0]
-        return jax.grad(lambda ex: jnp.sum(fight_ll(th, d, fl, nF, ex)))(jnp.zeros((nfr, 3, 5)))
-    _JAX["sg"] = jax.jit(slot_grad, static_argnums=(3, 4))
+        return jax.grad(lambda ex: jnp.sum(fight_ll(th, d, fl, nF, nv, ex)))(jnp.zeros((nfr, 3, 5)))
+    _JAX["sg"] = jax.jit(slot_grad, static_argnums=(3, 4, 5))
     NG = N_GLOBAL
 
-    def grad_g(xg, xE, d, fl, tau_v, nJ, nF):
-        return jax.grad(obj)(jnp.concatenate([xg, xE]), d, fl, tau_v, nJ, nF)[:NG]
+    def grad_g(xg, xE, d, fl, tau_v, nJ, nF, nv):
+        return jax.grad(obj)(jnp.concatenate([xg, xE]), d, fl, tau_v, nJ, nF, nv)[:NG]
 
-    def hvp_g(xg, xE, v, d, fl, tau_v, nJ, nF):
+    def hvp_g(xg, xE, v, d, fl, tau_v, nJ, nF, nv):
         # one Hessian-vector product of the global block (forward over reverse); memory of one gradient
-        return jax.jvp(lambda z: grad_g(z, xE, d, fl, tau_v, nJ, nF), (xg,), (v,))[1]
-    _JAX["hvp"] = jax.jit(hvp_g, static_argnums=(6, 7))
+        return jax.jvp(lambda z: grad_g(z, xE, d, fl, tau_v, nJ, nF, nv), (xg,), (v,))[1]
+    _JAX["hvp"] = jax.jit(hvp_g, static_argnums=(6, 7, 8))
     _JAX["jnp"] = jnp
     return _JAX
 
 
 def flags_of(cfg):
-    return np.array([float(cfg.get(k, 1)) for k in ("shared", "judges", "home", "trend")])
+    return np.array([float(cfg.get(k, 1)) for k in ("shared", "judges", "home", "trend")] +
+                    [float(cfg.get(k, 0)) for k in ("probit", "closeness", "fightfx")])
+
+
+def nv_of(cfg):
+    return 7 if cfg.get("fightfx", 0) else 1
 
 
 class Model:
@@ -692,30 +726,40 @@ class Model:
         self.dz = dz
         self.data = dz.arrays()
 
+    def fix(self, x):
+        """Older parameter vectors (fits made before the extras existed) get the default extras appended."""
+        x = np.asarray(x, float)
+        need = N_GLOBAL + 5 * self.dz.nJ + len(EXTRA)
+        if len(x) < need:
+            x = np.concatenate([x, [d for _, d in EXTRA][len(x) - need:]])
+        return x
+
     def vg(self, x, cfg, tau):
         jnp = self.fns["jnp"]
-        v, g = self.fns["vg"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)),
-                              jnp.asarray([tau[k] for k in EFF]), self.dz.nJ, self.dz.nF)
+        v, g = self.fns["vg"](jnp.asarray(self.fix(x)), self.data, jnp.asarray(flags_of(cfg)),
+                              jnp.asarray([tau[k] for k in EFF]), self.dz.nJ, self.dz.nF, nv_of(cfg))
         return float(v), np.asarray(g, dtype=float)
 
     def ll(self, x, cfg):
         jnp = self.fns["jnp"]
-        return np.asarray(self.fns["ll"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ, self.dz.nF))
+        return np.asarray(self.fns["ll"](jnp.asarray(self.fix(x)), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ,
+                                         self.dz.nF, nv_of(cfg)))
 
     def hess_g(self, x, cfg, tau):
         jnp = self.fns["jnp"]
-        x = jnp.asarray(x)
+        x = jnp.asarray(self.fix(x))
         fl, tv = jnp.asarray(flags_of(cfg)), jnp.asarray([tau[k] for k in EFF])
         cols = []
         for i in range(N_GLOBAL):
             e = jnp.zeros(N_GLOBAL).at[i].set(1.0)
             cols.append(np.asarray(self.fns["hvp"](x[:N_GLOBAL], x[N_GLOBAL:], e, self.data, fl, tv,
-                                                   self.dz.nJ, self.dz.nF)))
+                                                   self.dz.nJ, self.dz.nF, nv_of(cfg))))
         return np.stack(cols, 1)
 
     def slot_grad(self, x, cfg):
         jnp = self.fns["jnp"]
-        return np.asarray(self.fns["sg"](jnp.asarray(x), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ, self.dz.nF))
+        return np.asarray(self.fns["sg"](jnp.asarray(self.fix(x)), self.data, jnp.asarray(flags_of(cfg)), self.dz.nJ,
+                                         self.dz.nF, nv_of(cfg)))
 
 
 def make_precond(M, x, cfg, tau, Tg=None):
@@ -737,7 +781,7 @@ def make_precond(M, x, cfg, tau, Tg=None):
         dE = dE + np.einsum("jkk->jk", info)
     if lam is not None:
         log(f"  preconditioner built in {time.time() - t0:.0f}s (global eig {lam.min():.3g}..{lam.max():.3g})")
-    return {"Tg": Tg, "sE": 1.0 / np.sqrt(dE.ravel())}
+    return {"Tg": Tg, "sE": np.concatenate([1.0 / np.sqrt(dE.ravel()), np.full(len(EXTRA), 0.1)])}
 
 
 def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, model=None, precond=None):
@@ -745,7 +789,7 @@ def fit_model(dz, cfg, tau, flat_init=None, maxiter=None, verbose=True, model=No
     from scipy.optimize import minimize
     import os
     M = model or Model(dz)
-    x0 = ravel(init_params(dz.nJ)) if flat_init is None else np.asarray(flat_init, float)
+    x0 = ravel(init_params(dz.nJ)) if flat_init is None else M.fix(flat_init)
     maxiter = maxiter or int(os.environ.get("OFFICIALS_MAXITER", 3000))
     t0 = time.time()
     if precond is None:
@@ -821,6 +865,10 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
     if judge_mask is not None:
         Ez = Ez * judge_mask
     su = float(np.exp(th["log_su"]))
+    kap = float(th.get("_kappa", 0.0))
+    sv = float(th.get("_sv", 0.0))
+    probit = bool(th.get("_probit", 0))
+    from scipy.special import ndtr
     e10 = 1 / (1 + np.exp(-th["lg_e10"]))
     pi = np.exp(th["lpi"])
     pd_ = np.array([1 - 2 * pi[0] - 2 * pi[1] - pi[2], pi[0], pi[0], pi[1], pi[1], pi[2]])
@@ -828,6 +876,7 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
     cardp = np.zeros((dz.nF, 3, 3))
     any108 = np.zeros((dz.nF, 3))
     rprob = np.zeros((dz.nfr, 3, 5))
+    runan = np.zeros(dz.nfr)
     starts = np.r_[0, np.cumsum([r["R"] for r in dz.rows])]
     for f in range(dz.nF):
         sl = slice(starts[f], starts[f + 1])
@@ -836,17 +885,21 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
         V, K, G = X[:, :3] @ b[:3], X[:, 3] * b[3], X[:, 4:] @ b[4:]
         tt, hm, us, yr = dz.t[sl][0], dz.home[sl][0], dz.us[sl][0], dz.yr[sl][0]
         hh = (th["h"][0] * us + th["h"][1] * (1 - us)) * hm
-        u = rng.normal(0, su, (nsim, R))
+        core0 = np.exp(th["w"][0] * tt) * V + np.exp(th["w"][1] * tt) * K + np.exp(th["w"][2] * tt) * G
+        u = rng.normal(0, 1, (nsim, R)) * (su * np.exp(-kap * np.abs(core0)))[None, :]
+        vfx = rng.normal(0, sv, (nsim, 1)) if sv > 0 else 0.0
         totA = np.zeros((nsim, 3))
         totB = np.zeros((nsim, 3))
         n108 = np.zeros((nsim, 3))
         lin = th["th"][0] * V + th["th"][1] * K + th["th"][2] * G
+        AW = []
         for j in range(3):
             e = Ez[dz.J[sl][0, j]]
             core = (np.exp(e[1] + th["w"][0] * tt) * V + np.exp(e[2] + th["w"][1] * tt) * K +
                     np.exp(e[3] + th["w"][2] * tt) * G + hh)
-            eta = np.exp(e[0]) * (core[None, :] + u)
-            aw = rng.random((nsim, R)) < 1 / (1 + np.exp(-eta))
+            eta = np.exp(e[0]) * (core[None, :] + u + vfx)
+            aw = rng.random((nsim, R)) < (ndtr(eta) if probit else 1 / (1 + np.exp(-eta)))
+            AW.append(aw)
             cc = th["c0"] + th["cy"][yr] + e[4]
             zW = np.where(aw, cc + lin[None, :] + th["th"][3] * u, cc - lin[None, :] - th["th"][3] * u)
             big = rng.random((nsim, R)) < 1 / (1 + np.exp(-zW))
@@ -859,6 +912,7 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
             totA[:, j] = sa.sum(1)
             totB[:, j] = sb.sum(1)
             n108[:, j] = (big & ~tie).sum(1)
+        runan[sl] = ((AW[0] == AW[1]) & (AW[1] == AW[2])).mean(0)
         dopt = rng.choice(6, size=nsim, p=pd_)
         dA = np.array([d[0] for d in DED_OPTS])[dopt]
         dB = np.array([d[1] for d in DED_OPTS])[dopt]
@@ -879,6 +933,7 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
             cardp[f, j] = [(totA[:, j] > totB[:, j]).mean(), (totA[:, j] < totB[:, j]).mean(),
                            (totA[:, j] == totB[:, j]).mean()]
             any108[f, j] = (n108[:, j] > 0).mean()
+    simulate_decisions.last_runan = runan
     return out, cardp, any108, rprob
 
 
@@ -1022,7 +1077,12 @@ MODELS = {"indep": {"shared": 0, "judges": 0, "home": 0},
           "league": {"judges": 0, "home": 0},
           "league_home": {"judges": 0},
           "judges": {"home": 0},
-          "judges_home": {}}
+          "judges_home": {},
+          "lh_probit": {"judges": 0, "probit": 1},
+          "lh_close": {"judges": 0, "closeness": 1},
+          "lh_fight": {"judges": 0, "fightfx": 1},
+          "lh_close_fight": {"judges": 0, "closeness": 1, "fightfx": 1},
+          "lh_probit_close": {"judges": 0, "probit": 1, "closeness": 1}}
 
 
 def remap(x_old, jidx_old, jidx_new):
@@ -1087,6 +1147,9 @@ def sim_params(th, cfg):
         th_sim["h"] = np.zeros(2)
     if not cfg.get("trend", 1):
         th_sim["w"] = np.zeros(3)
+    th_sim["_probit"] = int(cfg.get("probit", 0))
+    th_sim["_kappa"] = float(th.get("kappa", 0.0)) if cfg.get("closeness", 0) else 0.0
+    th_sim["_sv"] = float(np.exp(th.get("log_sv", -30.0))) if cfg.get("fightfx", 0) else 0.0
     return th_sim
 
 
@@ -1111,6 +1174,7 @@ def evaluate(fit, rows, nat, years, nsim=8000, seed=7):
     th_sim = sim_params(to_np(unravel(np.asarray(fit["x"]), len(fit["jidx"]))), cfg)
     probs, cardp, any108, rprob = simulate_decisions(th_sim, dz, nsim=nsim, seed=seed)
     return {"fids": [r["fid"] for r in dz.rows], "card_ll": ll, "probs": probs, "cardp": cardp, "any108": any108,
+            "rprob": rprob, "runan": simulate_decisions.last_runan,
             "years": [r["year"] for r in dz.rows], "rows_meta": [{k: r[k] for k in ("fid", "year", "R", "winner", "cat",
                                                                                     "n0", "n1", "cards", "referee",
                                                                                     "region")} for r in dz.rows]}
@@ -1961,6 +2025,56 @@ def to_jsonable(o):
     return o
 
 
+def observed_unanimity(rows_eval, runan):
+    """Predicted vs observed round unanimity on rounds where all three judges' round scores are known."""
+    pu, ou, k = [], [], 0
+    for r in rows_eval:
+        R = r["R"]
+        if all(c[4] is not None for c in r["cards"]):
+            w = np.sign(np.array([c[4] for c in r["cards"]], int) - 2)
+            for q in range(R):
+                if (w[:, q] != 0).all():
+                    pu.append(runan[k + q])
+                    ou.append(abs(w[:, q].sum()) == 3)
+        k += R
+    pu, ou = np.array(pu), np.array(ou)
+    close = pu < 0.7
+    return {"rounds": int(len(pu)), "pred": float(pu.mean()), "obs": float(ou.mean()),
+            "close_rounds": int(close.sum()), "pred_close": float(pu[close].mean()), "obs_close": float(ou[close].mean())}
+
+
+def run_structure(rows, nat, test_year, tag, years_eval, variants, init_tag=None):
+    """Structural variants of the league model (no named judges, home on), one window, held-out years_eval."""
+    import pickle
+    W = Window(rows, nat, test_year)
+    init = None
+    if init_tag and (CACHE / f"fold_{init_tag}.pkl").exists():
+        t = pickle.load(open(CACHE / f"fold_{init_tag}.pkl", "rb"))
+        if "league_home" in t["models"]:
+            init = t["models"]["league_home"]["x"]
+            ij = t["models"]["league_home"]["jidx"]
+    if init is None:
+        base = W.fit("league", TAU_DEFAULT)
+        init, ij = base["x"], base["jidx"]
+    by_fid = {r["fid"]: r for r in rows}
+    res = {}
+    for m in variants:
+        f = W.fit(m, TAU_DEFAULT, init=init, init_jidx=ij)
+        ev = evaluate(f, rows, nat, years_eval)
+        mb = metrics_block(ev, by_fid)
+        un = observed_unanimity([by_fid[x] for x in ev["fids"]], ev["runan"])
+        th = to_np(unravel(np.asarray(f["x"]), len(f["jidx"])))
+        res[m] = {"x": f["x"], "jidx": f["jidx"], "eval": ev, "metrics": strip_private(mb), "unanimity": un,
+                  "th": th, "model": m, "tau": f["tau"]}
+        log(f"  {m}: card {mb['card_ll']:.4f} wLL {mb['winner_logloss']:.4f} split {mb['split_logloss']:.4f} "
+            f"pred/obs split {mb['pred_split_rate']:.3f}/{mb['obs_split_rate']:.3f} unan {un['pred']:.3f}/{un['obs']:.3f} "
+            f"close {un['pred_close']:.3f}/{un['obs_close']:.3f} su {float(np.exp(th['log_su'])):.3f} "
+            f"kappa {float(th['kappa']):.3f} sv {float(np.exp(th['log_sv'])):.3f}")
+        with open(CACHE / f"struct_{tag}.pkl", "wb") as fh:
+            pickle.dump(res, fh)
+    return res
+
+
 def load_all():
     """Decisions plus nationality map (cached for the parallel fold processes)."""
     F, S, D, rows, notes, data_max = build_data()
@@ -2075,6 +2189,7 @@ if __name__ == "__main__":
     ap.add_argument("--tag", default=None)
     ap.add_argument("--eval-years", default=None)
     ap.add_argument("--models", default="indep,league,league_home,judges,judges_home")
+    ap.add_argument("--init-tag", default=None)
     args = ap.parse_args()
     if args.fetch_wikidata:
         fetch_wikidata()
@@ -2083,6 +2198,10 @@ if __name__ == "__main__":
         ev = [int(y) for y in args.eval_years.split(",")] if args.eval_years else None
         run_fold(rows, nat, args.test_year, args.tag or str(args.test_year), models=tuple(args.models.split(",")),
                  tau_mults=tuple(float(m) for m in args.tau_mults.split(",")), years_eval=ev)
+    elif args.stage == "structure":
+        F, S, D, rows, nat, info, notes, data_max = load_all()
+        ev = [int(y) for y in args.eval_years.split(",")]
+        run_structure(rows, nat, args.test_year, args.tag, ev, args.models.split(","), init_tag=args.init_tag)
     elif args.stage == "post":
         F, S, D, rows, nat, info, notes, data_max = load_all()
         run_post(rows, nat, info, F, S, data_max, notes)

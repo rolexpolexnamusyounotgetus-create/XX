@@ -96,25 +96,8 @@ def assets_js():
                 mime = "model/gltf-binary"
             with open(path, "rb") as f:
                 out[name] = "data:" + mime + ";base64," + base64.b64encode(f.read()).decode("ascii")
-    return "window.FightAssets = " + json.dumps(out, separators=(",", ":")) + ";\n" + scouting_js()
+    return "window.FightAssets = " + json.dumps(out, separators=(",", ":")) + ";"
 
-
-def scouting_js():
-    """Appearance blocks from data/scouting/*.json, for the avatar builder's defaults (a few KB)."""
-    out = {}
-    d = os.path.join(ROOT, "data", "scouting")
-    if os.path.isdir(d):
-        for name in sorted(os.listdir(d)):
-            if not name.endswith(".json"):
-                continue
-            try:
-                with open(os.path.join(d, name), encoding="utf-8") as f:
-                    app = json.load(f).get("appearance")
-            except (ValueError, OSError):
-                continue
-            if isinstance(app, dict):
-                out[name[:-5]] = {k: v for k, v in app.items() if k != "sources"}
-    return "window.FightScouting = " + json.dumps(out, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/") + ";"
 
 
 def main():

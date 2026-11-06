@@ -52,7 +52,7 @@
       "cauliflower_ear": "None obvious",
       "note": "Sit slightly out from the head"
     },
-    "notable_marks_scars": "A small round reddish-dark mark on the upper right chest below the collarbone (ESPN headshot). A few small dark spots on the cheeks/forehead (cagesidepress photo)."
+    "notable_marks_scars": "No obvious facial scars. A few small dark spots on the cheeks and forehead (cagesidepress photo). The reddish mark on the upper right chest below the collarbone is a tattoo (a red lip-print), not a scar; see tattoos."
   },
   "hair": {
     "style": "Very short buzz cut, even all over",
@@ -71,9 +71,9 @@
     "shape": "boxed full beard following the jaw, slightly fuller at the chin"
   },
   "skin": {
-    "tone_hex": "#c4724b",
-    "tone_hex_method": "average of the cheek samples only (forehead samples sit on specular highlights in every photo); each sample is the median of the 25th-65th luma percentile pixels of the patch",
-    "tone_hex_all_samples_avg": "#cc8462",
+    "tone_hex": "#b76d4d",
+    "tone_hex_method": "average of the eight cheek samples from five photos (forehead samples sit on specular highlights and are excluded); each sample is the median of the 25th-65th luma percentile pixels of the patch",
+    "tone_hex_all_samples_avg": "#c17d5f",
     "tone_samples": [
       {
         "photo": "espn_headshot.png",
@@ -128,11 +128,23 @@
         "where": "cheek below cheekbone, image-right side",
         "light": "warm arena light",
         "hex": "#b37957"
+      },
+      {
+        "photo": "03_profile_ufc322_msg_bjpenn.jpg",
+        "where": "cheek below cheekbone, right side (box x1100-1200, y280-360 of 1920x1080)",
+        "light": "arena light, warm/red cast",
+        "hex": "#b06a50"
+      },
+      {
+        "photo": "07_commons_3q_2021.png",
+        "where": "cheek below cheekbone, image-left side (box x300-380, y650-760 of 1247x1673)",
+        "light": "video still, cool/blue cast",
+        "hex": "#6d5155"
       }
     ],
     "undertone": "Warm (orange-red). Medium-dark brown skin.",
-    "freckles_marks": "Small dark spots on the cheeks and forehead; a small reddish mark on the upper right chest.",
-    "note": "The ESPN grade is very warm (cheek samples #bf512e and #db633d), and the flash photo is lifted. The three-photo cheek average (#c4724b) is a reasonable midpoint. He reads lighter and warmer than Kamaru Usman in comparable light."
+    "freckles_marks": "Small dark spots on the cheeks and forehead. No freckles.",
+    "note": "The ESPN grade is very warm (cheek samples #bf512e and #db633d, re-checked in review as #c1522e and #d55f39), the flash photo is lifted, and the 2021 Commons still has a cool cast (#6d5155). Review added the 03 and 07 cheek samples, which moves the average from #c4724b to the value above. Medium-dark brown with a warm undertone; he reads lighter and warmer than Kamaru Usman in comparable studio light (ESPN cheek #c1522e vs #7c442f)."
   },
   "body": {
     "build": "Long-limbed, lean, athletic welterweight (188 cm, 77 kg)",
@@ -148,28 +160,38 @@
   },
   "tattoos": [
     {
-      "where": "left pectoral / upper left chest",
-      "description": "Script reading 'Death Before Dishonour' in two lines",
+      "where": "upper left chest / left pectoral below the collarbone",
+      "description": "Cursive script 'Death Before Dishonour' in two lines",
       "size": "medium"
     },
     {
-      "where": "right pectoral / upper right chest",
-      "description": "Several lines of script near the collarbone, with a black-and-grey vertical portrait/figure below it on the upper right chest",
+      "where": "upper right chest below the collarbone",
+      "description": "Two lines of thin cursive script, roughly 'God protect me from my friends / I'll take care of my enemies', running diagonally across the upper right chest toward the shoulder",
       "size": "medium"
+    },
+    {
+      "where": "upper right chest near the collarbone, above the script",
+      "description": "A small red lip-print (kiss) tattoo, the only colour tattoo; it reads as a reddish mark at low resolution",
+      "size": "small (about 4 cm)"
+    },
+    {
+      "where": "right pectoral",
+      "description": "Black-and-grey portrait of a veiled, weeping Virgin Mary with eyes closed and hands pressed together in prayer, about from the collarbone script down to the nipple",
+      "size": "medium-large"
     },
     {
       "where": "left side of torso (ribs/flank)",
-      "description": "A vertical column of large script letters running down the ribs (not readable at the available resolution)",
+      "description": "The name EDWARDS in large Old English/gothic capitals running vertically down the ribs, from below the pec toward the waistband",
       "size": "medium (tall)"
     },
     {
       "where": "left forearm",
-      "description": "Black-and-grey forearm piece, dense, from the elbow toward the wrist",
+      "description": "Dense black-and-grey forearm piece from the elbow toward the wrist (individual motifs not readable at the available resolution)",
       "size": "half sleeve (forearm)"
     }
   ],
   "kit": {
-    "fight_shorts": "Black/grey patterned UFC shorts with crypto.com logo (2025); red Venum shorts (2022); black with gold trim as champion (2023-2024)",
+    "fight_shorts": "2025 (ESPN UFC 322-era cutout): black UFC shorts with a grey layered-scale pattern, a black-and-white checker waistband and crypto.com logo; red Venum shorts (2022 cutout); black with gold trim as champion (2023-2024)",
     "walkout": "Black Venum hoodie with gold UFC lettering (champion era)",
     "colours": [
       "#111111 black",
@@ -227,5 +249,5 @@
     "ears/r-ear-rot-forward": 0.1
   },
   "morphs_unavailable": "No hairline-recession or beard-shape targets: do these in the hair/beard textures. No ear targets in the shipped manifest (a small forward rotation is under morphs_if_available).",
-  "notes": "Confidence: medium-high for the overall look (long oval face, receding buzz cut, dense boxed black beard, high cheekbones, long lean frame, chest scripts); medium for morph values. What to watch for: (1) the receding temple hairline is important for the likeness and must be in the scalp texture; (2) the beard is dense and neatly edged, so do not render stubble; (3) keep him slimmer and longer-limbed than Usman; (4) no 2026 photos were found (data/derived/fighters.json lists his last fight as UFC 322 on 2025-11-15), so the Nov 2025 photos are the most current; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height."
+  "notes": "Confidence: medium-high for the overall look (long oval face, receding buzz cut, dense boxed black beard, high cheekbones, long lean frame, chest scripts); medium for morph values. What to watch for: (1) the receding temple hairline is important for the likeness and must be in the scalp texture; (2) the beard is dense and neatly edged, so do not render stubble; (3) keep him slimmer and longer-limbed than Usman; (4) no 2026 photos were found (data/derived/fighters.json lists his last fight as UFC 322 on 2025-11-15), so the Nov 2025 photos are the most current; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. Review (second pass, 2026-11-06): re-checked every photo. Corrected the tattoos: the 'reddish mark' on the upper right chest is a red lip-print tattoo, the right-pec figure is a praying, weeping Virgin Mary, the right-chest script is legible, and the left-rib letters spell EDWARDS. Skin average updated with two more cheek samples. Commons licence for Leon_Edwards_2021.png re-checked (CC BY 3.0, James English). A web search found no 2026 fight photos. Morph names and ranges validated against assets/embed/mh-manifest.json; values unchanged."
 }

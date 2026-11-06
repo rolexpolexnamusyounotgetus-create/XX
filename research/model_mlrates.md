@@ -2,7 +2,7 @@
 
 Status: built, validated and exported Nov 6, 2026. Files: `tools/mlrates.py` (dataset, models, validation,
 export), `tools/mlrates_engine.js` (engine v3 expectations and the simulator check, called by the Python tool),
-`src/ml/mlrates.js` (dependency-free UMD evaluator plus the engine adapter), `tests/test_mlrates.js` (45 checks),
+`src/ml/mlrates.js` (dependency-free UMD evaluator plus the engine adapter), `tests/test_mlrates.js` (47 checks),
 `tests/fixtures/mlrates_fixtures.json`, `tools/mlrates_mlcal_hook.js` (hook for the mlcal tuner). Outputs:
 `data/derived/mlrates_eval.json` (all validation and simulator numbers in this report),
 `data/derived/mlrates.json` (production model, trained 2010-2025), `data/derived/mlrates_dev.json` (trained
@@ -31,6 +31,9 @@ export), `tools/mlrates_engine.js` (engine v3 expectations and the simulator che
    - Simulated per-minute stat lines (sig. landed, takedowns landed, control) move closer to the real ones in both
      periods, all CIs excluding zero.
    - Walk-forward Elo: 0.6769 (2024-2025), 0.6857 (2019-2023).
+   - Independent reviewer re-run (production engine inputs, both corner orientations, fresh seeds; see the
+     verification log): 2024-2025 **-0.0182 [-0.0265, -0.0102]**, pooled 2019-2025 **-0.0098 [-0.0153, -0.0045]**,
+     no corner bias from the ML layer. Plan on about -0.010 pooled.
 3. **Ship it as the engine's rate layer.** In the integration recipe below, the engine keeps its calibrated league
    level and its in-fight dynamics. The ML model supplies each fighter's matchup-specific multipliers (attempts by
    position and target, accuracy, KD, takedowns, control, submissions, reversals). Knobs still work on top.
@@ -367,7 +370,7 @@ python3 tools/mlrates.py engine                # engine v3 expectations for ever
 python3 tools/mlrates.py fit                   # selection, CV, validation, exports: ~12 min wall on a loaded machine
 python3 tools/mlrates.py sim --period train    # 2019-2023 simulator check with out-of-fold rates
 python3 tools/mlrates.py sim --period val      # 2024-2025 simulator check with the dev model (+ recalibration)
-node tests/test_mlrates.js                     # 45 checks
+node tests/test_mlrates.js                     # 47 checks
 ```
 
 Every training job runs single-threaded (OpenMP/BLAS/torch threads = 1). On this shared 4-core machine at load
@@ -388,3 +391,146 @@ Every training job runs single-threaded (OpenMP/BLAS/torch threads = 1). On this
 - The Volkanovski-Gaethje default matchup moves from 62% to 75% for Volkanovski with the learned rates (5
   rounds, 3,000 simulations). The no-vig market has him at about 37%. A single fight says nothing about the
   model, but the gap is a flag for the v9 market blend.
+
+## Verification log
+
+Adversarial review, Nov 6 2026. Scope: leakage, corner order, validation reuse, exposure offsets and JS/Python
+parity. The headline numbers were re-run with reviewer code in `tools/mlrates_review/`, which is independent of the
+analyst's harness. Verdict: **the gain is real and replicates, slightly smaller in the simulator.** Two
+train/serve skews in the shipped evaluator were found and fixed. Neither touched the validation numbers, which were
+computed on the trained features.
+
+**Leakage and protocol checks (passed)**
+- 2026: every fight on or after 2026-01-01 is dropped right after parsing. The latest dataset row is 2025-12-13,
+  and `mlrates_oof.json` spans 2019-01-19..2025-12-13. The reviewer scripts assert that no 2026 entry is touched.
+- Walk-forward inputs: S, n, KO losses, home division and layoff are snapshotted before the fight's own stats are
+  added. Elo is pre-fight, with K and boost tuned on 2019-2023 only. Priors for year y come from [y-5, y) and are
+  identical to `mlcal_priors_asof.json` (max relative difference 0).
+- Fitting: the GLM and MLP scalers are fit on each training mask only, per fold. Hyperparameters were set on
+  ≤2016 with stops on 2017-2018. Each fold b in 2019..2023 trains on 2010..b-1, and the stack weights are fit on
+  those out-of-fold predictions. The dev model trains on 2010-2023, and 2024-2025 is only reported.
+- Exposure offsets:
+  - Counts are per fighter-minute, with fight minutes as exposure.
+  - Binomial trials are attempts, takedown attempts or landed head strikes.
+  - The offsets come from `build_priors` with the same numerators and denominators.
+  - LightGBM fits a rate label y/e with weight e and the offset as init_score. The MLP and IRLS losses carry e
+    explicitly.
+  - All of this is correct.
+- Corner order: the model has no corner input, and both sides of every fight are in training. The GLM intercept is
+  a level term, not a corner term. predict(A,B) and predict(B,A) swap exactly.
+
+**Problems found and fixed**
+1. **Weight-class-move feature (upX/upY), train/serve skew.**
+   - Cause: `dataset.pkl`, and so all three exported models and every validation number, was built before a ±3
+     clip was added to `features()`. Both ports served the clipped value, while training saw values from -8 to +6.
+   - Extent: 88 training rows and 10 validation rows, for example light heavyweight to heavyweight (+6). Rates
+     moved by up to 11% on those fights (max |Δ log rate| 0.112).
+   - Fix: the bound is now ±10 in `tools/mlrates.py` and `src/ml/mlrates.js`. It never binds on training rows. A
+     matrix rebuilt with the fixed code equals the cached training matrix exactly (max difference 0.0).
+2. **Unknown layoff for experienced fighters, out of distribution.**
+   - Cause: `backtest_dev.json` sides carry no layoff, so the evaluator set layX_na = 1. That combination occurs in
+     0 of the 10,647 training rows with a prior fight.
+   - Effect on 2024-2025: systematic shifts in mean log rate (distance attempts +3.3%, reversals +9.3%, KD -6.1%)
+     and worse deviance (distance attempts 21.30 → 21.66).
+   - Fix: impute the training median, 168 days (`fc.layMed`, added to both ports and both model JSONs), when n > 0.
+     Debutants keep the unknown branch, as in training. This changes no training row.
+   - Result: deviance is within 0.1% of the true-layoff value (distance attempts 21.32 vs 21.30).
+3. **Tests.** The fixtures were regenerated with a -6 mover and a copy with the layoff removed. The 62 old fixtures
+   are unchanged (max eta change 0). The Node test now runs 47 checks, all passing, with JS = Python to 1.8e-15.
+4. **Simulator scoring.** The harness's "symmetric scoring" was a tautology: 0.5·(ll(p,y) + ll(1-p,1-y)) =
+   ll(p,y), from one simulation per fight. This is not a leak, since the model has no corner input, but it was not a
+   check either. The section above is annotated.
+
+**Independent per-stat re-run.** This uses a different data path: backtest_dev S, Elo and age, the JS evaluator,
+backtest_dev actuals, and engine v3 fed the full backtest_dev profiles (pace, KD absorbed). Values are mean
+deviance per fight-side on 2024-2025, n = 1,730 sides; fight-bootstrap 95% CIs on ML − engine.
+
+| stat | engine v3 | ML, dev model | ML − engine [95% CI] |
+|---|---|---|---|
+| sig. attempts / min | 21.50 | 19.36 | -2.14 [-2.81, -1.48] |
+| head landed / min | 10.76 | 10.39 | -0.37 [-0.62, -0.15] |
+| body landed / min | 4.58 | 4.33 | -0.24 [-0.35, -0.13] |
+| leg landed / min | 4.85 | 4.58 | -0.27 [-0.43, -0.12] |
+| takedown attempts | 2.831 | 2.492 | -0.339 [-0.433, -0.245] |
+| takedown success | 1.818 | 1.710 | -0.108 [-0.151, -0.064] |
+| control | 123.15 | 113.30 | -9.85 [-13.42, -6.42] |
+| submission attempts | 0.956 | 0.914 | -0.042 [-0.067, -0.018] |
+| KD per landed head strike | 0.839 | 0.763 | -0.076 [-0.102, -0.050] |
+| sig. accuracy | 4.043 | 4.031 | -0.012 [-0.162, +0.150] |
+
+- These match the analyst's numbers: takedown attempts -0.340, control -9.87, takedown success -0.108.
+- 2019-2023 with the out-of-fold rates: every one of these stats is better, sig. accuracy included (-0.46
+  [-0.56, -0.35]).
+- JS dev rates on backtest_dev sides agree with the analyst's stored dev rates to a median of 0.08% (max 4.3%).
+  The residual comes from backtest_dev rounding age to 0.1 years and Elo to whole points, which crosses GBM
+  thresholds. Before fix 1 the max was 11%.
+
+**Independent simulator re-run.**
+- Setup: backtest_dev profiles with pace (the inputs calibrate.js gives the engine), rates from `mlrates_oof.json`
+  (2019-2023 from the folds, 2024-2025 from the dev model). Every fight is simulated in both corner orientations
+  with seeds disjoint from the analyst's: 400 simulations per orientation for 2024-2025, 200 for 2019-2023. Plain
+  and ML runs are paired.
+- Scoring: winner log loss on decisive fights, averaged over the two orientations.
+
+| | n | plain | ML | ML − plain [95% CI] | analyst's number |
+|---|---|---|---|---|---|
+| 2024-2025 | 854 | 0.6452 | 0.6270 | **-0.0182 [-0.0265, -0.0102]** | -0.0226 [-0.0311, -0.0136] |
+| 2019-2023 | 1955 | 0.6760 | 0.6698 | -0.0062 [-0.0130, +0.0007] | -0.0057 [-0.0123, +0.0012] |
+| pooled 2019-2025 | 2809 | 0.6667 | 0.6568 | **-0.0098 [-0.0153, -0.0045]** | -0.0108 [-0.0159, -0.0055] |
+
+- Other metrics:
+  - Brier: -0.0084 [-0.0123, -0.0047] on 2024-2025.
+  - Accuracy: +2.8 points (64.1% → 66.9%) on 2024-2025, +2.7 points pooled.
+  - 7-outcome log loss: -0.019 [-0.036, -0.002] on 2024-2025.
+  - Walk-forward Elo on the same fights: 0.6769 (2024-2025), 0.6857 (2019-2023).
+- By year (plain → ML):
+  - 2019: 0.6756 → 0.6612
+  - 2020: 0.6847 → 0.6801
+  - 2021: 0.6491 → 0.6490 (a tie)
+  - 2022: 0.6843 → 0.6823
+  - 2023: 0.6885 → 0.6781
+  - 2024: 0.6499 → 0.6255
+  - 2025: 0.6404 → 0.6285
+- The gain is discrimination, not just spread:
+  - Mirrored AUC: 0.683 → 0.713 on 2024-2025, 0.613 → 0.634 on 2019-2023.
+  - Each setup was given its own in-sample best logit slope (oracle, no intercept, mirrored). ML still wins:
+    0.6422 → 0.6228 on 2024-2025 and 0.6729 → 0.6661 on 2019-2023.
+  - The best slopes swing between periods for both setups: about 1.3 in 2024-2025 and 0.76 in 2019-2023. The
+    engine's spread is period-dependent, which supports leaving calibration to the v9 stack rather than shipping a
+    fixed slope.
+- Corner bias, the mean of P(A wins | A in corner 1) − P(A wins | A in corner 2):
+  - ML: +0.0004 ± 0.0008 pooled.
+  - Plain engine: -0.0015 ± 0.0008 pooled (-0.0023 ± 0.0011 in 2019-2023).
+  - So mlrates adds no corner asymmetry. The plain engine may have a tiny one, about 2 SE, which single-orientation
+    scoring charges to the plain side (roughly 0.001 log loss in 2019-2023). The mirrored numbers above remove it.
+- Why the 2024-2025 gain is smaller than the analyst's: their harness ran the engine without pace and KD absorbed,
+  which its fight JSON lacks. With production inputs the plain engine is slightly better (0.6452 vs 0.6465) and
+  the ML version slightly worse (0.6270 vs 0.6239). Seeds and orientation averaging also differ.
+- **Planning estimate:** about -0.010 pooled and about -0.018 on 2024-2025.
+
+**Caveats (not fixed, small)**
+- "All out of sample" for 2019-2023 is slightly generous:
+  - Those simulations use stack weights fit on the same 2019-2023 out-of-fold predictions (3 non-negative weights
+    per stat, over about 10,000 rows).
+  - The MLP architecture side run used 2018-2019 for selection.
+  - 2024-2025 is clean on both counts.
+- The engine itself has a small base-rate leak: params3 selfcal division factors come from fighters.json priors,
+  which include 2024 and later fights (flagged by calibrate.js). It applies to plain and ML alike, since the adapter
+  re-levels to the engine's league expectation.
+- If `tools/mlrates.py build` and `fit` are re-run, the models will train on the ±10-bounded feature, which is
+  identical to what they were trained on. A re-run of `eval` rewrites `mlrates_eval.json` without the
+  `reviewer_verification` block; the numbers are also in this log.
+
+Reproduce the review (about 25 min of CPU in total):
+
+```
+export MLRATES_REVIEW_DIR=out/mlrates_review; mkdir -p $MLRATES_REVIEW_DIR
+python3 tools/mlrates_review/mk_layoff.py
+node tools/mlrates_review/vpred.js $MLRATES_REVIEW_DIR/layoff.json $MLRATES_REVIEW_DIR/vpred.json
+python3 tools/mlrates_review/vstats.py
+for k in 0 1; do node tools/mlrates_review/vsim.js $MLRATES_REVIEW_DIR/val_$k.json 400 $k 2 2024 2025 oof & done; wait
+for k in 0 1; do node tools/mlrates_review/vsim.js $MLRATES_REVIEW_DIR/tr_$k.json 200 $k 2 2019 2023 oof & done; wait
+python3 tools/mlrates_review/vanal.py $MLRATES_REVIEW_DIR/val_0.json $MLRATES_REVIEW_DIR/val_1.json
+python3 tools/mlrates_review/vanal.py $MLRATES_REVIEW_DIR/tr_*.json $MLRATES_REVIEW_DIR/val_*.json
+node tests/test_mlrates.js
+```

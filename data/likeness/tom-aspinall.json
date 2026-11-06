@@ -59,13 +59,13 @@
     "length_cm": 6,
     "length_note": "About 0 to 0.3 cm on the sides; the top is about 5 to 7 cm and looked longer and messier in 2026 (07).",
     "colour_hex": "#2a1c17",
-    "colour_note": "Dark brown, nearly black under arena light. The raw sample from the ESPN top hair is #201416.",
+    "colour_note": "Dark brown, nearly black under arena and studio light (raw ESPN top-hair sample #201416; 07 crown in shadow #23170d). In daylight (07) the lit curls show medium-brown highlights (#64412f), so add a little brown variation rather than flat black.",
     "hairline": "Fairly straight front hairline with mild temple recession",
-    "texture": "Curly (tight ringlets on top in Oct 2025; looser waves in some 2024 photos)"
+    "texture": "Curly on top when grown out (tight curls in the Oct 2025 ESPN headshot and weigh-in, looser and messier in 2026). In the older walkout and cage photos (01, 02) the top is cut short and reads as a textured crop with no visible curl."
   },
   "facial_hair": {
     "type": "goatee",
-    "detail": "Thin moustache plus a pointed chin beard (goatee) about 2 to 4 cm long, tapering to a point under the chin; the cheeks are shaved. In 2026 (07) it is fuller: a moustache and short beard joined along the jawline.",
+    "detail": "Thin moustache joined to a pointed chin beard (goatee) about 2 to 4 cm long, tapering to a point under the chin; the cheeks are shaved (2023-2025). In 2026 (07) it is a little fuller: the moustache still joins a short chin beard that now spreads slightly along the lower jaw toward the jaw angle, with light stubble above it; it is not a full cheek beard.",
     "colour_hex": "#3a2620",
     "colour_note": "Dark brown. The raw chin sample is #6c3832 because skin shows through; render the strands darker.",
     "density": "dense on the chin and moustache, none on the cheeks (2025)",
@@ -138,8 +138,18 @@
   "tattoos": [
     {
       "where": "neck (front and both sides) and upper sternum",
-      "description": "Dense black-and-grey neck piece (2025-2026): a mandala/star at the throat; Roman-numeral date IV.V.MMXIX across the top of the sternum; the Taurus zodiac symbol (circle with horns) on the right side of the neck. Absent in the Nov 2023 ESPN cutout, so it was added in 2024-2025. An older photo (02) shows Roman-numeral script MCMXCIII on the right side of the neck.",
+      "description": "Dense black-and-grey neck piece (2025-2026): a spiral/galaxy motif with small stars at the centre of the throat, cloud shading wrapping the sides, the Taurus zodiac symbol (circle with horns, about 5 cm) on the right side of the neck (03, 07), and the Roman-numeral date IV.V.MMXIX across the top of the sternum. Absent in the Nov 2023 ESPN cutout and in photos 01 and 02, so it was added in 2024-2025.",
       "size": "large"
+    },
+    {
+      "where": "base of the right side of the neck, above the trapezius",
+      "description": "Small Roman-numeral script MCMXCIII (1993) running along the base of the neck (clear in 02, which predates the neck piece; not distinguishable in the lower-resolution 2025 photos)",
+      "size": "small"
+    },
+    {
+      "where": "top of left shoulder near the collarbone",
+      "description": "Small Roman-numeral date script (starts I.VI.MM...)",
+      "size": "small"
     },
     {
       "where": "chest, across both pectorals",
@@ -148,28 +158,28 @@
     },
     {
       "where": "left arm",
-      "description": "Full sleeve: Japanese-style dragon over the shoulder and upper arm; a serpent (snake) coiling down the forearm",
+      "description": "Full sleeve. Outer shoulder and upper arm: black-and-grey Japanese-style dragon (2023 cutout). Inner upper arm: a colour koi (green body, red fins) with a blue peony and grey waves (Oct 2025 weigh-in, 04). Forearm: a black-and-grey serpent coiling from elbow to wrist. An older photo (01) also shows cursive script ('Pocket Full of ...') on the inner left forearm.",
       "size": "full sleeve"
     },
     {
-      "where": "right arm",
-      "description": "Full sleeve: dark solid shading on the shoulder; a palm tree and dotwork stars on the forearm (2023). By 2025 there is colour work (a koi/carp with green-teal scales) on the upper arm and forearm.",
-      "size": "full sleeve"
+      "where": "right arm and right hand",
+      "description": "Full sleeve, reworked between 2023 and 2025. In 2023: solid black shading on the shoulder with tribal-style shapes, a palm tree and dotwork stars on the forearm. By Oct 2025: colour flowers (red/orange) at the top of the shoulder, a large black-and-grey skull/mask face on the outer upper arm, a teal-green koi with scales on the forearm, pink-purple peonies with green leaves on the inner forearm, a few lines of cursive script on the inner upper arm, a solid black band at the wrist and a tattooed back of the hand and fingers (03, 04).",
+      "size": "full sleeve plus hand"
     },
     {
-      "where": "top of left shoulder near collarbone",
-      "description": "Small Roman-numeral date script (starts I.VI.MM...)",
-      "size": "small"
+      "where": "left lower shin / ankle and top of left foot",
+      "description": "Black geometric mandala band around the lower shin just above the ankle; bold black block lettering across the top of the left foot (reads like 'Ibiza')",
+      "size": "small-medium"
     },
     {
-      "where": "both ankles and tops of both feet",
-      "description": "Geometric/mandala bands around the ankles; an image on each foot (detail unclear)",
+      "where": "top of right foot",
+      "description": "Black lotus/mandala design on the top of the foot. There is no band around the right ankle.",
       "size": "small-medium"
     }
   ],
   "kit": {
     "fight_shorts": "Union Jack (red, white and blue) UFC shorts with crypto.com logo (UFC 321, Oct 2025); white Venum shorts with ASPINALL in red (2023)",
-    "weigh_in": "Olive/khaki Venum shorts with yellow trim (UFC 321 weigh-in)",
+    "weigh_in": "Dark olive-brown Venum shorts with yellow piping and a yellow graphic on the left leg (UFC 321 weigh-in)",
     "walkout": "Black crypto.com/Venum walkout shirt",
     "colours": [
       "#c8102e red",
@@ -234,5 +244,5 @@
     "ears/r-ear-rot-forward": 0.3
   },
   "morphs_unavailable": "Ears: the shipped assets/embed/mh-manifest.json has no ear targets, so the large protruding ears cannot be shown with morphs. Suggested full-set values (ear scale up, rotated forward as a stand-in for protrusion) are under morphs_if_available; otherwise sculpt or scale the ears. No target for hair, the goatee, or the very thick neck-to-jaw line beyond neck-scale-horiz.",
-  "notes": "Confidence: medium-high for the overall look (very tall, thick neck, rectangular face, curly-top fade, goatee, light blue-grey eyes, protruding ears, neck/chest/arm tattoos); medium for exact morph values. What to watch for: (1) the neck and throat tattoos are new since 2023, so use the 2025 photos for them; (2) the goatee is narrow and pointed, and grew into a fuller jaw beard in 2026, so pick one style (default: the Oct 2025 goatee); (3) keep the eyes light blue-grey; dark eyes lose the likeness; (4) the body is big and slightly soft, not a shredded V-taper, so do not over-apply muscle; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. (6) he vacated the title in Sept 2026 after the eye injury, so do not render him with the belt by default."
+  "notes": "Confidence: medium-high for the overall look (very tall, thick neck, rectangular face, curly-top fade, goatee, light blue-grey eyes, protruding ears, neck/chest/arm tattoos); medium for exact morph values. What to watch for: (1) the neck and throat tattoos are new since 2023, so use the 2025 photos for them; (2) the goatee is narrow and pointed, and grew into a fuller jaw beard in 2026, so pick one style (default: the Oct 2025 goatee); (3) keep the eyes light blue-grey; dark eyes lose the likeness; (4) the body is big and slightly soft, not a shredded V-taper, so do not over-apply muscle; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. (6) he vacated the title in Sept 2026 after the eye injury, so do not render him with the belt by default. Review (second pass, 2026-11-06): re-checked every photo. Fixed the tattoo list: the mandala band is on the left ankle only (the right foot has a lotus and the left foot has lettering), the 2025 right sleeve is colour work (koi, skull/mask, peonies, black wrist band, tattooed hand), the left inner upper arm has a colour koi, and MCMXCIII sits at the base of the right side of the neck. The 2026 beard is a slightly wider goatee, not a jaw-line beard. Morph names and ranges validated against assets/embed/mh-manifest.json; values unchanged."
 }

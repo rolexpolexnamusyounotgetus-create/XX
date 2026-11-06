@@ -45,8 +45,31 @@ Two knockdowns absorbed in 13 UFC fights. He has been finished twice, both times
 
 Decayed sums in fighters.json: 8.0 significant attempts and 4.8 landed per minute at 60% accuracy; absorbs 4.0 per minute. Of his attempts, 60% go to the head, 17% to the body and 22% to the legs. Opponents land 49% against him. Elo 1716. Of his 13 UFC fights, 9 were five-rounders, and only the Gane fight was at heavyweight, so his heavyweight inputs should lean on the division prior.
 
+## Appearance (for the avatar)
+
+No photo-based likeness sheet exists yet. From the ESPN/UFC studio headshot and cutouts (left cutout and headshot shot at UFC Freedom 250 fight week, Jun 2026, going by the Freedom 250 gloves; right cutout Oct 2025, UFC 320) and the Wikimedia weigh-in photo of Jun 13, 2026 in `assets/reference/alex-pereira/`:
+
+- **Build:** tall, long-limbed, muscular shoulders and back; visibly fuller through the torso at heavyweight (listed 251 lb) than at 205 in Oct 2025.
+- **Hair:** short black hair with a tight curl, cropped close at the sides; a little fuller on top in 2026.
+- **Facial hair:** varies. A short full black beard joined to the moustache (about 1.5-2 cm) for Freedom 250; clean-shaven to light stubble for UFC 320. The earlier "thin mustache with a short chin beard" line was not current.
+- **Skin:** medium.
+- **Tattoos:** heavily tattooed, much of it in colour: a red-orange serpent/dragon from the right shoulder across the right collarbone; a black-and-grey dragon on the left upper chest and shoulder; a large red dragon/koi-style piece across the lower chest and upper abdomen; "Kickboxing" in script across the lower abdomen; a colour Japanese-style sleeve on the right upper arm; a feather on the right forearm; black-and-grey work on the left forearm; a large black-and-grey piece on the right thigh.
+- **Kit:** vale tudo-cut compression shorts to mid-thigh rather than board shorts in both cutouts: a multicolour Brazil/indigenous-print kit (Oct 2025) and a navy-and-red US-flag Freedom 250 kit with red gloves (Jun 2026). For a standard bout use corner-colour compression shorts and black UFC gloves. At ceremonial weigh-ins he has worn a feather headdress and red face paint (Jun 2026); that is not fight kit.
+
+## Still unconfirmed
+
+- A heavyweight ranking on the media list (he is outside the top 15 there).
+- Tattoos on his back.
+
 ## Sources
 
+- https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261212 (UFC 335 card, fetched Nov 6, 2026)
+- https://www.sherdog.com/fighter/Alex-Pereira-224511 (upcoming: UFC 335, Dec 12, 2026)
+- https://www.mmamania.com/ufc-news/480970/alex-pereira-leaving-heavyweight-ufc-335-loss-sergei-pavlovich-not-going-keep-trying
+- https://www.cbssports.com/ufc/rankings/men/ (updated Nov 3, 2026)
+- https://www.ufcalendar.com/rankings/light-heavyweight and https://www.ufcalendar.com/rankings/heavyweight (media Nov 3, Meta Oct 31, 2026)
+- https://www.espn.com/mma/fighter/_/id/4705658/alex-pereira and studio photos https://a.espncdn.com/i/headshots/mma/players/full/4705658.png, .../stance/left/4705658.png, .../stance/right/4705658.png
+- assets/reference/alex-pereira/wiki-weighin-2026-06-13-07.jpg
 - https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335
 - https://sports.yahoo.com/mma/article/alex-pereira-staying-at-heavyweight-as-dana-white-announces-his-next-fight-for-ufc-335-011052102.html
 - https://heavy.com/sports/ufc/the-return-alex-pereira-ufc-335/

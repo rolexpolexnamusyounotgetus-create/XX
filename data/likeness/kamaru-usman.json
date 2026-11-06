@@ -64,57 +64,77 @@
   },
   "facial_hair": {
     "type": "stubble",
-    "detail": "Short stubble beard plus moustache about 2 to 4 mm long (ESPN Jul 2026, 2025 fights). Sometimes a short trimmed beard up to about 1 cm (2023 press photo 01).",
+    "detail": "Short stubble beard plus moustache about 2 to 4 mm long (ESPN Jul 2026, 2025 fights). A short trimmed full beard of about 0.5 to 1 cm in the 2023 press photo (01) and again at the Jul 2026 face-off (04), so it varies between close stubble and a short beard.",
     "colour_hex": "#3e3330",
     "colour_note": "Salt-and-pepper: black with a clear sprinkling of grey/white, densest on the chin and along the jaw in the 2026 ESPN headshot (jaw sample #725f5f, chin #522e22 with skin showing through). No grey in the 2023 photo.",
     "density": "even, short, full coverage of the jaw, chin and upper lip",
     "shape": "close-cropped full stubble following the jawline; the cheeks are clean above the jaw line"
   },
   "skin": {
-    "tone_hex": "#a0654d",
-    "tone_hex_method": "average of the cheek samples only (forehead samples sit on specular highlights in every photo); each sample is the median of the 25th-65th luma percentile pixels of the patch",
-    "tone_hex_all_samples_avg": "#ae755e",
+    "tone_hex": "#8b553d",
+    "tone_hex_method": "average of the four mid-cheek samples (below the cheekbone, clear of beard and highlights) from the two evenly lit frontals; each sample is the median of the 25th-65th luma percentile pixels of the patch. Forehead and top-of-cheekbone samples are listed but excluded because they sit on the key light.",
+    "tone_hex_all_samples_avg": "#a66c54",
     "tone_samples": [
       {
         "photo": "espn_headshot.png",
         "where": "forehead, centre",
-        "light": "studio flash",
-        "hex": "#d8a79b"
+        "light": "studio flash (specular)",
+        "hex": "#d8a79b",
+        "used_in_average": false
       },
       {
         "photo": "espn_headshot.png",
-        "where": "cheek below cheekbone, image-left side",
+        "where": "top of cheekbone, image-left side (catches the key light)",
         "light": "studio flash",
-        "hex": "#92543b"
+        "hex": "#b1694a",
+        "used_in_average": false
       },
       {
         "photo": "espn_headshot.png",
-        "where": "cheek below cheekbone, image-right side",
+        "where": "top of cheekbone, image-right side (catches the key light)",
         "light": "studio flash",
-        "hex": "#ae6850"
+        "hex": "#be795f",
+        "used_in_average": false
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-left side (box x240-265, y195-225 of 600x436)",
+        "light": "studio flash",
+        "hex": "#7c442f",
+        "used_in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-right side (box x335-360, y195-225)",
+        "light": "studio flash",
+        "hex": "#884c36",
+        "used_in_average": true
       },
       {
         "photo": "01_headshot_ufc286_press_bjpenn.jpg",
         "where": "forehead, centre",
         "light": "press-event lighting",
-        "hex": "#ba8464"
+        "hex": "#ba8464",
+        "used_in_average": false
       },
       {
         "photo": "01_headshot_ufc286_press_bjpenn.jpg",
-        "where": "cheek below cheekbone, image-left side",
+        "where": "cheek below cheekbone, image-left side (box x460-520, y250-310 of 1200x800)",
         "light": "press-event lighting",
-        "hex": "#955d41"
+        "hex": "#925e43",
+        "used_in_average": true
       },
       {
         "photo": "01_headshot_ufc286_press_bjpenn.jpg",
-        "where": "cheek below cheekbone, image-right side",
+        "where": "cheek below cheekbone, image-right side (box x670-730, y250-310)",
         "light": "press-event lighting",
-        "hex": "#ab7c67"
+        "hex": "#96654d",
+        "used_in_average": true
       }
     ],
     "undertone": "Warm (red-brown). Deep brown skin; studio and flash light lift the measured values.",
     "freckles_marks": "No freckles. Even tone. Slightly lighter specular sheen on the forehead and cheekbones in every photo.",
-    "note": "Both photos used for sampling are brightly lit, so the cheek medians (#92543b to #ae7c67) read lighter than the skin looks in arena photos. Match the render against the ESPN headshot under similar lighting rather than using the hex blind. He is clearly darker than Leon Edwards in side-by-side photos."
+    "note": "Second-pass review: the first-pass cheek samples (#92543b to #ae7c67, average #a0654d) partly overlapped the lit top of the cheekbone; re-sampled mid-cheek patches read darker (#7c442f to #96654d). The cage photo (02) is mostly in shade (cheek #32221b to #4c3327), so it is not used. Deep brown skin with a warm red-brown undertone; match the render against the ESPN headshot under similar lighting. He is clearly darker than Leon Edwards in comparable studio light (ESPN cheek #7c442f vs #c1522e)."
   },
   "body": {
     "build": "Very muscular, compact-powerful (183 cm) with long arms (193 cm reach, ape index about +10 cm)",
@@ -136,7 +156,7 @@
     }
   ],
   "kit": {
-    "fight_shorts": "Black Venum shorts with a grey leaf/chevron pattern and USMAN in green (UFC Atlanta 2025, UFC Oklahoma City 2026); grey/black tiger-stripe crypto.com shorts (ESPN 2025 cutout); earlier gold/black champion shorts",
+    "fight_shorts": "UFC Atlanta (Jun 2025, photo 03): black Venum shorts with a white slash/claw-stripe pattern, green USMAN down the left leg and crypto.com. ESPN 2025 cutout: the same slash-stripe design on a navy-grey base. UFC Oklahoma City (Jul 2026, ESPN right-stance cutout): black Venum shorts with a grey layered-scale pattern, a black-and-white checker waistband and USMAN in green. Earlier gold/black champion shorts.",
     "walkout": "Often carries the Nigerian flag (green-white-green). Wore green-white-green face paint at UFC Oklahoma City (Jul 2026).",
     "colours": [
       "#111111 black",
@@ -202,5 +222,5 @@
     "ears/r-ear-rot-backward": 0.1
   },
   "morphs_unavailable": "No ear targets in the shipped manifest; his small, close-set ears are close to the base mesh anyway (full-set values under morphs_if_available). No grey-stubble control: do it in the texture. No target for the trapezius height.",
-  "notes": "Confidence: high for the overall look (shaved round head, broad face and jaw, wide nose, full lips, grey-flecked stubble, very muscular V-taper, no tattoos); medium for morph values. What to watch for: (1) by 2026 the stubble shows grey, which the 2023 press photo does not; (2) he moved up to middleweight in 2026, but the physique in the Jul 2026 cutout is nearly the same as in 2025; (3) the face paint in the 2026 walkout photos is not his skin; (4) avoid over-wide eyes, which are medium-small and slightly hooded; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height."
+  "notes": "Confidence: high for the overall look (shaved round head, broad face and jaw, wide nose, full lips, grey-flecked stubble, very muscular V-taper, no tattoos); medium for morph values. What to watch for: (1) by 2026 the stubble shows grey, which the 2023 press photo does not; (2) he moved up to middleweight in 2026, but the physique in the Jul 2026 cutout is nearly the same as in 2025; (3) the face paint in the 2026 walkout photos is not his skin; (4) avoid over-wide eyes, which are medium-small and slightly hooded; (5) macro/heightUpM uses a linear fit to the two MPFB2 builds in research/assets.md (height slider 0.30 -> 1.61 m, 0.62 -> 1.89 m, so slider = 0.5 + (H - 1.785 m) / 0.875 and heightUpM = 2 * (slider - 0.5)). Muscle and weight also change stature slightly, so measure the built mesh and nudge heightUpM until it matches the listed height. Review (second pass, 2026-11-06): re-checked every photo. Skin re-sampled on clean mid-cheek patches (tone_hex now darker than the first pass); fight-shorts description corrected (UFC Atlanta 2025 used the slash-stripe design, the scale pattern is the 2026 kit); beard length noted as varying. Commons licence for KamaruUsmanPress2018.png re-checked (CC BY-SA 3.0, MMAnytt). Morph names and ranges validated against assets/embed/mh-manifest.json; values unchanged."
 }

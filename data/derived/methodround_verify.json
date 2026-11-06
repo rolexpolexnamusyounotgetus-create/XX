@@ -1828,5 +1828,54 @@
    "n_settings": 8
   },
   "seconds": 1559.8
+ },
+ "part5_ablations": {
+  "logit": {
+   "method3": 0.96691,
+   "joint": 2.17323,
+   "winner": 0.64971,
+   "finish": 0.66149,
+   "bin7": 1.63895,
+   "d_method3_vs_logit": 0.0,
+   "d_joint_vs_logit": 0.0
+  },
+  "lgbm": {
+   "method3": 0.97723,
+   "joint": 2.19252,
+   "winner": 0.65244,
+   "finish": 0.66644,
+   "bin7": 1.65824,
+   "d_method3_vs_logit": 0.01032,
+   "d_joint_vs_logit": 0.01929
+  },
+  "factor": {
+   "method3": 0.96879,
+   "joint": 2.17497,
+   "winner": 0.65077,
+   "finish": 0.6618,
+   "bin7": 1.64069,
+   "d_method3_vs_logit": 0.00188,
+   "d_joint_vs_logit": 0.00174
+  },
+  "logit_recal": {
+   "method3": 0.96708,
+   "joint": 2.17349,
+   "winner": 0.64961,
+   "finish": 0.66155,
+   "bin7": 1.63921,
+   "d_method3_vs_logit": 0.00017,
+   "d_joint_vs_logit": 0.00026
+  },
+  "blend_30pct_lgbm": {
+   "method3": 0.96731,
+   "joint": 2.17377,
+   "winner": 0.64932,
+   "finish": 0.66147,
+   "bin7": 1.63949,
+   "d_method3_vs_logit": 0.0004,
+   "d_joint_vs_logit": 0.00054
+  },
+  "n_cv_fights": 1581,
+  "seconds": 755.5
  }
 }

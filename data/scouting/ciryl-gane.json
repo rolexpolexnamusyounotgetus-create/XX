@@ -3,11 +3,11 @@
   "name": "Ciryl Gane",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "UFC interim heavyweight champion. He stopped Alex Pereira at 1:27 of round 2 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026): a counter jab put Pereira down and Gane out-landed him 54-12. Before that, his undisputed title fight with Tom Aspinall at UFC 321 (Oct 25, 2025) was ruled a no contest at 4:35 of round 1 after Gane poked Aspinall in the eye. He has been booked against Josh Hokit (reported by ESPN, Oct 2026); the date, event and whether the interim belt is at stake were not confirmed in the sources available this session. He was also interim champion in 2021 (beat Derrick Lewis, UFC 265) and lost title fights to Francis Ngannou (UFC 270, decision) and Jon Jones (UFC 285, submission).",
-    "title": "UFC interim heavyweight champion",
-    "ranking": null,
+    "summary": "UFC heavyweight champion. He won the interim title by stopping Alex Pereira at 1:27 of round 2 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026): a counter jab put Pereira down and Gane out-landed him 54-12. When Tom Aspinall vacated the undisputed title on Sep 14, 2026, Dana White first said Gane would not be elevated, but the UFC confirmed on its UFC 331 broadcast (Sep 19) that Gane is undisputed champion. He makes his first defense against unbeaten Josh Hokit (10-0) in the UFC 334 main event, Nov 14, 2026, at Madison Square Garden, New York (five rounds). Before that, his title fight with Aspinall at UFC 321 (Oct 25, 2025) was ruled a no contest at 4:35 of round 1 after Gane poked Aspinall in the eyes. He was also interim champion in 2021 (beat Derrick Lewis, UFC 265) and lost title fights to Francis Ngannou (UFC 270, decision) and Jon Jones (UFC 285, submission). Pro record 14-2 (1 NC). No injury reported.",
+    "title": "UFC heavyweight champion (undisputed; promoted from interim champion after Aspinall vacated in Sep 2026)",
+    "ranking": "Heavyweight champion; tied #11 in the UFC men's pound-for-pound media rankings (Nov 3, 2026, per ufcalendar.com)",
     "active": true,
-    "next_fight": "Josh Hokit (booking reported by ESPN, Oct 2026; date, event and title status not confirmed in the sources available this session)",
+    "next_fight": "Josh Hokit (10-0), UFC 334, Nov 14, 2026, Madison Square Garden, New York (undisputed heavyweight title, 5 rounds, main event)",
     "injuries": [],
     "sources": [
       "http://ufcstats.com/fighter-details/787bb1f087ccff8a",
@@ -16,14 +16,31 @@
       "https://www.espn.com/mma/story/_/id/49068238/gane-crushes-pereira-capture-ufc-interim-heavyweight-title",
       "https://www.cbssports.com/ufc/news/ufc-freedom-250-results-highlights-ciryl-gane-alex-pereira-knockout/",
       "https://boxingnews.com/news/alex-pereira-vs-ciryl-gane-result-and-reaction",
-      "https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335",
-      "https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/"
+      "https://www.cbssports.com/ufc/news/2026-ufc-event-schedule-ciryl-gane-josh-hokit-charles-oliveira-diego-lopes/",
+      "https://www.sherdog.com/news/news/Dana-White-said-Ciryl-Gane-wasnt-undisputed-champ-UFC-says-otherwise-202862",
+      "https://www.thescore.com/mma/news/3603598/gane-hokit-harrison-nunes-set-for-ufc-334",
+      "https://www.sherdog.com/events/UFC-334-Gane-vs-Hokit-114293",
+      "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=20261101-20261231 (ESPN UFC schedule feed, read Nov 6, 2026)",
+      "https://www.ufcalendar.com/rankings/heavyweight (mirror of the UFC Meta rankings, updated Oct 31, 2026, and the UFC media-panel rankings, updated Nov 3, 2026; read Nov 6, 2026)",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound (UFC media-panel men's pound-for-pound, updated Nov 3, 2026)",
+      "https://en.wikipedia.org/wiki/Ciryl_Gane (revision 1383916856; record 14-2, 1 NC)",
+      "https://www.espn.com/mma/fighter/_/id/4426000/ciryl-gane (record 14-2 via the ESPN athlete API)"
     ]
   },
   "style": {
     "archetype": "kickboxer",
     "stance": "orthodox",
-    "tags": ["footwork", "switch-stance", "jab", "counter", "leg-kicks", "body-work", "range-control", "rangy", "volume"],
+    "tags": [
+      "footwork",
+      "switch-stance",
+      "jab",
+      "counter",
+      "leg-kicks",
+      "body-work",
+      "range-control",
+      "rangy",
+      "volume"
+    ],
     "signature": [
       "counter jab (it dropped Alex Pereira at UFC Freedom 250 before the stoppage)",
       "low kicks to the legs at very high accuracy (career 284 of 319, 89%; 13 of 13 vs Aspinall, 32 of 32 vs Derrick Lewis)",
@@ -71,22 +88,39 @@
   },
   "appearance": {
     "build": "tall, long-limbed and athletic; lean for a heavyweight (6 ft 4 in, 81 in reach, listed 245 lb per ufcstats)",
-    "hair": "short, close-cropped black hair",
-    "facial_hair": "usually a short beard",
-    "skin": "dark",
-    "tattoos": "unknown",
-    "kit": "unknown",
+    "hair": "head shaved or clipped to the scalp (ESPN, Dec 2024, Jun 2026 and Oct 2026)",
+    "facial_hair": "short, neatly trimmed full beard with moustache, fuller on the chin (ESPN, 2024-2026)",
+    "skin": "medium-dark",
+    "tattoos": "black tribal sun/medallion emblem on the right upper chest beside the sternum; BON GAMIN (his nickname) in block letters across the left thigh above the knee; vertical ornamental monogram-style designs on both shins, larger on the left (ESPN full-body cutouts, Dec 2024 and Jun 2026)",
+    "kit": "white UFC fight shorts in his recent shoots: white with a grey slash pattern and black waistband (Dec 2024), and white with red-white-blue stars-and-stripes trim for UFC Freedom 250 (Jun 2026). Corner colour sets the shorts in the sim",
     "sources": [
       "http://ufcstats.com/fighter-details/787bb1f087ccff8a",
-      "https://www.ufc.com/athlete/ciryl-gane"
+      "https://a.espncdn.com/i/headshots/mma/players/full/4426000.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4426000.png",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4426000.png"
     ]
   },
   "engine_notes": [
-    { "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.57, 1.64, 1.06, 0.60 (minute-weighted): output builds through rounds 2-3 and drops in round 5 (based on 15 round-5 minutes: Rozenstruik, Volkov 1, Ngannou).", "source": "data/derived/fighters.json (pace, pace_w)" },
-    { "note": "Takedown defense is the lever against him: 43% decayed and 47% career, with opponents' control at about 92 s per 15 min decayed. He lands only 23% of his own takedowns (8 of 34 career).", "source": "data/derived/fighters.json" },
-    { "note": "91% of his significant attempts come at distance. Leg accuracy 89% career and 93% decayed; head accuracy 47% career.", "source": "data/derived/fighters.json" },
-    { "note": "Chin: 1 knockdown absorbed in 14 UFC fights (Tuivasa) and no KO/TKO losses. Power: 4 knockdowns career, 0.91 per 100 head strikes landed (1.17 decayed).", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/810c9da07970c4a6" },
-    { "note": "Against Aspinall at UFC 321 he landed 30 of 40 significant strikes in 4:35, including 13 of 13 leg kicks, before the eye poke ended the fight.", "source": "http://ufcstats.com/fight-details/6390c8e74630473e" }
+    {
+      "note": "In 5-round fights his landed rate relative to round 1 runs 1.00, 1.57, 1.64, 1.06, 0.60 (minute-weighted): output builds through rounds 2-3 and drops in round 5 (based on 15 round-5 minutes: Rozenstruik, Volkov 1, Ngannou).",
+      "source": "data/derived/fighters.json (pace, pace_w)"
+    },
+    {
+      "note": "Takedown defense is the lever against him: 43% decayed and 47% career, with opponents' control at about 92 s per 15 min decayed. He lands only 23% of his own takedowns (8 of 34 career).",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "91% of his significant attempts come at distance. Leg accuracy 89% career and 93% decayed; head accuracy 47% career.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Chin: 1 knockdown absorbed in 14 UFC fights (Tuivasa) and no KO/TKO losses. Power: 4 knockdowns career, 0.91 per 100 head strikes landed (1.17 decayed).",
+      "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/810c9da07970c4a6"
+    },
+    {
+      "note": "Against Aspinall at UFC 321 he landed 30 of 40 significant strikes in 4:35, including 13 of 13 leg kicks, before the eye poke ended the fight.",
+      "source": "http://ufcstats.com/fight-details/6390c8e74630473e"
+    }
   ],
   "confidence": "medium"
 }
