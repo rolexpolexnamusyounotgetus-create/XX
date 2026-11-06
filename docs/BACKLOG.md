@@ -178,3 +178,10 @@ Findings from verified research that the next engine versions must use. Each lin
   within noise. Experience alone is worth twice the whole fight-week block.
 - PROTOCOL FIX: backtest.json now holds 2019-2025 only (2026 sealed outside the repo); tools/build_db.py enforces
   it on every rebuild (--include-vault only for audits).
+- EMBEDDINGS (verified, research/model_embed.md): stat-line gain is real — adding the embedding blend to the
+  mlrates stat-line model lowers mean relative deviance over 18 targets by -1.67% [-2.11, -1.24] on 2024-25
+  (newcomers -1.51%); use src/ml/embed.js blendMLRates in the engine's ML-rate path (v5 merge). Winner head:
+  0.6336 vs Elo 0.6769 alone, but train-only CV rejects it on top of the no-line stack, the ratings stack, the
+  close and close + stack; keep it only on top of the opening line (-0.0088 [-0.0143, -0.0036]) and the ML
+  logistic alone. Tuned rating systems in data/derived/ratings.json score 0.618-0.623 on 2024-25 (Elo 0.677):
+  use them in the stacks once the ratings verifier signs off.

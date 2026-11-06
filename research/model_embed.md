@@ -251,6 +251,10 @@ calibration, table, winner and stat models, integration and recipe.
 | embedding's own stat line vs GLM baseline | +4.83% (worse) | **-2.62%** (better) |
 | mlrates + embedding vs mlrates | -0.49% | **-1.68%** |
 
+Verification note: this table compares like with like across the bug fix. The close + head row is a diagnostic,
+because train CV rejects the head on top of the close. The mlrates row is the all-target recipe; the exported
+CV-selected recipe scores -1.67% [-2.11, -1.24].
+
 ### The factor model on its own
 
 Deviance is relative to a context-only model (division x era x five-round, with the defender's effect
@@ -651,7 +655,7 @@ Runtime on the shared machine (load average about 80):
 
 ## Verification log
 
-Adversarial review, Nov 6, 2026, about 4:05-4:45 pm UTC. The reviewer assumed every validation gain was fake until
+Adversarial review, Nov 6, 2026, about 4:05-4:25 pm UTC. The reviewer assumed every validation gain was fake until
 shown otherwise. It used fresh code and its own scripts (scratchpad `embed_verify/`), with `nice -n 5`, one thread
 per process and no more than two processes at a time.
 
@@ -687,7 +691,7 @@ Two selection rules broke the hidden-data protocol. Both are fixed, and the fixe
      that quarter reproduces every cached snapshot bit for bit (max difference 0).
    - Scrambling the stat lines of the 2025-02-22 card (24 directed rows; counts multiplied by U(0, 3)) and flipping
      its 12 results leaves every snapshot dated on or before that day **bit-identical**. The perturbed men's later
-     fight moves (by up to 0.22 sd).
+     fight moves (by up to 0.22 in raw walk units).
    - Scrambling every row and result from 2024-07-01 on (1,526 rows, 755 results) leaves that quarter's refit
      identical to 6e-15.
    - The tool's own pre- vs post-fight check (0.902 vs 0.750) and exposure check (0 of 2,074) reproduce.

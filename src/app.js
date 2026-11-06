@@ -1873,7 +1873,7 @@
         var p = beats[i - 1], c = beats[i];
         if (c.k === "strike" && p.k === "strike" && c.who === p.who && c.t - p.t < 1.6 && c.st === p.st) c.chain = true;
       }
-      script.rounds.push({ r: ri, beats: beats, endT: endT, judges: rd.judges || null, stoppage: rd.stoppage || null, fin: rd.fin, st: rd.st,
+      script.rounds.push({ r: ri, beats: beats, endT: endT, judges: rd.judges || null, ded: rd.ded || null, stoppage: rd.stoppage || null, fin: rd.fin, st: rd.st,
         dHA: rd.dHA, dHB: rd.dHB, dLA: rd.dLA, dLB: rd.dLB, SA: rd.SA, SB: rd.SB });
     }
     return script;
@@ -2066,6 +2066,9 @@
       var st = rd.st || {}, la = st.A ? st.A.sig_lnd : 0, lb = st.B ? st.B.sig_lnd : 0;
       if (rd.judges && H) { for (var j = 0; j < 3; j++) H.cards[j].push(rd.judges[j]); renderCards(); }
       var cards = rd.judges ? rd.judges.map(function (s) { return s[0] + "–" + s[1]; }).join(", ") : "";
+      if (rd.ded) ["A", "B"].forEach(function (w, i) {   // engine v4.0.1: point deductions for fouls (already in the round's scores)
+        if (rd.ded[i] > 0) addPbp(r, null, "Referee takes " + (rd.ded[i] > 1 ? rd.ded[i] + " points" : "a point") + " from " + nameOf(w) + " for a foul.", "rnd");
+      });
       addPbp(r, null, "End of round " + (r + 1) + ". Landed: " + shortOf("A") + " " + la + ", " + shortOf("B") + " " + lb + "." + (cards ? " Judges (" + shortOf("A") + " first): " + cards + "." : ""), "rnd");
       roundCard("End of round " + (r + 1), shortOf("A") + " " + la + " – " + lb + " " + shortOf("B") + " landed" + (cards ? " · " + cards : ""), 2600);
       if (rd.stoppage) addPbp(r, null, "The corner stops it. " + nameOf(other(rd.stoppage)) + " can't continue.", "big");

@@ -872,7 +872,7 @@
         b.pri = b.k === "note" ? 0 : (b.k === "strike" ? (b.kd || b.fin || b.hurt ? 2 : (b.miss ? 0 : 1)) : 2);
       }
 
-      var R = { r: ri, beats: beats, endT: endT, judges: rd.judges || null, stoppage: rd.stoppage || null, fin: rd.fin || null, st: rd.st || null,
+      var R = { r: ri, beats: beats, endT: endT, judges: rd.judges || null, ded: rd.ded || null, stoppage: rd.stoppage || null, fin: rd.fin || null, st: rd.st || null,
         dHA: rd.dHA, dHB: rd.dHB, dLA: rd.dLA, dLB: rd.dLB, SA: rd.SA, SB: rd.SB, endState: rd.endState || null,
         base: statsObj(base), end: statsObj(cum), timeline: timeline, density: density(beats, ev, endT, timeline),
         cum: { t: cumT, v: cumV, base: base }, intro: introTxt || null, outro: null };

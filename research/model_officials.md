@@ -489,3 +489,152 @@ unanimity 0.77-0.81, 10-8 rounds about 2% of judge-rounds (2024-25), 10-10 0.1%.
   an hour on 4 cores), or `OFFICIALS_SUFFIX=_c python3 tools/officials.py --stage post` from the cached folds in
   `out/officials/` (about 6 minutes).
 
+
+## Verification log
+
+Adversarial review, Nov 6, 2026 (afternoon), by a separate agent that started from the assumption that the
+analysis was wrong. What I did: re-scored the analyst's fold pickles with my own metric and bootstrap code; wrote
+an independent re-implementation of the judge model and re-fit it on three walk-forward folds
+(`tools/officials_verify.py`, summary `data/derived/officials_verify.json`, per-fight output in
+`out/officials/verify/`); ran ablations of the published structure in the analyst's own simulator; fixed what was
+wrong in `tools/officials.py` and reran its post stage. Folds: 2024-25 = fit before 2024 (validation); 2022-23 =
+fit before 2022 and 2019-23 = fit before 2019 (tuning). Intervals are 95% event-cluster bootstraps; negative =
+the first model is better for log losses.
+
+### 1. Joins: held
+
+- **Loser-first cards.** After mapping DETAILS to A and B, the three cards agree with the official result (winner
+  and UD/SD/MD) in 3,871 of 3,876 decisions. The 5 exceptions are source errors, not mapping errors: Demopoulos vs
+  Frey 2022 (DETAILS 29-29, 28-28, 30-27 for a split decision), Cummins vs Blachowicz 2017 (a 28-28 card in a
+  "unanimous" decision), Trinaldo vs Parke 2015, Cariaso vs Smolka 2014, Thomson vs Franca 2004. None is in 2024-25.
+- **Round scores.** The round-by-round codes reproduce the card totals on 9,763 of 9,772 observed cards. The 9 misses
+  are deductions missing from fights marked deduction-free; only those cards are affected.
+- **Fighter order.** A is the first-named fighter and wins 61.7% of non-drawn decisions, so the listing carries
+  information. The model is antisymmetric with no intercept, so it cannot learn the listing. The 55 draws allow
+  both orientations. NCs are excluded by the category filter. fightweek.json's A/B order matches ufcstats in all
+  3,270 matched decisions (8 are spelling variants).
+- **Metrics.** The published held-out numbers recompute exactly from the pickles (7-class 0.7930 vs 0.8055, -0.0125
+  [-0.0204, -0.0056]; card LL +0.0273 [+0.0109, +0.0433]).
+
+### 2. Leakage and selection: none that moves the results
+
+- **Fold boundaries.** Each fold fits only on decisions dated before its first scored year (3,335 before 2024).
+  The judge index comes from training only. The 10-8 year level is capped at the last training year, and the era
+  trend is extrapolated. No 2026 row is loaded.
+- **Nationality.** It is a 2026 snapshot, and Wikidata coverage depends on outcomes: fighters who won the decision
+  are listed more often (local fighters abroad 94% vs 89%, visitors 94% vs 85%), because listing follows later
+  fame. The bias hits locals and visitors about equally. With fightweek.json's nationality (99.9% coverage
+  2012-2025), the raw home decision win rate abroad is 60.8% (541 decisions, vs 59.6% of 441 with Wikidata), and
+  the re-fit home gain on 2024-25 grows to -0.0127 [-0.0223, -0.0041]. Selection does not create the home effect.
+- **Panel knowledge.** Held-out scores condition on the actual three judges. Commissions often name them only
+  days before the fight, or on fight night, so named-judge gains are an upper bound for pre-fight use (moot, see 4).
+- **Deduction check.** The deduction check (AUC 0.992) uses the final fit, which saw those decisions. The deduction
+  prior is estimated only from fights where the deduction is latent, so the check is close to out-of-sample but
+  not strictly so.
+- **Test-set reuse.** 2024-25 was used to adopt closeness and to reject fight-level noise and the 10-8 trend. The
+  protocol allows version selection on 2024-25, and the headline does not depend on it. On the base folds without
+  closeness, judges + home vs league is 7-class -0.0130 [-0.0208, -0.0061], and home alone -0.0108 [-0.0185,
+  -0.0040].
+
+### 3. Headline with fresh code: replicated
+
+The fresh code has its own likelihood, fit on cards with observed round scores only (12-node Gauss-Hermite shared
+noise with the closeness sd), its own 10-8 GLM (winner-oriented stats, random-walk year levels, judge
+intercepts), its own simulator (20,000 panels per fight), its own metrics and event-cluster sandwich SEs.
+
+| 2024-25 (534 decisions) | Analyst 7-class | Fresh 7-class | Analyst winner LL | Fresh winner LL |
+|---|---|---|---|---|
+| League judge | 0.8055 | 0.8039 | 0.3414 | 0.3338 |
+| League + home | 0.7950 | 0.7932 | 0.3383 | 0.3309 |
+| Named judges + home | 0.7930 | 0.7919 | 0.3387 | 0.3313 |
+| All officials terms vs league | -0.0125 [-0.0204, -0.0056] | -0.0120 [-0.0200, -0.0048] | -0.0027 [-0.0083, +0.0024] | -0.0024 [-0.0084, +0.0029] |
+| Home vs league | -0.0105 [-0.0182, -0.0037] | -0.0107 [-0.0185, -0.0038] | -0.0030 [-0.0087, +0.0021] | -0.0029 [-0.0087, +0.0025] |
+
+h_abroad comes out at 0.685 in the fresh fit vs 0.688 in the analyst's fit (both fit before 2024). The fresh
+model's decision-winner loss is lower on 2024-25 (paired vs the analyst's model with judges off, -0.0060 [-0.0093,
+-0.0024]) but not on 2022-23 (-0.0010 [-0.0086, +0.0067]). Its calibration slope is the same (0.94 on 2024-25,
+0.74 on 2022-23). That is not enough to switch models.
+
+### 4. Named-judge effects make decision predictions worse: fixed
+
+These are the analyst's own simulator and parameters (judges + home, tau x 0.5), with every judge effect set to 0
+("named off") or as published (`officials.json` `judging.verification`).
+
+| Published - named off | Winner LL | 7-class LL | Split LL |
+|---|---|---|---|
+| 2024-25 | +0.0019 [+0.0003, +0.0035] | -0.0003 [-0.0033, +0.0029] | -0.0026 [-0.0051, -0.0000] |
+| 2022-23 | +0.0036 [+0.0006, +0.0077] | +0.0024 [-0.0009, +0.0058] | +0.0020 [-0.0003, +0.0048] |
+| 2019-23 | +0.0015 [+0.0003, +0.0028] | +0.0018 [-0.0002, +0.0038] | -0.0000 [-0.0011, +0.0011] |
+
+The fresh re-fit agrees (named judges vs none, winner / 7-class): 2024-25 +0.0004 [-0.0009, +0.0019] / -0.0012
+[-0.0036, +0.0012]; 2022-23 +0.0024 [-0.0000, +0.0051] / +0.0014 [-0.0018, +0.0046]; 2019-23 +0.0017 [+0.0002,
++0.0031] / +0.0004 [-0.0021, +0.0030]. The judge effects were adopted on a card log-likelihood gain of +0.0026
+[-0.0081, +0.0135] on the tuning fold. No window shows a decision-level gain, the winner loss is worse in every
+window, and only the 2024-25 split loss improves. The named-off model keeps the whole headline: -0.0122 [-0.0203,
+-0.0053] 7-class vs the league judge, and -0.0017 [-0.0031, -0.0004] vs league + home.
+**Fix:** `engine.named_judges_default = false` and `engine.knobs.named_judges` (default off, with the evidence).
+Every judge is the league judge, using the same league parameters and `tasteSd` 0. The judge table stays as
+description and for assigned-official scenarios. Sections 5.1, 5.3 and 5.4 are updated.
+
+### 5. Home term: real, but the held-out gain depends on the window (kept, caveats added)
+
+- **Estimate.** h_abroad is stable across fits: 0.70 (fit before 2019), 0.65 (before 2022), 0.69 (before 2024),
+  0.73 (final). The fresh re-fits give 0.71, 0.65 and 0.69, with event-cluster SEs of 0.12-0.13.
+- **Gain from the home terms** (named off; removing both terms, analyst / fresh):
+
+  | Window | Analyst | Fresh |
+  |---|---|---|
+  | 2024-25 | -0.0108 [-0.0185, -0.0042] | -0.0107 [-0.0185, -0.0038] |
+  | 2022-23 | -0.0057 [-0.0149, +0.0034] | -0.0045 [-0.0148, +0.0054] |
+  | 2019-23 (fit before 2019) | +0.0012 [-0.0048, +0.0076] | +0.0004 [-0.0058, +0.0066] |
+
+  The windows have little power. Decisions with a home fighter abroad numbered 10, 0 and 7 in 2020-2022 (closed
+  and Apex events), 25 in 2023 and 40 in 2024-25.
+- **h_USA changes sign** across fits: +0.07 before 2019, then -0.10, -0.14, -0.16 (fresh: -0.05, -0.21, -0.25).
+  Dropping it changes 7-class loss by +0.0016 [-0.0000, +0.0034] on 2024-25, +0.0008 [-0.0014, +0.0030] on 2022-23
+  and -0.0009 [-0.0023, +0.0005] on 2019-23. It stays in (validation leans that way) but is flagged unstable in
+  the knob note.
+- **Tuning list fixed.** `tuning_choice` had left the no-home league judge out of the candidate list, so the home
+  term was never tested on a tuning fold. It is a candidate now, and the pick is unchanged.
+
+### 6. Uncertainty: SEs somewhat too small
+
+The Laplace SEs are conditional on the judge effects and are not clustered by event. In the fresh model, the
+event-cluster sandwich SEs are 10-20% larger than the inverse-Hessian SEs (h_abroad 0.118 vs 0.106; w_K 0.216 vs
+0.187, fit before 2024). Read the SEs in 3.4 as about 1.15 times larger. The bootstrap intervals of the held-out
+metrics already resample events (84 events on 2024-25).
+
+### 7. Referees: held, one caution
+
+The league rates and the empirical-Bayes multipliers check out: all are within a few percent of 1 except DQ. DQ
+rests on 22 events in all, its tau sits at the top of the grid (0.8), Mark Smith gets x3.70 from 5 DQs in 461
+fights, and the 2024-25 check had 2 DQs (-0.0009 [-0.0028, +0.0002]). **Fix:** `engine.referee_note` now says to
+use 1.0 for the dq multiplier unless a DQ scenario is wanted.
+
+### 8. Fixes made and rerun
+
+- `tools/officials.py`:
+  - The league judge is now a tuning candidate (`judging.tuning.home_on_tuning_fold`).
+  - New `verification_block` (the ablations in 4 and 5, all folds, written to `judging.verification`).
+  - `engine.named_judges_default` and `engine.knobs.named_judges`, set by rule: on only if named effects beat zero
+    effects on the 2024-25 7-class loss without hurting the winner loss on any fold.
+  - Verification notes on `knobs.home_effect` and `referee_note`.
+- **Rerun.** `OFFICIALS_SUFFIX=_c python3 tools/officials.py --stage post`, log at `out/officials_post_c_verify.log`.
+  Every number already in `officials.json` reproduced exactly. The only changes are the additions above.
+- **New tool.** `tools/officials_verify.py`, run as `<variants> <fold> all`, `--checks` and `--collect`. A smoke run
+  of the repo copy reproduces the scratch fit (league, 2024-25: nll 8795.27, 7-class 0.8039).
+- **This report.** Updated the bottom line, 3.1, the 3.3 table (engine-default row), 5.1, 5.3, 5.4 and the
+  nationality caveat.
+
+### 9. Corrected engine recommendation (changes only)
+
+- **Judging.** Same equations and values as 5.1, but by default every judge has n = v = p = g = c = 0 and
+  `tasteSd` is 0. Named effects only with `knobs.named_judges` on. On real 2024-25 stats this default gives
+  decision-winner log loss 0.3368, 7-class 0.7933 and split/majority 26.4% predicted vs 20.0% observed.
+- **Home.** h_abroad +0.733 and h_USA -0.159, as published. Treat h_USA as unstable; `home_effect` scales both.
+- **Referees.** dq multiplier 1.0. The other multipliers are cosmetic, as the report says.
+
+**Verdict.** The pipeline is sound: the joins are right, the walk-forward is clean, and the headline 7-class gain
+reproduces with independent code. The gain is the home-abroad term, which is significant on 2024-25 but not on the
+earlier windows. The claim that named judges add predictive value did not survive: they worsen the decision winner
+in every window. They are now off by default.

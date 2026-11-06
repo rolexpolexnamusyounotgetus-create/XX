@@ -13,9 +13,9 @@
    clocks recomputed after every event: strike attempts (misses are real events) by target and position,
    clinch entries and breaks, takedowns, ground sub-positions with passes, escapes, sweeps and stand-ups,
    submissions, knockdowns with a follow-up sequence, hurt states, standing / ground-and-pound / leg TKOs,
-   stamina and pace, three judges (v4: EM round-winner weights with shared + individual noise and a
-   margin-based 10-8 rule, all fit on 2019-2023 judges' rounds; v4.0.1: weights refit on pre-2024 cards only, and point
-   deductions for fouls on the cards), and doctor / corner stoppages.
+   stamina and pace, three judges (EM round-winner weights from ufcstats cards, v4.0.1: 2015-2023 cards only, v4.0.0 used
+   every card through 2026-10; shared + individual noise, a margin-based 10-8 rule and, v4.0.1, point deductions, all fit
+   on 2019-2023 judges' rounds), and doctor / corner stoppages.
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
