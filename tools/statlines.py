@@ -1448,7 +1448,7 @@ def M2():
 
 def expert_D(wl_oof, wl_valid=None):
     D = pickle.load(open(os.path.join(ROOT, "out", "ml2_cache", "stack.pkl"), "rb"))["D"].copy()
-    assert D["date"].max() < VAULT_FROM
+    assert str(D["date"].max()) < VAULT_FROM
     p = lambda f, src: (1 / (1 + math.exp(-src[f]))) if (src and f in src and src[f] is not None) else np.nan
     yr = D["year"].to_numpy()
     st = [p(f, wl_oof) if y <= 2023 else (p(f, wl_valid) if wl_valid else np.nan) for f, y in zip(D["fid"], yr)]
