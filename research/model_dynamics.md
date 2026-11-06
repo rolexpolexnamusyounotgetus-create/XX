@@ -608,6 +608,34 @@ The engine's damage terms are near zero in its own output (D10 +0.005), which ma
 3. too much knockdown frailty, 1.7 vs 0.9;
 4. a 3-round pace curve that is too flat in realized terms.
 
+### 7.1 Current engine, both windows (added by the verification)
+
+The engine as of 14:22 (src/engine3.js + params3.js, params 4.0.0-dev: the walk-forward form values, none of
+E1-E11 yet), frozen in a scratch copy, run with `tools/dynamics_engine.js` on 1,999 matchups from 2019-2023 (12
+sims each) and on the 865 matchups from 2024-2025 (30 sims). JSON keys `engine_check_v4dev_train` and
+`engine_check_v4dev_test`. Tune against the 2019-2023 columns; the 2024-2025 columns are for choosing versions.
+
+| Statistic | Engine 2019-23 | Real 2019-23 | Engine 2024-25 | Real 2024-25 |
+|---|---|---|---|---|
+| Output: sd fighter-fight / corr / AR(1) | 0.49 / 0.49 / 0.01 | 0.44 / 0.85 / 0.63 | 0.48 / 0.47 / 0.04 | 0.50 / 0.80 / 0.51 |
+| Own output corr R1-R2 / fighters same round | 0.44 / 0.54 | 0.57 / 0.66 | 0.42 / 0.55 | 0.53 / 0.69 |
+| Accuracy: sd fighter-fight / AR(1) | 0.44 / -0.12 | 0.34 / 0.70 | 0.43 / 0.60 | 0.32 / 0.58 |
+| KD frailty (cells only) | 1.64 | 1.49 | 1.56 | 0.87 |
+| KD per strike profile, 3 rounds | 1, 0.69, 0.58 | 1, 0.55, 0.37 | 1, 0.69, 0.57 | 1, 0.50, 0.42 |
+| KD per strike profile, 5 rounds | 1, 1.02, 0.78, 0.72, 0.65 | 1, 0.89, 0.52, 0.29, 0.43 | 1, 0.83, 0.82, 0.76, 0.64 | 1, 0.53, 0.39, 0.23, 0.12 |
+| P(round ends KO/TKO), 3 rounds | 0.169, 0.114, 0.095 | 0.158, 0.129, 0.070 | 0.153, 0.103, 0.089 | 0.142, 0.097, 0.081 |
+| P(round ends KO/TKO), 5 rounds | 0.099, 0.101, 0.079, 0.070, 0.071 | 0.105, 0.152, 0.074, 0.043, 0.080 | 0.084, 0.081, 0.086, 0.071, 0.066 | 0.104, 0.101, 0.069, 0.049, 0.038 |
+| Sig attempts per min R1, 3 / 5 rounds | 8.37 / 8.07 | 8.19 / 7.68 | 8.38 / 8.12 | 7.51 / 6.73 |
+| Output after being controlled earlier (octrl_m) | +0.130 | -0.006 | +0.127 | +0.001 |
+| Output, Ks_lag / K_lag | -0.009 / -0.001 | -0.101 / +0.064 | -0.001 / +0.016 | -0.066 / +0.127 |
+| Late-ratio total variance | 0.52 | 0.42 | 0.55 | 0.49 |
+
+Reading: the walk-forward calibration fixed the size of the fight-level output spread and the 5-round late
+finishes, but put most of the spread in the individual draw (corr 0.49 vs 0.85) and overshot accuracy form. The
+engine still has no round-to-round persistence, a knockdown hazard that falls too little by round, and a
+spurious rise in output after being controlled. Its knockdown frailty is close to the 2019-2023 value. Real
+5-round rounds 3-5 rest on 28 (2019-23) and 10 (2024-25) finishes; treat each cell as +-50%.
+
 ## 8. Engine recommendation (v6)
 
 Every number is a starting value for `tools/calibrate.js` / mlcal. The acceptance check is the engine-check
@@ -671,8 +699,22 @@ continued):
     po[j]   x 1.05 (j = the man dropped);         takedown attempts of j x 1.12
     kdRepeat: keep 1.15 (data x1.15 next round, CI 0.83-1.60, given per-direction frailty)
 
+    Verified, corrected (Nov 6). 0.92 and 1.05 are the dynamic RE coefficients, which are relative to an
+    expectation that already contains the knockdown round (scorer +15% that round, dropped man -12%). An engine
+    multiplier acts on the baseline rate, so it should match the skip-round contrast (next round vs the round
+    before the knockdown round, `kd_momentum_descriptive.skip_round`): scorer -5.9% (SE 4.8%), dropped -2.6%
+    (SE 4.9%) on 2010-2023; 2019-2023 alone -0.5% (7.6%) and -4.1% (8.1%); 2024-2025 +15.5% (11.2%) and +22% (14%).
+    The engine as of 14:22 on 2019-2023 matchups (same contrast, `engine_check_v4dev_train.kd_skip_round`): the
+    scorer's knockdown round +22.6% (SE 2.1%) and his next round +6.5% (SE 2.4%) above the round before; the dropped
+    man -1.6% (2.3%) and +3.2% (2.3%). So for this engine po[i] x 0.92 is about right (it removes the +6.5%), po[j]
+    should be about x 0.95, not x 1.05, and the dropped man's dip inside the knockdown round (-12% real) is missing
+    and belongs in the within-round hurt logic. Calibrate to the contrasts, not to the coefficients:
+    scorer +15% / -6% to 0%, dropped -12% / -3% (knockdown round / next round, vs the round before).
+
 **E5. Adaptation:** none by default. No trailing-fighter surge. Optional knob, default off: accuracy odds x 0.96 in
-the round after one lost on the cards.
+the round after one lost on the cards. *Verified, corrected: with the published round scores the accuracy dip is
+-0.079 logit (SE 0.015) in train and -0.085 (SE 0.026) on 2024-2025, so the knob value is x 0.92. Keep it off by
+default: it may be information about the night's form that the stats miss, not a choice.*
 
 **E6. Grappling carry-over** (takedown attempt rate in round r):
 
@@ -681,7 +723,9 @@ the round after one lost on the cards.
     x exp(+0.048 * minutes in control in earlier rounds)      (optional: may be style persistence)
 
 Distance output also falls 1.3% per minute controlled earlier: either directly, or through bottom-time drain
-with `outStam` small.
+with `outStam` small. *Verified on a 2024-2025 refit: takedowns landed (-0.062, SE 0.016), minutes in control
+(+0.072, SE 0.021) and the distance-output term (-1.5%, SE 0.7%) replicate; the controlled-minutes term is weaker
+(-0.040, SE 0.026), so expect less than -0.104 out of sample.*
 
 **E7. Knockdown hazard per landed standing head strike:**
 
@@ -697,6 +741,13 @@ with `outStam` small.
     Acceptance: engine-check KD frailty (cells only) about 0.9 (real 0.88 validation; 0.8-1.1 with profiles).
     If still above 1.1 after E2, lower form.vol further before touching form.pow / form.chin.
 
+    Verified, corrected (Nov 6). The 0.9 target is the 2024-2025 value. On 2019-2023 matchups the real cells-only
+    frailty is 1.49 and the engine as of 14:22 (pow/chin already cut to 0.316 by the walk-forward calibration,
+    vol 0.6) gives 1.64. So: form.vol 0.6 -> 0.5 at most, acceptance about 1.5 on engine_check_v4dev_train.
+    The round tables are still needed: on 2019-2023 matchups the engine's per-strike profile is [1, 0.69, 0.58]
+    (3 rounds) and [1, 1.02, 0.78, 0.72, 0.65] (5 rounds) against [1, 0.55, 0.37] and [1, 0.89, 0.52, 0.29, 0.43]
+    real. The 2010-2023 kdRound5 has exposure-weighted mean 0.974 on train exposures (kdRound3 0.997).
+
 **E8. Knockdown → finish conversion:**
 
     per-knockdown conversion about 0.52 (league; division factor as now)
@@ -711,10 +762,12 @@ with `outStam` small.
     In the engine's forms:
         stkoBase: 0.3 -> 0.9   (stko x (stkoBase + D/100) then has the data's slope at small D)
         gnpDmg:   600 -> 100
+    Verified: the damage slope is weak in train (z 1.1 and 1.5) but has the same sign on a 2024-2025 refit
+    (standing +0.25, SE 0.13; ground +0.11, SE 0.12; 26 and 46 events).
 
 **E10. Cardio:**
 
-    kPace: 15 -> 45
+    kPace: 15 -> 45     (verified: 30 does as well held out, and 45 vs 15 is not significant there; 30-45)
     pace partly mutual: m.pace[i][r] = paceCurve[r] x rho_i[r] x rho_j[r]^0.4 / norm
         (opponent coefficient 0.39 train, 0.74 test)
     Expected spread of fighter cardio among active fighters: sd about 0.11 on the log scale.

@@ -110,7 +110,7 @@
     try { if (window.MethodRound && mr) MR = window.MethodRound.create(mr); } catch (e) { MR = null; }
     if (mlr && window.MLRates) {
       // engine v4 applies the learned rates itself (opts.ml === false turns them off); v3 takes them through the adapter
-      if (typeof E.loadMLRates === "function") { try { E.loadMLRates(mlr); MLR.native = true; MLR.ok = true; } catch (e) { MLR.native = false; } }
+      if (typeof E.loadMLRates === "function") { try { E.loadMLRates(mlr); MLR.native = true; MLR.ok = true; MLJSON = mlr; postModel(worker); } catch (e) { MLR.native = false; } }
       if (!MLR.native) { try { window.MLRates.load(mlr); MLR.ok = true; } catch (e) { MLR.ok = false; } }
     }
     MLR.pending = false; mlCache.key = null; mrCache = {};
@@ -735,7 +735,10 @@
   function workerMain() {
     var EN = self.FightEngine, current = 0;
     self.onmessage = function (e) {
-      var d = e.data; current = d.id;
+      var d = e.data;
+      // the learned stat-line model (engine v4): the worker's own FightEngine can then build learned-rate matchups too
+      if (d && d.mlModel) { try { if (EN.loadMLRates) EN.loadMLRates(d.mlModel); } catch (x) { /* keeps the base tables */ } return; }
+      current = d.id;
       var m = d.m, rng = EN.makeRng(d.seed), N = d.n, i = 0, agg = aggInit(m.rounds, EN.STATS.length);
       function chunk() {
         if (d.id !== current) return;
@@ -754,6 +757,7 @@
       var src = $("engine-src").textContent + "\n;" + aggInit.toString() + "\n" + aggAdd.toString() + "\n;(" + workerMain.toString() + ")();";
       var url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
       var w = new Worker(url);
+      postModel(w);
       w.onmessage = function (e) {
         var d = e.data; if (d.id !== tallyId) return;
         if (d.error) { workerFailed = true; worker = null; try { w.terminate(); } catch (x) { /* gone */ } startTally(); return; }
@@ -763,6 +767,8 @@
       return w;
     } catch (e) { return null; }
   }
+  var MLJSON = null;   // the learned stat-line model JSON once installed (engine v4); posted to the tally worker
+  function postModel(w) { if (w && MLJSON) { try { w.postMessage({ mlModel: MLJSON }); } catch (e) { /* the posted matchups already carry the learned tables */ } } }
   function mainTally(id, m) {
     var rng = E.makeRng(newSeed()), i = 0, agg = aggInit(m.rounds, E.STATS.length);
     (function chunk() {

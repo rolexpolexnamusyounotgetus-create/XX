@@ -1236,20 +1236,22 @@ def kd_skip_round(S, periods):
     key = ["fid", "idx"]
     P = {c: x.pivot_table(index=key, columns="rnd", values=c) for c in ("y", "kd", "o_kd", "rsec")}
     Rr = x.groupby(key).R.first()
-    rows = []
+    parts = []
+    Rr = Rr.reindex(P["y"].index)
     for r in (2, 3, 4):
         if r + 1 not in P["y"].columns:
             continue
         q = lambda c, rr: P[c][rr]
         ok = (q("rsec", r - 1) >= 300) & (q("rsec", r) >= 300) & (q("rsec", r + 1) >= 60)
         ok &= (q("kd", r - 1) == 0) & (q("o_kd", r - 1) == 0)
+        y0, y1, y2 = q("y", r - 1), q("y", r), q("y", r + 1)
         for lab, sel in (("scorer", ok & (q("kd", r) >= 1) & (q("o_kd", r) == 0)),
                          ("dropped", ok & (q("o_kd", r) >= 1) & (q("kd", r) == 0)),
                          ("control", ok & (q("kd", r) == 0) & (q("o_kd", r) == 0))):
-            for i in sel[sel].index:
-                rows.append((lab, f"{Rr[i]}_{r}", P["y"].loc[i, r] - P["y"].loc[i, r - 1],
-                             P["y"].loc[i, r + 1] - P["y"].loc[i, r], P["y"].loc[i, r + 1] - P["y"].loc[i, r - 1]))
-    D = pd.DataFrame(rows, columns=["grp", "cell", "kd_round_vs_before", "after_vs_kd_round", "after_vs_before"])
+            parts.append(pd.DataFrame({"grp": lab, "cell": Rr[sel].astype(str) + f"_{r}",
+                                       "kd_round_vs_before": (y1 - y0)[sel], "after_vs_kd_round": (y2 - y1)[sel],
+                                       "after_vs_before": (y2 - y0)[sel]}))
+    D = pd.concat(parts, ignore_index=True)
     cols = ["kd_round_vs_before", "after_vs_kd_round", "after_vs_before"]
     cm = D[D.grp == "control"].groupby("cell")[cols].mean()
     res = {"n_control": int((D.grp == "control").sum())}

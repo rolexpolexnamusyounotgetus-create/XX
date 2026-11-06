@@ -1,7 +1,7 @@
 {
  "meta": {
   "tool": "tools/dynamics.py",
-  "built": "2026-11-06T11:20:40+00:00",
+  "built": "2026-11-06T14:33:50+00:00",
   "snapshot": "2026-10-31",
   "train": [
    "2019-01-01",
@@ -48,7 +48,8 @@
    "Ks_early": "knockdowns scored before the previous round",
    "lost": "lost the previous round on sig strikes landed (tie 0.5)",
    "behind2_final": "final scheduled round and down 2+ rounds on sig-landed rounds",
-   "lostJ": "share of judges who gave the previous round to the opponent (decisions only)"
+   "lostJ": "share of judges who gave the previous round to the opponent: published per-round scores (decisions only)",
+   "lostJinf": "legacy inferred version of lostJ from card totals and all-round stats (looks ahead; comparison only)"
   },
   "jackknife_groups": 10,
   "secs": 376.997617,
@@ -1411,7 +1412,78 @@
     },
     "dll_per_obs": 0.00867
    },
-   "secs": 258.707505
+   "test_refit": {
+    "gamma": {
+     "partial": {
+      "est": 0.193707,
+      "se": 0.031598
+     },
+     "D10": {
+      "est": -0.040274,
+      "se": 0.017651
+     },
+     "K_lag": {
+      "est": 0.124813,
+      "se": 0.045858
+     },
+     "K_early": {
+      "est": 0.040223,
+      "se": 0.068583
+     },
+     "A100": {
+      "est": 0.164321,
+      "se": 0.072317
+     },
+     "oA100": {
+      "est": 0.175651,
+      "se": 0.068283
+     },
+     "octrl_m": {
+      "est": 0.006888,
+      "se": 0.012547
+     },
+     "ctrl_m": {
+      "est": -0.022488,
+      "se": 0.012033
+     },
+     "otdl": {
+      "est": -0.020196,
+      "se": 0.015965
+     },
+     "tdl": {
+      "est": -0.011374,
+      "se": 0.014597
+     },
+     "H10": {
+      "est": -0.016817,
+      "se": 0.016809
+     },
+     "Ks_lag": {
+      "est": -0.07022,
+      "se": 0.040315
+     },
+     "Ks_early": {
+      "est": -0.147555,
+      "se": 0.070271
+     },
+     "lost": {
+      "est": 0.017845,
+      "se": 0.0126
+     },
+     "behind2_final": {
+      "est": -0.003246,
+      "se": 0.02464
+     }
+    },
+    "var_components_null": {
+     "sd_fighter_fight": 0.505603,
+     "corr_fighters": 0.78587,
+     "sd_round_shared": 0.363372,
+     "sd_round_own": 0.235715,
+     "ar1_round_own": 0.47273
+    }
+   },
+   "secs": 118.844162
   },
   "dist": {
    "outcome": "distance sig attempts per minute of non-control time (log)",
@@ -1564,7 +1636,78 @@
     },
     "dll_per_obs": 0.009315
    },
-   "secs": 241.225317
+   "test_refit": {
+    "gamma": {
+     "partial": {
+      "est": 0.092062,
+      "se": 0.021111
+     },
+     "D10": {
+      "est": -0.015978,
+      "se": 0.01024
+     },
+     "K_lag": {
+      "est": 0.013662,
+      "se": 0.020701
+     },
+     "K_early": {
+      "est": -0.024516,
+      "se": 0.035646
+     },
+     "A100": {
+      "est": 0.045792,
+      "se": 0.051169
+     },
+     "oA100": {
+      "est": 0.025157,
+      "se": 0.039747
+     },
+     "octrl_m": {
+      "est": -0.015233,
+      "se": 0.007104
+     },
+     "ctrl_m": {
+      "est": -0.042446,
+      "se": 0.007419
+     },
+     "otdl": {
+      "est": 0.009472,
+      "se": 0.008236
+     },
+     "tdl": {
+      "est": 0.007391,
+      "se": 0.008695
+     },
+     "H10": {
+      "est": -0.003054,
+      "se": 0.010811
+     },
+     "Ks_lag": {
+      "est": -0.068126,
+      "se": 0.021392
+     },
+     "Ks_early": {
+      "est": -0.113047,
+      "se": 0.038193
+     },
+     "lost": {
+      "est": 0.002927,
+      "se": 0.009986
+     },
+     "behind2_final": {
+      "est": 0.029652,
+      "se": 0.018189
+     }
+    },
+    "var_components_null": {
+     "sd_fighter_fight": 0.253747,
+     "corr_fighters": 1.0,
+     "sd_round_shared": 0.133483,
+     "sd_round_own": 0.246999,
+     "ar1_round_own": 0.901869
+    }
+   },
+   "secs": 91.147422
   },
   "acc": {
    "outcome": "sig accuracy (empirical logit)",
@@ -1702,7 +1845,78 @@
     },
     "dll_per_obs": 0.00435
    },
-   "secs": 52.04329
+   "test_refit": {
+    "gamma": {
+     "partial": {
+      "est": 0.1652,
+      "se": 0.020699
+     },
+     "D10": {
+      "est": -0.006228,
+      "se": 0.014127
+     },
+     "K_lag": {
+      "est": -0.010178,
+      "se": 0.030386
+     },
+     "K_early": {
+      "est": 0.036705,
+      "se": 0.065337
+     },
+     "A100": {
+      "est": -0.002331,
+      "se": 0.059347
+     },
+     "oA100": {
+      "est": -0.131018,
+      "se": 0.060848
+     },
+     "octrl_m": {
+      "est": 0.009516,
+      "se": 0.009932
+     },
+     "ctrl_m": {
+      "est": 0.01397,
+      "se": 0.010093
+     },
+     "otdl": {
+      "est": -0.010304,
+      "se": 0.010312
+     },
+     "tdl": {
+      "est": -0.004202,
+      "se": 0.011241
+     },
+     "H10": {
+      "est": 0.03982,
+      "se": 0.014145
+     },
+     "Ks_lag": {
+      "est": -0.068966,
+      "se": 0.034496
+     },
+     "Ks_early": {
+      "est": -0.052452,
+      "se": 0.068405
+     },
+     "lost": {
+      "est": 0.016813,
+      "se": 0.021341
+     },
+     "behind2_final": {
+      "est": -0.022789,
+      "se": 0.033507
+     }
+    },
+    "var_components_null": {
+     "sd_fighter_fight": 0.31606,
+     "corr_fighters": -0.135882,
+     "sd_round_shared": 0.0,
+     "sd_round_own": 0.231982,
+     "ar1_round_own": 0.579832
+    }
+   },
+   "secs": 39.856477
   },
   "hacc": {
    "outcome": "head sig accuracy (empirical logit)",
@@ -1840,7 +2054,78 @@
     },
     "dll_per_obs": 0.005372
    },
-   "secs": 51.050137
+   "test_refit": {
+    "gamma": {
+     "partial": {
+      "est": 0.263079,
+      "se": 0.025699
+     },
+     "D10": {
+      "est": -0.021575,
+      "se": 0.015001
+     },
+     "K_lag": {
+      "est": -0.025974,
+      "se": 0.034751
+     },
+     "K_early": {
+      "est": 0.025382,
+      "se": 0.069019
+     },
+     "A100": {
+      "est": 0.011402,
+      "se": 0.066155
+     },
+     "oA100": {
+      "est": -0.012875,
+      "se": 0.065459
+     },
+     "octrl_m": {
+      "est": 0.020202,
+      "se": 0.011371
+     },
+     "ctrl_m": {
+      "est": 0.021613,
+      "se": 0.011571
+     },
+     "otdl": {
+      "est": -0.015201,
+      "se": 0.012036
+     },
+     "tdl": {
+      "est": -0.008629,
+      "se": 0.014219
+     },
+     "H10": {
+      "est": 0.03216,
+      "se": 0.016229
+     },
+     "Ks_lag": {
+      "est": -0.083702,
+      "se": 0.042551
+     },
+     "Ks_early": {
+      "est": -0.074967,
+      "se": 0.075065
+     },
+     "lost": {
+      "est": 0.013981,
+      "se": 0.025203
+     },
+     "behind2_final": {
+      "est": -0.059576,
+      "se": 0.036741
+     }
+    },
+    "var_components_null": {
+     "sd_fighter_fight": 0.396267,
+     "corr_fighters": -0.093301,
+     "sd_round_shared": 0.037095,
+     "sd_round_own": 0.208941,
+     "ar1_round_own": 0.314216
+    }
+   },
+   "secs": 48.264274
   },
   "tda": {
    "outcome": "takedown attempts per minute (Poisson, gamma frailty per fighter-fight)",
@@ -2117,6 +2402,107 @@
     "se": 0.014659,
     "d_logit_acc_vs_control": 0.0,
     "d_td_att_vs_control": 0.0
+   }
+  },
+  "skip_round": {
+   "train": {
+    "n_control": 2952,
+    "scorer": {
+     "n": 85,
+     "kd_round_vs_before": {
+      "est": 0.133693,
+      "se": 0.06186
+     },
+     "after_vs_kd_round": {
+      "est": -0.138532,
+      "se": 0.065319
+     },
+     "after_vs_before": {
+      "est": -0.004839,
+      "se": 0.076073
+     }
+    },
+    "dropped": {
+     "n": 85,
+     "kd_round_vs_before": {
+      "est": -0.088021,
+      "se": 0.067592
+     },
+     "after_vs_kd_round": {
+      "est": 0.04678,
+      "se": 0.069312
+     },
+     "after_vs_before": {
+      "est": -0.041241,
+      "se": 0.081277
+     }
+    }
+   },
+   "ext+train": {
+    "n_control": 6918,
+    "scorer": {
+     "n": 205,
+     "kd_round_vs_before": {
+      "est": 0.145837,
+      "se": 0.038631
+     },
+     "after_vs_kd_round": {
+      "est": -0.205103,
+      "se": 0.038778
+     },
+     "after_vs_before": {
+      "est": -0.059266,
+      "se": 0.048209
+     }
+    },
+    "dropped": {
+     "n": 205,
+     "kd_round_vs_before": {
+      "est": -0.120044,
+      "se": 0.043572
+     },
+     "after_vs_kd_round": {
+      "est": 0.093981,
+      "se": 0.043706
+     },
+     "after_vs_before": {
+      "est": -0.026063,
+      "se": 0.04901
+     }
+    }
+   },
+   "test": {
+    "n_control": 1280,
+    "scorer": {
+     "n": 37,
+     "kd_round_vs_before": {
+      "est": 0.317482,
+      "se": 0.105259
+     },
+     "after_vs_kd_round": {
+      "est": -0.162025,
+      "se": 0.100403
+     },
+     "after_vs_before": {
+      "est": 0.155457,
+      "se": 0.111633
+     }
+    },
+    "dropped": {
+     "n": 37,
+     "kd_round_vs_before": {
+      "est": -0.032696,
+      "se": 0.127127
+     },
+     "after_vs_kd_round": {
+      "est": 0.254549,
+      "se": 0.106822
+     },
+     "after_vs_before": {
+      "est": 0.221853,
+      "se": 0.137588
+     }
+    }
    }
   }
  },
@@ -9918,6 +10304,31 @@
  "form_decomposition": {
   "league_att_pm": 8.628933,
   "league_acc": 0.467428,
+  "out_test_refit": {
+   "with_profile": {
+    "sd_fighter_fight": 0.38241,
+    "corr_fighters": 1.0,
+    "sd_round_shared": 0.36229,
+    "sd_round_own": 0.30274,
+    "ar1_round_own": 0.687762
+   },
+   "gamma": {
+    "partial": {
+     "est": 0.196937,
+     "se": 0.030603
+    },
+    "x_out_att": {
+     "est": 1.03938,
+     "se": 0.058493
+    },
+    "x_out_def": {
+     "est": 1.013126,
+     "se": 0.055778
+    }
+   },
+   "form_sd_individual": 3e-06,
+   "form_sd_shared_fight": 0.38241
+  },
   "out": {
    "null": {
     "sd_fighter_fight": 0.447889,
@@ -9950,6 +10361,31 @@
    "form_sd_individual": 3e-06,
    "form_sd_shared_fight": 0.367668,
    "heldout_one_step_profile_vs_null_dll": 0.021398
+  },
+  "acc_test_refit": {
+   "with_profile": {
+    "sd_fighter_fight": 0.269937,
+    "corr_fighters": -0.125881,
+    "sd_round_shared": 0.0,
+    "sd_round_own": 0.228654,
+    "ar1_round_own": 0.56045
+   },
+   "gamma": {
+    "partial": {
+     "est": 0.148409,
+     "se": 0.020484
+    },
+    "x_acc_att": {
+     "est": 0.673875,
+     "se": 0.047361
+    },
+    "x_acc_def": {
+     "est": 0.558754,
+     "se": 0.046774
+    }
+   },
+   "form_sd_individual": 0.286424,
+   "form_sd_shared_fight": 0.0
   },
   "acc": {
    "null": {
