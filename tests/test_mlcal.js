@@ -80,6 +80,37 @@ const close = (a, b, t = 1e-12) => Math.abs(a - b) <= t;
   check("winner log loss and 7-bin log loss are finite", isFinite(m2.winLL) && isFinite(m2.binLL) && m2.winLL > 0.3 && m2.winLL < 1.5);
   await S.close();
 
+  // ---- fixed overrides, overrides relative to the pristine params file, hook plumbing
+  const fx = M.resolveFixed({ kdScale: 1.5, "hook.w_acc": 0.2 });
+  check("fixed splits engine values and hook values", fx.params.kdScale === 1.5 && fx.hook.w_acc === 0.2);
+  const SF = new M.Session(Object.assign({}, spec0, { fixed: { kdScale: 1.5 } }), 1);
+  const dk = SF.dims.find((d) => d.name === "kdScale");
+  check("fixed value becomes the dimension's current value", dk.value === 1.5);
+  check("overrides are reported against the pristine params file", SF.tree({}).overrides.kdScale === 1.5 && Object.keys(SF.tree({}).overrides).length === 1);
+  const candFile = path.join(__dirname, "../data/derived/mlcal_candidates.json");
+  if (fs.existsSync(candFile)) {
+    const cand = JSON.parse(fs.readFileSync(candFile, "utf8"));
+    const c1 = cand.candidates.find((c) => c.rank === 1);
+    const SC = new M.Session(Object.assign({}, spec0, { fixed: "data/derived/mlcal_candidates.json#1" }), 1);
+    const ov = SC.tree({}).overrides;
+    check("fixed from candidates.json#rank reproduces that candidate's overrides",
+      Object.keys(c1.overrides).every((k) => Math.abs(ov[k] - c1.overrides[k]) < 1e-12) && Object.keys(ov).length === Object.keys(c1.overrides).length);
+  }
+  const H = require("../tools/mlcal_hooks/elo_skill.js");
+  const h1 = H.matchupOpts({}, { A: { elo: 1650 }, B: { elo: 1500 }, hookParams: { w_acc: 0.5, w_pow: 0.3, w_td: 0.2 } });
+  const h2 = H.matchupOpts({}, { A: { elo: 1500 }, B: { elo: 1650 }, hookParams: { w_acc: 0.5, w_pow: 0.3, w_td: 0.2 } });
+  check("elo hook is antisymmetric in the corners", ["acc", "pow", "chin", "tdDef"].every((k) => close(h1.adjA[k], h2.adjB[k]) && close(h1.adjB[k], h2.adjA[k])));
+  const specH = M.loadSpec(path.join(__dirname, "../tools/mlcal_spec_engine3_elo.json"));
+  const SH = new M.Session(specH, 2), SN = new M.Session(spec0, 2);
+  await SH.setup({ split: "train", nFights: 12, offset: 0, seed: 7, mirror: "swap" });
+  await SN.setup({ split: "train", nFights: 12, offset: 0, seed: 7, mirror: "swap" });
+  const h0 = await SH.evaluate({ key: "h0", x: { "hook.w_acc": 0, "hook.w_pow": 0, "hook.w_td": 0 }, sims: 8 });
+  const n0 = await SN.evaluate({ key: "n0", x: {}, sims: 8 });
+  const hh = await SH.evaluate({ key: "hh", x: { "hook.w_acc": 1.0 }, sims: 8 });
+  check("hook with zero weights reproduces the engine without the hook", h0.objective === n0.objective, h0.objective.toFixed(6));
+  check("hook weights reach the engine", hh.objective !== h0.objective);
+  await SH.close(); await SN.close();
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

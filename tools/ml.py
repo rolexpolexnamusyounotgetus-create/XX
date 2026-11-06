@@ -1169,7 +1169,7 @@ def block_iter(df, dec, evm, extra_train=None):
     for y0, y1 in BLOCKS:
         tr = ((df["year"] < y0) & dec).to_numpy()
         if extra_train is not None:
-            tr &= extra_train
+            tr = tr & extra_train
         va = ((df["year"] >= y0) & (df["year"] <= y1) & dec & evm).to_numpy()
         yield y0, y1, tr, va
 
@@ -1472,8 +1472,690 @@ def main():
     stage_two(R)
 
 
-def stage_two(R):   # STUB-REPLACED-BELOW
-    log("stage two not written yet")
+# ====================================================================== stage two: 7-bin, stacking, evaluation, export
+METHOD_GBM_SPACE = {"num_leaves": [4, 7], "min_data_in_leaf": [80, 200], "feature_fraction": [0.4, 0.7],
+                    "lambda_l2": [10.0]}
+SM_CS = [0.003, 0.01, 0.03, 0.1, 0.3]
+
+
+def _lgb_multi_fit(params, X, k, ncls, rounds, sw=None):
+    import lightgbm as lgb
+    p = dict(params)
+    p.update(objective="multiclass", num_class=ncls, verbose=-1, num_threads=1, max_bin=63, seed=1,
+             bagging_fraction=0.85, bagging_freq=1, deterministic=True, force_row_wise=True)
+    return lgb.train(p, lgb.Dataset(X, k, weight=sw), num_boost_round=rounds)
+
+
+def seven(R):
+    """7-bin outcome models: factorised (winner x method | winner) and direct multinomial."""
+    C, P = R["_ctx"], R["_P"]
+    df, dec, evm, years = C["df"], C["dec"], C["evm"], C["years"]
+    quick = C["args"].quick
+    n = len(df)
+    k7 = df["bin7"].to_numpy(dtype=float)
+    v7 = ~np.isnan(k7)
+    mlab = method_label(df, None)
+    winA = (df["winner"] == "A").to_numpy()
+    mrow = dec & (mlab >= 0)
+    Xw, mcols = method_design(df, winA)          # winner-oriented (training)
+    XA, _ = method_design(df, np.ones(n, bool))  # A as the winner
+    XB, _ = method_design(df, np.zeros(n, bool))
+    msym = df[["M_" + c for c in M_SYM]].to_numpy(dtype=float)
+    XwG, XAG, XBG = (np.hstack([Xw, msym]), np.hstack([XA, msym]), np.hstack([XB, msym]))
+    D0, dcols = direct7_design(df)
+    D1, _ = direct7_design(df, flip=True)
+    out = {"tuning": {}}
+
+    def blocks(mask_train, mask_val):
+        for y0, y1 in BLOCKS:
+            yield (y0, ((df["year"] < y0).to_numpy() & mask_train),
+                   ((df["year"] >= y0) & (df["year"] <= y1)).to_numpy() & mask_val)
+
+    # -- method | winner, softmax LR
+    grid = []
+    for Cc in SM_CS:
+        tot, nn = 0.0, 0
+        for _, tr, va in blocks(mrow, mrow & evm):
+            m = SoftmaxLR(Cc).fit(Xw[tr], mlab[tr])
+            Pm = m.predict(Xw[va], 3)
+            tot += ll7(Pm, mlab[va]) * va.sum()
+            nn += va.sum()
+        grid.append({"C": Cc, "cv_method_log_loss": round(tot / nn, 5)})
+    m_best = min(grid, key=lambda g: g["cv_method_log_loss"])
+    # base-rate method log loss on the same blocks (winner-oriented KO/SUB/DEC shares of the training years)
+    tot, nn = 0.0, 0
+    for _, tr, va in blocks(mrow, mrow & evm):
+        sh = np.bincount(mlab[tr], minlength=3) / tr.sum()
+        tot += ll7(np.tile(sh, (va.sum(), 1)), mlab[va]) * va.sum()
+        nn += va.sum()
+    out["tuning"]["method_lr"] = {"best": m_best, "grid": grid, "base_rate_cv": round(tot / nn, 5)}
+    log("method|winner LR best C=%s cv %.5f (base rates %.5f)" % (m_best["C"], m_best["cv_method_log_loss"], tot / nn))
+
+    # -- method | winner, LightGBM multiclass
+    cfgs = sample_configs(METHOD_GBM_SPACE, 2 if quick else 4, 17,
+                          {"num_leaves": 4, "min_data_in_leaf": 200, "feature_fraction": 0.4, "lambda_l2": 10.0})
+    checks = list(range(50, 801, 50))
+    res = []
+    for cfg in cfgs:
+        sums = np.zeros(len(checks))
+        nn = 0
+        for _, tr, va in blocks(mrow, mrow & evm):
+            m = _lgb_multi_fit(dict(cfg, learning_rate=0.03), XwG[tr], mlab[tr], 3, checks[-1])
+            sums += np.array([ll7(m.predict(XwG[va], num_iteration=c), mlab[va]) for c in checks]) * va.sum()
+            nn += va.sum()
+        mean = sums / nn
+        j = int(np.argmin(mean))
+        res.append({"cfg": cfg, "rounds": checks[j], "cv_method_log_loss": round(float(mean[j]), 5)})
+        log("  method GBM %s -> %d rounds cv %.5f" % (cfg, checks[j], mean[j]))
+    mg_best = min(res, key=lambda r: r["cv_method_log_loss"])
+    out["tuning"]["method_lgb"] = {"best": mg_best, "search": res}
+
+    # -- direct 7-bin softmax LR (both corner orders, mirrored labels)
+    grid = []
+    for Cc in SM_CS:
+        tot, nn = 0.0, 0
+        for _, tr, va in blocks(v7, v7 & evm):
+            m = SoftmaxLR(Cc).fit(np.vstack([D0[tr], D1[tr]]), np.r_[k7[tr], MIRROR7[k7[tr].astype(int)]].astype(int))
+            Pd = 0.5 * (m.predict(D0[va], 7) + m.predict(D1[va], 7)[:, MIRROR7])
+            tot += ll7(Pd, k7[va]) * va.sum()
+            nn += va.sum()
+        grid.append({"C": Cc, "cv_7bin_log_loss": round(tot / nn, 5)})
+    d_best = min(grid, key=lambda g: g["cv_7bin_log_loss"])
+    out["tuning"]["direct7_lr"] = {"best": d_best, "grid": grid}
+    log("direct 7-bin LR best C=%s cv %.5f" % (d_best["C"], d_best["cv_7bin_log_loss"]))
+
+    # -- direct 7-bin LightGBM (both corner orders); one configuration, rounds by block CV
+    dg_best = None
+    if not quick:
+        DG0 = np.hstack([C["G0"].to_numpy(), D0])
+        DG1 = np.hstack([C["G1"].to_numpy(), D1])
+        cfg = {"num_leaves": 7, "min_data_in_leaf": 160, "feature_fraction": 0.4, "lambda_l2": 20.0}
+        checks7 = list(range(50, 501, 50))
+        sums = np.zeros(len(checks7))
+        nn = 0
+        for _, tr, va in blocks(v7, v7 & evm):
+            m = _lgb_multi_fit(dict(cfg, learning_rate=0.04), np.vstack([DG0[tr], DG1[tr]]),
+                               np.r_[k7[tr], MIRROR7[k7[tr].astype(int)]].astype(int), 7, checks7[-1])
+            sums += np.array([ll7(0.5 * (m.predict(DG0[va], num_iteration=c) + m.predict(DG1[va], num_iteration=c)[:, MIRROR7]),
+                                  k7[va]) for c in checks7]) * va.sum()
+            nn += va.sum()
+        mean = sums / nn
+        j = int(np.argmin(mean))
+        dg_best = {"cfg": cfg, "rounds": checks7[j], "cv_7bin_log_loss": round(float(mean[j]), 5)}
+        out["tuning"]["direct7_lgb"] = dg_best
+        log("direct 7-bin LightGBM rounds %d cv %.5f" % (checks7[j], mean[j]))
+
+    # -- walk-forward predictions: OOF years (annual expanding) + frozen test fit
+    S = {k: np.full((n, 7), np.nan) for k in ("base", "elo", "lr_fact", "ml_fact", "gbm_fact", "mlgbm_fact",
+                                               "direct_lr", "direct_lgb")}
+    MA_lr = np.full((n, 3), np.nan)
+    MB_lr = np.full((n, 3), np.nan)
+    pD_by = {}
+    plan = [(Y, (df["year"] < Y).to_numpy(), (df["year"] == Y).to_numpy()) for Y in OOF_YEARS]
+    plan.append((TEST_FROM, (df["year"] <= TUNE_END).to_numpy(), C["test"]))
+    for Y, trY, teY in plan:
+        trm = trY & mrow
+        tr7 = trY & v7
+        pD = float(((k7 == 3) & tr7).sum() + 0.5) / float(tr7.sum() + 1.0)
+        pD_by[Y] = pD
+        S["base"][teY] = base7(df[tr7], df[teY])
+        bm = np.array([method_split_given_winner(r) for r in S["base"][teY]])
+        S["elo"][teY] = assemble7(P["elo"][teY], bm, bm, pD)
+        mlr = SoftmaxLR(m_best["C"]).fit(Xw[trm], mlab[trm])
+        MA_lr[teY] = mlr.predict(XA[teY], 3)
+        MB_lr[teY] = mlr.predict(XB[teY], 3)
+        S["lr_fact"][teY] = assemble7(P["lr"][teY], MA_lr[teY], MB_lr[teY], pD)
+        S["ml_fact"][teY] = assemble7(P["ml"][teY], MA_lr[teY], MB_lr[teY], pD)
+        mg = _lgb_multi_fit(dict(mg_best["cfg"], learning_rate=0.03), XwG[trm], mlab[trm], 3, mg_best["rounds"])
+        gA, gB = mg.predict(XAG[teY]), mg.predict(XBG[teY])
+        S["gbm_fact"][teY] = assemble7(P["lgb"][teY], gA, gB, pD)
+        S["mlgbm_fact"][teY] = assemble7(P["ml"][teY], gA, gB, pD)
+        md = SoftmaxLR(d_best["C"]).fit(np.vstack([D0[tr7], D1[tr7]]),
+                                        np.r_[k7[tr7], MIRROR7[k7[tr7].astype(int)]].astype(int))
+        S["direct_lr"][teY] = 0.5 * (md.predict(D0[teY], 7) + md.predict(D1[teY], 7)[:, MIRROR7])
+        if dg_best:
+            mdg = _lgb_multi_fit(dict(dg_best["cfg"], learning_rate=0.04), np.vstack([DG0[tr7], DG1[tr7]]),
+                                 np.r_[k7[tr7], MIRROR7[k7[tr7].astype(int)]].astype(int), 7, dg_best["rounds"])
+            S["direct_lgb"][teY] = 0.5 * (mdg.predict(DG0[teY]) + mdg.predict(DG1[teY])[:, MIRROR7])
+        log("  7-bin fits for %s done" % ("OOF %d" % Y if Y in OOF_YEARS else "test (<=2023 fit)"))
+    keys = ["ml_fact", "mlgbm_fact", "direct_lr"] + (["direct_lgb"] if dg_best else [])
+    S["ens"] = np.mean([S[k] for k in keys], axis=0)
+    S["ens_fact"] = 0.5 * (S["ml_fact"] + S["mlgbm_fact"])
+    if not dg_best:
+        del S["direct_lgb"]
+    # evaluation sets
+    ev_o = C["oof"] & v7 & df["in_bt"].to_numpy()
+    ev_t = C["test"] & v7 & df["in_bt"].to_numpy()
+    res = {"oof": {}, "test": {}}
+    for k, M in S.items():
+        res["oof"][k] = round(ll7(M[ev_o], k7[ev_o]), 5)
+        res["test"][k] = round(ll7(M[ev_t], k7[ev_t]), 5)
+    best_k = min((k for k in S if k not in ("base", "elo")), key=lambda k: res["oof"][k])
+    out["recommended"] = best_k
+    out["n"] = {"oof": int(ev_o.sum()), "test": int(ev_t.sum())}
+    out["pD"] = {str(k): round(v, 5) for k, v in pD_by.items()}
+    out["ll7"] = res
+    # bootstrap CI on test for the recommended model, base rates and Elo, plus paired differences
+    g = df.loc[ev_t, "event"].to_numpy()
+    kt = k7[ev_t].astype(int)
+
+    def l7(M):
+        Mm = np.clip(M[ev_t], 1e-6, 1)
+        Mm = Mm / Mm.sum(1, keepdims=True)
+        return -np.log(Mm[np.arange(len(kt)), kt])
+    L = {k: l7(S[k]) for k in S}
+    nb = max(200, C["args"].boot // 2)
+    bs = cluster_boot(g, lambda idx: np.array([L[best_k][idx].mean(), L["base"][idx].mean(), L["elo"][idx].mean(),
+                                               L[best_k][idx].mean() - L["base"][idx].mean()]), nb)
+    out["test_ci"] = {"model": best_k, "ll7": ci(bs[:, 0]), "base": ci(bs[:, 1]), "elo_x_base": ci(bs[:, 2]),
+                      "model_minus_base": ci(bs[:, 3])}
+    # market 7-bin benchmark (method6 props), test rows where present
+    ext = R.get("_ext") or {}
+    m6 = ext.get("mkt_method6", {})
+    fid = df["fid"].to_numpy()
+    have = np.array([f in m6 for f in fid]) & ev_t
+    if have.sum() > 50:
+        pDt = pD_by[TEST_FROM]
+        MM = np.array([[(1 - pDt) * m6[f][0], (1 - pDt) * m6[f][1], (1 - pDt) * m6[f][2], pDt, (1 - pDt) * m6[f][5],
+                        (1 - pDt) * m6[f][4], (1 - pDt) * m6[f][3]] for f in fid[have]])
+        kk = k7[have].astype(int)
+        out["market_test"] = {"n": int(have.sum()), "market_ll7": round(ll7(MM, kk), 5),
+                              best_k: round(ll7(S[best_k][have], kk), 5), "base": round(ll7(S["base"][have], kk), 5),
+                              "elo": round(ll7(S["elo"][have], kk), 5)}
+        for k in ("ml_fact", "mlgbm_fact", "direct_lr", "ens"):
+            out["market_test"][k] = round(ll7(S[k][have], kk), 5)
+        # does the model add to the market? 50/50 log-linear pool
+        pool = np.exp(0.5 * np.log(np.clip(MM, 1e-6, 1)) + 0.5 * np.log(np.clip(S[best_k][have], 1e-6, 1)))
+        out["market_test"]["pool_50_50"] = round(ll7(pool / pool.sum(1, keepdims=True), kk), 5)
+    # method marginals on test: predicted vs observed shares (calibration of the method split)
+    Mt = S[best_k][ev_t]
+    out["test_marginals"] = {"pred": {"KO": round(float((Mt[:, 0] + Mt[:, 6]).mean()), 4),
+                                      "SUB": round(float((Mt[:, 1] + Mt[:, 5]).mean()), 4),
+                                      "DEC": round(float((Mt[:, 2] + Mt[:, 4]).mean()), 4),
+                                      "DRAW": round(float(Mt[:, 3].mean()), 4)},
+                             "obs": {"KO": round(float(np.isin(kt, [0, 6]).mean()), 4),
+                                     "SUB": round(float(np.isin(kt, [1, 5]).mean()), 4),
+                                     "DEC": round(float(np.isin(kt, [2, 4]).mean()), 4),
+                                     "DRAW": round(float((kt == 3).mean()), 4)}}
+    # finish-probability calibration (P(finish) deciles)
+    pf = 1 - Mt[:, 2] - Mt[:, 4] - Mt[:, 3]
+    of = np.isin(kt, [0, 1, 5, 6]).astype(float)
+    qs = np.quantile(pf, np.linspace(0, 1, 6))
+    out["finish_calibration"] = [{"lo": round(float(qs[i]), 3), "hi": round(float(qs[i + 1]), 3),
+                                  "n": int(((pf >= qs[i]) & (pf <= qs[i + 1])).sum()),
+                                  "pred": round(float(pf[(pf >= qs[i]) & (pf <= qs[i + 1])].mean()), 4),
+                                  "obs": round(float(of[(pf >= qs[i]) & (pf <= qs[i + 1])].mean()), 4)} for i in range(5)]
+    log("7-bin log loss OOF: " + ", ".join("%s %.4f" % (k, v) for k, v in res["oof"].items()))
+    log("7-bin log loss TEST: " + ", ".join("%s %.4f" % (k, v) for k, v in res["test"].items()))
+    R["seven"] = out
+    R["_S"] = S
+    R["_seven_models"] = {"m_best": m_best, "d_best": d_best, "mcols": mcols, "dcols": dcols}
+
+
+def stacking(R):
+    C, P = R["_ctx"], R["_P"]
+    df, y, years = C["df"], C["y"], C["years"]
+    oof_bt, test_bt = C["oof_bt"], C["test_bt"]
+    fid = df["fid"].to_numpy()
+    ext, src = load_external(set(fid[df["in_bt"].to_numpy()]))
+    R["_ext"] = ext
+    for k in ("mkt_close", "mkt_close_mult", "mkt_open", "mkt_rating", "engine", "engine_cal", "ratings"):
+        if k in ext:
+            P[k] = np.array([ext[k].get(f, np.nan) for f in fid], dtype=float)
+    avail = [k for k in ("engine", "engine_cal", "ratings", "mkt_rating", "mkt_open", "mkt_close") if k in P]
+    log("external stacking inputs: %s" % avail)
+    variants = [("ml", ["ml"]), ("elo+ml", ["elo", "ml"]), ("elo+lr+lgb+xgb", ["elo", "lr", "lgb", "xgb"])]
+    pre = ["elo", "ml"]
+    for k in ("engine", "engine_cal", "ratings"):
+        if k in P:
+            variants.append(("elo+ml+" + k, ["elo", "ml", k]))
+            pre.append(k)
+    if "engine" in P:
+        variants.append(("elo+engine", ["elo", "engine"]))
+    if "mkt_rating" in P:
+        variants.append(("pre-line: " + "+".join(pre + ["mkt_rating"]), pre + ["mkt_rating"]))
+        variants.append(("elo+ml+mkt_rating", ["elo", "ml", "mkt_rating"]))
+    if "mkt_open" in P:
+        variants.append(("open", ["mkt_open"]))
+        variants.append(("open+ml", ["mkt_open", "ml"]))
+        variants.append(("open+all", ["mkt_open"] + [k for k in pre if k != "elo"] + (["mkt_rating"] if "mkt_rating" in P else [])))
+    if "mkt_close" in P:
+        variants.append(("close", ["mkt_close"]))
+        variants.append(("close+ml", ["mkt_close", "ml"]))
+        variants.append(("close+all", ["mkt_close"] + [k for k in pre if k != "elo"] + (["mkt_rating"] if "mkt_rating" in P else [])))
+    out = {"inputs": avail, "sources": src, "variants": []}
+    for name, ks in variants:
+        Zall = np.column_stack([to_logit(np.clip(P[k], 1e-4, 1 - 1e-4)) for k in ks])
+        ok = ~np.isnan(np.column_stack([P[k] for k in ks])).any(1)
+        tr = oof_bt & ok
+        te = test_bt & ok
+        if tr.sum() < 200 or te.sum() < 100:
+            continue
+        w = stack_fit(Zall[tr], y[tr])
+        lo = np.full(len(df), np.nan)
+        for Y in OOF_YEARS:
+            a = tr & (years != Y)
+            b = tr & (years == Y)
+            if b.sum() == 0:
+                continue
+            lo[b] = 1 / (1 + np.exp(-Zall[b] @ stack_fit(Zall[a], y[a])))
+        pt = np.full(len(df), np.nan)
+        pt[ok] = 1 / (1 + np.exp(-Zall[ok] @ w))
+        key = "stack:" + name
+        P[key] = pt
+        out["variants"].append({"name": name, "inputs": ks, "weights": [round(float(v), 4) for v in w],
+                                "n_oof": int(tr.sum()), "oof_loyo_log_loss": round(log_loss(lo[tr], y[tr]), 5),
+                                "n_test": int(te.sum()), "test": win_metrics(pt[te], y[te]),
+                                "test_first_input_alone": win_metrics(P[ks[0]][te], y[te])})
+        log("stack %-40s w=%s OOF-LOYO %.4f | test n=%d ll %.4f (first input alone %.4f)"
+            % (name, out["variants"][-1]["weights"], out["variants"][-1]["oof_loyo_log_loss"], te.sum(),
+               out["variants"][-1]["test"]["log_loss"], out["variants"][-1]["test_first_input_alone"]["log_loss"]))
+    # recommended pre-line product stack: best OOF-LOYO among variants without opening/closing lines
+    cands = [v for v in out["variants"] if not any(k in ("mkt_open", "mkt_close") for k in v["inputs"])]
+    full_cov = [v for v in cands if all(k in ("elo", "ml", "lr", "lgb", "xgb", "mkt_rating") for k in v["inputs"])]
+    out["recommended_pre_line"] = min(full_cov, key=lambda v: v["oof_loyo_log_loss"])["name"]
+    out["best_pre_line_any_coverage"] = min(cands, key=lambda v: v["oof_loyo_log_loss"])["name"]
+    R["stacking"] = out
+
+
+def evaluate(R):
+    C, P = R["_ctx"], R["_P"]
+    df, y = C["df"], C["y"]
+    oof_bt, test_bt = C["oof_bt"], C["test_bt"]
+    nb = C["args"].boot
+    main_models = ["elo", "elo_sig", "elo_judge", "lr", "lgb", "xgb", "ml", "ml_platt", "ml_iso", "lr_platt",
+                   "lgb_platt", "lgb_iso", "lr_refit", "lgb_refit", "xgb_refit", "ml_refit"]
+    rec = "stack:" + R["stacking"]["recommended_pre_line"]
+    main_models.append(rec)
+    out = {"oof_2019_2023": {}, "test_2024_plus": {}}
+    for k in main_models:
+        if k in P and not np.isnan(P[k][oof_bt]).any():
+            out["oof_2019_2023"][k] = win_metrics(P[k][oof_bt], y[oof_bt])
+    g = df.loc[test_bt, "event"].to_numpy()
+    yt = y[test_bt]
+    models_t = [k for k in main_models if k in P and not np.isnan(P[k][test_bt]).any()]
+    for k in models_t:
+        out["test_2024_plus"][k] = win_metrics(P[k][test_bt], yt)
+    # bootstrap (event clusters) for log loss / Brier / accuracy and paired differences vs Elo and vs LR
+    Lp = {k: np.clip(P[k][test_bt], 1e-6, 1 - 1e-6) for k in models_t}
+    LL = {k: -(yt * np.log(Lp[k]) + (1 - yt) * np.log(1 - Lp[k])) for k in models_t}
+    BR = {k: (Lp[k] - yt) ** 2 for k in models_t}
+    AC = {k: ((Lp[k] > 0.5) == (yt > 0.5)).astype(float) for k in models_t}
+
+    def stat(idx):
+        row = []
+        for k in models_t:
+            row += [LL[k][idx].mean(), BR[k][idx].mean(), AC[k][idx].mean(), LL[k][idx].mean() - LL["elo"][idx].mean()]
+        return np.array(row)
+    bs = cluster_boot(g, stat, nb)
+    for j, k in enumerate(models_t):
+        o = out["test_2024_plus"][k]
+        o["log_loss_ci95"] = ci(bs[:, 4 * j])
+        o["brier_ci95"] = ci(bs[:, 4 * j + 1])
+        o["accuracy_ci95"] = ci(bs[:, 4 * j + 2])
+        o["minus_elo_log_loss"] = round(float(LL[k].mean() - LL["elo"].mean()), 5)
+        o["minus_elo_ci95"] = ci(bs[:, 4 * j + 3])
+    # pairwise differences of interest
+    pairs = [("lgb", "lr"), ("ml", "lr"), ("ml", "lgb"), ("ml_iso", "ml"), ("ml_platt", "ml"), ("ml_refit", "ml"),
+             (rec, "ml"), ("elo_sig", "elo")]
+    out["pairs_test"] = []
+    for a, b in pairs:
+        if a in LL and b in LL:
+            d = LL[a] - LL[b]
+            bsd = cluster_boot(g, lambda idx: d[idx].mean(), nb)
+            out["pairs_test"].append({"a": a, "b": b, "log_loss_diff": round(float(d.mean()), 5), "ci95": ci(bsd)})
+    # market subset comparison
+    if "mkt_close" in P:
+        sub = test_bt & ~np.isnan(P["mkt_close"]) & ~np.isnan(P.get("mkt_open", P["mkt_close"]))
+        ys = y[sub]
+        gs = df.loc[sub, "event"].to_numpy()
+        mk = ["elo", "lr", "lgb", "ml", "ml_iso", rec, "mkt_rating", "mkt_open", "mkt_close"]
+        mk += [v and ("stack:" + v["name"]) for v in R["stacking"]["variants"] if v["name"] in ("open+ml", "close+ml", "close+all", "open+all")]
+        mk = [k for k in mk if k in P and not np.isnan(P[k][sub]).any()]
+        mo = {k: win_metrics(P[k][sub], ys) for k in mk}
+        Ls = {k: -(ys * np.log(np.clip(P[k][sub], 1e-6, 1)) + (1 - ys) * np.log(np.clip(1 - P[k][sub], 1e-6, 1))) for k in mk}
+        for k in mk:
+            d = Ls[k] - Ls["mkt_close"]
+            mo[k]["minus_close"] = round(float(d.mean()), 5)
+            mo[k]["minus_close_ci95"] = ci(cluster_boot(gs, lambda idx: d[idx].mean(), max(300, nb // 4)))
+        out["test_market_subset"] = {"n": int(sub.sum()), "models": mo}
+    # calibration tables (test)
+    out["calibration_test"] = {k: calib_table(P[k][test_bt], yt) for k in ("elo", "lr", "lgb", "ml", "ml_iso", rec)
+                               if k in P}
+    out["calibration_oof"] = {k: calib_table(P[k][oof_bt], y[oof_bt]) for k in ("lr", "lgb", "ml") if k in P}
+    # subgroups (report only)
+    d = df[test_bt].copy()
+    subs = {
+        "year": d["year"].astype(str),
+        "sex": np.where(d["women"] > 0, "women", "men"),
+        "weight": np.where(d["women"] > 0, "women", np.where(d["lbs"] <= 145, "men <=145", np.where(d["lbs"] <= 185, "men 155-185", "men 205+"))),
+        "format": np.where(d["title"] > 0, "title", np.where(d["five"] > 0, "5-round non-title", "3-round")),
+        "experience": np.where(np.minimum(d["A_n"], d["B_n"]) < 3, "a fighter with 1-2 UFC fights",
+                               np.where(np.minimum(d["A_n"], d["B_n"]) < 8, "both 3-7", "both 8+")),
+        "elo_gap": pd.cut((d["A_elo"] - d["B_elo"]).abs(), [-1, 50, 120, 1e9], labels=["<50", "50-120", ">120"]).astype(str),
+    }
+    sg = {}
+    for name, lab in subs.items():
+        lab = np.asarray(lab)
+        sg[name] = {}
+        for v in sorted(set(lab)):
+            m = lab == v
+            row = {"n": int(m.sum())}
+            for k in ("elo", "lr", "lgb", "ml", "mkt_close"):
+                if k in P:
+                    pk = P[k][test_bt][m]
+                    ok = ~np.isnan(pk)
+                    row[k] = round(log_loss(pk[ok], yt[m][ok]), 4) if ok.sum() else None
+            row["acc_ml"] = round(float(np.mean((P["ml"][test_bt][m] > 0.5) == (yt[m] > 0.5))), 3)
+            sg[name][v] = row
+    out["subgroups_test"] = sg
+    R["eval"] = out
+    for k in models_t:
+        o = out["test_2024_plus"][k]
+        log("TEST %-28s ll %.4f [%.4f, %.4f] brier %.4f acc %.3f auc %.3f slope %.2f  vs Elo %+.4f [%+.4f, %+.4f]"
+            % (k, o["log_loss"], o["log_loss_ci95"][0], o["log_loss_ci95"][1], o["brier"], o["accuracy"], o["auc"],
+               o["calib_slope"], o["minus_elo_log_loss"], o["minus_elo_ci95"][0], o["minus_elo_ci95"][1]))
+
+
+def importance(R):
+    C = R["_ctx"]
+    m = C["lgb_final"]
+    gain = m.feature_importance("gain")
+    names = m.feature_name()
+    tot = gain.sum()
+    top = sorted(zip(names, gain), key=lambda t: -t[1])[:30]
+    grp = defaultdict(float)
+    for nm, gv in zip(names, gain):
+        if nm.startswith("d_"):
+            grp[term_group(nm[2:])] += gv
+        elif nm.startswith("a_") or nm.startswith("b_"):
+            grp["side levels (" + term_group(nm[2:]) + ")"] += gv
+        elif nm.startswith("m_"):
+            grp["matchup (normalised products)"] += gv
+        else:
+            grp["context"] += gv
+    lr = C["lr_final"]
+    std = lr.w   # coefficients on standardised columns
+    lr_top = sorted(zip(C["cols"], std, lr.coef), key=lambda t: -abs(t[1]))[:30]
+    R["importance"] = {
+        "lgb_gain_top30": [{"feature": n, "share": round(float(gv / tot), 4)} for n, gv in top],
+        "lgb_gain_by_group": {k: round(v / tot, 4) for k, v in sorted(grp.items(), key=lambda t: -t[1])},
+        "lr_std_coef_top30": [{"term": n, "group": term_group(n), "std_coef": round(float(s), 4),
+                               "raw_coef": round(float(c), 6)} for n, s, c in lr_top]}
+
+
+DYNAMIC_KEYS = ["age", "layoff", "log_layoff", "wc_move", "new_class", "years_ufc", "debut"]
+
+
+def page_sides(fx, fight_date, fight_lbs, snapshot):
+    """Per-fighter values for a fight on `fight_date` at `fight_lbs` (what the page does in JS)."""
+    v = dict(fx)
+    d = dt.date.fromisoformat(fight_date)
+    snap = dt.date.fromisoformat(snapshot)
+    if fx.get("_dob"):
+        v["age"] = (d - dt.date.fromisoformat(fx["_dob"])).days / 365.25
+    else:
+        v["age"] = None
+    if fx.get("_last_fight"):
+        v["layoff"] = (d - dt.date.fromisoformat(fx["_last_fight"])).days
+        v["log_layoff"] = math.log1p(v["layoff"])
+    v["years_ufc"] = fx["years_ufc"] + (d - snap).days / 365.25
+    v["wc_move"] = (fight_lbs - fx["_prev_lbs"]) if (fight_lbs and fx.get("_prev_lbs")) else 0.0
+    v["new_class"] = 1.0 if (fight_lbs and fx.get("_lbs_fought") and fight_lbs not in fx["_lbs_fought"]) else 0.0
+    return v
+
+
+def eval_terms(terms, a, b):
+    """Reference implementation of the page's logistic evaluator (mirror of the JS in research/model_ml.md)."""
+    z = 0.0
+    for t in terms:
+        ty = t["type"]
+        if ty == "logr":
+            x = math.log(a[t["key"]] + t["eps"]) - math.log(b[t["key"]] + t["eps"])
+        elif ty == "logit":
+            la = min(max(a[t["key"]], 1e-4), 1 - 1e-4)
+            lb = min(max(b[t["key"]], 1e-4), 1 - 1e-4)
+            x = math.log(la / (1 - la)) - math.log(lb / (1 - lb))
+        elif ty == "lin":
+            if a.get(t["key"]) is None or b.get(t["key"]) is None:
+                x = 0.0
+            else:
+                x = (a[t["key"]] - b[t["key"]]) * t["scale"]
+        elif ty == "hinge":
+            if a.get(t["key"]) is None or b.get(t["key"]) is None:
+                x = 0.0
+            else:
+                x = max(a[t["key"]] - t["h"], 0) - max(b[t["key"]] - t["h"], 0)
+        elif ty == "flag":
+            if a.get(t["key"]) is None or b.get(t["key"]) is None:
+                x = 0.0
+            else:
+                x = float(a[t["key"]] > t["t"]) - float(b[t["key"]] > t["t"])
+        elif ty == "share":
+            ea = a[t["u"]] * b[t["v"]]
+            eb = b[t["u"]] * a[t["v"]]
+            x = ea / (ea + eb + 1e-12) - 0.5
+        elif ty == "stance":
+            x = a["southpaw"] * b["orthodox"] - b["southpaw"] * a["orthodox"]
+        z += t["coef"] * x
+    return z
+
+
+def side_block_dict(v):
+    F = []
+    for k in METHOD_SIDE_LOG:
+        F.append(math.log(v[k] + EPS_LOG))
+    for k in METHOD_SIDE_LOGIT:
+        p = min(max(v[k], 1e-4), 1 - 1e-4)
+        F.append(math.log(p / (1 - p)))
+    for k in METHOD_SIDE_LIN:
+        F.append(v[k])
+    for k in METHOD_SIDE_ELO:
+        F.append(v[k] / 100.0)
+    age = v["age"] if v.get("age") is not None else 30.0
+    F += [age, max(age - 30, 0), (v["reach"] - v["height"]) if (v.get("reach") and v.get("height")) else 0.0]
+    return F
+
+
+def page_predict(model, roster, sa, sb, fight):
+    """Full page prediction: P(A wins), 7-bin. fight = {date, lbs, five, title, women, catch}."""
+    snap = model["snapshot"]
+    a = page_sides(roster[sa], fight["date"], fight["lbs"], snap)
+    b = page_sides(roster[sb], fight["date"], fight["lbs"], snap)
+    W = model["winner"]
+    z = eval_terms(W["terms"], a, b) * W["platt_slope"]
+    pA = 1 / (1 + math.exp(-z))
+    M = model["method"]
+    ctx = [fight["lbs"] / 100.0, fight.get("women", 0.0), fight.get("five", 0.0), fight.get("title", 0.0),
+           fight.get("catch", 0.0)]
+
+    def meth(w, l):
+        x = side_block_dict(w) + side_block_dict(l) + ctx
+        lg = [M["intercept"][k] + sum(c * xi for c, xi in zip(M["coef"][k], x)) for k in range(3)]
+        mx = max(lg)
+        e = [math.exp(v - mx) for v in lg]
+        s = sum(e)
+        return [v / s for v in e]
+    mA, mB = meth(a, b), meth(b, a)
+    pD = model["draw_rate"]
+    q = 1 - pD
+    bins = [q * pA * mA[0], q * pA * mA[1], q * pA * mA[2], pD, q * (1 - pA) * mB[2], q * (1 - pA) * mB[1],
+            q * (1 - pA) * mB[0]]
+    return pA, bins
+
+
+def page_model(R):
+    C, P = R["_ctx"], R["_P"]
+    df, X, y, dec, years = C["df"], C["X"], C["y"], C["dec"], C["years"]
+    specs = C["specs"]
+    cfg = C["lr_best"]
+    tr = lr_train_mask(df, dec, cfg, dec.copy())
+    m = lr_from_cfg(cfg).fit(X[tr], y[tr], years[tr], int(years.max()) + 1)
+    slope = R["tuning"]["recalibration"]["lr"]["platt_slope"]
+    terms = []
+    for t, c in zip(specs, m.coef):
+        tt = dict(t)
+        tt["coef"] = float("%.6g" % c)
+        tt["group"] = term_group(t["name"])
+        terms.append(tt)
+    # method | winner (production fit on every fight with a method)
+    mlab = method_label(df, None)
+    winA = (df["winner"] == "A").to_numpy()
+    mrow = dec & (mlab >= 0)
+    Xw, mcols = method_design(df, winA)
+    mm = SoftmaxLR(R["_seven_models"]["m_best"]["C"]).fit(Xw[mrow], mlab[mrow])
+    k7 = df["bin7"].to_numpy(dtype=float)
+    v7 = ~np.isnan(k7)
+    pD = float((k7[v7] == 3).sum() + 0.5) / float(v7.sum() + 1)
+    keys = set()
+    for t in specs:
+        for f in ("key", "u", "v"):
+            if f in t:
+                keys.add(t[f])
+    keys |= set(METHOD_SIDE_LOG + METHOD_SIDE_LOGIT + METHOD_SIDE_LIN + METHOD_SIDE_ELO)
+    keys |= {"southpaw", "orthodox", "switch", "height", "reach", "age", "layoff", "log_layoff", "years_ufc",
+             "wc_move", "new_class", "n", "mins_c"}
+    roster = {}
+    for slug, fx in C["roster_feats"].items():
+        r = {}
+        for k in sorted(keys):
+            v = fx.get(k)
+            r[k] = None if v is None or (isinstance(v, float) and not math.isfinite(v)) else float("%.6g" % v)
+        for k in ("_dob", "_last_fight", "_division", "_prev_lbs", "_lbs_fought"):
+            r[k] = fx.get(k)
+        roster[slug] = r
+    snap = C["tmeta"]["snapshot"]
+    model = {
+        "snapshot": snap,
+        "winner": {"terms": terms, "platt_slope": round(slope, 4),
+                   "fit": "L2 logistic, no intercept, every decisive UFC fight 2010-01-01..%s (%d fights), lam=%s, "
+                          "train_set=%s; held-out numbers are for the same specification fit on 2010-2023 only"
+                          % (snap, int(tr.sum()), cfg["lam"], cfg["train_set"]),
+                   "eval": "p(A wins) = 1 / (1 + exp(-platt_slope * sum_j coef_j * term_j(A, B))); exactly "
+                           "antisymmetric, so p(B beats A) = 1 - p(A beats B)"},
+        "method": dict(mm.export(mcols), classes_meaning=["KO/TKO", "SUB", "DEC"],
+                       side_block={"log(x+eps)": METHOD_SIDE_LOG, "logit(x)": METHOD_SIDE_LOGIT, "x": METHOD_SIDE_LIN,
+                                   "x/100": METHOD_SIDE_ELO, "then": ["age (30 if missing)", "max(age-30,0)",
+                                                                      "reach-height (0 if missing)"], "eps": EPS_LOG},
+                       context=["lbs/100", "women", "five", "title", "catch"],
+                       eval="x = [side_block(winner), side_block(loser), context]; softmax(intercept + coef @ x) = "
+                            "P(KO/TKO, SUB, DEC | that fighter wins)"),
+        "draw_rate": round(pD, 5),
+        "bins": ["A KO/TKO", "A SUB", "A DEC", "DRAW", "B DEC", "B SUB", "B KO/TKO"],
+        "dynamic_keys": "age, layoff, log_layoff, years_ufc, wc_move, new_class are recomputed for the fight date and "
+                        "weight from _dob, _last_fight, the snapshot date, _prev_lbs and _lbs_fought (see "
+                        "page_sides() in tools/ml.py); everything else is as of the snapshot",
+    }
+    # cross-check the reference evaluator against the training design on real rows
+    chk = df[C["test_bt"]].head(50)
+    zt = lr_design(chk, specs).to_numpy() @ m.coef
+    ze = []
+    for _, row in chk.iterrows():
+        a = {k[2:]: (None if (isinstance(v, float) and math.isnan(v)) else v) for k, v in row.items() if k.startswith("A_")}
+        b = {k[2:]: (None if (isinstance(v, float) and math.isnan(v)) else v) for k, v in row.items() if k.startswith("B_")}
+        ze.append(eval_terms(terms, a, b))
+    model["selfcheck_max_abs_logit_diff"] = float("%.3g" % np.max(np.abs(np.array(ze) - zt)))
+    examples = []
+    pairs = [("alexander-volkanovski", "justin-gaethje", 155, 1, 0),
+             ("islam-makhachev", "ilia-topuria", 155, 1, 1), ("tom-aspinall", "ciryl-gane", 265, 1, 1),
+             ("merab-dvalishvili", "petr-yan", 135, 1, 1), ("alex-pereira", "magomed-ankalaev", 205, 1, 1),
+             ("khamzat-chimaev", "dricus-du-plessis", 185, 1, 1), ("valentina-shevchenko", "natalia-silva", 125, 1, 1)]
+    for sa, sb, lbs, five, title in pairs:
+        if sa in roster and sb in roster:
+            fight = {"date": "2026-11-15", "lbs": lbs, "five": five, "title": title,
+                     "women": 1.0 if sa in ("valentina-shevchenko",) else 0.0}
+            pA, bins = page_predict(model, roster, sa, sb, fight)
+            pB, binsB = page_predict(model, roster, sb, sa, fight)
+            examples.append({"A": sa, "B": sb, "fight": fight, "pA": round(pA, 4), "bins": [round(v, 4) for v in bins],
+                             "check_swap_pA_plus_pB": round(pA + pB, 6)})
+    model["test_vectors"] = examples
+    R["page_model"] = model
+    R["roster_out"] = roster
+    log("page model: %d terms, %d roster fighters, selfcheck %.2e; examples: %s"
+        % (len(terms), len(roster), model["selfcheck_max_abs_logit_diff"],
+           "; ".join("%s-%s %.3f" % (e["A"], e["B"], e["pA"]) for e in examples)))
+
+
+def write_outputs(R):
+    C, P, S = R["_ctx"], R["_P"], R["_S"]
+    df, y = C["df"], C["y"]
+    rec_stack = "stack:" + R["stacking"]["recommended_pre_line"]
+    rec7 = R["seven"]["recommended"]
+    fights = {}
+    gbm_test = {}
+    for i in np.flatnonzero(df["in_bt"].to_numpy()):
+        f = df["fid"].iat[i]
+        st = "oof" if C["oof"][i] else ("test" if C["test"][i] else None)
+        if st is None:
+            continue
+        w = df["winner"].iat[i]
+        o = {"set": st, "y": 1 if w == "A" else (0 if w == "B" else None),
+             "bin7": None if np.isnan(df["bin7"].iat[i]) else int(df["bin7"].iat[i])}
+        for k, nm in (("elo", "elo"), ("elo_sig", "elo_sig"), ("lr", "lr"), ("lgb", "gbm"), ("xgb", "xgb"),
+                      ("ml", "ml"), ("ml_iso", "ml_iso"), (rec_stack, "stack")):
+            if k in P and not np.isnan(P[k][i]):
+                o[nm] = r4(P[k][i])
+        if st == "test":
+            for k, nm in (("lr_refit", "lr_refit"), ("lgb_refit", "gbm_refit"), ("ml_refit", "ml_refit")):
+                if not np.isnan(P[k][i]):
+                    o[nm] = r4(P[k][i])
+            gbm_test[f] = r4(P["lgb"][i])
+        if not np.isnan(S[rec7][i]).any():
+            o["bins7"] = [r4(v) for v in S[rec7][i]]
+        fights[f] = o
+    tun = dict(R["tuning"])
+    tun["margin_elo"] = C["margin_tun"]
+    tun["seven"] = R["seven"].pop("tuning")
+    for k in ("lgb", "xgb"):
+        tun[k] = dict(tun[k])
+        tun[k]["search"] = [{kk: vv for kk, vv in r.items()} for r in tun[k]["search"]]
+    out = {
+        "meta": {
+            "tool": "tools/ml.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+            "snapshot": C["tmeta"]["snapshot"],
+            "protocol": "features for each fight use only earlier fights (walk-forward); time-ordered CV on 2010-2023 "
+                        "(expanding window, validation blocks 2016-17, 2018-19, 2020-21, 2022-23) for every choice; "
+                        "out-of-fold 2019-2023 predictions from annual expanding refits feed recalibration and stacking; "
+                        "2024+ scored once by models trained on 2010-2023 (refit variants marked *_refit retrain each "
+                        "January with frozen hyperparameters). Draws and no-contests are excluded from winner metrics; "
+                        "DQ and NC are excluded from 7-bin metrics. Every model is corner-symmetric.",
+            "eval_sets": {"oof": "backtest.json fights 2019-2023 (both men had a prior UFC fight)",
+                          "test": "backtest.json fights 2024-01-01..%s" % C["tmeta"]["snapshot"]},
+            "feature_params": FEAT_PARAMS,
+            "keys": {"fights": "per backtest fight id: set (oof|test), y (1 = A won, 0 = B won, null = draw/NC), "
+                               "bin7 (0..6), elo, elo_sig (strike-share Elo), lr, gbm (LightGBM), xgb, ml (blend), "
+                               "ml_iso (isotonic-recalibrated blend), stack (recommended pre-line stack), *_refit "
+                               "(annual-refit variants, test only), bins7 (recommended 7-bin model: A KO, A SUB, "
+                               "A DEC, draw, B DEC, B SUB, B KO); all probabilities are P(A wins | decisive) with "
+                               "A = first ufcstats name",
+                     "gbm_test": "LightGBM P(A wins) for every 2024+ backtest fight (trained on 2010-2023)",
+                     "page_model": "logistic winner model + method-given-winner softmax that the page can evaluate "
+                                   "in JS for any two roster fighters (see research/model_ml.md)",
+                     "roster": "per-fighter feature values as of the snapshot, keyed by fighters.json slug"},
+            "recommended": {"winner_pre_line": rec_stack, "seven_bin": rec7},
+        },
+        "tuning": tun,
+        "results": {"eval": R["eval"], "seven": R["seven"], "stacking": R["stacking"],
+                    "importance": R["importance"]},
+        "fights": fights,
+        "gbm_test": gbm_test,
+        "page_model": R["page_model"],
+        "roster": R["roster_out"],
+    }
+    with open(OUT_JSON, "w") as fh:
+        json.dump(out, fh, separators=(",", ":"), default=lambda o: o.item() if hasattr(o, "item") else str(o))
+    log("wrote %s (%.2f MB, %d fights, %d roster)" % (OUT_JSON, os.path.getsize(OUT_JSON) / 1e6, len(fights),
+                                                    len(R["roster_out"])))
+
+
+def stage_two(R):
+    stacking(R)
+    seven(R)
+    evaluate(R)
+    importance(R)
+    page_model(R)
+    write_outputs(R)
+    log("done in %.0f s" % (time.time() - R["_ctx"]["T0"]))
 
 
 if __name__ == "__main__":

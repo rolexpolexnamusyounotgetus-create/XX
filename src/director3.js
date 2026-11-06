@@ -446,7 +446,7 @@
       "{a} shoots {atech} and drags {d} down.", "{a} hits {atech}. {Hes} {posin}.", "{a} gets {d} down with {atech}.", "{a} times {atech} and takes {d} down.",
       "{Atech} from {a}, and {d} goes down."],
     tdClinch: ["{a} hits {atech} from the clinch. {d} is on {dhis} back.", "{a} drags {d} off the fence with {atech}.", "{Atech} from {a} in the clinch, and {d} goes down.",
-      "{a} finishes {atech} on the fence."],
+      "{a} finishes {atech}."],
     tdLate: ["{a} sneaks in {atech} with {clock} left in the round."],
     tdxCount: ["{d} stops another shot. {a} is {N} for {M} on takedowns.", "Another takedown stuffed. {a} is {N} for {M}.", "{d} denies {a} again: {N} for {M} on takedowns."],
     tdx: ["{d} stuffs the {tech}.", "{a} shoots {atech}. {d} sprawls and stays up.", "{d} reads the level change and sprawls.", "{a} goes for {atech}, but {d} defends.",
@@ -503,7 +503,7 @@
   };
 
   // ------------------------------------------------------------------ voice: fills templates, never repeats a line in a fight
-  function Voice(r) { this.r = r; this.used = {}; }
+  function Voice(r) { this.r = r; this.used = {}; this.tu = {}; }
   Voice.prototype.fill = function (tpl, c) {
     var s = tpl.replace(/\{(\w+)\}/g, function (m0, k) { var v = c[k]; return v == null ? m0 : String(v); });
     if (s.indexOf("{") >= 0) return null;
@@ -512,12 +512,13 @@
   Voice.prototype.take = function (s) { if (!s || this.used[s]) return null; this.used[s] = 1; return s; };
   // pools: template list (or list of lists, tried in order); c.variants: alternative values for {move}
   Voice.prototype.say = function (pool, c, fallback) {
-    var r = this.r, n = pool.length, order = shuffled(n, r), vars = c._mv || null;
+    var r = this.r, n = pool.length, order = shuffled(n, r), vars = c._mv || null, tu = this.tu;
+    order.sort(function (x, y) { return (tu[pool[x]] || 0) - (tu[pool[y]] || 0); });   // stable: random among the least used
     for (var pass = 0; pass < (vars ? Math.min(3, vars.length) : 1); pass++) {
       for (var i = 0; i < n; i++) {
         if (vars) setMove(c, vars[(pass + Math.floor(r() * vars.length)) % vars.length]);
         var s = this.take(this.fill(pool[order[i]], c));
-        if (s) return s;
+        if (s) { tu[pool[order[i]]] = (tu[pool[order[i]]] || 0) + 1; return s; }
       }
     }
     if (fallback) for (var j = 0; j < fallback.length; j++) { var f = this.take(this.fill(fallback[j], c)); if (f) return f; }
@@ -836,10 +837,11 @@
       }
 
       // ---- pass 7: play-by-play
-      var rc = { td: pair(), kd: pair(), hurt: pair(), color: 0, combo: 0, counter: 0, special: 0, miss: 0, body: 0, clinchSaid: false };
+      var rc = { td: pair(), kd: pair(), hurt: pair(), tdxSaid: pair(), color: 0, combo: 0, counter: 0, special: 0, miss: 0, body: 0, clinchSaid: false, lastTxtT: -99 };
       for (i = 0; i < beats.length; i++) {
         b = beats[i];
         b.txt = narrate(b, i, beats, rc, ri, endT) || undefined;
+        if (b.txt) rc.lastTxtT = b.t;
         if (!b.txt) delete b.txt;
       }
 
@@ -870,6 +872,7 @@
       // ------------------------------------------------------------ narration for one beat
       function narrate(b, bi, beats, rc, ri, endT) {
         var w = b.who, d = w ? other(w) : null, c = ctx(w), k = b.k, e = b.ev, txt = null, Fa = w ? F[w] : null;
+        var free = b.t - rc.lastTxtT >= 3.5;
         if (k === "strike") {
           var mvT = moveTexts(b.tech, Fa, b.tgt, b.pos);
           c._mv = mvT; setMove(c, mvT[0]);
@@ -908,10 +911,12 @@
             txt = voice.say(b.counter ? T.hurtCounter.concat(T.hurt) : T.hurt, c, ["{a} hurts {d} for the {n} time in this fight."]);
             txt = join(txt, [meter(b, w, d)]);
           } else if (b.landed && !b.down) {
-            txt = color(b, bi, beats, rc, c, w, d);
-          } else if (b.miss && !b.down && b.st < 2 && rc.miss < 1 && (b.tech === "overhand" || b.tech === "headkick" || b.tech === "wheel" || b.tech === "spinback" || b.tech === "spinfist" || b.tech === "flyknee") && r() < 0.15) {
+            txt = free ? color(b, bi, beats, rc, c, w, d) : null;
+          } else if (free && b.miss && !b.down && b.st < 2 && rc.miss < 1 && (b.tech === "overhand" || b.tech === "headkick" || b.tech === "wheel" || b.tech === "spinback" || b.tech === "spinfist" || b.tech === "flyknee") && r() < 0.15) {
             txt = voice.say(CLASS[b.tech] === "kick" || CLASS[b.tech] === "knee" ? T.bigMissKick : T.bigMiss, c); if (txt) rc.miss++;
           }
+        } else if (k === "clinch" && !free) {
+          txt = null;
         } else if (k === "clinch") {
           if (b.via === "tdx") txt = r() < 0.7 ? voice.say(T.clinchTdx, c) : null;
           else if (b.via === "up") txt = null;
@@ -919,7 +924,7 @@
           else if (!rc.clinchSaid ? r() < 0.9 : r() < 0.3) txt = voice.say(T.clinch, c);
           if (txt) rc.clinchSaid = true;
         } else if (k === "break") {
-          if (r() < 0.2) txt = voice.say(T.brk, c);
+          if (free && r() < 0.2) txt = voice.say(T.brk, c);
         } else if (k === "td") {
           rc.td[w]++; fc.td[w]++; fc.tda[w]++;
           var counterTd = lastOppStrike(beats, bi, w, 1.5);
@@ -937,19 +942,20 @@
           var tech2 = pickW(tdTechs(Fa, b.from === 1, lastOppStrike(beats, bi, w, 1.5)), r()) || "single-leg";
           b.tech = tech2; c.tech = tech2; c.atech = article(tech2);
           c.N = fc.td[w]; c.M = fc.tda[w];
-          if (r() < 0.6) txt = voice.say(T.tdx, c);
-          if (fc.tda[w] >= 3 && r() < 0.5) txt = txt ? join(txt, [voice.say(fc.td[w] === 0 ? ["{a} is 0 for {M} on takedowns."] : ["{a} is {N} for {M} on takedowns.", "{a} has {N} of {M} takedowns."], c)]) : voice.say(T.tdxCount, c);
+          var tally = [3, 5, 8, 10, 15, 20, 25, 30, 40, 50].indexOf(fc.tda[w]) >= 0;
+          if (free && rc.tdxSaid[w] < 3 && r() < 0.6) { txt = voice.say(T.tdx, c); if (txt) rc.tdxSaid[w]++; }
+          if (tally && (free || txt)) txt = txt ? join(txt, [voice.say(fc.td[w] === 0 ? ["{a} is 0 for {M} on takedowns."] : ["{a} is {N} for {M} on takedowns.", "{a} has {N} of {M} takedowns."], c)]) : voice.say(T.tdxCount, c);
         } else if (k === "pass") {
           fc.pass[w]++;
           c.n = ordinal(fc.pass[w]); c.posname = POS_NAME[b.pos] || "a better position";
           var poolP = b.pos === "half" ? T.passHalf : (b.pos === "side" ? T.passSide : (b.pos === "mount" ? T.passMount : (b.pos === "back" ? (b.from === "guard" ? T.passBackScramble.concat(T.passBack) : T.passBack) : null)));
-          if (poolP && (b.pos === "mount" || b.pos === "back" || r() < 0.75)) txt = voice.say(poolP, c, ["{a} advances to {posname}, {his} {n} pass of the fight."]);
+          if (poolP && (b.pos === "mount" || b.pos === "back" || (free && r() < 0.75))) txt = voice.say(poolP, c, ["{a} advances to {posname}, {his} {n} pass of the fight."]);
           if (txt) rc.posSaid = b.pos;
         } else if (k === "esc") {
           fc.esc[w]++;
           c.n = ordinal(fc.esc[w]); c.posname = POS_NAME[b.pos] || "guard";
           var poolE = b.from === "mount" ? T.escMount : (b.from === "back" ? T.escBack : (b.pos === "guard" ? T.escGuard : T.escHalf));
-          if (b.from === "mount" || b.from === "back" || rc.posSaid === b.from || r() < 0.5) txt = voice.say(poolE, c, ["{a} works back to {posname}. That's {his} {n} escape of the fight."]);
+          if (b.from === "mount" || b.from === "back" || rc.posSaid === b.from || (free && r() < 0.5)) txt = voice.say(poolE, c, ["{a} works back to {posname}. That's {his} {n} escape of the fight."]);
           rc.posSaid = txt ? b.pos : null;
         } else if (k === "sweep") {
           fc.sweep[w]++;
@@ -1000,9 +1006,9 @@
             for (kk = bi; kk >= 0; kk--) { var o = beats[kk]; if (o.k !== "strike" || o.who !== w) { if (o.k === "strike") continue; break; } if (o.combo !== b.combo) break; seq.unshift(o); }
             for (kk = 0; kk < seq.length; kk++) if (!seq[kk].landed) allLanded = false;
             if (seq.length >= 3 && allLanded && r() < 0.6) {
-              var parts = seq.map(function (o) { return seqText(F[w], o.tech); });
-              c.seq = parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
-              c.aseq = article(c.seq);
+              var parts = seqParts(seq.map(function (o) { return seqText(F[w], o.tech); }));
+              c.seq = parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0];
+              c.aseq = /^(two|three|four|five) /.test(c.seq) ? c.seq : article(c.seq);
               t = voice.say(T.combo, c); if (t) { rc.combo++; rc.color++; } return t;
             }
           }
@@ -1130,6 +1136,22 @@
     var out = txt || "";
     for (var i = 0; i < extra.length; i++) if (extra[i]) out = out ? out + " " + extra[i] : extra[i];
     return out || null;
+  }
+  // ["right hand", "right hand", "jab"] -> ["two right hands", "a jab"] (articles added after the first item)
+  function pluralWord(p) {
+    var m = /^(.*?)( to the .*| on the inside)$/.exec(p), head = m ? m[1] : p, tail = m ? m[2] : "";
+    head = /(ch|sh|s|x)$/.test(head) ? head + "es" : head + "s";
+    return head + tail;
+  }
+  function seqParts(list) {
+    var out = [], i = 0;
+    while (i < list.length) {
+      var j = i; while (j + 1 < list.length && list[j + 1] === list[i]) j++;
+      var n = j - i + 1;
+      out.push(n > 1 ? NUMW[Math.min(n, 10)] + " " + pluralWord(list[i]) : (out.length ? article(list[i]) : list[i]));
+      i = j + 1;
+    }
+    return out;
   }
   function plural(tech, dt) {
     if (dt && dt.tool === "elbow") return "elbows";

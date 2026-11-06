@@ -477,7 +477,8 @@
     var curve = nR === 5 ? p.pace5 : (nR === 3 ? p.pace3 : null);
     if (!curve) { curve = []; for (k = 0; k < nR; k++) curve.push(k < p.pace5.length ? p.pace5[k] : p.pace5[p.pace5.length - 1]); }
     var nb = Math.min(3, nR), cm0 = 0; for (k = 0; k < nb; k++) cm0 += curve[k]; cm0 /= nb;
-    m.paceCurve = []; m.kdPace = []; m.pace = [[], []];
+    m.paceCurve = []; m.kdPace = []; m.pace = [[], []]; m.finR = [];
+    for (k = 0; k < nR; k++) m.finR.push(nR >= 5 && k === 0 ? p.r1Caution5 : 1);
     for (k = 0; k < nR; k++) { m.paceCurve.push(curve[k] / cm0); m.kdPace.push(Math.pow(curve[k] / cm0, p.kdPaceExp)); }
     m.drain = [0, 0]; m.cardio = [0, 0];
     for (i = 0; i < 2; i++) {
@@ -660,7 +661,7 @@
       var rp = sharedPace * lnorm(rng, F.roundPace);
       po[0] = m.pace[0][r] * fOut[0] * rp * lnorm(rng, F.roundOut);
       po[1] = m.pace[1][r] * fOut[1] * rp * lnorm(rng, F.roundOut);
-      var kdP = m.kdPace[r];
+      var fr = m.finR[r], kdP = m.kdPace[r] * fr;
 
       while (true) {
         var h0 = t < hurtEnd[0], h1 = t < hurtEnd[1];
@@ -756,7 +757,7 @@
               if (follow) {
                 var ro = refO * chinM[j] * (1 + D[j] / K.refDmg) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
                 if (rng.u() < ro / (1 + ro)) { kind = "fin"; finHow = "TKO"; }
-              } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]))) { kind = "fin"; finHow = "GNP"; }
+              } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / K.gnpDmg) * (hj ? K.gnpHurt : 1) * chinM[j] * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]))) { kind = "fin"; finHow = "GNP"; }
             }
           } else if (tg === 1) {
             S[j] -= K.bodyDrain * dw[i]; if (S[j] < 0.05) S[j] = 0.05;
@@ -852,7 +853,7 @@
           st[i * NS + I_SUB]++;
           var fromTop = x === 2, hj3 = j === 0 ? h0 : h1;
           var sname = pickName(fromTop ? SUBN[POSN[pos]] : SUBN.bottom, rng.u());
-          var os = subO[i] * (fromTop ? subOPos[top * 5 + pos] : subBotO) * gRs[i] * subK[i] * (1 + K.subStam * (1 - S[j])) * (hj3 ? K.subHurt : 1) * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
+          var os = subO[i] * (fromTop ? subOPos[top * 5 + pos] : subBotO) * gRs[i] * subK[i] * (1 + K.subStam * (1 - S[j])) * (hj3 ? K.subHurt : 1) * fr * Math.max(0.05, 1 - K.finStamAtt * (1 - S[i]));
           if (rng.u() < os / (1 + os)) {
             fin = { by: SIDE[i], how: "SUB", t: t, loc: "ground", name: sname, detail: sname, pos: POSN[pos] + (fromTop ? "" : " (bottom)") };
             if (trace) { var eu = evObj(t, "sub", SIDE[i], state, pos, false, D, G, S); eu.name = sname; eu.loc = "ground"; ev.push(eu); }

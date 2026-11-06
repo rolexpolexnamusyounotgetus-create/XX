@@ -84,8 +84,10 @@ function parseArgs(argv) {
 }
 
 // ------------------------------------------------------------------ spec: which parameters, what bounds
-function loadSpec(specPath) {
+function loadSpec(specPath, args) {
   const spec = specPath ? readJSON(specPath) : {};
+  if (args && args.fixed) spec.fixed = args.fixed;
+  if (args && args.hook) spec.hook = args.hook;
   spec.engine = spec.engine || "src/engine3.js";
   spec.params = spec.params || "src/params3.js";
   spec.inject = spec.inject || "opts";       // "opts": pass the full tree as opts.params; "mutate": write it into the params object
@@ -104,7 +106,7 @@ function freshRequire(p) { const r = absPath(p); delete require.cache[require.re
                                                                  one multiplier on several current values
      {"path": "hook.w_oppadj", "value": 0, "lo": -1, "hi": 1}    passed to the spec's hook module, not the engine
    Optional: "min"/"max" hard limits, "int": true, "log": false. Defaults: spec.defaults.rel (1.6), log when lo > 0. */
-function resolveSpec(spec, base) {
+function resolveSpec(spec, base, hookFixed) {
   const flat = flatten(base, "", []), fmap = new Map(flat.map((e) => [e.path, e.value]));
   const defs = Object.assign({ rel: 1.6 }, spec.defaults || {});
   const dims = [];
@@ -123,7 +125,7 @@ function resolveSpec(spec, base) {
     if (!paths.length) throw new Error("mlcal spec: no parameter matches " + ent.path);
     for (const p of paths) {
       const hook = p.startsWith("hook.");
-      const v = hook ? +ent.value : fmap.get(p);
+      const v = hook ? (hookFixed && hookFixed[p.slice(5)] != null ? +hookFixed[p.slice(5)] : +ent.value) : fmap.get(p);
       if (v === undefined || !isFinite(v)) throw new Error("mlcal spec: unknown or non-numeric parameter " + p);
       let lo = ent.lo, hi = ent.hi;
       const rel = ent.rel || defs.rel;
@@ -144,10 +146,32 @@ function resolveSpec(spec, base) {
   return dims;
 }
 
+/* Fixed overrides applied to the base before tuning: an object {path: value} or "candidates.json#rank"
+   (rank 0 = that file's baseline). Hook values ("hook.<name>") go to the hook. */
+function resolveFixed(fx) {
+  const out = { params: {}, hook: {}, source: null };
+  if (!fx) return out;
+  let o = fx;
+  if (typeof fx === "string") {
+    const [file, rk] = fx.split("#"), cand = readJSON(file), rank = +(rk || 1);
+    const c = rank === 0 ? cand.baseline : (cand.candidates || []).find((e) => e.rank === rank);
+    if (!c) throw new Error("mlcal fixed: no rank " + rank + " in " + file);
+    o = Object.assign({}, c.overrides || {}, c.hook ? Object.fromEntries(Object.entries(c.hook).map(([k, v]) => ["hook." + k, v])) : {});
+    out.source = fx;
+  }
+  for (const k of Object.keys(o)) { if (k.startsWith("hook.")) out.hook[k.slice(5)] = +o[k]; else out.params[k] = +o[k]; }
+  return out;
+}
+function diffLeaves(a, b) {          // numeric leaves of a that differ from b
+  const fb = new Map(flatten(b, "", []).map((e) => [e.path, e.value])), out = {};
+  for (const e of flatten(a, "", [])) if (fb.get(e.path) !== e.value) out[e.path] = e.value;
+  return out;
+}
+
 /* Full parameter tree for a candidate. x maps dimension names (or raw parameter paths) to values;
    missing dimensions keep their current values. Returns { tree, hook, overrides }. */
-function buildTree(base, dims, x) {
-  const tree = structuredClone(base), hook = {}, overrides = {};
+function buildTree(base, dims, x, hookBase) {
+  const tree = structuredClone(base), hook = Object.assign({}, hookBase || {}), overrides = {};
   const byName = new Map(dims.map((d) => [d.name, d]));
   for (const d of dims) if (d.kind === "hook") hook[d.paths[0].slice(5)] = d.value;
   for (const name of Object.keys(x || {})) {
@@ -276,7 +300,7 @@ class Pool {
     const common = { enginePath: spec.enginePath || absPath(spec.engine), paramsPath: spec.paramsPath || absPath(spec.params),
       hookPath: spec.hook ? absPath(spec.hook) : null,
       inject: spec.inject, priors: PA };
-    this.workers = this.groups.map((g) => new Worker(__filename, { workerData: Object.assign({
+    this.workers = this.groups.map((g) => new Worker(spec.workerFile || __filename, { workerData: Object.assign({
       tasks: g.map((i) => { const t = tasks[i], f = fights[t.fi]; return { swap: t.swap, seed: t.seed, f: { id: f.id, date: f.date, year: f.year,
         division: f.division, rounds: f.rounds, title: f.title, A: f.A, B: f.B } }; }) }, common) }));
     this.nTasks = tasks.length;
@@ -458,10 +482,11 @@ function snapshotEngine(spec) {
     }
   };
   copy(srcDir, dir, 2);
+  fs.copyFileSync(__filename, path.join(dir, "__mlcal_worker.js"));
   const inside = !path.relative(srcDir, par).startsWith("..");
   const parSnap = inside ? path.join(dir, path.relative(srcDir, par)) : path.join(dir, "__params__", path.basename(par));
   if (!inside) { fs.mkdirSync(path.dirname(parSnap), { recursive: true }); fs.copyFileSync(par, parSnap); }
-  return { dir, engine: path.join(dir, path.basename(eng)), params: parSnap };
+  return { dir, engine: path.join(dir, path.basename(eng)), params: parSnap, worker: path.join(dir, "__mlcal_worker.js") };
 }
 
 class Session {
@@ -471,12 +496,18 @@ class Session {
     this.nWorkers = nWorkers;
     if (spec.snapshot !== false) {
       this.snap = snapshotEngine(spec);
-      spec.enginePath = this.snap.engine; spec.paramsPath = this.snap.params;
+      spec.enginePath = this.snap.engine; spec.paramsPath = this.snap.params; spec.workerFile = this.snap.worker;
       const cleanup = () => { try { fs.rmSync(this.snap.dir, { recursive: true, force: true }); } catch (e) { /* ignore */ } };
       process.once("exit", cleanup);
     } else { spec.enginePath = absPath(spec.engine); spec.paramsPath = absPath(spec.params); }
-    this.base = freshRequire(spec.paramsPath);
-    this.dims = resolveSpec(spec, this.base);
+    this.pristine = freshRequire(spec.paramsPath);
+    this.base = structuredClone(this.pristine);
+    this.fixed = resolveFixed(spec.fixed);
+    for (const k of Object.keys(this.fixed.params)) {
+      if (typeof getPath(this.base, k) !== "number") throw new Error("mlcal fixed: unknown parameter " + k);
+      setPath(this.base, k, this.fixed.params[k]);
+    }
+    this.dims = resolveSpec(spec, this.base, this.fixed.hook);
     this.PA = readJSON(spec.priors);
     for (const y of Object.keys(this.PA)) if (+y >= 2026) delete this.PA[y];
     this.pool = null; this.accs = new Map();
@@ -488,7 +519,8 @@ class Session {
   specInfo() {
     return { dims: this.dims.map((d) => ({ name: d.name, kind: d.kind, paths: d.paths, value: d.value, lo: d.lo, hi: d.hi, log: d.log, int: d.int })),
       engine: this.spec.engine, params: this.spec.params, engineVersion: this.engineVersion, paramsVersion: this.base.version || null,
-      paramsHash: this.paramsHash, engineHash: this.engineHash, inject: this.spec.inject, objective: this.spec.objective };
+      paramsHash: this.paramsHash, engineHash: this.engineHash, inject: this.spec.inject, objective: this.spec.objective,
+      hook: this.spec.hook || null, fixed: this.fixed.source || (Object.keys(this.fixed.params).length || Object.keys(this.fixed.hook).length ? this.fixed : null) };
   }
   async setup(o) {
     if (this.pool) await this.pool.close();
@@ -507,7 +539,7 @@ class Session {
   async evaluate(o) {
     if (!this.pool) throw new Error("mlcal: setup first");
     const key = String(o.key || "k" + Date.now());
-    const { tree, hook, overrides } = buildTree(this.base, this.dims, o.x || {});
+    const { tree, hook, overrides } = this.tree(o.x || {});
     const t0 = Date.now();
     const r = await this.pool.run(key, tree, hook, +o.sims || 30, +o.seedOff || 0);
     let acc = o.accumulate === false ? null : this.accs.get(key);
@@ -520,13 +552,19 @@ class Session {
     m.overrides = o.returnOverrides ? overrides : undefined;
     return m;
   }
+  tree(x) {
+    const b = buildTree(this.base, this.dims, x, this.fixed.hook);
+    b.overrides = diffLeaves(b.tree, this.pristine);
+    delete b.overrides.version;
+    return b;
+  }
   drop(key) { if (key === "*") this.accs.clear(); else this.accs.delete(String(key)); return { ok: true }; }
   async close() { if (this.pool) await this.pool.close(); this.pool = null; }
 }
 
 // ------------------------------------------------------------------ CLI
 async function serve(args) {
-  const spec = loadSpec(args.spec);
+  const spec = loadSpec(args.spec, args);
   const sess = new Session(spec, +(args.workers || 2));
   const rl = require("readline").createInterface({ input: process.stdin, terminal: false });
   const send = (o) => process.stdout.write(JSON.stringify(o) + "\n");
@@ -541,7 +579,7 @@ async function serve(args) {
         else if (req.cmd === "setup") send(await sess.setup(req));
         else if (req.cmd === "eval") send(await sess.evaluate(req));
         else if (req.cmd === "drop") send(sess.drop(req.key));
-        else if (req.cmd === "tree") { const b = buildTree(sess.base, sess.dims, req.x || {}); send({ tree: b.tree, overrides: b.overrides, hook: b.hook }); }
+        else if (req.cmd === "tree") { const b = sess.tree(req.x || {}); send({ tree: b.tree, overrides: b.overrides, hook: b.hook }); }
         else if (req.cmd === "quit") { await sess.close(); send({ ok: true }); process.exit(0); }
         else send({ error: "unknown cmd " + req.cmd });
       } catch (e) { send({ error: String(e && e.stack || e) }); }
@@ -551,7 +589,7 @@ async function serve(args) {
 }
 
 async function evalCli(args) {
-  const spec = loadSpec(args.spec);
+  const spec = loadSpec(args.spec, args);
   const sess = new Session(spec, +(args.workers || 2));
   let x = {};
   if (args.x) { const j = readJSON(args.x); x = j.x || j.overrides || j; }
@@ -565,17 +603,18 @@ async function evalCli(args) {
 }
 
 function exportCli(args) {
-  const spec = loadSpec(args.spec);
+  const spec = loadSpec(args.spec, args);
   const cand = readJSON(args.cand || "data/derived/mlcal_candidates.json");
   const rank = +(args.rank || 1);
   const c = rank === 0 ? cand.baseline : (cand.candidates || []).find((e) => e.rank === rank);
   if (!c) throw new Error("mlcal export: no candidate with rank " + rank);
-  const base = freshRequire(spec.params), dims = resolveSpec(spec, base);
-  const { tree, overrides } = buildTree(base, dims, c.overrides || c.x || {});
+  const base = freshRequire(spec.params);
+  const { tree, overrides } = buildTree(base, [], c.overrides || {});
+  const hookTxt = c.hook && Object.keys(c.hook).length ? "   Hook values (not engine parameters; " + (spec.hook || "hook") + "): " + JSON.stringify(c.hook) + "\n" : "";
   tree.version = String(base.version || "params") + "+mlcal-r" + rank;
   const txt = "/* Generated by tools/mlcal.js export from " + (args.cand || "data/derived/mlcal_candidates.json") + " (rank " + rank + ").\n" +
     "   Base: " + spec.params + " (" + (base.version || "?") + "). Changed values:\n" +
-    Object.keys(overrides).map((k) => "     " + k + ": " + getPath(base, k) + " -> " + overrides[k]).join("\n") + "\n*/\n" +
+    Object.keys(overrides).map((k) => "     " + k + ": " + getPath(base, k) + " -> " + overrides[k]).join("\n") + "\n" + hookTxt + "*/\n" +
     "(function (root) {\n  \"use strict\";\n  var FightParams = " + JSON.stringify(tree, null, 2).replace(/\n/g, "\n  ") + ";\n" +
     "  if (typeof module !== \"undefined\" && module.exports) module.exports = FightParams;\n  else root.FightParams = FightParams;\n" +
     "})(typeof self !== \"undefined\" ? self : (typeof window !== \"undefined\" ? window : globalThis));\n";
@@ -590,7 +629,7 @@ else if (require.main === module) {
   const args = parseArgs(process.argv.slice(2));
   const cmd = args._[0] || "help";
   const run = async () => {
-    if (cmd === "spec") { const spec = loadSpec(args.spec); const s = new Session(spec, 1); console.log(JSON.stringify(s.specInfo(), null, 1)); }
+    if (cmd === "spec") { const spec = loadSpec(args.spec, args); const s = new Session(spec, 1); console.log(JSON.stringify(s.specInfo(), null, 1)); }
     else if (cmd === "serve") await serve(args);
     else if (cmd === "eval") await evalCli(args);
     else if (cmd === "export") exportCli(args);
@@ -599,4 +638,4 @@ else if (require.main === module) {
   run().catch((e) => { console.error(e && e.stack || e); process.exit(1); });
 }
 
-module.exports = { resolveSpec, buildTree, loadSpec, loadFights, resultBin, metrics, flatten, getPath, setPath, Session, BR_DEFAULT, SPLITS };
+module.exports = { resolveSpec, buildTree, resolveFixed, diffLeaves, loadSpec, loadFights, resultBin, metrics, flatten, getPath, setPath, Session, BR_DEFAULT, SPLITS };

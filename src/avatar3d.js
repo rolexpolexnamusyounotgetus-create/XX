@@ -1315,11 +1315,10 @@
   };
   Avatar.prototype.onMode = function (from, to) {
     var C = this.base.clips; if (!C) return;
-    var self = this, pick = (this.app.slug || "x").length % 2 ? "fallBack" : "fallBack2";
-    if (to === "ko") this.clip(pick, 1, 0.12, { restart: true });
+    var self = this, fwd = (this.app.slug || "x").length % 3 === 0;
+    if (to === "ko") this.clip(fwd ? "fallFwd" : "fallBack2", 1, 0.12, { restart: true, speed: fwd ? 1.7 : 1.15 });
     else if (to === "down") {
-      var c = this.clipByName("fallBack");
-      this.clip("fallBack", 1, 0.12, { restart: true, speed: 1.5 });
+      this.clip("fallBack2", 1, 0.12, { restart: true, speed: 1.4 });
     } else if (to === "stand" && (from === "down")) this.clip("getUp", 1, 0.08, { restart: true, speed: 1.55, t: 0.05 });
     else if (to === "celebrate") this.clip("fistPump", 0.85, 0.5, { mask: "upper", loop: true });
     else {

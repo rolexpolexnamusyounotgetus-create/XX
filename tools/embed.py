@@ -481,7 +481,10 @@ class Fit:
         new["ua"], new["ud"] = Si @ P["ua"], Qi @ P["ud"]
         new["M"] = Si @ P["M"] @ Qi
         L1 = self.loss(new, self._parts)        # predictions unchanged: only the prior moves
-        return (new, L1) if L1 < L0 else (P, L0)
+        if L1 < L0:
+            self._cP = new                         # same linear predictors as P (up to rounding)
+            return new, L1
+        return P, L0
 
     def run(self, max_sweeps, tol, verbose):
         P = self.P
@@ -504,3 +507,37 @@ class Fit:
     # ---------------------------------------------------------------- predictions
     def emb(self, idx):
         return np.hstack([self.P["A"][idx], self.P["D"][idx]])
+
+
+# ------------------------------------------------------------------------------------------------ helpers
+def ctx_design(D, idx):
+    Z = np.zeros((len(idx), D.NDIV + 2))
+    Z[np.arange(len(idx)), D.r_div[idx]] = 1.0
+    Z[:, D.NDIV] = D.r_era[idx]
+    Z[:, D.NDIV + 1] = D.r_five[idx]
+    return Z
+
+
+def predict_rows(P, D, idx, ex=None, ey=None):
+    """Linear predictors for directed rows idx; ex / ey override the (offense, defense) embeddings used."""
+    K = P["A"].shape[1]
+    ax = P["A"][D.r_x[idx]] if ex is None else ex[:, :K]
+    dy = P["D"][D.r_y[idx]] if ey is None else ey[:, K:]
+    return ctx_design(D, idx) @ P["C"].T + ax @ P["W"].T + dy @ P["V"].T
+
+
+def win_logit_emb(P, ea, eb):
+    K = P["A"].shape[1]
+    Aa, Da, Ab, Db = ea[:, :K], ea[:, K:], eb[:, :K], eb[:, K:]
+    return ((Aa - Ab) @ P["ua"] + (Da - Db) @ P["ud"] + ((Aa @ P["M"]) * Db).sum(1) - ((Ab @ P["M"]) * Da).sum(1))
+
+
+def pearson_dispersion(fit):
+    """Weighted Pearson chi2 / row per task on the fit's own rows (quasi-likelihood scale)."""
+    eta = fit.eta(fit.P)
+    mu = task_mean(eta, fit.Er)
+    var = np.where(IS_BIN[None, :], mu * (1 - mu / np.maximum(fit.Er, 1e-9)), mu)
+    ok = fit.Er > 0
+    r2 = np.where(ok, (fit.Yr - mu) ** 2 / np.maximum(var, 1e-9), 0.0)
+    w = fit.w[:, None] * ok
+    return (w * r2).sum(0) / w.sum(0)

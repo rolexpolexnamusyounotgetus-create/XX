@@ -521,11 +521,14 @@ def geo_path(key):
 GEO_FIX = {  # city names the geocoder spells differently
     "New York City": "New York", "Kallang": "Singapore", "Saint Petersburg": "Saint Petersburg",
     "Fort Campbell": "Fort Campbell North", "Elmont": "Elmont", "St. Louis": "St Louis",
+    "Quebec City": "Quebec",
 }
+GEO_ISO_FIX = {"Macau": "MAC"}      # ufcstats files Macau under China; the geocoder under MO
 
 
 def geocode(fx, city, admin, iso3):
     """Best Open-Meteo geocoder hit for a city in a country (admin region as a tiebreak)."""
+    iso3 = GEO_ISO_FIX.get(city, iso3)
     iso2 = COUNTRIES[iso3][0] if iso3 in COUNTRIES else None
     q = GEO_FIX.get(city, city)
     key = "%s__%s" % (q, iso2 or "XX")

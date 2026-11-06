@@ -67,8 +67,13 @@ def cmd_priors(args):
 
 # ------------------------------------------------------------------ evaluator process
 class Evaluator:
-    def __init__(self, spec, workers):
-        self.p = subprocess.Popen(["node", rel("tools/mlcal.js"), "serve", "--spec", spec, "--workers", str(workers)],
+    def __init__(self, spec, workers, fixed=None, hook=None):
+        cmd = ["node", rel("tools/mlcal.js"), "serve", "--spec", spec, "--workers", str(workers)]
+        if fixed:
+            cmd += ["--fixed", fixed]
+        if hook:
+            cmd += ["--hook", hook]
+        self.p = subprocess.Popen(cmd,
                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1, cwd=ROOT)
         self.tick = os.sysconf("SC_CLK_TCK")
 
@@ -249,9 +254,12 @@ def pick_finalists(history, dims, rungs, k, min_dist=0.03):
 
 
 # ------------------------------------------------------------------ validation (ledger-guarded) and bootstrap
-def cand_hash(info, overrides):
-    blob = json.dumps({"engine": info["engineHash"], "params": info["paramsHash"],
-                       "x": {k: float("%.6g" % v) for k, v in sorted(overrides.items())}}, sort_keys=True)
+def cand_hash(info, overrides, hook=None):
+    d = {"engine": info["engineHash"], "params": info["paramsHash"],
+         "x": {k: float("%.6g" % v) for k, v in sorted(overrides.items())}}
+    if hook and any(abs(v) > 0 for v in hook.values()):
+        d["hook"] = {"file": info.get("hook"), "x": {k: float("%.6g" % v) for k, v in sorted(hook.items())}}
+    blob = json.dumps(d, sort_keys=True)
     return hashlib.sha1(blob.encode()).hexdigest()[:16]
 
 
@@ -317,7 +325,7 @@ def validate_set(ev, info, finalists, val_sims, seed, force=False, split="val"):
     res, pfs = {}, {}
     for label, x in finalists:
         tree = ev.call(cmd="tree", x=x)
-        h = cand_hash(info, tree["overrides"])
+        h = cand_hash(info, tree["overrides"], tree.get("hook"))
         if h in known and not force:
             log("validation: %s already scored on %s (hash %s); reusing the stored result" % (label, known[h]["when"], h))
             res[label] = dict(known[h]["result"], reused=True, hash=h)
@@ -337,7 +345,8 @@ def validate_set(ev, info, finalists, val_sims, seed, force=False, split="val"):
                        "eloA": f["eloA"], "eloB": f["eloB"]} for f in pf]
         ledger["entries"].append({"hash": h, "label": label, "when": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
                                   "engine": info["engine"], "engineHash": info["engineHash"], "params": info["params"],
-                                  "paramsHash": info["paramsHash"], "overrides": rnd(tree["overrides"]), "result": r,
+                                  "paramsHash": info["paramsHash"], "overrides": rnd(tree["overrides"]), "hook": rnd(tree.get("hook") or {}),
+                                  "hookFile": info.get("hook"), "result": r,
                                   "perFight": pfs[label]})
         json.dump(ledger, open(LEDGER, "w"), separators=(",", ":"))
         log("validation %s: obj %.4f win %.4f bins %.4f base %.4f brier %.4f acc %.3f" % (
@@ -370,7 +379,7 @@ def cmd_tune(args):
     rungs = [int(v) for v in args.rungs.split(",")]
     eta = max(2, int(round(rungs[1] / rungs[0]))) if len(rungs) > 1 else 2
     t0 = time.time()
-    ev = Evaluator(args.spec, args.workers)
+    ev = Evaluator(args.spec, args.workers, fixed=args.fixed, hook=args.hook)
     try:
         info = ev.call(cmd="spec")
         dims = info["dims"]
@@ -421,9 +430,11 @@ def cmd_tune(args):
 
         # output
         cands = []
+        base_tree = ev.call(cmd="tree", x=base_rec["x"])
         for r, h in enumerate(finalists, 1):
             tree = ev.call(cmd="tree", x=h["x"])
             cands.append({"rank": r, "source": h["opt"], "id": h["id"], "x": rnd(h["x"]), "overrides": rnd(tree["overrides"]),
+                          "hook": rnd(tree.get("hook") or {}),
                           "train": {"rungs": rnd(h["rungs"]), "top": h["last"]}, "confirm": conf.get(h["id"]),
                           "val": val.get(h["id"])})
         out = {
@@ -431,7 +442,8 @@ def cmd_tune(args):
                 "tool": "tools/mlcal.py + tools/mlcal.js", "created": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
                 "engine": info["engine"], "engineVersion": info["engineVersion"], "engineHash": info["engineHash"],
                 "params": info["params"], "paramsVersion": info["paramsVersion"], "paramsHash": info["paramsHash"],
-                "spec": args.spec, "dims": dims, "objective": info.get("objective"),
+                "spec": args.spec, "dims": dims, "objective": info.get("objective"), "hook": info.get("hook"),
+                "fixed": info.get("fixed"),
                 "budget": {"trials": args.trials, "cma_evals": args.cma_evals, "cma_pop": args.cma_pop, "n_fights": st["n"],
                            "rungs": rungs, "eta": eta, "confirm_fights": args.confirm_fights, "confirm_sims": args.confirm_sims,
                            "val_sims_per_order": args.val_sims, "workers": args.workers, "seed": args.seed,
@@ -444,7 +456,8 @@ def cmd_tune(args):
                 "how_to_use": "node tools/mlcal.js export --cand data/derived/mlcal_candidates.json --rank 1 --out <file.js> writes a "
                               "full params file; the owner of src/params3.js copies the overrides in after review",
             },
-            "baseline": {"x": rnd(base_rec["x"]), "train": {"rungs": rnd(base_rec["rungs"]), "top": base_rec["last"]},
+            "baseline": {"x": rnd(base_rec["x"]), "overrides": rnd(base_tree["overrides"]), "hook": rnd(base_tree.get("hook") or {}),
+                         "train": {"rungs": rnd(base_rec["rungs"]), "top": base_rec["last"]},
                          "confirm": conf.get("baseline"), "val": val.get("baseline")},
             "candidates": cands,
             "tpe_importance": importance,
@@ -481,10 +494,11 @@ def summary(out):
 def cmd_validate(args):
     cand = json.load(open(rel(args.cand)))
     ranks = [int(r) for r in args.ranks.split(",")] if args.ranks else [c["rank"] for c in cand["candidates"]]
-    ev = Evaluator(args.spec or cand["meta"]["spec"], args.workers)
+    ev = Evaluator(args.spec or cand["meta"]["spec"], args.workers, hook=args.hook or cand["meta"].get("hook"))
     try:
         info = ev.call(cmd="spec")
-        fin = [("baseline", cand["baseline"]["x"])] + [(c["id"], c["overrides"]) for c in cand["candidates"] if c["rank"] in ranks]
+        absx = lambda c: dict(c.get("overrides") or {}, **{"hook." + k: v for k, v in (c.get("hook") or {}).items()})
+        fin = [("baseline", absx(cand["baseline"]))] + [(c["id"], absx(c)) for c in cand["candidates"] if c["rank"] in ranks]
         res = validate_set(ev, info, fin, args.val_sims, args.seed, force=args.force)
         cand["baseline"]["val"] = res.get("baseline")
         for c in cand["candidates"]:
@@ -522,6 +536,8 @@ def main():
     p.add_argument("--val-split", default="val", choices=["val", "train"], help=argparse.SUPPRESS)
     p.add_argument("--cpu-min", type=float, default=20, help="CPU minutes for tuning (TPE + CMA) (20)")
     p.add_argument("--tpe-share", type=float, default=0.5, help="share of --cpu-min TPE may use (0.5)")
+    p.add_argument("--fixed", default=None, help="start from saved values: candidates.json#rank (rank 0 = baseline)")
+    p.add_argument("--hook", default=None, help="hook module (overrides the spec's)")
     p.add_argument("--out", default="data/derived/mlcal_candidates.json")
     p = sub.add_parser("validate")
     p.add_argument("--cand", default="data/derived/mlcal_candidates.json")
@@ -530,6 +546,7 @@ def main():
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--val-sims", type=int, default=80)
     p.add_argument("--seed", type=int, default=20261106 + 202)
+    p.add_argument("--hook", default=None)
     p.add_argument("--force", action="store_true", help="re-run sets already in the ledger (avoid: validation is single-use)")
     a = ap.parse_args()
     {"priors": cmd_priors, "tune": cmd_tune, "validate": cmd_validate}[a.cmd](a)

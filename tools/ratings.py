@@ -849,6 +849,8 @@ class WHR:
         self.e_p = prev[e]
         dt_y = (node_day[e] - node_day[self.e_p]) / YEAR
         self.e_c = 1.0 / (w2 * dt_y + vf + 1e-9)
+        self.c_of = np.zeros(2 * K)
+        self.c_of[e] = self.e_c
         self.e_d = np.array([age_G(node_age[n], dy, do) - age_G(node_age[m], dy, do)
                              for n, m in zip(e, self.e_p)]) if (dy or do) else np.zeros(len(e))
         f = np.where(prev < 0)[0]
@@ -935,7 +937,7 @@ class WHR:
         same = self.node_p[nodes[1:]] == self.node_p[nodes[:-1]]
         off = np.zeros(len(perm) - 1)
         if same.any():
-            off[same] = np.asarray(Hc[perm[1:][same], perm[:-1][same]]).ravel()
+            off[same] = -self.c_of[nodes[1:][same]]      # chain edge (prev -> node) precision
         ab = np.zeros((3, len(perm)))
         ab[0, 1:] = off
         ab[1] = dg
@@ -1255,6 +1257,13 @@ def run_dims(D, DP, until=None, record=True, dims=None):
                 k, ex = o[s_]
                 base[(div, dim)][0] = base[(div, dim)][0] * rho + k
                 base[(div, dim)][1] = base[(div, dim)][1] * rho + ex
+    rates = {}
+    for (div, dim), (bc, be) in base.items():
+        if DIMS[dim][1] == "bin":
+            rates.setdefault(div, {})[dim] = (bc + 50 * prior_rate[dim]) / (be + 50)
+        else:
+            rates.setdefault(div, {})[dim] = (bc + 20 * prior_rate[dim]) / (be + 20)
+    st["_base"] = rates
     return pre, pred, pll, st
 
 
@@ -1372,16 +1381,16 @@ def _eval(args):
             "in_va": score(D, p, D.idx_in_va)}
 
 
-def _refine(v, cands):
+def _refine(v, cands, coarse=False):
     if isinstance(v, bool) or isinstance(v, str):
         return cands
     if v == 0:
-        return cands
-    out = sorted({round(v * f, 6) for f in (0.6, 0.8, 0.9, 1.1, 1.25, 1.6)})
-    return out
+        return [] if coarse else cands
+    fs = (0.75, 1.33) if coarse else (0.6, 0.8, 0.9, 1.1, 1.25, 1.6)
+    return sorted({round(v * f, 6) for f in fs})
 
 
-def coord_descent(kind, P0, grid, pool, passes=3, objective="tune", log=print, min_gain=2e-5):
+def coord_descent(kind, P0, grid, pool, passes=3, objective="tune", log=print, min_gain=2e-5, coarse=False):
     """Coordinate descent over parameter grids; objective = mean log loss on 2019-2023 ('tune') or on
     2019-2021 ('in_tr', for the time-ordered check). Data stream stops at 2024-01-01 in every trial."""
     best = dict(P0)
@@ -1391,7 +1400,7 @@ def coord_descent(kind, P0, grid, pool, passes=3, objective="tune", log=print, m
     for ps in range(passes):
         improved = False
         for name, cands in grid:
-            cs = cands if ps == 0 else _refine(best.get(name, 0), cands)
+            cs = cands if ps == 0 else _refine(best.get(name, 0), cands, coarse)
             trials = [dict(best, **{name: c}) for c in cs if c != best.get(name)]
             if not trials:
                 continue
@@ -1546,24 +1555,25 @@ def specs(quick):
                        ("th_sd", [0.3, 0.6, 1.0, 2.0, 1e10]), ("w_fin", [0.8, 1.0, 1.25, 1.5]),
                        ("s0", [0.5, 0.8, 1.0, 1.3]), ("tau_y", [0.05, 0.1, 0.2, 0.3]),
                        ("gam", [0.0, 0.1, 0.2, 0.3]), ("kappa", [0.8, 0.9, 1.0, 1.1, 1.2])]})
-    whr_core = [("w2", [0.01, 0.03, 0.06, 0.1, 0.2]), ("vf", [0.0, 0.01, 0.03, 0.06]),
-                ("s0", [0.4, 0.6, 0.8, 1.0])]
+    whr_core = [("w2", [0.02, 0.05, 0.1, 0.2]), ("vf", [0.0, 0.02, 0.05]), ("s0", [0.5, 0.8, 1.1])]
     S.append({"name": "whr", "kind": "whr", "family": "WHR",
-              "label": "Whole-History Rating (Bayesian Bradley-Terry, Gaussian random-walk skill, full-history "
-                       "re-solve before every fight day), binary outcomes",
-              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "pre_on": True}, "from_shared": "elo_full",
+              "label": "Whole-History Rating (Bayesian Bradley-Terry, Gaussian random-walk skill, history re-solved "
+                       "before every fight day), binary outcomes",
+              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "pre_on": True}, "from_shared": "elo_full", "coarse": True,
               "grid": whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2])]})
     S.append({"name": "whr_mov", "kind": "whr", "family": "WHR",
               "label": "WHR with margin of victory (fractional / weighted outcomes by method)",
-              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "enc": "mov", "pre_on": True}, "from": "whr",
-              "from_mov": "elo_full",
-              "grid": mov + whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2])]})
+              "P": {"enc": "mov", "pre_on": True}, "from": "whr", "from_mov": "elo_full", "coarse": True,
+              "grid": [("y_sd", [0.6, 0.75, 0.9, 1.0]), ("w_fin", [1.0, 1.3, 1.6]), ("y_ud", [0.85, 1.0]),
+                       ("kappa", [0.9, 1.0, 1.1, 1.2]), ("w2", [0.02, 0.05, 0.1])]})
     S.append({"name": "whr_rounds", "kind": "whr", "family": "Round-level",
               "label": "Round-level WHR: every round a game (judge-consensus winners), finishing and unplayed "
                        "rounds to the finisher",
-              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "enc": "rounds", "w_round": 0.3, "w_fround": 2.0,
-                    "w_rem": 0.5, "kappa": 2.0, "pre_on": True}, "from_whr": "whr",
-              "grid": [("w_round", [0.1, 0.2, 0.3, 0.5, 0.8])] + rnd + whr_core})
+              "P": {"enc": "rounds", "w_round": 0.3, "kappa": 2.0, "pre_on": True}, "from": "whr",
+              "from_rounds": "elo_rounds", "coarse": True,
+              "grid": [("w_round", [0.15, 0.25, 0.4, 0.6]), ("kappa", [1.5, 2.0, 2.5, 3.0, 4.0]),
+                       ("w2", [0.01, 0.02, 0.05, 0.1]), ("s0", [0.3, 0.5, 0.8]), ("w_fround", [1.0, 2.0, 3.0]),
+                       ("w_rem", [0.0, 0.5, 1.0])]})
     if quick:
         for s in S:
             if s["grid"]:
@@ -1831,6 +1841,8 @@ def main():
             P0.update({k: v for k, v in tuned[s["from_shared"]].items() if k in SHARED_KEYS})
         if s.get("from_mov") in tuned:
             P0.update({k: v for k, v in tuned[s["from_mov"]].items() if k in MOV_KEYS})
+        if s.get("from_rounds") in tuned:
+            P0.update({k: v for k, v in tuned[s["from_rounds"]].items() if k in ("w_fround", "w_rem")})
         if s.get("from_whr") in tuned:
             P0.update({k: v for k, v in tuned[s["from_whr"]].items() if k in SHARED_KEYS + ("w2", "vf", "s0")})
         if s["kind"] == "trueskill" and s["name"] == "trueskill":
@@ -1839,7 +1851,8 @@ def main():
         log("tuning %s (%s)" % (s["name"], s["label"]))
         if s["grid"]:
             passes = 1 if args.quick else (2 if s["kind"] == "whr" else 3)
-            best, r, h = coord_descent(s["kind"], P0, s["grid"], pool, passes=passes, log=log)
+            best, r, h = coord_descent(s["kind"], P0, s["grid"], pool, passes=passes, log=log,
+                                       coarse=s.get("coarse", False))
         else:
             best, r, h = P0, _eval((s["kind"], P0)), []
         tuned[s["name"]], tune_res[s["name"]], hists[s["name"]] = best, r, h
@@ -2010,6 +2023,11 @@ def main():
         },
         "systems": sys_out,
         "analysis": extra,
+        "dim_baselines": {"note": "league rate per division at the snapshot (exponentially weighted, ~300-fight "
+                                  "memory); a fighter's expected rate vs an average opponent = baseline * exp(off), "
+                                  "allowed vs an average attacker = baseline * exp(-def); acc is a probability "
+                                  "on the logit scale",
+                          "rates": {d: {k: r5(v, 5) for k, v in r.items()} for d, r in dstate["_base"].items()}},
         "matchups": match,
         "predictions": pred_out,
         "roster": roster,
