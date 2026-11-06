@@ -41,8 +41,10 @@ The post-event run still finds the event after BFO's home page and Wikipedia's s
 It re-reads the BFO event pages and carries over the bouts from the previous snapshot.
 
 Runs so far: 2026-11-06 09:50, 10:02 and 10:15 UTC. All three are the "early fight-week" capture.
-The 09:50 and 10:02 files were rebuilt from their cached raw pages by the final code version
-(`--replay`, same raw data).
+All three files were rebuilt from their cached raw pages (`--replay`, same raw data) by the verifier at
+about 10:48 UTC, after the fixes in the verification log below. Each keeps its original capture time,
+window and live request counts (`meta.rebuilt_from_cache_utc` records the rebuild). Against the files they
+replaced, only the exchange fields changed.
 
 ## Coverage (snapshot 20261106-1015)
 
@@ -249,12 +251,27 @@ Numbers worth knowing (29 bouts, one capture; read them as descriptive, not as t
 - **Moves since the open.** The mean absolute move is 1.8 points (max 6.3). 3 of 29 moved more than
   5 points: Karine Silva 0.609 to 0.672, Grant 0.321 to 0.263, and Parsons 0.373 to 0.321. 22 of the
   28 bouts that moved (79%) moved toward the opening favourite.
-- **Method market** (15 bouts; 4 retail books for 11 of them, 3 for 3, 1 for Kayla Harrison-Amanda Nunes... see note; median margin 18% on the 7-way market):
+- **Method market** (15 bouts; 4 retail books for 11 of them, 3 for Nakamura-Schmid, Gane-Hokit and
+  Harrison-Nunes, and FanDuel alone for Parsons-Souza; median margin 18% on the 7-way market):
   - Average P(KO) 0.42, P(sub) 0.20, P(decision) 0.38, P(draw) 0.009.
   - Its implied P(A) matches the moneyline consensus within 1.1 points on average.
   - The two P(distance) estimates (two-way prop vs method sum) differ by 1.1 points on average.
 
 ## Caveats
+
+- **Exchange identities** (checked Nov 6 against the exchanges' own public APIs). fightodds' "Polymarket"
+  is the international Polymarket book: it matched the gamma-api.polymarket.com best asks on 23 of 26
+  bouts, and the other 3 were within a cent. BFO's "Polymarket" column is the **Polymarket US** app, its
+  header disclosure says so, and its prices are not the international book's. It is stored as
+  `PolymarketUS`, a separate exchange. Until the verification it was merged with fightodds'
+  Polymarket, which produced 4 false `src_disagree` flags.
+  Kalshi on fightodds is the raw ask (it matched the Kalshi API on 20 of 22 bouts). BFO's Kalshi column adds Kalshi's
+  taker fee of 0.07 p(1-p). Action Network's "Polymarket" is the international book's mid price, with no
+  spread. None of these enter `p_consensus` or the ledger `market` block.
+- **Like-for-like benchmark.** `market.p_a_novig` (the mean of BFO's US sportsbooks, multiplicative) uses
+  the book set and estimator of `data/derived/market.json`'s primary close definition. `p_meandec_mult` uses the
+  same estimator over every sportsbook, offshore included. `market.json` also drops a book more than
+  0.15 from the median book; here the cross-book filter is 0.60 logit.
 
 - **Card dependence.** Bouts not in `cards_upcoming.json` are not scored. They are listed in
   `unmatched_source_bouts` so the cards can be refreshed. Replays use the cards file as it is now;

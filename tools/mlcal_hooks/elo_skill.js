@@ -10,7 +10,10 @@
    the live one), d = (Elo_A - Elo_B) / 400:
      accuracy odds   A x exp(w_acc d),  B x exp(-w_acc d)
      KD power        A x exp(w_pow d),  B x exp(-w_pow d);  chin (KD susceptibility) the inverse
-     takedown odds   A's shots x exp(w_td d) (via B's tdDef knob), B's shots x exp(-w_td d)
+     takedown odds   B's shots / exp(w_td d) (via A's tdDef knob: the engine divides a man's TD success odds by
+                     his opponent's tdDef), A's shots / exp(-w_td d) (via B's tdDef); i.e. the higher-rated man
+                     defends takedowns better (review note, Nov 6: this line used to say "A's shots x exp(w_td d)
+                     via B's tdDef", which is not what the code does; the effect is antisymmetric either way)
    Other analysts' outputs (data/derived/ratings.json, oppadj.json, durability.json) plug in the same way:
    look the fighter up by ctx.A.slug and ctx.fight.date, turn the signal into an antisymmetric knob change. */
 "use strict";

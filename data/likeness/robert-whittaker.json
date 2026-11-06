@@ -1,0 +1,267 @@
+{
+  "slug": "robert-whittaker",
+  "name": "Robert Whittaker",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 35,
+  "tale_of_tape": {
+    "height_cm": 182.9,
+    "reach_cm": 185.4,
+    "stance": "Orthodox",
+    "fight_weight_lb": 205.5,
+    "source": "data/derived/fighters.json (72 in height, 73 in reach); 205.5 lb at the UFC 329 weigh-in (Jul 2026, light-heavyweight debut). Previously a middleweight (185 lb)."
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_right.png",
+    "espn_stance_left.png",
+    "ref_mmafighting_ufc329_presser_action_2026-07-11.jpg",
+    "ref_cageside_ufc329_presser_2026-07-11.jpg",
+    "ref_getty_ufc329_action_2026-07-11.webp",
+    "ref_lowkick_ufc329_action_2026-07-11.png",
+    "ref_getty_ufcriyadh_celebration_2024-06.webp",
+    "ref_bjpenn_ufc298_weighin_2024-02.jpg",
+    "ref_mmasucka_training_undated.webp",
+    "c1_commons_2024.png",
+    "c3_commons_mediaday_2024.png",
+    "c4_commons_faceoff_2024.png",
+    "c2_commons_ufc271_2022.jpg",
+    "c5_commons_cc0.jpg"
+  ],
+  "photo_coverage": "Good. Current (Jul 2026) studio headshot and full-body cutout, a Jul 2025 cutout, two Jul 2026 press-conference faces and two Jul 2026 action shots (three-quarter face). Profile coverage is weaker: the best side view (c4, Jun 2024 face-off) is partly blocked by a camera. Five Commons files are freely licensed (four CC BY 3.0 video stills from 2022-2024 plus an uploader-asserted CC0 photo from about 2016); everything else is reference-only.",
+  "face": {
+    "shape": "Broad, squarish face of medium height: wide across the cheekbones and the jaw, with near-parallel sides. Lean, but the cheeks are not hollow. The top of the head is rounded under the buzz cut.",
+    "jaw": "Wide, strong and straight, with the angles set out under the ears. The lower jaw is mostly under the goatee, but the 3/4 views (ESPN cutouts, UFC 329 action) show a heavy, straight jaw line running into a thick neck.",
+    "chin": "Broad and of medium-to-long height, under the goatee. In the side view (c4) the chin plus beard projects a little past the lower lip.",
+    "cheekbones": "Moderately wide and fairly high. The cheeks below are flat; a crease runs from the nose wing to the mouth corner when he smiles.",
+    "brow_ridge": "Strong. The brows sit low, right on top of the upper lids, so the eyes look narrow and intense.",
+    "forehead": "Medium height, broad and fairly upright. The front hairline is straight across with a mild recession at the temples.",
+    "eyes": {
+      "shape": "Almond with a medium-narrow opening and heavy, slightly hooded upper lids; outer corners level to slightly down",
+      "spacing": "average",
+      "colour": "dark brown"
+    },
+    "eyebrows": {
+      "thickness": "thick",
+      "shape": "Low and nearly straight, heaviest at the inner ends, with a gentle lift over the outer third; a clear gap between them",
+      "colour": "very dark brown (the raw sample #764e40 is lightened by skin showing through; render near #2b1d18)"
+    },
+    "nose": {
+      "length": "medium",
+      "width": "medium-wide, broad at the base",
+      "bridge": "fairly broad, straight, medium height",
+      "hump": "none",
+      "tip": "Rounded and fleshy, slightly wide; the nostrils show a little from the front",
+      "fight_damage": "No obvious deviation in the frontal views; the bridge is a little broad and flat, as is common after many fights."
+    },
+    "mouth_lips": "Medium width. Upper lip medium, lower lip fuller and rounder; lips pinkish. Corners level at rest; a wide, toothy smile in the press photos.",
+    "ears": {
+      "size": "medium-large",
+      "cauliflower_ear": "No obvious cauliflower ear: the folds look smooth and normal in the ESPN headshot zoom.",
+      "note": "They stand out slightly from the head."
+    },
+    "notable_marks_scars": "Fresh red marks on the forehead and around the brows after UFC 329 (Jul 2026); no obvious permanent facial scar. Band tattoo on the left ring finger."
+  },
+  "hair": {
+    "style": "Buzz cut: very short all over (top about 0.5-1 cm), tighter on the sides and back, no parting.",
+    "length_cm": 0.8,
+    "colour_hex": "#2b1f1a",
+    "colour_note": "Very dark brown, near black. The raw ESPN sample from the top of the head is #44332d because scalp shows through the short hair; render the strands darker.",
+    "hairline": "Straight front line, set fairly low, with mild temple recession",
+    "texture": "Too short to judge; looks dense and coarse"
+  },
+  "facial_hair": {
+    "type": "goatee",
+    "detail": "Full goatee: moustache joined to a chin beard that covers the chin and hangs about 3-4 cm below it (Jul 2026), trimmed to a rounded block about as wide as the mouth. Cheeks and the jaw line beyond the chin are shaved, with a faint stubble shadow. In mid-2024 it was longer (about 5 cm) and pointed; in 2016-2022 it was short (1-2 cm).",
+    "colour_hex": "#24160f",
+    "colour_note": "Near-black brown. Raw ESPN chin sample #261711; lit strands #6b473a.",
+    "density": "dense on the chin and moustache, thinner at the sides of the chin, none on the cheeks",
+    "shape": "rounded rectangular chin block (2026); pointed in 2024"
+  },
+  "skin": {
+    "tone_hex": "#e09d82",
+    "tone_hex_method": "plain RGB mean of the samples marked in_average (well-lit, near-neutral cheek and forehead-free patches); each sample is the median of the 25th-65th luma percentile pixels of the patch",
+    "tone_hex_all_samples_avg": "#e5a88f",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead, centre",
+        "light": "studio flash (specular)",
+        "hex": "#fac3ac",
+        "in_average": false
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-left",
+        "light": "studio flash",
+        "hex": "#e9a383",
+        "in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-right",
+        "light": "studio flash",
+        "hex": "#f1ad8d",
+        "in_average": true
+      },
+      {
+        "photo": "c1_commons_2024.png",
+        "where": "forehead, centre",
+        "light": "press-room video light",
+        "hex": "#d7937c",
+        "in_average": false
+      },
+      {
+        "photo": "c1_commons_2024.png",
+        "where": "cheek, image-left",
+        "light": "press-room video light",
+        "hex": "#ce8973",
+        "in_average": true
+      },
+      {
+        "photo": "c1_commons_2024.png",
+        "where": "cheek, image-right",
+        "light": "press-room video light",
+        "hex": "#bf7d67",
+        "in_average": true
+      },
+      {
+        "photo": "ref_mmafighting_ufc329_presser_action_2026-07-11.jpg",
+        "where": "forehead, centre",
+        "light": "presser key light",
+        "hex": "#e19c79",
+        "in_average": false
+      },
+      {
+        "photo": "ref_mmafighting_ufc329_presser_action_2026-07-11.jpg",
+        "where": "cheek, image-left (shadow side)",
+        "light": "presser key light",
+        "hex": "#b37057",
+        "in_average": false
+      },
+      {
+        "photo": "ref_mmafighting_ufc329_presser_action_2026-07-11.jpg",
+        "where": "cheek, image-right (lit side)",
+        "light": "presser key light",
+        "hex": "#f8bb9f",
+        "in_average": true
+      },
+      {
+        "photo": "ref_cageside_ufc329_presser_2026-07-11.jpg",
+        "where": "forehead, centre",
+        "light": "overexposed video still",
+        "hex": "#ffddca",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_ufc329_presser_2026-07-11.jpg",
+        "where": "cheek, image-left",
+        "light": "overexposed video still",
+        "hex": "#fcc7b2",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_ufc329_presser_2026-07-11.jpg",
+        "where": "cheek, image-right",
+        "light": "overexposed video still",
+        "hex": "#fdc8b7",
+        "in_average": false
+      }
+    ],
+    "undertone": "Warm, olive/golden. Tans evenly; no strong pink in the cheeks.",
+    "freckles_marks": "No visible freckles. Light hair on the forearms and legs, very little chest hair.",
+    "note": "The ESPN studio cheeks (#e9a383, #f1ad8d) are the most neutral reference. He is a light-medium olive tone: darker and more golden than Ankalaev or Shevchenko, lighter than Pantoja."
+  },
+  "body": {
+    "build": "Compact, dense and muscular: 183 cm and 93 kg (205.5 lb) at the Jul 2026 weigh-in. A wide frame for his height; looks thick rather than long.",
+    "body_fat": "lean",
+    "body_fat_note": "Clear six-pack and obliques in the 2025 and 2026 ESPN cutouts and the UFC 329 photos; the lower abdomen is slightly softer.",
+    "shoulders": "Broad, with round, well-capped deltoids and a strong trapezius rising into a thick neck",
+    "chest": "Thick, square pectorals with a defined lower edge",
+    "arms": "Muscular upper arms with big triceps and strong forearms; average arm length (reach only 2.5 cm more than height)",
+    "waist": "Narrow next to the shoulders: a clear V-taper",
+    "legs_calves": "Powerful thighs, medium calves, hairy legs",
+    "posture": "Upright, square shoulders, chin slightly down",
+    "notable": "The neck is about as wide as the jaw. Limbs are of average length, so the build reads compact and stocky next to rangier light heavyweights."
+  },
+  "tattoos": [
+    {
+      "where": "right shoulder, right upper arm and right upper chest/collarbone",
+      "description": "Black Maori/Polynesian-style tribal piece: big koru spirals over the shoulder cap with hooked, patterned bands. It spills forward onto the right upper chest and collarbone, runs down the upper arm to about mid-biceps and wraps over the rear deltoid (side view c4).",
+      "size": "large"
+    },
+    {
+      "where": "left chest, between collarbone and nipple",
+      "description": "Southern Cross constellation: five small seven-pointed stars in black outline (four larger, one small), laid out as on the Australian flag",
+      "size": "medium"
+    },
+    {
+      "where": "left ring finger",
+      "description": "Thin band tattoo (seen in the Feb 2024 weigh-in photo)",
+      "size": "small"
+    }
+  ],
+  "kit": {
+    "fight_shorts": "UFC 329 (Jul 2026): white Venum shorts with a grey leaf/scale print and green WHITTAKER lettering, blue-corner gloves (the Jul 2026 ESPN cutout shows the same white shorts). Jul 2025: black/charcoal tiger-stripe Venum shorts with crypto.com. Jun 2024: black shorts with a grey splatter print.",
+    "walkout": "Black Venum jacket with a green-and-gold kangaroo AUS patch on the left sleeve (UFC 329 presser)",
+    "colours": [
+      "#ffffff white",
+      "#a7aaa8 grey print",
+      "#00843d green lettering",
+      "#111111 black"
+    ]
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.154,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.75,
+    "macro/weightUpM": 0.15,
+    "macro/heightUpM": 0.1,
+    "macro/proportionsUpM": 0.45,
+    "head/head-square": 0.35,
+    "head/head-scale-horiz-incr": 0.15,
+    "head/head-fat-decr": 0.05,
+    "chin/chin-width-incr": 0.3,
+    "chin/chin-bones-incr": 0.4,
+    "chin/chin-prominent-incr": 0.15,
+    "chin/chin-height-incr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.25,
+    "cheek/r-cheek-bones-incr": 0.25,
+    "cheek/l-cheek-volume-decr": 0.05,
+    "cheek/r-cheek-volume-decr": 0.05,
+    "eyebrows/eyebrows-trans-down": 0.35,
+    "eyebrows/eyebrows-trans-forward": 0.3,
+    "eyebrows/eyebrows-angle-down": 0.1,
+    "eyes/l-eye-height2-decr": 0.25,
+    "eyes/r-eye-height2-decr": 0.25,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1,
+    "nose/nose-scale-horiz-incr": 0.25,
+    "nose/nose-width1-incr": 0.2,
+    "nose/nose-nostrils-width-incr": 0.3,
+    "nose/nose-point-width-incr": 0.25,
+    "nose/nose-flaring-incr": 0.15,
+    "nose/nose-scale-vert-incr": 0.05,
+    "nose/nose-hump-decr": 0.05,
+    "mouth/mouth-lowerlip-volume-incr": 0.2,
+    "mouth/mouth-upperlip-volume-incr": 0.05,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "neck/neck-scale-horiz-incr": 0.5,
+    "torso/measure-shoulder-dist-incr": 0.5,
+    "torso/torso-vshape-incr": 0.55,
+    "torso/measure-waist-circ-decr": 0.2,
+    "torso/measure-hips-circ-decr": 0.05,
+    "buttocks/buttocks-volume-incr": 0.15
+  },
+  "morphs_if_available": {
+    "note": "Ear targets from the full MakeHuman set. They are not in the shipped assets/embed/mh-manifest.json, so they are listed here and not under morphs.",
+    "ears/l-ear-scale-incr": 0.15,
+    "ears/r-ear-scale-incr": 0.15,
+    "ears/l-ear-rot-forward": 0.15,
+    "ears/r-ear-rot-forward": 0.15
+  },
+  "morphs_unavailable": "Ears: no ear targets in the shipped manifest (full-set values under morphs_if_available). No target for the goatee, hair or the thick trapezius beyond neck-scale-horiz.",
+  "notes": "Confidence: high for the overall look (buzz cut, low heavy straight brows, dark eyes, full goatee, broad square face, Maori right-shoulder piece, Southern Cross on the left chest, compact muscular build); medium for exact morph values. Watch for: (1) the tattoos are on his RIGHT shoulder and LEFT chest; mirroring them breaks the likeness; (2) goatee length changes between fights; default to the Jul 2026 rounded 3-4 cm block, not the long pointed 2024 version; (3) keep the brows low and heavy and the eye opening narrow, which carries most of his expression; (4) do not make him lanky: he is short-limbed and thick for a light heavyweight; (5) macro/heightUpM uses the linear fit in research/assets.md (heightUpM = 2 * (H - 1.785 m) / 0.875); muscle and weight change stature slightly, so measure the built mesh and nudge heightUpM until it reads 183 cm."
+}

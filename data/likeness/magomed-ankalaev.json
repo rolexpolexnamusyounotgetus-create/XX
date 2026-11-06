@@ -1,0 +1,245 @@
+{
+  "slug": "magomed-ankalaev",
+  "name": "Magomed Ankalaev",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 34,
+  "tale_of_tape": {
+    "height_cm": 190.5,
+    "reach_cm": 190.5,
+    "stance": "Orthodox",
+    "fight_weight_lb": 205.5,
+    "source": "data/derived/fighters.json (75 in height, 75 in reach); 205.5 lb at the UFC Abu Dhabi weigh-in (Jul 2026)"
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ref_getty_ufc320_weighin_2025-10-03.jpg",
+    "ref_cageside_ufc320_weighin_2025-10.jpg",
+    "ref_cageside_ufc313_ceremonial_faceoff_2025-03.jpg",
+    "ref_getty_ufcabudhabi_action_2026-07-25.jpg",
+    "ref_afp_lasvegas_celebration_file.jpg",
+    "c2_commons_ufcfn136_moscow_2018.jpg"
+  ],
+  "photo_coverage": "Adequate. Current (Jul 2026) studio headshot and cutout, a Mar 2025 cutout, two Oct 2025 weigh-in shots, a Mar 2025 left profile (face-off), a Jul 2026 action three-quarter view and a large frontal celebration photo. Only one freely licensed photo exists on Commons (2018, CC BY 3.0; a second file of the same 2018 session could not be downloaded because of rate limiting). His fringe hides the forehead in every recent photo; the 2018 photo is the only view of his hairline and ears.",
+  "face": {
+    "shape": "Long, medium-narrow oval face: clearly taller than wide, with a long midface (long nose) and high cheekbones. Lean, with slight hollows under the cheekbones.",
+    "jaw": "Hidden by the full beard in all 2025-2026 photos. In the 2018 photo (shorter beard) the jaw is of medium width with a long, gently tapering line.",
+    "chin": "Under the beard; the beard outline suggests a medium-width, fairly long chin. The beard hangs 5-7 cm below it.",
+    "cheekbones": "High and prominent, a visible ridge under the eyes. Flat to slightly hollow cheeks below, where the beard line starts.",
+    "brow_ridge": "Moderate. The brows sit low and close above the eyes.",
+    "forehead": "High and broad in the 2018 photo (short hair). In 2025-2026 it is covered almost to the brows by a heavy fringe.",
+    "eyes": {
+      "shape": "Almond, medium size, slightly deep-set, with fine lines under the eyes",
+      "spacing": "average",
+      "colour": "light-to-medium brown (amber/hazel-brown in studio light)"
+    },
+    "eyebrows": {
+      "thickness": "medium-thick",
+      "shape": "Low and fairly straight, angled slightly down toward the nose (inner ends lowest), which gives a stern look",
+      "colour": "dark brown"
+    },
+    "nose": {
+      "length": "long",
+      "width": "narrow to medium at the bridge, medium at the base",
+      "bridge": "High and straight; slightly convex in profile (UFC 313 face-off, Abu Dhabi action)",
+      "hump": "slight",
+      "tip": "Fleshy, rounded and slightly downturned, with a long columella",
+      "fight_damage": "Possibly slightly off-centre at the lower bridge in the 2018 photo; no obvious break"
+    },
+    "mouth_lips": "Medium-narrow. Thin upper lip, medium lower lip; often pressed together or pursed (weigh-in faces). Corners slightly down.",
+    "ears": {
+      "size": "medium",
+      "cauliflower_ear": "No: smooth, normally folded ears in the 2018 close-up.",
+      "note": "They lie fairly close to the head; in 2025-2026 the hair covers their tops."
+    },
+    "notable_marks_scars": "Several small moles on the front of the neck and upper chest; the largest is a dark red-brown mole on the right side of the neck, just below the beard line (ESPN headshot). Light freckling across the nose and cheeks in studio light."
+  },
+  "hair": {
+    "style": "2025-2026: thick hair grown out on top and brushed forward into a heavy, straight fringe that reaches just above the brows; the sides cover the tops of the ears; a rounded, bowl-like outline. In 2018 it was a short crop.",
+    "length_cm": 9,
+    "length_note": "About 8-10 cm on top, 4-6 cm at the sides.",
+    "colour_hex": "#251a16",
+    "colour_note": "Very dark brown, near black. Raw ESPN sample #261a16; arena light #252229.",
+    "hairline": "Straight front hairline (2018), now hidden by the fringe",
+    "texture": "Straight to slightly wavy, thick and dense"
+  },
+  "facial_hair": {
+    "type": "full beard",
+    "detail": "Dense full beard covering the jaw, the cheeks below the cheekbones and the chin; about 5-7 cm long under the chin, trimmed to a rounded-square bottom. The moustache is trimmed short above the lip and blends into the beard. Natural, high cheek line.",
+    "colour_hex": "#4a2414",
+    "colour_note": "Clearly reddish (auburn/ginger-brown) and much warmer than his near-black hair. Raw ESPN chin sample #452110, lit strands #653925, side of the beard #613e2c. It looks darker under arena light (AFP chin #200f0e).",
+    "density": "very dense",
+    "shape": "full, rounded-square, longer at the chin than at the sides"
+  },
+  "skin": {
+    "tone_hex": "#eca691",
+    "tone_hex_method": "plain RGB mean of the samples marked in_average (well-lit, near-neutral cheek and forehead-free patches); each sample is the median of the 25th-65th luma percentile pixels of the patch",
+    "tone_hex_all_samples_avg": "#e7aa8f",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead between brows, below the fringe",
+        "light": "studio flash",
+        "hex": "#eeaf90",
+        "in_average": false
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "upper cheek, image-left",
+        "light": "studio flash",
+        "hex": "#fabb9a",
+        "in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "upper cheek, image-right",
+        "light": "studio flash",
+        "hex": "#fdc4a8",
+        "in_average": true
+      },
+      {
+        "photo": "ref_getty_ufc320_weighin_2025-10-03.jpg",
+        "where": "forehead, centre",
+        "light": "weigh-in stage light",
+        "hex": "#f4b5a3",
+        "in_average": false
+      },
+      {
+        "photo": "ref_getty_ufc320_weighin_2025-10-03.jpg",
+        "where": "upper cheek, image-left",
+        "light": "weigh-in stage light",
+        "hex": "#f2a78f",
+        "in_average": true
+      },
+      {
+        "photo": "ref_getty_ufc320_weighin_2025-10-03.jpg",
+        "where": "upper cheek, image-right",
+        "light": "weigh-in stage light",
+        "hex": "#ee9a85",
+        "in_average": true
+      },
+      {
+        "photo": "ref_afp_lasvegas_celebration_file.jpg",
+        "where": "forehead, centre",
+        "light": "arena light, post-fight flush",
+        "hex": "#d3988b",
+        "in_average": false
+      },
+      {
+        "photo": "ref_afp_lasvegas_celebration_file.jpg",
+        "where": "upper cheek, image-left",
+        "light": "arena light, post-fight flush",
+        "hex": "#dba194",
+        "in_average": true
+      },
+      {
+        "photo": "ref_afp_lasvegas_celebration_file.jpg",
+        "where": "upper cheek, image-right",
+        "light": "arena light, post-fight flush",
+        "hex": "#d7867e",
+        "in_average": true
+      },
+      {
+        "photo": "c2_commons_ufcfn136_moscow_2018.jpg",
+        "where": "forehead, centre",
+        "light": "video still, yellow cast",
+        "hex": "#e4c295",
+        "in_average": false
+      },
+      {
+        "photo": "c2_commons_ufcfn136_moscow_2018.jpg",
+        "where": "upper cheek, image-left",
+        "light": "video still, yellow cast",
+        "hex": "#ecc296",
+        "in_average": false
+      },
+      {
+        "photo": "c2_commons_ufcfn136_moscow_2018.jpg",
+        "where": "upper cheek, image-right (shadow)",
+        "light": "video still, yellow cast",
+        "hex": "#c69165",
+        "in_average": false
+      }
+    ],
+    "undertone": "Neutral-to-warm with pink; flushes red after exertion (AFP photo).",
+    "freckles_marks": "Light freckles across the nose and cheeks; small moles on the neck and upper chest. Visible dark hair on the chest (down the sternum), abdomen, forearms and legs.",
+    "note": "Fair-to-light skin. The ESPN and Getty weigh-in cheeks agree well (#ee9a85 to #fdc4a8). The 2018 Commons still has a yellow cast and is left out of the average."
+  },
+  "body": {
+    "build": "Tall, long-limbed light heavyweight (190.5 cm, 93 kg at the Jul 2026 weigh-in): lean and rangy rather than bulky.",
+    "body_fat": "lean",
+    "body_fat_note": "Upper abs and serratus show; the lower abdomen is slightly soft. Not stage-lean.",
+    "shoulders": "Broad but slightly sloping; rounded delts; long collarbones",
+    "chest": "Moderate, flat pectorals with dark hair down the sternum",
+    "arms": "Long arms (reach 190.5 cm), lean and sinewy, with visible veins and a biceps peak when flexed",
+    "waist": "Narrow, with a moderate V-taper",
+    "legs_calves": "Long, slim legs with lean thighs and slim calves; hairy",
+    "posture": "Upright, head slightly forward, chin down, relaxed shoulders",
+    "notable": "Long neck and long torso. Body hair is a visible part of the look."
+  },
+  "tattoos": [],
+  "tattoos_note": "None visible in any photo (front, both sides; the back is only partly seen in the action shot).",
+  "kit": {
+    "fight_shorts": "Red Venum UFC shorts with dark-red tiger-stripe print and white slashes, black waistband and crypto.com logo (2025 and Jul 2026 ESPN cutouts); red shorts with a white checkered waistband panel at UFC Abu Dhabi (Jul 2026).",
+    "weigh_in": "Black Venum shorts",
+    "colours": [
+      "#c8102e red",
+      "#7a0c1c dark red print",
+      "#ffffff white",
+      "#111111 black"
+    ]
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.138,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.55,
+    "macro/weightDownM": 0.1,
+    "macro/heightUpM": 0.27,
+    "macro/proportionsUpM": 0.6,
+    "head/head-oval": 0.35,
+    "head/head-scale-vert-incr": 0.25,
+    "head/head-scale-horiz-decr": 0.15,
+    "head/head-fat-decr": 0.15,
+    "forehead/forehead-scale-vert-incr": 0.1,
+    "chin/chin-height-incr": 0.2,
+    "chin/chin-prominent-incr": 0.1,
+    "chin/chin-width-decr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.4,
+    "cheek/r-cheek-bones-incr": 0.4,
+    "cheek/l-cheek-volume-decr": 0.3,
+    "cheek/r-cheek-volume-decr": 0.3,
+    "eyebrows/eyebrows-trans-down": 0.25,
+    "eyebrows/eyebrows-angle-down": 0.2,
+    "eyebrows/eyebrows-trans-forward": 0.15,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-height2-decr": 0.1,
+    "eyes/r-eye-height2-decr": 0.1,
+    "eyes/l-eye-bag-incr": 0.1,
+    "eyes/r-eye-bag-incr": 0.1,
+    "nose/nose-scale-vert-incr": 0.45,
+    "nose/nose-scale-depth-incr": 0.35,
+    "nose/nose-hump-incr": 0.15,
+    "nose/nose-point-down": 0.25,
+    "nose/nose-width1-decr": 0.1,
+    "nose/nose-scale-horiz-decr": 0.05,
+    "nose/nose-point-width-incr": 0.1,
+    "mouth/mouth-upperlip-volume-decr": 0.3,
+    "mouth/mouth-lowerlip-volume-decr": 0.1,
+    "mouth/mouth-scale-horiz-decr": 0.1,
+    "mouth/mouth-angles-down": 0.1,
+    "neck/neck-scale-vert-incr": 0.15,
+    "neck/neck-scale-horiz-incr": 0.2,
+    "torso/measure-shoulder-dist-incr": 0.3,
+    "torso/torso-vshape-incr": 0.25,
+    "torso/measure-waist-circ-decr": 0.15,
+    "torso/measure-hips-circ-decr": 0.1
+  },
+  "morphs_if_available": {
+    "note": "Ear targets from the full MakeHuman set. They are not in the shipped assets/embed/mh-manifest.json, so they are listed here and not under morphs. His ears are close to the base mesh, so none are suggested."
+  },
+  "morphs_unavailable": "No target for the fringe, the long reddish beard or body hair: these come from hair/beard proxies and the skin texture. No ear targets in the shipped manifest (not needed for him).",
+  "notes": "Confidence: high for the overall look (long face, long straight nose, high cheekbones, heavy straight fringe, dense auburn full beard that is redder than the hair, light-brown eyes, fair skin, tall lean hairy build, no tattoos); medium for exact morph values; low for the jaw and chin shape, which are hidden by the beard in every recent photo. Watch for: (1) beard colour must be visibly warmer/redder than the near-black hair; one dark colour for both loses the likeness; (2) the fringe covers the forehead to the brows in 2025-2026; do not render a bare forehead or short crop (that is the 2018 look); (3) keep him slim and long-limbed, not a bodybuilder; (4) macro/heightUpM uses heightUpM = 2 * (H - 1.785 m) / 0.875 from research/assets.md; measure the built mesh and nudge until it reads 190.5 cm."
+}

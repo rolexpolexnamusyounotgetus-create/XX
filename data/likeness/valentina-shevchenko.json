@@ -1,0 +1,255 @@
+{
+  "slug": "valentina-shevchenko",
+  "name": "Valentina Shevchenko",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 38,
+  "tale_of_tape": {
+    "height_cm": 165.1,
+    "reach_cm": 167.6,
+    "stance": "Southpaw",
+    "fight_weight_lb": 124.6,
+    "source": "data/derived/fighters.json (65 in height, 66 in reach); 124.6 lb at the UFC 322 weigh-in (Nov 2025)"
+  },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ref_cageside_ufc322_weighin_a_2025-11-14.jpg",
+    "ref_cageside_ufc322_weighin_b_2025-11-14.jpg",
+    "ref_getty_ufc322_a_2025-11-15.jpg",
+    "ref_getty_ufc322_b_2025-11-15.jpg",
+    "ref_postwrestling_ufc322_2025-11-15.jpg",
+    "c1_commons_2018.jpg",
+    "c2_commons_ufc256_2020.jpg",
+    "c3_commons_dvids_2016.jpg"
+  ],
+  "photo_coverage": "Good. Studio headshot and full-body cutout photographed for a 2026 fight week (CDN date Oct 2026), a Sep 2024 cutout in a sports bra (tattoos), two Nov 2025 weigh-in photos, three Nov 2025 fight photos (near-frontal face, left near-profile, full body). Four Commons files are freely licensed (2018 and 2020 CC BY 3.0 video stills; two 2016 U.S. Air Force public-domain photos, one a right near-profile). Her latest fight in data/derived/fighters.json is UFC 322 (Nov 2025).",
+  "face": {
+    "shape": "Broad oval face, a little wider than average at the cheekbones, tapering to a rounded chin. Fuller-cheeked in 2016-2020; leaner and more defined in 2025-2026.",
+    "jaw": "Moderately wide with soft, rounded angles; a clean jaw line in the 2025-2026 photos.",
+    "chin": "Rounded, medium width and average height; not prominent.",
+    "cheekbones": "Broad and high: the widest part of the face. The cheeks flush pink-red easily (ESPN studio).",
+    "brow_ridge": "Low to moderate. The brows sit close to the eyes.",
+    "forehead": "High, broad and smoothly rounded. The hair is always pulled back tight, so the whole forehead shows.",
+    "eyes": {
+      "shape": "Almond, medium size, slightly hooded at the outer corners; faint lines under the eyes",
+      "spacing": "average to slightly wide",
+      "colour": "medium brown (warm hazel-brown)"
+    },
+    "eyebrows": {
+      "thickness": "thin to medium",
+      "shape": "Fairly straight with a soft arch over the outer third; set low",
+      "colour": "light ash-brown, darker than the hair (raw sample #9e503e includes skin)"
+    },
+    "nose": {
+      "length": "medium",
+      "width": "medium-narrow",
+      "bridge": "straight, medium height",
+      "hump": "none",
+      "tip": "Rounded, slightly upturned, moderately wide",
+      "fight_damage": "None obvious"
+    },
+    "mouth_lips": "Medium-small width. Thin upper lip, medium lower lip; a slight closed-mouth smile at rest.",
+    "ears": {
+      "size": "small to medium",
+      "cauliflower_ear": "No: smooth ears in the 2016-2020 close-ups.",
+      "note": "Close to the head; small earrings in non-fight photos."
+    },
+    "notable_marks_scars": "Freckles on the shoulders, upper chest and arms (Sep 2024 cutout). No obvious facial scars."
+  },
+  "hair": {
+    "style": "Long hair always pulled straight back: a high, tight ponytail for weigh-ins and media; for fights, tight braids from the hairline (cornrow-style, Nov 2025 photo a) or two to three boxer braids (Nov 2025 photo b).",
+    "length_cm": 45,
+    "length_note": "Ponytail falls past the shoulders to about mid-back (2016 photo).",
+    "colour_hex": "#8a6c45",
+    "colour_note": "Dark honey-blonde with slightly darker roots and lighter, golden lengths. Raw samples: 2016 ponytail #7c6642 (lit strands #8e7a56); Nov 2025 weigh-in ponytail #775124 (lit strands #a28252, warm light).",
+    "hairline": "Straight-to-rounded front hairline, no recession",
+    "texture": "Straight, fine to medium"
+  },
+  "facial_hair": {
+    "type": "none"
+  },
+  "skin": {
+    "tone_hex": "#e5a78f",
+    "tone_hex_method": "plain RGB mean of the samples marked in_average (well-lit, near-neutral cheek and forehead-free patches); each sample is the median of the 25th-65th luma percentile pixels of the patch",
+    "tone_hex_all_samples_avg": "#d29a84",
+    "tone_samples": [
+      {
+        "photo": "espn_headshot.png",
+        "where": "forehead, centre",
+        "light": "studio flash (specular)",
+        "hex": "#f5bdab",
+        "in_average": false
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-left",
+        "light": "studio flash",
+        "hex": "#e68a70",
+        "in_average": true
+      },
+      {
+        "photo": "espn_headshot.png",
+        "where": "cheek below cheekbone, image-right",
+        "light": "studio flash",
+        "hex": "#ea8f73",
+        "in_average": true
+      },
+      {
+        "photo": "ref_getty_ufc322_a_2025-11-15.jpg",
+        "where": "forehead, centre",
+        "light": "arena light",
+        "hex": "#ce9e95",
+        "in_average": false
+      },
+      {
+        "photo": "ref_getty_ufc322_a_2025-11-15.jpg",
+        "where": "cheek, image-left (shadow)",
+        "light": "arena light",
+        "hex": "#a36b61",
+        "in_average": false
+      },
+      {
+        "photo": "ref_getty_ufc322_a_2025-11-15.jpg",
+        "where": "cheek, image-right (lit)",
+        "light": "arena light",
+        "hex": "#dfb4af",
+        "in_average": true
+      },
+      {
+        "photo": "c2_commons_ufc256_2020.jpg",
+        "where": "forehead, centre",
+        "light": "video still, slight yellow cast",
+        "hex": "#e7c8ab",
+        "in_average": false
+      },
+      {
+        "photo": "c2_commons_ufc256_2020.jpg",
+        "where": "cheek, image-left",
+        "light": "video still, slight yellow cast",
+        "hex": "#ecc69f",
+        "in_average": true
+      },
+      {
+        "photo": "c2_commons_ufc256_2020.jpg",
+        "where": "cheek, image-right",
+        "light": "video still, slight yellow cast",
+        "hex": "#dcb299",
+        "in_average": true
+      },
+      {
+        "photo": "ref_cageside_ufc322_weighin_b_2025-11-14.jpg",
+        "where": "forehead, centre",
+        "light": "weigh-in stage light, warm",
+        "hex": "#be8567",
+        "in_average": false
+      },
+      {
+        "photo": "ref_cageside_ufc322_weighin_b_2025-11-14.jpg",
+        "where": "cheek, her right (shadow)",
+        "light": "weigh-in stage light, warm",
+        "hex": "#804931",
+        "in_average": false
+      }
+    ],
+    "undertone": "Cool-to-neutral pink; cheeks and nose flush red.",
+    "freckles_marks": "Fair skin with freckles on the shoulders, chest and arms; light down only.",
+    "note": "Fair skin with a pink undertone. The ESPN studio cheeks are flushed (#e68a70, #ea8f73), the 2020 still is slightly yellow; the average of the two lands near the true tone. Shadowed samples are excluded."
+  },
+  "body": {
+    "build": "Compact, athletic flyweight: 165 cm, 56.5 kg (124.6 lb at the Nov 2025 weigh-in). Muscular but not bulky.",
+    "body_fat": "lean",
+    "body_fat_note": "Clear six-pack and oblique lines at the Nov 2025 weigh-in.",
+    "shoulders": "Rounded, muscular deltoids; moderately broad for her frame",
+    "chest": "Small bust; flat upper chest",
+    "arms": "Toned, visibly muscular upper arms and strong forearms; reach 167.6 cm",
+    "waist": "Narrow and defined",
+    "legs_calves": "Strong, muscular thighs (a kicker's legs), defined knees and calves",
+    "posture": "Upright with a very straight back; often stands side-on in a southpaw stance",
+    "notable": "Southpaw. Thick, muscular neck for her size."
+  },
+  "tattoos": [
+    {
+      "where": "left upper arm, outer side below the shoulder",
+      "description": "Black circular emblem (a round medallion with a figure inside, about 5 cm across) with a line of Thai script under it",
+      "size": "small-medium"
+    },
+    {
+      "where": "left side of the abdomen, lower ribs",
+      "description": "Black pistol (Glock-style handgun) with the muzzle pointing toward her centre line and three bullet cartridges standing below the muzzle; about 10-12 cm",
+      "size": "medium"
+    },
+    {
+      "where": "right side of the abdomen, from the lower ribs toward the hip",
+      "description": "Thai-style line-art figure (a robed deity/warrior figure in sak yant style) with small dagger/flame marks around it and a base line beneath; about 12-15 cm tall. New: absent in the Sep 2024 cutout, present at UFC 322 (Nov 2025).",
+      "size": "medium-large"
+    },
+    {
+      "where": "right ankle",
+      "description": "Thin black patterned band around the ankle, about 2 cm wide",
+      "size": "small"
+    }
+  ],
+  "kit": {
+    "fight_shorts": "UFC 322 (Nov 2025): dark green/teal Venum sports bra and shorts with a gold tiger and dragon print and a Monster Energy logo; red-cuffed gloves. Noche UFC (Sep 2024): green Mexican-themed kit with gold SHEVCHENKO lettering and gold gloves. 2026 ESPN cutout: black crypto.com/Venum jersey with gold accents and olive-grey tiger-print shorts.",
+    "weigh_in": "Black sports bra and briefs",
+    "colours": [
+      "#1f4a3a dark green",
+      "#c9a24a gold",
+      "#111111 black"
+    ]
+  },
+  "morphs": {
+    "macro/sexF": 1.0,
+    "macro/ageOldF": 0.2,
+    "macro/ageYoungF": 0.0,
+    "macro/muscleUpF": 0.65,
+    "macro/weightDownF": 0.1,
+    "macro/proportionsUpF": 0.5,
+    "head/head-round": 0.25,
+    "head/head-oval": 0.2,
+    "head/head-scale-horiz-incr": 0.1,
+    "forehead/forehead-scale-vert-incr": 0.25,
+    "forehead/forehead-trans-forward": 0.05,
+    "chin/chin-width-incr": 0.1,
+    "chin/chin-bones-incr": 0.1,
+    "chin/chin-prominent-decr": 0.05,
+    "cheek/l-cheek-bones-incr": 0.35,
+    "cheek/r-cheek-bones-incr": 0.35,
+    "cheek/l-cheek-volume-incr": 0.05,
+    "cheek/r-cheek-volume-incr": 0.05,
+    "eyebrows/eyebrows-trans-down": 0.1,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-height2-decr": 0.05,
+    "eyes/r-eye-height2-decr": 0.05,
+    "eyes/l-eye-trans-out": 0.05,
+    "eyes/r-eye-trans-out": 0.05,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15,
+    "nose/nose-scale-vert-incr": 0.05,
+    "nose/nose-point-up": 0.15,
+    "nose/nose-point-width-incr": 0.15,
+    "nose/nose-width1-decr": 0.05,
+    "mouth/mouth-upperlip-volume-decr": 0.25,
+    "mouth/mouth-lowerlip-volume-decr": 0.05,
+    "mouth/mouth-scale-horiz-decr": 0.05,
+    "mouth/mouth-angles-up": 0.05,
+    "neck/neck-scale-horiz-incr": 0.2,
+    "torso/measure-shoulder-dist-incr": 0.3,
+    "torso/torso-vshape-incr": 0.3,
+    "torso/measure-waist-circ-decr": 0.25,
+    "torso/measure-hips-circ-decr": 0.1,
+    "buttocks/buttocks-volume-incr": 0.1
+  },
+  "morphs_extra_macro": {
+    "note": "Outside the requested morph list but in the shipped manifest; needed for a female athlete's build. Use if the avatar code supports them (src/avatar3d.js macroWeights has cupSize and firmness).",
+    "macro/cupDownF": 0.4,
+    "macro/firmUpF": 0.5
+  },
+  "morphs_if_available": {
+    "note": "Ear targets from the full MakeHuman set. They are not in the shipped assets/embed/mh-manifest.json, so they are listed here and not under morphs. Her ears are close to the base mesh, so none are suggested."
+  },
+  "morphs_unavailable": "Height: the research/assets.md height fit (heightUpM = 2 * (H - 1.785 m) / 0.875) is for the male base, so no heightUpF/heightDownF value is given; build her at the female default height and nudge macro/heightUpF or heightDownF until the mesh reads 165 cm. No target for the braids/ponytail, freckles or tattoos (texture work).",
+  "notes": "Confidence: high for the overall look (broad high cheekbones, rounded chin, high forehead with hair pulled back, dark-honey-blonde ponytail or braids, medium-brown eyes, fair pink skin with freckled shoulders, compact muscular build, the three torso/arm tattoos); medium for exact morph values. Watch for: (1) she is a woman: use the F macros (sexF 1; sexM 0) and keep the face soft-angled, not masculinised by the muscle macro; (2) tattoo sides: pistol on the LEFT abdomen, Thai figure on the RIGHT abdomen (new since 2025), emblem with Thai script on the LEFT upper arm, band on the RIGHT ankle; (3) hair is never loose in fights: braids for fight scenes, ponytail for weigh-ins; (4) southpaw stance (right foot forward); (5) do not make the hair platinum: it is a darker honey-blonde."
+}

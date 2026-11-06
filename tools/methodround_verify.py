@@ -290,7 +290,7 @@ def _mr():
     return M
 
 
-FEATURE_SKIP = {"winner", "method", "cls", "rnd", "time_s", "fight_s"}   # outcome columns (not features)
+FEATURE_SKIP = {"id", "winner", "method", "cls", "rnd", "time_s", "fight_s"}   # outcome columns (not features)
 
 
 def table_cols(T):

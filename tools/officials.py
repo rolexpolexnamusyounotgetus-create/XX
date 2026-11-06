@@ -818,6 +818,7 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
     out = np.zeros((dz.nF, 7))
     cardp = np.zeros((dz.nF, 3, 3))
     any108 = np.zeros((dz.nF, 3))
+    rprob = np.zeros((dz.nfr, 3, 5))
     starts = np.r_[0, np.cumsum([r["R"] for r in dz.rows])]
     for f in range(dz.nF):
         sl = slice(starts[f], starts[f + 1])
@@ -843,6 +844,9 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
             tie = rng.random((nsim, R)) < e10
             sa = np.where(tie, 10, np.where(aw, 10, np.where(big, 8, 9)))
             sb = np.where(tie, 10, np.where(~aw, 10, np.where(big, 8, 9)))
+            oc = np.where(tie, 2, np.where(aw, np.where(big, 4, 3), np.where(big, 0, 1)))
+            for o in range(5):
+                rprob[sl, j, o] = (oc == o).mean(0)
             totA[:, j] = sa.sum(1)
             totB[:, j] = sb.sum(1)
             n108[:, j] = (big & ~tie).sum(1)
@@ -866,7 +870,91 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
             cardp[f, j] = [(totA[:, j] > totB[:, j]).mean(), (totA[:, j] < totB[:, j]).mean(),
                            (totA[:, j] == totB[:, j]).mean()]
             any108[f, j] = (n108[:, j] > 0).mean()
-    return out, cardp, any108
+    return out, cardp, any108, rprob
+
+
+def simulate_engine_v3(dz, J, nsim=8000, seed=11):
+    """The v3 engine's judging rule (src/engine3.js, params3.js judge block) applied to real round stats.
+    Hurts and power-weighted damage are engine-only events (not in ufcstats), so they are zero here."""
+    rng = np.random.default_rng(seed)
+    out = np.zeros((dz.nF, 7))
+    rprob = np.zeros((dz.nfr, 3, 5))
+    any108 = np.zeros((dz.nF, 3))
+    starts = np.r_[0, np.cumsum([r["R"] for r in dz.rows])]
+
+    def lnorm(sd, size):
+        return np.exp(sd * rng.normal(size=size) - 0.5 * sd * sd)
+    for f in range(dz.nF):
+        sl = slice(starts[f], starts[f + 1])
+        X = dz.X[sl]
+        R = X.shape[0]
+        dStr = J["head"] * X[:, 0] + J["body"] * X[:, 1] + J["leg"] * X[:, 2]
+        dGr = J["td"] * X[:, 4] + J["ctrlMin"] * X[:, 5] + J["sub"] * X[:, 6]
+        dKd = X[:, 3]
+        tS, tG, tP = (lnorm(J["tasteSd"], (nsim, 3)) for _ in range(3))
+        shared = J["sharedSd"] * rng.normal(size=(nsim, R))
+        totA = np.zeros((nsim, 3))
+        totB = np.zeros((nsim, 3))
+        for j in range(3):
+            z = (dStr[None, :] * tS[:, j:j + 1] + dGr[None, :] * tG[:, j:j + 1] + (J["kd"] * dKd)[None, :] * tP[:, j:j + 1]
+                 + shared + J["indSd"] * rng.normal(size=(nsim, R)))
+            aw = z > 0
+            mg = np.abs(z)
+            kdE = np.where(aw, dKd[None, :], -dKd[None, :])
+            big = ((kdE >= 2) & (mg > J["t108kd2"])) | ((kdE >= 1) & (mg > J["t108"])) | ((kdE >= 2) & (mg > J["t108b"]))
+            sa = np.where(aw, 10, np.where(big, 8, 9))
+            sb = np.where(~aw, 10, np.where(big, 8, 9))
+            oc = np.where(aw, np.where(big, 4, 3), np.where(big, 0, 1))
+            for o in range(5):
+                rprob[sl, j, o] = (oc == o).mean(0)
+            totA[:, j] = sa.sum(1)
+            totB[:, j] = sb.sum(1)
+            any108[f, j] = big.any(1).mean()
+        ca = (totA > totB).sum(1)
+        cb = (totB > totA).sum(1)
+        cd = 3 - ca - cb
+        cls = np.full(nsim, 3)
+        cls[(ca == 3)] = 0
+        cls[(ca == 2) & (cb == 1)] = 1
+        cls[(ca == 2) & (cd == 1)] = 2
+        cls[(cb == 2) & (cd == 1)] = 4
+        cls[(cb == 2) & (ca == 1)] = 5
+        cls[(cb == 3)] = 6
+        out[f] = np.bincount(cls, minlength=7) / nsim
+    return out, rprob, any108
+
+
+def round_metrics(rprob, dz, eps=1e-4):
+    """Per judge-round outcome metrics on cards with observed round scores: 5-class log loss
+    (B10-8, B10-9, 10-10, A10-9, A10-8), round-winner log loss and accuracy, 10-8 log loss."""
+    starts = np.r_[0, np.cumsum([r["R"] for r in dz.rows])]
+    ll5, llw, acc, ll8, p8, y8 = [], [], [], [], [], []
+    for f, r in enumerate(dz.rows):
+        for j, c in enumerate(r["cards"]):
+            if c[4] is None:
+                continue
+            for k, o in enumerate(c[4]):
+                P = np.clip(rprob[starts[f] + k, j], eps, 1)
+                P = P / P.sum()
+                ll5.append(-math.log(P[o]))
+                if o != 2:
+                    pa = P[3] + P[4]
+                    pb = P[0] + P[1]
+                    q = min(max(pa / (pa + pb), eps), 1 - eps)
+                    ya = o > 2
+                    llw.append(-(math.log(q) if ya else math.log(1 - q)))
+                    acc.append((q > 0.5) == ya)
+                    # 10-8 given the winner
+                    pw8 = (P[4] / pa) if ya else (P[0] / pb)
+                    pw8 = min(max(pw8, eps), 1 - eps)
+                    is8 = o in (0, 4)
+                    ll8.append(-(math.log(pw8) if is8 else math.log(1 - pw8)))
+                    p8.append(pw8)
+                    y8.append(is8)
+    return {"judge_rounds": len(ll5), "outcome5_logloss": float(np.mean(ll5)), "winner_logloss": float(np.mean(llw)),
+            "winner_acc": float(np.mean(acc)), "ten8_given_winner_logloss": float(np.mean(ll8)),
+            "pred_ten8_rate": float(np.mean(p8)), "obs_ten8_rate": float(np.mean(y8)),
+            "_ll5": np.array(ll5), "_llw": np.array(llw)}
 
 
 def actual_class(r):
@@ -979,13 +1067,8 @@ class Window:
                 "nF": self.dz.nF, "train_ll": self.M.ll(x, cfg)}
 
 
-def evaluate(fit, rows, nat, years, nsim=8000, seed=7):
-    """Held-out: exact-card log-lik and decision metrics on decisions in `years` with frozen params."""
-    te = [r for r in rows if r["year"] in years]
-    dz = Design(te, fit["jidx"], nat, fit["year_end"] - 1)
-    cfg = MODELS[fit["model"]]
-    ll = Model(dz).ll(fit["x"], cfg)
-    th = to_np(unravel(np.asarray(fit["x"]), len(fit["jidx"])))
+def sim_params(th, cfg):
+    """Parameters as the simulator should use them for a model variant (switched-off parts zeroed)."""
     th_sim = dict(th)
     if not cfg.get("shared", 1):
         th_sim["log_su"] = np.array(-30.0)
@@ -995,7 +1078,29 @@ def evaluate(fit, rows, nat, years, nsim=8000, seed=7):
         th_sim["h"] = np.zeros(2)
     if not cfg.get("trend", 1):
         th_sim["w"] = np.zeros(3)
-    probs, cardp, any108 = simulate_decisions(th_sim, dz, nsim=nsim, seed=seed)
+    return th_sim
+
+
+def engine_v3_params():
+    """Current judge block of src/params3.js (read-only)."""
+    txt = (ROOT / "src" / "params3.js").read_text()
+    blk = txt[txt.index("judge: {"): txt.index("}", txt.index("judge: {"))]
+    out = {}
+    for k in ("head", "body", "leg", "kd", "td", "ctrlMin", "sub", "sharedSd", "indSd", "tasteSd", "t108b", "t108kd2",
+              "t108"):
+        m = re.search(r"\b" + k + r"\s*:\s*([-0-9.]+)", blk)
+        out[k] = float(m.group(1))
+    return out
+
+
+def evaluate(fit, rows, nat, years, nsim=8000, seed=7):
+    """Held-out: exact-card log-lik and decision metrics on decisions in `years` with frozen params."""
+    te = [r for r in rows if r["year"] in years]
+    dz = Design(te, fit["jidx"], nat, fit["year_end"] - 1)
+    cfg = MODELS[fit["model"]]
+    ll = Model(dz).ll(fit["x"], cfg)
+    th_sim = sim_params(to_np(unravel(np.asarray(fit["x"]), len(fit["jidx"]))), cfg)
+    probs, cardp, any108, rprob = simulate_decisions(th_sim, dz, nsim=nsim, seed=seed)
     return {"fids": [r["fid"] for r in dz.rows], "card_ll": ll, "probs": probs, "cardp": cardp, "any108": any108,
             "years": [r["year"] for r in dz.rows], "rows_meta": [{k: r[k] for k in ("fid", "year", "R", "winner", "cat",
                                                                                     "n0", "n1", "cards", "referee",
@@ -1636,6 +1741,36 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
         "median_abs_dP_winner": float(np.median(dp)), "p90_abs_dP_winner": float(np.percentile(dp, 90)),
         "max_abs_dP_winner": float(dp.max()), "share_abs_dP_over_5pts": float((dp > 0.05).mean()),
         "share_favorite_flips": float(((pA_J > 0.5) != (pA_L > 0.5)).mean())}
+    # round-level metrics (cards with observed round scores) and the v3 engine's rule on the same fights
+    te_rows = [r for r in rows if r["year"] in test["years_eval"]]
+    rl = {}
+    for name in ("indep", "league", "league_home", "judges" + sfx, "judges_home" + sfx):
+        v = test["models"][name]
+        dzt = Design(te_rows, v["jidx"], nat, test["test_year"] - 1)
+        thv = sim_params(to_np(unravel(np.asarray(v["x"]), len(v["jidx"]))), MODELS[v["model"]])
+        _, _, _, rprob = simulate_decisions(thv, dzt, nsim=8000, seed=7)
+        rl[name.replace(sfx, "")] = round_metrics(rprob, dzt)
+    try:
+        J3 = engine_v3_params()
+        dzt = Design(te_rows, {}, nat, test["test_year"] - 1)
+        p3, r3, a3 = simulate_engine_v3(dzt, J3)
+        m3 = decision_metrics(p3, dzt.rows)
+        rl["engine_v3_rule"] = round_metrics(r3, dzt)
+        obs108 = np.array([[card_n108(c, r["R"]) > 0 for c in r["cards"]] for r in dzt.rows])
+        J["heldout_2024_on"]["engine_v3_rule"] = dict(strip_private(m3), params=J3,
+                                                      pred_card108_rate=float(a3.mean()),
+                                                      obs_card108_rate=float(obs108.mean()))
+        J["heldout_2024_on"]["comparisons"]["judges_home_vs_engine_v3"] = {
+            "winner_logloss": boot_diff(JH["_ll_w"], m3["_ll_w"]) if len(JH["_ll_w"]) == len(m3["_ll_w"]) else None,
+            "class7_logloss": boot_diff(JH["_ll7"], m3["_ll7"]) if len(JH["_ll7"]) == len(m3["_ll7"]) else None,
+            "round_outcome5_logloss": boot_diff(rl["judges_home"]["_ll5"], rl["engine_v3_rule"]["_ll5"])}
+    except Exception as e:      # the engine file is another agent's and may change shape
+        J["heldout_2024_on"]["engine_v3_rule"] = {"error": repr(e)}
+    J["heldout_2024_on"]["comparisons"]["round_judges_home_vs_league"] = {
+        "outcome5_logloss": boot_diff(rl["judges_home"]["_ll5"], rl["league"]["_ll5"]),
+        "winner_logloss": boot_diff(rl["judges_home"]["_llw"], rl["league"]["_llw"]),
+        "note": "bootstrap over judge-rounds (rounds of one fight are not independent: intervals are optimistic)"}
+    J["heldout_2024_on"]["round_level"] = {k: strip_private(v) for k, v in rl.items()}
     J["heldout_2024_on"]["calibration_judges_home"] = calib_table(JH["_q"], JH["_ya"])
     J["heldout_2024_on"]["calibration_indep"] = calib_table(hm["indep"]["_q"], hm["indep"]["_ya"])
     yrs = np.array(evJH["years"])

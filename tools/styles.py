@@ -16,6 +16,11 @@ pre-fight sums `S` and the priors_asof table of the fight's year (fights before 
 Standardisation constants, clusters, penalties and coefficients are all fit on 2019-2023 fights only;
 2024-01-01 onward is reported, never tuned on.
 
+Revised in verification (Nov 6, 2026): rate-term verdicts, term selection and block switches now use 2019-2023
+evidence only (fight-clustered z, leave-one-year-out CV with a fight bootstrap) instead of 2024+ intervals; the
+test-chosen "judgment" term is gone; joint fits also report the implied main-effect exponents and an a = b = 1
+refit of the modifiers. Independent re-check: tools/styles_verify.py.
+
 Needs numpy and pandas (no scipy).
 """
 import argparse
@@ -48,8 +53,8 @@ SEED = 20261106
 # the grid values it picked on the Oct 31, 2026 snapshot.
 K_MIN = 10.0        # per-minute rates
 K_ATT = 120.0       # strike accuracy / defense / attempt shares (attempts)
-K_TD = 8.0          # takedown accuracy / defense (attempts)
-K_HEAD = 125.0      # knockdowns per landed head strike
+K_TD = 4.0          # takedown accuracy / defense (attempts)
+K_HEAD = 60.0       # knockdowns per landed head strike
 K_CTRLTD = 3.0      # control seconds per takedown landed (takedowns)
 SHRINK_GRID = {"K_MIN": ((5.0, 10.0, 20.0), ("dist_att", "td_att", "ctrl", "sub_att", "clinch_att")),
                "K_ATT": ((60.0, 120.0, 240.0), ("dist_acc", "leg_share", "body_share")),
@@ -2018,10 +2023,17 @@ def render_report(J):
     # ------------------------------------------------------------------ modifiers
     A("## 6. The modifier set and its size")
     A("")
-    A("Per model, held-out survivors go in first; held-out-supported matchup terms are then added in order of tune z "
-      "only if they lower 2019-2023 CV deviance given what is already in (this resolves overlapping terms on tune "
-      "data). Terms built only from the attacker's own style are excluded: they are decomposition corrections, "
-      "not matchups. A block is **on by default** when its joint 2024+ deviance change has a CI below zero.")
+    A("Per model, screened matchup terms (CV-confirmed first, then by |z|) are added one at a time and kept only if "
+      "they lower the 2019-2023 LOYO CV deviance given what is already in (this resolves overlapping terms such as "
+      "open stance vs southpaw-vs-orthodox). Terms built only from the attacker's own style are excluded: they are "
+      "decomposition corrections, not matchups. A block is **on by default** when its joint LOYO CV deviance change "
+      "has a fight-bootstrap CI below zero. Nothing in this section was chosen with 2024+ data.")
+    A("")
+    A("The coefficients are conditional on the main-effect strengths they were fit with: the free main effects "
+      "imply engine exponents well below 1 for what the defender allows (table below), and refitting the same terms "
+      "with the main effects fixed at the engine's default `a = b = 1` changes several of them materially (columns "
+      "'a=b=1'). Use the 'coef per unit' column with the fitted exponents, or the 'a=b=1' column if the engine keeps "
+      "`a = b = 1`; do not mix them.")
     A("")
     for label, blk in (("On by default", em["default_on"]), ("Optional (knob, default off)", em["optional_off"])):
         A("**%s**" % label)
@@ -2030,23 +2042,25 @@ def render_report(J):
         for name, j in blk.items():
             for t in j["terms"]:
                 rows_.append((name, "`%s`" % t["term"], TERM_DOCS.get(t["term"], ""), t["tier"], "%+.4f" % t["coef_per_term_sd"],
-                              "%+.4f" % t["coef_per_unit"], _f(t["z_tune"], 2), "%.3f" % t["mult_at_plus1sd"]))
-            rows_.append((name, "*block*", "2024+ deviance %+.2f%%, CI %s" % (j["test_dev_change_pct"], _f(j["test_dev_ci"], 0)),
-                          "", "", "", "", ""))
-        A(_tbl(["Rate", "Term", "Definition", "Tier", "Coef per term sd", "Coef per unit", "z (tune, joint)", "exp(coef) at +1 sd"], rows_))
+                              "%+.4f" % t["coef_per_unit"], _f(t["z_tune"], 2), "%.3f" % t["mult_at_plus1sd"],
+                              "%+.4f" % t.get("coef_per_unit_ab1", float("nan")), _f(t.get("z_tune_ab1"), 2)))
+            rows_.append((name, "*block*", "2019-2023 CV %+.0f, CI %s; 2024+ deviance %+.2f%%, CI %s"
+                          % (j["cv_dev_change"], _f(j["cv_dev_ci"], 0), j["test_dev_change_pct"], _f(j["test_dev_ci"], 0)),
+                          "", "", "", "", "", "", ""))
+        A(_tbl(["Rate", "Term", "Definition", "Tier", "Coef per term sd", "Coef per unit", "z (tune, joint)",
+                "exp(coef) at +1 sd", "Coef per unit (a=b=1)", "z (a=b=1)"], rows_))
         A("")
-    wj = em.get("without_judgment_terms", {})
-    jt = ", ".join("%s on %s" % (t, k) for k, ts in em.get("judgment_terms", {}).items() for t in ts)
-    A("Tier 1 = survived alone; tier 2 = supported alone and kept by the tune-CV step; tier 3 = judgment term "
-      "(%s): it missed the tune screen (z %.2f < 3) but its 2024+ change has a CI below zero and it carries the "
-      "total-control model's surviving kicker effect (a decomposition puts that effect on takedown attempts and "
-      "takedowns landed, not on takedown accuracy, control duration or control without a takedown). Without it the "
-      "td_att block's 2024+ deviance change is %s%% (CI %s); with it, %s%%. Joint z values are lower than "
-      "the single-term ones where terms share signal."
-      % (jt, next((c["z_tune"] for c in rl["td_att"]["candidates"] if c["term"] == "kick_y"), float("nan")),
-         _f(wj.get("td_att", {}).get("test_dev_change_pct"), 2), _f(wj.get("td_att", {}).get("test_dev_ci"), 0),
-         _f(em["default_on"].get("td_att", {}).get("test_dev_change_pct"), 2)) + " How big the modifiers get across real 2024+ matchups (the "
-      "modifier part of the linear predictor, log scale for rates and log-odds for shares):")
+    A("Implied main-effect exponents of the free fits (coefficient on the raw log-ratio or log-odds feature; the "
+      "engine default is 1 for both):")
+    A("")
+    A(_tbl(["Rate", "Attacker's own (a)", "What the defender allows (b)"],
+           [(k, _f(list(j["base_exponent_raw"].values())[0], 2),
+             _f(list(j["base_exponent_raw"].values())[1], 2) if len(j["base_exponent_raw"]) > 1 else "n/a")
+            for k, j in list(em["default_on"].items()) + list(em["optional_off"].items())]))
+    A("")
+    A("Tier 1 = CV-confirmed alone; tier 2 = screened alone and kept by the forward CV step. Joint z values are "
+      "lower than the single-term ones where terms share signal. How big the modifiers get across real 2024+ "
+      "matchups (the modifier part of the linear predictor, log scale for rates and log-odds for shares):")
     A("")
     rows_ = []
     for name, j in list(em["default_on"].items()) + list(em["optional_off"].items()):
@@ -2054,8 +2068,11 @@ def render_report(J):
         rows_.append((name, _f(q["p5"]), _f(q["p25"]), _f(q["p50"]), _f(q["p75"]), _f(q["p95"]), _f(q["abs_median"])))
     A(_tbl(["Rate", "p5", "p25", "median", "p75", "p95", "median |shift|"], rows_))
     A("")
-    A("So a typical matchup moves a rate by 3-10% and the 5% most extreme by 10-25%. Examples (multipliers for "
-      "Poisson rates, log-odds shifts for shares, all blocks including optional ones):")
+    med = [j["shift_pct_2024"]["abs_median"] for j in em["default_on"].values()]
+    ext = [max(-j["shift_pct_2024"]["p5"], j["shift_pct_2024"]["p95"]) for j in em["default_on"].values()]
+    A("So for the default-on blocks a typical matchup moves a rate by %.0f-%.0f%% and the 5%% most extreme by up to "
+      "%.0f%%. Examples (multipliers for Poisson rates, log-odds shifts for shares, all selected blocks including "
+      "optional ones):" % (100 * (math.exp(min(med)) - 1), 100 * (math.exp(max(med)) - 1), 100 * (math.exp(max(ext)) - 1)))
     A("")
     rows_ = []
     for key, ex in J["examples"].items():
@@ -2089,11 +2106,11 @@ def render_report(J):
             "Median / max |dp| (points)"], rows_))
     A("")
     A("Read: the scorecard alone lifts Elo from %s to %s (it is a real, if crude, mechanistic predictor). Modifiers "
-      "change the scorecard model's 2024+ log loss by at most about 0.002, with intervals that include zero; the "
-      "'tune_screened' row is the clean test (no 2024+ data used to pick terms) and is flat. On top of the full "
-      "skill baseline the scorecard adds nothing, as expected: the baseline already holds the same main effects. "
-      "The held-out period was used once to confirm each rate term, so the tier1 / default_on rows are consistency "
-      "checks rather than independent tests."
+      "change the scorecard model's 2024+ log loss by at most about 0.002, with intervals that include zero. Every "
+      "variant's terms were chosen on 2019-2023 only ('tier1' = CV-confirmed terms of the selected blocks, "
+      "'default_on' = the on-by-default blocks, 'all_recommended' = every selected block, 'tune_screened' = every "
+      "screened matchup term without the forward step), so each row is a clean held-out test. On top of the full "
+      "skill baseline the scorecard adds nothing, as expected: the baseline already holds the same main effects."
       % (_f(wl["elo_only"]["test"]["log_loss"], 4), _f(tr["variants"]["none"]["elo_plus_impact"]["test"]["log_loss"], 4)))
     A("")
     A("Median relative change in the expected per-minute stats from the modifiers (2019-2026 sides): " +
@@ -2142,11 +2159,14 @@ def render_report(J):
     for name, j in list(em["default_on"].items()) + list(em["optional_off"].items()):
         on = name in em["default_on"]
         eq = " + ".join("(%+.4f) * %s" % (t["coef_per_unit"], t["term"]) for t in j["terms"])
+        eq1 = " + ".join("(%+.4f) * %s" % (t.get("coef_per_unit_ab1", float("nan")), t["term"]) for t in j["terms"])
+        ex = j.get("base_exponent_raw", {})
         state = "check only, not applied" if name == "ctrl" else ("on" if on else "knob, default off")
-        A("   - `%s` (%s): %s, with `s = %s`." % (name, state, RATE_ENGINE.get(name, ""), eq))
+        A("   - `%s` (%s): %s. With the fitted exponents (%s): `s = %s`. If the engine keeps a = b = 1: `s = %s`."
+          % (name, state, RATE_ENGINE.get(name, ""), ", ".join("%s %.2f" % (k, v) for k, v in ex.items()), eq, eq1))
     A("   For a Poisson rate: `rate *= exp(s)`. For a share: `logit(p) += s`. Products such as `zx_ctrl*zy_octrl` "
       "are the product of the two z-scores. `open`, `x_sp_vs_orth` are 0/1 from the listed stances (switch counts "
-      "as neither).")
+      "as neither). A term whose 'a=b=1' z is below 2 in absolute value is effectively zero under that composition.")
     A("3. **Control.** Control in the engine comes from takedowns (`td_att`, success unchanged) and how long the top "
       "man keeps the position (`ctrl_per_td`). The total `ctrl` block is the check: an engine with `td_att` and "
       "`ctrl_per_td` on should reproduce its direction (more control against kickers, less in wrestler-vs-wrestler "
@@ -2160,13 +2180,16 @@ def render_report(J):
     A("6. **Do not** add archetype-pair or interaction terms to the final win probability; none survived held-out "
       "validation and the combined set made 2024+ log loss worse. Do not use the scouting tags as numeric inputs "
       "in backtests (hindsight); use them for the director's technique choices and the page.")
-    A("7. **Calibration order.** The modifiers were fit with free main-effect coefficients, so they are close to "
-      "orthogonal to the engine's own prior strengths and exponents; recheck the default-on blocks with the "
-      "engine's per-fight stat errors after v4 retunes those (expected change: small).")
+    A("7. **Calibration order.** The modifiers are not orthogonal to the engine's exponents: with the main effects "
+      "fixed at a = b = 1, the defender's-wrestling term on takedown attempts vanishes and the control ceiling term "
+      "more than doubles (section 6). Ship them together with the exponents they were fit with (v4 should start "
+      "its exponent search from the implied values above), or use the a = b = 1 column while the engine keeps "
+      "a = b = 1; refit the modifiers by rerunning this tool whenever v4 changes the exponents or the prior "
+      "strengths.")
     A("8. **Validation target for v7.** With the modifiers on, the engine's simulated per-fight stats should "
-      "reproduce the 2024+ rate-level gains above (distance attempts, leg share, takedown attempts, control), and "
-      "its 2024+ winner log loss should be no worse than without them; that is the ship criterion, given that the "
-      "winner-level effect is below what %d fights can detect." % m["n_test_decisive"])
+      "reproduce the 2024+ rate-level gains above (%s), and its 2024+ winner log loss should be no worse than "
+      "without them; that is the ship criterion, given that the winner-level effect is below what %d fights can "
+      "detect." % (", ".join(RATE_WORDS.get(k, k) for k in em["default_on"] if k != "ctrl"), m["n_test_decisive"]))
     A("")
     # ------------------------------------------------------------------ caveats
     A("## 10. Caveats")
@@ -2178,8 +2201,10 @@ def render_report(J):
       "attempts by position; pressure, counter-punching and kick types can only be proxied.")
     A("- Control time includes clinch control; standing minutes are approximate (min minus both men's control).")
     A("- Stance, reach and height are the current tale of the tape, applied to past fights.")
-    A("- The 2024+ period confirmed the rate terms and was then reused for the transmission and mismatch tables; "
-      "the 'tune_screened' variant is the only fully clean held-out test of the procedure.")
+    A("- All selection uses 2019-2023 (a revision made in verification; the first version selected on 2024+). The "
+      "2024+ period is reused for several descriptive tables (single-term labels, transmission, mismatch), so read "
+      "the many 2024+ numbers as one family, not as independent confirmations. A stricter out-of-time split "
+      "(screen 2019-2021, confirm 2022-2023) confirms fewer single terms; see the verification log.")
     A("- The skill baseline's main effects are style features too (shares, intents); a model without them would "
       "let interactions absorb main effects. The 'on top of Elo alone' table shows what that looks like.")
     A("")
@@ -2190,8 +2215,18 @@ def render_report(J):
     A("python3 tools/styles.py --report-only   # re-render this file from data/derived/styles.json")
     A("```")
     A("")
-    A("Needs numpy and pandas; reuses `tools/build_db.py` (parse_fights, build_vectors) for the per-fight vectors.")
+    A("Needs numpy and pandas; reuses `tools/build_db.py` (parse_fights, build_vectors) for the per-fight vectors. "
+      "The independent re-check (statsmodels, scikit-learn) is `python3 tools/styles_verify.py`, which writes "
+      "`data/derived/styles_verify.json`; rerun `python3 tools/styles.py --report-only` afterwards to refresh the "
+      "verification log below.")
     A("")
+    vf = os.path.join(DER, "styles_verify.json")
+    if os.path.exists(vf):
+        with open(vf) as fh:
+            V = json.load(fh)
+        if V.get("log_md"):
+            A(V["log_md"].rstrip())
+            A("")
     return "\n".join(L)
 
 
