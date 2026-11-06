@@ -870,6 +870,459 @@ def fit_round_pool(Rs, side, meth, rnd, K, n_exp, with_delta=False):
     return unpack(r.x)
 
 
+# ====================================================================== assembly for CV / valid / export
+METRICS = ["joint", "method3", "finish", "bin7", "method_round", "round_given_fin", "ko_vs_sub", "method_given_winner",
+           "winner"]
+A_MARKET = 0.6                    # methodround.json meta.chosen.a_market: the current 40/60 blend (chosen 2021-2023)
+_ASM = {}
+
+
+def assemble(rep_m="m6", rep_r="er"):
+    """Rows: every backtest fight 2021-2025 in the method table. Experts: method | winner (n x 2 x 3) and round |
+    side, method (n x 2 x 2 x 5) for S2, SM, S, the props (nan where absent) and the current 40/60 blend."""
+    import numpy as np
+    key = (rep_m, rep_r)
+    if key in _ASM:
+        return _ASM[key]
+    c = pickle.load(open(os.path.join(CACHE, "cells.pkl"), "rb"))
+    w = pickle.load(open(os.path.join(CACHE, "winner.pkl"), "rb"))
+    tab = pickle.load(open(os.path.join(CACHE, "table.pkl"), "rb"))["tab"]
+    assert list(w["ids"]) == list(c["ids"])
+    keep = (c["year"] >= 2021) & np.array([d < VAULT_S for d in c["date"]])
+    ids = c["ids"][keep]
+    n = len(ids)
+    K = np.where(c["rounds"][keep] == 5, 5, 3)
+    A = {"ids": ids, "year": c["year"][keep], "date": c["date"][keep], "event": c["event"][keep], "K": K,
+         "y": c["y"][keep], "W_close": w["W_close"][keep], "W_ml2": w["W_ml2"][keep], "draw_c": c["draw_c"]}
+    A["side"], A["meth"], A["rnd"] = outcome_parts(A["y"])
+    Rh = round_shapes_from_H(c["H"][keep])
+    A["M"] = {k: cond_from_p6(c["P6"][k][keep]) for k in ("S2", "SM", "S")}
+    A["R"] = {"S2": Rh}
+    J = {k: v[keep] for k, v in c["J"].items()}
+    PMK = c["PMK"][keep]
+    hp = ~np.isnan(PMK[:, 0])
+    B46 = J["S2+ml2win"].copy()
+    B46[hp] = (1 - A_MARKET) * J["S2+ml2win"][hp] + A_MARKET * PMK[hp]
+    A["J_pub"] = {"S2+ml2win": J["S2+ml2win"], "props (market.json)": np.where(hp[:, None], PMK, np.nan),
+                  "40/60 blend (current)": B46}
+    A["has_pmk"] = hp
+    Mb, Rb = cond_from_joint(B46)
+    A["M"]["B46"], A["R"]["B46"] = Mb, Rb
+    Mp = np.full((n, 2, 3), np.nan)
+    Rp = np.full((n, 2, 2, R5), np.nan)
+    seg, nb, recs = [], [], []
+    for i, fid in enumerate(ids):
+        rec = tab.get(fid, {})
+        recs.append(rec)
+        seg.append(rec.get("seg", "unknown"))
+        nb.append(max((rec.get("n_books") or {}).values() or [0]))
+        if rec.get("has"):
+            m, r = props_cond(rec, int(K[i]), rep_m, rep_r)
+            if m is not None:
+                Mp[i] = m
+            if r is not None:
+                Rp[i] = r
+    A["M"]["P"], A["R"]["P"] = Mp, Rp
+    A["hasM"] = ~np.isnan(Mp[:, 0, 0])
+    A["hasR"] = ~np.isnan(Rp[:, 0, 0, 0])
+    A["seg"], A["n_books"], A["recs"] = np.array(seg), np.array(nb), recs
+    # props-alone joint (own winner from m6): m6 (+ the model's draw share) spread by the props' round shapes,
+    # S2's shapes where no round family is quoted
+    Pj = np.full((n, NC), np.nan)
+    for i in np.flatnonzero(A["hasM"]):
+        m6 = np.asarray(recs[i]["m6"], float)
+        pa = m6[:3].sum() / m6.sum()
+        Rr = Rp[i:i + 1] if A["hasR"][i] else Rh[i:i + 1]
+        Pj[i] = compose(np.array([pa]), Mp[i:i + 1], Rr, K[i:i + 1], A["draw_c"])[0]
+    A["J_pub"]["props alone (this extract)"] = Pj
+    _ASM[key] = A
+    return A
+
+
+def losses(P, y):
+    import methodround as MR
+    import numpy as np
+    return MR.per_fight_losses(np.asarray(P, float), np.asarray(y), None)
+
+
+class Spec:
+    """A pool configuration: method experts + biases, round experts + format biases, props representations."""
+
+    def __init__(self, name, m_exp=("S2",), m_bias=(), r_exp=("S2",), r_delta=False, rep_m="m6", rep_r="er"):
+        self.name, self.m_exp, self.m_bias, self.r_exp = name, tuple(m_exp), tuple(m_bias), tuple(r_exp)
+        self.r_delta, self.rep_m, self.rep_r = r_delta, rep_m, rep_r
+
+    def as_dict(self):
+        return {"name": self.name, "m_exp": list(self.m_exp), "m_bias": list(self.m_bias), "r_exp": list(self.r_exp),
+                "r_delta": self.r_delta, "rep_m": self.rep_m, "rep_r": self.rep_r}
+
+    def fixed(self):
+        """Specs without fitted parameters (a single expert taken as is)."""
+        return len(self.m_exp) == 1 and not self.m_bias and len(self.r_exp) == 1 and not self.r_delta
+
+    def fit(self, A, tr):
+        import numpy as np
+        par = {"alpha": [1.0] * len(self.m_exp), "beta": [0.0, 0.0, 0.0], "gamma": [1.0] * len(self.r_exp),
+               "delta": None}
+        mm = tr & (A["side"] >= 0)
+        if "P" in self.m_exp:
+            mm = mm & A["hasM"]
+        if len(self.m_exp) > 1 or self.m_bias:
+            a, b = fit_method_pool([A["M"][e][mm] for e in self.m_exp], A["side"][mm], A["meth"][mm],
+                                   len(self.m_exp), self.m_bias)
+            par["alpha"], par["beta"] = [float(x) for x in a], [float(x) for x in b]
+        rr = tr & (A["rnd"] >= 0)
+        if "P" in self.r_exp:
+            rr = rr & A["hasR"]
+        if len(self.r_exp) > 1 or self.r_delta:
+            g, d = fit_round_pool([A["R"][e][rr] for e in self.r_exp], A["side"][rr], A["meth"][rr], A["rnd"][rr],
+                                  A["K"][rr], len(self.r_exp), self.r_delta)
+            par["gamma"] = [float(x) for x in g]
+            par["delta"] = None if d is None else {k: [float(x) for x in v] for k, v in d.items()}
+        par["n_fit_method"], par["n_fit_round"] = int(mm.sum()), int(rr.sum())
+        return par
+
+    def predict(self, A, rows, par):
+        """method | winner and round shapes for `rows`; a part whose props are absent falls back to S2 (degrade)."""
+        import numpy as np
+        M = A["M"]["S2"][rows].copy()
+        R = A["R"]["S2"][rows].copy()
+        okm = np.ones(rows.sum(), bool) if "P" not in self.m_exp else A["hasM"][rows]
+        if okm.any():
+            Ms = [A["M"][e][rows][okm] for e in self.m_exp]
+            M[okm] = pool_method(Ms, par["alpha"], par["beta"]) if (len(Ms) > 1 or self.m_bias) else Ms[0]
+        okr = np.ones(rows.sum(), bool) if "P" not in self.r_exp else A["hasR"][rows]
+        if okr.any():
+            Rs = [A["R"][e][rows][okr] for e in self.r_exp]
+            R[okr] = pool_round(Rs, par["gamma"], par["delta"], A["K"][rows][okr]) \
+                if (len(Rs) > 1 or self.r_delta) else Rs[0]
+        return M, R
+
+
+def predict_folds(A, spec, folds):
+    """folds: list of (fit_mask, pred_mask). Returns M, R filled on the predicted rows and the fitted params."""
+    import numpy as np
+    n = len(A["ids"])
+    M = np.full((n, 2, 3), np.nan)
+    R = np.full((n, 2, 2, R5), np.nan)
+    pars = []
+    for tr, pr in folds:
+        par = spec.fit(A, tr)
+        m, r = spec.predict(A, pr, par)
+        M[pr], R[pr] = m, r
+        pars.append(par)
+    return M, R, pars
+
+
+def fwd_folds(A, years=CV_YEARS, first=2021):
+    return [((A["year"] >= first) & (A["year"] < Y), A["year"] == Y) for Y in years]
+
+
+def loyo_folds(A, years=PROP_YEARS):
+    return [((A["year"] != Y) & (A["year"] >= years[0]) & (A["year"] <= years[-1]), A["year"] == Y) for Y in years]
+
+
+def score_table(A, mask, joints, ref, B=2000, seed=11):
+    """Mean losses with event-cluster CIs on `mask`, paired differences against `ref`."""
+    import methodround as MR
+    import numpy as np
+    L = {k: losses(P[mask], A["y"][mask]) for k, P in joints.items()}
+    bt, st = MR.cluster_bootstrap(L, A["event"][mask], B=B, seed=seed)
+    out = {"n": int(mask.sum()), "means": bt, "paired_vs_" + ref: {}}
+    for k in joints:
+        if k != ref:
+            out["paired_vs_" + ref][k] = MR.paired_diff(L[k], L[ref], st, METRICS)
+    return out, L, st
+
+
+def p_decision(P):
+    return P[:, I_XDEC] + P[:, I_YDEC] + P[:, I_DRAW]
+
+
+# ====================================================================== reports: coverage, consistency, families
+def coverage_report():
+    import numpy as np
+    T = pickle.load(open(os.path.join(CACHE, "table.pkl"), "rb"))
+    tab, allb = T["tab"], T["allb"]
+    out = {"backtest": {}, "all_bouts": {}, "orientation_flags": len(T["orient_flags"])}
+    rows = [r for r in tab.values() if r["year"] >= 2021]
+    for grp in ("year", "seg"):
+        g = defaultdict(list)
+        for r in rows:
+            g[str(r[grp])].append(r)
+        out["backtest"][grp] = {k: {"n": len(v), "m6": round(np.mean(["m6" in r for r in v]), 3),
+                                    "gd": round(np.mean(["gd" in r for r in v]), 3),
+                                    "er": round(np.mean(["er" in r for r in v]), 3),
+                                    "wr": round(np.mean(["wr" in r for r in v]), 3),
+                                    "mr": round(np.mean(["mr" in r for r in v]), 3),
+                                    "itd": round(np.mean(["itd" in r for r in v]), 3),
+                                    "ou": round(np.mean(["ou" in r for r in v]), 3),
+                                    "mean_books_m6": round(float(np.mean([r["n_books"].get("m6", 0) for r in v
+                                                                          if "m6" in r] or [0])), 2)}
+                                for k, v in sorted(g.items())}
+    g = defaultdict(list)
+    for r in allb:
+        g[(r["seg"], "debut" if r["debut"] else "backtest")].append(r)
+    out["all_bouts"]["by_segment"] = {"%s|%s" % k: {"n": len(v), "matched": round(np.mean([r["matched"] for r in v]), 3),
+                                                   "m6": round(np.mean([r["m6"] for r in v]), 3),
+                                                   "round": round(np.mean([r["round"] for r in v]), 3)}
+                                      for k, v in sorted(g.items())}
+    g = defaultdict(list)
+    for r in allb:
+        g[r["seg"]].append(r)
+    out["all_bouts"]["segment_totals"] = {k: {"n": len(v), "m6": round(np.mean([r["m6"] for r in v]), 3),
+                                              "round": round(np.mean([r["round"] for r in v]), 3)}
+                                          for k, v in sorted(g.items())}
+    return out
+
+
+def pdec_of(rec, fam):
+    if fam == "m6" and rec.get("m6") is not None:
+        v = rec["m6"]
+        dr = rec.get("m6_draw") or 0.0
+        return (v[2] + v[5] + dr) / (sum(v) + dr)
+    if fam == "gd":
+        return rec.get("gd")
+    if fam == "er" and rec.get("er") is not None:
+        return rec["er"][-1]
+    if fam == "wr" and rec.get("wr") is not None:
+        return rec["wr"][-1] + rec["wr"][-2]
+    return None
+
+
+def consistency_report():
+    """Outcome-free agreement between prop families on the same bouts (all development rows 2021-2025)."""
+    import numpy as np
+    tab = pickle.load(open(os.path.join(CACHE, "table.pkl"), "rb"))["tab"]
+    rows = [r for r in tab.values() if r.get("has")]
+    out = {}
+    pairs = [("m6", "gd"), ("m6", "er"), ("m6", "wr"), ("gd", "er"), ("er", "wr")]
+    for a, b in pairs:
+        v = [(pdec_of(r, a), pdec_of(r, b)) for r in rows]
+        v = np.array([x for x in v if x[0] is not None and x[1] is not None])
+        if len(v):
+            out["p_decision %s vs %s" % (a, b)] = {"n": len(v), "mean_abs_diff": round(float(np.mean(np.abs(v[:, 0] - v[:, 1]))), 4),
+                                                   "mean_diff": round(float(np.mean(v[:, 0] - v[:, 1])), 4),
+                                                   "corr": round(float(np.corrcoef(v.T)[0, 1]), 4)}
+    # P(A wins): method six-way vs the page moneyline (same books) and vs fighter-wins-in-round
+    v = np.array([(sum(r["m6"][:3]) / sum(r["m6"]), r["ml"]) for r in rows if r.get("m6") and r.get("ml") is not None])
+    out["p_A m6 vs moneyline"] = {"n": len(v), "mean_abs_diff": round(float(np.mean(np.abs(v[:, 0] - v[:, 1]))), 4),
+                                  "corr": round(float(np.corrcoef(v.T)[0, 1]), 4)}
+    v = np.array([(sum(r["m6"][:3]) / sum(r["m6"]), (sum(r["wr"][:r["K"]]) + r["wr"][2 * r["K"]]) / sum(r["wr"]))
+                  for r in rows if r.get("m6") and r.get("wr")])
+    if len(v):
+        out["p_A m6 vs wr"] = {"n": len(v), "mean_abs_diff": round(float(np.mean(np.abs(v[:, 0] - v[:, 1]))), 4),
+                               "corr": round(float(np.corrcoef(v.T)[0, 1]), 4)}
+    # inside the distance: m6 (KO + SUB) vs the two-way ITD market
+    v = []
+    for r in rows:
+        if r.get("m6") and r.get("itd"):
+            s6 = sum(r["m6"]) + (r.get("m6_draw") or 0)
+            for j, idx in ((0, (0, 1)), (1, (3, 4))):
+                if r["itd"][j] is not None:
+                    v.append(((r["m6"][idx[0]] + r["m6"][idx[1]]) / s6, r["itd"][j]))
+    v = np.array(v)
+    if len(v):
+        out["p_inside_distance m6 vs itd"] = {"n": len(v), "mean_abs_diff": round(float(np.mean(np.abs(v[:, 0] - v[:, 1]))), 4),
+                                              "mean_diff": round(float(np.mean(v[:, 0] - v[:, 1])), 4),
+                                              "corr": round(float(np.corrcoef(v.T)[0, 1]), 4)}
+    # finishing-round shape: fight ends in round k vs fighter wins in round k (summed over sides)
+    d = []
+    for r in rows:
+        if r.get("er") and r.get("wr"):
+            K = r["K"]
+            a = np.asarray(r["er"][:K]) / sum(r["er"][:K])
+            w = np.asarray(r["wr"][:K]) + np.asarray(r["wr"][K:2 * K])
+            d.append(np.abs(a - w / w.sum()).sum())
+    if d:
+        out["round_shape er vs wr (L1)"] = {"n": len(d), "mean": round(float(np.mean(d)), 4),
+                                            "p90": round(float(np.percentile(d, 90)), 4)}
+    # over/under k.5 rounds vs the round props' bounds: P(over 1.5) lies in [1 - er1 - er2, 1 - er1]
+    ok = tot = 0
+    for r in rows:
+        if r.get("er") and (r.get("ou") or {}).get("15") is not None:
+            lo, hi = 1 - r["er"][0] - r["er"][1], 1 - r["er"][0]
+            tot += 1
+            ok += lo - 0.02 <= r["ou"]["15"] <= hi + 0.02
+    if tot:
+        out["over_1.5 within the er bounds (+-0.02)"] = {"n": tot, "share": round(ok / tot, 4)}
+    return out
+
+
+def family_scores(lo=2021, hi=2023):
+    """Outcome-based comparison of the families on the tuning years only (2021-2023)."""
+    import ml2
+    import numpy as np
+    A = assemble()
+    out = {}
+    m = (A["year"] >= lo) & (A["year"] <= hi) & (A["y"] >= 0)
+    rec = A["recs"]
+    isdec = np.isin(A["y"], [I_XDEC, I_YDEC, I_DRAW])
+    fams = ["m6", "gd", "er", "wr"]
+    P = {f: np.array([pdec_of(rec[i], f) if rec[i] else None for i in range(len(rec))], dtype=float) for f in fams}
+    com = m & np.all([~np.isnan(P[f]) for f in fams], axis=0)
+    S2d = A["M"]["S2"]
+    pd_s2 = A["W_close"] * S2d[:, 0, 2] + (1 - A["W_close"]) * S2d[:, 1, 2]
+    res = {"n": int(com.sum()), "observed": round(float(isdec[com].mean()), 4)}
+    for f in fams + ["avg"]:
+        p = np.mean([P[g] for g in fams], axis=0) if f == "avg" else P[f]
+        res[f] = {"pred_mean": round(float(p[com].mean()), 4), "log_loss": round(ml2.ll(p[com], isdec[com]), 5)}
+    res["S2 (W_close)"] = {"pred_mean": round(float(pd_s2[com].mean()), 4), "log_loss": round(ml2.ll(pd_s2[com], isdec[com]), 5)}
+    out["p_decision"] = res
+    # round given finish, per family
+    fin = m & (A["rnd"] >= 0)
+    ix = np.arange(len(A["ids"]))
+    res = {}
+    reps = {}
+    for rep in ("er", "wr", "best"):
+        B = assemble(rep_r=rep)
+        reps[rep] = B["R"]["P"][ix, np.maximum(A["side"], 0), np.maximum(A["meth"], 0) % 2, np.maximum(A["rnd"], 0)]
+    reps["S2"] = A["R"]["S2"][ix, np.maximum(A["side"], 0), np.maximum(A["meth"], 0) % 2, np.maximum(A["rnd"], 0)]
+    com = fin & np.all([~np.isnan(v) for v in reps.values()], axis=0)
+    res["n"] = int(com.sum())
+    for k, v in reps.items():
+        res[k] = round(float(np.mean(-np.log(np.clip(v[com], 1e-6, 1)))), 5)
+    out["round_given_finish"] = res
+    return out
+
+
+# ====================================================================== cv: forward-chained 2022-2023
+def cv_loss_method(A, spec, folds, rows):
+    import numpy as np
+    M, _, pars = predict_folds(A, spec, folds)
+    ix = np.flatnonzero(rows)
+    l = -np.log(np.clip(M[ix, A["side"][ix], A["meth"][ix]], 1e-9, 1))
+    return float(l.mean()), l, pars
+
+
+def cv_loss_round(A, spec, folds, rows):
+    import numpy as np
+    _, R, pars = predict_folds(A, spec, folds)
+    ix = np.flatnonzero(rows)
+    l = -np.log(np.clip(R[ix, A["side"][ix], A["meth"][ix], A["rnd"][ix]], 1e-9, 1))
+    return float(l.mean()), l, pars
+
+
+def select_sequence(A_of, seq, metric_fn, rows_fn, log_name):
+    """Nested selection: each candidate is compared with the current choice; it replaces it only if the CV loss
+    improves by more than SEL_MIN (0.0005)."""
+    table, cur = [], None
+    for spec, parent in seq:
+        A = A_of(spec)
+        folds = fwd_folds(A)
+        rows = rows_fn(A)
+        loss, _, pars = metric_fn(A, spec, folds, rows)
+        row = {"spec": spec.name, "cv": round(loss, 5), "n": int(rows.sum()), "params_by_fold": pars}
+        if cur is None:
+            cur = (spec, loss)
+            row["decision"] = "start"
+        elif parent is None or parent == cur[0].name:
+            if loss < cur[1] - SEL_MIN:
+                row["decision"] = "accepted (%.5f < %.5f - %.4f)" % (loss, cur[1], SEL_MIN)
+                cur = (spec, loss)
+            else:
+                row["decision"] = "rejected"
+        else:
+            row["decision"] = "skipped (parent %s not chosen)" % parent
+        table.append(row)
+        log("%s %-36s CV %.5f n=%d -> %s" % (log_name, spec.name, loss, rows.sum(), row["decision"]))
+    return cur[0], table
+
+
+@stage("cv")
+def stage_cv(args):
+    import numpy as np
+    t0 = time.time()
+    res = {"built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+           "protocol": "forward-chained folds %s (fit on 2021..Y-1); LOYO 2021-2023 secondary; 0.0005 rule" % (CV_YEARS,)}
+    res["coverage"] = coverage_report()
+    res["consistency"] = consistency_report()
+    res["families_tune_2021_2023"] = family_scores()
+    log("cv: coverage / consistency / families done (%.0f s)" % (time.time() - t0))
+    A_of = lambda s: assemble(s.rep_m, s.rep_r)          # noqa: E731
+    fold_years = lambda A: np.isin(A["year"], CV_YEARS)  # noqa: E731
+    rows_m = lambda A: fold_years(A) & (A["side"] >= 0) & A["hasM"]                         # noqa: E731
+    rows_r = lambda A: fold_years(A) & (A["rnd"] >= 0) & A["hasR"] & A["hasM"]              # noqa: E731
+    # --- method given the winner
+    seq_m = [(Spec("S2"), None),
+             (Spec("S2+P", m_exp=("S2", "P")), "S2"),
+             (Spec("S2+P | dec", m_exp=("S2", "P"), m_bias=("dec",)), "S2+P"),
+             (Spec("S2+P | dec, sub", m_exp=("S2", "P"), m_bias=("dec", "sub")), "S2+P | dec"),
+             (Spec("S2+SM+P | dec", m_exp=("S2", "SM", "P"), m_bias=("dec",)), "S2+P | dec"),
+             (Spec("S2+P | dec [m6_gd]", m_exp=("S2", "P"), m_bias=("dec",), rep_m="m6_gd"), "S2+P | dec")]
+    best_m, tab_m = select_sequence(A_of, seq_m, cv_loss_method, rows_m, "method")
+    # comparators (not candidates): props alone, the current 40/60 blend's conditionals
+    comp = {}
+    for spec in (Spec("P", m_exp=("P",), r_exp=("P",)), Spec("B46", m_exp=("B46",), r_exp=("B46",))):
+        A = A_of(spec)
+        comp[spec.name] = {"method_given_winner": round(cv_loss_method(A, spec, fwd_folds(A), rows_m(A))[0], 5),
+                           "round_given_fin": round(cv_loss_round(A, spec, fwd_folds(A), rows_r(A))[0], 5)}
+    # --- round given a finish (method part fixed at the chosen spec)
+    mk = dict(m_exp=best_m.m_exp, m_bias=best_m.m_bias, rep_m=best_m.rep_m)
+    seq_r = [(Spec("S2 shapes", **mk), None),
+             (Spec("S2+P[er]", r_exp=("S2", "P"), rep_r="er", **mk), "S2 shapes"),
+             (Spec("S2+P[wr]", r_exp=("S2", "P"), rep_r="wr", **mk), "S2+P[er]"),
+             (Spec("S2+P[best]", r_exp=("S2", "P"), rep_r="best", **mk), "S2+P[er]"),
+             (Spec("S2+P[er] | delta", r_exp=("S2", "P"), rep_r="er", r_delta=True, **mk), "S2+P[er]")]
+    best, tab_r = select_sequence(A_of, seq_r, cv_loss_round, rows_r, "round ")
+    best.name = "pool: %s / %s" % (best_m.name, best.name)
+    res["selection"] = {"method": tab_m, "round": tab_r, "comparators": comp, "chosen": best.as_dict()}
+    log("cv: chosen %s (%.0f s)" % (best.as_dict(), time.time() - t0))
+    # --- the package table on the CV folds: every package composed with the same winner (W_close)
+    A = A_of(best)
+    folds = fwd_folds(A)
+    pk = {"S2 (cycle-1 cells)": Spec("S2"), "props alone": Spec("P", m_exp=("P",), r_exp=("P",)),
+          "40/60 blend (current)": Spec("B46", m_exp=("B46",), r_exp=("B46",)), "pool (chosen)": best}
+    res["cv_tables"] = {}
+    for wname in ("W_close", "W_ml2"):
+        joints = {}
+        for k, s in pk.items():
+            Ak = A_of(s)
+            M, R, _ = predict_folds(Ak, s, folds)
+            joints[k] = compose(Ak[wname], np.nan_to_num(M, nan=1 / 3), np.nan_to_num(R, nan=0.2), Ak["K"], Ak["draw_c"])
+        fy = fold_years(A)
+        for setname, msk in (("fights with method props", fy & A["hasM"] & (A["y"] >= 0)),
+                             ("all fights (degrade: S2 where props are missing)", fy & (A["y"] >= 0))):
+            tabl, _, _ = score_table(A, msk, joints, "S2 (cycle-1 cells)", B=args.boot)
+            tabl["p_decision"] = {k: {"pred": round(float(p_decision(P[msk]).mean()), 4)} for k, P in joints.items()}
+            tabl["p_decision"]["observed"] = round(float(np.isin(A["y"][msk], [I_XDEC, I_YDEC, I_DRAW]).mean()), 4)
+            res["cv_tables"]["%s | %s" % (wname, setname)] = tabl
+        # pool vs the current blend, paired
+    jp = {k: A["J_pub"][k] for k in A["J_pub"]}
+    msk = fold_years(A) & A["hasM"] & A["has_pmk"] & (A["y"] >= 0)
+    tabl, _, _ = score_table(A, msk, dict(jp, **{"pool (W_close)": joints_cache(A, best, folds, "W_close")}),
+                             "40/60 blend (current)", B=args.boot)
+    res["cv_tables"]["as published (own winners) | fights with props in market.json too"] = tabl
+    # --- LOYO 2021-2023 (secondary)
+    lo = {}
+    for k, s in pk.items():
+        Ak = A_of(s)
+        M, R, _ = predict_folds(Ak, s, loyo_folds(Ak))
+        lo[k] = compose(Ak["W_close"], np.nan_to_num(M, nan=1 / 3), np.nan_to_num(R, nan=0.2), Ak["K"], Ak["draw_c"])
+    msk = (A["year"] >= 2021) & (A["year"] <= 2023) & A["hasM"] & (A["y"] >= 0)
+    tabl, _, _ = score_table(A, msk, lo, "S2 (cycle-1 cells)", B=args.boot)
+    res["cv_tables"]["LOYO 2021-2023 | W_close | fights with method props"] = tabl
+    # --- final parameters for the 2024-25 look and for production-before-2024: fit on 2021-2023
+    tr = (A["year"] >= 2021) & (A["year"] <= 2023)
+    res["params_fit_2021_2023"] = best.fit(A, tr)
+    # corner symmetry of the chosen pool: swapping A and B mirrors the joint exactly
+    rows = tr & A["hasM"]
+    M, R = best.predict(A, rows, res["params_fit_2021_2023"])
+    P = compose(A["W_close"][rows], M, R, A["K"][rows], A["draw_c"])
+    Ms, Rs = M[:, ::-1], R[:, ::-1]
+    Ps = compose(1 - A["W_close"][rows], Ms, Rs, A["K"][rows], A["draw_c"])
+    res["corner_swap_max_abs"] = float(np.max(np.abs(mirror(Ps) - P)))
+    assert res["corner_swap_max_abs"] < 1e-12
+    json.dump(res, open(os.path.join(CACHE, "cv.json"), "w"), indent=1, default=float)
+    log("cv: written out/props_cache/cv.json (%.0f s)" % (time.time() - t0))
+
+
+def joints_cache(A, spec, folds, wname):
+    import numpy as np
+    M, R, _ = predict_folds(A, spec, folds)
+    return compose(A[wname], np.nan_to_num(M, nan=1 / 3), np.nan_to_num(R, nan=0.2), A["K"], A["draw_c"])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=sorted(STAGES) + ["all"])
