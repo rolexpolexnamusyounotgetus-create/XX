@@ -1349,6 +1349,9 @@ def parse_weighins(card, paras, event):
             weights = [(m.start(), wnum(m.group(1))) for m in W_RE.finditer(k)]
             overs = [(m.start(), wnum(m.group(1))) for m in OVER_RE.finditer(k)] + \
                     [(m.start(), wnum(m.group(1))) for m in BY_RE.finditer(k)]
+            if re.search(r"(?:weight|limit)\s*:", k):     # "missed weight: Scott Jorgensen (128 lb), ..."
+                weights += [(m.start(), wnum(m.group(1))) for m in
+                            re.finditer(r"\((\d{3}(?:\.\d+)?)\s*(?:lbs?|pounds?)\.?\)", k)]
             weights = [(p, w) for p, w in weights if w and 100 <= w <= 300]
             overs = [(p, o) for p, o in overs if o is not None and 0 < o < 30]
             respectively = "respectively" in k
@@ -1406,10 +1409,15 @@ def parse_weighins(card, paras, event):
                 if negated:
                     rec["negated"] = True
                 rec["explicit"] = rec["explicit"] or explicit
-                if omap.get(si) is not None and rec["lbs_over"] is None:
+                # the official weight is the last attempt: "would miss weight again on his second attempt, at 137"
+                later = bool(re.search(r"second attempt|second try|another attempt|re-?weigh", k)) and \
+                    not re.search(r"first attempt", k)
+                if omap.get(si) is not None and (rec["lbs_over"] is None or later):
                     rec["lbs_over"] = omap[si]
-                if wmap.get(si) is not None and rec["weighed"] is None:
+                if wmap.get(si) is not None and (rec["weighed"] is None or later):
                     rec["weighed"] = wmap[si]
+                    if later and omap.get(si) is None:
+                        rec["lbs_over"] = None    # measured again from the new scale weight
                 rec["text"].append(s[:300])
                 out[key] = rec
             prev_subj = subj_here

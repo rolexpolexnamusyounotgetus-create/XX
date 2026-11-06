@@ -734,7 +734,6 @@ function fixedPoint(x, o, D, K, sh, e) {
     }
     log("x = " + JSON.stringify(Object.fromEntries(Object.entries(x).map(([k, v]) => [k, +v.toPrecision(4)]))));
     tuneInfo.end = { obj: best.obj, llw: best.llw, ll7: best.ll7, pen: best.pen, dev: best.dev };
-    try { fs.writeFileSync(path.join(os.tmpdir(), "calibrate_x.json"), JSON.stringify(x)); } catch (e) { /* checkpoint only */ }
   } else {
     log("final-only: evaluating src/params3.js as is");
   }

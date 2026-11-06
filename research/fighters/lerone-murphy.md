@@ -1,12 +1,15 @@
 # Lerone Murphy ("The Miracle"): scouting dossier
 
-As of Nov 6, 2026. Stats come from `data/derived/fighters.json` and the round stats in `data/raw/` (ufcstats snapshot through Oct 31, 2026). Web search was used up for this pass, so status facts beyond the dataset are taken from other dossiers' cited links and were not re-opened.
+As of Nov 6, 2026. Stats come from `data/derived/fighters.json` and the round stats in `data/raw/` (ufcstats snapshot through Oct 31, 2026). Born Jul 22, 1991 in Manchester, England; trains at Apex Combat & Conditioning (ESPN). Pro record 17-1-1 (ESPN, UFCalendar, ufcrankings.org).
+
+> Research note: this file was first written without web access. On Nov 6, 2026 the status, ranking, record, injury and appearance were checked on the web (ESPN, UFCalendar, ufcrankings.org, MMA Mania, MMA Fighting, MiddleEasy, Wikipedia via its API, ESPN studio photos). ufc.com returned 403 to scripts.
 
 ## Current status
 
-- **Last fight:** majority-decision loss to Movsar Evloev (46-48, 46-48, 47-47), five-round main event, London, **Mar 21, 2026**. It was his first UFC loss.
-- **Ranking:** No. 3 at featherweight after UFC 333 (UFCalendar, Nov 3).
-- **Next fight:** no booking found in this pass. Since his last fight was 7.5 months ago, a booking may exist that this pass could not see. No injury reported. Age 35.
+- **Last fight:** majority-decision loss to Movsar Evloev (46-48, 46-48, 47-47), five-round main event, London, **Mar 21, 2026**. It was his first pro loss. Evloev lost a point in R4 for repeated groin strikes, and 12 of 17 media scorecards had it a draw (Wikipedia).
+- **Injury:** he said on Instagram that he **tore a hip flexor** in R4 of that fight (MMA Fighting, Mar 23; Sportsnet). No timeline was given and no later update was found.
+- **Ranking:** **No. 3** at featherweight on both the UFC media-panel board (Nov 3, 2026, per UFCalendar; ufcrankings.org, updated Nov 5, agrees) and the UFC/Meta algorithmic board (Oct 31, 2026; UFCalendar, MMA Mania).
+- **Next fight:** none booked (ESPN, UFCalendar on Nov 6), 7.5 months after his last fight. On Oct 26 he posted that all title contenders should need one more fight and that he had been told to beat a top-five opponent first (MiddleEasy). Aaron Pico (Oct 24-Nov 4) and Patricio Pitbull (Oct 26) have called him out. Age 35.
 
 ## Recent fights
 
@@ -34,6 +37,21 @@ He has absorbed 2 knockdowns in 11 UFC fights (Tukhugov 2019, Ige 2024) and has 
 
 UFC record 9-1-1: 3 KO, 6 decisions, a 2019 draw and the Evloev loss. Elo 1699, fourth among active featherweights. Decayed target split is 74/16/10 (landed 62/21/17); 87% of his landed strikes come at distance. For the sim, he wins the striking at range and can finish with spinning or clinch strikes, but a chain wrestler can take rounds from him on the mat.
 
+## Appearance (for the avatar)
+
+No likeness sheet exists yet. Checked against the ESPN headshot and right-stance cutout (files dated Mar 19, 2026) and the left-stance cutout (Aug 14, 2025):
+
+- **Hair:** black, short and curly on top with faded sides.
+- **Facial hair:** chin beard (goatee) with a thin moustache; cheeks clean or lightly stubbled.
+- **Skin:** medium-dark warm brown. That replaces the earlier recalled "dark".
+- **Tattoos:** black-and-grey, mostly on his left side. Several lines of cursive script on the left upper chest, partly legible as a quote about a dark night before a brighter day and God not giving you more than you can handle. Roses and a clock face on the left shoulder and upper arm. A lion-cub face on the left lower abdomen. Smaller pieces on both forearms. The script reads correctly, so the cutouts are not mirrored.
+- **Kit:** red shorts with white flash stripes in both studio cutouts. The corner colour wins in the sim.
+
+## Still unconfirmed
+
+- Whether the hip flexor has healed and whether it explains the gap since March.
+- The exact wording of the chest script.
+
 ## Sources
 
 - http://ufcstats.com/fighter-details/396fe87b84ac2e1c
@@ -44,3 +62,13 @@ UFC record 9-1-1: 3 KO, 6 decisions, a 2019 draw and the Evloev loss. Elo 1699, 
 - http://ufcstats.com/fight-details/17aa636aa98678d3 (Barboza)
 - http://ufcstats.com/fight-details/156f2425a937b22f (Amirkhani)
 - https://www.ufcalendar.com/rankings
+- https://ufcrankings.org/featherweight and https://mmamania.com/ufc-mma-rankings/483818/tom-nolan-boots-renato-moicano-top-10-latest-ufc-rankings-update-jacobe-smith-top-15 (rankings)
+- https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4576101 (Active, 17-1-1; read Nov 6, 2026)
+- https://www.ufcalendar.com/fighters/lerone-murphy (record, rank, no next fight; read Nov 6, 2026)
+- https://www.mmafighting.com/latest-news/478262/lerone-murphy-reveals-injury-he-suffered-against-movsar-evloev-at-ufc-london
+- https://www.sportsnet.ca/ufc/article/lerone-murphy-confirms-he-tore-hip-flexor-during-loss-to-movsar-evloev/ (headline)
+- https://middleeasy.com/mma-news/lerone-murphy-featherweight-title-contenders-top-five-win/
+- https://www.sherdog.com/news/news/Aaron-Pico-isnt-done-with-Lerone-Murphy-I-know-I-can-beat-him-203483 (headline)
+- https://heavy.com/sports/ufc/patricio-pitbull-calls-out-lerone-murphy/ (headline)
+- https://en.wikipedia.org/wiki/Lerone_Murphy (revision of Oct 25, 2026, via API)
+- Photos: https://a.espncdn.com/i/headshots/mma/players/full/4576101.png, https://a.espncdn.com/i/headshots/mma/players/stance/right/4576101.png, https://a.espncdn.com/i/headshots/mma/players/stance/left/4576101.png

@@ -1911,11 +1911,17 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
         J["heldout_2024_on"]["yearly_refit"] = yr_ref
     yrs = np.array(evJH["years"])
     J["heldout_2024_on"]["by_year"] = {}
+    ycls = np.array([actual_class(by_fid[f]) for f in evJH["fids"]])
+    obs108f = np.array([[card_n108(c, by_fid[f]["R"]) > 0 for c in by_fid[f]["cards"]] for f in evJH["fids"]])
     for y in sorted(set(yrs)):
         msk = yrs == y
         J["heldout_2024_on"]["by_year"][int(y)] = {
             "n": int(msk.sum()), "card_ll_league": float(evL["card_ll"][msk].mean()),
-            "card_ll_judges_home": float(evJH["card_ll"][msk].mean())}
+            "card_ll_judges_home": float(evJH["card_ll"][msk].mean()),
+            "pred_split_judges_home": float((1 - evJH["probs"][msk, 0] - evJH["probs"][msk, 6]).mean()),
+            "pred_split_league": float((1 - evL["probs"][msk, 0] - evL["probs"][msk, 6]).mean()),
+            "obs_split": float((~np.isin(ycls[msk], [0, 6])).mean()),
+            "pred_card108": float(evJH["any108"][msk].mean()), "obs_card108": float(obs108f[msk].mean())}
     # ---- final fit: league params and judge table
     th = final_fit["th"]
     J["tau"] = final_fit["tau"]
