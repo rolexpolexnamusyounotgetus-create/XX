@@ -250,7 +250,14 @@ def metrics(p, y):
     if len(p) == 0:
         return {"n": 0}
     return {"n": int(len(p)), "log_loss": float(ll_vec(p, y).mean()), "brier": float(((p - y) ** 2).mean()),
-            "accuracy": float(((p > 0.5) == (y > 0.5)).mean() - 0.5 * (p == 0.5).mean())}
+            "accuracy": float(acc_vec(p, y).mean())}
+
+
+def acc_vec(p, y):
+    """Per-fight accuracy; an exact 0.5 prediction counts as half right whichever side won. (Review fix: the
+    earlier `mean(right) - 0.5 * mean(p == 0.5)` scored a tie -0.5 when A won; no run had exact ties, so no stored
+    number changes.)"""
+    return np.where(p == 0.5, 0.5, ((p > 0.5) == (y > 0.5)).astype(float))
 
 
 def score(D, P, idx):
@@ -318,7 +325,7 @@ def bootstrap(D, preds, idx, base=None, B_=2000, seed=7):
         p = P[idx]
         ll = ll_vec(p, y)
         br = (p - y) ** 2
-        ac = ((p > 0.5) == (y > 0.5)).astype(float)
+        ac = acc_vec(p, y)
         bl = ll_vec(preds[base][idx], y) if base else None
         stats = {"log_loss": [], "brier": [], "accuracy": [], "d_log_loss": []}
         for s in samples:
@@ -2774,7 +2781,135 @@ def review_whr(path=OUT_JSON, jobs=3):
                               if isinstance(v, dict)})
 
 
+# =====================================================================================================
+# adversarial review checks (python3 tools/ratings.py review_leak | review_oppufc), written to ratings.json["review"]
+#   review_leak  : for 3 cut days in 2024-2025 (first, middle, last test day), physically truncate the bout list after the
+#                  cut day (later bouts do not exist, so neither their results nor their existence can leak), flip every
+#                  result ON the cut day (winner, cards, round stats swapped), rebuild everything and rerun the 11 rating
+#                  systems with their stored parameters; every pre-fight p on days <= cut must equal the full-data run.
+#                  Also the dims Kalman pre-fight states. A difference on the cut day = same-day leakage.
+#   review_oppufc: pre-UFC opp_ufc_w counts wins over opponents with UFC experience, but only opponents whose Sherdog page
+#                  was crawled; pre-2015 UFC debutants were crawled only if still on the 2026 roster or in a 0-3-prior UFC
+#                  bout from 2015 on (later than many predicted bouts: survivor look-ahead). Recount with only 2015+
+#                  debutant opponents (complete crawl) and rerun with stored parameters (no re-tuning); "all" recount =
+#                  the same recount over every era, a control for recount noise.
+# =====================================================================================================
+def review_leak(path=OUT_JSON, systems=None):
+    J = json.load(open(path))
+    systems = systems or REVIEW_SYS
+    D = load_data()
+    prepare(D, log=lambda *a: None)
+    ev_full = np.r_[D.bt_idx, D.idx_vault]
+    base = {k: run_system(D, J["systems"][k]["kind"], dict(J["systems"][k]["params"]), eval_idx=ev_full)[0]
+            for k in systems}
+    dpre0 = run_dims(D, J["systems"]["dims"]["dim_params"], record=True)[0]
+    days = sorted(set(D.day[D.idx_test]))
+    cuts = [days[0], days[len(days) // 2], days[-1]]
+    global BACKTEST
+    orig_parse, orig_bt = B.parse_fights, BACKTEST
+    BT = json.load(open(orig_bt))
+    import tempfile
+    tmpd = tempfile.mkdtemp(prefix="ratings_leak_")
+    out = {"what": "truncate after the cut day + flip every result on it; compare pre-fight p on days <= cut with "
+                   "the full-data run (stored parameters)", "systems": systems, "cuts": []}
+    try:
+        for d0 in cuts:
+            iso = dt.date.fromordinal(int(d0)).isoformat()
+            B.parse_fights = (lambda log, _d0=d0: (lambda r: ([f for f in r[0] if f.day <= _d0], r[1]))(orig_parse(log)))
+            BACKTEST = os.path.join(tmpd, "backtest_trunc.json")
+            json.dump({"meta": BT["meta"], "fights": [e for e in BT["fights"] if e["date"] <= iso]}, open(BACKTEST, "w"))
+            Dt = load_data()
+            on = np.where(Dt.day == d0)[0]
+            for i in on:
+                Dt.winner[i] = {"A": "B", "B": "A"}.get(Dt.winner[i], Dt.winner[i])
+                Dt.y[i] = np.nan if np.isnan(Dt.y[i]) else 1.0 - Dt.y[i]
+                if Dt.rounds[i]:
+                    Dt.rounds[i] = {k: [v[1], v[0]] for k, v in Dt.rounds[i].items()}
+                if Dt.cards[i]:
+                    Dt.cards[i] = [[b, a] for a, b in Dt.cards[i]]
+            prepare(Dt, log=lambda *a: None)
+            ev = Dt.bt_idx
+            full = np.array([D.fidx[Dt.fid[i]] for i in ev])
+            oncut = Dt.day[ev] == d0
+            row = {"cut_day": iso, "n_bouts_kept": int(Dt.n), "n_bouts_flipped": int(len(on)),
+                   "n_compared_on_cut_day": int(oncut.sum()), "n_compared_before": int((~oncut).sum()),
+                   "max_abs_diff_on_cut_day": {}, "max_abs_diff_before": {}}
+            for k in systems:
+                q = run_system(Dt, J["systems"][k]["kind"], dict(J["systems"][k]["params"]), eval_idx=ev)[0]
+                d = np.abs(q[ev] - base[k][full])
+                row["max_abs_diff_on_cut_day"][k] = float(d[oncut].max())
+                row["max_abs_diff_before"][k] = float(d[~oncut].max())
+            dpt = run_dims(Dt, J["systems"]["dims"]["dim_params"], record=True)[0]
+            allf = np.array([D.fidx[f] for f in Dt.fid])
+            row["dims_state_max_abs_diff"] = float(np.abs(np.nan_to_num(dpt) - np.nan_to_num(dpre0[allf])).max())
+            out["cuts"].append(row)
+            print("  leak check %s: max |diff| on cut day %.2e, before %.2e, dims %.2e" % (
+                iso, max(row["max_abs_diff_on_cut_day"].values()), max(row["max_abs_diff_before"].values()),
+                row["dims_state_max_abs_diff"]), flush=True)
+    finally:
+        B.parse_fights, BACKTEST = orig_parse, orig_bt
+    _save_review(path, "reviewer_truncation_leak_test", out)
+    return out
+
+
+def review_oppufc(path=OUT_JSON, systems=("elo_full", "glicko2", "trueskill_mov", "whr_rounds"), mode="new"):
+    import re
+    J = json.load(open(path))
+    PJ = json.load(open(PREUFC))
+    ci = {c: k for k, c in enumerate(PJ["meta"]["snapshot_columns"])}
+    first = {}
+    for s, v in PJ["fighters"].items():
+        m = re.search(r"-(\d+)$", ((v.get("sherdog") or {}).get("url") or "").rstrip("/"))
+        if m and v.get("snapshots"):
+            first[int(m.group(1))] = v["snapshots"][0][ci["date"]]
+    lo = "2015-01-01" if mode == "new" else "0000"
+    D = load_data()
+    prepare(D, log=lambda *a: None)
+    slug2p = {s: k for k, s in enumerate(D.slug)}
+    K = PRE_KEYS.index("pre_oppufc")
+    changed = 0
+    for s, v in PJ["fighters"].items():
+        p = slug2p.get(s)
+        for row in (v.get("snapshots") or []) if p is not None else []:
+            i = D.fidx.get(row[ci["fid"]])
+            if i is None:
+                continue
+            side = 0 if D.ia[i] == p else (1 if D.ib[i] == p else -1)
+            if side < 0 or D.pre[i, side, 0] != D.pre[i, side, 0]:
+                continue
+            d0 = row[ci["date"]]
+            n = sum(1 for r in v["fights"] if not r[7] and r[0] and r[0] < d0 and r[1] == "W" and r[5] in first
+                    and lo <= first[r[5]] < d0)
+            changed += int(abs(math.log1p(n) - D.pre[i, side, K]) > 1e-12)
+            D.pre[i, side, K] = math.log1p(n)
+    ev = np.r_[D.bt_idx, D.idx_vault]
+    it, ix = D.idx_tune, D.idx_test
+    rng = np.random.default_rng(9)
+    res = {"mode": mode, "what": "opp_ufc_w recounted over opponents whose first UFC bout is %s; stored parameters"
+                                 % ("on/after 2015-01-01 (complete crawl)" if mode == "new" else "any date (control)"),
+           "snapshots_changed": changed}
+    for k in systems:
+        P0 = np.full(D.n, np.nan)
+        for fid, e in J["predictions"].items():
+            P0[D.fidx[fid]] = e["p"][k]
+        q = run_system(D, J["systems"][k]["kind"], dict(J["systems"][k]["params"]), eval_idx=ev)[0]
+        r = {lab: {"stored": round(float(ll_vec(P0[idx], D.y[idx]).mean()), 5),
+                   "recount": round(float(ll_vec(q[idx], D.y[idx]).mean()), 5)}
+             for lab, idx in (("tune_2019_2023", it), ("test_2024_2025", ix))}
+        r["test_paired_recount_minus_stored"] = _paired(D, q, P0, ix, rng)
+        res[k] = r
+        print("  opp_ufc %s %s: %s" % (mode, k, r), flush=True)
+    _save_review(path, "reviewer_oppufc_%s" % mode, res)
+    return res
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "review_leak":
+        review_leak(OUT_JSON, sys.argv[2].split(",") if len(sys.argv) > 2 else None)
+        sys.exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] == "review_oppufc":
+        review_oppufc(OUT_JSON, mode=sys.argv[2] if len(sys.argv) > 2 else "new")
+        sys.exit(0)
     if len(sys.argv) > 1 and sys.argv[1] == "review":
         review(OUT_JSON, tuple(sys.argv[2].split(",")) if len(sys.argv) > 2 else ("describe", "ablation", "verify"))
         sys.exit(0)
