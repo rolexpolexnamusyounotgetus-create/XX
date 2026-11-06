@@ -1511,17 +1511,20 @@ def fit_lr_nonneg(X, y, l2):
     return r.x
 
 
-def cv_lr(D, X, l2, idx, nonneg=False):
-    """Expanding-window CV by year inside idx (2019-2023): train on years < y, predict year y, y = 2020..2023.
-    Returns pooled out-of-fold log loss."""
+def cv_lr(D, X, l2, idx, nonneg=False, X_extra=None, y_extra=None, years=range(2020, 2024)):
+    """Expanding-window CV by year inside idx (2019-2023): train on years < y (plus optional always-earlier rows
+    X_extra / y_extra, e.g. 2008-2018), predict year y. Returns pooled out-of-fold log loss and the OOF vector."""
     yrs = D.year[idx]
     y = D.y[idx]
     oof = np.full(len(idx), np.nan)
-    for yr in range(2020, 2024):
+    for yr in years:
         tr, va = yrs < yr, yrs == yr
-        if tr.sum() < 50 or va.sum() == 0:
+        Xt, yt = X[tr], y[tr]
+        if X_extra is not None:
+            Xt, yt = np.vstack([X_extra, Xt]), np.concatenate([y_extra, yt])
+        if len(yt) < 50 or va.sum() == 0:
             continue
-        b = fit_lr_nonneg(X[tr], y[tr], l2) if nonneg else fit_lr(X[tr], y[tr], l2)
+        b = fit_lr_nonneg(Xt, yt, l2) if nonneg else fit_lr(Xt, yt, l2)
         oof[va] = expit(X[va] @ b)
     m = ~np.isnan(oof)
     return float(ll_vec(oof[m], y[m]).mean()), oof
@@ -1568,7 +1571,7 @@ def specs(quick):
               ("ay", [25.0, 27.0, 29.0, 31.0]), ("ao", [29.0, 31.0, 33.0, 35.0]),
               ("dl", [0.0, 0.03, 0.06, 0.1, 0.15]), ("nl", [2.0, 4.0, 8.0]), ("lay", [0.0, 0.05, 0.1, 0.2]),
               ("kappa", [0.8, 0.9, 1.0, 1.1, 1.2])]
-    pre = [("pre_net", [0.0, 0.1, 0.2, 0.35, 0.5]), ("pre_wp", [-0.5, 0.0, 0.5, 1.0, 2.0]),
+    pre = [("pre_net", [0.0, 0.1, 0.2, 0.35, 0.5]), ("pre_wp", [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
            ("pre_n", [-0.1, 0.0, 0.1, 0.2]), ("pre_dwcs", [-0.1, 0.0, 0.1, 0.2]), ("pre_grad", [0.0, 0.03, 0.06, 0.1]),
            ("pre_oppufc", [0.0, 0.05, 0.1, 0.2]), ("pre_feed", [-0.05, 0.0, 0.03, 0.06, 0.1])]
     if PRE_ON:
@@ -1633,7 +1636,7 @@ def specs(quick):
               "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "pre_on": PRE_ON}, "from_shared": "elo_full", "coarse": True,
               "grid": whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2]), ("do", [0.01, 0.02, 0.04]),
                                   ("dl", [0.0, 0.05, 0.1]), ("mu_new", [-0.3, -0.15, 0.0])]
-              + ([("pre_net", [0.1, 0.2, 0.35, 0.5]), ("pre_wp", [0.0, 0.5, 1.0])] if PRE_ON else [])})
+              + ([("pre_net", [0.1, 0.2, 0.35, 0.5]), ("pre_wp", [2.0, 3.0, 4.0, 5.0])] if PRE_ON else [])})
     S.append({"name": "whr_mov", "kind": "whr", "family": "WHR",
               "label": "WHR with margin of victory (fractional / weighted outcomes by method)",
               "P": {"enc": "mov", "pre_on": PRE_ON}, "from": "whr", "from_mov": "elo_full", "coarse": True,
@@ -2032,19 +2035,22 @@ def main():
     Xa = Xd / asd
     feature_sets = {"log_adv": Xa, "rate_diff": Xr, "both": np.c_[Xa, Xr]}
     dims_oof, best_fs = None, None
+    ip = D.idx_pre               # 2008-2018 decisive bouts (both men with a prior UFC fight): always-earlier rows
     for fs, Xf in feature_sets.items():
         for l2 in (0.3, 1.0, 3.0, 10.0, 30.0, 100.0, 300.0):
-            cvll, oof = cv_lr(D, Xf[it], l2, it)
+            cvll, oof = cv_lr(D, Xf[it], l2, it, X_extra=Xf[ip], y_extra=D.y[ip], years=range(2019, 2024))
             cv_table["%s|%g" % (fs, l2)] = cvll
             if cvll < best_cv:
                 best_l2, best_cv, dims_oof, best_fs = l2, cvll, oof, fs
     Xd = feature_sets[best_fs]
-    bd = fit_lr(Xd[it], ytr, best_l2)
+    bd = fit_lr(np.vstack([Xd[ip], Xd[it]]), np.concatenate([D.y[ip], ytr]), best_l2)
     p_dims = expit(Xd @ bd)
-    preds["dims"] = p_dims
+    preds["dims"] = p_dims.copy()
+    preds["dims"][it] = dims_oof          # 2019-2023: out-of-fold (expanding window by year); 2024+: full fit
     fnames = {"log_adv": ["adv_" + d for d in DIMS], "rate_diff": ["rate_" + d for d in DIMS],
               "both": ["adv_" + d for d in DIMS] + ["rate_" + d for d in DIMS]}[best_fs]
-    log("dims winner model: features %s, CV(2020-23) log loss %.5f at l2=%g; standardized coefficients %s"
+    log("dims winner model: features %s, CV(2019-23, trained on 2008+ earlier years) log loss %.5f at l2=%g; "
+        "standardized coefficients %s"
         % (best_fs, best_cv, best_l2, dict(zip(fnames, np.round(bd, 3)))))
     scale = {"adv_" + d: float(asd[j]) for j, d in enumerate(DIMS)}
     scale.update({"rate_" + d: float(rsd[j]) for j, d in enumerate(DIMS)})
@@ -2052,7 +2058,8 @@ def main():
                   "coef_standardized": dict(zip(fnames, [float(b) for b in bd])),
                   "feature_sd_2019_2023": {k: scale[k] for k in fnames},
                   "coef": {k: float(b) / scale[k] for k, b in zip(fnames, bd)}}
-    tune_res["dims"] = {"tune": score(D, p_dims, it), "cv": best_cv}
+    tune_res["dims"] = {"tune": score(D, preds["dims"], it), "cv": best_cv,
+                        "tune_in_sample": score(D, p_dims, it)}
 
     # ------------------------------------------------------------------ stacking (time-ordered CV, 2019-2023)
     singles = [s["name"] for s in S if s["name"] != "elo_ref"] + ["dims"]
@@ -2076,6 +2083,9 @@ def main():
     Xs = np.c_[[Z[c] for c in chosen]].T
     bs = fit_lr_nonneg(Xs[it], ytr, 1.0)
     preds["stack"] = expit(Xs @ bs)
+    _, stack_oof = cv_lr(D, Xs[it], 1.0, it, nonneg=True)
+    stack_in = preds["stack"][it].copy()
+    preds["stack"][it] = np.where(np.isnan(stack_oof), stack_in, stack_oof)   # 2019: in-sample (no earlier fold)
     tune_res["stack"] = {"tune": score(D, preds["stack"], it), "cv": cur}
     log("stack: %s weights %s, CV(2020-23) log loss %.5f" % (chosen, np.round(bs, 3), cur))
 
@@ -2094,7 +2104,7 @@ def main():
     # expanding-window out-of-fold predictions for the dims model)
     m20 = D.year[it] >= 2020
     rank_score = {k: float(ll_vec(preds[k][it][m20], ytr[m20]).mean()) for k in names if k not in ("stack", "dims")}
-    okd = ~np.isnan(dims_oof)
+    okd = ~np.isnan(dims_oof) & m20
     rank_score["dims"] = float(ll_vec(dims_oof[okd], ytr[okd]).mean())
     singles_rank = sorted(rank_score, key=lambda k: rank_score[k])
     best = singles_rank[0]

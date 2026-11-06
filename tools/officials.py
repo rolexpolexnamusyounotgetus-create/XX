@@ -1126,12 +1126,14 @@ class Window:
         self.ncards = np.bincount(self.dz.J[starts].ravel(), minlength=self.dz.nJ + 1)[:self.dz.nJ]
         self.pre = {}
 
-    def fit(self, model, tau, init=None, init_jidx=None, eb_rounds=0):
+    def fit(self, model, tau, init=None, init_jidx=None, eb_rounds=0, warm=False):
         x0 = ravel(init_params(self.dz.nJ)) if init is None else remap(init, init_jidx or self.jidx, self.jidx)
         cfg = MODELS[model]
         log(f"fit {model} < {self.year_end}: {self.dz.nF} fights, {self.dz.nJ} judges, tau "
             f"{ {k: round(v, 3) for k, v in tau.items()} }")
         key = "j" if cfg.get("judges", 1) else "l"
+        if key not in self.pre and warm:
+            self.pre[key] = make_precond(self.M, x0, cfg, tau)      # warm start: one build near the optimum
         if key not in self.pre:
             pre = make_precond(self.M, x0, cfg, tau)
             x, _ = fit_model(self.dz, cfg, tau, flat_init=x0, model=self.M, precond=pre, maxiter=120)
@@ -1197,16 +1199,27 @@ def evaluate(fit, rows, nat, years, nsim=8000, seed=7):
 
 
 def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home", "judges", "judges_home"),
-             tau_mults=(1.0,), years_eval=None):
+             tau_mults=(1.0,), years_eval=None, init_tag=None):
     """One walk-forward fold: fit every model on decisions before test_year, evaluate on years_eval.
     Judge-effect variances: empirical Bayes on the training window, times each multiplier in tau_mults."""
     import pickle
     CACHE.mkdir(parents=True, exist_ok=True)
     years_eval = years_eval or [test_year]
     W = Window(rows, nat, test_year)
-    base = W.fit("league", TAU_DEFAULT)
+    old = None
+    if init_tag and (CACHE / f"fold_{init_tag}.pkl").exists():
+        old = pickle.load(open(CACHE / f"fold_{init_tag}.pkl", "rb"))["models"]
+        log(f"warm start from fold_{init_tag}.pkl ({sorted(old)})")
+    if old and "league" in old:
+        base = W.fit("league", TAU_DEFAULT, init=old["league"]["x"], init_jidx=old["league"]["jidx"], warm=True)
+    else:
+        base = W.fit("league", TAU_DEFAULT)
     fits = {"league": base}
-    jh = W.fit("judges_home", TAU_DEFAULT, init=base["x"], eb_rounds=1)
+    if old and "judges_home" in old:
+        jh = W.fit("judges_home", TAU_DEFAULT, init=old["judges_home"]["x"], init_jidx=old["judges_home"]["jidx"],
+                   eb_rounds=1, warm=True)
+    else:
+        jh = W.fit("judges_home", TAU_DEFAULT, init=base["x"], eb_rounds=1)
     tau_eb = jh["tau"]
     for m in ("indep", "league_home"):
         if m in models:
@@ -2224,7 +2237,7 @@ if __name__ == "__main__":
         F, S, D, rows, nat, info, notes, data_max = load_all()
         ev = [int(y) for y in args.eval_years.split(",")] if args.eval_years else None
         run_fold(rows, nat, args.test_year, args.tag or str(args.test_year), models=tuple(args.models.split(",")),
-                 tau_mults=tuple(float(m) for m in args.tau_mults.split(",")), years_eval=ev)
+                 tau_mults=tuple(float(m) for m in args.tau_mults.split(",")), years_eval=ev, init_tag=args.init_tag)
     elif args.stage == "structure":
         F, S, D, rows, nat, info, notes, data_max = load_all()
         ev = [int(y) for y in args.eval_years.split(",")]

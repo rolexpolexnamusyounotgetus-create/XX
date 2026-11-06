@@ -1051,6 +1051,116 @@ def comb_fit(ev, name, terms):
             "c0": rnd(bta[0], 4), "dispersion": rnd(phi, 3)}
 
 
+# ------------------------------------------------------------------ engine-level check (Monte Carlo, engine v3)
+def _bucket7(res):
+    w, m = res["winner"], res["method"]
+    if w not in ("A", "B"):
+        return 3 if m == "DRAW" else None
+    kind = 0 if m in ("KO", "DOC") else (1 if m == "SUB" else (2 if m in ("UD", "SD", "MD") else None))
+    if kind is None:
+        return None
+    return kind if w == "A" else 6 - kind
+
+
+def engine_eval(args):
+    """Simulate every pre-vault backtest fight with engine v3, plain vs with this tool's snapshot factors (same
+    seeds), and score winner / 7-bin / finish log loss by period. Folds the result into args.out."""
+    out = json.load(open(args.out))
+    snaps = out["snapshots"]
+    bt = json.load(open(os.path.join(OUT, "backtest.json")))
+    keys = bt["meta"]["keys"]
+    scratch = args.engine_dir or os.path.join(ROOT, "out", "oppadj_engine")
+    os.makedirs(scratch, exist_ok=True)
+    periods = {"tune_2019_2023": (TUNE[0], "2024-01-01", args.engine_sims_tune),
+               "test_2024_2025": (TEST_FROM, VAULT_FROM, args.engine_sims_test)}
+    strip = ("pace3", "pace3_w", "kd_absorbed")
+    res_all = {}
+    for per, (lo, hi, N) in periods.items():
+        fights = []
+        for e in bt["fights"]:
+            if not (lo <= e["date"] < hi) or e["id"] not in snaps:
+                continue
+            f = {k: e[k] for k in ("id", "date", "division", "rounds", "title") if k in e}
+            f["prior_division"] = e.get("prior_division")
+            for t in ("A", "B"):
+                sd = {k: v for k, v in e[t].items() if k not in strip}
+                sd["oppadj"] = snaps[e["id"]][t]
+                f[t] = sd
+            fights.append(f)
+        inp = os.path.join(scratch, "in_%s.json" % per)
+        with open(inp, "w") as fh:
+            json.dump({"keys": keys, "priors": bt["priors_asof"], "fights": fights}, fh)
+        t1 = time.time()
+        procs = []
+        for part in range(args.procs):
+            o_ = os.path.join(scratch, "out_%s_%d.json" % (per, part))
+            procs.append((o_, subprocess.Popen(["node", os.path.join(HERE, "oppadj_engine.js"), inp, o_, str(N),
+                                                str(part), str(args.procs)])))
+        rows = {}
+        for o_, pr in procs:
+            if pr.wait() != 0:
+                raise SystemExit("oppadj_engine.js failed")
+            rows.update(json.load(open(o_))["rows"])
+        print("engine check %s: %d fights x %d sims/orientation in %.0f s" % (per, len(rows), N, time.time() - t1))
+        eps = 0.5 / N
+        rec = []
+        ent = {e["id"]: e for e in bt["fights"]}
+        for fid, rr in rows.items():
+            e = ent[fid]
+            if "err" in rr.get("plain", {}) or "err" in rr.get("adj", {}):
+                continue
+            r = {"id": fid, "w": e["result"]["winner"], "b": _bucket7(e["result"]),
+                 "both_n": e["A"]["n"] > 0 and e["B"]["n"] > 0,
+                 "elo": 1 / (1 + 10 ** ((e["B"]["elo"] - e["A"]["elo"]) / 400))}
+            for k in ("plain", "adj"):
+                s_ = rr[k]
+                pa = s_["pA"] / max(1e-9, s_["pA"] + s_["pB"])
+                bins = np.array(s_["bins"]) * (1 - 7 * eps) + eps
+                r[k] = (pa, bins)
+            rec.append(r)
+
+        def score(sub):
+            dec = [x for x in sub if x["w"] in ("A", "B")]
+            b7 = [x for x in sub if x["b"] is not None]
+            o2 = {"n_decisive": len(dec), "n_bucketed": len(b7)}
+            yv = np.array([1.0 if x["w"] == "A" else 0.0 for x in dec])
+            lls = {}
+            for k in ("plain", "adj"):
+                pa = np.clip(np.array([x[k][0] for x in dec]), 1e-4, 1 - 1e-4)
+                ll = -(yv * np.log(pa) + (1 - yv) * np.log(1 - pa))
+                l7 = np.array([-math.log(x[k][1][x["b"]]) for x in b7])
+                fin = np.array([x[k][1][[0, 1, 5, 6]].sum() for x in b7])
+                yf = np.array([1.0 if x["b"] in (0, 1, 5, 6) else 0.0 for x in b7])
+                fin = np.clip(fin, 1e-4, 1 - 1e-4)
+                lf = -(yf * np.log(fin) + (1 - yf) * np.log(1 - fin))
+                lls[k] = (ll, l7, lf)
+                o2[k] = {"winner_log_loss": rnd(ll.mean(), 5), "brier": rnd(((pa - yv) ** 2).mean(), 5),
+                         "accuracy": rnd(((pa > 0.5) == (yv > 0.5)).mean(), 4),
+                         "outcome7_log_loss": rnd(l7.mean(), 5), "finish_log_loss": rnd(lf.mean(), 5),
+                         "mean_abs_logit_A": rnd(float(np.abs(np.log(pa / (1 - pa))).mean()), 4)}
+            pe = np.clip(np.array([x["elo"] for x in dec]), 1e-4, 1 - 1e-4)
+            o2["elo_winner_log_loss"] = rnd(float((-(yv * np.log(pe) + (1 - yv) * np.log(1 - pe))).mean()), 5)
+            for j, nm in enumerate(("winner_log_loss", "outcome7_log_loss", "finish_log_loss")):
+                m, lo_, hi_ = boot_ll(lls["adj"][j], lls["plain"][j], args.boot)
+                o2["adj_minus_plain_" + nm + "_95"] = [rnd(m, 5), rnd(lo_, 5), rnd(hi_, 5)]
+            return o2
+
+        res_all[per] = {"sims_per_orientation": N, "all": score(rec),
+                        "both_have_ufc_history": score([x for x in rec if x["both_n"]])}
+        a_ = res_all[per]["all"]
+        print("  %s winner ll plain %.4f adj %.4f  delta %s | 7-bin %.4f -> %.4f | elo %.4f"
+              % (per, a_["plain"]["winner_log_loss"], a_["adj"]["winner_log_loss"],
+                 a_["adj_minus_plain_winner_log_loss_95"], a_["plain"]["outcome7_log_loss"],
+                 a_["adj"]["outcome7_log_loss"], a_["elo_winner_log_loss"]))
+    res_all["note"] = ("engine v3 (src/engine3.js + src/params3.js as of the run) via tools/oppadj_engine.js; "
+                       "plain = engine raw shrunk rates; adj = the same rates times this file's snapshot factors; "
+                       "same seeds for both, both corner orders averaged; winner log loss on decisive fights, "
+                       "symmetric; 7-bin = [A KO, A SUB, A DEC, DRAW, B DEC, B SUB, B KO]; 2026+ never simulated")
+    out["results"]["engine_backtest"] = res_all
+    n = B.write_json(args.out, out)
+    print("updated %s (%s)" % (args.out, B.human(n)))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--procs", type=int, default=max(1, (os.cpu_count() or 2)))
@@ -1060,7 +1170,15 @@ def main():
     ap.add_argument("--out", default=os.path.join(OUT, "oppadj.json"))
     ap.add_argument("--cache", default="", help="pickle path for the grid results (written after the search)")
     ap.add_argument("--reuse", action="store_true", help="load the grid from --cache instead of searching")
+    ap.add_argument("--engine-eval", action="store_true",
+                    help="only run the engine v3 Monte Carlo check with the factors already in --out")
+    ap.add_argument("--engine-sims-test", type=int, default=1000)
+    ap.add_argument("--engine-sims-tune", type=int, default=300)
+    ap.add_argument("--engine-dir", default="", help="scratch directory for the engine check (default out/oppadj_engine)")
     args = ap.parse_args()
+    if args.engine_eval:
+        engine_eval(args)
+        return
     t0 = time.time()
     p = engine_params()
     D = Data(p)
