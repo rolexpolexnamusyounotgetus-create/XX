@@ -194,3 +194,25 @@ Findings from verified research that the next engine versions must use. Each lin
   closeness shape improve 7-class decision log loss -0.0120 [-0.0200, -0.0048] on 2024-25 (significant only
   there). NAMED-JUDGE EFFECTS DO NOT PREDICT (they make decision-winner log loss worse in all three windows):
   ship them OFF by default; keep shared judge noise and the home-abroad term.
+
+## v5 component verdicts so far (Nov 6, ~19:00 UTC)
+- durability: INCLUDE (verified). Flag on, engineWeight 0.5, absolute tracked league level, kdCal re-matched to
+  1.1640 on frozen v4; train: soft CE vs close -0.0008 [-0.0015, -0.0001], 7-bin -0.0072, method -0.0040; winner
+  n.s. Use the evalv wiring in scratchpad/components/durability_evalv_v4main.patch for validation.
+- blend_anchor: INCLUDE (verified, two bugs fixed, patch re-issued against v4 final 122c31a). FightEngine.predict
+  = blend P(win) + rescaled/pool method x round + intervals (kappa 1.65); anchor mode for shown fights; recalT = 1.
+  Train OOF vs simulator alone: winner -0.0229, soft CE -0.0191, 7-bin -0.0450, method -0.0122. Validation/vault
+  runs must pass a stacker fit on 2023 or earlier and walk-forward method/round cells, not production defaults.
+- officials: code behind the flag only, OFF in the prediction path (no metric improves; league model slightly
+  worse on decision outcome). Opt-in for showing real officials.
+- styles_sos: builder recommends include with SOS on from "wf", style blocks OFF on the learned-rate path
+  (they double-count), newcomer off until preufc verified; soft CE -0.0010 [-0.0018, -0.0001], stat lines -0.48%.
+  sosSource "oppadj" gives better stat lines (-0.8 to -3.3%) at +0.0011 soft CE; do not stack the two. Verifier
+  relaunched after the usage cap.
+- realism_sens: include as capability (sensitivity API + realism tool), prediction metrics null; verifier
+  relaunched.
+- dynamics: builder relaunched after the usage cap (use the corrected recipe).
+- preufc (built; verifier relaunched): seeded Elo for newcomers 0.6792 -> 0.6526 on 2024-25 newcomer bouts
+  (-0.0266 [-0.0404, -0.0147]); UFC-stat logistic + pre-UFC block -0.0122 [-0.0204, -0.0042]; adds nothing on
+  top of the closing line. Use seeded Elo in the blend, the faded pre-UFC block in ML models, and finish-odds
+  multipliers as simulator newcomer priors.
