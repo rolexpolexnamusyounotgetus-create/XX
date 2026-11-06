@@ -246,7 +246,9 @@
     "torso/measure-hips-circ-decr": 0.1
   },
   "morphs_if_available": {
-    "note": "Ear targets are not in assets/embed/mh-manifest.json. His ears stand out slightly; if added: ears/l-ear-rot-forward and ears/r-ear-rot-forward (or the manifest's protrusion target) about 0.15, no cauliflower shaping."
+    "note": "Ear targets are not in assets/embed/mh-manifest.json. His ears stand out slightly from the head; if ear targets are added: ears/l-ear-wing-incr and ears/r-ear-wing-incr about 0.15, no cauliflower shaping.",
+    "ears/l-ear-wing-incr": 0.15,
+    "ears/r-ear-wing-incr": 0.15
   },
   "morphs_unavailable": "No target for the barber-squared hairline, the skin fade or the right-side shaved part: do them in the scalp texture. Arm length: reach is 175 cm on a 163 cm frame, so lengthen the arm bones (about +4 percent over the default) rather than using proportions. macro/heightDownM 0.36 uses heightUpM = 2 * (1.626 - 1.785) / 0.875 = -0.364 from research/assets.md; it is an extrapolation below the measured builds, so measure the mesh and nudge until it reads 163 cm.",
   "render_hints": {
