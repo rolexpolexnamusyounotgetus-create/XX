@@ -72,7 +72,7 @@ PRED_DIR = os.path.join(ROOT, "data", "predictions")
 FETCH_DIR = os.path.join(ROOT, "out", "forward_results")
 GRECO = "https://raw.githubusercontent.com/Greco1899/scrape_ufc_stats/main/"
 ESPN = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=%s"
-UA = "Mozilla/5.0 (X11; Linux x86_64) forward-ledger/1.0"
+UA = "FightLabSim/1.0 (forward-ledger)"     # the project's fetch User-Agent (no browser string, no email)
 DEBUT_ELO = 1500.0                        # tools/build_db.py start rating
 TOOL = "tools/forward_ledger.py 1.1"
 # Forward model v4.1 (pre-registered in data/predictions/README.md): p_a = the first of these models-block entries that
