@@ -348,6 +348,7 @@ class MLLogistic(Model):
             T["X"].shape[1], self.lam, T["sha"], refit)
         mlj = ctx.json("ml.json")
         self._hist = {i: r["lr"] for i, r in mlj["fights"].items() if r.get("set") == "oof" and r.get("lr") is not None}
+        self.version += ", history ml.json built %s" % mlj["meta"]["built"]   # stacker caches follow the history rows
         self.coef = None
 
     def history(self):
@@ -387,6 +388,7 @@ class MLTrees(Model):
         mlj = ctx.json("ml.json")
         key = "gbm" if kind == "lgb" else "xgb"
         self._hist = {i: r[key] for i, r in mlj["fights"].items() if r.get("set") == "oof" and r.get(key) is not None}
+        self.version += ", history ml.json built %s" % mlj["meta"]["built"]
         self.m = None
 
     def history(self):
@@ -455,6 +457,7 @@ class FeatLR(Model):
             len(names), self.C, sha_files(os.path.join(ROOT, "out", "moe_cache", "prep.pkl")), refit)
         self._hist = {fid: float(p) for fid, d, p in zip(E["ids"], E["dates"], E["pred"]["feat_lr"])
                       if HIST_FROM <= d < WINDOW[0] and np.isfinite(p)}
+        self.version += ", history experts.pkl %s" % sha_files(os.path.join(ROOT, "out", "moe_cache", "experts.pkl"))
         self.m = None
 
     def history(self):
@@ -585,8 +588,9 @@ class MoEStack(Model):
         R = ctx.moe_rows()
         self.MO, self.Gall = R["MO"], R["G"]
         self.drops = self.MO.make_drops(self.names)[0]
-        self.version = "tools/moe.py %s %s cal=%s%s, experts %s" % (
-            self.method, json.dumps(self.hp, sort_keys=True), self.cal_kind,
+        self.version = "tools/moe.py %s %s%s cal=%s%s, experts %s" % (
+            self.method, json.dumps(self.hp, sort_keys=True),
+            (" fold-own gate scaling, gates %s" % self._gate_sha()) if self.method != "linear" else "", self.cal_kind,
             ((" on the last %d days" % cal_days) if cal_days else "") + (" split newcomer/other" if cal_newcomer else ""),
             "+".join("%s=%s" % (e, self.map[e]) if e != self.map[e] else e for e in self.names))
         self._fold_cache = {}
@@ -606,23 +610,38 @@ class MoEStack(Model):
         G = np.array([D[f] if f in D else np.full(len(self.MO.GATE_NAMES), np.nan) for f in fids], float)
         return L, M, G
 
-    def _gs(self, G):
-        Gn = np.where(np.isfinite(G), G, self.mu)
-        return np.hstack([np.ones((len(G), 1)), (Gn - self.mu) / self.sd])
+    def _gate_sha(self):
+        """Fingerprint of the gate matrix (experts.pkl rows + the preufc flag from preufc.json). Part of the gated
+        stackers' version, so their cached fits die when a gate input changes (verification fix: a preufc.json rebuild
+        left gated fits cached from an older gate column, 1e-3 off a fresh replay)."""
+        h = hashlib.sha256()
+        for f in sorted(self.Gall):
+            h.update(f.encode())
+            h.update(np.nan_to_num(np.asarray(self.Gall[f], float), nan=-999.0).round(10).tobytes())
+        return h.hexdigest()[:10]
+
+    def _gs(self, G, musd=None):
+        mu, sd = musd if musd is not None else (self.mu, self.sd)
+        Gn = np.where(np.isfinite(G), G, mu)
+        return np.hstack([np.ones((len(G), 1)), (Gn - mu) / sd])
+
+    def _musd(self, ids, P):
+        _, _, G = self._mats(ids, P)
+        return np.nanmean(G, 0), np.nanstd(G, 0) + 1e-9
 
     def _rows_before(self, cutoff, start=HIST_FROM):
         return [i for i in self.ctx.order if start <= self.ctx.date[i] < cutoff and self.ctx.y[i] is not None
                 and i in self.Gall]
 
-    def _fit_stacker(self, ids, P):
+    def _fit_stacker(self, ids, P, musd=None):
         L, M, G = self._mats(ids, P)
         y = np.array([self.ctx.y[i] for i in ids])
         yrs = np.array([int(self.ctx.date[i][:4]) for i in ids])
         ok = M.any(1)
         st = self.MO.Stacker(self.method, self.names, self.drops, self.hp)
-        return st.fit(L[ok], M[ok], self._gs(G[ok]), y[ok], yrs[ok])
+        return st.fit(L[ok], M[ok], self._gs(G[ok], musd), y[ok], yrs[ok])
 
-    def _logits(self, st, ids, P):
+    def _logits(self, st, ids, P, musd=None):
         """Stack logits under every availability pattern of this regime (as tools/moe.py's OOF folds)."""
         L, M, G = self._mats(ids, P)
         y = np.array([self.ctx.y[i] for i in ids])
@@ -636,7 +655,7 @@ class MoEStack(Model):
             ok = Md.any(1)
             if ok.sum():
                 try:
-                    zs.append(self._safe_logit(st, L[ok], Md[ok], self._gs(G[ok])))
+                    zs.append(self._safe_logit(st, L[ok], Md[ok], self._gs(G[ok], musd)))
                     ys.append(y[ok])
                     ds.append(dd[ok])
                     gs.append(gg[ok])
@@ -667,9 +686,7 @@ class MoEStack(Model):
 
     def fit(self, cutoff, P):
         ids = self._rows_before(cutoff)
-        _, _, G = self._mats(ids, P)
-        self.mu = np.nanmean(G, 0)
-        self.sd = np.nanstd(G, 0) + 1e-9
+        self.mu, self.sd = self._musd(ids, P)
         self.st = self._fit_stacker(ids, P)
         self.cal = self.MO.Calib("none").fit(None, None) if self.cal_kind == "none" else None
         if self.cal_kind != "none":
@@ -684,8 +701,14 @@ class MoEStack(Model):
                 key = (Y, end)
                 if key not in self._fold_cache:
                     if ("st", Y) not in self._fold_cache:
-                        self._fold_cache[("st", Y)] = self._fit_stacker(self._rows_before(start), P)
-                    self._fold_cache[key] = self._logits(self._fold_cache[("st", Y)], te, P)
+                        # verification fix: each fold stacker standardises the gates on its own training rows (it
+                        # used the current fit's mean/sd, which depended on which card first built the fold and
+                        # therefore on the fit cache; only the gated method reads the gates)
+                        tr = self._rows_before(start)
+                        musd = self._musd(tr, P)
+                        self._fold_cache[("st", Y)] = (self._fit_stacker(tr, P, musd), musd)
+                    st_y, musd_y = self._fold_cache[("st", Y)]
+                    self._fold_cache[key] = self._logits(st_y, te, P, musd_y)
                 z, yy, dd, g = self._fold_cache[key]
                 zs.append(z[dd >= lo])
                 ys.append(yy[dd >= lo])

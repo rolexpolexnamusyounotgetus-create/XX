@@ -1527,9 +1527,11 @@
         if (this.boneW(i, HEADB) < 0.5 || !lmB) continue;
         covB[i] = smooth(0.18, 0.9, lmB[i]);
       }
-      var lb = looks.beardShellLen;
-      this.addStrandShell("beard", covB, { grey: looks.beardGrey || 0, len: function () { return lb * 0.7; }, layers: lb > 0.012 ? 6 : 4, color: looks.beardColor, density: looks.beardDensity * 0.85,
-        dir: function (i, out) { return out.set(0, -0.45, 0.08); }, freq: 1500, thick: lb > 0.012 ? 0.55 : 0.5, gain: 1.05, farK: 0.45 });
+      // short beards: the painted beard carries the colour and texture; the shell only adds a thin, sparse
+      // layer of strands for the jaw silhouette (a full-length dense shell read as a speckled block)
+      var lb = looks.beardShellLen, longB = lb >= 0.015, sl = longB ? Math.min(lb, 0.022) * 0.7 : Math.min(lb, 0.0065) * 0.75;
+      this.addStrandShell("beard", covB, { grey: looks.beardGrey || 0, len: function () { return sl; }, layers: longB ? 6 : 3, color: looks.beardColor, density: looks.beardDensity * (longB ? 0.8 : 0.62),
+        dir: function (i, out) { return out.set(0, -0.45, 0.08); }, freq: longB ? 1700 : 2300, thick: 0.5, gain: 0.8, farK: 0.25 });
     }
     if (looks.hairMode === "shell" && X.maskHair && X.maskHair2 && looks.scalpCh >= 0 && looks.scalpCh < 4) {
       var ph = texPixels(looks.scalpCh < 3 ? X.maskHair : X.maskHair2), covH = new Float32Array(n), ch = looks.scalpCh % 3;
