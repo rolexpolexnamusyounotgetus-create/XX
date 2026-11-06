@@ -37,7 +37,7 @@ modest sample; **low** = an approximation that could be off for individual fight
 3. **Weight missers underperform (medium).** -0.31 [-0.56, -0.06] in training (won 42.6% vs 50.1%
    expected; 4 lb+ misses 34.5%); 2024-2025 too small to confirm (refit -0.21 [-0.76, +0.33], n = 55).
 4. **Home crowd matters outside the USA only (high).** +0.37 [+0.24, +0.51] with a full arena outside the
-   USA, replicated on 2024-2025 (+0.51 [+0.16, +0.86]); Brazil home side 64.2% vs 52.3% expected
+   USA in training, +0.51 [+0.16, +0.86] refit on 2024-2025; Brazil home side 64.2% vs 52.3% expected
    (2012-2019). Inside the USA the "home" American has drifted to 41.1% vs 50.0% expected in 2020-2023
    (training years, n = 282) and 37.1% vs 51.4% in 2024-2025 (n = 186): an Elo problem with international
    signings (Americans anywhere: -0.16 in 2012-2023, -0.41 in 2024-2025), not a crowd effect. The

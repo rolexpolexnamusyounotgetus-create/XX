@@ -272,6 +272,11 @@ versions/v<N>/ (engine3.js, params3.js and, from v4, ml/mlrates.js). Three chang
    - The engine uses the 2021-2023 10-8 threshold, the latest train era.
    - The engine's sharedSd is reduced by the residual variance of its hurt/power terms.
    - The fit and its checks are in data/derived/judgecal.json.
+4. **Train-only re-tune.** The mlcal search over 11 global scales (tools/mlcal_spec_engine4.json, learned rates on via
+   tools/mlcal_hooks/ml_oof_v4.js, `--no-val`) adopted nothing: no finalist beat the self-calibrated set on both train
+   windows. tools/v4_levels.js then matched four levels on 2019-2023 fights with the learned rates on: kdScale, the
+   KO conversion group, subConvScale and judge.t108. Targets: knockdowns per landed head strike, KO and submission
+   shares, and a 3.6% 10-8 share. Output in data/derived/v4_levels.json.
 
 **Standard evaluation (from v4 on).** `node tools/evalv.js --version v<N>` evaluates versions/v<N>/ on
 backtest_dev.json. Fights are symmetric (both corner orders averaged), use common random numbers and walk-forward

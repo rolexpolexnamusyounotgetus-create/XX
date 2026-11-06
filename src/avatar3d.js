@@ -164,10 +164,47 @@
     this.boneIndex = {};
     var self = this;
     man.bones.forEach(function (b, j) { self.boneIndex[b.name.replace(PRE, "")] = j; });
+    this.smoothShoulderWeights();
     this.proxyCache = {};
     this.clips = clips;
     this.mocap = null;
   }
+  /* The game rig's weights pinch the front of the shoulder when the arm comes forward into a guard (a
+     folded notch by the collarbone). Diffuse the clavicle / upper-arm / upper-chest weights over the
+     mesh a few times (per MakeHuman vertex, so UV seams stay closed), keep the top four, renormalise. */
+  Base.prototype.smoothShoulderWeights = function () {
+    var bi = this.boneIndex, J = this.joints, Wt = this.weights, mh = this.mh, idx = this.index, n = mh.length, N = this.N, i, k;
+    var zone = {}; ["LeftShoulder", "RightShoulder", "LeftArm", "RightArm", "Spine2", "Neck"].forEach(function (b) { if (bi[b] != null) zone[bi[b]] = 1; });
+    var nb = 52, Wm = new Float32Array(N * nb), cnt = new Uint8Array(N), inZone = new Uint8Array(N);
+    for (i = 0; i < n; i++) {
+      var m = mh[i]; if (cnt[m]) continue; cnt[m] = 1;
+      var z = 0; for (k = 0; k < 4; k++) { var j = J[i * 4 + k], w = Wt[i * 4 + k]; if (w > 0 && j < nb) { Wm[m * nb + j] += w; if (zone[j] && w > 0.08) z++; } }
+      var hasSh = (bi.LeftShoulder != null && Wm[m * nb + bi.LeftShoulder] > 0.04) || (bi.RightShoulder != null && Wm[m * nb + bi.RightShoulder] > 0.04);
+      inZone[m] = z >= 2 && hasSh ? 1 : 0;
+    }
+    // MakeHuman-vertex adjacency from the render triangles
+    var adj = []; for (i = 0; i < N; i++) adj.push(null);
+    function link(a, b) { if (!inZone[a]) return; (adj[a] || (adj[a] = [])).push(b); }
+    for (i = 0; i < idx.length; i += 3) { var a = mh[idx[i]], b = mh[idx[i + 1]], c = mh[idx[i + 2]]; link(a, b); link(a, c); link(b, a); link(b, c); link(c, a); link(c, b); }
+    var tmp = new Float32Array(N * nb);
+    for (var it = 0; it < 4; it++) {
+      tmp.set(Wm);
+      for (i = 0; i < N; i++) {
+        if (!inZone[i] || !adj[i]) continue;
+        var L = adj[i], o = i * nb;
+        for (k = 0; k < nb; k++) { var sum = 0; for (var q = 0; q < L.length; q++) sum += Wm[L[q] * nb + k]; tmp[o + k] = Wm[o + k] * 0.4 + 0.6 * sum / L.length; }
+      }
+      Wm.set(tmp);
+    }
+    for (i = 0; i < n; i++) {
+      var mm = mh[i]; if (!inZone[mm]) continue;
+      var o2 = mm * nb, best = [];
+      for (k = 0; k < nb; k++) if (Wm[o2 + k] > 1e-4) best.push([Wm[o2 + k], k]);
+      best.sort(function (x, y) { return y[0] - x[0]; }); best = best.slice(0, 4);
+      var tot = 0; best.forEach(function (bb) { tot += bb[0]; });
+      for (k = 0; k < 4; k++) { J[i * 4 + k] = best[k] ? best[k][1] : 0; Wt[i * 4 + k] = best[k] ? best[k][0] / tot : 0; }
+    }
+  };
   /* Extra targets (assets/embed/mh-shapes-x.bin.gz): same packed coding, own header. */
   Base.prototype.addShapes = function (bytes) {
     var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), hl = dv.getUint32(0, true);
