@@ -1334,6 +1334,140 @@ def stage_stack(args):
 STAGES["stack"] = stage_stack
 
 
+# ====================================================================== stage: method (methodround model S refit)
+METHOD_METRICS = ["joint", "method3", "bin7", "finish", "method_round", "winner", "method_given_winner", "ko_vs_sub"]
+
+
+def method_new_cols(MT, T2, F, tau, pm):
+    """New side-oriented columns for methodround's FX (X = A) and FY (X = B). The ML v2 logit is the LR's
+    annual-refit OOF prediction for 2012-2023 rows and the static (<= 2023) prediction for 2024-2025."""
+    pos = {f: i for i, f in enumerate(T2["fid"])}
+    ii = np.array([pos.get(f, -1) for f in MT["id"]])
+    have = ii >= 0
+    j = np.where(have, ii, 0)
+    yr = MT["year"].to_numpy()
+    z_oof = logit(F["preds"]["lr|oof"], 1e-6)
+    z_st = logit(F["preds"]["lr|static"], 1e-6)
+    zb_oof = logit(np.nan_to_num(F["preds"]["blend|oof"], nan=0.5), 1e-6)
+    zb_st = logit(F["preds"]["blend|static"], 1e-6)
+    z = np.where(yr >= 2024, z_st[j], z_oof[j])
+    zb = np.where(yr >= 2024, zb_st[j], zb_oof[j])
+    ok = have & ~np.isnan(z) & (yr >= 2012)
+    z = np.where(ok, z, 0.0)
+    zb = np.where(ok & ~np.isnan(zb), zb, z)
+    zw = np.where(have, logit(T2["r_whr_rounds"].to_numpy(float), 1e-3)[j], 0.0)
+    zm = np.where(have, np.nan_to_num(logit(T2["mr_p"].to_numpy(float), 1e-3))[j], 0.0)
+
+    def side(s):
+        n = T2["n" + s[0]].to_numpy(float)[j]
+        fade = T2[s + "pre_ok"].to_numpy(float)[j] * (np.exp(-n / tau) if tau else 1.0) * have
+        out = {}
+        for k in ("pre_ko", "pre_sub", "pre_kol", "pre_subl", "pre_fin", "pre_finl"):
+            v = T2[s + k].to_numpy(float)[j]
+            mu = np.nanmean(T2.loc[(T2["date"] < dt.date(2024, 1, 1)) & (T2[s + "pre_ok"] > 0), s + k])
+            out[k] = np.nan_to_num(v - mu) * fade
+        out["missed"] = np.nan_to_num(T2[s + "fw_missed"].to_numpy(float)[j]) * have
+        return out
+    A, Bs = side("A_"), side("B_")
+    FXn = {"n_z": z, "n_az": np.abs(z), "n_zw": zw, "n_azw": np.abs(zw), "n_zm": zm, "n_azm": np.abs(zm)}
+    FYn = {"n_z": -z, "n_az": np.abs(z), "n_zw": -zw, "n_azw": np.abs(zw), "n_zm": -zm, "n_azm": np.abs(zm)}
+    for k in ("pre_ko", "pre_sub", "pre_fin"):
+        FXn["x_" + k], FYn["x_" + k] = A[k], Bs[k]
+        FXn["y_" + k], FYn["y_" + k] = Bs[k], A[k]
+    for k in ("pre_kol", "pre_subl", "pre_finl"):
+        FXn["y_" + k], FYn["y_" + k] = Bs[k], A[k]
+        FXn["x_" + k], FYn["x_" + k] = A[k], Bs[k]
+    FXn["x_missed"], FYn["x_missed"] = A["missed"], Bs["missed"]
+    FXn["y_missed"], FYn["y_missed"] = Bs["missed"], A["missed"]
+    pwin = sig(zb)
+    return pd.DataFrame(FXn, index=MT.index), pd.DataFrame(FYn, index=MT.index), pwin, ok
+
+
+def stage_method(args):
+    import methodround as MR
+    S = load_table()
+    T2 = S["df"]
+    F = pickle.load(open(os.path.join(CACHE, "fit.pkl"), "rb"))
+    C = json.load(open(os.path.join(CACHE, "cv.json")))
+    D = MR.prepare(False)
+    T, FX, FY, y = D["T"], D["FX"], D["FY"], D["y"]
+    assert T["date"].max() < VAULT
+    chosen = jload("methodround.json")["meta"]["chosen"]
+    draw_c = chosen["draw_c"]
+    nX, nY, pwin, okz = method_new_cols(T, T2, F, C["lr"]["tau"], C["pre_means"])
+    FX2 = pd.concat([FX, nX], axis=1)
+    FY2 = pd.concat([FY, nY], axis=1)
+    stat = D["stat_cols"]
+    new = list(nX.columns)
+    yrs = T["year"].to_numpy()
+    vmask = np.isin(yrs, MR.VALID_YEARS)
+    # hazard (round shapes) per fold, methodround's chosen penalty; reused by every variant
+    H = np.zeros((len(T), MR.NC_))
+    for v in MR.VALID_YEARS + [2024]:
+        tr = ((T["year"] < v) & (T["year"] >= MR.HAZ_START)).to_numpy()
+        va = (T["year"] == v).to_numpy() if v < 2024 else (T["year"] >= 2024).to_numpy()
+        hz = MR.HazardModel(MR.HAZ_COLS, C=chosen["C_haz"], C_dec=MR.C_DEC).fit(T[tr], FX[tr], FY[tr], y[tr])
+        H[va] = hz.predict(T[va], FX[va], FY[va])
+    log("method: hazard fits done")
+
+    def run6(cols, C, start, fxx, fyy):
+        P6 = np.full((len(T), 6), np.nan)
+        for v in MR.VALID_YEARS + [2024]:
+            tr = ((T["year"] < v) & (T["year"] >= start)).to_numpy()
+            va = (T["year"] == v).to_numpy() if v < 2024 else (T["year"] >= 2024).to_numpy()
+            m = MR.C6Logit(cols, C=C, hl_years=MR.HL_YEARS).fit(T[tr], fxx[tr], fyy[tr], y[tr])
+            P6[va] = m.predict6(T[va], fxx[va], fyy[va])
+        return P6
+
+    variants = {}
+    variants["S"] = run6(stat, chosen["C6_S"], 2012, FX, FY)
+    cvres = {}
+    best = None
+    for Cc in (0.001, 0.002, 0.004):
+        P6 = run6(stat + new, Cc, 2012, FX2, FY2)
+        Pj = MR.joint_from_c6(P6, H, draw_c)
+        s_ = MR.summarize_losses(MR.losses_on(Pj[vmask], D, vmask))
+        cvres[str(Cc)] = {k: round(v, 5) for k, v in s_.items()}
+        log("  S2 C6=%g CV joint %.5f method3 %.5f bin7 %.5f" % (Cc, s_["joint"], s_["method3"], s_["bin7"]))
+        if best is None or s_["joint"] < best[0]:
+            best = (s_["joint"], Cc, P6)
+    variants["S2"] = best[2]
+    variants["S+ml2win"] = MR.reweight_winner(variants["S"], pwin)
+    variants["S2+ml2win"] = MR.reweight_winner(variants["S2"], pwin)
+    J = {k: MR.joint_from_c6(v, H, draw_c) for k, v in variants.items()}
+    out = {"chosen_C6_S2": best[1], "cv_grid_S2": cvres, "cv": {}, "test": {}, "paired_cv": {}, "paired_test": {}}
+    for k, P in J.items():
+        out["cv"][k] = {m: round(v, 5) for m, v in MR.summarize_losses(MR.losses_on(P[vmask], D, vmask)).items()}
+    test = (T["date"] >= dt.date(2024, 1, 1)).to_numpy() & (y >= 0)
+    L = {k: MR.losses_on(P[test], D, test) for k, P in J.items()}
+    Lcv = {k: MR.losses_on(P[vmask], D, vmask) for k, P in J.items()}
+    bt, st = MR.cluster_bootstrap(L, T["event"].to_numpy()[test], B=2000)
+    btc, stc = MR.cluster_bootstrap(Lcv, T["event"].to_numpy()[vmask], B=1000)
+    out["test"] = bt
+    for k in ("S2", "S+ml2win", "S2+ml2win"):
+        out["paired_test"][k + " - S"] = MR.paired_diff(L[k], L["S"], st, METHOD_METRICS)
+        out["paired_cv"][k + " - S"] = MR.paired_diff(Lcv[k], Lcv["S"], stc, METHOD_METRICS)
+    # selection rule: the variant with the lowest CV joint loss (2020-2023), if better than S by > 0.0005
+    cvj = {k: out["cv"][k]["joint"] for k in J}
+    pick = min(cvj, key=cvj.get)
+    out["chosen"] = pick if cvj[pick] < cvj["S"] - SEL_MIN else "S"
+    out["n_test"] = int(test.sum())
+    out["n_cv"] = int((vmask & (y >= 0)).sum())
+    for k in J:
+        log("  %-10s CV joint %.5f method3 %.5f bin7 %.5f | 2024-25 joint %.5f method3 %.5f bin7 %.5f winner %.5f"
+            % (k, out["cv"][k]["joint"], out["cv"][k]["method3"], out["cv"][k]["bin7"], bt[k]["joint"]["mean"],
+               bt[k]["method3"]["mean"], bt[k]["bin7"]["mean"], bt[k]["winner"]["mean"]))
+    for k, v in out["paired_test"].items():
+        log("  %s: %s" % (k, {m: (v[m]["diff"], v[m]["ci95"]) for m in ("joint", "method3", "bin7", "winner")}))
+    log("  chosen by CV: %s" % out["chosen"])
+    # per-fight 2024-25 cells of the chosen variant (A KO r1..R, ...) for the export
+    out["_pred_test"] = {T["id"].iloc[i]: J[out["chosen"]][i].round(5).tolist() for i in np.flatnonzero(test)}
+    json.dump(out, open(os.path.join(CACHE, "method.json"), "w"), default=float)
+
+
+STAGES["method"] = stage_method
+
+
 # ====================================================================== main
 
 

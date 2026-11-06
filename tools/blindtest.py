@@ -770,6 +770,13 @@ def _ml_lr_static(ctx):
                   version="ml.json built " + mlj["meta"]["built"])
 
 
+@register("ml_lr_annual", desc="tools/ml.py logistic refit each Jan 1 (ml.json 'lr_refit'): the annual-refit control")
+def _ml_lr_annual(ctx):
+    mlj = ctx.json("ml.json")
+    P = {i: (r.get("lr_refit") if r.get("set") == "test" else r.get("lr")) for i, r in mlj["fights"].items()}
+    return Stored(ctx.dev(P), history=ctx.dev(P), version="ml.json built " + mlj["meta"]["built"])
+
+
 @register("ml_lgb", refit="month", desc="tools/ml.py LightGBM, frozen hyper-parameters, refit before each month's first card")
 def _ml_lgb(ctx):
     return MLTrees(ctx, "lgb", refit=ctx.args.tree_refit)
@@ -995,6 +1002,7 @@ def replay(ctx, keys):
     fit_info = {k: None for k in order}
     leak = []
     events = []
+    secs = {k: 0.0 for k in order}
     by_date = {}
     for i in ctx.win_ids:
         by_date.setdefault(ctx.date[i], []).append(i)
@@ -1006,6 +1014,7 @@ def replay(ctx, keys):
         fset = set(fids)
         ev = {"date": d, "event": ctx.fights[fids[0]]["event"], "n": len(fids), "refit": []}
         for k in order:
+            t_k = time.time()
             m = models[k]
             sched = getattr(m, "refit", "never") or "never"
             new_fit = sched != "never" and due(sched, last_fit[k], d)
@@ -1046,9 +1055,11 @@ def replay(ctx, keys):
                 P[k][f] = float(v)
             for f, b in m.bins7(fids).items():
                 bins[k][f] = [float(x) for x in b]
+            secs[k] += time.time() - t_k
         events.append(ev)
         if (n_ev + 1) % 10 == 0 or n_ev == len(dates) - 1:
-            log("card %d/%d %s (%.0f s)" % (n_ev + 1, len(dates), d, time.time() - t_start))
+            log("card %d/%d %s (%.0f s; slowest: %s)" % (n_ev + 1, len(dates), d, time.time() - t_start, ", ".join(
+                "%s %.0fs" % kv for kv in sorted(secs.items(), key=lambda kv: -kv[1])[:4])))
             for c in caches.values():
                 c.save()
     for c in caches.values():
@@ -1064,7 +1075,7 @@ def replay(ctx, keys):
                           "experimental": spec["experimental"], "n_fits": len(fits[k]), "note": m.note,
                           "symmetric": m.symmetric, "n_history": len(P[k]) - len(rec[k]),
                           "symmetry_check": {"n": sym[k]["n"], "max_abs_p_plus_pswap_minus_1": float("%.3g" % sym[k]["max_abs"])} if sym[k]["n"] else None,
-                          "final_weights": w}
+                          "final_weights": w, "replay_cpu_wall_s": round(secs[k], 1)}
     return dict(replay_utc=replay_utc, seconds=round(time.time() - t_start), models=meta_models, skipped=skipped,
                 rec=rec, bins=bins, fits=fits, events=events, order=order)
 
