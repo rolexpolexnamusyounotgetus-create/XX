@@ -794,6 +794,14 @@ HP_CONFIGS = {
     "side_elo": {"side_elo": True},
 }
 HP_FOLDS = [2016, 2017, 2018]
+
+
+def cfg_of(name):
+    """A grid name, or a stage-2 combination 'a+b' (the overrides of a, then b)."""
+    out = {}
+    for part in name.split("+"):
+        out.update(HP_CONFIGS[part])
+    return out
 HP_SEEDS = [11, 12]
 
 
@@ -813,7 +821,7 @@ def stage_hpcv(args):
             for s in HP_SEEDS:
                 if "%s|%d|%d" % (nm, Y, s) in R.get("runs", {}):
                     continue
-                jobs.append({"kind": "es", "cfg": HP_CONFIGS[nm], "seed": s, "Y": Y, "pred_years": [Y],
+                jobs.append({"kind": "es", "cfg": cfg_of(nm), "seed": s, "Y": Y, "pred_years": [Y],
                              "name": nm})
     # es jobs train < Jan 1 (Y-1) and stop on Y-1; here the fold predicts Y with that model
     for j in jobs:
@@ -834,7 +842,8 @@ def stage_hpcv(args):
     run_pool(jobs, args.workers, save)
     # summary: seed-averaged logit per fold, scored on eval rows of the fold year
     summ = {}
-    for nm in HP_CONFIGS:
+    seen = sorted({k.split("|")[0] for k in R["runs"]}, key=lambda k: (k.count("+"), k))
+    for nm in seen:
         tot, nn_, per = 0.0, 0, {}
         okall = True
         for Y in HP_FOLDS:
@@ -877,7 +886,7 @@ def chosen_cfg():
     H = json.load(open(os.path.join(CACHE, "hpcv.json")))
     summ = H["summary"]
     best = min(summ, key=lambda k: summ[k]["cv_ll"])
-    ch = {"name": best, "cfg": dict(DEFAULT_CFG, **HP_CONFIGS[best]), "cv_ll": summ[best]["cv_ll"],
+    ch = {"name": best, "cfg": dict(DEFAULT_CFG, **cfg_of(best)), "cv_ll": summ[best]["cv_ll"],
           "all": {k: v["cv_ll"] for k, v in summ.items()}, "frozen": dt.datetime.utcnow().isoformat() + "Z"}
     json.dump(ch, open(path, "w"), indent=1)
     return ch
@@ -886,7 +895,7 @@ def chosen_cfg():
 def stage_walk(args):
     A = get_arrays()
     ch = chosen_cfg()
-    cfg = HP_CONFIGS[ch["name"]]
+    cfg = cfg_of(ch["name"])
     log("walk with config %s: %s" % (ch["name"], ch["cfg"]))
     path = os.path.join(CACHE, "walk.pkl")
     W = pickle.load(open(path, "rb")) if os.path.exists(path) else {"es": {}, "full": {}}
@@ -984,8 +993,8 @@ def stage_swaptest(args):
     corners of every example are swapped (history, side features, labels)."""
     torch = _torch()
     A = get_arrays()
-    cfg = dict(DEFAULT_CFG, **HP_CONFIGS[chosen_cfg()["name"]] if os.path.exists(os.path.join(CACHE, "hpcv.json"))
-               else {}, max_ep=2)
+    cfg = dict(DEFAULT_CFG, **(cfg_of(chosen_cfg()["name"]) if os.path.exists(os.path.join(CACHE, "hpcv.json"))
+                               else {}))
     r = fit_one(A, cfg, 5, day_of(2015), epochs=2)
     model = r["model"]
     prep = Prep(A, day_of(2015), cfg)
