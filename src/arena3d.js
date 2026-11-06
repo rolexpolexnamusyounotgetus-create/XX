@@ -789,9 +789,11 @@
   // equirect) the dark backdrop becomes a real venue dome, so skin, gloves and vinyl pick up varied, believable
   // reflections; the bowl's own materials keep tiny envMapIntensity values, so the stands stay dark.
   var ENV = { gain: 0.42, yaw: 0.12, fixtures: 0.8 };
-  function buildEnvironment(renderer, useRoom, sky) {
+  // pass one PMREMGenerator for every build: in r128 a generator's dispose() takes module-level resources the
+  // next generator needs, and a second fresh generator then prefilters to black
+  function buildEnvironment(renderer, useRoom, sky, pmShared) {
     if (!T.PMREMGenerator) return null;
-    var pm = new T.PMREMGenerator(renderer), tex = null, es = new T.Scene(), disposables = [];
+    var pm = pmShared || new T.PMREMGenerator(renderer), tex = null, es = new T.Scene(), disposables = [];
     function keep(o) { if (o.geometry) disposables.push(o.geometry); if (o.material) disposables.push(o.material); return o; }
     try {
       if (useRoom && T.RoomEnvironment) tex = pm.fromScene(new T.RoomEnvironment(), 0.04).texture;
@@ -818,7 +820,7 @@
         tex = rt.texture; tex._fightRT = rt;   // kept for dev checks (readRenderTargetPixels)
       }
     } catch (e) { tex = null; if (root.console) console.warn("[arena] environment build failed", e && e.message); }
-    pm.dispose();
+    if (!pmShared) pm.dispose();
     disposables.forEach(function (d) { d.dispose(); });
     return tex;
   }

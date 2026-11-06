@@ -1,6 +1,6 @@
 <title>Fight Lab</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Fight Lab: pick any two UFC fighters. A stacked blend of validated models sets the win odds, a method-and-round model says how it ends, and a data-driven simulator plays the fight in a 3D cage and tallies 20,000 more.">
+<meta name="description" content="Fight Lab: pick any two UFC fighters. Win chances combine seven models tested on fights they hadn't seen, a finish model says how it ends, and a simulator plays one fight in a 3D cage and tallies 20,000 more.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Big+Shoulders+Display:wght@700;800;900&display=swap">
@@ -633,11 +633,11 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
   <header class="mast">
     <div class="brandrow">
       <span class="brand"><span class="brand-mark" aria-hidden="true"></span>Fight Lab</span>
-      <span class="livepill"><i aria-hidden="true"></i>Engine v3</span>
+      <span class="asof" id="asOf">Model as of Nov 6, 2026</span>
       <p class="kicker" id="kicker">Lightweight · 5 × 5 min · title fight</p>
     </div>
     <h1 id="h1"><span class="hA" id="h1A">Volkanovski</span> <span class="vs">vs</span> <span class="hB" id="h1B">Gaethje</span></h1>
-    <p class="dek" id="dek">Pick any two UFC fighters. A blend of models tested on fights they never saw sets the odds. The simulator builds both men from their round-by-round UFC numbers, plays one fight in the cage, then runs twenty thousand more to show how it could go.</p>
+    <p class="dek" id="dek"><span class="dek-1">Pick any two UFC fighters to see who wins, how, and one simulated fight in the cage.</span><button type="button" class="dek-btn" id="btnDek" aria-expanded="false" aria-controls="dekMore">More</button><span class="dek-more" id="dekMore"> Win chances combine seven models, including the betting market when you enter odds; all were tested on fights they hadn't seen. The simulator builds both fighters from their round-by-round UFC numbers, plays one fight in the cage, then runs twenty thousand more to show how it could go.</span></p>
   </header>
 
   <section class="matchbar" aria-label="Choose the matchup">
@@ -647,7 +647,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
         <div class="combo">
           <input id="pickA" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="listA" autocomplete="off" spellcheck="false" placeholder="Search fighters" aria-describedby="metaA">
           <span class="caret" aria-hidden="true"></span>
-          <ul id="listA" class="combo-list" role="listbox" aria-label="Blue corner fighters" hidden></ul>
+          <ul id="listA" class="combo-list" role="listbox" aria-label="Blue corner fighters" tabindex="-1" hidden></ul>
         </div>
         <div class="cp-meta" id="metaA"></div>
       </div>
@@ -660,7 +660,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
         <div class="combo">
           <input id="pickB" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="listB" autocomplete="off" spellcheck="false" placeholder="Search fighters" aria-describedby="metaB">
           <span class="caret" aria-hidden="true"></span>
-          <ul id="listB" class="combo-list" role="listbox" aria-label="Red corner fighters" hidden></ul>
+          <ul id="listB" class="combo-list" role="listbox" aria-label="Red corner fighters" tabindex="-1" hidden></ul>
         </div>
         <div class="cp-meta" id="metaB"></div>
       </div>
@@ -673,7 +673,8 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
       <span class="mb-spacer"></span>
       <button type="button" class="linkbtn" id="btnLink">Copy link to this matchup</button>
     </div>
-    <p class="mb-note" id="mbSrc">Win chances: the stacked blend of models (see the model stack). The cage plays one simulated fight.</p>
+    <div class="linkfb" id="linkFb" hidden><label for="linkFbIn">Copying didn't work here. Add this to the end of the artifact link:</label><input id="linkFbIn" type="text" readonly></div>
+    <p class="mb-note" id="mbSrc">Win chances combine seven models (see The model stack below). The cage plays one simulated fight.</p>
     <p class="mb-note" id="mbNote" aria-live="polite"></p>
   </section>
 
@@ -686,7 +687,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
       </div>
       <div class="stage" id="stage">
         <canvas id="gl" role="img" aria-label="3D view of one simulated fight. The blue-corner fighter wears blue, the red-corner fighter red. The play-by-play beside the cage lists every key moment."></canvas>
-        <div class="ov poster" id="poster"><span>Fight Lab</span></div>
+        <div class="ov poster busy" id="poster"><span id="posterT">Building the fighters…</span></div>
         <span class="ov chip-ov" id="camLabel" hidden>Broadcast</span>
         <div class="ov replay-ov" id="replayOv" hidden><span class="rp-badge">Replay</span><button type="button" class="rp-skip" id="btnSkip">Skip</button></div>
         <div class="ov toast" id="toast" hidden></div>
@@ -722,6 +723,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
           <label class="dtog"><input type="checkbox" id="replayTog" checked> Replays</label>
           <label class="dtog" id="sndWrap" hidden><input type="checkbox" id="soundTog"> Sound</label>
         </div>
+        <p class="deck-note" id="deckNote">One simulated fight; winners follow the headline odds.</p>
       </div>
     </div>
 
@@ -783,8 +785,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
       <div class="sechead">
         <div><span class="eyebrow">Odds and finish</span><h2 id="tally-h">Who wins, and how</h2></div>
         <div class="sh-act">
-          <label class="tog2" title="Feed the learned stat-line model into the simulator's rates"><input type="checkbox" id="mlTog" checked> ML stat lines</label>
-          <button type="button" class="btn ghost" id="btnRun">Run again</button>
+          <button type="button" class="btn ghost" id="btnRun">Re-run 20,000 fights</button>
         </div>
       </div>
       <div style="display:grid;gap:6px">
@@ -819,22 +820,27 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
       <div class="tiles">
         <div class="tile"><span class="tl" id="tDistL">Goes the distance</span><span class="tv" id="tDist">–</span></div>
         <div class="tile"><span class="tl" id="tCardsL">Wins on the cards</span><span class="tv" id="tCards">–</span></div>
-        <div class="tile"><span class="tl">Split or majority, of decisions (simulator)</span><span class="tv" id="tSplit">–</span></div>
+        <div class="tile"><span class="tl" id="tKoL">Ends by KO or TKO</span><span class="tv" id="tKo">–</span></div>
       </div>
-      <div>
-        <h3 class="mini">How it ends, side by side</h3>
-        <div class="tbl-wrap"><table class="data" id="howTbl"></table></div>
-        <p class="small" id="howNote" style="margin-top:6px"></p>
-      </div>
-      <div>
-        <h3 class="mini">Simulator detail: method table</h3>
-        <div class="tbl-wrap"><table class="data" id="methodTbl"></table></div>
-        <p class="small" style="margin-top:6px">The simulator's finer methods, rescaled so its winner odds match the blend (its draw share and its mix of methods for each winner are kept).</p>
-      </div>
-      <div>
-        <h3 class="mini">Average simulated fight, per fighter</h3>
-        <div class="tbl-wrap"><table class="data" id="avgTbl"></table></div>
-      </div>
+      <details class="more sim" id="simDet">
+        <summary>Simulator detail: the 20,000 simulated fights</summary>
+        <div class="dbody">
+          <div>
+            <h3 class="mini">How it ends, side by side</h3>
+            <div class="tbl-wrap"><table class="data" id="howTbl"></table></div>
+            <p class="small" id="howNote" style="margin-top:6px"></p>
+          </div>
+          <div>
+            <h3 class="mini">Method table</h3>
+            <div class="tbl-wrap"><table class="data" id="methodTbl"></table></div>
+            <p class="small" id="methodNote" style="margin-top:6px">The simulator's finer methods, rescaled so its winner odds match the headline (its draw share and its mix of methods for each winner are kept).</p>
+          </div>
+          <div>
+            <h3 class="mini">Average simulated fight, per fighter</h3>
+            <div class="tbl-wrap"><table class="data" id="avgTbl"></table></div>
+          </div>
+        </div>
+      </details>
     </section>
 
     <section class="panel" aria-labelledby="knobs-h">
@@ -853,7 +859,11 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
       </div>
       <div class="sliders" id="kpanel" role="tabpanel" aria-labelledby="ktabA"></div>
       <div class="judgebox sliders" id="judgeKnob"></div>
-      <p class="note">Every knob multiplies what the data says, so 1.00 means no change. Each change reruns the tally; the next fight in the cage uses the new settings.</p>
+      <div class="mlknob">
+        <label class="tog2"><input type="checkbox" id="mlTog" checked> Simulator uses learned stat lines</label>
+        <p class="hint" id="mlTogHint">A model trained on 2010-2025 UFC fights predicts each fighter's strike, takedown and control rates against this opponent, and the simulator plays from those. Turn it off to play from the raw UFC numbers. This changes the simulator only, not the win odds at the top.</p>
+      </div>
+      <p class="note">Every knob multiplies what the data says, so 1.00 means no change; the small tick under each slider marks the data. Each change reruns the tally; the next fight in the cage uses the new settings.</p>
     </section>
   </div>
 
@@ -881,7 +891,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
 
   <section class="panel" aria-labelledby="stack-h">
     <div class="sechead"><div><span class="eyebrow">Who wins</span><h2 id="stack-h">The model stack</h2></div><span class="sub" id="stackSub"></span></div>
-    <p class="lede">Several models read the fight, each from different evidence: a betting-market rating, two learned models on fighters' records and stats, the simulator, two Elo ratings and, when you enter odds, the market line itself. The blend weighs them with weights learned on 2019-2023 fights and tested on 2024-25 fights it never saw. <b>The blend decides who wins; the simulator explains how.</b> On past fights the simulator added nothing to the blend's winner call, so it gets little or no weight here, and your knobs move the simulator far more than the headline.</p>
+    <p class="lede">Several models read the fight, each from different evidence: a rating built from past betting lines, two learned models on fighters' records and stats, the simulator, two Elo ratings and, when you enter odds, the betting line itself. They are combined with weights learned on 2019-2023 fights and tested on 2024-25 fights the weights never saw. <b>The combined pick decides who wins; the simulator explains how.</b> On past fights the simulator added nothing to the winner call, so it gets little or no weight here, and your knobs move the simulator far more than the headline.</p>
     <div class="stack-grid">
       <div class="xwrap">
         <div class="xrows" id="xrows" role="table" aria-label="Each model's chance for the blue corner, its weight and its push on the blend"></div>
@@ -910,13 +920,15 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
   </section>
 
   <section class="panel" aria-labelledby="fw-h">
-    <div class="sechead"><div><span class="eyebrow">Forward test</span><h2 id="fw-h">The next five cards</h2></div><span class="sub" id="fwSub"></span></div>
+    <div class="sechead"><div><span class="eyebrow">Forward test</span><h2 id="fw-h">The next cards</h2></div><span class="sub" id="fwSub"></span></div>
     <div id="fwBody"></div>
   </section>
 
   <section class="panel" aria-labelledby="research-h">
     <div class="sechead"><div><span class="eyebrow">As of Friday, Nov 6, 2026</span><h2 id="research-h">What the research says</h2></div></div>
     <p class="rnote" id="researchNote">This section covers the default matchup, Volkanovski vs Gaethje at lightweight. Scouting notes for other fighters appear in the tale of the tape.</p>
+    <details class="rdet" id="researchDet" open>
+    <summary id="researchSum">Research notes: Volkanovski vs Gaethje</summary>
     <div class="rgrid">
       <div class="rcard A">
         <span class="date">Oct 24, 2026 · UFC 333, Abu Dhabi</span>
@@ -958,13 +970,13 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
         <span class="date">League data, 2010 to Oct 2026</span>
         <h3>Age: both 38</h3>
         <p>Across UFC fights, the chance of being knocked down by a head strike rises about 4% a year after 30 and knockdown power falls about 3.6% a year. Fighters aged 38 to 40 won 36.9% of their fights and lost 25.5% by KO. They are six weeks apart in age, so it is a wash between them, but it raises the finish rate.</p>
-        <p class="src-l">Our analysis of the ufcstats snapshot (research/volkanovski.md, section 2)</p>
+        <p class="src-l">Our analysis of UFC results, 2010 to Oct 2026</p>
       </div>
       <div class="rcard">
         <span class="date">383 fights</span>
         <h3>Size: weak overall, noisy at the top</h3>
-        <p>Fighters moving up one class showed no measurable penalty once Elo is controlled for (+0.03 log-odds, standard error 0.10), and were knocked down at the same rate per head strike (ratio 1.02). Featherweight champions against elite lightweights went 4-8 where Elo expected 6.3 wins. So the engine keeps the size term small and leaves the rest to the 155-lb tax scenario.</p>
-        <p class="src-l">Our analysis of the ufcstats snapshot (research/matchup_market.md, section 7)</p>
+        <p>Fighters moving up one class showed no measurable penalty once Elo rating is taken into account (if anything they did under a point better, with about ±5 points of uncertainty), and were knocked down at the same rate per head strike. Featherweight champions against elite lightweights went 4-8 where Elo expected 6.3 wins. So the simulator keeps the size term small and leaves the rest to the 155-lb tax scenario.</p>
+        <p class="src-l">Our analysis of UFC weight-class moves, 2010 to Oct 2026</p>
       </div>
       <div class="rcard">
         <span class="date">Modeling literature</span>
@@ -973,15 +985,16 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
         <p class="src-l"><a href="https://agentmma.com/mma-lab/ufc-favorites-win-rate" target="_blank" rel="noopener">AgentMMA</a> · <a href="https://www.fightmatrix.com/2019/09/18/tuning-glicko-what-i-learned-confirmed/" target="_blank" rel="noopener">FightMatrix</a> · <a href="https://econpapers.repec.org/RePEc:eee:intfor:v:39:y:2023:i:2:p:623-640" target="_blank" rel="noopener">Holmes et al., IJF 2023</a></p>
       </div>
     </div>
+    </details>
   </section>
 
   <section class="panel" aria-labelledby="method-h">
     <div class="sechead"><div><span class="eyebrow">Under the hood</span><h2 id="method-h">How the engine works</h2></div></div>
     <div class="diagram" id="diagram"></div>
     <div class="mbody">
-      <p>Every fighter in the UFC stats snapshot (through Oct 31, 2026) gets a profile built from round-by-round numbers, weighted toward recent fights with a two-year half-life and pulled toward the division average in proportion to how little data there is. A fighter with 20 UFC minutes reads close to average; one with 300 reads close to his own record.</p>
-      <p>Each simulated fight runs as competing clocks, re-drawn after every event. At distance both men throw strikes at rates set by one's attempts and the other's attempts allowed, and each strike lands or misses on the log5 of attacker accuracy and defender defense, by target. Clinch entries, takedowns, ground passes, sweeps, stand-ups and submission attempts each have their own clocks, fitted so the pair's expected clinch and control time matches their records.</p>
-      <p>Clean head shots can knock a man down, with a chance built from the puncher's knockdown rate, the receiver's chin, age past 34, prior KO losses and moving up in weight. After a knockdown the attacker may follow him down; the referee can stop it or he can recover. Leg kicks slow a man, body shots drain the tank, and fatigue cuts output, accuracy and power. Three judges score each round with weights fit to real UFC scorecards, each with a personal taste and their own noise. Fight-night form varies every fight.</p>
+      <p>Every fighter in the UFC stats snapshot (through Oct 31, 2026) gets a profile built from round-by-round numbers, weighted toward recent fights with a two-year half-life and pulled toward the division average in proportion to how little data there is. A fighter with 20 UFC minutes reads close to average; one with 300 reads close to their own record.</p>
+      <p>Each simulated fight runs as competing clocks, re-drawn after every event. At distance both fighters throw strikes at rates set by one's attempts and the other's attempts allowed, and each strike lands or misses on a combination of the attacker's accuracy and the defender's defense, by target. Clinch entries, takedowns, ground passes, sweeps, stand-ups and submission attempts each have their own clocks, fitted so the pair's expected clinch and control time matches their records.</p>
+      <p>Clean head shots can knock a fighter down, with a chance built from the puncher's knockdown rate, how easily the other fighter is dropped, age past 34, prior KO losses and moving up in weight. After a knockdown the attacker may follow up on the ground; the referee can stop it or the downed fighter can recover. Leg kicks slow a fighter, body shots drain the tank, and fatigue cuts output, accuracy and power. Three judges score each round with weights fit to real UFC scorecards, each with a personal taste and their own noise. Fight-night form varies every fight.</p>
       <p>The global settings are tuned on UFC fights from 2019 to 2023 and reported on fights from 2024 on that the tuning never saw. The backtest panel above shows that report, and the forward-test panel lists the picks for the next cards.</p>
     </div>
   </section>
@@ -1007,11 +1020,13 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
-<script type="application/json" id="fighters-db">/*__FIGHTERS_JSON__*/</script>
+<script type="text/plain" id="fighters-gz">/*__FIGHTERS_GZ__*/</script>
+<script type="application/json" id="fighters-db"></script>
 <script type="application/json" id="calib-db">/*__CALIB_JSON__*/</script>
 <script type="application/json" id="scenarios-db">/*__SCENARIOS_JSON__*/</script>
 <script type="application/json" id="overrides-db">/*__OVERRIDES_JSON__*/</script>
-<script type="application/json" id="scouting-db">/*__SCOUTING_JSON__*/</script>
+<script type="text/plain" id="scouting-gz">/*__SCOUTING_GZ__*/</script>
+<script type="application/json" id="scouting-db"></script>
 <script type="application/json" id="moe-db">/*__MOE_JSON__*/</script>
 <script type="text/plain" id="mlrates-gz">/*__MLRATES_GZ__*/</script>
 <script type="text/plain" id="mlpage-gz">/*__MLPAGE_GZ__*/</script>

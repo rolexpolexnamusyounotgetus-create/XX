@@ -20,6 +20,10 @@
   var nf = new Intl.NumberFormat("en-US");
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   function pct(x, d) { return x == null || !isFinite(x) ? "–" : (100 * x).toFixed(d == null ? 1 : d) + "%"; }
+  // headline spots: whole percents; a draw (or any share) under 1% reads "<1%"
+  function pctW(x) { return x == null || !isFinite(x) ? "–" : (x > 0 && x < 0.005 ? "<1%" : Math.round(100 * x) + "%"); }
+  function pctD(x) { return x == null || !isFinite(x) ? "–" : (x > 0 && x < 0.01 ? "<1%" : Math.round(100 * x) + "%"); }
+  function pts(dp) { var v = Math.round(100 * dp); return (v > 0 ? "+" : (v < 0 ? "−" : "")) + Math.abs(v) + " pt" + (Math.abs(v) === 1 ? "" : "s"); }
   function fx(x, d) { return x == null || !isFinite(x) ? "–" : (+x).toFixed(d == null ? 2 : d); }
   function mmss(sec) { var s = Math.max(0, Math.round(sec)); var m = Math.floor(s / 60), r = s % 60; return m + ":" + (r < 10 ? "0" : "") + r; }
   function clockOf(t) { return mmss(Math.ceil(300 - t - 1e-9)); }
@@ -57,7 +61,11 @@
     return t.slice(i).join(" ");
   }
   function initials(name) { var t = String(name || "").trim().split(/\s+/); return ((t[0] || "?")[0] + (t.length > 1 ? lastName(name)[0] : "")).toUpperCase(); }
-  function norm(s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(); }
+  // letters NFD does not decompose (Polish l with stroke, Nordic o, ...) are folded first
+  var FOLD = { "ł": "l", "ø": "o", "đ": "d", "ð": "d", "ß": "ss", "æ": "ae", "œ": "oe", "þ": "th", "ı": "i", "ħ": "h" };
+  function norm(s) { return String(s || "").toLowerCase().replace(/[łøđðßæœþıħ]/g, function (c) { return FOLD[c]; }).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(); }
+  // the same with apostrophes, hyphens and spaces gone: "omalley" finds O'Malley, "duplessis" Du Plessis
+  function squash(s) { return norm(s).replace(/ /g, ""); }
   function slugify(s) { return norm(s).replace(/ /g, "-"); }
   function other(w) { return w === "A" ? "B" : "A"; }
   function readJSON(id, fallback) {
@@ -65,18 +73,70 @@
     try { var d = JSON.parse(n.textContent); return d == null ? fallback : d; } catch (e) { return fallback; }
   }
   function linkList(box, sources, max) {
-    var seen = {}, n = 0;
+    var seen = {}, used = {}, n = 0;
     (sources || []).forEach(function (s) {
       var url = typeof s === "string" ? s : s && s.url, label = typeof s === "string" ? null : s && s.label;
       if (!url && !label) return;
       var key = url || label; if (seen[key] || (max && n >= max)) return; seen[key] = 1; n++;
       if (url && /^https?:\/\//.test(url)) {
-        var a = el("a", null, label || hostOf(url)); a.href = url; a.target = "_blank"; a.rel = "noopener"; box.appendChild(a);
+        // link text names the outlet and the date or headline, so a list of links reads unambiguously
+        var t = label || srcLabel(url), base = t, k = 2;
+        while (used[t]) t = base + " (" + (k++) + ")";
+        used[t] = 1;
+        var a = el("a", null, t); a.href = url; a.target = "_blank"; a.rel = "noopener"; box.appendChild(a);
       } else box.appendChild(el("span", null, label || url));
     });
     return n;
   }
   function hostOf(url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return url; } }
+  var OUTLETS = { "espn.com": "ESPN", "cbssports.com": "CBS Sports", "ufcalendar.com": "UFCalendar", "sherdog.com": "Sherdog", "bloodyelbow.com": "Bloody Elbow",
+    "heavy.com": "Heavy", "skysports.com": "Sky Sports", "mmamania.com": "MMA Mania", "mmafighting.com": "MMA Fighting", "mmajunkie.usatoday.com": "MMA Junkie",
+    "ufc.com": "UFC.com", "ufcstats.com": "UFC Stats", "en.wikipedia.org": "Wikipedia", "tapology.com": "Tapology", "sportskeeda.com": "Sportskeeda",
+    "f4wonline.com": "F4W", "middleeasy.com": "MiddleEasy", "agentmma.com": "AgentMMA", "thescore.com": "theScore", "cagesidepress.com": "Cageside Press",
+    "talksport.com": "talkSPORT", "essentiallysports.com": "EssentiallySports", "bjpenn.com": "BJPenn.com", "mmanews.com": "MMA News", "yahoo.com": "Yahoo Sports",
+    "sports.yahoo.com": "Yahoo Sports", "si.com": "Sports Illustrated", "bleacherreport.com": "Bleacher Report", "foxsports.com": "Fox Sports", "fightmatrix.com": "FightMatrix",
+    "mmasucka.com": "MMA Sucka", "news4jax.com": "News4JAX", "dazn.com": "DAZN", "theguardian.com": "The Guardian", "bbc.com": "BBC", "bbc.co.uk": "BBC",
+    "mmaweekly.com": "MMA Weekly", "lowkickmma.com": "LowKick MMA", "fightbookmma.com": "FightBook", "nypost.com": "New York Post", "fightful.com": "Fightful",
+    "mmaoddsbreaker.com": "MMA Odds Breaker", "ufcespanol.com": "UFC Español", "instagram.com": "Instagram", "x.com": "X", "twitter.com": "X", "youtube.com": "YouTube" };
+  function srcLabel(url) {
+    var u; try { u = new URL(url); } catch (e) { return url; }
+    var h = u.hostname.replace(/^www\./, ""), out = OUTLETS[h];
+    if (!out) { var hp = h.split("."); out = hp.length > 1 ? hp[hp.length - 2] : h; out = out.charAt(0).toUpperCase() + out.slice(1); }
+    var path = u.pathname, m = /\/(20\d\d)[\/-](\d{1,2})(?:[\/-]\d{1,2})?(?:\/|-|$)/.exec(path);
+    if (m && +m[2] >= 1 && +m[2] <= 12) return out + ", " + MONTHS[+m[2] - 1] + " " + m[1];
+    if (h === "ufcstats.com") return out + (/fighter-details/.test(path) ? ": fighter page" : (/event-details/.test(path) ? ": event page" : ": fight page"));
+    var segs = path.split("/").filter(function (x) { return x && !/^\d+$/.test(x) && !/^(news|story|mma|_|id|sports|ufc|article|latest-news)$/i.test(x); });
+    var slug = segs.length ? decodeURIComponent(segs[segs.length - 1]).replace(/\.[a-z]+$/i, "").replace(/-\d{3,}$/, "") : "";
+    var words = slug.split(/[-_]+/).filter(function (w) { return w && !/^\d{5,}$/.test(w); }).slice(0, 5);
+    if (!words.length) return out;
+    var hl = words.join(" "); hl = hl.charAt(0).toUpperCase() + hl.slice(1);
+    return out + ": " + hl + (slug.split(/[-_]+/).length > 5 ? "…" : "");
+  }
+
+  /* ================================================================ boot
+     The roster and the scouting files ship gzip + base64 (build.py). They are inflated into their JSON blocks (the 3D
+     avatars read them from there too) before the page starts. */
+  function readGzText(id) {
+    var n = $(id), txt = n ? n.textContent.trim() : "";
+    if (!txt || txt === "null" || txt.indexOf("/*__") === 0) return Promise.resolve(null);
+    if (!window.DecompressionStream || !window.Response || !window.atob) return Promise.reject(new Error("DecompressionStream is not available"));
+    try {
+      var bin = atob(txt), u = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      n.textContent = "";
+      return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+    } catch (e) { return Promise.reject(e); }
+  }
+  Promise.all([readGzText("fighters-gz"), readGzText("scouting-gz")]).then(function (t) {
+    if (t[0] != null) $("fighters-db").textContent = t[0];
+    if (t[1] != null) $("scouting-db").textContent = t[1];
+    start();
+  }, function (e) {
+    fail("This browser can't unpack the fighter roster (" + (e && e.message || e) + "). A current Chrome, Edge, Firefox or Safari can.");
+  });
+
+  // everything below runs once the roster is in (kept at the outer indentation)
+  function start() {
 
   /* ================================================================ data */
   var DBJ = readJSON("fighters-db", null);
@@ -152,7 +212,7 @@
     return { slug: slug, name: f.name || slug, nick: f.nick || "", div: f.division || "Unknown", elo: f.elo || 0,
       rec: rec.w != null ? rec.w + "-" + rec.l + (rec.d ? "-" + rec.d : "") : "",
       last: last ? last.res + " vs " + last.opp + ", " + fmtDate(last.date, true) : (f.last_fight ? fmtDate(f.last_fight, true) : ""),
-      n: norm(f.name), ln: norm(lastName(f.name)), nk: norm(f.nick) };
+      n: norm(f.name), ln: norm(lastName(f.name)), nk: norm(f.nick), sq: squash(f.name), lsq: squash(lastName(f.name)), nsq: squash(f.nick) };
   });
 
   /* ================================================================ state */
@@ -334,13 +394,16 @@
         arr.forEach(function (r) { res.push(r); });
       });
     } else {
-      var words = qn.split(" ");
+      var words = qn.split(" "), qs = squash(q);
       ROSTER.forEach(function (r) {
         var sc = 0;
         if (r.n.indexOf(qn) === 0 || r.ln.indexOf(qn) === 0) sc = 5;
         else if ((" " + r.n).indexOf(" " + qn) >= 0) sc = 4;
+        else if (qs.length >= 3 && (r.sq.indexOf(qs) === 0 || r.lsq.indexOf(qs) === 0)) sc = 4;
         else if (r.nk && (r.nk.indexOf(qn) === 0 || (" " + r.nk).indexOf(" " + qn) >= 0)) sc = 3.5;
         else if (words.every(function (w) { return (" " + r.n + " " + r.nk).indexOf(" " + w) >= 0; })) sc = 3;
+        else if (qs.length >= 4 && (r.sq.indexOf(qs) >= 0 || (r.nsq && r.nsq.indexOf(qs) >= 0))) sc = 2;
+        else if (words.length > 1 && words.every(function (w) { return r.sq.indexOf(w) >= 0; })) sc = 1.5;
         else if (r.n.indexOf(qn) >= 0 || (r.nk && r.nk.indexOf(qn) >= 0)) sc = 1;
         if (sc) { r._s = sc; res.push(r); }
       });
@@ -2322,4 +2385,5 @@
     modelsReady.then(function () { afterModels(); go(); }, go);
     setTimeout(go, 4000);
   });
+  }   // start
 })();
