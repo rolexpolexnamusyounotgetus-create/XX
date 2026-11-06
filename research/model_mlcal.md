@@ -4,13 +4,19 @@ Status: built and tested on engine v3, Nov 6, 2026. Files: `tools/mlcal.js` (eva
 `tools/mlcal.py` (driver: Optuna TPE with successive-halving pruning, CMA-ES, confirmation, ledger-guarded
 validation, bootstrap CIs), `tools/mlcal_spec_engine3.json` (which v3 parameters to tune),
 `tools/mlcal_hooks/elo_skill.js` + `tools/mlcal_spec_engine3_elo.json` (example coupling of an external
-rating into the engine), `tests/test_mlcal.js` (23 checks), outputs `data/derived/mlcal_candidates.json`,
-`data/derived/mlcal_val_ledger.json`, `data/derived/mlcal_priors_asof.json`.
+rating into the engine), `tests/test_mlcal.js` (30 checks, `node tests/test_mlcal.js`, about 10 s).
+Outputs: `data/derived/mlcal_candidates.json` (run 1, the requested small-budget demo),
+`data/derived/mlcal_candidates_wide.json` (run 2), `data/derived/mlcal_candidates_elo.json` (run 3),
+`data/derived/mlcal_val_ledger.json` (every set ever scored on validation, with per-fight predictions),
+`data/derived/mlcal_priors_asof.json` (walk-forward shrinkage priors 2019-2025).
 
 ## Results (Nov 6, 2026)
 
-**Verdict.** The harness works end to end and tells the truth. In the requested small-budget run on
-engine v3, no candidate beat the current parameters on validation, so nothing should be adopted. The
+**Verdict.** The harness works end to end and its safeguards held: the gains the search found on the tuning
+window did not survive confirmation or validation, and the harness reported that. In the requested
+small-budget run on engine v3 (and in two follow-up runs) no candidate beat the current parameters
+significantly on validation, so nothing should be adopted into src/params3.js. The best lead is an Elo
+coupling through a hook (run 3): better on every outcome metric by point estimate, not significant. The
 current v3 parameters beat the walk-forward Elo by 0.028 winner log loss [95% CI 0.010, 0.046] on 857
 validation fights and are well calibrated (symmetric ECE 0.015). Run 1 also showed why small tuning
 windows overfit (fight-sample noise, not Monte Carlo noise) and led to the wide-window defaults below.
@@ -60,7 +66,42 @@ What happened:
   decisions 17.7% vs 18.5%. Stat lines: sig landed MAE 25.6 per fighter, KD MAE 0.32, TD MAE 1.14,
   correlation of predicted vs actual sig-landed differential 0.41.
 
-__RUNS23__
+### Runs 2 and 3: wide windows, and an Elo coupling through a hook
+
+Both on the same frozen engine snapshot as run 1 (`--engine/--params` pointed at a copy of the run-1
+snapshot), tuning window 1,300 train fights, confirmation on the other 672, rungs 10/20/40 sims, 2 workers.
+
+- **Run 2, wide** (`data/derived/mlcal_candidates_wide.json`): the same 16 dimensions, 30 TPE trials + 24
+  CMA evaluations; 241 s CPU tuning, 292 s in all. Tuning-window gains of 0.03-0.05 shrank to -0.004..+0.016
+  on confirmation; on validation all three finalists were again slightly worse than the current set (paired
+  winner log loss +0.0022 [-0.0066, +0.0111], +0.0039, +0.0026; objectives 1.4831-1.5356 vs 1.4719).
+- **Run 3, Elo coupling** (`data/derived/mlcal_candidates_elo.json`, spec `tools/mlcal_spec_engine3_elo.json`,
+  hook `tools/mlcal_hooks/elo_skill.js`): 5 dimensions (w_acc, w_pow, w_td per 400 Elo points, combA,
+  combB), 20 TPE trials + 16 CMA evaluations; 156 s CPU tuning, 206 s in all.
+
+| set | tuning window (1,300, 40 sims) | confirmation (672, 40 sims) | validation objective | validation winner LL [95% CI] | 7-bin LL | Brier | accuracy | sym. ECE | sig-diff corr | paired d winner LL [95% CI] | paired d (win + 0.5 bins) [95% CI] |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| current params3 | 1.6187 | 1.6007 | 1.4719 | 0.6486 [0.6316, 0.6657] | 1.6136 | 0.2284 | 0.621 | 0.015 | 0.41 | - | - |
+| Elo rank 1 (tpe6): w_acc 0.75, w_pow -0.03, w_td 0.73, combA 1.04, combB 0.55 | 1.5923 | 1.5970 | **1.4661** | **0.6449** [0.6273, 0.6633] | **1.6063** | **0.2266** | **0.628** | 0.022 | 0.34 | -0.0036 [-0.0145, +0.0079] | -0.0085 [-0.0272, +0.0123] |
+| Elo rank 2 (cma1_0): w_acc 0.75, w_pow -0.49, w_td 0.78, combA 0.91, combB 0.56 | 1.5943 | 1.6175 | 1.4802 | 0.6517 [0.6364, 0.6672] | 1.6207 | 0.2299 | 0.620 | 0.023 | 0.35 | +0.0031 [-0.0064, +0.0124] | |
+
+The Elo coupling is the only change with a better validation point estimate on every outcome metric
+(winner log loss, 7-bin, Brier, accuracy), and the gain is consistent with what TPE's importance says
+(all three hook weights matter more than the exponents). It is not significant (the paired CI includes 0),
+and it costs stat-line skill: with combB at 0.55 the defender's allowed rates matter less, so the
+correlation between predicted and actual sig-landed differentials falls from 0.41 to 0.34. Its
+lesson for v4+: results-based strength (Elo now, tools/ratings.py later) carries information the decayed
+stat sums miss, and it should enter the engine through accuracy and takedown odds, not power. Next step
+for whoever owns v4: re-run run 3 with `"wStat": 1` in the objective (protects the stat lines) and the
+ratings.json rating in place of Elo, then put the winning coupling into the engine as params entries.
+
+**Overall:** three runs' finalists (8 candidate sets, plus the baseline) were scored on validation once
+each; none is a significant improvement over the current v3 set. Engine v3's global knobs sit on a flat
+optimum around the self-calibrated values for this objective, and further gains must come from new
+information or structure (v4-v10), which the hook interface lets the harness test and tune. The baseline was
+scored twice on validation (runs 1 and 3) because the ledger hash scheme changed between the runs; the
+results were bit-identical (deterministic seeds) and the ledger now carries one hash per parameter set,
+with the repeat marked `duplicate_of`.
 
 
 ## What it does
@@ -175,12 +216,18 @@ becomes an engine feature with a params entry in the next cycle.
 1. Write `tools/mlcal_spec_engine<N>.json`: point `engine`/`params` at the new files, list the parameters
    that version adds or re-opens (keep it to 10-20 dimensions per run), keep the objective block unless the
    version is about something else (raise `wStat` for a stat-line version, for example).
-2. `python3 tools/mlcal.py tune --spec tools/mlcal_spec_engine<N>.json --trials 60 --cma-evals 48
-   --n-fights 800 --rungs 15,30,60 --workers 2 --top 3 --val-sims 80` (about 15-20 CPU minutes on this
-   machine at engine v3 speed; `--cpu-min` caps tuning). A first look: `--trials 30 --cma-evals 32
-   --n-fights 600`. A cheap code check without touching validation: `--no-val`.
+2. `python3 tools/mlcal.py tune --spec tools/mlcal_spec_engine<N>.json --out data/derived/mlcal_candidates_<tag>.json`
+   runs the defaults learned on Nov 6: 30 TPE trials, 24 CMA evaluations, 1,300-fight tuning window, all
+   other train fights for confirmation, rungs 10/20/40, 3 finalists, 80 sims per corner order on validation,
+   2 workers (about 5 CPU minutes at engine v3 speed, 0.2 ms CPU per simulated fight; `--cpu-min` caps the
+   tuning phase). With more dimensions raise `--trials`/`--cma-evals` rather than shrinking the window. The
+   requested demo was `--trials 30 --cma-evals 32 --n-fights 600 --rungs 15,30,60 --confirm-fights 600
+   --confirm-sims 60`. A cheap code check that never touches validation: `--no-val`.
 3. Stage 2 on top of the winner: `--fixed data/derived/mlcal_candidates.json#1` (tune more parameters or
-   hook weights with the first stage's values held), written to a different `--out`.
+   hook weights with the first stage's values held), written to a different `--out`. To re-score a saved
+   candidate on a changed engine: `--fixed <file>#<rank> --trials 1 --cma-evals 0` (trial 0 is the
+   candidate; it is confirmed and validated, under a new hash because the engine changed). To repeat a run
+   exactly, point `--engine/--params` at a frozen copy of the files it used (hashes in the candidates file).
 4. Read `data/derived/mlcal_candidates.json`: ranks, confirmation scores, validation metrics with CIs and
    paired differences, calibration table, base rates. Adopt a candidate only if its paired validation CI
    on the objective (or winner log loss) excludes zero or the version adds a capability without making

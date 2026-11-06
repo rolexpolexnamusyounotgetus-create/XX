@@ -1,14 +1,17 @@
 # Song Yadong: scouting dossier
 
-As of Nov 6, 2026. "Dataset" is `data/derived/fighters.json` (ufcstats through Oct 31, 2026). Web claims come from search summaries of the linked pages. Fact-check (Nov 6): results and stats re-checked against raw ufcstats; status could not be re-searched, but matches the project's Yan and Umar files.
+As of Nov 6, 2026. "Dataset" is `data/derived/fighters.json` (ufcstats through Oct 31, 2026). Fact-check (Nov 6): results and stats re-checked against raw ufcstats.
+
+**Research note (updated Nov 6, 2026):** the network was open for this pass. Status, ranking, record, bookings, injuries and appearance were re-checked on the web (pages listed under Sources, all fetched on Nov 6 unless marked as a search summary). ufc.com returned 403, so the official rankings were read through two mirrors that agree. Fight numbers still come from the ufcstats snapshot of Oct 31, 2026.
 
 ## Current status
 
-- **Ranking:** #2 bantamweight on ufcalendar.com and #3 on ufcrankings.org, both updated Nov 3, 2026. Official UFC page not checked.
-- **Records:** pro 24-9-1 per UFC Calendar; UFC 13-4-1 in the dataset.
+- **Ranking:** #3 bantamweight in the UFC media-panel rankings (Nov 3, 2026, ufcalendar.com; ufcrankings.org agrees on Nov 5) and #2 in the UFC/Meta algorithmic rankings (Oct 31, 2026). The "#2 on ufcalendar.com" in the earlier draft was the Meta list.
+- **Records:** pro 24-9-1 (1 NC) per UFCalendar and Wikipedia; UFC 13-4-1 in the dataset.
 - **Age and frame:** 28 (born Dec 2, 1997), 5'8" with a 67" reach, orthodox. Nickname "Kung Fu Kid".
-- **Title picture:** Petr Yan beat Merab Dvalishvili at UFC 333 (Oct 24, 2026) to keep the belt. On Oct 25 Dana White named Song and Sean O'Malley as the two contenders.
-- **Booking, injuries:** none reported.
+- **Title picture:** Petr Yan beat Merab Dvalishvili at UFC 333 (Oct 24, 2026) to keep the belt. On Oct 25 Dana White named Song and Sean O'Malley as the two contenders. No UFC bout is booked on Nov 6 (UFCalendar).
+- **Next:** a freestyle wrestling match, not MMA: a rematch with Henry Cejudo for Cejudo's RAF lightweight crossover title at RAF 15, NOW Arena, Chicago, Nov 28, 2026. It was announced on Oct 21 as the main event and moved to co-main on Oct 27, when Arman Tsarukyan vs Anthony Pettis took the top slot (MMA Junkie, MMA Crossfire, MMA Mania).
+- **Injuries:** none reported.
 
 ## Recent fights
 
@@ -49,6 +52,16 @@ An orthodox boxer-puncher: UFC.com lists his style as "Boxer", and Sherdog calls
 
 Song is efficient rather than busy: 3.76 landed vs 3.48 absorbed per minute (decayed), minimal control (6.6 s/min). Elo 1711. In the engine he should rarely be taken down, win the low-kick exchange and carry real KO equity, while running roughly even in decisions against sharp volume strikers.
 
+## Appearance
+
+No photo-based likeness sheet exists for him. Read from ESPN's fight-week headshot and stance shots (Last-Modified May 27 and Aug 27, 2026).
+
+- **Hair:** black, styled up: a longer textured top brushed upward over short faded sides.
+- **Facial hair:** clean-shaven.
+- **Skin:** light-medium.
+- **Tattoos:** left leg only: a graphic with a text banner just above the knee and vertical script down the inner calf. None visible on the chest, torso or arms.
+- **Kit:** black UFC fight-kit shorts in both 2026 sets. Corner colour wins in the sim.
+
 ## Sources
 
 - Dataset and ufcstats: [fighter page](http://ufcstats.com/fighter-details/efb96bf3e9ada36f); fights: [Umar](http://ufcstats.com/fight-details/228fefc6923c40a5), [Figueiredo](http://ufcstats.com/fight-details/423f32dd018ac218), [O'Malley](http://ufcstats.com/fight-details/007e8e0d4a39d82c), [Cejudo](http://ufcstats.com/fight-details/b959e2c1d16ff832), [Yan](http://ufcstats.com/fight-details/9861b6d04e6ed43c), [Phillips](http://ufcstats.com/fight-details/5980ab31e4718a83)
@@ -56,3 +69,5 @@ Song is efficient rather than busy: 3.76 landed vs 3.48 absorbed per minute (dec
 - [Cageside: Figueiredo](https://cagesidepress.com/2026/05/30/song-yadong-scores-career-biggest-win-with-submission-of-figueiredo/); [Cageside: UFC 324](https://cagesidepress.com/2026/01/24/ufc-324-sean-omalley-takes-close-decision-over-song-yadong); [CBS: Cejudo](https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-song-yadong-beats-henry-cejudo-after-eye-poke-forces-technical-decision)
 - [Bloody Elbow: White on Yan's next](https://bloodyelbow.com/2026/10/25/a-good-problem-dana-white-reveals-2-fighters-are-in-contention-to-face-petr-yan-next/); [Yahoo: UFC 333](https://sports.yahoo.com/mma/article/ufc-333-petr-yan-conquers-merab-dvalishvili-with-thrilling-come-from-behind-win-in-trilogy-fight-221808640.html)
 - [UFC Calendar rankings](https://www.ufcalendar.com/rankings/bantamweight); [ufcrankings.org](https://ufcrankings.org/); [UFC Calendar profile](https://www.ufcalendar.com/fighters/song-yadong); [UFC athlete page](https://www.ufc.com/athlete/song-yadong); [Sherdog scouting](https://www.sherdog.com/news/articles/Scouting-Report-Yadong-Song-187972)
+- Nov 6 re-check: [UFCalendar profile](https://www.ufcalendar.com/fighters/song-yadong); [UFCalendar rankings](https://www.ufcalendar.com/rankings/bantamweight) (media panel Nov 3, Meta Oct 31); [ufcrankings.org](https://ufcrankings.org/bantamweight/) (media panel, Nov 5); [MMA Junkie: RAF 15 announced](https://mmajunkie.usatoday.com/story/sports/mma/2026/10/21/henry-cejudo-vs-song-yadong-announced-raf-15-main-event/92373656007/) and [new main event](https://mmajunkie.usatoday.com/story/sports/mma/2026/10/27/arman-tsarukyan-vs-anthony-pettis-raf-15-new-main-event-chicago/92467252007/) (both search summaries; the site returned 402); [MMA Crossfire: RAF 15 card](https://www.mmacrossfire.com/2026/10/27/raf-15-main-event-changed-to-arman-tsarukyan-vs-anthony-pettis/); [MMA Mania](https://www.mmamania.com/raf-wrestling-schedule-cards-live-results/480953/henry-cejudo-vs-song-yadong-rematch-nov-28-chicago-raf-15); [Wikipedia](https://en.wikipedia.org/wiki/Song_Yadong) (record)
+- Photos: [ESPN headshot](https://a.espncdn.com/i/headshots/mma/players/full/3151289.png), [stance left](https://a.espncdn.com/i/headshots/mma/players/stance/left/3151289.png), [stance right](https://a.espncdn.com/i/headshots/mma/players/stance/right/3151289.png)

@@ -2187,6 +2187,8 @@ def cmd_eval(args):
             "replacement": rpa - rpb, "repl_le14d": sna - snb,
             "opp_change": oca - ocb, "opp_change_le14d": lca - lcb,
             "home": ha - hb, "home_x_fullcrowd": (ha - hb) * full, "home_x_nocrowd_or_apex": (ha - hb) * (1 - full),
+            "home_fullcrowd_outside_usa": (ha - hb) * full * float(r["venue"]["iso3"] != "USA"),
+            "home_fullcrowd_in_usa": (ha - hb) * full * float(r["venue"]["iso3"] == "USA"),
             "tz_shift_per6h": (tza - tzb) / 6.0,
             "altitude_adapted_at_altitude": (ea - eb) * hi,
             "elo_x_nocrowd": elo * float(r["no_crowd"]), "elo_x_altitude_km": elo * alt,
@@ -2252,9 +2254,13 @@ def cmd_eval(args):
     # slot), so the two are collinear: the multi-feature models carry the replacement family only
     curated = base + ["missed", "replacement", "repl_le14d", "home_x_fullcrowd", "home_x_nocrowd_or_apex"]
     full = summarize(curated, "full: elo + debut + missed + replacement + repl_le14d + home x crowd")
-    summarize([k for k in names if not k.startswith("opp_change")], "full_all: every feature except opp_change")
+    summarize([k for k in names if not k.startswith("opp_change") and k not in ("home_fullcrowd_outside_usa",
+                                                                                "home_fullcrowd_in_usa")],
+              "full_all: every feature except opp_change")
     summarize(base + ["replacement", "repl_le14d"], "pair: replacement + repl_le14d")
     summarize(base + ["missed", "replacement", "repl_le14d"], "full_nohome: elo + debut + missed + replacement + repl_le14d")
+    summarize(base + ["missed", "replacement", "repl_le14d", "home_fullcrowd_outside_usa"],
+              "full_intl: elo + debut + missed + replacement + repl_le14d + home outside USA")
     # report
     log("\nbase (elo + debut): coef %s; val log loss %.4f, Brier %.4f" % (
         {k: round(v, 3) for k, v in res["models"]["base: elo + debut"]["coef"].items()}, l0.mean(),

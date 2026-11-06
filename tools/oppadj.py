@@ -938,6 +938,8 @@ def main():
     ap.add_argument("--smoke", action="store_true", help="tiny grid to exercise the pipeline (one half-life)")
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--out", default=os.path.join(OUT, "oppadj.json"))
+    ap.add_argument("--cache", default="", help="pickle path for the grid results (written after the search)")
+    ap.add_argument("--reuse", action="store_true", help="load the grid from --cache instead of searching")
     args = ap.parse_args()
     t0 = time.time()
     p = engine_params()
@@ -955,23 +957,7 @@ def main():
         eng_sc[name] = ev.score(name, ev.pred_raw(name, ev.engine_R))
     print("baselines done %.0f s" % (time.time() - t0))
 
-    # ---- raw shrunk rates re-tuned (half-life and separate offense/defense k), same engine formulas
-    raw, Ss = raw_scan(D, ev, p, hls)
-    print("raw scan done %.0f s" % (time.time() - t0))
-
-    # ---- opponent-adjusted (full) and division/era-normalized without opponents (nosos)
-    # stage A: diagonal k (k_off = k_def) at every half-life, plus the no-opponent ablation (one pass each)
     G = {}
-    jobs = []
-    for name in FAMILIES:
-        for hl in hls:
-            for k in kg[name]:
-                jobs.append((name, hl, k, k, "full"))
-                jobs.append((name, hl, k, k, "nosos"))
-    print("stage A: %d walk-forward fits on %d processes" % (len(jobs), args.procs))
-    G.update(run_grid(D, p, jobs, args.procs))
-    print("stage A done %.0f s" % (time.time() - t0))
-
     def adj_score(name, cfg, mode="full"):
         hl, ko, kd = cfg
         if mode == "full":
@@ -984,56 +970,86 @@ def main():
         s_.pop("dev")
         return s_
 
-    # stage B: local search over (k_off, k_def) at each family's best stage-A half-life: evaluate the 8
-    # neighbours of the incumbent in grid-index space, move to the best, stop when nothing improves on tune
-    best_hl, cur = {}, {}
-    for name in FAMILIES:
-        diag = {(hl, k, k): adj_score(name, (hl, k, k)) for hl in hls for k in kg[name]}
-        c0 = min(diag, key=lambda c: diag[c]["tune"])
-        best_hl[name] = c0[0]
-        g = kg[name]
-        cur[name] = (g.index(c0[1]), g.index(c0[2]))
-    active = set(FAMILIES)
-    step = 0
-    while active and step < 8:
-        step += 1
+    cache = args.cache
+    if args.reuse and os.path.exists(cache):
+        import pickle
+        with open(cache, "rb") as fh:
+            raw, Gc, hls_c, kg_c = pickle.load(fh)
+        assert hls_c == hls and kg_c == kg, "cache grid differs from the requested grid"
+        G.update(Gc)
+        Ss = {hl: (D.s_S if hl == 730 else D.side_sums(hl)) for hl in hls}
+        print("reused grid cache %s (%d fits)" % (cache, len(G)))
+    else:
+        # ---- raw shrunk rates re-tuned (half-life and separate offense/defense k), same engine formulas
+        raw, Ss = raw_scan(D, ev, p, hls)
+        print("raw scan done %.0f s" % (time.time() - t0))
+
+        # ---- opponent-adjusted (full) and division/era-normalized without opponents (nosos)
+        # stage A: diagonal k (k_off = k_def) at every half-life, plus the no-opponent ablation (one pass each)
         jobs = []
-        for name in sorted(active):
+        for name in FAMILIES:
+            for hl in hls:
+                for k in kg[name]:
+                    jobs.append((name, hl, k, k, "full"))
+                    jobs.append((name, hl, k, k, "nosos"))
+        print("stage A: %d walk-forward fits on %d processes" % (len(jobs), args.procs))
+        G.update(run_grid(D, p, jobs, args.procs))
+        print("stage A done %.0f s" % (time.time() - t0))
+
+        # stage B: local search over (k_off, k_def) at each family's best stage-A half-life: evaluate the 8
+        # neighbours of the incumbent in grid-index space, move to the best, stop when nothing improves on tune
+        best_hl, cur = {}, {}
+        for name in FAMILIES:
+            diag = {(hl, k, k): adj_score(name, (hl, k, k)) for hl in hls for k in kg[name]}
+            c0 = min(diag, key=lambda c: diag[c]["tune"])
+            best_hl[name] = c0[0]
             g = kg[name]
-            i0, j0 = cur[name]
-            for di in (-1, 0, 1):
-                for dj in (-1, 0, 1):
-                    i, j = i0 + di, j0 + dj
-                    if 0 <= i < len(g) and 0 <= j < len(g):
-                        key = (name, best_hl[name], g[i], g[j], "full")
-                        if key not in G:
-                            jobs.append(key)
-        if jobs:
-            G.update(run_grid(D, p, jobs, args.procs))
-        for name in sorted(active):
+            cur[name] = (g.index(c0[1]), g.index(c0[2]))
+        active = set(FAMILIES)
+        step = 0
+        while active and step < 8:
+            step += 1
+            jobs = []
+            for name in sorted(active):
+                g = kg[name]
+                i0, j0 = cur[name]
+                for di in (-1, 0, 1):
+                    for dj in (-1, 0, 1):
+                        i, j = i0 + di, j0 + dj
+                        if 0 <= i < len(g) and 0 <= j < len(g):
+                            key = (name, best_hl[name], g[i], g[j], "full")
+                            if key not in G:
+                                jobs.append(key)
+            if jobs:
+                G.update(run_grid(D, p, jobs, args.procs))
+            for name in sorted(active):
+                g = kg[name]
+                i0, j0 = cur[name]
+                cands = [(i0 + di, j0 + dj) for di in (-1, 0, 1) for dj in (-1, 0, 1)
+                         if 0 <= i0 + di < len(g) and 0 <= j0 + dj < len(g)]
+                sc_ = {ij: adj_score(name, (best_hl[name], g[ij[0]], g[ij[1]]))["tune"] for ij in cands}
+                nb = min(sc_, key=sc_.get)
+                if nb == (i0, j0):
+                    active.discard(name)
+                else:
+                    cur[name] = nb
+            print("stage B step %d: %d fits, %d families still moving (%.0f s)"
+                  % (step, len(jobs), len(active), time.time() - t0))
+        # stage C: the best (k_off, k_def) at every other half-life (half-life scan at the chosen k ratio)
+        jobs = []
+        for name in FAMILIES:
             g = kg[name]
-            i0, j0 = cur[name]
-            cands = [(i0 + di, j0 + dj) for di in (-1, 0, 1) for dj in (-1, 0, 1)
-                     if 0 <= i0 + di < len(g) and 0 <= j0 + dj < len(g)]
-            sc_ = {ij: adj_score(name, (best_hl[name], g[ij[0]], g[ij[1]]))["tune"] for ij in cands}
-            nb = min(sc_, key=sc_.get)
-            if nb == (i0, j0):
-                active.discard(name)
-            else:
-                cur[name] = nb
-        print("stage B step %d: %d fits, %d families still moving (%.0f s)"
-              % (step, len(jobs), len(active), time.time() - t0))
-    # stage C: the best (k_off, k_def) at every other half-life (half-life scan at the chosen k ratio)
-    jobs = []
-    for name in FAMILIES:
-        g = kg[name]
-        ko, kd = g[cur[name][0]], g[cur[name][1]]
-        for hl in hls:
-            if (name, hl, ko, kd, "full") not in G:
-                jobs.append((name, hl, ko, kd, "full"))
-    print("stage C: %d fits" % len(jobs))
-    G.update(run_grid(D, p, jobs, args.procs))
-    print("grid done %.0f s" % (time.time() - t0))
+            ko, kd = g[cur[name][0]], g[cur[name][1]]
+            for hl in hls:
+                if (name, hl, ko, kd, "full") not in G:
+                    jobs.append((name, hl, ko, kd, "full"))
+        print("stage C: %d fits" % len(jobs))
+        G.update(run_grid(D, p, jobs, args.procs))
+        print("grid done %.0f s" % (time.time() - t0))
+        if cache:
+            import pickle
+            with open(cache, "wb") as fh:
+                pickle.dump((raw, G, hls, kg), fh)
 
     chosen = {}
     for name, (kind, fields, kname, _, label) in FAMILIES.items():

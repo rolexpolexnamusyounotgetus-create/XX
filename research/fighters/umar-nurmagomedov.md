@@ -1,13 +1,17 @@
 # Umar Nurmagomedov: scouting dossier
 
-As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). No web access in the research or fact-check passes (search budget spent, fetches blocked); outside claims reuse URLs cited by other repo dossiers. Fight numbers re-checked against raw ufcstats rows on Nov 6. Unverified: ranking, plans, medical suspension, appearance.
+As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot to Oct 31, 2026). Fight numbers re-checked against raw ufcstats rows on Nov 6.
+
+**Research note (updated Nov 6, 2026):** the network was open for this pass. Status, ranking, record, bookings, injuries and appearance were re-checked on the web (pages listed under Sources, all fetched on Nov 6 unless marked as a search summary). ufc.com returned 403, so the official rankings were read through two mirrors that agree. Fight numbers still come from the ufcstats snapshot of Oct 31, 2026.
 
 ## Current status
 
-- **Form:** coming off a KO loss to Song Yadong at 1:48 of round 2 in the UFC Shanghai main event (Aug 29, 2026). ESPN's headline called it a massive upset.
-- **Record:** 8-2 in the UFC. His only other loss was a title-fight decision to Merab Dvalishvili (UFC 311, Jan 18, 2025).
+- **Ranking:** #4 bantamweight in the UFC media-panel rankings (Nov 3, 2026) and #5 in the UFC/Meta algorithmic rankings (Oct 31, 2026).
+- **Form:** coming off a KO loss to Song Yadong at 1:48 of round 2 in the UFC Shanghai main event (Aug 29, 2026), the first stoppage loss of his career. He went in as a massive favourite (ESPN called it a massive upset).
+- **Record:** 20-2 pro (MMA Junkie, UFCalendar, Wikipedia); 8-2 in the UFC. His only other loss was a title-fight decision to Merab Dvalishvili (UFC 311, Jan 18, 2025).
 - **Age and frame:** 30 (born Jan 3, 1996), 5'8", 69" reach, orthodox.
-- **Booking and injuries:** not web-checked; none in the sources cited.
+- **Next:** no UFC bout booked. He posted from the gym 10 days after the knockout (Lowkick MMA). His next outing is his Real American Freestyle debut, a freestyle wrestling match (not MMA) against Urijah Faber at RAF Abu Dhabi, Nov 14, 2026, Etihad Arena (MMA Fighting, Oct 2).
+- **Injuries:** none reported. No medical suspension from the Shanghai knockout was found in the sources checked.
 
 ## Recent fights
 
@@ -47,7 +51,19 @@ As of Nov 6, 2026. "Dataset" = `data/derived/fighters.json` (ufcstats snapshot t
 
 Decayed rates: he lands 3.37 per minute and absorbs 1.97, with 21.9 s/min of control and 3.9 takedowns per 15 min at 47%. His attempt split is 76.8% head, 15.2% body and 8.0% leg. His Elo is 1687. In the engine he should win most rounds through control against opponents with ordinary takedown defence. He needs a damage multiplier on his chin that the low absorbed-strike rate would otherwise hide. Against heavy counter-punchers with good takedown defence (Song, Yan), his losing path is a single clean shot on the entry.
 
+## Appearance
+
+No photo-based likeness sheet exists for him. Read from ESPN's UFC Shanghai fight-week headshot and stance shot (Last-Modified Aug 27, 2026) and an ESPN stance shot from Jan 2025. These replace the earlier unverified recall.
+
+- **Hair:** very short dark brown, close-cropped all over.
+- **Facial hair:** short dark beard, heaviest under the jaw, with a thin moustache.
+- **Skin:** light.
+- **Tattoos:** none visible on the chest, torso, arms or legs (front views; back not seen).
+- **Kit:** white UFC Shanghai fight-kit shorts (Aug 2026) and red fight-kit shorts (Jan 2025). Corner colour wins in the sim.
+
 ## Sources
 
 - Dataset: `data/derived/fighters.json`; `data/raw/` ufcstats CSVs; ufcstats [fighter page](http://ufcstats.com/fighter-details/2b6fc1c02736833d); fight pages: [Song](http://ufcstats.com/fight-details/228fefc6923c40a5), [Figueiredo](http://ufcstats.com/fight-details/6c9f4799990c3c33), [Bautista](http://ufcstats.com/fight-details/e69f9b4b9cae12a4), [Dvalishvili](http://ufcstats.com/fight-details/f39941b3743bf18c), [Sandhagen](http://ufcstats.com/fight-details/33655fd07cfbe034), [Almakhan](http://ufcstats.com/fight-details/dcf5014e56649c2f)
 - Via other repo dossiers (not opened this pass): [ESPN: Song KOs Umar](https://www.espn.com/mma/story/_/id/49762250/song-yadong-kos-umar-nurmagomedov-massive-ufc-upset-shanghai); [UFC Shanghai results](https://www.ufc.com/news/ufc-shanghai-results-nurmagomedov-vs-song); [mmasucka breakdown](https://mmasucka.com/opinion/how-song-yadong-beat-umar-nurmagomedov-breaking-down-the-ufc-shanghai-main-event-knockout/)
+- Nov 6 re-check: [UFCalendar profile](https://www.ufcalendar.com/fighters/umar-nurmagomedov); [UFCalendar rankings](https://www.ufcalendar.com/rankings/bantamweight) (media panel Nov 3, Meta Oct 31); [ufcrankings.org](https://ufcrankings.org/bantamweight/) (media panel, Nov 5); [MMA Fighting: RAF Abu Dhabi vs Faber](https://www.mmafighting.com/raf-wrestling/513680/umar-nurmagomedov-vs-urijah-faber-set-for-raf-abu-dhabi); [Bloody Elbow, Oct 2](https://bloodyelbow.com/2026/10/02/umar-nurmagomedov-announces-return-to-action-after-brutal-ko-on-show-that-clashes-with-ufc-334/) (search summary); [Lowkick MMA: back in the gym](https://www.lowkickmma.com/umar-nurmagomedov-training-song-yadong-loss/); [MMA Junkie: statement and record](https://mmajunkie.usatoday.com/story/sports/ufc/2026/08/29/umar-nurmagomedov-statement-ufc-shanghai-knockout-loss/91528342007/) (search summary); [Wikipedia](https://en.wikipedia.org/wiki/Umar_Nurmagomedov)
+- Photos: [ESPN headshot](https://a.espncdn.com/i/headshots/mma/players/full/4569549.png), [stance left](https://a.espncdn.com/i/headshots/mma/players/stance/left/4569549.png), [stance right](https://a.espncdn.com/i/headshots/mma/players/stance/right/4569549.png)
