@@ -20,7 +20,7 @@
        "bladed": 0.6,         // hips and shoulders: 0 square to the opponent .. 1 fully side-on
        "guard": {
          "style": "standard",   // label only: standard | high | long | low | shell | peekaboo | hand-fighting
-         "height": 0.6,         // gloves: 0 chest .. 0.5 chin .. 1 brow
+         "height": 0.6,         // glove centres: 0 chest .. 0.5 chin/mouth .. 0.65 cheekbone .. 1 brow
          "lead_reach": 0.35,    // lead hand: 0 by the face .. 1 extended, pawing or measuring
          "lead_height": 0.6,    // lead glove height relative to the guard height (0 low .. 1 high)
          "lead_width": 0.0,     // lead glove: -1 across the centre line .. 1 out wide
@@ -235,10 +235,11 @@
   Actor.prototype.guardTargets = function (P, lh, rh, G, op, lead, rear, st) {
     var F = this.faceRef(), sc = this.H / 1.75, GR = 0.052 * sc;   // glove radius (4 oz MMA glove, closed fist)
     var cx = Math.abs(F.cheek.x);
-    function hy(v) {                     // head-local height for a guard height value
-      if (v <= 0.5) return F.chin.y - (0.5 - v) / 0.5 * 0.2 * sc;
-      if (v <= 0.65) return lerp(F.chin.y, F.cheek.y, (v - 0.5) / 0.15);
-      return lerp(F.cheek.y, F.brow.y, Math.min(1, (v - 0.65) / 0.35));
+    function hy(v) {                     // head-local height of the glove centre for a guard height value
+      var y5 = lerp(F.chin.y, F.cheek.y, 0.45), y65 = lerp(F.cheek.y, F.brow.y, 0.3);
+      if (v <= 0.5) return y5 - (0.5 - v) / 0.5 * 0.2 * sc;
+      if (v <= 0.65) return lerp(y5, y65, (v - 0.5) / 0.15);
+      return lerp(y65, F.brow.y + 0.01 * sc, Math.min(1, (v - 0.65) / 0.35));
     }
     function fz(y) {                     // face surface depth at height y (chin -> cheekbone -> brow)
       if (y <= F.cheek.y) return lerp(F.chin.z, F.cheek.z + 0.012 * sc, clamp((y - F.chin.y) / Math.max(0.01, F.cheek.y - F.chin.y), 0, 1));
@@ -352,7 +353,7 @@
       P.cp = cl ? 0.14 : 0.03 + 0.05 * ln + 0.05 * G.shoulderRoll; P.cy = (cl ? 0.1 : 0.06 + 0.14 * bl) * st; P.cr = 0;
       // chin down, eyes on the opponent: the face's pitch is set in world terms (the torso already leans
       // forward, so the neck only adds what the lean leaves of the chin tuck)
-      P.hp = cl ? 0.15 : (0.07 + 0.2 * hd.chinTuck) - 0.9 * (P.pp + P.sp + P.cp); P.hy = (cl ? 0.08 : 0.1 + 0.25 * bl) * st; P.hr = 0;
+      P.hp = cl ? 0.15 : (0.1 + 0.3 * hd.chinTuck) - 0.9 * (P.pp + P.sp + P.cp); P.hy = (cl ? 0.08 : 0.1 + 0.25 * bl) * st; P.hr = 0;
       var op = pf.open, gh = G.height, lh = clamp(gh + (G.leadHeight - 0.6) * 0.6, 0, 1), rh = clamp(gh + (G.rearHeight - 0.6) * 0.6, 0, 1);
       if (!cl) {
         // upper-body movement and head position off the centre line
