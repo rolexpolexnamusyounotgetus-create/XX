@@ -1546,20 +1546,32 @@ def export(args):
         b_ = np.array([preds[f]["seeded_elo"] for f in ids])
         yy = np.array([float(dec.loc[dec["fid"] == f, "y"].iloc[0]) for f in ids])
         pooled = {"debut vs seeded_elo, 2019-2025": paired(np.array([evd[f] for f in ids]), a_, b_, yy)}
-    # adoption: the project decision rule (docs/V6_V10_PLAN.md 6.3 / 7.1: keep if the look's paired CI excludes 0, or
-    # it is "not worse", CI upper <= +0.002 for the winner, and clearly better on method) applied to the single look
+    # adoption (verifier fix, Nov 6): the CV gate decides and the single look can only confirm. CV gate = the plan's
+    # cycle-5 acceptance test on forward-chained 2019-2023 (no line: CI vs seeded Elo excludes 0; line: ml2's 0.0005
+    # rule and stack-vs-line CI upper < +0.001; method: method given the winner CI excludes 0). Confirmation = the
+    # "not worse" bounds of 6.3 / 7.1 on the look (winner CI upper <= +0.002, method <= +0.003). The builder's version
+    # keyed the method on the look's method3 CI (a pre-registered secondary) - selection on 2024-25; same outcome.
     adoption = None
     if H:
         hp = H["out"]["paired"]
-        nl_ok = hp["debut vs seeded_elo"]["ci"][1] < 0 or hp["debut vs seeded_elo"]["ci"][1] <= 0.002
-        op_ok = sd["open"]["debut_enters"] and hp["stack_open vs open"]["ci"][1] <= 0.002
-        cl_ok = sd["close"]["debut_enters"] and hp["stack_close vs close"]["ci"][1] <= 0.002
+        cvm = C["method"]["paired"]["method_given_winner vs division base"]
+        nl_cv = sd["noline"] == "raw debut" and sd["noline_vs_seeded_elo_gate"]["ci"][1] < 0
+        nl_ok = nl_cv and hp["debut vs seeded_elo"]["ci"][1] <= 0.002
+        op_ok = (sd["open"]["debut_enters"] and sd["open"]["paired_stack_vs_raw_line"]["ci"][1] < 0.001
+                 and hp["stack_open vs open"]["ci"][1] <= 0.002)
+        cl_ok = (sd["close"]["debut_enters"] and sd["close"]["paired_stack_vs_raw_line"]["ci"][1] < 0.001
+                 and hp["stack_close vs close"]["ci"][1] <= 0.002)
         me = H["out"]["method"]["method3"]
+        me_ok = cvm["ci"][1] < 0 and me["ci"][1] <= 0.003
         adoption = {"winner_noline": "debut" if nl_ok else "fallback_seeded_elo",
                     "winner_open": "stack_open" if op_ok else "line",
                     "winner_close": "stack_close" if cl_ok else "line",
-                    "method": "debut" if me["ci"][1] < 0 else "division_base",
-                    "rule": "docs/V6_V10_PLAN.md 6.3 / 7.1 applied to the pre-registered 2024-25 look"}
+                    "method": "debut" if me_ok else "division_base",
+                    "rule": "CV gate (forward-chained 2019-2023; docs/V6_V10_PLAN.md cycle 5 acceptance test, ml2's 0.0005 "
+                            "rule) decides; the pre-registered 2024-25 look confirms with the 6.3 / 7.1 'not worse' "
+                            "bounds",
+                    "verification": "the close stack's CV admission (-0.0008) does not survive nested selection "
+                                    "(+0.0004) or an independent network rebuild (-0.0004): treat as rejected"}
     # fixtures for tests/test_debut.js: 30 bouts (seeded draw), sides in the model's columns, Python's production output
     rng = np.random.default_rng(11)
     pick = sorted(rng.choice(len(dec), size=min(30, len(dec)), replace=False).tolist())
@@ -1647,7 +1659,7 @@ def features(args):
     out = {"href": args.href, "date": args.date, "rows_before": len(rr), "rows_cap": cap.isoformat()}
     for h, F in sorted(fits.items()):
         net = GlobalNet([], half_life=F["half_life"], lam_u=F["lam_u"], lam_g=F["lam_g"])
-        th, s_, mu_, sos = net.rate(rr, cap, F["fit"])
+        th, s_, mu_, sos = net.rate(rr, D, F["fit"])     # rows already capped; decay to the bout date, as in training
         out.update({"g%s_th" % h: round(th, 4), "g%s_sd" % h: round(s_, 4),
                     "g%s_sos" % h: None if sos is None else round(sos, 4), "g%s_m" % h: round(mu_, 4)})
     amr = [x for x in am if x["_d"] and x["_d"] < cap]

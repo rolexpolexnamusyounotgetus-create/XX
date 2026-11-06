@@ -10,6 +10,15 @@ standalone winner model, adds nothing as a stack expert (the stack gate rejects 
 its method x round and stat-line heads lose clearly to methodround S and mlrates. Nothing ships to the page, so
 there is no JS evaluator. The code, the JSON and the plugin stay as a standing negative baseline.
 
+**Adversarially verified (Nov 6, ~11:20 pm UTC; see "Verification log" at the end).** The verdict stands. Every
+headline number re-derives with independent code: the scores, the paired CIs, the stack gate in all six pairs, the
+harness replay and the 7-bin gap to S, and a walk refit retrains bit-identically. No look-ahead, no 2026 data, no
+selection on 2024-25 and no corner-order exploit was found. Two kinds of fix were made:
+- Section 5's side findings were overstated: every hyperparameter-grid difference is within seed noise. They are
+  rewritten below.
+- Small corrections: the harness levels, the segment wording, the commit time, and the embed path the stat-line
+  recipes need.
+
 All brackets are 95% event-cluster bootstrap CIs (2,000 resamples of UFC cards; 1,000 for the per-target stat
 lines), paired where they are differences. Lower log loss / deviance is better; differences are seqnet (or the
 stack with seqnet) minus the reference.
@@ -40,8 +49,11 @@ stack with seqnet) minus the reference.
 | closing line | +0.0260 [+0.0129, +0.0385] | +0.0315 [+0.0147, +0.0496] (845) |
 | opening line | | +0.0079 [-0.0068, +0.0248] (843) |
 
-- seqnet is worse than ML v2 in every year 2019-2025 and in every experience segment (newcomer bouts, 3-7 prior
-  fights, veterans, five-rounders, women's bouts).
+- seqnet's point estimate is worse than ML v2's in every year 2019-2025 and in every experience segment (newcomer
+  bouts, 3-7 prior fights, veterans, five-rounders, women's bouts). In 2019-2023, four of the five segment CIs
+  include 0 (Winner detail below).
+- The pre-registration expected seqnet to be 0.010-0.020 worse than ML v2 on 2024-25. It came out +0.0276, worse
+  than expected.
 - It is overconfident out of fold (calibration slope 0.83, against ML v2's 1.00). On 2024-25 it is underconfident
   (1.44), like every other model in that period.
 - The annual refit does not help: annual minus static on 2024-25 is -0.0001 [-0.0074, +0.0080].
@@ -60,8 +72,9 @@ stack with seqnet) minus the reference.
 - The stacker gives seqnet weights of 0.02-0.13. Its logit correlates 0.84 with ML v2's out of fold, so it carries
   almost no information that ML v2 lacks.
 - In the blind-test harness, which refits the MoE stackers before every card, adding seqnet makes both stacks worse:
-  - with the close: moe_close 0.5773 -> 0.5785, +0.0012 [+0.0000, +0.0025];
-  - with no line: moe_noline 0.5855 -> 0.5865, +0.0014 [+0.0002, +0.0028].
+  - with the close (845 fights): moe_close 0.5773 -> 0.5785, +0.0012 [+0.0000, +0.0025];
+  - with no line (all 854 fights): moe_noline 0.5896 -> 0.5910, +0.0014 [+0.0002, +0.0028]. On the 845 fights every
+    harness model covers, it is 0.5855 -> 0.5865.
 
 **3. Method x round: much worse than methodround S.** The model's 23-cell joint is its winner, times its
 method-and-round head given the winner, plus a draw share by format.
@@ -86,26 +99,45 @@ against ML v2's S2+ml2win cells.
 | mlrates + embeddings (embed's recipe, 14 of 18) vs mlrates recalibrated | CV keeps 14 targets | -1.67% [-2.06, -1.29] |
 | + seqnet on top of mlrates + embeddings (CV keep: 7 of 18) | CV keeps 7 targets | -0.10% [-0.19, -0.01] |
 
-- The 0.1% gains are real but about a tenth of what 2024-25 can resolve for one target (around 1% of level;
-  docs/V6_V10_PLAN.md section 2).
+- The 0.1% gains exclude 0 on the single 2024-25 look, but they are about a tenth of what 2024-25 can resolve for
+  one target (around 1% of level; docs/V6_V10_PLAN.md section 2).
+- The per-target keep rule has no margin: any CV improvement keeps the term. A 0.0005-style margin would keep fewer
+  targets.
 - Using them would mean running a PyTorch network in the stat-line path.
 - The pre-registration said nothing from the heads would be adopted, and nothing is.
 
-**5. What the experiment taught (all from data before 2024).**
-- **Data size is the binding constraint.** Each refit trains on 3,680 (2019) to 6,709 (2025) fights.
-  - Every configuration overfits within 2-7 epochs; after that the validation loss climbs steeply.
-  - Regularization did not help: smaller width, a lower learning rate, more dropout and weight decay all lost to
-    the base config in the 2016-2018 CV.
-  - The transformer encoder was the worst configuration (+0.0083 vs the GRU).
-- **The joint heads help the winner.** Dropping the method and stat losses cost +0.0014 in the 2016-2018 CV
-  (0.6473 vs 0.6459). Multi-task signal is the cheapest regularizer here.
-- **The current pre-fight Elo as an input did not help** (+0.0009). The GRU already recovers rating information
-  from the past fights' opponent Elo, outcomes and closing lines.
-- **Seed ensembles matter for nets this small.** Out-of-fold log loss falls from 0.6528 (1 seed) to 0.6509 (2),
-  0.6503 (4) and 0.6492 (8).
-- **Do not spend another cycle on deep winner models over UFC-only careers.** That would change only if the
-  training universe grew, for example with pre-UFC regional fights (research/model_preufc.md). That would be a new
-  premise, not a retune.
+**5. What the experiment taught (all from data before 2024; corrected by the verifier).**
+- **No hyperparameter change differed from the base config beyond noise.** The table below gives each config minus
+  base, paired per fight on the 1,093 fights of the 2016-2018 CV (`tools/seqnet_verify.py claims`).
+
+  | config minus base | CV log loss difference |
+  |---|---|
+  | from2010 (chosen) | -0.0007 [-0.0053, +0.0043] |
+  | long_hist | -0.0002 [-0.0037, +0.0031] |
+  | side_elo (current Elo as an input) | +0.0009 [-0.0020, +0.0039] |
+  | winner_only (no method or stat losses) | +0.0014 [-0.0027, +0.0054] |
+  | slow | +0.0015 [-0.0015, +0.0047] |
+  | slow_reg | +0.0019 [-0.0020, +0.0057] |
+  | small | +0.0022 [-0.0029, +0.0072] |
+  | transformer | +0.0077 [-0.0004, +0.0156] |
+
+  - Seed noise is as large as most of these gaps: two single seeds of the same config differ by +0.0011 (base) to
+    +0.0035 (from2010).
+  - So the earlier claims "the joint heads help the winner", "regularization did not help" and "the current Elo did
+    not help" are not established. None of these is distinguishable from 0. The choice of `from2010` followed the
+    pre-declared 0.0005 rule correctly, but it is a noise-level pick.
+- **Training dynamics.** At the base learning rate (2e-3), the best validation epoch is 2-7. The slower configs
+  peak later: slow at 5-10 epochs, slow_reg at 5-22, the transformer at 3-11. After the best epoch, validation loss
+  rises by a median of 0.004-0.022 over the next three epochs.
+- **Data size as "the binding constraint" is a hypothesis, not a result.** Each refit trains on 3,680 (2019) to
+  6,709 (2025) fights, and the net peaks early. But no learning-curve test was run. Dropping 2005-2009 (`from2010`)
+  was not worse than keeping it.
+- **Seed ensembles matter for nets this small** (re-derived exactly). Out-of-fold log loss falls from 0.6528
+  (1 seed) to 0.6509 (2), 0.6503 (4) and 0.6492 (8).
+- **Recommendation: no more retunes of deep winner models over UFC-only careers.** The gap to ML v2 (+0.015 out of
+  fold) is several times any hyperparameter effect seen here. A larger training universe, such as pre-UFC regional
+  fights (research/model_preufc.md), would be a new premise. It is untested, and the pre-UFC block already failed
+  inside ML v2.
 
 ## The model
 
@@ -167,7 +199,7 @@ against ML v2's S2+ml2win cells.
   chosen by forward-chained CV) on ml2's 2019-2025 expert table, with the seqnet column added. Forward-chained
   2021-2023 CV, 0.0005 rule.
 - **The single look.** 2024-2025 was scored once, by the `confirm` stage (`out/seqnet_cache/confirm.done`), after
-  the pre-registration was committed (8e41138, 10:55:44 pm UTC).
+  the pre-registration was committed (8e41138, 10:55:43 pm UTC by git).
   - One fix came afterwards. The market-rating benchmark row came out NaN because 9 of the 854 fights in 2025 have
     no market rating. The `addendum` stage scores that benchmark on its 845 fights with NaN-safe helpers and changes
     no seqnet number.
@@ -301,7 +333,20 @@ Run from the project root. Times are on the shared 4-core box with about 12 othe
 
 Each stage resumes from its cache. `hpcv` and `walk` skip runs already in `hpcv.json` or `walk.pkl`. The chosen
 config is frozen in `chosen.json` the first time `walk` runs; delete it to re-select. Training is seeded with one
-thread per process, so reruns on the same machine should match to float precision.
+thread per process, so reruns on the same machine should match to float precision. The verifier retrained the
+2023 refit with seed 101 and got bit-identical logits.
+
+Two runtime dependencies:
+- **embed's state for the stat-line recipes.** The `cv` and `confirm` stat-line recipes that use embeddings read
+  embed's `eval_state.pkl`, which `tools/embed.py` writes to its `--cache` directory. The published run read a
+  session scratch copy.
+  - Set `SEQNET_EMBED_STATE=<embed cache>/eval_state.pkl`. The default is `$TMPDIR/embed_cache`.
+  - Without it, those recipes are skipped with a warning and the stat-line row set changes. No winner or stack
+    number depends on it.
+- **The harness replay output.** It lives in the session scratchpad. Its provenance (replay at 10:56:52 pm UTC) is
+  in `seqnet.json["blindtest_replay"]`.
+
+Verification: `nice -n 5 python3 tools/seqnet_verify.py all` (about 10 s) writes `data/derived/seqnet_verify.json`.
 
 `data/derived/seqnet.json` carries the following.
 - Per backtest fight id (2019-2025, 2,809 fights):
@@ -326,7 +371,7 @@ thread per process, so reruns on the same machine should match to float precisio
 
 ---
 
-The pre-registration below is verbatim as committed in 8e41138 (10:55:44 pm UTC). The "~10:58 pm" in its first
+The pre-registration below is verbatim as committed in 8e41138 (10:55:43 pm UTC by git). The "~10:58 pm" in its first
 line was an estimate written before the commit; the commit time is the record.
 
 ## Pre-registration of the 2024-2025 look

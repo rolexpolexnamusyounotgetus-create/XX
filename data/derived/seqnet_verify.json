@@ -137,7 +137,7 @@
  },
  "_meta": {
   "tool": "tools/seqnet_verify.py",
-  "updated": "2026-11-06T23:11:42.867355Z"
+  "updated": "2026-11-06T23:13:39.561548Z"
  },
  "score": {
   "oof_2019_2023": {
