@@ -185,3 +185,12 @@ Findings from verified research that the next engine versions must use. Each lin
   close and close + stack; keep it only on top of the opening line (-0.0088 [-0.0143, -0.0036]) and the ML
   logistic alone. Tuned rating systems in data/derived/ratings.json score 0.618-0.623 on 2024-25 (Elo 0.677):
   use them in the stacks once the ratings verifier signs off.
+- OPPADJ (verified, research/model_oppadj.md): per-fight deviance on 2024-25 vs the engine's raw rates —
+  takedown attempts -11.5%, control -7.9%, control/TD -6.7%, distance attempts -5.4%, TD success -3.9%, leg acc
+  -3.4%, head acc -3.3%, ground attempts -2.9% (CIs exclude 0); KD, body accuracy and submissions do not improve
+  (keep them off). Still gains on top of mlrates. Winner log loss ~-0.003 in every period, not significant
+  alone. Engine recipe and the ML-path recipe (scale ML targets by (F_off*F_def)^beta) are in the report.
+- OFFICIALS (verified with one claim dropped, research/model_officials.md): the home-abroad judging term plus the
+  closeness shape improve 7-class decision log loss -0.0120 [-0.0200, -0.0048] on 2024-25 (significant only
+  there). NAMED-JUDGE EFFECTS DO NOT PREDICT (they make decision-winner log loss worse in all three windows):
+  ship them OFF by default; keep shared judge noise and the home-abroad term.
