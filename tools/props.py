@@ -1323,6 +1323,118 @@ def joints_cache(A, spec, folds, wname):
     return compose(A[wname], np.nan_to_num(M, nan=1 / 3), np.nan_to_num(R, nan=0.2), A["K"], A["draw_c"])
 
 
+# ====================================================================== pre-registration and the single 2024-25 look
+PREREG = os.path.join(CACHE, "prereg.json")
+VALID_DONE = os.path.join(CACHE, "valid.done")
+
+
+@stage("prereg")
+def stage_prereg(args):
+    cvr = json.load(open(os.path.join(CACHE, "cv.json")))
+    if os.path.exists(VALID_DONE):
+        raise SystemExit("the 2024-25 look has already run; the pre-registration is frozen")
+    tb = cvr["cv_tables"]["W_close | fights with method props"]
+    pv = tb["paired_vs_S2 (cycle-1 cells)"]
+    pr = {
+        "written_utc": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+        "frozen_from": {"cv_built": cvr["built"], "chosen": cvr["selection"]["chosen"],
+                        "params": cvr["params_fit_2021_2023"]},
+        "scored_object": "the chosen pool (spec and parameters above, fit on 2021-2023 fights with props) for "
+                         "P(method | winner) and P(round | side, method), composed with the winner model W_close "
+                         "(cycle 1's close stack, market + ML v2, fit 2019-2023); where a prop family is missing the "
+                         "part falls back to S2 (the degrade rule)",
+        "window": [TEST_FROM, TEST_TO],
+        "primary": {"metric": "7-bin log loss", "set": "2024-25 fights with method props (close+props regime)",
+                    "comparison": "pool minus S2 cycle-1 cells, same winner (W_close): the difference is method given "
+                                  "the winner plus the draw cell",
+                    "cv_estimate": pv.get("pool (chosen)", {}).get("bin7"),
+                    "expected_effect": "about the CV estimate; V6_V10_PLAN Cycle 2 expects -0.005 to -0.015",
+                    "mde_note": "V6_V10_PLAN section 2: MDE for a method-given-winner change about 0.015 on 2024-25"},
+        "secondaries": ["method given the winner", "round given a finish", "method3", "finish vs decision",
+                        "who x how x when (joint)", "the same against props alone and against the current 40/60 "
+                        "blend (conditionals with the same winner, and as published with their own winners)",
+                        "W_ml2 instead of W_close", "all fights (degrade)", "P(decision) mean predicted vs observed "
+                        "(target: within 2 points)", "card segment (descriptive)"],
+        "failure": ["primary: pool worse than S2 with a CI excluding 0",
+                    "method given the winner worse than the current 40/60 blend's conditionals by more than +0.003 "
+                    "(V6_V10_PLAN 6.3 not-worse bound for method)",
+                    "round given a finish worse than S2 by more than +0.002 (V6_V10_PLAN Cycle 2 gate)",
+                    "P(decision) more than 2 points from observed"],
+        "decision_rule": "This is cycle-2 research (no version look). The look confirms or not; it never changes the "
+                         "spec or the parameters. Adoption into predict()/the ledger follows the CV gate; the v7 "
+                         "version look is the official test.",
+        "confirmation_look_note": "2024-25 was already used for the S2 / props / 40/60 comparisons in model_ml2 and "
+                                  "model_methodround: the S2 and 40/60 numbers there are known, the pool's are not.",
+    }
+    json.dump(pr, open(PREREG, "w"), indent=1, default=float)
+    log("prereg written: %s" % PREREG)
+
+
+@stage("valid")
+def stage_valid(args):
+    import numpy as np
+    if os.path.exists(VALID_DONE):
+        raise SystemExit("valid has already run (%s): 2024-25 is scored once" % VALID_DONE)
+    if not os.path.exists(PREREG):
+        raise SystemExit("run `prereg` first (and commit it) before the single look")
+    pr = json.load(open(PREREG))
+    ch = pr["frozen_from"]["chosen"]
+    best = Spec(ch["name"], ch["m_exp"], ch["m_bias"], ch["r_exp"], ch["r_delta"], ch["rep_m"], ch["rep_r"])
+    par = pr["frozen_from"]["params"]
+    A_of = lambda s: assemble(s.rep_m, s.rep_r)          # noqa: E731
+    A = A_of(best)
+    test = (A["year"] >= 2024) & (A["year"] <= 2025) & np.array([d <= TEST_TO for d in A["date"]])
+    open(VALID_DONE, "w").write(dt.datetime.now(dt.timezone.utc).isoformat() + "\n")
+    pk = {"S2 (cycle-1 cells)": Spec("S2"), "props alone": Spec("P", m_exp=("P",), r_exp=("P",)),
+          "40/60 blend (current)": Spec("B46", m_exp=("B46",), r_exp=("B46",)), "pool (chosen)": best}
+    trn = (A["year"] >= 2021) & (A["year"] <= 2023)
+    out = {"built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(), "prereg": pr, "tables": {}}
+    joints_w = {}
+    for wname in ("W_close", "W_ml2"):
+        joints = {}
+        for k, s in pk.items():
+            Ak = A_of(s)
+            p = par if k == "pool (chosen)" else s.fit(Ak, trn)
+            M, R = s.predict(Ak, test, p)
+            Mf = np.full((len(Ak["ids"]), 2, 3), 1 / 3)
+            Rf = np.full((len(Ak["ids"]), 2, 2, R5), 0.2)
+            Mf[test], Rf[test] = M, R
+            joints[k] = compose(Ak[wname], Mf, Rf, Ak["K"], Ak["draw_c"])
+        joints_w[wname] = joints
+        for setname, msk in (("fights with method props", test & A["hasM"] & (A["y"] >= 0)),
+                             ("all fights (degrade: S2 where props are missing)", test & (A["y"] >= 0))):
+            tabl, _, _ = score_table(A, msk, joints, "S2 (cycle-1 cells)", B=args.boot)
+            tabl["paired_pool_vs_blend"] = score_table(A, msk, {"pool (chosen)": joints["pool (chosen)"],
+                                                                "40/60 blend (current)": joints["40/60 blend (current)"]},
+                                                       "40/60 blend (current)", B=args.boot)[0]["paired_vs_40/60 blend (current)"]
+            tabl["paired_pool_vs_props"] = score_table(A, msk, {"pool (chosen)": joints["pool (chosen)"],
+                                                                "props alone": joints["props alone"]},
+                                                       "props alone", B=args.boot)[0]["paired_vs_props alone"]
+            tabl["p_decision"] = {k: round(float(p_decision(P[msk]).mean()), 4) for k, P in joints.items()}
+            tabl["p_decision"]["observed"] = round(float(np.isin(A["y"][msk], [I_XDEC, I_YDEC, I_DRAW]).mean()), 4)
+            out["tables"]["%s | %s" % (wname, setname)] = tabl
+    msk = test & A["hasM"] & A["has_pmk"] & (A["y"] >= 0)
+    tabl, _, _ = score_table(A, msk, dict(A["J_pub"], **{"pool (W_close)": joints_w["W_close"]["pool (chosen)"]}),
+                             "40/60 blend (current)", B=args.boot)
+    out["tables"]["as published (own winners) | fights with props in market.json too"] = tabl
+    # card segment (descriptive): pool minus S2, W_close, fights with props
+    out["by_segment"] = {}
+    for sg in ("main", "prelim", "early", "unknown"):
+        m = test & A["hasM"] & (A["y"] >= 0) & (A["seg"] == sg)
+        if m.sum() >= 30:
+            t_, _, _ = score_table(A, m, {k: joints_w["W_close"][k] for k in ("S2 (cycle-1 cells)", "pool (chosen)")},
+                                   "S2 (cycle-1 cells)", B=args.boot)
+            out["by_segment"][sg] = {"n": int(m.sum()), "pool_minus_S2": {
+                k: t_["paired_vs_S2 (cycle-1 cells)"]["pool (chosen)"][k] for k in ("bin7", "method_given_winner",
+                                                                                   "round_given_fin", "joint")}}
+    out["pool_cells_2024_25"] = {A["ids"][i]: [round(float(x), 5) for x in joints_w["W_close"]["pool (chosen)"][i]]
+                                 for i in np.flatnonzero(test)}
+    json.dump(out, open(os.path.join(CACHE, "valid.json"), "w"), indent=1, default=float)
+    t = out["tables"]["W_close | fights with method props"]
+    log("valid (ONE look) n=%d: pool - S2 %s" % (t["n"], {k: t["paired_vs_S2 (cycle-1 cells)"]["pool (chosen)"][k]["diff"]
+                                                          for k in ("bin7", "method_given_winner", "round_given_fin")}))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=sorted(STAGES) + ["all"])

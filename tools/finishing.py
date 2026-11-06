@@ -830,6 +830,291 @@ def losses(base, J, rows):
     return MR.per_fight_losses(J, base["y"][rows], base["T"][rows])
 
 
+def summ(base, P6, H, rows):
+    return {k: round(v, 5) for k, v in MR.summarize_losses(losses(base, joint(base, P6, H, rows), rows)).items()}
+
+
+def get_folds(base, feats, fcfg, use_pre=True, years=FOLDS):
+    """FoldData for each fold (cached by filter settings and the pre-UFC switch)."""
+    key = "fd_s%g_t%g_p%d.pkl" % (fcfg["sigma0"], fcfg["tau"], int(use_pre))
+    if os.path.exists(cpath(key)):
+        FD = load(key)
+        if all(v in FD for v in years):
+            return FD
+    filt, _ = run_filter(feats, base, fcfg["sigma0"], fcfg["tau"])
+    card = cardio_block(feats, base)
+    FD = {v: FoldData(base, feats, v, filt, card, use_pre=use_pre) for v in years}
+    save(FD, key)
+    return FD
+
+
+def oof_method(base, FD, years, cfg):
+    """Out-of-fold P6 for the given folds under a method config {spec, C, start, hl, gbm, pool}."""
+    T = base["T"]
+    yr = T["year"].to_numpy()
+    P6 = np.full((len(T), 6), np.nan)
+    for v in years:
+        va = (yr == v) if v < 2024 else (yr >= 2024)
+        qA, qB, _ = cm_fold(FD[v], base, cfg["spec"], cfg.get("C"), cfg.get("start", 2008), cfg.get("gbm"),
+                            cfg.get("hl", 8.0))
+        if cfg.get("gbm_mix"):
+            gA, gB, _ = cm_fold(FD[v], base, cfg["spec"], None, cfg.get("start", 2008), cfg["gbm_mix"],
+                                cfg.get("hl", 8.0))
+            qA, qB = 0.5 * (qA + gA), 0.5 * (qB + gB)
+        if cfg.get("pool"):
+            qA, qB = pool_s2(base, qA, qB, cfg["pool"])
+        P6[va] = p6_from_cond(qA[va], qB[va], base["pwin"][va])
+    return P6
+
+
+def s2_cond(base):
+    """S2's own method-given-winner shares per side (from its six-class output)."""
+    P = np.nan_to_num(base["P6_S2"], nan=1.0 / 6)
+    qA = P[:, :3] / P[:, :3].sum(1, keepdims=True)
+    qB = P[:, [5, 4, 3]] / P[:, 3:].sum(1, keepdims=True)
+    return qA, qB
+
+
+def pool_s2(base, qA, qB, a):
+    """Log-linear pool of the conditional shares with S2's: q ~ q_fin^(1 - a) q_S2^a."""
+    sA, sB = s2_cond(base)
+    out = []
+    for q, s in ((qA, sA), (qB, sB)):
+        z = (1 - a) * np.log(np.clip(q, 1e-9, 1)) + a * np.log(np.clip(s, 1e-9, 1))
+        z = np.exp(z - z.max(1, keepdims=True))
+        out.append(z / z.sum(1, keepdims=True))
+    return out
+
+
+def oof_round(base, FD, years, rcfg):
+    T = base["T"]
+    yr = T["year"].to_numpy()
+    H = np.array(base["H"], copy=True)
+    if rcfg is None:
+        return H
+    for v in years:
+        va = (yr == v) if v < 2024 else (yr >= 2024)
+        Hv, _ = cr_fold(FD[v], base, rcfg["spec"], rcfg["C"], rcfg.get("start", 2008), rcfg.get("slope", True))
+        H[va] = Hv[va]
+    return H
+
+
+def rows_of(base, years):
+    yr = base["T"]["year"].to_numpy()
+    m = np.zeros(len(yr), bool)
+    for v in years:
+        m |= (yr == v) if v < 2024 else (yr >= 2024)
+    return m & (base["y"] >= 0)
+
+
+# ====================================================================== stage: tune (folds 2016-2019)
+METHOD_BLOCKS = ["filter", "round", "sd", "cardio", "exp", "inter"]
+ROUND_SPECS = {"haz": {"haz": True}, "haz+eb": {"haz": True, "fin": ["eb"]},
+               "eb+fight+win": {"fin": ["eb", "fight", "win"]},
+               "eb+fight+win+filter+cardio": {"fin": ["eb", "fight", "win", "filter", "cardio"]},
+               "haz+eb+fight+win+filter+cardio": {"haz": True, "fin": ["eb", "fight", "win", "filter", "cardio"]}}
+
+
+def stage_tune(args):
+    """Every hyperparameter by forward-chained CV on the 2016-2019 folds (each fit on everything before the fold
+    year). Decision rule for adding anything: the 7-bin log loss improves by more than 0.0005 (the ml2 rule)."""
+    t0 = time.time()
+    base, feats = load("base.pkl"), load("feats.pkl")
+    yrs = TUNE_YEARS
+    rows = rows_of(base, yrs)
+    rec = {"years": list(yrs), "n": int(rows.sum()), "S2+ml2win": summ(base, base["P6_S2w"], base["H"], rows)}
+    ref = rec["S2+ml2win"]["bin7"]
+    log("tune: S2+ml2win on %d tune-fold fights: bin7 %.5f joint %.5f mgw %.5f rgf %.5f" % (
+        rows.sum(), ref, rec["S2+ml2win"]["joint"], rec["S2+ml2win"]["method_given_winner"],
+        rec["S2+ml2win"]["round_given_fin"]))
+    # 1) filter settings by the filter's own pre-fight method-given-winner log loss, 2012-2019 bouts
+    rec["filter_grid"] = []
+    best = None
+    for s0 in (0.6, 0.8, 1.0):
+        for tau in (0.1, 0.3):
+            _, pl = run_filter(feats, base, s0, tau)
+            m = (pl[:, 0] >= 2012) & (pl[:, 0] < 2020)
+            v = float(pl[m, 1].mean())
+            rec["filter_grid"].append({"sigma0": s0, "tau": tau, "mgw_ll": round(v, 5), "n": int(m.sum())})
+            if best is None or v < best[0]:
+                best = (v, {"sigma0": s0, "tau": tau})
+    fcfg = best[1]
+    _, pl0 = run_filter(feats, base, 1e-4, 0.0)
+    m = (pl0[:, 0] >= 2012) & (pl0[:, 0] < 2020)
+    rec["filter_base_only_mgw_ll"] = round(float(pl0[m, 1].mean()), 5)
+    rec["filter"] = fcfg
+    log("tune: filter %s (own mgw %.5f vs division base rates %.5f)" % (fcfg, best[0], rec["filter_base_only_mgw_ll"]))
+    FD = get_folds(base, feats, fcfg, True)
+    FDn = get_folds(base, feats, fcfg, False)
+    rec["eb_meta"] = {str(v): FD[v].meta for v in FOLDS}
+
+    def ev(cfg, H=None, fd=None):
+        P6 = oof_method(base, fd or FD, yrs, cfg)
+        return summ(base, P6, base["H"] if H is None else H, rows), P6
+    # 2) training start, recency, penalty on the core spec (S2 design + winner logit + EB rates)
+    rec["core_grid"] = []
+    core = {"s2": True, "fin": ["win", "eb"]}
+    best = None
+    for start in (2008, 2012):
+        for hl in (8.0, None):
+            for C in (0.001, 0.0015, 0.002, 0.003):
+                s, _ = ev({"spec": core, "C": C, "start": start, "hl": hl})
+                rec["core_grid"].append({"start": start, "hl": hl, "C": C, **s})
+                if best is None or s["bin7"] < best[0]:
+                    best = (s["bin7"], start, hl, C)
+    _, start, hl, C = best
+    log("tune: core grid best start %d hl %s C %g bin7 %.5f (%+.5f vs S2+ml2win)" % (start, hl, C, best[0], best[0] - ref))
+    # the conditional structure alone (S2 design + winner logit, no EB) and the EB block's own contribution
+    s_noeb, _ = ev({"spec": {"s2": True, "fin": ["win"]}, "C": C, "start": start, "hl": hl})
+    s_nopre, _ = ev({"spec": core, "C": C, "start": start, "hl": hl}, fd=FDn)
+    s_eb_only, _ = ev({"spec": {"fin": ["win", "eb", "fight"]}, "C": 0.01, "start": start, "hl": hl})
+    rec["ablation"] = {"conditional_S2_design_only": s_noeb, "core_without_preufc_prior": s_nopre,
+                       "finishing_only_no_S2_design": s_eb_only}
+    use_pre = not (best[0] >= s_nopre["bin7"] - SEL_MIN)       # the pre-UFC prior must earn its place
+    if not use_pre:
+        FD = FDn
+    eb_in = best[0] < s_noeb["bin7"] - SEL_MIN
+    log("tune: no-EB %.5f, no pre-UFC prior %.5f, finishing-only %.5f -> EB %s, pre-UFC prior %s" % (
+        s_noeb["bin7"], s_nopre["bin7"], s_eb_only["bin7"], eb_in, use_pre))
+    spec = {"s2": True, "fin": ["win"] + (["eb"] if eb_in else [])}
+    cur = best[0] if eb_in else s_noeb["bin7"]
+    # 3) forward block selection with the 0.0005 rule
+    rec["forward"] = []
+    pool = list(METHOD_BLOCKS)
+    while pool:
+        trial = []
+        for b in pool:
+            s, _ = ev({"spec": {"s2": True, "fin": spec["fin"] + [b]}, "C": C, "start": start, "hl": hl})
+            trial.append((s["bin7"], b, s))
+            rec["forward"].append({"base": list(spec["fin"]), "add": b, **s})
+        bv, bb, _ = min(trial)
+        if bv < cur - SEL_MIN:
+            spec["fin"].append(bb)
+            pool.remove(bb)
+            cur = bv
+            log("tune: + %s -> bin7 %.5f" % (bb, bv))
+        else:
+            break
+    # 4) penalty re-check on the final spec
+    rec["final_C_grid"] = []
+    for Cc in (0.001, 0.0015, 0.002, 0.003):
+        s, _ = ev({"spec": spec, "C": Cc, "start": start, "hl": hl})
+        rec["final_C_grid"].append({"C": Cc, **s})
+        if s["bin7"] < cur - 1e-9:
+            cur, C = s["bin7"], Cc
+    mcfg = {"spec": spec, "C": C, "start": start, "hl": hl}
+    sM, P6M = ev(mcfg)
+    # 5) GBM family and the MNL + GBM average (recorded; the family choice is made on the 2020-2023 folds)
+    rec["gbm_grid"] = []
+    bestg = None
+    for nl, mdl, ff in ((4, 80, 0.6), (7, 80, 0.6), (7, 150, 0.4)):
+        g = {"num_leaves": nl, "min_data_in_leaf": mdl, "feature_fraction": ff}
+        s, _ = ev({"spec": spec, "start": start, "hl": hl, "gbm": g})
+        rec["gbm_grid"].append({**g, **s})
+        if bestg is None or s["bin7"] < bestg[0]:
+            bestg = (s["bin7"], g)
+    gcfg = {"spec": spec, "start": start, "hl": hl, "gbm": bestg[1]}
+    # 6) log-linear pool with S2's own method-given-winner shares
+    rec["pool_grid"] = []
+    for a in (0.0, 0.25, 0.5, 0.75):
+        s, _ = ev(dict(mcfg, pool=a))
+        rec["pool_grid"].append({"a": a, **s})
+    a_best = min(rec["pool_grid"], key=lambda r: r["bin7"])
+    mcfg["pool"] = a_best["a"] if a_best["bin7"] < sM["bin7"] - SEL_MIN else 0.0
+    sM, P6M = ev(mcfg)
+    log("tune: method model %s -> bin7 %.5f (%+.5f vs S2+ml2win); GBM best %.5f" % (
+        mcfg, sM["bin7"], sM["bin7"] - ref, bestg[0]))
+    # 7) round model on the chosen method model's P6: selected on the joint (who x how x when) loss; it replaces
+    # S2's competing-risk round shapes only if the joint improves by > 0.0005
+    rec["round_grid"] = []
+    bestr = None
+    for name, rs in ROUND_SPECS.items():
+        for Cr in (0.003, 0.01, 0.03):
+            for slope in (True, False):
+                rc = {"spec": rs, "C": Cr, "slope": slope, "name": name}
+                H = oof_round(base, FD, yrs, rc)
+                s = summ(base, P6M, H, rows)
+                rec["round_grid"].append({"name": name, "C": Cr, "slope": slope, **s})
+                if bestr is None or s["joint"] < bestr[0]:
+                    bestr = (s["joint"], rc)
+    rcfg = bestr[1] if bestr[0] < sM["joint"] - SEL_MIN else None
+    log("tune: round model %s (best joint %.5f vs S2 shapes %.5f)" % (rcfg, bestr[0], sM["joint"]))
+    rec["chosen"] = {"filter": fcfg, "use_pre": use_pre, "method": mcfg, "gbm": gcfg, "round": rcfg}
+    rec["seconds"] = round(time.time() - t0)
+    json.dump(rec, open(cpath("tune.json"), "w"), indent=1, default=float)
+    log("tune: done in %.0f s" % (time.time() - t0))
+
+
+STAGES["tune"] = stage_tune
+
+
+# ====================================================================== stage: cv (folds 2020-2023)
+def paired(base, rows, P, ref, B_=2000, seed=11):
+    """Means with event-cluster CIs and paired differences vs ref for {name: (P6, H)} on rows."""
+    T = base["T"]
+    L = {k: losses(base, joint(base, p6, h, rows), rows) for k, (p6, h) in P.items()}
+    bt, st = MR.cluster_bootstrap(L, T["event"].to_numpy()[rows], B=B_, seed=seed)
+    pdif = {k + " - " + ref: MR.paired_diff(L[k], L[ref], st, METRICS) for k in P if k != ref}
+    return bt, pdif, L, st
+
+
+def stage_cv(args):
+    """Frozen tune choices; out-of-fold predictions for every fold 2016-2023 (each year fit on everything before it);
+    the 2020-2023 folds decide the model family and give the comparison with S2+ml2win (paired event-cluster CIs)."""
+    t0 = time.time()
+    base, feats = load("base.pkl"), load("feats.pkl")
+    tn = json.load(open(cpath("tune.json")))
+    ch = tn["chosen"]
+    FD = get_folds(base, feats, ch["filter"], ch["use_pre"])
+    years = TUNE_YEARS + CV_YEARS
+    mcfg, gcfg, rcfg = ch["method"], ch["gbm"], ch["round"]
+    P6 = {"MNL": oof_method(base, FD, years, mcfg), "GBM": oof_method(base, FD, years, gcfg),
+          "MNL+GBM": oof_method(base, FD, years, dict(mcfg, gbm_mix=gcfg["gbm"]))}
+    H = oof_round(base, FD, years, rcfg)
+    rows = rows_of(base, CV_YEARS)
+    fam = {k: summ(base, p, base["H"], rows) for k, p in P6.items()}
+    fam_pick = min(fam, key=lambda k: fam[k]["bin7"])
+    log("cv: family on 2020-2023 (S2 shapes): %s -> %s" % ({k: v["bin7"] for k, v in fam.items()}, fam_pick))
+    # ablations on the CV folds (reported; nothing is re-chosen from them)
+    abl = {"conditional_S2_design_only": dict(mcfg, spec={"s2": True, "fin": ["win"]}),
+           "finishing_only_no_S2_design": {"spec": {"fin": ["win", "eb", "fight"]}, "C": 0.01,
+                                           "start": mcfg["start"], "hl": mcfg["hl"]}}
+    P6a = {k: oof_method(base, FD, CV_YEARS, c) for k, c in abl.items()}
+    FDn = get_folds(base, feats, ch["filter"], not ch["use_pre"])
+    P6a["core_without_preufc_prior" if ch["use_pre"] else "core_with_preufc_prior"] = oof_method(base, FDn, CV_YEARS, mcfg)
+    best = P6[fam_pick]
+    comp = {"S2+ml2win": (base["P6_S2w"], base["H"]), "S2": (np.nan_to_num(base["P6_S2"], nan=1 / 6), base["H"]),
+            "finishing (method only, S2 round shapes)": (best, base["H"]),
+            "finishing": (best, H)}
+    for k, p in P6a.items():
+        comp["ablation: " + k] = (p, base["H"])
+    bt, pdif, L, st = paired(base, rows, comp, "S2+ml2win")
+    out = {"years": list(CV_YEARS), "n": int(rows.sum()), "family": fam, "family_pick": fam_pick,
+           "means": bt, "paired_vs_S2+ml2win": pdif, "choices": ch}
+    # by year and by format (descriptive)
+    yr = base["T"]["year"].to_numpy()
+    out["by_year"] = {}
+    for v in CV_YEARS:
+        m = rows & (yr == v)
+        out["by_year"][str(v)] = {k: summ(base, comp[k][0], comp[k][1], m)["bin7"] for k in ("S2+ml2win", "finishing")}
+        out["by_year"][str(v)]["n"] = int(m.sum())
+    r5 = (base["T"]["rounds"].to_numpy() == 5)
+    out["by_format"] = {}
+    for nm, m in (("3 rounds", rows & ~r5), ("5 rounds", rows & r5)):
+        out["by_format"][nm] = {"n": int(m.sum()), **{k: {mm: summ(base, comp[k][0], comp[k][1], m)[mm]
+                                                          for mm in ("bin7", "joint", "round_given_fin")}
+                                                      for k in ("S2+ml2win", "finishing")}}
+    for k, v in pdif.items():
+        log("cv: %s: %s" % (k, {m: (v[m]["diff"], v[m]["ci95"]) for m in ("bin7", "joint", "method_given_winner",
+                                                                            "round_given_fin") if m in v}))
+    save({"P6": P6, "H": H, "P6_best": best, "fam_pick": fam_pick, "years": years}, "cv_oof.pkl")
+    json.dump(out, open(cpath("cv.json"), "w"), indent=1, default=float)
+    log("cv: done in %.0f s" % (time.time() - t0))
+
+
+STAGES["cv"] = stage_cv
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])

@@ -170,18 +170,22 @@ function finish() {
       const nk = mt.startsWith("nc_") ? "nc_n" : null, { sE, nE } = stat(L[k], mt, nk);
       const tot = sE.reduce((a, b) => a + b, 0) / Math.max(1, nE.reduce((a, b) => a + b, 0));
       out.levels[k][mt] = +tot.toFixed(5);
-      if (k === "base") continue;
-      const b = stat(L.base, mt, nk), d = sE.map((v, j) => v - b.sE[j]), N = nE;
-      const diff = d.reduce((a, c) => a + c, 0) / Math.max(1, N.reduce((a, c) => a + c, 0));
-      const bs = picks.map((p) => { let num = 0, den = 0; for (let j = 0; j < p.length; j++) if (p[j]) { num += p[j] * d[j]; den += p[j] * N[j]; } return num / Math.max(1, den); }).sort((x, y) => x - y);
-      out.paired[k] = out.paired[k] || {};
-      out.paired[k][mt] = { diff: +diff.toFixed(5), lo: +bs[50].toFixed(5), hi: +bs[1949].toFixed(5) };
+      for (const ref of ["base", "embed"]) {
+        if (k === ref || !L[ref] || (ref === "embed" && k === "base")) continue;
+        const b = stat(L[ref], mt, nk), d = sE.map((v, j) => v - b.sE[j]), N = nE;
+        const diff = d.reduce((a, c) => a + c, 0) / Math.max(1, N.reduce((a, c) => a + c, 0));
+        const bs = picks.map((p) => { let num = 0, den = 0; for (let j = 0; j < p.length; j++) if (p[j]) { num += p[j] * d[j]; den += p[j] * N[j]; } return num / Math.max(1, den); }).sort((x, y) => x - y);
+        const key = ref === "base" ? k : k + "_vs_embed";
+        out.paired[key] = out.paired[key] || {};
+        out.paired[key][mt] = { diff: +diff.toFixed(5), lo: +bs[50].toFixed(5), hi: +bs[1949].toFixed(5) };
+      }
     }
   }
   out.levels.nc_sides = L.base.reduce((a, l) => a + (l.nc_n || 0), 0);
   fs.writeFileSync(path.join(ROOT, "data/derived/v5_step4_check.json"), JSON.stringify(out, null, 1));
-  for (const k of CFG) {
-    console.log(`${k.padEnd(13)} ` + metrics.map((mt) => `${mt} ${out.levels[k][mt]}` + (out.paired[k] ? ` (${out.paired[k][mt].diff >= 0 ? "+" : ""}${out.paired[k][mt].diff} [${out.paired[k][mt].lo}, ${out.paired[k][mt].hi}])` : "")).join("; "));
+  for (const k of CFG) console.log(`${k.padEnd(13)} ` + metrics.map((mt) => `${mt} ${out.levels[k][mt]}`).join("; "));
+  for (const k in out.paired) {
+    console.log(`  paired ${k} - ${k.endsWith("_vs_embed") ? "embed" : "base"}: ` + metrics.map((mt) => { const q = out.paired[k][mt]; return `${mt} ${q.diff >= 0 ? "+" : ""}${q.diff} [${q.lo}, ${q.hi}]`; }).join("; "));
   }
   console.log(`errors ${errs.length}${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}; newcomer sides ${out.levels.nc_sides}; ${((Date.now() - t0) / 1000).toFixed(0)} s; wrote data/derived/v5_step4_check.json`);
 }
