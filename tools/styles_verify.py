@@ -667,7 +667,7 @@ def render_log(r, J):
       "quasi-likelihood dispersion. Fight-clustered sandwich z (now used for the screen) against the first "
       "version's z: " + "; ".join("%s %+.2f -> %+.2f" % (k, v["quasi_original"], v["clustered_statsmodels"])
                                   for k, v in zc.items()) +
-      ". Symmetric opponent terms lose 15-35% of their z; antisymmetric physical terms gain. The numpy sandwich in "
+      ". Symmetric opponent terms lose 15-35%% of their z; antisymmetric physical terms gain. The numpy sandwich in "
       "`styles.py` matches statsmodels (max |z difference| %.2f)."
       % max(abs(v["clustered_statsmodels"] - v["clustered_styles_json"]) for v in zc.values()))
     A("")

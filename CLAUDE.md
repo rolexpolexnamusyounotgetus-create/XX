@@ -77,6 +77,15 @@ Artifact tool: pass the link and the rebuilt volk-gaethje-simulator.html.
   center so posts never block it.
 - Headless Chrome uses software WebGL and crawls. To test the flow, call show.frame(1/30) in a loop
   with arena.render stubbed out (see tests/func_check.py). window.VGSim exposes { show, newFight }.
+- Skinned fighters (src/avatar3d.js, FightAvatar): the primitive Rig stays as an invisible driver. When an
+  avatar binds, it resizes the driver's segments to the avatar's skeleton, remaps pelvis height for the
+  longer MakeHuman legs, hides the primitive meshes, and wraps takeHit and headPos/bodyPos/liverPos.
+  Show.render calls avatar.sync() before drawing; Actor.update calls avatar.tick(dt). Rig.STRIDE grows
+  by 20 floats so replays carry clip and face state. Dev page: tests/dev_avatar.html (+ fightassets_shim.js).
+- The arena turns off renderer.info.autoReset; skeletons only update when info.reset() runs, so render
+  through arena.render() (a bare renderer.render shows stale poses).
+- r128 shader chunks #define r1/r2 etc.; do not use those names in onBeforeCompile code. Hex colours on
+  materials are linear in r128: convertSRGBToLinear() for kit and skin tints.
 
 ## Page rules (claude.ai artifact host)
 
