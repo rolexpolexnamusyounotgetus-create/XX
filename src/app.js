@@ -1302,7 +1302,7 @@
 
     // occupancy bar
     var occ = x.pair.occupancy, occBox = $("occBar"), key = $("occKey"); occBox.textContent = ""; key.textContent = "";
-    var parts = [["Distance", occ[0], "var(--axis)", "var(--ink)"], ["Clinch", occ[1] + occ[2], "var(--muted)", "var(--on-fill)"], [nA + " on top", occ[3], "var(--blue)", "var(--on-fill)"], [nB + " on top", occ[4], "var(--red)", "var(--on-fill)"]];
+    var parts = [["Distance", occ[0], "var(--axis)", "var(--ink)"], ["Clinch", occ[1] + occ[2], "var(--muted)", "var(--on-fill)"], [nA + " on top", occ[3], "var(--blue-fill)", "var(--on-fill)"], [nB + " on top", occ[4], "var(--red-fill)", "var(--on-fill)"]];
     parts.forEach(function (p) {
       var s = el("span", null, p[1] > 0.09 ? pct(p[1], 0) : ""); s.style.width = Math.max(0.5, p[1] * 100) + "%"; s.style.background = p[2]; s.style.color = p[3]; occBox.appendChild(s);
       var k = el("span"); var i = el("i"); i.style.background = p[2]; k.appendChild(i); k.appendChild(document.createTextNode(p[0] + " " + pct(p[1], 0))); key.appendChild(k);

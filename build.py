@@ -200,9 +200,15 @@ def bench_block():
             if full:
                 out["noline"] = {"ll": g(full, "static", "log_loss"), "n": g(full, "static", "n"), "ci": full.get("ci_static"),
                                  "vs_best": full.get("vs_best_single_static")}
+                acc = g(full, "static", "accuracy")
+                if acc is not None:
+                    out["noline"]["acc"] = acc
         out["noline_cv"] = g(a, "no_line_cv_2021_2023")
         out["calibration"] = {k: v for k, v in (r.get("calibration_valid") or {}).items() if k in ("moe_market", "moe_nomarket", "market")}
         out["by_year"] = r.get("by_year")
+    # which simulator version produced the engine numbers the backtest quotes (the blend's engine expert, the calibration run)
+    out["engine_version"] = g(load_json("data/derived/moe_engine_bt.json"), "meta", "engine_version")
+    out["calib_version"] = g(load_json("data/derived/calibration.json"), "version")
     ml = load_json("data/derived/ml.json")
     t = g(ml, "results", "eval", "test_2024_plus")
     mk = load_json("data/derived/market.json")

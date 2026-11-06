@@ -62,3 +62,77 @@ Not embedded: the Mixamo-derived three.js example characters (licence unclear) a
 | `mh-mocap.bin.gz` | 280897 | Adobe Mixamo animation library (FBX re-host https://huggingface.co/datasets/Linzhan/Mixamo-Animations-Characters, converted to animation-only GLB in assets_wide): Bouncing_Fight_Idle, Lead_Jab, Punching, Hook_3, Right_Hook, Boxing_7, Hook_4, Body_Jab_Cross_3, Boxing_4, Elbow_Punch, Mma_Kick_5, Mma_Kick_6, Mma_Kick_2, Illegal_Knee, Light/Medium/Big_Hit_To_Head, Head_Hit_2, Head_Hit_3, Receiving_An_Uppercut, Hit_To_Body, Big_Stomach_Hit, Dizzy_Idle, Knocked_Out, Knocked_Out_2, Falling_Back_Death, Falling_Flat_Impact, Dying_7, Stunned, Standing_React_Death_Left/Right, Getting_Up, Double_Leg_Takedown_-_Attacker (0.6-2.4 s), Intercepting, Victory_Idle, Disappointed, Sitting_Idle_3 | Adobe (Mixamo) | **Not CC0.** Adobe Mixamo terms: royalty-free use of the animations inside your own projects; standalone redistribution of the raw animation files is not allowed. Used here baked into this page's own compact format for a private build | 37 clips sampled at 20-30 fps, strikes trimmed around contact, world-delta quaternions per bone plus a pelvis offset, delta-coded int16 in byte planes, gzipped (avatar2/tools/bakemocap.js); contact time and effector per strike |
 
 Total for the avatar files (`mh-*`): 4289888 bytes (about 5.7 MB once base64-encoded in the page). Arena and audio files have their own rows where those workstreams add them.
+
+## Arena surfaces and environment (`arena-*`, read by src/arena3d.js)
+
+All CC0 1.0. Each one is optional: the procedural stand-in stays when its image is missing or fails to decode.
+
+| File | Bytes | Source | Author | Licence | Changes |
+|---|---|---|---|---|---|
+| `arena-env-circus.jpg` | 28552 | https://polyhaven.com/a/circus_arena (`circus_arena_1k.hdr`) | Oliksiy Yakovlyev (Poly Haven) | CC0-1.0 | box-filtered to 512x256, log-encoded into 8 bits (value = log2(1 + 16 x) / log2(1 + 8192)), JPEG; decoded in a shader, the source venue's floor and seats dimmed, prefiltered by PMREM for image-based lighting (scratchpad arena2/hdr.py) |
+| `arena-fence-opacity.webp` | 24686 | https://ambientcg.com/a/Fence003 (`Fence003_1K-JPG_Opacity.jpg`) | ambientCG (Lennart Demes) | CC0-1.0 | 512 px, WebP; the wire is thickened slightly and its round-wire normal map is derived from it at load time |
+| `arena-mat-weave-normal.jpg` | 19296 | https://ambientcg.com/a/Fabric036 (`Fabric036_1K-JPG_NormalGL.jpg`) | ambientCG (Lennart Demes) | CC0-1.0 | one weave tile cut out, 128 px, JPEG; tiled under the procedural canvas print |
+| `arena-mat-slub.webp` | 23238 | https://ambientcg.com/a/Fabric036 (`Fabric036_1K-JPG_Color.jpg`) | ambientCG (Lennart Demes) | CC0-1.0 | greyscale high-pass of the colour map (the fabric's slubs), 256 px, WebP; modulates the print's brightness slightly |
+| `arena-leather-normal.jpg` | 9828 | https://polyhaven.com/a/leather_white (`leather_white_nor_gl_1k.jpg`) | Rob Tuytel (Poly Haven) | CC0-1.0 | 256 px tile, grain amplified x4 (scaled back in the material), JPEG; on the fence pads, post pads and stools |
+
+Arena total: 105600 bytes.
+
+## Arena sound (`audio-*`, read by src/audio.js)
+
+Re-encoded from the project's arena audio pack (scratchpad `assets_wide/audio/`, built by its `tools/audio/build_pack.py`;
+each pack item's sources are listed in its `manifest_audio.json`): mono MP3, 64 kbps for effects, 48-56 kbps for crowd beds
+and reactions, same lengths as the pack items. **Not all CC0**: three licences in this set carry conditions, and the
+credits ship inside the page in the header of src/audio.js.
+
+- **CC BY 4.0, attribution required**: Gregor Quendel, "Crowd Cheering Sounds", https://opengameart.org/content/free-crowd-cheering-sounds
+  (gregorquendel.com). Credit: "Crowd sounds: Gregor Quendel, CC BY 4.0", in the src/audio.js header.
+- **BBC RemArc licence, personal, educational or research use only, no commercial use** (copyright BBC):
+  BBC Sound Effects archive items 07075056 (bell), 07052085 and 07047063 (boos), 07052086 and 07013092 (crowd pops),
+  https://sound-effects.bbcrewind.co.uk. Fine for this private build; replace these three files before any commercial use.
+- **CC BY-NC-SA 4.0** (non-commercial, share-alike, attribution): the referee's "stop", synthesised with the Piper TTS
+  voice `en_US-ryan-high` (https://huggingface.co/rhasspy/piper-voices), which inherits the RyanSpeech corpus licence.
+- Sonniss #GameAudioGDC bundle licence (royalty-free, commercial use allowed, no attribution required, no redistribution
+  of the raw library files): 2015-2026 bundles, mirrored at https://archive.org/details/sonniss-gdc-20XX-game-audio-bundle-normalized
+  (https://sonniss.com/gameaudiogdc).
+- CC0 1.0: Kenney voiceover packs (https://opengameart.org/content/voiceover-pack-fighter-40-taunts, .../voiceover-pack-40-lines),
+  rubberduck (https://opengameart.org/content/100-cc0-metal-and-wood-sfx), Iwan Gabovitch / qubodup
+  (https://opengameart.org/content/40-wet-towel-clubpoundhitattack-sounds, .../12-...), independent.nu via qubodup
+  (https://opengameart.org/content/37-hitspunches).
+
+| File | Bytes | Pack item | Sources (author, licence) |
+|---|---|---|---|
+| `audio-crowd-bed.mp3` | 140478 | crowd_arena_loop | Gregor Quendel "10 - Ambience", **CC BY 4.0**; seamless 20.0 s loop |
+| `audio-crowd-chant.mp3` | 45523 | crowd_chant_swell | Gregor Quendel, **CC BY 4.0** |
+| `audio-crowd-roar.mp3` | 40037 | crowd_roar_rise | Gregor Quendel, **CC BY 4.0** |
+| `audio-crowd-pop.mp3` | 39410 | crowd_pop_knockdown | **BBC RemArc** (07052086, 07013092) + 2496SoundEffects "Surround At The Show" (Sonniss 2019) |
+| `audio-crowd-boo.mp3` | 36432 | crowd_boo_whistle | **BBC RemArc** (07047063, 07052085) + Sonic Bat "Soccer Stadium Ambience" (Sonniss 2020) |
+| `audio-crowd-ooh.mp3` | 24521 | crowd_ooh | Sonic Bat "Soccer Stadium Ambience" (Sonniss 2020) |
+| `audio-bell-x3.mp3` | 14463 | bell_x3 | **BBC RemArc** (07075056) |
+| `audio-bell-ring.mp3` | 18852 | bell_ring | **BBC RemArc** (07075056) |
+| `audio-clapper.mp3` | 6313 | clapper_10s | rubberduck, CC0 |
+| `audio-ref-fight.mp3` | 6731 | ref_fight | Kenney, CC0 |
+| `audio-ref-go.mp3` | 6104 | ref_go | Kenney, CC0 |
+| `audio-ref-stop.mp3` | 4432 | ref_stop | Piper TTS en_US ryan, **CC BY-NC-SA 4.0** |
+| `audio-punch-head-1.mp3` | 4223 | punch_head_1 | Gamemaster Audio "Punch Sound Pack" (Sonniss 2017) + The Chris Alan "Hand-to-Hand Combat" (Sonniss 2018) |
+| `audio-punch-head-2.mp3` | 3805 | punch_head_2 | Shapeforms "Hit & Punch" (Sonniss 2020) + qubodup, CC0 |
+| `audio-punch-head-3.mp3` | 3387 | punch_head_3 | The Chris Alan (Sonniss 2018) + qubodup, CC0 |
+| `audio-punch-head-heavy.mp3` | 5268 | punch_head_heavy | Gamemaster Audio (Sonniss 2017) + PMSFX "Lethal Blow" (Sonniss 2020) |
+| `audio-punch-body-1.mp3` | 4223 | punch_body_1 | Gamemaster Audio (Sonniss 2017) + qubodup, CC0 |
+| `audio-punch-body-2.mp3` | 4641 | punch_body_2 | 344 Audio "Cinematic Fight Vol. 1" (Sonniss 2026) |
+| `audio-punch-body-3.mp3` | 4641 | punch_body_3 | 344 Audio "Cinematic Fight Vol. 1" (Sonniss 2026) |
+| `audio-kick-body-1.mp3` | 3387 | kick_body_1 | Borg Sound "Gym weights" (Sonniss 2017) + Shapeforms (Sonniss 2020), CC0 layer |
+| `audio-kick-body-2.mp3` | 4641 | kick_body_2 | independent.nu via qubodup, CC0 + Gamemaster Audio (Sonniss 2017) |
+| `audio-kick-leg-1.mp3` | 4641 | kick_leg_1 | qubodup, CC0 + The Chris Alan (Sonniss 2018) |
+| `audio-kick-leg-2.mp3` | 5059 | kick_leg_2 | qubodup, CC0 + PMSFX "Lethal Blow" (Sonniss 2020) + The Chris Alan (Sonniss 2018) |
+| `audio-blocked.mp3` | 4014 | strike_blocked | Gamemaster Audio (Sonniss 2017) |
+| `audio-whoosh-punch-1.mp3` | 4223 | whoosh_punch_1 | Airborne Sound "Organic Whooshes" (Sonniss 2019) |
+| `audio-whoosh-punch-2.mp3` | 5059 | whoosh_punch_2 | SoundBits "Just Whoosh 3" (Sonniss 2016) |
+| `audio-whoosh-punch-3.mp3` | 5268 | whoosh_punch_3 | Soundholder "Swipes And Whooshes" (Sonniss 2019) |
+| `audio-whoosh-kick.mp3` | 4641 | whoosh_kick | Mechanical Wave "Hits Whoosh" (Sonniss 2015) |
+| `audio-takedown-1.mp3` | 7776 | takedown_thud_1 | The Chris Alan (Sonniss 2018) + qubodup, CC0 |
+| `audio-takedown-2.mp3` | 8612 | takedown_thud_2 | Red Libraries "Bodyfall" (Sonniss 2019) + qubodup, CC0 + Shapeforms (Sonniss 2020) |
+| `audio-cage-rattle.mp3` | 15717 | cage_rattle | Robert Cordova "Base" (Sonniss 2015) |
+| `audio-cage-slam.mp3` | 13418 | cage_slam | Borg Sound "Gym weights" (Sonniss 2017) + Robert Cordova (Sonniss 2015) |
+| `audio-walkout-boom.mp3` | 34107 | walkout_boom | 344 Audio "Low Frequency Elements" + Federico Soler Fernandez (Sonniss 2019) |
+
+Sound total: 534047 bytes (about 0.71 MB once base64-encoded in the page).
