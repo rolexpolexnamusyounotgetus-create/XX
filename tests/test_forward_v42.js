@@ -199,7 +199,7 @@ const vegas = cp.spawnSync("python3", [path.join(ROOT, "tools/forward_ledger.py"
 ok(vegas.status !== 0 && /refused/.test(vegas.stderr + vegas.stdout), "4. writing fwd-4.2 for the Vegas 124 card (fwd-4.1) is refused");
 ok(fs.readdirSync(path.join(tmp, "ledger")).length === 0, "4. refused runs wrote nothing");
 const readme = fs.readFileSync(path.join(ROOT, "data/predictions/README.md"), "utf8");
-const sec = readme.slice(readme.indexOf("### Files and hashes fwd-4.2 reads"));
+const sec = readme.slice(readme.indexOf("### Files and hashes fwd-4.2 reads"), readme.indexOf("- **Per-event inputs**"));
 const rows = {};
 for (const m of sec.matchAll(/^\| ([a-z0-9_/.]+) \| ([0-9a-f]{16}) \|/gm)) rows[m[1]] = m[2];
 ok(JSON.stringify(rows) === JSON.stringify(P.model.preregistration.pinned_inputs), "4. README hash table = the tool's pinned list");

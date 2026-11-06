@@ -453,6 +453,25 @@ here naming the new hashes before its first file.
 - **Version string.** `model.version` starts `fwd-4.2:` and names the primary, the debut.json and statlines.json hashes
   and the engine, so a later change shows up as a separate tally.
 
+### Addendum: implementation (Nov 6, 2026, about 11:45 pm UTC; before any fwd-4.2 file)
+
+The code was written after the pre-registration commit (6011e6f, 11:30:52 pm UTC) and follows it without changes to the
+rules above. No fwd-4.2 ledger file exists; the UFC 334 dry run (`predict --event 2026-11-14 --fwd 4.2 --dry-run
+--sims 5000`) wrote nothing under data/predictions.
+
+- Tool code hashes (sha256, first 16 hex), recorded in every fwd-4.2 file as `model.code_sha256_16`:
+  - `tools/forward_ledger.py` (1.2): d5f662f54089525a
+  - `tools/forward_ledger.js`: b225c680da5a2e29
+  - `tools/forward_statlines.js`: 267beac95846c7df
+- A later edit to these files must keep the fwd-4.1 output byte-identical (tests/test_forward_v42.js part 1, against
+  tests/fixtures/forward_v41_golden.json, the pre-v4.2 tool's output) and the fwd-4.2 output unchanged, or it starts a
+  new version.
+- One implementation detail the rules leave open: the Greco1899 CSV writes most counts as "2.0"; the stat-total parser
+  reads those as integers (tests/test_forward_score42.py checks it against an independent parse of a 2025 event).
+- Tests: `node tests/test_forward_v42.js` (fwd-4.1 identity, additions only, corner symmetry of every new field, method
+  cells sum to 1 and agree with p_a, debut bouts with and without a line, guards, this hash table) and
+  `python3 tests/test_forward_score42.py` (stat parse, match rules, scoring arithmetic).
+
 ## Card snapshot notes (`cards_upcoming.json`)
 
 - `order` 1 is the main event, then down the card. `segment` is `main`, `prelims`, `early_prelims`
