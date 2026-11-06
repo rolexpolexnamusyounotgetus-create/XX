@@ -119,7 +119,8 @@ def load_data(verbose=True):
     fights, _ = B.parse_fights(log)
     people = B.build_people(fights, log)
     B.build_vectors(fights, log)
-    fights = [f for f in fights if DATA_FROM <= f.date < HIDDEN_FROM and f.persons and f.persons[0] != f.persons[1]]
+    all_fights = [f for f in fights if f.date < HIDDEN_FROM]          # hidden-data protocol
+    fights = [f for f in all_fights if DATA_FROM <= f.date and f.persons and f.persons[0] != f.persons[1]]
     assert all(f.date < HIDDEN_FROM for f in fights)
     persons = sorted({p for f in fights for p in f.persons})
     pidx = {p: i for i, p in enumerate(persons)}
@@ -127,6 +128,7 @@ def load_data(verbose=True):
     didx = {d: i for i, d in enumerate(divs)}
 
     D = Data()
+    D.all_fights = all_fights
     D.people, D.persons, D.pidx, D.divs, D.didx = people, persons, pidx, divs, didx
     D.slug = [people[p]["slug"] for p in persons]
     D.slug_idx = {s: i for i, s in enumerate(D.slug)}
@@ -695,3 +697,371 @@ def baseline_dev(D, noise, dates, until_day, hl=730.0):
         idx, fidx = heldout_rows(D, T, T1)
         out[T] = deviance(D.Y[idx], D.E[idx], predict_rows(f.P, D, idx)).sum(0) if len(idx) else np.zeros(NT)
     return out
+
+
+# ------------------------------------------------------------------------------------------------ stat predictions
+STATS = ["sig_att", "sig_lnd", "h_lnd", "b_lnd", "l_lnd", "kd", "td_att", "td_lnd", "ctrl", "sub_att"]
+
+
+def sig(x):
+    return 1.0 / (1.0 + np.exp(-x))
+
+
+def stat_rates(eta):
+    """Per-minute expected stat line of the attacker from the task linear predictors (rows x NT).
+    ctrl in seconds per minute; kd per minute via head landed x knockdowns per landed head strike."""
+    e = lambda t: np.exp(eta[:, TI[t]])
+    p = lambda t: sig(eta[:, TI[t]])
+    out = {}
+    out["sig_att"] = e("d_att") + e("c_att") + e("g_att")
+    out["sig_lnd"] = e("d_att") * p("d_acc") + e("c_att") * p("c_acc") + e("g_att") * p("g_acc")
+    out["h_lnd"] = e("h_att") * p("h_acc")
+    out["b_lnd"] = e("b_att") * p("b_acc")
+    out["l_lnd"] = e("l_att") * p("l_acc")
+    out["kd"] = out["h_lnd"] * e("kd")
+    out["td_att"] = e("td_att")
+    out["td_lnd"] = e("td_att") * p("td_acc")
+    out["ctrl"] = 60.0 * e("ctrl")
+    out["sub_att"] = e("sub_att")
+    out["ko_haz"] = e("ko_fin")
+    out["sub_haz"] = e("sub_fin")
+    return out
+
+
+def eta_pair(P, divs, era, five, ex, ey):
+    """Linear predictors for attacker embeddings ex against defender embeddings ey (rows x 2K each)."""
+    K = P["A"].shape[1]
+    NDIV = P["C"].shape[1] - 2
+    Z = np.zeros((len(ex), NDIV + 2))
+    Z[np.arange(len(ex)), divs] = 1.0
+    Z[:, NDIV] = era
+    Z[:, NDIV + 1] = five
+    return Z @ P["C"].T + ex[:, :K] @ P["W"].T + ey[:, K:] @ P["V"].T
+
+
+# ------------------------------------------------------------------------------------------------ snapshots 2010+
+SNAP_FROM = dt.date(2010, 1, 1)
+
+
+def snapshot_table(D, verbose=True):
+    """Walk-forward pre-fight snapshots (build_db.walk) for every eligible fight 2010-01-01..2025-12-31, the
+    same construction as backtest_dev.json (which starts in 2019), plus priors_asof for 2010..2025."""
+    t0 = time.time()
+    elo = json.load(open(os.path.join(DER, "elo_report.json")))["chosen"]
+    fights = D.all_fights
+    _, pre, _ = B.run_elo(fights, elo["K"], elo["boost"], store=True)
+    old = B.BACKTEST_FROM
+    B.BACKTEST_FROM = SNAP_FROM
+    try:
+        _, entries = B.walk(fights, D.people, pre, 730.0)
+    finally:
+        B.BACKTEST_FROM = old
+    priors = {str(y): B.build_priors(fights, dt.date(y - 5, 1, 1), dt.date(y, 1, 1)) for y in range(2010, 2026)}
+    entries = [e for e in entries if e["date"] < HIDDEN_FROM.isoformat()]
+    if verbose:
+        print("snapshots: %d entries %s..%s (%.0fs)" % (len(entries), entries[0]["date"], entries[-1]["date"],
+                                                       time.time() - t0))
+    return entries, priors
+
+
+K_MIN, K_ATT, K_TD, K_HEAD, K_FIGHT = 20.0, 60.0, 8.0, 250.0, 3.0
+
+
+def side_feats(sd, pri):
+    """Baseline per-side features from the frozen decayed sums S, shrunk toward the division prior."""
+    S = dict(zip(B.KEYS, sd["S"]))
+    m = S["min"]
+    r = lambda k: (S[k] + K_MIN * pri[k]) / (m + K_MIN)
+    def acc(lnd, att, pk, k=K_ATT):
+        return (S[lnd] + k * pk) / (S[att] + k)
+    sl = lambda: S["d_lnd"] + S["c_lnd"] + S["g_lnd"]
+    sa = lambda: S["d_att"] + S["c_att"] + S["g_att"]
+    osl = S["od_lnd"] + S["oc_lnd"] + S["og_lnd"]
+    osa = S["od_att"] + S["oc_att"] + S["og_att"]
+    p_sl = pri["d_lnd"] + pri["c_lnd"] + pri["g_lnd"]
+    p_sa = pri["d_att"] + pri["c_att"] + pri["g_att"]
+    f = {}
+    f["slpm"] = (sl() + K_MIN * p_sl) / (m + K_MIN)
+    f["sapm"] = (osl + K_MIN * p_sl) / (m + K_MIN)
+    f["satt"] = (sa() + K_MIN * p_sa) / (m + K_MIN)
+    f["osatt"] = (osa + K_MIN * p_sa) / (m + K_MIN)
+    f["acc"] = (sl() + K_ATT * pri["acc_sig"]) / (sa() + K_ATT)
+    f["oacc"] = (osl + K_ATT * pri["acc_sig"]) / (osa + K_ATT)
+    for z in ("h", "b", "l", "d", "c", "g"):
+        f[z + "_lpm"] = r(z + "_lnd")
+        f["o" + z + "_lpm"] = r("o" + z + "_lnd")
+        f[z + "_apm"] = r(z + "_att")
+        f["o" + z + "_apm"] = r("o" + z + "_att")
+    f["td_apm"] = r("td_att")
+    f["otd_apm"] = r("otd_att")
+    f["td_acc"] = acc("td_lnd", "td_att", pri["td_acc"], K_TD)
+    f["otd_acc"] = acc("otd_lnd", "otd_att", pri["td_acc"], K_TD)
+    f["td_lpm"] = r("td_lnd")
+    f["otd_lpm"] = r("otd_lnd")
+    f["ctrl"] = r("ctrl")
+    f["octrl"] = r("octrl")
+    f["sub"] = r("sub_att")
+    f["osub"] = r("osub_att")
+    f["pow"] = (S["kd"] + K_HEAD * pri["kd_per_h"]) / (S["h_lnd"] + K_HEAD)
+    f["chin"] = (S["okd"] + K_HEAD * pri["kd_per_h"]) / (S["oh_lnd"] + K_HEAD)
+    n = S["n"]
+    wins = S["ko_w"] + S["sub_w"] + S["dec_w"]
+    losses = S["ko_l"] + S["sub_l"] + S["dec_l"]
+    f["winr"] = (wins + K_FIGHT * 0.5) / (wins + losses + K_FIGHT)
+    f["kow"] = (S["ko_w"] + 0.15 * K_FIGHT) / (n + K_FIGHT)
+    f["kol"] = (S["ko_l"] + 0.15 * K_FIGHT) / (n + K_FIGHT)
+    f["subw"] = (S["sub_w"] + 0.08 * K_FIGHT) / (n + K_FIGHT)
+    f["subl"] = (S["sub_l"] + 0.08 * K_FIGHT) / (n + K_FIGHT)
+    f["mins_s"] = math.log1p(m)
+    f["elo"] = sd["elo"] / 100.0
+    f["age"] = sd["age"] if sd.get("age") is not None else np.nan
+    f["reach"] = sd["reach_in"] if sd.get("reach_in") else np.nan
+    f["height"] = sd["height_in"] if sd.get("height_in") else np.nan
+    f["n_ufc"] = math.log1p(sd["n"])
+    f["ko_losses"] = sd["ko_losses"]
+    return f
+
+
+BASE_FEATS = None
+
+
+def prior_for(priors, e):
+    py = priors[e["date"][:4]]
+    g = e.get("prior_division") or e["division"]
+    return py.get(g) or py["ALL"]
+
+
+def emb_lookup(fits, D):
+    """day, slug -> embedding (2K) of the latest refit dated on or before day, and its exposure."""
+    Ts = np.array([f["T"] for f in fits])
+    def get(day, slug):
+        j = int(np.searchsorted(Ts, day, side="right")) - 1
+        if j < 0:
+            return None
+        i = D.slug_idx.get(slug)
+        fit = fits[j]
+        if i is None:
+            return np.zeros(2 * fit["A"].shape[1]), fit, 0.0
+        return np.r_[fit["A"][i], fit["D"][i]], fit, fit["expo"][i]
+    return get
+
+
+def build_table(entries, priors, fits, D):
+    """One row per snapshot fight: baseline features per side, embeddings, embedding-model outputs, outcomes."""
+    get = emb_lookup(fits, D)
+    rows = []
+    for e in entries:
+        day = dt.date.fromisoformat(e["date"]).toordinal()
+        ga, gb = get(day, e["A"]["slug"]), get(day, e["B"]["slug"])
+        if ga is None or gb is None:
+            continue
+        pri = prior_for(priors, e)
+        div = D.didx.get(e["division"], D.didx.get(e.get("prior_division"), D.didx["Lightweight"]))
+        rows.append((e, day, div, pri, side_feats(e["A"], pri), side_feats(e["B"], pri), ga, gb))
+    T = {}
+    T["entries"] = [r[0] for r in rows]
+    T["id"] = [r[0]["id"] for r in rows]
+    T["day"] = np.array([r[1] for r in rows])
+    T["year"] = np.array([int(r[0]["date"][:4]) for r in rows])
+    T["div"] = np.array([r[2] for r in rows])
+    T["five"] = np.array([1.0 if r[0]["rounds"] == 5 else 0.0 for r in rows])
+    T["title"] = np.array([1.0 if r[0].get("title") else 0.0 for r in rows])
+    T["women"] = np.array([1.0 if "Women" in (r[0].get("prior_division") or r[0]["division"]) else 0.0 for r in rows])
+    T["era"] = (T["day"] - dt.date(2015, 1, 1).toordinal()) / 3652.5
+    names = sorted(rows[0][4])
+    T["fnames"] = names
+    T["FA"] = np.array([[r[4][k] for k in names] for r in rows], dtype=float)
+    T["FB"] = np.array([[r[5][k] for k in names] for r in rows], dtype=float)
+    T["prior"] = [r[3] for r in rows]
+    T["EA"] = np.array([r[6][0] for r in rows])
+    T["EB"] = np.array([r[7][0] for r in rows])
+    T["XA"] = np.array([r[6][2] for r in rows])
+    T["XB"] = np.array([r[7][2] for r in rows])
+    # embedding-model outputs with the parameters of each fight's refit
+    n = len(rows)
+    T["s_win"] = np.zeros(n)
+    T["eta_ab"] = np.zeros((n, NT))
+    T["eta_ba"] = np.zeros((n, NT))
+    fit_of = np.array([id(r[6][1]) for r in rows])
+    for fid_ in np.unique(fit_of):
+        ii = np.nonzero(fit_of == fid_)[0]
+        P = rows[ii[0]][6][1]["P"]
+        Pf = dict(P)
+        Pf["A"] = np.zeros((1, P["W"].shape[1]))
+        ea, eb = T["EA"][ii], T["EB"][ii]
+        T["s_win"][ii] = win_logit_emb(Pf, ea, eb)
+        T["eta_ab"][ii] = eta_pair(Pf, T["div"][ii], T["era"][ii], T["five"][ii], ea, eb)
+        T["eta_ba"][ii] = eta_pair(Pf, T["div"][ii], T["era"][ii], T["five"][ii], eb, ea)
+    T["winner"] = np.array([{"A": 1.0, "B": 0.0}.get(r[0]["result"]["winner"], np.nan) for r in rows])
+    # actual stat lines
+    act = []
+    for r in rows:
+        a = r[0].get("actual")
+        if not a or not a.get("minutes"):
+            act.append(None)
+            continue
+        act.append(a)
+    T["actual"] = act
+    return T
+
+
+def boot_ci(delta, n_boot=2000, seed=SEED):
+    """Mean and 95% paired-bootstrap interval of per-fight deltas."""
+    rng = np.random.default_rng(seed)
+    d = np.asarray(delta)
+    bs = d[rng.integers(0, len(d), (n_boot, len(d)))].mean(1)
+    return float(d.mean()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))
+
+
+def logloss(p, y):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+
+def calib_table(p, y, nb=10):
+    """Symmetric reliability table: every fight in both orientations, deciles of predicted probability."""
+    pp = np.r_[p, 1 - p]
+    yy = np.r_[y, 1 - y]
+    edges = np.quantile(pp, np.linspace(0, 1, nb + 1))
+    out = []
+    for i in range(nb):
+        m = (pp >= edges[i]) & (pp <= edges[i + 1] if i == nb - 1 else pp < edges[i + 1])
+        if m.sum():
+            out.append({"p": round(float(pp[m].mean()), 4), "obs": round(float(yy[m].mean()), 4), "n": int(m.sum())})
+    ece = sum(abs(r["p"] - r["obs"]) * r["n"] for r in out) / max(1, sum(r["n"] for r in out))
+    return out, round(ece, 4)
+
+
+# ------------------------------------------------------------------------------------------------ downstream: winner
+def winner_features(T, kind):
+    """Antisymmetric (A minus B) feature matrix for the winner models. kind: 'base' or 'emb' (base + embedding)."""
+    X = T["FA"] - T["FB"]
+    names = ["d_" + k for k in T["fnames"]]
+    if kind == "emb":
+        ra = stat_rates(T["eta_ab"])
+        rb = stat_rates(T["eta_ba"])
+        extra = [T["EA"] - T["EB"], T["s_win"][:, None]]
+        en = ["emb_o%d" % k for k in range(T["EA"].shape[1] // 2)] + ["emb_d%d" % k for k in range(T["EA"].shape[1] // 2)]
+        names = names + ["demb_" + x for x in en] + ["emb_win_logit"]
+        for k in ("sig_lnd", "sig_att", "td_lnd", "ctrl", "kd", "ko_haz", "sub_haz", "sub_att"):
+            extra.append((np.log(ra[k] + 1e-6) - np.log(rb[k] + 1e-6))[:, None])
+            names.append("emb_pred_%s_logdiff" % k)
+        X = np.hstack([X] + extra)
+    return X, names
+
+
+def _lgb():
+    import lightgbm as lgb
+    return lgb
+
+
+def fit_lr(X, y, C):
+    from sklearn.linear_model import LogisticRegression
+    Xm = np.vstack([X, -X])
+    ym = np.r_[y, 1 - y]
+    sd = Xm.std(0) + 1e-9
+    m = LogisticRegression(C=C, fit_intercept=False, max_iter=2000)
+    m.fit(Xm / sd, ym)
+    return lambda Z: m.predict_proba(np.nan_to_num(Z) / sd)[:, 1] if False else 1 / (1 + np.exp(-(np.nan_to_num(Z) / sd) @ m.coef_[0])), (m.coef_[0] / sd)
+
+
+GBM_PARAMS = {"objective": "binary", "learning_rate": 0.03, "num_leaves": 7, "min_data_in_leaf": 60,
+              "feature_fraction": 0.7, "bagging_fraction": 0.8, "bagging_freq": 1, "lambda_l2": 5.0,
+              "verbose": -1, "num_threads": 1, "seed": SEED}
+
+
+def fit_gbm_winner(X, y, ctx, n_iter):
+    lgb = _lgb()
+    Xm = np.vstack([np.hstack([X, ctx]), np.hstack([-X, ctx])])
+    ym = np.r_[y, 1 - y]
+    b = lgb.train(GBM_PARAMS, lgb.Dataset(Xm, ym), num_boost_round=n_iter)
+    def pred(Z, c):
+        p1 = b.predict(np.hstack([Z, c]))
+        p2 = b.predict(np.hstack([-Z, c]))
+        return 0.5 * (p1 + 1 - p2)
+    return pred, b
+
+
+def gbm_iters_winner(X, y, ctx, years, val_years):
+    """Boosting rounds by time-ordered CV: expanding window, each validation year scored by the earlier years."""
+    lgb = _lgb()
+    best = []
+    for vy in val_years:
+        tr, va = years < vy, years == vy
+        Xm = np.vstack([np.hstack([X[tr], ctx[tr]]), np.hstack([-X[tr], ctx[tr]])])
+        ym = np.r_[y[tr], 1 - y[tr]]
+        Xv = np.vstack([np.hstack([X[va], ctx[va]]), np.hstack([-X[va], ctx[va]])])
+        yv = np.r_[y[va], 1 - y[va]]
+        b = lgb.train(GBM_PARAMS, lgb.Dataset(Xm, ym), num_boost_round=1500,
+                      valid_sets=[lgb.Dataset(Xv, yv)], callbacks=[lgb.early_stopping(100, verbose=False)])
+        best.append(b.best_iteration)
+    return int(np.median(best)), best
+
+
+def eval_winner(T, verbose=True):
+    y = T["winner"]
+    ok = ~np.isnan(y)
+    yrs = T["year"]
+    tr = ok & (yrs <= 2023)
+    va = ok & (yrs >= 2024) & (yrs <= 2025)
+    ctx = np.c_[T["five"], T["title"], T["women"]]
+    cv_years = [2019, 2020, 2021, 2022, 2023]
+    res = {"n_train": int(tr.sum()), "n_valid": int(va.sum()), "models": {}}
+    preds = {}
+    # Elo and the embedding head need no fitting
+    elo_logit = (T["FA"][:, T["fnames"].index("elo")] - T["FB"][:, T["fnames"].index("elo")]) * 100 * math.log(10) / 400
+    preds["elo"] = 1 / (1 + np.exp(-elo_logit))
+    preds["emb_head"] = 1 / (1 + np.exp(-T["s_win"]))
+    for kind in ("base", "emb"):
+        X, names = winner_features(T, kind)
+        Xf = np.nan_to_num(X)
+        # LR: C by time-ordered CV
+        best = None
+        for C in (0.003, 0.01, 0.03, 0.1, 0.3, 1.0):
+            ll = []
+            for vy in cv_years:
+                a, b = tr & (yrs < vy), tr & (yrs == vy)
+                f, _ = fit_lr(Xf[a], y[a], C)
+                ll.append(logloss(f(Xf[b]), y[b]))
+            m = float(np.mean(np.concatenate(ll)))
+            if best is None or m < best[1]:
+                best = (C, m)
+        f, coef = fit_lr(Xf[tr], y[tr], best[0])
+        preds["lr_" + kind] = f(Xf)
+        res["models"]["lr_" + kind] = {"C": best[0], "cv_logloss_2019_2023": round(best[1], 5),
+                                       "n_features": X.shape[1]}
+        if kind == "emb":
+            res["lr_emb_coef"] = {n_: round(float(c), 5) for n_, c in zip(names, coef)}
+        # GBM
+        n_iter, per = gbm_iters_winner(X[tr], y[tr], ctx[tr], yrs[tr], cv_years)
+        oof = []
+        for vy in cv_years:
+            a, b = tr & (yrs < vy), tr & (yrs == vy)
+            g, _ = fit_gbm_winner(X[a], y[a], ctx[a], n_iter)
+            oof.append(logloss(g(X[b], ctx[b]), y[b]))
+        g, _ = fit_gbm_winner(X[tr], y[tr], ctx[tr], n_iter)
+        preds["gbm_" + kind] = g(X, ctx)
+        res["models"]["gbm_" + kind] = {"n_iter": n_iter, "cv_iters": per,
+                                        "cv_logloss_2019_2023": round(float(np.mean(np.concatenate(oof))), 5)}
+    for k, p in preds.items():
+        ll = logloss(p[va], y[va])
+        acc = float(np.mean((p[va] > 0.5) == (y[va] == 1)))
+        brier = float(np.mean((p[va] - y[va]) ** 2))
+        cal, ece = calib_table(p[va], y[va])
+        res["models"].setdefault(k, {}).update({"valid_logloss": round(float(ll.mean()), 5),
+                                                "valid_brier": round(brier, 5), "valid_acc": round(acc, 4),
+                                                "valid_ece": ece, "valid_calibration": cal})
+    pairs = [("lr_emb", "lr_base"), ("gbm_emb", "gbm_base"), ("lr_emb", "elo"), ("emb_head", "elo"),
+             ("gbm_emb", "lr_base")]
+    res["deltas"] = {}
+    for a_, b_ in pairs:
+        d = logloss(preds[a_][va], y[va]) - logloss(preds[b_][va], y[va])
+        mu, lo, hi = boot_ci(d)
+        res["deltas"]["%s - %s" % (a_, b_)] = {"mean": round(mu, 5), "ci95": [round(lo, 5), round(hi, 5)]}
+    if verbose:
+        for k, v in res["models"].items():
+            print("  winner %-9s valid logloss %.4f acc %.3f ece %.3f  cv %s" % (
+                k, v["valid_logloss"], v["valid_acc"], v["valid_ece"], v.get("cv_logloss_2019_2023")))
+        for k, v in res["deltas"].items():
+            print("  delta %-22s %+.4f [%+.4f, %+.4f]" % (k, v["mean"], v["ci95"][0], v["ci95"][1]))
+    return res, preds

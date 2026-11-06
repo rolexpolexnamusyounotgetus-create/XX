@@ -140,24 +140,26 @@
   function lastName(n) { n = String(n || "").trim(); var p = n.split(/\s+/); return (p.length > 1 ? p.slice(1).join(" ") : n).toUpperCase(); }
   function normInfo(o) {
     o = o || {};
-    var w = String(o.weight || 155).replace(/[^0-9]/g, "") || "155";
+    var w = String(o.weight == null ? 155 : o.weight).replace(/[^0-9]/g, "");
     return {
       a: String(o.a || "Volkanovski").toUpperCase(), b: String(o.b || "Gaethje").toUpperCase(),
       weight: w, division: String(o.division || DIVISIONS[w] || "CATCHWEIGHT").toUpperCase(),
       rounds: o.rounds || 5, event: String(o.event || "FIGHT LAB").toUpperCase()
     };
   }
+  var DIV_LB = { strawweight: 115, flyweight: 125, bantamweight: 135, featherweight: 145, lightweight: 155, welterweight: 170, middleweight: 185, "light heavyweight": 205, heavyweight: 265 };
   function infoFromScript(s) {
     if (!s) return null;
-    var a = null, b = null, w = null, d = null;
-    if (s.names) { a = s.names.A; b = s.names.B; }
-    if (!a && s.fighters) { var fa = s.fighters.A || s.fighters[0], fb = s.fighters.B || s.fighters[1]; a = fa && (fa.last || fa.short || lastName(fa.name)); b = fb && (fb.last || fb.short || lastName(fb.name)); }
-    if (!a && s.A && s.A.name) { a = lastName(s.A.name); b = s.B && lastName(s.B.name); }
-    w = s.weight || s.weight_lb || (s.matchup && (s.matchup.weight || s.matchup.weight_lb)) || null;
-    d = s.division || (s.matchup && s.matchup.division) || null;
+    var a = null, b = null, f = s.fighters || {};
+    if (s.short && s.short.A) { a = s.short.A; b = s.short.B; }   // broadcast surnames (director v3)
+    else if (s.names && s.names.A) { a = lastName(s.names.A); b = lastName(s.names.B); }
+    else if (f.A && f.A.name) { a = f.A.short || lastName(f.A.name); b = f.B && (f.B.short || lastName(f.B.name)); }
     if (!a && root.FightDirector && root.FightDirector.NAMES) { a = root.FightDirector.NAMES.A; b = root.FightDirector.NAMES.B; }
     if (!a) return null;
-    return { a: a, b: b, weight: w, division: d, rounds: s.maxRounds || s.scheduledRounds || (s.matchup && s.matchup.rounds) || 5 };
+    var d = s.division || (s.matchup && s.matchup.division) || (f.A && f.A.division) || null;
+    var key = d ? String(d).toLowerCase().replace(/^women's\s+/, "") : "";
+    var w = s.weight || s.weight_lb || (s.matchup && (s.matchup.weight || s.matchup.weight_lb)) || DIV_LB[key] || (d ? null : 155);
+    return { a: a, b: b, weight: w || "", division: d ? String(d).toUpperCase() : null, rounds: s.nRounds || s.maxRounds || (s.matchup && s.matchup.rounds) || 5 };
   }
 
   function fitFont(ctx, text, weight, family, maxW, maxH) {
@@ -202,13 +204,14 @@
     ctx.fillStyle = "rgba(19,22,27,0.88)"; ctx.fillText(info.event, 0, 0.27 * k);
     ctx.fillStyle = "rgba(190,28,40,0.88)"; ctx.fillRect(-0.95 * k, 0.40 * k, 1.9 * k, 0.075 * k);
     ctx.fillStyle = "rgba(19,22,27,0.74)";
-    fitFont(ctx, spaced(info.division + "  ·  " + info.weight + " LB"), "800", FONT_U, 2.1 * k, 0.15 * k);
-    ctx.fillText(spaced(info.division + "  ·  " + info.weight + " LB"), 0, 0.70 * k);
+    var divLine = spaced(info.weight ? info.division + "  ·  " + info.weight + " LB" : info.division);
+    fitFont(ctx, divLine, "800", FONT_U, 2.1 * k, 0.15 * k);
+    ctx.fillText(divLine, 0, 0.70 * k);
     fitFont(ctx, spaced("MONTE CARLO FIGHT SIMULATOR"), "700", FONT_U, 1.9 * k, 0.115 * k);
     ctx.fillStyle = "rgba(19,22,27,0.6)"; ctx.fillText(spaced("MONTE CARLO FIGHT SIMULATOR"), 0, -0.66 * k);
     ctx.restore();
     // band lettering: names beside their corners, branding and the weight between
-    var items = { 1: [info.event, null], 5: [info.event, null], 3: [info.a, "37,92,190"], 7: [info.b, "196,40,46"], 0: [info.weight, null], 4: [info.weight, null], 2: [info.division, null], 6: [info.rounds === 3 ? "THREE ROUNDS" : "FIVE ROUNDS", null] };
+    var items = { 1: [info.event, null], 5: [info.event, null], 3: [info.a, "37,92,190"], 7: [info.b, "196,40,46"], 0: [info.weight || info.event, null], 4: [info.weight || info.event, null], 2: [info.division, null], 6: [info.rounds === 3 ? "THREE ROUNDS" : "FIVE ROUNDS", null] };
     for (var s = 0; s < 8; s++) {
       var it = items[s], m = sideMid(s), mid = (bandIn * Math.cos(PI / 8) + APO) / 2;
       ctx.save(); ctx.translate(X(Math.cos(m.a) * mid), X(Math.sin(m.a) * mid)); ctx.rotate(m.a + PI / 2);
@@ -358,7 +361,7 @@
       ctx.fillStyle = "#ffd36b"; ctx.fillText(st.clock, x0 + W * 0.68, H * 0.55);
     } else if (kind === "div" || kind === "rounds") {
       ctx.fillStyle = "#06080d"; ctx.fillRect(x0, 0, W, H);
-      var txt = kind === "div" ? info.division + " · " + info.weight : (info.rounds === 3 ? "THREE ROUNDS" : "MAIN EVENT · 5 RDS");
+      var txt = kind === "div" ? (info.weight ? info.division + " · " + info.weight : info.division) : (info.rounds === 3 ? "THREE ROUNDS" : "MAIN EVENT · 5 RDS");
       fitFont(ctx, txt, "800", FONT_D, W * 0.86, H * 0.5);
       ctx.fillStyle = "#e9edf2"; ctx.fillText(txt, x0 + W / 2, H * 0.55);
       ctx.fillStyle = kind === "div" ? "#1d5fd6" : "#d2262c"; ctx.fillRect(x0 + W * 0.2, H * 0.84, W * 0.6, H * 0.05);

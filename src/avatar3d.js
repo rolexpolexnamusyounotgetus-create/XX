@@ -1365,8 +1365,16 @@
     }
     // full-body and upper-body clip layers for the torso
     var self = this, layers = this.layers, clipW = 0, hasFull = false;
+    function layerFrame(L) {
+      var qa = new Q().setFromAxisAngle(YAX, L.anchor.yaw);
+      if (L.mask !== "upper") return qa;
+      // upper-body layers ride on the driver's pelvis: rel * clip, rel = W_hips * inverse(clip hips)
+      var jh = C.bones.indexOf("Hips"), ch = self.clipQuat(L.clip, L.t, jh, new Q()).premultiply(qa).multiply(self.clipRef[jh]);
+      return W[bi.Hips].clone().multiply(ch.invert()).multiply(qa);
+    }
     function layerTorso(L, w) {
-      var c = L.clip, cy = Math.cos(L.anchor.yaw), sy = Math.sin(L.anchor.yaw), qa = new Q().setFromAxisAngle(YAX, L.anchor.yaw);
+      var c = L.clip, cy = Math.cos(L.anchor.yaw), sy = Math.sin(L.anchor.yaw), qa = layerFrame(L);
+      L._qa = qa;
       for (var jj = 0; jj < C.bones.length; jj++) {
         var nm2 = C.bones[jj], kk = bi[nm2];
         if (L.mask === "upper" && !UPPER_MASK[nm2]) continue;
@@ -1381,7 +1389,7 @@
       }
     }
     if (C) layers.forEach(function (L) {
-      if (L.prev && L.prev.w > 0) layerTorso({ clip: L.prev.clip, t: L.prev.t, anchor: L.prev.anchor, mask: L.mask }, clamp01(L.prev.w));
+      if (L.prev && L.prev.w > 0) { L.prev.mask = L.mask; layerTorso(L.prev, clamp01(L.prev.w)); }
       if (L.w > 0) { layerTorso(L, clamp01(L.w)); if (L.mask === "full") { hasFull = true; clipW = Math.max(clipW, L.w); } }
     });
     this.clipW = clipW;
@@ -1417,7 +1425,7 @@
     // clip layers on the limbs (after IK so they can override it)
     if (C) layers.forEach(function (L) {
       function limbsFrom(LL, w) {
-        var qa = new Q().setFromAxisAngle(YAX, LL.anchor.yaw);
+        var qa = LL._qa || new Q().setFromAxisAngle(YAX, LL.anchor.yaw);
         for (var jj = 0; jj < C.bones.length; jj++) {
           var nm2 = C.bones[jj]; if (!LIMB_BONE[nm2]) continue;
           if (LL.mask === "upper" && !UPPER_MASK[nm2]) continue;
@@ -1425,7 +1433,7 @@
           W[bi[nm2]].slerp(_q2, w);
         }
       }
-      if (L.prev && L.prev.w > 0) limbsFrom({ clip: L.prev.clip, t: L.prev.t, anchor: L.prev.anchor, mask: L.mask }, clamp01(L.prev.w));
+      if (L.prev && L.prev.w > 0) limbsFrom(L.prev, clamp01(L.prev.w));
       if (L.w > 0) limbsFrom(L, clamp01(L.w));
     });
     // fingers
@@ -1511,9 +1519,9 @@
     var Ls = this.layers;
     buf[o] = this.idleT; buf[o + 1] = this.idleW;
     for (var i = 0; i < 2; i++) {
-      var L = Ls[i], b = o + 2 + i * 6;
-      if (L && L.clip) { buf[b] = L.clip.id + 1; buf[b + 1] = L.t; buf[b + 2] = L.w; buf[b + 3] = L.anchor.x; buf[b + 4] = L.anchor.z; buf[b + 5] = L.anchor.yaw + (L.mask === "upper" ? 1000 : 0); }
-      else { buf[b] = 0; buf[b + 1] = buf[b + 2] = buf[b + 3] = buf[b + 4] = buf[b + 5] = 0; }
+      var L = Ls[i], b = o + 2 + i * 7;
+      if (L && L.clip) { buf[b] = L.clip.id + 1; buf[b + 1] = L.t; buf[b + 2] = L.w; buf[b + 3] = L.anchor.x; buf[b + 4] = L.anchor.z; buf[b + 5] = L.anchor.yaw + (L.mask === "upper" ? 1000 : 0); buf[b + 6] = L.speed + (L.target > 0 ? 0 : 100); }
+      else { buf[b] = 0; buf[b + 1] = buf[b + 2] = buf[b + 3] = buf[b + 4] = buf[b + 5] = buf[b + 6] = 0; }
     }
   };
   Avatar.prototype.restore = function (A, oa, B, ob, f) {
@@ -1523,12 +1531,13 @@
     this.idleW = lerp(A[oa + 1], B[ob + 1], f);
     var layers = [];
     for (var i = 0; i < 2; i++) {
-      var b = o + 2 + i * 6, id = src[b];
+      var b = o + 2 + i * 7, id = src[b];
       if (!id) continue;
-      var c = C.clips[C.list[id - 1]], ya = src[b + 5], upper = ya > 500;
-      var ba = oa + 2 + i * 6, bb = ob + 2 + i * 6, t = src[b + 1], w = src[b + 2];
+      var c = C.clips[C.list[id - 1]], ya = src[b + 5], upper = ya > 500, sp = src[b + 6], fading = sp >= 50;
+      var ba = oa + 2 + i * 7, bb = ob + 2 + i * 7, t = src[b + 1], w = src[b + 2];
       if (A[ba] === B[bb]) { t = lerp(A[ba + 1], B[bb + 1], f); w = lerp(A[ba + 2], B[bb + 2], f); }
-      layers.push({ clip: c, t: t, w: w, target: w, rate: 1, mask: upper ? "upper" : "full", anchor: { x: src[b + 3], z: src[b + 4], yaw: upper ? ya - 1000 : ya }, speed: 0 });
+      layers.push({ clip: c, t: t, w: w, target: fading ? 0 : w, rate: 1 / 0.4, mask: upper ? "upper" : "full", loop: c.loop, stop: null,
+        anchor: { x: src[b + 3], z: src[b + 4], yaw: upper ? ya - 1000 : ya }, speed: fading ? sp - 100 : sp });
     }
     this.layers = layers;
   };

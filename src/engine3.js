@@ -333,7 +333,8 @@
     }
     // ---- control targets (s per fight-minute) and clinch controller share
     var ctrlT = [0, 0];
-    for (i = 0; i < 2; i++) { j = 1 - i; ctrlT[i] = P.ctrl * pw(R[i].ctrl / P.ctrl, a) * pw(R[j].octrl / P.ctrl, b) * dvf("ctrl"); }
+    var ctrlSc = p.ctrlScale != null ? p.ctrlScale : 1;   // global control-target scale (walk-forward; the inverse of a get-up scale)
+    for (i = 0; i < 2; i++) { j = 1 - i; ctrlT[i] = P.ctrl * pw(R[i].ctrl / P.ctrl, a) * pw(R[j].octrl / P.ctrl, b) * dvf("ctrl") * ctrlSc; }
     var xA = ctrlT[0] / (ctrlT[0] + ctrlT[1]);
     var pCtl = 0.5 + p.clinchCtrlTemper * (xA - 0.5);
     var pcs = [pCtl, 1 - pCtl];
@@ -456,8 +457,9 @@
         koChin: Math.min(p.chinKOcap, Math.pow(1 + p.chinKO, kol)), koLosses: kol,
         sizeChin: Math.exp(p.sizeChin * upLb), sizePow: Math.exp(-p.sizePow * upLb), lbsUp: upLb * 10
       };
-      fac[i].pow = pw(fac[i].powRaw, a) * fac[i].agePow * fac[i].sizePow * adj[i].pow;
-      fac[i].chin = pw(fac[i].chinRaw, b) * fac[i].ageChin * fac[i].koChin * fac[i].sizeChin * adj[i].chin;
+      // power / chin exponents (walk-forward tunable; default to the log-linear combination exponents)
+      fac[i].pow = pw(fac[i].powRaw, p.powExp != null ? p.powExp : a) * fac[i].agePow * fac[i].sizePow * adj[i].pow;
+      fac[i].chin = pw(fac[i].chinRaw, p.chinExp != null ? p.chinExp : b) * fac[i].ageChin * fac[i].koChin * fac[i].sizeChin * adj[i].chin;
     }
     m.fac = fac;
     var koF = dvf("ko"), finOdds = odds(P.kd_fin != null ? P.kd_fin : p.kdFinRef) / odds(p.kdFinRef);

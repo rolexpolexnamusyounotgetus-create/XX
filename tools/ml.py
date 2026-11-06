@@ -1935,6 +1935,10 @@ def evaluate(R):
             d = Ls[k] - Ls["mkt_close"]
             mo[k]["minus_close"] = round(float(d.mean()), 5)
             mo[k]["minus_close_ci95"] = ci(cluster_boot(gs, lambda idx: d[idx].mean(), max(300, nb // 4)))
+            if "mkt_open" in Ls:
+                d2 = Ls[k] - Ls["mkt_open"]
+                mo[k]["minus_open"] = round(float(d2.mean()), 5)
+                mo[k]["minus_open_ci95"] = ci(cluster_boot(gs, lambda idx: d2[idx].mean(), max(300, nb // 4)))
         out["test_market_subset"] = {"n": int(sub.sum()), "models": mo}
     # diagnostic only (never used for a choice): the calibration slope a test-fit recalibration would apply, and
     # what it would be worth. Shows how much of the 2024+ gap is confidence rather than ranking.

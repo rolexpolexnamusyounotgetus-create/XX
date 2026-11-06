@@ -3,7 +3,7 @@
 *As of 2026-11-06. Orthodox, 5'10", 73-inch reach, born 1995-01-03. From Liverpool. 24-4 pro, 8-1 in the UFC.*
 
 ## Current status
-He is **#5 at lightweight** in the UFC media rankings (Nov 3, 2026) and has **no fight booked**. On **Jul 11, 2026** at UFC 329 he submitted Benoit Saint Denis in 52 seconds. In late **October 2026** he said he had stem-cell injections in his **left hand**, which keep him out of hand-heavy training, and that he is aiming for early 2027. He says he would rather have a title rematch with **Justin Gaethje**, who beat Ilia Topuria for the undisputed title on Jun 14, 2026. **Topuria** said on Nov 5, 2026 that he wants Pimblett for his return in April 2027. Pimblett also says he suffered a scratched cornea in the Gaethje loss.
+He is **#5 at lightweight** in both of the UFC's lists, the official media-panel rankings (updated Nov 3, 2026; mirrored by ufcrankings.org on Nov 5) and the Meta algorithmic rankings (Oct 31, 2026), and he has **no fight booked** (ESPN lists no upcoming bout). Pro record 24-4 (Wikipedia, ESPN). On **Jul 11, 2026** at UFC 329 he submitted Benoit Saint Denis in 52 seconds. In late **October 2026** he said he had stem-cell injections in his **left hand**, which keep him out of hand-heavy training, and that he is aiming for early 2027. He says he would rather have a title rematch with **Justin Gaethje**, who beat Ilia Topuria for the undisputed title on Jun 14, 2026. **Topuria** said on Nov 5, 2026 that he wants Pimblett for his return in April 2027. The same day Dana White said the UFC is working on Topuria's return but named no opponent, and The Sun described claims that a Pimblett fight is in the works as unverified. Pimblett also says he suffered a scratched cornea in the Gaethje loss.
 
 ## Recent fights
 - **W Saint Denis, UFC 329 (Jul 2026), D'Arce choke in round 1 at 0:52.** He blocked a high kick and sprawled on the takedown that followed. He then locked a front-headlock choke he described as part D'Arce and part Peruvian necktie, sat to his hip, and Saint Denis went unconscious rather than tap.
@@ -32,8 +32,21 @@ He has 0 KO losses and 2 knockdowns absorbed in 9 UFC fights. In two five-round 
 ## What the numbers say
 His Elo is 1690 (9th among active lightweights). The profile is high volume with average accuracy (53%) and poor defence, a strong submission rate and weak wrestling defence. In the simulator, his best paths should be chokes in scrambles and late volume. His worst matchups are clean, powerful strikers (the Gaethje knockdowns) and patient control wrestlers who avoid giving up the front headlock.
 
+## Appearance
+There is no likeness sheet for him (data/likeness/paddy-pimblett.json does not exist); this comes from dated photos and Wikipedia.
+- **Hair:** dirty-blond and shaggy, with a long side-swept fringe, when worn loose (ESPN headshot file dated Jul 9, 2026). For fights he has braided it in tight cornrows back to the nape since Dec 2023, because he felt the loose hair made him look more hurt to judges (Wikipedia). He fought UFC 329 braided, so AgentMMA's July 2026 report of a braid-free look did not carry into the cage.
+- **Facial hair:** light sandy-blond stubble.
+- **Skin:** light.
+- **Tattoos:** none. He has said he deliberately has no tattoos (Wikipedia), and UFC 329 photos show none on his torso or arms.
+- **Kit:** orange UFC shorts with a black waistband at UFC 329 (ESPN photo, Jul 11, 2026).
+
 ## Sources
-- https://www.espn.com/mma/story/_/id/49339995/ufc-329-paddy-pimblett-superstar-moment-benoit-saint-denis
+- https://www.espn.com/mma/story/_/id/49339995/ufc-329-paddy-pimblett-superstar-moment-benoit-saint-denis (also the lead photo used for kit)
+- https://www.thesun.co.uk/sport/40922502/dana-white-ilia-topuria-next-fight-announcement-ufc-news/
+- https://en.wikipedia.org/wiki/Paddy_Pimblett (record; no tattoos; braids since Dec 2023)
+- https://www.espn.com/mma/fighter/_/id/4008549/paddy-pimblett and https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4008549/overview
+- https://a.espncdn.com/i/headshots/mma/players/full/4008549.png (headshot, file dated Jul 9, 2026)
+- https://ufcrankings.org/lightweight/ ; https://www.ufcalendar.com/rankings/lightweight (Meta and media lists)
 - https://sports.yahoo.com/articles/paddy-pimblett-quickly-submits-benoit-031630151.html
 - https://www.yardbarker.com/mma/articles/paddy_pimblett_explains_ufc_329_choke_that_put_saint_denis_to_sleep/s1_17349_44057735
 - https://www.ufc.com/news/ufc-324-scorecards-judges-gaethje-vs-pimblett
@@ -43,5 +56,4 @@ His Elo is 1690 (9th among active lightweights). The profile is high volume with
 - https://bloodyelbow.com/2026/11/05/ilia-topuria-claims-he-will-eat-sausage-paddy-pimblett-as-he-offers-ufc-return-update/
 - https://www.espn.com/story/_/id/49015148
 - https://www.cbssports.com/mma/news/ufc-314-results-highlights-paddy-pimblett-lives-up-to-his-moniker-with-thumping-tko-of-michael-chandler/
-- https://ufcrankings.org/
 - data/derived/fighters.json; data/raw/ufc_fight_stats.csv

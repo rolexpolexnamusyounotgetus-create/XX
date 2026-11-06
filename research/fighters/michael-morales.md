@@ -52,7 +52,7 @@ Elo 1717. Decayed significant strikes: 6.4 landed and 2.9 absorbed per minute. T
 No likeness sheet exists for him. Checked on Nov 6, 2026 against the current ESPN headshot and the Getty photo of the Brady fight (UFC 322, Nov 2025).
 
 - **Hair:** bleached platinum-blond on top with short dark faded sides. This is a styling choice and may change before UFC 336.
-- **Facial hair:** thin moustache and a short, sparse chin goatee.
+- **Facial hair:** thin black moustache and a short, sparse black chin goatee.
 - **Skin:** medium-dark.
 - **Tattoos:** heavy coverage: the front of the neck, the whole chest and upper torso (ornamental and geometric work, a honeycomb pattern over the right shoulder), both arms and the back.
 - **Kit:** purple shorts at UFC 322. Only one fight was checked.

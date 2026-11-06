@@ -9,7 +9,7 @@ As of 2026-11-06. He/him. Southpaw, 6 ft 2 in, 74 in reach, born 1991-08-25 (age
 - **Three straight losses.** Belal Muhammad (UD, UFC 304, Jul 27, 2024; lost the title), Sean Brady (guillotine from mount R4, London, Mar 22, 2025) and Carlos Prates (KO R2 1:28, UFC 322, Nov 15, 2025).
 - **Inactive about 12 months.** He has not fought since Nov 15, 2025.
 - **Scrapped return:** Daniel Rodriguez said in April 2026 that he would fight Edwards at UFC 329 (Jul 11, 2026), but the bout never happened. Rodriguez later said his side asked for it and Edwards' side "were leaning towards another direction". Rodriguez fought Uros Medic instead, and Medic called Edwards out after that win (UFC Belgrade, Aug 1, 2026).
-- **Next:** nothing booked as of Nov 6, 2026 (Wikipedia, ESPN profile, ufc.com rankings tables). No injury or retirement announcement found.
+- **Next:** nothing booked as of Nov 6, 2026 (his Wikipedia page, the next-fight columns of Wikipedia's UFC rankings tables, his ESPN profile). No injury or retirement announcement found.
 - **Ranking:** #8 welterweight in the UFC media rankings (Nov 3, 2026); #10 in the Meta UFC rankings (Oct 31, 2026).
 
 ## Recent fights

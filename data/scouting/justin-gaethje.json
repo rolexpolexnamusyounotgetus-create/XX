@@ -1,0 +1,102 @@
+{
+  "slug": "justin-gaethje",
+  "name": "Justin Gaethje",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Undisputed UFC lightweight champion since UFC Freedom 250 on the White House South Lawn (Jun 14, 2026), where Ilia Topuria's corner stopped the fight after R4 with Gaethje ahead 39-37 on all three cards. Pro record 28-5 (UFC 11-5). He has ruled out fighting again in 2026 (both hands still hurt and a deep bone bruise in a knee he carried through both 2026 fights) and has not decided whether to retire; if he fights again he has named Arman Tsarukyan. Nothing is booked. On Nov 4-5, 2026 Dana White said the UFC is waiting on Gaethje's decision, with a superfight against featherweight champion Alexander Volkanovski among the options. No public answer from Gaethje to Volkanovski's callout was found. No. 4 pound-for-pound.",
+    "title": "UFC lightweight champion (undisputed)",
+    "ranking": "#4 men's pound-for-pound and lightweight champion (UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org on Nov 5-6; ufc.com itself returned 403 to scripts)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      { "what": "both hands hurt since UFC Freedom 250 ('I still can't punch anything', Aug 2026); some outlets say broken, but his quoted word is hurt", "when": "2026-06", "source": "https://middleeasy.com/mma-news/justin-gaethje-both-hands-hurt-sit-out-2026/" },
+      { "what": "deep bone bruise in the knee, which he says he carried through both 2026 fights; ruled out fighting again in 2026 (Sep 2026)", "when": "2026-09", "source": "https://agentmma.com/news/90201-justin-gaethje-rules-out-fighting-for-remainder-of-2026-due-to-injuries" },
+      { "what": "medical suspension after Freedom 250: 180 days (to about Dec 11, 2026) unless cleared by negative MRIs of the right wrist and left knee, plus 45 days of mandatory rest. No MRI result, surgery or clearance has been published", "when": "2026-06", "source": "https://sports.yahoo.com/articles/justin-gaethje-ilia-topuria-receive-190008823.html" }
+    ],
+    "sources": [
+      "https://en.wikipedia.org/wiki/Justin_Gaethje",
+      "https://www.ufcalendar.com/fighters/justin-gaethje",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
+      "https://ufcrankings.org/lightweight/",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://www.givemesport.com/judges-scorecards-ilia-topuria-justin-gaethje-ufc-freedom-250-white-house/",
+      "https://heavy.com/sports/ufc/scorecards-revealed-for-justin-gaethje-vs-ilia-topuria/",
+      "https://agentmma.com/news/90201-justin-gaethje-rules-out-fighting-for-remainder-of-2026-due-to-injuries",
+      "https://agentmma.com/news/89765-justin-gaethje-rules-out-competing-in-2026-due-to-hand-injuries-from-ufc-freedom",
+      "https://sports.yahoo.com/articles/justin-gaethje-ilia-topuria-receive-190008823.html",
+      "https://www.sherdog.com/news/news/Dana-White-awaits-Justin-Gaethje-decision-on-Alexander-Volkanovski-fight-203509",
+      "https://www.mmamania.com/latest-news/474425/justin-gaethje-weighs-retirement-ahead-of-possible-arman-tsarukyan-title-defense-i-want-to-keep-my-faculties",
+      "http://ufcstats.com/fighter-details/9e8f6c728eb01124"
+    ]
+  },
+  "style": {
+    "archetype": "pressure striker",
+    "stance": "orthodox",
+    "tags": ["pressure", "power", "leg-kicks", "clinch", "knees", "takedown-defense", "wild-exchanges", "cardio"],
+    "signature": [
+      "heavy right hand and hooks at distance: Barboza, Cerrone and Ferguson were all finished by punches at distance",
+      "hard calf and low kicks from close range, his trademark in 2017-22 (Poirier's lead leg in 2018); they fell from 3.0 landed per minute in 2017-19 to 0.33 in 2025-26",
+      "head kick: knocked out Dustin Poirier at 1:00 of R2, UFC 291 (2023)",
+      "knees and punches in the clinch: knees finished Michael Johnson (2017); 20% of his landed strikes came in the clinch in 2025-26",
+      "forward pressure, throwing in bunches; coach Trevor Wittman describes a long hook to bait the guard and a feinted overhand"
+    ],
+    "weaknesses": [
+      "the body: since 2023, 39% of the significant strikes he absorbs land on the body (lightweight league 22%); Topuria dropped him with body shots in R2",
+      "hittable: 44% significant-strike defense since 2023 (league 52%) and 5.9 absorbed per minute",
+      "3 KO/TKO losses (Alvarez knee in the clinch, Poirier, Holloway at 4:59 of R5) and 4 knockdowns absorbed in 16 UFC fights",
+      "mileage and age: 1,381 significant strikes absorbed in 202 UFC minutes; turns 38 on Nov 14, 2026",
+      "no submission attempts ever in the UFC, and both submission losses came off his back or after a knockdown (Khabib triangle, Oliveira choke)"
+    ],
+    "summary": "A forward-pressure power striker with an NCAA Division I wrestling base he uses mostly to stay standing. He is accurate (58% career), hits hard, and keeps his pace over five rounds, but he takes a lot back, especially to the body. His once-signature leg kicks have nearly disappeared since 2025, and he now head-hunts and works more in the clinch.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/9e8f6c728eb01124",
+      "research/gaethje.md (sections 7-9, dataset tables)",
+      "https://facepunching.substack.com/p/the-barely-controlled-chaos-of-justin",
+      "https://combatwrapup.substack.com/p/highlighting-the-highlight",
+      "https://onxsports.com/blogs/inside-the-onx-lab-honing-champions/top-mma-counter-strikes",
+      "https://www.cbssports.com/mma/news/ufc-218-results-highlights-eddie-alvarez-scores-tko-victory-over-justin-gaethje"
+    ]
+  },
+  "moves": {
+    "jab": 0.17,
+    "cross": 0.3,
+    "hook": 0.26,
+    "overhand": 0.12,
+    "upper": 0.11,
+    "headkick": 0.04,
+    "bodykick": 0.35,
+    "bodyhook": 0.45,
+    "bodystraight": 0.2,
+    "calf": 0.65,
+    "inside": 0.35,
+    "spinning": 0.0,
+    "knee": 0.25,
+    "elbow": 0.05,
+    "notes": "Weights are normalized to sum to 1 within the head, body and leg groups, as the director's picker expects. Target split from data/derived/fighter_justin-gaethje.json: decayed significant attempts are 82% head, 9% body, 9% legs (landed 74/12/14); career 77/8/15, so leg weights must not be read from his 2017-19 peak. The rear hand and hooks lead the head group because his KO wins came from punches at distance and breakdowns describe power punching in bunches rather than a jab-led game (Face Punching, Combat Wrap-Up); the jab is the smallest punch weight, a judgment. The head kick is small but not zero (Poirier KO, UFC 291). The calf leads the leg group because the calf and low kick were his trademark (Face Punching). Knee is high for a striker because clinch strikes are 10% of his decayed attempts and 14% of landed (20% of landed in 2025-26), including knees in the Johnson and Topuria fights. No spinning attacks in his UFC record. ufcstats does not record technique, so the split inside each target is a judgment."
+  },
+  "appearance": {
+    "build": "compact, dense wrestler's frame: 5 ft 11 in with a 70 in reach (ufcstats); very thick neck and traps, thick trunk with only a mild V-taper, powerful legs",
+    "hair": "short fade, 4-5 cm textured top, receding temples, mid-brown",
+    "facial_hair": "short full beard joined to the moustache, about 1 cm, copper-ginger, clearly redder than his hair",
+    "skin": "light",
+    "tattoos": "all on his right side except two small pieces: a large colour piece on the right ribs and flank (a winged warrior in a crested Spartan-style helmet with a sword, a second figure with a round shield, banners reading 'BEFORE' and 'DISHONOR') and an ornate gothic cross on the outer right upper arm; a small black line-work curl on the left ribs; a partly seen black outline tattoo on the back of the left shoulder",
+    "kit": "black UFC shorts with two white diagonal stripes, a vertical UFC wordmark and the crypto.com logo on his right hip and thigh (studio portrait, UFC 324); at UFC Freedom 250, white shorts with thin light-blue lines and blue gloves",
+    "notes": "Copied from the photo-based likeness sheet data/likeness/justin-gaethje.json (14 photos, 12 from 2026, second-pass review Nov 6, 2026), which is the better source for the avatar: hair #5e4536, beard #8a4e38, skin #dc9b8b with a warm-pink, ruddy undertone, plus face notes and morph values. The red beard against brown hair and the right-side warrior and cross tattoos are the main recognition cues; mirror-check that both tattoos sit on his right. He often wears a white cap in public.",
+    "sources": [
+      "data/likeness/justin-gaethje.json",
+      "assets/reference/justin-gaethje/sources.json",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3022677.png",
+      "http://ufcstats.com/fighter-details/9e8f6c728eb01124"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Leg kicks have collapsed: 3.01 landed per minute in 2017-19, 1.56 in 2020-22, 1.13 in 2023-24 and 0.33 in 2025-26 (6.5% of his landed strikes, against 23% career). Keep the leg share as a labeled knob.", "source": "research/gaethje.md section 7 (dataset)" },
+    { "note": "Body vulnerability: 39% of significant strikes absorbed since 2023 land on the body (league 22%); Fiziev landed 52 and 43 body strikes, Holloway 62, Pimblett 48, Topuria 37 with the only knockdown.", "source": "research/gaethje.md section 7 (dataset)" },
+    { "note": "Pace holds over five rounds: in the five 5-round fights that reached round 4, landed per minute relative to round 1 runs 1.00, 1.11, 0.91, 1.11, 1.13.", "source": "research/gaethje.md section 0 and 9 (dataset)" },
+    { "note": "Chin: 0.52 knockdowns per 100 head strikes absorbed career (0.39 counting head-shot knockdowns only) against 0.95 per 100 landed in the division; shrunk to about 0.68x the prior on career data and 0.91x with a 2-year half-life, before age and mileage terms.", "source": "research/gaethje.md section 8d (dataset)" },
+    { "note": "Judges at UFC 324 split on the rounds he lost: Bell gave Pimblett R3 and R5 (48-47), Cleary and D'Amato only R3 (49-46). At Freedom 250 all three judges had him up 39-37 after four rounds (R2 to Topuria).", "source": "https://mmadecisions.com/decision/15866/Justin-Gaethje-vs-Paddy-Pimblett; https://www.givemesport.com/judges-scorecards-ilia-topuria-justin-gaethje-ufc-freedom-250-white-house/" },
+    { "note": "Freedom 250 last posted lines on BestFightOdds: Gaethje +350 to +360 at FanDuel, Caesars, BetRivers, BetWay and Unibet (Topuria -450 to -500).", "source": "data/raw/odds/bfo_event_lines.csv (BestFightOdds event 4082, scraped Nov 6, 2026)" }
+  ],
+  "confidence": "high"
+}

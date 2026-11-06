@@ -1238,6 +1238,44 @@ class GBMDiff:
         return 0.5 * (p1 + 1 - p2)
 
 
+def american_p(a):
+    a = float(a)
+    return 100.0 / (a + 100.0) if a > 0 else -a / (-a + 100.0)
+
+
+def load_market(fights, people):
+    """Closing no-vig probability for A from nlbair/ufc-data (BFO closing-range midpoints; CC BY 4.0), cached
+    by tools/market.py in data/raw/odds/nlbair_odds.csv. Ranges wider than 0.20 in implied probability are
+    dropped (they can hold stale or in-play prices: the tools/market.py cleaning rule). Also the opening line."""
+    import pandas as pd
+    path = os.path.join(ROOT, "data", "raw", "odds", "nlbair_odds.csv")
+    if not os.path.exists(path):
+        return {}
+    od = pd.read_csv(path)
+    byid = {f.fid: f for f in fights}
+    out = {}
+    for r in od.itertuples(index=False):
+        f = byid.get(r.fight_id)
+        if f is None or not r.has_odds:
+            continue
+        try:
+            lo1, hi1 = american_p(r.f1_close_low), american_p(r.f1_close_high)
+            lo2, hi2 = american_p(r.f2_close_low), american_p(r.f2_close_high)
+        except (TypeError, ValueError):
+            continue
+        if any(map(lambda x: x != x, (lo1, hi1, lo2, hi2))):
+            continue
+        if abs(lo1 - hi1) > 0.20 or abs(lo2 - hi2) > 0.20:
+            continue
+        p = r.f1_close_prob_novig
+        if p != p:
+            continue
+        flip = name_sim(r.f1_name, f.names[0]) < name_sim(r.f1_name, f.names[1])
+        po = r.f1_open_prob_novig
+        out[f.fid] = {"close": 1 - p if flip else p, "open": (1 - po if flip else po) if po == po else None}
+    return out
+
+
 def evaluate(args):
     import numpy as np
     import pandas as pd
@@ -1544,6 +1582,66 @@ def evaluate(args):
         p = np.array([pre_[f][2] for f in both_prior["fid"]])
         overall["backtest_rule_subset (both >= 1 prior)"]["elo_" + nm] = scores(p, both_prior["y"].to_numpy())
 
+    # ---------------- market benchmark: does the pre-UFC record add anything to the closing line?
+    mk = load_market(fights, people)
+    newc["p_mkt"] = newc["fid"].map(lambda f: mk.get(f, {}).get("close", np.nan))
+    for t in "AB":
+        newc["lmkt_" + t] = np.nan
+    lm = np.log(np.clip(newc["p_mkt"], 1e-4, 1 - 1e-4) / (1 - np.clip(newc["p_mkt"], 1e-4, 1 - 1e-4)))
+    newc["lmkt_A"] = lm / 2.0          # side split so that A - B = market logit
+    newc["lmkt_B"] = -lm / 2.0
+    has = newc["p_mkt"].notna()
+    tv_m = newc[has & (newc["date"] < TEST_FROM)]
+    te_m = newc[has & (newc["date"] >= TEST_FROM)]
+    market = {"coverage": {"train_newcomer_bouts_with_close": int(len(tv_m)),
+                           "train_newcomer_bouts": int(len(trainval)),
+                           "test_newcomer_bouts_with_close": int(len(te_m)), "test_newcomer_bouts": int(len(test))}}
+    mbest = {}
+    for nm, fsx in (("mkt_cal", []), ("mkt+pre_core", PRE_CORE), ("mkt+base", BASE_KEYS),
+                    ("mkt+base+pre_core", BASE_KEYS + PRE_CORE)):
+        basek = ["lmkt"] + ([k for k in fsx if k in BASE_KEYS])
+        prek = [k for k in fsx if k not in BASE_KEYS]
+        for C in Cs:
+            for tau in (taus if prek else (None,)):
+                o = cv_eval(lambda: DiffModel(basek, prek, C=C, tau=tau), tv_m)
+                v = oof_ll(o, tv_m)
+                if nm not in mbest or v < mbest[nm]["cv_ll"]:
+                    mbest[nm] = {"C": C, "tau": tau, "cv_ll": v, "base": basek, "pre": prek}
+    ytm = te_m["y"].to_numpy()
+    mp = {"market_close": te_m["p_mkt"].to_numpy()}
+    for nm, b in mbest.items():
+        mp[nm] = DiffModel(b["base"], b["pre"], C=b["C"], tau=b["tau"]).fit(tv_m).predict(te_m)
+    mp["base+pre (no market)"] = m_bp.predict(te_m)
+    mp["base (no market)"] = m_base.predict(te_m)
+    rngm = np.random.default_rng(11)
+    idm = rngm.integers(0, len(ytm), size=(B_, len(ytm)))
+    lmk = {}
+    for nm, p in mp.items():
+        p = np.clip(p, 1e-6, 1 - 1e-6)
+        lmk[nm] = -(ytm * np.log(p) + (1 - ytm) * np.log(1 - p))
+    market["test"] = {}
+    for nm, v in lmk.items():
+        bs = v[idm].mean(axis=1)
+        market["test"][nm] = {"log_loss": round(float(v.mean()), 4),
+                              "ci95": [round(float(np.percentile(bs, 2.5)), 4), round(float(np.percentile(bs, 97.5)), 4)],
+                              "accuracy": round(float(np.mean((mp[nm] > 0.5) == (ytm > 0.5))), 4)}
+    for nm in mp:
+        if nm == "market_close":
+            continue
+        dlt = lmk[nm] - lmk["market_close"]
+        bs = dlt[idm].mean(axis=1)
+        market["test"][nm]["delta_vs_market [mean, lo, hi, P(<0)]"] = [
+            round(float(dlt.mean()), 4), round(float(np.percentile(bs, 2.5)), 4),
+            round(float(np.percentile(bs, 97.5)), 4), round(float((bs < 0).mean()), 3)]
+    dlt = lmk["mkt+pre_core"] - lmk["mkt_cal"]
+    bs = dlt[idm].mean(axis=1)
+    market["test"]["delta mkt+pre_core - mkt_cal"] = [round(float(dlt.mean()), 4),
+                                                       round(float(np.percentile(bs, 2.5)), 4),
+                                                       round(float(np.percentile(bs, 97.5)), 4),
+                                                       round(float((bs < 0).mean()), 3)]
+    market["cv"] = {k: {kk: vv for kk, vv in v.items()} for k, v in mbest.items()}
+    print("market:", json.dumps(market["test"], default=str), flush=True)
+
     # ---------------- method (how): KO / SUB / DEC for newcomer bouts
     meth = method_eval(df_all, train_from)
 
@@ -1609,6 +1707,7 @@ def evaluate(args):
                                        "sd": [round(float(x), 4) for x in sf["sd"]],
                                        "boost": sf["boost"]} for nm, sf in seed_fits.items()}},
         "method": meth,
+        "market": market,
     }
     pre["eval"] = ev
     pre["predictions"] = predictions

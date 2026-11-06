@@ -25,6 +25,9 @@
     kTgt: 80,         // distance target-mix prior strength, attempts (default)
     combA: 1,         // log-linear exponent on the attacker's ratio (combine_fit: pure a=b=1 beat the free fit and averaging held-out)
     combB: 1,         // log-linear exponent on the defender's allowed ratio (same source)
+    powExp: 1,        // exponent on the shrunk power ratio (KD scored per landed head strike vs division) in the knockdown odds (default = combA)
+    chinExp: 1,       // exponent on the shrunk chin ratio (KD absorbed per landed head strike absorbed vs division) (default = combB)
+    ctrlScale: 1,     // global scale on each pair's control-time target (1 / get-up scale); moment-matched to control per minute in the walk-forward backtest
 
     // ---------------- positions ----------------
     ctrlGroundShare: 0.84,   // share of ufcstats control time spent on the ground; rest is clinch control (baserates est 0.89 main, 0.79 alt; midpoint)

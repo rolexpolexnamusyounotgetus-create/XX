@@ -1,0 +1,101 @@
+{
+  "slug": "alexander-volkanovski",
+  "name": "Alexander Volkanovski",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "UFC featherweight champion (second reign, since UFC 314 in Apr 2025). At UFC 333 (Abu Dhabi, Oct 24, 2026) he stopped the previously unbeaten Movsar Evloev at 4:54 of R2 with a right hand and punches from half guard, fighting with a fight-week illness; it was his ninth UFC featherweight title-fight win. Pro record 29-4 (UFC 16-3). Nothing is booked. He has pitched a 'send-off' lightweight superfight with champion Justin Gaethje (first on a podcast before UFC 333, again after it) and offered to fight Arman Tsarukyan for the lightweight title if Gaethje retires. On Nov 4-5, 2026 Dana White said the holdup is Gaethje's decision. No. 2 pound-for-pound.",
+    "title": "UFC featherweight champion",
+    "ranking": "#2 men's pound-for-pound and featherweight champion (UFC media-panel rankings of Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org on Nov 5-6; ufc.com itself returned 403 to scripts)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      { "what": "fight-week illness before UFC 333 (flu or chest infection by different accounts); he declined medication. No post-fight injury was reported, and no UFC 333 medical-suspension list was found (the Abu Dhabi commission's list was not published in any source checked)", "when": "2026-10", "source": "https://www.sherdog.com/news/news/Alexander-Volkanovski-says-he-was-sick-at-UFC-333-Too-easy-otherwise-203333" },
+      { "what": "long-term left-eye issue disclosed in Feb 2026; he lost vision in the left eye during UFC 314 after what he told FOX Australia was a fourth-round punch", "when": "2026-02", "source": "https://www.si.com/fannation/mma/news/alex-volkanovski-injuries-ufc-314" },
+      { "what": "possible broken hand at UFC 314 (coach Joe Lopez: 'might have broke his hand'); never confirmed by a scan report in any source found", "when": "2025-04", "source": "https://middleeasy.com/mma-news/coach-says-alexander-volkanovski-might-have-broke-his-hand-ufc-314/" }
+    ],
+    "sources": [
+      "https://en.wikipedia.org/wiki/Alexander_Volkanovski",
+      "https://www.ufcalendar.com/fighters/alexander-volkanovski",
+      "https://www.ufcalendar.com/rankings/featherweight",
+      "https://www.ufcalendar.com/rankings/mens-pound-for-pound",
+      "https://ufcrankings.org/pound-for-pound/",
+      "https://www.ufcalendar.com/events/ufc-333-2026-10-24",
+      "https://www.sherdog.com/news/news/Dana-White-awaits-Justin-Gaethje-decision-on-Alexander-Volkanovski-fight-203509",
+      "https://www.sherdog.com/news/news/Arman-Tsarukyan-sets-one-condition-for-fighting-Alexander-Volkanovski-203451",
+      "https://www.espn.com/mma/story/_/id/50189696/ufc-champ-volkanovski-proposes-send-superbout-vs-gaethje",
+      "https://www.sherdog.com/news/news/Alexander-Volkanovski-says-he-was-sick-at-UFC-333-Too-easy-otherwise-203333",
+      "http://ufcstats.com/fighter-details/e1248941344b3288"
+    ]
+  },
+  "style": {
+    "archetype": "volume striker",
+    "stance": "orthodox",
+    "tags": ["volume", "pressure", "feints", "switch-stance", "footwork", "leg-kicks", "takedown-defense", "get-ups", "ground-and-pound", "cardio", "late-surge"],
+    "signature": [
+      "constant feints and stance shifts behind the jab and one-two; the shift step sets up angles and counters",
+      "overhand right counter against forward pressure",
+      "step-up inside low kick and calf kicks (75 of 93 leg strikes landed vs Holloway in 2019), though leg kicks fell to 13.5% of his landed strikes after 2025",
+      "takedowns or knockdowns finished with ground strikes: 4 of his 6 UFC KO/TKOs (Kasuya, Kennedy, Rodriguez, Evloev)",
+      "output that rises through five rounds: round-5 landed rate 1.64 times round 1 across seven 25-minute fights (league 1.31)"
+    ],
+    "weaknesses": [
+      "small for 155: 5 ft 6 in; 1-2 at lightweight, with both losses to Islam Makhachev in 2023 (decision, then a head-kick KO)",
+      "knocked down 3 times in 189 head strikes absorbed since 2023 (Makhachev head kick, Topuria right hand, Lopes jab-overhand), against none from 2019 to 2022",
+      "low one-punch power: 0.49 knockdowns per 100 head strikes landed career (featherweight league 0.88), none in his last four fights",
+      "age 38 (born Sep 29, 1988)",
+      "Evloev landed 3 of 4 takedowns on him in R1 at UFC 333, the most any UFC opponent has landed in one round, though he got up each time"
+    ],
+    "summary": "A high-volume, feint-heavy striker who wins on pace and fight IQ. He switches stance, walks opponents back with the jab and one-two, mixes in low kicks and level changes, and gets stronger as the fight goes on. His finishes usually come from ground strikes after a takedown or a hurt opponent rather than one-punch knockouts, and since 2023 he has been dropped three times.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/e1248941344b3288",
+      "research/volkanovski.md (sections 11-13, dataset tables)",
+      "https://fightlibrary.wordpress.com/2023/10/08/alexander-volkanovski-and-the-shifting-of-stance/",
+      "https://bloodyelbow.com/2023/07/13/ufc-290-technique-volkanovski/",
+      "https://www.sherdog.com/news/articles/Scouting-Report-Alexander-Volkanovski-189128",
+      "https://www.fightprimer.com/advanced-striking-20-alexander-volkanovski-inside-low-kick-footsie",
+      "https://www.thescore.com/mma/news/2338015"
+    ]
+  },
+  "moves": {
+    "jab": 0.3,
+    "cross": 0.27,
+    "hook": 0.15,
+    "overhand": 0.14,
+    "upper": 0.1,
+    "headkick": 0.04,
+    "bodykick": 0.5,
+    "bodyhook": 0.3,
+    "bodystraight": 0.2,
+    "calf": 0.55,
+    "inside": 0.45,
+    "spinning": 0.0,
+    "knee": 0.05,
+    "elbow": 0.03,
+    "notes": "Weights are normalized to sum to 1 within the head, body and leg groups, as the director's picker expects. Target split from data/derived/fighter_alexander-volkanovski.json: decayed significant attempts are 78% head, 7% body, 15% legs (landed 72/8/19); career 74/9/18; last 3 years 81/7/12. Jab and cross lead because breakdowns describe a jab and one-two game set up by feints (Fight Library, Bloody Elbow UFC 290); the overhand gets more than a usual share because breakdowns of the Holloway fights describe an overhand counter waiting for his aggression. Leg kicks split toward the calf and inside low kick (Fight Primer, Sherdog scouting). The head kick is small but not zero. Knee and elbow stay near zero: clinch strikes are 5% of his decayed attempts and 4% of landed since 2025. No spinning attacks in his UFC record. ufcstats does not record technique, so the split inside each target is a judgment; the values match the worked example in docs/SCOUTING_SCHEMA.md, checked against these splits on Nov 6, 2026."
+  },
+  "appearance": {
+    "build": "compact and muscular: 5 ft 6 in with a 71 in reach (ufcstats); broad shoulders, thick neck and traps, narrow waist, visible abs at fight weight",
+    "hair": "bald: head shaved clean in every photo since Dec 2021 (natural colour dark brown)",
+    "facial_hair": "short full beard joined to the moustache, about 1 cm, medium-dark brown with a few grey hairs on the chin",
+    "skin": "light-medium",
+    "tattoos": "one full black-and-grey sleeve on the right arm, shoulder to wrist: an Asian-style dragon on the upper arm and front of the shoulder reaching toward the collarbone, a geometric band at the elbow, scales, clouds and waves on the forearm; it extends over the top of the right trapezius. Left arm, chest, abdomen and back are clean",
+    "kit": "2026 fights (UFC 325, UFC 333): dark green shorts with gold Greek-key trim and THE GREAT lettering; earlier Venum green shorts with VOLKANOVSKI in gold. Black UFC gloves, red wrist tape in the champion's corner",
+    "notes": "Copied from the photo-based likeness sheet data/likeness/alexander-volkanovski.json (15 photos, second-pass review Nov 6, 2026), which is the better source for the avatar: it has colour hexes (beard strand #604535, skin #c99a82, warm/olive undertone), face notes and morph values. Do not use the platinum-blond hair from the UFC 333 ceremonial weigh-in face-off: it was a wig for his Street Fighter film role (Joe); he was bald on Oct 21 and Oct 24, 2026. Beard length varies 0.5-1.5 cm between fights. An unconfirmed small mark on the inner left calf is marked do-not-render in the sheet.",
+    "sources": [
+      "data/likeness/alexander-volkanovski.json",
+      "assets/reference/alexander-volkanovski/sources.json",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3949584.png",
+      "https://commons.wikimedia.org/wiki/File:Alexander_Volkanovski_in_2021.jpg",
+      "http://ufcstats.com/fighter-details/e1248941344b3288"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Late surge: in the seven five-round fights that reached round 5, landed per minute by round relative to round 1 is 1.00, 1.21, 1.43, 1.42, 1.64, against 1.00, 1.22, 1.24, 1.29, 1.31 for the league (five-round decisions since 2015); his accuracy rises and opponents' accuracy falls in the same rounds.", "source": "research/volkanovski.md section 13 (dataset)" },
+    { "note": "Since 2025 the profile has shifted: 8.8 significant attempts per minute (career 10.5), 59% accuracy, 82% of landed strikes to the head and 13.5% to the legs (career 66% and 24%). Use the decayed or post-2025 profile, not the career one.", "source": "research/volkanovski.md section 5b (dataset)" },
+    { "note": "Chin: 0.63 knockdowns per 100 head strikes absorbed career, but 1.59 per 100 since 2023 (3 events in 189 head strikes; a 95% interval of roughly 0.3 to 4.6). Shrunk with a 300-head-strike prior and 2-year half-life it lands near the league average before any age term.", "source": "research/volkanovski.md section 12 (dataset)" },
+    { "note": "Power is low: 0.49 knockdowns per 100 head strikes landed career (featherweight league 0.88, lightweight 0.84) and none in his last four fights.", "source": "research/volkanovski.md section 11 (dataset)" },
+    { "note": "Wrestling is a live scoring path: 4.75 takedown attempts per 15 min career at 34% (20% since 2024), 88-109 s of control per takedown landed; takedown defense 67% (35 of 52).", "source": "research/volkanovski.md sections 11 and 15 (dataset)" },
+    { "note": "Age 38.1 on the as-of date; a fight in the first half of 2027 would have him at 38.3-38.7. In the dataset, fighters aged 38-40 win 36.9% of UFC appearances and lose 25.5% by KO/TKO.", "source": "research/volkanovski.md section 2a (dataset)" }
+  ],
+  "confidence": "high"
+}

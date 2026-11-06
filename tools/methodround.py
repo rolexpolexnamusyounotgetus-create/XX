@@ -1584,6 +1584,9 @@ def run(args):
                 rec[v] = compact_joint(preds[v][i], R)
         sm = summary_of(preds["S"][i:i + 1])
         rec["sum_S"] = {k: round(float(v[0]), 4) for k, v in sm.items()}
+        Mg = marginals(preds["S"][i:i + 1])
+        rec["sum_S"]["bins7"] = [round(float(Mg[c][0]), 4) for c in ("XKO", "XSUB", "XDEC", "DRAW", "YDEC", "YSUB",
+                                                                     "YKO")]
         fights_out[T.at[i, "id"]] = rec
     out = {
         "meta": {
@@ -1630,6 +1633,8 @@ def run(args):
 
 
 def _json_default(o):
+    if isinstance(o, (np.bool_,)):
+        return bool(o)
     if isinstance(o, (np.integer,)):
         return int(o)
     if isinstance(o, (np.floating,)):

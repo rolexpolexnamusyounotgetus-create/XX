@@ -1057,6 +1057,15 @@ def parse_results_table(sec):
     return rows
 
 
+# ufcstats single-token names -> how Wikipedia writes them (pattern, surname used alone)
+NAME_ALIASES = {"Alatengheili": [("heili alateng", "alateng")], "Maheshate": [("hayisaer maheshate", "maheshate")],
+                "Mizuki": [("mizuki inoue", "inoue")], "Rongzhu": [("zhu rong", "zhu"), ("rong zhu", "zhu")],
+                "Sumudaerji": [("su mudaerji", "mudaerji"), ("su mudaerji", "su")],
+                "Wulijiburen": [("wuliji buren", "buren"), ("wuliji buren", "wuliji")],
+                "Aoriqileng": [("aoriqileng", "aoriqileng")], "Sulangrangbo": [("sulangrangbo", "sulangrangbo")],
+                "Yizha": [("yizha", "yizha")]}
+
+
 class Card:
     """Final bouts of one ufcstats event, with name matchers for the article text."""
     SUFFIX = {"jr", "sr", "ii", "iii", "iv", "junior"}
@@ -1083,6 +1092,9 @@ class Card:
                     pats.add(" ".join(tk[i:]))                 # "rogerio de lima", "de lima"
                 pats.add(tk[0] + " " + tk[-1])
             J = r"[\s.\-]+"
+            for full, sur in NAME_ALIASES.get(x["name"], []):
+                pats.add(full)
+                x.setdefault("alias_last", set()).add(sur)
             x["full_re"] = re.compile(r"\b(?:%s)\b" % "|".join(
                 J.join(re.escape(t) for t in p.split()) for p in sorted(pats, key=len, reverse=True))) if pats else None
             x["last_re"] = re.compile(r"\b%s\b" % re.escape(x["last"])) if x["last"] and len(x["last"]) >= 2 else None
@@ -1104,7 +1116,7 @@ class Card:
         return memo[mk]
 
     EVENT_NAME = re.compile(r"(?:ufc|fight night|the ultimate fighter|tuf|bellator|strikeforce|wec|pfl|invicta|"
-                            r"lfa|cage warriors|ksw|one)\b[^.;\n]{0,45}?\bvs\.?\s+[\w.\-]+(?:\s+(?:\d+|[a-z][\w.\-]+))?")
+                            r"lfa|cage warriors|ksw)\b[^.;\n]{0,45}?\bvs\.?\s+[\w.\-]+(?:\s+(?:\d+|[a-z][\w.\-]+))?")
 
     def _mentions(self, text, prefer=None):
         k = self.key(text)
@@ -1134,6 +1146,11 @@ class Card:
                 if any(a <= m.start() < b for a, b in taken):
                     continue
                 out.append((m.start(), m.end(), i, "last"))
+            for sur in x.get("alias_last", ()):
+                for m in re.finditer(r"\b%s\b" % re.escape(sur), k):
+                    if any(a <= m.start() < b for a, b in taken) or any(o[0] == m.start() for o in out):
+                        continue
+                    out.append((m.start(), m.end(), i, "last"))
             tk = x["tokens"]
             if len(tk) == 2 and len(tk[0]) >= 4 and re.search(r"\b%s[\s.\-]+%s\b" % (re.escape(tk[1]), re.escape(tk[0])), pk) \
                     and not any(tk[0] in y["tokens"] for j, y in enumerate(self.f) if j != i):
@@ -1226,8 +1243,13 @@ def parse_weighins(card, paras, event):
                             continue
                         subj_here.extend(g[2] for g in group)
                     else:
-                        pron = re.search(r"\b(he|she|both fighters|both|the pair|they|the former|the latter)\b",
-                                         k[:tm.start()])
+                        prons = list(re.finditer(r"\b(he|she|both fighters|both|the pair|they|the former|the latter)\b",
+                                                 k[:tm.start()]))
+                        pron = prons[-1] if prons else None
+                        if pron and (tm.start() - pron.end() > 60 or re.search(
+                                r"\b(?:but|after|when|because|while|since|before|although|though|however)\b",
+                                k[pron.end():tm.start()])):
+                            pron = None
                         if pron and prev_subj:
                             w = pron.group(1)
                             if w in ("he", "she") and len(prev_subj) == 1:
@@ -1371,8 +1393,10 @@ def date_cues(s, event_date):
         out.append((4, "fight week"))
     # explicit dates (not the event's own original date: "originally planned to take place on April 18")
     for m in re.finditer(r"\b(?:on |by |as of )?(%s) (\d{1,2})(?:st|nd|rd|th)?(?:,? (\d{4}))?\b" % MON_RE, k):
-        if EVENT_DATE_CTX.search(k[max(0, m.start() - 60):m.start()]):
-            continue
+        if EVENT_DATE_CTX.search(k[max(0, m.start() - 60):m.start()]) or \
+                re.match(r"\s*(?:,\s*\d{4}\s*)?,?\s*(?:at|in) (?:ufc|the ufc|bellator|the event|ufc fight night|the ultimate)",
+                         k[m.end():m.end() + 30]):
+            continue                      # the date of an event, not of the change
         d = _mkdate(event_date, MONTHS_FULL.index(m.group(1)) + 1, int(m.group(2)), m.group(3))
         if d is not None:
             out.append(((event_date - d).days, "dated"))

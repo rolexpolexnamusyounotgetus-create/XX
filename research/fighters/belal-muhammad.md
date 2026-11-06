@@ -8,7 +8,7 @@ As of 2026-11-06. He/him. Orthodox, 5 ft 11 in, 72 in reach, born 1988-07-09 (ag
 
 - **Three straight decision losses:** Jack Della Maddalena (UFC 315, Montreal, May 10, 2025; lost the title 47-48, 47-48, 46-49), Ian Machado Garry (Doha, Nov 22, 2025; 27-30, 27-30, 28-29) and Gabriel Bonfim (five-round main event, Las Vegas, Jun 6, 2026; 45-50 on all three cards).
 - **Freestyle wrestling:** he has competed in Real American Freestyle (RAF). He beat Ben Askren 6-3 at RAF 11 (Milwaukee, Jul 18, 2026), then lost a 10-0 technical fall to Colby Covington for the RAF cruiserweight crossover title at RAF 13 (Miami, Sep 18, 2026). These are wrestling matches, not MMA, and do not change his MMA record.
-- **Next:** no UFC fight booked as of Nov 6, 2026 (Wikipedia, ESPN profile, ufc.com rankings tables). No injury or retirement announcement found.
+- **Next:** no UFC fight booked as of Nov 6, 2026 (his Wikipedia page, the next-fight columns of Wikipedia's UFC rankings tables, his ESPN profile). No injury or retirement announcement found.
 - **Ranking:** #7 welterweight in both the UFC media rankings (Nov 3, 2026) and the Meta UFC rankings (Oct 31, 2026).
 
 ## Recent fights

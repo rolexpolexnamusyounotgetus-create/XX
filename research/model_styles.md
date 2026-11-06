@@ -14,7 +14,7 @@ Built 2026-11-06 from the ufcstats snapshot through 2026-10-31 by `tools/styles.
   In words: fighters throw about 2.4% less at distance per sd of the opponent's knockdown power; the longer man throws more at distance, kicks the legs less and shoots less; open-stance fights see about 7% fewer distance attempts; everyone kicks the legs less and shoots about 9% less per sd of the opponent's wrestling, and shoots about 8% less per sd of takedown defense, which also cuts control time per takedown by about 7%; kickers get taken down more.
 - **Applied mechanistically, they move win probabilities only slightly.** Feeding the modifiers through an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes win probabilities by a median 1.3 points (max 7.3) and moves 2024+ log loss of the Elo + scorecard model by -0.0016 (CI [-0.0040, 0.0007]); the clean variant that uses only the tune-period screen moves it by -0.0001 (CI [-0.0022, 0.0020]). Neither is significant: the gain is in realistic fight statistics, not in a measurable edge on who wins.
 - **Recommendation:** apply styles as rate modifiers inside the engine (section 9, exact equations and values); do not add archetype or interaction tweaks to the final win probability; use the archetypes for labels, the director and the page.
-- **Archetypes are a continuum.** Silhouette is about 0.09 for every k from 4 to 12, so there are no natural clusters. k = 8 is the most stable of the interpretable solutions (bootstrap adjusted Rand 0.53) and its clusters match expert scouting on the grappling and kicking axes (tag AUCs: top-control 0.98, leg-kicks 0.95, takedown-defense 0.95, volume 0.92), but the attempts-ratio pressure proxy does not match the scouts' 'pressure' or 'counter' tags (AUC 0.48 and 0.52): ufcstats has no cage position.
+- **Archetypes are a continuum.** Silhouette is about 0.09 for every k from 4 to 12, so there are no natural clusters. k = 8 is the most stable of the interpretable solutions (bootstrap adjusted Rand 0.53) and its clusters match expert scouting on the grappling and kicking axes (tag AUCs: top-control 0.98, leg-kicks 0.94, takedown-defense 0.94, volume 0.92), but the attempts-ratio pressure proxy does not match the scouts' 'pressure' or 'counter' tags (AUC 0.47 and 0.51): ufcstats has no cage position.
 - **By-product for v9:** the engine-free skill logistic (2024+ log loss 0.6272) is a far stronger benchmark than Elo (0.6805) and a natural stacking input; its coefficients are in `styles.json` (`winner_level.skill_baseline`).
 
 ## 1. Data and design
@@ -293,39 +293,39 @@ Median relative change in the expected per-minute stats from the modifiers (2019
 
 ## 8. Scouting files versus the data
 
-83 fighters in `data/scouting/` have a live profile. The scouting tags are written in 2026 with hindsight, so they cannot be used in a walk-forward backtest; they serve here to check what the data features mean. AUC = chance that a tagged fighter scores higher on the data feature than an untagged one (signed so 1 = agreement).
+85 fighters in `data/scouting/` have a live profile. The scouting tags are written in 2026 with hindsight, so they cannot be used in a walk-forward backtest; they serve here to check what the data features mean. AUC = chance that a tagged fighter scores higher on the data feature than an untagged one (signed so 1 = agreement).
 
 | Tag | Data feature | Sign | Tagged | AUC |
 |---|---|---|---|---|
 | top-control | `ctrl` | + | 35 | 0.98 |
-| chain-wrestling | `td_int` | + | 11 | 0.95 |
-| leg-kicks | `sh_l` | + | 27 | 0.95 |
-| takedown-defense | `td_def` | + | 37 | 0.95 |
-| volume | `vol` | + | 18 | 0.92 |
+| chain-wrestling | `td_int` | + | 11 | 0.96 |
+| leg-kicks | `sh_l` | + | 29 | 0.94 |
+| takedown-defense | `td_def` | + | 39 | 0.94 |
+| volume | `vol` | + | 19 | 0.92 |
 | body-work | `sh_b` | + | 34 | 0.89 |
-| chin-concern | `chin` | + | 19 | 0.88 |
 | submissions | `sub_int` | + | 34 | 0.88 |
-| back-takes | `sub_int` | + | 22 | 0.84 |
-| cage-wrestling | `td_int` | + | 8 | 0.82 |
-| power | `kd_pow` | + | 36 | 0.81 |
-| clinch | `sh_c` | + | 20 | 0.78 |
-| durable | `chin` | - | 33 | 0.76 |
-| late-surge | `late` | + | 21 | 0.76 |
-| rangy | `reach_rel` | + | 24 | 0.75 |
+| chin-concern | `chin` | + | 19 | 0.88 |
+| back-takes | `sub_int` | + | 22 | 0.85 |
+| cage-wrestling | `td_int` | + | 8 | 0.83 |
+| power | `kd_pow` | + | 37 | 0.81 |
+| clinch | `sh_c` | + | 21 | 0.79 |
+| late-surge | `late` | + | 22 | 0.77 |
+| durable | `chin` | - | 33 | 0.77 |
 | calf-kicks | `sh_l` | + | 4 | 0.75 |
-| cardio | `late` | + | 22 | 0.70 |
+| rangy | `reach_rel` | + | 24 | 0.74 |
+| cardio | `late` | + | 24 | 0.69 |
 | fades-late | `late` | - | 4 | 0.69 |
+| knees | `sh_c` | + | 8 | 0.62 |
 | elbows | `sh_c` | + | 16 | 0.58 |
-| knees | `sh_c` | + | 7 | 0.58 |
 | head-movement | `dfn` | + | 3 | 0.53 |
-| counter | `press` | - | 19 | 0.52 |
-| ground-and-pound | `g_rate` | + | 31 | 0.51 |
+| ground-and-pound | `g_rate` | + | 32 | 0.52 |
+| counter | `press` | - | 19 | 0.51 |
 | jab | `sh_h` | + | 16 | 0.48 |
-| pressure | `press` | + | 24 | 0.48 |
+| pressure | `press` | + | 26 | 0.47 |
 
-What the weakly matched tags line up with instead (best three features by |AUC - 0.5|): **pressure**: sh_l 0.22, otd_int 0.30, otd_rate 0.31; **counter**: ctrl 0.27, kd_pow 0.71, osh_l 0.69; **durable**: ko_l 0.16, chin 0.24, late 0.73; **cardio**: kd_pow 0.22, fin_w 0.27, lexp 0.72; **ground-and-pound**: sh_g 0.85, sh_d 0.18, ctrl 0.77; **power**: kd_pow 0.81, g_rate 0.79, fin_w 0.78.
+What the weakly matched tags line up with instead (best three features by |AUC - 0.5|): **pressure**: sh_l 0.25, otd_int 0.29, otd_rate 0.30; **counter**: ctrl 0.27, kd_pow 0.71, osh_l 0.69; **durable**: ko_l 0.16, chin 0.23, late 0.72; **cardio**: kd_pow 0.23, fin_w 0.27, lexp 0.72; **ground-and-pound**: sh_g 0.85, sh_d 0.18, ctrl 0.77; **power**: kd_pow 0.81, g_rate 0.78, fin_w 0.78.
 
-Scouts' 'pressure' fighters kick the legs less and get fewer takedown attempts against them; nothing in the attempt counts measures walking a man down. Treat `press` as an output-share feature, not as pressure in the coaching sense, and keep the scouting tag for the director. Stance agrees with the tale of the tape for every scouted fighter (orthodox|orthodox 49, southpaw|southpaw 20, switch|switch 14).
+Scouts' 'pressure' fighters kick the legs less and get fewer takedown attempts against them; nothing in the attempt counts measures walking a man down. Treat `press` as an output-share feature, not as pressure in the coaching sense, and keep the scouting tag for the director. Stance agrees with the tale of the tape for every scouted fighter (orthodox|orthodox 51, southpaw|southpaw 20, switch|switch 14).
 
 Scouting archetype family (rows) against the data archetype (largest live membership):
 
@@ -337,8 +337,8 @@ Scouting archetype family (rows) against the data archetype (largest live member
 | grappling | 10 | 9 | 3 | 4 | 1 | 1 | 0 | 0 |
 | kicking | 0 | 0 | 0 | 0 | 2 | 3 | 1 | 8 |
 | power | 0 | 0 | 0 | 1 | 0 | 3 | 1 | 1 |
-| pressure | 0 | 0 | 0 | 1 | 0 | 1 | 1 | 0 |
-| volume | 0 | 0 | 2 | 0 | 0 | 1 | 2 | 1 |
+| pressure | 0 | 0 | 0 | 2 | 0 | 1 | 1 | 0 |
+| volume | 0 | 0 | 2 | 1 | 0 | 1 | 2 | 1 |
 
 ## 9. Exact recommendation for the engine
 

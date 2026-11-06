@@ -872,6 +872,153 @@ def run_fold(rows, nat, test_year, tag, models=("indep", "league", "league_home"
 
 
 # ================================================================================================
+# post-fit: deductions, judge indices, pools
+# ================================================================================================
+DED_GROUPS = {"none": [0], "A": [1, 3], "B": [2, 4], "both": [5]}
+
+
+def deduction_posterior(x, dz, cfg):
+    """P(point deduction | three cards, round stats) per fight, split by fighter. Recorded deductions = 1."""
+    import copy
+    lls = {}
+    base = Model(dz).ll(x, cfg)
+    for name, codes in DED_GROUPS.items():
+        d2 = copy.copy(dz)
+        d2.buckets = [(fi, idx, dd, mask & np.isin(dd, codes)) for fi, idx, dd, mask in dz.buckets]
+        lls[name] = Model(d2).ll(x, cfg)
+    P = {k: np.exp(np.where(np.isfinite(v), v - base, -np.inf)) for k, v in lls.items()}
+    rec = np.array([r["ded"] is not None for r in dz.rows])
+    out = pd.DataFrame({"fid": [r["fid"] for r in dz.rows], "p_none": P["none"], "p_A": P["A"], "p_B": P["B"],
+                        "p_both": P["both"], "recorded": rec,
+                        "referee": [r["referee"] for r in dz.rows], "year": [r["year"] for r in dz.rows]})
+    out["p_any"] = np.where(rec, 1.0, 1 - out.p_none)
+    return out
+
+
+def canonical_rounds():
+    """A - B round differentials (FEATS order) for interpretable judge indices."""
+    return {
+        "damage_vs_control": np.array([3, 0, 0, 1, -1, -2.5, 0, 0], float),
+        "volume_vs_grappling": np.array([8, 2, 2, 0, -2, -3, -1, 0], float),
+        "close_striking": np.array([3, 1, 0, 0, 0, 0, 0, 0], float),
+    }
+
+
+def judge_round_prob(th, e, X, t_era, nodes=40):
+    xq, wq = np.polynomial.hermite.hermgauss(nodes)
+    u = np.exp(th["log_su"]) * xq * np.sqrt(2.0)
+    w = wq / np.sqrt(np.pi)
+    b = th["beta"]
+    V, K, G = X[..., :3] @ b[:3], X[..., 3] * b[3], X[..., 4:] @ b[4:]
+    core = (np.exp(e[..., 1] + th["w"][0] * t_era) * V + np.exp(e[..., 2] + th["w"][1] * t_era) * K +
+            np.exp(e[..., 3] + th["w"][2] * t_era) * G)
+    eta = np.exp(e[..., 0])[..., None] * (core[..., None] + u)
+    return (w / (1 + np.exp(-eta))).sum(-1)
+
+
+def judge_p108(th, e, X, year_idx, nodes=40):
+    """P(10-8 | A wins the round) for a dominant A round."""
+    xq, wq = np.polynomial.hermite.hermgauss(nodes)
+    u = np.exp(th["log_su"]) * xq * np.sqrt(2.0)
+    w = wq / np.sqrt(np.pi)
+    b = th["beta"]
+    V, K, G = X[:3] @ b[:3], X[3] * b[3], X[4:] @ b[4:]
+    z = th["c0"] + th["cy"][year_idx] + e[..., 4][..., None] + th["th"][0] * V + th["th"][1] * K + th["th"][2] * G \
+        + th["th"][3] * u
+    # weight u by P(A wins | u) so the 10-8 rate is conditional on A winning (league judge)
+    eta = V * 1 + K + G + u
+    pw = 1 / (1 + np.exp(-eta))
+    return ((w * pw) / (1 + np.exp(-z))).sum(-1) / (w * pw).sum()
+
+
+def judge_table(fit, rows, display, ndraw=1000, seed=3):
+    """Per-judge effects with Laplace sds and interpretable indices (current era)."""
+    th = fit["th"]
+    jidx = fit["jidx"]
+    cov = fit["cov"]
+    tau = fit["tau"]
+    rng = np.random.default_rng(seed)
+    t_era = (2026 - 2017) / 10.0
+    yidx = 2026 - YEAR0
+    CR = canonical_rounds()
+    zero = np.zeros(5)
+    league = {k: float(judge_round_prob(th, zero, v, t_era)) for k, v in CR.items()}
+    dom = np.array([20, 3, 2, 1, 0, 1.0, 0, 0], float)
+    league108 = float(judge_p108(th, zero, dom, yidx))
+    # empirical stats per judge
+    emp = defaultdict(lambda: {"cards": 0, "rounds": 0, "i108": 0, "dissent": 0, "years": [], "regions": Counter(),
+                               "recent": 0, "absdev": [], "names": Counter()})
+    for r in rows:
+        R = r["R"]
+        cards = r["cards"]
+        margins = []
+        for (k, nm, a, b) in cards:
+            margins.append(a - b)
+        for i, (k, nm, a, b) in enumerate(cards):
+            if k == "unknown":
+                continue
+            e = emp[k]
+            e["cards"] += 1
+            e["rounds"] += R
+            e["names"][nm] += 1
+            e["i108"] += max(0, 19 * R - a - b)
+            e["years"].append(r["year"])
+            e["regions"][r["region"]] += 1
+            if r["year"] >= 2022:
+                e["recent"] += 1
+            if r["winner"] != -1:
+                win_margin = (a - b) if r["winner"] == 0 else (b - a)
+                if r["cat"] in ("S-DEC", "M-DEC") and win_margin <= 0:
+                    e["dissent"] += 1
+                others = [margins[j] for j in range(3) if j != i]
+                e["absdev"].append(abs((a - b) - np.mean(others)))
+    out = []
+    for k, i in jidx.items():
+        e = emp[k]
+        m = th["E"][i]
+        C = cov[i] if cov is not None else np.diag([tau[q] ** 2 for q in EFF])
+        draws = rng.multivariate_normal(m, C, ndraw)
+        idx = {}
+        for nm_, Xc in CR.items():
+            pj = judge_round_prob(th, draws, Xc, t_era)
+            pm = float(judge_round_prob(th, m, Xc, t_era))
+            lg = math.log(league[nm_] / (1 - league[nm_]))
+            lj = np.log(pj / (1 - pj)) - lg
+            idx[nm_] = {"p": pm, "logit_vs_league": float(math.log(pm / (1 - pm)) - lg), "sd": float(lj.std())}
+        p108 = float(judge_p108(th, m, dom, yidx))
+        out.append({"key": k, "name": e["names"].most_common(1)[0][0] if e["names"] else display.get(k, k),
+                    "cards": e["cards"], "cards_2022_on": e["recent"],
+                    "years": [int(min(e["years"])), int(max(e["years"]))] if e["years"] else None,
+                    "regions": dict(e["regions"].most_common(4)),
+                    "effects": {q: float(m[n]) for n, q in enumerate(EFF)},
+                    "sd": {q: float(math.sqrt(C[n, n])) for n, q in enumerate(EFF)},
+                    "power_index": idx["damage_vs_control"], "volume_vs_grappling": idx["volume_vs_grappling"],
+                    "close_striking": idx["close_striking"],
+                    "p108_dominant": p108, "p108_league": league108,
+                    "emp_dissent_rate": e["dissent"] / e["cards"] if e["cards"] else None,
+                    "emp_implied108_per_round": e["i108"] / e["rounds"] if e["rounds"] else None,
+                    "emp_mean_abs_dev_from_others": float(np.mean(e["absdev"])) if e["absdev"] else None})
+    return out, league, league108
+
+
+def region_pools(rows, jt, since=2022):
+    """Who judges where (cards since `since`), for sampling a panel when officials are unknown."""
+    known = {j["key"] for j in jt}
+    pools = defaultdict(Counter)
+    for r in rows:
+        if r["year"] < since:
+            continue
+        for (k, nm, a, b) in r["cards"]:
+            if k != "unknown":
+                pools[r["region"]][k if k in known else "_other"] += 1
+    out = {}
+    for reg, c in pools.items():
+        tot = sum(c.values())
+        out[reg] = {"cards": tot, "judges": [{"key": k, "share": round(v / tot, 4)} for k, v in c.most_common()]}
+    return out
+
+
+# ================================================================================================
 # referees
 # ================================================================================================
 SINGLE_RE = re.compile(r"^(Punch|Kick|Knee|Elbow|Spinning Back Fist|Spinning Back Kick|Flying Knee|Spinning Back Elbow|"
@@ -1107,21 +1254,24 @@ def ref_walkforward(units, tune=(2019, 2023), test_from=2024):
             lm[tau] = f["log_marginal"]
         tau_lm = max(lm, key=lm.get)
         # test with yearly refits
-        L0, L1, nt = [], [], 0
+        L0, L1, L2 = [], [], []
         for ty in sorted(set(yr[yr >= test_from])):
             trw = yr < ty
             te = yr == ty
-            f0 = glmm_fit(y[trw], Xa[trw], g[trw], fam, None if o is None else o[trw], tau=0.0)
-            f1 = glmm_fit(y[trw], Xa[trw], g[trw], fam, None if o is None else o[trw], tau=max(tau_star, 1e-9),
-                          disp=disp)
-            L0.append(unit_loss(f0, y[te], Xa[te], g[te], None if o is None else o[te]))
-            L1.append(unit_loss(f1, y[te], Xa[te], g[te], None if o is None else o[te]))
-        L0, L1 = np.concatenate(L0), np.concatenate(L1)
+            ot, oe = (None, None) if o is None else (o[trw], o[te])
+            f0 = glmm_fit(y[trw], Xa[trw], g[trw], fam, ot, tau=0.0)
+            f1 = glmm_fit(y[trw], Xa[trw], g[trw], fam, ot, tau=max(tau_star, 1e-9), disp=disp)
+            f2 = glmm_fit(y[trw], Xa[trw], g[trw], fam, ot, tau=tau_lm, disp=disp)
+            L0.append(unit_loss(f0, y[te], Xa[te], g[te], oe))
+            L1.append(unit_loss(f1, y[te], Xa[te], g[te], oe))
+            L2.append(unit_loss(f2, y[te], Xa[te], g[te], oe))
+        L0, L1, L2 = np.concatenate(L0), np.concatenate(L1), np.concatenate(L2)
         res[name] = {"n_units": int(len(y)), "events": float(y.sum()), "tau_tuned": tau_star, "dispersion": disp,
                      "tune_loss": losses, "tau_laplace_pre2024": tau_lm,
                      "test_n": int(len(L0)), "test_events": float(y[yr >= test_from].sum()),
                      "test_loss_league": float(L0.mean()), "test_loss_ref": float(L1.mean()),
-                     "test_delta": boot_diff(L1, L0), "family": fam}
+                     "test_delta": boot_diff(L1, L0), "test_loss_ref_laplace": float(L2.mean()),
+                     "test_delta_laplace": boot_diff(L2, L0), "family": fam}
         log(f"  ref {name}: n {len(y)}, events {y.sum():.0f}, tau* {tau_star} (Laplace {tau_lm}), "
             f"2024+ loss {L0.mean():.5f} -> {L1.mean():.5f}")
     return res
@@ -1152,6 +1302,90 @@ def ref_final(units, taus, min_show=15, deductions=None):
         for k in f["levels"]:
             f["recent_n"][k] = int(((df.referee.to_numpy() == k) & (yrs >= 2019)).sum())
         out[name] = f
+    return out
+
+
+def referee_pools(Fh, since=2022):
+    pools = defaultdict(Counter)
+    for reg, ref, yr in zip(Fh.region, Fh.referee, Fh.year):
+        if yr >= since and ref:
+            pools[reg][ref] += 1
+    return {reg: {"fights": sum(c.values()), "referees": [{"name": k, "share": round(v / sum(c.values()), 4)}
+                                                          for k, v in c.most_common()]} for reg, c in pools.items()}
+
+
+def run_referees(F, S, ded=None):
+    """Walk-forward referee models, final per-referee table (all data), deduction rates."""
+    units, Fh = ref_unit_frames(F, S)
+    wf = ref_walkforward(units)
+    # published shrinkage: the empirical-Bayes (Laplace) tau on all data; tuned tau kept as a sensitivity value
+    taus_eb, taus_tuned = {}, {}
+    for name, (df, y, X, off, fam) in units.items():
+        ya, Xa, ga = np.asarray(y, float), X.to_numpy(float), df.referee.to_numpy()
+        oa = None if off is None else np.asarray(off, float)
+        disp = pearson_disp(ya, Xa, ga, fam, oa)
+        lm = {t: glmm_fit(ya, Xa, ga, fam, oa, tau=t, disp=disp)["log_marginal"] for t in TAU_GRID[1:]}
+        taus_eb[name] = max(lm, key=lm.get)
+        taus_tuned[name] = wf[name]["tau_tuned"]
+    fin_eb = ref_final(units, taus_eb)
+    fin_tuned = ref_final(units, {k: max(v, 1e-9) for k, v in taus_tuned.items()})
+    Fall = F.copy()
+    Fall["referee"] = Fall["REFEREE"].fillna("").str.strip()
+    E = br._load(RAW / "ufc_event_details.csv")
+    Fall["region"] = Fall.EVENT.map(dict(zip(E.EVENT, E.LOCATION))).map(lambda l: region_of(l)[1])
+    out = {"units": {}, "wf": wf, "taus_eb": taus_eb, "taus_tuned": taus_tuned}
+    for name in units:
+        out["units"][name] = {"definition": REF_UNITS[name], "family": units[name][4],
+                              "n_units": wf[name]["n_units"], "events": wf[name]["events"],
+                              "tau_eb_all_data": taus_eb[name], "tau_tuned_2019_2023": taus_tuned[name],
+                              "league_rate_2019_on": fin_eb[name]["league_recent"],
+                              "fixed_effects": dict(zip(fin_eb[name]["cols"], map(float, fin_eb[name]["beta"]))),
+                              "dispersion": fin_eb[name]["disp"],
+                              "heldout_2024_on": {k: wf[name][k] for k in ("test_n", "test_events", "test_loss_league",
+                                                                         "test_loss_ref", "test_delta",
+                                                                         "test_loss_ref_laplace", "test_delta_laplace")}}
+    # per-referee rows
+    refs = sorted(set(Fall.referee) - {""})
+    nf = Fall.groupby("referee").size()
+    nf19 = Fall[Fall.year >= 2019].groupby("referee").size()
+    yrs = Fall.groupby("referee").year.agg(["min", "max"])
+    regs = Fall.groupby("referee").region.agg(lambda x: dict(Counter(x).most_common(3)))
+    rows = []
+    for ref in refs:
+        row = {"name": ref, "fights": int(nf.get(ref, 0)), "fights_2019_on": int(nf19.get(ref, 0)),
+               "years": [int(yrs.loc[ref, "min"]), int(yrs.loc[ref, "max"])], "regions": regs.get(ref, {})}
+        for name in units:
+            for tag, fin in (("", fin_eb), ("_tuned", fin_tuned)):
+                f = fin[name]
+                li = {k: i for i, k in enumerate(f["levels"])}
+                if ref in li:
+                    i = li[ref]
+                    row[name + tag] = {"mult": float(math.exp(f["u"][i])), "u": float(f["u"][i]),
+                                       "sd": float(f["u_sd"][i]), "n": int(f["n"][i]), "events": float(f["events"][i])}
+        rows.append(row)
+    # quick-stoppage index: single-strike KD finish (logit) minus follow-up strikes (log), tuned-tau effects
+    for row in rows:
+        if "kd_single_tuned" in row and "kd_follow_tuned" in row:
+            row["kd_speed_index"] = row["kd_single_tuned"]["u"] - row["kd_follow_tuned"]["u"]
+    out["referees"] = rows
+    out["pools"] = referee_pools(Fall)
+    out["recorded_deductions"] = None
+    if ded is not None:
+        d = ded.copy()
+        g = d.referee.to_numpy()
+        X = np.column_stack([np.ones(len(d)), (d.year.to_numpy() - 2015) / 10.0])
+        lm = {t: glmm_fit(d.p_any.to_numpy(), X, g, "binomial", tau=t)["log_marginal"] for t in TAU_GRID[1:]}
+        tded = max(lm, key=lm.get)
+        f = glmm_fit(d.p_any.to_numpy(), X, g, "binomial", tau=tded)
+        li = {k: i for i, k in enumerate(f["levels"])}
+        base = float(d[d.year >= 2019].p_any.mean())
+        for row in rows:
+            if row["name"] in li:
+                i = li[row["name"]]
+                row["deduction"] = {"decisions": int(f["n"][i]), "expected_deductions": float(f["events"][i]),
+                                    "odds_mult": float(math.exp(f["u"][i])), "sd": float(f["u_sd"][i])}
+        out["deduction_model"] = {"tau_eb": tded, "league_rate_per_decision_2019_on": base,
+                                  "by_year": d.groupby("year").p_any.mean().round(4).to_dict()}
     return out
 
 
