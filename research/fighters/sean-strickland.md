@@ -6,7 +6,7 @@ As of Nov 6, 2026. Orthodox middleweight, age 35 (born Feb 27, 1991), 6'1" with 
 
 ## Current status
 - **UFC middleweight champion, second reign.** He beat Khamzat Chimaev by split decision at UFC 328 on May 9, 2026. Eric Colon and Sal D'Amato scored it 48-47 for him; Sue Sanidad had it for Chimaev.
-- **First reign:** he won the belt from Israel Adesanya (UD 49-46 x3, UFC 293, Sep 9, 2023) and lost it to Dricus Du Plessis (SD, UFC 297, Jan 20, 2024). Du Plessis beat him again in Feb 2025 (UD).
+- **First reign:** he won the belt from Israel Adesanya (UD 49-46 x3, UFC 293, Sep 9, 2023) and lost it to Dricus Du Plessis (SD, UFC 297, Jan 20, 2024).
 - **Next (reported, not official):** a title rematch with Nassourdine Imavov. A September report put it on UFC 335 (Dec 12, 2026), but that fell through over Strickland's pay dispute. MMA Junkie reported on Oct 27, 2026 that it is targeted for **February 2027 in Florida**. Brendan Allen called him out in June 2026.
 - **UFC record 18-7** (5 KO/TKO, 1 SUB, 12 DEC).
 
@@ -22,7 +22,7 @@ A forward-walking boxer with enormous volume: 14.4 significant strikes attempted
 
 **Strengths:** relentless pace, the jab, output that rises every round, getting up quickly against wrestlers, and a five-round track record against champions.
 
-**Weaknesses:** kicks. Opponents land 59% of their strikes on his body and legs, against roughly 36% for a typical middleweight. His takedown defense is 47.6% decayed. He has been stopped twice: a wheel kick from Elizeu Zaleski dos Santos (2018) and punches from Alex Pereira (2022). His fights are close: five of his last 11 were split decisions (he is 3-2 in them).
+**Weaknesses:** kicks. Opponents land 59% of their strikes on his body and legs, against roughly 36% for a typical middleweight. His takedown defense is 47.6% decayed. He has been stopped twice: a wheel kick from Elizeu Zaleski dos Santos (2018) and punches from Alex Pereira (2022). Five of his last 11 fights were split decisions (he went 3-2).
 
 ## Durability and cardio
 He has absorbed three knockdowns in 25 UFC fights, none since Pereira in July 2022. Cardio is his calling card: across 11 five-round fights his R2-R5 output runs 1.42, 1.59, 1.67 and 1.86 times R1, well above the middleweight curve (1.26, 1.20, 1.28, 1.31).
