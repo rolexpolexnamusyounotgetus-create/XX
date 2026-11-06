@@ -909,8 +909,28 @@ register("stack_elo_ml_mr", group="stack", refit="event", needs=("elo", "ml_lr",
          desc="the ml.json recommended pre-line stack (Elo + ML + market rating), refit before every card")(
     lambda ctx: Stack(ctx, ["elo", "ml_lr", "mkt_rating"], required=["elo", "ml_lr"]))
 
-_ENG = sorted([k for k in REGISTRY if k.startswith("engine_v")], key=lambda k: int(k[8:]))
-_ENGK = _ENG[-1] if _ENG else None
+def _engine_vkey(k):
+    """'engine_v4.0.1' -> (4, 0, 1); 'engine_v4' -> (4,): numeric order, so v4 < v4.0.1 < v5."""
+    return tuple(int(x) for x in k[len("engine_v"):].split(".") if x.isdigit())
+
+
+def _engine_rejected():
+    """Engine versions whose recorded validation decision says kept: false (data/derived/version_history.json)."""
+    try:
+        vh = json.load(open(os.path.join(DERIVED, "version_history.json")))
+    except Exception:
+        return set()
+    return {"engine_" + v["version"] for v in vh.get("versions", [])
+            if isinstance(v.get("decision"), dict) and v["decision"].get("kept") is False}
+
+
+_ENG = sorted([k for k in REGISTRY if k.startswith("engine_v")], key=_engine_vkey)
+# The MoE stackers use the newest engine version that has made its validation look and was not rejected (the page's
+# engine follows the same rule); BLINDTEST_MOE_ENGINE=engine_v4 pins another one.
+_ENG_OK = [k for k in _ENG if k not in _engine_rejected()]
+_ENGK = os.environ.get("BLINDTEST_MOE_ENGINE") or (_ENG_OK[-1] if _ENG_OK else None)
+if _ENGK and _ENGK not in REGISTRY:
+    raise SystemExit("BLINDTEST_MOE_ENGINE=%s is not a registered engine (%s)" % (_ENGK, ", ".join(_ENG)))
 _MOE_BASE = {"mkt_rating": "mkt_rating", "ml": "ml_lr", "feat_lr": "feat_lr", "elo_sig": "elo_sig", "elo": "elo"}
 if _ENGK:
     _MOE_BASE["engine"] = _ENGK
