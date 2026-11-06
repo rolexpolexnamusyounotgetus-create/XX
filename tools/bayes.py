@@ -1134,6 +1134,9 @@ def stage_fit(args):
             H = fit_year(X, Y, H, em_iters=2 if cold else 1, sweeps=3 if cold else 2, stat_sweeps=2 if cold else 1)
         P = predict_year(X, H, Y)
         pickle.dump({"H": H, "P": P, "variant": v, "year": Y}, open(p, "wb"))
+        if Y >= 2024:          # validation years: scored once by `confirm`, never printed here
+            log("%s %d: predictions stored (validation year, not scored here)" % (v, Y))
+            continue
         ev = X["evalrow"][P["idx"]]
         yv = X["win"][P["idx"]][ev]
         pa = P["pA"][ev]

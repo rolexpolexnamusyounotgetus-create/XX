@@ -293,8 +293,8 @@ priors, and take out-of-fold learned rates when the engine has them.
 ## Engine v5 component: durability (`params.components.durability`)
 
 Replaces the power and chin block (item 5 above) with the knockdown model of research/model_durability.md
-(tools/durability.py, data/derived/durability.json). With the flag false, `matchup()` is the v4 engine bit for bit
-(tests/test_durability.js). The hook runs after the base tables and the learned rates (`applyDurability` in
+(tools/durability.py, data/derived/durability.json). With the flag false, `matchup()` is the engine before the component
+bit for bit (v5 merge step 2: the step-1 engine; tests/test_durability.js, tests/test_v5_step2.js). The hook runs after the base tables and the learned rates (`applyDurability` in
 engine3.js) and rewrites `m.kd`, `m.gnp`, `m.stko` and `m.dw`; `simulate()` and the trace format are unchanged.
 
 - Knockdown hazard per landed standing head strike, i on j: `kdCal * kdScale * base_ij * rel_ij`, with
@@ -320,3 +320,26 @@ engine3.js) and rewrites `m.kd`, `m.gnp`, `m.stko` and `m.dw`; `simulate()` and 
   divided by NORM). Size (`sizeChin`, `sizePow`, default 0) and the withdrawn first-version terms (`withdrawn`:
   layoff, last-fight KO, years in the UFC; neutral) stay labeled knobs. `m.dur` carries every input and factor;
   `explain()` prints them.
+
+## Engine v5 component: fight dynamics (`params.components.dynamics`)
+
+Recipe E1-E11 of research/model_dynamics.md (tools/dynamics.py, data/derived/dynamics.json), values in `params.dyn`.
+With the flag false the engine is the one before the component bit for bit (v5 merge step 2: step 1 + durability;
+tests/test_dynamics.js, tests/test_v5_step2.js). `matchup()` adds `m.dyn` (null when off): per-round tables built by
+`dynTables`. `simulate()` then uses them in place of the plain engine's terms; the trace format is unchanged.
+
+- Output: league pace curve by format (`pace3` / `pace5`) x own late-round ratio (prior strength `kPace` 45) x the
+  opponent's ratio^`paceMutual` (0.4), x `outLevel`; fight-level form `formPace` / `formOut`, an AR(1) round noise per
+  man (`arSd`, `arPhi`, valid range [0, 1)) and an accuracy AR(1) (`accArSd`, `accArPhi`); accuracy profile shifts
+  attenuated by `accProfA` / `accProfB`.
+- Knockdowns: per landed standing strike `kdRound3` / `kdRound5` x `kdLevel3` / `kdLevel5` by round, replacing the
+  damage, stamina, pace and 5-round caution terms (the per-strike hazard `m.kd`, durability's when that flag is on,
+  is unchanged). Conversion after a knockdown: odds x `convLevel` x exp(`convRound` (r - 1)). Non-knockdown stoppages:
+  `stkoScale` / `gnpScale` x exp(`noKdRound` (r - 1)), damage slopes `stkoBase` / `gnpDmg`; `stkoHurtGate` (default
+  false) is a labeled alternative for the standing TKO round shape.
+- Between rounds: knockdown momentum for the next round (`momScorer*`, `momDropped*`), grappling carry-over (`tdCtrlOpp`,
+  `tdTdl`, `distCtrlOpp`) inside a takedown-attempt round curve (`tdRound3` / `tdRound5`, `tdLevel`); `lostAcc` (E5)
+  is a knob, default off.
+- Both components scale knockdowns: durability through `durability.kdCal`, dynamics through `dyn.kdLevel3/5`. They are
+  one level, set in one joint pass (v5 Calibrate stage); never re-match them separately.
+

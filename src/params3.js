@@ -24,11 +24,15 @@
      tags); v401.off (just before div, below) holds v4.0.0's values, which a sub-flag that is off puts back. Tools that
      rewrite these fields in place (tools/v4_levels.js --write, tools/judgecal.js --write, tests/test_engine3.js --fit
      --write) write the flag-on values: run them with the sub-flag on, or drop the sub-flag first.
+   - step 2, components.durability (block durability) and components.dynamics (block dyn): both on. Each flag off
+     reproduces the engine before it (tests/test_v5_step2.js). Their knockdown levels (durability.kdCal, dyn.kdLevel3/5)
+     and the dynamics finish levels (convLevel, stkoScale, gnpScale) are still the separately verified values; one joint
+     level pass in the Calibrate stage sets them (first joint check: docs/CHANGELOG.md v5 merge log, step 2).
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "5.0.0-dev.1-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge step 1 (components.v401)
+    version: "5.0.0-dev.2-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401) and 2 (durability, dynamics)
 
     // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
     components: {

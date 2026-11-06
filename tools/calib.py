@@ -248,6 +248,26 @@ def apply_spec(spec, p, flags=None):
     return float(out[0]) if scalar else out
 
 
+def fit_from_history(rows, as_of, cfg):
+    """Walk-forward refit for the forward ledger / predict(): rows = [{date (ISO), p (raw P(A)), y, flags}] of scored
+    bouts; rows dated on or after as_of are ignored. cfg = calib.json production_cfg[head] ({"kind": "none"} today;
+    else kind + half_life / max_age / last_n / sd_a / sd_b / segs). Same result as src/ml/calib.js fitFromHistory."""
+    if not cfg or cfg.get("kind", "none") == "none":
+        return {"type": "none"}
+    t0 = dt.date.fromisoformat(as_of).toordinal()
+    hist = [r for r in rows if dt.date.fromisoformat(r["date"]).toordinal() < t0]
+    if not hist:
+        return {"type": "none", "reason": "no history"}
+    z = logit([r["p"] for r in hist])
+    y = np.array([r["y"] for r in hist], float)
+    a = np.array([(t0 - dt.date.fromisoformat(r["date"]).toordinal()) / 365.25 for r in hist])
+    S = np.array([[float((r.get("flags") or {}).get(s, 0.0)) for s in SEGMENTS] for r in hist])
+    kw = {k: cfg[k] for k in ("half_life", "max_age", "last_n", "sd_a", "sd_b") if k in cfg}
+    if "segs" in cfg:
+        kw["segs"] = tuple(cfg["segs"])
+    return fit_spec(cfg["kind"], z, y, a, S, **kw)
+
+
 def calib_slope(p, y):
     """Mirrored calibration slope (no intercept by mirroring): y ~ b * logit(p) on both orientations. 1 = calibrated,
     > 1 underconfident. Same as tools/ml.py calib_slope's slope (its mirrored intercept is 0 by construction)."""
@@ -1215,8 +1235,164 @@ def stage_confirm(args):
     pickle.dump(preds, open(os.path.join(CACHE, "confirm_preds.pkl"), "wb"))
 
 
+# ====================================================================== stage: export
+def test_vectors(seed=5):
+    """Vectors for tests/test_calib.js: apply (every kind, both corner orders), fit (every kind, windows, priors),
+    fit_from_history, slope and the monitor. Synthetic inputs, so they carry no fight data."""
+    rng = np.random.default_rng(seed)
+    V = {"apply": [], "fit": [], "history": [], "slope": [], "monitor": []}
+    specs = [{"type": "none"}, {"type": "temperature", "a": 1.23}, {"type": "temperature", "a": 0.81},
+             {"type": "odd", "a": 1.05, "b": 0.07}, {"type": "odd", "a": 0.97, "b": -0.04},
+             {"type": "segment", "a": 1.1, "d": {"women": -0.08, "heavy": 0.05, "newcomer": -0.12, "debut": -0.2,
+                                                  "five": 0.09, "bigfav": 0.06}}]
+    for sp in specs:
+        for _ in range(12):
+            p = float(rng.uniform(0.02, 0.98))
+            fl = {s: float(rng.random() < 0.4) for s in SEGMENTS}
+            V["apply"].append({"spec": sp, "p": p, "flags": fl, "out": apply_spec(sp, p, fl),
+                               "out_swapped": apply_spec(sp, 1 - p, fl)})
+    for kind, kw in (("temperature", {}), ("temperature", {"half_life": 1.0}), ("temperature", {"half_life": 2.0, "sd_a": 0.15}),
+                     ("temperature", {"last_n": 150, "sd_a": 0.3}), ("temperature", {"max_age": 1.0}),
+                     ("odd", {"half_life": 4.0, "sd_b": 0.15}), ("odd", {"sd_a": 0.15, "sd_b": 0.05}),
+                     ("segment", {"half_life": 8.0, "sd_a": 0.15, "sd_b": 0.1}),
+                     ("segment", {"segs": ("women",), "sd_a": 0.15, "sd_b": 0.2})):
+        n = 400
+        z = rng.normal(0, 0.9, n)
+        S = (rng.random((n, len(SEGMENTS))) < 0.3).astype(float)
+        y = (rng.random(n) < sig(1.25 * z)).astype(float)
+        a = rng.uniform(0.01, 5.0, n)
+        sp = fit_spec(kind, z, y, a, S, **kw)
+        V["fit"].append({"kind": kind, "opts": {k: (list(v) if isinstance(v, tuple) else v) for k, v in kw.items()},
+                         "rows": [{"z": float(z[i]), "y": float(y[i]), "age": float(a[i]),
+                                   "flags": {s: float(S[i, j]) for j, s in enumerate(SEGMENTS)}} for i in range(n)],
+                         "spec": sp})
+    base = dt.date(2025, 1, 4).toordinal()
+    rows = []
+    for i in range(300):
+        p = float(sig(rng.normal(0, 0.9)))
+        rows.append({"date": dt.date.fromordinal(base + int(rng.integers(0, 700))).isoformat(), "p": p,
+                     "y": float(rng.random() < sig(1.3 * logit(p))),
+                     "flags": {s: float(rng.random() < 0.3) for s in SEGMENTS}})
+    for cfg, as_of in (({"kind": "none"}, "2026-12-12"), ({"kind": "temperature", "half_life": 1.0, "sd_a": 0.15}, "2026-12-12"),
+                       ({"kind": "temperature", "last_n": 200}, "2026-06-01"),
+                       ({"kind": "segment", "segs": ["women", "five"], "half_life": 2.0, "sd_a": 0.15, "sd_b": 0.1}, "2026-12-12")):
+        V["history"].append({"cfg": cfg, "as_of": as_of, "spec": fit_from_history(rows, as_of, cfg)})
+    V["history_rows"] = rows
+    for n in (60, 200, 500):
+        p = sig(rng.normal(0, 1.0, n))
+        y = (rng.random(n) < sig(1.2 * logit(p))).astype(float)
+        b, se = wald_slope(logit(p), y)
+        V["slope"].append({"p": p.tolist(), "y": y.tolist(), "slope": b, "se": se})
+        V["monitor"].append({"p": p.tolist(), "y": y.tolist(), "window": 200, "out": slope_monitor(p, y, 200)})
+    return V
+
+
+def stage_export(args):
+    J = lambda n: json.load(open(os.path.join(CACHE, n)))
+    drift, cvb, rule = J("drift.json"), J("cv_backtest.json"), J("rule.json")
+    cva = J("cv_all.json") if os.path.exists(os.path.join(CACHE, "cv_all.json")) else None
+    conf = J("confirm.json") if os.path.exists(os.path.join(CACHE, "confirm.json")) else None
+    PR = json.load(open(PREREG_JSON)) if os.path.exists(PREREG_JSON) else None
+    slim_cv = lambda R: {h: {"incumbent": H["incumbent"], "incumbent_gate_ll": H["incumbent_gate_ll"],
+                             "incumbent_gate_slope": H["incumbent_gate_slope"], "rows_inner": H["rows_inner"],
+                             "rows_gate": H["rows_gate"], "base_long_inner_ll": H["base_long_inner_ll"],
+                             "base_long_gate_ll": H["base_long_gate_ll"], "families": H["families"],
+                             "chosen": H["chosen"], "by_year": H["by_year"],
+                             "segment_slopes_2016_2023": H.get("segment_slopes_2016_2023")}
+                         for h, H in R["heads"].items()}
+    production = {h: {"type": "none"} for h in HEADS}
+    production_cfg = {h: {"kind": "none"} for h in HEADS}
+    if PR:
+        for h, v in PR["heads"].items():
+            if v["chosen"]["family"] != "none":
+                fam, cfg = parse_cfg(v["chosen"]["config"])
+                production_cfg[h] = {"kind": {"temp": "temperature"}.get(fam, fam), **{k: (list(x) if isinstance(x, tuple)
+                                                                                     else x) for k, x in cfg.items()}}
+                production[h] = None   # refit walk-forward from history (fit_from_history)
+    fights = {}
+    pk = os.path.join(CACHE, "plugin_preds.pkl")
+    if os.path.exists(pk):
+        fights = pickle.load(open(pk, "rb"))
+    doc = {"meta": {"tool": TOOL, "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                    "protocol": "fights dated 2026-01-01+ dropped at parse; every choice by rolling-origin / forward-"
+                                "chained CV on fights before 2024 (hyper-parameters on origins 2016-2020, adoption gate "
+                                "2021-2023 with ml2's 0.0005 rule); 2024-2025 scored once by the confirm stage after "
+                                "data/derived/calib_prereg.json was committed; corner symmetry asserted (swap test); "
+                                "event-cluster bootstrap CIs (2,000 resamples of cards)",
+                    "sources": {"ml2 table.pkl / fit.pkl / stack.pkl": ML2_CACHE, "nlbair_odds.csv": "data/raw/odds",
+                                "market.json": sha16(os.path.join(DERIVED, "market.json")),
+                                "ml2.json": sha16(os.path.join(DERIVED, "ml2.json"))},
+                    "code_sha256_16": sha16(os.path.abspath(__file__)),
+                    "keys": {"production[head]": "recalibration spec for FightEngine.predict / the forward ledger: "
+                                                 "{type: none} = identity (nothing passed the CV gate)",
+                             "production_cfg[head]": "walk-forward refit config for fit_from_history / "
+                                                     "Calib.fitFromHistory ({kind: none} today)",
+                             "monitor": "trailing slope monitor settings read by the pre-registered rule 6.5.1 (b)",
+                             "fights": "per backtest fight 2019-2025 (blind-test plugin): set hist/valid and the "
+                                       "heads' predictions (incumbent = chosen; *_wf = walk-forward trailing "
+                                       "temperature, experimental)"}},
+           "families": FAMILIES, "segments": list(SEGMENTS), "bigfav_p": BIGFAV_P,
+           "production": production, "production_cfg": production_cfg,
+           "monitor": {"window": 200, "z": 1.96, "ci": "Wald (observed information), mirrored no-intercept slope",
+                       "rule": "docs/V6_V10_PLAN.md 6.5.1 (b): switch the production no-line stack to h 3, T 1 when the "
+                               "trailing-200 CI includes 1 at two consecutive quarterly checks (pre-registered; see "
+                               "rule.findings for its operating characteristics)"},
+           "drift": {"by_year": {c: {Y: {"n": v["n"], "slope": v["slope"], "slope_ci": v["slope_ci"],
+                                         "log_loss": v["log_loss"]} for Y, v in d.items()} for c, d in drift["by_year"].items()},
+                     "pooled_2012_2023": drift["pooled"], "persistence": drift["persistence"],
+                     "comovement": drift["comovement"],
+                     "trailing_temperature": {c: {lb: {k: (x["diff"], x["diff_ci"]) if isinstance(x, dict) and "diff" in x
+                                                       else x for k, x in v.items()} for lb, v in d.items()}
+                                              for c, d in drift["trailing"].items()},
+                     "notes": drift["notes"]},
+           "cv": {"decision_rule": cvb["decision_rule"], "grid_size": cvb["grid_size"], "swap_test": cvb["swap_test"],
+                  "backtest": slim_cv(cvb), "all_decisive": slim_cv(cva) if cva else None},
+           "rule": rule, "prereg": PR, "confirm": conf, "test_vectors": test_vectors(), "fights": fights}
+    with open(OUT_JSON + ".tmp", "w") as fh:
+        json.dump(doc, fh, default=float)
+        fh.write("\n")
+    os.replace(OUT_JSON + ".tmp", OUT_JSON)
+    log("wrote %s (%.0f KB)" % (os.path.relpath(OUT_JSON, ROOT), os.path.getsize(OUT_JSON) / 1024))
+
+
+def stage_plugin_preds(args):
+    """Per-fight predictions for tools/blindtest_plugins/calib.py (2019-2025 backtest fights): for each stack head,
+    `<head>` = the pre-registered choice (the incumbent ml2 page stack: 2021-2023 forward-chained fit 2019..Y-1,
+    2024-2025 fit 2019-2023) and `<head>_wf` = the long-history stack with the walk-forward trailing temperature
+    (the temp family's 2016-2020 choice, refit before every card). Needs the confirm stage for 2024-2025."""
+    if not os.path.exists(os.path.join(CACHE, "confirm_preds.pkl")):
+        raise SystemExit("run the confirm stage first")
+    D = load_table()
+    R = json.load(open(os.path.join(CACHE, "cv_backtest.json")))
+    CP = pickle.load(open(os.path.join(CACHE, "confirm_preds.pkl"), "rb"))
+    pipe = Pipe(D, "backtest")
+    yr = D["year"].to_numpy()
+    out = {}
+    cols = {}
+    for head in ("noline", "open", "line"):
+        rows = pipe.rows(head)
+        inc_hist = pipe.incumbent(head, [2021, 2022, 2023])
+        fam, cfg = parse_cfg(R["heads"][head]["families"]["temp"]["inner_choice"])
+        wf_hist = pipe.scheme(head, fam, cfg, list(range(2019, 2024)))
+        inc = np.where(yr >= 2024, CP[(head, "incumbent")], inc_hist)
+        wf = np.where(yr >= 2024, CP[(head, "temp")], wf_hist)
+        cols[head] = np.where(rows, inc, np.nan)
+        cols[head + "_wf"] = np.where(rows, wf, np.nan)
+    for i, f in enumerate(D["fid"]):
+        if not D["evalrow"].iat[i] or yr[i] < 2019:
+            continue
+        r = {"set": "valid" if yr[i] >= 2024 else "hist"}
+        for k, v in cols.items():
+            if np.isfinite(v[i]):
+                r[k] = round(float(v[i]), 6)
+        if len(r) > 1:
+            out[f] = r
+    pickle.dump(out, open(os.path.join(CACHE, "plugin_preds.pkl"), "wb"))
+    log("plugin predictions for %d fights" % len(out))
+
+
 STAGES = {"table": stage_table, "drift": stage_drift, "cv": stage_cv, "rule": stage_rule,
-          "prereg": stage_prereg, "confirm": stage_confirm}
+          "prereg": stage_prereg, "confirm": stage_confirm, "plugin": stage_plugin_preds, "export": stage_export}
 
 
 def main():
@@ -1228,7 +1404,9 @@ def main():
     ap.add_argument("--universe", default="backtest", choices=["backtest", "all"],
                     help="backtest = both men had a prior UFC fight (the scored universe); all = every decisive fight")
     args = ap.parse_args()
-    stages = [s for s in STAGES if s not in ("confirm",)] if args.stage == "all" else [args.stage]
+    # "all" never writes the pre-registration or reads 2024-2025: prereg and confirm are run explicitly, in that order,
+    # with a git commit of data/derived/calib_prereg.json in between (confirm refuses otherwise)
+    stages = ["table", "drift", "cv", "rule", "export"] if args.stage == "all" else [args.stage]
     for s in stages:
         t0 = time.time()
         log("== %s" % s)

@@ -897,6 +897,229 @@ def stage_q1(a):
 STAGES["q1"] = stage_q1
 
 
+# ====================================================================== stage: beyond (movement beyond the close) + consensus gate
+def lr_fit(Z, yv, wv=None, l2=1e-4):
+    """No-intercept logistic regression with free signs (ridge l2 as in ml2.stack_fit); mirrored-data symmetric."""
+    from scipy.optimize import minimize
+    wv = np.ones(len(yv)) if wv is None else wv
+    wv = wv / wv.sum()
+
+    def f(b):
+        q = Z @ b
+        return np.sum(wv * (np.logaddexp(0, q) - yv * q)) + l2 * b @ b, Z.T @ (wv * (sg(q) - yv)) + 2 * l2 * b
+    return minimize(f, np.zeros(Z.shape[1]), jac=True, method="L-BFGS-B").x
+
+
+def cv_lr(Z, y, yrs, rows, years=CV_YEARS, start=2019, fitter=None):
+    fitter = fitter or (lambda Zt, yt, yrt, Y: lr_fit(Zt, yt))
+    pr = np.full(len(y), np.nan)
+    for Y in years:
+        tr = rows & (yrs >= start) & (yrs <= Y - 1)
+        te = rows & (yrs == Y)
+        b = fitter(Z[tr], y[tr], yrs[tr], Y)
+        pr[te] = sg(Z[te] @ b)
+    m = rows & np.isin(yrs, years)
+    return round(ml2.ll(pr[m], y[m]), 5), pr
+
+
+def books_sd(E):
+    out = np.full(len(E), np.nan)
+    nb = np.zeros(len(E))
+    for i, b in enumerate(E["books_p"]):
+        if isinstance(b, dict) and len(b) >= 3:
+            v = lg(np.array(list(b.values())))
+            out[i] = float(np.std(v))
+            nb[i] = len(b)
+    return out, nb
+
+
+def stage_beyond(a):
+    E, P, tm = stack_table()
+    y = E["y"].to_numpy(float)
+    yrs = E["year"].to_numpy()
+    full = E["full"].to_numpy(bool)
+    g = cv_groups(E)
+    ZS = np.column_stack([zcol(P[:, j]) for j in range(NPTS)])
+    Zml = zcol(E["ml2lr_static"])
+    Zc = zcol(E["market"])
+    R = {}
+    # ---- winner: movement and dispersion beyond the close (forward-chained 2021-2023, fit 2019..Y-1)
+    rs = np.array([v if v == v and v is not None else np.nan for v in E["range_spread"]], float)
+    bsd, nb = books_sd(E)
+    rs0 = np.nan_to_num(rs, nan=np.nanmedian(rs))
+    mv = np.abs(ZS[:, 9] - ZS[:, 1])
+    late = np.abs(ZS[:, 9] - ZS[:, 8])
+    base = np.column_stack([Zc, Zml])
+    variants = {
+        "B0 close + ml2lr (free signs)": base,
+        "B1 + opener": np.column_stack([base, ZS[:, 0]]),
+        "B2 + point 8 (late steam)": np.column_stack([base, ZS[:, 8]]),
+        "B3 + point 1 (first consensus)": np.column_stack([base, ZS[:, 1]]),
+        "B4 + points 1 and 8": np.column_stack([base, ZS[:, 1], ZS[:, 8]]),
+        "B5 + range spread x (close, ml2lr)": np.column_stack([base, rs0 * Zc, rs0 * Zml]),
+        "B6 + |open-close move| x (close, ml2lr)": np.column_stack([base, mv * Zc, mv * Zml]),
+        "B7 + |late move| x (close, ml2lr)": np.column_stack([base, late * Zc, late * Zml]),
+    }
+    rows = full
+    win = {}
+    pr0 = None
+    for name, Z in variants.items():
+        v, pr = cv_lr(Z, y, yrs, rows)
+        if pr0 is None:
+            pr0 = pr
+        m = rows & np.isin(yrs, CV_YEARS)
+        b = lr_fit(Z[rows & (yrs <= 2023)], y[rows & (yrs <= 2023)])
+        win[name] = {"cv": v, "coef_fit_le_2023": np.round(b, 4).tolist(),
+                     "vs_B0": ml2.compare(pr[m], pr0[m], y[m], g[m], a.boot)}
+        log("winner %-42s CV %.5f vs B0 %+.5f %s coef %s" % (name, v, win[name]["vs_B0"]["diff"],
+                                                             win[name]["vs_B0"]["diff_ci"], np.round(b, 3)))
+    # per-book dispersion exists from 2021 only: CV 2022-2023 trained on 2021..Y-1
+    okb = rows & ~np.isnan(bsd)
+    bsd0 = np.nan_to_num(bsd)
+    v0_, p0b = cv_lr(base, y, yrs, okb, years=(2022, 2023), start=2021)
+    v1_, p1b = cv_lr(np.column_stack([base, bsd0 * Zc, bsd0 * Zml]), y, yrs, okb, years=(2022, 2023), start=2021)
+    mb = okb & np.isin(yrs, (2022, 2023))
+    win["B8 + per-book sd x (close, ml2lr) [2021+; CV 2022-23]"] = {"cv": v1_, "cv_B0_same_rows": v0_,
+                                                                   "vs_B0": ml2.compare(p1b[mb], p0b[mb], y[mb], g[mb], a.boot)}
+    log("winner B8 per-book sd: CV %.5f vs B0 %.5f" % (v1_, v0_))
+    # gate = tools/ml2.py's rule (CV point estimate better by more than 0.0005); the stricter variant that also needs
+    # the paired CI to exclude 0 is reported alongside (it was coded first; the brief names the ml2 rule)
+    passed = [k for k, v in win.items() if k != "B0 close + ml2lr (free signs)" and v["vs_B0"]["diff"] < -SEL_MIN]
+    strict = [k for k in passed if win[k]["vs_B0"]["diff_ci"][1] < 0]
+    R["winner_beyond_close"] = {"variants": win, "passed_gate_ml2_rule (CV diff < -0.0005)": passed,
+                                "passed_strict_variant (also CI < 0)": strict,
+                                "note": "B1-B7 are 7 variants tried at once; a pass is the best of 7 and is confirmed "
+                                        "or not by the single 2024-2025 look"}
+    # ---- method: does movement / dispersion predict a decision beyond the decision prop? (props 2021+)
+    tr_ = load_traj()["D"].set_index("fid")
+    mk = json.load(open(os.path.join(DERIVED, "market.json")))["fights"]
+    Dall = load_traj()["D"]
+    Pa = snaps(Dall, "pow")
+    za = lg(Pa)
+    dec_y = np.array([1.0 if m_ in ("UD", "SD", "MD", "DRAW") else (0.0 if m_ in ("KO", "SUB", "DOC", "DQ") else np.nan)
+                      for m_ in Dall["method"]])
+    pdec = np.array([mk.get(f, {}).get("p_dec") if mk.get(f, {}).get("p_dec") is not None else np.nan for f in Dall["fid"]], float)
+    yA = Dall["year"].to_numpy()
+    rsA = np.array([v if isinstance(v, float) and v == v else np.nan for v in Dall.get("range_spread", pd.Series([np.nan] * len(Dall)))], float)
+    okm = (~np.isnan(pdec)) & (~np.isnan(dec_y)) & (~np.isnan(za).any(1)) & Dall["evalrow"].to_numpy(bool) & (yA <= 2023)
+    zp = lg(np.clip(pdec, 0.02, 0.98))
+    fav = np.abs(za[:, 9])
+    feats = {"|late move|": np.abs(za[:, 9] - za[:, 8]), "|open-close move|": np.abs(za[:, 9] - za[:, 1]),
+             "steam to favourite": np.sign(za[:, 9]) * (za[:, 9] - za[:, 1]), "range spread": np.nan_to_num(rsA, nan=np.nanmedian(rsA))}
+    from scipy.optimize import minimize
+
+    def lr_int(X, yv):
+        def f(b):
+            q = X @ b
+            return np.sum(np.logaddexp(0, q) - yv * q) / len(yv) + 1e-4 * b[1:] @ b[1:], X.T @ (sg(q) - yv) / len(yv) + np.r_[0, 2e-4 * b[1:]]
+        return minimize(f, np.zeros(X.shape[1]), jac=True, method="L-BFGS-B").x
+    meth = {}
+    base_m = np.column_stack([np.ones(len(zp)), zp, fav])
+    gA = Dall["event"].to_numpy()
+    prs = {}
+    for name, extra in [("D0 prop + |close logit|", None)] + [("D + " + k, v) for k, v in feats.items()]:
+        X = base_m if extra is None else np.column_stack([base_m, extra])
+        pr = np.full(len(zp), np.nan)
+        for Y in (2022, 2023):
+            trm = okm & (yA >= 2021) & (yA <= Y - 1)
+            te = okm & (yA == Y)
+            b = lr_int(X[trm], dec_y[trm])
+            pr[te] = sg(X[te] @ b)
+        prs[name] = pr
+        m = okm & np.isin(yA, (2022, 2023))
+        meth[name] = {"cv_2022_2023": round(ml2.ll(pr[m], dec_y[m]), 5), "n": int(m.sum())}
+    m = okm & np.isin(yA, (2022, 2023))
+    raw_prop = round(ml2.ll(pdec[m], dec_y[m]), 5)
+    for k in meth:
+        if k != "D0 prop + |close logit|":
+            meth[k]["vs_D0"] = ml2.compare(prs[k][m], prs["D0 prop + |close logit|"][m], dec_y[m], gA[m], a.boot)
+    meth["raw decision prop (no refit)"] = {"cv_2022_2023": raw_prop}
+    R["decision_beyond_props"] = meth
+    log("decision: %s" % {k: (v["cv_2022_2023"], v.get("vs_D0", {}).get("diff"), v.get("vs_D0", {}).get("diff_ci")) for k, v in meth.items()})
+    # ---- consensus stack: which training snapshots, and the gate vs the incumbent open-trained stack
+    fed = list(range(4, NPTS))          # a T-25h..T-8h consensus capture sits in here under either sampling reading
+    sets = {"S8": [8], "S678": [6, 7, 8], "S4-8": [4, 5, 6, 7, 8], "S1-9": list(range(1, NPTS)), "S9 (close-trained)": [9]}
+    cons = {}
+    oofs = {}
+    for name, js in sets.items():
+        res_h = {}
+        for h in (None, 3.0, 1.5):
+            per_fed = {}
+            pr_fed = {}
+            for j in fed:
+                pr = np.full(len(y), np.nan)
+                for Y in CV_YEARS:
+                    trm = full & (yrs >= 2019) & (yrs <= Y - 1)
+                    Zt = np.vstack([np.column_stack([ZS[trm, k], Zml[trm]]) for k in js])
+                    yt = np.tile(y[trm], len(js))
+                    yrt = np.tile(yrs[trm], len(js))
+                    b = fit_w(Zt, yt, yrt, Y - 1, h)
+                    te = full & (yrs == Y)
+                    pr[te] = sg(np.column_stack([ZS[te, j], Zml[te]]) @ b)
+                mm = full & np.isin(yrs, CV_YEARS)
+                per_fed[j] = round(ml2.ll(pr[mm], y[mm]), 5)
+                pr_fed[j] = pr
+            res_h[str(h)] = {"by_fed": per_fed, "mean_fed_4_9": round(float(np.mean(list(per_fed.values()))), 5)}
+            oofs[(name, str(h))] = pr_fed
+        hb = min(res_h, key=lambda k: res_h[k]["mean_fed_4_9"] + (0 if k == "None" else SEL_MIN))
+        trm = full & (yrs <= 2023)
+        Zt = np.vstack([np.column_stack([ZS[trm, k], Zml[trm]]) for k in js])
+        b = fit_w(Zt, np.tile(y[trm], len(js)), np.tile(yrs[trm], len(js)), 2023, None if hb == "None" else float(hb))
+        cons[name] = {"by_h": res_h, "h": None if hb == "None" else float(hb), "weights_fit_le_2023": np.round(b, 4).tolist()}
+        log("consensus %-20s h %s mean fed 4-9 %.5f by fed %s w %s" % (name, hb, res_h[hb]["mean_fed_4_9"], res_h[hb]["by_fed"], np.round(b, 4)))
+    # incumbent: the open-trained stack (snapshot 0 = the opener, multiplicative), fed each consensus point
+    inc = {}
+    for j in fed:
+        pr = np.full(len(y), np.nan)
+        for Y in CV_YEARS:
+            trm = full & (yrs >= 2019) & (yrs <= Y - 1)
+            b = fit_w(np.column_stack([ZS[trm, 0], Zml[trm]]), y[trm], yrs[trm], Y - 1, None)
+            te = full & (yrs == Y)
+            pr[te] = sg(np.column_stack([ZS[te, j], Zml[te]]) @ b)
+        inc[j] = pr
+    mm = full & np.isin(yrs, CV_YEARS)
+    best = min((k for k in cons if not k.startswith("S9")), key=lambda k: cons[k]["by_h"][str(cons[k]["h"])]["mean_fed_4_9"])
+    pb = oofs[(best, str(cons[best]["h"]))]
+    gate = {}
+    stack_new = np.concatenate([pb[j][mm] for j in fed])
+    stack_inc = np.concatenate([inc[j][mm] for j in fed])
+    yy = np.tile(y[mm], len(fed))
+    gg = np.tile(g[mm], len(fed))
+    gate["pooled over fed points 4-9 (each fight counted once per point)"] = ml2.compare(stack_new, stack_inc, yy, gg, a.boot)
+    for j in fed:
+        gate["fed point %d" % j] = ml2.compare(pb[j][mm], inc[j][mm], y[mm], g[mm], a.boot)
+    # the close-trained stack (ml2's line regime) fed the consensus points, against the chosen consensus stack
+    pc9 = oofs[("S9 (close-trained)", str(cons["S9 (close-trained)"]["h"]))]
+    for j in fed:
+        gate["close-trained minus chosen, fed point %d" % j] = ml2.compare(pc9[j][mm], pb[j][mm], y[mm], g[mm], a.boot)
+    d = gate["pooled over fed points 4-9 (each fight counted once per point)"]
+    passed_c = bool(d["diff"] < -SEL_MIN)
+    R["consensus_stack"] = {"sets": cons, "chosen_set": best, "gate_vs_open_trained": gate,
+                            "rule": "chosen set = lowest mean CV log loss over fed points 4-9 (h by the 0.0005 rule); "
+                                    "gate (tools/ml2.py rule): pooled CV log loss better than the open-trained stack "
+                                    "by more than 0.0005",
+                            "gate_passed": passed_c,
+                            "strict_variant_passed (also CI < 0)": bool(passed_c and d["diff_ci"][1] < 0)}
+    for k, v in gate.items():
+        log("gate %-62s %+.5f %s" % (k, v["diff"], v["diff_ci"]))
+    log("consensus chosen %s; gate passed %s; winner beyond close passed: %s" % (best, passed_c, passed))
+    # symmetry: power / multiplicative de-vig are corner-symmetric and the stacks have no intercept
+    sw = []
+    for (dA, dB) in ((1.5, 2.8), (1.08, 9.0), (2.0, 1.9), (3.4, 1.33)):
+        for mth in ("mult", "power"):
+            sw.append(abs(MK.devig(dA, dB, mth) + MK.devig(dB, dA, mth) - 1))
+    bch = np.array(cons[best]["weights_fit_le_2023"])
+    Zt = np.column_stack([ZS[full, 8], Zml[full]])
+    sw.append(float(np.max(np.abs(sg(Zt @ bch) + sg(-Zt @ bch) - 1))))
+    R["symmetry_max_abs"] = float(max(sw))
+    assert R["symmetry_max_abs"] < 1e-12, R["symmetry_max_abs"]
+    pickle.dump({"R": R}, open(os.path.join(CACHE, "beyond.pkl"), "wb"))
+    wjson(os.path.join(CACHE, "beyond.json"), R)
+
+
+STAGES["beyond"] = stage_beyond
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
