@@ -76,7 +76,7 @@
   "use": "embed-ok",
   "what": "profile",
   "attribution": "Official White House photo by Daniel Torok, public domain, via Wikimedia Commons",
-  "notes": "Same moment as 55, slightly more frontal; right forearm rose tattoo, neck chess-knight tattoo, script on right back."
+  "notes": "Same moment as 55, slightly more frontal; right forearm rose tattoo, chess-king tattoo on the right side of the neck, script on right back."
  },
  {
   "file": "commons_2026-06-14_grandfoyer_57.jpg",
@@ -88,7 +88,7 @@
   "use": "embed-ok",
   "what": "profile",
   "attribution": "Official White House photo by Daniel Torok, public domain, via Wikimedia Commons",
-  "notes": "Closest of the three: right profile/3q of face, '69' and script tattoos on right shoulder and back."
+  "notes": "Closest of the three: right profile/3q of face; green shamrock-with-banner, 'JOHN', '69' and script tattoos on the right shoulder and back; chess-king tattoo on the right neck."
  },
  {
   "file": "commons_2026-06-14_grandfoyer_58.jpg",
@@ -131,12 +131,13 @@
   "url": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Sean_O%27Malley_2018.png",
   "page": "https://commons.wikimedia.org/wiki/File:Sean_O%27Malley_2018.png",
   "author": "OpTic Gaming (YouTube video still)",
-  "license": "CC BY 3.0",
+  "license": "CC BY 3.0 as stated on Commons (YouTube CC-BY; Commons licence review pending)",
   "date_taken": "2018-08-21",
-  "use": "embed-ok",
+  "use": "reference-only",
   "what": "headshot",
   "attribution": "OpTic Gaming, CC BY 3.0, via Wikimedia Commons",
-  "notes": "Older (2018) but the only photo with his natural hair colour: shoulder-length loose brown curls, light moustache and chin hair, fewer face tattoos."
+  "notes": "Older (2018) but the only photo with his natural hair colour: shoulder-length loose brown curls, light moustache and chin hair, fewer face tattoos.",
+  "license_note": "Commons tags this as {{YouTube CC-BY}} but its licence review has not been completed (no reviewer recorded), and the YouTube page could not be checked from this machine. Downgraded to reference-only on second review; upgrade to embed-ok only after confirming the video's licence line reads 'Creative Commons Attribution licence (reuse allowed)'."
  },
  {
   "file": "ref_nbcmontana_ap_profile_2026-06-14.jpg",

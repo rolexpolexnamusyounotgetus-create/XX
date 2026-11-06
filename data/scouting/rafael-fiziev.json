@@ -3,17 +3,39 @@
   "name": "Rafael Fiziev",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Active, coming off a win. He stopped Manuel Torres with ground punches 15 seconds into round 2 in the UFC Fight Night main event in Baku, Azerbaijan (Jun 27, 2026). Five months earlier Mauricio Ruffy had stopped him in round 2 at UFC 325 in Sydney (Jan 31, 2026). He is 2-3 in his last five and 8-5 in the UFC (fighters.json). No booking, current ranking or current injury could be confirmed: web search was unavailable to the research pass and to the Nov 6, 2026 fact-check, and no other project file lists one. The Torres and Ruffy results match fighters.json and the raw bout stats.",
+    "summary": "Active, coming off a win, with no fight booked. He stopped Manuel Torres 15 seconds into round 2 in the UFC Fight Night 280 main event in Baku, Azerbaijan (Jun 27, 2026). A spinning wheel kick dropped Torres and punches finished it (Wikipedia; Yahoo/Uncrowned; UFC Stats logs the finish as ground punches), and it earned a $100,000 Performance of the Night bonus. He said afterwards that a first-round jab had left him seeing quadruple out of his left eye. Five months earlier Mauricio Ruffy stopped him in round 2 at UFC 325 in Sydney (Jan 31, 2026 US time / Feb 1 local). Pro record 14-5-0 (ESPN, UFCalendar, ufcrankings.org); UFC 8-5; 2-3 in his last five. ESPN and UFCalendar list no upcoming bout on Nov 6, and no new injury has been reported since Baku. He trains at Tiger Muay Thai in Phuket, Thailand, and fights for Azerbaijan.",
     "title": null,
-    "ranking": null,
+    "ranking": "#11 lightweight in the UFC media-panel rankings (Nov 3, 2026, per ufcalendar.com; ufcrankings.org, updated Nov 5, agrees) and #13 in the UFC/Meta algorithmic rankings (Oct 31, 2026 board, up one; ufcalendar.com, MMA Mania, Wikipedia). ufc.com/rankings returned 403 to scripts.",
     "active": true,
     "next_fight": null,
     "injuries": [
-      { "what": "leg injury that ended his fight with Mateusz Gamrot in round 2 (UFC Stats: 'Leg Injury'); his next fight came about 17 months later", "when": "2023-09", "source": "data/raw/ufc_fight_results.csv (UFC Fight Night: Fiziev vs. Gamrot, Sep 23, 2023)" }
+      {
+        "what": "knee/leg injury that stopped his fight with Mateusz Gamrot in round 2 (UFC Stats: 'Leg Injury'; Wikipedia: knee injury); his next fight came about 17 months later",
+        "when": "2023-09",
+        "source": "data/raw/ufc_fight_results.csv (UFC Fight Night: Fiziev vs. Gamrot, Sep 23, 2023); https://en.wikipedia.org/wiki/Rafael_Fiziev"
+      },
+      {
+        "what": "knee injury that forced him out of an Oct 11, 2025 main event against Charles Oliveira in Rio (Mateusz Gamrot replaced him)",
+        "when": "2025-09",
+        "source": "https://www.espn.com/mma/story/_/id/46322360/sources-fiziev-injured-ufc-rio-bout-vs-oliveira"
+      },
+      {
+        "what": "left-eye vision problem during the Torres fight: he said a round-1 jab left him seeing 'quadrupled' and he threw the finishing spinning kick almost blind. No follow-up medical report was found",
+        "when": "2026-06",
+        "source": "https://sports.yahoo.com/mma/article/rafael-fiziev-confesses-his-slump-busting-ufc-baku-knockout-was-very-lucky-i-didnt-see-anything-213703059.html"
+      }
     ],
     "sources": [
       "data/derived/fighters.json (recent: 2026-06-27 W Torres TKO R2 0:15; 2026-01-31 L Ruffy TKO R2 4:30; 2025-06-21 W Bahamondes U-DEC; 2025-03-08 L Gaethje U-DEC)",
-      "data/raw/ufc_event_details.csv (Baku and Sydney event dates and locations)"
+      "data/raw/ufc_event_details.csv (Baku and Sydney event dates and locations)",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4339488 (ESPN: Active, 14-5-0, Tiger Muay Thai, switch stance; overview shows only a previous fight; read Nov 6, 2026)",
+      "https://www.ufcalendar.com/fighters/rafael-fiziev (14-5-0, #11, no next fight listed; read Nov 6, 2026)",
+      "https://en.wikipedia.org/wiki/Rafael_Fiziev (revision of Nov 3, 2026, read via the API)",
+      "https://sports.yahoo.com/mma/article/rafael-fiziev-confesses-his-slump-busting-ufc-baku-knockout-was-very-lucky-i-didnt-see-anything-213703059.html",
+      "https://www.espn.com/mma/story/_/id/46322360/sources-fiziev-injured-ufc-rio-bout-vs-oliveira",
+      "https://www.ufcalendar.com/rankings",
+      "https://ufcrankings.org/lightweight",
+      "https://mmamania.com/ufc-mma-rankings/483818/tom-nolan-boots-renato-moicano-top-10-latest-ufc-rankings-update-jacobe-smith-top-15"
     ]
   },
   "style": {
@@ -22,7 +44,7 @@
     "tags": ["body-work", "switch-stance", "head-kicks", "spinning", "knees", "clinch", "leg-kicks", "takedown-defense", "power"],
     "signature": [
       "body kicks and body strikes at volume: 52 body strikes landed against Justin Gaethje at UFC 286 and 43 in their 2025 rematch; 39% of his landed significant strikes go to the body",
-      "spinning wheel kick (KO of Brad Riddell, R3 2:20, Dec 2021)",
+      "spinning wheel kick (KO of Brad Riddell, R3 2:20, Dec 2021; it also dropped Manuel Torres for the finish 15 seconds into R2 in Baku, Jun 2026, per Wikipedia and Yahoo/Uncrowned)",
       "punching power at distance (KO of Rafael Dos Anjos 18 seconds into R5, Jul 2022; KO of Renato Moicano, R1, UFC 256)",
       "clinch work: 10% of his landed significant strikes come in the clinch (16 against Gaethje at UFC 286)",
       "selective takedowns: 10 of 14 career, 4 of 4 against Ignacio Bahamondes"
@@ -37,7 +59,7 @@
     "sources": [
       "data/derived/fighters.json (career C and recency-weighted S sums; lightweight medians over 120 lightweights with 30+ UFC minutes)",
       "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (2019-2026 bout stats and methods)",
-      "https://en.wikipedia.org/wiki/Rafael_Fiziev (reference page for background; could not be fetched in this pass)"
+      "https://en.wikipedia.org/wiki/Rafael_Fiziev (background and fighting style; read via the API on Nov 6, 2026)"
     ]
   },
   "moves": {
@@ -47,14 +69,18 @@
     "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json: recency-weighted landed shares are head 0.41 / body 0.42 / leg 0.18 and attempt shares are head 0.57 / body 0.31 / leg 0.13 (career landed 0.43 / 0.39 / 0.18; lightweight median landed about 0.62 / 0.22 / 0.15). The body share is about double the division's, which is the main thing the director should show. Body kicks dominate the body group, because his body volume comes at distance (52 body strikes against Gaethje in 2023, 43 in 2025, while 84-87% of his landed strikes are at distance). UFC Stats does not separate body kicks from body punches, so the 0.7 is a judgment. Head kicks (0.12) and spinning (0.15) sit above most lightweights for the Riddell wheel-kick KO. Knee is 0.3 because 10% of his landed strikes come in the clinch. Leg kicks are a generic split with inside slightly ahead, which is a judgment, not data. No published technique breakdown could be fetched in this pass."
   },
   "appearance": {
-    "build": "compact lightweight: 5'8\" with a 71-inch reach (fighters.json)",
-    "hair": "unknown (photos could not be checked in this pass)",
-    "facial_hair": "unknown",
-    "skin": "unknown",
-    "tattoos": "none confirmed",
-    "kit": "unknown",
+    "build": "compact, muscular lightweight: 5'8\" with a 71-inch reach (fighters.json)",
+    "hair": "light brown, long and tightly curly, about shoulder length: worn loose in the June 2026 ESPN studio photos and tied up in a top knot in the March 2025 ones",
+    "facial_hair": "full, bushy light-brown beard, about 4-6 cm, with a moustache; slightly redder than his hair (June 2026 studio photos)",
+    "skin": "light",
+    "tattoos": "none visible on the chest, abdomen or arms in ESPN studio photos (Mar 2025, Jun 2026); back not seen",
+    "kit": "dark navy/black UFC shorts with a tonal wave pattern (June 2026 studio) and white shorts with grey stripes (March 2025 studio). The corner colour wins in the sim",
+    "notes": "No likeness sheet exists yet (data/likeness/rafael-fiziev.json is absent). Checked Nov 6, 2026 against the ESPN headshot and the left-stance studio cutout (both files dated Jun 25, 2026) and the right-stance cutout (file dated Mar 7, 2025). Light blue eyes. Wikipedia's lead image is a 2023 photo and was not used.",
     "sources": [
-      "data/derived/fighters.json (height, reach)"
+      "data/derived/fighters.json (height, reach)",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4339488.png (Last-Modified Jun 25, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/4339488.png (Last-Modified Jun 25, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/4339488.png (Last-Modified Mar 7, 2025)"
     ]
   },
   "engine_notes": [

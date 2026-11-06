@@ -22,11 +22,11 @@
   "commons_2022_a.png",
   "commons_2022_b.jpg"
  ],
- "photo_coverage_note": "No clearly dated 2026 face photo was found (Commons has only 2022 and 2025 photos of him). The newest are the UFC 323 face-off profile (Dec 2025) and an undated RAF wrestling photo published Oct 2026; his look has been stable since about 2023.",
+ "photo_coverage_note": "No clearly dated 2026 face photo was found (Commons has only 2022 and 2025 photos of him). The newest are the UFC 323 face-off profile (Dec 2025) and an undated RAF wrestling photo published Oct 2026; his look has been stable since about 2023. Only the two UFC 316 files (public domain) are embed-ok; the 2022 YouTube stills are reference-only until their CC BY licence is verified.",
  "face": {
   "shape": "Medium-long, rectangular-oval face with broad, high cheekbones and a fairly wide jaw under the beard. Lean and weathered; forehead and cheeks show lines.",
   "jaw": "Medium-wide and strong, mostly hidden by the beard; the beard outline makes the lower face look squared and slightly long.",
-  "chin": "Medium width, moderate projection in profile (UFC 323 face-off); covered by beard.",
+  "chin": "Medium width, moderate projection in right profile (UFC 323 face-off); covered by beard.",
   "cheekbones": "Prominent, broad and high; the cheeks bunch up strongly when he smiles (UFC 316, RAF photo).",
   "brow_ridge": "Strong. Heavy brows sit low over deep-set eyes, giving a hooded, intense look at rest.",
   "forehead": "Broad, medium-high, with clear horizontal lines. Slight temple recession.",
@@ -52,7 +52,7 @@
   "mouth_lips": "Medium width; thin upper lip under a full moustache, medium lower lip. Wide, toothy smile that lifts the cheeks high.",
   "ears": {
    "size": "Medium-large and clearly protruding",
-   "cauliflower_ear": "Yes, both ears: thickened, lumpy helix and filled-in upper ear (ESPN headshot, RAF photo, UFC 323 profile)."
+   "cauliflower_ear": "Yes, both ears: thickened, lumpy helix and filled-in upper ear (ESPN headshot, RAF photo, right ear in the UFC 323 face-off profile)."
   },
   "marks_scars": "Crease/scar line across the nose bridge; forehead lines; small marks around the brows typical of fight scarring."
  },
@@ -212,5 +212,14 @@
   "hair": "short02 or short04 trimmed to a skin fade on the sides, tinted #2a2124",
   "beard": "full-beard texture or shell #6a4337 (copper), clearly redder than the hair"
  },
- "notes": "Confidence: high for hair, beard colours, ears, nose damage and build (clear studio photos plus several event photos). Medium for exact face proportions because most frontal photos are studio headshots of unknown date, and the only public-domain face photos (UFC 316, Jun 2025) show a broad smile. No clearly dated 2026 face photo found. Watch for: (1) beard is copper while head hair is near-black, (2) nose broad with a crease across the bridge, (3) both ears cauliflowered and protruding, (4) compact 168 cm frame with thick neck: do not make him tall or slender."
+ "notes": "Confidence: high for hair, beard colours, ears, nose damage and build (clear studio photos plus several event photos). Medium for exact face proportions because most frontal photos are studio headshots of unknown date, and the only public-domain face photos (UFC 316, Jun 2025) show a broad smile. No clearly dated 2026 face photo found. Watch for: (1) beard is copper while head hair is near-black, (2) nose broad with a crease across the bridge, (3) both ears cauliflowered and protruding, (4) compact 168 cm frame with thick neck: do not make him tall or slender.",
+ "review": {
+  "date": "2026-11-06",
+  "by": "second-pass photo review",
+  "changes": [
+   "UFC 323 face-off photo is a right profile, not a left profile (sources.json and face notes corrected).",
+   "commons_2022_a.png and commons_2022_b.jpg moved to reference-only: the YouTube CC-BY tag on Commons has no completed licence review.",
+   "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Hair, copper beard, Georgia-flag tattoo on the left chest (only tattoo), cauliflower ears, nose, skin samples and build match the photos."
+  ]
+ }
 }

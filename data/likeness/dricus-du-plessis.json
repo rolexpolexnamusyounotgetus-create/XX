@@ -26,7 +26,7 @@
  "face": {
   "shape": "Broad rectangular face with a wide, square jaw and a wide neck that runs almost straight down from the ears. Lean, with a slightly ruddy, weathered look.",
   "jaw": "Wide and square with well-defined angles; the boxed beard follows and emphasises it.",
-  "chin": "Broad, moderately projecting and slightly squared in profile (July 2026 face-off).",
+  "chin": "Broad, moderately projecting and slightly squared in right profile (July 2026 face-off).",
   "cheekbones": "Moderate, fairly flat; cheeks lean but not hollow.",
   "brow_ridge": "Moderate to strong; brows sit low, so the eyes look narrowed.",
   "forehead": "Medium-high and broad, with horizontal lines; slight recession at the temples.",
@@ -52,9 +52,9 @@
   "mouth_lips": "Medium width; thin upper lip, medium-full lower lip; neutral expression with level corners.",
   "ears": {
    "size": "Medium, moderately protruding",
-   "cauliflower_ear": "Yes, both ears thickened at the helix (ESPN headshot, July 2026 profile)."
+   "cauliflower_ear": "Yes, mild: upper helix and inner upper ear thickened and lumpy on both ears (ESPN headshot, right ear in the July 2026 face-off profile, left ear in the media-day photo); milder than Merab's or Chimaev's."
   },
-  "marks_scars": "Minor facial marks after fights (July 2026); no prominent permanent scars visible. Possible faint horizontal mark on the lower right abdomen in ESPN stance-right (unclear)."
+  "marks_scars": "Minor facial marks after fights (July 2026); no prominent permanent face scars. Body: a thin, pale horizontal line about 10 cm long runs from just beside the navel across his lower left abdomen in ESPN stance-right (looks like an old scar); in stance-left only a faint crease at navel height shows, so it is low render priority. Temporary bruises (yellow-green on the right shoulder in stance-left, a small purple mark on the abdomen in stance-right) should be ignored."
  },
  "hair": {
   "style": "Short textured crop: sides faded short (about 1 cm), top 4-6 cm pushed up and slightly forward into a small spiky quiff.",
@@ -207,5 +207,15 @@
   "hair": "short04 or short01 with a faded side, tinted #5c3d28",
   "beard": "short boxed-beard texture or shell #613d2f with a crisp cheek line"
  },
- "notes": "Confidence: high for build, jaw, eye colour, hair and beard (clear studio set plus several July 2026 photos). Medium for nose and lip detail. No confirmed licence-free photo: the only Commons file is listed CC0 but looks like a reposted social-media snapshot, so it is marked reference-only. Watch for: (1) blue eyes and ruddy skin, (2) square jaw with a neat boxed beard, (3) very thick neck and broad shoulders, (4) cauliflower ears are milder than Merab's or Chimaev's."
+ "notes": "Confidence: high for build, jaw, eye colour, hair and beard (clear studio set plus several July 2026 photos). Medium for nose and lip detail. No confirmed licence-free photo: the only Commons file is listed CC0 but looks like a reposted social-media snapshot, so it is marked reference-only. Watch for: (1) blue eyes and ruddy skin, (2) square jaw with a neat boxed beard, (3) very thick neck and broad shoulders, (4) cauliflower ears are milder than Merab's or Chimaev's.",
+ "review": {
+  "date": "2026-11-06",
+  "by": "second-pass photo review",
+  "changes": [
+   "The abdominal mark is clear (not faint) in ESPN stance-right and is on the lower LEFT abdomen, not the right.",
+   "The July 2026 face-off photo is a right profile (sources.json and face notes corrected).",
+   "Commons 2023 photo stays reference-only; added the evidence (it is a phone screenshot).",
+   "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Hair, boxed beard, blue eyes, no tattoos, skin samples and build match the photos."
+  ]
+ }
 }

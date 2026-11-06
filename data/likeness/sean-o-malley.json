@@ -175,8 +175,13 @@
    "size": "large (ribs to waist)"
   },
   {
-   "where": "Right side of abdomen/flank",
-   "description": "Stacked lines of black script lettering (not legible in these photos).",
+   "where": "Left ribs/flank, beside the left arm",
+   "description": "Large vertical black script running down the left ribs between the cobra and the left arm (word not legible; ESPN stance-right).",
+   "size": "large (armpit to waist)"
+  },
+  {
+   "where": "Right ribs/flank",
+   "description": "Stacked lines of black script reading 'Float like a Butterfly / Sting like a Bee' running down the right ribs (legible in the Cageside weigh-in photo; partly visible in ESPN stance-left).",
    "size": "medium"
   },
   {
@@ -185,18 +190,18 @@
    "size": "full sleeve"
   },
   {
-   "where": "Right arm",
-   "description": "Mostly black-and-grey sleeve with some colour; a shaded rose on the forearm; script on the forearm; letters on the knuckles.",
-   "size": "full sleeve"
+   "where": "Right arm (partial, not a full sleeve)",
+   "description": "Upper arm mostly bare skin: a thin outline awareness ribbon with script on the inner biceps and a few small pieces. Forearm more heavily worked: a large shaded black-and-grey rose on the outer forearm below the elbow, dark black-and-grey work toward the wrist, a blackletter word on the inner forearm near the wrist, and letters on the knuckles (ESPN stance photos, White House 55-57, Cageside weigh-in, 2024 CC0 photo).",
+   "size": "forearm half-sleeve plus small upper-arm pieces"
   },
   {
    "where": "Right shoulder and upper back",
-   "description": "A banner/heart-shaped design on top of the right shoulder, '69' on the rear shoulder and a vertical column of large black script down the right side of the back (White House 55-57).",
+   "description": "A green shamrock/clover shape crossed by a black scroll banner of script on top of the right shoulder, the small word 'JOHN' beside it, '69' in black numerals on the rear shoulder, and a vertical column of large black script down the right side of the back (White House 55-57). Small black lettering on the front of the right shoulder (ESPN stance-left).",
    "size": "large"
   },
   {
    "where": "Neck",
-   "description": "Black chess-knight piece on the right side of the neck; a black-and-grey figure on the left side of the neck (AP profile).",
+   "description": "Black chess king drawn on its side on the right side of the neck (clear in White House 57); a black-and-grey figure on the left side of the neck (AP profile).",
    "size": "small-medium"
   },
   {
@@ -275,7 +280,18 @@
   "eyebrows": "eyebrow010 tinted #3b2a22, low and straight",
   "hair": "afro01 scaled down and tinted #a52e97 (with blue #2f5496 on his left side if per-vertex tint is possible) for the curly look; for fight night a tight cornrow look needs a custom texture over a near-bald cap",
   "beard": "short beard texture or shell #45322c, fuller at the chin",
-  "tattoos": "Without tattoo textures the likeness drops sharply; a skin overlay with the chest bird, two sleeves and face marks is the top priority after hair."
+  "tattoos": "Without tattoo textures the likeness drops sharply; a skin overlay with the chest bird, the full colour left sleeve, the right-forearm rose, the cobra and flank script, and the face marks is the top priority after hair. Keep the right upper arm mostly bare."
  },
- "notes": "Confidence: high for build, nose, eyes, beard and hair colours (many clear 2026 photos, several public domain). Medium for exact jaw and chin shape because the beard hides them. Watch for: (1) hair changes almost every fight; the June 2026 look is magenta curls/cornrows with blue on his left and red on his right, (2) keep him slim and long-limbed, (3) heavy tattoos on chest, both arms, neck and face are a core part of his look, (4) the ESPN stance-right shoot (cornrows, pink shorts) predates 2026."
+ "notes": "Confidence: high for build, nose, eyes, beard and hair colours (many clear 2026 photos, several public domain). Medium for exact jaw and chin shape because the beard hides them. Watch for: (1) hair changes almost every fight; the June 2026 look is magenta curls/cornrows with blue on his left and red on his right, (2) keep him slim and long-limbed, (3) heavy tattoos on the chest, the full left sleeve, the right forearm, both flanks, neck and face are a core part of his look (the right upper arm is mostly bare), (4) the ESPN stance-right shoot (cornrows, pink shorts) predates 2026.",
+ "review": {
+  "date": "2026-11-06",
+  "by": "second-pass photo review",
+  "changes": [
+   "Right arm corrected: not a full sleeve; upper arm is mostly bare, the work is on the forearm (rose, blackletter word) plus an outline ribbon on the inner biceps.",
+   "Neck tattoo is a chess king, not a knight; right-shoulder piece is a green shamrock with a script banner plus 'JOHN'.",
+   "Right-flank script is legible: 'Float like a Butterfly / Sting like a Bee'. Added the vertical script on the left flank.",
+   "commons_2018_opticgaming.png moved to reference-only (Commons YouTube licence review pending).",
+   "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Face, hair, beard, skin samples and build match the photos."
+  ]
+ }
 }

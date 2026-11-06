@@ -21,7 +21,7 @@
   "commons_2023_with_shamsiev.jpg",
   "commons_2019_corner.png"
  ],
- "photo_coverage_note": "Commons has only 2019-2023 photos (none with the shaved head). Recent looks come from reference-only news photos (UFC 319 Aug 2025, UFC 328 May 2026) and the undated UFC/ESPN studio set, which matches the 2025-2026 look.",
+ "photo_coverage_note": "Commons has only 2019-2023 photos (none with the shaved head). Recent looks come from reference-only news photos (UFC 319 Aug 2025, UFC 328 May 2026) and the undated UFC/ESPN studio set, which matches the 2025-2026 look. Licence-free: only commons_2019_corner.png (dark, low-resolution 2019 video still, licence reviewed on Commons) is embed-ok; the 2022 still (licence review pending) and the 2023 street snapshot (doubtful own-work claim) are reference-only.",
  "face": {
   "shape": "Broad, square-oval face: wide at the cheekbones and temples with a broad, rounded shaved skull on top. The long beard makes the overall head silhouette long and tapered at the bottom.",
   "jaw": "Wide and strong, with heavy masseters; completely hidden by the beard, but the beard's width at the jaw angle shows the breadth.",
@@ -114,14 +114,14 @@
   "tone_hex": "#d4997e",
   "tone_note": "Average of the first four samples. Light-medium skin; the studio headshot is brighter than the other photos.",
   "undertone": "Warm (golden-peach).",
-  "freckles_marks": "None visible; light chest hair."
+  "freckles_marks": "No freckles or marks visible. Body hair: light-to-moderate short dark hair across the upper chest and sternum with a thin line down the middle of the abdomen; visible forearm and leg hair (ESPN stance photos)."
  },
  "body": {
   "build": "Big, thick middleweight: broad shoulders, deep chest, thick neck and solid arms; heavier-looking than most at the weight.",
   "body_fat": "lean",
   "body_fat_note": "Abs visible but not sharply cut in the studio shots; at the May 2026 weigh-in he looked drained and flatter.",
   "shoulders": "Broad with large, round deltoids and a high, thick trapezius.",
-  "chest": "Deep, full pectorals; light chest hair.",
+  "chest": "Deep, full pectorals; light-to-moderate short dark chest hair, densest over the sternum (ESPN stance-right).",
   "arms": "Thick upper arms and forearms; not especially long (reach about equal to height).",
   "waist": "Moderately narrow but solid; less V-taper than the shoulders suggest because the torso is thick throughout.",
   "legs_calves": "Solid thighs, medium calves; light leg hair.",
@@ -198,5 +198,14 @@
   "hair": "none (shaved); faint dark stubble tint over the whole scalp",
   "beard": "long full-beard shell, black #231b1a, about 8-10 cm below the chin, clean cheeks, very short moustache"
  },
- "notes": "Confidence: high for head, beard, ears and build (clear studio photos and 2025-2026 fight photos). Medium for exact eye and nose detail (the studio headshot is small and the 2026 photos are action shots). Few licence-free photos: the Commons images are 2019-2023 video stills and one 2023 snapshot whose licence should be double-checked. Watch for: (1) beard is long, black and dense with a very short moustache, (2) shaved head with cauliflower ears, (3) thick neck and trapezius, (4) do not make him lanky; he is broad and heavy-set at 188 cm."
+ "notes": "Confidence: high for head, beard, ears and build (clear studio photos and 2025-2026 fight photos). Medium for exact eye and nose detail (the studio headshot is small and the 2026 photos are action shots). Only one embed-ok photo (the low-resolution 2019 video still); the 2022 still and the 2023 snapshot are reference-only pending licence confirmation. Watch for: (1) beard is long, black and dense with a very short moustache, (2) shaved head with cauliflower ears, (3) thick neck and trapezius, (4) do not make him lanky; he is broad and heavy-set at 188 cm.",
+ "review": {
+  "date": "2026-11-06",
+  "by": "second-pass photo review",
+  "changes": [
+   "Chest hair corrected from light to light-to-moderate (clearly visible across the upper chest and sternum in ESPN stance-right).",
+   "commons_2022.png (Commons YouTube licence review pending) and commons_2023_with_shamsiev.jpg (self-promotional upload, doubtful own-work claim) moved to reference-only.",
+   "Morph names checked against assets/embed/mh-manifest.json; all valid and in 0..1. Shaved head, long black beard with very short moustache, cauliflower ears, no tattoos, skin samples and build match the photos."
+  ]
+ }
 }

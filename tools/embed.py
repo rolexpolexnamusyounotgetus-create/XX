@@ -872,6 +872,8 @@ def build_table(entries, priors, lookup, D):
     T["s_win"] = np.zeros(n)
     T["eta_ab"] = np.zeros((n, NT))
     T["eta_ba"] = np.zeros((n, NT))
+    for k in ("off_ab", "def_ab", "off_ba", "def_ba"):
+        T[k] = np.zeros((n, NT))
     fit_of = np.array([id(r[6][2]) for r in rows])
     for fid_ in np.unique(fit_of):
         ii = np.nonzero(fit_of == fid_)[0]
@@ -881,6 +883,9 @@ def build_table(entries, priors, lookup, D):
         T["s_win"][ii] = win_logit_emb(P, ea, eb)
         T["eta_ab"][ii] = eta_pair(P, T["div"][ii], T["era"][ii], T["five"][ii], ea, eb)
         T["eta_ba"][ii] = eta_pair(P, T["div"][ii], T["era"][ii], T["five"][ii], eb, ea)
+        K = P["W"].shape[1]
+        T["off_ab"][ii], T["def_ab"][ii] = ea[:, :K] @ P["W"].T, eb[:, K:] @ P["V"].T
+        T["off_ba"][ii], T["def_ba"][ii] = eb[:, :K] @ P["W"].T, ea[:, K:] @ P["V"].T
     T["winner"] = np.array([{"A": 1.0, "B": 0.0}.get(r[0]["result"]["winner"], np.nan) for r in rows])
     # actual stat lines
     act = []
@@ -892,6 +897,133 @@ def build_table(entries, priors, lookup, D):
         act.append(a)
     T["actual"] = act
     return T
+
+
+def task_rows(T, D):
+    """Directed task rows for the fights in T: (T row, side, y [n x NT], exposure [n x NT])."""
+    drow = {(D.f_id[D.r_fight[r]], int(D.r_side[r])): r for r in range(len(D.r_fight))}
+    jj, side, rr = [], [], []
+    for j, fid in enumerate(T["id"]):
+        for sd_ in (0, 1):
+            r = drow.get((fid, sd_))
+            if r is not None:
+                jj.append(j)
+                side.append(sd_)
+                rr.append(r)
+    jj, side, rr = np.array(jj), np.array(side), np.array(rr)
+    return jj, side, D.Y[rr], D.E[rr]
+
+
+def calibrate_tasks(T, D, fit_years=(2010, 2023), verbose=True):
+    """Per-task recalibration of the factor model's walk-forward predictions:
+        eta' = context + c_t + s_off,t * (W_t . a_X) + s_def,t * (V_t . d_Y)
+    fit by Poisson / binomial deviance on directed rows of fit_years (walk-forward predictions, so out of
+    sample for every row), plus a no-intercept slope for the win head. Folded exactly into W, V, C and the
+    head afterwards (apply_calibration), so the exported model keeps its form. Also reports the factor
+    model's own 2024-2025 validation deviance per task: context-only vs raw vs calibrated."""
+    jj, side, Y, E = task_rows(T, D)
+    yrs = T["year"][jj]
+    tr = (yrs >= fit_years[0]) & (yrs <= fit_years[1])
+    va = (yrs >= 2024) & (yrs <= 2025)
+    eta = np.where(side[:, None] == 0, T["eta_ab"][jj], T["eta_ba"][jj])
+    off = np.where(side[:, None] == 0, T["off_ab"][jj], T["off_ba"][jj])
+    dfn = np.where(side[:, None] == 0, T["def_ab"][jj], T["def_ba"][jj])
+    ctx = eta - off - dfn
+    cal = {"c": np.zeros(NT), "s_off": np.ones(NT), "s_def": np.ones(NT)}
+    val = {}
+    days = T["day"][jj]
+    for t in range(NT):
+        binom = bool(IS_BIN[t])
+        y, n = Y[:, t], E[:, t]
+        ok = n > 0
+        m = tr & ok
+        # fit with the context as an offset: Newton on (c, s_off, s_def)
+        Z = np.c_[np.ones(len(y)), off[:, t], dfn[:, t]]
+        b = np.array([0.0, 1.0, 1.0])
+        for _ in range(60):
+            e = ctx[m, t] + Z[m] @ b
+            if binom:
+                pr = 1 / (1 + np.exp(-e))
+                g = Z[m].T @ (n[m] * pr - y[m])
+                Hm = (Z[m] * (n[m] * pr * (1 - pr))[:, None]).T @ Z[m]
+            else:
+                mu = n[m] * np.exp(np.clip(e, -30, 20))
+                g = Z[m].T @ (mu - y[m])
+                Hm = (Z[m] * mu[:, None]).T @ Z[m]
+            st = np.linalg.solve(Hm + 1e-6 * np.eye(3), g)
+            b -= st
+            if np.abs(st).max() < 1e-10:
+                break
+        cal["c"][t], cal["s_off"][t], cal["s_def"][t] = b
+        # context-only baseline (offset + refit constant) for the factor model's own validation numbers
+        c0 = _glm_newton(np.ones((int(m.sum()), 1)), y[m], n[m] * (np.exp(ctx[m, t]) if not binom else 1.0), False) \
+            if not binom else None
+        mv = va & ok
+        e_raw = eta[mv, t]
+        e_cal = ctx[mv, t] + Z[mv] @ b
+        if binom:
+            cb = _glm_newton_offset(ctx[m, t], y[m], n[m])
+            e_ctx = ctx[mv, t] + cb
+        else:
+            e_ctx = ctx[mv, t] + c0[0]
+        d_ctx, d_raw, d_cal = (_dev1(y[mv], n[mv], e_, binom) for e_ in (e_ctx, e_raw, e_cal))
+        mu_, lo_, hi_ = boot_ci(d_cal - d_ctx, days[mv])
+        base = d_ctx.mean()
+        val[TN[t]] = {"ctx_dev": round(float(d_ctx.sum()), 2), "raw_dev": round(float(d_raw.sum()), 2),
+                      "cal_dev": round(float(d_cal.sum()), 2), "rel_raw": round(float(d_raw.sum() / d_ctx.sum()), 4),
+                      "rel_cal": round(float(d_cal.sum() / d_ctx.sum()), 4),
+                      "cal_vs_ctx_ci95": [round(lo_ / base, 4), round(hi_ / base, 4)],
+                      "c": round(float(b[0]), 4), "s_off": round(float(b[1]), 4), "s_def": round(float(b[2]), 4)}
+        if verbose:
+            print("  task %-7s valid rel. deviance vs context-only: raw %.4f calibrated %.4f [%+.4f, %+.4f] "
+                  "(c %+.3f, s_off %.3f, s_def %.3f)" % (TN[t], val[TN[t]]["rel_raw"], val[TN[t]]["rel_cal"],
+                                                         lo_ / base, hi_ / base, b[0], b[1], b[2]))
+    # win head slope (mirrored, no intercept)
+    y = T["winner"]
+    okw = ~np.isnan(y) & (T["year"] >= fit_years[0]) & (T["year"] <= fit_years[1])
+    z = T["s_win"][okw]
+    yy = y[okw]
+    sl = 1.0
+    for _ in range(50):
+        p_ = 1 / (1 + np.exp(-sl * z))
+        g = ((p_ - yy) * z).sum()
+        h = (p_ * (1 - p_) * z * z).sum()
+        sl -= g / h
+    cal["s_win"] = float(sl)
+    vw = ~np.isnan(y) & (T["year"] >= 2024) & (T["year"] <= 2025)
+    ll_raw = logloss(1 / (1 + np.exp(-T["s_win"][vw])), y[vw]).mean()
+    ll_cal = logloss(1 / (1 + np.exp(-sl * T["s_win"][vw])), y[vw]).mean()
+    val["win_head"] = {"slope": round(sl, 4), "valid_logloss_raw": round(float(ll_raw), 5),
+                       "valid_logloss_cal": round(float(ll_cal), 5)}
+    rr_ = np.array([val[t]["rel_raw"] for t in TN])
+    rc_ = np.array([val[t]["rel_cal"] for t in TN])
+    val["mean_rel_raw"], val["mean_rel_cal"] = round(float(rr_.mean()), 4), round(float(rc_.mean()), 4)
+    if verbose:
+        print("  factor model, 2024-25 mean relative deviance vs context-only: raw %.4f, calibrated %.4f; win head "
+              "slope %.3f, valid log loss %.4f -> %.4f" % (rr_.mean(), rc_.mean(), sl, ll_raw, ll_cal))
+    return cal, val
+
+
+def _glm_newton_offset(off, y, n, iters=60):
+    """Constant c for a logit binomial with offset: P = sigmoid(off + c)."""
+    c = 0.0
+    for _ in range(iters):
+        pr = 1 / (1 + np.exp(-(off + c)))
+        g = (n * pr - y).sum()
+        h = (n * pr * (1 - pr)).sum() + 1e-9
+        c -= g / h
+    return c
+
+
+def apply_calibration(walk, cal):
+    """Fold the per-task calibration into every refit's parameters (and the final refit)."""
+    for q in walk["quarters"] + [walk["final"]]:
+        P = q["P"]
+        P["W"] = P["W"] * cal["s_off"][:, None]
+        P["V"] = P["V"] * cal["s_def"][:, None]
+        P["C"] = P["C"].copy()
+        P["C"][:, 0] = P["C"][:, 0] + cal["c"]
+        P["ua"], P["ud"], P["M"] = P["ua"] * cal["s_win"], P["ud"] * cal["s_win"], P["M"] * cal["s_win"]
 
 
 def boot_ci(delta, clusters=None, n_boot=2000, seed=SEED):
@@ -1362,6 +1494,10 @@ def eval_stats(T, verbose=True):
         preds["blend"] = gb.predict(Xb) * m
         out["blend_coef"] = {"b0": round(float(gb.intercept_), 4), "b_log5": round(float(gb.coef_[0]), 4),
                              "b_emb": round(float(gb.coef_[1]), 4)}
+        ge = PoissonRegressor(alpha=0.0, max_iter=1000)
+        ge.fit(Xb[tr, 1:], rate[tr], sample_weight=m[tr])
+        preds["emb_cal"] = ge.predict(Xb[:, 1:]) * m
+        out["emb_cal_coef"] = {"b0": round(float(ge.intercept_), 4), "b_emb": round(float(ge.coef_[0]), 4)}
         for kind in ("glm_base", "glm_emb", "gbm_base", "gbm_emb"):
             X = stat_design(T, R, stat, kind)
             if kind.startswith("glm"):
@@ -1382,28 +1518,30 @@ def eval_stats(T, verbose=True):
         for k, d in devs.items():
             out[k] = {"dev": round(float(d.sum()), 2), "rel": round(float(d.sum() / base), 4)}
             all_dev[k] += d / max(base, 1e-9)
-        # per-fight paired bootstrap for the embedding gain over the best baseline
+        # per-fight paired bootstrap (event clusters) for fixed model pairs; best_base is reported, not selected on
         best_base = min(("glm_base", "gbm_base"), key=lambda k: devs[k].sum())
-        best_emb = min(("glm_emb", "gbm_emb"), key=lambda k: devs[k].sum())
         fv = fight[va]
-        _, inv = np.unique(fv, return_inverse=True)
-        dfight = np.bincount(inv, weights=devs[best_emb] - devs[best_base])
-        bfight = np.bincount(inv, weights=devs[best_base])
-        mu, lo, hi = boot_ci(dfight, T["day"][np.unique(fv)])
-        tot = bfight.mean()
-        out["gain"] = {"best_base": best_base, "best_emb": best_emb,
-                       "rel_change": round(mu / tot, 4), "ci95": [round(lo / tot, 4), round(hi / tot, 4)]}
-        for a_, b_ in (("gbm_emb", "gbm_base"), ("glm_emb", "glm_base"), ("blend", "glm_base"),
-                       (best_emb, best_base), ("emb_direct", "glm_base")):
-            key = "%s - %s" % (a_, b_) if (a_, b_) != (best_emb, best_base) else "best_emb - best_base"
+        uf, inv = np.unique(fv, return_inverse=True)
+        out["gain"] = {}
+        for key, a_, b_ in (("gbm_emb - gbm_base", "gbm_emb", "gbm_base"), ("glm_emb - glm_base", "glm_emb", "glm_base"),
+                            ("blend - glm_base", "blend", "glm_base")):
+            dfight = np.bincount(inv, weights=devs[a_] - devs[b_])
+            tot = np.bincount(inv, weights=devs[b_]).mean()
+            mu, lo, hi = boot_ci(dfight, T["day"][uf])
+            out["gain"][key] = {"rel_change": round(mu / tot, 4), "ci95": [round(lo / tot, 4), round(hi / tot, 4)]}
+        for key, a_, b_ in (("gbm_emb - gbm_base", "gbm_emb", "gbm_base"), ("glm_emb - glm_base", "glm_emb", "glm_base"),
+                            ("blend - glm_base", "blend", "glm_base"), ("emb_direct - glm_base", "emb_direct", "glm_base"),
+                            ("emb_cal - glm_base", "emb_cal", "glm_base"),
+                            ("gbm_emb - best_base", "gbm_emb", best_base)):
             contrib[key] += np.bincount(inv_all, weights=devs[a_] - devs[b_]) / devs[b_].sum() / len(STATS)
         res["stats"][stat] = out
         if verbose:
-            print("  stat %-8s rel dev vs glm_base: gbm_base %.4f | emb_direct %.4f blend %.4f glm_emb %.4f gbm_emb %.4f"
-                  " | best emb vs best base %+.2f%% [%+.2f, %+.2f]" % (
-                      stat, out["gbm_base"]["rel"], out["emb_direct"]["rel"], out["blend"]["rel"], out["glm_emb"]["rel"],
-                      out["gbm_emb"]["rel"], 100 * out["gain"]["rel_change"], 100 * out["gain"]["ci95"][0],
-                      100 * out["gain"]["ci95"][1]))
+            g1, g2 = out["gain"]["gbm_emb - gbm_base"], out["gain"]["glm_emb - glm_base"]
+            print("  stat %-8s rel dev vs glm_base: gbm_base %.4f | emb_direct %.4f emb_cal %.4f blend %.4f glm_emb %.4f "
+                  "gbm_emb %.4f | gbm %+.2f%% [%+.2f, %+.2f] glm %+.2f%% [%+.2f, %+.2f]" % (
+                      stat, out["gbm_base"]["rel"], out["emb_direct"]["rel"], out["emb_cal"]["rel"], out["blend"]["rel"],
+                      out["glm_emb"]["rel"], out["gbm_emb"]["rel"], 100 * g1["rel_change"], 100 * g1["ci95"][0],
+                      100 * g1["ci95"][1], 100 * g2["rel_change"], 100 * g2["ci95"][0], 100 * g2["ci95"][1]))
     res["mean_rel"] = {k: round(float(v.sum() / len(STATS)), 4) for k, v in all_dev.items()}
     res["mean_rel_change"] = {}
     for k, c in contrib.items():
@@ -1742,7 +1880,8 @@ def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs,
             "corner": "A / B as in backtest_dev.json (A = first-named); nothing in the model uses the order",
             "cv": [{"hp": c["hp"], "mean_rel_dev": round(c["mean_rel"], 4), "win_logloss": round(c["win_ll"], 4),
                     "score": round(cv_score(c), 4)} for c in cv],
-            "stitch": walk.get("stitch"), "axis_effect": walk.get("axis_effect"), "runtime_s": round(secs)}
+            "stitch": walk.get("stitch"), "axis_effect": walk.get("axis_effect"),
+            "calibration": walk.get("calibration"), "runtime_s": round(secs)}
     out = {"meta": meta, "model": {k: model[k] for k in ("K", "tasks", "divs", "C", "W", "V", "ua", "ud", "M")},
            "axes": axes, "neighbours": nn, "signature": signature,
            "validation": {"winner": win_res, "stats": stat_res},
@@ -1893,6 +2032,12 @@ def main():
     T = build_table(entries, priors, walk_lookup(walk), D)
     print("downstream table: %d fights (%d train <= 2023, %d validation 2024-25)" % (
         len(T["id"]), int((T["year"] <= 2023).sum()), int((T["year"] >= 2024).sum())), flush=True)
+    cal, cal_val = calibrate_tasks(T, D)
+    apply_calibration(walk, cal)
+    walk["calibration"] = {"per_task": {TN[t]: {"c": round(float(cal["c"][t]), 4), "s_off": round(float(cal["s_off"][t]), 4),
+                                                "s_def": round(float(cal["s_def"][t]), 4)} for t in range(NT)},
+                           "s_win": round(cal["s_win"], 4), "validation": cal_val}
+    T = build_table(entries, priors, walk_lookup(walk), D)
     epath = _pk(args.cache, "eval.pkl")
     if args.reuse_eval and os.path.exists(epath):
         win_res, win_preds, stat_res = _load(epath)

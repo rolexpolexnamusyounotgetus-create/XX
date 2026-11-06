@@ -958,6 +958,38 @@ def blend(kind, pa, pe, lam):
     return lam * pa + (1 - lam) * pe
 
 
+def avg_preds(kind, preds):
+    """Equal-weight average of several adjusted predictions: geometric for counts, on the logit for
+    probabilities (the same as averaging the log factors)."""
+    if len(preds) == 1:
+        return preds[0]
+    if kind == "count":
+        P = np.array(preds)
+        pos = np.all(P > 0, axis=0)
+        out = P.mean(0)
+        out[pos] = np.exp(np.log(P[:, pos]).mean(0))
+        return out
+    return np.mean(preds, axis=0)
+
+
+def avg_terms(terms):
+    return tuple(np.mean([t[i] for t in terms], axis=0) for i in range(2))
+
+
+def multi_factors(name, CA, R, L, cal, lam):
+    """Factors for an equal-weight average over configs: exp(lam * mean log F_h) times the calibration term."""
+    kind = FAMILIES[name][0]
+    logs = None
+    for so, sd, sc in CA:
+        Fh = side_factors(name, so, sd, sc, R, L, 1.0 if kind == "count" else 0.0, 1.0)
+        lf = {k: np.log(v) for k, v in Fh.items()}
+        logs = lf if logs is None else {k: logs[k] + lf[k] for k in logs}
+    n = len(CA)
+    if kind == "count":
+        return {k: np.exp(lam * v / n) * cal for k, v in logs.items()}
+    return {k: np.exp(lam * v / n + cal) for k, v in logs.items()}
+
+
 def adj_terms(ev, so, sd, sc):
     return sc / 2 + so, sc / 2 + sd[ev.opp]
 
@@ -1145,9 +1177,19 @@ def main():
         bf, bfs = select(full_sc)
         bn, bns = select(nosos_sc)
         br, brs = select(raw[name])
-        so, sd, sc, _ = G[(name,) + bf + ("full",)]
-        so, sd, sc = so.astype(float), sd.astype(float), sc.astype(float)
-        pa, pe = ev.pred_adj(name, so, sd, sc), ev.pred_raw(name, ev.engine_R)
+        arrs = lambda c: tuple(a.astype(float) for a in G[(name,) + c + ("full",)][:3])
+        per_hl = {hl: min((c for c in full_sc if c[0] == hl), key=lambda c: full_sc[c]["tune"]) for hl in hls}
+        pa_single = ev.pred_adj(name, *arrs(bf))
+        pa_avg = avg_preds(kind, [ev.pred_adj(name, *arrs(c)) for c in per_hl.values()])
+        s_avg = ev.score(name, pa_avg)
+        s_avg.pop("dev")
+        single_sc = bfs
+        if len(hls) > 1 and s_avg["tune"] < bfs["tune"]:
+            cfgs, pa, bfs = list(per_hl.values()), pa_avg, s_avg
+        else:
+            cfgs, pa = [bf], pa_single
+        CA = [arrs(c) for c in cfgs]
+        pe = ev.pred_raw(name, ev.engine_R)
         dv_full = ev.score(name, pa)
         dv_eng = ev.score(name, pe)
         Rr = fighter_rates(Ss[br[0]], D.sL, p, k={kname: {fields[0]: br[1], fields[1]: br[2]}})
@@ -1188,7 +1230,13 @@ def main():
             "n_tune_sides": int(ev.fam[name]["tune"].sum()), "n_test_sides": n_te,
             "chosen": {"half_life_days": bf[0], "k_offense": bf[1], "k_defense": bf[2],
                        "k_unit": {"count": "exposure units (see k_unit_note)", "binom": "attempts"}[kind],
-                       "blend_lambda": lam},
+                       "blend_lambda": lam,
+                       "half_life_average": len(cfgs) > 1,
+                       "configs": [{"half_life_days": c[0], "k_offense": c[1], "k_defense": c[2]} for c in cfgs]},
+            "single_vs_average_tune": {"single_best": {"tune": rnd(single_sc["tune"], 6), "test": rnd(single_sc["test"], 6),
+                                                       "half_life_days": bf[0], "k_offense": bf[1], "k_defense": bf[2]},
+                                       "average_over_half_lives": {"tune": rnd(s_avg["tune"], 6),
+                                                                   "test": rnd(s_avg["test"], 6)}},
             "deviance": {
                 "league_only": {"tune": rnd(null_sc[name]["tune"], 6), "test": rnd(null_sc[name]["test"], 6)},
                 "engine_raw": {"tune": rnd(eng_sc[name]["tune"], 6), "test": rnd(eng_sc[name]["test"], 6),
@@ -1218,16 +1266,16 @@ def main():
             "half_life_scan_at_chosen_k": hl_at_k,
             "final_vs_engine_by_group": subgroups(D, dv_eng["dev"], dv_fin["dev"], te),
             "combination_exponents_tune": {
-                "opp_adjusted": comb_fit(ev, name, adj_terms(ev, so, sd, sc)),
+                "opp_adjusted": comb_fit(ev, name, avg_terms([adj_terms(ev, *a) for a in CA])),
                 "engine_raw": comb_fit(ev, name, raw_terms(ev, name, ev.engine_R))},
         }
-        chosen[name] = {"cfg": bf, "so": so, "sd": sd, "sc": sc, "cal_adj": cal_of(bfs),
+        chosen[name] = {"cfgs": cfgs, "CA": CA, "cal_adj": cal_of(bfs),
                         "cal_eng": cal_of(eng_sc[name]), "raw_cfg": br, "R_raw": Rr, "cal_raw": cal_of(brs),
                         "lam": lam, "cal_fin": cal_of(dv_fin)}
         dl = res["families"][name]["test_delta_bootstrap_95"]
-        print("%-9s hl %4d k %s/%s lam %.1f | test dev engine %.0f raw-tuned %.0f nosos %.0f adj %.0f final %.0f | "
+        print("%-9s hl %4d k %s/%s avg %d lam %.1f | test dev engine %.0f raw-tuned %.0f nosos %.0f adj %.0f final %.0f | "
               "adj vs engine %.1f%% [%.0f, %.0f]; final %.1f%%"
-              % (name, bf[0], bf[1], bf[2], lam, eng_sc[name]["test"], brs["test"], bns["test"], bfs["test"],
+              % (name, bf[0], bf[1], bf[2], len(cfgs) > 1, lam, eng_sc[name]["test"], brs["test"], bns["test"], bfs["test"],
                  dv_fin["test"], dl["vs_engine_raw"]["pct_of_baseline"], dl["vs_engine_raw"]["lo"],
                  dl["vs_engine_raw"]["hi"], dl["final_vs_engine_raw"]["pct_of_baseline"]))
 
@@ -1241,9 +1289,9 @@ def main():
         elif which == "raw_tuned":
             pr, cal = ev.pred_raw(name, ch["R_raw"], unit), ch["cal_raw"]
         elif which == "full":
-            pr, cal = ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"], unit), ch["cal_adj"]
+            pr, cal = avg_preds(kind, [ev.pred_adj(name, *a, unit=unit) for a in ch["CA"]]), ch["cal_adj"]
         else:
-            pr = blend(kind, ev.pred_adj(name, ch["so"], ch["sd"], ch["sc"], unit),
+            pr = blend(kind, avg_preds(kind, [ev.pred_adj(name, *a, unit=unit) for a in ch["CA"]]),
                        ev.pred_raw(name, ev.engine_R, unit), ch["lam"])
             cal = ch["cal_fin"]
         return pr * cal if kind == "count" else pr + cal
@@ -1313,7 +1361,7 @@ def main():
     F = {}
     for name, ch in chosen.items():
         kind = FAMILIES[name][0]
-        F.update(side_factors(name, ch["so"], ch["sd"], ch["sc"], ev.engine_R, D.sL, cal_term(ch, kind), ch["lam"]))
+        F.update(multi_factors(name, ch["CA"], ev.engine_R, D.sL, cal_term(ch, kind), ch["lam"]))
     snaps = {}
     for i, e in enumerate(D.entries):
         snaps[e["id"]] = {"A": pack_factors(F, 2 * i), "B": pack_factors(F, 2 * i + 1)}
@@ -1366,14 +1414,15 @@ def main():
     FR, sched = {}, {}
     for name, ch in chosen.items():
         kind = FAMILIES[name][0]
-        hl, ko, kd = ch["cfg"]
         y, E, Lb = family_arrays(name, D.V, D.L, p)
         f = walk_count if kind == "count" else walk_binom
-        _, _, _, _, (o_all, d_all, c_all) = f(D, y, E, Lb, hl, ko, kd, "full", extra_T=T_snap)
-        o_r = np.where(has, o_all[np.maximum(pidx, 0)], 0.0)
-        d_r = np.where(has, d_all[np.maximum(pidx, 0)], 0.0)
-        FR.update(side_factors(name, o_r, d_r, np.full(len(slugs), c_all), Rr, Lr, cal_term(ch, kind), ch["lam"]))
-        # schedule diagnostic: exposure-weighted mean opponent defense effect he faced (decayed)
+        CR = []
+        for hl, ko, kd in ch["cfgs"]:
+            _, _, _, _, (o_all, d_all, c_all) = f(D, y, E, Lb, hl, ko, kd, "full", extra_T=T_snap)
+            CR.append((np.where(has, o_all[np.maximum(pidx, 0)], 0.0), np.where(has, d_all[np.maximum(pidx, 0)], 0.0),
+                       np.full(len(slugs), c_all)))
+        FR.update(multi_factors(name, CR, Rr, Lr, cal_term(ch, kind), ch["lam"]))
+        # schedule diagnostic (last config's fit): exposure-weighted mean opponent defense effect he faced
         w = np.exp(-math.log(2) / hl * (T_snap - D.day))
         if kind == "count":
             wt = w * E * Lb

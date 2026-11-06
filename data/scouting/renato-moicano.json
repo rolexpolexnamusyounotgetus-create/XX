@@ -3,12 +3,18 @@
   "name": "Renato Moicano",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Lost a five-round main event to Tom Nolan by TKO (elbows from half guard) at 1:28 of round 3 (UFC Fight Night: Moicano vs. Nolan, Las Vegas, Oct 31, 2026). He controlled 7:09 of the first two rounds, then Nolan dropped him in round 2 and finished him from the top. Before that he submitted Chris Duncan with a rear-naked choke in round 2 (Apr 4, 2026), and lost to Islam Makhachev for the lightweight title (D'Arce choke, R1, UFC 311, Jan 18, 2025) and to Beneil Dariush (UD, UFC 317, Jun 28, 2025). A planned Brian Ortega fight at UFC 326 fell through when Ortega withdrew in January 2026. No bout booked. Age 37.",
+    "summary": "Active, but he says he will leave MMA when his UFC contract ends, which he puts at three more fights (Ariel Helwani interview, Nov 2, 2026, via Sherdog and MMA Mania). Tom Nolan stopped him with ground strikes at 1:28 of round 3 in the UFC Fight Night 292 / UFC Vegas 123 main event in Las Vegas (Oct 31, 2026). He controlled 7:09 of the first two rounds and had Nolan's back with a body triangle in round 2 when referee Dan Miragliotta stood the fight up. Nolan then dropped him late in round 2 and finished him from the top in round 3. He was taken to hospital for precautionary CT scans of the head and face; no result or medical suspension had been published by Nov 6 that this pass found. He said he will not appeal the result. After the contract he wants to do influencer boxing. Before Nolan he submitted Chris Duncan (RNC R2, Apr 4, 2026), and he lost to Beneil Dariush (UD, UFC 317, Jun 28, 2025) and Islam Makhachev (D'Arce choke R1, UFC 311 title fight, Jan 18, 2025). A planned Brian Ortega fight at UFC 326 fell through when Ortega withdrew in January 2026. Pro record 21-8-1 (ESPN, UFCalendar, ufcrankings.org); UFC 13-8. No bout booked (ESPN, UFCalendar). Age 37.",
     "title": null,
-    "ranking": "Unconfirmed. An MMA Mania UFC rankings-update headline after Oct 31, 2026 says Tom Nolan boots Renato Moicano from the lightweight top 10 (headline only; the article could not be opened on Nov 6)",
+    "ranking": "#12 lightweight in the UFC media-panel rankings (Nov 3, 2026, per ufcalendar.com; ufcrankings.org, updated Nov 5, agrees) and #14 in the UFC/Meta algorithmic rankings (Oct 31, 2026 board, down six from #8 after the Nolan loss; ufcalendar.com, MMA Mania, Wikipedia). MMA Mania's 'Tom Nolan boots Renato Moicano from top 10' story refers to the Meta board. ufc.com/rankings returned 403 to scripts.",
     "active": true,
     "next_fight": null,
-    "injuries": [],
+    "injuries": [
+      {
+        "what": "taken to hospital after the TKO loss to Tom Nolan for precautionary CT scans of the head and face; no result or commission suspension was published by Nov 6, 2026 that this pass found",
+        "when": "2026-10",
+        "source": "https://www.mmamania.com/ufc-results/483399/renato-moicano-hasanov-transported-to-hospital-following-ufc-halloween"
+      }
+    ],
     "sources": [
       "http://ufcstats.com/fighter-details/b6452706b373eea1",
       "http://ufcstats.com/fight-details/6d7244be5589953c",
@@ -16,7 +22,17 @@
       "http://ufcstats.com/fight-details/d69bd8e53ec858dc",
       "http://ufcstats.com/fight-details/1ea9ad3b6e1cba79",
       "http://ufcstats.com/fight-details/daef1691c7d6b1e4",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/3028863 (ESPN: Active, 21-8-1, American Top Team; overview shows only a previous fight, Oct 31; read Nov 6, 2026)",
+      "https://www.ufcalendar.com/fighters/renato-moicano (21-8-1, no next fight listed; read Nov 6, 2026)",
+      "https://www.mmamania.com/ufc-results/483399/renato-moicano-hasanov-transported-to-hospital-following-ufc-halloween",
+      "https://www.mmamania.com/ufc-results/483542/monday-morning-hangover-whats-next-for-renato-moicano-after-tko-loss-at-ufc-halloween",
+      "https://www.mmamania.com/latest-news/483712/renato-moicano-reveals-mma-career-coming-to-an-end-following-ufc-halloween-loss-you-have-to-realize-when-youre-done",
+      "https://www.sherdog.com/news/news/Renato-Moicano-predicts-MMA-retirement-after-three-more-UFC-fights-203466",
+      "https://superfight.net/news/380709/What-will-Renato-Moicano%27s-future-be-Will-he-get-married-after-UFC-Vegas-123/",
+      "https://en.wikipedia.org/wiki/Renato_Moicano (revision of Nov 3, 2026, read via the API)",
       "https://mmamania.com/ufc-mma-rankings/483818/tom-nolan-boots-renato-moicano-top-10-latest-ufc-rankings-update-jacobe-smith-top-15",
+      "https://www.ufcalendar.com/rankings",
+      "https://ufcrankings.org/lightweight",
       "https://www.espn.com/mma/story/_/id/47784076/brian-ortega-pulls-ufc-326-fight-vs-renato-moicano-due-nagging-injuries",
       "https://cagesidepress.com/2025/06/28/beneil-dariush-dominates-moicano-in-return-from-2-year-layoff"
     ]
@@ -66,14 +82,17 @@
   },
   "appearance": {
     "build": "5 ft 11 in with a 72 in reach (ufcstats); fought at featherweight until 2019 and at lightweight since 2020",
-    "hair": "dark (as recalled from fight photos; style not re-checked)",
-    "facial_hair": "unknown",
+    "hair": "dark brown and short: clipped sides with a slightly longer top, receding at the temples (ESPN headshot and studio cutout, files dated Oct 29, 2026)",
+    "facial_hair": "short, trimmed dark-brown beard (about 5-10 mm) with a moustache (Oct 2026 studio photos); the length varies between fights",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "notes": "Build is from ufcstats. Hair colour and skin tone follow widely published fight photos as recalled; they were not re-checked on the web this session (search budget exhausted; wikipedia and ufc.com unreachable). Facial hair varies between fights and is left unknown.",
+    "tattoos": "heavily tattooed. 'Sagrada Família' in large script across the upper chest. A black tribal/Polynesian-style piece over the left pec, left shoulder and left side of the neck, running into a full left sleeve. A full black-and-grey right sleeve, with a robed figure on the shoulder and a city skyline with numbers and script lower down. A large tattoo on the right shin and calf",
+    "kit": "yellow (Brazil) UFC shorts with a black waistband in both ESPN studio cutouts (Jun 2025 and Oct 2026). The corner colour wins in the sim",
+    "notes": "No likeness sheet exists yet (data/likeness/renato-moicano.json is absent). Build is from ufcstats. Checked Nov 6, 2026 against the ESPN headshot and the left-stance studio cutout (both files dated Oct 29, 2026, the week of the Nolan fight) and the right-stance cutout (file dated Jun 26, 2025, UFC 317 week). The 'Sagrada Família' script reads correctly, so the cutouts are not mirrored and left/right are his own. Skin is judged from studio light: light-medium, olive. What the tattoos mean is not sourced.",
     "sources": [
-      "http://ufcstats.com/fighter-details/b6452706b373eea1"
+      "http://ufcstats.com/fighter-details/b6452706b373eea1",
+      "https://a.espncdn.com/i/headshots/mma/players/full/3028863.png (Last-Modified Oct 29, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/left/3028863.png (Last-Modified Oct 29, 2026)",
+      "https://a.espncdn.com/i/headshots/mma/players/stance/right/3028863.png (Last-Modified Jun 26, 2025)"
     ]
   },
   "engine_notes": [

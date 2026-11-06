@@ -39,7 +39,8 @@
   "date_taken": "2023-10-26",
   "use": "reference-only",
   "what": "headshot",
-  "notes": "Seated, smiling, green rugby-style shirt. Listed CC0 on Commons, but it looks like a social-media snapshot and the 'own work' claim is doubtful, so treat as reference-only until the licence is confirmed."
+  "notes": "Seated, smiling, green rugby-style shirt. Listed CC0 on Commons, but it looks like a social-media snapshot and the 'own work' claim is doubtful, so treat as reference-only until the licence is confirmed.",
+  "license_note": "Kept reference-only on second review: the full-size file shows an iPhone home-indicator bar along the bottom edge, so it is a phone screenshot (most likely of a social-media post), which contradicts the 'own work' CC0 claim."
  },
  {
   "file": "commons_2023_cc0_cropped.jpg",
@@ -50,7 +51,8 @@
   "date_taken": "2023-10-26",
   "use": "reference-only",
   "what": "headshot",
-  "notes": "Crop of the above (used on Wikipedia). Same licence caveat. Shows hair with a spiky quiff, smile, shirt-on build."
+  "notes": "Crop of the above (used on Wikipedia). Same licence caveat. Shows hair with a spiky quiff, smile, shirt-on build.",
+  "license_note": "Kept reference-only on second review: the full-size file shows an iPhone home-indicator bar along the bottom edge, so it is a phone screenshot (most likely of a social-media post), which contradicts the 'own work' CC0 claim."
  },
  {
   "file": "ref_briefly_mediaday_2026-07.jpg",
@@ -72,7 +74,7 @@
   "date_taken": "2026-07 (UFC Oklahoma City fight week face-off)",
   "use": "reference-only",
   "what": "profile",
-  "notes": "Clean left-facing profile at a face-off with Kamaru Usman: nose, brow, chin projection, beard depth, ear."
+  "notes": "Clean right profile (he faces image right, so his right side is visible) at a face-off with Kamaru Usman: nose, brow, chin projection, beard depth, right ear (upper ear mildly thickened)."
  },
  {
   "file": "ref_aljazeera_usman_2026-07-18.jpg",

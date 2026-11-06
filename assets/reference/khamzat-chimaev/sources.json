@@ -35,12 +35,13 @@
   "url": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Khamzat_Chimaev_2022.png",
   "page": "https://commons.wikimedia.org/wiki/File:Khamzat_Chimaev_2022.png",
   "author": "MMAnytt (YouTube video still)",
-  "license": "CC BY 3.0",
+  "license": "CC BY 3.0 as stated on Commons (YouTube CC-BY; Commons licence review pending)",
   "date_taken": "2022-04-08",
-  "use": "embed-ok",
+  "use": "reference-only",
   "what": "3q",
   "attribution": "MMAnytt, CC BY 3.0, via Wikimedia Commons",
-  "notes": "Press-conference 3q (face turned to his right): nose and brow in 3q, beard outline. Hair was grown short then (now shaved)."
+  "notes": "Press-conference 3q (face turned to his right): nose and brow in 3q, beard outline. Hair was grown short then (now shaved).",
+  "license_note": "Commons tags this as {{YouTube CC-BY}} but its licence review has not been completed (no reviewer recorded), and the YouTube page could not be checked from this machine. Downgraded to reference-only on second review; upgrade to embed-ok only after confirming the video's licence line reads 'Creative Commons Attribution licence (reuse allowed)'."
  },
  {
   "file": "commons_2019_corner.png",
@@ -52,19 +53,21 @@
   "use": "embed-ok",
   "what": "headshot",
   "attribution": "MMAnytt, CC BY 3.0, via Wikimedia Commons",
-  "notes": "Old, dark, low-resolution; shorter beard. Low value, kept for completeness."
+  "notes": "Old, dark, low-resolution; shorter beard. Low value, kept for completeness.",
+  "license_note": "Commons licence review completed (LicenseReview by Leoboudv, 2020-09-21) confirming the MMAnytt YouTube CC BY licence; embed-ok with attribution."
  },
  {
   "file": "commons_2023_with_shamsiev.jpg",
   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/ADAM_SHAMSIEV_AND_KHAMZAT_CHIMAEV.jpg/960px-ADAM_SHAMSIEV_AND_KHAMZAT_CHIMAEV.jpg",
   "page": "https://commons.wikimedia.org/wiki/File:ADAM_SHAMSIEV_AND_KHAMZAT_CHIMAEV.jpg",
   "author": "Adam Tunniev (Wikimedia Commons uploader, 'own work')",
-  "license": "CC BY-SA 4.0",
+  "license": "CC BY-SA 4.0 as stated on Commons (own-work claim doubtful)",
   "date_taken": "2023-08-08",
-  "use": "embed-ok",
+  "use": "reference-only",
   "what": "body",
   "attribution": "Adam Tunniev, CC BY-SA 4.0, via Wikimedia Commons",
-  "notes": "Night street photo, standing in a tank top: shoulders, arm size, beard length. Flash lighting. Licence is as stated on Commons; the upload's description reads promotional, so double-check before embedding."
+  "notes": "Night street photo, standing in a tank top: shoulders, arm size, beard length. Flash lighting. Licence is as stated on Commons; the upload's description reads promotional, so double-check before embedding.",
+  "license_note": "Downgraded on second review: the upload is self-promotional (the description praises the other man in the photo), the uploader's name matches that man, the photo shows both people posing (not a selfie), and the file has no camera metadata, so the uploader probably did not take it. Not clearly licensed."
  },
  {
   "file": "ref_thenational_ufc328_2026-05-09.jpg",

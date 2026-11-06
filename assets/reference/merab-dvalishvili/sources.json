@@ -35,7 +35,7 @@
   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Donald_Trump_and_Merab_Dvalishvili_at_UFC_316.jpg/1280px-Donald_Trump_and_Merab_Dvalishvili_at_UFC_316.jpg",
   "page": "https://commons.wikimedia.org/wiki/File:Donald_Trump_and_Merab_Dvalishvili_at_UFC_316.jpg",
   "author": "Margo Martin (White House staff)",
-  "license": "Public domain (work of the U.S. federal government)",
+  "license": "Public domain ({{PD-USGov-POTUS}} on Commons: photo by White House staff, posted on X)",
   "date_taken": "2025-06-07",
   "use": "embed-ok",
   "what": "action",
@@ -47,7 +47,7 @@
   "url": "https://upload.wikimedia.org/wikipedia/commons/6/66/Merab_Dvalishvili_at_UFC_316_%28cropped%29.jpg",
   "page": "https://commons.wikimedia.org/wiki/File:Merab_Dvalishvili_at_UFC_316_(cropped).jpg",
   "author": "Margo Martin (White House staff)",
-  "license": "Public domain (work of the U.S. federal government)",
+  "license": "Public domain ({{PD-USGov-POTUS}} on Commons: photo by White House staff, posted on X)",
   "date_taken": "2025-06-07",
   "use": "embed-ok",
   "what": "3q",
@@ -59,24 +59,26 @@
   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Merab_Dvalishvili_2022.png/500px-Merab_Dvalishvili_2022.png",
   "page": "https://commons.wikimedia.org/wiki/File:Merab_Dvalishvili_2022.png",
   "author": "OnlyFans YouTube channel (video still)",
-  "license": "CC BY 3.0",
+  "license": "CC BY 3.0 as stated on Commons (YouTube CC-BY; no Commons licence review recorded)",
   "date_taken": "2022-05-05",
-  "use": "embed-ok",
+  "use": "reference-only",
   "what": "headshot",
   "attribution": "OnlyFans (YouTube), CC BY 3.0, via Wikimedia Commons",
-  "notes": "Older, soft video still with a stylised filter; near-frontal, shows nose bridge and ears. Shape only."
+  "notes": "Older, soft video still with a stylised filter; near-frontal, shows nose bridge and ears. Shape only.",
+  "license_note": "Commons tags this as {{YouTube CC-BY}} but its licence review has not been completed (no reviewer recorded), and the YouTube page could not be checked from this machine. Downgraded to reference-only on second review; upgrade to embed-ok only after confirming the video's licence line reads 'Creative Commons Attribution licence (reuse allowed)'."
  },
  {
   "file": "commons_2022_b.jpg",
   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Merab_Dvalishvili_2022_%282%29.jpg/500px-Merab_Dvalishvili_2022_%282%29.jpg",
   "page": "https://commons.wikimedia.org/wiki/File:Merab_Dvalishvili_2022_(2).jpg",
   "author": "OnlyFans YouTube channel (video still)",
-  "license": "CC BY 3.0",
+  "license": "CC BY 3.0 as stated on Commons (YouTube CC-BY; no Commons licence review recorded)",
   "date_taken": "2022-05-05",
-  "use": "embed-ok",
+  "use": "reference-only",
   "what": "headshot",
   "attribution": "OnlyFans (YouTube), CC BY 3.0, via Wikimedia Commons",
-  "notes": "Same video, frontal, fists up; scan-line filter. Good view of the broad, slightly deviated nose and full beard outline."
+  "notes": "Same video, frontal, fists up; scan-line filter. Good view of the broad, slightly deviated nose and full beard outline.",
+  "license_note": "Commons tags this as {{YouTube CC-BY}} but its licence review has not been completed (no reviewer recorded), and the YouTube page could not be checked from this machine. Downgraded to reference-only on second review; upgrade to embed-ok only after confirming the video's licence line reads 'Creative Commons Attribution licence (reuse allowed)'."
  },
  {
   "file": "ref_cagesidepress_ufc323_2025-12-06.jpg",
@@ -87,7 +89,7 @@
   "date_taken": "2025-12-05 (UFC 323 weigh-in face-off, approximate)",
   "use": "reference-only",
   "what": "profile",
-  "notes": "Clean left profile in face-off with Petr Yan: nose profile (straight-to-slightly-convex bridge, rounded tip), brow, beard depth, short dark hair with longer top."
+  "notes": "Clean right profile (he faces image right, so his right side is visible) in face-off with Petr Yan: nose profile (straight-to-slightly-convex bridge, rounded tip), brow, right ear, beard depth, short dark hair with longer top."
  },
  {
   "file": "ref_mmasucka_ufc323_action.webp",
