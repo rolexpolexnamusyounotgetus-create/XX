@@ -74,6 +74,22 @@ if (sd.open.debut_enters) ok(Math.abs(pr.p_open - 0.65) > 0 && pr.src_open.index
 else ok(pr.p_open === 0.65, "open regime keeps the opener");
 const pr2 = M.predict(b, a, { division: "Lightweight", rounds: 3, p_close: 0.3, p_open: 0.35 });
 ok(close(pr.p_open + pr2.p_open, 1, 1e-12) && close(pr.p_noline + pr2.p_noline, 1, 1e-12), "regime outputs are corner-symmetric");
+// adopted path (the decision rule applied to the 2024-25 look): a "line"/"fallback" entry keeps the ledger's number
+const ad = J.model.adoption;
+if (ad) {
+  const q1 = M.predict(a, b, { division: "Lightweight", rounds: 3, p_close: 0.7, p_open: 0.65, p_seeded: 0.55 });
+  const q2 = M.predict(b, a, { division: "Lightweight", rounds: 3, p_close: 0.3, p_open: 0.35, p_seeded: 0.45 });
+  if (ad.winner_close === "line") ok(q1.adopted.p_close === 0.7, "adopted close = the line");
+  if (ad.winner_open === "line") ok(q1.adopted.p_open === 0.65, "adopted open = the line");
+  if (ad.winner_noline !== "debut") ok(q1.adopted.p_noline === 0.55, "adopted no-line = the ledger's seeded Elo");
+  if (ad.method === "debut") {
+    ok(!!q1.adopted.method && close(q1.adopted.method.pA, 0.7, 1e-12), "adopted method is fed the adopted winner probability (close)");
+    let mx = 0;
+    for (let c = 0; c < 3; c++) mx = Math.max(mx, Math.abs(q1.adopted.method.marginal[c] - q2.adopted.method.marginal[c]),
+      Math.abs(q1.adopted.method.whohow.A[c] - q2.adopted.method.whohow.B[c]));
+    ok(mx < 1e-12, "adopted method is corner-symmetric");
+  }
+}
 // 5. forward ledger hook: --debut-model adds r.debut_path and changes nothing else; corner-symmetric
 (function ledgerHook() {
   const cp = require("child_process"), os = require("os");
@@ -96,9 +112,16 @@ ok(close(pr.p_open + pr2.p_open, 1, 1e-12) && close(pr.p_noline + pr2.p_noline, 
   ok(!off.bouts[0].debut_path && !!on.bouts[0].debut_path, "debut_path only with the flag");
   const d1 = on.bouts[0].debut_path, d2 = sw.bouts[0].debut_path;
   ok(close(d1.p_a_noline + d2.p_a_noline, 1, 1e-9) && close(d1.p_a_open + d2.p_a_open, 1, 1e-9), "ledger debut path is corner-symmetric");
+  if (J.model.adoption) {
+    ok(close(d1.adopted.p_a_noline, on.bouts[0].models.elo, 1e-12), "ledger adopted no-line = its seeded Elo");
+    ok(close(d1.adopted.p_a_noline + d2.adopted.p_a_noline, 1, 1e-9), "ledger adopted path is corner-symmetric");
+    if (d1.adopted.method) ok(close(d1.adopted.method.marginal.reduce((x, y) => x + y, 0), 1, 1e-9), "ledger adopted method sums to 1");
+  }
   ok(d1.unknown_columns.b.length < J.model.winner.cols.length, "debutant side built from the entry (" + d1.unknown_columns.b.length + " unknown columns: " + d1.unknown_columns.b.join(",") + ")");
   console.log("ledger hook: " + opp.name + " (a) vs debutant " + e.name + " (b): P(a) no line " + d1.p_a_noline.toFixed(4) + ", open " + d1.p_a_open.toFixed(4) +
-    " (" + d1.src_open + "), close " + d1.p_a_close.toFixed(4) + " (" + d1.src_close + ")");
+    " (" + d1.src_open + "), close " + d1.p_a_close.toFixed(4) + " (" + d1.src_close + ")" +
+    (d1.adopted ? "; adopted: no line " + d1.adopted.p_a_noline.toFixed(4) + " (" + d1.adopted.src_noline + "), method " +
+      (d1.adopted.method ? d1.adopted.method.marginal.map((v) => v.toFixed(3)).join("/") + " (" + d1.adopted.method_src + ")" : "base rates") : ""));
 })();
 
 console.log((fails ? "FAILED " : "ok ") + (checks - fails) + "/" + checks + " checks; fixtures " + J.fixtures.length +

@@ -3,12 +3,13 @@
 
 Run from the project root:
 
-    python3 tools/debut.py crawl        # resolve 2012-2014 debutants + one-hop opponents (Sherdog, >= 2 s/request)
-    python3 tools/debut.py build        # universe + features -> out/debut_cache/frame.pkl (no network)
-    python3 tools/debut.py cv           # forward-chained CV <= 2023: every choice (winner, method, line stack)
-    python3 tools/debut.py holdout      # score 2024-2025 ONCE with the frozen CV choices
-    python3 tools/debut.py export       # data/derived/debut.json (production coefficients, refit <= 2025)
-    python3 tools/debut.py features --name "First Last" --date YYYY-MM-DD [--sherdog URL]   # live debutant entry
+    nice -n 5 python3 tools/debut.py crawl --skip-resolve   # resolve debutants + one-hop opponents (Sherdog, >= 2 s/request)
+    nice -n 5 python3 tools/debut.py build    # universe, network ratings, features -> out/debut_cache/frame.pkl (~1 min, offline)
+    nice -n 5 python3 tools/debut.py cv       # forward-chained CV 2019-2023: every choice (winner blocks, C, tau, stacks, method)
+    nice -n 5 python3 tools/debut.py holdout  # score 2024-2025 ONCE with the frozen CV choices (refuses a second run)
+    nice -n 5 python3 tools/debut.py export   # data/derived/debut.json (CV + look + production refit through 2025)
+    python3 tools/debut.py features --href /fighter/First-Last-123456 --date YYYY-MM-DD [--live]   # a debutant's network columns
+    node tests/test_debut.js                  # JS evaluator (src/ml/debut.js) vs Python, symmetry, ledger hook
 
 Universe: every UFC bout 2012-01-01..2025-12-31 (ufcstats) in which at least one man has 0 prior UFC bouts.
 Bouts dated 2026-01-01 or later are dropped at parse and never fit or scored (hidden-data protocol,
@@ -1481,6 +1482,10 @@ def export(args):
     C = frozen_choices()
     ch = C["chosen"]
     H = pickle.load(open(os.path.join(OUTC, "holdout.pkl"), "rb")) if os.path.exists(os.path.join(OUTC, "holdout.pkl")) else None
+    if H and H["out"]["frozen_from"]["chosen"] != ch and not args.allow_new_cv:
+        raise SystemExit("cv.json changed after the 2024-25 look (look: %s, now: %s). A post-look CV choice is not covered "
+                         "by the confirmation; pass --allow-new-cv to export it anyway (it is then labelled)."
+                         % (H["out"]["frozen_from"]["chosen"], ch))
     df, meta = load_frame()
     dec, RA, RB = prep(df)
     y = dec["y"].to_numpy(float)
@@ -1532,6 +1537,29 @@ def export(args):
                                                         round(mu_, 4)]
         pickle.dump(fits, open(os.path.join(OUTC, "gnet_fit_2026.pkl"), "wb"))
     preds = H["preds"] if H else {}
+    # pooled 2019-2025 out-of-sample (CV OOF + the look), descriptive planning number (never a selection input)
+    pooled = None
+    if H:
+        evd = dict(zip(df["fid"], df["event"]))
+        ids = [f for f, r in preds.items() if r["debut"] is not None and r["seeded_elo"] is not None]
+        a_ = np.array([preds[f]["debut"] for f in ids])
+        b_ = np.array([preds[f]["seeded_elo"] for f in ids])
+        yy = np.array([float(dec.loc[dec["fid"] == f, "y"].iloc[0]) for f in ids])
+        pooled = {"debut vs seeded_elo, 2019-2025": paired(np.array([evd[f] for f in ids]), a_, b_, yy)}
+    # adoption: the project decision rule (docs/V6_V10_PLAN.md 6.3 / 7.1: keep if the look's paired CI excludes 0, or
+    # it is "not worse", CI upper <= +0.002 for the winner, and clearly better on method) applied to the single look
+    adoption = None
+    if H:
+        hp = H["out"]["paired"]
+        nl_ok = hp["debut vs seeded_elo"]["ci"][1] < 0 or hp["debut vs seeded_elo"]["ci"][1] <= 0.002
+        op_ok = sd["open"]["debut_enters"] and hp["stack_open vs open"]["ci"][1] <= 0.002
+        cl_ok = sd["close"]["debut_enters"] and hp["stack_close vs close"]["ci"][1] <= 0.002
+        me = H["out"]["method"]["method3"]
+        adoption = {"winner_noline": "debut" if nl_ok else "fallback_seeded_elo",
+                    "winner_open": "stack_open" if op_ok else "line",
+                    "winner_close": "stack_close" if cl_ok else "line",
+                    "method": "debut" if me["ci"][1] < 0 else "division_base",
+                    "rule": "docs/V6_V10_PLAN.md 6.3 / 7.1 applied to the pre-registered 2024-25 look"}
     # fixtures for tests/test_debut.js: 30 bouts (seeded draw), sides in the model's columns, Python's production output
     rng = np.random.default_rng(11)
     pick = sorted(rng.choice(len(dec), size=min(30, len(dec)), replace=False).tolist())
@@ -1564,9 +1592,9 @@ def export(args):
                                "scored)", "swap_test_production": sym},
         "cv": {k: C.get(k) for k in ("rows", "steps", "chosen", "all_blocks", "cv_compare", "cv_diagnostics", "stacks",
                                      "stack_decisions", "method", "swap_test_max_abs", "built", "frame_meta")},
-        "holdout": H["out"] if H else None,
+        "holdout": H["out"] if H else None, "pooled_2019_2025": pooled,
         "model": {"winner": m.export(), "method": mm.export(), "live_division_base": live_base,
-                  "stacks": stacks, "stack_decisions": sd,
+                  "stacks": stacks, "stack_decisions": sd, "adoption": adoption,
                   "side_columns": {
                       "elo": "UFC walk-forward Elo / 100 (1500 for a debutant)", "debut": "1 if 0 prior UFC bouts",
                       "logn": "log(1 + prior UFC bouts)", "uwin": "log((UFC W + 1.5) / (UFC L + 1.5))",
@@ -1644,7 +1672,8 @@ def main():
     h = sub.add_parser("holdout")
     h.add_argument("--force-rescore-same-choices", action="store_true",
                    help="recompute the spent look with the same frozen choices (bug fixes only; logged)")
-    sub.add_parser("export")
+    ex_ = sub.add_parser("export")
+    ex_.add_argument("--allow-new-cv", action="store_true")
     fe = sub.add_parser("features")
     fe.add_argument("--href", required=True, help="Sherdog path, e.g. /fighter/First-Last-123456")
     fe.add_argument("--date", required=True)

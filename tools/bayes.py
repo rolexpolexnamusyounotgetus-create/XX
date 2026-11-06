@@ -1409,7 +1409,8 @@ def refit_win_on_ep(X, H, Y, back=7):
 
 def config_H(X, variant, schedule, Y):
     """Hyperparameters for predicting year Y (fit on data before Jan 1 of Y) with the schedule's options applied:
-    "+q<f>" multiplies the r-dimension process noise (per fight and per year) by f; "+g" refits the prediction link
+    "+q<f>" multiplies the r-dimension process noise (per fight and per year) by f, "+w<f>" the round-encoder weight
+    by f; "+g" refits the prediction link
     on EP-refit states of the training window. Returns the EP schedule and H."""
     sched, *opts = schedule.split("+")
     H = pickle.load(open(year_path(variant, Y), "rb"))["H"]
@@ -1418,6 +1419,9 @@ def config_H(X, variant, schedule, Y):
             H = copy.deepcopy(H)
             H["qf"][0] *= float(o[1:])
             H["qy"][0] *= float(o[1:])
+        elif o.startswith("w"):               # "+w<f>": round-encoder weight x f
+            H = copy.deepcopy(H)
+            H["w_round"] *= float(o[1:])
     if "g" in opts:
         H = refit_win_on_ep(X, H, Y)
     return sched, H
@@ -1802,7 +1806,8 @@ def stage_cv(args):
             b1 = stepwise([b0, "%s|%s+g|%s" % (v, sc0, va)]) if (v, sc0 + "+g") in preds else b0
             # r process-noise multipliers on top of the chosen schedule: the best one must beat it by > SEL_MIN
             sc1 = b1.split("|")[1]
-            qs = ["%s|%s|%s" % (v, k[1], va) for k in preds if k[0] == v and k[1].startswith(sc1 + "+q")]
+            qs = ["%s|%s|%s" % (v, k[1], va) for k in preds if k[0] == v and k[1].startswith(sc1 + "+")
+                  and k[1][len(sc1) + 1] in "qw"]
             best[(v, va)] = stepwise([b1, min(qs, key=lambda c: LL[c])]) if qs else b1
     for v in ("nostats", "main"):
         best[v] = stepwise([best[(v, "plugin")], best[(v, "varaware")]])

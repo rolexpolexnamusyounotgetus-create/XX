@@ -112,7 +112,7 @@ const DEBUT_MODEL_PATH = opt("--debut-model", null);
 const DMJ = DEBUT_MODEL_PATH ? JSON.parse(fs.readFileSync(path.resolve(ROOT, DEBUT_MODEL_PATH), "utf8")) : null;
 const DebutJS = DMJ ? require(path.join(ROOT, "src/ml/debut.js")) : null;
 const DMOD = DMJ ? DebutJS.load(DMJ.model) : null;
-function debutPath(b, ctx, ka, kb) {
+function debutPath(b, ctx, ka, kb, pSeeded) {
   const side = (slug, key, flags) => {
     if (slug && FJ.fighters[slug]) return { s: DebutJS.sideFromProfile(Object.assign({ slug }, FJ.fighters[slug]), ctx.date, ctx.division, DMJ, flags), src: "fighters.json + debut.json roster_gnet" };
     if (key && DEBUT[key]) return { s: DebutJS.sideFromDebutant(DEBUT[key], ctx.date, DMJ, flags), src: DEBUT[key]._file };
@@ -120,14 +120,19 @@ function debutPath(b, ctx, ka, kb) {
   };
   const A = side(b.a, ka, b.flags_a), B = side(b.b, kb, b.flags_b);
   const pr = DMOD.predict(A.s, B.s, { division: ctx.division, rounds: ctx.rounds, p_close: fin(b.p_line) ? b.p_line : null,
-    p_open: fin(b.p_open_in) ? b.p_open_in : null });
+    p_open: fin(b.p_open_in) ? b.p_open_in : null, p_seeded: fin(pSeeded) ? pSeeded : null });
   const missing = (s) => DMJ.model.winner.cols.filter((k) => !fin(s[k]));
   return { p_a_debut: pr.p_debut, p_a_noline: pr.p_noline, p_a_open: fin(pr.p_open) ? pr.p_open : null, src_open: pr.src_open || null,
     p_a_close: fin(pr.p_close) ? pr.p_close : null, src_close: pr.src_close || null,
     method: { classes: pr.method.classes, given_a: pr.method.A, given_b: pr.method.B, marginal: pr.method.marginal, whohow_a: pr.method.whohow.A,
       whohow_b: pr.method.whohow.B, p_a_used: pr.method.pA },
+    adopted: pr.adopted ? { p_a_noline: pr.adopted.p_noline, src_noline: pr.adopted.src_noline,
+      p_a_open: fin(pr.adopted.p_open) ? pr.adopted.p_open : null, p_a_close: fin(pr.adopted.p_close) ? pr.adopted.p_close : null,
+      method: pr.adopted.method ? { classes: pr.adopted.method.classes, marginal: pr.adopted.method.marginal,
+        whohow_a: pr.adopted.method.whohow.A, whohow_b: pr.adopted.method.whohow.B, p_a_used: pr.adopted.method.pA } : null,
+      method_src: pr.adopted.method_src } : null,
     sides: { a: A.src, b: B.src }, unknown_columns: { a: missing(A.s), b: missing(B.s) },
-    model: { built: DMJ.meta.built, decisions: DMJ.model.stack_decisions } };
+    model: { built: DMJ.meta.built, decisions: DMJ.model.stack_decisions, adoption: DMJ.model.adoption } };
 }
 const RAW = args.indexOf("--raw") >= 0;                // unrounded output (tests/test_forward_models.js)
 
@@ -303,7 +308,7 @@ for (const b of input.bouts) {
   r.models = M;
   if (!pa || !pb) {
     r.notes.push("debut: not in fighters.json, no stack");
-    if (DMOD) { try { r.debut_path = debutPath(b, ctx, ka, kb); } catch (e) { r.notes.push("debut path failed: " + (e.message || e)); } }
+    if (DMOD) { try { r.debut_path = debutPath(b, ctx, ka, kb, M.elo); } catch (e) { r.notes.push("debut path failed: " + (e.message || e)); } }
     out.bouts.push(RAW ? r : roundObj(r)); continue;
   }
   const o = { keys: FJ.meta.keys, snapshot: FJ.meta.snapshot, halfLife: FJ.meta.half_life_days || 730 };

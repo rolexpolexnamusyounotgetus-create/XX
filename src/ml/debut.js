@@ -104,6 +104,20 @@
       }
       const pBest = fin(out.p_close) ? out.p_close : fin(out.p_open) ? out.p_open : out.p_noline;
       out.method = method(a, b, { division: bout.division, rounds: bout.rounds, pA: pBest });
+      // adopted path (model.adoption: the decision rule applied to the 2024-25 look). A "fallback"/"line" entry means
+      // the ledger keeps its own number (bout.p_seeded = its seeded-Elo P(a); the line as given); method follows it.
+      const ad = model.adoption;
+      if (ad) {
+        const A = {};
+        A.p_noline = ad.winner_noline === "debut" ? out.p_noline : (fin(bout.p_seeded) ? bout.p_seeded : null);
+        A.src_noline = ad.winner_noline === "debut" ? out.src_noline : "ledger fallback (seeded Elo)";
+        if (fin(bout.p_open)) { A.p_open = ad.winner_open === "stack_open" ? out.p_open : bout.p_open; A.src_open = ad.winner_open; }
+        if (fin(bout.p_close)) { A.p_close = ad.winner_close === "stack_close" ? out.p_close : bout.p_close; A.src_close = ad.winner_close; }
+        const pw = fin(A.p_close) ? A.p_close : fin(A.p_open) ? A.p_open : (fin(A.p_noline) ? A.p_noline : pd);
+        A.method = ad.method === "debut" ? method(a, b, { division: bout.division, rounds: bout.rounds, pA: pw }) : null;
+        A.method_src = ad.method === "debut" ? "debut method model, P(a) = " + (fin(A.p_close) ? "close" : fin(A.p_open) ? "open" : fin(A.p_noline) ? "adopted no-line" : "debut model") : "division base rates";
+        out.adopted = A;
+      }
       return out;
     }
     return { winner, method, predict, stack, sideVec };
