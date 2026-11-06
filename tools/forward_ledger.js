@@ -2,6 +2,7 @@
 /* forward_ledger.js: the page's forecast package for upcoming bouts, evaluated in Node (called by tools/forward_ledger.py).
 
      node tools/forward_ledger.js <input.json> [--engine-dir src] [--moe data/derived/blindtest_stack.json]   -> JSON on stdout
+                                  [--pred-dir data/predictions] [--raw]   (debutants_*.json folder; no 5-decimal rounding)
 
    input.json = { date: "YYYY-MM-DD", sims: 2000, bouts: [{ bout_id, a, b, key_a, key_b, name_a, name_b, division, rounds,
                   title, p_line, p_open_in, p_novig }] }
@@ -88,7 +89,7 @@ const ML2P = ML2J ? ML2.load(ML2J.page_model) : null;                           
 const ML2S = (ML2J && FMJ) ? ML2.load(Object.assign({}, ML2J.page_model, { stack: FMJ.ml2_static })) : null; // fit 2019-2023
 const RTJ = rdOpt("data/derived/ratings.json");
 const PUJ = rdOpt("data/derived/preufc.json");
-const PRED_DIR = path.join(ROOT, "data", "predictions");
+const PRED_DIR = path.resolve(ROOT, opt("--pred-dir", path.join("data", "predictions")));   // where debutants_*.json live
 const DEBUT_FILES = fs.existsSync(PRED_DIR) ? fs.readdirSync(PRED_DIR).filter((f) => /^debutants_.*\.json$/.test(f)).sort() : [];
 const DEBUT = {};                                     // later files (sorted by name) override earlier ones
 for (const f of DEBUT_FILES) {
@@ -101,6 +102,7 @@ const SEED_LIVE = (() => {                            // preufc.json: production
   return null;
 })();
 const DEBUT_ELO = 1500;                                // tools/build_db.py start rating
+const RAW = args.indexOf("--raw") >= 0;                // unrounded output (tests/test_forward_models.js)
 
 function seedOf(id, k) { return parseInt(crypto.createHash("md5").update(id + ":" + k).digest("hex").slice(0, 8), 16); }
 const r5 = (x) => (x == null || !isFinite(x)) ? null : Math.round(x * 1e5) / 1e5;
@@ -266,7 +268,7 @@ for (const b of input.bouts) {
   M.elo = MoE.eloProb(ea.rating, eb.rating);
   r.elo_seed = { a: ea, b: eb };
   r.models = M;
-  if (!pa || !pb) { r.notes.push("debut: not in fighters.json, no stack"); out.bouts.push(roundObj(r)); continue; }
+  if (!pa || !pb) { r.notes.push("debut: not in fighters.json, no stack"); out.bouts.push(RAW ? r : roundObj(r)); continue; }
   const o = { keys: FJ.meta.keys, snapshot: FJ.meta.snapshot, halfLife: FJ.meta.half_life_days || 730 };
   const A = MoE.sideFromProfile(pa, ctx.date, o), B = MoE.sideFromProfile(pb, ctx.date, o);
   const ex = r.experts;
@@ -320,6 +322,6 @@ for (const b of input.bouts) {
   const rt = ratingsModels(b.a, b.b);
   if (rt) { M.whr_rounds = rt.whr_rounds; M.ratings_stack = rt.ratings_stack; r.ratings_members = rt.members; }
   else r.notes.push(RTJ ? "no ratings.json roster row" : "ratings.json missing");
-  out.bouts.push(roundObj(r));
+  out.bouts.push(RAW ? r : roundObj(r));
 }
 process.stdout.write(JSON.stringify(out));

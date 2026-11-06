@@ -1,0 +1,1621 @@
+{
+ "as_of": "2026-11-06T21:13:10Z",
+ "event": {
+  "name": "UFC Fight Night: Cortes-Acosta vs. Walker",
+  "alt_names": [
+   "UFC Vegas 124",
+   "UFC Fight Night 293"
+  ],
+  "date": "2026-11-07",
+  "lock_utc": "2026-11-07T22:00Z",
+  "card_as_of": "2026-11-06T21:13:10Z"
+ },
+ "compiled_by": "Claude (card desk) for the forward-test ledger; input data, not a prediction file",
+ "purpose": "Pre-UFC records for the card's UFC debutants (slug null in cards_upcoming.json), in the shape that tools/preufc.py writes to data/derived/preufc.json fighters[slug], so the forward package can seed them: debut Elo = 1500 + elo_debut_shift (research/model_preufc.md, Recommendation 1), newcomer finish priors from finish_odds_multipliers (Recommendation 3) and the overall-level shift (Recommendation 4). Per Recommendation 5, add no pre-UFC term on top of a market line.",
+ "method": "Sherdog fighter pages fetched Nov 6, 2026, 21:03Z (User-Agent FightLabSim/1.0, one request per second or slower), parsed with tools/preufc.py parse_fighter and row_list. The debut snapshot is tools/preufc.py snapshot_feats + StrictNetwork.feats at the UFC bout date, run on the setup half of preufc.build() (cached Sherdog pages, promotion quality, full and strict networks; offline). A debutant's own page is not in the strict network, so net_elo_h is the tool's one-sided Elo walk over his own rows against opponents rated in network_C (C = Jan 1, 2026), the same treatment build() gives a fighter whose page is not in network_C. side_pre is tools/preufc.py side_pre(snapshot, 0). seeded_elo uses the live coefficients in preufc.json eval.models[\"seeded_elo_live (roster_priors; refit on every debut 2015-2025, vault excluded)\"] (z = (x - mu) / sd, age_debut from the ufcstats DOB, which matches Sherdog's for all four). finish_odds_multipliers follow roster_priors(): (rate / mu_pre)^b with the n = 0 coefficients from eval.side_finish (n_UFC = 0, so at_debut = now). Amateur and exhibition fights are excluded from the record; no contests are counted in nc only.",
+ "validation": "The same script, run on five roster fighters' cached pages at their real UFC debut dates (Mitch Raposo, Alexia Thainara, Bogdan Grad, Cam Rowston, Bruno Lopes), reproduces their preufc.json debut snapshots exactly on every field, except age_pro_debut where build() used a ufcstats DOB that differs from Sherdog's (Thainara, Grad); elo_debut_shift matches roster_priors within 0.4 points (rounding of the stored mu and sd), apart from Thainara's DOB difference.",
+ "caveats": [
+  "net_elo, opp_known and opp_wpct (no _h suffix) are the full-network reference values. A debutant's own page is not crawled, so they see only his fights against crawled fighters and are not comparable with roster values. The models use the strict versions (net_elo_h, opp_wpct_h, opp_known_h).",
+  "Sherdog's completeness for small regional shows is not measured (research/model_preufc.md, Caveats).",
+  "Tapology (403) and ufc.com (403) could not be fetched for a second full fight list; records were cross-checked against ESPN's records, the ufcstats DOBs and news reports instead (cross_checks per fighter).",
+  "These pages are not in data/raw/sherdog_cache (nothing there was changed). A later `tools/preufc.py crawl` will not pick them up either, because crawl targets only fighters with ufcstats bouts."
+ ],
+ "schema": {
+  "fighters": "key = slugified name used in the ledger's bout_id (slug is null in cards_upcoming.json)",
+  "debut": "the record entering the UFC as of the bout date, in preufc.json meta.snapshot_columns field names (see data/derived/preufc.json meta.fields), plus date and fid (null: no ufcstats fight id yet)",
+  "fights": "[date, result, method class, promotion, opponent, opponent sherdog id, round, 'UFC' or ''], oldest first (preufc.json fights format)",
+  "record / last_fights": "readable summary of the same data (last_fights newest first)",
+  "derived.side_pre": "tools/preufc.py side_pre(debut, 0) (strict mode)",
+  "derived.seeded_elo": "elo_debut_shift (with age at UFC debut), elo_debut_shift_pre_only, debut_rating = 1500 + shift, and z-scores per key",
+  "derived.finish_odds_multipliers": "engine newcomer multipliers on per-fight odds: ko_win ~ power, sub_win ~ submission threat, ko_loss ~ chin (weak); fade by exp(-n_UFC / 8)",
+  "also_upcoming": "debutants on the next card (UFC 334), same shape"
+ },
+ "fighters": {
+  "marcos-degli": {
+   "name": "Marcos Degli",
+   "alt_names": [],
+   "slug": null,
+   "bout": {
+    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
+    "date": "2026-11-07",
+    "order": 6,
+    "side": "b",
+    "bout_id": "2026-11-07:mitch-raposo__marcos-degli",
+    "opponent": {
+     "name": "Mitch Raposo",
+     "slug": "mitch-raposo"
+    },
+    "weight_class": "Flyweight",
+    "weigh_in_lb": 126,
+    "notice": "regular booking (Contender Series signing)"
+   },
+   "ufc_status": "true UFC debut: no bouts in data/raw/ufc_fight_results.csv and no UFC rows on Sherdog; ufcstats has a pre-created fighter page with no fights",
+   "ufc_id": "0575068a0f83f963",
+   "ufcstats_tott": {
+    "id": "0575068a0f83f963",
+    "dob": "2000-05-13",
+    "height": null,
+    "reach_in": null,
+    "stance": null,
+    "listed_weight_lb": 125
+   },
+   "status": "ok",
+   "sherdog": {
+    "url": "https://www.sherdog.com/fighter/Marcos-Degli-377798",
+    "name": "Marcos Degli",
+    "nick": "Tailandes",
+    "dob": "2000-05-13",
+    "nationality": "Brazil",
+    "locality": "Taubate, Sau Paulo",
+    "association": "Vale Top Team",
+    "class": "Flyweight",
+    "lbs": 126,
+    "height": "5'6\"",
+    "how": "fighter link on Sherdog's event page",
+    "n_ufc": 0,
+    "amateur_n": 2,
+    "fetched_utc": "2026-11-06T21:03Z"
+   },
+   "path_to_ufc": "Dana White's Contender Series 2026, Week 7 (Sep 22, 2026): submission (rear-naked choke) of Paris Moran, R2 4:46. Before that 6-0 in LFA (May 2023 to Jan 2026).",
+   "record": {
+    "pro": "15-3-0",
+    "wins": {
+     "ko": 9,
+     "sub": 5,
+     "dec": 1,
+     "other": 0
+    },
+    "losses": {
+     "ko": 0,
+     "sub": 1,
+     "dec": 2,
+     "other": 0
+    },
+    "no_contests": 0,
+    "win_streak": 13,
+    "last5": "5-0",
+    "pro_debut": "2021-05-02",
+    "last_fight": "2026-09-22",
+    "layoff_days": 46,
+    "contender_series": "1-0",
+    "amateur_fights_excluded": 2
+   },
+   "last_fights": [
+    {
+     "date": "2026-09-22",
+     "result": "W",
+     "method": "sub",
+     "promotion": "DWCS",
+     "opponent": "Paris Moran",
+     "round": 2
+    },
+    {
+     "date": "2026-01-23",
+     "result": "W",
+     "method": "ko",
+     "promotion": "LFA",
+     "opponent": "Luis Aguiar",
+     "round": 1
+    },
+    {
+     "date": "2025-07-11",
+     "result": "W",
+     "method": "ko",
+     "promotion": "LFA",
+     "opponent": "Matheus Severino",
+     "round": 3
+    },
+    {
+     "date": "2025-02-07",
+     "result": "W",
+     "method": "ko",
+     "promotion": "LFA",
+     "opponent": "Lincon Santos",
+     "round": 2
+    },
+    {
+     "date": "2024-07-06",
+     "result": "W",
+     "method": "ko",
+     "promotion": "LFA",
+     "opponent": "Ignacio Fernandez",
+     "round": 1
+    }
+   ],
+   "debut": {
+    "n": 18,
+    "w": 15,
+    "l": 3,
+    "d": 0,
+    "nc": 0,
+    "ko_w": 9,
+    "sub_w": 5,
+    "dec_w": 1,
+    "oth_w": 0,
+    "ko_l": 0,
+    "sub_l": 1,
+    "dec_l": 2,
+    "oth_l": 0,
+    "streak": 13,
+    "streak_all": 13,
+    "lstreak_all": 0,
+    "l5_w": 5,
+    "l5_n": 5,
+    "n_ufc_sd": 0,
+    "pro_debut": "2021-05-02",
+    "years_active": 5.517,
+    "age_pro_debut": 20.969,
+    "layoff_days": 46,
+    "n_2y": 4,
+    "last_nonufc": "2026-09-22",
+    "promos": [
+     "LFA",
+     "Thunder Fight",
+     "APM | Arena Pride MMA",
+     "Spartacus MMA"
+    ],
+    "n_promos": 7,
+    "last_promo": "DWCS",
+    "dwcs_w": 1,
+    "dwcs_n": 1,
+    "promo_feed": 5.347,
+    "promo_feed_max": 5.7615,
+    "promo_grad": 0.5072,
+    "opp_known": 1,
+    "opp_wpct": 1.0,
+    "opp_ufc_w": 0,
+    "opp_ufc_n": 1,
+    "net_elo": 1486.7,
+    "exh_n": 0,
+    "exh_w": 0,
+    "net_elo_h": 1652.7,
+    "opp_wpct_h": 1.0,
+    "opp_known_h": 1,
+    "date": "2026-11-07",
+    "fid": null
+   },
+   "fights": [
+    [
+     "2021-05-02",
+     "L",
+     "dec",
+     "Thunder Fight",
+     "Davi Bittencourt",
+     263121,
+     3,
+     ""
+    ],
+    [
+     "2021-07-11",
+     "L",
+     "dec",
+     "Thunder Fight",
+     "Marceu Pasin",
+     259007,
+     3,
+     ""
+    ],
+    [
+     "2021-10-10",
+     "W",
+     "ko",
+     "Thunder Fight",
+     "Watson Silva de Castro",
+     293425,
+     1,
+     ""
+    ],
+    [
+     "2021-12-19",
+     "W",
+     "ko",
+     "APM | Arena Pride MMA",
+     "Nilcelio Vieira Faria",
+     376381,
+     1,
+     ""
+    ],
+    [
+     "2022-03-06",
+     "L",
+     "sub",
+     "APM | Arena Pride MMA",
+     "Felipe dos Santos",
+     324589,
+     3,
+     ""
+    ],
+    [
+     "2022-04-30",
+     "W",
+     "ko",
+     "Spartacus MMA",
+     "Carlos dos Santos",
+     405449,
+     1,
+     ""
+    ],
+    [
+     "2022-05-15",
+     "W",
+     "sub",
+     "APM | Arena Pride MMA",
+     "Gabriel Fermino",
+     309949,
+     2,
+     ""
+    ],
+    [
+     "2022-08-13",
+     "W",
+     "sub",
+     "Fight Pro Championship",
+     "Maicon Cardoso",
+     88203,
+     2,
+     ""
+    ],
+    [
+     "2022-08-27",
+     "W",
+     "ko",
+     "Spartacus MMA",
+     "Alexandre Rodrigues",
+     408410,
+     2,
+     ""
+    ],
+    [
+     "2022-11-13",
+     "W",
+     "ko",
+     "Jungle Fight",
+     "Frank Bispo",
+     116133,
+     1,
+     ""
+    ],
+    [
+     "2023-03-11",
+     "W",
+     "sub",
+     "Spartacus MMA",
+     "Fernando Bonatto",
+     401119,
+     1,
+     ""
+    ],
+    [
+     "2023-05-27",
+     "W",
+     "sub",
+     "LFA",
+     "Hugo Paiva",
+     256291,
+     1,
+     ""
+    ],
+    [
+     "2023-11-03",
+     "W",
+     "dec",
+     "LFA",
+     "Alisson Murilo",
+     233869,
+     3,
+     ""
+    ],
+    [
+     "2024-07-06",
+     "W",
+     "ko",
+     "LFA",
+     "Ignacio Fernandez",
+     289287,
+     1,
+     ""
+    ],
+    [
+     "2025-02-07",
+     "W",
+     "ko",
+     "LFA",
+     "Lincon Santos",
+     323375,
+     2,
+     ""
+    ],
+    [
+     "2025-07-11",
+     "W",
+     "ko",
+     "LFA",
+     "Matheus Severino",
+     201107,
+     3,
+     ""
+    ],
+    [
+     "2026-01-23",
+     "W",
+     "ko",
+     "LFA",
+     "Luis Aguiar",
+     385233,
+     1,
+     ""
+    ],
+    [
+     "2026-09-22",
+     "W",
+     "sub",
+     "DWCS",
+     "Paris Moran",
+     305077,
+     2,
+     ""
+    ]
+   ],
+   "derived": {
+    "side_pre": {
+     "pre_wpct": 1.2993,
+     "pre_logn": 2.9444,
+     "pre_fin": 0.725,
+     "pre_ko": 0.465,
+     "pre_sub": 0.26,
+     "pre_finl": 0.065,
+     "pre_kol": 0.01,
+     "pre_subl": 0.055,
+     "pre_streak": 2.6391,
+     "pre_l5": 0.8571,
+     "pre_yrs": 5.517,
+     "pre_agedeb": 20.969,
+     "pre_feed": 5.347,
+     "pre_feedmax": 5.7615,
+     "pre_grad": 0.0072,
+     "pre_oppw": 1.0,
+     "pre_oppufc": 0.0,
+     "pre_netelo": 1.527,
+     "pre_dwcs": 1.0,
+     "pre_tuf": 0.0,
+     "pre_layoff": 3.8501
+    },
+    "age_at_ufc_debut": 26.486,
+    "seeded_elo": {
+     "elo_debut_shift": 128.2,
+     "elo_debut_shift_pre_only": 110.3,
+     "debut_rating": 1628.2,
+     "z": {
+      "pre_wpct": -0.057,
+      "pre_logn": 1.099,
+      "pre_fin": 0.889,
+      "pre_finl": -0.273,
+      "pre_streak": 1.683,
+      "pre_feed": 2.366,
+      "pre_grad": 0.125,
+      "pre_oppufc": -0.535,
+      "pre_netelo": 1.443,
+      "pre_dwcs": 1.698,
+      "pre_agedeb": -0.547,
+      "age_debut": -0.55
+     }
+    },
+    "finish_odds_multipliers": {
+     "ko_win": {
+      "at_debut": 1.2,
+      "now": 1.2
+     },
+     "sub_win": {
+      "at_debut": 1.034,
+      "now": 1.034
+     },
+     "ko_loss": {
+      "at_debut": 0.698,
+      "now": 0.698
+     }
+    },
+    "pre_ko_rate": 0.465,
+    "pre_sub_rate": 0.26,
+    "pre_finished_rate": 0.065,
+    "opponents_with_ufc_bouts": [
+     {
+      "opp": "Felipe dos Santos",
+      "date": "2022-03-06",
+      "res": "L",
+      "opp_ufcstats_person": "5cdf5339728f580d"
+     }
+    ]
+   },
+   "cross_checks": [
+    {
+     "source": "ESPN fightcenter feed (fetched Nov 6, ~21:00Z)",
+     "says": "record 15-3-0, age 26, Brazil"
+    },
+    {
+     "source": "Sherdog news, Nov 4, 2026",
+     "says": "15-3, nine knockouts, 14 finishes in 15 wins"
+    },
+    {
+     "source": "ufcstats fighter_tott (data/raw, snapshot Oct 31)",
+     "says": "DOB May 13, 2000 (same as Sherdog)"
+    }
+   ],
+   "sources": [
+    "https://www.sherdog.com/fighter/Marcos-Degli-377798",
+    "https://www.sherdog.com/news/news/UFC-debutant-Marcos-Degli-targets-finish-bonus-against-Mitch-Raposo-203493",
+    "https://www.espn.com/mma/fightcenter/_/id/600061268/league/ufc"
+   ]
+  },
+  "gabriel-lourenco": {
+   "name": "Gabriel Lourenço",
+   "alt_names": [
+    "Gabriel Lorenço",
+    "Gabriel Lorenco",
+    "Gabriel Lourenco"
+   ],
+   "slug": null,
+   "bout": {
+    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
+    "date": "2026-11-07",
+    "order": 8,
+    "side": "a",
+    "bout_id": "2026-11-07:gabriel-lourenco__thomas-petersen",
+    "opponent": {
+     "name": "Thomas Petersen",
+     "slug": "thomas-petersen"
+    },
+    "weight_class": "Heavyweight",
+    "weigh_in_lb": 234,
+    "notice": "regular booking; the opponent changed (Alvin Hines out with vertigo, Thomas Petersen in, reported Oct 8)"
+   },
+   "ufc_status": "true UFC debut: no bouts in data/raw/ufc_fight_results.csv and no UFC rows on Sherdog; ufcstats has a pre-created fighter page with no fights",
+   "ufc_id": "e3fc6c1fab298561",
+   "ufcstats_tott": {
+    "id": "e3fc6c1fab298561",
+    "dob": "1999-09-30",
+    "height": null,
+    "reach_in": null,
+    "stance": null,
+    "listed_weight_lb": null
+   },
+   "status": "ok",
+   "sherdog": {
+    "url": "https://www.sherdog.com/fighter/Gabriel-Lourenco-398156",
+    "name": "Gabriel Lourenco",
+    "nick": "Black Mamba",
+    "dob": "1999-09-30",
+    "nationality": "Brazil",
+    "locality": "Encantado, Rio Grande do Sul",
+    "association": "Chute Boxe",
+    "class": "Heavyweight",
+    "lbs": 234,
+    "height": "6'3\"",
+    "how": "fighter link on Sherdog's event page",
+    "n_ufc": 0,
+    "amateur_n": 0,
+    "fetched_utc": "2026-11-06T21:03Z"
+   },
+   "path_to_ufc": "Dana White's Contender Series 2026, Week 4 (Sep 1, 2026; DWCS 90 in agentmma's numbering): KO (elbow and punches) of Charlie Cleveland, R1 2:02. His other eight pro fights were on regional shows (IFL, X-Fest, MFC, CDL, BCC, Saikyo, Curitiba Fight Pro).",
+   "record": {
+    "pro": "8-1-0",
+    "wins": {
+     "ko": 6,
+     "sub": 1,
+     "dec": 1,
+     "other": 0
+    },
+    "losses": {
+     "ko": 1,
+     "sub": 0,
+     "dec": 0,
+     "other": 0
+    },
+    "no_contests": 0,
+    "win_streak": 8,
+    "last5": "5-0",
+    "pro_debut": "2021-10-17",
+    "last_fight": "2026-09-01",
+    "layoff_days": 67,
+    "contender_series": "1-0",
+    "amateur_fights_excluded": 0
+   },
+   "last_fights": [
+    {
+     "date": "2026-09-01",
+     "result": "W",
+     "method": "ko",
+     "promotion": "DWCS",
+     "opponent": "Charlie Cleveland",
+     "round": 1
+    },
+    {
+     "date": "2025-11-15",
+     "result": "W",
+     "method": "ko",
+     "promotion": "CFP | Curitiba Fight Pro",
+     "opponent": "Bruno de Jesus",
+     "round": 1
+    },
+    {
+     "date": "2025-10-18",
+     "result": "W",
+     "method": "sub",
+     "promotion": "Saikyo",
+     "opponent": "William Magalhaes",
+     "round": 1
+    },
+    {
+     "date": "2025-06-28",
+     "result": "W",
+     "method": "ko",
+     "promotion": "BCC | Brazilian Cage Championship",
+     "opponent": "Tiago Afonso",
+     "round": 1
+    },
+    {
+     "date": "2024-11-30",
+     "result": "W",
+     "method": "dec",
+     "promotion": "CDL | Cidade da Luta",
+     "opponent": "Alan Oliveira",
+     "round": 3
+    }
+   ],
+   "debut": {
+    "n": 9,
+    "w": 8,
+    "l": 1,
+    "d": 0,
+    "nc": 0,
+    "ko_w": 6,
+    "sub_w": 1,
+    "dec_w": 1,
+    "oth_w": 0,
+    "ko_l": 1,
+    "sub_l": 0,
+    "dec_l": 0,
+    "oth_l": 0,
+    "streak": 8,
+    "streak_all": 8,
+    "lstreak_all": 0,
+    "l5_w": 5,
+    "l5_n": 5,
+    "n_ufc_sd": 0,
+    "pro_debut": "2021-10-17",
+    "years_active": 5.057,
+    "age_pro_debut": 22.048,
+    "layoff_days": 67,
+    "n_2y": 5,
+    "last_nonufc": "2026-09-01",
+    "promos": [
+     "IFL | Inside Fighters League",
+     "X-Fest",
+     "MFC | Master Fighting Championship",
+     "CDL | Cidade da Luta"
+    ],
+    "n_promos": 8,
+    "last_promo": "DWCS",
+    "dwcs_w": 1,
+    "dwcs_n": 1,
+    "promo_feed": 1.2973,
+    "promo_feed_max": 5.7615,
+    "promo_grad": 0.521,
+    "opp_known": 0,
+    "opp_wpct": null,
+    "opp_ufc_w": 0,
+    "opp_ufc_n": 0,
+    "net_elo": 1500.0,
+    "exh_n": 0,
+    "exh_w": 0,
+    "net_elo_h": 1598.4,
+    "opp_wpct_h": null,
+    "opp_known_h": 0,
+    "date": "2026-11-07",
+    "fid": null
+   },
+   "fights": [
+    [
+     "2021-10-17",
+     "L",
+     "ko",
+     "IFL | Inside Fighters League",
+     "Igor Cavalcanti",
+     387931,
+     1,
+     ""
+    ],
+    [
+     "2021-12-18",
+     "W",
+     "ko",
+     "IFL | Inside Fighters League",
+     "Bruno Land",
+     398304,
+     1,
+     ""
+    ],
+    [
+     "2023-11-12",
+     "W",
+     "ko",
+     "X-Fest",
+     "Wellington Madeira",
+     282115,
+     1,
+     ""
+    ],
+    [
+     "2024-09-29",
+     "W",
+     "ko",
+     "MFC | Master Fighting Championship",
+     "Junior Baiano",
+     371374,
+     1,
+     ""
+    ],
+    [
+     "2024-11-30",
+     "W",
+     "dec",
+     "CDL | Cidade da Luta",
+     "Alan Oliveira",
+     424150,
+     3,
+     ""
+    ],
+    [
+     "2025-06-28",
+     "W",
+     "ko",
+     "BCC | Brazilian Cage Championship",
+     "Tiago Afonso",
+     165333,
+     1,
+     ""
+    ],
+    [
+     "2025-10-18",
+     "W",
+     "sub",
+     "Saikyo",
+     "William Magalhaes",
+     457688,
+     1,
+     ""
+    ],
+    [
+     "2025-11-15",
+     "W",
+     "ko",
+     "CFP | Curitiba Fight Pro",
+     "Bruno de Jesus",
+     320521,
+     1,
+     ""
+    ],
+    [
+     "2026-09-01",
+     "W",
+     "ko",
+     "DWCS",
+     "Charlie Cleveland",
+     440422,
+     1,
+     ""
+    ]
+   ],
+   "derived": {
+    "side_pre": {
+     "pre_wpct": 1.335,
+     "pre_logn": 2.3026,
+     "pre_fin": 0.6818,
+     "pre_ko": 0.5727,
+     "pre_sub": 0.1091,
+     "pre_finl": 0.1182,
+     "pre_kol": 0.1091,
+     "pre_subl": 0.0091,
+     "pre_streak": 2.1972,
+     "pre_l5": 0.8571,
+     "pre_yrs": 5.057,
+     "pre_agedeb": 22.048,
+     "pre_feed": 1.2973,
+     "pre_feedmax": 5.7615,
+     "pre_grad": 0.021,
+     "pre_oppw": null,
+     "pre_oppufc": 0.0,
+     "pre_netelo": 0.984,
+     "pre_dwcs": 1.0,
+     "pre_tuf": 0.0,
+     "pre_layoff": 4.2195
+    },
+    "age_at_ufc_debut": 27.105,
+    "seeded_elo": {
+     "elo_debut_shift": 17.4,
+     "elo_debut_shift_pre_only": 5.4,
+     "debut_rating": 1517.4,
+     "z": {
+      "pre_wpct": 0.023,
+      "pre_logn": -0.252,
+      "pre_fin": 0.598,
+      "pre_finl": 0.521,
+      "pre_streak": 0.933,
+      "pre_feed": -0.98,
+      "pre_grad": 0.452,
+      "pre_oppufc": -0.535,
+      "pre_netelo": -0.068,
+      "pre_dwcs": 1.698,
+      "pre_agedeb": -0.229,
+      "age_debut": -0.372
+     }
+    },
+    "finish_odds_multipliers": {
+     "ko_win": {
+      "at_debut": 1.36,
+      "now": 1.36
+     },
+     "sub_win": {
+      "at_debut": 0.6,
+      "now": 0.6
+     },
+     "ko_loss": {
+      "at_debut": 1.251,
+      "now": 1.251
+     }
+    },
+    "pre_ko_rate": 0.573,
+    "pre_sub_rate": 0.109,
+    "pre_finished_rate": 0.118,
+    "opponents_with_ufc_bouts": []
+   },
+   "cross_checks": [
+    {
+     "source": "ESPN fightcenter feed (fetched Nov 6, ~21:00Z)",
+     "says": "record 8-1-0, age 27, Brazil"
+    },
+    {
+     "source": "agentmma news, Sep 1, 2026",
+     "says": "KO of Charlie Cleveland at 2:02 of round 1 on the Contender Series"
+    },
+    {
+     "source": "ufcstats fighter_tott (data/raw, snapshot Oct 31)",
+     "says": "DOB Sep 30, 1999 (same as Sherdog)"
+    }
+   ],
+   "sources": [
+    "https://www.sherdog.com/fighter/Gabriel-Lourenco-398156",
+    "https://agentmma.com/news/89419-gabriel-lorenco-kos-charlie-cleveland-in-round-1-at-dwcs-90",
+    "https://www.espn.com/mma/fightcenter/_/id/600061268/league/ufc"
+   ]
+  },
+  "carlos-calderon": {
+   "name": "Carlos Calderon",
+   "alt_names": [
+    "Carlos Calderón"
+   ],
+   "slug": null,
+   "bout": {
+    "event": "UFC Fight Night: Cortes-Acosta vs. Walker",
+    "date": "2026-11-07",
+    "order": 11,
+    "side": "b",
+    "bout_id": "2026-11-07:austin-bashi__carlos-calderon",
+    "opponent": {
+     "name": "Austin Bashi",
+     "slug": "austin-bashi"
+    },
+    "weight_class": "Featherweight",
+    "weigh_in_lb": 145.5,
+    "notice": "short notice: replaced Lucas Brennan (torn ACL) four days out (booked Nov 3-4); 36 days since his last fight"
+   },
+   "ufc_status": "true UFC debut: no bouts in data/raw/ufc_fight_results.csv and no UFC rows on Sherdog; ufcstats has a pre-created fighter page with no fights",
+   "ufc_id": "7d4d7583df7eebf9",
+   "ufcstats_tott": {
+    "id": "7d4d7583df7eebf9",
+    "dob": "1996-02-10",
+    "height": "5' 11\"",
+    "reach_in": 71,
+    "stance": "Southpaw",
+    "listed_weight_lb": 145
+   },
+   "status": "ok",
+   "sherdog": {
+    "url": "https://www.sherdog.com/fighter/Carlos-Calderon-247279",
+    "name": "Carlos Calderon",
+    "nick": "The Chief",
+    "dob": "1996-02-10",
+    "nationality": "United States",
+    "locality": "Aurora, Colorado",
+    "association": "Havoc MMA",
+    "class": "Featherweight",
+    "lbs": 146,
+    "height": "5'11\"",
+    "how": "fighter link on Sherdog's event page",
+    "n_ufc": 0,
+    "amateur_n": 4,
+    "fetched_utc": "2026-11-06T21:03Z"
+   },
+   "path_to_ufc": "Reigning Fury FC featherweight champion (MMA Fighting, MMAmania): his five-round unanimous decision over Lorram Esteves (Oct 2, 2026) was his first title defense. Before that he submitted ex-UFC fighter Damon Jackson in round 4 (May 17, 2026, Fury FC 119 main event). Lost on the Contender Series in 2024 (Week 8, anaconda choke by Alberto Montes).",
+   "record": {
+    "pro": "11-4-0 (1 NC)",
+    "wins": {
+     "ko": 2,
+     "sub": 6,
+     "dec": 3,
+     "other": 0
+    },
+    "losses": {
+     "ko": 0,
+     "sub": 2,
+     "dec": 2,
+     "other": 0
+    },
+    "no_contests": 1,
+    "win_streak": 3,
+    "last5": "4-1",
+    "pro_debut": "2020-12-12",
+    "last_fight": "2026-10-02",
+    "layoff_days": 36,
+    "contender_series": "0-1",
+    "amateur_fights_excluded": 4
+   },
+   "last_fights": [
+    {
+     "date": "2026-10-02",
+     "result": "W",
+     "method": "dec",
+     "promotion": "Fury FC",
+     "opponent": "Lorram Esteves",
+     "round": 5
+    },
+    {
+     "date": "2026-05-17",
+     "result": "W",
+     "method": "sub",
+     "promotion": "Fury FC",
+     "opponent": "Damon Jackson",
+     "round": 4
+    },
+    {
+     "date": "2026-02-20",
+     "result": "W",
+     "method": "sub",
+     "promotion": "Fury FC",
+     "opponent": "Justice Torres",
+     "round": 1
+    },
+    {
+     "date": "2025-12-14",
+     "result": "L",
+     "method": "dec",
+     "promotion": "Fury FC",
+     "opponent": "Mauricio Gomez",
+     "round": 3
+    },
+    {
+     "date": "2025-07-18",
+     "result": "W",
+     "method": "dec",
+     "promotion": "Fury FC",
+     "opponent": "Jesse Butler",
+     "round": 3
+    }
+   ],
+   "debut": {
+    "n": 15,
+    "w": 11,
+    "l": 4,
+    "d": 0,
+    "nc": 1,
+    "ko_w": 2,
+    "sub_w": 6,
+    "dec_w": 3,
+    "oth_w": 0,
+    "ko_l": 0,
+    "sub_l": 2,
+    "dec_l": 2,
+    "oth_l": 0,
+    "streak": 3,
+    "streak_all": 3,
+    "lstreak_all": 0,
+    "l5_w": 4,
+    "l5_n": 5,
+    "n_ufc_sd": 0,
+    "pro_debut": "2020-12-12",
+    "years_active": 5.903,
+    "age_pro_debut": 24.838,
+    "layoff_days": 36,
+    "n_2y": 6,
+    "last_nonufc": "2026-10-02",
+    "promos": [
+     "Fury FC",
+     "Combate Global",
+     "CCC",
+     "CCC | Colorado Combat Club"
+    ],
+    "n_promos": 6,
+    "last_promo": "Fury FC",
+    "dwcs_w": 0,
+    "dwcs_n": 1,
+    "promo_feed": 3.8783,
+    "promo_feed_max": 3.8783,
+    "promo_grad": 0.525,
+    "opp_known": 3,
+    "opp_wpct": 0.7648,
+    "opp_ufc_w": 2,
+    "opp_ufc_n": 3,
+    "net_elo": 1530.5,
+    "exh_n": 0,
+    "exh_w": 0,
+    "net_elo_h": 1586.6,
+    "opp_wpct_h": 0.5333,
+    "opp_known_h": 2,
+    "date": "2026-11-07",
+    "fid": null
+   },
+   "fights": [
+    [
+     "2020-12-12",
+     "W",
+     "dec",
+     "Fury FC",
+     "Eduardo Anaya",
+     215117,
+     3,
+     ""
+    ],
+    [
+     "2021-03-06",
+     "NC",
+     "nc",
+     "Fury FC",
+     "Jordan Plutin",
+     317009,
+     2,
+     ""
+    ],
+    [
+     "2021-09-12",
+     "W",
+     "sub",
+     "Fury FC",
+     "Kyle Broadwater",
+     270849,
+     3,
+     ""
+    ],
+    [
+     "2022-03-25",
+     "W",
+     "ko",
+     "CCC",
+     "Jake Mendez",
+     147565,
+     1,
+     ""
+    ],
+    [
+     "2022-09-30",
+     "W",
+     "ko",
+     "Combate Global",
+     "Carlos Cordoba Fonseca",
+     211549,
+     1,
+     ""
+    ],
+    [
+     "2022-12-09",
+     "L",
+     "sub",
+     "CCC | Colorado Combat Club",
+     "Motaz Askar",
+     248375,
+     1,
+     ""
+    ],
+    [
+     "2023-05-28",
+     "L",
+     "dec",
+     "Combate Global",
+     "Elijah Leggett",
+     204451,
+     3,
+     ""
+    ],
+    [
+     "2023-09-23",
+     "W",
+     "sub",
+     "Combate Global",
+     "Alejandro Gavidia",
+     292401,
+     2,
+     ""
+    ],
+    [
+     "2024-06-22",
+     "W",
+     "sub",
+     "LFA",
+     "Kurtis Ellis",
+     227267,
+     1,
+     ""
+    ],
+    [
+     "2024-10-01",
+     "L",
+     "sub",
+     "DWCS",
+     "Alberto Montes",
+     257203,
+     2,
+     ""
+    ],
+    [
+     "2025-05-25",
+     "W",
+     "sub",
+     "Fury FC",
+     "Juan Alvarez Jr.",
+     305889,
+     1,
+     ""
+    ],
+    [
+     "2025-07-18",
+     "W",
+     "dec",
+     "Fury FC",
+     "Jesse Butler",
+     217941,
+     3,
+     ""
+    ],
+    [
+     "2025-12-14",
+     "L",
+     "dec",
+     "Fury FC",
+     "Mauricio Gomez",
+     369934,
+     3,
+     ""
+    ],
+    [
+     "2026-02-20",
+     "W",
+     "sub",
+     "Fury FC",
+     "Justice Torres",
+     270853,
+     1,
+     ""
+    ],
+    [
+     "2026-05-17",
+     "W",
+     "sub",
+     "Fury FC",
+     "Damon Jackson",
+     113767,
+     4,
+     ""
+    ],
+    [
+     "2026-10-02",
+     "W",
+     "dec",
+     "Fury FC",
+     "Lorram Esteves",
+     183397,
+     5,
+     ""
+    ]
+   ],
+   "derived": {
+    "side_pre": {
+     "pre_wpct": 0.821,
+     "pre_logn": 2.7726,
+     "pre_fin": 0.5,
+     "pre_ko": 0.1353,
+     "pre_sub": 0.3647,
+     "pre_finl": 0.1353,
+     "pre_kol": 0.0118,
+     "pre_subl": 0.1235,
+     "pre_streak": 1.3863,
+     "pre_l5": 0.7143,
+     "pre_yrs": 5.903,
+     "pre_agedeb": 24.838,
+     "pre_feed": 3.8783,
+     "pre_feedmax": 3.8783,
+     "pre_grad": 0.025,
+     "pre_oppw": 0.5333,
+     "pre_oppufc": 1.0986,
+     "pre_netelo": 0.866,
+     "pre_dwcs": 0.0,
+     "pre_tuf": 0.0,
+     "pre_layoff": 3.6109
+    },
+    "age_at_ufc_debut": 30.741,
+    "seeded_elo": {
+     "elo_debut_shift": -30.4,
+     "elo_debut_shift_pre_only": -8.4,
+     "debut_rating": 1469.6,
+     "z": {
+      "pre_wpct": -1.132,
+      "pre_logn": 0.738,
+      "pre_fin": -0.63,
+      "pre_finl": 0.776,
+      "pre_streak": -0.443,
+      "pre_feed": 1.152,
+      "pre_grad": 0.546,
+      "pre_oppufc": 2.327,
+      "pre_netelo": -0.396,
+      "pre_dwcs": -0.589,
+      "pre_agedeb": 0.595,
+      "age_debut": 0.677
+     }
+    },
+    "finish_odds_multipliers": {
+     "ko_win": {
+      "at_debut": 0.571,
+      "now": 0.571
+     },
+     "sub_win": {
+      "at_debut": 1.278,
+      "now": 1.278
+     },
+     "ko_loss": {
+      "at_debut": 0.726,
+      "now": 0.726
+     }
+    },
+    "pre_ko_rate": 0.135,
+    "pre_sub_rate": 0.365,
+    "pre_finished_rate": 0.135,
+    "opponents_with_ufc_bouts": [
+     {
+      "opp": "Alberto Montes",
+      "date": "2024-10-01",
+      "res": "L",
+      "opp_ufcstats_person": "a112097ad877a48f"
+     },
+     {
+      "opp": "Jesse Butler",
+      "date": "2025-07-18",
+      "res": "W",
+      "opp_ufcstats_person": "a75a48bfe776b2c2"
+     },
+     {
+      "opp": "Damon Jackson",
+      "date": "2026-05-17",
+      "res": "W",
+      "opp_ufcstats_person": "29af297d9f1de0f8"
+     }
+    ]
+   },
+   "cross_checks": [
+    {
+     "source": "ESPN fightcenter feed (fetched Nov 6, ~21:00Z)",
+     "says": "record 11-4-0, age 30, USA"
+    },
+    {
+     "source": "MMA Fighting, Nov 4, 2026",
+     "says": "11-4, 1 NC; three-fight win streak; 5-1 in his last six; five-round decision over Lorram Esteves in October"
+    },
+    {
+     "source": "MMAmania, Nov 4, 2026",
+     "says": "11-4; six of 11 wins by submission; calls him 31 (DOB Feb 10, 1996 makes him 30, as ESPN has it)"
+    },
+    {
+     "source": "ufcstats fighter_tott (data/raw, snapshot Oct 31)",
+     "says": "DOB Feb 10, 1996 (same as Sherdog)"
+    }
+   ],
+   "sources": [
+    "https://www.sherdog.com/fighter/Carlos-Calderon-247279",
+    "https://www.mmafighting.com/ufc/519393/ufc-vegas-124-adds-replacement-fighter-on-4-days-notice",
+    "https://www.mmamania.com/ufc-fight-announcements/484031/ufc-newcomer-steps-up-on-four-days-notice-for-ufc-vegas-124",
+    "https://www.espn.com/mma/fightcenter/_/id/600061268/league/ufc"
+   ]
+  }
+ },
+ "also_upcoming": {
+  "samuel-sanches": {
+   "name": "Samuel Sanches",
+   "alt_names": [],
+   "slug": null,
+   "bout": {
+    "event": "UFC 334: Gane vs. Hokit",
+    "date": "2026-11-14",
+    "order": 12,
+    "side": "b",
+    "bout_id": "2026-11-14:evan-elder__samuel-sanches",
+    "opponent": {
+     "name": "Evan Elder",
+     "slug": "evan-elder"
+    },
+    "weight_class": "Lightweight",
+    "weigh_in_lb": null,
+    "notice": "regular booking; UFC 334 weigh-ins are Fri Nov 13, so weigh_in_lb is not known yet"
+   },
+   "ufc_status": "true UFC debut: no bouts in data/raw/ufc_fight_results.csv and no UFC rows on Sherdog; ufcstats has a pre-created fighter page with no fights",
+   "ufc_id": "438d497617ecb16e",
+   "ufcstats_tott": {
+    "id": "438d497617ecb16e",
+    "dob": "2003-01-28",
+    "height": "5' 10\"",
+    "reach_in": 74,
+    "stance": "Orthodox",
+    "listed_weight_lb": 155
+   },
+   "status": "ok",
+   "sherdog": {
+    "url": "https://www.sherdog.com/fighter/Samuel-Sanches-389956",
+    "name": "Samuel Sanches",
+    "nick": "The Prodigy",
+    "dob": "2003-01-28",
+    "nationality": "Brazil",
+    "locality": "Salvador, Bahia",
+    "association": "Galpao da Luta",
+    "class": "Lightweight",
+    "lbs": 155,
+    "height": "5'10\"",
+    "how": "fighter link on Sherdog's event page",
+    "n_ufc": 0,
+    "amateur_n": 0,
+    "fetched_utc": "2026-11-06T21:03Z"
+   },
+   "path_to_ufc": "Dana White's Contender Series 2025, Week 5 (Sep 9, 2025): TKO (punches) of Chasen Blair, R1 2:01. Has not fought since (431 days to his UFC debut).",
+   "record": {
+    "pro": "11-1-0",
+    "wins": {
+     "ko": 8,
+     "sub": 1,
+     "dec": 2,
+     "other": 0
+    },
+    "losses": {
+     "ko": 0,
+     "sub": 1,
+     "dec": 0,
+     "other": 0
+    },
+    "no_contests": 0,
+    "win_streak": 8,
+    "last5": "5-0",
+    "pro_debut": "2021-08-14",
+    "last_fight": "2025-09-09",
+    "layoff_days": 431,
+    "contender_series": "1-0",
+    "amateur_fights_excluded": 0
+   },
+   "last_fights": [
+    {
+     "date": "2025-09-09",
+     "result": "W",
+     "method": "ko",
+     "promotion": "DWCS",
+     "opponent": "Chasen Blair",
+     "round": 1
+    },
+    {
+     "date": "2025-03-30",
+     "result": "W",
+     "method": "ko",
+     "promotion": "Thunder Fight",
+     "opponent": "Evaldo dos Santos",
+     "round": 1
+    },
+    {
+     "date": "2024-06-01",
+     "result": "W",
+     "method": "ko",
+     "promotion": "Jua Fight",
+     "opponent": "Severino Neto",
+     "round": 2
+    },
+    {
+     "date": "2024-04-28",
+     "result": "W",
+     "method": "dec",
+     "promotion": "DF | Demo Fight",
+     "opponent": "Sergio de Jesus Santos",
+     "round": 3
+    },
+    {
+     "date": "2024-01-27",
+     "result": "W",
+     "method": "ko",
+     "promotion": "DF | Demo Fight",
+     "opponent": "Bruno Justo",
+     "round": 2
+    }
+   ],
+   "debut": {
+    "n": 12,
+    "w": 11,
+    "l": 1,
+    "d": 0,
+    "nc": 0,
+    "ko_w": 8,
+    "sub_w": 1,
+    "dec_w": 2,
+    "oth_w": 0,
+    "ko_l": 0,
+    "sub_l": 1,
+    "dec_l": 0,
+    "oth_l": 0,
+    "streak": 8,
+    "streak_all": 8,
+    "lstreak_all": 0,
+    "l5_w": 5,
+    "l5_n": 5,
+    "n_ufc_sd": 0,
+    "pro_debut": "2021-08-14",
+    "years_active": 5.251,
+    "age_pro_debut": 18.543,
+    "layoff_days": 431,
+    "n_2y": 2,
+    "last_nonufc": "2025-09-09",
+    "promos": [
+     "DF | Demo Fight",
+     "JF | Jardim Fight",
+     "Imperium",
+     "QC | Qualify Combat"
+    ],
+    "n_promos": 8,
+    "last_promo": "DWCS",
+    "dwcs_w": 1,
+    "dwcs_n": 1,
+    "promo_feed": 2.5166,
+    "promo_feed_max": 5.7615,
+    "promo_grad": 0.4628,
+    "opp_known": 0,
+    "opp_wpct": null,
+    "opp_ufc_w": 0,
+    "opp_ufc_n": 0,
+    "net_elo": 1500.0,
+    "exh_n": 0,
+    "exh_w": 0,
+    "net_elo_h": 1627.2,
+    "opp_wpct_h": null,
+    "opp_known_h": 0,
+    "date": "2026-11-14",
+    "fid": null
+   },
+   "fights": [
+    [
+     "2021-08-14",
+     "W",
+     "ko",
+     "Imperium",
+     "Joao Pedro",
+     388965,
+     1,
+     ""
+    ],
+    [
+     "2021-11-07",
+     "W",
+     "ko",
+     "JF | Jardim Fight",
+     "Emerson Conceicao",
+     334673,
+     1,
+     ""
+    ],
+    [
+     "2022-03-27",
+     "W",
+     "ko",
+     "JF | Jardim Fight",
+     "William Paiva",
+     299487,
+     1,
+     ""
+    ],
+    [
+     "2022-07-09",
+     "L",
+     "sub",
+     "QC | Qualify Combat",
+     "Hugo Vargas",
+     295023,
+     1,
+     ""
+    ],
+    [
+     "2022-11-05",
+     "W",
+     "ko",
+     "WS Fighting",
+     "Walef Pereira da Silva",
+     406898,
+     1,
+     ""
+    ],
+    [
+     "2023-03-25",
+     "W",
+     "sub",
+     "DF | Demo Fight",
+     "Paulo Roberto",
+     73631,
+     1,
+     ""
+    ],
+    [
+     "2023-07-29",
+     "W",
+     "dec",
+     "DF | Demo Fight",
+     "Sergio Mario Conceicao dos Santos",
+     422832,
+     3,
+     ""
+    ],
+    [
+     "2024-01-27",
+     "W",
+     "ko",
+     "DF | Demo Fight",
+     "Bruno Justo",
+     30944,
+     2,
+     ""
+    ],
+    [
+     "2024-04-28",
+     "W",
+     "dec",
+     "DF | Demo Fight",
+     "Sergio de Jesus Santos",
+     136853,
+     3,
+     ""
+    ],
+    [
+     "2024-06-01",
+     "W",
+     "ko",
+     "Jua Fight",
+     "Severino Neto",
+     203705,
+     2,
+     ""
+    ],
+    [
+     "2025-03-30",
+     "W",
+     "ko",
+     "Thunder Fight",
+     "Evaldo dos Santos",
+     213893,
+     1,
+     ""
+    ],
+    [
+     "2025-09-09",
+     "W",
+     "ko",
+     "DWCS",
+     "Chasen Blair",
+     403054,
+     1,
+     ""
+    ]
+   ],
+   "derived": {
+    "side_pre": {
+     "pre_wpct": 1.6094,
+     "pre_logn": 2.5649,
+     "pre_fin": 0.6786,
+     "pre_ko": 0.5929,
+     "pre_sub": 0.0857,
+     "pre_finl": 0.0929,
+     "pre_kol": 0.0143,
+     "pre_subl": 0.0786,
+     "pre_streak": 2.1972,
+     "pre_l5": 0.8571,
+     "pre_yrs": 5.251,
+     "pre_agedeb": 18.543,
+     "pre_feed": 2.5166,
+     "pre_feedmax": 5.7615,
+     "pre_grad": -0.0372,
+     "pre_oppw": null,
+     "pre_oppufc": 0.0,
+     "pre_netelo": 1.272,
+     "pre_dwcs": 1.0,
+     "pre_tuf": 0.0,
+     "pre_layoff": 6.0684
+    },
+    "age_at_ufc_debut": 23.795,
+    "seeded_elo": {
+     "elo_debut_shift": 78.6,
+     "elo_debut_shift_pre_only": 35.5,
+     "debut_rating": 1578.6,
+     "z": {
+      "pre_wpct": 0.64,
+      "pre_logn": 0.3,
+      "pre_fin": 0.576,
+      "pre_finl": 0.143,
+      "pre_streak": 0.933,
+      "pre_feed": 0.027,
+      "pre_grad": -0.924,
+      "pre_oppufc": -0.535,
+      "pre_netelo": 0.733,
+      "pre_dwcs": 1.698,
+      "pre_agedeb": -1.264,
+      "age_debut": -1.326
+     }
+    },
+    "finish_odds_multipliers": {
+     "ko_win": {
+      "at_debut": 1.389,
+      "now": 1.389
+     },
+     "sub_win": {
+      "at_debut": 0.516,
+      "now": 0.516
+     },
+     "ko_loss": {
+      "at_debut": 0.762,
+      "now": 0.762
+     }
+    },
+    "pre_ko_rate": 0.593,
+    "pre_sub_rate": 0.086,
+    "pre_finished_rate": 0.093,
+    "opponents_with_ufc_bouts": []
+   },
+   "cross_checks": [
+    {
+     "source": "ESPN fightcenter feed for UFC 334 (fetched Nov 6, ~21:00Z)",
+     "says": "record 11-1-0"
+    },
+    {
+     "source": "Sportscape Magazine (UFC 334 booking report)",
+     "says": "11-1 Brazilian prospect"
+    },
+    {
+     "source": "ufcstats fighter_tott (data/raw, snapshot Oct 31)",
+     "says": "DOB Jan 28, 2003 (same as Sherdog)"
+    }
+   ],
+   "sources": [
+    "https://www.sherdog.com/fighter/Samuel-Sanches-389956",
+    "https://www.sportscapemagazine.com/blog/evan-elder-draws-11-1-brazilian-prospect-samuel-sanches-for-ufc-334",
+    "https://www.espn.com/mma/fightcenter/_/id/600061400/league/ufc"
+   ]
+  }
+ },
+ "unreachable_sources": {
+  "tapology.com": "403 on Nov 6, 21:00Z",
+  "ufc.com": "403 on Nov 6, 21:00Z",
+  "ufcstats.com": "no connection on Nov 6, 21:00Z (local CSVs, snapshot Oct 31, used)"
+ }
+}
