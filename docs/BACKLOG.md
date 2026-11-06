@@ -88,3 +88,38 @@ Findings from verified research that the next engine versions must use. Each lin
   the v6/v10 audits.
 - Every input became underconfident in 2024-25 (the market too: calibration slopes 1.1-1.7). Recalibrate
   on recent data (temperature/recency weighting) at each release.
+
+## Verified component results (Nov 6, 11:00-12:00 UTC round) -> engine cycles v4-v6
+- ML stat-line model (tools/mlrates.py, src/ml/mlrates.js, research/model_mlrates.md), VERIFIED: beats engine
+  v3's own rates on 12 of 18 per-fight stats (2024-25); feeding it into the simulator improves winner log loss
+  0.6465 -> 0.6239 on 2024-25 (-0.0226 [-0.0311, -0.0136]) and pooled 2019-2025 out-of-sample 0.6661 -> 0.6553
+  (-0.0108 [-0.0159, -0.0055]), better in all seven years. -> v4 core.
+- Durability (tools/durability.py, research/model_durability.md): chin +6.0%/yr at all ages (no knee at 30)
+  + 2.1%/UFC year; power -2.8%/yr past 30; KO loss in last 365 d x1.156, older x1.046; last fight KO loss
+  x1.163; layoff >= 2 y x0.64; five-round x0.905, title x0.883; no size tax (confirmed on 7,982 fights);
+  fighter chin/power multipliers with Gamma(3,3) priors; 2024 glove-trial dip and 2026 KD surge in the league
+  level (track trailing 730-day level). Volk chin 1.07 (0.50-1.83) power 0.67; Gaethje chin 0.81 power 0.90.
+  -> v5.
+- Dynamics (tools/dynamics.py, research/model_dynamics.md; verifier was cut off by the usage limit):
+  output barely decays with damage; shared fight-level pace sd 0.37 (engine 0.10); per-fighter AR(1) round
+  noise 0.68/0.31; accuracy form sd 0.29 logit (engine 0.12); no adaptation after losing a round; KD momentum
+  (scorer eases off, dropped man throws more); KD hazard per head strike falls by round [1, .57, .37] /
+  [1, .65, .405, .29, .29] and does NOT rise with damage; KD-to-finish ~0.52 declining by round. Engine v3
+  gaps: round-to-round output corr 0.19 vs 0.53 real, fight-level output sd 0.25 vs 0.50, KO rate in 5-round
+  R3-5 0.10 vs 0.04-0.07. Exact parameter recipe E1-E11 in the report. -> v6.
+- Market (tools/market.py, data/derived/market.json, research/model_market.md; verifier cut off): closing
+  line for 3,228/3,237 backtest fights; benchmarks on 2024+: close (power no-vig) 0.5899, open 0.6126, market
+  rating 0.6336, Elo 0.6800; method6 1.4762; p_dec 0.6464; round 1.1600. Walk-forward Kalman "market rating"
+  works as a no-line prior. Soft-label scoring against the close is 3-4.6x less noisy for development.
+  Volk-Gaethje: market rating 63.5% Volk vs ~37% openers.
+- ML benchmark (tools/ml.py; verifier cut off): logistic 0.6156 on 2024+ (66.6% accuracy) vs Elo 0.6799;
+  ties the open line, 0.023 behind the close; stack Elo+ML+market rating 0.6071. Engine v3 adds nothing to the
+  stack. Gap to the close concentrated in newcomers (0.051 log loss when a fighter has 1-2 UFC fights).
+- Method/round (tools/methodround.py, verified): model S beats division base rates on method by -0.0445
+  [-0.062, -0.027]; 7-bin 1.5643 (SM 1.5243); ties the market's method props in a 40/60 blend. It is the
+  yardstick for the simulator's method/round output.
+- Judges' rounds (tools/judgerounds.py, verified): 10,692 rounds / 31,319 judge-rounds 2006-2025 from
+  public MMA Decisions-derived datasets; 22.4% of rounds not unanimous; shared judge noise needed; 10-8s 3.6%.
+- Failed mid-run on the usage cap, to relaunch: oppadj fit, officials fit, ratings fit, preufc fit, embed fit;
+  verifiers for dynamics, market, ml, fightweek; 3D reviews/fixes; page UI/QA reviews/fix; v3 calibrate/
+  reviews/fix; asset clip conversion + verify; scouting and likeness checkers.
