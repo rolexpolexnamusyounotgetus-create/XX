@@ -397,3 +397,91 @@ What the look scores (stage `confirm`, once; `confirm.done` marks it):
   recipes fit on 2019-2023 with the CV keep rule (mlrates + seqnet, mlrates + embeddings + seqnet).
 - Failure: not applicable to adoption (already rejected); if 2024-2025 showed seqnet gaining in a stack, that is
   one look and is not a reason to add it (the clean tests would be vault audit 2 and the forward ledger).
+
+## Verification log
+
+Adversarial verifier, Nov 6, 2026, about 11:05-11:25 pm UTC. I started from the stance that every number was fake
+until reproduced. My code is `tools/seqnet_verify.py` (stages protocol, score, gate, claims and repro; about 10 s
+in all), and it writes `data/derived/seqnet_verify.json`.
+
+It is independent of the builder's evaluation code:
+- its own log loss;
+- its own event-cluster bootstrap, with a different seed;
+- its own mirrored, intercept-free stacker;
+- its own parse of the raw ufcstats CSVs.
+
+It reads the builder's caches only as inputs (`out/seqnet_cache/data.pkl`, `walk.pkl` and `hpcv.json`).
+
+**Decision: adopt = false. The builder's verdict is confirmed.** seqnet enters no winner stack and no method x
+round or stat-line path. It stays as a standing negative baseline: the tool, the JSON, and a blind-test plugin whose
+two stack variants are marked experimental.
+
+### Protocol and leak hunt
+
+| check | how | result |
+|---|---|---|
+| 2026 data | scanned data.pkl, the token days and seqnet.json | 0 examples and 0 tokens on or after 2026-01-01; last fight 2025-12-13. The only "2026-" strings in seqnet.json are the cutoff constant and build timestamps. The round stats and nlbair rows of 2026 are discarded before use. No vault file was needed. |
+| look-ahead inside careers | checked every history token's date against the fight it feeds (94,963 tokens) | 0 tokens dated after their fight. 113 share the fight's day, all on 1994-1999 tournament nights. They are earlier bouts that night: build_db orders a day by -idx, and ufcstats lists the main event first. None falls in a training window (from 2010) or an evaluation year. |
+| labels and joins | checked the 2,809 evaluation labels against my own parse of `ufc_fight_results.csv` | 0 mismatches and 0 missing. seqnet.json covers all 2,809 ml2 rows, so no bout failed to match and there is no match bias. |
+| walk-forward windows | recomputed each refit's training rows | All 7 refits match the logged n_train. Each one's last training fight comes before Jan 1 of the year it predicts: the 2024 refit's last fight is 2023-12-16 (it predicts 2024-25), and the 2025 refit's is 2024-12-14. |
+| normalisation | read the code | Token and side standardisation, the stat base rates and the draw shares are all fit on rows before each refit's cutoff. |
+| published predictions | averaged walk.pkl's logits myself | They reproduce seqnet.json's `p` and `p_annual` to 5e-6, which is rounding. |
+| selection | re-scored the HP CV from its raw runs, and read the git history | The table is identical, and the 0.0005 rule picks from2010, the only passing change. The config was frozen at 10:46:24 pm and the pre-registration committed at 10:55:43 pm. Confirm scored at 10:55:49 pm, with no forced rerun. After the commit, only the NaN-safe helpers and the addendum stage changed (`git diff 8e41138 HEAD -- tools/seqnet.py`). |
+| early 2024 exposure | read the walk log | The 2025 refit early-stops on 2024 (validation log loss 0.6184, all bouts), so the walk shows one 2024 number before the look. Annual walk-forward requires this. Nothing depended on it: the config was already frozen. |
+| tale-of-the-tape missingness | counted evaluation rows | Only 1 of the 2,809 has a missing height, reach or date of birth. The snapshot-missingness leak has no room to act in the evaluation universe. |
+| corner order | ran the symmetry test and a free-intercept fit (2019-2023 OOF) | `tests/test_seqnet.py` passes exactly. seqnet's mean P(A) is 0.524 against a 0.571 A-win rate, and its free intercept is 0.225. For comparison: Elo 0.226, ML v2 0.195, close 0.124. seqnet does not exploit ufcstats' winner-first order. |
+
+### Re-derivation (own code)
+
+| claim | builder | verifier |
+|---|---|---|
+| OOF 2019-2023 winner log loss (1,955 fights) | 0.6492, slope 0.83 | 0.64923, slope 0.827 |
+| OOF seqnet minus ML v2 blend | +0.0155 [+0.0067, +0.0240] | +0.0155 [+0.0066, +0.0237] |
+| OOF seqnet minus the close | +0.0260 [+0.0129, +0.0385] | +0.0260 [+0.0132, +0.0382] |
+| 2024-25 seqnet static (854 fights) | 0.6193 | 0.61933 |
+| 2024-25 seqnet minus ML v2 blend | +0.0276 [+0.0171, +0.0386] | +0.0276 [+0.0170, +0.0378] |
+| 2024-25 seqnet minus the close (845 fights) | +0.0315 [+0.0147, +0.0496] | +0.0315 [+0.0147, +0.0485] |
+| 2024-25 annual minus static | -0.0001 [-0.0074, +0.0080] | -0.0001 [-0.0072, +0.0081] |
+| stack gate, six pairs (forward-chained 2021-2023, 0.0005 rule) | all rejected; gains +0.00001 to +0.00030 | Identical CV values to 5 decimals in all six pairs, all rejected. Every paired CV-year CI spans 0. |
+| gate with looser stackers | | Signed weights: gains -0.00000 to +0.00024. A free intercept with no mirroring (the corner-order exploit, not allowed) does best at -0.00038. Both are short of the 0.0005 bar. |
+| harness: moe_close + seqnet minus moe_close | +0.0012 [+0.0000, +0.0025] | +0.00124 [+0.00006, +0.00250] (845 fights) |
+| harness: moe_noline + seqnet minus moe_noline | +0.0014 [+0.0002, +0.0028] | +0.00141 [+0.00022, +0.00279] (854 fights) |
+| harness fit dates | | Every seqnet `fit_through` is before its fight's date. |
+| 7-bin, seqnet minus S | +0.051 (2019-23, 1,972 incl. draws); +0.062 (2024-25, 857) | +0.053 [+0.033, +0.072] (1,952 decisive); +0.065 [+0.037, +0.093] (853). Uses the published bins and raw outcomes. |
+| raw stat head vs mlrates OOF, 2019-2023 | +16.0% (3,998 rows) | +15.97% (3,998 rows), own deviance |
+| seed curve (1, 2, 4, 8 seeds) | 0.6528 / 0.6509 / 0.6503 / 0.6492 | 0.65275 / 0.65093 / 0.65026 / 0.64923 |
+| retraining reproducibility | | The 2023 refit with seed 101, retrained, gives a max logit difference of 0.0 (bit-identical). |
+
+### Defects found and fixed
+
+1. **Overstated side findings (section 5 and the builder's summary).** Every hyperparameter-grid difference is
+   within noise: all eight paired CIs against base include 0, and two seeds of one config differ by up to 0.0035.
+   - "Joint heads help the winner (-0.0014)", "regularization did not help" and "the current Elo did not help" are
+     now reported as not distinguishable from 0, with CIs.
+   - "Every configuration overfits within 2-7 epochs" is true only at the base learning rate. The slow configs peak
+     at 5-22 epochs.
+   - "Data size is the binding constraint" is now labelled a hypothesis. No learning curve was run, and from2010,
+     which drops 2005-2009, was not worse.
+   - The transformer's +0.0083 was measured against from2010. Against the like-for-like base GRU it is +0.0077
+     [-0.0004, +0.0156].
+2. **The harness line mixed two fight sets.** It paired the 845-fight common-set levels (0.5855 -> 0.5865) with the
+   854-fight paired difference. It now gives 0.5896 -> 0.5910 on all 854 and the common-set levels separately.
+3. **Segments.** "Worse in every segment" is now worded as point estimates; four of the five 2019-2023 CIs include 0.
+   The pre-registered expectation (0.010-0.020 worse than ML v2) is now set against the result (+0.0276).
+4. **Commit time.** The pre-registration commit is 10:55:43 pm by git, not 10:55:44.
+5. **Embed path (`tools/seqnet.py`).** `EMBED_STATE` defaulted to a path inside this session's scratchpad, so the
+   "+emb" stat-line recipes would silently disappear anywhere else. It now defaults to embed's own
+   `$TMPDIR/embed_cache`, still honours `SEQNET_EMBED_STATE`, and logs a warning when the file is missing. The
+   `chosen_cfg` docstring now names the 0.0005 rule. No number changes.
+6. **Replay provenance.** `blindtest_replay.replayed_at` in seqnet.json was null. It now holds the replay's own
+   time, 10:56:52 pm UTC, and seqnet.json was re-exported. Its fights, cv, validation and hpcv blocks are
+   byte-identical to before.
+
+### Noted, not changed
+
+- The stat-line keep rule has no margin. The 2024-25 sliver of -0.10% is one look and was pre-registered as not
+  adopted.
+- Inherited inputs are already listed under Caveats: the tale-of-the-tape snapshot (stance is current) and Elo
+  constants from ML v1.
+- The `seqnet` plugin is not marked experimental, so it appears in standing harness replays. It covers all 854
+  decisive fights in the 2024-25 window, so it does not shrink the harness's common set.
