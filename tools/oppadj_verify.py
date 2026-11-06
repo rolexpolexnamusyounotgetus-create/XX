@@ -453,12 +453,19 @@ def part_attrib(args):
             print("side sums hl %d: %.0f s" % (hl, time.time() - t1))
     te_all = D.s_test
 
+    # the cached grid may cover more backtest entries than today's backtest.json (it was built before the 2026
+    # vault entries were removed from that file): map the cached side arrays onto today's entries by fight id
+    old_ids = list(opp["snapshots"].keys())
+    pos = {fid: i for i, fid in enumerate(old_ids)}
+    sel = np.array([2 * pos[e["id"]] + s for e in D.entries for s in (0, 1)], int)
+    assert len(next(iter(G.values()))[0]) == 2 * len(old_ids), "cached grid does not match oppadj.json snapshots"
+
     def arrs(nm, c, mode="full"):
         if mode == "full":
-            return tuple(a.astype(float) for a in G[(nm,) + tuple(c) + ("full",)][:3])
+            return tuple(a.astype(float)[sel] for a in G[(nm,) + tuple(c) + ("full",)][:3])
         hl, ko, kd = c
-        return (G[(nm, hl, ko, ko, "nosos")][0].astype(float), G[(nm, hl, kd, kd, "nosos")][1].astype(float),
-                G[(nm, hl, ko, ko, "nosos")][2].astype(float))
+        return (G[(nm, hl, ko, ko, "nosos")][0].astype(float)[sel], G[(nm, hl, kd, kd, "nosos")][1].astype(float)[sel],
+                G[(nm, hl, ko, ko, "nosos")][2].astype(float)[sel])
 
     def raw_pred(nm, c):
         kind, (fo, fd), kname = O.FAMILIES[nm][:3]
