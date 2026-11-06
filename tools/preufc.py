@@ -1051,6 +1051,11 @@ def build(args):
 
 # ------------------------------------------------------------------ evaluation (walk-forward)
 TEST_FROM = dt.date(2024, 1, 1)
+# hidden-data protocol (docs/BACKLOG.md): validation 2024-01-01..2025-12-31; fights from 2026-01-01 are the sealed
+# vault, never scored or fit on here. Their pre-fight predictions go to <vault dir>/preufc_vault.json outside the repo.
+VAULT_FROM = dt.date(2026, 1, 1)
+VAULT_DIR = os.environ.get("PREUFC_VAULT_DIR",      # = tools/make_vault.py / tools/ml.py / tools/market.py default
+                           "/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault")
 CV_YEARS = [2019, 2020, 2021, 2022, 2023]
 LN10_400 = math.log(10) / 400.0
 
@@ -1536,12 +1541,19 @@ def evaluate(args):
     E = EloRunner(fights, K, boost, seed_from=train_from)
     elo_pre = E.run()
     ufc = ufc_walk(fights, people)
-    df_all = build_frame(fights, people, ufc, elo_pre, snaps, train_from)
-    # sanity: our Elo equals backtest.json's pre-fight Elo
-    bt = json.load(open(os.path.join(DERIVED, "backtest.json")))["fights"]
+    df_every = build_frame(fights, people, ufc, elo_pre, snaps, train_from)
+    # the vault (2026+) leaves every fit and score here; only its pre-fight predictions are exported
+    vault_rows = df_every[df_every["date"] >= VAULT_FROM].copy()
+    df_all = df_every[df_every["date"] < VAULT_FROM].copy()
+    # sanity: our Elo equals backtest_dev.json's pre-fight Elo (backtest.json minus the vault)
+    btp = os.path.join(DERIVED, "backtest_dev.json")
+    if not os.path.exists(btp):
+        btp = os.path.join(DERIVED, "backtest.json")
+    bt = [e for e in json.load(open(btp))["fights"] if e["date"] < VAULT_FROM.isoformat()]
     btid = {e["id"]: e for e in bt}
     chk = [abs(elo_pre[e["id"]][0] - e["A"]["elo"]) for e in bt[:500] if e["id"] in elo_pre]
-    print("Elo check vs backtest.json: max |diff| %.4f over %d" % (max(chk), len(chk)))
+    print("Elo check vs %s: max |diff| %.4f over %d; vault rows set aside %d" % (
+        os.path.basename(btp), max(chk), len(chk), len(vault_rows)))
     df = df_all[df_all["decisive"]].copy()
     tested = set(T for T in targets(fights, people, args.since, args.extra_since))
     print("rows %d decisive since %s; newcomer rows %d; %.0f s" % (len(df), train_from, int(df["newc"].sum()),
@@ -1912,11 +1924,14 @@ def evaluate(args):
         src = seedY.get(Y, pre_final) if Y < 2024 else pre_final
         if e["id"] in src:
             seeded_bt[e["id"]] = round(float(src[e["id"]][2]), 4)
+    # vault export: pre-fight probabilities for 2026+ newcomer bouts and seeded Elo for every 2026+ bout, from the
+    # frozen [2015, 2024) fits; no results, nothing scored
+    export_vault(vault_rows, m_base, m_bp, pre_final, fs, pick)
 
     # ---------------- roster-level newcomer priors (live use, fit on everything before 2024 + refit to now)
-    # live coefficients: the same seeded Elo refit on every debut through the snapshot (2015-2026); the held-out
-    # numbers above come from the fit on [2015, 2024) only
-    sf_live = fit_seed(PRE_CORE, True, dt.date.today() + dt.timedelta(days=1))
+    # production coefficients: the same seeded Elo refit on every debut 2015-2025 (the 2026 vault is never fit
+    # on); the held-out numbers above come from the fit on [2015, 2024) only
+    sf_live = fit_seed(PRE_CORE, True, VAULT_FROM)
     roster = roster_priors(pre, people, bouts, sf_live, first_fid, age_at, fights, snaps, side_fin, train_from)
 
     ev = {
@@ -1924,7 +1939,8 @@ def evaluate(args):
         "design": {
             "rows": "decisive UFC bouts (draws and no-contests excluded) where at least one side had 0-3 prior UFC "
                     "bouts; train/tune [%s, 2024-01-01), time-ordered CV years %s (fit on all earlier years, score "
-                    "year Y); test 2024-01-01 to %s scored once" % (train_from, CV_YEARS, max(df["date"])),
+                    "year Y); validation 2024-01-01 to %s scored once; fights from %s (the vault) are never fit or "
+                    "scored here" % (train_from, CV_YEARS, max(df["date"]), VAULT_FROM),
             "elo": "walk-forward Elo over every UFC bout since 1994, K=%d, boost %.1f for the first 5 UFC bouts "
                    "(tools/build_db.py rule; reproduced exactly)" % (K, boost),
             "base": "symmetric no-intercept logistic on side differences: Elo, age, reach, height, log(1+n UFC), "
@@ -1950,7 +1966,7 @@ def evaluate(args):
                                        "mu": [round(float(x), 4) for x in sf["mu"]],
                                        "sd": [round(float(x), 4) for x in sf["sd"]],
                                        "boost": sf["boost"]} for nm, sf in seed_fits.items()},
-                   "seeded_elo_live (roster_priors; refit on every debut 2015 to the snapshot)": {
+                   "seeded_elo_live (roster_priors; refit on every debut 2015-2025, vault excluded)": {
                        "keys": sf_live["keys"], "beta_elo_points_per_sd": [round(float(x), 2) for x in sf_live["beta"][:-1]],
                        "mu": [round(float(x), 4) for x in sf_live["mu"]], "sd": [round(float(x), 4) for x in sf_live["sd"]]}},
         "method": meth,
@@ -2003,7 +2019,7 @@ def run_audit(args, fights, people, ufc, elo_pre, snaps, train_from, df, newc, t
     t0 = time.time()
     # 1. full network reference with the chosen settings
     df_full_all = build_frame(fights, people, ufc, elo_pre, snaps, train_from, mode="full")
-    df_full = df_full_all[df_full_all["decisive"]]
+    df_full = df_full_all[df_full_all["decisive"] & (df_full_all["date"] < VAULT_FROM)]
     nf = df_full[df_full["newc"]]
     tv_f, te_f = nf[nf["date"] < TEST_FROM], nf[nf["date"] >= TEST_FROM]
     assert list(te_f["fid"]) == list(test["fid"])
@@ -2069,7 +2085,7 @@ def ml_stack_eval(newc, fs, pick, Cs, taus):
     chk = d["fid"].map(lambda f: M[f]["y"]).to_numpy(float)
     assert np.allclose(chk, d["y"].to_numpy()), "ml.json orientation differs"
     oof = d[(d["set"] == "oof") & (d["date"] < TEST_FROM)].copy()
-    te = d[(d["set"] == "test") & (d["date"] >= TEST_FROM)].copy()
+    te = d[(d["set"] == "test") & (d["date"] >= TEST_FROM) & (d["date"] < VAULT_FROM)].copy()
     res["rows"] = {"oof_2019_2023": int(len(oof)), "test_2024plus": int(len(te))}
     yt = te["y"].to_numpy()
     cb = ClusterBoot(te["date"].tolist(), 2000, 21)
@@ -2117,6 +2133,35 @@ def ml_stack_eval(newc, fs, pick, Cs, taus):
         res[src] = r
         print("ml stack", src, {k: v for k, v in r.items() if k != "coef"}, flush=True)
     return res
+
+
+def export_vault(vault_rows, m_base, m_bp, pre_final, fs, pick):
+    """Pre-fight predictions for vault bouts (2026+) written outside the repository for the milestone auditor.
+    Models are the frozen fits on [2015, 2024); results are not read, nothing is scored."""
+    if vault_rows is None or not len(vault_rows):
+        return
+    os.makedirs(VAULT_DIR, exist_ok=True)
+    nv = vault_rows[vault_rows["newc"]]
+    out = {"meta": {"tool": "tools/preufc.py", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                    "note": "pre-fight probabilities that corner A wins, from fits on 2015-2023 only; vault fights "
+                            "(from %s) are never fit or scored by preufc.py" % VAULT_FROM,
+                    "base+pre": {"features": fs, "C": pick["C"], "tau": pick["tau"]}},
+           "newcomer_bouts": {}, "seeded_elo_all_bouts": {}}
+    if len(nv):
+        pb, pbp = m_base.predict(nv), m_bp.predict(nv)
+        for (i, r), a, b in zip(nv.iterrows(), pb, pbp):
+            out["newcomer_bouts"][r["fid"]] = {"date": r["date"].isoformat(), "nA": int(r["nA"]), "nB": int(r["nB"]),
+                                               "p_elo": round(float(r["elo_p"]), 4), "p_base": round(float(a), 4),
+                                               "p_base_pre": round(float(b), 4),
+                                               "p_seeded_elo": round(float(pre_final[r["fid"]][2]), 4)}
+    for f_ in vault_rows["fid"]:
+        if f_ in pre_final:
+            out["seeded_elo_all_bouts"][f_] = round(float(pre_final[f_][2]), 4)
+    path = os.path.join(VAULT_DIR, "preufc_vault.json")
+    with open(path, "w") as fh:
+        json.dump(out, fh, separators=(",", ":"))
+    print("vault export: %d newcomer bouts, %d bouts -> %s" % (len(out["newcomer_bouts"]),
+                                                              len(out["seeded_elo_all_bouts"]), path), flush=True)
 
 
 def method_eval(df_all, train_from):

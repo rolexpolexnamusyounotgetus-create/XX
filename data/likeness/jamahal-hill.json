@@ -84,18 +84,78 @@
   },
   "skin": {
     "tone_samples": [
-      {"photo": "ref-espn-headshot.png", "spot": "right cheek", "hex": "#af4e3b", "light": "studio, warm red grade"},
-      {"photo": "ref-espn-headshot.png", "spot": "left cheek", "hex": "#a75140", "light": "studio, warm red grade"},
-      {"photo": "ref-espn-headshot.png", "spot": "forehead", "hex": "#eba092", "light": "studio highlight (excluded)"},
-      {"photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg", "spot": "right cheek (lower)", "hex": "#b46e56", "light": "neutral studio"},
-      {"photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg", "spot": "left cheek (lower)", "hex": "#d28768", "light": "neutral studio, lit side"},
-      {"photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg", "spot": "sternum", "hex": "#ce7c55", "light": "neutral studio"},
-      {"photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg", "spot": "under-eye cheekbones", "hex": "#db9c82", "light": "highlight (excluded)"},
-      {"photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg", "spot": "left shoulder", "hex": "#dc9469", "light": "highlight (excluded)"},
-      {"photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg", "spot": "abdomen", "hex": "#9c5a44", "light": "studio, falling into shadow"},
-      {"photo": "ref-bloodyelbow-presser-closeup.jpg", "spot": "left cheek", "hex": "#cb8056", "light": "arena, lit side"},
-      {"photo": "ref-bloodyelbow-presser-closeup.jpg", "spot": "right cheek", "hex": "#8f543a", "light": "arena, shadow side"},
-      {"photo": "ref-espn-stance-left.png", "spot": "chest below the script", "hex": "#8c5343", "light": "studio cutout"}
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek",
+        "hex": "#af4e3b",
+        "light": "studio, warm red grade"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek",
+        "hex": "#a75140",
+        "light": "studio, warm red grade"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "forehead",
+        "hex": "#eba092",
+        "light": "studio highlight (excluded)"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg",
+        "spot": "right cheek (lower)",
+        "hex": "#b46e56",
+        "light": "neutral studio"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg",
+        "spot": "left cheek (lower)",
+        "hex": "#d28768",
+        "light": "neutral studio, lit side"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg",
+        "spot": "sternum",
+        "hex": "#ce7c55",
+        "light": "neutral studio"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg",
+        "spot": "under-eye cheekbones",
+        "hex": "#db9c82",
+        "light": "highlight (excluded)"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg",
+        "spot": "left shoulder",
+        "hex": "#dc9469",
+        "light": "highlight (excluded)"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg",
+        "spot": "abdomen",
+        "hex": "#9c5a44",
+        "light": "studio, falling into shadow"
+      },
+      {
+        "photo": "ref-bloodyelbow-presser-closeup.jpg",
+        "spot": "left cheek",
+        "hex": "#cb8056",
+        "light": "arena, lit side"
+      },
+      {
+        "photo": "ref-bloodyelbow-presser-closeup.jpg",
+        "spot": "right cheek",
+        "hex": "#8f543a",
+        "light": "arena, shadow side"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "chest below the script",
+        "hex": "#8c5343",
+        "light": "studio cutout"
+      }
     ],
     "tone_hex_average_all": "#b97054",
     "tone_hex": "#b2674c",
@@ -224,7 +284,7 @@
     "cheek/r-cheek-volume-decr": 0.0
   },
   "morphs_not_in_embed": {
-    "_note": "assets/embed/mh-manifest.json has no ear targets. If added: slight protrusion, ears/l-ear-rot-backward and ears/r-ear-rot-backward about 0.15."
+    "_note": "assets/embed/mh-manifest.json has no ear targets. Ears are medium with slight protrusion at the top, so no ear morphs are needed."
   },
   "notes": "Confidence: high for skin range, hair, facial hair, tattoos and build; medium for face proportions (sharp 2025 frontals and a large close-up, three-quarters only with fight damage, no profile); low-to-medium for exact morph values. No embed-ok photos exist on Commons. Watch for: (1) A long, narrow oval face with high cheekbones, lean cheeks and an angular jaw; avoid a broad or round head. (2) Thin pencil moustache and a sparse chin goatee, not a full beard. (3) Low, straight black brows; almond, slightly heavy-lidded dark eyes; medium-broad nose with a rounded tip; full lips with a defined cupid's bow. (4) Short natural crop with a neat, lined front edge. (5) Medium-deep warm brown skin (darker than Ulberg's). (6) The chest set ('Northsides' between two thumbs-up hands) is the signature tattoo; add '722' on the right upper arm, script on the left upper arm, lion on the right foot. (7) Long and rangy with a soft lower belly at 205; southpaw. macro/ageOldM 0.154 follows avatar3d.js (35-25)/65; heightUpM 0.32 matches the other 193 cm sheets; proportionsUpM 0.6 reflects the long limbs."
 }

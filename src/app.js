@@ -1461,16 +1461,16 @@
     if (list && list.length && list.some(function (v) { return v && (v.train || v.validation); })) {
       // tools/evalv.js schema: versions[] with train / validation {n_decisive, metrics: {winLL: {est, lo, hi}, ...}}, blend, notes
       var est = function (M, k) { var x = M && M[k]; return x == null ? null : (typeof x === "number" ? x : (x.est != null ? +x.est : null)); };
-      var anyVal = false;
+      var anyVal = false, nDec = 0;
       var vr = list.map(function (v) {
         var val = v.validation && v.validation.metrics ? v.validation : null, tr = v.train && v.train.metrics ? v.train : null, src = val || tr, M = src ? src.metrics : null;
         if (val) anyVal = true;
         var bw = v.blend == null ? null : (typeof v.blend === "number" ? v.blend : [v.blend.weight, v.blend.w, v.blend.moe_weight, v.blend.engine].filter(function (x) { return typeof x === "number"; })[0]);
-        return { cells: [v.version + (v.engine_version ? " (" + v.engine_version + ")" : ""), val ? "2024-25" : (tr ? "2019-23 *" : "–"), src && src.n_decisive ? nf.format(src.n_decisive) : "–",
-          fx(est(M, "winLL"), 4), fx(est(M, "bin7"), 4), fx(est(M, "method"), 4), pct(est(M, "acc"), 1), bw == null ? "–" : pct(bw, 0)], note: v.notes && v.notes[0] };
+        if (src && src.n_decisive) nDec = src.n_decisive;
+        return { cells: [v.version + (val ? "" : " *"), fx(est(M, "winLL"), 4), fx(est(M, "bin7"), 4), fx(est(M, "method"), 4), pct(est(M, "acc"), 1), bw == null ? "–" : pct(bw, 0)], note: v.notes && v.notes[0] };
       });
-      d.appendChild(table(["Version", "Fights from", "Fights", "Winner log loss", "7-outcome log loss", "Method log loss", "Accuracy", "Blend weight"], vr));
-      d.appendChild(el("p", "small", "From data/derived/version_history.json (tools/evalv.js). " + (anyVal ? "" : "No version has its one-time validation score yet; ") + "* tuning-period numbers, shown until a version's single look at 2024-25 is recorded. Each version also has to earn a non-zero weight in the blend and beat the method-and-round model to replace the one before."));
+      d.appendChild(table(["Version", "Winner log loss", "7-outcome", "Method", "Accuracy", "Blend weight"], vr));
+      d.appendChild(el("p", "small", "From data/derived/version_history.json (tools/evalv.js); log losses, lower is better. " + (anyVal ? "" : "No version has its one-time validation score yet. ") + "* marks tuning-period numbers (2019-23" + (nDec ? ", " + nf.format(nDec) + " fights" : "") + "), shown until the version's single look at 2024-25 is recorded. To replace the version before it, each one also has to earn a non-zero weight in the blend and beat the method-and-round model."));
       var notes = vr.filter(function (r) { return r.note; });
       if (notes.length) {
         var dn = el("details", "more"); dn.appendChild(el("summary", null, "Version notes"));

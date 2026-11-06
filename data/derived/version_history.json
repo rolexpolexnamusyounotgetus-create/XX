@@ -724,7 +724,8 @@
    "blend": null,
    "notes": [
     "2026-11-06T15:14: frozen files changed before validation; train block refreshed",
-    "2026-11-06T15:14 train: re-frozen after the train-only level step (tools/v4_levels.js); the earlier train block was for params before that step"
+    "2026-11-06T15:14 train: re-frozen after the train-only level step (tools/v4_levels.js); the earlier train block was for params before that step",
+    "v4 = learned stat-line rates in the engine (out-of-fold rates in this evaluation: mlrates_oof.json), train-only priors (priors_dev.json) with the self-calibration re-run on them, EM judging with noise / fight-level share / 10-8 rule fit on 2019-2023 judges' rounds (tools/judgecal.js), mlcal global-scale search on TRAIN (--no-val; nothing adopted), train-only level matching (tools/v4_levels.js). Validation and blend: pending (node tools/evalv.js --version v4 --split val --compare v3, after v3's own val run)."
    ]
   }
  ]

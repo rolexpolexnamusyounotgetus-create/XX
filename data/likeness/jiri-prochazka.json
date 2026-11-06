@@ -86,22 +86,102 @@
   },
   "skin": {
     "tone_samples": [
-      {"photo": "ref-espn-headshot.png", "spot": "right cheek", "hex": "#f8ad93", "light": "bright studio"},
-      {"photo": "ref-espn-headshot.png", "spot": "left cheek", "hex": "#fcb69c", "light": "bright studio"},
-      {"photo": "ref-espn-headshot.png", "spot": "forehead", "hex": "#fecfbe", "light": "studio highlight (excluded)"},
-      {"photo": "ref-espn-stance-left.png", "spot": "right cheek", "hex": "#f2ac8d", "light": "studio cutout"},
-      {"photo": "ref-espn-stance-left.png", "spot": "left cheek", "hex": "#eba081", "light": "studio cutout"},
-      {"photo": "ref-espn-stance-left.png", "spot": "abdomen", "hex": "#c48d73", "light": "studio cutout"},
-      {"photo": "ref-espn-stance-left.png", "spot": "left pec", "hex": "#bd8364", "light": "studio, partly shadowed (excluded)"},
-      {"photo": "ref-espn-stance-right.png", "spot": "right cheek", "hex": "#fbac92", "light": "bright studio"},
-      {"photo": "ref-espn-stance-right.png", "spot": "left cheek", "hex": "#febda7", "light": "bright studio, near clipping (excluded)"},
-      {"photo": "ref-espn-stance-right.png", "spot": "pec", "hex": "#eb9e74", "light": "studio cutout (excluded, edge light)"},
-      {"photo": "wiki-interview-2022-06-22.png", "spot": "right cheek", "hex": "#c66854", "light": "warm TV stage light"},
-      {"photo": "wiki-interview-2022-06-22.png", "spot": "left cheek", "hex": "#994131", "light": "TV stage, shadow side (excluded)"},
-      {"photo": "ref-cagesidepress-ufc327-mediaday-2026-04-08.jpg", "spot": "left cheek", "hex": "#de9160", "light": "warm room light"},
-      {"photo": "ref-cagesidepress-ufc327-mediaday-2026-04-08.jpg", "spot": "right cheek", "hex": "#fec595", "light": "overexposed (excluded)"},
-      {"photo": "ref-thescore-ufc327-walkout-2026-04-11.jpg", "spot": "right cheek", "hex": "#e0979b", "light": "red arena light cast (excluded)"},
-      {"photo": "ref-thescore-ufc327-walkout-2026-04-11.jpg", "spot": "left cheek", "hex": "#e2a4a5", "light": "red arena light cast (excluded)"}
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek",
+        "hex": "#f8ad93",
+        "light": "bright studio"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek",
+        "hex": "#fcb69c",
+        "light": "bright studio"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "forehead",
+        "hex": "#fecfbe",
+        "light": "studio highlight (excluded)"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "right cheek",
+        "hex": "#f2ac8d",
+        "light": "studio cutout"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "left cheek",
+        "hex": "#eba081",
+        "light": "studio cutout"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "abdomen",
+        "hex": "#c48d73",
+        "light": "studio cutout"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "left pec",
+        "hex": "#bd8364",
+        "light": "studio, partly shadowed (excluded)"
+      },
+      {
+        "photo": "ref-espn-stance-right.png",
+        "spot": "right cheek",
+        "hex": "#fbac92",
+        "light": "bright studio"
+      },
+      {
+        "photo": "ref-espn-stance-right.png",
+        "spot": "left cheek",
+        "hex": "#febda7",
+        "light": "bright studio, near clipping (excluded)"
+      },
+      {
+        "photo": "ref-espn-stance-right.png",
+        "spot": "pec",
+        "hex": "#eb9e74",
+        "light": "studio cutout (excluded, edge light)"
+      },
+      {
+        "photo": "wiki-interview-2022-06-22.png",
+        "spot": "right cheek",
+        "hex": "#c66854",
+        "light": "warm TV stage light"
+      },
+      {
+        "photo": "wiki-interview-2022-06-22.png",
+        "spot": "left cheek",
+        "hex": "#994131",
+        "light": "TV stage, shadow side (excluded)"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc327-mediaday-2026-04-08.jpg",
+        "spot": "left cheek",
+        "hex": "#de9160",
+        "light": "warm room light"
+      },
+      {
+        "photo": "ref-cagesidepress-ufc327-mediaday-2026-04-08.jpg",
+        "spot": "right cheek",
+        "hex": "#fec595",
+        "light": "overexposed (excluded)"
+      },
+      {
+        "photo": "ref-thescore-ufc327-walkout-2026-04-11.jpg",
+        "spot": "right cheek",
+        "hex": "#e0979b",
+        "light": "red arena light cast (excluded)"
+      },
+      {
+        "photo": "ref-thescore-ufc327-walkout-2026-04-11.jpg",
+        "spot": "left cheek",
+        "hex": "#e2a4a5",
+        "light": "red arena light cast (excluded)"
+      }
     ],
     "tone_hex_average_all": "#e19a80",
     "tone_hex": "#e69c7f",
@@ -190,7 +270,7 @@
     "torso/measure-hips-circ-decr": 0.05
   },
   "morphs_not_in_embed": {
-    "_note": "assets/embed/mh-manifest.json has no ear targets. The left-ear cauliflower swelling (2026) needs a sculpt or normal map; slight protrusion would be ears/l-ear-rot-backward and ears/r-ear-rot-backward at about 0.1 if ear targets are added."
+    "_note": "assets/embed/mh-manifest.json has no ear targets. Ears are medium and moderately protruding, so no scale change; the left-ear cauliflower swelling (2026) needs a sculpt or normal map, not a slider."
   },
   "notes": "Confidence: high for skin range, hair history, beard, body and the absence of tattoos; medium for face proportions (sharp 2026 frontal and three-quarter, one near-profile from 2025); low-to-medium for exact morph values. Watch for: (1) The full brown beard with ginger-blond tones is his single biggest identifier; keep it 4-5 cm and rounded, with the lower lip showing. (2) Light blue-grey eyes under low, close, medium-brown brows, often in a slight frown. (3) Long, straight, high-bridged nose and a long face with a tall forehead. (4) Head: buzz cut about 1 cm now (shaved on fight night); use the topknot/undercut only for a 2023-2024 version. (5) Fair, warm, ruddy skin; avoid the overexposed studio pinks and the red arena cast. (6) Body: lean and long-limbed (reach 5 in over height), moderate light-brown body hair on chest, belly and legs, no tattoos. (7) Left-ear cauliflower in 2026. macro/ageOldM 0.138 follows avatar3d.js (34-25)/65; heightUpM 0.27 matches the other 190.5 cm sheets; proportionsUpM 0.65 reflects the long reach."
 }

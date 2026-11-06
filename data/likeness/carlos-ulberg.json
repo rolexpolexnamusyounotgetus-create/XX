@@ -24,7 +24,7 @@
   "face": {
     "shape": "Broad, rectangular-to-square face, wide across the cheekbones and the jaw, with a medium-tall forehead. The short beard follows the jaw and keeps the lower face square.",
     "jaw": "Wide and strong with well-defined angles; the jawline runs fairly straight from the angle to the chin under a short beard.",
-    "chin": "Medium-broad, squared, moderately projecting; a faint dimple-like dip shows through the beard at the centre (2026 headshot).",
+    "chin": "Medium-broad, squared, moderately projecting; under the beard there is a small darker patch of hair just below the lower lip (2026 headshot).",
     "cheekbones": "Broad and prominent, set fairly high; the cheeks below are flat to slightly hollow at fight weight.",
     "brow_ridge": "Moderately strong; brows sit low and close above the eyes, giving a steady, heavy-browed look.",
     "forehead": "Medium-tall and broad, gently rounded, smooth; a faint horizontal crease when relaxed.",
@@ -86,20 +86,90 @@
   },
   "skin": {
     "tone_samples": [
-      {"photo": "ref-espn-headshot.png", "spot": "right cheek", "hex": "#c55b3e", "light": "studio, warm saturated grade"},
-      {"photo": "ref-espn-headshot.png", "spot": "left cheek", "hex": "#d27257", "light": "studio, warm saturated grade"},
-      {"photo": "ref-espn-headshot.png", "spot": "nose bridge", "hex": "#d37358", "light": "studio, warm saturated grade"},
-      {"photo": "ref-espn-stance-left.png", "spot": "left pec", "hex": "#c27053", "light": "studio cutout"},
-      {"photo": "ref-espn-stance-left.png", "spot": "upper right cheekbone", "hex": "#e8987c", "light": "studio cheekbone highlight (excluded)"},
-      {"photo": "ref-espn-stance-left.png", "spot": "upper left cheekbone", "hex": "#eb967a", "light": "studio cheekbone highlight (excluded)"},
-      {"photo": "ref-espn-stance-left.png", "spot": "abdomen", "hex": "#dd977b", "light": "studio, lit front (excluded, highlight)"},
-      {"photo": "ref-espn-stance-right.png", "spot": "left cheek", "hex": "#cc886d", "light": "studio cutout"},
-      {"photo": "ref-espn-stance-right.png", "spot": "right cheek", "hex": "#93573c", "light": "studio, shadow side"},
-      {"photo": "ref-espn-stance-right.png", "spot": "left pec", "hex": "#b47157", "light": "studio cutout"},
-      {"photo": "ref-bloodyelbow-getty-london-weighin-2025-03-21.jpg", "spot": "left cheek", "hex": "#b9715b", "light": "weigh-in stage"},
-      {"photo": "ref-bloodyelbow-getty-london-weighin-2025-03-21.jpg", "spot": "right cheek", "hex": "#74473f", "light": "weigh-in, deep shadow (excluded)"},
-      {"photo": "ref-bloodyelbow-getty-london-weighin-2025-03-21.jpg", "spot": "abdomen", "hex": "#e5b4a0", "light": "flash highlight (excluded)"},
-      {"photo": "ref-bloodyelbow-getty-london-weighin-2025-03-21.jpg", "spot": "left pec", "hex": "#e99f7d", "light": "flash highlight (excluded)"}
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek",
+        "hex": "#c55b3e",
+        "light": "studio, warm saturated grade"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek",
+        "hex": "#d27257",
+        "light": "studio, warm saturated grade"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "nose bridge",
+        "hex": "#d37358",
+        "light": "studio, warm saturated grade"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "left pec",
+        "hex": "#c27053",
+        "light": "studio cutout"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "upper right cheekbone",
+        "hex": "#e8987c",
+        "light": "studio cheekbone highlight (excluded)"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "upper left cheekbone",
+        "hex": "#eb967a",
+        "light": "studio cheekbone highlight (excluded)"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "abdomen",
+        "hex": "#dd977b",
+        "light": "studio, lit front (excluded, highlight)"
+      },
+      {
+        "photo": "ref-espn-stance-right.png",
+        "spot": "left cheek",
+        "hex": "#cc886d",
+        "light": "studio cutout"
+      },
+      {
+        "photo": "ref-espn-stance-right.png",
+        "spot": "right cheek",
+        "hex": "#93573c",
+        "light": "studio, shadow side"
+      },
+      {
+        "photo": "ref-espn-stance-right.png",
+        "spot": "left pec",
+        "hex": "#b47157",
+        "light": "studio cutout"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-london-weighin-2025-03-21.jpg",
+        "spot": "left cheek",
+        "hex": "#b9715b",
+        "light": "weigh-in stage"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-london-weighin-2025-03-21.jpg",
+        "spot": "right cheek",
+        "hex": "#74473f",
+        "light": "weigh-in, deep shadow (excluded)"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-london-weighin-2025-03-21.jpg",
+        "spot": "abdomen",
+        "hex": "#e5b4a0",
+        "light": "flash highlight (excluded)"
+      },
+      {
+        "photo": "ref-bloodyelbow-getty-london-weighin-2025-03-21.jpg",
+        "spot": "left pec",
+        "hex": "#e99f7d",
+        "light": "flash highlight (excluded)"
+      }
     ],
     "tone_hex_average_all": "#c87d63",
     "tone_hex": "#bc6d53",
