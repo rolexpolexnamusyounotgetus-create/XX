@@ -108,5 +108,53 @@
     }
     return { winner, method, predict, stack, sideVec };
   }
-  return { load, DIV_LBS };
+  // ---- side builders for the forward ledger (tools/forward_ledger.js --debut-model)
+  const yearsBetween = (a, b) => (Date.parse(b) - Date.parse(a)) / (365.25 * 864e5);
+  const daysBetween = (a, b) => (Date.parse(b) - Date.parse(a)) / 864e5;
+  // bout flags: { repl, short, miss } given explicitly, else read from a debutant entry's bout.notice text
+  function flagsFrom(entry, given) {
+    const g = given || {};
+    const notice = String(((entry || {}).bout || {}).notice || "");
+    const days = fin(g.notice_days) ? g.notice_days : (fin(((entry || {}).bout || {}).notice_days) ? entry.bout.notice_days : null);
+    const repl = fin(g.repl) ? g.repl : (/replac|stepp?ed in|short[- ]notice/i.test(notice) ? 1 : 0);
+    const short = fin(g.short) ? g.short : (repl && fin(days) && days <= 21 ? 1 : (/short[- ]notice/i.test(notice) ? 1 : 0));
+    const miss = fin(g.miss) ? g.miss : 0;
+    return { repl, short, miss };
+  }
+  // a UFC veteran from data/derived/fighters.json (live record and Elo) + debut.json roster_gnet (network as of 2026-01-01)
+  function sideFromProfile(prof, date, division, model, flags) {
+    const rec = prof.record || {}, n = fin(prof.n_fights) ? prof.n_fights : (rec.w || 0) + (rec.l || 0) + (rec.d || 0) + (rec.nc || 0);
+    const s = { _n: n, debut: 0, elo: fin(prof.elo) ? prof.elo / 100 : null, logn: Math.log1p(n),
+      uwin: Math.log(((rec.w || 0) + 1.5) / ((rec.l || 0) + 1.5)),
+      ufin: ((rec.ko_w || 0) + (rec.sub_w || 0) + 0.5) / (n + 2), ufinl: ((rec.ko_l || 0) + (rec.sub_l || 0) + 0.3) / (n + 2),
+      age: prof.dob ? yearsBetween(prof.dob, date) : null,
+      lay: prof.last_fight ? Math.log1p(Math.max(0, daysBetween(prof.last_fight, date))) : null,
+      wcmove: (DIV_LBS[division] && DIV_LBS[prof.division]) ? Math.sign(DIV_LBS[division] - DIV_LBS[prof.division]) : 0,
+      uko_w: rec.ko_w || 0, usub_w: rec.sub_w || 0, uko_l: rec.ko_l || 0, usub_l: rec.sub_l || 0, pav: 0 };
+    const rg = (model.roster_gnet || {});
+    const row = rg.fighters && prof.slug ? rg.fighters[prof.slug] : null;
+    if (row && rg.half_life != null) {
+      const h = String(rg.half_life.toFixed(1));
+      s["g" + h + "_th"] = row[0]; s["g" + h + "_sd"] = row[1]; s["g" + h + "_sos"] = row[2];
+    }
+    return Object.assign(s, flagsFrom(null, flags));
+  }
+  // a debutant from a data/predictions/debutants_*.json entry (preufc.json-shaped; optional debut_model block written
+  // by `python3 tools/debut.py features`)
+  function sideFromDebutant(entry, date, model, flags) {
+    const dv = entry.derived || {}, sp = dv.side_pre || {}, deb = entry.debut || {}, sh = entry.sherdog || {};
+    const rec = entry.record || {}, dm = entry.debut_model || {};
+    const dob = (entry.ufcstats_tott || {}).dob || sh.dob;
+    const s = { _n: 0, debut: 1, elo: 15, logn: 0, uwin: 0, ufin: 0.25, ufinl: 0.15,
+      age: dob ? yearsBetween(dob, date) : null,
+      lay: fin(rec.layoff_days) ? Math.log1p(rec.layoff_days) : (fin(sp.pre_layoff) ? sp.pre_layoff : null), wcmove: 0,
+      am_n: fin(dm.am_n) ? dm.am_n : (fin(sh.amateur_n) ? Math.log1p(sh.amateur_n) : null),
+      am_wpct: fin(dm.am_wpct) ? dm.am_wpct : null,
+      pre_tuf: fin(dm.pre_tuf) ? dm.pre_tuf : (fin(deb.exh_n) ? (deb.exh_n > 0 ? 1 : 0) : (fin(sp.pre_tuf) ? sp.pre_tuf : null)),
+      uko_w: 0, usub_w: 0, uko_l: 0, usub_l: 0, pav: 1 };
+    for (const k in sp) if (/^pre_/.test(k) && !(k in s)) s[k] = sp[k];
+    for (const k in dm) if (/^g[0-9.]+_(th|sd|sos)$/.test(k)) s[k] = dm[k];
+    return Object.assign(s, flagsFrom(entry, flags));
+  }
+  return { load, DIV_LBS, sideFromProfile, sideFromDebutant, flagsFrom };
 });

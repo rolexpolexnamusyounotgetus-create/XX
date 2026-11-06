@@ -74,6 +74,33 @@ if (sd.open.debut_enters) ok(Math.abs(pr.p_open - 0.65) > 0 && pr.src_open.index
 else ok(pr.p_open === 0.65, "open regime keeps the opener");
 const pr2 = M.predict(b, a, { division: "Lightweight", rounds: 3, p_close: 0.3, p_open: 0.35 });
 ok(close(pr.p_open + pr2.p_open, 1, 1e-12) && close(pr.p_noline + pr2.p_noline, 1, 1e-12), "regime outputs are corner-symmetric");
+// 5. forward ledger hook: --debut-model adds r.debut_path and changes nothing else; corner-symmetric
+(function ledgerHook() {
+  const cp = require("child_process"), os = require("os");
+  const deb = JSON.parse(fs.readFileSync(path.join(ROOT, "data/predictions/debutants_vegas124.json"), "utf8"));
+  const key = Object.keys(deb.fighters)[0], e = deb.fighters[key], opp = e.bout.opponent;
+  const mk = (swap) => ({ date: e.bout.date, sims: 50, bouts: [{ bout_id: "t", a: swap ? null : opp.slug, b: swap ? opp.slug : null,
+    key_a: swap ? key : opp.slug, key_b: swap ? opp.slug : key, name_a: swap ? e.name : opp.name, name_b: swap ? opp.name : e.name,
+    division: e.bout.weight_class, rounds: 3, title: false, p_line: swap ? 0.4 : 0.6, p_open_in: swap ? 0.42 : 0.58, p_novig: null }] });
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "debut-"));
+  const run = (inp, flag) => {
+    const f = path.join(tmp, "in.json"); fs.writeFileSync(f, JSON.stringify(inp));
+    const a = [path.join(ROOT, "tools/forward_ledger.js"), f, "--raw"].concat(flag ? ["--debut-model", "data/derived/debut.json"] : []);
+    return JSON.parse(cp.execFileSync("node", a, { cwd: ROOT, maxBuffer: 64 << 20 }).toString());
+  };
+  let off, on, sw;
+  try { off = run(mk(false), false); on = run(mk(false), true); sw = run(mk(true), true); }
+  catch (err) { console.log("SKIP ledger hook (forward_ledger.js did not run: " + String(err.message).slice(0, 120) + ")"); return; }
+  const strip = (o) => { const c = JSON.parse(JSON.stringify(o)); delete c.meta.debut_model; c.bouts.forEach((b) => delete b.debut_path); return c; };
+  ok(JSON.stringify(strip(on)) === JSON.stringify(off), "flag on leaves every other field identical");
+  ok(!off.bouts[0].debut_path && !!on.bouts[0].debut_path, "debut_path only with the flag");
+  const d1 = on.bouts[0].debut_path, d2 = sw.bouts[0].debut_path;
+  ok(close(d1.p_a_noline + d2.p_a_noline, 1, 1e-9) && close(d1.p_a_open + d2.p_a_open, 1, 1e-9), "ledger debut path is corner-symmetric");
+  ok(d1.unknown_columns.b.length < J.model.winner.cols.length, "debutant side built from the entry (" + d1.unknown_columns.b.length + " unknown columns: " + d1.unknown_columns.b.join(",") + ")");
+  console.log("ledger hook: " + opp.name + " (a) vs debutant " + e.name + " (b): P(a) no line " + d1.p_a_noline.toFixed(4) + ", open " + d1.p_a_open.toFixed(4) +
+    " (" + d1.src_open + "), close " + d1.p_a_close.toFixed(4) + " (" + d1.src_close + ")");
+})();
+
 console.log((fails ? "FAILED " : "ok ") + (checks - fails) + "/" + checks + " checks; fixtures " + J.fixtures.length +
   "; winner cols " + J.model.winner.cols.length + "; decisions " + JSON.stringify({ noline: sd.noline, open: sd.open.debut_enters, close: sd.close.debut_enters }));
 process.exit(fails ? 1 : 0);

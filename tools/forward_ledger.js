@@ -38,7 +38,10 @@
    The fit-2019-2023 ML v2 weights come from data/derived/forward_models.json (tools/forward_models.py export).
    Engine seeds depend on the unordered pair and the corner order of each run, so swapping a and b swaps the two runs
    and every model satisfies P(a | a, b) = 1 - P(b | b, a) (tests/test_forward_models.js).
-   A bout with a debutant gets no stack (the stacks never saw a debut; the ledger falls back to its debut prior). */
+   A bout with a debutant gets no stack (the stacks never saw a debut; the ledger falls back to its debut prior).
+   --debut-model data/derived/debut.json (off by default) adds r.debut_path for such bouts: tools/debut.py's debut model
+   (src/ml/debut.js) by regime plus P(method | winner); input bouts may carry flags_a / flags_b = { repl, short, miss,
+   notice_days }. Nothing else in the output changes. */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -102,6 +105,30 @@ const SEED_LIVE = (() => {                            // preufc.json: production
   return null;
 })();
 const DEBUT_ELO = 1500;                                // tools/build_db.py start rating
+// ---- debut path (tools/debut.py, research/model_debut.md), OFF unless --debut-model <debut.json> is given. With it on,
+// a bout with a debutant gets a separate r.debut_path block (winner by regime + method); the pre-registered models
+// block, p_a and every other field are unchanged (tests/test_debut.js checks this).
+const DEBUT_MODEL_PATH = opt("--debut-model", null);
+const DMJ = DEBUT_MODEL_PATH ? JSON.parse(fs.readFileSync(path.resolve(ROOT, DEBUT_MODEL_PATH), "utf8")) : null;
+const DebutJS = DMJ ? require(path.join(ROOT, "src/ml/debut.js")) : null;
+const DMOD = DMJ ? DebutJS.load(DMJ.model) : null;
+function debutPath(b, ctx, ka, kb) {
+  const side = (slug, key, flags) => {
+    if (slug && FJ.fighters[slug]) return { s: DebutJS.sideFromProfile(Object.assign({ slug }, FJ.fighters[slug]), ctx.date, ctx.division, DMJ, flags), src: "fighters.json + debut.json roster_gnet" };
+    if (key && DEBUT[key]) return { s: DebutJS.sideFromDebutant(DEBUT[key], ctx.date, DMJ, flags), src: DEBUT[key]._file };
+    return { s: { _n: 0, debut: 1, elo: 15, logn: 0, uwin: 0, ufin: 0.25, ufinl: 0.15, wcmove: 0 }, src: "debutant without an entry: unknown columns at the mean" };
+  };
+  const A = side(b.a, ka, b.flags_a), B = side(b.b, kb, b.flags_b);
+  const pr = DMOD.predict(A.s, B.s, { division: ctx.division, rounds: ctx.rounds, p_close: fin(b.p_line) ? b.p_line : null,
+    p_open: fin(b.p_open_in) ? b.p_open_in : null });
+  const missing = (s) => DMJ.model.winner.cols.filter((k) => !fin(s[k]));
+  return { p_a_debut: pr.p_debut, p_a_noline: pr.p_noline, p_a_open: fin(pr.p_open) ? pr.p_open : null, src_open: pr.src_open || null,
+    p_a_close: fin(pr.p_close) ? pr.p_close : null, src_close: pr.src_close || null,
+    method: { classes: pr.method.classes, given_a: pr.method.A, given_b: pr.method.B, marginal: pr.method.marginal, whohow_a: pr.method.whohow.A,
+      whohow_b: pr.method.whohow.B, p_a_used: pr.method.pA },
+    sides: { a: A.src, b: B.src }, unknown_columns: { a: missing(A.s), b: missing(B.s) },
+    model: { built: DMJ.meta.built, decisions: DMJ.model.stack_decisions } };
+}
 const RAW = args.indexOf("--raw") >= 0;                // unrounded output (tests/test_forward_models.js)
 
 function seedOf(id, k) { return parseInt(crypto.createHash("md5").update(id + ":" + k).digest("hex").slice(0, 8), 16); }
@@ -259,6 +286,7 @@ const out = { meta: {
   seed_betas: SEED_LIVE ? SEED_LIVE.name : null,
   debutant_files: DEBUT_FILES.map((f) => ({ file: "data/predictions/" + f, sha256_16: sha(path.join(PRED_DIR, f)) }))
 }, bouts: [] };
+if (DMJ) out.meta.debut_model = { file: DEBUT_MODEL_PATH, built: DMJ.meta.built, sha256_16: sha(path.resolve(ROOT, DEBUT_MODEL_PATH)) };
 
 for (const b of input.bouts) {
   const pa = b.a ? DB.fighters[b.a] : null, pb = b.b ? DB.fighters[b.b] : null;
@@ -273,7 +301,11 @@ for (const b of input.bouts) {
   M.elo = MoE.eloProb(ea.rating, eb.rating);
   r.elo_seed = { a: ea, b: eb };
   r.models = M;
-  if (!pa || !pb) { r.notes.push("debut: not in fighters.json, no stack"); out.bouts.push(RAW ? r : roundObj(r)); continue; }
+  if (!pa || !pb) {
+    r.notes.push("debut: not in fighters.json, no stack");
+    if (DMOD) { try { r.debut_path = debutPath(b, ctx, ka, kb); } catch (e) { r.notes.push("debut path failed: " + (e.message || e)); } }
+    out.bouts.push(RAW ? r : roundObj(r)); continue;
+  }
   const o = { keys: FJ.meta.keys, snapshot: FJ.meta.snapshot, halfLife: FJ.meta.half_life_days || 730 };
   const A = MoE.sideFromProfile(pa, ctx.date, o), B = MoE.sideFromProfile(pb, ctx.date, o);
   const ex = r.experts;

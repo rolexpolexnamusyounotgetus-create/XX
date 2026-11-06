@@ -729,11 +729,13 @@ BLOCKS = {
             "pre_netelo", "pre_dwcs", "pre_agedeb"],
     "gnet2": ["g2.0_th", "g2.0_sos", "g2.0_sd"],
     "gnet4": ["g4.0_th", "g4.0_sos", "g4.0_sd"],
+    "promo2": ["g2.0_m"],
+    "promo4": ["g4.0_m"],
     "extra": ["am_n", "am_wpct", "pre_tuf", "short", "repl", "miss"],
     "opp1h": ["o1_wp", "o1_logn", "o1_good"],
 }
 FADED = set(BLOCKS["pre"]) | {"am_n", "am_wpct", "pre_tuf"}     # pre-UFC information fades with UFC experience
-EXCLUSIVE = [{"gnet2", "gnet4"}]
+EXCLUSIVE = [{"gnet2", "gnet4"}, {"promo2", "promo4"}]
 
 
 def load_frame():
@@ -769,7 +771,7 @@ def side_raw(df, tag):
     out["repl"] = np.nan_to_num(g("repl"))
     out["miss"] = np.nan_to_num(g("miss"))
     for h in ("2.0", "4.0"):
-        for k in ("th", "sos", "sd"):
+        for k in ("th", "sos", "sd", "m"):
             out["g%s_%s" % (h, k)] = g("g%s_%s" % (h, k))
     # one-hop opponents (debutants only): mean pre-fight win share, mean log fights, share with a winning record
     wp, ln, gd = np.full(n, np.nan), np.full(n, np.nan), np.full(n, np.nan)
@@ -1155,7 +1157,7 @@ def cv(args):
     yr = dec["year"].to_numpy()
     ev = dec["event"].to_numpy()
     # symmetry: the swapped table must give exactly 1 - p
-    blocks_all = [b for b in BLOCKS if b != "gnet2"]
+    blocks_all = [b for b in BLOCKS if b not in ("gnet2", "promo2")]
     m = DebutLR(cfg_cols(blocks_all), 0.1, 8.0).fit(RA, RB, y)
     sym = float(np.max(np.abs(m.predict(RA, RB) + m.predict(RB, RA) - 1.0)))
     print("rows: %d decisive debut bouts 2012-2025 (%d in CV years, %d in 2024-25 untouched); swap test max |p+p'-1| %.2e"

@@ -794,6 +794,7 @@ HP_CONFIGS = {
     "side_elo": {"side_elo": True},
 }
 HP_FOLDS = [2016, 2017, 2018]
+SEL_MIN_HP = 0.0005
 
 
 def cfg_of(name):
@@ -873,8 +874,8 @@ def stage_hpcv(args):
 
 # ====================================================================== stage: walk-forward annual refits
 WALK_YEARS = list(range(2019, 2026))
-ES_SEEDS = [21, 22]
-FULL_SEEDS = [101, 102, 103, 104, 105]
+ES_SEEDS = [21, 22, 23]
+FULL_SEEDS = [101, 102, 103, 104, 105, 106, 107, 108]
 
 
 def chosen_cfg():
@@ -885,7 +886,9 @@ def chosen_cfg():
         return json.load(open(path))
     H = json.load(open(os.path.join(CACHE, "hpcv.json")))
     summ = H["summary"]
-    best = min(summ, key=lambda k: summ[k]["cv_ll"])
+    # ml2's 0.0005 rule: a departure from the base config must beat it by more than SEL_MIN in the 2016-2018 CV
+    # (stage 2 = the combination of every stage-1 change that passed, adopted on the same rule)
+    best = min(summ, key=lambda k: summ[k]["cv_ll"] + (0 if k == "base" else SEL_MIN_HP))
     ch = {"name": best, "cfg": dict(DEFAULT_CFG, **cfg_of(best)), "cv_ll": summ[best]["cv_ll"],
           "all": {k: v["cv_ll"] for k, v in summ.items()}, "frozen": dt.datetime.utcnow().isoformat() + "Z"}
     json.dump(ch, open(path, "w"), indent=1)
@@ -1634,7 +1637,7 @@ def main():
     ap.add_argument("stage", choices=sorted(STAGES))
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--workers", type=int, default=2)
-    ap.add_argument("--seeds", type=int, default=5)
+    ap.add_argument("--seeds", type=int, default=8)
     ap.add_argument("--configs", default=None)
     args = ap.parse_args()
     STAGES[args.stage](args)
