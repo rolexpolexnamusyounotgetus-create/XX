@@ -261,11 +261,11 @@ if (R0s) {
 // ------------------------------------------------------------------ embed: the blend, the backtest etas, the coefficients
 {
   const h = FEm.load(EMJ), P = E.params(), tix = {}; P.embed.tasks.forEach((t, i) => { tix[t] = i; });
-  let maxd = 0;
+  let maxd = 0, maxPy = 0;
   for (const r of EMJ.blend_check) {
     const a = h.blendMLRates(r.ml, r.eta), b = E.embedBlend(r.ml, r.eta, P.embed.recipe, tix);
     for (const k in a) maxd = Math.max(maxd, Math.abs(a[k] - b[k]));
-    if (r.out) for (const k in r.out) maxd = Math.max(maxd, Math.abs(r.out[k] - b[k]) / Math.max(1e-9, Math.abs(r.out[k])) * 1e-6);
+    if (r.out) for (const k in r.out) maxPy = Math.max(maxPy, Math.abs(r.out[k] - b[k]) / Math.max(1e-12, Math.abs(r.out[k])));
   }
   const r2 = E.makeRng(77);
   for (let q = 0; q < 300; q++) {
@@ -274,7 +274,8 @@ if (R0s) {
     const a = h.blendMLRates(side, eta), b = E.embedBlend(side, eta, P.embed.recipe, tix);
     for (const k in a) maxd = Math.max(maxd, Math.abs(a[k] - b[k]));
   }
-  check("engine embedBlend = src/ml/embed.js blendMLRates (embed_model.json blend_check rows + 300 random sides)", maxd === 0, `max |diff| ${maxd}`);
+  check("engine embedBlend = src/ml/embed.js blendMLRates bit for bit (blend_check rows + 300 random sides) and = the Python outputs of tools/embed.py (relative 1e-9)",
+    maxd === 0 && maxPy < 1e-9, `max |diff| vs JS ${maxd}; max rel diff vs Python ${maxPy.toExponential(2)}`);
   // backtest etas: the snapshot's quarterly refit reproduces the walk's own win logit (export rounding, max 2.4e-3)
   const EJ = XR.table("data/derived/embed.json");
   let maxw = 0, nW = 0;
@@ -363,18 +364,29 @@ if (R0s) {
 
 // ------------------------------------------------------------------ preufc
 {
-  // the recipe reproduces preufc.json's at-debut multipliers from the debut records
-  let maxd = 0, nR = 0;
-  for (const s of Object.keys(PREJ.roster_priors).sort().slice(0, 400)) {
+  // params = preufc.json's exact finish-model constants; the engine formula = (rate / ref)^(exp x fade); preufc.json's roster
+  // multipliers (rates rounded to 3 decimals before the power, then the result rounded to 3) are reproduced from the debut records
+  const SF = PREJ.eval.side_finish, Q = FP.preufc;
+  const constOk = Q.ref.ko === SF.mu_pre.pre_ko && Q.ref.sub === SF.mu_pre.pre_sub && Q.ref.kol === SF.mu_pre.pre_kol &&
+    Q.exp.pow === SF.ko_win["ufc+pre"]["coef_log_ratio (own, opponent), at n=0"][0] && Q.exp.sub === SF.sub_win["ufc+pre"]["coef_log_ratio (own, opponent), at n=0"][0] &&
+    Q.exp.chin === SF.ko_loss["ufc+pre"]["coef_log_ratio (own, opponent), at n=0"][0] && Q.tau === SF.ko_win["ufc+pre"].tau;
+  let maxd = 0, maxF = 0, nR = 0;
+  const r3 = (x) => Math.round(x * 1000) / 1000;
+  for (const s of Object.keys(PREJ.roster_priors).sort()) {
     const d = PREJ.fighters[s] && PREJ.fighters[s].debut, rp = PREJ.roster_priors[s].finish_odds_multipliers;
-    if (!d || !rp) continue;
-    const mlt = E.preufcMult({ n: d.n, ko_w: d.ko_w, sub_w: d.sub_w, ko_l: d.ko_l, n_ufc: 0 });
-    maxd = Math.max(maxd, Math.abs(mlt.pow - rp.ko_win.at_debut), Math.abs(mlt.sub - rp.sub_win.at_debut), Math.abs(mlt.chin - rp.ko_loss.at_debut));
-    const n1 = PREJ.roster_priors[s].n_ufc, now = E.preufcMult({ n: d.n, ko_w: d.ko_w, sub_w: d.sub_w, ko_l: d.ko_l, n_ufc: n1 }, null, Object.assign({}, FP.preufc, { maxUfc: 99 }));
-    maxd = Math.max(maxd, Math.abs(now.pow - rp.ko_win.now), Math.abs(now.sub - rp.sub_win.now), Math.abs(now.chin - rp.ko_loss.now));
+    if (!d || !rp || !rp.ko_win) continue;
+    const n1 = PREJ.roster_priors[s].n_ufc, nn = d.n + 2, fd = Math.exp(-n1 / Q.tau);
+    const rk = r3((d.ko_w + 0.3) / nn), rs = r3((d.sub_w + 0.2) / nn), rl = (d.ko_l + 0.2) / nn;   // tools/preufc.py roster_priors
+    const want = [[Math.pow(rk / Q.ref.ko, Q.exp.pow), rp.ko_win], [Math.pow(rs / Q.ref.sub, Q.exp.sub), rp.sub_win], [Math.pow(rl / Q.ref.kol, Q.exp.chin), rp.ko_loss]];
+    for (const [m0, o] of want) maxd = Math.max(maxd, Math.abs(r3(m0) - o.at_debut), Math.abs(r3(Math.pow(m0, fd)) - o.now));
+    const mlt = E.preufcMult({ n: d.n, ko_w: d.ko_w, sub_w: d.sub_w, ko_l: d.ko_l, n_ufc: Math.min(n1, 3) });
+    const f3 = Math.exp(-Math.min(n1, 3) / Q.tau);
+    maxF = Math.max(maxF, Math.abs(mlt.pow - Math.pow((d.ko_w + 0.3) / nn / Q.ref.ko, Q.exp.pow * f3)) / mlt.pow,
+      Math.abs(mlt.sub - Math.pow((d.sub_w + 0.2) / nn / Q.ref.sub, Q.exp.sub * f3)) / mlt.sub, Math.abs(mlt.chin - Math.pow(rl / Q.ref.kol, Q.exp.chin * f3)) / mlt.chin);
     nR++;
   }
-  check("preufcMult reproduces preufc.json roster_priors finish_odds_multipliers (at_debut and faded 'now', 3-decimal export)", maxd <= 0.0006, `${nR} fighters, max |diff| ${maxd.toFixed(5)}`);
+  check("preufc: params = preufc.json's exact constants; engine multipliers = (rate / ref)^(exp x exp(-n_UFC / tau)); preufc.json roster multipliers reproduced",
+    constOk && maxF < 1e-12 && maxd < 1e-9, `${nR} roster fighters; formula rel diff ${maxF.toExponential(2)}; roster (at_debut, now) max |diff| ${maxd.toExponential(2)}`);
   const g = E.preufcMult({ n: 17, ko_w: 14, sub_w: 1, ko_l: 0, n_ufc: 4 });
   check("preufc gate: more than maxUfc (3) prior UFC fights -> no prior", g === null && E.preufcMult({ n: 17, ko_w: 14, sub_w: 1, ko_l: 0, n_ufc: 3 }) !== null);
   // hazards: X's KO hazards x M_pow,X^s x M_chin,Y^s; X's sub attempt rates x M_sub,X^s
@@ -417,14 +429,23 @@ if (R0s) {
 {
   E.loadMLRates(mlJson); R0.loadMLRates(mlJson);
   try {
-    const c = noSos([casesC[4]])[0];
-    const mr = R0.matchup(c.a, c.b, c.opts), mc = E.matchup(c.a, c.b, withParams(c.opts, ALL4));
-    const fr = R0.simulate(mr, R0.makeRng(11), true), fc = E.simulate(mc, E.makeRng(11), true);
-    const keys = (o) => Object.keys(o).sort().join(","), evk = (f) => [...new Set([].concat(...f.rounds.map((r) => (r.events || []).map((e) => keys(e)))))].sort().join("|");
-    const extra = Object.keys(mc).filter((k) => !(k in mr)).sort();
-    check("all step-4 components on: same fight keys, round keys and event shapes as step 3; the matchup only gains m.embed / m.oppadj / m.preufc",
-      keys(fr) === keys(fc) && keys(fr.rounds[0]) === keys(fc.rounds[0]) && evk(fr).split("|").every((s) => !s || evk(fc).split("|").includes(s) || true) &&
-      JSON.stringify(extra) === JSON.stringify(["embed", "oppadj", "preufc"].filter((k) => k in mc)), `extra matchup keys ${JSON.stringify(extra)}`);
+    // key unions over many traced fights (optional keys such as a deduction count appear only on some paths)
+    const U = () => ({ fight: new Set(), round: new Set(), ev: new Set() });
+    const ur = U(), uc = U(), extra = new Set();
+    const add = (u, f) => {
+      Object.keys(f).forEach((k) => u.fight.add(k));
+      for (const r of f.rounds) { Object.keys(r).forEach((k) => u.round.add(k)); for (const e of (r.events || [])) u.ev.add((e.type || e.t || "?") + ":" + Object.keys(e).sort().join(",")); }
+    };
+    noSos(casesC.slice(0, 40)).forEach((c, i) => {
+      const mr = R0.matchup(c.a, c.b, c.opts), mc = E.matchup(c.a, c.b, withParams(c.opts, ALL4));
+      Object.keys(mc).filter((k) => !(k in mr)).forEach((k) => extra.add(k));
+      for (let q = 0; q < 3; q++) { add(ur, R0.simulate(mr, R0.makeRng(100 * i + q), true)); add(uc, E.simulate(mc, E.makeRng(100 * i + q), true)); }
+    });
+    const same = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+    const evOnlyNew = [...uc.ev].filter((k) => !ur.ev.has(k));
+    check("all step-4 components on: same fight / round key sets and event shapes as step 3 (120 traced fights each); the matchup only gains m.embed / m.oppadj / m.preufc",
+      same(ur.fight, uc.fight) && same(ur.round, uc.round) && evOnlyNew.length === 0 && same(extra, ["embed", "oppadj", "preufc"]),
+      `${uc.ev.size} event shapes; new: ${JSON.stringify(evOnlyNew)}; extra matchup keys ${JSON.stringify([...extra])}`);
   } finally { E.loadMLRates(null); R0.loadMLRates(null); }
 }
 

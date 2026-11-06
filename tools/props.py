@@ -293,11 +293,14 @@ OVER_MAX = {"m6": 1.6, "gd": 1.25, "er": 1.8, "wr": 2.2, "mr": 2.6, "itd": 1.25,
 
 
 def _dec_q(d, t):
-    if d.get("dec%d" % t) is not None:
-        return q_of(d["dec%d" % t])
-    if d.get("ud%d" % t) is not None and d.get("sm%d" % t) is not None:
-        return q_of(d["ud%d" % t]) + q_of(d["sm%d" % t])
-    return None
+    """Implied P(side t wins by decision): the 'wins by decision' price, else unanimous + split/majority. Empty
+    cells count as missing (Nov 7 fix; the 2021-2025 extract has no bout-book where this differs, so every scored
+    number is unchanged)."""
+    q = q_of(d.get("dec%d" % t))
+    if q is not None:
+        return q
+    u, m = q_of(d.get("ud%d" % t)), q_of(d.get("sm%d" % t))
+    return u + m if (u is not None and m is not None) else None
 
 
 def book_families(d, K, sw, how="power"):

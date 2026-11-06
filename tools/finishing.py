@@ -640,6 +640,21 @@ class FoldData:
         X = self.base["FX2"] if o == 0 else self.base["FY2"]
         return X[self.base["cols_s2"]].reset_index(drop=True)
 
+    def eb6(self, o, blocks=("eb",)):
+        """Directional EB columns for the six-class model with X = side o (attacker) and Y = the other side."""
+        x, yv = o, 1 - o
+        U, F = self.U, self.F
+        D = {}
+        if "eb" in blocks:
+            for r in ("kow", "subw", "dec", "kol", "subl", "r1w", "r1l", "latew", "latel"):
+                D["e_x_" + r] = U[r][:, x]
+                D["e_y_" + r] = U[r][:, yv]
+        if "filter" in blocks:
+            for j, nm in enumerate(("oko", "osub", "dko", "dsub")):
+                D["e_x_f" + nm] = F[:, x, j]
+                D["e_y_f" + nm] = F[:, yv, j]
+        return pd.DataFrame(D)
+
 
 FIN_SETS = {
     "eb": ["w_kow", "w_subw", "w_dec", "l_kol", "l_subl", "l_dec", "w_kol", "w_subl", "l_kow", "l_subw"],
@@ -858,6 +873,9 @@ def oof_method(base, FD, years, cfg):
     P6 = np.full((len(T), 6), np.nan)
     for v in years:
         va = (yr == v) if v < 2024 else (yr >= 2024)
+        if cfg.get("six"):
+            P6[va] = six_fold(FD[v], base, cfg)[va]
+            continue
         qA, qB, _ = cm_fold(FD[v], base, cfg["spec"], cfg.get("C"), cfg.get("start", 2008), cfg.get("gbm"),
                             cfg.get("hl", 8.0))
         if cfg.get("gbm_mix"):
@@ -868,6 +886,21 @@ def oof_method(base, FD, years, cfg):
             qA, qB = pool_s2(base, qA, qB, cfg["pool"])
         P6[va] = p6_from_cond(qA[va], qB[va], base["pwin"][va])
     return P6
+
+
+def six_fold(fd, base, cfg, return_model=False):
+    """S2's six-class who-and-how logit (both orientations, averaged) with the directional EB block appended, fit on
+    rows dated [start, v); the winner share is then replaced by ML v2's (S2+ml2win's reweighting)."""
+    T = base["T"]
+    y = base["y"]
+    tr, _ = fold_masks(T, fd.v, cfg.get("start", 2012))
+    XA = pd.concat([fd.s2(0), fd.eb6(0, cfg["six"])], axis=1)
+    XB = pd.concat([fd.s2(1), fd.eb6(1, cfg["six"])], axis=1)
+    cols = list(XA.columns)
+    m = MR.C6Logit(cols, C=cfg["C"], hl_years=cfg.get("hl", MR.HL_YEARS)).fit(T[tr], XA[tr], XB[tr], y[tr])
+    P6 = m.predict6(T, XA, XB)
+    P6w = MR.reweight_winner(P6, base["pwin"])
+    return (P6w, m, cols) if return_model else P6w
 
 
 def s2_cond(base):
@@ -1128,10 +1161,18 @@ GRID_START = (2008, 2012)
 GRID_HL = (8.0, None)
 GRID_C = (0.0005, 0.0007, 0.001, 0.0015, 0.002)
 GRID_YEARS = TUNE_YEARS + CV_YEARS
+INCUMBENT = "incumbent|S2+ml2win"
+
+
+SIX_SPECS = {"six_eb": (("eb",), True), "six_eb_nopre": (("eb",), False), "six_eb_filter": (("eb", "filter"), True)}
+SIX_C = (0.001, 0.0015, 0.002, 0.003)
 
 
 def method_grid():
     out = {}
+    for sn, (blocks, pre) in SIX_SPECS.items():
+        for C in SIX_C:
+            out["%s|st2012|hl8|C%g" % (sn, C)] = ({"six": blocks, "C": C, "start": 2012, "hl": 8.0}, pre)
     for sn, (spec, pre) in GRID_SPECS.items():
         for st in GRID_START:
             for hl in GRID_HL:
@@ -1161,6 +1202,9 @@ def stage_grid(args):
     rows = rows_of(base, GRID_YEARS)
     MG, RG = method_grid(), round_grid()
     res = {"rows": rows, "method": {}, "round": {}, "P6": {}, "H": {}}
+    L = losses(base, joint(base, base["P6_S2w"], base["H"], rows), rows)     # the incumbent is a candidate too
+    res["method"][INCUMBENT] = {m: L[m] for m in ("bin7", "method_given_winner", "method3", "joint")}
+    res["P6"][INCUMBENT] = base["P6_S2w"].astype(np.float32)
     for i, (k, (cfg, pre)) in enumerate(MG.items()):
         P6 = oof_method(base, FDs[pre], GRID_YEARS, cfg)
         L = losses(base, joint(base, P6, base["H"], rows), rows)
@@ -1255,8 +1299,8 @@ def stage_nested(args):
              MR.paired_diff(L["EB candidates only, nested"], L["s2cond nested (no EB block)"], st, METRICS)}
     out = {"years": list(CV_YEARS), "n": int(rows.sum()), "picks": picks, "picks_s2cond": picks_s,
            "picks_eb_only": picks_e, "oracle_2020_23": orc, "means": bt, "paired_vs_S2+ml2win": pdif, "paired_extra": extra}
-    out["production"] = {"method": prod_m[1], "method_mean_bin7_2016_2023": round(prod_m[0], 5),
-                         "round": prod_r[1], "round_mean_sided_2016_2023": round(prod_r[0], 5)}
+    out["production"] = {"method": prod_m[0], "method_mean_bin7_2016_2023": round(prod_m[1], 5),
+                         "round": prod_r[0], "round_mean_sided_2016_2023": round(prod_r[1], 5)}
     out["by_year"] = {}
     for v in CV_YEARS:
         m = rows & (yr == v)
@@ -1273,7 +1317,7 @@ def stage_nested(args):
         log("nested: %s: %s" % (k, {m: (v[m]["diff"], v[m]["ci95"]) for m in ("bin7", "joint", "method_given_winner",
                                                                                 "round_given_fin") if m in v}))
     log("nested: picks %s" % {y: (p["method"], p["round"]) for y, p in picks.items()})
-    log("nested: production method %s, round %s" % (prod_m[1], prod_r[1]))
+    log("nested: production method %s, round %s" % (prod_m[0], prod_r[0]))
     save({"P6": P6n, "H": Hn, "years": years}, "nested_oof.pkl")
     json.dump(out, open(cpath("nested.json"), "w"), indent=1, default=float)
     log("nested: done in %.0f s" % (time.time() - t0))

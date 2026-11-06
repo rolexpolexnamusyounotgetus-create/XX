@@ -86,9 +86,9 @@
       // finish-odds multipliers from the regional record for fighters with 0-3 UFC fights. The verified recipe; styles_sos's
       // newcomer sub-flag (the older stub) stays off and the engine refuses both. A no-op until a caller passes opts.preufc
       // (backtests: tools/mlpathrec.js, preufc.json snapshots) or loads a roster (FightEngine.loadPreUFC(preufc.json)).
-      // ON: engine-level train check vs embed alone (tools/v5_step4_check.js, 300 sims per order, common random numbers): 7-bin
-      // -0.0086 [-0.0167, -0.0001], method -0.0053 [-0.0106, +0.0001], KD deviance -0.0081 [-0.0127, -0.0032], KO-win log loss
-      // per newcomer side -0.0080 [-0.0154, -0.0004]; winner and stat lines n.s. Caveat: the recipe's exponents were fit on
+      // ON: engine-level train check vs embed alone (tools/v5_step4_check.js, 300 sims per order, common random numbers): method
+      // -0.0060 [-0.0115, -0.0005], 7-bin -0.0084 [-0.0168, +0.0002], KD deviance -0.0078 [-0.0127, -0.0027], KO-win log loss
+      // per newcomer side -0.0092 [-0.0168, -0.0014]; winner and stat lines n.s. Caveat: the recipe's exponents were fit on
       // 2015-2023 newcomer sides, so 2019-2023 is not out of sample for them; the research's held-out check is its 2024-25 look.
       preufc: true
     },
