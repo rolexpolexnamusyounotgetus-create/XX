@@ -3,3 +3,8 @@ tests/*.png
 node_modules/
 __pycache__/
 .DS_Store
+
+# regenerable by tools/build_db.py (5 MB)
+data/derived/backtest.json
+tools/__pycache__/
+out/

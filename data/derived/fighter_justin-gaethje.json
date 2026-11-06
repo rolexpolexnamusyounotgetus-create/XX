@@ -1,0 +1,3919 @@
+{
+ "meta": {
+  "source": "ufcstats.com via github.com/Greco1899/scrape_ufc_stats (data/raw)",
+  "snapshot": "2026-10-31",
+  "asof": "2026-10-31",
+  "built": "2026-11-06T08:47:12",
+  "half_life_days": 730,
+  "prior_years": 6,
+  "script": "tools/fighter_report.py",
+  "notes": [
+   "rates use fights with round stats only",
+   "o-prefixed = what opponents did to this fighter",
+   "KO/TKO includes doctor and corner stoppages",
+   "ctrl = ufcstats control time (clinch + ground)"
+  ]
+ },
+ "slug": "justin-gaethje",
+ "name": "Justin Gaethje",
+ "nick": "The Highlight",
+ "ambiguous_name": false,
+ "height_in": 71,
+ "reach_in": 70.0,
+ "weight_listed": "155 lbs.",
+ "stance": "Orthodox",
+ "dob": "1988-11-14",
+ "ufcstats_url": "http://ufcstats.com/fighter-details/9e8f6c728eb01124",
+ "age_asof": 37.96,
+ "age_years": 37,
+ "division": "Lightweight",
+ "divisions": {
+  "Lightweight": 16
+ },
+ "record": {
+  "w": 11,
+  "l": 5,
+  "d": 0,
+  "nc": 0,
+  "ko_w": 7,
+  "sub_w": 0,
+  "dec_w": 4,
+  "other_w": 0,
+  "ko_l": 3,
+  "sub_l": 2,
+  "dec_l": 0,
+  "other_l": 0
+ },
+ "n_fights": 16,
+ "n_with_stats": 16,
+ "n_5rd": 12,
+ "n_title": 4,
+ "first_fight": "2017-07-07",
+ "last_fight": "2026-06-14",
+ "days_since_last": 139,
+ "kd_absorbed_career": 4,
+ "ko_losses": 3,
+ "pace_ratio": [
+  1.0,
+  1.045,
+  0.756,
+  0.927,
+  0.944
+ ],
+ "pace_w": [
+  51.6,
+  32.4,
+  25.0,
+  20.6,
+  13.6
+ ],
+ "rates": {
+  "career": {
+   "fights": 16,
+   "weight": 16.0,
+   "minutes": 202.15,
+   "slpm": 6.28741,
+   "sapm": 6.831561,
+   "sig_att_pm": 10.922582,
+   "opp_sig_att_pm": 13.856047,
+   "sig_acc": 0.575634,
+   "opp_sig_acc": 0.493038,
+   "tot_lpm": 6.955231,
+   "tot_apm": 11.694286,
+   "diff_pm": -0.54415,
+   "sig_def": 0.506962,
+   "head_acc": 0.495873,
+   "opp_head_acc": 0.375859,
+   "head_share_l": 0.661684,
+   "head_share_a": 0.768116,
+   "opp_head_share_l": 0.554671,
+   "head_lpm": 4.160277,
+   "opp_head_lpm": 3.789265,
+   "body_acc": 0.759563,
+   "opp_body_acc": 0.785971,
+   "body_share_l": 0.109363,
+   "body_share_a": 0.08288,
+   "opp_body_share_l": 0.316437,
+   "body_lpm": 0.687608,
+   "opp_body_lpm": 2.161761,
+   "leg_acc": 0.884498,
+   "opp_leg_acc": 0.859903,
+   "leg_share_l": 0.228954,
+   "leg_share_a": 0.149004,
+   "opp_leg_share_l": 0.128892,
+   "leg_lpm": 1.439525,
+   "opp_leg_lpm": 0.880534,
+   "dist_acc": 0.549252,
+   "opp_dist_acc": 0.471626,
+   "dist_share_l": 0.837923,
+   "dist_share_a": 0.87817,
+   "opp_dist_share_l": 0.890659,
+   "dist_lpm": 5.268365,
+   "opp_dist_lpm": 6.084591,
+   "clinch_acc": 0.786408,
+   "opp_clinch_acc": 0.776471,
+   "clinch_share_l": 0.127459,
+   "clinch_share_a": 0.093297,
+   "opp_clinch_share_l": 0.095583,
+   "clinch_lpm": 0.801385,
+   "opp_clinch_lpm": 0.65298,
+   "ground_acc": 0.698413,
+   "opp_ground_acc": 0.826087,
+   "ground_share_l": 0.034618,
+   "ground_share_a": 0.028533,
+   "opp_ground_share_l": 0.013758,
+   "ground_lpm": 0.21766,
+   "opp_ground_lpm": 0.09399,
+   "kd15": 0.667821,
+   "okd15": 0.296809,
+   "kd": 9.0,
+   "okd": 4.0,
+   "head_l": 841.0,
+   "o_head_l": 766.0,
+   "power_kd_per100_head": 1.070155,
+   "chin_kd_per100_head_abs": 0.522193,
+   "power_kd_per100_sig": 0.708104,
+   "chin_kd_per100_sig_abs": 0.289645,
+   "td_att15": 1.113035,
+   "td_l15": 0.296809,
+   "td_acc": 0.266667,
+   "otd_att15": 2.22607,
+   "otd_l15": 0.593619,
+   "opp_td_acc": 0.266667,
+   "ctrl15_s": 59.139253,
+   "octrl15_s": 29.458323,
+   "ctrl_share": 0.06571,
+   "octrl_share": 0.032731,
+   "ctrl_per_td_s": 199.25,
+   "octrl_per_otd_s": 49.625,
+   "sub15": 0.0,
+   "osub15": 0.222607,
+   "rev15": 0.0,
+   "orev15": 0.0,
+   "td_def": 0.733333
+  },
+  "last3y": {
+   "fights": 4,
+   "weight": 4.0,
+   "minutes": 84.98,
+   "slpm": 4.824475,
+   "sapm": 5.907041,
+   "sig_att_pm": 9.166503,
+   "opp_sig_att_pm": 10.602079,
+   "sig_acc": 0.526316,
+   "opp_sig_acc": 0.557159,
+   "tot_lpm": 6.118847,
+   "tot_apm": 10.625613,
+   "diff_pm": -1.082565,
+   "sig_def": 0.442841,
+   "head_acc": 0.470866,
+   "opp_head_acc": 0.405157,
+   "head_share_l": 0.729268,
+   "head_share_a": 0.815148,
+   "opp_head_share_l": 0.438247,
+   "head_lpm": 3.518337,
+   "opp_head_lpm": 2.588743,
+   "body_acc": 0.690476,
+   "opp_body_acc": 0.756972,
+   "body_share_l": 0.141463,
+   "body_share_a": 0.107831,
+   "opp_body_share_l": 0.378486,
+   "body_lpm": 0.682487,
+   "opp_body_lpm": 2.235732,
+   "leg_acc": 0.883333,
+   "opp_leg_acc": 0.859813,
+   "leg_share_l": 0.129268,
+   "leg_share_a": 0.077022,
+   "opp_leg_share_l": 0.183267,
+   "leg_lpm": 0.623652,
+   "opp_leg_lpm": 1.082565,
+   "dist_acc": 0.48628,
+   "opp_dist_acc": 0.536108,
+   "dist_share_l": 0.778049,
+   "dist_share_a": 0.842105,
+   "opp_dist_share_l": 0.87251,
+   "dist_lpm": 3.753677,
+   "opp_dist_lpm": 5.153952,
+   "clinch_acc": 0.743902,
+   "opp_clinch_acc": 0.732394,
+   "clinch_share_l": 0.14878,
+   "clinch_share_a": 0.105263,
+   "opp_clinch_share_l": 0.103586,
+   "clinch_lpm": 0.717788,
+   "opp_clinch_lpm": 0.611885,
+   "ground_acc": 0.731707,
+   "opp_ground_acc": 0.923077,
+   "ground_share_l": 0.073171,
+   "ground_share_a": 0.052632,
+   "opp_ground_share_l": 0.023904,
+   "ground_lpm": 0.35301,
+   "opp_ground_lpm": 0.141204,
+   "kd15": 0.529516,
+   "okd15": 0.35301,
+   "kd": 3.0,
+   "okd": 2.0,
+   "head_l": 299.0,
+   "o_head_l": 220.0,
+   "power_kd_per100_head": 1.003344,
+   "chin_kd_per100_head_abs": 0.909091,
+   "power_kd_per100_sig": 0.731707,
+   "chin_kd_per100_sig_abs": 0.398406,
+   "td_att15": 1.941557,
+   "td_l15": 0.529516,
+   "td_acc": 0.272727,
+   "otd_att15": 1.765052,
+   "otd_l15": 0.529516,
+   "opp_td_acc": 0.3,
+   "ctrl15_s": 95.136301,
+   "octrl15_s": 42.361247,
+   "ctrl_share": 0.105707,
+   "octrl_share": 0.047068,
+   "ctrl_per_td_s": 179.666667,
+   "octrl_per_otd_s": 80.0,
+   "sub15": 0.0,
+   "osub15": 0.0,
+   "rev15": 0.0,
+   "orev15": 0.0,
+   "td_def": 0.7
+  },
+  "last4y": {
+   "fights": 6,
+   "weight": 6.0,
+   "minutes": 105.98,
+   "slpm": 5.227237,
+   "sapm": 5.906589,
+   "sig_att_pm": 9.586413,
+   "opp_sig_att_pm": 10.58657,
+   "sig_acc": 0.545276,
+   "opp_sig_acc": 0.557932,
+   "tot_lpm": 6.293442,
+   "tot_apm": 10.784715,
+   "diff_pm": -0.679352,
+   "sig_def": 0.442068,
+   "head_acc": 0.488485,
+   "opp_head_acc": 0.404935,
+   "head_share_l": 0.727437,
+   "head_share_a": 0.812008,
+   "opp_head_share_l": 0.445687,
+   "head_lpm": 3.802485,
+   "opp_head_lpm": 2.632489,
+   "body_acc": 0.745283,
+   "opp_body_acc": 0.778481,
+   "body_share_l": 0.142599,
+   "body_share_a": 0.104331,
+   "opp_body_share_l": 0.392971,
+   "body_lpm": 0.7454,
+   "opp_body_lpm": 2.32112,
+   "leg_acc": 0.847059,
+   "opp_leg_acc": 0.863248,
+   "leg_share_l": 0.129964,
+   "leg_share_a": 0.083661,
+   "opp_leg_share_l": 0.161342,
+   "leg_lpm": 0.679352,
+   "opp_leg_lpm": 0.95298,
+   "dist_acc": 0.509238,
+   "opp_dist_acc": 0.534907,
+   "dist_share_l": 0.796029,
+   "dist_share_a": 0.852362,
+   "opp_dist_share_l": 0.86901,
+   "dist_lpm": 4.161032,
+   "opp_dist_lpm": 5.132883,
+   "clinch_acc": 0.759259,
+   "opp_clinch_acc": 0.76087,
+   "clinch_share_l": 0.148014,
+   "clinch_share_a": 0.106299,
+   "opp_clinch_share_l": 0.111821,
+   "clinch_lpm": 0.773707,
+   "opp_clinch_lpm": 0.660481,
+   "ground_acc": 0.738095,
+   "opp_ground_acc": 0.923077,
+   "ground_share_l": 0.055957,
+   "ground_share_a": 0.041339,
+   "opp_ground_share_l": 0.019169,
+   "ground_lpm": 0.292499,
+   "opp_ground_lpm": 0.113225,
+   "kd15": 0.566127,
+   "okd15": 0.283063,
+   "kd": 4.0,
+   "okd": 2.0,
+   "head_l": 403.0,
+   "o_head_l": 279.0,
+   "power_kd_per100_head": 0.992556,
+   "chin_kd_per100_head_abs": 0.716846,
+   "power_kd_per100_sig": 0.722022,
+   "chin_kd_per100_sig_abs": 0.319489,
+   "td_att15": 1.981444,
+   "td_l15": 0.566127,
+   "td_acc": 0.285714,
+   "otd_att15": 1.415317,
+   "otd_l15": 0.424595,
+   "opp_td_acc": 0.3,
+   "ctrl15_s": 77.13477,
+   "octrl15_s": 33.967605,
+   "ctrl_share": 0.085705,
+   "octrl_share": 0.037742,
+   "ctrl_per_td_s": 136.25,
+   "octrl_per_otd_s": 80.0,
+   "sub15": 0.0,
+   "osub15": 0.0,
+   "rev15": 0.0,
+   "orev15": 0.0,
+   "td_def": 0.7
+  },
+  "decayed": {
+   "fights": 16,
+   "weight": 4.198,
+   "minutes": 70.83,
+   "slpm": 5.371401,
+   "sapm": 5.913962,
+   "sig_att_pm": 9.795593,
+   "opp_sig_att_pm": 11.080173,
+   "sig_acc": 0.548349,
+   "opp_sig_acc": 0.533743,
+   "tot_lpm": 6.589801,
+   "tot_apm": 11.184277,
+   "diff_pm": -0.542561,
+   "sig_def": 0.466257,
+   "head_acc": 0.494943,
+   "opp_head_acc": 0.39568,
+   "head_share_l": 0.743598,
+   "head_share_a": 0.823835,
+   "opp_head_share_l": 0.492809,
+   "head_lpm": 3.994163,
+   "opp_head_lpm": 2.914454,
+   "body_acc": 0.732106,
+   "opp_body_acc": 0.783093,
+   "body_share_l": 0.120293,
+   "body_share_a": 0.0901,
+   "opp_body_share_l": 0.363629,
+   "body_lpm": 0.646143,
+   "opp_body_lpm": 2.150485,
+   "leg_acc": 0.867194,
+   "opp_leg_acc": 0.876775,
+   "leg_share_l": 0.136109,
+   "leg_share_a": 0.086065,
+   "opp_leg_share_l": 0.143562,
+   "leg_lpm": 0.731095,
+   "opp_leg_lpm": 0.849022,
+   "dist_acc": 0.512347,
+   "opp_dist_acc": 0.508448,
+   "dist_share_l": 0.791716,
+   "dist_share_a": 0.847349,
+   "opp_dist_share_l": 0.859019,
+   "dist_lpm": 4.252626,
+   "opp_dist_lpm": 5.080204,
+   "clinch_acc": 0.755939,
+   "opp_clinch_acc": 0.745203,
+   "clinch_share_l": 0.143864,
+   "clinch_share_a": 0.104357,
+   "opp_clinch_share_l": 0.117874,
+   "clinch_lpm": 0.772749,
+   "opp_clinch_lpm": 0.697103,
+   "ground_acc": 0.73144,
+   "opp_ground_acc": 0.892452,
+   "ground_share_l": 0.06442,
+   "ground_share_a": 0.048295,
+   "opp_ground_share_l": 0.023107,
+   "ground_lpm": 0.346025,
+   "opp_ground_lpm": 0.136654,
+   "kd15": 0.64044,
+   "okd15": 0.3274,
+   "kd": 3.024338,
+   "okd": 1.546079,
+   "head_l": 282.923696,
+   "o_head_l": 206.443289,
+   "power_kd_per100_head": 1.068959,
+   "chin_kd_per100_head_abs": 0.748912,
+   "power_kd_per100_sig": 0.794876,
+   "chin_kd_per100_sig_abs": 0.369071,
+   "td_att15": 1.964075,
+   "td_l15": 0.547269,
+   "td_acc": 0.27864,
+   "otd_att15": 2.055666,
+   "otd_l15": 0.532855,
+   "opp_td_acc": 0.259213,
+   "ctrl15_s": 92.264113,
+   "octrl15_s": 44.626018,
+   "ctrl_share": 0.102516,
+   "octrl_share": 0.049584,
+   "ctrl_per_td_s": 168.59013,
+   "octrl_per_otd_s": 83.748829,
+   "sub15": 0.0,
+   "osub15": 0.115686,
+   "rev15": 0.0,
+   "orev15": 0.0,
+   "td_def": 0.740787
+  }
+ },
+ "sums": {
+  "career": {
+   "kd": 9.0,
+   "sub": 0.0,
+   "rev": 0.0,
+   "ctrl": 797.0,
+   "sig_l": 1271.0,
+   "sig_a": 2208.0,
+   "tot_l": 1406.0,
+   "tot_a": 2364.0,
+   "td_l": 4.0,
+   "td_a": 15.0,
+   "head_l": 841.0,
+   "head_a": 1696.0,
+   "body_l": 139.0,
+   "body_a": 183.0,
+   "leg_l": 291.0,
+   "leg_a": 329.0,
+   "dist_l": 1065.0,
+   "dist_a": 1939.0,
+   "clinch_l": 162.0,
+   "clinch_a": 206.0,
+   "ground_l": 44.0,
+   "ground_a": 63.0,
+   "o_kd": 4.0,
+   "o_sub": 3.0,
+   "o_rev": 0.0,
+   "o_ctrl": 397.0,
+   "o_sig_l": 1381.0,
+   "o_sig_a": 2801.0,
+   "o_tot_l": 1439.0,
+   "o_tot_a": 2869.0,
+   "o_td_l": 8.0,
+   "o_td_a": 30.0,
+   "o_head_l": 766.0,
+   "o_head_a": 2038.0,
+   "o_body_l": 437.0,
+   "o_body_a": 556.0,
+   "o_leg_l": 178.0,
+   "o_leg_a": 207.0,
+   "o_dist_l": 1230.0,
+   "o_dist_a": 2608.0,
+   "o_clinch_l": 132.0,
+   "o_clinch_a": 170.0,
+   "o_ground_l": 19.0,
+   "o_ground_a": 23.0,
+   "minutes": 202.15,
+   "ck": 202.15,
+   "o_ck": 202.15,
+   "rds": 45.0,
+   "n": 16.0,
+   "n_fights": 16
+  },
+  "last3y": {
+   "kd": 3.0,
+   "sub": 0.0,
+   "rev": 0.0,
+   "ctrl": 539.0,
+   "sig_l": 410.0,
+   "sig_a": 779.0,
+   "tot_l": 520.0,
+   "tot_a": 903.0,
+   "td_l": 3.0,
+   "td_a": 11.0,
+   "head_l": 299.0,
+   "head_a": 635.0,
+   "body_l": 58.0,
+   "body_a": 84.0,
+   "leg_l": 53.0,
+   "leg_a": 60.0,
+   "dist_l": 319.0,
+   "dist_a": 656.0,
+   "clinch_l": 61.0,
+   "clinch_a": 82.0,
+   "ground_l": 30.0,
+   "ground_a": 41.0,
+   "o_kd": 2.0,
+   "o_sub": 0.0,
+   "o_rev": 0.0,
+   "o_ctrl": 240.0,
+   "o_sig_l": 502.0,
+   "o_sig_a": 901.0,
+   "o_tot_l": 543.0,
+   "o_tot_a": 946.0,
+   "o_td_l": 3.0,
+   "o_td_a": 10.0,
+   "o_head_l": 220.0,
+   "o_head_a": 543.0,
+   "o_body_l": 190.0,
+   "o_body_a": 251.0,
+   "o_leg_l": 92.0,
+   "o_leg_a": 107.0,
+   "o_dist_l": 438.0,
+   "o_dist_a": 817.0,
+   "o_clinch_l": 52.0,
+   "o_clinch_a": 71.0,
+   "o_ground_l": 12.0,
+   "o_ground_a": 13.0,
+   "minutes": 84.983333,
+   "ck": 84.983333,
+   "o_ck": 84.983333,
+   "rds": 17.0,
+   "n": 4.0,
+   "n_fights": 4
+  },
+  "last4y": {
+   "kd": 4.0,
+   "sub": 0.0,
+   "rev": 0.0,
+   "ctrl": 545.0,
+   "sig_l": 554.0,
+   "sig_a": 1016.0,
+   "tot_l": 667.0,
+   "tot_a": 1143.0,
+   "td_l": 4.0,
+   "td_a": 14.0,
+   "head_l": 403.0,
+   "head_a": 825.0,
+   "body_l": 79.0,
+   "body_a": 106.0,
+   "leg_l": 72.0,
+   "leg_a": 85.0,
+   "dist_l": 441.0,
+   "dist_a": 866.0,
+   "clinch_l": 82.0,
+   "clinch_a": 108.0,
+   "ground_l": 31.0,
+   "ground_a": 42.0,
+   "o_kd": 2.0,
+   "o_sub": 0.0,
+   "o_rev": 0.0,
+   "o_ctrl": 240.0,
+   "o_sig_l": 626.0,
+   "o_sig_a": 1122.0,
+   "o_tot_l": 667.0,
+   "o_tot_a": 1167.0,
+   "o_td_l": 3.0,
+   "o_td_a": 10.0,
+   "o_head_l": 279.0,
+   "o_head_a": 689.0,
+   "o_body_l": 246.0,
+   "o_body_a": 316.0,
+   "o_leg_l": 101.0,
+   "o_leg_a": 117.0,
+   "o_dist_l": 544.0,
+   "o_dist_a": 1017.0,
+   "o_clinch_l": 70.0,
+   "o_clinch_a": 92.0,
+   "o_ground_l": 12.0,
+   "o_ground_a": 13.0,
+   "minutes": 105.983333,
+   "ck": 105.983333,
+   "o_ck": 105.983333,
+   "rds": 22.0,
+   "n": 6.0,
+   "n_fights": 6
+  },
+  "decayed": {
+   "kd": 3.024338,
+   "sub": 0.0,
+   "rev": 0.0,
+   "ctrl": 435.697506,
+   "sig_l": 380.479352,
+   "sig_a": 693.863828,
+   "tot_l": 466.783836,
+   "tot_a": 792.230252,
+   "td_l": 2.58436,
+   "td_a": 9.274921,
+   "head_l": 282.923696,
+   "head_a": 571.62936,
+   "body_l": 45.769058,
+   "body_a": 62.517008,
+   "leg_l": 51.786598,
+   "leg_a": 59.717461,
+   "dist_l": 301.231758,
+   "dist_a": 587.94451,
+   "clinch_l": 54.737135,
+   "clinch_a": 72.409452,
+   "ground_l": 24.510459,
+   "ground_a": 33.509866,
+   "o_kd": 1.546079,
+   "o_sub": 0.546303,
+   "o_rev": 0.0,
+   "o_ctrl": 210.73681,
+   "o_sig_l": 418.911268,
+   "o_sig_a": 784.856176,
+   "o_tot_l": 450.697648,
+   "o_tot_a": 820.024942,
+   "o_td_l": 2.516296,
+   "o_td_a": 9.70744,
+   "o_head_l": 206.443289,
+   "o_head_a": 521.742854,
+   "o_body_l": 152.328094,
+   "o_body_a": 194.521182,
+   "o_leg_l": 60.139885,
+   "o_leg_a": 68.59214,
+   "o_dist_l": 359.852658,
+   "o_dist_a": 707.747642,
+   "o_clinch_l": 49.378811,
+   "o_clinch_a": 66.262235,
+   "o_ground_l": 9.679799,
+   "o_ground_a": 10.846299,
+   "minutes": 70.834286,
+   "ck": 70.834286,
+   "o_ck": 70.834286,
+   "rds": 14.755468,
+   "n": 4.198399,
+   "n_fights": 16
+  }
+ },
+ "sums_by_half_life": {
+  "None": {
+   "kd": 9.0,
+   "sub": 0.0,
+   "rev": 0.0,
+   "ctrl": 797.0,
+   "sig_l": 1271.0,
+   "sig_a": 2208.0,
+   "tot_l": 1406.0,
+   "tot_a": 2364.0,
+   "td_l": 4.0,
+   "td_a": 15.0,
+   "head_l": 841.0,
+   "head_a": 1696.0,
+   "body_l": 139.0,
+   "body_a": 183.0,
+   "leg_l": 291.0,
+   "leg_a": 329.0,
+   "dist_l": 1065.0,
+   "dist_a": 1939.0,
+   "clinch_l": 162.0,
+   "clinch_a": 206.0,
+   "ground_l": 44.0,
+   "ground_a": 63.0,
+   "o_kd": 4.0,
+   "o_sub": 3.0,
+   "o_rev": 0.0,
+   "o_ctrl": 397.0,
+   "o_sig_l": 1381.0,
+   "o_sig_a": 2801.0,
+   "o_tot_l": 1439.0,
+   "o_tot_a": 2869.0,
+   "o_td_l": 8.0,
+   "o_td_a": 30.0,
+   "o_head_l": 766.0,
+   "o_head_a": 2038.0,
+   "o_body_l": 437.0,
+   "o_body_a": 556.0,
+   "o_leg_l": 178.0,
+   "o_leg_a": 207.0,
+   "o_dist_l": 1230.0,
+   "o_dist_a": 2608.0,
+   "o_clinch_l": 132.0,
+   "o_clinch_a": 170.0,
+   "o_ground_l": 19.0,
+   "o_ground_a": 23.0,
+   "minutes": 202.15,
+   "ck": 202.15,
+   "o_ck": 202.15,
+   "rds": 45.0,
+   "n": 16.0,
+   "n_fights": 16
+  },
+  "1460": {
+   "kd": 4.752376,
+   "sub": 0.0,
+   "rev": 0.0,
+   "ctrl": 552.025907,
+   "sig_l": 616.574506,
+   "sig_a": 1095.692894,
+   "tot_l": 721.307831,
+   "tot_a": 1215.468821,
+   "td_l": 3.160175,
+   "td_a": 11.375541,
+   "head_l": 435.185549,
+   "head_a": 873.959763,
+   "body_l": 72.474998,
+   "body_a": 97.542242,
+   "leg_l": 108.913959,
+   "leg_a": 124.190889,
+   "dist_l": 502.96816,
+   "dist_a": 945.198286,
+   "clinch_l": 82.381824,
+   "clinch_a": 107.126867,
+   "ground_l": 31.224522,
+   "ground_a": 43.367741,
+   "o_kd": 2.251611,
+   "o_sub": 1.271178,
+   "o_rev": 0.0,
+   "o_ctrl": 265.31638,
+   "o_sig_l": 674.012713,
+   "o_sig_a": 1304.913067,
+   "o_tot_l": 713.81453,
+   "o_tot_a": 1349.815189,
+   "o_td_l": 3.976842,
+   "o_td_a": 14.892148,
+   "o_head_l": 345.157008,
+   "o_head_a": 897.306875,
+   "o_body_l": 233.445715,
+   "o_body_a": 297.759244,
+   "o_leg_l": 95.40999,
+   "o_leg_a": 109.846947,
+   "o_dist_l": 590.668743,
+   "o_dist_a": 1197.525859,
+   "o_clinch_l": 70.924282,
+   "o_clinch_a": 93.174357,
+   "o_ground_l": 12.419688,
+   "o_ground_a": 14.212851,
+   "minutes": 107.959211,
+   "ck": 107.959211,
+   "o_ck": 107.959211,
+   "rds": 23.128454,
+   "n": 7.305916,
+   "n_fights": 16
+  },
+  "730": {
+   "kd": 3.024338,
+   "sub": 0.0,
+   "rev": 0.0,
+   "ctrl": 435.697506,
+   "sig_l": 380.479352,
+   "sig_a": 693.863828,
+   "tot_l": 466.783836,
+   "tot_a": 792.230252,
+   "td_l": 2.58436,
+   "td_a": 9.274921,
+   "head_l": 282.923696,
+   "head_a": 571.62936,
+   "body_l": 45.769058,
+   "body_a": 62.517008,
+   "leg_l": 51.786598,
+   "leg_a": 59.717461,
+   "dist_l": 301.231758,
+   "dist_a": 587.94451,
+   "clinch_l": 54.737135,
+   "clinch_a": 72.409452,
+   "ground_l": 24.510459,
+   "ground_a": 33.509866,
+   "o_kd": 1.546079,
+   "o_sub": 0.546303,
+   "o_rev": 0.0,
+   "o_ctrl": 210.73681,
+   "o_sig_l": 418.911268,
+   "o_sig_a": 784.856176,
+   "o_tot_l": 450.697648,
+   "o_tot_a": 820.024942,
+   "o_td_l": 2.516296,
+   "o_td_a": 9.70744,
+   "o_head_l": 206.443289,
+   "o_head_a": 521.742854,
+   "o_body_l": 152.328094,
+   "o_body_a": 194.521182,
+   "o_leg_l": 60.139885,
+   "o_leg_a": 68.59214,
+   "o_dist_l": 359.852658,
+   "o_dist_a": 707.747642,
+   "o_clinch_l": 49.378811,
+   "o_clinch_a": 66.262235,
+   "o_ground_l": 9.679799,
+   "o_ground_a": 10.846299,
+   "minutes": 70.834286,
+   "ck": 70.834286,
+   "o_ck": 70.834286,
+   "rds": 14.755468,
+   "n": 4.198399,
+   "n_fights": 16
+  },
+  "365": {
+   "kd": 1.690174,
+   "sub": 0.0,
+   "rev": 0.0,
+   "ctrl": 313.405286,
+   "sig_l": 215.436841,
+   "sig_a": 406.269924,
+   "tot_l": 278.931021,
+   "tot_a": 478.802439,
+   "td_l": 1.843836,
+   "td_a": 6.804421,
+   "head_l": 170.671199,
+   "head_a": 348.351828,
+   "body_l": 24.744388,
+   "body_a": 34.384315,
+   "leg_l": 20.021254,
+   "leg_a": 23.533781,
+   "dist_l": 164.295267,
+   "dist_a": 337.34872,
+   "clinch_l": 33.908652,
+   "clinch_a": 45.681798,
+   "ground_l": 17.232922,
+   "ground_a": 23.239406,
+   "o_kd": 0.985315,
+   "o_sub": 0.104536,
+   "o_rev": 0.0,
+   "o_ctrl": 160.481695,
+   "o_sig_l": 237.067632,
+   "o_sig_a": 433.911629,
+   "o_tot_l": 260.386628,
+   "o_tot_a": 459.321807,
+   "o_td_l": 1.471538,
+   "o_td_a": 6.18168,
+   "o_head_l": 117.865846,
+   "o_head_a": 286.983225,
+   "o_body_l": 87.681202,
+   "o_body_a": 111.663159,
+   "o_leg_l": 31.520583,
+   "o_leg_a": 35.265244,
+   "o_dist_l": 197.125584,
+   "o_dist_a": 380.763107,
+   "o_clinch_l": 32.85979,
+   "o_clinch_a": 45.250569,
+   "o_ground_l": 7.082257,
+   "o_ground_a": 7.897953,
+   "minutes": 42.060846,
+   "ck": 42.060846,
+   "o_ck": 42.060846,
+   "rds": 8.533247,
+   "n": 2.155197,
+   "n_fights": 16
+  }
+ },
+ "eb": {
+  "career": {
+   "chin_kd_per100_head_abs_shrunk": 0.62,
+   "power_kd_per100_head_shrunk": 1.044,
+   "prior_division": "Lightweight"
+  },
+  "last4y": {
+   "chin_kd_per100_head_abs_shrunk": 0.822,
+   "power_kd_per100_head_shrunk": 0.978,
+   "prior_division": "Lightweight"
+  },
+  "decayed": {
+   "chin_kd_per100_head_abs_shrunk": 0.855,
+   "power_kd_per100_head_shrunk": 1.016,
+   "prior_division": "Lightweight"
+  }
+ },
+ "chin_events": {
+  "career": {
+   "events": 5.0,
+   "head_abs": 766.0,
+   "per100_head": 0.653
+  },
+  "last3y": {
+   "events": 2.0,
+   "head_abs": 220.0,
+   "per100_head": 0.909
+  },
+  "last4y": {
+   "events": 2.0,
+   "head_abs": 279.0,
+   "per100_head": 0.717
+  },
+  "ko_losses_without_kd": [
+   {
+    "date": "2018-04-14",
+    "opponent": "Dustin Poirier",
+    "detail": "Punch to Head In Clinch",
+    "round": 4
+   }
+  ]
+ },
+ "finishes_absorbed": [
+  {
+   "date": "2017-12-02",
+   "opponent": "Eddie Alvarez",
+   "method": "KO/TKO",
+   "detail": "Knee to Head In Clinch",
+   "round": 3,
+   "time": "3:59",
+   "kd_absorbed": 1
+  },
+  {
+   "date": "2018-04-14",
+   "opponent": "Dustin Poirier",
+   "method": "KO/TKO",
+   "detail": "Punch to Head In Clinch",
+   "round": 4,
+   "time": "0:33",
+   "kd_absorbed": 0
+  },
+  {
+   "date": "2020-10-24",
+   "opponent": "Khabib Nurmagomedov",
+   "method": "SUB",
+   "detail": "Triangle Choke From Bottom Guard",
+   "round": 2,
+   "time": "1:34",
+   "kd_absorbed": 0
+  },
+  {
+   "date": "2022-05-07",
+   "opponent": "Charles Oliveira",
+   "method": "SUB",
+   "detail": "Rear Naked Choke",
+   "round": 1,
+   "time": "3:22",
+   "kd_absorbed": 1
+  },
+  {
+   "date": "2024-04-13",
+   "opponent": "Max Holloway",
+   "method": "KO/TKO",
+   "detail": "Punch to Head At Distance",
+   "round": 5,
+   "time": "4:59",
+   "kd_absorbed": 1
+  }
+ ],
+ "knockdown_log": [
+  {
+   "date": "2017-12-02",
+   "opponent": "Eddie Alvarez",
+   "kd_for": 0,
+   "kd_against": 1,
+   "result": "L",
+   "method": "KO/TKO"
+  },
+  {
+   "date": "2018-08-25",
+   "opponent": "James Vick",
+   "kd_for": 1,
+   "kd_against": 0,
+   "result": "W",
+   "method": "KO/TKO"
+  },
+  {
+   "date": "2019-03-30",
+   "opponent": "Edson Barboza",
+   "kd_for": 1,
+   "kd_against": 0,
+   "result": "W",
+   "method": "KO/TKO"
+  },
+  {
+   "date": "2019-09-14",
+   "opponent": "Donald Cerrone",
+   "kd_for": 1,
+   "kd_against": 0,
+   "result": "W",
+   "method": "KO/TKO"
+  },
+  {
+   "date": "2021-11-06",
+   "opponent": "Michael Chandler",
+   "kd_for": 1,
+   "kd_against": 0,
+   "result": "W",
+   "method": "U-DEC"
+  },
+  {
+   "date": "2022-05-07",
+   "opponent": "Charles Oliveira",
+   "kd_for": 1,
+   "kd_against": 1,
+   "result": "L",
+   "method": "SUB"
+  },
+  {
+   "date": "2023-07-29",
+   "opponent": "Dustin Poirier",
+   "kd_for": 1,
+   "kd_against": 0,
+   "result": "W",
+   "method": "KO/TKO"
+  },
+  {
+   "date": "2024-04-13",
+   "opponent": "Max Holloway",
+   "kd_for": 0,
+   "kd_against": 1,
+   "result": "L",
+   "method": "KO/TKO"
+  },
+  {
+   "date": "2025-03-08",
+   "opponent": "Rafael Fiziev",
+   "kd_for": 1,
+   "kd_against": 0,
+   "result": "W",
+   "method": "U-DEC"
+  },
+  {
+   "date": "2026-01-24",
+   "opponent": "Paddy Pimblett",
+   "kd_for": 2,
+   "kd_against": 0,
+   "result": "W",
+   "method": "U-DEC"
+  },
+  {
+   "date": "2026-06-14",
+   "opponent": "Ilia Topuria",
+   "kd_for": 0,
+   "kd_against": 1,
+   "result": "W",
+   "method": "KO/TKO"
+  }
+ ],
+ "pace": {
+  "five_round_all": [
+   {
+    "round": 1,
+    "fights": 12,
+    "minutes": 51.62,
+    "slpm": 6.296416,
+    "sig_att_pm": 10.90733,
+    "sapm": 6.703261,
+    "opp_att_pm": 14.084598,
+    "head_lpm": 3.719729,
+    "leg_lpm": 2.014853,
+    "td_att_pm": 0.058121,
+    "kd_pm": 0.096868,
+    "okd_pm": 0.019374,
+    "sig_acc": 0.577265,
+    "opp_sig_acc": 0.475928,
+    "slpm_vs_r1": 1.0,
+    "att_vs_r1": 1.0
+   },
+   {
+    "round": 2,
+    "fights": 8,
+    "minutes": 32.37,
+    "slpm": 6.580844,
+    "sig_att_pm": 10.875386,
+    "sapm": 7.260556,
+    "opp_att_pm": 13.903193,
+    "head_lpm": 4.479918,
+    "leg_lpm": 1.513903,
+    "td_att_pm": 0.092688,
+    "kd_pm": 0.061792,
+    "okd_pm": 0.030896,
+    "sig_acc": 0.605114,
+    "opp_sig_acc": 0.522222,
+    "slpm_vs_r1": 1.045173,
+    "att_vs_r1": 0.997071
+   },
+   {
+    "round": 3,
+    "fights": 5,
+    "minutes": 25.0,
+    "slpm": 4.76,
+    "sig_att_pm": 8.68,
+    "sapm": 5.56,
+    "opp_att_pm": 11.52,
+    "head_lpm": 2.72,
+    "leg_lpm": 1.2,
+    "td_att_pm": 0.0,
+    "kd_pm": 0.0,
+    "okd_pm": 0.0,
+    "sig_acc": 0.548387,
+    "opp_sig_acc": 0.482639,
+    "slpm_vs_r1": 0.755986,
+    "att_vs_r1": 0.795795
+   },
+   {
+    "round": 4,
+    "fights": 5,
+    "minutes": 20.55,
+    "slpm": 5.839416,
+    "sig_att_pm": 10.26764,
+    "sapm": 6.861314,
+    "opp_att_pm": 11.922141,
+    "head_lpm": 4.038929,
+    "leg_lpm": 0.924574,
+    "td_att_pm": 0.097324,
+    "kd_pm": 0.0,
+    "okd_pm": 0.0,
+    "sig_acc": 0.56872,
+    "opp_sig_acc": 0.57551,
+    "slpm_vs_r1": 0.927419,
+    "att_vs_r1": 0.941352
+   },
+   {
+    "round": 5,
+    "fights": 3,
+    "minutes": 13.63,
+    "slpm": 5.94132,
+    "sig_att_pm": 10.268949,
+    "sapm": 7.114914,
+    "opp_att_pm": 14.816626,
+    "head_lpm": 4.694377,
+    "leg_lpm": 0.806846,
+    "td_att_pm": 0.0,
+    "kd_pm": 0.0,
+    "okd_pm": 0.07335,
+    "sig_acc": 0.578571,
+    "opp_sig_acc": 0.480198,
+    "slpm_vs_r1": 0.943604,
+    "att_vs_r1": 0.941472
+   }
+  ],
+  "five_round_went_5": [
+   {
+    "round": 1,
+    "fights": 3,
+    "minutes": 15.0,
+    "slpm": 4.333333,
+    "sig_att_pm": 7.2,
+    "sapm": 6.066667,
+    "opp_att_pm": 10.533333,
+    "head_lpm": 2.8,
+    "leg_lpm": 0.933333,
+    "td_att_pm": 0.0,
+    "kd_pm": 0.066667,
+    "okd_pm": 0.0,
+    "sig_acc": 0.601852,
+    "opp_sig_acc": 0.575949,
+    "slpm_vs_r1": 1.0,
+    "att_vs_r1": 1.0
+   },
+   {
+    "round": 2,
+    "fights": 3,
+    "minutes": 15.0,
+    "slpm": 5.8,
+    "sig_att_pm": 8.4,
+    "sapm": 5.666667,
+    "opp_att_pm": 10.933333,
+    "head_lpm": 4.0,
+    "leg_lpm": 1.2,
+    "td_att_pm": 0.133333,
+    "kd_pm": 0.066667,
+    "okd_pm": 0.0,
+    "sig_acc": 0.690476,
+    "opp_sig_acc": 0.518293,
+    "slpm_vs_r1": 1.338462,
+    "att_vs_r1": 1.166667
+   },
+   {
+    "round": 3,
+    "fights": 3,
+    "minutes": 15.0,
+    "slpm": 4.266667,
+    "sig_att_pm": 8.4,
+    "sapm": 6.266667,
+    "opp_att_pm": 13.333333,
+    "head_lpm": 2.333333,
+    "leg_lpm": 0.933333,
+    "td_att_pm": 0.0,
+    "kd_pm": 0.0,
+    "okd_pm": 0.0,
+    "sig_acc": 0.507937,
+    "opp_sig_acc": 0.47,
+    "slpm_vs_r1": 0.984615,
+    "att_vs_r1": 1.166667
+   },
+   {
+    "round": 4,
+    "fights": 3,
+    "minutes": 15.0,
+    "slpm": 6.2,
+    "sig_att_pm": 10.0,
+    "sapm": 7.066667,
+    "opp_att_pm": 12.8,
+    "head_lpm": 4.2,
+    "leg_lpm": 1.0,
+    "td_att_pm": 0.066667,
+    "kd_pm": 0.0,
+    "okd_pm": 0.0,
+    "sig_acc": 0.62,
+    "opp_sig_acc": 0.552083,
+    "slpm_vs_r1": 1.430769,
+    "att_vs_r1": 1.388889
+   },
+   {
+    "round": 5,
+    "fights": 3,
+    "minutes": 13.63,
+    "slpm": 5.94132,
+    "sig_att_pm": 10.268949,
+    "sapm": 7.114914,
+    "opp_att_pm": 14.816626,
+    "head_lpm": 4.694377,
+    "leg_lpm": 0.806846,
+    "td_att_pm": 0.0,
+    "kd_pm": 0.0,
+    "okd_pm": 0.07335,
+    "sig_acc": 0.578571,
+    "opp_sig_acc": 0.480198,
+    "slpm_vs_r1": 1.371074,
+    "att_vs_r1": 1.426243
+   }
+  ],
+  "five_round_decayed": [
+   {
+    "round": 1,
+    "fights": 12,
+    "minutes": 14.84,
+    "slpm": 5.617085,
+    "sig_att_pm": 10.348015,
+    "sapm": 6.266571,
+    "opp_att_pm": 11.835031,
+    "head_lpm": 4.173555,
+    "leg_lpm": 0.88892,
+    "td_att_pm": 0.177181,
+    "kd_pm": 0.080367,
+    "okd_pm": 0.014228,
+    "sig_acc": 0.542818,
+    "opp_sig_acc": 0.529493,
+    "slpm_vs_r1": 1.0,
+    "att_vs_r1": 1.0
+   },
+   {
+    "round": 2,
+    "fights": 8,
+    "minutes": 11.77,
+    "slpm": 4.605986,
+    "sig_att_pm": 8.255403,
+    "sapm": 6.490067,
+    "opp_att_pm": 11.011682,
+    "head_lpm": 3.609841,
+    "leg_lpm": 0.567837,
+    "td_att_pm": 0.204642,
+    "kd_pm": 0.092543,
+    "okd_pm": 0.074432,
+    "sig_acc": 0.557936,
+    "opp_sig_acc": 0.58938,
+    "slpm_vs_r1": 0.819996,
+    "att_vs_r1": 0.797776
+   },
+   {
+    "round": 3,
+    "fights": 5,
+    "minutes": 11.07,
+    "slpm": 4.496036,
+    "sig_att_pm": 8.531173,
+    "sapm": 4.88323,
+    "opp_att_pm": 9.568644,
+    "head_lpm": 2.998495,
+    "leg_lpm": 0.748086,
+    "td_att_pm": 0.0,
+    "kd_pm": 0.0,
+    "okd_pm": 0.0,
+    "sig_acc": 0.527013,
+    "opp_sig_acc": 0.510337,
+    "slpm_vs_r1": 0.800421,
+    "att_vs_r1": 0.824426
+   },
+   {
+    "round": 4,
+    "fights": 5,
+    "minutes": 10.84,
+    "slpm": 5.882519,
+    "sig_att_pm": 10.782003,
+    "sapm": 5.621558,
+    "opp_att_pm": 9.599556,
+    "head_lpm": 4.312785,
+    "leg_lpm": 0.685857,
+    "td_att_pm": 0.151596,
+    "kd_pm": 0.0,
+    "okd_pm": 0.0,
+    "sig_acc": 0.545587,
+    "opp_sig_acc": 0.585606,
+    "slpm_vs_r1": 1.047255,
+    "att_vs_r1": 1.041939
+   },
+   {
+    "round": 5,
+    "fights": 3,
+    "minutes": 6.28,
+    "slpm": 5.298602,
+    "sig_att_pm": 10.231497,
+    "sapm": 6.880441,
+    "opp_att_pm": 15.077941,
+    "head_lpm": 4.143139,
+    "leg_lpm": 0.584366,
+    "td_att_pm": 0.0,
+    "kd_pm": 0.0,
+    "okd_pm": 0.065811,
+    "sig_acc": 0.517872,
+    "opp_sig_acc": 0.456325,
+    "slpm_vs_r1": 0.943301,
+    "att_vs_r1": 0.98874
+   }
+  ],
+  "three_round_all": [
+   {
+    "round": 1,
+    "fights": 4,
+    "minutes": 20.0,
+    "slpm": 5.7,
+    "sig_att_pm": 11.15,
+    "sapm": 6.95,
+    "opp_att_pm": 15.2,
+    "head_lpm": 3.35,
+    "leg_lpm": 1.7,
+    "td_att_pm": 0.1,
+    "kd_pm": 0.0,
+    "okd_pm": 0.0,
+    "sig_acc": 0.511211,
+    "opp_sig_acc": 0.457237,
+    "slpm_vs_r1": 1.0,
+    "att_vs_r1": 1.0
+   },
+   {
+    "round": 2,
+    "fights": 4,
+    "minutes": 20.0,
+    "slpm": 6.85,
+    "sig_att_pm": 12.7,
+    "sapm": 7.3,
+    "opp_att_pm": 15.6,
+    "head_lpm": 4.9,
+    "leg_lpm": 0.95,
+    "td_att_pm": 0.05,
+    "kd_pm": 0.1,
+    "okd_pm": 0.0,
+    "sig_acc": 0.53937,
+    "opp_sig_acc": 0.467949,
+    "slpm_vs_r1": 1.201754,
+    "att_vs_r1": 1.139013
+   },
+   {
+    "round": 3,
+    "fights": 4,
+    "minutes": 18.98,
+    "slpm": 8.533802,
+    "sig_att_pm": 13.064091,
+    "sapm": 7.269535,
+    "opp_att_pm": 14.381036,
+    "head_lpm": 6.532046,
+    "leg_lpm": 1.316945,
+    "td_att_pm": 0.210711,
+    "kd_pm": 0.0,
+    "okd_pm": 0.052678,
+    "sig_acc": 0.653226,
+    "opp_sig_acc": 0.505495,
+    "slpm_vs_r1": 1.497158,
+    "att_vs_r1": 1.171667
+   }
+  ]
+ },
+ "division_split": {
+  "Lightweight": {
+   "fights": 16,
+   "weight": 16.0,
+   "minutes": 202.15,
+   "slpm": 6.28741,
+   "sapm": 6.831561,
+   "sig_att_pm": 10.922582,
+   "opp_sig_att_pm": 13.856047,
+   "sig_acc": 0.575634,
+   "opp_sig_acc": 0.493038,
+   "tot_lpm": 6.955231,
+   "tot_apm": 11.694286,
+   "diff_pm": -0.54415,
+   "sig_def": 0.506962,
+   "head_acc": 0.495873,
+   "opp_head_acc": 0.375859,
+   "head_share_l": 0.661684,
+   "head_share_a": 0.768116,
+   "opp_head_share_l": 0.554671,
+   "head_lpm": 4.160277,
+   "opp_head_lpm": 3.789265,
+   "body_acc": 0.759563,
+   "opp_body_acc": 0.785971,
+   "body_share_l": 0.109363,
+   "body_share_a": 0.08288,
+   "opp_body_share_l": 0.316437,
+   "body_lpm": 0.687608,
+   "opp_body_lpm": 2.161761,
+   "leg_acc": 0.884498,
+   "opp_leg_acc": 0.859903,
+   "leg_share_l": 0.228954,
+   "leg_share_a": 0.149004,
+   "opp_leg_share_l": 0.128892,
+   "leg_lpm": 1.439525,
+   "opp_leg_lpm": 0.880534,
+   "dist_acc": 0.549252,
+   "opp_dist_acc": 0.471626,
+   "dist_share_l": 0.837923,
+   "dist_share_a": 0.87817,
+   "opp_dist_share_l": 0.890659,
+   "dist_lpm": 5.268365,
+   "opp_dist_lpm": 6.084591,
+   "clinch_acc": 0.786408,
+   "opp_clinch_acc": 0.776471,
+   "clinch_share_l": 0.127459,
+   "clinch_share_a": 0.093297,
+   "opp_clinch_share_l": 0.095583,
+   "clinch_lpm": 0.801385,
+   "opp_clinch_lpm": 0.65298,
+   "ground_acc": 0.698413,
+   "opp_ground_acc": 0.826087,
+   "ground_share_l": 0.034618,
+   "ground_share_a": 0.028533,
+   "opp_ground_share_l": 0.013758,
+   "ground_lpm": 0.21766,
+   "opp_ground_lpm": 0.09399,
+   "kd15": 0.667821,
+   "okd15": 0.296809,
+   "kd": 9.0,
+   "okd": 4.0,
+   "head_l": 841.0,
+   "o_head_l": 766.0,
+   "power_kd_per100_head": 1.070155,
+   "chin_kd_per100_head_abs": 0.522193,
+   "power_kd_per100_sig": 0.708104,
+   "chin_kd_per100_sig_abs": 0.289645,
+   "td_att15": 1.113035,
+   "td_l15": 0.296809,
+   "td_acc": 0.266667,
+   "otd_att15": 2.22607,
+   "otd_l15": 0.593619,
+   "opp_td_acc": 0.266667,
+   "ctrl15_s": 59.139253,
+   "octrl15_s": 29.458323,
+   "ctrl_share": 0.06571,
+   "octrl_share": 0.032731,
+   "ctrl_per_td_s": 199.25,
+   "octrl_per_otd_s": 49.625,
+   "sub15": 0.0,
+   "osub15": 0.222607,
+   "rev15": 0.0,
+   "orev15": 0.0,
+   "td_def": 0.733333,
+   "record": {
+    "w": 11,
+    "l": 5,
+    "d": 0,
+    "nc": 0,
+    "ko_w": 7,
+    "sub_w": 0,
+    "dec_w": 4,
+    "other_w": 0,
+    "ko_l": 3,
+    "sub_l": 2,
+    "dec_l": 0,
+    "other_l": 0
+   },
+   "dates": [
+    "2017-07-07",
+    "2026-06-14"
+   ],
+   "opponent_adjusted": {
+    "landed_idx": 1.547,
+    "absorbed_idx": 1.454,
+    "acc_idx": 1.253,
+    "opp_acc_idx": 1.029,
+    "note": "landed/acc > 1 and absorbed/opp_acc < 1 are better than the opponents' norms"
+   }
+  }
+ },
+ "opponent_adjusted": {
+  "summary": {
+   "landed_idx": 1.547,
+   "absorbed_idx": 1.454,
+   "acc_idx": 1.253,
+   "opp_acc_idx": 1.029,
+   "note": "landed/acc > 1 and absorbed/opp_acc < 1 are better than the opponents' norms"
+  },
+  "fights": [
+   {
+    "date": "2017-07-07",
+    "opponent": "Michael Johnson",
+    "opp_other_min": 357.1,
+    "landed": 104,
+    "exp_landed": 35.1,
+    "landed_idx": 2.959,
+    "absorbed": 91,
+    "exp_absorbed": 40.3,
+    "absorbed_idx": 2.259,
+    "acc": 0.598,
+    "opp_usual_acc_allowed": 0.403,
+    "opp_acc": 0.455,
+    "opp_usual_acc": 0.394
+   },
+   {
+    "date": "2017-12-02",
+    "opponent": "Eddie Alvarez",
+    "opp_other_min": 75.0,
+    "landed": 122,
+    "exp_landed": 62.8,
+    "landed_idx": 1.941,
+    "absorbed": 155,
+    "exp_absorbed": 46.2,
+    "absorbed_idx": 3.353,
+    "acc": 0.515,
+    "opp_usual_acc_allowed": 0.447,
+    "opp_acc": 0.435,
+    "opp_usual_acc": 0.406
+   },
+   {
+    "date": "2018-04-14",
+    "opponent": "Dustin Poirier",
+    "opp_other_min": 332.6,
+    "landed": 115,
+    "exp_landed": 70.0,
+    "landed_idx": 1.643,
+    "absorbed": 174,
+    "exp_absorbed": 77.8,
+    "absorbed_idx": 2.236,
+    "acc": 0.542,
+    "opp_usual_acc_allowed": 0.472,
+    "opp_acc": 0.496,
+    "opp_usual_acc": 0.499
+   },
+   {
+    "date": "2018-08-25",
+    "opponent": "James Vick",
+    "opp_other_min": 112.8,
+    "landed": 7,
+    "exp_landed": 4.8,
+    "landed_idx": 1.457,
+    "absorbed": 10,
+    "exp_absorbed": 5.8,
+    "absorbed_idx": 1.714,
+    "acc": 0.467,
+    "opp_usual_acc_allowed": 0.399,
+    "opp_acc": 0.5,
+    "opp_usual_acc": 0.401
+   },
+   {
+    "date": "2019-03-30",
+    "opponent": "Edson Barboza",
+    "opp_other_min": 387.2,
+    "landed": 20,
+    "exp_landed": 11.7,
+    "landed_idx": 1.705,
+    "absorbed": 13,
+    "exp_absorbed": 10.3,
+    "absorbed_idx": 1.263,
+    "acc": 0.571,
+    "opp_usual_acc_allowed": 0.444,
+    "opp_acc": 0.406,
+    "opp_usual_acc": 0.447
+   },
+   {
+    "date": "2019-09-14",
+    "opponent": "Donald Cerrone",
+    "opp_other_min": 352.5,
+    "landed": 40,
+    "exp_landed": 21.5,
+    "landed_idx": 1.86,
+    "absorbed": 17,
+    "exp_absorbed": 20.9,
+    "absorbed_idx": 0.815,
+    "acc": 0.656,
+    "opp_usual_acc_allowed": 0.481,
+    "opp_acc": 0.327,
+    "opp_usual_acc": 0.475
+   },
+   {
+    "date": "2020-05-09",
+    "opponent": "Tony Ferguson",
+    "opp_other_min": 247.9,
+    "landed": 143,
+    "exp_landed": 98.6,
+    "landed_idx": 1.451,
+    "absorbed": 136,
+    "exp_absorbed": 112.3,
+    "absorbed_idx": 1.211,
+    "acc": 0.726,
+    "opp_usual_acc_allowed": 0.425,
+    "opp_acc": 0.459,
+    "opp_usual_acc": 0.458
+   },
+   {
+    "date": "2020-10-24",
+    "opponent": "Khabib Nurmagomedov",
+    "opp_other_min": 165.3,
+    "landed": 29,
+    "exp_landed": 11.8,
+    "landed_idx": 2.454,
+    "absorbed": 26,
+    "exp_absorbed": 26.6,
+    "absorbed_idx": 0.976,
+    "acc": 0.644,
+    "opp_usual_acc_allowed": 0.343,
+    "opp_acc": 0.325,
+    "opp_usual_acc": 0.494
+   },
+   {
+    "date": "2021-11-06",
+    "opponent": "Michael Chandler",
+    "opp_other_min": 67.7,
+    "landed": 116,
+    "exp_landed": 59.8,
+    "landed_idx": 1.941,
+    "absorbed": 103,
+    "exp_absorbed": 48.5,
+    "absorbed_idx": 2.123,
+    "acc": 0.634,
+    "opp_usual_acc_allowed": 0.553,
+    "opp_acc": 0.42,
+    "opp_usual_acc": 0.536
+   },
+   {
+    "date": "2022-05-07",
+    "opponent": "Charles Oliveira",
+    "opp_other_min": 291.7,
+    "landed": 21,
+    "exp_landed": 10.2,
+    "landed_idx": 2.054,
+    "absorbed": 30,
+    "exp_absorbed": 10.7,
+    "absorbed_idx": 2.798,
+    "acc": 0.636,
+    "opp_usual_acc_allowed": 0.505,
+    "opp_acc": 0.638,
+    "opp_usual_acc": 0.548
+   },
+   {
+    "date": "2023-03-18",
+    "opponent": "Rafael Fiziev",
+    "opp_other_min": 134.9,
+    "landed": 103,
+    "exp_landed": 67.2,
+    "landed_idx": 1.533,
+    "absorbed": 97,
+    "exp_absorbed": 66.2,
+    "absorbed_idx": 1.466,
+    "acc": 0.602,
+    "opp_usual_acc_allowed": 0.481,
+    "opp_acc": 0.574,
+    "opp_usual_acc": 0.517
+   },
+   {
+    "date": "2023-07-29",
+    "opponent": "Dustin Poirier",
+    "opp_other_min": 342.2,
+    "landed": 41,
+    "exp_landed": 27.5,
+    "landed_idx": 1.49,
+    "absorbed": 27,
+    "exp_absorbed": 31.7,
+    "absorbed_idx": 0.852,
+    "acc": 0.621,
+    "opp_usual_acc_allowed": 0.473,
+    "opp_acc": 0.519,
+    "opp_usual_acc": 0.498
+   },
+   {
+    "date": "2024-04-13",
+    "opponent": "Max Holloway",
+    "opp_other_min": 508.9,
+    "landed": 103,
+    "exp_landed": 114.8,
+    "landed_idx": 0.898,
+    "absorbed": 181,
+    "exp_absorbed": 170.0,
+    "absorbed_idx": 1.065,
+    "acc": 0.518,
+    "opp_usual_acc_allowed": 0.41,
+    "opp_acc": 0.586,
+    "opp_usual_acc": 0.477
+   },
+   {
+    "date": "2025-03-08",
+    "opponent": "Rafael Fiziev",
+    "opp_other_min": 134.9,
+    "landed": 72,
+    "exp_landed": 70.3,
+    "landed_idx": 1.025,
+    "absorbed": 68,
+    "exp_absorbed": 69.1,
+    "absorbed_idx": 0.984,
+    "acc": 0.537,
+    "opp_usual_acc_allowed": 0.491,
+    "opp_acc": 0.571,
+    "opp_usual_acc": 0.519
+   },
+   {
+    "date": "2026-01-24",
+    "opponent": "Paddy Pimblett",
+    "opp_other_min": 63.3,
+    "landed": 144,
+    "exp_landed": 79.6,
+    "landed_idx": 1.809,
+    "absorbed": 156,
+    "exp_absorbed": 121.4,
+    "absorbed_idx": 1.285,
+    "acc": 0.567,
+    "opp_usual_acc_allowed": 0.547,
+    "opp_acc": 0.502,
+    "opp_usual_acc": 0.527
+   },
+   {
+    "date": "2026-06-14",
+    "opponent": "Ilia Topuria",
+    "opp_other_min": 84.2,
+    "landed": 91,
+    "exp_landed": 75.7,
+    "landed_idx": 1.203,
+    "absorbed": 97,
+    "exp_absorbed": 92.2,
+    "absorbed_idx": 1.052,
+    "acc": 0.474,
+    "opp_usual_acc_allowed": 0.368,
+    "opp_acc": 0.599,
+    "opp_usual_acc": 0.479
+   }
+  ]
+ },
+ "spec_sums": {
+  "C": {
+   "min": 202.15,
+   "n": 16.0,
+   "rds": 45.0,
+   "d_att": 1939.0,
+   "d_lnd": 1065.0,
+   "od_att": 2608.0,
+   "od_lnd": 1230.0,
+   "c_att": 206.0,
+   "c_lnd": 162.0,
+   "oc_att": 170.0,
+   "oc_lnd": 132.0,
+   "g_att": 63.0,
+   "g_lnd": 44.0,
+   "og_att": 23.0,
+   "og_lnd": 19.0,
+   "h_att": 1696.0,
+   "h_lnd": 841.0,
+   "oh_att": 2038.0,
+   "oh_lnd": 766.0,
+   "b_att": 183.0,
+   "b_lnd": 139.0,
+   "ob_att": 556.0,
+   "ob_lnd": 437.0,
+   "l_att": 329.0,
+   "l_lnd": 291.0,
+   "ol_att": 207.0,
+   "ol_lnd": 178.0,
+   "t_att": 2364.0,
+   "t_lnd": 1406.0,
+   "ot_att": 2869.0,
+   "ot_lnd": 1439.0,
+   "s_att": 2208.0,
+   "s_lnd": 1271.0,
+   "os_att": 2801.0,
+   "os_lnd": 1381.0,
+   "kd": 9.0,
+   "okd": 4.0,
+   "td_att": 15.0,
+   "td_lnd": 4.0,
+   "otd_att": 30.0,
+   "otd_lnd": 8.0,
+   "ctrl": 797.0,
+   "octrl": 397.0,
+   "sub_att": 0.0,
+   "osub_att": 3.0,
+   "rev": 0.0,
+   "orev": 0.0,
+   "ko_w": 7.0,
+   "sub_w": 0.0,
+   "dec_w": 4.0,
+   "ko_l": 3.0,
+   "sub_l": 2.0,
+   "dec_l": 0.0,
+   "r5_min_1": 51.6167,
+   "r5_lnd_1": 325.0,
+   "r5_att_1": 563.0,
+   "r5_min_2": 32.3667,
+   "r5_lnd_2": 213.0,
+   "r5_att_2": 352.0,
+   "r5_min_3": 25.0,
+   "r5_lnd_3": 119.0,
+   "r5_att_3": 217.0,
+   "r5_min_4": 20.55,
+   "r5_lnd_4": 120.0,
+   "r5_att_4": 211.0,
+   "r5_min_5": 13.6333,
+   "r5_lnd_5": 81.0,
+   "r5_att_5": 140.0,
+   "r5_min": 143.1667
+  },
+  "S": {
+   "min": 70.8343,
+   "n": 4.1984,
+   "rds": 14.7555,
+   "d_att": 587.9445,
+   "d_lnd": 301.2318,
+   "od_att": 707.7476,
+   "od_lnd": 359.8527,
+   "c_att": 72.4095,
+   "c_lnd": 54.7371,
+   "oc_att": 66.2622,
+   "oc_lnd": 49.3788,
+   "g_att": 33.5099,
+   "g_lnd": 24.5105,
+   "og_att": 10.8463,
+   "og_lnd": 9.6798,
+   "h_att": 571.6294,
+   "h_lnd": 282.9237,
+   "oh_att": 521.7429,
+   "oh_lnd": 206.4433,
+   "b_att": 62.517,
+   "b_lnd": 45.7691,
+   "ob_att": 194.5212,
+   "ob_lnd": 152.3281,
+   "l_att": 59.7175,
+   "l_lnd": 51.7866,
+   "ol_att": 68.5921,
+   "ol_lnd": 60.1399,
+   "t_att": 792.2303,
+   "t_lnd": 466.7838,
+   "ot_att": 820.0249,
+   "ot_lnd": 450.6976,
+   "s_att": 693.8638,
+   "s_lnd": 380.4794,
+   "os_att": 784.8562,
+   "os_lnd": 418.9113,
+   "kd": 3.0243,
+   "okd": 1.5461,
+   "td_att": 9.2749,
+   "td_lnd": 2.5844,
+   "otd_att": 9.7074,
+   "otd_lnd": 2.5163,
+   "ctrl": 435.6975,
+   "octrl": 210.7368,
+   "sub_att": 0.0,
+   "osub_att": 0.5463,
+   "rev": 0.0,
+   "orev": 0.0,
+   "ko_w": 1.5595,
+   "sub_w": 0.0,
+   "dec_w": 1.7935,
+   "ko_l": 0.5102,
+   "sub_l": 0.3352,
+   "dec_l": 0.0,
+   "r5_min_1": 14.8383,
+   "r5_lnd_1": 83.3479,
+   "r5_att_1": 153.5469,
+   "r5_min_2": 11.774,
+   "r5_lnd_2": 54.2307,
+   "r5_att_2": 97.1988,
+   "r5_min_3": 11.0669,
+   "r5_lnd_3": 49.7572,
+   "r5_att_3": 94.4137,
+   "r5_min_4": 10.8373,
+   "r5_lnd_4": 63.7507,
+   "r5_att_4": 116.848,
+   "r5_min_5": 6.2775,
+   "r5_lnd_5": 33.262,
+   "r5_att_5": 64.2282,
+   "r5_min": 54.794
+  }
+ },
+ "priors": {
+  "Lightweight": {
+   "fights": 828,
+   "weight": 828.0,
+   "minutes": 8390.47,
+   "slpm": 4.323478,
+   "sapm": 4.323478,
+   "sig_att_pm": 9.012967,
+   "opp_sig_att_pm": 9.012967,
+   "sig_acc": 0.479695,
+   "opp_sig_acc": 0.479695,
+   "tot_lpm": 5.858554,
+   "tot_apm": 10.841233,
+   "diff_pm": 0.0,
+   "sig_def": 0.520305,
+   "head_acc": 0.396177,
+   "opp_head_acc": 0.396177,
+   "head_share_l": 0.63083,
+   "head_share_a": 0.763815,
+   "opp_head_share_l": 0.63083,
+   "head_lpm": 2.727381,
+   "opp_head_lpm": 2.727381,
+   "body_acc": 0.705846,
+   "opp_body_acc": 0.705846,
+   "body_share_l": 0.221993,
+   "body_share_a": 0.150867,
+   "opp_body_share_l": 0.221993,
+   "body_lpm": 0.95978,
+   "opp_body_lpm": 0.95978,
+   "leg_acc": 0.827495,
+   "opp_leg_acc": 0.827495,
+   "leg_share_l": 0.147177,
+   "leg_share_a": 0.085318,
+   "opp_leg_share_l": 0.147177,
+   "leg_lpm": 0.636317,
+   "opp_leg_lpm": 0.636317,
+   "dist_acc": 0.442698,
+   "opp_dist_acc": 0.442698,
+   "dist_share_l": 0.801825,
+   "dist_share_a": 0.868836,
+   "opp_dist_share_l": 0.801825,
+   "dist_lpm": 3.466672,
+   "opp_dist_lpm": 3.466672,
+   "clinch_acc": 0.740185,
+   "opp_clinch_acc": 0.740185,
+   "clinch_share_l": 0.095104,
+   "clinch_share_a": 0.061635,
+   "opp_clinch_share_l": 0.095104,
+   "clinch_lpm": 0.411181,
+   "opp_clinch_lpm": 0.411181,
+   "ground_acc": 0.711107,
+   "opp_ground_acc": 0.711107,
+   "ground_share_l": 0.103071,
+   "ground_share_a": 0.069529,
+   "opp_ground_share_l": 0.103071,
+   "ground_lpm": 0.445625,
+   "opp_ground_lpm": 0.445625,
+   "kd15": 0.389728,
+   "okd15": 0.389728,
+   "kd": 218.0,
+   "okd": 218.0,
+   "head_l": 22884.0,
+   "o_head_l": 22884.0,
+   "power_kd_per100_head": 0.952631,
+   "chin_kd_per100_head_abs": 0.952631,
+   "power_kd_per100_sig": 0.600948,
+   "chin_kd_per100_sig_abs": 0.600948,
+   "td_att15": 4.287008,
+   "td_l15": 1.526733,
+   "td_acc": 0.35613,
+   "otd_att15": 4.287008,
+   "otd_l15": 1.526733,
+   "opp_td_acc": 0.35613,
+   "ctrl15_s": 174.288875,
+   "octrl15_s": 174.288875,
+   "ctrl_share": 0.193654,
+   "octrl_share": 0.193654,
+   "ctrl_per_td_s": 114.15808,
+   "octrl_per_otd_s": 114.15808,
+   "sub15": 0.40403,
+   "osub15": 0.40403,
+   "rev15": 0.143019,
+   "orev15": 0.143019,
+   "td_def": 0.64387,
+   "bouts": 414,
+   "window": [
+    "2020-10-31",
+    "2026-10-31"
+   ],
+   "lbs": 155,
+   "method_split": {
+    "KO/TKO": 0.3865,
+    "U-DEC": 0.3261,
+    "SUB": 0.1812,
+    "S-DEC": 0.0773,
+    "M-DEC": 0.0217,
+    "CNC": 0.0048,
+    "Overturned": 0.0024
+   },
+   "finish_rate": 0.5749,
+   "five_round_bouts": 36,
+   "five_round_finish_rate": 0.8056,
+   "pace_5rd": [
+    {
+     "round": 1,
+     "fights": 72,
+     "minutes": 323.1,
+     "slpm": 3.522129,
+     "sig_att_pm": 6.502631,
+     "sapm": 3.522129,
+     "opp_att_pm": 6.502631,
+     "head_lpm": 2.141752,
+     "leg_lpm": 0.609718,
+     "td_att_pm": 0.225936,
+     "kd_pm": 0.034045,
+     "okd_pm": 0.034045,
+     "sig_acc": 0.541647,
+     "opp_sig_acc": 0.541647,
+     "slpm_vs_r1": 1.0,
+     "att_vs_r1": 1.0
+    },
+    {
+     "round": 2,
+     "fights": 52,
+     "minutes": 203.1,
+     "slpm": 4.229444,
+     "sig_att_pm": 7.720335,
+     "sapm": 4.229444,
+     "opp_att_pm": 7.720335,
+     "head_lpm": 2.82127,
+     "leg_lpm": 0.42836,
+     "td_att_pm": 0.251108,
+     "kd_pm": 0.054161,
+     "okd_pm": 0.054161,
+     "sig_acc": 0.547832,
+     "opp_sig_acc": 0.547832,
+     "slpm_vs_r1": 1.20082,
+     "att_vs_r1": 1.187263
+    },
+    {
+     "round": 3,
+     "fights": 30,
+     "minutes": 131.23,
+     "slpm": 3.802388,
+     "sig_att_pm": 6.728473,
+     "sapm": 3.802388,
+     "opp_att_pm": 6.728473,
+     "head_lpm": 2.415545,
+     "leg_lpm": 0.541021,
+     "td_att_pm": 0.304801,
+     "kd_pm": 0.0,
+     "okd_pm": 0.0,
+     "sig_acc": 0.565119,
+     "opp_sig_acc": 0.565119,
+     "slpm_vs_r1": 1.079571,
+     "att_vs_r1": 1.034731
+    },
+    {
+     "round": 4,
+     "fights": 24,
+     "minutes": 115.27,
+     "slpm": 3.869289,
+     "sig_att_pm": 7.669173,
+     "sapm": 3.869289,
+     "opp_att_pm": 7.669173,
+     "head_lpm": 2.498554,
+     "leg_lpm": 0.399075,
+     "td_att_pm": 0.312319,
+     "kd_pm": 0.008676,
+     "okd_pm": 0.008676,
+     "sig_acc": 0.504525,
+     "opp_sig_acc": 0.504525,
+     "slpm_vs_r1": 1.098565,
+     "att_vs_r1": 1.179395
+    },
+    {
+     "round": 5,
+     "fights": 20,
+     "minutes": 85.97,
+     "slpm": 4.629701,
+     "sig_att_pm": 8.817371,
+     "sapm": 4.629701,
+     "opp_att_pm": 8.817371,
+     "head_lpm": 3.105855,
+     "leg_lpm": 0.500194,
+     "td_att_pm": 0.348972,
+     "kd_pm": 0.034897,
+     "okd_pm": 0.034897,
+     "sig_acc": 0.525066,
+     "opp_sig_acc": 0.525066,
+     "slpm_vs_r1": 1.314461,
+     "att_vs_r1": 1.35597
+    }
+   ],
+   "eb": {
+    "chin_head": {
+     "p": 0.00953,
+     "k": 223.9,
+     "k_95": [
+      177.8,
+      281.8
+     ],
+     "at_grid_edge": false,
+     "tau": 0.00648,
+     "fighters": 923,
+     "min_exposure": 20,
+     "unit": "o_head_l",
+     "k_mom": 143.1,
+     "div_p": {
+      "Bantamweight": 0.00777,
+      "Featherweight": 0.00938,
+      "Flyweight": 0.00891,
+      "Heavyweight": 0.00843,
+      "Light Heavyweight": 0.01164,
+      "Lightweight": 0.00953,
+      "Middleweight": 0.0086,
+      "Welterweight": 0.00837
+     },
+     "p_pooled_group": 0.00878,
+     "k_division_only": 223.9
+    },
+    "power_head": {
+     "p": 0.00953,
+     "k": 237.1,
+     "k_95": [
+      188.4,
+      316.2
+     ],
+     "at_grid_edge": false,
+     "tau": 0.0063,
+     "fighters": 871,
+     "min_exposure": 20,
+     "unit": "head_l",
+     "k_mom": 170.4,
+     "div_p": {
+      "Bantamweight": 0.00777,
+      "Featherweight": 0.00938,
+      "Flyweight": 0.00891,
+      "Heavyweight": 0.00843,
+      "Light Heavyweight": 0.01164,
+      "Lightweight": 0.00953,
+      "Middleweight": 0.0086,
+      "Welterweight": 0.00837
+     },
+     "p_pooled_group": 0.00887,
+     "k_division_only": 446.7
+    },
+    "sig_acc": {
+     "p": 0.4797,
+     "k": 47.3,
+     "k_95": [
+      44.7,
+      53.1
+     ],
+     "at_grid_edge": false,
+     "tau": 0.07188,
+     "fighters": 920,
+     "min_exposure": 50,
+     "unit": "sig_a",
+     "k_mom": 59.2,
+     "div_p": {
+      "Bantamweight": 0.46498,
+      "Featherweight": 0.47304,
+      "Flyweight": 0.46494,
+      "Heavyweight": 0.50225,
+      "Light Heavyweight": 0.50671,
+      "Lightweight": 0.4797,
+      "Middleweight": 0.48796,
+      "Welterweight": 0.4774
+     },
+     "p_pooled_group": 0.4796,
+     "k_division_only": 50.1
+    },
+    "opp_sig_acc": {
+     "p": 0.4797,
+     "k": 47.3,
+     "k_95": [
+      44.7,
+      53.1
+     ],
+     "at_grid_edge": false,
+     "tau": 0.07188,
+     "fighters": 948,
+     "min_exposure": 50,
+     "unit": "o_sig_a",
+     "k_mom": 66.5,
+     "div_p": {
+      "Bantamweight": 0.46498,
+      "Featherweight": 0.47304,
+      "Flyweight": 0.46494,
+      "Heavyweight": 0.50225,
+      "Light Heavyweight": 0.50671,
+      "Lightweight": 0.4797,
+      "Middleweight": 0.48796,
+      "Welterweight": 0.4774
+     },
+     "p_pooled_group": 0.47926,
+     "k_division_only": 56.2
+    },
+    "head_acc": {
+     "p": 0.39618,
+     "k": 39.8,
+     "k_95": [
+      35.5,
+      42.2
+     ],
+     "at_grid_edge": false,
+     "tau": 0.07657,
+     "fighters": 887,
+     "min_exposure": 50,
+     "unit": "head_a",
+     "k_mom": 49.0,
+     "div_p": {
+      "Bantamweight": 0.37785,
+      "Featherweight": 0.38935,
+      "Flyweight": 0.38491,
+      "Heavyweight": 0.41402,
+      "Light Heavyweight": 0.4153,
+      "Lightweight": 0.39618,
+      "Middleweight": 0.40555,
+      "Welterweight": 0.39073
+     },
+     "p_pooled_group": 0.39475,
+     "k_division_only": 39.8
+    },
+    "opp_head_acc": {
+     "p": 0.39618,
+     "k": 35.5,
+     "k_95": [
+      33.5,
+      37.6
+     ],
+     "at_grid_edge": false,
+     "tau": 0.08096,
+     "fighters": 912,
+     "min_exposure": 50,
+     "unit": "o_head_a",
+     "k_mom": 46.6,
+     "div_p": {
+      "Bantamweight": 0.37785,
+      "Featherweight": 0.38935,
+      "Flyweight": 0.38491,
+      "Heavyweight": 0.41402,
+      "Light Heavyweight": 0.4153,
+      "Lightweight": 0.39618,
+      "Middleweight": 0.40555,
+      "Welterweight": 0.39073
+     },
+     "p_pooled_group": 0.39403,
+     "k_division_only": 42.2
+    },
+    "td_acc": {
+     "p": 0.35613,
+     "k": 21.1,
+     "k_95": [
+      16.8,
+      26.6
+     ],
+     "at_grid_edge": false,
+     "tau": 0.10186,
+     "fighters": 658,
+     "min_exposure": 5,
+     "unit": "td_a",
+     "k_mom": 23.0,
+     "div_p": {
+      "Bantamweight": 0.33848,
+      "Featherweight": 0.38329,
+      "Flyweight": 0.35758,
+      "Heavyweight": 0.36508,
+      "Light Heavyweight": 0.34124,
+      "Lightweight": 0.35613,
+      "Middleweight": 0.36372,
+      "Welterweight": 0.35928
+     },
+     "p_pooled_group": 0.35801,
+     "k_division_only": 29.9
+    },
+    "opp_td_acc": {
+     "p": 0.35613,
+     "k": 13.3,
+     "k_95": [
+      11.2,
+      15.8
+     ],
+     "at_grid_edge": false,
+     "tau": 0.12663,
+     "fighters": 704,
+     "min_exposure": 5,
+     "unit": "o_td_a",
+     "k_mom": 13.7,
+     "div_p": {
+      "Bantamweight": 0.33848,
+      "Featherweight": 0.38329,
+      "Flyweight": 0.35758,
+      "Heavyweight": 0.36508,
+      "Light Heavyweight": 0.34124,
+      "Lightweight": 0.35613,
+      "Middleweight": 0.36372,
+      "Welterweight": 0.35928
+     },
+     "p_pooled_group": 0.35683,
+     "k_division_only": 14.1
+    }
+   }
+  }
+ },
+ "fights": [
+  {
+   "date": "2017-07-07",
+   "event": "The Ultimate Fighter: Redemption Finale",
+   "opponent": "Michael Johnson",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "W",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Knees to Head In Clinch",
+   "round": 2,
+   "time": "4:48",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 9.8,
+   "referee": "John McCarthy",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/0d5356c506111a57",
+   "for": {
+    "sig": [
+     104,
+     174
+    ],
+    "head": [
+     62,
+     124
+    ],
+    "body": [
+     6,
+     8
+    ],
+    "leg": [
+     36,
+     42
+    ],
+    "dist": [
+     77,
+     138
+    ],
+    "clinch": [
+     27,
+     36
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     104,
+     174
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 6,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     91,
+     200
+    ],
+    "head": [
+     47,
+     146
+    ],
+    "body": [
+     40,
+     48
+    ],
+    "leg": [
+     4,
+     6
+    ],
+    "dist": [
+     78,
+     176
+    ],
+    "clinch": [
+     12,
+     21
+    ],
+    "ground": [
+     1,
+     3
+    ],
+    "total": [
+     91,
+     200
+    ],
+    "kd": 0,
+    "td": [
+     1,
+     3
+    ],
+    "ctrl_s": 34,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2017-12-02",
+   "event": "UFC 218: Holloway vs. Aldo 2",
+   "opponent": "Eddie Alvarez",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "L",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Knee to Head In Clinch",
+   "round": 3,
+   "time": "3:59",
+   "format": "3 Rnd (5-5-5)",
+   "sched_rounds": 3,
+   "minutes": 13.98,
+   "referee": "Herb Dean",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/23e5acd1549b538a",
+   "for": {
+    "sig": [
+     122,
+     237
+    ],
+    "head": [
+     69,
+     180
+    ],
+    "body": [
+     16,
+     17
+    ],
+    "leg": [
+     37,
+     40
+    ],
+    "dist": [
+     106,
+     218
+    ],
+    "clinch": [
+     15,
+     16
+    ],
+    "ground": [
+     1,
+     3
+    ],
+    "total": [
+     124,
+     240
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     1
+    ],
+    "ctrl_s": 6,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     155,
+     356
+    ],
+    "head": [
+     113,
+     299
+    ],
+    "body": [
+     36,
+     49
+    ],
+    "leg": [
+     6,
+     8
+    ],
+    "dist": [
+     128,
+     325
+    ],
+    "clinch": [
+     24,
+     28
+    ],
+    "ground": [
+     3,
+     3
+    ],
+    "total": [
+     162,
+     366
+    ],
+    "kd": 1,
+    "td": [
+     1,
+     2
+    ],
+    "ctrl_s": 20,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2018-04-14",
+   "event": "UFC Fight Night: Poirier vs. Gaethje",
+   "opponent": "Dustin Poirier",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "L",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Punch to Head In Clinch",
+   "round": 4,
+   "time": "0:33",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 15.55,
+   "referee": "Herb Dean",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/bfae2fb50efbdb0f",
+   "for": {
+    "sig": [
+     115,
+     212
+    ],
+    "head": [
+     56,
+     143
+    ],
+    "body": [
+     9,
+     12
+    ],
+    "leg": [
+     50,
+     57
+    ],
+    "dist": [
+     98,
+     194
+    ],
+    "clinch": [
+     17,
+     18
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     116,
+     213
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 64,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     174,
+     351
+    ],
+    "head": [
+     142,
+     314
+    ],
+    "body": [
+     21,
+     26
+    ],
+    "leg": [
+     11,
+     11
+    ],
+    "dist": [
+     162,
+     338
+    ],
+    "clinch": [
+     12,
+     13
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     179,
+     357
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     5
+    ],
+    "ctrl_s": 6,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2018-08-25",
+   "event": "UFC Fight Night: Gaethje vs. Vick",
+   "opponent": "James Vick",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "W",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Punch to Head In Clinch",
+   "round": 1,
+   "time": "1:27",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 1.45,
+   "referee": "Kevin MacDonald",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/d6f6ac29008509db",
+   "for": {
+    "sig": [
+     7,
+     15
+    ],
+    "head": [
+     3,
+     8
+    ],
+    "body": [
+     2,
+     3
+    ],
+    "leg": [
+     2,
+     4
+    ],
+    "dist": [
+     6,
+     14
+    ],
+    "clinch": [
+     0,
+     0
+    ],
+    "ground": [
+     1,
+     1
+    ],
+    "total": [
+     7,
+     15
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 4,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     10,
+     20
+    ],
+    "head": [
+     3,
+     9
+    ],
+    "body": [
+     5,
+     8
+    ],
+    "leg": [
+     2,
+     3
+    ],
+    "dist": [
+     10,
+     20
+    ],
+    "clinch": [
+     0,
+     0
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     11,
+     21
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2019-03-30",
+   "event": "UFC Fight Night: Barboza vs. Gaethje",
+   "opponent": "Edson Barboza",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "W",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Punch to Head At Distance",
+   "round": 1,
+   "time": "2:30",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 2.5,
+   "referee": "Keith Peterson",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/b309cdde35310875",
+   "for": {
+    "sig": [
+     20,
+     35
+    ],
+    "head": [
+     13,
+     28
+    ],
+    "body": [
+     2,
+     2
+    ],
+    "leg": [
+     5,
+     5
+    ],
+    "dist": [
+     12,
+     22
+    ],
+    "clinch": [
+     8,
+     13
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     22,
+     37
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 44,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     13,
+     32
+    ],
+    "head": [
+     6,
+     21
+    ],
+    "body": [
+     3,
+     5
+    ],
+    "leg": [
+     4,
+     6
+    ],
+    "dist": [
+     11,
+     30
+    ],
+    "clinch": [
+     2,
+     2
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     13,
+     32
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2019-09-14",
+   "event": "UFC Fight Night: Cowboy vs. Gaethje",
+   "opponent": "Donald Cerrone",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "W",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Punch to Head At Distance",
+   "round": 1,
+   "time": "4:18",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 4.3,
+   "referee": "Jerin Valel",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/490724f8b3658f67",
+   "for": {
+    "sig": [
+     40,
+     61
+    ],
+    "head": [
+     27,
+     44
+    ],
+    "body": [
+     0,
+     2
+    ],
+    "leg": [
+     13,
+     15
+    ],
+    "dist": [
+     36,
+     55
+    ],
+    "clinch": [
+     2,
+     3
+    ],
+    "ground": [
+     2,
+     3
+    ],
+    "total": [
+     40,
+     61
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 4,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     17,
+     52
+    ],
+    "head": [
+     12,
+     45
+    ],
+    "body": [
+     4,
+     6
+    ],
+    "leg": [
+     1,
+     1
+    ],
+    "dist": [
+     17,
+     52
+    ],
+    "clinch": [
+     0,
+     0
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     17,
+     52
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2020-05-09",
+   "event": "UFC 249: Ferguson vs. Gaethje",
+   "opponent": "Tony Ferguson",
+   "weightclass": "UFC Interim Lightweight Title Bout",
+   "division": "Lightweight",
+   "title": true,
+   "result": "W",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Punch to Head At Distance",
+   "round": 5,
+   "time": "3:39",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 23.65,
+   "referee": "Herb Dean",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/d395828f5cb045a5",
+   "for": {
+    "sig": [
+     143,
+     197
+    ],
+    "head": [
+     100,
+     153
+    ],
+    "body": [
+     13,
+     14
+    ],
+    "leg": [
+     30,
+     30
+    ],
+    "dist": [
+     143,
+     197
+    ],
+    "clinch": [
+     0,
+     0
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     143,
+     197
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     136,
+     296
+    ],
+    "head": [
+     64,
+     212
+    ],
+    "body": [
+     36,
+     43
+    ],
+    "leg": [
+     36,
+     41
+    ],
+    "dist": [
+     136,
+     296
+    ],
+    "clinch": [
+     0,
+     0
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     136,
+     296
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2020-10-24",
+   "event": "UFC 254: Khabib vs. Gaethje",
+   "opponent": "Khabib Nurmagomedov",
+   "weightclass": "UFC Lightweight Title Bout",
+   "division": "Lightweight",
+   "title": true,
+   "result": "L",
+   "method": "SUB",
+   "method_raw": "Submission",
+   "detail": "Triangle Choke From Bottom Guard",
+   "round": 2,
+   "time": "1:34",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 6.57,
+   "referee": "Jason Herzog",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/59eea37af7efb06c",
+   "for": {
+    "sig": [
+     29,
+     45
+    ],
+    "head": [
+     12,
+     26
+    ],
+    "body": [
+     2,
+     4
+    ],
+    "leg": [
+     15,
+     15
+    ],
+    "dist": [
+     29,
+     45
+    ],
+    "clinch": [
+     0,
+     0
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     29,
+     46
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 14,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     26,
+     80
+    ],
+    "head": [
+     18,
+     72
+    ],
+    "body": [
+     7,
+     7
+    ],
+    "leg": [
+     1,
+     1
+    ],
+    "dist": [
+     25,
+     79
+    ],
+    "clinch": [
+     0,
+     0
+    ],
+    "ground": [
+     1,
+     1
+    ],
+    "total": [
+     26,
+     80
+    ],
+    "kd": 0,
+    "td": [
+     2,
+     3
+    ],
+    "ctrl_s": 55,
+    "sub_att": 1,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2021-11-06",
+   "event": "UFC 268: Usman vs. Covington 2",
+   "opponent": "Michael Chandler",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "W",
+   "method": "U-DEC",
+   "method_raw": "Decision - Unanimous",
+   "detail": "Sal D'amato 28 - 29.Derek Cleary 28 - 29.Doug Crosby 27 - 30.",
+   "round": 3,
+   "time": "5:00",
+   "format": "3 Rnd (5-5-5)",
+   "sched_rounds": 3,
+   "minutes": 15.0,
+   "referee": "Mike Beltran",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/999a0fad4c82148d",
+   "for": {
+    "sig": [
+     116,
+     183
+    ],
+    "head": [
+     83,
+     143
+    ],
+    "body": [
+     7,
+     12
+    ],
+    "leg": [
+     26,
+     28
+    ],
+    "dist": [
+     102,
+     164
+    ],
+    "clinch": [
+     5,
+     5
+    ],
+    "ground": [
+     9,
+     14
+    ],
+    "total": [
+     133,
+     205
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 97,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     103,
+     245
+    ],
+    "head": [
+     64,
+     199
+    ],
+    "body": [
+     28,
+     35
+    ],
+    "leg": [
+     11,
+     11
+    ],
+    "dist": [
+     99,
+     241
+    ],
+    "clinch": [
+     4,
+     4
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     104,
+     246
+    ],
+    "kd": 0,
+    "td": [
+     1,
+     6
+    ],
+    "ctrl_s": 3,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2022-05-07",
+   "event": "UFC 274: Oliveira vs. Gaethje",
+   "opponent": "Charles Oliveira",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "L",
+   "method": "SUB",
+   "method_raw": "Submission",
+   "detail": "Rear Naked Choke",
+   "round": 1,
+   "time": "3:22",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 3.37,
+   "referee": "Marc Goddard",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/7d4e49d8a6678157",
+   "for": {
+    "sig": [
+     21,
+     33
+    ],
+    "head": [
+     13,
+     22
+    ],
+    "body": [
+     3,
+     3
+    ],
+    "leg": [
+     5,
+     8
+    ],
+    "dist": [
+     15,
+     26
+    ],
+    "clinch": [
+     6,
+     7
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     21,
+     33
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 13,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     30,
+     47
+    ],
+    "head": [
+     18,
+     32
+    ],
+    "body": [
+     11,
+     13
+    ],
+    "leg": [
+     1,
+     2
+    ],
+    "dist": [
+     20,
+     34
+    ],
+    "clinch": [
+     8,
+     10
+    ],
+    "ground": [
+     2,
+     3
+    ],
+    "total": [
+     33,
+     52
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     1
+    ],
+    "ctrl_s": 39,
+    "sub_att": 2,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2023-03-18",
+   "event": "UFC 286: Edwards vs. Usman 3",
+   "opponent": "Rafael Fiziev",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "W",
+   "method": "M-DEC",
+   "method_raw": "Decision - Majority",
+   "detail": "Mark Collett 28 - 29.Clemens Werner 28 - 29.Paul Sutherland 28 - 28.",
+   "round": 3,
+   "time": "5:00",
+   "format": "3 Rnd (5-5-5)",
+   "sched_rounds": 3,
+   "minutes": 15.0,
+   "referee": "Marc Goddard",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/90a83875e1d11238",
+   "for": {
+    "sig": [
+     103,
+     171
+    ],
+    "head": [
+     81,
+     142
+    ],
+    "body": [
+     14,
+     15
+    ],
+    "leg": [
+     8,
+     14
+    ],
+    "dist": [
+     84,
+     147
+    ],
+    "clinch": [
+     19,
+     24
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     106,
+     174
+    ],
+    "kd": 0,
+    "td": [
+     1,
+     3
+    ],
+    "ctrl_s": 5,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     97,
+     169
+    ],
+    "head": [
+     38,
+     100
+    ],
+    "body": [
+     52,
+     61
+    ],
+    "leg": [
+     7,
+     8
+    ],
+    "dist": [
+     81,
+     151
+    ],
+    "clinch": [
+     16,
+     18
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     97,
+     169
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2023-07-29",
+   "event": "UFC 291: Poirier vs. Gaethje 2",
+   "opponent": "Dustin Poirier",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "W",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Kick to Head At Distance",
+   "round": 2,
+   "time": "1:00",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 6.0,
+   "referee": "Herb Dean",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/c27e33ee8ef53866",
+   "for": {
+    "sig": [
+     41,
+     66
+    ],
+    "head": [
+     23,
+     48
+    ],
+    "body": [
+     7,
+     7
+    ],
+    "leg": [
+     11,
+     11
+    ],
+    "dist": [
+     38,
+     63
+    ],
+    "clinch": [
+     2,
+     2
+    ],
+    "ground": [
+     1,
+     1
+    ],
+    "total": [
+     41,
+     66
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 1,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     27,
+     52
+    ],
+    "head": [
+     21,
+     46
+    ],
+    "body": [
+     4,
+     4
+    ],
+    "leg": [
+     2,
+     2
+    ],
+    "dist": [
+     25,
+     49
+    ],
+    "clinch": [
+     2,
+     3
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     27,
+     52
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2024-04-13",
+   "event": "UFC 300: Pereira vs. Hill",
+   "opponent": "Max Holloway",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "L",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "Punch to Head At Distance",
+   "round": 5,
+   "time": "4:59",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 24.98,
+   "referee": "Marc Goddard",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/cf5e8f98159c3971",
+   "for": {
+    "sig": [
+     103,
+     199
+    ],
+    "head": [
+     44,
+     121
+    ],
+    "body": [
+     26,
+     42
+    ],
+    "leg": [
+     33,
+     36
+    ],
+    "dist": [
+     103,
+     199
+    ],
+    "clinch": [
+     0,
+     0
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     103,
+     199
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     181,
+     309
+    ],
+    "head": [
+     62,
+     149
+    ],
+    "body": [
+     62,
+     91
+    ],
+    "leg": [
+     57,
+     69
+    ],
+    "dist": [
+     181,
+     308
+    ],
+    "clinch": [
+     0,
+     1
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     181,
+     309
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     0
+    ],
+    "ctrl_s": 0,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2025-03-08",
+   "event": "UFC 313: Pereira vs. Ankalaev",
+   "opponent": "Rafael Fiziev",
+   "weightclass": "Lightweight Bout",
+   "division": "Lightweight",
+   "title": false,
+   "result": "W",
+   "method": "U-DEC",
+   "method_raw": "Decision - Unanimous",
+   "detail": "Ben Cartlidge 28 - 29.Chris Lee 28 - 29.Ron McCarthy 28 - 29.",
+   "round": 3,
+   "time": "5:00",
+   "format": "3 Rnd (5-5-5)",
+   "sched_rounds": 3,
+   "minutes": 15.0,
+   "referee": "Jason Herzog",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/a2f31cf3a28a7730",
+   "for": {
+    "sig": [
+     72,
+     134
+    ],
+    "head": [
+     56,
+     117
+    ],
+    "body": [
+     9,
+     9
+    ],
+    "leg": [
+     7,
+     8
+    ],
+    "dist": [
+     41,
+     92
+    ],
+    "clinch": [
+     26,
+     34
+    ],
+    "ground": [
+     5,
+     8
+    ],
+    "total": [
+     98,
+     163
+    ],
+    "kd": 1,
+    "td": [
+     0,
+     3
+    ],
+    "ctrl_s": 92,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     68,
+     119
+    ],
+    "head": [
+     20,
+     61
+    ],
+    "body": [
+     43,
+     52
+    ],
+    "leg": [
+     5,
+     6
+    ],
+    "dist": [
+     49,
+     100
+    ],
+    "clinch": [
+     14,
+     14
+    ],
+    "ground": [
+     5,
+     5
+    ],
+    "total": [
+     81,
+     134
+    ],
+    "kd": 0,
+    "td": [
+     2,
+     2
+    ],
+    "ctrl_s": 40,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2026-01-24",
+   "event": "UFC 324: Gaethje vs. Pimblett",
+   "opponent": "Paddy Pimblett",
+   "weightclass": "UFC Interim Lightweight Title Bout",
+   "division": "Lightweight",
+   "title": true,
+   "result": "W",
+   "method": "U-DEC",
+   "method_raw": "Decision - Unanimous",
+   "detail": "Mike Bell 47 - 48.Derek Cleary 46 - 49.Sal D'amato 46 - 49.",
+   "round": 5,
+   "time": "5:00",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 25.0,
+   "referee": "Marc Goddard",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/fa4b3f5ce8055921",
+   "for": {
+    "sig": [
+     144,
+     254
+    ],
+    "head": [
+     120,
+     222
+    ],
+    "body": [
+     15,
+     21
+    ],
+    "leg": [
+     9,
+     11
+    ],
+    "dist": [
+     102,
+     198
+    ],
+    "clinch": [
+     20,
+     27
+    ],
+    "ground": [
+     22,
+     29
+    ],
+    "total": [
+     200,
+     313
+    ],
+    "kd": 2,
+    "td": [
+     3,
+     3
+    ],
+    "ctrl_s": 355,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     156,
+     311
+    ],
+    "head": [
+     83,
+     221
+    ],
+    "body": [
+     48,
+     63
+    ],
+    "leg": [
+     25,
+     27
+    ],
+    "dist": [
+     140,
+     284
+    ],
+    "clinch": [
+     16,
+     27
+    ],
+    "ground": [
+     0,
+     0
+    ],
+    "total": [
+     170,
+     326
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     5
+    ],
+    "ctrl_s": 48,
+    "sub_att": 0,
+    "rev": 0
+   }
+  },
+  {
+   "date": "2026-06-14",
+   "event": "UFC Freedom 250",
+   "opponent": "Ilia Topuria",
+   "weightclass": "UFC Lightweight Title Bout",
+   "division": "Lightweight",
+   "title": true,
+   "result": "W",
+   "method": "KO/TKO",
+   "method_raw": "KO/TKO",
+   "detail": "toCorner Stoppage",
+   "round": 4,
+   "time": "5:00",
+   "format": "5 Rnd (5-5-5-5-5)",
+   "sched_rounds": 5,
+   "minutes": 20.0,
+   "referee": "Marc Goddard",
+   "has_stats": true,
+   "fight_url": "http://ufcstats.com/fight-details/7208e40818401e88",
+   "for": {
+    "sig": [
+     91,
+     192
+    ],
+    "head": [
+     79,
+     175
+    ],
+    "body": [
+     8,
+     12
+    ],
+    "leg": [
+     4,
+     5
+    ],
+    "dist": [
+     73,
+     167
+    ],
+    "clinch": [
+     15,
+     21
+    ],
+    "ground": [
+     3,
+     4
+    ],
+    "total": [
+     119,
+     228
+    ],
+    "kd": 0,
+    "td": [
+     0,
+     5
+    ],
+    "ctrl_s": 92,
+    "sub_att": 0,
+    "rev": 0
+   },
+   "against": {
+    "sig": [
+     97,
+     162
+    ],
+    "head": [
+     55,
+     112
+    ],
+    "body": [
+     37,
+     45
+    ],
+    "leg": [
+     5,
+     5
+    ],
+    "dist": [
+     68,
+     125
+    ],
+    "clinch": [
+     22,
+     29
+    ],
+    "ground": [
+     7,
+     8
+    ],
+    "total": [
+     111,
+     177
+    ],
+    "kd": 1,
+    "td": [
+     1,
+     3
+    ],
+    "ctrl_s": 152,
+    "sub_att": 0,
+    "rev": 0
+   }
+  }
+ ]
+}

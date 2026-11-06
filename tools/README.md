@@ -1,0 +1,158 @@
+# tools/
+
+Offline scripts that turn the UFC stats snapshot into the data the v3 engine, the calibration harness
+and the page read. The contract for every output is `docs/ENGINE_V3_SPEC.md`; this file explains how
+the pipeline gets there and how to add or override a fighter.
+
+## build_db.py: the data pipeline
+
+```
+python3 tools/build_db.py                    # from the project root, about 5 seconds
+python3 tools/build_db.py --half-life 540    # decay half-life for the S sums, in days (default 730)
+python3 tools/build_db.py --roster-since 2019-01-01   # who goes in fighters.json (default 2021-01-01)
+```
+
+Needs Python 3 with pandas and numpy (no scipy, no network). Rerun it whenever `data/raw/` changes.
+
+### Inputs (data/raw/, ufcstats.com via Greco1899/scrape_ufc_stats)
+
+| File | Used for |
+|---|---|
+| ufc_event_details.csv | event dates (the snapshot date is the last event) |
+| ufc_fight_results.csv | bouts, outcome, method, round/time, time format, weight class, judges' cards |
+| ufc_fight_stats.csv | round-by-round stats per fighter ("x of y" strings, CTRL "m:ss") |
+| ufc_fighter_details.csv | canonical names (they match the bout names) and nicknames |
+| ufc_fighter_tott.csv | height, reach, stance, DOB, listed weight |
+
+### Steps
+
+1. **Clean and parse.** Every field is stripped. Fight id = the ufcstats fight URL id. The scrape lists
+   two Noche UFC cards twice under different event names: one copy per fight URL is kept. Fights whose
+   event has no date in ufc_event_details.csv are dropped and listed in `meta.excluded_fights`
+   (currently the two bouts of "UFC - Road to UFC 4.6"). Outcome `W/L` / `L/W` maps to the two names
+   in `BOUT` in order; `D/D` draw; `NC/NC` no contest. Division = the weight-class string reduced to a
+   division name (`UFC`, `Interim`, `Title`, `Tournament`, TUF / Road to UFC season words dropped;
+   "Super Heavyweight" counts as Heavyweight; early no-class tournaments are Open Weight).
+   `title` = championship bouts (undisputed, interim, "Superfight Championship"); TUF and Road to UFC
+   tournament finals are flagged `tourn` instead.
+2. **Time.** Round lengths come from `TIME FORMAT` ("3 Rnd (5-5-5)", "3 Rnd + OT (5-5-5-5)",
+   "1 Rnd + OT (12-3)" ...; "No Time Limit" = one open round). Minutes in a stats round = the scheduled
+   length, except the final round = `TIME`. Total fight seconds = earlier rounds + `TIME`.
+3. **People.** Bout names are matched to ufcstats people (fighter URL ids): first the fighter-details
+   name, then the tott name (catches renames like "Kai Kamaka" / "Kai Kamaka III", "Patricio Freire" /
+   "Patricio Pitbull"), then `MANUAL_ALIASES` in the script ("Nick Galanti", "Rafael Cerquiera"), then a
+   strict fuzzy match. Merges are listed in `meta.aliases`. Nine names belong to two different people
+   in ufcstats (Anthony Figueroa, Anthony Romero, Bruno Silva, Jean Silva, Joey Gomez, Michael McDonald,
+   Mike Davis, Tony Johnson, Victor Valenzuela). Each of their bouts is assigned by the listed weight
+   closest to the division limit (needs a 10 lb margin), otherwise to the same person as that name's
+   nearest confidently assigned bout within 4 years; anything still open becomes an `amb:` person that
+   is kept out of the roster, the priors and the backtest. All bouts resolve in this snapshot; Bruno
+   Silva becomes `bruno-silva-bulldog` (flyweight) and `bruno-silva-blindado` (middleweight). The
+   report is `meta.ambiguous_names`. A tott row stored under a fighter's URL with a different name and
+   an implausible weight is ignored (`meta.tott_distrusted`: Tyrell Fortune carries Regina Malpica's row).
+4. **Per-fight vectors.** Round stats are summed per fighter into the spec's sum keys (what he did, what
+   was done to him, results, 5-round pace pieces). Fights without round stats (a few 1990s bouts) count
+   for the record, Elo and `n_fights` but not for the sums.
+5. **Elo.** Walk-forward over every fight since 1994 (start 1500, scale 400, draws 0.5, NCs skipped),
+   K grid 16..80 x boost {1, 1.5, 2, 2.5} for a fighter's first 5 UFC fights; chosen by log loss on
+   2019-2023 decisive fights where both men had a prior UFC fight, then reported on 2024+.
+6. **Walk-forward.** Fights in date order (bout order inside an event). Before each fight both men's
+   decayed sums are snapshotted as of that date, built only from earlier fights; then the fight is
+   added. Eligible fights (2019-01-01 on, both with a prior UFC fight, no `amb:` person) become
+   backtest entries. At the end every S is decayed to the snapshot date.
+7. **Priors.** Fights since 2018-01-01, per division and ALL.
+
+### Outputs
+
+**data/derived/fighters.json** (about 2 MB; the page inlines it). Spec "Profile format":
+`meta` (source, snapshot, built, half_life_days, roster_since, keys, notes, ambiguous_names, aliases,
+tott_distrusted, excluded_fights), `priors` (same object as priors.json), `fighters` keyed by slug
+(ascii, lowercase, hyphenated name; namesakes get the nickname appended). Each fighter: `name nick id
+dob height_in reach_in stance division divisions record last_fight n_fights n_5rd ko_losses
+kd_absorbed elo S C pace pace_w recent`.
+
+- `S` / `C`: sums in `meta.keys` order, decayed (`0.5 ^ (days before snapshot / half_life)`) and
+  career. Keys: the spec list plus `r5_min_1..r5_min_5` (minutes in each round of 5-round fights, the
+  denominators the pace curve needs). Divide by exposure and shrink toward priors in the engine.
+- `record`: `w l d nc ko_w sub_w dec_w ko_l sub_l dec_l dq_w dq_l`; KO includes doctor and corner
+  stoppages; Overturned and Could Not Continue are NC; DQ has its own fields.
+- `ko_losses`: KO/TKO losses by strikes or corner stoppage (doctor stoppages excluded), for chin aging.
+- `division`: most frequent division over the 3 years before the snapshot (catch and open weight
+  ignored), else career.
+- `pace` / `pace_w`: sig landed per minute by round in his 5-round fights relative to round 1, with the
+  minutes per round as weights; 3-round fights for rounds 1-3 (and null for 4-5) when he has no
+  5-round fights.
+- `recent`: last 6 fights, newest first: `date opp res method rd time wc title`, plus `how` (ufcstats
+  finish detail) for KO/TKO and submission finishes.
+
+**data/derived/priors.json**: `{meta, priors}`; `priors[division]` holds `lbs`, `n_fights`,
+`fighter_min`, every sum key per fighter-minute (the league-average fighter), accuracies `acc_d acc_c
+acc_g acc_h acc_b acc_l acc_t acc_sig`, `slpm`, `kd_per_h` (knockdowns per landed head strike), `kd15`,
+`td_acc`, `td15`, `ctrl_per_td` (control seconds per takedown landed), `ctrl15`, `sub15`, `sub_conv`
+(submission wins per attempt), `kd_fin` (share of rounds with a knockdown that the knockdown scorer
+finished by KO/TKO), `fin3`/`fin5` (finish split by round: KO and SUB arrays, DEC, DRAW, OTH, n),
+`dec3`/`dec5` (UD/SD/MD shares), `pace3`/`pace5`, `mpf3`/`mpf5`/`mpf` (minutes per fight). Open
+Weight has no fights since 2018 and carries the ALL rates with `fallback: "ALL"`.
+
+**data/derived/backtest.json** (about 5 MB, for tools/calibrate.js; not inlined in the page):
+`{meta, fights}`. Each entry: `id date event division rounds title [tourn] A B result actual`.
+A = first name in the ufcstats bout. Sides carry `slug name age n ko_losses kd_absorbed elo home
+height_in reach_in stance pace pace_w S`, all as of the fight (S decayed to the fight date; `n`,
+`ko_losses`, `kd_absorbed`, `pace`, `home` and `elo` from earlier fights only). `result`: `winner`
+(A, B, D, NC), `method` (KO, SUB, UD, SD, MD, DRAW, DQ, NC, DOC, CNC), `round`, `time_s` (seconds into
+the final round), `fight_s` (total), `detail` (finish detail, or the cards), `cards` ([A, B] per
+judge; ufcstats writes them loser-first, order unknown for draws), `corner` for corner stoppages.
+`actual`: per side `sig_lnd sig_att kd td_lnd td_att ctrl sub_att h_lnd b_lnd l_lnd`, plus `minutes`.
+
+**data/derived/elo_report.json**: rule, chosen K and boost, the grid with tuning metrics, 2019-2023
+and 2024+ log loss / Brier / accuracy, 2024+ calibration bins.
+
+**data/overrides.json** is created only when missing (appearance placeholders for the default matchup
+copied from the v2 rig SPECS); after that it is hand-edited and never overwritten.
+
+### Checks the script prints
+
+Career numbers for Volkanovski and Gaethje should match ufcstats: Volkanovski 5.98 landed / 3.33
+absorbed per minute, 34% takedown accuracy, 67% takedown defense; Gaethje 6.29 / 6.83, 27% / 73%.
+A random-entry recomputation of backtest snapshots from raw per-fight vectors matched to rounding.
+
+## Adding or overriding a fighter
+
+All hand edits go in `data/overrides.json`, keyed by the fighter's slug from fighters.json. The build
+script never touches that file once it exists, so rebuilding the data keeps the edits.
+
+```jsonc
+{
+  "fighters": {
+    "justin-gaethje": {
+      "appearance": { "skin": "#d59a7c", "hair": "#6b4a33", "beard": false,
+                      "shorts": "#c9312f", "trim": "#111111", "glove": "#16181c" },
+      "nick": "The Highlight",           // any profile field can be replaced
+      "reach_in": 70
+    }
+  },
+  "manual": {
+    "new-signee": {                      // not in the ufcstats data (or a full replacement)
+      "name": "New Signee", "dob": "1997-05-01", "height_in": 70, "reach_in": 72, "stance": "Orthodox",
+      "division": "Lightweight",
+      "rates": { "slpm": 4.5, "sapm": 3.9, "acc": 0.48, "def": 0.57, "td15": 1.2, "tdAcc": 0.40,
+                 "tdDef": 0.70, "sub15": 0.4, "kd15": 0.3, "head": 0.62, "body": 0.18, "leg": 0.20,
+                 "dist": 0.80, "clinch": 0.10, "ground": 0.10, "mins": 60 }
+    }
+  }
+}
+```
+
+- **Fighter in the data**: nothing to do; everyone with a UFC fight since `--roster-since` gets a
+  profile. To include older fighters, rerun with an earlier `--roster-since` (the file grows by about
+  1.6 KB per fighter).
+- **Name mismatch** (a bout name that doesn't match ufcstats' fighter list): add it to
+  `MANUAL_ALIASES` in build_db.py; the build prints how many names stayed unmatched.
+- **Two people with one name**: handled automatically by weight and era; check
+  `meta.ambiguous_names` after a new snapshot.
+- **Fighter not in the data** (new signee, other promotions): add a `manual` entry with a `rates`
+  block in ufcstats career format (`slpm sapm acc def td15 tdAcc tdDef sub15 kd15 head body leg dist
+  clinch ground mins`); the engine turns it into pseudo-sums, and `mins` sets how much weight it gets
+  against the priors.
+- **New data**: replace the CSVs in `data/raw/` with a fresh scrape and rerun build_db.py, then
+  tools/calibrate.js.

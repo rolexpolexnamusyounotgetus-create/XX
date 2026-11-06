@@ -1,0 +1,26 @@
+{
+  "_note": "Hand-entered tweaks layered on data/derived/fighters.json by slug. 'appearance' drives the 3D rig; any profile field (nick, height_in, reach_in, stance, dob, division) may be overridden; 'manual' holds fighters not in the data, each with a 'rates' block in ufcstats career format (slpm sapm acc def td15 tdAcc tdDef sub15 kd15 head body leg dist clinch ground mins). See tools/README.md.",
+  "fighters": {
+    "alexander-volkanovski": {
+      "appearance": {
+        "skin": "#d9a383",
+        "hair": "#231710",
+        "beard": true,
+        "shorts": "#2563c9",
+        "trim": "#e9eef5",
+        "glove": "#16181c"
+      }
+    },
+    "justin-gaethje": {
+      "appearance": {
+        "skin": "#d59a7c",
+        "hair": "#6b4a33",
+        "beard": false,
+        "shorts": "#c9312f",
+        "trim": "#111111",
+        "glove": "#16181c"
+      }
+    }
+  },
+  "manual": {}
+}
