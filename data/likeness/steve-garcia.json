@@ -1,0 +1,336 @@
+{
+  "slug": "steve-garcia",
+  "name": "Steve Garcia",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 34,
+  "official": {
+    "dob": "1992-05-22",
+    "height_cm": 182.9,
+    "reach_cm": 190.5,
+    "stance": "Southpaw",
+    "fight_weight_lb": 145,
+    "division_note": "Featherweight (fought at lightweight earlier in his UFC run). Knocked out by Diego Lopes at UFC Freedom 250 (Jun 14, 2026); reported (not yet official on Nov 6) vs Yair Rodriguez at UFC 335, Dec 12, 2026."
+  },
+  "photos_used": [
+    "espn-headshot.png",
+    "ref-csp-2026-06-freedom250-media-front.jpg",
+    "wm-2026-06-12-lincoln-presser-10-cropped.jpg",
+    "wm-2026-06-12-lincoln-faceoff-21.jpg",
+    "ref-zuffa-2025-10-31-vegas110-faceoff.jpg",
+    "ref-csp-2026-06-13-freedom250-faceoff.jpg",
+    "ref-zuffa-2025-10-31-vegas110-weighin.jpg",
+    "wm-2026-06-12-lincoln-steps-22.jpg",
+    "espn-stance-right.png",
+    "espn-stance-left.png"
+  ],
+  "photo_coverage": "Good; 10 photos. Front: ESPN studio headshot (Jun 2026), Jun 2026 media day (reference-only) and the Jun 12, 2026 Lincoln Memorial photo (public domain, embed-ok). Profile: Oct 2025 faceoff (right side, with the arm tattoos) and two Jun 2026 faceoffs (left side; Cageside and a public-domain White House photo). Physique: Oct 2025 official weigh-in, ESPN cutouts (Oct 2025, Jun 2026) and a Jun 2026 Army photo (full length, in a suit). No fight-action photo of him was found on Commons; the South Lawn set shows other bouts.",
+  "face": {
+    "shape": "Broad, squarish-round face: wide across the cheeks and jaw, with fuller cheeks than his lean body suggests. Medium length.",
+    "jaw": "Wide with rounded-square angles; strong under the stubble.",
+    "chin": "Medium-broad, slightly prominent, rounded; stubble-covered.",
+    "cheekbones": "Moderate, softened by full cheeks.",
+    "brow_ridge": "Moderate to strong; heavy brows sit low on it.",
+    "forehead": "Medium height and broad, with faint horizontal creases.",
+    "eyes": {
+      "shape": "Almond, smallish, hooded under heavy upper lids; outer corners slightly downturned; mild bags.",
+      "spacing": "Average.",
+      "colour": "Medium-dark brown. Closest embed iris: brown.",
+      "size": "Small-medium"
+    },
+    "eyebrows": {
+      "thickness": "Thick",
+      "shape": "Dark, straight and low, close together at the inner ends (near-joined), slightly lower at the inner ends, which gives a frowning, intense look.",
+      "colour": "Dark brown-black.",
+      "colour_hex": "#2b1f1a"
+    },
+    "nose": {
+      "length": "Medium-long",
+      "width": "Broad, especially at the tip.",
+      "bridge": "Broad and slightly flattened at mid-bridge from the front.",
+      "hump": "Slightly convex in both side profiles (Oct 2025 right, Jun 2026 left).",
+      "tip": "Wide, rounded and fleshy; wide nostrils.",
+      "fight_damage": "The broad, slightly flattened bridge is consistent with old breaks; no clear deviation."
+    },
+    "mouth_lips": "Medium width; thin upper lip, medium lower lip; corners slightly downturned at rest (stern expression).",
+    "ears": {
+      "size": "Large",
+      "protrusion": "Stick out strongly from the head; the most recognisable feature from the front.",
+      "cauliflower_ear": "Yes, both ears look thickened and smoothed at the upper rim and inner folds (cauliflower), clearest on his left ear in the June 2026 media photo and the studio headshot."
+    },
+    "notable_marks_scars": "Small dark mole on the left cheek (his left), below and outside the left eye (studio headshot and June 2026 media photo)."
+  },
+  "hair": {
+    "style": "Very short buzz cut (about 1 cm on top) with a high skin fade on the sides and back; a shaved hard-part line on the right side in October 2025.",
+    "length_cm": {
+      "top": 1,
+      "sides": 0.2,
+      "back": 0.2
+    },
+    "colour": "Dark brown.",
+    "colour_samples": {
+      "espn_2026_top_median": "#33241d",
+      "espn_2026_top_lit_half": "#423028",
+      "media_2026_top": "#493b3b"
+    },
+    "colour_hex": "#2e221c",
+    "hairline": "Slightly receding at the temples with a rounded central front; shaved short so the scalp shows through.",
+    "texture": "Straight, dense."
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "colour": "Dark brown.",
+    "colour_samples": {
+      "espn_chin_dark_half": "#56372a",
+      "espn_moustache_dark_half": "#9a5f48"
+    },
+    "colour_samples_note": "Stubble boxes are mostly skin; colour_hex is judged.",
+    "colour_hex": "#2f231d",
+    "density": "Medium on the moustache, chin and jaw line; sparse on the cheeks.",
+    "length_mm": "About 2-4 mm (2025-2026).",
+    "shape": "Heavy stubble in a beard pattern: moustache joined to the chin and along the jaw; cheeks mostly clear above a low cheek line."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn-headshot.png",
+        "spot": "forehead",
+        "box": "270,110,330,135",
+        "hex": "#f2bca7",
+        "light": "studio, high key, warm grade"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "right cheek",
+        "box": "235,200,258,225",
+        "hex": "#c2836a",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "left cheek",
+        "box": "342,200,365,225",
+        "hex": "#c0876e",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "ref-csp-2026-06-freedom250-media-front.jpg",
+        "spot": "right cheek",
+        "box": "300,160,325,185",
+        "hex": "#daa6a0",
+        "light": "press-room light, slightly over-exposed, cool"
+      },
+      {
+        "photo": "ref-csp-2026-06-freedom250-media-front.jpg",
+        "spot": "neck",
+        "box": "330,255,380,275",
+        "hex": "#d8b6ad",
+        "light": "press-room light, slightly over-exposed, cool"
+      },
+      {
+        "photo": "ref-zuffa-2025-10-31-vegas110-weighin.jpg",
+        "spot": "forehead",
+        "box": "330,45,380,60",
+        "hex": "#f9ba9c",
+        "light": "weigh-in stage light, bright"
+      },
+      {
+        "photo": "ref-zuffa-2025-10-31-vegas110-weighin.jpg",
+        "spot": "right cheek",
+        "box": "325,95,342,112",
+        "hex": "#eaa07d",
+        "light": "weigh-in stage light"
+      },
+      {
+        "photo": "ref-zuffa-2025-10-31-vegas110-weighin.jpg",
+        "spot": "chest",
+        "box": "300,215,350,250",
+        "hex": "#fbd1ba",
+        "light": "weigh-in stage light, bright"
+      },
+      {
+        "photo": "wm-2026-06-12-lincoln-presser-10-cropped.jpg",
+        "spot": "forehead",
+        "box": "570,290,680,320",
+        "hex": "#ae8b79",
+        "light": "night floodlight, dim and grainy"
+      },
+      {
+        "photo": "wm-2026-06-12-lincoln-presser-10-cropped.jpg",
+        "spot": "right cheek",
+        "box": "510,410,540,445",
+        "hex": "#a07964",
+        "light": "night floodlight, dim and grainy"
+      },
+      {
+        "photo": "wm-2026-06-12-lincoln-presser-10-cropped.jpg",
+        "spot": "left cheek",
+        "box": "700,405,730,440",
+        "hex": "#a48173",
+        "light": "night floodlight, dim and grainy"
+      }
+    ],
+    "tone_average_all": "#d19f8a",
+    "tone_average_face": "#cb9781",
+    "tone_hex": "#d19f8a",
+    "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). All three sources run bright (high-key studio, an over-exposed press photo whose forehead clips to #fcd4cc and was left out, and a bright Zuffa weigh-in), so the average may read a little light; the backlit June 2026 faceoff (#b59391, cool and grey) was not sampled.",
+    "tone_category": "light",
+    "undertone": "Neutral-warm (peach); slight redness on the cheeks and nose.",
+    "freckles_marks": "Small mole on the left cheek; faint forehead creases; light chest hair."
+  },
+  "body": {
+    "build": "Tall and long for featherweight (183 cm with a 190.5 cm reach): long arms, long legs, narrow frame.",
+    "body_fat": "lean",
+    "body_fat_notes": "Lean with visible abs and obliques at the October 2025 weigh-in; a little softness at the lower belly in the October 2025 studio cutout.",
+    "shoulders": "Moderate width, sloping; narrow relative to his height.",
+    "chest": "Flat, modest pecs.",
+    "arms": "Very long and lean; modest biceps; long forearms.",
+    "waist": "Narrow.",
+    "legs_calves": "Long legs with lean thighs and slim calves.",
+    "neck": "Medium, fairly long.",
+    "posture": "Upright, shoulders slightly rounded forward, head carried a little forward.",
+    "notable_physique_traits": "Tall, rangy southpaw frame with a reach well beyond his height; buzz cut, protruding cauliflower ears and heavy low brows."
+  },
+  "tattoos": [
+    {
+      "where": "Back of the right upper arm (triceps / rear shoulder)",
+      "description": "Black-and-grey figurative piece, vertically oriented, with feather- or wing-like shading; details not legible at this resolution.",
+      "size": "About 12 cm tall x 6 cm wide"
+    },
+    {
+      "where": "Right upper arm, just above the back of the elbow",
+      "description": "Small line of black script or numerals under the triceps piece (not legible).",
+      "size": "About 4 cm wide"
+    },
+    {
+      "where": "Right forearm, outer / back side",
+      "description": "Black line-work dagger or sword with a cross-guard, the blade running along the forearm toward the wrist.",
+      "size": "About 15 cm long"
+    },
+    {
+      "where": "Right inner elbow",
+      "description": "Small dark mark visible from the front at the October 2025 weigh-in and in the October 2025 cutout; may be part of the forearm piece.",
+      "size": "About 2-3 cm"
+    },
+    {
+      "where": "Right hand, side of one finger (ring or middle finger, near the knuckle)",
+      "description": "Small dark blue-black mark in the June 12, 2026 Lincoln Memorial photo; possibly a small finger tattoo (low confidence, grainy night photo).",
+      "size": "About 1 cm"
+    }
+  ],
+  "tattoos_note": "Seen in the October 2025 Zuffa faceoff (right side) and weigh-in photos. The front of the torso, the left arm and the legs look clean in the 2025-2026 studio cutouts and faceoffs.",
+  "accessories_seen": "Large round pendant on a silver chain and a black band ring on the left ring finger (June 12, 2026 press conference); black wristband on the left wrist at the June 13, 2026 faceoff; sunglasses on the scale (Oct 2025).",
+  "kit": {
+    "typical_shorts": "Navy UFC Freedom 250 event shorts with red stars on the waistband, red pinstripes and white stripes, worn with blue 'Freedom 250' gloves (June 2026, one-off); black shorts with a grey and white slash pattern (October 2025 studio shoot); brown briefs on the scale. Fight-night colour follows the corner.",
+    "shorts_colours_hex": {
+      "navy": "#081430",
+      "star_red": "#c8102e",
+      "black": "#1f212b",
+      "slash_white": "#e8e8ea"
+    }
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.138,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.35,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.25,
+    "macro/heightUpM": 0.15,
+    "macro/heightDownM": 0.0,
+    "macro/proportionsUpM": 0.55,
+    "head/head-square": 0.3,
+    "head/head-round": 0.2,
+    "head/head-scale-horiz-incr": 0.1,
+    "head/head-fat-incr": 0.1,
+    "chin/chin-width-incr": 0.2,
+    "chin/chin-bones-incr": 0.25,
+    "chin/chin-prominent-incr": 0.1,
+    "cheek/l-cheek-volume-incr": 0.15,
+    "cheek/r-cheek-volume-incr": 0.15,
+    "cheek/l-cheek-bones-incr": 0.05,
+    "cheek/r-cheek-bones-incr": 0.05,
+    "eyes/l-eye-scale-decr": 0.15,
+    "eyes/r-eye-scale-decr": 0.15,
+    "eyes/l-eye-height2-decr": 0.2,
+    "eyes/r-eye-height2-decr": 0.2,
+    "eyes/l-eye-corner1-down": 0.15,
+    "eyes/r-eye-corner1-down": 0.15,
+    "eyes/l-eye-bag-incr": 0.2,
+    "eyes/r-eye-bag-incr": 0.2,
+    "eyebrows/eyebrows-trans-down": 0.35,
+    "eyebrows/eyebrows-trans-forward": 0.2,
+    "eyebrows/eyebrows-angle-down": 0.1,
+    "nose/nose-scale-horiz-incr": 0.2,
+    "nose/nose-width1-incr": 0.2,
+    "nose/nose-point-width-incr": 0.35,
+    "nose/nose-nostrils-width-incr": 0.25,
+    "nose/nose-flaring-incr": 0.15,
+    "nose/nose-scale-vert-incr": 0.1,
+    "nose/nose-hump-incr": 0.1,
+    "nose/nose-scale-depth-incr": 0.1,
+    "mouth/mouth-upperlip-volume-decr": 0.3,
+    "mouth/mouth-angles-down": 0.15,
+    "ears/l-ear-scale-incr": 0.35,
+    "ears/r-ear-scale-incr": 0.35,
+    "ears/l-ear-rot-forward": 0.45,
+    "ears/r-ear-rot-forward": 0.45,
+    "ears/l-ear-lobe-decr": 0.1,
+    "ears/r-ear-lobe-decr": 0.1,
+    "neck/neck-scale-vert-incr": 0.05,
+    "torso/measure-shoulder-dist-decr": 0.05,
+    "torso/torso-vshape-incr": 0.05,
+    "torso/measure-waist-circ-decr": 0.25,
+    "torso/measure-hips-circ-decr": 0.15,
+    "buttocks/buttocks-volume-decr": 0.1
+  },
+  "render_hints": {
+    "iris": "brown",
+    "eyebrows": "eyebrow010 (heavier) tinted #2b1f1a, low and nearly joined",
+    "hair": "buzz cut: no hair mesh, dark scalp shading #2e221c with a high fade",
+    "beard": "stubble #2f231d in a beard pattern, sparse on the cheeks"
+  },
+  "stance": {
+    "schema": "stance/1",
+    "base": "southpaw",
+    "width": 1.0,
+    "depth": 1.1,
+    "crouch": 0.3,
+    "lean": 0.3,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 45,
+    "weight_front": 0.56,
+    "bladed": 0.55,
+    "guard": {
+      "style": "long",
+      "height": 0.55,
+      "lead_reach": 0.5,
+      "lead_height": 0.55,
+      "lead_width": 0.05,
+      "rear_height": 0.6,
+      "rear_tuck": 0.7,
+      "elbow_flare": 0.25,
+      "shoulder_roll": 0.45
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.3,
+      "chin_tuck": 0.45
+    },
+    "bounce": {
+      "amp": 0.45,
+      "rate": 1.1
+    },
+    "switch_per_min": 0.0,
+    "feints": 0.25,
+    "hand_fighting": 0.3,
+    "posture": "closed",
+    "footwork": [
+      "pressure",
+      "cage-cutting"
+    ],
+    "source": "data/scouting/steve-garcia.json (archetype pressure striker, southpaw; tags pressure, power, volume, rangy, fast-starter, wild-exchanges; straight left and low kicks backing opponents to the fence) plus general knowledge of his fight footage. Not measured from these photos.",
+    "confidence": "low",
+    "notes": "Long southpaw pressure fighter: walks forward behind a long right hand and the straight left, high output from the opening bell; gets drawn into exchanges with the chin up, so chin_tuck is lower than average."
+  },
+  "notes": "Confidence: high for the ears, brows, hair, build and right-arm tattoo placement; medium for face proportions; medium for the morph values. What to watch: (1) large, strongly protruding cauliflower ears, his strongest likeness cue (ears/ear-rot-forward and ear-scale carry it); (2) heavy, low, nearly joined dark brows over small, hooded brown eyes; (3) a broad face with full cheeks and a wide jaw on a lean, tall body, so do not slim the face to match the body; (4) broad nose with a wide rounded tip; (5) buzz cut with a high skin fade; (6) tattoos only on the right arm (back of the upper arm, a forearm dagger) plus a possible small finger mark; (7) 183 cm with a 190.5 cm reach, so long arms. The earlier scouting note said 'no tattoos' because the studio cutouts only show the front. The stance block comes from data/scouting and general fight-footage knowledge, not from these photos. ageOldM uses (years-25)/65; l-/r- values are symmetric."
+}

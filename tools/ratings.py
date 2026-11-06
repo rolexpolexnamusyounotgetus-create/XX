@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Advanced walk-forward fighter ratings: Elo variants, Glicko-2, TrueSkill, Whole-History Rating,
 round-level ratings and dimensional (striking / grappling) ratings, tuned on 2019-2023 and scored once
-on 2024+.
+on the validation years 2024-2025. Fights from 2026-01-01 are the sealed vault (docs/BACKLOG.md hidden-data
+protocol): never scored here; their pre-fight probabilities go to <vault dir>/ratings_vault.json outside the repo.
 
 Run from the project root:
 
-    python3 tools/ratings.py --ckpt CK    # full run: tune every system, score 2024+, write outputs (~50 min on a
+    python3 tools/ratings.py --ckpt CK    # full run: tune, score 2024-2025, write outputs (~50 min on a
                                           # loaded 4-core box; CK = checkpoint file so a cut-off run resumes)
     python3 tools/ratings.py plus         # then: rating logits + pre-fight covariates (ratings_plus), added to the json
     python3 tools/ratings.py tables       # markdown tables for research/model_ratings.md
@@ -57,6 +58,9 @@ FIGHTERS = os.path.join(ROOT, "data", "derived", "fighters.json")
 
 TUNE_FROM = dt.date(2019, 1, 1).toordinal()
 TEST_FROM = dt.date(2024, 1, 1).toordinal()
+VAULT_FROM = dt.date(2026, 1, 1).toordinal()       # sealed vault: never scored or fit on (hidden-data protocol)
+VAULT_DIR = os.environ.get("RATINGS_VAULT_DIR",     # = tools/make_vault.py / ml.py / market.py default, outside the repo
+                           "/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/vault")
 INNER_SPLIT = dt.date(2022, 1, 1).toordinal()      # time-ordered check inside the tuning window
 YEAR = 365.25
 LN10_400 = math.log(10) / 400.0                    # Elo points -> logits
@@ -202,7 +206,8 @@ def load_data():
     dec = np.array([D.winner[i] in ("A", "B") for i in D.bt_idx])
     bi = D.bt_idx[dec]
     D.idx_tune = bi[(D.day[bi] >= TUNE_FROM) & (D.day[bi] < TEST_FROM)]
-    D.idx_test = bi[D.day[bi] >= TEST_FROM]
+    D.idx_test = bi[(D.day[bi] >= TEST_FROM) & (D.day[bi] < VAULT_FROM)]   # validation 2024-2025 only
+    D.bt_idx = D.bt_idx[D.day[D.bt_idx] < VAULT_FROM]       # backtest.json holds 2019-2025 since the vault split
     D.idx_in_tr = D.idx_tune[D.day[D.idx_tune] < INNER_SPLIT]
     D.idx_in_va = D.idx_tune[D.day[D.idx_tune] >= INNER_SPLIT]
     D.snapshot = fights[-1].date
@@ -1423,6 +1428,10 @@ def prepare(D, log=print):
     elig &= np.array([not (D.pids[a].startswith("amb:") or D.pids[b].startswith("amb:"))
                       for a, b in zip(D.ia, D.ib)])
     D.idx_pre = np.where(elig & (D.day >= dt.date(2008, 1, 1).toordinal()) & (D.day < TUNE_FROM))[0]
+    # vault bouts: pre-fight probabilities are exported outside the repo (results never read here)
+    pv = (npa >= 1) & (npb >= 1) & (D.day >= VAULT_FROM)
+    pv &= np.array([not (D.pids[a].startswith("amb:") or D.pids[b].startswith("amb:")) for a, b in zip(D.ia, D.ib)])
+    D.idx_vault = np.where(pv)[0]
 
 
 # =====================================================================================================
@@ -1930,7 +1939,7 @@ def main():
         logs.append(s)
 
     D = load_data()
-    log("loaded %d bouts, %d fighters; tuning fights %d (2019-2023), held-out fights %d (2024+)"
+    log("loaded %d bouts, %d fighters; tuning fights %d (2019-2023), held-out fights %d (2024-2025)"
         % (D.n, D.n_players, len(D.idx_tune), len(D.idx_test)))
     prepare(D, log)
     _G["D"] = D
@@ -2016,12 +2025,12 @@ def main():
         pool.close()
 
     # ------------------------------------------------------------------ final walk-forward runs (2019-2026)
-    log("final runs with the tuned parameters (the only pass that reaches 2024+)")
+    log("final runs with the tuned parameters (the only pass that reaches 2024-2025; vault days predicted, not scored)")
     finals, preds, recs = {}, {}, {}
     for s in S:
         P = tuned[s["name"]]
         ts = time.time()
-        p, rec, st = run_system(D, s["kind"], P, record=True, eval_idx=D.bt_idx)
+        p, rec, st = run_system(D, s["kind"], P, record=True, eval_idx=np.r_[D.bt_idx, D.idx_vault])
         F = {"kind": s["kind"], "P": P, "state": st if s["kind"] != "whr" else None,
              "model": st if s["kind"] == "whr" else None}
         finals[s["name"]] = F
@@ -2119,7 +2128,7 @@ def main():
     rank_score["dims"] = float(ll_vec(dims_oof[okd], ytr[okd]).mean())
     singles_rank = sorted(rank_score, key=lambda k: rank_score[k])
     best = singles_rank[0]
-    log("held-out 2024+ (n=%d):" % len(ix))
+    log("held-out validation 2024-2025 (n=%d; 2026+ vault never scored):" % len(ix))
     for k in names:
         log("  %-14s tune %.5f | test LL %.5f %s Brier %.5f acc %.3f ECE %.3f slope %.2f | dLL vs ref %+.5f (P<0 %.2f)"
             % (k, tune_m[k]["log_loss"], test[k]["log_loss"], boot[k]["log_loss_ci95"], test[k]["brier"],
@@ -2184,9 +2193,14 @@ def main():
             "n_bouts": D.n, "n_tune": len(it), "n_test": len(ix),
             "protocol": "walk-forward over every UFC bout since 1994 in date order (bout order inside a card); "
                         "parameters chosen by coordinate descent on 2019-2023 log loss with the data stream cut at "
-                        "2024-01-01; second-stage models by expanding-window CV by year inside 2019-2023; 2024+ "
+                        "2024-01-01; second-stage models by expanding-window CV by year inside 2019-2023; 2024-2025 "
                         "scored once with the chosen settings; draws and no-contests excluded from winner metrics; "
                         "event-clustered bootstrap (2000 resamples) for CIs",
+            "test_window": "test_2024_plus keys cover the validation years 2024-01-01..2025-12-31 only; fights from "
+                           "2026-01-01 are the sealed vault (never scored; pre-fight probabilities exported outside "
+                           "the repo to ratings_vault.json)",
+            "roster_note": "roster = live state at the ufcstats snapshot (every fight through it, 2026 included), for "
+                           "the page and live matchups only; never use it to score past fights",
             "units": "all ratings in log-odds (logit) units except TrueSkill (probit units, performance noise "
                      "beta = 1); P(A) = sigmoid(kappa * (mu_A - mu_B)) for Elo; Glicko-2 and WHR shrink the "
                      "difference by the combined uncertainty",
@@ -2221,6 +2235,21 @@ def main():
     with open(args.out, "w") as fh:
         json.dump(out, fh, separators=(",", ":"))
     log("wrote %s (%.1f MB) in %.0fs" % (args.out, os.path.getsize(args.out) / 1e6, time.time() - t0))
+    if len(D.idx_vault) and not args.no_test:
+        vrows = {}
+        for i in D.idx_vault:
+            vrows[D.fid[i]] = {"date": D.fights[i].date.isoformat(), "A": D.slug[D.ia[i]], "B": D.slug[D.ib[i]],
+                               "p": {k: r5(preds[k][i]) for k in names},
+                               "r": {k: [r5(v) for v in recs[k][i]] for k in [s["name"] for s in S] if recs[k] is not None}}
+        os.makedirs(VAULT_DIR, exist_ok=True)
+        vp = os.path.join(VAULT_DIR, "ratings_vault.json")
+        with open(vp, "w") as fh:
+            json.dump({"meta": {"tool": "tools/ratings.py", "built": out["meta"]["built"],
+                                "note": "sealed vault: pre-fight P(A wins) per system for UFC bouts from 2026-01-01 "
+                                        "(both men with a prior UFC fight); parameters tuned on 2019-2023, second "
+                                        "stages fit on <= 2023; results are not included and were never scored",
+                                "n": len(vrows)}, "fights": vrows}, fh, separators=(",", ":"))
+        log("vault: %d pre-fight predictions written outside the repo (%s); not scored" % (len(vrows), vp))
 
 
 # =====================================================================================================
@@ -2236,7 +2265,7 @@ def tables(path=OUT_JSON, top=10):
     rk = M.get("ranking_scores_2020_2023", {})
     order = [k for k in ["elo_ref", "elo_k", "elo_full", "glicko2", "trueskill", "trueskill_mov", "whr", "whr_mov",
                          "elo_rounds", "whr_rounds", "whr_hybrid", "dims", "stack", "ratings_plus"] if k in S]
-    print("### Results (decisive fights; tune = 2019-2023 prequential, rank = 2020-2023, test = 2024+ held out)\n")
+    print("### Results (decisive fights; tune = 2019-2023 prequential, rank = 2020-2023, test = 2024-2025 held out)\n")
     print("| System | Family | Tune LL | Rank LL 2020-23 | Test LL [95% CI] | Test Brier | Test acc | ECE | "
           "Slope | dLL vs elo_ref [95% CI] | P(better) |")
     print("|---|---|---|---|---|---|---|---|---|---|---|")
@@ -2264,7 +2293,7 @@ def tables(path=OUT_JSON, top=10):
         s = S[k]
         if s.get("time_ordered_check"):
             print("| %s | %s | %s |" % (k, _f(s["inner_2022_2023"]), _f(s["time_ordered_check"]["score_2022_2023"])))
-    print("\n### Calibration on 2024+ (favourite orientation)\n")
+    print("\n### Calibration on 2024-2025 (favourite orientation)\n")
     best = M["best_single_by_tuning"]
     for k in dict.fromkeys(["elo_ref", best, "stack"]):
         c = S[k]["calibration"]
@@ -2297,7 +2326,7 @@ def tables(path=OUT_JSON, top=10):
                                                        ("%+.5f" % v["test_dll_vs_rating_rescaled"])
                                                        if "test_dll_vs_rating_rescaled" in v else ""))
     if A.get("test_by_min_prior_fights"):
-        print("\n### 2024+ log loss by the less experienced fighter's prior UFC fights\n")
+        print("\n### 2024-2025 log loss by the less experienced fighter's prior UFC fights\n")
         print("| Prior fights | n | %s | elo_ref |" % best)
         print("|---|---|---|---|")
         for k, v in A["test_by_min_prior_fights"].items():
@@ -2305,7 +2334,7 @@ def tables(path=OUT_JSON, top=10):
     mk = A.get("market_benchmark")
     if mk and "test_market" in mk:
         print("\n### Market benchmark (closing line; known only minutes before the bout)\n")
-        print("| On the same 2024+ fights (n=%d) | Log loss | Brier | Accuracy |" % mk["test_n"])
+        print("| On the same 2024-2025 fights (n=%d) | Log loss | Brier | Accuracy |" % mk["test_n"])
         print("|---|---|---|---|")
         for lab, key in (("Market close (power de-vig)", "test_market"), (best, "test_best_same_fights"),
                          ("Market + %s (weights fit on 2019-2023)" % best, "test_market_plus_best")):
@@ -2398,6 +2427,18 @@ def plus(path=OUT_JSON):
             v = e["p"].get(k)
             if v is not None:
                 P[k][i] = v
+    vpath = os.path.join(VAULT_DIR, "ratings_vault.json")
+    V = None
+    if os.path.exists(vpath):          # our own export (pre-fight probabilities only, no results)
+        V = json.load(open(vpath))
+        for fid, e in V["fights"].items():
+            i = D.fidx.get(fid)
+            if i is None:
+                continue
+            for k in names:
+                v = e["p"].get(k)
+                if v is not None:
+                    P[k][i] = v
     feats = residual_features(D)
     cands = {"logit_" + k: logit(P[k]) for k in names}
     sd = {}
@@ -2430,7 +2471,8 @@ def plus(path=OUT_JSON):
            "label": "Rating logits + pre-fight covariates (age gap, years past 34, reach, height, experience, "
                     "layoff), forward selection by time-ordered CV; specified before the 2024+ results were seen",
            "members": chosen, "weights": [float(v) for v in b], "covariate_sd_2019_2023": sd, "path": path_,
-           "cv_2020_2023": cur, "tune_2019_2023": metrics(p[it], y[it]), "test_2024_plus": metrics(p[ix], y[ix])}
+           "cv_2020_2023": cur, "tune_2019_2023": metrics(p[it], y[it]), "test_2024_plus": metrics(p[ix], y[ix]),
+           "test_window": "2024-01-01..2025-12-31 (2026+ vault never scored)"}
     preds = {"ratings_plus": p, "elo_ref": np.full(D.n, np.nan)}
     for fid, e in J["predictions"].items():
         preds["elo_ref"][D.fidx[fid]] = e["p"]["elo_ref"]
@@ -2483,6 +2525,14 @@ def plus(path=OUT_JSON):
             mp["ratings_plus"] = r5(1.0 / (1.0 + math.exp(-z)))
             print("current matchup %s: ratings_plus %.4f (covariates as of %s: %s)" % (key, mp["ratings_plus"], snap,
                                                                                   {k: round(v, 3) for k, v in cov.items()}))
+    if V is not None:
+        for fid, e in V["fights"].items():
+            i = D.fidx.get(fid)
+            if i is not None:
+                e["p"]["ratings_plus"] = r5(p[i])
+        with open(vpath, "w") as fh:
+            json.dump(V, fh, separators=(",", ":"))
+        print("vault: ratings_plus added to %d sealed pre-fight rows (not scored)" % len(V["fights"]))
     J["meta"]["ratings_plus_added"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
     with open(path, "w") as fh:
         json.dump(J, fh, separators=(",", ":"))

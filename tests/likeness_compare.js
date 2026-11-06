@@ -93,7 +93,7 @@ function pngSize(buf) { return buf.readUInt32BE(16) + "x" + buf.readUInt32BE(20)
           for (let yy = 0; yy < H && crown < 0; yy++) { let n = 0; for (let xx = 0; xx < W; xx++) if (d[(yy * W + xx) * 4 + 3] > 128) n++; if (n > 3) crown = yy; }
           if (crown >= 0 && d[3] < 128) {
             for (let yy = crown; yy < Math.min(H, crown + H * 0.4); yy++) { let l = -1, r = -1; for (let xx = 0; xx < W; xx++) if (d[(yy * W + xx) * 4 + 3] > 128) { if (l < 0) l = xx; r = xx; } if (r - l > maxW) maxW = r - l; if (l >= 0) { cxs += (l + r) / 2; cn++; } }
-            const cx = cxs / cn, chin = crown + maxW * 1.08;
+            const cx = cxs / cn, chin = crown + maxW * 1.22;
             bx = [(cx - maxW / 2) / W, crown / H, (cx + maxW / 2) / W, chin / H]; how = "alpha silhouette";
           } else { bx = [0.3, 0.12, 0.7, 0.62]; how = "default centre"; }
         }

@@ -1,0 +1,270 @@
+{
+  "slug": "jean-silva",
+  "name": "Jean Silva",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 29,
+  "official": {
+    "dob": "1996-12-27",
+    "height_cm": 170.2,
+    "reach_cm": 175.3,
+    "stance": "Orthodox",
+    "fight_weight_lb": 145,
+    "source": "data/derived/fighters.json (67 in height, 69 in reach, orthodox, featherweight). Recent fights: beat Arnold Allen by unanimous decision at UFC 324 (2026-01-24); submitted Jose Miguel Delgado (rear-naked choke, R3 2:57) in the Noche UFC 4 main event, Glendale, 2026-09-12 (AgentMMA, Boxing News)."
+  },
+  "photos_used": [
+    "espn-full.png",
+    "ref-cageside-2026-09-b.jpg",
+    "ref-cageside-2026-01-ufc324-c.jpg",
+    "ref-cageside-2026-09-c.jpg",
+    "ref-cageside-2026-01-ufc324-b.jpg",
+    "ref-cageside-2026-01-ufc324-faceoff-allen.jpg",
+    "espn-stance-left.png",
+    "espn-stance-right.png",
+    "ref-cageside-2026-09-faceoff.jpg",
+    "ref-cageside-2026-01-ufc324-a.jpg",
+    "wm-2025-04-12-ufc314-54451470998.jpg"
+  ],
+  "photo_coverage": "Good. Front: ESPN studio headshot (older buzz) plus Jan and Sep 2026 press-conference fronts (shaved head). Three-quarter: Sep 2026 fight week, Jan 2026 presser. Profile: Jan 2026 face-off (left side). Physique: two ESPN cutouts and three 2026 weigh-ins. Free-licence: two public-domain White House photos from UFC 314 (April 2025), both red-lit and small in frame, useful for kit and posture only; the Commons face crop did not download (HTTP 429).",
+  "face": {
+    "shape": "Squarish oval: broad forehead and temples, strong cheekbones, jaw hidden by the beard. With the shaved head the skull reads wide at the temples with a high, rounded crown.",
+    "jaw": "Medium-wide (under the beard); the beard squares the lower face.",
+    "chin": "Medium, under the beard; the beard ends in a rounded point below the chin.",
+    "cheekbones": "Prominent and fairly wide, with a little hollow beneath at fight weight; deep smile creases when he laughs.",
+    "brow_ridge": "Strong; deep-set eyes in shadow.",
+    "forehead": "Broad and high, smooth, continuing into the shaved scalp; faint horizontal lines.",
+    "eyes": {
+      "shape": "Almond, slightly narrow, heavy upper lids; crinkle to slits with crow's feet when he smiles.",
+      "spacing": "Average.",
+      "colour": "brown (dark brown)",
+      "size": "Medium, deep-set, with mild under-eye bags."
+    },
+    "eyebrows": {
+      "thickness": "Medium-thick",
+      "shape": "Low and straight with a slight arch toward the outer third; slightly heavier at the inner ends.",
+      "colour": "Dark brown",
+      "colour_hex": "#3a2419"
+    },
+    "nose": {
+      "length": "Medium-long",
+      "width": "Medium bridge, base a little broad.",
+      "bridge": "Straight.",
+      "hump": "None visible.",
+      "tip": "Rounded, slightly broad and shiny, level.",
+      "fight_damage": "No obvious deviation."
+    },
+    "mouth_lips": "Medium-wide mouth with a medium upper lip and fuller lower lip, mostly framed by the moustache; very broad open smile showing upper and lower teeth.",
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Moderately out from the head; obvious on the shaved head.",
+      "cauliflower_ear": "Yes, moderate on both ears: thick, rolled, lumpy upper rims (ESPN headshot; his right ear in the Sep 2026 presser; his left ear in the Jan 2026 face-off)."
+    },
+    "notable_marks_scars": "A pale vertical scar at the hairline above his left temple (ESPN headshot); a small dark mole on his left cheek beside the nose. Red marks on the forehead in Jan 2026 and a black left eye in Sep 2026 were fresh fight damage."
+  },
+  "hair": {
+    "style": "2026: head shaved smooth (Jan and Sep 2026 photos, UFC 314 in April 2025). Older studio cutouts show a very short buzz with a high front hairline, deep temple recession and thin coverage on top.",
+    "length_cm": 0,
+    "length_note": "Shaved; earlier buzz about 0.3 cm.",
+    "colour": "No visible hair on the scalp in 2026 (scalp is skin tone, #ad6f51 to #e3b299 depending on light). When grown, dark brown.",
+    "colour_samples": {
+      "espn_headshot_buzzed_scalp_box_270,50,330,65": "#b9815f (mostly skin)"
+    },
+    "colour_hex": "#3a2419",
+    "hairline": "Not visible in 2026 because the head is shaved.",
+    "texture": "Unknown when grown beyond a buzz."
+  },
+  "facial_hair": {
+    "type": "full beard",
+    "colour": "Dark brown with auburn/red-brown tones in light, a few lighter hairs on the chin.",
+    "colour_hex": "#3e271c",
+    "colour_samples": {
+      "espn_chin": "#40261b",
+      "espn_moustache": "#49281d"
+    },
+    "density": "Dense on the moustache, chin and jaw; the cheek line is natural and a little patchy on the upper cheeks.",
+    "length_mm": 18,
+    "shape": "Full beard about 1.5-2.5 cm, slightly longer at the chin where it comes to a rounded point; full moustache joined to the beard. Similar length in Jan and Sep 2026 (a little longer in Jan)."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn-full.png",
+        "spot": "forehead",
+        "box": "268,90,325,112",
+        "hex": "#f9cdb6",
+        "light": "studio highlight on the forehead",
+        "in_average": false
+      },
+      {
+        "photo": "espn-full.png",
+        "spot": "right cheek",
+        "box": "240,180,262,200",
+        "hex": "#b17257",
+        "light": "studio, shadow side"
+      },
+      {
+        "photo": "espn-full.png",
+        "spot": "left cheek",
+        "box": "333,180,355,200",
+        "hex": "#cb896b",
+        "light": "studio"
+      },
+      {
+        "photo": "espn-stance-right.png",
+        "spot": "chest",
+        "box": "150,400,230,460",
+        "hex": "#e2a073",
+        "light": "studio, warm grade"
+      },
+      {
+        "photo": "espn-stance-right.png",
+        "spot": "abdomen",
+        "box": "200,600,280,660",
+        "hex": "#c18562",
+        "light": "studio"
+      },
+      {
+        "photo": "ref-cageside-2026-09-b.jpg",
+        "spot": "forehead",
+        "box": "325,70,370,90",
+        "hex": "#f1a189",
+        "light": "press flash"
+      },
+      {
+        "photo": "ref-cageside-2026-09-b.jpg",
+        "spot": "crown of the shaved scalp",
+        "box": "330,40,370,55",
+        "hex": "#ad6f51",
+        "light": "press flash falloff"
+      },
+      {
+        "photo": "ref-cageside-2026-01-ufc324-c.jpg",
+        "spot": "forehead",
+        "box": "315,78,350,90",
+        "hex": "#e3b299",
+        "light": "press light"
+      }
+    ],
+    "tone_average_all": "#d39678",
+    "tone_average_used": "#ce8e6f",
+    "tone_hex": "#ce8e6f",
+    "tone_note": "Each sample is the median of a box on lit skin (box in source pixels); the forehead highlight in the studio headshot is left out of the used average. The White House UFC 314 photos are under red stage light and are not sampled.",
+    "tone_category": "light-medium (tanned, olive-golden)",
+    "undertone": "Warm golden-olive; the shaved scalp is a touch darker and redder than the forehead.",
+    "freckles_marks": "Mole on the left cheek; moderate body hair on the forearms, legs and lower abdomen (a line of hair below the navel)."
+  },
+  "body": {
+    "build": "Compact, muscular featherweight at 170 cm with a 175 cm reach; dense and athletic rather than lanky.",
+    "body_fat": "lean",
+    "body_fat_notes": "Visible six-pack and oblique lines at weigh-ins and in both studio cutouts.",
+    "shoulders": "Medium-broad with rounded delts.",
+    "chest": "Well-developed pecs for his size, flat lower line.",
+    "arms": "Muscular, defined forearms and biceps.",
+    "waist": "Narrow.",
+    "legs_calves": "Muscular thighs and solid calves; hairy legs.",
+    "neck": "Medium thickness.",
+    "posture": "Upright and animated; at weigh-ins he spreads his arms wide and leans in. Hands on knees between rounds at UFC 314.",
+    "notable_physique_traits": "Shaved head with a full brown beard, 'LORD' across the lower chest, padlock on the left chest, full left sleeve; right arm mostly bare except the forearm script."
+  },
+  "tattoos": [
+    {
+      "where": "Left upper chest below the collarbone, running onto the left shoulder",
+      "description": "Black-and-grey padlock with an ornate quatrefoil (four-lobed) design on its face, linked to shaded clouds that trail over the left shoulder.",
+      "size": "Padlock about 10 cm tall; clouds to the deltoid"
+    },
+    {
+      "where": "Left arm sleeve (shoulder to wrist)",
+      "description": "Full black-and-grey sleeve: clouds, sun rays, a small cross, a large spread-winged bird or angel on the upper arm, a pocket watch or compass on the forearm, stars, and a date ending '.12.96' near the inner elbow (matches his 27 Dec 1996 birthday).",
+      "size": "Full sleeve"
+    },
+    {
+      "where": "Lower chest, across both sides just below the pecs",
+      "description": "'LORD' in large black serif capitals with a drop shadow.",
+      "size": "About 25 cm wide x 7 cm tall"
+    },
+    {
+      "where": "Right thigh, front, just below the shorts hem",
+      "description": "Black linework flowers (peony-like) and leaves.",
+      "size": "About 15 cm"
+    },
+    {
+      "where": "Inner right forearm (small script, not a sleeve)",
+      "description": "Cursive 'Familia' with a small heart loop (Sep 2026 photo).",
+      "size": "About 10 cm"
+    }
+  ],
+  "accessories_seen": "Gold chain with a round gold medallion (Sep 2026), gold chain and pendant (Jan 2026), gold wristwatch; often wears glasses or sunglasses at media events (clear dark frames, amber lenses, white wraparounds).",
+  "kit": {
+    "typical_shorts": "Studio cutouts: black UFC shorts with a grey chevron-wave pattern, white-check waistband, crypto.com and Noche UFC patches (newer); green shorts with gold 'SILVA' lettering, a gold geometric side panel and a green-white-red waistband stripe (older). UFC 314 (Apr 2025): yellow shorts with a dark pattern and black waistband, blue corner tape.",
+    "gloves": "Black UFC gloves.",
+    "shorts_colours_hex": {
+      "black_base": "#17181c",
+      "grey_pattern": "#4b4e57",
+      "green_base": "#1f6b34",
+      "gold_lettering": "#c9a96e",
+      "yellow_ufc314": "#e3c21f"
+    },
+    "brand_note": "Logos visible: UFC, crypto.com, Noche UFC patch (newer), Venum (older)."
+  },
+  "stance_and_guard": {
+    "official_stance": "Orthodox (data/derived/fighters.json).",
+    "seen_in_photos": "Only a between-rounds style frame at UFC 314 (bent forward, hands on knees). No guard photo, so nothing about his guard is inferred.",
+    "confidence": "low"
+  },
+  "render_hints": {
+    "iris": "brown",
+    "skin_base": "mh-skin-young_caucasian_male (closest swatch) tinted toward the sampled tone",
+    "eyebrows": "eyebrow010 tinted #3a2419",
+    "hair": "none: smooth shaved scalp, skin-tone, slightly redder at the crown; no hairline",
+    "beard": "full beard about 18 mm, #3e271c with auburn highlights, rounded point at the chin",
+    "tattoos": "left sleeve, padlock on the left chest, 'LORD' across the lower chest; the right-forearm 'Familia' is a small script, do not render it as a sleeve"
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.062,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.55,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.15,
+    "macro/heightUpM": 0.0,
+    "macro/heightDownM": 0.15,
+    "macro/proportionsUpM": 0.35,
+    "head/head-square": 0.2,
+    "head/head-round": 0.1,
+    "head/head-scale-horiz-incr": 0.05,
+    "head/head-fat-decr": 0.2,
+    "forehead/forehead-scale-vert-incr": 0.15,
+    "chin/chin-width-incr": 0.1,
+    "chin/chin-bones-incr": 0.15,
+    "cheek/l-cheek-bones-incr": 0.25,
+    "cheek/r-cheek-bones-incr": 0.25,
+    "cheek/l-cheek-volume-decr": 0.2,
+    "cheek/r-cheek-volume-decr": 0.2,
+    "eyes/l-eye-height2-decr": 0.1,
+    "eyes/r-eye-height2-decr": 0.1,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15,
+    "eyebrows/eyebrows-trans-down": 0.2,
+    "eyebrows/eyebrows-trans-forward": 0.25,
+    "nose/nose-scale-vert-incr": 0.1,
+    "nose/nose-width1-incr": 0.05,
+    "nose/nose-point-width-incr": 0.2,
+    "nose/nose-nostrils-width-incr": 0.1,
+    "mouth/mouth-upperlip-volume-decr": 0.15,
+    "mouth/mouth-scale-horiz-incr": 0.05,
+    "neck/neck-scale-horiz-incr": 0.05,
+    "torso/measure-shoulder-dist-incr": 0.15,
+    "torso/torso-vshape-incr": 0.3,
+    "torso/measure-waist-circ-decr": 0.25,
+    "torso/measure-hips-circ-decr": 0.1,
+    "buttocks/buttocks-volume-decr": 0.05
+  },
+  "morphs_extra": {
+    "_note": "Targets from assets/embed/mh-shapes-x.bin.gz (read by src/avatar3d.js). l- = the fighter's own left. Moderate cauliflower on both ears (thicker, slightly protruding), wide temples on the shaved skull.",
+    "ears/l-ear-scale-depth-incr": 0.3,
+    "ears/r-ear-scale-depth-incr": 0.4,
+    "ears/l-ear-wing-incr": 0.2,
+    "ears/r-ear-wing-incr": 0.2,
+    "forehead/forehead-temple-incr": 0.15
+  },
+  "notes": "Confidence: high for the shaved head, beard, tattoos, skin and build; medium-high for the face (three fronts, two three-quarters, one profile with glasses); medium for morphs. What to watch: (1) smooth shaved head in 2026 with a high rounded crown, not the old buzz; (2) full dark-brown beard with auburn tones and a rounded chin point; (3) deep-set dark eyes under a strong, low brow; big laugh with crow's feet; (4) thick cauliflower ears on both sides; (5) mole on the left cheek and a pale scar above the left temple; (6) 'LORD' across the lower chest, padlock on the left chest, full left sleeve, flowers on the right thigh; (7) compact 170 cm, muscular and lean. Ignore the Day-of-the-Dead face paint (Sep 2026 ceremonial) and fresh fight marks. ageOldM uses (years-25)/65 like src/avatar3d.js."
+}

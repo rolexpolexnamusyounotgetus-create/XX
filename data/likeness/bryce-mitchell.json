@@ -1,0 +1,292 @@
+{
+  "slug": "bryce-mitchell",
+  "name": "Bryce Mitchell",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 32,
+  "official": {
+    "dob": "1994-10-04",
+    "height_cm": 177.8,
+    "reach_cm": 177.8,
+    "stance": "Southpaw",
+    "fight_weight_lb": 135,
+    "division_note": "Moved from featherweight to bantamweight; submitted Santiago Luna at bantamweight at UFC Vegas 118 (Jun 6, 2026)."
+  },
+  "photos_used": [
+    "espn-headshot.png",
+    "ref-csp-2026-06-vegas118-media.jpg",
+    "ref-csp-2026-06-06-vegas118-postfight.jpg",
+    "ref-csp-2025-04-ufc314-presser-3q.jpg",
+    "ref-csp-2025-04-11-ufc314-official-weighin.jpg",
+    "ref-zuffa-2026-06-05-vegas118-faceoff.jpg",
+    "ref-ufcyt-2025-07-abudhabi-faceoff-profile.jpg",
+    "ref-csp-2025-04-11-ufc314-ceremonial.jpg",
+    "espn-stance-left.png",
+    "espn-stance-right.png"
+  ],
+  "photo_coverage": "Good; 10 photos, all reference-only: the Commons search and category for him returned nothing, so there is no embed-ok photo. Front: ESPN studio headshot (Jun 2026), Jun 2026 media day and post-fight press conference. Three-quarter: Apr 2025 press conference and official weigh-in. Profile: Jul 2025 and Jun 2026 faceoffs (both his right side; glasses in 2026). Physique: ESPN cutouts (Dec 2023, Jun 2026) and the Apr 2025 ceremonial weigh-in.",
+  "face": {
+    "shape": "Oval, slightly long, widest at the cheekbones and tapering to a narrow, beard-covered chin (a mild inverted triangle). Lean, with little facial fat.",
+    "jaw": "Narrow to medium, lightly defined under the beard; the jaw line rises steeply from chin to ear.",
+    "chin": "Narrow and slightly pointed, medium height; covered by the beard.",
+    "cheekbones": "Moderately high, not very prominent; flat cheeks below.",
+    "brow_ridge": "Mild; the brows sit fairly low and straight.",
+    "forehead": "Medium height, mostly covered by a short fringe; a faint horizontal line or two.",
+    "eyes": {
+      "shape": "Almond to slightly round, open, with a visible upper-lid crease; level outer corners, light lashes.",
+      "spacing": "Average to slightly wide.",
+      "colour": "Light blue (blue-grey). Closest embed iris: blue.",
+      "size": "Medium"
+    },
+    "eyebrows": {
+      "thickness": "Medium-thin",
+      "shape": "Straight, low and fairly level, slightly heavier at the inner ends; light colour makes them read faint.",
+      "colour": "Light reddish-brown.",
+      "colour_hex": "#8a5a45"
+    },
+    "nose": {
+      "length": "Medium-long",
+      "width": "Narrow bridge, medium tip.",
+      "bridge": "Straight and narrow from the front.",
+      "hump": "None; straight to very slightly concave in the July 2025 right-side profile.",
+      "tip": "Rounded, slightly upturned to level; medium nostrils.",
+      "fight_damage": "No visible deviation."
+    },
+    "mouth_lips": "Medium-narrow mouth; thin upper lip, medium lower lip, mostly hidden by the moustache. Broad, toothy grin when smiling (2025 and 2026 media).",
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Stand out slightly, the left a little more in the studio headshot.",
+      "cauliflower_ear": "No clear cauliflower ear visible; ear folds look normal at this resolution (medium confidence)."
+    },
+    "notable_marks_scars": "None obvious. Face and neck flush red easily (post-fight June 2026 photo)."
+  },
+  "hair": {
+    "style": "Short textured crop: about 5 cm on top pushed forward into a short, choppy fringe over the forehead, shorter (about 1.5 cm) tapered sides and back (June 2026 studio shoot; similar in December 2023 and April 2025).",
+    "length_cm": {
+      "top": 5,
+      "sides": 1.5,
+      "back": 1.5
+    },
+    "colour": "Light to medium brown with a reddish-golden tint and lighter, sun-lightened tips.",
+    "colour_samples": {
+      "espn_2026_top_median": "#35221e",
+      "espn_2026_top_lit_half": "#462f2a",
+      "espn_2026_fringe_tips_lit": "#a66e5d",
+      "espn_stance_2026_top": "#392522"
+    },
+    "colour_samples_note": "The top of the head sits in shadow in the studio light; the fringe tips (where light passes through) show the true lighter colour. colour_hex is a judged mid value.",
+    "colour_hex": "#5e4030",
+    "hairline": "Straight, fairly low, mostly hidden by the fringe.",
+    "texture": "Fine to medium, straight, slightly piecey."
+  },
+  "facial_hair": {
+    "type": "short beard",
+    "colour": "Ginger / auburn brown, redder than the head hair.",
+    "colour_samples": {
+      "espn_moustache_median": "#9a5e4b",
+      "espn_chin_dark_half": "#694131",
+      "espn_chin_median": "#885745",
+      "csp_2025_weighin_moustache": "#a9694d"
+    },
+    "colour_hex": "#7d4a33",
+    "density": "Dense on the moustache and chin, medium on the jaw, thinner on the upper cheeks.",
+    "length_mm": "About 8-12 mm (2025-2026).",
+    "shape": "Full short beard joined to the moustache; low, natural cheek line; rounded at the chin; neckline under the jaw."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn-headshot.png",
+        "spot": "forehead",
+        "box": "270,125,330,150",
+        "hex": "#f7b7a1",
+        "light": "studio, high key, warm grade"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "right cheek",
+        "box": "238,200,260,225",
+        "hex": "#d48c73",
+        "light": "studio, high key, warm grade"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "left cheek",
+        "box": "340,200,362,225",
+        "hex": "#d1896f",
+        "light": "studio, high key, warm grade"
+      },
+      {
+        "photo": "ref-csp-2026-06-vegas118-media.jpg",
+        "spot": "forehead",
+        "box": "345,105,385,118",
+        "hex": "#cb8d73",
+        "light": "press-room light"
+      },
+      {
+        "photo": "ref-csp-2026-06-vegas118-media.jpg",
+        "spot": "hand",
+        "box": "345,282,380,295",
+        "hex": "#d39377",
+        "light": "press-room light"
+      },
+      {
+        "photo": "ref-csp-2026-06-06-vegas118-postfight.jpg",
+        "spot": "chest",
+        "box": "240,240,290,280",
+        "hex": "#ca8861",
+        "light": "press-room light (face flushed after the fight, not sampled)"
+      },
+      {
+        "photo": "ref-csp-2025-04-11-ufc314-official-weighin.jpg",
+        "spot": "forehead",
+        "box": "325,98,375,115",
+        "hex": "#c18d69",
+        "light": "weigh-in stage light"
+      },
+      {
+        "photo": "ref-csp-2025-04-11-ufc314-official-weighin.jpg",
+        "spot": "right cheek",
+        "box": "318,145,335,162",
+        "hex": "#bd8b66",
+        "light": "weigh-in stage light"
+      },
+      {
+        "photo": "ref-csp-2025-04-11-ufc314-official-weighin.jpg",
+        "spot": "chest",
+        "box": "290,300,350,340",
+        "hex": "#dcb192",
+        "light": "weigh-in stage light"
+      }
+    ],
+    "tone_average_all": "#d29577",
+    "tone_average_face": "#d19376",
+    "tone_hex": "#d29577",
+    "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). Studio ESPN files are high-key and warm; the post-fight face is flushed red (#bd6953 forehead), so only his chest was sampled there. The 2026 media-day highlight on his left cheek (#eeba9f) was left out as a specular highlight.",
+    "tone_category": "fair to light",
+    "undertone": "Warm-pink (ruddy): flushes red on the face, neck and chest; light golden tan on the arms.",
+    "freckles_marks": "No distinct freckles visible at these resolutions; ruddy cheeks and nose; light reddish body hair."
+  },
+  "body": {
+    "build": "Lean and long-limbed for 135 lb (178 cm, 178 cm reach); narrow frame.",
+    "body_fat": "lean",
+    "body_fat_notes": "Low body fat with soft-edged definition: abs outlined but not deeply cut in the 2025 and 2026 photos; smooth, not vascular.",
+    "shoulders": "Moderate width, sloping, not bulky.",
+    "chest": "Flat, lightly developed pecs.",
+    "arms": "Long, lean arms with modest biceps; slim forearms.",
+    "waist": "Narrow and straight; little V-taper.",
+    "legs_calves": "Long legs with slim thighs and slim calves.",
+    "neck": "Medium-long and slim.",
+    "posture": "Relaxed, slightly hunched shoulders when standing; head carried a little forward.",
+    "notable_physique_traits": "Pale, lean, long-limbed grappler's body; reddish beard and fringe; no tattoos on the front. Light body hair on chest and legs."
+  },
+  "tattoos": [
+    {
+      "where": "none visible",
+      "description": "None visible on the chest, abdomen, arms or legs in the front-facing studio cutouts (2023, 2026) or the 2025-2026 weigh-in and press photos. Back not seen clearly.",
+      "size": "-"
+    }
+  ],
+  "accessories_seen": "Beaded necklace (white, red, blue and black beads) with two claw- or tusk-shaped pendants at the July 2025 faceoff and June 2026 post-fight presser; thin dark-rimmed rectangular glasses at the June 2026 weigh-in faceoff.",
+  "kit": {
+    "typical_shorts": "UFC fight-kit shorts in a woodland / hunting-camouflage print (browns, tan leaves, dark bark) with black side panels and white stripes, MITCHELL down the left leg, cut longer than most; worn in the December 2023 and June 2026 studio shoots. Fight-night colour follows the corner.",
+    "shorts_colours_hex": {
+      "camo_mid_brown": "#523c3e",
+      "camo_light_leaf": "#8a6a55",
+      "black_panel": "#141416",
+      "stripe_white": "#efefef"
+    }
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.108,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.3,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.2,
+    "macro/heightUpM": 0.05,
+    "macro/heightDownM": 0.0,
+    "macro/proportionsUpM": 0.45,
+    "head/head-oval": 0.35,
+    "head/head-invertedtriangular": 0.2,
+    "head/head-scale-horiz-decr": 0.05,
+    "head/head-fat-decr": 0.25,
+    "chin/chin-width-decr": 0.15,
+    "chin/chin-prominent-incr": 0.05,
+    "chin/chin-bones-decr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.15,
+    "cheek/r-cheek-bones-incr": 0.15,
+    "cheek/l-cheek-volume-decr": 0.25,
+    "cheek/r-cheek-volume-decr": 0.25,
+    "eyes/l-eye-height2-incr": 0.08,
+    "eyes/r-eye-height2-incr": 0.08,
+    "eyes/l-eye-trans-out": 0.05,
+    "eyes/r-eye-trans-out": 0.05,
+    "eyebrows/eyebrows-trans-down": 0.1,
+    "nose/nose-scale-vert-incr": 0.15,
+    "nose/nose-width1-decr": 0.12,
+    "nose/nose-point-width-incr": 0.05,
+    "nose/nose-hump-decr": 0.1,
+    "nose/nose-point-up": 0.05,
+    "mouth/mouth-upperlip-volume-decr": 0.3,
+    "mouth/mouth-scale-horiz-decr": 0.05,
+    "ears/l-ear-rot-forward": 0.1,
+    "ears/r-ear-rot-forward": 0.1,
+    "neck/neck-scale-vert-incr": 0.15,
+    "neck/neck-scale-horiz-decr": 0.05,
+    "torso/measure-shoulder-dist-incr": 0.0,
+    "torso/torso-vshape-incr": 0.05,
+    "torso/measure-waist-circ-decr": 0.2,
+    "torso/measure-hips-circ-decr": 0.1,
+    "buttocks/buttocks-volume-decr": 0.1
+  },
+  "render_hints": {
+    "iris": "blue",
+    "skin_base": "mh-skin-young_caucasian_male tinted toward the tone_hex, with extra red on the cheeks, nose and neck",
+    "eyebrows": "eyebrow001 tinted #8a5a45, thin and straight",
+    "hair": "cortu_short_messy_hair or short02 with a short forward fringe, tinted #5e4030 (lighter tips)",
+    "beard": "short full beard #7d4a33 (ginger), redder than the hair"
+  },
+  "stance": {
+    "schema": "stance/1",
+    "base": "southpaw",
+    "width": 1.05,
+    "depth": 1.0,
+    "crouch": 0.4,
+    "lean": 0.25,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 40,
+    "weight_front": 0.5,
+    "bladed": 0.5,
+    "guard": {
+      "style": "hand-fighting",
+      "height": 0.6,
+      "lead_reach": 0.45,
+      "lead_height": 0.55,
+      "lead_width": 0.0,
+      "rear_height": 0.6,
+      "rear_tuck": 0.8,
+      "elbow_flare": 0.2,
+      "shoulder_roll": 0.5
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.25,
+      "chin_tuck": 0.55
+    },
+    "bounce": {
+      "amp": 0.35,
+      "rate": 0.9
+    },
+    "switch_per_min": 0.0,
+    "feints": 0.3,
+    "hand_fighting": 0.45,
+    "posture": "closed",
+    "footwork": [
+      "pressure"
+    ],
+    "source": "data/scouting/bryce-mitchell.json (archetype grappler/BJJ, southpaw; long top-control rides; southpaw kicks to legs and body at range; low striking output) plus general knowledge of his fight footage. Not measured from these photos.",
+    "confidence": "low",
+    "notes": "Southpaw grappler: moderately crouched, square enough to change levels, lead hand busy reaching and pawing; walks forward behind kicks looking for the clinch or a shot. Little head movement."
+  },
+  "notes": "Confidence: high for colouring (light-blue eyes, light-brown hair with lighter tips, ginger beard, fair ruddy skin) and build; medium for face proportions; medium-low for the morph values. What to watch: (1) light-blue eyes and a ginger/auburn short full beard that is redder than the light-brown hair; (2) short, choppy fringe pushed forward over the forehead; (3) fair skin that flushes red on the face and neck; (4) oval face tapering to a narrow bearded chin; (5) narrow, lean, smooth body with long limbs and no tattoos; (6) the beaded claw-pendant necklace and glasses are off-duty accessories, not fight-night kit. He now fights at bantamweight (135 lb). The stance block comes from data/scouting and general fight-footage knowledge, not from these photos. ageOldM uses (years-25)/65; l-/r- values are symmetric."
+}

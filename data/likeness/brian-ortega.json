@@ -1,0 +1,305 @@
+{
+  "slug": "brian-ortega",
+  "name": "Brian Ortega",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 35,
+  "official": {
+    "dob": "1991-02-21",
+    "height_cm": 172.7,
+    "reach_cm": 175.3,
+    "stance": "Switch",
+    "fight_weight_lb": 145,
+    "division_note": "Featherweight; the Aug 2025 Sterling fight was moved to a catchweight. Last fought Aug 23, 2025 (UFC Shanghai, decision loss to Aljamain Sterling); out of planned 2026 bookings with Renato Moicano (UFC 326, UFC 331) through injury."
+  },
+  "photos_used": [
+    "espn-headshot.png",
+    "ref-ufcyt-2025-08-shanghai-media-3q.jpg",
+    "wm-2018-mmanytt-interview.jpg",
+    "ref-ufcyt-2024-02-ufc-mexico-city-with-yair.jpg",
+    "ref-ufcyt-2025-08-shanghai-faceoff-profile.jpg",
+    "ref-csp-2024-09-ufc306-weighin.jpg",
+    "ref-csp-2024-06-ufc303-weighin.jpg",
+    "espn-stance-left.png",
+    "espn-stance-right.png"
+  ],
+  "photo_coverage": "Good; 9 photos. Front: ESPN studio headshot (Aug 2025), Sep 2024 official weigh-in (2880 px) and Feb 2024 beside Yair Rodriguez. Three-quarter: Aug 2025 media day and a 2018 CC BY 3.0 interview still (embed-ok, over-brightened). Profile: Aug 2025 faceoff (his right side, with the neck tattoo). Physique: ESPN cutouts (Feb 2024, Aug 2025) and the UFC 303 and UFC 306 weigh-ins. No 2026 photo: he has not fought since Aug 2025 and withdrew from his 2026 bookings.",
+  "face": {
+    "shape": "Long, rectangular face with a tall, broad forehead, long midface and a well-defined, angular jaw. Lean cheeks.",
+    "jaw": "Defined and angular, medium-wide, with clear jaw angles below the ears.",
+    "chin": "Medium width, squared, slightly prominent.",
+    "cheekbones": "High and visible, with flat to slightly hollow cheeks below.",
+    "brow_ridge": "Noticeable; brows sit low on it, shading the eyes.",
+    "forehead": "Tall and broad, made to look taller by the slicked-back hair; two or three horizontal creases.",
+    "eyes": {
+      "shape": "Almond, slightly narrow and deep-set; crow's feet when he smiles; mild under-eye creases.",
+      "spacing": "Average.",
+      "colour": "Light hazel: grey-green with a warm ring near the pupil. Closest embed iris: green (or grey).",
+      "size": "Medium-small"
+    },
+    "eyebrows": {
+      "thickness": "Medium-thick",
+      "shape": "Low, straight and fairly level, with a short downward tail; inner ends moderately close.",
+      "colour": "Dark brown.",
+      "colour_hex": "#3b261d"
+    },
+    "nose": {
+      "length": "Long",
+      "width": "Medium; medium bridge and a rounded tip a little wider than the bridge.",
+      "bridge": "Straight, medium width.",
+      "hump": "Straight to very slightly convex in the August 2025 right profile.",
+      "tip": "Rounded, level to slightly down; medium nostrils.",
+      "fight_damage": "No obvious deviation."
+    },
+    "mouth_lips": "Wide mouth; thin upper lip, medium lower lip. Calm, closed-mouth resting expression; broad smile with even upper teeth in media photos.",
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Lie fairly close to the head.",
+      "cauliflower_ear": "Not obvious in the studio or 2025 photos at this resolution (low confidence for a BJJ black belt; check closer photos)."
+    },
+    "notable_marks_scars": "Small sun spots / freckles on the cheeks and nose in the studio headshot; forehead creases. A blackletter script tattoo on the right side of the neck (see tattoos)."
+  },
+  "hair": {
+    "style": "Medium-long hair (about 15-20 cm on top) slicked straight back with product; often tied in a small top knot or low bun at weigh-ins (2018, 2024). Sides are combed back flat, not faded.",
+    "length_cm": {
+      "top": 17,
+      "sides": 8,
+      "back": 12
+    },
+    "colour": "Dark brown, with lighter caramel-brown on the top layer where light catches it.",
+    "colour_samples": {
+      "espn_2025_top_median": "#341916",
+      "espn_2025_top_lit_half": "#54332e",
+      "media_2025_top_median": "#29201d",
+      "media_2025_top_lit_half": "#3a3230"
+    },
+    "colour_hex": "#3a2a22",
+    "hairline": "Straight and fairly high, with mildly recessed temples (slight M shape) when slicked back.",
+    "texture": "Straight to slightly wavy, medium thickness; usually wet-look with gel."
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "colour": "Light-to-medium brown with some grey mixed in at the chin and jaw (studio headshot, 2025).",
+    "colour_samples": {
+      "espn_chin_dark_half": "#8e503d",
+      "media_2025_jaw_dark_half": "#8c6760"
+    },
+    "colour_samples_note": "Stubble boxes are mostly skin; colour_hex is a judged value.",
+    "colour_hex": "#5a463b",
+    "density": "Light to medium; even over the jaw, chin and upper lip, thinner on the cheeks.",
+    "length_mm": "About 2-4 mm in 2025; a fuller short beard (about 8-10 mm) in 2018 and 2024.",
+    "shape": "Even stubble with a low natural cheek line; moustache joined to the chin."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "espn-headshot.png",
+        "spot": "forehead",
+        "box": "270,95,330,125",
+        "hex": "#fcb291",
+        "light": "studio, high key, strong warm grade"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "right cheek",
+        "box": "235,190,258,215",
+        "hex": "#e47f5d",
+        "light": "studio, high key, strong warm grade"
+      },
+      {
+        "photo": "espn-headshot.png",
+        "spot": "left cheek",
+        "box": "342,190,365,215",
+        "hex": "#e7835e",
+        "light": "studio, high key, strong warm grade"
+      },
+      {
+        "photo": "ref-ufcyt-2025-08-shanghai-media-3q.jpg",
+        "spot": "forehead",
+        "box": "880,200,970,225",
+        "hex": "#ba8468",
+        "light": "press-room video light"
+      },
+      {
+        "photo": "ref-ufcyt-2025-08-shanghai-media-3q.jpg",
+        "spot": "left cheek",
+        "box": "975,300,1000,330",
+        "hex": "#c28674",
+        "light": "press-room video light"
+      },
+      {
+        "photo": "ref-ufcyt-2025-08-shanghai-media-3q.jpg",
+        "spot": "right cheek",
+        "box": "840,330,880,360",
+        "hex": "#ac8072",
+        "light": "press-room video light"
+      },
+      {
+        "photo": "ref-csp-2024-09-ufc306-weighin.jpg",
+        "spot": "forehead",
+        "box": "1405,80,1495,118",
+        "hex": "#e7a284",
+        "light": "weigh-in stage light"
+      },
+      {
+        "photo": "ref-csp-2024-09-ufc306-weighin.jpg",
+        "spot": "left cheek (upper)",
+        "box": "1505,200,1535,235",
+        "hex": "#e0987c",
+        "light": "weigh-in stage light"
+      },
+      {
+        "photo": "ref-csp-2024-09-ufc306-weighin.jpg",
+        "spot": "chest",
+        "box": "1330,560,1430,640",
+        "hex": "#f1b38f",
+        "light": "weigh-in stage light"
+      },
+      {
+        "photo": "ref-csp-2024-09-ufc306-weighin.jpg",
+        "spot": "abdomen",
+        "box": "1400,760,1500,830",
+        "hex": "#edaf8a",
+        "light": "weigh-in stage light"
+      }
+    ],
+    "tone_average_all": "#dc9678",
+    "tone_average_face": "#d78f73",
+    "tone_hex": "#dc9678",
+    "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). The ESPN headshot is graded very warm and saturated (orange); the 2025 media still is flatter and cooler. The 2018 Commons still (wm-2018-mmanytt-interview.jpg) is over-brightened (forehead #f6f2f2) and was not sampled.",
+    "tone_category": "light-medium (tan)",
+    "undertone": "Warm golden-peach with a sun tan; slight redness on the nose and cheeks.",
+    "freckles_marks": "Small sun spots / freckles on the cheeks and nose; forehead creases; dark arm and leg hair."
+  },
+  "body": {
+    "build": "Medium frame, 173 cm with a 175 cm reach; compact and athletic.",
+    "body_fat": "lean",
+    "body_fat_notes": "Lean with visible abs and some serratus at the September 2024 weigh-in; softer, less sharply cut in the August 2025 studio shoot.",
+    "shoulders": "Moderately broad for his height, rounded delts.",
+    "chest": "Moderately developed, flat pecs.",
+    "arms": "Muscular but not bulky; defined forearms with visible veins; noticeable arm hair.",
+    "waist": "Narrow to medium.",
+    "legs_calves": "Medium-length legs with solid thighs and moderate calves; noticeable leg hair.",
+    "neck": "Medium-thick.",
+    "posture": "Upright and relaxed, chin slightly raised in posed shots.",
+    "notable_physique_traits": "Compact, evenly muscled BJJ build; long slicked-back hair; light eyes; neck script tattoo."
+  },
+  "tattoos": [
+    {
+      "where": "Right side of the neck, below and slightly behind the ear",
+      "description": "Two short lines of small black blackletter (Old English) script; reads roughly 'gods warrior' at this resolution (low confidence on the words). Seen in August 2025 (media day and faceoff); not visible in the 2024 photos.",
+      "size": "About 5 cm wide x 3 cm tall"
+    },
+    {
+      "where": "Right arm, outer side just above the elbow",
+      "description": "Small black symbol or letters (not legible), seen in the August 2025 studio cutout and faceoff.",
+      "size": "About 2 cm"
+    }
+  ],
+  "tattoos_note": "Front of the torso, the left arm and the legs show no tattoos in the 2024-2025 photos.",
+  "accessories_seen": "Silver cross pendant on a black cord (Feb 2024 ceremonial weigh-in).",
+  "kit": {
+    "typical_shorts": "Black UFC fight-kit shorts with ORTEGA in red down the left leg (Feb 2024 studio shoot); black shorts with a grey and white slash pattern printed 'UFC Shanghai' (Aug 2025). Black briefs on the scale. Fight-night colour follows the corner.",
+    "shorts_colours_hex": {
+      "black": "#161621",
+      "name_red": "#d4202c",
+      "slash_white": "#e8e8ea"
+    }
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.154,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.45,
+    "macro/weightUpM": 0.0,
+    "macro/weightDownM": 0.1,
+    "macro/heightUpM": 0.0,
+    "macro/heightDownM": 0.1,
+    "macro/proportionsUpM": 0.35,
+    "head/head-square": 0.25,
+    "head/head-oval": 0.2,
+    "head/head-scale-vert-incr": 0.2,
+    "head/head-fat-decr": 0.3,
+    "forehead/forehead-scale-vert-incr": 0.2,
+    "chin/chin-bones-incr": 0.2,
+    "chin/chin-width-incr": 0.1,
+    "chin/chin-height-incr": 0.1,
+    "chin/chin-prominent-incr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.3,
+    "cheek/r-cheek-bones-incr": 0.3,
+    "cheek/l-cheek-volume-decr": 0.35,
+    "cheek/r-cheek-volume-decr": 0.35,
+    "eyes/l-eye-scale-decr": 0.05,
+    "eyes/r-eye-scale-decr": 0.05,
+    "eyes/l-eye-height2-decr": 0.12,
+    "eyes/r-eye-height2-decr": 0.12,
+    "eyes/l-eye-bag-incr": 0.2,
+    "eyes/r-eye-bag-incr": 0.2,
+    "eyebrows/eyebrows-trans-down": 0.3,
+    "eyebrows/eyebrows-trans-forward": 0.2,
+    "nose/nose-scale-vert-incr": 0.25,
+    "nose/nose-point-width-incr": 0.2,
+    "nose/nose-nostrils-width-incr": 0.15,
+    "nose/nose-width1-incr": 0.05,
+    "nose/nose-hump-incr": 0.05,
+    "nose/nose-point-down": 0.05,
+    "mouth/mouth-scale-horiz-incr": 0.15,
+    "mouth/mouth-upperlip-volume-decr": 0.3,
+    "ears/l-ear-rot-backward": 0.1,
+    "ears/r-ear-rot-backward": 0.1,
+    "neck/neck-scale-horiz-incr": 0.1,
+    "torso/measure-shoulder-dist-incr": 0.1,
+    "torso/torso-vshape-incr": 0.2,
+    "torso/measure-waist-circ-decr": 0.2,
+    "torso/measure-hips-circ-decr": 0.1
+  },
+  "render_hints": {
+    "iris": "green (or grey)",
+    "eyebrows": "eyebrow001 tinted #3b261d, low and straight",
+    "hair": "ponytail01 (tied back) or a long slicked-back cut, tinted #3a2a22 with lighter top highlights",
+    "beard": "stubble #5a463b, light; a few grey hairs at the chin"
+  },
+  "stance": {
+    "schema": "stance/1",
+    "base": "switch",
+    "width": 0.95,
+    "depth": 1.05,
+    "crouch": 0.25,
+    "lean": 0.1,
+    "lead_foot_deg": 10,
+    "rear_foot_deg": 45,
+    "weight_front": 0.48,
+    "bladed": 0.6,
+    "guard": {
+      "style": "high",
+      "height": 0.7,
+      "lead_reach": 0.45,
+      "lead_height": 0.6,
+      "lead_width": 0.0,
+      "rear_height": 0.7,
+      "rear_tuck": 0.85,
+      "elbow_flare": 0.15,
+      "shoulder_roll": 0.55
+    },
+    "head": {
+      "offset": 0.0,
+      "movement": 0.35,
+      "chin_tuck": 0.6
+    },
+    "bounce": {
+      "amp": 0.35,
+      "rate": 0.85
+    },
+    "switch_per_min": 1.0,
+    "feints": 0.3,
+    "hand_fighting": 0.3,
+    "posture": "closed",
+    "footwork": [
+      "circling",
+      "stance-switch"
+    ],
+    "source": "data/scouting/brian-ortega.json (archetype grappler/BJJ, stance switch; tags switch-stance, jab, slow-starter, late-surge; switch-stance jab-heavy boxing vs Chan Sung Jung) plus general knowledge of his fight footage. Not measured from these photos.",
+    "confidence": "low",
+    "notes": "Patient switch-stance boxer: fairly tall stance, high tight guard, a measuring jab from either stance, steady rather than bouncy. Low output in 2024-2025 (out-landed 106-63 and 124-55), so feints and pressure stay modest."
+  },
+  "notes": "Confidence: high for hair, eyes, build and the neck-tattoo placement; medium for face proportions; medium-low for the morph values; the tattoo wording is a low-resolution read. What to watch: (1) long rectangular face with a tall forehead, angular jaw and lean cheeks; (2) light hazel/grey-green eyes under low, straight dark brows; (3) long dark-brown hair slicked straight back or tied up, lighter on the top layer; (4) light stubble with some grey at the chin; (5) blackletter script on the RIGHT side of the neck (2025 onward); (6) compact, evenly muscled body at 173 cm. The stance block starts him orthodox and switches about once a minute; it comes from data/scouting and general fight-footage knowledge, not from these photos. ageOldM uses (years-25)/65; l-/r- values are symmetric."
+}

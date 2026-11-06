@@ -761,7 +761,7 @@
       self.gloveProxy = r[12];
       self.makeBody(r[0], masks);
       self.addProxy(r[1], { map: r[2], roughness: 0.12, eyes: true });
-      self.addProxy(r[3], { color: looks.beardColor === looks.hairColor ? looks.hairColor : mixHex(looks.hairColor, looks.beardColor, 0.4), brows: true });
+      self.addProxy(r[3], { color: mixHex(looks.beardColor === looks.hairColor ? looks.hairColor : mixHex(looks.hairColor, looks.beardColor, 0.4), "#a07a5c", 0.25), brows: true });
       self.addProxy(r[4], { lashes: true });
       if (r[5]) self.addProxy(r[5], { color: looks.hairColor, hair: true });
       if (self.cfg.ref) self.makeRefKit(); else self.makeFightKit();
@@ -961,7 +961,7 @@
           "  float hair = mix(0.5, vn(su * 1400.0), hatt); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
           "  float mB = vMask.x, mS = vMask2.x;\n" +
           "  if (uMaskOn > 0.5) {\n" +
-          "    mB = dot(texture2D(uMaskB, su), uBeardCh);\n" +
+          "    mB = dot(texture2D(uMaskB, su), uBeardCh) * clamp(vMask.x * 2.2, 0.0, 1.0);\n" +
           "    vec2 hu = (su - vec2(0.6, 0.03)) / vec2(0.3, 0.84);\n" +
           "    float inH = step(0.0, hu.x) * step(hu.x, 1.0) * step(0.0, hu.y) * step(hu.y, 1.0);\n" +
           "    vec2 hc = clamp(hu, 0.0, 1.0); mS = (dot(texture2D(uMaskH, hc), uScalpCh) + dot(texture2D(uMaskH2, hc), uScalpCh2)) * inH;\n" +
@@ -1025,6 +1025,7 @@
     var a1 = new Float32Array(n * 4), a2 = new Float32Array(n * 4);
     for (var i = 0; i < n; i++) for (var k = 0; k < 4; k++) { a1[i * 4 + k] = masks.m1[mh[i] * 4 + k]; a2[i * 4 + k] = masks.m2[mh[i] * 4 + k]; }
     g.setAttribute("aMask", new T.BufferAttribute(a1, 4));
+    var vb = this.vMaskBeard = new Float32Array(n); for (i = 0; i < n; i++) vb[i] = a1[i * 4];
     g.setAttribute("aMask2", new T.BufferAttribute(a2, 4));
     g.setAttribute("aDecal", new T.BufferAttribute(this.decals(), 4));
     g.setIndex(new T.BufferAttribute(base.index.slice(), 1));
@@ -1168,7 +1169,7 @@
       mat.customProgramCacheKey = function () { return "proxy-tint-" + tk; };
     }
     if (o.brows || o.lashes) {
-      var boost = o.brows ? 1.9 : 1.25;
+      var boost = o.brows ? 1.45 : 1.25;
       mat.onBeforeCompile = function (sh) { sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n\tdiffuseColor.a = clamp(diffuseColor.a * " + boost.toFixed(2) + ", 0.0, 1.0);"); };
       mat.customProgramCacheKey = function () { return "fight-proxy-alpha-" + boost; };
     }
@@ -1428,10 +1429,11 @@
     var HEADB = { Head: 1, Neck: 1 }, M = this.maskL;
     if (looks.beardShellLen > 0 && X.maskBeard && looks.beard > 0.3) {
       var pb = texPixels(X.maskBeard), covB = new Float32Array(n);
-      for (i = 0; i < n; i++) { if (this.boneW(i, HEADB) < 0.5) continue; covB[i] = sampleMask(pb, uv[i * 2], uv[i * 2 + 1], looks.beardCh); }
+      var lmB = this.vMaskBeard;
+      for (i = 0; i < n; i++) { if (this.boneW(i, HEADB) < 0.5) continue; covB[i] = sampleMask(pb, uv[i * 2], uv[i * 2 + 1], looks.beardCh) * (lmB ? clamp01(lmB[i] * 2.2) : 1); }
       var lb = looks.beardShellLen;
-      this.addStrandShell("beard", covB, { len: function () { return lb; }, layers: lb > 0.012 ? 7 : (lb > 0.005 ? 5 : 3), color: looks.beardColor, density: looks.beardDensity,
-        dir: function (i, out) { return out.set(0, -0.55, 0.12); }, freq: 1100, thick: lb > 0.012 ? 0.62 : 0.5 });
+      this.addStrandShell("beard", covB, { len: function () { return lb * 0.7; }, layers: lb > 0.012 ? 7 : (lb > 0.005 ? 5 : 3), color: looks.beardColor, density: looks.beardDensity,
+        dir: function (i, out) { return out.set(0, -0.45, 0.08); }, freq: 1250, thick: lb > 0.012 ? 0.62 : 0.55, gain: 1.8 });
     }
     if (looks.hairMode === "shell" && X.maskHair && X.maskHair2 && looks.scalpCh >= 0 && looks.scalpCh < 4) {
       var ph = texPixels(looks.scalpCh < 3 ? X.maskHair : X.maskHair2), covH = new Float32Array(n), ch = looks.scalpCh % 3;
@@ -1447,7 +1449,7 @@
       this.addStrandShell("hair", covH, {
         len: function (j) { var tf = smooth(earY + 0.025, earY + 0.09, P[j * 3 + 1]); return lerp(sides, top, tf); },
         dir: function (j, out) { var tf = smooth(earY + 0.02, earY + 0.08, P[j * 3 + 1]); return out.set(0, 0.32 * tf - 0.3 * (1 - tf), 0.12 * tf - 0.08); },
-        layers: top > 0.02 ? 9 : (top > 0.008 ? 6 : 4), color: looks.hairColor, density: 1, freq: top > 0.015 ? 900 : 1300, thick: top > 0.02 ? 0.62 : 0.55, hair: true });
+        layers: top > 0.02 ? 9 : (top > 0.008 ? 6 : 4), color: looks.hairColor, density: 1, freq: top > 0.015 ? 900 : 1300, thick: top > 0.02 ? 0.62 : 0.55, hair: true, gain: 1.6 });
     }
   };
   Avatar.prototype.addStrandShell = function (name, cov, o) {
@@ -1486,7 +1488,7 @@
     g.setAttribute("skinIndex", new T.BufferAttribute(si, 4)); g.setAttribute("skinWeight", new T.BufferAttribute(sw, 4)); g.setAttribute("aFur", new T.BufferAttribute(fur, 2));
     g.setIndex(new T.BufferAttribute(index, 1));
     if (md.length) { g.morphAttributes.position = md.map(function (a) { return new T.BufferAttribute(a, 3); }); g.morphTargetsRelative = true; }
-    var col = lin(o.color), U = { uFreq: { value: o.freq || 1000 }, uDens: { value: o.density || 1 }, uThick: { value: o.thick || 0.55 } };
+    var col = lin(o.color).multiplyScalar(o.gain || 1), U = { uFreq: { value: o.freq || 1000 }, uDens: { value: o.density || 1 }, uThick: { value: o.thick || 0.55 } };
     var mat = new T.MeshStandardMaterial({ color: col, roughness: o.hair ? 0.62 : 0.78, metalness: 0, skinning: true, morphTargets: !!md.length, alphaTest: 0.5, side: T.DoubleSide });
     mat.onBeforeCompile = function (sh) {
       for (var kk in U) sh.uniforms[kk] = U[kk];
@@ -1497,7 +1499,7 @@
         .replace("#include <alphatest_fragment>",
           "{ vec2 cell = vSUv * uFreq; vec2 ci = floor(cell); vec2 cf = fract(cell) - 0.5;\n" +
           "  float sq1 = sh1(ci), sq2 = sh1(ci + 17.3), sq3 = sh1(ci + 41.7);\n" +
-          "  float c = clamp(vFur.y * uDens * 1.25, 0.0, 1.0), h = vFur.x;\n" +
+          "  float c = smoothstep(0.18, 0.62, vFur.y * uDens), h = vFur.x;\n" +
           "  float len = 0.45 + 0.55 * sq2;\n" +
           "  vec2 off = (vec2(sq3, sh1(ci + 3.1)) - 0.5) * 0.5;\n" +
           "  float rad = uThick * 0.5 * (1.0 - 0.7 * h / max(len, 0.05));\n" +

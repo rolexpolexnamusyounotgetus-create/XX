@@ -1903,6 +1903,442 @@ def write_outputs(D, noise, hp, cv, walk, T, win_res, win_preds, stat_res, secs,
     _save({"T": T, "win_preds": win_preds, "walk_final": fin}, _pk(cache, "eval_state.pkl"))
 
 
+# ------------------------------------------------------------------------------------------------ extras: integration
+# Second pass (python3 tools/embed.py --stage extras): reads the cached walk / downstream table, adds
+#   * integration tests on top of the current best inputs (ML logistic, the no-line stack, ratings, the closing line),
+#   * by-segment results (newcomers, years, 5-rounders, women, favourite strength),
+#   * the mlrates + embedding stat-line blend recipe (per target, embedding term kept only where time-ordered CV
+#     inside 2019-2023 says it helps), with a browser check block,
+#   * neighbours in three pools (profile distance, style cosine, same weight band, active men),
+# and merges them into data/derived/embed.json and embed_model.json.
+
+def _lg(p):
+    p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
+def _slope(p, y):
+    """Calibration slope: mirrored no-intercept logistic of y on logit p (1 = calibrated, > 1 underconfident)."""
+    z = np.r_[_lg(p), -_lg(p)]
+    yy = np.r_[y, 1 - y]
+    s = 1.0
+    for _ in range(60):
+        q = 1 / (1 + np.exp(-s * z))
+        g = ((q - yy) * z).sum()
+        h = (q * (1 - q) * z * z).sum() + 1e-12
+        s -= g / h
+    return float(s)
+
+
+def _min_n(T):
+    """Prior UFC fights of the less experienced man (backtest entries need >= 1 for both)."""
+    return np.array([min(e["A"]["n"], e["B"]["n"]) for e in T["entries"]], float)
+
+
+def _segments_fight(T, idx, base_p):
+    """Boolean masks (over the rows idx of T) for the fight-level segments used throughout."""
+    mn = _min_n(T)[idx]
+    yr = T["year"][idx]
+    fav = np.abs(np.asarray(base_p) - 0.5)
+    q1, q2 = np.quantile(fav, [1 / 3, 2 / 3])
+    return {
+        "min UFC fights 1-2 (newcomer)": mn <= 2,
+        "min UFC fights 3-5": (mn >= 3) & (mn <= 5),
+        "min UFC fights 6+": mn >= 6,
+        "2024": yr == 2024,
+        "2025": yr == 2025,
+        "five-round": T["five"][idx] == 1,
+        "three-round": T["five"][idx] == 0,
+        "women": T["women"][idx] == 1,
+        "men": T["women"][idx] == 0,
+        "toss-ups (bottom third of |p - 0.5|)": fav <= q1,
+        "middle third of |p - 0.5|": (fav > q1) & (fav <= q2),
+        "clear favourites (top third of |p - 0.5|)": fav > q2,
+    }
+
+
+def _delta_rec(da, clusters):
+    mu, lo, hi = boot_ci(da, clusters)
+    return {"mean": round(mu, 5), "ci95": [round(lo, 5), round(hi, 5)]}
+
+
+def _score_rec(p, y):
+    cal, ece = calib_table(p, y)
+    return {"n": int(len(y)), "logloss": round(float(logloss(p, y).mean()), 5),
+            "brier": round(float(np.mean((p - y) ** 2)), 5), "acc": round(float(np.mean((p > 0.5) == (y == 1))), 4),
+            "ece": ece, "slope": round(_slope(p, y), 3)}
+
+
+def load_bases(T):
+    """Per-fight win probabilities from the other verified components, read only for backtest_dev ids
+    (2019-2025): ml.json (lr = the 0.6062 logistic, stack = elo + ml + market rating), market.json (power no-vig
+    close, no-vig open, market rating), ratings.json (its second-stage stack). Orientation is checked against
+    backtest_dev (A = first-named) on every row."""
+    dev = {e["id"]: e for e in json.load(open(BACKTEST_DEV))["fights"] if e["date"] < HIDDEN_FROM.isoformat()}
+    rowof = {fid: i for i, fid in enumerate(T["id"])}
+    ml = json.load(open(os.path.join(DER, "ml.json")))["fights"]
+    mk = json.load(open(os.path.join(DER, "market.json")))["fights"]
+    rp = os.path.join(DER, "ratings.json")
+    rt = json.load(open(rp))["predictions"] if os.path.exists(rp) else {}
+    ids, cols = [], defaultdict(list)
+    bad = 0
+    for fid, e in dev.items():
+        j = rowof.get(fid)
+        if j is None or np.isnan(T["winner"][j]):
+            continue
+        m, k, r = ml.get(fid, {}), mk.get(fid, {}), rt.get(fid)
+        if m.get("y") is not None and float(m["y"]) != T["winner"][j]:
+            bad += 1
+        if r is not None and (r["A"] != e["A"]["slug"] or r["B"] != e["B"]["slug"]):
+            r = None
+            bad += 1
+        ids.append(j)
+        cols["ml_lr"].append(m.get("lr", np.nan))
+        cols["ml_stack"].append(m.get("stack", np.nan))
+        cols["close"].append(k.get("p_power_close", np.nan))
+        cols["open"].append(k.get("p_novig_open", np.nan))
+        cols["mkt_rating"].append(k.get("p_market_rating", np.nan))
+        cols["ratings"].append(r["p"].get("stack", np.nan) if r is not None else np.nan)
+    assert bad == 0, "orientation mismatch in %d rows" % bad
+    return np.array(ids), {c: np.array([np.nan if v is None else v for v in vals], float) for c, vals in cols.items()}
+
+
+INTEG_SETS = [("ml_lr", ["ml_lr"]), ("ml_stack", ["ml_stack"]), ("no_line_best", ["ml_stack", "ratings"]),
+              ("open", ["open"]), ("close", ["close"]), ("close+ml_stack", ["close", "ml_stack"])]
+
+
+def eval_integration(T, verbose=True):
+    """Does the embedding add to the current best inputs? For each base set: a mirrored no-intercept logistic
+    on the logits (recalibrated base), the same plus the embedding head logit (+emb), and plus the head and its
+    interaction with the smaller decayed fight count g = x_min / (1 + x_min) (+emb_x, so the stack can trust the
+    head more when both men have data). Fit on 2019-2023 (all inputs present), C = 1e4 (no penalty); the
+    variant to use is chosen by leave-one-year-out log loss inside 2019-2023; scored once on 2024-2025."""
+    ids, B_ = load_bases(T)
+    y = T["winner"][ids]
+    yrs = T["year"][ids]
+    days = T["day"][ids]
+    ze = T["s_win"][ids]
+    xm = np.minimum(T["XA"][ids], T["XB"][ids])
+    g = xm / (1 + xm)
+    out = {"sets": {}, "segments": {}, "n_rows": int(len(ids))}
+    seg_store = {}
+    for name, cols in INTEG_SETS:
+        ok = np.all([~np.isnan(B_[c]) for c in cols], axis=0)
+        tr, va = ok & (yrs <= 2023), ok & (yrs >= 2024) & (yrs <= 2025)
+        Zb = np.c_[[_lg(B_[c]) for c in cols]].T
+        designs = {"base": Zb, "+emb": np.c_[Zb, ze], "+emb_x": np.c_[Zb, ze, ze * g]}
+        rec = {"inputs": cols, "n_train": int(tr.sum()), "n_valid": int(va.sum()), "variants": {}}
+        preds = {}
+        for vk, Z in designs.items():
+            loyo = []
+            for vy in range(2019, 2024):
+                a, b = tr & (yrs != vy), tr & (yrs == vy)
+                if b.sum() == 0 or a.sum() == 0:
+                    continue
+                f, _ = fit_lr(Z[a], y[a], 1e4)
+                loyo.append(logloss(f(Z[b]), y[b]))
+            f, coef = fit_lr(Z[tr], y[tr], 1e4)
+            preds[vk] = f(Z)
+            rec["variants"][vk] = dict(_score_rec(preds[vk][va], y[va]),
+                                       loyo_2019_2023=round(float(np.mean(np.concatenate(loyo))), 5),
+                                       coef=[round(float(c), 4) for c in coef])
+        raw = np.mean([B_[c] for c in cols], axis=0) if len(cols) == 1 else None
+        if raw is not None:
+            rec["raw_valid"] = _score_rec(raw[va], y[va])
+        pick = min(("+emb", "+emb_x"), key=lambda k: rec["variants"][k]["loyo_2019_2023"])
+        rec["chosen_by_loyo"] = pick
+        rec["deltas"] = {}
+        for a_ in ("+emb", "+emb_x"):
+            rec["deltas"][a_ + " - base"] = _delta_rec(logloss(preds[a_][va], y[va]) - logloss(preds["base"][va], y[va]),
+                                                       days[va])
+        rec["deltas"]["chosen - base"] = rec["deltas"][pick + " - base"]
+        out["sets"][name] = rec
+        seg_store[name] = (va, preds["base"], preds[pick])
+        if verbose:
+            v = rec["variants"]
+            d = rec["deltas"]["chosen - base"]
+            print("  integ %-15s n %d/%d  base %.4f  +emb %.4f  +emb_x %.4f  chosen %s %+.4f [%+.4f, %+.4f]" % (
+                name, rec["n_train"], rec["n_valid"], v["base"]["logloss"], v["+emb"]["logloss"], v["+emb_x"]["logloss"],
+                pick, d["mean"], d["ci95"][0], d["ci95"][1]), flush=True)
+    # segments for each set: chosen embedding variant vs base, and the base's own log loss
+    for name, (va, pb, pe) in seg_store.items():
+        idx = ids[va]
+        masks = _segments_fight(T, idx, pb[va])
+        yy = y[va]
+        dl = logloss(pe[va], yy) - logloss(pb[va], yy)
+        out["segments"][name] = {}
+        for sk, m in masks.items():
+            if m.sum() < 20:
+                continue
+            out["segments"][name][sk] = dict(n=int(m.sum()), base_logloss=round(float(logloss(pb[va][m], yy[m]).mean()), 5),
+                                             delta=_delta_rec(dl[m], days[va][m]))
+    # the newcomer gap itself: each base vs the close on the same rows, by segment
+    ok = ~np.isnan(B_["close"]) & ~np.isnan(B_["ml_lr"]) & ~np.isnan(B_["ml_stack"]) & (yrs >= 2024)
+    idx = ids[ok]
+    masks = _segments_fight(T, idx, B_["close"][ok])
+    gap = {}
+    for sk in ("min UFC fights 1-2 (newcomer)", "min UFC fights 3-5", "min UFC fights 6+"):
+        m = masks[sk]
+        gap[sk] = {"n": int(m.sum())}
+        for c in ("close", "ml_lr", "ml_stack"):
+            gap[sk][c] = round(float(logloss(B_[c][ok][m], y[ok][m]).mean()), 5)
+        gap[sk]["emb_head"] = round(float(logloss(1 / (1 + np.exp(-ze[ok][m])), y[ok][m]).mean()), 5)
+        gap[sk]["x_min_mean"] = round(float(xm[ok][m].mean()), 3)
+    out["newcomer_gap_2024_25"] = gap
+    if verbose:
+        for sk, v in gap.items():
+            print("  gap %-40s %s" % (sk, v))
+    return out
+
+
+def eval_winner_segments(T, win_preds, verbose=True):
+    """By-segment validation deltas for the downstream winner models (embedding vs base, head vs Elo)."""
+    y = T["winner"]
+    va = ~np.isnan(y) & (T["year"] >= 2024) & (T["year"] <= 2025)
+    idx = np.where(va)[0]
+    masks = _segments_fight(T, idx, win_preds["lr_base"][va])
+    out = {}
+    for a_, b_ in (("lr_emb", "lr_base"), ("gbm_emb", "gbm_base"), ("emb_head", "elo")):
+        dl = logloss(win_preds[a_][va], y[va]) - logloss(win_preds[b_][va], y[va])
+        key = "%s - %s" % (a_, b_)
+        out[key] = {}
+        for sk, m in masks.items():
+            if m.sum() < 20:
+                continue
+            out[key][sk] = dict(n=int(m.sum()), base_logloss=round(float(logloss(win_preds[b_][va][m], y[va][m]).mean()), 5),
+                                delta=_delta_rec(dl[m], T["day"][va][m]))
+        if verbose:
+            s = out[key]
+            print("  seg %-18s " % key + " | ".join("%s %+.4f" % (k.split(" (")[0][:14], v["delta"]["mean"])
+                                                   for k, v in s.items()))
+    return out
+
+
+def _blend_link(tname, binom_task, ML):
+    """mlrates output -> the link scale of the blend (and whether the blend is binomial)."""
+    if tname == "ctrl":
+        return np.log(np.maximum(ML / 60.0, 1e-6)), False
+    if tname == "kd_h":
+        return np.log(np.clip(ML, 1e-6, 1 - 1e-6)), False
+    if binom_task:
+        pm = np.clip(ML, 1e-6, 1 - 1e-6)
+        return np.log(pm / (1 - pm)), True
+    return np.log(np.maximum(ML, 1e-9)), False
+
+
+def eval_mlrates_blend(T, D, verbose=True):
+    """The stat-line integration recipe: per mlrates target, link(rate) = b0 + b1 link(mlrates) [+ b2 eta_emb].
+    Fit on mlrates' 2019-2023 out-of-fold rows; whether to keep b2 is decided per target by leave-one-year-out
+    deviance inside 2019-2023 (never by validation); scored once on 2024-2025 (mlrates' dev model, trained
+    2010-2023). Reports all-target and CV-selected versions, per-target changes and segments by the attacker's
+    and the fight's UFC experience."""
+    mo = json.load(open(os.path.join(DER, "mlrates_oof.json")))
+    targets = mo["meta"]["targets"]
+    dev_ids = {e["id"] for e in json.load(open(BACKTEST_DEV))["fights"]}
+    rowof = {fid: i for i, fid in enumerate(T["id"])}
+    drow = {(D.f_id[D.r_fight[r]], int(D.r_side[r])): r for r in range(len(D.r_fight))}
+    R = []
+    for fid, v in mo["fights"].items():
+        if fid not in dev_ids or fid not in rowof or v["date"] >= HIDDEN_FROM.isoformat():
+            continue
+        j = rowof[fid]
+        for side, tag in ((0, "A"), (1, "B")):
+            r = drow.get((fid, side))
+            if r is not None:
+                R.append((j, r, side, v[tag]))
+    jj = np.array([x[0] for x in R])
+    rr = np.array([x[1] for x in R])
+    sd_ = np.array([x[2] for x in R])
+    ML = np.array([x[3] for x in R], float)
+    ETA = np.where(sd_[:, None] == 0, T["eta_ab"][jj], T["eta_ba"][jj])
+    yrs = T["year"][jj]
+    tr, va = yrs <= 2023, (yrs >= 2024) & (yrs <= 2025)
+    days = T["day"][jj]
+    n_att = np.array([T["entries"][j]["A" if s == 0 else "B"]["n"] for j, s in zip(jj, sd_)], float)
+    n_min = _min_n(T)[jj]
+    recipe, per = {}, {}
+    dv = {"recal": [], "all": [], "sel": []}
+    for ti_, tname in enumerate(targets):
+        task = MLR_MAP[tname]
+        t = TI[task]
+        y, n = D.Y[rr, t], D.E[rr, t]
+        ok = n > 0
+        lm, binom = _blend_link(tname, bool(IS_BIN[t]), ML[:, ti_])
+        le = ETA[:, t]
+        one = np.ones(len(y))
+        Z1, Z2 = np.c_[one, lm], np.c_[one, lm, le]
+        m_tr = tr & ok
+        # leave-one-year-out inside 2019-2023
+        cv1 = cv2 = 0.0
+        for vy in range(2019, 2024):
+            a, b = m_tr & (yrs != vy), m_tr & (yrs == vy)
+            if b.sum() == 0:
+                continue
+            b1 = _glm_newton(Z1[a], y[a], n[a], binom)
+            b2 = _glm_newton(Z2[a], y[a], n[a], binom)
+            cv1 += _dev1(y[b], n[b], Z1[b] @ b1, binom).sum()
+            cv2 += _dev1(y[b], n[b], Z2[b] @ b2, binom).sum()
+        keep = bool(cv2 < cv1)
+        b1 = _glm_newton(Z1[m_tr], y[m_tr], n[m_tr], binom)
+        b2 = _glm_newton(Z2[m_tr], y[m_tr], n[m_tr], binom)
+        okv = ok[va]
+        d1 = np.where(okv, _dev1(y[va], n[va], Z1[va] @ b1, binom), 0.0)
+        d2 = np.where(okv, _dev1(y[va], n[va], Z2[va] @ b2, binom), 0.0)
+        dv["recal"].append(d1)
+        dv["all"].append(d2)
+        dv["sel"].append(d2 if keep else d1)
+        mu, lo, hi = boot_ci(d2 - d1, days[va])
+        base = d1.mean()
+        per[tname] = {"task": task, "cv_dev_recal": round(cv1, 2), "cv_dev_plus_emb": round(cv2, 2),
+                      "cv_rel_change": round((cv2 - cv1) / cv1, 4), "keep_emb": keep,
+                      "valid_rel_change": round(mu / base, 4), "ci95": [round(lo / base, 4), round(hi / base, 4)]}
+        recipe[tname] = {"task": task, "link": "logit" if binom else "log",
+                         "units": "seconds / min" if tname == "ctrl" else (
+                             "P(knockdown) per landed head strike" if tname == "kd_h" else (
+                                 "probability" if binom else "per minute")),
+                         "b": [round(float(x), 6) for x in (b2 if keep else np.r_[b1, 0.0])]}
+        if verbose:
+            print("  blend %-7s cv %+.2f%% keep %-5s valid %+.2f%% [%+.2f, %+.2f]  b %s" % (
+                tname, 100 * (cv2 - cv1) / cv1, keep, 100 * mu / base, 100 * lo / base, 100 * hi / base,
+                recipe[tname]["b"]), flush=True)
+    NTg = len(targets)
+
+    def mean_rel(mask, which):
+        """Mean over targets of the relative deviance change (which vs recal) on the rows in mask, with an
+        event-cluster bootstrap CI."""
+        contrib = np.zeros(int(mask.sum()))
+        for d1, dx in zip(dv["recal"], dv[which]):
+            contrib += (dx[mask] - d1[mask]) / max(d1[mask].sum(), 1e-9) / NTg
+        mu, lo, hi = boot_ci(contrib, days[va][mask])
+        k = len(contrib)
+        return {"n_rows": k, "mean": round(mu * k, 4), "ci95": [round(lo * k, 4), round(hi * k, 4)]}
+
+    allm = np.ones(int(va.sum()), bool)
+    na, nm = n_att[va], n_min[va]
+    segs = {"all": allm, "attacker 1-2 UFC fights": na <= 2, "attacker 3-5": (na >= 3) & (na <= 5),
+            "attacker 6+": na >= 6, "fight has a 1-2 fight newcomer": nm <= 2, "2024": yrs[va] == 2024,
+            "2025": yrs[va] == 2025}
+    out = {"n_rows_train": int(tr.sum()), "n_rows_valid": int(va.sum()), "per_target": per, "recipe": recipe,
+           "n_targets_kept": int(sum(v["keep_emb"] for v in per.values())), "segments": {}}
+    for sk, m in segs.items():
+        out["segments"][sk] = {"all_targets": mean_rel(m, "all"), "cv_selected": mean_rel(m, "sel")}
+        if verbose:
+            a_, s_ = out["segments"][sk]["all_targets"], out["segments"][sk]["cv_selected"]
+            print("  blend seg %-32s n %5d  all %+.2f%% [%+.2f, %+.2f]  selected %+.2f%% [%+.2f, %+.2f]" % (
+                sk, a_["n_rows"], 100 * a_["mean"], 100 * a_["ci95"][0], 100 * a_["ci95"][1], 100 * s_["mean"],
+                100 * s_["ci95"][0], 100 * s_["ci95"][1]), flush=True)
+    # a few real validation rows for the browser check (inputs: mlrates side + embedding eta; output: blend)
+    rng = np.random.default_rng(SEED)
+    pick = rng.choice(np.where(va)[0], 12, replace=False)
+    out["_check_rows"] = [{"ml": {tn: float(ML[i, k]) for k, tn in enumerate(targets)}, "eta": ETA[i].tolist()}
+                          for i in pick]
+    return out
+
+
+def py_blend(recipe, task_index, ml, eta):
+    """Python twin of src/ml/embed.js blendMLRates(): mlrates side (target -> rate) + embedding eta -> rates."""
+    out = {}
+    for tname, r in recipe.items():
+        x = float(ml[tname])
+        b0, b1, b2 = r["b"]
+        if tname == "ctrl":
+            z = math.log(max(x / 60.0, 1e-6))
+        elif tname == "kd_h":
+            z = math.log(min(max(x, 1e-6), 1 - 1e-6))
+        elif r["link"] == "logit":
+            p = min(max(x, 1e-6), 1 - 1e-6)
+            z = math.log(p / (1 - p))
+        else:
+            z = math.log(max(x, 1e-9))
+        e = b0 + b1 * z + b2 * float(eta[task_index[r["task"]]])
+        if r["link"] == "logit":
+            out[tname] = 1 / (1 + math.exp(-e))
+        elif tname == "ctrl":
+            out[tname] = 60.0 * math.exp(e)
+        elif tname == "kd_h":
+            out[tname] = min(math.exp(e), 0.5)
+        else:
+            out[tname] = math.exp(e)
+    return out
+
+
+def neighbours_v2(D, fin, hp, slugs_of_interest=("alexander-volkanovski", "justin-gaethje"), k=10):
+    """Neighbours on the standardised predicted-stat profile (21 offense + 21 defense effects): Euclidean
+    distance and style cosine, among established fighters (decayed fight count >= NN_MIN_EXPO) who fought in
+    2023-2025, men only for the two men, plus a same-weight-band pool (145-170 lb divisions)."""
+    P, A, Dm = fin["P"], fin["A"], fin["D"]
+    expo = exposure(D, fin["T"], hp["hl"])
+    emb = np.hstack([A, Dm])
+    Q, so, sdv = nn_metric(P, A, Dm, expo)
+    prof = np.array([profile(P, emb[i], so, sdv) for i in range(len(emb))])
+    last = np.full(D.F, -1)
+    np.maximum.at(last, D.r_x, D.r_day)
+    lastdiv = {}
+    order = np.argsort(D.r_day)
+    for r in order:
+        lastdiv[int(D.r_x[r])] = D.divs[int(D.r_div[r])]
+    women = np.array([lastdiv.get(i, "").startswith("Women") for i in range(D.F)])
+    active = last >= dt.date(2023, 1, 1).toordinal()
+    band = np.array([lastdiv.get(i, "") in ("Featherweight", "Lightweight", "Welterweight") for i in range(D.F)])
+    base = (expo >= NN_MIN_EXPO) & active & ~women
+    out = {"pool": "decayed fight count >= %.1f at 2026-01-01, fought in 2023-2025, men; profile = 21 offense + 21 "
+                   "defense effects of the embedding on predicted log-rates / logits, each standardised over active "
+                   "fighters" % NN_MIN_EXPO}
+    nrm = np.linalg.norm(prof, axis=1) + 1e-12
+    for sl in slugs_of_interest:
+        i = D.slug_idx[sl]
+        dist = np.linalg.norm(prof - prof[i], axis=1)
+        cos = prof @ prof[i] / (nrm * nrm[i])
+        rec = {}
+        for key, m, score, asc in (("profile_distance", base, dist, True), ("style_cosine", base, cos, False),
+                                   ("profile_distance_145_170", base & band, dist, True)):
+            mm = m.copy()
+            mm[i] = False
+            cand = np.where(mm)[0]
+            o = cand[np.argsort(score[cand] if asc else -score[cand])][:k]
+            rec[key] = [[D.slug[j], round(float(score[j]), 3), lastdiv.get(int(j), "")] for j in o]
+        rec["profile_norm"] = round(float(nrm[i]), 3)
+        rec["median_profile_norm_in_pool"] = round(float(np.median(nrm[base])), 3)
+        rec["expo"] = round(float(expo[i]), 3)
+        out[sl] = rec
+    return out
+
+
+def stage_extras(D, hp, cache, verbose=True):
+    st = _load(_pk(cache, "eval_state.pkl"))
+    T, win_preds, fin = st["T"], st["win_preds"], st["walk_final"]
+    integ = eval_integration(T, verbose)
+    wseg = eval_winner_segments(T, win_preds, verbose)
+    blend = eval_mlrates_blend(T, D, verbose)
+    nn2 = neighbours_v2(D, fin, hp)
+    if verbose:
+        for sl in ("alexander-volkanovski", "justin-gaethje"):
+            for key in ("profile_distance", "style_cosine", "profile_distance_145_170"):
+                print("  %s %s: %s" % (sl, key, ", ".join("%s (%.2f)" % (a, b) for a, b, _ in nn2[sl][key][:6])))
+    # merge into the outputs
+    J = json.load(open(OUT_JSON))
+    M = json.load(open(OUT_MODEL))
+    J["validation"]["integration"] = integ
+    J["validation"]["winner_segments"] = wseg
+    checks = blend.pop("_check_rows")
+    J["validation"]["stats"]["mlrates_blend"] = blend
+    J["neighbours_v2"] = nn2
+    task_index = {t: i for i, t in enumerate(TN)}
+    M["mlrates_blend"] = {"note": "link(rate) = b0 + b1 link(mlrates rate) + b2 eta_embedding[task]; fit on mlrates "
+                                  "2019-2023 out-of-fold rows; b2 = 0 where leave-one-year-out CV inside 2019-2023 "
+                                  "said the embedding did not help (research/model_embed.md)",
+                          "targets": blend["recipe"]}
+    M["blend_check"] = [{"ml": c["ml"], "eta": [round(float(x), 10) for x in c["eta"]],
+                         "out": py_blend(blend["recipe"], task_index,
+                                         c["ml"], [round(float(x), 10) for x in c["eta"]])} for c in checks]
+    J["meta"]["extras_built"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    with open(OUT_JSON, "w") as fh:
+        json.dump(J, fh, separators=(",", ":"))
+    with open(OUT_MODEL, "w") as fh:
+        json.dump(M, fh, separators=(",", ":"))
+    print("merged extras into %s and %s" % (OUT_JSON, OUT_MODEL), flush=True)
+
+
 # ------------------------------------------------------------------------------------------------ driver
 CV_GRID = [dict(lam=30.0, hl=730.0), dict(lam=15.0, hl=730.0), dict(lam=60.0, hl=730.0), dict(lam=30.0, hl=1460.0),
            dict(lam=30.0, hl=730.0, lam_d=2.0), dict(lam=30.0, hl=730.0, win_w=4.0), dict(lam=30.0, hl=365.0)]
@@ -1997,7 +2433,7 @@ def main():
                     help="directory for intermediate pickles (noise, CV, walks)")
     ap.add_argument("--quick", action="store_true", help="yearly CV refits, 2-config grid")
     ap.add_argument("--skip-cv", action="store_true", help="use the CV results already in the cache / embed.json")
-    ap.add_argument("--stage", default="all", choices=["noise", "cv", "walk", "eval", "all"],
+    ap.add_argument("--stage", default="all", choices=["noise", "cv", "walk", "eval", "extras", "all"],
                     help="run up to this stage (walk with --chunk runs one chunk only, for two parallel processes)")
     ap.add_argument("--chunk", type=int, default=0, help="1 = 2010-2017, 2 = 2018-2025 (default both)")
     ap.add_argument("--reuse-eval", action="store_true", help="reuse the cached downstream results (re-export only)")
@@ -2022,6 +2458,9 @@ def main():
     hp = best["hp"]
     print("chosen hyperparameters: %s (score %.4f)" % (hp, cv_score(best)), flush=True)
     if args.stage == "cv":
+        return
+    if args.stage == "extras":
+        stage_extras(D, hp, args.cache)
         return
     chunks = [args.chunk] if args.chunk else [1, 2]
     walks = {c: stage_walk(D, noise, hp, args.cache, c) for c in chunks}

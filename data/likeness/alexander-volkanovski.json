@@ -262,10 +262,16 @@
     "torso/torso-vshape-incr": 0.45,
     "torso/measure-waist-circ-decr": 0.3,
     "torso/measure-hips-circ-decr": 0.15,
-    "buttocks/buttocks-volume-incr": 0.1
+    "buttocks/buttocks-volume-incr": 0.1,
+    "ears/l-ear-flap-incr": 0.45,
+    "ears/r-ear-flap-incr": 0.45,
+    "ears/l-ear-scale-incr": 0.2,
+    "ears/r-ear-scale-incr": 0.2,
+    "ears/l-ear-lobe-incr": 0.1,
+    "ears/r-ear-lobe-incr": 0.1
   },
   "morphs_unavailable": {
-    "note": "assets/embed/mh-manifest.json has no ears/* targets. If ear targets are added, use about: ears/l|r-ear-flap-incr 0.45 (protrusion), ears/l|r-ear-scale-incr 0.2, ears/l|r-ear-lobe-incr 0.1. Until then, protruding ears are the main likeness cue that is missing.",
+    "note": "Ear targets are now baked (assets/embed/mh-shapes-x.bin.gz); the values this note recommended (flap 0.45, scale 0.2, lobe 0.1, both sides) moved into morphs on 2026-11-06.",
     "arm_length": "Reach is 180 cm at 168 cm height (ape index about +12 cm). No morph controls arm length; if the rig allows, scale the upper-arm and forearm bones up about 3-4%."
   },
   "render_hints": {
