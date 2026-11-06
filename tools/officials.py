@@ -868,6 +868,7 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
     kap = float(th.get("_kappa", 0.0))
     sv = float(th.get("_sv", 0.0))
     probit = bool(th.get("_probit", 0))
+    nshift = float(th.get("_nshift", 0.0))
     from scipy.special import ndtr
     e10 = 1 / (1 + np.exp(-th["lg_e10"]))
     pi = np.exp(th["lpi"])
@@ -897,7 +898,7 @@ def simulate_decisions(th, dz, nsim=20000, seed=0, judge_mask=None):
             e = Ez[dz.J[sl][0, j]]
             core = (np.exp(e[1] + th["w"][0] * tt) * V + np.exp(e[2] + th["w"][1] * tt) * K +
                     np.exp(e[3] + th["w"][2] * tt) * G + hh)
-            eta = np.exp(e[0]) * (core[None, :] + u + vfx)
+            eta = np.exp(e[0] + nshift) * (core[None, :] + u + vfx)
             aw = rng.random((nsim, R)) < (ndtr(eta) if probit else 1 / (1 + np.exp(-eta)))
             AW.append(aw)
             cc = th["c0"] + th["cy"][yr] + e[4]
@@ -1086,6 +1087,31 @@ MODELS = {"indep": {"shared": 0, "judges": 0, "home": 0},
 
 
 STRUCT = {}
+SUFFIX = __import__("os").environ.get("OFFICIALS_SUFFIX", "")   # e.g. "_c": folds refit with the closeness option
+FOLD_SOURCES = {}
+
+
+def fold_exists(tag):
+    return (CACHE / f"fold_{tag}{SUFFIX}.pkl").exists() or (CACHE / f"fold_{tag}.pkl").exists()
+
+
+def load_fold(tag):
+    """fold_<tag><SUFFIX>.pkl; models it lacks are taken from the base fold_<tag>.pkl (recorded in FOLD_SOURCES)."""
+    import pickle
+    fs, fb = CACHE / f"fold_{tag}{SUFFIX}.pkl", CACHE / f"fold_{tag}.pkl"
+    base = pickle.load(open(fb, "rb")) if fb.exists() else None
+    if not SUFFIX or not fs.exists():
+        FOLD_SOURCES[tag] = {"file": fb.name, "struct": (base or {}).get("struct", {}), "models_from_base": "all"}
+        return base
+    t = pickle.load(open(fs, "rb"))
+    filled = []
+    if base is not None:
+        for k, v in base["models"].items():
+            if k not in t["models"]:
+                t["models"][k] = v
+                filled.append(k)
+    FOLD_SOURCES[tag] = {"file": fs.name, "struct": t.get("struct", {}), "models_from_base": filled}
+    return t
 
 
 def apply_struct(opts):
@@ -1787,10 +1813,9 @@ def tuning_choice():
     import pickle
     out = {}
     for tag in ("tune22", "tune"):
-        f = CACHE / f"fold_{tag}.pkl"
-        if not f.exists():
+        if not fold_exists(tag):
             continue
-        t = pickle.load(open(f, "rb"))
+        t = load_fold(tag)
         c = {n: float(np.mean(v["eval"]["card_ll"])) for n, v in t["models"].items()
              if n.startswith("judges_home") or n in ("league_home", "league")}
         out[tag] = c
@@ -1821,13 +1846,13 @@ def strip_private(m):
 def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final_fit, final_W):
     import pickle
     by_fid = {r["fid"]: r for r in rows}
-    tune = pickle.load(open(CACHE / "fold_tune.pkl", "rb"))
-    test = pickle.load(open(CACHE / "fold_test.pkl", "rb"))
+    tune = load_fold("tune")
+    test = load_fold("test")
     J = {"tuning_2019_2023": {}, "heldout_2024_on": {}}
     for name, v in tune["models"].items():
         J["tuning_2019_2023"][name] = strip_private(metrics_block(v["eval"], by_fid))
-    if (CACHE / "fold_tune22.pkl").exists():
-        t22 = pickle.load(open(CACHE / "fold_tune22.pkl", "rb"))
+    if fold_exists("tune22"):
+        t22 = load_fold("tune22")
         J["tuning_2022_2023"] = {n: strip_private(metrics_block(v["eval"], by_fid)) for n, v in t22["models"].items()}
     tc = tuning_choice()
     J["tuning"] = tc
@@ -1900,8 +1925,8 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
     J["heldout_2024_on"]["calibration_judges_home"] = calib_table(JH["_q"], JH["_ya"])
     J["heldout_2024_on"]["calibration_indep"] = calib_table(hm["indep"]["_q"], hm["indep"]["_ya"])
     # yearly refit: 2024 scored by the fit before 2024, 2025 by the fit before 2025 (if that fold ran)
-    if (CACHE / "fold_test25.pkl").exists():
-        t25 = pickle.load(open(CACHE / "fold_test25.pkl", "rb"))
+    if fold_exists("test25"):
+        t25 = load_fold("test25")
         yr_ref = {}
         for name in ("league", "league_home", "judges_home" + sfx):
             if name not in t25["models"] or name not in test["models"]:
@@ -1950,6 +1975,7 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
                                                             if YEAR0 + i <= data_max.year},
                       "theta": dict(zip(["V", "K", "G", "u"], map(float, th["th"])))},
         "p_10_10": float(1 / (1 + np.exp(-th["lg_e10"]))),
+        "closeness_kappa": float(th["kappa"]) if STRUCT.get("closeness") else 0.0,
         "deduction_prior": dict(zip(["one_point_per_fighter", "two_points_per_fighter", "both_one_point"],
                                     map(float, np.exp(th["lpi"]))))}
     if "se_global" in final_fit:
@@ -2007,6 +2033,10 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
            "sigma_shared": lg["sigma_shared"], "home": lg["home"], "p_10_10": lg["p_10_10"],
            "ten_eight": {"c0": lg["ten_eight"]["c0"], "c_now": lg["ten_eight"]["c_by_year"][last_year],
                          "theta": lg["ten_eight"]["theta"]},
+           "kappa": float(th["kappa"]) if STRUCT.get("closeness") else 0.0,
+           "kappa_note": "shared-noise sd per round = sigma_shared * exp(-kappa * |core0|), core0 = exp(wV*t)*V + "
+                         "exp(wK*t)*K + exp(wG*t)*G (league weights, no home term); kappa < 0: lopsided rounds carry "
+                         "more shared noise (heavier tails than logistic-normal)",
            "unknown_judge_sd": J["tau"],
            "judge_cols": ["name", "n", "v", "p", "g", "c", "cards", "cards_2022_on"],
            "judges": {j["key"]: [j["name"]] + [round(j["effects"][q], 4) for q in EFF] + [j["cards"], j["cards_2022_on"]]
@@ -2171,9 +2201,154 @@ def deduction_validation(x, cfg, rows, nat, jidx, year_max):
             "excluded_too_many_patterns": int(len(era) - len(post))}
 
 
+def cy_forecast(cy, last_idx, damp, k):
+    """10-8 year level beyond the last training year: last level plus a damped linear trend
+    (slope = mean change over the last k years), cy[T + h] = cy[T] + damp * h * slope."""
+    cy = np.array(cy, float).copy()
+    slope = (cy[last_idx] - cy[last_idx - k]) / k
+    for h in range(1, len(cy) - last_idx):
+        cy[last_idx + h] = cy[last_idx] + damp * h * slope
+    return cy
+
+
+def _fit_th(fit):
+    return dict(to_np(unravel(np.asarray(fit["x"]), len(fit["jidx"]))))
+
+
+def ten8_forecast_block(rows, nat, tune_fit, tune_years, test_fit, test_years, final_fit, by_fid,
+                        damps=(0.0, 0.25, 0.5, 0.75, 1.0, 1.25), ks=(1, 2, 3)):
+    """Tune (damp, k) of the 10-8 level forecast on the tuning fold by held-out card log-likelihood, then
+    report it on the held-out fold (frozen) and give the engine's 2026 level from the final fit."""
+    out = {"rule": "cy[T+h] = cy[T] + damp * h * (cy[T] - cy[T-k]) / k; T = last training year", "tuning": {}}
+    res = {}
+    for tag, fit, years in (("tuning", tune_fit, tune_years), ("heldout", test_fit, test_years)):
+        te = [r for r in rows if r["year"] in years]
+        dz = Design(te, fit["jidx"], nat, max(years))
+        M = Model(dz)
+        cfg = MODELS[fit["model"]]
+        th = _fit_th(fit)
+        T = (min(years) - 1) - YEAR0          # last training year (folds fit on everything before min(years))
+        lls = {}
+        grid = [(d, k) for d in damps for k in ks] if tag == "tuning" else [(0.0, 1), res["best"]]
+        for d, k in grid:
+            th2 = dict(th)
+            th2["cy"] = cy_forecast(th["cy"], T, d, k)
+            lls[(d, k)] = M.ll(ravel(th2), cfg)
+        if tag == "tuning":
+            res["best"] = max(lls, key=lambda q: lls[q].mean())
+            out["tuning"] = {"fold_years": list(years), "card_ll": {f"damp={d:g},k={k}": float(v.mean())
+                                                                     for (d, k), v in lls.items()},
+                             "best": {"damp": res["best"][0], "k": res["best"][1]}}
+        best = res["best"]
+        th0, th1 = dict(th), dict(th)
+        th0["cy"] = cy_forecast(th["cy"], T, 0.0, 1)
+        th1["cy"] = cy_forecast(th["cy"], T, *best)
+        blk = {"years": list(years), "n": int(dz.nF), "card_ll_last_level": float(lls[(0.0, 1)].mean()),
+               "card_ll_forecast": float(lls[best].mean()),
+               "diff": boot_diff(lls[best], lls[(0.0, 1)]),
+               "c_last": float(th["cy"][T]), "c_forecast": [float(th1["cy"][T + h]) for h in (1, 2)]}
+        obs108 = np.array([[card_n108(c, r["R"]) > 0 for c in r["cards"]] for r in dz.rows])
+        for nm, thx in (("last_level", th0), ("forecast", th1)):
+            pr, _, a108, rp = simulate_decisions(sim_params(thx, cfg), dz, nsim=4000, seed=7)
+            rl = round_metrics(rp, dz)
+            dm = decision_metrics(pr, dz.rows)
+            blk[nm] = {"pred_card108": float(a108.mean()), "pred_ten8_given_winner": rl["pred_ten8_rate"],
+                       "ten8_given_winner_logloss": rl["ten8_given_winner_logloss"],
+                       "class7_logloss": dm["class7_logloss"], "winner_logloss": dm["winner_logloss"]}
+        blk["obs_card108"] = float(obs108.mean())
+        blk["obs_ten8_given_winner"] = round_metrics(rp, dz)["obs_ten8_rate"]
+        out[tag] = blk if tag == "heldout" else dict(out["tuning"], **blk)
+    thf = _fit_th(final_fit)
+    T = 2025 - YEAR0
+    cyf = cy_forecast(thf["cy"], T, *res["best"])
+    out["engine_c_2025"] = float(thf["cy"][T])
+    out["engine_c_2026"] = float(cyf[T + 1])
+    return out
+
+
+def structure_block(rows, by_fid, test_base, test_new, sfx):
+    """Structural variants (league + home, no named judges) on two folds, and closeness on/off for the
+    full model on the held-out fold."""
+    import pickle
+    out = {"variants": {"lh_probit": "probit own noise", "lh_close": "shared-noise sd varies with |stat edge|",
+                        "lh_fight": "fight-level shared judge noise (all rounds, all judges)",
+                        "lh_close_fight": "both", "lh_probit_close": "probit + closeness"}}
+    for tag, nm in (("s22", "fit before 2022, scored 2022-2023 (tuning)"),
+                    ("s24", "fit before 2024, scored 2024-2025 (held-out)")):
+        f = CACHE / f"struct_{tag}.pkl"
+        if not f.exists():
+            continue
+        S_ = pickle.load(open(f, "rb"))
+        base = S_["league_home"]["eval"]["card_ll"]
+        blk = {"fold": nm}
+        for m, v in S_.items():
+            th = v["th"]
+            blk[m] = dict(v["metrics"], card_ll_vs_league_home=boot_diff(v["eval"]["card_ll"], base),
+                          round_unanimity=v["unanimity"], sigma_shared=float(np.exp(th["log_su"])),
+                          kappa=float(th["kappa"]), sigma_fight=float(np.exp(th["log_sv"])) if m.endswith("fight") else 0.0)
+        out[tag] = blk
+    if test_base is not None and test_new is not None:
+        cmp_ = {}
+        for m in ("league_home", "judges_home" + sfx, "judges_home"):
+            if m in test_base["models"] and m in test_new["models"]:
+                eb, en = test_base["models"][m]["eval"], test_new["models"][m]["eval"]
+                if eb is None or en is None or list(eb["fids"]) != list(en["fids"]):
+                    continue
+                rws = [by_fid[f] for f in en["fids"]]
+                mb, mn = decision_metrics(eb["probs"], rws), decision_metrics(en["probs"], rws)
+                cmp_[m] = {"card_ll_base": float(eb["card_ll"].mean()), "card_ll_closeness": float(en["card_ll"].mean()),
+                           "card_ll": boot_diff(en["card_ll"], eb["card_ll"]),
+                           "winner_logloss": boot_diff(mn["_ll_w"], mb["_ll_w"]),
+                           "class7_logloss": boot_diff(mn["_ll7"], mb["_ll7"]),
+                           "split_logloss": boot_diff(mn["_ll_nu"], mb["_ll_nu"])}
+        out["closeness_on_vs_off_heldout_2024_on"] = cmp_
+    return out
+
+
+def agreement_block(rows, nat, final_fit, test, sfx, by_fid, shifts=(0.0, 0.1, 0.2, 0.3, 0.45, 0.6)):
+    """Panel agreement by year (held-out predictions vs observed) and the sharpness shift that reproduces
+    the 2025 split/majority rate with the final fit (an engine knob, not a validated parameter)."""
+    out = {"by_year_heldout": {}}
+    name = "judges_home" + sfx
+    ev = test["models"][name]["eval"]
+    yrs = np.array(ev["years"])
+    for y in sorted(set(yrs)):
+        idx = np.nonzero(yrs == y)[0]
+        # rounds of those fights in the eval design order
+        starts = np.r_[0, np.cumsum([by_fid[f]["R"] for f in ev["fids"]])]
+        sel_rows = [by_fid[ev["fids"][i]] for i in idx]
+        ru = np.concatenate([ev["runan"][starts[i]:starts[i + 1]] for i in idx])
+        un = observed_unanimity(sel_rows, ru)
+        out["by_year_heldout"][int(y)] = {"decisions": int(len(idx)), "round_unanimity_pred": un["pred"],
+                                          "round_unanimity_obs": un["obs"], "rounds": un["rounds"],
+                                          "split_pred": float((1 - ev["probs"][idx, 0] - ev["probs"][idx, 6]).mean()),
+                                          "split_obs": float(np.mean([actual_class(r) not in (0, 6) for r in sel_rows]))}
+    cfg = MODELS["judges_home"]
+    th = _fit_th(final_fit)
+    for label, yrs_ in (("2025", [2025]), ("2024_2025", [2024, 2025])):
+        te = [r for r in rows if r["year"] in yrs_]
+        dz = Design(te, final_fit["jidx"], nat, 2025)
+        obs = float(np.mean([actual_class(r) not in (0, 6) for r in dz.rows]))
+        grid = {}
+        for sh in shifts:
+            ths = sim_params(th, cfg)
+            ths["_nshift"] = sh
+            pr, _, _, _ = simulate_decisions(ths, dz, nsim=2000, seed=5)
+            un = observed_unanimity(dz.rows, simulate_decisions.last_runan)
+            grid[sh] = {"split_pred": float((1 - pr[:, 0] - pr[:, 6]).mean()), "round_unanimity_pred": un["pred"],
+                        "round_unanimity_obs": un["obs"]}
+        xs = np.array(sorted(grid))
+        ys = np.array([grid[x]["split_pred"] for x in xs])
+        sh_star = float(np.interp(-obs, -ys, xs)) if ys.min() <= obs <= ys.max() else (float(xs[-1]) if obs < ys.min() else 0.0)
+        out["final_fit_" + label] = {"split_obs": obs, "grid": {f"{k:g}": v for k, v in grid.items()},
+                                     "sharpness_shift_matching_split": sh_star,
+                                     "sharpness_mult": float(math.exp(sh_star))}
+    return out
+
+
 def run_post(rows, nat, natinfo, F, S, data_max, notes):
     import pickle
-    final = pickle.load(open(CACHE / "fold_final.pkl", "rb"))
+    final = load_fold("final")
     apply_struct(list(final.get("struct", {}).keys()))
     log(f"structural options: {STRUCT}")
     by_fid = {r["fid"]: r for r in rows}
@@ -2210,6 +2385,32 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
     dedval["observed_with_deduction"] = int(ded.p_any.sum())
     refs = run_referees(F, S, ded)
     out = assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, ff, W)
+    # ---- structure, 10-8 level forecast, panel agreement
+    test = load_fold("test")
+    base_test = pickle.load(open(CACHE / "fold_test.pkl", "rb")) if SUFFIX else None
+    out["judging"]["structure"] = structure_block(rows, by_fid, base_test, test if SUFFIX else None, sfx)
+    try:
+        t22 = load_fold("tune22")
+        fc = ten8_forecast_block(rows, nat, t22["models"]["judges_home" + sfx], [2022, 2023],
+                                 test["models"]["judges_home" + sfx], [2024, 2025], ff, by_fid)
+        out["judging"]["ten_eight_forecast"] = fc
+        out["engine"]["ten_eight"]["c_2026_forecast"] = fc["engine_c_2026"]
+        out["engine"]["ten_eight"]["forecast_rule"] = fc["rule"] + f" with damp={fc['tuning']['best']['damp']}, " \
+                                                                   f"k={fc['tuning']['best']['k']} (tuned 2022-23)"
+        log(f"10-8 forecast: tuning best {fc['tuning']['best']}; held-out card ll "
+            f"{fc['heldout']['card_ll_last_level']:.4f} -> {fc['heldout']['card_ll_forecast']:.4f}")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        out["judging"]["ten_eight_forecast"] = {"error": repr(e)}
+    try:
+        out["judging"]["agreement"] = agreement_block(rows, nat, ff, test, sfx, by_fid)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        out["judging"]["agreement"] = {"error": repr(e)}
+    out["judging"]["fold_sources"] = dict(FOLD_SOURCES)
+    out["meta"]["structure"] = dict(STRUCT)
     OUT.write_text(json.dumps(to_jsonable(out), indent=1))
     log(f"wrote {OUT} ({OUT.stat().st_size / 1e3:.0f} KB)")
     with open(CACHE / "post.pkl", "wb") as fh:

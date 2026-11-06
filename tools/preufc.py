@@ -640,7 +640,121 @@ def snapshot_feats(rows, D, dob, ex_rows, net, promo_q, same_event_fid=None):
 SNAP_KEYS = ["n", "w", "l", "d", "nc", "ko_w", "sub_w", "dec_w", "oth_w", "ko_l", "sub_l", "dec_l", "oth_l",
              "streak", "streak_all", "lstreak_all", "l5_w", "l5_n", "n_ufc_sd", "years_active", "age_pro_debut",
              "layoff_days", "n_2y", "n_promos", "dwcs_w", "dwcs_n", "promo_feed", "promo_feed_max", "promo_grad",
-             "opp_known", "opp_wpct", "opp_ufc_w", "opp_ufc_n", "net_elo", "exh_n", "exh_w"]
+             "opp_known", "opp_wpct", "opp_ufc_w", "opp_ufc_n", "net_elo", "exh_n", "exh_w",
+             "net_elo_h", "opp_wpct_h", "opp_known_h"]
+
+
+class StrictNetwork:
+    """Time-honest version of the Sherdog-network features (net Elo, opponents' records).
+
+    The full network (net_elo, opp_wpct) is the union of every cached page. Which pages are cached depends on
+    the future: a regional opponent who reached the UFC in 2025 has his whole history in the network, one who
+    never did has only his fights against cached fighters. A 2021 snapshot that rates its opponents with that
+    network uses who-made-the-UFC-later information. Here a bout dated D uses network_C with C = Jan 1 of D's
+    year, built only from the pages of UFC debutants whose first UFC bout is in [graduates_from, C): every such
+    debutant was crawled (complete set, chosen by facts known before C). The fighter's own page is always known
+    on the bout date; when it is not in network_C, his rating is a one-sided Elo walk over his own rows
+    against opponents rated in network_C on each fight date. Opponent records are their network_C win share
+    before the fight date (>= 3 known fights). Same K (32) and start (1500) as the full network."""
+
+    NK = 32.0
+
+    def __init__(self, rowsby, res, first_ufc, grad_from, today):
+        import bisect
+        self.bisect = bisect
+        self.first_ufc = first_ufc
+        self.grad_from = grad_from
+        uniq = {}
+        for p, rows in rowsby.items():
+            of = first_ufc[p]
+            if of < grad_from:
+                continue
+            me = sid(res[p]["href"])
+            for r in rows:
+                if not r["_d"] or r["_sid"] is None:
+                    continue
+                sc = {"W": 1.0, "L": 0.0, "D": 0.5}.get(r["res"])
+                if sc is None:
+                    continue
+                a, b = me, r["_sid"]
+                key = (r["date"], min(a, b), max(a, b))
+                if key in uniq:
+                    uniq[key][4] = min(uniq[key][4], of)       # in network_C if either owner debuted before C
+                    continue
+                uniq[key] = [r["_d"], a, b, sc, of]
+        fl = sorted(uniq.values(), key=lambda t: t[0])
+        self.n_fights = len(fl)
+        self.cuts = [dt.date(y, 1, 1) for y in range(grad_from.year, today.year + 2)]
+        self.R = {}        # cut -> sid -> (dates, ratings after)
+        self.W = {}        # cut -> sid -> (dates, cumulative wins, cumulative fights) after each fight
+        for C in self.cuts:
+            R = defaultdict(lambda: 1500.0)
+            hist = defaultdict(lambda: ([], []))
+            rec = defaultdict(lambda: ([], [], []))
+            wl = defaultdict(lambda: [0, 0])
+            for d, a, b, sc, of in fl:
+                if of >= C:
+                    continue
+                ra, rb = R[a], R[b]
+                ea = 1 / (1 + 10 ** ((rb - ra) / 400))
+                R[a] = ra + self.NK * (sc - ea)
+                R[b] = rb - self.NK * (sc - ea)
+                if sc == 1.0:
+                    wl[a][0] += 1
+                elif sc == 0.0:
+                    wl[b][0] += 1
+                wl[a][1] += 1
+                wl[b][1] += 1
+                for x in (a, b):
+                    hist[x][0].append(d)
+                    hist[x][1].append(R[x])
+                    rec[x][0].append(d)
+                    rec[x][1].append(wl[x][0])
+                    rec[x][2].append(wl[x][1])
+            self.R[C] = dict(hist)
+            self.W[C] = dict(rec)
+
+    def cut_for(self, D):
+        C = dt.date(D.year, 1, 1)
+        return C if C in self.R else (self.cuts[-1] if C > self.cuts[-1] else self.cuts[0])
+
+    def rating(self, C, s, D):
+        H = self.R[C].get(s)
+        if not H:
+            return 1500.0
+        k = self.bisect.bisect_left(H[0], D)
+        return H[1][k - 1] if k > 0 else 1500.0
+
+    def record(self, C, s, D):
+        H = self.W[C].get(s)
+        if not H:
+            return 0, 0
+        k = self.bisect.bisect_left(H[0], D)
+        return (H[1][k - 1], H[2][k - 1]) if k > 0 else (0, 0)
+
+    def feats(self, p, me, rows, D):
+        C = self.cut_for(D)
+        pre = [r for r in rows if r["_d"] and r["_d"] < D]
+        of = self.first_ufc.get(p)
+        if of is not None and self.grad_from <= of < C:
+            elo = self.rating(C, me, D)                      # own page is part of network_C
+        else:
+            elo = 1500.0                                     # one-sided walk over the fighter's own rows
+            for r in pre:
+                sc = {"W": 1.0, "L": 0.0, "D": 0.5}.get(r["res"])
+                if sc is None or r["_sid"] is None:
+                    continue
+                ro = self.rating(C, r["_sid"], r["_d"])
+                elo += self.NK * (sc - 1 / (1 + 10 ** ((ro - elo) / 400)))
+        wp = []
+        for r in pre:
+            if r["_ufc"] or r["_sid"] is None:
+                continue
+            w, n = self.record(C, r["_sid"], r["_d"])
+            if n >= 3:
+                wp.append(w / n)
+        return {"net_elo_h": round(elo, 1), "opp_wpct_h": round(sum(wp) / len(wp), 4) if wp else None,
+                "opp_known_h": len(wp)}
 
 
 def build(args):
@@ -799,6 +913,10 @@ def build(args):
             return H[k - 1][1] if k > 0 else 1500.0
         return f
 
+    strict = StrictNetwork(rowsby, res, first_ufc, grad_from, today)
+    print("strict network: %d unique fights from pages of UFC debutants since %s; cutoffs %s..%s" % (
+        strict.n_fights, grad_from, strict.cuts[0], strict.cuts[-1]), flush=True)
+
     # ---- per fighter output
     out = {}
     cover = Counter()
@@ -826,12 +944,15 @@ def build(args):
         snaps = []
         deb = None
         ub = sorted(bouts[p], key=lambda t: (t[0], -t[3].idx))
+        me_sid = sid(r["href"])
         for j, (d, q, on, f) in enumerate(ub):
             ft = snapshot_feats(rows, d, dob, exrows[p], net, promo_q)
+            ft.update(strict.feats(p, me_sid, rows, d))
             if j == 0:
                 deb = dict(ft, date=d.isoformat(), fid=f.fid)
             snaps.append([d.isoformat(), f.fid, j] + [ft[k] for k in SNAP_KEYS])
         cur = snapshot_feats(rows, today + dt.timedelta(days=1), dob, exrows[p], net, promo_q)
+        cur.update(strict.feats(p, me_sid, rows, today + dt.timedelta(days=1)))
         fl = [[x["date"], x["res"], x["mclass"], x["_promo"], x["opp"], x["_sid"], x["rd"],
                x["_fid"] or ("UFC" if x["_ufc"] else "")] for x in rows]
         v = vinfo[p]
@@ -890,7 +1011,14 @@ def build(args):
             "opp_wpct / opp_known": "mean pre-fight win share of non-UFC opponents with >= 3 fights seen in the "
                                     "Sherdog network (union of every cached page), and how many such opponents",
             "opp_ufc_w / opp_ufc_n": "non-UFC wins / fights against opponents who had a UFC bout before the bout date",
-            "net_elo": "Elo over every fight in the Sherdog network (K 32, start 1500), as of the bout date",
+            "net_elo": "Elo over every fight in the Sherdog network (K 32, start 1500), as of the bout date. The "
+                       "network is the union of every cached page, and which pages are cached depends on who "
+                       "reached the UFC later: kept for reference, the models use net_elo_h",
+            "net_elo_h / opp_wpct_h / opp_known_h": "strict walk-forward versions (class StrictNetwork): a bout "
+                       "in year Y uses only pages of UFC debutants with first UFC bout in [graduates_from, Jan 1 Y) "
+                       "(a complete set, chosen by facts known before Y) plus the fighter's own rows (one-sided "
+                       "Elo walk when his page is not in that network); opponents' win share uses their record "
+                       "before the fight date in the same network (>= 3 known fights)",
             "exh_n exh_w": "exhibition (TUF house) fights / wins before the bout",
             "snapshots": "one row per UFC bout in meta.snapshot_columns order (walk-forward features)",
             "debut": "the first snapshot as a dict (the record entering the UFC), plus date and fid",
@@ -901,7 +1029,8 @@ def build(args):
         "promotions": {pr: {"graduates": len(v), "grad_bouts": len(gradres[pr]),
                             "grad_win": round(promo_q(pr, today)["grad"], 4)}
                        for pr, v in sorted(grads.items(), key=lambda kv: -len(kv[1]))[:80]},
-        "network": {"fights": len(net_fights), "nodes": len(R)},
+        "network": {"fights": len(net_fights), "nodes": len(R), "strict_fights": strict.n_fights,
+                    "strict_cutoffs": [c.isoformat() for c in strict.cuts]},
     }
     obj = {"meta": meta, "fighters": dict(sorted(out.items()))}
     old = os.path.join(DERIVED, "preufc.json")
@@ -1143,10 +1272,14 @@ class EloRunner:
         return out
 
 
-def side_pre(snap, n_prior):
-    """Per-side pre-UFC feature vector (dict) from a preufc snapshot; None when the fighter is unresolved."""
+def side_pre(snap, n_prior, mode="strict"):
+    """Per-side pre-UFC feature vector (dict) from a preufc snapshot; None when the fighter is unresolved.
+    mode "strict" (default) takes the net Elo and opponents' records from the time-honest network
+    (StrictNetwork); "full" takes them from the union of every cached page (reference only)."""
     if snap is None:
         return None
+    if mode == "strict" and "net_elo_h" in snap:
+        snap = dict(snap, net_elo=snap["net_elo_h"], opp_wpct=snap["opp_wpct_h"])
     n, w, l = snap["n"], snap["w"], snap["l"]
     fin_w = snap["ko_w"] + snap["sub_w"]
     fin_l = snap["ko_l"] + snap["sub_l"]
@@ -1198,7 +1331,7 @@ def base_side(u, elo):
             "okd15": u["okd15"], "ctrl": u["ctrl"], "octrl": u["octrl"]}
 
 
-def build_frame(fights, people, ufc, elo_pre, snaps, from_date):
+def build_frame(fights, people, ufc, elo_pre, snaps, from_date, mode="strict"):
     """One row per decisive bout from from_date on: per-side base + pre-UFC features, outcome, flags."""
     import numpy as np
     rows = []
@@ -1217,7 +1350,7 @@ def build_frame(fights, people, ufc, elo_pre, snaps, from_date):
             bs = base_side(u, el)
             for k, v in bs.items():
                 r[k + "_" + tag] = v
-            sp = side_pre(snaps.get((people[p]["slug"], f.fid)), u["n"])
+            sp = side_pre(snaps.get((people[p]["slug"], f.fid)), u["n"], mode)
             r["res_" + tag] = 0.0 if sp is None else 1.0
             for k in PRE_KEYS + ["pre_layoff"]:
                 r[k + "_" + tag] = (sp or {}).get(k, float("nan"))
@@ -1240,8 +1373,9 @@ class DiffModel:
     Side features are imputed with the training mean (missing -> 0 contribution), pre-UFC features are
     multiplied by exp(-n / tau) so they fade with UFC experience, then scaled (not centred)."""
 
-    def __init__(self, base, pre, C=1.0, tau=None, add_missing=False):
+    def __init__(self, base, pre, C=1.0, tau=None, add_missing=False, cap=None):
         self.base, self.pre, self.C, self.tau, self.add_missing = list(base), list(pre), C, tau, add_missing
+        self.cap = cap          # pre-UFC block only for sides with <= cap prior UFC bouts (None: every side)
 
     def _side(self, df, tag, fit=False):
         import numpy as np
@@ -1254,6 +1388,8 @@ class DiffModel:
         w = np.ones(len(df))
         if self.tau:
             w = np.exp(-df["n" + tag].to_numpy(float) / self.tau)
+        if self.cap is not None:
+            w = w * (df["n" + tag].to_numpy(float) <= self.cap)
         for k in self.pre:
             v = df[k + "_" + tag].to_numpy(float)
             X.append(v)
@@ -2184,7 +2320,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("cmd", choices=["crawl", "build", "eval", "all", "report"])
     ap.add_argument("--since", default="2019-01-01", help="newcomer window start (bouts with <= 3 prior UFC fights)")
-    ap.add_argument("--extra-since", default=None, help="widen the newcomer window (e.g. 2015-01-01)")
+    ap.add_argument("--extra-since", default="2015-01-01",
+                    help="widen the newcomer window and the train window (default 2015-01-01, the published run)")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--retry", action="store_true", help="retry unresolved targets")

@@ -1490,6 +1490,80 @@ def main():
         hs = res["families"][name]["heldout_adjustment_slope"]
         print("slope %-9s beta %.3f (se %.3f) sd change %.3f" % (name, hs["beta"], hs["beta_se"], hs["sd_change"]))
 
+    # ---- incremental value over the ML stat-line model (tools/mlrates.py, the v4 rate core): does the opponent
+    # adjustment carry information the learned per-matchup rates miss? Baseline: the ML rate (out-of-fold for
+    # 2019-2023, dev model trained 2010-2023 for 2024-25) with one level term fit on 2019-2023; challenger adds
+    # x = log(final / engine raw) (logit difference for probabilities) with its coefficient fit on 2019-2023.
+    ml_path = os.path.join(OUT, "mlrates_oof.json")
+    if os.path.exists(ml_path):
+        mo = json.load(open(ml_path))
+        tg = mo["meta"]["targets"]
+        MLMAP = {"dAtt": "d_att", "cAtt": "c_att", "gAtt": "g_att", "tdAtt": "td_att", "ctrl": "ctrl", "sub": "sub_att",
+                 "accH": "acc_h", "accB": "acc_b", "accL": "acc_l", "tdAcc": "td_acc", "kd": "kd_h"}
+        Vs_ = D.V[D.s_row]
+        mins_ = Vs_[:, KI["min"]]
+        ml_res = {}
+        for name, t in MLMAP.items():
+            jt = tg.index(t)
+            mlr = np.array([mo["fights"][e["id"]][sd][jt] if e["id"] in mo["fights"] else np.nan
+                            for e in D.entries for sd in ("A", "B")], dtype=float)
+            f = ev.fam[name]
+            kind = FAMILIES[name][0]
+            pe, pf = predict(name, "engine"), predict(name, "final")
+            y = f["y"]
+            if kind == "count":
+                n_ = f["E"] if name == "kd" else mins_
+                off = np.log(np.maximum(n_ * mlr, 1e-12))
+                x = np.log(np.maximum(pf, 1e-12) / np.maximum(pe, 1e-12))
+                okm = np.isfinite(mlr) & (mlr > 0) & (pe > 0) & (pf > 0) & (n_ > 0)
+            else:
+                n_ = f["E"]
+                off = logit(np.clip(mlr, 1e-6, 1 - 1e-6))
+                x = pf - pe
+                okm = np.isfinite(mlr)
+            tu, te = f["tune"] & okm, f["test"] & okm
+
+            def fitp(cols, m):
+                X = np.column_stack([np.ones(m.sum())] + [c[m] for c in cols])
+                b = np.zeros(X.shape[1])
+                for _ in range(80):
+                    if kind == "count":
+                        mu = np.exp(X @ b + off[m])
+                        W, r = mu, y[m] - mu
+                    else:
+                        pp = sigm(X @ b + off[m])
+                        W, r = n_[m] * pp * (1 - pp) + 1e-12, y[m] - n_[m] * pp
+                    st = np.linalg.solve((X.T * W) @ X + 1e-9 * np.eye(X.shape[1]), X.T @ r)
+                    b += st
+                    if np.abs(st).max() < 1e-10:
+                        break
+                return b
+
+            def devs(b, cols):
+                X = np.column_stack([np.ones(len(y))] + list(cols))
+                z = X @ b + off
+                if kind == "count":
+                    return pois_dev(y, np.exp(z))
+                return binom_dev(y, n_, z)
+
+            b0 = fitp([], tu)
+            b1 = fitp([x], tu)
+            d0, d1 = devs(b0, []), devs(b1, [x])
+            bt_ = boot_delta(D, d0, d1, te, args.boot)
+            bte = fitp([x], te)
+            ml_res[name] = {"n_tune": int(tu.sum()), "n_test": int(te.sum()), "beta_tune": rnd(b1[1], 4),
+                            "beta_test_diagnostic": rnd(bte[1], 4),
+                            "test_dev_ml": rnd(d0[te].sum(), 6), "test_dev_ml_plus_oppadj": rnd(d1[te].sum(), 6),
+                            "test_gain_95": [rnd(bt_[0], 5), rnd(bt_[1], 5), rnd(bt_[2], 5)],
+                            "test_gain_pct": rnd(100 * bt_[0] / max(d0[te].sum(), 1e-9), 3)}
+            print("over ML %-6s beta tune %.3f (test %.3f) | test dev ML %.0f -> %.0f, gain %.1f [%.1f, %.1f]"
+                  % (name, b1[1], bte[1], d0[te].sum(), d1[te].sum(), bt_[0], bt_[1], bt_[2]))
+        res["over_mlrates"] = {"note": ("baseline = ML rate x exposure (fight minutes for counts, landed head strikes for "
+                                        "kd, attempts for probabilities) with a level fit on 2019-2023; + oppadj adds "
+                                        "x = log(final/engine raw) with coefficient fit on 2019-2023; gain = test "
+                                        "deviance reduction 2024-25, 95% fight-cluster bootstrap"),
+                               "families": ml_res}
+
     # ---- diagnostic beyond the task grid: half-life 3650 at the chosen k (never eligible for selection)
     if not args.smoke:
         jobs = []

@@ -1,25 +1,32 @@
-/* Fight engine v3: a data-driven, continuous-time simulation of an MMA bout between any two fighters.
-   Contract: docs/ENGINE_V3_SPEC.md. Parameters: src/params3.js (FightParams).
+/* Fight engine v4: a data-driven, continuous-time simulation of an MMA bout between any two fighters.
+   Contract: docs/ENGINE_V3_SPEC.md (+ "Engine v4" section). Parameters: src/params3.js (FightParams).
+   The file names stay engine3.js / params3.js for every version; VERSION below is the engine version.
 
    Profiles (data/derived/fighters.json, or backtest snapshots) hold decayed sums; matchup() turns them
    into rates by exposure-based shrinkage toward the fight division's priors, combines attacker and
    defender log-linearly (rates) or by log5 on odds (probabilities), and fits position occupancy so the
-   pair's simulated control and clinch time match their data-implied expectations. simulate() plays one
-   fight as competing exponential clocks recomputed after every event: strike attempts (misses are real
-   events) by target and position, clinch entries and breaks, takedowns, ground sub-positions with
-   passes, escapes, sweeps and stand-ups, submissions, knockdowns with a follow-up sequence, hurt states,
-   standing / ground-and-pound / leg TKOs, stamina and pace, three judges, and doctor / corner stoppages.
+   pair's simulated control and clinch time match their data-implied expectations. v4: when a learned
+   stat-line model is loaded (FightEngine.loadMLRates(mlrates.json), src/ml/mlrates.js), matchup() then
+   re-targets the rate tables to the model's per-matchup predictions (attempts by position and target,
+   accuracy, knockdowns, takedowns, control, submissions, reversals) at the engine's own league level;
+   opts.ml === false keeps the plain v3-style tables. simulate() plays one fight as competing exponential
+   clocks recomputed after every event: strike attempts (misses are real events) by target and position,
+   clinch entries and breaks, takedowns, ground sub-positions with passes, escapes, sweeps and stand-ups,
+   submissions, knockdowns with a follow-up sequence, hurt states, standing / ground-and-pound / leg TKOs,
+   stamina and pace, three judges (v4: EM round-winner weights with shared + individual noise and a
+   margin-based 10-8 rule, all fit on 2019-2023 judges' rounds), and doctor / corner stoppages.
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
-  var FP = root && root.FightParams;
+  var FP = root && root.FightParams, MLR = root && root.MLRates;
   if (!FP && typeof require === "function") { try { FP = require("./params3.js"); } catch (e) { FP = null; } }
-  var api = factory(FP, root);
+  if (!MLR && typeof require === "function") { try { MLR = require("./ml/mlrates.js"); } catch (e) { MLR = null; } }
+  var api = factory(FP, root, MLR);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.FightEngine = api;
-})(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root) {
+})(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
   "use strict";
-  var VERSION = "3.0.0";
+  var VERSION = "4.0.0";
 
   // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
   var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",
@@ -44,6 +51,7 @@
     E_RECOVER = 9, E_RESET = 10, E_SWAP = 11;
 
   var DB = null;
+  var MLMODEL = null;          // learned stat-line model handle (MLRates.load), set by loadMLRates()
 
   // ------------------------------------------------------------------ helpers
   function clip(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
@@ -56,6 +64,7 @@
   function pw(x, e) { return e === 1 ? x : Math.pow(x, e); }
   function lnorm(rng, sd) { return sd > 0 ? Math.exp(sd * rng.normal() - 0.5 * sd * sd) : (rng.normal(), 1); }
   function getParams() { return FP0 || (root && root.FightParams) || null; }
+  function getML() { return MLR0 || (root && root.MLRates) || null; }
 
   function mergeParams(base, over) {
     var out = {}, k, k2;
@@ -288,8 +297,8 @@
     return x;
   }
 
-  // ------------------------------------------------------------------ matchup
-  function matchup(profA, profB, opts) {
+  // ------------------------------------------------------------------ matchup (v3 rate tables, no learned model)
+  function matchupBase(profA, profB, opts) {
     opts = opts || {};
     var base = getParams();
     if (!base) throw new Error("FightEngine: FightParams not loaded (load params3.js first)");
