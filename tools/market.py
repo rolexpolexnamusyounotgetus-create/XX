@@ -483,6 +483,369 @@ def fetch_bfo(cache, since, until, delay):
     print(f'BFO done: {len(ev_rows)} event-line rows, {len(f_rows)} fighter-line rows, {F.n_net} requests', flush=True)
 
 
+# ----------------------------------------------------------------------------------------------
+# no-vig methods for a two-way market (decimal odds d1, d2) -> probability of side 1
+# ----------------------------------------------------------------------------------------------
+
+def _bisect(f, lo, hi, n=60):
+    """f decreasing; returns x with f(x) ~ 1."""
+    for _ in range(n):
+        mid = (lo + hi) / 2
+        if f(mid) > 1:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
+def devig(d1, d2, method='mult'):
+    q1, q2 = 1.0 / d1, 1.0 / d2
+    S = q1 + q2
+    if method == 'mult' or abs(S - 1) < 1e-9:
+        return q1 / S
+    if method == 'add':
+        return min(max(q1 - (S - 1) / 2, 1e-4), 1 - 1e-4)
+    if method == 'power':  # p_i = q_i^k, sum 1
+        k = _bisect(lambda k: q1 ** k + q2 ** k, 0.05, 20.0)
+        return q1 ** k / (q1 ** k + q2 ** k)
+    if method == 'shin':
+        if S <= 1:
+            return q1 / S
+        def pi(q, z):
+            return (math.sqrt(z * z + 4 * (1 - z) * q * q / S) - z) / (2 * (1 - z))
+        z = _bisect(lambda z: pi(q1, z) + pi(q2, z), 0.0, 0.99)
+        a, b = pi(q1, z), pi(q2, z)
+        return a / (a + b)
+    if method == 'odds_ratio':  # p/(1-p) = (q/(1-q)) / c
+        def pp(q, c):
+            return q / (c - c * q + q)
+        if S <= 1 or q1 >= 1 or q2 >= 1:
+            return q1 / S
+        c = _bisect(lambda c: pp(q1, c) + pp(q2, c), 1e-3, 50.0)
+        a, b = pp(q1, c), pp(q2, c)
+        return a / (a + b)
+    raise ValueError(method)
+
+
+DEVIG_METHODS = ['mult', 'add', 'power', 'shin', 'odds_ratio']
+
+
+# ----------------------------------------------------------------------------------------------
+# assembly: one market record per backtest fight
+# ----------------------------------------------------------------------------------------------
+
+def _int(x):
+    try:
+        return int(float(x))
+    except (TypeError, ValueError):
+        return None
+
+
+def load_bfo_matchups():
+    """Merge event-page lines and fighter-page lines into BFO matchup records (team order)."""
+    mus = {}
+    p_ev = os.path.join(ODDS_DIR, 'bfo_event_lines.csv')
+    p_fl = os.path.join(ODDS_DIR, 'bfo_fighter_lines.csv')
+    if os.path.exists(p_ev):
+        for r in read_csv(p_ev):
+            mu = int(r['mu'])
+            m = mus.setdefault(mu, {'mu': mu, 'date': r['date'], 'n1': r['t1_name'], 'n2': r['t2_name'],
+                                    't1_url': r['t1_url'], 't2_url': r['t2_url'], 'event': r['event_slug'],
+                                    'books': {}, 'pages': []})
+            a1, a2 = _int(r['a1']), _int(r['a2'])
+            if r['book'] and a1 and a2:
+                m['books'][r['book']] = (a1, a2)
+    if os.path.exists(p_fl):
+        for r in read_csv(p_fl):
+            mu, t = _int(r['mu']), _int(r['owner_team'])
+            if mu is None or t not in (1, 2):
+                continue
+            m = mus.get(mu)
+            if m is None:
+                own, opp = (r['owner_name'], r['opp_name'])
+                m = mus[mu] = {'mu': mu, 'date': r['date'], 'n1': own if t == 1 else opp,
+                               'n2': opp if t == 1 else own,
+                               't1_url': r['owner_url'] if t == 1 else r['opp_url'],
+                               't2_url': r['opp_url'] if t == 1 else r['owner_url'],
+                               'event': (r['event_url'] or '').replace('/events/', ''), 'books': {}, 'pages': []}
+            o = {'open': (_int(r['open1']), _int(r['open2'])), 'lo': (_int(r['lo1']), _int(r['lo2'])),
+                 'hi': (_int(r['hi1']), _int(r['hi2']))}
+            if t == 2:
+                o = {k: (v[1], v[0]) for k, v in o.items()}
+            m['pages'].append(o)
+            if r['spark']:
+                m[f'spark{t}'] = [float(x) for x in r['spark'].split(';') if x]
+    return mus
+
+
+def _first(vals):
+    for v in vals:
+        if v is not None and v[0] is not None and v[1] is not None:
+            return v
+    return None
+
+
+def bfo_summary(m):
+    """open (team order), closing range, BFO mean close (decimal, both teams), per-book closes."""
+    out = {'books': {k: v for k, v in m['books'].items()}}
+    out['open'] = _first([p['open'] for p in m['pages']])
+    lo = _first([p['lo'] for p in m['pages']])
+    hi = _first([p['hi'] for p in m['pages']])
+    out['range'] = (lo, hi) if lo and hi else None
+    s1, s2 = m.get('spark1'), m.get('spark2')
+    out['mean_close'] = (s1[-1], s2[-1]) if s1 and s2 else None
+    out['mean_open'] = (s1[0], s2[0]) if s1 and s2 else None
+    # consistency of the two fighter pages (same matchup read twice)
+    if len(m['pages']) >= 2:
+        a, b = m['pages'][0], m['pages'][1]
+        out['pages_agree'] = a == b
+    return out
+
+
+def range_mid_dec(lo, hi):
+    """decimal-odds midpoint of the closing range for each side (as nlbair computes it)."""
+    return tuple((am_to_dec(lo[i]) + am_to_dec(hi[i])) / 2 for i in (0, 1))
+
+
+def book_consensus(books):
+    """Sportsbook closes (exchanges excluded) -> (mean decimal per side, n, mean of per-book no-vig p1)."""
+    sb = {k: v for k, v in books.items() if k not in EXCHANGES and v[0] and v[1]}
+    if len(sb) < 1:
+        return None
+    d = [(am_to_dec(a), am_to_dec(b)) for a, b in sb.values()]
+    d = [x for x in d if x[0] and x[1]]
+    if not d:
+        return None
+    md = (sum(x[0] for x in d) / len(d), sum(x[1] for x in d) / len(d))
+    pnv = sum(devig(x[0], x[1]) for x in d) / len(d)
+    best = (max(x[0] for x in d), max(x[1] for x in d))
+    return {'mean_dec': md, 'n': len(d), 'p_avg_novig': pnv, 'best_dec': best, 'books': sorted(sb)}
+
+
+def assemble(fights):
+    """-> {fight_id: record} with every representation found, oriented to the backtest's A/B."""
+    import pandas as pd
+    recs = {f['id']: {} for f in fights}
+    fl = [{'id': f['id'], 'date': f['date'], 'A_name': f['A']['name'], 'B_name': f['B']['name']} for f in fights]
+    diag = {}
+    # 1. nlbair (keyed by ufcstats fight id; f1 = ufcstats first name = A)
+    nl = pd.read_csv(os.path.join(ODDS_DIR, 'nlbair_odds.csv'), low_memory=False).set_index('fight_id')
+    n_nl = 0
+    for f in fights:
+        if f['id'] not in nl.index:
+            continue
+        q = nl.loc[f['id']]
+        if not bool(q.has_odds):
+            continue
+        assert norm_name(q.f1_name) == norm_name(f['A']['name']) or name_sim(q.f1_name, f['A']['name']) > 0.7
+        r = recs[f['id']]
+        r['nl_open'] = (_int(q.f1_open), _int(q.f2_open))
+        r['nl_range'] = ((_int(q.f1_close_low), _int(q.f2_close_low)), (_int(q.f1_close_high), _int(q.f2_close_high)))
+        r['nl_bfo_url'] = q.bfo_profile_url if isinstance(q.bfo_profile_url, str) else None
+        n_nl += 1
+    diag['nlbair_matched'] = n_nl
+    # 2. Ultimate UFC Dataset (single-book closing line), matched on date and names
+    u = pd.read_csv(os.path.join(ODDS_DIR, 'uud_odds.csv'), low_memory=False)
+    cands = [{'key': i, 'date': row.date, 'n1': row.R_fighter, 'n2': row.B_fighter}
+             for i, row in u.iterrows() if row.date >= '2018-12-20']
+    mt = match_matchups(fl, cands)
+    n_u = 0
+    for fid, (k, sw, sc, g) in mt.items():
+        a1, a2 = u.loc[k, 'R_odds'], u.loc[k, 'B_odds']
+        if pd.isna(a1) or pd.isna(a2):
+            continue
+        a1, a2 = int(a1), int(a2)
+        recs[fid]['uud_close'] = (a2, a1) if sw else (a1, a2)
+        n_u += 1
+    diag['uud_matched'] = n_u
+    # 3. BestFightOdds scrape
+    mus = load_bfo_matchups()
+    diag['bfo_matchups'] = len(mus)
+    if mus:
+        cands = [{'key': mu, 'date': m['date'], 'n1': m['n1'], 'n2': m['n2']} for mu, m in mus.items()
+                 if m.get('date') and m.get('n1') and m.get('n2')]
+        mt = match_matchups(fl, cands)
+        diag['bfo_matched'] = len(mt)
+        agree = Counter()
+        for fid, (mu, sw, sc, g) in mt.items():
+            b = bfo_summary(mus[mu])
+            def orient(t):
+                return (t[1], t[0]) if (t and sw) else t
+            r = recs[fid]
+            r['bfo_mu'] = mu
+            r['bfo_event'] = mus[mu].get('event')
+            r['bfo_open'] = orient(b['open'])
+            if b['range']:
+                r['bfo_range'] = (orient(b['range'][0]), orient(b['range'][1]))
+            r['bfo_mean_close'] = orient(b['mean_close'])
+            r['bfo_mean_open'] = orient(b['mean_open'])
+            r['bfo_books'] = {k: orient(v) for k, v in b['books'].items()}
+            if 'pages_agree' in b:
+                agree[b['pages_agree']] += 1
+        diag['bfo_two_pages_agree'] = dict(agree)
+    return recs, diag
+
+
+def choose(rec):
+    """Pick the representation used for open / close and compute probabilities for side A."""
+    out = {}
+    op = rec.get('bfo_open') or rec.get('nl_open')
+    if op and op[0] and op[1]:
+        d = (am_to_dec(op[0]), am_to_dec(op[1]))
+        if d[0] and d[1]:
+            out['open'] = list(op)
+            out['open_dec'] = d
+    cons = book_consensus(rec.get('bfo_books') or {})
+    rng = rec.get('bfo_range') or rec.get('nl_range')
+    if rec.get('bfo_mean_close'):
+        out['close_dec'] = rec['bfo_mean_close']
+        out['book'] = 'BFO mean of books' + (f" ({cons['n']} US books)" if cons else '')
+        out['src'] = 'bfo_mean'
+    elif cons and cons['n'] >= 2:
+        out['close_dec'] = cons['mean_dec']
+        out['book'] = f"BFO per-book mean ({cons['n']} US books)"
+        out['src'] = 'bfo_books'
+    elif rng and all(rng[0]) and all(rng[1]):
+        out['close_dec'] = range_mid_dec(rng[0], rng[1])
+        out['book'] = 'BFO closing-range midpoint'
+        out['src'] = 'range_mid'
+    elif rec.get('uud_close'):
+        u = rec['uud_close']
+        out['close_dec'] = (am_to_dec(u[0]), am_to_dec(u[1]))
+        out['book'] = 'single book close (Ultimate UFC Dataset)'
+        out['src'] = 'uud'
+    if out.get('close_dec') and not (out['close_dec'][0] and out['close_dec'][1]):
+        out.pop('close_dec')
+    if out.get('close_dec'):
+        d = out['close_dec']
+        out['close'] = [dec_to_am(d[0]), dec_to_am(d[1])]
+    out['cons'] = cons
+    out['range'] = rng
+    return out
+
+
+# ----------------------------------------------------------------------------------------------
+# evaluation
+# ----------------------------------------------------------------------------------------------
+
+def _np():
+    import numpy as np
+    return np
+
+
+def logit(p):
+    np = _np()
+    p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
+def sigmoid(x):
+    np = _np()
+    return 1 / (1 + np.exp(-np.asarray(x, float)))
+
+
+def loss_arrays(p, y):
+    np = _np()
+    p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
+    y = np.asarray(y, float)
+    ll = -(y * np.log(p) + (1 - y) * np.log(1 - p))
+    br = (p - y) ** 2
+    acc = np.where(np.abs(p - 0.5) < 1e-12, 0.5, ((p > 0.5) == (y == 1)).astype(float))
+    return ll, br, acc
+
+
+def ece(p, y, width=0.05):
+    np = _np()
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    pf = np.maximum(p, 1 - p)
+    yf = np.where(p >= 0.5, y, 1 - y)
+    bins = np.minimum(((pf - 0.5) / width).astype(int), int(0.5 / width) - 1)
+    tot = 0.0
+    for b in np.unique(bins):
+        k = bins == b
+        tot += k.sum() * abs(pf[k].mean() - yf[k].mean())
+    return tot / len(p)
+
+
+def metrics(p, y):
+    np = _np()
+    ll, br, acc = loss_arrays(p, y)
+    return {'n': int(len(ll)), 'log_loss': round(float(ll.mean()), 4), 'brier': round(float(br.mean()), 4),
+            'accuracy': round(float(acc.mean()), 4), 'ece': round(float(ece(p, y)), 4)}
+
+
+def wilson(k, n, z=1.96):
+    if n == 0:
+        return (None, None)
+    ph = k / n
+    den = 1 + z * z / n
+    c = (ph + z * z / (2 * n)) / den
+    h = z * math.sqrt(ph * (1 - ph) / n + z * z / (4 * n * n)) / den
+    return (round(c - h, 4), round(c + h, 4))
+
+
+def calib_table(p, y, edges=(0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 1.0001)):
+    np = _np()
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    pf = np.maximum(p, 1 - p)
+    yf = np.where(p >= 0.5, y, 1 - y)
+    rows = []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        k = (pf >= lo) & (pf < hi)
+        n = int(k.sum())
+        if n == 0:
+            continue
+        w = float(yf[k].sum())
+        rows.append({'lo': lo, 'hi': round(min(hi, 1.0), 2), 'n': n, 'pred': round(float(pf[k].mean()), 4),
+                     'obs': round(w / n, 4), 'ci95': wilson(w, n)})
+    return rows
+
+
+def logreg(X, y, l2=0.0, iters=50):
+    """Newton logistic regression; returns (beta, se)."""
+    np = _np()
+    X = np.asarray(X, float)
+    y = np.asarray(y, float)
+    b = np.zeros(X.shape[1])
+    for _ in range(iters):
+        p = sigmoid(X @ b)
+        W = p * (1 - p)
+        H = X.T @ (X * W[:, None]) + l2 * np.eye(len(b))
+        g = X.T @ (y - p) - l2 * b
+        step = np.linalg.solve(H, g)
+        b = b + step
+        if np.max(np.abs(step)) < 1e-10:
+            break
+    p = sigmoid(X @ b)
+    H = X.T @ (X * (p * (1 - p))[:, None])
+    se = np.sqrt(np.diag(np.linalg.inv(H)))
+    return b, se
+
+
+def boot_event(groups, arrays, B=2000, seed=7):
+    """Cluster bootstrap by event. arrays: {name: per-fight values}; returns {name: (lo, hi)} of means
+    and the resampled means matrix for paired differences."""
+    np = _np()
+    rng = np.random.default_rng(seed)
+    uniq, inv = np.unique(np.asarray(groups), return_inverse=True)
+    E = len(uniq)
+    cnt = np.bincount(inv, minlength=E).astype(float)
+    sums = {k: np.bincount(inv, weights=np.asarray(v, float), minlength=E) for k, v in arrays.items()}
+    draws = rng.integers(0, E, size=(B, E))
+    W = np.zeros((B, E))
+    for i in range(B):
+        W[i] = np.bincount(draws[i], minlength=E)
+    n_tot = W @ cnt
+    return {k: (W @ s) / n_tot for k, s in sums.items()}
+
+
+def ci(v, digits=4):
+    np = _np()
+    return [round(float(np.percentile(v, 2.5)), digits), round(float(np.percentile(v, 97.5)), digits)]
+
+
 def cmd_fetch(a):
     if not a.skip_sources:
         fetch_sources(a.cache)
