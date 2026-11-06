@@ -24,28 +24,37 @@ Model (one fight, A vs B; z = [x_A, x_B, u, e_A, e_B]):
     round        finishing round from walk-forward shapes by format and method; draws at the walk-forward draw share
     L_*          walk-forward exponentially weighted division baselines (data only, pre-fight values)
 
-Inference: assumed-density filtering. Each fight is a Laplace (Newton) update of the joint Gaussian over z, both
-fighters' marginals are kept (an online EP / extended Kalman approximation of the posterior). Hyperparameters are
-empirical Bayes: an EM M-step on per-fighter RTS-smoothed states (newcomer prior mean regressed on age and the
-pre-UFC record, full population covariance Sigma0, process noise and age drift of the stat dimensions, pace and
-form variances, NB dispersions), GLMs for the result link and the method model, and a coordinate search of the
-result-side scalars on one-step-ahead (prequential) winner log loss. Everything is refit every Jan 1 on data before
-it (walk-forward); between refits the filter updates after every fight day.
+Inference (a Kalman / EP approximation; NumPyro SVI is not installed and would be far slower walk-forward):
+    filter   assumed-density filtering: each fight day is a Laplace (Newton) update of the joint Gaussian over z, both
+             fighters' marginals kept (an online EP / extended Kalman step);
+    refit    expectation propagation over the whole history before a cut day (TrueSkill-through-time style): each fight
+             is a factor whose per-fighter Gaussian messages are re-estimated from the cavity (all other information
+             about both fighters, through forward-backward passes over every fighter chain) x likelihood; parallel
+             damped updates until the skill means move < 0.002. EP refits run on a CV-chosen schedule (none / every
+             Jan 1 / quarter / month); between refits the filter updates after every fight day.
+    hyper    empirical Bayes, refit every Jan 1 on data before it: an EM M-step on per-fighter RTS-smoothed states
+             (newcomer prior mean regressed on age and the pre-UFC record, full population covariance Sigma0, process
+             noise and age drift of the stat dimensions, pace and form variances, NB dispersions), type-II ML of the
+             stat-side variance scales on one-step predictive likelihood, GLMs for the result link and the method
+             model, and a coordinate search of the result-side scalars on one-step-ahead winner log loss. Option "+g":
+             the prediction link alone refit on EP-refit pre-fight states of the training window.
 
 Prediction: P(A wins) = sigmoid(m / sqrt(1 + pi v / 8)) with m, v the mean and variance of the linear predictor
-beta' Delta under the pre-fight posterior (variance-aware link, chosen by forward-chained CV), method x round cells in
-methodround's layout, expected stat lines, and per-fighter skill means and sds (simulator inputs).
+beta' Delta under the pre-fight posterior (variance-aware link; plug-in sigmoid(m) is the alternative, chosen by CV),
+method x round cells in methodround's layout, expected stat lines, and per-fighter skill means and sds (simulator inputs).
 
-Run from the project root (stages cache into out/bayes_cache/):
+Run from the project root (stages cache into out/bayes_cache/; nice -n 5, at most 2 worker processes):
 
-    nice -n 5 python3 tools/bayes.py data          # data arrays + walk-forward baselines (2026+ dropped at parse)
-    nice -n 5 python3 tools/bayes.py fit --years 2019-2025 --jobs 2   # yearly walk-forward refits + predictions
-    nice -n 5 python3 tools/bayes.py cv            # forward-chained CV choices (pre-2024 only)
-    nice -n 5 python3 tools/bayes.py eval          # standalone / method / stats / uncertainty on 2019-2023
-    nice -n 5 python3 tools/bayes.py stack         # forward-chained 2021-2023 stack gate (ml2's stack code)
-    nice -n 5 python3 tools/bayes.py confirm       # the ONE scoring of 2024-2025 (after every choice is frozen)
-    nice -n 5 python3 tools/bayes.py swap          # corner-swap test (P(A,B) + P(B,A) = 1)
-    nice -n 5 python3 tools/bayes.py export        # data/derived/bayes.json
+    python3 tools/bayes.py data                              # data arrays + walk-forward baselines (2026+ dropped)
+    python3 tools/bayes.py fit --years 2019-2025 --variant main      # yearly EB refits (also --variant nostats)
+    python3 tools/bayes.py predict --variant main,nostats --jobs 2   # OOF 2019-2023, static 2024-25, roll 2025, per
+                                                                     #   EP schedule (--schedules none,year,...,year+g)
+    python3 tools/bayes.py cv          # choices on 2019-2023 OOF only (schedule, link, variant; 0.0005 rule)
+    python3 tools/bayes.py eval        # standalone / ratings comparison / uncertainty / method x round / stats, 2019-23
+    python3 tools/bayes.py stack       # forward-chained 2021-2023 stack gate (ml2's stack code and rule)
+    python3 tools/bayes.py swap        # corner-swap test (P(A,B) + P(B,A) = 1, mirrored cells and stats)
+    python3 tools/bayes.py confirm     # the ONE scoring of 2024-2025 (after every choice is frozen)
+    python3 tools/bayes.py fit --years 2026-2026 && python3 tools/bayes.py export   # production roster -> bayes.json
 
 Hidden-data protocol (docs/BACKLOG.md): build_db.parse_fights is wrapped so every fight dated 2026-01-01 or later
 is dropped right after parsing. Choices use data before 2024-01-01 only; 2024-2025 is scored once by `confirm`.

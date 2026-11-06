@@ -1615,6 +1615,12 @@ def cmd_selftest(args):
     mm_bd = {"mm": {"share_a": 0.7, "freeze": "by_design"}}
     assert "mm" not in crowd_probs(mm_drop) and "mm" in crowd_probs(mm_bd) and "mm" not in crowd_probs(mm_bd, strict=True)
     ok.append("contest lock parser, per-card lock check, freeze categories in crowd_probs")
+    card = {"bouts": [{"a": {"name": "Islam Makhachev", "slug": "islam-makhachev"},
+                       "b": {"name": "Jack Della Maddalena", "slug": "jack-della-maddalena"}}]}
+    bid, la, lb, ka, kb = _orient("Jack Della Maddalena", "Islam Makhachev", 1, 5, card, "2025-11-15")
+    assert bid == "2025-11-15:islam-makhachev__jack-della-maddalena" and la == "Islam Makhachev" and (ka, kb) == (5, 1)
+    assert _orient("Jon Jones", "Stipe Miocic", 3, 2, card, "2025-11-15")[0] is None
+    ok.append("forward capture orients panel counts to the ledger's a / b and uses its bout_id")
     # 3. name matching
     assert _pair_score("Ian Garry", "Neil Magny", "Ian Machado Garry", "Neil Magny") >= 0.8
     assert _pair_score("Zhang Weili", "Valentina Shevchenko", "Weili Zhang", "Valentina Shevchenko") >= 0.8

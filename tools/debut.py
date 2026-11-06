@@ -1507,6 +1507,28 @@ def export(args):
             th, s_, mu_, sos = net.rate(rr, VAULT_FROM, F)
             roster[slug] = [round(th, 4), round(s_, 4), None if sos is None else round(sos, 4)]
     preds = H["preds"] if H else {}
+    # fixtures for tests/test_debut.js: 30 bouts (seeded draw), sides in the model's columns, Python's production output
+    rng = np.random.default_rng(11)
+    pick = sorted(rng.choice(len(dec), size=min(30, len(dec)), replace=False).tolist())
+    pw_all = m.predict(RA, RB)
+    PAx = mm.predict(XA, np.log(np.array([live_base.get(d, live_base["_all"]) for d in dec["division"]])))
+    PBx = mm.predict(XB, np.log(np.array([live_base.get(d, live_base["_all"]) for d in dec["division"]])))
+    mcols = ["pre_ko", "pre_sub", "pre_kol", "pre_subl", "uko_w", "usub_w", "uko_l", "usub_l", "pav"]
+
+    def side_fix(R, tag, i):
+        o = {k: (None if not np.isfinite(R[k][i]) else round(float(R[k][i]), 6)) for k in cols + ["_n"]}
+        for k in mcols:
+            c = k + "_" + tag
+            v = float(dec[c].iloc[i]) if c in dec else float("nan")
+            o[k] = None if not np.isfinite(v) else round(v, 6)
+        o["debut"] = float(dec["debut_" + tag].iloc[i])
+        return o
+    fixtures = []
+    for i in pick:
+        fixtures.append({"fid": dec["fid"].iloc[i], "A": side_fix(RA, "A", i), "B": side_fix(RB, "B", i),
+                         "bout": {"division": dec["division"].iloc[i], "rounds": _rounds(dec["rounds"].iloc[i])},
+                         "p": round(float(pw_all[i]), 6), "method_A": [round(float(x), 6) for x in PAx[i]],
+                         "method_B": [round(float(x), 6) for x in PBx[i]]})
     out = {
         "meta": {"tool": "tools/debut.py export", "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
                  "universe": "every UFC bout 2012-01-01..2025-12-31 (ufcstats) with at least one man at 0 prior UFC bouts;"
@@ -1518,8 +1540,7 @@ def export(args):
         "cv": {k: C[k] for k in ("rows", "steps", "chosen", "all_blocks", "cv_compare", "stacks", "stack_decisions",
                                  "method", "swap_test_max_abs")},
         "holdout": H["out"] if H else None,
-        "model": {"winner": m.export(), "method": mm.export(), "live_division_base": {k: [round(x, 4) for x in v]
-                                                                                       for k, v in live_base.items()},
+        "model": {"winner": m.export(), "method": mm.export(), "live_division_base": live_base,
                   "stacks": stacks, "stack_decisions": sd,
                   "side_columns": {
                       "elo": "UFC walk-forward Elo / 100 (1500 for a debutant)", "debut": "1 if 0 prior UFC bouts",
@@ -1536,10 +1557,18 @@ def export(args):
                       "_n": "prior UFC bouts (fades pre-UFC columns by exp(-n / tau))"}},
         "promotions": promos, "roster_gnet": {"half_life": hl, "as_of": "2026-01-01", "fields": ["th", "sd", "sos"],
                                               "fighters": roster},
-        "predictions": preds}
+        "predictions": preds, "fixtures": fixtures}
     json.dump(out, open(os.path.join(DERIVED, "debut.json"), "w"), separators=(",", ":"), default=float)
     print("wrote data/derived/debut.json: winner cols %s, %d promotions, %d roster ratings, %d predictions; swap %.1e" % (
         cols, len(promos), len(roster), len(preds), sym))
+
+
+def _rounds(v):
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        return 3
+    return int(v) if v == v and v > 0 else 3
 
 
 def features(args):

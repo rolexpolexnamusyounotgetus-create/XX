@@ -2,15 +2,16 @@
 that file exists.
 
 Per backtest fight id, crowd.json carries the RotoWire panel (rw: n_a, n_b, frozen) and the Money MMA pick'em
-consensus (mm: share_a). The inputs are pre-fight by construction (research/model_crowd.md "Freeze"): a panel counts
-only when its article was published at least a day before the card; same-day panels are dropped here exactly as in
-tools/crowd.py. Probabilities are the raw stack inputs (tools/crowd.crowd_probs: panel share shrunk with 0.5
-pseudo-picks per side, contest share clipped to [0.03, 0.97], 'crowd' = mean logit of the two), not calibrated
-forecasts, so the stand-alone rows of these models are descriptive; their use is as stack experts. Coverage is
-partial (pay-per-view main cards, and the five contest bouts of each card from Feb 2022), so the harness leaves them out
-of its common set (it needs >= 95% window coverage) and the stackers treat a missing crowd as an absent expert.
-All entries are experimental: tools/crowd.py's forward-chained 2021-2023 stack CV did not adopt the crowd (see the
-research note), so no production stack reads them.
+consensus (mm: share_a, freeze). The inputs are pre-fight by construction (research/model_crowd.md "Freeze"): a panel
+counts only when its article was published at least a day before the card; a Money MMA card is dropped when its stated
+lock is later than the main card's earliest start (none were); both rules live in tools/crowd.crowd_probs, which this
+plugin calls. Probabilities are the raw stack inputs (panel share shrunk with 0.5 pseudo-picks per side, contest share
+clipped to [0.03, 0.97], 'crowd' = mean logit of the two), not calibrated forecasts (forward-fit slopes are 0.25-0.56),
+so the stand-alone rows of these models are descriptive; their use is as stack experts. Coverage is partial
+(pay-per-view main cards, and the five contest bouts of each card from Feb 2022), so the harness leaves them out of
+its common set (it needs >= 95% window coverage) and the stackers treat a missing crowd as an absent expert.
+All entries are experimental: tools/crowd.py's forward-chained 2021-2023 stack CV did not adopt any crowd column in the
+no-line, open or close stacks, nor in the method model (research/model_crowd.md), so no production stack reads them.
 """
 from blindtest import register, Stored, MoEStack, _MOE_BASE
 import crowd as _C

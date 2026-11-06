@@ -9,7 +9,8 @@ calib.json fights[id] (backtest fights 2019-2025): set (hist = 2019-2023, valid 
   <head>_wf  experimental control: the same stack fit each year on 2013..Y-1 with a trailing temperature refit before
              every card (the temperature family's 2016-2020 choice), walk-forward through 2024-2025. Rejected by the
              2021-2023 gate; registered so the harness can show what a deployed recalibration would have done.
-History rows are each column's strictly out-of-sample 2019-2023 predictions.
+History rows are each column's strictly out-of-sample predictions: 2021-2023 for <head> (ml2's forward-chained fit
+needs 2019-2020 as its first training years) and 2019-2023 for <head>_wf.
 """
 from blindtest import register, Stored
 

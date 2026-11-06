@@ -1318,16 +1318,16 @@ def test_vectors(seed=5):
                          "rows": [{"z": float(z[i]), "y": float(y[i]), "age": float(a[i]),
                                    "flags": {s: float(S[i, j]) for j, s in enumerate(SEGMENTS)}} for i in range(n)],
                          "spec": sp})
-    base = dt.date(2025, 1, 4).toordinal()
+    base = dt.date(2101, 1, 4).toordinal()      # synthetic dates, far from any real fight
     rows = []
     for i in range(300):
         p = float(sig(rng.normal(0, 0.9)))
         rows.append({"date": dt.date.fromordinal(base + int(rng.integers(0, 700))).isoformat(), "p": p,
                      "y": float(rng.random() < sig(1.3 * logit(p))),
                      "flags": {s: float(rng.random() < 0.3) for s in SEGMENTS}})
-    for cfg, as_of in (({"kind": "none"}, "2026-12-12"), ({"kind": "temperature", "half_life": 1.0, "sd_a": 0.15}, "2026-12-12"),
-                       ({"kind": "temperature", "last_n": 200}, "2026-06-01"),
-                       ({"kind": "segment", "segs": ["women", "five"], "half_life": 2.0, "sd_a": 0.15, "sd_b": 0.1}, "2026-12-12")):
+    for cfg, as_of in (({"kind": "none"}, "2102-12-12"), ({"kind": "temperature", "half_life": 1.0, "sd_a": 0.15}, "2102-12-12"),
+                       ({"kind": "temperature", "last_n": 200}, "2102-06-01"),
+                       ({"kind": "segment", "segs": ["women", "five"], "half_life": 2.0, "sd_a": 0.15, "sd_b": 0.1}, "2102-12-12")):
         V["history"].append({"cfg": cfg, "as_of": as_of, "spec": fit_from_history(rows, as_of, cfg)})
     V["history_rows"] = rows
     for n in (60, 200, 500):
@@ -1339,14 +1339,15 @@ def test_vectors(seed=5):
     # rule 6.5.1 (b) on synthetic ledger streams (calibrated, strongly underconfident, and with same-date ties)
     V["rule_b"] = []
     for s_true, n, span in ((1.0, 700, 600), (2.2, 700, 600), (1.3, 450, 420)):
-        d0 = dt.date(2026, 2, 7).toordinal()
+        d0 = dt.date(2101, 2, 7).toordinal()
         rows = []
         for i in range(n):
             p = float(sig(rng.normal(0, 1.0)))
             rows.append({"date": dt.date.fromordinal(d0 + 7 * int(rng.integers(0, span // 7))).isoformat(), "p": p,
                          "y": float(rng.random() < sig(s_true * logit(p)))})
-        V["rule_b"].append({"rows": rows, "as_of": "2027-10-01", "window": 200,
-                            "out": drift_rule_b(rows, "2027-10-01", 200)})
+        V["rule_b"].append({"rows": rows, "as_of": "2102-10-01", "window": 200,
+                            "out": drift_rule_b(rows, "2102-10-01", 200)})
+    V["note"] = "synthetic inputs only (random p and y, dates in 2101-2102): no fight data"
     return V
 
 
