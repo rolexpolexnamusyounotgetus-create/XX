@@ -1079,7 +1079,7 @@
           "{ vec3 pp = -vViewPosition; float hI = smoothstep(0.615, 0.64, vUv.x) * smoothstep(0.02, 0.05, vUv.y) * (1.0 - smoothstep(0.88, 0.91, vUv.y)); float mf = mix(uPoreF.y, uPoreF.x, hI) * 55.0;\n" +
           "  float fw = length(fwidth(vUv * mf)); float att = 1.0 - smoothstep(0.15, 0.5, fw);\n" +
           "  float hgt = vn(vUv * mf) + 0.5 * vn(vUv * mf * 0.31 + 7.0);\n" +
-          "  vec2 dH = vec2(dFdx(hgt), dFdy(hgt)) * 0.000022 * att * (1.0 - 0.6 * gBeard);\n" +
+          "  vec2 dH = vec2(dFdx(hgt), dFdy(hgt)) * 0.000035 * att * (1.0 - 0.6 * gBeard);\n" +
           "  vec3 dpx = dFdx(pp), dpy = dFdy(pp); vec3 pr1 = cross(dpy, normal), pr2 = cross(normal, dpx); float det = dot(dpx, pr1);\n" +
           "  vec3 grad = sign(det) * (dH.x * pr1 + dH.y * pr2); normal = normalize(abs(det) * normal - grad); }")
         .replace("#include <lights_physical_pars_fragment>", T.ShaderChunk.lights_physical_pars_fragment
@@ -1341,9 +1341,9 @@
         .replace("#include <map_fragment>", "#include <map_fragment>\n" +
           "{ float lum = clamp(dot(texelColor.rgb, vec3(0.299, 0.587, 0.114)) * uHK * 0.5, 0.0, 1.0);\n" +
           "  vec3 base = diffuse; if (uSideOn > 0.5) base = mix(base, uSideCol, smoothstep(-0.015, 0.035, vHairR.x));\n" +
-          "  float ao = mix(0.4, 1.0, smoothstep(0.0, uMaxD, vHairR.w));\n" +
+          "  float ao = mix(mix(0.66, 0.42, uAfro), 1.0, smoothstep(0.0, uMaxD, vHairR.w));\n" +
           "  float clump = hvn(vHairR.xyz * 55.0);\n" +
-          "  diffuseColor.rgb = base * mix(0.42, 1.22, pow(lum, mix(0.85, 0.7, uAfro))) * ao * (0.82 + 0.36 * clump);\n" +
+          "  diffuseColor.rgb = base * mix(0.5, 1.45, pow(lum, mix(0.85, 0.7, uAfro))) * ao * (0.84 + 0.32 * clump);\n" +
           "  diffuseColor.rgb *= mix(0.35, 1.0, smoothstep(0.05, 0.85, diffuseColor.a));\n" +
           "  if (uAfro > 0.5 && diffuseColor.a < 0.995) diffuseColor.a *= 0.6 + 0.8 * hh2(floor(vUv * 900.0));\n" +
           "  if (uCutOn > 0.5) { float cy = uCutY - 0.016 * smoothstep(uCutZ, uCutZ + 0.07, vHairR.z); float j = hh2(floor(vUv * 700.0)) - 0.5;\n" +
