@@ -64,6 +64,13 @@ Findings from verified research that the next engine versions must use. Each lin
 - Forward test: before each upcoming UFC card, commit the current version's predictions to
   data/predictions/ (git history is the timestamp); score them after the results land.
 
+- calib (lab 3, VERIFIED ~23:00 UTC, research/model_calib.md): NO recalibration enters production (every spec
+  {type: none}; Calib.apply is the identity; src/ml/calib.js + tests/test_calib.js ship as plumbing). No recency,
+  per-card, annual-temperature or segment scheme beats the incumbents by > 0.0005 on the forward-chained 2021-23
+  gate. 2024-25 (pre-registered, one look): close stack vs close -0.0096 [-0.0141, -0.0052]; open -0.0043 n.s.;
+  no-line +0.0013 n.s. Descriptive only: a per-card trailing temperature would have helped no-line -0.0047 on
+  2024-25 (already-seen window: judge it only on the forward ledger / audit 2). Proposed v9 refinements to the
+  pre-registered drift rule (one-sided test, longer ledger window, named column) AFTER audit 1 only.
 - OWNER REDIRECT (Nov 6 ~22:00 UTC): resources move from the 3D game to ML / stats / prediction. 3D pass 3 was
   stopped after its systemic round (beard/short-hair caps, skin, body definition, women's sports top shipped;
   likeness labs not run). Prediction lab round 3 launched (scratchpad/wf_predict_lab3.js, four workflows): crowd

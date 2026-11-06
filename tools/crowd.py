@@ -20,7 +20,7 @@ SOURCES (what the brief asked for and what was used; research/model_crowd.md "So
     MMA Junkie, MMA Fighting, MMA Mania, Cageside Press, ESPN, BetMMA.tips, Bleacher Report, Bloody Elbow (403),
     OpenML's copy of the fighters'-predictions set (/api/ disallowed). Sherdog's staff pick'em is an image.
   * USED 1 - RotoWire staff / expert picks (rotowire.com; robots.txt allows every agent and its llms.txt invites
-    LLM use): 3-8 RotoWire MMA writers pick every main-card bout of each UFC pay-per-view, 2016 and 2019 on.
+    LLM use): 3-7 RotoWire MMA writers pick every main-card bout of each UFC pay-per-view, 2016 and 2019 on.
     Signal: share of the panel picking fighter A. Frozen: the article's JSON-LD datePublished must be before the
     event's date (articles are re-saved after the event to add the panel's records; the picks are not changed -
     spot-checked against the records rows, see `audit_rotowire`).
@@ -576,6 +576,11 @@ def build_rows(fights=None, verbose=True):
         if not pub:
             st["no_date"] += 1
             continue
+        if pub >= VAULT_FROM:
+            # verifier fix: a 2026 article (the sitemap filter only screens numbered pay-per-views) goes to the vault
+            # file alone; before, its bouts also landed in meta.match.rw_unmatched, i.e. in the committed crowd.json
+            vault.append({"src": "rotowire", "file": os.path.basename(fn), "published": pub, "bouts": P["bouts"]})
+            continue
         for b in P["bouts"]:
             st["bouts"] += 1
             m = fx.match_pair(b["a"], b["b"], pub, (dt.date.fromisoformat(pub) + dt.timedelta(days=10)).isoformat())
@@ -586,8 +591,6 @@ def build_rows(fights=None, verbose=True):
                     st["post_event"] += 1
                 else:
                     st["unmatched"].append([os.path.basename(fn)[:70], b["a"], b["b"], pub])
-                if pub >= VAULT_FROM:
-                    vault.append({"src": "rotowire", "file": os.path.basename(fn), "bout": b})
                 continue
             f, sw, score = m
             na = nb = 0
@@ -1127,7 +1130,7 @@ def cmd_build(args):
                        "picking A; P(A) inputs: rw = (n_a + 0.5) / (n + 1), mm = clip(share_a, 0.03, 0.97), crowd = "
                        "mean of the available logits",
         "sources": {
-            "rw": "RotoWire staff / expert picks (rotowire.com/mma/article/...): 3-8 RotoWire MMA writers pick every "
+            "rw": "RotoWire staff / expert picks (rotowire.com/mma/article/...): 3-7 RotoWire MMA writers pick every "
                   "main-card bout of each UFC pay-per-view; 2016 and 2019-2025 here. robots.txt allows every agent; "
                   "llms.txt invites LLM use",
             "mm": "Money MMA pick'em contest consensus (moneymma.substack.com, free part of each results post): the "

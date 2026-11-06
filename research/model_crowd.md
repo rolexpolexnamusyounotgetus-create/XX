@@ -50,7 +50,7 @@ negative = the first-named model is better. Log loss throughout, lower is better
      and `ClaudeBot` for the whole site (re-checked 10:30 pm UTC). Fetching it under the project's User-Agent would
      only hide who is asking, so it was not fetched in any form.
    - Two permitted public sources with history were used instead:
-     - the **RotoWire staff panel**: 3-8 writers, pay-per-view main cards in 2016 and 2019-2025;
+     - the **RotoWire staff panel**: 3-7 writers, pay-per-view main cards in 2016 and 2019-2025;
      - the **Money MMA pick'em contest consensus**: about 50 entrants, the five main-card bouts of each card, Feb
        2022-Dec 2025.
    - Match rate to ufcstats fight ids: 99.2% (476 of 480 bouts) and 98.5% (583 of 592 picks).
@@ -94,13 +94,14 @@ agent names, at least 2.2 s between requests, no logins, nothing behind the payw
   - A RotoWire bout is matched by both names, in either order, inside the window from the publish day to 10 days
     after it.
   - A Money MMA pick is matched by one name, unique in the 9 days before the results post.
-  - Aliases are accepted, such as "Ian Garry"/"Ian Machado Garry" and married names. A different opponent is
+  - RotoWire pairs accept aliases, such as "Ian Garry"/"Ian Machado Garry" and married names (the Money MMA
+    single-name matcher does not: see the verification log, V4). A different opponent is
     rejected (selftest).
 
 | source | bouts or picks | matched | rate | unmatched (all listed in crowd.json meta.match) |
 |---|---|---|---|---|
 | RotoWire | 480 bouts in 96 articles | 476 | 99.2% | 4: misspelt names (Adrade, Felcia) and one cancelled bout |
-| Money MMA | 592 picks in 125 posts | 583 | 98.5% | 9: name variants ("Muniz/Park" listed as a pair) |
+| Money MMA | 592 picks in 125 posts | 583 | 98.5% | 9: name variants ("Muniz/Park" listed as a pair); the consensus side won 7 of the other 8 (verification log, V4) |
 
 **Inputs as probabilities.**
 - **rw** = (n_a + 0.5) / (n + 1). The panel share is shrunk by half a pick per side.
@@ -162,14 +163,15 @@ too.
 The crowd input is calibrated by one no-intercept slope, p = sigmoid(b z). The slope is fit forward on every covered
 decisive UFC bout of the earlier years, and the 2024-25 look uses the slope fit on data through 2023.
 - Slopes for the panel: 0.25 (2019) rising to 0.43 (2023).
-- Slope for the contest: 0.56.
+- Slope for the contest: 0.56 (fit on 2022, so the stand-alone mm row is 2023 only; in 2022 the crowd row uses the
+  panel-only slope on rows that are mostly contest shares).
 - So the raw shares are very overconfident as probabilities. A 6-0 panel is about a 74% favourite, not 93%.
 - Every row below uses the same fights: those with both lines.
 
 | | period | n (cards) | crowd | Elo | elo_sig | ML v2 | open | close | crowd - close [CI] | crowd majority acc. |
 |---|---|---|---|---|---|---|---|---|---|---|
 | rw | 2019-23 | 279 (61) | 0.6431 | 0.6970 | 0.6600 | 0.5923 | 0.6059 | 0.5927 | +0.0504 [+0.0270, +0.0747] | 63.8% |
-| mm | 2022-23 | 160 (37) | 0.6422 | 0.6974 | 0.6903 | 0.6350 | 0.6308 | 0.6175 | +0.0247 [-0.0009, +0.0491] | 65.3% |
+| mm | 2023 (no 2022 slope) | 160 (37) | 0.6422 | 0.6974 | 0.6903 | 0.6350 | 0.6308 | 0.6175 | +0.0247 [-0.0009, +0.0491] | 65.3% |
 | crowd | 2019-23 | 470 (104) | 0.6420 | 0.6891 | 0.6742 | 0.6138 | 0.6173 | 0.6056 | +0.0365 [+0.0194, +0.0528] | 64.9% |
 | rw | 2024-25 (look) | 113 (26) | 0.6235 | 0.6643 | 0.6461 | 0.5715 | 0.6210 | 0.5824 | +0.0411 [+0.0041, +0.0767] | 67.3% |
 | mm | 2024-25 (look) | 249 (57) | 0.6453 | 0.6832 | 0.6764 | 0.6078 | 0.6346 | 0.6229 | +0.0223 [+0.0009, +0.0432] | 65.1% |
@@ -287,7 +289,9 @@ harder.
 - There are 22 and 18 debut bouts. The signs flip between the periods, and the forward fits of the early years rest on
   about 50 panel bouts from 2016-2017.
 - The RotoWire-only row on 11 pre-2024 debut bouts (close + panel -0.0565 [-0.0868, -0.0268]) is one of 24 cells and
-  rests on 10 cards. Treat it as noise until the forward ledger has its own debut sample.
+  rests on 10 cards. Treat it as noise until the forward ledger has its own debut sample. The 2024-25 look has a
+  second such cell, open + contest on 18 debut bouts (-0.0293 [-0.0519, -0.0037]); it is a different source and line,
+  and the matching close cell goes the other way (+0.0141 [-0.0122, +0.0402]).
 - On non-debut bouts the crowd hurts the open stack in CV. That matches test 2.
 
 ## Protocol and symmetry checks
