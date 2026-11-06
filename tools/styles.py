@@ -1132,8 +1132,12 @@ def joint_rate_eval(D, sets, sd_feat, n_boot=1000, seed=SEED):
                           "term_sd": float(scales[j]), "coef_per_unit": coef_sd / scales[j],
                           "z_tune": float(b[kb + j] / math.sqrt(cov[kb + j, kb + j] * disp)),
                           "mult_at_plus1sd": float(math.exp(coef_sd))})
+        shift = X[:, kb:] @ b[kb:]                     # the modifier part of the linear predictor
+        q = np.percentile(shift[~tune], [5, 25, 50, 75, 95])
         out[name] = {"desc": m["desc"], "family": m["fam"], "base_terms": [cname(c) for c in m["base"]],
                      "base_coef_joint": [float(v) for v in b[:kb]], "terms": terms,
+                     "shift_pct_2024": {"p5": float(q[0]), "p25": float(q[1]), "p50": float(q[2]), "p75": float(q[3]),
+                                        "p95": float(q[4]), "abs_median": float(np.median(np.abs(shift[~tune])))},
                      "test_dev_change": float(dd.sum()), "test_dev_change_pct": float(dd.sum() / dev0.sum() * 100),
                      "test_dev_ci": [float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))]}
     return out
@@ -1260,12 +1264,30 @@ def scouting_validation(live, mu, sd, arch):
         neg = [sign * r["z"][feat] for r in recs if tag not in r["tags"]]
         if len(pos) >= 3:
             tags[tag] = {"feature": feat, "sign": sign, "n_tagged": len(pos), "auc": auc(pos, neg)}
+    # which data features best separate each tag (descriptive: what the scouts' word means in the data)
+    alltags = Counter(t for r in recs for t in r["tags"])
+    best = {}
+    for tag, n_t in alltags.items():
+        if n_t < 4:
+            continue
+        sc_ = []
+        for feat in list(mu) + ["reach_rel"]:
+            if feat in ("mins", "n", "elo", "southpaw", "switch", "orthodox", "ko_losses"):
+                continue
+            pos = [r["z"].get(feat, 0.0) for r in recs if tag in r["tags"]]
+            neg = [r["z"].get(feat, 0.0) for r in recs if tag not in r["tags"]]
+            a = auc(pos, neg)
+            if a is not None:
+                sc_.append((abs(a - 0.5), feat, a))
+        sc_.sort(reverse=True)
+        best[tag] = {"n": n_t, "top": [{"feature": f, "auc": a} for _, f, a in sc_[:3]]}
     # archetype cross-tab: data archetype (max membership) vs scouting family
     ct = defaultdict(Counter)
     for r in recs:
         ct[SCOUT_TO_ARCH.get(r["archetype"], r["archetype"])][arch["names"][int(np.argmax(r["memb"]))]] += 1
     stance_agree = Counter((r["stance"], r["data_stance"]) for r in recs)
-    return {"n_fighters": len(recs), "tag_auc": tags, "crosstab": {k: dict(v) for k, v in ct.items()},
+    return {"n_fighters": len(recs), "tag_auc": tags, "tag_best_features": best,
+            "crosstab": {k: dict(v) for k, v in ct.items()},
             "stance_pairs": {"%s|%s" % k: v for k, v in stance_agree.items()},
             "fighters": [{"slug": r["slug"], "scouting_archetype": r["archetype"],
                           "data_archetype": arch["names"][int(np.argmax(r["memb"]))],
@@ -1383,13 +1405,24 @@ def main():
     tier1 = {k: {"terms": [t for t in v["terms"] if v["tier"][t] == 1],
                  "tier": {t: 1 for t in v["terms"] if v["tier"][t] == 1}} for k, v in sets.items()}
     tier1 = {k: v for k, v in tier1.items() if v["terms"]}
-    joint = joint_rate_eval(D, sets, sd, n_boot=args.boot)
+    joint_all = joint_rate_eval(D, sets, sd, n_boot=args.boot)
+    # a rate block is on by default only if its joint held-out deviance CI excludes zero
+    joint = {k: v for k, v in joint_all.items() if v["test_dev_ci"][1] < 0}
+    optional = {k: v for k, v in joint_all.items() if k not in joint}
     joint1 = joint_rate_eval(D, tier1, sd, n_boot=args.boot)
+    # the clean variant: every matchup term that passed the tune-only screen, no held-out confirmation
+    screened_sets = {}
+    for k, v in rates.items():
+        ts = [c["term"] for c in v["candidates"] if c["screen"] and is_matchup(c["term"])]
+        if ts:
+            screened_sets[k] = {"terms": ts, "tier": {t: 0 for t in ts}}
+    joint_scr = joint_rate_eval(D, screened_sets, sd, n_boot=args.boot)
 
     print("transmission test ...")
-    variants = {"none": {}, "tier1": {k: v["terms"] for k, v in tier1.items()},
-                "recommended": {k: [_term_from_name(t) for t in v["terms"]] for k, v in sets.items()}}
-    variants["tier1"] = {k: [_term_from_name(t) for t in v] for k, v in variants["tier1"].items()}
+    tt = lambda dd: {k: [_term_from_name(t) for t in v["terms"]] for k, v in dd.items()}
+    variants = {"none": {}, "tune_screened": tt(screened_sets), "tier1": tt(tier1),
+                "default_on": {k: [_term_from_name(t) for t in sets[k]["terms"]] for k in joint},
+                "all_recommended": tt(sets)}
     trans = transmission_test(D, rows, W, Xb, pen_b, variants, n_boot=args.boot)
     # predictions for the mismatch table
     preds = {"elo": p_elo, "skill_baseline": p_base}
@@ -1435,8 +1468,8 @@ def main():
             fa, fb = live[a][1], live[b][1]
             examples["%s vs %s" % (a, b)] = {
                 "archetypes": [roster[a]["archetype"], roster[b]["archetype"]],
-                a: rnd(matchup_modifiers(fa, fb, mu, sd, joint), 3),
-                b: rnd(matchup_modifiers(fb, fa, mu, sd, joint), 3)}
+                a: rnd(matchup_modifiers(fa, fb, mu, sd, joint_all), 3),
+                b: rnd(matchup_modifiers(fb, fa, mu, sd, joint_all), 3)}
     J = {
         "meta": {"built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
                  "snapshot": bt["meta"]["snapshot"], "tune": list(TUNE), "test_from": TEST_FROM,
@@ -1454,7 +1487,8 @@ def main():
                          "on_top_of_elo_only": {"baseline": rnd(win_elo["baseline"]),
                                                 "candidates": rnd(win_elo["candidates"])}},
         "rate_level": rnd(rates),
-        "engine_modifiers": {"recommended": rnd(joint, 5), "tier1_only": rnd(joint1, 5),
+        "engine_modifiers": {"default_on": rnd(joint, 5), "optional_off": rnd(optional, 5),
+                             "tier1_only": rnd(joint1, 5), "tune_screened": rnd(joint_scr, 5),
                              "selection": {k: v for k, v in sets.items()}},
         "transmission": rnd(trans),
         "mismatch": rnd(mism),

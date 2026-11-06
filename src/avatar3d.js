@@ -341,16 +341,18 @@
     var muscleBias = 0;
     if (/muscular|jacked|thick|powerful|stocky|barrel|broad/.test(fig)) muscleBias += 0.06;
     if (/lean|lanky|long-limbed|rangy|slim|wiry|skinny/.test(fig)) muscleBias -= 0.06;
-    var muscle = ref ? 0.55 : clamp(0.74 + muscleBias + (bmi - 24) * 0.012, 0.6, 0.96);
-    var weight = clamp(0.5 + (bmi - 23.5) * 0.045 - (muscle - 0.5) * 0.25, 0.3, 0.95);
+    var muscle = ref ? 0.55 : clamp(0.9 + muscleBias + (bmi - 24) * 0.012, 0.72, 1.0);
+    if (female && !ref) muscle = clamp(muscle - 0.12, 0.6, 0.9);
+    var weight = clamp(0.5 + (bmi - 23.5) * 0.05 - (muscle - 0.5) * 0.3, 0.25, 0.95);
     if (ref) weight = clamp(0.5 + (bmi - 24.5) * 0.05, 0.35, 0.8);
     var det = {};
     if (!ref) {
       var m = muscle - 0.7;
-      det.neckWidth = clamp(0.35 + m * 1.5 + (bmi - 24) * 0.05, 0, 0.9);
-      det.shoulders = clamp(0.12 + m * 1.2 + (/stocky|broad|thick/.test(fig) ? 0.15 : 0), -0.2, 0.7);
-      det.vShape = clamp(0.25 + m * 1.2, 0, 0.7);
-      det.chest = clamp(0.1 + m * 0.8 + (bmi - 25) * 0.03, -0.2, 0.5);
+      det.neckWidth = clamp(0.45 + m * 1.2 + (bmi - 24) * 0.05, 0, 1);
+      det.shoulders = clamp(0.25 + m * 0.8 + (/stocky|broad|thick/.test(fig) ? 0.15 : 0), -0.2, 0.8);
+      det.vShape = clamp(0.35 + m * 0.9, 0, 0.8);
+      det.chest = clamp(0.15 + m * 0.6 + (bmi - 25) * 0.03, -0.2, 0.55);
+      det.upperLip = -0.3; det.lowerLip = -0.15;
       det.waist = clamp(-0.15 + (bmi - 26) * 0.07 - m * 0.4, -0.5, 0.6);
       det.belly = bmi > 29 ? clamp((bmi - 29) * 0.07, 0, 0.5) : -0.15;
       det.buttocks = -0.1;
@@ -360,7 +362,7 @@
     for (var k in face) if (DETAIL[k]) det[k] = face[k];
     // reach -> arm stretch, computed after the bake (needs the measured span)
     return {
-      gender: female ? 0 : 1, years: years, muscle: muscle, weight: weight, heightRaw: 0.5, proportions: ref ? 0.5 : 0.62,
+      gender: female ? 0 : 1, years: years, muscle: muscle, weight: weight, heightRaw: 0.5, proportions: ref ? 0.5 : 0.75,
       cupSize: female ? 0.4 : 0.5, firmness: 0.6, detail: det, H: H, reach: (+app.reach_in || hIn) * 0.0254, bmi: bmi, female: female, ref: ref
     };
   }
@@ -376,7 +378,7 @@
     else if (/afro/.test(hairT)) L.hair = "hair-afro01";
     else if (/ponytail|top knot|topknot|tied|bun|braid/.test(hairT) || (/long/.test(hairT) && !/short/.test(hairT))) L.hair = "hair-ponytail01";
     else if (/mop|shaggy|medium|styled up|quiff|swept|side part|curly/.test(hairT)) L.hair = "hair-short01";
-    else if (/receding|thinning/.test(hairT)) L.hair = "hair-short04";
+    else if (/receding|thinning|short on the sides|crop|high and tight|fade/.test(hairT)) L.hair = "hair-short04";
     else L.hair = cfg.female ? "hair-ponytail01" : "hair-short02";
     if (L.hair) L.scalp = 0.35;
     if (!known(fhT)) L.beard = cfg.female ? 0 : 0.28;
@@ -693,9 +695,11 @@
           "  float hfw = length(fwidth(su * 1400.0)); float hatt = 1.0 - smoothstep(0.35, 1.2, hfw);\n" +
           "  float hair = mix(0.5, vn(su * 1400.0), hatt); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
           "  float bd = clamp(vMask.x * uBeard, 0.0, 1.0);\n" +
-          "  float edge = smoothstep(0.0, 0.55, vMask.x);\n" +
-          "  float stub = bd * edge * (0.62 + 0.38 * smoothstep(0.2, 0.8, hair)) * (0.8 + 0.2 * hair2) * (0.9 + 0.1 * hair3);\n" +
-          "  diffuseColor.rgb = mix(diffuseColor.rgb, uBeardCol * (0.7 + 0.4 * hair), clamp(stub * (0.5 + 0.5 * bd), 0.0, 0.9));\n" +
+          "  float g2fw = length(fwidth(su * 420.0)); float g2 = mix(0.5, vn(su * 420.0), 1.0 - smoothstep(0.3, 1.0, g2fw));\n" +
+          "  float edge = smoothstep(0.0, 0.7, vMask.x);\n" +
+          "  float grain = 0.55 + 0.25 * smoothstep(0.25, 0.75, hair) + 0.2 * smoothstep(0.3, 0.7, g2);\n" +
+          "  float stub = bd * edge * grain * (0.88 + 0.12 * hair3);\n" +
+          "  diffuseColor.rgb = mix(diffuseColor.rgb, uBeardCol * (0.62 + 0.5 * g2 * hair), clamp(stub * (0.55 + 0.45 * bd) * 1.1, 0.0, 0.93));\n" +
           "  float sc = vMask2.x * uScalp; float sst = sc * (0.55 + 0.45 * smoothstep(0.2, 0.9, hair));\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, uHairCol * 0.8, clamp(sst * 0.85, 0.0, 0.9));\n" +
           "  float sideL = step(0.0, vMask.y);\n" +
@@ -944,7 +948,7 @@
     var self = this, J = this.J, app = this.app, H = this.cfg.H, pos = this.pos, nrm = this.nrm;
     var waistY = J.Hips.h.y + 0.028 * H / 1.75 * 1.75 * 0.6 + 0.012, hipJ = J.LeftUpLeg.h.y, thigh = J.LeftUpLeg.h.distanceTo(J.LeftLeg.h);
     waistY = J.Hips.h.y + 0.018 * (H / 1.75);
-    var hemY = hipJ - thigh * (this.cfg.female ? 0.38 : 0.5);
+    var hemY = hipJ - thigh * (this.cfg.female ? 0.4 : 0.64);
     var ARMS = {}, LEGS = {}, i;
     ["Left", "Right"].forEach(function (s) { ["Arm", "ForeArm", "Hand", "Shoulder"].forEach(function (b) { ARMS[s + b] = 1; }); FINGERS.concat(["Thumb"]).forEach(function (f) { for (var k = 1; k <= 3; k++) ARMS[s + "Hand" + f + k] = 1; }); LEGS[s + "UpLeg"] = 1; LEGS[s + "Leg"] = 1; });
     function y(i) { return pos[i * 3 + 1]; }
@@ -952,7 +956,7 @@
     var hemSpan = Math.max(0.05, waistY - hemY);
     var shortsG = this.shell(function (i) { return inShorts(i); }, function (i) {
       var v = clamp01((y(i) - hemY) / hemSpan), lat = Math.abs(nrm[i * 3]);
-      return 0.006 + 0.016 * (1 - smooth(0.25, 0.75, v)) + 0.007 * lat * (1 - v);
+      return 0.006 + 0.022 * (1 - smooth(0.2, 0.8, v)) + 0.012 * lat * (1 - v);
     }, { name: "aKit", size: 4, fn: function (i, out, o) {
       out[o] = clamp01((y(i) - hemY) / hemSpan); out[o + 1] = Math.atan2(nrm[i * 3], nrm[i * 3 + 2]); out[o + 2] = pos[i * 3] >= 0 ? 1 : -1; out[o + 3] = pos[i * 3 + 2];
     } });

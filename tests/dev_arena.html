@@ -40,8 +40,12 @@
 <script src="../vendor/three-r128-examples/postprocessing/UnrealBloomPass.js"></script>
 <script src="../vendor/three-r128-examples/postprocessing/SMAAPass.js"></script>
 <script src="../vendor/three-r128-examples/environments/RoomEnvironment.js"></script>
+<script src="fightassets_shim.js" data-base="../assets/embed/"></script>
 <script src="../src/engine2.js"></script>
 <script src="../src/rig3d.js"></script>
+<script>if (/[#&]av=0\b/.test(location.hash)) document.write("<!--"); </script>
+<script src="../src/avatar3d.js"></script>
+<!-- -->
 <script src="../src/arena3d.js"></script>
 <script src="../src/director.js"></script>
 <script src="../src/show3d.js"></script>
@@ -58,7 +62,7 @@
     onFinish: function (res) { log.push("finish " + JSON.stringify(res)); },
     onResult: function (res) { log.push("result " + JSON.stringify(res)); }
   };
-  var show = new FightShow.Show(cv, hooks, { maxDpr: P.dpr ? +P.dpr : 2, shadow: 2048, adaptive: !P.q });
+  var show = new FightShow.Show(cv, hooks, { maxDpr: P.dpr ? +P.dpr : 2, shadow: 2048, adaptive: !P.q, avatars: P.av !== "0" });
   var arena = show.arena;
   arena.show = show;
   function fit() { var w = cv.clientWidth, h = cv.clientHeight; show.resize(w, h); }
@@ -119,7 +123,7 @@
     stats: function () { return arena.stats(); }
   };
   var stat = document.getElementById("stat");
-  function info() { var s = arena.stats(); stat.textContent = show.phase + " " + show.state + " R" + (show.rIdx + 1) + " " + (show.clock || 0).toFixed(0) + "s  cam " + show.cam.label + "\n" + JSON.stringify(s); }
+  function info() { var s = arena.stats(); s.avatars = show.avatars ? show.avatars().length : 0; stat.textContent = show.phase + " " + show.state + " R" + (show.rIdx + 1) + " " + (show.clock || 0).toFixed(0) + "s  cam " + show.cam.label + "\n" + JSON.stringify(s); }
   Array.prototype.forEach.call(document.querySelectorAll("[data-step]"), function (b) { b.onclick = function () { stepFor(+b.dataset.step); info(); }; });
   Array.prototype.forEach.call(document.querySelectorAll("[data-burst]"), function (b) { b.onclick = function () { arena.burst(+b.dataset.burst); }; });
   document.getElementById("shot").onchange = function (e) { settle(e.target.value); };

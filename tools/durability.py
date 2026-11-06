@@ -822,9 +822,6 @@ def within_fighter(X, r, mask, zcols):
             break
     cov = np.linalg.inv(H)
     sc = Zm * resid[:, None]
-    meat = np.zeros_like(H)
-    for k in range(G):
-        pass
     sg = np.vstack([np.bincount(codes, sc[:, k], G) for k in range(Zm.shape[1])]).T
     meat = sg.T @ sg
     covc = cov @ meat @ cov * G / (G - 1)

@@ -1044,7 +1044,7 @@ def cmd_build(a):
         reps[per] = {}
         for pair in (('p_bfo_mean', 'p_range_mid'), ('p_bfo_mean', 'p_uud'), ('p_range_mid', 'p_uud'),
                      ('p_bfo_mean', 'p_books_mean'), ('p_books_mean', 'p_books_avgnv'), ('p_books_mean', 'p_books_median'),
-                     ('p_books_mean', 'p_uud')):
+                     ('p_books_mean', 'p_uud'), ('p_books_mean', 'p_range_mid')):
             g = sub(per, list(pair))
             if len(g) < 30:
                 continue

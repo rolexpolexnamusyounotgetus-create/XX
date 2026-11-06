@@ -37,6 +37,9 @@ import math
 import os
 import sys
 import time
+
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):   # single-threaded BLAS is faster
+    os.environ.setdefault(_v, "1")                                          # for these small dense problems
 from collections import Counter, defaultdict
 
 import numpy as np
@@ -518,12 +521,81 @@ def summarize_losses(L):
 
 
 # ============================================================== 4. models
-from sklearn.linear_model import LogisticRegression  # noqa: E402
-from sklearn.preprocessing import StandardScaler  # noqa: E402
-import warnings  # noqa: E402
+from scipy.optimize import minimize  # noqa: E402
 
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
+
+class StandardScaler:
+    def fit(self, X):
+        self.mean_ = X.mean(0)
+        sd = X.std(0)
+        self.scale_ = np.where(sd > 1e-9, sd, 1.0)
+        return self
+
+    def transform(self, X):
+        return (X - self.mean_) / self.scale_
+
+
+class LogisticRegression:
+    """Multinomial (or binary) logit with an L2 penalty on standardized slopes, fit by L-BFGS.
+    Objective: sum_i w_i * NLL_i / sum_i w_i + 1 / (2 C n_eff) * |W|^2, so C plays the sklearn role scaled
+    per observation. Intercepts are not penalized. Columns listed in `free` (e.g. baseline-hazard dummies)
+    are not penalized either."""
+
+    def __init__(self, C=1.0, max_iter=2000, tol=1e-7, fit_intercept=True, free=None):
+        self.C, self.max_iter, self.tol, self.fit_intercept, self.free = C, max_iter, tol, fit_intercept, free
+
+    def fit(self, X, y, sample_weight=None):
+        X = np.asarray(X, float)
+        y = np.asarray(y)
+        self.classes_ = np.unique(y)
+        k = len(self.classes_)
+        Y = (y[:, None] == self.classes_[None, :]).astype(float)
+        w = np.ones(len(y)) if sample_weight is None else np.asarray(sample_weight, float)
+        w = w / w.sum()
+        n, d = X.shape
+        pen = np.ones(d)
+        if self.free is not None:
+            pen[np.asarray(self.free)] = 0.0
+        lam = 1.0 / (self.C * len(y))
+        fi = 1 if self.fit_intercept else 0
+
+        def f(theta):
+            W = theta.reshape(d + fi, k)
+            Z = X @ W[:d]
+            if fi:
+                Z = Z + W[d]
+            Z = Z - Z.max(1, keepdims=True)
+            E = np.exp(Z)
+            s = E.sum(1)
+            P = E / s[:, None]
+            nll = (w * (np.log(s) - (Z * Y).sum(1))).sum()
+            R = (P - Y) * w[:, None]
+            G = np.empty_like(W)
+            G[:d] = X.T @ R + lam * pen[:, None] * W[:d]
+            if fi:
+                G[d] = R.sum(0)
+            return nll + 0.5 * lam * (pen[:, None] * W[:d] ** 2).sum(), G.ravel()
+
+        th0 = np.zeros((d + fi) * k)
+        if fi:
+            th0.reshape(d + fi, k)[d] = np.log(np.maximum(Y.T @ w, 1e-6))
+        r = minimize(f, th0, jac=True, method="L-BFGS-B", options={"maxiter": self.max_iter, "gtol": self.tol})
+        W = r.x.reshape(d + fi, k)
+        # identify: centre the class columns (softmax is invariant to a common shift)
+        W = W - W.mean(1, keepdims=True)
+        self.coef_ = W[:d].T.copy()
+        self.intercept_ = W[d].copy() if fi else np.zeros(k)
+        self.n_iter_ = r.nit
+        return self
+
+    def decision_function(self, X):
+        return np.asarray(X, float) @ self.coef_.T + self.intercept_
+
+    def predict_proba(self, X):
+        Z = self.decision_function(X)
+        Z = Z - Z.max(1, keepdims=True)
+        E = np.exp(Z)
+        return E / E.sum(1, keepdims=True)
 
 
 def recency_weights(years, ref_year, hl_years):
@@ -616,7 +688,7 @@ class HazardModel:
         nb = X.shape[1] - 8
         self.scaler = StandardScaler().fit(X[:, :nb])
         X[:, :nb] = self.scaler.transform(X[:, :nb])
-        self.lr = LogisticRegression(C=self.C, max_iter=3000, tol=1e-6)
+        self.lr = LogisticRegression(C=self.C, free=list(range(nb, X.shape[1])), fit_intercept=False)
         self.lr.fit(X, np.array(ys), sample_weight=np.array(ws))
         # decision winner (X wins | decision), both orientations, draws excluded
         dmask = (y == I_XDEC) | (y == I_YDEC)
@@ -624,7 +696,7 @@ class HazardModel:
         yd = np.concatenate([(y[dmask] == I_XDEC), (y[dmask] == I_YDEC)]).astype(int)
         wd = np.concatenate([w0[dmask], w0[dmask]])
         self.dscaler = StandardScaler().fit(Xd)
-        self.dlr = LogisticRegression(C=self.C_dec, max_iter=3000, tol=1e-6, fit_intercept=False)
+        self.dlr = LogisticRegression(C=self.C_dec, fit_intercept=False)
         self.dlr.fit(self.dscaler.transform(Xd), yd, sample_weight=wd)
         ndec = dmask.sum()
         self.draw_c = float(((y == I_DRAW).sum() + 0.5) / (ndec + (y == I_DRAW).sum() + 1))
@@ -726,7 +798,7 @@ class C6Logit:
         X = np.vstack([FX[ok][self.cols].to_numpy(float), FY[ok][self.cols].to_numpy(float)])
         yy = np.concatenate([c[ok], 5 - c[ok]])
         self.scaler = StandardScaler().fit(X)
-        self.lr = LogisticRegression(C=self.C, max_iter=3000, tol=1e-6)
+        self.lr = LogisticRegression(C=self.C)
         self.lr.fit(self.scaler.transform(X), yy, sample_weight=np.concatenate([w0, w0]))
         return self
 
@@ -743,7 +815,7 @@ class C6GBM:
         self.cols, self.hl, self.rounds = list(cols), hl_years, rounds
         self.params = dict(objective="multiclass", num_class=6, learning_rate=0.03, num_leaves=7,
                            min_data_in_leaf=60, feature_fraction=0.6, bagging_fraction=0.8, bagging_freq=1,
-                           lambda_l2=10.0, verbose=-1, num_threads=4, seed=7)
+                           lambda_l2=10.0, verbose=-1, num_threads=1, seed=7)
         if params:
             self.params.update(params)
 

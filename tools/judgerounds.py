@@ -40,6 +40,7 @@ USAGE
 import argparse
 import datetime as dt
 import difflib
+import functools
 import hashlib
 import itertools
 import json
@@ -129,6 +130,7 @@ NICK = {"mike": "michael", "doug": "douglas", "dave": "david", "rich": "richard"
         "jeff": "jeffrey", "ron": "ronald", "andy": "andrew", "pat": "patricia", "ben": "benjamin"}
 
 
+@functools.lru_cache(maxsize=None)
 def name_sim(a, b):
     """0..1 similarity for person names written by different sites."""
     a, b = norm(a), norm(b)

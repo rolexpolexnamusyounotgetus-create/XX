@@ -75,5 +75,27 @@
     "use": "embed-ok",
     "what": "3q",
     "note": "Islam Makhachev in 2022, after first title win (UFC 280)"
+  },
+  {
+    "file": "ref-getty-2026-08-13-ufc330-weighin.jpg",
+    "url": "https://assets-cms.thescore.com/uploads/image/file/844246/w1280xh966_GettyImages-2290452489.jpg",
+    "page": "https://www.thescore.com/mma/news/3579591",
+    "author": "Getty Images (via theScore)",
+    "license": "All rights reserved (Getty Images)",
+    "date_taken": "2026-08-13",
+    "use": "reference-only",
+    "what": "body",
+    "note": "UFC 330 official weigh-in, Philadelphia"
+  },
+  {
+    "file": "ref-cageside-2025-01-ufc311-weighin.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2025/01/UFC-311-ceremonial-weigh-in-43.jpg",
+    "page": "https://cagesidepress.com/2026/08/14/ufc-330-makhachev-vs-garry-weigh-in-results/",
+    "author": "Gabriel Gonzalez / Cageside Press",
+    "license": "All rights reserved (Cageside Press)",
+    "date_taken": "2025-01",
+    "use": "reference-only",
+    "what": "body",
+    "note": "UFC 311 ceremonial weigh-in"
   }
 ]

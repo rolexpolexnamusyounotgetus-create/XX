@@ -1177,6 +1177,24 @@ def part5(S, F):
     pv = agg.pivot(index="fid", columns="idx", values="r").dropna()
     pva = agg.pivot(index="fid", columns="idx", values="y").dropna()
     kd["direction_residual_corr"] = {"pearson": float(np.corrcoef(pv[0], pv[1])[0, 1]), "n_fights": int(len(pv))}
+    kd["shared_volatility_check"] = vol_check(d, mnf)
+    # round profile with the 2010-2023 window (more five-round fights; still before the test period)
+    ext = d[d.period.isin(["ext", "train"])]
+    me = FrailPois(ext, "o_kd", "o_sh_l", specs["null"]).fit()
+    coe = me.coef()
+    kd["round_profile_given_frailty_2010_2023"] = {
+        str(R): [math.exp(coe[f"c{R}_{r}"]["est"] - coe[f"c{R}_1"]["est"]) for r in range(1, R + 1)] for R in (3, 5)}
+    kd["round_profile_se_log_2010_2023"] = {str(R): [coe[f"c{R}_{r}"]["se"] for r in range(1, R + 1)] for R in (3, 5)}
+    kd["frailty_2010_2023"] = coe["frailty_var"]
+    # pooled rounds 4-5 of five-round fights (sparse): refit with a merged cell
+    for lab, dd in (("train", tr), ("2010_2023", ext)):
+        z = dd.copy(); z["c5_4"] = z["c5_4"] + z["c5_5"]
+        Xp = [c for c in specs["null"] if c != "c5_5"]
+        mp = FrailPois(z, "o_kd", "o_sh_l", Xp).fit()
+        cp = mp.coef()
+        kd[f"five_round_profile_r45_pooled_{lab}"] = [math.exp(cp[f"c5_{r}"]["est"] - cp["c5_1"]["est"]) for r in (1, 2, 3, 4)]
+    # per-round decline in the 3-round format: KD-only vs all KO/TKO, and the R1 rate level
+    kd["r1_rate_per_standing_head_given_frailty_3rd"] = math.exp(co["c3_1"]["est"])
     res["kd_hazard"] = kd
     # ---- (b) knockdown -> finish conversion, per knockdown (geometric within the round)
     import statsmodels.api as sm
@@ -1337,3 +1355,38 @@ def main(argv=None):
 
 if __name__ == "__main__":
     main()
+
+
+def vol_check(d, mnf, reps=30, seed=5):
+    """Expected correlation of the two directions' per-fight Pearson residuals (knockdowns absorbed vs the
+    no-frailty expectation) under (i) independent frailty per direction (gamma, variance 1.0) and (ii) the
+    engine v3 structure: lognormal power and chin form per direction (sd 0.45 each) times a lognormal
+    volatility shared by both directions (sd 0.60). Uses the real exposures and expectations."""
+    q = mnf.d.assign(mu=np.exp(mnf.lE + mnf.X @ mnf.par[:-1]))
+    agg = q.groupby(["fid", "idx"]).agg(y=("o_kd", "sum"), mu=("mu", "sum")).reset_index()
+    pv = agg.pivot(index="fid", columns="idx", values="mu").dropna()
+    yv = agg.pivot(index="fid", columns="idx", values="y").reindex(pv.index)
+    mu = pv.to_numpy()
+    obs_r = (yv.to_numpy() - mu) / np.sqrt(mu)
+    obs = float(np.corrcoef(obs_r[:, 0], obs_r[:, 1])[0, 1])
+    rng = np.random.default_rng(seed)
+    n = len(mu)
+    out = {"observed": obs, "n_fights": int(n)}
+    sims = {"independent_gamma_var1": [], "engine_pow_chin_vol": [], "shared_only_gamma_var1": []}
+    for _ in range(reps):
+        th = rng.gamma(1.0, 1.0, (n, 2))
+        sims["independent_gamma_var1"].append(th)
+        z = rng.normal(size=(n, 2, 2)); v = rng.normal(size=(n, 1))
+        lt = 0.45 * z[:, :, 0] + 0.45 * z[:, :, 1] + 0.6 * v
+        t2 = np.exp(lt); t2 /= t2.mean()
+        sims["engine_pow_chin_vol"].append(t2)
+        s = rng.gamma(1.0, 1.0, (n, 1)) * np.ones((1, 2))
+        sims["shared_only_gamma_var1"].append(s)
+    for k, lst in sims.items():
+        cs = []
+        for th in lst:
+            y = rng.poisson(mu * th)
+            r = (y - mu) / np.sqrt(mu)
+            cs.append(np.corrcoef(r[:, 0], r[:, 1])[0, 1])
+        out[k] = {"mean": float(np.mean(cs)), "sd": float(np.std(cs))}
+    return out

@@ -382,6 +382,9 @@ class Fetcher:
     def get(self, site, name, url, data=None, headers=None):
         """GET (or POST when data is given). Returns (text, fetched_utc) or (None, None)."""
         fp = self.path(site, name)
+        u = urllib.parse.urlsplit(url)
+        url = urllib.parse.urlunsplit((u.scheme, u.netloc, urllib.parse.quote(u.path, safe="/:_.-()%,!~*'@"),
+                                       u.query, u.fragment))
         if self.replay:
             txt = self._read_cache(fp)
             ts = None
@@ -508,6 +511,8 @@ def wiki_card(F, ev):
                 continue
             a, b = m.group(2).strip(), re.sub(r'\s*\[.*$', '', m.group(3)).strip()
             if re.fullmatch(r'TB[AD]', b, re.I) or re.fullmatch(r'TB[AD]', a, re.I):
+                continue
+            if any(pair_score(x['A'], x['B'], a, b)[0] >= 0.8 for x in bouts):
                 continue
             order += 1
             bouts.append({'A': a, 'B': b, 'weight_class': m.group(1).strip(), 'segment': 'Announced',
@@ -643,6 +648,12 @@ def fo_queries(F):
     m = re.search(r'src="(/app\.[a-z0-9]+\.js)"', home)
     if not m:
         return None
+    qcache = os.path.join(CACHE_ROOT, 'fightodds', 'queries_' + re.sub(r'[^a-z0-9]', '', m.group(1)) + '.json')
+    if os.path.exists(qcache):        # the bundle (6 MB) is fetched once per site deploy, not per run
+        with open(qcache) as fh:
+            q = json.load(fh)
+        if all(n in q for n in FO_QUERY_NAMES):
+            return q
     js, _ = F.get('fightodds', 'bundle', FO_SITE + m.group(1))
     if not js:
         return None
@@ -654,6 +665,10 @@ def fo_queries(F):
                 q[name] = json.loads('"' + mm.group(1) + '"')
             except ValueError:
                 pass
+    if q:
+        os.makedirs(os.path.dirname(qcache), exist_ok=True)
+        with open(qcache, 'w') as fh:
+            json.dump(q, fh)
     return q
 
 
@@ -708,7 +723,7 @@ def fetch_fightodds(F, since, until, detail=True):
             rec = {'src': 'fightodds', 'src_id': n['slug'], 'event_title': ev['name'], 'date': ev['date'],
                    'n1': f'{f1["firstName"]} {f1["lastName"]}'.strip(),
                    'n2': f'{f2["firstName"]} {f2["lastName"]}'.strip(),
-                   'lines': lines, 'fetched': ts, 'url': f"{FO_SITE}/mma-events/{ev['pk']}/{ev['slug']}/odds"}
+                   'lines': lines, 'fetched': ts, 'url': f"{FO_SITE}/fights/{n['slug']}/odds"}
             if detail and lines:
                 dd, ts2 = fo_post(F, f"fight_{n['slug']}", q.get('FightOfferTableRefetchQuery', ''),
                                   {'fightSlug': n['slug']})
@@ -810,15 +825,16 @@ def fetch_covers(F):
         for th in re.findall(r'<th[^>]*>(.*?)</th>', head.group(1), re.S):
             sl = re.search(r'slug=([a-z0-9-]+)', th)
             cols.append(sl.group(1) if sl else text_of(th))
-        rows = []
-        for r in re.findall(r'<tr class="[^"]*">(.*?)</tr>', t, re.S):
-            th = re.search(r'<th[^>]*>.*?<span>(.*?)</span>', r, re.S)
-            if not th:
-                continue
-            tds = [text_of(x) for x in re.findall(r'<td[^>]*>(.*?)</td>', r, re.S)]
-            rows.append((text_of(th.group(1)), tds))
-        for k in range(0, len(rows) - 1, 2):
-            (n1, c1), (n2, c2) = rows[k], rows[k + 1]
+        pairs = []
+        for chunk in re.split(r'<tr style="height: ?20px;?"[^>]*>\s*</tr>', t)[1:]:   # one bout per spacer
+            rows = []
+            for r in re.findall(r'<tr class="[^"]*">(.*?)</tr>', chunk, re.S):
+                th = re.search(r'<th[^>]*>.*?<span>(.*?)</span>', r, re.S)
+                if th:
+                    rows.append((text_of(th.group(1)), [text_of(x) for x in re.findall(r'<td[^>]*>(.*?)</td>', r, re.S)]))
+            if len(rows) == 2:
+                pairs.append(rows)
+        for k, ((n1, c1), (n2, c2)) in enumerate(pairs):
             lines = {}
             for j, col in enumerate(cols[1:]):       # cols[0] = Fighters; tds[0] = '+-' toggle
                 if col in ('Open', 'Fighters'):
@@ -827,7 +843,7 @@ def fetch_covers(F):
                 a2 = parse_am(c2[j + 1]) if j + 1 < len(c2) else None
                 if a1 and a2:
                     lines[canon_book(col)] = {'ml': [a1, a2]}
-            out.append({'src': 'covers', 'src_id': f'{slugify(title)}:{k // 2}', 'event_title': title,
+            out.append({'src': 'covers', 'src_id': f'{slugify(title)}:{k}', 'event_title': title,
                         'date': d.isoformat() if d else None, 'n1': n1, 'n2': n2, 'lines': lines,
                         'fetched': ts, 'url': COVERS_URL})
     return out, {}
@@ -1430,20 +1446,19 @@ def cmd_snapshot(a):
     if not a.skip_wiki:
         def _wiki():
             evs, ts = wiki_events(F, since, until)
-            n = 0
             for e in evs:
-                bl, _ = wiki_card(F, e)
-                wiki_cards[e['wiki']] = bl
-                n += len(bl)
+                wiki_evs.append(e)
+                wiki_cards[e['wiki']], _ = wiki_card(F, e)
             return [b for e in evs for b in wiki_cards[e['wiki']]], {'fetched': ts, 'n_events': len(evs)}
-        res, meta = run('wikipedia', _wiki)
-        wiki_evs, _ = (wiki_events(Fetcher(stamp, replay=True), since, until) if res or a.replay else ([], None))
-    print(f'  wikipedia: {sources.get("wikipedia")}', flush=True)
+        run('wikipedia', _wiki)
+        print(f'  wikipedia: {sources.get("wikipedia")}', flush=True)
     sel = set(a.sources.split(','))
     fo_meta = {}
     if 'fightodds' in sel:
         r, fo_meta = run('fightodds', lambda: fetch_fightodds(F, since, until, detail=not a.no_fight_detail))
         src_bouts += r
+        if fo_meta.get('events'):
+            sources['fightodds']['event_list'] = fo_meta['events']
         print(f'  fightodds: {sources["fightodds"]}', flush=True)
     if 'bestfightodds' in sel:
         r, bmeta = run('bestfightodds', lambda: fetch_bfo(F, since, until))
