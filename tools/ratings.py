@@ -1325,17 +1325,24 @@ def dim_features(pre, dims):
 # pre-UFC records (tools/preufc.py output, Sherdog, walk-forward per UFC bout) for newcomer priors
 # =====================================================================================================
 PREUFC = os.path.join(ROOT, "data", "derived", "preufc.json")
-# OFF: on Nov 6, 2026 preufc.json covered 258 of 1,711 targets and the crawl had resolved survivors first (77.5%
-# of resolved fighters still active in 2024+ vs 48.9% of unresolved; career UFC win rate 59.4% vs 50.8%), so any
-# term that is non-zero only for crawled fighters leaks future survival (it "improved" 2019-2023 log loss by 0.019).
-# Turn on only once coverage of the walk-forward debut snapshots is complete (or provably outcome-independent).
-PRE_ON = False
+# Coverage guard. preufc.json crawled the roster plus every fighter with 0-3 prior UFC bouts in a UFC bout on or after
+# 2015-01-01, so EVERY UFC debut from 2015 on has a snapshot (1,373 of 1,373 checked on Nov 6, 2026), whatever that
+# fighter did afterwards. Debuts before 2015 were crawled only when the fighter was still around in 2015 or is on the
+# current roster (survivors), so a term that is non-zero only for crawled fighters would leak future survival (an
+# earlier partial crawl "improved" 2019-2023 log loss by 0.019 that way). The pre-UFC prior is therefore applied only to
+# debuts on or after PRE_FROM, where its presence is outcome-independent; older debuts keep the age-only prior.
+PRE_ON = True
+PRE_FROM = dt.date(2015, 1, 1).toordinal()
+PRE_FEATS = ["win share (shrunk) - 0.8", "log1p(non-UFC pro fights) - 2.4", "Sherdog-network Elo: (net_elo - 1600)/100",
+             "Contender Series win - 0.28", "feeder promotion graduates' UFC win rate: (promo_grad - 0.5) x 10",
+             "log1p(non-UFC wins over opponents with UFC experience)", "feeder promotion volume: promo_feed - 2.5"]
+PRE_KEYS = ["pre_wp", "pre_n", "pre_net", "pre_dwcs", "pre_grad", "pre_oppufc", "pre_feed"]
 
 
 def attach_preufc(D):
-    """D.pre[i, side] = (shrunk non-UFC win share - 0.7, log1p(non-UFC fights) - 2, net Elo / 400 - 3.75 in
-    logits, Contender Series win) as of the bout, from preufc.json snapshots; nan when not crawled."""
-    D.pre = np.full((D.n, 2, 4), np.nan)
+    """D.pre[i, side] = the PRE_FEATS vector (centred near the 2015+ debut means) as of the bout, from preufc.json
+    walk-forward snapshots (Sherdog fights strictly before the bout date); nan when not crawled."""
+    D.pre = np.full((D.n, 2, len(PRE_KEYS)), np.nan)
     D.pre_cov = 0
     if not os.path.exists(PREUFC):
         return
@@ -1344,9 +1351,16 @@ def attach_preufc(D):
     except Exception:
         return
     cols = J["meta"]["snapshot_columns"]
+    if isinstance(cols, str):
+        import ast
+        cols = ast.literal_eval(cols)
     ci = {c: k for k, c in enumerate(cols)}
     slug2p = {s: k for k, s in enumerate(D.slug)}
     hit = 0
+
+    def g(row, c, default=0.0):
+        v = row[ci[c]] if c in ci else None
+        return default if v is None else v
     for slug, rec in J.get("fighters", {}).items():
         p = slug2p.get(slug)
         if p is None or not rec.get("snapshots"):
@@ -1358,22 +1372,23 @@ def attach_preufc(D):
             side = 0 if D.ia[i] == p else (1 if D.ib[i] == p else -1)
             if side < 0:
                 continue
-            w, n = row[ci["w"]] or 0, row[ci["n"]] or 0
-            net = row[ci["net_elo"]]
-            D.pre[i, side] = ((w + 1.4) / (n + 2.0) - 0.7, math.log1p(n) - 2.0,
-                              ((net if net is not None else 1500.0) - 1500.0) * LN10_400,
-                              1.0 if (row[ci["dwcs_w"]] or 0) > 0 else 0.0)
+            w, n = g(row, "w"), g(row, "n")
+            D.pre[i, side] = ((w + 1.4) / (n + 2.0) - 0.8, math.log1p(n) - 2.4,
+                              (g(row, "net_elo", 1600.0) - 1600.0) / 100.0,
+                              (1.0 if g(row, "dwcs_w") > 0 else 0.0) - 0.28,
+                              (g(row, "promo_grad", 0.5) - 0.5) * 10.0,
+                              math.log1p(g(row, "opp_ufc_w")),
+                              g(row, "promo_feed", 2.5) - 2.5)
             hit += 1
     D.pre_cov = hit
 
 
 def newcomer_i(D, P, i, side, age):
     m = newcomer(age, P)
-    if P.get("pre_on"):
+    if P.get("pre_on") and D.day[i] >= PRE_FROM:
         f = D.pre[i, side]
         if f[0] == f[0]:
-            m += P.get("pre_wp", 0.0) * f[0] + P.get("pre_n", 0.0) * f[1] + P.get("pre_net", 0.0) * f[2] \
-                + P.get("pre_dwcs", 0.0) * f[3]
+            m += sum(P.get(k, 0.0) * f[j] for j, k in enumerate(PRE_KEYS))
     return m
 
 
@@ -1553,6 +1568,11 @@ def specs(quick):
               ("ay", [25.0, 27.0, 29.0, 31.0]), ("ao", [29.0, 31.0, 33.0, 35.0]),
               ("dl", [0.0, 0.03, 0.06, 0.1, 0.15]), ("nl", [2.0, 4.0, 8.0]), ("lay", [0.0, 0.05, 0.1, 0.2]),
               ("kappa", [0.8, 0.9, 1.0, 1.1, 1.2])]
+    pre = [("pre_net", [0.0, 0.1, 0.2, 0.35, 0.5]), ("pre_wp", [-0.5, 0.0, 0.5, 1.0, 2.0]),
+           ("pre_n", [-0.1, 0.0, 0.1, 0.2]), ("pre_dwcs", [-0.1, 0.0, 0.1, 0.2]), ("pre_grad", [0.0, 0.03, 0.06, 0.1]),
+           ("pre_oppufc", [0.0, 0.05, 0.1, 0.2]), ("pre_feed", [-0.05, 0.0, 0.03, 0.06, 0.1])]
+    if PRE_ON:
+        shared = shared[:2] + pre + shared[2:]
     mov = [("y_ud", [0.8, 0.9, 1.0]), ("y_sd", [0.5, 0.6, 0.7, 0.85, 1.0]), ("w_fin", [1.0, 1.2, 1.5, 2.0]),
            ("w_r1", [1.0, 1.2, 1.5])]
     rnd = [("w_fround", [0.5, 1.0, 2.0, 3.0, 5.0]), ("w_rem", [0.0, 0.25, 0.5, 1.0]),
@@ -1579,7 +1599,7 @@ def specs(quick):
               "P": {"K": 0.06, "enc": "rounds", "w_round": 1.0, "w_fround": 2.0, "w_rem": 0.5, "kappa": 2.5,
                     "kb": 0.5, "kn": 3.0, "pre_on": PRE_ON},
               "grid": [("K", [0.01, 0.015, 0.02, 0.03, 0.045, 0.06, 0.08]), ("kb", [0.0, 0.5, 1.0]),
-                       ("kn", [1.0, 3.0, 8.0])] + rnd + shared[:-1]})
+                       ("kn", [1.0, 3.0, 8.0])] + rnd + [g for g in shared if g[0] != "kappa"]})
     S.append({"name": "glicko2", "kind": "glicko2", "family": "Glicko-2",
               "label": "Glicko-2: rating deviation inflating with inactivity, volatility, newcomer prior, age "
                        "drift, margin-weighted games",
@@ -1592,8 +1612,8 @@ def specs(quick):
               "P": {"s0": 1.0, "tau_y": 0.3, "gam": 0.1, "pre_on": PRE_ON},
               "grid": [("s0", [0.5, 0.8, 1.0, 1.3, 1.7]), ("tau_y", [0.05, 0.1, 0.2, 0.3, 0.5]),
                        ("gam", [0.0, 0.1, 0.2, 0.3])] + [(k, [round(1.5 * v, 4) for v in vals])
-                                                         if k in ("mu_new", "age_new", "dy", "do", "pre_wp",
-                                                                  "pre_n", "pre_net", "pre_dwcs", "dl", "lay")
+                                                         if k in ("mu_new", "age_new", "dy", "do", "dl", "lay")
+                                                         or k.startswith("pre_")
                                                          else (k, vals)
                                                          for k, vals in shared]})
     S.append({"name": "trueskill_mov", "kind": "trueskill", "family": "TrueSkill",
@@ -1612,7 +1632,8 @@ def specs(quick):
                        "before every fight day), binary outcomes",
               "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "pre_on": PRE_ON}, "from_shared": "elo_full", "coarse": True,
               "grid": whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2]), ("do", [0.01, 0.02, 0.04]),
-                                  ("dl", [0.0, 0.05, 0.1]), ("mu_new", [-0.3, -0.15, 0.0])]})
+                                  ("dl", [0.0, 0.05, 0.1]), ("mu_new", [-0.3, -0.15, 0.0])]
+              + ([("pre_net", [0.1, 0.2, 0.35, 0.5]), ("pre_wp", [0.0, 0.5, 1.0])] if PRE_ON else [])})
     S.append({"name": "whr_mov", "kind": "whr", "family": "WHR",
               "label": "WHR with margin of victory (fractional / weighted outcomes by method)",
               "P": {"enc": "mov", "pre_on": PRE_ON}, "from": "whr", "from_mov": "elo_full", "coarse": True,
@@ -1805,8 +1826,7 @@ def matchup_probs(roster, sys_params, a, b, stack=None, dims_coef=None, baseline
 # =====================================================================================================
 # final runs, outputs
 # =====================================================================================================
-SHARED_KEYS = ("mu_new", "age_new", "dy", "do", "ay", "ao", "dl", "nl", "lay", "pre_on", "pre_wp", "pre_n", "pre_net",
-               "pre_dwcs")
+SHARED_KEYS = ("mu_new", "age_new", "dy", "do", "ay", "ao", "dl", "nl", "lay", "pre_on") + tuple(PRE_KEYS)
 MOV_KEYS = ("y_ud", "y_sd", "y_dq", "w_fin", "w_r1")
 
 

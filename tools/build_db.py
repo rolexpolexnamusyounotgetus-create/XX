@@ -6,11 +6,14 @@ Run from the project root:
     python3 tools/build_db.py                  # default half-life 730 days
     python3 tools/build_db.py --half-life 540  # different time decay for the S sums
     python3 tools/build_db.py --priors-window 4  # trailing years behind each backtest year's priors_asof
+    python3 tools/build_db.py --priors-until 2024-01-01 --priors-only --priors-out data/derived/priors_dev.json
+                                               # train-only league priors for tuning / dev evaluation (engine v4+)
 
 Writes (see docs/ENGINE_V3_SPEC.md, "Profile format" and "Calibration and validation"):
 
     data/derived/fighters.json    roster profiles (everyone with a UFC fight since --roster-since)
-    data/derived/priors.json      division league rates from fights since 2018-01-01
+    data/derived/priors.json      division league rates from fights since 2018-01-01 (before --priors-until if given)
+    data/derived/priors_dev.json  (with --priors-until 2024-01-01 --priors-only) train-period league rates
     data/derived/backtest.json    walk-forward pre-fight snapshots for fights since 2019-01-01
     data/derived/elo_report.json  Elo K selection (tuned 2019-2023) and 2024+ metrics
     data/overrides.json           only if missing: appearance placeholders for the default matchup
@@ -1000,6 +1003,49 @@ def ensure_overrides():
     return True
 
 
+PRIORS_NOTES = ("sum keys are per fighter-minute (league average fighter); acc_* landed/attempted; "
+                "kd_per_h knockdowns per landed head strike; td_acc; ctrl_per_td control seconds per "
+                "takedown landed; sub_conv submission wins per attempt; kd_fin share of rounds with a "
+                "knockdown that the knockdown scorer finished by KO/TKO; finN/decN finish split by round "
+                "for N-round fights; paceN landed/min by round vs round 1; mpfN minutes per fight")
+
+
+def write_priors_file(path, priors, snap, built, until):
+    path = path if os.path.isabs(path) else os.path.join(ROOT, path)
+    meta = {"source": SOURCE, "snapshot": snap.isoformat(), "built": built, "since": PRIORS_FROM.isoformat(),
+            "until": until.isoformat() if until else None, "keys": KEYS, "notes": PRIORS_NOTES,
+            "use": ("train-only league priors (hidden-data protocol): engine self-calibration targets, tuning and "
+                    "dev evaluation. Not for live predictions." if until else
+                    "production league priors (every fight up to the snapshot); live use only")}
+    size = write_json(path, {"meta": meta, "priors": priors})
+    print("wrote %s: %d groups, fights %s..%s, %s" % (os.path.relpath(path, ROOT), len(priors),
+                                                     PRIORS_FROM.isoformat(), until.isoformat() if until else snap.isoformat(),
+                                                     human(size)))
+    return size
+
+
+def priors_only(args, until):
+    """--priors-only: parse, drop fights on/after --priors-until, build round stats and write the priors file."""
+    t0 = time.time()
+    log = {}
+    fights, _ = parse_fights(log)
+    n_all = len(fights)
+    if until is not None:
+        fights = [f for f in fights if f.date < until]      # nothing on or after the cutoff is processed further
+    print("parsed %d fights; kept %d before %s" % (n_all, len(fights), until.isoformat() if until else "the snapshot"))
+    build_people(fights, log)
+    build_vectors(fights, log)
+    snap = fights[-1].date
+    priors = build_priors(fights, PRIORS_FROM, until)
+    built = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    write_priors_file(args.priors_out, priors, snap, built, until)
+    lw = priors.get("Lightweight", {})
+    print("Lightweight priors: n %s fights, SLpM %.2f, acc %.3f, KD per head landed %.4f, TD acc %.3f, ctrl/15 %.0f s"
+          % (lw.get("n_fights"), lw.get("slpm", 0), lw.get("acc_sig", 0), lw.get("kd_per_h", 0), lw.get("td_acc", 0),
+             lw.get("ctrl15", 0)))
+    print("done in %.1f s" % (time.time() - t0))
+
+
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -1008,7 +1054,22 @@ def main():
                                                                  "or after this date (2021-01-01)")
     ap.add_argument("--priors-window", type=int, default=5,
                     help="years of fights before Jan 1 of each backtest year used for backtest.json priors_asof (5)")
+    ap.add_argument("--priors-until", default=None,
+                    help="live league priors (priors.json / fighters.json priors) use only fights dated before this "
+                         "ISO date. Default: every fight up to the snapshot (production). Tuning and dev evaluation "
+                         "use 2024-01-01 (hidden-data protocol, docs/BACKLOG.md)")
+    ap.add_argument("--priors-only", action="store_true",
+                    help="write only the priors file (--priors-out) and stop; with --priors-until, fights on or after "
+                         "that date are dropped right after parsing, so nothing later is processed")
+    ap.add_argument("--priors-out", default=None,
+                    help="priors file to write (default data/derived/priors.json; --priors-only requires it to be "
+                         "given explicitly so the production file is not overwritten by accident)")
     args = ap.parse_args()
+    until = dt.date.fromisoformat(args.priors_until) if args.priors_until else None
+    if args.priors_only:
+        if not args.priors_out:
+            raise SystemExit("--priors-only needs --priors-out (e.g. data/derived/priors_dev.json)")
+        return priors_only(args, until)
     t0 = time.time()
     os.makedirs(OUT, exist_ok=True)
     log = {}
@@ -1040,7 +1101,7 @@ def main():
             stt["S"] *= math.exp(-math.log(2) / args.half_life * (snap_day - stt["t"]))
             stt["t"] = snap_day
 
-    priors = build_priors(fights, PRIORS_FROM)
+    priors = build_priors(fights, PRIORS_FROM, until)
     # walk-forward priors for the backtest: the live priors above include every fight up to the snapshot,
     # 2024+ test fights among them, so a backtest that shrinks toward them would see the test period's
     # league rates. priors_asof[Y] uses only fights in [Jan 1 of Y - window, Jan 1 of Y).
@@ -1095,13 +1156,15 @@ def main():
     size_f = write_json(os.path.join(OUT, "fighters.json"), {"meta": meta, "priors": priors, "fighters": roster})
     size_p = write_json(os.path.join(OUT, "priors.json"), {
         "meta": {"source": SOURCE, "snapshot": snap.isoformat(), "built": built, "since": PRIORS_FROM.isoformat(),
-                 "keys": KEYS,
+                 "until": until.isoformat() if until else None, "keys": KEYS,
                  "notes": "sum keys are per fighter-minute (league average fighter); acc_* landed/attempted; "
                           "kd_per_h knockdowns per landed head strike; td_acc; ctrl_per_td control seconds per "
                           "takedown landed; sub_conv submission wins per attempt; kd_fin share of rounds with a "
                           "knockdown that the knockdown scorer finished by KO/TKO; finN/decN finish split by round "
                           "for N-round fights; paceN landed/min by round vs round 1; mpfN minutes per fight"},
         "priors": priors})
+    if args.priors_out and os.path.abspath(args.priors_out) != os.path.abspath(os.path.join(OUT, "priors.json")):
+        write_priors_file(args.priors_out, priors, snap, built, until)
     n_dec = sum(1 for e in entries if e["result"]["winner"] in ("A", "B"))
     a_rate = sum(1 for e in entries if e["result"]["winner"] == "A") / max(n_dec, 1)
     size_b = write_json(os.path.join(OUT, "backtest.json"), {
