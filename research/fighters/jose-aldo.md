@@ -12,7 +12,6 @@ As of Friday, Nov 6, 2026. "Dataset" means `data/derived/fighters.json` and the 
 - **Pro record:** 32-10 in MMA (17 KO/TKO, 1 submission, 14 decisions; losses 4 KO/TKO, 1 submission, 5 decisions) per Sherdog, ESPN, MMA Fighting and Wikipedia. Pro boxing 1-0-1 (Wikipedia).
 - **Honours:** UFC Hall of Fame (modern wing, class of 2023); inaugural UFC featherweight champion with seven straight defences.
 - **Injuries:** none reported. UFC 315 moved to featherweight on weigh-in day after he could not make bantamweight (Wikipedia).
-
 - **Age and frame:** 40 (born Sep 9, 1986), 5'7" with a 70" reach, orthodox.
 - **Division:** listed at bantamweight for his recent run, but his last bout was at featherweight.
 - **UFC record:** 14-9 (4 KO/TKO, 0 submissions, 10 decisions; losses 4 KO/TKO, 5 decisions).

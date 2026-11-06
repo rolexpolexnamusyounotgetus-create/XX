@@ -130,6 +130,20 @@ Slope = logistic recalibration slope of the outcome on logit(p) (1 = calibrated,
 | 2025 | 429 | 0.9521 | 0.9479 | 0.9426 | 0.9875 | 2.0683 | 2.2329 |
 | 2026 | 372 | 0.9629 | 0.9642 | 0.9558 | 1.0151 | 2.1598 | 2.3360 |
 
+## How to use the outputs
+
+- `fights[id]` (every backtest.json fight, 2019+): `S` and `SM` hold the joint as A KO r1..R, A SUB r1..R,
+  B KO r1..R, B SUB r1..R, A dec, B dec, draw (R = scheduled rounds, A = first ufcstats name); `sum_S` has P(finish),
+  P(KO), P(SUB), P(dec), P(A), P(B) and the 7 bins; `fit_through` says which fit produced it (2019-2023 are
+  out-of-fold, 2024+ the fit through 2023; `S_refit` / `SM_refit` for 2025-2026).
+- `roster[slug]`: each fighter's win/lose-by-method shares against his current division field.
+- `js_model` + `tools/methodround_model.js`: `MethodRound.create(js_model).predict(profA, profB, {slugA, slugB,
+  division, rounds, title, date, pMarketA})` with fighters.json profiles; returns the cells, bins7, finish-round
+  distribution and method-given-win for each fighter (S without `pMarketA`, SM with it).
+- Score the simulator (or any model) on the same fights and metrics: write `{fight_id: {"cells": [...]}}` (same
+  layout as above) or `{fight_id: {"bins7": [...], "fin_round": [...]}}` and run
+  `python3 tools/methodround.py --score sim.json` (paired event-cluster bootstrap against model S).
+
 ## Method
 
 **Data.** Every UFC bout in the ufcstats snapshot, parsed with `tools/build_db.py`'s own loaders so
@@ -221,9 +235,9 @@ Evidence behind the recommendations: method given the actual winner, S - base ra
 
 1. **Use this model as the method/round prior and as the yardstick for the simulator.** The v3+ engine's
    simulated method distribution should be scored on the same held-out fights with the same metrics (method
-   3-class LL, finish LL, round-given-finish LL, 7-bin and joint LL, plus the calibration tables above). If the
-   engine does not beat model S on method and round, the page should take its method/round split from here and
-   use the engine for the play-by-play and the fight story.
+   3-class LL, finish LL, round-given-finish LL, 7-bin and joint LL, plus the calibration tables above):
+   `python3 tools/methodround.py --score sim.json`. If the engine does not beat model S on method and round, the
+   page should take its method/round split from here and use the engine for the play-by-play and the story.
 2. **Factorize the final forecast:** P(A wins) from the winner ensemble (market + Elo + engine + this model's
    winner), then P(method, round | winner) from this model's conditional shares (`methodGivenWin` in the JS
    output; the per-fight cells give the same). That keeps the winner question with the stack and uses this

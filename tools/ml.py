@@ -1950,6 +1950,23 @@ def evaluate(R):
                 mo[k]["minus_open"] = round(float(d2.mean()), 5)
                 mo[k]["minus_open_ci95"] = ci(cluster_boot(gs, lambda idx: d2[idx].mean(), max(300, nb // 4)))
         out["test_market_subset"] = {"n": int(sub.sum()), "models": mo}
+    # the hidden-data protocol's validation split (docs/BACKLOG.md): 2024-01-01..2025-12-31, excluding the 2026 vault
+    v25 = test_bt & (C["years"] <= 2025)
+    g25 = df.loc[v25, "event"].to_numpy()
+    y25 = y[v25]
+    val = {"n": int(v25.sum()), "models": {}}
+    keys25 = [k for k in models_t] + [k for k in ("mkt_rating", "mkt_open", "mkt_close", "engine",
+                                                   "stack:close+ml", "stack:open+ml") if k in P]
+    for k in keys25:
+        ok = ~np.isnan(P[k][v25])
+        if ok.sum() < 100:
+            continue
+        mrow = win_metrics(P[k][v25][ok], y25[ok])
+        if k in ("elo", "lr", "lgb", "ml", rec):
+            L_ = -(y25 * np.log(np.clip(P[k][v25], 1e-6, 1)) + (1 - y25) * np.log(np.clip(1 - P[k][v25], 1e-6, 1)))
+            mrow["log_loss_ci95"] = ci(cluster_boot(g25, lambda idx: L_[idx].mean(), max(300, nb // 4)))
+        val["models"][k] = mrow
+    out["valid_2024_2025"] = val
     # diagnostic only (never used for a choice): the calibration slope a test-fit recalibration would apply, and
     # what it would be worth. Shows how much of the 2024+ gap is confidence rather than ranking.
     diag = {}

@@ -8,7 +8,7 @@ As of 2026-11-06. He/him. Orthodox, 5 ft 5 in, 65 in reach, born 2001-10-10 (age
 - **Defences:** TKO of Tatsuro Taira at 1:32 of round 5, UFC 328 (May 9, 2026). Unanimous decision over Pantoja at UFC 331 (Sep 19, 2026; 49-46, 48-47, 50-45 per ufcstats); Yahoo called it a Fight of the Year contender.
 - **Next:** Manel Kape, UFC 336 main event, Scotiabank Arena, Toronto, Jan 30, 2027, his third defence. Still on as of Nov 6, 2026 (Sherdog; Wikipedia UFC 336 page, where an interim welterweight title fight, Carlos Prates vs Michael Morales, was added after Islam Makhachev withdrew). On Oct 30, 2026 he named Petr Yan as a possible future opponent.
 - **Ranking:** flyweight champion and **#6 men's pound-for-pound** in the official UFC rankings (media panel, released Nov 3, 2026; ufc.com via a Wayback capture of Nov 4); champion in the Elo-based Meta UFC rankings released Oct 31, 2026, which have no pound-for-pound list.
-- **Injuries:** a knee injury in camp pushed the Taira defence from UFC 327 (Apr 11, 2026) to UFC 328 (May 9). The UFC called it minor; Van later said it was serious, that he could not run until the last two weeks of the rescheduled camp and that he would have it checked (Heavy, May 10, 2026). No later update found. This replaces the earlier RotoWire "undisclosed injury" note.
+- **Injuries:** a knee injury in camp pushed the Taira defence from UFC 327 (Apr 11, 2026) to UFC 328 (May 9). It was described as minor at the time; Van later said it was serious, that he could not run until the last two weeks of the rescheduled camp and that he would have it checked (Heavy, May 10, 2026). No later update found. This replaces the earlier RotoWire "undisclosed injury" note.
 
 ## Recent fights
 

@@ -88,13 +88,25 @@ if (doc.feat) {
     const o = { keys: db.meta.keys, snapshot: db.meta.snapshot, halfLife: db.meta.half_life_days };
     const A = MoE.sideFromProfile(db.fighters["alexander-volkanovski"], "2026-12-12", o);
     const B = MoE.sideFromProfile(db.fighters["justin-gaethje"], "2026-12-12", o);
-    const pml = MoE.featLR(doc.feat, A, B, { division: "Lightweight" });
+    const pml = MoE.featLR(doc.feat, A, B, { division: "Lightweight", homeA: A.home, homeB: B.home });
     const gate = MoE.gateFromSides(A, B, { division: "Lightweight", rounds: 5 });
-    const r = prod.predict({ experts: { engine: 0.6, ml: pml, feat_lr: pml, elo: MoE.eloProb(A.elo, B.elo) }, gate });
-    const rm = prod.predict({ experts: { engine: 0.6, ml: pml, feat_lr: pml, elo: MoE.eloProb(A.elo, B.elo), market: MoE.devig(160, -180) }, gate });
+    const ex = { engine: 0.6, feat_lr: pml, elo: MoE.eloProb(A.elo, B.elo) };
+    const mj = path.join(ROOT, "data/derived/market.json");
+    if (fs.existsSync(mj)) {
+      const MJ = JSON.parse(fs.readFileSync(mj, "utf8")), R = (MJ.ratings && typeof MJ.ratings === "object") ? MJ.ratings : {};
+      const ra = R["alexander-volkanovski"], rb = R["justin-gaethje"];
+      if (ra && rb) ex.mkt_rating = MoE.ratingProb(ra[0], ra[1], rb[0], rb[1]);
+    }
+    const r = prod.predict({ experts: ex, gate });
+    const rm = prod.predict({ experts: Object.assign({ market: MoE.devig(160, -180) }, ex), gate });
+    const fmt = (o) => Object.entries(o).map(([k, v]) => k + " " + v.toFixed(2)).join(", ");
     check("live profiles: Volkanovski vs Gaethje evaluates", pml > 0.05 && pml < 0.95 && r.p > 0 && r.p < 1,
-      `featLR ${pml.toFixed(3)}, MoE (engine 0.60, no market) ${r.p.toFixed(3)}, with market +160/-180 ${rm.p.toFixed(3)}; weights ` +
-      Object.entries(rm.weights).map(([k, v]) => k + " " + v.toFixed(2)).join(", "));
+      `featLR ${pml.toFixed(3)}${ex.mkt_rating ? ", market rating " + ex.mkt_rating.toFixed(3) : ""}; MoE (engine 0.60, no line) ` +
+      `${r.p.toFixed(3)} [${fmt(r.weights)}]; with line +160/-180 ${rm.p.toFixed(3)} [${fmt(rm.weights)}]`);
+    // an untrained pattern (ml without elo_sig) falls back to the largest trained pattern and says so
+    const rf = prod.predict({ experts: Object.assign({ ml: 0.6 }, ex), gate });
+    check("untrained pattern falls back and reports ignored experts", rf.ignored && rf.ignored.indexOf("ml") >= 0 && rf.p > 0 && rf.p < 1,
+      "ignored: " + rf.ignored.join(", "));
   }
 }
 

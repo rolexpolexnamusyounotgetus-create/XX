@@ -88,13 +88,24 @@
   }
 
   function linearLogit(model, L, used) {
-    var key = used.join("+"), w = model.linear && model.linear[key];
-    if (!w) throw new Error("MoE: no linear weights for expert pattern " + key);
+    var key = used.join("+"), w = model.linear && model.linear[key], ignored = [];
+    if (!w) {
+      // untrained availability pattern (e.g. ml without elo_sig): use the largest trained pattern contained in
+      // the given experts and report the experts it leaves out
+      var best = null;
+      for (var kk in model.linear) {
+        var parts = kk.split("+");
+        if (parts.every(function (e) { return used.indexOf(e) >= 0; }) && (!best || parts.length > best.length)) best = parts;
+      }
+      if (!best) throw new Error("MoE: no linear weights for expert pattern " + key);
+      w = model.linear[best.join("+")];
+      ignored = used.filter(function (e) { return best.indexOf(e) < 0; });
+    }
     var z = 0, contrib = {};
     for (var k in w) { var c = w[k] * L[k]; contrib[k] = c; z += c; }
     var tot = 0; for (k in w) tot += w[k];
     var weights = {}; for (k in w) weights[k] = tot > 0 ? w[k] / tot : 0;
-    return { z: z, contrib: contrib, weights: weights, scale: tot };
+    return { z: z, contrib: contrib, weights: weights, scale: tot, ignored: ignored };
   }
 
   function predictWith(model, inputs) {
@@ -112,7 +123,7 @@
     }
     if (!used.length) throw new Error("MoE: no expert probabilities given");
     var raw = gateVector((inputs && inputs.gate) || {}), g = standardise(model, raw);
-    var z, weights = {}, contrib = {}, scale = 1;
+    var z, weights = {}, contrib = {}, scale = 1, ignoredOut = [];
     if (model.method === "gated") {
       (model.presence_groups || []).forEach(function (gr) {
         g.push(gr.every(function (e) { return e in L; }) ? 1 : 0);
@@ -133,6 +144,7 @@
     } else if (model.method === "linear") {
       var r = linearLogit(model, L, used);
       z = r.z; weights = r.weights; contrib = r.contrib; scale = r.scale;
+      if (r.ignored.length) { used = used.filter(function (e) { return r.ignored.indexOf(e) < 0; }); ignoredOut = r.ignored; }
     } else if (model.method === "gbm" || model.method === "gbm_res") {
       var x1 = [], x2 = [];
       for (i = 0; i < E.length; i++) { var l = E[i] in L ? L[E[i]] : NaN; x1.push(l); x2.push(-l); }
@@ -142,7 +154,7 @@
     } else throw new Error("MoE: unknown method " + model.method);
     var pRaw = sigm(z), pc2 = calibrate(model.calibration, pRaw);
     return { p: pc2, pRaw: pRaw, z: z, weights: weights, scale: scale, contrib: contrib, used: used, gate: raw,
-      method: model.method };
+      method: model.method, ignored: ignoredOut };
   }
 
   /** P(A) from a Gaussian rating on the log-odds scale (tools/market.py market rating: mu, sd per fighter). */

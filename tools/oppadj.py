@@ -889,6 +889,20 @@ def winner_proxy(D, feats):
     return res
 
 
+def subgroups(D, dv_a, dv_b, mask):
+    """Held-out deviance gain (a - b) by the attacker's prior UFC fights and by year, as % of a's deviance."""
+    n_prior = np.array([e[t]["n"] for e in D.entries for t in ("A", "B")])
+    yr = np.array([e["date"][:4] for e in D.entries for _ in (0, 1)])
+    out = {}
+    for lab, g in (("prior_fights_1_3", (n_prior <= 3)), ("prior_fights_4_8", (n_prior >= 4) & (n_prior <= 8)),
+                   ("prior_fights_9_plus", n_prior >= 9), ("2024", yr == "2024"), ("2025", yr == "2025"),
+                   ("2026", yr == "2026")):
+        m = mask & g
+        a, b = dv_a[m].sum(), dv_b[m].sum()
+        out[lab] = {"n": int(m.sum()), "gain_pct": rnd(100 * (a - b) / max(a, 1e-9), 3)}
+    return out
+
+
 def boot_ll(a, b, nb=2000, seed=11):
     rng = np.random.default_rng(seed)
     d = a - b
@@ -1202,6 +1216,7 @@ def main():
             "half_life_scan": hl_scan,
             "k_scan_at_chosen_half_life": k_scan,
             "half_life_scan_at_chosen_k": hl_at_k,
+            "final_vs_engine_by_group": subgroups(D, dv_eng["dev"], dv_fin["dev"], te),
             "combination_exponents_tune": {
                 "opp_adjusted": comb_fit(ev, name, adj_terms(ev, so, sd, sc)),
                 "engine_raw": comb_fit(ev, name, raw_terms(ev, name, ev.engine_R))},
@@ -1270,6 +1285,7 @@ def main():
             row[w]["vs_engine_mae_per_side_95"] = [rnd(bm[0] / te.sum(), 4), rnd(bm[1] / te.sum(), 4),
                                                    rnd(bm[2] / te.sum(), 4)]
         row["n_test_sides"] = int(te.sum())
+        row["final_vs_engine_by_group"] = subgroups(D, dvs["engine"], dvs["final"], te)
         res["composites"][k] = row
         print("composite %-7s test dev engine %.0f raw-tuned %.0f full %.0f final %.0f | MAE %.2f / %.2f / %.2f / %.2f"
               % (k, row["engine"]["test_dev"], row["raw_tuned"]["test_dev"], row["full"]["test_dev"],

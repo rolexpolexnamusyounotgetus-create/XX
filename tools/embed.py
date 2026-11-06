@@ -847,33 +847,27 @@ def prior_for(priors, e):
     return py.get(g) or py["ALL"]
 
 
-def emb_lookup(fits, D):
-    """day, slug -> embedding (2K) of the latest refit dated on or before day, and its exposure."""
-    Ts = np.array([f["T"] for f in fits])
-    def get(day, slug):
-        j = int(np.searchsorted(Ts, day, side="right")) - 1
-        if j < 0:
+def walk_lookup(walk):
+    """entry -> (embedding A, embedding B, refit parameters, exposure A, exposure B) from a production walk."""
+    def get(e):
+        v = walk["fight"].get(e["id"])
+        if v is None:
             return None
-        i = D.slug_idx.get(slug)
-        fit = fits[j]
-        if i is None:
-            return np.zeros(2 * fit["A"].shape[1]), fit, 0.0
-        return np.r_[fit["A"][i], fit["D"][i]], fit, fit["expo"][i]
+        return v[1], v[2], walk["quarters"][v[0]]["P"], v[3], v[4]
     return get
 
 
-def build_table(entries, priors, fits, D):
+def build_table(entries, priors, lookup, D):
     """One row per snapshot fight: baseline features per side, embeddings, embedding-model outputs, outcomes."""
-    get = emb_lookup(fits, D)
     rows = []
     for e in entries:
-        day = dt.date.fromisoformat(e["date"]).toordinal()
-        ga, gb = get(day, e["A"]["slug"]), get(day, e["B"]["slug"])
-        if ga is None or gb is None:
+        g = lookup(e)
+        if g is None:
             continue
+        day = dt.date.fromisoformat(e["date"]).toordinal()
         pri = prior_for(priors, e)
         div = D.didx.get(e["division"], D.didx.get(e.get("prior_division"), D.didx["Lightweight"]))
-        rows.append((e, day, div, pri, side_feats(e["A"], pri), side_feats(e["B"], pri), ga, gb))
+        rows.append((e, day, div, pri, side_feats(e["A"], pri), side_feats(e["B"], pri), g))
     T = {}
     T["entries"] = [r[0] for r in rows]
     T["id"] = [r[0]["id"] for r in rows]
@@ -890,24 +884,23 @@ def build_table(entries, priors, fits, D):
     T["FB"] = np.array([[r[5][k] for k in names] for r in rows], dtype=float)
     T["prior"] = [r[3] for r in rows]
     T["EA"] = np.array([r[6][0] for r in rows])
-    T["EB"] = np.array([r[7][0] for r in rows])
-    T["XA"] = np.array([r[6][2] for r in rows])
-    T["XB"] = np.array([r[7][2] for r in rows])
+    T["EB"] = np.array([r[6][1] for r in rows])
+    T["XA"] = np.array([r[6][3] for r in rows])
+    T["XB"] = np.array([r[6][4] for r in rows])
     # embedding-model outputs with the parameters of each fight's refit
     n = len(rows)
     T["s_win"] = np.zeros(n)
     T["eta_ab"] = np.zeros((n, NT))
     T["eta_ba"] = np.zeros((n, NT))
-    fit_of = np.array([id(r[6][1]) for r in rows])
+    fit_of = np.array([id(r[6][2]) for r in rows])
     for fid_ in np.unique(fit_of):
         ii = np.nonzero(fit_of == fid_)[0]
-        P = rows[ii[0]][6][1]["P"]
-        Pf = dict(P)
-        Pf["A"] = np.zeros((1, P["W"].shape[1]))
+        P = dict(rows[ii[0]][6][2])
+        P["A"] = np.zeros((1, P["W"].shape[1]))
         ea, eb = T["EA"][ii], T["EB"][ii]
-        T["s_win"][ii] = win_logit_emb(Pf, ea, eb)
-        T["eta_ab"][ii] = eta_pair(Pf, T["div"][ii], T["era"][ii], T["five"][ii], ea, eb)
-        T["eta_ba"][ii] = eta_pair(Pf, T["div"][ii], T["era"][ii], T["five"][ii], eb, ea)
+        T["s_win"][ii] = win_logit_emb(P, ea, eb)
+        T["eta_ab"][ii] = eta_pair(P, T["div"][ii], T["era"][ii], T["five"][ii], ea, eb)
+        T["eta_ba"][ii] = eta_pair(P, T["div"][ii], T["era"][ii], T["five"][ii], eb, ea)
     T["winner"] = np.array([{"A": 1.0, "B": 0.0}.get(r[0]["result"]["winner"], np.nan) for r in rows])
     # actual stat lines
     act = []
@@ -1218,3 +1211,121 @@ def eval_stats(T, verbose=True):
                       100 * out["gain"]["ci95"][1]))
     res["mean_rel"] = {k: round(float(v.sum() / len(STATS)), 4) for k, v in all_dev.items()}
     return res
+
+
+# ------------------------------------------------------------------------------------------------ production walk
+def production_walk(D, hp, noise, start, end, cold_sweeps=30, warm_sweeps=6, light_iters=2, verbose=True,
+                    tag=""):
+    """Quarterly full refits on [start, end) plus a light (fighter-only Newton) update after every event, so the
+    embedding used for a fight dated d has seen every earlier fight. A final full refit at `end`.
+
+    Returns {"quarters": [{T, P (loadings, intercepts, head), A, D}], "fight": {fid: [q, embA, embB, expoA,
+    expoB]}, "final": {T, P, A, D}}; the quarters are Procrustes-chained to each other."""
+    qdates = refit_dates(start, end, "quarter")
+    days = sorted({f.day for f in D.all_fights if start.toordinal() <= f.day < end.toordinal()})
+    by_day = defaultdict(list)
+    for f in D.all_fights:
+        if start.toordinal() <= f.day < end.toordinal() and f.persons and f.persons[0] != f.persons[1]:
+            by_day[f.day].append(f)
+    out = {"quarters": [], "fight": {}, "hp": hp}
+    P_prev = None
+    t0 = time.time()
+    lam_hl = math.log(2) / hp["hl"]
+    for qi, Tq in enumerate(qdates):
+        Tn = qdates[qi + 1] if qi + 1 < len(qdates) else end.toordinal()
+        f = Fit(D, Tq, hp, noise, warm=P_prev, max_sweeps=cold_sweeps if P_prev is None else warm_sweeps, tol=1e-6)
+        P = align(f.P, P_prev, exposure(D, Tq, hp["hl"])) if P_prev is not None else f.P
+        P_prev = P
+        out["quarters"].append({"T": Tq, "P": {k: v.copy() for k, v in P.items() if k not in ("A", "D")},
+                                "A": P["A"].copy(), "D": P["D"].copy(), "sweeps": f.sweeps})
+        cur = P
+        for d in [x for x in days if Tq <= x < Tn]:
+            fl = by_day[d]
+            expo = exposure(D, d, hp["hl"])
+            for fo in fl:
+                if fo.persons[0] not in D.pidx or fo.persons[1] not in D.pidx:
+                    continue
+                a, b = D.pidx[fo.persons[0]], D.pidx[fo.persons[1]]
+                out["fight"][fo.fid] = [qi, np.r_[cur["A"][a], cur["D"][a]], np.r_[cur["A"][b], cur["D"][b]],
+                                        float(expo[a]), float(expo[b])]
+            who = sorted({D.pidx[p] for fo in fl if fo.stats for p in fo.persons if p in D.pidx})
+            if who and d + 1 < Tn:
+                lf = Fit(D, d + 1, hp, noise, warm=cur, who=np.array(who), light_iters=light_iters)
+                cur = lf.P
+        if verbose:
+            print("%s quarter %s: %d sweeps, %d fights recorded, %.0fs" % (
+                tag, dt.date.fromordinal(Tq), f.sweeps, len(out["fight"]), time.time() - t0), flush=True)
+    f = Fit(D, end.toordinal(), hp, noise, warm=P_prev, max_sweeps=warm_sweeps * 2, tol=1e-6)
+    P = align(f.P, P_prev, exposure(D, end.toordinal(), hp["hl"]))
+    out["final"] = {"T": end.toordinal(), "P": {k: v.copy() for k, v in P.items() if k not in ("A", "D")},
+                    "A": P["A"].copy(), "D": P["D"].copy(), "sweeps": f.sweeps}
+    if verbose:
+        print("%s final refit %s: %d sweeps, %.0fs" % (tag, end, f.sweeps, time.time() - t0), flush=True)
+    return out
+
+
+def lin_transform(W, Vv, ua, ud, M, SA, SD):
+    """Loadings / head after the fighter-space change a' = a SA, d' = d SD (predictions unchanged)."""
+    iA, iD = np.linalg.inv(SA), np.linalg.inv(SD)
+    return W @ iA.T, Vv @ iD.T, iA @ ua, iD @ ud, iA @ M @ iD.T
+
+
+def apply_walk(walk, SA, SD):
+    """Apply a fighter-space change to every stored quarter, fight embedding and the final refit."""
+    K = SA.shape[0]
+    for q in walk["quarters"] + [walk["final"]]:
+        q["A"], q["D"] = q["A"] @ SA, q["D"] @ SD
+        P = q["P"]
+        P["W"], P["V"], P["ua"], P["ud"], P["M"] = lin_transform(P["W"], P["V"], P["ua"], P["ud"], P["M"], SA, SD)
+    for v in walk["fight"].values():
+        for j in (1, 2):
+            v[j] = np.r_[v[j][:K] @ SA, v[j][K:] @ SD]
+
+
+def varimax(L, gamma=1.0, iters=200, tol=1e-8):
+    p, k = L.shape
+    R = np.eye(k)
+    d = 0
+    for _ in range(iters):
+        Lr = L @ R
+        u, s, vt = np.linalg.svd(L.T @ (Lr ** 3 - (gamma / p) * Lr @ np.diag((Lr ** 2).sum(0))))
+        R = u @ vt
+        d_new = s.sum()
+        if d_new < d * (1 + tol):
+            break
+        d = d_new
+    return R
+
+
+def stitch_and_orient(w1, w2, D, hp, ref_date=dt.date(2019, 1, 1)):
+    """Align chunk 2 onto chunk 1 at their shared date, then rotate everything to varimax axes of the loadings
+    of the refit at ref_date (training data only), orient and scale each axis (unit sd over fighters with a
+    decayed fight count >= 1 at ref_date). Returns the merged walk."""
+    ref = w1["final"]
+    first = w2["quarters"][0]
+    assert ref["T"] == first["T"]
+    wts = exposure(D, ref["T"], hp["hl"])
+    RA = procrustes(first["A"], ref["A"], wts)
+    RD = procrustes(first["D"], ref["D"], wts)
+    apply_walk(w2, RA, RD)
+    merged = {"quarters": w1["quarters"] + w2["quarters"], "fight": {**w1["fight"], **w2["fight"]},
+              "final": w2["final"], "hp": hp, "stitch": {"RA_dev_from_I": float(np.abs(RA - np.eye(len(RA))).max())}}
+    q = next(x for x in merged["quarters"] if x["T"] == ref_date.toordinal())
+    GA = varimax(q["P"]["W"])
+    GD = varimax(q["P"]["V"])
+    apply_walk(merged, GA, GD)
+    q = next(x for x in merged["quarters"] if x["T"] == ref_date.toordinal())
+    W, Vv = q["P"]["W"], q["P"]["V"]
+    # offense: largest loading positive; defense: largest loading negative (higher = opponents do less)
+    sa = np.sign(W[np.abs(W).argmax(0), np.arange(W.shape[1])])
+    sd = -np.sign(Vv[np.abs(Vv).argmax(0), np.arange(Vv.shape[1])])
+    act = exposure(D, ref_date.toordinal(), hp["hl"]) >= 1.0
+    scA = q["A"][act].std(0) + 1e-9
+    scD = q["D"][act].std(0) + 1e-9
+    # order the axes by how much they move predictions (loading norm x fighter sd)
+    oa = np.argsort(-(np.sqrt((W ** 2).sum(0)) * scA))
+    od = np.argsort(-(np.sqrt((Vv ** 2).sum(0)) * scD))
+    PA = np.eye(len(oa))[:, oa]
+    PD = np.eye(len(od))[:, od]
+    apply_walk(merged, np.diag(sa / scA) @ PA, np.diag(sd / scD) @ PD)
+    return merged

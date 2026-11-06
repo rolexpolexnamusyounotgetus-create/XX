@@ -98,6 +98,7 @@ DEV.head = function (i, yaw, mode) {
 DEV.hideExtras = function (hide) { extras.forEach(function (a) { a.rig.root.visible = !hide && !a.avatar; if (a.avatar) a.avatar.group.visible = !hide; }); };
 DEV.live = function (want) {
   DEV.hideExtras(true);
+  show.A.opp = show.B; show.B.opp = show.A; show.R.opp = null;
   var E = FightEngine, m = E.volkGaethje(E.presetKnobs("baseline")), seed, fight;
   want = want || "kd";
   for (seed = 1; seed < 5000; seed++) {

@@ -205,8 +205,10 @@ and reversals (slopes 0.5-0.64), and too shrunk on distance and head attempts an
 | td_acc | 1.7628 | 1.7282 | 1.6746 | 1.6794 | 1.6774 | **1.6619** | 0.10 / 0.72 / 0.44 |
 | kd_h | 0.8884 | 0.9135 | 0.8552 | 0.8629 | 0.8571 | **0.8537** | 0.60 / 0.00 / 0.40 |
 
-The stack beats every single component on every stat in CV. On validation the stack is best or within
-0.01 of the best component on every stat.
+The stack beats every single component on every stat in CV. On validation it is the best model for 9 stats and
+within 1.3% of the best single component on the others (largest gaps: leg accuracy 1.779 vs 1.757 for the GBM
+alone, body accuracy 1.873 vs 1.861 for the GLM, ground attempts 13.713 vs 13.681 for the MLP). No single
+component is reliably better across stats, so the stack is the safe choice.
 
 ## What the model learned (engine insights)
 

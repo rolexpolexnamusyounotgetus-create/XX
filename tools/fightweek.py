@@ -8,6 +8,7 @@ Run from the project root:
     python3 tools/fightweek.py fetch-sherdog   # Sherdog fighter pages for nationality gaps (cached)
     python3 tools/fightweek.py build           # parse caches -> data/derived/fightweek.json (no network)
     python3 tools/fightweek.py eval            # walk-forward check (train 2012-2023, validate 2024-2025)
+    python3 tools/fightweek.py report          # markdown tables for research/data_fightweek.md
     python3 tools/fightweek.py all             # build + eval (no network)
 
 Sources (all cached raw under data/raw/web_cache/<site>/, gitignored):
@@ -2202,6 +2203,7 @@ def cmd_eval(args):
             "home": ha - hb, "home_x_fullcrowd": (ha - hb) * full, "home_x_nocrowd_or_apex": (ha - hb) * (1 - full),
             "home_fullcrowd_outside_usa": (ha - hb) * full * float(r["venue"]["iso3"] != "USA"),
             "home_fullcrowd_in_usa": (ha - hb) * full * float(r["venue"]["iso3"] == "USA"),
+            "usa_national": float(r["nat"].get("A") == "USA") - float(r["nat"].get("B") == "USA"),
             "tz_shift_per6h": (tza - tzb) / 6.0,
             "altitude_adapted_at_altitude": (ea - eb) * hi,
             "elo_x_nocrowd": elo * float(r["no_crowd"]), "elo_x_altitude_km": elo * alt,
@@ -2236,12 +2238,22 @@ def cmd_eval(args):
                                           "val_logloss": float(l0.mean()),
                                           "val_brier": float(((p0 - y[va]) ** 2).mean())}
 
-    def summarize(cols, label):
+    base2 = base + ["log_prior_fights"]
+    ib2 = [names.index(k) for k in base2]
+    b02, _ = fit_logit(X[tr][:, ib2], y[tr])
+    p02 = sym_pred(X[va][:, ib2], b02)
+    l02 = ll(p02, y[va])
+    res["models"]["base2: elo + debut + log prior UFC fights"] = {
+        "coef": dict(zip(base2, map(float, b02))), "val_logloss": float(l02.mean()),
+        "val_brier": float(((p02 - y[va]) ** 2).mean()),
+        "note": "a stronger baseline: experienced fighters underperform Elo (age / decline), not a fight-week effect"}
+
+    def summarize(cols, label, ref=None):
         ii = [names.index(k) for k in cols]
         bb, cc = fit_logit(X[tr][:, ii], y[tr])
         p1 = sym_pred(X[va][:, ii], bb)
         l1 = ll(p1, y[va])
-        d = l1 - l0
+        d = l1 - (l0 if ref is None else ref)
         bd = d[boot_idx].mean(axis=1)
         se = np.sqrt(np.diag(cc))
         out = {"coef": {k: {"b": float(bb[j]), "se": float(se[j]), "ci95": [float(bb[j] - 1.96 * se[j]),
@@ -2250,7 +2262,7 @@ def cmd_eval(args):
                             "nonzero_train": int((X[tr][:, ii[j]] != 0).sum())}
                         for j, k in enumerate(cols)},
                "val_logloss": float(l1.mean()), "val_brier": float(((p1 - y[va]) ** 2).mean()),
-               "val_delta_logloss_vs_base": float(d.mean()),
+               "val_delta_logloss_vs_base": float(d.mean()), "delta_vs": "base" if ref is None else "base2",
                "val_delta_ci95": [float(np.percentile(bd, 2.5)), float(np.percentile(bd, 97.5))]}
         # replication on the validation years (estimate only; not used to choose anything)
         bv, cv = fit_logit(X[va][:, ii], y[va])
@@ -2258,20 +2270,22 @@ def cmd_eval(args):
         out["val_refit"] = {k: {"b": float(bv[j]), "ci95": [float(bv[j] - 1.96 * sv[j]), float(bv[j] + 1.96 * sv[j])],
                                 "nonzero_val": int((X[va][:, ii[j]] != 0).sum())}
                             for j, k in enumerate(cols) if k not in base}
-        res["models" if label.startswith("full") else "single"][label] = out
+        res["models" if label.startswith(("full", "pair", "robust")) else "single"][label] = out
         return out
     extra = [k for k in names if k not in base and k != "log_prior_fights"]
     for k in extra:
         summarize(base + [k], k)
-    summarize(base + ["log_prior_fights", "missed", "replacement", "repl_le14d"],
-              "robust: + log prior UFC fights control")
+    summarize(base2 + ["missed", "replacement", "repl_le14d"],
+              "robust: base2 + missed + replacement + repl_le14d (delta vs base2)", ref=l02)
+    summarize(base2 + ["missed", "replacement", "repl_le14d", "home_fullcrowd_outside_usa"],
+              "robust_intl: base2 + missed + replacement + repl_le14d + home outside USA (delta vs base2)", ref=l02)
     # opp_change is (almost) the mirror of replacement inside a bout (one side stepped in, the other kept his
     # slot), so the two are collinear: the multi-feature models carry the replacement family only
     curated = base + ["missed", "replacement", "repl_le14d", "home_x_fullcrowd", "home_x_nocrowd_or_apex"]
     full = summarize(curated, "full: elo + debut + missed + replacement + repl_le14d + home x crowd")
     summarize([k for k in names if not k.startswith("opp_change") and k not in ("home_fullcrowd_outside_usa",
                                                                                 "home_fullcrowd_in_usa",
-                                                                                "log_prior_fights")],
+                                                                                "log_prior_fights", "usa_national")],
               "full_all: every feature except opp_change")
     summarize(base + ["replacement", "repl_le14d"], "pair: replacement + repl_le14d")
     summarize(base + ["missed", "replacement", "repl_le14d"], "full_nohome: elo + debut + missed + replacement + repl_le14d")
@@ -2290,9 +2304,13 @@ def cmd_eval(args):
         log("%-30s %8.3f [%7.3f, %7.3f] %7.2f %6d | %+9.5f [%+9.5f, %+9.5f] | %6.3f [%.2f, %.2f] n=%d" % (
             k, c["b"], c["ci95"][0], c["ci95"][1], c["z"] or 0, c["nonzero_train"], o["val_delta_logloss_vs_base"],
             o["val_delta_ci95"][0], o["val_delta_ci95"][1], vr["b"], vr["ci95"][0], vr["ci95"][1], vr["nonzero_val"]))
-    for lab, o in list(res["models"].items())[1:]:
-        log("\n%s: val log loss %.4f (base %.4f), delta %+.5f [%+.5f, %+.5f]" % (
-            lab, o["val_logloss"], l0.mean(), o["val_delta_logloss_vs_base"], *o["val_delta_ci95"]))
+    log("base2 (elo + debut + log prior fights): coef %s; val log loss %.4f" % (
+        {k: round(v, 3) for k, v in res["models"]["base2: elo + debut + log prior UFC fights"]["coef"].items()},
+        l02.mean()))
+    for lab, o in list(res["models"].items())[2:]:
+        log("\n%s: val log loss %.4f (%s %.4f), delta %+.5f [%+.5f, %+.5f]" % (
+            lab, o["val_logloss"], o["delta_vs"], l0.mean() if o["delta_vs"] == "base" else l02.mean(),
+            o["val_delta_logloss_vs_base"], *o["val_delta_ci95"]))
         for k, c in o["coef"].items():
             log("   %-30s %8.3f [%7.3f, %7.3f]" % (k, c["b"], c["ci95"][0], c["ci95"][1]))
     # home advantage by period: fights with exactly one home fighter, full crowd, not the Apex
@@ -2350,9 +2368,83 @@ def cmd_eval(args):
     log("eval stored in %s meta.eval" % OUT)
 
 
+def cmd_report(args):
+    """Markdown tables for research/data_fightweek.md from fightweek.json (coverage by year, eval)."""
+    import statistics
+    d = json.load(open(OUT, encoding="utf-8"))
+    F, ev = d["fights"], d["meta"].get("eval")
+    by = defaultdict(Counter)
+    days, lbs = [], []
+    for r in F.values():
+        c = by[r["date"][:4]]
+        c["bouts"] += 1
+        for s_ in "AB":
+            c["missed"] += bool(r["missed"].get(s_))
+            if r["missed"].get(s_) and r["missed_weight"].get(s_) is not None:
+                c["missed_lbs"] += 1
+                lbs.append(r["missed_weight"][s_])
+            c["repl"] += bool(r["replacement"].get(s_))
+            if r["replacement"].get(s_) and r["short_notice"].get(s_) is not None:
+                c["repl_days"] += 1
+                days.append(r["short_notice"][s_])
+                c["repl_le14"] += r["short_notice"][s_] <= 14
+            c["oppchg"] += r["opp_change"].get(s_) is not None
+            c["nat"] += bool(r["nat"].get(s_))
+            c["home"] += bool(r["home"].get(s_))
+        c["catch"] += r["catchweight"]["is"]
+        c["nocrowd"] += r["no_crowd"]
+        c["apex"] += r["venue"]["apex"]
+        c["alt1000"] += (r["venue"]["altitude_m"] or 0) >= 1000
+    cols = ["bouts", "missed", "missed_lbs", "repl", "repl_days", "repl_le14", "oppchg", "catch", "nat", "home",
+            "nocrowd", "apex", "alt1000"]
+    heads = ["bouts", "missed weight", "with lbs", "replacements", "with days", "<=14 d", "opp. changes",
+             "catchweight", "sides with nat.", "home sides", "no crowd", "Apex", ">=1000 m"]
+    print("| year | " + " | ".join(heads) + " |")
+    print("|---" * (len(cols) + 1) + "|")
+    tot = Counter()
+    for y in sorted(by):
+        print("| %s | " % y + " | ".join(str(by[y][k]) for k in cols) + " |")
+        tot.update(by[y])
+    print("| **all** | " + " | ".join("**%d**" % tot[k] for k in cols) + " |")
+    if days:
+        q = statistics.quantiles(days, n=4)
+        print("\nnotice days: n=%d, median %g, quartiles %g / %g; <=7 d %d, 8-14 %d, 15-28 %d, 29-56 %d, >56 %d" % (
+            len(days), statistics.median(days), q[0], q[2], sum(x <= 7 for x in days),
+            sum(7 < x <= 14 for x in days), sum(14 < x <= 28 for x in days), sum(28 < x <= 56 for x in days),
+            sum(x > 56 for x in days)))
+    if lbs:
+        print("lbs over: n=%d, median %.2f, mean %.2f, max %.1f; >=4 lb %d" % (
+            len(lbs), statistics.median(lbs), statistics.mean(lbs), max(lbs), sum(x >= 4 for x in lbs)))
+    if not ev:
+        return
+    print("\n| feature (added to Elo + debut) | b (log-odds) | 95% CI, train 2012-23 | z | sides != 0 | "
+          "val dLL | 95% CI | val refit b [95% CI], n |")
+    print("|---|---|---|---|---|---|---|---|")
+    for k, o in ev["single"].items():
+        c = o["coef"][k]
+        v = o["val_refit"][k]
+        print("| %s | %+.3f | [%+.3f, %+.3f] | %.1f | %d | %+.4f | [%+.4f, %+.4f] | %+.2f [%+.2f, %+.2f], %d |" % (
+            k, c["b"], c["ci95"][0], c["ci95"][1], c["z"] or 0, c["nonzero_train"], o["val_delta_logloss_vs_base"],
+            o["val_delta_ci95"][0], o["val_delta_ci95"][1], v["b"], v["ci95"][0], v["ci95"][1], v["nonzero_val"]))
+    print("\n| model | val log loss | val Brier | delta log loss [95% CI] |")
+    print("|---|---|---|---|")
+    for lab, o in ev["models"].items():
+        dl = o.get("val_delta_logloss_vs_base")
+        print("| %s | %.4f | %.4f | %s |" % (lab, o["val_logloss"], o["val_brier"],
+                                            "%+.4f [%+.4f, %+.4f] vs %s" % (dl, *o["val_delta_ci95"], o["delta_vs"])
+                                            if dl is not None else "-"))
+    for lab, o in ev["models"].items():
+        if "coef" in o and isinstance(next(iter(o["coef"].values())), dict):
+            print("\n%s: " % lab + ", ".join("%s %+.3f [%+.3f, %+.3f]" % (k, c["b"], c["ci95"][0], c["ci95"][1])
+                                            for k, c in o["coef"].items()))
+    for key in ("descriptive_train", "home_by_period", "home_by_country_period", "missed_by_size_train"):
+        print("\n%s: %s" % (key, json.dumps({k: {kk: (round(vv, 3) if isinstance(vv, float) else vv)
+                                                for kk, vv in v.items()} for k, v in ev[key].items()})))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["fetch-wiki", "fetch-geo", "fetch-sherdog", "build", "eval", "all"])
+    ap.add_argument("cmd", choices=["fetch-wiki", "fetch-geo", "fetch-sherdog", "build", "eval", "report", "all"])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--no-search", action="store_true", help="fetch-sherdog: skip the name-search pass")
     args = ap.parse_args()
@@ -2366,6 +2458,8 @@ def main():
         cmd_build(args)
     elif args.cmd == "eval":
         cmd_eval(args)
+    elif args.cmd == "report":
+        cmd_report(args)
     else:
         cmd_build(args)
         cmd_eval(args)

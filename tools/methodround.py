@@ -8,8 +8,9 @@ Run from the project root (about 3-6 minutes on 4 cores):
     python3 tools/methodround.py --score sim.json    # score the simulator (or any model) on the same fights/metrics
 
 Reads   data/raw/*.csv (through tools/build_db.py's loaders, so people, aliases and Elo match the pipeline),
-        data/derived/fighters.json (roster outputs), and, when present, the method-prop odds of the
-        Ultimate UFC Dataset (ufc-master.csv; pass --uud PATH) as a market benchmark.
+        data/derived/backtest.json (fight ids), data/derived/fighters.json (roster outputs), and, when present,
+        data/derived/market.json (tools/market.py: closing moneylines, method / round props) and
+        data/raw/odds/nlbair_odds.csv (2013-2018 closing ranges) for the market variant and benchmark.
 Writes  data/derived/methodround.json   per-fight predictions keyed by backtest (ufcstats) fight id, held-out
                                         metrics, roster-level outputs keyed by slug, and a compact JS model
         research/model_methodround.md    method, held-out results with bootstrap CIs, calibration, recommendation
@@ -2011,6 +2012,19 @@ def write_report(o):
     L.append(_md_table(["Year", "n", "Method S", "Method S refit", "Method SM", "Method base", "Joint S",
                         "Joint base"], rows))
     L.append("")
+    L.append("## How to use the outputs\n")
+    L.append("""- `fights[id]` (every backtest.json fight, 2019+): `S` and `SM` hold the joint as A KO r1..R, A SUB r1..R,
+  B KO r1..R, B SUB r1..R, A dec, B dec, draw (R = scheduled rounds, A = first ufcstats name); `sum_S` has P(finish),
+  P(KO), P(SUB), P(dec), P(A), P(B) and the 7 bins; `fit_through` says which fit produced it (2019-2023 are
+  out-of-fold, 2024+ the fit through 2023; `S_refit` / `SM_refit` for 2025-2026).
+- `roster[slug]`: each fighter's win/lose-by-method shares against his current division field.
+- `js_model` + `tools/methodround_model.js`: `MethodRound.create(js_model).predict(profA, profB, {slugA, slugB,
+  division, rounds, title, date, pMarketA})` with fighters.json profiles; returns the cells, bins7, finish-round
+  distribution and method-given-win for each fighter (S without `pMarketA`, SM with it).
+- Score the simulator (or any model) on the same fights and metrics: write `{fight_id: {"cells": [...]}}` (same
+  layout as above) or `{fight_id: {"bins7": [...], "fin_round": [...]}}` and run
+  `python3 tools/methodround.py --score sim.json` (paired event-cluster bootstrap against model S).
+""")
     L.append("## Method\n")
     L.append("""**Data.** Every UFC bout in the ufcstats snapshot, parsed with `tools/build_db.py`'s own loaders so
 people, aliases and Elo match the pipeline. A walk-forward pass over all %d bouts since 2008 (both fighters with an
@@ -2122,9 +2136,9 @@ groups are roughly neutral for method (kept for the winner and for the page).
              % (_dci(mgw), rnd_txt))
     L.append("""1. **Use this model as the method/round prior and as the yardstick for the simulator.** The v3+ engine's
    simulated method distribution should be scored on the same held-out fights with the same metrics (method
-   3-class LL, finish LL, round-given-finish LL, 7-bin and joint LL, plus the calibration tables above). If the
-   engine does not beat model S on method and round, the page should take its method/round split from here and
-   use the engine for the play-by-play and the fight story.
+   3-class LL, finish LL, round-given-finish LL, 7-bin and joint LL, plus the calibration tables above):
+   `python3 tools/methodround.py --score sim.json`. If the engine does not beat model S on method and round, the
+   page should take its method/round split from here and use the engine for the play-by-play and the story.
 2. **Factorize the final forecast:** P(A wins) from the winner ensemble (market + Elo + engine + this model's
    winner), then P(method, round | winner) from this model's conditional shares (`methodGivenWin` in the JS
    output; the per-fight cells give the same). That keeps the winner question with the stack and uses this

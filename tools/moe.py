@@ -1348,9 +1348,10 @@ def report_and_export(args):
     rep["chosen"] = {"set": "page", "experts": experts,
                      "market": {"method": chosen["market"], "hp": page["regimes"]["market"]["methods"][chosen["market"]]["hp"]},
                      "nomarket": {"method": chosen["nomarket"], "hp": page["regimes"]["nomarket"]["methods"][chosen["nomarket"]]["hp"]},
-                     "rule": "per regime (market line present / absent) the stacker family + hyper-parameters with the lowest "
-                             "forward-chained CV log loss (validation years 2021-2023, train from 2019); calibration kind chosen "
-                             "nested inside the CV; 2024-2025 never used for a choice"}
+                     "rule": "per regime (market line present / absent): within each family the hyper-parameters with the "
+                             "lowest forward-chained CV log loss (validation years 2021-2023, train from 2019); across families the "
+                             "simplest (linear < gated < gbm_res < gbm) unless a more complex one is better by > 0.0005; calibration "
+                             "kind chosen nested inside the CV; 2024-2025 never used for a choice"}
     log("chosen for export: %s" % rep["chosen"])
     L = np.column_stack([logit(np.clip(P[k], PCLIP, 1 - PCLIP)) for k in experts])
     M = np.column_stack([np.isfinite(P[k]) for k in experts])
@@ -1519,7 +1520,7 @@ def report_and_export(args):
                  "experts": {
                      "market": "de-vigged closing moneyline P(A) (power method; MoE.devig(oddsA, oddsB)); optional",
                      "mkt_rating": "market rating P(A): MoE.ratingProb(muA, sdA, muB, sdB) with data/derived/market.json "
-                                   "meta.ratings[slug] = [mu, sd, ...]; leave out when either fighter has no rating",
+                                   "ratings[slug] = [mu, sd, last fight, fights seen]; leave out when either fighter has no rating",
                      "engine": "FightEngine.summarize pA / (pA + pB) (draws removed); leave out if the engine is not run",
                      "ml": "tools/ml.py page model: page_model.winner P(A) WITHOUT its Platt slope (matches ml.json "
                            "fights[*].lr); leave out (with elo_sig) when ml.json is not loaded",

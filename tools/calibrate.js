@@ -54,7 +54,10 @@ const V_MIN = 26;         // fight minutes
 const V_SL = 27, V_SA = 29, V_TL = 31, V_TA = 33, V_KD = 35, V_HL = 37, V_CT = 39, V_SUBA = 41;   // A, B pairs
 const V_SHL = 43;         // standing head landed (both)
 const V_DOC = 44;         // doctor + corner stoppages
-const NV = 45;
+const V_Z1 = 45, V_Z2 = 47;   // per side: sum and sum of squares of z = log((landed + 1) / (minutes + 0.5)) (per-fight output dispersion)
+const V_Q1 = 49, V_Q2 = 51;   // per side: sum and sum of squares of logit accuracy log((landed + 0.5) / (missed + 0.5))
+const V_F = 53;           // matchup constants (not sums): log power ratio A, B; log chin ratio A, B; years past chinAge0 A, B; prior KO losses A, B; lbs up / 10 A, B
+const NV = 63;
 
 function fightSeed(id, salt) { return ((parseInt(String(id).slice(0, 8), 16) >>> 0) ^ (salt >>> 0)) >>> 0; }
 
@@ -85,7 +88,18 @@ function simFight(E, m, N, fseed, out, o) {
     out[o + V_CT] += A.ctrl; out[o + V_CT + 1] += B.ctrl;
     out[o + V_SUBA] += A.sub_att; out[o + V_SUBA + 1] += B.sub_att;
     out[o + V_SHL] += A.sh_lnd + B.sh_lnd;
+    const mn = meth === "UD" || meth === "SD" || meth === "MD" || meth === "DRAW" ? nR * 5 : (f.round - 1) * 5 + f.t / 60;
+    const zA = Math.log((A.sig_lnd + 1) / (mn + 0.5)), zB = Math.log((B.sig_lnd + 1) / (mn + 0.5));
+    const qA = Math.log((A.sig_lnd + 0.5) / (A.sig_att - A.sig_lnd + 0.5)), qB = Math.log((B.sig_lnd + 0.5) / (B.sig_att - B.sig_lnd + 0.5));
+    out[o + V_Z1] += zA; out[o + V_Z1 + 1] += zB; out[o + V_Z2] += zA * zA; out[o + V_Z2 + 1] += zB * zB;
+    out[o + V_Q1] += qA; out[o + V_Q1 + 1] += qB; out[o + V_Q2] += qA * qA; out[o + V_Q2 + 1] += qB * qB;
   }
+  const fc = m.fac, a0 = m.p.chinAge0;
+  out[o + V_F] = Math.log(fc[0].powRaw); out[o + V_F + 1] = Math.log(fc[1].powRaw);
+  out[o + V_F + 2] = Math.log(fc[0].chinRaw); out[o + V_F + 3] = Math.log(fc[1].chinRaw);
+  out[o + V_F + 4] = m.ages[0] != null ? Math.max(0, m.ages[0] - a0) : 0; out[o + V_F + 5] = m.ages[1] != null ? Math.max(0, m.ages[1] - a0) : 0;
+  out[o + V_F + 6] = fc[0].koLosses || 0; out[o + V_F + 7] = fc[1].koLosses || 0;
+  out[o + V_F + 8] = (fc[0].lbsUp || 0) / 10; out[o + V_F + 9] = (fc[1].lbsUp || 0) / 10;
 }
 
 // ================================================================== worker
@@ -536,95 +550,87 @@ function ll7Of(idxs, qf) {
     const st = makeStore(); putResults(st, await pool.run(buildOver(xx), idxs, N, salt)); tuneInfo.evals++; return st;
   }
 
-  let beforeTest = null;
+  let beforeTest = null, fpLog = [], kdReg = null, noise = null;
   if (!FINAL_ONLY) {
     // ---------------- before tuning: a test read with the builder's parameters (reported only, never used for tuning)
     {
-      const NB = QUICK ? 40 : 150, st = await evalFull(x, TEST, NB, SALT_FINAL);
+      const NB = QUICK ? 40 : 100, st = await evalFull(x, TEST, NB, SALT_FINAL);
       const e = winnerMetrics(TEST, (g) => engineP(st, g)), e7 = ll7Of(TEST, (g) => engineQ7(st, g, NB)), ag = aggregates(st, TEST, NB), rs = rates(ag.sim), ra = rates(ag.act);
       beforeTest = { n_sims: NB, params_version: BASE.version, log_loss: r4(e.log_loss), brier: r4(e.brier), accuracy: r4(e.accuracy), ece: r4(e.ece), slope: r3(e.slope),
         outcome7_log_loss: r4(e7.log_loss), finish_sim: r4(rs.fin), finish_actual: r4(ra.fin), ko_sim: r4(rs.ko), sub_sim: r4(rs.sub), fin5_sim: r4(rs.fin5), fin5_actual: r4(ra.fin5) };
       log(`before tuning (test, N=${NB}): LL ${e.log_loss.toFixed(4)} Brier ${e.brier.toFixed(4)} acc ${(100 * e.accuracy).toFixed(1)}% ECE ${(100 * e.ece).toFixed(2)}% slope ${e.slope.toFixed(2)} 7-bin ${e7.log_loss.toFixed(4)} fin ${(100 * rs.fin).toFixed(1)}/${(100 * ra.fin).toFixed(1)}`);
     }
-    // ---------------- baseline on train
-    let cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE);
-    let best = objective(cur, TRAIN, N_TUNE);
-    tuneInfo.start = { obj: best.obj, llw: best.llw, ll7: best.ll7, pen: best.pen, dev: best.dev };
-    const show = (tag, o) => log(`${tag}: obj ${o.obj.toFixed(5)} = LLwin ${o.llw.toFixed(5)} + 0.5 x LL7 ${o.ll7.toFixed(5)} + pen ${o.pen.toFixed(5)} | ` +
+    const show = (tag, o, extra) => log(`${tag}: obj ${o.obj.toFixed(5)} = LLwin ${o.llw.toFixed(5)} + 0.5 x LL7 ${o.ll7.toFixed(5)} + pen ${o.pen.toFixed(5)} | ` +
       `fin3 ${(100 * o.s.fin3).toFixed(1)}/${(100 * o.a.fin3).toFixed(1)} fin5 ${o.s.fin5 != null ? (100 * o.s.fin5).toFixed(1) : "-"}/${o.a.fin5 != null ? (100 * o.a.fin5).toFixed(1) : "-"} ` +
       `KO ${(100 * o.s.ko).toFixed(1)}/${(100 * o.a.ko).toFixed(1)} SUB ${(100 * o.s.sub).toFixed(1)}/${(100 * o.a.sub).toFixed(1)} UD ${(100 * o.s.ud).toFixed(1)}/${(100 * o.a.ud).toFixed(1)} ` +
       `kd100 ${o.s.kd100.toFixed(3)}/${o.a.kd100.toFixed(3)} att15 ${o.s.sa15.toFixed(1)}/${o.a.sa15.toFixed(1)} acc ${(100 * o.s.acc).toFixed(1)}/${(100 * o.a.acc).toFixed(1)} ` +
-      `tdA15 ${o.s.ta15.toFixed(2)}/${o.a.ta15.toFixed(2)} tdAcc ${(100 * o.s.tdAcc).toFixed(1)}/${(100 * o.a.tdAcc).toFixed(1)} ctrl15 ${o.s.ctrl15.toFixed(0)}/${o.a.ctrl15.toFixed(0)} sub15 ${o.s.sub15.toFixed(3)}/${o.a.sub15.toFixed(3)}`);
-    show("baseline (train)", best);
-    history.push({ t: +mins().toFixed(2), what: "baseline", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
+      `tdA15 ${o.s.ta15.toFixed(2)}/${o.a.ta15.toFixed(2)} tdAcc ${(100 * o.s.tdAcc).toFixed(1)}/${(100 * o.a.tdAcc).toFixed(1)} ctrl15 ${o.s.ctrl15.toFixed(0)}/${o.a.ctrl15.toFixed(0)} sub15 ${o.s.sub15.toFixed(3)}/${o.a.sub15.toFixed(3)}` +
+      (extra ? " | " + extra : ""));
 
-    // ---------------- moment matching and base-rate fixed point (three dampened updates)
-    for (let mu = 0; mu < 3; mu++) {
-      x = momentUpdate(x, best.s, best.a, 0.85);
-      cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE); best = objective(cur, TRAIN, N_TUNE); tuneInfo.moment_updates++;
-      show(`moment update ${mu + 1}`, best);
-      history.push({ t: +mins().toFixed(2), what: "moment", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
+    // ---------------- stage 1: fixed point on data targets (train only)
+    let cur = null, best = null;
+    const nFP = QUICK ? 3 : opt("--fp", 8);
+    for (let it = 0; it <= nFP; it++) {
+      cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE); best = objective(cur, TRAIN, N_TUNE);
+      const D = dispersion(cur, TRAIN, N_TUNE), sl = slopeInfo(cur, TRAIN), K = kdRegression(cur, TRAIN);
+      const sh = shapeStats(best);
+      show(it === 0 ? "baseline (train)" : `fixed point ${it}`, best,
+        `slope ${sl.raw.toFixed(3)} (noise-corrected ${sl.corr.toFixed(3)}) | landed disp ${D.zRatio.toFixed(3)} acc disp ${D.qRatio.toFixed(3)} | R1 share 3rd ${(100 * sh.s1).toFixed(1)}/${(100 * sh.a1).toFixed(1)} | ` +
+        `KD reg d(pow) ${K.d[1].toFixed(3)}+-${K.se[1].toFixed(3)} d(chin) ${K.d[2].toFixed(3)}+-${K.se[2].toFixed(3)} d(ageChin) ${K.d[3].toFixed(4)}+-${K.se[3].toFixed(4)} ` +
+        `d(agePow) ${K.d[4].toFixed(4)}+-${K.se[4].toFixed(4)} d(koL) ${K.d[5].toFixed(3)}+-${K.se[5].toFixed(3)} d(up) ${K.d[6].toFixed(3)}+-${K.se[6].toFixed(3)}`);
+      fpLog.push({ it, obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen), slope: r3(sl.raw), slope_corr: r3(sl.corr), landed_disp: r3(D.zRatio), acc_disp: r3(D.qRatio),
+        r1_share_3rd: [r3(sh.s1), r3(sh.a1)], kd_reg: { d: K.d.map(r4), se: K.se.map(r4) }, x: Object.fromEntries(Object.entries(x).map(([k, v]) => [k, +v.toPrecision(4)])) });
+      history.push({ t: +mins().toFixed(2), what: it === 0 ? "baseline" : "fixed point", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
+      if (it === 0) tuneInfo.start = { obj: best.obj, llw: best.llw, ll7: best.ll7, pen: best.pen, dev: best.dev, slope: sl.raw };
+      kdReg = { d: K.d.map(r4), se: K.se.map(r4), names: K.names, n: K.n };
+      if (it === nFP || mins() > BUDGET_MIN * 0.6) break;
+      x = fixedPoint(x, best, D, K, sh, it < 2 ? 0.8 : 0.6);
+      tuneInfo.moment_updates++;
     }
 
-    // ---------------- coordinate descent with shrinking steps
+    // ---------------- stage 2: coordinate descent (shrinking steps) on the train objective for levers without a direct data target;
+    // a step is accepted only if it beats the Monte Carlo noise of the objective
+    noise = objNoise(cur, TRAIN, N_TUNE);
+    const THR = Math.max(0.0005, 1.0 * noise);
+    log(`objective Monte Carlo sd at N=${N_TUNE}: ${noise.toFixed(5)}; acceptance threshold ${THR.toFixed(5)}`);
     const steps = {}; for (const s of SPECS) steps[s.k] = s.step;
-    const THR = 0.0003;
     let stop = false;
-    for (let pass = 0; pass < 6 && !stop; pass++) {
-      let improvedAny = false, sinceAnchor = 0;
+    for (let pass = 0; pass < 3 && !stop; pass++) {
+      let improvedAny = false;
       for (const s0 of SPECS) {
-        if (sinceAnchor >= REANCHOR_EVERY && mins() <= BUDGET_MIN) {
-          x = momentUpdate(x, best.s, best.a, 0.85);
-          cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE); best = objective(cur, TRAIN, N_TUNE); tuneInfo.moment_updates++; sinceAnchor = 0;
-          show("re-anchor", best);
-          history.push({ t: +mins().toFixed(2), what: "moment", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
-        }
-        sinceAnchor++;
         if (mins() > BUDGET_MIN) { stop = true; break; }
         const s = Object.assign({}, s0, { step: steps[s0.k] });
         const subIdx = s.sub === "all" ? TRAIN : TRAIN.filter((g) => SUBSET[s.sub].has(g));
         let improved = false;
         for (const dir of [1, -1]) {
+          if (mins() > BUDGET_MIN) { stop = true; break; }
           const v = stepVal(s, x[s.k], dir);
           if (v === x[s.k]) continue;
           const xc = Object.assign({}, x, { [s.k]: v });
           const st = new Float64Array(cur); putResults(st, await pool.run(buildOver(xc), subIdx, N_TUNE, SALT_TUNE)); tuneInfo.evals++;
           const oc = objective(st, TRAIN, N_TUNE);
-          const tag = `pass ${pass + 1} ${s.k} ${x[s.k].toPrecision(4)} -> ${v.toPrecision(4)} (${subIdx.length} fights)`;
-          log(`${tag}: obj ${oc.obj.toFixed(5)} (best ${best.obj.toFixed(5)}) LLwin ${oc.llw.toFixed(5)} LL7 ${oc.ll7.toFixed(5)} pen ${oc.pen.toFixed(5)}${oc.obj < best.obj - THR ? "  accepted" : ""}`);
-          history.push({ t: +mins().toFixed(2), what: s.k, from: r4(x[s.k]), to: r4(v), obj: r4(oc.obj), llw: r4(oc.llw), ll7: r4(oc.ll7), pen: r4(oc.pen), accepted: oc.obj < best.obj - THR });
-          if (oc.obj < best.obj - THR) {
-            x = xc; cur = st; best = oc; improved = true; improvedAny = true;
-            // one extension step in the same direction
-            const v2 = stepVal(s, x[s.k], dir);
-            if (v2 !== x[s.k] && mins() <= BUDGET_MIN) {
-              const xe = Object.assign({}, x, { [s.k]: v2 });
-              const st2 = new Float64Array(cur); putResults(st2, await pool.run(buildOver(xe), subIdx, N_TUNE, SALT_TUNE)); tuneInfo.evals++;
-              const oe = objective(st2, TRAIN, N_TUNE);
-              log(`  extend ${s.k} -> ${v2.toPrecision(4)}: obj ${oe.obj.toFixed(5)}${oe.obj < best.obj - THR ? "  accepted" : ""}`);
-              history.push({ t: +mins().toFixed(2), what: s.k + " (extend)", from: r4(x[s.k]), to: r4(v2), obj: r4(oe.obj), llw: r4(oe.llw), ll7: r4(oe.ll7), pen: r4(oe.pen), accepted: oe.obj < best.obj - THR });
-              if (oe.obj < best.obj - THR) { x = xe; cur = st2; best = oe; }
-            }
-            break;
-          }
+          const acc = oc.obj < best.obj - THR;
+          log(`CD pass ${pass + 1} ${s.k} ${x[s.k].toPrecision(4)} -> ${v.toPrecision(4)} (${subIdx.length} fights): obj ${oc.obj.toFixed(5)} (best ${best.obj.toFixed(5)}) LLwin ${oc.llw.toFixed(5)} LL7 ${oc.ll7.toFixed(5)} pen ${oc.pen.toFixed(5)}${acc ? "  accepted" : ""}`);
+          history.push({ t: +mins().toFixed(2), what: s.k, from: r4(x[s.k]), to: r4(v), obj: r4(oc.obj), llw: r4(oc.llw), ll7: r4(oc.ll7), pen: r4(oc.pen), accepted: acc });
+          if (acc) { x = xc; cur = st; best = oc; improved = true; improvedAny = true; break; }
         }
         if (!improved) steps[s0.k] = s0.kind === "mul" ? Math.sqrt(steps[s0.k]) : steps[s0.k] / 2;
       }
       tuneInfo.passes = pass + 1;
-      // re-anchor the volume scales after each pass
-      if (!stop || mins() < BUDGET_MIN + 5) {
-        x = momentUpdate(x, best.s, best.a, 0.85);
-        cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE); best = objective(cur, TRAIN, N_TUNE); tuneInfo.moment_updates++;
-        show(`after pass ${pass + 1} + moment update`, best);
-        history.push({ t: +mins().toFixed(2), what: "moment", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
-      }
-      log("x = " + JSON.stringify(Object.fromEntries(Object.entries(x).map(([k, v]) => [k, +v.toPrecision(4)]))));
-      if (!improvedAny) { log("no parameter improved in this pass; stopping"); break; }
+      if (!improvedAny) { log("coordinate descent: no step beat the noise threshold in this pass; stopping"); break; }
     }
+    // re-anchor the data-target scales once more if anything moved in stage 2
+    if (history.some((h) => h.accepted)) {
+      const D = dispersion(cur, TRAIN, N_TUNE), K = kdRegression(cur, TRAIN), sh = shapeStats(best);
+      x = fixedPoint(x, best, D, K, sh, 0.6, true);
+      cur = await evalFull(x, TRAIN, N_TUNE, SALT_TUNE); best = objective(cur, TRAIN, N_TUNE); tuneInfo.moment_updates++;
+      show("final re-anchor", best);
+      history.push({ t: +mins().toFixed(2), what: "fixed point", obj: r4(best.obj), llw: r4(best.llw), ll7: r4(best.ll7), pen: r4(best.pen) });
+    }
+    log("x = " + JSON.stringify(Object.fromEntries(Object.entries(x).map(([k, v]) => [k, +v.toPrecision(4)]))));
     tuneInfo.end = { obj: best.obj, llw: best.llw, ll7: best.ll7, pen: best.pen, dev: best.dev };
     try { fs.writeFileSync(path.join(os.tmpdir(), "calibrate_x.json"), JSON.stringify(x)); } catch (e) { /* checkpoint only */ }
   } else {
-    // --final-only: evaluate the parameters in src/params3.js as they stand
     log("final-only: evaluating src/params3.js as is");
   }
   const tuneMin = mins();

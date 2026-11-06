@@ -1533,11 +1533,41 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
         "p_10_10": float(1 / (1 + np.exp(-th["lg_e10"]))),
         "deduction_prior": dict(zip(["one_point_per_fighter", "two_points_per_fighter", "both_one_point"],
                                     map(float, np.exp(th["lpi"]))))}
+    if "se_global" in final_fit:
+        se = final_fit["se_global"]
+        J["league"]["se"] = {"beta": dict(zip(FEATS, map(float, se["beta"]))),
+                             "era_trend_per_decade": dict(zip(GROUP_NAMES, map(float, se["w"]))),
+                             "log_sigma_shared": float(se["log_su"]),
+                             "home": {"usa_events": float(se["h"][0]), "outside_usa": float(se["h"][1])},
+                             "ten_eight_theta": dict(zip(["V", "K", "G", "u"], map(float, se["th"]))),
+                             "c0": float(se["c0"]),
+                             "note": "Laplace (inverse Hessian of the MAP objective over the global block, judge "
+                                     "effects held at their MAP values)"}
     jt, league_idx, league108 = judge_table(final_fit, rows, {})
     jt.sort(key=lambda d: -d["cards"])
     J["league_canonical"] = {"round_prob": league_idx, "p108_dominant": league108}
     J["judges"] = jt
     J["region_pools"] = region_pools(rows, jt)
+    jmap = {j["key"]: j for j in jt}
+    regsum = {}
+    for reg, pool in J["region_pools"].items():
+        w = [(jmap[x["key"]], x["share"]) for x in pool["judges"] if x["key"] in jmap]
+        tot = sum(sh for _, sh in w) or 1.0
+        regsum[reg] = {"cards_2022_on": pool["cards"], "n_judges": len(pool["judges"]),
+                       "mean_effects": {q: float(sum(j["effects"][q] * sh for j, sh in w) / tot) for q in EFF},
+                       "mean_power_index": float(sum(j["power_index"]["logit_vs_league"] * sh for j, sh in w) / tot),
+                       "mean_p108_dominant": float(sum(j["p108_dominant"] * sh for j, sh in w) / tot)}
+    # observed 10-8 rate by region (2022+)
+    reg108 = defaultdict(lambda: [0, 0])
+    for r in rows:
+        if r["year"] >= 2022:
+            for (_, _, a, b) in r["cards"]:
+                reg108[r["region"]][0] += max(0, 19 * r["R"] - a - b)
+                reg108[r["region"]][1] += r["R"]
+    for reg in regsum:
+        n8, nr = reg108[reg]
+        regsum[reg]["obs_implied108_per_round"] = n8 / nr if nr else None
+    J["region_summary"] = regsum
     act = [j for j in jt if j["cards_2022_on"] >= 30]
     act.sort(key=lambda d: -d["power_index"]["logit_vs_league"])
     J["power_friendly"] = {"definition": "logit P(judge gives the round to the fighter with +1 KD and +3 head strikes "
@@ -1640,6 +1670,15 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
         ff = {"x": f["x"], "jidx": f["jidx"], "tau": f["tau"], "cov": f["cov"], "model": "judges_home",
               "th": to_np(unravel(np.asarray(f["x"]), len(f["jidx"])))}
     cfg = MODELS["judges_home"]
+    # standard errors of the global parameters (Laplace, conditional on the judge effects)
+    Hg = W.M.hess_g(ff["x"], cfg, ff["tau"])
+    Hg = 0.5 * (Hg + Hg.T)
+    try:
+        covg = np.linalg.inv(Hg)
+        se = np.sqrt(np.clip(np.diag(covg), 0, None))
+    except np.linalg.LinAlgError:
+        se = np.full(N_GLOBAL, np.nan)
+    ff["se_global"] = unravel(np.concatenate([se, np.zeros(5 * len(ff["jidx"]))]), len(ff["jidx"]))
     ded = deduction_posterior(ff["x"], W.dz, cfg)
     log(f"deductions: posterior sum {ded.p_any.sum():.1f} over {len(ded)} decisions")
     dedval = deduction_validation(ff["x"], cfg, rows, nat, ff["jidx"], 2026)
