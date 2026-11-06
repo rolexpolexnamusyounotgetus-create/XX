@@ -1,0 +1,110 @@
+{
+ "meta": {
+  "tool": "tools/v401_kocomp.js",
+  "built": "2026-11-06T21:53:33.101Z",
+  "engine": "5.0.0-dev",
+  "params": "5.0.0-dev.1-selfcal-pre2024",
+  "division": "Lightweight",
+  "rounds": 3,
+  "n_per_iter": 2000,
+  "iters": 3,
+  "avg_last": 2,
+  "priors": "data/derived/priors_dev.json (fights before 2024-01-01)",
+  "learned_rates": false,
+  "targets_old": {
+   "ground": 0.28,
+   "clinch": 0.125,
+   "standNoKd": 0.07
+  },
+  "targets_new": {
+   "ground": 0.2859,
+   "clinch": 0.0711,
+   "standNoKd": 0.0725
+  },
+  "targets_source": "data/derived/ko_composition_pre2024.json (tools/ko_composition.py, 2019-2023 fights)"
+ },
+ "start": {
+  "kdScale": 1.383,
+  "kdInstant": 0.3623,
+  "kdRefStop": 0.1807,
+  "gnpTko": 0.03005,
+  "kdClinch": 2.561,
+  "stko": 0.03565
+ },
+ "held_level": {
+  "kd100": 0.9629578260137311,
+  "kdFin": 0.5726795096322241,
+  "gShare": 0.2333577176298464,
+  "cShare": 0.11704462326261887,
+  "stShare": 0.07315288953913679,
+  "ko": 0.35125,
+  "fin": 0.5425
+ },
+ "fitA": {
+  "g": {
+   "kdScale": 1.406095049364895,
+   "kdInstant": 0.37074018107256274,
+   "kdRefStop": 0.1861445109849224,
+   "gnpTko": 0.036221286799935,
+   "kdClinch": 2.7536430876283853,
+   "stko": 0.04475558501966438
+  },
+  "last": {
+   "kd100": 1.0068903503727482,
+   "kdFin": 0.5954022988505747,
+   "gShare": 0.28021248339973437,
+   "cShare": 0.13147410358565736,
+   "stShare": 0.06905710491367861,
+   "ko": 0.387,
+   "fin": 0.5715
+  }
+ },
+ "fitB": {
+  "g": {
+   "kdScale": 1.478325048432049,
+   "kdInstant": 0.38379045102977183,
+   "kdRefStop": 0.19470749835385898,
+   "gnpTko": 0.03865948807869518,
+   "kdClinch": 1.3208910430680838,
+   "stko": 0.04366812436051867
+  },
+  "last": {
+   "kd100": 0.933447200651427,
+   "kdFin": 0.5815347721822542,
+   "gShare": 0.28236914600550966,
+   "cShare": 0.08539944903581267,
+   "stShare": 0.0743801652892562,
+   "ko": 0.368,
+   "fin": 0.5415
+  }
+ },
+ "factors": {
+  "kdScale": 1.051,
+  "kdClinch": 0.4797,
+  "gnpTko": 1.067,
+  "stko": 0.9757,
+  "kdInstant": 1.057,
+  "kdRefStop": 1.057
+ },
+ "check": {
+  "off": {
+   "kd100": 0.9754538233527714,
+   "kdFin": 0.5847651775486827,
+   "gShare": 0.213078618662748,
+   "cShare": 0.11682586333578251,
+   "stShare": 0.07714915503306392,
+   "ko": 0.346,
+   "fin": 0.52375
+  },
+  "on": {
+   "kd100": 0.9101523760204406,
+   "kdFin": 0.5799392097264437,
+   "gShare": 0.26153846153846155,
+   "cShare": 0.06666666666666667,
+   "stShare": 0.06666666666666667,
+   "ko": 0.3505,
+   "fin": 0.52725
+  }
+ },
+ "seconds": 1.95
+}
