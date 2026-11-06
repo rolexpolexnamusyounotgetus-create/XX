@@ -31,6 +31,8 @@ var REF = Object.assign({}, FightAvatar.REFEREE, (overrides.referee || {}).appea
 var log = [], logEl = document.getElementById("log");
 function L(s) { log.push(s); logEl.textContent = log.slice(-12).join("\n"); }
 
+if (Q.get("shorts")) FightAvatar.defaults.proxyShorts = Q.get("shorts");
+if (Q.get("gloves") === "0") FightAvatar.defaults.proxyGloves = false;
 var show = new FightShow.Show(cv, {
   onPhase: function (p, r) { L("phase " + p + " r" + (r + 1)); }, onFinish: function (res) { L("finish " + JSON.stringify(res)); },
   onReplay: function (on) { L("replay " + on); }, onResult: function (res) { L("result " + JSON.stringify(res)); }

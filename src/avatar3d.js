@@ -714,8 +714,10 @@
       base.proxy(looks.brows), base.proxy("eyelashes-eyelashes01"),
       looks.hair ? base.proxy(looks.hair) : null,
       optTex("mh-skin-athletic-n.jpg"), optTex("mh-skin-pores-n.jpg"), optTex("mh-skin-spec.jpg"), optTex("mh-mask-hair.png"), optTex("mh-mask-beard.png"), optTex("mh-mask-hair2.png"),
-      wantGlove ? base.proxy(gloveId).catch(function () { return null; }) : null
+      wantGlove ? base.proxy(gloveId).catch(function () { return null; }) : null,
+      !cfg.ref && opts.proxyShorts ? base.proxy(opts.proxyShorts).catch(function () { return null; }) : null
     ]).then(function (r) {
+      self.shortsProxy = r[13];
       self.tex = { normal: r[6], pores: r[7], spec: r[8], maskHair: r[9], maskBeard: r[10], maskHair2: r[11] };
       self.gloveProxy = r[12];
       self.makeBody(r[0], masks);
@@ -1245,7 +1247,8 @@
     function y(i) { return pos[i * 3 + 1]; }
     function inShorts(i, pad) { pad = pad || 0; return y(i) < waistY - pad && y(i) > hemY + pad && self.boneW(i, ARMS) < 0.05; }
     var hemSpan = Math.max(0.05, waistY - hemY);
-    var shortsG = this.shell(function (i) { return inShorts(i); }, function (i) {
+    if (this.shortsProxy) { shortsG = null; }
+    var shortsG = this.shortsProxy ? null : this.shell(function (i) { return inShorts(i); }, function (i) {
       var v = clamp01((y(i) - hemY) / hemSpan), lat = Math.abs(nrm[i * 3]);
       return 0.006 + 0.022 * (1 - smooth(0.2, 0.8, v)) + 0.012 * lat * (1 - v);
     }, { name: "aKit", size: 4, fn: function (i, out, o) {
@@ -1274,8 +1277,15 @@
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.85, smoothstep(1.0 - uBandW, 1.0 - uBandW + 0.02, vKit.x));");
     } });
     this.shortsMat = shorts;
-    this.addShell(shortsG, shorts, "shorts");
-    this.hideUnder(function (i) { return inShorts(i, 0.02); });
+    if (shortsG) { this.addShell(shortsG, shorts, "shorts"); this.hideUnder(function (i) { return inShorts(i, 0.02); }); }
+    if (this.shortsProxy) {
+      var sp = this.shortsProxy, smesh = this.addProxy(sp, { color: app.shorts || "#2563c9", tint: true, tintGain: 1.5, roughness: 0.7 });
+      smesh.name = "shorts";
+      var del = new Uint8Array(this.base.N);
+      (sp.meta.deleteVerts || []).forEach(function (r) { for (var q = r[0]; q <= r[1]; q++) del[q] = 1; });
+      var mhv = this.base.mh;
+      this.hideUnder(function (i) { return del[mhv[i]] === 1; });
+    }
     if (this.gloveProxy) {
       // CC0 open-finger MMA glove proxy (corner-neutral colour), fitted to this hand
       var gm = this.addProxy(this.gloveProxy, { color: app.glove || "#16181c", tint: true, tintGain: 1.9, roughness: 0.42 });
@@ -2007,7 +2017,9 @@
   }
 
   /* ------------------------------------------------------------ public API */
+  var DEFAULTS = {};   // build options for every avatar (dev pages: proxyShorts, proxyGloves)
   function build(appearance, opts) {
+    opts = Object.assign({}, DEFAULTS, opts || {});
     return loadBase().then(function (base) { return new Avatar(base, appearance || {}, opts).ready; });
   }
   /* Build for an Actor and swap in when ready. Returns a promise of the avatar (or null on failure). */
@@ -2029,7 +2041,7 @@
 
   root.FightAvatar = {
     supported: supported, loadBase: loadBase, build: build, attach: attach, detach: detach,
-    appearanceFor: appearanceFor, configFor: configFor, dbFromPage: dbFromPage, REFEREE: REFEREE, Avatar: Avatar,
+    appearanceFor: appearanceFor, configFor: configFor, dbFromPage: dbFromPage, REFEREE: REFEREE, Avatar: Avatar, defaults: DEFAULTS,
     webgl2: function (renderer) { return !!(renderer && renderer.capabilities && renderer.capabilities.isWebGL2); }
   };
 })(typeof window !== "undefined" ? window : globalThis);

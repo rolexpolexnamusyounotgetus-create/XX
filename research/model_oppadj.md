@@ -18,9 +18,12 @@ tdAccAg (success odds allowed) and tdAttAg; plus ctrl / octrl (control, control 
 (control per takedown landed / absorbed), sub / subAg (submission attempts, allowed).
 
 Reproduce (4 cores): `python3 tools/oppadj.py` (about 11 minutes; `--cache f.pkl` saves the grid and
-`--reuse` re-scores from it in 80 s), then `python3 tools/oppadj.py --engine-eval` and
-`python3 tools/oppadj.py --engine-eval --engine-gated` (engine Monte Carlo, about 15 minutes each on an idle
-machine).
+`--reuse` re-scores from it in 80 s), then the engine Monte Carlo runs as used here:
+`python3 tools/oppadj.py --engine-eval --engine-sims-test 600 --engine-sims-tune 250` (all families, both
+periods; about 15 minutes on an idle machine) and `python3 tools/oppadj.py --engine-eval --engine-gated
+--engine-periods test --engine-sims-test 300` (recommended set, 2024-25, plus Volkanovski vs Gaethje).
+Each engine run copies `src/engine3.js`, `src/params3.js` and `src/ml/mlrates.js` to its scratch directory
+first and records their hashes, so edits to `src/` during a run cannot mix versions.
 
 ## Verdict
 
@@ -48,8 +51,8 @@ machine).
    stacking the adjustment onto the ML rates (coefficient fit on 2019-2023 out-of-fold rates) cuts 2024-25
    deviance for distance attempts -2.5% [-3.7, -1.4], control -2.9% [-5.2, -0.5], leg accuracy -0.6%,
    takedown success -0.3%; head accuracy, takedown and clinch attempts are positive but n.s.
-6. **Where it does not help, switch it off:** knockdown power / chin (-0.7%, slope 0), body accuracy (-1.1%)
-   and submission attempts (-0.3%). Recommended set below.
+6. **Where it does not help, switch it off:** knockdown power / chin (+0.7% deviance, held-out slope about 0),
+   body accuracy (+1.1%) and submission attempts (+0.3%). Recommended set below.
 7. ENGINE_SUMMARY_TBD
 
 ## Data and protocol
@@ -398,7 +401,8 @@ adjustment to the ML targets instead, per side X against Y:
     h_att, b_att, l_att scale with the total attempt change (d_att + c_att + g_att)
 
 with beta from the table (2019-2023 fit, clipped to [0, 1], 0 where the stack did not improve 2024-25), and
-topSkill / escWeak still multiplying the engine's R. `tools/oppadj_engine.js adjTargets()` is the reference.
+topSkill / escWeak still multiplying the engine's R (the ML-path simulations above left topSkill unadjusted, so
+that combination is untested at the engine level). `tools/oppadj_engine.js adjTargets()` is the reference.
 
 **4. If the engine keeps raw rates for any family,** its own prior strengths are far from the 2019-2023
 optimum of its own formula (re-tuned half-life h, offense / defense k in engine units; 2024-25 deviance change
