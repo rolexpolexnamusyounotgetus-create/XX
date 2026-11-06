@@ -1780,6 +1780,7 @@ def main():
         "half_life_grid": hls,
         "engine_params_used": {k: p[k] for k in ("kPM", "kAcc", "kTdPM", "kTdAcc", "kKD", "kCtrlTD", "kTgt",
                                                  "ctrlGroundShare")},
+        "params3_version": p.get("version"),
         "model": ("counts: E[y] = E * L * exp(c + o_X + d_Y); probabilities: logit p = b + c + a_X + g_Y; "
                   "fit walk-forward on every UFC fight with stats since %s before each prediction date, "
                   "weights 0.5^(days/half_life), conjugate pseudo-data priors of k exposure units at the "

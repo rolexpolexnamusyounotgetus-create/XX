@@ -967,7 +967,10 @@ def simulate_engine_v3(dz, J, nsim=8000, seed=11):
             aw = z > 0
             mg = np.abs(z)
             kdE = np.where(aw, dKd[None, :], -dKd[None, :])
-            big = ((kdE >= 2) & (mg > J["t108kd2"])) | ((kdE >= 1) & (mg > J["t108"])) | ((kdE >= 2) & (mg > J["t108b"]))
+            if "t108b" in J:     # older rule (Nov 6 morning): KD-gated thresholds
+                big = ((kdE >= 2) & (mg > J["t108kd2"])) | ((kdE >= 1) & (mg > J["t108"])) | ((kdE >= 2) & (mg > J["t108b"]))
+            else:                # current rule: |z| > t108 - t108kd * min(2, winner's KD edge)
+                big = mg > J["t108"] - J.get("t108kd", 0.0) * np.clip(kdE, 0, 2)
             sa = np.where(aw, 10, np.where(big, 8, 9))
             sb = np.where(~aw, 10, np.where(big, 8, 9))
             oc = np.where(aw, np.where(big, 4, 3), np.where(big, 0, 1))
@@ -1223,9 +1226,13 @@ def engine_v3_params():
     blk = txt[txt.index("judge: {"): txt.index("}", txt.index("judge: {"))]
     out = {}
     for k in ("head", "body", "leg", "kd", "td", "ctrlMin", "sub", "sharedSd", "indSd", "tasteSd", "t108b", "t108kd2",
-              "t108"):
+              "t108kd", "t108"):
         m = re.search(r"\b" + k + r"\s*:\s*([-0-9.]+)", blk)
-        out[k] = float(m.group(1))
+        if m:
+            out[k] = float(m.group(1))
+    for k in ("head", "body", "leg", "kd", "td", "ctrlMin", "sub", "sharedSd", "indSd", "tasteSd", "t108"):
+        if k not in out:
+            raise ValueError("params3.js judge block lacks " + k)
     return out
 
 

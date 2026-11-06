@@ -26,6 +26,10 @@ SCRIPTS = {
     "/*__DIRECTOR__*/": ["src/director3.js"],
     "/*__SHOW__*/": ["src/show3d.js"],
     "/*__APP__*/": ["src/app.js"],
+    # verified browser models: the stacked blend, ML stat-line rates, the ML page winner model, method x round
+    "/*__ML__*/": ["src/ml/moe.js", "src/ml/mlrates.js", "src/ml/mlpage.js", "tools/methodround_model.js"],
+    # broadcast sound (FightAudio); optional until the 3D workstream lands it
+    "/*__AUDIO__*/": ["src/audio.js"],
 }
 
 # placeholder -> JSON file (minified and made safe inside <script type="application/json">)
@@ -42,7 +46,9 @@ MAX_BYTES = 15 * 1024 * 1024
 
 
 # pieces another workstream may not have written yet: missing ones build as empty with a warning
-OPTIONAL = {"src/avatar3d.js": "", "src/director3.js": "", "data/derived/calibration.json": "null", "data/scenarios.json": "{}"}
+OPTIONAL = {"src/avatar3d.js": "", "src/director3.js": "", "data/derived/calibration.json": "null", "data/scenarios.json": "{}",
+            "src/audio.js": "", "src/ml/moe.js": "", "src/ml/mlrates.js": "", "src/ml/mlpage.js": "",
+            "tools/methodround_model.js": ""}
 
 # optional block: scouting files and likeness sheets by slug, inlined only when the page asks for them
 SCOUTING_MARKER = "/*__SCOUTING_JSON__*/"
