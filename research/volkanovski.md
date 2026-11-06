@@ -162,7 +162,7 @@ Minutes are actual fight time. Strike defense = 1 - opponent sig landed / oppone
 | Sub attempts / 15 | 0.19 | 0.10 | 0.22 | 0.25 | 0.00 |
 | Ctrl share (him / opp) | 19.7% / 5.3% | 14.3% / 7.2% | 8.5% / 4.0% | 9.8% / 4.5% | 13.3% / 28.2% |
 | Target mix head/body/leg | 66/10/24 | 74/10/17 | 77/7/16 | 82/5/14 | 50/30/20 |
-| Position mix dist/clinch/ground | 76/8/15 | 83/7/10 | 88/5/8 | 87/4/9 | 82/10/8 |
+| Position mix dist/clinch/ground | 76/8/15 | 83/7/10 | 88/4/8 | 87/4/9 | 82/10/8 |
 
 Notes: UFC.com/ufcstats publish 5.99 landed, 3.31 absorbed (v2 HANDOFF); my dataset recompute gives 5.98 and
 3.33, the small gap is rounding of finish times. Previews quoted his TD defense as 68.9%
@@ -381,9 +381,9 @@ Volk was 38.07, the oldest featherweight title-fight winner in the dataset (feat
 |---|---|---|
 | Oct 2026 (UFC 333 week) | Sick (flu or chest infection), fought without medication | Heavy, Sherdog, MMA Sucka (M) |
 | Post-UFC 333 | No injury reported in the coverage I found; medical suspension unknown | unknown |
-| Feb 2026 | Says he has had a long-term eye issue since UFC 314 | [Bloody Elbow, Feb 28, 2026](https://bloodyelbow.com/2026/02/28/alexander-volkanovski-reveals-long-term-eye-issue-while-defending-tom-aspinall-from-harsh-backlash/) (M) |
+| Feb 2026 | Revealed a long-term eye issue (per the headline; that it dates from UFC 314 is an inference, not confirmed, L) | [Bloody Elbow, Feb 28, 2026](https://bloodyelbow.com/2026/02/28/alexander-volkanovski-reveals-long-term-eye-issue-while-defending-tom-aspinall-from-harsh-backlash/) (M) |
 | Jan 2026 (UFC 325 camp) | Shoulder injury about four weeks out; withdrawal discussed | Bloody Elbow, Sherdog (M) |
-| Apr 2025 (UFC 314) | Lost vision in the left eye after the R2 knockdown; possible broken hand (unconfirmed) | Sportskeeda, The Mac Life (M) |
+| Apr 2025 (UFC 314) | Lost vision in the left eye after a Lopes punch (the R2 knockdown or a round-4 shot; sources disagree, see section 6); possible broken hand (unconfirmed) | Sportskeeda, The Mac Life (M) |
 | Oct 2023 | Head-kick KO (concussion effects he later described) | MiddleEasy (M) |
 | Jul 2023 | Elbow surgery, about six weeks' recovery; his manager said it had bothered him for over a year | [BJPenn](https://bjpenn.com/mma-news/alex-volkanovski/alexander-volkanovski-has-successful-elbow-surgery-for-unbearable-injury) (M) |
 | 2024 (retrospective) | Lopez said Volk fought a title fight with bone fragments in his elbow and little use of the left arm in camp | [Bloody Elbow, Nov 4, 2024](https://bloodyelbow.com/2024/11/04/coach-reveals-alexander-volkanovski-had-bits-of-broken-bone-in-his-elbow-during-his-infamous-ufc-featherweight-title-fight) (M; which fight is unclear) |
@@ -419,14 +419,22 @@ that his recent injuries changed output. The eye issue and two KO losses since 2
 
 ## 10. Stated plans after UFC 333 and the matchmaking picture
 
-- **Gaethje as a retirement fight.** At the UFC 333 post-fight press conference he called a Gaethje superfight
-  "something I would retire for", win or lose, and said vacating afterward wouldn't hold up featherweight
+- **Gaethje as a retirement fight.** He has pitched a Gaethje superfight as a fight he would retire after, win or
+  lose, and said vacating afterward wouldn't hold up featherweight
   ([theScore](https://www.thescore.com/mma/news/3634621/volkanovski-eyes-gaethje-superfight-thats-something-i-would-retire-for),
   [MMA News](https://mmanews.com/article/volkanovski-would-retire-win-lose-gaethje-superfight),
-  [Yardbarker](https://www.yardbarker.com/mma/articles/volkanovski_says_he_would_retire_for_gaethje_bout/s1_17349_44473025), H).
-  Exact transcript wording varies by outlet (L on exact words).
+  [Yardbarker](https://www.yardbarker.com/mma/articles/volkanovski_says_he_would_retire_for_gaethje_bout/s1_17349_44473025), H
+  that he said it). **When and where (verification pass, L):** this file originally put "something I would retire
+  for" at the UFC 333 post-fight press conference, but `research/matchup_market.md` dates that line to before UFC 333
+  ([Yahoo](https://sports.yahoo.com/articles/alexander-volkanovski-wants-superfight-justin-150000227.html),
+  [MMA Sucka](https://mmasucka.com/news/alexander-volkanovski-justin-gaethje-ufc-333-superfight-retirement/)), and
+  `research/gaethje.md` says he first floated it on a podcast in mid-October and after beating Evloev said "If they
+  wanted to give me that opportunity, I would retire. Win or lose, retire." ([AgentMMA](https://agentmma.com/news/91994-volkanovski-says-he-d-retire-after-a-superfight-with-gaethje-win-or-lose)).
+  Treat it as said both before and after UFC 333; which wording came from which appearance is unconfirmed.
 - **Tsarukyan if Gaethje retires.** He offered to vacate the featherweight title to fight Arman Tsarukyan for a
-  vacant lightweight title if Gaethje retires, and told Ariel Helwani that fight excites him more than Gaethje
+  vacant lightweight title if Gaethje retires or won't fight him (`research/matchup_market.md` attributes the offer
+  to an MMA Fighting interview; whether the Helwani appearance is the same interview is unconfirmed, L), and said
+  that fight excites him more than Gaethje
   ([Bloody Elbow](https://bloodyelbow.com/2026/10/28/alexander-volkanovski-offers-to-vacate-title-for-more-exciting-lightweight-fight-than-justin-gaethje/),
   [DAZN](https://www.dazn.com/en-US/news/mma/alexander-volkanovski-vacate-ufc-title-arman-tsarukyan-t3r/kb4ja2ubyet01rz8qrfxfwnzp),
   [Yardbarker/MMA Fighting](https://www.yardbarker.com/mma/articles/volkanovski_offers_tsarukyan_vacant_title_fight/s1_17349_44488566), H).
@@ -460,7 +468,7 @@ that his recent injuries changed output. The eye issue and two KO losses since 2
 | Level changes, wrestling | Takedown threat and fast get-ups make grappling a poor route against him (Sherdog scouting, M) | 4.75 TD attempts per 15 career, 34% success; 20% since 2024; 7 of 12 vs Rodriguez; 109 s control per TD landed |
 | Top game and finishing | | 4 of his 6 UFC KO/TKO wins came from ground strikes (Kasuya, Kennedy, Rodriguez, Evloev); only Mendes and Jung were finished standing; 0.19 sub attempts per 15, no UFC submission wins |
 | Fence work | Topuria caught him with his back on the cage; v2 HANDOFF (Sherdog, MMA Sucka) said he leans away in the pocket, especially on the fence (not re-verified) | Clinch is a small share of his offense (8% career, 4% since 2025) |
-| Defense | "Immensely hard to hit" (Sherdog scouting, M) | 58% strike defense; opponents land 33% of head strikes on him (55.7% for Makhachev); 2.02 head strikes absorbed per min, 0.80 body, 0.52 leg |
+| Defense | "Immensely hard to hit" (Sherdog scouting, M) | 58% strike defense; opponents land 33% of head strikes on him (55.7% for Makhachev); 2.02 head strikes absorbed per min, 0.80 body, 0.51 leg |
 | Late-fight strength | UFC.com cited about 7.5 sig strikes per min in fifth rounds before UFC 298 (v2 HANDOFF) | Confirmed and updated in section 13: 7.20 per min across all seven fifth rounds through UFC 325 |
 | Power | Analysts call lack of power his real disadvantage at 155 ([theScore](https://www.thescore.com/mma/news/2338015), M) | 0.49 KDs per 100 head strikes landed career vs 0.88 featherweight and 0.84 lightweight league averages; no knockdowns scored in his last four fights (277 head strikes landed) |
 
@@ -475,7 +483,7 @@ that his recent injuries changed output. The eye issue and two KO losses since 2
 | 1 | 2018-12-29, UFC 232 | Chad Mendes | 2 | Left hook at distance (Mendes's R2: 10 of 20 at distance, 3 of 4 in clinch, 9 of 20 head) | Recovered, dropped Mendes about 20 s later, won by TKO (punches at distance) at 4:14 | [Bloody Elbow](https://bloodyelbow.com/2025/04/08/alexander-volkanovski-koed-iconic-conor-mcgregor-rival-faster-than-notorious-did), [Quebrada](https://quebrada.net/reviews/best201812.html) (M); one Sherdog account places a knockdown in round 1 (L); dataset records it in round 2 |
 | 2 | 2023-10-21, UFC 294 | Islam Makhachev | 1 | Left head kick at distance after a clinch break ("Kick to Head At Distance") | Finished by ground punches, 3:06 | Dataset; Yahoo, Fighters Only (M) |
 | 3 | 2024-02-17, UFC 298 | Ilia Topuria | 2 | Right hand with his back near the cage ("Punch to Head At Distance") | Finished by follow-up punches, 3:32 | Dataset; Bloody Elbow, Uproxx (M) |
-| 4 | 2025-04-12, UFC 314 | Diego Lopes | 2 | Jab, overhand right at distance, closing seconds (Lopes's R2: 15 of 32 head, all at distance) | Up quickly, bell; lost vision in left eye; won the fight | Dataset; AOL/AP, Cageside Press (M) |
+| 4 | 2025-04-12, UFC 314 | Diego Lopes | 2 | Jab, overhand right at distance, closing seconds (Lopes's R2: 15 of 32 head, all at distance) | Up quickly, bell; lost vision in left eye at some point in the fight (round disputed); won the fight | Dataset; AOL/AP, Cageside Press (M) |
 
 ### 12b. Rates
 
@@ -568,7 +576,7 @@ climbs and his opponents' accuracy falls at the same time.
 - Use the **post-2025 strike profile** with decay, not the career one: lower attempt rate (8.8/min), higher accuracy
   (59%), head-heavy targeting (82%), less leg kicking (13.5%), low power (0 KDs in 4 fights). The career profile
   overstates his leg-kick volume and understates his head accuracy.
-- **Power is a weakness to model honestly:** 0.49 KDs per 100 head strikes landed career (about 55% of league).
+- **Power is a weakness to model honestly:** 0.49 KDs per 100 head strikes landed career (about 56-58% of the featherweight/lightweight league rates).
   His finishes come from ground strikes after takedowns or a hurt opponent, not one-punch knockdowns.
 - **Chin:** career 0.63 per 100 (better than league) vs recent 1.59 per 100 (worse). With a 300-head-strike prior and
   2-year half-life the shrunk estimate lands near league average; then apply the age term (x1.37 at 38 vs 30) and the
@@ -578,7 +586,7 @@ climbs and his opponents' accuracy falls at the same time.
 - **Grappling vs Gaethje:** Volk's offensive wrestling (5 attempts per 15, 20% recent success, 88-109 s control per
   TD) is a live scoring path; his control-conceded weakness at 155 (Makhachev: 119 s per TD) mostly won't matter
   against a non-wrestler.
-- **Leg-kick defense matters:** he absorbs 0.52 leg strikes per minute career, and Lopes landed 20 leg strikes in
+- **Leg-kick defense matters:** he absorbs 0.51 leg strikes per minute career (161 in 312.9 min), and Lopes landed 20 leg strikes in
   the rematch; Gaethje is a heavy leg kicker (v2 HANDOFF: 28% of his landed strikes to the legs).
 
 ## 15. Corrections to the v2 HANDOFF
@@ -672,3 +680,85 @@ Web (accessed Nov 6, 2026; claims taken from search-result summaries where direc
 - https://www.ufcalendar.com/blog/when-do-ufc-fighters-get-washed
 - https://agentmma.com/mma-lab/ufc-fighter-peak-age
 - https://bloodyelbow.com/2013/07/18/ufc-going-deeper-into-mma-fighter-longevity-does-age-matter/
+
+---
+
+## Verification log
+
+Adversarial check, Nov 6, 2026. Goal: try to refute the claims above. Dataset numbers were recomputed from
+`data/raw/` with an independent pandas script (not `research/analysis/`). Strings stripped, events joined on
+the stripped EVENT name, "x of y" parsed, control in seconds.
+
+**Web access in this pass: none.** The shared web-search budget was already used up when this check started,
+and direct fetches to news4jax.com, thescore.com and bloodyelbow.com failed (hosts not reachable from this
+session). So no current-news claim below was independently re-confirmed on the web. Where another project file
+(`research/gaethje.md`, `research/matchup_market.md`, `HANDOFF.md`) cites different sources for the same point,
+that is noted as corroboration, but those files came out of the same overnight research effort and are not
+fully independent.
+
+### Recomputed from the dataset (all match unless noted)
+
+| Claim | Recompute | Verdict |
+|---|---|---|
+| 19 UFC bouts, 16-3: W 6 KO/TKO (Kasuya, Kennedy, Mendes, Jung, Rodriguez, Evloev), 0 sub, 10 dec; L 2 KO/TKO (Makhachev 2, Topuria), 1 dec (Makhachev 1) | same | confirmed |
+| Every row of the section 3 table (dates, events, methods, rounds/times, sig, KD, TD, ctrl) and layoffs 119/420/294/266 days | same | confirmed |
+| Round-by-round tables for UFC 284, 294, 298, 314, 325, 333 | same, cell by cell | confirmed |
+| UFC 333: TKO R2 4:54, "Punches to Head From Half Guard", ref Marc Goddard; sig 56/110 vs 40/65; Evloev 3/4 TD + 31 s ctrl in R1, 0/3 in R2; Volk 1/2 TD, 104 s ctrl | same | confirmed |
+| Evloev's 3 R1 takedowns = most by any opponent in one round; previous max 2 (Mendes R2, 2 of 2) | same | confirmed |
+| KDs absorbed: Mendes R2, Makhachev R1, Topuria R2, Lopes R2; 632 head absorbed (0.63/100); 284 since 2022 (1.06); 189 since 2023 (1.59); 61 since UFC 314 | same | confirmed |
+| KDs scored: 6 on 1,228 head landed (0.49/100); none in last 4 fights (21+136+72+48 = 277 head landed) | same | confirmed |
+| League KD per 100 head landed: FW 2015+ 0.882 (341 / 38,661); LW 2015+ 0.843 (380 / 45,086); FW 2022+ 1.007; LW 2022+ 0.994 | same | confirmed |
+| Five-round pace (7 fights reaching R5): 4.40, 5.34, 6.31, 6.26, 7.20; ratio 1.64; per-fight ratios; pooled 1.38 | same | confirmed |
+| League 5-round decisions since 2015: 3.22, 3.90, 3.98, 4.16, 4.22; ratio 1.31 | 236 fights / 472 fighter-rounds per round (file says 474); pooled (R4+R5)/(R1+R2) = 1.177, which rounds to 1.18, so Volk's lift is about 17% rather than 18% above | confirmed (within rounding) |
+| Section 13c cuts (4.41 ... 7.20; 4.82, 5.52-5.53, 7.54, 7.10, 7.73) | same | confirmed |
+| Poisson fit (defender/attacker years past 30, clipped at 0, offset log head absorbed) | defender +0.0396 (SE 0.0057), attacker -0.0361 (SE 0.0070), baseline 0.0084, x1.37 at 38 | confirmed exactly |
+| Age buckets (2a) | 38-40: n 416, 37.0% wins, 25.5% KO losses; 28-31: n 4,225, 52.3%, 15.0% (file: 412 / 36.9% / 25.5% and 4,192 / 52.2% / 15.0%; small filter differences) | confirmed (within rounding) |
+| 2b KD-by-defender-age table | identical counts | confirmed |
+| 2c finish-rate table | same percentages within 0.2 pp; my counts slightly higher (e.g. 6,754 vs 6,629 men's bouts), likely catchweight/division filtering | confirmed |
+| Men's title fights with a fighter 37+: 21 W, 9 KO losses | 46 appearances incl. 1 draw and 1 NC, so 44 W/L | confirmed |
+| Oldest featherweight title-fight winner in the dataset (38.07 at UFC 333) | top three are all Volk | confirmed |
+| Section 3a windows (minutes, rates, accuracies, defense, TD, ctrl share, target mix) | same, except one cell | corrected: since-2024 position mix is 88/4/8 (clinch 4.46%), not 88/5/8 |
+| Leg strikes absorbed per minute | 161 / 312.9 min = 0.51 | corrected 0.52 -> 0.51 (sections 11 and 14) |
+| "Power about 55% of league" | 0.49 / 0.88 = 56%; 0.49 / 0.84 = 58% | corrected to 56-58% |
+| Since-2025 mix 82.1/4.5/13.5; 59.0% on 8.83 att/min; career 65.6/10.2/24.2, 56.9% on 10.51 | same | confirmed |
+| Kasuya 2016 (lightweight): 50/76 sig, 45 ground, 3/3 TD, 4:23 ctrl | same | confirmed |
+| Makhachev at UFC 284: 70-57 sig, Volk's KD in R5; R1/R2/R4 Makhachev 3/4 TD, 386 s ctrl, Volk out-landed 36-33; Makhachev head 36/72 | same | confirmed |
+| Control per TD: Volk 109 s (34, 3,694 s); opponents 58 s; since 2025 32 s (5, 161 s); Makhachev 119 s (4, 476 s) | same | confirmed |
+| Out-landed 8 of 9 opponents since 2022; worst round absorbed 37 (Holloway, UFC 245 R4); leg 75/93 vs Holloway 1, 50/59 vs Aldo, 11/11 R1 vs Topuria; 78% career leg accuracy | same | confirmed |
+| Shrunk chin estimate "near league average" (300-strike prior, 2-year half-life) | 0.86-0.89 per 100 with a 0.0085-0.009 prior | confirmed |
+| Gaethje: DOB Nov 14, 1988; 5'11", 70"; all 16 UFC bouts at lightweight; Topuria-Gaethje at UFC Freedom 250 (Jun 14, 2026) ended by corner stoppage after R4 | same | confirmed |
+| Evloev 10-0 in the UFC, all decisions, before UFC 333 | same (pro 20-0 not in dataset) | confirmed (UFC part) |
+
+### Web and news claims: status after this pass
+
+- **Pro record 29-4** (H for consistency, not re-fetched): HANDOFF.md also lists 29-4; 28-4 entering UFC 333 plus the
+  dataset win gives 29-4. Note the "13-1 pre-UFC" row is derived from 29-4, so it is not an independent check.
+- **"Something I would retire for"** (corrected, L on timing): another project file dates the line to before
+  UFC 333, not the post-fight press conference. Section 10 now says he said it both before and after; which words
+  came from which appearance is unconfirmed. `research/gaethje.md` also reports (med, no URL given) that he later
+  told MMA Junkie he isn't necessarily retiring after his next fight; check it before relying on "last fight" framing.
+- **Tsarukyan / vacate offer** (unverifiable here, corroborated): `research/matchup_market.md` has the same offer
+  via MMA Fighting, Sherdog, MMAmania and Yardbarker, framed as "if Gaethje won't fight him". Wording softened.
+- **Nothing booked; White says it's Gaethje's call; Gaethje said no fight before 2027** (unverifiable here,
+  corroborated): both other research files report the same, with Cageside Press, BJPenn and Sportskeeda for the
+  Nov 5 remarks and an August SI interview (both hands hurt) plus a mid-September statement (knee bone bruise)
+  for 2027. Gaethje's medical suspension runs to about Dec 11, 2026 per `research/gaethje.md`.
+- **Shoulder injury before UFC 325; vision loss at UFC 314; long-term eye issue** (unverifiable here): the file's
+  own section 6 says sources disagree whether the vision loss followed the R2 knockdown or a round-4 shot, but the
+  health table and section 12a tied it to the R2 knockdown. Those two places now carry the same caveat. The claim
+  that the Feb 2026 "long-term eye issue" dates from UFC 314 rested on a headline only; now flagged as an inference.
+- **UFC 294 on about 11 days' notice; about 26.5 lb cut from about 181 lb** (unverifiable here): left at M.
+- **Per-round judges' calls at UFC 284, strike types for the Mendes and Lopes knockdowns, UFC 333 R1 judges,
+  betting pick'em, Aldo record comparison, Sterling vs Vallejos on Nov 21** (unverifiable here): unchanged, still
+  M or L as marked. The dataset only describes the finishing strike, so the Makhachev ("Kick to Head At
+  Distance") and Topuria ("Punch to Head At Distance") entries are dataset-backed; the Mendes and Lopes
+  knockdown strikes are not.
+- **Camp name** (not checked): the file says "Freestyle MMA"; the full gym name may be Freestyle Fighting Gym
+  (checker's recall, not a source). Unverified this pass; left as written.
+
+### Net assessment
+
+Every dataset number I re-derived holds up (more than 40 checks), with three small rounding or transcription slips
+fixed. The weak point is the current-news layer: it rests on search-result summaries, and this pass could not
+re-open any of those pages. One timing claim (where the retirement line was said) conflicted with another project
+file and was softened, and one internal inconsistency (which punch caused the vision loss) was reconciled.

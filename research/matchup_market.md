@@ -25,12 +25,16 @@ Research pass for engine v3, as of Friday, Nov 6, 2026. Fighters' pronouns are h
 
 1. **Not booked.** As of Nov 6, 2026 nobody has set a date, venue or contract. Volkanovski wants the
    fight. Dana White says he will do almost anything for Volk, but the decision is Gaethje's. Gaethje
-   hasn't spoken in public about it. His last update (late August) said both hands were still hurt,
-   he wouldn't fight in 2026, and he was weighing retirement. *(high)*
-2. **Market: Gaethje about 63%, Volkanovski about 37%** with the margin removed. Four early lines
-   from three books, all posted Oct 24–25, 2026: Gaethje -180 to -200, Volk +155 to +170. Every
-   no-vig method puts Volk between 34.9% and 37.9%. *(high that these lines were posted; medium on
-   exact prices)*
+   hasn't spoken in public about it. In late August he said both hands were still hurt and he
+   wouldn't fight in 2026. He was weighing retirement. His later September interviews, cited in
+   `research/gaethje.md` and not re-checked in the verification pass, say he hadn't decided. They
+   also say that if he fights again, he wants Tsarukyan. *(medium-high; see Verification log)*
+2. **Market: Gaethje about 63%, Volkanovski about 37%** with the margin removed. There are four
+   early prices from three sources, posted Oct 24–25, 2026 (Lucky Rebel's date is unknown):
+   Gaethje -180 to -200, Volk +155 to +170. FightOdds.io is an odds site, not a sportsbook, and
+   which book its opener came from is unknown. The +157 row is BetOnline's line as one outlet
+   printed it, not a separate book. Every no-vig method puts Volk between 34.9% and 37.9%. *(medium:
+   these rest on search snippets, which the verification pass could not re-read)*
 3. **Ratings lean Volk before any size adjustment.** Combat Edge Elo: Volk 1879, Gaethje 1869 (v2
    research, not re-checked this pass), which is about 51% Volk. A UFC-only Elo I built on the
    dataset has Volk 1682 and Gaethje 1621, about 59% Volk. That Elo is weak, though: its favorite won
@@ -55,7 +59,7 @@ Research pass for engine v3, as of Friday, Nov 6, 2026. Fighters' pronouns are h
 
 | Date (2026) | Who | What was said or reported | Source | Conf. |
 |---|---|---|---|---|
-| Before UFC 333 (Oct 24) | Volkanovski | Pitched a superfight with Gaethje: "That's something I would retire for" | [Yahoo](https://sports.yahoo.com/articles/alexander-volkanovski-wants-superfight-justin-150000227.html), [MMA Sucka](https://mmasucka.com/news/alexander-volkanovski-justin-gaethje-ufc-333-superfight-retirement/) | high |
+| Before UFC 333 (Oct 24) | Volkanovski | Pitched a superfight with Gaethje: "That's something I would retire for." *Verification note: `research/volkanovski.md` and `research/gaethje.md` place this line at the UFC 333 post-fight press conference ([theScore](https://www.thescore.com/mma/news/3634621/volkanovski-eyes-gaethje-superfight-thats-something-i-would-retire-for)). The pre-fight pitch itself is supported by MMAmania's "after UFC 333" headline in the next row. When the quote was said is unverified* | [Yahoo](https://sports.yahoo.com/articles/alexander-volkanovski-wants-superfight-justin-150000227.html), [MMA Sucka](https://mmasucka.com/news/alexander-volkanovski-justin-gaethje-ufc-333-superfight-retirement/) | high (pitch), low (quote timing) |
 | Before UFC 333 | Dana White | Open to it: "it's hard to say no to a guy like that" | [MMAmania](https://www.mmamania.com/ufc-news/481203/dana-white-open-to-alexander-volkanovskis-proposed-gaethje-superfight-after-ufc-333-its-hard-to-say-no-to-a-guy-like-that) | high |
 | Oct 24 (UFC 333, Abu Dhabi) | Volkanovski | Beat Evloev by TKO at 4:54 of round 2, then called for Gaethje again as a "double retirement" fight: win or lose, he retires. Said he was ill that week (flu or chest infection) and refused all medication | [Yahoo](https://sports.yahoo.com/articles/alexander-volkanovski-insists-lightweight-title-170100012.html), [Athlon](https://athlonsports.com/mma/ufc-333-alexander-volkanovski-illness-michael-jordan-flu-game-justin-gaethje-last-dance), [Heavy](https://heavy.com/sports/ufc/alexander-volkanovski-reveals-illness-ufc-333/), [MMA Sucka](https://mmasucka.com/news/alexander-volkanovski-had-a-chest-infection-before-ufc-333-but-refused-to-back-down/); result in dataset | high (result), medium (illness details) |
 | Oct 24 (post-fight press conference) | Dana White | Called Volk an "absolute stud" and "built different"; "there's not much we're gonna say no to with him." No dates, no contracts | [MMAmania](https://www.mmamania.com/ufc-333-fight-card-start-time-live-stream-volkanovski-vs-evloev/481925/dana-white-reacts-to-absolute-stud-alexander-volkanovskis-ufc-333-win-just-f-king-built-different), [Yahoo](https://sports.yahoo.com/mma/article/alexander-volkanovski-presses-for-justin-gaethje-retirement-fight-after-ufc-333-win-dana-white-reacts-171858455.html), [MMA Sucka](https://mmasucka.com/news/alexander-volkanovski-justin-gaethje-superfight-dana-white-ufc-333/) | high |
@@ -71,18 +75,27 @@ Research pass for engine v3, as of Friday, Nov 6, 2026. Fighters' pronouns are h
 | Reported Nov 5 (Jim Rome Show) | Dana White | Would "pretty much do anything" for Volk. On Gaethje: "He's gonna have to pull the trigger one way or the other, see if he wants to retire or continue to fight." "We're talking to him, but we'll figure it out." Backed a 2027 date | [Bloody Elbow, Nov 5](https://bloodyelbow.com/2026/11/05/justin-gaethje-vs-alexander-volkanovski-dana-white-reveals-whats-holding-up-superfight/), [Cageside Press, Nov 5](https://cagesidepress.com/2026/11/05/white-open-volk-gaethje-waiting-lightweight-champs/), [BJPenn.com](https://www.bjpenn.com/mma-news/ufc/dana-white-presses-justin-gaethje-pull-trigger-alexander-volkanovski/), [Heavy](https://heavy.com/sports/ufc/dana-white-alex-volkanovski-justin-gaethje/), [NY Fights](https://nyfights.com/featured/alexander-volkanovski-justin-gaethje-ufc-2/) | high (gist), medium (exact wording) |
 | Early Nov | Dana White (headline) | "Golf or UFC? Justin Gaethje must 'decide what he's gonna do'" | [Yahoo](https://sports.yahoo.com/articles/golf-ufc-justin-gaethje-must-122856281.html), [Yardbarker](https://www.yardbarker.com/mma/articles/gaethje_must_decide_between_golf_and_ufc/s1_17349_44519048) | medium |
 
-**Gaethje's side.** His latest public update was in late August 2026, in an SI interview widely
-re-reported. "I still can't punch anything." Both hands were still hurt from the Topuria fight. He
-ruled out fighting in 2026 and pointed to 2027 if he doesn't retire. He said he'd put the pros and
+**Gaethje's side.** His most widely re-reported update was a late-August 2026 SI interview, but it
+was not his last. `research/gaethje.md` cites later interviews (not re-checked in the verification
+pass). In mid-September he ruled out the rest of 2026, citing a knee bone bruise
+([AgentMMA](https://agentmma.com/news/90201-justin-gaethje-rules-out-fighting-for-remainder-of-2026-due-to-injuries)).
+In a September interview with Andrew Schulz he said that if he fights again it will be Tsarukyan, that he
+hasn't decided, and "I want to keep my faculties"
+([MMAmania](https://www.mmamania.com/latest-news/474425/justin-gaethje-weighs-retirement-ahead-of-possible-arman-tsarukyan-title-defense-i-want-to-keep-my-faculties)).
+*(medium)* Both came before Volk's Oct 24 callout. In the August interview he said: "I still can't
+punch anything." Both hands were still hurt from the Topuria fight. He ruled out fighting in 2026 and pointed to 2027 if he doesn't retire. He said he'd put the pros and
 cons on paper and decide with his family: "This has never been about money for me. It's about
 health… I want kids." He also mentioned revenge fights with Oliveira and Holloway. *(medium-high:
 [Bloody Elbow, Aug 29](https://bloodyelbow.com/2026/08/29/justin-gaethje-still-cant-punch-over-two-months-after-damaging-his-hands-on-ilia-topurias-face/),
 [Yahoo](https://sports.yahoo.com/articles/justin-gaethje-reveals-ongoing-hand-055830458.html),
 [Athlon](https://athlonsports.com/mma/justin-gaethje-injury-ufc-white-house-fight-ilia-topuria),
 [BJPenn.com](https://www.bjpenn.com/mma-news/ufc/justin-gaethje-remains-sidelined-until-2027-amid-injury-update-both-of-my-hands-are-still-hurt/))*.
-After the Topuria fight the CSAC suspended him for up to 180 days pending MRIs on his right wrist and
-left knee. *(medium:
+After the Topuria fight he got a medical suspension of up to 180 days, pending MRIs on his right
+wrist and left knee. *(medium:
 [The Mac Life](https://themaclife.com/sports/mma/gaethje-handed-medical-suspension-after-title-win/), from v2)*.
+Sources disagree on who issued it. v2 said the CSAC. `research/gaethje.md` cites
+[F4W](https://www.f4wonline.com/news/ufc/ufc-freedom-250-medical-suspensions/): the list came from
+the ABC and CSAC's Andy Foster shared it. *(low on the issuer)*
 I found no statement from Gaethje or his team responding to the Volk proposal. **Unknown** whether
 his team has replied in private. White says talks are ongoing.
 
@@ -132,13 +145,16 @@ power and Shin no-vig. For a two-way market these differ by about 1 point.
 | Line | Posted | Volk | Gaethje | Implied Volk / Gaethje | Overround | No-vig Volk (mult.) | additive | power | Shin | No-vig Gaethje (mult.) | Source | Conf. |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | FightOdds.io opener | Oct 24, 2026, 21:10 UTC (decoded from the X post ID) | +170 | -200 | 0.370 / 0.667 | 3.7% | **0.357** | 0.352 | 0.349 | 0.352 | 0.643 | [X post](https://x.com/FightOdds_io/status/2114102147243450379), [Heavy](https://heavy.com/sports/ufc/justin-gaethje-betting-favorite-alex-volkanovski/) | high |
-| BetOnline.ag opener | about Oct 25, 2026 (Gambling911 page dated Oct 25) | +160 | -180 | 0.385 / 0.643 | 2.7% | **0.374** | 0.371 | 0.369 | 0.371 | 0.626 | [Sherdog](https://www.sherdog.com/news/news/Petr-Yan-favored-in-2-rematches-Volkanovski-underdog-to-Gaethje-203356), [Gambling911](https://gambling911.com/ufc-226-betting-odds), [Boxing News](https://boxingnews.com/news/yan-favored-omalley-rematch-volkanovski-underdog), [FightBook](https://www.fightbookmma.com/betonline-ufc-336-title-fight-odds-potential-matchups/) | high |
+| BetOnline.ag opener | about Oct 25, 2026 (Gambling911 page dated Oct 25) | +160 | -180 | 0.385 / 0.643 | 2.7% | **0.374** | 0.371 | 0.369 | 0.371 | 0.626 | [Sherdog](https://www.sherdog.com/news/news/Petr-Yan-favored-in-2-rematches-Volkanovski-underdog-to-Gaethje-203356), [Gambling911](https://gambling911.com/ufc-226-betting-odds) (verification note: this URL's slug names UFC 226, a 2018 event, so the link may be wrong or an evergreen page; don't lean on it), [Boxing News](https://boxingnews.com/news/yan-favored-omalley-rematch-volkanovski-underdog), [FightBook](https://www.fightbookmma.com/betonline-ufc-336-title-fight-odds-potential-matchups/) | high |
 | BetOnline.ag opener as MMAmania printed it | about Oct 25, 2026 | +157 | -180 | 0.389 / 0.643 | 3.2% | 0.377 | 0.373 | 0.371 | 0.373 | 0.623 | [MMAmania](https://www.mmamania.com/ufc-odds/481818/latest-ufc-odds-justin-gaethje-opens-betting-favorite-smash-alex-volkanovski-not-by-much) | medium (one outlet; most say +160) |
 | Lucky Rebel early line | late Oct 2026 (exact date unknown) | +155 | -180 | 0.392 / 0.643 | 3.5% | **0.379** | 0.375 | 0.373 | 0.375 | 0.621 | [FightBook](https://www.fightbookmma.com/alexander-volkanovski-justin-gaethje-odds-superfight/) | medium |
 
 **Consensus:** the mean multiplicative no-vig across the four rows is **Volk 0.372, Gaethje 0.628**.
-Use 0.374 (BetOnline at +160) as the single best opener: it has the lowest margin and the most outlets
-confirm it. All de-vig methods give 0.349 to 0.379.
+That mean counts BetOnline twice (+160 and +157). With one row per source (FightOdds.io 0.357,
+BetOnline +160 0.374, Lucky Rebel 0.379) it is **0.370**. Use 0.374 (BetOnline at +160) as the
+single best opener: it has the lowest margin and the most outlets confirm it. All de-vig methods give
+0.349 to 0.379. *(arithmetic re-checked in the verification pass; the prices themselves were not
+re-read)*
 
 **Movement:** none found. No book has posted an updated line since the openers, which makes sense with
 no bout agreement. **Unknown** for DraftKings, FanDuel, BetMGM, Bovada, Pinnacle, Circa, Kalshi and
@@ -153,7 +169,7 @@ right after UFC 333's main event in Abu Dhabi.
 | Line | Odds | No-vig | Source | Conf. |
 |---|---|---|---|---|
 | Volk vs Jean Silva (145), BetOnline | Volk -115 / Silva -105 | Volk 0.511 | [Sherdog](https://www.sherdog.com/news/news/Petr-Yan-favored-in-2-rematches-Volkanovski-underdog-to-Gaethje-203356) | medium |
-| Volk vs Evloev (UFC 333), closing | about -113 / -113 (pick'em) | 0.50 | [Sherdog: "Volkanovski & Evloev even"](https://www.sherdog.com/news/news/UFC-333-odds-Volkanovski-Evloev-even-Yan-favored-in-trilogy-203230); v2 backtest | medium |
+| Volk vs Evloev (UFC 333), pre-fight line (timing unknown; neither source says it was the closing line) | about -113 / -113 (pick'em) | 0.50 | [Sherdog: "Volkanovski & Evloev even"](https://www.sherdog.com/news/news/UFC-333-odds-Volkanovski-Evloev-even-Yan-favored-in-trilogy-203230); v2 HANDOFF.md | medium |
 | Volk vs Tsarukyan / Gaethje vs Tsarukyan | no line found | unknown | search returned none | n/a |
 | Gaethje vs Topuria (Freedom 250), from v2 | Gaethje +450 / Topuria -600 | Gaethje 0.175 | v2 HANDOFF.md (heavy.com) | medium |
 | Gaethje vs Holloway (UFC 300), from v2 | Gaethje -162 / Holloway +136 | Gaethje 0.593 | v2 HANDOFF.md (lowkickmma.com) | medium |
@@ -162,9 +178,9 @@ right after UFC 333's main event in Abu Dhabi.
 What the market is saying: it priced Volk as a coin flip at 145 against Evloev and Jean Silva, but at
 about 37% against Gaethje at 155. If Volk's level at 145 is roughly "even with the best 145
 contenders," the market's whole 155 penalty sits in the matchup and the weight class. Topuria is a
-reference point. The market made him a 4.7-to-1 favorite over Gaethje at 155 (82.5% no-vig), and he
-lost. The 155 market has been on the wrong side of this exact matchup type, a featherweight
-champion against Gaethje, both times it came up: Holloway in 2024 (won as a 41% dog) and Topuria in
+reference point. The market made him a -600 favorite over Gaethje at 155, about 4.7-to-1 once the
+margin is removed (82.5% no-vig), and he lost. The 155 market has been on the wrong side of this
+exact matchup type, a former featherweight champion against Gaethje, both times it came up: Holloway in 2024 (won as a 41% dog) and Topuria in
 2026 (lost as an 82% favorite). Two fights prove nothing about calibration, but they do warn against
 letting the market's size discount run unchecked.
 
@@ -230,7 +246,7 @@ differential per minute (landed minus absorbed).
 |---|---|---|---|---|
 | **Conor McGregor** (FW champ Dec 2015) | W Alvarez, KO R2, UFC 205, Nov 12, 2016 (title). L Khabib, sub R4, UFC 229, Oct 6, 2018 (title). L Poirier, TKO R2, UFC 257, Jan 23, 2021. L Poirier, doctor stoppage R1, UFC 264, Jul 10, 2021 | 1-3 | -0.62 vs +2.51 | Also 1-1 vs Diaz and 1-0 vs Cerrone at 170; lost to Holloway at 170 (UFC 329, Jul 11, 2026, knee injury R1) |
 | **Max Holloway** (FW champ 2017–19) | L Poirier, UD, UFC 236, Apr 13, 2019 (interim title; 46-49 x3). W Gaethje, KO R5 4:59, UFC 300, Apr 13, 2024. W Poirier, UD, UFC 318, Jul 19, 2025. L Oliveira, UD 45-50 x3, UFC 326, Mar 7, 2026 | 2-2 | +1.46 vs +2.44 | Never knocked out at 155. Against Oliveira he was controlled for 20:49 of 25 minutes and landed 26 significant strikes |
-| **Alexander Volkanovski** (FW champ 2019–24, 2025–) | W Kasuya, TKO R2, Nov 26, 2016 (UFC debut, pre-title). L Makhachev, UD 47-48, 47-48, 46-49, UFC 284, Feb 11, 2023 (title). L Makhachev, KO R1 3:06 (head kick), UFC 294, Oct 21, 2023 (title; short notice per v2 research) | 1-2 (0-2 as champion) | +1.11 vs +2.81 (155 includes Kasuya) | Takedowns absorbed rose to 2.13 per 15 at 155 vs 0.63 at 145, all from Makhachev |
+| **Alexander Volkanovski** (FW champ 2019–24, 2025–) | W Kasuya, TKO R2, Nov 26, 2016 (UFC debut, pre-title). L Makhachev, UD 47-48, 47-48, 46-49, UFC 284, Feb 11, 2023 (title). L Makhachev, KO R1 3:06 (head kick), UFC 294, Oct 21, 2023 (title; short notice per v2 research) | 1-2 (0-2 as champion) | +1.11 vs +2.81 (155 includes Kasuya) | Takedowns absorbed rose to 2.13 per 15 at 155 vs 0.63 at 145. Of the 5 at 155, 4 were Makhachev's and 1 was Kasuya's (corrected in the verification pass; the earlier text said all came from Makhachev) |
 | **Ilia Topuria** (FW champ 2024–25) | W Herbert, KO R2, Mar 19, 2022 (pre-title). W Oliveira, KO R1 2:27, UFC 317, Jun 28, 2025 (vacant title). L Gaethje, corner stoppage after R4, UFC Freedom 250, Jun 14, 2026 (title) | 2-1 | +0.56 vs +0.95 | Won the 155 title (as McGregor did) and lost his first defense. His only UFC knockdown absorbed was against Herbert (R1, 2022). Against Gaethje he scored the only knockdown and still lost |
 | **José Aldo** (FW champ 2010–15) | **No UFC lightweight fights** in the dataset (his UFC fights were at 145 and 135). His fights at 155 before the UFC: **unknown**, not verified this pass | n/a | n/a | |
 
@@ -299,7 +315,7 @@ average lightweight isn't. For the engine, make the size tax a labeled knob with
 |---|---|---|---|---|---|---|---|
 | UFC 245, Dec 14, 2019 (145) | Volk UD (48-47, 48-47, 50-45) | Volk 157/303 (52%); Holloway 134/303 (44%) | 6.28 vs 5.36 | 0-0 | Volk 0/4 | 0:44 vs 0:02 | Volk 67/15/75; Holloway 85/32/17 |
 | UFC 251, Jul 11, 2020 (145) | Volk SD (48-47, 47-48, 48-47) | Volk 137/272 (50%); Holloway 102/268 (38%) | 5.48 vs 4.08 | 0-0 | Volk 3/9 | 1:26 vs 0:00 | Volk 64/6/67; Holloway 44/27/31 |
-| UFC 276, Jul 2, 2022 (145) | Volk UD (50-45 x3) | Volk 199/372 (53%); Holloway 127/301 (42%) | 7.96 vs 5.08 | 0-0 | 0/0 | 1:57 vs 0:16 | Volk 152/19/28; Holloway 64/42/21 |
+| UFC 276, Jul 2, 2022 (145) | Volk UD (50-45 x3) | Volk 199/372 (53%); Holloway 127/301 (42%) | 7.96 vs 5.08 | 0-0 | Volk 0/0; Holloway 0/3 (corrected from "0/0") | 1:57 vs 0:16 | Volk 152/19/28; Holloway 64/42/21 |
 | UFC 300, Apr 13, 2024 (155, BMF) | Holloway KO R5 4:59 | Holloway 181/309 (59%); Gaethje 103/199 (52%) | 7.24 vs 4.12 | Holloway 1 | 0/0 | 0:00 | Holloway 62/62/57; Gaethje 44/26/33 |
 
 - Volk vs Holloway over 75 minutes: out-landed him 493-363, **+1.73 a minute**, with heavy leg kicking
@@ -385,8 +401,9 @@ Gaethje 5'11", 70" reach, orthodox, born Nov 14, 1988 (37; 38 on Nov 14, 2026).
 
 ## 10. Numbers for the engine
 
-- **Market prior for Volk:** 0.374 (BetOnline opener, no-vig); consensus 0.372; range 0.349–0.379
-  across books and methods. The market weight in the stack should use the consensus.
+- **Market prior for Volk:** 0.374 (BetOnline opener, no-vig). The consensus is 0.372, or 0.370 with
+  one row per source. The range is 0.349–0.379 across sources and methods. The market weight in the
+  stack should use the consensus.
 - **Rating prior:** Combat Edge Elo, Volk 1879 vs Gaethje 1869, gives 0.514. Re-check before shipping.
   The dataset UFC-only Elo gives 0.586; use it only as a weak baseline (55.6% favorite accuracy).
 - **Market minus Elo gap:** 0.57 log-odds against Volk (Combat Edge basis). If the engine's size, age
@@ -417,9 +434,10 @@ Gaethje 5'11", 70" reach, orthodox, born Nov 14, 1988 (37; 38 on Nov 14, 2026).
 
 - **Duplicate bouts.** `ufc_fight_results.csv` lists some bouts twice under different event names,
   such as "Noche UFC: Lopes vs. Silva" and "UFC Fight Night: Lopes vs. Silva" (same fight-details
-  URL). Only one of the two names exists in `ufc_event_details.csv`, so 27 rows (14 + 11 + 2,
-  including "Noche UFC: Grasso vs. Shevchenko 2" and "UFC - Road to UFC 4.6") come back without a
-  date. **Dedupe on URL** before joining to events. Fight stats have the same duplication.
+  URL). Only one of the two names exists in `ufc_event_details.csv`, so 27 rows come back without a
+  date. They are 14 under "UFC Fight Night: Lopes vs. Silva", 11 under "UFC Fight Night: Grasso vs.
+  Shevchenko 2" and 2 under "UFC - Road to UFC 4.6". The "Noche UFC: ..." names are the ones that
+  *do* exist in the event file (corrected in the verification pass). **Dedupe on URL** before joining to events. Fight stats have the same duplication.
 - **Decision scores.** In `DETAILS`, each judge's score is written "loser - winner": in 9,493 of 9,510
   unanimous-decision scores the second number is the higher one, whatever order the names are in.
   In a split decision, the dissenting judge's score reads higher-first.
@@ -530,3 +548,61 @@ Web (seen via search results; full pages could not be fetched in this session):
 - https://au.sports.yahoo.com/alexander-volkanovski-justin-gaethje-probably-203009685.html
 - https://bloodyelbow.com/2024/04/08/alexander-volkanovski-switches-his-pick-for-max-holloway-vs-justin-gaethje-for-one-key-reason
 - https://heavy.com/sports/ufc/alexander-volkanovski-predicts-topuria-vs-gaethje/
+
+---
+
+## Verification log
+
+Adversarial check run Nov 6, 2026. The checker set out to refute claims, not confirm them.
+
+**Limits of this pass.** The web-search budget (200 calls, shared by all agents in the run) was
+already used up when this check started. WebFetch could not reach bloodyelbow.com or
+cagesidepress.com (DNS failure: the hosts aren't in this session's allowed network). So **no web
+claim was independently re-searched.** Web claims are graded only on internal consistency, against
+`HANDOFF.md`, `research/gaethje.md` and `research/volkanovski.md`. Those files partly draw on the same
+search results, so agreement between them is weak evidence. Every dataset number was recomputed from
+`data/raw/` with fresh scripts (deduped on URL; names stripped). The size-tax and Elo scripts were
+re-run from copies (`/tmp/claude-0/-home-user-XX/4b441402-ee46-53a7-b3cc-cf59c11a22cb/scratchpad/fcm/`), and every no-vig figure was recomputed independently.
+
+| # | Claim | Verdict | Note |
+|---|---|---|---|
+| 1 | Not booked as of Nov 6; White (Jim Rome, reported Nov 5) says it hinges on Gaethje's retire-or-fight decision | unverifiable | Couldn't re-search or fetch either cited article. `research/gaethje.md` and `research/volkanovski.md` also find no booking. Nothing contradicts it |
+| 2 | FightOdds.io opener Gaethje -200 / Volk +170; post at 21:10 UTC Oct 24 | partly confirmed | The Snowflake decode is right: (2114102147243450379 >> 22) + 1288834974657 ms = 2026-10-24 21:10:04 UTC. The dataset confirms UFC 333 was Oct 24 in Abu Dhabi. The prices are unverifiable this pass but match v2's HANDOFF.md. "Right after the main event" is an inference: the event start time wasn't checked. FightOdds.io is an odds site, not a book (wording fixed in section 1) |
+| 3 | BetOnline -180/+160 (~Oct 25); MMAmania printed +157; Lucky Rebel -180/+155 | unverifiable | Not re-searched. Warning sign: the cited Gambling911 URL slug is "ufc-226-betting-odds", a 2018 event (flagged in place). +157 is one outlet's version of the same BetOnline line, so it's not independent |
+| 4 | No-vig Volk 35.7–37.9%; consensus 37.2%; 34.9–37.9% across methods | confirmed (arithmetic) | Recomputed multiplicative, additive, power and Shin. They match to 3 decimals. Overrounds are 3.7%, 2.7%, 3.2% and 3.5%. Mean of the four rows = 0.3719. The four rows double-count BetOnline; one row per source gives 0.370 (added). Market-minus-Elo 0.571 and 0.862 log-odds both check |
+| 5 | Late Aug: both hands hurt, "still can't punch anything"; ruled out 2026; weighing retirement | corrected (framing) | The quote and the injury are unverifiable this pass, but URL slugs from several outlets agree. The file called August his "last"/"latest" update, which `research/gaethje.md` contradicts. It cites a mid-September statement ruling out 2026 (knee bone bruise) and a September Schulz interview: "if he fights again it will be Tsarukyan", undecided. Both corrected in section 1 and "Gaethje's side". The suspension issuer is also disputed (CSAC vs ABC per F4W), now flagged |
+| 6 | Nov 3 media rankings: champ Gaethje; 1 Topuria, 2 Tsarukyan, 3 Oliveira, 4 Holloway, 5 Pimblett | unverifiable | Not re-searched. `research/gaethje.md` gives the same order from the same aggregators, so this isn't independent. ufc.com wasn't checked |
+| 7 | Makhachev WW champ (UD over Machado Garry, UFC 330, Aug 15, 2026); next vs the Prates–Morales interim winner (UFC 336, Jan 30, 2027); "one of the last" | partly confirmed | Dataset: UFC 330, Aug 15, 2026, Makhachev UD 49-46, 49-46, 48-47. UFC 322, Nov 15, 2025: UD 50-45 x3 over Della Maddalena. The dataset is consistent with a Prates–Morales contender fight: Prates beat Della Maddalena (May 2, 2026) and Morales beat Brady (Nov 15, 2025). The UFC 336 date, venue, interim status and quote are unverifiable this pass |
+| 8 | Volk out-landed Holloway 493-363 over 75 min (+1.73/min); Holloway out-landed Gaethje 181-103 (62-18 in R5), KO at 4:59 R5 | confirmed | 157+137+199 = 493; 134+102+127 = 363; 130/75 = 1.733. UFC 300: 181-103, R5 62-18, R4 35-35, KO R5 4:59. Separate error found in the same table: at UFC 276, Holloway went 0 of 3 on takedowns, not "0/0" (fixed) |
+| 9 | Freedom 250: Topuria out-landed Gaethje 97-91, only KD (R2); Gaethje 0/5 TD; Topuria's corner stopped it after R4 | confirmed (dataset) | 97/162 vs 91/192. KD Topuria R2. TD Gaethje 0/5, Topuria 1/3. Control 2:32 vs 1:32. Rounds 29-32, 44-12, 7-22, 17-25. Results file: KO/TKO, R4 5:00, "Corner Stoppage", Topuria L |
+| 10 | FW champions vs elite LWs 4-8, Elo expected 6.27 | confirmed (as computed) | Recomputed from the dataset Elo: 12 fights, 4 wins, sum of expectations 6.267. About 1.3 SD short. Inference stays low-confidence (n=12) |
+| 11 | 383 one-class-up fights: +0.03 log-odds (se 0.10); KD-absorbed rate 1.02x home | confirmed (as computed) | Re-ran: intercept +0.025 (se 0.105); 145→155 +0.144 (se 0.242, n=74); since 2015 +0.080 (0.113, n=334); chin ratio 1.02, power 1.33; KO/TKO-loss 0.170; FW/LW same-home KO shares 0.337/0.292. Elo check: favorite won 0.556, Brier 0.2452, n=3,644 |
+| 12 | Combat Edge Elo after UFC 333: Volk 1879, Gaethje 1869; before: Volk 1865, Evloev 1861 | unverifiable | Not re-checked; the post-fight values come only from v2's HANDOFF.md. 1/(1+10^(-10/400)) = 0.514 checks. A +14 gain from beating a near-equal opponent implies K ≈ 28, which is plausible |
+| 13 | BetOnline Volk -115 / Jean Silva -105 | unverifiable | Not re-searched. No-vig 0.511 checks |
+| 14 | Each fighter knocked down 4 times in the UFC; 2 of each led to KO losses | confirmed | Volk was dropped by Mendes 2018 (Volk won), Makhachev 2023 (KO loss), Topuria 2024 (KO loss) and Lopes 2025 (Volk won). Gaethje was dropped by Alvarez 2017 (KO loss), Oliveira 2022 (sub loss), Holloway 2024 (KO loss) and Topuria 2026 (Gaethje won). Gaethje's third UFC KO loss (Poirier 2018) came without a recorded knockdown |
+
+**Other checks on the rest of the file.**
+
+- **Confirmed from the dataset:**
+  - Records and judges' scores for every fight in sections 3, 4, 7, 8 and 9. This covers Gaethje–Pimblett 48-47, 49-46, 49-46 and Makhachev–Volk 1 48-47, 48-47, 49-46.
+  - The Freedom 250, UFC 298, UFC 284/294, UFC 302, UFC 280, Poirier–Gaethje 1 and Khabib–Gaethje (15 of 15 leg kicks) stat lines.
+  - Recent-form rows: Lopes 1 and 2, Evloev, Fiziev 2, Pimblett.
+  - Round-pace figures for both men (Volk 4.41/5.48/7.11/6.38/7.20; Gaethje 6.30/6.58/4.76/5.84/5.94) and their ratios.
+  - Gaethje 0.30 TD per 15. Physicals: 5'6", 71", born Sep 29, 1988; 5'11", 70", born Nov 14, 1988.
+  - Tsarukyan's 6-fight streak. Topuria's only UFC knockdown absorbed (Herbert).
+  - All dataset Elo values. Minutes-weighted differential drop -1.43/min. Per-fighter diffs.
+  - Edgar 8-5, Penn 0-3 and Pettis 1-1 at 145.
+  - Volk's "seventh title defense" (5 + 2) and his 2016 Kasuya win at 155.
+- **Corrected:**
+  - Volk's takedowns absorbed at 155: 4 of 5 were Makhachev's, 1 was Kasuya's (the file said all were Makhachev's).
+  - UFC 276 takedowns: Holloway went 0/3.
+  - Data note: the 11 undated rows are under "UFC Fight Night: Grasso vs. Shevchenko 2", not "Noche UFC: ..." (that name is the one the event file has).
+  - Volk–Evloev -113/-113 was labeled "closing", but neither source says so; now "pre-fight, timing unknown".
+  - Topuria at -600 is 6-to-1 as posted; 4.7-to-1 is the no-vig figure (clarified).
+  - "Featherweight champion against Gaethje" changed to "former featherweight champion": Holloway in 2024 and Topuria in 2026 no longer held the 145 belt.
+- **Confirmed data notes:** 9,493 of 9,510 unanimous-decision scores (after URL dedupe) read loser–winner. pandas is 3.0.5 and loads text as `str`. Fight stats are duplicated under both event aliases (64 and 52 rows).
+- **Flagged, unresolved:**
+  - Timing of Volk's "That's something I would retire for" line. This file says before UFC 333; `research/volkanovski.md` and `research/gaethje.md` say the post-fight press conference.
+  - Lucky Rebel's posting date is unknown.
+  - Every quote and price in sections 2–6 still rests on search snippets that nobody has read in full.
+- **To redo once web access returns:** booking status after Nov 5, the Nov 3 rankings on ufc.com, the four Volk–Gaethje prices and any line movement, Combat Edge's current ratings, UFC 336's card and date, and Gaethje's latest public statement.

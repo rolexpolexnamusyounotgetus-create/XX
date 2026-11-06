@@ -21,6 +21,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS = {
     "/*__ENGINE__*/": ["src/params3.js", "src/engine3.js"],
     "/*__RIG__*/": ["src/rig3d.js"],
+    "/*__AVATAR__*/": ["src/avatar3d.js"],
     "/*__ARENA__*/": ["src/arena3d.js"],
     "/*__DIRECTOR__*/": ["src/director3.js"],
     "/*__SHOW__*/": ["src/show3d.js"],
