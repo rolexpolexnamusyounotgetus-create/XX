@@ -26,7 +26,7 @@ Data: ufcstats snapshot through Oct 31, 2026 (2026 rows dropped at parse); Sherd
   - Pooled 2019-2025 (674 bouts; a planning number, never a selection input): -0.039 [-0.066, -0.013]; -0.037
     [-0.063, -0.011] with nested selection.
   - Part of the shortfall is the reference: seeded Elo beat plain Elo by only 0.006 in the CV years but by 0.036 on
-    the look. Against plain Elo the debut model is -0.060 in CV and -0.033 [-0.080, +0.012] on the look.
+    the look. Against plain Elo the debut model is -0.060 in CV and -0.033 [-0.077, +0.012] on the look.
 - **With a line, the market stays.**
   - CV admitted the stack [open, debut] (-0.021; robust: -0.018 nested, -0.020 on the verifier's rebuilt network).
   - [close, debut] passed the 0.0005 rule by a hair (-0.0008) as built, but the admission does not survive nested
@@ -439,3 +439,61 @@ node tests/test_forward_models.js                     # the ledger's own test st
 
 The replacement and raw-coefficient facts above come from `DebutLR` refit on 2012-2023 with the chosen config
 (`tools/debut.py` load_frame, prep, cfg_cols, DebutLR; 2012-2023 rows only).
+
+## Verification log
+
+Adversarial verifier, Nov 6, 2026, about 11:40 pm UTC.
+
+**Verdict.** No look-ahead, no 2026 data and no corner-order exploitation was found. Every headline number reproduces
+with independent code, including on a network rating the verifier rebuilt from the raw Sherdog pages.
+- **Adopt the debut method model** for bouts with a debutant (adopt = true). The CV gate passes for the setup the
+  ledger actually uses, and the look confirms it. Making it primary still needs a pre-registered forward version
+  (fwd-6+).
+- **Nothing changes for the winner.** The no-line debut model passed CV but the look did not confirm it.
+- **Both line stacks are out.** [open, debut] fails the plan's CV non-inferiority bound. The [close, debut]
+  admission was an artefact of selection on the gate years.
+
+**Defects fixed:**
+- `tools/debut.py` export: the adoption block keyed the method on the look's method3 CI, a pre-registered secondary
+  ("never decisive"), which is selection on 2024-25. It is now keyed on the CV gate, with the look as a "not worse"
+  confirmation. debut.json was re-exported, and only `model.adoption.rule` / `verification` and `meta.built` changed.
+- `tools/debut.py` features: without `--live`, the rows were decayed to 2026-01-01 instead of the bout date.
+- Report text: the close-stack admission, the "biggest single signal" claim, the decision rule, the nested-selection
+  optimism, and the change in the reference across periods (corrected above).
+
+**What was re-done independently.** `tools/debut_verify.py` does not use tools/debut.py's model code. It shares only
+the ufcstats parse, the Sherdog HTML parser, the promotion mapper and the frame's raw per-side columns. Outputs go to
+out/debut_cache/verify/.
+
+| check | result | command |
+|---|---|---|
+| Timeline | cv.json (sha256-16 ff5b8cdb2659dcd2) and frame.pkl (00f12a966c82463e) are byte-identical to the pre-registration commit 8c17161 (10:51:26 pm). holdout ran at 10:51:38 pm. After the prereg, tools/debut.py changed only in export (the pooled number, adoption) and the docstring. Three earlier CV runs (cv0-cv2, 10:41-10:47 pm) read ≤ 2023 only; the promo blocks were added between them | `git log`, `git diff 8c17161 HEAD -- tools/debut.py`, `sha256sum` |
+| 2026 data | none in any fit or committed file (debut.json dates: 2019-2025 bouts, plus 2026-01-01 as the as-of date and 2026-11-06 build stamps). The test fixture's Nov 7, 2026 bout carries no result. The running crawl writes only to gitignored data/raw/debut_cache/ | scan of debut.json; `git check-ignore` |
+| Universe | 1,442 debut bouts from the raw CSVs by name identity against 1,443. The one extra is the two Bruno Silvas (person ids are right) | `... debut_verify.py checks` (1) |
+| Page resolution | all 1,728 debutants' Sherdog pages list every one of their UFC bouts (date match within 3 days) | `checks` (3) |
+| Own debut bout leaking as a regional row | the builder's non-UFC rows within 3 days of any UFC bout of the same man: 0. The verifier's own pages flag any such row as UFC by construction, and still reproduce | `checks` (2) |
+| Network rating, rebuilt | own availability rule, dedup, MAP fit and one-fighter rating. Identical bout counts (32,150; 8,405 UFC; 25,602 / 27,912 / 29,959 at the last three cutoffs). Per-row correlation with the frame 0.993-0.9997 (th 0.996-0.998, promotion level 0.999+) | `... debut_verify.py net` |
+| Winner CV, frozen config | builder features: 0.61423 (builder 0.61430); own network: 0.61653. vs seeded Elo -0.0541 [-0.0866, -0.0221] / -0.0518 [-0.0836, -0.0200]. Greedy selection picks the same 5 blocks, C 1, tau 2, on both | `... cv --net builder --nested`, `--net mine` |
+| Selection optimism | nested selection (each year's blocks chosen on 2015..Y-1 only): CV 0.61962 (+0.0054). vs seeded -0.0487 [-0.0817, -0.0160]; own network -0.0464 [-0.0794, -0.0137] | same |
+| Stack gate 2021-23 | as built: close -0.00079 (enters), open -0.02134 (enters). Nested: close +0.00042 (rejected), open -0.01759. Own network: close -0.00044 (rejected), open -0.01997. Stack-vs-line upper bounds +0.0030-0.0040 (open) and +0.009-0.010 (close), all above the plan's +0.001 | same |
+| The look | debut vs seeded Elo +0.0031 [-0.0464, +0.0504] (builder +0.0032); open stack +0.0175 [-0.0128, +0.0460]; close stack +0.0059 [-0.0085, +0.0202]; nested model -0.0034 [-0.0495, +0.0412]. Reference shift: seeded minus plain Elo -0.0056 in CV, -0.0357 on the look | same |
+| Method | own multinomial, own base-rate table. CV as built: method given the winner -0.0338 [-0.0595, -0.0070], method3 -0.0197 [-0.0430, +0.0030] (builder -0.0352 / -0.0209). CV with the ledger's winner fed: -0.0330 [-0.0591, -0.0061] / -0.0252 [-0.0491, -0.0023]. Look: -0.0831 / -0.0444 as built, -0.0857 / -0.0507 adopted | `... debut_verify.py method` |
+| Corner order | swap max \|p + p' - 1\| = 2.2e-16 (own code). A free intercept on the CV out-of-fold logits is +0.255 [+0.059, +0.461]: corner A wins 63.5% of CV debut bouts, and the no-intercept model leaves that unused. The references have no intercept | `cv`, `checks` (5) |
+| CIs | card-cluster bootstrap with a ratio estimator. Event names are unique per date. The verifier's intervals (different seed) match the builder's to about 0.003 | all of the above |
+| Replacement signal | reproduced: 398 bouts, the replacement won 28.1%, the close gave him 34.3%. In 2024-25: 49 bouts, 30.6% against 34.3%. In the model, dropping repl costs only +0.0038; the network rating (+0.0133), promotion level (+0.0089) and amateur win log-odds (+0.0078) cost more | `checks` (4, 6) |
+| Tests | `node tests/test_debut.js` 23/23 and `node tests/test_forward_models.js` PASS after the re-export | as listed |
+
+**Residual risks, not testable here:**
+- The fight-week flags come from the current revision of each Wikipedia event article. If bout-change prose were
+  less complete for some outcomes, the replacement flag would carry a little outcome information.
+- Seeded Elo, the primary reference, is much stronger on the look than in the CV years.
+- The look is not clean (preufc had scored the reference on it).
+- Elo's K and boost come from elo_report.json (inherited, project-wide).
+
+```
+nice -n 5 python3 tools/debut_verify.py net                        # ~25 s
+nice -n 5 python3 tools/debut_verify.py cv --net builder --nested  # ~2 min
+nice -n 5 python3 tools/debut_verify.py cv --net mine --nested     # ~2 min (after net)
+nice -n 5 python3 tools/debut_verify.py method                     # after cv --net builder
+nice -n 5 python3 tools/debut_verify.py checks                     # after cv --net builder; ~1 min
+```
