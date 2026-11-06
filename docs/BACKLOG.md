@@ -332,6 +332,13 @@ Findings from verified research that the next engine versions must use. Each lin
       0.519 vs 0.500 (5 rounds). Conversion is 0.510 vs 0.512 per KD; the 3-round KO share is 30.7% vs 30.7%.
     - So the one joint level pass is within noise; no level was moved.
     - League-average plain-table KO shares run 0.4-3.1 pts low, so the selfcal re-fit is a job for Calibrate.
+  - Step 3 done (~23:20 UTC; docs/CHANGELOG.md "v5 merge log"): components.styles_sos (sos "wf" on, styles and newcomer off),
+    components.officials (off; opt-in per call, named-judge effects off) and components.realism_sens (off; factors fit on
+    v4.0.1) with FightEngine.sensitivity. Each flag off = the engine before it bit for bit (tests/test_v5_step3.js), and a
+    strict check runs against step 2's own params.
+    - SOS acts only with opts.sos. Backtest tools get the pairs from tools/sosrec.js: sos_wf.json, corners swapped, LOYO
+      coefficients on train and meta.coef on 2024-25. tools/evalv.js has its own copy, and versions/v5/ must include
+      styles_sos.js.
 - blindtest harness (VERIFIED ~21:10 UTC, research/model_blindtest.md "Verification log"): independent no-cache
   replay, own scorer and own stacker reproduce every headline. MoE stack + close 0.5774 vs close 0.5854
   (-0.0081 [-0.0125, -0.0036], ahead on 56 of 84 cards); no-line stack ties the close (+0.0001); removing the
