@@ -892,7 +892,7 @@
     mat.color.copy(lin(looks.tint));
     var X = this.tex || {}, cfg = this.cfg;
     function chan(i) { return new T.Vector4(i === 0 ? 1 : 0, i === 1 ? 1 : 0, i === 2 ? 1 : 0, i === 3 ? 1 : 0); }
-    if (X.normal) {
+    if (X.normal && !this.opts.noNormal) {
       // sculpted athletic relief (MakeHuman UV, glTF v convention so green is flipped); leaner fighters show more of it
       var ns = cfg.ref ? 0.35 : 0.45 + 0.75 * (cfg.lean || 0.5);
       mat.normalMap = X.normal; mat.normalScale = new T.Vector2(ns, -ns);

@@ -36,7 +36,7 @@ Formats: 3 x 5 min and 5 x 5 min only. Panel: 8,660 fights, 41,200 fighter-round
   own round-to-round noise is an AR(1) process (sd 0.31, autocorrelation 0.68), where the engine uses iid noise.
   Accuracy has individual fight-night form of sd 0.29 logit (engine `form.acc` 0.12). Profiles explain accuracy
   only about 0.55 for 1, so it should be attenuated.
-  *Verified: the shared pace (sd 0.38 on the 2024-2025 refit) and the accuracy form (0.27) replicate; the AR(1)
+  *Verified: the shared pace (sd 0.38 on the 2024-2025 refit) and the accuracy form (sd 0.27-0.29) replicate; the AR(1)
   persistence does not: 0.45 on the 2024-2025 refit, 0.27-0.49 by the method of moments. Treat 0.68 as the upper
   end and target the engine's realized persistence on 2019-2023 matchups (0.63), section 8 E2.*
 - **Per-fighter cardio is real but small.** A fighter's true late-round output ratio has sd 0.16 on the log scale
@@ -854,3 +854,108 @@ JSON keys:
 | `engine_check_v4dev_train`, `engine_check_v4dev_test` | section 7.1 (engine as of 14:22, real 2019-2023 / 2024-2025) |
 | `state_models.*.test_refit`, `form_decomposition.*_test_refit` | 2024-2025 refits (replication checks) |
 | `kd_momentum_descriptive.skip_round` | knockdown momentum vs the round before the knockdown round |
+
+## Verification log
+
+Adversarial re-check, Nov 6, 2026, about 2:15 to 3:30 pm UTC. The first verifier was cut off by the usage limit and
+left `tools/dynamics_verify.py` unfinished (never run to the end; no output file). This check started from the
+assumption that the headline results were inflated or wrong.
+
+**Method.** New code in `tools/dynamics_audit.py` (output `data/derived/dynamics_audit.json`, about 3 minutes). It
+reuses only the raw loaders and re-derives the covariates, the walk-forward chin and power indices and the
+knockdown likelihood itself. The two replication fits that reuse `DynRE` / `FrailPois` come after a brute-force
+check of the likelihood. Then `tools/dynamics.py` was fixed in place and rerun in full (10-group jackknife, 22 minutes
+under heavy machine load). The current engine was run on both windows (section 7.1).
+
+### Confirmed
+
+| Check | Result |
+|---|---|
+| Vault | No 2026 fight is scored anywhere. The raw snapshot holds 476 of them; they enter only `fighter_late_ratio.current` and `cardio_by_slug` (forward use, already flagged). `tools/dynamics_audit.py` drops them on load. |
+| Walk-forward features | Chin and power indices rebuilt from scratch, with fights on the same day kept apart, give the same knockdown fits to 0.01 log-likelihood. The engine-rule pace fields come from `tools/build_db.py`'s walk, which reads each fighter's state before the fight. |
+| Corner order | Every model stacks both fighters' rows with no A/B term or intercept, so the 56% first-listed-wins pattern cannot leak in. The only input built from the fight's result was the judges' label (fixed below). |
+| Fighter order and people | Person id vs the name on the stats row: 12 mismatches in 16,368 fighter-fights, all spellings of the same person (Kai Kamaka / Kai Kamaka III, Rafael Cerquiera / Cerqueira, Patricio Freire / Pitbull, Bibulatov Magomed). Winner orientation agrees across the two loaders in 8,658 of 8,658 fights. |
+| Loser-first cards | Unanimous: first number larger on 1 card of 2,985 fights. Split: exactly one card in 778 of 779. Majority: none of 59 (the dissent is a draw card). The parser's orientation holds for split decisions too. |
+| NCs and draws | No finish flags on NC or draw rows; they never enter the judges' labels. |
+| Covariates | D10, K_lag, K_early and lost rebuilt from round pivots match the tool exactly; opponent columns are symmetric. |
+| DynRE likelihood | Equals a brute-force multivariate-normal likelihood on 150 fights (difference 3e-12; GLS beta identical). The estimator simulation reproduces (DynRE +0.016 / -0.005 for a true 0; fixed effects -0.42 / -0.40). |
+| Knockdown hazard | Own negative-multinomial code: test log-lik -1406.40 (null), -1411.03 (no frailty), -1406.66 (damage), -1412.22 (damage, no frailty); profile [1, 0.569, 0.372] and [1, 0.880, 0.507, 0.294, 0.447]; 2010-2023 [1, 0.549, 0.332] and [1, 0.650, 0.405, 0.300, 0.275]. All as reported. A 2024-2025 refit also finds no damage effect (D10 +0.013, SE 0.057). |
+| Conversion and stoppages | 550 of 1,074 knockdowns converted (0.512) in train, 219 of 414 (0.529) in test. Non-knockdown stoppages 55 standing / 150 ground (train), 27 / 47 (test). |
+| Cardio | Lag-1 within-fighter correlation of the late ratio 0.073, in line with the reported one-fight ICC 0.058. |
+| Momentum and carry-over | The knockdown coefficients replicate on a 2024-2025 refit (output: scorer -0.070, SE 0.040; dropped +0.125, SE 0.046). Controlled-minutes at distance replicates (-0.015, SE 0.007). |
+
+### Problems found, and what was done
+
+1. **Look-ahead in the judges' label (fixed).** `judge_labels` spreads each card's total over the rounds with a
+   round-winner model and the stats of every round. So the label of round r-1 depends on round r, the outcome it is
+   used to explain, and on later rounds and the result. Holding the published label fixed, the inferred label still
+   moves with round r's landed margin (-0.0055 per 10, SE 0.0015). `tools/dynamics.py` now uses the published
+   per-round scores (`true_judge_labels`, from `data/derived/judgerounds_rows.json`: complete cards that agree with
+   ufcstats; dev file without 2026). It keeps the old label as `lostJinf` on the same fights for comparison
+   (agreement 92%, corr 0.91). Train coefficients (2024-2025 refit in brackets), published vs inferred label:
+   output -0.009 (+0.009) vs +0.002 (+0.034); accuracy -0.079 (-0.085) vs -0.045 (-0.053); takedown attempts
+   +0.006 (-0.078) vs +0.025 (-0.024).
+   Conclusions: output and takedowns still show no response. The accuracy dip is twice as large as reported and
+   replicates on held-out fights. The inferred label had produced a spurious z = 2 output response on the test refit
+   (+0.034).
+2. **Tuning targets taken from the validation window (fixed).** The E2 and E7 acceptance values (output sd 0.50 /
+   corr 0.80 / AR 0.5; knockdown frailty "about 0.9") were the real statistics of the 2024-2025 matchups. Under the
+   protocol that tunes on validation data. On 2019-2023 matchups the real knockdown frailty is 1.49, not 0.88. The
+   cut of `form.vol` to 0.3 rested on the validation number and is withdrawn (0.5 at most). `engine_check` now takes
+   `--engine-period train|test`. Section 7.1 and E2 / E7 give the train-window targets.
+3. **Knockdown momentum misread for the engine (corrected, E4).** The dynamic RE coefficients (-8.8% scorer, +6%
+   dropped) are relative to an expectation that already contains the knockdown round's own output: the scorer's
+   round runs +15% (SE 4%) above the round before, the dropped man's -12% (SE 4%). The contrast an engine multiplier
+   must match is next round vs the round before the knockdown round (`kd_momentum_descriptive.skip_round`; also in
+   the engine check): scorer -5.9% (SE 4.8%), dropped -2.6% (SE 4.9%) on 2010-2023. A first pass of this audit that
+   also required the next round to be full and knockdown-free gave -11.6% for the scorer. That selection is on the
+   post-knockdown outcome, so the tool uses the relaxed version. The current engine's scorer runs +6.5% above
+   baseline next round, so x 0.92 suits that engine; the dropped man should get about x 0.95, not x 1.05.
+4. **Over-claimed precision (text corrected in place).**
+   - 5-round late KO/TKO "2-3x too often": the real 0.07 / 0.05 / 0.04 rest on 5 / 3 / 2 finishes. Pooled rounds
+     3-5 give 0.054 (Wilson 95% 0.029-0.096) in 2024-2025 and 0.066 (0.046-0.093) in 2019-2023, so about
+     1.6-2x for the old engine. The current engine is at 0.073 on 2019-2023: closed.
+   - kPace 45 vs 15, "held-out skill rises from 2.1% to 2.6%": the difference has a fight-bootstrap 95% CI of
+     -0.6 to +1.9 points; kPace 30 scores 2.7%.
+   - "The decline is if anything steeper out of sample": true for round 2 (88 vs 114) but round 3 is under-
+     predicted (68 vs 58).
+   - 5-round validation knockdown profile [.., 0.23, 0.12]: 4 and 2 knockdowns.
+5. **Terms that do not replicate on a 2024-2025 refit (flagged in place).** AR(1) of own output 0.68 -> 0.45
+   (moments: 0.49 train, 0.27 test, once the shared round shock may persist; with the iid shared shock of the
+   DynRE the moments have no solution with |phi| < 1). Opponent's earlier output on accuracy +0.078 -> -0.131
+   (SE 0.061), which was cited as support for `accStam`. Own earlier output at distance -0.044 -> +0.046.
+   Desperation -4.7% -> -0.3%. Controlled minutes on takedown attempts -0.104 -> -0.040 (SE 0.026). Damage on
+   output per round-minute -0.017 -> -0.040 (SE 0.018): a small decay, not none. `fit_dynre_outcome` and
+   `form_decomposition` now store these refits (`test_refit`, `*_test_refit`) as checks, never for selection.
+6. **Stale baselines.** E2 / E7 quoted "was" values from params 3.0.0-selfcal. The engine now runs the walk-forward
+   values (form.out 0.357, pace 0.329, acc 0.478, pow / chin 0.316). With those, the output spread is right in total
+   but split the wrong way (corr 0.49 vs 0.85), and accuracy form overshoots (0.44 vs 0.34). E2 has been re-based.
+7. **Protocol hygiene (fixed, no numeric change).** Part 2 read `backtest.json`, which contains 2026 fights (none
+   were scored). It now reads `backtest_dev.json` and skips anything from 2026. The kPace rows are unchanged.
+8. **Tool bugs (fixed).** A full run rewrote the JSON from scratch, dropping the engine checks and the hand-written
+   `meta.provenance`; `save()` now merges (meta included) unless `--fresh`. `--parts 3` silently reran every part
+   1/3/4 model; `--parts J` now reruns only the judges' models. A code comment had H10 backwards (the documented
+   meaning was right).
+
+### Not changed, still open
+
+- The `partial` dummy is contemporaneous: it marks a round that ended early, which is the outcome. It is a nuisance
+  term in both the null and the full models, so the held-out comparisons are fair. Its coefficient is not a
+  dynamic.
+- Section 4 conditions on fights that went the distance, which selects on later rounds. The sig-landed label on all
+  fights (section 2.2) agrees, so the output conclusion does not rest on it.
+- The knockdown frailty variance is not stable over time (train 1.08, 2024-2025 refit 0.53, SE of log 0.41). That
+  fits the 2024 glove-trial dip in `research/model_durability.md`. Recheck with the trailing level before
+  committing to any frailty value.
+- Jackknife SEs were reproduced only by rerunning the tool, not by independent code.
+
+### Rerun
+
+`python3 tools/dynamics.py --jack 10`: a full rerun. A key-by-key diff against the pre-verification JSON shows every
+number unchanged to 1e-4 except `adaptation_judges` (intended) and the vault count in
+`fighter_late_ratio.engine_rule.n`, which the old run tallied but never scored. The new keys were added and the
+earlier engine checks kept. Then: `python3 tools/dynamics.py --parts none --engine-csv <eng_train.csv> --engine-period
+train --engine-key engine_check_v4dev_train` and the same with `<eng_test.csv> --engine-period test --engine-key
+engine_check_v4dev_test`. The CSVs came from `node tools/dynamics_engine.js <csv> --engine-dir <frozen copy of src
+at 14:22>`, with `--sims 12 --from 2019-01-01 --to 2023-12-31` for train and `--sims 30` for test.
+`python3 tools/dynamics_audit.py`.

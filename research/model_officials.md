@@ -228,7 +228,7 @@ yearly is worth about 0.016 per fight in card LL over the frozen fit.
 **By year** (published model, frozen fit): 2024 card LL -3.925 vs -3.956 league, split predicted 0.247 vs 0.244
 observed; 2025 card LL -3.804 vs -3.827, split predicted 0.266 vs 0.153 observed.
 
-**Calibration of the decision winner** (2024-25, deciles of predicted P(A wins)): 116 decisions at 2.3%
+**Calibration of the decision winner** (2024-25, bins of width 0.1 in predicted P(A wins)): 116 decisions at 2.3%
 predicted, 3.4% observed; 162 at 97.1% predicted, 98.1% observed; the middle bins are noisy (n = 23-48 each). A
 logit-logit calibration slope is 0.92 on 2024-25 and 0.73 on 2022-23 (engine v3 rule: 1.02 and 0.82): the model
 is somewhat overconfident about the decision winner in 2022-23 and close to calibrated in 2024-25. The fight-level

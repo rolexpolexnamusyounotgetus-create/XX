@@ -2081,11 +2081,16 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
     lg = J["league"]
     last_year = max(int(k) for k in lg["ten_eight"]["c_by_year"])
     eng = {"version": "officials v8 (tools/officials.py)",
-           "judge_equation": "z = exp(n)*(exp(v+wV*t)*V + exp(p+wK*t)*K + exp(g+wG*t)*G + h*home + u) + Logistic(0,1); "
-                             "u ~ N(0, sigma_shared^2) per round, shared by the panel; A wins the round if z > 0; "
-                             "winner W gets 10-8 with P = sigmoid(c0 + c_now + c + thV*V_W + thK*K_W + thG*G_W + thU*u_W); "
-                             "10-10 with P = p_10_10",
+           "judge_equation": "V = b_head*dHead + b_body*dBody + b_leg*dLeg (landed, A - B); K = b_kd*dKD; "
+                             "G = b_td*dTD + b_ctrl_min*dCtrlMin + b_sub*dSubAtt + b_rev*dRev; t = (year - 2017)/10; "
+                             "z = exp(n)*(exp(v+wV*t)*V + exp(p+wK*t)*K + exp(g+wG*t)*G + h*home + u) + Logistic(0,1); "
+                             "u ~ N(0, s^2) per round, shared by the panel, s = sigma_shared*exp(-kappa*|core0|), "
+                             "core0 = exp(wV*t)*V + exp(wK*t)*K + exp(wG*t)*G; A wins the round if z > 0; "
+                             "winner W gets 10-8 with P = sigmoid(c0 + c_year + c + thV*V_W + thK*K_W + thG*G_W + thU*u_W) "
+                             "(V_W, K_W, G_W, u_W = W's edge; c_year = ten_eight.c_2026 for new fights); "
+                             "10-10 with P = p_10_10 (checked before the winner); home = [A from event country] - [B]",
            "beta": lg["beta"], "w": lg["era_trend_per_decade"], "t_now": round((last_year - 2017) / 10, 2),
+           "t_2026": 0.9,
            "sigma_shared": lg["sigma_shared"], "home": lg["home"], "p_10_10": lg["p_10_10"],
            "ten_eight": {"c0": lg["ten_eight"]["c0"], "c_now": lg["ten_eight"]["c_by_year"][last_year],
                          "theta": lg["ten_eight"]["theta"],

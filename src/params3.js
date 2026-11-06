@@ -11,8 +11,11 @@
      fit to all-years priors (2018..2026-10, incl. validation and the vault).
    - [judgecal] values: tools/judgecal.js, maximum likelihood on the 2019-2023 judges' rounds (judgerounds_rows.json).
    - Global-scale re-tune (tools/mlcal.py, spec tools/mlcal_spec_engine4.json, learned rates on through the out-of-fold
-     hook, TRAIN only, --no-val): no candidate beat these values on both train windows (tuning 1,300 fights and
-     confirmation 672 fights), so they stand (data/derived/mlcal_candidates_v4.json).
+     hook, TRAIN only, --no-val): no candidate beat the self-calibrated values on both train windows (tuning 1,300
+     fights and confirmation 672 fights), so the search adopted nothing (data/derived/mlcal_candidates_v4.json).
+   - [levels v4] values: tools/v4_levels.js, a dampened fixed point on 1,000 TRAIN fights with the learned rates on
+     (out-of-fold), matching knockdowns per landed head strike, the KO/TKO and submission shares and the 10-8 share
+     (data/derived/v4_levels.json). The self-calibrated league level ran ~10% low on knockdowns there.
    - [walkfwd] values left from v3 (tools/calibrate.js on 2019-2023 with walk-forward priors): form sds, caution5,
      r1Caution5, drainSchedExp, age / KO-loss / size coefficients, powExp, chinExp, ctrlScale.
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
@@ -104,7 +107,7 @@
     outMob: 0.15,            // output x (1 - outMob (1 - mobility)) (default)
 
     // ---------------- damage, knockdowns, finishes ----------------
-    kdScale: 1.236,          // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.246] global knockdown scale on p0 (division KD per landed standing head strike)
+    kdScale: 1.391,          // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 1.246] global knockdown scale on p0 (division KD per landed standing head strike)
     kdPos: [1.0, 2.561],     // [selfcal v4: train-only priors_dev.json] KD multiplier for distance, clinch head strikes; fit so clinch stoppages are 12.5% of strike KO/TKOs (baserates; knees and elbows)
     kdBodyRatio: 0.05,       // KD chance per landed standing body strike relative to head (baserates: body 5.5% of KO/TKOs)
     kdDmg: 800,              // accumulated head damage: KD x (1 + D / kdDmg) (literature 3.2: damage effect is weaker than fatigue and selection)
@@ -129,7 +132,7 @@
     powDmgExp: 0.5,          // damage per landed head strike = (power ratio)^powDmgExp (v2: sqrt)
     dmgHeal: 0.06,           // share of head damage that clears between rounds (default)
 
-    kdInstant: 0.3949,       // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.3175] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
+    kdInstant: 0.3673,       // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.3175] P(knockdown is an immediate knockout), x damage, fatigue and division factors; scaled on odds with kdRefStop, stko and gnpTko (koAll 0.771) to the 2019-2023 KO share
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
     finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
@@ -138,11 +141,11 @@
     kdRecoverStand: 0.45,    // share of recoveries that get back to the feet; the rest recover guard with the attacker on top (default)
     kdGnpRate: 1.1,          // ground strikes per second in the follow-up flurry (default)
     kdGnpAcc: 0.78,          // landing probability of follow-up ground strikes (default)
-    kdRefStop: 0.2022,       // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.153] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
+    kdRefStop: 0.184,       // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.153] P(referee stops it) per landed follow-up head strike, x damage and fatigue factors
     refDmg: 600,             // follow-up referee stop odds x (1 + D / refDmg) (default; small: finish hazard falls by round in the data)
     kdFinRef: 0.6,           // league P(same-round finish | KD) the follow-up was tuned for; division kd_fin rescales on odds (priors kd_fin, LW 0.60)
-    stko: 0.04096,           // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.03439] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
-    gnpTko: 0.03453,           // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.02467] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
+    stko: 0.03644,           // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.03439] standing TKO hazard per landed standing head strike while hurt, x (stkoBase + D/100); fit so stoppages without a KD are ~7% of KO/TKOs (baserates 0.049 vs 0.509 per 100 standing head landed)
+    gnpTko: 0.03072,           // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 0.02467] GNP TKO hazard per landed top ground head strike (x sub-position, damage, fatigue); fit so ground stoppages are 28% of strike KO/TKOs (baserates)
     stkoBase: 0.3,           // standing TKO hazard while hurt = stko x (stkoBase + D / 100) (default)
     gnpDmg: 600,             // GNP TKO x (1 + D / gnpDmg) (default)
     gnpHurt: 2.0,            // GNP TKO multiplier while hurt (default)
@@ -175,7 +178,7 @@
     tdOddsScale: 0.9018,     // [selfcal v4: train-only priors_dev.json; v3 walkfwd 0.9103] takedown success odds scale
     sweepScale: 1.0,         // sweep / reversal rate scale (default; reversals come from each pair's data rates)
     subAttScale: 1.085,      // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.042] submission attempt rate scale
-    subConvScale: 1.488,     // [selfcal v4: train-only priors_dev.json; v3 walkfwd 1.619] submission conversion odds scale
+    subConvScale: 1.847,     // [levels v4: tools/v4_levels.js on 2019-2023 fights, learned rates on; v3 walkfwd 1.619] submission conversion odds scale
     gilloScale: 1.0,         // standing guillotine attempts on stuffed shots scale
 
     // ---------------- fight-night form (sds; every multiplicative draw is a mean-1 lognormal) ----------------
@@ -209,7 +212,7 @@
       sharedFight: 0.3303,                    // [judgecal] share of the shared variance drawn once per fight (persists across rounds; data 0.283 of 1.531^2, LR 101): panel residuals correlate ~0.12 between rounds of a fight
       indSd: 1.079,                           // [judgecal] sd of each judge's own noise (logits)
       tasteSd: 0,                             // lognormal sd of each judge's fight-level taste for striking / grappling / damage; 0 in v4: a judge who dissents twice in a fight does so in either direction equally often (judgecal: no fight-level taste; v3 0.2 from literature 12.5)
-      t108: 7.07,                             // [judgecal] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge); 2021-2023 threshold (2019-2020: 6.29; 10-8 share 3.6% vs 5.9%)
+      t108: 8.555,                            // [judgecal 7.07 on real rounds; levels v4 8.555: simulated decision rounds give the 2021-2023 3.5% 10-8 share on train fights] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge); 2021-2023 threshold (2019-2020: 6.29; 10-8 share 3.6% vs 5.9%)
       t108kd: -1.087                          // [judgecal] threshold change per knockdown of edge; negative: z already carries 2.42 per KD, and judges give a 10-8 to 13% of KD-edge round winners, not the 23% that z alone implies
     },
 
