@@ -786,8 +786,8 @@ def model_eta(J, X, BASEv):
 
 
 # ------------------------------------------------------------------ fit pipeline
-OOF_YEARS = [2020, 2021, 2022, 2023]          # time-ordered CV folds inside the training period
-ES_SPLIT = (2017, (2018, 2019))               # round / epoch selection: train <= 2017, stop on 2018-2019
+OOF_YEARS = [2019, 2020, 2021, 2022, 2023]    # time-ordered CV folds inside the training period
+ES_SPLIT = (2016, (2017, 2018))               # round / epoch selection: train <= 2016, stop on 2017-2018
 GLM_LAMS = [50.0, 250.0, 1250.0, 6250.0, 31250.0, 156250.0]
 GLM_TOP = 12                                   # interactions among the top-k GBM features of each target
 GLM_CORE_PEN = 0.02                            # penalty multiplier for each target's own mechanistic features
@@ -880,7 +880,7 @@ def cmd_fit(args):
     if quick:                                     # smoke test of every code path (numbers meaningless)
         OOF_YEARS, MLP_SEEDS = [2023], 1
 
-    # ---------------- 1) round selection for GBM (train <= 2017, early stop on 2018-2019)
+    # ---------------- 1) round selection for GBM (train <= 2016, early stop on 2017-2018)
     es_tr = (yr >= TRAIN_FROM.year) & (yr <= ES_SPLIT[0])
     es_va = (yr >= ES_SPLIT[1][0]) & (yr <= ES_SPLIT[1][1])
     rounds, imp = [], []
@@ -983,7 +983,7 @@ def cmd_fit(args):
         log("  cv %-8s league %.4f engine %.4f glm %.4f gbm %.4f mlp %.4f stack %.4f  w=%s"
             % (TNAMES[t], cv_table[TNAMES[t]]["league"], cv_table[TNAMES[t]]["engine"], cv_table[TNAMES[t]]["glm"],
                cv_table[TNAMES[t]]["gbm"], cv_table[TNAMES[t]]["mlp"], best.fun, np.round(w, 2)))
-    report["cv_oof_2020_2023"] = cv_table
+    report["cv_oof_2019_2023"] = cv_table
 
     # ---------------- 5) fit on a period, export JSON; dev = 2010-2023, prod = 2010-2025
     # weights below 1e-3 are set to 0 and that component is left out of the export for the target
@@ -1027,6 +1027,34 @@ def cmd_fit(args):
     J_dev = fit_period(trainM, "dev: trained 2010-2023 (validation numbers and honest engine backtests)", 1.1)
     J_dev = json.loads(json.dumps(J_dev))           # exactly what the file holds
     eta_val, off_val, comp_val = model_eta(J_dev, X[valM], BASE[valM])
+
+    # ---------------- 5b) out-of-fold table for honest engine tuning (mlcal hook): 2019-2023 from the folds,
+    # 2024-2025 from the dev model; rates per fight id and corner
+    oof_eta = OFF.copy()
+    for t in range(nt):
+        for k in ("glm", "gbm", "mlp"):
+            if stack_r[t][k]:
+                oof_eta[:, t] += stack_r[t][k] * np.nan_to_num(oof[k][:, t])
+    tab = {}
+    vidx_all = np.where(valM)[0]
+    eta_rows = {}
+    for k in np.where(oofM)[0]:
+        eta_rows[k] = (oof_eta[k], "cv%d" % yr[k])
+    for j, k in enumerate(vidx_all):
+        eta_rows[k] = (eta_val[j], "dev")
+    for k, (eta_k, src) in eta_rows.items():
+        r = d["rows"][fight[k]]
+        ent = tab.setdefault(r["id"], {"date": r["date"], "src": src})
+        ent["AB"[M["side"][k]]] = [sig(inv_link(t, eta_k[t]), 5) for t in range(nt)]
+    with open(os.path.join(OUT, "mlrates_oof.json"), "w") as fh:
+        json.dump({"meta": {"name": "mlrates out-of-fold rates", "targets": TNAMES,
+                            "note": "per fight id: A and B rates (A = first-named corner, each side attacking the "
+                                    "other) predicted without that fight's year in training: cv<year> = time-ordered "
+                                    "fold trained on 2010..year-1 (stack weights fit on these folds), dev = model "
+                                    "trained 2010-2023 (validation years). For honest tuning of engine couplings; "
+                                    "no 2026 fight is present."},
+                   "fights": tab}, fh, separators=(",", ":"))
+    log("wrote data/derived/mlrates_oof.json (%d fights)" % len(tab))
 
     # ---------------- 6) validation 2024-2025
     vf = fight[valM]

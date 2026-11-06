@@ -313,7 +313,7 @@
     matchupChanged(true);
     announce(nameOf("A") + " vs " + nameOf("B") + " at " + S.div.toLowerCase() + ".");
   };
-  function announce(t) { var n = $("mbNote"); if (n) n.textContent = t; }
+  function announce(t) { var n = $("mbNote"); if (n && !n.textContent) { n.textContent = t; setTimeout(function () { if (n.textContent === t) n.textContent = ""; }, 4000); } }
 
   function swapCorners() {
     var a = S.a; S.a = S.b; S.b = a;
@@ -336,6 +336,11 @@
     sel.value = S.div;
     Array.prototype.forEach.call($("segRounds").children, function (b) { b.setAttribute("aria-pressed", +b.dataset.r === S.rounds ? "true" : "false"); });
     $("chkTitle").checked = S.title;
+    // an honest flag when the pair is outside what the size data covers
+    var hA = prof("A").division, hB = prof("B").division, la = divLbs(hA), lb = divLbs(hB), warn = "";
+    if (/^Women/.test(hA || "") !== /^Women/.test(hB || "")) warn = "These fighters compete in men's and women's divisions. The engine will run it, but nothing in the data speaks to this matchup.";
+    else if (la && lb && Math.abs(la - lb) > 20) warn = "Their home divisions are " + Math.abs(la - lb) + " lb apart. The engine's size term was fit on fighters moving up one weight class, so it understates a gap this large; read the numbers as a curiosity.";
+    $("mbNote").textContent = warn;
     $("h1A").textContent = shortOf("A"); $("h1B").textContent = shortOf("B");
     $("kicker").textContent = S.div + " · " + S.rounds + " × 5 min" + (S.title ? " · title fight" : "") + " · " + (divLbs(S.div) || "?") + " lb";
     document.title = "Fight Lab";

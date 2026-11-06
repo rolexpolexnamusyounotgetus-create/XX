@@ -261,21 +261,48 @@ def deviance(Y, E, eta):
     return dev
 
 
-def _glm_terms(eta, Y, E, wc):
-    """Loss, gradient wrt eta and Fisher weight per row and task, all already weighted by wc."""
-    G = np.empty_like(eta)
-    H = np.empty_like(eta)
-    pz = ~IS_BIN
-    ep = E[:, pz] * np.exp(np.clip(eta[:, pz], -30, 20))
-    L = (wc[:, pz] * (ep - Y[:, pz] * eta[:, pz])).sum()
-    G[:, pz] = ep - Y[:, pz]
-    H[:, pz] = ep
+IS_NB = np.array([k in ("pm", "kd") for k in TK])          # negative binomial counts
+IS_PO = np.array([k == "hz" for k in TK])                  # Poisson (finish hazards)
+
+
+def _glm_terms(eta, Y, E, wc, knb):
+    """Loss, gradient wrt eta and Fisher weight per row and task, already multiplied by the row weights wc.
+
+    NB2 counts: mean mu = E exp(eta), shape k (var = mu + mu^2 / k); binomial proportions (wc carries the
+    beta-binomial row weight 1 / (1 + (n - 1) rho)); Poisson hazards."""
+    G = np.zeros_like(eta)
+    H = np.zeros_like(eta)
+    L = 0.0
+    # negative binomial
+    e = eta[:, IS_NB]
+    Ee, Ye, k = E[:, IS_NB], Y[:, IS_NB], knb[None, IS_NB]
+    mu = Ee * np.exp(np.clip(e, -30, 20))
+    ok = Ee > 0
+    lmk = np.log(mu + k)
+    L += (wc[:, IS_NB] * np.where(ok, (Ye + k) * lmk - Ye * e, 0.0)).sum()
+    G[:, IS_NB] = np.where(ok, k * (mu - Ye) / (mu + k), 0.0)
+    H[:, IS_NB] = np.where(ok, k * mu / (mu + k), 0.0)
+    # Poisson
+    e = eta[:, IS_PO]
+    mu = E[:, IS_PO] * np.exp(np.clip(e, -30, 20))
+    L += (wc[:, IS_PO] * (mu - Y[:, IS_PO] * e)).sum()
+    G[:, IS_PO] = mu - Y[:, IS_PO]
+    H[:, IS_PO] = mu
+    # binomial
     eb = eta[:, IS_BIN]
     sb = 1.0 / (1.0 + np.exp(-eb))
     L += (wc[:, IS_BIN] * (E[:, IS_BIN] * np.logaddexp(0, eb) - Y[:, IS_BIN] * eb)).sum()
     G[:, IS_BIN] = E[:, IS_BIN] * sb - Y[:, IS_BIN]
     H[:, IS_BIN] = E[:, IS_BIN] * sb * (1 - sb)
     return L, G * wc, H * wc
+
+
+def noise_weights(D, idx, noise):
+    """Row x task weights: the beta-binomial factor for proportions, 1 elsewhere."""
+    w = np.ones((len(idx), NT))
+    n = D.E[idx][:, IS_BIN]
+    w[:, IS_BIN] = 1.0 / (1.0 + np.maximum(n - 1, 0) * noise["rho"][None, IS_BIN])
+    return w
 
 
 class Fit:
@@ -286,8 +313,9 @@ class Fit:
     and the other's defense, the win head adds Gauss-Newton cross terms), (3) the win head (logistic Newton).
     Each block step is backtracked on the full objective, so the MAP objective decreases monotonically."""
 
-    def __init__(self, D, T_day, hp, cw, warm=None, max_sweeps=40, tol=2e-6, verbose=False):
-        self.D, self.T, self.hp, self.cw = D, T_day, hp, cw
+    def __init__(self, D, T_day, hp, noise, warm=None, max_sweeps=40, tol=2e-6, verbose=False):
+        self.D, self.T, self.hp, self.noise = D, T_day, hp, noise
+        self.knb = noise["k"]
         self.K = K = hp["K"]
         lam_hl = math.log(2) / hp["hl"]
         win = hp.get("window", 4.0) * hp["hl"]          # rows older than `window` half-lives weigh < 1/16
@@ -297,7 +325,7 @@ class Fit:
         self.x, self.y = D.r_x[ri], D.r_y[ri]
         self.div, self.era, self.five = D.r_div[ri], D.r_era[ri], D.r_five[ri]
         self.Yr, self.Er = D.Y[ri], D.E[ri]
-        self.wc = self.w[:, None] * cw[None, :]
+        self.wc = self.w[:, None] * noise_weights(D, ri, noise)
         n = len(ri)
         F = D.F
         self.Sx = sparse.csr_matrix((np.ones(n), (self.x, np.arange(n))), shape=(F, n))
@@ -351,7 +379,7 @@ class Fit:
                 - ((Ab @ P["M"]) * Da).sum(1))
 
     def loss_stat(self, P):
-        return _glm_terms(self.eta(P), self.Yr, self.Er, self.wc)[0]
+        return _glm_terms(self.eta(P), self.Yr, self.Er, self.wc, self.knb)[0]
 
     def loss_win(self, P):
         s = self.win_s(P)
@@ -389,7 +417,7 @@ class Fit:
         lam, K, D = self.hp["lam"], self.K, self.D
         AX, DY = P["A"][self.x], P["D"][self.y]
         Z = np.hstack([AX, DY, self.Zc])
-        _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc)
+        _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc, self.knb)
         p = Z.shape[1]
         reg = np.r_[np.full(2 * K, lam), np.full(D.NDIV + 2, 1e-4)]
         new = {"W": P["W"].copy(), "V": P["V"].copy(), "C": P["C"].copy()}
@@ -407,7 +435,7 @@ class Fit:
 
     def step_fighters(self, P, L0):
         lam, K, F = self.hp["lam"], self.K, self.D.F
-        _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc)
+        _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc, self.knb)
         W, V = P["W"], P["V"]
         g = np.zeros((F, 2 * K))
         g[:, :K] = self.Sx @ (G @ W)
@@ -532,12 +560,41 @@ def win_logit_emb(P, ea, eb):
     return ((Aa - Ab) @ P["ua"] + (Da - Db) @ P["ud"] + ((Aa @ P["M"]) * Db).sum(1) - ((Ab @ P["M"]) * Da).sum(1))
 
 
-def pearson_dispersion(fit):
-    """Weighted Pearson chi2 / row per task on the fit's own rows (quasi-likelihood scale)."""
-    eta = fit.eta(fit.P)
-    mu = task_mean(eta, fit.Er)
-    var = np.where(IS_BIN[None, :], mu * (1 - mu / np.maximum(fit.Er, 1e-9)), mu)
-    ok = fit.Er > 0
-    r2 = np.where(ok, (fit.Yr - mu) ** 2 / np.maximum(var, 1e-9), 0.0)
-    w = fit.w[:, None] * ok
-    return (w * r2).sum(0) / w.sum(0)
+def estimate_noise(D, P, idx):
+    """Moment estimates of NB shape k (counts) and beta-binomial rho (proportions) from rows idx predicted
+    by parameters P (held-out rows, so the estimate includes fight-to-fight form, not just sampling)."""
+    eta = predict_rows(P, D, idx)
+    Y, E = D.Y[idx], D.E[idx]
+    mu = task_mean(eta, E)
+    k = np.full(NT, np.inf)
+    rho = np.zeros(NT)
+    for t in range(NT):
+        ok = E[:, t] > 0
+        y, m, n = Y[ok, t], mu[ok, t], E[ok, t]
+        if IS_BIN[t]:
+            p = m / n
+            v = n * p * (1 - p)
+            rho[t] = max(1e-4, ((y - m) ** 2 - v).sum() / max((v * (n - 1)).sum(), 1e-9))
+        elif IS_NB[t]:
+            ex = ((y - m) ** 2 - m).sum()
+            k[t] = (m ** 2).sum() / ex if ex > 0 else 1e3
+            k[t] = float(np.clip(k[t], 0.3, 1e3))
+    return {"k": k, "rho": rho}
+
+
+def heldout_rows(D, T0, T1):
+    """Directed rows / fights dated in [T0, T1) whose two fighters both had a stat fight before T0."""
+    m = (D.r_day >= T0) & (D.r_day < T1) & (D.first_day[D.r_x] < T0) & (D.first_day[D.r_y] < T0)
+    fm = ((D.f_day >= T0) & (D.f_day < T1) & (D.first_day[D.f_a] < T0) & (D.first_day[D.f_b] < T0)
+          & ~np.isnan(D.f_win))
+    return np.nonzero(m)[0], np.nonzero(fm)[0]
+
+
+def eval_block(D, P, idx, fidx):
+    eta = predict_rows(P, D, idx)
+    dev = deviance(D.Y[idx], D.E[idx], eta).sum(0)
+    ea = np.hstack([P["A"][D.f_a[fidx]], P["D"][D.f_a[fidx]]])
+    eb = np.hstack([P["A"][D.f_b[fidx]], P["D"][D.f_b[fidx]]])
+    s = win_logit_emb(P, ea, eb)
+    y = D.f_win[fidx]
+    return dev, (np.logaddexp(0, s) - y * s), s

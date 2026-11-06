@@ -1718,7 +1718,7 @@ def analysis(D, preds, best, it, ix, no_test, log):
     return out
 
 
-def matchup_probs(roster, sys_params, a, b, stack=None, dims_coef=None):
+def matchup_probs(roster, sys_params, a, b, stack=None, dims_coef=None, baselines=None):
     """P(a beats b) from each system's current roster ratings (uncertainty included where the system has it)."""
     A, Bb = roster.get(a), roster.get(b)
     if not A or not Bb:
@@ -1743,12 +1743,29 @@ def matchup_probs(roster, sys_params, a, b, stack=None, dims_coef=None):
             p = expit(kap * d / math.sqrt(1.0 + math.pi * kap * kap * vd / 8.0))
         out[name] = round(float(p), 4)
     if dims_coef and A.get("dims") and Bb.get("dims"):
-        z = 0.0
-        for dim, c in dims_coef.items():
+        base = (baselines or {}).get(A.get("division")) or (baselines or {}).get(Bb.get("division")) or {}
+        z, ok = 0.0, True
+        for feat, c in dims_coef.items():
+            kind_, dim = feat.split("_", 1)
             da, db = A["dims"].get(dim), Bb["dims"].get(dim)
-            if da and db:
-                z += c * ((da["off"] - db["def"]) - (db["off"] - da["def"]))
-        out["dims"] = round(float(expit(z)), 4)
+            if not da or not db:
+                ok = False
+                continue
+            ea, eb = da["off"] - db["def"], db["off"] - da["def"]
+            if kind_ == "adv":
+                z += c * (ea - eb)
+            else:
+                b0 = base.get(dim)
+                if b0 is None:
+                    ok = False
+                    continue
+                if DIMS[dim][1] == "bin":
+                    l0 = math.log(b0 / (1 - b0))
+                    z += c * (expit(l0 + ea) - expit(l0 + eb))
+                else:
+                    z += c * b0 * (math.exp(ea) - math.exp(eb))
+        if ok:
+            out["dims"] = round(float(expit(z)), 4)
     if stack and all(m in out for m in stack[0]):
         z = sum(w * float(logit(np.array([out[m]]))[0]) for m, w in zip(stack[0], stack[1]))
         out["stack"] = round(float(expit(z)), 4)
@@ -2048,7 +2065,8 @@ def main():
     match = {}
     for a, b in (("alexander-volkanovski", "justin-gaethje"),):
         mp = matchup_probs(roster, sys_params, a, b, stack=(chosen, [float(v) for v in bs]),
-                           dims_coef=dims_model["coef"])
+                           dims_coef=dims_model["coef"],
+                           baselines={d: dict(r) for d, r in dstate["_base"].items()})
         if mp:
             match["%s__%s" % (a, b)] = mp
             log("current ratings, P(%s beats %s): %s" % (a, b, mp))

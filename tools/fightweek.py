@@ -1097,6 +1097,13 @@ class Card:
         """[(start, end, idx, kind)] fighter mentions in text (positions in the normalized text).
         Surname-only mentions count when the surname is unique on the card, or when that fighter's full name
         appears in `prefer` (the paragraph)."""
+        mk = (text, prefer)
+        memo = self.__dict__.setdefault("_memo", {})
+        if mk not in memo:
+            memo[mk] = self._mentions(text, prefer)
+        return memo[mk]
+
+    def _mentions(self, text, prefer=None):
         k = self.key(text)
         out = []
         taken = []

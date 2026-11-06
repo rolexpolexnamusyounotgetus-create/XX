@@ -342,16 +342,17 @@
   function leagueExpect(m, FE) {
     var o = m.opts || {}, key = [m.division, m.rounds, m.title, m.date, m.p.version, JSON.stringify(m.P && [m.P.d_att, m.P.ctrl, m.P.kd_per_h, m.P.td_acc])].join("|");
     if (leagueCache[key]) return leagueCache[key];
-    var o2 = {}; for (var k in o) if (k !== "adjA" && k !== "adjB") o2[k] = o[k];
+    var o2 = {}; for (var k in o) if (k !== "adjA" && k !== "adjB" && k.charAt(0) !== "_") o2[k] = o[k];
     o2.division = m.division; o2.rounds = m.rounds; o2.title = m.title;
     if (!o2.priors) { o2.priors = { ALL: m.P }; o2.priors[m.division] = m.P; }
-    var eL = engineSide(FE.matchup(EMPTY, EMPTY, o2), 0);
+    var eL = engineSide((FE.__mlratesOrig || FE.matchup)(EMPTY, EMPTY, o2), 0);
     var keys = Object.keys(leagueCache); if (keys.length > 200) leagueCache = {};
     leagueCache[key] = eL;
     return eL;
   }
 
-  // pred: MLRates.predict output. opts: {engine (FightEngine), level: "engine" (default) | "absolute", parts: {grappling,
+  // pred: MLRates.predict output. opts: {engine (FightEngine), level: "engine" (default) | "absolute", weight (0..1, default
+  // 1: blend toward the engine's own rates), parts: {grappling,
   // strikes, accuracy, kd, subs: false to keep the engine's own}, maxRatio (cap on any single multiplier, default 4)}.
   // level "engine": the target for each stat is the engine's own league-average expectation x (ML / league rate), so the
   // simulator keeps its calibrated league level (its in-fight modifiers, e.g. on knockdowns, stay balanced) and plays the
@@ -398,6 +399,17 @@
       tg[i].td_acc = prob(odds(tg[i].td_acc) / aj.tdDef);
       ["acc_h", "acc_b", "acc_l", "acc_d", "acc_c", "acc_g"].forEach(function (q) { tg[i][q] = prob(odds(tg[i][q]) * a.acc); });
       tg[i].kd_h *= a.pow * aj.chin;
+    }
+    // optional blend toward the engine's own rates: weight 1 = ML rates, 0 = plain engine (geometric on rates, logit on
+    // probabilities), for tuning how far to trust the learned rates
+    var wgt = opts.weight == null ? 1 : clip(+opts.weight, 0, 1);
+    if (wgt < 1) {
+      var eB0 = engineExpect(m), eb = [eB0.A, eB0.B];
+      for (i = 0; i < 2; i++) for (k in tg[i]) {
+        if (eb[i][k] == null || !isFinite(eb[i][k])) continue;
+        if (PROB_T[k] && k !== "kd_h") tg[i][k] = sigm((1 - wgt) * lgt(eb[i][k]) + wgt * lgt(tg[i][k]));
+        else tg[i][k] = Math.exp((1 - wgt) * Math.log(Math.max(eb[i][k], 1e-12)) + wgt * Math.log(Math.max(tg[i][k], 1e-12)));
+      }
     }
     var ratios = [{}, {}];
     // 1) grappling: takedown attempts and success, sweeps, control targets; refit position occupancy

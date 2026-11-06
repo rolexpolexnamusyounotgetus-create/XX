@@ -18,7 +18,8 @@ function check(name, ok, info) {
 }
 
 const prod = MoE.load(doc), val = MoE.load(doc, "model_validated");
-check("loads production model", prod.model && prod.model.method, prod.model.method + " over " + prod.model.experts.join(", "));
+check("loads production model", prod.model && prod.model.method, prod.model.method + " over " + prod.model.experts.join(", ") +
+  (prod.model.method === "switch" ? ` (market present: ${prod.model.present.method}, absent: ${prod.model.absent.method})` : ""));
 let maxP = 0, maxV = 0, maxSym = 0;
 const tv = doc.test_vectors;
 for (let i = 0; i < tv.length; i++) {
@@ -42,17 +43,19 @@ for (const k of Object.keys(doc.alternatives || {})) {
   check(`alternative model '${k}' evaluates`, r.p > 0 && r.p < 1, "p = " + r.p.toFixed(4));
 }
 
-// missing experts: every subset that keeps at least one non-market expert must work for the gated model
+// missing experts: the four availability patterns the stacker was trained for must evaluate (market and/or
+// engine missing); other subsets must evaluate for a gated model and fail loudly for a linear one
 const g = tv[0].gate, full = { market: 0.62, engine: 0.55, ml: 0.58, feat_lr: 0.58, elo: 0.53 };
 const E = prod.model.experts;
 let okSub = true, nSub = 0;
 for (let mask = 1; mask < (1 << E.length); mask++) {
   const ex = {};
   E.forEach((e, j) => { if (mask & (1 << j)) ex[e] = full[e]; });
+  const core = E.filter((e) => e !== "market" && e !== "engine").every((e) => e in ex);
   try { const r = prod.predict({ experts: ex, gate: g }); if (!(r.p > 0 && r.p < 1)) okSub = false; nSub++; }
-  catch (err) { if (prod.model.method === "gated") okSub = false; }
+  catch (err) { if (core) okSub = false; }
 }
-check("any subset of experts evaluates (gated) or fails loudly (linear)", okSub, nSub + " subsets evaluated");
+check("every trained availability pattern evaluates", okSub, nSub + " of " + ((1 << E.length) - 1) + " subsets evaluate");
 
 // an all-50% matchup is exactly 50%
 const even = prod.predict({ experts: { market: 0.5, engine: 0.5, elo: 0.5, ml: 0.5, feat_lr: 0.5 }, gate: g });
@@ -63,7 +66,7 @@ const r0 = prod.predict(tv[0]);
 const wsum = Object.values(r0.weights).reduce((x, y) => x + y, 0);
 const csum = Object.values(r0.contrib).reduce((x, y) => x + y, 0);
 check("weights sum to 1", Math.abs(wsum - 1) < 1e-9, wsum);
-if (prod.model.method !== "gbm") check("contributions sum to the logit", Math.abs(csum - r0.z) < 1e-9, csum.toFixed(6) + " vs " + r0.z.toFixed(6));
+if (r0.method !== "gbm") check("contributions sum to the logit", Math.abs(csum - r0.z) < 1e-9, csum.toFixed(6) + " vs " + r0.z.toFixed(6));
 
 // built-in ML expert (feature LR): reproduce Python on validation rows, symmetry, and a live profile matchup
 if (doc.feat) {

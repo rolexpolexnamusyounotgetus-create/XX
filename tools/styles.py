@@ -1110,6 +1110,14 @@ def _term_from_name(t):
     return tuple(t.split("*")) if "*" in t else t
 
 
+# Judgment additions (tier 3), stated openly: the defender's kick share on takedown attempts missed the tune
+# screen (z 2.4 < 3) but its 2024+ change has a CI below zero, and the total-control model's kick_y term
+# survives; a decomposition (takedowns landed per standing minute +, takedown accuracy 0, control without a
+# takedown 0) puts that control effect on takedown attempts. Without this term the engine would lose the
+# kicker-gets-taken-down effect the total-control model confirms.
+JUDGMENT_TERMS = {"td_att": ["kick_y"]}
+
+
 def recommend_sets(D, rate_res):
     """Per rate model: start from held-out survivors, then add held-out-supported matchup terms in order of
     tune z, keeping each only if it lowers the 2019-2023 leave-one-year-out CV deviance given the terms
@@ -1480,11 +1488,19 @@ def main():
     print("rate-level tests ...")
     D = build_sides(rows, keys, mu, sd)
     rates = rate_tests(D, n_boot=args.boot)
-    sets = recommend_sets(D, rates)
+    sets_rule = recommend_sets(D, rates)
+    sets = json.loads(json.dumps(sets_rule))
+    for k, ts in JUDGMENT_TERMS.items():
+        sets.setdefault(k, {"terms": [], "tier": {}})
+        for t in ts:
+            if t not in sets[k]["terms"]:
+                sets[k]["terms"].append(t)
+                sets[k]["tier"][t] = 3
     tier1 = {k: {"terms": [t for t in v["terms"] if v["tier"][t] == 1],
                  "tier": {t: 1 for t in v["terms"] if v["tier"][t] == 1}} for k, v in sets.items()}
     tier1 = {k: v for k, v in tier1.items() if v["terms"]}
     joint_all = joint_rate_eval(D, sets, sd, n_boot=args.boot)
+    joint_rule = joint_rate_eval(D, {k: v for k, v in sets_rule.items() if k in JUDGMENT_TERMS}, sd, n_boot=args.boot)
     # a rate block is on by default only if its joint held-out deviance CI excludes zero
     joint = {k: v for k, v in joint_all.items() if v["test_dev_ci"][1] < 0}
     optional = {k: v for k, v in joint_all.items() if k not in joint}
@@ -1569,6 +1585,7 @@ def main():
         "rate_level": rnd(rates),
         "engine_modifiers": {"default_on": rnd(joint, 5), "optional_off": rnd(optional, 5),
                              "tier1_only": rnd(joint1, 5), "tune_screened": rnd(joint_scr, 5),
+                             "without_judgment_terms": rnd(joint_rule, 5), "judgment_terms": JUDGMENT_TERMS,
                              "selection": {k: v for k, v in sets.items()}},
         "transmission": rnd(trans),
         "mismatch": rnd(mism),
@@ -1631,7 +1648,9 @@ RATE_ENGINE = {
     "body_share": "add to the log-odds of X's body-target share",
     "td_att": "multiply X's takedown-attempt rate (per standing minute, distance and clinch)",
     "td_acc": "add to the log-odds of X's takedown success",
-    "ctrl": "composition check only (total control per minute); do not apply on top of td_att and ctrl_per_td",
+    "ctrl": ("composition check only (total control per minute): its zy_td_int and length_d parts are carried by "
+             "td_att, its kick_y part by td_att's kick_y term, and its zx_ctrl*zy_octrl part is a time-ceiling effect "
+             "(control cannot exceed the clock) that a finite-time position chain reproduces by itself; do not apply"),
     "ctrl_per_td": "multiply X's top-control duration per takedown (divide the bottom man's escape / stand-up hazard)",
     "gnp_att": "multiply X's ground-strike rate per top-control minute",
     "kd": "multiply knockdown probability per landed head strike",
@@ -1697,9 +1716,15 @@ def render_report(J):
       "several style terms pass a tune-period screen and then improve 2024+ deviance with fight-level bootstrap "
       "intervals that exclude zero. The blocks recommended on by default:")
     for name, j in em["default_on"].items():
-        terms = ", ".join("%s %+.3f/sd" % (t["term"], t["coef_per_term_sd"]) for t in j["terms"])
-        A("  - `%s` (%s): %s; 2024+ deviance %+.2f%% (95%% CI of the change %s)."
-          % (name, j["desc"], terms, j["test_dev_change_pct"], _f(j["test_dev_ci"], 0)))
+        terms = ", ".join("%s %+.3f/sd%s" % (t["term"], t["coef_per_term_sd"], " (judgment)" if t["tier"] == 3 else "")
+                          for t in j["terms"])
+        A("  - `%s` (%s): %s; 2024+ deviance %+.2f%% (95%% CI of the change %s)%s."
+          % (name, j["desc"], terms, j["test_dev_change_pct"], _f(j["test_dev_ci"], 0),
+             "; a composition check, not applied in the engine (section 9)" if name == "ctrl" else ""))
+    A("  In words: fighters throw about 2.4% less at distance per sd of the opponent's knockdown power; the longer "
+      "man throws more at distance, kicks the legs less and shoots less; open-stance fights see about 7% fewer "
+      "distance attempts; everyone kicks the legs less and shoots less against wrestlers, and shoots less against "
+      "good takedown defense, which also shortens control after a takedown; kickers get taken down more.")
     v = tr["variants"]
     vd = v.get("default_on", {}).get("elo_plus_impact", {}).get("vs_none", {})
     vc = v.get("tune_screened", {}).get("elo_plus_impact", {}).get("vs_none", {})
@@ -1899,8 +1924,17 @@ def render_report(J):
                           "", "", "", "", ""))
         A(_tbl(["Rate", "Term", "Definition", "Tier", "Coef per term sd", "Coef per unit", "z (tune, joint)", "exp(coef) at +1 sd"], rows_))
         A("")
-    A("Tier 1 = survived alone; tier 2 = supported alone and kept by the tune-CV step. Joint z values are lower than "
-      "the single-term ones where terms share signal. How big the modifiers get across real 2024+ matchups (the "
+    wj = em.get("without_judgment_terms", {})
+    jt = ", ".join("%s on %s" % (t, k) for k, ts in em.get("judgment_terms", {}).items() for t in ts)
+    A("Tier 1 = survived alone; tier 2 = supported alone and kept by the tune-CV step; tier 3 = judgment term "
+      "(%s): it missed the tune screen (z %.2f < 3) but its 2024+ change has a CI below zero and it carries the "
+      "total-control model's surviving kicker effect (a decomposition puts that effect on takedown attempts and "
+      "takedowns landed, not on takedown accuracy, control duration or control without a takedown). Without it the "
+      "td_att block's 2024+ deviance change is %s%% (CI %s); with it, %s%%. Joint z values are lower than "
+      "the single-term ones where terms share signal."
+      % (jt, next((c["z_tune"] for c in rl["td_att"]["candidates"] if c["term"] == "kick_y"), float("nan")),
+         _f(wj.get("td_att", {}).get("test_dev_change_pct"), 2), _f(wj.get("td_att", {}).get("test_dev_ci"), 0),
+         _f(em["default_on"].get("td_att", {}).get("test_dev_change_pct"), 2)) + " How big the modifiers get across real 2024+ matchups (the "
       "modifier part of the linear predictor, log scale for rates and log-odds for shares):")
     A("")
     rows_ = []
@@ -2007,13 +2041,16 @@ def render_report(J):
       "block to control duration and drop its `zy_td_int` term (that part is already carried by `td_att`).")
     A("4. **Knob.** Expose one `styleMatchups` knob in [0, 1.5], default 1, that scales every `s`; 0 reproduces "
       "the pure skill composition. Optional blocks get their own toggle, default off.")
-    A("5. **Do not** add archetype-pair or interaction terms to the final win probability; none survived held-out "
+    A("5. **Labels.** Show the scouting archetype where a scouting file exists and the data archetype otherwise "
+      "(with its membership); the data names describe centroids, and the attempts-ratio 'pressure' axis can label a "
+      "forward-moving fighter who gets out-thrown (Gaethje) as a counter striker.")
+    A("6. **Do not** add archetype-pair or interaction terms to the final win probability; none survived held-out "
       "validation and the combined set made 2024+ log loss worse. Do not use the scouting tags as numeric inputs "
       "in backtests (hindsight); use them for the director's technique choices and the page.")
-    A("6. **Calibration order.** The modifiers were fit with free main-effect coefficients, so they are close to "
+    A("7. **Calibration order.** The modifiers were fit with free main-effect coefficients, so they are close to "
       "orthogonal to the engine's own prior strengths and exponents; recheck the default-on blocks with the "
       "engine's per-fight stat errors after v4 retunes those (expected change: small).")
-    A("7. **Validation target for v7.** With the modifiers on, the engine's simulated per-fight stats should "
+    A("8. **Validation target for v7.** With the modifiers on, the engine's simulated per-fight stats should "
       "reproduce the 2024+ rate-level gains above (distance attempts, leg share, takedown attempts, control), and "
       "its 2024+ winner log loss should be no worse than without them; that is the ship criterion, given that the "
       "winner-level effect is below what %d fights can detect." % m["n_test_decisive"])

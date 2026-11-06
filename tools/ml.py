@@ -1847,7 +1847,31 @@ def evaluate(R):
                    "lgb_platt", "lgb_iso", "lr_refit", "lgb_refit", "xgb_refit", "ml_refit"]
     rec = "stack:" + R["stacking"]["recommended_pre_line"]
     main_models.append(rec)
-    out = {"oof_2019_2023": {}, "test_2024_plus": {}}
+    # rolling (walk-forward) temperature: each calendar year's predictions are rescaled by the slope fit on the
+    # previous year's predictions and results (known by then). Adopted only if it helps on OOF 2020-2023.
+    roll = {}
+    known = oof_bt | test_bt
+    for k in ("lr", "ml", rec):
+        pr = np.full(len(df), np.nan)
+        slopes = {}
+        for Y in range(OOF_YEARS[0] + 1, int(df["year"].max()) + 1):
+            prev = known & (C["years"] == Y - 1)
+            cur = (C["years"] == Y) & ~np.isnan(P[k])
+            if prev.sum() < 100:
+                continue
+            a_ = float(stack_fit(to_logit(P[k][prev])[:, None], y[prev], lam=0.0)[0])
+            slopes[str(Y)] = round(a_, 3)
+            pr[cur] = 1 / (1 + np.exp(-a_ * to_logit(P[k][cur])))
+        P[k + "_roll"] = pr
+        o20 = oof_bt & (C["years"] >= OOF_YEARS[0] + 1)
+        roll[k] = {"slopes": slopes, "oof_2020_2023": {"raw": round(log_loss(P[k][o20], y[o20]), 5),
+                                                        "rolling": round(log_loss(pr[o20], y[o20]), 5)},
+                   "test": {"raw": round(log_loss(P[k][test_bt], y[test_bt]), 5),
+                            "rolling": round(log_loss(pr[test_bt], y[test_bt]), 5)}}
+        roll[k]["adopt"] = bool(roll[k]["oof_2020_2023"]["rolling"] < roll[k]["oof_2020_2023"]["raw"])
+        main_models.append(k + "_roll")
+    out_roll = roll
+    out = {"oof_2019_2023": {}, "test_2024_plus": {}, "rolling_temperature": out_roll}
     for k in main_models:
         if k in P and not np.isnan(P[k][oof_bt]).any():
             out["oof_2019_2023"][k] = win_metrics(P[k][oof_bt], y[oof_bt])
@@ -1877,7 +1901,8 @@ def evaluate(R):
         o["minus_elo_ci95"] = ci(bs[:, 4 * j + 3])
     # pairwise differences of interest
     pairs = [("lgb", "lr"), ("ml", "lr"), ("ml", "lgb"), ("ml_iso", "ml"), ("ml_platt", "ml"), ("ml_refit", "ml"),
-             (rec, "ml"), ("elo_sig", "elo")]
+             (rec, "ml"), ("elo_sig", "elo"), ("elo_judge", "elo"), ("ml_roll", "ml"), ("lr_roll", "lr"),
+             (rec + "_roll", rec)]
     out["pairs_test"] = []
     for a, b in pairs:
         if a in LL and b in LL:

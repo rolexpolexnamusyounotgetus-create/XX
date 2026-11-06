@@ -98,7 +98,13 @@
   }
 
   function predictWith(model, inputs) {
-    var ex = (inputs && inputs.experts) || {}, E = model.experts, pc = model.pclip;
+    var ex = (inputs && inputs.experts) || {};
+    if (model.method === "switch") {          // one stacker when the market line is given, another when it is not
+      var has = present(ex[model.on]), r0 = predictWith(has ? model.present : model.absent, inputs);
+      r0.regime = has ? "present" : "absent";
+      return r0;
+    }
+    var E = model.experts, pc = model.pclip;
     var used = [], L = {}, i, k;
     for (i = 0; i < E.length; i++) {
       var p = ex[E[i]];
@@ -132,7 +138,8 @@
       if (model.method === "gbm_res") { var rb = linearLogit(model, L, used); z += rb.z; weights = rb.weights; contrib = rb.contrib; }
     } else throw new Error("MoE: unknown method " + model.method);
     var pRaw = sigm(z), pc2 = calibrate(model.calibration, pRaw);
-    return { p: pc2, pRaw: pRaw, z: z, weights: weights, scale: scale, contrib: contrib, used: used, gate: raw };
+    return { p: pc2, pRaw: pRaw, z: z, weights: weights, scale: scale, contrib: contrib, used: used, gate: raw,
+      method: model.method };
   }
 
   /** P(A) from Elo ratings (scale 400). */

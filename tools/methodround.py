@@ -1043,3 +1043,378 @@ class Recalibrator:
         Z = Z - Z.max(1, keepdims=True)
         E = np.exp(Z)
         return E / E.sum(1, keepdims=True)
+
+
+class WinLogit:
+    """Symmetric binary winner logit (no intercept, both orientations)."""
+
+    def __init__(self, cols, C=0.003, hl_years=None):
+        self.cols, self.C, self.hl = list(cols), C, hl_years
+
+    def fit(self, T, FX, FY, y):
+        c = cells_to_c6(y)
+        ok = c >= 0
+        w0 = recency_weights(T["year"][ok], T["year"].max() + 1, self.hl)
+        a_won = np.isin(c[ok], [0, 1, 2])
+        X = np.vstack([FX[ok][self.cols].to_numpy(float), FY[ok][self.cols].to_numpy(float)])
+        yy = np.concatenate([a_won, ~a_won]).astype(int)
+        self.sc = StandardScaler().fit(X)
+        self.lr = LogisticRegression(C=self.C, fit_intercept=False).fit(self.sc.transform(X), yy,
+                                                                       sample_weight=np.concatenate([w0, w0]))
+        return self
+
+    def predict_pa(self, FX, FY):
+        pa = self.lr.predict_proba(self.sc.transform(FX[self.cols].to_numpy(float)))[:, 1]
+        pb = self.lr.predict_proba(self.sc.transform(FY[self.cols].to_numpy(float)))[:, 1]
+        return 0.5 * (pa + 1 - pb)
+
+
+def reweight_winner(P6, pa):
+    """Keep the 6-class model's method-given-winner shares, replace its P(A wins)."""
+    xa = P6[:, :3] / np.maximum(P6[:, :3].sum(1, keepdims=True), 1e-12)
+    yb = P6[:, 3:] / np.maximum(P6[:, 3:].sum(1, keepdims=True), 1e-12)
+    return np.hstack([xa * pa[:, None], yb * (1 - pa)[:, None]])
+
+
+FIGHT_COLS = ["lbs", "hw", "women", "r5", "title", "catch", "yr", "lg_ko", "lg_sub", "lg_mpf"]
+HAZ_COLS = FIGHT_COLS + ["x_fint", "y_fint", "x_r1", "y_r1", "s_dec", "s_mpf", "s_cmpf", "m_ko_pm", "m_sub_pm", "m_kd",
+                         "m_pow", "m_str", "m_td", "m_ctrl", "m_subatt", "a_elo", "d_elo", "x_kd15", "y_okd15",
+                         "x_sub15", "y_osub15", "x_ko_w_pf", "y_ko_l_pf", "x_sub_w_pf", "y_sub_l_pf", "x_age30",
+                         "y_age30"]
+MARKET_COLS = ["mk", "mk_a"]
+
+
+class MethodRoundModel:
+    """The full model: 6-class who-and-how logit (+ optional separate winner logit) spread over rounds by the
+    competing-risks hazard model's conditional round shapes."""
+
+    def __init__(self, cfg):
+        self.cfg = dict(cfg)
+
+    def fit(self, T, FX, FY, y):
+        c = self.cfg
+        m6 = (T["year"] >= c["start"]).to_numpy()
+        self.c6 = C6Logit(c["cols"], C=c["C6"], hl_years=c["hl"]).fit(T[m6], FX[m6], FY[m6], y[m6])
+        mh = (T["year"] >= c["haz_start"]).to_numpy()
+        self.haz = HazardModel(HAZ_COLS, C=c["C_haz"], C_dec=c["C_dec"]).fit(T[mh], FX[mh], FY[mh], y[mh])
+        self.win = None
+        if c.get("win_cols"):
+            self.win = WinLogit(c["win_cols"], C=c["C_win"], hl_years=c["hl"]).fit(T[m6], FX[m6], FY[m6], y[m6])
+        return self
+
+    def predict(self, T, FX, FY, return_parts=False):
+        P6 = self.c6.predict6(T, FX, FY)
+        if self.win is not None:
+            P6 = reweight_winner(P6, self.win.predict_pa(FX, FY))
+        H = self.haz.predict(T, FX, FY)
+        P = joint_from_c6(P6, H, self.haz.draw_c)
+        return (P, P6, H) if return_parts else P
+
+
+# ============================================================== 6. evaluation helpers
+def cluster_bootstrap(loss_tables, clusters, B=2000, seed=11):
+    """Event-cluster bootstrap of mean losses. loss_tables: {model: {metric: per-fight array (nan = n/a)}}.
+    Returns per model/metric mean + 95% CI, and a resampling matrix for paired differences."""
+    rng = np.random.default_rng(seed)
+    cl = pd.factorize(np.asarray(clusters))[0]
+    k = cl.max() + 1
+    W = rng.multinomial(k, np.full(k, 1.0 / k), size=B).astype(float)   # B x clusters resample counts
+
+    def stat(v):
+        ok = ~np.isnan(v)
+        s = np.bincount(cl[ok], weights=v[ok], minlength=k)
+        n = np.bincount(cl[ok], minlength=k).astype(float)
+        boot = (W @ s) / np.maximum(W @ n, 1e-9)
+        return float(v[ok].mean()), boot
+
+    out, boots = {}, {}
+    for mname, L in loss_tables.items():
+        out[mname], boots[mname] = {}, {}
+        for met, v in L.items():
+            v = np.asarray(v, float)
+            if np.all(np.isnan(v)):
+                continue
+            mean, bt = stat(v)
+            out[mname][met] = {"mean": round(mean, 5), "ci95": [round(float(np.percentile(bt, 2.5)), 5),
+                                                                 round(float(np.percentile(bt, 97.5)), 5)],
+                               "n": int((~np.isnan(v)).sum())}
+            boots[mname][met] = bt
+    return out, (W, cl, stat)
+
+
+def paired_diff(LA, LB, stat_tuple, metrics):
+    """Mean difference A - B on fights where both are defined, with an event-cluster bootstrap CI."""
+    W, cl, stat = stat_tuple
+    res = {}
+    for met in metrics:
+        a, b = np.asarray(LA[met], float), np.asarray(LB[met], float)
+        d = np.where(np.isnan(a) | np.isnan(b), np.nan, a - b)
+        if np.all(np.isnan(d)):
+            continue
+        mean, bt = stat(d)
+        res[met] = {"diff": round(mean, 5), "ci95": [round(float(np.percentile(bt, 2.5)), 5),
+                                                      round(float(np.percentile(bt, 97.5)), 5)],
+                    "p_worse_or_equal": round(float((bt >= 0).mean()), 4), "n": int((~np.isnan(d)).sum())}
+    return res
+
+
+def wilson(k, n, z=1.96):
+    if n == 0:
+        return [None, None]
+    p = k / n
+    den = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / den
+    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / den
+    return [round(c - h, 4), round(c + h, 4)]
+
+
+def calib_table(p, o, nb=10):
+    """Reliability by predicted-probability quantile bins + ECE + logistic calibration slope/intercept."""
+    p, o = np.asarray(p, float), np.asarray(o, float)
+    order = np.argsort(p)
+    bins = np.array_split(order, nb)
+    rows, ece = [], 0.0
+    for b in bins:
+        if len(b) == 0:
+            continue
+        pm_, om = p[b].mean(), o[b].mean()
+        rows.append({"pred": round(float(pm_), 4), "obs": round(float(om), 4), "n": int(len(b)),
+                     "obs_ci95": wilson(int(o[b].sum()), len(b))})
+        ece += len(b) / len(p) * abs(pm_ - om)
+    lr = LogisticRegression(C=1e6).fit(logit(p, 1e-6)[:, None], o.astype(int))
+    slope = float(lr.coef_[1, 0] - lr.coef_[0, 0])
+    inter = float(lr.intercept_[1] - lr.intercept_[0])
+    return {"bins": rows, "ece": round(float(ece), 4), "slope": round(slope, 3), "intercept": round(inter, 3),
+            "mean_pred": round(float(p.mean()), 4), "mean_obs": round(float(o.mean()), 4), "n": int(len(p))}
+
+
+def outcome_flags(y):
+    is_ko = ((y >= I_XKO) & (y < I_XKO + R5)) | ((y >= I_YKO) & (y < I_YKO + R5))
+    is_sub = ((y >= I_XSUB) & (y < I_XSUB + R5)) | ((y >= I_YSUB) & (y < I_YSUB + R5))
+    is_dec = (y == I_XDEC) | (y == I_YDEC) | (y == I_DRAW)
+    return is_ko, is_sub, is_dec
+
+
+def calibration_report(P, y, T):
+    ok = y >= 0
+    P, y, T = P[ok], y[ok], T[ok]
+    M = marginals(P)
+    is_ko, is_sub, is_dec = outcome_flags(y)
+    rep = {"KO": calib_table(M["KO"], is_ko), "SUB": calib_table(M["SUB"], is_sub),
+           "DEC": calib_table(M["DEC"], is_dec), "FINISH": calib_table(M["FIN"], ~is_dec)}
+    # per-fighter win-by-method: each fight gives two sides x three methods
+    side_p, side_o = defaultdict(list), defaultdict(list)
+    for nm, a_cells, b_cells in (("win_KO", M["XKO"], M["YKO"]), ("win_SUB", M["XSUB"], M["YSUB"]),
+                                 ("win_DEC", M["XDEC"], M["YDEC"])):
+        if nm == "win_KO":
+            oa = (y >= I_XKO) & (y < I_XKO + R5)
+            ob = (y >= I_YKO) & (y < I_YKO + R5)
+        elif nm == "win_SUB":
+            oa = (y >= I_XSUB) & (y < I_XSUB + R5)
+            ob = (y >= I_YSUB) & (y < I_YSUB + R5)
+        else:
+            oa, ob = y == I_XDEC, y == I_YDEC
+        rep[nm] = calib_table(np.concatenate([a_cells, b_cells]), np.concatenate([oa, ob]))
+    # finishing round shares, by format
+    rr = {}
+    for R in (3, 5):
+        m = (T["rounds"].to_numpy() == 5) == (R == 5)
+        if m.sum() == 0:
+            continue
+        rows = []
+        r_obs = np.where(~is_dec[m], y[m] % R5 + 1, 0)
+        for r in range(1, R + 1):
+            rows.append({"round": r, "pred_ko": round(float(M["ko_r"][m, r - 1].mean()), 4),
+                         "obs_ko": round(float((is_ko[m] & (r_obs == r)).mean()), 4),
+                         "pred_sub": round(float(M["sub_r"][m, r - 1].mean()), 4),
+                         "obs_sub": round(float((is_sub[m] & (r_obs == r)).mean()), 4)})
+        rr["%d_rounds" % R] = {"n": int(m.sum()), "rounds": rows,
+                               "pred_dec": round(float(M["DEC"][m].mean()), 4),
+                               "obs_dec": round(float(is_dec[m].mean()), 4)}
+    rep["by_round"] = rr
+    return rep
+
+
+# ============================================================== 7. pipeline
+METRICS = ["joint", "method3", "finish", "bin7", "method_round", "round_given_fin", "ko_vs_sub", "winner",
+           "winner_brier", "winner_acc", "method3_brier"]
+
+
+class Window:
+    """Everything fit on one training window (fights before Jan 1 of `until`): the hazard model (shared by
+    both variants) and each variant's 6-class / winner logits."""
+
+    def __init__(self, D, until, cfgs, C_haz):
+        T, FX, FY, y = D["T"], D["FX"], D["FY"], D["y"]
+        self.until = until
+        tr = (T["year"] < until).to_numpy()
+        mh = tr & (T["year"] >= HAZ_START).to_numpy()
+        self.haz = HazardModel(HAZ_COLS, C=C_haz, C_dec=C_DEC).fit(T[mh], FX[mh], FY[mh], y[mh])
+        self.parts = {}
+        for name, c in cfgs.items():
+            m = tr & (T["year"] >= c["start"]).to_numpy()
+            c6 = C6Logit(c["cols"], C=c["C6"], hl_years=c["hl"]).fit(T[m], FX[m], FY[m], y[m])
+            win = WinLogit(c["win_cols"], C=c["C_win"], hl_years=c["hl"]).fit(T[m], FX[m], FY[m], y[m]) \
+                if c.get("win_cols") else None
+            self.parts[name] = (c6, win)
+
+    def predict(self, D, mask, name):
+        T, FX, FY = D["T"][mask], D["FX"][mask], D["FY"][mask]
+        c6, win = self.parts[name]
+        P6 = c6.predict6(T, FX, FY)
+        if win is not None:
+            P6 = reweight_winner(P6, win.predict_pa(FX, FY))
+        H = self.haz.predict(T, FX, FY)
+        return joint_from_c6(P6, H, self.haz.draw_c), P6, H
+
+
+HAZ_START = 2008
+C_DEC = 0.003
+HL_YEARS = 8
+
+
+def variant_cfgs(stat_cols, C6_S=0.002, C6_SM=0.002, C_win=0.003):
+    return {"S": {"cols": stat_cols, "C6": C6_S, "start": 2012, "hl": HL_YEARS},
+            "SM": {"cols": stat_cols + MARKET_COLS, "C6": C6_SM, "start": 2013, "hl": HL_YEARS,
+                   "win_cols": stat_cols + MARKET_COLS, "C_win": C_win}}
+
+
+def losses_on(P, D, mask):
+    return per_fight_losses(P, D["y"][mask], D["T"][mask])
+
+
+def tune(D, quick=False):
+    """Expanding-window CV inside the tuning period (validation years 2020-2023, train on everything
+    earlier). Returns the chosen hyperparameters and the CV tables."""
+    T, FX, FY, y = D["T"], D["FX"], D["FY"], D["y"]
+    stat_cols = D["stat_cols"]
+    vmask = T["year"].isin(VALID_YEARS).to_numpy()
+    log = {"hazard": [], "S": [], "SM": [], "market_blend": []}
+    t0 = time.time()
+    # 1) hazard penalty (round shapes): fit per fold once per C, reuse
+    Cs_h = [0.01] if quick else [0.003, 0.01, 0.03]
+    H_by_C = {}
+    for Ch in Cs_h:
+        H = np.zeros((len(T), NC_))
+        for v in VALID_YEARS:
+            tr = ((T["year"] < v) & (T["year"] >= HAZ_START)).to_numpy()
+            va = (T["year"] == v).to_numpy()
+            hz = HazardModel(HAZ_COLS, C=Ch, C_dec=C_DEC).fit(T[tr], FX[tr], FY[tr], y[tr])
+            H[va] = hz.predict(T[va], FX[va], FY[va])
+        H_by_C[Ch] = H
+        print("  tune hazard C=%g (%.0fs)" % (Ch, time.time() - t0))
+    draw_c = float(((y[(T["year"] < 2024).to_numpy()] == I_DRAW).sum())
+                   / max(1, np.isin(y[(T["year"] < 2024).to_numpy()], [I_XDEC, I_YDEC, I_DRAW]).sum()))
+
+    def cv6(cols, C, start, win_cols=None, C_win=None):
+        P6 = np.zeros((len(T), 6))
+        for v in VALID_YEARS:
+            tr = ((T["year"] < v) & (T["year"] >= start)).to_numpy()
+            va = (T["year"] == v).to_numpy()
+            m = C6Logit(cols, C=C, hl_years=HL_YEARS).fit(T[tr], FX[tr], FY[tr], y[tr])
+            P6[va] = m.predict6(T[va], FX[va], FY[va])
+            if win_cols:
+                w = WinLogit(win_cols, C=C_win, hl_years=HL_YEARS).fit(T[tr], FX[tr], FY[tr], y[tr])
+                P6[va] = reweight_winner(P6[va], w.predict_pa(FX[va], FY[va]))
+        return P6
+
+    H0 = H_by_C[0.01]
+    Cs6 = [0.002] if quick else [0.001, 0.002, 0.004]
+    best_S = None
+    for C in Cs6:
+        P6 = cv6(stat_cols, C, 2012)
+        s = summarize_losses(losses_on(joint_from_c6(P6, H0, draw_c)[vmask], D, vmask))
+        log["S"].append({"C6": C, **{k: round(v, 5) for k, v in s.items()}})
+        if best_S is None or s["joint"] < best_S[0]:
+            best_S = (s["joint"], C, P6)
+    P6_S = best_S[2]
+    for Ch, H in H_by_C.items():
+        s = summarize_losses(losses_on(joint_from_c6(P6_S, H, draw_c)[vmask], D, vmask))
+        log["hazard"].append({"C_haz": Ch, **{k: round(v, 5) for k, v in s.items()}})
+    C_haz = min(log["hazard"], key=lambda r: r["joint"])["C_haz"]
+    H = H_by_C[C_haz]
+    print("  tune S: C6=%g C_haz=%g (%.0fs)" % (best_S[1], C_haz, time.time() - t0))
+    best_SM = None
+    Cws = [0.003] if quick else [0.002, 0.003, 0.005]
+    for C in Cs6:
+        for Cw in Cws:
+            P6 = cv6(stat_cols + MARKET_COLS, C, 2013, stat_cols + MARKET_COLS, Cw)
+            s = summarize_losses(losses_on(joint_from_c6(P6, H, draw_c)[vmask], D, vmask))
+            log["SM"].append({"C6": C, "C_win": Cw, **{k: round(v, 5) for k, v in s.items()}})
+            if best_SM is None or s["joint"] < best_SM[0]:
+                best_SM = (s["joint"], C, Cw, P6)
+    print("  tune SM: C6=%g C_win=%g (%.0fs)" % (best_SM[1], best_SM[2], time.time() - t0))
+    # 3) blend of the stats+market model with the market's own method / round props (2021-2023 OOF)
+    P_SM = joint_from_c6(best_SM[3], H, draw_c)
+    PMK = D["PMK"]
+    hm = vmask & ~np.isnan(PMK[:, 0])
+    best_a = None
+    for a in np.round(np.arange(0, 1.01, 0.1), 2):
+        Q = (1 - a) * P_SM[hm] + a * PMK[hm]
+        s = summarize_losses(losses_on(Q, D, hm))
+        log["market_blend"].append({"a_market": float(a), "n": int(hm.sum()), **{k: round(v, 5) for k, v in s.items()}})
+        if best_a is None or s["joint"] < best_a[0]:
+            best_a = (s["joint"], float(a))
+    chosen = {"C6_S": best_S[1], "C6_SM": best_SM[1], "C_win": best_SM[2], "C_haz": C_haz, "a_market": best_a[1],
+              "draw_c": round(draw_c, 5)}
+    print("  tune market blend a=%.1f (%.0fs)" % (best_a[1], time.time() - t0))
+    return chosen, log
+
+
+def prepare(quick=False):
+    T, priors, fights, people, state = build_table()
+    T = T.reset_index(drop=True)
+    PR = prior_frame(T, priors)
+    FX, FY, SA, SB = build_features(T, PR)
+    stat_cols = list(FX.columns)
+    pm, src, m6, rd, pdec = load_market(T)
+    FX, FY = add_market_features(T, FX, FY, pm)
+    y = outcome_cells(T)
+    PMK = market_joint(T, m6, rd, 0.014)
+    D = {"T": T, "PR": PR, "PMK": PMK, "FX": FX, "FY": FY, "y": y, "stat_cols": stat_cols, "pm": pm, "msrc": src,
+         "m6": m6, "rd": rd, "pdec": pdec, "priors": priors, "fights": fights, "people": people, "state": state}
+    return D
+
+
+# ============================================================== 8. live inputs (roster, matchups)
+def side_row(tag, P, st, day, date, elo_now):
+    """The table columns build_table writes for one side, from a person's walk state at `day` (live use)."""
+    T_ = P["tott"] or {}
+    dob = T_.get("dob")
+    lam = math.log(2) / HALF_LIFE
+    S = st["S"] * (math.exp(-lam * (day - st["t"])) if st["t"] is not None and day > st["t"] else 1.0)
+    r = {tag + "_slug": P.get("slug"), tag + "_name": P["name"],
+         tag + "_age": (date - dob).days / 365.25 if dob else np.nan, tag + "_elo": elo_now,
+         tag + "_n": st["n_all"], tag + "_n5": st["n5"], tag + "_ko_losses": st["ko_losses"],
+         tag + "_height": T_.get("height_in") or np.nan, tag + "_reach": T_.get("reach_in") or np.nan,
+         tag + "_stance": T_.get("stance") or "", tag + "_home": B.mode_recent(st["hist"], day),
+         tag + "_layoff": (day - st["last"][0]) if st["last"] else np.nan,
+         tag + "_last": st["last"][1] if st["last"] else "", tag + "_streak": st["streak"],
+         tag + "_fin_min_w": st["fin_min_w"], tag + "_fin_n_w": st["fin_n_w"], tag + "_fin_min_l": st["fin_min_l"],
+         tag + "_fin_n_l": st["fin_n_l"], tag + "_r1_w": st["r1_w"], tag + "_r1_l": st["r1_l"],
+         tag + "_dur": st["dur"], tag + "_dur_n": st["dur_n"],
+         tag + "_opp_elo": st["opp_elo"] / st["n_all"] if st["n_all"] else np.nan,
+         tag + "_S": S, tag + "_C": st["C"].copy()}
+    for k in REC_KEYS:
+        r[tag + "_rec_" + k] = st["rec"].get(k, 0)
+    return r
+
+
+def live_frame(D, pairs, live_priors_year):
+    """Virtual fights for live use. pairs: list of dicts {a, b (person ids), division, rounds, title, date}."""
+    rows = []
+    elo_now = D["elo_now"]
+    for q in pairs:
+        day = q["date"].toordinal()
+        r = {"id": q.get("id", ""), "date": q["date"], "day": day, "year": live_priors_year, "event": "live",
+             "division": q["division"], "rounds": q["rounds"], "title": q.get("title", False), "tourn": False,
+             "winner": "", "method": "", "cls": None, "rnd": 0, "time_s": None, "fight_s": None}
+        r.update(side_row("A", D["people"][q["a"]], D["state"][q["a"]], day, q["date"], elo_now[q["a"]]))
+        r.update(side_row("B", D["people"][q["b"]], D["state"][q["b"]], day, q["date"], elo_now[q["b"]]))
+        pdiv = q["division"]
+        if pdiv in B.NON_DIV:
+            hs = [h for h in (r["A_home"], r["B_home"]) if B.LBS.get(h)]
+            pdiv = max(hs, key=lambda d: B.LBS[d]) if hs else "ALL"
+        r["prior_div"] = pdiv
+        rows.append(r)
+    return pd.DataFrame(rows)
