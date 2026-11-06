@@ -111,8 +111,8 @@
   "tattoos_note": "None visible. The front torso and both arms are clear in the two studio stances; the right side and arm in the April 2026 face-off; the left side and back of the shoulder in the April 2026 fight photo. His full back was not seen.",
   "accessories_seen": "Gold chains (a thin chain at the April 2026 weigh-in, a heavy gold Cuban-link chain at a ceremonial weigh-in, a large rope chain in 2018), colourful woven bracelets on the right wrist, and a multicolour flag over his shoulder at the April 2026 weigh-in.",
   "kit": {
-    "typical_shorts": "Compression-length vale tudo shorts that end just above the knee, not board shorts. April 2026 studio: red UFC-issued shorts with a darker red wave/scale pattern, black UFC waistband panel and a white crypto.com logo on his right thigh. April 2026 fight: red VENUM fight shorts with a black UFC waistband and his name in white down the left leg. August 2025 studio: royal-blue VENUM shorts with dark-blue and white tiger-stripe slashes. April 2026 weigh-in: dark maroon and black patterned VENUM shorts.",
-    "gloves": "Standard black UFC 4 oz gloves in studio; blue-cuffed gloves vary with corner.",
+    "typical_shorts": "Compression-length vale tudo shorts that end just above the knee, not board shorts. April 2026 studio: red UFC-issued shorts with a darker red wave/scale pattern, black UFC waistband panel and a white crypto.com logo on his right thigh. April 2026 fight: red VENUM fight shorts with a black UFC waistband and his name in white lettering down the side of the leg (left side visible in the photo). August 2025 studio: royal-blue VENUM shorts with dark-blue and white tiger-stripe slashes. April 2026 weigh-in: dark maroon and black patterned VENUM shorts.",
+    "gloves": "Standard black UFC 4 oz gloves; the cuff colour follows his corner.",
     "shorts_colours_hex": { "red_base": "#d81f26", "red_print": "#9e1b22", "black_waistband": "#17171a", "blue_2025": "#1f56b5", "white_logo": "#f2f2f2" },
     "brand_note": "UFC-issued studio kit; VENUM wordmarks on fight shorts."
   },

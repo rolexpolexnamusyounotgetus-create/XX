@@ -239,7 +239,9 @@ priors are the year's 5-year window, and the engine is src/engine3.js with param
 `FightEngine.matchup` followed by `MLRates.applyToMatchup` (level "engine", weight 1). 2024-2025 uses
 `mlrates_dev.json` (trained 2010-2023). 2019-2023 uses the out-of-fold rates (each year predicted by a model
 trained on 2010..year-1). No simulated fight's own year was ever in the training data of the rates it used.
-Winner metrics are scored on decisive fights in both corner orientations; the model has no corner input.
+Winner metrics are scored on decisive fights; the model has no corner input. (Reviewer note: this harness
+simulates each fight once, with the first-named fighter in corner A, and its "both orientations" score is
+algebraically the same number; the verification log has a real two-orientation re-run, which finds no corner bias.)
 
 | | 2024-2025 plain | 2024-2025 ML | 2019-2023 plain | 2019-2023 ML |
 |---|---|---|---|---|
@@ -331,9 +333,13 @@ expectation after the adapter equals the target exactly for attempts, accuracies
 
 **Backtests / calibrate.js.** Use `data/derived/mlrates_dev.json` for any score on 2024-2025 (it never saw those
 years). For tuning on 2019-2023, use the out-of-fold rates in `data/derived/mlrates_oof.json`, not the dev model,
-which saw those years. Sides in `backtest_dev.json` work as profiles directly. `layoff` is not stored there, so
-the model takes its "unknown layoff" branch. Pass `layoff` (days) or `last_fight` to use it. With fighters.json
-profiles, layoff is computed from `last_fight` and the matchup date.
+which saw those years. Sides in `backtest_dev.json` work as profiles directly. `layoff` is not stored there; the
+evaluator now imputes the training median (168 days, `fc.layMed`) for a side with UFC fights and no layoff
+(reviewer fix, see the verification log: the old "unknown layoff" branch was never seen for experienced fighters in
+training and shifted rates by up to 9%). Pass `layoff` (days) or `last_fight` to use the real value. For exact
+parity with the validated rates on 2019-2025 fights, prefer the `mlrates_oof.json` rates keyed by fight id
+(2019-2023 folds, 2024-2025 dev model), which also avoid backtest_dev's rounding of age and Elo. With
+fighters.json profiles, layoff is computed from `last_fight` and the matchup date.
 
 ```js
 var pred = MLRates.predict(model, entry.A, entry.B, { division: entry.division, prior_division: entry.prior_division,

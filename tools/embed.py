@@ -65,7 +65,6 @@ from collections import defaultdict
 
 import numpy as np
 from scipy import sparse
-from scipy.optimize import minimize
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -426,11 +425,10 @@ class Fit:
         return P, L0
 
     def step_loadings(self, P, L0):
-        lam, K, D = self.hp["lam"], self.K, self.D
+        lam, K = self.hp["lam"], self.K
         AX, DY = P["A"][self.x], P["D"][self.y]
         Z = np.hstack([AX, DY, self.Zc])
         _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc, self.knb)
-        p = Z.shape[1]
         ld = lam * self.hp.get("lam_d", 1.0)
         reg = np.r_[np.full(K, lam), np.full(K, ld), self.creg]
         new = {"W": P["W"].copy(), "V": P["V"].copy(), "C": P["C"].copy()}
@@ -1226,7 +1224,7 @@ def eval_mlrates_stack(T, D, verbose=True):
         one = np.ones(len(y))
         Z1 = np.c_[one, lm]
         Z2 = np.c_[one, lm, le]
-        m_tr, m_va = tr & ok, va & ok
+        m_tr = tr & ok
         b1 = _glm_newton(Z1[m_tr], y[m_tr], n[m_tr], binom)
         b2 = _glm_newton(Z2[m_tr], y[m_tr], n[m_tr], binom)
         d_raw = _dev1(y[va], n[va], lm[va], binom)
@@ -1435,7 +1433,6 @@ def production_walk(D, hp, noise, start, end, cold_sweeps=30, warm_sweeps=5, lig
     out = {"quarters": [], "fight": {}, "hp": hp}
     P_prev = None
     t0 = time.time()
-    lam_hl = math.log(2) / hp["hl"]
     for qi, Tq in enumerate(qdates):
         Tn = qdates[qi + 1] if qi + 1 < len(qdates) else end.toordinal()
         f = Fit(D, Tq, hp, noise, warm=P_prev, max_sweeps=cold_sweeps if P_prev is None else warm_sweeps, tol=1e-6)

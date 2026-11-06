@@ -1,0 +1,227 @@
+{
+  "slug": "conor-mcgregor",
+  "name": "Conor McGregor",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 38,
+  "official": { "height_cm": 175.3, "reach_cm": 188.0, "stance": "Southpaw", "fight_weight_lb": 170 },
+  "photos_used": [
+    "espn_headshot.png",
+    "espn_stance_left.png",
+    "espn_stance_right.png",
+    "ref_ufc329_faceoff_profile_2026-07-10.jpg",
+    "ref_ufc329_weighin_front_2026-07-10.jpg",
+    "commons_pentagon_portrait_2025-03-17.jpg",
+    "commons_pentagon_pose_2025-03-17_crop.jpg",
+    "commons_whitehouse_oval_2025-03-17_crop.jpg",
+    "commons_whitehouse_desk_3q_2025-03-17_crop.jpg",
+    "commons_moscow_2018-07-15_crop.jpg"
+  ],
+  "face": {
+    "shape": "Broad, rounded-square face, widest at the cheekbones and jaw, noticeably fuller than in his 2015-2018 featherweight and lightweight years (compare the 2018 Moscow photo). In 2025-2026 the cheeks and the area under the jaw carry more volume; the full beard makes the lower face look heavier still.",
+    "jaw": "Wide, with the angles set far out under the ears. In the March 2025 photos (short beard) the jaw line is strong but softened by fuller cheeks; in 2026 it is hidden under a full beard.",
+    "chin": "Medium width, rounded, moderately projecting; in the July 2026 right profile the beard carries the chin line well forward of the lips.",
+    "cheekbones": "Broad and fairly high, padded by full cheeks; no hollows.",
+    "brow_ridge": "Prominent and heavy. In right profile the brow juts forward over a deep-set eye; from the front it casts the eyes into shadow.",
+    "forehead": "Tall and broad, sloping back in profile. Faint horizontal creases, deeper when he raises his brows. With the 2025 buzz cut the forehead and temples are fully exposed and the hairline sits high.",
+    "eyes": {
+      "shape": "Hooded, heavy upper lids that droop at the outer corners, giving a narrowed, sleepy-intense look. Mild bags under the eyes. Fairly small for the face.",
+      "spacing": "Average.",
+      "colour": "Hazel to light brown with a green tint in studio and daylight; they read dark at a distance because the brow shades them. Closest embed iris: mh-iris-brownlight (or green tinted toward brown).",
+      "expression": "Neutral face: chin down, eyes narrowed and fixed (2026 headshot, weigh-ins). Smiling: eyes close to slits with strong crow's-feet (2025 Pentagon and Oval Office photos)."
+    },
+    "eyebrows": {
+      "thickness": "Medium",
+      "shape": "Low and fairly straight with a slight peak at the outer third, sitting right on the brow ridge.",
+      "colour": "Light-to-medium brown with ginger, lighter than the beard.",
+      "colour_hex": "#7a5544"
+    },
+    "nose": {
+      "length": "Medium to slightly long",
+      "width": "Broad, especially across the lower half.",
+      "bridge": "Broad and slightly flattened from the front. In the July 2026 right profile it is nearly straight with a small bump at mid-bridge.",
+      "hump": "Small, low bump at mid-bridge; no big dorsal hump.",
+      "tip": "Broad, rounded and slightly bulbous, projecting moderately, pointing very slightly down.",
+      "nostrils": "Wide and fleshy.",
+      "fight_damage": "Some: the bridge is broader and flatter than in early-career photos, with a small irregular bump in profile. No obvious sideways deviation; model it symmetric."
+    },
+    "mouth": {
+      "width": "Medium",
+      "upper_lip": "Thin, mostly covered by the moustache in 2026.",
+      "lower_lip": "Medium fullness.",
+      "resting_expression": "Lips pressed together, corners slightly down, often with the chin raised and lips pushed out in a pout or smirk at weigh-ins. Smiling, he shows straight, very white upper teeth."
+    },
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Stand out slightly, especially visible with the 2025 buzz cut.",
+      "cauliflower_ear": "None. Both ears have a smooth, fairly thin helix and normal lobes (2025 buzz-cut photos, July 2026 right profile).",
+      "notes": "Normal ears."
+    },
+    "notable_marks_scars": "No large facial scars visible. Deep forehead creases and crow's-feet; some redness across the cheeks and nose. In March 2025 a small bright point on an upper front tooth catches the light (possibly a tooth gem); do not model. The round purple marks on his neck and right shoulder in the July 2026 face-off are cupping marks, temporary."
+  },
+  "hair": {
+    "style": "July 2026 (current): grown out and swept straight back with product, wet-look. The top is about 10-12 cm, the sides about 4-5 cm combed back over the ears (no fade), and the back reaches the collar. March 2025: buzzed to stubble (2-3 mm) all over. 2018 and 2021: short sides with a textured, longer top.",
+    "length_cm": { "top": 11, "sides": 4.5, "back": 6 },
+    "colour": "Medium brown with golden and copper tints in studio light; darker brown when wet and slicked (July 2026 face-off).",
+    "colour_samples": { "studio_top": "#5e4538", "studio_top_warm": "#814d44", "weighin_wet": "#35291d" },
+    "colour_hex": "#5a4134",
+    "hairline": "Receded at both temples into a clear M shape; the central front is thinner but present. The 2025 buzz cut shows the temple recession clearly.",
+    "texture": "Straight to slightly wavy, medium thickness.",
+    "notes": "Closest embed proxy: short02 or short04 pushed straight back, tinted #5a4134. For a 2025 look, use a buzz-cut skin shader instead."
+  },
+  "facial_hair": {
+    "type": "full beard",
+    "colour": "Copper-brown to ginger, redder and lighter than the head hair, with a lighter blond-to-grey patch at the centre of the chin under the lower lip and a lighter ginger moustache.",
+    "colour_samples": { "studio_chin": "#693e2f", "studio_jaw_shadow": "#442b1e", "studio_moustache": "#875342", "weighin_beard": "#543b2c", "weighin_chin": "#3c2c1e" },
+    "colour_hex": "#6a4332",
+    "density": "Dense on the chin, jaw and moustache; slightly thinner on the upper cheeks.",
+    "length_mm": "About 30-40 mm at the chin and 20-25 mm on the jaw in July 2026; trimmed to about 5-8 mm in March 2025.",
+    "shape": "Full beard joined to a thick moustache that covers the upper-lip edge. Natural cheek line sitting fairly high, a rounded-square bottom edge and a neckline on the upper neck. The moustache ends are a little longer than the beard at the mouth corners."
+  },
+  "skin": {
+    "tone_samples": [
+      { "photo": "espn_headshot.png", "spot": "right cheek", "hex": "#ec937a", "light": "studio, high key" },
+      { "photo": "espn_headshot.png", "spot": "left cheek", "hex": "#e38871", "light": "studio, high key" },
+      { "photo": "commons_pentagon_portrait_2025-03-17.jpg", "spot": "right cheek", "hex": "#d58e6f", "light": "indoor window light" },
+      { "photo": "commons_pentagon_portrait_2025-03-17.jpg", "spot": "left cheek", "hex": "#b57d69", "light": "indoor window light, shaded side" },
+      { "photo": "ref_ufc329_weighin_front_2026-07-10.jpg", "spot": "right cheek", "hex": "#d07468", "light": "weigh-in flash" },
+      { "photo": "ref_ufc329_weighin_front_2026-07-10.jpg", "spot": "left cheek", "hex": "#d4796d", "light": "weigh-in flash" },
+      { "photo": "ref_ufc329_faceoff_profile_2026-07-10.jpg", "spot": "right cheek", "hex": "#dfab7d", "light": "warm stage light" }
+    ],
+    "tone_average_all": "#d68971",
+    "tone_average_excluding_espn": "#cf876f",
+    "tone_hex": "#d68971",
+    "body_samples": { "stage_right_shoulder": "#ba8254", "pentagon_forehead": "#e0b0a1" },
+    "undertone": "Warm and ruddy: fair skin with a tan in 2026 and noticeable redness on the cheeks, nose and forehead.",
+    "freckles_marks": "No distinct freckles at these resolutions; some uneven redness on the shoulders (partly cupping marks in July 2026). Light reddish-brown body hair on the forearms and legs.",
+    "texture_pick": "middleage_caucasian_male skin tinted warmer toward #d68971 with extra red on the cheeks and nose."
+  },
+  "body": {
+    "build": "Muscular welterweight frame on a 5 ft 9 in body with a long 74-inch reach, so the arms look long. In 2026 he is bulkier than in his featherweight years: big shoulders and arms, thick chest, but still with visible abs.",
+    "body_fat": "lean",
+    "body_fat_notes": "Moderately lean at fight week (abs and serratus visible in the July 2026 weigh-in and studio stance) but softer than his 2015-2016 featherweight peak.",
+    "shoulders": "Broad with large, rounded deltoids; well-developed traps.",
+    "chest": "Thick, full pecs, mostly covered by the chest piece.",
+    "arms": "Long arms with big biceps and triceps (very visible in the double-biceps weigh-in pose) and strong forearms.",
+    "waist": "Medium-narrow; clear V-taper.",
+    "legs_calves": "Lean, fairly slim legs for the upper body, with defined quads and slim calves.",
+    "neck": "Thick and muscular, tattooed at the front.",
+    "posture": "Chin down and shoulders slightly forward in face-offs; a chest-out, chin-up swagger at weigh-ins. Southpaw stance.",
+    "notable_physique_traits": "Big tattooed chest and shoulders, long arms, slimmer legs, full copper beard."
+  },
+  "tattoos": [
+    {
+      "where": "Chest, across both pecs from shoulder to shoulder and down to the bottom of the sternum",
+      "description": "Large traditional-style colour piece: a snarling gorilla's head at the centre of the chest with a red heart in its mouth, flanked by spread black feathered wings that sweep out over both pecs to the front of the shoulders, with red and orange shading behind the feathers. The gorilla's face and the area over his left pec are heavily shaded in black and grey.",
+      "size": "About 45 cm wide x 30 cm tall"
+    },
+    {
+      "where": "Front of the neck, at the throat just above the collarbones",
+      "description": "Black crown with grey and blue-grey shading, sitting directly above the gorilla's head.",
+      "size": "About 12 cm wide x 8 cm tall"
+    },
+    {
+      "where": "Upper abdomen, centred just below the pecs",
+      "description": "'McGREGOR' in black serif capitals (small 'c'), slightly arched.",
+      "size": "About 25 cm wide x 6 cm tall"
+    },
+    {
+      "where": "Left side of the abdomen and oblique, from below the ribs down to the waistband",
+      "description": "Black-and-grey tiger climbing downward toward the hip, partly hidden by the waistband.",
+      "size": "About 25 cm tall x 10 cm wide"
+    },
+    {
+      "where": "Left forearm, all around from the wrist to just below the elbow",
+      "description": "Traditional-style colour sleeve: a banner reading 'SLOW' (red) with smaller 'SMOOTH' and 'FAST' (black) lines near the elbow; a dagger with a yellow pommel piercing a red heart; red and orange roses with green leaves; a pocket watch with a blue face; a bead chain; and a small black monogram on the outer side near the elbow.",
+      "size": "Full forearm, about 25 cm long"
+    },
+    {
+      "where": "Back of the left hand, by the wrist",
+      "description": "Faded rose in grey with a pink tint.",
+      "size": "About 6 cm"
+    },
+    {
+      "where": "Lower right flank / lower back, just above the waistband",
+      "description": "Small dark tattoo seen only at the edge of the July 2026 face-off; design not readable.",
+      "size": "About 4-5 cm",
+      "confidence": "low"
+    },
+    {
+      "where": "Inner front of the left shin, above the ankle",
+      "description": "Short vertical line of small black script.",
+      "size": "About 8 cm long",
+      "confidence": "low"
+    }
+  ],
+  "tattoos_note": "His right arm looks clear of tattoos (July 2026 weigh-in and face-off). His back is not visible in any photo here except the right shoulder blade (no tattoo there), so back tattoos are unknown.",
+  "accessories_seen": "Silver chain (July 2026 face-off), gold Rolex-style watch on the left wrist (March 2025), pinstripe three-piece suits with an Irish/US flag pin.",
+  "kit": {
+    "typical_shorts": "Green. July 2026 studio: compression-length green shorts covered in Celtic knotwork, a Celtic-knot band around the waistband, a black UFC tag at the front, orange-and-white claw slashes and small Celtic symbols over his RIGHT thigh (viewer's left when he faces the camera) with a crypto.com logo and a UFC wordmark. July 2021 studio: dark-green VENUM shorts with white pinstripe lines and CONOR in white down the left leg. UFC 329 weigh-in (July 2026): black VENUM shorts.",
+    "gloves": "Standard black UFC 4 oz gloves.",
+    "shorts_colours_hex": { "green_base": "#1f6b3a", "green_light": "#3f9a5a", "orange_slash": "#f07a2a", "white_slash": "#f4f4f4", "dark_green_2021": "#0f4a2a" },
+    "brand_note": "Describe as UFC-issued; VENUM wordmark on the 2021 and weigh-in shorts."
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.2,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.65,
+    "macro/weightUpM": 0.05,
+    "macro/heightDownM": 0.08,
+    "macro/proportionsUpM": 0.45,
+
+    "head/head-square": 0.35,
+    "head/head-round": 0.15,
+    "head/head-scale-horiz-incr": 0.15,
+    "head/head-scale-depth-incr": 0.05,
+    "head/head-fat-incr": 0.2,
+
+    "forehead/forehead-scale-vert-incr": 0.2,
+    "forehead/forehead-trans-backward": 0.2,
+
+    "chin/chin-width-incr": 0.15,
+    "chin/chin-bones-incr": 0.25,
+    "chin/chin-prominent-incr": 0.05,
+
+    "cheek/l-cheek-volume-incr": 0.3,
+    "cheek/r-cheek-volume-incr": 0.3,
+    "cheek/l-cheek-bones-incr": 0.1,
+    "cheek/r-cheek-bones-incr": 0.1,
+
+    "eyes/l-eye-scale-decr": 0.15,
+    "eyes/r-eye-scale-decr": 0.15,
+    "eyes/l-eye-height2-decr": 0.35,
+    "eyes/r-eye-height2-decr": 0.35,
+    "eyes/l-eye-corner1-down": 0.15,
+    "eyes/r-eye-corner1-down": 0.15,
+    "eyes/l-eye-bag-incr": 0.3,
+    "eyes/r-eye-bag-incr": 0.3,
+
+    "eyebrows/eyebrows-trans-down": 0.3,
+    "eyebrows/eyebrows-trans-forward": 0.35,
+
+    "nose/nose-scale-horiz-incr": 0.3,
+    "nose/nose-scale-vert-incr": 0.1,
+    "nose/nose-width1-incr": 0.4,
+    "nose/nose-hump-incr": 0.1,
+    "nose/nose-point-width-incr": 0.35,
+    "nose/nose-nostrils-width-incr": 0.25,
+    "nose/nose-point-down": 0.1,
+
+    "mouth/mouth-upperlip-volume-decr": 0.3,
+    "mouth/mouth-cupidsbow-decr": 0.1,
+    "mouth/mouth-angles-down": 0.1,
+
+    "neck/neck-scale-horiz-incr": 0.35,
+
+    "torso/measure-shoulder-dist-incr": 0.35,
+    "torso/torso-vshape-incr": 0.35,
+    "torso/measure-waist-circ-decr": 0.05,
+    "torso/measure-hips-circ-decr": 0.05
+  },
+  "morphs_not_in_embed": {
+    "_note": "assets/embed/mh-manifest.json has no ear targets. Standard MakeHuman ear modifiers, in case they are added later: normal ears that stand out slightly.",
+    "ears/l-ear-flap-incr": 0.2,
+    "ears/r-ear-flap-incr": 0.2
+  },
+  "notes": "Confidence: high for tattoos, beard, hair (July 2026), skin and build; medium-to-high for face proportions (sharp frontal photos from 2025 and a sharp true right profile from July 2026); low-to-medium for exact morph values. 10 photos: 5 freely licensed (four public-domain DOD/White House photos from March 2025, cropped to him alone where others were in frame, and one CC BY 4.0 2018 photo), 5 reference-only. What to watch: (1) His look changes a lot: in March 2025 he had a buzz cut and short beard; at UFC 329 (July 2026) he had slicked-back hair of about 11 cm and a full copper beard. Use the 2026 look for the simulator. (2) The face is broader and fuller than his famous 2015-2016 look; do not give him a lean, angular face. (3) Heavy brow, hooded drooping eyelids and a broad flattened nose are the key face cues, with the copper beard that is redder than the brown hair. (4) Tattoos are the strongest body cue: gorilla-and-wings chest piece with the neck crown, McGREGOR across the upper abdomen, tiger on his left side, and the colour sleeve on his LEFT forearm only. Mirror-check them. (5) Southpaw. Macro values: ageOldM uses avatar3d.js (age - 25) / 65 with age 38.3; heightDownM 0.08 matches Poirier at 175 cm; proportionsUpM is raised for the 74-inch reach. Scale the final mesh to 175.3 cm if the avatar code supports it. MakeHuman l-/r- morphs refer to the character's own left and right; the values here are symmetric."
+}

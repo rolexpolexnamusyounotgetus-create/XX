@@ -12,6 +12,18 @@ Outputs: `data/derived/mlcal_candidates.json` (run 1, the requested small-budget
 
 ## Results (Nov 6, 2026)
 
+> **Review status (adversarial review, Nov 6).** The harness code is sound: the metrics and validation
+> numbers were reproduced by separate code with different seeds, and no out-of-fold, corner-order or 2026
+> leak was found in the harness itself. Three conclusions below do not hold as stated: (1) the baseline
+> src/params3.js `3.0.0-selfcal-2026-11-06` is not a clean reference. Its [selfcal] values were fit to
+> league rates pooled over 2018 to Oct 2026, which include the validation years and the 2026 vault, and in
+> the frozen snapshot they were stale (league-average LW finish rate 44.6% vs 52.7% target). (2) "Engine v3's
+> global parameters are already near their best" is false: re-running the same self-calibration on
+> train-period rates only, with no search, beats every searched candidate of runs 2-4 on the same train
+> confirmation window, and matches or beats every candidate of runs 1-3 on validation winner log loss. (3) The engine's 0.028 margin over Elo on validation is not representative:
+> on 2019-2023 it averages about 0.006, and the engine is overconfident there (train calibration slope 0.65).
+> Details, numbers and fixes are in "Verification log" at the end.
+
 **Verdict.** The harness works end to end and its safeguards held: the gains the search found on the tuning
 window did not survive confirmation or validation, and the harness reported that. In the requested
 small-budget run on engine v3 (and in two follow-up runs) no candidate beat the current parameters
@@ -249,3 +261,182 @@ and stat-line errors as JSON).
 
 mlcal produces parameter values for the engine, not a model the page evaluates, so there is no
 `src/ml/mlcal.js`. A winning hook coupling is moved into the engine as code plus a params entry.
+
+## Verification log
+
+Adversarial review, Nov 6, 2026. The working assumption was that every validation number was wrong until
+re-derived. The review used the frozen run-1 engine snapshot, now kept in the repo at
+`tools/mlcal_frozen/a6904fc06b98/` (engine hash a6904fc06b98, params hash 940478b62032). The runs had pointed
+at a scratch copy that does not persist. Review CPU was about 7 minutes in total, run as separate jobs with
+at most 2 workers each.
+
+### What was checked and held
+
+- **Metric code.** `python3 tools/mlcal_verify.py ledger` re-derives every ledger entry from its stored
+  per-fight predictions. Outcomes are re-coded separately from backtest_dev.json, and every one matches.
+  Winner log loss matches to 1e-5 (7-bin values differ by at most 6e-5, from 5-decimal rounding). Paired
+  bootstrap CIs agree with the report.
+- **Fresh simulation.** `tools/mlcal_verify.js` shares no code with mlcal.js: it has its own outcome
+  coding, both-corner loop, seeds and accumulation. It re-simulated the baseline and the Elo-hook leader
+  tpe6 on the 857 validation fights at 80 sims per corner order.
+
+  | set | ledger winner LL | fresh code and seeds, winner LL [95% CI] | paired d vs baseline [95% CI] |
+  |---|---|---|---|
+  | baseline | 0.6486 | 0.6481 [0.6311, 0.6653] | - |
+  | Elo hook tpe6 | 0.6449 | 0.6455 [0.6260, 0.6646] | -0.0026 [-0.0139, +0.0082] |
+
+  The engine predictions agree up to Monte Carlo noise: mean |dp| is 0.043, which is the size expected
+  from two independent 160-sim estimates.
+- **Snapshots are pre-fight.** For every pair of consecutive appearances of a fighter, S(next) =
+  (S(this) + this fight's stats) x 0.5^(days/730), within 2%. This holds for min, kd, td_lnd, ctrl, sub_att
+  and h_lnd, about 26,000 key-pairs from 2019 to 2025 with 0 mismatches, and n always rises by exactly 1.
+  Elo is pre-fight, with K and boost chosen on 2019-2023 only (tools/build_db.py tune_elo). priors_asof[Y]
+  uses only fights in [Y-5, Y).
+- **Hidden data in the harness.** backtest_dev.json ends 2025-12-13. Every ledger fight is dated
+  2024-01-13..2025-12-13. mlcal_priors_asof.json covers 2019-2025. The verifier skips dates >= 2026-01-01
+  before reading anything else.
+- **Corner order.** Tuning swaps corners by a fixed hash, validation averages both orders, and scoring is
+  orientation-invariant. The 7-bin smoothing prior and the winner pseudo-counts are symmetric. The Elo hook
+  is antisymmetric (test). The fresh both-orders simulation reproduces the numbers. The fitted Elo reference
+  and the blend diagnostic below have no intercept and are fit on mirrored rows.
+- **Exposure offsets.** None: mlcal has no count model. Per-15 base rates divide by simulated minutes, and
+  the stat-line errors compare per-fight totals.
+- **No browser evaluator.** mlcal outputs parameter values, so there is no src/ml/mlcal.js to check against
+  Python.
+
+### What did not hold
+
+1. **The baseline was contaminated, and in the snapshot it was also stale.** tests/test_engine3.js `--fit`
+   sets every [selfcal] value against `fighters.json` priors: `since 2018-01-01`, snapshot 2026-10-31,
+   with 555 LW three-round fights against 308 in priors_asof[2024]. Those values (the global scales,
+   kdInstant, kdRefStop, gnpTko, stko, judge.indSd/t108 and all `div.*` factors) were therefore matched to
+   league rates that include 2024-2025 and the 2026 vault. tools/build_db.py warns about exactly this
+   ("a backtest that shrinks toward them would see the test period's league rates").
+
+   On top of that, the frozen params do not fit the frozen engine. A league-average LW pair simulates a
+   44.6% finish rate against a 52.7% target (KO 29.1% vs 35.6%). The current src pair gives 53.0%, so
+   params3.js was re-fit after the snapshot. "No 2026 fight was loaded" is true of the harness, but the
+   reference it compared everything against contains aggregate 2026 information.
+2. **A clean baseline beats every searched candidate.** `node tools/mlcal_cleanbase.js` re-runs the same
+   fixed-point self-calibration: same updates, same order, 8,000/6,000 fights per iteration, 43 s CPU. The
+   targets and the engine's shrinkage priors come from priors_asof[2024] (2019-2023 fights) only. Output:
+   `data/derived/mlcal_params3_selfcal_pre2024.js`. It was scored once through the normal ledgered path
+   (`tune --trials 1 --cma-evals 0`, the same windows and seeds as runs 2 and 3, ledger hash
+   9087f41436d7d4b9; `data/derived/mlcal_candidates_cleanbase.json`):
+
+   | set (frozen engine) | tuning window, 1,300, 40 sims | confirmation, 672 | val objective | val winner LL [95% CI] | 7-bin LL | Brier | acc. | base-rate pen. |
+   |---|---|---|---|---|---|---|---|---|
+   | params3 selfcal (all-years rates) | 1.6187 | 1.6007 | **1.4719** | 0.6486 [0.6316, 0.6657] | 1.6136 | 0.2284 | 0.621 | **0.0166** |
+   | best run-2 finalist, by confirmation (cma0_3) | 1.5848 | 1.5969 | 1.4952 | 0.6508 | 1.6228 | 0.2294 | **0.640** | 0.0330 |
+   | Elo hook tpe6 (run 3) | 1.5923 | 1.5970 | 1.4661 | 0.6449 | 1.6063 | 0.2266 | 0.628 | 0.0180 |
+   | **selfcal on 2019-2023 rates (review)** | **1.5979** | **1.5895** | 1.4744 | **0.6441** [0.6283, 0.6608] | **1.6073** | **0.2262** | 0.637 | 0.0267 |
+
+   Both train windows are out of sample for the clean set: only league aggregates were used, no fight
+   outcomes. On them it improves on the original by 0.021 and 0.011 (about 3 SE pooled over 1,972 fights),
+   and on confirmation it beats every finalist of runs 2 and 3, which used the same windows and seeds (run 1 used other windows).
+
+   On validation (paired, same per-fight seeds) the clean set's winner log loss is better than the original
+   by 0.0045 [-0.0117, +0.0025], than run 1's rank 1 by 0.0067 [-0.0145, +0.0009] and than run 2's rank 1 by
+   0.0068 [-0.0155, +0.0020]. It ties the Elo hook (-0.0009 [-0.0120, +0.0101]). It loses only on the
+   validation base-rate penalty: KO share 33.3% vs 29.1% observed, and KD per 15 minutes 0.292 vs 0.250.
+   That loss is genuine era drift (2019-2023 had more knockouts). It is also the one metric the original
+   could have learned from its 2024-2026 targets.
+
+   The run-1/run-2 search mostly re-discovered the stale calibration (subConvScale went to 1.0-1.4 in
+   every finalist; the clean fixed point is 1.40). The rest of its gain was more shrinkage.
+3. **Run 4: the search on top of the clean baseline.** Same 16-dimension spec, 30 TPE trials + 24 CMA
+   evaluations, the same windows and seeds as run 2, 237 s CPU, `--no-val`
+   (`data/derived/mlcal_candidates_clean_wide.json`). The rule was fixed before the run: validate rank 1
+   only if it beats the clean baseline on confirmation. The finalists improved the tuning window by
+   0.010-0.013, but confirmation got worse: 1.6003, 1.6095 and 1.6106 against 1.5895. Nothing was
+   validated.
+
+   So the corrected conclusion is: once the baseline is fit on train-period rates, a 16-dimension search over
+   v3's global knobs finds nothing that survives even the train confirmation window. The earlier "gains"
+   came from the stale baseline.
+4. **Train and validation behave differently, and that is why tuning gains do not transfer.** Fresh
+   simulation of all 1,972 train fights (80 sims each) and the 857 validation fights gives:
+   - Engine winner LL is 0.680 on train and 0.648 on validation, while Elo is 0.685 and 0.677.
+   - Engine minus Elo by year: 2019 -0.030, 2020 +0.017, 2021 -0.030, 2022 +0.011, 2023 +0.006, 2024 -0.025,
+     2025 -0.032.
+   - For fights where both men have 7+ UFC fights, engine minus Elo is +0.015 on train (n=544) and -0.055
+     on validation (n=296), a swing of about 4 SE.
+   - The calibration slope (no intercept, mirrored) fit on train is 0.65, so the engine is overconfident on
+     2019-2023. Applying it on validation hurts: +0.0071 [+0.0011, +0.0130].
+
+   Every finalist in runs 1, 2 and 4 raised prior strengths (kPM, kAcc, kKD, kTd*) or form.vol, i.e. made
+   predictions less confident. That helps on train and hurts on validation. Fight-sampling noise is real,
+   but this period shift explains more of the vanished gains.
+
+   Snapshot leakage is ruled out above. The cause of the shift is still open: the engine's hand-set
+   defaults may have been shaped on 2024+ backtests, or the period really is different. A v4 owner should
+   look at it before trusting any train-tuned spread parameter.
+5. **The claim that the engine beats Elo by 0.028 needs a qualifier.** It holds on validation against both
+   references:
+   - raw 400-point Elo: -0.029 [-0.047, -0.009];
+   - Elo with its slope fit on train (1.80 per 400 points, against ln 10 = 2.30): -0.030 [-0.048, -0.012].
+     The fitted Elo is slightly worse than the raw one on validation (0.6782 vs 0.6768).
+
+   On 2019-2023, though, the margin is only about 0.006, with the engine worse than Elo in 2 of 5 years.
+   Treat the validation margin as optimistic.
+6. **"Well calibrated (ECE 0.015)" depends on the seed.** The same parameter set gives a symmetric ECE of
+   0.031 with the verifier's seeds, and the clean baseline gives 0.035. A 10-bin ECE on 853 fights has noise
+   of about 0.02. The calibration slope is the more robust check: about 1 on validation (a train-fit
+   temperature makes it worse) and 0.65 on train.
+7. **The best lead (the Elo hook) is the best of 8 sets scored on validation, and it does not replicate as
+   a gain.** With fresh seeds it is -0.0026 [-0.014, +0.008].
+   - A simpler test of the same idea, a no-intercept blend logit = a x engine logit + b x Elo difference
+     fit on train, puts weight on Elo there (a = 0.58, b = 1.24 per 400). On validation it adds nothing:
+     +0.0005 [-0.008, +0.009] vs the engine alone.
+   - The clean baseline alone ties the hook.
+
+   The Elo information that helps on 2019-2023 is already in the engine's 2024-2025 predictions, or it does
+   not transfer.
+
+**Validation use.** The ledger held 9 distinct sets before the review: the baseline plus 8 candidates. The
+review added 1, the clean baseline. The fresh re-simulation of two existing sets is recorded under
+`audits` in the ledger. Run 4 spent nothing on validation.
+
+### Fixes made (in place)
+
+- `tools/mlcal.js eval` refuses `--split val` or `dev` unless given `--unledgered-val`, which prints a
+  warning. Before, the CLI could score validation any number of times outside the ledger.
+- `tools/mlcal.py`:
+  - Each validation result now also reports `eloLL_fit` and `vs_elo_fit_winLL`: Elo with its slope fit by
+    maximum likelihood on 2019-2023 train fights, mirrored, no intercept. The summary prints both
+    references.
+  - `meta.warnings` and a log warning flag a params file whose [selfcal] values were fit to all-years
+    priors (`baseline_warnings`).
+- `tools/mlcal_hooks/elo_skill.js`: the header said the hook multiplies A's takedown odds through B's
+  tdDef. The code changes A's tdDef, so B's shots are divided: the higher-rated man defends better. The
+  comment is corrected; the behaviour is unchanged and still antisymmetric.
+- `tests/test_mlcal.js` has 3 new checks: the validation guard, the contamination warning, and that the
+  fitted Elo slope is finite. All 33 pass (`node tests/test_mlcal.js`).
+- New files:
+  - `tools/mlcal_verify.js` + `tools/mlcal_verify.py`: separate re-simulation and metrics.
+  - `tools/mlcal_cleanbase.js`: train-only self-calibration.
+  - `tools/mlcal_frozen/a6904fc06b98/`: the frozen engine and params the runs used.
+  - `data/derived/mlcal_params3_selfcal_pre2024.js`, `mlcal_candidates_cleanbase.json`,
+    `mlcal_candidates_clean_wide.json`, `mlcal_review_scores.json`.
+
+### Changes to the integration recipe
+
+- **Start every cycle from a train-only baseline.** Use calibrate.js output if it is walk-forward (it now
+  exists, tools/calibrate.js, train 2019-2023) or `node tools/mlcal_cleanbase.js --engine <engine>
+  --params <params> --out <file>`. Then pass that file as `--params`. Never compare candidates against a
+  params file whose values were fit to all-years rates. `meta.warnings` in the candidates file says when
+  that happened.
+- **For v3, nothing from runs 1-4 should be adopted,** including the Elo hook. Of all sets tried, the clean
+  self-calibration has the best validation winner log loss. It is still not significant against the
+  current set (CI includes 0), so per the ROADMAP rule it is a lead for the owner of src/params3.js /
+  calibrate.js, not an adoption.
+- **Watch the train/validation shift.** Train-tuned spread knobs (prior strengths, form.vol, form.out) move
+  toward less confidence and lose on validation. Give future objectives a recent-seasons weight, or tune
+  spread on 2022-2023 only, before spending validation.
+- **Reproduce with the commands below** (the frozen engine is in the repo):
+
+      node tools/mlcal_cleanbase.js --engine tools/mlcal_frozen/a6904fc06b98/engine3.js --params tools/mlcal_frozen/a6904fc06b98/params3.js --out data/derived/mlcal_params3_selfcal_pre2024.js
+      node tools/mlcal_verify.js --engine tools/mlcal_frozen/a6904fc06b98/engine3.js --params tools/mlcal_frozen/a6904fc06b98/params3.js --split val --sims 80 --seed 777 --out <val_base.json>
+      node tools/mlcal_verify.js ... --split train --sims 40 --seed 778 --out <train_base.json>
+      python3 tools/mlcal_verify.py score --base <val_base.json> --train-base <train_base.json> --ledger-hash baseline=a857a24a5e96302a
+      python3 tools/mlcal_verify.py ledger

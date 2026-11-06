@@ -1687,6 +1687,29 @@ def run_referees(F, S, ded=None):
     return out
 
 
+def tuning_choice():
+    """Pick the judge-variance multiplier on the tuning folds by held-out card log-likelihood. Primary: the
+    two-year-horizon fold (fit before 2022, score 2022-2023), which matches yearly refits; fallback: the
+    five-year frozen fold (fit before 2019, score 2019-2023). Candidates include no named-judge effects."""
+    import pickle
+    out = {}
+    for tag in ("tune22", "tune"):
+        f = CACHE / f"fold_{tag}.pkl"
+        if not f.exists():
+            continue
+        t = pickle.load(open(f, "rb"))
+        c = {n: float(np.mean(v["eval"]["card_ll"])) for n, v in t["models"].items()
+             if n.startswith("judges_home") or n in ("league_home", "league")}
+        out[tag] = c
+    tag = "tune22" if "tune22" in out else "tune"
+    c = {n: v for n, v in out[tag].items() if n != "league"}
+    best = max(c, key=c.get)
+    named = best != "league_home"
+    jh = best if named else max((n for n in c if n.startswith("judges_home")), key=c.get)
+    mult = 1.0 if "@" not in jh else float(jh.split("@")[1])
+    return {"fold": tag, "candidates": out, "best": best, "named_judges_recommended": named, "mult": mult}
+
+
 def metrics_block(ev, rows_by_fid):
     rows = [rows_by_fid[f] for f in ev["fids"]]
     m = decision_metrics(ev["probs"], rows)
@@ -1708,15 +1731,15 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
     tune = pickle.load(open(CACHE / "fold_tune.pkl", "rb"))
     test = pickle.load(open(CACHE / "fold_test.pkl", "rb"))
     J = {"tuning_2019_2023": {}, "heldout_2024_on": {}}
-    # ---- tuning: choose the tau multiplier by the exact-card log-likelihood on 2019-2023
-    tm = {}
     for name, v in tune["models"].items():
-        mb = metrics_block(v["eval"], by_fid)
-        J["tuning_2019_2023"][name] = strip_private(mb)
-        tm[name] = mb
-    cands = {name: tm[name]["card_ll"] for name in tm if name.startswith("judges_home")}
-    best = max(cands, key=cands.get)
-    mult = 1.0 if "@" not in best else float(best.split("@")[1])
+        J["tuning_2019_2023"][name] = strip_private(metrics_block(v["eval"], by_fid))
+    if (CACHE / "fold_tune22.pkl").exists():
+        t22 = pickle.load(open(CACHE / "fold_tune22.pkl", "rb"))
+        J["tuning_2022_2023"] = {n: strip_private(metrics_block(v["eval"], by_fid)) for n, v in t22["models"].items()}
+    tc = tuning_choice()
+    J["tuning"] = tc
+    mult = tc["mult"]
+    best = tc["best"]
     J["tau_multiplier"] = mult
     J["tau_eb_pre2019"] = tune["tau_eb"]
     log(f"tuning picks {best} (tau x {mult})")
@@ -1783,6 +1806,29 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
     J["heldout_2024_on"]["round_level"] = {k: strip_private(v) for k, v in rl.items()}
     J["heldout_2024_on"]["calibration_judges_home"] = calib_table(JH["_q"], JH["_ya"])
     J["heldout_2024_on"]["calibration_indep"] = calib_table(hm["indep"]["_q"], hm["indep"]["_ya"])
+    # yearly refit: 2024 scored by the fit before 2024, 2025 by the fit before 2025 (if that fold ran)
+    if (CACHE / "fold_test25.pkl").exists():
+        t25 = pickle.load(open(CACHE / "fold_test25.pkl", "rb"))
+        yr_ref = {}
+        for name in ("league", "league_home", "judges_home" + sfx):
+            if name not in t25["models"] or name not in test["models"]:
+                continue
+            e24 = test["models"][name]["eval"]
+            m24 = np.array(e24["years"]) == 2024
+            e25 = t25["models"][name]["eval"]
+            ll = np.concatenate([e24["card_ll"][m24], e25["card_ll"]])
+            pr = np.vstack([e24["probs"][m24], e25["probs"]])
+            fl = [f for f, k in zip(e24["fids"], m24) if k] + list(e25["fids"])
+            mb = decision_metrics(pr, [by_fid[f] for f in fl])
+            yr_ref[name.replace(sfx, "")] = dict(strip_private(mb), card_ll=float(ll.mean()), _ll=ll, _w=mb["_ll_w"])
+        if "league" in yr_ref and "judges_home" in yr_ref:
+            yr_ref["judges_home_vs_league"] = {
+                "card_ll_per_fight": boot_diff(yr_ref["judges_home"]["_ll"], yr_ref["league"]["_ll"]),
+                "winner_logloss": boot_diff(yr_ref["judges_home"]["_w"], yr_ref["league"]["_w"])}
+        for v in yr_ref.values():
+            v.pop("_ll", None)
+            v.pop("_w", None)
+        J["heldout_2024_on"]["yearly_refit"] = yr_ref
     yrs = np.array(evJH["years"])
     J["heldout_2024_on"]["by_year"] = {}
     for y in sorted(set(yrs)):
@@ -1979,14 +2025,10 @@ def deduction_validation(x, cfg, rows, nat, jidx, year_max):
 def run_post(rows, nat, natinfo, F, S, data_max, notes):
     import pickle
     final = pickle.load(open(CACHE / "fold_final.pkl", "rb"))
-    tune = pickle.load(open(CACHE / "fold_tune.pkl", "rb"))
-    cands = {}
     by_fid = {r["fid"]: r for r in rows}
-    for name, v in tune["models"].items():
-        if name.startswith("judges_home"):
-            cands[name] = float(np.mean(v["eval"]["card_ll"]))
-    best = max(cands, key=cands.get)
-    mult = 1.0 if "@" not in best else float(best.split("@")[1])
+    tc = tuning_choice()
+    mult = tc["mult"]
+    log(f"tuning: {tc}")
     sfx = "" if mult == 1.0 else f"@{mult:g}"
     W = Window(rows, nat, VAULT_FROM.year)
     if "judges_home" + sfx in final["models"]:
