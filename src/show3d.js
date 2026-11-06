@@ -153,7 +153,7 @@
   function punchCurve(u, h) { if (u < h) return easeOut(u / h); if (u < h + 0.1) return 1; return 1 - smooth((u - h - 0.1) / (1 - h - 0.1)); }
   function kickCurve(u, h) { return u < h ? smooth(u / h) : 1 - smooth((u - h) / (1 - h)); }
 
-  var _v = new V3(), _w = new V3(), _u = new V3(), _q = new T.Quaternion(), _cham = new V3();
+  var _v = new V3(), _w = new V3(), _u = new V3(), _q = new T.Quaternion(), _cham = new V3(), _sp = new V3();
   var UP = new V3(0, 1, 0);
 
   /* ------------------------------------------------------------ actors */
@@ -512,8 +512,11 @@
         // close the distance the punch needs: shoulder to target minus the arm's reach (the old fixed lunge left jabs ~0.7 m short)
         var sh = (a.hi === 0 ? this.rig.armL : this.rig.armR).sh.getWorldPosition(_u);
         this.aimPoint(a.def.body ? "body" : "head", _v);
-        var need = sh.distanceTo(_v) - (this.rig.ua + this.rig.la) * (a.def.elbowUp ? 0.86 : 0.95) - 0.07;   // glove stops at the face, not the head centre
-        a.lungeNeed = clamp(need * 1.12, 0, 1.15);
+        // the glove's centre stops a glove radius off the face (or body), not at the head's centre; the body
+        // closes whatever distance the arm cannot (applyAction aims at the same stop point)
+        a.stop = a.def.body ? 0.1 : 0.125;
+        var need = sh.distanceTo(_v) - a.stop - (this.rig.ua + this.rig.la) * (a.def.elbowUp ? 0.88 : 0.96);
+        a.lungeNeed = clamp(need, 0, 1.15);
       }
     } else if (a.type === "kick") {
       a.li = a.leg === "lead" ? lead : 1 - lead;
@@ -546,6 +549,7 @@
     if (a.type === "punch") {
       var d = a.def, e = punchCurve(u, 0.42);
       this.aimPoint(d.body ? "body" : "head", _v);
+      if (a.stop) { (a.hi === 0 ? this.rig.armL : this.rig.armR).sh.getWorldPosition(_sp); _sp.sub(_v); _sp.y *= 0.5; _v.addScaledVector(_sp.normalize(), a.stop); }
       if (!a.landed) _v.addScaledVector(a.missOff, 1);
       this.left(_w);
       var sideSign = a.hi === 0 ? 1 : -1;
@@ -1242,7 +1246,8 @@
     var target = (clinch ? 0.6 : this.range) - A.lunge - B.lunge + A.s.kb.x * 0.25 + B.s.kb.x * 0.25;
     if (this.downed) target = Math.max(target, 1.15);
     var striking = (A.act && (A.act.type === "punch" || A.act.type === "kick")) || (B.act && (B.act.type === "punch" || B.act.type === "kick"));
-    this.d += (Math.max(clinch ? 0.5 : 0.98, target) - this.d) * Math.min(1, dt * (striking ? 20 : 7));
+    // a strike may close to about a step inside the usual minimum (the attacker steps in behind the punch)
+    this.d += (Math.max(clinch ? 0.5 : (striking ? 0.66 : 0.98), target) - this.d) * Math.min(1, dt * (striking ? 20 : 7));
     ax = Math.cos(this.theta); az = Math.sin(this.theta);
     var nax = this.M.x - ax * this.d / 2, naz = this.M.z - az * this.d / 2, nbx = this.M.x + ax * this.d / 2, nbz = this.M.z + az * this.d / 2;
     A.vel.set((nax - A.pos.x) / Math.max(dt, 1e-3), 0, (naz - A.pos.z) / Math.max(dt, 1e-3));
