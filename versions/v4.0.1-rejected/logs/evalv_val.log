@@ -1,0 +1,27 @@
+evalv v4.0.1 (engine 4.0.1, params 4.0.1-pre2024) on val: 865 fights x 2 orders x 300 sims, 3 workers, ML on (out-of-fold)
+  400/865 fights, 39 s
+  800/865 fights, 66 s
+
+v4.0.1 val: 865 fights (853 decisive, 857 with an outcome), ML applied 100.0% of matchups
+  winLL        0.6289 [0.6137, 0.6435]
+  brier        0.2189 [0.2118, 0.2257]
+  acc          0.6665 [0.6346, 0.6993]
+  ece          0.0713 [0.0443, 0.1057]
+  calSlope     1.7746 [1.4542, 2.1786]
+  bin7         1.5708 [1.5349, 1.6098]
+  method       0.9409 [0.9130, 0.9707]
+  dev_sig_lnd  21.817 [20.232, 23.440]
+  dev_sig_att  43.364 [40.025, 46.817]
+  dev_td_lnd   1.798 [1.679, 1.933]
+  dev_ctrl     153.712 [144.181, 163.732]
+  dev_kd       0.653 [0.613, 0.700]
+  base rates (sim vs actual): finish 48.7 vs 46.0, KO 30.3 vs 29.1, SUB 18.5 vs 16.9, KD/100 head 0.746 vs 0.684, UD 79.6 vs 81.5, SD 19.5 vs 18.1, 10-8 4.60 vs 2.46
+  finish by round 3-rd sim 24.9/14.3/9.1 vs 23.7/13.7/7.8; 5-rd sim 14.6/12.5/10.2/9.1/5.4 vs 15.2/16.2/9.5/7.6/2.9
+  methodround: joint 2.0699 (S 2.0418, d +0.0281 [0.0075, 0.0476]); method3 0.9409 (S 0.9360, d +0.0050 [-0.0082, 0.0174]); finish 0.6631 (S 0.6593, d +0.0038 [-0.0073, 0.0145]); bin7 1.5708 (S 1.5538, d +0.0170 [0.0027, 0.0322]); method_round 1.4340 (S 1.4240, d +0.0100 [-0.0070, 0.0259]); round_given_fin 1.0674 (S 1.0601, d +0.0072 [-0.0100, 0.0245]); ko_vs_sub 0.6042 (S 0.6017, d +0.0026 [-0.0128, 0.0185]); method_given_winner 0.9181 (S 0.9073, d +0.0108 [-0.0031, 0.0254]); winner 0.6289 (S 0.6213, d +0.0077 [-0.0010, 0.0164]); winner_brier 0.2189 (S 0.2154, d +0.0035 [-0.0006, 0.0076]); winner_acc 0.6659 (S 0.6753, d -0.0094 [-0.0385, 0.0186]); method3_brier 0.5641 (S 0.5610, d +0.0031 [-0.0061, 0.0117])
+  paired vs v4: winLL -0.0034 [-0.0073, 0.0008]; brier -0.0017 [-0.0038, 0.0002]; acc +0.0094 [-0.0122, 0.0319]; bin7 -0.0004 [-0.0232, 0.0149]; method +0.0010 [-0.0046, 0.0063]
+wrote data/derived/evalv/v4.0.1_val.json (73 s wall)
+market    n=845  engine weight 0.002  log loss with 0.5788  without 0.5788  diff -0.0000 [-0.0000, -0.0000]
+nomarket  n=845  engine weight 0.000  log loss with 0.5930  without 0.5930  diff +0.0000 [+0.0000, +0.0000]
+wrote /home/user/XX/data/derived/evalv/v4.0.1_blend.json
+
+updated data/derived/version_history.json: v4.0.1 val

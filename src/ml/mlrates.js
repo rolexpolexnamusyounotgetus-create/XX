@@ -367,8 +367,7 @@
 
   // pred: MLRates.predict output. opts: {engine (FightEngine), level: "engine" (default) | "absolute", weight (0..1, default
   // 1: blend toward the engine's own rates), parts: {grappling,
-  // strikes, accuracy, kd, subs: false to keep the engine's own}, maxRatio (cap on any single multiplier, default 4),
-  // levels ({target: factor} on the learned rate targets, e.g. { td_att: 1.07, ctrl: 1.05, sub_att: 1.08 }; v4.0.1)}.
+  // strikes, accuracy, kd, subs: false to keep the engine's own}, maxRatio (cap on any single multiplier, default 4)}.
   // level "engine": the target for each stat is the engine's own league-average expectation x (ML / league rate), so the
   // simulator keeps its calibrated league level (its in-fight modifiers, e.g. on knockdowns, stay balanced) and plays the
   // ML's matchup-specific multipliers; probabilities combine on odds. level "absolute": the ML rates are imposed on the
@@ -415,10 +414,6 @@
       ["acc_h", "acc_b", "acc_l", "acc_d", "acc_c", "acc_g"].forEach(function (q) { tg[i][q] = prob(odds(tg[i][q]) * a.acc); });
       tg[i].kd_h *= a.pow * aj.chin;
     }
-    // level factors on the learned targets (v4.0.1: opts.levels = { td_att, ctrl, sub_att } from params mlTdLevel /
-    // mlCtrlLevel / mlSubLevel, matched on train fights by tools/v4_levels.js; rates only, never probabilities)
-    var LV = opts.levels || {};
-    for (i = 0; i < 2; i++) for (k in LV) if (tg[i][k] != null && !PROB_T[k] && LV[k] > 0 && LV[k] !== 1) tg[i][k] *= LV[k];
     // optional blend toward the engine's own rates: weight 1 = ML rates, 0 = plain engine (geometric on rates, logit on
     // probabilities), for tuning how far to trust the learned rates
     var wgt = opts.weight == null ? 1 : clip(+opts.weight, 0, 1);
@@ -435,7 +430,7 @@
     if (on("grappling")) {
       var e0 = engineExpect(m), es = [e0.A, e0.B];
       for (i = 0; i < 2; i++) {
-        var ro = rr(odds(tg[i].td_acc), odds(es[i].td_acc));   // capped like every other multiplier (v4.0.1)
+        var ro = odds(tg[i].td_acc) / odds(es[i].td_acc);
         m.tdO[i] *= ro; m.tdOC[i] *= ro; ratios[i].tdOdds = ro;
         var rv = rr(tg[i].rev, es[i].rev); m.sw[i] *= rv; ratios[i].rev = rv;
         for (k = 0; k < 5; k++) m.swPos[(1 - i) * 5 + k] *= rv;
@@ -450,9 +445,7 @@
         refitOccupancy(m, FE);
         var e1 = engineExpect(m), e1s = [e1.A, e1.B];
         for (i = 0; i < 2; i++) {
-          // v4.0.1: the cap applies to the cumulative multiplier (v4.0.0 capped each of the three steps, so it could
-          // compound to 4^3; 20 of 3,998 train sides went past 4, up to x6.3)
-          var r1 = rr(tdr[i] * tg[i].td_att, e1s[i].td_att) / tdr[i];
+          var r1 = rr(tg[i].td_att, e1s[i].td_att);
           m.tdD[i] *= r1; m.tdCC[i] *= r1; m.tdCU[i] *= r1; tdr[i] *= r1;
         }
       }

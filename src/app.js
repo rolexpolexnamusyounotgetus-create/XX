@@ -24,6 +24,7 @@
   function pctW(x) { return x == null || !isFinite(x) ? "–" : (x > 0 && x < 0.005 ? "<1%" : Math.round(100 * x) + "%"); }
   function pctD(x) { return x == null || !isFinite(x) ? "–" : (x > 0 && x < 0.01 ? "<1%" : Math.round(100 * x) + "%"); }
   function pts(dp) { var v = Math.round(100 * dp); return (v > 0 ? "+" : (v < 0 ? "−" : "")) + Math.abs(v) + " pt" + (Math.abs(v) === 1 ? "" : "s"); }
+  function hashStr(s) { var h = 2166136261; s = String(s || ""); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function fx(x, d) { return x == null || !isFinite(x) ? "–" : (+x).toFixed(d == null ? 2 : d); }
   function mmss(sec) { var s = Math.max(0, Math.round(sec)); var m = Math.floor(s / 60), r = s % 60; return m + ":" + (r < 10 ? "0" : "") + r; }
   function clockOf(t) { return mmss(Math.ceil(300 - t - 1e-9)); }
@@ -469,7 +470,7 @@
     $("mbNote").textContent = warn;
     $("h1A").textContent = shortOf("A"); $("h1B").textContent = shortOf("B");
     $("kicker").textContent = S.div + " · " + S.rounds + " × 5 min" + (S.title ? " · title fight" : "") + " · " + (divLbs(S.div) || "?") + " lb";
-    $("asOf").title = "Fight data through " + fmtDate(DB.meta && DB.meta.snapshot) + "; simulator engine " + ENGV;
+    $("asOf").title = "Fight data through " + fmtDate(DB.meta && DB.meta.snapshot) + "; simulator " + ENGV;
     document.title = "Fight Lab";
     // names everywhere
     ["A", "B"].forEach(function (s) {
@@ -1391,11 +1392,11 @@
   function expertSub(k) {
     var pa = prof("A"), pb = prof("B"), mk = BL.mk;
     switch (k) {
-      case "market": return mk.p != null ? (S.line ? (S.odds.A + " / " + S.odds.B + ", margin removed") : "switched off below") : "enter odds below";
+      case "market": return mk.p != null ? (S.line ? (S.odds.A + " / " + S.odds.B + ", bookmaker's cut removed") : "switched off below") : (mk.bad ? "that line doesn't add up; check the odds" : "enter odds below");
       case "mkt_rating": return BL.ex.mkt_rating != null ? "rating built from past closing lines" : BL.X.notes.mkt_rating || "not available";
-      case "ml": return BL.ex.ml != null ? "logistic on stats, record, age, layoff" : BL.X.notes.ml || "not available";
-      case "feat_lr": return BL.ex.feat_lr != null ? "logistic on 60 stat differences" : BL.X.notes.feat_lr || "not available";
-      case "engine": return BL.ex.engine != null ? "engine " + ENGV + ", " + nf.format(stack.engineN) + " fights" + (cur.m && cur.m.mlApplied ? ", ML stat lines" : "") : "tally running";
+      case "ml": return BL.ex.ml != null ? "learned from stats, record, age and layoff" : BL.X.notes.ml || "not available";
+      case "feat_lr": return BL.ex.feat_lr != null ? "learned from 60 stat differences" : BL.X.notes.feat_lr || "not available";
+      case "engine": return BL.ex.engine != null ? "simulator " + ENGV + ", " + nf.format(stack.engineN) + " fights" + (cur.m && cur.m.mlApplied ? ", learned stat lines" : "") : "tally running";
       case "elo_sig": return BL.ex.elo_sig != null ? "Elo moved by strike margins" : BL.X.notes.elo_sig || "not available";
       case "elo": return (pa.elo || 1500) + " vs " + (pb.elo || 1500);
     }
@@ -1407,29 +1408,50 @@
     var A = shortOf("A"), B = shortOf("B"), fav = p >= 0.5 ? A : B, dog = p >= 0.5 ? B : A, pf = Math.max(p, 1 - p);
     var s = pf < 0.53 ? "Too close to call: " + fav + " " + pct(pf, 0) + ", " + dog + " " + pct(1 - pf, 0) + "."
       : fav + " is " + (pf < 0.6 ? "a slight" : (pf < 0.7 ? "a clear" : (pf < 0.8 ? "a strong" : "a heavy"))) + " favorite at " + pct(pf, 0) + ".";
-    if (!BL.r) return s + " The blend did not load, so this is the simulator alone.";
+    if (!BL.r) return s + " The combined model did not load, so this is the simulator alone.";
     if (BL.useLine) {
       var pm = BL.mk.p, favA = p >= 0.5, pmf = favA ? pm : 1 - pm, d = pf - pmf;
-      s += Math.abs(d) < 0.01 ? " The market line carries most of the weight and the other models barely move it." :
-        " The market line alone gives " + fav + " " + pct(pmf, 0) + "; the other models move that " + (d > 0 ? "up" : "down") + " to " + pct(pf, 0) + ".";
+      s += Math.abs(d) < 0.01 ? " The betting line carries most of the weight and the other models barely move it." :
+        " The betting line alone gives " + fav + " " + pct(pmf, 0) + "; the other models move that " + (d > 0 ? "up" : "down") + " to " + pct(pf, 0) + ".";
       if (BL.rNo && Math.abs(BL.rNo.p - pm) > 0.15) s += " On stats alone the blend has " + A + " at " + pct(BL.rNo.p, 0) + ". A gap that size is a warning, not an edge: on past fights the market usually won those arguments.";
     } else {
       var top = null, c = BL.r.contrib || {};
       for (var k in c) if (!top || Math.abs(c[k]) > Math.abs(c[top])) top = k;
-      s += " With no market line the stats models decide" + (top ? "; the " + expertName(top).toLowerCase().replace("ml model", "ML model").replace("elo", "Elo") + " pushes hardest" : "") + ".";
+      s += " With no betting line the stats models decide" + (top ? "; the " + expertName(top).toLowerCase().replace("ml model", "ML model").replace("elo", "Elo") + " pulls hardest" : "") + ".";
       if (BL.hasLine && BL.rLine) s += " With the line switched on it would be " + A + " " + pct(BL.rLine.p, 0) + ".";
     }
+    var bf = blendFacts(BL.r, BL.useLine);
+    if (bf && bf.beyond) s += " That is " + (bf.beyond > 0 ? "higher" : "lower") + " than any single model (their simple average is " + A + " " + pct(bf.avg, 0) + "): they carry partly independent evidence, and on 2024-25 fights every model was too cautious.";
+    if (pf > 0.9) s += " Very lopsided picks are rarer in the test data; treat the last few points loosely.";
     return s;
+  }
+  // the inputs a blend used: their simple average and range, and whether the blend lands outside that range
+  function blendFacts(r, withLine) {
+    if (!r || !r.used || !r.used.length) return null;
+    var ps = [];
+    r.used.forEach(function (k) { var v = k === "market" ? (withLine ? BL.mk.p : null) : BL.ex[k]; if (v != null && isFinite(v)) ps.push(v); });
+    if (!ps.length) return null;
+    var avg = sum(ps) / ps.length, lo = Math.min.apply(null, ps), hi = Math.max.apply(null, ps);
+    return { avg: avg, lo: lo, hi: hi, n: ps.length, beyond: r.p > hi + 0.005 ? 1 : (r.p < lo - 0.005 ? -1 : 0) };
+  }
+  // each model's pull on the blend in percentage points: the blend's lead over 50-50, shared out in proportion to each
+  // model's part of the combined score (so the pulls add up to the lead)
+  function pullPts(r) {
+    var out = {}, z = 0, k;
+    if (!r || !r.contrib) return out;
+    for (k in r.contrib) z += r.contrib[k];
+    for (k in r.contrib) out[k] = Math.abs(z) > 1e-6 ? (r.p - 0.5) * r.contrib[k] / z : 0.25 * r.contrib[k];
+    return out;
   }
   function renderStack() {
     var box = $("xrows"); if (!box || !BL) return;
     var r = BL.r, A = shortOf("A"), rows = [];
     box.textContent = "";
     var hd = el("div", "xrow xh"); hd.setAttribute("role", "row");
-    ["Model", "Chance for " + A + ", 0 to 100%", "Chance", "Weight", "Push (+ toward " + A + ")"].forEach(function (h) { var x = el("span", null, h); x.setAttribute("role", "columnheader"); hd.appendChild(x); });
+    ["Model", "Chance for " + A + ", 0 to 100%", "Chance", "Weight", "Moves the blend (pts toward " + A + ")"].forEach(function (h) { var x = el("span", null, h); x.setAttribute("role", "columnheader"); hd.appendChild(x); });
     box.appendChild(hd);
-    var maxAbs = 0.25, k;
-    if (r) { for (k in r.contrib) maxAbs = Math.max(maxAbs, Math.abs(r.contrib[k])); maxAbs = Math.max(maxAbs, Math.abs(logit(r.p))); }
+    var pull = pullPts(r), maxAbs = 0.05, k;
+    if (r) { for (k in pull) maxAbs = Math.max(maxAbs, Math.abs(pull[k])); maxAbs = Math.max(maxAbs, Math.abs(r.p - 0.5)); }
     function track(p, big) {
       var t = el("div", "xt"); t.appendChild(el("i", "mid"));
       if (p != null) {
@@ -1445,7 +1467,7 @@
         var i = el("i", v > 0 ? "A" : "B"), wd = 50 * Math.min(1, Math.abs(v) / maxAbs);
         i.style.width = wd + "%"; i.style.left = v > 0 ? (50 - wd) + "%" : "50%"; bar.appendChild(i);
       }
-      w.appendChild(bar); w.appendChild(el("span", null, v == null ? "–" : (v > 0 ? "+" : (v < 0 ? "−" : "")) + Math.abs(v).toFixed(2)));
+      w.appendChild(bar); w.appendChild(el("span", null, v == null ? "–" : pts(v)));
       return w;
     }
     EXPERTS.forEach(function (e) {
@@ -1457,24 +1479,32 @@
       row.appendChild(el("span", "xp", p == null ? "–" : pct(p, 0)));
       var wt = used ? r.weights[key] : null;
       row.appendChild(el("span", "xw", p == null ? "" : (wt == null ? (r && r.ignored && r.ignored.indexOf(key) >= 0 ? "unused" : "–") : (wt < 0.005 ? "0%" : pct(wt, 0)) + (window.innerWidth <= 680 ? " weight" : ""))));
-      row.appendChild(p == null ? el("span") : push(used ? r.contrib[key] : null));
-      row.setAttribute("aria-label", e[1] + ": " + (p == null ? expertSub(key) : pct(p, 0) + " for " + A + (used ? ", weight " + pct(r.weights[key], 0) + ", push " + r.contrib[key].toFixed(2) : "")));
+      row.appendChild(p == null ? el("span") : push(used ? pull[key] : null));
+      row.setAttribute("aria-label", e[1] + ": " + (p == null ? expertSub(key) : pct(p, 0) + " for " + A + (used ? ", weight " + pct(r.weights[key], 0) + ", moves the blend " + pts(pull[key]) + " toward " + A : "")));
       box.appendChild(row); rows.push(row);
     });
     var fin = el("div", "xrow fin"); fin.setAttribute("role", "row");
-    var fl = el("div", "xl"); fl.appendChild(el("b", null, "The blend")); fl.appendChild(el("small", null, r ? (BL.useLine ? "learned weights, line present" : "learned weights, no line") : "not available"));
+    var fl = el("div", "xl"); fl.appendChild(el("b", null, "The blend")); fl.appendChild(el("small", null, r ? (BL.useLine ? "learned weights, betting line included" : "learned weights, no betting line") : "not available"));
     fin.appendChild(fl); fin.appendChild(track(BL.p));
     fin.appendChild(el("span", "xp", BL.p == null ? "–" : pct(BL.p, 0)));
-    fin.appendChild(el("span", "xw", r ? "Σ " + fx(r.scale, 2) : ""));
-    fin.appendChild(r ? push(logit(r.p)) : el("span"));
-    fin.setAttribute("aria-label", "The blend: " + (BL.p == null ? "not available" : pct(BL.p, 0) + " for " + A));
+    var tw = el("span", "xw tw"); if (r) { tw.appendChild(el("small", null, "Total weight")); tw.appendChild(document.createTextNode(" " + fx(r.scale, 2))); } fin.appendChild(tw);
+    fin.appendChild(r ? push(r.p - 0.5) : el("span"));
+    fin.setAttribute("aria-label", "The blend: " + (BL.p == null ? "not available" : pct(BL.p, 0) + " for " + A + (r ? ", total weight " + fx(r.scale, 2) : "")));
     box.appendChild(fin);
+    // in plain words, next to the blend row: why it can sit outside its inputs, and the simple average for contrast
+    var bf = blendFacts(r, BL.useLine), xe = el("p", "xexp");
+    if (bf) {
+      xe.appendChild(el("b", null, "Simple average of the " + numWord(bf.n) + " models: " + A + " " + pct(bf.avg, 0) + ". "));
+      if (bf.beyond) xe.appendChild(document.createTextNode("The blend is " + (bf.beyond > 0 ? "higher" : "lower") + " than any single model (they range " + pct(bf.lo, 0) + " to " + pct(bf.hi, 0) + "): they carry partly independent evidence, and on 2024-25 fights every model was too cautious. "));
+      if (Math.max(r.p, 1 - r.p) > 0.9) xe.appendChild(document.createTextNode("Very lopsided picks are rarer in the test data; treat the last few points loosely."));
+      box.appendChild(xe);
+    }
     // notes
     var stretch = r && Math.abs(r.z) > 1e-6 ? logit(r.p) / r.z : 1;
-    $("xNote").textContent = r ? "Weight is each model's share of the blend for the models available here. Before they are shared out the weights add up to " + fx(r.scale, 2) +
-      ": the models carry partly independent evidence, so the blend can be more confident than any one of them. Push is the model's contribution to the blend's log-odds." +
-      (!BL.useLine && Math.abs(stretch - 1) > 0.01 ? " With no market line the result is then stretched by a factor of " + fx(stretch, 2) + ", a temperature fit on recent fights, when every model, the market included, turned out underconfident." : "") +
-      " Draws are set aside: every chance here is for a decisive result." : "The blend's model file did not load, so the headline falls back to the simulator.";
+    $("xNote").textContent = r ? "Weight is each model's share of the blend. “Moves the blend” is how many percentage points each model pulls the blend away from 50-50 toward " + A + " (a minus pulls toward " + shortOf("B") + "); the pulls add up to the blend's lead. " +
+      "Before they are shared out, the weights add up to " + fx(r.scale, 2) + " (Total weight): the models carry partly independent evidence, so together they can be more confident than any one of them." +
+      (!BL.useLine && Math.abs(stretch - 1) > 0.01 ? " With no betting line the blend is then pushed a little further from 50-50 (×" + fx(stretch, 2) + "), because on recent fights every model, the market included, turned out too cautious." : "") +
+      " Draws are set aside: every chance here is for a decisive result." : "The combined model's file did not load, so the headline falls back to the simulator.";
     $("stackSub").textContent = r ? r.used.length + " models · " + (BL.useLine ? "with the line" : "no line") : "";
     $("blendOut").textContent = BL.p == null ? "–" : A + " " + Math.round(100 * BL.p) + "%, " + shortOf("B") + " " + (100 - Math.round(100 * BL.p)) + "%";
     $("verdict").textContent = verdictText();
@@ -1482,11 +1512,12 @@
     var mk = BL.mk, hasM = mk.p != null;
     ["A", "B"].forEach(function (s) {
       var inp = $("odd" + s); if (document.activeElement !== inp) inp.value = S.odds[s] || "";
-      var v = parseOdds(S.odds[s]); inp.setAttribute("aria-invalid", v != null && !isFinite(v) ? "true" : "false");
+      var v = parseOdds(S.odds[s]); inp.setAttribute("aria-invalid", (v != null && !isFinite(v)) || mk.bad ? "true" : "false");
     });
     $("lineTog").checked = S.line; $("lineTog").disabled = !hasM;
     var pd = pairData(S.a, S.b), note = $("oddNote"); note.textContent = "";
-    if (hasM) note.appendChild(document.createTextNode("Implied " + pct(mk.ia, 1) + " and " + pct(mk.ib, 1) + " (margin " + pct(mk.over, 1) + "); with the margin removed, " + A + " " + pct(mk.p, 1) + ". "));
+    if (hasM) note.appendChild(document.createTextNode("Implied " + pct(mk.ia, 1) + " and " + pct(mk.ib, 1) + " (bookmaker's margin " + pct(mk.over, 1) + "); with the margin removed, " + A + " " + pct(mk.p, 1) + ". "));
+    else if (mk.bad) note.appendChild(document.createTextNode("Those two prices imply a bookmaker's margin of " + pct(mk.over, 1) + ". A real two-way line runs about 2% to 10%, so check the odds; this line is left out of the blend. "));
     else if (isNaN(mk.ia) || isNaN(mk.ib)) note.appendChild(document.createTextNode("Use American odds such as +160 or -180. "));
     else note.appendChild(document.createTextNode("No price for this pair. Enter both sides' American odds to add the market line to the blend. "));
     if (pd && pd.market && pd.market.odds && (S.odds.A === pd.market.odds[S.a] && S.odds.B === pd.market.odds[S.b])) {
@@ -1496,15 +1527,16 @@
     // the two regimes side by side
     var rg = $("regimes"); rg.textContent = "";
     function tile(label, v, sub) { var t = el("div", "tile"); t.appendChild(el("span", "tl", label)); t.appendChild(el("b", null, v)); if (sub) t.appendChild(el("span", "tl", sub)); rg.appendChild(t); }
-    if (BL.rNo) tile("Blend without a line", A + " " + pct(BL.rNo.p, 0), "stats and ratings only");
-    if (BL.rLine) tile("Blend with the line", A + " " + pct(BL.rLine.p, 0), "market alone " + pct(mk.p, 0));
+    var bfNo = blendFacts(BL.rNo, false), bfLine = blendFacts(BL.rLine, true);
+    if (BL.rNo) tile("Blend without a line", A + " " + pct(BL.rNo.p, 0), "stats and ratings only" + (bfNo ? "; simple average " + pct(bfNo.avg, 0) : ""));
+    if (BL.rLine) tile("Blend with the line", A + " " + pct(BL.rLine.p, 0), "market alone " + pct(mk.p, 0) + (bfLine ? "; simple average " + pct(bfLine.avg, 0) : ""));
     else if (BL.rNo) tile("Market line", "–", "enter odds to compare");
-    $("blendNote").textContent = "Validated on 2024-25 fights: with a closing line the blend was level with the market to slightly better; without one it beat every single model. The backtest below has the numbers.";
+    $("blendNote").textContent = "Tested on 2024-25 fights: with a closing line the blend was level with the market to slightly better; without one it beat every single model. The backtest below has the numbers.";
     // market marker on the forecast bar
     var mkM = $("mktMark"), mkN = $("mktNote");
     if (hasM) {
       mkM.hidden = false; mkN.hidden = false; mkM.style.left = (100 * mk.p) + "%";
-      $("mktNoteT").textContent = "Market: " + A + " " + pct(mk.p, 0) + " with the margin removed (" + (S.odds.A || "") + " / " + (S.odds.B || "") + ")" + (S.line ? "." : ", left out of the blend.");
+      $("mktNoteT").textContent = "Market: " + A + " " + pct(mk.p, 0) + " with the bookmaker's cut removed (" + (S.odds.A || "") + " / " + (S.odds.B || "") + ")" + (S.line ? "." : ", left out of the blend.");
     } else { mkM.hidden = true; mkN.hidden = true; }
   }
 

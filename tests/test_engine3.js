@@ -251,7 +251,7 @@ const strip = (f) => JSON.stringify({ w: f.winner, m: f.method, d: f.detail, r: 
 
 console.log("\n=== API and determinism ===");
 check("API surface", ["loadDB", "profile", "matchup", "matchupBase", "simulate", "bucket", "makeRng", "summarize", "explain", "manualProfile",
-  "loadMLRates", "mlModel", "judgeRound", "deductions"].every((k) => typeof E[k] === "function") && E.VERSION === "4.0.1", "VERSION " + E.VERSION);
+  "loadMLRates", "mlModel", "judgeRound"].every((k) => typeof E[k] === "function") && E.VERSION === "4.0.0", "VERSION " + E.VERSION);
 check("no learned model loaded by default: matchup = base tables", !E.mlModel() && mVG.mlApplied === false);
 check("engine source has no Math.random", !/Math\.random/.test(fs.readFileSync(ENGINE_SRC, "utf8")));
 {
@@ -358,18 +358,13 @@ console.log("\n=== Engine v4: train-only priors (hidden-data protocol) ===");
   check("data/derived/priors_dev.json exists and stops before 2024-01-01", !!pd && pd.meta.until === "2024-01-01" && pd.meta.since === "2018-01-01");
   check("train-only priors hold fewer fights than the production priors", !!pd && pd.priors.Lightweight.n_fights < DB.priors.Lightweight.n_fights,
     pd ? `Lightweight ${pd.priors.Lightweight.n_fights} vs ${DB.priors.Lightweight.n_fights}` : "");
-  check("params are labelled as fit on pre-2024 data (train-only priors and judging)", /pre2024/.test(BASE.version), BASE.version);
+  check("params are labelled as self-calibrated on the train-only priors", /selfcal-pre2024/.test(BASE.version), BASE.version);
 }
 
 console.log("\n=== Engine v4: judges (EM weights, shared + fight-level noise, 10-8 rule) ===");
 {
   const J = BASE.judge, T1 = [1, 1, 1];
-  // v4.0.1: the EM fit on pre-2024 cards only (tools/judge_em_train.py), not the all-years fit in baserates.json
-  const emF = path.join(ROOT, "data/derived/judge_em_train.json"), em = fs.existsSync(emF) ? JSON.parse(fs.readFileSync(emF, "utf8")) : null;
-  const c = em && em.em_all_cards.target.coef, r4 = (x) => Math.round(x * 1e4) / 1e4;
-  check("judge weights are the pre-2024 EM fit (data/derived/judge_em_train.json, cards before 2024-01-01)", !!c && em.meta.until === "2024-01-01" &&
-    em.meta.date_max_used < "2024-01-01" && J.head === r4(c.head_l) && J.body === r4(c.body_l) && J.leg === r4(c.leg_l) && J.kd === r4(c.kd) &&
-    J.td === r4(c.td_l) && J.ctrlMin === r4(c.ctrl_min) && J.sub === r4(c.sub), em ? `${em.em_all_cards.n_cards} cards to ${em.meta.date_max_used}` : "missing");
+  check("judge weights are the EM fit", J.head === 0.179 && J.body === 0.133 && J.leg === 0.105 && J.kd === 2.42 && J.td === 0.286 && J.ctrlMin === 0.46 && J.sub === 0.85);
   function panel(d, n, seed, sF) {
     const rng = E.makeRng(seed); let aW = 0, nonU = 0, n108 = 0;
     for (let i = 0; i < n; i++) {
@@ -392,45 +387,6 @@ console.log("\n=== Engine v4: judges (EM weights, shared + fight-level noise, 10
   const sv = E.summarize(mVG, 4000, 21);
   check("decision split and 10-8 share in a sane band", sv.dec.UD > 0.6 && sv.dec.UD < 0.95 && sv.r108 > 0.005 && sv.r108 < 0.12,
     `UD ${pct(sv.dec.UD)}%, SD ${pct(sv.dec.SD)}%, 10-8 ${pct(sv.r108, 2)}% per judge-round`);
-}
-
-console.log("\n=== Engine v4.0.1: point deductions and the cumulative learned-rate cap ===");
-{
-  const J = BASE.judge;
-  check("deduction params set (judgecal: 2019-2023 decision rounds)", J.ded > 0.002 && J.ded < 0.01 && J.ded2 >= 0 && J.ded2 < 0.3, `ded ${J.ded}, ded2 ${J.ded2}`);
-  // deductions are drawn after the last round: with and without them every fight is the same up to the cards
-  const m0 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: { judge: Object.assign({}, J, { ded: 0 }) } }, VG_OPTS));
-  const m1 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ params: { judge: Object.assign({}, J, { ded: 0.2 }) } }, VG_OPTS));
-  let sameFight = true, nDiff = 0, nDec = 0, sumOk = true, dPts = 0;
-  for (let sd = 1; sd <= 400; sd++) {
-    const a = E.simulate(m0, E.makeRng(sd), false), b = E.simulate(m1, E.makeRng(sd), true);
-    if (JSON.stringify(a.totals) !== JSON.stringify(b.totals) || a.round !== b.round || (!/^(UD|SD|MD|DRAW)$/.test(a.method) && (a.method !== b.method || a.winner !== b.winner))) sameFight = false;
-    if (/^(UD|SD|MD|DRAW)$/.test(b.method)) {
-      nDec++; dPts += b.nDed; if (a.method !== b.method || a.winner !== b.winner) nDiff++;
-      for (let j = 0; j < 3; j++) {
-        let x = 0, y = 0; b.rounds.forEach((rd) => { if (rd.judges) { x += rd.judges[j][0]; y += rd.judges[j][1]; } });
-        if (x !== b.cards[j][0] || y !== b.cards[j][1]) sumOk = false;
-      }
-    }
-  }
-  check("deductions leave the fight itself unchanged (same stats, same finishes; only the cards move)", sameFight && nDiff > 0, `${nDiff} of ${nDec} decisions changed at ded 0.2`);
-  check("trace: per-round judges' scores add up to the cards after deductions", sumOk && dPts > 0, `${dPts} points deducted in ${nDec} decisions`);
-  const sD = E.summarize(m1, 3000, 5), expPts = 2 * 5 * 0.2 * (1 + J.ded2);
-  check("deduction points per decision match 2 x rounds x ded x (1 + ded2)", Math.abs(sD.dedPerDecision / expPts - 1) < 0.1, `${f2(sD.dedPerDecision)} vs ${f2(expPts)}`);
-  const sN = E.summarize(mVG, 4000, 21);
-  check("at the fitted rate deductions stay rare", sN.dedPerDecision > 0.01 && sN.dedPerDecision < 0.15, `${f2(sN.dedPerDecision, 3)} points per decision`);
-  // cumulative cap: an extreme learned takedown rate cannot push the multiplier past mlMaxRatio
-  const ctxP = { division: "Lightweight", rounds: 5, title: true, date: DATE, priors: DB.priors };
-  const pr = MLR.predict(ML_MODEL, DB.profile("alexander-volkanovski"), DB.profile("justin-gaethje"), ctxP);
-  const hiA = Object.assign({}, pr.A, { td_att: pr.A.td_att * 40, td_acc: 0.97 }), loB = Object.assign({}, pr.B, { td_att: pr.B.td_att / 40, td_acc: 0.01 });
-  const mX = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: hiA, B: loB } } }, VG_OPTS));
-  const RM = BASE.mlMaxRatio || 4, rs = mX.ml.ratios;
-  check("learned takedown multipliers stay within mlMaxRatio (cumulative attempts and odds)",
-    [rs[0].tdAtt, rs[1].tdAtt, rs[0].tdOdds, rs[1].tdOdds].every((v) => v <= RM * (1 + 1e-9) && v >= 1 / RM * (1 - 1e-9)),
-    `TD attempts x${f2(rs[0].tdAtt)} / x${f2(rs[1].tdAtt, 3)}, TD odds x${f2(rs[0].tdOdds)} / x${f2(rs[1].tdOdds, 3)} (cap ${RM})`);
-  const mL = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pr.A, B: pr.B } }, params: { mlTdLevel: 1.5 } }, VG_OPTS));
-  const mL0 = E.matchup("alexander-volkanovski", "justin-gaethje", Object.assign({ ml: { pred: { A: pr.A, B: pr.B } }, params: { mlTdLevel: 1 } }, VG_OPTS));
-  check("mlTdLevel scales the learned takedown targets", mL.ml.ratios[0].tdAtt > mL0.ml.ratios[0].tdAtt * 1.2, `x${f2(mL0.ml.ratios[0].tdAtt)} -> x${f2(mL.ml.ratios[0].tdAtt)}`);
 }
 
 console.log("\n=== Trace format ===");

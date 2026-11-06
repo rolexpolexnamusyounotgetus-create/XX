@@ -13,9 +13,8 @@
    clocks recomputed after every event: strike attempts (misses are real events) by target and position,
    clinch entries and breaks, takedowns, ground sub-positions with passes, escapes, sweeps and stand-ups,
    submissions, knockdowns with a follow-up sequence, hurt states, standing / ground-and-pound / leg TKOs,
-   stamina and pace, three judges (EM round-winner weights from ufcstats cards, v4.0.1: 2015-2023 cards only, v4.0.0 used
-   every card through 2026-10; shared + individual noise, a margin-based 10-8 rule and, v4.0.1, point deductions, all fit
-   on 2019-2023 judges' rounds), and doctor / corner stoppages.
+   stamina and pace, three judges (v4: EM round-winner weights with shared + individual noise and a
+   margin-based 10-8 rule, all fit on 2019-2023 judges' rounds), and doctor / corner stoppages.
 
    UMD: module.exports in Node, self.FightEngine in a browser or Web Worker. No DOM; all randomness comes from makeRng(seed). */
 (function (root, factory) {
@@ -27,7 +26,7 @@
   else root.FightEngine = api;
 })(typeof self !== "undefined" ? self : (typeof window !== "undefined" ? window : globalThis), function (FP0, root, MLR0) {
   "use strict";
-  var VERSION = "4.0.1";
+  var VERSION = "4.0.0";
 
   // Sum keys (spec order; profiles may carry their own order in meta.keys / prof.keys)
   var KEYS = ["min", "n", "rds", "d_att", "d_lnd", "c_att", "c_lnd", "g_att", "g_lnd", "h_att", "h_lnd", "b_att", "b_lnd",
@@ -572,9 +571,7 @@
   // tables for leak-free backtests; base = league rates of the shrinkage division, filled in when missing); { model } ->
   // that model handle instead of the loaded one. opts.mlModel is accepted as a shorthand for { model }.
   // params.mlWeight (0..1) blends toward the base tables (1 = full learned rates); params.mlMaxRatio caps any single
-  // multiplier; params.mlTdLevel / mlCtrlLevel / mlSubLevel (v4.0.1) scale the learned takedown-attempt, control and
-  // submission-attempt targets (train level
-  // matching with the learned rates on; the plain tables keep their own self-calibrated level). The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
+  // multiplier. The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
   function mlPredFor(MLR, m, pa, pb, opts, model) {
     var x = opts.ml;
     var pred = null;
@@ -608,7 +605,7 @@
     var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
     if (!(w > 0)) return m;
     MLR.applyToMatchup(m, pred, { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
-      parts: opts.mlParts || undefined, levels: { td_att: m.p.mlTdLevel || 1, ctrl: m.p.mlCtrlLevel || 1, sub_att: m.p.mlSubLevel || 1 } });
+      parts: opts.mlParts || undefined });
     m.mlPred = { A: pred.A, B: pred.B, base: pred.base };
     m.mlApplied = true;
     return m;
@@ -683,8 +680,7 @@
   // ------------------------------------------------------------------ judges (one round)
   // Each judge j scores z_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared + individual noise (logits; A
   // minus B differentials; the shared noise has a fight-level part sF, variance share sharedFight, drawn once per fight:
-  // the panel's view beyond the counts persists from round to round), with the EM round-winner weights (v4.0.1: refit on the
-  // 5,519 ufcstats cards of 2015-2023 only, tools/judge_em_train.py; v4.0.0 used all 7,550 cards through 2026-10):
+  // the panel's view beyond the counts persists from round to round), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
   // striking = head * dHead + body * dBody + leg * dLeg landed; grappling = td * dTD + ctrlMin * dCtrl / 60 + sub * dSubAtt;
   // damage = kd * dKD + hurt * dHurt + judgePower * head * dPow (engine-only: hurts and power beyond the strike count).
   // The round goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd * min(2, winner's KD edge). The shared and individual
@@ -707,32 +703,6 @@
       if (js) js.push([scA, scB]);
     }
     return n108;
-  }
-
-  // ------------------------------------------------------------------ point deductions (v4.0.1)
-  // Fouls cost points on all three cards: in each round each fighter is docked with probability J.ded (1 point, 2 with
-  // probability J.ded2; tools/judgecal.js on 2019-2023 decision rounds: 0.5% per fighter-round, 3.1% of decisions).
-  // They are drawn once the last round is over and only for fights that go to the cards, so every earlier draw of the
-  // fight is unchanged (common random numbers with v4.0.0 up to the decision) and a finished fight never consumes them.
-  // rounds (trace) gets rec.ded = [A, B] and the per-round judges' scores lose the points, so the round cards still add
-  // up to fight.cards. Returns the points deducted.
-  function deductions(J, nR, rng, cards, rounds) {
-    var pd = J.ded || 0;
-    if (!(pd > 0)) return 0;
-    var p2 = J.ded2 || 0, n = 0;
-    for (var r = 0; r < nR; r++) for (var i = 0; i < 2; i++) {
-      if (rng.u() >= pd) continue;
-      var pts = rng.u() < p2 ? 2 : 1, j;
-      n += pts;
-      for (j = 0; j < 3; j++) cards[j][i] -= pts;
-      var rec = rounds && rounds[r];
-      if (rec) {
-        if (rec.judges) for (j = 0; j < rec.judges.length; j++) rec.judges[j][i] -= pts;
-        if (!rec.ded) rec.ded = [0, 0];
-        rec.ded[i] += pts;
-      }
-    }
-    return n;
   }
 
   // ------------------------------------------------------------------ simulate one fight
@@ -778,7 +748,7 @@
     var fight = { winner: "D", method: "DRAW", detail: "", round: nR, t: 300, cards: cards, totals: null,
       form: { A: { out: fOut[0], acc: fAcc[0], pow: fPow[0], chin: 1 / fChin[0], cardio: 1 / fCard[0], grap: fGrap[0], subOff: fSubO[0], subDef: 1 / fSubD[0] },
               B: { out: fOut[1], acc: fAcc[1], pow: fPow[1], chin: 1 / fChin[1], cardio: 1 / fCard[1], grap: fGrap[1], subOff: fSubO[1], subDef: 1 / fSubD[1] } },
-      rounds: rounds, fin: null, n108: 0, nDed: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
+      rounds: rounds, fin: null, n108: 0, kdr: 0, kdrf: 0, pace: sharedPace, vol: vol };
     var po = [0, 0], fin = null;
 
     for (var r = 0; r < nR; r++) {
@@ -1050,8 +1020,7 @@
         }
       }
     }
-    // ---- decision (point deductions first: drawn only now, see deductions())
-    fight.nDed = deductions(J, nR, rng, cards, rounds);
+    // ---- decision
     var ja = 0, jb = 0;
     for (var q = 0; q < 3; q++) { if (cards[q][0] > cards[q][1]) ja++; else if (cards[q][1] > cards[q][0]) jb++; }
     var dr = 3 - ja - jb;
@@ -1079,7 +1048,7 @@
     var rng = makeRng(seed == null ? 1 : seed), nR = m.rounds, i, k;
     var bins = [0, 0, 0, 0, 0, 0, 0], finA = [], finB = [], finKO = [], finSUB = [];
     for (k = 0; k < nR; k++) { finA.push(0); finB.push(0); finKO.push(0); finSUB.push(0); }
-    var methods = {}, dist = 0, distA = 0, distB = 0, dec = { UD: 0, SD: 0, MD: 0, DRAW: 0 }, n108 = 0, nDed = 0, rndsJudged = 0, secs = 0;
+    var methods = {}, dist = 0, distA = 0, distB = 0, dec = { UD: 0, SD: 0, MD: 0, DRAW: 0 }, n108 = 0, rndsJudged = 0, secs = 0;
     var sumA = new Float64Array(NS), sumB = new Float64Array(NS);
     var koLoc = { dist: 0, clinch: 0, ground: 0, "between rounds": 0 }, subNames = {}, koKind = { KO: 0, TKO_followup: 0, TKO_standing: 0, GNP: 0, LEG: 0, DOC: 0, CORNER: 0 }, kdr = 0, kdrf = 0;
     var chunk = Math.max(1, Math.floor(N / 50));
@@ -1090,7 +1059,7 @@
       var TA = f.totals.A, TB = f.totals.B;
       for (k = 0; k < NS; k++) { sumA[k] += TA[STK[k]]; sumB[k] += TB[STK[k]]; }
       if (isDecision(f)) {
-        dist++; dec[f.method]++; secs += nR * 300; rndsJudged += nR; nDed += f.nDed || 0;
+        dist++; dec[f.method]++; secs += nR * 300; rndsJudged += nR;
         if (f.winner === "A") distA++; else if (f.winner === "B") distB++;
       } else {
         secs += (f.round - 1) * 300 + f.t; rndsJudged += f.method === "CORNER" || f.method === "DOC" ? f.round : f.round - 1;
@@ -1128,7 +1097,6 @@
       dec: { UD: dec.UD / Math.max(1, dist), SD: dec.SD / Math.max(1, dist), MD: dec.MD / Math.max(1, dist), DRAW: dec.DRAW / Math.max(1, dist) },
       methods: methods, koLoc: koLoc, koKind: koKind, subNames: subNames, fins: fins / N, kdFin: kdrf / Math.max(1, kdr), kdRounds: kdr,
       r108: n108 / Math.max(1, 3 * rndsJudged), avgMin: mins / N,
-      dedPerDecision: nDed / Math.max(1, dist),   // v4.0.1: points deducted per fight that went to the cards
       avg: { A: avgA, B: avgB },
       kd15: (sumA[I_KD] + sumB[I_KD]) / 2 / mins * 15, ctrl15: (sumA[I_CTRL] + sumB[I_CTRL]) / 2 / mins * 15
     };
@@ -1276,7 +1244,7 @@
   var api = {
     VERSION: VERSION, KEYS: KEYS, STATS: STK,
     loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
-    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound, deductions: deductions,
+    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound,
     summarize: summarize, explain: explain, manualProfile: manualProfile,
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,

@@ -2549,7 +2549,233 @@ def plus(path=OUT_JSON):
              res["d_log_loss_vs_stack"] or 0, res["d_log_loss_vs_stack_ci95"]))
 
 
+# =====================================================================================================
+# review (python3 tools/ratings.py review): checks and extra analyses added after the main run, written to
+# ratings.json["review"]. Nothing here is tuned on 2024+; 2026 fights are never scored.
+#   - describe: log loss by year, calibration slope 2019-2023 vs 2024-2025, paired event-clustered bootstrap of
+#     2024-2025 differences between systems, close + rating blends (weights fit on 2019-2023, scored once)
+#   - ablation_one_at_a_time / ablation_cumulative: tuning window only, no re-tuning
+#   - reproducibility: rerun every rating system with its stored parameters, compare to the stored predictions
+#   - corner_swap_symmetry: swap A and B on every bout since 1994 (fighters, ages, results, round stats, cards),
+#     rebuild the round outcomes, rerun, check P_swap(A) = 1 - P(A)
+# python3 tools/ratings.py review_whr: the time-ordered check for WHR (choose on 2019-2021, score 2022-2023),
+# chained from elo_full's / elo_rounds' own 2019-2021 choices; written to ratings.json["review"]["whr_time_ordered"]
+# =====================================================================================================
+REVIEW_SYS = ["elo_ref", "elo_k", "elo_full", "elo_rounds", "glicko2", "trueskill", "trueskill_mov", "whr", "whr_mov",
+              "whr_rounds", "whr_hybrid"]
+REVIEW_PAIRS = [("whr_rounds", "whr", "every round a game vs binary result (WHR)"),
+                ("whr_mov", "whr", "margin of victory vs binary result (WHR)"),
+                ("trueskill_mov", "trueskill", "method-aware ordinal outcome vs binary (TrueSkill)"),
+                ("elo_full", "elo_k", "MOV + newcomer prior + age/layoff drift vs K-tuned Elo"),
+                ("glicko2", "elo_full", "Glicko-2 vs Elo, same encoder and priors"),
+                ("whr_mov", "elo_full", "WHR vs Elo, same encoder and priors"),
+                ("whr_rounds", "elo_rounds", "WHR vs Elo, both round-level"),
+                ("whr_rounds", "glicko2", "best single vs runner-up family"),
+                ("whr_hybrid", "whr_rounds", "fight+rounds blend vs rounds only"),
+                ("stack", "whr_rounds", "stack (whr_rounds, glicko2, dims) vs best single"),
+                ("ratings_plus", "whr_rounds", "ratings + covariates vs best single"),
+                ("ratings_plus", "stack", "ratings + covariates vs stack"),
+                ("dims", "elo_k", "dimensional ratings vs K-tuned Elo")]
+CUM_STEPS = [("tuned", {}), ("- margin of victory / round encoding (binary result)", {"enc": "binary"}),
+             ("- pre-UFC record", {"pre_on": False}), ("- newcomer age prior", {"mu_new": 0.0, "age_new": 0.0}),
+             ("- age curve and layoff drift", {"dy": 0.0, "do": 0.0, "lay": 0.0, "dl": 0.0})]
+
+
+def _paired(D, pa, pb, idx, rng, B_=2000):
+    ev = np.array([D.event[i] for i in idx])
+    _, inv = np.unique(ev, return_inverse=True)
+    groups = [np.where(inv == g)[0] for g in range(inv.max() + 1)]
+    y = D.y[idx]
+    la, lb = ll_vec(pa[idx], y), ll_vec(pb[idx], y)
+    ds = np.array([(lambda s: la[s].mean() - lb[s].mean())(
+        np.concatenate([groups[j] for j in rng.integers(0, len(groups), len(groups))])) for _ in range(B_)])
+    return {"n": int(len(idx)), "d_log_loss": round(float(la.mean() - lb.mean()), 5),
+            "ci95": [round(float(np.percentile(ds, 2.5)), 5), round(float(np.percentile(ds, 97.5)), 5)],
+            "p_a_better": round(float(np.mean(ds < 0)), 4)}
+
+
+def review_describe(D, J):
+    it, ix = D.idx_tune, D.idx_test
+    assert D.day[ix].max() < VAULT_FROM
+    names = list(J["systems"])
+    P = {k: np.full(D.n, np.nan) for k in names}
+    for fid, e in J["predictions"].items():
+        i = D.fidx[fid]
+        for k in names:
+            v = e["p"].get(k)
+            if v is not None:
+                P[k][i] = v
+    pm = market_probs(D)
+    y = D.y
+    res = {}
+    by = {}
+    for yr in range(2019, 2026):
+        m = np.r_[it, ix]
+        m = m[D.year[m] == yr]
+        row = {"n": int(len(m))}
+        for k in names:
+            if k == "ratings_plus" and yr < 2024:
+                continue                      # 2019-2023 fit everywhere: in-sample before 2024
+            row[k] = round(float(ll_vec(P[k][m], y[m]).mean()), 4)
+        mm = m[~np.isnan(pm[m])]
+        row["market_close"] = round(float(ll_vec(pm[mm], y[mm]).mean()), 4)
+        row["n_market"] = int(len(mm))
+        by[str(yr)] = row
+    res["log_loss_by_year"] = by
+    cs = {}
+    for k in names + ["market_close"]:
+        Pk = pm if k == "market_close" else P[k]
+        r = {}
+        for lab, idx in (("tune_2019_2023", it), ("test_2024_2025", ix)):
+            if k == "ratings_plus" and lab.startswith("tune"):
+                continue
+            ok = idx[~np.isnan(Pk[idx])]
+            r[lab] = round(float(_logit_fit(logit(Pk[ok])[:, None], y[ok])[0][0]), 3)
+        cs[k] = r
+    res["calibration_slope_tune_vs_test"] = cs
+    rng = np.random.default_rng(11)
+    pr = {}
+    for a, b, lab in REVIEW_PAIRS:
+        r = _paired(D, P[a], P[b], ix, rng)
+        r["what"] = lab
+        pr["%s - %s" % (a, b)] = r
+    res["paired_2024_2025"] = pr
+    mt, mx = it[~np.isnan(pm[it])], ix[~np.isnan(pm[ix])]
+    zm = logit(pm)
+    bl = {}
+    for lab, members in (("market + whr_rounds", ["whr_rounds"]),
+                         ("market + whr_rounds + glicko2 + dims", ["whr_rounds", "glicko2", "dims"])):
+        X = np.c_[[zm] + [logit(P[k]) for k in members]].T
+        b, _ = _logit_fit(X[mt], y[mt], l2=1e-6)
+        pb = expit(X @ b)
+        r = _paired(D, pb, pm, mx, rng)
+        r.update({"members": ["market_close"] + members, "weights_fit_2019_2023": [round(float(v), 4) for v in b],
+                  "test_log_loss": round(float(ll_vec(pb[mx], y[mx]).mean()), 5),
+                  "test_market_log_loss": round(float(ll_vec(pm[mx], y[mx]).mean()), 5),
+                  "test_brier": round(float(((pb[mx] - y[mx]) ** 2).mean()), 5),
+                  "test_accuracy": round(float(((pb[mx] > 0.5) == (y[mx] > 0.5)).mean()), 4)})
+        bl[lab] = r
+    res["market_blends"] = bl
+    for k in ("whr_rounds", "stack", "ratings_plus"):
+        res["%s_vs_market_same_fights" % k] = _paired(D, P[k], pm, mx, rng)
+    return res
+
+
+def review_cumulative(D, J, systems=("elo_full", "glicko2", "trueskill_mov", "whr_rounds")):
+    out = {}
+    for name in systems:
+        sd = J["systems"][name]
+        P, kind = dict(sd["params"]), sd["kind"]
+        rows, prev = [], None
+        for lab, ch in CUM_STEPS:
+            P = dict(P, **ch)
+            v = score(D, run_system(D, kind, P, until=TEST_FROM, eval_idx=D.idx_tune)[0], D.idx_tune)
+            rows.append({"step": lab, "tune_ll": round(v, 5), "change": None if prev is None else round(v - prev, 5)})
+            print("  cumulative %s %s %.5f" % (name, lab, v), flush=True)
+            prev = v
+        out[name] = rows
+    return out
+
+
+def _swap_corners(D):
+    D.ia, D.ib = D.ib.copy(), D.ia.copy()
+    D.age_a, D.age_b = D.age_b.copy(), D.age_a.copy()
+    D.winner = [{"A": "B", "B": "A"}.get(w, w) for w in D.winner]
+    D.y = np.where(np.isnan(D.y), np.nan, 1.0 - D.y)
+    D.rounds = [None if rr is None else {k: [v[1], v[0]] for k, v in rr.items()} for rr in D.rounds]
+    D.cards = [None if c is None else [[b, a] for a, b in c] for c in D.cards]
+    return D
+
+
+def review_verify(D, J):
+    ev = np.r_[D.bt_idx, D.idx_vault]       # the final run's prediction days (keeps the WHR re-solve schedule)
+    bt = D.bt_idx                            # compared rows: 2019-2025 backtest fights only
+    P = {}
+    rep = {}
+    for k in REVIEW_SYS:
+        sd = J["systems"][k]
+        P[k] = run_system(D, sd["kind"], dict(sd["params"]), eval_idx=ev)[0]
+        st = np.array([J["predictions"][D.fid[i]]["p"][k] for i in bt], float)
+        d = np.abs(np.round(P[k][bt], 4) - st)
+        rep[k] = {"n": int(len(bt)), "max_abs_diff": float(np.nanmax(d)),
+                  "share_diff_gt_1e-4": float(np.mean(d > 1.01e-4))}
+        print("  reproducibility %-14s max |diff| %.5f" % (k, rep[k]["max_abs_diff"]), flush=True)
+    D2 = _swap_corners(load_data())
+    prepare(D2, log=lambda *a: None)
+    sym = {}
+    for k in REVIEW_SYS:
+        sd = J["systems"][k]
+        q = run_system(D2, sd["kind"], dict(sd["params"]), eval_idx=ev)[0]
+        d = np.abs(q[bt] - (1.0 - P[k][bt]))
+        sym[k] = {"n": int(len(bt)), "max_abs_diff": float(np.nanmax(d)), "mean_abs_diff": float(np.nanmean(d))}
+        print("  symmetry %-14s max |P_swap - (1 - P)| %.2e" % (k, sym[k]["max_abs_diff"]), flush=True)
+    return {"reproducibility": rep, "corner_swap_symmetry": sym}
+
+
+def _save_review(path, part, value):
+    J = json.load(open(path))
+    J.setdefault("review", {})[part] = value
+    J["review"]["updated"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    with open(path, "w") as fh:
+        json.dump(J, fh, separators=(",", ":"))
+
+
+def review(path=OUT_JSON, parts=("describe", "ablation", "verify")):
+    J = json.load(open(path))
+    D = load_data()
+    prepare(D, log=lambda *a: None)
+    if "describe" in parts:
+        _save_review(path, "describe", review_describe(D, J))
+        print("review: describe saved", flush=True)
+    if "ablation" in parts:
+        one = ablate(path)
+        _save_review(path, "ablation_one_at_a_time", one)
+        _save_review(path, "ablation_cumulative", review_cumulative(D, J))
+        print("review: ablations saved", flush=True)
+    if "verify" in parts:
+        _save_review(path, "verify", review_verify(D, J))
+        print("review: verify saved", flush=True)
+
+
+def review_whr(path=OUT_JSON, jobs=3):
+    J = json.load(open(path))
+    D = load_data()
+    prepare(D, log=lambda *a: None)
+    _G["D"] = D
+    S = {s["name"]: s for s in specs(False)}
+    ief = J["systems"]["elo_full"]["time_ordered_check"]["chosen_on_2019_2021"]
+    ier = J["systems"]["elo_rounds"]["time_ordered_check"]["chosen_on_2019_2021"]
+    pool = Pool(jobs) if jobs > 1 else None
+    res = {"note": "parameters chosen on 2019-2021 only (data stream cut at 2024-01-01; objective = 2019-2021 log "
+                   "loss), scored on 2022-2023; whr starts from elo_full's 2019-2021 choice of the shared priors, "
+                   "whr_rounds from that whr choice plus elo_rounds' 2019-2021 round weights"}
+    s = S["whr"]
+    P0 = dict(s["P"])
+    P0.update({k: v for k, v in ief.items() if k in SHARED_KEYS})
+    b1, r1, _ = coord_descent("whr", P0, s["grid"], pool, passes=2, objective="in_tr", coarse=True)
+    res["whr"] = {"chosen_on_2019_2021": b1, "score_2019_2021": r1["in_tr"], "score_2022_2023": r1["in_va"],
+                  "in_window_2022_2023": J["systems"]["whr"]["inner_2022_2023"]}
+    s = S["whr_rounds"]
+    P0 = dict(b1)
+    P0.update({k: v for k, v in s["P"].items() if k not in P0 or k in ("enc", "ordinal", "pre_on")})
+    P0.update({k: v for k, v in ier.items() if k in ("w_fround", "w_rem")})
+    b2, r2, _ = coord_descent("whr", P0, s["grid"], pool, passes=2, objective="in_tr", coarse=True)
+    res["whr_rounds"] = {"chosen_on_2019_2021": b2, "score_2019_2021": r2["in_tr"], "score_2022_2023": r2["in_va"],
+                         "in_window_2022_2023": J["systems"]["whr_rounds"]["inner_2022_2023"]}
+    if pool:
+        pool.close()
+    _save_review(path, "whr_time_ordered", res)
+    print("review_whr: %s" % {k: (v["score_2022_2023"], v["in_window_2022_2023"]) for k, v in res.items()
+                              if isinstance(v, dict)})
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "review":
+        review(OUT_JSON, tuple(sys.argv[2].split(",")) if len(sys.argv) > 2 else ("describe", "ablation", "verify"))
+        sys.exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] == "review_whr":
+        review_whr(OUT_JSON, int(sys.argv[2]) if len(sys.argv) > 2 else 3)
+        sys.exit(0)
     if len(sys.argv) > 1 and sys.argv[1] == "tables":
         tables(sys.argv[2] if len(sys.argv) > 2 else OUT_JSON)
     elif len(sys.argv) > 1 and sys.argv[1] == "plus":
