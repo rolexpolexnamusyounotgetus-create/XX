@@ -2156,7 +2156,7 @@ def eval_mlrates_blend(T, D, verbose=True):
     days = T["day"][jj]
     n_att = np.array([T["entries"][j]["A" if s == 0 else "B"]["n"] for j, s in zip(jj, sd_)], float)
     n_min = _min_n(T)[jj]
-    recipe, per = {}, {}
+    recipe, recipe_sel, per = {}, {}, {}
     dv = {"recal": [], "all": [], "sel": []}
     for ti_, tname in enumerate(targets):
         task = MLR_MAP[tname]
@@ -2192,15 +2192,15 @@ def eval_mlrates_blend(T, D, verbose=True):
         per[tname] = {"task": task, "cv_dev_recal": round(cv1, 2), "cv_dev_plus_emb": round(cv2, 2),
                       "cv_rel_change": round((cv2 - cv1) / cv1, 4), "keep_emb": keep,
                       "valid_rel_change": round(mu / base, 4), "ci95": [round(lo / base, 4), round(hi / base, 4)]}
-        recipe[tname] = {"task": task, "link": "logit" if binom else "log",
-                         "units": "seconds / min" if tname == "ctrl" else (
-                             "P(knockdown) per landed head strike" if tname == "kd_h" else (
-                                 "probability" if binom else "per minute")),
-                         "b": [round(float(x), 6) for x in (b2 if keep else np.r_[b1, 0.0])]}
+        units = "seconds / min" if tname == "ctrl" else ("P(knockdown) per landed head strike" if tname == "kd_h"
+                                                         else ("probability" if binom else "per minute"))
+        recipe[tname] = {"task": task, "link": "logit" if binom else "log", "units": units,
+                         "b": [round(float(x), 6) for x in b2]}
+        recipe_sel[tname] = dict(recipe[tname], b=[round(float(x), 6) for x in (b2 if keep else np.r_[b1, 0.0])])
         if verbose:
             print("  blend %-7s cv %+.2f%% keep %-5s valid %+.2f%% [%+.2f, %+.2f]  b %s" % (
                 tname, 100 * (cv2 - cv1) / cv1, keep, 100 * mu / base, 100 * lo / base, 100 * hi / base,
-                recipe[tname]["b"]), flush=True)
+                recipe_sel[tname]["b"]), flush=True)
     NTg = len(targets)
 
     def mean_rel(mask, which):
@@ -2219,6 +2219,7 @@ def eval_mlrates_blend(T, D, verbose=True):
             "attacker 6+": na >= 6, "fight has a 1-2 fight newcomer": nm <= 2, "2024": yrs[va] == 2024,
             "2025": yrs[va] == 2025}
     out = {"n_rows_train": int(tr.sum()), "n_rows_valid": int(va.sum()), "per_target": per, "recipe": recipe,
+           "recipe_cv_selected": recipe_sel,
            "n_targets_kept": int(sum(v["keep_emb"] for v in per.values())), "segments": {}}
     for sk, m in segs.items():
         out["segments"][sk] = {"all_targets": mean_rel(m, "all"), "cv_selected": mean_rel(m, "sel")}
@@ -2262,46 +2263,97 @@ def py_blend(recipe, task_index, ml, eta):
     return out
 
 
+STYLE_TASKS = ["d_att", "c_att", "g_att", "h_att", "b_att", "l_att", "ns_att", "td_att", "ctrl", "sub_att"]
+
+
 def neighbours_v2(D, fin, hp, slugs_of_interest=("alexander-volkanovski", "justin-gaethje"), k=10):
-    """Neighbours on the standardised predicted-stat profile (21 offense + 21 defense effects): Euclidean
-    distance and style cosine, among established fighters (decayed fight count >= NN_MIN_EXPO) who fought in
-    2023-2025, men only for the two men, plus a same-weight-band pool (145-170 lb divisions)."""
+    """Neighbours on the standardised predicted-stat profile (21 offense + 21 defense effects of a fighter's
+    embedding on log-rates / logits, each standardised over active fighters), in four views:
+      profile_distance          Euclidean distance on the full profile (style and quality together)
+      style_cosine_quality_out  cosine after projecting out the profile direction of the linear win head
+                                (the 'how good' direction), so dominance alone does not make two men similar
+      attempts_cosine           cosine on the offense attempt profile only (what he tries to do: strike volume
+                                by position and target, non-sig. strikes, takedown attempts, control, sub attempts)
+      profile_distance_145_170  full-profile distance within the 145-170 lb divisions
+    Pool: decayed fight count >= NN_MIN_EXPO at 2026-01-01, a fight in 2023-2025, men (both men here are men)."""
     P, A, Dm = fin["P"], fin["A"], fin["D"]
     expo = exposure(D, fin["T"], hp["hl"])
     emb = np.hstack([A, Dm])
+    K = A.shape[1]
     Q, so, sdv = nn_metric(P, A, Dm, expo)
     prof = np.array([profile(P, emb[i], so, sdv) for i in range(len(emb))])
+    Bm = np.zeros((2 * NT, 2 * K))
+    Bm[:NT, :K] = P["W"] / so[:, None]
+    Bm[NT:, K:] = P["V"] / sdv[:, None]
+    qdir = Bm @ np.linalg.solve(Q + 1e-9 * np.eye(2 * K), np.r_[P["ua"], P["ud"]])
+    qdir /= np.linalg.norm(qdir)
+    prof_s = prof - np.outer(prof @ qdir, qdir)
+    vol = [TI[t] for t in STYLE_TASKS]
+    prof_o = prof[:, vol]
     last = np.full(D.F, -1)
     np.maximum.at(last, D.r_x, D.r_day)
     lastdiv = {}
-    order = np.argsort(D.r_day)
-    for r in order:
+    for r in np.argsort(D.r_day, kind="stable"):
         lastdiv[int(D.r_x[r])] = D.divs[int(D.r_div[r])]
     women = np.array([lastdiv.get(i, "").startswith("Women") for i in range(D.F)])
     active = last >= dt.date(2023, 1, 1).toordinal()
     band = np.array([lastdiv.get(i, "") in ("Featherweight", "Lightweight", "Welterweight") for i in range(D.F)])
     base = (expo >= NN_MIN_EXPO) & active & ~women
-    out = {"pool": "decayed fight count >= %.1f at 2026-01-01, fought in 2023-2025, men; profile = 21 offense + 21 "
-                   "defense effects of the embedding on predicted log-rates / logits, each standardised over active "
-                   "fighters" % NN_MIN_EXPO}
-    nrm = np.linalg.norm(prof, axis=1) + 1e-12
+    qual = prof @ qdir
+    out = {"pool": "decayed fight count >= %.1f at 2026-01-01, a fight in 2023-2025, men" % NN_MIN_EXPO,
+           "views": {"profile_distance": "Euclidean distance on the 42-effect standardised profile (style + quality)",
+                     "style_cosine_quality_out": "cosine after removing the profile direction of the linear win head",
+                     "attempts_cosine": "cosine on the offense attempt effects only: " + ", ".join(STYLE_TASKS),
+                     "profile_distance_145_170": "profile distance within Featherweight / Lightweight / Welterweight"},
+           "quality_share_of_profile_variance": round(float((qual[base] ** 2).sum() / (prof[base] ** 2).sum()), 3)}
+
+    def cosv(X, i):
+        n = np.linalg.norm(X, axis=1) + 1e-12
+        return X @ X[i] / (n * n[i])
+
     for sl in slugs_of_interest:
         i = D.slug_idx[sl]
         dist = np.linalg.norm(prof - prof[i], axis=1)
-        cos = prof @ prof[i] / (nrm * nrm[i])
         rec = {}
-        for key, m, score, asc in (("profile_distance", base, dist, True), ("style_cosine", base, cos, False),
+        for key, m, score, asc in (("profile_distance", base, dist, True),
+                                   ("style_cosine_quality_out", base, cosv(prof_s, i), False),
+                                   ("attempts_cosine", base, cosv(prof_o, i), False),
                                    ("profile_distance_145_170", base & band, dist, True)):
             mm = m.copy()
             mm[i] = False
             cand = np.where(mm)[0]
-            o = cand[np.argsort(score[cand] if asc else -score[cand])][:k]
+            o = cand[np.argsort(score[cand] if asc else -score[cand], kind="stable")][:k]
             rec[key] = [[D.slug[j], round(float(score[j]), 3), lastdiv.get(int(j), "")] for j in o]
-        rec["profile_norm"] = round(float(nrm[i]), 3)
-        rec["median_profile_norm_in_pool"] = round(float(np.median(nrm[base])), 3)
+        rec["quality_score_sd_units"] = round(float(qual[i] / qual[base].std()), 2)
+        rec["attempt_profile"] = {t: round(float(prof[i][TI[t]]), 2) for t in STYLE_TASKS}
+        order = np.argsort(-np.abs(prof_s[i]))[:8]
+        rec["style_signature_quality_out"] = [[("off " if j < NT else "def ") + TN[j % NT], round(float(prof_s[i][j]), 2)]
+                                              for j in order]
         rec["expo"] = round(float(expo[i]), 3)
         out[sl] = rec
+    out["_style_model"] = {"tasks": STYLE_TASKS, "so": [round(float(so[t]), 8) for t in vol]}
     return out
+
+
+def py_style_neighbours(M, slug, k):
+    """Python twin of src/ml/embed.js neighbours(slug, k, {mode: "style"}): cosine on the standardised offense
+    attempt profile (W[tasks] . o / so) over roster fighters with expo >= nn_min_expo (no activity filter)."""
+    ti = {t[0]: i for i, t in enumerate(M["tasks"])}
+    W = np.array(M["W"])
+    rows = [ti[t] for t in M["nn_style"]["tasks"]]
+    so = np.array(M["nn_style"]["so"])
+    K = M["K"]
+    me = np.array(M["roster"][slug][0][:K])
+    pm = W[rows] @ me / so
+    nm = np.linalg.norm(pm) + 1e-12
+    res = []
+    for sl, (e, x) in M["roster"].items():
+        if sl == slug or x < M["nn_min_expo"]:
+            continue
+        p = W[rows] @ np.array(e[:K]) / so
+        res.append((sl, float(p @ pm / ((np.linalg.norm(p) + 1e-12) * nm))))
+    res.sort(key=lambda r: (-r[1], r[0]))
+    return [[a, b] for a, b in res[:k]]
 
 
 def stage_extras(D, hp, cache, verbose=True):
@@ -2313,7 +2365,7 @@ def stage_extras(D, hp, cache, verbose=True):
     nn2 = neighbours_v2(D, fin, hp)
     if verbose:
         for sl in ("alexander-volkanovski", "justin-gaethje"):
-            for key in ("profile_distance", "style_cosine", "profile_distance_145_170"):
+            for key in ("profile_distance", "style_cosine_quality_out", "attempts_cosine", "profile_distance_145_170"):
                 print("  %s %s: %s" % (sl, key, ", ".join("%s (%.2f)" % (a, b) for a, b, _ in nn2[sl][key][:6])))
     # merge into the outputs
     J = json.load(open(OUT_JSON))
@@ -2322,15 +2374,19 @@ def stage_extras(D, hp, cache, verbose=True):
     J["validation"]["winner_segments"] = wseg
     checks = blend.pop("_check_rows")
     J["validation"]["stats"]["mlrates_blend"] = blend
+    style_model = nn2.pop("_style_model")
     J["neighbours_v2"] = nn2
     task_index = {t: i for i, t in enumerate(TN)}
-    M["mlrates_blend"] = {"note": "link(rate) = b0 + b1 link(mlrates rate) + b2 eta_embedding[task]; fit on mlrates "
-                                  "2019-2023 out-of-fold rows; b2 = 0 where leave-one-year-out CV inside 2019-2023 "
-                                  "said the embedding did not help (research/model_embed.md)",
-                          "targets": blend["recipe"]}
+    M["mlrates_blend"] = {"note": "link(rate) = b0 + b1 link(mlrates rate) + b2 eta_embedding[task], every target; fit "
+                                  "on mlrates 2019-2023 out-of-fold rows; validated once on 2024-2025 (mean relative "
+                                  "deviance change in research/model_embed.md). targets_cv_selected (b2 = 0 where "
+                                  "leave-one-year-out CV inside 2019-2023 rejected the term) scored worse on validation.",
+                          "targets": blend["recipe"], "targets_cv_selected": blend["recipe_cv_selected"]}
     M["blend_check"] = [{"ml": c["ml"], "eta": [round(float(x), 10) for x in c["eta"]],
                          "out": py_blend(blend["recipe"], task_index,
                                          c["ml"], [round(float(x), 10) for x in c["eta"]])} for c in checks]
+    M["nn_style"] = style_model
+    M["nn_style_check"] = {sl: py_style_neighbours(M, sl, 8) for sl in ("alexander-volkanovski", "justin-gaethje")}
     J["meta"]["extras_built"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
     with open(OUT_JSON, "w") as fh:
         json.dump(J, fh, separators=(",", ":"))

@@ -175,7 +175,9 @@
     "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). All three sources run bright (high-key studio, an over-exposed press photo whose forehead clips to #fcd4cc and was left out, and a bright Zuffa weigh-in), so the average may read a little light; the backlit June 2026 faceoff (#b59391, cool and grey) was not sampled.",
     "tone_category": "light",
     "undertone": "Neutral-warm (peach); slight redness on the cheeks and nose.",
-    "freckles_marks": "Small mole on the left cheek; faint forehead creases; light chest hair."
+    "freckles_marks": "Small mole on the left cheek; faint forehead creases; light chest hair.",
+    "tone_hex_recommended": "#d8a08a",
+    "tone_recommended_note": "Judged: the raw average mixes three over-bright sources with a dim night photo. He reads light with a neutral-peach undertone: lighter and less golden than Yair Rodriguez, a touch darker and less pink than Bryce Mitchell."
   },
   "body": {
     "build": "Tall and long for featherweight (183 cm with a 190.5 cm reach): long arms, long legs, narrow frame.",
@@ -287,7 +289,8 @@
     "iris": "brown",
     "eyebrows": "eyebrow010 (heavier) tinted #2b1f1a, low and nearly joined",
     "hair": "buzz cut: no hair mesh, dark scalp shading #2e221c with a high fade",
-    "beard": "stubble #2f231d in a beard pattern, sparse on the cheeks"
+    "beard": "stubble #2f231d in a beard pattern, sparse on the cheeks",
+    "tattoos": "right arm only: a single line-work dagger (about 15 cm) on the outer right forearm, not a sleeve; a grey piece about 12 x 6 cm on the back of the right upper arm. Left arm and torso clean."
   },
   "stance": {
     "schema": "stance/1",

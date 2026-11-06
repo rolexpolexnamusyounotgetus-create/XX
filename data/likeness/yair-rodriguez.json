@@ -165,7 +165,15 @@
     "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). The ESPN studio files are high-key and pink-warm; the April 2025 stage photos carry a yellow cast. Shadowed cheeks (his right cheek at the media day, #7e5527; his left cheek at the weigh-in, #9f6735) were left out.",
     "tone_category": "light-medium (tan)",
     "undertone": "Warm golden-olive; tans evenly with no visible pink flush outside the studio grade.",
-    "freckles_marks": "No freckles visible; faint forehead lines; possible faint scar line on the left cheek (see face)."
+    "freckles_marks": "No freckles visible; faint forehead lines; possible faint scar line on the left cheek (see face).",
+    "tone_hex_recommended": "#daa27c",
+    "tone_recommended_note": "Judged from the samples: the raw average is pulled light and yellow by the direct-sun 2016 forehead and the yellow-cast 2025 stage photos. Same-photo check: in the Feb 2024 UFC Mexico City still (ref-ufcyt-2024-02-ufc-mexico-city-with-ortega.jpg) Yair and Ortega read almost the same lightness (foreheads #b3825e vs #b68169, chests #ca9b77 vs #c48d75), Yair slightly more golden and Ortega slightly pinker. Same-session check: at the UFC 314 ceremonial weigh-in (same photographer, same stage, Apr 11, 2025) Bryce's chest reads pale and almost neutral (#d8d1c5) while Yair's reads warm golden (#feefc4, clipped); Bryce is clearly the paler and pinker of the two.",
+    "same_light_checks": {
+      "mexico_city_2024_forehead": "#b3825e",
+      "mexico_city_2024_chest": "#ca9b77",
+      "ufc314_ceremonial_chest": "#feefc4 (clipped)",
+      "ufc314_ceremonial_abdomen": "#d6be88"
+    }
   },
   "body": {
     "build": "Tall, long-limbed featherweight (180 cm, 180 cm reach): slim frame with long arms and legs.",

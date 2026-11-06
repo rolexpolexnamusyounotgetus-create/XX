@@ -9,7 +9,7 @@
     "reach_cm": 185.4,
     "stance": "Orthodox",
     "fight_weight_lb": 145,
-    "source": "data/derived/fighters.json (69 in height, 73 in reach, orthodox, featherweight). Weighed 145 lb for UFC London on 2026-03-20 (UFC official weigh-in results); lost to Movsar Evloev by majority decision on 2026-03-21, his first pro loss (Al Jazeera). Nickname 'The Miracle' comes from surviving being shot in the face and neck in Manchester in 2013 (Manchester Evening News reporting, via search); only marks visible in the photos are described below."
+    "source": "data/derived/fighters.json (69 in height, 73 in reach, orthodox, featherweight). Weighed 145 lb for UFC London on 2026-03-20 (UFC official weigh-in results); lost to Movsar Evloev by majority decision on 2026-03-21, his first UFC loss (Al Jazeera caption). Nickname 'The Miracle' comes from surviving being shot in the face and neck in Manchester in 2013 (Manchester Evening News reporting, via search); only marks visible in the photos are described below."
   },
   "photos_used": [
     "espn-full.png",

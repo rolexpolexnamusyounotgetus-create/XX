@@ -168,7 +168,13 @@
     "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). The ESPN headshot is graded very warm and saturated (orange); the 2025 media still is flatter and cooler. The 2018 Commons still (wm-2018-mmanytt-interview.jpg) is over-brightened (forehead #f6f2f2) and was not sampled.",
     "tone_category": "light-medium (tan)",
     "undertone": "Warm golden-peach with a sun tan; slight redness on the nose and cheeks.",
-    "freckles_marks": "Small sun spots / freckles on the cheeks and nose; forehead creases; dark arm and leg hair."
+    "freckles_marks": "Small sun spots / freckles on the cheeks and nose; forehead creases; dark arm and leg hair.",
+    "tone_hex_recommended": "#d99a7a",
+    "tone_recommended_note": "Judged: close to the raw average but pulled back from the orange ESPN grade. Same-photo check: in the Feb 2024 UFC Mexico City still (ref-ufcyt-2024-02-ufc-mexico-city-with-ortega.jpg) Yair and Ortega read almost the same lightness (foreheads #b3825e vs #b68169, chests #ca9b77 vs #c48d75), Yair slightly more golden and Ortega slightly pinker.",
+    "same_light_checks": {
+      "mexico_city_2024_forehead": "#b68169",
+      "mexico_city_2024_chest": "#c48d75"
+    }
   },
   "body": {
     "build": "Medium frame, 173 cm with a 175 cm reach; compact and athletic.",
@@ -256,7 +262,8 @@
     "iris": "green (or grey)",
     "eyebrows": "eyebrow001 tinted #3b261d, low and straight",
     "hair": "ponytail01 (tied back) or a long slicked-back cut, tinted #3a2a22 with lighter top highlights",
-    "beard": "stubble #5a463b, light; a few grey hairs at the chin"
+    "beard": "stubble #5a463b, light; a few grey hairs at the chin",
+    "tattoos": "small two-line blackletter script on the right side of the neck below the ear (about 5 x 3 cm); a tiny mark above the right elbow. No sleeves or torso pieces."
   },
   "stance": {
     "schema": "stance/1",

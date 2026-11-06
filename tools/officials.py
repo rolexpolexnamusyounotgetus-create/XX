@@ -2119,7 +2119,10 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
         eng["referee_note"] = ("multipliers on the league rate (odds for kd_finish, kd_single, doctor, dq, deduction; "
                                "rate for kd_follow, stand_tko, gnp_tko); default = empirical-Bayes shrinkage "
                                "(referees_eb); referees_tuned = less shrinkage (2019-2023 tuned tau), a style knob "
-                               "that did not improve 2024-2025 predictions")
+                               "that did not improve 2024-2025 predictions. Verification caution: the dq column rests "
+                               "on 22 DQs in all (1-5 per referee), its tau sits at the top of the grid (0.8) and the "
+                               "2024-25 check had 2 DQs (not significant); use 1.0 for dq unless a DQ scenario is "
+                               "wanted")
         for tag, sfx_ in (("referees_eb", ""), ("referees_tuned", "_tuned")):
             eng[tag] = {r["name"]: [r["fights_2019_on"]] + [round(r.get(u + sfx_, {}).get("mult", 1.0), 4) for u in rcols]
                         + [round(r.get("deduction", {}).get("odds_mult", 1.0), 4)]
@@ -2540,6 +2543,19 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
         import traceback
         traceback.print_exc()
         out["judging"]["agreement"] = {"error": repr(e)}
+    # ---- adversarial-review ablations: named-judge effects and the home terms on every fold (engine defaults)
+    try:
+        ver = verification_block(rows, nat, by_fid, sfx)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        ver = {"error": repr(e)}
+    out["judging"]["verification"] = ver
+    vfolds = [v for v in ver.values() if isinstance(v, dict) and "diff" in v]
+    vt = ver.get("test", {}).get("diff", {}).get("published - named_off") if isinstance(ver.get("test"), dict) else None
+    named_hurts = any(v["diff"]["published - named_off"]["winner_logloss"]["lo"] > 0 for v in vfolds)
+    named_default = bool(vt is not None and vt["class7_logloss"]["hi"] < 0 and not named_hurts)
+    out["engine"]["named_judges_default"] = named_default
     out["judging"]["fold_sources"] = dict(FOLD_SOURCES)
     out["meta"]["structure"] = dict(STRUCT)
     # ---- knobs for the engine (labelled judgment calls, not validated parameters)
@@ -2564,7 +2580,23 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
             "default": 0.0, "fit_before_2022": sv22,
             "note": "one N(0, sd^2) draw per fight added to every round's shared noise; improved 2022-23 but not "
                     "2024-25 (section 3.2 of research/model_officials.md), so it is off by default"},
-        "home_effect": {"default": 1.0, "note": "multiplier on h (0 turns the home-country effect off)"},
+        "named_judges": {
+            "default": named_default,
+            "evidence": {k: {"winner_logloss": v["diff"]["published - named_off"]["winner_logloss"],
+                             "class7_logloss": v["diff"]["published - named_off"]["class7_logloss"],
+                             "split_logloss": v["diff"]["published - named_off"]["split_logloss"]}
+                         for k, v in ver.items() if isinstance(v, dict) and "diff" in v},
+            "note": "true = use engine.judges[key] effects for an assigned panel; false (default unless the named-judge "
+                    "effects beat zero effects on the 2024-25 7-class loss without hurting the winner loss on any fold) "
+                    "= every judge is the league judge (effects 0) with the same league parameters. Verification: the "
+                    "named effects made the decision-winner log loss worse on all three folds (2024-25, 2022-23, "
+                    "2019-23) and never improved the 7-class loss; they help only the split/unanimous loss in 2024-25. "
+                    "Keep them for assigned-official scenarios, not for the default forecast"},
+        "home_effect": {"default": 1.0, "note": "multiplier on h (0 turns the home-country effect off). Verification: "
+                        "with named judges off, dropping both home terms costs +0.011 [+0.004, +0.018] 7-class log loss "
+                        "on 2024-25 and +0.006 [-0.003, +0.015] on 2022-23; with the fit before 2019 it is neutral on "
+                        "2019-23 (-0.001). h_USA changed sign across fits (+0.07 before 2019, -0.10 before 2022, -0.14 "
+                        "before 2024, -0.16 final): treat it as unstable"},
         "referee_table": {"default": "referees_eb", "alternative": "referees_tuned",
                           "note": "referees_tuned (less shrinkage) did not improve 2024-25 overall; style knob only"}}
     OUT.write_text(json.dumps(to_jsonable(out), indent=1))

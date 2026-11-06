@@ -164,7 +164,13 @@
     "tone_note": "Each sample is the median of a box on well-lit skin (box in source pixels). Studio ESPN files are high-key and warm; the post-fight face is flushed red (#bd6953 forehead), so only his chest was sampled there. The 2026 media-day highlight on his left cheek (#eeba9f) was left out as a specular highlight.",
     "tone_category": "fair to light",
     "undertone": "Warm-pink (ruddy): flushes red on the face, neck and chest; light golden tan on the arms.",
-    "freckles_marks": "No distinct freckles visible at these resolutions; ruddy cheeks and nose; light reddish body hair."
+    "freckles_marks": "No distinct freckles visible at these resolutions; ruddy cheeks and nose; light reddish body hair.",
+    "tone_hex_recommended": "#e2a48c",
+    "tone_recommended_note": "Judged: the raw average comes out darker than Yair's because his 2025 stage photos are under-exposed (forehead #c18d69 against a chest of #dcb192 in the same frame). Same-session check: at the UFC 314 ceremonial weigh-in (same photographer, same stage, Apr 11, 2025) Bryce's chest reads pale and almost neutral (#d8d1c5) while Yair's reads warm golden (#feefc4, clipped); Bryce is clearly the paler and pinker of the two. Recommended value is fair pink-peach, lighter and pinker than Yair Rodriguez and Brian Ortega, close to the studio forehead/cheek mean.",
+    "same_light_checks": {
+      "ufc314_ceremonial_chest": "#d8d1c5",
+      "ufc314_ceremonial_abdomen": "#bebbab"
+    }
   },
   "body": {
     "build": "Lean and long-limbed for 135 lb (178 cm, 178 cm reach); narrow frame.",
@@ -233,7 +239,6 @@
     "ears/r-ear-rot-forward": 0.1,
     "neck/neck-scale-vert-incr": 0.15,
     "neck/neck-scale-horiz-decr": 0.05,
-    "torso/measure-shoulder-dist-incr": 0.0,
     "torso/torso-vshape-incr": 0.05,
     "torso/measure-waist-circ-decr": 0.2,
     "torso/measure-hips-circ-decr": 0.1,
