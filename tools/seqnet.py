@@ -591,7 +591,7 @@ class Prep:
 def losses(model, prep, idx, cfg, train=True):
     torch = _torch()
     F = torch.nn.functional
-    (ta, la, sa), (tb, lb, sb_), ctx = prep.batch(idx)
+    ((ta, la, sa), (tb, lb, sb_)), ctx = prep.batch(idx)
     idx_t = torch.as_tensor(idx)
     z, qa, qb, ea, eb = model(ta, la, tb, lb, sa, sb_, ctx)
     yw = prep.YW[idx_t]
@@ -629,7 +629,7 @@ def predict(model, prep, idx, bs=1024):
     with torch.no_grad():
         for k in range(0, len(idx), bs):
             b = idx[k:k + bs]
-            (ta, la, sa), (tb, lb, sb_), ctx = prep.batch(b)
+            ((ta, la, sa), (tb, lb, sb_)), ctx = prep.batch(b)
             z, qa, qb, ea, eb = model(ta, la, tb, lb, sa, sb_, ctx)
             mask = prep.CLSMASK[torch.as_tensor(b)]
             PA.append(torch.softmax(qa.masked_fill(mask, -1e9), 1).numpy())

@@ -112,7 +112,7 @@ def _get_raw(url, timeout=40):
     wait = MIN_GAP - (time.time() - _last.get(host, 0))
     if wait > 0:
         time.sleep(wait)
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "text/html,application/xml"})
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = r.read()

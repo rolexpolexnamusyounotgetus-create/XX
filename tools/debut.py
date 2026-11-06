@@ -348,6 +348,15 @@ def build(args):
     res = json.load(open(DRESOLVE)) if os.path.exists(DRESOLVE) else json.load(open(os.path.join(PCACHE, "resolve.json")))
     fx = PU.Fetcher(offline=True)
     first_ufc = {p: min(d for d, *_ in ub) for p, ub in bouts.items() if ub}
+    st = json.load(open(STATE)) if os.path.exists(STATE) else {}
+    done = st.get("ranks_complete")
+    if args.opp_k is not None:
+        opp_k = args.opp_k
+    else:                                          # uniform policy: only ranks complete for every debutant
+        opp_k = 0
+        while done is not None and opp_k in done:
+            opp_k += 1
+    print("one-hop opponent ranks used: %d (crawl state: %s)" % (opp_k, done), flush=True)
     # ---- pages of resolved persons
     rowsby, exby, amby, bio = {}, {}, {}, {}
     href2p = {}
@@ -374,23 +383,18 @@ def build(args):
         if p not in rowsby:
             continue
         pre = [x for x in rowsby[p] if x["_d"] and x["_d"] < d0 and not x["_ufc"]]
-        for k, x in enumerate(reversed(pre[-OPP_K:])):
+        for k, x in enumerate(reversed(pre[-opp_k:] if opp_k else [])):
             s = x["_sid"]
             if s is None:
                 continue
-            opp_rank[(p, s)] = k
+            opp_rank[(p, s)] = min(k, opp_rank.get((p, s), k))
             if s not in opp_av or d0 < opp_av[s]:
                 opp_av[s] = d0
     opp_rows = {}
     for s in opp_av:
         if s in href2p and href2p[s] in rowsby:
             continue
-        path = None
-        for base in (PCACHE, DCACHE):
-            for fn in os.listdir(os.path.join(base, "fighter")) if False else []:
-                pass
-        # file names are "<Name>-<sid>.html": look up via an index built once
-        opp_rows[s] = None
+        opp_rows[s] = None                         # filled below from the page index ("<Name>-<sid>.html")
     idx = {}
     for base in (PCACHE, DCACHE):
         dd = os.path.join(base, "fighter")
@@ -579,7 +583,7 @@ def build(args):
             if n == 0 and p in rowsby:
                 pre = [x for x in rowsby[p] if x["_d"] and x["_d"] < D and not x["_ufc"]]
                 stats = []
-                for k, x in enumerate(reversed(pre[-OPP_K:])):
+                for k, x in enumerate(reversed(pre[-opp_k:] if opp_k else [])):
                     orows = opp_rows.get(x["_sid"]) if x["_sid"] is not None else None
                     if orows is None and x["_sid"] in href2p and href2p[x["_sid"]] in rowsby:
                         orows = rowsby[href2p[x["_sid"]]]
@@ -607,19 +611,23 @@ def build(args):
                     r["travel_" + tag] = tk
             r["own_rows_" + tag] = own_rows(p, D)
             r["key_" + tag] = key_of_person(p)
+            r["person_" + tag] = p
         if fwr:
             r["catch"] = 1.0 if (fwr.get("catchweight") or {}).get("is") else 0.0
         recs.append(r)
     print("rows %d (%.0f s)" % (len(recs), time.time() - t0), flush=True)
 
     # ---- global ratings per side, each half-life
-    def opp_rating_fn(net, F):
+    def opp_rating_fn(net, F, p, D):
         cache = {}
 
         def fn(o, d):
             if o in cache.get(d, {}):
                 return cache[d][o]
-            rows = opp_rows.get(o) if isinstance(o, int) else None
+            # an opponent's own page counts only if it was crawled for this debutant (rank < opp_k) or for a
+            # debutant who debuted before D: never because a later debutant fought him
+            ok = isinstance(o, int) and ((p, o) in opp_rank or opp_av.get(o, VAULT_FROM) < D)
+            rows = opp_rows.get(o) if ok else None
             val = None
             if rows:
                 rr = [(y["_d"], y["_sid"], SC.get(y["res"]), y["_promo"]) for y in rows
@@ -633,10 +641,10 @@ def build(args):
         tg = time.time()
         for r in recs:
             F = net.cut(r["date"])
-            fn = opp_rating_fn(net, F)
             for tag in ("A", "B"):
                 rows = r["own_rows_" + tag]
-                th, sd, m, sos = net.rate(rows, r["date"], F, opp_rating=fn if r["debut_" + tag] else None)
+                fn = opp_rating_fn(net, F, r["person_" + tag], r["date"]) if r["debut_" + tag] else None
+                th, sd, m, sos = net.rate(rows, r["date"], F, opp_rating=fn)
                 r["g%s_th_%s" % (hl, tag)] = th
                 r["g%s_sd_%s" % (hl, tag)] = sd
                 r["g%s_m_%s" % (hl, tag)] = m
@@ -687,6 +695,7 @@ def main():
     c.add_argument("--max-requests", type=int, default=0)
     b = sub.add_parser("build")
     b.add_argument("--half-lives", type=float, nargs="+", default=[2.0, 4.0])
+    b.add_argument("--opp-k", type=int, default=None, help="one-hop ranks to use (default: complete ranks)")
     args = ap.parse_args()
     if args.cmd == "crawl":
         crawl(args)

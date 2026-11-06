@@ -588,7 +588,260 @@ def stage_drift(args):
         log("persistence %-14s %s" % (c, v))
 
 
-STAGES = {"table": stage_table, "drift": stage_drift}
+# ====================================================================== stage: cv (rolling origin, <= 2023)
+H_GRID = [None, 8.0, 4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5]
+HEADS = ("noline", "open", "line", "ml2lr")
+INNER = (2016, 2020)               # hyper-parameters chosen on these rolling origins
+GATE = (2021, 2023)                # adoption gate: forward-chained years (ml2's stack gate), 0.0005 rule
+INCUMBENT = {"noline": "ml2 page stack ml2lr + mkt_rating, h 1.5, fit 2019..Y-1 (tools/ml2.py stage_stack)",
+             "open": "ml2 page stack open + ml2lr, no recency, fit 2019..Y-1",
+             "line": "ml2 page stack close + ml2lr, no recency, fit 2019..Y-1",
+             "ml2lr": "ML v2 logistic as published (annual expanding refit), no recalibration"}
+
+
+def scheme_grid():
+    G = []
+    for h in H_GRID:
+        G.append(("recency", {"h": h}))
+    for h in H_GRID:
+        G.append(("percard", {"h": h}))
+    for hl in (0.5, 1.0, 2.0, 4.0, 8.0):
+        for sd in (None, 0.3, 0.15, 0.08):
+            G.append(("temp", {"half_life": hl, "sd_a": sd}))
+    for n in (200, 400, 800):
+        for sd in (None, 0.15):
+            G.append(("temp", {"last_n": n, "sd_a": sd}))
+    for lb in (1.0, 2.0, 4.0):
+        G.append(("temp_annual", {"max_age": lb}))
+    for hl in (1.0, 2.0, 4.0, 8.0):
+        for sd_b in (0.05, 0.15):
+            for sd_a in (None, 0.15):
+                G.append(("odd", {"half_life": hl, "sd_a": sd_a, "sd_b": sd_b}))
+    allseg = tuple(SEGMENTS)
+    for hl in (2.0, 8.0, None):
+        for sd_b in (0.05, 0.1, 0.2):
+            for sd_a in (0.15, None):
+                G.append(("segment", {"segs": allseg, "half_life": hl, "sd_a": sd_a, "sd_b": sd_b}))
+    for sg in ("women", "heavy", "newcomer", "five", "bigfav"):
+        for hl in (8.0, None):
+            for sd_b in (0.1, 0.2):
+                G.append(("segment", {"segs": (sg,), "half_life": hl, "sd_a": 0.15, "sd_b": sd_b}))
+    return G
+
+
+def cfg_label(fam, cfg):
+    return fam + "|" + ",".join("%s=%s" % (k, ("+".join(v) if isinstance(v, tuple) else v)) for k, v in sorted(cfg.items()))
+
+
+class Pipe:
+    """Per-head base predictions and scheme predictions on one table (any orientation)."""
+    def __init__(self, D, universe="backtest"):
+        self.D = D
+        self.y = D["y"].to_numpy(float)
+        self.yr = D["year"].to_numpy()
+        self.dates = D["date"].to_numpy()
+        self.dord = np.array([dt.date.fromisoformat(d).toordinal() for d in self.dates], float)
+        self.universe = universe
+        self.base = {}
+
+    def rows(self, head):
+        if head == "ml2lr":
+            ok = self.D["ml2lr"].notna().to_numpy()
+        else:
+            ok = head_rows(self.D, head) if self.universe == "backtest" else self._rows_all(head)
+        return ok & (self.D["evalrow"].to_numpy() if self.universe == "backtest" else True)
+
+    def _rows_all(self, head):
+        ok = self.D["ml2lr"].notna().to_numpy() & (self.yr >= 2013)
+        if head == "open":
+            ok &= self.D["open"].notna().to_numpy()
+        if head == "line":
+            ok &= self.D["close"].notna().to_numpy()
+        return ok
+
+    def cols(self, head):
+        return ["ml2lr"] if head == "ml2lr" else HEAD_STACKS[head][2]
+
+    def h0(self, head):
+        return None if head == "ml2lr" else HEAD_STACKS[head][3]
+
+    def base_long(self, head, years):
+        """Out-of-sample base predictions: the head's stack refit each year on 2013..Y-1 with ml2's half-life (the
+        ML v2 logistic as published for the ml2lr head)."""
+        key = (head, tuple(years))
+        if key not in self.base:
+            if head == "ml2lr":
+                P = self.D["ml2lr"].to_numpy(float).copy()
+                P[~self.rows(head)] = np.nan
+            else:
+                P, _ = stack_annual(self.D, self.cols(head), self.h0(head), self.rows(head), years, 2013)
+            self.base[key] = P
+        return self.base[key]
+
+    def incumbent(self, head, years):
+        if head == "ml2lr":
+            return self.base_long(head, years)
+        P, _ = stack_annual(self.D, self.cols(head), self.h0(head), self.rows(head), years, 2019)
+        return P
+
+    def recal(self, base, rows, years, kind, cfg, S, annual=False):
+        """Walk-forward recalibration of `base` (out-of-sample logits) refit before every card (or every Jan 1) on all
+        rows with a finite base prediction dated strictly before it."""
+        out = np.full(len(base), np.nan)
+        z = logit(base)
+        fin = rows & np.isfinite(base)
+        tgt = fin & np.isin(self.yr, list(years))
+        keys = sorted(set(self.dates[tgt])) if not annual else ["%d-01-01" % Y for Y in years]
+        kw = dict(cfg)
+        segs = kw.pop("segs", SEGMENTS)
+        for d in keys:
+            do = dt.date.fromisoformat(d).toordinal()
+            h = fin & (self.dord < do)
+            m = tgt & ((self.dates == d) if not annual else (self.yr == int(d[:4])))
+            if not m.any():
+                continue
+            a = (do - self.dord[h]) / 365.25
+            spec = fit_spec(kind, z[h], self.y[h], a, S[h] if S is not None else None, segs=segs, **kw)
+            out[m] = apply_spec(spec, base[m], S[m] if S is not None else None)
+        return out
+
+    def scheme(self, head, fam, cfg, years):
+        rows = self.rows(head)
+        yrs_base = list(range(2014, max(years) + 1))
+        if fam == "recency":
+            P, _ = stack_annual(self.D, self.cols(head), cfg["h"], rows, years, 2013) if head != "ml2lr" else \
+                stack_annual(self.D, ["ml2lr"], cfg["h"], rows, years, 2012)
+            return P
+        if fam == "percard":
+            return stack_percard(self.D, self.cols(head), cfg["h"], rows, years, 2013 if head != "ml2lr" else 2012)
+        base = self.base_long(head, yrs_base)
+        S = seg_matrix(self.D, base)
+        if fam == "temp":
+            return self.recal(base, rows, years, "temperature", cfg, S)
+        if fam == "temp_annual":
+            return self.recal(base, rows, years, "temperature", {"max_age": cfg["max_age"]}, S, annual=True)
+        if fam == "odd":
+            return self.recal(base, rows, years, "odd", cfg, S)
+        if fam == "segment":
+            return self.recal(base, rows, years, "segment", cfg, S)
+        raise ValueError(fam)
+
+
+def swapped_table(D):
+    """The same fights with corners swapped: every P(A) -> 1 - P(A), y -> 1 - y; fight-level flags unchanged."""
+    E = D.copy()
+    for c in list(FAMILIES) + [c + "_roll" for c in ("ml1", "ml2lr", "ml2")]:
+        if c in E:
+            E[c] = 1.0 - E[c]
+    E["y"] = 1.0 - E["y"]
+    E["nA"], E["nB"] = D["nB"].to_numpy(), D["nA"].to_numpy()
+    return E
+
+
+def stage_cv(args):
+    D0 = load_table()
+    D = train_only(D0)
+    assert D["year"].max() <= 2023 and D["date"].max() < "2024-01-01"
+    pipe = Pipe(D, args.universe)
+    years = list(range(INNER[0], GATE[1] + 1))
+    y, yr, ev = pipe.y, pipe.yr, D["event"].to_numpy()
+    G = scheme_grid()
+    R = {"universe": args.universe, "inner": list(INNER), "gate": list(GATE), "sel_min": SEL_MIN, "heads": {},
+         "grid_size": len(G), "decision_rule": DECISION_RULE}
+    allpreds = {}
+    # end-to-end corner-swap test on a subset of schemes (fits see the swapped outcomes too)
+    E = swapped_table(D)
+    pipe_s = Pipe(E, args.universe)
+    sw = {}
+    for head in HEADS:
+        for fam, cfg in (("recency", {"h": 1.5}), ("percard", {"h": 1.0}), ("temp", {"half_life": 2.0, "sd_a": None}),
+                         ("odd", {"half_life": 4.0, "sd_a": None, "sd_b": 0.15}),
+                         ("segment", {"segs": tuple(SEGMENTS), "half_life": 8.0, "sd_a": 0.15, "sd_b": 0.1})):
+            p1 = pipe.scheme(head, fam, cfg, [2021])
+            p2 = pipe_s.scheme(head, fam, cfg, [2021])
+            m = np.isfinite(p1)
+            sw["%s|%s" % (head, fam)] = float(np.max(np.abs(p1[m] + p2[m] - 1)))
+    worst = max(sw.values())
+    log("corner-swap test (scheme on swapped corners, 2021): max |p + p_swapped - 1| = %.2e" % worst)
+    assert worst < 1e-9, sw
+    R["swap_test"] = {"max_abs": worst, "by_scheme": sw}
+    for head in HEADS:
+        rows = pipe.rows(head)
+        inc = pipe.incumbent(head, [2021, 2022, 2023])
+        mg = rows & (yr >= GATE[0]) & (yr <= GATE[1])
+        mi = rows & (yr >= INNER[0]) & (yr <= INNER[1])
+        base = pipe.base_long(head, list(range(2014, 2024)))
+        H = {"rows_inner": int(mi.sum()), "rows_gate": int(mg.sum()), "incumbent": INCUMBENT[head],
+             "incumbent_gate_ll": r5(ll(inc[mg], y[mg])), "incumbent_gate_slope": round(calib_slope(inc[mg], y[mg]), 3),
+             "base_long_inner_ll": r5(ll(base[mi], y[mi])), "base_long_gate_ll": r5(ll(base[mg], y[mg])),
+             "configs": {}, "families": {}}
+        log("%s: incumbent gate %.5f (slope %.3f); long base inner %.5f gate %.5f" % (
+            head, H["incumbent_gate_ll"], H["incumbent_gate_slope"], H["base_long_inner_ll"], H["base_long_gate_ll"]))
+        for fam, cfg in G:
+            if head == "ml2lr" and fam in ("recency", "percard") and cfg["h"] is None:
+                pass
+            lab = cfg_label(fam, cfg)
+            P = pipe.scheme(head, fam, cfg, years)
+            ok_i, ok_g = mi & np.isfinite(P), mg & np.isfinite(P)
+            # rows a scheme cannot cover (too little history) keep the base / incumbent prediction
+            Pi = np.where(np.isfinite(P), P, base)
+            Pg = np.where(np.isfinite(P), P, inc)
+            H["configs"][lab] = {"family": fam, "cfg": {k: (list(v) if isinstance(v, tuple) else v) for k, v in cfg.items()},
+                                 "inner_ll": r5(ll(Pi[mi], y[mi])), "gate_ll": r5(ll(Pg[mg], y[mg])),
+                                 "cover_inner": int(ok_i.sum()), "cover_gate": int(ok_g.sum())}
+            allpreds[(head, lab)] = np.where(np.isfinite(P), P, np.nan)
+        # per family: inner-chosen config, its gate result vs the incumbent; the gate-best config (ml2-style)
+        for fam in dict.fromkeys(f for f, _ in G):
+            labs = [l for l, v in H["configs"].items() if v["family"] == fam]
+            li = min(labs, key=lambda l: H["configs"][l]["inner_ll"])
+            lg = min(labs, key=lambda l: H["configs"][l]["gate_ll"])
+            Pg = np.where(np.isfinite(allpreds[(head, li)]), allpreds[(head, li)], inc)
+            cmp_inc = paired(Pg[mg], inc[mg], y[mg], ev[mg], args.boot)
+            Pgb = np.where(np.isfinite(allpreds[(head, lg)]), allpreds[(head, lg)], inc)
+            cmp_best = paired(Pgb[mg], inc[mg], y[mg], ev[mg], args.boot)
+            passed = cmp_inc["diff"] < -SEL_MIN and cmp_best["diff"] < -SEL_MIN
+            H["families"][fam] = {"inner_choice": li, "inner_choice_inner_ll": H["configs"][li]["inner_ll"],
+                                  "inner_choice_vs_incumbent_gate": cmp_inc,
+                                  "inner_choice_gate_slope": round(calib_slope(Pg[mg], y[mg]), 3),
+                                  "gate_best": lg, "gate_best_vs_incumbent": cmp_best, "passes": bool(passed)}
+            log("  %-12s inner choice %-70s gate %+.5f %s | gate-best %+.5f | %s" % (
+                fam, li, cmp_inc["diff"], cmp_inc["diff_ci"], cmp_best["diff"], "PASS" if passed else "fail"))
+        fams_pass = [f for f, v in H["families"].items() if v["passes"]]
+        if fams_pass:
+            best = min(fams_pass, key=lambda f: H["families"][f]["inner_choice_vs_incumbent_gate"]["a"])
+            H["chosen"] = {"family": best, "config": H["families"][best]["inner_choice"]}
+        else:
+            H["chosen"] = {"family": "none", "config": "none (keep the incumbent)"}
+        # by-year view of the incumbent, the long base and every family's inner choice (calibration slope and ll)
+        by = {}
+        for Y in range(INNER[0], GATE[1] + 1):
+            m = rows & (yr == Y)
+            rowY = {"n": int(m.sum()), "base_long": [r5(ll(base[m], y[m])), round(calib_slope(base[m], y[m]), 3)]}
+            if Y >= GATE[0]:
+                rowY["incumbent"] = [r5(ll(inc[m], y[m])), round(calib_slope(inc[m], y[m]), 3)]
+            for fam, v in H["families"].items():
+                P = allpreds[(head, v["inner_choice"])]
+                Pm = np.where(np.isfinite(P[m]), P[m], base[m])
+                rowY[fam] = [r5(ll(Pm, y[m])), round(calib_slope(Pm, y[m]), 3)]
+            by[str(Y)] = rowY
+        H["by_year"] = by
+        R["heads"][head] = H
+        log("%s: chosen %s" % (head, H["chosen"]))
+    json.dump(R, open(os.path.join(CACHE, "cv_%s.json" % args.universe), "w"), indent=1, default=float)
+    pickle.dump(allpreds, open(os.path.join(CACHE, "cv_preds_%s.pkl" % args.universe), "wb"))
+
+
+DECISION_RULE = (
+    "Per head and scheme family, the hyper-parameters are chosen by pooled log loss over the rolling origins "
+    "2016-2020 (each year predicted only from earlier fights, per-card refits where the scheme refits per card). "
+    "A family passes the gate only if BOTH (a) its 2016-2020 choice and (b) its best configuration on the "
+    "forward-chained years 2021-2023 beat the incumbent (ml2's own stack fit 2019..Y-1 with its CV half-life; the "
+    "ML v2 logistic as published) by more than 0.0005 pooled log loss on 2021-2023 (ml2's selection rule). Among "
+    "passing families the one whose 2016-2020 choice scores best on 2021-2023 is adopted; if none passes, the head "
+    "keeps the incumbent (no recalibration). Fixed before any cv output was read; 2024-2025 never enters.")
+
+
+STAGES = {"table": stage_table, "drift": stage_drift, "cv": stage_cv}
 
 
 def main():
@@ -596,6 +849,8 @@ def main():
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--boot-slope", type=int, default=400, help="resamples for slope CIs (each refits)")
+    ap.add_argument("--universe", default="backtest", choices=["backtest", "all"],
+                    help="backtest = both men had a prior UFC fight (the scored universe); all = every decisive fight")
     args = ap.parse_args()
     stages = [s for s in STAGES if s not in ("confirm",)] if args.stage == "all" else [args.stage]
     for s in stages:
