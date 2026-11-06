@@ -265,7 +265,8 @@ def add_columns(df, knots=(27.0, 31.0, 35.0), win=730):
     ra = X["a_reach"].astype(float).fillna(X["a_height"].astype(float) + 1.5)
     rd = X["d_reach"].astype(float).fillna(X["d_height"].astype(float) + 1.5)
     X["reach_adv"] = (ra - rd).fillna(0.0)
-    X["ht_adv"] = (X["a_height"].astype(float) - X["d_height"].astype(float)).fillna(0.0)
+    X["ht_adv"] = (X["a_height"].astype(float) - X["d_height"].astype(float)).fillna(0.0).clip(-12, 12)
+    X["reach_adv"] = X["reach_adv"].clip(-12, 12)
     X["five"] = (X["sched"] == 5).astype(float)
     X["elo_diff"] = (X["elo_a"] - X["elo_d"]) / 400.0 * math.log(10)
     X["women"] = X["division"].str.startswith("Women").astype(float)
@@ -341,59 +342,62 @@ def pois_dev(y, mu):
 def eb_walk(df, base_mu, alpha_c, alpha_p, hl_c=None, hl_p=None, use_c=True, use_p=True, final_state=False):
     """Walk the rows in fight order. base_mu = E * p without fighter effects.
 
-    Returns chin multiplier of the defender and power multiplier of the attacker as of before each fight,
-    plus their posterior shapes / rates. Both directions of a fight are predicted before either updates."""
+    Returns the defender's chin multiplier and the attacker's power multiplier as of before each fight (Gamma
+    posterior means), plus the posterior shapes and rates. Both directions of a fight are predicted before
+    either is used to update."""
     n = len(df)
-    chin = np.ones(n)
-    powm = np.ones(n)
-    cshape = np.zeros(n)
-    crate = np.zeros(n)
-    pshape = np.zeros(n)
-    prate = np.zeros(n)
-    Yc, Mc, Tc = defaultdict(float), defaultdict(float), {}
-    Yp, Mp, Tp = defaultdict(float), defaultdict(float), {}
-    fid = df.fid.to_numpy()
-    day = df.day.to_numpy()
-    att = df["att"].to_numpy()
-    de = df["def"].to_numpy()
-    y = df.y.to_numpy()
-    ok = df.has_stats.to_numpy() == 1
+    fid = df.fid.tolist()
+    day = df.day.tolist()
+    att = df["att"].tolist()
+    de = df["def"].tolist()
+    y = df.y.fillna(0).tolist()
+    ok = ((df.has_stats.to_numpy() == 1) & np.isfinite(base_mu)).tolist()
+    bm = np.nan_to_num(base_mu).tolist()
     lam_c = math.log(2) / hl_c if hl_c else 0.0
     lam_p = math.log(2) / hl_p if hl_p else 0.0
+    cs, cr, ps, pr = [0.0] * n, [0.0] * n, [0.0] * n, [0.0] * n
+    chin, powm = [1.0] * n, [1.0] * n
+    Yc, Mc, Tc, Yp, Mp, Tp = {}, {}, {}, {}, {}, {}
 
     def get(Y, M, T, p, d, lam):
-        if lam and p in T and d > T[p]:
+        if p not in T:
+            T[p] = d
+            Y[p] = 0.0
+            M[p] = 0.0
+            return 0.0, 0.0
+        if lam and d > T[p]:
             f = math.exp(-lam * (d - T[p]))
             Y[p] *= f
             M[p] *= f
-            T[p] = d
-        elif p not in T:
             T[p] = d
         return Y[p], M[p]
 
     i = 0
     while i < n:
-        j = i
+        j = i + 1
         while j < n and fid[j] == fid[i]:
             j += 1
         for r in range(i, j):
             yc, mc = get(Yc, Mc, Tc, de[r], day[r], lam_c)
             yp, mp = get(Yp, Mp, Tp, att[r], day[r], lam_p)
-            cshape[r], crate[r] = alpha_c + yc, alpha_c + mc
-            pshape[r], prate[r] = alpha_p + yp, alpha_p + mp
-            chin[r] = cshape[r] / crate[r] if use_c else 1.0
-            powm[r] = pshape[r] / prate[r] if use_p else 1.0
+            cs[r], cr[r] = alpha_c + yc, alpha_c + mc
+            ps[r], pr[r] = alpha_p + yp, alpha_p + mp
+            if use_c:
+                chin[r] = cs[r] / cr[r]
+            if use_p:
+                powm[r] = ps[r] / pr[r]
         for r in range(i, j):
-            if not ok[r] or not np.isfinite(base_mu[r]):
+            if not ok[r]:
                 continue
             Yc[de[r]] += y[r]
-            Mc[de[r]] += base_mu[r] * powm[r]
+            Mc[de[r]] += bm[r] * powm[r]
             Yp[att[r]] += y[r]
-            Mp[att[r]] += base_mu[r] * chin[r]
+            Mp[att[r]] += bm[r] * chin[r]
         i = j
-    out = {"chin": chin, "pow": powm, "cshape": cshape, "crate": crate, "pshape": pshape, "prate": prate}
+    out = {"chin": np.array(chin), "pow": np.array(powm), "cshape": np.array(cs), "crate": np.array(cr),
+           "pshape": np.array(ps), "prate": np.array(pr)}
     if final_state:
-        out["state"] = {"Yc": dict(Yc), "Mc": dict(Mc), "Tc": dict(Tc), "Yp": dict(Yp), "Mp": dict(Mp), "Tp": dict(Tp)}
+        out["state"] = {"Yc": Yc, "Mc": Mc, "Tc": Tc, "Yp": Yp, "Mp": Mp, "Tp": Tp}
     return out
 
 
@@ -424,7 +428,7 @@ def blocks(spec, X=None):
         "lay": ["d_lay_short", "d_lay_12_24", "d_lay_24p", "d_last_ko_loss", "d_ko_short"],
         "move": ["d_up_cls", "d_dn_cls", "a_up_cls", "a_dn_cls"],
         "move_lbs": ["d_up_lbs", "d_dn_lbs", "a_up_lbs", "a_dn_lbs"],
-        "body": ["d_ht_rel", "d_ape", "a_ht_rel", "a_ape", "reach_adv"],
+        "body": ["d_ht_rel", "d_ape", "ht_adv", "reach_adv"],
         "aexp": ["a_yrs", "a_lognp", "a_debut"],
     }
 

@@ -673,6 +673,7 @@ def assemble(fights):
                 return (t[1], t[0]) if (t and sw) else t
             r = recs[fid]
             r['bfo_mu'] = mu
+            r['bfo_swap'] = sw
             r['bfo_event'] = mus[mu].get('event')
             r['bfo_open'] = orient(b['open'])
             if b['range']:
@@ -1181,6 +1182,14 @@ def write_market_json(R, res, best):
             e['uud_close'] = list(rec['uud_close'])
         if rec.get('bfo_mu'):
             e['bfo'] = {'matchup': rec['bfo_mu'], 'event': rec.get('bfo_event')}
+        mm = (res.get('method_market') or {}).get('per_fight', {}).get(r['id'])
+        if mm:
+            e['method6'] = mm['method6']
+            e['method_books'] = mm['n_books']
+            if 'p_dec' in mm:
+                e['p_dec'] = mm['p_dec']
+            if 'round_dist' in mm:
+                e['round_dist'] = mm['round_dist']
         fights[r['id']] = e
     meta = {
         'built': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
@@ -1203,8 +1212,16 @@ def write_market_json(R, res, best):
         ],
         'periods': {'tune': list(TUNE), 'test': list(TEST)},
     }
-    out = {'meta': meta, 'coverage': res['coverage'], 'eval': {k: v for k, v in res.items() if k not in ('coverage',)},
-           'fights': fights}
+    ev = {k: v for k, v in res.items() if k not in ('coverage',)}
+    if 'method_market' in ev:
+        ev['method_market'] = {k: v for k, v in ev['method_market'].items() if k != 'per_fight'}
+        meta['method6'] = ('market method-of-victory distribution [A_KO, A_SUB, A_DEC, B_KO, B_SUB, B_DEC]: per book the six '
+                           '"wins by TKO/KO / submission / decision" closing prices (decision = UD + split/majority when '
+                           'missing), power-normalised to sum 1, averaged over US books; KO includes doctor stoppages')
+        meta['p_dec'] = 'P(fight goes to decision): two-way "goes to decision" prop, multiplicative no-vig, averaged over books'
+        meta['round_dist'] = ('P(fight ends in round 1..K, decision), from "fight ends in round k" and "goes to decision" '
+                              'yes prices, power-normalised, averaged over books')
+    out = {'meta': meta, 'coverage': res['coverage'], 'eval': ev, 'fights': fights}
     with open(OUT_JSON, 'w') as fh:
         json.dump(out, fh, separators=(',', ':'))
     print(f'wrote {OUT_JSON}: {len(fights)} fights, {os.path.getsize(OUT_JSON) / 1e6:.2f} MB')
@@ -1231,6 +1248,251 @@ def print_summary(res):
     print('checks', res['checks'])
 
 
+
+# ----------------------------------------------------------------------------------------------
+# props: method-of-victory and round markets from cached event pages
+# ----------------------------------------------------------------------------------------------
+
+# data-li on prop cells: [book, side (1 yes / 2 no), matchup, prop type, team (0 = whole fight)]
+PROP_COLS = {(8, 1): 'ko1', (8, 2): 'ko2', (9, 1): 'sub1', (9, 2): 'sub2', (11, 1): 'dec1', (11, 2): 'dec2',
+             (18, 1): 'ud1', (18, 2): 'ud2', (19, 1): 'sm1', (19, 2): 'sm2', (6, 0): 'draw',
+             (22, 0): 'r1', (23, 0): 'r2', (24, 0): 'r3', (25, 0): 'r4', (26, 0): 'r5'}
+
+
+def parse_event_props(html):
+    """-> {(mu, book): {col: american}} for the props in PROP_COLS (yes side) plus goes-to-decision yes/no."""
+    starts = [x.start() for x in re.finditer(r'<table class="odds-table"', html)]
+    if not starts:
+        return {}
+    t = html[starts[-1]:]
+    t = t[:t.find('</table>')]
+    books = {int(b): n.strip() for b, n in
+             re.findall(r'<th scope="col" data-b="(\d+)"[^>]*>(?:<a[^>]*>|<span[^>]*>)([^<]+)', t)}
+    out = defaultdict(dict)
+    for bid, side, mu, ptype, team, val in re.findall(
+            r'data-li="\[(\d+),(\d),(\d+),(\d+),(\d+)\]"><span[^>]*>([^<]+)</span>', t):
+        side, ptype, team = int(side), int(ptype), int(team)
+        a = parse_am(val)
+        if a is None:
+            continue
+        key = (int(mu), books.get(int(bid), bid))
+        if ptype == 1 and team == 0:
+            out[key]['godec_yes' if side == 1 else 'godec_no'] = a
+        elif side == 1 and (ptype, team) in PROP_COLS:
+            out[key][PROP_COLS[(ptype, team)]] = a
+    return out
+
+
+PROP_FIELDS = ['ko1', 'sub1', 'dec1', 'ud1', 'sm1', 'ko2', 'sub2', 'dec2', 'ud2', 'sm2', 'draw', 'godec_yes',
+               'godec_no', 'r1', 'r2', 'r3', 'r4', 'r5']
+
+
+def _norm(q, method):
+    """normalise a list of implied probabilities (mutually exclusive, exhaustive outcomes) to sum 1."""
+    S = sum(q)
+    if method == 'mult' or S <= 1:
+        return [x / S for x in q]
+    k = _bisect(lambda k: sum(x ** k for x in q), 0.05, 20.0)
+    v = [x ** k for x in q]
+    t = sum(v)
+    return [x / t for x in v]
+
+
+METHOD_CLASSES = ['A_KO', 'A_SUB', 'A_DEC', 'B_KO', 'B_SUB', 'B_DEC']
+
+
+def method_class(f):
+    w, m = f['result']['winner'], f['result']['method']
+    if w not in ('A', 'B'):
+        return None
+    k = {'KO': 'KO', 'DOC': 'KO', 'SUB': 'SUB', 'UD': 'DEC', 'SD': 'DEC', 'MD': 'DEC'}.get(m)
+    return f'{w}_{k}' if k else None
+
+
+def method_market(a, fights, recs):
+    """6-way method-of-victory, goes-to-decision and round-of-finish markets vs walk-forward base rates."""
+    np = _np()
+    path = os.path.join(ODDS_DIR, 'bfo_event_props.csv')
+    if not os.path.exists(path):
+        return {'note': 'run `tools/market.py props` first'}
+    with open(BACKTEST) as fh:
+        pri = json.load(fh)['priors_asof']
+    props = defaultdict(dict)
+    for r in read_csv(path):
+        props[int(r['mu'])][r['book']] = {k: _int(r[k]) for k in PROP_FIELDS}
+    out = {'classes': METHOD_CLASSES}
+    per_fight = {}
+    rows = []
+    for f in fights:
+        rec = recs[f['id']]
+        mu = rec.get('bfo_mu')
+        if not mu or mu not in props:
+            continue
+        sw = rec.get('bfo_swap', False)
+        books = props[mu]
+        # per book six-way method distribution (team order -> A/B order)
+        six = {'mult': [], 'power': []}
+        for bk, d in books.items():
+            def dec_of(t):
+                if d.get(f'dec{t}'):
+                    return 1 / am_to_dec(d[f'dec{t}'])
+                if d.get(f'ud{t}') and d.get(f'sm{t}'):
+                    return 1 / am_to_dec(d[f'ud{t}']) + 1 / am_to_dec(d[f'sm{t}'])
+                return None
+            q = []
+            for t in (1, 2):
+                q += [1 / am_to_dec(d[f'ko{t}']) if d.get(f'ko{t}') else None,
+                      1 / am_to_dec(d[f'sub{t}']) if d.get(f'sub{t}') else None, dec_of(t)]
+            if any(x is None for x in q):
+                continue
+            if sw:
+                q = q[3:] + q[:3]
+            for m in six:
+                six[m].append(_norm(q, m))
+        # goes to decision (two-way), round of finish (K rounds + decision)
+        gd = [devig(am_to_dec(d['godec_yes']), am_to_dec(d['godec_no'])) for d in books.values()
+              if d.get('godec_yes') and d.get('godec_no')]
+        K = f['rounds']
+        rd = {'mult': [], 'power': []}
+        for d in books.values():
+            if all(d.get(f'r{k}') for k in range(1, K + 1)) and d.get('godec_yes'):
+                q = [1 / am_to_dec(d[f'r{k}']) for k in range(1, K + 1)] + [1 / am_to_dec(d['godec_yes'])]
+                for m in rd:
+                    rd[m].append(_norm(q, m))
+        row = {'id': f['id'], 'date': f['date'], 'event': f['event'], 'period': period_of(f['date']),
+               'cls': method_class(f), 'K': K, 'res': f['result']}
+        if six['mult']:
+            for m in six:
+                row['six_' + m] = list(np.mean(six[m], axis=0))
+            row['n_books_method'] = len(six['mult'])
+        if gd:
+            row['p_dec'] = float(np.mean(gd))
+            row['n_books_dec'] = len(gd)
+        if rd['mult']:
+            for m in rd:
+                row['rd_' + m] = list(np.mean(rd[m], axis=0))
+        # walk-forward base rates: division finish split from priors_asof[year]
+        dv = f.get('prior_division') or f['division']
+        P = pri[f['date'][:4]].get(dv) or pri[f['date'][:4]]['ALL']
+        fin = (P if K == 3 else pri[f['date'][:4]]['ALL'])['fin3' if K == 3 else 'fin5']
+        ko, sb, de = sum(fin['KO']), sum(fin['SUB']), fin['DEC']
+        tot = ko + sb + de
+        row['base_share'] = [ko / tot, sb / tot, de / tot]
+        rr = [fin['KO'][k] + fin['SUB'][k] for k in range(K)] + [de]
+        row['base_round'] = [x / sum(rr) for x in rr]
+        pm = rec.get('p_close_mult')
+        rows.append(row)
+    # attach market moneyline (multiplicative close) for the baseline
+    ml = {}
+    for f in fights:
+        c = choose(recs[f['id']])
+        if c.get('close_dec'):
+            ml[f['id']] = devig(*c['close_dec'])
+    res = {}
+    for per in ('tune', 'test'):
+        g = [r for r in rows if r['period'] == per and r['cls'] and 'six_mult' in r and r['id'] in ml]
+        if not g:
+            continue
+        idx = np.array([METHOD_CLASSES.index(r['cls']) for r in g])
+        def ll6(P):
+            P = np.clip(np.asarray(P), 1e-6, 1)
+            return float(np.mean(-np.log(P[np.arange(len(P)), idx])))
+        base = []
+        base_only = []
+        for r in g:
+            pa = ml[r['id']]
+            sh = r['base_share']
+            base.append([pa * x for x in sh] + [(1 - pa) * x for x in sh])
+            base_only.append([0.5 * x for x in sh] * 2)
+        mk = {m: [r['six_' + m] for r in g] for m in ('mult', 'power')}
+        # moneyline-consistent market: rescale A's three and B's three to the closing moneyline
+        mlc = []
+        for r in g:
+            v = r['six_power']
+            pa = ml[r['id']]
+            sa, sb_ = sum(v[:3]), sum(v[3:])
+            mlc.append([x * pa / sa for x in v[:3]] + [x * (1 - pa) / sb_ for x in v[3:]])
+        res[per] = {'n': len(g), 'll6_market_mult': round(ll6(mk['mult']), 4), 'll6_market_power': round(ll6(mk['power']), 4),
+                    'll6_market_power_ml_rescaled': round(ll6(mlc), 4),
+                    'll6_moneyline_x_base_rates': round(ll6(base), 4), 'll6_base_rates_only': round(ll6(base_only), 4),
+                    'll6_uniform': round(math.log(6), 4),
+                    'mean_books': round(float(np.mean([r['n_books_method'] for r in g])), 2)}
+        # cluster bootstrap on the market - baseline difference
+        P1 = np.clip(np.asarray(mk['power']), 1e-6, 1)[np.arange(len(g)), idx]
+        P0 = np.clip(np.asarray(base), 1e-6, 1)[np.arange(len(g)), idx]
+        bs = boot_event([r['event'] for r in g], {'m': -np.log(P1), 'b': -np.log(P0)}, B=a.boot)
+        res[per]['ll6_market_minus_baseline_ci95'] = ci(bs['m'] - bs['b'])
+        # calibration of the method shares: predicted vs observed totals
+        Pm = np.asarray(mk['power'])
+        obs = np.bincount(idx, minlength=6) / len(g)
+        res[per]['class_pred_vs_obs'] = {c: [round(float(Pm[:, i].mean()), 4), round(float(obs[i]), 4)]
+                                         for i, c in enumerate(METHOD_CLASSES)}
+        fin_pred = Pm[:, [0, 1, 3, 4]].sum(axis=1)
+        fin_obs = np.isin(idx, [0, 1, 3, 4]).astype(float)
+        res[per]['finish_calibration'] = calib_bins_generic(fin_pred, fin_obs)
+        # goes-to-decision two-way market (fights with a decisive or draw result, excluding NC)
+        gd = [r for r in rows if r['period'] == per and 'p_dec' in r and r['res']['winner'] in ('A', 'B', 'D')]
+        yd = np.array([1.0 if r['res']['method'] in ('UD', 'SD', 'MD', 'DRAW') else 0.0 for r in gd])
+        pdm = np.array([r['p_dec'] for r in gd])
+        pdb = np.array([r['base_share'][2] for r in gd])
+        res[per]['goes_to_decision'] = {'market': metrics(pdm, yd), 'base_rate': metrics(pdb, yd),
+                                        'pred_mean': round(float(pdm.mean()), 4), 'obs_mean': round(float(yd.mean()), 4),
+                                        'calibration': calib_bins_generic(pdm, yd)}
+        # round of finish (K rounds + decision)
+        gr = [r for r in rows if r['period'] == per and 'rd_power' in r and r['res']['winner'] in ('A', 'B', 'D')
+              and r['res']['method'] not in ('DQ', 'NC', 'CNC')]
+        if gr:
+            def rcls(r):
+                return r['K'] if r['res']['method'] in ('UD', 'SD', 'MD', 'DRAW') else r['res']['round'] - 1
+            ri = [rcls(r) for r in gr]
+            def llr(key):
+                return round(float(np.mean([-math.log(max(r[key][i], 1e-6)) for r, i in zip(gr, ri)])), 4)
+            res[per]['round_of_finish'] = {'n': len(gr), 'll_market_mult': llr('rd_mult'), 'll_market_power': llr('rd_power'),
+                                           'll_base_rates': llr('base_round')}
+    out['eval'] = res
+    out['per_fight'] = {r['id']: {'method6': [round(x, 4) for x in r['six_power']], 'n_books': r['n_books_method'],
+                                  **({'p_dec': round(r['p_dec'], 4)} if 'p_dec' in r else {}),
+                                  **({'round_dist': [round(x, 4) for x in r['rd_power']]} if 'rd_power' in r else {})}
+                        for r in rows if 'six_power' in r}
+    out['coverage'] = {per: sum(1 for r in rows if r['period'] == per and 'six_mult' in r) for per in ('tune', 'test')}
+    return out
+
+
+def calib_bins_generic(p, y, edges=(0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0001)):
+    np = _np()
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    out = []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        k = (p >= lo) & (p < hi)
+        n = int(k.sum())
+        if n:
+            out.append({'lo': lo, 'hi': round(min(hi, 1), 2), 'n': n, 'pred': round(float(p[k].mean()), 4),
+                        'obs': round(float(y[k].mean()), 4), 'ci95': wilson(float(y[k].sum()), n)})
+    return out
+
+
+def cmd_props(a):
+    F = Fetcher(os.path.join(a.cache, 'bfo'))
+    ev = read_csv(os.path.join(ODDS_DIR, 'bfo_event_lines.csv'))
+    seen = {}
+    for r in ev:
+        seen[r['event_slug'] + '-' + r['event_id']] = r['date']
+    rows = []
+    for slug, date in sorted(seen.items(), key=lambda x: x[1]):
+        fp = F.path_for(f'{BFO}/events/{slug}')
+        if not os.path.exists(fp):
+            continue
+        with gzip.open(fp, 'rt', encoding='utf-8', errors='replace') as fh:
+            html = fh.read()
+        for (mu, book), d in parse_event_props(html).items():
+            if book in EXCHANGES:
+                continue
+            rows.append(dict(d, mu=mu, book=book, date=date, event=slug))
+    write_csv(os.path.join(ODDS_DIR, 'bfo_event_props.csv'), rows, ['mu', 'date', 'event', 'book'] + PROP_FIELDS)
+    print(f'props: {len(rows)} matchup-book rows from {len(seen)} events')
+
+
 def cmd_fetch(a):
     if not a.skip_sources:
         fetch_sources(a.cache)
@@ -1251,7 +1513,11 @@ def main():
     f.set_defaults(func=cmd_fetch)
     b = sub.add_parser('build')
     b.add_argument('--boot', type=int, default=2000, help='bootstrap resamples (by event)')
+    b.add_argument('--props', action='store_true', help='also evaluate the method/round prop markets')
     b.set_defaults(func=cmd_build)
+    pr = sub.add_parser('props')
+    pr.add_argument('--cache', default=os.path.expanduser('~/.cache/xx-market'))
+    pr.set_defaults(func=cmd_props)
     a = ap.parse_args()
     a.func(a)
 

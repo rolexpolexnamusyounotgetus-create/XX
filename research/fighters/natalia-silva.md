@@ -16,7 +16,7 @@ As of Friday, Nov 6, 2026. She/her. Southpaw, 5'4" with a 65" reach, born Feb 3,
 |---|---|---|---|
 | Oct 3, 2026 | Wang Cong | W UD (5 rds) | Won the title. She dropped Wang in round 2 and won the significant strikes 109-98, with 28 of 39 to the body. Wang won the leg exchanges (34 of 56) and closed with 2:39 of control in rounds 4-5. |
 | Jan 24, 2026 | Rose Namajunas | W UD 29-28 x3 | 51-26 on strikes, 18 of 24 leg kicks landed. |
-| May 10, 2025 | Alexa Grasso | W UD 30-27 x3 | 65-45 on strikes, all at distance. |
+| May 10, 2025 | Alexa Grasso | W UD 30-27 x3 | 65-45 on strikes, 64 of the 65 at distance. |
 | Sep 7, 2024 | Jessica Andrade | W UD 30-27 x3 | 117-50 on strikes, 38 of 45 to the body. |
 | Feb 3, 2024 | Viviane Araujo | W UD 29-28 x3 | Araujo held 6:01 of control on 1 of 9 takedowns. |
 

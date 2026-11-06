@@ -390,18 +390,18 @@ class Data:
 # ------------------------------------------------------------------ stat families
 # name: kind, engine fields (offense, defense), engine k parameter, k grid (exposure units), short label
 FAMILIES = {
-    "dAtt":     ("count", ("dAtt", "dAttAg"), "kPM", [6, 12, 25, 50, 100, 200], "distance strike attempts per distance minute"),
-    "cAtt":     ("count", ("cAtt", "cAttAg"), "kPM", [10, 20, 40, 80, 160, 320], "clinch strike attempts per fight minute"),
-    "gAtt":     ("count", ("gAtt", "gAttAg"), "kPM", [1.5, 3, 6, 12, 24, 48], "ground strike attempts per top minute"),
-    "accH":     ("binom", ("accH", "accAgH"), "kAcc", [40, 80, 150, 300, 600, 1200, 2400], "head accuracy"),
-    "accB":     ("binom", ("accB", "accAgB"), "kAcc", [40, 80, 150, 300, 600, 1200, 2400], "body accuracy"),
-    "accL":     ("binom", ("accL", "accAgL"), "kAcc", [40, 80, 150, 300, 600, 1200, 2400], "leg accuracy"),
+    "dAtt":     ("count", ("dAtt", "dAttAg"), "kPM", [1.5, 3, 6, 12, 25, 50, 100], "distance strike attempts per distance minute"),
+    "cAtt":     ("count", ("cAtt", "cAttAg"), "kPM", [2.5, 5, 10, 20, 40, 80, 160], "clinch strike attempts per fight minute"),
+    "gAtt":     ("count", ("gAtt", "gAttAg"), "kPM", [0.4, 0.75, 1.5, 3, 6, 12, 24], "ground strike attempts per top minute"),
+    "accH":     ("binom", ("accH", "accAgH"), "kAcc", [20, 40, 80, 150, 300, 600, 1200], "head accuracy"),
+    "accB":     ("binom", ("accB", "accAgB"), "kAcc", [20, 40, 80, 150, 300, 600, 1200], "body accuracy"),
+    "accL":     ("binom", ("accL", "accAgL"), "kAcc", [20, 40, 80, 150, 300, 600, 1200], "leg accuracy"),
     "kd":       ("count", ("pow", "chin"), "kKD", [60, 120, 230, 460, 920, 1840, 3680], "knockdowns per landed head strike"),
-    "tdAtt":    ("count", ("tdAtt", "tdAttAg"), "kTdPM", [8, 16, 33, 66, 130, 260], "takedown attempts per standing minute"),
-    "tdAcc":    ("binom", ("tdAcc", "tdAccAg"), "kTdAcc", [3, 6, 12, 24, 48, 96], "takedown success"),
-    "ctrl":     ("count", ("ctrl", "octrl"), "kPM", [10, 20, 40, 80, 160, 320], "control seconds per fight minute"),
-    "topSkill": ("count", ("topSkill", "escWeak"), "kCtrlTD", [1, 2, 4, 8, 16, 32], "control seconds per takedown landed"),
-    "sub":      ("count", ("sub", "subAg"), "kPM", [3, 6, 11, 22, 45, 90], "submission attempts per ground minute"),
+    "tdAtt":    ("count", ("tdAtt", "tdAttAg"), "kTdPM", [2, 4, 8, 16, 33, 66, 130], "takedown attempts per standing minute"),
+    "tdAcc":    ("binom", ("tdAcc", "tdAccAg"), "kTdAcc", [1.5, 3, 6, 12, 24, 48, 96], "takedown success"),
+    "ctrl":     ("count", ("ctrl", "octrl"), "kPM", [2.5, 5, 10, 20, 40, 80, 160], "control seconds per fight minute"),
+    "topSkill": ("count", ("topSkill", "escWeak"), "kCtrlTD", [0.5, 1, 2, 4, 8, 16, 32], "control seconds per takedown landed"),
+    "sub":      ("count", ("sub", "subAg"), "kPM", [0.75, 1.5, 3, 6, 11, 22, 45], "submission attempts per ground minute"),
 }
 # minimum exposure for a held-out row to be scored (tiny exposures with events give unbounded deviance)
 EVAL_MIN = {"dAtt": 0.5, "cAtt": 0.5, "gAtt": 0.25, "kd": 1, "tdAtt": 0.5, "ctrl": 0.5, "topSkill": 1, "sub": 0.5}
@@ -626,6 +626,7 @@ def pois_dev(y, mu):
     return 2 * (t - (y - mu))
 
 
+@np.errstate(divide="ignore", invalid="ignore")
 def binom_dev(y, n, z):
     p = np.clip(sigm(z), 1e-9, 1 - 1e-9)
     a = np.where(y > 0, y * np.log(np.maximum(y, 1e-12) / (n * p)), 0.0)
@@ -634,9 +635,9 @@ def binom_dev(y, n, z):
     return 2 * (a + bb)
 
 
-RAW_K_GRID = {"kPM": [5, 10, 20, 40, 80, 160, 320], "kAcc": [40, 80, 150, 300, 600, 1200, 2400],
-              "kTdPM": [10, 20, 45, 90, 180, 360], "kTdAcc": [3, 6, 12, 24, 48, 96],
-              "kKD": [60, 120, 230, 460, 920, 1840, 3680], "kCtrlTD": [1, 2, 4, 8, 16, 32]}
+RAW_K_GRID = {"kPM": [2.5, 5, 10, 20, 40, 80, 160, 320], "kAcc": [20, 40, 80, 150, 300, 600, 1200, 2400],
+              "kTdPM": [5, 10, 20, 45, 90, 180, 360], "kTdAcc": [1.5, 3, 6, 12, 24, 48, 96],
+              "kKD": [60, 120, 230, 460, 920, 1840, 3680], "kCtrlTD": [0.5, 1, 2, 4, 8, 16, 32]}
 
 
 class Evaluator:

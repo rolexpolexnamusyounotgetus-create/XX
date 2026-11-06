@@ -515,3 +515,250 @@ def per_fight_losses(P, y, T):
 
 def summarize_losses(L):
     return {k: float(np.nanmean(v)) for k, v in L.items()}
+
+
+# ============================================================== 4. models
+from sklearn.linear_model import LogisticRegression  # noqa: E402
+from sklearn.preprocessing import StandardScaler  # noqa: E402
+import warnings  # noqa: E402
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
+
+def recency_weights(years, ref_year, hl_years):
+    if not hl_years:
+        return np.ones(len(years))
+    return 0.5 ** ((ref_year - np.asarray(years, float)) / hl_years)
+
+
+def baseline_joint(T, priors, k_shrink=50.0, elo=False):
+    """Division x scheduled-rounds base rates from the five years before the fight's year (priors_asof),
+    shrunk toward the all-division rates for the same format; winner 50/50 or split by pre-fight Elo."""
+    P = np.zeros((len(T), NC_))
+    for i, (y, d, R) in enumerate(zip(T["year"], T["prior_div"], T["rounds"])):
+        R = 5 if R == 5 else 3
+        allp = priors[y]["ALL"]["fin%d" % R]
+        dv = (priors[y].get(d) or priors[y]["ALL"]).get("fin%d" % R) or allp
+        n = dv["n"] if dv is not allp else 0
+        w = n / (n + k_shrink) if k_shrink else 1.0
+        mix = lambda key: w * np.asarray(dv[key], float) + (1 - w) * np.asarray(allp[key], float)
+        ko, sub = mix("KO"), mix("SUB")
+        dec, draw = float(mix("DEC")), float(mix("DRAW"))
+        tot = ko.sum() + sub.sum() + dec + draw
+        pa = 0.5
+        if elo:
+            pa = 1.0 / (1.0 + 10 ** ((T["B_elo"].iat[i] - T["A_elo"].iat[i]) / 400.0))
+        P[i, I_XKO:I_XKO + R] = ko / tot * pa
+        P[i, I_YKO:I_YKO + R] = ko / tot * (1 - pa)
+        P[i, I_XSUB:I_XSUB + R] = sub / tot * pa
+        P[i, I_YSUB:I_YSUB + R] = sub / tot * (1 - pa)
+        P[i, I_XDEC] = dec / tot * pa
+        P[i, I_YDEC] = dec / tot * (1 - pa)
+        P[i, I_DRAW] = draw / tot
+    return P
+
+
+def round_design(R, r):
+    """Baseline-hazard dummies: separate round shapes for 3- and 5-round bouts."""
+    d = np.zeros(8)
+    d[(r - 1) if R == 3 else 3 + (r - 1)] = 1.0
+    return d
+
+
+ROUND_COLS = ["h3_r1", "h3_r2", "h3_r3", "h5_r1", "h5_r2", "h5_r3", "h5_r4", "h5_r5"]
+
+
+class HazardModel:
+    """Discrete-time competing risks: per round, P(no finish), P(X KO), P(X SUB), P(Y KO), P(Y SUB) by a
+    multinomial logit on fight features + round dummies (+ optional round-slope interactions); fights that
+    reach the final bell go to a decision-winner logit. Trained on both orientations of every fight."""
+
+    def __init__(self, cols, C=0.05, C_dec=0.05, slope_cols=(), hl_years=None):
+        self.cols, self.C, self.C_dec, self.slope_cols, self.hl = list(cols), C, C_dec, list(slope_cols), hl_years
+
+    def _rows(self, F, R, r):
+        base = F[self.cols].to_numpy(float)
+        rd = np.stack([round_design(RR, rr) for RR, rr in zip(R, r)])
+        sl = F[self.slope_cols].to_numpy(float) * ((np.asarray(r, float) - 1) / 2)[:, None] if self.slope_cols \
+            else np.zeros((len(F), 0))
+        return np.hstack([base, sl, rd])
+
+    def fit(self, T, FX, FY, y):
+        ok = y >= 0
+        T, FX, FY, y = T[ok], FX[ok], FY[ok], y[ok]
+        w0 = recency_weights(T["year"], T["year"].max() + 1, self.hl)
+        Rs = np.where(T["rounds"].to_numpy() == 5, 5, 3)
+        Xs, ys, ws, idx_f, idx_r = [], [], [], [], []
+        for orient, F in ((0, FX), (1, FY)):
+            yy = y if orient == 0 else mirror_index(y)
+            for i in range(len(T)):
+                R = Rs[i]
+                c = yy[i]
+                if c in (I_XDEC, I_YDEC, I_DRAW):
+                    last, cls = R, 0
+                else:
+                    grp, rr = c // R5, c % R5 + 1
+                    last, cls = min(rr, R), {0: 1, 1: 2, 2: 3, 3: 4}[grp]
+                for r in range(1, last + 1):
+                    idx_f.append((orient, i))
+                    idx_r.append((R, r))
+                    ys.append(cls if r == last else 0)
+                    ws.append(w0[i])
+        # assemble design in blocks
+        rows_o = np.array([o for o, _ in idx_f])
+        rows_i = np.array([i for _, i in idx_f])
+        RR = np.array([a for a, _ in idx_r])
+        rr = np.array([b for _, b in idx_r])
+        Fall = pd.concat([FX.reset_index(drop=True), FY.reset_index(drop=True)], ignore_index=True)
+        take = rows_i + rows_o * len(T)
+        X = self._rows(Fall.iloc[take].reset_index(drop=True), RR, rr)
+        nb = X.shape[1] - 8
+        self.scaler = StandardScaler().fit(X[:, :nb])
+        X[:, :nb] = self.scaler.transform(X[:, :nb])
+        self.lr = LogisticRegression(C=self.C, max_iter=3000, tol=1e-6)
+        self.lr.fit(X, np.array(ys), sample_weight=np.array(ws))
+        # decision winner (X wins | decision), both orientations, draws excluded
+        dmask = (y == I_XDEC) | (y == I_YDEC)
+        Xd = np.vstack([FX[dmask][self.cols].to_numpy(float), FY[dmask][self.cols].to_numpy(float)])
+        yd = np.concatenate([(y[dmask] == I_XDEC), (y[dmask] == I_YDEC)]).astype(int)
+        wd = np.concatenate([w0[dmask], w0[dmask]])
+        self.dscaler = StandardScaler().fit(Xd)
+        self.dlr = LogisticRegression(C=self.C_dec, max_iter=3000, tol=1e-6, fit_intercept=False)
+        self.dlr.fit(self.dscaler.transform(Xd), yd, sample_weight=wd)
+        ndec = dmask.sum()
+        self.draw_c = float(((y == I_DRAW).sum() + 0.5) / (ndec + (y == I_DRAW).sum() + 1))
+        return self
+
+    def _predict_one(self, T, F):
+        n = len(T)
+        Rs = np.where(T["rounds"].to_numpy() == 5, 5, 3)
+        P = np.zeros((n, NC_))
+        S = np.ones(n)
+        classes = list(self.lr.classes_)
+        for r in range(1, 6):
+            act = Rs >= r
+            if not act.any():
+                break
+            X = self._rows(F[act], Rs[act], np.full(act.sum(), r))
+            nb = X.shape[1] - 8
+            X[:, :nb] = self.scaler.transform(X[:, :nb])
+            h = self.lr.predict_proba(X)
+            H = np.zeros((act.sum(), 5))
+            for j, c in enumerate(classes):
+                H[:, c] = h[:, j]
+            Sa = S[act]
+            idx = np.where(act)[0]
+            P[idx, I_XKO + r - 1] = Sa * H[:, 1]
+            P[idx, I_XSUB + r - 1] = Sa * H[:, 2]
+            P[idx, I_YKO + r - 1] = Sa * H[:, 3]
+            P[idx, I_YSUB + r - 1] = Sa * H[:, 4]
+            S[idx] = Sa * H[:, 0]
+        q = self.dlr.predict_proba(self.dscaler.transform(F[self.cols].to_numpy(float)))[:, 1]
+        P[:, I_XDEC] = S * q * (1 - self.draw_c)
+        P[:, I_YDEC] = S * (1 - q) * (1 - self.draw_c)
+        P[:, I_DRAW] = S * self.draw_c
+        return P
+
+    def predict(self, T, FX, FY):
+        return 0.5 * (self._predict_one(T, FX) + mirror_cells(self._predict_one(T, FY)))
+
+
+def mirror_index(y):
+    """Observed cell index under the X/Y swap."""
+    out = y.copy()
+    for a, b in ((I_XKO, I_YKO), (I_XSUB, I_YSUB)):
+        ma = (y >= a) & (y < a + R5)
+        mb = (y >= b) & (y < b + R5)
+        out[ma] = y[ma] - a + b
+        out[mb] = y[mb] - b + a
+    out[y == I_XDEC] = I_YDEC
+    out[y == I_YDEC] = I_XDEC
+    return out
+
+
+def cells_to_c6(y):
+    """Joint cell -> 6-class label (XKO, XSUB, XDEC, YDEC, YSUB, YKO); -1 for draws/excluded."""
+    c = np.full(len(y), -1)
+    c[(y >= I_XKO) & (y < I_XKO + R5)] = 0
+    c[(y >= I_XSUB) & (y < I_XSUB + R5)] = 1
+    c[y == I_XDEC] = 2
+    c[y == I_YDEC] = 3
+    c[(y >= I_YSUB) & (y < I_YSUB + R5)] = 4
+    c[(y >= I_YKO) & (y < I_YKO + R5)] = 5
+    return c
+
+
+def c6_mirror(P6):
+    return P6[:, ::-1]
+
+
+def joint_from_c6(P6, H, draw_c):
+    """Spread a 6-class distribution over rounds with the hazard model's conditional round shapes."""
+    P = np.zeros((len(P6), NC_))
+    for j, base in ((0, I_XKO), (1, I_XSUB), (5, I_YKO), (4, I_YSUB)):
+        shape = H[:, base:base + R5]
+        shape = shape / np.maximum(shape.sum(1, keepdims=True), 1e-12)
+        P[:, base:base + R5] = P6[:, [j]] * shape
+    P[:, I_XDEC] = P6[:, 2] * (1 - draw_c)
+    P[:, I_YDEC] = P6[:, 3] * (1 - draw_c)
+    P[:, I_DRAW] = (P6[:, 2] + P6[:, 3]) * draw_c
+    return P
+
+
+def joint_to_c6(P):
+    M = marginals(P)
+    d = M["XDEC"] + M["YDEC"] + M["DRAW"]
+    xs = M["XDEC"] / np.maximum(M["XDEC"] + M["YDEC"], 1e-12)
+    return np.stack([M["XKO"], M["XSUB"], d * xs, d * (1 - xs), M["YSUB"], M["YKO"]], 1)
+
+
+class C6Logit:
+    """Multinomial logit over the six who-and-how outcomes, both orientations, averaged at prediction."""
+
+    def __init__(self, cols, C=0.05, hl_years=None):
+        self.cols, self.C, self.hl = list(cols), C, hl_years
+
+    def fit(self, T, FX, FY, y):
+        c = cells_to_c6(y)
+        ok = c >= 0
+        w0 = recency_weights(T["year"][ok], T["year"].max() + 1, self.hl)
+        X = np.vstack([FX[ok][self.cols].to_numpy(float), FY[ok][self.cols].to_numpy(float)])
+        yy = np.concatenate([c[ok], 5 - c[ok]])
+        self.scaler = StandardScaler().fit(X)
+        self.lr = LogisticRegression(C=self.C, max_iter=3000, tol=1e-6)
+        self.lr.fit(self.scaler.transform(X), yy, sample_weight=np.concatenate([w0, w0]))
+        return self
+
+    def predict6(self, T, FX, FY):
+        pa = self.lr.predict_proba(self.scaler.transform(FX[self.cols].to_numpy(float)))
+        pb = self.lr.predict_proba(self.scaler.transform(FY[self.cols].to_numpy(float)))
+        return 0.5 * (pa + c6_mirror(pb))
+
+
+class C6GBM:
+    """LightGBM multiclass over the six outcomes; same orientation averaging."""
+
+    def __init__(self, cols, params=None, rounds=300, hl_years=None):
+        self.cols, self.hl, self.rounds = list(cols), hl_years, rounds
+        self.params = dict(objective="multiclass", num_class=6, learning_rate=0.03, num_leaves=7,
+                           min_data_in_leaf=60, feature_fraction=0.6, bagging_fraction=0.8, bagging_freq=1,
+                           lambda_l2=10.0, verbose=-1, num_threads=4, seed=7)
+        if params:
+            self.params.update(params)
+
+    def fit(self, T, FX, FY, y):
+        import lightgbm as lgb
+        c = cells_to_c6(y)
+        ok = c >= 0
+        w0 = recency_weights(T["year"][ok], T["year"].max() + 1, self.hl)
+        X = np.vstack([FX[ok][self.cols].to_numpy(float), FY[ok][self.cols].to_numpy(float)])
+        yy = np.concatenate([c[ok], 5 - c[ok]])
+        ds = lgb.Dataset(X, yy, weight=np.concatenate([w0, w0]), free_raw_data=False)
+        self.m = lgb.train(self.params, ds, num_boost_round=self.rounds)
+        return self
+
+    def predict6(self, T, FX, FY):
+        pa = self.m.predict(FX[self.cols].to_numpy(float))
+        pb = self.m.predict(FY[self.cols].to_numpy(float))
+        return 0.5 * (pa + c6_mirror(pb))

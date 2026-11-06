@@ -60,17 +60,25 @@ DEV.ready = waitAvatars().then(function (ok) { L("avatars ready: " + ok); DEV.ok
 DEV.lineupActors = function () { return [show.A, show.B, extras[0], extras[1], show.R].filter(Boolean); };
 DEV.pose = function (actors, mode, yaw, dt) {
   actors.forEach(function (a, i) {
-    var n = actors.length, x = (i - (n - 1) / 2) * 1.35;
+    var n = actors.length, x = (i - (n - 1) / 2) * 1.15;
     a.pos.set(x, 0, 0); a.yaw = yaw; a.vel.set(0, 0, 0); a.opp = null; a.act = null; a.react = null; a.walkTo = null;
     if (a.mode !== mode || a.tr) a.snapMode(mode); else a.replant(true);
     for (var k = 0; k < (dt ? 1 : 6); k++) a.update(dt || 1 / 30);
+    if (mode === "walk") { // lineup: arms hanging relaxed
+      var r = a.rig, s = new THREE.Vector3(), f = a.fwd(new THREE.Vector3()), lf = a.left(new THREE.Vector3());
+      for (var j = 0; j < 2; j++) {
+        (j === 0 ? r.armL : r.armR).sh.getWorldPosition(s);
+        var t = s.clone().addScaledVector(THREE.Object3D.DefaultUp, -(r.ua + r.la) * 0.96).addScaledVector(f, 0.05).addScaledVector(lf, (j === 0 ? 1 : -1) * 0.07);
+        r.arm(j === 0, t, f.clone().negate().addScaledVector(lf, j === 0 ? 0.4 : -0.4));
+      }
+    }
     if (a.avatar) a.avatar.sync();
   });
 };
 DEV.lineup = function (yaw, mode) {
   var actors = DEV.lineupActors();
   DEV.pose(actors, mode || "walk", yaw || 0);
-  cam.fov = 30; cam.aspect = W / H; cam.position.set(0, 1.25, 9.6); cam.lookAt(0, 0.98, 0); cam.updateProjectionMatrix();
+  cam.fov = 44; cam.aspect = W / H; cam.position.set(0, 1.2, 3.75); cam.lookAt(0, 0.95, 0); cam.updateProjectionMatrix();
   renderer.render(scene, cam);
 };
 DEV.head = function (i, yaw, mode) {

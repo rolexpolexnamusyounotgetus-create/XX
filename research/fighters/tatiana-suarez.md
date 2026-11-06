@@ -15,7 +15,7 @@ As of Friday, Nov 6, 2026. She/her. Southpaw, 5'5" with a 66" reach, born Dec 19
 
 | Date | Opponent | Result | How (ufcstats) |
 |---|---|---|---|
-| Apr 11, 2026 | Loopy Godinez | W sub R2 2:29 | Rear-naked choke. Godinez out-landed her 18-12 and won round 1 on the ground, but Suarez landed 3 of 3 takedowns and held 5:12 of control. |
+| Apr 11, 2026 | Loopy Godinez | W sub R2 2:29 | Rear-naked choke. Godinez out-landed her 18-12 (17-7 in round 1, 10 of them on the ground), but Suarez landed 3 of 3 takedowns and held 5:12 of control. |
 | Sep 13, 2025 | Amanda Lemos | W UD 29-28 x3 | Landed 3 of 12 takedowns but held 9:34 of control. Lemos out-landed her 23-20. |
 | Feb 8, 2025 | Zhang Weili | L UD 46-49, 46-49, 45-49 | Title fight. She landed 1 of 15 takedowns, Zhang out-landed her 53-12 and held 10:54 of control. |
 | Aug 5, 2023 | Jessica Andrade | W sub R2 1:31 | Guillotine after dropping to guard. |

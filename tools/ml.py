@@ -92,11 +92,21 @@ def load_all():
     return fights, people, elo_pre
 
 
-def margin_elo(fights, K=40.0, w_share=0.3, boost=1.5, until=None):
-    """Elo whose actual score blends the result with the share of significant strikes landed.
+def perf_score(v, mode):
+    """Per-fighter performance used by the margin-aware Elo: 'sig' = significant strikes landed;
+    'judge' = judging-weight score (head 1, body 0.74, leg 0.59, KD 13.5, TD 1.6, control 2.6 per minute;
+    weights from the EM round-winner fit in docs/BACKLOG.md)."""
+    if mode == "sig":
+        return float(v[SIG_L].sum())
+    return float(v[KI["h_lnd"]] + 0.74 * v[KI["b_lnd"]] + 0.59 * v[KI["l_lnd"]] + 13.5 * v[KI["kd"]]
+                 + 1.6 * v[KI["td_lnd"]] + 2.6 * v[KI["ctrl"]] / 60.0)
 
-    score_A = (1 - w) * result + w * sigA / (sigA + sigB)   (result 1 / 0 / 0.5; share 0.5 without stats)
-    Returns pre-fight ratings {fid: (ra, rb)} and decisive predictions [(year, p, y, both_exp)].
+
+def margin_elo(fights, K=40.0, w_share=0.3, mode="sig", boost=1.5):
+    """Elo whose actual score blends the result with the fighter's share of a performance score.
+
+    score_A = (1 - w) * result + w * perfA / (perfA + perfB)   (result 1 / 0 / 0.5; share 0.5 without stats)
+    Returns pre-fight ratings {fid: (ra, rb)}, decisive predictions [(year, p, y, both_exp)], final ratings.
     """
     R = defaultdict(lambda: 1500.0)
     N = Counter()
@@ -114,10 +124,10 @@ def margin_elo(fights, K=40.0, w_share=0.3, boost=1.5, until=None):
             res = {"A": 1.0, "B": 0.0, "D": 0.5}[f.winner]
             share = 0.5
             if f.stats:
-                la = float(f.stats["v"][0][SIG_L].sum())
-                lb = float(f.stats["v"][1][SIG_L].sum())
-                if la + lb > 0:
-                    share = la / (la + lb)
+                pa = perf_score(f.stats["v"][0], mode)
+                pb = perf_score(f.stats["v"][1], mode)
+                if pa + pb > 0:
+                    share = pa / (pa + pb)
             sa = (1 - w_share) * res + w_share * share
             ka = K * (boost if N[a] < 5 else 1.0)
             kb = K * (boost if N[b] < 5 else 1.0)
@@ -125,24 +135,26 @@ def margin_elo(fights, K=40.0, w_share=0.3, boost=1.5, until=None):
             R[b] = rb - kb * (sa - ea)
         N[a] += 1
         N[b] += 1
-    return pre, preds
+    return pre, preds, R
 
 
-def tune_margin_elo(fights):
-    """Pick K and the strike-share weight on 2010-2018 decisive fights (both men experienced)."""
+def tune_margin_elo(fights, mode):
+    """Pick K and the performance-share weight by log loss on 2010-2023 decisive fights (both men had a
+    prior UFC fight). 2024+ is never scored here."""
     best = None
     grid = []
-    for K in (24, 32, 40, 48, 56):
-        for w in (0.0, 0.2, 0.35, 0.5):
-            _, preds = margin_elo(fights, K, w)
-            rows = [(p, y) for (yr, p, y, ex) in preds if 2010 <= yr <= 2018 and ex]
+    for K in (48, 72, 96, 128, 160, 200):
+        for w in (0.5, 0.65, 0.8, 0.9):
+            _, preds, _ = margin_elo(fights, K, w, mode)
+            rows = [(p, y) for (yr, p, y, ex) in preds if 2010 <= yr <= TUNE_END and ex]
             p = np.clip(np.array([r[0] for r in rows]), 1e-6, 1 - 1e-6)
             y = np.array([r[1] for r in rows])
             ll = float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
-            grid.append({"K": K, "w_share": w, "log_loss_2010_2018": round(ll, 5)})
+            grid.append({"K": K, "w_share": w, "log_loss_2010_2023": round(ll, 5)})
             if best is None or ll < best[0]:
                 best = (ll, K, w)
-    return {"K": best[1], "w_share": best[2], "log_loss_2010_2018": round(best[0], 5), "grid": grid}
+    return {"mode": mode, "K": best[1], "w_share": best[2], "log_loss_2010_2023": round(best[0], 5),
+            "grid": grid}
 
 
 # ====================================================================== priors (walk-forward)
@@ -458,8 +470,7 @@ def stance_terms(sa, sb):
     return out
 
 
-def build_table(fights, people, elo_pre, elo2_pre, prm=None, since=FEATURES_FROM, roster_slugs=None,
-                snapshot=None):
+def build_table(fights, people, elo_pre, extra_ratings, prm=None, since=FEATURES_FROM, snapshot=None):
     """Walk every fight in date order; emit a feature row (both sides as of the fight) for fights >= since."""
     prm = dict(FEAT_PARAMS, **(prm or {}))
     years = sorted({f.date.year for f in fights if f.date >= since} | {snapshot.year + 1 if snapshot else 2027})
@@ -472,7 +483,7 @@ def build_table(fights, people, elo_pre, elo2_pre, prm=None, since=FEATURES_FROM
             continue
         sa, sb = state[a], state[b]
         ea, eb = elo_pre[f.fid]
-        e2a, e2b = elo2_pre[f.fid]
+        xr = {k: pre[f.fid] for k, pre in extra_ratings.items()}
         if f.date >= since:
             ha, hb = home_div(sa, f.day), home_div(sb, f.day)
             div = f.division
@@ -483,9 +494,10 @@ def build_table(fights, people, elo_pre, elo2_pre, prm=None, since=FEATURES_FROM
             flbs = fight_lbs_of(f, ha, hb)
             fa = side_features(sa, f.day, P, prm, flbs)
             fb = side_features(sb, f.day, P, prm, flbs)
-            for fx, st, e, e2, p in ((fa, sa, ea, e2a, a), (fb, sb, eb, e2b, b)):
+            for side, (fx, st, e, p) in enumerate(((fa, sa, ea, a), (fb, sb, eb, b))):
                 fx["elo"] = e
-                fx["elo2"] = e2
+                for k, v in xr.items():
+                    fx[k] = v[side]
                 fx["elo_chg3"] = elo_change(st, e)
                 T = people[p]["tott"] or {}
                 dob = T.get("dob")
@@ -518,7 +530,7 @@ def build_table(fights, people, elo_pre, elo2_pre, prm=None, since=FEATURES_FROM
                 row["M_" + k] = v
             rows.append(row)
         # apply the fight to both states
-        for s, p, st, e_own, e_opp, e2 in ((0, a, sa, ea, eb, e2a), (1, b, sb, eb, ea, e2b)):
+        for s, p, st, e_own, e_opp in ((0, a, sa, ea, eb), (1, b, sb, eb, ea)):
             if st.first_day is None:
                 st.first_day = f.day
             st.days.append(f.day)
@@ -535,7 +547,6 @@ def build_table(fights, people, elo_pre, elo2_pre, prm=None, since=FEATURES_FROM
             st.opp.append(f.persons[1 - s])
             st.opp_elo.append(e_opp)
             st.own_elo.append(e_own)
-            st.elo2.append(e2)
             st.div.append(f.division)
             st.sched.append(f.sched)
             st.title.append(bool(f.title))

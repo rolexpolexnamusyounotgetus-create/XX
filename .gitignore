@@ -18,3 +18,6 @@ data/derived/backtest_dev.json
 
 # Sherdog fighter/search pages cached by tools/preufc.py (raw third-party HTML; regenerable)
 data/raw/sherdog_cache/
+
+# raw third-party pages cached by tools/*.py (regenerable)
+data/raw/web_cache/

@@ -463,7 +463,7 @@
     var tipL = this.fingertip(true, J), armLen = J.LeftArm.h.distanceTo(J.LeftForeArm.h) + J.LeftForeArm.h.distanceTo(J.LeftHand.h) + J.LeftHand.h.distanceTo(tipL);
     var span0 = shW + 2 * armLen, ua = J.LeftArm.h.distanceTo(J.LeftForeArm.h), fa = J.LeftForeArm.h.distanceTo(J.LeftHand.h);
     var need = (cfg.reach - span0) / 2;                       // extra length per arm
-    var s = clamp(1 + need / (ua + fa + 0.35 * J.LeftHand.h.distanceTo(tipL)), 0.9, 1.16);
+    var s = clamp(1 + need / (ua + fa + 0.35 * J.LeftHand.h.distanceTo(tipL)), 0.84, 1.2);
     this.armStretch = s; this.span0 = span0;
     var stretch = this.stretchFields(J, s);
     // 4. body render geometry
@@ -954,7 +954,7 @@
           "  c = mix(c, uTrim, smoothstep(1.0 - uBandW - 0.008, 1.0 - uBandW, v));\n" +
           "  c = mix(c, uBand, smoothstep(1.0 - uBandW + 0.012, 1.0 - uBandW + 0.02, v));\n" +
           "  c = mix(c, uTrim, (1.0 - smoothstep(0.018, 0.03, v)) * 0.9);\n" +
-          "  float weave = 0.94 + 0.06 * fract(sin(dot(floor(vUv * 900.0), vec2(12.9898, 78.233))) * 43758.5453);\n" +
+          "  float weave = 0.95 + 0.05 * fract(sin(dot(floor(vec2(vKit.y * 260.0, vKit.x * 420.0)), vec2(12.9898, 78.233))) * 43758.5453);\n" +
           "  diffuseColor.rgb = c * weave;\n" +
           "  if (slit > 0.5) discard;\n" +
           "  if (!gl_FrontFacing) diffuseColor.rgb *= 0.3; }")
@@ -1043,9 +1043,9 @@
     var mat = new T.MeshStandardMaterial({ color: col, roughness: 0.75, metalness: 0, skinning: true, transparent: false, alphaTest: 0.5 });
     mat.onBeforeCompile = function (sh) {
       for (var k in U) sh.uniforms[k] = U[k];
-      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec4 aKit;\nvarying vec4 vKit;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = aKit;");
-      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec4 vKit;\nfloat bh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }")
-        .replace("#include <alphatest_fragment>", "float strand = bh(floor(vUv * 1800.0)); diffuseColor.a = step(1.0 - clamp(vKit.x * 1.15, 0.0, 1.0) * 0.82, strand);\ndiffuseColor.rgb *= 0.75 + 0.35 * strand;\n#include <alphatest_fragment>");
+      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec4 aKit;\nvarying vec4 vKit;\nvarying vec2 vBUv;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvKit = aKit; vBUv = uv;");
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec4 vKit;\nvarying vec2 vBUv;\nfloat bh(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }")
+        .replace("#include <alphatest_fragment>", "float strand = bh(floor(vBUv * 1800.0)); diffuseColor.a = step(1.0 - clamp(vKit.x * 1.15, 0.0, 1.0) * 0.82, strand);\ndiffuseColor.rgb *= 0.75 + 0.35 * strand;\n#include <alphatest_fragment>");
     };
     mat.customProgramCacheKey = function () { return "beard-shell"; };
     var m = this.addShell(g, mat, "beard"); m.castShadow = false;

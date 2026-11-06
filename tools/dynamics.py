@@ -525,6 +525,7 @@ def person_history(S, p0_kd):
                  osh=("o_sh_l", "sum"), td_a=("td_a", "sum"), ctrl=("ctrl", "sum"), octrl=("o_ctrl", "sum"))
             .reset_index().sort_values(["DATE", "fid", "idx"]))
     cols = ["mins", "sig_a", "sig_l", "kd", "okd", "sh", "osh", "td_a", "ctrl", "octrl"]
+    FS["pid"] = FS["pid"].fillna("anon:" + FS.fid.astype(str) + ":" + FS.idx.astype(str))
     g = FS.groupby("pid", sort=False)
     for c in cols:
         FS["h_" + c] = g[c].cumsum() - FS[c]
