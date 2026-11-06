@@ -1655,6 +1655,8 @@ def engine_check(S, csv, label, real_period="test"):
                    "own_r1_r3": float(w[[1, 3]].dropna().corr().iloc[0, 1]) if 3 in w else None,
                    "fighters_same_round": float(bq.corr().iloc[0, 1])}
     res["round_correlations"] = rc
+    # 7: knockdown momentum against the round before the knockdown round (what an engine multiplier must match)
+    res["kd_skip_round"] = {"engine": kd_skip_round(E, ("test",)), "real": kd_skip_round(real, (real_period,))}
     res["secs"] = time.time() - t0
     return res
 

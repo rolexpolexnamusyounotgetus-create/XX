@@ -127,7 +127,6 @@ def part_a(F, S, people, fights):
     d = d[d.cards.map(len) == 3]
     d["first_bigger"] = d.cards.map(lambda c: sum(1 for _, a, b in c if a > b))
     res["loser_first_cards"] = {f"{c}": d[d.cat == c].first_bigger.value_counts().sort_index().to_dict() for c in ("U-DEC", "S-DEC", "M-DEC")}
-    dd = dy.add_covariates(dy.add_cum(S.assign(o_ohl=0).rename(columns={})) if False else S)  # noqa (keep simple)
     res["nc_draw_rows_with_finish_flag"] = int(S[(S.winner < 0) & (S.fin_ko_against == 1)].shape[0])
     # compare covariates with dynamics.py's panel
     F2, S2, _ = dy.build_panel()
@@ -165,7 +164,7 @@ class NegMult:
         nb = self.X.shape[1]
         p0 = np.zeros(nb + (1 if frail else 0))
         f = lambda p: -self.llg(p, frail).sum()
-        r = optimize.minimum(f, p0) if False else optimize.minimize(f, p0, method="BFGS", options={"gtol": 1e-6, "maxiter": 3000})
+        r = optimize.minimize(f, p0, method="BFGS", options={"gtol": 1e-6, "maxiter": 3000})
         self.p, self.frail = r.x, frail
         P = len(r.x); h = 1e-5
         gcl = np.zeros(self.G, int); gcl[self.g] = self.cl
@@ -333,25 +332,9 @@ def part_f(F, S2):
                               "margin: a non-zero marg_r means the label carries information from the round it is used to explain"}
 
 
-def part_g(S2):
-    out = {}
-    for lab, quiet in (("relaxed", False), ("quiet_next_round", True)):
-        for p in (("train",), ("ext", "train"), ("test",)):
-            if quiet:
-                x = S2[S2.period.isin(list(p))]
-                # quiet / full r+1: drop fighter-fights whose r+1 had a knockdown or ended early (post-treatment selection)
-                bad = x[(x.kd + x.o_kd > 0) | (x.rsec < 300)][["fid", "idx", "rnd"]].assign(rnd=lambda z: z.rnd - 1)
-                key = set(zip(bad.fid, bad.idx, bad.rnd))
-                r = dy.kd_skip_round(x[[k not in key for k in zip(x.fid, x.idx, x.rnd)]] if False else x, p)
-                # (the quiet variant is approximated by excluding pairs below)
-                r = _skip_quiet(x, p)
-            else:
-                r = dy.kd_skip_round(S2, p)
-            out[f"{lab}:{'+'.join(p)}"] = r
-    return out
-
-
 def _skip_quiet(S, periods):
+    """The skip-round contrast WITH post-treatment selection (round r+1 full and without knockdowns), to show how
+    much that selection moves it (this is the version a first pass of this audit used)."""
     x = S[S.period.isin(list(periods))].copy()
     x["y"] = np.log((x.sig_a + 0.5) / 5)
     P = {c: x.pivot_table(index=["fid", "idx"], columns="rnd", values=c) for c in ("y", "kd", "o_kd", "rsec")}

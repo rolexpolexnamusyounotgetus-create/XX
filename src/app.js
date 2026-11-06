@@ -784,30 +784,174 @@
   var BIN_SHORT = ["KO/TKO", "Sub", "Decision", "Draw", "Decision", "Sub", "KO/TKO"];
   var BIN_COL = ["var(--blue)", "var(--blue)", "var(--blue)", "var(--neutral)", "var(--red)", "var(--red)", "var(--red)"];
 
+  var ENG = null, ENGINE_MIN = 2000;   // the simulator's running tally: { pA, pB, pD, n, done }
   function renderTally(agg, done) {
     lastAgg = agg;
     var n = Math.max(1, agg.n), b = agg.bins;
     var pA = (b[0] + b[1] + b[2]) / n, pB = (b[4] + b[5] + b[6]) / n, pD = b[3] / n;
-    $("pA").textContent = pct(pA); $("pB").textContent = pct(pB); $("pD").textContent = pct(pD);
-    $("winA").firstChild.nodeValue = pct(pA, 0); $("winB").firstChild.nodeValue = pct(pB, 0);
-    $("segA").style.width = (pA * 100) + "%"; $("segD").style.width = Math.max(0.4, pD * 100) + "%"; $("segB").style.width = (pB * 100) + "%";
-    $("segAl").textContent = pA > 0.12 ? pct(pA, 0) : ""; $("segBl").textContent = pB > 0.12 ? pct(pB, 0) : "";
-    $("segbar").setAttribute("aria-label", nameOf("A") + " " + pct(pA) + ", draw " + pct(pD) + ", " + nameOf("B") + " " + pct(pB));
-    var mins = S.rounds * 5;
-    $("tDistL").textContent = "Goes the full " + mins + " minutes";
-    $("tDist").textContent = pct(agg.dist / n, 0);
-    $("tCardsL").textContent = shortOf("A") + " wins when it goes to the cards";
-    $("tCards").textContent = agg.dist ? pct(agg.distA / agg.dist, 0) : "–";
-    var decs = agg.dec.UD + agg.dec.SD + agg.dec.MD;
-    $("tSplit").textContent = decs ? pct((agg.dec.SD + agg.dec.MD) / decs, 0) : "–";
-    $("runStatus").textContent = done ? nf.format(agg.n) + " fights · " + scenarioName() + " · " + (worker ? "background thread" : "main thread")
-      : "Simulated " + nf.format(agg.n) + " of " + nf.format(N_TALLY) + " fights";
+    ENG = { pA: pA, pB: pB, pD: pD, n: agg.n, done: done };
+    stack.engine = agg.n >= ENGINE_MIN ? pA / Math.max(1e-9, pA + pB) : null; stack.engineN = agg.n;
+    var mlOn = cur.m && cur.m.mlApplied;
+    $("runStatus").textContent = done ? nf.format(agg.n) + " simulated fights · " + scenarioName() + " · " + (mlOn ? "ML stat lines on" : "data-only rates") + " · " + (worker ? "background thread" : "main thread")
+      : "Simulating " + nf.format(agg.n) + " of " + nf.format(N_TALLY) + " fights";
     setProgress(agg.n / N_TALLY);
-    if (done) $("tallyLive").textContent = "Tally finished: " + nameOf("A") + " " + pct(pA, 0) + ", " + nameOf("B") + " " + pct(pB, 0) + ", draw " + pct(pD, 0) + ".";
-    drawBins(agg); drawRounds(agg); renderMethodTable(agg); renderAvgTable(agg);
-    stack.engine = pA / Math.max(1e-9, pA + pB); stack.engineN = agg.n;
+    renderForecast();
+    if (done && BL && BL.head) $("tallyLive").textContent = "Forecast: " + nameOf("A") + " " + pct(BL.head.pA, 0) + ", " + nameOf("B") + " " + pct(BL.head.pB, 0) + ", draw " + pct(BL.head.pD, 0) + ".";
+  }
+
+  /* ================================================================ the blend (MoE) and the method-and-round model */
+  var BL = null;
+  function fightCtx() { return { division: S.div, rounds: S.rounds, title: S.title, date: todayISO() }; }
+  function mlFight(ctx) {
+    return { date: ctx.date, lbs: divLbs(ctx.division) || 155, five: ctx.rounds === 5 ? 1 : 0, title: ctx.title ? 1 : 0, women: /^Women/.test(ctx.division || "") ? 1 : 0, "catch": 0 };
+  }
+  // every expert the page can compute without the simulator, for any two roster fighters
+  function expertsFor(slugA, slugB, pa, pb, ctx) {
+    var out = { experts: {}, notes: {}, A: null, B: null };
+    if (!MOE || !pa || !pb) return out;
+    var MoE = window.MoE, o = { keys: DB.meta && DB.meta.keys, snapshot: DB.meta && DB.meta.snapshot, halfLife: (DB.meta && DB.meta.half_life_days) || 730 };
+    try { out.A = MoE.sideFromProfile(pa, ctx.date, o); out.B = MoE.sideFromProfile(pb, ctx.date, o); } catch (e) { return out; }
+    try {
+      var fl = MoE.featLR(MOEJ.feat, out.A, out.B, { division: ctx.division, homeA: out.A.home, homeB: out.B.home });
+      if (isFinite(fl)) out.experts.feat_lr = fl;
+    } catch (e) { out.notes.feat_lr = "could not be computed"; }
+    out.experts.elo = MoE.eloProb(out.A.elo, out.B.elo);
+    var missing = function (has) { var w = []; if (!has(slugA)) w.push(lastName(pa.name)); if (!has(slugB)) w.push(lastName(pb.name)); return w.join(" and "); };
+    if (MLP) {
+      var r = null; try { r = MLP.predict(slugA, slugB, mlFight(ctx)); } catch (e) { r = null; }
+      if (r && r.pEloSig != null && isFinite(r.pLR)) { out.experts.ml = r.pLR; out.experts.elo_sig = r.pEloSig; out.mlPlatt = r.pA; }
+      else out.notes.ml = out.notes.elo_sig = "no ML profile for " + (missing(MLP.has) || "this pair");
+    } else out.notes.ml = out.notes.elo_sig = "not in this build";
+    var ra = MKTR[slugA], rb = MKTR[slugB];
+    if (ra && rb) out.experts.mkt_rating = MoE.ratingProb(ra[0], ra[1], rb[0], rb[1]);
+    else out.notes.mkt_rating = "no closing-line history for " + missing(function (s) { return !!MKTR[s]; });
+    return out;
+  }
+  function marketLine() {
+    var ia = parseOdds(S.odds.A), ib = parseOdds(S.odds.B);
+    if (ia == null || ib == null || !isFinite(ia) || !isFinite(ib)) return { p: null, ia: ia, ib: ib };
+    var p = ia / (ia + ib);
+    var oa = String(S.odds.A).trim().toLowerCase().replace(/[−–]/g, "-"), ob = String(S.odds.B).trim().toLowerCase().replace(/[−–]/g, "-");
+    try { if (window.MoE && /^[+-]?\d/.test(oa) && /^[+-]?\d/.test(ob)) p = window.MoE.devig(parseFloat(oa), parseFloat(ob)); } catch (e) { /* proportional */ }
+    return { p: p, ia: ia, ib: ib, over: ia + ib - 1 };
+  }
+  var mrCache = {};
+  function mrFor(pMkt) {
+    if (!MR) return null;
+    var ctx = fightCtx(), key = [S.a, S.b, ctx.division, ctx.rounds, ctx.title, ctx.date, pMkt == null ? "S" : pMkt.toFixed(4)].join("|");
+    if (key in mrCache) return mrCache[key];
+    var o = null;
+    try {
+      o = MR.predict(prof("A"), prof("B"), { slugA: S.a, slugB: S.b, division: ctx.division, rounds: ctx.rounds, title: ctx.title, date: ctx.date,
+        pMarketA: pMkt == null ? undefined : pMkt });
+      if (!o || !o.cells || !isFinite(o.pA) || o.cells.A.ko.length !== S.rounds) o = null;
+    } catch (e) { o = null; }
+    var ks = Object.keys(mrCache); if (ks.length > 60) mrCache = {};
+    mrCache[key] = o; return o;
+  }
+  function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
+  // the simulator's tally with every A-win quantity scaled by f.fA and every B-win quantity by f.fB (MoE.winnerFactors)
+  function scaledAgg(agg, f) {
+    var fa = f.fA, fb = f.fB, k;
+    var s = { n: agg.n, nR: agg.nR, bins: agg.bins.map(function (x, i) { return i < 3 ? x * fa : (i > 3 ? x * fb : x); }),
+      finA: agg.finA.map(function (x) { return x * fa; }), finB: agg.finB.map(function (x) { return x * fb; }),
+      distA: agg.distA * fa, distB: agg.distB * fb, dec: agg.dec, methods: {}, secs: agg.secs, sumA: agg.sumA, sumB: agg.sumB };
+    s.dist = s.distA + s.distB + (agg.dec.DRAW || 0);
+    for (k in agg.methods) s.methods[k] = agg.methods[k] * (k.charAt(0) === "A" ? fa : (k.charAt(0) === "B" ? fb : 1));
+    return s;
+  }
+  function computeBlend() {
+    var pa = prof("A"), pb = prof("B"), ctx = fightCtx();
+    var X = expertsFor(S.a, S.b, pa, pb, ctx), ex = {}, k;
+    for (k in X.experts) ex[k] = X.experts[k];
+    var engStale = !ENG || !lastAgg || lastAgg.nR !== S.rounds;
+    if (stack.engine != null && !engStale) ex.engine = stack.engine;
+    var mk = marketLine(), hasLine = mk.p != null, useLine = hasLine && S.line;
+    var gate = X.A ? window.MoE.gateFromSides(X.A, X.B, { division: S.div, rounds: S.rounds }) : {};
+    var rNo = null, rLine = null;
+    if (MOE && Object.keys(ex).length) {
+      try { rNo = MOE.predict({ experts: ex, gate: gate }); } catch (e) { rNo = null; }
+      if (hasLine) {
+        var ex2 = {}; for (k in ex) ex2[k] = ex[k]; ex2.market = mk.p;
+        try { rLine = MOE.predict({ experts: ex2, gate: gate }); } catch (e) { rLine = null; }
+      }
+    }
+    var r = useLine ? rLine : rNo;
+    var p = r ? r.p : (ENG && !engStale ? ENG.pA / Math.max(1e-9, ENG.pA + ENG.pB) : null);
+    var mr = mrFor(useLine ? mk.p : null);
+    var pD = mr ? mr.pDraw : (ENG && !engStale ? ENG.pD : 0.008);
+    var f = (ENG && !engStale && p != null && window.MoE) ? window.MoE.winnerFactors(ENG.pA, ENG.pB, ENG.pD, p) : { fA: 1, fB: 1 };
+    var sc = (!engStale && lastAgg) ? scaledAgg(lastAgg, f) : null;
+    var head = null;
+    if (p != null) {
+      var qA = p * (1 - pD), qB = (1 - p) * (1 - pD);
+      head = { pA: qA, pB: qB, pD: pD, src: null, bins7: null, finA: null, finB: null, variant: mr ? mr.variant : null };
+      if (mr) {
+        var c = mr.cells, fA = qA / Math.max(1e-9, mr.pA), fB = qB / Math.max(1e-9, mr.pB);
+        head.src = "mr";
+        head.bins7 = [sum(c.A.ko) * fA, sum(c.A.sub) * fA, c.A.dec * fA, pD, c.B.dec * fB, sum(c.B.sub) * fB, sum(c.B.ko) * fB];
+        head.finA = c.A.ko.map(function (v, i) { return (v + c.A.sub[i]) * fA; });
+        head.finB = c.B.ko.map(function (v, i) { return (v + c.B.sub[i]) * fB; });
+      } else if (sc) {
+        var n = Math.max(1, sc.n);
+        head.src = "engine"; head.pD = sc.bins[3] / n;
+        head.bins7 = sc.bins.map(function (x) { return x / n; });
+        head.finA = sc.finA.map(function (x) { return x / n; }); head.finB = sc.finB.map(function (x) { return x / n; });
+      }
+    }
+    BL = { X: X, ex: ex, r: r, rNo: rNo, rLine: rLine, mk: mk, hasLine: hasLine, useLine: useLine, p: p, mr: mr, head: head, f: f, sc: sc, engStale: engStale };
+    return BL;
+  }
+
+  function renderForecast() {
+    computeBlend();
+    var H = BL.head, sc = BL.sc;
+    if (H) {
+      $("pA").textContent = pct(H.pA); $("pB").textContent = pct(H.pB); $("pD").textContent = pct(H.pD);
+      $("winA").firstChild.nodeValue = pct(H.pA, 0); $("winB").firstChild.nodeValue = pct(H.pB, 0);
+      $("segA").style.width = (H.pA * 100) + "%"; $("segD").style.width = Math.max(0.4, H.pD * 100) + "%"; $("segB").style.width = (H.pB * 100) + "%";
+      $("segAl").textContent = H.pA > 0.12 ? pct(H.pA, 0) : ""; $("segBl").textContent = H.pB > 0.12 ? pct(H.pB, 0) : "";
+      $("segbar").setAttribute("aria-label", "Forecast: " + nameOf("A") + " " + pct(H.pA) + ", draw " + pct(H.pD) + ", " + nameOf("B") + " " + pct(H.pB));
+    }
+    // what the headline is made of, in one place
+    var fc = $("fcNote"); fc.textContent = "";
+    var l1 = el("span");
+    if (BL.r) {
+      var nUsed = BL.r.used.length;
+      l1.appendChild(el("b", null, "Who wins: the blend of " + nUsed + " models" + (BL.useLine ? ", market line included" : (BL.hasLine ? ", market line switched off" : ", no market line")) + ". "));
+    } else l1.appendChild(el("b", null, "Who wins: the simulator alone (the blend did not load). "));
+    if (ENG && !BL.engStale) l1.appendChild(document.createTextNode("The simulator by itself: " + shortOf("A") + " " + pct(ENG.pA) + ", " + shortOf("B") + " " + pct(ENG.pB) + ", draw " + pct(ENG.pD, 1) + " over " + nf.format(ENG.n) + " fights, " + (cur.m && cur.m.mlApplied ? "with ML stat lines." : "with data-only rates.")));
+    else l1.appendChild(document.createTextNode("The simulator is running."));
+    fc.appendChild(l1);
+    var l2 = el("span");
+    if (H && H.src === "mr") l2.textContent = "How it ends: the method-and-round model (" + (H.variant === "SM" ? "SM, which also reads the market line" : "S, stats only") + "), scaled to the blend's winner odds. The ticks show the simulator, rescaled the same way.";
+    else if (H && H.src === "engine") l2.textContent = "How it ends: the simulator, rescaled to the blend's winner odds (the method-and-round model is not available for this pair).";
+    if (l2.textContent) fc.appendChild(l2);
+    if (cur.m && cur.m.mlStuck) fc.appendChild(el("span", null, "This engine build keeps its learned rates even with the toggle off."));
+    // legend for both charts
+    var key = $("howKey"); key.textContent = "";
+    if (H && H.src === "mr") {
+      var k1 = el("span"); k1.appendChild(el("i", "k-bar")); k1.appendChild(document.createTextNode("Bars: method-and-round model × blend (the forecast)")); key.appendChild(k1);
+      if (sc) { var k2 = el("span"); k2.appendChild(el("i", "k-tick")); k2.appendChild(document.createTextNode("Ticks: simulator, rescaled")); key.appendChild(k2); }
+    } else if (H) { var k3 = el("span"); k3.appendChild(el("i", "k-bar")); k3.appendChild(document.createTextNode("Simulator, rescaled to the blend")); key.appendChild(k3); }
+    if (H && H.bins7) {
+      drawBins(H, sc); drawRounds(H, sc);
+      var dist = H.bins7[2] + H.bins7[3] + H.bins7[4];
+      $("tDistL").textContent = "Goes the full " + S.rounds * 5 + " minutes";
+      $("tDist").textContent = pct(dist, 0);
+      $("tCardsL").textContent = shortOf("A") + " wins when it goes to the cards";
+      $("tCards").textContent = H.bins7[2] + H.bins7[4] > 0 ? pct(H.bins7[2] / (H.bins7[2] + H.bins7[4]), 0) : "–";
+    }
+    if (lastAgg && !BL.engStale) {
+      var decs = lastAgg.dec.UD + lastAgg.dec.SD + lastAgg.dec.MD;
+      $("tSplit").textContent = decs ? pct((lastAgg.dec.SD + lastAgg.dec.MD) / decs, 0) : "–";
+      if (sc) renderMethodTable(sc);
+      renderAvgTable(lastAgg);
+    }
+    renderHowTable(H, sc, BL.engStale ? null : lastAgg);
     renderStack();
   }
+
   function scenarioName() {
     var sc = scenarioList().filter(function (x) { return x.id === S.scen; })[0];
     if (sc) return sc.label + " settings";
@@ -831,13 +975,20 @@
     var r = Math.min(4, h / 2, (x1 - x0) / 2);
     return "M" + x0 + "," + yBase + " V" + (yTop + r) + " Q" + x0 + "," + yTop + " " + (x0 + r) + "," + yTop + " H" + (x1 - r) + " Q" + x1 + "," + yTop + " " + x1 + "," + (yTop + r) + " V" + yBase + " Z";
   }
-  function drawBins(agg) {
-    var box = $("binsChart"), n = Math.max(1, agg.n), b = agg.bins, labels = binLabels();
-    var W = Math.max(300, Math.round(box.clientWidth || 560)), H = 232, L = 34, R = 8, T = 20, B = 48;
-    var vals = b.map(function (x) { return 100 * x / n; });
-    var max = niceMax(Math.max.apply(null, vals) * 1.1);
-    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Outcome shares: " + vals.map(function (v, i) { return labels[i] + " " + v.toFixed(1) + "%"; }).join(", ") });
-    var plotW = W - L - R, plotH = H - T - B, band = plotW / 7, bw = Math.min(28, band * 0.56);
+  // a tick for the simulator's value, drawn over the bar with a surface ring so it stays readable on any fill
+  function tickMark(svg, x0, x1, y) {
+    svg.appendChild(svgEl("line", { x1: x0, x2: x1, y1: y, y2: y, stroke: "var(--surface)", "stroke-width": 5, "stroke-linecap": "round" }));
+    svg.appendChild(svgEl("line", { x1: x0, x2: x1, y1: y, y2: y, stroke: "var(--ink)", "stroke-width": 2.5, "stroke-linecap": "round" }));
+  }
+  function drawBins(H, sc) {
+    var box = $("binsChart"), labels = binLabels();
+    var W = Math.max(300, Math.round(box.clientWidth || 560)), H0 = 232, L = 34, R = 8, T = 20, B = 48;
+    var vals = H.bins7.map(function (x) { return 100 * x; });
+    var ticks = (H.src === "mr" && sc) ? sc.bins.map(function (x) { return 100 * x / Math.max(1, sc.n); }) : null;
+    var max = niceMax(Math.max(Math.max.apply(null, vals), ticks ? Math.max.apply(null, ticks) : 0) * 1.12);
+    var aria = "How the fights end. " + labels.map(function (l, i) { return l + " " + vals[i].toFixed(1) + "%" + (ticks ? " (simulator " + ticks[i].toFixed(1) + "%)" : ""); }).join(", ");
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H0, role: "img", "aria-label": aria });
+    var plotW = W - L - R, plotH = H0 - T - B, band = plotW / 7, bw = Math.min(24, band * 0.5);
     var step = max <= 20 ? 5 : (max <= 50 ? 10 : 20);
     for (var t = 0; t <= max + 1e-9; t += step) {
       var y = T + plotH - plotH * t / max;
@@ -847,52 +998,85 @@
     vals.forEach(function (v, i) {
       var x = L + band * i + band / 2, h = plotH * v / max, y = T + plotH - h;
       svg.appendChild(svgEl("path", { d: barPath(x - bw / 2, x + bw / 2, y, T + plotH), fill: BIN_COL[i] }));
-      svgText(svg, x, y - 5, v >= 0.05 ? v.toFixed(1) : "0", { "text-anchor": "middle", "font-size": 12, "font-weight": 700, fill: "var(--ink)" });
+      var top = y;
+      if (ticks) { var ty = T + plotH - plotH * ticks[i] / max; tickMark(svg, x - bw / 2 - 4, x + bw / 2 + 4, ty); top = Math.min(top, ty - 2); }
+      svgText(svg, x, top - 5, v >= 0.05 ? v.toFixed(1) : "0", { "text-anchor": "middle", "font-size": 12, "font-weight": 700, fill: "var(--ink)" });
       svgText(svg, x, T + plotH + 16, W < 430 && BIN_SHORT[i] === "Decision" ? "Dec" : BIN_SHORT[i], { "text-anchor": "middle", "font-size": W < 430 ? 10 : 11, fill: "var(--ink-2)" });
       var hit = svgEl("rect", { x: L + band * i, y: T, width: band, height: plotH + 20, fill: "transparent" });
-      hit.addEventListener("pointerenter", function () { var bb = box.getBoundingClientRect(), s = bb.width / W; tip(box, x * s, y * s, labels[i] + ": " + v.toFixed(1) + "% (" + nf.format(b[i]) + " fights)"); });
+      var txt = labels[i] + ": " + v.toFixed(1) + "%" + (ticks ? " · simulator, rescaled " + ticks[i].toFixed(1) + "%" : "");
+      hit.addEventListener("pointerenter", function () { var bb = box.getBoundingClientRect(), s = bb.width / W; tip(box, x * s, top * s, txt); });
       hit.addEventListener("pointerleave", function () { tip(box, 0, 0, null); });
       svg.appendChild(hit);
     });
     svg.appendChild(svgEl("line", { x1: L, x2: W - R, y1: T + plotH, y2: T + plotH, stroke: "var(--axis)", "stroke-width": 1 }));
-    var gy = H - 8;
-    svgText(svg, L + band * 1.5, gy, shortOf("A") + " wins", { "text-anchor": "middle", "font-size": 11.5, "font-weight": 700, fill: "var(--blue)" });
-    svgText(svg, L + band * 5.5, gy, shortOf("B") + " wins", { "text-anchor": "middle", "font-size": 11.5, "font-weight": 700, fill: "var(--red)" });
+    var gy = H0 - 8;
+    svgText(svg, L + band * 1.5, gy, shortOf("A") + " wins", { "text-anchor": "middle", "font-size": 11.5, "font-weight": 700, fill: "var(--ink)" });
+    svgText(svg, L + band * 5.5, gy, shortOf("B") + " wins", { "text-anchor": "middle", "font-size": 11.5, "font-weight": 700, fill: "var(--ink)" });
     box.textContent = ""; box.appendChild(svg); if (tipEl) tipEl.hidden = true;
   }
-  function drawRounds(agg) {
-    var box = $("roundChart"), n = Math.max(1, agg.n), nR = agg.nR;
-    var W = Math.max(300, Math.round(box.clientWidth || 560)), H = 178, L = 34, R = 8, T = 16, B = 42;
-    var a = agg.finA.map(function (x) { return 100 * x / n; }), g = agg.finB.map(function (x) { return 100 * x / n; });
-    var max = niceMax(Math.max(Math.max.apply(null, a), Math.max.apply(null, g), 1) * 1.18);
-    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Finishes by round. " + nameOf("A") + ": " + a.map(function (v, i) { return "round " + (i + 1) + " " + v.toFixed(1) + "%"; }).join(", ") + ". " + nameOf("B") + ": " + g.map(function (v, i) { return "round " + (i + 1) + " " + v.toFixed(1) + "%"; }).join(", ") });
-    var plotW = W - L - R, plotH = H - T - B, band = plotW / nR, bw = Math.min(24, band * 0.28);
+  function drawRounds(H, sc) {
+    var box = $("roundChart"), nR = H.finA.length;
+    var W = Math.max(300, Math.round(box.clientWidth || 560)), H0 = 182, L = 34, R = 8, T = 18, B = 42;
+    var a = H.finA.map(function (x) { return 100 * x; }), g = H.finB.map(function (x) { return 100 * x; });
+    var useT = H.src === "mr" && sc && sc.finA.length === nR;
+    var ta = useT ? sc.finA.map(function (x) { return 100 * x / Math.max(1, sc.n); }) : null, tg = useT ? sc.finB.map(function (x) { return 100 * x / Math.max(1, sc.n); }) : null;
+    var hi = Math.max(Math.max.apply(null, a), Math.max.apply(null, g), 1);
+    if (useT) hi = Math.max(hi, Math.max.apply(null, ta), Math.max.apply(null, tg));
+    var max = niceMax(hi * 1.18);
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H0, role: "img", "aria-label": "Finishes by round. " + nameOf("A") + ": " + a.map(function (v, i) { return "round " + (i + 1) + " " + v.toFixed(1) + "%"; }).join(", ") + ". " + nameOf("B") + ": " + g.map(function (v, i) { return "round " + (i + 1) + " " + v.toFixed(1) + "%"; }).join(", ") });
+    var plotW = W - L - R, plotH = H0 - T - B, band = plotW / nR, bw = Math.min(24, band * 0.28);
     [0, max / 2, max].forEach(function (t) {
       var y = T + plotH - plotH * t / max;
       svg.appendChild(svgEl("line", { x1: L, x2: W - R, y1: y, y2: y, stroke: "var(--line)", "stroke-width": 1 }));
       svgText(svg, L - 6, y + 4, (t % 1 ? t.toFixed(1) : t) + "%", { "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
     });
     for (var i = 0; i < nR; i++) {
-      [[a[i], "var(--blue)", -1, shortOf("A")], [g[i], "var(--red)", 1, shortOf("B")]].forEach(function (s) {
-        var cx = L + band * i + band / 2 + s[2] * (bw / 2 + 2), h = plotH * s[0] / max, y = T + plotH - h;
+      [[a[i], "var(--blue)", -1, shortOf("A"), ta && ta[i]], [g[i], "var(--red)", 1, shortOf("B"), tg && tg[i]]].forEach(function (s) {
+        var cx = L + band * i + band / 2 + s[2] * (bw / 2 + 2), h = plotH * s[0] / max, y = T + plotH - h, top = y;
         svg.appendChild(svgEl("path", { d: barPath(cx - bw / 2, cx + bw / 2, y, T + plotH), fill: s[1] }));
-        svgText(svg, cx, y - 4, s[0].toFixed(1), { "text-anchor": "middle", "font-size": 10.5, "font-weight": 700, fill: "var(--ink-2)" });
-        var rnd = i + 1, who = s[3], val = s[0];
+        if (s[4] != null) { var ty = T + plotH - plotH * s[4] / max; tickMark(svg, cx - bw / 2 - 3, cx + bw / 2 + 3, ty); top = Math.min(top, ty - 2); }
+        svgText(svg, cx, top - 4, s[0].toFixed(1), { "text-anchor": "middle", "font-size": 10.5, "font-weight": 700, fill: "var(--ink-2)" });
+        var rnd = i + 1, who = s[3], val = s[0], tv = s[4];
         var hit = svgEl("rect", { x: cx - bw / 2 - 2, y: T, width: bw + 4, height: plotH, fill: "transparent" });
-        hit.addEventListener("pointerenter", function () { var bb = box.getBoundingClientRect(), sc = bb.width / W; tip(box, cx * sc, y * sc, who + " finishes in round " + rnd + ": " + val.toFixed(1) + "% of fights"); });
+        hit.addEventListener("pointerenter", function () { var bb = box.getBoundingClientRect(), k = bb.width / W; tip(box, cx * k, top * k, who + " finishes in round " + rnd + ": " + val.toFixed(1) + "%" + (tv != null ? " · simulator " + tv.toFixed(1) + "%" : "")); });
         hit.addEventListener("pointerleave", function () { tip(box, 0, 0, null); });
         svg.appendChild(hit);
       });
       svgText(svg, L + band * i + band / 2, T + plotH + 16, (W < 430 ? "R" : "Round ") + (i + 1), { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
     }
     svg.appendChild(svgEl("line", { x1: L, x2: W - R, y1: T + plotH, y2: T + plotH, stroke: "var(--axis)", "stroke-width": 1 }));
-    svg.appendChild(svgEl("circle", { cx: L + 6, cy: H - 9, r: 5, fill: "var(--blue)" }));
-    var t1 = svgText(svg, L + 15, H - 5, shortOf("A") + " finishes", { "font-size": 11.5, fill: "var(--ink-2)" });
+    svg.appendChild(svgEl("circle", { cx: L + 6, cy: H0 - 9, r: 5, fill: "var(--blue)" }));
+    svgText(svg, L + 15, H0 - 5, shortOf("A") + " finishes", { "font-size": 11.5, fill: "var(--ink-2)" });
     var off = L + 15 + Math.max(110, (shortOf("A").length + 9) * 7);
-    svg.appendChild(svgEl("circle", { cx: off, cy: H - 9, r: 5, fill: "var(--red)" }));
-    svgText(svg, off + 9, H - 5, shortOf("B") + " finishes", { "font-size": 11.5, fill: "var(--ink-2)" });
-    void t1;
+    svg.appendChild(svgEl("circle", { cx: off, cy: H0 - 9, r: 5, fill: "var(--red)" }));
+    svgText(svg, off + 9, H0 - 5, shortOf("B") + " finishes", { "font-size": 11.5, fill: "var(--ink-2)" });
     box.textContent = ""; box.appendChild(svg);
+  }
+  // the three views side by side: the forecast (method model x blend), the simulator rescaled to the blend, the simulator alone
+  function renderHowTable(H, sc, agg) {
+    var t = $("howTbl"); t.textContent = "";
+    var note = $("howNote");
+    if (!H || !H.bins7) { note.textContent = "Waiting for the models."; return; }
+    var cols = [];
+    if (H.src === "mr") cols.push({ h: "Forecast", sub: (H.variant === "SM" ? "model SM" : "model S") + " × blend", v: H.bins7 });
+    if (sc) cols.push({ h: "Simulator", sub: "rescaled", v: sc.bins.map(function (x) { return x / Math.max(1, sc.n); }) });
+    if (agg) cols.push({ h: "Simulator", sub: "alone", v: agg.bins.map(function (x) { return x / Math.max(1, agg.n); }) });
+    var th = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Outcome"));
+    cols.forEach(function (c, i) { var x = el("th", i === 0 && H.src === "mr" ? "strong" : null); x.appendChild(document.createTextNode(c.h)); x.appendChild(el("br")); x.appendChild(el("small", null, c.sub)); hr.appendChild(x); });
+    Array.prototype.forEach.call(hr.children, function (x) { x.scope = "col"; }); th.appendChild(hr); t.appendChild(th);
+    var tb = el("tbody"), labels = binLabels();
+    function row(label, f, strong) {
+      var tr = el("tr"); tr.appendChild(el("td", strong ? "strong" : null, label));
+      cols.forEach(function (c, i) { tr.appendChild(el("td", i === 0 && H.src === "mr" ? "strong" : null, pct(f(c.v), 1))); });
+      tb.appendChild(tr);
+    }
+    labels.forEach(function (l, i) { row(l, function (v) { return v[i]; }); });
+    row(shortOf("A") + " wins", function (v) { return v[0] + v[1] + v[2]; }, true);
+    row(shortOf("B") + " wins", function (v) { return v[4] + v[5] + v[6]; }, true);
+    row("Goes the distance", function (v) { return v[2] + v[3] + v[4]; }, true);
+    t.appendChild(tb);
+    note.textContent = (H.src === "mr" ? "The forecast column is what the page leads with: the winner odds come from the blend, and how the fight ends comes from the method-and-round model (" + (H.variant === "SM" ? "SM, which also reads the market line" : "S, from stats only") + "), which beat division base rates on 2024+ fights the way it was tested. " : "") +
+      "The simulator columns show the same outcomes from " + nf.format(agg ? agg.n : 0) + " simulated fights, once rescaled so its winner odds match the blend (its draw share and its mix of methods for each winner kept) and once as played.";
   }
   function renderMethodTable(agg) {
     var t = $("methodTbl"), n = Math.max(1, agg.n), M = agg.methods; t.textContent = "";
@@ -905,11 +1089,11 @@
     var tb = el("tbody"), totA = 0, totB = 0;
     rows.forEach(function (r) {
       var a = c("A", r[1]), b = c("B", r[1]); totA += a; totB += b;
-      if (!a && !b && (r[1][0] === "LEG")) return;
+      if (a < 0.5 && b < 0.5 && (r[1][0] === "LEG")) return;
       var tr = el("tr"); tr.appendChild(el("td", null, r[0])); tr.appendChild(el("td", null, pct(a / n))); tr.appendChild(el("td", null, pct(b / n))); tr.appendChild(el("td", null, pct((a + b) / n))); tb.appendChild(tr);
     });
     var dr = el("tr"); dr.appendChild(el("td", null, "Draw")); dr.appendChild(el("td", null, "")); dr.appendChild(el("td", null, "")); dr.appendChild(el("td", null, pct((M["D:DRAW"] || 0) / n))); tb.appendChild(dr);
-    var tr2 = el("tr"); tr2.appendChild(el("td", "strong", "Total")); tr2.appendChild(el("td", "strong", pct(totA / n))); tr2.appendChild(el("td", "strong", pct(totB / n))); tr2.appendChild(el("td", "strong", pct(1))); tb.appendChild(tr2);
+    var tr2 = el("tr"); tr2.appendChild(el("td", "strong", "Total")); tr2.appendChild(el("td", "strong", pct(totA / n))); tr2.appendChild(el("td", "strong", pct(totB / n))); tr2.appendChild(el("td", "strong", pct((totA + totB + (M["D:DRAW"] || 0)) / n))); tb.appendChild(tr2);
     t.appendChild(tb);
   }
   function renderAvgTable(agg) {
@@ -1045,18 +1229,6 @@
     }
     return null;
   }
-  function eloScale() {
-    var s = calibGet(["elo.scale", "elo_scale", "elo.calibrated_scale", "baselines.elo.scale", "stack.elo_scale", "blend.elo_scale"]);
-    return s && isFinite(s) && s > 50 ? +s : 400;
-  }
-  function blendWeights() {
-    var w = calibGet(["blend.weights", "stack.weights", "stacked_blend.weights", "stacked_blend", "blend_weights", "stack"]);
-    if (w && typeof w === "object") {
-      var e = +(w.engine != null ? w.engine : w.w_engine), l = +(w.elo != null ? w.elo : w.w_elo), mk = +(w.market != null ? w.market : w.w_market);
-      if (isFinite(e) && isFinite(l)) { if (!isFinite(mk)) mk = 0; var s = e + l + mk; if (s > 0) return { engine: e / s, elo: l / s, market: mk / s, src: "calibration" }; }
-    }
-    return { engine: 0.4, elo: 0.2, market: 0.4, src: "default" };
-  }
   function parseOdds(s) {
     s = String(s == null ? "" : s).trim().toLowerCase().replace(/[−–]/g, "-");
     if (!s) return null;
@@ -1067,79 +1239,159 @@
     return v > 0 ? 100 / (v + 100) : -v / (-v + 100);
   }
   function logit(p) { p = clamp(p, 0.001, 0.999); return Math.log(p / (1 - p)); }
-  function sigm(z) { return 1 / (1 + Math.exp(-z)); }
-  function marketProb() {
-    var ia = parseOdds(S.odds.A), ib = parseOdds(S.odds.B);
-    if (ia == null || ib == null || !isFinite(ia) || !isFinite(ib)) return { p: null, ia: ia, ib: ib };
-    return { p: ia / (ia + ib), ia: ia, ib: ib, over: ia + ib - 1 };
+  var EXPERTS = [
+    ["market", "Market line"], ["mkt_rating", "Market rating"], ["ml", "ML model"], ["feat_lr", "Feature model"],
+    ["engine", "Simulator"], ["elo_sig", "Strike-share Elo"], ["elo", "Elo"]
+  ];
+  function expertSub(k) {
+    var pa = prof("A"), pb = prof("B"), mk = BL.mk;
+    switch (k) {
+      case "market": return mk.p != null ? (S.line ? (S.odds.A + " / " + S.odds.B + ", margin removed") : "switched off below") : "enter odds below";
+      case "mkt_rating": return BL.ex.mkt_rating != null ? "rating built from past closing lines" : BL.X.notes.mkt_rating || "not available";
+      case "ml": return BL.ex.ml != null ? "logistic on stats, record, age, layoff" : BL.X.notes.ml || "not available";
+      case "feat_lr": return BL.ex.feat_lr != null ? "logistic on 60 stat differences" : BL.X.notes.feat_lr || "not available";
+      case "engine": return BL.ex.engine != null ? "engine " + ENGV + ", " + nf.format(stack.engineN) + " fights" + (cur.m && cur.m.mlApplied ? ", ML stat lines" : "") : "tally running";
+      case "elo_sig": return BL.ex.elo_sig != null ? "Elo moved by strike margins" : BL.X.notes.elo_sig || "not available";
+      case "elo": return (pa.elo || 1500) + " vs " + (pb.elo || 1500);
+    }
+    return "";
+  }
+  function expertName(k) { for (var i = 0; i < EXPERTS.length; i++) if (EXPERTS[i][0] === k) return EXPERTS[i][1]; return k; }
+  function verdictText() {
+    var p = BL.p; if (p == null) return "";
+    var A = shortOf("A"), B = shortOf("B"), fav = p >= 0.5 ? A : B, dog = p >= 0.5 ? B : A, pf = Math.max(p, 1 - p);
+    var s = pf < 0.53 ? "Too close to call: " + fav + " " + pct(pf, 0) + ", " + dog + " " + pct(1 - pf, 0) + "."
+      : fav + " is " + (pf < 0.6 ? "a slight" : (pf < 0.7 ? "a clear" : (pf < 0.8 ? "a strong" : "a heavy"))) + " favorite at " + pct(pf, 0) + ".";
+    if (!BL.r) return s + " The blend did not load, so this is the simulator alone.";
+    if (BL.useLine) {
+      var pm = BL.mk.p, d = p - pm;
+      s += Math.abs(d) < 0.01 ? " The market line carries most of the weight and the other models barely move it." :
+        " The market line alone gives " + A + " " + pct(pm, 0) + "; the other models pull that " + (d > 0 ? "up" : "down") + " to " + pct(p, 0) + ".";
+      if (BL.rNo && Math.abs(BL.rNo.p - pm) > 0.15) s += " On stats alone the blend has " + A + " at " + pct(BL.rNo.p, 0) + ". A gap that size is a warning, not an edge: on past fights the market usually won those arguments.";
+    } else {
+      var top = null, c = BL.r.contrib || {};
+      for (var k in c) if (!top || Math.abs(c[k]) > Math.abs(c[top])) top = k;
+      s += " With no market line the stats models decide" + (top ? "; the " + expertName(top).toLowerCase().replace("ml model", "ML model").replace("elo", "Elo") + " pushes hardest" : "") + ".";
+      if (BL.hasLine && BL.rLine) s += " With the line switched on it would be " + A + " " + pct(BL.rLine.p, 0) + ".";
+    }
+    return s;
   }
   function renderStack() {
-    var box = $("stackChart"); if (!box) return;
-    var pa = prof("A"), pb = prof("B"), sc = eloScale();
-    var pElo = pa.elo && pb.elo ? 1 / (1 + Math.pow(10, -(pa.elo - pb.elo) / sc)) : null;
-    var mk = marketProb(), W = blendWeights();
-    if (S.trust == null) S.trust = W.market;
-    var hasM = mk.p != null, t = hasM ? S.trust : 0;
-    var rest = W.engine + W.elo || 1, we = (1 - t) * W.engine / rest, wl = (1 - t) * W.elo / rest;
-    var pE = stack.engine;
-    var comps = [];
-    if (pE != null) comps.push([we, pE]);
-    if (pElo != null) comps.push([wl, pElo]);
-    if (hasM) comps.push([t, mk.p]);
-    var ws = 0, z = 0; comps.forEach(function (c) { ws += c[0]; z += c[0] * logit(c[1]); });
-    var pBl = ws > 0 ? sigm(z / ws) : null;
-    var nA = shortOf("A");
-    var rows = [
-      { l: "Fight engine v3", s: pE != null ? nf.format(stack.engineN) + " fights, your settings" : "running…", v: pE },
-      { l: "Elo", s: pa.elo && pb.elo ? pa.elo + " vs " + pb.elo + ", scale " + Math.round(sc) : "no rating", v: pElo },
-      { l: "Betting market", s: hasM ? "no-vig, from the odds below" : "enter odds below", v: hasM ? mk.p : null },
-      { l: "The blend", s: "log-odds average", v: pBl, strong: true }
-    ];
-    var Wd = Math.max(300, Math.round(box.clientWidth || 520)), narrow = Wd < 500;
-    var rowH = narrow ? 56 : 44, T = 8, H = T + rows.length * rowH + 24, X0 = narrow ? 4 : 210, X1 = Wd - 48;
-    var svg = svgEl("svg", { viewBox: "0 0 " + Wd + " " + H, role: "img", "aria-label": nameOf("A") + "'s chance by source: " + rows.map(function (r) { return r.l + " " + (r.v == null ? "not available" : pct(r.v, 0)); }).join(", ") });
-    function xOf(v) { return X0 + (X1 - X0) * v; }
-    [0, 0.25, 0.5, 0.75, 1].forEach(function (tk) {
-      var xx = xOf(tk);
-      svg.appendChild(svgEl("line", { x1: xx, x2: xx, y1: T, y2: T + rows.length * rowH, stroke: tk === 0.5 ? "var(--axis)" : "var(--line)", "stroke-width": 1, "stroke-dasharray": tk === 0.5 ? "3 3" : "none" }));
-      svgText(svg, xx, H - 6, Math.round(tk * 100) + "%", { "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" });
+    var box = $("xrows"); if (!box || !BL) return;
+    var r = BL.r, A = shortOf("A"), rows = [];
+    box.textContent = "";
+    var hd = el("div", "xrow xh"); hd.setAttribute("role", "row");
+    ["Model", "Chance for " + A + ", 0 to 100%", "Chance", "Weight", "Push (+ toward " + A + ")"].forEach(function (h) { var x = el("span", null, h); x.setAttribute("role", "columnheader"); hd.appendChild(x); });
+    box.appendChild(hd);
+    var maxAbs = 0.25, k;
+    if (r) { for (k in r.contrib) maxAbs = Math.max(maxAbs, Math.abs(r.contrib[k])); maxAbs = Math.max(maxAbs, Math.abs(logit(r.p))); }
+    function track(p, big) {
+      var t = el("div", "xt"); t.appendChild(el("i", "mid"));
+      if (p != null) {
+        var seg = el("i", "seg"); seg.style.left = Math.min(50, p * 100) + "%"; seg.style.width = Math.abs(p * 100 - 50) + "%"; t.appendChild(seg);
+        var d = el("i", "dot"); d.style.left = (p * 100) + "%"; t.appendChild(d);
+      }
+      t.setAttribute("aria-hidden", "true"); return t;
+    }
+    function push(v) {
+      var w = el("div", "xc");
+      var bar = el("div", "xbar");
+      if (v != null && isFinite(v) && Math.abs(v) > 1e-9) {
+        var i = el("i", v > 0 ? "A" : "B"), wd = 50 * Math.min(1, Math.abs(v) / maxAbs);
+        i.style.width = wd + "%"; i.style.left = v > 0 ? (50 - wd) + "%" : "50%"; bar.appendChild(i);
+      }
+      w.appendChild(bar); w.appendChild(el("span", null, v == null ? "–" : (v > 0 ? "+" : (v < 0 ? "−" : "")) + Math.abs(v).toFixed(2)));
+      return w;
+    }
+    EXPERTS.forEach(function (e) {
+      var key = e[0], p = key === "market" ? (BL.mk.p != null && S.line ? BL.mk.p : null) : (BL.ex[key] != null ? BL.ex[key] : null);
+      var used = r && r.used.indexOf(key) >= 0;
+      var row = el("div", "xrow" + (p == null ? " off" : "")); row.setAttribute("role", "row");
+      var l = el("div", "xl"); l.appendChild(el("b", null, e[1])); l.appendChild(el("small", null, expertSub(key))); row.appendChild(l);
+      row.appendChild(track(p));
+      row.appendChild(el("span", "xp", p == null ? "–" : pct(p, 0)));
+      var wt = used ? r.weights[key] : null;
+      row.appendChild(el("span", "xw", p == null ? "" : (wt == null ? (r && r.ignored && r.ignored.indexOf(key) >= 0 ? "unused" : "–") : (wt < 0.005 ? "0%" : pct(wt, 0)) + (window.innerWidth <= 680 ? " weight" : ""))));
+      row.appendChild(p == null ? el("span") : push(used ? r.contrib[key] : null));
+      row.setAttribute("aria-label", e[1] + ": " + (p == null ? expertSub(key) : pct(p, 0) + " for " + A + (used ? ", weight " + pct(r.weights[key], 0) + ", push " + r.contrib[key].toFixed(2) : "")));
+      box.appendChild(row); rows.push(row);
     });
-    rows.forEach(function (r, i) {
-      var y = narrow ? T + i * rowH + 38 : T + i * rowH + rowH / 2;
-      var t1 = svgText(svg, 0, narrow ? y - 20 : y - 3, r.l, { "font-size": 13, "font-weight": r.strong ? 800 : 700, fill: "var(--ink)" });
-      svgText(svg, narrow ? Math.min(Wd - 120, r.l.length * 7.4 + 10) : 0, narrow ? y - 20 : y + 12, r.s, { "font-size": 10.5, fill: "var(--muted)" });
-      void t1;
-      if (r.v == null) { svgText(svg, xOf(0.5), y + 4, "–", { "text-anchor": "middle", "font-size": 13, fill: "var(--muted)" }); return; }
-      svg.appendChild(svgEl("line", { x1: xOf(0), x2: xOf(r.v), y1: y, y2: y, stroke: r.strong ? "var(--ink)" : "var(--axis)", "stroke-width": r.strong ? 3 : 2 }));
-      svg.appendChild(svgEl("circle", { cx: xOf(r.v), cy: y, r: r.strong ? 7 : 5.5, fill: r.strong ? "var(--ink)" : "var(--blue)" }));
-      svgText(svg, X1 + 10, y + 4, pct(r.v, 0), { "font-size": 13, "font-weight": 700, fill: "var(--ink)" });
-    });
-    box.textContent = ""; box.appendChild(svg);
+    var fin = el("div", "xrow fin"); fin.setAttribute("role", "row");
+    var fl = el("div", "xl"); fl.appendChild(el("b", null, "The blend")); fl.appendChild(el("small", null, r ? (BL.useLine ? "learned weights, line present" : "learned weights, no line") : "not available"));
+    fin.appendChild(fl); fin.appendChild(track(BL.p));
+    fin.appendChild(el("span", "xp", BL.p == null ? "–" : pct(BL.p, 0)));
+    fin.appendChild(el("span", "xw", r ? "Σ " + fx(r.scale, 2) : ""));
+    fin.appendChild(r ? push(logit(r.p)) : el("span"));
+    fin.setAttribute("aria-label", "The blend: " + (BL.p == null ? "not available" : pct(BL.p, 0) + " for " + A));
+    box.appendChild(fin);
+    // notes
+    var stretch = r && Math.abs(r.z) > 1e-6 ? logit(r.p) / r.z : 1;
+    $("xNote").textContent = r ? "Weight is each model's share of the blend for the models available here. Before they are shared out the weights add up to " + fx(r.scale, 2) +
+      ": the models carry partly independent evidence, so the blend can be more confident than any one of them. Push is the model's contribution to the blend's log-odds." +
+      (!BL.useLine && Math.abs(stretch - 1) > 0.01 ? " With no market line the result is then stretched by a factor of " + fx(stretch, 2) + ", a temperature fit on recent fights, when every model, the market included, turned out underconfident." : "") +
+      " Draws are set aside: every chance here is for a decisive result." : "The blend's model file did not load, so the headline falls back to the simulator.";
+    $("stackSub").textContent = r ? r.used.length + " models · " + (BL.useLine ? "with the line" : "no line") : "";
+    $("blendOut").textContent = BL.p == null ? "–" : A + " " + Math.round(100 * BL.p) + "%, " + shortOf("B") + " " + (100 - Math.round(100 * BL.p)) + "%";
+    $("verdict").textContent = verdictText();
     // odds inputs and notes
+    var mk = BL.mk, hasM = mk.p != null;
     ["A", "B"].forEach(function (s) {
       var inp = $("odd" + s); if (document.activeElement !== inp) inp.value = S.odds[s] || "";
       var v = parseOdds(S.odds[s]); inp.setAttribute("aria-invalid", v != null && !isFinite(v) ? "true" : "false");
     });
+    $("lineTog").checked = S.line; $("lineTog").disabled = !hasM;
     var pd = pairData(S.a, S.b), note = $("oddNote"); note.textContent = "";
-    if (hasM) note.appendChild(document.createTextNode("Implied " + pct(mk.ia, 1) + " and " + pct(mk.ib, 1) + " (margin " + pct(mk.over, 1) + "); with the margin removed, " + nA + " " + pct(mk.p, 1) + ". "));
+    if (hasM) note.appendChild(document.createTextNode("Implied " + pct(mk.ia, 1) + " and " + pct(mk.ib, 1) + " (margin " + pct(mk.over, 1) + "); with the margin removed, " + A + " " + pct(mk.p, 1) + ". "));
     else if (isNaN(mk.ia) || isNaN(mk.ib)) note.appendChild(document.createTextNode("Use American odds such as +160 or -180. "));
-    else note.appendChild(document.createTextNode("No price for this pair. Enter both sides' American odds to add the market to the blend. "));
+    else note.appendChild(document.createTextNode("No price for this pair. Enter both sides' American odds to add the market line to the blend. "));
     if (pd && pd.market && pd.market.odds && (S.odds.A === pd.market.odds[S.a] && S.odds.B === pd.market.odds[S.b])) {
-      note.appendChild(document.createTextNode("Prefilled: " + pd.market.label + ". " + (pd.market.range || "") + " "));
+      note.appendChild(document.createTextNode("Prefilled: " + pd.market.label + ". " + (pd.market.range || "") + " An opening line is less sharp than the closing line the blend was tested with. "));
       var srcs = el("span", "srcs"); srcs.style.display = "inline-flex"; linkList(srcs, pd.market.sources); note.appendChild(srcs);
-    }
-    var slider = $("k-trust"); slider.disabled = !hasM; slider.value = t;
-    $("o-trust").textContent = hasM ? Math.round(t * 100) + "%" : "off";
-    $("trustHint").textContent = (W.src === "calibration" ? "Starting weights come from the stacked blend fit in the walk-forward backtest" : "Starting weights are 40% market, 40% engine and 20% Elo until the backtest's stacked blend is available") +
-      ". The rest splits between the engine and Elo in the same ratio. The market price here is an opening line, which is less sharp than a closing one.";
-    $("blendOut").textContent = pBl == null ? "–" : nA + " " + Math.round(100 * pBl) + "%, " + shortOf("B") + " " + (100 - Math.round(100 * pBl)) + "%";
-    $("blendNote").textContent = "Weights: " + (hasM ? "market " + Math.round(t * 100) + "%, " : "") + "engine " + Math.round(we / Math.max(1e-9, ws) * 100) + "%, Elo " + Math.round(wl / Math.max(1e-9, ws) * 100) + "%. The engine and Elo share information, so this is a pooled opinion, not three independent votes.";
-    // market marker on the tally bar
+    } else if (S.oddsSrc && hasM) note.appendChild(document.createTextNode("Prefilled: " + S.oddsSrc + ". "));
+    // the two regimes side by side
+    var rg = $("regimes"); rg.textContent = "";
+    function tile(label, v, sub) { var t = el("div", "tile"); t.appendChild(el("span", "tl", label)); t.appendChild(el("b", null, v)); if (sub) t.appendChild(el("span", "tl", sub)); rg.appendChild(t); }
+    if (BL.rNo) tile("Blend without a line", A + " " + pct(BL.rNo.p, 0), "stats and ratings only");
+    if (BL.rLine) tile("Blend with the line", A + " " + pct(BL.rLine.p, 0), "market alone " + pct(mk.p, 0));
+    else if (BL.rNo) tile("Market line", "–", "enter odds to compare");
+    $("blendNote").textContent = "Validated on 2024-25 fights: with a closing line the blend was level with the market to slightly better; without one it beat every single model. The backtest below has the numbers.";
+    // market marker on the forecast bar
     var mkM = $("mktMark"), mkN = $("mktNote");
     if (hasM) {
       mkM.hidden = false; mkN.hidden = false; mkM.style.left = (100 * mk.p) + "%";
-      $("mktNoteT").textContent = "Market: " + nA + " " + pct(mk.p, 0) + " with the margin removed (" + (S.odds.A || "") + " / " + (S.odds.B || "") + ").";
+      $("mktNoteT").textContent = "Market: " + A + " " + pct(mk.p, 0) + " with the margin removed (" + (S.odds.A || "") + " / " + (S.odds.B || "") + ")" + (S.line ? "." : ", left out of the blend.");
     } else { mkM.hidden = true; mkN.hidden = true; }
+  }
+
+  /* ================================================================ ML stat-line card */
+  function renderMLCard() {
+    var box = $("mlCards"), lede = $("mlLede"); if (!box) return;
+    box.textContent = "";
+    var pred = mlPredict(prof("A"), prof("B"));
+    if (!pred) { lede.textContent = MLR.ok ? "The stat-line model could not score this pair." : "The stat-line model is not in this build."; return; }
+    lede.textContent = "Per minute of fight time, each fighter against this opponent, from a learned model trained on 2010-2025 UFC fights. On 2024-25 fights it beat the simulator's own rates on 12 of 18 stats, and feeding it to the simulator improved its winner calls. " +
+      (cur.m && cur.m.mlApplied ? "The simulator is using these lines now." : "The toggle in the forecast panel has them switched off, so the simulator uses its data-only rates.") + " Avg is the " + S.div.toLowerCase() + " average.";
+    var base = {}; (pred.base || []).forEach(function (v, i) { base[(window.MLRates && window.MLRates.TNAMES[i]) || i] = v; });
+    ["A", "B"].forEach(function (side) {
+      var q = pred[side], card = el("div", "mlcard " + side);
+      card.appendChild(el("h4", null, nameOf(side)));
+      var t = el("table", "data"), tb = el("tbody");
+      function row(label, v, avg) { var tr = el("tr"); tr.appendChild(el("td", null, label)); var td = el("td", "strong", v); tr.appendChild(td); var ta = el("td"); if (avg != null) ta.appendChild(el("small", null, "avg " + avg)); tr.appendChild(ta); tb.appendChild(tr); }
+      function f1(x) { return fx(x, 1); } function f2(x) { return fx(x, 2); }
+      var tot = q.d_att + q.c_att + q.g_att;
+      row("Significant strikes thrown / min", f1(tot), base.d_att != null ? f1(base.d_att + base.c_att + base.g_att) : null);
+      row("Head · body · legs thrown / min", f1(q.h_att) + " · " + f1(q.b_att) + " · " + f1(q.l_att), base.h_att != null ? f1(base.h_att) + " · " + f1(base.b_att) + " · " + f1(base.l_att) : null);
+      row("Head · body · legs landed / min", f1(q.h_att * q.acc_h) + " · " + f1(q.b_att * q.acc_b) + " · " + f1(q.l_att * q.acc_l), base.h_att != null ? f1(base.h_att * base.acc_h) + " · " + f1(base.b_att * base.acc_b) + " · " + f1(base.l_att * base.acc_l) : null);
+      row("Accuracy: head · body · legs", pct(q.acc_h, 0) + " · " + pct(q.acc_b, 0) + " · " + pct(q.acc_l, 0), base.acc_h != null ? pct(base.acc_h, 0) + " · " + pct(base.acc_b, 0) + " · " + pct(base.acc_l, 0) : null);
+      row("Distance · clinch · ground thrown / min", f1(q.d_att) + " · " + f2(q.c_att) + " · " + f2(q.g_att), base.d_att != null ? f1(base.d_att) + " · " + f2(base.c_att) + " · " + f2(base.g_att) : null);
+      row("Takedown attempts / 15 min", f1(q.td_att * 15), base.td_att != null ? f1(base.td_att * 15) : null);
+      row("Takedown success", pct(q.td_acc, 0), base.td_acc != null ? pct(base.td_acc, 0) : null);
+      row("Control time / 15 min", mmss(q.ctrl * 15), base.ctrl != null ? mmss(base.ctrl * 15) : null);
+      row("Submission attempts / 15 min", f2(q.sub_att * 15), base.sub_att != null ? f2(base.sub_att * 15) : null);
+      row("Knockdown chance per head strike landed", pct(q.kd_h, 2), base.kd_h != null ? pct(base.kd_h, 2) : null);
+      row("Expected knockdowns / 15 min", f2(q.h_att * q.acc_h * q.kd_h * 15), base.kd_h != null ? f2(base.h_att * base.acc_h * base.kd_h * 15) : null);
+      t.appendChild(tb); var w = el("div", "tbl-wrap"); w.appendChild(t); card.appendChild(w); box.appendChild(card);
+    });
   }
 
   /* ================================================================ backtest */
@@ -1152,125 +1404,262 @@
     if (!out.coin) out.coin = { log_loss: Math.log(2), brier: 0.25, accuracy: 0.5 };
     return out.engine || out.elo ? { models: out, n: test.n || (out.engine && out.engine.n) || (out.elo && out.elo.n) } : null;
   }
-  // fallback: score per-fight rows ({date, pA[, pB], y | winner, elo, blend}) on the held-out years ourselves
-  function modelsFromFights() {
-    var F = calibGet(["fights", "predictions"]); if (!F || typeof F !== "object") return null;
-    var rows = Array.isArray(F) ? F : Object.keys(F).map(function (k) { return F[k]; });
-    var acc = { engine: [], elo: [], blend: [] };
-    rows.forEach(function (r) {
-      if (!r || typeof r !== "object") return;
-      var d = r.date || r.d; if (!d || String(d) < "2024-01-01") return;
-      var y = r.y != null ? +r.y : (r.winner === "A" ? 1 : (r.winner === "B" ? 0 : (r.res === "W" ? 1 : (r.res === "L" ? 0 : null))));
-      if (y !== 0 && y !== 1) return;
-      var pe = r.pA != null ? (r.pB != null ? r.pA / Math.max(1e-9, r.pA + r.pB) : r.pA) : r.p;
-      if (pe != null && isFinite(pe)) acc.engine.push([+pe, y]);
-      var pl = r.elo != null ? r.elo : r.pElo; if (pl != null && isFinite(pl)) acc.elo.push([+pl, y]);
-      var pb = r.blend != null ? r.blend : r.pBlend; if (pb != null && isFinite(pb)) acc.blend.push([+pb, y]);
-    });
-    if (acc.engine.length < 20) return null;
-    function score(arr) {
-      if (!arr.length) return null;
-      var ll = 0, br = 0, ok = 0, bins = [];
-      for (var b = 0; b < 10; b++) bins.push({ lo: b / 10, hi: (b + 1) / 10, n: 0, ps: 0, ys: 0 });
-      arr.forEach(function (a) {
-        var p = clamp(a[0], 1e-6, 1 - 1e-6), y = a[1];
-        ll -= y ? Math.log(p) : Math.log(1 - p); br += (p - y) * (p - y); if ((p > 0.5) === (y === 1) && p !== 0.5) ok++;
-        // corner-symmetric bins: count each fight from both sides
-        [[p, y], [1 - p, 1 - y]].forEach(function (q) { var k = Math.min(9, Math.floor(q[0] * 10)); bins[k].n++; bins[k].ps += q[0]; bins[k].ys += q[1]; });
-      });
-      return { log_loss: ll / arr.length, brier: br / arr.length, accuracy: ok / arr.length, n: arr.length,
-        bins: bins.filter(function (x) { return x.n >= 10; }).map(function (x) { return { lo: x.lo, hi: x.hi, n: x.n, pred: x.ps / x.n, obs: x.ys / x.n }; }) };
-    }
-    var out = { engine: score(acc.engine), elo: score(acc.elo), blend: score(acc.blend), coin: { log_loss: Math.log(2), brier: 0.25, accuracy: 0.5 } };
-    return { models: out, n: acc.engine.length, derived: true };
-  }
   function metric(o, keys) { if (!o) return null; for (var i = 0; i < keys.length; i++) if (o[keys[i]] != null && isFinite(o[keys[i]])) return +o[keys[i]]; return null; }
-  function renderBacktest() {
-    var box = $("btBody"); box.textContent = "";
-    var intro = el("p", "lede", "Every fight in the backtest is predicted with each fighter's profile frozen as it stood the day before, so the model never sees the result. Settings were tuned on 2019-2023 and scored on 2024 onward. This replaces v2's seven-fight backtest, which used career numbers that already included those fights.");
-    box.appendChild(intro);
-    var mods = CALIB ? (findModels() || modelsFromFights()) : null;
-    if (!CALIB || !mods) {
-      var st = el("div", "status");
-      var p1 = el("p"); p1.appendChild(el("b", null, CALIB ? "The calibration report is in an unexpected format. " : "Calibration is still running. "));
-      p1.appendChild(document.createTextNode("When the walk-forward run finishes, this panel shows held-out log loss, Brier score and accuracy for the engine, Elo, the blend and a coin flip, a reliability chart and the base-rate table."));
-      st.appendChild(p1);
-      st.appendChild(el("p", null, "For scale while it runs: the data pipeline's Elo baseline scored a log loss of 0.680 and picked 54.9% of winners on 1,223 held-out fights from 2024 on, against 0.693 and 50% for a coin flip (data/derived/elo_report.json, Nov 6, 2026). Lower log loss is better."));
-      box.appendChild(st);
-      box.appendChild(caveats());
-      return;
-    }
-    var M = mods.models, rows = [["Fight engine", M.engine], ["Elo", M.elo], ["Blend", M.blend], ["More UFC wins", M.naive], ["Coin flip", M.coin]].filter(function (r) { return r[1]; });
-    var wrap = el("div", "tbl-wrap"), t = el("table", "data"), th = el("thead"), hr = el("tr");
-    ["Held-out, 2024 on", "Log loss", "Brier", "Accuracy", "Fights"].forEach(function (h) { var x = el("th", null, h); x.scope = "col"; hr.appendChild(x); }); th.appendChild(hr); t.appendChild(th);
-    var tb = el("tbody"), bestLL = Infinity;
-    rows.forEach(function (r) { var v = metric(r[1], ["log_loss", "logloss", "ll"]); if (v != null && v < bestLL) bestLL = v; });
+  function ci(o) { return o && o.lo != null ? "[" + sgn(o.lo) + ", " + sgn(o.hi) + "]" : ""; }
+  function sgn(v) { return (v > 0 ? "+" : (v < 0 ? "−" : "")) + Math.abs(v).toFixed(4); }
+  function table(head, rows, opts) {
+    opts = opts || {};
+    var w = el("div", "tbl-wrap"), t = el("table", "data"), th = el("thead"), hr = el("tr");
+    head.forEach(function (h) { var x = el("th", null, h); x.scope = "col"; hr.appendChild(x); }); th.appendChild(hr); t.appendChild(th);
+    var tb = el("tbody");
     rows.forEach(function (r) {
-      var o = r[1], ll = metric(o, ["log_loss", "logloss", "ll"]), br = metric(o, ["brier"]), ac = metric(o, ["accuracy", "acc"]), n = metric(o, ["n"]) || mods.n;
-      var tr = el("tr"); tr.appendChild(el("td", ll === bestLL ? "strong" : null, r[0]));
-      tr.appendChild(el("td", ll === bestLL ? "strong" : null, fx(ll, 4))); tr.appendChild(el("td", null, fx(br, 4))); tr.appendChild(el("td", null, pct(ac, 1))); tr.appendChild(el("td", null, n ? nf.format(n) : "–"));
+      var tr = el("tr", r.cls || null);
+      r.cells.forEach(function (c, i) {
+        var td = el("td", r.strong ? "strong" : null);
+        if (c && c.nodeType) td.appendChild(c); else td.textContent = c == null ? "–" : c;
+        if (r.span && i === 0) td.colSpan = r.span;
+        tr.appendChild(td);
+      });
       tb.appendChild(tr);
     });
-    t.appendChild(tb); wrap.appendChild(t); box.appendChild(wrap);
-    box.appendChild(el("p", "small", "Log loss and Brier score: lower is better. Draws and no-contests are left out. Accuracy counts how often the model's favorite won."));
-    // reliability chart
-    var bins = calibGet(["calibration_bins", "calibration", "reliability", "test_calibration", "bins"]);
-    if (!bins && mods.derived) { bins = {}; ["engine", "elo", "blend"].forEach(function (k) { if (M[k] && M[k].bins && M[k].bins.length) bins[k] = M[k].bins; }); }
-    var series = [];
-    if (Array.isArray(bins)) series.push(["Fight engine", bins, "var(--ink)"]);
-    else if (bins && typeof bins === "object") [["engine", "Fight engine", "var(--ink)"], ["elo", "Elo", "var(--neutral)"], ["blend", "Blend", "var(--gold)"]].forEach(function (k) { if (Array.isArray(bins[k[0]])) series.push([k[1], bins[k[0]], k[2]]); });
-    if (series.length) {
-      box.appendChild(el("h3", "mini", "Reliability: predicted vs actual win rate"));
-      var cb = el("div", "chart"); cb.style.maxWidth = "440px"; box.appendChild(cb); drawReliability(cb, series);
-      var lg = el("div", "bt-legend"); series.forEach(function (s) { var x = el("span"), i = el("i"); i.style.background = s[2]; x.appendChild(i); x.appendChild(document.createTextNode(s[0])); lg.appendChild(x); });
-      var dg = el("span"); dg.appendChild(document.createTextNode("Dashed line: perfect calibration. Dot size: number of fights.")); lg.appendChild(dg); box.appendChild(lg);
-    }
-    // base rates
-    var br = calibGet(["baserates", "base_rates", "base_rate_table", "baserate_table", "league"]);
-    var brRows = [];
-    if (Array.isArray(br)) br.forEach(function (r) { if (r && typeof r === "object") brRows.push([r.label || r.name || r.stat || r.key, r.sim != null ? r.sim : r.model, r.actual != null ? r.actual : (r.data != null ? r.data : r.obs), r.unit || r.fmt]); });
-    else if (br && typeof br === "object") for (var k in br) { var v = br[k]; if (v && typeof v === "object" && (v.sim != null || v.model != null)) brRows.push([v.label || k, v.sim != null ? v.sim : v.model, v.actual != null ? v.actual : (v.data != null ? v.data : v.obs), v.unit || v.fmt]); }
-    if (brRows.length) {
-      box.appendChild(el("h3", "mini", "League base rates: simulated vs actual"));
-      var w2 = el("div", "tbl-wrap"), t2 = el("table", "data"), h2 = el("thead"), r2 = el("tr");
-      ["Statistic", "Simulated", "Actual"].forEach(function (h) { var x = el("th", null, h); x.scope = "col"; r2.appendChild(x); }); h2.appendChild(r2); t2.appendChild(h2);
-      var b2 = el("tbody");
-      brRows.slice(0, 18).forEach(function (r) {
-        function f(v) { if (v == null || !isFinite(v)) return v == null ? "–" : String(v); return (r[3] === "pct" || (Math.abs(v) <= 1 && r[3] !== "num")) ? pct(v, 1) : fx(v, Math.abs(v) >= 20 ? 0 : 2); }
-        var tr = el("tr"); tr.appendChild(el("td", null, String(r[0]).replace(/_/g, " "))); tr.appendChild(el("td", null, f(r[1]))); tr.appendChild(el("td", null, f(r[2]))); b2.appendChild(tr);
+    t.appendChild(tb); w.appendChild(t); if (opts.caption) { var cp = el("caption", "vh", opts.caption); t.insertBefore(cp, t.firstChild); }
+    return w;
+  }
+  function llCell(ll, best, worst) {
+    var s = el("span"); var b = el("i", "llb" + (ll <= best + 1e-9 ? " hi" : ""));
+    b.style.width = Math.max(2, 46 * clamp((worst - ll) / Math.max(1e-9, worst - best), 0, 1)) + "px"; s.appendChild(b);
+    s.appendChild(document.createTextNode(fx(ll, 4))); return s;
+  }
+  function versionTable() {
+    var d = el("div"); d.appendChild(el("h3", "mini", "Versions"));
+    var list = null;
+    if (VERS) list = Array.isArray(VERS) ? VERS : (Array.isArray(VERS.versions) ? VERS.versions : (typeof VERS === "object" ? Object.keys(VERS).filter(function (k) { return VERS[k] && typeof VERS[k] === "object"; }).map(function (k) { var o = {}; for (var kk in VERS[k]) o[kk] = VERS[k][kk]; if (!o.version) o.version = k; return o; }) : null));
+    if (list && list.length) {
+      // a tolerant reader: version label, then whichever numeric metrics the history file carries
+      var flat = list.map(function (v) {
+        var o = { version: v.version || v.name || v.id || "?", note: v.label || v.summary || v.note || v.notes || v.date || "" }, src = [v, v.metrics || {}, v.validation || {}, v.valid || {}, v.blend || {}];
+        src.forEach(function (s) { for (var k in s) if (typeof s[k] === "number" && isFinite(s[k]) && !(k in o)) o[k] = s[k]; });
+        return o;
       });
-      t2.appendChild(b2); w2.appendChild(t2); box.appendChild(w2);
+      var keys = []; flat.forEach(function (o) { for (var k in o) if (k !== "version" && k !== "note" && typeof o[k] === "number" && keys.indexOf(k) < 0) keys.push(k); });
+      keys = keys.slice(0, 6);
+      var NICE = { winner_log_loss: "Winner log loss", log_loss: "Log loss", ll: "Log loss", brier: "Brier", accuracy: "Accuracy", acc: "Accuracy", outcome7_log_loss: "7-outcome log loss", method_ll: "Method log loss", blend_weight: "Blend weight", weight: "Blend weight", moe_weight: "Blend weight", n: "Fights" };
+      d.appendChild(table(["Version"].concat(keys.map(function (k) { return NICE[k] || k.replace(/_/g, " "); })), flat.map(function (o) {
+        return { cells: [o.version + (o.note ? " · " + o.note : "")].concat(keys.map(function (k) { var v = o[k]; if (v == null) return "–"; return /acc|weight/.test(k) && v <= 1 ? pct(v, k.indexOf("weight") >= 0 ? 0 : 1) : (k === "n" ? nf.format(v) : fx(v, 4)); })) };
+      })));
+      d.appendChild(el("p", "small", "From data/derived/version_history.json: validation numbers on 2024-25 fights, the blend weight each version earned."));
+      return d;
     }
-    box.appendChild(caveats());
+    var sm = BENCH && BENCH.sim, rows = [];
+    if (sm && sm.val_plain) rows.push({ cells: ["v3 simulator, data-only rates", fx(sm.val_plain.winner_log_loss, 4), fx(sm.val_plain.outcome7_log_loss, 4), pct(sm.val_plain.accuracy, 1), "0%"] });
+    if (sm && sm.val_ml) rows.push({ cells: ["v3 + ML stat lines", fx(sm.val_ml.winner_log_loss, 4), fx(sm.val_ml.outcome7_log_loss, 4), pct(sm.val_ml.accuracy, 1), "not refit yet"] });
+    if (rows.length) {
+      d.appendChild(table(["Version, 2024-25 (" + nf.format(sm.n || 0) + " fights)", "Winner log loss", "7-outcome log loss", "Accuracy", "Blend weight"], rows));
+      d.appendChild(el("p", "small", "From the stat-line model's report (" + (sm.nsim || 400) + " simulations per fight). Pooled over 2019-2025 the ML lines improve the simulator's winner log loss by " + (sm.pooled ? fx(-sm.pooled.ml_minus_plain.mean, 4) + " [" + fx(-sm.pooled.ml_minus_plain.hi, 4) + ", " + fx(-sm.pooled.ml_minus_plain.lo, 4) + "]" : "–") + ", better in all seven years. Engine " + ENGV + " is being tested now; its row appears here, with the weight the blend gives it, once the version history lands."));
+    } else d.appendChild(el("p", "small", "The version history has not been written yet."));
+    return d;
   }
   function drawReliability(box, series) {
     var W = Math.max(280, Math.min(460, Math.round(box.clientWidth || 360))), H = W * 0.86, L = 40, R = 10, T = 10, B = 34;
-    var pw = W - L - R, ph = H - T - B;
-    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Reliability chart: " + series.map(function (s) { return s[0] + " " + s[1].map(function (b) { return "predicted " + pct(b.pred != null ? b.pred : b.p, 0) + " actual " + pct(b.obs != null ? b.obs : b.o, 0); }).join("; "); }).join(". ") });
-    function X(v) { return L + pw * v; } function Y(v) { return T + ph - ph * v; }
-    [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
-      svg.appendChild(svgEl("line", { x1: X(0), x2: X(1), y1: Y(v), y2: Y(v), stroke: "var(--line)", "stroke-width": 1 }));
+    var pw = W - L - R, ph = H - T - B, lo = 0.5;
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Reliability chart: " + series.map(function (s) { return s[0] + " " + s[1].map(function (b) { return "predicted " + pct(b.pred, 0) + " actual " + pct(b.obs, 0); }).join("; "); }).join(". ") });
+    function X(v) { return L + pw * (v - lo) / (1 - lo); } function Y(v) { return T + ph - ph * (v - lo) / (1 - lo); }
+    [0.5, 0.6, 0.7, 0.8, 0.9, 1].forEach(function (v) {
+      svg.appendChild(svgEl("line", { x1: X(lo), x2: X(1), y1: Y(v), y2: Y(v), stroke: "var(--line)", "stroke-width": 1 }));
       svgText(svg, L - 6, Y(v) + 4, Math.round(v * 100) + "%", { "text-anchor": "end", "font-size": 10.5, fill: "var(--muted)" });
       svgText(svg, X(v), H - 16, Math.round(v * 100) + "%", { "text-anchor": "middle", "font-size": 10.5, fill: "var(--muted)" });
     });
-    svgText(svg, L + pw / 2, H - 2, "Predicted chance", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
-    svg.appendChild(svgEl("line", { x1: X(0), y1: Y(0), x2: X(1), y2: Y(1), stroke: "var(--axis)", "stroke-width": 1.5, "stroke-dasharray": "4 4" }));
+    svgText(svg, L + pw / 2, H - 2, "Predicted chance for the favorite", { "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" });
+    svg.appendChild(svgEl("line", { x1: X(lo), y1: Y(lo), x2: X(1), y2: Y(1), stroke: "var(--axis)", "stroke-width": 1.5 }));
     var maxN = 1; series.forEach(function (s) { s[1].forEach(function (b) { maxN = Math.max(maxN, b.n || 1); }); });
     series.forEach(function (s) {
-      var pts = s[1].filter(function (b) { return (b.pred != null || b.p != null) && (b.obs != null || b.o != null); }).map(function (b) { return [b.pred != null ? b.pred : b.p, b.obs != null ? b.obs : b.o, b.n || 1]; });
-      if (pts.length > 1) svg.appendChild(svgEl("polyline", { points: pts.map(function (p) { return X(p[0]) + "," + Y(p[1]); }).join(" "), fill: "none", stroke: s[2], "stroke-width": 1.5, opacity: 0.7 }));
-      pts.forEach(function (p) { svg.appendChild(svgEl("circle", { cx: X(p[0]), cy: Y(p[1]), r: 2.5 + 6 * Math.sqrt(p[2] / maxN), fill: s[2], "fill-opacity": 0.85 })); });
+      var pts = s[1].filter(function (b) { return b.pred != null && b.obs != null && (b.n || 0) >= 10; }).map(function (b) { return [b.pred, b.obs, b.n || 1]; });
+      if (pts.length > 1) svg.appendChild(svgEl("polyline", { points: pts.map(function (p) { return X(p[0]) + "," + Y(Math.max(lo, p[1])); }).join(" "), fill: "none", stroke: s[2], "stroke-width": 2, "stroke-linejoin": "round" }));
+      pts.forEach(function (p) { svg.appendChild(svgEl("circle", { cx: X(p[0]), cy: Y(Math.max(lo, p[1])), r: 3 + 5 * Math.sqrt(p[2] / maxN), fill: s[2], stroke: "var(--surface)", "stroke-width": 2 })); });
     });
     box.textContent = ""; box.appendChild(svg);
+  }
+  function simulatorAlone() {
+    var d = el("div");
+    var mods = CALIB ? findModels() : null;
+    if (!mods) return d;
+    d.appendChild(el("h3", "mini", "The simulator's own calibration report"));
+    var M = mods.models, rows = [["Simulator (" + (calibGet(["meta.engine_version", "engine_version"]) || "v3") + ")", M.engine], ["Elo", M.elo], ["Simulator + Elo, old blend", M.blend], ["More UFC wins", M.naive], ["Coin flip", M.coin]].filter(function (r) { return r[1]; });
+    var bestLL = Infinity; rows.forEach(function (r) { var v = metric(r[1], ["log_loss", "logloss", "ll"]); if (v != null && v < bestLL) bestLL = v; });
+    d.appendChild(table(["Fights from 2024 on", "Log loss", "Brier", "Accuracy", "Fights"], rows.map(function (r) {
+      var o = r[1], ll = metric(o, ["log_loss", "logloss", "ll"]), n = metric(o, ["n"]) || mods.n;
+      return { cells: [r[0], fx(ll, 4), fx(metric(o, ["brier"]), 4), pct(metric(o, ["accuracy", "acc"]), 1), n ? nf.format(n) : "–"] };
+    })));
+    d.appendChild(el("p", "small", "From the v3 calibration run, scored on fights from Jan 2024 to Oct 2026 before the 2026 vault was sealed, with neutral knobs. Kept for reference; the blend's numbers above are on 2024-25 only."));
+    return d;
+  }
+  function renderBacktest() {
+    var box = $("btBody"); box.textContent = "";
+    box.appendChild(el("p", "lede", "Every number here is out of sample: each fight is predicted from what was known the day before, by models that never saw it. Lower log loss is better; a coin flip scores 0.693, and a few thousandths is a real difference at this level."));
+    var grid = el("div", "bt-grid"), c1 = el("div", "bt-col"), c2 = el("div", "bt-col");
+    grid.appendChild(c1); grid.appendChild(c2); box.appendChild(grid);
+    // the protocol, plainly
+    c1.appendChild(el("h3", "mini", "How the testing works"));
+    var ol = el("ol", "proto");
+    [["Tuning years, 2019-2023.", " Every model, weight and setting was fit or tuned on these fights only."],
+      ["Validation years, 2024-2025.", " Used only to choose between versions. The scoreboard below comes from here."],
+      ["A sealed vault, 2026.", " Every fight from Jan 1, 2026 on (about 370) is kept in a separate folder outside the project. Nothing is tuned or scored on it; an independent auditor opens it once at milestones."],
+      ["The forward test.", " Before each upcoming card the current version's picks are committed to the project's ledger, so the timestamp proves they came first. They are scored after the fights (see the next panel)."]
+    ].forEach(function (x) { var li = el("li"), sp = el("span"); sp.appendChild(el("b", null, x[0])); sp.appendChild(document.createTextNode(x[1])); li.appendChild(sp); ol.appendChild(li); });
+    c1.appendChild(ol);
+    // scoreboard: 2024-25 validation
+    if (BENCH && BENCH.singles) {
+      c1.appendChild(el("h3", "mini", "Scoreboard, 2024-25 validation fights"));
+      var sg = BENCH.singles, rowsB = [];
+      if (BENCH.line && BENCH.line.moe) rowsB.push(["The blend, with the closing line", BENCH.line.moe.est, BENCH.line.n, true]);
+      if (sg.market) rowsB.push(["Market closing line alone", sg.market.ll, sg.market.n]);
+      if (BENCH.noline) rowsB.push(["The blend, no line", BENCH.noline.ll, BENCH.noline.n, true]);
+      [["ml", "ML model"], ["feat_lr", "Feature model"], ["mkt_rating", "Market rating"], ["engine", "Simulator (v3, data-only rates)"], ["elo_sig", "Strike-share Elo"], ["elo", "Elo"]].forEach(function (k) { if (sg[k[0]]) rowsB.push([k[1], sg[k[0]].ll, sg[k[0]].n]); });
+      rowsB.push(["Coin flip", Math.log(2), null]);
+      var best = Math.min.apply(null, rowsB.map(function (r) { return r[1]; })), worst = Math.log(2);
+      c1.appendChild(table(["Model", "Log loss", "Fights"], rowsB.map(function (r) { return { strong: r[3], cells: [r[0], llCell(r[1], best, worst), r[2] ? nf.format(r[2]) : "–"] }; }), { caption: "Log loss on 2024-25 validation fights" }));
+      var ul = el("ul", "caveats"), L = BENCH.line || {}, NL = BENCH.noline || {}, CV = BENCH.noline_cv || {};
+      if (L.diff) ul.appendChild(el("li", null, "With a line, the blend beat the closing line on 2024-25 by " + fx(-L.diff.est, 4) + " (95% interval " + ci(L.diff) + "), but was level in the 2021-23 checks" + (L.cv_2021_2023 ? " (" + sgn(L.cv_2021_2023.est) + " " + ci(L.cv_2021_2023) + ")" : "") + ". Pooled over every out-of-sample year, 2021-2025" + (L.pooled_n ? " (" + nf.format(L.pooled_n) + " fights)" : "") + ", it is " + (L.pooled_2021_2025 ? sgn(L.pooled_2021_2025.est) + " " + ci(L.pooled_2021_2025) : "–") + ": level with the market to slightly better, not a reliable edge."));
+      if (NL.vs_best) ul.appendChild(el("li", null, "Without a line it beats every single model: " + fx(-NL.vs_best.est, 4) + " better than the best one (the ML model) on 2024-25 " + ci(NL.vs_best) + (CV.moe_minus_ml ? ", and " + fx(-CV.moe_minus_ml.est, 4) + " better in the 2021-23 checks " + ci(CV.moe_minus_ml) : "") + "."));
+      ul.appendChild(el("li", null, "The simulator gets little weight because on its own it trails the learned models; for the winner it added nothing beyond them. Its job is the how: methods, rounds, the story of a fight."));
+      c1.appendChild(ul);
+    }
+    if (BENCH && BENCH.since2024 && BENCH.since2024.length) {
+      c1.appendChild(el("h3", "mini", "Benchmarks on fights from 2024 on"));
+      var R2 = BENCH.since2024, b2 = Math.min.apply(null, R2.map(function (r) { return r.ll; }));
+      c1.appendChild(table(["Model", "Log loss", "Picks right", "Fights"], R2.map(function (r) { return { cells: [r.label, llCell(r.ll, b2, Math.log(2)), pct(r.acc, 1), r.n ? nf.format(r.n) : "–"] }; })));
+      c1.appendChild(el("p", "small", "From the market and ML reports, Jan 2024 to Oct 2026. These were scored before the 2026 vault was sealed, so they include 2026 fights; the scoreboard above uses 2024-25 only."));
+    }
+    // reliability
+    var cal = BENCH && BENCH.calibration;
+    if (cal && (cal.moe_market || cal.moe_nomarket)) {
+      c2.appendChild(el("h3", "mini", "Reliability, 2024-25: when it says 70%, does the favorite win 70%?"));
+      var series = [];
+      if (cal.moe_market) series.push(["Blend, with the line", cal.moe_market, "var(--s1)"]);
+      if (cal.moe_nomarket) series.push(["Blend, no line", cal.moe_nomarket, "var(--s2)"]);
+      if (cal.market) series.push(["Market closing line", cal.market, "var(--s3)"]);
+      var cb = el("div", "chart relchart"); c2.appendChild(cb); drawReliability(cb, series);
+      var lg = el("div", "bt-legend"); series.forEach(function (s) { var x = el("span"), i = el("i"); i.style.background = s[2]; x.appendChild(i); x.appendChild(document.createTextNode(s[0])); lg.appendChild(x); });
+      lg.appendChild(el("span", null, "Diagonal: perfect calibration. Dot size: number of fights.")); c2.appendChild(lg);
+      var det = el("details", "more"), sm = el("summary", null, "Reliability as a table"); det.appendChild(sm);
+      var rr = [];
+      series.forEach(function (s) { s[1].forEach(function (b) { rr.push({ cells: [s[0], Math.round(b.lo * 100) + "-" + Math.round(b.hi * 100) + "%", pct(b.pred, 1), pct(b.obs, 1), nf.format(b.n)] }); }); });
+      det.appendChild(table(["Model", "Bin", "Predicted", "Actual", "Fights"], rr)); c2.appendChild(det);
+      c2.appendChild(el("p", "small", "Points above the diagonal mean the favorite won more often than predicted. In 2024-25 every input, the market included, was underconfident; the production blend is refit with recent fights weighted up to correct for it."));
+    }
+    c2.appendChild(versionTable());
+    c2.appendChild(simulatorAlone());
+    c2.appendChild(caveats());
   }
   function caveats() {
     var d = el("div"); d.appendChild(el("h3", "mini", "Read with care"));
     var ul = el("ul", "caveats");
-    ["Rating systems and models like this one top out in the high 50s to 60s percent for picking winners; a few points of log loss is a real gain.",
-      "The backtest scores the engine with neutral knobs. Scenario presets are judgment calls the backtest can't check.",
-      "Fighters with little UFC data are pulled hard toward their division average, so debut and early-career predictions are close to coin flips by design.",
-      "Featherweight champions moving up are rare in the data, so the backtest says little about Volkanovski at 155 specifically."].forEach(function (t) { ul.appendChild(el("li", null, t)); });
+    ["The production blend is refit on 2019-2025 with recent fights weighted up, so it is sharper than the validated one. If 2026 fights look more like 2019-2023 than 2024-25, that costs it some accuracy; the forward test will tell.",
+      "Scenario presets and knobs change the simulator, not the blend. They are judgment calls the backtest can't check.",
+      "Fighters with little UFC data are pulled hard toward their division average, so debut and early-career predictions lean on the market.",
+      "Featherweight champions moving up are rare in the data, so none of these models says much about Volkanovski at 155 specifically."].forEach(function (t) { ul.appendChild(el("li", null, t)); });
     d.appendChild(ul); return d;
+  }
+
+  /* ================================================================ forward test */
+  function divFor(wc, sa, sb) { return DIVS.indexOf(wc) >= 0 ? wc : defaultDivision(sa, sb); }
+  function liveForward(b, date) {
+    var sa = b.a && b.a.slug, sb = b.b && b.b.slug;
+    if (!MOE || !sa || !sb || !DB.fighters[sa] || !DB.fighters[sb]) return null;
+    var ctx = { division: divFor(b.wc, sa, sb), rounds: b.rounds || 3, title: !!b.title, date: date };
+    var X = expertsFor(sa, sb, DB.fighters[sa], DB.fighters[sb], ctx);
+    if (!Object.keys(X.experts).length) return null;
+    try { var r = MOE.predict({ experts: X.experts, gate: window.MoE.gateFromSides(X.A, X.B, { division: ctx.division, rounds: ctx.rounds }) }); return { p: r.p, n: r.used.length, ctx: ctx }; }
+    catch (e) { return null; }
+  }
+  function fmtOdds(v) { return v == null ? "" : (v > 0 ? "+" + v : String(v)); }
+  function loadBout(b, ev) {
+    var sa = b.a.slug, sb = b.b.slug; if (!DB.fighters[sa] || !DB.fighters[sb]) return;
+    S.a = sa; S.b = sb; applyPairDefaults();
+    S.div = divFor(b.wc, sa, sb); S.rounds = b.rounds === 5 ? 5 : 3; S.title = !!b.title;
+    if (b.mkt && b.mkt.oa != null && b.mkt.ob != null) { S.odds = { A: fmtOdds(b.mkt.oa), B: fmtOdds(b.mkt.ob) }; S.oddsSrc = "consensus odds snapshot" + (FWD && FWD.odds && FWD.odds.utc ? " of " + fmtDate(FWD.odds.utc.slice(0, 10)) : "") + " for " + ev.name; }
+    matchupChanged(true);
+    var mb = document.querySelector(".matchbar"); if (mb && mb.scrollIntoView) mb.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+  function renderForward() {
+    var box = $("fwBody"); if (!box) return; box.textContent = "";
+    if (!FWD || !FWD.events || !FWD.events.length) { box.appendChild(el("p", "small", "No upcoming cards in this build.")); return; }
+    var nB = 0, nPick = 0, nAgree = 0, nBoth = 0, scored = [], rowsOut = [];
+    FWD.events.forEach(function (ev) {
+      ev.bouts.forEach(function (b) {
+        nB++;
+        var live = liveForward(b, ev.date); b._live = live;
+        if (live) nPick++;
+        if (live && b.mkt && b.mkt.p != null) { nBoth++; if ((live.p > 0.5) === (b.mkt.p > 0.5)) nAgree++; }
+        var res = b.result, led = b.ledger;
+        if (res && res.outcome === "win" && led && led.p_a != null) {
+          var pw = res.winner === "a" ? led.p_a : 1 - led.p_a, mk = b.mkt ? (res.winner === "a" ? b.mkt.p : 1 - b.mkt.p) : null;
+          scored.push({ ll: -Math.log(clamp(pw, 1e-6, 1)), mll: mk != null ? -Math.log(clamp(mk, 1e-6, 1)) : null, hit: pw > 0.5 ? 1 : (pw === 0.5 ? 0.5 : 0) });
+        }
+      });
+    });
+    $("fwSub").textContent = "Cards as of " + fmtDate(String(FWD.as_of || "").slice(0, 10)) + (FWD.odds && FWD.odds.utc ? " · odds " + fmtDate(FWD.odds.utc.slice(0, 10)) : "");
+    var lede = el("p", "lede", "The model's pick for every announced bout in the next six weeks, next to the betting market. The picks shown here are computed live in your browser from the no-line blend (the market line is left out so the two can be compared, and the simulator is left out to keep the page quick). The record that counts is the ledger committed to the project before each card; once results land, this panel scores those committed picks against the market.");
+    box.appendChild(lede);
+    var sumBox = el("div", "fw-sum");
+    function tile(l, v) { var t = el("div", "tile"); t.appendChild(el("span", "tl", l)); t.appendChild(el("span", "tv", v)); sumBox.appendChild(t); }
+    tile("Bouts on " + FWD.events.length + " cards", String(nB));
+    tile("With a model pick", String(nPick));
+    tile("Same favorite as the market", nBoth ? nAgree + " of " + nBoth : "–");
+    if (scored.length) {
+      var ll = 0, mll = 0, nm = 0, hit = 0; scored.forEach(function (s) { ll += s.ll; hit += s.hit; if (s.mll != null) { mll += s.mll; nm++; } });
+      tile("Scored: log loss, model vs market", fx(ll / scored.length, 3) + (nm ? " vs " + fx(mll / nm, 3) : ""));
+    } else tile("Scored so far", FWD.n_ledger ? "0 (no results yet)" : "0 (no ledger yet)");
+    box.appendChild(sumBox);
+    FWD.events.forEach(function (ev) {
+      var wrap = el("div", "fw-ev"), hd = el("div", "fw-eh");
+      hd.appendChild(el("h3", null, ev.name)); hd.appendChild(el("span", null, fmtDate(ev.date) + (ev.loc ? " · " + String(ev.loc).split(",")[0] : "") + (ev.status && ev.status !== "official" ? " · not yet official" : "")));
+      wrap.appendChild(hd);
+      ev.bouts.forEach(function (b) {
+        var row = el("div", "fw-row"), live = b._live, pA = live ? live.p : null;
+        var nm = el("div", "fw-names");
+        var an = el("span", pA != null && pA >= 0.5 ? "pick" : null, b.a.name), bn = el("span", pA != null && pA < 0.5 ? "pick" : null, b.b.name);
+        nm.appendChild(an); nm.appendChild(el("span", "vs", "vs")); nm.appendChild(bn);
+        var meta = [b.wc, (b.rounds || 3) + " rds", b.title ? "title" : null, b.order === 1 ? "main event" : null].filter(Boolean).join(" · ");
+        var mt = el("span", "fw-meta", meta); nm.appendChild(mt);
+        if (b.status && b.status !== "official") mt.appendChild(el("span", "fw-flag", b.status));
+        if (!b.a.slug || !b.b.slug) mt.appendChild(el("span", "fw-flag", "UFC debut"));
+        else if (!live) mt.appendChild(el("span", "fw-flag", "no profile"));
+        row.appendChild(nm);
+        var bar = el("div", "fw-bar");
+        if (pA != null) {
+          var tr = el("div", "fw-track"), ia = el("i", "A"), ib = el("i", "B");
+          ia.style.width = (pA * 100) + "%"; ib.style.width = ((1 - pA) * 100) + "%"; tr.appendChild(ia); tr.appendChild(ib);
+          if (b.mkt && b.mkt.p != null) { var u = el("u"); u.style.left = (b.mkt.p * 100) + "%"; tr.appendChild(u); }
+          tr.setAttribute("role", "img"); tr.setAttribute("aria-label", "Model: " + b.a.name + " " + pct(pA, 0) + (b.mkt && b.mkt.p != null ? "; market " + pct(b.mkt.p, 0) : ""));
+          bar.appendChild(tr);
+          var nums = el("div", "fw-nums"), fav = pA >= 0.5 ? lastName(b.a.name) : lastName(b.b.name);
+          nums.appendChild(el("span", null, "Model: " + fav + " " + pct(Math.max(pA, 1 - pA), 0)));
+          nums.appendChild(el("span", null, b.mkt && b.mkt.p != null ? "Market " + (b.mkt.p >= 0.5 ? lastName(b.a.name) : lastName(b.b.name)) + " " + pct(Math.max(b.mkt.p, 1 - b.mkt.p), 0) : "No odds yet"));
+          bar.appendChild(nums);
+        } else {
+          bar.appendChild(el("span", "fw-res", b.mkt && b.mkt.p != null ? "Market: " + (b.mkt.p >= 0.5 ? lastName(b.a.name) : lastName(b.b.name)) + " " + pct(Math.max(b.mkt.p, 1 - b.mkt.p), 0) + " · no model pick" : "No model pick and no odds yet"));
+        }
+        row.appendChild(bar);
+        var rs = el("div", "fw-res");
+        if (b.result && b.result.outcome) {
+          var w = b.result.winner === "a" ? b.a.name : (b.result.winner === "b" ? b.b.name : null);
+          rs.appendChild(el("b", null, b.result.outcome === "win" && w ? lastName(w) + " won" : b.result.outcome));
+          if (b.result.method) rs.appendChild(document.createTextNode(" · " + b.result.method + (b.result.round ? " R" + b.result.round : "")));
+          if (!b.ledger) rs.appendChild(el("span", "fw-meta", "not in the ledger, so not scored"));
+        } else rs.appendChild(document.createTextNode(b.ledger ? "Pick committed (" + (b.ledger.model || "ledger") + ")" : "Not yet committed"));
+        row.appendChild(rs);
+        var go = el("div", "fw-go");
+        if (live) {
+          var btn = el("button", "btn ghost", "Load"); btn.type = "button"; btn.setAttribute("aria-label", "Load " + b.a.name + " vs " + b.b.name + " into the simulator");
+          btn.addEventListener("click", function () { loadBout(b, ev); }); go.appendChild(btn);
+        }
+        row.appendChild(go);
+        wrap.appendChild(row);
+      });
+      box.appendChild(wrap);
+    });
+    box.appendChild(el("p", "small", "Model: the blend without a market line. Market: the consensus no-vig price from the latest odds snapshot (black tick on each bar). Bouts with a UFC debutant or a fighter outside the roster get no model pick. Ledger rules: data/predictions/README.md."));
   }
 
   /* ================================================================ research section visibility */

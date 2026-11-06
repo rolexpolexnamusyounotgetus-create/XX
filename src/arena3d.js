@@ -596,7 +596,7 @@
     "  mv.xy += q * aHz.w;",
     "  vUv = position.xy + 0.5;",
     "  float d = -mv.z;",
-    "  vA = uHaze * smoothstep(2.0, 6.0, d) * (1.0 - smoothstep(45.0, 80.0, d)) * (0.55 + 0.45 * smoothstep(1.5, 9.0, c.y));",
+    "  vA = uHaze * smoothstep(3.0, 10.0, d) * (1.0 - smoothstep(45.0, 80.0, d)) * (0.55 + 0.45 * smoothstep(1.5, 9.0, c.y));",
     "  gl_Position = projectionMatrix * mv;",
     "}"
   ].join("\n");
@@ -896,13 +896,20 @@
       var env = buildEnvironment(self.renderer, false, t);
       t.dispose();
       if (!env) { self.envState = "procedural"; return; }
-      var old = self.env;
-      self.env = env; self.scene.environment = env; self.envState = "hdri";
-      if (old && old.dispose) old.dispose();
+      self.envProc = self.env;   // kept for useEnv("procedural")
+      self.envHdri = self.env = env; self.scene.environment = env; self.envState = "hdri";
     }).catch(function (e) {
       self.envState = "procedural";
       if (root.console) console.warn("[arena] environment map unavailable, keeping the procedural one", e && e.message);
     });
+  };
+
+  // switch between the two environments (dev A/B, or a page that wants the plain one back)
+  Arena.prototype.useEnv = function (kind) {
+    var t = kind === "procedural" ? (this.envProc || this.env) : this.envHdri;
+    if (!t) return false;
+    this.env = t; this.scene.environment = t; this.envState = kind === "procedural" ? "procedural" : "hdri";
+    return true;
   };
 
   // photo surfaces: ambientCG chain-link (opacity; the wire normal is derived from it), Fabric036 weave and slubs
@@ -942,7 +949,7 @@
       A.surfaces = (A.surfaces || 0) | 2;
     }).catch(warn);
     if (assetUrl("arena-mat-slub.webp")) loadImage("arena-mat-slub.webp").then(function (img) {
-      A.matU.uSlub.value = imageTex(img, false, A.aniso, true); A.matU.uSlubAmt.value = 0.16;
+      A.matU.uSlub.value = imageTex(img, false, A.aniso, true); A.matU.uSlubAmt.value = 0.1;
       A.surfaces = (A.surfaces || 0) | 4;
     }).catch(warn);
     if (assetUrl("arena-leather-normal.jpg")) loadImage("arena-leather-normal.jpg").then(function (img) {
@@ -1022,7 +1029,7 @@
         .replace("#include <map_fragment>", [
           "#include <map_fragment>",
           // printed fabric under the print: slubs and thread lines at two scales so the tile never repeats visibly
-          "float slub = texture2D(uSlub, vUv * uSlubRep).r * 0.62 + texture2D(uSlub, vUv * uSlubRep * 0.37 + vec2(0.31, 0.17)).r * 0.38;",
+          "float slub = texture2D(uSlub, vUv * uSlubRep).r * 0.6 + texture2D(uSlub, vUv * uSlubRep * 1.73 + vec2(0.31, 0.17)).r * 0.4;",
           "diffuseColor.rgb *= 1.0 + (slub - 0.5) * uSlubAmt;",
           "vec4 wear = texture2D(uWear, vUv);",
           "diffuseColor.rgb *= 1.0 - 0.34 * sqrt(clamp(wear.r, 0.0, 1.0));",
@@ -1509,7 +1516,7 @@
     g2.setAttribute("aHz", new T.InstancedBufferAttribute(hz, 4));
     g2.setAttribute("aHr", new T.InstancedBufferAttribute(hr, 2));
     g2.instanceCount = N;
-    var m = new T.ShaderMaterial({ uniforms: { uTime: A.U.uTime, uHaze: A.U.uHaze, uTex: { value: tex }, uColor: { value: new T.Color(1.0, 0.93, 0.84).multiplyScalar(0.55) } }, vertexShader: HAZE_VS, fragmentShader: HAZE_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending });
+    var m = new T.ShaderMaterial({ uniforms: { uTime: A.U.uTime, uHaze: A.U.uHaze, uTex: { value: tex }, uColor: { value: new T.Color(1.0, 0.93, 0.84).multiplyScalar(0.13) } }, vertexShader: HAZE_VS, fragmentShader: HAZE_FS, transparent: true, depthWrite: false, blending: T.AdditiveBlending });
     var mesh = A.haze = new T.Mesh(g2, m); mesh.frustumCulled = false; mesh.renderOrder = 4; mesh.visible = A.Q.haze > 0;
     A.own(mesh);
   }
@@ -1697,7 +1704,7 @@
     else if (ph === "break") hz = 0.3;
     else if (ph === "finish" || ph === "result" || ph === "decision") hz = 0.36;
     else if (!ph || ph === "idle") hz = 0.6;
-    F.haze += (hz - F.haze) * Math.min(1, dt * (hz > F.haze ? 0.9 : 0.25));
+    F.haze += (hz - F.haze) * Math.min(1, dt * (hz > F.haze ? 0.9 : 0.45));
     U.uHaze.value = F.haze * (this.Q.haze || 0);
     U.uShaft.value = 0.008 + 0.017 * F.haze;
     // camera flashes; the press at the apron fire hardest on knockdowns and light the cage for a frame

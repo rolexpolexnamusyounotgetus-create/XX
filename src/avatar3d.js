@@ -522,7 +522,47 @@
     L.tattoos = app.tattoo_marks || [];
     var LK = app.likeness && typeof app.likeness === "object" ? app.likeness : null;
     if (LK) applyLikeness(L, LK, app, cfg, base, ids);
+    hairPlan(L, app, LK, cfg, base);
     return L;
+  }
+
+  /* Hair and facial hair as worn: painted scalp shadow for shaved heads, multi-layer strand shells for
+     buzz cuts, crops and fades (length from the sheet), proxy meshes for longer hair; painted stubble as
+     the undercoat under a strand shell for beards. Coverage maps: mh-mask-hair.png (buzz, skin fade,
+     receding buzz, horseshoe) and mh-mask-beard.png (3-day, heavy stubble, goatee+moustache, shaved scalp). */
+  function firstNum(v) {
+    if (typeof v === "number") return v;
+    var m = /(\d+(?:\.\d+)?)\s*(?:-|to|–)\s*(\d+(?:\.\d+)?)/.exec(String(v || "")), m2 = /(\d+(?:\.\d+)?)/.exec(String(v || ""));
+    return m ? (+m[1] + +m[2]) / 2 : (m2 ? +m2[1] : null);
+  }
+  function hairPlan(L, app, LK, cfg, base) {
+    var H = (LK && LK.hair) || {}, FH = (LK && LK.facial_hair) || {};
+    var txt = lower([H.style, H.hairline, app.hair].join(" ")), len = H.length_cm, top = null, sides = null;
+    if (typeof len === "number") top = len; else if (len && typeof len === "object") { top = firstNum(len.top); sides = firstNum(len.sides); }
+    L.hairMode = L.hair ? "mesh" : "paint"; L.scalpCh = -1; L.hairLen = 0; L.hairSides = sides;
+    var reced = /reced|receding|m shape|m-shape|thinning|widow/.test(txt), horseshoe = /horseshoe|male-pattern|crown thinning|bald on top/.test(txt);
+    var fade = /fade|taper|high and tight|clipped very short|skin fade/.test(txt);
+    if (top === 0 || (top == null && /bald|clean-shaven head|shaved head|head shaved|shaven head/.test(txt))) {
+      L.hair = null; L.hairMode = "paint"; L.scalpCh = horseshoe || reced ? 3 : 4; L.scalp = 0.2;
+    } else if ((top != null && top <= 1.3) || (top == null && /buzz|induction|clipper|very short|crew cut/.test(txt))) {
+      L.hair = null; L.hairMode = "shell"; L.hairLen = Math.max(0.25, top || 0.6); L.scalpCh = reced ? 2 : (horseshoe ? 3 : (fade ? 1 : 0)); L.scalp = 0.9;
+    } else if (top != null && top <= 6.5 && /fade|taper|crop|crew|short|high and tight|buzz|textured|spiky|tapered/.test(txt) && !/long|ponytail|bun|braid|afro|curly mop|shoulder/.test(txt)) {
+      L.hair = null; L.hairMode = "shell"; L.hairLen = Math.min(top, 3.4); L.scalpCh = reced ? 2 : (fade ? 1 : 0); L.scalp = 0.9;
+    } else if (L.hair) { L.scalpCh = reced ? 2 : 0; L.scalp = 0.55; }
+    else if (!L.hair && L.scalp > 0.5) { L.hairMode = "shell"; L.hairLen = 0.5; L.scalpCh = 0; }
+    else if (!L.hair) { L.scalpCh = 4; }
+    // facial hair: undercoat mask, strand length and density
+    var ft = lower([FH.type, FH.shape, typeof FH.length_mm === "string" ? FH.length_mm : "", app.facial_hair].join(" "));
+    var mm = firstNum(FH.length_mm);
+    L.beardCh = 0; L.beardLen = 0;
+    if (cfg.female || L.beard <= 0.15) { L.beardLen = 0; }
+    else if (L.chinOnly || L.moustacheOnly || /goatee|chin beard|moustache only|mustache only/.test(lower(FH.type))) { L.beardCh = 2; L.beardLen = mm || 8; }
+    else if (/full|long|thick/.test(lower(FH.type)) && /beard/.test(lower(FH.type))) { L.beardCh = 1; L.beardLen = mm || 22; }
+    else if (/beard/.test(lower(FH.type)) || (/beard/.test(ft) && !/stubble/.test(lower(FH.type)))) { L.beardCh = 1; L.beardLen = mm || 9; }
+    else if (/stubble|scruff/.test(ft) || L.beard >= 0.5) { L.beardCh = /heavy/.test(ft) ? 1 : 0; L.beardLen = mm || (/heavy/.test(ft) ? 3.5 : 1.5); }
+    L.beardDensity = /patchy|sparse|thin|light/.test(lower(FH.density || "")) ? 0.75 : (/dense|thick/.test(lower(FH.density || "")) ? 1 : 0.9);
+    L.beardShellLen = L.beardLen >= 2 ? Math.min(L.beardLen, 30) / 1000 : 0;
+    L.beardShell = 0;   // the old single-layer shell is replaced by the strand shell
   }
 
   /* Likeness sheet (data/likeness/<slug>.json) -> looks: colours sampled from photos, beard type, iris,
@@ -666,12 +706,18 @@
     // 6. masks (facial hair, damage zones, kick zones, scalp) and decals per MakeHuman vertex
     var masks = this.computeMasks(P, J);
     // 7. materials and meshes
+    function optTex(name, srgb) { return assetUrl(name) ? loadTexture(name, !!srgb).catch(function () { return null; }) : null; }
+    var gloveId = "clothes-learning_mma_fighting_gloves", wantGlove = !cfg.ref && opts.proxyGloves !== false && base.man.proxies.some(function (p) { return p.kind + "-" + p.id === gloveId; });
     return Promise.all([
       loadTexture(looks.skin.file, true),
       base.proxy("eyes-high-poly"), loadTexture("mh-iris-" + looks.iris + ".webp", true),
       base.proxy(looks.brows), base.proxy("eyelashes-eyelashes01"),
-      looks.hair ? base.proxy(looks.hair) : null
+      looks.hair ? base.proxy(looks.hair) : null,
+      optTex("mh-skin-athletic-n.jpg"), optTex("mh-skin-pores-n.jpg"), optTex("mh-skin-spec.jpg"), optTex("mh-mask-hair.png"), optTex("mh-mask-beard.png"),
+      wantGlove ? base.proxy(gloveId).catch(function () { return null; }) : null
     ]).then(function (r) {
+      self.tex = { normal: r[6], pores: r[7], spec: r[8], maskHair: r[9], maskBeard: r[10] };
+      self.gloveProxy = r[11];
       self.makeBody(r[0], masks);
       self.addProxy(r[1], { map: r[2], roughness: 0.12, eyes: true });
       self.addProxy(r[3], { color: looks.beardColor === looks.hairColor ? looks.hairColor : mixHex(looks.hairColor, looks.beardColor, 0.4), brows: true });
@@ -679,6 +725,7 @@
       if (r[5]) self.addProxy(r[5], { color: looks.hairColor, hair: true });
       if (self.cfg.ref) self.makeRefKit(); else self.makeFightKit();
       if (looks.beardShell > 0) self.makeBeardShell(masks);
+      if (!self.cfg.ref || looks.hairMode === "shell") self.makeStrands();
       self.initRetarget();
       self.measure();
       self.group.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; } });

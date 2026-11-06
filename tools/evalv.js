@@ -1,0 +1,530 @@
+#!/usr/bin/env node
+/* evalv.js: the STANDARD EVALUATION of a frozen engine version (engine v4 cycle on; docs/BACKLOG.md "Evaluation rule"
+   and "Hidden-data protocol").
+
+     node tools/evalv.js --version v4 [--split train] [--sims 300] [--workers 3] [--compare v3]
+     node tools/evalv.js --version v4 --split val [--sims 300] [--workers 3] [--compare v3]     (ONE look per version)
+     node tools/evalv.js --version v4 --engine-dir src --dev [--split train] ...                (unfrozen code: no history)
+
+   What it runs. The engine and params of versions/<version>/ (engine3.js + params3.js, and ml/mlrates.js for engines
+   with the learned stat-line layer) on data/derived/backtest_dev.json (every fight dated 2026-01-01 or later is dropped
+   on load, whatever the file holds). TRAIN = 2019-01-01..2023-12-31, VALIDATION = 2024-01-01..2025-12-31.
+   - Symmetric: every fight is simulated in both corner orders (sims per order = --sims) and the two are averaged in the
+     data's orientation; nothing is fit with an intercept (BACKLOG: the first-named fighter wins 56.3%).
+   - Common random numbers: fight f, order o uses makeRng(mix(hash(id), o, seed)), the same for every version.
+   - Shrinkage priors: data/derived/mlcal_priors_asof.json[year] (walk-forward: division rates from the 5 years before
+     Jan 1 of the fight's year; train-only for train fights).
+   - Learned stat-line rates, leak-free, when the engine has them (FightEngine.loadMLRates and params mlWeight > 0):
+     data/derived/mlrates_oof.json (2019-2023: time-ordered folds trained on 2010..year-1; 2024-2025: the dev model
+     trained 2010-2023), passed per fight as opts.ml = { pred } in the simulation's corner order.
+   Metrics (per split, 95% event-cluster bootstrap CIs, 2,000 resamples of events):
+     winner log loss, Brier, accuracy, ECE (10 bins, mirrored), calibration slope (mirrored, no intercept), 7-bin log
+     loss, method (KO / SUB / DEC) log loss, who x how x when log loss and the rest of tools/methodround.py's metrics
+     (scored by `python3 tools/methodround.py --score`, paired against methodround model S), per-fight stat-line
+     deviance (Poisson: sig landed, sig attempts, takedowns landed, control seconds, knockdowns; plus MAE), and the
+     base-rate table (finish rate, KO / SUB / DEC, finish by round for 3- and 5-round fights, KD per 100 head landed,
+     decision split UD / SD / MD, 10-8 rate) simulated vs actual. --compare <version> adds paired differences against
+     that version's stored results on the same split.
+   The blend test (validation runs only): the MoE stacker (tools/moe.py's Stacker, chosen linear family) refit with
+     this version's engine probabilities, via tools/evalv_blend.py: validated engine weight and the blend's validation
+     log loss with vs without the engine.
+   Outputs: data/derived/evalv/<version>_<split>.json (metrics + per-fight predictions), and the version's entry in
+   data/derived/version_history.json {version, date, engine_sha256, params_sha256, train, validation, blend, notes}.
+   A train run creates or updates the entry's train block (and leaves validation null). A validation run fills
+   validation and blend exactly once: it refuses when the entry already holds validation numbers for the same engine and
+   params hashes, and when the frozen files no longer match the entry's hashes (a second look needs a new version entry
+   and a note). --dev runs never touch the history. */
+"use strict";
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const { execFileSync } = require("child_process");
+const { Worker, isMainThread, parentPort, workerData } = require("worker_threads");
+
+const ROOT = path.resolve(__dirname, "..");
+const VAULT_FROM = "2026-01-01";
+const SPLITS = { train: ["2019-01-01", "2024-01-01"], val: ["2024-01-01", "2026-01-01"] };
+const STATK = ["sig_lnd", "sig_att", "td_lnd", "td_att", "ctrl", "kd", "h_lnd", "sub_att"];
+const NSTAT = STATK.length;
+const DEVK = ["sig_lnd", "sig_att", "td_lnd", "ctrl", "kd"];
+
+function hash32(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return h >>> 0; }
+function mix(a, b) { let h = (a ^ Math.imul(b + 0x6d2b79f5, 0x9e3779b1)) >>> 0; h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); return (h ^ (h >>> 16)) >>> 0; }
+function sha256(file) { return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex"); }
+function readJSON(p) { return JSON.parse(fs.readFileSync(path.isAbsolute(p) ? p : path.join(ROOT, p), "utf8")); }
+function loadBacktest() {
+  const bt = readJSON("data/derived/backtest_dev.json");
+  const keys = bt.meta.keys;
+  const fights = bt.fights.filter((f) => f.date < VAULT_FROM);         // hidden-data protocol: never a 2026 fight
+  for (const f of fights) { f.A.keys = keys; f.B.keys = keys; }
+  return fights;
+}
+// outcome code in the data's orientation: { winner, cls: KO | SUB | DEC | DRAW | null (DQ, NC: excluded), round }
+function outcome(f) {
+  const r = f.result || {};
+  const cls = { KO: "KO", DOC: "KO", SUB: "SUB", UD: "DEC", SD: "DEC", MD: "DEC", DRAW: "DRAW" }[r.method] || null;
+  if (!cls || (cls !== "DRAW" && r.winner !== "A" && r.winner !== "B")) return null;
+  return { winner: cls === "DRAW" ? "D" : r.winner, cls, round: r.round || 1, method: r.method };
+}
+
+// ================================================================== worker: simulate fights in both corner orders
+if (!isMainThread) {
+  const W = workerData;
+  const E = require(path.join(W.engineDir, "engine3.js"));
+  const PRM = E.params();
+  const useML = W.useML;
+  const fights = loadBacktest();
+  const byId = new Map(fights.map((f) => [f.id, f]));
+  const priors = readJSON("data/derived/mlcal_priors_asof.json");
+  const OOF = useML ? readJSON("data/derived/mlrates_oof.json") : null;
+  const names = OOF ? OOF.meta.targets : null;
+  const rates = (arr) => { const o = {}; names.forEach((n, i) => { o[n] = arr[i]; }); return o; };
+  parentPort.on("message", (msg) => {
+    if (msg.cmd !== "run") return;
+    const out = [];
+    for (const id of msg.ids) {
+      const f = byId.get(id);
+      const R = f.rounds === 5 ? 5 : 3;
+      const NCELL = 4 * R + 3;
+      const acc = { id, cells: new Float64Array(NCELL), dec: [0, 0, 0], draw: 0, n108: 0, judged: 0, decRounds: 0, decN108: 0,
+        stats: new Float64Array(2 * NSTAT), mins: 0, n: 0, mlApplied: 0, err: null };
+      try {
+        for (let o = 0; o < 2; o++) {
+          const A = o === 0 ? f.A : f.B, B = o === 0 ? f.B : f.A;
+          const opts = { division: f.prior_division || f.division, rounds: f.rounds, title: f.title, date: f.date, priors: priors[f.date.slice(0, 4)] };
+          if (useML) {
+            const ent = OOF.fights[f.id];
+            if (ent && ent.A && ent.B) opts.ml = { pred: o === 0 ? { A: rates(ent.A), B: rates(ent.B) } : { A: rates(ent.B), B: rates(ent.A) } };
+            else opts.ml = false;
+          } else if (typeof E.loadMLRates === "function") opts.ml = false;
+          const m = E.matchup(A, B, opts);
+          if (m.mlApplied) acc.mlApplied++;
+          const rng = E.makeRng(mix(mix(hash32(f.id), o), W.seed));
+          for (let i = 0; i < W.sims; i++) {
+            const s = E.simulate(m, rng, false);
+            // map the simulated corner back to the data's orientation
+            const wD = s.winner === "D" ? "D" : ((s.winner === "A") === (o === 0) ? "A" : "B");
+            const meth = s.method, isDec = meth === "UD" || meth === "SD" || meth === "MD" || meth === "DRAW";
+            const r = Math.max(1, Math.min(R, s.round));
+            if (wD === "D") { acc.cells[4 * R + 2]++; acc.draw++; }
+            else if (isDec) { acc.cells[wD === "A" ? 4 * R : 4 * R + 1]++; acc.dec[meth === "UD" ? 0 : (meth === "SD" ? 1 : 2)]++; }
+            else {
+              const sub = meth === "SUB";
+              acc.cells[(wD === "A" ? (sub ? R : 0) : (sub ? 3 * R : 2 * R)) + r - 1]++;
+            }
+            acc.n108 += s.n108 || 0;
+            const jr = isDec ? R : (meth === "CORNER" || meth === "DOC" ? s.round : s.round - 1);
+            acc.judged += jr;
+            if (isDec) { acc.decRounds += R; acc.decN108 += s.n108 || 0; }
+            acc.mins += isDec ? R * 5 : (s.round - 1) * 5 + s.t / 60;
+            const TA = o === 0 ? s.totals.A : s.totals.B, TB = o === 0 ? s.totals.B : s.totals.A;
+            for (let k = 0; k < NSTAT; k++) { acc.stats[k] += TA[STATK[k]]; acc.stats[NSTAT + k] += TB[STATK[k]]; }
+            acc.n++;
+          }
+        }
+      } catch (e) { acc.err = String(e && e.message || e); }
+      out.push({ id: acc.id, cells: Array.from(acc.cells), dec: acc.dec, draw: acc.draw, n108: acc.n108, judged: acc.judged,
+        decRounds: acc.decRounds, decN108: acc.decN108, stats: Array.from(acc.stats), mins: acc.mins, n: acc.n, mlApplied: acc.mlApplied, err: acc.err });
+    }
+    parentPort.postMessage({ cmd: "done", out, version: E.VERSION, params: PRM && PRM.version });
+  });
+  return;
+}
+
+// ================================================================== main
+function parseArgs(argv) {
+  const o = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (!a.startsWith("--")) continue;
+    const k = a.slice(2), v = argv[i + 1];
+    if (v == null || v.startsWith("--")) o[k] = true; else { o[k] = v; i++; }
+  }
+  return o;
+}
+const args = parseArgs(process.argv.slice(2));
+if (!args.version) { console.error("evalv: --version vN is required"); process.exit(2); }
+const VERSION = String(args.version);
+const SPLIT = String(args.split || "train");
+if (!SPLITS[SPLIT]) { console.error("evalv: --split train | val"); process.exit(2); }
+const DEV = !!args.dev;
+const ENGINE_DIR = path.resolve(ROOT, args["engine-dir"] || path.join("versions", VERSION));
+const SIMS = +(args.sims || 300);
+const WORKERS = Math.max(1, Math.min(3, +(args.workers || 3)));
+const SEED = +(args.seed || 1);
+const B = +(args.boot || 2000);
+const OUTDIR = path.join(ROOT, "data/derived/evalv");
+const HIST = path.join(ROOT, "data/derived/version_history.json");
+if (!fs.existsSync(path.join(ENGINE_DIR, "engine3.js")) || !fs.existsSync(path.join(ENGINE_DIR, "params3.js"))) {
+  console.error("evalv: no engine3.js / params3.js in " + ENGINE_DIR); process.exit(2);
+}
+if (!DEV && path.relative(path.join(ROOT, "versions"), ENGINE_DIR).startsWith("..")) {
+  console.error("evalv: a history run needs a frozen copy under versions/ (use --dev for src/)"); process.exit(2);
+}
+const engineSha = sha256(path.join(ENGINE_DIR, "engine3.js")), paramsSha = sha256(path.join(ENGINE_DIR, "params3.js"));
+const mlFile = path.join(ENGINE_DIR, "ml", "mlrates.js");
+const mlSha = fs.existsSync(mlFile) ? sha256(mlFile) : null;
+
+function loadHistory() { return fs.existsSync(HIST) ? JSON.parse(fs.readFileSync(HIST, "utf8")) : { meta: {}, versions: [] }; }
+function historyEntry(H) { return H.versions.find((v) => v.version === VERSION && !v.superseded) || null; }
+if (SPLIT === "val" && !DEV) {
+  const e = historyEntry(loadHistory());
+  if (e && e.validation) {
+    if (e.engine_sha256 === engineSha && e.params_sha256 === paramsSha) {
+      console.error(`evalv: ${VERSION} already has validation numbers for these files (one look per version). A second look needs a new version entry and a note.`);
+      process.exit(3);
+    }
+  }
+  if (e && (e.engine_sha256 !== engineSha || e.params_sha256 !== paramsSha)) {
+    console.error(`evalv: versions/${VERSION} no longer matches the history entry's hashes; freeze a new version instead.`);
+    process.exit(3);
+  }
+}
+
+const E0 = require(path.join(ENGINE_DIR, "engine3.js"));
+const P0 = E0.params();
+const useML = !args["no-ml"] && typeof E0.loadMLRates === "function" && (P0.mlWeight == null || P0.mlWeight > 0);
+const fightsAll = loadBacktest();
+const [d0, d1] = SPLITS[SPLIT];
+const fights = fightsAll.filter((f) => f.date >= d0 && f.date < d1);
+const trainFights = fightsAll.filter((f) => f.date >= SPLITS.train[0] && f.date < SPLITS.train[1]);
+console.log(`evalv ${VERSION} (engine ${E0.VERSION}, params ${P0.version}) on ${SPLIT}: ${fights.length} fights x 2 orders x ${SIMS} sims, ` +
+  `${WORKERS} workers, ML ${useML ? "on (out-of-fold)" : "off"}${DEV ? ", DEV run (no history)" : ""}`);
+
+// ------------------------------------------------------------------ run the workers
+function runAll() {
+  return new Promise((resolve, reject) => {
+    const ids = fights.map((f) => f.id);
+    const chunks = [];
+    const CH = 40;
+    for (let i = 0; i < ids.length; i += CH) chunks.push(ids.slice(i, i + CH));
+    const res = [];
+    let next = 0, live = 0, done = 0;
+    const t0 = Date.now();
+    const workers = [];
+    function feed(w) {
+      if (next >= chunks.length) { w.terminate(); live--; if (live === 0) resolve(res); return; }
+      w.postMessage({ cmd: "run", ids: chunks[next++] });
+    }
+    for (let k = 0; k < Math.min(WORKERS, chunks.length); k++) {
+      const w = new Worker(__filename, { workerData: { engineDir: ENGINE_DIR, sims: SIMS, seed: SEED, useML } });
+      live++;
+      w.on("message", (m) => {
+        if (m.cmd === "done") {
+          res.push(...m.out); done += m.out.length;
+          if (done % 400 < m.out.length) console.log(`  ${done}/${ids.length} fights, ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+          feed(w);
+        }
+      });
+      w.on("error", reject);
+      workers.push(w);
+      feed(w);
+    }
+  });
+}
+
+// ------------------------------------------------------------------ metrics
+const clip = (x, lo, hi) => (x < lo ? lo : (x > hi ? hi : x));
+function baseDist(fs_) {
+  // corner-symmetric outcome shares from TRAIN fights (smoothing prior; train-only for every split)
+  const c = { KO: 0, SUB: 0, DEC: 0, DRAW: 0 }, byR = { 3: { ko: [0, 0, 0], sub: [0, 0, 0], dec: 0, draw: 0, n: 0 }, 5: { ko: [0, 0, 0, 0, 0], sub: [0, 0, 0, 0, 0], dec: 0, draw: 0, n: 0 } };
+  let n = 0;
+  for (const f of fs_) {
+    const y = outcome(f); if (!y) continue;
+    c[y.cls]++; n++;
+    const R = f.rounds === 5 ? 5 : 3, q = byR[R]; q.n++;
+    if (y.cls === "KO") q.ko[Math.min(R, y.round) - 1]++; else if (y.cls === "SUB") q.sub[Math.min(R, y.round) - 1]++; else if (y.cls === "DEC") q.dec++; else q.draw++;
+  }
+  const b7 = [c.KO / 2, c.SUB / 2, c.DEC / 2, c.DRAW, c.DEC / 2, c.SUB / 2, c.KO / 2].map((v) => v / n);
+  const cells = {};
+  for (const R of [3, 5]) {
+    const q = byR[R], m = Math.max(1, q.n), v = [];
+    for (let r = 0; r < R; r++) v.push(q.ko[r] / 2 / m); for (let r = 0; r < R; r++) v.push(q.sub[r] / 2 / m);
+    for (let r = 0; r < R; r++) v.push(q.ko[r] / 2 / m); for (let r = 0; r < R; r++) v.push(q.sub[r] / 2 / m);
+    v.push(q.dec / 2 / m, q.dec / 2 / m, q.draw / m);
+    const s = v.reduce((a, b) => a + b, 0) || 1; cells[R] = v.map((x) => (x + 1e-4) / (s + 1e-4 * v.length));
+  }
+  return { b7, cells };
+}
+function perFight(sim, f, base) {
+  const R = f.rounds === 5 ? 5 : 3, n = sim.n;
+  const c = sim.cells;
+  // smoothed joint cells (one pseudo-sim spread over the train base cells of this format)
+  const cellsS = c.map((v, i) => (v + base.cells[R][i]) / (n + 1));
+  const sumR = (a, b) => { let s = 0; for (let i = a; i < b; i++) s += c[i]; return s; };
+  const aKO = sumR(0, R), aSUB = sumR(R, 2 * R), bKO = sumR(2 * R, 3 * R), bSUB = sumR(3 * R, 4 * R), aDEC = c[4 * R], bDEC = c[4 * R + 1], DR = c[4 * R + 2];
+  const raw7 = [aKO, aSUB, aDEC, DR, bDEC, bSUB, bKO];
+  const b7 = raw7.map((v, i) => (v + base.b7[i]) / (n + 1));
+  const aW = aKO + aSUB + aDEC, bW = bKO + bSUB + bDEC;
+  const pA = clip((aW + 0.5) / (aW + bW + 1), 0.005, 0.995);
+  const finR = []; for (let r = 0; r < R; r++) finR.push((c[r] + c[R + r] + c[2 * R + r] + c[3 * R + r]) / n);
+  const stats = { A: {}, B: {} };
+  for (let k = 0; k < NSTAT; k++) { stats.A[STATK[k]] = sim.stats[k] / n; stats.B[STATK[k]] = sim.stats[NSTAT + k] / n; }
+  return { id: f.id, event: f.event, date: f.date, rounds: R, pA, b7, cells: cellsS, rawCounts: raw7, finR,
+    pKO: (aKO + bKO) / n, pSUB: (aSUB + bSUB) / n, pDEC: (aDEC + bDEC + DR) / n, stats, mins: sim.mins / n,
+    dec: sim.dec, draw: sim.draw, decRounds: sim.decRounds, decN108: sim.decN108, n };
+}
+function poisDev(y, mu) { mu = Math.max(mu, 1e-6); return 2 * ((y > 0 ? y * Math.log(y / mu) : 0) - (y - mu)); }
+function losses(pf, f) {
+  const y = outcome(f), L = {};
+  if (y) {
+    const k7 = y.cls === "DRAW" ? 3 : (y.cls === "DEC" ? (y.winner === "A" ? 2 : 4) : (y.cls === "SUB" ? (y.winner === "A" ? 1 : 5) : (y.winner === "A" ? 0 : 6)));
+    L.bin7 = -Math.log(pf.b7[k7]);
+    const s3 = { KO: pf.b7[0] + pf.b7[6], SUB: pf.b7[1] + pf.b7[5], DEC: pf.b7[2] + pf.b7[3] + pf.b7[4] };
+    L.method = -Math.log(s3[y.cls === "DRAW" ? "DEC" : y.cls]);
+    if (y.winner === "A" || y.winner === "B") {
+      const yy = y.winner === "A" ? 1 : 0, p = pf.pA;
+      L.winLL = -(yy * Math.log(p) + (1 - yy) * Math.log(1 - p));
+      L.brier = (p - yy) * (p - yy);
+      L.acc = p === 0.5 ? 0.5 : ((p > 0.5) === (yy === 1) ? 1 : 0);
+      L._p = p; L._y = yy;
+    }
+  }
+  if (f.actual && f.actual.A && f.actual.B) {
+    for (const k of DEVK) {
+      const ya = f.actual.A[k], yb = f.actual.B[k];
+      if (ya == null || yb == null) continue;
+      L["dev_" + k] = 0.5 * (poisDev(ya, pf.stats.A[k]) + poisDev(yb, pf.stats.B[k]));
+      L["mae_" + k] = 0.5 * (Math.abs(ya - pf.stats.A[k]) + Math.abs(yb - pf.stats.B[k]));
+    }
+  }
+  return L;
+}
+function ece(ps, ys) {
+  const bins = new Array(10).fill(0).map(() => [0, 0, 0]);
+  for (let i = 0; i < ps.length; i++) for (const [p, y] of [[ps[i], ys[i]], [1 - ps[i], 1 - ys[i]]]) {
+    const b = Math.min(9, Math.floor(p * 10)); bins[b][0]++; bins[b][1] += p; bins[b][2] += y;
+  }
+  let e = 0, n = 0; for (const b of bins) { n += b[0]; } for (const b of bins) if (b[0]) e += b[0] / n * Math.abs(b[1] / b[0] - b[2] / b[0]);
+  return e;
+}
+function calSlope(ps, ys) {
+  // mirrored, no intercept: logit P(y) = beta * logit(p)
+  let beta = 1;
+  for (let it = 0; it < 30; it++) {
+    let g = 0, h = 0;
+    for (let i = 0; i < ps.length; i++) for (const [p, y] of [[ps[i], ys[i]], [1 - ps[i], 1 - ys[i]]]) {
+      const x = Math.log(p / (1 - p)), q = 1 / (1 + Math.exp(-beta * x)); g += (y - q) * x; h += q * (1 - q) * x * x;
+    }
+    beta += g / Math.max(1e-9, h);
+  }
+  return beta;
+}
+function baseRates(pfs, fs_, simSide) {
+  // simulated (mean over fights) vs actual on the same fights
+  const o = {}, idx = new Map(fs_.map((f) => [f.id, f]));
+  let n = 0, sFin = 0, sKO = 0, sSUB = 0, sDEC = 0, aFin = 0, aKO = 0, aSUB = 0, aDEC = 0;
+  const fr = { 3: { n: 0, s: [0, 0, 0], a: [0, 0, 0] }, 5: { n: 0, s: [0, 0, 0, 0, 0], a: [0, 0, 0, 0, 0] } };
+  let sKD = 0, sHL = 0, aKD = 0, aHL = 0, sUD = 0, sSD = 0, sMD = 0, aUD = 0, aSD = 0, aMD = 0, sW = 0, sR = 0, aW = 0, aR = 0;
+  let sMin = 0, aMin = 0, sSL = 0, aSL = 0, sTD = 0, aTD = 0, sCT = 0, aCT = 0;
+  for (const pf of pfs) {
+    const f = idx.get(pf.id), y = outcome(f);
+    if (y) {
+      n++; sFin += pf.pKO + pf.pSUB; sKO += pf.pKO; sSUB += pf.pSUB; sDEC += pf.pDEC;
+      if (y.cls === "KO") { aKO++; aFin++; } else if (y.cls === "SUB") { aSUB++; aFin++; } else aDEC++;
+      const q = fr[pf.rounds]; q.n++;
+      for (let r = 0; r < pf.rounds; r++) q.s[r] += pf.finR[r];
+      if (y.cls === "KO" || y.cls === "SUB") q.a[Math.min(pf.rounds, y.round) - 1]++;
+      const nd = pf.dec[0] + pf.dec[1] + pf.dec[2];
+      if (nd) { sUD += pf.dec[0] / pf.n; sSD += pf.dec[1] / pf.n; sMD += pf.dec[2] / pf.n; }
+      if (y.method === "UD") aUD++; else if (y.method === "SD") aSD++; else if (y.method === "MD") aMD++;
+      sW += pf.decN108 / pf.n; sR += 3 * pf.decRounds / pf.n;
+      const cards = f.result && f.result.cards;
+      if ((y.method === "UD" || y.method === "SD" || y.method === "MD" || y.method === "DRAW") && cards && cards.length === 3) {
+        for (const c of cards) { aW += Math.max(0, 19 * pf.rounds - (c[0] + c[1])); aR += pf.rounds; }
+      }
+    }
+    if (f.actual && f.actual.A && f.actual.B) {
+      sKD += pf.stats.A.kd + pf.stats.B.kd; sHL += pf.stats.A.h_lnd + pf.stats.B.h_lnd;
+      aKD += f.actual.A.kd + f.actual.B.kd; aHL += f.actual.A.h_lnd + f.actual.B.h_lnd;
+      sMin += pf.mins; aMin += f.actual.minutes || 0;
+      sSL += pf.stats.A.sig_lnd + pf.stats.B.sig_lnd; aSL += f.actual.A.sig_lnd + f.actual.B.sig_lnd;
+      sTD += pf.stats.A.td_lnd + pf.stats.B.td_lnd; aTD += f.actual.A.td_lnd + f.actual.B.td_lnd;
+      sCT += pf.stats.A.ctrl + pf.stats.B.ctrl; aCT += f.actual.A.ctrl + f.actual.B.ctrl;
+    }
+  }
+  const pair = (s, a) => ({ sim: s, actual: a, diff: s - a });
+  o.n = n;
+  o.finish = pair(sFin / n, aFin / n); o.KO = pair(sKO / n, aKO / n); o.SUB = pair(sSUB / n, aSUB / n); o.DEC = pair(sDEC / n, aDEC / n);
+  for (const R of [3, 5]) { const q = fr[R]; o["finByRound" + R] = { n: q.n, sim: q.s.map((v) => v / Math.max(1, q.n)), actual: q.a.map((v) => v / Math.max(1, q.n)) }; }
+  o.kdPer100Head = pair(100 * sKD / sHL, 100 * aKD / aHL);
+  const sD = sUD + sSD + sMD, aD = aUD + aSD + aMD;
+  o.decision = { sim: { UD: sUD / sD, SD: sSD / sD, MD: sMD / sD }, actual: { UD: aUD / aD, SD: aSD / aD, MD: aMD / aD }, nActual: aD };
+  o.r108 = pair(sW / Math.max(1e-9, sR), aW / Math.max(1, aR));
+  o.sigLndPer15 = pair(15 * sSL / 2 / sMin, 15 * aSL / 2 / aMin); o.tdPer15 = pair(15 * sTD / 2 / sMin, 15 * aTD / 2 / aMin); o.ctrlPer15 = pair(15 * sCT / 2 / sMin, 15 * aCT / 2 / aMin);
+  return o;
+}
+function bootstrap(pfs, L, fs_, keys, extra) {
+  // event-cluster bootstrap of per-fight means (and of ECE / slope via resampled fight lists)
+  const ev = new Map();
+  pfs.forEach((pf, i) => { const k = pf.event + "|" + pf.date; if (!ev.has(k)) ev.set(k, []); ev.get(k).push(i); });
+  const groups = [...ev.values()];
+  let st = 12345;
+  const rnd = () => { st = (Math.imul(st, 1664525) + 1013904223) >>> 0; return st / 4294967296; };
+  const point = {}, draws = {};
+  for (const k of keys) { const v = L.map((l) => l[k]).filter((x) => x != null && isFinite(x)); point[k] = v.reduce((a, b) => a + b, 0) / Math.max(1, v.length); draws[k] = []; }
+  const winIdx = L.map((l, i) => (l._p != null ? i : -1)).filter((i) => i >= 0);
+  point.ece = ece(winIdx.map((i) => L[i]._p), winIdx.map((i) => L[i]._y));
+  point.calSlope = calSlope(winIdx.map((i) => L[i]._p), winIdx.map((i) => L[i]._y));
+  draws.ece = []; draws.calSlope = [];
+  for (let b = 0; b < B; b++) {
+    const sums = {}, cnt = {}; for (const k of keys) { sums[k] = 0; cnt[k] = 0; }
+    const ps = [], ys = [];
+    for (let g = 0; g < groups.length; g++) {
+      const G = groups[Math.floor(rnd() * groups.length)];
+      for (const i of G) {
+        const l = L[i];
+        for (const k of keys) { const v = l[k]; if (v != null && isFinite(v)) { sums[k] += v; cnt[k]++; } }
+        if (l._p != null && b < 400) { ps.push(l._p); ys.push(l._y); }
+      }
+    }
+    for (const k of keys) draws[k].push(sums[k] / Math.max(1, cnt[k]));
+    if (b < 400) { draws.ece.push(ece(ps, ys)); draws.calSlope.push(calSlope(ps, ys)); }
+  }
+  const out = {};
+  for (const k of Object.keys(draws)) {
+    const d = draws[k].slice().sort((a, b) => a - b);
+    out[k] = { est: point[k], lo: d[Math.floor(0.025 * d.length)], hi: d[Math.min(d.length - 1, Math.floor(0.975 * d.length))] };
+  }
+  return out;
+}
+function pairedDiff(pfs, L, Lo, keys) {
+  const ev = new Map();
+  pfs.forEach((pf, i) => { const k = pf.event + "|" + pf.date; if (!ev.has(k)) ev.set(k, []); ev.get(k).push(i); });
+  const groups = [...ev.values()];
+  let st = 777;
+  const rnd = () => { st = (Math.imul(st, 1664525) + 1013904223) >>> 0; return st / 4294967296; };
+  const out = {};
+  for (const k of keys) {
+    const d = L.map((l, i) => (l[k] != null && Lo[i] && Lo[i][k] != null ? l[k] - Lo[i][k] : null));
+    const v = d.filter((x) => x != null), est = v.reduce((a, b) => a + b, 0) / Math.max(1, v.length);
+    const ds = [];
+    for (let b = 0; b < B; b++) {
+      let s = 0, c = 0;
+      for (let g = 0; g < groups.length; g++) for (const i of groups[Math.floor(rnd() * groups.length)]) if (d[i] != null) { s += d[i]; c++; }
+      ds.push(s / Math.max(1, c));
+    }
+    ds.sort((a, b) => a - b);
+    out[k] = { diff: est, lo: ds[Math.floor(0.025 * B)], hi: ds[Math.floor(0.975 * B)], n: v.length };
+  }
+  return out;
+}
+function methodroundScore(pfs) {
+  // tools/methodround.py --score: who x how x when and friends, paired against model S on the same fights
+  const dir = path.join(ROOT, "out", "evalv"); fs.mkdirSync(dir, { recursive: true });
+  const sub = {}; for (const pf of pfs) sub[pf.id] = { cells: compactCells(pf) };
+  const inp = path.join(dir, `${VERSION}_${SPLIT}_cells.json`), outp = path.join(dir, `${VERSION}_${SPLIT}_methodround.json`);
+  fs.writeFileSync(inp, JSON.stringify(sub));
+  try {
+    execFileSync("python3", [path.join(ROOT, "tools/methodround.py"), "--score", inp, "--score-from", d0, "--score-until", d1,
+      "--score-out", outp, "--backtest", path.join(ROOT, "data/derived/backtest_dev.json")], { stdio: ["ignore", "pipe", "pipe"], env: Object.assign({}, process.env, { OMP_NUM_THREADS: "1" }) });
+    return JSON.parse(fs.readFileSync(outp, "utf8"));
+  } catch (e) { return { error: String(e.stderr || e.message).slice(-2000) }; }
+}
+function compactCells(pf) {
+  // evalv cells: A KO r, A SUB r, B KO r, B SUB r, A DEC, B DEC, DRAW (methodround's compact order)
+  return pf.cells.map((v) => +v.toFixed(6));
+}
+function r4(x) { return x == null || !isFinite(x) ? x : Math.round(x * 1e4) / 1e4; }
+function roundObj(o) { if (Array.isArray(o)) return o.map(roundObj); if (o && typeof o === "object") { const q = {}; for (const k in o) q[k] = roundObj(o[k]); return q; } return typeof o === "number" ? r4(o) : o; }
+
+(async function main() {
+  const t0 = Date.now(), c0 = process.cpuUsage();
+  const sims = await runAll();
+  const errs = sims.filter((s) => s.err);
+  if (errs.length) console.log(`  ${errs.length} fights failed, e.g. ${errs[0].id}: ${errs[0].err}`);
+  const simById = new Map(sims.filter((s) => !s.err).map((s) => [s.id, s]));
+  const fsOk = fights.filter((f) => simById.has(f.id));
+  const base = baseDist(trainFights);
+  const pfs = fsOk.map((f) => perFight(simById.get(f.id), f, base));
+  const L = pfs.map((pf, i) => losses(pf, fsOk[i]));
+  const keys = ["winLL", "brier", "acc", "bin7", "method"].concat(DEVK.map((k) => "dev_" + k), DEVK.map((k) => "mae_" + k));
+  const met = bootstrap(pfs, L, fsOk, keys);
+  const br = baseRates(pfs, fsOk);
+  const nWin = L.filter((l) => l.winLL != null).length, nOut = L.filter((l) => l.bin7 != null).length;
+  const mlShare = sims.reduce((a, s) => a + (s.mlApplied || 0), 0) / Math.max(1, 2 * sims.length);
+  console.log(`\n${VERSION} ${SPLIT}: ${pfs.length} fights (${nWin} decisive, ${nOut} with an outcome), ML applied ${(100 * mlShare).toFixed(1)}% of matchups`);
+  const show = (k, d) => met[k] && console.log(`  ${k.padEnd(12)} ${met[k].est.toFixed(d || 4)} [${met[k].lo.toFixed(d || 4)}, ${met[k].hi.toFixed(d || 4)}]`);
+  ["winLL", "brier", "acc", "ece", "calSlope", "bin7", "method"].forEach((k) => show(k));
+  DEVK.forEach((k) => show("dev_" + k, 3));
+  console.log(`  base rates (sim vs actual): finish ${(100 * br.finish.sim).toFixed(1)} vs ${(100 * br.finish.actual).toFixed(1)}, KO ${(100 * br.KO.sim).toFixed(1)} vs ${(100 * br.KO.actual).toFixed(1)}, ` +
+    `SUB ${(100 * br.SUB.sim).toFixed(1)} vs ${(100 * br.SUB.actual).toFixed(1)}, KD/100 head ${br.kdPer100Head.sim.toFixed(3)} vs ${br.kdPer100Head.actual.toFixed(3)}, ` +
+    `UD ${(100 * br.decision.sim.UD).toFixed(1)} vs ${(100 * br.decision.actual.UD).toFixed(1)}, SD ${(100 * br.decision.sim.SD).toFixed(1)} vs ${(100 * br.decision.actual.SD).toFixed(1)}, ` +
+    `10-8 ${(100 * br.r108.sim).toFixed(2)} vs ${(100 * br.r108.actual).toFixed(2)}`);
+  console.log(`  finish by round 3-rd sim ${br.finByRound3.sim.map((v) => (100 * v).toFixed(1)).join("/")} vs ${br.finByRound3.actual.map((v) => (100 * v).toFixed(1)).join("/")}; ` +
+    `5-rd sim ${br.finByRound5.sim.map((v) => (100 * v).toFixed(1)).join("/")} vs ${br.finByRound5.actual.map((v) => (100 * v).toFixed(1)).join("/")}`);
+  let mr = null;
+  if (!args["no-methodround"]) {
+    mr = methodroundScore(pfs);
+    if (mr && mr.metrics) console.log("  methodround: " + Object.entries(mr.metrics).map(([k, v]) => `${k} ${v.submitted.toFixed(4)} (S ${v.model_S.toFixed(4)}, d ${v.diff >= 0 ? "+" : ""}${v.diff.toFixed(4)} [${v.ci95[0].toFixed(4)}, ${v.ci95[1].toFixed(4)}])`).join("; "));
+    else if (mr && mr.error) console.log("  methodround --score failed: " + mr.error.split("\n").slice(-3).join(" "));
+  }
+  let cmp = null;
+  if (args.compare) {
+    const other = path.join(OUTDIR, `${args.compare}_${SPLIT}.json`);
+    if (fs.existsSync(other)) {
+      const O = JSON.parse(fs.readFileSync(other, "utf8"));
+      const om = new Map(O.fights.map((x) => [x.id, x.L]));
+      const Lo = pfs.map((pf) => om.get(pf.id) || null);
+      cmp = { against: args.compare, paired: pairedDiff(pfs, L, Lo, keys) };
+      console.log(`  paired vs ${args.compare}: ` + ["winLL", "brier", "acc", "bin7", "method"].map((k) => `${k} ${cmp.paired[k].diff >= 0 ? "+" : ""}${cmp.paired[k].diff.toFixed(4)} [${cmp.paired[k].lo.toFixed(4)}, ${cmp.paired[k].hi.toFixed(4)}]`).join("; "));
+    } else console.log(`  (no stored ${args.compare} ${SPLIT} results to compare with: ${other})`);
+  }
+  const cpu = process.cpuUsage(c0);
+  const result = {
+    meta: { tool: "tools/evalv.js", version: VERSION, split: SPLIT, range: [d0, d1], built: new Date().toISOString(), dev: DEV,
+      engine_dir: path.relative(ROOT, ENGINE_DIR), engine_version: E0.VERSION, params_version: P0.version,
+      engine_sha256: engineSha, params_sha256: paramsSha, mlrates_js_sha256: mlSha, ml: useML ? "out-of-fold rates (data/derived/mlrates_oof.json)" : "off",
+      ml_applied_share: mlShare, sims_per_order: SIMS, seed: SEED, bootstrap: B, n_fights: pfs.length, n_decisive: nWin, n_outcome: nOut, failed: errs.length,
+      wall_s: (Date.now() - t0) / 1000, main_cpu_s: (cpu.user + cpu.system) / 1e6,
+      priors: "data/derived/mlcal_priors_asof.json (walk-forward 5-year windows)" },
+    metrics: met, baseRates: br, methodround: mr, compare: cmp,
+    fights: pfs.map((pf, i) => ({ id: pf.id, date: pf.date, pA: r4(pf.pA), b7: pf.b7.map(r4), finR: pf.finR.map(r4), L: roundObj(L[i]),
+      sig: [r4(pf.stats.A.sig_lnd), r4(pf.stats.B.sig_lnd)] }))
+  };
+  fs.mkdirSync(OUTDIR, { recursive: true });
+  const outFile = path.join(OUTDIR, `${VERSION}${DEV ? "_dev" : ""}_${SPLIT}.json`);
+  fs.writeFileSync(outFile, JSON.stringify(roundObj(result)));
+  console.log(`wrote ${path.relative(ROOT, outFile)} (${((Date.now() - t0) / 1000).toFixed(0)} s wall)`);
+  if (DEV) return;
+
+  // ---------------- version history
+  const summary = { n_fights: pfs.length, n_decisive: nWin, sims_per_order: SIMS, metrics: roundObj(met), baseRates: roundObj(br),
+    methodround: mr && mr.metrics ? roundObj(mr.metrics) : null, compare: cmp ? roundObj(cmp) : null, file: path.relative(ROOT, outFile) };
+  const H = loadHistory();
+  H.meta = { tool: "tools/evalv.js", rule: "validation numbers are computed once per version (tools/evalv.js --split val refuses a second look at the same files); " +
+    "train numbers can be refreshed; a second validation look needs a new version entry and a note", splits: SPLITS };
+  let e = historyEntry(H);
+  if (!e) {
+    e = { version: VERSION, date: new Date().toISOString().slice(0, 10), engine_version: E0.VERSION, params_version: P0.version,
+      engine_sha256: engineSha, params_sha256: paramsSha, mlrates_js_sha256: mlSha, train: null, validation: null, blend: null, notes: [] };
+    H.versions.push(e);
+  } else if (e.engine_sha256 !== engineSha || e.params_sha256 !== paramsSha) {
+    if (e.validation) { console.error("evalv: history entry has validation numbers for other files; not overwriting"); process.exit(3); }
+    e.engine_sha256 = engineSha; e.params_sha256 = paramsSha; e.mlrates_js_sha256 = mlSha; e.engine_version = E0.VERSION; e.params_version = P0.version;
+    e.notes.push(`${new Date().toISOString().slice(0, 16)}: frozen files changed before validation; train block refreshed`);
+  }
+  if (SPLIT === "train") { e.train = summary; }
+  else {
+    e.validation = summary;
+    e.validated_at = new Date().toISOString();
+    // blend test: refit the MoE stacker with this version's engine probabilities (train + validation fights)
+    const trainFile = path.join(OUTDIR, `${VERSION}_train.json`);
+    if (fs.existsSync(trainFile) && !args["no-blend"]) {
+      const T = JSON.parse(fs.readFileSync(trainFile, "utf8"));
+      const eng = { meta: { tool: "tools/evalv.js", version: VERSION, engine_sha256: engineSha, params_sha256: paramsSha, sims_per_orientation: SIMS }, fights: {} };
+      for (const x of T.fights.concat(result.fights)) eng.fights[x.id] = { pA: x.pA, pB: r4(1 - x.pA) };
+      const engFile = path.join(ROOT, "out", "evalv", `${VERSION}_engine_bt.json`);
+      fs.writeFileSync(engFile, JSON.stringify(eng));
+      try {
+        const txt = execFileSync("python3", [path.join(ROOT, "tools/evalv_blend.py"), "--engine-bt", engFile, "--out", path.join(OUTDIR, `${VERSION}_blend.json`)],
+          { env: Object.assign({}, process.env, { OMP_NUM_THREADS: "1" }) }).toString();
+        console.log(txt);
+        e.blend = JSON.parse(fs.readFileSync(path.join(OUTDIR, `${VERSION}_blend.json`), "utf8")).summary;
+      } catch (err) { e.blend = { error: String(err.stderr || err.message).slice(-1500) }; }
+    } else e.blend = { error: "no train run stored for this version (run --split train first) or --no-blend" };
+  }
+  if (args.note) e.notes.push(`${new Date().toISOString().slice(0, 16)} ${SPLIT}: ${args.note}`);
+  fs.writeFileSync(HIST, JSON.stringify(H, null, 1));
+  console.log(`updated ${path.relative(ROOT, HIST)}: ${VERSION} ${SPLIT}`);
+})().catch((e) => { console.error(e); process.exit(1); });

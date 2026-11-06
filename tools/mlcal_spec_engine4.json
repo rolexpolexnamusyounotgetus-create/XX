@@ -1,0 +1,33 @@
+{
+  "_doc": "mlcal spec for engine v4: re-tune the global scales on TRAIN only (2019-2023) with the learned stat-line rates on (out-of-fold, tools/mlcal_hooks/ml_oof_v4.js), after the train-only self-calibration (tests/test_engine3.js --fit --priors data/derived/priors_dev.json) and the judges' fit (tools/judgecal.js). Run with --no-val: version selection on 2024-2025 is tools/evalv.js's single ledgered look.",
+  "engine": "src/engine3.js",
+  "params": "src/params3.js",
+  "inject": "opts",
+  "hook": "tools/mlcal_hooks/ml_oof_v4.js",
+  "backtest": "data/derived/backtest_dev.json",
+  "priors": "data/derived/mlcal_priors_asof.json",
+  "defaults": { "rel": 1.3 },
+  "tune": [
+    { "path": "strikeScale", "rel": 1.2 },
+    { "path": "accScale", "rel": 1.25 },
+    { "path": "kdScale", "rel": 1.4 },
+    { "name": "koAll", "paths": ["kdInstant", "kdRefStop", "stko", "gnpTko"], "lo": 0.7, "hi": 1.4 },
+    { "path": "tdScale", "rel": 1.3 },
+    { "path": "tdOddsScale", "rel": 1.3 },
+    { "path": "ctrlScale", "rel": 1.3 },
+    { "path": "subAttScale", "rel": 1.3 },
+    { "path": "subConvScale", "rel": 1.4 },
+    { "path": "caution5", "lo": 0.4, "hi": 1.0 },
+    { "path": "mlWeight", "lo": 0.3, "hi": 1.0, "log": false }
+  ],
+  "objective": {
+    "wWin": 1.0,
+    "wBins": 0.5,
+    "wBase": 1.0,
+    "wStat": 0.0,
+    "brWeight": 0.003,
+    "binPrior": 1.0,
+    "winPrior": 0.5,
+    "pClip": 0.005
+  }
+}
