@@ -3,7 +3,7 @@
   "name": "Mauricio Ruffy",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Active, coming off a loss. Arman Tsarukyan knocked him out with a standing elbow in the clinch at 4:56 of round 1 at UFC 331 in Los Angeles (Sep 19, 2026). That ended a two-fight win streak: TKO wins over Rafael Fiziev (UFC 325, Jan 31, 2026) and Michael Chandler (UFC Freedom 250, Washington, DC, Jun 14, 2026). UFC record 5-2 in fighters.json. He is No. 10 at lightweight on the Nov 3, 2026 media-panel list as mirrored by UFCalendar and ufcrankings.org (recorded in the project's market research; not checked on ufc.com). A Yardbarker headline has him saying carelessness cost him the Tsarukyan fight. No booking or injury was found; web search was unavailable to the research pass and to the Nov 6 fact-check.",
+    "summary": "Active, coming off a loss. Arman Tsarukyan knocked him out with a standing elbow in the clinch at 4:56 of round 1 at UFC 331 in Los Angeles (Sep 19, 2026). That ended a two-fight win streak: TKO wins over Rafael Fiziev (UFC 325, Jan 31, 2026) and Michael Chandler (UFC Freedom 250, Washington, DC, Jun 14, 2026). UFC record 5-2 in fighters.json. He is No. 10 at lightweight on the Nov 3, 2026 media-panel list as mirrored by UFCalendar and ufcrankings.org (recorded in the project's market research; not checked on ufc.com). No booking or injury was found; web search was unavailable to the research pass and to the Nov 6 fact-check.",
     "title": null,
     "ranking": "#10 lightweight (UFC media panel, Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org per research/matchup_market.md; not checked on ufc.com)",
     "active": true,
@@ -16,8 +16,7 @@
       "https://sports.yahoo.com/articles/arman-tsarukyan-knocks-mauricio-ruffy-061351913.html (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
       "https://www.bjpenn.com/mma-news/arman-tsarukyan/ufc-331-results-arman-tsarukyan-kos-mauricio-ruffy-video/ (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
       "https://www.tapology.com/fightcenter/bouts/1166249-ufc-331-arman-ahalkalakets-tsarukyan-vs-mauricio-ruffy (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
-      "research/matchup_market.md, section 3 (lightweight picture as of Nov 6, 2026: 'Ruffy is No. 10'), citing https://www.ufcalendar.com/rankings/lightweight and https://ufcrankings.org/ (not re-fetched)",
-      "https://www.yardbarker.com/mma/articles/ruffy_on_tsarukyan_ko_carelessness_cost_me/s1_17349_44346695 (cited in CONVERSATION.md; headline only, not re-fetched)"
+      "research/matchup_market.md, section 3 (lightweight picture as of Nov 6, 2026: 'Ruffy is No. 10'), citing https://www.ufcalendar.com/rankings/lightweight and https://ufcrankings.org/ (not re-fetched)"
     ]
   },
   "style": {
