@@ -157,11 +157,14 @@ h1 .hA { color: var(--ink); } h1 .hB { color: var(--ink); }
   .matchbar { padding: 10px; gap: 10px; }
   .mb-corners { position: relative; gap: 6px; }
   .cpick { position: static; padding: 8px 9px 9px; gap: 4px; }
-  .combo { position: static; }
+  /* the list spans the whole strip (positioned on .mb-corners), so the caret sits in the flow beside the input */
+  .combo { position: static; display: flex; align-items: center; }
+  .combo .caret { position: static; flex: none; margin: -6px 1px 0 6px; width: 8px; height: 8px; }
   .cp-meta, .swap-vs { display: none; }
+  .cp-label { letter-spacing: .07em; }
   .cp-win { font-size: 18px; }
   .cp-win small { display: none; }
-  .combo input { font-size: 17px; padding-right: 18px; }
+  .combo input { font-size: 17px; padding-right: 0; }
   .swap { width: 34px; height: 34px; }
   .swap svg { width: 17px; height: 17px; }
   .combo-list, .cpick.B .combo-list { left: 0; right: 0; top: calc(100% + 6px); }
@@ -625,7 +628,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
   .th-card .initials, .th-card.B .initials { grid-column: 1; grid-row: auto; width: 40px; height: 40px; font-size: 18px; }
   .th-card.B .initials { justify-self: end; }
   .th-card.B > div { grid-column: 1; grid-row: auto; }
-  .th-name { font-size: 20px; }
+  .th-name { font-size: clamp(15px, 4.7vw, 20px); overflow-wrap: break-word; }
   .sp b { font-size: 30px; }
   .tape td, .tape th { padding: 7px 4px; }
   .tape { font-size: 13px; }

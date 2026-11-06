@@ -358,7 +358,7 @@
     input.addEventListener("input", function () { self.render(input.value); self.show(true); });
     input.addEventListener("keydown", function (e) {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        e.preventDefault(); if (!self.open) { self.render(input.value === nameOf(side) ? "" : input.value); self.show(true); }
+        e.preventDefault(); if (!self.open) { self.render(input.value === nameOf(side) || input.value === shortOf(side) ? "" : input.value); self.show(true); }
         if (!self.items.length) return;
         self.setActive(clamp(self.active + (e.key === "ArrowDown" ? 1 : -1), 0, self.items.length - 1));
       } else if (e.key === "Enter") {
@@ -371,7 +371,9 @@
     list.addEventListener("mousedown", function (e) { e.preventDefault(); });
     list.addEventListener("click", function (e) { var li = e.target.closest ? e.target.closest(".opt") : null; if (li) self.choose(li.dataset.slug); });
   }
-  Picker.prototype.reset = function () { this.input.value = nameOf(this.side); };
+  // phones show the last name in the narrow two-column strip (the list and the tale of the tape carry the full name)
+  var narrowMQ = null; try { narrowMQ = window.matchMedia("(max-width: 640px)"); } catch (e) { narrowMQ = null; }
+  Picker.prototype.reset = function () { this.input.value = narrowMQ && narrowMQ.matches ? shortOf(this.side) : nameOf(this.side); this.input.title = nameOf(this.side); };
   Picker.prototype.show = function (on) {
     this.open = on; this.list.hidden = !on; this.input.setAttribute("aria-expanded", on ? "true" : "false");
     if (!on) { this.input.removeAttribute("aria-activedescendant"); this.active = -1; }
@@ -385,7 +387,7 @@
   };
   Picker.prototype.render = function (q) {
     var side = this.side, qn = norm(q), mine = slugOf(side), theirs = slugOf(other(side)), res = [];
-    if (!qn || qn === norm(nameOf(side))) {
+    if (!qn || qn === norm(nameOf(side)) || qn === norm(shortOf(side))) {
       // no query: the strongest names in each division, the current fight's division first
       var byDiv = {};
       ROSTER.forEach(function (r) { (byDiv[r.div] = byDiv[r.div] || []).push(r); });
