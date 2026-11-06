@@ -1120,6 +1120,43 @@ def stage_beyond(a):
 STAGES["beyond"] = stage_beyond
 
 
+# ====================================================================== pre-registration of the single 2024-2025 look
+PREREG = {
+    "written": "2026-11-06 ~22:25 UTC, after the pre-2024 CV stages (timing, q1, stacks, beyond) and before any "
+               "2024-2025 number of this tool was computed; committed to git before `valid` runs",
+    "window": "2024-01-01..2025-12-31, decisive dev evaluation fights with a full 10-point trajectory, a close and an open",
+    "primary": "consensus stack (sparkline points 4-8 pooled + ML v2 logistic, weights fit on 2019-2023, no recency "
+               "weighting) minus the open-trained stack (opener + ML v2 logistic, fit 2019-2023), both fed the real BFO "
+               "mean line at points 4..9, pooled (each fight once per point); paired log loss, 2,000 card resamples. "
+               "Expected about -0.0012 (CV 2021-2023: -0.00124 [-0.0033, +0.0009]).",
+    "secondaries": [
+        "the same difference per fed point 4..9, and with January refits (rolling, ML v2 monthly-rolling logistic)",
+        "close-trained stack (point 9 + ML v2 logistic) minus the consensus stack, fed points 4..9",
+        "the full cross-feed matrix (trained on 0 / consensus / 9, fed 0..9)",
+        "raw log loss of every sparkline point and of market.json's close",
+        "winner beyond the close: B3 (close + ML v2 logistic + point 1, free signs, fit 2019-2023) minus B0 (close + ML v2 "
+        "logistic) -- the only beyond-close variant that passed the ml2 0.0005 rule (best of 7)",
+        "Q1: out-of-sample R^2 of the move to the close (coefficients fit <= 2023) from points 0, 1, 4, 8; CLV and ROI "
+        "of betting ML v2's side at points 0, 1, 4, 8 for edge thresholds 0, 0.03, 0.05, 0.10",
+        "synthetic T-24h line (Brownian bridge, profile fit <= 2023): consensus vs open-trained stack (descriptive)",
+    ],
+    "not_scored": "the decision-prop variants (none passed), B1, B2, B4-B8 (failed the gate)",
+    "failure": "primary CI upper bound above +0.0005 counts as 'not confirmed'; a CI entirely above 0 counts as "
+               "'contradicted' (the open-trained stack stays primary for consensus lines)",
+}
+
+
+def stage_prereg(a):
+    os.makedirs(DERIVED, exist_ok=True)
+    doc = json.load(open(OUT_JSON)) if os.path.exists(OUT_JSON) else {}
+    doc["prereg"] = PREREG
+    wjson(OUT_JSON, doc)
+    log("pre-registration written to %s" % OUT_JSON)
+
+
+STAGES["prereg"] = stage_prereg
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
