@@ -1,0 +1,78 @@
+{
+  "slug": "jorge-masvidal",
+  "name": "Jorge Masvidal",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Retired from MMA. He announced his retirement in the cage after losing a unanimous decision to Gilbert Burns at UFC 287 in Miami (Apr 8, 2023), his fourth straight loss. He then lost a majority decision to Nate Diaz in a boxing match (Jul 6, 2024). He runs the Gamebred bare-knuckle MMA promotion. Age 41. No MMA bout appears in the UFC Stats snapshot of Oct 31, 2026. Comeback talk, bookings and any 2025-26 news were NOT verified this session (web search budget used up; Wikipedia and ufc.com blocked).",
+    "title": null,
+    "ranking": null,
+    "active": false,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/47b9e0e7703a4868",
+      "http://ufcstats.com/fight-details/71ea7d7985dad804 (UFC 287 vs Burns)",
+      "data/derived/fighters.json (last_fight 2023-04-08, snapshot 2026-10-31)",
+      "https://en.wikipedia.org/wiki/Jorge_Masvidal (reference for the retirement, the Diaz boxing match and Gamebred; not reachable this session, so unverified)"
+    ]
+  },
+  "style": {
+    "archetype": "boxer",
+    "stance": "orthodox",
+    "tags": ["power", "counter", "body-work", "leg-kicks", "clinch", "dirty-boxing", "elbows", "knees", "flying-knee", "takedown-defense", "durable", "fades-late"],
+    "signature": [
+      "flying knee: knocked out Ben Askren at 0:05 of round 1 (UFC 239, Jul 6, 2019), widely reported as the fastest KO in UFC history",
+      "one-punch power at distance: knocked out Darren Till at 3:05 of round 2 in London (Mar 16, 2019); 0.46 knockdowns per 15 min career (welterweight median 0.35)",
+      "body punches and body kicks: 24% of his landed significant strikes go to the body (league welterweight about 21%); 35 of 39 vs Benson Henderson (2015), 29 vs Kamaru Usman (UFC 251), and the body-punch finish of Donald Cerrone (2017)",
+      "elbows and knees in the clinch: elbow KO of Cezar Ferreira in the clinch (2015); 17% of his landed significant strikes come in the clinch",
+      "finishing on the ground: 2 knockdowns and 40 ground strikes landed vs Nate Diaz before the doctor stoppage at UFC 244",
+      "low kicks late in his career: 17 of 19 leg strikes vs Burns, 19 of 27 vs Colby Covington, 15 of 15 vs Usman at UFC 261"
+    ],
+    "weaknesses": [
+      "held down by elite welterweight wrestlers: Usman had 16:38 of control at UFC 251, Covington 16:14 at UFC 272 and Burns 5:41 at UFC 287; opponents controlled him for 41% of his recency-weighted minutes",
+      "output collapses late in five-round fights: pace by round relative to round 1 is 1.00 / 1.19 / 0.85 / 0.61 / 0.23; vs Usman he landed 24, 20, 12, 6 and 4 significant strikes by round",
+      "knocked out by an Usman right hand at 1:02 of round 2 (UFC 261)",
+      "loses close decisions: 9 of his 10 UFC losses went to the judges, including split decisions to Al Iaquinta, Lorenz Larkin and Benson Henderson",
+      "four straight losses to end his UFC career (2020-2023), retired since Apr 2023, age 41"
+    ],
+    "summary": "A veteran orthodox striker with real power, a sharp counter game and an unusually complete toolkit: body punches, body kicks, low kicks, clinch elbows and knees and the most famous flying knee in UFC history. His takedown defence is good against most of the division (70% career), but the best welterweight wrestlers took him down and held him there, and his output drops sharply in rounds 4 and 5.",
+    "sources": [
+      "data/derived/fighters.json (career C and recency-weighted S sums; division medians computed over welterweights with 30+ UFC minutes)",
+      "data/raw/ufc_fight_stats.csv and ufc_fight_results.csv (UFC 239, 244, 251, 261, 272, 287 bout and round stats)",
+      "http://ufcstats.com/fight-details/70af72a72b31fe4d (UFC 239 vs Askren)",
+      "http://ufcstats.com/fight-details/c6dd17ab89437805 (vs Till)",
+      "http://ufcstats.com/fight-details/ac0a63ad13897564 (UFC 244 vs Diaz)",
+      "http://ufcstats.com/fight-details/d292243c6499b2fe (UFC 251 vs Usman)",
+      "http://ufcstats.com/fight-details/6a5eb525331fa1fc (UFC 261 vs Usman)",
+      "http://ufcstats.com/fight-details/d03d0abf331df751 (UFC 272 vs Covington)",
+      "http://ufcstats.com/fight-details/11aac355349ecc94 (vs Ferreira)",
+      "http://ufcstats.com/fight-details/b91756d955e14d2e (vs Cerrone)"
+    ]
+  },
+  "moves": {
+    "jab": 0.27, "cross": 0.27, "hook": 0.23, "overhand": 0.07, "upper": 0.12, "headkick": 0.04,
+    "bodykick": 0.45, "bodyhook": 0.35, "bodystraight": 0.2,
+    "calf": 0.55, "inside": 0.45, "spinning": 0.0, "knee": 0.3, "elbow": 0.2,
+    "notes": "Group weights (head, body, leg) each sum to 1; the engine's target split should come from fighters.json. Career significant attempts go head 0.733 / body 0.156 / leg 0.111 and landed head 0.594 / body 0.240 / leg 0.166; recency-weighted attempts are 0.688 / 0.157 / 0.155 (landed 0.527 / 0.225 / 0.248), because his last three fights leaned on low kicks. League welterweight attempts are about 0.77 / 0.14 / 0.09, so he sends more than average to the body and legs. In the head group the jab, cross and hook lead: 69% of his landed significant strikes are at distance and the Till KO was a punch at distance (UFC Stats); the hook gets extra weight for his counter game, a judgment. Uppercut is 0.12 for his close-range and clinch punching (17% of landed strikes in the clinch). Head kick is small (0.04). Body accuracy is 76% career, high enough that a large share is kicks, so bodykick leads; bodyhook gets 0.35 for the punch finish of Cerrone (UFC Stats: punches to body). Leg strikes are mostly round kicks; calf slightly over inside is a judgment. Knee 0.3 covers the flying knee (Askren) and clinch knees; elbow 0.2 covers the clinch elbow KO of Ferreira and ground elbows. Spinning is 0. UFC Stats does not record technique types, so the within-group split is an analyst judgment from the bout stats in data/raw."
+  },
+  "appearance": {
+    "build": "lean, muscular welterweight: 5 ft 11 in with a 74-inch reach (fighters.json)",
+    "hair": "dark, usually buzzed or very short (from widely published photos; not re-checked this session)",
+    "facial_hair": "full dark beard in most photos from his late UFC career (from widely published photos; unconfirmed in text)",
+    "skin": "light-medium",
+    "tattoos": "unknown (no source opened this session)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height, reach, stance)",
+      "general published fight photos (no written description could be opened this session)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Strong fade in five-round fights: pace 1.00 / 1.19 / 0.85 / 0.61 / 0.23 (weights 30, 24, 20, 15, 15 min); three-round curve 1.00 / 0.98 / 0.78. Part of the late drop is being held down by Usman and Covington, so model it as both a stamina fade and lower get-up success late.", "source": "data/derived/fighters.json (pace, pace3); data/raw/ufc_fight_stats.csv" },
+    { "note": "Power above the division: 0.46 knockdowns per 15 min career vs a welterweight median of 0.35; 6 KO/TKO wins in the UFC, including a flying knee and a body-punch finish.", "source": "data/derived/fighters.json; data/raw/ufc_fight_results.csv" },
+    { "note": "Defence splits by opponent type: he absorbs 3.07 significant strikes per minute (median 3.69) and stops 70% of takedowns, but against Usman, Covington and Burns he was controlled for 16:38, 16:14 and 5:41.", "source": "data/derived/fighters.json; ufcstats bout pages listed above" },
+    { "note": "Durable: one KO loss by strikes (Usman, UFC 261) in 22 UFC fights and 6 knockdowns absorbed in 294 UFC minutes.", "source": "data/derived/fighters.json (ko_losses, kd_absorbed, C min)" },
+    { "note": "Retired since Apr 2023 at age 38, now 41: use the career sums for a prime version and add an inactivity discount for a current one.", "source": "data/derived/fighters.json (last_fight, dob)" }
+  ],
+  "confidence": "medium"
+}
