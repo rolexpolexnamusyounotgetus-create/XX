@@ -702,6 +702,569 @@ def universe_lines(ufs):
     return out
 
 
+
+# ------------------------------------------------------------------ modelling (forward-chained CV <= 2023)
+CV_YEARS = [2019, 2020, 2021, 2022, 2023]          # scored CV years (fit on every earlier year from 2012)
+STACK_YEARS = [2021, 2022, 2023]                   # stack gate (ml2's forward-chained 2021-2023 CV)
+SEL_MIN = 0.0005                                   # ml2's rule: a block / expert enters only if CV improves by more
+CS = [0.003, 0.01, 0.03, 0.1, 0.3, 1.0]
+TAUS = [2.0, 8.0]
+PCLIP = 0.01
+BLOCKS = {
+    "core": ["elo", "debut"],
+    "ufc": ["logn", "uwin", "ufin", "ufinl"],
+    "bio": ["age", "lay", "wcmove"],
+    "pre": ["pre_wpct", "pre_logn", "pre_fin", "pre_finl", "pre_streak", "pre_feed", "pre_grad", "pre_oppufc",
+            "pre_netelo", "pre_dwcs", "pre_agedeb"],
+    "gnet2": ["g2.0_th", "g2.0_sos", "g2.0_sd"],
+    "gnet4": ["g4.0_th", "g4.0_sos", "g4.0_sd"],
+    "extra": ["am_n", "am_wpct", "pre_tuf", "short", "repl", "miss"],
+    "opp1h": ["o1_wp", "o1_logn", "o1_good"],
+}
+FADED = set(BLOCKS["pre"]) | {"am_n", "am_wpct", "pre_tuf"}     # pre-UFC information fades with UFC experience
+EXCLUSIVE = [{"gnet2", "gnet4"}]
+
+
+def load_frame():
+    import pandas as pd  # noqa: F401
+    F = pickle.load(open(os.path.join(OUTC, "frame.pkl"), "rb"))
+    df = F["df"]
+    assert (df["date"] < VAULT_FROM).all()
+    df = df.sort_values(["date", "fid"]).reset_index(drop=True)
+    return df, F["meta"]
+
+
+def side_raw(df, tag):
+    """Raw per-side columns (NaN = unknown) used by every block."""
+    import numpy as np
+    n = len(df)
+    g = lambda k: df[k + "_" + tag].to_numpy(float) if (k + "_" + tag) in df else np.full(n, np.nan)  # noqa: E731
+    out = {}
+    for k in ("elo", "debut", "logn", "uwin", "ufin", "ufinl", "age", "wcmove"):
+        out[k] = g(k)
+    out["wcmove"] = np.nan_to_num(out["wcmove"])
+    lay = g("layoff")
+    out["lay"] = np.where(np.isnan(lay), g("pre_layoff"), lay)
+    pav = g("pav") if ("pav_" + tag) in df else g("debut")
+    pav = np.nan_to_num(pav)
+    for k in BLOCKS["pre"] + ["pre_tuf"]:
+        v = g(k)
+        out[k] = np.where(pav > 0, v, np.nan)
+    am = g("am_n")
+    out["am_n"] = np.where(pav > 0, np.log1p(am), np.nan)
+    out["am_wpct"] = np.where(pav > 0, g("am_wpct"), np.nan)
+    sh = g("short")
+    out["short"] = np.where(np.isnan(sh), 0.0, (sh <= 21).astype(float))
+    out["repl"] = np.nan_to_num(g("repl"))
+    out["miss"] = np.nan_to_num(g("miss"))
+    for h in ("2.0", "4.0"):
+        for k in ("th", "sos", "sd"):
+            out["g%s_%s" % (h, k)] = g("g%s_%s" % (h, k))
+    # one-hop opponents (debutants only): mean pre-fight win share, mean log fights, share with a winning record
+    wp, ln, gd = np.full(n, np.nan), np.full(n, np.nan), np.full(n, np.nan)
+    col = "opp1h_" + tag
+    if col in df:
+        for i, st in enumerate(df[col].tolist()):
+            if not isinstance(st, list):
+                continue
+            v = [s for _, s in st if s is not None]
+            if v:
+                wp[i] = sum((w + 1.0) / (w + l + 2.0) for w, l, nn, _ in v) / len(v)
+                ln[i] = sum(math.log1p(nn) for w, l, nn, _ in v) / len(v)
+                gd[i] = sum(1.0 for w, l, nn, _ in v if w > l) / len(v)
+    out["o1_wp"], out["o1_logn"], out["o1_good"] = wp, ln, gd
+    out["_n"] = g("n") if ("n_" + tag) in df else df["n" + tag].to_numpy(float)
+    return out
+
+
+class DebutLR:
+    """Symmetric no-intercept logistic on side differences (preufc.DiffModel's construction): side columns are centred
+    at the training mean (unknown -> the mean, i.e. 0), pre-UFC columns faded by exp(-n_UFC / tau), the difference
+    A - B scaled by its training sd. P(A | A, B) = 1 - P(B | B, A) exactly."""
+
+    def __init__(self, cols, C=0.1, tau=8.0):
+        self.cols, self.C, self.tau = list(cols), C, tau
+
+    def _sides(self, RA, RB):
+        import numpy as np
+        XA = np.vstack([RA[k] for k in self.cols]).T
+        XB = np.vstack([RB[k] for k in self.cols]).T
+        return XA, XB
+
+    def design(self, RA, RB, fit=False):
+        import numpy as np
+        XA, XB = self._sides(RA, RB)
+        if fit:
+            mu = np.nanmean(np.vstack([XA, XB]), axis=0)
+            self.mu = np.where(np.isnan(mu), 0.0, mu)
+        XA = np.nan_to_num(XA - self.mu)
+        XB = np.nan_to_num(XB - self.mu)
+        fa = np.exp(-RA["_n"] / self.tau)
+        fb = np.exp(-RB["_n"] / self.tau)
+        for j, k in enumerate(self.cols):
+            if k in FADED:
+                XA[:, j] *= fa
+                XB[:, j] *= fb
+        D = XA - XB
+        if fit:
+            sd = D.std(axis=0)
+            self.sd = np.where(sd < 1e-9, 1.0, sd)
+        return D / self.sd
+
+    def fit(self, RA, RB, y):
+        from sklearn.linear_model import LogisticRegression
+        D = self.design(RA, RB, fit=True)
+        self.m = LogisticRegression(C=self.C, fit_intercept=False, max_iter=5000).fit(D, y)
+        self.coef = self.m.coef_[0]
+        return self
+
+    def predict(self, RA, RB):
+        import numpy as np
+        z = self.design(RA, RB) @ self.coef
+        return 1.0 / (1.0 + np.exp(-z))
+
+    def export(self):
+        return {"cols": self.cols, "C": self.C, "tau": self.tau, "mu": [float(x) for x in self.mu],
+                "sd": [float(x) for x in self.sd], "coef": [float(x) for x in self.coef],
+                "faded": [k for k in self.cols if k in FADED]}
+
+
+def take(R, m):
+    return {k: v[m] for k, v in R.items()}
+
+
+def ll_vec(p, y):
+    import numpy as np
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+
+def boot_ci(groups, vals, B=2000, seed=7):
+    """Event-cluster bootstrap (resample cards) of the mean of each column of vals (n x k): [mean, lo, hi] per col."""
+    import numpy as np
+    vals = np.asarray(vals, float)
+    if vals.ndim == 1:
+        vals = vals[:, None]
+    g = np.asarray(groups)
+    ug, inv = np.unique(g, return_inverse=True)
+    S = np.zeros((len(ug), vals.shape[1]))
+    np.add.at(S, inv, vals)
+    cnt = np.bincount(inv, minlength=len(ug)).astype(float)
+    rng = np.random.default_rng(seed)
+    out = []
+    draws = rng.integers(0, len(ug), size=(B, len(ug)))
+    for b in range(B):
+        d = draws[b]
+        out.append(S[d].sum(axis=0) / cnt[d].sum())
+    out = np.array(out)
+    mean = vals.mean(axis=0)
+    lo, hi = np.percentile(out, [2.5, 97.5], axis=0)
+    return [[round(float(mean[j]), 5), round(float(lo[j]), 5), round(float(hi[j]), 5)] for j in range(vals.shape[1])]
+
+
+def paired(groups, a, b, y, B=2000):
+    """Mean log-loss difference a - b with a paired event-cluster CI and P(a better)."""
+    import numpy as np
+    d = ll_vec(a, y) - ll_vec(b, y)
+    m, lo, hi = boot_ci(groups, d, B)[0]
+    return {"diff": m, "ci": [lo, hi], "n": int(len(y))}
+
+
+def stack_fit(Z, y, w=None):
+    """tools/ml2.py stack_fit (copied): non-negative logit weights, no intercept; Z = n x k expert logits."""
+    import numpy as np
+    from scipy.optimize import minimize
+    n, k = Z.shape
+    w = np.ones(n) if w is None else w
+    w = w / w.sum()
+
+    def f(b):
+        q = Z @ b
+        p = 1 / (1 + np.exp(-q))
+        return np.sum(w * (np.logaddexp(0, q) - y * q)) + 1e-4 * b @ b, Z.T @ (w * (p - y)) + 2e-4 * b
+    r = minimize(f, np.full(k, 0.3), jac=True, method="L-BFGS-B", bounds=[(0, None)] * k)
+    return r.x
+
+
+def zlogit(p):
+    import numpy as np
+    p = np.clip(np.asarray(p, float), PCLIP, 1 - PCLIP)
+    return np.log(p / (1 - p))
+
+
+def prep(df):
+    """Decisive rows, both sides' raw columns, swapped copies, the walk-forward reference predictions."""
+    import numpy as np
+    pre = json.load(open(os.path.join(DERIVED, "preufc.json")))["predictions"]
+    df = df.copy()
+    df["p_seeded"] = [pre[f]["p_seeded_elo"] if f in pre else np.nan for f in df["fid"]]
+    df["p_preufc_elo"] = [pre[f]["p_elo"] if f in pre else np.nan for f in df["fid"]]
+    dec = df[df["decisive"]].reset_index(drop=True)
+    RA, RB = side_raw(dec, "A"), side_raw(dec, "B")
+    return dec, RA, RB
+
+
+def cfg_cols(blocks):
+    cols = []
+    for b in blocks:
+        cols += BLOCKS[b]
+    return cols
+
+
+def oof(dec, RA, RB, cols, C, tau, years, train_from=2012):
+    """Annual forward-chained predictions for `years` (fit on decisive rows with train_from <= year < Y)."""
+    import numpy as np
+    y = dec["y"].to_numpy(float)
+    yr = dec["year"].to_numpy()
+    p = np.full(len(dec), np.nan)
+    for Y in years:
+        tr = (yr < Y) & (yr >= train_from)
+        te = yr == Y
+        if te.sum() == 0:
+            continue
+        m = DebutLR(cols, C, tau).fit(take(RA, tr), take(RB, tr), y[tr])
+        p[te] = m.predict(take(RA, te), take(RB, te))
+    return p
+
+
+def cv_ll(dec, RA, RB, blocks, years=CV_YEARS):
+    """Best (C, tau) for a block set by pooled forward-chained CV log loss over `years`."""
+    import numpy as np
+    y = dec["y"].to_numpy(float)
+    mask = dec["year"].isin(years).to_numpy()
+    cols = cfg_cols(blocks)
+    taus = TAUS if any(c in FADED for c in cols) else [8.0]
+    best = None
+    grid = {}
+    for C in CS:
+        for tau in taus:
+            p = oof(dec, RA, RB, cols, C, tau, years)
+            v = float(np.mean(ll_vec(p[mask], y[mask])))
+            grid["C=%g tau=%g" % (C, tau)] = round(v, 5)
+            if best is None or v < best[0]:
+                best = (v, C, tau, p)
+    return {"ll": round(best[0], 5), "C": best[1], "tau": best[2], "p": best[3], "grid": grid}
+
+
+def select_blocks(dec, RA, RB, log=print):
+    """Greedy forward block selection from 'core' by pooled CV log loss 2019-2023; a block enters only if it improves
+    the CV loss by more than SEL_MIN (ml2's 0.0005 rule)."""
+    chosen = ["core"]
+    cur = cv_ll(dec, RA, RB, chosen)
+    steps = [{"step": 0, "blocks": list(chosen), "ll": cur["ll"], "C": cur["C"], "tau": cur["tau"], "tried": {}}]
+    log("CV core: %.5f (C %g)" % (cur["ll"], cur["C"]))
+    cand = [b for b in BLOCKS if b != "core"]
+    while True:
+        tried = {}
+        best = None
+        for b in cand:
+            if b in chosen or any(b in ex and (ex & set(chosen)) for ex in EXCLUSIVE):
+                continue
+            r = cv_ll(dec, RA, RB, chosen + [b])
+            tried[b] = {"ll": r["ll"], "C": r["C"], "tau": r["tau"]}
+            log("   + %-6s %.5f (C %g, tau %g)" % (b, r["ll"], r["C"], r["tau"]))
+            if best is None or r["ll"] < best[1]["ll"]:
+                best = (b, r)
+        if best is None:
+            break
+        gain = cur["ll"] - best[1]["ll"]
+        steps[-1]["tried"] = tried
+        if gain <= SEL_MIN:
+            log("stop: best addition %s gains %.5f <= %.4f" % (best[0], gain, SEL_MIN))
+            break
+        chosen.append(best[0])
+        cur = best[1]
+        steps.append({"step": len(steps), "blocks": list(chosen), "ll": cur["ll"], "C": cur["C"], "tau": cur["tau"],
+                      "tried": {}})
+        log("add %s -> %.5f" % (best[0], cur["ll"]))
+    return chosen, cur, steps
+
+
+# ---- method: P(KO / SUB / DEC | winner side), multinomial with walk-forward division base-rate offsets
+MCLS = ["ko", "sub", "dec"]
+MFEAT = ["w_ko", "w_sub", "w_uko", "w_usub", "l_kol", "l_subl", "l_ukol", "l_usubl", "mis", "five", "lbs",
+         "women", "w_debut", "l_debut"]
+
+
+def division_rates(fights, Y, span=5):
+    """KO / SUB / DEC shares by division (and overall) among decisive UFC bouts in [Y - span, Y)."""
+    cnt = defaultdict(Counter)
+    for f in fights:
+        if Y - span <= f.date.year < Y and f.cat in MCLS:
+            cnt[f.division][f.cat] += 1
+            cnt["_all"][f.cat] += 1
+    out = {}
+    for d, c in cnt.items():
+        n = sum(c.values())
+        a = cnt["_all"]
+        na = sum(a.values())
+        out[d] = [(c[k] + 20.0 * a[k] / na) / (n + 20.0) for k in MCLS]
+    return out
+
+
+def method_rows(dec, RA, RB, p_win):
+    """Two rows per decisive bout (A as winner, B as winner): features from the winner's finishing profile and the
+    loser's finished-loss profile; plus which row really happened."""
+    import numpy as np
+    n = len(dec)
+
+    def side(R, tag):
+        f = lambda k: np.nan_to_num(dec[k + "_" + tag].to_numpy(float)) if (k + "_" + tag) in dec else np.zeros(n)  # noqa
+        pav = np.nan_to_num(dec["pav_" + tag].to_numpy(float)) if ("pav_" + tag) in dec else dec["debut_" + tag].to_numpy(float)
+        fade = np.exp(-R["_n"] / 4.0) * pav
+        nU = R["_n"]
+        return {"ko": np.nan_to_num(dec["pre_ko_" + tag].to_numpy(float), nan=0.3) * fade,
+                "sub": np.nan_to_num(dec["pre_sub_" + tag].to_numpy(float), nan=0.15) * fade,
+                "kol": np.nan_to_num(dec["pre_kol_" + tag].to_numpy(float), nan=0.15) * fade,
+                "subl": np.nan_to_num(dec["pre_subl_" + tag].to_numpy(float), nan=0.08) * fade,
+                "uko": (f("uko_w") + 0.3) / (nU + 2.0), "usub": (f("usub_w") + 0.2) / (nU + 2.0),
+                "ukol": (f("uko_l") + 0.2) / (nU + 2.0), "usubl": (f("usub_l") + 0.1) / (nU + 2.0),
+                "debut": dec["debut_" + tag].to_numpy(float)}
+    SA, SB = side(RA, "A"), side(RB, "B")
+    mis = np.abs(zlogit(p_win))
+    five = (dec["rounds"].to_numpy(float) >= 5).astype(float)
+    lbs = np.array([DIV_LBS.get(d, 160) / 100.0 for d in dec["division"]])
+    women = np.array([1.0 if str(d).startswith("Women") else 0.0 for d in dec["division"]])
+
+    def mk(W, L):
+        return np.vstack([W["ko"], W["sub"], W["uko"], W["usub"], L["kol"], L["subl"], L["ukol"], L["usubl"], mis,
+                          five, lbs, women, W["debut"], L["debut"]]).T
+    return mk(SA, SB), mk(SB, SA)
+
+
+class MethodMN:
+    """Multinomial logit P(m | winner) = softmax(log base_m + a_m + x . b_m), DEC the reference (a, b = 0); L2."""
+
+    def __init__(self, lam=1.0):
+        self.lam = lam
+
+    def fit(self, X, off, yk):
+        import numpy as np
+        from scipy.optimize import minimize
+        self.mu = X.mean(axis=0)
+        self.sd = np.where(X.std(axis=0) < 1e-9, 1.0, X.std(axis=0))
+        Z = (X - self.mu) / self.sd
+        n, k = Z.shape
+        Y = np.zeros((n, 3))
+        Y[np.arange(n), yk] = 1
+
+        def f(w):
+            W = w.reshape(2, k + 1)
+            eta = off.copy()
+            eta[:, 0] += W[0, 0] + Z @ W[0, 1:]
+            eta[:, 1] += W[1, 0] + Z @ W[1, 1:]
+            eta -= eta.max(axis=1, keepdims=True)
+            P = np.exp(eta)
+            P /= P.sum(axis=1, keepdims=True)
+            L = -np.sum(Y * np.log(np.clip(P, 1e-12, 1))) / n + 0.5 * self.lam / n * np.sum(W[:, 1:] ** 2)
+            G = np.zeros((2, k + 1))
+            R = (P - Y) / n
+            for c in range(2):
+                G[c, 0] = R[:, c].sum()
+                G[c, 1:] = Z.T @ R[:, c] + self.lam / n * W[c, 1:]
+            return L, G.ravel()
+        r = minimize(f, np.zeros(2 * (k + 1)), jac=True, method="L-BFGS-B")
+        self.W = r.x.reshape(2, k + 1)
+        return self
+
+    def predict(self, X, off):
+        import numpy as np
+        Z = (X - self.mu) / self.sd
+        eta = off.copy()
+        eta[:, 0] += self.W[0, 0] + Z @ self.W[0, 1:]
+        eta[:, 1] += self.W[1, 0] + Z @ self.W[1, 1:]
+        eta -= eta.max(axis=1, keepdims=True)
+        P = np.exp(eta)
+        return P / P.sum(axis=1, keepdims=True)
+
+    def export(self):
+        return {"classes": MCLS, "features": MFEAT, "lam": self.lam, "mu": self.mu.tolist(), "sd": self.sd.tolist(),
+                "W": self.W.tolist(), "form": "P(m | winner) = softmax_m(log base_m(division) + W[m,0] + z . W[m,1:]), "
+                "z = (x - mu) / sd, DEC reference (0)"}
+
+
+def method_eval(dec, RA, RB, pw, fights, years, lam, base_only=False):
+    """Annual forward-chained method predictions for `years`: method3 marginal and who x how (6 classes)."""
+    import numpy as np
+    yr = dec["year"].to_numpy()
+    cat = dec["cat"].to_numpy()
+    ok = np.isin(cat, MCLS)
+    yk = np.array([MCLS.index(c) if c in MCLS else -1 for c in cat])
+    XA, XB = method_rows(dec, RA, RB, pw)
+    win_a = dec["y"].to_numpy() == 1.0
+    PA = np.full((len(dec), 3), np.nan)
+    PB = np.full((len(dec), 3), np.nan)
+    for Y in years:
+        te = yr == Y
+        if not te.any():
+            continue
+        br = division_rates(fights, Y)
+        off = np.log(np.array([br.get(d, br["_all"]) for d in dec["division"]]))
+        if base_only:
+            PA[te] = np.exp(off[te])
+            PB[te] = np.exp(off[te])
+            continue
+        tr = (yr < Y) & ok
+        Xw = np.where(win_a[:, None], XA, XB)
+        m = MethodMN(lam).fit(Xw[tr], off[tr], yk[tr])
+        PA[te] = m.predict(XA[te], off[te])
+        PB[te] = m.predict(XB[te], off[te])
+    return PA, PB, yk, ok
+
+
+def method_scores(PA, PB, pw, yk, win_a, mask):
+    import numpy as np
+    pm = pw[:, None] * PA + (1 - pw[:, None]) * PB                 # marginal KO / SUB / DEC
+    l3 = -np.log(np.clip(pm[np.arange(len(yk)), np.maximum(yk, 0)], 1e-12, 1))
+    pj = np.where(win_a, pw * PA[np.arange(len(yk)), np.maximum(yk, 0)],
+                  (1 - pw) * PB[np.arange(len(yk)), np.maximum(yk, 0)])
+    l6 = -np.log(np.clip(pj, 1e-12, 1))
+    pg = np.where(win_a[:, None], PA, PB)[np.arange(len(yk)), np.maximum(yk, 0)]
+    lg = -np.log(np.clip(pg, 1e-12, 1))
+    return {"method3": l3[mask], "whohow6": l6[mask], "method_given_winner": lg[mask]}
+
+
+def cv(args):
+    import numpy as np
+    t0 = time.time()
+    df, meta = load_frame()
+    dec, RA, RB = prep(df)
+    y = dec["y"].to_numpy(float)
+    yr = dec["year"].to_numpy()
+    ev = dec["event"].to_numpy()
+    # symmetry: the swapped table must give exactly 1 - p
+    blocks_all = [b for b in BLOCKS if b != "gnet2"]
+    m = DebutLR(cfg_cols(blocks_all), 0.1, 8.0).fit(RA, RB, y)
+    sym = float(np.max(np.abs(m.predict(RA, RB) + m.predict(RB, RA) - 1.0)))
+    print("rows: %d decisive debut bouts 2012-2025 (%d in CV years, %d in 2024-25 untouched); swap test max |p+p'-1| %.2e"
+          % (len(dec), int(dec["year"].isin(CV_YEARS).sum()), int((yr >= 2024).sum()), sym), flush=True)
+    chosen, best, steps = select_blocks(dec, RA, RB)
+    cvm = dec["year"].isin(CV_YEARS).to_numpy()
+    p_deb = best["p"]
+    # reference models on the CV rows
+    refs = {"elo": dec["elo_p"].to_numpy(float), "seeded_elo": dec["p_seeded"].to_numpy(float),
+            "close": dec["p_close"].to_numpy(float), "open": dec["p_open"].to_numpy(float)}
+    full = cv_ll(dec, RA, RB, blocks_all)
+    res = {"rows": {"decisive": int(len(dec)), "cv": int(cvm.sum()), "by_year": {int(k): int(v) for k, v in
+                                                                                  Counter(yr.tolist()).items()}},
+           "swap_test_max_abs": sym, "steps": steps, "chosen": {"blocks": chosen, "C": best["C"], "tau": best["tau"],
+                                                                 "cv_ll": best["ll"]},
+           "all_blocks": {"blocks": blocks_all, "cv_ll": full["ll"], "C": full["C"], "tau": full["tau"]}}
+    # standalone comparisons on CV rows where each reference exists
+    comp = {}
+    for k, p in refs.items():
+        mm = cvm & ~np.isnan(p)
+        comp["debut vs " + k] = dict(paired(ev[mm], p_deb[mm], p[mm], y[mm]),
+                                     ll_debut=round(float(ll_vec(p_deb[mm], y[mm]).mean()), 5),
+                                     ll_ref=round(float(ll_vec(p[mm], y[mm]).mean()), 5))
+        print("CV 2019-23 %-22s n %4d  debut %.5f  ref %.5f  diff %+.5f [%+.5f, %+.5f]" % (
+            "debut vs " + k, mm.sum(), comp["debut vs " + k]["ll_debut"], comp["debut vs " + k]["ll_ref"],
+            comp["debut vs " + k]["diff"], *comp["debut vs " + k]["ci"]), flush=True)
+    res["cv_compare"] = comp
+    # ---- stacks: forward-chained 2021-2023 on the CV OOF rows (fit on 2019..Y-1), ml2's stack_fit
+    P = dict(refs, debut=p_deb)
+    regimes = {"noline": [["seeded_elo"], ["debut"], ["debut", "seeded_elo"], ["debut", "elo"]],
+               "close": [["close"], ["close", "debut"], ["close", "debut", "seeded_elo"]],
+               "open": [["open"], ["open", "debut"], ["open", "debut", "seeded_elo"]]}
+    raw = {"noline": ["debut", "seeded_elo"], "close": ["close"], "open": ["open"]}
+    st = {}
+    for reg, sets in regimes.items():
+        need = {"noline": ["debut", "seeded_elo", "elo"], "close": ["close", "debut", "seeded_elo"],
+                "open": ["open", "debut", "seeded_elo"]}[reg]
+        ok = np.ones(len(dec), bool)
+        for k in need:
+            ok &= ~np.isnan(P[k])
+        gate = ok & np.isin(yr, STACK_YEARS)
+        out = {"n": int(gate.sum())}
+        for r_ in raw[reg]:
+            out["raw " + r_] = round(float(ll_vec(P[r_][gate], y[gate]).mean()), 5)
+        preds = {}
+        for cols in sets:
+            pp = np.full(len(dec), np.nan)
+            ws = {}
+            for Y in STACK_YEARS:
+                tr = ok & (yr >= 2019) & (yr < Y)
+                te = ok & (yr == Y)
+                Z = np.vstack([zlogit(P[c]) for c in cols]).T
+                b = stack_fit(Z[tr], y[tr])
+                pp[te] = 1 / (1 + np.exp(-(Z[te] @ b)))
+                ws[Y] = [round(float(x), 4) for x in b]
+            key = "+".join(cols)
+            preds[key] = pp
+            out["stack " + key] = {"ll": round(float(ll_vec(pp[gate], y[gate]).mean()), 5), "w": ws}
+        st[reg] = out
+        st[reg]["_preds"] = preds
+        st[reg]["_gate"] = gate
+        print("stack gate 2021-23 %-6s n %d: %s" % (reg, gate.sum(), {k: (v["ll"] if isinstance(v, dict) else v)
+                                                                       for k, v in out.items() if k != "n"}), flush=True)
+    # decisions (0.0005 rule; simpler wins ties)
+    dec_out = {}
+    nl = st["noline"]
+    cands = [("raw debut", nl["raw debut"], 0), ("stack debut", nl["stack debut"]["ll"], 1),
+             ("stack debut+seeded_elo", nl["stack debut+seeded_elo"]["ll"], 2),
+             ("stack debut+elo", nl["stack debut+elo"]["ll"], 2)]
+    bestc = cands[0]
+    for c in cands[1:]:
+        if c[1] < bestc[1] - SEL_MIN:
+            bestc = c
+    dec_out["noline"] = bestc[0]
+    g = nl["_gate"]
+    dec_out["noline_vs_seeded_elo_gate"] = paired(ev[g], nl["_preds"]["debut"][g] if bestc[0] != "raw debut"
+                                                  else p_deb[g], P["seeded_elo"][g], y[g])
+    for reg in ("close", "open"):
+        o = st[reg]
+        base = min(o["raw " + reg], o["stack " + reg]["ll"])
+        add = o["stack %s+debut" % reg]["ll"]
+        dec_out[reg] = {"debut_enters": bool(add < base - SEL_MIN), "gain_vs_best_line_only": round(add - base, 5)}
+        g = o["_gate"]
+        dec_out[reg]["paired_stack_vs_raw_line"] = paired(ev[g], o["_preds"]["%s+debut" % reg][g], P[reg][g], y[g])
+    res["stacks"] = {k: {kk: vv for kk, vv in v.items() if not kk.startswith("_")} for k, v in st.items()}
+    res["stack_decisions"] = dec_out
+    print("decisions:", json.dumps(dec_out), flush=True)
+    # ---- method: lam by CV 2019-2023, vs division base rates; winner prob = the chosen debut model's OOF
+    fights, people, bouts, uni = load_universe_strict()
+    win_a = y == 1.0
+    mres = {}
+    pw_s = np.where(np.isnan(P["seeded_elo"]), P["elo"], P["seeded_elo"])
+    PA0, PB0, yk, okm = method_eval(dec, RA, RB, p_deb, fights, CV_YEARS, 1.0, base_only=True)
+    mm = cvm & okm
+    s_base = method_scores(PA0, PB0, pw_s, yk, win_a, mm)
+    best_lam = None
+    for lam in (1.0, 10.0, 30.0, 100.0, 300.0):
+        PA, PB, _, _ = method_eval(dec, RA, RB, p_deb, fights, CV_YEARS, lam)
+        s = method_scores(PA, PB, p_deb, yk, win_a, mm)
+        mres["lam=%g" % lam] = {k: round(float(v.mean()), 5) for k, v in s.items()}
+        print("method CV lam %g: %s | base %s" % (lam, mres["lam=%g" % lam],
+                                                  {k: round(float(v.mean()), 5) for k, v in s_base.items()}), flush=True)
+        if best_lam is None or s["method3"].mean() < best_lam[1]:
+            best_lam = (lam, s["method3"].mean(), s)
+    s = best_lam[2]
+    s_bw = method_scores(PA0, PB0, p_deb, yk, win_a, mm)          # base-rate method with the debut winner prob
+    mres["chosen_lam"] = best_lam[0]
+    mres["base_rates"] = {k: round(float(v.mean()), 5) for k, v in s_base.items()}
+    mres["paired"] = {
+        "method3 vs division base": paired_vals(ev[mm], s["method3"], s_base["method3"]),
+        "method_given_winner vs division base": paired_vals(ev[mm], s["method_given_winner"],
+                                                             s_base["method_given_winner"]),
+        "whohow6 (debut winner + method) vs fallback (seeded Elo x base)": paired_vals(ev[mm], s["whohow6"],
+                                                                                       s_base["whohow6"]),
+        "whohow6 method part only (same debut winner)": paired_vals(ev[mm], s["whohow6"], s_bw["whohow6"])}
+    mres["n"] = int(mm.sum())
+    res["method"] = mres
+    print("method paired:", json.dumps(mres["paired"]), flush=True)
+    res["built"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    res["frame_meta"] = {k: meta[k] for k in ("built", "n", "half_lives", "opp_pages", "opp_ids", "pages",
+                                               "global_bouts") if k in meta}
+    pickle.dump({"res": res, "oof": {"fid": dec["fid"].tolist(), "p_debut": p_deb.tolist()}},
+                open(os.path.join(OUTC, "cv.pkl"), "wb"))
+    json.dump(res, open(os.path.join(OUTC, "cv.json"), "w"), indent=1, default=float)
+    print("wrote out/debut_cache/cv.json (%.0f s)" % (time.time() - t0))
+
+
+def paired_vals(groups, a, b, B=2000):
+    m, lo, hi = boot_ci(groups, a - b, B)[0]
+    return {"diff": m, "ci": [lo, hi], "n": int(len(a)), "a": round(float(a.mean()), 5), "b": round(float(b.mean()), 5)}
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -712,7 +1275,11 @@ def main():
     b = sub.add_parser("build")
     b.add_argument("--half-lives", type=float, nargs="+", default=[2.0, 4.0])
     b.add_argument("--opp-k", type=int, default=None, help="one-hop ranks to use (default: complete ranks)")
+    sub.add_parser("cv")
     args = ap.parse_args()
+    if args.cmd == "cv":
+        cv(args)
+        return
     if args.cmd == "crawl":
         crawl(args)
     elif args.cmd == "build":

@@ -8,9 +8,17 @@ survives time-ordered CV before 2024, and a tested recalibration function for th
     nice -n 5 python3 tools/calib.py prereg     # freeze the chosen scheme per head BEFORE 2024-25 is read
     nice -n 5 python3 tools/calib.py confirm    # (3) score the pre-registered choice once on 2024-2025
     nice -n 5 python3 tools/calib.py rule       # (4) the pre-registered production drift rule: replay + simulation
+    nice -n 5 python3 tools/calib.py plugin     # per-fight predictions for tools/blindtest_plugins/calib.py
     nice -n 5 python3 tools/calib.py export     # data/derived/calib.json (+ JS test vectors for src/ml/calib.js)
-    nice -n 5 python3 tools/calib.py all        # everything in order
-    node tests/test_calib.js                    # JS evaluator / fitter vs the Python vectors, corner symmetry
+    python3 tools/calib.py report               # the markdown tables of research/model_calib.md, from calib.json only
+    nice -n 5 python3 tools/calib.py all        # table, drift, cv, rule, export (never prereg / confirm)
+    node tests/test_calib.js                    # JS evaluator / fitter / rule (b) vs the Python vectors, symmetry
+
+Runtime API (the forward package and FightEngine.predict(); JS twin src/ml/calib.js):
+    apply_spec(spec, p, flags)              recalibrated P(A) (calib.json production[head]; identity today)
+    fit_from_history(rows, as_of, cfg)      walk-forward refit from scored bouts (production_cfg[head])
+    slope_monitor(p, y, 200)                trailing-200 mirrored slope + Wald CI
+    drift_rule_b(rows, as_of)               pre-registered rule 6.5.1 (b) state from the ledger's scored bouts
 
 Protocol (docs/BACKLOG.md "Evaluation rule" and "Hidden-data protocol"; the task brief):
   * Every fight dated 2026-01-01 or later is dropped at parse: the inputs are tools/ml2.py's verified caches
@@ -1446,8 +1454,119 @@ def stage_plugin_preds(args):
     log("plugin predictions for %d fights" % len(out))
 
 
+def stage_report(args):
+    """Markdown tables for research/model_calib.md, read from the committed data/derived/calib.json only (no caches)."""
+    d = json.load(open(OUT_JSON))
+    out = []
+    w = out.append
+    f5 = lambda x: "-" if x is None else "%.5f" % x
+    fd = lambda c: "%+.4f [%+.4f, %+.4f]" % (c["diff"], c["diff_ci"][0], c["diff_ci"][1])
+    dr = d["drift"]
+    fams = list(dr["by_year"])
+    years = [str(y) for y in range(2012, 2024)]
+    w("### T1. Mirrored calibration slope by year, 2012-2023 (backtest universe, out of sample; > 1 = underconfident)\n")
+    w("| family | " + " | ".join(y[2:] for y in years) + " | pooled | lag-1 corr | sd log | noise sd | excess sd |")
+    w("|---|" + "---|" * (len(years) + 5))
+    for c in fams:
+        by = dr["by_year"][c]
+        ps = dr["persistence"].get(c, {})
+        w("| %s | %s | %.2f | %s | %s | %s | %s |" % (
+            c, " | ".join("%.2f" % by[y]["slope"] if y in by else "" for y in years), dr["pooled_2012_2023"][c]["slope"],
+            ps.get("corr_log_slope_lag1", ""), ps.get("sd_log_slope", ""), ps.get("median_sampling_sd_log_slope", ""),
+            ps.get("excess_sd_log_slope", "")))
+    cm = dr["comovement"]
+    w("\nCo-movement 2014-2023 (%d families): PC1 share %.2f; mean log slope by year: %s\n" % (
+        len(cm["families"]), cm["pc1_share"], ", ".join("%s %+.3f" % (k, v) for k, v in cm["mean_log_slope_by_year"].items())))
+    w("### T2. Trailing temperature (mirrored slope of the previous 1 / 2 / 4 years) vs the raw predictions, log loss\n")
+    w("| family | 1 y, 2014-23 | 1 y, 2021-23 | 2 y, 2014-23 | 4 y, 2014-23 | 4 y, 2021-23 |")
+    w("|---|---|---|---|---|---|")
+    for c in fams:
+        t = dr["trailing_temperature"].get(c, {})
+        cell = lambda lb, per: ("%+.4f [%+.4f, %+.4f]" % (t[lb][per][0], *t[lb][per][1])) if lb in t and per in t[lb] else ""
+        w("| %s | %s | %s | %s | %s | %s |" % (c, cell("lookback_1", "2014-2023"), cell("lookback_1", "2021-2023"),
+                                               cell("lookback_2", "2014-2023"), cell("lookback_4", "2014-2023"),
+                                               cell("lookback_4", "2021-2023")))
+    for uni in ("backtest", "all_decisive"):
+        cv = d["cv"].get(uni)
+        if not cv:
+            continue
+        w("\n### T3%s. Rolling-origin CV, universe '%s': each family's 2016-2020 choice on the 2021-2023 gate\n" % (
+            "a" if uni == "backtest" else "b", uni))
+        w("| head | incumbent 2021-23 (slope) | family | 2016-20 choice | vs incumbent | gate-best vs incumbent | "
+          "vs own long base | slope 2021-23 | passes |")
+        w("|---|---|---|---|---|---|---|---|---|")
+        for h, H in cv.items():
+            first = True
+            for fam, v in H["families"].items():
+                w("| %s | %s | %s | `%s` | %s | %s | %s | %.3f | %s |" % (
+                    h if first else "", ("%.5f (%.3f)" % (H["incumbent_gate_ll"], H["incumbent_gate_slope"])) if first else "",
+                    fam, v["inner_choice"].split("|", 1)[1], fd(v["inner_choice_vs_incumbent_gate"]),
+                    "%+.4f `%s`" % (v["gate_best_vs_incumbent"]["diff"], v["gate_best"].split("|", 1)[1]),
+                    fd(v["inner_choice_vs_long_base_gate"]) if "inner_choice_vs_long_base_gate" in v else "",
+                    v["inner_choice_gate_slope"], "yes" if v["passes"] else "no"))
+                first = False
+            w("| | | **chosen** | %s | | | | | |" % H["chosen"]["family"])
+        w("\nSegment slopes of the long-history base, 2016-2023 pooled [400-resample event-cluster CI]:\n")
+        segs = ["all", "women", "heavy", "newcomer", "debut", "five", "bigfav"]
+        w("| head | " + " | ".join(segs) + " |")
+        w("|---|" + "---|" * len(segs))
+        for h, H in cv.items():
+            S = H.get("segment_slopes_2016_2023") or {}
+            w("| %s | %s |" % (h, " | ".join(("%.2f [%.2f, %.2f] n %d" % (S[s]["slope"], *S[s]["slope_ci"], S[s]["n"]))
+                                            if s in S else "" for s in segs)))
+    rule = d["rule"]
+    w("\n### T4. Pre-registered drift rule 6.5.1: operating characteristics (synthetic outcomes on 2021-2023 inputs)\n")
+    w("Production / validated sharpness k = %.3f; break-even: switching to h 3 helps only if the true slope on the "
+      "validated scale is below %.3f (production-stack slope %.3f).\n" % (
+          rule["sharpness_ratio_prod_over_valid"], rule["break_even"]["true_slope_on_validated"],
+          rule["break_even"]["production_slope"]))
+    w("| true slope s (validated scale) | median production slope (n 370) | P(rule a switches) | P(persist branch) | "
+      "P(rule b fires by Q2 / Q4) | E[ll] h 1.5 | E[ll] h 3 | regret never / rule a / rule b / break-even |")
+    w("|---|---|---|---|---|---|---|---|")
+    for s, v in rule["scenarios"].items():
+        r_ = v["regret"]
+        w("| %s | %.3f | %.3f | %.3f | %.3f / %.3f | %.5f | %.5f | %.5f / %.5f / %.5f / %.5f |" % (
+            s, v["median_prod_slope"], v["p_switch_rule_a"], v["p_persist_branch"], v["p_fire_by_q2"], v["p_fire_by_q4"],
+            v["exp_ll_production_h1.5"], v["exp_ll_switched_h3"], r_["never_switch"], r_["rule_a"], r_["rule_b_q4"],
+            r_["breakeven_rule"]))
+    rp = rule["replay_2015_2023"]
+    w("\nReplay 2015-2023 of the trailing-200 monitor on the long-history no-line stack: %d quarterly checks, CI includes 1 "
+      "in %.0f%%; condition (b) first met %s; CI excludes 1 at %s.\n" % (
+          rp["n_checks"], 100 * rp["share_ci_includes_1"], rp["first_fire"], ", ".join(rp["quarters_ci_excludes_1"])))
+    conf = d.get("confirm")
+    if conf:
+        w("### T5. 2024-2025, scored once (pre-registered %s)\n" % conf["prereg"]["written_utc"])
+        w("| head | n | chosen | log loss | slope | Brier | acc. | vs incumbent | vs close | ml2 rolling (reference) |")
+        w("|---|---|---|---|---|---|---|---|---|---|")
+        for h, H in conf["heads"].items():
+            m = H["chosen_metrics"]
+            w("| %s | %d | %s | %.5f | %.3f | %.5f | %.4f | %s | %s | %.5f (slope %.3f) |" % (
+                h, H["n"], H["chosen"]["family"], m["log_loss"], m["slope"], m["brier"], m["accuracy"],
+                fd(H["chosen_vs_incumbent"]), fd(H["chosen_vs_close"]), H["incumbent_rolling"]["log_loss"],
+                H["incumbent_rolling"]["slope"]))
+        w("\nDescriptive only (each family's 2016-2020 choice run walk-forward through 2024-2025; cannot change anything):\n")
+        w("| head | family | config | log loss | slope | vs static incumbent | vs ml2 rolling |")
+        w("|---|---|---|---|---|---|---|")
+        for h, H in conf["heads"].items():
+            for fam, v in H["descriptive"].items():
+                w("| %s | %s | `%s` | %.5f | %.3f | %s | %s |" % (h, fam, v["config"].split("|", 1)[1],
+                                                               v["metrics"]["log_loss"], v["metrics"]["slope"],
+                                                               fd(v["vs_incumbent_static"]), fd(v["vs_incumbent_rolling"])))
+        w("\nCalibration slope by family, 2024 / 2025 / pooled (continuation of T1):\n")
+        w("| family | 2024 | 2025 | pooled 2024-25 |")
+        w("|---|---|---|---|")
+        for c, v in conf["drift_2024_2025"].items():
+            g = lambda k: ("%.2f [%.2f, %.2f]" % (v[k]["slope"], *v[k]["slope_ci"])) if k in v else ""
+            w("| %s | %s | %s | %.2f |" % (c, g("2024"), g("2025"), v["pooled"]["slope"]))
+    txt = "\n".join(out) + "\n"
+    if args.out:
+        open(args.out, "w").write(txt)
+    print(txt)
+
+
 STAGES = {"table": stage_table, "drift": stage_drift, "cv": stage_cv, "rule": stage_rule,
-          "prereg": stage_prereg, "confirm": stage_confirm, "plugin": stage_plugin_preds, "export": stage_export}
+          "prereg": stage_prereg, "confirm": stage_confirm, "plugin": stage_plugin_preds, "export": stage_export,
+          "report": stage_report}
 
 
 def main():
@@ -1456,6 +1575,7 @@ def main():
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--boot-slope", type=int, default=400, help="resamples for slope CIs (each refits)")
     ap.add_argument("--nsim", type=int, default=4000, help="rule stage: simulations per scenario")
+    ap.add_argument("--out", default=None, help="report stage: also write the markdown here")
     ap.add_argument("--universe", default="backtest", choices=["backtest", "all"],
                     help="backtest = both men had a prior UFC fight (the scored universe); all = every decisive fight")
     args = ap.parse_args()
