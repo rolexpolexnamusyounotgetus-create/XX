@@ -4,17 +4,17 @@ As of 2026-11-06. He/him. Southpaw, 5 ft 10 in, 70 in reach, born 1991-10-27 (ag
 
 ## Current status
 
-- **Title:** UFC welterweight champion. He took the 170 lb belt from champion Jack Della Maddalena with a 50-45 sweep at UFC 322 (Nov 15, 2025). He moved up as the reigning lightweight champion.
+- **Title:** UFC welterweight champion. He took the 170 lb belt from Jack Della Maddalena with a 50-45 sweep at UFC 322 (Nov 15, 2025), after giving up the lightweight title (UFC 317 in June 2025 was for the vacant belt, per ufcstats).
 - **Last fight:** UD over Ian Machado Garry at UFC 330, Philadelphia, Aug 15, 2026 (49-46, 49-46, 48-47). It was his 17th straight UFC win, a promotional record.
-- **Next:** No bout booked. Dana White said Makhachev verbally agreed to face Carlos Prates at UFC 336 (Jan 30, 2027, Toronto) and then backed out. The UFC booked Prates vs Michael Morales for an interim title in that slot, and the winner is expected to face Makhachev later in 2027. On Oct 31, 2026 he posted that his next fight will be "one of the last" of his career. Al Jazeera reports he wants to wait until after Ramadan (a mid-2027 return).
-- **Ranking:** #1 men's pound-for-pound per CBS Sports (Sep 2026). One page says the UFC dropped its official P4P list in June 2026 (unconfirmed).
+- **Next:** No bout booked. Dana White said Makhachev verbally agreed to face Carlos Prates at UFC 336 (Jan 30, 2027, Toronto) and then backed out. The UFC booked Prates vs Michael Morales for an interim title in that slot, and the winner is expected to face Makhachev later in 2027. On Oct 31, 2026 he posted that his next fight will be "one of the last" of his career. Al Jazeera reports he wants to wait until after Ramadan.
+- **Ranking:** #1 men's pound-for-pound per CBS Sports (Sep 2026); the official UFC list was not checked.
 - **Injuries:** None reported in the sources found.
 
 ## Recent fights
 
 | Date | Opponent | Result | How |
 |---|---|---|---|
-| 2026-08-15 | Ian Machado Garry | W UD (title) | Banked R1-R2 with wrestling and dropped Garry with a R2 head kick. Garry won R3 on output (Garry out-landed him 29-22 overall). R5: full takedown, back take, body triangle. 7/15 takedowns, 12:30 control. Makhachev was cut. |
+| 2026-08-15 | Ian Machado Garry | W UD (title) | Banked R1-R2 with wrestling and dropped Garry with a R2 head kick. Garry won R3 on output (Garry out-landed him 29-22 overall). R5: full takedown, back take, body triangle. 7/15 takedowns, 12:30 control. |
 | 2025-11-15 | Jack Della Maddalena | W UD 50-45 x3 (title) | 4/4 takedowns, 19:10 control; won the welterweight belt. |
 | 2025-01-18 | Renato Moicano | W SUB R1 4:05 | D'Arce choke. |
 | 2024-06-01 | Dustin Poirier | W SUB R5 2:42 | D'Arce choke. |
@@ -28,8 +28,7 @@ A sambo-based chain wrestler. He works opponents to the fence, ties up a body lo
 ## Strengths
 
 - Takedown offense and control: 3.2 takedowns per 15 min, and 485 s of control per 15 min decayed against a 167 s league rate.
-- Takedown defense: 91% career, so opponents rarely get to wrestle on their terms.
-- Many ways to finish from top position and the back.
+- Takedown defense: 91% career.
 
 ## Weaknesses
 
@@ -39,11 +38,11 @@ A sambo-based chain wrestler. He works opponents to the fence, ties up a body lo
 
 ## Durability and cardio
 
-Two knockdowns absorbed in 19 UFC fights. His one loss is a 2015 first-round KO by Adriano Martins. He has gone 25 minutes four times and finished Poirier in round 5. His 5-round output curve (1.00, 1.24, 0.89, 0.67, 0.54 of round 1) falls late, but most of that drop is control time, not fatigue. He did look tired in round 3 of UFC 330 by one account.
+Two knockdowns absorbed in 19 UFC fights. His one loss is a 2015 first-round KO by Adriano Martins. He has gone 25 minutes three times (Volkanovski 2023, Della Maddalena, Machado Garry) and finished Poirier in round 5. His 5-round output curve (1.00, 1.24, 0.89, 0.67, 0.54 of round 1) falls late, but most of that drop is control time, not fatigue.
 
 ## What the numbers in fighters.json say
 
-Elo 1870, the highest of this group. Decayed significant strikes: 1.9 landed and 1.5 absorbed per minute. Target split of landed strikes: 66% head, 20% body, 14% leg. A third of his landed strikes come in the clinch or on the ground. Takedown accuracy is 49% and he averages about 1 submission attempt every 28 minutes. The data shows a grappler whose striking keeps him safe and sets up the wrestling.
+Elo 1870. Decayed significant strikes: 1.9 landed and 1.5 absorbed per minute. Target split of landed strikes: 66% head, 20% body, 14% leg. A third of his landed strikes come in the clinch or on the ground. Takedown accuracy is 49% and he averages about 1 submission attempt every 28 minutes.
 
 ## Sources
 

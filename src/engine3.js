@@ -483,7 +483,7 @@
       var rho = R[i].rho, rm = 0; for (k = 0; k < nb; k++) rm += rho[k]; rm /= nb;
       for (k = 0; k < nR; k++) m.pace[i].push(m.paceCurve[k] * rho[Math.min(4, k)] / rm);
       m.cardio[i] = R[i].cardio;
-      m.drain[i] = p.drain * Math.pow(clip(R[i].cardio, 0.5, 1.6), -p.cardioExp) * adj[i].cardio;
+      m.drain[i] = p.drain * Math.pow(3 / nR, p.drainSchedExp) * Math.pow(clip(R[i].cardio, 0.5, 1.6), -p.cardioExp) * adj[i].cardio;
     }
     return m;
   }
@@ -607,16 +607,16 @@
           evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 0; evR[n++] = m.dRate[1] * out1;
           evT[n] = E_CLINCH; evW[n] = 0; evX[n] = 0; evR[n++] = m.clE * m.pCtl;
           evT[n] = E_CLINCH; evW[n] = 1; evX[n] = 0; evR[n++] = m.clE * (1 - m.pCtl);
-          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = m.tdD[0] * (0.6 + 0.4 * S[0]) * (h0 ? 0.5 : 1);
-          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = m.tdD[1] * (0.6 + 0.4 * S[1]) * (h1 ? 0.5 : 1);
+          evT[n] = E_TD; evW[n] = 0; evX[n] = 0; evR[n++] = m.tdD[0] * (1 - p.tdAttStam * (1 - S[0])) * (h0 ? 0.5 : 1);
+          evT[n] = E_TD; evW[n] = 1; evX[n] = 0; evR[n++] = m.tdD[1] * (1 - p.tdAttStam * (1 - S[1])) * (h1 ? 0.5 : 1);
         } else if (state === 1) {
           var cs = p.clinchCtrlStrike;
           evT[n] = E_STRIKE; evW[n] = 0; evX[n] = 1; evR[n++] = m.cRate[0] * out0 * (ctl === 0 ? cs : 2 - cs);
           evT[n] = E_STRIKE; evW[n] = 1; evX[n] = 1; evR[n++] = m.cRate[1] * out1 * (ctl === 1 ? cs : 2 - cs);
           evT[n] = E_BREAK; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = m.clBreak;
           evT[n] = E_SWAP; evW[n] = 1 - ctl; evX[n] = 0; evR[n++] = m.clSwap * 2 * (ctl === 0 ? 1 - m.pCtl : m.pCtl);
-          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = m.tdCC[ctl] * (0.6 + 0.4 * S[ctl]);
-          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = m.tdCU[1 - ctl] * (0.6 + 0.4 * S[1 - ctl]);
+          evT[n] = E_TD; evW[n] = ctl; evX[n] = 1; evR[n++] = m.tdCC[ctl] * (1 - p.tdAttStam * (1 - S[ctl]));
+          evT[n] = E_TD; evW[n] = 1 - ctl; evX[n] = 1; evR[n++] = m.tdCU[1 - ctl] * (1 - p.tdAttStam * (1 - S[1 - ctl]));
         } else {
           top = state - 2; bot = 1 - top; k5 = top * 5 + pos;
           if (downed === bot) {
@@ -630,7 +630,7 @@
             for (var to = pos + 1; to < 5; to++) if (prow[to] > 0) { evT[n] = E_PASS; evW[n] = top; evX[n] = to; evR[n++] = prow[to] * m.gEdge[top] * gTop; }
             for (to = 0; to < pos; to++) if (rrow[to] > 0) { evT[n] = E_ESC; evW[n] = bot; evX[n] = to; evR[n++] = rrow[to] / (m.gEdge[top] * gTop); }
             evT[n] = E_SWEEP; evW[n] = bot; evX[n] = 0; evR[n++] = m.swPos[k5] / gTop;
-            evT[n] = E_UP; evW[n] = bot; evX[n] = 0; evR[n++] = m.upPos[k5] / gTop * (0.6 + 0.4 * S[bot]) * (hb ? 0.5 : 1);
+            evT[n] = E_UP; evW[n] = bot; evX[n] = 0; evR[n++] = m.upPos[k5] / gTop * (1 - p.standStam * (1 - S[bot])) * (hb ? 0.5 : 1);
             evT[n] = E_SUB; evW[n] = top; evX[n] = 2; evR[n++] = m.subTPos[k5] * gRs[top] * subKs[top];
             evT[n] = E_SUB; evW[n] = bot; evX[n] = 3; evR[n++] = m.subBPos[k5] * gRs[bot] * subKs[bot];
             evT[n] = E_RESET; evW[n] = -1; evX[n] = 0; evR[n++] = p.groundReset;
@@ -680,7 +680,7 @@
             if (pc <= 1) {
               st[so + I_SHL]++;
               var pk = kdB[i] * kdPos[pc] * chinM[j] * (1 + D[j] / p.kdDmg) * (hj ? p.kdHurt : 1) * (1 + p.kdStamDef * (1 - S[j])) *
-                (1 - p.kdStamAtt * (1 - S[i])) * kdP * (0.75 + 0.25 * mobi);
+                Math.max(0.05, 1 - p.kdStamAtt * (1 - S[i])) * kdP * (0.75 + 0.25 * mobi);
               var uk = rng.u();
               if (uk < pk) kind = "kd";
               else if (uk < pk * (1 + p.hurtRatio)) kind = "hurt";
@@ -704,7 +704,7 @@
           }
           if (kind === "kd") {
             st[so + I_KD]++; kdN[j]++; D[j] += p.dmgKD; chinM[j] *= p.kdRepeat;
-            var io = instO * (1 + D[j] / p.kdInstantDmg);
+            var io = instO * (1 + D[j] / p.kdInstantDmg) * (1 - p.instStam * (1 - S[i]));
             if (rng.u() < io / (1 + io)) { kind = "fin"; finHow = "KO"; }
           }
           if (kind === "fin") {
@@ -741,7 +741,7 @@
           i = w; j = 1 - i;
           st[i * NS + I_TDA]++; S[i] -= p.drainTd; if (S[i] < 0.05) S[i] = 0.05;
           var hj2 = j === 0 ? h0 : h1;
-          var ot = (x === 0 ? tdO[i] : tdOC[i] * (ctl === i ? 1 : 0.8)) * (1 + 0.8 * (1 - S[j])) * (hj2 ? 1.5 : 1);
+          var ot = (x === 0 ? tdO[i] : tdOC[i] * (ctl === i ? 1 : 0.8)) * (1 + p.tdStam * (1 - S[j])) * (hj2 ? 1.5 : 1);
           var fromState = state;
           if (rng.u() < ot / (1 + ot)) {
             st[i * NS + I_TDL]++;

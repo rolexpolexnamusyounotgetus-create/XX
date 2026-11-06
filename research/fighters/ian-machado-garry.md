@@ -22,7 +22,7 @@ As of 2026-11-06. He/him. Orthodox, 6 ft 3 in, 74 in reach, born 1997-11-17 (age
 
 ## Style breakdown
 
-A rangy orthodox kickboxer. Nine of every ten significant strikes he lands come at distance. He leads with the jab and straight right, and he chops the lead leg and kicks the body more than most welterweights. Decayed, legs take 15.6% of his attempts and the body 14.9%, against league rates of 9.3% and 13.9%. Ranked against this group, his leg and body landing shares are the highest. His only head-kick finish is Daniel Rodriguez (2023). He can wrestle when it suits him (Page, Prates), but he is a defensive grappler first.
+A rangy orthodox kickboxer. Nine of every ten significant strikes he lands come at distance. He leads with the jab and straight right, and he chops the lead leg and kicks the body more than most welterweights. Decayed, legs take 15.6% of his attempts and the body 14.9%, against league rates of 9.3% and 13.9%. His only head-kick finish is Daniel Rodriguez (2023). He can wrestle when it suits him (Page, Prates), but he is a defensive grappler first.
 
 ## Strengths
 
@@ -40,7 +40,7 @@ A rangy orthodox kickboxer. Nine of every ten significant strikes he lands come 
 
 ## Durability and cardio
 
-Two knockdowns absorbed in 12 UFC fights (Song Kenan 2023, Makhachev 2026) and never stopped. He has gone 25 minutes three times and was the busier man late in all three. Cardio is a clear strength.
+Two knockdowns absorbed in 12 UFC fights (Song Kenan 2023, Makhachev 2026) and never stopped. He has gone 25 minutes three times. He out-landed Prates and Makhachev in rounds 4-5; against Rakhmonov those two rounds were even on landed strikes (15-15). Cardio is a clear strength.
 
 ## What the numbers in fighters.json say
 

@@ -61,7 +61,7 @@
     "spinning": 0.0,
     "knee": 0.05,
     "elbow": 0.03,
-    "notes": "Weights follow his target split in fighters.json. Decayed significant attempts go 69.5% head, 14.9% body, 15.6% legs; landed strikes go 52.8% head, 21.3% body, 26.0% legs, the highest leg and body shares in this group and well above the welterweight league (9.3% legs, 13.9% body of attempts). Leg and body kicks therefore get heavy weight. Legs went 43/43 vs Magny and 27/28 vs Muhammad. The split between calf and inside kicks is not in the data and is set roughly even. 90% of his landed strikes come at distance, so knees and elbows are near zero. The jab gets the top weight, a judgment from his distance-first output and 74 in reach. No spinning finishes are recorded. Sources: ufcstats sums and per-fight totals."
+    "notes": "Weights follow his target split in fighters.json. Decayed significant attempts go 69.5% head, 14.9% body, 15.6% legs; landed strikes go 52.8% head, 21.3% body, 26.0% legs, well above the welterweight league (9.3% legs, 13.9% body of attempts). Leg and body kicks therefore get heavy weight. Legs went 43/43 vs Magny and 27/28 vs Muhammad. The split between calf and inside kicks is not in the data and is set roughly even. 90% of his landed strikes come at distance, so knees and elbows are near zero. The jab gets the top weight, a judgment from his distance-first output and 74 in reach. No spinning finishes are recorded. Sources: ufcstats sums and per-fight totals."
   },
   "appearance": {
     "build": "tall and lean for welterweight; 6 ft 3 in with a 74 in reach (ufcstats)",

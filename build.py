@@ -41,8 +41,16 @@ ASSETS_DIR = os.path.join(ROOT, "assets", "embed")
 MAX_BYTES = 15 * 1024 * 1024
 
 
+# pieces another workstream may not have written yet: missing ones build as empty with a warning
+OPTIONAL = {"src/avatar3d.js": "", "data/derived/calibration.json": "null", "data/scenarios.json": "{}"}
+
+
 def read(rel):
-    with open(os.path.join(ROOT, rel), encoding="utf-8") as f:
+    path = os.path.join(ROOT, rel)
+    if not os.path.exists(path) and rel in OPTIONAL:
+        print("warning: " + rel + " is missing; building without it", file=sys.stderr)
+        return OPTIONAL[rel]
+    with open(path, encoding="utf-8") as f:
         return f.read()
 
 

@@ -2,7 +2,7 @@
 
 As of Nov 6, 2026. Switch-stance middleweight, age 32 (born Jan 14, 1994), 6'1" with a 76" reach. Dataset: `data/derived/fighters.json`, ufcstats snapshot of Oct 31, 2026.
 
-**Research limits:** no web access in this pass (search budget spent; espn.com and wikipedia.org unreachable). Results come from the ufcstats snapshot; ranking and post-July news are **unverified**.
+**Research limits:** no web access in this pass (search budget spent; espn.com and wikipedia.org unreachable). Results come from the ufcstats snapshot; the Brendan Allen callout is carried from the Allen research pass; ranking and post-July news are **unverified**.
 
 ## Current status
 - **Former UFC middleweight champion.** He won the title from Sean Strickland (SD, UFC 297, Jan 20, 2024). He defended it against Israel Adesanya (RNC R4, UFC 305, Aug 17, 2024) and Strickland again (UD, UFC 312, Feb 8, 2025). He lost it to Khamzat Chimaev (UD 50-44 x3, UFC 319, Aug 16, 2025).
@@ -15,11 +15,11 @@ As of Nov 6, 2026. Switch-stance middleweight, age 32 (born Jan 14, 1994), 6'1" 
 - **L Chimaev (UD, Aug 2025):** Chimaev took him down 12 times in 17 attempts and held him for 21:40. Du Plessis landed 13 significant strikes in five rounds, with one takedown and one submission attempt, both in R5.
 - **W Strickland 2 (UD, Feb 2025):** He out-landed Strickland 147-128 by changing targets: 52 of 62 leg strikes and 45 of 59 body strikes landed.
 - **W Adesanya (RNC R4, Aug 2024):** He trailed 90-97 in significant strikes but went 4 for 9 on takedowns, had 3:39 of control and finished from the back.
-- **W Strickland 1 (SD, Jan 2024):** He was out-landed 137-173 and won the close rounds with 6 takedowns in 11 attempts.
+- **W Strickland 1 (SD, Jan 2024):** He was out-landed 137-173 but landed 6 of 11 takedowns and took two of the three cards 48-47.
 - **W Robert Whittaker (KO R2, Jul 2023):** He dropped Whittaker and out-landed him 62-31.
 
 ## Style
-He is a pressure fighter who switches stance, throws in volume and keeps coming forward. He attempts 9.9 significant strikes per minute (the middleweight average is 8.1) at 48% accuracy. He adjusts his targets to the opponent. Against Usman he went mostly to the head. Against Strickland's high guard he kicked the legs and body. He also wrestles and takes the back: a neck crank from back control finished Darren Till, and a rear-naked choke finished Adesanya.
+He is a pressure fighter who switches stance, throws in volume and keeps coming forward. He attempts 9.9 significant strikes per minute (the middleweight average is 8.1) at 48% accuracy. He adjusts his targets to the opponent. Against Usman he went mostly to the head. Against Strickland he kicked the legs and body. He also wrestles and takes the back: a neck crank from back control finished Darren Till, and a rear-naked choke finished Adesanya.
 
 **Strengths:** volume and pressure that rise late, punching power at distance (Perez, Giles and Whittaker were all finished by punches), changing targets mid-fight, back takes, durability.
 

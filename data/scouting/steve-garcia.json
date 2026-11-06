@@ -3,11 +3,11 @@
   "name": "Steve Garcia",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Ranked featherweight knockout artist from Albuquerque (Jackson-Wink), pro record 19-6 (UFC 8-3). His seven-fight win streak ended when Diego Lopes knocked him out at 2:42 of round 2 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026). Garcia had won round 1 and buckled Lopes early in round 2. He is booked against former interim champion Yair Rodriguez at UFC 335 (Dec 12, 2026, T-Mobile Arena, Las Vegas); Garcia confirmed the bout on Instagram.",
+    "summary": "Ranked featherweight knockout artist from Albuquerque (Jackson-Wink), pro record 19-6 (UFC 8-3). His seven-fight win streak ended when Diego Lopes knocked him out at 2:42 of round 2 at UFC Freedom 250 on the White House South Lawn (Jun 14, 2026). Garcia won round 1 (23-6 in significant strikes per ufcstats) before Lopes rallied in round 2, dropped him and finished him with punches on the ground. He is reported booked against former interim champion Yair Rodriguez at UFC 335 (Dec 12, 2026, T-Mobile Arena, Las Vegas); Garcia confirmed the bout on Instagram, but no UFC release was found.",
     "title": null,
     "ranking": "#14 featherweight (UFC, as cited by MMA Mania, Oct-Nov 2026)",
     "active": true,
-    "next_fight": "vs Yair Rodriguez, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas",
+    "next_fight": "vs Yair Rodriguez, UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas (reported; confirmed by Garcia on Instagram; no UFC release found)",
     "injuries": [],
     "sources": [
       "https://www.mmamania.com/ufc-fight-announcements/484091/violence-yair-rodriguez-returns-against-knockout-artist-steve-garcia-at-ufc-335",
@@ -17,6 +17,7 @@
       "https://cagesidepress.com/2026/06/14/diego-lopes-kicks-off-ufc-freedom-250-with-violent-finish-of-steve-garcia/",
       "https://www.mmamania.com/ufc-white-house-2026-fight-card-start-time-full-results-dana-white-conor-mcgregor-cbs-mma/450586/ufc-white-house-results-diego-lopes-knocks-out-steve-garcia-in-second-round-rally",
       "https://middleeasy.com/mma-news/diego-lopes-steve-garcia-knockout-ufc-freedom-250/",
+      "https://www.cbssports.com/ufc/news/ufc-freedom-250-white-house-results-highlights-diego-lopes-steve-garcia-knockout/",
       "http://ufcstats.com/fighter-details/97cf1a2c7c5e7889"
     ]
   },
@@ -25,18 +26,18 @@
     "stance": "southpaw",
     "tags": ["pressure", "power", "volume", "southpaw", "rangy", "fast-starter", "ground-and-pound", "elbows", "takedown-defense", "chin-concern", "wild-exchanges"],
     "signature": [
-      "southpaw straight left (buckled Diego Lopes early in round 2 at UFC Freedom 250)",
+      "southpaw straight left (singled out in the UFC Freedom 250 recaps; his KOs of Chase Hooper and SeungWoo Choi came from punches at distance)",
       "forward pressure with low kicks to back opponents onto the fence (round 1 vs Lopes)",
       "punches to the body (KO of Shayilan Nuerdanbieke with a body punch, 2023; 23/29 body strikes vs Calvin Kattar)",
       "ground strikes and elbows to finish (Costa from mount, Kyle Nelson from half guard, Onama on the ground)"
     ],
     "weaknesses": [
       "chin: 6 knockdowns absorbed and 2 KO losses in 11 UFC fights (Maheshate 2022, Diego Lopes 2026)",
-      "gets drawn into exchanges of hooks; Lopes's finishing sequence came out of a hook exchange",
+      "gets drawn into exchanges: Lopes dropped him in a round-2 exchange (a counter left hook per the CBS recap) while Garcia led 47-24 in significant strikes",
       "little takedown offense of his own (no landed takedowns since 2021 in the UFC)",
       "weight-making was a recurring problem earlier in his career (Albuquerque Journal, 2020)"
     ],
-    "summary": "A tall (6 ft 0 in, 75 in reach) southpaw featherweight who comes forward fast and throws in volume, mostly at the head. His straight left and follow-up ground strikes finished six of his seven streak wins. The cost is defense: he has been knocked down six times in the UFC, and the Lopes loss came in an exchange he had been winning.",
+    "summary": "A tall (6 ft 0 in, 75 in reach) southpaw featherweight who comes forward fast and throws in volume, mostly at the head. Six of his seven streak wins were stoppages: two by punches at distance, one by a body punch and three by strikes on the ground (ufcstats). The cost is defense: he has been knocked down six times in the UFC, and the Lopes loss came in an exchange he had been winning.",
     "sources": [
       "http://ufcstats.com/fighter-details/97cf1a2c7c5e7889",
       "https://en.wikipedia.org/wiki/Steve_Garcia",

@@ -5,7 +5,7 @@ As of 2026-11-06. He/him. Orthodox, 6 ft 0 in, 79 in reach, born 1999-06-24 (age
 ## Current status
 
 - **Booked:** vs Carlos Prates for the **interim UFC welterweight title**, co-main event of UFC 336, Jan 30, 2027, Scotiabank Arena, Toronto. Champion Islam Makhachev had verbally agreed to headline that card against Prates and then backed out. The UFC made Prates vs Morales for the interim belt, and the winner is expected to face Makhachev later in 2027.
-- **Before the booking:** On Oct 4, 2026, Morales said he was fighting Shavkat Rakhmonov next. He had agreed to a January return but did not want to fight the champion or Prates. The interim-title offer replaced that plan.
+- **Before the booking:** On Oct 4, 2026, Morales said he was fighting Shavkat Rakhmonov next. He said he had agreed to a January return. The interim-title offer replaced that plan.
 - **Weight:** MMA Mania and Heavy report he started camp around 220 lb, about 50 lb above the limit, with three months to cut.
 - **Ranking:** #3 welterweight contender per CBS Sports and EventClock (Nov 2026).
 - **Injuries:** None reported in the sources found. He has not fought since Nov 15, 2025.

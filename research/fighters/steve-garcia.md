@@ -5,15 +5,15 @@ As of 2026-11-06. He/him. Southpaw, 6 ft 0 in, 75 in reach, born 1992-05-22 (age
 ## Current status
 
 - **Last fight:** KO loss to Diego Lopes at 2:42 of round 2, UFC Freedom 250, on the White House South Lawn, Jun 14, 2026. It ended a seven-fight winning streak (six stoppages).
-- **Next:** vs former interim champion Yair Rodriguez at UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas. Garcia confirmed the bout on Instagram and MMA Mania reported it. Rodriguez has not fought since April 2025. Boxing News says a win would likely move Garcia into the featherweight top 10. Before the booking, Garcia said he wanted Jean Silva at Madison Square Garden.
-- **Ranking:** #14 featherweight (cited by MMA Mania). Other sites list him anywhere from #9 to #14.
+- **Next:** vs former interim champion Yair Rodriguez at UFC 335, Dec 12, 2026, T-Mobile Arena, Las Vegas. Garcia confirmed the bout on Instagram and MMA Mania reported it; no UFC release was found. Rodriguez has not fought since April 2025.
+- **Ranking:** #14 featherweight (cited by MMA Mania).
 - **Injuries:** None reported in the sources found.
 
 ## Recent fights
 
 | Date | Opponent | Result | How |
 |---|---|---|---|
-| 2026-06-14 | Diego Lopes | L KO R2 2:42 | Won round 1 with pressure, low kicks and the straight left, and buckled Lopes with a left early in round 2. Lopes answered with an overhand right, dropped him in an exchange of hooks and finished with hammer fists (referee Mike Beltran). Garcia out-landed him 47-24 before the finish. |
+| 2026-06-14 | Diego Lopes | L KO R2 2:42 | Won round 1 with pressure, low kicks and the straight left (23-6 in significant strikes, 8/8 to the legs). Lopes rallied in round 2, dropped him in an exchange (a counter left hook per CBS) and finished with punches from top (referee Mike Beltran). Garcia out-landed him 47-24 before the finish. |
 | 2025-11-01 | David Onama | W TKO R1 3:34 | Main event; one-way traffic (33/62 significant strikes vs 2/16), a knockdown, then ground strikes. Performance of the Night. |
 | 2025-07-12 | Calvin Kattar | W UD (30-27 x3) | 85/250 significant strikes with a knockdown; 23/29 to the body. |
 | 2024-09-07 | Kyle Nelson | W TKO R1 3:59 | Elbows from half guard. |
@@ -34,7 +34,7 @@ A long southpaw pressure fighter. He walks opponents to the fence and throws a l
 ## Weaknesses
 
 - Chin: 6 knockdowns absorbed and 2 KO losses in 11 UFC fights. That is 5.45 KD per 100 head strikes absorbed, against a 0.94 league rate.
-- Defensive lapses in exchanges. He was winning the Lopes fight until a hook exchange.
+- Defensive lapses in exchanges. He was winning the Lopes fight until a round-2 exchange.
 - Limited wrestling offense. He was held down for 14 minutes by Luis Pena in his 2020 debut, but has largely kept fights standing since.
 - Weight-making was a recurring problem early in his career (Albuquerque Journal, 2020).
 
@@ -56,6 +56,7 @@ Elo 1620. Decayed significant strikes: 5.9 landed and 2.1 absorbed per minute. T
 - https://cagesidepress.com/2026/06/14/diego-lopes-kicks-off-ufc-freedom-250-with-violent-finish-of-steve-garcia/
 - https://www.mmamania.com/ufc-white-house-2026-fight-card-start-time-full-results-dana-white-conor-mcgregor-cbs-mma/450586/ufc-white-house-results-diego-lopes-knocks-out-steve-garcia-in-second-round-rally
 - https://middleeasy.com/mma-news/diego-lopes-steve-garcia-knockout-ufc-freedom-250/
+- https://www.cbssports.com/ufc/news/ufc-freedom-250-white-house-results-highlights-diego-lopes-steve-garcia-knockout/
 - https://www.cbssports.com/ufc/news/ufc-fight-night-results-steve-garcia-david-onama-first-round-knockout
 - https://www.ufc.com/news/ufc-fight-night-garcia-vs-onama-main-card-results-highlights-recaps-winners-interviews
 - https://en.wikipedia.org/wiki/Steve_Garcia

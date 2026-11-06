@@ -6,7 +6,7 @@ As of 2026-11-06. He/him. Orthodox, 6 ft 1 in, 77 in reach, born 1994-10-23 (age
 
 - **Inactive.** His last fight was a unanimous decision over Ian Machado Garry at UFC 310 on Dec 7, 2024 (48-47 x3), about 23 months ago.
 - **Injury:** A knee injury has needed several surgeries. The latest is reported as Jan 31, 2026, with doctors estimating a 9-10 month recovery. He was photographed on crutches and was back in contact training by late May 2026 (Bloody Elbow). In July 2026 his physician said there were no remaining medical reasons to stop him competing and expected him back early in 2027. Coach Eduard Bazrov said he could be ready around February 2027 but would not commit to a date.
-- **Next:** Nothing booked. On Oct 30, 2026, manager Daniel Rubenstein denied a rumored January 2027 fight with Jack Della Maddalena and said Rakhmonov would not be back in January. Michael Morales claimed in early October that he would fight Rakhmonov next, but Morales has since been booked against Carlos Prates. A "19-0 vs 19-0" post was read as a tease of a Morales fight, but nothing is confirmed.
+- **Next:** Nothing booked. On Oct 30, 2026, manager Daniel Rubenstein denied a rumored January 2027 fight with Jack Della Maddalena and said Rakhmonov would not be back in January. Michael Morales claimed in early October that he would fight Rakhmonov next, but Morales has since been booked against Carlos Prates.
 - **Ranking:** Reported removed from the UFC welterweight rankings in February 2026 for inactivity.
 
 ## Recent fights

@@ -17,7 +17,7 @@ As of Nov 6, 2026. Orthodox middleweight, age 32 (born May 1, 1994), 6'2" with a
 - **W Kevin Holland (D'Arce R1, Sep 2022, catchweight)** and **W Gilbert Burns (UD, Apr 2022).** He dropped Burns in R1, but Burns out-landed him 119-108 over 15 minutes.
 
 ## Style
-A chain wrestler. He takes opponents down 5.8 times per 15 minutes at 62% accuracy (the middleweight average is 1.36 at 36%) and holds top position 54% of the time. From top he finishes with chokes (two D'Arces and two rear-naked chokes in the UFC) or with strikes (he stopped Rhys McKee from mount). Standing, he hits hard but loads up: Gerald Meerschaert went out in 17 seconds. When his takedowns stop working, he puts more into the body, landing 35 of 65 body strikes against Strickland.
+A chain wrestler. He takes opponents down 5.8 times per 15 minutes at 62% accuracy (the middleweight average is 1.36 at 36%) and holds top position 54% of the time. From top he finishes with chokes (two D'Arces and two rear-naked chokes in the UFC) or with strikes (he stopped Rhys McKee from mount). Standing, he has one-punch power: Gerald Meerschaert went out in 17 seconds. When his takedowns stop working, he puts more into the body, landing 35 of 65 body strikes against Strickland.
 
 **Strengths:** takedown entries and chains, top control, submissions, early pressure, and real power standing.
 
