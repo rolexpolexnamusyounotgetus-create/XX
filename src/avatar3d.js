@@ -868,7 +868,7 @@
 
   /* Per-vertex masks from the rest shape and face landmarks (MediaPipe-to-MakeHuman vertex map from
      HumanForge faceMap.ts). x: facial hair, y: cut zone (signed by side), z: swelling zone (signed by
-     side), w: kick zone on the legs (signed by side). Second vec4: scalp, chest, face, 0. */
+     side), w: kick zone on the legs (signed by side). Second vec4: scalp, chest, face, lips. */
   var LM = { noseTip: 297, chin: 5225, mouthR: 3730, mouthL: 10398, lipTop: 455, lipBot: 495, faceR: 5201, faceL: 11812, jawAngR: 910, jawAngL: 7612,
     eyeOutR: 1119, eyeOutL: 7811, browR: 176, browL: 6952, browOutR: 14, browOutL: 6798, glabella: 133, cheekBoneR: 5324, cheekBoneL: 11928, noseBottom: 317,
     underChin: 5162, sideburnR: 5202, sideburnL: 11813, eyeLowR: 79, eyeLowL: 6863, forehead: 3750, noseBridge: 131, cheekLowR: 5332, cheekLowL: 11936 };
@@ -893,7 +893,7 @@
       if (p.y < sbY + 0.01 && p.y > neckLine - 0.03 && p.z > earZ - 0.035 && ax < earX + 0.02 && p.y > J.Neck.h.y - 0.02) {
         var tx = clamp01(ax / Math.max(0.03, earX)), tm = clamp01((mouthHalf + 0.004) / Math.max(0.03, earX)), lineY;
         if (tx < tm) lineY = lerp(noseB + 0.001, lipTopY + 0.012, smooth(0, 1, tx / tm));
-        else lineY = lerp(lipTopY + 0.012, sbY - 0.004, Math.pow((tx - tm) / (1 - tm), 1.35));
+        else lineY = lerp(lipTopY + 0.012, sbY - 0.016, Math.pow((tx - tm) / (1 - tm), 1.15));   // cheek line: mouth corner to mid-ear, under the cheekbone
         var top = 1 - smooth(lineY - 0.014, lineY + 0.005, p.y);
         var neck = smooth(neckLine - 0.02, neckLine + 0.004, p.y);
         var lips = (p.y < lipTopY + 0.001 && p.y > L.lipBot.y - 0.002 && ax < mouthHalf + 0.002 && p.z > L.lipBot.z - 0.02) ? 0 : 1;
@@ -913,6 +913,9 @@
         var sw = Math.max(g(p, L.eyeLowR, 0.014), g(p, L.eyeLowL, 0.014), g(p, L.cheekBoneR, 0.016), g(p, L.cheekBoneL, 0.016), g(p, L.browOutR, 0.014) * 0.8, g(p, L.browOutL, 0.014) * 0.8);
         m1[o1 + 1] = cut * side; m1[o1 + 2] = sw * side;
         m2[o1 + 2] = 1;
+        // lips (soft): between the lip lines, inside the mouth corners, on the front of the face
+        var lipC = (L.lipTop.y + L.lipBot.y) / 2, lipH = Math.max(0.004, (L.lipTop.y - L.lipBot.y) / 2 + 0.003);
+        if (p.z > L.lipBot.z - 0.025 && ax < mouthHalf + 0.006) m2[o1 + 3] = (1 - smooth(lipH * 0.55, lipH * 1.25, Math.abs(p.y - lipC))) * (1 - smooth(mouthHalf * 0.75, mouthHalf + 0.004, ax));
       }
       // scalp (shaved or buzzed shading): above the brows, behind the hairline, above the ears' bottoms
       var dy = p.y - (browY + 0.022), front = p.z - headC.z;
@@ -1001,6 +1004,7 @@
           "  float lz = abs(vMask.w) * mix(uLeg.y, uLeg.x, step(0.0, vMask.w));\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.12, 0.6, 0.58), clamp(lz * (0.75 + 0.25 * vn(su * 60.0)), 0.0, 0.7));\n" +
           "  diffuseColor.rgb *= mix(vec3(1.0), vec3(1.06, 0.93, 0.92), uFlush * vMask2.z);\n" +
+          "  diffuseColor.rgb *= mix(vec3(1.0), vec3(0.8, 0.6, 0.58), clamp(vMask2.w, 0.0, 1.0) * 0.55);\n" +
           "  if (uTatOn > 0.5) {\n" +
           "    vec2 d1 = vDecal.xy, d2 = vDecal.zw; float ink = 0.0;\n" +
           "    if (d1.x > 0.0 && d1.x < 1.0 && d1.y > 0.0 && d1.y < 1.0) ink = max(ink, texture2D(uTattoo, vec2(d1.x * 0.5, d1.y)).r);\n" +

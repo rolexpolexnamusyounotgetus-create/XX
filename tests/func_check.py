@@ -7,12 +7,13 @@ then prints the HUD state and any console errors.
 Needs: pip install playwright && playwright install chromium   (or set CHROME=/path/to/chrome)
 Run from the project root:  python3 tests/func_check.py
 """
-import json, os, time
+import json, os, re, time
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 src = open(os.path.join(ROOT, "volk-gaethje-simulator.html"), encoding="utf-8").read()
 src = src.replace("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js", "vendor/three.min.js")
+src = re.sub(r"https://cdn\.jsdelivr\.net/npm/three@0\.128\.0/examples/js/", "vendor/three-r128-examples/", src)
 wrapped = ("<!doctype html><html><head><meta charset='utf-8'>"
            "<meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'>"
            "<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}"
@@ -41,7 +42,7 @@ with sync_playwright() as p:
     time.sleep(0.5)
     info = pg.evaluate("""() => ({
       tally: document.getElementById('runStatus').textContent,
-      volk: document.getElementById('pV').textContent, gaethje: document.getElementById('pG').textContent,
+      blue: document.getElementById('pA').textContent, red: document.getElementById('pB').textContent, draw: document.getElementById('pD').textContent,
       clock: document.getElementById('bugClock').textContent,
       landed: [document.getElementById('landA').textContent, document.getElementById('landB').textContent],
       playByPlay: [...document.querySelectorAll('#pbp li')].map(li => li.textContent).slice(0, 5),

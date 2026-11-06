@@ -91,17 +91,17 @@ p { margin: 0; }
 .brand-mark { width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, var(--blue) 0 50%, var(--red) 50% 100%); flex: none; }
 .kicker { margin: 0; font: 600 12px/1.3 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .asof { display: inline-flex; align-items: center; font: 600 11px/1 var(--font-ui); letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 9px; }
-h1 { margin: 0; font: 900 clamp(42px, 9.6vw, 104px)/.86 var(--font-display); text-transform: uppercase; letter-spacing: .004em; text-wrap: balance; overflow-wrap: anywhere; }
+h1 { margin: 0; font: 900 clamp(42px, 9.6vw, 84px)/.86 var(--font-display); text-transform: uppercase; letter-spacing: .004em; text-wrap: balance; overflow-wrap: anywhere; }
 h1 .vs { display: inline-block; font-weight: 700; font-size: .32em; letter-spacing: .08em; color: var(--muted); transform: translateY(-.7em); margin: 0 .12em; }
 h1 .hA { color: var(--ink); } h1 .hB { color: var(--ink); }
 .dek { max-width: 68ch; color: var(--ink-2); text-wrap: pretty; }
 .dek-btn { display: none; font: 600 13px/1 var(--font-ui); color: var(--ink); background: none; border: 0; padding: 4px 0; margin-left: 4px; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; min-height: 24px; }
-@media (max-width: 640px) {
-  .dek-more { display: none; }
-  .dek.open .dek-more { display: inline; }
-  .dek-btn { display: inline; }
-  .dek.open .dek-btn { display: none; }
-}
+/* the intro reads as one line with "More" on every screen, so the cage starts higher */
+.dek-more { display: none; }
+.dek.open .dek-more { display: inline; }
+.dek-btn { display: inline; }
+.dek.open .dek-btn { display: none; }
+@media (min-width: 900px) { h1 { font-size: clamp(56px, 6.4vw, 84px); line-height: .9; } }
 
 /* ---------- Matchup strip ---------- */
 .matchbar { background: var(--bar); color: var(--bar-ink); border-radius: var(--r); padding: 14px; display: grid; gap: 12px; box-shadow: var(--shadow); }
@@ -463,7 +463,7 @@ details.sim > summary { font-size: 14px; color: var(--ink); }
 .bt-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); }
 .bt-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
 .small { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
-#btBody { display: grid; gap: 14px; align-content: start; min-width: 0; }
+#btBody, #fwBody { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .caveats { margin: 0; padding-left: 18px; display: grid; gap: 5px; color: var(--ink-2); font-size: 13px; }
 
 /* ---------- Forecast, model stack, backtest, forward test (model integration) ---------- */
@@ -680,7 +680,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
       <button type="button" class="linkbtn" id="btnLink">Copy link to this matchup</button>
     </div>
     <div class="linkfb" id="linkFb" hidden><label for="linkFbIn">Copying didn't work here. Add this to the end of the artifact link:</label><input id="linkFbIn" type="text" readonly></div>
-    <p class="mb-note" id="mbSrc">Win chances combine seven models (see The model stack below). The cage plays one simulated fight.</p>
+    <p class="mb-note" id="mbSrc">Win chances combine seven models; The model stack below shows how.</p>
     <p class="mb-note" id="mbNote" aria-live="polite"></p>
   </section>
 
@@ -756,7 +756,7 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
           </div>
         </div>
         <div class="tgt-key" aria-hidden="true"><span><i class="t-h"></i>Head</span><span><i class="t-b"></i>Body</span><span><i class="t-l"></i>Legs</span><span><i class="t-g"></i>Ground</span></div>
-        <p class="liverule">Counts and meters come straight from the engine's record of this fight, in step with the fight clock.</p>
+        <p class="liverule">Counts and meters come straight from the simulator's record of this fight, in step with the fight clock.</p>
         <div>
           <h3 class="mini">Fight-night form</h3>
           <div class="form" id="form"></div>

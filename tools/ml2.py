@@ -2356,11 +2356,12 @@ STAGES["export"] = stage_export
 
 # ====================================================================== stage: verify (truncation tests of the new features)
 def stage_verify(args):
-    """Truncation and flipped-result tests of the rebuilt rating features. Each system is run twice in the same
-    process (same inputs): the full stream to 2025-12-31 and the stream cut at CUT; every prediction for a fight
-    before CUT must be identical. A third run reverses every result on/after CUT: earlier predictions must not
-    move. Also reports how far the cached features are from a rebuild with the current preufc.json (the ratings'
-    newcomer prior reads it), so a later preufc.json rebuild is visible."""
+    """Leak tests of the rebuilt rating and market-rating features. Each rating system is run with evaluation cut at
+    CUT (identical earlier predictions; for WHR this only checks the solve path, since the later fights stay in its
+    graph) and again with the encoded outcome of every fight on/after d0 (the first fight day >= CUT) reversed:
+    predictions up to and including d0 must not move, later ones must. The market rating is rebuilt with the closing
+    line and the result of every fight on/after d0 reversed, same checks. Also reports how far the cached features
+    are from a rebuild with the current preufc.json (the ratings' newcomer prior reads it)."""
     import ratings as RT
     S = load_table()
     T = S["df"]
@@ -2374,28 +2375,54 @@ def stage_verify(args):
     late = ev_all[D.day[ev_all] >= cut.toordinal()]
     cached = pickle.load(open(os.path.join(CACHE, "ratings_all.pkl"), "rb"))
     cidx = {f: i for i, f in enumerate(cached["fid"])}
-    Df = RT.load_data()
-    RT.prepare(Df, log=lambda s: None)
-    flip = (Df.day >= cut.toordinal()) & Df.obs
-    Df.y = np.where(flip, 1 - Df.y, Df.y)
-    Df.winner = [{"A": "B", "B": "A"}.get(w, w) if f else w for w, f in zip(Df.winner, flip)]
+    # Perturbation test (verifier fix): reverse the ENCODED outcome (ratings.encode: binary, mov and rounds alike) of
+    # every fight on/after the first fight day d0 >= CUT. The first version flipped D.y / D.winner only, which
+    # WHR-rounds never reads (its outcomes are the precomputed round shares), and its truncation run keeps the later
+    # fights inside the WHR graph, so neither test could see a leak in WHR. Here the fights ON d0 are compared too:
+    # their own result and same-day results must not reach their prediction.
+    d0 = int(D.day[ev_all][D.day[ev_all] >= cut.toordinal()].min())
+    upto = ev_all[D.day[ev_all] <= d0]
+    on_d0 = ev_all[D.day[ev_all] == d0]
+    after = ev_all[D.day[ev_all] > d0]
+    enc0 = RT.encode
+    flip = (D.day >= d0)
+
+    def enc_flipped(D_, P_):
+        y_, w_ = enc0(D_, P_)
+        return np.where(flip, 1.0 - y_, y_), w_
+    out["d0"] = dt.date.fromordinal(d0).isoformat()
     for name in ("whr_rounds", "glicko2", "elo_full", "trueskill_mov"):
         Sy = J["systems"][name]
         pf, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False, eval_idx=ev_all)
         pt, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=cut.toordinal(), record=False, eval_idx=early)
-        px, _, _ = RT.run_system(Df, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False, eval_idx=ev_all)
+        RT.encode = enc_flipped
+        try:
+            px, _, _ = RT.run_system(D, Sy["kind"], Sy["params"], until=VAULT.toordinal(), record=False, eval_idx=ev_all)
+        finally:
+            RT.encode = enc0
         pc = cached["p"][name][[cidx[D.fid[i]] for i in ev_all]]
-        out[name] = {"n_before_cut": int(len(early)),
+        out[name] = {"n_before_cut": int(len(early)), "n_on_d0": int(len(on_d0)),
                      "truncation_max_abs_diff": float(np.nanmax(np.abs(pt[early] - pf[early]))),
-                     "flip_after_cut_max_abs_diff_before": float(np.nanmax(np.abs(px[early] - pf[early]))),
-                     "flip_after_cut_share_changed_after": float(np.mean(np.abs(px[late] - pf[late]) > 1e-9)),
+                     "flip_from_d0_max_abs_diff_upto_d0": float(np.nanmax(np.abs(px[upto] - pf[upto]))),
+                     "flip_from_d0_max_abs_diff_on_d0": float(np.nanmax(np.abs(px[on_d0] - pf[on_d0]))),
+                     "flip_from_d0_share_changed_after": float(np.mean(np.abs(px[after] - pf[after]) > 1e-9)),
                      "cached_vs_current_preufc_max_abs_diff": float(np.nanmax(np.abs(pf[ev_all] - pc)))}
         log("verify %s: %s" % (name, out[name]))
-    sub = T[T["date"] < cut].copy()
-    mr_cut, _, _ = build_market_rating(sub)
-    mr_full = T.set_index("fid")["mr_p"]
-    d = [abs(v[0] - mr_full[f]) for f, v in mr_cut.items() if f in mr_full.index and not np.isnan(mr_full[f])]
-    out["market_rating"] = {"n": len(d), "truncation_max_abs_diff": float(max(d))}
+    # market rating: reverse the closing line AND the result of every stream fight on/after d0 (both streams)
+    d0s = out["d0"]
+    mr_full, _, _ = build_market_rating(T)
+    mr_px, _, _ = build_market_rating(T, perturb_from=d0s)
+    dates = dict(zip(T["fid"], T["date"].astype(str)))
+    upto_ids = [f for f in mr_full if f in dates and dates[f] <= d0s]
+    after_ids = [f for f in mr_full if f in dates and dates[f] > d0s]
+    out["market_rating"] = {"n_upto_d0": len(upto_ids),
+                            "flip_from_d0_max_abs_diff_upto_d0": float(max(abs(mr_full[f][0] - mr_px[f][0])
+                                                                           for f in upto_ids)),
+                            "flip_from_d0_share_changed_after": float(np.mean([abs(mr_full[f][0] - mr_px[f][0]) > 1e-9
+                                                                               for f in after_ids])),
+                            "table_vs_rebuild_max_abs_diff": float(np.nanmax([abs(mr_full[f][0] - p) for f, p in
+                                                                             zip(T["fid"], T["mr_p"]) if f in mr_full
+                                                                             and not np.isnan(p)]))}
     log("verify market rating: %s" % out["market_rating"])
     json.dump(out, open(os.path.join(CACHE, "verify.json"), "w"), indent=1)
 

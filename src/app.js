@@ -587,7 +587,17 @@
       box.appendChild(d);
     });
   }
-  function scoutBlock(sc) {
+  // research files are cited by project path inside some scouting and scenario text; visitors can't open those, so the
+  // page says "our research notes" instead (the paths stay in the files and in HANDOFF.md)
+  var PATH_RE = /\b(?:research|data|docs|tools|src)\/[\w.\/-]+\.(?:md|json|js|py)\b(?:,? sections? [\d, and]+\d)?/g;
+  function scrubPaths(node) {
+    if (!node || !document.createTreeWalker) return node;
+    var w = document.createTreeWalker(node, 4), t;
+    while ((t = w.nextNode())) if (PATH_RE.test(t.nodeValue)) { PATH_RE.lastIndex = 0; t.nodeValue = t.nodeValue.replace(PATH_RE, "our research notes"); }
+    return node;
+  }
+  function scoutBlock(sc) { return scrubPaths(scoutBlock0(sc)); }
+  function scoutBlock0(sc) {
     var b = el("div", "scout"), st = sc.status || {}, sy = sc.style || {};
     b.appendChild(el("h4", "mini", "Scouting"));
     if (st.summary) b.appendChild(el("p", "sc-status", st.summary));
@@ -798,6 +808,7 @@
     if (sc.research) { var r = el("p"); r.appendChild(el("b", null, "The research: ")); r.appendChild(document.createTextNode(sc.research)); box.appendChild(r); }
     var srcs = el("div", "srcs"); if (linkList(srcs, sc.sources)) box.appendChild(srcs);
     termsLine();
+    scrubPaths(box);
   }
 
   var knobTimer = null;
@@ -1545,7 +1556,10 @@
     if (BL.rNo) tile("Blend without a line", A + " " + pct(BL.rNo.p, 0), "stats and ratings only" + (bfNo ? "; simple average " + pct(bfNo.avg, 0) : ""));
     if (BL.rLine) tile("Blend with the line", A + " " + pct(BL.rLine.p, 0), "market alone " + pct(mk.p, 0) + (bfLine ? "; simple average " + pct(bfLine.avg, 0) : ""));
     else if (BL.rNo) tile("Market line", "–", "enter odds to compare");
-    $("blendNote").textContent = "Tested on 2024-25 fights: with a closing line the blend was level with the market to slightly better; without one it beat every single model. The backtest below has the numbers.";
+    var bn = "";
+    if (bfNo && bfNo.beyond) bn += "Without a line the blend sits " + (bfNo.beyond > 0 ? "above" : "below") + " every single model (they range " + pct(bfNo.lo, 0) + " to " + pct(bfNo.hi, 0) + " for " + A + "): they carry partly independent evidence, and on 2024-25 fights every model was too cautious. ";
+    if (BL.rNo && Math.max(BL.rNo.p, 1 - BL.rNo.p) > 0.9) bn += "Very lopsided picks are rarer in the test data; treat the last few points loosely. ";
+    $("blendNote").textContent = bn + "Tested on 2024-25 fights: with a closing line the blend was level with the market to slightly better; without one it beat every single model. The backtest below has the numbers.";
     // market marker on the forecast bar
     var mkM = $("mktMark"), mkN = $("mktNote");
     if (hasM) {
@@ -1580,7 +1594,7 @@
       row("Takedown success", pct(q.td_acc, 0), base.td_acc != null ? pct(base.td_acc, 0) : null);
       row("Control time / 15 min", mmss(q.ctrl * 15), base.ctrl != null ? mmss(base.ctrl * 15) : null);
       row("Submission attempts / 15 min", f2(q.sub_att * 15), base.sub_att != null ? f2(base.sub_att * 15) : null);
-      row("Knockdown chance per head strike landed", pct(q.kd_h, 2), base.kd_h != null ? pct(base.kd_h, 2) : null);
+      row("Knockdown chance per head strike landed, all positions", pct(q.kd_h, 2), base.kd_h != null ? pct(base.kd_h, 2) : null);
       row("Expected knockdowns / 15 min", f2(q.h_att * q.acc_h * q.kd_h * 15), base.kd_h != null ? f2(base.h_att * base.acc_h * base.kd_h * 15) : null);
       t.appendChild(tb); var w = el("div", "tbl-wrap"); w.appendChild(t); card.appendChild(w); box.appendChild(card);
     });
@@ -2560,7 +2574,7 @@
   writeHash();
   $("runStatus").textContent = "Starting the tally";
   window.FightLab = { state: S, matchup: function () { return cur.m; }, tally: function () { return lastAgg; }, newFight: function () { newFight(); }, script: function () { return script; }, blend: function () { return BL; }, models: function () { return { moe: !!MOE, mlpage: !!MLP, methodround: !!MR, mlrates: MLR }; },
-    hud: function () { return H ? { A: totals("A"), B: totals("B") } : null; }, lastPick: function () { return lastPick; } };
+    hud: function () { return H ? { A: totals("A"), B: totals("B") } : null; }, fight: function () { return H && H.f; }, lastPick: function () { return lastPick; } };
   // the compressed models arrive a few milliseconds after the first paint: re-render everything that reads them
   var started = false;
   function afterModels() {
