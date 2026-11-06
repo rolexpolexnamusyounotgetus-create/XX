@@ -243,63 +243,58 @@ class DynRE:
     m: measurement noise with known variance v (count / binomial noise).
     x may hold functions of earlier-round outcomes (predetermined). The z-transform y - x'gamma has a unit
     triangular Jacobian, so the Gaussian likelihood of z is the exact likelihood; (mu, gamma) are profiled
-    out by GLS and the five variance parameters are found by ML."""
+    out by GLS and the five variance parameters are found by ML. Rounds may be missing for either fighter
+    (rows dropped by an exposure filter); fights are batched by their (fighter, round) pattern."""
 
     def __init__(self, df, ycol, vcol, xcols, cellcol="cell", fixed_cells=None):
         df = df.sort_values(["fid", "idx", "rnd"])
         self.xcols = list(xcols)
-        cells = sorted(df[cellcol].unique()) if fixed_cells is None else fixed_cells
+        cells = sorted(df[cellcol].unique()) if fixed_cells is None else list(fixed_cells)
         self.cells = cells
         ci = {c: k for k, c in enumerate(cells)}
         self.k = len(cells) + len(self.xcols)
+        fid = df.fid.to_numpy(); idx = df.idx.to_numpy().astype(int); rnd = df.rnd.to_numpy().astype(int)
+        Yall = df[ycol].to_numpy(float); Vall = df[vcol].to_numpy(float)
+        Call = df[cellcol].map(ci).to_numpy()
+        Xall = df[self.xcols].to_numpy(float) if self.xcols else np.zeros((len(df), 0))
+        starts = np.r_[0, np.flatnonzero(fid[1:] != fid[:-1]) + 1, len(df)]
         groups = defaultdict(list)
-        for fid, x in df.groupby("fid", sort=False):
-            rr = sorted(set(x.rnd[x.idx == 0]) & set(x.rnd[x.idx == 1]))
-            if not rr:
-                continue
-            x = x[x.rnd.isin(rr)]
-            T = len(rr)
-            if x.rnd.max() - x.rnd.min() + 1 != T:      # need consecutive rounds starting anywhere
-                continue
-            groups[T].append(x)
+        for s0, s1 in zip(starts[:-1], starts[1:]):
+            pat = tuple(zip(idx[s0:s1], rnd[s0:s1]))
+            groups[pat].append((s0, s1))
         self.batches = {}
-        for T, xs in groups.items():
-            n = len(xs)
-            Y = np.zeros((n, 2 * T)); V = np.zeros((n, 2 * T)); X = np.zeros((n, 2 * T, self.k))
-            fids = []
-            for q, x in enumerate(xs):
-                x = x.sort_values(["idx", "rnd"])
-                Y[q] = x[ycol].to_numpy(float)
-                V[q] = x[vcol].to_numpy(float)
-                cc = x[cellcol].map(ci).to_numpy()
-                X[q, np.arange(2 * T), cc] = 1.0
-                if self.xcols:
-                    X[q, :, len(cells):] = x[self.xcols].to_numpy(float)
-                fids.append(x.fid.iloc[0])
-            self.batches[T] = (Y, V, X, fids)
-        self.n_obs = sum(2 * T * len(b[3]) for T, b in self.batches.items())
+        for pat, lst in groups.items():
+            n, m = len(lst), len(pat)
+            rows = np.concatenate([np.arange(s0, s1) for s0, s1 in lst])
+            Y = Yall[rows].reshape(n, m); V = Vall[rows].reshape(n, m)
+            X = np.zeros((n * m, self.k))
+            X[np.arange(n * m), Call[rows]] = 1.0
+            if self.xcols:
+                X[:, len(cells):] = Xall[rows]
+            self.batches[pat] = (Y, V, X.reshape(n, m, self.k), [fid[s0] for s0, _ in lst])
+        self.n_obs = sum(len(p) * len(b[3]) for p, b in self.batches.items())
         self.n_fights = sum(len(b[3]) for b in self.batches.values())
 
     @staticmethod
-    def base_cov(T, th):
+    def base_cov(pat, th):
         sa, rho, sb, se, phi = th
-        J = np.ones((T, T))
-        Ka = np.kron(np.array([[1, rho], [rho, 1]]), J)
-        Kb = np.kron(np.ones((2, 2)), np.eye(T))
-        lag = np.abs(np.subtract.outer(np.arange(T), np.arange(T)))
-        Ke = np.kron(np.eye(2), phi ** lag)
-        return sa ** 2 * Ka + sb ** 2 * Kb + se ** 2 * Ke
+        i = np.array([q[0] for q in pat]); r = np.array([q[1] for q in pat])
+        same_i = i[:, None] == i[None, :]
+        same_r = r[:, None] == r[None, :]
+        lag = np.abs(r[:, None] - r[None, :])
+        return (sa ** 2 * np.where(same_i, 1.0, rho) + sb ** 2 * same_r
+                + se ** 2 * same_i * phi ** lag)
 
     @staticmethod
     def unpack(p):
         return (math.exp(p[0]), math.tanh(p[1]), math.exp(p[2]), math.exp(p[3]), math.tanh(p[4]))
 
-    def _accum(self, th, batches=None):
-        batches = self.batches if batches is None else batches
+    def _accum(self, th):
         A = np.zeros((self.k, self.k)); c = np.zeros(self.k); ld = 0.0; yy = 0.0
         store = {}
-        for T, (Y, V, X, _) in batches.items():
-            Sg = self.base_cov(T, th)[None] + V[:, :, None] * np.eye(2 * T)[None]
+        for pat, (Y, V, X, _) in self.batches.items():
+            m = len(pat)
+            Sg = self.base_cov(pat, th)[None] + V[:, :, None] * np.eye(m)[None]
             L = np.linalg.cholesky(Sg)
             Xs = np.linalg.solve(L, X)
             ys = np.linalg.solve(L, Y[:, :, None])[:, :, 0]
@@ -307,7 +302,7 @@ class DynRE:
             c += np.einsum("nik,ni->k", Xs, ys)
             ld += 2 * np.log(np.diagonal(L, axis1=1, axis2=2)).sum()
             yy += (ys ** 2).sum()
-            store[T] = (Xs, ys)
+            store[pat] = (Xs, ys)
         return A, c, ld, yy, store
 
     def negll(self, p):
@@ -321,18 +316,17 @@ class DynRE:
         return 0.5 * (ld + q + self.n_obs * math.log(2 * math.pi))
 
     def fit(self, p0=None):
-        p0 = np.array([math.log(0.3), 0.5, math.log(0.1), math.log(0.3), 0.3]) if p0 is None else p0
-        r = optimize.minimize(self.negll, p0, method="Nelder-Mead",
-                              options={"maxiter": 4000, "xatol": 1e-5, "fatol": 1e-4})
-        r = optimize.minimize(self.negll, r.x, method="L-BFGS-B")
-        self.p = r.x
-        self.th = self.unpack(r.x)
+        p0 = np.array([math.log(0.4), 1.0, math.log(0.3), math.log(0.3), 0.6]) if p0 is None else p0
+        r = optimize.minimize(self.negll, p0, method="L-BFGS-B")
+        r2 = optimize.minimize(self.negll, r.x, method="Nelder-Mead",
+                               options={"maxiter": 600, "xatol": 1e-4, "fatol": 1e-3})
+        self.p = r2.x if r2.fun < r.fun else r.x
+        self.th = self.unpack(self.p)
         A, c, ld, yy, store = self._accum(self.th)
         Ainv = np.linalg.inv(A)
         self.beta = Ainv @ c
-        # cluster-robust (by fight) sandwich on the GLS scores
         M = np.zeros((self.k, self.k))
-        for T, (Xs, ys) in store.items():
+        for pat, (Xs, ys) in store.items():
             res = ys - Xs @ self.beta
             sc = np.einsum("nik,ni->nk", Xs, res)
             M += sc.T @ sc
@@ -346,6 +340,10 @@ class DynRE:
         se = np.sqrt(np.diag(self.cov_rob))
         return {n: (float(b), float(s)) for n, b, s in zip(names, self.beta, se)}
 
+    def est(self):
+        names = ["cell:" + c for c in self.cells] + self.xcols
+        return dict(zip(names, map(float, self.beta)))
+
     def gamma(self):
         k0 = len(self.cells)
         se = np.sqrt(np.diag(self.cov_rob))[k0:]
@@ -357,34 +355,29 @@ class DynRE:
                 "ar1_round_own": phi}
 
     def predictive(self, other, beta=None, th=None):
-        """One-step-ahead predictive log-likelihood and squared error on another DynRE dataset (same columns),
-        with parameters fixed: for each fight, each round r >= 2 of both fighters given all earlier rounds
-        (and the same round of the other fighter is NOT used). Returns sums and counts."""
+        """One-step-ahead predictive log-likelihood and squared error on another DynRE dataset with fixed
+        parameters: every observation in a round after the fight's first observed round, given all
+        observations of both fighters in earlier rounds (the other fighter's same round is not used)."""
         beta = self.beta if beta is None else beta
         th = self.th if th is None else th
-        ll = 0.0; se2 = 0.0; n = 0; ll1 = 0.0; n1 = 0
-        for T, (Y, V, X, _) in other.batches.items():
-            Sg = self.base_cov(T, th)[None] + V[:, :, None] * np.eye(2 * T)[None]
+        ll = 0.0; se2 = 0.0; n = 0
+        for pat, (Y, V, X, _) in other.batches.items():
+            m = len(pat)
+            Sg = self.base_cov(pat, th)[None] + V[:, :, None] * np.eye(m)[None]
             mu = X @ beta
-            # order: idx0 rounds 0..T-1, idx1 rounds 0..T-1
-            for r in range(T):
-                past = [q for q in range(T) if q < r] + [T + q for q in range(T) if q < r]
-                for i in (0, 1):
-                    t = i * T + r
-                    if past:
-                        S_pp = Sg[:, past][:, :, past]
-                        S_tp = Sg[:, t, past]
-                        w = np.linalg.solve(S_pp, S_tp[:, :, None])[:, :, 0]
-                        m = mu[:, t] + np.einsum("np,np->n", w, Y[:, past] - mu[:, past])
-                        v = Sg[:, t, t] - np.einsum("np,np->n", w, S_tp)
-                    else:
-                        m = mu[:, t]; v = Sg[:, t, t]
-                    lp = -0.5 * (np.log(2 * np.pi * v) + (Y[:, t] - m) ** 2 / v)
-                    if r >= 1:
-                        ll += lp.sum(); se2 += ((Y[:, t] - m) ** 2).sum(); n += len(m)
-                    else:
-                        ll1 += lp.sum(); n1 += len(m)
-        return {"ll_r2plus": ll, "n_r2plus": n, "mse_r2plus": se2 / max(n, 1), "ll_r1": ll1, "n_r1": n1}
+            rr = np.array([q[1] for q in pat])
+            for t in range(m):
+                past = np.flatnonzero(rr < rr[t])
+                if len(past) == 0:
+                    continue
+                S_pp = Sg[:, past][:, :, past]
+                S_tp = Sg[:, t, past]
+                w = np.linalg.solve(S_pp, S_tp[:, :, None])[:, :, 0]
+                mm = mu[:, t] + np.einsum("np,np->n", w, Y[:, past] - mu[:, past])
+                v = Sg[:, t, t] - np.einsum("np,np->n", w, S_tp)
+                ll += (-0.5 * (np.log(2 * np.pi * v) + (Y[:, t] - mm) ** 2 / v)).sum()
+                se2 += ((Y[:, t] - mm) ** 2).sum(); n += len(mm)
+        return {"ll": float(ll), "n": int(n), "mse": float(se2 / max(n, 1))}
 
 
 def logit(p):

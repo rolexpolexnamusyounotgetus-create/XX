@@ -749,3 +749,132 @@ def run_grid(D, p, jobs, procs):
         for r in pool.imap_unordered(_job, jobs, chunksize=2):
             out[r[0]] = r[1:]
     return out
+
+
+# ------------------------------------------------------------------ analysis driver
+def kgrid_pairs(grid):
+    return [(a, b) for a in grid for b in grid]
+
+
+def rnd(x, sig=4):
+    return B.rnd(x, sig)
+
+
+def select(scores):
+    """scores: {config: score dict}; minimum tune deviance."""
+    best = min(scores, key=lambda c: scores[c]["tune"])
+    return best, scores[best]
+
+
+def raw_scan(D, ev, p, hls, procs_note=""):
+    """Engine-form raw shrunk rates at other half-lives and prior strengths (separate offense / defense k).
+    Returns {family: {(hl, ko, kd): score}} and the S arrays per hl."""
+    out = {name: {} for name in FAMILIES}
+    Ss = {}
+    for hl in hls:
+        S = D.s_S if hl == 730 else D.side_sums(hl)
+        Ss[hl] = S
+        for name, (kind, (fo, fd), kname, _, _) in FAMILIES.items():
+            for ko, kd in kgrid_pairs(RAW_K_GRID[kname]):
+                R = fighter_rates(S, D.sL, p, k={kname: {fo: ko, fd: kd}})
+                sc = ev.score(name, ev.pred_raw(name, R))
+                sc.pop("dev")
+                out[name][(hl, ko, kd)] = sc
+    return out, Ss
+
+
+def composites(D, ev, p, parts):
+    """Per-side composite predictions conditional on the fight's actual time in each position.
+    parts: dict with, per side, calibrated mu_d, mu_c, mu_g, acc shifts sh (n x 3), kd factor, mu_tdatt,
+    td logit. Returns dict of predicted sig_att, sig_lnd, h_lnd, kd, td_lnd."""
+    L = D.sL
+    n = len(D.s_row)
+    mixD = ev.engine_R["mixD"]
+    cm = np.tile(np.array(p["clinchMix"]), (n, 1))
+    gm = np.tile(np.array(p["groundTopMix"]), (n, 1))
+    mus = [parts["mu_d"], parts["mu_c"], parts["mu_g"]]
+    mixes = [mixD, cm, gm]
+    lnd = np.zeros((n, 3))
+    for t in range(3):
+        for q in range(3):
+            lnd[:, t] += mus[q] * mixes[q][:, t] * sigm(L.accA[:, t] + L.accB[:, q] + parts["sh"][:, t])
+    out = {"sig_att": mus[0] + mus[1] + mus[2], "sig_lnd": lnd.sum(1), "h_lnd": lnd[:, 0]}
+    out["kd"] = lnd[:, 0] * L.P_kd_per_h * parts["kdf"]
+    out["td_lnd"] = parts["mu_tdatt"] * sigm(parts["td_z"])
+    return out
+
+
+def winner_features(D, ev, p, rates):
+    """Pre-fight expected per-minute output for each side with league position shares (no actual-fight
+    information): landed/min, KD per 15, TD landed per 15, control share. rates: per-side calibrated
+    rates per exposure unit (dAtt, cAtt, gAtt, tdAtt, ctrl) and shifts (sh, kdf, td_z)."""
+    L = D.sL
+    n = len(D.s_row)
+    gs = p["ctrlGroundShare"]
+    top = np.clip(rates["ctrl"] / 60 * gs, 0, 0.8)
+    att = [rates["dAtt"] * L.dist, rates["cAtt"], rates["gAtt"] * top]
+    mixD = ev.engine_R["mixD"]
+    cm = np.tile(np.array(p["clinchMix"]), (n, 1))
+    gm = np.tile(np.array(p["groundTopMix"]), (n, 1))
+    mixes = [mixD, cm, gm]
+    lnd = np.zeros((n, 3))
+    for t in range(3):
+        for q in range(3):
+            lnd[:, t] += att[q] * mixes[q][:, t] * sigm(L.accA[:, t] + L.accB[:, q] + rates["sh"][:, t])
+    slpm = lnd.sum(1)
+    kd15 = 15 * lnd[:, 0] * L.P_kd_per_h * rates["kdf"]
+    td15 = 15 * rates["tdAtt"] * L.stand * sigm(rates["td_z"])
+    ctrl = rates["ctrl"] / 60
+    return np.column_stack([slpm, kd15, td15, ctrl])
+
+
+def logit_fit(X, y, l2=1e-4):
+    b = np.zeros(X.shape[1])
+    for _ in range(100):
+        pp = sigm(X @ b)
+        H = X.T @ (X * (pp * (1 - pp))[:, None]) + l2 * np.eye(X.shape[1])
+        st = np.linalg.solve(H, X.T @ (y - pp) - l2 * b)
+        b += st
+        if np.abs(st).max() < 1e-10:
+            break
+    return b
+
+
+def winner_proxy(D, feats):
+    """Symmetric winner model on differences (A - B) of pre-fight features, no intercept, mirrored rows.
+    feats: {name: n_sides x m}. Fit on 2019-2023, score 2024+. Returns log loss / Brier / accuracy."""
+    ent = D.entries
+    win = np.array([e["result"]["winner"] for e in ent])
+    dec = np.isin(win, ["A", "B"])
+    yA = (win == "A").astype(float)
+    date = np.array([e["date"] for e in ent])
+    tune = dec & (date >= TUNE[0]) & (date <= TUNE[1])
+    test = dec & (date >= TEST_FROM)
+    elo = np.array([[e["A"]["elo"], e["B"]["elo"]] for e in ent], dtype=float)
+    res = {}
+    for name, F in feats.items():
+        diff = F[0::2] - F[1::2]
+        if name.endswith("+elo") or name == "elo":
+            ed = (elo[:, 0] - elo[:, 1]) / 400 * math.log(10)
+            diff = ed[:, None] if name == "elo" else np.column_stack([diff, ed])
+        sd = diff[tune].std(0) + 1e-12
+        Z = diff / sd
+        Xtr = np.vstack([Z[tune], -Z[tune]])
+        ytr = np.r_[yA[tune], 1 - yA[tune]]
+        bcoef = logit_fit(Xtr, ytr)
+        pt = sigm(Z[test] @ bcoef)
+        yt = yA[test]
+        pt = np.clip(pt, 1e-6, 1 - 1e-6)
+        ll = -(yt * np.log(pt) + (1 - yt) * np.log(1 - pt))
+        res[name] = {"n_test": int(test.sum()), "log_loss": float(ll.mean()),
+                     "brier": float(((pt - yt) ** 2).mean()), "accuracy": float(((pt > 0.5) == (yt > 0.5)).mean()),
+                     "coef_per_sd": [rnd(x) for x in bcoef], "_ll": ll}
+    return res
+
+
+def boot_ll(a, b, nb=2000, seed=11):
+    rng = np.random.default_rng(seed)
+    d = a - b
+    idx = rng.integers(0, len(d), size=(nb, len(d)))
+    bs = d[idx].mean(1)
+    return float(d.mean()), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5))

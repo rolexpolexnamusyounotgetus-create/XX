@@ -438,6 +438,445 @@ def crawl(args):
     print("finished: %d targets, %d resolved, %d requests, %.0f s" % (len(T), okn, fx.n, time.time() - t0))
 
 
+
+# ------------------------------------------------------------------ build: records + walk-forward snapshots
+PROMO_ALIASES = [
+    (r"contender series|^dwcs\b|lookin.? for a fight", "DWCS"),
+    (r"^road to ufc", "Road to UFC"),
+    (r"^(ufc|the ultimate fighter|tuf)\b", "UFC"),
+    (r"^bellator", "Bellator"),
+    (r"^(pfl|professional fighters league|wsof|world series of fighting)\b", "PFL/WSOF"),
+    (r"^one (championship|fc|fight night|on prime|warrior|dangal|hero)|^one\b(?! friday)", "ONE"),
+    (r"^one friday fights", "ONE Friday Fights"),
+    (r"^(lfa|legacy fighting alliance)\b", "LFA"),
+    (r"^(rfa|resurrection fighting alliance)\b", "RFA"),
+    (r"^(lfc|legacy fc|legacy fighting championship)\b", "Legacy FC"),
+    (r"^(cwfc|cage warriors)", "Cage Warriors"),
+    (r"^m-1", "M-1"),
+    (r"^(aca|acb|absolute championship)", "ACA"),
+    (r"^ksw\b", "KSW"),
+    (r"^rizin", "Rizin"),
+    (r"^(pride|pride fc)\b", "Pride"),
+    (r"^(sf|strikeforce)\b", "Strikeforce"),
+    (r"^wec\b|world extreme cagefighting", "WEC"),
+    (r"^(cffc|cage fury)", "CFFC"),
+    (r"^(brave|brave cf)\b", "Brave CF"),
+    (r"^(invicta|invicta fc)\b", "Invicta FC"),
+    (r"^(oktagon)", "Oktagon"),
+    (r"^(uae warriors)", "UAE Warriors"),
+    (r"^(jungle fight)", "Jungle Fight"),
+    (r"^(shooto brazil)", "Shooto Brazil"),
+    (r"^(titan fc|titan fighting)", "Titan FC"),
+    (r"^(kotc|king of the cage)\b", "KOTC"),
+    (r"^(eternal mma)", "Eternal MMA"),
+    (r"^(hex fight)", "Hex Fight Series"),
+    (r"^(fury fc)", "Fury FC"),
+    (r"^(eagle fc)", "Eagle FC"),
+]
+
+
+def promotion(event):
+    e = ascii_fold(event or "").strip()
+    pre = e.split(" - ")[0].strip()
+    low = e.lower()
+    for pat, name in PROMO_ALIASES:
+        if re.search(pat, low) or re.search(pat, pre.lower()):
+            return name
+    out = []
+    for t in pre.split():
+        if re.fullmatch(r"#?\d+[a-z]?|\d{4}|[IVX]{1,4}|season|week|episode|vol\.?|volume|night|day|\(.*", t,
+                        re.I):
+            break
+        out.append(t)
+    return " ".join(out) or pre or "?"
+
+
+def row_list(parsed):
+    """Pro rows (amateur and exhibition sections excluded), oldest first."""
+    rows = []
+    for k, v in parsed["sections"].items():
+        if "amateur" in k or "exhibition" in k:
+            continue
+        rows.extend(v)
+    rows = list(reversed(rows))                          # page lists newest first
+    rows.sort(key=lambda r: r["date"] or "0000")        # stable: same-day order kept
+    return rows
+
+
+def sid(href):
+    m = re.search(r"-(\d+)$", href or "")
+    return int(m.group(1)) if m else None
+
+
+def years(a, b):
+    return round((b - a).days / 365.25, 3)
+
+
+def snapshot_feats(rows, D, dob, ex_rows, net, promo_q, same_event_fid=None):
+    """Features from Sherdog pro fights dated strictly before D (the UFC bout date)."""
+    pre = [r for r in rows if r["date"] and r["_d"] < D]
+    nu = [r for r in pre if not r["_ufc"]]
+    c = Counter()
+    for r in nu:
+        res = r["res"]
+        if res in ("W", "L"):
+            c[res] += 1
+            c[r["mclass"] + "_" + res.lower()] += 1
+        elif res == "D":
+            c["D"] += 1
+        else:
+            c["NC"] += 1
+    w, l, d = c["W"], c["L"], c["D"]
+    n = w + l + d
+    f = {"n": n, "w": w, "l": l, "d": d, "nc": c["NC"],
+         "ko_w": c["ko_w"], "sub_w": c["sub_w"], "dec_w": c["dec_w"], "oth_w": c["other_w"] + c["dq_w"],
+         "ko_l": c["ko_l"], "sub_l": c["sub_l"], "dec_l": c["dec_l"], "oth_l": c["other_l"] + c["dq_l"]}
+
+    def streak(rs):
+        s = 0
+        for r in reversed(rs):
+            if r["res"] == "W":
+                s += 1
+            elif r["res"] == "NC":
+                continue
+            else:
+                break
+        return s
+
+    def lstreak(rs):
+        s = 0
+        for r in reversed(rs):
+            if r["res"] == "L":
+                s += 1
+            elif r["res"] == "NC":
+                continue
+            else:
+                break
+        return s
+    f["streak"] = streak(nu)                 # non-UFC win streak (entering the UFC, for a debut)
+    f["streak_all"] = streak(pre)            # overall pro win streak entering this bout
+    f["lstreak_all"] = lstreak(pre)
+    last5 = [r for r in nu if r["res"] in ("W", "L", "D")][-5:]
+    f["l5_w"] = sum(r["res"] == "W" for r in last5)
+    f["l5_n"] = len(last5)
+    f["n_ufc_sd"] = sum(1 for r in pre if r["_ufc"])
+    if pre:
+        first = pre[0]["_d"]
+        f["pro_debut"] = first.isoformat()
+        f["years_active"] = years(first, D)
+        f["age_pro_debut"] = years(dob, first) if dob else None
+        f["layoff_days"] = (D - pre[-1]["_d"]).days
+        f["n_2y"] = sum(1 for r in pre if (D - r["_d"]).days <= 730)
+    else:
+        f.update({"pro_debut": None, "years_active": 0.0, "age_pro_debut": years(dob, D) if dob else None,
+                  "layoff_days": None, "n_2y": 0})
+    if nu:
+        f["last_nonufc"] = nu[-1]["_d"].isoformat()
+    pc = Counter(r["_promo"] for r in nu)
+    f["promos"] = [p for p, _ in pc.most_common(4)]
+    f["n_promos"] = len(pc)
+    f["last_promo"] = nu[-1]["_promo"] if nu else None
+    f["dwcs_w"] = sum(1 for r in nu if r["_promo"] == "DWCS" and r["res"] == "W")
+    f["dwcs_n"] = sum(1 for r in nu if r["_promo"] == "DWCS")
+    # promotion quality as of D (walk-forward): graduates count and their UFC results
+    qs, qw = [], []
+    for r in nu[-6:]:
+        q = promo_q(r["_promo"], D)
+        qs.append(q["feed"])
+        qw.append(q["grad"])
+    f["promo_feed"] = round(sum(qs) / len(qs), 4) if qs else 0.0
+    f["promo_feed_max"] = round(max(qs), 4) if qs else 0.0
+    f["promo_grad"] = round(sum(qw) / len(qw), 4) if qw else None
+    # opponent quality from the Sherdog network (every opponent fight observed on any cached page)
+    known = [r for r in nu if r.get("_opp_n", 0) >= 3]
+    f["opp_known"] = len(known)
+    f["opp_wpct"] = round(sum(r["_opp_w"] / r["_opp_n"] for r in known) / len(known), 4) if known else None
+    f["opp_ufc_w"] = sum(1 for r in nu if r["res"] == "W" and r.get("_opp_ufc_first") and r["_opp_ufc_first"] < D)
+    f["opp_ufc_n"] = sum(1 for r in nu if r.get("_opp_ufc_first") and r["_opp_ufc_first"] < D)
+    f["net_elo"] = round(net(D), 1) if net else None
+    # TUF house fights (Sherdog files them under pro exhibition)
+    ex = [r for r in ex_rows if r["date"] and r["_d"] < D]
+    f["exh_n"] = len(ex)
+    f["exh_w"] = sum(1 for r in ex if r["res"] == "W")
+    return f
+
+
+SNAP_KEYS = ["n", "w", "l", "d", "nc", "ko_w", "sub_w", "dec_w", "oth_w", "ko_l", "sub_l", "dec_l", "oth_l",
+             "streak", "streak_all", "lstreak_all", "l5_w", "l5_n", "n_ufc_sd", "years_active", "age_pro_debut",
+             "layoff_days", "n_2y", "n_promos", "dwcs_w", "dwcs_n", "promo_feed", "promo_feed_max", "promo_grad",
+             "opp_known", "opp_wpct", "opp_ufc_w", "opp_ufc_n", "net_elo", "exh_n", "exh_w"]
+
+
+def build(args):
+    fights, people, bouts = load_ufc()
+    T = targets(fights, people, args.since, args.extra_since)
+    res = json.load(open(RESOLVE)) if os.path.exists(RESOLVE) else {}
+    fx = Fetcher(offline=True)
+    snap_date = max(f.date for f in fights)
+    today = dt.date.today()
+    first_ufc = {}
+    for p, ub in bouts.items():
+        first_ufc[p] = min(d for d, *_ in ub)
+    parsed = {}
+    rowsby = {}
+    exrows = {}
+    href2p = {}
+    vinfo = {}
+    sec_kinds = Counter()
+    for p, r in res.items():
+        if r.get("status") != "ok" or p not in people:
+            continue
+        P = parse_fighter(fx.get(BASE + r["href"], fighter_path(r["href"])))
+        if not P:
+            continue
+        parsed[p] = P
+        for k in P["sections"]:
+            sec_kinds[k] += 1
+        rows = row_list(P)
+        k, matched = verify({"sections": {"pro": rows}}, bouts[p])
+        fidrow = {i: fid for fid, i, q in matched}
+        for i, row in enumerate(rows):
+            row["_d"] = dt.date.fromisoformat(row["date"]) if row["date"] else None
+            row["_promo"] = promotion(row["event"])
+            row["_fid"] = fidrow.get(i)
+            # UFC rows that ufcstats lacks still count as UFC experience, never as a pre-UFC record
+            row["_ufc"] = row["_fid"] is not None or row["_promo"] == "UFC"
+            row["_sid"] = sid(row["opp_href"])
+        for fid, i, q in matched:
+            h = rows[i]["opp_href"]
+            if h and not q.startswith(("amb:", "name:")):
+                href2p.setdefault(sid(h), q)
+        href2p[sid(r["href"])] = p
+        ex = [x for kk, v in P["sections"].items() if "exhibition" in kk for x in v]
+        for x in ex:
+            x["_d"] = dt.date.fromisoformat(x["date"]) if x["date"] else None
+        exrows[p] = ex
+        rowsby[p] = rows
+        sd_ufc_rows = [x for x in rows if x["_promo"] == "UFC"]
+        vinfo[p] = {"matched": k, "n_ufc": len(bouts[p]),
+                    "sd_ufc_unmatched": sum(1 for x in sd_ufc_rows if x["_fid"] is None)}
+    print("parsed %d resolved pages; section kinds %s" % (len(parsed), dict(sec_kinds)))
+
+    # ---- promotion quality, walk-forward: graduates (resolved UFC fighters who fought there before their
+    # UFC debut) with debut before D, and those graduates' results in their first 3 UFC bouts before D
+    grads = defaultdict(list)          # promo -> sorted debut dates
+    gradres = defaultdict(list)        # promo -> [(date, win)] first-3 UFC bouts of its graduates
+    import bisect
+    grad_from = dt.date.fromisoformat(args.extra_since or args.since)
+    for p, rows in rowsby.items():
+        deb = first_ufc[p]
+        if deb < grad_from:            # older debuts are only the survivors still in the roster: skip them
+            continue
+        promos = set(r["_promo"] for r in rows if not r["_ufc"] and r["_d"] and r["_d"] < deb)
+        ub = sorted(bouts[p], key=lambda t: t[0])[:3]
+        for pr in promos:
+            grads[pr].append(deb)
+            for (d, q, on, f) in ub:
+                if f.winner in ("A", "B"):
+                    won = (f.winner == "A") == (f.persons[0] == p)
+                    gradres[pr].append((d, 1 if won else 0))
+    for pr in grads:
+        grads[pr].sort()
+        gradres[pr].sort()
+    grad_dates = {pr: [d for d, _ in v] for pr, v in gradres.items()}
+    grad_cumw = {}
+    for pr, v in gradres.items():
+        cw, s = [], 0
+        for _, w_ in v:
+            s += w_
+            cw.append(s)
+        grad_cumw[pr] = cw
+    PRIOR_GRAD = 10.0
+
+    def promo_q(pr, D):
+        g = bisect.bisect_left(grads.get(pr, []), D)
+        k = bisect.bisect_left(grad_dates.get(pr, []), D)
+        wins = grad_cumw[pr][k - 1] if k > 0 else 0
+        return {"feed": math.log1p(g), "grad": (wins + PRIOR_GRAD * 0.5) / (k + PRIOR_GRAD), "n_grad": g,
+                "n_res": k}
+
+    # ---- Sherdog network: every pro fight seen on any resolved page, deduped; opponent records and a
+    # network Elo walked forward in date order
+    allf = {}
+    for p, rows in rowsby.items():
+        me = None
+        for r in res.values():
+            pass
+        me = sid(res[p]["href"])
+        for r in rows:
+            if not r["_d"] or r["_sid"] is None:
+                continue
+            a, b = me, r["_sid"]
+            key = (r["date"], min(a, b), max(a, b))
+            if key in allf:
+                continue
+            sc = {"W": 1.0, "L": 0.0, "D": 0.5}.get(r["res"])
+            if sc is None:
+                continue
+            allf[key] = (r["_d"], a, b, sc)
+    net_fights = sorted(allf.values(), key=lambda t: t[0])
+    R = defaultdict(lambda: 1500.0)
+    WL = defaultdict(lambda: [0, 0])
+    hist = defaultdict(list)           # sid -> [(date, rating after)]
+    pre_rec = {}                       # (date, a, b) -> (a_w, a_n, b_w, b_n)
+    NK = 32.0
+    for (d, a, b, sc) in net_fights:
+        ra, rb = R[a], R[b]
+        ea = 1 / (1 + 10 ** ((rb - ra) / 400))
+        pre_rec[(d, a, b)] = (WL[a][0], WL[a][1], WL[b][0], WL[b][1])
+        R[a] = ra + NK * (sc - ea)
+        R[b] = rb - NK * (sc - ea)
+        if sc == 1.0:
+            WL[a][0] += 1
+        elif sc == 0.0:
+            WL[b][0] += 1
+        WL[a][1] += 1
+        WL[b][1] += 1
+        hist[a].append((d, R[a]))
+        hist[b].append((d, R[b]))
+    for p, rows in rowsby.items():
+        me = sid(res[p]["href"])
+        for r in rows:
+            if not r["_d"] or r["_sid"] is None:
+                continue
+            a, b = me, r["_sid"]
+            pr = pre_rec.get((r["_d"], a, b))
+            if pr is None:
+                pr2 = pre_rec.get((r["_d"], b, a))
+                if pr2 is not None:
+                    pr = (pr2[2], pr2[3], pr2[0], pr2[1])
+            if pr is not None:
+                r["_opp_w"], r["_opp_n"] = pr[2], pr[3]
+            q = href2p.get(r["_sid"])
+            if q and q in first_ufc:
+                r["_opp_ufc_first"] = first_ufc[q]
+
+    def net_for(me):
+        H = hist.get(me, [])
+        ds = [d for d, _ in H]
+
+        def f(D):
+            k = bisect.bisect_left(ds, D)
+            return H[k - 1][1] if k > 0 else 1500.0
+        return f
+
+    # ---- per fighter output
+    out = {}
+    cover = Counter()
+    for p in T:
+        P = people[p]
+        slug = P["slug"]
+        r = res.get(p, {})
+        cover["targets"] += 1
+        if p not in rowsby:
+            cover["unresolved"] += 1
+            out[slug] = {"name": P["name"], "ufc_id": P["id"], "status": r.get("status", "not_crawled"),
+                         "n_ufc": len(bouts[p])}
+            continue
+        cover["resolved"] += 1
+        rows = rowsby[p]
+        Pp = parsed[p]
+        tt = P.get("tott") or {}
+        dob = tt.get("dob")
+        sd_dob = dt.date.fromisoformat(Pp["bio"]["dob"]) if Pp["bio"].get("dob") else None
+        if dob and sd_dob:
+            cover["dob_both"] += 1
+            cover["dob_agree"] += int(abs((dob - sd_dob).days) <= 1)
+        dob = dob or sd_dob
+        net = net_for(sid(r["href"]))
+        snaps = []
+        deb = None
+        ub = sorted(bouts[p], key=lambda t: (t[0], -t[3].idx))
+        for j, (d, q, on, f) in enumerate(ub):
+            ft = snapshot_feats(rows, d, dob, exrows[p], net, promo_q)
+            if j == 0:
+                deb = dict(ft, date=d.isoformat(), fid=f.fid)
+            snaps.append([d.isoformat(), f.fid, j] + [ft[k] for k in SNAP_KEYS])
+        cur = snapshot_feats(rows, today + dt.timedelta(days=1), dob, exrows[p], net, promo_q)
+        fl = [[x["date"], x["res"], x["mclass"], x["_promo"], x["opp"], x["_sid"], x["rd"],
+               x["_fid"] or ("UFC" if x["_ufc"] else "")] for x in rows]
+        v = vinfo[p]
+        cover["ufc_bouts"] += v["n_ufc"]
+        cover["ufc_bouts_matched"] += v["matched"]
+        out[slug] = {
+            "name": P["name"], "ufc_id": P["id"], "status": "ok",
+            "sherdog": {"url": BASE + r["href"], "name": Pp["bio"]["name"], "nick": Pp["bio"]["nick"],
+                        "dob": Pp["bio"]["dob"], "nationality": Pp["bio"]["nationality"],
+                        "locality": Pp["bio"]["locality"], "association": Pp["bio"]["association"],
+                        "class": Pp["bio"]["class"], "how": r.get("how"),
+                        "ufc_bouts_found": v["matched"], "n_ufc": v["n_ufc"],
+                        "sd_ufc_rows_not_in_ufcstats": v["sd_ufc_unmatched"],
+                        "amateur_n": sum(len(x) for k, x in Pp["sections"].items() if "amateur" in k)},
+            "debut": deb,
+            "current": cur,
+            "snapshots": snaps,
+            "fights": fl,
+        }
+    meta = {
+        "source": "sherdog.com fighter pages (pro fight history), fetched by tools/preufc.py at <= 1 request/s; "
+                  "raw HTML cached in data/raw/sherdog_cache/ (gitignored)",
+        "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+        "ufcstats_snapshot": snap_date.isoformat(),
+        "targets": "roster (fighters.json) + every fighter with 0-3 prior UFC bouts in a UFC bout on/after %s"
+                   % (args.extra_since or args.since),
+        "coverage": dict(cover),
+        "walk_forward": "snapshots[k] uses only Sherdog pro fights dated strictly before the k-th UFC bout's date; "
+                        "rows matched to ufcstats bouts (or any UFC-promoted row) are UFC experience and never "
+                        "count in the non-UFC record; amateur and exhibition (TUF house) fights are excluded "
+                        "from the record (exh_n/exh_w count exhibitions)",
+        "snapshot_columns": ["date", "fid", "n_ufc_prior"] + SNAP_KEYS,
+        "graduates_from": (args.extra_since or args.since),
+        "fields": {
+            "n w l d nc": "non-UFC pro record before the bout (w+l+d = n)",
+            "ko_w sub_w dec_w oth_w / ko_l sub_l dec_l oth_l": "non-UFC wins and losses by method "
+                                                               "(KO includes TKO; oth = DQ and other)",
+            "streak": "non-UFC win streak at the end of the non-UFC record (entering the UFC for a debut)",
+            "streak_all / lstreak_all": "overall pro win / loss streak entering the bout (UFC included)",
+            "l5_w l5_n": "wins in the last (up to) 5 non-UFC fights",
+            "n_ufc_sd": "UFC bouts Sherdog lists before this bout",
+            "years_active": "years from pro debut to the bout", "age_pro_debut": "age at pro debut",
+            "layoff_days": "days since the last pro fight of any kind", "n_2y": "pro fights in the 2 years before",
+            "promos / last_promo / n_promos": "non-UFC promotions (Sherdog event-name prefix, big orgs merged)",
+            "dwcs_w dwcs_n": "Dana White's Contender Series wins / fights (not in ufcstats)",
+            "promo_feed": "mean over the last 6 non-UFC fights of log(1 + number of UFC fighters who came through "
+                          "that promotion and debuted in the UFC before the bout date); graduates counted only from "
+                          "meta.graduates_from on, where the target set holds every debut (older debuts are "
+                          "survivors only)",
+            "promo_feed_max": "max of the same over the last 6 non-UFC fights",
+            "promo_grad": "mean over the last 6 non-UFC fights of the promotion's graduates' win rate in their first "
+                          "3 UFC bouts before the bout date (shrunk to 0.5 with 10 pseudo-bouts)",
+            "opp_wpct / opp_known": "mean pre-fight win share of non-UFC opponents with >= 3 fights seen in the "
+                                    "Sherdog network (union of every cached page), and how many such opponents",
+            "opp_ufc_w / opp_ufc_n": "non-UFC wins / fights against opponents who had a UFC bout before the bout date",
+            "net_elo": "Elo over every fight in the Sherdog network (K 32, start 1500), as of the bout date",
+            "exh_n exh_w": "exhibition (TUF house) fights / wins before the bout",
+            "snapshots": "one row per UFC bout in meta.snapshot_columns order (walk-forward features)",
+            "debut": "the first snapshot as a dict (the record entering the UFC), plus date and fid",
+            "fights": "[date, result, method class, promotion, opponent, opponent sherdog id, round, ufcstats fight id "
+                      "or 'UFC' for UFC rows ufcstats lacks or '' for non-UFC]",
+            "current": "the same features as of today (non-UFC record including fights between or after UFC stints)",
+        },
+        "promotions": {pr: {"graduates": len(v), "grad_bouts": len(gradres[pr]),
+                            "grad_win": round(promo_q(pr, today)["grad"], 4)}
+                       for pr, v in sorted(grads.items(), key=lambda kv: -len(kv[1]))[:80]},
+        "network": {"fights": len(net_fights), "nodes": len(R)},
+    }
+    obj = {"meta": meta, "fighters": dict(sorted(out.items()))}
+    old = os.path.join(DERIVED, "preufc.json")
+    if os.path.exists(old):
+        try:
+            prev = json.load(open(old))
+            for k in ("predictions", "eval"):
+                if k in prev:
+                    obj[k] = prev[k]
+        except Exception:
+            pass
+    with open(old, "w") as fh:
+        json.dump(obj, fh, separators=(",", ":"), default=str)
+    print("wrote %s (%.1f MB); coverage %s" % (old, os.path.getsize(old) / 1e6, dict(cover)))
+    return obj
+
+
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])

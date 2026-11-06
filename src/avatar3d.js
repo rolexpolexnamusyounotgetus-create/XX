@@ -322,6 +322,7 @@
     if (f && f.fighters) out.fighters = f.fighters;
     if (o) { out.overrides = o.fighters || {}; if (o.manual) for (var k in o.manual) out.fighters[k] = out.fighters[k] || o.manual[k]; if (o.referee) out.referee = o.referee.appearance; }
     if (s) out.scouting = s.fighters || s;
+    else if (root.FightScouting) out.scouting = root.FightScouting;
     return out;
   }
 
@@ -381,7 +382,7 @@
     if (!known(fhT)) L.beard = cfg.female ? 0 : 0.28;
     else if (/clean|shaven|no beard|beardless/.test(fhT)) L.beard = 0.12;
     else if (/full|thick|long/.test(fhT) && /beard/.test(fhT)) { L.beard = 1; L.beardShell = 0.006; }
-    else if (/beard/.test(fhT) && !/chin beard|goatee/.test(fhT)) { L.beard = /short|trim|stubble|light/.test(fhT) ? 0.78 : 0.9; L.beardShell = /stubble/.test(fhT) ? 0 : 0.0028; }
+    else if (/beard/.test(fhT) && !/chin beard|goatee/.test(fhT)) { L.beard = /short|trim|stubble|light/.test(fhT) ? 0.8 : 0.92; L.beardShell = 0; }
     else if (/stubble|scruff|5 o/.test(fhT)) L.beard = 0.55;
     if (/moustache|mustache/.test(fhT) && (/chin|goatee/.test(fhT))) { L.beard = 0.85; L.moustacheOnly = true; L.chinOnly = true; }
     else if (/moustache|mustache/.test(fhT) && !/beard/.test(fhT)) { L.beard = 0.85; L.moustacheOnly = true; }
@@ -404,7 +405,8 @@
   }
 
   /* ------------------------------------------------------------ kit colours */
-  function colorOf(v, d) { return new T.Color(v == null ? d : v); }
+  function colorOf(v, d) { return new T.Color(v == null ? d : v).convertSRGBToLinear(); }
+  function lin(v) { return new T.Color(v).convertSRGBToLinear(); }
 
   /* ------------------------------------------------------------ the avatar */
   function basisQuat(q, yAxis, zHint) {
@@ -619,8 +621,9 @@
       var ax = Math.abs(p.x), o1 = i * 4;
       // facial hair: front of the ears, under the cheek line, above the neckline, off the lips
       if (p.y < sbY + 0.01 && p.y > neckLine - 0.03 && p.z > earZ - 0.035 && ax < earX + 0.02 && p.y > J.Neck.h.y - 0.02) {
-        var tx = clamp01(ax / Math.max(0.03, earX)), lineY = lerp(noseB + 0.004, sbY, Math.pow(tx, 1.6));
-        if (tx > 0.55) lineY = lerp(lineY, cheekTop + 0.012, (tx - 0.55) * 0.9 * (1 - tx));
+        var tx = clamp01(ax / Math.max(0.03, earX)), tm = clamp01((mouthHalf + 0.004) / Math.max(0.03, earX)), lineY;
+        if (tx < tm) lineY = lerp(noseB + 0.001, lipTopY + 0.012, smooth(0, 1, tx / tm));
+        else lineY = lerp(lipTopY + 0.012, sbY - 0.004, Math.pow((tx - tm) / (1 - tm), 1.35));
         var top = 1 - smooth(lineY - 0.006, lineY + 0.004, p.y);
         var neck = smooth(neckLine - 0.02, neckLine + 0.004, p.y);
         var lips = (p.y < lipTopY + 0.001 && p.y > L.lipBot.y - 0.002 && ax < mouthHalf + 0.002 && p.z > L.lipBot.z - 0.02) ? 0 : 1;
@@ -670,9 +673,9 @@
   Avatar.prototype.skinMaterial = function (map, opts) {
     var self = this, looks = this.looks;
     var mat = new T.MeshPhysicalMaterial({ map: map, roughness: 0.56, metalness: 0, clearcoat: 0.0, clearcoatRoughness: 0.32, skinning: true });
-    mat.color.set(looks.tint);
+    mat.color.copy(lin(looks.tint));
     var U = this.uniforms = this.uniforms || {
-      uBeard: { value: looks.beard }, uBeardCol: { value: new T.Color(looks.beardColor) }, uScalp: { value: looks.scalp }, uHairCol: { value: new T.Color(looks.hairColor) },
+      uBeard: { value: looks.beard }, uBeardCol: { value: lin(looks.beardColor) }, uScalp: { value: looks.scalp }, uHairCol: { value: lin(looks.hairColor) },
       uDam: { value: new T.Vector2(0, 0) }, uLeg: { value: new T.Vector2(0, 0) }, uSweat: { value: 0 }, uFlush: { value: 0 },
       uTattoo: { value: this.tattooTex || null }, uTatOn: { value: this.tattooTex ? 1 : 0 }
     };
@@ -687,11 +690,12 @@
           "float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hh(i), hh(i + vec2(1,0)), f.x), mix(hh(i + vec2(0,1)), hh(i + vec2(1,1)), f.x), f.y); }")
         .replace("#include <map_fragment>", "#include <map_fragment>\n" +
           "{ vec2 su = vUv;\n" +
-          "  float hair = hh(floor(su * 2400.0)); float hair2 = vn(su * 900.0);\n" +
+          "  float hair = vn(su * 1400.0); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
           "  float bd = clamp(vMask.x * uBeard, 0.0, 1.0);\n" +
-          "  float stub = bd * (0.45 + 0.55 * smoothstep(0.25, 0.85, hair)) * (0.75 + 0.25 * hair2);\n" +
-          "  diffuseColor.rgb = mix(diffuseColor.rgb, uBeardCol * 0.85, clamp(stub * (0.55 + 0.45 * bd), 0.0, 0.92));\n" +
-          "  float sc = vMask2.x * uScalp; float sst = sc * (0.5 + 0.5 * smoothstep(0.2, 0.9, hair));\n" +
+          "  float edge = smoothstep(0.0, 0.55, vMask.x);\n" +
+          "  float stub = bd * edge * (0.62 + 0.38 * smoothstep(0.2, 0.8, hair)) * (0.8 + 0.2 * hair2) * (0.9 + 0.1 * hair3);\n" +
+          "  diffuseColor.rgb = mix(diffuseColor.rgb, uBeardCol * (0.7 + 0.4 * hair), clamp(stub * (0.5 + 0.5 * bd), 0.0, 0.9));\n" +
+          "  float sc = vMask2.x * uScalp; float sst = sc * (0.55 + 0.45 * smoothstep(0.2, 0.9, hair));\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, uHairCol * 0.8, clamp(sst * 0.85, 0.0, 0.9));\n" +
           "  float sideL = step(0.0, vMask.y);\n" +
           "  float dam = mix(uDam.y, uDam.x, step(0.0, vMask.z));\n" +
@@ -710,12 +714,18 @@
           "  }\n" +
           "}")
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.34, uSweat) + 0.12 * clamp(vMask.x * uBeard, 0.0, 1.0);")
+        .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n" +
+          "{ vec3 pp = -vViewPosition; float hgt = vn(vUv * 620.0) * 0.55 + vn(vUv * 1500.0) * 0.45;\n" +
+          "  vec2 dH = vec2(dFdx(hgt), dFdy(hgt)) * 0.0035 * (1.0 - 0.6 * clamp(vMask.x * uBeard, 0.0, 1.0));\n" +
+          "  vec3 dpx = dFdx(pp), dpy = dFdy(pp); vec3 r1 = cross(dpy, normal), r2 = cross(normal, dpx); float det = dot(dpx, r1);\n" +
+          "  vec3 grad = sign(det) * (dH.x * r1 + dH.y * r2); normal = normalize(abs(det) * normal - grad); }")
         .replace("#include <lights_physical_pars_fragment>", T.ShaderChunk.lights_physical_pars_fragment
           .replace("vec3 irradiance = dotNL * directLight.color;", "vec3 irradiance = dotNL * directLight.color;\n\tfloat rawNL = dot( geometry.normal, directLight.direction );\n\tvec3 irradianceW = clamp( ( vec3( rawNL ) + vec3( 0.36, 0.16, 0.11 ) ) / vec3( 1.36, 1.16, 1.11 ), 0.0, 1.0 ) * directLight.color;\n\t#ifndef PHYSICALLY_CORRECT_LIGHTS\n\t\tirradianceW *= PI;\n\t#endif")
           .replace("reflectedLight.directDiffuse += ( 1.0 - clearcoatDHR ) * irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );", "reflectedLight.directDiffuse += ( 1.0 - clearcoatDHR ) * irradianceW * BRDF_Diffuse_Lambert( material.diffuseColor );")
           .replace("reflectedLight.directDiffuse += irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );", "reflectedLight.directDiffuse += irradianceW * BRDF_Diffuse_Lambert( material.diffuseColor );"));
     };
     mat.customProgramCacheKey = function () { return "fight-skin-v1"; };
+    mat.extensions = { derivatives: true };
     return mat;
   };
 
@@ -817,7 +827,7 @@
     g.computeVertexNormals();
     var mat = new T.MeshStandardMaterial({ map: o.map || px.tex, roughness: o.roughness != null ? o.roughness : (o.hair ? 0.5 : 0.8), metalness: 0, skinning: true,
       side: meta.doubleSided ? T.DoubleSide : T.FrontSide });
-    if (o.color) mat.color.set(o.color);
+    if (o.color) mat.color.copy(lin(o.color));
     var mesh, extra = null;
     if (o.hair) {
       mat.alphaTest = 0.5; mat.side = T.DoubleSide;
@@ -828,7 +838,7 @@
       this.disposables.push(tips);
     } else if (meta.transparent) {
       mat.transparent = true; mat.depthWrite = false;
-      if (o.brows || o.lashes) { mat.alphaTest = 0.02; }
+      if (o.brows || o.lashes) { mat.alphaTest = 0; mat.polygonOffset = true; mat.polygonOffsetFactor = -1; }
     }
     if (o.eyes) { mat.transparent = false; mat.depthWrite = true; mat.roughness = 0.1; }
     mesh = new T.SkinnedMesh(g, mat);
@@ -841,9 +851,10 @@
     return mesh;
   };
   function hairShading(m) {
-    // HumanForge: darken near-white transparent texels so strand tips fade instead of haloing
+    // texture luminance x hair colour (any colour), then HumanForge's darkening of near-white
+    // transparent texels so strand tips fade instead of haloing
     m.onBeforeCompile = function (sh) {
-      sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n\tdiffuseColor.rgb *= mix(0.35, 1.0, smoothstep(0.05, 0.85, diffuseColor.a));");
+      sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n\tdiffuseColor.rgb = diffuse * clamp(dot(texelColor.rgb, vec3(0.299, 0.587, 0.114)) * 4.5, 0.0, 1.6);\n\tdiffuseColor.rgb *= mix(0.35, 1.0, smoothstep(0.05, 0.85, diffuseColor.a));");
     };
     m.customProgramCacheKey = function () { return "fight-hair"; };
   }
@@ -994,7 +1005,7 @@
     this.addShell(gloveG, glove, "gloves");
     // hand wraps peeking out above the strap
     var wrapG = this.shell(function (i) { if (!onArmSide(i)) return false; var t = wristT(i); return t > 0.058 && t < 0.083 && self.boneW(i, DIST) < 0.1; }, function () { return 0.0042; });
-    this.addShell(wrapG, fabricMaterial(new T.Color("#e9e6dc"), { rough: 0.9 }), "wraps");
+    this.addShell(wrapG, fabricMaterial(lin("#e9e6dc"), { rough: 0.9 }), "wraps");
     this.hideUnder(function (i) { if (!onArmSide(i)) return false; var wp = self.boneW(i, HAND) + self.boneW(i, PROX), t = wristT(i); return (wp > 0.8 && t < -0.005 && self.boneW(i, DIST) < 0.05) || (t > 0.005 && t < 0.075); });
   };
 
@@ -1027,7 +1038,7 @@
     var pantsG = this.shell(function (i) { return inPants(i); }, function (i) { return 0.009 + 0.012 * smooth(hipJ - 0.1, ankleY + 0.1, y(i)); });
     this.addShell(pantsG, fabricMaterial(colorOf(this.app.pants, "#2b2e34"), { rough: 0.8 }), "trousers");
     var shoeG = this.shell(function (i) { return self.boneW(i, FEET) > 0.3 || (y(i) < ankleY + 0.01 && self.boneW(i, ARMS) < 0.05 && self.boneW(i, FEET) + 0.01 > 0); }, function (i) { return y(i) < 0.012 ? 0.002 : 0.008; });
-    this.addShell(shoeG, fabricMaterial(new T.Color("#0c0d10"), { rough: 0.45 }), "shoes");
+    this.addShell(shoeG, fabricMaterial(lin("#0c0d10"), { rough: 0.45 }), "shoes");
     var gloveG = this.shell(function (i) { return self.boneW(i, HANDS) > 0.3; }, function () { return 0.0014; });
     this.addShell(gloveG, fabricMaterial(colorOf(this.app.gloves, "#15161a"), { rough: 0.35 }), "latex");
     this.hideUnder(function (i) { return inShirt(i, 0.02) || inPants(i, 0.02) || self.boneW(i, FEET) > 0.9 || self.boneW(i, HANDS) > 0.95; });
@@ -1038,7 +1049,7 @@
     var self = this, base = this.base, m1 = masks.m1, len = this.looks.beardShell, mh = base.mh;
     var g = this.shell(function (i) { return m1[mh[i] * 4] > 0.08; }, function (i) { return len * clamp01(m1[mh[i] * 4] * 1.4); },
       { name: "aKit", size: 4, fn: function (i, out, o) { out[o] = m1[mh[i] * 4]; out[o + 1] = 0; out[o + 2] = 0; out[o + 3] = 0; } });
-    var col = new T.Color(this.looks.beardColor);
+    var col = lin(this.looks.beardColor);
     var U = { uCol: { value: col } };
     var mat = new T.MeshStandardMaterial({ color: col, roughness: 0.75, metalness: 0, skinning: true, transparent: false, alphaTest: 0.5 });
     mat.onBeforeCompile = function (sh) {

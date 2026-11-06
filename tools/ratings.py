@@ -566,6 +566,7 @@ def run_elo(D, P, until=None, record=False):
     y, w = encode(D, P)
     K = P["K"]
     kb, kn, kl = P.get("kb", 0.0), P.get("kn", 3.0), P.get("kl", 0.0)
+    boost, boost_n = P.get("boost", 1.0), P.get("boost_n", 0)
     dy, do = P.get("dy", 0.0), P.get("do", 0.0)
     kap = P.get("kappa", 1.0)
     r = {}
@@ -591,6 +592,8 @@ def run_elo(D, P, until=None, record=False):
                 if (dy or do) and gap > 0 and dob[p] == dob[p]:
                     r[p] += age_G(age, dy, do) - age_G(age - gap, dy, do)
             k = K * (1.0 + kb * math.exp(-nf[p] / kn)) * (1.0 + kl * min(gap, 3.0))
+            if nf[p] < boost_n:
+                k *= boost
             rs.append(r[p])
             ks.append(k)
         diff = rs[0] - rs[1]
@@ -648,7 +651,7 @@ def run_glicko2(D, P, until=None, record=False):
             for p, q, s in ((a, b, y[i]), (b, a, 1.0 - y[i])):
                 m, ph, sg = mu[p], phi[p], sig[p]
                 g = 1.0 / math.sqrt(1.0 + 3.0 * phi_q2(phi, q) / pi2)
-                E = 1.0 / (1.0 + math.exp(-g * (m - mu[q] if q != p else 0)))
+                E = 1.0 / (1.0 + math.exp(-g * (m - mu[q])))
                 ww = w[i]
                 v = 1.0 / (ww * g * g * E * (1 - E) + 1e-12)
                 delta = v * ww * g * (s - E)
@@ -680,8 +683,8 @@ def run_glicko2(D, P, until=None, record=False):
                         fa /= 2
                     Bv, fb = C, fc
                 sg2 = math.exp(Aa / 2)
-                phs = math.sqrt(ph2 + sg2 * sg2 * 0.0)
-                phn = 1.0 / math.sqrt(1.0 / (phs * phs) + 1.0 / v)
+                # phi was already inflated for the elapsed time before the fight, so no extra period here
+                phn = 1.0 / math.sqrt(1.0 / ph2 + 1.0 / v)
                 phn = max(phn, phimin)
                 newmu = m + phn * phn * ww * g * (s - E)
                 if p == a:
@@ -780,3 +783,216 @@ def run_trueskill(D, P, until=None, record=False):
         last[a] = d
         last[b] = d
     return out, rec, {"mu": mu, "var": var, "last": last}
+
+
+# =====================================================================================================
+# Whole-History Rating / Bayesian Bradley-Terry with Gaussian random-walk skill (walk-forward)
+# =====================================================================================================
+class WHR:
+    """Time-varying Bradley-Terry: each fighter has a skill node at every fight; consecutive nodes follow a
+    Gaussian random walk x' ~ N(x + drift(age), w2 * years + vf); the first node has the newcomer prior
+    N(mu_new + age_new * (age - 29), s0^2). Observations: weighted (fractional) logistic likelihood of the
+    encoder's (y, w). MAP by global sparse Newton over all nodes; walk-forward by fight day: before each day
+    the posterior is re-solved on all earlier fights (warm-started), so opponents' strengths are re-estimated
+    retroactively, and the day's fights are predicted from each fighter's last node, its posterior variance
+    (diagonal of the inverse Hessian) and the random-walk variance accrued since."""
+
+    def __init__(self, D, P):
+        self.D, self.P = D, P
+        y, w = encode(D, P)
+        obs = np.where(D.obs & (w > 0))[0]
+        self.fobs = obs
+        K = len(obs)
+        self.K = K
+        self.nn = 2 * K
+        self.y = y[obs]
+        self.w = w[obs]
+        self.fight_day = D.day[obs]
+        node_p = np.empty(2 * K, int)
+        node_p[0::2] = D.ia[obs]
+        node_p[1::2] = D.ib[obs]
+        node_age = np.empty(2 * K)
+        node_age[0::2] = D.age_a[obs]
+        node_age[1::2] = D.age_b[obs]
+        node_day = np.repeat(D.day[obs], 2)
+        self.node_p, self.node_age, self.node_day = node_p, node_age, node_day
+        w2, vf, s0 = P["w2"], P.get("vf", 0.0), P["s0"]
+        dy, do = P.get("dy", 0.0), P.get("do", 0.0)
+        prev = np.full(2 * K, -1)
+        lastn = {}
+        for n in range(2 * K):
+            p = node_p[n]
+            if p in lastn:
+                prev[n] = lastn[p]
+            lastn[p] = n
+        self.prev = prev
+        e = np.where(prev >= 0)[0]
+        self.e_n = e
+        self.e_p = prev[e]
+        dt_y = (node_day[e] - node_day[self.e_p]) / YEAR
+        self.e_c = 1.0 / (w2 * dt_y + vf + 1e-9)
+        self.e_d = np.array([age_G(node_age[n], dy, do) - age_G(node_age[m], dy, do)
+                             for n, m in zip(e, self.e_p)]) if (dy or do) else np.zeros(len(e))
+        f = np.where(prev < 0)[0]
+        self.f_n = f
+        self.f_m = np.array([newcomer(node_age[n], P) for n in f])
+        self.f_c = 1.0 / (s0 * s0)
+        # initial values: newcomer mean propagated along the chain with the drift
+        x = np.zeros(2 * K)
+        x[f] = self.f_m
+        dmap = dict(zip(e, self.e_d))
+        for n in range(2 * K):
+            if prev[n] >= 0:
+                x[n] = x[prev[n]] + dmap[n]
+        self.x = x
+        self.lu = None
+
+    def _system(self, N):
+        """Gradient and sparse Hessian of the negative log posterior on nodes [0, N)."""
+        x = self.x
+        g = np.zeros(N)
+        fN = np.searchsorted(self.f_n, N)
+        f = self.f_n[:fN]
+        g[f] += (x[f] - self.f_m[:fN]) * self.f_c
+        eN = np.searchsorted(self.e_n, N)
+        en, ep, ec, ed = self.e_n[:eN], self.e_p[:eN], self.e_c[:eN], self.e_d[:eN]
+        r = ec * (x[en] - x[ep] - ed)
+        np.add.at(g, en, r)
+        np.add.at(g, ep, -r)
+        K = N // 2
+        za = np.arange(0, 2 * K, 2)
+        zb = za + 1
+        z = x[za] - x[zb]
+        p = expit(z)
+        wk = self.w[:K]
+        rr = wk * (p - self.y[:K])
+        g[za] += rr
+        g[zb] -= rr
+        h = wk * p * (1 - p)
+        rows = np.concatenate([f, en, ep, en, ep, za, zb, za, zb])
+        cols = np.concatenate([f, en, ep, ep, en, za, zb, zb, za])
+        data = np.concatenate([np.full(fN, self.f_c), ec, ec, -ec, -ec, h, h, -h, -h])
+        H = sp.csc_matrix((data, (rows, cols)), shape=(N, N))
+        return g, H
+
+    def solve(self, N, tol=1e-5, max_it=30):
+        if N == 0:
+            return
+        for it in range(max_it):
+            g, H = self._system(N)
+            lu = spla.splu(H, permc_spec="MMD_AT_PLUS_A", diag_pivot_thresh=0.0,
+                           options={"SymmetricMode": True})
+            step = lu.solve(-g)
+            mx = np.max(np.abs(step))
+            if mx > 2.0:              # damping for the cold start
+                step *= 2.0 / mx
+            self.x[:N] += step
+            self.lu, self.luN = lu, N
+            if mx < tol:
+                break
+
+    def variances(self, nodes):
+        nodes = np.asarray(nodes, int)
+        if len(nodes) == 0:
+            return np.zeros(0)
+        N = self.luN
+        E = np.zeros((N, len(nodes)))
+        E[nodes, np.arange(len(nodes))] = 1.0
+        X = self.lu.solve(E)
+        return X[nodes, np.arange(len(nodes))]
+
+    def run(self, eval_days, until=None, record=False):
+        """Walk forward over fights; returns (p array over all D fights, rec)."""
+        D, P = self.D, self.P
+        until = until or 10 ** 9
+        w2, vf, s0 = P["w2"], P.get("vf", 0.0), P["s0"]
+        dy, do = P.get("dy", 0.0), P.get("do", 0.0)
+        kap = P.get("kappa", 1.0)
+        out = np.full(D.n, np.nan)
+        rec = np.full((D.n, 4), np.nan) if record else None
+        days = sorted(d for d in set(eval_days) if d < until)
+        # fight index ranges by day (all fights, including NCs)
+        order_day = D.day
+        lastnode = {}             # player -> last node index (among nodes already in the prefix)
+        node_of_fight = {}        # D fight index -> (node a, node b)
+        for k, i in enumerate(self.fobs):
+            node_of_fight[i] = (2 * k, 2 * k + 1)
+        fi = 0                    # next D fight to add to lastnode
+        for dday in days:
+            # add all fights before dday
+            while fi < D.n and order_day[fi] < dday:
+                if fi in node_of_fight:
+                    na, nb = node_of_fight[fi]
+                    lastnode[D.ia[fi]] = na
+                    lastnode[D.ib[fi]] = nb
+                fi += 1
+            N = int(np.searchsorted(self.node_day, dday))      # nodes strictly before dday
+            # warm start the nodes added since the previous solve
+            self.solve(N)
+            # predict the day's fights
+            j = fi
+            todo = []
+            while j < D.n and order_day[j] == dday:
+                todo.append(j)
+                j += 1
+            need = sorted({lastnode[p] for i in todo for p in (D.ia[i], D.ib[i]) if p in lastnode})
+            V = dict(zip(need, self.variances(need))) if need else {}
+            for i in todo:
+                ms, vs = [], []
+                for p, age in ((D.ia[i], D.age_a[i]), (D.ib[i], D.age_b[i])):
+                    if p in lastnode:
+                        n = lastnode[p]
+                        gap = (dday - self.node_day[n]) / YEAR
+                        m = self.x[n] + (age_G(age, dy, do) - age_G(self.node_age[n], dy, do)
+                                         if (dy or do) else 0.0)
+                        v = V[n] + w2 * gap + vf
+                    else:
+                        m, v = newcomer(age, P), s0 * s0
+                    ms.append(m)
+                    vs.append(v)
+                md, vd = ms[0] - ms[1], vs[0] + vs[1]
+                out[i] = expit(kap * md / math.sqrt(1.0 + math.pi * kap * kap * vd / 8.0))
+                if record:
+                    rec[i] = (ms[0], math.sqrt(vs[0]), ms[1], math.sqrt(vs[1]))
+            # initialise the new nodes of this day's fights from the predictive means
+            for i in todo:
+                if i in node_of_fight:
+                    na, nb = node_of_fight[i]
+                    for n in (na, nb):
+                        pv = self.prev[n]
+                        self.x[n] = (self.x[pv] if pv >= 0 else newcomer(self.node_age[n], P))
+        return out, rec
+
+    def final_state(self, players, ref_day):
+        """Full-data posterior: mean and sd of every listed player's skill at ref_day."""
+        self.solve(self.nn)
+        D, P = self.D, self.P
+        w2, vf = P["w2"], P.get("vf", 0.0)
+        dy, do = P.get("dy", 0.0), P.get("do", 0.0)
+        last = {}
+        for n in range(self.nn):
+            last[self.node_p[n]] = n
+        out = {}
+        nodes = [last[p] for p in players if p in last]
+        V = {}
+        for c in range(0, len(nodes), 300):
+            chunk = nodes[c:c + 300]
+            V.update(zip(chunk, self.variances(chunk)))
+        for p in players:
+            if p not in last:
+                continue
+            n = last[p]
+            gap = (ref_day - self.node_day[n]) / YEAR
+            age = (ref_day - D.dob[p]) / YEAR if D.dob[p] == D.dob[p] else float("nan")
+            m = self.x[n] + (age_G(age, dy, do) - age_G(self.node_age[n], dy, do) if (dy or do) else 0.0)
+            out[p] = (float(m), float(math.sqrt(V[n] + w2 * gap + vf)), float(self.x[n]), float(math.sqrt(V[n])))
+        return out
+
+
+def run_whr(D, P, until=None, record=False, eval_idx=None):
+    model = WHR(D, P)
+    if eval_idx is None:
+        eval_idx = D.bt_idx
+    days = D.day[eval_idx]
+    p, rec = model.run(days, until=until, record=record)
+    return p, rec, model

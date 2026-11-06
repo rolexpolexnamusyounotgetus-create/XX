@@ -115,6 +115,7 @@
 
     kdInstant: 0.3032,         // [selfcal] P(knockdown is an immediate knockout), x damage and division factors
     kdInstantDmg: 600,       // instant-KO x (1 + D / kdInstantDmg) (default)
+    finStamAtt: 1.0,         // attacker fatigue: GNP TKO, follow-up referee stop and submission conversion x max(0.05, 1 - finStamAtt (1 - S_att)) (finish hazards fall by round while output rises)
     instStam: 1.0,           // attacker fatigue: instant-KO odds x (1 - instStam (1 - S_att)) (default)
     kdPounce: 0.72,          // P(attacker follows him down) after a knockdown that isn't a KO (default)
     kdRecover: 1 / 6.5,      // per second, the downed man recovers (to guard or his feet) (default; [selfcal] with kdRefStop)
@@ -136,7 +137,7 @@
     bodyDrain: 0.0035,       // stamina drained by a landed body strike, x damage weight (default)
 
     // ---------------- stamina and pace ----------------
-    drain: 0.0008,          // base stamina drain per second at league-average cardio in a 3-round fight (S starts at 1; ~0.55 by the end of R3)
+    drain: 0.0011,          // base stamina drain per second at league-average cardio in a 3-round fight (S starts at 1; ~0.4 by the end of R3; shapes the finish hazard by round)
     drainSchedExp: 0.8,      // drain x (3 / scheduled rounds)^drainSchedExp: fighters budget energy for the distance (baserates: KO hazard drops in R3 of 3-rounders, R4-5 of 5-rounders)
     drainPos: [1.0, 1.5, 0.9, 1.6],   // drain multiplier at distance, clinch, ground top, ground bottom (default)
     drainAtt: 0.00025,       // stamina per strike attempt thrown (default)

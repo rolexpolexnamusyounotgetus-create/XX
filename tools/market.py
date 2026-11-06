@@ -1146,12 +1146,70 @@ def cmd_build(a):
                                     'p95': round(float(np.percentile(du, 95)), 4)}
     res['checks'] = chk
 
+    # ---------------- does anything beat the close? ----------------
+    res['residual_features'] = residual_features(R, {f['id']: f for f in fights}, boot=min(a.boot, 1000))
+
     # ---------------- method props (event pages, if cached) ----------------
     if getattr(a, 'props', None):
         res['method_market'] = method_market(a, fights, recs)
 
     write_market_json(R, res, best)
     print_summary(res)
+
+
+def residual_features(R, fights_by_id, boot=1000):
+    """Does anything known before the fight predict the result beyond the closing line?
+    logit P(A) = b0 logit(p_close) + sum_k b_k x_k (A-minus-B features, no intercept, so the corner label
+    cannot matter). One feature at a time and all together; fit on tune, scored on test."""
+    np = _np()
+    def feats(f):
+        A, B = f['A'], f['B']
+        def g(s, k, d=None):
+            v = s.get(k)
+            return d if v is None else v
+        def moved(s):
+            return 1.0 if (s.get('home') and s['home'] != f['division'] and f['division'] not in ('Catch Weight', 'Open Weight')) else 0.0
+        return {
+            'age': (g(A, 'age', 30) - g(B, 'age', 30)) / 5,
+            'reach_in': (g(A, 'reach_in', 0) or 0) - (g(B, 'reach_in', 0) or 0) if A.get('reach_in') and B.get('reach_in') else 0.0,
+            'height_in': (g(A, 'height_in', 0) - g(B, 'height_in', 0)) if A.get('height_in') and B.get('height_in') else 0.0,
+            'log_ufc_fights': math.log1p(g(A, 'n', 0)) - math.log1p(g(B, 'n', 0)),
+            'ko_losses': g(A, 'ko_losses', 0) - g(B, 'ko_losses', 0),
+            'kd_absorbed': g(A, 'kd_absorbed', 0) - g(B, 'kd_absorbed', 0),
+            'elo_logit': (g(A, 'elo', 1500) - g(B, 'elo', 1500)) * math.log(10) / 400,
+            'weight_move': moved(A) - moved(B),
+            'southpaw': (1.0 if A.get('stance') == 'Southpaw' else 0.0) - (1.0 if B.get('stance') == 'Southpaw' else 0.0),
+        }
+    rows = []
+    for r in R:
+        if r['y'] is None or 'p_close_mult' not in r:
+            continue
+        rows.append((r, feats(fights_by_id[r['id']])))
+    names = list(rows[0][1].keys())
+    out = {'features': names, 'single': {}, 'all': {}}
+    def mat(per, keys):
+        g = [(r, x) for r, x in rows if r['period'] == per]
+        X = np.column_stack([logit([r['p_close_mult'] for r, _ in g])] + [[x[k] for _, x in g] for k in keys])
+        y = np.array([r['y'] for r, _ in g])
+        return X, y, [r['event'] for r, _ in g]
+    Xt0, yt, _ = mat('tune', [])
+    Xs0, ys, ev_s = mat('test', [])
+    b0, _ = logreg(Xt0, yt)
+    base_test = loss_arrays(sigmoid(Xs0 @ b0), ys)[0]
+    for k in names + ['ALL']:
+        keys = names if k == 'ALL' else [k]
+        Xt, yt, _ = mat('tune', keys)
+        Xs, ys, ev_s = mat('test', keys)
+        b, se = logreg(Xt, yt)
+        bt_, st_ = logreg(Xs, ys)  # refit on test, only to see whether a sign persists (not used for scoring)
+        lt = loss_arrays(sigmoid(Xs @ b), ys)[0]
+        bs = boot_event(ev_s, {'m': lt, 'b': base_test}, B=boot)
+        entry = {'tune_coef': {kk: [round(float(bb), 4), round(float(ss), 4)] for kk, bb, ss in zip(['close'] + keys, b, se)},
+                 'test_refit_coef': {kk: [round(float(bb), 4), round(float(ss), 4)] for kk, bb, ss in zip(['close'] + keys, bt_, st_)},
+                 'test_ll_minus_close_slope': [round(float(np.mean(lt - base_test)), 4), ci(bs['m'] - bs['b'])]}
+        (out['all'] if k == 'ALL' else out['single']).update({k: entry} if k != 'ALL' else entry)
+    out['n'] = {'tune': int(len(yt)), 'test': int(len(ys))}
+    return out
 
 
 def write_market_json(R, res, best):
@@ -1246,6 +1304,16 @@ def print_summary(res):
             continue
         print(f"  stack {k:28s} tune {v['tune']['log_loss']} test {v['test']['log_loss']} d {v['test_ll_minus_close_mult']} {v['coef_logit_[b,se]']}")
     print('checks', res['checks'])
+    rf = res['residual_features']
+    for k, v in list(rf['single'].items()) + [('ALL', rf['all'])]:
+        print(f"  resid {k:16s} tune {v['tune_coef']} | test refit {v['test_refit_coef']} | dLL {v['test_ll_minus_close_slope']}")
+    mm = res.get('method_market')
+    if mm and 'eval' in mm:
+        for per, v in mm['eval'].items():
+            print('method', per, {k: v[k] for k in v if k.startswith('ll6') or k in ('n', 'mean_books')})
+            print('   godec', per, v['goes_to_decision']['market'], v['goes_to_decision']['base_rate'])
+            if 'round_of_finish' in v:
+                print('   rounds', per, v['round_of_finish'])
 
 
 

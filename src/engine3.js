@@ -689,9 +689,9 @@
               else if (hj) { if (rng.u() < stkoB[i] * chinM[j] * (p.stkoBase + D[j] / 100)) { kind = "fin"; finHow = "TKO"; } }
             } else if (pc === 2) {
               if (follow) {
-                var ro = refO * chinM[j] * (1 + D[j] / p.refDmg);
+                var ro = refO * chinM[j] * (1 + D[j] / p.refDmg) * Math.max(0.05, 1 - p.finStamAtt * (1 - S[i]));
                 if (rng.u() < ro / (1 + ro)) { kind = "fin"; finHow = "TKO"; }
-              } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / p.gnpDmg) * (hj ? p.gnpHurt : 1) * chinM[j]) { kind = "fin"; finHow = "GNP"; }
+              } else if (rng.u() < gnpB[i] * gnpTkoPos[pos] * (1 + D[j] / p.gnpDmg) * (hj ? p.gnpHurt : 1) * chinM[j] * Math.max(0.05, 1 - p.finStamAtt * (1 - S[i]))) { kind = "fin"; finHow = "GNP"; }
             }
           } else if (tg === 1) {
             S[j] -= p.bodyDrain * dw[i]; if (S[j] < 0.05) S[j] = 0.05;
@@ -787,7 +787,7 @@
           st[i * NS + I_SUB]++;
           var fromTop = x === 2, hj3 = j === 0 ? h0 : h1;
           var sname = pickName(fromTop ? SUBN[POSN[pos]] : SUBN.bottom, rng.u());
-          var os = m.subO[i] * (fromTop ? m.subOPos[top * 5 + pos] : m.subBotO) * gRs[i] * subK[i] * (1 + p.subStam * (1 - S[j])) * (hj3 ? p.subHurt : 1);
+          var os = m.subO[i] * (fromTop ? m.subOPos[top * 5 + pos] : m.subBotO) * gRs[i] * subK[i] * (1 + p.subStam * (1 - S[j])) * (hj3 ? p.subHurt : 1) * Math.max(0.05, 1 - p.finStamAtt * (1 - S[i]));
           if (rng.u() < os / (1 + os)) {
             fin = { by: SIDE[i], how: "SUB", t: t, loc: "ground", name: sname, detail: sname, pos: POSN[pos] + (fromTop ? "" : " (bottom)") };
             if (trace) { var eu = evObj(t, "sub", SIDE[i], state, pos, false, D, G, S); eu.name = sname; eu.loc = "ground"; ev.push(eu); }

@@ -219,6 +219,18 @@
       if (it[1]) { ctx.fillStyle = "rgba(" + it[1] + ",0.85)"; ctx.fillRect(-0.7 * k, 0.24 * k, 1.4 * k, 0.05 * k); }
       ctx.restore();
     }
+    // secondary prints on the open canvas, on the diagonals between the emblem and the band
+    var marks = ["MONTE CARLO", "20,000 FIGHTS", "MONTE CARLO", "20,000 FIGHTS"];
+    for (j = 0; j < 4; j++) {
+      var ma = PI / 4 + j * PI / 2 + PI / 8, mr = 2.55, mx = X(Math.cos(ma) * mr), my = X(Math.sin(ma) * mr);
+      ctx.save(); ctx.translate(mx, my); ctx.rotate(ma + PI / 2);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.strokeStyle = "rgba(24,28,34,0.28)"; ctx.lineWidth = 0.018 * k;
+      ctx.beginPath(); for (var q2 = 0; q2 < 8; q2++) { var oa = vertexAngle(q2), ox = Math.cos(oa) * 0.2 * k, oy = Math.sin(oa) * 0.2 * k - 0.22 * k; if (q2 === 0) ctx.moveTo(ox, oy); else ctx.lineTo(ox, oy); } ctx.closePath(); ctx.stroke();
+      fitFont(ctx, "FL", "900", FONT_D, 0.3 * k, 0.2 * k); ctx.fillStyle = "rgba(24,28,34,0.34)"; ctx.fillText("FL", 0, -0.215 * k);
+      fitFont(ctx, spaced(marks[j]), "800", FONT_U, 1.2 * k, 0.13 * k); ctx.fillStyle = "rgba(24,28,34,0.3)"; ctx.fillText(spaced(marks[j]), 0, 0.08 * k);
+      ctx.restore();
+    }
     // corner colour wedges: the corner of the band in blue and red
     [[BLUE_K, "28,74,160"], [RED_K, "170,32,40"]].forEach(function (cw) {
       var va = vertexAngle(cw[0]), vp = vertexAngle(cw[0] - 1), vn = vertexAngle(cw[0] + 1);
@@ -319,7 +331,7 @@
     var g;
     ctx.save(); ctx.beginPath(); ctx.rect(x0, 0, W, H); ctx.clip();
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    if (st.flash > 0.01) {
+    if (st.flash > 0.08) {
       var f = st.flash;
       g = ctx.createLinearGradient(x0, 0, x0 + W, 0);
       g.addColorStop(0, "rgb(" + Math.round(150 * f + 20) + ",10,18)"); g.addColorStop(0.5, "rgb(" + Math.round(235 * f + 20) + "," + Math.round(40 * f) + ",40)"); g.addColorStop(1, "rgb(" + Math.round(150 * f + 20) + ",10,18)");
@@ -382,7 +394,7 @@
     });
     fitFont(ctx, "VS", "900", FONT_D, W * 0.1, H * 0.14); ctx.fillStyle = "#ffd36b"; ctx.fillText("VS", W / 2, H * 0.44);
     // round and clock
-    var flash = st.flash > 0.01;
+    var flash = st.flash > 0.08;
     ctx.fillStyle = flash ? "rgba(200,16,46," + (0.4 + 0.6 * st.flash) + ")" : "#0b0e14"; ctx.fillRect(W * 0.2, H * 0.68, W * 0.6, H * 0.24);
     var line = flash ? info.event : ("ROUND " + st.round + "   " + st.clock);
     fitFont(ctx, line, "900", FONT_D, W * 0.56, H * 0.19);
@@ -694,8 +706,8 @@
     this.aniso = Math.max(1, Math.min(Q.aniso, caps.getMaxAnisotropy ? caps.getMaxAnisotropy() : 1));
 
     var scene = this.scene = new T.Scene();
-    scene.background = new T.Color(0x020305);
-    scene.fog = new T.FogExp2(0x06080d, 0.0135);
+    scene.background = new T.Color(0x040509);
+    scene.fog = new T.FogExp2(0x040509, 0.0135);
     var cam = this.camera = new T.PerspectiveCamera(34, 1, 0.1, 170);
     cam.position.set(0, 4, 9);
 
@@ -706,7 +718,7 @@
     this.cssW = Math.max(1, canvas.clientWidth || canvas.width || 300); this.cssH = Math.max(1, canvas.clientHeight || canvas.height || 150);
     this.contacts = []; for (var ci = 0; ci < 16; ci++) this.contacts.push(new T.Vector4(0, 0, 0, 0));
     this.lowPts = [];
-    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 0.42 }, uScale: { value: 600 }, uPhones: { value: 0.03 } };
+    this.U = { uTime: { value: 0 }, uExcite: { value: 0.2 }, uStand: { value: 0.1 }, uWave: { value: 0 }, uHouse: { value: 0.012 }, uSpill: { value: 0.42 }, uScale: { value: 600 }, uPhones: { value: 0.03 }, uFarHouse: { value: 0.045 } };
 
     this.env = buildEnvironment(renderer, opts.env === "room");
     if (this.env) scene.environment = this.env;
@@ -832,48 +844,51 @@
     fenceMat.customProgramCacheKey = function () { return "fightlab-fence"; };
     A.fenceMat = fenceMat;
     var padMat = vinyl(0x0a0b0d, 0.36), metal = new T.MeshStandardMaterial({ color: 0x121316, roughness: 0.4, metalness: 0.6, envMapIntensity: 0.5 });
+    var padItems = [], metalItems = [], k, i;
+    function place(geo, x, y, z, ry) { return { g: geo, m: new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion().setFromAxisAngle(_up, ry || 0), new T.Vector3(1, 1, 1)) }; }
     var railGeo = new T.CylinderGeometry(0.075, 0.075, SIDE - 0.1, 16, 1, true); railGeo.rotateZ(PI / 2);
     var baseGeo = new T.BoxGeometry(SIDE - 0.1, 0.13, 0.12);
-    for (var k = 0; k < 8; k++) {
+    var tubeGeo = new T.CylinderGeometry(0.014, 0.014, SIDE - 0.1, 6, 1, true); tubeGeo.rotateZ(PI / 2);
+    for (k = 0; k < 8; k++) {
       var m = sideMid(k);
       var panel = new T.Mesh(new T.PlaneGeometry(SIDE - 0.08, meshH), fenceMat);
       panel.position.set(m.x, (MESH_BOT + MESH_TOP) / 2, m.z); panel.rotation.y = m.rotY; panel.renderOrder = 2; g.add(panel);
-      var rail = new T.Mesh(railGeo, padMat);
-      rail.position.set(m.x, RAIL_Y, m.z); rail.rotation.y = m.rotY; g.add(rail);
-      var base = new T.Mesh(baseGeo, padMat);
-      base.position.set(Math.cos(m.a) * (APO + 0.01), 0.065, Math.sin(m.a) * (APO + 0.01)); base.rotation.y = m.rotY; base.receiveShadow = true; g.add(base);
+      padItems.push(place(railGeo, m.x, RAIL_Y, m.z, m.rotY));
+      padItems.push(place(baseGeo, Math.cos(m.a) * (APO + 0.01), 0.065, Math.sin(m.a) * (APO + 0.01), m.rotY));
       // steel tube that carries the mesh at the bottom and top
-      [MESH_BOT + 0.01, MESH_TOP - 0.01].forEach(function (yy) {
-        var tube = new T.Mesh(new T.CylinderGeometry(0.014, 0.014, SIDE - 0.1, 6, 1, true), metal);
-        tube.geometry.rotateZ(PI / 2); tube.position.set(Math.cos(m.a) * (APO + 0.02), yy, Math.sin(m.a) * (APO + 0.02)); tube.rotation.y = m.rotY; g.add(tube);
-      });
-      if (GATES.indexOf(k) >= 0) addGate(g, m, metal);
+      [MESH_BOT + 0.01, MESH_TOP - 0.01].forEach(function (yy) { metalItems.push(place(tubeGeo, Math.cos(m.a) * (APO + 0.02), yy, Math.sin(m.a) * (APO + 0.02), m.rotY)); });
+      if (GATES.indexOf(k) >= 0) addGate(metalItems, m);
     }
     // padded posts with rounded top pads; the blue and red corners carry their colours
-    var prof = [], i;
+    var prof = [];
     for (i = 0; i <= 14; i++) { var y = i / 14 * 1.7; prof.push(new T.Vector2(POST_R * (1 + 0.035 * Math.sin(PI * i / 14)), y)); }
     var postGeo = new T.LatheGeometry(prof, 20);
     var capProf = [[0.0, 1.66], [0.15, 1.66], [0.158, 1.7], [0.16, 1.76], [0.152, 1.82], [0.128, 1.87], [0.085, 1.9], [0.0, 1.91]].map(function (p) { return new T.Vector2(Math.max(1e-3, p[0]), p[1]); });
     var capGeo = new T.LatheGeometry(capProf, 20);
-    var texBlack = postTexture("#101114", null), texBlue = postTexture("#123a8a", "#e9eef5"), texRed = postTexture("#8e1a22", "#111111");
+    var posts = { black: [], blue: [], red: [] }, caps = { black: padItems, blue: [], red: [] };
     for (k = 0; k < 8; k++) {
-      var va = vertexAngle(k), map = k === BLUE_K ? texBlue : (k === RED_K ? texRed : texBlack);
-      var post = new T.Mesh(postGeo, new T.MeshStandardMaterial({ map: map, roughness: 0.46, metalness: 0, envMapIntensity: 0.45 }));
-      post.position.set(Math.cos(va) * RV, 0, Math.sin(va) * RV); post.rotation.y = PI / 2 - va; post.castShadow = false; g.add(post);
-      var cap = new T.Mesh(capGeo, k === BLUE_K ? vinyl(0x163f93, 0.4) : (k === RED_K ? vinyl(0x951c24, 0.4) : padMat));
-      cap.position.copy(post.position); g.add(cap);
+      var va = vertexAngle(k), kind = k === BLUE_K ? "blue" : (k === RED_K ? "red" : "black"), px = Math.cos(va) * RV, pz = Math.sin(va) * RV;
+      posts[kind].push(place(postGeo, px, 0, pz, PI / 2 - va));
+      caps[kind].push(place(capGeo, px, 0, pz, 0));
     }
+    var texs = { black: postTexture("#101114", null), blue: postTexture("#123a8a", "#e9eef5"), red: postTexture("#8e1a22", "#111111") };
+    var capMats = { blue: vinyl(0x163f93, 0.4), red: vinyl(0x951c24, 0.4) };
+    ["black", "blue", "red"].forEach(function (kd) {
+      g.add(new T.Mesh(mergeGeos(posts[kd]), new T.MeshStandardMaterial({ map: texs[kd], roughness: 0.46, metalness: 0, envMapIntensity: 0.45 })));
+      if (kd !== "black") g.add(new T.Mesh(mergeGeos(caps[kd]), capMats[kd]));
+    });
+    var pads = new T.Mesh(mergeGeos(padItems), padMat); pads.receiveShadow = true; g.add(pads);
+    g.add(new T.Mesh(mergeGeos(metalItems), metal));
   }
-  function addGate(g, m, metal) {
-    var gate = new T.Group();
-    gate.position.set(Math.cos(m.a) * (APO + 0.035), 0, Math.sin(m.a) * (APO + 0.035)); gate.rotation.y = m.rotY;
+  function addGate(items, m) {
     var w = 1.12, y0 = MESH_BOT + 0.02, y1 = MESH_TOP - 0.03, r = 0.02;
-    function bar(x0, ya, x1, yb) { var it = cylBetween(new T.Vector3(x0, ya, 0), new T.Vector3(x1, yb, 0), r, 8); var mesh = new T.Mesh(it.g, metal); mesh.applyMatrix4(it.m); gate.add(mesh); }
+    var M = new T.Matrix4().compose(new T.Vector3(Math.cos(m.a) * (APO + 0.035), 0, Math.sin(m.a) * (APO + 0.035)), new T.Quaternion().setFromAxisAngle(_up, m.rotY), new T.Vector3(1, 1, 1));
+    function push(it) { items.push({ g: it.g, m: M.clone().multiply(it.m) }); }
+    function bar(x0, ya, x1, yb) { push(cylBetween(new T.Vector3(x0, ya, 0), new T.Vector3(x1, yb, 0), r, 8)); }
     bar(-w / 2, y0, -w / 2, y1); bar(w / 2, y0, w / 2, y1); bar(-w / 2, y1, w / 2, y1); bar(-w / 2, y0, w / 2, y0); bar(-w / 2, (y0 + y1) / 2, w / 2, (y0 + y1) / 2);
-    var latch = new T.Mesh(new T.BoxGeometry(0.07, 0.16, 0.06), metal); latch.position.set(w / 2 - 0.08, 1.12, 0.04); gate.add(latch);
-    var handle = new T.Mesh(new T.BoxGeometry(0.03, 0.03, 0.12), metal); handle.position.set(w / 2 - 0.08, 1.12, 0.1); gate.add(handle);
-    [0.35, 1.45].forEach(function (yy) { var h = new T.Mesh(new T.CylinderGeometry(0.026, 0.026, 0.12, 8), metal); h.position.set(-w / 2, yy, 0.0); gate.add(h); });
-    g.add(gate);
+    push(boxAt(0.07, 0.16, 0.06, w / 2 - 0.08, 1.12, 0.04));
+    push(boxAt(0.03, 0.03, 0.12, w / 2 - 0.08, 1.12, 0.1));
+    [0.35, 1.45].forEach(function (yy) { push({ g: new T.CylinderGeometry(0.026, 0.026, 0.12, 8), m: new T.Matrix4().makeTranslation(-w / 2, yy, 0) }); });
   }
 
   /* ---- apron, LED skirt, steps ---- */
@@ -1116,7 +1131,7 @@
       pg.setAttribute("position", new T.Float32BufferAttribute(far, 3)); pg.setAttribute("aC0", new T.Float32BufferAttribute(farCol, 3));
       pg.setAttribute("aC2", new T.Float32BufferAttribute(farSkin, 3)); pg.setAttribute("aPar", new T.Float32BufferAttribute(farPar, 2));
       var farMat = new T.ShaderMaterial({ uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, {}]), vertexShader: FAR_VS, fragmentShader: FAR_FS, fog: true });
-      ["uTime", "uExcite", "uScale", "uHouse", "uSpill"].forEach(function (u) { farMat.uniforms[u] = A.U[u]; });
+      ["uTime", "uExcite", "uScale", "uSpill"].forEach(function (u) { farMat.uniforms[u] = A.U[u]; }); farMat.uniforms.uHouse = A.U.uFarHouse;
       var pts = new T.Points(pg, farMat); pts.frustumCulled = false; A.own(pts); A.farCrowd = pts;
     }
     A.heads = heads;
@@ -1228,6 +1243,7 @@
         var bl = this.bloom = new T.UnrealBloomPass(new T.Vector2(w, h), 0.32, 0.55, half ? 0.86 : 0.9);
         var scale = this.Q.bloom || 0.5, set0 = bl.setSize.bind(bl);
         bl.setSize = function (ww, hh) { set0(Math.max(2, Math.round(ww * scale)), Math.max(2, Math.round(hh * scale))); };
+        if (half) [bl.renderTargetBright].concat(bl.renderTargetsHorizontal, bl.renderTargetsVertical).forEach(function (t) { if (t) t.texture.type = T.HalfFloatType; });
         bl.enabled = this.Q.bloom > 0;
         comp.addPass(bl);
       }
@@ -1287,7 +1303,7 @@
   };
   function fmtClock(s) { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
   Arena.prototype.updateBoards = function (force) {
-    var b = this.board, key = b.round + "|" + b.clock + "|" + b.shift + "|" + (b.flash > 0.01 ? Math.round(b.flash * 6) : 0) + "|" + this.info.a + this.info.b;
+    var b = this.board, key = b.round + "|" + b.clock + "|" + b.shift + "|" + (b.flash > 0.08 ? Math.round(b.flash * 6) : 0) + "|" + this.info.a + this.info.b;
     if (!force && key === this.led.key) return;
     this.led.key = key;
     drawLED(this.led.ctx, this.led.c.width, this.led.c.height, this.info, b);
