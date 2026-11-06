@@ -15,6 +15,21 @@ were already done. This run added:
 - production roster coefficients;
 - this report.
 
+**Review and final relaunch (Nov 6, 4:36 pm to 7:30 pm UTC).**
+- A review pass changed three things in tools/preufc.py. Then `eval` was rerun once, and that run is the
+  `eval.built` 4:49 pm UTC state of preufc.json.
+  - **Calibration now pools both corner orders.** Corner A wins about 57% of decisive bouts, and the old
+    corner-A bins and ECE mixed that ordering artefact into calibration.
+  - **Paired accuracy differences** now carry card-bootstrap intervals.
+  - **The KO/SUB/DEC model centres the pre-UFC rates on training rows.** It used to centre on the mean of
+    every row's corner A, test rows included. The test log loss is unchanged at 0.9776.
+- This relaunch did not refit or rescore anything. It brings this report in line with that json and
+  corrects one claim the first draft made: seeded Elo is **not** better calibrated than plain Elo (see
+  Calibration).
+- It also ran independent checks: a re-parse, a walk-forward recount, coverage against backtest.json, the
+  stored predictions reproducing every validation score, the vault and robots.txt. They are under Audit,
+  "Independent checks".
+
 ## Bottom line
 
 - **Every target fighter is matched.** All 1,711 targets resolve to a Sherdog page that contains every one of
@@ -28,9 +43,14 @@ were already done. This run added:
   - UFC-stat logistic: log loss goes from 0.6498 to **0.6376**, a change of **-0.0122 [-0.0204, -0.0042]**.
     Accuracy goes from 60.4% to 63.8%.
   - Elo with each debutant's starting rating set by his pre-UFC record: log loss goes from 0.6792 to
-    **0.6526**, a change of **-0.0266 [-0.0404, -0.0147]**. Age at debut alone accounts for only -0.0045
-    [-0.0163, +0.0080] of that. This seeded Elo is the best-calibrated model here (ECE 0.035 against
-    0.046 for plain Elo).
+    **0.6526**, a change of **-0.0266 [-0.0404, -0.0147]**. Accuracy goes from 55.5% to 59.8%, a change of
+    +4.3 points [+0.5, +8.7]. Age at debut alone accounts for only -0.0045 [-0.0163, +0.0080] of the log-loss
+    gain.
+  - Accuracy gain for the UFC-stat logistic: +3.4 points [+0.6, +6.3].
+  - **Calibration is about level across these models.** With both corner orders pooled, each model's
+    calibration slope lies within the others' 95% intervals, and every interval contains 1. Seeded Elo's ECE
+    minus plain Elo's ECE is +0.012 [-0.030, +0.057]. The first draft called seeded Elo the best-calibrated
+    model, but that came from corner-A ECE and is withdrawn.
   - Across all 1,026 decisive 2024-2025 bouts the seeded Elo goes from 0.6762 to 0.6538. Bouts between
     veterans improve too, because their opponents were rated better.
   - Stacked on tools/ml.py's walk-forward ML probabilities (361 backtest bouts in 2024-2025 with a 1-3 fight

@@ -1165,6 +1165,13 @@ def replay(ctx, keys):
         c.save()
     if leak:
         raise SystemExit("look-ahead guard tripped:\n  " + "\n  ".join(leak[:20]))
+    for k in order:   # stackers served from the cache never fit in this process: refit the last fit for its weights
+        m = models[k]
+        if hasattr(m, "weights") and not fitted[k] and last_fit[k] and getattr(m, "refit", "never") != "never":
+            try:
+                m.fit(last_fit[k], P)
+            except Exception as ex:
+                log("weights refit for %s failed: %r" % (k, ex))
     meta_models = {}
     for k in order:
         m, spec = models[k], REGISTRY[k]

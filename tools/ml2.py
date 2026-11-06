@@ -6,7 +6,7 @@ Run from the project root (stages cache into out/ml2_cache/, so each can be re-r
     nice -n 5 python3 tools/ml2.py table      # feature union table (2010-2025; every 2026+ fight dropped at parse)
     nice -n 5 python3 tools/ml2.py cv         # time-ordered CV on pre-2024 data: blocks, penalties, trees
     nice -n 5 python3 tools/ml2.py fit        # OOF 2019-2023, static-2023 and monthly-rolling 2024-2025 predictions
-    nice -n 5 python3 tools/ml2.py stage2     # 2019+-only sources (durability, oppadj, mlrates, methodround) on top
+    nice -n 5 python3 tools/ml2.py stage2     # 2019+-only sources (durability, oppadj, mlrates, methodround, styles) on top
     nice -n 5 python3 tools/ml2.py stack      # no-line / with-line MoE-style stacks vs the current stack and the close
     nice -n 5 python3 tools/ml2.py method     # methodround model S refit with the new features (method, 7-bin)
     nice -n 5 python3 tools/ml2.py verify     # truncation / flipped-result tests of the rebuilt rating features
@@ -1081,6 +1081,78 @@ def late_blocks(T, late):
     return out
 
 
+STY_SCREENED = ["submission threat vs submission exposure", "clinch fighter vs distance fighter",
+                "leg kicker vs opponent who gets leg-kicked"]     # styles.py's own 2019-2023 (tune-only) screen
+
+
+def styles_block(T):
+    """tools/styles.py's walk-forward style terms for every dev backtest fight, as antisymmetric A-minus-B columns:
+    sty3 = the three matchup crosses styles.py's tune-only screen kept; styx = all 31 non-archetype candidates
+    (crosses, context, stance, type indicators); stya = archetype main effects (7); stb = styles.py's 32-term skill
+    baseline (A minus B z-scores). Built from backtest.json's frozen pre-fight sums with z constants fit on 2019-2023
+    rows and styles.json's archetype centroids (fit on 2019-2023 snapshots). 2026+ fights are dropped first."""
+    path = os.path.join(CACHE, "styles_block.pkl")
+    if os.path.exists(path):
+        St = pickle.load(open(path, "rb"))
+    else:
+        import styles as SY
+        bt = SY.load_backtest()
+        bt["fights"] = [e for e in bt["fights"] if e["date"] < VAULT_S]
+        rows = SY.build_table(bt)
+        feats = sorted(rows[0]["A"].keys())
+        tune = np.array([r["date"] < SY.TEST_FROM for r in rows])
+        mu, sd = SY.zconsts(rows, feats, tune)
+        arch = jload("styles.json")["archetypes"]
+
+        def design(rows_):
+            W = SY.WinData(rows_, mu, sd, SY.memberships(rows_, mu, sd, arch))
+            C = SY.winner_candidates(W)
+            cols, names = [], []
+            for k, c in C.items():
+                if k == "archetype x archetype matrix":
+                    continue
+                for j, v in enumerate(c[1]):
+                    cols.append(np.asarray(v, float))
+                    names.append((c[0], k, j))
+            Xb = np.column_stack([W.zd(c) for c in SY.BASE_WIN])
+            return W, np.column_stack(cols), names, Xb
+        W, X, names, Xb = design(rows)
+        sw = []
+        for r in rows:                       # corner swap: every term must flip sign
+            r2 = dict(r)
+            r2["A"], r2["B"] = r["B"], r["A"]
+            for a, b in (("slugA", "slugB"), ("nameA", "nameB")):
+                r2[a], r2[b] = r[b], r[a]
+            r2["winner"] = {"A": "B", "B": "A"}.get(r["winner"], r["winner"])
+            sw.append(r2)
+        _, X2, _, Xb2 = design(sw)
+        asym = float(max(np.abs(X + X2).max(), np.abs(Xb + Xb2).max()))
+        assert asym < 1e-9, asym
+        St = {"fid": [r["id"] for r in W.rows], "X": X, "names": names, "Xb": Xb, "base_names": list(SY.BASE_WIN),
+              "asym": asym, "n": len(W.rows)}
+        pickle.dump(St, open(path, "wb"))
+        log("styles block: %d decisive dev fights, %d style columns, %d skill columns; max |X + X_swapped| %.1e"
+            % (St["n"], X.shape[1], Xb.shape[1], asym))
+    pos = {f: i for i, f in enumerate(St["fid"])}
+    ii = T["fid"].map(pos)
+    have = ii.notna().to_numpy()
+    jj = ii.fillna(0).astype(int).to_numpy()
+
+    def frame(M, cols):
+        A = np.full((len(T), M.shape[1]), np.nan)
+        A[have] = M[jj[have]]
+        return pd.DataFrame(A, columns=cols, index=T.index)
+    nm = ["sty_%s_%d" % (k.replace(" ", "_"), j) for _, k, j in St["names"]]
+    full = frame(St["X"], nm)
+    kinds = [kd for kd, _, _ in St["names"]]
+    keys = [k for _, k, _ in St["names"]]
+    out = {"sty3": full[[c for c, k in zip(nm, keys) if k in STY_SCREENED]],
+           "styx": full[[c for c, kd in zip(nm, kinds) if kd != "archetype"]],
+           "stya": full[[c for c, kd in zip(nm, kinds) if kd == "archetype"]],
+           "stb": frame(St["Xb"], ["stb_" + c for c in St["base_names"]])}
+    return out, St
+
+
 def resid_fit(z, Xe, y, lam, sw=None):
     """No-intercept logistic on [z, Xe] with L2 on the Xe coefficients only (standardised), z unpenalised."""
     from scipy.optimize import minimize
@@ -1106,14 +1178,20 @@ def stage_stage2(args):
     T = S["df"]
     F = pickle.load(open(os.path.join(CACHE, "fit.pkl"), "rb"))
     L = late_blocks(T, S["late"])
+    Ls, St = styles_block(T)
+    L.update(Ls)
     ev = T["evalrow"].to_numpy()
     yr = T["year"].to_numpy()
     y = T["y"].to_numpy(float)
     z = {sch: logit(F["preds"]["blend|" + sch], 1e-6) for sch in ("oof", "static", "roll")}
-    R = {}
+    R = {"_styles": {"n_fights": St["n"], "max_abs_X_plus_swapped": St["asym"], "screened_terms": STY_SCREENED,
+                     "columns": {k: v.shape[1] for k, v in Ls.items()},
+                     "coverage_eval_2019_2025": float(Ls["sty3"].notna().all(1)[ev & (yr >= 2019)].mean())}}
     base_rows = ev & (yr >= 2019) & (yr <= 2023)
     combos = {"du": ["du"], "oa": ["oa"], "mlr": ["mlr"], "mrs": ["mrs"], "du+mlr": ["du", "mlr"],
-              "all four": ["du", "oa", "mlr", "mrs"]}
+              "all four": ["du", "oa", "mlr", "mrs"],
+              "sty3": ["sty3"], "styx": ["styx"], "stya": ["stya"], "stb": ["stb"],
+              "all + styles": ["du", "oa", "mlr", "mrs", "styx", "stya"]}
     for name, bl in combos.items():
         Xe = pd.concat([L[b] for b in bl], axis=1)
         okc = Xe.notna().all(1).to_numpy()
@@ -1145,10 +1223,127 @@ def stage_stage2(args):
         cmpv = compare(p1, p0, y[vrows], T["event"].to_numpy()[vrows], 1000)
         best.update({"valid_static": cmpv, "coef": dict(zip(["z_ml2"] + list(Xe.columns), np.round(w1, 4).tolist())),
                      "adopt": best["gain"] < -SEL_MIN})
+        if name == "sty3":
+            # styles.py chose these three terms on 2019-2023, the years this CV scores: the CV is in-sample for the
+            # selection, so it cannot adopt them. The honest test is "sty nested" below (screen inside each fold).
+            best.update({"adopt": False, "note": "terms pre-screened by styles.py on 2019-2023 (the CV years): CV "
+                         "gain is selection-biased, not admissible; see 'sty nested'"})
         R[name] = best
         log("stage2 %-9s CV gain %+.5f (lam %s) adopt=%s | 2024-25 %+.5f %s" % (name, best["gain"], best["lam"],
             best["adopt"], cmpv["diff"], cmpv["diff_ci"]))
+    R["sty nested"] = nested_style_screen(T, Ls["styx"], St, z, y, yr, ev, base_rows)
+    if R["sty nested"]["adopt"]:
+        P, info = style_stage_preds(T, Ls["styx"], St, z, y, yr, ev, R["sty nested"]["lam"])
+        pickle.dump(P, open(os.path.join(CACHE, "stage2_preds.pkl"), "wb"))
+        R["sty nested"]["walk_forward"] = info
+    elif os.path.exists(os.path.join(CACHE, "stage2_preds.pkl")):
+        os.remove(os.path.join(CACHE, "stage2_preds.pkl"))
     json.dump(R, open(os.path.join(CACHE, "stage2.json"), "w"), indent=1, default=float)
+
+
+def style_stage_preds(T, Xs, St, z, y, yr, ev, lam):
+    """'ml2s' = ML v2 blend + the nested style stage, strictly walk-forward for the stacks: a row in year Y uses the
+    screen and fit on eval rows 2019..Y-1 (2019 rows: no history, plain ML v2). Static: 2024 and 2025 use the 2019-2023
+    fit on the static logit. Rolling: yearly refits (2025 uses 2019-2024, with the rolling logit for 2024 rows)."""
+    from scipy.stats import chi2
+    groups = defaultdict(list)
+    for c, (_, k, _j) in zip(Xs.columns, [n for n in St["names"] if n[0] != "archetype"]):
+        groups[k].append(c)
+    colix = {c: i for i, c in enumerate(Xs.columns)}
+    XA = np.nan_to_num(Xs.to_numpy(float))
+    okc = Xs.notna().all(1).to_numpy()
+
+    def fit(tr, zt):
+        n = tr.sum()
+        w0 = resid_fit(zt[tr], np.zeros((n, 0)), y[tr], 1e-4)
+        l0 = ll(sig(zt[tr] * w0[0]), y[tr]) * n
+        ix = []
+        keep = []
+        for k, cs in groups.items():
+            jx = [colix[c] for c in cs]
+            w1 = resid_fit(zt[tr], XA[tr][:, jx], y[tr], 1e-4)
+            if 2 * (l0 - ll(sig(np.c_[zt[tr], XA[tr][:, jx]] @ w1), y[tr]) * n) >= chi2.ppf(0.95, len(jx)):
+                ix += jx
+                keep.append(k)
+        return resid_fit(zt[tr], XA[tr][:, ix], y[tr], lam), ix, keep
+    out = {}
+    info = {}
+    for sch in ("static", "roll"):
+        zz = z["oof"].copy()
+        va = (yr >= 2024) & (yr <= 2025)
+        zz[va] = z[sch][va]
+        p = sig(zz)
+        for Y in range(2020, 2026):
+            ref = Y if (sch == "roll" or Y <= 2024) else 2024
+            tr = ev & okc & (yr >= 2019) & (yr < ref)
+            w, ix, keep = fit(tr, zz)
+            te = ev & okc & (yr == Y)
+            p[te] = sig(np.c_[zz[te], XA[te][:, ix]] @ w)
+            info["%s %d" % (sch, Y)] = {"fit_years": "2019-%d" % (ref - 1), "terms": keep,
+                                        "w_ml2": round(float(w[0]), 4)}
+        out[sch] = p
+    log("ml2s walk-forward: %s" % {k: (v["fit_years"], len(v["terms"])) for k, v in info.items()})
+    return out, info
+
+
+def nested_style_screen(T, Xs, St, z, y, yr, ev, base_rows):
+    """styles.py's winner screen redone inside each forward-chained fold: on the fold's training rows only, each of
+    the 31 candidate terms enters on top of ML v2's OOF logit if its likelihood-ratio statistic passes the 5% chi2
+    cut (|z| >= ~2 for one column, as styles.py's rule); the survivors are fit with L2 lam and the held-out year
+    scored. The 2024-25 look screens and fits on 2019-2023."""
+    from scipy.stats import chi2
+    groups = defaultdict(list)
+    for c, (_, k, _j) in zip(Xs.columns, [n for n in St["names"] if n[0] != "archetype"]):
+        groups[k].append(c)
+    okc = Xs.notna().all(1).to_numpy()
+    rows = base_rows & okc
+    XA = Xs.to_numpy(float)
+    colix = {c: i for i, c in enumerate(Xs.columns)}
+
+    def screen(tr):
+        n = tr.sum()
+        w0 = resid_fit(z["oof"][tr], np.zeros((n, 0)), y[tr], 1e-4)
+        l0 = ll(sig(z["oof"][tr] * w0[0]), y[tr]) * n
+        keep = []
+        for k, cs in groups.items():
+            ix = [colix[c] for c in cs]
+            w1 = resid_fit(z["oof"][tr], XA[tr][:, ix], y[tr], 1e-4)
+            l1 = ll(sig(np.c_[z["oof"][tr], XA[tr][:, ix]] @ w1), y[tr]) * n
+            if 2 * (l0 - l1) >= chi2.ppf(0.95, len(ix)):
+                keep.append(k)
+        return keep, [colix[c] for k in keep for c in groups[k]]
+    folds = {}
+    for Y in (2021, 2022, 2023):
+        tr = rows & (yr < Y)
+        folds[Y] = screen(tr)
+    best = None
+    for lam in (0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0):
+        tot0 = tot1 = nn = 0.0
+        for Y in (2021, 2022, 2023):
+            tr, te = rows & (yr < Y), rows & (yr == Y)
+            keep, ix = folds[Y]
+            w0 = resid_fit(z["oof"][tr], np.zeros((tr.sum(), 0)), y[tr], lam)
+            w1 = resid_fit(z["oof"][tr], XA[tr][:, ix], y[tr], lam)
+            tot0 += ll(sig(z["oof"][te] * w0[0]), y[te]) * te.sum()
+            tot1 += ll(sig(np.c_[z["oof"][te], XA[te][:, ix]] @ w1), y[te]) * te.sum()
+            nn += te.sum()
+        r = {"lam": lam, "cv_ml2_only": round(tot0 / nn, 5), "cv_with": round(tot1 / nn, 5),
+             "gain": round((tot1 - tot0) / nn, 5), "n": int(nn)}
+        if best is None or r["cv_with"] < best["cv_with"]:
+            best = r
+    keep, ix = screen(rows)
+    vrows = ev & (yr >= 2024) & (yr <= 2025) & okc
+    w1 = resid_fit(z["oof"][rows], XA[rows][:, ix], y[rows], best["lam"])
+    w0 = resid_fit(z["oof"][rows], np.zeros((rows.sum(), 0)), y[rows], best["lam"])
+    p1 = sig(np.c_[z["static"][vrows], XA[vrows][:, ix]] @ w1)
+    p0 = sig(z["static"][vrows] * w0[0])
+    cmpv = compare(p1, p0, y[vrows], T["event"].to_numpy()[vrows], 1000)
+    best.update({"screened_by_fold": {str(Y): folds[Y][0] for Y in folds}, "screened_2019_2023": keep,
+                 "valid_static": cmpv, "adopt": best["gain"] < -SEL_MIN})
+    log("stage2 sty nested CV gain %+.5f (lam %s) adopt=%s | folds %s | 2019-23 screen %s | 2024-25 %+.5f %s"
+        % (best["gain"], best["lam"], best["adopt"], {Y: len(folds[Y][0]) for Y in folds}, keep, cmpv["diff"],
+           cmpv["diff_ci"]))
+    return best
 
 
 STAGES["stage2"] = stage_stage2
@@ -1194,6 +1389,11 @@ def expert_table(T, F):
         va = (D["year"] >= 2024).to_numpy()
         D.loc[va, "ml2_" + sch] = F["preds"]["blend|" + sch][rows][va]
         D.loc[va, "ml2lr_" + sch] = F["preds"]["lr|" + sch][rows][va]
+    sp = os.path.join(CACHE, "stage2_preds.pkl")
+    if os.path.exists(sp):                    # ML v2 + style stage (walk-forward), when stage 2 adopted it
+        P2 = pickle.load(open(sp, "rb"))
+        for sch in ("static", "roll"):
+            D["ml2s_" + sch] = P2[sch][rows]
     D["nA"] = T["nA"].to_numpy()[rows]
     D["nB"] = T["nB"].to_numpy()[rows]
     D["division"] = T["division"].to_numpy()[rows]
@@ -1233,6 +1433,7 @@ STACKS = {
         "market+ml2": ["market", "ml2"],
         "market+ml2+mkt_rating+feat_lr": ["market", "ml2", "mkt_rating", "feat_lr"],
         "page: market+ml2lr": ["market", "ml2lr"],
+        "market+ml2s": ["market", "ml2s"],
     },
     "noline": {
         "current": ["mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo"],
@@ -1240,12 +1441,13 @@ STACKS = {
         "ml2 alone": ["ml2"],
         "ml2+mkt_rating+feat_lr": ["ml2", "mkt_rating", "feat_lr"],
         "page: ml2lr+mkt_rating": ["ml2lr", "mkt_rating"],
+        "ml2s+mkt_rating+feat_lr": ["ml2s", "mkt_rating", "feat_lr"],
     },
 }
 
 
 def col_for(c, scheme):
-    if c in ("ml2", "ml2lr"):
+    if c in ("ml2", "ml2lr", "ml2s"):
         return c + "_" + scheme
     if scheme == "roll" and c in ("ml", "feat_lr"):
         return c + "_roll"
@@ -1783,7 +1985,7 @@ def stage_export(args):
                     "preufc": "data/derived/preufc.json strict snapshots (tools/preufc.side_pre), target rule applied "
                               "pre-fight",
                     "fightweek": "data/derived/fightweek.json",
-                    "late (stage2)": "durability.json, oppadj.json, mlrates_oof.json, methodround.json (2019+ only)"},
+                    "late (stage2)": "durability.json, oppadj.json, mlrates_oof.json, methodround.json, styles.py terms (styles.json archetypes) (2019+ only)"},
         "orientation": "P(A wins | decisive), A = first ufcstats name; every model is corner-symmetric",
         "keys": {"fights": "per backtest fight id 2019-2025: set (oof = 2019-2023 annual refit, valid = 2024-2025), "
                            "y, ml2 (blend: LR + LightGBM + XGBoost), ml2_lr, ml2_lgb, ml2_xgb, mr (market rating), "
