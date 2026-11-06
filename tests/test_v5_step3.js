@@ -205,10 +205,12 @@ if (R0s) {
       [R1, "officials on vs step 2 + styles_sos", { components: { officials: true, realism_sens: false } }, 0.05],
       [R2, "realism_sens on (shipped v4.0.1 factors) vs step 2 + styles_sos + officials", { components: { realism_sens: true } }, 0.3]
     ];
+    // fight.officials (the names) is dropped before comparing, so the officials check counts changed scoring, not the new field
+    const noOff = (j) => { const o = JSON.parse(j); delete o.officials; return JSON.stringify(o); };
     for (const [REF, nm, P, min] of ON) {
       let diff = 0, n = 0;
       casesA.slice(0, 30).concat(casesC.slice(0, 30)).forEach((c) => {
-        const fr = fights(REF, REF.matchup(c.a, c.b, c.opts), c.seed), fc = fights(E, E.matchup(c.a, c.b, withParams(c.opts, P)), c.seed);
+        const fr = fights(REF, REF.matchup(c.a, c.b, c.opts), c.seed).map(noOff), fc = fights(E, E.matchup(c.a, c.b, withParams(c.opts, P)), c.seed).map(noOff);
         for (let q = 0; q < fr.length; q++) { n++; if (fr[q] !== fc[q]) diff++; }
       });
       check(`flag on changes fights: ${nm}`, diff > min * n, `${diff} of ${n} fights differ`);

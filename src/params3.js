@@ -28,11 +28,15 @@
      reproduces the engine before it (tests/test_v5_step2.js). Their knockdown levels (durability.kdCal, dyn.kdLevel3/5)
      and the dynamics finish levels (convLevel, stkoScale, gnpScale) are still the separately verified values; one joint
      level pass in the Calibrate stage sets them (first joint check: docs/CHANGELOG.md v5 merge log, step 2).
+   - step 3, components.styles_sos (sos on with sosSource "wf", styles and newcomer off; knobs stylesSOS), components.officials
+     (off; block officials, opt-in per call to show real officials) and components.realism_sens (off; block realism, factors fit
+     on v4.0.1). SOS acts only when a caller passes opts.sos (backtest harnesses: tools/sosrec.js / tools/evalv.js). Each flag
+     off reproduces the engine before it (tests/test_v5_step3.js).
    Units inside the engine: seconds and per-second rates unless a comment says otherwise. */
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "5.0.0-dev.2-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401) and 2 (durability, dynamics)
+    version: "5.0.0-dev.3-selfcal-pre2024",   // parameter set label (engine VERSION is separate); [selfcal] values fit to train-only priors (data/derived/priors_dev.json, fights before 2024-01-01); v5 merge steps 1 (components.v401), 2 (durability, dynamics) and 3 (styles_sos, officials, realism_sens)
 
     // ---------------- engine v5 components (src/engine3.js resolveParams; each flag off reproduces v4.0.0) ----------------
     components: {

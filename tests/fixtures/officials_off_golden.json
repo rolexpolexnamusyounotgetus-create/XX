@@ -2,7 +2,7 @@
  "note": "sha256 of flag-off outputs (tests/test_officials.js caseOutputs) from the engine the officials component was applied on",
  "base_engine": "engine3_pre_officials.js",
  "base_engine_sha256": "f6ca7239ebf4fea1eea6e6008e32c48f9bb5bc55088975844679e2d5a997f5e7",
- "params_version": "5.0.0-dev.2-selfcal-pre2024",
+ "params_version": "5.0.0-dev.3-selfcal-pre2024",
  "cases": [
   {
    "fights": "2c447c7e7d46fa933481dc081fbd4b9a57cba596052de9123f11434142e68942",
