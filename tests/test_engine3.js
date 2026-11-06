@@ -349,6 +349,16 @@ console.log("\n=== Engine v4: learned stat-line rates (loadMLRates / opts.ml) ==
     Math.abs(s0.fins - s1.fins) < 0.04 && Math.abs(s1.avg.A.sig_lnd / s0.avg.A.sig_lnd - 1) < 0.08, `finish ${pct(s0.fins)}% -> ${pct(s1.fins)}%, sig landed ${f2(s0.avg.A.sig_lnd, 1)} -> ${f2(s1.avg.A.sig_lnd, 1)}`);
 }
 
+console.log("\n=== Engine v4: train-only priors (hidden-data protocol) ===");
+{
+  const pdFile = path.join(ROOT, "data/derived/priors_dev.json");
+  const pd = fs.existsSync(pdFile) ? JSON.parse(fs.readFileSync(pdFile, "utf8")) : null;
+  check("data/derived/priors_dev.json exists and stops before 2024-01-01", !!pd && pd.meta.until === "2024-01-01" && pd.meta.since === "2018-01-01");
+  check("train-only priors hold fewer fights than the production priors", !!pd && pd.priors.Lightweight.n_fights < DB.priors.Lightweight.n_fights,
+    pd ? `Lightweight ${pd.priors.Lightweight.n_fights} vs ${DB.priors.Lightweight.n_fights}` : "");
+  check("params are labelled as self-calibrated on the train-only priors", /selfcal-pre2024/.test(BASE.version), BASE.version);
+}
+
 console.log("\n=== Engine v4: judges (EM weights, shared + fight-level noise, 10-8 rule) ===");
 {
   const J = BASE.judge, T1 = [1, 1, 1];

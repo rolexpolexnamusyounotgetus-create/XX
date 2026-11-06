@@ -1,0 +1,90 @@
+[
+  {
+    "file": "ref-espn-headshot.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/full/4425355.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4425355/jamahal-hill",
+    "author": "UFC / Zuffa LLC studio portrait (served by ESPN)",
+    "license": "All rights reserved",
+    "date_taken": "2025 (CDN Last-Modified 2025-06-20, UFC Baku fight week)",
+    "use": "reference-only",
+    "what": "headshot",
+    "notes": "Sharp frontal studio headshot: short natural hair, thin moustache and sparse chin beard, 'Northsides' chest script with the two thumbs-up hands. Best image for brows, eyes, nose, lips and the small marks on the forehead. Warm, red-shifted studio grade."
+  },
+  {
+    "file": "ref-espn-stance-left.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/left/4425355.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4425355/jamahal-hill",
+    "author": "UFC / Zuffa LLC studio portrait (served by ESPN)",
+    "license": "All rights reserved",
+    "date_taken": "2025 (CDN Last-Modified 2025-06-20)",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body three-quarter cutout (body turned to his left) in black-and-grey 'tiger-stripe' UFC board shorts. Shows the '722' numerals on the right upper arm, the right thumbs-up hand on the chest, and the lion-head tattoo on top of the right foot. Long legs, slim calves, soft lower belly."
+  },
+  {
+    "file": "ref-espn-stance-right.png",
+    "url": "https://a.espncdn.com/i/headshots/mma/players/stance/right/4425355.png",
+    "page": "https://www.espn.com/mma/fighter/_/id/4425355/jamahal-hill",
+    "author": "UFC / Zuffa LLC studio portrait (served by ESPN)",
+    "license": "All rights reserved",
+    "date_taken": "2025 (CDN Last-Modified 2025-01-16, UFC 311 fight week)",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Full-body three-quarter cutout (body turned to his right) in black-and-grey compression (vale tudo) shorts. Shows the left thumbs-up hand on the chest and the cursive script on the outer left upper arm."
+  },
+  {
+    "file": "ref-bloodyelbow-getty-studio-ufc311-2025-01.jpg",
+    "url": "https://cdn1.bloodyelbow.com/uploads/1/2025/01/GettyImages-2194082913-scaled.jpg",
+    "page": "https://bloodyelbow.com/2025/01/16/jamahal-hill-completes-epic-ufc-311-body-transformation-after-ballooning-up-to-260lbs",
+    "author": "Getty Images / Zuffa LLC (ID 2194082913)",
+    "license": "All rights reserved",
+    "date_taken": "2025-01 (UFC 311 fight-week studio portrait; article dated 2025-01-16)",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "High-resolution waist-up studio portrait on light grey, body turned slightly to his right. The most neutral light of the set: best for skin colour, chest tattoos ('Northsides' script, two thumbs-up hands), the '722' numerals on the right upper arm, the small stud earring in his left lobe, and the soft, rounded lower belly."
+  },
+  {
+    "file": "ref-mmasucka-imagn-ufc311-postfight-2025-01-18.jpg",
+    "url": "https://mmasucka.com/api/media/file/USATSI_25224386-scaled.webp",
+    "page": "https://mmasucka.com/news/jamahal-hill-sidelined-till-2026-cartilage-transplant/",
+    "author": "USA TODAY Sports / Imagn Images (USATSI 25224386)",
+    "license": "All rights reserved",
+    "date_taken": "2025-01-18 (UFC 311, Los Angeles, leaving the octagon after the loss to Prochazka; California commission officials in frame)",
+    "use": "reference-only",
+    "what": "3q",
+    "notes": "Three-quarter face with fight damage (swelling and cuts around both eyes, which are not permanent features). Useful for the head shape from the side, the hairline, and the full chest tattoo layout, plus the script on the left upper arm. Saved as JPEG from the WebP original."
+  },
+  {
+    "file": "ref-bloodyelbow-presser-closeup.jpg",
+    "url": "https://cdn1.bloodyelbow.com/uploads/1/2025/05/Demetrious-Johnson-Death-Sentence1.png",
+    "page": "https://bloodyelbow.com/2025/05/07/jamahal-hill-details-awkward-run-in-with-khalil-rountree-jr-ahead-of-ufc-azerbaijan-that-left-former-champion-confused",
+    "author": "Unknown agency photographer (left half of a Bloody Elbow composite thumbnail)",
+    "license": "All rights reserved",
+    "date_taken": "Unknown, before May 2025 (press-conference setting)",
+    "use": "reference-only",
+    "what": "headshot",
+    "notes": "Cropped to Hill only. Large, sharp near-frontal close-up (head turned slightly to his left): skin texture, eye shape, nose and nostrils, lip shape, ear shape and the sparse chin beard. Arena lighting from the left."
+  },
+  {
+    "file": "ref-bloodyelbow-getty-baku-kick-2025-06-21.jpg",
+    "url": "https://cdn1.bloodyelbow.com/uploads/1/2025/06/GettyImages-2221384169-scaled.jpg",
+    "page": "https://bloodyelbow.com/2025/06/21/jamahal-hill-vs-khalil-rountree-jr-ufc-baku-result-light-heavyweights-go-the-distance-on-sleepy-night-in-baku",
+    "author": "Getty Images (ID 2221384169)",
+    "license": "All rights reserved",
+    "date_taken": "2025-06-21 (UFC Baku, vs Khalil Rountree Jr.)",
+    "use": "reference-only",
+    "what": "action",
+    "notes": "Wide shot of Hill (black Venum shorts) throwing a rear-leg body kick in a southpaw stance. Useful for limb length and stance width; face too small for detail."
+  },
+  {
+    "file": "ref-cagesidepress-ufc311-weighin-2025-01-17.jpg",
+    "url": "https://cagesidepress.com/wp-content/uploads/2025/01/UFC-311-Official-Weigh-In9.jpg",
+    "page": "https://cagesidepress.com/2025/06/20/ufc-baku-hill-vs-rountree-weigh-in-results",
+    "author": "Cageside Press",
+    "license": "All rights reserved",
+    "date_taken": "2025-01-17 (UFC 311 official weigh-in)",
+    "use": "reference-only",
+    "what": "body",
+    "notes": "Frontal double-biceps on the scale at the weight limit: arm and shoulder shape and leanness at weigh-in. Small (711x399)."
+  }
+]

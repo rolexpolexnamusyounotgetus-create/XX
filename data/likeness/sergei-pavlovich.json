@@ -1,0 +1,266 @@
+{
+  "slug": "sergei-pavlovich",
+  "name": "Sergei Pavlovich",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 34,
+  "official": {
+    "height_cm": 190.5,
+    "reach_cm": 213.4,
+    "stance": "Southpaw",
+    "fight_weight_lb": null,
+    "source": "data/derived/fighters.json (75 in height, 84 in reach, southpaw, born 1992-05-13). Weigh-in weight not looked up."
+  },
+  "photos_used": [
+    "ref-espn-headshot.png",
+    "ref-espn-stance-left.png",
+    "ref-espn-stance-right.png",
+    "ref-imago-riyadh-media-2025-01.webp",
+    "ref-cagesidepress-macau-weighin-2026-05-29.jpg",
+    "ref-cagesidepress-shanghai-weighin-2025-08-22.jpg",
+    "ref-getty-shanghai-fight-2025-08-23.jpg",
+    "ref-getty-macau-2026-05-30.jpg",
+    "wiki-faceoff-volkov-2024-06-21.png",
+    "wiki-interview-stranafm-2018-10.png"
+  ],
+  "photo_coverage": "Adequate. 10 photos. Frontal: ESPN studio headshot (May 2026). Three-quarter: a sharp 3000 px media-day photo (Jan 2025) and an old interview still (2018). Profile: left near-profiles at the May 2026 and Aug 2025 weigh-ins (video stills), right near-profile in the May 2026 fight photo. Body: studio cutouts from Aug 2025 and 2022, a back view (June 2024). No clean, sharp true profile. 2 files are CC BY; the rest are reference-only.",
+  "face": {
+    "shape": "Broad, square-to-round face, wide at the cheeks and jaw, with full cheeks; the face is wide relative to its height. Heavier in the lower half.",
+    "jaw": "Wide and heavy with soft, rounded angles; some fullness under the chin; the jawline runs straight into a very thick neck.",
+    "chin": "Broad and rounded, moderately projecting. No cleft.",
+    "cheekbones": "Broad but not sharply defined; cheeks full, no hollows.",
+    "brow_ridge": "Low to moderate; the brow area is smooth.",
+    "forehead": "High, broad and smooth. Hairline straight across with mildly recessed temples.",
+    "eyes": {
+      "shape": "Almond, medium-small, slightly hooded upper lids and puffy lower lids. Outer corners level.",
+      "spacing": "Average to slightly wide.",
+      "colour": "Hazel: green-brown with an amber ring (ESPN headshot, Jan 2025 media photo).",
+      "size": "Look small in the broad face."
+    },
+    "eyebrows": {
+      "thickness": "Thin and sparse",
+      "shape": "Fairly straight and low, the outer ends tipping slightly down.",
+      "colour": "Light brown, close to the hair.",
+      "colour_hex": "#7d5a43"
+    },
+    "nose": {
+      "length": "Medium",
+      "width": "Medium bridge, fairly broad base",
+      "bridge": "Straight, medium height.",
+      "hump": "None.",
+      "tip": "Rounded and fleshy, pointing straight ahead.",
+      "nostrils": "Medium-wide, slightly flared.",
+      "fight_damage": "None obvious."
+    },
+    "mouth": {
+      "width": "Medium to slightly narrow for the face",
+      "upper_lip": "Thin",
+      "lower_lip": "Fuller than the upper lip",
+      "resting_expression": "Closed, corners level to slightly down; a faint half smile at media events."
+    },
+    "ears": {
+      "size": "Medium-large",
+      "protrusion": "Stand out moderately; obvious with the short crop.",
+      "cauliflower_ear": "None visible: normal folds frontally (ESPN) and in the Jan 2025 three-quarter view of the left ear.",
+      "lobes": "Small to medium, attached"
+    },
+    "notable_marks_scars": "No large scars. A few small blemishes and faint marks on the forehead and cheeks in the high-resolution media photo; visible pores."
+  },
+  "hair": {
+    "style": "Short crop: about 2.5-3 cm on top, pushed slightly forward and up at the front, tapered short (about 3-6 mm) on the sides and back. Same cut in 2018, 2022, 2024, 2025 and 2026.",
+    "length_cm": 2.5,
+    "colour": "Light brown to dark blond with a golden cast in warm light.",
+    "colour_samples": {
+      "espn_top": "#634231",
+      "imago_top": "#744b26",
+      "imago_front_lit": "#9d6e4a",
+      "espn_top_dark_pixels": "#674432"
+    },
+    "colour_hex": "#7a5434",
+    "hairline": "Straight across with mild temple recession.",
+    "texture": "Straight, fine."
+  },
+  "facial_hair": {
+    "type": "stubble",
+    "detail": "Light stubble about 1-3 mm on the chin, jaw and upper lip (May 2026 studio); sometimes nearly clean-shaven (2018).",
+    "colour": "Light brown with a reddish cast.",
+    "colour_samples": {
+      "espn_chin_with_skin": "#ab6855",
+      "espn_chin_dark_pixels": "#6a3e2f"
+    },
+    "colour_hex": "#6b4a35",
+    "density": "Light and even.",
+    "shape": "Natural; covers the lower cheeks, jaw, chin and upper lip."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek",
+        "hex": "#e29579",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek",
+        "hex": "#eea180",
+        "light": "studio, high key"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "right cheek",
+        "hex": "#ca8168",
+        "light": "studio"
+      },
+      {
+        "photo": "ref-espn-stance-left.png",
+        "spot": "left cheek",
+        "hex": "#db886e",
+        "light": "studio"
+      },
+      {
+        "photo": "ref-imago-riyadh-media-2025-01.webp",
+        "spot": "right cheek",
+        "hex": "#c27259",
+        "light": "indoor, warm"
+      },
+      {
+        "photo": "ref-imago-riyadh-media-2025-01.webp",
+        "spot": "left cheek",
+        "hex": "#ce866b",
+        "light": "indoor, warm"
+      },
+      {
+        "photo": "ref-imago-riyadh-media-2025-01.webp",
+        "spot": "forehead",
+        "hex": "#d88f6a",
+        "light": "indoor, warm"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "forehead",
+        "hex": "#fdc6ae",
+        "light": "studio specular highlight (excluded)"
+      },
+      {
+        "photo": "ref-getty-macau-2026-05-30.jpg",
+        "spot": "right cheek",
+        "hex": "#b95d4c",
+        "light": "arena, flushed mid-fight (excluded)"
+      },
+      {
+        "photo": "ref-getty-macau-2026-05-30.jpg",
+        "spot": "right temple",
+        "hex": "#aa5543",
+        "light": "arena, flushed mid-fight (excluded)"
+      }
+    ],
+    "tone_hex_average_all": "#d3866c",
+    "tone_hex": "#d68a6d",
+    "tone_hex_method": "Mean of the 7 samples not marked excluded (9x9-pixel medians).",
+    "tone_hex_recommended": "#d98f78",
+    "tone_note": "Fair skin with a strong ruddy component. The warm indoor media photo pulls orange; the recommended value is nudged pinker and slightly lighter. Fight photos show him flushing deep red.",
+    "undertone": "Pink-ruddy; cheeks, nose and ears redden easily.",
+    "freckles_marks": "No freckles seen. Little body hair on the chest and abdomen.",
+    "texture_pick": "middleage_caucasian_male",
+    "texture_pick_reason": "Age 34 maps to middleage; swatch #e8ccb2 is lighter than the target, so the multiply tint can reach #d98f78."
+  },
+  "body": {
+    "build": "Big, thick heavyweight: 190.5 cm with exceptionally long arms (reach 213 cm, 23 cm more than his height). Powerful, heavy frame.",
+    "body_fat": "average",
+    "body_fat_notes": "Smooth midsection with a soft lower belly; no visible abs in 2025-26 (faint upper abs in 2022).",
+    "shoulders": "Very broad, with big, round deltoids and high, thick trapezius; the neck-to-shoulder line is short and steep.",
+    "chest": "Thick and full, soft lower edge.",
+    "arms": "Very long and thick: big biceps and triceps, heavy forearms.",
+    "waist": "Thick; little V-taper from the front.",
+    "legs_calves": "Thick thighs, solid calves; legs medium length relative to the long arms.",
+    "neck": "Very thick and short, as wide as the jaw.",
+    "posture": "Upright, shoulders slightly rounded forward, arms hanging slightly away from the body because of the lats and arm mass.",
+    "notable_physique_traits": "Arm length and a very thick neck and shoulder girdle. No tattoos anywhere visible."
+  },
+  "fight_posture": {
+    "stance": "Southpaw (fighters.json): right foot and right hand lead.",
+    "observed": "Fight photos (UFC Macau May 2026, UFC Shanghai Aug 2025): fairly square, wide base, throws wide power punches with the non-punching glove dropped low near the chest; upright head.",
+    "confidence": "Low to medium: two action stills."
+  },
+  "tattoos": [
+    {
+      "where": "none visible",
+      "description": "None: front of torso and arms clear in the 2022 and 2025 studio cutouts; back clear in the June 2024 face-off.",
+      "size": "n/a"
+    }
+  ],
+  "kit": {
+    "typical_shorts": "UFC Macau fight (May 2026): white UFC shorts with a light grey pattern and crypto.com logo; weigh-in in black and dark-red patterned shorts. Aug 2025 studio: black shorts with grey tiger-slash pattern and UFC SHANGHAI logo. 2022 studio: white and grey Venum shorts with red PAVLOVICH lettering.",
+    "gloves": "Black UFC gloves with red cuffs (May 2026).",
+    "accessories_seen": "Thin dark cord necklace at the May 2026 weigh-in.",
+    "shorts_colours_hex": {
+      "black_2025": "#06070c",
+      "black_2025_pattern": "#1c1d27"
+    }
+  },
+  "render_hints": {
+    "iris": "brownlight (hazel; green also plausible)",
+    "skin_base": "mh-skin-middleage_caucasian_male tinted toward #d98f78",
+    "eyebrows": "eyebrow001 (thin, sparse) tinted #7d5a43",
+    "hair": "hair-short04 (short crop) tinted #7a5434, or a light-brown scalp tint if the proxy reads too long",
+    "beard": "light stubble, #6b4a35"
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.138,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.6,
+    "macro/weightUpM": 0.4,
+    "macro/heightUpM": 0.27,
+    "macro/proportionsUpM": 0.4,
+    "head/head-square": 0.3,
+    "head/head-round": 0.25,
+    "head/head-scale-horiz-incr": 0.25,
+    "head/head-scale-depth-incr": 0.1,
+    "head/head-fat-incr": 0.3,
+    "forehead/forehead-scale-vert-incr": 0.15,
+    "chin/chin-width-incr": 0.25,
+    "chin/chin-bones-incr": 0.3,
+    "chin/chin-prominent-incr": 0.05,
+    "chin/chin-height-incr": 0.05,
+    "cheek/l-cheek-volume-incr": 0.35,
+    "cheek/r-cheek-volume-incr": 0.35,
+    "cheek/l-cheek-bones-incr": 0.1,
+    "cheek/r-cheek-bones-incr": 0.1,
+    "eyes/l-eye-scale-decr": 0.15,
+    "eyes/r-eye-scale-decr": 0.15,
+    "eyes/l-eye-height2-decr": 0.2,
+    "eyes/r-eye-height2-decr": 0.2,
+    "eyes/l-eye-bag-incr": 0.25,
+    "eyes/r-eye-bag-incr": 0.25,
+    "eyebrows/eyebrows-trans-down": 0.15,
+    "eyebrows/eyebrows-trans-forward": 0.15,
+    "eyebrows/eyebrows-angle-down": 0.05,
+    "nose/nose-scale-horiz-incr": 0.15,
+    "nose/nose-scale-vert-incr": 0.05,
+    "nose/nose-scale-depth-incr": 0.05,
+    "nose/nose-width1-incr": 0.1,
+    "nose/nose-point-width-incr": 0.25,
+    "nose/nose-nostrils-width-incr": 0.15,
+    "nose/nose-flaring-incr": 0.1,
+    "mouth/mouth-scale-horiz-decr": 0.05,
+    "mouth/mouth-upperlip-volume-decr": 0.25,
+    "mouth/mouth-lowerlip-volume-incr": 0.1,
+    "mouth/mouth-angles-down": 0.1,
+    "neck/neck-scale-horiz-incr": 0.65,
+    "neck/neck-scale-vert-decr": 0.15,
+    "torso/measure-shoulder-dist-incr": 0.4,
+    "torso/torso-vshape-incr": 0.1,
+    "torso/measure-waist-circ-incr": 0.35,
+    "torso/measure-hips-circ-incr": 0.2,
+    "buttocks/buttocks-volume-incr": 0.15
+  },
+  "morphs_not_in_embed": {
+    "_note": "assets/embed/mh-manifest.json has no ear targets. Estimates for standard MakeHuman ear modifiers in case they are added.",
+    "ears/l-ear-big-incr": 0.15,
+    "ears/r-ear-big-incr": 0.15,
+    "ears/l-ear-rot-forward": 0.2,
+    "ears/r-ear-rot-forward": 0.2
+  },
+  "notes": "Confidence: high for hair, skin, no tattoos and build; medium for face proportions (one sharp frontal, one sharp three-quarter, profiles only from video stills); low-to-medium for exact morph values. Watch for: (1) Broad, full face with a wide, soft jaw and a neck as wide as the jaw; a narrow or angular face will look wrong. (2) Small, slightly hooded hazel eyes and thin, sparse light-brown brows. (3) Fair, ruddy skin: do not tan it. (4) The arms are much longer than his height suggests (reach 213 cm); make sure the reach-driven arm stretch is applied. (5) Southpaw: the right side leads, opposite to most of the roster. macro/ageOldM 0.138 follows avatar3d.js (34-25)/65; heightUpM 0.27 matches the 190.5 cm Ankalaev sheet."
+}
