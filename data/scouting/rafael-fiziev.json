@@ -1,0 +1,68 @@
+{
+  "slug": "rafael-fiziev",
+  "name": "Rafael Fiziev",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Active, coming off a win. He stopped Manuel Torres with ground punches 15 seconds into round 2 in the UFC Fight Night main event in Baku, Azerbaijan (Jun 27, 2026). Five months earlier Mauricio Ruffy had stopped him in round 2 at UFC 325 in Sydney (Jan 31, 2026). He is 2-3 in his last five and 8-5 in the UFC (fighters.json). No booking, current ranking or injury could be confirmed in this pass (web search was unavailable).",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [
+      { "what": "leg injury that ended his fight with Mateusz Gamrot in round 2 (UFC Stats: 'Leg Injury'); his next fight came about 17 months later", "when": "2023-09", "source": "data/raw/ufc_fight_results.csv (UFC Fight Night: Fiziev vs. Gamrot, Sep 23, 2023)" }
+    ],
+    "sources": [
+      "data/derived/fighters.json (recent: 2026-06-27 W Torres TKO R2 0:15; 2026-01-31 L Ruffy TKO R2 4:30; 2025-06-21 W Bahamondes U-DEC; 2025-03-08 L Gaethje U-DEC)",
+      "data/raw/ufc_event_details.csv (Baku and Sydney event dates and locations)"
+    ]
+  },
+  "style": {
+    "archetype": "muay thai",
+    "stance": "switch",
+    "tags": ["body-work", "switch-stance", "head-kicks", "spinning", "knees", "clinch", "leg-kicks", "takedown-defense", "power"],
+    "signature": [
+      "body kicks and body strikes at volume: 52 body strikes landed against Justin Gaethje at UFC 286 and 43 in their 2025 rematch; 39% of his landed significant strikes go to the body",
+      "spinning wheel kick (KO of Brad Riddell, R3 2:20, Dec 2021)",
+      "punching power at distance (KO of Rafael Dos Anjos 18 seconds into R5, Jul 2022; KO of Renato Moicano, R1, UFC 256)",
+      "clinch work: 10% of his landed significant strikes come in the clinch (16 against Gaethje at UFC 286)",
+      "selective takedowns: 10 of 14 career, 4 of 4 against Ignacio Bahamondes"
+    ],
+    "weaknesses": [
+      "lost both fights with Justin Gaethje (majority decision 2023, unanimous decision 2025), getting outlanded to the head 81-38 and 56-20",
+      "stopped by Mauricio Ruffy (knockdown, then ground punches in R2) at UFC 325",
+      "absorbs 4.8 significant strikes per minute at 50% defence (lightweight medians about 4.1 and 54%)",
+      "no submission game: 0 submission attempts in 13 UFC fights"
+    ],
+    "summary": "A switch-stance Muay Thai striker built around body kicks: about two of every five significant strikes he lands go to the body, roughly double the lightweight norm. He adds head and wheel kicks, clinch knees and real punching power, and opponents rarely take him down. But he gets drawn into exchanges and takes a lot to the head, which cost him both Gaethje fights and the Ruffy fight.",
+    "sources": [
+      "data/derived/fighters.json (career C and recency-weighted S sums; lightweight medians over 120 lightweights with 30+ UFC minutes)",
+      "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (2019-2026 bout stats and methods)",
+      "https://en.wikipedia.org/wiki/Rafael_Fiziev (reference page for background; could not be fetched in this pass)"
+    ]
+  },
+  "moves": {
+    "jab": 0.22, "cross": 0.3, "hook": 0.2, "overhand": 0.06, "upper": 0.1, "headkick": 0.12,
+    "bodykick": 0.7, "bodyhook": 0.2, "bodystraight": 0.1,
+    "calf": 0.45, "inside": 0.55, "spinning": 0.15, "knee": 0.3, "elbow": 0.05,
+    "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json: recency-weighted landed shares are head 0.41 / body 0.42 / leg 0.18 and attempt shares are head 0.57 / body 0.31 / leg 0.13 (career landed 0.43 / 0.39 / 0.18; lightweight median landed about 0.62 / 0.22 / 0.15). The body share is about double the division's, which is the main thing the director should show. Body kicks dominate the body group, because his body volume comes at distance (52 body strikes against Gaethje in 2023, 43 in 2025, while 84-87% of his landed strikes are at distance). UFC Stats does not separate body kicks from body punches, so the 0.7 is a judgment. Head kicks (0.12) and spinning (0.15) sit above most lightweights for the Riddell wheel-kick KO. Knee is 0.3 because 10% of his landed strikes come in the clinch. Leg kicks are a generic split with inside slightly ahead, which is a judgment, not data. No published technique breakdown could be fetched in this pass."
+  },
+  "appearance": {
+    "build": "compact lightweight: 5'8\" with a 71-inch reach (fighters.json)",
+    "hair": "unknown (photos could not be checked in this pass)",
+    "facial_hair": "unknown",
+    "skin": "unknown",
+    "tattoos": "none confirmed",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height, reach)"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Body targeting is the defining tendency: 39% of landed significant strikes career and 42% recency-weighted go to the body (median about 22%); 29-31% of his attempts go to the body (median about 14%).", "source": "data/derived/fighters.json (C and S sums)" },
+    { "note": "Hard to take down: 90% takedown defence career (47 of 52 stopped), opponent control only 78 seconds per 15 min. He has never attempted a submission and has never been submitted.", "source": "data/derived/fighters.json" },
+    { "note": "ko_losses = 3 counts the 2023 leg-injury stoppage against Gamrot. Only two of his three KO/TKO losses came from strikes (Magomed Mustafaev 2019, Ruffy 2026).", "source": "data/raw/ufc_fight_results.csv; data/derived/fighters.json (ko_losses)" },
+    { "note": "Five-round pace (1.00 / 1.32 / 1.13 / 0.80 relative to round 1) rests mostly on the 2022 Dos Anjos fight, the only one to pass round 2. The round-5 value comes from 18 seconds and should be ignored.", "source": "data/derived/fighters.json (pace, pace_w)" },
+    { "note": "Opponents land mostly to his head (64-68% of what they land), and his losses to Gaethje and Ruffy came from head damage while he won the body exchanges.", "source": "data/derived/fighters.json (oh/ob/ol sums); data/raw/ufc_fight_stats.csv" }
+  ],
+  "confidence": "medium"
+}

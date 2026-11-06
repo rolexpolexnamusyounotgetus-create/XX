@@ -1,0 +1,75 @@
+{
+  "slug": "curtis-blaydes",
+  "name": "Curtis Blaydes",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Veteran heavyweight contender, aged 35, 1-1 in 2026. He lost a 28-29 x3 decision to Josh Hokit at UFC 327 in Miami (Apr 11, 2026), a slugfest with 351 sig strikes landed between them. He then beat Waldo Cortes Acosta by 29-28 x3 at Noche UFC in Glendale, Arizona (Sep 12, 2026). His last title fight was a 60-second KO loss to Tom Aspinall for the interim belt at UFC 304 (Jul 27, 2024). Hokit has since been booked against interim champion Ciryl Gane (ESPN, Oct 2026). UFC record 15-6 (1 NC) per ufcstats. No booking, ranking or injury news for Blaydes was verified in this pass.",
+    "title": null,
+    "ranking": null,
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/fa6796c55d6c5440",
+      "http://ufcstats.com/fight-details/606639bf387f60e2",
+      "http://ufcstats.com/fight-details/903552edaba48f4a",
+      "http://ufcstats.com/fight-details/8e5744c664fec3e9",
+      "http://ufcstats.com/fight-details/ec434314c5438fc7",
+      "https://www.espn.com/mma/story/_/id/50095462/alex-pereira-set-take-sergei-pavlovich-ufc-335",
+      "data/derived/fighters.json"
+    ]
+  },
+  "style": {
+    "archetype": "wrestler",
+    "stance": "orthodox",
+    "tags": ["top-control", "ground-and-pound", "elbows", "power", "rangy", "clinch", "chin-concern"],
+    "signature": [
+      "takedowns into heavy top control: 70 UFC takedowns, the most of any fighter listed at heavyweight in fighters.json (next is Jon Jones with 45, mostly from his light heavyweight years), at 5.0 per 15 min career vs a 1.1 heavyweight average",
+      "elbows from top: finishes of Cody East (2016), Alistair Overeem (2018) and Shamil Abdurakhimov (2019) per ufcstats",
+      "right-hand power at distance: KOs of Junior dos Santos (2020) and Chris Daukaus (2022)",
+      "ground punches to stop Jailton Almeida 36 seconds into round 2 after Almeida had held him down for 4:39 of round 1 (2024)",
+      "clinch punching: 60 of 73 clinch strikes vs Josh Hokit (2026)"
+    ],
+    "weaknesses": [
+      "chin against elite punchers: four KO/TKO losses by strikes, all in rounds 1-2 (Francis Ngannou 2018, Derrick Lewis 2021, Sergei Pavlovich 2023, Tom Aspinall 2024), plus a 2016 doctor stoppage against Ngannou",
+      "takedowns are landing less: accuracy 47% career but 33% time-decayed (2 of 15 vs Rizvan Kuniev, 2 of 7 vs Hokit, 4 of 10 vs Cortes Acosta)",
+      "when he stands and trades he gets hit: opponents land 4.5 sig strikes per minute on him (decayed), up from 2.7 career, and Hokit out-landed him 82-60 in round 3",
+      "no stoppage win since Almeida in March 2024: 2-2 since then, both wins by decision (one split)"
+    ],
+    "summary": "A tall, long heavyweight wrestler whose best path is takedowns, long top control and elbows or punches from top. He also carries real right-hand power at range. In recent fights the takedowns have landed less often and he has stood and traded more, as in the Hokit brawl. His losses are almost all fast knockouts by heavy punchers, so the engine should treat his chin as the main risk.",
+    "sources": [
+      "data/derived/fighters.json",
+      "data/raw/ufc_fight_stats.csv",
+      "data/raw/ufc_fight_results.csv",
+      "http://ufcstats.com/fight-details/903552edaba48f4a",
+      "http://ufcstats.com/fight-details/606639bf387f60e2",
+      "http://ufcstats.com/fight-details/0133019a4f1055ee",
+      "http://ufcstats.com/fight-details/856468ba24a37fcc"
+    ]
+  },
+  "moves": {
+    "jab": 0.34, "cross": 0.28, "hook": 0.14, "overhand": 0.1, "upper": 0.1, "headkick": 0.04,
+    "bodykick": 0.4, "bodyhook": 0.3, "bodystraight": 0.3,
+    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.04, "elbow": 0.08,
+    "notes": "Weights are relative within each target group, as src/director.js uses them: head moves sum to 1, body to 1, legs to 1. spinning, knee and elbow are separate rates for occasional specials. fighters.json time-decayed attempt split is 84.4% head, 5.9% body and 9.7% leg (landed 74.2/9.7/16.1), against a heavyweight average of 77.5/12.9/9.6. He is very head-heavy, rarely goes to the body and is average to the legs. That changed in his last fight: 15 of 19 leg strikes landed vs Cortes Acosta. With 79% of decayed attempts at distance and a reach of 80 in, the head group leans on the jab and straight right. His KOs at distance were punches (dos Santos, Daukaus), so overhand and hook sit at modest values. elbow 0.08 reflects three elbow finishes from top in ufcstats. knee 0.04 is a clinch default (15% of decayed attempts come in the clinch). The body and leg internal splits are unsourced defaults. No scouting page could be opened in this pass."
+  },
+  "appearance": {
+    "build": "tall and long for a heavyweight, broad-shouldered: 6'4\" (76 in) with an 80 in reach per ufcstats",
+    "hair": "shaved or very short (unverified: from widely published pre-2026 fight photos; no photo was checked in this pass)",
+    "facial_hair": "beard (unverified, as above)",
+    "skin": "medium-dark",
+    "tattoos": "not recorded (no source checked)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height_in, reach_in, stance from ufcstats tott)",
+      "skin, hair and facial hair: unverified recall of widely published pre-2026 photos; a fact-check against a dated photo is needed"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Takedown rate is falling: 10.7 attempts and 5.0 landed per 15 min career, against 9.6 and 3.2 decayed (33% accuracy). Control fell from 26.3 to 17.0 s/min. Both are still far above the heavyweight averages of about 2.7 attempts, 1.1 landed and 10.7 s/min.", "source": "data/derived/fighters.json" },
+    { "note": "Knocked down 5 times in 22 UFC fights (0.36 per 15 min career, 0.29 decayed, vs a 0.34 heavyweight prior). Every KO/TKO loss came in round 1 or 2 against a top heavyweight puncher.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
+    { "note": "Striking volume has risen to 9.5 sig attempts per minute decayed (career 7.8, heavyweight 7.7), driven by the Hokit fight: 174 of 302 for him and 177 of 293 for Hokit.", "source": "data/derived/fighters.json; http://ufcstats.com/fight-details/903552edaba48f4a" },
+    { "note": "The five-round pace vector (1.00 / 1.13 / 0.57 / 0.22 / 0.31) rests on one bout that went past round 2 (Volkov, 2020, five rounds). Do not read it as a real late fade; use the prior.", "source": "data/derived/fighters.json (pace_w = 25.1 / 7.8 / 5 / 5 / 5 minutes)" }
+  ],
+  "confidence": "low"
+}

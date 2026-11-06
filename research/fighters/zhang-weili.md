@@ -9,7 +9,7 @@ As of Friday, Nov 6, 2026. She/her. "Magnum". Switch stance, 5'4" with a 63" rea
 - **Title:** none. She held the strawweight belt twice: she won it in 2019, lost it to Rose Namajunas in 2021, regained it in 2022 and defended it three times. That is 8 strawweight title fights (6-2).
 - **Last fight:** she moved up and lost a 50-45 x3 decision to Valentina Shevchenko for the flyweight title at UFC 322 (Nov 15, 2025). She has had no fight since in the snapshot.
 - **The strawweight belt now:** Mackenzie Dern won it against Virna Jandiroba at UFC 321 (Oct 25, 2025) and defended it against Gillian Robertson at UFC 330 (Aug 15, 2026).
-- **Unknown:** whether she returns at 115 or stays at 125, plus any booking or injury.
+- **Unknown:** her division, booking or any injury.
 
 ## Recent fights
 
@@ -24,7 +24,7 @@ As of Friday, Nov 6, 2026. She/her. "Magnum". Switch stance, 5'4" with a 63" rea
 
 ## Style
 
-A compact, powerful striker who switches stance and has become a heavy top player. On the feet she lands 55% (decayed) and throws more leg kicks than most strawweights (15% of attempts against a division 9%). Since 2023 she lands 1.65 takedowns per 15 min and holds 279 s of control. A quarter of her strikes come on the ground.
+A compact, powerful switch-stance striker who has become a heavy top player. She lands 55% (decayed) and throws more leg kicks than most strawweights (15% of attempts against a division 9%). She lands 1.65 takedowns and holds 279 s of control per 15 min (decayed), and a quarter of her strikes come on the ground.
 
 ## Strengths
 

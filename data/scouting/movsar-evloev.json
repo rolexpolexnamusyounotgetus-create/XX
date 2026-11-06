@@ -1,0 +1,87 @@
+{
+  "slug": "movsar-evloev",
+  "name": "Movsar Evloev",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "Lost his first pro fight in his first UFC title shot: Alexander Volkanovski stopped him with punches from half guard at 4:54 of round 2 at UFC 333 (Abu Dhabi, Oct 24, 2026). He entered 20-0. He landed 3 of 4 takedowns in round 1 but turned them into only 31 seconds of control, then was stuffed on all three shots in round 2 and out-landed 32-20 before the finish. Before that he beat Lerone Murphy by majority decision (48-46, 48-46, 47-47) in a five-round main event in London (Mar 21, 2026) and Aljamain Sterling by UD (UFC 310, Dec 7, 2024). Still listed No. 1 at featherweight after UFC 333. No bout booked and no injury reported. Age 32.",
+    "title": null,
+    "ranking": "#1 featherweight (UFC rankings as summarised by UFCalendar after UFC 333, Nov 3, 2026; relayed from research/matchup_market.md, not re-checked in this pass)",
+    "active": true,
+    "next_fight": null,
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/76e2870ffafbe38f",
+      "http://ufcstats.com/fight-details/ce1388d6c7651d2e",
+      "http://ufcstats.com/event-details/cc18abc046b382c9",
+      "http://ufcstats.com/fight-details/346e3897c2ead99a",
+      "http://ufcstats.com/fight-details/df30514e0674d598",
+      "https://www.news4jax.com/sports/2026/10/24/alexander-volkanovski-stops-movsar-evloev-in-2nd-round-to-retain-featherweight-title-at-ufc-333/",
+      "https://sports.yahoo.com/mma/live/ufc-333-live-results-volkanovski-vs-evloev-updates-round-by-round-scoring-for-todays-title-double-header-110000274.html",
+      "https://www.ufcalendar.com/blog/volkanovski-evloev-breakdown-ufc-333-takedowns",
+      "https://mmasucka.com/news/volkanovski-vs-evloev-ufc-333-grappling-breakdown/",
+      "https://www.ufcalendar.com/rankings"
+    ]
+  },
+  "style": {
+    "archetype": "wrestle-boxer",
+    "stance": "orthodox",
+    "tags": ["chain-wrestling", "top-control", "body-work", "slow-starter", "late-surge", "cardio"],
+    "signature": [
+      "takedown volume: 9.2 attempts and 4.8 landed per 15 min career (featherweight league 4.1 and 1.6), at 52% accuracy",
+      "late takedown surge: 8 of 9 takedowns vs Murphy came in rounds 4-5, including 5 of 5 in round 5",
+      "top-position ground strikes: 32 ground strikes and 8:30 of control on Diego Lopes (UFC 288, 2023)",
+      "body punching: 33 of his 86 landed significant strikes vs Murphy went to the body"
+    ],
+    "weaknesses": [
+      "no knockdown power: 0 knockdowns in 11 UFC fights; all 10 UFC wins are decisions, two of them split or majority",
+      "slow starts: in three-round fights he lands 2.78 significant strikes per minute in R1 against 4.56 in R2 and 4.64 in R3; Murphy out-landed him 38-28 over rounds 1-2",
+      "when the takedowns stop he can be out-struck: Volkanovski stuffed 3 of 3 in R2 and finished him; Arnold Allen out-landed him 59-51 while stopping 12 of 17 shots",
+      "takedown defense 30% over the last 3 years (small sample): Sterling took him down 6 of 8 times at UFC 310"
+    ],
+    "summary": "A wrestle-boxer who wins on takedown volume and control rather than damage: ten UFC wins, all on the scorecards, and no knockdowns scored. He boxes at range (88% of his landed significant strikes over three years came at distance) with a head-first mix that has added body punching, and his output and wrestling rise as the fight goes on. Volkanovski showed the counter: get up from the early takedowns, stuff the later ones and hit him as he resets.",
+    "sources": [
+      "http://ufcstats.com/fighter-details/76e2870ffafbe38f",
+      "http://ufcstats.com/fight-details/069ab7e7b8b5d262",
+      "http://ufcstats.com/fight-details/1a7cd191f0cf160c",
+      "http://ufcstats.com/fight-details/346e3897c2ead99a",
+      "https://mmasucka.com/news/volkanovski-vs-evloev-ufc-333-grappling-breakdown/",
+      "data/derived/fighters.json; data/raw/ufc_fight_stats.csv; tools/fighter_report.py"
+    ]
+  },
+  "moves": {
+    "jab": 0.45,
+    "cross": 0.42,
+    "hook": 0.3,
+    "overhand": 0.25,
+    "upper": 0.12,
+    "headkick": 0.03,
+    "bodykick": 0.12,
+    "bodyhook": 0.22,
+    "bodystraight": 0.22,
+    "calf": 0.06,
+    "inside": 0.08,
+    "spinning": 0.0,
+    "knee": 0.08,
+    "elbow": 0.03,
+    "notes": "Target split from fighters.json: decayed significant attempts are 80% head, 14% body, 6% legs (landed 69/22/8); career 86/9/5, last 3 years 77/17/6. Body weights are set above his career mix because the recent fights carry more body work (33 of 86 landed vs Murphy were body strikes), and they lean to punches (body hooks and straights) over kicks because 80% of decayed landed strikes come at distance and his leg share is low. Leg kicks are low (6% of attempts, league 9.5%). Knees are small (8% of decayed landed strikes in the clinch). Spinning is zero. ufcstats does not record technique, so the split inside each target is a judgment; no scouting breakdown of his striking could be opened this pass."
+  },
+  "appearance": {
+    "build": "5 ft 7 in with a 72 in reach (ufcstats): compact, with a long reach for his height; has fought his whole UFC career at featherweight",
+    "hair": "short dark (as recalled from fight photos; not re-checked)",
+    "facial_hair": "full dark beard (as recalled from fight photos; not re-checked)",
+    "skin": "light",
+    "tattoos": "unknown",
+    "kit": "unknown",
+    "notes": "Build is from ufcstats. Hair, beard and skin tone follow widely published fight photos as recalled; they were not re-checked on the web this session (search budget exhausted; wikipedia and ufc.com unreachable).",
+    "sources": [
+      "http://ufcstats.com/fighter-details/76e2870ffafbe38f"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Chin: 0 knockdowns absorbed in 11 UFC fights (323 significant head strikes absorbed). His one loss, to Volkanovski, was a TKO by punches from half guard with no knockdown recorded.", "source": "data/derived/fighters.json; tools/fighter_report.py chin table" },
+    { "note": "Takedowns against elite get-ups do not become rides: 3 of 4 in R1 vs Volkanovski produced 31 s of control, and 5 of 17 vs Allen produced 3:31.", "source": "http://ufcstats.com/fight-details/ce1388d6c7651d2e; http://ufcstats.com/fight-details/1a7cd191f0cf160c" },
+    { "note": "Pace: in nine three-round fights his landed rate is 1.00, 1.64, 1.67 of R1. Only two five-round fights (Murphy, Volkanovski), so the 5-round curve in fighters.json (1, 1.21, 1.61, 1.35, 0.77) rests on one bout after R2.", "source": "tools/fighter_report.py pace table" },
+    { "note": "Defense at range is good: opponents land 32% of head strikes on him career (league 39%); opponent-adjusted, he absorbs 0.73x what opponents usually land.", "source": "tools/fighter_report.py rates and opponent-adjusted indices" }
+  ],
+  "confidence": "medium"
+}

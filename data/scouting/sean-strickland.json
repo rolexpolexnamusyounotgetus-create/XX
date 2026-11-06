@@ -1,0 +1,80 @@
+{
+  "slug": "sean-strickland",
+  "name": "Sean Strickland",
+  "as_of": "2026-11-06",
+  "status": {
+    "summary": "UFC middleweight champion for the second time. He took the belt from Khamzat Chimaev by split decision at UFC 328 (May 9, 2026). His first reign ran from beating Israel Adesanya (UFC 293, Sep 9, 2023) to losing to Dricus Du Plessis (UFC 297, Jan 20, 2024). Before the Chimaev fight he stopped Anthony Hernandez (TKO R3, Feb 21, 2026). UFC record 18-7. A rematch with Nassourdine Imavov for the title has been reported. A September report put it on UFC 335 (Dec 12, 2026), but that fell through over Strickland's pay dispute. MMA Junkie (Oct 27, 2026) now says February 2027 in Florida. It is not officially announced. These bout reports are carried from the Imavov research pass; web checks were blocked in this pass.",
+    "title": "UFC middleweight champion",
+    "ranking": null,
+    "active": true,
+    "next_fight": "Reported, not official: vs Nassourdine Imavov for the UFC middleweight title, targeted for February 2027 in Florida (MMA Junkie, Oct 27, 2026, via Bloody Elbow); an earlier Dec 12, 2026 (UFC 335) target fell through over Strickland's pay dispute.",
+    "injuries": [],
+    "sources": [
+      "http://ufcstats.com/fighter-details/0d8011111be000b2",
+      "http://ufcstats.com/fight-details/70f1621080b3435c",
+      "http://ufcstats.com/fight-details/8d740c844353ae0e",
+      "https://www.espn.com/mma/ufc/story/_/id/48728368/strickland-stuns-chimaev-ufc-middleweight-title",
+      "https://bloodyelbow.com/2026/10/27/new-date-emerges-for-sean-strickland-vs-nassourdine-imavov-ufc-title-rematch-amid-pay-dispute/",
+      "https://bloodyelbow.com/2026/09/04/i-know-the-date-nassourdine-imavov-confirms-hell-face-sean-strickland-for-the-ufc-middleweight-title-next/",
+      "https://mmasucka.com/news/sean-strickland-nassourdine-imavov-ufc-title-rematch-deal-florida/",
+      "https://sports.yahoo.com/articles/report-sean-strickland-vs-nassourdine-151350283.html",
+      "data/scouting/nassourdine-imavov.json (web links above carried from that pass; not re-opened here)",
+      "data/derived/fighters.json (last_fight 2026-05-09, snapshot 2026-10-31)"
+    ]
+  },
+  "style": {
+    "archetype": "pressure striker",
+    "stance": "orthodox",
+    "tags": ["pressure", "volume", "jab", "get-ups", "cardio", "late-surge"],
+    "signature": [
+      "walks forward behind constant punching: 14.4 sig attempts per minute decayed (middleweight average 8.1), 87% to the head, 96% of landed strikes at distance",
+      "out-throws champions over five rounds: 408 sig attempts vs Du Plessis (UFC 297), 312 vs Chimaev (UFC 328, none in R1), 402 vs Paulo Costa (UFC 302)",
+      "hurts and then pours it on: knocked Adesanya down in R1 on the way to 49-46 x3 (UFC 293); stopped Abus Magomedov (R2, 2023) and Anthony Hernandez (R3, 2026) with ground punches after hurting them",
+      "gets back up against wrestlers: Chimaev landed 7 takedowns after R1 but held him for only 2:29 across R2-R5"
+    ],
+    "weaknesses": [
+      "kicks: 59% of what opponents land on him goes to the body or legs (decayed); Costa landed 130 of his 158 there (UFC 302) and Du Plessis 97 of 147 (UFC 312)",
+      "rarely wrestles himself (0.41 takedown attempts per 15 min decayed) and his takedown defense is 47.6% decayed; Chimaev went 9 of 13",
+      "two KO/TKO losses: Elizeu Zaleski dos Santos (wheel kick, R1, 2018) and Alex Pereira (punches, R1, 2022); three knockdowns absorbed in 25 UFC fights",
+      "close fights: five of his last 11 fights were split decisions (3-2 in them)"
+    ],
+    "summary": "A forward-walking boxer who throws more than almost anyone at middleweight, jabbing and punching to the head from range for five rounds and getting busier as the fight goes on. He barely kicks or wrestles. He gets back up quickly when taken down, which is how he outlasted Chimaev to win the title back. Opponents who kick his legs and body, as Du Plessis and Costa did, are the ones who score on him.",
+    "sources": [
+      "http://ufcstats.com/fight-details/70f1621080b3435c",
+      "http://ufcstats.com/fight-details/8d740c844353ae0e",
+      "http://ufcstats.com/fight-details/d13849f49f99bf01",
+      "http://ufcstats.com/fight-details/14e53999507c76a7",
+      "http://ufcstats.com/fight-details/9e7538a788e6d789",
+      "http://ufcstats.com/fight-details/7f16e7725245bb2d",
+      "http://ufcstats.com/fight-details/f557405652165aa3",
+      "http://ufcstats.com/fight-details/0308bcdd00cc72e2",
+      "data/raw/ufc_fight_stats.csv",
+      "data/derived/fighters.json"
+    ]
+  },
+  "moves": {
+    "jab": 0.5, "cross": 0.3, "hook": 0.1, "overhand": 0.03, "upper": 0.06, "headkick": 0.01,
+    "bodykick": 0.3, "bodyhook": 0.2, "bodystraight": 0.5,
+    "calf": 0.3, "inside": 0.7, "spinning": 0.0, "knee": 0.02, "elbow": 0.02,
+    "notes": "Group shares follow fighters.json decayed sums: sig attempts 87.0% head, 10.7% body, 2.3% leg (career 88.1/9.1/2.8), against a middleweight league split of 77.2/14.0/8.8. He goes to the head far more than average and almost never kicks the legs. 95.6% of his landed sig is at distance, so clinch weights are minimal. In the head group the jab leads and the cross is second: he throws 14.4 sig attempts per minute at 44% accuracy, which fits a jab-heavy volume game, and his jab-led, high-guard boxing is widely described in pre-2026 coverage. No scouting page was opened in this pass to confirm that, so these in-group weights are data-led judgments. The overhand and head kick are near zero because nothing in the data points to looping punches or high kicks. The body straight leads the body group as a judgment; ufcstats does not split body punches from kicks. Leg weights are tiny either way. Spinning is 0."
+  },
+  "appearance": {
+    "build": "6'1\" with a 76\" reach (dataset); long-limbed with a lean, muscular frame (judgment from widely published fight photos; not re-checked in this pass)",
+    "hair": "short hair, usually cut close (colour and current style not re-checked in this pass)",
+    "facial_hair": "unknown for 2026; varies across published photos",
+    "skin": "light",
+    "tattoos": "unknown (no source in this pass)",
+    "kit": "unknown",
+    "sources": [
+      "data/derived/fighters.json (height_in 73, reach_in 76, stance Orthodox)",
+      "http://ufcstats.com/fighter-details/0d8011111be000b2"
+    ]
+  },
+  "engine_notes": [
+    { "note": "Strongest late surge of the five fighters in this batch: across 11 five-round fights his R2-R5 output is 1.42, 1.59, 1.67 and 1.86 times R1, against a middleweight curve of 1.26, 1.20, 1.28 and 1.31.", "source": "data/derived/fighters.json (pace; priors.Middleweight.pace5)" },
+    { "note": "Opponents' landed strikes on him split 40.6% head, 35.7% body and 23.7% leg (decayed). That is far less head and far more legs than the league, because his guard covers the head and he does not check or punish kicks with his own.", "source": "data/derived/fighters.json (oh/ob/ol landed)" },
+    { "note": "Against Chimaev he spent R1 under 4:47 of control and landed nothing, then out-landed Chimaev 123-98 over R2-R5. A get-up or escape knob for him should be high after the first takedown.", "source": "http://ufcstats.com/fight-details/70f1621080b3435c" },
+    { "note": "Knockdowns: 1.67 landed decayed, 7 career; 3 absorbed career, none since Pereira in Jul 2022.", "source": "data/derived/fighters.json (kd, okd)" }
+  ],
+  "confidence": "medium"
+}
