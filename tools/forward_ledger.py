@@ -1245,6 +1245,13 @@ def compute_scores(files, results, B, stats=None):
                 k = {"KO/TKO": "ko", "SUB": "sub"}.get(r["method"], "dec" if "Dec" in str(r["method"]) else None)
                 if k:
                     m7 = b["p_method"].get("%s_%s" % (r["winner"], k))
+                    sec = (b.get("p_method_secondary") or {}).get("division_base_rates")
+                    if sec:           # fwd-4.2 bout with a debutant: primary (debut method) vs base-rate secondary
+                        went = 1.0 if k == "dec" else 0.0
+                        mrows.append({"version": doc["model"]["version"], "date": doc["date"], "bout_id": b["bout_id"],
+                                      "prim": method_probs(b["p_method"], r["winner"], k),
+                                      "sec": method_probs(sec["p_method"], r["winner"], k),
+                                      "dist": (b["p_distance"], sec["p_distance"], went)})
             rows.append({"bout_id": b["bout_id"], "event": doc["event"], "date": doc["date"], "file": os.path.basename(f),
                          "version": doc["model"]["version"], "y": y, "p": pv, "p_method_actual": m7,
                          "m": {k: v for k, v in (b.get("models") or {}).items() if v is not None},
@@ -1305,6 +1312,12 @@ def compute_scores(files, results, B, stats=None):
     dd = [(r["p_distance"], r["went_distance"]) for r in rows if r["p_distance"] is not None and r["went_distance"] is not None]
     if dd:
         out["distance"] = {"n": len(dd), "brier": sum((p - y) ** 2 for p, y in dd) / len(dd)}
+    # fwd-4.2 additions (README "Forward model v4.2", Scoring); absent until such bouts are scored
+    if mrows:
+        out["method_debut"] = score_method_debut(mrows, B)
+    if srows:
+        out["statlines"] = score_statlines(srows, B)
+        out["n_statline_bouts"] = len({r["bout_id"] for r in srows})
     return out
 
 
@@ -1351,6 +1364,21 @@ def scores_md(S):
             L.append("| `%s` | %d | %.4f | %.4f | %.1f%% | %s | %s |" % (k, o["n"], o["log_loss"], o["brier"],
                                                                    100 * o["accuracy"], ci(o.get("minus_market_pred")),
                                                                    ci(o.get("minus_market_close"))))
+    for v, o in (S.get("method_debut") or {}).items():
+        L += ["", "Debut method model vs division base rates, %s (bouts with a debutant; %d bouts, %d events; paired "
+              "differences: negative = the debut method model is better):" % (v, o["n"], o["n_events"]), "",
+              "| metric | debut method | base rates | difference [CI] (n) |", "|---|---|---|---|"]
+        for k in ("log_loss_7way", "log_loss_given_winner", "log_loss_method3", "distance_brier"):
+            L.append("| %s | %.4f | %.4f | %s |" % (k, o["primary"][k], o["base_rates"][k], ci(o["paired"].get(k))))
+    for v, mv in (S.get("statlines") or {}).items():
+        L += ["", "Stat lines, %s (fight-sides vs ufcstats totals; Poisson deviance of the mean, paired difference vs the "
+              "blend mean: negative = the stat-line layer is better; band [p10, p90] inclusive):" % v, "",
+              "| stat | n | deviance | blend deviance | difference [CI] (n) | in band | above p90 | below p10 | MAE p50 |",
+              "|---|---|---|---|---|---|---|---|---|"]
+        for st, o in mv.items():
+            L.append("| %s | %d | %.3f | %.3f | %s | %.3f | %.3f | %.3f | %.2f |" % (
+                st, o["n"], o["deviance_mean"], o["deviance_blend_mean"], ci(o.get("deviance_minus_blend")),
+                o["coverage_p10_p90"], o["above_p90"], o["below_p10"], o["mae_p50"]))
     return "\n".join(L) + "\n"
 
 

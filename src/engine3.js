@@ -399,6 +399,7 @@
     var base = getParams();
     if (!base) throw new Error("FightEngine: FightParams not loaded (load params3.js first)");
     var p = resolveParams(base, opts.params);   // v5: components flags (components.v401 sub-flags) applied here
+    oppadjExclusive(p);                         // v5 merge step 4: components.oppadj never stacks with styles_sos sos
     profA = resolve(profA); profB = resolve(profB);
     var division = opts.division || profA.division || profA.home || "Lightweight";
     var P = priorFor(division, opts.priors);
@@ -783,8 +784,10 @@
     var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
     if (!(w > 0)) return m;
     // v5 merge step 4: the learned targets are rewritten before the adapter re-targets the tables: the embedding blend
-    // (components.embed). Off: pred is untouched and the adapter gets exactly the step-3 inputs.
+    // (components.embed), then the opponent adjustment (components.oppadj). Off: pred is untouched and the adapter gets
+    // exactly the step-3 inputs.
     if (compOn(m.p, "embed")) pred = embedTargets(m, pa, pb, opts, pred);
+    if (compOn(m.p, "oppadj")) pred = oppadjTargets(m, opts, pred);
     var fl = v401Flags(m.p), mo = { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
       parts: opts.mlParts || undefined };
     // v5 step 1 (components.v401): (c) learned-path levels on the takedown-attempt / control / sub-attempt targets;
@@ -805,6 +808,127 @@
     return MLMODEL;
   }
   function mlModel() { return MLMODEL; }
+
+  // ------------------------------------------------------------------ embedding blend (engine v5 component: params.components.embed)
+  // research/model_embed.md "Integration recipe" (verified: mean relative deviance over 18 stat-line targets -1.67% [-2.11,
+  // -1.24] on 2024-25; train leave-one-year-out -0.72% [-0.97, -0.49] vs the recalibrated rates and -0.42% [-0.68, -0.16] vs
+  // the raw ones, tools/embed_blend_loyo.py). Per learned target t of one side (X attacking Y), before the adapter re-targets
+  // the tables:
+  //   link(rate_t) = b0 + b1 link(mlrates rate_t) + b2 eta[task(t)]
+  // links: log for per-minute rates (ctrl on minutes per minute), logit for accuracies, log for kd_h (P(KD) per landed head
+  // strike, capped at 0.5); eta = the embedding model's task predictors for X against Y (params.embed.tasks order). The same
+  // arithmetic as src/ml/embed.js blendMLRates (tests/test_v5_step4.js checks it). Coefficients: params.embed.recipe (=
+  // data/derived/embed_model.json mlrates_blend.targets, fit on mlrates' 2019-2023 out-of-fold rows; b2 = 0 for rev, acc_g,
+  // td_acc and kd_h, where time-ordered CV inside 2019-2023 rejected the embedding term), or opts.embed.recipe per call
+  // (backtests: train fights get the refit without their year, tools/mlpathrec.js).
+  // Inputs (first found wins): opts.embed = { etaA, etaB, recipe? } (corner order of this call; false = none), else the roster
+  // registered with loadEmbed(embed_model.json) by slug (a fighter not in it gets the zero vector = the division average), only
+  // for matchups dated on or after its as-of date (the roster is the fit at 2026-01-01, so never for a backtest fight), else
+  // nothing: the targets pass unchanged and m.embed.src is null. It acts only on the learned-rate path.
+  var EMBM = null, EMBASOF = null;
+  function loadEmbed(json) {
+    if (json == null) { EMBM = null; EMBASOF = null; return null; }
+    var FEm = getEmbMod();
+    if (!FEm) throw new Error("FightEngine.loadEmbed: src/ml/embed.js (FightEmbed) is not loaded");
+    var d = typeof json === "string" ? JSON.parse(json) : json, h = FEm.load(d), p = getParams();
+    var tk = (p && p.embed && p.embed.tasks) || null;
+    if (tk && JSON.stringify(h.tasks.map(function (t) { return t[0]; })) !== JSON.stringify(tk)) throw new Error("FightEngine.loadEmbed: task order differs from params.embed.tasks");
+    EMBM = h;
+    EMBASOF = (d.model || d).era_date || null;
+    return { n: Object.keys(h.model.roster || {}).length, asof: EMBASOF };
+  }
+  function embedEtas(m, pa, pb, opts) {
+    var o = opts.embed;
+    if (o === false) return null;
+    if (o && o.etaA && o.etaB) return { etaA: o.etaA, etaB: o.etaB, recipe: o.recipe || null, src: "opts" };
+    if (EMBM && (!m.date || !EMBASOF || String(m.date) >= EMBASOF)) {
+      var eo = { rounds: m.rounds }, va = EMBM.vec((pa && pa.slug) || ""), vb = EMBM.vec((pb && pb.slug) || "");
+      if (m.date) eo.date = m.date;
+      return { etaA: EMBM.eta(va, vb, m.division, eo), etaB: EMBM.eta(vb, va, m.division, eo), recipe: null, src: "roster" };
+    }
+    return null;
+  }
+  function embedBlendSide(side, eta, recipe, tix) {
+    var out = {}, k;
+    for (k in side) out[k] = side[k];
+    for (var tn in recipe) {
+      if (side[tn] == null) continue;
+      var r = recipe[tn], x = +side[tn], z, q, ti = tix[r.task];
+      if (ti == null || eta[ti] == null) throw new Error("FightEngine embed: no task predictor for " + r.task);
+      if (tn === "ctrl") z = Math.log(Math.max(x / 60, 1e-6));
+      else if (tn === "kd_h") z = Math.log(Math.min(Math.max(x, 1e-6), 1 - 1e-6));
+      else if (r.link === "logit") { q = Math.min(Math.max(x, 1e-6), 1 - 1e-6); z = Math.log(q / (1 - q)); }
+      else z = Math.log(Math.max(x, 1e-9));
+      var e = r.b[0] + r.b[1] * z + r.b[2] * eta[ti];
+      if (r.link === "logit") out[tn] = sigm(e);
+      else if (tn === "ctrl") out[tn] = 60 * Math.exp(e);
+      else if (tn === "kd_h") out[tn] = Math.min(Math.exp(e), 0.5);
+      else out[tn] = Math.exp(e);
+    }
+    return out;
+  }
+  function embedTargets(m, pa, pb, opts, pred) {
+    var eb = embedEtas(m, pa, pb, opts), pe = m.p.embed || {};
+    if (!eb) { m.embed = { src: null }; return pred; }
+    var rc = eb.recipe || pe.recipe, tix = {}, i;
+    if (!rc || !pe.tasks) throw new Error("FightEngine: components.embed is on but params.embed has no tasks / recipe");
+    for (i = 0; i < pe.tasks.length; i++) tix[pe.tasks[i]] = i;
+    m.embed = { src: eb.src, recipe: eb.recipe ? "opts" : "params", raw: { A: pred.A, B: pred.B } };
+    return { A: embedBlendSide(pred.A, eb.etaA, rc, tix), B: embedBlendSide(pred.B, eb.etaB, rc, tix), base: pred.base };
+  }
+
+  // ------------------------------------------------------------------ opponent adjustment (engine v5 component: params.components.oppadj)
+  // research/model_oppadj.md "Recommendation for the engine", item 3 (verified): with the learned rates, scale the learned
+  // targets of X against Y by the walk-forward opponent-adjustment factors (tools/oppadj.py, data/derived/oppadj.json):
+  //   counts:        target_X <- target_X * (F_off,X * F_def,Y)^beta          d_att, c_att, g_att, td_att, ctrl (sub_att: beta 0)
+  //   probabilities: odds(target_X) <- odds(target_X) * (F_off,X * F_def,Y)^beta   acc_h, acc_l, td_acc (acc_b, kd_h: beta 0)
+  //   h_att, b_att, l_att scale with the total attempt change (d_att + c_att + g_att)
+  // beta: params.oppadj.beta (oppadj.json results.recommendation ml_path_beta: fit on 2019-2023 out-of-fold learned rates,
+  // clipped to [0, 1]; knockdowns, body accuracy and submission attempts stay 0 = off). The reference is tools/oppadj_engine.js
+  // adjTargets (identical up to float rounding: a family with beta 0 is skipped here instead of multiplied by 1). topSkill /
+  // escWeak are not applied (the ML-path simulations left them out, so that combination is untested). Factors: opts.oppadj =
+  // { A, B } (corner order of this call; backtests: oppadj.json snapshots[id], tools/mlpathrec.js), else prof.oppadj; a side
+  // without factors is neutral. It competes with the styles_sos strength of schedule (both adjust for the schedule): never
+  // stack them, so matchupBase refuses components.oppadj together with components.styles_sos sos (any source). OFF by default:
+  // the Calibrate ablation picks one of the two by train soft CE + stat lines.
+  function oppadjExclusive(p) {
+    if (!compOn(p, "oppadj")) return;
+    var s = p.components.styles_sos;
+    if (s && (s === true || s.sos !== false)) {
+      throw new Error("FightEngine: components.oppadj and components.styles_sos sos are exclusive (never stack the opponent adjustment " +
+        "with strength of schedule): pass params.components.styles_sos = { sos: false } with oppadj, or switch oppadj off");
+    }
+  }
+  function oppadjSide(t, Fi, Fj, bt) {
+    var o = {}, k;
+    for (k in t) o[k] = t[k];
+    function g(F, key, idx) { var v = F ? (idx != null ? (F[key] ? F[key][idx] : null) : F[key]) : null; return v != null && isFinite(v) && v > 0 ? +v : 1; }
+    function mul(off, def, beta, idx) { return beta ? Math.pow(Math.max(g(Fi, off, idx) * g(Fj, def, idx), 1e-6), beta) : 1; }
+    var att0 = t.d_att + t.c_att + t.g_att, e;
+    if (bt.dAtt) o.d_att = t.d_att * mul("dAtt", "dAttAg", bt.dAtt);
+    if (bt.cAtt) o.c_att = t.c_att * mul("cAtt", "cAttAg", bt.cAtt);
+    if (bt.gAtt) o.g_att = t.g_att * mul("gAtt", "gAttAg", bt.gAtt);
+    if (bt.dAtt || bt.cAtt || bt.gAtt) {
+      var r = att0 > 0 ? (o.d_att + o.c_att + o.g_att) / att0 : 1;
+      o.h_att = t.h_att * r; o.b_att = t.b_att * r; o.l_att = t.l_att * r;
+    }
+    if (bt.tdAtt) o.td_att = t.td_att * mul("tdAtt", "tdAttAg", bt.tdAtt);
+    if (bt.sub) o.sub_att = t.sub_att * mul("sub", "subAg", bt.sub);
+    if (bt.ctrl) o.ctrl = t.ctrl * mul("ctrl", "octrl", bt.ctrl);
+    var ac = [["acc_h", "accH", 0], ["acc_b", "accB", 1], ["acc_l", "accL", 2]];
+    for (k = 0; k < 3; k++) if (bt[ac[k][1]]) { e = mul("acc", "accAg", bt[ac[k][1]], ac[k][2]); o[ac[k][0]] = prob(odds(t[ac[k][0]]) * e); }
+    if (bt.tdAcc) o.td_acc = prob(odds(t.td_acc) * mul("tdAcc", "tdAccAg", bt.tdAcc));
+    if (bt.kd) o.kd_h = t.kd_h * mul("pow", "chin", bt.kd);
+    return o;
+  }
+  function oppadjTargets(m, opts, pred) {
+    var src = m._src || {}, oa = opts.oppadj || null;
+    var FA = oa ? (oa.A || null) : (src.A && src.A.oppadj) || null, FB = oa ? (oa.B || null) : (src.B && src.B.oppadj) || null;
+    var bt = (m.p.oppadj && m.p.oppadj.beta) || {};
+    m.oppadj = { have: [!!FA, !!FB], src: oa ? "opts" : (FA || FB ? "profile" : null) };
+    if (!FA && !FB) return pred;
+    return { A: oppadjSide(pred.A, FA, FB, bt), B: oppadjSide(pred.B, FB, FA, bt), base: pred.base };
+  }
 
   // ------------------------------------------------------------------ durability (engine v5 component: params.components.durability)
   // Replaces the chin / power block with the knockdown model of research/model_durability.md (tools/durability.py,
@@ -1973,6 +2097,7 @@
     VERSION: VERSION, KEYS: KEYS, STATS: STK,
     loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
     loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound, deductions: deductions, loadDurability: loadDurability,
+    loadEmbed: loadEmbed, embedBlend: embedBlendSide, oppadjSide: oppadjSide,   // v5 merge step 4: components.embed, .oppadj
     durabilityCovariates: function (prof, age, dp) { return durCovariates(dp || (getParams() || {}).durability || {}, prof || {}, age, null); },
     loadOfficials: loadOfficials, officialsTable: function () { return OFFTAB; }, officialsTableFor: officialsTableFor, officialsRound: officialsRound,
     summarize: summarize, explain: explain, manualProfile: manualProfile,

@@ -1862,6 +1862,64 @@ def parse_event_props(html):
     return out
 
 
+# Full prop families (added Nov 6, 2026 for tools/props.py; parse_event_props above is unchanged). BFO prop type id
+# -> short key; team-specific ids (team 1 / 2 on the page) get the team number appended by the caller.
+# yes/no: two-way props carry both sides; one-sided props carry the yes price only.
+PROP_TYPES_FULL = {
+    1: 'godec', 6: 'draw', 8: 'ko', 9: 'sub', 10: 'itd', 11: 'dec', 18: 'ud', 19: 'sm',
+    13: 'wr1', 14: 'wr2', 15: 'wr3', 16: 'wr4', 17: 'wr5',                  # fighter wins in round k
+    22: 'er1', 23: 'er2', 24: 'er3', 25: 'er4', 26: 'er5',                  # fight ends in round k
+    32: 'ou15', 33: 'ou25', 34: 'ou35', 35: 'ou45',                         # over (yes) / under (no) k.5 rounds
+    174: 'kor1', 179: 'kor2', 180: 'kor3', 181: 'kor4', 182: 'kor5',        # fighter wins by KO/TKO in round k
+    175: 'subr1', 183: 'subr2', 184: 'subr3', 185: 'subr4', 186: 'subr5',   # fighter wins by submission in round k
+    187: 'anyko', 188: 'anysub',
+}
+
+
+def parse_event_props_full(html):
+    """-> (matchups, props). matchups: {mu: {'t1_name', 't2_name', 'lines': {book: [a1, a2]}}} in page order;
+    props: {(mu, book): {key: [yes, no]}} with key = PROP_TYPES_FULL[type] (+ team digit for team props).
+    American odds as ints; None where a side is not quoted. Exchanges are kept here (the caller drops them)."""
+    starts = [x.start() for x in re.finditer(r'<table class="odds-table"', html)]
+    if not starts:
+        return {}, {}
+    t = html[starts[-1]:]
+    t = t[:t.find('</table>')]
+    books = {int(b): n.strip() for b, n in
+             re.findall(r'<th scope="col" data-b="(\d+)"[^>]*>(?:<a[^>]*>|<span[^>]*>)([^<]+)', t)}
+    mus = {}
+    props = defaultdict(dict)
+    for attrs, row in re.findall(r'<tr([^>]*)>(.*?)</tr>', t, re.S):
+        if '<th scope="row"' not in row:
+            continue
+        if 'class="pr"' in attrs:
+            for bid, side, mu, ptype, team, val in re.findall(
+                    r'data-li="\[(\d+),(\d),(\d+),(\d+),(\d+)\]"><span[^>]*>([^<]+)</span>', row):
+                ptype, team, side = int(ptype), int(team), int(side)
+                key = PROP_TYPES_FULL.get(ptype)
+                a = parse_am(val)
+                if key is None or a is None or side not in (1, 2):
+                    continue
+                if team in (1, 2):
+                    key += str(team)
+                rec = props[(int(mu), books.get(int(bid), bid))].setdefault(key, [None, None])
+                rec[side - 1] = a
+            continue
+        fm = re.search(r'href="(/fighters/[^"]+)"><span class="t-b-fcc">([^<]+)</span>', row)
+        mu_m = re.search(r'data-li="\[(\d),(\d+)\]"', row)
+        if not fm or not mu_m:
+            continue
+        team, mu = int(mu_m.group(1)), int(mu_m.group(2))
+        rec = mus.setdefault(mu, {'lines': {}})
+        rec[f't{team}_name'] = unescape(fm.group(2)).strip()
+        rec[f't{team}_url'] = fm.group(1)
+        for bid, tm, mu2, val in re.findall(r'data-li="\[(\d+),(\d),(\d+)\]"><span[^>]*>([^<]+)</span>', row):
+            a = parse_am(val)
+            if int(mu2) == mu and a is not None:
+                rec['lines'].setdefault(books.get(int(bid), bid), [None, None])[int(tm) - 1] = a
+    return mus, dict(props)
+
+
 PROP_FIELDS = ['ko1', 'sub1', 'dec1', 'ud1', 'sm1', 'ko2', 'sub2', 'dec2', 'ud2', 'sm2', 'draw', 'godec_yes',
                'godec_no', 'r1', 'r2', 'r3', 'r4', 'r5']
 

@@ -67,7 +67,19 @@
       // realismFactors). OFF: the factors were fit on v4.0.1 final and gave no out-of-fold gain there (temporal 2-fold: winner
       // -0.0011 [-0.0033, +0.0012], 7-bin +0.0049 [-0.0020, +0.0123], method +0.0029 [-0.0015, +0.0074]); refit on v5 first.
       // FightEngine.sensitivity / rateSd (tornado data, common random numbers) work with it off or on.
-      realism_sens: false
+      realism_sens: false,
+      // v5 merge step 4: embedding blend of the learned stat-line targets (block `embed` below; engine3.js embedTargets;
+      // research/model_embed.md, verified). ON: confirmed on train before leaving it on (tools/embed_blend_loyo.py, 2019-2023
+      // out-of-fold rows, each year scored by the recipe fit without it: mean relative deviance over 18 targets -0.72% [-0.97,
+      // -0.49] vs the recalibrated rates, -0.42% [-0.68, -0.16] vs the raw learned rates). A no-op until a caller passes
+      // opts.embed (backtests: tools/mlpathrec.js) or loads a roster (FightEngine.loadEmbed(embed_model.json), bouts dated on or
+      // after 2026-01-01 only).
+      embed: true,
+      // v5 merge step 4: opponent adjustment of the learned targets, research/model_oppadj.md ML-path recipe (block `oppadj`
+      // below; engine3.js oppadjTargets). OFF: it competes with styles_sos sos "wf" (both adjust for the schedule) and the
+      // engine refuses the two together; the Calibrate ablation picks one by train soft CE + stat lines. Arm: { oppadj: true,
+      // styles_sos: { sos: false } } with opts.oppadj (backtests: tools/mlpathrec.js, oppadj.json walk-forward snapshots).
+      oppadj: false
     },
 
     // ---------------- styles_sos knobs (component "styles_sos"; src/styles_sos.js, docs/ENGINE_V3_SPEC.md) ----------------
@@ -84,6 +96,45 @@
       sosSource: "wf"    // "wf": this component's walk-forward schedule table (tools/sos_wf.py, opts.sos / prof.sos); "oppadj": the
                          // verified factors of tools/oppadj.py (prof.oppadj or StylesSOS.loadOppadj; research/model_oppadj.md).
                          // Never stack the two (verdict: oppadj gives better stat lines, -0.8 to -3.3%, at +0.0011 soft CE).
+    },
+
+    // ---------------- embedding blend (component "embed"; research/model_embed.md "Integration recipe", data/derived/embed_model.json) ----------------
+    // v5 merge step 4. Per learned target t of one side: link(rate) = b0 + b1 link(mlrates rate) + b2 eta[task] (log links for
+    // per-minute rates, ctrl in minutes per minute and kd_h; logit for accuracies). recipe = embed_model.json mlrates_blend.targets
+    // (fit on mlrates' 2019-2023 out-of-fold rows; b2 = 0 where time-ordered CV inside 2019-2023 rejected the term). tasks = the
+    // embedding model's task order (the index of each eta). Release refit (research/model_embed.md): refit the blend on 2019-2025
+    // out-of-fold rows and rerun tools/embed.py before a release; the backtest harness keeps these 2019-2023 values.
+    embed: {
+      tasks: ["d_att", "c_att", "g_att", "h_att", "b_att", "l_att", "ns_att", "d_acc", "c_acc", "g_acc", "h_acc", "b_acc", "l_acc", "kd", "td_att", "td_acc", "ctrl", "sub_att", "rev", "ko_fin", "sub_fin"],
+      recipe: {
+        d_att: { task: "d_att", link: "log", b: [-0.069982, 0.711099, 0.322209] },
+        c_att: { task: "c_att", link: "log", b: [-0.003585, 0.581088, 0.406225] },
+        g_att: { task: "g_att", link: "log", b: [-0.038304, 0.657976, 0.37345] },
+        h_att: { task: "h_att", link: "log", b: [-0.177151, 0.725199, 0.360312] },
+        b_att: { task: "b_att", link: "log", b: [-0.000881, 0.686235, 0.32603] },
+        l_att: { task: "l_att", link: "log", b: [0.01211, 0.796754, 0.202168] },
+        td_att: { task: "td_att", link: "log", b: [0.043751, 0.573656, 0.425045] },
+        sub_att: { task: "sub_att", link: "log", b: [0.352258, 0.851244, 0.229988] },
+        rev: { task: "rev", link: "log", b: [-0.490037, 0.88882, 0.0] },
+        ctrl: { task: "ctrl", link: "log", b: [0.064459, 0.557073, 0.455859] },
+        acc_h: { task: "h_acc", link: "logit", b: [0.011774, 0.521711, 0.515074] },
+        acc_b: { task: "b_acc", link: "logit", b: [0.07556, 0.554021, 0.388165] },
+        acc_l: { task: "l_acc", link: "logit", b: [-0.011057, 0.481682, 0.51298] },
+        acc_d: { task: "d_acc", link: "logit", b: [-0.011446, 0.434249, 0.503721] },
+        acc_c: { task: "c_acc", link: "logit", b: [0.19873, 0.255241, 0.563796] },
+        acc_g: { task: "g_acc", link: "logit", b: [0.014659, 0.946195, 0.0] },
+        td_acc: { task: "td_acc", link: "logit", b: [-0.056387, 0.889465, 0.0] },
+        kd_h: { task: "kd", link: "log", b: [-0.703483, 0.849507, 0.0] }
+      }
+    },
+
+    // ---------------- opponent adjustment of the learned targets (component "oppadj"; research/model_oppadj.md item 3) ----------------
+    // v5 merge step 4. target_X x (F_off,X F_def,Y)^beta (odds for accuracies and takedown success); beta = data/derived/oppadj.json
+    // results.recommendation ml_path_beta (stacked on mlrates' 2019-2023 out-of-fold rates, clipped to [0, 1]). Knockdowns (kd),
+    // body accuracy (accB) and submission attempts (sub) stay 0 (off: they do not improve per-fight deviance). Same values as
+    // src/styles_sos.js OA_ML_BETA (the sosSource "oppadj" approximation on the final tables, which this recipe replaces).
+    oppadj: {
+      beta: { dAtt: 0.932, cAtt: 0.988, gAtt: 0.17, accH: 0.548, accB: 0, accL: 0.262, kd: 0, tdAtt: 0.372, tdAcc: 0.119, ctrl: 0.621, sub: 0 }
     },
 
     // ---------------- fight dynamics (component "dynamics"; research/model_dynamics.md section 8, data/derived/dynamics.json) ----------------
