@@ -77,11 +77,7 @@ const close = (a, b, t = 1e-12) => Math.abs(a - b) <= t;
   const info = await S.setup({ split: "train", nFights: 12, offset: 0, seed: 7, mirror: "both" });
   const m2 = await S.evaluate({ key: "m", x, sims: 8, seedOff: 0 });
   check("mirror both: two tasks per fight, sims add up", info.tasks === 24 && m2.simsPerFight === 16);
-  // a clone fight (A vs A) must give p(A) near 0.5 under 'both' (symmetric by construction)
-  const f0 = S.fights[0];
-  S.fights[0] = Object.assign({}, f0, { B: Object.assign({}, f0.A) });
   check("winner log loss and 7-bin log loss are finite", isFinite(m2.winLL) && isFinite(m2.binLL) && m2.winLL > 0.3 && m2.winLL < 1.5);
-  S.fights[0] = f0;
   await S.close();
 
   console.log(`\n${pass} passed, ${fail} failed`);
