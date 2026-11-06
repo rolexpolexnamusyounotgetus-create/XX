@@ -1,6 +1,6 @@
 # Mario Bautista: scouting dossier
 
-As of Friday, Nov 6, 2026. "Dataset" means `data/derived/fighters.json`, the ufcstats snapshot through Oct 31, 2026. Web claims come from search-result summaries of the linked pages. Direct page fetches were blocked, and the shared search budget ran out before a dedicated Bautista search. His pro record, gym, next booking and appearance are therefore unconfirmed, and the style section relies mostly on the dataset and on UFC 329 coverage.
+As of Nov 6, 2026. "Dataset" is `data/derived/fighters.json` (ufcstats through Oct 31, 2026). Web claims come from search summaries of the linked pages. His pro record, gym, next booking and appearance are unconfirmed, and the style section relies mostly on the dataset and UFC 329 coverage. Fact-check (Nov 6): results and stats re-checked against raw ufcstats; status could not be re-searched.
 
 ## Current status
 
@@ -8,17 +8,17 @@ As of Friday, Nov 6, 2026. "Dataset" means `data/derived/fighters.json`, the ufc
 - **Age and frame:** 33 (born Jul 1, 1993), 5'9" with a 69" reach. ufcstats lists his stance as switch.
 - **Record:** UFC record 12-3 (1 KO, 4 submissions, 7 decisions).
 - **Form:** two straight wins in 2026 and 7 wins in his last 8.
-- **Booking and injuries:** none confirmed in this pass.
+- **Booking, injuries:** none confirmed.
 
 ## Recent fights
 
 | Date | Opponent | Result | How |
 |---|---|---|---|
-| Jul 11, 2026 | Cory Sandhagen | W, UD (29-28 x3) | Revenge for his 2019 UFC debut loss on seven days' notice. Sandhagen had the better of the early striking. As round 1 ended, Bautista caught a Suloev stretch that turned into a kneebar and hurt Sandhagen's hamstring. He attacked the leg to open R2 but lost the round. In R3 he dropped Sandhagen, backed away from a leglock attempt and took him down repeatedly (7 of 11 takedowns in the round). Sig strikes 114-89. |
+| Jul 11, 2026 | Cory Sandhagen | W, UD (29-28 x3) | Revenge for his 2019 UFC debut loss (armbar, R1). As round 1 ended he caught a Suloev stretch into a kneebar that hurt Sandhagen's hamstring. In R3 he dropped Sandhagen and went 7 of 11 on takedowns. Sig strikes 114-89. |
 | Feb 7, 2026 | Vinicius Oliveira | W, SUB R2 4:46 | He went 5 of 7 on takedowns with 5:47 of control and finished with a rear-naked choke. |
 | Oct 25, 2025 | Umar Nurmagomedov | L, UD (30-27 x3) | Umar landed 11 of 14 takedowns and held 10:46 of control. Bautista still scored a knockdown in R2. |
-| Jun 7, 2025 | Patchy Mix | W, UD | A pure striking fight with no completed takedowns: 173 of 302 sig strikes, including 58 of 66 to the body. |
-| Oct 5, 2024 | Jose Aldo | W, split decision | He went 0 of 10 on takedowns but logged 7:15 of control and edged a close fight. |
+| Jun 7, 2025 | Patchy Mix | W, UD | Pure striking: 173 of 302 sig strikes, 58 of 66 to the body. |
+| Oct 5, 2024 | Jose Aldo | W, split decision | 0 of 10 takedowns but 7:15 of control in a close fight. |
 
 ## Style
 
@@ -26,7 +26,7 @@ Bautista is a switch-stance all-rounder.
 
 - **Standing:** he throws high volume at good accuracy and invests heavily in the body. 17% of his attempts go to the body, against a 14% league average, and 27% of his landed strikes do.
 - **Grappling:** he chains takedown attempts, especially late, and hunts submissions in scrambles. That means the back (three rear-naked chokes and a triangle armbar from back control in the UFC) and, as UFC 329 showed, the legs.
-- **Wildcard:** he also has a flying-knee KO (Miles Johns, 2020).
+- **Wildcard:** a flying-knee KO (Miles Johns, 2020).
 
 ## Strengths
 
@@ -48,7 +48,7 @@ Bautista is a switch-stance all-rounder.
 
 ## What the numbers say
 
-Bautista's numbers describe a busy, efficient two-way fighter. His career strike differential is +1.35 per minute (5.52 landed vs 4.17 absorbed). His control rate (13.8 s/min) and submission rate are well above the division, and his Elo is 1698. In the engine he should out-land most strikers and threaten takedowns and submissions late. Against a strong wrestler the main risk is being the one who gets controlled.
+Bautista's numbers describe a busy, efficient two-way fighter. His career strike differential is +1.35 per minute (5.52 landed vs 4.17 absorbed). His control (13.8 s/min career) and submission rates are well above the division. Elo 1698. In the engine he should out-land most strikers and threaten takedowns and submissions late. Against a strong wrestler the main risk is being the one who gets controlled.
 
 ## Sources
 

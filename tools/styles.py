@@ -519,3 +519,90 @@ def rate_tests(D, n_boot=1000, seed=SEED, z_screen=3.0):
             })
         out[name] = res
     return out
+
+
+# --------------------------------------------------------------------------------------------- archetypes
+GROUPS = {"vol": "output", "press": "output", "opp_vol": "output", "sh_d": "position", "sh_c": "position",
+          "sh_g": "position", "sh_h": "target", "sh_b": "target", "sh_l": "target", "td_int": "grappling",
+          "ctrl": "grappling", "sub_int": "grappling", "kd_pow": "power", "acc": "power", "dfn": "power"}
+
+
+def dim_weights():
+    cnt = Counter(GROUPS[d] for d in STYLE_DIMS)
+    return np.array([1.0 / math.sqrt(cnt[GROUPS[d]]) for d in STYLE_DIMS])
+
+
+def kmeans(X, k, seed=SEED, n_init=20, iters=300):
+    rng = np.random.default_rng(seed)
+    best = None
+    for _ in range(n_init):
+        c = [X[rng.integers(len(X))]]
+        for _ in range(k - 1):
+            d2 = np.min(((X[:, None, :] - np.array(c)[None]) ** 2).sum(-1), 1)
+            c.append(X[rng.choice(len(X), p=d2 / d2.sum())])
+        c = np.array(c)
+        for _ in range(iters):
+            lab = ((X[:, None, :] - c[None]) ** 2).sum(-1).argmin(1)
+            nc = np.array([X[lab == j].mean(0) if (lab == j).any() else c[j] for j in range(k)])
+            if np.allclose(nc, c):
+                break
+            c = nc
+        inert = float(((X - c[lab]) ** 2).sum())
+        if best is None or inert < best[0]:
+            best = (inert, c, lab)
+    return best
+
+
+def ari(a, b):
+    a, b = np.asarray(a), np.asarray(b)
+    ct = np.zeros((a.max() + 1, b.max() + 1))
+    np.add.at(ct, (a, b), 1)
+    c2 = lambda x: x * (x - 1) / 2.0
+    s, sa, sb, n = c2(ct).sum(), c2(ct.sum(1)).sum(), c2(ct.sum(0)).sum(), c2(ct.sum())
+    e = sa * sb / n
+    return float((s - e) / ((sa + sb) / 2 - e))
+
+
+def silhouette(X, lab, max_n=1500, seed=SEED):
+    rng = np.random.default_rng(seed)
+    idx = rng.choice(len(X), min(len(X), max_n), replace=False)
+    X, lab = X[idx], lab[idx]
+    D = np.sqrt(((X[:, None, :] - X[None]) ** 2).sum(-1))
+    s = []
+    for i in range(len(X)):
+        same = lab == lab[i]
+        a = D[i, same].sum() / max(same.sum() - 1, 1)
+        b = min(D[i, lab == j].mean() for j in np.unique(lab) if j != lab[i])
+        s.append((b - a) / max(a, b))
+    return float(np.mean(s))
+
+
+def soft_membership(Zw, cent, temp):
+    d2 = ((Zw[:, None, :] - cent[None]) ** 2).sum(-1)
+    l = -d2 / temp
+    l -= l.max(1, keepdims=True)
+    p = np.exp(l)
+    return p / p.sum(1, keepdims=True)
+
+
+def name_cluster(c):
+    """plain-language archetype name from a centroid (dict of z-scores on STYLE_DIMS)"""
+    grap = (c["td_int"] + c["ctrl"]) / 2
+    kick = (c["sh_l"] + c["sh_b"]) / 2
+    if grap > 0.8 and c["sh_g"] > 0.6:
+        return "wrestler / top-control grappler"
+    if grap > 0.5 and c["sh_c"] > 0.4:
+        return "clinch wrestle-boxer"
+    if c["press"] < -0.8:
+        return "counter striker"
+    if c["kd_pow"] > 0.7:
+        return "power puncher"
+    if c["sh_d"] > 1.2 and c["vol"] > 0.9:
+        return "high-volume distance boxer"
+    if kick > 0.6 and c["sh_d"] > 0.5:
+        return "rangy kickboxer"
+    if c["vol"] > 0.6 and c["press"] > 0.4:
+        return "pressure volume striker"
+    if kick > 0.4 and c["sh_c"] > 0.4:
+        return "clinch / body-kick all-rounder"
+    return "balanced all-rounder"

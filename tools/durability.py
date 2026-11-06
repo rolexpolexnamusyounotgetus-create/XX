@@ -509,3 +509,109 @@ def tune(df, verbose=True):
     stage("hl_c", [None, 1825, 2920])
     stage("hl_p", [None, 1825, 2920])
     return best, grid
+
+
+# ------------------------------------------------------------------ evaluation helpers
+def v3_offset(X, train_mask):
+    """The v3 engine's hand-set structure (src/params3.js as of Nov 6): shrunk decayed power and chin ratios
+    (k = 230 head strikes), chin age past 34 (+0.04/yr), power age past 34 (-0.03/yr), 1.04^KO losses capped
+    at 1.15, size 0.05 / 0.03 per 10 lb moved up."""
+    tr = X[train_mask]
+    pdiv = (tr.groupby("division").y.sum() / tr.groupby("division").H.sum())
+    p = X.division.map(pdiv).fillna(tr.y.sum() / tr.H.sum()).to_numpy(float)
+    k = 230.0
+    pw = ((X.a_dkd.to_numpy(float) + k * p) / (X.a_dh.to_numpy(float) + k)) / p
+    ch = ((X.d_dokd.to_numpy(float) + k * p) / (X.d_doh.to_numpy(float) + k)) / p
+    agec = np.exp(0.04 * np.clip(X.d_age.fillna(30).to_numpy(float) - 34, 0, None))
+    agep = np.exp(-0.03 * np.clip(X.a_age.fillna(30).to_numpy(float) - 34, 0, None))
+    kol = (X.d_kol_r + X.d_kol_o).to_numpy(float)
+    koc = np.minimum(1.15, 1.04 ** kol)
+    sc = np.exp(0.05 * X.d_up_lbs.to_numpy(float) / 10)
+    sp = np.exp(-0.03 * X.a_up_lbs.to_numpy(float) / 10)
+    return np.log(pw * ch * agec * agep * koc * sc * sp)
+
+
+def fight_diff(X, mask, d1, d0):
+    """Mean and cluster (fight) SE of a deviance difference, as totals and per fight-side."""
+    f = X.fid.to_numpy()[mask]
+    diff = pd.Series(d1 - d0).groupby(f).sum()
+    n = len(diff)
+    return {"total": float(diff.sum()), "se_total": float(diff.std(ddof=1) * math.sqrt(n)), "fights": int(n)}
+
+
+def linear_combo(r, names, weights):
+    idx = [(["const"] + r["cols"]).index(n) for n in names]
+    w = np.array(weights, float)
+    est = float(w @ r["b"][idx])
+    cov = r.get("cov_cl", r["cov"])
+    se = float(math.sqrt(w @ cov[np.ix_(idx, idx)] @ w))
+    return est, se
+
+
+def coef_table(r, X, groups):
+    r["cov_cl"] = cluster_cov(r["D"][r["fit"]], r["y"][r["fit"]], r["mu"][r["fit"]], r["cov"],
+                              groups[r["fit"]])
+    se = np.sqrt(np.diag(r["cov"]))
+    sec = np.sqrt(np.diag(r["cov_cl"]))
+    out = []
+    for nm, b, s, sc in zip(["const"] + r["cols"], r["b"], se, sec):
+        out.append({"term": nm, "coef": round(float(b), 5), "se": round(float(s), 5), "se_cluster": round(float(sc), 5),
+                    "mult": round(math.exp(b), 4)})
+    return out
+
+
+def calib(X, mask, mus, by, labels=None):
+    rows = []
+    g = by[mask]
+    y = X.y.to_numpy(float)[mask]
+    for lev in (labels or sorted(pd.unique(g))):
+        m = g == lev
+        if m.sum() == 0:
+            continue
+        row = {"group": str(lev), "rows": int(m.sum()), "kd": int(y[m].sum())}
+        for nm, mu in mus.items():
+            e = float(mu[mask][m].sum())
+            row["exp_" + nm] = round(e, 1)
+            row["oe_" + nm] = round(float(y[m].sum()) / e, 3) if e > 0 else None
+        rows.append(row)
+    return rows
+
+
+def nb_dispersion(y, mu):
+    """MLE of the gamma heterogeneity variance v = 1/k in y ~ NB(mean mu, var mu + v mu^2), mu fixed."""
+    def nll(lv):
+        v = math.exp(lv)
+        k = 1.0 / v
+        return -np.sum(special.gammaln(y + k) - special.gammaln(k) - special.gammaln(y + 1)
+                       + k * np.log(k / (k + mu)) + y * np.log(mu / (k + mu)))
+    from scipy.optimize import minimize_scalar
+    res = minimize_scalar(nll, bounds=(-8, 3), method="bounded")
+    v = math.exp(res.x)
+    # curvature SE on log v
+    h = 1e-3
+    d2 = (nll(res.x + h) - 2 * nll(res.x) + nll(res.x - h)) / h ** 2
+    se_lv = 1 / math.sqrt(d2) if d2 > 0 else float("nan")
+    return v, se_lv, float(nll(res.x)), float(nll(-30))
+
+
+def logit_fit(Xm, y, ridge=1e-4, iters=100):
+    k = Xm.shape[1]
+    b = np.zeros(k)
+    R = ridge * np.eye(k)
+    R[0, 0] = 0
+    for _ in range(iters):
+        p = 1 / (1 + np.exp(-(Xm @ b)))
+        g = Xm.T @ (y - p) - R @ b
+        H = Xm.T @ (Xm * (p * (1 - p))[:, None]) + R
+        st = np.linalg.solve(H, g)
+        b += st
+        if np.max(np.abs(st)) < 1e-9:
+            break
+    p = 1 / (1 + np.exp(-(Xm @ b)))
+    H = Xm.T @ (Xm * (p * (1 - p))[:, None]) + R
+    return b, np.linalg.inv(H), p
+
+
+def logloss(y, p):
+    p = np.clip(p, 1e-9, 1 - 1e-9)
+    return -(y * np.log(p) + (1 - y) * np.log(1 - p))

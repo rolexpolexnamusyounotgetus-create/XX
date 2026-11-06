@@ -16,7 +16,7 @@ As of Nov 6, 2026. "Dataset" is `data/derived/fighters.json` (ufcstats through O
 |---|---|---|---|
 | Jul 11, 2026 | Mario Bautista | L, UD | He won early exchanges with inside low kicks (9 of 9 leg strikes in R1). Bautista caught a Suloev stretch into a kneebar at the end of R1. Bautista dropped him early in R3 and took him down 7 times in the round (8 of 20 overall). Sig strikes 89-114. |
 | Oct 4, 2025 | Merab Dvalishvili (title) | L, UD | Dvalishvili landed a record 20 takedowns (20 of 37) with 10:02 of control. Sig strikes 80-114. |
-| May 3, 2025 | Deiveson Figueiredo | W, TKO R2 4:08 | Figueiredo's knee gave out. Sandhagen led 54-6 in sig strikes with 5:07 of control. |
+| May 3, 2025 | Deiveson Figueiredo | W, TKO R2 4:08 | Figueiredo knee injury; Sandhagen led 54-6 in sig strikes. |
 | Aug 3, 2024 | Umar Nurmagomedov | L, UD (five rounds) | Gave up 5 of 13 takedowns and 5:11 of control; out-landed 98-71. |
 | Aug 5, 2023 | Rob Font | W, UD 50-45 x3 | He wrestled: 7 of 7 takedowns and 19:38 of control. |
 
@@ -33,7 +33,7 @@ A long, switch-stance striker whose game rests on footwork (Sportskeeda).
 
 - **Volume:** 10.85 sig attempts per minute career, against an 8.70 bantamweight average.
 - **Leg kicks:** about 90% accurate.
-- **Range:** height and reach edge on almost every bantamweight.
+- **Range:** a height and reach edge on most bantamweights.
 - **Finishing variety:** 6 UFC KO/TKO wins.
 
 ## Weaknesses
