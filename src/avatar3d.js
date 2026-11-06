@@ -1204,8 +1204,10 @@
     }
     g.setAttribute("position", new T.BufferAttribute(pos, 3));
     g.setAttribute("uv", new T.BufferAttribute(px.uv, 2));
-    g.setAttribute("skinIndex", new T.BufferAttribute(px.joints, 4));
-    g.setAttribute("skinWeight", new T.BufferAttribute(px.weights, 4));
+    var sj = px.joints, swt = px.weights;
+    if (o.reweight) { var rw = this.refWeights(px); sj = rw.j; swt = rw.w; }
+    g.setAttribute("skinIndex", new T.BufferAttribute(sj, 4));
+    g.setAttribute("skinWeight", new T.BufferAttribute(swt, 4));
     g.setIndex(new T.BufferAttribute(index, 1));
     g.computeVertexNormals();
     var mat = new T.MeshStandardMaterial({ map: o.map || px.tex, roughness: o.roughness != null ? o.roughness : (o.hair ? 0.5 : 0.8), metalness: 0, skinning: true,
@@ -1255,6 +1257,26 @@
     if (o.brows || o.lashes || o.eyes) { mesh.castShadow = false; }
     this.meshes.push(mesh); this.disposables.push(g, mat);
     return mesh;
+  };
+  /* Skin weights for a proxy from its three reference body vertices (barycentric blend of the body's
+     weights, top four kept). The glove proxy ships with its fingertips weighted to the second phalanx
+     only, so a closed fist left them sticking out like claws; the body's weights follow every joint. */
+  Avatar.prototype.refWeights = function (px) {
+    var base = this.base, n = px.refs.length / 3, N = base.N, first = this._mhFirst;
+    if (!first) { first = this._mhFirst = new Int32Array(N).fill(-1); for (var v = 0; v < base.mh.length; v++) if (first[base.mh[v]] < 0) first[base.mh[v]] = v; }
+    var J = new Uint16Array(n * 4), Wt = new Float32Array(n * 4), acc = {}, i, k, q;
+    for (i = 0; i < n; i++) {
+      acc = {};
+      for (q = 0; q < 3; q++) {
+        var bw = px.refw[i * 3 + q], rv = first[px.refs[i * 3 + q]]; if (bw <= 0 || rv < 0) continue;
+        for (k = 0; k < 4; k++) { var w = base.weights[rv * 4 + k]; if (w > 0) { var j = base.joints[rv * 4 + k]; acc[j] = (acc[j] || 0) + w * bw; } }
+      }
+      var best = Object.keys(acc).map(function (key) { return [acc[key], +key]; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, 4), tot = 0;
+      best.forEach(function (b) { tot += b[0]; });
+      if (!tot) { for (k = 0; k < 4; k++) { J[i * 4 + k] = px.joints[i * 4 + k]; Wt[i * 4 + k] = px.weights[i * 4 + k]; } continue; }
+      for (k = 0; k < 4; k++) { J[i * 4 + k] = best[k] ? best[k][1] : 0; Wt[i * 4 + k] = best[k] ? best[k][0] / tot : 0; }
+    }
+    return { j: J, w: Wt };
   };
   function hairShading(m, k) {
     k = (k || 4.5).toFixed(2);
@@ -1397,8 +1419,12 @@
     if (shortsG) { this.addShell(shortsG, shorts, "shorts"); this.hideUnder(function (i) { return inShorts(i, 0.02); }); }
     if (this.gloveProxy) {
       // CC0 open-finger MMA glove proxy (corner-neutral colour), fitted to this hand
-      var gm = this.addProxy(this.gloveProxy, { color: app.glove || "#16181c", tint: true, tintGain: 1.9, roughness: 0.42 });
+      var gp = this.gloveProxy, gm = this.addProxy(gp, { color: app.glove || "#16181c", tint: true, tintGain: 1.9, roughness: 0.42, reweight: true });
       gm.name = "gloves"; this.gloveMesh = gm;
+      // body skin the glove sits on (its reference vertices) would poke through the cuff and palm when skinned
+      var cov = new Uint8Array(this.base.N), mhb = this.base.mh;
+      for (var gi = 0; gi < gp.refs.length; gi++) if (gp.refw[gi] > 0.2) cov[gp.refs[gi]] = 1;
+      this.hideUnder(function (i) { return cov[mhb[i]] === 1; });
       return;
     }
     // 4 oz open-finger gloves: palm, back and the first phalanx; knuckle padding on the back; wrist strap

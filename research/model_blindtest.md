@@ -14,8 +14,11 @@ with cached fits (18 minutes from scratch).
 
 **Integrity.**
 - The look-ahead guard never tripped.
-- The selftest passes. Outcomes from the 4th card on were flipped: no earlier prediction moved, and later ones did.
-- Corner symmetry holds to 4e-16 for the logistic models and stackers, and to 6e-8 for XGBoost.
+- The selftest passes. Outcomes from a middle card on were flipped: no earlier prediction moved, and later ones did.
+  The verification reran it over 14 cards on 23 harness-refit models and stackers (see the Verification log).
+- Corner symmetry holds to 4e-16 for the logistic models and stackers, and to 6e-8 for XGBoost. For the logistic
+  models this follows from the design: the harness now rebuilds the ML design from the corner-swapped table on
+  every load and stops unless it equals -X exactly (it does, max difference 0).
 - No 2026 fight was read, fit or scored.
 
 **Blind scoreboard** (log loss, 95% event-cluster CI; lower is better):
@@ -55,16 +58,19 @@ with cached fits (18 minutes from scratch).
    - The rejected v4.0.1 scores 0.6282 alone. Using it inside the stacks moved them by at most 0.0006 (first replay of
      this run).
 5. **ML v2 is the strongest new input. As an extra expert it is not yet proven.**
-   - Alone, `ml2_lr` beats `ml_lr` by -0.0177 [-0.0243, -0.0109] and ties the close.
+   - ML v2's CV-chosen model is its blend, `ml2`. It beats `ml_lr` by -0.0149 [-0.0224, -0.0071].
+   - Its logistic alone, `ml2_lr` (the JS page model, not CV's pick), beats `ml_lr` by -0.0177 [-0.0243, -0.0109]
+     and ties the close. Do not pick it over the blend on this window's ranking.
    - As an extra MoE expert: -0.0038 [-0.0085, +0.0013] on the no-line stack and -0.0018 [-0.0040, +0.0006] on the
      close stack. Both are n.s., and both are experiments chosen on this window.
 6. **Newcomers are still the gap.** These are the 258 fights where the less experienced man has 1-2 prior UFC fights.
    - Log loss: close 0.6051, `moe_close` 0.6006, no-line stack 0.6217 (+0.0166 [-0.0232, +0.0513] vs the close).
-   - The no-line stack is overconfident there (slope 0.81) while underconfident overall.
+   - The no-line stack is overconfident there (slope 0.81), while it is close to calibrated overall (slope 1.06).
    - A separate newcomer temperature (`moe_noline_nt`) and the pre-UFC-seeded Elo expert (`moe_noline_pre`) do not help:
      +0.0011 and +0.0005.
    - With 3-5 prior fights, the no-line stack beats the close by -0.0249 [-0.0607, +0.0091].
-7. **Every input is underconfident in 2024-25.** Calibration slopes are 1.4-1.8 for the single models and 1.11 for the
+7. **Every input is underconfident in 2024-25.** Calibration slopes are 1.36-1.79 for the feature, rating and
+   simulator models, 1.13-1.17 for the two Elos and 1.11 for the
    close. The stacks absorb most of it (1.06-1.23).
 
 **For the Nov 7 ledger (written tomorrow, before the 22:00 UTC lock).**
@@ -106,8 +112,13 @@ predictions to 5e-5 (logistic, LightGBM, XGBoost, 865 fights), and the logistic 
 **Look-ahead selftest** (`python3 tools/blindtest.py selftest --cards 6`). It replays the first six cards twice. The
 second time, every outcome dated on or after the 4th card (2024-02-10) is flipped: in the backtest labels, the ML table
 and the feature-LR table.
-- Result: all 40 predictions up to that card are bit-identical for the 13 refit models and stackers tested.
-- Predictions after it move, by up to 0.021 for `moe_noline`, so the flip took effect.
+- Result: all 40 predictions up to that card are bit-identical for the 13 models tested. Eight of them are the
+  harness's own refits (ml_lr, feat_lr, the two tree models, ml_blend, stack_elo_ml_mr, moe_noline, moe_close) and
+  five are stored inputs, which a label flip cannot move.
+- Predictions after it move, by up to 0.021 for `moe_noline`, so the flip took effect. The tree models refit
+  monthly, so at six cards their post-flip predictions do not move. The verification's 14-card run (flip at the
+  8th card, 2024-03-09) covers 23 harness refits, experiments included: 0 change up to the flip and movement
+  after it for every one of them (Verification log).
 - Stored upstream predictions (Elo, market rating, WHR, ML v2, the simulator) are covered by their own tools'
   truncation and flip tests. This selftest cannot change them.
 
@@ -115,6 +126,14 @@ and the feature-LR table.
 construction (antisymmetric logits without an intercept, mirrored training rows, both corner orders averaged), and the
 refit models and stackers are re-predicted with A and B swapped on every replayed fight: max |P(A,B) + P(B,A) - 1| is
 at most 4e-16 for the logistic models and stackers and 6e-8 for XGBoost (see the models table below).
+- For the logistic models and stackers that re-prediction negates X or flips the expert probabilities, so on its own
+  it only proves there is no intercept.
+- What makes it a real check is the design. On every load, `Ctx.ml()` rebuilds the ML design and the tree design
+  from the corner-swapped table and stops unless they equal -X and the flipped tree design exactly (both exact).
+- The feature LR and the trees are re-predicted from the swapped side matrices, which is a real swap.
+- The MoE gates are symmetric by construction (min, max, absolute gaps, averages).
+- Stored inputs from other tools cannot be swapped here. A free-intercept check on the window finds no model that has
+  absorbed the first-named corner's edge (Verification log).
 
 **Scoring.** Log loss (primary), Brier, accuracy (ties count half), ECE (10 mirrored bins) and the calibration slope
 (mirrored, no-intercept logistic of the outcome on the model's logit; 1 = calibrated, above 1 = underconfident). 95%
@@ -134,9 +153,12 @@ stat-line rates; the MoE stackers use the newest engine whose validation decisio
 method/round models S and SM; and the stackers: the `ml.json` pre-line stack (Elo + ML + market rating), the MoE
 stacker with `moe.json`'s chosen configuration in three information classes (no line, opening line, closing line),
 and experiments (marked) that add the WHR, method/round S or the pre-UFC Elo as experts, or recalibrate on the last
-two years. Two plugins in `tools/blindtest_plugins/`:
+two years. Three plugins in `tools/blindtest_plugins/`:
 - `ml2.py`: ML v2 (`tools/ml2.py`), its own stacks, and `moe_noline_ml2` / `moe_close_ml2`. It registers once
   `data/derived/ml2.json` exists.
+- `fedopen.py` (added by the verification): `moe_close_fed_open`, `moe_close`'s close-trained weights fed the
+  opening line at prediction time. Paired with `moe_open`, it measures what an early line pushed through
+  close-trained weights costs.
 - `noengine.py`: `moe_noline_noeng` / `moe_close_noeng`, the MoE stackers without the simulator. These are the
   controls for the engine's contribution.
 
@@ -532,9 +554,18 @@ scratch ledger with synthetic results. The first real file (Nov 7 card) is to be
      nothing.
    - ML v2 refits monthly and the trees refit monthly (CPU on the shared box). Everything else that learns refits
      before every card.
-3. **Unverified inputs.** No verifier has signed off on `ratings.json` (4:44 pm build, now on preufc's strict
-   `net_elo_h`), `preufc.json` (verifier relaunched) or ML v2 (`ml2.json`, 4:52 pm). Their rows are scored here as
-   published. The production stack (`moe_*`, `blindtest_stack.json`) uses none of them.
+3. **Input verification status (rechecked 8:40 pm).**
+   - ML v2 (`research/model_ml2.md`, verified about 8 pm) and pre-UFC (`research/model_preufc.md`, verified about
+     7:55 pm) now carry verification logs. Their rebuilt files (ml2.json 7:51 pm, preufc.json 7:51 pm) give the
+     replay's predictions to the stored 4 decimals, so their rows here stand.
+   - `ratings.json` is still under review (a review section was added at 8:01 pm). Its predictions are unchanged
+     from the 4:44 pm build the replay used.
+   - The production stack (`moe_*`, `blindtest_stack.json`) uses none of these three.
+   - **Engine v4 carries one known contamination.** Its EM judging weights were fit on cards through 2026-10
+     (docs/BACKLOG.md, "Known contamination"). Those cards include this window, as aggregate round-scoring weights
+     only, with no per-fight outcomes. The `engine_v*` rows and the engine expert inside the stacks inherit it. The
+     no-engine controls show the engine adds nothing measurable (+0.0005 to +0.0009), so no stack result depends
+     on it.
 4. **Universe.** These are backtest fights: both men need at least one prior UFC fight, so debuts are excluded, and
    draws are left out of the winner metrics. The 11 fights without a closing line are outside the common set.
    - The forward ledger must handle debutants with fallbacks (line, else Elo with a 1500 debut rating) that were never
