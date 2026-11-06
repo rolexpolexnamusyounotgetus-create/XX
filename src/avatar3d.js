@@ -711,7 +711,7 @@
           "  float g2fw = length(fwidth(su * 420.0)); float g2 = mix(0.5, vn(su * 420.0), 1.0 - smoothstep(0.3, 1.0, g2fw));\n" +
           "  float edge = smoothstep(0.0, 0.7, vMask.x);\n" +
           "  float grain = 0.55 + 0.25 * smoothstep(0.25, 0.75, hair) + 0.2 * smoothstep(0.3, 0.7, g2);\n" +
-          "  float stub = bd * edge * grain * (0.88 + 0.12 * hair3);\n" +
+          "  float stub = bd * edge * grain;\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, uBeardCol * (0.62 + 0.5 * g2 * hair), clamp(stub * (0.55 + 0.45 * bd) * 1.1, 0.0, 0.93));\n" +
           "  float sc = vMask2.x * uScalp; float sst = sc * (0.55 + 0.45 * smoothstep(0.2, 0.9, hair));\n" +
           "  diffuseColor.rgb = mix(diffuseColor.rgb, uHairCol * 0.8, clamp(sst * 0.85, 0.0, 0.9));\n" +

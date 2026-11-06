@@ -749,6 +749,8 @@ def main():
             "D_matcher_disagreements": log["D_match_disagrees_with_N"][:50],
             "N_orientation_check": log["N_orientation_check"],
             "D_unmatched": len(unmatched_D), "D_unmatched_examples": unmatched_D[:40],
+            "D_duplicate_fight": log["D_duplicate_fight"],
+            "D_judge_order_inconsistent": log["D_judge_order_inconsistent"],
             "N_fights_not_in_ufcstats": log["N_fight_not_in_ufcstats"],
         },
         "report_dev": report,
@@ -914,6 +916,32 @@ def summarize(rounds, scores, fights, merged, dev, jname):
                                             "agree_2019_2023": round(float((np.sign(em[nz2]) == maj[nz2])[
                                                 (Rs["year"].to_numpy()[nz2] >= 2019) &
                                                 (Rs["year"].to_numpy()[nz2] <= 2023)].mean()), 4)}
+    # what goes with a 10-8 (judge rounds with stats and known deductions)
+    Sk = S[S["raw_known"] & S["has_stats"]].join(R[["A_kd", "B_kd", "A_ctrl", "B_ctrl", "A_sig_l", "B_sig_l"]],
+                                                 on="ri")
+    w = np.sign(Sk["mA"])
+    won = Sk[w != 0]
+    wsign = np.sign(won["mA"])
+    kd_adv = (wsign * (won["A_kd"] - won["B_kd"])) >= 1
+    wide = won["mA"].abs() >= 2
+    rep["ten_eight_context"] = {
+        "judge_rounds": int(len(won)),
+        "share_of_10_8s_with_winner_kd_advantage": round(float(kd_adv[wide].mean()), 4),
+        "p_10_8_given_winner_kd_advantage": round(float(wide[kd_adv].mean()), 4),
+        "p_10_8_given_no_kd_advantage": round(float(wide[~kd_adv].mean()), 4),
+        "median_sig_margin_in_10_8": float(np.median((wsign * (won["A_sig_l"] - won["B_sig_l"]))[wide])),
+        "median_sig_margin_in_10_9": float(np.median((wsign * (won["A_sig_l"] - won["B_sig_l"]))[~wide])),
+    }
+    # judge agreement by how lopsided the stats are (EM logit from docs/BACKLOG.md, 3-judge rounds)
+    Rb = Rs.assign(em=em, maj=maj)
+    Rb = Rb[np.isfinite(Rb["em"])]
+    bins = [0, 0.5, 1, 2, 3, 99]
+    Rb["bin"] = pd.cut(Rb["em"].abs(), bins, right=False, labels=["0-0.5", "0.5-1", "1-2", "2-3", "3+"])
+    rep["agreement_by_em_margin"] = {
+        str(b): {"rounds": int(len(g)),
+                 "majority_agrees_with_em": round(float((np.sign(g["em"]) == g["maj"]).mean()), 4),
+                 "unanimous_winner": round(float(((g["nA"] == 3) | (g["nB"] == 3)).mean()), 4)}
+        for b, g in Rb.groupby("bin", observed=True)}
     # judge-level: rounds per judge
     per = S.groupby("jid").size()
     rep["judges_with_100_rounds"] = int((per >= 100).sum())

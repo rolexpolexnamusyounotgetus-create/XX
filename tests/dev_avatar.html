@@ -57,6 +57,11 @@ APP.slice(2).forEach(function (app, i) {
 });
 DEV.ready = waitAvatars().then(function (ok) { L("avatars ready: " + ok); DEV.ok = ok; return ok; });
 
+/* Render through the arena (post-processing, and its renderer.info reset that lets skeletons update). */
+DEV.shoot = function () {
+  var c = show.arena.camera; c.position.copy(cam.position); c.quaternion.copy(cam.quaternion); c.fov = cam.fov; c.aspect = W / H; c.updateProjectionMatrix();
+  show.arena.render();
+};
 DEV.lineupActors = function () { return [show.A, show.B, extras[0], extras[1], show.R].filter(Boolean); };
 DEV.pose = function (actors, mode, yaw, dt) {
   actors.forEach(function (a, i) {
@@ -79,7 +84,7 @@ DEV.lineup = function (yaw, mode) {
   var actors = DEV.lineupActors();
   DEV.pose(actors, mode || "walk", yaw || 0);
   cam.fov = 44; cam.aspect = W / H; cam.position.set(0, 1.2, 3.75); cam.lookAt(0, 0.95, 0); cam.updateProjectionMatrix();
-  renderer.render(scene, cam);
+  DEV.shoot();
 };
 DEV.head = function (i, yaw, mode) {
   var actors = DEV.lineupActors(), a = actors[i];
@@ -88,7 +93,7 @@ DEV.head = function (i, yaw, mode) {
   hp.y += 0.09;
   var d = 0.95, ang = (yaw || 0) + (Q.get("headAng") ? +Q.get("headAng") : 0.35);
   cam.fov = 26; cam.position.set(hp.x + Math.sin(ang) * d, hp.y + 0.02, hp.z + Math.cos(ang) * d); cam.lookAt(hp.x, hp.y - 0.02, hp.z); cam.updateProjectionMatrix();
-  renderer.render(scene, cam);
+  DEV.shoot();
 };
 DEV.hideExtras = function (hide) { extras.forEach(function (a) { a.rig.root.visible = !hide && !a.avatar; if (a.avatar) a.avatar.group.visible = !hide; }); };
 DEV.live = function (want) {

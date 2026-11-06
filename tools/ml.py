@@ -1797,13 +1797,31 @@ def stacking(R):
         pt[ok] = 1 / (1 + np.exp(-Zall[ok] @ w))
         key = "stack:" + name
         P[key] = pt
+        # paired event-bootstrap differences on the same test rows: stack - ml, stack - its strongest single input
+        g = df.loc[te, "event"].to_numpy()
+        yt = y[te]
+        lt = lambda p_: -(yt * np.log(np.clip(p_, 1e-6, 1)) + (1 - yt) * np.log(np.clip(1 - p_, 1e-6, 1)))
+        Ls = lt(pt[te])
+        Lml = lt(P["ml"][te])
+        singles = {k: lt(P[k][te]).mean() for k in ks}
+        best_single = min(singles, key=singles.get)
+        Lb = lt(P[best_single][te])
+        nb = max(300, C["args"].boot // 4)
+        bs = cluster_boot(g, lambda idx: np.array([Ls[idx].mean() - Lml[idx].mean(), Ls[idx].mean() - Lb[idx].mean()]), nb)
         out["variants"].append({"name": name, "inputs": ks, "weights": [round(float(v), 4) for v in w],
                                 "n_oof": int(tr.sum()), "oof_loyo_log_loss": round(log_loss(lo[tr], y[tr]), 5),
+                                "oof_ml_same_rows": round(log_loss(P["ml"][tr], y[tr]), 5),
                                 "n_test": int(te.sum()), "test": win_metrics(pt[te], y[te]),
+                                "test_singles": {k: round(float(v), 5) for k, v in singles.items()},
+                                "test_ml_same_rows": round(float(Lml.mean()), 5),
+                                "test_minus_ml": [round(float(Ls.mean() - Lml.mean()), 5), ci(bs[:, 0])],
+                                "test_best_single": best_single,
+                                "test_minus_best_single": [round(float(Ls.mean() - Lb.mean()), 5), ci(bs[:, 1])],
                                 "test_first_input_alone": win_metrics(P[ks[0]][te], y[te])})
-        log("stack %-40s w=%s OOF-LOYO %.4f | test n=%d ll %.4f (first input alone %.4f)"
-            % (name, out["variants"][-1]["weights"], out["variants"][-1]["oof_loyo_log_loss"], te.sum(),
-               out["variants"][-1]["test"]["log_loss"], out["variants"][-1]["test_first_input_alone"]["log_loss"]))
+        v_ = out["variants"][-1]
+        log("stack %-40s w=%s OOF-LOYO %.4f | test n=%d ll %.4f; minus ml %+.4f %s; minus best single (%s) %+.4f %s"
+            % (name, v_["weights"], v_["oof_loyo_log_loss"], te.sum(), v_["test"]["log_loss"], v_["test_minus_ml"][0],
+               v_["test_minus_ml"][1], best_single, v_["test_minus_best_single"][0], v_["test_minus_best_single"][1]))
     # rows missing an input of a pre-line stack (e.g. no market rating yet) fall back to the elo+ml stack
     base_key = "stack:elo+ml"
     for v in out["variants"]:
@@ -1881,6 +1899,32 @@ def evaluate(R):
             mo[k]["minus_close"] = round(float(d.mean()), 5)
             mo[k]["minus_close_ci95"] = ci(cluster_boot(gs, lambda idx: d[idx].mean(), max(300, nb // 4)))
         out["test_market_subset"] = {"n": int(sub.sum()), "models": mo}
+    # diagnostic only (never used for a choice): the calibration slope a test-fit recalibration would apply, and
+    # what it would be worth. Shows how much of the 2024+ gap is confidence rather than ranking.
+    diag = {}
+    for k in ("lr", "ml", "elo", "lgb"):
+        z = to_logit(P[k][test_bt])
+        a_ = float(stack_fit(z[:, None], yt, lam=0.0)[0])
+        diag[k] = {"test_fit_slope": round(a_, 3), "log_loss_if_rescaled": round(log_loss(1 / (1 + np.exp(-a_ * z)), yt), 5),
+                   "log_loss": round(log_loss(P[k][test_bt], yt), 5)}
+    for k in ("mkt_close", "mkt_open"):
+        if k in P:
+            m_ = test_bt & ~np.isnan(P[k])
+            z = to_logit(P[k][m_])
+            a_ = float(stack_fit(z[:, None], y[m_], lam=0.0)[0])
+            diag[k] = {"test_fit_slope": round(a_, 3), "n": int(m_.sum())}
+    out["oracle_slope_diagnostic"] = diag
+    # by-year view of the tuning and test periods (who gets better when)
+    by_year = {}
+    for Y in sorted(set(df.loc[oof_bt | test_bt, "year"])):
+        m_ = (oof_bt | test_bt) & (df["year"].to_numpy() == Y)
+        row = {"n": int(m_.sum())}
+        for k in ("elo", "lr", "lgb", "ml", "mkt_open", "mkt_close"):
+            if k in P:
+                mm = m_ & ~np.isnan(P[k])
+                row[k] = round(log_loss(P[k][mm], y[mm]), 4) if mm.sum() else None
+        by_year[str(Y)] = row
+    out["by_year"] = by_year
     # calibration tables (test)
     out["calibration_test"] = {k: calib_table(P[k][test_bt], yt) for k in ("elo", "lr", "lgb", "ml", "ml_iso", rec)
                                if k in P}

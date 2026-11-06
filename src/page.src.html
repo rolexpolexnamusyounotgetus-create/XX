@@ -618,7 +618,8 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; paddin
         <button type="button" class="btn ghost" id="btnRun">Run again</button>
       </div>
       <div style="display:grid;gap:6px">
-        <p class="sub" id="runStatus" aria-live="polite">Waiting for the first frame</p>
+        <p class="sub" id="runStatus">Waiting for the first frame</p>
+        <p class="vh" id="tallyLive" aria-live="polite"></p>
         <div class="progress" role="progressbar" aria-labelledby="runStatus" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="prog"><i id="progBar"></i></div>
       </div>
       <div class="splitrow">

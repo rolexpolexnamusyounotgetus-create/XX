@@ -1233,6 +1233,10 @@ def run_dims(D, DP, until=None, record=True, dims=None):
                 bl = math.log((bc + 50 * prior_rate[dim]) / (be - bc + 50 * (1 - prior_rate[dim])))
             else:
                 bl = math.log((bc + 20 * prior_rate[dim]) / (be + 20))
+            # pre-fight expected rate in natural units for both directions (A on B, B on A), stats or not
+            for s_, (att, dfn) in enumerate(((S[0], S[1]), (S[1], S[0]))):
+                e_ = bl + att[0] - dfn[2]
+                pred[i, s_, j] = 1.0 / (1.0 + math.exp(-e_)) if kind == "bin" else math.exp(e_)
             o = obs[dim][i]
             if np.isnan(o[0, 0]):
                 continue
@@ -1248,14 +1252,12 @@ def run_dims(D, DP, until=None, record=True, dims=None):
                     mu = ex * pr
                     sc = (k - mu) / size          # size = overdispersion factor phi for accuracy
                     info = ex * pr * (1 - pr) / size
-                    pred[i, s_, j] = pr
                     lls += float(-(k * math.log(pr + 1e-12) + (ex - k) * math.log(1 - pr + 1e-12))
                                  + (k * math.log(k / ex + 1e-12) + (ex - k) * math.log(1 - k / ex + 1e-12)))
                 else:
                     if ex <= 0:
                         continue
                     mu = math.exp(eta) * ex
-                    pred[i, s_, j] = mu / ex
                     if kind == "nb":
                         sc = (k - mu) * size / (size + mu)
                         info = mu * size / (size + mu)
@@ -1575,7 +1577,7 @@ def specs(quick):
                        ("th_sd", [0.3, 0.6, 1.0, 2.0, 1e10]), ("w_fin", [0.8, 1.0, 1.25, 1.5]),
                        ("s0", [0.5, 0.8, 1.0, 1.3]), ("tau_y", [0.05, 0.1, 0.2, 0.3]),
                        ("gam", [0.0, 0.1, 0.2, 0.3]), ("kappa", [0.8, 0.9, 1.0, 1.1, 1.2])]})
-    whr_core = [("w2", [0.02, 0.05, 0.1, 0.2]), ("vf", [0.0, 0.02, 0.05]), ("s0", [0.5, 0.8, 1.1])]
+    whr_core = [("w2", [0.02, 0.05, 0.1, 0.2]), ("vf", [0.0, 0.02, 0.05]), ("s0", [0.5, 0.8, 1.1, 1.5])]
     S.append({"name": "whr", "kind": "whr", "family": "WHR",
               "label": "Whole-History Rating (Bayesian Bradley-Terry, Gaussian random-walk skill, history re-solved "
                        "before every fight day), binary outcomes",
@@ -1833,6 +1835,7 @@ def main():
     ap.add_argument("--skip-whr", action="store_true", help="leave the WHR systems out (fast run)")
     ap.add_argument("--out", default=OUT_JSON)
     ap.add_argument("--no-test", action="store_true", help="smoke run: never compute or print 2024+ metrics")
+    ap.add_argument("--no-tune", action="store_true", help="smoke run: default parameters, no grid search")
     args = ap.parse_args()
     t0 = time.time()
     logs = []
@@ -1869,7 +1872,7 @@ def main():
             pass
         ts = time.time()
         log("tuning %s (%s)" % (s["name"], s["label"]))
-        if s["grid"]:
+        if s["grid"] and not args.no_tune:
             passes = 1 if args.quick else (2 if s["kind"] == "whr" else 3)
             best, r, h = coord_descent(s["kind"], P0, s["grid"], pool, passes=passes, log=log,
                                        coarse=s.get("coarse", False))
@@ -1879,7 +1882,7 @@ def main():
         log("  -> %s tune log loss %.5f (2019-21 %.5f, 2022-23 %.5f) [%.0fs]"
             % (s["name"], r["tune"], r["in_tr"], r["in_va"], time.time() - ts))
         # time-ordered check: choose on 2019-2021 only, score the choice on 2022-2023
-        if s["grid"] and s["kind"] != "whr" and not args.quick:
+        if s["grid"] and s["kind"] != "whr" and not args.quick and not args.no_tune:
             b2, r2, _ = coord_descent(s["kind"], P0, s["grid"], pool, passes=2, objective="in_tr",
                                       log=lambda *_: None)
             inner[s["name"]] = {"chosen_on_2019_2021": {k: r5(v, 5) if isinstance(v, float) else v
@@ -1888,7 +1891,10 @@ def main():
             log("  time-ordered check: tuned on 2019-21 only -> 2022-23 log loss %.5f" % r2["in_va"])
     # dimensional ratings
     log("tuning dimensional ratings (predictive likelihood of each stat, 2019-2023)")
-    DP, dim_hist = dims_tune(D, args.quick, log)
+    if args.no_tune:
+        DP, dim_hist = {k: dict(v) for k, v in DIM_DEFAULT.items()}, {}
+    else:
+        DP, dim_hist = dims_tune(D, args.quick, log)
     if pool:
         pool.close()
 
@@ -1914,19 +1920,35 @@ def main():
     best_l2, best_cv = None, 9
     Xd = np.nan_to_num(adv)
     cv_table = {}
-    dims_oof = None
-    for l2 in (0.1, 1.0, 10.0, 100.0, 1000.0):
-        cvll, oof = cv_lr(D, Xd[it], l2, it)
-        cv_table[l2] = cvll
-        if cvll < best_cv:
-            best_l2, best_cv, dims_oof = l2, cvll, oof
+    # expected-rate differentials in natural units keep the attacker-vs-defender interaction that the log
+    # advantages lose ((off_A - def_B) - (off_B - def_A) is just net skill A minus net skill B)
+    Xr = np.nan_to_num(dpred[:, 0, :] - dpred[:, 1, :])
+    rsd = Xr[it].std(0) + 1e-9
+    Xr = Xr / rsd
+    asd = Xd[it].std(0) + 1e-9
+    Xa = Xd / asd
+    feature_sets = {"log_adv": Xa, "rate_diff": Xr, "both": np.c_[Xa, Xr]}
+    dims_oof, best_fs = None, None
+    for fs, Xf in feature_sets.items():
+        for l2 in (0.3, 1.0, 3.0, 10.0, 30.0, 100.0, 300.0):
+            cvll, oof = cv_lr(D, Xf[it], l2, it)
+            cv_table["%s|%g" % (fs, l2)] = cvll
+            if cvll < best_cv:
+                best_l2, best_cv, dims_oof, best_fs = l2, cvll, oof, fs
+    Xd = feature_sets[best_fs]
     bd = fit_lr(Xd[it], ytr, best_l2)
     p_dims = expit(Xd @ bd)
     preds["dims"] = p_dims
-    log("dims winner model: CV(2020-23) log loss %.5f at l2=%g; coefficients %s"
-        % (best_cv, best_l2, dict(zip(DIMS, np.round(bd, 3)))))
-    dims_model = {"l2": best_l2, "cv_log_loss": best_cv, "cv_table": cv_table,
-                  "coef": dict(zip(DIMS, [float(b) for b in bd]))}
+    fnames = {"log_adv": ["adv_" + d for d in DIMS], "rate_diff": ["rate_" + d for d in DIMS],
+              "both": ["adv_" + d for d in DIMS] + ["rate_" + d for d in DIMS]}[best_fs]
+    log("dims winner model: features %s, CV(2020-23) log loss %.5f at l2=%g; standardized coefficients %s"
+        % (best_fs, best_cv, best_l2, dict(zip(fnames, np.round(bd, 3)))))
+    scale = {"adv_" + d: float(asd[j]) for j, d in enumerate(DIMS)}
+    scale.update({"rate_" + d: float(rsd[j]) for j, d in enumerate(DIMS)})
+    dims_model = {"features": best_fs, "l2": best_l2, "cv_log_loss": best_cv, "cv_table": cv_table,
+                  "coef_standardized": dict(zip(fnames, [float(b) for b in bd])),
+                  "feature_sd_2019_2023": {k: scale[k] for k in fnames},
+                  "coef": {k: float(b) / scale[k] for k, b in zip(fnames, bd)}}
     tune_res["dims"] = {"tune": score(D, p_dims, it), "cv": best_cv}
 
     # ------------------------------------------------------------------ stacking (time-ordered CV, 2019-2023)

@@ -238,7 +238,7 @@
         if (!self.items.length) return;
         self.setActive(clamp(self.active + (e.key === "ArrowDown" ? 1 : -1), 0, self.items.length - 1));
       } else if (e.key === "Enter") {
-        if (self.open && self.active >= 0) { e.preventDefault(); self.choose(self.items[self.active].slug); }
+        if (self.open && self.items.length) { e.preventDefault(); self.choose(self.items[Math.max(0, self.active)].slug); }
       } else if (e.key === "Escape") {
         if (self.open) { e.preventDefault(); self.show(false); self.reset(); }
       } else if (e.key === "Home" && self.open && self.items.length && !input.value) { self.setActive(0); }
@@ -295,6 +295,7 @@
       var id = "opt" + side + "-" + i, li = el("li", "opt" + (r.slug === mine ? " cur" : ""));
       li.id = id; li.setAttribute("role", "option"); li.setAttribute("aria-selected", "false"); li.dataset.slug = r.slug;
       var nm = el("span", "o-name", r.name); if (r.nick) { nm.appendChild(document.createTextNode(" ")); nm.appendChild(el("span", "o-nick", "“" + r.nick + "”")); }
+      nm.appendChild(el("span", "vh", ", " + r.div));
       li.appendChild(nm); li.appendChild(el("span", "o-elo", r.elo ? "Elo " + r.elo : ""));
       li.appendChild(el("span", "o-meta", [r.rec ? r.rec + " UFC" : null, r.last ? "last: " + r.last : null, r.slug === theirs ? "in the other corner" : null].filter(Boolean).join(" · ")));
       list.appendChild(li); self.items.push({ id: id, slug: r.slug });
@@ -751,6 +752,7 @@
     $("runStatus").textContent = done ? nf.format(agg.n) + " fights · " + scenarioName() + " · " + (worker ? "background thread" : "main thread")
       : "Simulated " + nf.format(agg.n) + " of " + nf.format(N_TALLY) + " fights";
     setProgress(agg.n / N_TALLY);
+    if (done) $("tallyLive").textContent = "Tally finished: " + nameOf("A") + " " + pct(pA, 0) + ", " + nameOf("B") + " " + pct(pB, 0) + ", draw " + pct(pD, 0) + ".";
     drawBins(agg); drawRounds(agg); renderMethodTable(agg); renderAvgTable(agg);
     stack.engine = pA / Math.max(1e-9, pA + pB); stack.engineN = agg.n;
     renderStack();

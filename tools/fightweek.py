@@ -440,10 +440,12 @@ COUNTRIES = {
     "VUT": ("VU", "Vanuatu", [], "Pacific/Efate", "OC"),
     "FSM": ("FM", "Micronesia", [], "Pacific/Pohnpei", "OC"),
     "GUM": ("GU", "Guam", [], "Pacific/Guam", "OC"),
+    "MNP": ("MP", "Northern Mariana Islands", ["saipan"], "Pacific/Saipan", "OC"),
     "ZAF": ("ZA", "South Africa", [], "Africa/Johannesburg", "AF"),
     "NGA": ("NG", "Nigeria", [], "Africa/Lagos", "AF"),
     "CMR": ("CM", "Cameroon", [], "Africa/Douala", "AF"),
-    "COD": ("CD", "DR Congo", ["democratic republic of the congo", "congo kinshasa", "dr congo", "drc"],
+    "COD": ("CD", "DR Congo", ["democratic republic of the congo", "congo kinshasa", "dr congo", "drc",
+                               "congo the democratic republic of the"],
             "Africa/Kinshasa", "AF"),
     "COG": ("CG", "Republic of the Congo", ["congo", "congo brazzaville"], "Africa/Brazzaville", "AF"),
     "AGO": ("AO", "Angola", [], "Africa/Luanda", "AF"),
@@ -1602,8 +1604,8 @@ def crowd_status(info, event_date, venue, fulltext):
     limited = bool(re.search(r"limited (?:number of )?(?:fans|crowd|capacity|attendance|audience)|reduced capacity|"
                              r"capacity (?:was |of the arena was )?(?:limited|capped|reduced)|socially distanced|"
                              r"\d+ ?(?:percent|%) capacity|limited fans", t))
-    covid = dt.date(2020, 3, 14) <= event_date <= dt.date(2021, 4, 23)
-    if att.startswith(("none", "0", "no ", "n/a")) and covid:
+    covid = dt.date(2020, 3, 14) <= event_date <= dt.date(2021, 12, 31)
+    if att.startswith(("none", "no ")) or "closed doors" in att or re.match(r"^0\b", att):
         return "none", "infobox attendance %r" % info.get("Attendance")
     if covid and closed and not limited:
         return "none", "article text"

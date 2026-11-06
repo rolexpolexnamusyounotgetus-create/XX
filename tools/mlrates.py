@@ -512,13 +512,15 @@ def glm_design(X, mean, sd, pairs):
     return np.hstack(cols)
 
 
-def glm_fit(Z, y, e, off, kind, lam, w_extra=None, iters=30, init=None, tol=1e-6):
+def glm_fit(Z, y, e, off, kind, lam, w_extra=None, iters=30, init=None, tol=1e-6, pen_mult=None):
     """Ridge-penalised GLM by IRLS. Poisson: E[y] = e exp(off + b0 + Z b); binomial: y ~ Bin(e, sigm(off + b0 + Z b)).
     The intercept b0 is unpenalised. Returns (b0, b)."""
     n, p = Z.shape
     A = np.hstack([np.ones((n, 1)), Z])
     beta = np.zeros(p + 1) if init is None else np.concatenate([[init[0]], init[1]])
     pen = np.full(p + 1, lam)
+    if pen_mult is not None:
+        pen[1:] *= pen_mult
     pen[0] = 0.0
     for _ in range(iters):
         eta = off + A @ beta
@@ -786,9 +788,25 @@ def model_eta(J, X, BASEv):
 # ------------------------------------------------------------------ fit pipeline
 OOF_YEARS = [2020, 2021, 2022, 2023]          # time-ordered CV folds inside the training period
 ES_SPLIT = (2017, (2018, 2019))               # round / epoch selection: train <= 2017, stop on 2018-2019
-GLM_LAMS = [10.0, 50.0, 250.0, 1250.0]
+GLM_LAMS = [50.0, 250.0, 1250.0, 6250.0, 31250.0, 156250.0]
 GLM_TOP = 12                                   # interactions among the top-k GBM features of each target
-MLP_CFG = dict(hidden=(96, 48), drop=0.15, wd=1e-3, lr=3e-3)
+GLM_CORE_PEN = 0.02                            # penalty multiplier for each target's own mechanistic features
+GLM_CORE = {"d_att": ["e_d", "c_d", "xo_d", "yd_d", "e_dist"], "c_att": ["e_c", "c_c", "xo_c", "yd_c", "e_cl"],
+            "g_att": ["e_g", "c_g", "xo_g", "yd_g", "e_grX", "e_grY"], "h_att": ["e_h", "c_h", "xo_h", "yd_h"],
+            "b_att": ["e_b", "c_b", "xo_b", "yd_b"], "l_att": ["e_l", "c_l", "xo_l", "yd_l"],
+            "td_att": ["e_tda", "c_tda", "xo_tda", "yd_tda"], "sub_att": ["e_sub", "c_sub", "c_subm", "xo_sub", "yd_sub"],
+            "rev": ["e_rev", "c_rev", "xo_rev", "yd_rev"], "ctrl": ["e_ctrl", "c_ctrl", "xo_ctrl", "yd_ctrl", "e_grX"],
+            "acc_h": ["c_ah", "xo_ah", "yd_ah"], "acc_b": ["c_ab", "xo_ab", "yd_ab"], "acc_l": ["c_al", "xo_al", "yd_al"],
+            "acc_d": ["c_ad", "xo_ad", "yd_ad"], "acc_c": ["c_ac", "xo_ac", "yd_ac"], "acc_g": ["c_ag", "xo_ag", "yd_ag"],
+            "td_acc": ["c_tdp", "xo_tdp", "yd_tdp"], "kd_h": ["c_kd", "xo_kd", "yd_kd"]}
+
+
+def glm_pen(t, n_pairs):
+    pm = np.ones(len(FNAMES) + n_pairs)
+    for nm in GLM_CORE[TNAMES[t]]:
+        pm[FI[nm]] = GLM_CORE_PEN
+    return pm
+MLP_CFG = dict(hidden=(128,), drop=0.4, wd=3e-2, lr=1e-3)   # chosen on the round-selection split (side run)
 MLP_SEEDS = 2                                  # seeds for round selection and the final fits (+1)
 FOLD_MLP_SEEDS = 1                             # seeds per CV fold (CPU budget)
 
@@ -907,8 +925,9 @@ def cmd_fit(args):
         Za = glm_design(X[a], mean_es, sd_es, pairs_t[t])
         Zb = glm_design(X[b], mean_es, sd_es, pairs_t[t])
         devs, init = [], None
-        for lam in sorted(GLM_LAMS, reverse=True):
-            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam, iters=15, init=init)
+        for lam in sorted(GLM_LAMS, reverse=True):     # strongest first, warm-started
+            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam, iters=15, init=init,
+                             pen_mult=glm_pen(t, len(pairs_t[t])))
             init = (b0, bb)
             devs.append((target_dev(t, Y[b, t], e[b], OFF[b, t] + b0 + Zb @ bb).mean(), lam))
         lam_t.append(min(devs)[1])
@@ -927,7 +946,8 @@ def cmd_fit(args):
             a = trm & (e > 0)
             Za = glm_design(X[a], mean, sd, pairs_t[t])
             Zt = glm_design(X[tem], mean, sd, pairs_t[t])
-            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam_t[t], iters=15)
+            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam_t[t], iters=15,
+                             pen_mult=glm_pen(t, len(pairs_t[t])))
             oof["glm"][tem, t] = b0 + Zt @ bb
             bst, _ = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], rounds[t])
             oof["gbm"][tem, t] = bst.predict(X[tem], raw_score=True)
@@ -966,6 +986,9 @@ def cmd_fit(args):
     report["cv_oof_2020_2023"] = cv_table
 
     # ---------------- 5) fit on a period, export JSON; dev = 2010-2023, prod = 2010-2025
+    # weights below 1e-3 are set to 0 and that component is left out of the export for the target
+    stack_r = [{k: (round(v, 4) if v >= 1e-3 else 0.0) for k, v in w.items()} for w in stack]
+
     def fit_period(mask, label, scale_rounds):
         mean = X[mask].mean(0)
         sd = X[mask].std(0) + 1e-6
@@ -974,13 +997,14 @@ def cmd_fit(args):
             e = EX[:, t]
             a = mask & (e > 0)
             Za = glm_design(X[a], mean, sd, pairs_t[t])
-            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam_t[t], iters=20)
+            b0, bb = glm_fit(Za, Y[a, t], e[a], OFF[a, t], TARGETS[t][1], lam_t[t], iters=20,
+                             pen_mult=glm_pen(t, len(pairs_t[t])))
             glm.append({"b0": b0, "b": bb, "pairs": pairs_t[t]})
             nr = int(round(rounds[t] * scale_rounds))
             bst, _ = gbm_fit(t, X[a], Y[a, t], e[a], OFF[a, t], nr)
             gbm.append(gbm_trees(bst))
         nets = []
-        for s in range(MLP_SEEDS + 1):
+        for s in range(MLP_SEEDS):
             nets.append(mlp_train(X[mask], Y[mask], EX[mask], OFF[mask], seed=300 + s, task_w=tw,
                                   fixed_epochs=mlp_epochs, **MLP_CFG))
         J = {"meta": {"name": "mlrates", "label": label, "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
@@ -993,8 +1017,10 @@ def cmd_fit(args):
              "fc": FC, "fnames": FNAMES, "targets": TNAMES, "kinds": [k for _, k, _, _ in TARGETS],
              "base_keys": [BASE_KEY[t] for t in TNAMES],
              "glm_mean": sig(mean, 10), "glm_sd": sig(sd, 10),
-             "glm": [export_glm(g) for g in glm], "gbm": [export_trees(tr) for tr in gbm],
-             "mlp": [export_mlp(n) for n in nets], "stack": [{k: round(v, 4) for k, v in w.items()} for w in stack]}
+             "glm": [export_glm(g) if w["glm"] >= 1e-3 else None for g, w in zip(glm, stack_r)],
+             "gbm": [export_trees(tr) if w["gbm"] >= 1e-3 else [] for tr, w in zip(gbm, stack_r)],
+             "mlp": [export_mlp(n) for n in nets] if any(w["mlp"] >= 1e-3 for w in stack_r) else None,
+             "stack": stack_r}
         log("  fit %s done (%.0fs)" % (label, time.time() - t_start))
         return J
 

@@ -1338,6 +1338,11 @@
     W.dirty = true;
   };
 
+  Arena.prototype.resetWear = function () {
+    var W = this.wear; W.ctx.save(); W.ctx.globalCompositeOperation = "source-over"; W.ctx.fillStyle = "#000"; W.ctx.fillRect(0, 0, W.c.width, W.c.height); W.ctx.restore();
+    W.tex.needsUpdate = true; W.dirty = false; this._blood = 0;
+  };
+
   // feet, knees and bodies on the canvas: contact shadows every frame, wear a few times a second
   var _v = new T.Vector3();
   Arena.prototype.trackActors = function () {
@@ -1406,6 +1411,7 @@
     // boards: names from the script, round and clock from the show
     if (show && show.script && show.script !== this._lastScript) {
       this._lastScript = show.script;
+      this.resetWear();
       var inf = infoFromScript(show.script);
       if (inf) this.setMatchup(inf);
     }
@@ -1419,6 +1425,11 @@
     }
     // canvas wear builds through the fight
     var W = this.wear;
+    if (this._blood && show && show.impact) {
+      var I = show.impact, nb = 2 + Math.floor(r() * (this._blood >= 0.45 ? 6 : 3));
+      for (var bi = 0; bi < nb; bi++) this.mark(I.x + (r() - 0.5) * 0.7, I.z + (r() - 0.5) * 0.7, "blood", 0.3 + r() * 0.5);
+      this._blood = 0;
+    }
     if (ph === "live" || ph === "finish") {
       W.stampT += dt;
       if (W.stampT > 0.18) {
@@ -1443,11 +1454,7 @@
 
   Arena.prototype.burst = function (lvl) {
     this.flashLevel = Math.max(this.flashLevel, lvl);
-    var sh = this.show || (root.VGSim && root.VGSim.show), I = sh && sh.impact;
-    if (I && lvl >= 0.25 && Math.random() < 0.65) {
-      var n = 2 + Math.floor(Math.random() * (lvl >= 0.45 ? 6 : 3));
-      for (var i = 0; i < n; i++) this.mark(I.x + (Math.random() - 0.5) * 0.7, I.z + (Math.random() - 0.5) * 0.7, "blood", 0.3 + Math.random() * 0.5);
-    }
+    if (lvl >= 0.25 && Math.random() < 0.65) this._blood = lvl;   // dropped next tick, once the show has set the impact point
     var M = this.mood;
     M.be = Math.max(M.be, Math.min(1, 0.35 + lvl * 1.4));
     M.bs = Math.max(M.bs, Math.min(1, lvl * 1.6));

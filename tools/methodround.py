@@ -222,7 +222,7 @@ PRIOR_FIELDS = ["min", "n", "ko_w", "ko_l", "sub_w", "sub_l", "dec_w", "dec_l", 
 
 # shrinkage strengths (pseudo-exposure toward the division prior); tuned values are written to the JSON
 SHRINK = {"k_fight": 3.0,      # fights, for per-fight result rates
-          "k_min": 30.0,       # minutes, for per-minute rates
+          "k_min": 15.0,       # minutes, for per-minute rates (CV: 15 < 20 < 30 < 60)
           "k_head": 300.0,     # landed head strikes, for knockdown power / chin
           "k_att": 150.0,      # attempts, for accuracies
           "k_sub": 6.0}        # submission attempts, for conversion / defence
