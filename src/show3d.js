@@ -231,7 +231,7 @@
   /* Guard glove targets (chest frame) from the stance profile, placed against the face. Heights set the
      TOP of the glove against the face: 0.5 at the bottom of the nose (glove centre about the chin), 0.65
      just under the lower eyelid (centre at the mouth: cheekbone-and-jaw guard), 1 at the brow. Above 0.65 the
-     sheet value is compressed (0.8 -> 0.72) and the gloves slide out beside the eyes, so the eyes stay open
+     sheet value is compressed (0.8 -> 0.7) and the gloves slide out beside the eyes, so the eyes stay open
      from the opponent's side (owner review, Nov 6: gloves were reading as covering the face). Rear glove:
      against the rear jaw and cheek, a finger off the skin (rear_tuck 1) or ~10 cm out (rear_tuck 0); lead
      glove: further out on the opponent's line by lead_reach, on the lead side of the face. */
@@ -242,7 +242,7 @@
     var eyeBot = (F.eyeLow ? F.eyeLow.y : lerp(F.cheek.y, F.brow.y, 0.5)) - 0.008 * sc;
     var noseY = F.noseB ? F.noseB.y : lerp(F.chin.y, F.cheek.y, 0.75);
     var eyeX = Math.max(F.eyeOut ? Math.abs(F.eyeOut.x) : 0, cx * 0.85);
-    function veff(v) { return v <= 0.65 ? v : 0.65 + (v - 0.65) * 0.45; }
+    function veff(v) { return v <= 0.65 ? v : 0.65 + (v - 0.65) * 0.32; }
     function topY(v) {
       v = veff(v);
       if (v <= 0.5) return noseY - (0.5 - v) / 0.5 * 0.2 * sc;
@@ -257,13 +257,13 @@
     // offsets off the face run level in the world (the head is pitched down by th), not along the tucked face
     var th = P.pp + P.sp + P.cp + P.hp, cs = Math.cos(th), sn = Math.sin(th);
     var rt = topY(rh) - 0.03 * op * sc, ry = rt - GR * 0.95;
-    var rx = -st * (lerp(cx * 1.36, Math.max(cx * 1.36, eyeX + GR * 0.92), outK(rt)) + 0.02 * op * sc);
+    var rx = -st * (lerp(cx * 1.58, Math.max(cx * 1.58, eyeX + GR * 0.95), outK(rt)) + 0.02 * op * sc);
     var rg = GR + (0.005 + 0.1 * (1 - G.rearTuck)) * sc;
     _g1.set(rx, ry + rg * sn, fz(ry) - 0.016 * sc + rg * cs);   // the face curves back toward the jaw
     this.headToChest(P, _g1, P.hl[rear]);
     // lead glove: out front on the lead side of the face (lead_reach 0 at the face .. 1 about 30 cm off it)
     var lt = topY(lh) - 0.03 * op * sc, ly = lt - GR * 0.95, reach = (0.035 + 0.24 * G.leadReach) * sc;
-    var lx = st * (lerp(cx * 1.36, Math.max(cx * 1.36, eyeX + GR * 0.92), outK(lt)) + (0.04 * G.leadWidth - 0.012 * G.leadReach) * sc + 0.02 * op * sc);
+    var lx = st * (lerp(cx * 1.45, Math.max(cx * 1.45, eyeX + GR * 0.95), outK(lt)) + (0.04 * G.leadWidth - 0.012 * G.leadReach) * sc + 0.02 * op * sc);
     var lg = GR + 0.012 * sc + reach;
     _g2.set(lx, ly + lg * sn - 0.06 * reach, fz(ly) + lg * cs);
     this.headToChest(P, _g2, P.hl[lead]);
