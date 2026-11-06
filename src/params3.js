@@ -155,7 +155,7 @@
       smooth: { ko: 0.3, sub: 0.2, kol: 0.2 },
       ref: { ko: 0.343, sub: 0.247, kol: 0.044 },
       exp: { pow: 0.60, sub: 0.63, chin: 0.24 },
-      scale: { pow: 1, sub: 1, chin: 1 }
+      scale: { pow: 1.007, sub: 1.311, chin: 0.992 }
     },
 
     // ---------------- fight dynamics (component "dynamics"; research/model_dynamics.md section 8, data/derived/dynamics.json) ----------------

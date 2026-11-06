@@ -609,6 +609,267 @@ def stage_cells(args):
                                                               out["repro_max_abs_vs_ml2"], time.time() - t0))
 
 
+# ====================================================================== winner: the fixed winner models
+@stage("winner")
+def stage_winner(args):
+    """W_ml2 = the ML v2 blend that S2+ml2win uses (annual OOF 2019-2023, fit through 2023 for 2024-25).
+    W_close = cycle 1's close-regime stack, market (power de-vig consensus close) + ML v2, no intercept,
+    non-negative logit weights (tools/ml2.py stack_fit, h = none as ml2 chose), forward-chained: year Y fit on
+    2019..Y-1, 2024-2025 fit on 2019-2023. Fights without a close keep W_ml2."""
+    import numpy as np
+    import ml2
+    c = pickle.load(open(os.path.join(CACHE, "cells.pkl"), "rb"))
+    mk = jload("market.json")["fights"]
+    ids, yr = c["ids"], c["year"]
+    pml2 = np.asarray(c["pwin"], float)
+    m2 = ml2.dev_only(jload("ml2.json")["fights"])
+    chk = [abs(m2[i]["ml2"] - p) for i, p in zip(ids, pml2) if i in m2 and m2[i].get("ml2") is not None]
+    pc = np.array([mk.get(i, {}).get("p_power_close", np.nan) if mk.get(i, {}).get("p_power_close") is not None
+                   else np.nan for i in ids], float)
+    ywin = winner_of(c["y"])
+    Z = np.c_[ml2.logit(np.clip(np.nan_to_num(pc, nan=0.5), 0.01, 0.99), 1e-6), ml2.logit(np.clip(pml2, 0.01, 0.99), 1e-6)]
+    has = ~np.isnan(pc)
+    W = pml2.copy()
+    wts = {}
+    for Y in (2020, 2021, 2022, 2023, 2024):
+        tr = has & (ywin >= 0) & (yr >= 2019) & (yr < Y)
+        b = ml2.stack_fit(Z[tr], ywin[tr].astype(float))
+        pr = (yr == Y) if Y < 2024 else (yr >= 2024)
+        W[pr & has] = ml2.sig(Z[pr & has] @ b)
+        wts[str(Y) if Y < 2024 else "2024-25"] = [round(float(x), 4) for x in b]
+    sym = float(np.max(np.abs(ml2.sig(-Z[has] @ np.array(wts["2024-25"])) - (1 - ml2.sig(Z[has] @ np.array(wts["2024-25"]))))))
+    out = {"ids": ids, "W_ml2": pml2, "W_close": W, "p_close": pc, "weights": wts, "ml2_json_max_abs": max(chk),
+           "corner_swap_max": sym}
+    pickle.dump(out, open(os.path.join(CACHE, "winner.pkl"), "wb"))
+    ok = (ywin >= 0) & has
+    for name, P in (("W_ml2", pml2), ("W_close", W), ("close", np.nan_to_num(pc, nan=0.5))):
+        for lo, hi in ((2021, 2023), (2024, 2025)):
+            m = ok & (yr >= lo) & (yr <= hi)
+            if lo == 2024:
+                continue          # never printed here: 2024-25 is scored once by `valid`
+            log("winner %-8s %d-%d n=%d log loss %.5f" % (name, lo, hi, m.sum(), ml2.ll(P[m], ywin[m])))
+    log("winner: stack weights [market, ml2] by fit year %s; ml2.json match %.1e; swap %.1e" % (wts, max(chk), sym))
+
+
+# ====================================================================== pool machinery
+R5 = 5
+I_XKO, I_XSUB, I_YKO, I_YSUB, I_XDEC, I_YDEC, I_DRAW = 0, 5, 10, 15, 20, 21, 22
+NC = 23
+CLS = ("KO", "SUB", "DEC")
+
+
+def winner_of(y):
+    import numpy as np
+    y = np.asarray(y)
+    w = np.full(len(y), -1)
+    w[((y >= I_XKO) & (y < I_XSUB + R5)) | (y == I_XDEC)] = 1
+    w[((y >= I_YKO) & (y < I_YSUB + R5)) | (y == I_YDEC)] = 0
+    return w                       # 1 = A won, 0 = B won, -1 = draw / excluded
+
+
+def outcome_parts(y):
+    """-> side (0 = A, 1 = B, -1), method (0 KO, 1 SUB, 2 DEC, -1), round index (0-based, -1 if no finish)."""
+    import numpy as np
+    y = np.asarray(y)
+    side = np.full(len(y), -1)
+    meth = np.full(len(y), -1)
+    rnd = np.full(len(y), -1)
+    for base, s, m in ((I_XKO, 0, 0), (I_XSUB, 0, 1), (I_YKO, 1, 0), (I_YSUB, 1, 1)):
+        k = (y >= base) & (y < base + R5)
+        side[k], meth[k], rnd[k] = s, m, y[k] - base
+    side[y == I_XDEC], meth[y == I_XDEC] = 0, 2
+    side[y == I_YDEC], meth[y == I_YDEC] = 1, 2
+    return side, meth, rnd
+
+
+def cond_from_p6(P6):
+    """6-class [XKO, XSUB, XDEC, YDEC, YSUB, YKO] -> method | winner, n x 2 (side A, B) x 3 (KO, SUB, DEC)."""
+    import numpy as np
+    A = P6[:, [0, 1, 2]]
+    B = P6[:, [5, 4, 3]]
+    M = np.stack([A / A.sum(1, keepdims=True), B / B.sum(1, keepdims=True)], 1)
+    return M
+
+
+def cond_from_joint(J):
+    """23-cell joint -> (method | winner n x 2 x 3, round | side, method n x 2 x 2 x 5)."""
+    import numpy as np
+    n = len(J)
+    M = np.zeros((n, 2, 3))
+    R = np.zeros((n, 2, 2, R5))
+    for s, (bko, bsub, bdec) in enumerate(((I_XKO, I_XSUB, I_XDEC), (I_YKO, I_YSUB, I_YDEC))):
+        ko, sub = J[:, bko:bko + R5], J[:, bsub:bsub + R5]
+        tot = ko.sum(1) + sub.sum(1) + J[:, bdec]
+        M[:, s] = np.c_[ko.sum(1), sub.sum(1), J[:, bdec]] / np.maximum(tot, 1e-12)[:, None]
+        R[:, s, 0] = ko / np.maximum(ko.sum(1, keepdims=True), 1e-12)
+        R[:, s, 1] = sub / np.maximum(sub.sum(1, keepdims=True), 1e-12)
+    return M, R
+
+
+def round_shapes_from_H(H):
+    import numpy as np
+    _, R = cond_from_joint(H)
+    return R
+
+
+def props_cond(rec, K, rep_m="m6", rep_r="er"):
+    """Props-implied method | winner (2 x 3) and round | side, method (2 x 2 x 5), or None where the family is absent.
+    rep_m: 'm6' (method six-way) or 'm6_gd' (m6 with its decision cells rescaled so that P(decision) = the mean of m6
+    and goes-to-decision). rep_r: 'er' (fight ends in round k: unsided), 'wr' (fighter wins in round k: per side),
+    'best' (mr > wr > er: the most specific family quoted)."""
+    import numpy as np
+    M = R = None
+    m6 = rec.get("m6")
+    if m6 is not None:
+        v = np.asarray(m6, float)
+        if rep_m == "m6_gd" and rec.get("gd") is not None:
+            pd_m6 = v[2] + v[5]
+            tgt = 0.5 * (pd_m6 + rec["gd"])
+            v = v.copy()
+            v[[2, 5]] *= tgt / pd_m6
+            v[[0, 1, 3, 4]] *= (1 - tgt) / (1 - pd_m6)
+        A, B = v[:3], v[3:][[0, 1, 2]]
+        M = np.stack([A / A.sum(), B / B.sum()])
+    order = {"er": ("er",), "wr": ("wr",), "best": ("mr", "wr", "er")}[rep_r]
+    for fam in order:
+        f = rec.get(fam)
+        if f is None:
+            continue
+        f = np.asarray(f, float)
+        R = np.zeros((2, 2, R5))
+        if fam == "er":
+            sh = f[:K] / f[:K].sum()
+            R[:, :, :K] = sh
+        elif fam == "wr":
+            for s in (0, 1):
+                sh = f[s * K:(s + 1) * K]
+                R[s, :, :K] = sh / sh.sum()
+        else:  # mr: [A KO r, A SUB r, B KO r, B SUB r, A dec, B dec]
+            for s in (0, 1):
+                for m in (0, 1):
+                    sh = f[(2 * s + m) * K:(2 * s + m + 1) * K]
+                    R[s, m, :K] = sh / sh.sum()
+        break
+    return M, R
+
+
+def compose(W, M, R, K, draw_c):
+    """Winner W = P(A) (n), method | winner M (n x 2 x 3), round | side, method R (n x 2 x 2 x 5), rounds K (n) ->
+    23-cell joint. The draw takes draw_c of the decision mass; every non-draw cell is scaled by (1 - draw), so the
+    joint's P(A) / (P(A) + P(B)) equals W exactly (the winner stays bit-identical across packages)."""
+    import numpy as np
+    n = len(W)
+    P = np.zeros((n, NC))
+    Wm = np.c_[W, 1 - W]
+    D = Wm[:, 0] * M[:, 0, 2] + Wm[:, 1] * M[:, 1, 2]
+    draw = draw_c * D
+    nd = 1 - draw
+    for s, (bko, bsub, bdec) in enumerate(((I_XKO, I_XSUB, I_XDEC), (I_YKO, I_YSUB, I_YDEC))):
+        ws = (nd * Wm[:, s])[:, None]
+        P[:, bko:bko + R5] = ws * M[:, s, [0]] * R[:, s, 0]
+        P[:, bsub:bsub + R5] = ws * M[:, s, [1]] * R[:, s, 1]
+        P[:, bdec] = ws[:, 0] * M[:, s, 2]
+    P[:, I_DRAW] = draw
+    kk = np.asarray(K) == 3
+    P[kk, 3:5] = P[kk, 8:10] = P[kk, 13:15] = P[kk, 18:20] = 0.0
+    return P / P.sum(1, keepdims=True)
+
+
+def mirror(P):
+    import numpy as np
+    Q = np.empty_like(P)
+    Q[:, I_XKO:I_XKO + R5], Q[:, I_YKO:I_YKO + R5] = P[:, I_YKO:I_YKO + R5], P[:, I_XKO:I_XKO + R5]
+    Q[:, I_XSUB:I_XSUB + R5], Q[:, I_YSUB:I_YSUB + R5] = P[:, I_YSUB:I_YSUB + R5], P[:, I_XSUB:I_XSUB + R5]
+    Q[:, I_XDEC], Q[:, I_YDEC], Q[:, I_DRAW] = P[:, I_YDEC], P[:, I_XDEC], P[:, I_DRAW]
+    return Q
+
+
+def pool_method(Ms, alpha, beta):
+    """Log-linear pool of method | winner experts: log p ∝ sum_j alpha_j log M_j + beta (beta = [0, b_sub, b_dec],
+    shared by both sides, so the pool is corner-symmetric)."""
+    import numpy as np
+    s = sum(a * np.log(np.clip(M, 1e-6, 1)) for a, M in zip(alpha, Ms)) + np.asarray(beta)[None, None, :]
+    s -= s.max(-1, keepdims=True)
+    e = np.exp(s)
+    return e / e.sum(-1, keepdims=True)
+
+
+def pool_round(Rs, gamma, delta, K):
+    """Log-linear pool of round | side, method shapes: log p ∝ sum_j gamma_j log R_j + delta_K (round biases by
+    format, delta[K][0] = 0), rounds past K masked."""
+    import numpy as np
+    K = np.asarray(K)
+    s = sum(g * np.log(np.clip(R, 1e-6, 1)) for g, R in zip(gamma, Rs))
+    if delta is not None:
+        for k_ in (3, 5):
+            m = K == k_
+            s[m] = s[m] + np.asarray(delta[k_])[None, None, :]
+    mask = np.arange(R5)[None, :] >= K[:, None]
+    s = np.where(mask[:, None, None, :], -1e9, s)
+    s -= s.max(-1, keepdims=True)
+    e = np.exp(s)
+    e = np.where(mask[:, None, None, :], 0.0, e)
+    return e / e.sum(-1, keepdims=True)
+
+
+def fit_method_pool(Ms, side, meth, n_exp, bias=("dec",)):
+    """MLE of (alpha >= 0, beta) on method given the actual winner. bias: subset of ('sub', 'dec')."""
+    import numpy as np
+    from scipy.optimize import minimize
+    ix = np.arange(len(side))
+    L = [np.log(np.clip(M[ix, side], 1e-6, 1)) for M in Ms]   # n x 3 for the winner's side
+    nb = len(bias)
+
+    def unpack(th):
+        a = th[:n_exp]
+        b = np.zeros(3)
+        for j, nm in enumerate(bias):
+            b[1 if nm == "sub" else 2] = th[n_exp + j]
+        return a, b
+
+    def f(th):
+        a, b = unpack(th)
+        s = sum(a_ * l for a_, l in zip(a, L)) + b
+        s -= s.max(1, keepdims=True)
+        lse = np.log(np.exp(s).sum(1))
+        return float(np.mean(lse - s[ix, meth]))
+    th0 = np.r_[np.full(n_exp, 1.0 / n_exp), np.zeros(nb)]
+    r = minimize(f, th0, method="L-BFGS-B", bounds=[(0, 5)] * n_exp + [(-3, 3)] * nb)
+    a, b = unpack(r.x)
+    return a, b
+
+
+def fit_round_pool(Rs, side, meth, rnd, K, n_exp, with_delta=False):
+    import numpy as np
+    from scipy.optimize import minimize
+    ix = np.arange(len(side))
+    L = [np.log(np.clip(R[ix, side, meth], 1e-6, 1)) for R in Rs]   # n x 5
+    K = np.asarray(K)
+    mask = np.arange(R5)[None, :] >= K[:, None]
+
+    def unpack(th):
+        g = th[:n_exp]
+        if not with_delta:
+            return g, None
+        d3 = np.r_[0.0, th[n_exp:n_exp + 2], 0.0, 0.0]
+        d5 = np.r_[0.0, th[n_exp + 2:n_exp + 6]]
+        return g, {3: d3, 5: d5}
+
+    def f(th):
+        g, d = unpack(th)
+        s = sum(g_ * l for g_, l in zip(g, L))
+        if d is not None:
+            s = s + np.where((K == 3)[:, None], d[3][None, :], d[5][None, :])
+        s = np.where(mask, -1e9, s)
+        s -= s.max(1, keepdims=True)
+        lse = np.log(np.where(mask, 0, np.exp(s)).sum(1))
+        return float(np.mean(lse - s[ix, rnd]))
+    nd = 6 if with_delta else 0
+    th0 = np.r_[np.full(n_exp, 1.0 / n_exp), np.zeros(nd)]
+    r = minimize(f, th0, method="L-BFGS-B", bounds=[(0, 5)] * n_exp + [(-3, 3)] * nd)
+    return unpack(r.x)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=sorted(STAGES) + ["all"])

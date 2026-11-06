@@ -577,6 +577,259 @@ def cardio_block(feats, base, c_min=15.0):
     return out
 
 
+# ====================================================================== designs (winner / finisher oriented)
+FIGHT_COLS = ["lbs", "hw", "women", "r5", "title", "catch", "yr", "lg_ko", "lg_sub", "lg_mpf"]
+FILTER_DEFAULT = {"sigma0": 0.8, "tau": 0.15}
+
+
+class FoldData:
+    """Everything a fold needs: EB block fit before v, filter state, cardio, S2 designs, ML v2 winner logit."""
+
+    def __init__(self, base, feats, v, filt, card, use_pre=True):
+        self.v = v
+        self.base = base
+        self.U, self.SD, self.meta = eb_block(feats, base, v, use_pre=use_pre)
+        self.F = filt
+        self.C = card
+        T = base["T"]
+        self.n = len(T)
+        self.z = logit(base["pwin"], 1e-4)
+        pr = base["priors"]
+        yk = [k for k in pr if isinstance(k, int)]
+        bk = np.zeros(self.n)
+        bs = np.zeros(self.n)
+        for i, (yy, dv) in enumerate(zip(T["year"], T["prior_div"])):
+            P = pr[min(max(yy, min(yk)), max(yk))]
+            P = P.get(dv) or P["ALL"]
+            bk[i] = math.log(max(P["ko_w"], 1e-9) / max(P["dec_w"], 1e-9))
+            bs[i] = math.log(max(P["sub_w"], 1e-9) / max(P["dec_w"], 1e-9))
+        self.bk, self.bs = bk, bs
+        self.nlog = np.log1p(np.stack([T["A_n"].to_numpy(float), T["B_n"].to_numpy(float)], 1))
+
+    def fin(self, o):
+        """Finishing block with W = side o (0 = A wins, 1 = B wins), L = the other side."""
+        w, l = o, 1 - o
+        U, F, C = self.U, self.F, self.C
+        X = self.base["FX2"] if o == 0 else self.base["FY2"]
+        D = {}
+        for r in ("kow", "subw", "r1w", "latew", "dec", "kol", "subl"):
+            D["w_" + r] = U[r][:, w]
+        for r in ("kol", "subl", "r1l", "latel", "dec", "kow", "subw"):
+            D["l_" + r] = U[r][:, l]
+        D["w_sd_kow"], D["w_sd_subw"] = self.SD["kow"][:, w], self.SD["subw"][:, w]
+        D["l_sd_kol"], D["l_sd_subl"] = self.SD["kol"][:, l], self.SD["subl"][:, l]
+        D["f_oko"], D["f_osub"], D["f_dko"], D["f_dsub"] = F[:, w, 0], F[:, w, 1], F[:, l, 2], F[:, l, 3]
+        D["f_eta_ko"] = self.bk + F[:, w, 0] + F[:, l, 2]
+        D["f_eta_sub"] = self.bs + F[:, w, 1] + F[:, l, 3]
+        D["w_card"], D["l_card"], D["l_card_opp"] = C[:, w, 0], C[:, l, 0], C[:, l, 1]
+        z = self.z if o == 0 else -self.z
+        D["zW"], D["azW"] = z, np.abs(z)
+        D["w_nlog"], D["l_nlog"] = self.nlog[:, w], self.nlog[:, l]
+        for c in FIGHT_COLS:
+            D[c] = X[c].to_numpy(float)
+        r5, ti = D["r5"], D["title"]
+        D["r5_l_latel"], D["r5_w_latew"], D["r5_dec"] = r5 * D["l_latel"], r5 * D["w_latew"], r5 * (D["w_dec"] + D["l_dec"])
+        D["ti_zW"] = ti * z
+        D["r5_zW"] = r5 * z
+        return pd.DataFrame(D)
+
+    def s2(self, o):
+        X = self.base["FX2"] if o == 0 else self.base["FY2"]
+        return X[self.base["cols_s2"]].reset_index(drop=True)
+
+
+FIN_SETS = {
+    "eb": ["w_kow", "w_subw", "w_dec", "l_kol", "l_subl", "l_dec", "w_kol", "w_subl", "l_kow", "l_subw"],
+    "round": ["w_r1w", "w_latew", "l_r1l", "l_latel"],
+    "sd": ["w_sd_kow", "w_sd_subw", "l_sd_kol", "l_sd_subl"],
+    "filter": ["f_oko", "f_osub", "f_dko", "f_dsub", "f_eta_ko", "f_eta_sub"],
+    "cardio": ["w_card", "l_card", "l_card_opp"],
+    "win": ["zW", "azW"],
+    "exp": ["w_nlog", "l_nlog"],
+    "fight": FIGHT_COLS,
+    "inter": ["r5_l_latel", "r5_w_latew", "r5_dec", "ti_zW", "r5_zW"],
+}
+
+
+def method_labels(base):
+    """Winner side (0 = A, 1 = B, -1 = not decisive) and method class (0 KO, 1 SUB, 2 DEC, -1)."""
+    T = base["T"]
+    ws = np.where(T["winner"].to_numpy() == "A", 0, np.where(T["winner"].to_numpy() == "B", 1, -1))
+    mc = T["cls"].map({"KO": 0, "SUB": 1, "DEC": 2}).fillna(-1).astype(int).to_numpy()
+    ok = (ws >= 0) & (mc >= 0)
+    return np.where(ok, ws, -1), np.where(ok, mc, -1)
+
+
+class CondMethod:
+    """P(method | W wins, x): multinomial logit over {KO, SUB, DEC} on winner-oriented features with class
+    intercepts (method base rates given a win; no corner term). Recency weights as methodround (half-life 8 y)."""
+
+    def __init__(self, C=0.01, hl=8.0):
+        self.C, self.hl = C, hl
+
+    def fit(self, X, y, years, ref_year):
+        w = MR.recency_weights(years, ref_year, self.hl)
+        self.sc = MR.StandardScaler().fit(X)
+        self.lr = MR.LogisticRegression(C=self.C).fit(self.sc.transform(X), y, sample_weight=w)
+        return self
+
+    def predict(self, X):
+        return self.lr.predict_proba(self.sc.transform(X))
+
+
+class CondMethodGBM:
+    """LightGBM version of CondMethod (multiclass, both orientations are separate rows by construction)."""
+
+    def __init__(self, params=None, rounds=400, hl=8.0):
+        self.hl, self.rounds = hl, rounds
+        self.params = dict(objective="multiclass", num_class=3, learning_rate=0.02, num_leaves=7, min_data_in_leaf=80,
+                           feature_fraction=0.6, bagging_fraction=0.8, bagging_freq=1, lambda_l2=10.0, verbose=-1,
+                           num_threads=2, seed=7)
+        if params:
+            self.params.update(params)
+
+    def fit(self, X, y, years, ref_year):
+        import lightgbm as lgb
+        w = MR.recency_weights(years, ref_year, self.hl)
+        self.m = lgb.train(self.params, lgb.Dataset(np.asarray(X, float), y, weight=w), num_boost_round=self.rounds)
+        return self
+
+    def predict(self, X):
+        return self.m.predict(np.asarray(X, float))
+
+
+def p6_from_cond(qA, qB, pa):
+    """Six-class who-and-how (XKO, XSUB, XDEC, YDEC, YSUB, YKO) from the winner probability and the conditional
+    method shares of each potential winner."""
+    pb = 1 - pa
+    return np.stack([pa * qA[:, 0], pa * qA[:, 1], pa * qA[:, 2], pb * qB[:, 2], pb * qB[:, 1], pb * qB[:, 0]], 1)
+
+
+def design(fd, o, spec):
+    """spec: {'fin': [set names], 's2': bool}."""
+    parts = []
+    cols = [c for s in spec.get("fin", []) for c in FIN_SETS[s]]
+    if cols:
+        parts.append(fd.fin(o)[cols])
+    if spec.get("s2"):
+        parts.append(fd.s2(o))
+    return pd.concat(parts, axis=1).to_numpy(float)
+
+
+def cm_fold(fd, base, spec, C=0.01, start=2012, gbm=None, hl=8.0):
+    """Fit the conditional method model on decisive rows dated [start, v) and predict qA, qB for every row."""
+    T = base["T"]
+    ws, mc = method_labels(base)
+    yr = T["year"].to_numpy()
+    XA, XB = design(fd, 0, spec), design(fd, 1, spec)
+    tr = (yr < fd.v) & (yr >= start) & (ws >= 0)
+    Xtr = np.where((ws[tr] == 0)[:, None], XA[tr], XB[tr])
+    m = (CondMethodGBM(gbm, hl=hl) if gbm is not None else CondMethod(C, hl=hl)).fit(Xtr, mc[tr], yr[tr], fd.v)
+    return m.predict(XA), m.predict(XB), m
+
+
+# ---------------------------------------------------------------------- round given a finish
+class CondRound:
+    """P(finishing round | W finishes L by method m, scheduled R): continuation-ratio logit. Rows (fight, j) for
+    j = 1..min(r, R-1) with y = 1 if the finish came in round j; free dummies for (R, j, m) and penalized covariates
+    (finisher-oriented) plus covariate x (j-1) slopes. P(round R) is the remainder."""
+
+    def __init__(self, C=0.01, hl=8.0, slope=True):
+        self.C, self.hl, self.slope = C, hl, slope
+
+    @staticmethod
+    def dummies(R, j, m):
+        d = np.zeros((len(R), 12))
+        idx = np.where(R == 3, (j - 1) * 2 + m, 4 + (j - 1) * 2 + m)
+        d[np.arange(len(R)), idx] = 1.0
+        return d
+
+    def _rows(self, X, R, j, m):
+        Xs = self.sc.transform(X)
+        parts = [Xs]
+        if self.slope:
+            parts.append(Xs * ((j - 1) / 2.0)[:, None])
+        parts.append(self.dummies(R, j, m))
+        return np.hstack(parts)
+
+    def fit(self, X, R, m, r, years, ref_year):
+        w0 = MR.recency_weights(years, ref_year, self.hl)
+        self.sc = MR.StandardScaler().fit(X)
+        ii, jj = [], []
+        for i in range(len(R)):
+            for j in range(1, min(r[i], R[i] - 1) + 1):
+                ii.append(i)
+                jj.append(j)
+        ii, jj = np.array(ii), np.array(jj)
+        y = (r[ii] == jj).astype(int)
+        Z = self._rows(X[ii], R[ii], jj, m[ii])
+        nfree = 12
+        self.lr = MR.LogisticRegression(C=self.C, fit_intercept=False,
+                                        free=list(range(Z.shape[1] - nfree, Z.shape[1]))).fit(Z, y, sample_weight=w0[ii])
+        return self
+
+    def shape(self, X, R, m):
+        """(n, 5) P(round | finish by m) for scheduled R (zeros past R)."""
+        n = len(R)
+        out = np.zeros((n, 5))
+        surv = np.ones(n)
+        for j in range(1, 5):
+            act = R > j
+            h = np.zeros(n)
+            if act.any():
+                h[act] = self.lr.predict_proba(self._rows(X[act], R[act], np.full(act.sum(), j), m[act]))[:, 1]
+            out[:, j - 1] = np.where(act, surv * h, 0.0)
+            surv = np.where(act, surv * (1 - h), surv)
+        last = np.where(R == 3, 2, 4)
+        out[np.arange(n), last] = surv
+        return out
+
+
+ROUND_SETS = {
+    "eb": ["w_r1w", "w_latew", "l_r1l", "l_latel", "w_kow", "w_subw", "l_kol", "l_subl", "w_dec", "l_dec"],
+    "filter": ["f_eta_ko", "f_eta_sub"],
+    "cardio": ["w_card", "l_card", "l_card_opp"],
+    "win": ["zW", "azW"],
+    "fight": ["lbs", "hw", "women", "title", "yr", "lg_mpf"],
+}
+
+
+def round_design(fd, o, spec):
+    cols = [c for s in spec.get("fin", []) for c in ROUND_SETS[s]]
+    parts = [fd.fin(o)[cols]] if cols else []
+    if spec.get("haz"):
+        X = fd.base["FX2"] if o == 0 else fd.base["FY2"]
+        hz = [c for c in MR.HAZ_COLS if c not in FIGHT_COLS]
+        parts.append(X[hz].reset_index(drop=True))
+    return pd.concat(parts, axis=1).to_numpy(float)
+
+
+def cr_fold(fd, base, spec, C=0.01, start=2008, slope=True):
+    """Fit the round model on finished rows dated [start, v); return an H-like (n, NC_) array of round shapes for
+    A KO, A SUB, B KO, B SUB (the layout joint_from_c6 reads)."""
+    T = base["T"]
+    ws, mc = method_labels(base)
+    yr = T["year"].to_numpy()
+    R = np.where(T["rounds"].to_numpy() == 5, 5, 3)
+    rr = np.clip(T["rnd"].to_numpy().astype(int), 1, 5)
+    XA, XB = round_design(fd, 0, spec), round_design(fd, 1, spec)
+    tr = (yr < fd.v) & (yr >= start) & (ws >= 0) & (mc <= 1) & (rr <= R)
+    Xtr = np.where((ws[tr] == 0)[:, None], XA[tr], XB[tr])
+    m = CondRound(C, slope=slope).fit(Xtr, R[tr], mc[tr], rr[tr], yr[tr], fd.v)
+    H = np.zeros((len(T), NC_))
+    for base_i, X, meth in ((I_XKO, XA, 0), (I_XSUB, XA, 1), (I_YKO, XB, 0), (I_YSUB, XB, 1)):
+        H[:, base_i:base_i + R5] = m.shape(X, R, np.full(len(T), meth))
+    return H, m
+
+
+def joint(base, P6, H, rows):
+    return MR.joint_from_c6(P6[rows], H[rows], base["draw_c"])
+
+
+def losses(base, J, rows):
+    return MR.per_fight_losses(J, base["y"][rows], base["T"][rows])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=list(STAGES) + ["all"])
