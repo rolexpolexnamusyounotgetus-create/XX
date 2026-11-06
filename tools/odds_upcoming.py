@@ -32,7 +32,8 @@ are gathered from Wikipedia event pages plus any in-window bout an odds site lis
 
 Sources (all public pages; generic User-Agent; robots.txt checked at run time; <= 1 request/second
 overall; raw responses cached gzip'd under data/raw/web_cache/<site>/<stamp>/):
-  bestfightodds   event pages: moneylines for the US books BFO lists + Polymarket/Kalshi, and props
+  bestfightodds   event pages: moneylines for the US books BFO lists + Polymarket US (stored as PolymarketUS)
+                  and Kalshi (BFO's Kalshi prices include the taker fee), and props
                   (method of victory, goes the distance, rounds totals). robots: all but /cnadm/.
   fightodds       fightodds.io public GraphQL API (the site's own persisted queries): ~24 books incl.
                   Pinnacle, Circa, Bookmaker, BetOnline and exchanges; per-book open/best/worst;

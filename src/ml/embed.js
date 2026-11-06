@@ -6,7 +6,7 @@
    landed head strike, takedowns, control, submission attempts, reversals, KO/TKO and submission finish
    hazards) has the linear predictor
 
-       eta_t = C_t[division] + C_t[era] * era + C_t[five] * fiveRound + W_t . o_X + V_t . d_Y
+       eta_t = C_t[0] + C_t[1 + division] + C_t[era] * era + C_t[five] * fiveRound + W_t . o_X + V_t . d_Y
 
    with a log link for rates (per fight minute; knockdowns per landed head strike) and a logit link for
    accuracies. The win head is antisymmetric (no intercept): swap A and B -> 1 - p.
@@ -79,7 +79,7 @@
       var out = new Array(NT);
       for (var t = 0; t < NT; t++) {
         var C = m.C[t];
-        var s = C[dv] + C[NDIV] * era + C[NDIV + 1] * five;
+        var s = C[0] + C[1 + dv] + C[NDIV + 1] * era + C[NDIV + 2] * five;
         var Wt = m.W[t], Vt = m.V[t];
         for (var k = 0; k < K; k++) s += Wt[k] * ex[k] + Vt[k] * ey[K + k];
         out[t] = s;

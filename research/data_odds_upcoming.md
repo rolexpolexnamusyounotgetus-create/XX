@@ -265,8 +265,8 @@ Numbers worth knowing (29 bouts, one capture; read them as descriptive, not as t
   header disclosure says so, and its prices are not the international book's. It is stored as
   `PolymarketUS`, a separate exchange. Until the verification it was merged with fightodds'
   Polymarket, which produced 4 false `src_disagree` flags.
-  Kalshi on fightodds is the raw ask (it matched the Kalshi API on 20 of 22 bouts). BFO's Kalshi column adds Kalshi's
-  taker fee of 0.07 p(1-p). Action Network's "Polymarket" is the international book's mid price, with no
+  Kalshi on fightodds is the raw ask (it matched the Kalshi API on 20 of 22 bouts). BFO's Kalshi
+  column adds Kalshi's taker fee of 0.07 p(1-p). Action Network's "Polymarket" is the international book's mid price, with no
   spread. None of these enter `p_consensus` or the ledger `market` block.
 - **Like-for-like benchmark.** `market.p_a_novig` (the mean of BFO's US sportsbooks, multiplicative) uses
   the book set and estimator of `data/derived/market.json`'s primary close definition. `p_meandec_mult` uses the
@@ -290,7 +290,8 @@ Numbers worth knowing (29 bouts, one capture; read them as descriptive, not as t
   tool re-reads the bundle. If a query is refused, that source is skipped and the snapshot records
   the error; it never aborts.
 - **Timing.** Every book line carries the fetch time of its page (`t`). Sources are read in sequence
-  over about 3 minutes, so cross-source disagreements of a few points (6 today) are timing.
+  over about 3 minutes, so a cross-source gap of a few points can be timing alone. The 2 flagged in
+  20261106-1015 are not: both were stable across reads (verification log).
   fightodds' `oddsOpen` is the first line fightodds recorded for that book, not necessarily the
   book's first offer. Exchange openers are ignored.
 - **Start times.** Phases use the card's segment times. Bouts in segment `unknown` use the event's
@@ -300,3 +301,127 @@ Numbers worth knowing (29 bouts, one capture; read them as descriptive, not as t
 - **Not validated as a predictor here.** That is `tools/market.py`'s job on the 2019-2025 history.
   This file only collects and cleans; scoring happens after results land
   (`data/predictions/README.md`).
+
+## Verification log
+
+**2026-11-06, about 10:25-10:55 UTC, independent verifier.** Covers `tools/odds_upcoming.py`, the three
+snapshots, `data/derived/odds_upcoming.json` and this file. All checks use my own parsers and solvers
+(scratch scripts, not the tool's functions): `html.parser` for BFO; my own walkers for the fightodds
+GraphQL JSON, Action Network's `__NEXT_DATA__` and the Covers table. A/B orientation was decided by
+name-token overlap with the cards file, not by the tool's matcher.
+
+**What was checked**
+
+1. **Parsing against the cached raw pages, every observation in all three captures:**
+   - fightodds: 518 lines and 409 opening lines. BFO: 168. Action Network: 63. Covers: 167.
+     **0 mismatches.**
+   - The ledger `market` block was recomputed from the raw BFO pages: 29 of 29 equal.
+   - Pinnacle history: I read the API's `outcome.fighter` for the 32 outcome ids used, and every one is
+     the right fighter for its side. The last history point equals the current Pinnacle line on all
+     16 bouts.
+2. **Live re-fetch at 10:32 UTC.** 26 requests, at least 1.5 s apart, generic User-Agent, robots.txt
+   re-read first. The raw pages are in `data/raw/web_cache/<site>/verify_20261106-1032/`, which is
+   gitignored.
+   - **Random spot check:** 40 (bout, book, source) records from fightodds and BFO, seed 1106. 38 were
+     identical; 2 exchange quotes had moved by 0.6 points or less (Borralho on Kalshi, Miller on
+     Polymarket).
+   - **All 686 fightodds and BFO records:** 668 identical, 18 moved, none by more than 5 points.
+   - **8 random fight-detail pages:** all 121 opening lines identical.
+   - **Pinnacle history, 2 random bouts:** the first point equals the snapshot's open.
+   - **Action Network:** 62 of 63 identical; one moved 0.4 points. **Covers:** 167 of 167 identical.
+   - No name or A/B orientation disagrees with the cards file.
+3. **Math.** Every per-book multiplicative and Shin no-vig value was recomputed with an independent
+   bisection, along with the trimmed logit-mean consensus, `p_meandec_mult`, sharp, exchange and open.
+   0 differences above 1e-4. The method market sums to 1 on all 15 bouts.
+4. **Props.**
+   - BFO prop ids match their labels: 1 "fight goes to decision", 8 "wins by TKO/KO", 9 submission,
+     10 inside the distance, 11 decision, 13-17 rounds, 32-35 over/under.
+   - Team-to-A/B mapping: on all 324 fighter-specific props, the fighter named in the label matches
+     the mapped side. 0 mismatches.
+5. **Fight-id matching.**
+   - All 29 fightodds listings map to their card bout.
+   - BFO's 7 pages: 29 listings used, 1 stale duplicate ignored (Parsons vs "Jose Henrique", 1 book),
+     1 removed bout reported (Nickal-Pyfer).
+   - None of BFO's 42 future-events listings is a card pairing. Pereira-Adesanya and
+     Moreno-Figueiredo share one fighter with a card bout and are correctly not matched.
+   - No two bouts on one card are similar enough to be confused.
+   - Rematches: none in the window. The timeline keys bouts by date plus slug pair, so a rematch on
+     another date stays separate.
+   - Same-day events: none in the window, but see fix 2.
+   - Namesakes: `ufcstats_id` is attached only when the roster lookup returns the card's own slug.
+6. **Coverage.** Every number in the Coverage section and in "What the market says" was re-derived from
+   the snapshot, and the market table was re-checked cell by cell. It matched, except for the items
+   corrected under fix 5.
+7. **Walk-forward safety.**
+   - No script or derived file reads the snapshots or the timeline (checked with grep).
+   - Every record is a 2026 forward-test bout, labelled benchmark-only, and nothing evaluates on 2026
+     fights.
+   - The odds are not a feature anywhere. Fix 3 hardens the pre-lock label.
+8. **robots.txt and throttle, re-read live.**
+   - BFO allows everything except `/cnadm/`.
+   - `api.fightodds.io` has only content-signal comments and no rules.
+   - Action Network disallows query strings, and the tool uses none.
+   - Covers allows `/sport/mma/ufc/odds`.
+   - The Fetcher waits at least the delay (minimum 1.0 s, default 1.25 s) before every request,
+     robots.txt requests included.
+   - For the exchange check: polymarket.com allows everything, and gamma-api.polymarket.com and
+     api.elections.kalshi.com have no robots.txt (404).
+
+**Fixes made**
+
+1. **Exchange identity (data).** BFO's "Polymarket" column is the Polymarket US app, not the
+   international book. I compared 26 bouts against the gamma-api.polymarket.com and Kalshi APIs:
+   - fightodds' Polymarket matched the international book's asks 23 of 26 times;
+   - fightodds' Kalshi matched Kalshi's asks 20 of 22 times;
+   - BFO's Kalshi matched the fee-inclusive Kalshi price;
+   - BFO's "Polymarket" matched neither consistently.
+
+   BFO's column is now the separate exchange `PolymarketUS`, detected from BFO's header disclosure.
+   - `p_exchange_mult` changed on 24 bouts, by up to 2.3 points (Johnson-Almeida 0.599 to 0.622).
+   - `n_exchange` is up by one on 26 bouts.
+   - `src_disagree` cases fell from 6 to 2; the 4 removed were false flags.
+   - Lines used rose from 587 to 613.
+   - The sportsbook consensus, ledger blocks, opens and props are unchanged.
+2. **Matcher robustness (code).**
+   - Each source listing is now tried against every event within -1..+2 days, not just the nearest
+     one. Before, a BFO main-card page dated the day after its card, on a day that also holds another
+     event, went unmatched. A regression test covers this.
+   - A listing that matches one of the card file's `removed` pairings at least as well as the
+     current bout is no longer attached to it. Real case: "Jake Matthews vs Akbar Abdullaev" was an
+     announcement error, and a stale listing of it scores 0.78 against Matthews vs Tahir Abdullayev,
+     which the old code accepted.
+   - Neither change alters the current snapshots.
+3. **Walk-forward (code).** `phase` and `pre_lock` now use the latest fetch time of the bout's lines,
+   not the run's start time. Test: run starts 21:58, line read 22:01, lock 22:00. `pre_lock` is now
+   false; before, it was true. No effect today, because every capture was about 36 hours before the
+   lock.
+4. **Replay faithfulness (code).** `--replay` now keeps the original file's `snapshot_utc`, window and
+   live request counts, and adds `rebuilt_from_cache_utc`.
+   - Before, a replay moved the capture time to the first cached file's mtime (10:15:40 instead of
+     10:15:35) and reset the window to the defaults.
+   - All three snapshots and the timeline were rebuilt this way. Diffs against the replaced files
+     show only the exchange fields from fix 1 plus metadata.
+5. **This document.**
+   - The `src_disagree` explanation (the remaining two are not timing differences) and the line
+     counts.
+   - The Hasan exchange value.
+   - "76%" is now "22 of the 28 that moved (79%)".
+   - The method-market book counts: one bout has only FanDuel.
+   - 17 cells of the Exchanges column.
+   - The phase/lock wording.
+   - Two new caveats: exchange identities and the like-for-like benchmark.
+
+**Open items (not changed)**
+
+- **Ko-Turman BetRivers.** fightodds has -714/+475 and BFO has -1115/+650, with no change across four
+  reads from 09:50 to 10:32.
+  - fightodds' BetRivers equals BFO's Unibet; both are Kambi books, which often share prices. One of
+    the two sites has a stale or mismapped line.
+  - The consensus uses the fightodds copy: one book of 21, and the trimmed mean drops the extreme.
+  - The BFO copy is in the bout's ledger `market` block, which by definition is BFO's mean (no-vig
+    0.845 with it).
+  - Recheck this at the T-2h capture.
+- **BetOnline's opener for Cortes-Acosta-Walker** is -300/+247, against about -200 elsewhere. It passes
+  the 1.0-logit opener filter, and the trimmed mean drops it as the maximum.
+- **Riyadh's lock** is still the 12:00 UTC regional estimate. It is meant to err early, the safe
+  direction for a lock. Replace it with the real time once the card is published.

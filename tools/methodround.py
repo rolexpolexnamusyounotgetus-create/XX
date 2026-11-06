@@ -2168,8 +2168,15 @@ groups are roughly neutral for method (kept for the winner and for the page).
 - Roster outputs are averages over the current division field with the stats-only model; they describe
   tendencies, not any particular matchup.
 """)
+    # keep a reviewer's "## Verification log" (appended by hand / tools/methodround_verify.py) across rebuilds
+    keep = ""
+    if os.path.exists(OUT_MD):
+        old = open(OUT_MD).read()
+        j = old.find("\n## Verification log")
+        if j >= 0:
+            keep = old[j:]
     with open(OUT_MD, "w") as fh:
-        fh.write("\n".join(L))
+        fh.write("\n".join(L).rstrip("\n") + "\n" + keep)
 
 
 def expand_cells(v, R):

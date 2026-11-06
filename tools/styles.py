@@ -1736,9 +1736,10 @@ RATE_ENGINE = {
     "body_share": "add to the log-odds of X's body-target share",
     "td_att": "multiply X's takedown-attempt rate (per standing minute, distance and clinch)",
     "td_acc": "add to the log-odds of X's takedown success",
-    "ctrl": ("composition check only (total control per minute): its zy_td_int and length_d parts are carried by "
-             "td_att, its kick_y part by td_att's kick_y term, and its zx_ctrl*zy_octrl part is a time-ceiling effect "
-             "(control cannot exceed the clock) that a finite-time position chain reproduces by itself; do not apply"),
+    "ctrl": ("composition check only (total control per minute): its zy_td_int part is carried by td_att, its "
+             "zx_ctrl*zy_octrl part is a time-ceiling effect (control cannot exceed the clock) that a finite-time "
+             "position chain reproduces by itself, and its kick_y part (kickers spend more time controlled) has no "
+             "carrier, because the defender's kick share on takedown attempts misses the 2019-2023 screen; do not apply"),
     "ctrl_per_td": "multiply X's top-control duration per takedown (divide the bottom man's escape / stand-up hazard)",
     "gnp_att": "multiply X's ground-strike rate per top-control minute",
     "kd": "multiply knockdown probability per landed head strike",
@@ -1826,7 +1827,7 @@ def render_report(J):
                                             "in open-stance fights" if t["term"] == "open" else "when " + TERM_DOCS.get(t["term"], t["term"])))
             else:
                 parts.append("%s%.2f per +1 sd of %s" % (unit, math.exp(t["coef_per_term_sd"]),
-                                                          TERM_DOCS.get(t["term"], t["term"]).replace(" (z)", "")))
+                                                          TERM_DOCS.get(t["term"], t["term"]).split(":")[0].replace(" (z)", "")))
         words.append("%s %s" % (RATE_WORDS.get(name, name), ", ".join(parts)))
     A("  In words: " + "; ".join(words) + ".")
     v = tr["variants"]
@@ -2169,9 +2170,10 @@ def render_report(J):
       "as neither). A term whose 'a=b=1' z is below 2 in absolute value is effectively zero under that composition.")
     A("3. **Control.** Control in the engine comes from takedowns (`td_att`, success unchanged) and how long the top "
       "man keeps the position (`ctrl_per_td`). The total `ctrl` block is the check: an engine with `td_att` and "
-      "`ctrl_per_td` on should reproduce its direction (more control against kickers, less in wrestler-vs-wrestler "
-      "fights, less for the longer man, and a sub-multiplicative ceiling when a heavy controller meets a man who is "
-      "often controlled). Applying it on top would count those effects twice.")
+      "`ctrl_per_td` on should reproduce its direction for wrestler-vs-wrestler fights (less control) and the "
+      "sub-multiplicative ceiling when a heavy controller meets a man who is often controlled. It will not "
+      "reproduce the kicker effect (more control against kickers), which no on-block carries. Applying the `ctrl` "
+      "block on top would count the other effects twice.")
     A("4. **Knob.** Expose one `styleMatchups` knob in [0, 1.5], default 1, that scales every `s`; 0 reproduces "
       "the pure skill composition. Optional blocks get their own toggle, default off.")
     A("5. **Labels.** Show the scouting archetype where a scouting file exists and the data archetype otherwise "

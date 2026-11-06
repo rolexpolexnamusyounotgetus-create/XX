@@ -7,6 +7,7 @@ Run from the project root:
     python3 tools/ml.py --quick         # smaller GBM search (for development)
     python3 tools/ml.py --no-cache      # rebuild the feature table instead of reusing the scratch cache
     python3 tools/ml.py --stage2        # redo stacking / 7-bin / evaluation / export from cached stage-1 fits
+    python3 tools/ml.py --stage2 --page-only   # redo only the page model and the export (cached stage 2)
     python3 tools/ml.py --jobs 4        # worker processes for the tree searches (default 4)
 
 Needs Python 3 with numpy, pandas, scipy, scikit-learn, lightgbm and xgboost. Full run about 30-60 minutes on a
@@ -1353,11 +1354,13 @@ def main():
     ap.add_argument("--direct7-gbm", action="store_true",
                     help="also fit a direct 7-class LightGBM (both corner orders; slow on a busy box)")
     ap.add_argument("--stage2", action="store_true", help="reuse the cached stage-1 fits (out/ml_cache/stage1.pkl)")
+    ap.add_argument("--page-only", action="store_true", help="with --stage2: redo only the page model and the export "
+                                                             "from out/ml_cache/stage2.pkl")
     args = ap.parse_args()
     if args.stage2:
         R = pickle.load(open(os.path.join(CACHE_DIR, "stage1.pkl"), "rb"))
         R["_ctx"]["args"] = args
-        stage_two(R)
+        stage_two(R, page_only=args.page_only)
         return
     n_lgb = args.n_lgb or (3 if args.quick else 8)
     n_xgb = args.n_xgb or (2 if args.quick else 4)
@@ -2229,12 +2232,12 @@ def page_model(R):
         roster[slug] = r
     snap = C["tmeta"]["snapshot"]
     stk = {v["name"]: v for v in R["stacking"]["variants"]}
-    page_stack = {}
+    stack_block = {}
     for nm in ("elo+lr+mkt_rating", "elo+lr"):
         if nm in stk:
-            page_stack[nm] = {"inputs": stk[nm]["inputs"], "weights": stk[nm]["weights"],
-                              "oof_loyo_log_loss": stk[nm]["oof_loyo_log_loss"],
-                              "test_log_loss": stk[nm]["test"]["log_loss"]}
+            stack_block[nm] = {"inputs": stk[nm]["inputs"], "weights": stk[nm]["weights"],
+                               "oof_loyo_log_loss": stk[nm]["oof_loyo_log_loss"],
+                               "test_log_loss": stk[nm]["test"]["log_loss"]}
     mpath = os.path.join(DERIVED, "market.json")
     if os.path.exists(mpath):
         mr = json.load(open(mpath)).get("ratings", {})
@@ -2256,7 +2259,7 @@ def page_model(R):
                        context=["lbs/100", "women", "five", "title", "catch"],
                        eval="x = [side_block(winner), side_block(loser), context]; softmax(intercept + coef @ x) = "
                             "P(KO/TKO, SUB, DEC | that fighter wins)"),
-        "stack": dict(page_stack, eval="z = sum_i w_i * logit(p_i) over inputs; p = 1/(1+exp(-z)). p_elo = "
+        "stack": dict(stack_block, eval="z = sum_i w_i * logit(p_i) over inputs; p = 1/(1+exp(-z)). p_elo = "
                       "1/(1+10^((eloB-eloA)/400)); p_lr = the winner model WITHOUT platt_slope; p_mkt_rating = "
                       "1/(1+exp(-(mr_muA-mr_muB)/sqrt(1+pi*(mr_sdA^2+mr_sdB^2)/8))) (tools/market.py Kalman market "
                       "rating; use 'elo+lr' when either fighter has no rating). Weights fit on 2019-2023 "
@@ -2393,12 +2396,19 @@ def write_outputs(R):
                                                     len(R["roster_out"])))
 
 
-def stage_two(R):
-    blend_and_calibrate(R)
-    stacking(R)
-    seven(R)
-    evaluate(R)
-    importance(R)
+def stage_two(R, page_only=False):
+    path = os.path.join(CACHE_DIR, "stage2.pkl")
+    if page_only:
+        R2 = pickle.load(open(path, "rb"))
+        R2["_ctx"]["args"] = R["_ctx"]["args"]
+        R = R2
+    else:
+        blend_and_calibrate(R)
+        stacking(R)
+        seven(R)
+        evaluate(R)
+        importance(R)
+        pickle.dump(R, open(path, "wb"))
     page_model(R)
     write_outputs(R)
     log("done in %.0f s" % (time.time() - R["_ctx"]["T0"]))

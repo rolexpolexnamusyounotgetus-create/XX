@@ -1,41 +1,52 @@
 #!/usr/bin/env python3
 """Fighter embeddings: time-aware offense / defense latent vectors learned by a multi-task factorisation.
 
-    python3 tools/embed.py                  # everything: CV on 2019-2023, walk-forward 2019-2025, downstream
-                                            # tests, roster fit, outputs (about 15-20 minutes on 2 cores)
-    python3 tools/embed.py --quick          # small grid, quarterly refits (smoke test, a few minutes)
-    python3 tools/embed.py --skip-cv        # reuse the hyperparameters stored in data/derived/embed.json
+    python3 tools/embed.py                       # everything (noise, CV on 2019-2023, walk, downstream, outputs)
+    python3 tools/embed.py --stage walk --chunk 1 &  python3 tools/embed.py --stage walk --chunk 2
+                                                 # the two halves of the walk-forward as parallel processes,
+    python3 tools/embed.py --skip-cv             # then the downstream tests and outputs from the cache
+    python3 tools/embed.py --quick               # yearly CV refits and a 2-config grid (smoke test)
 
-Model (one fit = one date T, every UFC fight with round stats from 2005-01-01 to the day before T):
+Model (one fit = one date T, every UFC fight with round stats in the 4 half-lives before T, never on/after T):
 
-  every fighter i has an offense vector a_i and a defense vector d_i (K dims each). For each directed
-  observation "X against Y in fight f" and each task t,
+  every fighter i has an offense vector a_i and a defense vector d_i (K = 8 dims each). For each directed
+  observation "X against Y in fight f" and each of 21 tasks t,
 
-      eta_t = mu_t[division] + beta_t * era + gamma_t * five_round + W_t . a_X + V_t . d_Y
+      eta_t = c_t + c_t[division] + beta_t * era + gamma_t * five_round + W_t . a_X + V_t . d_Y
 
-  with a log link for counts (Poisson with exposure: minutes for strike attempts by position and target,
-  non-significant attempts, takedown attempts, control minutes, submission attempts, reversals, KO/TKO and
-  submission finish hazards; landed head strikes for knockdowns) and a logit link for proportions
-  (accuracy at distance / clinch / ground and to head / body / leg, takedown accuracy). Every task's
-  log-likelihood is divided by its overdispersion phi_t (Pearson, estimated once on pre-2019 fights),
-  i.e. a quasi-likelihood. The result head is antisymmetric (no intercept, so it cannot learn corners):
+  Tasks: significant strike attempts per minute at distance / clinch / ground and to head / body / leg,
+  non-significant attempts, takedown attempts, control minutes, submission attempts and reversals per minute
+  (negative binomial, log link, exposure = fight minutes; NB shape k_t), accuracy at distance / clinch /
+  ground and to head / body / leg and takedown accuracy (binomial, logit link, each row weighted by the
+  beta-binomial factor 1 / (1 + (n - 1) rho_t)), knockdowns per landed head strike (NB) and KO/TKO and
+  submission finish hazards per minute (Poisson). k_t and rho_t are moment estimates on held-out 2016 fights
+  (pre-2019 data only). The result head is antisymmetric (no intercept, so it cannot learn the corner):
 
       logit P(X beats Y) = u_a.(a_X - a_Y) + u_d.(d_X - d_Y) + a_X' M d_Y - a_Y' M d_X
 
-  Every observation is weighted 0.5 ^ ((T - date) / half_life) (decay-weighted refit: the temporal prior),
-  fighters and loadings carry L2 priors of the same strength lambda (a nuclear-norm-like penalty on the
-  fighter x task matrix), and fits are MAP by L-BFGS with analytic gradients, warm-started from the
-  previous refit and Procrustes-aligned to it so the axes keep their meaning through time.
+  Rows are weighted 0.5 ^ ((T - date) / half_life) (decay-weighted refit = the temporal prior). Fighters and
+  loadings carry L2 priors of the same strength lambda (a nuclear-norm-like penalty on the fighter x task
+  matrix), division intercepts shrink toward the task's global level. MAP by alternating block Newton
+  (per-task GLM steps, a 2K x 2K Newton step per fighter, a logistic step for the head, an exact L2
+  rebalancing of the factor scales), each step backtracked so the objective falls monotonically.
 
-Walk-forward: refits at every distinct event date (default) or every month / quarter; a fight dated d uses
-the refit of the latest refit date <= d, which saw only fights strictly before that date. Hyperparameters
-(K, lambda, half-life, win weight) are chosen by time-ordered CV on 2019-2023 quarters; 2024-2025 is the
-validation period. Fights dated 2026-01-01 or later are dropped on load (hidden-data protocol) and never
-read; the roster embeddings are the fit at 2026-01-01.
+Walk-forward: a full refit at the start of every quarter (warm-started from the previous quarter and
+Procrustes-aligned to it, so the axes keep their meaning), and after every event a light update: a
+fighter-only Newton step for the fighters who just fought, loadings frozen. The embedding used for a fight
+dated d has therefore seen every UFC fight before d and nothing from d on. Hyperparameters (lambda, half-life,
+defense prior, win weight) are chosen by time-ordered CV on 2019-2023 (half-year refits); 2024-2025 is the
+validation period. Fights dated 2026-01-01 or later are dropped on load (hidden-data protocol) and never read;
+the roster embeddings are the fit at 2026-01-01.
 
-Writes data/derived/embed.json (model, per-snapshot embeddings keyed by backtest id and side, roster
-embeddings keyed by slug, interpretation, nearest neighbours, validation numbers), data/derived/
-embed_model.json (compact browser model for src/ml/embed.js) and research/model_embed.md.
+Downstream tests (2010-2023 train, 2024-2025 validation, symmetric evaluation): a mirrored no-intercept
+logistic winner model and a mirrored LightGBM, each with and without embedding features; per-stat Poisson
+models of the stat line (GLM on log5 features, LightGBM), with and without embeddings.
+
+Writes data/derived/embed.json (model, per-snapshot embeddings keyed by backtest id and side, 2010-2018
+training snapshots keyed by fight id, roster embeddings keyed by slug, axes, nearest neighbours, CV and
+validation numbers), data/derived/embed_model.json (compact browser model for src/ml/embed.js, with a check
+block of Python outputs that tests/test_embed.js reproduces) and research/model_embed.md (written by hand
+from the printed numbers).
 """
 from __future__ import annotations
 
@@ -307,6 +318,25 @@ def noise_weights(D, idx, noise):
     return w
 
 
+DIV_RIDGE, SLOPE_RIDGE = 2.0, 1.0
+
+
+def ctx_rows(div, era, five, NDIV):
+    """Context design [1, one-hot division, era (decades from 2015), five-round flag] (rows x NDIV + 3)."""
+    Z = np.zeros((len(div), NDIV + 3))
+    Z[:, 0] = 1.0
+    Z[np.arange(len(div)), 1 + np.asarray(div)] = 1.0
+    Z[:, NDIV + 1] = era
+    Z[:, NDIV + 2] = five
+    return Z
+
+
+def ctx_ridge(NDIV):
+    """Ridge on the context coefficients: the global intercept is free, division offsets shrink toward it (so a
+    small division with no events of a rare kind in the window cannot drive its rate to zero), slopes mildly."""
+    return np.r_[1e-4, np.full(NDIV, DIV_RIDGE), SLOPE_RIDGE, SLOPE_RIDGE]
+
+
 class Fit:
     """One MAP fit on the rows dated before T (ordinal day), decay-weighted, by alternating block Newton.
 
@@ -349,11 +379,9 @@ class Fit:
         self.active = np.zeros(F, bool)
         self.active[self.x] = True
         self.active[self.y] = True
-        # per-row context design for the intercept block
-        self.Zc = np.zeros((n, D.NDIV + 2))
-        self.Zc[np.arange(n), self.div] = 1.0
-        self.Zc[:, D.NDIV] = self.era
-        self.Zc[:, D.NDIV + 1] = self.five
+        # per-row context design for the intercept block: [global, division offsets, era, five-round]
+        self.Zc = ctx_rows(self.div, self.era, self.five, D.NDIV)
+        self.creg = ctx_ridge(D.NDIV)
         self.P = self.init() if warm is None else {k: v.copy() for k, v in warm.items()}
         if warm is not None and warm["A"].shape[1] != K:
             raise ValueError("warm start with a different K")
@@ -375,13 +403,13 @@ class Fit:
         rng = np.random.default_rng(SEED)
         P = {"A": rng.normal(0, 0.1, (D.F, K)), "D": rng.normal(0, 0.1, (D.F, K)),
              "W": rng.normal(0, 0.1, (NT, K)), "V": rng.normal(0, 0.1, (NT, K)),
-             "C": np.zeros((NT, D.NDIV + 2)), "ua": np.zeros(K), "ud": np.zeros(K), "M": np.zeros((K, K))}
+             "C": np.zeros((NT, D.NDIV + 3)), "ua": np.zeros(K), "ud": np.zeros(K), "M": np.zeros((K, K))}
         num = (self.w[:, None] * self.Yr).sum(0)
         den = (self.w[:, None] * self.Er).sum(0)
         r = num / np.maximum(den, 1e-9)
         base = np.where(IS_BIN, np.log(np.clip(r, 1e-6, 1 - 1e-6) / np.clip(1 - r, 1e-6, 1)),
                         np.log(np.maximum(r, 1e-6)))
-        P["C"][:, :D.NDIV] = base[:, None]
+        P["C"][:, 0] = base
         return P
 
     def eta(self, P):
@@ -409,7 +437,7 @@ class Fit:
         return (0.5 * lam * ((P["A"] ** 2).sum() + (P["W"] ** 2).sum())
                 + 0.5 * ld * ((P["D"] ** 2).sum() + (P["V"] ** 2).sum())
                 + 0.5 * lh * ((P["ua"] ** 2).sum() + (P["ud"] ** 2).sum() + (P["M"] ** 2).sum())
-                + 0.5e-4 * (P["C"] ** 2).sum())
+                + 0.5 * (self.creg[None, :] * P["C"] ** 2).sum())
 
     def loss(self, P, parts=None):
         """Full objective. parts = (stat, win) already known for P's unchanged components (None = compute)."""
@@ -440,7 +468,7 @@ class Fit:
         _, G, H = _glm_terms(self.eta(P), self.Yr, self.Er, self.wc, self.knb)
         p = Z.shape[1]
         ld = lam * self.hp.get("lam_d", 1.0)
-        reg = np.r_[np.full(K, lam), np.full(K, ld), np.full(D.NDIV + 2, 1e-4)]
+        reg = np.r_[np.full(K, lam), np.full(K, ld), self.creg]
         new = {"W": P["W"].copy(), "V": P["V"].copy(), "C": P["C"].copy()}
         for t in range(NT):
             th = np.r_[P["W"][t], P["V"][t], P["C"][t]]
@@ -561,11 +589,7 @@ class Fit:
 
 # ------------------------------------------------------------------------------------------------ helpers
 def ctx_design(D, idx):
-    Z = np.zeros((len(idx), D.NDIV + 2))
-    Z[np.arange(len(idx)), D.r_div[idx]] = 1.0
-    Z[:, D.NDIV] = D.r_era[idx]
-    Z[:, D.NDIV + 1] = D.r_five[idx]
-    return Z
+    return ctx_rows(D.r_div[idx], D.r_era[idx], D.r_five[idx], D.NDIV)
 
 
 def predict_rows(P, D, idx, ex=None, ey=None):
@@ -746,12 +770,9 @@ def stat_rates(eta):
 
 def eta_pair(P, divs, era, five, ex, ey):
     """Linear predictors for attacker embeddings ex against defender embeddings ey (rows x 2K each)."""
-    K = P["A"].shape[1]
-    NDIV = P["C"].shape[1] - 2
-    Z = np.zeros((len(ex), NDIV + 2))
-    Z[np.arange(len(ex)), divs] = 1.0
-    Z[:, NDIV] = era
-    Z[:, NDIV + 1] = five
+    K = P["W"].shape[1]
+    NDIV = P["C"].shape[1] - 3
+    Z = ctx_rows(divs, era, five, NDIV)
     return Z @ P["C"].T + ex[:, :K] @ P["W"].T + ey[:, K:] @ P["V"].T
 
 
@@ -1315,8 +1336,14 @@ def stitch_and_orient(w1, w2, D, hp, ref_date=dt.date(2019, 1, 1)):
     RA = procrustes(first["A"], ref["A"], wts)
     RD = procrustes(first["D"], ref["D"], wts)
     apply_walk(w2, RA, RD)
+    act = wts >= 1.0
+    X1 = np.hstack([ref["A"], ref["D"]])[act]
+    X2 = np.hstack([w2["quarters"][0]["A"], w2["quarters"][0]["D"]])[act]
+    stitch = {"date": dt.date.fromordinal(ref["T"]).isoformat(), "n_fighters": int(act.sum()),
+              "rel_rms_diff": round(float(np.sqrt(((X1 - X2) ** 2).mean()) / X1.std()), 4),
+              "corr": round(float(np.corrcoef(X1.ravel(), X2.ravel())[0, 1]), 4)}
     merged = {"quarters": w1["quarters"] + w2["quarters"], "fight": {**w1["fight"], **w2["fight"]},
-              "final": w2["final"], "hp": hp, "stitch": {"RA_dev_from_I": float(np.abs(RA - np.eye(len(RA))).max())}}
+              "final": w2["final"], "hp": hp, "stitch": stitch}
     q = next(x for x in merged["quarters"] if x["T"] == ref_date.toordinal())
     GA = varimax(q["P"]["W"])
     GD = varimax(q["P"]["V"])
@@ -1410,7 +1437,8 @@ def py_eval_compact(m, ea, eb, division, era, five):
     dv = m["divs"].index(division) if division in m["divs"] else m["divs"].index(m["default_division"])
     ea, eb = np.array(ea, float), np.array(eb, float)
     def eta(x, y):
-        return C[:, dv] + C[:, NDIV] * era + C[:, NDIV + 1] * five + W @ x[:K] + V @ y[K:]
+        return (C[:, 0] + C[:, 1 + dv] + C[:, NDIV + 1] * era + C[:, NDIV + 2] * five
+                + W @ x[:K] + V @ y[K:])
     ua, ud, M = np.array(m["ua"]), np.array(m["ud"]), np.array(m["M"])
     z = ua @ (ea[:K] - eb[:K]) + ud @ (ea[K:] - eb[K:]) + ea[:K] @ M @ eb[K:] - eb[:K] @ M @ ea[K:]
     eA, eB = eta(ea, eb), eta(eb, ea)

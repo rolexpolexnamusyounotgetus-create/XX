@@ -111,6 +111,20 @@ const close = (a, b, t = 1e-12) => Math.abs(a - b) <= t;
   check("hook weights reach the engine", hh.objective !== h0.objective);
   await SH.close(); await SN.close();
 
+  // review checks (Nov 6): unledgered validation scoring is refused; contaminated-baseline warning; fitted Elo slope
+  const cp = require("child_process"), ROOTD = path.join(__dirname, "..");
+  const ev = cp.spawnSync("node", [path.join(ROOTD, "tools/mlcal.js"), "eval", "--split", "val", "--n-fights", "5", "--sims", "2"], { cwd: ROOTD, encoding: "utf8" });
+  check("eval --split val without --unledgered-val is refused (validation goes through the ledger)", ev.status !== 0 && /ledger/.test(ev.stderr));
+  const tmpP = path.join(require("os").tmpdir(), "mlcal_selfcal_probe_" + process.pid + ".js");
+  fs.writeFileSync(tmpP, "// x: 1, // [selfcal] probe\n");
+  const py = cp.spawnSync("python3", ["-c", "import sys; sys.path.insert(0, 'tools'); import mlcal; " +
+    "print(len(mlcal.baseline_warnings(sys.argv[1])), len(mlcal.baseline_warnings('data/derived/mlcal_params3_selfcal_pre2024.js')), round(mlcal.elo_slope_train(), 3))", tmpP],
+    { cwd: ROOTD, encoding: "utf8" });
+  fs.unlinkSync(tmpP);
+  const pv = (py.stdout || "").trim().split(/\s+/).map(Number);
+  check("baseline warning fires for all-years [selfcal] values and not for the pre-2024 rebuild", py.status === 0 && pv[0] === 1 && pv[1] === 0, (py.stderr || "").slice(-200));
+  check("train-fitted Elo slope is finite and positive (no intercept, mirrored)", pv[2] > 0.5 && pv[2] < 5, String(pv[2]));
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

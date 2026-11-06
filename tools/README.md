@@ -179,7 +179,9 @@ Stdlib only, about 90 polite requests (1.25 s apart, robots.txt checked) in 3-4 
   `data/derived/odds_upcoming.json`.
 
 Run it in fight week, at T-2h before each card's lock, and about 10 h after the card for the archived
-closing lines (`plan` prints the times). Details and caveats: `research/data_odds_upcoming.md`.
+closing lines (`plan` prints the times). Details and caveats: `research/data_odds_upcoming.md`. Its
+verification log (Nov 6) covers the source spot checks and the exchange identities: BFO's "Polymarket"
+is stored as `PolymarketUS`, and BFO's Kalshi prices include the taker fee.
 
 
 ## fightweek.py: fight-week context (weigh-ins, bout changes, venue, home country)

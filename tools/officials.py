@@ -76,7 +76,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import baserates as br  # noqa: E402  (loader and card regex shared with the base-rate tool)
 
 RAW = ROOT / "data" / "raw"
-OUT = ROOT / "data" / "derived" / "officials.json"
+OUT = Path(__import__("os").environ.get("OFFICIALS_OUT", str(ROOT / "data" / "derived" / "officials.json")))
 WIKIDATA = RAW / "wikidata_mma_people.csv"
 WIKIDATA_ALT = RAW / "wikidata_mma_altlabels.csv"
 SINCE = "2001-01-01"
@@ -1008,7 +1008,7 @@ def boot_diff(a, b, n=2000, seed=1):
 # ================================================================================================
 # judge-model driver (walk-forward)
 # ================================================================================================
-CACHE = ROOT / "out" / "officials"
+CACHE = Path(__import__("os").environ.get("OFFICIALS_CACHE", str(ROOT / "out" / "officials")))
 MODELS = {"indep": {"shared": 0, "judges": 0, "home": 0},
           "league": {"judges": 0, "home": 0},
           "league_home": {"judges": 0},
@@ -1621,7 +1621,8 @@ def run_referees(F, S, ded=None):
     Fall["referee"] = Fall["REFEREE"].fillna("").str.strip()
     E = br._load(RAW / "ufc_event_details.csv")
     Fall["region"] = Fall.EVENT.map(dict(zip(E.EVENT, E.LOCATION))).map(lambda l: region_of(l)[1])
-    out = {"units": {}, "wf": wf, "taus_eb": taus_eb, "taus_tuned": taus_tuned}
+    out = {"units": {}, "taus_eb": taus_eb, "taus_tuned": taus_tuned,
+           "tune_loss_by_tau": {k: wf[k]["tune_loss"] for k in wf}}
     for name in units:
         out["units"][name] = {"definition": REF_UNITS[name], "family": units[name][4],
                               "n_units": wf[name]["n_units"], "events": wf[name]["events"],
@@ -1840,6 +1841,43 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
                            "most": [{k: j[k] for k in ("name", "cards", "cards_2022_on", "power_index")} for j in act[:8]],
                            "least": [{k: j[k] for k in ("name", "cards", "cards_2022_on", "power_index")} for j in act[-8:]]}
     J["deductions"] = dedval
+    # ---- compact engine table
+    lg = J["league"]
+    last_year = max(int(k) for k in lg["ten_eight"]["c_by_year"])
+    eng = {"version": "officials v8 (tools/officials.py)",
+           "judge_equation": "z = exp(n)*(exp(v+wV*t)*V + exp(p+wK*t)*K + exp(g+wG*t)*G + h*home + u) + Logistic(0,1); "
+                             "u ~ N(0, sigma_shared^2) per round, shared by the panel; A wins the round if z > 0; "
+                             "winner W gets 10-8 with P = sigmoid(c0 + c_now + c + thV*V_W + thK*K_W + thG*G_W + thU*u_W); "
+                             "10-10 with P = p_10_10",
+           "beta": lg["beta"], "w": lg["era_trend_per_decade"], "t_now": round((last_year - 2017) / 10, 2),
+           "sigma_shared": lg["sigma_shared"], "home": lg["home"], "p_10_10": lg["p_10_10"],
+           "ten_eight": {"c0": lg["ten_eight"]["c0"], "c_now": lg["ten_eight"]["c_by_year"][last_year],
+                         "theta": lg["ten_eight"]["theta"]},
+           "unknown_judge_sd": J["tau"],
+           "judge_cols": ["name", "n", "v", "p", "g", "c", "cards", "cards_2022_on"],
+           "judges": {j["key"]: [j["name"]] + [round(j["effects"][q], 4) for q in EFF] + [j["cards"], j["cards_2022_on"]]
+                      for j in jt if j["years"] and j["years"][1] >= 2019},
+           "judge_pools": {reg: [[x["key"], x["share"]] for x in pool["judges"]]
+                           for reg, pool in J["region_pools"].items()},
+           "pool_note": "draw three distinct judges by share; '_other' = a judge not in the table: draw "
+                        "(n, v, p, g, c) ~ N(0, unknown_judge_sd^2)"}
+    if refs:
+        rcols = ["kd_finish", "kd_single", "kd_follow", "stand_tko", "gnp_tko", "doctor", "dq"]
+        eng["referee_cols"] = ["name", "fights_2019_on"] + rcols + ["deduction"]
+        eng["referee_note"] = ("multipliers on the league rate (odds for kd_finish, kd_single, doctor, dq, deduction; "
+                               "rate for kd_follow, stand_tko, gnp_tko); default = empirical-Bayes shrinkage "
+                               "(referees_eb); referees_tuned = less shrinkage (2019-2023 tuned tau), a style knob "
+                               "that did not improve 2024-2025 predictions")
+        for tag, sfx_ in (("referees_eb", ""), ("referees_tuned", "_tuned")):
+            eng[tag] = {r["name"]: [r["fights_2019_on"]] + [round(r.get(u + sfx_, {}).get("mult", 1.0), 4) for u in rcols]
+                        + [round(r.get("deduction", {}).get("odds_mult", 1.0), 4)]
+                        for r in refs["referees"] if r["fights_2019_on"] >= 10}
+        eng["referee_pools"] = {reg: [[x["name"], x["share"]] for x in pool["referees"]]
+                                for reg, pool in refs["pools"].items()}
+        eng["referee_league_rates_2019_on"] = {u: refs["units"][u]["league_rate_2019_on"] for u in refs["units"]}
+        if "deduction_model" in refs:
+            eng["referee_league_rates_2019_on"]["deduction_per_decision"] = \
+                refs["deduction_model"]["league_rate_per_decision_2019_on"]
     out = {"meta": {"source": "ufcstats snapshot data/raw (DETAILS judges' totals, loser-first; REFEREE); Wikidata "
                               "nationality (CC0) for the home effect", "snapshot": str(data_max.date()),
                     "built": dt.date.today().isoformat(), "tool": "tools/officials.py",
@@ -1847,7 +1885,7 @@ def assemble(rows, nat, natinfo, F, S, data_max, notes, refs, ded, dedval, final
                     "nationality": natinfo, "notes": notes,
                     "walk_forward": "tau multiplier tuned on 2019-2023 (fit before 2019); held-out 2024-01-01 on "
                                     "(fit before 2024, frozen); final tables fit on all data"},
-           "judging": J, "referees": refs}
+           "judging": J, "referees": refs, "engine": eng}
     return out
 
 
@@ -1898,6 +1936,8 @@ def deduction_validation(x, cfg, rows, nat, jidx, year_max):
         q["dfix"], q["ded"] = None, None
         era.append(q)
         truth.append(tuple(t))
+    if not era:
+        return {"fights": 0}
     dz = Design(era, jidx, nat, year_max)
     post = deduction_posterior(x, dz, cfg)
     tmap = {r["fid"]: t for r, t in zip(era, truth)}
