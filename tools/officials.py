@@ -2388,7 +2388,12 @@ def run_post(rows, nat, natinfo, F, S, data_max, notes):
     # ---- structure, 10-8 level forecast, panel agreement
     test = load_fold("test")
     base_test = pickle.load(open(CACHE / "fold_test.pkl", "rb")) if SUFFIX else None
-    out["judging"]["structure"] = structure_block(rows, by_fid, base_test, test if SUFFIX else None, sfx)
+    try:
+        out["judging"]["structure"] = structure_block(rows, by_fid, base_test, test if SUFFIX else None, sfx)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        out["judging"]["structure"] = {"error": repr(e)}
     try:
         t22 = load_fold("tune22")
         fc = ten8_forecast_block(rows, nat, t22["models"]["judges_home" + sfx], [2022, 2023],

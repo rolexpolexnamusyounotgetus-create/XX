@@ -1315,6 +1315,11 @@ PRE_CORE = ["pre_wpct", "pre_logn", "pre_fin", "pre_finl", "pre_streak", "pre_fe
             "pre_netelo", "pre_dwcs", "pre_agedeb"]
 BASE_KEYS = ["elo", "age", "reach", "height", "logn", "uwin", "ufin", "ufinl", "layoff", "slpm", "sapm", "acc",
              "sdef", "td15", "tdacc", "tddef", "sub15", "kd15", "okd15", "ctrl", "octrl"]
+# ablation sets: the fighter's own record only (no network, no promotion quality), and record + promotion
+PRE_RECORD = ["pre_wpct", "pre_logn", "pre_fin", "pre_ko", "pre_sub", "pre_finl", "pre_kol", "pre_subl",
+              "pre_streak", "pre_l5", "pre_yrs", "pre_agedeb", "pre_dwcs", "pre_tuf"]
+PRE_RECORD_PROMO = PRE_RECORD + ["pre_feed", "pre_feedmax", "pre_grad", "pre_oppufc"]
+SEED_RECORD = ["pre_wpct", "pre_logn", "pre_fin", "pre_finl", "pre_streak", "pre_dwcs", "pre_agedeb"]
 
 
 def base_side(u, elo):
@@ -1873,6 +1878,11 @@ def evaluate(args):
     meth = method_eval(df_all, train_from)
     side_fin = side_finish_eval(df_all, args)
 
+    # ---------------- audit: leakage sensitivity and ablations (hyperparameters by CV on 2015-2023 only)
+    audit = run_audit(args, fights, people, ufc, elo_pre, snaps, train_from, df, newc, trainval, test, pick, fs,
+                      best, cv_eval, oof_ll, fit_seed, seeded_pre, side_pre_deb=deb, first_fid=first_fid,
+                      tested=tested, E=E, yt=yt, cb=cb, lls_by=lls_by, preds_test=preds_test, Cs=Cs, taus=taus)
+
     # ---------------- out-of-sample predictions for every newcomer bout 2019+ (CV years oof, 2024+ final)
     predictions = {}
     oof_bp = cv_eval(lambda: DiffModel(BASE_KEYS, fs, C=pick["C"], tau=pick["tau"]), trainval)
@@ -1937,6 +1947,7 @@ def evaluate(args):
         "method": meth,
         "market": market,
         "side_finish": side_fin,
+        "audit": audit,
     }
     pre["eval"] = ev
     pre["predictions"] = predictions
@@ -1951,6 +1962,142 @@ def evaluate(args):
     print(json.dumps(overall, indent=1, default=str)[:3000])
     print("done %.0f s" % (time.time() - t0))
     return ev
+
+
+def _boot_delta(cb, a, b):
+    import numpy as np
+    d = a - b
+    bs = cb.means(d)
+    return [round(float(d.mean()), 4), round(float(np.percentile(bs, 2.5)), 4), round(float(np.percentile(bs, 97.5)), 4),
+            round(float((bs < 0).mean()), 3)]
+
+
+def _lls(p, y):
+    import numpy as np
+    p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6)
+    return -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+
+def run_audit(args, fights, people, ufc, elo_pre, snaps, train_from, df, newc, trainval, test, pick, fs, best,
+              cv_eval, oof_ll, fit_seed, seeded_pre, side_pre_deb, first_fid, tested, E, yt, cb, lls_by, preds_test,
+              Cs, taus):
+    """Checks on the main result, each scored once on 2024+ with settings chosen by CV inside 2015-2023:
+    1. full-network reference (net Elo / opponents' records from every cached page: who-reached-the-UFC-later
+       leaks into the network) against the strict network the models use;
+    2. ablations: own record only, record + promotion quality, pre-UFC block on newcomer sides only;
+    3. seeded Elo from the own record only;
+    4. stacking on tools/ml.py's out-of-fold ML and stack probabilities (backtest bouts with a 1-3 fight side)."""
+    import numpy as np
+    import pandas as pd
+    out = {"note": "the strict network (StrictNetwork) is the default; the earlier run of this tool scored 2024+ "
+                   "with the full network, so these 2024+ numbers are a second look at the held-out years"}
+    t0 = time.time()
+    # 1. full network reference with the chosen settings
+    df_full_all = build_frame(fights, people, ufc, elo_pre, snaps, train_from, mode="full")
+    df_full = df_full_all[df_full_all["decisive"]]
+    nf = df_full[df_full["newc"]]
+    tv_f, te_f = nf[nf["date"] < TEST_FROM], nf[nf["date"] >= TEST_FROM]
+    assert list(te_f["fid"]) == list(test["fid"])
+    p_full = DiffModel(BASE_KEYS, fs, C=pick["C"], tau=pick["tau"]).fit(tv_f).predict(te_f)
+    sens = {"base+pre strict (main)": round(float(lls_by["base+pre"].mean()), 4),
+            "base+pre full network": round(float(_lls(p_full, yt).mean()), 4),
+            "full - strict": _boot_delta(cb, _lls(p_full, yt), lls_by["base+pre"])}
+    out["full_network_reference"] = sens
+    # 2. ablations, CV-chosen on trainval
+    abl = {}
+    grid_C = [c for c in Cs if c in (0.003, 0.01, 0.03, 0.1)] or list(Cs)
+    grid_t = [t for t in taus if t in (2.0, 4.0, 8.0, None)] or list(taus)
+    variants = [("base+pre_record", PRE_RECORD, None), ("base+pre_record+promo", PRE_RECORD_PROMO, None),
+                ("base+pre newcomer sides only", fs, 3)]
+    for nm, keys, cap in variants:
+        bestv = None
+        for C in grid_C:
+            for tau in grid_t:
+                o = cv_eval(lambda: DiffModel(BASE_KEYS, keys, C=C, tau=tau, cap=cap), trainval)
+                v = oof_ll(o, trainval)
+                if bestv is None or v < bestv[0]:
+                    bestv = (v, C, tau)
+        p = DiffModel(BASE_KEYS, keys, C=bestv[1], tau=bestv[2], cap=cap).fit(trainval).predict(test)
+        l = _lls(p, yt)
+        abl[nm] = {"cv_ll": round(bestv[0], 4), "C": bestv[1], "tau": bestv[2], "test_ll": round(float(l.mean()), 4),
+                   "minus base": _boot_delta(cb, l, lls_by["base"]),
+                   "minus base+pre (main)": _boot_delta(cb, l, lls_by["base+pre"])}
+        print("audit", nm, abl[nm], "%.0f s" % (time.time() - t0), flush=True)
+    out["ablations"] = abl
+    # 3. seeded Elo from the own record only (+ age)
+    sf = fit_seed(SEED_RECORD, True, TEST_FROM)
+    pre_, _ = seeded_pre(sf)
+    p = np.array([pre_[f][2] for f in test["fid"]])
+    l = _lls(p, yt)
+    out["seed_record+age"] = {"keys": sf["keys"], "beta_elo_points_per_sd": [round(float(x), 2) for x in sf["beta"][:-1]],
+                              "test_ll": round(float(l.mean()), 4),
+                              "minus elo": _boot_delta(cb, l, lls_by["elo"]),
+                              "minus seed_pre+age (main)": _boot_delta(cb, l, lls_by["elo_seed_pre+age"])}
+    print("audit seed_record+age", out["seed_record+age"], flush=True)
+    # 4. stacking on tools/ml.py out-of-fold predictions
+    try:
+        out["ml_stack"] = ml_stack_eval(newc, fs, pick, Cs, taus)
+    except FileNotFoundError as e:
+        out["ml_stack"] = {"error": str(e)}
+    print("audit done %.0f s" % (time.time() - t0), flush=True)
+    return out
+
+
+def ml_stack_eval(newc, fs, pick, Cs, taus):
+    """Does the pre-UFC block add to tools/ml.py? ml.json holds out-of-fold probabilities for backtest bouts
+    2019-2023 (annual expanding refits) and 2024+ test probabilities from models fit on 2010-2023. Stack:
+    symmetric logistic on [logit(p_ml)] + faded pre-UFC side differences; C and tau by year-ahead CV inside the
+    2019-2023 out-of-fold rows (fit on earlier OOF years, score year Y, Y = 2020..2023); test 2024+ once.
+    Rows: backtest bouts (both men had >= 1 prior UFC bout) where one side had 1-3 prior bouts."""
+    import numpy as np
+    path = os.path.join(DERIVED, "ml.json")
+    M = json.load(open(path))["fights"]
+    d = newc[newc["fid"].isin(M.keys())].copy()
+    res = {"rows": {}}
+    for src in ("ml", "stack", "elo"):
+        d["p_" + src] = d["fid"].map(lambda f: M[f].get(src))
+    d["set"] = d["fid"].map(lambda f: M[f]["set"])
+    chk = d["fid"].map(lambda f: M[f]["y"]).to_numpy(float)
+    assert np.allclose(chk, d["y"].to_numpy()), "ml.json orientation differs"
+    oof = d[(d["set"] == "oof") & (d["date"] < TEST_FROM)].copy()
+    te = d[(d["set"] == "test") & (d["date"] >= TEST_FROM)].copy()
+    res["rows"] = {"oof_2019_2023": int(len(oof)), "test_2024plus": int(len(te))}
+    yt = te["y"].to_numpy()
+    cb = ClusterBoot(te["date"].tolist(), 2000, 21)
+    years = [2020, 2021, 2022, 2023]
+    for src in ("ml", "stack"):
+        for frame in (oof, te):
+            lg = np.log(np.clip(frame["p_" + src], 1e-4, 1 - 1e-4) / (1 - np.clip(frame["p_" + src], 1e-4, 1 - 1e-4)))
+            frame["l" + src + "_A"] = lg / 2.0
+            frame["l" + src + "_B"] = -lg / 2.0
+        r = {}
+        cands = {}
+        for nm, prek in (("cal", []), ("+pre", fs)):
+            bestv = None
+            for C in Cs:
+                for tau in (taus if prek else (None,)):
+                    oo = []
+                    for Y in years:
+                        trn = oof[oof["date"] < dt.date(Y, 1, 1)]
+                        va = oof[oof["year"] == Y]
+                        m = DiffModel(["l" + src], prek, C=C, tau=tau).fit(trn)
+                        oo.append((_lls(m.predict(va), va["y"].to_numpy()).sum(), len(va)))
+                    v = sum(a for a, _ in oo) / sum(n for _, n in oo)
+                    if bestv is None or v < bestv[0]:
+                        bestv = (v, C, tau)
+            m = DiffModel(["l" + src], prek, C=bestv[1], tau=bestv[2]).fit(oof)
+            cands[nm] = m.predict(te)
+            r[nm] = {"cv_ll": round(bestv[0], 4), "C": bestv[1], "tau": bestv[2],
+                     "test_ll": round(float(_lls(cands[nm], yt).mean()), 4)}
+            if prek:
+                r[nm]["coef"] = m.coefs()
+        raw = _lls(te["p_" + src].to_numpy(), yt)
+        r["raw_test_ll"] = round(float(raw.mean()), 4)
+        r["+pre minus cal"] = _boot_delta(cb, _lls(cands["+pre"], yt), _lls(cands["cal"], yt))
+        r["+pre minus raw"] = _boot_delta(cb, _lls(cands["+pre"], yt), raw)
+        res[src] = r
+        print("ml stack", src, {k: v for k, v in r.items() if k != "coef"}, flush=True)
+    return res
 
 
 def method_eval(df_all, train_from):

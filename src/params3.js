@@ -15,7 +15,11 @@
 (function (root) {
   "use strict";
   var FightParams = {
-    version: "3.0.0-wf-2026-11-06",   // parameter set label (engine VERSION is separate)
+    version: "4.0.0-dev",   // parameter set label (engine VERSION is separate)
+
+    // ---------------- learned stat-line rates (engine v4) ----------------
+    mlWeight: 1,      // blend of the learned matchup rates (FightEngine.loadMLRates; src/ml/mlrates.js) vs the base tables: 1 = learned, 0 = base
+    mlMaxRatio: 4,    // cap on any single learned-vs-base multiplier (src/ml/mlrates.js applyToMatchup maxRatio)
 
     // ---------------- profile estimation (shrinkage toward the fight division's priors) ----------------
     kPM: 40,          // per-minute rate prior strength, fight-minutes of division-average fighting (combine_fit meta.shrink_k_default.pm)
@@ -186,20 +190,22 @@
     },
 
     // ---------------- judging ----------------
+    // v4: EM round-winner fit over all 7,550 ufcstats cards with only 10-9 rounds (docs/BACKLOG.md "Judging";
+    // research/data_baserates.md item 12), logit per landed differential. Noise, tastes and the 10-8 rule are fit to the
+    // 2019-2023 judges' rounds in data/derived/judgerounds_rows.json by tools/judgecal.js (train years only).
     judge: {
-      head: 0.411, body: 0.310, leg: 0.287,  // logit per landed strike differential (baserates round_model clean subset, 1,541 rounds)
-      kd: 2.81,                               // per knockdown (same fit)
-      td: 0.651,                              // per takedown landed (same fit)
-      ctrlMin: 0.882,                         // per minute of control (same fit)
-      sub: 1.342,                             // per submission attempt (same fit)
-      hurt: 1.0,                              // per hurt/wobble scored (engine-only event; literature 12.5: between a head strike and a KD)
+      head: 0.179, body: 0.133, leg: 0.105,   // per landed sig strike differential to head / body / leg (EM fit)
+      kd: 2.42,                               // per knockdown (EM fit; 13.5 head strikes)
+      td: 0.286,                              // per takedown landed (EM fit)
+      ctrlMin: 0.46,                          // per minute of control (EM fit; ufcstats control includes clinch control)
+      sub: 0.85,                              // per submission attempt (EM fit)
+      hurt: 0.8,                              // per hurt/wobble scored (engine-only event, not in ufcstats: about 1/3 of a knockdown; judgment call)
       power: 0.25,                            // default judges.power: extra credit for power-weighted head damage beyond the strike count (v2 judgePower 0.25)
-      sharedSd: 1.1,                          // [walkfwd 2026-11-06] sd of the round noise shared by the three judges (logits) (default; indSd is fit to the split-decision share)
-      indSd: 1.975,                           // [walkfwd 2026-11-06; was 1.206] sd of each judge's own noise (logits); fit to the unanimous share of decisions on 2019-2023 fights (78.6%)
+      sharedSd: 1.0,                          // [judgecal] sd of the round noise shared by the three judges (logits)
+      indSd: 1.0,                             // [judgecal] sd of each judge's own noise (logits)
       tasteSd: 0.2,                           // lognormal sd of each judge's fight-level taste for striking / grappling / damage (literature 12.5: 0.15-0.25)
-      t108: 6.136,                            // [selfcal] logit margin a 10-8 needs with a one-knockdown edge (ABC: damage required); fit to ~3.5% of judge-rounds (4.7% 2015+, 2.5% 2024-25)
-      t108b: 9.136,                           // [selfcal] logit margin a 10-8 needs with no knockdown edge but 2+ more hurts (t108 + 3)
-      t108kd2: 3.136                          // [selfcal] logit margin a 10-8 needs with a two-knockdown edge (t108 - 3)
+      t108: 6.0,                              // [judgecal] a judge scores 10-8 when his |z| exceeds t108 - t108kd x min(2, winner's KD edge)
+      t108kd: 1.5                             // [judgecal] 10-8 threshold reduction per knockdown of edge
     },
 
     // ---------------- between rounds ----------------

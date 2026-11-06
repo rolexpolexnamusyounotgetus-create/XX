@@ -1,5 +1,7 @@
 # Engine roadmap: v3 to v10
 
+**Update, Nov 6 (Kira's call): the whole roadmap ships in v5.** v4 = ML stat-line rates + train-only priors + EM judging. The v5-v10 components below are built in parallel, each behind its own flag in an isolated worktree with a train-only ablation and an independent verifier, then merged into v5 with a leave-one-out ablation and a single validation measurement, followed by the first vault audit. v6-v10 become refinement cycles driven by the v5 review and the vault audit; the same keep-only-if-better rule applies to every number.
+
 Rule for every version: it ships only if it beats the previous version on the held-out backtest
 (UFC fights from 2024-01-01 on, profiles frozen before each fight, never used for tuning), or adds a
 capability that is checked against data without making the held-out numbers worse. Each version

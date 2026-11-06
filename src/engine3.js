@@ -565,6 +565,61 @@
     return m;
   }
 
+  // ------------------------------------------------------------------ matchup (v4): base tables + learned stat-line rates
+  // opts.ml: false -> plain base tables (v3-style rates); undefined / true -> apply the loaded model (loadMLRates) when there
+  // is one; { pred } or { A, B } -> apply these precomputed per-side rates (corner order of this call; e.g. out-of-fold
+  // tables for leak-free backtests; base = league rates of the shrinkage division, filled in when missing); { model } ->
+  // that model handle instead of the loaded one. opts.mlModel is accepted as a shorthand for { model }.
+  // params.mlWeight (0..1) blends toward the base tables (1 = full learned rates); params.mlMaxRatio caps any single
+  // multiplier. The result carries m.mlApplied (true / false) and, when applied, m.ml (targets, ratios) and m.mlPred.
+  function mlPredFor(MLR, m, pa, pb, opts, model) {
+    var x = opts.ml;
+    var pred = null;
+    if (x && typeof x === "object" && (x.pred || (x.A && x.B))) {
+      var src = x.pred || x;
+      pred = { A: src.A, B: src.B, base: src.base || null };
+    } else if (model) {
+      var priors = opts.priors || (DB && DB.priors) || null;
+      if (!priors) { priors = {}; priors.ALL = m.P; priors[m.division] = m.P; }
+      pred = MLR.predict(model, pa, pb, { division: m.division, prior_division: opts.prior_division || null, rounds: m.rounds,
+        title: m.title, date: m.date, priors: priors });
+    }
+    if (!pred) return null;
+    if (!pred.base) {
+      var names = (model && model.targets) || MLR.TNAMES;
+      pred.base = names.map(function (t) { var v = m.P[MLR.BASE_KEY[t]]; return v == null ? 0 : +v; });
+    }
+    return pred;
+  }
+  function matchup(profA, profB, opts) {
+    opts = opts || {};
+    var pa = resolve(profA), pb = resolve(profB);
+    var m = matchupBase(pa, pb, opts);
+    m.mlApplied = false;
+    if (opts.ml === false) return m;
+    var MLR = getML();
+    if (!MLR) return m;
+    var model = opts.mlModel || (opts.ml && typeof opts.ml === "object" && opts.ml.model) || MLMODEL;
+    var pred = mlPredFor(MLR, m, pa, pb, opts, model);
+    if (!pred) return m;
+    var w = m.p.mlWeight != null ? +m.p.mlWeight : 1;
+    if (!(w > 0)) return m;
+    MLR.applyToMatchup(m, pred, { engine: api, model: model || undefined, weight: w, maxRatio: m.p.mlMaxRatio || 4,
+      parts: opts.mlParts || undefined });
+    m.mlPred = { A: pred.A, B: pred.B, base: pred.base };
+    m.mlApplied = true;
+    return m;
+  }
+  // learned stat-line model (data/derived/mlrates.json; tools/mlrates.py). Returns the model handle.
+  function loadMLRates(json) {
+    var MLR = getML();
+    if (!MLR) throw new Error("FightEngine.loadMLRates: src/ml/mlrates.js (MLRates) is not loaded");
+    if (json == null) { MLMODEL = null; return null; }
+    MLMODEL = json && json.targets && json.stack && json.raw ? json : MLR.load(json);
+    return MLMODEL;
+  }
+  function mlModel() { return MLMODEL; }
+
   // ------------------------------------------------------------------ RNG (v2's xoshiro-style generator)
   function makeRng(seed) {
     var a = seed >>> 0, b = 0x9e3779b9, c = 0x243f6a88, d = (0xb7e15162 ^ seed) >>> 0;
@@ -621,6 +676,32 @@
     return e;
   }
   function statObj(st, i) { var o = {}; for (var k = 0; k < NS; k++) o[STK[k]] = st[i * NS + k]; o.ctrl = +o.ctrl.toFixed(1); o.dmg = +o.dmg.toFixed(2); return o; }
+
+  // ------------------------------------------------------------------ judges (one round)
+  // Each judge j scores z_j = tS_j * striking + tG_j * grappling + tP_j * damage + shared + individual noise (logits; A
+  // minus B differentials), with the EM round-winner weights fit on 7,550 ufcstats cards (research/data_baserates.md):
+  // striking = head * dHead + body * dBody + leg * dLeg landed; grappling = td * dTD + ctrlMin * dCtrl / 60 + sub * dSubAtt;
+  // damage = kd * dKD + hurt * dHurt + judgePower * head * dPow (engine-only: hurts and power beyond the strike count).
+  // The round goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd * min(2, winner's KD edge). The shared and individual
+  // sds, the tastes and the 10-8 thresholds are fit to the 2019-2023 judges' rounds (tools/judgecal.js). Draw order: one
+  // shared normal, then one normal per judge. Adds the scores to cards and returns the number of 10-8s; js (optional)
+  // receives [A, B] per judge.
+  function judgeRound(J, jp, dHL, dBL, dLL, dKd, dTd, dCtrl, dSub, dHu, dPow, tS, tG, tP, rng, cards, js) {
+    var dStr = J.head * dHL + J.body * dBL + J.leg * dLL;
+    var dGr = J.td * dTd + J.ctrlMin * dCtrl / 60 + J.sub * dSub;
+    var dDm = J.kd * dKd + J.hurt * dHu + jp * J.head * dPow;
+    var shared = J.sharedSd * rng.normal(), n108 = 0, kc = J.t108kd || 0;
+    for (var j = 0; j < 3; j++) {
+      var z = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared + J.indSd * rng.normal();
+      var aw = z > 0, mg = aw ? z : -z, kdE = aw ? dKd : -dKd;
+      var big = mg > J.t108 - kc * (kdE <= 0 ? 0 : (kdE >= 2 ? 2 : kdE));
+      var scA = aw ? 10 : (big ? 8 : 9), scB = aw ? (big ? 8 : 9) : 10;
+      if (big) n108++;
+      cards[j][0] += scA; cards[j][1] += scB;
+      if (js) js.push([scA, scB]);
+    }
+    return n108;
+  }
 
   // ------------------------------------------------------------------ simulate one fight
   function simulate(m, rng, trace) {
@@ -906,24 +987,12 @@
         return fight;
       }
 
-      // ---- judges: round-winner logistic weights (data fit), shared + individual noise, fight-level tastes
+      // ---- judges: EM round-winner weights (data fit), shared + individual noise, fight-level tastes, margin 10-8 rule
       var a0 = 0, b0 = NS;
-      var dStr = J.head * (st[a0 + I_HL] - st[b0 + I_HL]) + J.body * (st[a0 + I_BL] - st[b0 + I_BL]) + J.leg * (st[a0 + I_LL] - st[b0 + I_LL]);
-      var dGr = J.td * (st[a0 + I_TDL] - st[b0 + I_TDL]) + J.ctrlMin * (st[a0 + I_CTRL] - st[b0 + I_CTRL]) / 60 + J.sub * (st[a0 + I_SUB] - st[b0 + I_SUB]);
-      var dKd = st[a0 + I_KD] - st[b0 + I_KD], dHu = st[a0 + I_HURT] - st[b0 + I_HURT];
-      var dPow = (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]);
-      var shared = J.sharedSd * rng.normal();
       var js = trace ? [] : null;
-      for (j = 0; j < 3; j++) {
-        var dDm = J.kd * dKd + J.hurt * dHu + m.judgePower * tP[j] * J.head * dPow;
-        var z = dStr * tS[j] + dGr * tG[j] + dDm * tP[j] + shared + J.indSd * rng.normal();
-        var aw = z > 0, mg = aw ? z : -z, kdE = aw ? dKd : -dKd, hdE = aw ? dKd + dHu : -(dKd + dHu);
-        var big = (kdE >= 2 && mg > J.t108kd2) || (kdE >= 1 && mg > J.t108) || (hdE >= 2 && mg > J.t108b);
-        var scA = aw ? 10 : (big ? 8 : 9), scB = aw ? (big ? 8 : 9) : 10;
-        if (big) n108++;
-        cards[j][0] += scA; cards[j][1] += scB;
-        if (trace) js.push([scA, scB]);
-      }
+      n108 += judgeRound(J, m.judgePower, st[a0 + I_HL] - st[b0 + I_HL], st[a0 + I_BL] - st[b0 + I_BL], st[a0 + I_LL] - st[b0 + I_LL],
+        st[a0 + I_KD] - st[b0 + I_KD], st[a0 + I_TDL] - st[b0 + I_TDL], st[a0 + I_CTRL] - st[b0 + I_CTRL], st[a0 + I_SUB] - st[b0 + I_SUB],
+        st[a0 + I_HURT] - st[b0 + I_HURT], (st[a0 + I_DMG] - st[a0 + I_HL]) - (st[b0 + I_DMG] - st[b0 + I_HL]), tS, tG, tP, rng, cards, js);
       if (trace) rec.judges = js;
 
       // ---- between rounds: recovery, doctor and corner stoppages
@@ -1169,12 +1238,14 @@
   }
   function profile(slug) { return DB && DB.fighters[slug] ? DB.fighters[slug] : null; }
 
-  return {
+  var api = {
     VERSION: VERSION, KEYS: KEYS, STATS: STK,
-    loadDB: loadDB, profile: profile, matchup: matchup, simulate: simulate, bucket: bucket, makeRng: makeRng,
+    loadDB: loadDB, profile: profile, matchup: matchup, matchupBase: matchupBase, simulate: simulate, bucket: bucket, makeRng: makeRng,
+    loadMLRates: loadMLRates, mlModel: mlModel, judgeRound: judgeRound,
     summarize: summarize, explain: explain, manualProfile: manualProfile,
     // helpers exposed for tests, calibration and the page
     priorFor: priorFor, league: league, fighterRates: fighterRates, occupancy: occupancy, isDecision: isDecision,
     clip: clip, log5: log5, odds: odds, prob: prob, params: getParams
   };
+  return api;
 });
