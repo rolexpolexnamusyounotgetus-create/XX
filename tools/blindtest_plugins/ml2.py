@@ -4,7 +4,7 @@ Reads per-fight P(A wins) keyed by backtest fight id. Prefers a rolling/refit co
 publishes one, else its frozen pre-2024 fit; 2019-2023 rows are used as stacker history only when they are marked
 out-of-fold ('set'/'split' in oof|cv|tune-oof). Edit the key lists below if ml2.json names its columns differently.
 """
-from blindtest import register, Stored, MoEStack, REGISTRY, _MOE_BASE
+from blindtest import register, Stored, MoEStack, _MOE_BASE
 
 P_KEYS = ("p_rolling", "rolling", "p_refit", "refit", "lr_refit", "stack_refit", "p", "pA", "p_a", "ml2", "stack", "lr")
 OOF_TAGS = ("oof", "cv", "oof_cv")

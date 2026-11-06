@@ -51,7 +51,6 @@ import math
 import os
 import re
 import subprocess
-import sys
 import tempfile
 import unicodedata
 import urllib.request
@@ -576,10 +575,10 @@ def cmd_score(args):
         stamp_dir = os.path.join(FETCH_DIR, now_utc().strftime("%Y%m%d-%H%M"))
         evs = [{"date": doc["date"], "event": doc["event"]} for _, doc in pending]
         try:
-            G, gnames = greco_results(evs, stamp_dir)
+            G, _ = greco_results(evs, stamp_dir)
         except Exception as ex:
             print("ufcstats (Greco1899 CSV) fetch failed: %r" % ex)
-            G, gnames = {}, []
+            G = {}
         try:
             S = espn_results(sorted({e["date"] for e in evs}), stamp_dir)
         except Exception as ex:

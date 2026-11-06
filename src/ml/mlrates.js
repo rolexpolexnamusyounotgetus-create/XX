@@ -430,7 +430,7 @@
     if (on("grappling")) {
       var e0 = engineExpect(m), es = [e0.A, e0.B];
       for (i = 0; i < 2; i++) {
-        var ro = odds(tg[i].td_acc) / odds(es[i].td_acc);
+        var ro = rr(odds(tg[i].td_acc), odds(es[i].td_acc));   // capped like every other multiplier (v4.0.1)
         m.tdO[i] *= ro; m.tdOC[i] *= ro; ratios[i].tdOdds = ro;
         var rv = rr(tg[i].rev, es[i].rev); m.sw[i] *= rv; ratios[i].rev = rv;
         for (k = 0; k < 5; k++) m.swPos[(1 - i) * 5 + k] *= rv;
@@ -445,7 +445,9 @@
         refitOccupancy(m, FE);
         var e1 = engineExpect(m), e1s = [e1.A, e1.B];
         for (i = 0; i < 2; i++) {
-          var r1 = rr(tg[i].td_att, e1s[i].td_att);
+          // v4.0.1: the cap applies to the cumulative multiplier (v4.0.0 capped each of the three steps, so it could
+          // compound to 4^3; 20 of 3,998 train sides went past 4, up to x6.3)
+          var r1 = rr(tdr[i] * tg[i].td_att, e1s[i].td_att) / tdr[i];
           m.tdD[i] *= r1; m.tdCC[i] *= r1; m.tdCU[i] *= r1; tdr[i] *= r1;
         }
       }

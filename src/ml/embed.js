@@ -188,8 +188,9 @@
         by mlrates target: d_att ... per minute, acc_* probabilities, ctrl seconds / min, kd_h P(KD) per landed head
         strike) with the embedding's task predictors for the same attacker vs defender (etaA from matchup()):
             link(rate) = b0 + b1 * link(mlrates rate) + b2 * eta[task]
-        which = "targets" (default, every target; validated) or "targets_cv_selected". Missing targets pass
-        through unchanged. Returns a new object in mlrates units. */
+        which = "targets" (default: b2 = 0 where time-ordered CV inside 2019-2023 rejected the embedding term) or
+        "targets_all" (b2 everywhere; reference only). Missing targets pass through unchanged. Returns a new object
+        in mlrates units. */
     function blendMLRates(mlSide, etaSide, which) {
       var B = m.mlrates_blend && m.mlrates_blend[which || "targets"], out = {};
       for (var key in mlSide) out[key] = mlSide[key];

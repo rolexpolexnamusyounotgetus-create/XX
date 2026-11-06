@@ -551,7 +551,7 @@ class MoEStack(Model):
     day before), as tools/moe.py does for its 2025 rolling fit."""
     symmetric = "by construction (antisymmetric logits, symmetric gates, no intercept)"
 
-    def __init__(self, ctx, experts, regime, refit="event", cal=None, cal_days=None):
+    def __init__(self, ctx, experts, regime, refit="event", cal=None, cal_days=None, cal_newcomer=False):
         """experts: {moe expert name: harness model key}, e.g. {'market': 'market_close', 'ml': 'ml_lr', ...}.
         cal overrides moe.json's calibration kind; cal_days fits it on the last cal_days of forward-chained logits."""
         self.ctx, self.map, self.regime, self.refit = ctx, dict(experts), regime, refit
@@ -560,13 +560,14 @@ class MoEStack(Model):
         self.method, self.hp = cfg["method"], dict(cfg.get("hp") or {})
         self.cal_kind = cal or (cfg.get("calibration") or {}).get("type", "none")
         self.cal_days = cal_days
+        self.cal_newcomer = cal_newcomer          # separate calibration for newcomer fights (less experienced man 1-2)
         self.names = [e for e in mo["model"]["experts"] if e in self.map] + [e for e in self.map if e not in mo["model"]["experts"]]
         R = ctx.moe_rows()
         self.MO, self.Gall = R["MO"], R["G"]
         self.drops = self.MO.make_drops(self.names)[0]
         self.version = "tools/moe.py %s %s cal=%s%s, experts %s" % (
             self.method, json.dumps(self.hp, sort_keys=True), self.cal_kind,
-            (" on the last %d days" % cal_days) if cal_days else "",
+            ((" on the last %d days" % cal_days) if cal_days else "") + (" split newcomer/other" if cal_newcomer else ""),
             "+".join("%s=%s" % (e, self.map[e]) if e != self.map[e] else e for e in self.names))
         self._fold_cache = {}
         self.st, self.cal = None, None
@@ -606,7 +607,8 @@ class MoEStack(Model):
         L, M, G = self._mats(ids, P)
         y = np.array([self.ctx.y[i] for i in ids])
         dd = np.array([dt.date.fromisoformat(self.ctx.date[i]).toordinal() for i in ids])
-        zs, ys, ds = [], [], []
+        gg = self._newcomer(ids)
+        zs, ys, ds, gs = [], [], [], []
         for d in self.drops:
             if self.regime == "present" and "market" in d:
                 continue
@@ -617,11 +619,16 @@ class MoEStack(Model):
                     zs.append(self._safe_logit(st, L[ok], Md[ok], self._gs(G[ok])))
                     ys.append(y[ok])
                     ds.append(dd[ok])
+                    gs.append(gg[ok])
                 except KeyError:
                     continue
         if not zs:
-            return np.zeros(0), np.zeros(0), np.zeros(0)
-        return np.concatenate(zs), np.concatenate(ys), np.concatenate(ds)
+            return np.zeros(0), np.zeros(0), np.zeros(0), np.zeros(0, bool)
+        return np.concatenate(zs), np.concatenate(ys), np.concatenate(ds), np.concatenate(gs)
+
+    def _newcomer(self, ids):
+        F = self.ctx.fights
+        return np.array([min(F[i]["A"].get("n") or 0, F[i]["B"].get("n") or 0) <= 2 for i in ids], bool)
 
     def _safe_logit(self, st, L, M, G):
         if self.method != "linear":
@@ -647,7 +654,7 @@ class MoEStack(Model):
         self.cal = self.MO.Calib("none").fit(None, None) if self.cal_kind == "none" else None
         if self.cal_kind != "none":
             T = int(cutoff[:4])
-            zs, ys = [], []
+            zs, ys, gs = [], [], []
             lo = dt.date.fromisoformat(cutoff).toordinal() - self.cal_days if self.cal_days else -1
             for Y in range(2021, T + 1):
                 start, end = "%d-01-01" % Y, min("%d-01-01" % (Y + 1), cutoff)
@@ -659,12 +666,22 @@ class MoEStack(Model):
                     if ("st", Y) not in self._fold_cache:
                         self._fold_cache[("st", Y)] = self._fit_stacker(self._rows_before(start), P)
                     self._fold_cache[key] = self._logits(self._fold_cache[("st", Y)], te, P)
-                z, yy, dd = self._fold_cache[key]
+                z, yy, dd, g = self._fold_cache[key]
                 zs.append(z[dd >= lo])
                 ys.append(yy[dd >= lo])
-            self.cal = self.MO.Calib(self.cal_kind).fit(np.concatenate(zs), np.concatenate(ys))
-        return {"fit_through": max(self.ctx.date[i] for i in ids), "n_train": len(ids),
+                gs.append(g[dd >= lo])
+            Z, Yc, Gc = np.concatenate(zs), np.concatenate(ys), np.concatenate(gs)
+            self.cal = self.MO.Calib(self.cal_kind).fit(Z, Yc)
+            self.cal_g = None
+            if self.cal_newcomer and Gc.sum() >= 100 and (~Gc).sum() >= 100:
+                self.cal_g = {True: self.MO.Calib(self.cal_kind).fit(Z[Gc], Yc[Gc]),
+                              False: self.MO.Calib(self.cal_kind).fit(Z[~Gc], Yc[~Gc])}
+        info = {"fit_through": max(self.ctx.date[i] for i in ids), "n_train": len(ids),
                 "calibration": self.cal.export() if hasattr(self.cal, "export") else None}
+        if getattr(self, "cal_g", None):
+            info["calibration_newcomer"] = self.cal_g[True].export()
+            info["calibration_other"] = self.cal_g[False].export()
+        return info
 
     def predict(self, fids, P):
         fids = [f for f in fids if f in self.Gall]
@@ -682,7 +699,10 @@ class MoEStack(Model):
                 z = self._safe_logit(self.st, L[i:i + 1], M[i:i + 1], self._gs(G[i:i + 1]))
             except KeyError:                       # a required expert is missing for this fight
                 continue
-            out[f] = float(self.cal(sigm(z))[0])
+            cal = self.cal
+            if getattr(self, "cal_g", None):
+                cal = self.cal_g[bool(self._newcomer([f])[0])]
+            out[f] = float(cal(sigm(z))[0])
         return out
 
     def predict_swapped(self, fids, P):
@@ -917,6 +937,11 @@ _moe_reg("moe_noline_pre", "absent", {"preufc": "preufc_elo"},
          "experiment: moe_noline + the pre-UFC-seeded Elo as an extra expert (newcomers)", experimental=True)
 _moe_reg("moe_noline_rt", "absent", {}, "experiment: moe_noline with its temperature fit on the last 730 days only",
          experimental=True, cal="temperature", cal_days=730)
+_moe_reg("moe_noline_nt", "absent", {}, "experiment: moe_noline with separate temperatures for newcomer fights and the rest",
+         experimental=True, cal="temperature", cal_newcomer=True)
+_moe_reg("moe_close_nt", "present", {"market": "market_close"},
+         "experiment: moe_close with separate temperatures for newcomer fights and the rest", experimental=True,
+         cal="temperature", cal_newcomer=True)
 _moe_reg("moe_close_rt", "present", {"market": "market_close"},
          "experiment: moe_close plus a temperature fit on the last 730 days (moe.json chose none)", experimental=True,
          cal="temperature", cal_days=730)
@@ -1214,7 +1239,7 @@ class Boot:
 
 
 def score(ctx, R, B_boot=2000):
-    rec, order, models = R["rec"], R["order"], R["models"]
+    rec, order = R["rec"], R["order"]
     close = {f: v[0] for f, v in rec.get("market_close", {}).items()}
     qd = set(R["quick_dates"]) if R.get("quick_dates") else None
     universe = [i for i in ctx.win_ids if qd is None or ctx.date[i] in qd]

@@ -2034,7 +2034,11 @@ def eval_integration(T, verbose=True):
     on the logits (recalibrated base), the same plus the embedding head logit (+emb), and plus the head and its
     interaction with the smaller decayed fight count g = x_min / (1 + x_min) (+emb_x, so the stack can trust the
     head more when both men have data). Fit on 2019-2023 (all inputs present), C = 1e4 (no penalty); the
-    variant to use is chosen by leave-one-year-out log loss inside 2019-2023; scored once on 2024-2025."""
+    variant to use (base, +emb or +emb_x: base included, so the head can be rejected) is chosen by time-ordered
+    expanding-window CV inside 2019-2023 (fit on years < y, score year y, y = 2020..2023), the protocol's rule;
+    leave-one-year-out is reported as a diagnostic. Scored once on 2024-2025.
+    (Verification fix, Nov 6 2026: the first version picked only between +emb and +emb_x by leave-one-year-out,
+    never against base, so it "chose the head" even where training CV said the head hurts.)"""
     ids, B_ = load_bases(T)
     y = T["winner"][ids]
     yrs = T["year"][ids]
@@ -2052,37 +2056,51 @@ def eval_integration(T, verbose=True):
         rec = {"inputs": cols, "n_train": int(tr.sum()), "n_valid": int(va.sum()), "variants": {}}
         preds = {}
         for vk, Z in designs.items():
-            loyo = []
+            loyo, tcv = [], []
             for vy in range(2019, 2024):
                 a, b = tr & (yrs != vy), tr & (yrs == vy)
                 if b.sum() == 0 or a.sum() == 0:
                     continue
                 f, _ = fit_lr(Z[a], y[a], 1e4)
                 loyo.append(logloss(f(Z[b]), y[b]))
+            for vy in range(2020, 2024):                     # time-ordered: fit on earlier years only
+                a, b = tr & (yrs < vy), tr & (yrs == vy)
+                if b.sum() == 0 or a.sum() == 0:
+                    continue
+                f, _ = fit_lr(Z[a], y[a], 1e4)
+                tcv.append(logloss(f(Z[b]), y[b]))
             f, coef = fit_lr(Z[tr], y[tr], 1e4)
             preds[vk] = f(Z)
             rec["variants"][vk] = dict(_score_rec(preds[vk][va], y[va]),
+                                       timecv_2020_2023=round(float(np.mean(np.concatenate(tcv))), 5),
                                        loyo_2019_2023=round(float(np.mean(np.concatenate(loyo))), 5),
                                        coef=[round(float(c), 4) for c in coef])
         raw = np.mean([B_[c] for c in cols], axis=0) if len(cols) == 1 else None
         if raw is not None:
             rec["raw_valid"] = _score_rec(raw[va], y[va])
-        pick = min(("+emb", "+emb_x"), key=lambda k: rec["variants"][k]["loyo_2019_2023"])
-        rec["chosen_by_loyo"] = pick
+        pick = min(("base", "+emb", "+emb_x"), key=lambda k: rec["variants"][k]["timecv_2020_2023"])
+        rec["chosen_by_timecv"] = pick
+        rec["chosen_by_loyo"] = min(("base", "+emb", "+emb_x"), key=lambda k: rec["variants"][k]["loyo_2019_2023"])
         rec["deltas"] = {}
         for a_ in ("+emb", "+emb_x"):
             rec["deltas"][a_ + " - base"] = _delta_rec(logloss(preds[a_][va], y[va]) - logloss(preds["base"][va], y[va]),
                                                        days[va])
-        rec["deltas"]["chosen - base"] = rec["deltas"][pick + " - base"]
+        rec["deltas"]["chosen - base"] = (rec["deltas"][pick + " - base"] if pick != "base"
+                                          else {"mean": 0.0, "ci95": [0.0, 0.0], "note": "train CV rejected the head"})
         out["sets"][name] = rec
-        seg_store[name] = (va, preds["base"], preds[pick])
+        seg_store[name] = (va, preds["base"], preds["+emb"])
         if verbose:
             v = rec["variants"]
-            d = rec["deltas"]["chosen - base"]
-            print("  integ %-15s n %d/%d  base %.4f  +emb %.4f  +emb_x %.4f  chosen %s %+.4f [%+.4f, %+.4f]" % (
-                name, rec["n_train"], rec["n_valid"], v["base"]["logloss"], v["+emb"]["logloss"], v["+emb_x"]["logloss"],
-                pick, d["mean"], d["ci95"][0], d["ci95"][1]), flush=True)
-    # segments for each set: chosen embedding variant vs base, and the base's own log loss
+            d = rec["deltas"]["+emb - base"]
+            print("  integ %-15s n %d/%d  base %.4f  +emb %.4f  +emb_x %.4f  timecv base/+emb/+emb_x %.5f/%.5f/%.5f "
+                  "chosen %s | +emb - base %+.4f [%+.4f, %+.4f]" % (
+                      name, rec["n_train"], rec["n_valid"], v["base"]["logloss"], v["+emb"]["logloss"],
+                      v["+emb_x"]["logloss"], v["base"]["timecv_2020_2023"], v["+emb"]["timecv_2020_2023"],
+                      v["+emb_x"]["timecv_2020_2023"], pick, d["mean"], d["ci95"][0], d["ci95"][1]), flush=True)
+    out["selection_rule"] = ("variant (base, +emb, +emb_x) with the lowest time-ordered expanding-window CV log loss "
+                             "inside 2019-2023 (fit on years < y, score y = 2020..2023); chosen - base = 0 where base "
+                             "wins. segments report +emb - base for every set as a diagnostic, chosen or not.")
+    # segments for each set: +emb vs base (diagnostic, whether or not CV chose it), and the base's own log loss
     for name, (va, pb, pe) in seg_store.items():
         idx = ids[va]
         masks = _segments_fight(T, idx, pb[va])
@@ -2150,10 +2168,12 @@ def _blend_link(tname, binom_task, ML):
 
 def eval_mlrates_blend(T, D, verbose=True):
     """The stat-line integration recipe: per mlrates target, link(rate) = b0 + b1 link(mlrates) [+ b2 eta_emb].
-    Fit on mlrates' 2019-2023 out-of-fold rows; whether to keep b2 is decided per target by leave-one-year-out
-    deviance inside 2019-2023 (never by validation); scored once on 2024-2025 (mlrates' dev model, trained
-    2010-2023). Reports all-target and CV-selected versions, per-target changes and segments by the attacker's
-    and the fight's UFC experience."""
+    Fit on mlrates' 2019-2023 out-of-fold rows; whether to keep b2 is decided per target by time-ordered
+    expanding-window deviance inside 2019-2023 (fit on years < y, score y = 2020..2023; never by validation),
+    with leave-one-year-out reported as a diagnostic; scored once on 2024-2025 (mlrates' dev model, trained
+    2010-2023). The exported recipe is the CV-selected one; the all-target version is reported alongside.
+    (Verification fix, Nov 6 2026: the first version kept every target in the exported recipe after seeing
+    that the CV-selected one scored 0.01% worse on validation, and used leave-one-year-out for the keep rule.)"""
     mo = json.load(open(os.path.join(DER, "mlrates_oof.json")))
     targets = mo["meta"]["targets"]
     dev_ids = {e["id"] for e in json.load(open(BACKTEST_DEV))["fights"]}
@@ -2190,16 +2210,21 @@ def eval_mlrates_blend(T, D, verbose=True):
         one = np.ones(len(y))
         Z1, Z2 = np.c_[one, lm], np.c_[one, lm, le]
         m_tr = tr & ok
-        # leave-one-year-out inside 2019-2023
-        cv1 = cv2 = 0.0
+        # time-ordered expanding window inside 2019-2023 (the keep rule) and leave-one-year-out (diagnostic)
+        cv1 = cv2 = lo1 = lo2 = 0.0
         for vy in range(2019, 2024):
-            a, b = m_tr & (yrs != vy), m_tr & (yrs == vy)
-            if b.sum() == 0:
-                continue
-            b1 = _glm_newton(Z1[a], y[a], n[a], binom)
-            b2 = _glm_newton(Z2[a], y[a], n[a], binom)
-            cv1 += _dev1(y[b], n[b], Z1[b] @ b1, binom).sum()
-            cv2 += _dev1(y[b], n[b], Z2[b] @ b2, binom).sum()
+            for kind, a in (("loyo", m_tr & (yrs != vy)), ("time", m_tr & (yrs < vy))):
+                b = m_tr & (yrs == vy)
+                if b.sum() == 0 or a.sum() == 0:
+                    continue
+                b1 = _glm_newton(Z1[a], y[a], n[a], binom)
+                b2 = _glm_newton(Z2[a], y[a], n[a], binom)
+                d1_ = _dev1(y[b], n[b], Z1[b] @ b1, binom).sum()
+                d2_ = _dev1(y[b], n[b], Z2[b] @ b2, binom).sum()
+                if kind == "time":
+                    cv1, cv2 = cv1 + d1_, cv2 + d2_
+                else:
+                    lo1, lo2 = lo1 + d1_, lo2 + d2_
         keep = bool(cv2 < cv1)
         b1 = _glm_newton(Z1[m_tr], y[m_tr], n[m_tr], binom)
         b2 = _glm_newton(Z2[m_tr], y[m_tr], n[m_tr], binom)
@@ -2213,6 +2238,7 @@ def eval_mlrates_blend(T, D, verbose=True):
         base = d1.mean()
         per[tname] = {"task": task, "cv_dev_recal": round(cv1, 2), "cv_dev_plus_emb": round(cv2, 2),
                       "cv_rel_change": round((cv2 - cv1) / cv1, 4), "keep_emb": keep,
+                      "loyo_rel_change": round((lo2 - lo1) / lo1, 4), "keep_emb_loyo": bool(lo2 < lo1),
                       "valid_rel_change": round(mu / base, 4), "ci95": [round(lo / base, 4), round(hi / base, 4)]}
         units = "seconds / min" if tname == "ctrl" else ("P(knockdown) per landed head strike" if tname == "kd_h"
                                                          else ("probability" if binom else "per minute"))
@@ -2240,8 +2266,11 @@ def eval_mlrates_blend(T, D, verbose=True):
     segs = {"all": allm, "attacker 1-2 UFC fights": na <= 2, "attacker 3-5": (na >= 3) & (na <= 5),
             "attacker 6+": na >= 6, "fight has a 1-2 fight newcomer": nm <= 2, "2024": yrs[va] == 2024,
             "2025": yrs[va] == 2025}
-    out = {"n_rows_train": int(tr.sum()), "n_rows_valid": int(va.sum()), "per_target": per, "recipe": recipe,
-           "recipe_cv_selected": recipe_sel,
+    out = {"n_rows_train": int(tr.sum()), "n_rows_valid": int(va.sum()), "per_target": per, "recipe": recipe_sel,
+           "recipe_all_targets": recipe,
+           "keep_rule": "b2 kept where time-ordered expanding-window CV inside 2019-2023 (fit on years < y, score "
+                        "y = 2020..2023) lowers deviance; 'recipe' is that CV-selected recipe (exported), "
+                        "'recipe_all_targets' keeps b2 everywhere (reference only)",
            "n_targets_kept": int(sum(v["keep_emb"] for v in per.values())), "segments": {}}
     for sk, m in segs.items():
         out["segments"][sk] = {"all_targets": mean_rel(m, "all"), "cv_selected": mean_rel(m, "sel")}
@@ -2481,11 +2510,13 @@ def stage_extras(D, hp, cache, verbose=True):
     style_model = nn2.pop("_style_model")
     J["neighbours_v2"] = nn2
     task_index = {t: i for i, t in enumerate(TN)}
-    M["mlrates_blend"] = {"note": "link(rate) = b0 + b1 link(mlrates rate) + b2 eta_embedding[task], every target; fit "
-                                  "on mlrates 2019-2023 out-of-fold rows; validated once on 2024-2025 (mean relative "
-                                  "deviance change in research/model_embed.md). targets_cv_selected (b2 = 0 where "
-                                  "leave-one-year-out CV inside 2019-2023 rejected the term) scored worse on validation.",
-                          "targets": blend["recipe"], "targets_cv_selected": blend["recipe_cv_selected"]}
+    M["mlrates_blend"] = {"note": "link(rate) = b0 + b1 link(mlrates rate) + b2 eta_embedding[task]; fit on mlrates "
+                                  "2019-2023 out-of-fold rows; b2 = 0 where time-ordered expanding-window CV inside "
+                                  "2019-2023 rejected the term (the selection rule, fixed before validation was read "
+                                  "for it); scored on 2024-2025 (research/model_embed.md). targets_all keeps b2 for "
+                                  "every target and is a reference only.",
+                          "keep_rule": blend["keep_rule"],
+                          "targets": blend["recipe"], "targets_all": blend["recipe_all_targets"]}
     M["blend_check"] = [{"ml": c["ml"], "eta": [round(float(x), 10) for x in c["eta"]],
                          "out": py_blend(blend["recipe"], task_index,
                                          c["ml"], [round(float(x), 10) for x in c["eta"]])} for c in checks]

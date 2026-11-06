@@ -6,8 +6,9 @@
    judges, complete cards, ufcstats round stats present, deductions known (raw scores), no 10-10 rounds.
 
    Model (the engine's FightEngine.judgeRound without the engine-only hurt / power terms): judge j scores
-   z_j = x + s_r + e_j, x = the EM round-winner logit of the round's ufcstats differentials (params3 judge weights:
-   head 0.179, body 0.133, leg 0.105, KD 2.42, TD 0.286, control 0.46/min, sub attempt 0.85; never refit here),
+   z_j = x + s_r + e_j, x = the EM round-winner logit of the round's ufcstats differentials (params3 judge weights, never
+   refit here; v4.0.1: the pre-2024 EM fit of tools/judge_em_train.py, head 0.174, body 0.127, leg 0.104, KD 2.16, TD 0.278,
+   control 0.462/min, sub attempt 0.847; v4.0.0 used the all-years fit 0.179 / 0.133 / 0.105 / 2.42 / 0.286 / 0.46 / 0.85),
    s_r ~ N(0, sharedSd^2) shared by the panel with a fight-level part (s_r = sharedSd (sqrt(rho) F + sqrt(1 - rho) u_r),
    F drawn once per fight: panel residuals correlate ~0.12 between rounds of a fight), e_j ~ N(0, indSd^2). The round
    goes to sign(z_j); a 10-8 when |z_j| > t108 - t108kd x min(2, winner's KD edge). Maximum likelihood: the round-level
@@ -23,6 +24,8 @@
    judges see beyond the ufcstats counts), so the engine's total beyond-count variance matches the data.
 
      node tools/judgecal.js [--write] [--sims 4]        --write rewrites the [judgecal] values in src/params3.js
+   v4.0.1: also the point-deduction rate per fighter-round (and the 2-point share) on the same 2019-2023 decision rounds,
+   and a check of the published cards' decision split (deductions included) against the engine's judges + deductions.
    Output: data/derived/judgecal.json (fit, standard errors, checks). */
 "use strict";
 const fs = require("fs");
@@ -60,10 +63,29 @@ D.rounds.rows.forEach((r, i) => {
   const g = (s) => (+r[rx["A_" + s]] || 0) - (+r[rx["B_" + s]] || 0);
   const d = { head: g("head_l"), body: g("body_l"), leg: g("leg_l"), kd: g("kd"), td: g("td_l"), ctrl: g("ctrl"), sub: g("sub") };
   const x = J0.head * d.head + J0.body * d.body + J0.leg * d.leg + J0.kd * d.kd + J0.td * d.td + J0.ctrlMin * d.ctrl / 60 + J0.sub * d.sub;
-  rounds.push({ fid: r[rx.fid], date, late: date >= "2021-01-01", rnd: r[rx.rnd], sched: r[rx.sched], d, x, o,
+  rounds.push({ fid: r[rx.fid], date, late: date >= "2021-01-01", rnd: r[rx.rnd], sched: r[rx.sched], d, x, o, ded: [r[rx.ded_A], r[rx.ded_B]],
     nA: o.filter((q) => q.w > 0).length, nWide: o.filter((q) => q.wide).length });
 });
 console.log(`rounds: ${rounds.length} (2019-2023, 3 judges, complete, deductions known; skipped ${skipped.even} with a 10-10, ${skipped.judges} without 3 judge rows)`);
+
+// ------------------------------------------------------------------ point deductions (engine v4.0.1)
+// every 2019-2023 decision round of a complete three-judge card with deductions known (10-10 rounds included: a foul does
+// not depend on how the judges saw the round): deductions per fighter-round and the share that cost 2 points
+const DED = (() => {
+  let n = 0, ev = 0, pts = 0, two = 0; const fightsWith = new Set(), fightsAll = new Set();
+  D.rounds.rows.forEach((r) => {
+    const date = r[rx.date];
+    if (!(date >= "2019-01-01" && date < "2024-01-01")) return;
+    if (!(r[rx.complete] && r[rx.nJ] === 3 && r[rx.ded_A] != null && r[rx.ded_B] != null)) return;
+    n++; fightsAll.add(r[rx.fid]);
+    for (const v of [r[rx.ded_A], r[rx.ded_B]]) if (v > 0) { ev++; pts += v; if (v >= 2) two++; fightsWith.add(r[rx.fid]); }
+  });
+  return { rounds: n, events: ev, points: pts, twoPoint: two, perFighterRound: ev / (2 * n), pointsPerFighterRound: pts / (2 * n),
+    twoShare: two / Math.max(1, ev), fights: fightsAll.size, fightsWithDeduction: fightsWith.size, fightShare: fightsWith.size / Math.max(1, fightsAll.size),
+    se: Math.sqrt(ev) / (2 * n) };
+})();
+console.log(`point deductions: ${DED.events} in ${DED.rounds} rounds (${(100 * DED.perFighterRound).toFixed(2)}% per fighter-round, se ${(100 * DED.se).toFixed(2)}; ` +
+  `${DED.twoPoint} cost 2 points; ${DED.fightsWithDeduction} of ${DED.fights} decisions = ${(100 * DED.fightShare).toFixed(1)}%)`);
 
 // ------------------------------------------------------------------ normal CDF (erfc, Numerical Recipes 6.2, |err| < 1.2e-7)
 function erfc(x) {
@@ -255,8 +277,14 @@ const realCards = (fid, rs) => {
 };
 const dataAll = dataStats(rounds), dataLate = dataStats(rounds.filter((r) => r.late));
 const dataDec = decisionSplit(fullFights, realCards);
+const pubCards = (fid, rs) => {
+  const c = realCards(fid, rs);
+  for (const r of rs) for (let i = 0; i < 2; i++) { const v = r.ded[i] || 0; for (let j = 0; j < 3; j++) c[j][i] -= v; }
+  return c;
+};
+const dataDecPub = decisionSplit(fullFights, pubCards);
 
-function simulateJudges(Jp, rs, nSims, seed, tasteOn) {
+function simulateJudges(Jp, rs, nSims, seed, tasteOn, withDed) {
   // per fight: draw tastes once (as the engine does), then judge every round with judgeRound
   const rng = E.makeRng(seed);
   const out = [];
@@ -275,7 +303,10 @@ function simulateJudges(Jp, rs, nSims, seed, tasteOn) {
         out.push({ x: r.x, d: r.d, o, nA: o.filter((q) => q.w > 0).length });
         js.forEach((x, j) => { cards[j][0] += x[0]; cards[j][1] += x[1]; });
       }
-      if (frs.length === frs[0].sched) decCards.push(cards);
+      if (frs.length === frs[0].sched) {
+        if (withDed) E.deductions(Object.assign({}, Jp, { ded: DED.perFighterRound, ded2: DED.twoShare }), frs.length, rng, cards, null);
+        decCards.push(cards);
+      }
     }
   }
   let ud = 0, sd = 0, md = 0, dr = 0;
@@ -284,13 +315,15 @@ function simulateJudges(Jp, rs, nSims, seed, tasteOn) {
     if (a === 3 || b === 3) ud++; else if ((a === 2 && b === 1) || (b === 2 && a === 1)) sd++; else if (a === 2 || b === 2) md++; else dr++;
   }
   const nd = ud + sd + md;
-  return { rounds: dataStats(out), dec: { fights: decCards.length / nSims, UD: ud / nd, SD: sd / nd, MD: md / nd, drawShare: dr / decCards.length } };
+  return { rounds: dataStats(out), dec: { fights: decCards.length / nSims, UD: ud / nd, SD: sd / nd, MD: md / nd, drawShare: dr / decCards.length,
+    mdOrDraw: (md + dr) / decCards.length } };
 }
 const Jfit = Object.assign({}, J0, { sharedSd: est.sharedSd, indSd: est.indSd, sharedFight: est.sharedFight, t108kd: est.t108kd, t108: est.t108_2021_2023 });
 const JfitEarly = Object.assign({}, Jfit, { t108: est.t108_2019_2020 });
 const lateFights = new Map([...fights].filter(([, rs]) => rs[0].late)), earlyFights = new Map([...fights].filter(([, rs]) => !rs[0].late));
 const simLateT = simulateJudges(Jfit, lateFights, SIMS, 11, true), simEarlyT = simulateJudges(JfitEarly, earlyFights, SIMS, 12, true);
 const simLate0 = simulateJudges(Object.assign({}, Jfit, { sharedFight: 0 }), lateFights, SIMS, 11, false);
+const simLateD = simulateJudges(Jfit, lateFights, SIMS, 11, true, true), simEarlyD = simulateJudges(JfitEarly, earlyFights, SIMS, 12, true, true);
 // pooled 2019-2023 check: each era with its own threshold
 function pool(a, b, na, nb) {
   const o = {}; for (const k in a) o[k] = Array.isArray(a[k]) ? a[k].map((v, i) => (v * na + b[k][i] * nb) / (na + nb)) : (typeof a[k] === "number" ? (a[k] * na + b[k] * nb) / (na + nb) : a[k]);
@@ -298,6 +331,7 @@ function pool(a, b, na, nb) {
 }
 const nL = rounds.filter((r) => r.late).length, nE = rounds.length - nL;
 const simAll = { rounds: pool(simLateT.rounds, simEarlyT.rounds, nL, nE), dec: pool(simLateT.dec, simEarlyT.dec, lateFights.size, earlyFights.size) };
+const simAllD = { dec: pool(simLateD.dec, simEarlyD.dec, lateFights.size, earlyFights.size) };
 
 function show(name, d, s) {
   const f = (v) => (100 * v).toFixed(1) + "%";
@@ -318,6 +352,10 @@ console.log("  majority=EM by band:                      data " + dataAll.majori
 console.log(`  decisions (${dataDec.fights} complete fights): data UD ${(100 * dataDec.UD).toFixed(1)} SD ${(100 * dataDec.SD).toFixed(1)} MD ${(100 * dataDec.MD).toFixed(1)}` +
   `  model UD ${(100 * simAll.dec.UD).toFixed(1)} SD ${(100 * simAll.dec.SD).toFixed(1)} MD ${(100 * simAll.dec.MD).toFixed(1)}` +
   `  (2021-23 without the fight-level share: UD ${(100 * simLate0.dec.UD).toFixed(1)})`);
+console.log(`  published cards (with deductions): data UD ${(100 * dataDecPub.UD).toFixed(1)} SD ${(100 * dataDecPub.SD).toFixed(1)} MD ${(100 * dataDecPub.MD).toFixed(1)}, ` +
+  `draws ${(100 * dataDecPub.drawShare).toFixed(2)}% of decisions (raw cards ${(100 * dataDec.drawShare).toFixed(2)}%)` +
+  `  model UD ${(100 * simAllD.dec.UD).toFixed(1)} SD ${(100 * simAllD.dec.SD).toFixed(1)} MD ${(100 * simAllD.dec.MD).toFixed(1)}, draws ${(100 * simAllD.dec.drawShare).toFixed(2)}% ` +
+  `(no deductions: MD ${(100 * simAll.dec.MD).toFixed(1)}, draws ${(100 * simAll.dec.drawShare).toFixed(2)}%)`);
 
 // ------------------------------------------------------------------ engine-only damage terms vs the shared noise
 // simulated league-average decision rounds (Lightweight, 3 rounds, train-only priors): residual variance of
@@ -356,9 +394,11 @@ const result = {
   fit: { estimates: est, se: seLog, nll_rounds: fit.f, nll_fights: nllF, nll_fights_rho0: nllF0, dissentPersistence: tasteNote,
     note: "a heteroscedastic variant (individual sd x exp(-g |x + s|)) was tried and gave g = 0 with no likelihood gain (nll 5161.1 both)" },
   engine: { sharedSd: +sharedEngine.toFixed(4), sharedFight: +sharedFightEngine.toFixed(4), indSd: +est.indSd.toFixed(4), t108: +est.t108_2021_2023.toFixed(4), t108kd: +est.t108kd.toFixed(4),
+    ded: +DED.perFighterRound.toFixed(5), ded2: +DED.twoShare.toFixed(4), deductions: DED,
     note: "t108 = the 2021-2023 threshold (latest train era); the round-level part of the shared variance reduced by the residual variance of the engine-only hurt / power terms (fight-level part kept)",
     damageTerms: { rounds: nr, sd: Math.sqrt(varH), betaOnX: beta, residualVar: resid } },
-  checks: { data: { all: dataAll, late: dataLate, decisions: dataDec }, model: { all: simAll, late: simLateT, lateNoTaste: simLate0 } }
+  checks: { data: { all: dataAll, late: dataLate, decisions: dataDec, decisionsPublished: dataDecPub },
+    model: { all: simAll, late: simLateT, lateNoTaste: simLate0, decisionsWithDeductions: simAllD.dec } }
 };
 fs.writeFileSync(path.join(ROOT, "data/derived/judgecal.json"), JSON.stringify(result, null, 1));
 console.log("wrote data/derived/judgecal.json");
@@ -366,7 +406,8 @@ console.log("wrote data/derived/judgecal.json");
 if (WRITE) {
   const pf = path.join(ROOT, "src/params3.js");
   let src = fs.readFileSync(pf, "utf8");
-  const vals = { sharedSd: result.engine.sharedSd, sharedFight: result.engine.sharedFight, indSd: result.engine.indSd, t108: result.engine.t108, t108kd: result.engine.t108kd };
+  const vals = { sharedSd: result.engine.sharedSd, sharedFight: result.engine.sharedFight, indSd: result.engine.indSd, t108: result.engine.t108, t108kd: result.engine.t108kd,
+    ded: result.engine.ded, ded2: result.engine.ded2 };
   for (const [k, v] of Object.entries(vals)) {
     const re = new RegExp("^(\\s*)" + k + ":\\s*[-0-9.eE]+(,?)(\\s*//\\s*\\[judgecal\\])", "m");
     if (!re.test(src)) throw new Error("judgecal: could not find [judgecal] entry " + k);
