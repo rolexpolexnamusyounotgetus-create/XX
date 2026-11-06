@@ -1276,6 +1276,22 @@ def calib_slope(p, y):
     return float(b)
 
 
+def _free_intercept(p, y):
+    """Intercept c of the logistic fit y ~ c + b * logit(p) (Newton, two parameters)."""
+    z = logit(p)
+    X = np.c_[np.ones(len(z)), z]
+    w = np.array([0.0, 1.0])
+    for _ in range(50):
+        q = sigm(X @ w)
+        g = X.T @ (q - y)
+        H = (X * (q * (1 - q))[:, None]).T @ X + 1e-9 * np.eye(2)
+        step = np.linalg.solve(H, g)
+        w -= step
+        if np.max(np.abs(step)) < 1e-10:
+            break
+    return float(w[0])
+
+
 def basic_metrics(p, y):
     p = np.clip(p, 1e-6, 1 - 1e-6)
     ll = -(y * np.log(p) + (1 - y) * np.log(1 - p))
@@ -1422,6 +1438,12 @@ def score(ctx, R, B_boot=2000):
     for yv_ in ("2024", "2025"):
         ids = [i for i in common if ctx.date[i].startswith(yv_)]
         out["by_year"][yv_] = {k: r5(lls(k, ids).mean()) for k in head}
+    # corner-order check (verification, Nov 6): y ~ c + b * logit(p) with a free intercept on the common set. The first-
+    # named corner wins 54% here; a model that had learned that order would leave c below the market's (negative).
+    out["order_check"] = {}
+    for k in head:
+        p, y = arr(k, common)
+        out["order_check"][k] = r4(_free_intercept(p, y))
     # 7-bin (models that publish bins), on the fights where they all do
     b7 = {i: bin7_of(ctx.fights[i]) for i in universe}
     bk = [k for k in order if sum(1 for i in universe if i in R["bins"].get(k, {})) >= 0.95 * len(universe)]
@@ -1575,6 +1597,18 @@ def write_report(doc):
         for k, c in sb.items():
             if isinstance(c, dict) and "est" in c:
                 A("| `%s` | %s | %s |" % (k, fmt_ci(c), fmt_d(pv[k]) if k in pv else "-"))
+        A("")
+    oc = S.get("order_check") or {}
+    if oc and "market_close" in oc:
+        lo_k = min(oc, key=lambda k: oc[k])
+        A("**Corner-order check** (common set): the free intercept of y ~ c + b logit(p) is %+.3f for the closing line "
+          "(the market never sees ufcstats' order) and ranges %+.3f (`%s`) to %+.3f across all %d models. A model that had "
+          "learned that the first-named fighter wins %.0f%% of these fights would sit below the market. %s"
+          % (oc["market_close"], oc[lo_k], lo_k, max(oc.values()), len(oc),
+             100 * float(np.mean([doc["fights"][i]["y"] for i in doc["fights"] if doc["fights"][i]["y"] is not None])),
+             "None does." if oc[lo_k] >= oc["market_close"] - 0.05 else
+             "Check the models more than 0.05 below the market: %s." % ", ".join(
+                 "`%s`" % k for k in oc if oc[k] < oc["market_close"] - 0.05)))
         A("")
     A("### Models, versions and refit schedules")
     A("")

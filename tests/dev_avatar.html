@@ -185,10 +185,10 @@ DEV.studio = function (on) {
     var fill = new THREE.DirectionalLight(0xeef2fc, 1.1); fill.position.set(-2, 1.4, 1.6); L.add(fill);
     var rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(0, 2.2, -2.5); L.add(rim);
     sc.add(L); DEV._bg = sc.background; sc.background = new THREE.Color(0x6b6f75); DEV._fog = sc.fog; sc.fog = null;
-    DEV._env = sc.environment;
+    DEV._env = sc.environment; sc.environment = null;   // lights only: the venue HDRI loads late and would change the exposure between runs
   } else {
     (DEV._hidden || []).forEach(function (o) { o.visible = true; });
-    if (DEV._studio) sc.remove(DEV._studio); sc.background = DEV._bg; sc.fog = DEV._fog;
+    if (DEV._studio) sc.remove(DEV._studio); sc.background = DEV._bg; sc.fog = DEV._fog; if (DEV._env !== undefined) sc.environment = DEV._env;
   }
 };
 /* Head render for a likeness comparison. view: front | 3q | profile (side: +1 his left, -1 his right),

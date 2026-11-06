@@ -970,6 +970,9 @@
     var self = this, looks = this.looks;
     var mat = new T.MeshPhysicalMaterial({ map: map, roughness: 0.56, metalness: 0, clearcoat: 0.0, clearcoatRoughness: 0.32, skinning: true });
     mat.color.copy(lin(looks.tint));
+    // fighters train under lights and outdoors: a mild tan and less milky environment reflection, so skin
+    // keeps its colour under the arena's white key light instead of washing out pale pink (not the referee)
+    if (!this.cfg.ref) { mat.color.multiply(new T.Color(0.96, 0.88, 0.82)); mat.envMapIntensity = 0.75; }
     var X = this.tex || {}, cfg = this.cfg;
     function chan(i) { return new T.Vector4(i === 0 ? 1 : 0, i === 1 ? 1 : 0, i === 2 ? 1 : 0, i === 3 ? 1 : 0); }
     if (X.normal && !this.opts.noNormal) {
