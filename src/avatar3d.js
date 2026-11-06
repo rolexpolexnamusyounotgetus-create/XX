@@ -1583,19 +1583,23 @@
       });
     });
     this.fistAmt = this.cfg.ref ? 0.25 : 0.92;
-    // clip reference rotations: align each rest bone to the clip skeleton's rest direction
-    var C = this.base.clips;
-    if (C) {
-      this.clipBones = C.bones.map(function (nm) { return bi[nm]; });
-      var childOf = { Hips: "Spine", Spine: "Spine1", Spine1: "Spine2", Spine2: "Neck", Neck: "Head", LeftShoulder: "LeftArm", RightShoulder: "RightArm", LeftArm: "LeftForeArm", RightArm: "RightForeArm",
-        LeftForeArm: "LeftHand", RightForeArm: "RightHand", LeftHand: "LeftHandMiddle1", RightHand: "RightHandMiddle1", LeftUpLeg: "LeftLeg", RightUpLeg: "RightLeg", LeftLeg: "LeftFoot", RightLeg: "RightFoot", LeftFoot: "LeftToeBase", RightFoot: "RightToeBase" };
-      this.clipRef = C.bones.map(function (nm) {
+    // clip reference rotations per clip set: align each rest bone to that set's source rest direction
+    var childOf = { Hips: "Spine", Spine: "Spine1", Spine1: "Spine2", Spine2: "Neck", Neck: "Head", LeftShoulder: "LeftArm", RightShoulder: "RightArm", LeftArm: "LeftForeArm", RightArm: "RightForeArm",
+      LeftForeArm: "LeftHand", RightForeArm: "RightHand", LeftHand: "LeftHandMiddle1", RightHand: "RightHandMiddle1", LeftUpLeg: "LeftLeg", RightUpLeg: "RightLeg", LeftLeg: "LeftFoot", RightLeg: "RightFoot", LeftFoot: "LeftToeBase", RightFoot: "RightToeBase" };
+    var sets = this.base.clipSets || [this.base.clips];
+    this.clipRefs = []; this.clipMirror = []; this.clipBi = [];
+    sets.forEach(function (C, si) {
+      if (!C) { self.clipRefs.push(null); self.clipMirror.push(null); self.clipBi.push(null); return; }
+      self.clipBi.push(C.bones.map(function (nm) { return bi[nm]; }));
+      self.clipRefs.push(C.bones.map(function (nm) {
         var k = bi[nm], dmh = childOf[nm] ? J[childOf[nm]].h.clone().sub(J[nm].h) : J[nm].t.clone().sub(J[nm].h);
         var ds = new V3().fromArray(C.src.dirs[nm]);
         return new Q().setFromUnitVectors(dmh.normalize(), ds.normalize()).multiply(Rq[k]);
-      });
-      this.hipsY = J.Hips.h.y;
-    }
+      }));
+      self.clipMirror.push(C.bones.map(function (nm) { var m = nm.indexOf("Left") === 0 ? "Right" + nm.slice(4) : (nm.indexOf("Right") === 0 ? "Left" + nm.slice(5) : nm); var j = C.bones.indexOf(m); return j < 0 ? C.bones.indexOf(nm) : j; }));
+    });
+    this.clipRef = this.clipRefs[0] || this.clipRefs[1];
+    this.hipsY = J.Hips.h.y;
   };
 
   Avatar.prototype.measure = function () {
@@ -1694,6 +1698,8 @@
       this.damLeg[lead] = Math.min(1, this.damLeg[lead] + 0.05 * p);
     } else this.damBody = Math.min(1, this.damBody + 0.02 * p);
     if (this.face) this.face.flinch = Math.min(1, 0.6 + 0.3 * p);
+    this.lastHitInfo = { move: move, side: side == null ? 1 : side, body: !HEAD_MOVES[move] && move !== "calf" && move !== "inside", p: p };
+    this.hitClip(move, p, side == null ? 1 : side);
     this.applyLooks();
   };
   Avatar.prototype.setRound = function (r) { this.sweat = clamp01(0.25 + 0.17 * r); this.applyLooks(); };
@@ -1707,42 +1713,72 @@
     U.uFlush.value = clamp01(this.sweat * 0.8 + (this.damHead[0] + this.damHead[1]) * 0.3);
   };
 
-  /* Clip layers: { clip, t, speed, w, target, rate, mask, hold, stop, anchor } */
-  Avatar.prototype.clipByName = function (name) { var C = this.base.clips; return C && C.clips[name] ? C.clips[name] : null; };
+  /* ------------------------------------------------------------ clip layers
+     Two clip sets: Mesh2Motion (v1, CC0) and the Mixamo fight set (v2: strikes, reactions, knockdowns,
+     get-ups, takedowns, referee, celebrations). Layer: { clip, t, speed, speed2, w, target, rate, mask,
+     loop, stop, anchor, mirror, ik, sup, autoOff, prev }.
+     mask: "full" (whole body incl. root motion, anchored where the hips were), "upper" (spine, arms and
+     head riding on the driver's pelvis), "kick" (whole body on the driver's pelvis, support foot planted
+     on the driver's foot), "torso" (spine and head only).
+     ik: limb whose effector is pulled onto the driver's target around contact (so strikes land where the
+     engine says); sup: support leg pinned to the driver's foot; mirror: left and right swapped (southpaw,
+     or a clip thrown with the other hand). speed2: playback speed after contact (recovery). */
+  var CLIP_ALIAS = { fallFwd: "koFwd", fallBack2: "koBack", fallBack: "koFallBack", hitHead: "hitMed", hitChest: "hitBody" };
+  var MASK_CODE = { full: 0, upper: 1, kick: 2, torso: 3 }, MASK_NAME = ["full", "upper", "kick", "torso"];
+  var TORSO_MASK = { Spine: 1, Spine1: 1, Spine2: 1, Neck: 1, Head: 1 };
+  Avatar.prototype.clipByName = function (name) {
+    var B = this.base, M = B.mocap, C = B.clips;
+    if (M && M.clips[name]) return M.clips[name];
+    if (M && CLIP_ALIAS[name] && M.clips[CLIP_ALIAS[name]]) return M.clips[CLIP_ALIAS[name]];
+    return C && C.clips[name] ? C.clips[name] : null;
+  };
+  Avatar.prototype.slot = function (mask) { var L = null; this.layers.forEach(function (l) { if (l.mask === mask) L = l; }); return L; };
   Avatar.prototype.clip = function (name, weight, fade, opts) {
     opts = opts || {};
-    var c = this.clipByName(name); if (!c) return null;
-    var mask = opts.mask || "full", L = null;
-    this.layers.forEach(function (l) { if (l.mask === mask) L = l; });
+    var c = typeof name === "string" ? this.clipByName(name) : name; if (!c) return null;
+    var mask = opts.mask || "full", L = this.slot(mask);
+    if (mask === "kick" && !L) { var U = this.slot("upper"); if (U && U.w > 0.05) { U.target = 0; U.rate = 1 / 0.08; } }
     if (weight <= 0) { if (L) { L.target = 0; L.rate = 1 / Math.max(0.05, fade || 0.3); } return null; }
-    var a = this.actor, start = opts.t || 0;
-    var anchor = { x: 0, z: 0, yaw: a ? a.yaw : 0 };
-    if (L && L.clip === c && !opts.restart) { L.target = weight; L.rate = 1 / Math.max(0.05, fade || 0.3); return L; }
+    var a = this.actor, start = opts.t || 0, mir = !!opts.mirror;
+    if (L && L.clip === c && !opts.restart && L.mirror === mir) { L.target = weight; L.rate = 1 / Math.max(0.05, fade || 0.3); return L; }
     if (!L) { L = { w: 0 }; this.layers.push(L); }
-    else if (L.w > 0.05 && L.clip) { L.prev = { clip: L.clip, t: L.t, w: L.w, anchor: L.anchor }; }
-    L.clip = c; L.t = start; L.speed = opts.speed || 1; L.target = weight; L.rate = 1 / Math.max(0.05, fade || 0.3);
-    L.mask = mask; L.stop = opts.stop != null ? opts.stop : null; L.loop = opts.loop != null ? opts.loop : c.loop; L.anchor = anchor;
+    else if (L.w > 0.05 && L.clip) L.prev = { clip: L.clip, t: L.t, w: L.w, anchor: L.anchor, mirror: L.mirror, mask: L.mask };
+    L.clip = c; L.t = start; L.speed = opts.speed || 1; L.speed2 = opts.speed2 || L.speed; L.target = weight; L.rate = 1 / Math.max(0.03, fade || 0.3);
+    L.mask = mask; L.stop = opts.stop != null ? opts.stop : null; L.loop = opts.loop != null ? opts.loop : c.loop; L.mirror = mir;
+    L.ik = opts.ik != null ? opts.ik : -1; L.sup = opts.sup != null ? opts.sup : -1; L.autoOff = opts.autoOff != null ? opts.autoOff : null;
+    var anchor = L.anchor = { x: 0, z: 0, yaw: a ? a.yaw : 0 };
     if (mask === "full" && a) {
-      // keep the hips where they are at the clip's first frame
-      var d = this.clipPelvis(c, start, _v1), cy = Math.cos(anchor.yaw), sy = Math.sin(anchor.yaw), h = this.hipsY;
-      var hp = this.Wp[this.bi.Hips];
+      var d = this.clipPelvis(c, start, _v1, mir), cy = Math.cos(anchor.yaw), sy = Math.sin(anchor.yaw), h = this.hipsY, hp = this.Wp[this.bi.Hips];
       anchor.x = hp.x - (d.x * cy + d.z * sy) * h; anchor.z = hp.z - (-d.x * sy + d.z * cy) * h;
     }
     return L;
   };
-  Avatar.prototype.clipPelvis = function (c, t, out) {
-    var f = clamp(t * this.base.clips.fps, 0, c.frames - 1), f0 = Math.floor(f), f1 = Math.min(c.frames - 1, f0 + 1), a = f - f0, D = c.data, per = c.per;
-    return out.set(lerp(D[f0 * per], D[f1 * per], a) / 8192, lerp(D[f0 * per + 1], D[f1 * per + 1], a) / 8192, lerp(D[f0 * per + 2], D[f1 * per + 2], a) / 8192);
+  function frameAt(c, t) { return clamp(t * c.fps, 0, c.frames - 1); }
+  Avatar.prototype.clipPelvis = function (c, t, out, mir) {
+    var f = frameAt(c, t), f0 = Math.floor(f), f1 = Math.min(c.frames - 1, f0 + 1), a = f - f0, D = c.data, per = c.per;
+    out.set(lerp(D[f0 * per], D[f1 * per], a) / 8192, lerp(D[f0 * per + 1], D[f1 * per + 1], a) / 8192, lerp(D[f0 * per + 2], D[f1 * per + 2], a) / 8192);
+    if (mir) out.x = -out.x;
+    return out;
   };
-  Avatar.prototype.clipQuat = function (c, t, j, out) {
-    var f = clamp(t * this.base.clips.fps, 0, c.frames - 1), f0 = Math.floor(f), f1 = Math.min(c.frames - 1, f0 + 1), a = f - f0, D = c.data, per = c.per;
+  Avatar.prototype.clipQuat = function (c, t, j, out, mir) {
+    if (mir) j = this.clipMirror[c.set][j];
+    var f = frameAt(c, t), f0 = Math.floor(f), f1 = Math.min(c.frames - 1, f0 + 1), a = f - f0, D = c.data, per = c.per;
     var o0 = f0 * per + 3 + j * 4, o1 = f1 * per + 3 + j * 4;
     out.set(D[o0] / 32767, D[o0 + 1] / 32767, D[o0 + 2] / 32767, D[o0 + 3] / 32767).normalize();
     if (a > 0) { _q4.set(D[o1] / 32767, D[o1 + 1] / 32767, D[o1 + 2] / 32767, D[o1 + 3] / 32767).normalize(); out.slerp(_q4, a); }
+    if (mir) { out.y = -out.y; out.z = -out.z; }
     return out;
   };
+  /* Contact envelope: the strike's effector is pulled onto the driver's target from late wind-up to just
+     past contact, then let go through the recovery. */
+  function ikEnv(L) {
+    var c = L.clip; if (c.hit == null) return 0;
+    var go = c.go || 0, hit = c.hit, back = c.back || hit + 0.3, t = L.t;
+    if (t < hit) return smooth(go + 0.3 * (hit - go), hit, t);
+    return 1 - smooth(hit + 0.05, hit + 0.6 * (back - hit), t);
+  }
 
-  /* Live update: watch the actor's mode and reactions, advance clip layers. Not called in replays. */
+  /* Live update: watch the actor's mode, reactions and actions, advance clip layers. Not called in replays. */
   Avatar.prototype.tick = function (dt) {
     var a = this.actor; if (!a) return;
     var m = a.mode;
@@ -1750,21 +1786,25 @@
     var r = a.react;
     if (r && r !== this.lastReact) this.onReact(r);
     this.lastReact = r;
+    var act = a.act;
+    if (act && act !== this.lastAct) this.onAct(act);
+    this.lastAct = act;
     for (var i = this.layers.length - 1; i >= 0; i--) {
       var L = this.layers[i], c = L.clip;
-      L.t += dt * L.speed;
+      var sp = c.hit != null && L.t >= c.hit ? L.speed2 : L.speed;
+      L.t += dt * sp;
       if (L.loop) { if (L.t > c.dur) L.t -= c.dur; }
       else if (L.t > c.dur) L.t = c.dur;
       if (L.stop != null && L.t > L.stop) L.t = L.stop;
       if (L.w < L.target) L.w = Math.min(L.target, L.w + dt * L.rate); else if (L.w > L.target) L.w = Math.max(L.target, L.w - dt * L.rate);
-      if (L.prev) { L.prev.w -= dt * L.rate * 1.5; L.prev.t = Math.min(L.prev.clip.dur, L.prev.t + dt); if (L.prev.w <= 0) L.prev = null; }
-      if (L.autoOff != null) { L.autoOff -= dt; if (L.autoOff <= 0) { L.target = 0; L.autoOff = null; } }
+      if (L.prev) { L.prev.w -= dt * Math.max(L.rate, 3) * 1.5; L.prev.t = Math.min(L.prev.clip.dur, L.prev.t + dt); if (L.prev.w <= 0) L.prev = null; }
+      if (L.autoOff != null) { L.autoOff -= dt; if (L.autoOff <= 0) { L.target = 0; L.rate = Math.min(L.rate, 1 / 0.22); L.autoOff = null; } }
       if (L.w <= 0 && L.target <= 0 && !L.prev) this.layers.splice(i, 1);
     }
     this.tickFace(dt, a);
     var standing = m === "stand" || m === "clinch";
-    this.idleW += ((standing && !a.act ? 0.75 : (standing ? 0.35 : 0)) - this.idleW) * Math.min(1, dt * 3);
-    this.idleT += dt * (a.bounce || 1) * 0.9;
+    this.idleW += ((standing && !a.act ? 0.8 : (standing ? 0.35 : 0)) - this.idleW) * Math.min(1, dt * 3);
+    this.idleT += dt * (0.55 + 0.45 * (a.bounce || 1)) * (a.prof && a.prof.bounce ? a.prof.bounce.rate : 1);
   };
   /* Blinks, flinches, KO and knockdown faces. */
   Avatar.prototype.tickFace = function (dt, a) {
@@ -1791,26 +1831,93 @@
       inf[0] = F.blink; inf[1] = F.jaw; inf[2] = F.brow;
     }
   };
+  /* Strikes: the matching fight clip, timed so its contact frame lands on the driver's contact, mirrored
+     for the other hand or stance; the striking hand or foot is pulled onto the target near contact. */
+  var STRIKE_CLIP = { jab: "jab", cross: "cross", hook: "hook", overhand: "overhand", upper: "upper", bodyhook: "bodyhook", bodystraight: "bodycross", short: "rhook",
+    elbow: "elbow", shortbody: "bodycross", calf: "lowkick", inside: "lowkick", bodykick: "midkick", headkick: "highkick", knee: "knee", kneehead: "knee" };
+  Avatar.prototype.onAct = function (act) {
+    if (!this.base.mocap || this.cfg.ref || this.opts.noMocap) return;
+    var mv = act.move, c, side, frac;
+    if (act.type === "punch") { c = this.clipByName(STRIKE_CLIP[mv] || (act.hand === "lead" ? "jab" : "cross")); side = act.hi; frac = 0.42; }
+    else if (act.type === "kick") { c = this.clipByName(STRIKE_CLIP[mv] || "midkick"); side = act.li; frac = 0.48; }
+    else return;
+    if (!c || c.hit == null) return;
+    var clipSide = c.eff && c.eff.charAt(0) === "l" ? 0 : 1, mir = clipSide !== side;
+    var wind = Math.max(0.05, frac * act.dur), rec = Math.max(0.08, (1 - frac) * act.dur);
+    var s1 = clamp((c.hit - c.go) / wind, 0.6, 2.6), s2 = clamp(((c.back || c.hit + 0.3) - c.hit) / (rec + 0.12), 0.8, 3.2);
+    var kick = act.type === "kick", knee = /k$/.test(c.eff || "");
+    var L = this.clip(c, 1, 0.05, { mask: kick ? "kick" : "upper", t: c.go, speed: s1, speed2: s2, restart: true, mirror: mir,
+      ik: kick ? (knee ? -1 : 2 + side) : side, sup: kick ? 2 + (1 - side) : -1 });
+    if (L) L.autoOff = wind + rec + 0.06;
+  };
+  /* Hit reactions on the upper body (the driver's springs still snap the head). side 0 = his left. */
+  Avatar.prototype.hitClip = function (move, p, side) {
+    if (!this.base.mocap || this.cfg.ref || this.opts.noMocap) return;
+    var a = this.actor; if (!a || (a.mode !== "stand" && a.mode !== "clinch")) return;
+    if (a.act && (a.act.type === "punch" || a.act.type === "kick")) return;
+    var nm, mir = false;
+    if (move === "upper" || move === "kneehead") nm = "hitUpper";
+    else if (HEAD_MOVES[move]) {
+      if (p >= 1.6) { nm = "hitBig"; mir = side === 0; }
+      else if (move === "hook" || move === "elbow" || move === "headkick" || move === "overhand" || move === "gnp") { nm = "hitL"; mir = side === 1; }
+      else if (p > 1.1) { nm = "hitMed"; mir = side === 0; }
+      else { nm = "hitLight"; mir = side === 1; }
+    } else if (move === "calf" || move === "inside") return;
+    else nm = p >= 1.6 ? "hitLiver" : "hitBody";
+    var c = this.clipByName(nm); if (!c) return;
+    var start = { hitLight: 0.15, hitMed: 0.22, hitBig: 0.45, hitL: 0.3, hitUpper: 0.2, hitBody: 0.3, hitLiver: 0.3 }[nm] || 0;
+    var L = this.clip(c, clamp(0.45 + 0.28 * p, 0.45, 0.95), 0.06, { mask: "upper", t: start, speed: 1.15, restart: true, mirror: mir });
+    if (L) L.autoOff = Math.max(0.3, (c.dur - start) / 1.15 - 0.3);
+  };
   Avatar.prototype.onMode = function (from, to) {
-    var C = this.base.clips; if (!C) return;
-    var self = this, fwd = (this.app.slug || "x").length % 3 === 0;
-    if (to === "ko") this.clip(fwd ? "fallFwd" : "fallBack2", 1, 0.12, { restart: true, speed: fwd ? 1.7 : 1.15 });
-    else if (to === "down") {
-      this.clip("fallBack2", 1, 0.12, { restart: true, speed: 1.4 });
-    } else if (to === "stand" && (from === "down")) this.clip("getUp", 1, 0.08, { restart: true, speed: 1.55, t: 0.05 });
-    else if (to === "celebrate") this.clip("fistPump", 0.85, 0.5, { mask: "upper", loop: true });
+    var M = this.base.mocap, hl = this.lastHitInfo || {}, nm, mir;
+    if (!this.base.clips && !M) return;
+    if (to === "ko") {
+      mir = Math.random() < 0.5;
+      if (M) {
+        if (hl.body) nm = "koKnees";
+        else if (hl.move === "upper" || hl.move === "kneehead") nm = "koBack";
+        else if (hl.move === "hook" || hl.move === "headkick" || hl.move === "elbow") { nm = hl.side === 0 ? "koRight" : "koLeft"; mir = false; }
+        else nm = ["koBack", "koFallBack", "koFace", "koFwd"][Math.floor(Math.random() * 4)];
+      } else nm = (this.app.slug || "x").length % 3 === 0 ? "fallFwd" : "fallBack2";
+      this.clip(nm, 1, 0.1, { restart: true, speed: M ? 1.15 : 1.4, mirror: mir });
+    } else if (to === "down") {
+      this.clip(M ? "kdSit" : "fallBack2", 1, 0.1, { restart: true, speed: M ? 1.3 : 1.4, mirror: Math.random() < 0.5 });
+    } else if (to === "stand" && from === "down") {
+      var L0 = this.clip("getUp", 1, 0.08, { restart: true, speed: M ? 1.7 : 1.55, t: 0.05 });
+      if (L0) L0.autoOff = (L0.clip.dur - L0.t) / L0.speed - 0.3;
+    } else if (to === "celebrate") this.clip(M ? "victoryIdle" : "fistPump", 0.85, 0.5, { mask: "upper", loop: true });
+    else if (to === "sit" && M) this.clip("sitIdle", 0.55, 0.6, { mask: "torso", loop: true });
+    else if (to === "refstop" && M) { var Lr = this.clip("refStop", 0.7, 0.2, { mask: "upper", restart: true, speed: 1.2 }); if (Lr) Lr.autoOff = 1.1; }
     else {
-      this.layers.forEach(function (L) { if (L.mask === "upper" || (L.mask === "full" && L.clip && L.clip.name !== "getUp")) { L.target = 0; L.rate = 1 / 0.45; } });
-    }
-    if (to === "stand" && from === "down") {
-      // fade the get-up out as it completes
-      var L = null; this.layers.forEach(function (l) { if (l.mask === "full") L = l; });
-      if (L) L.autoOff = (L.clip.dur - L.t) / L.speed - 0.3;
+      this.layers.forEach(function (L) { if (L.mask === "upper" || L.mask === "torso" || (L.mask === "full" && L.clip && L.clip.name !== "getUp")) { L.target = 0; L.rate = 1 / 0.45; } });
     }
     if (to === "walk" && (from === "ko" || from === "down" || from === null)) this.layers.forEach(function (l) { l.target = 0; l.rate = 1 / 0.3; });
   };
   Avatar.prototype.onReact = function (r) {
     if (r.type === "wobble") { var L = this.clip("dizzy", 0.55, 0.15, { mask: "upper", t: 0.3, restart: true }); if (L) L.autoOff = r.dur * 0.8; }
+  };
+
+  /* Pull a limb's end onto the driver's target (hand: glove centre; foot: ankle) by weight w, bending
+     toward where the clip has the elbow or knee. */
+  Avatar.prototype.ikPull = function (li, w) {
+    var Lm = this.limbs[li], W = this.W, Wp = this.Wp, drv = this.rig, arm = Lm.L.arm;
+    this.fk(Lm.il); this.fk(Lm.ie);
+    var save = this._ikSave || (this._ikSave = [new Q(), new Q(), new Q(), new Q()]);
+    save[0].copy(W[Lm.iu]); save[1].copy(W[Lm.il]); save[2].copy(W[Lm.ie]);
+    var toe = arm ? -1 : this.bi[Lm.L.left ? "LeftToeBase" : "RightToeBase"]; if (toe >= 0) save[3].copy(W[toe]);
+    var eff = this._ikE || (this._ikE = new V3()), tgt = this._ikT || (this._ikT = new V3()), pole = this._ikP || (this._ikP = new V3());
+    eff.copy(Wp[Lm.ie]); pole.copy(Wp[Lm.il]);
+    if (arm) { eff.addScaledVector(_v1.copy(Wp[Lm.ie]).sub(Wp[Lm.il]).normalize(), Lm.fist); drv.handPos(Lm.L.left, tgt); }
+    else (Lm.L.left ? drv.legL : drv.legR).foot.getWorldPosition(tgt);
+    tgt.lerp(eff, 1 - w);
+    this.solveLimb(Lm, Wp[Lm.iu], tgt, pole);
+    var s = smooth(0, 0.35, w);
+    if (s < 0.999) {
+      W[Lm.iu].copy(save[0].slerp(W[Lm.iu], s)); W[Lm.il].copy(save[1].slerp(W[Lm.il], s)); W[Lm.ie].copy(save[2].slerp(W[Lm.ie], s));
+      if (toe >= 0) W[toe].copy(save[3].slerp(W[toe], s));
+      this.fk(Lm.il); this.fk(Lm.ie); if (toe >= 0) this.fk(toe);
+    }
   };
 
   /* Pose the skinned skeleton from the driver (plus clip layers). Called every rendered frame. */
@@ -1830,45 +1937,50 @@
     W[bi.LeftShoulder].copy(qC).multiply(Rq[bi.LeftShoulder]);
     W[bi.RightShoulder].copy(qC).multiply(Rq[bi.RightShoulder]);
     rig.pelvis.getWorldPosition(Wp[bi.Hips]);
-    // idle breathing layer (additive, torso only)
-    var C = this.base.clips, yaw = this.actor ? this.actor.yaw : 0, qy = _q3.setFromAxisAngle(YAX, yaw), qyi = tq[4].copy(qy).invert();
-    if (C && this.idleW > 0.01) {
-      var ic = C.clips.idle, t = this.idleT % ic.dur;
+    // idle layer (additive on the torso and head): the fight-idle bounce from the mocap set, else the breathing idle
+    var Mo = this.base.mocap, Cl = this.base.clips, yaw = this.actor ? this.actor.yaw : 0, qy = _q3.setFromAxisAngle(YAX, yaw), qyi = tq[4].copy(qy).invert();
+    var ic = Mo && Mo.clips.fightIdle ? Mo.clips.fightIdle : (Cl ? Cl.clips.idle : null);
+    if (ic && this.idleW > 0.01) {
+      var t = this.idleT % ic.dur, amp = this.actor && this.actor.prof && this.actor.prof.bounce ? 0.45 + 0.55 * this.actor.prof.bounce.amp : 1;
       for (var nm in IDLE_MASK) {
-        var j = C.bones.indexOf(nm); if (j < 0) continue;
+        var j = ic.bones.indexOf(nm); if (j < 0) continue;
         this.clipQuat(ic, t, j, _q2); this.clipQuat(ic, 0, j, tq[5]).invert(); _q2.multiply(tq[5]);
         _q2.premultiply(qy).multiply(qyi);
-        var dq = tq[6].identity().slerp(_q2, this.idleW * IDLE_MASK[nm]);
+        var dq = tq[6].identity().slerp(_q2, this.idleW * IDLE_MASK[nm] * amp * (ic.set ? 0.7 : 1));
         W[bi[nm]].premultiply(dq);
       }
     }
-    // full-body and upper-body clip layers for the torso
+    // clip layers on the torso
     var self = this, layers = this.layers, clipW = 0, hasFull = false;
     function layerFrame(L) {
       var qa = new Q().setFromAxisAngle(YAX, L.anchor.yaw);
-      if (L.mask !== "upper") return qa;
+      if (L.mask !== "upper" && L.mask !== "torso") return qa;
       // upper-body layers ride on the driver's pelvis: rel * clip, rel = W_hips * inverse(clip hips)
-      var jh = C.bones.indexOf("Hips"), ch = self.clipQuat(L.clip, L.t, jh, new Q()).premultiply(qa).multiply(self.clipRef[jh]);
+      var c = L.clip, jh = c.bones.indexOf("Hips"), ch = self.clipQuat(c, L.t, jh, new Q(), L.mirror).premultiply(qa).multiply(self.clipRefs[c.set][jh]);
       return W[bi.Hips].clone().multiply(ch.invert()).multiply(qa);
     }
+    function inMask(L, nm2) { return L.mask === "upper" ? UPPER_MASK[nm2] : (L.mask === "torso" ? TORSO_MASK[nm2] : true); }
     function layerTorso(L, w) {
-      var c = L.clip, cy = Math.cos(L.anchor.yaw), sy = Math.sin(L.anchor.yaw), qa = layerFrame(L);
+      var c = L.clip, cy = Math.cos(L.anchor.yaw), sy = Math.sin(L.anchor.yaw), qa = layerFrame(L), refs = self.clipRefs[c.set];
       L._qa = qa;
-      for (var jj = 0; jj < C.bones.length; jj++) {
-        var nm2 = C.bones[jj], kk = bi[nm2];
-        if (L.mask === "upper" && !UPPER_MASK[nm2]) continue;
-        if (LIMB_BONE[nm2]) continue;
-        self.clipQuat(c, L.t, jj, _q2).premultiply(qa).multiply(self.clipRef[jj]);
+      for (var jj = 0; jj < c.bones.length; jj++) {
+        var nm2 = c.bones[jj], kk = bi[nm2];
+        if (!inMask(L, nm2) || LIMB_BONE[nm2]) continue;
+        self.clipQuat(c, L.t, jj, _q2, L.mirror).premultiply(qa).multiply(refs[jj]);
         W[kk].slerp(_q2, w);
       }
+      var h = self.hipsY;
       if (L.mask === "full") {
-        var d = self.clipPelvis(c, L.t, _v1), h = self.hipsY;
+        var d = self.clipPelvis(c, L.t, _v1, L.mirror);
         _v2.set(L.anchor.x + (d.x * cy + d.z * sy) * h, h * (1 + d.y), L.anchor.z + (-d.x * sy + d.z * cy) * h);
         Wp[bi.Hips].lerp(_v2, w);
+      } else if (L.mask === "kick") {
+        var d1 = self.clipPelvis(c, L.t, _v1, L.mirror).y, d0 = self.clipPelvis(c, c.go || 0, _v2, L.mirror).y;
+        Wp[bi.Hips].y += (d1 - d0) * h * w * 0.8;
       }
     }
-    if (C) layers.forEach(function (L) {
-      if (L.prev && L.prev.w > 0) { L.prev.mask = L.mask; layerTorso(L.prev, clamp01(L.prev.w)); }
+    if (Mo || Cl) layers.forEach(function (L) {
+      if (L.prev && L.prev.w > 0) layerTorso(L.prev, clamp01(L.prev.w));
       if (L.w > 0) { layerTorso(L, clamp01(L.w)); if (L.mask === "full") { hasFull = true; clipW = Math.max(clipW, L.w); } }
     });
     this.clipW = clipW;
@@ -1913,20 +2025,27 @@
       }
       this.solveLimb(L, s, tgt, el);
     }
-    // clip layers on the limbs (after IK so they can override it)
-    if (C) layers.forEach(function (L) {
-      function limbsFrom(LL, w) {
-        var qa = LL._qa || new Q().setFromAxisAngle(YAX, LL.anchor.yaw);
-        for (var jj = 0; jj < C.bones.length; jj++) {
-          var nm2 = C.bones[jj]; if (!LIMB_BONE[nm2]) continue;
-          if (LL.mask === "upper" && !UPPER_MASK[nm2]) continue;
-          self.clipQuat(LL.clip, LL.t, jj, _q2).premultiply(qa).multiply(self.clipRef[jj]);
-          W[bi[nm2]].slerp(_q2, w);
+    // clip layers on the limbs (after IK so they can override it), then contact and support IK
+    if (Mo || Cl) {
+      layers.forEach(function (L) {
+        function limbsFrom(LL, w) {
+          var qa = LL._qa || new Q().setFromAxisAngle(YAX, LL.anchor.yaw), c = LL.clip, refs = self.clipRefs[c.set];
+          for (var jj = 0; jj < c.bones.length; jj++) {
+            var nm2 = c.bones[jj]; if (!LIMB_BONE[nm2] || !inMask(LL, nm2)) continue;
+            self.clipQuat(c, LL.t, jj, _q2, LL.mirror).premultiply(qa).multiply(refs[jj]);
+            W[bi[nm2]].slerp(_q2, w);
+          }
         }
-      }
-      if (L.prev && L.prev.w > 0) limbsFrom(L.prev, clamp01(L.prev.w));
-      if (L.w > 0) limbsFrom(L, clamp01(L.w));
-    });
+        if (L.prev && L.prev.w > 0) limbsFrom(L.prev, clamp01(L.prev.w));
+        if (L.w > 0) limbsFrom(L, clamp01(L.w));
+      });
+      this.fkAll();
+      layers.forEach(function (L) {
+        if (L.w <= 0.01) return;
+        if (L.sup >= 0) self.ikPull(L.sup, clamp01(L.w));
+        if (L.ik >= 0) { var e = ikEnv(L) * clamp01(L.w); if (e > 0.01) self.ikPull(L.ik, e); }
+      });
+    }
     // fingers and face
     this.fingers();
     this.applyFace();
@@ -1941,7 +2060,7 @@
     // floor clamp while a clip moves the body (feet, hands, head and hips stay above the canvas)
     if (hasFull) {
       this.fkAll();
-      var low = 1e9, lift = 0, chk = [bi.Head, bi.LeftHand, bi.RightHand, bi.LeftFoot, bi.RightFoot, bi.LeftToeBase, bi.RightToeBase, bi.Hips, bi.LeftLeg, bi.RightLeg, bi.Spine2];
+      var lift = 0, chk = [bi.Head, bi.LeftHand, bi.RightHand, bi.LeftFoot, bi.RightFoot, bi.LeftToeBase, bi.RightToeBase, bi.Hips, bi.LeftLeg, bi.RightLeg, bi.Spine2];
       var rad = [0.1, 0.035, 0.035, this.dims.ankle, this.dims.ankle, 0.025, 0.025, 0.09, 0.06, 0.06, 0.1];
       for (k = 0; k < chk.length; k++) lift = Math.max(lift, rad[k] * 0.8 - Wp[chk[k]].y);
       if (lift > 0) bones[0].position.y += lift * clamp01(clipW);
@@ -2007,32 +2126,37 @@
     }
   };
 
-  /* Replay snapshots: clip layer state appended to the driver's node block (see the Rig patch below). */
+  /* Replay snapshots: clip layer state appended to the driver's node block (see the Rig patch below).
+     [0] idleT [1] idleW [2..4] face, then up to 4 layers x 10: clip id+1, t, w, anchor x, z, yaw,
+     speed (+100 while fading out), mask code + 10*mirror, (ik+1) + 10*(sup+1), recovery speed. */
+  var SNAP_LAYERS = 4, SNAP_L = 10, EXTRA = 5 + SNAP_LAYERS * SNAP_L;
   Avatar.prototype.snapshot = function (buf, o) {
     var Ls = this.layers;
     buf[o] = this.idleT; buf[o + 1] = this.idleW;
-    var F = this.face; buf[o + 16] = F ? F.blink : 0; buf[o + 17] = F ? F.jaw : 0; buf[o + 18] = F ? F.brow : 0;
-    for (var i = 0; i < 2; i++) {
-      var L = Ls[i], b = o + 2 + i * 7;
-      if (L && L.clip) { buf[b] = L.clip.id + 1; buf[b + 1] = L.t; buf[b + 2] = L.w; buf[b + 3] = L.anchor.x; buf[b + 4] = L.anchor.z; buf[b + 5] = L.anchor.yaw + (L.mask === "upper" ? 1000 : 0); buf[b + 6] = L.speed + (L.target > 0 ? 0 : 100); }
-      else { buf[b] = 0; buf[b + 1] = buf[b + 2] = buf[b + 3] = buf[b + 4] = buf[b + 5] = buf[b + 6] = 0; }
+    var F = this.face; buf[o + 2] = F ? F.blink : 0; buf[o + 3] = F ? F.jaw : 0; buf[o + 4] = F ? F.brow : 0;
+    for (var i = 0; i < SNAP_LAYERS; i++) {
+      var L = Ls[i], b = o + 5 + i * SNAP_L;
+      if (L && L.clip) {
+        buf[b] = L.clip.id + 1; buf[b + 1] = L.t; buf[b + 2] = L.w; buf[b + 3] = L.anchor.x; buf[b + 4] = L.anchor.z; buf[b + 5] = L.anchor.yaw;
+        buf[b + 6] = L.speed + (L.target > 0 ? 0 : 100); buf[b + 7] = (MASK_CODE[L.mask] || 0) + (L.mirror ? 10 : 0); buf[b + 8] = (L.ik + 1) + 10 * (L.sup + 1); buf[b + 9] = L.speed2 || L.speed;
+      } else for (var k = 0; k < SNAP_L; k++) buf[b + k] = 0;
     }
   };
   Avatar.prototype.restore = function (A, oa, B, ob, f) {
-    var C = this.base.clips; if (!C) return;
+    var list = this.base.clipList; if (!list || !list.length) return;
     var src = f < 0.5 ? A : B, o = f < 0.5 ? oa : ob;
     this.idleT = lerp(A[oa], B[ob], f); if (Math.abs(B[ob] - A[oa]) > 0.5) this.idleT = src[o];
     this.idleW = lerp(A[oa + 1], B[ob + 1], f);
-    if (this.face) { this.face.blink = lerp(A[oa + 16], B[ob + 16], f); this.face.jaw = lerp(A[oa + 17], B[ob + 17], f); this.face.brow = lerp(A[oa + 18], B[ob + 18], f); }
+    if (this.face) { this.face.blink = lerp(A[oa + 2], B[ob + 2], f); this.face.jaw = lerp(A[oa + 3], B[ob + 3], f); this.face.brow = lerp(A[oa + 4], B[ob + 4], f); }
     var layers = [];
-    for (var i = 0; i < 2; i++) {
-      var b = o + 2 + i * 7, id = src[b];
-      if (!id) continue;
-      var c = C.clips[C.list[id - 1]], ya = src[b + 5], upper = ya > 500, sp = src[b + 6], fading = sp >= 50;
-      var ba = oa + 2 + i * 7, bb = ob + 2 + i * 7, t = src[b + 1], w = src[b + 2];
-      if (A[ba] === B[bb]) { t = lerp(A[ba + 1], B[bb + 1], f); w = lerp(A[ba + 2], B[bb + 2], f); }
-      layers.push({ clip: c, t: t, w: w, target: fading ? 0 : w, rate: 1 / 0.4, mask: upper ? "upper" : "full", loop: c.loop, stop: null,
-        anchor: { x: src[b + 3], z: src[b + 4], yaw: upper ? ya - 1000 : ya }, speed: fading ? sp - 100 : sp });
+    for (var i = 0; i < SNAP_LAYERS; i++) {
+      var b = o + 5 + i * SNAP_L, id = src[b];
+      if (!id || !list[id - 1]) continue;
+      var c = list[id - 1], sp = src[b + 6], fading = sp >= 50, mc = src[b + 7], ikc = src[b + 8];
+      var ba = oa + 5 + i * SNAP_L, bb = ob + 5 + i * SNAP_L, t = src[b + 1], w = src[b + 2];
+      if (A[ba] === B[bb] && Math.abs(B[bb + 1] - A[ba + 1]) < 0.5) { t = lerp(A[ba + 1], B[bb + 1], f); w = lerp(A[ba + 2], B[bb + 2], f); }
+      layers.push({ clip: c, t: t, w: w, target: fading ? 0 : w, rate: 1 / 0.4, mask: MASK_NAME[mc % 10] || "full", mirror: mc >= 10, loop: c.loop, stop: null,
+        anchor: { x: src[b + 3], z: src[b + 4], yaw: src[b + 5] }, speed: fading ? sp - 100 : sp, speed2: src[b + 9], ik: (ikc % 10) - 1, sup: Math.floor(ikc / 10) - 1 });
     }
     this.layers = layers;
   };
@@ -2046,7 +2170,6 @@
   };
 
   /* Patch the primitive Rig's replay snapshot so clip state rides along (extra floats per rig). */
-  var EXTRA = 20;
   if (root.FightRig && root.FightRig.Rig && !root.FightRig.Rig._avPatched) {
     var R = root.FightRig.Rig, base0 = R.STRIDE;
     R._avPatched = true; R.STRIDE = base0 + EXTRA;

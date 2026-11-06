@@ -317,11 +317,333 @@
     "compare": null,
     "file": "data/derived/evalv/v3_train.json"
    },
-   "validation": null,
-   "blend": null,
+   "validation": {
+    "n_fights": 865,
+    "n_decisive": 853,
+    "sims_per_order": 300,
+    "metrics": {
+     "winLL": {
+      "est": 0.6424,
+      "lo": 0.6272,
+      "hi": 0.6577
+     },
+     "brier": {
+      "est": 0.2252,
+      "lo": 0.218,
+      "hi": 0.2326
+     },
+     "acc": {
+      "est": 0.6424,
+      "lo": 0.6071,
+      "hi": 0.6787
+     },
+     "bin7": {
+      "est": 1.5883,
+      "lo": 1.5484,
+      "hi": 1.6299
+     },
+     "method": {
+      "est": 0.9405,
+      "lo": 0.9112,
+      "hi": 0.9713
+     },
+     "dev_sig_lnd": {
+      "est": 22.8305,
+      "lo": 21.1299,
+      "hi": 24.5972
+     },
+     "dev_sig_att": {
+      "est": 45.3103,
+      "lo": 41.7871,
+      "hi": 49.1207
+     },
+     "dev_td_lnd": {
+      "est": 1.9512,
+      "lo": 1.8197,
+      "hi": 2.0987
+     },
+     "dev_ctrl": {
+      "est": 164.3897,
+      "lo": 154.9504,
+      "hi": 174.4449
+     },
+     "dev_kd": {
+      "est": 0.668,
+      "lo": 0.6229,
+      "hi": 0.7215
+     },
+     "mae_sig_lnd": {
+      "est": 25.7405,
+      "lo": 24.5866,
+      "hi": 26.9304
+     },
+     "mae_sig_att": {
+      "est": 52.6393,
+      "lo": 50.2609,
+      "hi": 55.1234
+     },
+     "mae_td_lnd": {
+      "est": 1.1249,
+      "lo": 1.07,
+      "hi": 1.1818
+     },
+     "mae_ctrl": {
+      "est": 116.6588,
+      "lo": 111.9548,
+      "hi": 121.84
+     },
+     "mae_kd": {
+      "est": 0.3216,
+      "lo": 0.3069,
+      "hi": 0.3366
+     },
+     "ece": {
+      "est": 0.0543,
+      "lo": 0.0331,
+      "hi": 0.0884
+     },
+     "calSlope": {
+      "est": 1.5667,
+      "lo": 1.2358,
+      "hi": 1.9495
+     }
+    },
+    "baseRates": {
+     "n": 857,
+     "finish": {
+      "sim": 0.4823,
+      "actual": 0.4597,
+      "diff": 0.0226
+     },
+     "KO": {
+      "sim": 0.3058,
+      "actual": 0.2905,
+      "diff": 0.0152
+     },
+     "SUB": {
+      "sim": 0.1765,
+      "actual": 0.1692,
+      "diff": 0.0073
+     },
+     "DEC": {
+      "sim": 0.5177,
+      "actual": 0.5403,
+      "diff": -0.0226
+     },
+     "finByRound3": {
+      "n": 752,
+      "sim": [
+       0.2431,
+       0.1427,
+       0.0903
+      ],
+      "actual": [
+       0.2367,
+       0.137,
+       0.0785
+      ]
+     },
+     "finByRound5": {
+      "n": 105,
+      "sim": [
+       0.1474,
+       0.1294,
+       0.1035,
+       0.0921,
+       0.0542
+      ],
+      "actual": [
+       0.1524,
+       0.1619,
+       0.0952,
+       0.0762,
+       0.0286
+      ]
+     },
+     "kdPer100Head": {
+      "sim": 0.7174,
+      "actual": 0.6844,
+      "diff": 0.0331
+     },
+     "decision": {
+      "sim": {
+       "UD": 0.7959,
+       "SD": 0.1903,
+       "MD": 0.0138
+      },
+      "actual": {
+       "UD": 0.8148,
+       "SD": 0.1808,
+       "MD": 0.0044
+      },
+      "nActual": 459
+     },
+     "r108": {
+      "sim": 0.0496,
+      "actual": 0.0628,
+      "diff": -0.0132
+     },
+     "sigLndPer15": {
+      "sim": 63.883,
+      "actual": 58.1061,
+      "diff": 5.7769
+     },
+     "tdPer15": {
+      "sim": 1.3528,
+      "actual": 1.4128,
+      "diff": -0.06
+     },
+     "ctrlPer15": {
+      "sim": 166.8247,
+      "actual": 168.3007,
+      "diff": -1.476
+     }
+    },
+    "methodround": {
+     "joint": {
+      "submitted": 2.0877,
+      "model_S": 2.0418,
+      "diff": 0.046,
+      "ci95": [
+       0.0216,
+       0.0682
+      ]
+     },
+     "method3": {
+      "submitted": 0.9405,
+      "model_S": 0.936,
+      "diff": 0.0045,
+      "ci95": [
+       -0.007,
+       0.0165
+      ]
+     },
+     "finish": {
+      "submitted": 0.6603,
+      "model_S": 0.6593,
+      "diff": 0.001,
+      "ci95": [
+       -0.009,
+       0.011
+      ]
+     },
+     "bin7": {
+      "submitted": 1.5883,
+      "model_S": 1.5538,
+      "diff": 0.0345,
+      "ci95": [
+       0.0165,
+       0.053
+      ]
+     },
+     "method_round": {
+      "submitted": 1.4329,
+      "model_S": 1.424,
+      "diff": 0.0089,
+      "ci95": [
+       -0.0074,
+       0.0235
+      ]
+     },
+     "round_given_fin": {
+      "submitted": 1.0642,
+      "model_S": 1.0601,
+      "diff": 0.0041,
+      "ci95": [
+       -0.0155,
+       0.0217
+      ]
+     },
+     "ko_vs_sub": {
+      "submitted": 0.6095,
+      "model_S": 0.6017,
+      "diff": 0.0078,
+      "ci95": [
+       -0.0069,
+       0.0236
+      ]
+     },
+     "method_given_winner": {
+      "submitted": 0.9192,
+      "model_S": 0.9073,
+      "diff": 0.0119,
+      "ci95": [
+       -0.0019,
+       0.026
+      ]
+     },
+     "winner": {
+      "submitted": 0.6424,
+      "model_S": 0.6213,
+      "diff": 0.0211,
+      "ci95": [
+       0.0109,
+       0.0315
+      ]
+     },
+     "winner_brier": {
+      "submitted": 0.2252,
+      "model_S": 0.2154,
+      "diff": 0.0098,
+      "ci95": [
+       0.0049,
+       0.0146
+      ]
+     },
+     "winner_acc": {
+      "submitted": 0.6413,
+      "model_S": 0.6753,
+      "diff": -0.034,
+      "ci95": [
+       -0.0656,
+       -0.0006
+      ]
+     },
+     "method3_brier": {
+      "submitted": 0.5639,
+      "model_S": 0.561,
+      "diff": 0.0029,
+      "ci95": [
+       -0.0053,
+       0.0114
+      ]
+     }
+    },
+    "compare": null,
+    "file": "data/derived/evalv/v3_val.json"
+   },
+   "blend": {
+    "market": {
+     "engine_weight": 0,
+     "logloss_with": 0.5788248485320001,
+     "logloss_without": 0.5788257212949961,
+     "diff": {
+      "est": -8.727629959482959e-7,
+      "lo": -0.0000015272600814283089,
+      "hi": -2.5655151717160004e-7,
+      "p_gt0": 0.002
+     },
+     "n": 845
+    },
+    "nomarket": {
+     "engine_weight": 0,
+     "logloss_with": 0.5930335681784208,
+     "logloss_without": 0.5930336691698366,
+     "diff": {
+      "est": -1.0099141584613298e-7,
+      "lo": -1.8138076015023744e-7,
+      "hi": -1.882505288986469e-8,
+      "p_gt0": 0.0105
+     },
+     "n": 845
+    },
+    "dry": false
+   },
    "notes": [
-    "v3 as frozen before any v4 edit (versions/v3, params 3.0.0-wf-2026-11-06). Caveat: its [selfcal] values (clinchScale, groundScale, kdPos, judge t108, div.*) were fit to all-years league priors (fighters.json, 2018..2026-10, incl. 2024-25 and the vault; league averages only, no per-fight outcomes), and its walk-forward stage reported one look at 2024-2026 (docs/BACKLOG.md). Kept unchanged as the reference the v4 cycle is measured against."
-   ]
+    "v3 as frozen before any v4 edit (versions/v3, params 3.0.0-wf-2026-11-06). Caveat: its [selfcal] values (clinchScale, groundScale, kdPos, judge t108, div.*) were fit to all-years league priors (fighters.json, 2018..2026-10, incl. 2024-25 and the vault; league averages only, no per-fight outcomes), and its walk-forward stage reported one look at 2024-2026 (docs/BACKLOG.md). Kept unchanged as the reference the v4 cycle is measured against.",
+    "2026-11-06T15:24 val: single validation look for v3 (reference for the v4 decision); run by the v4 measurement step"
+   ],
+   "validated_at": "2026-11-06T15:24:15.935Z"
   },
   {
    "version": "v4",

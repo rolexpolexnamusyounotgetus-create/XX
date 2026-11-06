@@ -944,11 +944,11 @@
         if (top) att.startAction({ type: b.fin ? "gnp" : "gnp", hand: this.rnd() < 0.5 ? "lead" : "rear", dur: b.fin ? 0.3 : 0.38, def: def, landed: true, onHit: onHit });
         else att.startAction({ type: "upelbow", dur: 0.35, def: def, landed: true, onHit: onHit });
       } else if (KICK[b.move]) {
-        att.startAction({ type: "kick", leg: KICK[b.move].leg, def: KICK[b.move], dur: KICK[b.move].dur, landed: b.landed, missOff: missOff, onHit: onHit });
+        att.startAction({ type: "kick", move: b.move, leg: KICK[b.move].leg, def: KICK[b.move], dur: KICK[b.move].dur, landed: b.landed, missOff: missOff, onHit: onHit });
         if (!b.landed) def.startReact(b.move === "calf" || b.move === "inside" ? { type: this.rnd() < 0.5 ? "check" : "back", dur: 0.42 } : { type: "back", dur: 0.45 });
       } else {
         var d = PUNCH[b.move] || PUNCH.jab;
-        att.startAction({ type: "punch", hand: d.hand, def: d, dur: d.dur, landed: b.landed, missOff: missOff, onHit: onHit, lungeK: this.state === "clinch" ? 0 : 1 });
+        att.startAction({ type: "punch", move: PUNCH[b.move] ? b.move : "jab", hand: d.hand, def: d, dur: d.dur, landed: b.landed, missOff: missOff, onHit: onHit, lungeK: this.state === "clinch" ? 0 : 1 });
         if (!b.landed) {
           var rr = this.rnd(), react = d.body ? { type: "block", dur: 0.32 } : (rr < 0.5 ? { type: "slip", dir: missOff.dot(def.left(_v)) > 0 ? -1 : 1, dur: 0.34 } : (rr < 0.75 ? { type: "duck", dur: 0.34 } : (rr < 0.9 ? { type: "block", dur: 0.32 } : { type: "back", dur: 0.4 })));
           def.startReact(react);

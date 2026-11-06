@@ -1,0 +1,153 @@
+{
+ "meta": {
+  "tool": "tools/evalv_blend.py",
+  "engine_bt": "out/evalv/v3_engine_bt.json",
+  "engine_meta": {
+   "tool": "tools/evalv.js",
+   "version": "v3",
+   "engine_sha256": "7dcac8239b8d4aaa27367aec51378731e2d170b50dabba9d0ea95ef430066fe2",
+   "params_sha256": "06173bc61ee788fae415e4e629aab1c466dc72aa27f560bb3bdad4b53d489fc2",
+   "sims_per_orientation": 300
+  },
+  "experts": [
+   "market",
+   "mkt_rating",
+   "engine",
+   "ml",
+   "feat_lr",
+   "elo_sig",
+   "elo"
+  ],
+  "dry": false,
+  "train": "2019-2023",
+  "valid": "2024-2025",
+  "engine_coverage": {
+   "train": 1.0,
+   "valid": 1.0
+  },
+  "hp": {
+   "market": {},
+   "nomarket": {
+    "h": 1.5
+   }
+  },
+  "family": "linear (constrained logit-linear, no intercept), one weight vector per availability pattern"
+ },
+ "patterns": {
+  "market": {
+   "n": 845,
+   "experts_with": [
+    "market",
+    "mkt_rating",
+    "engine",
+    "ml",
+    "feat_lr",
+    "elo_sig",
+    "elo"
+   ],
+   "experts_without": [
+    "market",
+    "mkt_rating",
+    "ml",
+    "feat_lr",
+    "elo_sig",
+    "elo"
+   ],
+   "engine_weight": 0.0,
+   "weights_with": {
+    "market": 0.8637316502626587,
+    "mkt_rating": 0.10630759107352471,
+    "engine": 0.0,
+    "ml": 0.14737795773691276,
+    "feat_lr": 0.05528355027957276,
+    "elo_sig": 0.0,
+    "elo": 0.0
+   },
+   "weights_without": {
+    "market": 0.8637669143835934,
+    "mkt_rating": 0.10630082272628578,
+    "ml": 0.14734845388394213,
+    "feat_lr": 0.05527005696871116,
+    "elo_sig": 0.0,
+    "elo": 0.0
+   },
+   "logloss_with": 0.5788248485320001,
+   "logloss_without": 0.5788257212949961,
+   "diff_with_minus_without": {
+    "est": -8.727629959482959e-07,
+    "lo": -1.5272600814283089e-06,
+    "hi": -2.5655151717160004e-07,
+    "p_gt0": 0.002
+   }
+  },
+  "nomarket": {
+   "n": 845,
+   "experts_with": [
+    "mkt_rating",
+    "engine",
+    "ml",
+    "feat_lr",
+    "elo_sig",
+    "elo"
+   ],
+   "experts_without": [
+    "mkt_rating",
+    "ml",
+    "feat_lr",
+    "elo_sig",
+    "elo"
+   ],
+   "engine_weight": 0.0,
+   "weights_with": {
+    "mkt_rating": 0.8542527103408768,
+    "engine": 0.0,
+    "ml": 0.5552005493987505,
+    "feat_lr": 0.02546734307747899,
+    "elo_sig": 0.0,
+    "elo": 0.0
+   },
+   "weights_without": {
+    "mkt_rating": 0.854254311988562,
+    "ml": 0.5552081904160845,
+    "feat_lr": 0.025457307680403895,
+    "elo_sig": 0.0,
+    "elo": 0.0
+   },
+   "logloss_with": 0.5930335681784208,
+   "logloss_without": 0.5930336691698366,
+   "diff_with_minus_without": {
+    "est": -1.0099141584613298e-07,
+    "lo": -1.8138076015023744e-07,
+    "hi": -1.882505288986469e-08,
+    "p_gt0": 0.0105
+   }
+  }
+ },
+ "summary": {
+  "market": {
+   "engine_weight": 0.0,
+   "logloss_with": 0.5788248485320001,
+   "logloss_without": 0.5788257212949961,
+   "diff": {
+    "est": -8.727629959482959e-07,
+    "lo": -1.5272600814283089e-06,
+    "hi": -2.5655151717160004e-07,
+    "p_gt0": 0.002
+   },
+   "n": 845
+  },
+  "nomarket": {
+   "engine_weight": 0.0,
+   "logloss_with": 0.5930335681784208,
+   "logloss_without": 0.5930336691698366,
+   "diff": {
+    "est": -1.0099141584613298e-07,
+    "lo": -1.8138076015023744e-07,
+    "hi": -1.882505288986469e-08,
+    "p_gt0": 0.0105
+   },
+   "n": 845
+  },
+  "dry": false
+ }
+}
