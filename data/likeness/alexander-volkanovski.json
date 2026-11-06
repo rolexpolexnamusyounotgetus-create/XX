@@ -220,30 +220,26 @@
     "macro/weightDownM": 0.15,
     "macro/heightDownM": 0.35,
     "macro/proportionsUpM": 0.2,
-    "head/head-oval": 0.3,
-    "head/head-square": 0.35,
-    "head/head-scale-vert-incr": 0.2,
+    "head/head-oval": 0.1,
+    "head/head-square": 0.5,
     "head/head-scale-horiz-decr": 0.0,
     "head/head-fat-decr": 0.45,
-    "forehead/forehead-scale-vert-incr": 0.3,
+    "forehead/forehead-scale-vert-incr": 0.1,
     "forehead/forehead-trans-backward": 0.15,
     "eyebrows/eyebrows-trans-forward": 0.35,
     "eyebrows/eyebrows-trans-down": 0.3,
-    "eyebrows/eyebrows-angle-down": 0.2,
-    "eyes/l-eye-scale-decr": 0.15,
-    "eyes/r-eye-scale-decr": 0.15,
-    "eyes/l-eye-height2-decr": 0.2,
-    "eyes/r-eye-height2-decr": 0.2,
+    "eyebrows/eyebrows-angle-down": 0.05,
+    "eyes/l-eye-height2-decr": 0.05,
+    "eyes/r-eye-height2-decr": 0.05,
     "eyes/l-eye-bag-incr": 0.3,
     "eyes/r-eye-bag-incr": 0.3,
     "eyes/l-eye-corner1-down": 0.1,
     "eyes/r-eye-corner1-down": 0.1,
     "nose/nose-scale-vert-incr": 0.35,
     "nose/nose-scale-depth-incr": 0.3,
-    "nose/nose-width1-decr": 0.15,
     "nose/nose-hump-incr": 0.15,
     "nose/nose-point-down": 0.3,
-    "nose/nose-point-width-incr": 0.15,
+    "nose/nose-point-width-incr": 0.35,
     "mouth/mouth-upperlip-volume-decr": 0.35,
     "mouth/mouth-lowerlip-volume-decr": 0.1,
     "mouth/mouth-cupidsbow-decr": 0.2,
@@ -254,8 +250,8 @@
     "chin/chin-bones-incr": 0.15,
     "cheek/l-cheek-bones-incr": 0.45,
     "cheek/r-cheek-bones-incr": 0.45,
-    "cheek/l-cheek-volume-decr": 0.35,
-    "cheek/r-cheek-volume-decr": 0.35,
+    "cheek/l-cheek-volume-decr": 0.15,
+    "cheek/r-cheek-volume-decr": 0.15,
     "neck/neck-scale-horiz-incr": 0.4,
     "neck/neck-scale-vert-decr": 0.1,
     "torso/measure-shoulder-dist-incr": 0.3,
@@ -269,11 +265,13 @@
     "ears/r-ear-scale-incr": 0.2,
     "ears/l-ear-lobe-incr": 0.1,
     "ears/r-ear-lobe-incr": 0.1,
-    "eyes/l-eye-height1-decr": 0.3,
-    "eyes/r-eye-height1-decr": 0.3,
     "eyes/l-eye-push1-in": 0.3,
     "eyes/r-eye-push1-in": 0.3,
-    "community/elvs_flap_ears_2": 0.4
+    "community/elvs_flap_ears_2": 0.4,
+    "head/head-scale-horiz-incr": 0.35,
+    "nose/nose-width1-incr": 0.1,
+    "nose/nose-nostrils-width-incr": 0.3,
+    "nose/nose-scale-horiz-incr": 0.2
   },
   "morphs_unavailable": {
     "note": "Ear targets are now baked (assets/embed/mh-shapes-x.bin.gz); the values this note recommended (flap 0.45, scale 0.2, lobe 0.1, both sides) moved into morphs on 2026-11-06.",
@@ -299,7 +297,8 @@
       "Noted an unconfirmed mark on the inner left calf and a tiny spot on the upper-lip edge, both do-not-render",
       "sources.json: corrected the page URL for the two UFC 314 Cageside photos and added licence-check notes",
       "2026-11-06 avatar pass 2: tuned with tests/likeness_compare.js against espn_headshot.png (front): head no longer narrowed, wider cheekbones, deeper-set eyes (eye-push1-in, eye-height1-decr), ears stand out further (ear-flap 0.7 plus community elvs_flap_ears_2 0.4)."
-    ]
+    ],
+    "likeness_pass_2026_11_06_v4": "Head widened (scale-horiz +0.35, square 0.5, vertical scale removed), eyes opened (no eye-scale/height decrease), nose tip and nostrils widened, brows less angled, after side-by-side renders against espn_headshot.png."
   },
   "stance": {
     "schema": "stance/1",
@@ -343,5 +342,16 @@
     "confidence": "medium",
     "source": "Set 2026-11-06 from his documented fighting style: data/scouting/alexander-volkanovski.json (archetype, tags, signature and summary) and widely described stance traits. The ESPN stance cutouts (espn_stance_left.png, espn_stance_right.png) are posed standing shots, so they were used only for posture, shoulder set and build, not for the guard or footwork; fight footage would sharpen these values.",
     "notes": "Feint-heavy volume striker: constant shoulder and hand feints, stance shifts behind the jab, light on his feet; compact, slightly wide base."
+  },
+  "ethnicity_fit": {
+    "african": 0.2,
+    "asian": 0.15,
+    "caucasian": 0.65,
+    "photos": [
+      "espn_headshot.png (front)",
+      "zuffa_2025-12_sydney_media_3q.jpg (3/4, daylight)"
+    ],
+    "method": "Fitted by eye with tests/likeness_compare.js on 2026-11-06: the neutral MakeHuman thirds and a 0.15/0.15/0.7 trial were rendered front, 3/4 and profile at the photo's framing; the heavier weight on the third base matched his narrow lower cheeks, long straight nasal bridge and deep-set eyes better, and the nose-width targets above restore the broad tip and wide nostrils seen in the headshot. Shape bases only; skin colour comes from the tone samples.",
+    "confidence": "low"
   }
 }

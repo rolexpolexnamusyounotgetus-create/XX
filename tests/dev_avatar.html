@@ -200,7 +200,8 @@ DEV.headShot = function (i, view, side, box, yawDeg) {
   var av = a.avatar, J = av.J, P = av.P, bi = av.bi;
   var q = av.W[bi.Head].clone().multiply(av.restQ[bi.Head].clone().invert());
   function lm(n) { return new THREE.Vector3(P[n * 3], P[n * 3 + 1], P[n * 3 + 2]).sub(J.Head.h).applyQuaternion(q).add(av.Wp[bi.Head]); }
-  var chin = lm(5225), crown = lm(5225).clone(); crown.y = a.pos.y + av.cfg.H;
+  if (av._crownV == null) { var best = -1e9, nB = av.base.man.bodyVertexRange[1]; for (var vi = 0; vi < nB; vi++) if (P[vi * 3 + 1] > best) { best = P[vi * 3 + 1]; av._crownV = vi; } }
+  var chin = lm(5225), crown = lm(av._crownV);   // the posed crown (the lineup pose stands a little below full stature)
   var c = chin.clone().lerp(crown, 0.5); c.z = lm(297).z - 0.09;
   var hh = crown.y - chin.y;
   box = box || [0.3, 0.18, 0.7, 0.82];

@@ -1010,7 +1010,7 @@
           "    float inH = step(0.0, hu.x) * step(hu.x, 1.0) * step(0.0, hu.y) * step(hu.y, 1.0);\n" +
           "    vec2 hc = clamp(hu, 0.0, 1.0); mS = (dot(texture2D(uMaskH, hc), uScalpCh) + dot(texture2D(uMaskH2, hc), uScalpCh2)) * inH;\n" +
           "  }\n" +
-          "  float bd = smoothstep(0.04, 0.85, mB) * clamp(uBeard, 0.0, 1.0); gBeard = bd;\n" +
+          "  float bd = smoothstep(0.04 + 0.22 * vn(su * 160.0), 0.85, mB) * clamp(uBeard, 0.0, 1.0); gBeard = bd;\n" +
           "  float bfw = length(fwidth(su * 1700.0)); float bk = 1.0 - smoothstep(0.45, 1.3, bfw);\n" +
           "  float bn1 = vn(su * 1700.0), bn2 = vn(su * 520.0), bn3 = vn(su * 90.0);\n" +
           "  float dens = clamp(bd * (0.85 + 0.3 * bn3), 0.0, 1.0);\n" +
@@ -1528,7 +1528,7 @@
       var covB = new Float32Array(n), lmB = this.vMaskBeard;
       for (i = 0; i < n; i++) {
         if (this.boneW(i, HEADB) < 0.5 || !lmB) continue;
-        covB[i] = smooth(0.18, 0.9, lmB[i]);
+        covB[i] = Math.pow(smooth(0.3, 0.95, lmB[i]), 1.5);
       }
       // short beards: the painted beard carries the colour and texture; the shell only adds a thin, sparse
       // layer of strands for the jaw silhouette (a full-length dense shell read as a speckled block)
@@ -1570,7 +1570,7 @@
     for (k = 0; k < K; k++) {
       var h = (k + 1) / K;
       for (var j = 0; j < m; j++) {
-        var v = sel[j], q = k * m + j, L = o.len(v) * (0.35 + 0.65 * clamp01(cov[v] * 1.4));
+        var v = sel[j], q = k * m + j, L = o.len(v) * (0.15 + 0.85 * clamp01(cov[v] * 1.3));
         o.dir(v, dv);
         for (var c3 = 0; c3 < 3; c3++) {
           pos[q * 3 + c3] = P[v * 3 + c3] + Nr[v * 3 + c3] * L * h * (1 - 0.35 * h) + dv.getComponent(c3) * L * h * h;
