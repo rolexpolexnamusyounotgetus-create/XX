@@ -319,7 +319,9 @@
    },
    "validation": null,
    "blend": null,
-   "notes": []
+   "notes": [
+    "v3 as frozen before any v4 edit (versions/v3, params 3.0.0-wf-2026-11-06). Caveat: its [selfcal] values (clinchScale, groundScale, kdPos, judge t108, div.*) were fit to all-years league priors (fighters.json, 2018..2026-10, incl. 2024-25 and the vault; league averages only, no per-fight outcomes), and its walk-forward stage reported one look at 2024-2026 (docs/BACKLOG.md). Kept unchanged as the reference the v4 cycle is measured against."
+   ]
   }
  ]
 }

@@ -21,7 +21,9 @@ const path = require("path");
 const crypto = require("crypto");
 const Module = require("module");
 const ROOT = path.resolve(__dirname, "..");
-const FILE = path.join(ROOT, "src", "engine3.js");
+// OPPADJ_ENGINE_DIR: a frozen copy of src/ (engine3.js, params3.js, ml/mlrates.js) so a long run is not hit by edits
+const SRC = process.env.OPPADJ_ENGINE_DIR || path.join(ROOT, "src");
+const FILE = path.join(SRC, "engine3.js");
 
 function loadPatchedEngine() {
   const src = fs.readFileSync(FILE, "utf8");
@@ -51,7 +53,7 @@ function seedOf(id, k) { return parseInt(crypto.createHash("md5").update(id + ":
 const inp = process.argv[2], outp = process.argv[3];
 const SIMS = +(process.argv[4] || 300), PART = +(process.argv[5] || 0), PARTS = +(process.argv[6] || 1);
 const E = loadPatchedEngine();
-const ML = require(path.join(ROOT, "src", "ml", "mlrates.js"));
+const ML = require(path.join(SRC, "ml", "mlrates.js"));
 const TN = ML.TNAMES;
 function odds(p) { p = Math.min(Math.max(p, 1e-6), 1 - 1e-6); return p / (1 - p); }
 function prob(o) { return o / (1 + o); }

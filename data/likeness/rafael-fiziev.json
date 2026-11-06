@@ -1,0 +1,252 @@
+{
+  "slug": "rafael-fiziev",
+  "name": "Rafael Fiziev",
+  "as_of": "2026-11-06",
+  "age_at_as_of": 33,
+  "official": {
+    "height_cm": 172.7,
+    "reach_cm": 180.3,
+    "stance": "Switch",
+    "fight_weight_lb": 155,
+    "dob": "1993-03-05"
+  },
+  "photos_used": [
+    "ref-espn-headshot.png",
+    "ref-espn-stance-left.png",
+    "ref-espn-stance-right.png",
+    "ref-getty-baku-faceoff-2026-06-26.jpg",
+    "ref-cageside-baku-media-2026-06.jpg",
+    "ref-cageside-ufc325-media-2026-01.jpg",
+    "ref-ufc325-weighin-2026-01-30.jpg",
+    "ref-ufc-baku-weighin-2025-06-20.jpg",
+    "ref-cageside-ufc313-presser-2025-03.jpg",
+    "ref-getty-vegas79-weighin-2023-09-22.jpg",
+    "wiki-youtube-2023-03-15.png"
+  ],
+  "face": {
+    "shape": "Broad, squarish face, widest at the cheekbones, with a heavy brow and a wide jaw hidden under a long beard. With the beard the lower face reads long and full; the 2023 buzz-cut photo shows a broad, fairly square head with a strong jaw.",
+    "jaw": "Wide and strong (visible in the 2023 short-beard weigh-in photo); now fully hidden by the beard.",
+    "chin": "Broad; under the current beard its shape is not visible. In 2023 it was square and moderately projecting.",
+    "cheekbones": "Wide and fairly prominent; moderate cheek volume below them.",
+    "brow_ridge": "Heavy and prominent, casting the eyes into shadow under top light.",
+    "forehead": "Broad and medium-tall, sloping back slightly, with faint horizontal creases.",
+    "eyes": {
+      "shape": "Almond-shaped, slightly small and deep-set under the heavy brow, with hooded upper lids and slight puffiness below. Outer corners level.",
+      "spacing": "Average, about one eye width apart.",
+      "colour": "Light blue to blue-grey (studio headshot, UFC 325 media day). Closest embed iris: blue."
+    },
+    "eyebrows": {
+      "thickness": "Medium",
+      "shape": "Straight and low, sitting close to the eyes, with little arch.",
+      "colour": "Medium brown, a little darker than the hair tips.",
+      "colour_hex": "#5a3c2c"
+    },
+    "nose": {
+      "length": "Medium",
+      "width": "Broad bridge and a broad, rounded tip.",
+      "bridge": "Straight and wide from the front; straight in profile (Baku 2026 face-off).",
+      "hump": "None visible.",
+      "tip": "Broad and rounded, level.",
+      "nostrils": "Moderately wide.",
+      "fight_damage": "The wide, flattened bridge may reflect old breaks, but no clear deformity is visible."
+    },
+    "mouth": {
+      "width": "Medium",
+      "upper_lip": "Mostly hidden under the moustache.",
+      "lower_lip": "Medium fullness.",
+      "resting_expression": "Closed and serious; corners level or slightly down."
+    },
+    "ears": {
+      "size": "Medium",
+      "protrusion": "Close to the head; usually covered by hair or a hat.",
+      "cauliflower_ear": "None visible (2023 buzz-cut weigh-in, 2026 face-off profile).",
+      "notes": "Model as normal ears."
+    },
+    "notable_marks_scars": "A short, faint diagonal scar line (about 1.5 cm) on the forehead just above the LEFT eyebrow (studio headshot, June 2026). Otherwise no clear scars."
+  },
+  "hair": {
+    "style": "Long, tight ringlet curls that fall to the shoulders when worn loose (studio photos June 2026, UFC 325 media day Jan 2026). He often ties it up in a top knot (studio Mar 2025, UFC 313) or pulls it back tight (Baku media day June 2026), and wears a grey astrakhan papakha hat at weigh-ins. In Sept 2023 his head was buzz-cut; the long hair has grown since.",
+    "length_cm": {
+      "top": 20,
+      "sides": 20,
+      "back": 25
+    },
+    "length_notes": "Hanging length to about the shoulders when loose; the curls would be much longer stretched.",
+    "colour": "Warm medium brown with lighter golden-copper ends; reads auburn under warm light (UFC 325) and darker brown in dim light (Baku).",
+    "colour_samples": {
+      "studio_side_region_median": "#5e3f33",
+      "studio_side_dark_roots": "#3a1f14",
+      "ufc325_region_median_warm_light": "#35241c",
+      "baku_media_top": "#43301f",
+      "studio_side_points": "#2b1813 / #5a392c / #4c332b"
+    },
+    "colour_hex": "#5e3f2e",
+    "hairline": "Full and straight, with no recession visible.",
+    "texture": "Tight spiral curls (ringlets), dense and voluminous."
+  },
+  "facial_hair": {
+    "type": "full beard, long",
+    "colour": "Warm medium brown with copper and ginger tones, lighter at the edges and on the moustache.",
+    "colour_samples": {
+      "studio_chin": "#6c493f",
+      "studio_jaw": "#55362e",
+      "studio_chin_region_median": "#6d493c",
+      "ufc325_region_median": "#4f3720",
+      "baku_media_chin": "#4f3521"
+    },
+    "colour_hex": "#63432f",
+    "density": "Dense and full across the cheeks, jaw and chin.",
+    "length_mm": "60-90",
+    "length_notes": "About 6-9 cm at the chin and 3-4 cm on the cheeks in 2025-2026; about 1.5 cm in the 2023 weigh-in photo.",
+    "shape": "Long full beard, rounded to slightly squared at the bottom. Natural cheek line set fairly high; full moustache covering most of the upper lip."
+  },
+  "skin": {
+    "tone_samples": [
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "right cheek",
+        "hex": "#d79178",
+        "light": "studio, warm grade"
+      },
+      {
+        "photo": "ref-espn-headshot.png",
+        "spot": "left cheek",
+        "hex": "#db9178",
+        "light": "studio, warm grade"
+      },
+      {
+        "photo": "ref-cageside-ufc325-media-2026-01.jpg",
+        "spot": "right cheek",
+        "hex": "#dfa783",
+        "light": "warm press-conference light"
+      },
+      {
+        "photo": "ref-cageside-ufc325-media-2026-01.jpg",
+        "spot": "left cheek",
+        "hex": "#f6bd95",
+        "light": "warm press-conference light, highlight side"
+      },
+      {
+        "photo": "ref-cageside-baku-media-2026-06.jpg",
+        "spot": "right cheek",
+        "hex": "#a96c54",
+        "light": "dim, underexposed"
+      },
+      {
+        "photo": "ref-cageside-baku-media-2026-06.jpg",
+        "spot": "left cheek",
+        "hex": "#b07354",
+        "light": "dim, underexposed"
+      },
+      {
+        "photo": "ref-getty-vegas79-weighin-2023-09-22.jpg",
+        "spot": "right cheek",
+        "hex": "#ecab91",
+        "light": "stage, bright"
+      },
+      {
+        "photo": "ref-getty-vegas79-weighin-2023-09-22.jpg",
+        "spot": "left cheek",
+        "hex": "#df987a",
+        "light": "stage, bright"
+      }
+    ],
+    "excluded_samples": "Foreheads were highlights in the studio and UFC 325 photos.",
+    "tone_average_all": "#d59577",
+    "tone_hex": "#d69878",
+    "body_samples": {
+      "vegas79_chest": "#dca086",
+      "studio_abdomen": "#c48570"
+    },
+    "undertone": "Warm peach, fair to light; tans, with some redness across the cheeks and nose.",
+    "freckles_marks": "The forehead scar above the left brow. Light body hair on the chest and legs.",
+    "texture_pick": "young_caucasian_male tinted toward #d69878"
+  },
+  "body": {
+    "build": "Short, dense and heavily muscled for a lightweight: 173 cm with a 180 cm reach, so the arms are long for his height. Thick chest, shoulders and arms; a Muay Thai fighter's powerful frame.",
+    "body_fat": "lean",
+    "body_fat_notes": "Visible abs and defined obliques in the 2026 studio cutout; defined, not shredded.",
+    "shoulders": "Broad with big, rounded delts and thick traps.",
+    "chest": "Thick chest with well-developed pecs, the most developed chest of the four fighters in this batch.",
+    "arms": "Thick arms with big biceps and triceps and strong forearms.",
+    "waist": "Moderate; the V-taper comes from the wide shoulders and chest.",
+    "legs_calves": "Powerful legs with thick thighs and well-developed calves; legs are of average length for his height.",
+    "neck": "Thick and fairly short, sloping into heavy traps.",
+    "posture": "Upright and square with the chest high. In the studio cutouts his arms hang away from the torso (pushed out by the lats and arms), elbows bent, gloves at hip height. Listed as a switch-stance fighter (data/scouting: a Muay Thai striker built around body kicks). At the Baku 2026 face-off he stood tall with his hands down at his sides.",
+    "notable_physique_traits": "Thick, muscular upper body on a short frame; long curly hair and a long beard dominate the head silhouette."
+  },
+  "tattoos": [
+    {
+      "where": "none visible",
+      "description": "None visible in any photo, including both full-body studio cutouts (2025 and 2026) and the shirtless 2023 weigh-in.",
+      "size": "n/a"
+    }
+  ],
+  "accessories_seen": "Long necklace of dark beads worn at weigh-ins and pressers (2023, 2025, 2026); grey curly astrakhan papakha hat at the Baku weigh-ins (2025 and 2026); silver ring with a dark stone on the right hand (UFC 313) and a ring at UFC 325.",
+  "kit": {
+    "typical_shorts": "2026 studio: UFC-issued black shorts with a grey scalloped wave print, a white-and-black checker band on the waistband, a white UFC wordmark on the front panel and the right leg, crypto.com logo on his RIGHT thigh. Older shoot (file dated Mar 2025): white UFC/Venum shorts with a grey and black slash print and a Venum logo.",
+    "gloves": "Standard black UFC studio gloves; corner-coloured cuffs on fight night.",
+    "shorts_colours_hex": {
+      "base_2026": "#1a1d2a",
+      "dark_2026": "#0f111a",
+      "grey_print_2026": "#62555d",
+      "white_old": "#e7e5f0",
+      "grey_print_old": "#bdb6c3"
+    },
+    "brand_note": "Apparel brands: Venum on the older white shorts only; the 2026 shorts show no brand."
+  },
+  "morphs": {
+    "macro/sexM": 1.0,
+    "macro/ageOldM": 0.12,
+    "macro/ageYoungM": 0.0,
+    "macro/muscleUpM": 0.75,
+    "macro/weightUpM": 0.05,
+    "macro/weightDownM": 0.0,
+    "macro/heightUpM": 0.0,
+    "macro/heightDownM": 0.05,
+    "macro/proportionsUpM": 0.3,
+    "head/head-square": 0.35,
+    "head/head-round": 0.15,
+    "head/head-scale-horiz-incr": 0.15,
+    "forehead/forehead-trans-backward": 0.1,
+    "chin/chin-bones-incr": 0.3,
+    "chin/chin-width-incr": 0.3,
+    "chin/chin-prominent-incr": 0.1,
+    "cheek/l-cheek-bones-incr": 0.35,
+    "cheek/r-cheek-bones-incr": 0.35,
+    "eyes/l-eye-scale-decr": 0.1,
+    "eyes/r-eye-scale-decr": 0.1,
+    "eyes/l-eye-height2-decr": 0.25,
+    "eyes/r-eye-height2-decr": 0.25,
+    "eyes/l-eye-bag-incr": 0.15,
+    "eyes/r-eye-bag-incr": 0.15,
+    "eyebrows/eyebrows-trans-down": 0.3,
+    "eyebrows/eyebrows-trans-forward": 0.35,
+    "nose/nose-scale-horiz-incr": 0.2,
+    "nose/nose-scale-vert-incr": 0.05,
+    "nose/nose-width1-incr": 0.3,
+    "nose/nose-point-width-incr": 0.25,
+    "nose/nose-nostrils-width-incr": 0.15,
+    "nose/nose-scale-depth-incr": 0.05,
+    "mouth/mouth-upperlip-volume-decr": 0.15,
+    "neck/neck-scale-horiz-incr": 0.45,
+    "neck/neck-scale-vert-decr": 0.1,
+    "torso/measure-shoulder-dist-incr": 0.35,
+    "torso/torso-vshape-incr": 0.3,
+    "buttocks/buttocks-volume-incr": 0.05
+  },
+  "morphs_not_in_embed": {
+    "_note": "Ear targets live in assets/embed/mh-shapes-x.bin.gz (not mh-manifest.json); avatar3d.js reads this block. Ears sit close to the head and are mostly covered by hair.",
+    "ears/l-ear-flap-decr": 0.1,
+    "ears/r-ear-flap-decr": 0.1
+  },
+  "render_hints": {
+    "iris": "blue (light blue-grey)",
+    "skin_base": "young_caucasian_male tinted toward tone_hex #d69878 (fair, warm peach)",
+    "eyebrows": "eyebrow010 (the fuller one), tinted #5a3c2c, set low and straight",
+    "hair": "long tight curls to the shoulders, tinted #5e3f2e with lighter copper ends; ponytail01 is the nearest proxy for the tied-back fight look, but nothing in the embed matches loose ringlets",
+    "beard": "long full beard 6-9 cm at the chin, colour #63432f; it defines the lower half of the head",
+    "accessories": "optional weigh-in look: grey astrakhan papakha and a long dark bead necklace"
+  },
+  "notes": "Confidence: high for hair, beard, eye colour, build and the lack of tattoos; medium for face proportions (the beard hides the jaw and chin); low-to-medium for exact morph values. 11 photos (1 Commons CC BY 3.0 phone-video frame from 2023, 10 reference-only, 6 of them from 2026). Three right-side profiles exist (Baku 2025, Baku 2026, UFC 325 weigh-ins), all with hat or tied hair; no left profile. What to watch: (1) His look changes a lot: buzz cut and short beard in 2023, long loose ringlets and a long beard in 2026. Use the 2026 look (studio cutouts, June 2026). (2) The long curly hair and long beard are the recognition cues; a short-hair proxy will not read as him. (3) Broad face, heavy brow, deep-set light blue eyes and a wide nose. (4) Short, thick, muscular frame with long arms (reach 7.6 cm over height); the bulkiest upper body in this batch. (5) No tattoos at all. (6) Switch stance. Macro values: ageOldM uses avatar3d.js's (age-25)/65 mapping (age 33). heightDownM 0.05 is a guess for 172.7 cm; scale to the official height. MakeHuman l-/r- morphs refer to the character's own left and right."
+}

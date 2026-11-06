@@ -2507,6 +2507,7 @@
   }
  },
  "adaptation_judges": {
+  "label_source": "published per-round judges' scores (data/derived/judgerounds_rows.json: complete cards that agree with ufcstats, all rounds covered); lostJinf = the earlier inferred label (looks ahead)",
   "round_logit_train": {
    "coef": {
     "head_l": 0.37593,
@@ -2528,228 +2529,306 @@
    },
    "n_clean_fights": 326
   },
-  "n_decisions_labeled": 3979,
-  "n_fights_in_sample": 3979,
-  "share_fights_all_cards_sweep": 0.268912,
-  "agreement_lostJ_vs_lost_sig": 0.785564,
+  "n_decisions_labeled_inferred": 3979,
+  "n_fights_in_sample": 3118,
+  "n_fights_by_period": {
+   "ext": 1383,
+   "old": 26,
+   "test": 525,
+   "train": 1184
+  },
+  "share_fights_all_cards_sweep": 0.280949,
+  "agreement_lostJ_vs_lost_sig": 0.770697,
+  "agreement_lostJinf_vs_lostJ": 0.919659,
+  "corr_lostJinf_vs_lostJ": 0.911013,
   "models": {
    "out_judges": {
     "gamma": {
      "D10": {
-      "est": -0.022367,
-      "se": 0.010169,
-      "se_jack": 0.008226
+      "est": -0.021346,
+      "se": 0.010028,
+      "se_jack": 0.010245
      },
      "K_lag": {
-      "est": 0.02075,
-      "se": 0.035155,
-      "se_jack": 0.035168
+      "est": 0.009524,
+      "se": 0.036189,
+      "se_jack": 0.024907
      },
      "Ks_lag": {
-      "est": -0.107163,
-      "se": 0.035994,
-      "se_jack": 0.039055
+      "est": -0.113922,
+      "se": 0.037418,
+      "se_jack": 0.029459
      },
      "lostJ": {
-      "est": 6.6e-05,
-      "se": 0.010632,
-      "se_jack": 0.00992
+      "est": -0.009118,
+      "se": 0.009188,
+      "se_jack": 0.005354
      }
     },
     "test_refit": {
      "lostJ": {
-      "est": 0.032282,
-      "se": 0.015274
+      "est": 0.009341,
+      "se": 0.01362
      }
     },
-    "n_train": 7712,
-    "n_test": 3380
+    "n_train": 7540,
+    "n_test": 3350
    },
    "out_sig_diff": {
     "gamma": {
      "D10": {
-      "est": -0.021001,
-      "se": 0.010106,
-      "se_jack": 0.009212
+      "est": -0.020933,
+      "se": 0.010015,
+      "se_jack": 0.010571
      },
      "K_lag": {
-      "est": 0.021512,
-      "se": 0.034995,
-      "se_jack": 0.03327
+      "est": 0.008259,
+      "se": 0.036086,
+      "se_jack": 0.025446
      },
      "Ks_lag": {
-      "est": -0.107924,
-      "se": 0.035948,
-      "se_jack": 0.040222
+      "est": -0.11275,
+      "se": 0.037423,
+      "se_jack": 0.028738
      },
      "lost": {
-      "est": -0.013907,
-      "se": 0.008592,
-      "se_jack": 0.009422
+      "est": -0.013564,
+      "se": 0.008638,
+      "se_jack": 0.007504
      }
     },
     "test_refit": {
      "lost": {
-      "est": -0.000138,
-      "se": 0.012191
+      "est": -0.002979,
+      "se": 0.012138
      }
     },
-    "n_train": 7712,
-    "n_test": 3380
+    "n_train": 7540,
+    "n_test": 3350
    },
    "out_both": {
     "gamma": {
      "D10": {
-      "est": -0.02166,
-      "se": 0.010159
+      "est": -0.020676,
+      "se": 0.010035
      },
      "K_lag": {
-      "est": 0.019311,
-      "se": 0.035215
+      "est": 0.009109,
+      "se": 0.036235
      },
      "Ks_lag": {
-      "est": -0.105847,
-      "se": 0.036035
+      "est": -0.113556,
+      "se": 0.037445
      },
      "lostJ": {
-      "est": 0.010537,
-      "se": 0.012906
+      "est": -0.004065,
+      "se": 0.010166
      },
      "lost": {
-      "est": -0.01802,
-      "se": 0.010407
+      "est": -0.012093,
+      "se": 0.00954
      }
     },
     "test_refit": {
      "lostJ": {
-      "est": 0.045312,
-      "se": 0.019854
+      "est": 0.013158,
+      "se": 0.015492
      },
      "lost": {
-      "est": -0.019358,
-      "se": 0.015873
+      "est": -0.008218,
+      "se": 0.01381
      }
     },
-    "n_train": 7712,
-    "n_test": 3380
+    "n_train": 7540,
+    "n_test": 3350
+   },
+   "out_judges_inferred_legacy": {
+    "gamma": {
+     "D10": {
+      "est": -0.022416,
+      "se": 0.010084
+     },
+     "K_lag": {
+      "est": 0.007035,
+      "se": 0.036209
+     },
+     "Ks_lag": {
+      "est": -0.111552,
+      "se": 0.037458
+     },
+     "lostJinf": {
+      "est": 0.001664,
+      "se": 0.0107
+     }
+    },
+    "test_refit": {
+     "lostJinf": {
+      "est": 0.033937,
+      "se": 0.015152
+     }
+    },
+    "n_train": 7540,
+    "n_test": 3350
    },
    "acc_judges": {
     "gamma": {
      "D10": {
-      "est": -0.00967,
-      "se": 0.008053
+      "est": -0.007563,
+      "se": 0.008041
      },
      "K_lag": {
-      "est": -0.031948,
-      "se": 0.026771
+      "est": -0.016953,
+      "se": 0.02691
      },
      "Ks_lag": {
-      "est": -0.043681,
-      "se": 0.027533
+      "est": -0.05184,
+      "se": 0.027418
      },
      "lostJ": {
-      "est": -0.043282,
-      "se": 0.016335
+      "est": -0.07882,
+      "se": 0.015343
      }
     },
     "test_refit": {
      "lostJ": {
-      "est": -0.032771,
-      "se": 0.028051
+      "est": -0.085156,
+      "se": 0.025673
      }
     },
-    "n_train": 7539,
-    "n_test": 3279
+    "n_train": 7371,
+    "n_test": 3250
    },
    "acc_sig_diff": {
     "gamma": {
      "D10": {
-      "est": -0.01167,
-      "se": 0.007993
+      "est": -0.012031,
+      "se": 0.008076
      },
      "K_lag": {
-      "est": -0.041527,
-      "se": 0.026531
+      "est": -0.03649,
+      "se": 0.026742
      },
      "Ks_lag": {
-      "est": -0.03517,
-      "se": 0.027298
+      "est": -0.035109,
+      "se": 0.027359
      },
      "lost": {
-      "est": -0.025099,
-      "se": 0.013207
+      "est": -0.026955,
+      "se": 0.013381
      }
     },
     "test_refit": {
      "lost": {
-      "est": -0.002909,
-      "se": 0.023451
+      "est": -0.003718,
+      "se": 0.023581
      }
     },
-    "n_train": 7539,
-    "n_test": 3279
+    "n_train": 7371,
+    "n_test": 3250
    },
    "acc_both": {
     "gamma": {
      "D10": {
-      "est": -0.009531,
-      "se": 0.008045
+      "est": -0.007685,
+      "se": 0.008052
      },
      "K_lag": {
-      "est": -0.032515,
-      "se": 0.026783
+      "est": -0.016932,
+      "se": 0.026907
      },
      "Ks_lag": {
-      "est": -0.043086,
-      "se": 0.027582
+      "est": -0.051906,
+      "se": 0.027419
      },
      "lostJ": {
-      "est": -0.037643,
-      "se": 0.019877
+      "est": -0.080701,
+      "se": 0.01739
      },
      "lost": {
-      "est": -0.00906,
-      "se": 0.016096
+      "est": 0.004174,
+      "se": 0.015107
      }
     },
     "test_refit": {
      "lostJ": {
-      "est": -0.043416,
-      "se": 0.030596
+      "est": -0.091918,
+      "se": 0.026362
      },
      "lost": {
-      "est": 0.016326,
-      "se": 0.025684
+      "est": 0.016967,
+      "se": 0.02437
      }
     },
-    "n_train": 7539,
-    "n_test": 3279
+    "n_train": 7371,
+    "n_test": 3250
+   },
+   "acc_judges_inferred_legacy": {
+    "gamma": {
+     "D10": {
+      "est": -0.01002,
+      "se": 0.008136
+     },
+     "K_lag": {
+      "est": -0.027197,
+      "se": 0.027075
+     },
+     "Ks_lag": {
+      "est": -0.043384,
+      "se": 0.027411
+     },
+     "lostJinf": {
+      "est": -0.044652,
+      "se": 0.016524
+     }
+    },
+    "test_refit": {
+     "lostJinf": {
+      "est": -0.052561,
+      "se": 0.028468
+     }
+    },
+    "n_train": 7371,
+    "n_test": 3250
    },
    "tda_judges": {
     "gamma": {
      "lostJ": {
-      "est": 0.015926,
-      "se": 0.047816
+      "est": 0.006387,
+      "se": 0.045255
      }
     },
     "test_refit": {
      "lostJ": {
-      "est": -0.018907,
-      "se": 0.065566
+      "est": -0.078153,
+      "se": 0.063838
      }
     }
    },
    "tda_sig_diff": {
     "gamma": {
      "lost": {
-      "est": -0.004352,
-      "se": 0.037439
+      "est": 0.004763,
+      "se": 0.037926
      }
     },
     "test_refit": {
      "lost": {
-      "est": -0.018054,
-      "se": 0.050508
+      "est": -0.017694,
+      "se": 0.050623
+     }
+    }
+   },
+   "tda_judges_inferred_legacy": {
+    "gamma": {
+     "lostJinf": {
+      "est": 0.024719,
+      "se": 0.048651
+     }
+    },
+    "test_refit": {
+     "lostJinf": {
+      "est": -0.024348,
+      "se": 0.065925
      }
     }
    }
@@ -4233,8 +4312,7 @@
    },
    "n": {
     "test": 1092,
-    "train": 2378,
-    "vault": 408
+    "train": 2378
    }
   },
   "opponent_effect": {

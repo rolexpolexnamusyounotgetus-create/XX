@@ -78,7 +78,7 @@
       "studio_region_median_with_scalp": "#583c30"
     },
     "colour_hex": "#3b2a1f",
-    "hairline": "Straight front line with slight recession at the temple corners. Full density on top; no crown thinning visible.",
+    "hairline": "Straight front line with slight recession at the temple corners. Full density on top and at the crown.",
     "texture": "Straight."
   },
   "facial_hair": {
@@ -247,7 +247,7 @@
     "eyebrows": "eyebrow010 (the fuller of the two), tinted #3a271d, set low and nearly straight",
     "hair": "strand shell buzz cut about 1 cm, faded on the sides and back, tinted #3b2a1f; no hair mesh",
     "beard": "short full beard 6-10 mm, colour #4f3326, joined moustache, trimmed neckline under the jaw",
-    "marks": "small raised dark-brown mole on the RIGHT cheek beside the nose (#6b4334 approx.); the single most useful facial mark"
+    "marks": "small raised mole on the RIGHT cheek beside the nose, about 3-4 mm, reddish dark brown (darker-half sample #b25942 in the warm studio headshot, against cheek skin about #ed997b); the single most useful facial mark"
   },
   "notes": "Confidence: high for hair, beard, skin, ears, the mole and build; medium for face proportions; low-to-medium for exact morph values. 10 photos (2 Commons CC BY 3.0 from 2015, 8 reference-only, 6 of them from 2025-2026), so recent coverage is good, including a real right-side profile (UFC 327 weigh-in). No usable left profile. What to watch: (1) The cauliflower ears and the right-cheek mole are the most distinctive small details; keep both. (2) The buzz cut must read as a shell over a visible scalp, not a hair mesh. (3) Face is long and lean with flat cheeks; default MakeHuman cheeks are too full. (4) No tattoos at all; do not inherit tattoo marks from any generic fighter preset. (5) He fights southpaw: lead with the right foot and right hand. (6) Arms are proportional (reach equals height), unlike most lightweights in the set; do not stretch them. Macro values: ageOldM uses avatar3d.js's (age-25)/65 mapping (age 35, turning 36 on 2026-12-11). heightUpM 0.05 is a guess for 177.8 cm; scale the final mesh to the official height. MakeHuman l-/r- morphs refer to the character's own left and right."
 }

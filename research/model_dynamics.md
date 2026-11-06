@@ -370,34 +370,40 @@ kPace 45.
 
 ## 4. Between-round adaptation (part 3)
 
-**Judges' consensus labels.**
+**Judges' labels (corrected by the verification).** `lostJ` is the share of the three judges who gave the previous
+round to the opponent, from the published per-round scores (`data/derived/judgerounds_rows.json`, built by
+`tools/judgerounds.py` from MMA Decisions-derived data, development file without 2026). Only cards that are
+complete, agree with ufcstats and cover every round are used (10-10 rounds count half). It agrees with the
+sig-landed label on 77.1% of rounds.
 
-- **Clean sweeps.** For decisions where every card says the fight loser won no round, every round's winner is
-  known. That is 27% of decisions.
-- **Other cards.** Each card's total gives the number of rounds the fight loser won, assuming 10-9 and 10-8 rounds
-  only. Which rounds those were is inferred from round stats with a round-winner logistic fit on train clean
-  sweeps (326 fights): head 0.376, body 0.255, leg 0.281, KD 3.30, TD 0.95, control 0.74 per minute, sub 1.0. The
-  probability is proportional to the product of round odds over subsets of the right size.
-- **The label.** `lostJ` is the expected share of the three judges who gave the previous round to the opponent. It
-  agrees with the sig-landed label on 78.6% of rounds.
+The first version inferred the label instead: each card's total gave the number of rounds the fight loser won, and
+which rounds those were came from a round-winner logistic fitted on train clean sweeps (326 fights; head 0.376, body
+0.255, leg 0.281, KD 3.30, TD 0.95, control 0.74 per minute, sub 1.0), applied to the stats of all rounds. That label
+of round r-1 depends on round r, the round it explains, and on later rounds and the result. It agrees with the
+published scores on 92% of rounds (corr 0.91), but it biased the results below. It is kept as `lostJinf`
+(`*_judges_inferred_legacy` in the JSON) for comparison only.
 
-Decision sample (fights that went the distance; train 7,712 output rows):
+Decision sample (fights that went the distance with published round scores; 1,184 train fights, 7,540 output rows;
+525 test fights):
 
 | Label | output | accuracy (logit) | TD attempts |
 |---|---|---|---|
-| lostJ (judges) | +0.000 (0.011; jackknife 0.010); test refit +0.032 (0.015) | **-0.043 (0.016)**; test -0.033 (0.028) | +0.016 (0.048); test -0.019 (0.066) |
-| lost (sig landed), same sample | -0.014 (0.009; jackknife 0.009); test -0.000 (0.012) | -0.025 (0.013); test -0.003 (0.023) | -0.004 (0.037); test -0.018 (0.051) |
+| lostJ (published scores) | -0.009 (0.009; jackknife 0.005); test refit +0.009 (0.014) | **-0.079 (0.015)**; test **-0.085 (0.026)** | +0.006 (0.045); test -0.078 (0.064) |
+| lost (sig landed), same sample | -0.014 (0.009; jackknife 0.008); test -0.003 (0.012) | -0.027 (0.013); test -0.004 (0.024) | +0.005 (0.038); test -0.018 (0.051) |
+| both together | lostJ -0.004 (0.010), lost -0.012 (0.010) | lostJ **-0.081 (0.017)**, lost +0.004 (0.015) | |
+| lostJinf (old inferred label), same sample | +0.002 (0.011); test +0.034 (0.015) | -0.045 (0.017); test -0.053 (0.029) | +0.025 (0.049); test -0.024 (0.066) |
 | lost, all fights (section 2.2) | -0.008 (0.009) | -0.018 (0.013) | -0.020 (0.033) |
 
-No output or takedown response to losing a round, in either period. Accuracy dips by about 1 point after a round
-the judges gave away. That replicates in sign on test but is not significant there. It may be partly information
-about the night's form beyond the stats, not a choice.
+No output or takedown response to losing a round, in either period. The inferred label's z = 2.2 output response on
+the test refit was an artifact. Accuracy dips by about 2 points after a round the judges gave away, and this
+replicates on held-out fights. Losing on strikes landed has no effect once the judges' verdict is in, so the dip
+follows what the judges saw. It may be information about the night's form that the stats miss, not a choice.
 
 **Desperation.** Down two or more rounds entering the final round:
 
 | | train | validation (engine check, real) |
 |---|---|---|
-| Output | -4.7% (1.6%) | +1.5% (2.6%) |
+| Output | -4.7% (1.6%) | +1.5% (2.6%); 2024-2025 refit -0.3% (2.5%) |
 | TD attempts | -0.5% (4.8%) | |
 
 There is no surge.
@@ -424,6 +430,25 @@ Raw difference-in-differences, next-round change in log output vs no-knockdown r
 | Scorer | -0.24 (0.04) | -0.29 (0.08) |
 
 The scorer's raw drop includes mean reversion from a big round, which the model removes.
+
+**Against the round before the knockdown round (added by the verification).** The model's coefficients are
+relative to an expectation that already contains the knockdown round's own output. For an engine multiplier on the
+baseline rate, the relevant contrast compares round r+1 with round r-1, around a knockdown round r, against fighter-
+fights with no knockdown in r-1 and r. Rounds r-1 and r must be full; r+1 counts at its per-minute rate if it lasted
+60 s, with no condition on what happened in it (`kd_momentum_descriptive.skip_round`):
+
+| | knockdown round vs before | next round vs knockdown round | next round vs before | n |
+|---|---|---|---|---|
+| Scorer, 2010-2023 | +0.146 (0.039) | -0.205 (0.039) | -0.059 (0.048) | 205 |
+| Dropped, 2010-2023 | -0.120 (0.044) | +0.094 (0.044) | -0.026 (0.049) | 205 |
+| Scorer, 2019-2023 | +0.134 (0.062) | -0.139 (0.065) | -0.005 (0.076) | 85 |
+| Dropped, 2019-2023 | -0.088 (0.068) | +0.047 (0.069) | -0.041 (0.081) | 85 |
+| Scorer, 2024-2025 | +0.317 (0.105) | -0.162 (0.100) | +0.155 (0.112) | 37 |
+| Dropped, 2024-2025 | -0.033 (0.127) | +0.255 (0.107) | +0.222 (0.138) | 37 |
+
+The scorer surges in the knockdown round and comes back down. The dropped man dips in it and recovers. Against the
+baseline, neither shifts clearly in the next round. Requiring round r+1 to be full and free of knockdowns (a
+selection on what happens after the knockdown) pushes the scorer's 2010-2023 contrast to -0.116 (0.051).
 
 ## 6. Finish hazard vs accumulated damage (part 5)
 

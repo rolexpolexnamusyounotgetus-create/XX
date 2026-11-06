@@ -1125,11 +1125,21 @@ def engine_eval(args):
     strip = ("pace3", "pace3_w", "kd_absorbed")
     CFG = ("plain", "adj", "ml", "ml_adj")
     import hashlib
+    import shutil
+    # freeze the engine sources for the whole run (other work may edit src/ meanwhile)
+    frz = os.path.join(scratch, "engine_src")
+    os.makedirs(os.path.join(frz, "ml"), exist_ok=True)
+    for rel in ("engine3.js", "params3.js", os.path.join("ml", "mlrates.js")):
+        shutil.copyfile(os.path.join(ROOT, "src", rel), os.path.join(frz, rel))
+    env = dict(os.environ, OPPADJ_ENGINE_DIR=frz)
+    sha = lambda rel: hashlib.sha256(open(os.path.join(frz, rel), "rb").read()).hexdigest()[:16]
+    pv = subprocess.run(["node", "-e", "process.stdout.write(String(require(%s).version))"
+                         % json.dumps(os.path.join(frz, "params3.js"))], capture_output=True, text=True).stdout
     res_all = {"ml_beta_used": {k: rnd(v, 4) for k, v in ml_beta.items()}, "families_off": off,
-               "factors_sha16": snaps_sha(out["snapshots"]),
-               "engine3_sha16": hashlib.sha256(open(os.path.join(ROOT, "src", "engine3.js"), "rb").read()).hexdigest()[:16],
-               "params3_sha16": hashlib.sha256(open(os.path.join(ROOT, "src", "params3.js"), "rb").read()).hexdigest()[:16],
-               "mlrates_js_sha16": hashlib.sha256(open(os.path.join(ROOT, "src", "ml", "mlrates.js"), "rb").read()).hexdigest()[:16]}
+               "factors_sha16": snaps_sha(out["snapshots"]), "params3_version": pv,
+               "engine3_sha16": sha("engine3.js"), "params3_sha16": sha("params3.js"),
+               "mlrates_js_sha16": sha(os.path.join("ml", "mlrates.js"))}
+    all_rec = {}
     for per, (lo, hi, N) in periods.items():
         fights = []
         for e in bt["fights"]:
@@ -1158,7 +1168,7 @@ def engine_eval(args):
         for part in range(args.procs):
             o_ = os.path.join(scratch, "out_%s_%d.json" % (per, part))
             procs.append((o_, subprocess.Popen(["node", os.path.join(HERE, "oppadj_engine.js"), inp, o_, str(N),
-                                                str(part), str(args.procs)])))
+                                                str(part), str(args.procs)], env=env)))
         rows = {}
         for o_, pr in procs:
             if pr.wait() != 0:
@@ -1211,6 +1221,7 @@ def engine_eval(args):
                     o2["%s_minus_%s_%s_95" % (a_, b_, nm)] = [rnd(m, 5), rnd(lo_, 5), rnd(hi_, 5)]
             return o2
 
+        all_rec[per] = rec
         res_all[per] = {"sims_per_orientation": N,
                         "all_fights_plain_vs_adj": score(rec, ("plain", "adj")),
                         "ml_available_all_four": score(rec, CFG),
@@ -1222,7 +1233,16 @@ def engine_eval(args):
         for kk in ("adj_minus_plain_winner_log_loss_95", "ml_minus_plain_winner_log_loss_95",
                    "ml_adj_minus_ml_winner_log_loss_95", "ml_adj_minus_ml_outcome7_log_loss_95"):
             print("    %s %s" % (kk, a_[kk]))
-    res_all["note"] = ("engine v3 (src/engine3.js + src/params3.js as of the run) via tools/oppadj_engine.js; "
+    pooled = [x for v in all_rec.values() for x in v]
+    res_all["pooled_2019_2025"] = {"ml_available_all_four": score(pooled, CFG),
+                                   "all_fights_plain_vs_adj": score(pooled, ("plain", "adj"))}
+    a_ = res_all["pooled_2019_2025"]["ml_available_all_four"]
+    print("  pooled (n=%d) winner ll plain %.4f adj %.4f ml %.4f ml_adj %.4f | adj-plain %s | ml_adj-ml %s"
+          % (a_["n_decisive"], a_["plain"]["winner_log_loss"], a_["adj"]["winner_log_loss"], a_["ml"]["winner_log_loss"],
+             a_["ml_adj"]["winner_log_loss"], a_["adj_minus_plain_winner_log_loss_95"],
+             a_["ml_adj_minus_ml_winner_log_loss_95"]))
+    res_all["note"] = ("engine v3 (frozen copy of src/engine3.js, params3.js, ml/mlrates.js at the start of the run; "
+                       "hashes above) via tools/oppadj_engine.js; "
                        "plain = engine raw shrunk rates; adj = the same rates times this file's snapshot factors; "
                        "ml = mlrates out-of-fold / dev rates through src/ml/mlrates.js applyToMatchup; ml_adj = ML "
                        "targets x (F_off,X F_def,Y)^beta (ml_beta_used); same seeds for every configuration, both "
@@ -1242,7 +1262,8 @@ def engine_eval(args):
         with open(inp, "w") as fh:
             json.dump({"keys": fj["meta"]["keys"], "priors": {"2026": fj["priors"]}, "ml_beta": ml_beta, "fights": [vg]}, fh)
         o_ = os.path.join(scratch, "out_vg.json")
-        subprocess.run(["node", os.path.join(HERE, "oppadj_engine.js"), inp, o_, str(args.engine_sims_vg), "0", "1"], check=True)
+        subprocess.run(["node", os.path.join(HERE, "oppadj_engine.js"), inp, o_, str(args.engine_sims_vg), "0", "1"],
+                       check=True, env=env)
         rr = json.load(open(o_))["rows"]["volk_gaethje"]
         res_all["volk_gaethje"] = {"sims_per_orientation": args.engine_sims_vg, "families_off": offr,
                                    "plain": rr["plain"], "adj": rr["adj"],

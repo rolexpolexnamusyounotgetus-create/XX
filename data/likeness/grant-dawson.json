@@ -192,14 +192,14 @@
   "kit": {
     "typical_shorts": "Recent UFC-issued black shorts with the tonal grey wave/chevron pattern, UFC wordmark on the waistband and his right thigh, crypto.com logo low on his right leg. Older (2023 or before) Venum-era shorts: white and grey with black panels and a red DAWSON wordmark on his left leg.",
     "shorts_colours_hex": {
-      "black_base": "#15171c",
-      "grey_wave": "#3c4352",
-      "venum_white": "#e8eaec",
-      "venum_grey": "#b9c0c8",
-      "name_red": "#d8262c"
+      "black_base": "#10131b",
+      "grey_wave": "#3c4050",
+      "venum_light_grey": "#aeb9d0",
+      "name_red": "#da3439"
     },
     "gloves": "Standard UFC 4 oz black gloves.",
-    "brand_note": "No personal sponsor visible on fight kit."
+    "brand_note": "No personal sponsor visible on fight kit.",
+    "shorts_colours_note": "Region samples from the ESPN stance PNGs (black base = median, grey wave = 90th percentile, red = 75th percentile of the name letters)."
   },
   "morphs": {
     "macro/sexM": 1.0,
