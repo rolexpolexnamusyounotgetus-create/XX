@@ -1,0 +1,203 @@
+{
+ "meta": {
+  "tool": "tools/ko_composition.py",
+  "adopted_window": "2019-01-01..2024-01-01",
+  "notes": [
+   "25 fights appear twice under two event names (same fight URL); kept the copy whose event has a date, dropped the copies under ['UFC Fight Night: Grasso vs. Shevchenko 2', 'UFC Fight Night: Lopes vs. Silva']",
+   "1 event(s) missing from ufc_event_details.csv; dates imputed from the neighbouring event in results order: ['UFC - Road to UFC 4.6']",
+   "dropped 2 rows with duplicate (EVENT, BOUT): ['Kazushi Sakuraba vs. Marcus Silveira']",
+   "1 fights excluded from stats-based measures (round rows missing, unparsed numbers, unmatched names or non-5-minute rounds)"
+  ],
+  "v4_targets": {
+   "ground": 0.28,
+   "clinch": 0.125,
+   "standNoKd": 0.07
+  },
+  "v4_source": "data/derived/baserates_tables.md, All UFC 2015-01-01..2026-10-31 (ground 27.5%, clinch 12.3%; standNoKd 0.049 / 0.509 per 100 standing head landed x ~72% standing share, Lightweight row)"
+ },
+ "targets": {
+  "ground": 0.2859,
+  "clinch": 0.0711,
+  "standNoKd": 0.0725
+ },
+ "windows": [
+  {
+   "label": "All UFC 2019-01-01..2024-01-01",
+   "n_fights": 2512,
+   "n_ko_strikes": 759,
+   "distance": {
+    "n": 488,
+    "share": 0.643,
+    "ci95": [
+     0.6082,
+     0.6762
+    ]
+   },
+   "clinch": {
+    "n": 54,
+    "share": 0.0711,
+    "ci95": [
+     0.0549,
+     0.0917
+    ]
+   },
+   "ground": {
+    "n": 217,
+    "share": 0.2859,
+    "ci95": [
+     0.2549,
+     0.3191
+    ]
+   },
+   "unknown": {
+    "n": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.005
+    ]
+   },
+   "standNoKd_direct": {
+    "n": 55,
+    "of": 759,
+    "share": 0.0725,
+    "ci95": [
+     0.0561,
+     0.0931
+    ]
+   },
+   "standNoKd_v4_formula": {
+    "per100_standing_ko": 0.4428,
+    "per100_standing_ko_without_kd": 0.0449,
+    "standing_share": 0.7141,
+    "share": 0.0725
+   },
+   "since": "2019-01-01",
+   "until": "2024-01-01",
+   "date_max_used": "2023-12-16",
+   "lightweight": {
+    "n_ko_strikes": 116,
+    "ground": {
+     "n": 33,
+     "share": 0.2845,
+     "ci95": [
+      0.2103,
+      0.3725
+     ]
+    },
+    "clinch": {
+     "n": 5,
+     "share": 0.0431,
+     "ci95": [
+      0.0185,
+      0.0969
+     ]
+    },
+    "standNoKd_direct": {
+     "n": 7,
+     "of": 116,
+     "share": 0.0603,
+     "ci95": [
+      0.0295,
+      0.1193
+     ]
+    },
+    "standNoKd_v4_formula": {
+     "per100_standing_ko": 0.5574,
+     "per100_standing_ko_without_kd": 0.047,
+     "standing_share": 0.7155,
+     "share": 0.0603
+    }
+   }
+  },
+  {
+   "label": "All UFC 2015-01-01..2024-01-01",
+   "n_fights": 4409,
+   "n_ko_strikes": 1339,
+   "distance": {
+    "n": 796,
+    "share": 0.5945,
+    "ci95": [
+     0.5679,
+     0.6205
+    ]
+   },
+   "clinch": {
+    "n": 193,
+    "share": 0.1441,
+    "ci95": [
+     0.1263,
+     0.164
+    ]
+   },
+   "ground": {
+    "n": 350,
+    "share": 0.2614,
+    "ci95": [
+     0.2386,
+     0.2856
+    ]
+   },
+   "unknown": {
+    "n": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.0029
+    ]
+   },
+   "standNoKd_direct": {
+    "n": 101,
+    "of": 1339,
+    "share": 0.0754,
+    "ci95": [
+     0.0625,
+     0.0908
+    ]
+   },
+   "standNoKd_v4_formula": {
+    "per100_standing_ko": 0.4935,
+    "per100_standing_ko_without_kd": 0.0504,
+    "standing_share": 0.7386,
+    "share": 0.0754
+   },
+   "since": "2015-01-01",
+   "until": "2024-01-01",
+   "date_max_used": "2023-12-16",
+   "lightweight": {
+    "n_ko_strikes": 206,
+    "ground": {
+     "n": 51,
+     "share": 0.2476,
+     "ci95": [
+      0.1936,
+      0.3108
+     ]
+    },
+    "clinch": {
+     "n": 32,
+     "share": 0.1553,
+     "ci95": [
+      0.1122,
+      0.2111
+     ]
+    },
+    "standNoKd_direct": {
+     "n": 15,
+     "of": 206,
+     "share": 0.0728,
+     "ci95": [
+      0.0446,
+      0.1167
+     ]
+    },
+    "standNoKd_v4_formula": {
+     "per100_standing_ko": 0.5449,
+     "per100_standing_ko_without_kd": 0.0527,
+     "standing_share": 0.7524,
+     "share": 0.0728
+    }
+   }
+  }
+ ]
+}
