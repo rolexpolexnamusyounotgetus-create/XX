@@ -3,14 +3,22 @@
   "name": "Beneil Dariush",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Inactive and coaching. He has not announced his retirement, but after two straight first-round knockout losses, to Benoit Saint Denis (0:16, UFC 322, Nov 15, 2025) and Quillan Salkilld (UFC Perth, May 2, 2026), he has taken a head-coaching role. In early November 2026 he said he has no plans to fight unless something big comes up.",
+    "summary": "Inactive and coaching, not formally retired. After two straight first-round knockout losses, to Benoit Saint Denis (0:16, UFC 322, Nov 15, 2025, where he missed weight at 157.2 lb) and Quillan Salkilld (UFC Perth, May 2, 2026), he has taken a head-coaching role. In early November 2026 he said he has no plans to fight unless something big comes up. He is still #15 in the UFC's media-panel rankings but is not in the Meta top 15. Pro record 23-8-1. No fight booked.",
     "title": null,
-    "ranking": null,
+    "ranking": "#15 UFC lightweight in the official media-panel rankings (updated Nov 3, 2026; ufcalendar.com, and ufcrankings.org on Nov 5) despite his inactivity; not in the UFC's Meta algorithmic top 15 (updated Oct 31, 2026)",
     "active": false,
     "next_fight": null,
     "injuries": [
-      { "what": "repeated head trauma in 2023 training (two knockdowns and one knockout in the gym before his 2023 UFC losses, per coach Rafael Cordeiro); stepped back from hard sparring", "when": "2023", "source": "https://www.bjpenn.com/mma-news/beneil-dariush/beneil-dariush-coach-long-absence-due-repeated-head-trauma/" },
-      { "what": "swollen eye after the UFC Perth knockout loss", "when": "2026-05", "source": "https://www.lowkickmma.com/beneil-dariush-swollen-eye-ufc-perth/" }
+      {
+        "what": "repeated head trauma in 2023 training (two knockdowns and one knockout in the gym before his 2023 UFC losses, per coach Rafael Cordeiro); stepped back from hard sparring",
+        "when": "2023",
+        "source": "https://www.bjpenn.com/mma-news/beneil-dariush/beneil-dariush-coach-long-absence-due-repeated-head-trauma/"
+      },
+      {
+        "what": "swollen eye after the UFC Perth knockout loss",
+        "when": "2026-05",
+        "source": "https://www.lowkickmma.com/beneil-dariush-swollen-eye-ufc-perth/"
+      }
     ],
     "sources": [
       "https://bloodyelbow.com/2026/11/03/beneil-dariush-uninterested-in-ufc-offers-after-taking-on-new-role-unless-something-big-happens/",
@@ -19,13 +27,30 @@
       "https://www.sherdog.com/news/news/Beneil-Dariush-says-next-UFC-fight-could-be-his-last-200134",
       "https://www.thescore.com/mma/news/3399342/watch-saint-denis-flattens-dariush-for-16-second-ko",
       "https://www.lowkickmma.com/quillan-salkilld-knocks-out-dariush/",
-      "data/derived/fighters.json (recent)"
+      "data/derived/fighters.json (recent)",
+      "https://www.espn.com/mma/fighter/_/id/3085551/beneil-dariush",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/3085551/overview (no upcoming fight; latest event UFC Perth, May 2, 2026)",
+      "https://en.wikipedia.org/wiki/Beneil_Dariush",
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "https://sports.yahoo.com/articles/common-opponent-predicts-quillan-salkilld-144020233.html"
     ]
   },
   "style": {
     "archetype": "grappler/BJJ",
     "stance": "southpaw",
-    "tags": ["southpaw", "cage-wrestling", "clinch", "top-control", "back-takes", "submissions", "takedown-defense", "leg-kicks", "spinning", "chin-concern"],
+    "tags": [
+      "southpaw",
+      "cage-wrestling",
+      "clinch",
+      "top-control",
+      "back-takes",
+      "submissions",
+      "takedown-defense",
+      "leg-kicks",
+      "spinning",
+      "chin-concern"
+    ],
     "signature": [
       "bodylock takedowns against the fence (he sells an instructional on the MMA bodylock)",
       "back takes to the rear-naked choke (5 of his submission wins are RNCs, per his UFC profile)",
@@ -53,24 +78,53 @@
     ]
   },
   "moves": {
-    "jab": 0.25, "cross": 0.35, "hook": 0.18, "overhand": 0.07, "upper": 0.09, "headkick": 0.06,
-    "bodykick": 0.55, "bodyhook": 0.2, "bodystraight": 0.25,
-    "calf": 0.45, "inside": 0.55, "spinning": 0.05, "knee": 0.15, "elbow": 0.1,
+    "jab": 0.25,
+    "cross": 0.35,
+    "hook": 0.18,
+    "overhand": 0.07,
+    "upper": 0.09,
+    "headkick": 0.06,
+    "bodykick": 0.55,
+    "bodyhook": 0.2,
+    "bodystraight": 0.25,
+    "calf": 0.45,
+    "inside": 0.55,
+    "spinning": 0.05,
+    "knee": 0.15,
+    "elbow": 0.1,
     "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json, where recency-weighted landed shares are head 0.59 / body 0.20 / leg 0.22 and attempt shares are head 0.74 / body 0.14 / leg 0.12 (career landed 0.60 / 0.23 / 0.17). The cross stands for his rear left straight as a southpaw. Body work leans on kicks: the MMA Sucka Gamrot analysis credits his kicks, and he landed 15 body and 9 leg strikes vs Gamrot (raw bout stats). Leg kicks lean slightly to inside kicks, a judgment for a southpaw who often faces orthodox fighters, which no source states. Spinning is a small non-zero weight for the Holtzman spinning back fist KO. About 15% of his landed strikes come in the clinch (career), hence a modest knee weight. These are analyst judgments, not a published breakdown."
   },
   "appearance": {
     "build": "compact, muscular lightweight: 5'10\" with a 72-inch reach (fighters.json)",
-    "hair": "short dark hair (as seen in widely published photos; no written description found)",
-    "facial_hair": "usually a full dark beard in published photos (unconfirmed in text)",
+    "hair": "short salt and pepper hair, now mostly grey at the front and sides (ESPN headshot file dated Apr 30, 2026; UFC Perth press conference photo, Apr 30, 2026)",
+    "facial_hair": "short, close-trimmed salt and pepper beard in 2026 photos (no longer the dark beard of his earlier career)",
     "skin": "light-medium",
-    "tattoos": "unknown",
-    "kit": "unknown",
-    "sources": ["data/derived/fighters.json", "https://www.ufc.com/athlete/beneil-dariush"]
+    "tattoos": "none visible on his chest, shoulders or back in his 2026 ESPN headshot and in weigh-in photos from UFC 317 (Jun 2025), UFC 322 (Nov 2025) and UFC Perth (May 2026); arms and legs not fully checked",
+    "kit": "blue shorts with a black-and-white patterned side panel at UFC Perth (May 2, 2026)",
+    "sources": [
+      "https://a.espncdn.com/i/headshots/mma/players/full/3085551.png (ESPN headshot, file dated Apr 30, 2026)",
+      "https://www.bjpenn.com/mma-news/beneil-dariush/beneil-dariush-reveals-he-doesnt-have-plans-to-fight-as-he-becomes-a-head-coach-my-goal-is-coaching/ (lead photo: UFC Perth press conference)",
+      "https://cagesidepress.com/2026/05/02/quillan-salkilld-delivers-statement-win-over-dariush-at-ufc-perth/ (UFC Perth weigh-in photo)",
+      "https://www.lowkickmma.com/quillan-salkilld-knocks-out-dariush/ (UFC Perth fight photo: shorts)",
+      "https://cagesidepress.com/2025/11/15/ufc-322-benoit-saint-denis-stuns-beneil-dariush-with-16-second-ko (UFC 322 weigh-in photo, back view)",
+      "https://cagesidepress.com/2025/06/28/beneil-dariush-dominates-moicano-in-return-from-2-year-layoff (UFC 317 weigh-in photo, back view)",
+      "data/derived/fighters.json",
+      "no likeness sheet (data/likeness/beneil-dariush.json does not exist)"
+    ]
   },
   "engine_notes": [
-    { "note": "Chin has failed under power: he absorbed knockdowns at 1.59 per 15 min recency-weighted (lightweight median about 0.24) and has 9 knockdowns absorbed in UFC bouts. If he is still simulated, his durability knob should be well below average.", "source": "data/derived/fighters.json (S/C sums, kd_absorbed, ko_losses)" },
-    { "note": "Elite control when the fight hits the mat: 41-44% of fight time in control (lightweight median about 17%) while opponents control him only about 9% of the time; takedown defence 83% career.", "source": "data/derived/fighters.json" },
-    { "note": "Inactive and coaching as of Nov 2026, so he is best modelled as a historical or 'if he returns' profile.", "source": "https://www.bjpenn.com/mma-news/beneil-dariush/beneil-dariush-reveals-he-doesnt-have-plans-to-fight-as-he-becomes-a-head-coach-my-goal-is-coaching/" }
+    {
+      "note": "Chin has failed under power: he absorbed knockdowns at 1.59 per 15 min recency-weighted (lightweight median about 0.24) and has 9 knockdowns absorbed in UFC bouts. If he is still simulated, his durability knob should be well below average.",
+      "source": "data/derived/fighters.json (S/C sums, kd_absorbed, ko_losses)"
+    },
+    {
+      "note": "Elite control when the fight hits the mat: 41-44% of fight time in control (lightweight median about 17%) while opponents control him only about 9% of the time; takedown defence 83% career.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Inactive and coaching as of Nov 2026, so he is best modelled as a historical or 'if he returns' profile.",
+      "source": "https://www.bjpenn.com/mma-news/beneil-dariush/beneil-dariush-reveals-he-doesnt-have-plans-to-fight-as-he-becomes-a-head-coach-my-goal-is-coaching/"
+    }
   ],
   "confidence": "high"
 }

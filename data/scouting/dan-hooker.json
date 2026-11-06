@@ -3,24 +3,48 @@
   "name": "Dan Hooker",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Active, on a three-fight losing streak, all by stoppage: Arman Tsarukyan (arm-triangle from mount, R2, Doha, Nov 22, 2025), Benoit Saint Denis (TKO from mount, R2, UFC 325, Sydney, Jan 31, 2026) and Salahdine Parnasse (KO by a punch at 2:35 of R1, Paris, Sep 5, 2026). The Brian Ortega dossier reports him booked against Ortega, in Ortega's lightweight debut, at a UFC Fight Night at ABHA Arena in Doha on Nov 21, 2026 (citing ufcalendar.com and Yahoo); neither the research pass nor the Nov 6 fact-check could re-verify it on the web. No current ranking was found in any project file. A broken hand forced him out of a planned UFC 313 fight with Justin Gaethje in Mar 2025. UFC record 14-11 in fighters.json.",
+    "summary": "Active, on a three-fight losing streak, all by stoppage: Arman Tsarukyan (arm-triangle, R2, Doha, Nov 22, 2025), Benoit Saint Denis (TKO from mount, R2, UFC 325, Sydney, Jan 31, 2026 US time) and Salahdine Parnasse (TKO at 2:35 of R1, UFC Paris, Sep 5, 2026: a liver kick hurt him and punches finished it). Pro record 24-15. He is booked against Brian Ortega at lightweight at UFC Fight Night 294 in Doha on Nov 21, 2026, a 77-day turnaround that he says he asked for because the Parnasse loss left him with no serious injury. He is #14 in the UFC's media-panel rankings and not in the Meta top 15.",
     "title": null,
-    "ranking": null,
+    "ranking": "#14 UFC lightweight in the official media-panel rankings (updated Nov 3, 2026, down one; ufcalendar.com, and ufcrankings.org on Nov 5); not in the UFC's Meta algorithmic top 15 (updated Oct 31, 2026)",
     "active": true,
-    "next_fight": "Brian Ortega, lightweight, UFC Fight Night, ABHA Arena, Doha, Qatar, Nov 21, 2026 (per ufcalendar.com and Yahoo as cited in data/scouting/brian-ortega.json; not independently re-verified)",
-    "injuries": [ { "what": "broken hand; he withdrew from a UFC 313 fight with Justin Gaethje and Rafael Fiziev replaced him on about 10 days' notice", "when": "2025-02", "source": "https://bloodyelbow.com/2025/02/26/justin-gaethjes-replacement-revealed-for-ufc-313-after-dan-hooker-pulls-out-of-fight-with-injury (cited in research/gaethje.md with ESPN; not re-fetched)" } ],
+    "next_fight": "vs Brian Ortega, lightweight, UFC Fight Night 294 (UFC Qatar; headlined by Prochazka vs. Stirling), ABHA Arena (Ali Bin Hamad Al Attiyah Arena), Doha, Qatar, Nov 21, 2026, main card",
+    "injuries": [
+      {
+        "what": "hand injury (Wikipedia; Bloody Elbow reported it as a broken hand, not re-checked); he withdrew from a UFC 313 fight with Justin Gaethje and Rafael Fiziev replaced him. No current injury: he says the Sep 2026 Parnasse loss left him without serious injury",
+        "when": "2025-02",
+        "source": "https://en.wikipedia.org/wiki/Dan_Hooker (2025 section); also reported by Bloody Elbow and ESPN, Feb 2025"
+      }
+    ],
     "sources": [
-      "data/derived/fighters.json (recent: 2026-09-05 L Parnasse KO R1 2:35; 2026-01-31 L Saint Denis TKO R2 4:45; 2025-11-22 L Tsarukyan sub R2 3:34)",
-      "data/raw/ufc_event_details.csv (Doha, Sydney, Paris locations)",
-      "https://www.ufcalendar.com/fights/dan-hooker-vs-brian-ortega (cited in data/scouting/brian-ortega.json; not re-fetched)",
-      "https://sports.yahoo.com/articles/ufc-analyst-dan-hooker-vs-170039364.html (cited in data/scouting/brian-ortega.json; not re-fetched)",
-      "https://africa.espn.com/mma/story/_/id/44031380/rafael-fiziev-stepping-face-justin-gaethje-ufc-313 (cited in research/gaethje.md; not re-fetched)"
+      "https://www.sherdog.com/news/news/Dan-Hooker-calls-Brian-Ortega-old-while-explaining-quick-UFC-return-203495",
+      "https://mmasucka.com/news/dan-hooker-explains-his-decision-to-fight-again-just-weeks-after-ufc-paris-tko-loss/",
+      "https://www.qatar-tribune.com/article/261669/sports/doha-gears-up-to-host-highly-anticipated-ufc-fight-night-on-nov-21",
+      "https://www.espn.com/mma/fighter/_/id/3109135/dan-hooker",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/3109135/overview (upcoming: UFC Fight Night: Prochazka vs. Stirling, ABHA Arena, 2026-11-21, vs Brian Ortega)",
+      "https://en.wikipedia.org/wiki/Dan_Hooker",
+      "https://uk.sports.yahoo.com/news/ufc-paris-results-salahdine-parnasse-220612694.html",
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "data/derived/fighters.json (recent: 2026-09-05 L Parnasse KO/TKO R1 2:35; 2026-01-31 L Saint Denis TKO R2 4:45; 2025-11-22 L Tsarukyan sub R2 3:34)"
     ]
   },
   "style": {
     "archetype": "kickboxer",
     "stance": "switch",
-    "tags": ["switch-stance", "jab", "leg-kicks", "body-work", "knees", "clinch", "guillotine", "rangy", "volume", "takedown-defense", "wild-exchanges", "chin-concern"],
+    "tags": [
+      "switch-stance",
+      "jab",
+      "leg-kicks",
+      "body-work",
+      "knees",
+      "clinch",
+      "guillotine",
+      "rangy",
+      "volume",
+      "takedown-defense",
+      "wild-exchanges",
+      "chin-concern"
+    ],
     "signature": [
       "front kick to the body (KO of Claudio Puelles, UFC 281, R2 4:06)",
       "knee to the head in the clinch (KOs of Ross Pearson, 2017, and Jim Miller, 2018)",
@@ -29,7 +53,7 @@
       "guillotine chokes (finished Mark Eddiva, 2016, and Marc Diakiese, 2017)"
     ],
     "weaknesses": [
-      "three straight stoppage losses in 2025-26 (Tsarukyan sub, Saint Denis TKO, Parnasse KO)",
+      "three straight stoppage losses in 2025-26 (Tsarukyan sub, Saint Denis TKO, Parnasse TKO from a liver kick and punches)",
       "elite grapplers get him down and keep him there: Tsarukyan had 6:02 of control, Saint Denis 6:14 with 67 ground strikes, Islam Makhachev a kimura in 2:25",
       "5 KO/TKO losses in 25 UFC fights, 2 of them since Jan 2026",
       "defence has fallen: 40% significant-strike defence and 5.6 absorbed per minute recency-weighted (career 49% and 4.9; lightweight median about 54% and 4.1)"
@@ -39,33 +63,63 @@
       "data/derived/fighters.json (career C and recency-weighted S sums; lightweight medians over 120 lightweights with 30+ UFC minutes)",
       "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (2014-2026 bout stats and methods)",
       "data/scouting/arman-tsarukyan.json and data/scouting/benoit-saint-denis.json (fight accounts)",
-      "https://en.wikipedia.org/wiki/Dan_Hooker (reference page for background; could not be fetched in this pass)"
+      "https://en.wikipedia.org/wiki/Dan_Hooker",
+      "https://uk.sports.yahoo.com/news/ufc-paris-results-salahdine-parnasse-220612694.html"
     ]
   },
   "moves": {
-    "jab": 0.32, "cross": 0.28, "hook": 0.15, "overhand": 0.07, "upper": 0.12, "headkick": 0.06,
-    "bodykick": 0.55, "bodyhook": 0.25, "bodystraight": 0.2,
-    "calf": 0.6, "inside": 0.4, "spinning": 0.02, "knee": 0.4, "elbow": 0.1,
+    "jab": 0.32,
+    "cross": 0.28,
+    "hook": 0.15,
+    "overhand": 0.07,
+    "upper": 0.12,
+    "headkick": 0.06,
+    "bodykick": 0.55,
+    "bodyhook": 0.25,
+    "bodystraight": 0.2,
+    "calf": 0.6,
+    "inside": 0.4,
+    "spinning": 0.02,
+    "knee": 0.4,
+    "elbow": 0.1,
     "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json: recency-weighted landed shares are head 0.54 / body 0.24 / leg 0.21 and attempt shares are head 0.68 / body 0.18 / leg 0.14 (career landed 0.62 / 0.18 / 0.20; lightweight median landed about 0.62 / 0.22 / 0.15). So legs run well above the division and the body at or above it. Head group leans on the jab and straight from his long frame (6'0\", 75-inch reach); head kicks are a small share. In the body group kicks lead, because his body-strike finish was a front kick (Puelles). Calf outweighs inside because his leg strikes come at volume from range. UFC Stats does not separate calf from thigh kicks, so that split is judgment. Knee is high (0.4) for two clinch-knee KOs (Pearson, Miller), with 8% of his landed strikes in the clinch. Spinning is near zero. These weights are analyst judgment from the bout stats; no published breakdown could be fetched in this pass."
   },
   "appearance": {
     "build": "tall, long-limbed lightweight who previously fought at featherweight: 6'0\" with a 75-inch reach (fighters.json; 7 featherweight bouts in the dataset)",
-    "hair": "unknown (photos could not be checked in this pass)",
-    "facial_hair": "unknown",
+    "hair": "bleached platinum-blond hair, faded short at the sides with a short spiky top (ESPN headshot file dated Sep 3, 2026; UFC 325 and UFC Paris photos, 2026)",
+    "facial_hair": "ginger-brown beard, short to medium and trimmed (2026 photos)",
     "skin": "light",
-    "tattoos": "none confirmed",
-    "kit": "unknown",
+    "tattoos": "heavily tattooed: on the chest a sword pointing down the sternum crossed by two more blades; designs on both shoulders; a large floral back piece covering most of the back; a sleeve on the right arm; and a tattoo on the right side of the neck behind the ear. Seen in photos only, no written description found",
+    "kit": "unconfirmed: he was in the red corner at UFC Paris (red glove tape in the Getty photo), but his shorts were not visible in the photos checked",
     "sources": [
+      "https://a.espncdn.com/i/headshots/mma/players/full/3109135.png (ESPN headshot, file dated Sep 3, 2026: hair, beard, chest and shoulder tattoos)",
+      "https://www.thescore.com/mma/news/3593110/parnasse-crushes-hooker-in-1-st-round-of-ufc-paris-main-event (Getty photo from behind at UFC Paris: back piece, right sleeve, neck tattoo, hair)",
+      "https://heavy.com/sports/ufc/dan-hooker-in-desperate-search-of-a-win-at-ufc-qatar/ (lead photo from UFC 325: hair, beard)",
       "data/derived/fighters.json (height, reach, divisions)",
-      "skin: unverified recall of widely published fight photos; not checked against a dated photo (web access unavailable in the research pass and the fact-check)"
+      "no likeness sheet (data/likeness/dan-hooker.json does not exist)"
     ]
   },
   "engine_notes": [
-    { "note": "Opponents shoot on him 7.7 times per 15 min recency-weighted (6.4 career; lightweight median about 4.2) and controlled him 261 seconds per 15 recently (132 career). His 73-77% takedown defence holds early, but against elite wrestlers it gives way over a round.", "source": "data/derived/fighters.json (S and C sums)" },
-    { "note": "Chin trending down: knockdowns absorbed per 15 min rose from 0.18 career to 0.39 recency-weighted, with KO/TKO losses to Saint Denis and Parnasse in 2026. His KO losses outnumber the knockdowns he has absorbed (5 vs 3), because several stoppages came without a scored knockdown first.", "source": "data/derived/fighters.json (ko_losses, kd_absorbed, okd)" },
-    { "note": "Power: 9 knockdowns and 7 KO/TKO wins in 245.7 UFC minutes (0.55 knockdowns per 15; median about 0.31).", "source": "data/derived/fighters.json" },
-    { "note": "Submission threat from guard and front headlock persists (1.26 attempts per 15 recency-weighted; 2 each against Tsarukyan and Saint Denis), but his last submission win was in 2017.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
-    { "note": "Pace in his four five-round fights: 1.00 / 1.65 / 1.37 / 0.60 / 1.00 relative to round 1. Output peaks in rounds 2-3 and dips in round 4.", "source": "data/derived/fighters.json (pace)" }
+    {
+      "note": "Opponents shoot on him 7.7 times per 15 min recency-weighted (6.4 career; lightweight median about 4.2) and controlled him 261 seconds per 15 recently (132 career). His 73-77% takedown defence holds early, but against elite wrestlers it gives way over a round.",
+      "source": "data/derived/fighters.json (S and C sums)"
+    },
+    {
+      "note": "Chin and body trending down: knockdowns absorbed per 15 min rose from 0.18 career to 0.39 recency-weighted, with TKO losses to Saint Denis and Parnasse in 2026 (Parnasse hurt him with a liver kick before the punches). His KO losses outnumber the knockdowns he has absorbed (5 vs 3), because several stoppages came without a scored knockdown first.",
+      "source": "data/derived/fighters.json (ko_losses, kd_absorbed, okd); https://uk.sports.yahoo.com/news/ufc-paris-results-salahdine-parnasse-220612694.html"
+    },
+    {
+      "note": "Power: 9 knockdowns and 7 KO/TKO wins in 245.7 UFC minutes (0.55 knockdowns per 15; median about 0.31).",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Submission threat from guard and front headlock persists (1.26 attempts per 15 recency-weighted; 2 each against Tsarukyan and Saint Denis), but his last submission win was in 2017.",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
+    },
+    {
+      "note": "Pace in his four five-round fights: 1.00 / 1.65 / 1.37 / 0.60 / 1.00 relative to round 1. Output peaks in rounds 2-3 and dips in round 4.",
+      "source": "data/derived/fighters.json (pace)"
+    }
   ],
   "confidence": "medium"
 }

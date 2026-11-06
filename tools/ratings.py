@@ -1325,6 +1325,11 @@ def dim_features(pre, dims):
 # pre-UFC records (tools/preufc.py output, Sherdog, walk-forward per UFC bout) for newcomer priors
 # =====================================================================================================
 PREUFC = os.path.join(ROOT, "data", "derived", "preufc.json")
+# OFF: on Nov 6, 2026 preufc.json covered 258 of 1,711 targets and the crawl had resolved survivors first (77.5%
+# of resolved fighters still active in 2024+ vs 48.9% of unresolved; career UFC win rate 59.4% vs 50.8%), so any
+# term that is non-zero only for crawled fighters leaks future survival (it "improved" 2019-2023 log loss by 0.019).
+# Turn on only once coverage of the walk-forward debut snapshots is complete (or provably outcome-independent).
+PRE_ON = False
 
 
 def attach_preufc(D):
@@ -1547,8 +1552,6 @@ def specs(quick):
               ("dy", [0.0, 0.02, 0.05, 0.1]), ("do", [0.0, 0.01, 0.02, 0.04, 0.08]),
               ("ay", [25.0, 27.0, 29.0, 31.0]), ("ao", [29.0, 31.0, 33.0, 35.0]),
               ("dl", [0.0, 0.03, 0.06, 0.1, 0.15]), ("nl", [2.0, 4.0, 8.0]), ("lay", [0.0, 0.05, 0.1, 0.2]),
-              ("pre_wp", [0.0, 0.5, 1.0, 2.0]), ("pre_n", [0.0, 0.05, 0.1, 0.2]),
-              ("pre_net", [0.0, 0.1, 0.2, 0.4]), ("pre_dwcs", [0.0, 0.1, 0.2, 0.3]),
               ("kappa", [0.8, 0.9, 1.0, 1.1, 1.2])]
     mov = [("y_ud", [0.8, 0.9, 1.0]), ("y_sd", [0.5, 0.6, 0.7, 0.85, 1.0]), ("w_fin", [1.0, 1.2, 1.5, 2.0]),
            ("w_r1", [1.0, 1.2, 1.5])]
@@ -1564,9 +1567,9 @@ def specs(quick):
               "grid": [("K", [0.15, 0.2, 0.25, 0.3, 0.35, 0.45]), ("kb", [0.0, 0.25, 0.5, 1.0, 1.5]),
                        ("kn", [1.0, 2.0, 4.0, 8.0]), ("kl", [0.0, 0.1, 0.25, 0.5])]})
     S.append({"name": "elo_full", "kind": "elo", "family": "Elo",
-              "label": "Elo + margin of victory (method/round/decision type) + newcomer prior (age, pre-UFC "
-                       "record) + age drift",
-              "P": {"K": 44 * LN, "kb": 0.5, "kn": 3.0, "enc": "mov", "pre_on": True},
+              "label": "Elo + margin of victory (method/round/decision type) + newcomer prior by age + skill "
+                       "trajectory (age curve, early-career learning, layoff)",
+              "P": {"K": 44 * LN, "kb": 0.5, "kn": 3.0, "enc": "mov", "pre_on": PRE_ON},
               "from": "elo_k",
               "grid": [("K", [0.15, 0.2, 0.25, 0.3, 0.35]), ("kb", [0.0, 0.25, 0.5, 1.0]),
                        ("kn", [1.0, 2.0, 4.0, 8.0]), ("kl", [0.0, 0.1, 0.25])] + mov + shared})
@@ -1574,19 +1577,19 @@ def specs(quick):
               "label": "Round-level Elo: every round a game (judge-consensus round winners, stat model "
                        "elsewhere), finishing round weighted, unplayed rounds to the finisher",
               "P": {"K": 0.06, "enc": "rounds", "w_round": 1.0, "w_fround": 2.0, "w_rem": 0.5, "kappa": 2.5,
-                    "kb": 0.5, "kn": 3.0, "pre_on": True},
+                    "kb": 0.5, "kn": 3.0, "pre_on": PRE_ON},
               "grid": [("K", [0.01, 0.015, 0.02, 0.03, 0.045, 0.06, 0.08]), ("kb", [0.0, 0.5, 1.0]),
                        ("kn", [1.0, 3.0, 8.0])] + rnd + shared[:-1]})
     S.append({"name": "glicko2", "kind": "glicko2", "family": "Glicko-2",
               "label": "Glicko-2: rating deviation inflating with inactivity, volatility, newcomer prior, age "
                        "drift, margin-weighted games",
-              "P": {"phi0": 1.2, "sig0": 0.06, "tau": 0.3, "T": 60.0, "enc": "mov", "pre_on": True},
+              "P": {"phi0": 1.2, "sig0": 0.06, "tau": 0.3, "T": 60.0, "enc": "mov", "pre_on": PRE_ON},
               "grid": [("phi0", [0.6, 0.9, 1.2, 1.6, 2.0]), ("sig0", [0.02, 0.04, 0.06, 0.1, 0.15]),
                        ("tau", [0.1, 0.3, 0.6, 1.0]), ("T", [20.0, 40.0, 60.0, 120.0, 240.0])] + mov + shared})
     S.append({"name": "trueskill", "kind": "trueskill", "family": "TrueSkill",
               "label": "TrueSkill-like Gaussian (probit) ratings, binary outcome, skill variance growing with "
                        "time and per fight",
-              "P": {"s0": 1.0, "tau_y": 0.3, "gam": 0.1, "pre_on": True},
+              "P": {"s0": 1.0, "tau_y": 0.3, "gam": 0.1, "pre_on": PRE_ON},
               "grid": [("s0", [0.5, 0.8, 1.0, 1.3, 1.7]), ("tau_y", [0.05, 0.1, 0.2, 0.3, 0.5]),
                        ("gam", [0.0, 0.1, 0.2, 0.3])] + [(k, [round(1.5 * v, 4) for v in vals])
                                                          if k in ("mu_new", "age_new", "dy", "do", "pre_wp",
@@ -1597,7 +1600,7 @@ def specs(quick):
               "label": "TrueSkill with method-aware (ordinal) outcomes: finishes and unanimous decisions "
                        "truncate the performance gap further out, split decisions to a band near zero",
               "P": {"s0": 1.0, "tau_y": 0.3, "gam": 0.1, "ordinal": True, "th_fin": 0.3, "th_ud": 0.2,
-                    "th_sd": 1.0, "pre_on": True},
+                    "th_sd": 1.0, "pre_on": PRE_ON},
               "from": "trueskill",
               "grid": [("th_fin", [0.0, 0.2, 0.4, 0.7, 1.0]), ("th_ud", [0.0, 0.1, 0.2, 0.4, 0.6]),
                        ("th_sd", [0.3, 0.6, 1.0, 2.0, 1e10]), ("w_fin", [0.8, 1.0, 1.25, 1.5]),
@@ -1607,18 +1610,18 @@ def specs(quick):
     S.append({"name": "whr", "kind": "whr", "family": "WHR",
               "label": "Whole-History Rating (Bayesian Bradley-Terry, Gaussian random-walk skill, history re-solved "
                        "before every fight day), binary outcomes",
-              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "pre_on": True}, "from_shared": "elo_full", "coarse": True,
+              "P": {"w2": 0.05, "vf": 0.02, "s0": 0.8, "pre_on": PRE_ON}, "from_shared": "elo_full", "coarse": True,
               "grid": whr_core + [("kappa", [0.9, 1.0, 1.1, 1.2]), ("do", [0.01, 0.02, 0.04]),
                                   ("dl", [0.0, 0.05, 0.1]), ("mu_new", [-0.3, -0.15, 0.0])]})
     S.append({"name": "whr_mov", "kind": "whr", "family": "WHR",
               "label": "WHR with margin of victory (fractional / weighted outcomes by method)",
-              "P": {"enc": "mov", "pre_on": True}, "from": "whr", "from_mov": "elo_full", "coarse": True,
+              "P": {"enc": "mov", "pre_on": PRE_ON}, "from": "whr", "from_mov": "elo_full", "coarse": True,
               "grid": [("y_sd", [0.6, 0.75, 0.9, 1.0]), ("w_fin", [1.0, 1.3, 1.6]), ("y_ud", [0.85, 1.0]),
                        ("kappa", [0.9, 1.0, 1.1, 1.2]), ("w2", [0.02, 0.05, 0.1])]})
     S.append({"name": "whr_rounds", "kind": "whr", "family": "Round-level",
               "label": "Round-level WHR: every round a game (judge-consensus winners), finishing and unplayed "
                        "rounds to the finisher",
-              "P": {"enc": "rounds", "w_round": 0.3, "kappa": 2.0, "pre_on": True}, "from": "whr",
+              "P": {"enc": "rounds", "w_round": 0.3, "kappa": 2.0, "pre_on": PRE_ON}, "from": "whr",
               "from_rounds": "elo_rounds", "coarse": True,
               "grid": [("w_round", [0.15, 0.25, 0.4, 0.6]), ("kappa", [1.5, 2.0, 2.5, 3.0, 4.0]),
                        ("w2", [0.01, 0.02, 0.05, 0.1]), ("s0", [0.3, 0.5, 0.8]), ("w_fround", [1.0, 2.0, 3.0]),
@@ -2146,7 +2149,7 @@ def tables(path=OUT_JSON, top=10):
     S, M = J["systems"], J["meta"]
     rk = M.get("ranking_scores_2020_2023", {})
     order = [k for k in ["elo_ref", "elo_k", "elo_full", "glicko2", "trueskill", "trueskill_mov", "whr", "whr_mov",
-                         "elo_rounds", "whr_rounds", "dims", "stack"] if k in S]
+                         "elo_rounds", "whr_rounds", "dims", "stack", "ratings_plus"] if k in S]
     print("### Results (decisive fights; tune = 2019-2023 prequential, rank = 2020-2023, test = 2024+ held out)\n")
     print("| System | Family | Tune LL | Rank LL 2020-23 | Test LL [95% CI] | Test Brier | Test acc | ECE | "
           "Slope | dLL vs elo_ref [95% CI] | P(better) |")
@@ -2156,6 +2159,8 @@ def tables(path=OUT_JSON, top=10):
         t, b, c = s["test_2024_plus"], s["bootstrap"], s["calibration"]
         tune = s["tune_2019_2023"]["log_loss"]
         rkk = rk.get(k, s.get("cv_2020_2023"))
+        if k in ("stack", "ratings_plus"):
+            rkk = s.get("cv_2020_2023")
         d = b.get("d_log_loss_vs_elo_ref")
         print("| %s | %s | %s | %s | %s [%s, %s] | %s | %.1f%% | %s | %s | %s [%s, %s] | %s |" % (
             k, s["family"], _f(tune), _f(rkk), _f(t["log_loss"]), _f(b["log_loss_ci95"][0]),
@@ -2287,9 +2292,91 @@ def ablate(path=OUT_JSON, systems=("elo_full", "glicko2", "trueskill_mov", "whr_
     return out
 
 
+# =====================================================================================================
+# ratings_plus (python3 tools/ratings.py plus): rating logits + pre-fight covariates, specified before any
+# 2024+ result was seen: forward selection by expanding-window CV on 2019-2023 over every single system's logit
+# and six A-minus-B covariates (age gap, years past 34, reach, height, log UFC fights, layoff), no intercept,
+# L2 = 1, stop when the CV gain is below 1e-4; fit on 2019-2023, score 2024+ once; results added to ratings.json
+# =====================================================================================================
+def plus(path=OUT_JSON):
+    J = json.load(open(path))
+    D = load_data()
+    prepare(D, log=lambda *a: None)
+    S = J["systems"]
+    names = [k for k in S if k not in ("stack", "ratings_plus", "elo_ref")]
+    P = {k: np.full(D.n, np.nan) for k in names}
+    for fid, e in J["predictions"].items():
+        i = D.fidx[fid]
+        for k in names:
+            v = e["p"].get(k)
+            if v is not None:
+                P[k][i] = v
+    feats = residual_features(D)
+    cands = {"logit_" + k: logit(P[k]) for k in names}
+    sd = {}
+    it, ix = D.idx_tune, D.idx_test
+    for k, f in feats.items():
+        s_ = f[it].std() + 1e-9
+        sd[k] = float(s_)
+        cands[k] = f / s_
+    chosen, cur, path_ = [], 9.0, []
+    while True:
+        best = None
+        for k in cands:
+            if k in chosen:
+                continue
+            X = np.c_[[cands[c][it] for c in chosen + [k]]].T
+            cv, _ = cv_lr(D, X, 1.0, it)
+            if cv < cur - 1e-4 and (best is None or cv < best[1]):
+                best = (k, cv)
+        if not best:
+            break
+        chosen.append(best[0])
+        cur = best[1]
+        path_.append({"add": best[0], "cv_log_loss": round(cur, 5)})
+        print("  + %-22s CV(2020-23) %.5f" % best)
+    X = np.c_[[cands[c] for c in chosen]].T
+    b = fit_lr(X[it], D.y[it], 1.0)
+    p = expit(X @ b)
+    y = D.y
+    res = {"kind": "ratings_plus", "family": "Ratings + covariates",
+           "label": "Rating logits + pre-fight covariates (age gap, years past 34, reach, height, experience, "
+                    "layoff), forward selection by time-ordered CV; specified before the 2024+ results were seen",
+           "members": chosen, "weights": [float(v) for v in b], "covariate_sd_2019_2023": sd, "path": path_,
+           "cv_2020_2023": cur, "tune_2019_2023": metrics(p[it], y[it]), "test_2024_plus": metrics(p[ix], y[ix])}
+    preds = {"ratings_plus": p, "elo_ref": np.full(D.n, np.nan)}
+    for fid, e in J["predictions"].items():
+        preds["elo_ref"][D.fidx[fid]] = e["p"]["elo_ref"]
+    bt = bootstrap(D, preds, ix, base="elo_ref")
+    res["bootstrap"] = bt["ratings_plus"]
+    res["calibration"] = calibration(p[ix], y[ix])
+    best_single = J["meta"]["best_single_by_tuning"]
+    pb = np.full(D.n, np.nan)
+    for fid, e in J["predictions"].items():
+        pb[D.fidx[fid]] = e["p"].get(best_single, np.nan)
+    pst = np.full(D.n, np.nan)
+    for fid, e in J["predictions"].items():
+        pst[D.fidx[fid]] = e["p"].get("stack", np.nan)
+    b2 = bootstrap(D, {"ratings_plus": p, "stack": pst}, ix, base="stack")
+    res["d_log_loss_vs_stack"] = b2["ratings_plus"].get("d_log_loss_vs_stack")
+    res["d_log_loss_vs_stack_ci95"] = b2["ratings_plus"].get("d_log_loss_ci95")
+    S["ratings_plus"] = res
+    for fid, e in J["predictions"].items():
+        e["p"]["ratings_plus"] = r5(p[D.fidx[fid]])
+    J["meta"]["ratings_plus_added"] = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    with open(path, "w") as fh:
+        json.dump(J, fh, separators=(",", ":"))
+    t = res["test_2024_plus"]
+    print("ratings_plus: members %s; CV %.5f; test LL %.5f %s Brier %.5f acc %.3f; vs stack %+.5f %s"
+          % (chosen, cur, t["log_loss"], res["bootstrap"]["log_loss_ci95"], t["brier"], t["accuracy"],
+             res["d_log_loss_vs_stack"] or 0, res["d_log_loss_vs_stack_ci95"]))
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "tables":
         tables(sys.argv[2] if len(sys.argv) > 2 else OUT_JSON)
+    elif len(sys.argv) > 1 and sys.argv[1] == "plus":
+        plus(sys.argv[2] if len(sys.argv) > 2 else OUT_JSON)
     elif len(sys.argv) > 1 and sys.argv[1] == "ablate":
         ablate(sys.argv[2] if len(sys.argv) > 2 else OUT_JSON)
     else:

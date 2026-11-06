@@ -5,9 +5,9 @@ As of 2026-11-06. He/him. Orthodox, 6 ft 1 in, 77 in reach, born 1994-10-23 (age
 ## Current status
 
 - **Inactive.** His last fight was a unanimous decision over Ian Machado Garry at UFC 310 on Dec 7, 2024 (48-47 x3), about 23 months ago.
-- **Injury:** A knee injury has needed several surgeries. The latest is reported as Jan 31, 2026, with doctors estimating a 9-10 month recovery. He was photographed on crutches and was back in contact training by late May 2026 (Bloody Elbow). In July 2026 his physician said there were no remaining medical reasons to stop him competing and expected him back early in 2027. Coach Eduard Bazrov said he could be ready around February 2027 but would not commit to a date.
+- **Injury:** A knee injury has needed several surgeries. The latest is reported as Jan 31, 2026, with doctors estimating a 9-10 month recovery. He was photographed on crutches and was back in contact training by late May 2026 (Bloody Elbow). In July 2026 his physician said there were no remaining medical reasons to stop him competing and expected him back early in 2027. Coach Eduard Bazrov said he could be ready around February 2027 but would not commit to a date. In a Sep 7, 2026 interview (Sherdog) Rakhmonov said he fought Garry with a missing knee ligament, that the damage got worse in that fight, and that his UFC return is "far from guaranteed". He did not say he had retired.
 - **Next:** Nothing booked. On Oct 30, 2026, manager Daniel Rubenstein denied a rumored January 2027 fight with Jack Della Maddalena and said Rakhmonov would not be back in January. Michael Morales claimed in early October that he would fight Rakhmonov next, but Morales has since been booked against Carlos Prates.
-- **Ranking:** Reported removed from the UFC welterweight rankings in February 2026 for inactivity.
+- **Ranking:** Unranked. He is not in the welterweight top 15 of either the UFC media rankings (Nov 3, 2026) or the Meta UFC rankings (Oct 31, 2026). Wikipedia says he was removed from #2 after the January 2026 injury report.
 
 ## Recent fights
 
@@ -33,7 +33,7 @@ A long-limbed finisher who mixes kickboxing range with clinch and scramble grapp
 
 ## Weaknesses
 
-- Layoff and repeated knee surgery. Nobody, his camp included, can say how he will look in 2027.
+- Layoff, repeated knee surgery and, by his own account, a missing ligament. Nobody, his camp included, can say how he will look in 2027.
 - Defense is only average: opponents land 49.5% of significant strikes on him (league 47.7%). Garry beat him on the scoreboard standing.
 - Low takedown accuracy, and no leg-kick game of his own.
 - One five-round fight on record.
@@ -44,7 +44,17 @@ Never knocked down in 75 UFC minutes. He went 25 minutes once (Garry) and won on
 
 ## What the numbers in fighters.json say
 
-Elo 1733. The time decay leaves only 1.86 effective fights in his recent sums. Decayed significant strikes: 2.9 landed and 2.1 absorbed per minute. Target split of landed strikes: 71% head, 25% body, 4% leg. Clinch and ground make up 44% of his landed strikes. The model should treat him as high-variance: elite finishing numbers from a small, old sample, plus an unknown post-surgery state.
+Elo 1733. The time decay leaves only 1.86 effective fights in his recent sums. Decayed significant strikes: 2.9 landed and 2.1 absorbed per minute. Target split of landed strikes: 71% head, 25% body, 4% leg. Clinch and ground make up 44% of his landed strikes. The model should treat him as high-variance: elite finishing numbers from a small, old sample, plus a post-surgery state that nobody can measure yet.
+
+## Appearance
+
+No likeness sheet exists for him. Checked on Nov 6, 2026 against the current ESPN headshot and two Getty photos from UFC 310 (Dec 7, 2024). He has not fought since, so there are no newer fight photos.
+
+- **Hair:** short black, a little longer on top and worn forward in a fringe.
+- **Facial hair:** clean-shaven.
+- **Skin:** light-medium.
+- **Tattoos:** none visible on the torso or arms.
+- **Kit:** black shorts at UFC 310.
 
 ## Sources
 
@@ -57,3 +67,8 @@ Elo 1733. The time decay leaves only 1.86 effective fights in his recent sums. D
 - https://thebodylockmma.com/ufc/news-ufc/is-shavkat-rakhmonov-finally-ready-to-return-after-two-year-layoff/
 - https://bloodyelbow.com/2026/10/04/michael-morales-claims-hes-fighting-shavkat-rakhmonov-next-in-message-to-ufc-welterweight-division/
 - https://en.wikipedia.org/wiki/Shavkat_Rakhmonov
+- Rankings: ufc.com/rankings as captured by the Wayback Machine on Nov 4, 2026 (media rankings last updated Nov 3, Meta UFC rankings last updated Oct 31): https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings
+- https://en.wikipedia.org/wiki/UFC_rankings
+- https://www.sherdog.com/news/news/Shavkat-Rakhmonov-admits-UFC-return-is-far-from-guaranteed-202693
+- https://kz.kursiv.media/en/2026-07-27/engk-nknk-shavkat-rakhmonov-not-expected-to-return-to-the-octagon-in-2026/
+- Appearance: ESPN headshot https://a.espncdn.com/i/headshots/mma/players/full/4020699.png; UFC 310 photos on https://sports.yahoo.com/ufc-310-results-shavkat-rakhmonov-survives-late-scare-beats-ian-machado-garry-but-loses-perfect-finish-rate-055842499.html and https://bleacherreport.com/articles/10146323-ufc-310-shavkat-rakhmonov-wins-but-ian-machado-garrys-stock-just-went-higher

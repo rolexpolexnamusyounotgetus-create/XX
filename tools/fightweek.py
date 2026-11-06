@@ -1103,8 +1103,13 @@ class Card:
             memo[mk] = self._mentions(text, prefer)
         return memo[mk]
 
+    EVENT_NAME = re.compile(r"(?:ufc|fight night|the ultimate fighter|tuf|bellator|strikeforce|wec|pfl|invicta|"
+                            r"lfa|cage warriors|ksw|one)\b[^.;\n]{0,45}?\bvs\.?\s+[\w.\-]+(?:\s+(?:\d+|[a-z][\w.\-]+))?")
+
     def _mentions(self, text, prefer=None):
         k = self.key(text)
+        # mask event names ("UFC on ESPN: Santos vs. Hill") so headliners named there are not mentions
+        k = self.EVENT_NAME.sub(lambda m: " " * len(m.group(0)), k)
         out = []
         taken = []
         for i, x in enumerate(self.f):
@@ -1216,7 +1221,8 @@ def parse_weighins(card, paras, event):
                         gap_after = k[last[1]:tm.start()]
                         if re.search(r"\b(?:to|against|opponent|face|faced|facing)\s*$", k[max(0, last[0] - 30):last[0]]):
                             continue
-                        if len(gap_after) > 160:
+                        if len(gap_after) > 160 or re.search(r"\b(?:but|after|when|because|while|since|before|"
+                                                             r"although|though|whereas|however)\b", gap_after):
                             continue
                         subj_here.extend(g[2] for g in group)
                     else:
@@ -1259,6 +1265,19 @@ def parse_weighins(card, paras, event):
             weights = [(p, w) for p, w in weights if w and 100 <= w <= 300]
             overs = [(p, o) for p, o in overs if o is not None and 0 < o < 30]
             respectively = "respectively" in k
+            if respectively and trig:
+                t0 = trig[0].start()
+                allw = [(m.start(), wnum(m.group(1))) for m in re.finditer(
+                    r"(\d{3}(?:\.\d+)?(?:\s?\u00bd)?)\s*(?:pounds?|lbs?\.?|lb)\b", k) if m.start() >= t0]
+                allw = [(p, w) for p, w in allw if w and 100 <= w <= 300]
+                if len(allw) > len(weights):
+                    weights = allw
+                allo = [(m.start(), wnum(m.group(1))) for m in re.finditer(
+                    r"(\d+(?:\.\d+)?|half a|a half|one|two|three|four|five|six|seven|eight|nine|ten)"
+                    r"(?: and a half)?[- ](?:pounds?|lbs?\.?|lb)\b(?!\s*(?:\(|,)?\s*\d)", k) if m.start() >= t0]
+                allo = [(p, o) for p, o in allo if o is not None and 0 < o < 30]
+                if len(allo) > len(overs) and re.search(r"\bover\b", k):
+                    overs = allo
             pos = {}
             for x in ms:
                 pos.setdefault(x[2], x[0])
@@ -1665,6 +1684,37 @@ DIV_LBS = {"Strawweight": 115, "Flyweight": 125, "Bantamweight": 135, "Featherwe
            "Welterweight": 170, "Middleweight": 185, "Light Heavyweight": 205, "Heavyweight": 265}
 
 
+DIV_RE = re.compile(r"(women'?s )?(strawweight|flyweight|bantamweight|featherweight|lightweight|welterweight|"
+                    r"middleweight|light heavyweight|heavyweight)\b([^.]{0,40}?)\blimit", re.I)
+STD_LBS = {115, 125, 135, 145, 155, 170, 185, 205, 265}
+
+
+def miss_limit(texts, title, ufc_wc, wiki_wc, cw_lbs, opp_lbs):
+    """Scale limit (lbs) a weight miss is measured against, and where it came from."""
+    t = " ".join(texts or [])
+    m = DIV_RE.search(t)
+    if m:
+        name = m.group(2).title().replace("Light Heavyweight", "Light Heavyweight")
+        tail = m.group(3).lower()
+        is_title = "title" in tail and "non-title" not in tail and "non title" not in tail
+        if name in DIV_LBS:
+            return DIV_LBS[name] + (0 if is_title else 1), "division named in the weigh-in text"
+    if re.search(r"catch ?weight", t, re.I) and cw_lbs:
+        return cw_lbs + (0 if title else 1), "agreed catchweight"
+    lim = division_limit(ufc_wc) if "catch" not in ufc_wc.lower() else None
+    if lim:
+        return lim + (0 if title else 1), "ufcstats weight class"
+    lim = division_limit(wiki_wc or "") if wiki_wc and "catch" not in wiki_wc.lower() else None
+    if lim:
+        return lim + 1, "Wikipedia weight class"
+    m2 = re.search(r"limit of (\d{3})|(\d{3})[- ]?(?:pound|lb)s?\.? (?:\w+ )?limit", t)
+    if m2:
+        return int(m2.group(1) or m2.group(2)), "stated limit"
+    if opp_lbs in STD_LBS:
+        return opp_lbs + 1, "opponent's listed division"
+    return None, None
+
+
 ALT_FIX = {"New Orleans": 2.0}      # cities the geocoder returns without an elevation
 
 
@@ -1918,11 +1968,13 @@ def cmd_build(args):
                 if m and m["negated"] and not (m["lbs_over"] and m["explicit"] and
                                                re.search(r"no (?:further )?attempt|made no", " ".join(m["text"]))):
                     m = None             # "missed on his first attempt but made weight" -> not a miss
+                opp_pid = pb if side == "A" else pa
+                limit, limit_basis = (miss_limit(m["text"], title, b["wc"], seg.get("wc"), cw_lbs,
+                                                 ((people.get(opp_pid) or {}).get("tott") or {}).get("lbs"))
+                                      if m else (None, None))
                 if m and not m["explicit"] and m["lbs_over"] is None:
                     # only "weighed in at W": a miss only if W is over the limit
-                    limit0 = cw_lbs + (0 if title else 1) if (booked_cw and cw_lbs) else \
-                        (lim + (0 if title else 1) if lim else None)
-                    if not (m["weighed"] and limit0 and m["weighed"] > limit0):
+                    if not (m["weighed"] and limit and m["weighed"] > limit):
                         m = None
                 if not art:
                     rec["missed"][side] = None
@@ -1931,14 +1983,10 @@ def cmd_build(args):
                 elif m:
                     anymiss = True
                     over = m["lbs_over"]
-                    limit = None
-                    if over is None and m["weighed"] is not None:
-                        limit = cw_lbs + (0 if title else 1) if (booked_cw and cw_lbs) else \
-                            (lim + (0 if title else 1) if lim else None)
-                        if limit:
-                            over = round(m["weighed"] - limit, 2)
-                            if over <= 0 or over > 25:
-                                over = None
+                    if over is None and m["weighed"] is not None and limit:
+                        over = round(m["weighed"] - limit, 2)
+                        if over <= 0 or over > 25:
+                            over = None
                     rec["missed"][side] = True
                     rec["missed_weight"][side] = over
                     rec["weighed"][side] = m["weighed"]
@@ -1986,7 +2034,7 @@ def cmd_build(args):
                 rec["home_elev_m"][side] = h.get("elev")
             # opponent change marker -1 means "changed, date unknown"
             rec["catchweight"] = {"is": bool(booked_cw or anymiss), "lbs": cw_lbs,
-                                  "why": "booked" if booked_cw else ("weight miss" if anymiss else None)}
+                                  "why": "weight miss" if anymiss else ("booked" if booked_cw else None)}
             rec["venue"] = {k: venue[k] for k in ("city", "country", "iso3", "altitude_m", "apex")}
             rec["no_crowd"] = crowd == "none"
             rec["crowd"] = crowd

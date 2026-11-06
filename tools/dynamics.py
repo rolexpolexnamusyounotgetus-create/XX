@@ -1485,6 +1485,14 @@ def engine_check(S, csv, label):
                 row["round_profile"] = {str(R): [math.exp(co[f"c{R}_{r}"]["est"] - co[f"c{R}_1"]["est"])
                                                  for r in range(1, R + 1)] for R in (3, 5) if f"c{R}_1" in co}
                 row["r1_rate_3rd"] = math.exp(co["c3_1"]["est"]) if "c3_1" in co else None
+        # do the two directions of one fight share KD volatility? (Pearson residual correlation vs no-frailty fit)
+        mnf = FrailPois(d, "o_kd", "o_sh_l", cc).fit(fixed_la=math.log(1e-6))
+        q = mnf.d.assign(mu=np.exp(mnf.lE + mnf.X @ mnf.par[:-1]))
+        agg = q.groupby(["fid", "idx"]).agg(y=("o_kd", "sum"), mu=("mu", "sum")).reset_index()
+        agg["r"] = (agg.y - agg.mu) / np.sqrt(agg.mu)
+        pv = agg.pivot(index="fid", columns="idx", values="r").dropna()
+        row["direction_residual_corr"] = float(np.corrcoef(pv[0], pv[1])[0, 1])
+        row["direction_residual_n"] = int(len(pv))
         d["Dbin"] = damage_bin(d.c_ohl)
         b = d[d.rnd >= 2].groupby("Dbin", observed=True)
         row["by_prior_damage"] = {str(k): {"kd_per100_sh": 100 * float(g.o_kd.sum() / max(g.o_sh_l.sum(), 1)),

@@ -783,7 +783,7 @@ def raw_scan(D, ev, p, hls):
         out[name][(hl, ko, kd)] = sc
 
     for name, (kind, fields, kname, _, _) in FAMILIES.items():
-        grid = RAW_K_GRID[kname]
+        grid = RAW_K_GRID[kname][3:5] if len(hls) == 1 else RAW_K_GRID[kname]
         for hl in hls:
             for k in grid:
                 run(name, hl, k, k)
@@ -933,6 +933,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--procs", type=int, default=max(1, (os.cpu_count() or 2)))
     ap.add_argument("--quick", action="store_true", help="small grid (two half-lives, every other k)")
+    ap.add_argument("--smoke", action="store_true", help="tiny grid to exercise the pipeline (one half-life)")
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--out", default=os.path.join(OUT, "oppadj.json"))
     args = ap.parse_args()
@@ -941,8 +942,8 @@ def main():
     D = Data(p)
     D.sides_by_date = _sides_by_date(D)
     ev = Evaluator(D, p)
-    hls = [730, 1460] if args.quick else HL_GRID
-    kg = {n: (g[::2] if args.quick else g) for n, (_, _, _, g, _) in FAMILIES.items()}
+    hls = [1460] if args.smoke else ([730, 1460] if args.quick else HL_GRID)
+    kg = {n: (g[2:4] if args.smoke else (g[::2] if args.quick else g)) for n, (_, _, _, g, _) in FAMILIES.items()}
 
     # ---- baselines: league-only and the engine's raw shrunk rates (backtest S, half-life 730, params3 k)
     res = {"families": {}}
@@ -981,23 +982,50 @@ def main():
         s_.pop("dev")
         return s_
 
-    # stage B: full offense x defense k grid at each family's best stage-A half-life
-    best_hl = {}
-    jobs = []
+    # stage B: local search over (k_off, k_def) at each family's best stage-A half-life: evaluate the 8
+    # neighbours of the incumbent in grid-index space, move to the best, stop when nothing improves on tune
+    best_hl, cur = {}, {}
     for name in FAMILIES:
         diag = {(hl, k, k): adj_score(name, (hl, k, k)) for hl in hls for k in kg[name]}
-        best_hl[name] = min(diag, key=lambda c: diag[c]["tune"])[0]
-        for ko, kd in kgrid_pairs(kg[name]):
-            if ko != kd:
-                jobs.append((name, best_hl[name], ko, kd, "full"))
-    print("stage B: %d fits" % len(jobs))
-    G.update(run_grid(D, p, jobs, args.procs))
-    print("stage B done %.0f s" % (time.time() - t0))
+        c0 = min(diag, key=lambda c: diag[c]["tune"])
+        best_hl[name] = c0[0]
+        g = kg[name]
+        cur[name] = (g.index(c0[1]), g.index(c0[2]))
+    active = set(FAMILIES)
+    step = 0
+    while active and step < 8:
+        step += 1
+        jobs = []
+        for name in sorted(active):
+            g = kg[name]
+            i0, j0 = cur[name]
+            for di in (-1, 0, 1):
+                for dj in (-1, 0, 1):
+                    i, j = i0 + di, j0 + dj
+                    if 0 <= i < len(g) and 0 <= j < len(g):
+                        key = (name, best_hl[name], g[i], g[j], "full")
+                        if key not in G:
+                            jobs.append(key)
+        if jobs:
+            G.update(run_grid(D, p, jobs, args.procs))
+        for name in sorted(active):
+            g = kg[name]
+            i0, j0 = cur[name]
+            cands = [(i0 + di, j0 + dj) for di in (-1, 0, 1) for dj in (-1, 0, 1)
+                     if 0 <= i0 + di < len(g) and 0 <= j0 + dj < len(g)]
+            sc_ = {ij: adj_score(name, (best_hl[name], g[ij[0]], g[ij[1]]))["tune"] for ij in cands}
+            nb = min(sc_, key=sc_.get)
+            if nb == (i0, j0):
+                active.discard(name)
+            else:
+                cur[name] = nb
+        print("stage B step %d: %d fits, %d families still moving (%.0f s)"
+              % (step, len(jobs), len(active), time.time() - t0))
     # stage C: the best (k_off, k_def) at every other half-life (half-life scan at the chosen k ratio)
     jobs = []
     for name in FAMILIES:
-        cand = {c: adj_score(name, c) for c in [(best_hl[name], a, b) for a, b in kgrid_pairs(kg[name])]}
-        _, ko, kd = min(cand, key=lambda c: cand[c]["tune"])
+        g = kg[name]
+        ko, kd = g[cur[name][0]], g[cur[name][1]]
         for hl in hls:
             if (name, hl, ko, kd, "full") not in G:
                 jobs.append((name, hl, ko, kd, "full"))
@@ -1280,7 +1308,8 @@ def main():
     meta = {
         "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "snapshot": D.snapshot.isoformat(), "tool": "tools/oppadj.py", "report": "research/model_oppadj.md",
-        "tune": "%s..%s" % TUNE, "test_from": TEST_FROM, "grid": "quick" if args.quick else "full",
+        "tune": "%s..%s" % TUNE, "test_from": TEST_FROM,
+        "grid": "smoke" if args.smoke else ("quick" if args.quick else "full"),
         "half_life_grid": hls,
         "engine_params_used": {k: p[k] for k in ("kPM", "kAcc", "kTdPM", "kTdAcc", "kKD", "kCtrlTD", "kTgt",
                                                  "ctrlGroundShare")},

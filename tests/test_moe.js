@@ -45,20 +45,23 @@ for (const k of Object.keys(doc.alternatives || {})) {
 
 // missing experts: the four availability patterns the stacker was trained for must evaluate (market and/or
 // engine missing); other subsets must evaluate for a gated model and fail loudly for a linear one
-const g = tv[0].gate, full = { market: 0.62, engine: 0.55, ml: 0.58, feat_lr: 0.58, elo: 0.53 };
+const g = tv[0].gate, full = { market: 0.62, mkt_rating: 0.6, engine: 0.55, ml: 0.58, feat_lr: 0.58, elo_sig: 0.56, elo: 0.53 };
+const OPT = [].concat.apply([], prod.model.optional_groups || [["market"], ["engine"]]);
 const E = prod.model.experts;
 let okSub = true, nSub = 0;
 for (let mask = 1; mask < (1 << E.length); mask++) {
   const ex = {};
   E.forEach((e, j) => { if (mask & (1 << j)) ex[e] = full[e]; });
-  const core = E.filter((e) => e !== "market" && e !== "engine").every((e) => e in ex);
+  // a trained pattern: all non-optional experts present, and optional groups all-in or all-out
+  const core = E.filter((e) => !OPT.includes(e)).every((e) => e in ex) &&
+    (prod.model.optional_groups || []).every((gr) => gr.every((e) => e in ex) || gr.every((e) => !(e in ex)));
   try { const r = prod.predict({ experts: ex, gate: g }); if (!(r.p > 0 && r.p < 1)) okSub = false; nSub++; }
   catch (err) { if (core) okSub = false; }
 }
 check("every trained availability pattern evaluates", okSub, nSub + " of " + ((1 << E.length) - 1) + " subsets evaluate");
 
 // an all-50% matchup is exactly 50%
-const even = prod.predict({ experts: { market: 0.5, engine: 0.5, elo: 0.5, ml: 0.5, feat_lr: 0.5 }, gate: g });
+const even = prod.predict({ experts: { market: 0.5, mkt_rating: 0.5, engine: 0.5, elo: 0.5, ml: 0.5, feat_lr: 0.5, elo_sig: 0.5 }, gate: g });
 check("all experts at 50% -> 50%", Math.abs(even.p - 0.5) < 1e-12, even.p);
 
 // weights sum to 1 and contributions add up to the logit
@@ -96,6 +99,7 @@ if (doc.feat) {
 }
 
 // helpers
+check("ratingProb symmetric", Math.abs(MoE.ratingProb(0.3, 0.5, -0.1, 0.7) + MoE.ratingProb(-0.1, 0.7, 0.3, 0.5) - 1) < 1e-12);
 check("eloProb symmetric", Math.abs(MoE.eloProb(1600, 1500) + MoE.eloProb(1500, 1600) - 1) < 1e-12);
 const pv = MoE.devig(-150, 130), pm = MoE.devig(-150, 130, "mult");
 check("devig -150/+130 near 58%", pv > 0.56 && pv < 0.60 && pm > 0.56 && pm < 0.60, "power " + pv.toFixed(4) + ", mult " + pm.toFixed(4));

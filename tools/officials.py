@@ -919,7 +919,7 @@ def design_fixed(df, kind):
     return X
 
 
-def glmm_fit(y, X, g, family, offset=None, tau=0.3, ref_levels=None, iters=50, ridge_b=1e-3):
+def glmm_fit(y, X, g, family, offset=None, tau=0.3, ref_levels=None, iters=50, ridge_b=1e-3, disp=1.0):
     """Random-intercept GLM by penalized Newton: eta = X b + u_g + offset, u ~ N(0, tau^2).
     family: 'binomial' or 'poisson'. The one-hot random-effect block is handled with group sums, so the
     Hessian is [X'WX, X'WZ; Z'WX, diag(Z'WZ) + 1/tau^2]. Returns beta, u per level with Laplace sds, loglik
@@ -957,7 +957,8 @@ def glmm_fit(y, X, g, family, offset=None, tau=0.3, ref_levels=None, iters=50, r
         else:
             mu = np.exp(np.clip(eta, -30, 30))
             W = mu
-        r = y - mu
+        r = (y - mu) / disp
+        W = W / disp
         gb = X.T @ r - ridge_b * beta
         Hbb = (X * W[:, None]).T @ X + ridge_b * np.eye(p)
         if use_re:
@@ -985,10 +986,10 @@ def glmm_fit(y, X, g, family, offset=None, tau=0.3, ref_levels=None, iters=50, r
         W = mu * (1 - mu)
     else:
         mu = np.exp(eta)
-        ll = float(np.sum(y * eta - mu))
-        W = mu
+        ll = float(np.sum(y * eta - mu)) / disp
+        W = mu / disp
     Hbb = (X * W[:, None]).T @ X + ridge_b * np.eye(p)
-    out = {"levels": levels, "tau": tau, "loglik": ll, "family": family, "cols": None, "beta": beta}
+    out = {"levels": levels, "tau": tau, "loglik": ll, "family": family, "cols": None, "beta": beta, "disp": disp}
     if use_re:
         Duu = np.bincount(gi_ok, weights=W[ok], minlength=G) + 1.0 / tau ** 2
         Hbu = np.zeros((p, G))
@@ -1071,6 +1072,15 @@ def ref_unit_frames(F, S):
 TAU_GRID = [0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8]
 
 
+def pearson_disp(y, X, g, fam, off):
+    """Quasi-Poisson dispersion from the fixed-effects fit (1 for binomial)."""
+    if fam != "poisson":
+        return 1.0
+    f = glmm_fit(y, X, g, fam, off, tau=0.0)
+    mu = glmm_predict(f, X, g, off)
+    return float(max(1.0, np.sum((y - mu) ** 2 / np.maximum(mu, 1e-9)) / max(1, len(y) - X.shape[1])))
+
+
 def ref_walkforward(units, tune=(2019, 2023), test_from=2024):
     """Tau per unit by held-out loss on 2019-2023 (fit before 2019); report 2024+ with yearly refits
     (fit on everything before each test year) with and without referee effects."""
@@ -1083,16 +1093,17 @@ def ref_walkforward(units, tune=(2019, 2023), test_from=2024):
         o = None if off is None else np.asarray(off, float)
         tr = yr < tune[0]
         va = (yr >= tune[0]) & (yr <= tune[1])
+        disp = pearson_disp(y[tr], Xa[tr], g[tr], fam, None if o is None else o[tr])
         losses = {}
         for tau in TAU_GRID:
-            f = glmm_fit(y[tr], Xa[tr], g[tr], fam, None if o is None else o[tr], tau=tau)
+            f = glmm_fit(y[tr], Xa[tr], g[tr], fam, None if o is None else o[tr], tau=tau, disp=disp)
             losses[tau] = float(unit_loss(f, y[va], Xa[va], g[va], None if o is None else o[va]).mean())
         tau_star = min(losses, key=losses.get)
         # Laplace marginal on the training window (< 2024) as a cross-check
         trn = yr < test_from
         lm = {}
         for tau in TAU_GRID[1:]:
-            f = glmm_fit(y[trn], Xa[trn], g[trn], fam, None if o is None else o[trn], tau=tau)
+            f = glmm_fit(y[trn], Xa[trn], g[trn], fam, None if o is None else o[trn], tau=tau, disp=disp)
             lm[tau] = f["log_marginal"]
         tau_lm = max(lm, key=lm.get)
         # test with yearly refits
@@ -1101,11 +1112,12 @@ def ref_walkforward(units, tune=(2019, 2023), test_from=2024):
             trw = yr < ty
             te = yr == ty
             f0 = glmm_fit(y[trw], Xa[trw], g[trw], fam, None if o is None else o[trw], tau=0.0)
-            f1 = glmm_fit(y[trw], Xa[trw], g[trw], fam, None if o is None else o[trw], tau=max(tau_star, 1e-9))
+            f1 = glmm_fit(y[trw], Xa[trw], g[trw], fam, None if o is None else o[trw], tau=max(tau_star, 1e-9),
+                          disp=disp)
             L0.append(unit_loss(f0, y[te], Xa[te], g[te], None if o is None else o[te]))
             L1.append(unit_loss(f1, y[te], Xa[te], g[te], None if o is None else o[te]))
         L0, L1 = np.concatenate(L0), np.concatenate(L1)
-        res[name] = {"n_units": int(len(y)), "events": float(y.sum()), "tau_tuned": tau_star,
+        res[name] = {"n_units": int(len(y)), "events": float(y.sum()), "tau_tuned": tau_star, "dispersion": disp,
                      "tune_loss": losses, "tau_laplace_pre2024": tau_lm,
                      "test_n": int(len(L0)), "test_events": float(y[yr >= test_from].sum()),
                      "test_loss_league": float(L0.mean()), "test_loss_ref": float(L1.mean()),
@@ -1120,8 +1132,10 @@ def ref_final(units, taus, min_show=15, deductions=None):
     out = {}
     for name, (df, y, X, off, fam) in units.items():
         tau = max(taus.get(name, 0.0), 0.0)
-        f = glmm_fit(np.asarray(y, float), X.to_numpy(float), df.referee.to_numpy(), fam,
-                     None if off is None else np.asarray(off, float), tau=max(tau, 1e-9))
+        ya, Xa, ga = np.asarray(y, float), X.to_numpy(float), df.referee.to_numpy()
+        oa = None if off is None else np.asarray(off, float)
+        disp = pearson_disp(ya, Xa, ga, fam, oa)
+        f = glmm_fit(ya, Xa, ga, fam, oa, tau=max(tau, 1e-9), disp=disp)
         f["cols"] = list(X.columns)
         # league reference rate (mean prediction with u = 0 over the recent era)
         rec = df.year.to_numpy() >= 2019

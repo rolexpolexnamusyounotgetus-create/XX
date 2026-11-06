@@ -3,9 +3,9 @@
   "name": "Paddy Pimblett",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Ranked #5 at lightweight after choking out Benoit Saint Denis in 52 seconds at UFC 329 (Jul 11, 2026). That win came six months after his first UFC loss, a five-round decision to Justin Gaethje for the interim title at UFC 324 (Jan 24, 2026). No fight is booked: he had stem-cell injections in his left hand in October 2026 and is aiming to return in early 2027. Ilia Topuria has named him as the opponent he wants in April 2027.",
+    "summary": "#5 at lightweight in both the UFC media-panel and Meta rankings after choking out Benoit Saint Denis in 52 seconds at UFC 329 (Jul 11, 2026). That win came six months after his first UFC loss, a five-round decision to Justin Gaethje for the interim title at UFC 324 (Jan 24, 2026). Pro record 24-4. No fight is booked: he had stem-cell injections in his left hand in October 2026 and is aiming to return in early 2027. Ilia Topuria said on Nov 5, 2026 that he wants Pimblett in April 2027; Dana White confirmed the UFC is working on Topuria's return but named no opponent, and The Sun called reports of a Pimblett booking unverified.",
     "title": null,
-    "ranking": "#5 UFC lightweight (UFC media rankings updated Nov 3, 2026, via ufcrankings.org; ufcalendar.com and Home of Fight also list #5)",
+    "ranking": "#5 UFC lightweight in the official media-panel rankings (updated Nov 3, 2026; ufcalendar.com, and ufcrankings.org on Nov 5) and #5 in the UFC's Meta algorithmic rankings (updated Oct 31, 2026, per ufcalendar.com)",
     "active": true,
     "next_fight": null,
     "injuries": [
@@ -26,9 +26,13 @@
       "https://bloodyelbow.com/2026/10/29/paddy-pimblett-reveals-injury-delay-when-prioritizing-justin-gaethje-rematch-over-ilia-topuria-feud/",
       "https://bloodyelbow.com/2026/11/05/ilia-topuria-claims-he-will-eat-sausage-paddy-pimblett-as-he-offers-ufc-return-update/",
       "https://nyfights.com/news/ilia-topuria-targets-paddy-pimblett/",
-      "https://ufcrankings.org/",
       "https://www.ufcalendar.com/rankings/lightweight",
-      "https://next-fight.com/en/fighter/paddy-pimblett"
+      "https://next-fight.com/en/fighter/paddy-pimblett",
+      "https://www.thesun.co.uk/sport/40922502/dana-white-ilia-topuria-next-fight-announcement-ufc-news/",
+      "https://www.espn.com/mma/fighter/_/id/4008549/paddy-pimblett",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4008549/overview (no upcoming fight; latest event UFC 329)",
+      "https://en.wikipedia.org/wiki/Paddy_Pimblett",
+      "https://ufcrankings.org/lightweight/"
     ]
   },
   "style": {
@@ -92,18 +96,21 @@
   },
   "appearance": {
     "build": "thick-set, heavy-framed lightweight: 5'10\" with a 73-inch reach (fighters.json); said he was 190 lb in the cage vs 156 lb at the UFC 329 weigh-in",
-    "hair": "blond, shaggy mop-top worn long; often braided tight to the head for fights (he explained why in Aug 2026); AgentMMA reported a new look without the braids in Jul 2026",
-    "facial_hair": "unknown",
+    "hair": "dirty-blond, shaggy hair with a long side-swept fringe when worn loose (ESPN headshot file dated Jul 9, 2026); for fights since Dec 2023 he braids it in tight cornrows to the nape (Wikipedia; UFC 329 photos, Jul 11, 2026). AgentMMA reported a look without braids in Jul 2026, but he fought UFC 329 braided",
+    "facial_hair": "light blond-brown stubble",
     "skin": "light",
-    "tattoos": "has said he deliberately has no tattoos (older interview); not re-confirmed for 2026",
-    "kit": "unknown",
+    "tattoos": "none: he says he deliberately has no tattoos (Wikipedia), and UFC 329 photos (Jul 2026) show none on his torso or arms",
+    "kit": "orange UFC shorts with a black waistband at UFC 329 (Jul 11, 2026)",
     "sources": [
-      "https://www.sportskeeda.com/mma/5-ufc-fighters-sport-wacky-hairstyles",
+      "https://a.espncdn.com/i/headshots/mma/players/full/4008549.png (ESPN headshot, file dated Jul 9, 2026)",
+      "https://www.espn.com/mma/story/_/id/49339995/ufc-329-paddy-pimblett-superstar-moment-benoit-saint-denis (lead photo: full-length, UFC 329 shorts)",
+      "https://sports.yahoo.com/articles/paddy-pimblett-quickly-submits-benoit-031630151.html (lead photo: braids at UFC 329)",
+      "https://en.wikipedia.org/wiki/Paddy_Pimblett (no tattoos; braids since Dec 2023)",
       "https://heavy.com/sports/ufc/paddy-pimblett-explains-braiding-his-hair/",
       "https://agentmma.com/news/86353-paddy-pimblett-ditches-his-braids-debuts-new-look",
-      "https://www.sportskeeda.com/mma/news-paddy-pimblett-said-will-bigger-conor-mcgregor",
       "https://heavy.com/sports/ufc/paddy-pimblett-reveals-weight-against-bsd/",
-      "data/derived/fighters.json"
+      "data/derived/fighters.json",
+      "no likeness sheet (data/likeness/paddy-pimblett.json does not exist)"
     ]
   },
   "engine_notes": [

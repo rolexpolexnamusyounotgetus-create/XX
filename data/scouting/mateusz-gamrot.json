@@ -3,24 +3,48 @@
   "name": "Mateusz Gamrot",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Active, coming off a loss. Quillan Salkilld submitted him with a rear-naked choke at 4:25 of round 1 in a UFC Fight Night main event in Las Vegas (Aug 8, 2026). Before that he submitted Esteban Ribovics with an arm-triangle at UFC 327 (Apr 11, 2026), and in Oct 2025 Charles Oliveira choked him out in Rio. He is 2-2 in his last four. UFC record 9-5 in fighters.json. No booking, current ranking or injury could be confirmed: web search was unavailable to the research pass and to the Nov 6, 2026 fact-check, and none of the project's other research files lists one. The Salkilld, Ribovics and Oliveira results were re-checked against fighters.json, the raw bout stats and the Salkilld and Oliveira dossiers' recap accounts.",
+    "summary": "Active, coming off a loss. Quillan Salkilld submitted him with a rear-naked choke at 4:25 of round 1 in the UFC Vegas 120 main event (Aug 8, 2026). Before that he submitted Esteban Ribovics with an arm-triangle at UFC 327 (Apr 11, 2026), and in Oct 2025 Charles Oliveira submitted him in Rio. He is 2-2 in his last four; pro record 26-5 (1 NC). On Sep 12, 2026 he also lost his opening-round match at the ADCC World Championships in Krakow to Elijah Dorsey (rear-naked choke). He is #10 in the UFC's media-panel rankings and #9 in its Meta rankings. No bout is announced: on Oct 26 he said he had accepted a UFC offer for the first quarter of 2027 without naming the opponent or date, and denied a rumoured January fight with Axel Sola; on Nov 5 he answered Tom Nolan's call-out with 'Bierzemy' ('we'll take it'). He says a cut on his nose from before the Salkilld fight keeps reopening.",
     "title": null,
-    "ranking": null,
+    "ranking": "#10 UFC lightweight in the official media-panel rankings (updated Nov 3, 2026; ufcalendar.com, and ufcrankings.org on Nov 5); #9 in the UFC's Meta algorithmic rankings (updated Oct 31, 2026, per ufcalendar.com)",
     "active": true,
     "next_fight": null,
-    "injuries": [],
+    "injuries": [
+      {
+        "what": "recurring cut on the nose, picked up before the Salkilld fight, that reopens with contact in training (his own account, Oct 2026)",
+        "when": "2026-10",
+        "source": "https://www.polsatsport.pl/wiadomosc/2026-10-26/mateusz-gamrot-poznal-date-kolejnej-walki-w-ufc-jest-cel-jest-motywacja/"
+      }
+    ],
     "sources": [
-      "data/derived/fighters.json (recent: 2026-08-08 L Salkilld RNC R1 4:25; 2026-04-11 W Ribovics arm triangle R2 4:19; 2025-10-11 L Oliveira RNC R2 2:48)",
-      "data/raw/ufc_event_details.csv (event names, dates and locations)",
-      "https://www.mmaweekly.com/news/quillan-salkilld-submits-mateusz-garrot-in-ufc-vegas-120-main-event (cited in data/scouting/quillan-salkilld.json; not re-fetched)",
-      "https://www.espn.com/mma/ufc/story/_/id/46567043/oliveira-submits-gamrot-storybook-homecoming-ko-loss (cited in data/scouting/charles-oliveira.json; not re-fetched)",
-      "https://www.cbssports.com/mma/news/ufc-fight-night-results-highlights-charles-oliveira-submits-mateusz-gamrot-in-raucous-homecoming-win (cited in data/scouting/charles-oliveira.json; not re-fetched)"
+      "https://www.polsatsport.pl/wiadomosc/2026-10-26/mateusz-gamrot-poznal-date-kolejnej-walki-w-ufc-jest-cel-jest-motywacja/",
+      "https://www.lowking.pl/walka-wieczoru-ufc-fight-night-w-styczniu-z-axelem-sola-mateusz-gamrot-jednoznacznie-chcialbym-zdementowac-plotki/",
+      "https://www.lowking.pl/konkretnie-mateusz-gamrot-zareagowal-na-wyzwanie-ze-strony-toma-nolana/",
+      "https://www.sherdog.com/news/news/Tom-Nolan-eyes-Mateusz-Gamrot-after-Moicano-win-wants-tougher-test-203444",
+      "https://sports.yahoo.com/articles/elijah-dorsey-submits-ufc-veteran-114511115.html",
+      "https://heavy.com/sports/ufc/mateusz-gamrot-statement-ufc-vegas-120/",
+      "https://sports.yahoo.com/articles/quillan-salkilld-submits-mateusz-gamrot-023732640.html",
+      "https://www.espn.com/mma/fighter/_/id/3068125/mateusz-gamrot",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/3068125/overview (no upcoming fight; latest event UFC Vegas 120)",
+      "https://en.wikipedia.org/wiki/Mateusz_Gamrot",
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/rankings/lightweight",
+      "data/derived/fighters.json (recent: 2026-08-08 L Salkilld RNC R1 4:25; 2026-04-11 W Ribovics arm triangle R2 4:19; 2025-10-11 L Oliveira RNC R2 2:48)"
     ]
   },
   "style": {
     "archetype": "wrestler",
     "stance": "southpaw",
-    "tags": ["chain-wrestling", "top-control", "ground-and-pound", "scrambles", "submissions", "pressure", "cardio", "southpaw", "durable"],
+    "tags": [
+      "chain-wrestling",
+      "top-control",
+      "ground-and-pound",
+      "scrambles",
+      "submissions",
+      "pressure",
+      "cardio",
+      "southpaw",
+      "durable"
+    ],
     "signature": [
       "high-volume takedown chains: 13.3 attempts per 15 min over his UFC career (lightweight median about 3.6); 11 of 19 against Rafael Dos Anjos at UFC 299",
       "long top control: 32% of fight time over his career, 8:45 against Ludovit Klein and 7:01 against Dos Anjos",
@@ -29,7 +53,7 @@
       "ground strikes from top: 24% of his landed significant strikes come on the ground (recency-weighted)"
     ],
     "weaknesses": [
-      "back exposure in scrambles: rear-naked choke losses to Charles Oliveira (R2, Oct 2025) and Quillan Salkilld (R1, Aug 2026)",
+      "back exposure in scrambles: rear-naked choke losses to Charles Oliveira (R2, Oct 2025; UFC Stats lists an RNC, Wikipedia a face crank) and Quillan Salkilld (R1, Aug 2026), and an RNC loss to Elijah Dorsey at ADCC 2026 (grappling, Sep 2026)",
       "low standing output: 3.1 significant strikes landed per minute over his career vs a lightweight median of about 4.1",
       "gets dropped: 5 knockdowns absorbed in 159.5 UFC minutes (0.47 per 15 min vs a median of about 0.24), though never stopped by strikes",
       "takedown accuracy only 38%: Beneil Dariush stopped 15 of his 19 attempts (UFC 280)",
@@ -40,33 +64,62 @@
       "data/derived/fighters.json (career C and recency-weighted S sums; lightweight medians computed over 120 lightweights with 30+ UFC minutes)",
       "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (UFC 280, 299, 305, 327 and 2021-2026 bout stats and methods)",
       "https://mmasucka.com/game-over-how-beneil-dariush-shut-down-mateusz-gamrot/ (cited in data/scouting/beneil-dariush.json; not re-fetched)",
-      "https://en.wikipedia.org/wiki/Mateusz_Gamrot (reference page; could not be fetched in this pass)"
+      "https://en.wikipedia.org/wiki/Mateusz_Gamrot",
+      "https://sports.yahoo.com/articles/elijah-dorsey-submits-ufc-veteran-114511115.html"
     ]
   },
   "moves": {
-    "jab": 0.28, "cross": 0.3, "hook": 0.2, "overhand": 0.1, "upper": 0.08, "headkick": 0.04,
-    "bodykick": 0.4, "bodyhook": 0.3, "bodystraight": 0.3,
-    "calf": 0.5, "inside": 0.5, "spinning": 0.0, "knee": 0.15, "elbow": 0.05,
+    "jab": 0.28,
+    "cross": 0.3,
+    "hook": 0.2,
+    "overhand": 0.1,
+    "upper": 0.08,
+    "headkick": 0.04,
+    "bodykick": 0.4,
+    "bodyhook": 0.3,
+    "bodystraight": 0.3,
+    "calf": 0.5,
+    "inside": 0.5,
+    "spinning": 0.0,
+    "knee": 0.15,
+    "elbow": 0.05,
     "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json: recency-weighted landed shares are head 0.80 / body 0.13 / leg 0.07 and attempt shares are head 0.87 / body 0.09 / leg 0.04 (career landed 0.77 / 0.14 / 0.10). About a quarter of his recent landed strikes are ground strikes, which these standing weights do not cover. No published punch-by-punch breakdown could be fetched in this pass, so the head group is a generic straight-punch-first spread (with his southpaw listing the 'cross' is the rear left hand), with overhands, uppercuts and head kicks minor. UFC Stats does not split body or leg strikes into punches and kicks, so body weights are near even and calf/inside are split evenly. His landed leg strikes are few (5 of 5 vs Klein, 9 of 9 vs Turner, 14 of 15 vs Holtzman). Spinning is 0: none of his finishes used one. Knee is 0.15 for the ground-knee TKO of Ferreira; elbow is 0.05. These weights are analyst judgment from the bout stats above."
   },
   "appearance": {
-    "build": "lightweight whose reach equals his height: 5'10\" with a 70-inch reach (fighters.json); no written description of his build was found",
-    "hair": "unknown (no written description found; photos could not be checked in this pass)",
-    "facial_hair": "unknown",
+    "build": "lightweight whose reach equals his height: 5'10\" with a 70-inch reach (fighters.json); compact and muscular in 2026 photos",
+    "hair": "very short, buzzed dark brown hair (ESPN headshot file dated Aug 7, 2026; Getty fight photo, Aug 2026)",
+    "facial_hair": "short to medium dark brown beard, neatly trimmed (2026 photos)",
     "skin": "light",
-    "tattoos": "none confirmed",
-    "kit": "unknown",
+    "tattoos": "none visible on his face, neck, chest or shoulders in his Aug 2026 ESPN headshot and fight photo; arms, back and legs not checked",
+    "kit": "unconfirmed: no full-length 2026 fight photo was checked (the sim uses corner colour)",
     "sources": [
+      "https://a.espncdn.com/i/headshots/mma/players/full/3068125.png (ESPN headshot, file dated Aug 7, 2026)",
+      "https://heavy.com/sports/ufc/mateusz-gamrot-statement-ufc-vegas-120/ (lead Getty photo, Aug 2026)",
       "data/derived/fighters.json (height, reach)",
-      "skin: unverified recall of widely published fight photos; not checked against a dated photo (web access unavailable in the research pass and the fact-check)"
+      "no likeness sheet (data/likeness/mateusz-gamrot.json does not exist)"
     ]
   },
   "engine_notes": [
-    { "note": "Takedown volume is the core skill: 13.3 attempts per 15 min career at 38% (5.1 landed per 15; lightweight medians about 3.6 attempted and 1.2 landed), 11.8 attempts at 42% recency-weighted.", "source": "data/derived/fighters.json (C and S sums)" },
-    { "note": "Top-control share: 285 control seconds per 15 min career and 332 recency-weighted (32-37% of fight time; median about 17%). Opponents control him only 7-10% of the time.", "source": "data/derived/fighters.json" },
-    { "note": "Knocked down 5 times in 159.5 minutes (Kutateladze, Tsarukyan, Dariush, Turner, Dos Anjos; 0.47 per 15) but 0 KO/TKO losses in 14 UFC fights, so knockdowns should not convert into finishes at the usual rate.", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv" },
-    { "note": "Submission risk comes from scrambles rather than off his back: both submission losses were rear-naked chokes after the opponent took his back (Oliveira R2 2:48, Salkilld R1 4:25).", "source": "data/derived/fighters.json (recent); https://www.mmaweekly.com/news/quillan-salkilld-submits-mateusz-garrot-in-ufc-vegas-120-main-event" },
-    { "note": "Five-round pace evidence is thin: the pace curve (1.00 / 2.45 / 2.68 / 1.74 / 2.68) shows output rising after round 1, but rounds 3-5 rest on one fight (Tsarukyan, 2022). Treat late-round claims as uncertain.", "source": "data/derived/fighters.json (pace, pace_w)" }
+    {
+      "note": "Takedown volume is the core skill: 13.3 attempts per 15 min career at 38% (5.1 landed per 15; lightweight medians about 3.6 attempted and 1.2 landed), 11.8 attempts at 42% recency-weighted.",
+      "source": "data/derived/fighters.json (C and S sums)"
+    },
+    {
+      "note": "Top-control share: 285 control seconds per 15 min career and 332 recency-weighted (32-37% of fight time; median about 17%). Opponents control him only 7-10% of the time.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Knocked down 5 times in 159.5 minutes (Kutateladze, Tsarukyan, Dariush, Turner, Dos Anjos; 0.47 per 15) but 0 KO/TKO losses in 14 UFC fights, so knockdowns should not convert into finishes at the usual rate.",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv"
+    },
+    {
+      "note": "Submission risk comes from scrambles rather than off his back: both MMA submission losses came after the opponent took his back (Oliveira R2 2:48, Salkilld R1 4:25), and Elijah Dorsey also took his back and choked him in the first round of ADCC 2026 (Sep 12, 2026).",
+      "source": "data/derived/fighters.json (recent); https://sports.yahoo.com/articles/quillan-salkilld-submits-mateusz-gamrot-023732640.html; https://sports.yahoo.com/articles/elijah-dorsey-submits-ufc-veteran-114511115.html"
+    },
+    {
+      "note": "Five-round pace evidence is thin: the pace curve (1.00 / 2.45 / 2.68 / 1.74 / 2.68) shows output rising after round 1, but rounds 3-5 rest on one fight (Tsarukyan, 2022). Treat late-round claims as uncertain.",
+      "source": "data/derived/fighters.json (pace, pace_w)"
+    }
   ],
   "confidence": "medium"
 }

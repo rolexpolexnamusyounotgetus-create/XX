@@ -7,7 +7,7 @@ Run from the project root:
     python3 tools/ml.py --quick         # smaller GBM search (for development)
     python3 tools/ml.py --no-cache      # rebuild the feature table instead of reusing the scratch cache
     python3 tools/ml.py --stage2        # redo stacking / 7-bin / evaluation / export from cached stage-1 fits
-    python3 tools/ml.py --jobs 3        # worker processes for the tree searches (default 3)
+    python3 tools/ml.py --jobs 4        # worker processes for the tree searches (default 4)
 
 Needs Python 3 with numpy, pandas, scipy, scikit-learn, lightgbm and xgboost. Full run about 30-60 minutes on a
 busy 4-core box (BLAS is pinned to one thread; tree searches use --jobs workers). Caches live in out/ml_cache/.
@@ -1643,8 +1643,9 @@ def seven(R):
         log("direct 7-bin LightGBM rounds %d cv %.5f" % (checks7[j], mean[j]))
 
     # -- walk-forward predictions: OOF years (annual expanding) + frozen test fit
+    rec_key = "stack:" + R["stacking"]["recommended_pre_line"] if "stacking" in R else None
     S = {k: np.full((n, 7), np.nan) for k in ("base", "elo", "lr_fact", "ml_fact", "gbm_fact", "mlgbm_fact",
-                                               "direct_lr", "direct_lgb")}
+                                               "direct_lr", "direct_lgb", "stack_fact")}
     MA_lr = np.full((n, 3), np.nan)
     MB_lr = np.full((n, 3), np.nan)
     pD_by = {}
@@ -1667,6 +1668,8 @@ def seven(R):
         gA, gB = mg.predict(XAG[teY]), mg.predict(XBG[teY])
         S["gbm_fact"][teY] = assemble7(P["lgb"][teY], gA, gB, pD)
         S["mlgbm_fact"][teY] = assemble7(P["ml"][teY], gA, gB, pD)
+        if rec_key in P:
+            S["stack_fact"][teY] = assemble7(P[rec_key][teY], MA_lr[teY], MB_lr[teY], pD)
         md = SoftmaxLR(d_best["C"]).fit(np.vstack([D0[tr7], D1[tr7]]),
                                         np.r_[k7[tr7], MIRROR7[k7[tr7].astype(int)]].astype(int))
         S["direct_lr"][teY] = 0.5 * (md.predict(D0[teY], 7) + md.predict(D1[teY], 7)[:, MIRROR7])
@@ -1680,6 +1683,8 @@ def seven(R):
     S["ens_fact"] = 0.5 * (S["ml_fact"] + S["mlgbm_fact"])
     if not dg_best:
         del S["direct_lgb"]
+    if rec_key not in P:
+        del S["stack_fact"]
     # evaluation sets
     ev_o = C["oof"] & v7 & df["in_bt"].to_numpy()
     ev_t = C["test"] & v7 & df["in_bt"].to_numpy()
@@ -1719,8 +1724,9 @@ def seven(R):
         out["market_test"] = {"n": int(have.sum()), "market_ll7": round(ll7(MM, kk), 5),
                               best_k: round(ll7(S[best_k][have], kk), 5), "base": round(ll7(S["base"][have], kk), 5),
                               "elo": round(ll7(S["elo"][have], kk), 5)}
-        for k in ("ml_fact", "mlgbm_fact", "direct_lr", "ens"):
-            out["market_test"][k] = round(ll7(S[k][have], kk), 5)
+        for k in ("ml_fact", "mlgbm_fact", "direct_lr", "ens", "stack_fact"):
+            if k in S:
+                out["market_test"][k] = round(ll7(S[k][have], kk), 5)
         # does the model add to the market? 50/50 log-linear pool
         pool = np.exp(0.5 * np.log(np.clip(MM, 1e-6, 1)) + 0.5 * np.log(np.clip(S[best_k][have], 1e-6, 1)))
         out["market_test"]["pool_50_50"] = round(ll7(pool / pool.sum(1, keepdims=True), kk), 5)
@@ -2121,6 +2127,25 @@ def page_predict(model, roster, sa, sb, fight):
     return pA, bins
 
 
+def page_stack(model, roster, sa, sb, fight):
+    """Product stack on the page: Elo + raw logistic (+ market rating when both fighters have one)."""
+    snap = model["snapshot"]
+    a = page_sides(roster[sa], fight["date"], fight["lbs"], snap)
+    b = page_sides(roster[sb], fight["date"], fight["lbs"], snap)
+    lg = lambda p: math.log(min(max(p, 1e-4), 1 - 1e-4) / (1 - min(max(p, 1e-4), 1 - 1e-4)))
+    p_lr = 1 / (1 + math.exp(-eval_terms(model["winner"]["terms"], a, b)))
+    p_elo = 1 / (1 + 10 ** ((b["elo"] - a["elo"]) / 400))
+    have = a.get("mr_mu") is not None and b.get("mr_mu") is not None
+    st = model["stack"].get("elo+lr+mkt_rating" if have else "elo+lr")
+    if not st:
+        return None, p_lr, p_elo, None
+    p_mr = (1 / (1 + math.exp(-(a["mr_mu"] - b["mr_mu"]) / math.sqrt(1 + math.pi * (a["mr_sd"] ** 2 + b["mr_sd"] ** 2) / 8)))
+            if have else None)
+    inp = {"elo": p_elo, "lr": p_lr, "mkt_rating": p_mr}
+    z = sum(w * lg(inp[k]) for k, w in zip(st["inputs"], st["weights"]))
+    return 1 / (1 + math.exp(-z)), p_lr, p_elo, p_mr
+
+
 def page_model(R):
     C, P = R["_ctx"], R["_P"]
     df, X, y, dec, years = C["df"], C["X"], C["y"], C["dec"], C["years"]
@@ -2221,14 +2246,18 @@ def page_model(R):
                      "women": 1.0 if sa in ("valentina-shevchenko",) else 0.0}
             pA, bins = page_predict(model, roster, sa, sb, fight)
             pB, binsB = page_predict(model, roster, sb, sa, fight)
+            ps, p_lr, p_elo, p_mr = page_stack(model, roster, sa, sb, fight)
             examples.append({"A": sa, "B": sb, "fight": fight, "pA": round(pA, 4), "bins": [round(v, 4) for v in bins],
+                             "p_lr_raw": round(p_lr, 4), "p_elo": round(p_elo, 4),
+                             "p_mkt_rating": None if p_mr is None else round(p_mr, 4),
+                             "p_stack": None if ps is None else round(ps, 4),
                              "check_swap_pA_plus_pB": round(pA + pB, 6)})
     model["test_vectors"] = examples
     R["page_model"] = model
     R["roster_out"] = roster
     log("page model: %d terms, %d roster fighters, selfcheck %.2e; examples: %s"
         % (len(terms), len(roster), model["selfcheck_max_abs_logit_diff"],
-           "; ".join("%s-%s %.3f" % (e["A"], e["B"], e["pA"]) for e in examples)))
+           "; ".join("%s-%s %.3f (stack %s)" % (e["A"], e["B"], e["pA"], e["p_stack"]) for e in examples)))
 
 
 def clean_json(o):

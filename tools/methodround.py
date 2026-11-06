@@ -1839,3 +1839,301 @@ def roster_outputs(D, w, args):
                 "A_finish_round": _r((P[0, I_XKO:I_XKO + 5] + P[0, I_XSUB:I_XSUB + 5]), 4),
                 "B_finish_round": _r((P[0, I_YKO:I_YKO + 5] + P[0, I_YSUB:I_YSUB + 5]), 4)}
     return roster, matchups
+
+
+# ============================================================== 11. report
+def _ci(d, k=4):
+    if not d:
+        return "n/a"
+    return ("%%.%df [%%.%df, %%.%df]" % (k, k, k)) % (d["mean"], d["ci95"][0], d["ci95"][1])
+
+
+def _dci(d, k=4):
+    if not d:
+        return "n/a"
+    return ("%%+.%df [%%+.%df, %%+.%df]" % (k, k, k)) % (d["diff"], d["ci95"][0], d["ci95"][1])
+
+
+def _md_table(head, rows):
+    out = ["| " + " | ".join(head) + " |", "|" + "|".join("---" for _ in head) + "|"]
+    out += ["| " + " | ".join(str(c) for c in r) + " |" for r in rows]
+    return "\n".join(out)
+
+
+def write_report(o):
+    te = o["test"]
+    mt = te["metrics"]
+    ch = o["meta"]["chosen"]
+    names = {"base_division_raw": "Division x format base rates (raw 5-yr window)",
+             "base_division": "Division x format base rates (shrunk to all-division, k=50)",
+             "base_division_elo": "Base rates x Elo winner split",
+             "S": "**Model S** (stats only, frozen fit through 2023)", "S_refit": "Model S, yearly refit",
+             "SM": "**Model SM** (stats + closing moneyline, frozen)", "SM_refit": "Model SM, yearly refit"}
+    met_cols = [("method3", "Method 3-class LL"), ("finish", "Finish vs decision LL"), ("bin7", "7-bin LL"),
+                ("method_round", "Method x round LL"), ("joint", "Who x how x when LL"),
+                ("round_given_fin", "Round given finish LL"), ("ko_vs_sub", "KO vs SUB given finish LL"),
+                ("winner", "Winner LL"), ("winner_acc", "Winner accuracy")]
+    L = []
+    L.append("# Method-and-round model (methodround)\n")
+    L.append("Built %s by `tools/methodround.py` from the ufcstats snapshot through %s. Outputs: "
+             "`data/derived/methodround.json` (per-fight predictions keyed by backtest fight id, held-out metrics, "
+             "roster outputs keyed by slug, compact JS model), `tools/methodround_model.js` (evaluator). "
+             "This is the benchmark the simulator's method-and-round distribution has to match or beat.\n"
+             % (o["meta"]["built"][:16].replace("T", " ") + " UTC", o["meta"]["snapshot"]))
+    L.append("## Bottom line\n")
+    s, b, be = mt["S"], mt["base_division"], mt["base_division_elo"]
+    pdx = te["paired"]["S_minus_base_division"]
+    L.append("- Held out on %d UFC fights from Jan 1, 2024 to %s (draws kept as their own cell; DQ and no-contests "
+             "dropped), never used for any choice. Confidence intervals are 95%% event-cluster bootstrap (2,000 draws)."
+             % (te["n"], te["period"][1]))
+    L.append("- **Method (KO/TKO, submission, decision):** model S log loss %s vs %s for division base rates; "
+             "difference %s. Finish-vs-decision %s vs %s." % (_ci(s["method3"]), _ci(b["method3"]),
+                                                             _dci(pdx.get("method3")), _ci(s["finish"]),
+                                                             _ci(b["finish"])))
+    L.append("- **Who wins how (7 bins):** %s vs %s (base rates x Elo); **who x how x when** (every round cell): "
+             "%s vs %s." % (_ci(s["bin7"]), _ci(be["bin7"]), _ci(s["joint"]), _ci(be["joint"])))
+    L.append("- **Winner** (a by-product): %s log loss, %.1f%% accuracy, vs Elo %s." % (
+        _ci(s["winner"]), 100 * s["winner_acc"]["mean"], _ci(be["winner"])))
+    sm = te["market_subset"]
+    if sm["n"]:
+        mm = sm["metrics"]
+        L.append("- **Against the betting market's own method props** (%d held-out fights with US-book method and "
+                 "round props): market method LL %s, model SM %s, model S %s; the %.0f/%.0f blend of SM and the "
+                 "market %s (blend weight chosen on 2021-2023)." % (
+                     sm["n"], _ci(mm["market_props"]["method3"]), _ci(mm["SM"]["method3"]),
+                     _ci(mm["S"]["method3"]), 100 * (1 - ch["a_market"]), 100 * ch["a_market"],
+                     _ci(mm["SM_market_blend"]["method3"])))
+    L.append("")
+    L.append("## Held-out results (2024+)\n")
+    rows = []
+    for k in ("base_division_raw", "base_division", "base_division_elo", "S", "S_refit", "SM", "SM_refit"):
+        r = [names[k]]
+        for mkey, _ in met_cols:
+            d = mt[k].get(mkey)
+            r.append(("%.1f%%" % (100 * d["mean"])) if mkey == "winner_acc" else (("%.4f" % d["mean"]) if d else ""))
+        rows.append(r)
+    L.append(_md_table(["Model"] + [c[1] for c in met_cols], rows))
+    L.append("\nLower is better for every log loss (LL). Joint = the full outcome space (A or B, KO/TKO or "
+             "submission, in round r; decision winner; draw). Brier for the 3-class method: S %.4f, base %.4f.\n"
+             % (mt["S"]["method3_brier"]["mean"], mt["base_division"]["method3_brier"]["mean"]))
+    L.append("**95% CIs and paired differences (event-cluster bootstrap):**\n")
+    rows = []
+    for k in ("base_division", "base_division_elo", "S", "SM"):
+        rows.append([names[k], _ci(mt[k]["method3"]), _ci(mt[k]["finish"]), _ci(mt[k]["bin7"]),
+                     _ci(mt[k]["joint"]), _ci(mt[k]["winner"])])
+    L.append(_md_table(["Model", "Method LL", "Finish LL", "7-bin LL", "Joint LL", "Winner LL"], rows))
+    L.append("")
+    rows = []
+    for k, lab in (("S_minus_base_division", "S - division base rates"),
+                   ("S_minus_base_division_elo", "S - base rates x Elo"),
+                   ("SM_minus_S", "SM - S"), ("S_refit_minus_S", "S yearly refit - S frozen"),
+                   ("SM_minus_base_division_elo", "SM - base rates x Elo")):
+        pdd = te["paired"][k]
+        rows.append([lab] + [_dci(pdd.get(m)) for m in ("method3", "finish", "bin7", "joint", "round_given_fin",
+                                                       "winner")])
+    L.append(_md_table(["Paired difference", "Method", "Finish", "7-bin", "Joint", "Round | finish", "Winner"], rows))
+    L.append("\nNegative = the first model is better. The differences are on the same fights, so their CIs are "
+             "much tighter than the CIs of the levels.\n")
+    if sm["n"]:
+        L.append("### Versus the market's method and round props\n")
+        mm = sm["metrics"]
+        rows = []
+        for k, lab in (("base_division_elo", "Base rates x Elo"), ("S", "Model S"), ("SM", "Model SM"),
+                       ("market_props", "Market props (US books, power de-vig, averaged)"),
+                       ("SM_market_blend", "SM + market blend (a=%.1f)" % ch["a_market"]),
+                       ("SM_refit_market_blend", "SM refit + market blend")):
+            rows.append([lab] + [_ci(mm[k].get(m)) for m in ("method3", "finish", "ko_vs_sub", "round_given_fin",
+                                                             "bin7", "joint", "winner")])
+        L.append(_md_table(["Model", "Method", "Finish", "KO vs SUB", "Round | finish", "7-bin", "Joint", "Winner"],
+                           rows))
+        L.append("")
+        rows = []
+        for k, lab in (("SM_minus_market", "SM - market"), ("S_minus_market", "S - market"),
+                       ("blend_minus_market", "blend - market"), ("blend_minus_SM", "blend - SM")):
+            pdd = sm["paired"][k]
+            rows.append([lab] + [_dci(pdd.get(m)) for m in ("method3", "finish", "ko_vs_sub", "round_given_fin",
+                                                           "bin7", "joint")])
+        L.append(_md_table(["Paired difference", "Method", "Finish", "KO vs SUB", "Round | finish", "7-bin",
+                            "Joint"], rows))
+        L.append("\nThe market props come from `data/derived/market.json` (tools/market.py): per-book closing "
+                 "\"wins by KO/TKO / submission / decision\" prices, power-normalised and averaged over US books, "
+                 "spread over rounds with the books' \"fight ends in round k\" props. They exist from 2021 on.\n")
+    L.append("## Calibration (held out, model S)\n")
+    cs = te["calibration"]["S"]
+    rows = []
+    for k in ("KO", "SUB", "DEC", "FINISH", "win_KO", "win_SUB", "win_DEC"):
+        c = cs[k]
+        rows.append([k, c["n"], "%.3f" % c["mean_pred"], "%.3f" % c["mean_obs"], "%.3f" % c["ece"],
+                     "%.2f" % c["slope"], "%.2f" % c["intercept"]])
+    L.append(_md_table(["Event", "n", "Mean predicted", "Observed", "ECE", "Slope", "Intercept"], rows))
+    L.append("\nSlope = logistic recalibration slope of the outcome on logit(p) (1 = calibrated, < 1 = "
+             "overconfident). win_* pool both corners (two rows per fight).\n")
+    for k in ("KO", "SUB", "DEC"):
+        c = cs[k]
+        L.append("**P(%s) by decile:** " % k + "; ".join("%.2f→%.2f (n=%d)" % (r["pred"], r["obs"], r["n"])
+                                                        for r in c["bins"]) + "\n")
+    br = cs["by_round"]
+    for key, v in br.items():
+        rows = [[r["round"], "%.3f" % r["pred_ko"], "%.3f" % r["obs_ko"], "%.3f" % r["pred_sub"], "%.3f" % r["obs_sub"]]
+                for r in v["rounds"]]
+        rows.append(["decision", "%.3f" % v["pred_dec"], "%.3f" % v["obs_dec"], "", ""])
+        L.append("**Finishing round, %s bouts (n=%d)**\n" % (key.replace("_", " "), v["n"]))
+        L.append(_md_table(["Round", "P(KO) pred", "KO obs", "P(SUB) pred", "SUB obs"], rows))
+        L.append("")
+    L.append("## By division and format (held out)\n")
+    rows = [[d["division"], d["n"], "%.2f/%.2f/%.2f" % (d["pred_ko"], d["pred_sub"], d["pred_dec"]),
+             "%.2f/%.2f/%.2f" % (d["obs_ko"], d["obs_sub"], d["obs_dec"]), "%.4f" % d["method3_S"],
+             "%.4f" % d["method3_base"], "%.4f" % d["joint_S"], "%.4f" % d["joint_base"]] for d in te["by_division"]]
+    L.append(_md_table(["Division", "n", "Pred KO/SUB/DEC", "Obs KO/SUB/DEC", "Method LL S", "Method LL base",
+                        "Joint LL S", "Joint LL base"], rows))
+    L.append("")
+    rows = []
+    for r in te["by_format"]:
+        rows.append(["%d rounds" % r["rounds"], r["n"]] + ["%.4f / %.4f" % (r["S"][k], r["base_division"][k])
+                                                           for k in ("method3", "finish", "round_given_fin", "joint")])
+    L.append(_md_table(["Format", "n", "Method S/base", "Finish S/base", "Round|fin S/base", "Joint S/base"], rows))
+    L.append("")
+    rows = [[r["year"], r["n"], "%.4f" % r["S"]["method3"], "%.4f" % r["S_refit"]["method3"],
+             "%.4f" % r["SM"]["method3"], "%.4f" % r["base_division"]["method3"], "%.4f" % r["S"]["joint"],
+             "%.4f" % r["base_division"]["joint"]] for r in te["by_year"]]
+    L.append(_md_table(["Year", "n", "Method S", "Method S refit", "Method SM", "Method base", "Joint S",
+                        "Joint base"], rows))
+    L.append("")
+    L.append("## Method\n")
+    L.append("""**Data.** Every UFC bout in the ufcstats snapshot, parsed with `tools/build_db.py`'s own loaders so
+people, aliases and Elo match the pipeline. A walk-forward pass over all %d bouts since 2008 (both fighters with an
+earlier UFC bout) snapshots each fighter before every fight: the 730-day decayed sums `S` (identical to
+backtest.json, checked to 5e-4 relative), career sums `C`, the career record by method over every bout (also bouts
+without round stats), finishing-time tendencies, last result, streak, layoff, age, pre-fight Elo, mean opponent
+Elo and physicals. Same-day bouts never see each other. Division priors come from the five calendar years before
+the fight's year (`build_db.build_priors`), the same rule as `backtest.json` `priors_asof`.
+
+**Outcome space.** {A, B} x {KO/TKO, submission} x round 1..R, plus A by decision, B by decision and draw (R = 3 or
+5 scheduled rounds). KO/TKO includes doctor and corner stoppages. Every reported target is a marginal of this joint.
+
+**Features (%d, all pre-fight).** Per side, shrunk toward the bout's division prior (pseudo-exposure: %s fights for
+per-fight result rates, %s minutes for per-minute rates, %s landed head strikes for knockdown power and chin, %s
+attempts for accuracies, %s submission attempts for conversion): KO/sub wins and losses per fight and per 15
+minutes, decision share, knockdowns scored/absorbed per 15, KD per landed head strike (power) and absorbed per head
+strike taken (chin), strikes landed/absorbed, accuracy and defence, takedowns landed/absorbed, takedown accuracy
+and defence, control share both ways, ground strikes both ways, submission attempts both ways, submission
+conversion and defence, minutes per fight; the same finishing and grappling rates from undecayed career sums;
+career record rates; mean minute and round-1 share of his finishes / finished losses; age, years past 30,
+experience, KO losses, knockdowns absorbed (career), KO losses x age, layoff, last-fight KO loss, streak.
+Matchup terms: log5-style attacker x defender intensities (KO hazard, sub hazard, KD rate, KD power vs chin,
+strike volume, takedowns, control, ground strikes, sub attempts, sub conversion), symmetric fight-length
+tendencies, Elo difference and its absolute value, height/reach/age differences, open stance; fight terms:
+division weight, heavyweight, women, 5 rounds, title, catch weight, year, and the division's prior KO/sub rates and
+minutes per fight. SM adds the closing-line log-odds (power de-vig) and its absolute value.
+
+**Models.**
+1. *Who-and-how:* a multinomial logit over six outcomes (A KO, A SUB, A DEC, B DEC, B SUB, B KO) with an L2
+   penalty on standardized coefficients (C = %s for S, %s for SM, per-observation scale), recency weights
+   (half-life %d years), trained on 2012+ (S) / 2013+ (SM) fights. Every fight is used in both orientations and
+   predictions average the two, so the A/B corner (A wins 56%%) never leaks and swapping fighters swaps the
+   probabilities exactly. SM replaces the six-class model's winner share with a separate symmetric winner logit
+   (C = %s) and keeps its method-given-winner shares.
+2. *When:* a discrete-time competing-risks model: per round, a multinomial logit over {no finish, A KO, A SUB, B KO,
+   B SUB} with separate unpenalized baseline hazards for each round of 3- and 5-round bouts and 37 shared
+   finishing-tendency features (C = %s), trained on 2008+ fight-rounds in both orientations; a symmetric logit
+   picks the decision winner. Its conditional round shapes (P(round r | A KO), ...) spread the six-class
+   probabilities over rounds; a draw takes %.2f%% of the decision mass.
+3. *Market blend (live only):* when US-book method props exist, (1 - a) x SM + a x market joint, a = %.1f chosen on
+   2021-2023.
+
+**What did not earn a place (tuning-period CV, 2020-2023 validation years):** LightGBM six-class models
+(method LL about 0.008 worse than the logit; a 30%% blend gained 0.001 joint LL, not worth the opacity or the
+page size); a post-hoc temperature + per-method bias recalibration (no gain under leave-one-year-out); shorter
+recency half-lives (3-4 years slightly worse); training from 2008 (slightly worse than 2012 for the six-class
+model); a factorized winner x method-given-winner model (better winner, worse method; its winner part is reused
+in SM). Feature-group ablations: grappling, submission, fight-length tendencies and division terms carry the
+method signal; striking volume, age/experience and Elo carry the winner signal; recent-form and durability
+groups are roughly neutral for method (kept for the winner and for the page).
+
+**Tuning (expanding window, validation years 2020-2023):**
+""" % (o["meta"]["n_fights_table"], len(o["js_model"]["c6"]["S"]["cols"]), SHRINK["k_fight"], SHRINK["k_min"],
+       SHRINK["k_head"], SHRINK["k_att"], SHRINK["k_sub"], ch["C6_S"], ch["C6_SM"], HL_YEARS, ch["C_win"],
+       ch["C_haz"], 100 * o["js_model"]["draw_c"], ch["a_market"]))
+    cv = o["tuning"]["cv"]
+    rows = [["S", "C6=%g" % r["C6"], "%.4f" % r["method3"], "%.4f" % r["joint"], "%.4f" % r["winner"]] for r in cv["S"]]
+    rows += [["SM", "C6=%g, C_win=%g" % (r["C6"], r["C_win"]), "%.4f" % r["method3"], "%.4f" % r["joint"],
+              "%.4f" % r["winner"]] for r in cv["SM"]]
+    rows += [["hazard", "C_haz=%g" % r["C_haz"], "%.4f" % r["method3"], "%.4f" % r["joint"],
+              "rgf %.4f" % r["round_given_fin"]] for r in cv["hazard"]]
+    L.append(_md_table(["Part", "Setting", "Method LL", "Joint LL", "Winner LL"], rows))
+    if cv["market_blend"]:
+        L.append("\nMarket blend on the %d 2021-2023 fights with props: " % cv["market_blend"][0]["n"]
+                 + "; ".join("a=%.1f joint %.4f method %.4f" % (r["a_market"], r["joint"], r["method3"])
+                             for r in cv["market_blend"]) + ".\n")
+    oof = o["tuning"].get("oof_2019_2023")
+    if oof:
+        L.append("Walk-forward out-of-fold 2019-2023 (each year predicted by a fit through the previous Dec 31; "
+                 "n=%d): S method %.4f / joint %.4f / winner %.4f; base rates method %.4f / joint %.4f; base x Elo "
+                 "winner %.4f.\n" % (oof["n"], oof["S"]["method3"], oof["S"]["joint"], oof["S"]["winner"],
+                                     oof["base_division"]["method3"], oof["base_division"]["joint"],
+                                     oof["base_division_elo"]["winner"]))
+    L.append("## Roster and the default matchup\n")
+    for k, v in o["matchups"].items():
+        b7 = v["bins7"]
+        L.append("- **Volkanovski vs Gaethje, 5 x 5 at 155, %s:** Volk %.1f%% (KO %.1f, sub %.1f, dec %.1f), Gaethje "
+                 "%.1f%% (KO %.1f, sub %.1f, dec %.1f), draw %.1f%%; finish %.1f%% (KO/TKO %.1f%%, sub %.1f%%); "
+                 "finish by round %s." % (v["note"], 100 * v["p_A"], 100 * b7["A_KO"], 100 * b7["A_SUB"],
+                                          100 * b7["A_DEC"], 100 * v["p_B"], 100 * b7["B_KO"], 100 * b7["B_SUB"],
+                                          100 * b7["B_DEC"], 100 * b7["draw"], 100 * v["p_finish"],
+                                          100 * v["p_ko"], 100 * v["p_sub"],
+                                          ", ".join("%.1f" % (100 * x) for x in v["finish_round"])))
+    ro = o["roster"]
+    L.append("- `roster[slug]`: %d fighters, P(win/lose by KO, SUB, decision), P(finish) and method-given-win, "
+             "averaged over everyone in the fighter's division with a UFC fight since %s (3 rounds, stats-only "
+             "model fit through the snapshot)." % (len(ro), LIVE_FIELD_SINCE.isoformat()))
+    top = sorted(ro.items(), key=lambda kv: -kv[1]["vs_field"]["win_ko"])[:5]
+    L.append("  Highest P(win by KO/TKO) vs their division field: " + "; ".join(
+        "%s %.0f%%" % (k, 100 * v["vs_field"]["win_ko"]) for k, v in top) + ".")
+    tops = sorted(ro.items(), key=lambda kv: -kv[1]["vs_field"]["win_sub"])[:5]
+    L.append("  Highest P(win by submission): " + "; ".join("%s %.0f%%" % (k, 100 * v["vs_field"]["win_sub"])
+                                                         for k, v in tops) + ".")
+    jc = o["js_check"]
+    L.append("- JS model (`js_model` in the JSON, evaluator `tools/methodround_model.js`, fit through the snapshot): "
+             "%s; Python vs node on %s random roster matchups, max abs difference %s."
+             % ("verified" if jc.get("ok") else "CHECK FAILED", jc.get("cases"), jc.get("max_abs_diff")))
+    L.append("")
+    L.append("## Recommendation for the final ensemble\n")
+    L.append("""1. **Use this model as the method/round prior and as the yardstick for the simulator.** The v3+ engine's
+   simulated method distribution should be scored on the same held-out fights with the same metrics (method
+   3-class LL, finish LL, round-given-finish LL, 7-bin and joint LL, plus the calibration tables above). If the
+   engine does not beat model S on method and round, the page should take its method/round split from here and
+   use the engine for the play-by-play and the fight story.
+2. **Factorize the final forecast:** P(A wins) from the winner ensemble (market + Elo + engine + this model's
+   winner), then P(method, round | winner) from this model's conditional shares (`methodGivenWin` in the JS
+   output; the per-fight cells give the same). Method given winner is where this model adds the most, and it
+   leaves the winner question to the stack.
+3. **Live, with a line:** use SM, and when method props are posted, blend with them (weight a in the meta); the
+   props are sharp on KO vs submission, while the model is sharper on the finishing round.
+4. **Without a line** (hypothetical matchups such as Volkanovski vs Gaethje before odds): use S.
+5. Natural next inputs: pre-UFC records (tools/preufc.py; Sherdog crawl was incomplete when this ran, so it is not
+   used), opponent-adjusted rates (tools/oppadj.py) and the durability model's chin/power estimates
+   (data/derived/durability.json) as extra features; refit with `python3 tools/methodround.py`.
+""")
+    L.append("## Limitations\n")
+    L.append("""- Method and round are noisy targets: even the market's props reach a method log loss of only about 0.95
+  against 1.01 for base rates. Gains of 0.01-0.05 in log loss are what good looks like here.
+- Draws are a fixed share of decision outcomes; DQ and no-contests are not modelled (excluded from scoring).
+- The SM variant needs the closing line; scored on 2024+ it is a live model, not a fight-week forecast.
+- The market props benchmark covers fights with US-book props (2021+) and uses averaged, power-normalised
+  prices; a single sharp book could be stronger.
+- Roster outputs are averages over the current division field with the stats-only model; they describe
+  tendencies, not any particular matchup.
+""")
+    with open(OUT_MD, "w") as fh:
+        fh.write("\n".join(L))
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--quick", action="store_true", help="small grids, no 2019-2023 out-of-fold fits, 400 bootstraps")
+    args = ap.parse_args(argv)
+    run(args)
+
+
+if __name__ == "__main__":
+    main()

@@ -6,9 +6,9 @@ As of 2026-11-06. He/him. Southpaw, 5 ft 10 in, 70 in reach, born 1991-10-27 (ag
 
 - **Title:** UFC welterweight champion. He took the 170 lb belt from Jack Della Maddalena with a 50-45 sweep at UFC 322 (Nov 15, 2025), after giving up the lightweight title (UFC 317 in June 2025 was for the vacant belt, per ufcstats).
 - **Last fight:** UD over Ian Machado Garry at UFC 330, Philadelphia, Aug 15, 2026 (49-46, 49-46, 48-47). It was his 17th straight UFC win, a promotional record.
-- **Next:** No bout booked. Dana White said Makhachev verbally agreed to face Carlos Prates at UFC 336 (Jan 30, 2027, Toronto) and then backed out. The UFC booked Prates vs Michael Morales for an interim title in that slot, and the winner is expected to face Makhachev later in 2027. On Oct 31, 2026 he posted that his next fight will be "one of the last" of his career. Al Jazeera reports he wants to wait until after Ramadan.
-- **Ranking:** #1 men's pound-for-pound per CBS Sports (Sep 2026); the official UFC list was not checked.
-- **Injuries:** None reported in the sources found.
+- **Next:** No bout booked. Dana White said Makhachev verbally agreed to face Carlos Prates at UFC 336 (Jan 30, 2027, Toronto) and then backed out. The UFC booked Prates vs Michael Morales for an interim title in that slot, and the winner is expected to face Makhachev later in 2027. On Oct 31, 2026 he posted that his next fight will be "one of the last" of his career. Al Jazeera and MMA Fighting report he wants to wait until after Ramadan. On Nov 4 Dana White said "I think it's money" and that two fights a year "would be nice"; on Nov 5 Prates' manager, Lucas Lutkus, said Makhachev gave the UFC no reason for turning January down.
+- **Ranking:** #1 men's pound-for-pound in the UFC media-panel rankings (ufc.com, last updated Nov 3, 2026). Since June 2026 the UFC also publishes the Meta UFC rankings, an Elo model with no pound-for-pound list (last updated Oct 31, 2026). CBS Sports also had him #1 (Sep 2026).
+- **Injuries:** None reported as of Nov 6, 2026 (he was cut at UFC 330).
 
 ## Recent fights
 
@@ -44,6 +44,16 @@ Two knockdowns absorbed in 19 UFC fights. His one loss is a 2015 first-round KO 
 
 Elo 1870. Decayed significant strikes: 1.9 landed and 1.5 absorbed per minute. Target split of landed strikes: 66% head, 20% body, 14% leg. A third of his landed strikes come in the clinch or on the ground. Takedown accuracy is 49% and he averages about 1 submission attempt every 28 minutes.
 
+## Appearance
+
+No likeness sheet exists for him (data/likeness/islam-makhachev.json is absent). Checked on Nov 6, 2026 against the current ESPN headshot and two UFC 330 photos (Getty fight-night photo on theScore, Cageside Press ceremonial weigh-in).
+
+- **Hair:** short dark brown-black, cropped close at the sides.
+- **Facial hair:** full dark beard along the jaw, upper lip trimmed short.
+- **Skin:** light.
+- **Tattoos:** none visible on the torso, arms or back.
+- **Kit:** black-and-white shorts (black waistband, white legs) at UFC 330. Only one fight was checked.
+
 ## Sources
 
 - ufcstats profile: http://ufcstats.com/fighter-details/275aca31f61ba28c (via data/derived/fighters.json, snapshot 2026-10-31)
@@ -57,3 +67,9 @@ Elo 1870. Decayed significant strikes: 1.9 landed and 1.5 absorbed per minute. T
 - https://www.thescore.com/mma/news/3639613/makhachev-next-fight-will-be-one-of-the-last-in-my-career
 - https://www.aljazeera.com/sports/2026/10/31/islam-makhachev-ufc-welterweight-title-one-of-last-fight-prates-morales
 - https://www.cbssports.com/ufc/rankings/men/200/p4p/
+- Rankings: ufc.com/rankings as captured by the Wayback Machine on Nov 4, 2026 (media rankings last updated Nov 3, Meta UFC rankings last updated Oct 31): https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings
+- https://en.wikipedia.org/wiki/UFC_rankings
+- https://www.mmafighting.com/ufc/519467/dana-white-on-islam-makhachev-being-the-champ-i-dont-really-expect-you-to-fight-3-times-a-year-but-twice-would-be-nice
+- https://www.sherdog.com/news/news/Islam-Makhachev-gave-UFC-no-reason-for-January-exit-Prates-manager-says-203503
+- https://en.wikipedia.org/wiki/UFC_336
+- Appearance: ESPN headshot https://a.espncdn.com/i/headshots/mma/players/full/3332412.png; UFC 330 photos on https://www.thescore.com/mma/news/3573068/ufc-330-makhachev-vs-garry-results-analysis and https://cagesidepress.com/2026/08/16/ufc-330-islam-makhachev-ian-machado-garry/

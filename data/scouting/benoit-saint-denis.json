@@ -3,27 +3,42 @@
   "name": "Benoit Saint Denis",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Paddy Pimblett submitted him in 52 seconds with a D'Arce / Peruvian-necktie choke at UFC 329 (Jul 11, 2026), ending a run of four straight finishes. He dropped three places in the rankings and is booked to headline UFC Fight Night Sydney against unbeaten Quillan Salkilld over five rounds (Feb 7, 2027 local time).",
+    "summary": "Paddy Pimblett submitted him in 52 seconds with a D'Arce / Peruvian-necktie choke at UFC 329 (Jul 11, 2026), ending a run of four straight finishes. He is #6 in the UFC's media-panel rankings and #8 in its Meta algorithmic rankings, and is booked to headline UFC Fight Night 298 in Sydney against unbeaten Quillan Salkilld over five rounds (Feb 7, 2027 local time). Pro record 17-4 (1 NC). No injury reported.",
     "title": null,
-    "ranking": "#6-#8 UFC lightweight in early November 2026 (the lists disagree: ufcalendar.com #8 on Nov 3, Home of Fight #6 on Nov 5); he fell three places after UFC 329",
+    "ranking": "#6 UFC lightweight in the official media-panel rankings (updated Nov 3, 2026; ufcalendar.com, and ufcrankings.org on Nov 5); #8 in the UFC's Meta algorithmic rankings (updated Oct 31, 2026, per ufcalendar.com). The two lists put him and Salkilld in opposite order.",
     "active": true,
-    "next_fight": "vs Quillan Salkilld, UFC Fight Night: Salkilld vs. Saint Denis, Afterpay Arena, Sydney, Feb 7, 2027 local (Feb 6 US time), five-round main event",
+    "next_fight": "vs Quillan Salkilld, UFC Fight Night 298 (Salkilld vs. Saint Denis), Afterpay Arena, Sydney, Feb 7, 2027 local (Feb 6 US time), five-round main event",
     "injuries": [],
     "sources": [
       "https://www.ufc.com/news/ufc-fight-night-sydney-main-event-set-quillan-salkilld-face-benoit-saint-denis",
-      "https://sports.yahoo.com/articles/quillan-salkilld-benoit-saint-denis-041919424.html",
-      "https://www.espn.com/mma/fightcenter/_/id/600062420/league/ufc",
+      "https://www.sherdog.com/news/news/Quillan-Salkilld-vs-Benoit-St-Denis-to-headline-UFC-Sydney-on-Feb-6-203383",
+      "https://mmajunkie.usatoday.com/story/sports/ufc/2026/11/05/ufc-sydney-odds-quillan-salkilld-vs-benoit-saint-denis/92608836007/",
+      "https://www.espn.com/mma/fighter/_/id/4895362/benoit-saint-denis",
+      "https://site.web.api.espn.com/apis/common/v3/sports/mma/athletes/4895362/overview (upcoming: UFC Fight Night: Salkilld vs. Saint Denis, Afterpay Arena, 2027-02-06 US)",
+      "https://en.wikipedia.org/wiki/Beno%C3%AEt_Saint_Denis",
       "https://www.espn.com/mma/story/_/id/49339995/ufc-329-paddy-pimblett-superstar-moment-benoit-saint-denis",
       "https://www.sherdog.com/fighter/Benoit-St-Denis-317103",
-      "https://lnt.ma/?p=553032",
-      "https://www.ufcalendar.com/rankings/lightweight",
-      "https://www.homeoffight.com/ufc-rankings"
+      "https://ufcrankings.org/lightweight/",
+      "https://www.ufcalendar.com/rankings/lightweight"
     ]
   },
   "style": {
     "archetype": "wrestle-boxer",
     "stance": "southpaw",
-    "tags": ["pressure", "southpaw", "power", "head-kicks", "body-work", "clinch", "chain-wrestling", "cage-wrestling", "top-control", "ground-and-pound", "back-takes", "submissions"],
+    "tags": [
+      "pressure",
+      "southpaw",
+      "power",
+      "head-kicks",
+      "body-work",
+      "clinch",
+      "chain-wrestling",
+      "cage-wrestling",
+      "top-control",
+      "ground-and-pound",
+      "back-takes",
+      "submissions"
+    ],
     "signature": [
       "relentless takedown attempts (about 12 per 15 minutes) chained against the fence",
       "mounted ground-and-pound (97 significant strikes, 67 of them on the ground, before a mount TKO of Dan Hooker at UFC 325)",
@@ -51,30 +66,56 @@
     ]
   },
   "moves": {
-    "jab": 0.2, "cross": 0.35, "hook": 0.25, "overhand": 0.07, "upper": 0.08, "headkick": 0.05,
-    "bodykick": 0.5, "bodyhook": 0.25, "bodystraight": 0.25,
-    "calf": 0.4, "inside": 0.6, "spinning": 0.0, "knee": 0.25, "elbow": 0.2,
+    "jab": 0.2,
+    "cross": 0.35,
+    "hook": 0.25,
+    "overhand": 0.07,
+    "upper": 0.08,
+    "headkick": 0.05,
+    "bodykick": 0.5,
+    "bodyhook": 0.25,
+    "bodystraight": 0.25,
+    "calf": 0.4,
+    "inside": 0.6,
+    "spinning": 0.0,
+    "knee": 0.25,
+    "elbow": 0.2,
     "notes": "Group weights (head, body, leg) each sum to 1. The engine's target split should come from fighters.json, where recency-weighted landed shares are head 0.67 / body 0.24 / leg 0.09 and attempt shares are head 0.76 / body 0.18 / leg 0.06 (career landed 0.63 / 0.26 / 0.11). His body share is above the lightweight median (about 0.22), so bodykick is weighted highest in that group. The cross stands for his rear left as a southpaw, the punch that knocked out Dariush. Few leg kicks: leg strikes are only 6% of his attempts, and the calf/inside split is a guess. About 19% of his landed strikes come in the clinch and 38% on the ground (recency-weighted), so knees and elbows carry real weight, but no source splits his ground-and-pound into punches and elbows (UFC Stats lists the Hooker finish as punches from mount). Spinning is 0."
   },
   "appearance": {
     "build": "dense, muscular lightweight frame: 5'11\" with a 73-inch reach (fighters.json); former French Army special-forces soldier",
-    "hair": "very short or buzzed dark hair (as seen in widely published photos; no written description found)",
-    "facial_hair": "usually a full dark beard in published photos (unconfirmed in text)",
+    "hair": "short dark brown hair, clipped at the sides with a little more length on top (ESPN headshot file dated Jul 9, 2026)",
+    "facial_hair": "full, thick dark brown beard (ESPN headshot, Jul 2026; UFC 322 weigh-in photo, Nov 2025)",
     "skin": "light",
-    "tattoos": "has tattoos that coverage links to his military service; designs and placement not confirmed here",
-    "kit": "unknown",
+    "tattoos": "four, per Wikipedia: a Templar cross (cross pattée) on the left pectoral, a reminder of security missions in Mali, in colour (red with a green surround in the UFC 322 weigh-in photo); Joan of Arc on his back, in black; the French Special Forces dagger on the back of the left triceps (EssentiallySports); and a samurai helmet from his first BJJ club, on the right biceps (EssentiallySports)",
+    "kit": "black shorts with a blue side panel at UFC 329 (Jul 11, 2026)",
     "sources": [
+      "https://a.espncdn.com/i/headshots/mma/players/full/4895362.png (ESPN headshot, file dated Jul 9, 2026)",
+      "https://cagesidepress.com/2025/11/15/ufc-322-benoit-saint-denis-stuns-beneil-dariush-with-16-second-ko (UFC 322 weigh-in photo: chest tattoo, beard)",
+      "https://www.espn.com/mma/story/_/id/49339995/ufc-329-paddy-pimblett-superstar-moment-benoit-saint-denis (lead photo: UFC 329 shorts)",
+      "https://en.wikipedia.org/wiki/Beno%C3%AEt_Saint_Denis (Personal life: four tattoos)",
+      "https://www.essentiallysports.com/ufc-mma-news-benoit-saint-denis-tattoos-meaning-story-and-the-army-connection-behind-the-ufc-stars-inks/",
       "data/derived/fighters.json",
-      "https://essentiallysports.com/ufc-mma-news-benoit-saint-denis-tattoos-meaning-story-and-the-army-connection-behind-the-ufc-stars-inks",
-      "https://www.sportskeeda.com/mma/what-does-benoit-st-denis-tattoo-mean",
-      "https://www.aol.com/benoit-saint-denis-traded-fighting-070919685.html"
+      "no likeness sheet (data/likeness/benoit-saint-denis.json does not exist)"
     ]
   },
   "engine_notes": [
-    { "note": "One of the most ground-heavy strikers among the top 25 recently active lightweights by Elo (last UFC fight since Nov 2023; the long-inactive Gregor Gillespie is higher): 31% (career) and 38% (recency-weighted) of his significant strikes land on the ground, the highest recency-weighted share in that group (Grant Dawson is higher on career numbers); lightweight median about 9%. He controls 47-50% of fight time (median about 17%). He led round 1 vs Poirier 38-12 in significant strikes with 3:20 of control before being KO'd in round 2.", "source": "data/derived/fighters.json" },
-    { "note": "Very high takedown volume at low accuracy: about 12 attempts per 15 minutes at 34-35%. Each failed shot is a chance for front-headlock chokes against him (D'Arce loss to Pimblett; 4 Poirier submission attempts).", "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv; https://sports.yahoo.com/articles/paddy-pimblett-quickly-submits-benoit-031630151.html" },
-    { "note": "No evidence past round 2 in five-round fights: pace exists only for rounds 1-2 (1.00 / 1.04), and both of his five-round fights ended in round 2 with him losing. Late-round output for the Salkilld main event is unknown.", "source": "data/derived/fighters.json (pace, recent)" },
-    { "note": "Power on the feet as well as on the ground: 0.73-0.86 knockdowns per 15 minutes (lightweight median about 0.31).", "source": "data/derived/fighters.json" }
+    {
+      "note": "One of the most ground-heavy strikers among the top 25 recently active lightweights by Elo (last UFC fight since Nov 2023; the long-inactive Gregor Gillespie is higher): 31% (career) and 38% (recency-weighted) of his significant strikes land on the ground, the highest recency-weighted share in that group (Grant Dawson is higher on career numbers); lightweight median about 9%. He controls 47-50% of fight time (median about 17%). He led round 1 vs Poirier 38-12 in significant strikes with 3:20 of control before being KO'd in round 2.",
+      "source": "data/derived/fighters.json"
+    },
+    {
+      "note": "Very high takedown volume at low accuracy: about 12 attempts per 15 minutes at 34-35%. Each failed shot is a chance for front-headlock chokes against him (D'Arce loss to Pimblett; 4 Poirier submission attempts).",
+      "source": "data/derived/fighters.json; data/raw/ufc_fight_stats.csv; https://sports.yahoo.com/articles/paddy-pimblett-quickly-submits-benoit-031630151.html"
+    },
+    {
+      "note": "No evidence past round 2 in five-round fights: pace exists only for rounds 1-2 (1.00 / 1.04), and both of his five-round fights ended in round 2 with him losing. Late-round output for the Salkilld main event is unknown.",
+      "source": "data/derived/fighters.json (pace, recent)"
+    },
+    {
+      "note": "Power on the feet as well as on the ground: 0.73-0.86 knockdowns per 15 minutes (lightweight median about 0.31).",
+      "source": "data/derived/fighters.json"
+    }
   ],
   "confidence": "high"
 }

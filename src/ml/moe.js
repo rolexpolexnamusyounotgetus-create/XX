@@ -142,6 +142,11 @@
       method: model.method };
   }
 
+  /** P(A) from a Gaussian rating on the log-odds scale (tools/market.py market rating: mu, sd per fighter). */
+  function ratingProb(muA, sdA, muB, sdB) {
+    return sigm((muA - muB) / Math.sqrt(1 + Math.PI * (sdA * sdA + sdB * sdB) / 8));
+  }
+
   /** P(A) from Elo ratings (scale 400). */
   function eloProb(eA, eB) { return 1 / (1 + Math.pow(10, (eB - eA) / 400)); }
 
@@ -281,6 +286,6 @@
   }
 
   return { load: load, predict: predictWith, gateVector: gateVector, eloProb: eloProb, devig: devig,
-    decimal: decimal, calibrate: calibrate, logit: logit, sigm: sigm, featLR: featLR, sideFeatures: sideFeatures,
+    decimal: decimal, calibrate: calibrate, logit: logit, sigm: sigm, featLR: featLR, sideFeatures: sideFeatures, ratingProb: ratingProb,
     sideFromProfile: sideFromProfile, gateFromSides: gateFromSides, winnerFactors: winnerFactors, VERSION: "1.0.0" };
 });

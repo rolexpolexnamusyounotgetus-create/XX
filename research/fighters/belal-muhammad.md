@@ -1,13 +1,15 @@
 # Belal Muhammad: scouting dossier
 
-As of 2026-11-06. He/him. Orthodox, 5 ft 11 in, 72 in reach, born 1988-07-09 (age 38). UFC record 15-6, 1 NC (ufcstats). Nickname "Remember the Name". Former UFC welterweight champion.
+As of 2026-11-06. He/him. Orthodox, 5 ft 11 in, 72 in reach, born 1988-07-09 (age 38). Pro record 24-6, 1 NC; UFC record 15-6, 1 NC (ufcstats). Nickname "Remember the Name". Former UFC welterweight champion.
 
-**Research limits.** Neither the research pass nor the fact-check pass (2026-11-06) had web access (search budget used up; key sites blocked). Everything below comes from the ufcstats snapshot (through 2026-10-31) unless marked. The fact-check re-derived every date, method, score and per-fight number from data/raw, and all match. Bookings, rankings, injuries, retirement plans and appearance details are unverified.
+**Research notes.** The first research pass and its fact-check (2026-11-06) were done offline from the ufcstats snapshot (through 2026-10-31); the fact-check re-derived every date, method, score and per-fight number from data/raw, and all match. A later web pass the same day re-checked status, ranking, bookings, injuries and appearance against the sources listed below. Fight data and the style breakdown still come from ufcstats.
 
 ## Current status
 
 - **Three straight decision losses:** Jack Della Maddalena (UFC 315, Montreal, May 10, 2025; lost the title 47-48, 47-48, 46-49), Ian Machado Garry (Doha, Nov 22, 2025; 27-30, 27-30, 28-29) and Gabriel Bonfim (five-round main event, Las Vegas, Jun 6, 2026; 45-50 on all three cards).
-- **Next:** none found in this pass. Nothing after Jun 6 in the snapshot. Ranking not verified.
+- **Freestyle wrestling:** he has competed in Real American Freestyle (RAF). He beat Ben Askren 6-3 at RAF 11 (Milwaukee, Jul 18, 2026), then lost a 10-0 technical fall to Colby Covington for the RAF cruiserweight crossover title at RAF 13 (Miami, Sep 18, 2026). These are wrestling matches, not MMA, and do not change his MMA record.
+- **Next:** no UFC fight booked as of Nov 6, 2026 (Wikipedia, ESPN profile, ufc.com rankings tables). No injury or retirement announcement found.
+- **Ranking:** #7 welterweight in both the UFC media rankings (Nov 3, 2026) and the Meta UFC rankings (Oct 31, 2026).
 
 ## Recent fights
 
@@ -47,6 +49,16 @@ A pressure wrestle-boxer. On the decayed sums he throws 10.2 significant strikes
 
 Elo 1701, seventh among welterweights who have fought since November 2024. Decayed: 4.11 significant landed and 4.42 absorbed per minute. Over the last 3 years his strike differential is -0.92 per minute (career +0.44). Target split of landed strikes: 78% head, 16% body, 6% legs. His five-round pace curve rests on 25 minutes per round and is one of the better-supported late-surge signals in the dataset. The model should treat him as a volume decision fighter with no knockout threat whose form is declining.
 
+## Appearance
+
+No likeness sheet exists for him. Checked on Nov 6, 2026 against the current ESPN headshot and Zuffa photos from the Bonfim fight week (weigh-in Jun 5, 2026 on Cageside Press; fight Jun 6, 2026 on MMA Mania).
+
+- **Hair:** very short dark, buzzed close, with a receding hairline.
+- **Facial hair:** full thick black beard with moustache.
+- **Skin:** light-medium.
+- **Tattoos:** none visible on the torso, arms or back.
+- **Kit:** red Venum shorts with MUHAMMAD down the leg at UFC Vegas 118. Only one fight was checked. He often carries the Palestinian flag at weigh-ins (Wikipedia).
+
 ## Sources
 
 - ufcstats profile: http://ufcstats.com/fighter-details/b1b0729d27936f2f (via data/derived/fighters.json and tools/fighter_report.py, snapshot 2026-10-31)
@@ -54,3 +66,11 @@ Elo 1701, seventh among welterweights who have fought since November 2024. Decay
 - Machado Garry: http://ufcstats.com/fight-details/b2218930b982d9b6
 - Della Maddalena (UFC 315): http://ufcstats.com/fight-details/b873c116e39c9920
 - Edwards (UFC 304): http://ufcstats.com/fight-details/ec5163539a133f17
+- Rankings: ufc.com/rankings as captured by the Wayback Machine on Nov 4, 2026 (media rankings last updated Nov 3, Meta UFC rankings last updated Oct 31): https://web.archive.org/web/20261104014009/https://www.ufc.com/rankings
+- https://en.wikipedia.org/wiki/UFC_rankings
+- https://en.wikipedia.org/wiki/Belal_Muhammad
+- https://www.espn.com/mma/fighter/_/id/3172112/belal-muhammad
+- https://cagesidepress.com/2026/06/06/gabriel-bonfim-puts-on-masterclass-against-muhammad-calls-out-jdm/
+- https://www.fightful.com/mma/raf-13-results-9-18-colby-covington-beats-belal-muhammad-khamzat-chimaev-wins/
+- https://wtaq.com/2026/07/19/wrestling-askren-calls-time-on-wrestling-career-after-loss-in-comeback-bout/
+- Appearance: ESPN headshot https://a.espncdn.com/i/headshots/mma/players/full/3172112.png; weigh-in photo on Cageside Press (above); fight photo on https://www.mmamania.com/ufc-results/448761/ufc-vegas-118-results-gabriel-bonfim-shuts-out-bloody-belal-in-career-best-performance

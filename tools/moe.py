@@ -619,9 +619,37 @@ def ext_prob(v):
 
 def external_experts(ids):
     """Per-fight probabilities from other analysts' outputs when they exist (strictly out-of-fold for 2019-2023
-    is their contract; see research/model_moe.md for the recipe to plug a new one in)."""
-    out, notes = {}, {}
-    for key, files in (("ml", ["ml.json"]), ("ratings", ["ratings.json"]), ("methodround", ["methodround.json"]),
+    is their contract; see research/model_moe.md for the recipe to plug a new one in). Returns (rolling, static,
+    notes): rolling uses an annual-refit variant for 2024-2025 when the tool publishes one."""
+    out, out_s, notes = {}, {}, {}
+    d = load_json("ml.json")
+    if d and isinstance(d.get("fights"), dict):
+        T = d["fights"]
+        def col(k, fb=None):
+            v = []
+            for i in ids:
+                e = T.get(i) or {}
+                x = e.get(k)
+                if x is None and fb:
+                    x = e.get(fb)
+                v.append(np.nan if x is None else float(x))
+            return np.array(v)
+        # 'lr' = the tools/ml.py page winner model (without its Platt slope): out-of-fold 2019-2023 from annual
+        # expanding refits, 2024+ from the 2010-2023 fit; 'lr_refit' = January refits (2025 trained through 2024)
+        out_s["ml"], out["ml"] = col("lr"), col("lr_refit", "lr")
+        out_s["elo_sig"] = out["elo_sig"] = col("elo_sig")
+        out_s["ml_gbm"], out["ml_gbm"] = col("gbm"), col("gbm_refit", "gbm")
+        out_s["ml_blend"], out["ml_blend"] = col("ml"), col("ml_refit", "ml")
+        notes["ml"] = "ml.json: lr (page winner model) as 'ml', elo_sig, gbm as 'ml_gbm', ml blend as 'ml_blend'; coverage %.3f" % float(
+            np.isfinite(out_s["ml"]).mean())
+    mk = load_json("market.json")
+    if mk and isinstance(mk.get("fights"), dict):
+        v = np.array([(mk["fights"].get(i) or {}).get("p_market_rating") or np.nan for i in ids], dtype=float)
+        if np.isfinite(v).mean() > 0.5:
+            out["mkt_rating"] = out_s["mkt_rating"] = v
+            notes["mkt_rating"] = "market.json p_market_rating (walk-forward Kalman rating from earlier closing lines); coverage %.3f" % float(
+                np.isfinite(v).mean())
+    for key, files in (("ratings", ["ratings.json"]), ("methodround", ["methodround.json"]),
                        ("oppadj", ["oppadj.json"])):
         for fn in files:
             d = load_json(fn)
@@ -639,8 +667,8 @@ def external_experts(ids):
             cov = float(np.isfinite(arr).mean())
             notes[key] = "%s: coverage %.3f" % (fn, cov)
             if cov > 0.5:
-                out[key] = arr
-    return out, notes
+                out[key] = out_s[key] = arr
+    return out, out_s, notes
 
 
 def gating_matrix(rows, preufc):
@@ -957,12 +985,29 @@ class Stacker:
         return self.b.logit(L, M, G[:, 1:], base=base)
 
 
-DROPS = [set(), {"market"}, {"engine"}, {"market", "engine"}]
-REGIMES = {"market": [0, 2], "nomarket": [1, 3]}      # indices into DROPS
+# experts the page may lack, in groups that come and go together (the market line; the market rating, which
+# needs earlier closing lines for both fighters; the engine; the tools/ml.py page model and its strike-share Elo)
+OPTIONAL_GROUPS = [["market"], ["mkt_rating"], ["engine"], ["ml", "elo_sig"]]
+
+
+def make_drops(experts):
+    """All availability patterns the stacker is trained for: every subset of the optional groups present in the
+    expert list. REGIMES splits them by whether the market line is there."""
+    groups = [[e for e in g if e in experts] for g in OPTIONAL_GROUPS]
+    groups = [g for g in groups if g]
+    drops = []
+    for mask in range(1 << len(groups)):
+        drops.append(set(e for j, g in enumerate(groups) if mask >> j & 1 for e in g))
+    drops.sort(key=len)
+    regimes = {"market": [j for j, d in enumerate(drops) if "market" not in d],
+               "nomarket": [j for j, d in enumerate(drops) if "market" in d or "market" not in experts]}
+    return drops, regimes, groups
+
+
+DROPS, REGIMES, _ = make_drops(["market", "engine"])
 CANDS = [("linear", {}), ("linear", {"h": 3.0}), ("linear", {"h": 1.5}),
          ("gated", {"lam": 0.01}), ("gated", {"lam": 0.03}), ("gated", {"lam": 0.1}), ("gated", {"lam": 0.03, "h": 1.5}),
-         ("gbm", {"leaves": 3, "rounds": 150}), ("gbm", {"leaves": 7, "rounds": 150}),
-         ("gbm_res", {"leaves": 3, "rounds": 50}), ("gbm_res", {"leaves": 3, "rounds": 100}),
+         ("gbm", {"leaves": 3, "rounds": 150}), ("gbm_res", {"leaves": 3, "rounds": 50}),
          ("gbm_res", {"leaves": 3, "rounds": 50, "h": 1.5})]
 
 
@@ -1025,8 +1070,9 @@ def cmd_fit(args):
     P["market"] = np.array([(mf.get(i) or {}).get("p_power_close") or (mf.get(i) or {}).get("p_novig_close") or np.nan
                             for i in ids], dtype=float)
     P["market_open"] = np.array([(mf.get(i) or {}).get("p_novig_open") or np.nan for i in ids], dtype=float)
-    ext, ext_notes = external_experts(ids)
+    ext, ext_s, ext_notes = external_experts(ids)
     P.update(ext)
+    Ps.update(ext_s)
     for k in P:
         if k not in Ps:
             Ps[k] = P[k]
@@ -1060,10 +1106,9 @@ def cmd_fit(args):
             k, singles[k]["train"]["log_loss"], singles[k]["train"]["n"], singles[k]["valid"]["log_loss"],
             singles[k]["valid_rolling"]["log_loss"], singles[k]["valid"]["n"]))
 
-    ml_key = "ml" if "ml" in P else "feat_lr"
-    SETS = {"page": ["market", "engine", ml_key, "elo"],
-            "full": [k for k in ["market", "engine", "ml", "ratings", "feat_lr", "feat_lr_full", "feat_gbm", "elo", "glicko"]
-                     if k in P]}
+    SETS = {"page": [k for k in ["market", "mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo"] if k in P],
+            "full": [k for k in ["market", "mkt_rating", "engine", "ml", "ml_gbm", "ml_blend", "ratings", "feat_lr",
+                                 "feat_lr_full", "feat_gbm", "elo_sig", "elo", "glicko"] if k in P]}
     if args.quick:
         SETS.pop("full")
 
@@ -1109,7 +1154,8 @@ def cmd_fit(args):
     CVY = (2021, 2022, 2023)
     results = {}
     for set_name, experts in SETS.items():
-        log("=== expert set %s: %s" % (set_name, experts))
+        DROPS, REGIMES, groups = make_drops(experts)
+        log("=== expert set %s: %s (%d availability patterns)" % (set_name, experts, len(DROPS)))
         L, M = LM(P, experts)                     # rolling
         Ls, _ = LM(Ps, experts)                   # static (differs from L only in 2025 rows)
         oofs = {}
@@ -1119,7 +1165,7 @@ def cmd_fit(args):
         for reg in REGIMES:
             for k, v in sorted(cv[reg].items(), key=lambda kv: kv[1])[:6]:
                 log("  cv %-9s %-48s %.4f" % (reg, k, v))
-        res = {"experts": experts, "cv": cv, "regimes": {}}
+        res = {"experts": experts, "cv": cv, "regimes": {}, "drops": [sorted(d) for d in DROPS], "groups": groups}
         for reg in REGIMES:
             best = {}
             for m, hp in CANDS:
@@ -1217,6 +1263,7 @@ def export_model(st, cal, experts, mu, sd, P_clip=PCLIP):
 
 def export_composite(comp, mu, sd):
     return {"method": "switch", "on": "market", "experts": comp.experts, "pclip": PCLIP,
+            "optional_groups": make_drops(comp.experts)[2],
             "gate": {"names": GATE_NAMES, "mu": [float(v) for v in mu], "sd": [float(v) for v in sd]},
             "present": export_model(comp.parts["market"], comp.cals["market"], comp.experts, mu, sd),
             "absent": export_model(comp.parts["nomarket"], comp.cals["nomarket"], comp.experts, mu, sd)}
@@ -1282,6 +1329,7 @@ def report_and_export(args):
     # ---- exported model: page set, per regime the method with the lowest forward-chained CV (2021-2023)
     page = R["page"]
     experts = page["experts"]
+    DROPS, REGIMES, groups = make_drops(experts)
     chosen = {reg: page["regimes"][reg]["chosen"] for reg in REGIMES}
     rep["chosen"] = {"set": "page", "experts": experts,
                      "market": {"method": chosen["market"], "hp": page["regimes"]["market"]["methods"][chosen["market"]]["hp"]},
@@ -1316,7 +1364,7 @@ def report_and_export(args):
             full_maps[reg] = dict(zip(src["_idx"], src["_ps"]))
     segs = {}
     SM = segment_masks(rows, P, common)
-    mlk = experts[2]
+    mlk = "ml" if "ml" in experts else "feat_lr"
     for sgn, mask in SM.items():
         ii = common[mask]
         if len(ii) < 25:
@@ -1328,11 +1376,11 @@ def report_and_export(args):
         for reg, fm in full_maps.items():
             if all(i in fm for i in ii):
                 e["full_" + reg] = ll(np.array([fm[i] for i in ii]), yy)
-        for k in ("market", "engine", mlk, "elo", "feat_gbm", "feat_lr_full"):
+        for k in ("market", "mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo", "feat_gbm", "feat_lr_full"):
             if k in Ps and np.isfinite(Ps[k][ii]).all():
                 e[k] = ll(Ps[k][ii], yy)
         e["d_moe_vs_market"] = boot_ci(g("ms"), yy, cl, ref=P["market"][ii], B=1000)
-        best = min(("engine", mlk, "elo"), key=lambda k: e[k])
+        best = min((k for k in ("mkt_rating", "engine", "ml", "feat_lr", "elo_sig", "elo") if k in e), key=lambda k: e[k])
         e["d_nomarket_vs_best_single"] = dict(boot_ci(g("ns"), yy, cl, ref=Ps[best][ii], B=1000), expert=best)
         e["d_nomarket_vs_ml"] = boot_ci(g("ns"), yy, cl, ref=Ps[mlk][ii], B=1000)
         segs[sgn] = e
@@ -1351,6 +1399,9 @@ def report_and_export(args):
                                   "moe_nomarket_static": ll(np.array([maps["ns"][i] for i in ii]), y[ii]),
                                   "moe_nomarket_rolling": ll(np.array([maps["nr"][i] for i in ii]), y[ii]),
                                   mlk + "_static": ll(Ps[mlk][ii], y[ii]), mlk + "_rolling": ll(P[mlk][ii], y[ii]),
+                                  "feat_lr_static": ll(Ps["feat_lr"][ii], y[ii]),
+                                  "mkt_rating": ll(P["mkt_rating"][ii][np.isfinite(P["mkt_rating"][ii])],
+                                                   y[ii][np.isfinite(P["mkt_rating"][ii])]) if "mkt_rating" in P else None,
                                   "engine": ll(P["engine"][ii], y[ii]), "elo": ll(P["elo"][ii], y[ii])}
 
     # gated-model trust by segment (the (b) family, page set): mean softmax weights and scale on validation rows
@@ -1452,10 +1503,14 @@ def report_and_export(args):
                  "orientation": "every probability is P(first-named fighter A wins); the model is exactly symmetric "
                                 "(swap A/B -> 1 - p)",
                  "experts": {
-                     "market": "de-vigged closing moneyline P(A) (power method; MoE.devig); optional",
-                     "engine": "FightEngine.summarize pA / (pA + pB) (draws removed)",
+                     "market": "de-vigged closing moneyline P(A) (power method; MoE.devig(oddsA, oddsB)); optional",
+                     "mkt_rating": "market rating P(A): MoE.ratingProb(muA, sdA, muB, sdB) with data/derived/market.json "
+                                   "meta.ratings[slug] = [mu, sd, ...]; leave out when either fighter has no rating",
+                     "engine": "FightEngine.summarize pA / (pA + pB) (draws removed); leave out if the engine is not run",
+                     "ml": "tools/ml.py page model: page_model.winner P(A) WITHOUT its Platt slope (matches ml.json "
+                           "fights[*].lr); leave out (with elo_sig) when ml.json is not loaded",
                      "feat_lr": "built-in feature LR: MoE.featLR(doc.feat, sideA, sideB, ctx) on fighters.json profiles",
-                     "ml": "tools/ml.py page model P(A) (when this key is listed in model.experts)",
+                     "elo_sig": "strike-share Elo P(A) = 1 / (1 + 10^((B - A) / 400)) with ml.json roster[slug].elo_sig",
                      "elo": "MoE.eloProb(eloA, eloB) with fighters.json elo"},
                  "gate_inputs": {"nA/nB": "prior UFC fights", "cminA/cminB": "career UFC minutes",
                                  "eloA/eloB": "Elo", "rounds": "3 or 5", "division": "fight division",

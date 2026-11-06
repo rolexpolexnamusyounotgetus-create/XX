@@ -2,8 +2,9 @@
 """Styles and matchups (engine v7 component): style vectors, archetypes, and walk-forward tests of
 style interactions on the backtest.
 
-    python3 tools/styles.py                 # from the project root, about a minute
-    python3 tools/styles.py --boot 2000     # paired-bootstrap replicates for the held-out deltas
+    python3 tools/styles.py                 # from the project root, about 4-5 minutes on 4 cores
+    python3 tools/styles.py --boot 500      # fewer paired-bootstrap replicates (default 2000)
+    python3 tools/styles.py --report-only   # re-render research/model_styles.md from styles.json
 
 Reads   data/derived/backtest.json (walk-forward snapshots), data/derived/fighters.json (live roster),
         data/raw/*.csv through tools/build_db.py (per-fight stat vectors by position, for the rate
@@ -490,7 +491,7 @@ def rate_tests(D, n_boot=1000, seed=SEED, z_screen=3.0):
         nn = lambda mask: None if n is None else n[mask]
         Xb = np.column_stack([np.ones(len(D))] + [_col(D, c) for c in m["base"]])
         b0, cov0, disp0 = fit_glm(Xb[tr], y[tr], m["fam"], off[tr], nn(tr))
-        dev0 = fit_dev = glm_dev(Xb[te], b0, y[te], m["fam"], off[te], nn(te))
+        dev0 = glm_dev(Xb[te], b0, y[te], m["fam"], off[te], nn(te))
         bn, _, _ = fit_glm(Xb[tr][:, :1], y[tr], m["fam"], off[tr], nn(tr))
         devn = glm_dev(Xb[te][:, :1], bn, y[te], m["fam"], off[te], nn(te))
         # leave-one-year-out CV deviance of the baseline inside the tuning years
@@ -1305,7 +1306,6 @@ SCOUT_TO_ARCH = {   # scouting archetype -> broad family for the cross-tab
 def scouting_validation(live, mu, sd, arch):
     files = sorted(glob.glob(os.path.join(ROOT, "data", "scouting", "*.json")))
     recs = []
-    reach_res = None
     # reach relative to height (ape index) among roster fighters, for the "rangy" tag
     ape = [f["reach"] - f["height"] for _, f in live.values() if f["reach"] and f["height"]]
     ape_mu, ape_sd = float(np.mean(ape)), float(np.std(ape))
@@ -1583,7 +1583,10 @@ def main():
                          "on_top_of_elo_only": {"baseline": rnd(win_elo["baseline"]),
                                                 "candidates": rnd(win_elo["candidates"])}},
         "rate_level": rnd(rates),
-        "engine_modifiers": {"default_on": rnd(joint, 5), "optional_off": rnd(optional, 5),
+        "engine_modifiers": {"apply": [k for k in joint if k != "ctrl"], "check_only": [k for k in joint if k == "ctrl"],
+                             "how": "for attacker X vs defender Y: s = sum(coef_per_unit * term_value); Poisson rates "
+                                    "*= exp(s), shares: logit += s; term values from roster z-scores (see report sec. 9)",
+                             "default_on": rnd(joint, 5), "optional_off": rnd(optional, 5),
                              "tier1_only": rnd(joint1, 5), "tune_screened": rnd(joint_scr, 5),
                              "without_judgment_terms": rnd(joint_rule, 5), "judgment_terms": JUDGMENT_TERMS,
                              "selection": {k: v for k, v in sets.items()}},
@@ -1721,18 +1724,27 @@ def render_report(J):
         A("  - `%s` (%s): %s; 2024+ deviance %+.2f%% (95%% CI of the change %s)%s."
           % (name, j["desc"], terms, j["test_dev_change_pct"], _f(j["test_dev_ci"], 0),
              "; a composition check, not applied in the engine (section 9)" if name == "ctrl" else ""))
-    A("  In words: fighters throw about 2.4% less at distance per sd of the opponent's knockdown power; the longer "
-      "man throws more at distance, kicks the legs less and shoots less; open-stance fights see about 7% fewer "
-      "distance attempts; everyone kicks the legs less and shoots less against wrestlers, and shoots less against "
-      "good takedown defense, which also shortens control after a takedown; kickers get taken down more.")
+    def _cu(model, term):
+        for t in em["default_on"].get(model, {}).get("terms", []):
+            if t["term"] == term:
+                return t["coef_per_unit"]
+        return float("nan")
+    A("  In words: fighters throw about %.1f%% less at distance per sd of the opponent's knockdown power; the longer "
+      "man throws more at distance, kicks the legs less and shoots less; open-stance fights see about %.0f%% fewer "
+      "distance attempts; everyone kicks the legs less and shoots about %.0f%% less per sd of the opponent's "
+      "wrestling, and shoots about %.0f%% less per sd of takedown defense, which also cuts control time per takedown "
+      "by about %.0f%%; kickers get taken down more."
+      % (100 * (1 - math.exp(_cu("dist_att", "zy_kd_pow"))), 100 * (1 - math.exp(_cu("dist_att", "open"))),
+         100 * (1 - math.exp(_cu("td_att", "zy_td_int"))), 100 * (1 - math.exp(_cu("td_att", "zy_td_def"))),
+         100 * (1 - math.exp(_cu("ctrl_per_td", "zy_td_def")))))
     v = tr["variants"]
     vd = v.get("default_on", {}).get("elo_plus_impact", {}).get("vs_none", {})
     vc = v.get("tune_screened", {}).get("elo_plus_impact", {}).get("vs_none", {})
-    A("- **Applied mechanistically they help a little, and only through the fight.** Feeding the modifiers through "
+    A("- **Applied mechanistically, they move win probabilities only slightly.** Feeding the modifiers through "
       "an expected-scorecard stand-in for the engine (predicted rates -> expected judging impact) changes win "
       "probabilities by a median %.1f points (max %.1f) and moves 2024+ log loss of the Elo + scorecard model by "
       "%+.4f (CI %s); the clean variant that uses only the tune-period screen moves it by %+.4f (CI %s). Neither is "
-      "significant: the gain shows up in realistic fight statistics, not in a measurable edge on who wins."
+      "significant: the gain is in realistic fight statistics, not in a measurable edge on who wins."
       % (100 * vd.get("median_abs_dp", 0), 100 * vd.get("max_abs_dp", 0), vd.get("test_dll", 0),
          _f(vd.get("ci"), 4), vc.get("test_dll", 0), _f(vc.get("ci"), 4)))
     A("- **Recommendation:** apply styles as rate modifiers inside the engine (section 9, exact equations and values); "
@@ -1978,7 +1990,7 @@ def render_report(J):
             "Median / max |dp| (points)"], rows_))
     A("")
     A("Read: the scorecard alone lifts Elo from %s to %s (it is a real, if crude, mechanistic predictor). Modifiers "
-      "change the scorecard model's 2024+ log loss by a few thousandths with intervals that include zero; the "
+      "change the scorecard model's 2024+ log loss by at most about 0.002, with intervals that include zero; the "
       "'tune_screened' row is the clean test (no 2024+ data used to pick terms) and is flat. On top of the full "
       "skill baseline the scorecard adds nothing, as expected: the baseline already holds the same main effects. "
       "The held-out period was used once to confirm each rate term, so the tier1 / default_on rows are consistency "
@@ -2031,14 +2043,16 @@ def render_report(J):
     for name, j in list(em["default_on"].items()) + list(em["optional_off"].items()):
         on = name in em["default_on"]
         eq = " + ".join("(%+.4f) * %s" % (t["coef_per_unit"], t["term"]) for t in j["terms"])
-        A("   - `%s` (%s): %s, with `s = %s`." % (name, "on" if on else "knob, default off", RATE_ENGINE.get(name, ""), eq))
+        state = "check only, not applied" if name == "ctrl" else ("on" if on else "knob, default off")
+        A("   - `%s` (%s): %s, with `s = %s`." % (name, state, RATE_ENGINE.get(name, ""), eq))
     A("   For a Poisson rate: `rate *= exp(s)`. For a share: `logit(p) += s`. Products such as `zx_ctrl*zy_octrl` "
       "are the product of the two z-scores. `open`, `x_sp_vs_orth` are 0/1 from the listed stances (switch counts "
       "as neither).")
-    A("3. **Control.** Use `td_att` (attempts) and `ctrl_per_td` (duration per takedown) if `ctrl_per_td` is in the "
-      "on list; the total `ctrl` block is reported as a composition check and must not be applied on top, or the "
-      "wrestler-vs-wrestler and kicker effects are counted twice. If `ctrl_per_td` is not on, apply the `ctrl` "
-      "block to control duration and drop its `zy_td_int` term (that part is already carried by `td_att`).")
+    A("3. **Control.** Control in the engine comes from takedowns (`td_att`, success unchanged) and how long the top "
+      "man keeps the position (`ctrl_per_td`). The total `ctrl` block is the check: an engine with `td_att` and "
+      "`ctrl_per_td` on should reproduce its direction (more control against kickers, less in wrestler-vs-wrestler "
+      "fights, less for the longer man, and a sub-multiplicative ceiling when a heavy controller meets a man who is "
+      "often controlled). Applying it on top would count those effects twice.")
     A("4. **Knob.** Expose one `styleMatchups` knob in [0, 1.5], default 1, that scales every `s`; 0 reproduces "
       "the pure skill composition. Optional blocks get their own toggle, default off.")
     A("5. **Labels.** Show the scouting archetype where a scouting file exists and the data archetype otherwise "
