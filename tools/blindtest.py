@@ -1606,7 +1606,7 @@ def write_report(doc):
           "learned that the first-named fighter wins %.0f%% of these fights would sit below the market. %s"
           % (oc["market_close"], oc[lo_k], lo_k, max(oc.values()), len(oc),
              100 * float(np.mean([doc["fights"][i]["y"] for i in doc["fights"] if doc["fights"][i]["y"] is not None])),
-             "None does." if oc[lo_k] >= oc["market_close"] - 0.05 else
+             "None is more than 0.05 below it." if oc[lo_k] >= oc["market_close"] - 0.05 else
              "Check the models more than 0.05 below the market: %s." % ", ".join(
                  "`%s`" % k for k in oc if oc[k] < oc["market_close"] - 0.05)))
         A("")
@@ -1641,7 +1641,7 @@ def write_report(doc):
 # ====================================================================== main
 STACK_JSON = os.path.join(DERIVED, "blindtest_stack.json")
 EXPORT = {"present": "moe_close", "absent": "moe_noline"}
-# Verification (Nov 6): the close-trained 'present' weights fed an opening line score +0.0104 [+0.0063, +0.0144] worse
+# Verification (Nov 6): the close-trained 'present' weights fed an opening line score +0.0102 [+0.0057, +0.0145] worse
 # than open-trained weights on 2024-25, so the export also carries an open-trained switch model ('model_open':
 # present = moe_open, absent = moe_noline). Use it (MoE.load(doc, "model_open")) when the line at prediction time is
 # an opener or an early line rather than a fight-day line near the close.
@@ -1723,7 +1723,7 @@ def export_stack(args):
                              "line weights (moe_close): use it with a fight-day line near the close. 'model_open' "
                              "(MoE.load(doc, 'model_open')) = open-trained line weights (moe_open), same no-line block: "
                              "use it with an opener or an early line (blind 2024-25: the close-trained weights fed the "
-                             "open are +0.0104 [+0.0063, +0.0144] worse than the open-trained ones)" % _ENGK},
+                             "open are +0.0102 [+0.0057, +0.0145] worse than the open-trained ones)" % _ENGK},
            "model": out, "model_open": out_open, "test_vectors": vectors}
     wjson(STACK_JSON, res)
     log("wrote %s: present %d patterns, absent %d patterns, %d test vectors; weights present %s, absent %s" % (

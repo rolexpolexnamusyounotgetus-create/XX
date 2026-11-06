@@ -2135,7 +2135,9 @@
         var nm2 = c.bones[jj], kk = bi[nm2];
         if (!inMask(L, nm2) || LIMB_BONE[nm2]) continue;
         self.clipQuat(c, L.t, jj, _q2, L.mirror).premultiply(qa).multiply(refs[jj]);
-        W[kk].slerp(_q2, w);
+        // kicks: the Mixamo kicks fold the trunk far forward; keep about half of the driver's upright,
+        // slightly leaning-back trunk so a calf kick does not bow the head to the waist
+        W[kk].slerp(_q2, L.mask === "kick" ? w * (nm2 === "Hips" ? 0.7 : 0.5) : w);
       }
       var h = self.hipsY;
       if (L.mask === "full") {

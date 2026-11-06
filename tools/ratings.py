@@ -14,6 +14,10 @@ Run from the project root:
     python3 tools/ratings.py review       # checks + extra analyses -> ratings.json "review" (parts: describe,
                                           # ablation, verify; e.g. `review describe,ablation`)
     python3 tools/ratings.py review_whr 3 # WHR time-ordered check (choose on 2019-21, score 2022-23), 3 workers
+    python3 tools/ratings.py review_audit # adversarial-review checks (raw join, corner order, slope by year, dyadic
+                                          # SEs, ablation on both windows, pre-UFC coverage, dims swap symmetry)
+    python3 tools/ratings.py review_leak  # truncation + same-day result-flip test at 3 test-window cut days
+    python3 tools/ratings.py review_oppufc new|all   # opp_ufc_w recount check (the tool now uses the clean recount)
     python3 tools/ratings.py --quick      # smaller tuning grids (smoke test)
     python3 tools/ratings.py --jobs 4     # parallel workers for the tuning grids (default: all cores)
 
