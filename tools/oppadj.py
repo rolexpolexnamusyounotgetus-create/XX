@@ -58,6 +58,10 @@ KI = B.KI
 NK = B.NK
 TUNE = ("2019-01-01", "2023-12-31")
 TEST_FROM = "2024-01-01"
+# hidden-data protocol (docs/BACKLOG.md): 2026+ is the sealed vault. Factors are still written for those snapshots
+# (pure pre-fight outputs) but no 2026 fight is ever scored here.
+VAULT_FROM = "2026-01-01"
+HL_EXTRA = [3650]          # diagnostic only: beyond the task grid, never eligible for selection
 HL_GRID = [365, 730, 1095, 1460, 2190]
 # ufcstats has no control time before 1999, so model rows start in 2001; rows before 2004 take the 2004
 # priors (window 1999-2003). Both are long before the first prediction date (2019).
@@ -356,7 +360,7 @@ class Data:
                   if self.pslug.get(self.s_person[2 * i + s]) != e[t]["slug"])
         self.s_date = np.array([e["date"] for e in ent for _ in (0, 1)])
         self.s_tune = (self.s_date >= TUNE[0]) & (self.s_date <= TUNE[1])
-        self.s_test = self.s_date >= TEST_FROM
+        self.s_test = (self.s_date >= TEST_FROM) & (self.s_date < VAULT_FROM)
         self.s_key = [self.keys[r] for r in self.s_row]
         self.sL = LTable(self.s_key, self.priors_by_key, p)
         # prediction dates: unique backtest dates (fits use rows strictly before)
@@ -866,7 +870,7 @@ def winner_proxy(D, feats):
     yA = (win == "A").astype(float)
     date = np.array([e["date"] for e in ent])
     tune = dec & (date >= TUNE[0]) & (date <= TUNE[1])
-    test = dec & (date >= TEST_FROM)
+    test = dec & (date >= TEST_FROM) & (date < VAULT_FROM)
     elo = np.array([[e["A"]["elo"], e["B"]["elo"]] for e in ent], dtype=float)
     res = {}
     for name, F in feats.items():
@@ -895,8 +899,7 @@ def subgroups(D, dv_a, dv_b, mask):
     yr = np.array([e["date"][:4] for e in D.entries for _ in (0, 1)])
     out = {}
     for lab, g in (("prior_fights_1_3", (n_prior <= 3)), ("prior_fights_4_8", (n_prior >= 4) & (n_prior <= 8)),
-                   ("prior_fights_9_plus", n_prior >= 9), ("2024", yr == "2024"), ("2025", yr == "2025"),
-                   ("2026", yr == "2026")):
+                   ("prior_fights_9_plus", n_prior >= 9), ("2024", yr == "2024"), ("2025", yr == "2025")):
         m = mask & g
         a, b = dv_a[m].sum(), dv_b[m].sum()
         out[lab] = {"n": int(m.sum()), "gain_pct": rnd(100 * (a - b) / max(a, 1e-9), 3)}
@@ -1304,6 +1307,95 @@ def main():
         out["mu_d"], out["mu_c"], out["mu_g"], out["mu_tdatt"] = out["dAtt"], out["cAtt"], out["gAtt"], out["tdAtt"]
         return out
 
+    # ---- held-out adjustment slope: how much of the predicted change (final vs engine raw) is real on 2024-25.
+    # counts: log mu = log mu_eng + a0 + beta * log(mu_fin / mu_eng); binomials: the same on the logit.
+    # beta = 1: the adjustment is right-sized; 0: it carries no information; a0 absorbs any level drift.
+    # Also obs / pred by quintile of the predicted change (sides where the factors say the raw rate is inflated
+    # should come in below the raw prediction).
+    def adj_slope(name):
+        f = ev.fam[name]
+        kind = FAMILIES[name][0]
+        te = f["test"]
+        pe, pf = predict(name, "engine")[te], predict(name, "final")[te]
+        y, n = f["y"][te], f["E"][te]
+        if kind == "count":
+            ok = (pe > 0) & (pf > 0)
+            y, n, pe, pf = y[ok], n[ok], pe[ok], pf[ok]
+            x = np.log(pf / pe)
+            off = np.log(pe)
+        else:
+            x = pf - pe
+            off = pe
+        X = np.column_stack([np.ones(len(y)), x])
+        bta = np.zeros(2)
+        for _ in range(80):
+            if kind == "count":
+                mu = np.exp(X @ bta + off)
+                W, r = mu, y - mu
+            else:
+                pp = sigm(X @ bta + off)
+                W, r = n * pp * (1 - pp) + 1e-12, y - n * pp
+            st = np.linalg.solve((X.T * W) @ X, X.T @ r)
+            bta += st
+            if np.abs(st).max() < 1e-10:
+                break
+        if kind == "count":
+            mu = np.exp(X @ bta + off)
+            phi = float(np.sum((y - mu) ** 2 / np.maximum(mu, 1e-12)) / max(len(y) - 2, 1))
+            cov = np.linalg.inv((X.T * mu) @ X) * phi
+        else:
+            pp = sigm(X @ bta + off)
+            W = n * pp * (1 - pp) + 1e-12
+            phi = float(np.sum((y - n * pp) ** 2 / W) / max(len(y) - 2, 1))
+            cov = np.linalg.inv((X.T * W) @ X) * phi
+        qs = np.quantile(x, [0.2, 0.4, 0.6, 0.8])
+        b_ = np.searchsorted(qs, x)
+        tab = []
+        for g in range(5):
+            m = b_ == g
+            if kind == "count":
+                obs, e_, f_ = y[m].sum(), pe[m].sum(), pf[m].sum()
+                tab.append({"pred_change": rnd(float(np.exp(np.median(x[m]))), 3), "n": int(m.sum()),
+                            "obs_over_engine": rnd(obs / max(e_, 1e-12), 3), "obs_over_final": rnd(obs / max(f_, 1e-12), 3)})
+            else:
+                obs = y[m].sum() / max(n[m].sum(), 1e-12)
+                e_ = (n[m] * sigm(pe[m])).sum() / max(n[m].sum(), 1e-12)
+                f_ = (n[m] * sigm(pf[m])).sum() / max(n[m].sum(), 1e-12)
+                tab.append({"pred_change_odds": rnd(float(np.exp(np.median(x[m]))), 3), "n": int(m.sum()),
+                            "obs_rate": rnd(obs, 4), "engine_rate": rnd(e_, 4), "final_rate": rnd(f_, 4)})
+        return {"beta": rnd(bta[1], 4), "beta_se": rnd(float(math.sqrt(cov[1, 1])), 3), "a0": rnd(bta[0], 4),
+                "dispersion": rnd(phi, 3), "n_test_sides": int(len(y)), "sd_change": rnd(float(x.std()), 4),
+                "quintiles": tab}
+
+    for name in FAMILIES:
+        res["families"][name]["heldout_adjustment_slope"] = adj_slope(name)
+        hs = res["families"][name]["heldout_adjustment_slope"]
+        print("slope %-9s beta %.3f (se %.3f) sd change %.3f" % (name, hs["beta"], hs["beta_se"], hs["sd_change"]))
+
+    # ---- diagnostic beyond the task grid: half-life 3650 at the chosen k (never eligible for selection)
+    if not args.smoke:
+        jobs = []
+        for name in FAMILIES:
+            c = res["families"][name]["chosen"]
+            for hx in HL_EXTRA:
+                jobs.append((name, hx, c["k_offense"], c["k_defense"], "full"))
+        GX = run_grid(D, p, jobs, args.procs)
+        SX = {hx: D.side_sums(hx) for hx in HL_EXTRA}
+        for name, (kind, fields, kname, _, _) in FAMILIES.items():
+            fam = res["families"][name]
+            c = fam["chosen"]
+            rt = fam["deviance"]["raw_tuned"]
+            out_x = {}
+            for hx in HL_EXTRA:
+                so, sd, sc = (a.astype(float) for a in GX[(name, hx, c["k_offense"], c["k_defense"], "full")][:3])
+                sa = ev.score(name, ev.pred_adj(name, so, sd, sc))
+                Rx = fighter_rates(SX[hx], D.sL, p, k={kname: {fields[0]: rt["k_offense"], fields[1]: rt["k_defense"]}})
+                sr = ev.score(name, ev.pred_raw(name, Rx))
+                out_x[str(hx)] = {"opp_adjusted_tune": rnd(sa["tune"], 6), "opp_adjusted_test": rnd(sa["test"], 6),
+                                  "raw_tuned_k_tune": rnd(sr["tune"], 6), "raw_tuned_k_test": rnd(sr["test"], 6)}
+            fam["half_life_extra_diagnostic"] = out_x
+        print("extra half-life diagnostic done %.0f s" % (time.time() - t0))
+
     # ---- composites: per-fight strikes / KD / TD conditional on the fight's time in each position
     Vs = D.V[D.s_row]
     actual = {"sig_att": Vs[:, KI["d_att"]] + Vs[:, KI["c_att"]] + Vs[:, KI["g_att"]],
@@ -1455,7 +1547,8 @@ def main():
     meta = {
         "built": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "snapshot": D.snapshot.isoformat(), "tool": "tools/oppadj.py", "report": "research/model_oppadj.md",
-        "tune": "%s..%s" % TUNE, "test_from": TEST_FROM,
+        "tune": "%s..%s" % TUNE, "test_from": TEST_FROM, "test_until_excl": VAULT_FROM,
+        "vault_note": "2026+ fights are the sealed vault (docs/BACKLOG.md hidden-data protocol): never scored here; their snapshot factors are pre-fight outputs only",
         "grid": "smoke" if args.smoke else ("quick" if args.quick else "full"),
         "half_life_grid": hls,
         "engine_params_used": {k: p[k] for k in ("kPM", "kAcc", "kTdPM", "kTdAcc", "kKD", "kCtrlTD", "kTgt",
