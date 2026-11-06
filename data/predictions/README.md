@@ -107,6 +107,17 @@ Each event adds about 10 to 14 bouts, so after a few events the intervals are st
 scores file reports the count and the interval next to every number, and a lead over the market is
 not claimed until the paired interval excludes zero.
 
+## Tooling
+
+`python3 tools/forward_ledger.py predict --event <date>` writes an event's file in the format above (plus the
+experts, the simulator's raw output, `p_a_line` / `p_a_noline` / `p_elo` and the flags), refusing to overwrite or to
+predict after the lock; `--supersede` adds a `_v2` before the lock. Model version `fwd-1` sets `p_a` to the MoE
+stack with the market line captured at prediction time as one of its experts (it says so in the file's `model.p_a`);
+`p_a_noline` is the same stack without the line, and both are scored. `python3 tools/forward_ledger.py score`
+fetches results for finished ledger events (ufcstats through the Greco1899 CSVs and ESPN's scoreboard as the
+second source), appends them to `results.json` and regenerates `scores.json` / `scores.md`. The backtest-side
+counterpart is `tools/blindtest.py` (event-by-event replay of 2024-2025, `research/model_blindtest.md`).
+
 ## Card snapshot notes (`cards_upcoming.json`)
 
 - `order` 1 is the main event, then down the card. `segment` is `main`, `prelims`, `early_prelims`

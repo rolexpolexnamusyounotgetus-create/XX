@@ -229,3 +229,39 @@ and Sherdog fighter pages (sharing tools/preufc.py's cache and keeping the combi
   doors), event type, card segment; per slug: nationality with sources and a home point.
 - **Eval:** train 2012-2023, validate 2024-2025, mirrored no-intercept logistic beyond Elo + debut; results
   in `meta.eval`. Details, audit and caveats: `research/data_fightweek.md`.
+
+
+## blindtest.py: the standing blind test (event-by-event walk-forward replay of every model)
+
+```
+nice -n 5 python3 tools/blindtest.py list                 # registered models, refit schedules, information class
+nice -n 5 python3 tools/blindtest.py replay               # replay 2024-01-01..2025-12-31, score, write outputs (~30 min busy box)
+nice -n 5 python3 tools/blindtest.py replay --models elo,ml_lr,moe_noline   # a subset plus what it needs
+nice -n 5 python3 tools/blindtest.py score                # re-score the stored replay and rewrite the report
+python3 tools/blindtest.py replay --quick --out /tmp/x.json   # smoke test: first 8 cards
+```
+
+Before every UFC card date in the window each registered model is refit/updated on data strictly before that date
+(per event, per month, or frozen/sequential) and predicts the card; stackers refit before every card on 2019..yesterday.
+Fights from 2026-01-01 are never read. Outputs: `data/derived/blindtest.json` (every prediction with model version,
+refit cutoff and fit_through; fits; scores) and the auto section of `research/model_blindtest.md` (scoreboard with
+event-cluster bootstrap CIs, cumulative curves, segments incl. newcomers, calibration, 7-bin). A new model is a ~10-line
+`@register` plugin (in the file or in `tools/blindtest_plugins/*.py`, auto-imported; `ml2.py` there registers ML v2 as
+soon as `data/derived/ml2.json` exists). New engine versions register themselves from `data/derived/evalv/v<N>_val.json`
+(produced by the controlled one-look `tools/evalv.js` run; the harness never runs a validation look itself).
+Heavy fits are cached in `out/blindtest_cache/`.
+
+## forward_ledger.py: write-once forward predictions and their scoring
+
+```
+python3 tools/forward_ledger.py predict --event 2026-11-14 [--sims 2000] [--dry-run --dry-out /tmp/x.json]
+python3 tools/forward_ledger.py predict --event 2026-11-14 --supersede   # _v2 before the lock, names the file it replaces
+python3 tools/forward_ledger.py score [--no-fetch] [--manual results.json]
+python3 tools/forward_ledger.py status
+```
+
+`predict` writes `data/predictions/<date>_<event-slug>.json` (O_EXCL, read-only; refuses after the card's lock or when
+the file exists) from `cards_upcoming.json`, the newest pre-lock odds snapshot and the page's model package evaluated
+in Node by `tools/forward_ledger.js` (MoE stack with and without the line, experts, simulator, method/round).
+`score` pulls results for finished ledger events only (ufcstats via the Greco1899 CSVs into `out/forward_results/`,
+ESPN's scoreboard JSON as the second source), appends them to `results.json`, and regenerates `scores.json`/`scores.md`.

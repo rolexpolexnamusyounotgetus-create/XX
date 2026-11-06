@@ -536,19 +536,22 @@ class MoEStack(Model):
     day before), as tools/moe.py does for its 2025 rolling fit."""
     symmetric = "by construction (antisymmetric logits, symmetric gates, no intercept)"
 
-    def __init__(self, ctx, experts, regime, refit="event"):
-        """experts: {moe expert name: harness model key}, e.g. {'market': 'market_close', 'ml': 'ml_lr', ...}."""
+    def __init__(self, ctx, experts, regime, refit="event", cal=None, cal_days=None):
+        """experts: {moe expert name: harness model key}, e.g. {'market': 'market_close', 'ml': 'ml_lr', ...}.
+        cal overrides moe.json's calibration kind; cal_days fits it on the last cal_days of forward-chained logits."""
         self.ctx, self.map, self.regime, self.refit = ctx, dict(experts), regime, refit
         mo = ctx.json("moe.json")
         cfg = mo["model"][regime]
         self.method, self.hp = cfg["method"], dict(cfg.get("hp") or {})
-        self.cal_kind = (cfg.get("calibration") or {}).get("type", "none")
+        self.cal_kind = cal or (cfg.get("calibration") or {}).get("type", "none")
+        self.cal_days = cal_days
         self.names = [e for e in mo["model"]["experts"] if e in self.map] + [e for e in self.map if e not in mo["model"]["experts"]]
         R = ctx.moe_rows()
         self.MO, self.Gall = R["MO"], R["G"]
         self.drops = self.MO.make_drops(self.names)[0]
-        self.version = "tools/moe.py %s %s cal=%s, experts %s" % (
+        self.version = "tools/moe.py %s %s cal=%s%s, experts %s" % (
             self.method, json.dumps(self.hp, sort_keys=True), self.cal_kind,
+            (" on the last %d days" % cal_days) if cal_days else "",
             "+".join("%s=%s" % (e, self.map[e]) if e != self.map[e] else e for e in self.names))
         self._fold_cache = {}
         self.st, self.cal = None, None
@@ -587,7 +590,8 @@ class MoEStack(Model):
         """Stack logits under every availability pattern of this regime (as tools/moe.py's OOF folds)."""
         L, M, G = self._mats(ids, P)
         y = np.array([self.ctx.y[i] for i in ids])
-        zs, ys = [], []
+        dd = np.array([dt.date.fromisoformat(self.ctx.date[i]).toordinal() for i in ids])
+        zs, ys, ds = [], [], []
         for d in self.drops:
             if self.regime == "present" and "market" in d:
                 continue
@@ -597,9 +601,12 @@ class MoEStack(Model):
                 try:
                     zs.append(self._safe_logit(st, L[ok], Md[ok], self._gs(G[ok])))
                     ys.append(y[ok])
+                    ds.append(dd[ok])
                 except KeyError:
                     continue
-        return (np.concatenate(zs), np.concatenate(ys)) if zs else (np.zeros(0), np.zeros(0))
+        if not zs:
+            return np.zeros(0), np.zeros(0), np.zeros(0)
+        return np.concatenate(zs), np.concatenate(ys), np.concatenate(ds)
 
     def _safe_logit(self, st, L, M, G):
         if self.method != "linear":
@@ -626,6 +633,7 @@ class MoEStack(Model):
         if self.cal_kind != "none":
             T = int(cutoff[:4])
             zs, ys = [], []
+            lo = dt.date.fromisoformat(cutoff).toordinal() - self.cal_days if self.cal_days else -1
             for Y in range(2021, T + 1):
                 start, end = "%d-01-01" % Y, min("%d-01-01" % (Y + 1), cutoff)
                 te = self._rows_before(end, start)
@@ -636,9 +644,9 @@ class MoEStack(Model):
                     if ("st", Y) not in self._fold_cache:
                         self._fold_cache[("st", Y)] = self._fit_stacker(self._rows_before(start), P)
                     self._fold_cache[key] = self._logits(self._fold_cache[("st", Y)], te, P)
-                z, yy = self._fold_cache[key]
-                zs.append(z)
-                ys.append(yy)
+                z, yy, dd = self._fold_cache[key]
+                zs.append(z[dd >= lo])
+                ys.append(yy[dd >= lo])
             self.cal = self.MO.Calib(self.cal_kind).fit(np.concatenate(zs), np.concatenate(ys))
         return {"fit_through": max(self.ctx.date[i] for i in ids), "n_train": len(ids),
                 "calibration": self.cal.export() if hasattr(self.cal, "export") else None}
@@ -872,11 +880,11 @@ if _ENGK:
     _MOE_BASE["engine"] = _ENGK
 
 
-def _moe_reg(key, regime, extra, desc, experimental=False):
+def _moe_reg(key, regime, extra, desc, experimental=False, **kw):
     ex = dict(_MOE_BASE, **extra)
     register(key, group="stack", line={"market_close": "close", "market_open": "open"}.get(extra.get("market")),
              refit="event", needs=tuple(sorted(set(ex.values()))), desc=desc, experimental=experimental)(
-        lambda ctx: MoEStack(ctx, ex, regime))
+        lambda ctx: MoEStack(ctx, ex, regime, **kw))
 
 
 _moe_reg("moe_noline", "absent", {}, "the MoE stacker without a line (moe.json 'absent' config), refit before every card")
@@ -886,6 +894,13 @@ _moe_reg("moe_noline_plus", "absent", {"ratings": "ratings_whr", "mr": "mr_S"},
          "experiment: moe_noline + round-level WHR + method/round S as extra experts", experimental=True)
 _moe_reg("moe_close_plus", "present", {"market": "market_close", "ratings": "ratings_whr", "mr": "mr_S"},
          "experiment: moe_close + round-level WHR + method/round S as extra experts", experimental=True)
+_moe_reg("moe_noline_pre", "absent", {"preufc": "preufc_elo"},
+         "experiment: moe_noline + the pre-UFC-seeded Elo as an extra expert (newcomers)", experimental=True)
+_moe_reg("moe_noline_rt", "absent", {}, "experiment: moe_noline with its temperature fit on the last 730 days only",
+         experimental=True, cal="temperature", cal_days=730)
+_moe_reg("moe_close_rt", "present", {"market": "market_close"},
+         "experiment: moe_close plus a temperature fit on the last 730 days (moe.json chose none)", experimental=True,
+         cal="temperature", cal_days=730)
 
 
 def load_plugins():

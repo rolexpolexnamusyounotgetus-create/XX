@@ -1848,6 +1848,13 @@
   Avatar.prototype.onAct = function (act) {
     if (!this.base.mocap || this.cfg.ref || this.opts.noMocap) return;
     var mv = act.move, c, side, frac;
+    if (act.type === "shoot") {
+      // double-leg entry: level change, penetration step and drive from the Mixamo takedown, on the upper body
+      var cs = this.clipByName("tdShot"); if (!cs) return;
+      var Ls = this.clip(cs, 0.85, 0.08, { mask: "upper", t: 0.05, speed: clamp(1.25 / Math.max(0.3, act.dur), 1, 2.6), restart: true, mirror: this.actor && this.actor.stance < 0 });
+      if (Ls) Ls.autoOff = act.dur + 0.15;
+      return;
+    }
     if (act.type === "punch") { c = this.clipByName(STRIKE_CLIP[mv] || (act.hand === "lead" ? "jab" : "cross")); side = act.hi; frac = 0.42; }
     else if (act.type === "kick") { c = this.clipByName(STRIKE_CLIP[mv] || "midkick"); side = act.li; frac = 0.48; }
     else return;
@@ -1899,6 +1906,7 @@
     } else if (to === "celebrate") this.clip(M ? "victoryIdle" : "fistPump", 0.85, 0.5, { mask: "upper", loop: true });
     else if (to === "sit" && M) this.clip("sitIdle", 0.55, 0.6, { mask: "torso", loop: true });
     else if (to === "refstop" && M) { var Lr = this.clip("refStop", 0.7, 0.2, { mask: "upper", restart: true, speed: 1.2 }); if (Lr) Lr.autoOff = 1.1; }
+    else if (to === "raised" && M && this.actor && this.actor.armTarget === 0) this.clip("disappointed", 0.5, 0.8, { mask: "torso", t: 0.3 });
     else {
       this.layers.forEach(function (L) { if (L.mask === "upper" || L.mask === "torso" || (L.mask === "full" && L.clip && L.clip.name !== "getUp")) { L.target = 0; L.rate = 1 / 0.45; } });
     }

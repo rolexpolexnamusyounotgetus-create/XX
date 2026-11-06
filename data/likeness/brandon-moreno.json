@@ -203,17 +203,12 @@
       "size": "medium"
     },
     {
-      "where": "right upper arm (outer)",
-      "description": "Black-and-grey scene: a tall arch monument with clouds and a sign; a word on the sign reads like 'TIJUANA' in the cutout.",
-      "size": "large (shoulder to elbow)"
+      "where": "right arm (upper arm and forearm), patchwork half-sleeves",
+      "description": "Black-and-grey: on the outer upper arm a tall arch monument with clouds and a sign (a word on the sign reads like 'TIJUANA' in the cutout); on the outer forearm a standing Aztec warrior with a feathered headdress; vertical script 'Jiu Jitsu' on the inner forearm. Skin shows between the pieces at the elbow.",
+      "size": "large (shoulder to wrist, not solid)"
     },
     {
-      "where": "right forearm (outer)",
-      "description": "Black-and-grey standing Aztec warrior figure with a feathered headdress; vertical script 'Jiu Jitsu' on the inner right forearm.",
-      "size": "large (elbow to wrist)"
-    },
-    {
-      "where": "left forearm",
+      "where": "left lower arm, small pieces",
       "description": "Black outline of a rapier/sword lying along the outer left forearm; small vertical script near the left wrist on the inner side; a tiny 'S'-shaped mark on the inner left arm near the elbow.",
       "size": "medium (sword), small (script)"
     },
