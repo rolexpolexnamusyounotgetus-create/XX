@@ -3,17 +3,18 @@
   "name": "Dan Hooker",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Active, on a three-fight losing streak, all by stoppage: Arman Tsarukyan (arm-triangle from mount, R2, Doha, Nov 22, 2025), Benoit Saint Denis (TKO from mount, R2, UFC 325, Sydney, Jan 31, 2026) and Salahdine Parnasse (KO by a punch at 2:35 of R1, Paris, Sep 5, 2026). Sibling scouting sources report him booked against Brian Ortega, in Ortega's lightweight debut, at a UFC Fight Night in Doha on Nov 21, 2026; this pass could not re-verify that. UFC record 14-11 in fighters.json.",
+    "summary": "Active, on a three-fight losing streak, all by stoppage: Arman Tsarukyan (arm-triangle from mount, R2, Doha, Nov 22, 2025), Benoit Saint Denis (TKO from mount, R2, UFC 325, Sydney, Jan 31, 2026) and Salahdine Parnasse (KO by a punch at 2:35 of R1, Paris, Sep 5, 2026). The Brian Ortega dossier reports him booked against Ortega, in Ortega's lightweight debut, at a UFC Fight Night at ABHA Arena in Doha on Nov 21, 2026 (citing ufcalendar.com and Yahoo); neither the research pass nor the Nov 6 fact-check could re-verify it on the web. No current ranking was found in any project file. A broken hand forced him out of a planned UFC 313 fight with Justin Gaethje in Mar 2025. UFC record 14-11 in fighters.json.",
     "title": null,
     "ranking": null,
     "active": true,
-    "next_fight": "Brian Ortega, lightweight, UFC Fight Night, Doha, Qatar, Nov 21, 2026 (per ufcalendar.com and Yahoo as cited in data/scouting/brian-ortega.json; not re-verified in this pass)",
-    "injuries": [],
+    "next_fight": "Brian Ortega, lightweight, UFC Fight Night, ABHA Arena, Doha, Qatar, Nov 21, 2026 (per ufcalendar.com and Yahoo as cited in data/scouting/brian-ortega.json; not independently re-verified)",
+    "injuries": [ { "what": "broken hand; he withdrew from a UFC 313 fight with Justin Gaethje and Rafael Fiziev replaced him on about 10 days' notice", "when": "2025-02", "source": "https://bloodyelbow.com/2025/02/26/justin-gaethjes-replacement-revealed-for-ufc-313-after-dan-hooker-pulls-out-of-fight-with-injury (cited in research/gaethje.md with ESPN; not re-fetched)" } ],
     "sources": [
       "data/derived/fighters.json (recent: 2026-09-05 L Parnasse KO R1 2:35; 2026-01-31 L Saint Denis TKO R2 4:45; 2025-11-22 L Tsarukyan sub R2 3:34)",
       "data/raw/ufc_event_details.csv (Doha, Sydney, Paris locations)",
       "https://www.ufcalendar.com/fights/dan-hooker-vs-brian-ortega (cited in data/scouting/brian-ortega.json; not re-fetched)",
-      "https://sports.yahoo.com/articles/ufc-analyst-dan-hooker-vs-170039364.html (cited in data/scouting/brian-ortega.json; not re-fetched)"
+      "https://sports.yahoo.com/articles/ufc-analyst-dan-hooker-vs-170039364.html (cited in data/scouting/brian-ortega.json; not re-fetched)",
+      "https://africa.espn.com/mma/story/_/id/44031380/rafael-fiziev-stepping-face-justin-gaethje-ufc-313 (cited in research/gaethje.md; not re-fetched)"
     ]
   },
   "style": {
@@ -33,7 +34,7 @@
       "5 KO/TKO losses in 25 UFC fights, 2 of them since Jan 2026",
       "defence has fallen: 40% significant-strike defence and 5.6 absorbed per minute recency-weighted (career 49% and 4.9; lightweight median about 54% and 4.1)"
     ],
-    "summary": "A tall switch-stance kickboxer from New Zealand's City Kickboxing who fights at a high pace from range: a jab and long straights, front kicks and round kicks to the legs and body, and knees when he gets a clinch. He has real finishing ability standing and a dangerous guillotine. But he is hittable, and his last three fights ended inside the distance against an elite wrestler, a grappler and a striker.",
+    "summary": "A tall switch-stance kickboxer from New Zealand who fights at a high pace from range: a jab and long straights, front kicks and round kicks to the legs and body, and knees when he gets a clinch. He has real finishing ability standing and a dangerous guillotine. But he is hittable, and his last three fights ended inside the distance against an elite wrestler, a grappler and a striker.",
     "sources": [
       "data/derived/fighters.json (career C and recency-weighted S sums; lightweight medians over 120 lightweights with 30+ UFC minutes)",
       "data/raw/ufc_fight_stats.csv and data/raw/ufc_fight_results.csv (2014-2026 bout stats and methods)",
@@ -55,7 +56,8 @@
     "tattoos": "none confirmed",
     "kit": "unknown",
     "sources": [
-      "data/derived/fighters.json (height, reach, divisions)"
+      "data/derived/fighters.json (height, reach, divisions)",
+      "skin: unverified recall of widely published fight photos; not checked against a dated photo (web access unavailable in the research pass and the fact-check)"
     ]
   },
   "engine_notes": [

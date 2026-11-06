@@ -3,9 +3,9 @@
   "name": "Mauricio Ruffy",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Active, coming off a loss. Arman Tsarukyan knocked him out with a standing elbow in the clinch at 4:56 of round 1 at UFC 331 in Los Angeles (Sep 19, 2026). That ended a two-fight win streak: TKO wins over Rafael Fiziev (UFC 325, Jan 31, 2026) and Michael Chandler (UFC Freedom 250, Washington, DC, Jun 14, 2026). UFC record 5-2 in fighters.json. No booking, current ranking or injury could be confirmed in this pass (web search was unavailable).",
+    "summary": "Active, coming off a loss. Arman Tsarukyan knocked him out with a standing elbow in the clinch at 4:56 of round 1 at UFC 331 in Los Angeles (Sep 19, 2026). That ended a two-fight win streak: TKO wins over Rafael Fiziev (UFC 325, Jan 31, 2026) and Michael Chandler (UFC Freedom 250, Washington, DC, Jun 14, 2026). UFC record 5-2 in fighters.json. He is No. 10 at lightweight on the Nov 3, 2026 media-panel list as mirrored by UFCalendar and ufcrankings.org (recorded in the project's market research; not checked on ufc.com). A Yardbarker headline has him saying carelessness cost him the Tsarukyan fight. No booking or injury was found; web search was unavailable to the research pass and to the Nov 6 fact-check.",
     "title": null,
-    "ranking": null,
+    "ranking": "#10 lightweight (UFC media panel, Nov 3, 2026, as mirrored by UFCalendar and ufcrankings.org per research/matchup_market.md; not checked on ufc.com)",
     "active": true,
     "next_fight": null,
     "injuries": [],
@@ -15,7 +15,9 @@
       "https://www.mmaweekly.com/news/arman-tsarukyan-lands-elbow-knockout-on-mauricio-ruffy-at-ufc-331 (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
       "https://sports.yahoo.com/articles/arman-tsarukyan-knocks-mauricio-ruffy-061351913.html (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
       "https://www.bjpenn.com/mma-news/arman-tsarukyan/ufc-331-results-arman-tsarukyan-kos-mauricio-ruffy-video/ (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
-      "https://www.tapology.com/fightcenter/bouts/1166249-ufc-331-arman-ahalkalakets-tsarukyan-vs-mauricio-ruffy (cited in data/scouting/arman-tsarukyan.json; not re-fetched)"
+      "https://www.tapology.com/fightcenter/bouts/1166249-ufc-331-arman-ahalkalakets-tsarukyan-vs-mauricio-ruffy (cited in data/scouting/arman-tsarukyan.json; not re-fetched)",
+      "research/matchup_market.md, section 3 (lightweight picture as of Nov 6, 2026: 'Ruffy is No. 10'), citing https://www.ufcalendar.com/rankings/lightweight and https://ufcrankings.org/ (not re-fetched)",
+      "https://www.yardbarker.com/mma/articles/ruffy_on_tsarukyan_ko_carelessness_cost_me/s1_17349_44346695 (cited in CONVERSATION.md; headline only, not re-fetched)"
     ]
   },
   "style": {
@@ -63,7 +65,7 @@
     { "note": "Accuracy and defence at range: 56.5% significant accuracy (median about 47%) and 59% defence (median about 54%), absorbing 3.5 per minute career.", "source": "data/derived/fighters.json (C sums)" },
     { "note": "Takedown defence is good on first contact (26 of 30 stopped, 87%) but grapplers keep shooting: 9.2 attempts against him per 15 min, and 166-187 seconds of opponent control per 15. Both losses followed sustained clinch or wrestling pressure.", "source": "data/derived/fighters.json (otd, octrl); data/raw/ufc_fight_stats.csv" },
     { "note": "No offensive grappling recorded: 0 of 1 on takedowns and 0 submission attempts in the UFC.", "source": "data/derived/fighters.json" },
-    { "note": "Almost no late-round data: his only five-round booking (Tsarukyan, UFC 331) ended in round 1, and only the Llontop decision went 15 minutes. Cardio and late-round output are unknown and should carry wide uncertainty.", "source": "data/derived/fighters.json (pace has round 1 only; n_5rd 1); data/raw/ufc_fight_results.csv (time formats)" }
+    { "note": "Almost no late-round data: his only five-round booking (Tsarukyan, UFC 331) ended in round 1, and only the Llontop decision went 15 minutes. Cardio and late-round output are unknown and should carry wide uncertainty.", "source": "data/derived/fighters.json (pace covers rounds 1-3 only, at weights 26.3 / 12.4 / 5, and n_5rd is 1); data/raw/ufc_fight_results.csv (time formats)" }
   ],
   "confidence": "medium"
 }

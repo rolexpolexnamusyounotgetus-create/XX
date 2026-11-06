@@ -57,7 +57,7 @@ function targets(div, nR) {
 }
 
 // ---------------------------------------------------------------- simulate a league-average pair
-function simAvg(div, nR, params, n, seed, wantTrace) {
+function simAvg(div, nR, params, n, seed) {
   const m = E.matchup(avgProfile(div, "A"), avgProfile(div, "B"), { division: div, rounds: nR, title: nR === 5, params });
   const s = E.summarize(m, n, seed);
   const a = s.avg.A, b = s.avg.B, p15 = (k) => (a.per15[k] + b.per15[k]) / 2;
@@ -71,19 +71,10 @@ function simAvg(div, nR, params, n, seed, wantTrace) {
     ctrl15: s.ctrl15, sub15: p15("sub_att"), subConv: sum(s.finSUB) / Math.max(1e-9, (a.sub_att + b.sub_att)),
     koLoc: s.koLoc, subNames: s.subNames, avgMin: s.avgMin
   };
-  if (wantTrace) {
-    // P(same-round finish by the scorer | round with a one-sided knockdown), from traced fights
-    const rng = E.makeRng(seed + 99), nT = Math.min(4000, n);
-    let kr = 0, kf = 0;
-    for (let i = 0; i < nT; i++) {
-      const f = E.simulate(m, rng, true);
-      for (const r of f.rounds) for (const w of ["A", "B"]) {
-        const o = w === "A" ? "B" : "A";
-        if (r.st[w].kd > 0 && r.st[o].kd === 0) { kr++; if (r.fin && r.fin.by === w && r.fin.how !== "SUB") kf++; }
-      }
-    }
-    out.kdFin = kf / Math.max(1, kr); out.kdRounds = kr;
-  }
+  const kk = s.koKind, kt = Math.max(1, kk.KO + kk.TKO_followup + kk.TKO_standing + kk.GNP + kk.LEG);
+  const kl = s.koLoc, klt = Math.max(1, kl.dist + kl.clinch + kl.ground);
+  out.kdFin = s.kdFin; out.kdRounds = s.kdRounds; out.koKind = kk;
+  out.gShare = kl.ground / klt; out.cShare = kl.clinch / klt; out.stShare = kk.TKO_standing / kt;
   return out;
 }
 
@@ -95,8 +86,8 @@ const TOL = [
 function within(sim, tgt, kind, tol) { return kind === "abs" ? Math.abs(sim - tgt) <= tol : Math.abs(sim / tgt - 1) <= tol; }
 
 function divTable(div, n) {
-  const T3 = targets(div, 3), S3 = simAvg(div, 3, null, n, 101, true);
-  const T5 = targets(div, 5), S5 = simAvg(div, 5, null, Math.round(n / 2), 202, false);
+  const T3 = targets(div, 3), S3 = simAvg(div, 3, null, n, 101);
+  const T5 = targets(div, 5), S5 = simAvg(div, 5, null, Math.round(n / 2), 202);
   const all5 = targets("ALL", 5);
   console.log(`\n--- ${div} (${DB.priors[div].lbs || "?"} lb): league-average vs league-average, ${n} 3-round fights (data: priors 2018+, n=${T3.n}) ---`);
   console.log("metric".padEnd(30) + "sim".padStart(9) + "data".padStart(9) + "   tolerance");
@@ -125,14 +116,15 @@ function divTable(div, n) {
   row("clinch landed / att per 15", S3.cL15, T3.cL15, "", 1, `${f2(S3.cA15, 1)} att vs ${f2(T3.cA15, 1)}; acc ${pct(S3.cL15 / S3.cA15)}% vs ${pct(T3.cL15 / T3.cA15)}%`);
   row("ground landed / att per 15", S3.gL15, T3.gL15, "", 1, `${f2(S3.gA15, 1)} att vs ${f2(T3.gA15, 1)}; acc ${pct(S3.gL15 / S3.gA15)}% vs ${pct(T3.gL15 / T3.gA15)}%`);
   row("KD per 15", S3.kd15, T3.kd15, "", 3, `KD per 100 standing head ${f2(S3.kd100s, 3)}`);
-  row("P(finish same round | KD)", S3.kdFin, T3.kdFin, "%", 0, `traced, ${S3.kdRounds} one-sided KD rounds`);
+  row("P(finish same round | KD)", S3.kdFin, T3.kdFin, "%", 0, `${S3.kdRounds} one-sided KD rounds (data: priors kd_fin)`);
   row("TD landed per 15", S3.td15, T3.td15, "", 2, `attempts ${f2(S3.tdA15)} vs ${f2(T3.tdA15)}`);
   row("TD accuracy", S3.tdAcc, T3.tdAcc, "%");
   row("sub attempts per 15", S3.sub15, T3.sub15, "", 3, `conversion ${pct(S3.subConv)}% vs ${pct(T3.subConv)}%`);
   row("decision UD / SD / MD", S3.dec.UD, T3.dec.UD, "%", 0, `SD ${pct(S3.dec.SD)} vs ${pct(T3.dec.SD)}, MD ${pct(S3.dec.MD)} vs ${pct(T3.dec.MD)}, draws ${pct(S3.dec.DRAW)}% of decisions (data ~1.7%)`);
   row("10-8 per judge-round", S3.r108, 0.0469, "%", 0, "data 4.7% 2015+, ~2.5% 2024-25");
-  const kl = S3.koLoc, kt = kl.dist + kl.clinch + kl.ground + kl["between rounds"];
-  row("KO/TKO location", 0, null, "", 0, `distance ${pct(kl.dist / kt)}% clinch ${pct(kl.clinch / kt)}% ground ${pct(kl.ground / kt)}% between rounds ${pct(kl["between rounds"] / kt)}%  (data LW 58 / 13 / 28, doctor+corner ~1-3% of KOs)`);
+  const kl = S3.koLoc, kt = kl.dist + kl.clinch + kl.ground + kl["between rounds"], kk = S3.koKind, kkt = sum(Object.values(kk));
+  row("KO/TKO location", 0, null, "", 0, `distance ${pct(kl.dist / kt)}% clinch ${pct(kl.clinch / kt)}% ground ${pct(kl.ground / kt)}% between rounds ${pct(kl["between rounds"] / kt)}%  (data all 60 / 12 / 28 of strike stoppages; doctor+corner ~2% of KO/TKOs)`);
+  row("KO/TKO kinds", 0, null, "", 0, Object.entries(kk).map(([k, v]) => `${k} ${pct(v / Math.max(1, kkt))}%`).join(", "));
   const sn = Object.entries(S3.subNames).sort((x, y) => y[1] - x[1]).slice(0, 4), st = sum(Object.values(S3.subNames));
   row("submission types", 0, null, "", 0, sn.map(([k, v]) => `${k} ${pct(v / st, 0)}%`).join(", ") + "  (data RNC 44%, guillotine 17%, armbar 10%, arm triangle 10%)");
   const t5 = (T5.n >= 40) ? T5 : all5;
@@ -163,36 +155,44 @@ function selfCalibrate(n) {
   const g = {
     strikeScale: P0.strikeScale, accScale: P0.accScale, groundScale: P0.groundScale, clinchScale: P0.clinchScale, kdScale: P0.kdScale,
     tdScale: P0.tdScale, tdOddsScale: P0.tdOddsScale, subAttScale: P0.subAttScale, subConvScale: P0.subConvScale,
-    kdInstant: P0.kdInstant, kdRefStop: P0.kdRefStop, indSd: P0.judge.indSd, t108: P0.judge.t108, doc: P0.doc
+    kdInstant: P0.kdInstant, kdRefStop: P0.kdRefStop, gnpTko: P0.gnpTko, stko: P0.stko, kdClinch: P0.kdPos[1],
+    indSd: P0.judge.indSd, t108: P0.judge.t108
   };
   const ref = "Lightweight", T = targets(ref, 3);
+  // KO/TKO composition targets (baserates_tables.md, strike stoppages): ground 28%, clinch 12.5%; standing stoppages without a
+  // knockdown ~7% (0.049 vs 0.509 per 100 standing head landed at LW, x ~72% standing share)
+  const TG = { ground: 0.28, clinch: 0.125, standNoKd: 0.07 };
   const dmp = (x, e) => Math.pow(x, e === undefined ? 0.8 : e);
+  const oddsR = (t, s2) => (t / (1 - t)) / (s2 / (1 - s2));
   const asParams = (gv, divv) => ({ strikeScale: gv.strikeScale, accScale: gv.accScale, groundScale: gv.groundScale, clinchScale: gv.clinchScale,
     kdScale: gv.kdScale, tdScale: gv.tdScale, tdOddsScale: gv.tdOddsScale, subAttScale: gv.subAttScale, subConvScale: gv.subConvScale,
-    kdInstant: gv.kdInstant, kdRefStop: gv.kdRefStop, doc: gv.doc, judge: { indSd: gv.indSd, t108: gv.t108, t108b: gv.t108 + 3, t108kd2: Math.max(0.5, gv.t108 - 3) }, div: divv || {} });
+    kdInstant: gv.kdInstant, kdRefStop: gv.kdRefStop, gnpTko: gv.gnpTko, stko: gv.stko, kdPos: [1, gv.kdClinch],
+    judge: { indSd: gv.indSd, t108: gv.t108, t108b: gv.t108 + 3, t108kd2: Math.max(0.5, gv.t108 - 3) }, div: divv || {} });
   console.log(`\n=== Self-calibration: global scales on ${ref} (3 rounds), ${n} fights per iteration ===`);
-  for (let it = 0; it < 9; it++) {
-    const S = simAvg(ref, 3, asParams(g), n, 1000 + it, false);
-    console.log(`it ${it}: fin ${pct(S.fin)} (${pct(T.fin)}) KO ${pct(S.ko)} (${pct(T.ko)}) SUB ${pct(S.sub)} (${pct(T.sub)}) sigA ${f2(S.sigA15, 1)} (${f2(T.sigA15, 1)}) acc ${pct(S.acc)} (${pct(T.acc)}) ` +
-      `gA ${f2(S.gA15, 1)} (${f2(T.gA15, 1)}) cA ${f2(S.cA15, 1)} (${f2(T.cA15, 1)}) kd100 ${f2(S.kd100, 3)} (${f2(T.kd100, 3)}) tdA ${f2(S.tdA15)} (${f2(T.tdA15)}) tdAcc ${pct(S.tdAcc)} (${pct(T.tdAcc)}) ` +
+  for (let it = 0; it < 10; it++) {
+    const S = simAvg(ref, 3, asParams(g), n, 1000 + it);
+    console.log(`it ${it}: fin ${pct(S.fin)} (${pct(T.fin)}) KO ${pct(S.ko)} (${pct(T.ko)}) SUB ${pct(S.sub)} (${pct(T.sub)}) kdFin ${pct(S.kdFin)} (${pct(T.kdFin)}) ` +
+      `gr ${pct(S.gShare)} cl ${pct(S.cShare)} stNoKd ${pct(S.stShare)} sigA ${f2(S.sigA15, 1)} (${f2(T.sigA15, 1)}) acc ${pct(S.acc)} (${pct(T.acc)}) ` +
+      `kd100 ${f2(S.kd100, 3)} (${f2(T.kd100, 3)}) tdA ${f2(S.tdA15)} (${f2(T.tdA15)}) tdAcc ${pct(S.tdAcc)} (${pct(T.tdAcc)}) ` +
       `sub15 ${f2(S.sub15, 3)} (${f2(T.sub15, 3)}) ctrl ${f2(S.ctrl15, 0)} (${f2(T.ctrl15, 0)}) SD ${pct(S.dec.SD)} (${pct(T.dec.SD)}) 10-8 ${pct(S.r108, 2)}`);
-    // distance attempts drive strikeScale; clinch and ground are matched by their own scales
     g.strikeScale *= dmp(T.dA15 / S.dA15);
     g.groundScale *= dmp((T.gA15 / S.gA15) / (T.dA15 / S.dA15));
     g.clinchScale *= dmp((T.cA15 / S.cA15) / (T.dA15 / S.dA15));
-    g.accScale *= dmp((T.acc / (1 - T.acc)) / (S.acc / (1 - S.acc)));
+    g.accScale *= dmp(oddsR(T.acc, S.acc));
     g.kdScale *= dmp(T.kd100 / S.kd100);
     g.tdScale *= dmp(T.tdA15 / S.tdA15);
-    g.tdOddsScale *= dmp((T.tdAcc / (1 - T.tdAcc)) / (S.tdAcc / (1 - S.tdAcc)));
+    g.tdOddsScale *= dmp(oddsR(T.tdAcc, S.tdAcc));
     g.subAttScale *= dmp(T.sub15 / S.sub15);
-    const koNonKdOdds = dmp((T.ko / (1 - T.ko)) / (S.ko / (1 - S.ko)), 1.2);
-    g.kdInstant = E.prob(E.odds(g.kdInstant) * koNonKdOdds); g.kdRefStop = E.prob(E.odds(g.kdRefStop) * koNonKdOdds);
-    g.subConvScale *= dmp((T.sub / (1 - T.sub)) / (S.sub / (1 - S.sub)) / (T.sub15 / S.sub15), 1.0);
+    g.subConvScale *= dmp(oddsR(T.sub, S.sub) / (T.sub15 / S.sub15), 1.0);
+    const kf = dmp(oddsR(T.kdFin, S.kdFin), 1.0);
+    g.kdInstant = E.prob(E.odds(g.kdInstant) * kf); g.kdRefStop = E.prob(E.odds(g.kdRefStop) * kf);
+    g.gnpTko *= dmp(oddsR(TG.ground, Math.max(0.005, S.gShare)), 0.9);
+    g.kdClinch *= dmp(oddsR(TG.clinch, Math.max(0.005, S.cShare)), 0.8);
+    g.stko *= dmp(oddsR(TG.standNoKd, Math.max(0.003, S.stShare)), 0.8);
     g.indSd *= dmp(T.dec.SD / Math.max(0.01, S.dec.SD), 0.6);
     g.t108 *= dmp(S.r108 / 0.035, 0.35);
   }
   console.log("global:", JSON.stringify(g));
-  // per-division factors
   const divs = Object.keys(DB.priors).filter((d) => !["ALL", "Catch Weight", "Open Weight"].includes(d));
   const divF = {};
   console.log(`\n=== Self-calibration: per-division factors (3 rounds), ${n} fights per iteration ===`);
@@ -202,22 +202,25 @@ function selfCalibrate(n) {
     let S = null;
     for (let it = 0; it < 6; it++) {
       const dv = {}; dv[d] = f;
-      S = simAvg(d, 3, asParams(g, dv), n, 3000 + it, false);
+      S = simAvg(d, 3, asParams(g, dv), n, 3000 + it);
       f.att *= dmp(Td.sigL15 / S.sigL15);
       f.kd *= dmp(Td.kd100 / S.kd100);
-      f.ko *= dmp((Td.ko / (1 - Td.ko)) / (S.ko / (1 - S.ko)), 1.1);
-      f.sub *= dmp((Td.sub / (1 - Td.sub)) / (S.sub / (1 - S.sub)), 1.0);
+      f.ko *= dmp(oddsR(Td.ko, S.ko), 1.1);
+      f.sub *= dmp(oddsR(Td.sub, S.sub), 1.0);
       f.ctrl *= dmp(Td.ctrl15 / S.ctrl15);
       f.td *= dmp(Td.tdA15 / S.tdA15);
     }
     for (const k in f) f[k] = +f[k].toFixed(3);
     divF[d] = f;
-    console.log(`${d.padEnd(22)} ${JSON.stringify(f)}  last: fin ${pct(S.fin)} (${pct(Td.fin)}) KO ${pct(S.ko)} (${pct(Td.ko)}) SUB ${pct(S.sub)} (${pct(Td.sub)}) sigL ${f2(S.sigL15, 1)} (${f2(Td.sigL15, 1)}) kd100 ${f2(S.kd100, 3)} (${f2(Td.kd100, 3)}) ctrl ${f2(S.ctrl15, 0)} (${f2(Td.ctrl15, 0)})`);
+    console.log(`${d.padEnd(22)} ${JSON.stringify(f)}  last: fin ${pct(S.fin)} (${pct(Td.fin)}) KO ${pct(S.ko)} (${pct(Td.ko)}) SUB ${pct(S.sub)} (${pct(Td.sub)}) kdFin ${pct(S.kdFin)} (${pct(Td.kdFin)}) sigL ${f2(S.sigL15, 1)} (${f2(Td.sigL15, 1)}) kd100 ${f2(S.kd100, 3)} (${f2(Td.kd100, 3)}) ctrl ${f2(S.ctrl15, 0)} (${f2(Td.ctrl15, 0)})`);
   }
   if (WRITE) {
+    let src = fs.readFileSync(PARAMS_SRC, "utf8");
+    src = src.replace(/kdPos: \[[^\]]*\]/, `kdPos: [1.0, ${+g.kdClinch.toPrecision(4)}]`);
+    fs.writeFileSync(PARAMS_SRC, src);
     writeParams({ strikeScale: g.strikeScale, accScale: g.accScale, groundScale: g.groundScale, clinchScale: g.clinchScale, kdScale: g.kdScale,
       tdScale: g.tdScale, tdOddsScale: g.tdOddsScale, subAttScale: g.subAttScale, subConvScale: g.subConvScale, kdInstant: g.kdInstant, kdRefStop: g.kdRefStop,
-      indSd: g.indSd, t108: g.t108, t108b: g.t108 + 3, t108kd2: Math.max(0.5, g.t108 - 3) }, divF);
+      gnpTko: g.gnpTko, stko: g.stko, indSd: g.indSd, t108: g.t108, t108b: g.t108 + 3, t108kd2: Math.max(0.5, g.t108 - 3) }, divF);
     console.log("\nwrote src/params3.js");
   }
 }

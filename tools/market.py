@@ -322,3 +322,195 @@ def parse_date_text(s):
     if not m or m.group(1).lower() not in MONTHS:
         return None
     return dt.date(int(m.group(3)), MONTHS[m.group(1).lower()], int(m.group(2))).isoformat()
+
+
+# ----------------------------------------------------------------------------------------------
+# ufcstats side: backtest fights
+# ----------------------------------------------------------------------------------------------
+
+def load_backtest():
+    with open(BACKTEST) as fh:
+        bt = json.load(fh)
+    return bt['fights']
+
+
+def match_matchups(fights, cands, day_tol=2, min_sim=0.72):
+    """Assign candidate odds rows to ufcstats fights.
+
+    fights: [{id, date, A_name, B_name}]; cands: [{key, date, n1, n2, ...}] (n1/n2 in any order).
+    Returns {fight_id: (cand_key, swapped, score, day_gap)}. One candidate may serve only one fight;
+    a fight takes the candidate with the best (score, -day_gap).
+    """
+    by_day = defaultdict(list)
+    for c in cands:
+        if c.get('date'):
+            by_day[c['date']].append(c)
+    out = {}
+    used = {}
+    for f in fights:
+        d0 = dt.date.fromisoformat(f['date'])
+        best = None
+        for g in range(-day_tol, day_tol + 1):
+            day = (d0 + dt.timedelta(days=g)).isoformat()
+            for c in by_day.get(day, []):
+                s_straight = min(name_sim(f['A_name'], c['n1']), name_sim(f['B_name'], c['n2']))
+                s_swap = min(name_sim(f['A_name'], c['n2']), name_sim(f['B_name'], c['n1']))
+                sw = s_swap > s_straight
+                s = max(s_straight, s_swap)
+                key = (s, -abs(g))
+                if s >= min_sim and (best is None or key > best[0]):
+                    best = (key, c['key'], sw, s, g)
+        if best:
+            out[f['id']] = (best[1], best[2], round(best[3], 3), best[4])
+    # resolve candidates claimed by more than one fight: keep the best claim
+    claims = defaultdict(list)
+    for fid, (ck, sw, s, g) in out.items():
+        claims[ck].append((s, -abs(g), fid))
+    for ck, lst in claims.items():
+        if len(lst) > 1:
+            lst.sort(reverse=True)
+            for _, _, fid in lst[1:]:
+                out.pop(fid, None)
+    return out
+
+
+# ----------------------------------------------------------------------------------------------
+# fetch: public datasets + BestFightOdds
+# ----------------------------------------------------------------------------------------------
+
+NLB_COLS = ['fight_id', 'event_date', 'event_name', 'f1_name', 'f2_name', 'winner', 'has_odds',
+            'f1_open', 'f2_open', 'f1_close_low', 'f1_close_high', 'f2_close_low', 'f2_close_high',
+            'f1_open_prob_novig', 'f1_close_prob_novig', 'bfo_event', 'bfo_date']
+UUD_COLS = ['date', 'R_fighter', 'B_fighter', 'R_odds', 'B_odds', 'Winner', 'weight_class', 'title_bout']
+
+
+def git_shallow(url, dest):
+    if os.path.isdir(os.path.join(dest, '.git')):
+        return
+    subprocess.run(['git', 'clone', '-q', '--depth', '1', url, dest], check=True)
+
+
+def fetch_sources(cache):
+    import pandas as pd
+    src = os.path.join(cache, 'src')
+    os.makedirs(src, exist_ok=True)
+    nl = os.path.join(src, 'nlbair_ufc-data')
+    uu = os.path.join(src, 'ultimate_ufc_dataset')
+    git_shallow(NLBAIR_GIT, nl)
+    git_shallow(UUD_GIT, uu)
+    rev = {}
+    for name, d in (('nlbair', nl), ('uud', uu)):
+        rev[name] = subprocess.run(['git', '-C', d, 'log', '-1', '--format=%H %ci'], capture_output=True,
+                                   text=True).stdout.strip()
+    w = pd.read_csv(os.path.join(nl, 'data', 'ufc_all_fights_wide.csv'), low_memory=False)
+    x = pd.read_csv(os.path.join(nl, 'data', 'id_crosswalk_all.csv'), low_memory=False)
+    w = w[NLB_COLS].merge(x[['fight_id', 'bfo_profile_url', 'bfo_owner_id', 'f1_id', 'f2_id']], on='fight_id', how='left')
+    os.makedirs(ODDS_DIR, exist_ok=True)
+    w.to_csv(os.path.join(ODDS_DIR, 'nlbair_odds.csv'), index=False)
+    u = pd.read_csv(os.path.join(uu, 'ufc-master.csv'), low_memory=False)
+    u[UUD_COLS].to_csv(os.path.join(ODDS_DIR, 'uud_odds.csv'), index=False)
+    with open(os.path.join(ODDS_DIR, 'sources.json'), 'w') as fh:
+        json.dump({'nlbair': {'repo': NLBAIR_GIT, 'commit': rev['nlbair'], 'license': 'CC BY 4.0',
+                              'doi': '10.5281/zenodo.23458636', 'rows': int(len(w))},
+                   'uud': {'repo': UUD_GIT, 'commit': rev['uud'], 'license': 'CC BY 4.0 (Kaggle mdabbert/ultimate-ufc-dataset)',
+                           'rows': int(len(u))},
+                   'fetched': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')}, fh, indent=1)
+    print(f'sources: nlbair {len(w)} rows, uud {len(u)} rows')
+
+
+def fetch_bfo(cache, since, until, delay):
+    F = Fetcher(os.path.join(cache, 'bfo'), delay=delay)
+    fights = [{'id': f['id'], 'date': f['date'], 'A_name': f['A']['name'], 'B_name': f['B']['name']}
+              for f in load_backtest()]
+    sm = F.get(BFO + '/sitemap-events.xml', max_age_days=3)
+    events = [e for e in parse_sitemap_events(sm) if is_ufc_mma_event(e['slug'])
+              and since <= e['lastmod'] <= until]
+    events.sort(key=lambda e: e['lastmod'])
+    print(f'BFO: {len(events)} UFC event pages {since}..{until}', flush=True)
+    ev_rows, mus = [], {}
+    for i, e in enumerate(events):
+        html = F.get(e['url'])
+        if not html:
+            continue
+        p = parse_event_page(html)
+        for m in p['matchups']:
+            if not m.get('t1_url') or not m.get('t2_url'):
+                continue
+            mus[m['mu']] = {'key': m['mu'], 'date': p['date'] or e['lastmod'], 'n1': m['t1_name'], 'n2': m['t2_name'],
+                            't1_url': m['t1_url'], 't2_url': m['t2_url'], 'event_id': e['event_id']}
+            base = {'mu': m['mu'], 'event_id': e['event_id'], 'event_slug': e['slug'], 'date': p['date'] or e['lastmod'],
+                    't1_name': m['t1_name'], 't2_name': m['t2_name'], 't1_url': m['t1_url'], 't2_url': m['t2_url']}
+            if not m['lines']:
+                ev_rows.append(dict(base, book='', a1=None, a2=None))
+            for book, (a1, a2) in m['lines'].items():
+                ev_rows.append(dict(base, book=book, a1=a1, a2=a2))
+        if (i + 1) % 25 == 0:
+            print(f'  events {i + 1}/{len(events)} (net {F.n_net})', flush=True)
+    write_csv(os.path.join(ODDS_DIR, 'bfo_event_lines.csv'), ev_rows,
+              ['mu', 'event_id', 'event_slug', 'date', 't1_name', 't2_name', 't1_url', 't2_url', 'book', 'a1', 'a2'])
+    mt = match_matchups(fights, list(mus.values()))
+    print(f'BFO events: {len(mus)} matchups, {len(mt)} of {len(fights)} backtest fights matched', flush=True)
+    # fighter pages: both sides of every matched matchup, plus nlbair's owner page for the rest
+    urls = []
+    for fid, (mu, sw, s, g) in mt.items():
+        urls += [mus[mu]['t1_url'], mus[mu]['t2_url']]
+    nl_path = os.path.join(ODDS_DIR, 'nlbair_odds.csv')
+    if os.path.exists(nl_path):
+        for r in read_csv(nl_path):
+            if r['fight_id'] in {f['id'] for f in fights} and r['fight_id'] not in mt and r.get('bfo_profile_url'):
+                urls.append(re.sub(r'^https?://[^/]+', '', r['bfo_profile_url']))
+    seen, todo = set(), []
+    for u in urls:
+        if u and u not in seen:
+            seen.add(u)
+            todo.append(u)
+    print(f'BFO: {len(todo)} fighter pages', flush=True)
+    f_rows = []
+    for i, u in enumerate(todo):
+        html = F.get(BFO + u)
+        if not html:
+            continue
+        for r in parse_fighter_page(html):
+            r['page'] = u
+            r['date'] = parse_date_text(r['date_text'])
+            r['spark'] = ';'.join(f'{x:.6g}' for x in r['spark'])
+            f_rows.append(r)
+        if (i + 1) % 100 == 0:
+            print(f'  fighters {i + 1}/{len(todo)} (net {F.n_net})', flush=True)
+    write_csv(os.path.join(ODDS_DIR, 'bfo_fighter_lines.csv'), f_rows,
+              ['page', 'mu', 'owner_team', 'owner_url', 'owner_name', 'opp_url', 'opp_name', 'event_url', 'event_name',
+               'date', 'open1', 'lo1', 'hi1', 'open2', 'lo2', 'hi2', 'spark'])
+    print(f'BFO done: {len(ev_rows)} event-line rows, {len(f_rows)} fighter-line rows, {F.n_net} requests', flush=True)
+
+
+def cmd_build(a):  # replaced below
+    raise NotImplementedError
+
+
+def cmd_fetch(a):
+    if not a.skip_sources:
+        fetch_sources(a.cache)
+    if not a.skip_bfo:
+        fetch_bfo(a.cache, a.since, a.until, a.delay)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest='cmd', required=True)
+    f = sub.add_parser('fetch')
+    f.add_argument('--cache', default=os.path.expanduser('~/.cache/xx-market'))
+    f.add_argument('--since', default='2018-12-25')
+    f.add_argument('--until', default='2026-11-02')
+    f.add_argument('--delay', type=float, default=2.0, help='seconds between BFO requests (plus 0-1 s jitter)')
+    f.add_argument('--skip-sources', action='store_true')
+    f.add_argument('--skip-bfo', action='store_true')
+    f.set_defaults(func=cmd_fetch)
+    b = sub.add_parser('build')
+    b.add_argument('--boot', type=int, default=2000, help='bootstrap resamples (by event)')
+    b.set_defaults(func=cmd_build)
+    a = ap.parse_args()
+    a.func(a)
+
+
+if __name__ == '__main__':
+    main()

@@ -3,7 +3,7 @@
   "name": "Kai Kara-France",
   "as_of": "2026-11-06",
   "status": {
-    "summary": "Veteran flyweight contender and two-time title challenger. His last UFC fight was a third-round rear-naked-choke loss to Alexandre Pantoja for the title at UFC 317 (Jun 28, 2025); the ufcstats snapshot through Oct 31, 2026 shows no fight since, a layoff of more than 16 months. UFC record 8-5. Current status (bookings, injuries, ranking) could not be verified on the web in this pass.",
+    "summary": "Veteran flyweight contender and two-time title challenger. His last UFC fight was a third-round rear-naked-choke loss to Alexandre Pantoja for the title at UFC 317 (Jun 28, 2025); the ufcstats snapshot through Oct 31, 2026 shows no fight since, a layoff of more than 16 months. UFC record 8-5. Current status (bookings, injuries, ranking, retirement) could not be verified on the web in the research pass or the Nov 6, 2026 fact-check, so 'active' is left null.",
     "title": null,
     "ranking": null,
     "active": null,
@@ -55,7 +55,7 @@
     "notes": "Groups follow his target split in fighters.json: decayed significant attempts 78% head, 11% body, 11% legs (career 80/10/11); landed 62% head, 17% body, 22% legs, against a flyweight prior of about 77/14/9 attempted. Leg kicks are therefore a bigger share for him than for most flyweights, with calf slightly ahead of inside as a judgment (no source separates them). Head-group weights favour the cross and hook because his KO finishes are punches at distance; no technique-level scouting source was found in this pass, so within-group weights are judgments. 93% of decayed attempts are at distance and clinch strikes are 1%, so knees and elbows are near zero. Sources: data/derived/fighters.json, data/raw ufcstats per-fight stats."
   },
   "appearance": {
-    "build": "short, stocky flyweight: 5 ft 4 in with a 69 in reach (ufcstats), long arms for his height",
+    "build": "short, compact flyweight: 5 ft 4 in with a 69 in reach (ufcstats), long arms for his height (5 in longer than he is tall)",
     "hair": "dark; current style not verified in this pass",
     "facial_hair": "unknown",
     "skin": "medium",
