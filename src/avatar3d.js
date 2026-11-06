@@ -690,7 +690,8 @@
           "float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hh(i), hh(i + vec2(1,0)), f.x), mix(hh(i + vec2(0,1)), hh(i + vec2(1,1)), f.x), f.y); }")
         .replace("#include <map_fragment>", "#include <map_fragment>\n" +
           "{ vec2 su = vUv;\n" +
-          "  float hair = vn(su * 1400.0); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
+          "  float hfw = length(fwidth(su * 1400.0)); float hatt = 1.0 - smoothstep(0.35, 1.2, hfw);\n" +
+          "  float hair = mix(0.5, vn(su * 1400.0), hatt); float hair2 = vn(su * 330.0); float hair3 = vn(su * 90.0);\n" +
           "  float bd = clamp(vMask.x * uBeard, 0.0, 1.0);\n" +
           "  float edge = smoothstep(0.0, 0.55, vMask.x);\n" +
           "  float stub = bd * edge * (0.62 + 0.38 * smoothstep(0.2, 0.8, hair)) * (0.8 + 0.2 * hair2) * (0.9 + 0.1 * hair3);\n" +
@@ -715,8 +716,9 @@
           "}")
         .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.34, uSweat) + 0.12 * clamp(vMask.x * uBeard, 0.0, 1.0);")
         .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n" +
-          "{ vec3 pp = -vViewPosition; float hgt = vn(vUv * 620.0) * 0.55 + vn(vUv * 1500.0) * 0.45;\n" +
-          "  vec2 dH = vec2(dFdx(hgt), dFdy(hgt)) * 0.0035 * (1.0 - 0.6 * clamp(vMask.x * uBeard, 0.0, 1.0));\n" +
+          "{ vec3 pp = -vViewPosition; float fw = length(fwidth(vUv * 520.0)); float att = 1.0 - smoothstep(0.12, 0.45, fw);\n" +
+          "  float hgt = vn(vUv * 520.0);\n" +
+          "  vec2 dH = vec2(dFdx(hgt), dFdy(hgt)) * 0.0012 * att * (1.0 - 0.6 * clamp(vMask.x * uBeard, 0.0, 1.0));\n" +
           "  vec3 dpx = dFdx(pp), dpy = dFdy(pp); vec3 pr1 = cross(dpy, normal), pr2 = cross(normal, dpx); float det = dot(dpx, pr1);\n" +
           "  vec3 grad = sign(det) * (dH.x * pr1 + dH.y * pr2); normal = normalize(abs(det) * normal - grad); }")
         .replace("#include <lights_physical_pars_fragment>", T.ShaderChunk.lights_physical_pars_fragment
@@ -840,7 +842,12 @@
       mat.transparent = true; mat.depthWrite = false;
       if (o.brows || o.lashes) { mat.alphaTest = 0; mat.polygonOffset = true; mat.polygonOffsetFactor = -1; }
     }
-    if (o.eyes) { mat.transparent = false; mat.depthWrite = true; mat.roughness = 0.1; }
+    if (o.eyes) { mat.roughness = 0.08; }   // eyeball plus a cornea layer whose texels are mostly transparent
+    if (o.brows || o.lashes) {
+      var boost = o.brows ? 1.9 : 1.25;
+      mat.onBeforeCompile = function (sh) { sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n\tdiffuseColor.a = clamp(diffuseColor.a * " + boost.toFixed(2) + ", 0.0, 1.0);"); };
+      mat.customProgramCacheKey = function () { return "fight-proxy-alpha-" + boost; };
+    }
     mesh = new T.SkinnedMesh(g, mat);
     mesh.name = meta.kind;
     mesh.renderOrder = meta.transparent && !o.eyes ? 2 : 0;

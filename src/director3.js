@@ -421,7 +421,7 @@
     hurtCounter: ["{a} counters with a {move} and {d} is wobbled!", "Counter {move} from {a}! {d} is hurt."],
     finKO: ["IT'S ALL OVER! {A_s} {move} knocks {D} out cold.", "Lights out! {a} lands the {move} and {d} is out before hitting the floor.",
       "{A} flattens {D} with a {move}! The referee waves it off.", "What a {move} from {a}! {d} is out, and it's over.", "{a} lands the {move} and {d} is out. It's over!"],
-    finKOBody: ["{d} folds to a {move} and can't get up. It's over!", "A {move} to the body ends it! {d} is down and done."],
+    finKOBody: ["{d} folds to {amove} and can't get up. It's over!", "{amove} ends it! {d} is down and done.", "{a} goes to the body with {amove}, and {d} can't beat the count. It's over!"],
     finTKO: ["{a} swarms with punches and the referee steps in!", "{a} unloads, {d} covers up, and the referee waves it off!",
       "{a} finishes the job with a {move}. The referee has seen enough.", "{d} is out on {dhis} feet. The referee stops it after a {move} from {a}.",
       "{a} pours it on and the referee jumps in to save {d}!"],
@@ -442,7 +442,7 @@
     subxStand: ["{a} snatches a guillotine as {d} shoots. {d} pops {dhis} head out.", "{a} wraps up the neck on the shot. {d} escapes the {sub}."],
     subxBottom: ["{a} throws up {asub} off {his} back. {d} postures out.", "{a} attacks {asub} from the bottom. {d} defends.",
       "{a} threatens {asub} from guard. {d} pulls free."],
-    td: ["{a} changes levels and finishes {atech}. {d} lands {posin}.", "Takedown, {a}! {Atech} puts {d} on {dhis} back.",
+    td: ["{a} changes levels and finishes {atech}, landing {posin}.", "Takedown, {a}! {Atech} puts {d} on {dhis} back.",
       "{a} shoots {atech} and drags {d} down.", "{a} hits {atech}. {Hes} {posin}.", "{a} gets {d} down with {atech}.", "{a} times {atech} and takes {d} down.",
       "{Atech} from {a}, and {d} goes down."],
     tdClinch: ["{a} hits {atech} from the clinch. {d} is on {dhis} back.", "{a} drags {d} off the fence with {atech}.", "{Atech} from {a} in the clinch, and {d} goes down.",
@@ -991,7 +991,7 @@
         if ((tech === "headkick" || tech === "spinfist" || tech === "spinback" || tech === "wheel" || tech === "flyknee") && rc.special < 1 && r() < (tech === "headkick" ? 0.5 : 0.8)) {
           t = voice.say(tech === "headkick" ? T.headkick : T.specialLand, c); if (t) { rc.special++; rc.color++; } return t;
         }
-        if (b.counter && rc.counter < 2 && r() < 0.35) { t = voice.say(T.counter, c); if (t) { rc.counter++; rc.color++; } return t; }
+        if (b.counter && rc.counter < 2 && r() < 0.35) { t = voice.say(CLASS[tech] === "punch" ? T.counter : T.counter.slice(0, 2), c); if (t) { rc.counter++; rc.color++; } return t; }
         // a landed combination of three or more: narrate it on its last landed strike
         if (b.combo && b.ci >= 2 && rc.combo < 2 && b.st < 2) {
           var nxt = nextInCombo(beats, bi, b.combo);
@@ -1055,7 +1055,8 @@
             if (nA + nB <= 2) pool = NOTES.lull;
             else if (nA >= 4 && nB >= 4) pool = NOTES.busy;
             else if (la === lb) pool = la > 0 ? NOTES.even : null;
-            else pool = NOTES.dist;
+            else if (Math.abs(la - lb) >= 4) pool = NOTES.dist;
+            else pool = null;
           }
           if (pool) txt = voice.say(pool, c);
           if (!txt) continue;
@@ -1192,8 +1193,8 @@
       var L = other(W), agree = [], dissent = [], even = [];
       cards.forEach(function (c) { var x = winnerOf(c); if (x === W) agree.push(cardFor(c, W)); else if (x === L) dissent.push(cardFor(c, L)); else even.push(c[0] + "-" + c[1]); });
       if (method === "UD") txt = "We go to the scorecards. " + agree.join(", ") + ", for the winner by unanimous decision, " + F[W].name + "!";
-      else if (method === "SD") txt = "Split decision. One judge has it " + dissent.join(", ") + " for " + F[L].short + ", overruled by " + agree.join(" and ") + " for the winner, " + F[W].name + "!";
-      else txt = "Majority decision. One judge has it " + even.join(", ") + " even; " + agree.join(" and ") + " for the winner, " + F[W].name + "!";
+      else if (method === "SD") txt = "We go to the scorecards for a split decision. " + dissent.join(", ") + " " + F[L].short + ", then " + agree.join(" and ") + " for the winner, " + F[W].name + "!";
+      else txt = "We go to the scorecards for a majority decision. " + even.join(", ") + " on one card, then " + agree.join(" and ") + " for the winner, " + F[W].name + "!";
     }
     return { text: voice.take(txt) || txt, cards: cards, winner: W, method: method };
   }

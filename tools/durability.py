@@ -404,7 +404,13 @@ def eb_walk(df, base_mu, alpha_c, alpha_p, hl_c=None, hl_p=None, use_c=True, use
 
 
 # ------------------------------------------------------------------ model specification
-DEFAULT_SPEC = {"level": 730, "knots": [30.0], "win": 730, "alpha_c": 4.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None}
+DEFAULT_SPEC = {"level": 730, "knots": [30.0], "win": 730, "alpha_c": 4.0, "alpha_p": 3.0, "hl_c": None, "hl_p": None,
+                "dmg": "full", "aexp": False}
+DMG_VARIANTS = {
+    "full": ["d_yrs", "d_lognp", "d_cumoh100", "d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o", "d_debut"],
+    "no_okd": ["d_yrs", "d_lognp", "d_cumoh100", "d_kol_r", "d_kol_o", "d_debut"],      # KD history only via u_d
+    "no_okd_cumoh": ["d_yrs", "d_lognp", "d_kol_r", "d_kol_o", "d_debut"],
+}
 
 
 def prepare(df, spec):
@@ -426,7 +432,8 @@ def blocks(spec, X=None):
         "ctx": ["five", "title"],
         "age_d": ["d_age_c"] + ["d_age_h%d" % k for k in kn] + ["d_age_na"],
         "age_a": ["a_age_c"] + ["a_age_h%d" % k for k in kn],
-        "dmg": ["d_yrs", "d_lognp", "d_cumoh100", "d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o", "d_debut"],
+        "dmg": DMG_VARIANTS[spec.get("dmg", "full")],
+        "dmg_full": DMG_VARIANTS["full"],
         "lay": ["d_lay_short", "d_lay_12_24", "d_lay_24p", "d_last_ko_loss", "d_ko_short"],
         "move": ["d_up_cls", "d_dn_cls", "a_up_cls", "a_dn_cls"],
         "move_lbs": ["d_up_lbs", "d_dn_lbs", "a_up_lbs", "a_dn_lbs"],
@@ -437,7 +444,7 @@ def blocks(spec, X=None):
 
 def final_cols(spec, X=None):
     b = blocks(spec, X)
-    return b["div"] + b["ctx"] + b["age_d"] + b["age_a"] + b["dmg"] + b["lay"]
+    return b["div"] + b["ctx"] + b["age_d"] + b["age_a"] + b["dmg"] + b["lay"] + (b["aexp"] if spec.get("aexp") else [])
 
 
 def fit_kd(X, cols, fit_mask, spec, eb=True, use_level=True, extra_off=None, iters=4, ridge=1e-4,
@@ -492,7 +499,7 @@ def tune(df, verbose=True):
         fm, em = window(X, *TUNE_FIT), window(X, *TUNE_EVAL)
         r = fit_kd(X, final_cols(spec, X), fm, spec)
         d = dev_of(r, em)
-        grid.append({"spec": {k: spec[k] for k in ("level", "knots", "win", "alpha_c", "alpha_p", "hl_c", "hl_p")},
+        grid.append({"spec": {k: spec[k] for k in ("level", "knots", "win", "alpha_c", "alpha_p", "hl_c", "hl_p", "dmg", "aexp")},
                      "dev_2019_2023": round(d, 2)})
         if verbose:
             print("  tune %-70s dev %.1f" % (grid[-1]["spec"], d))
@@ -512,9 +519,17 @@ def tune(df, verbose=True):
     stage("win", [365, 730, 1095])
     stage("alpha_c", [2.0, 3.0, 4.0, 6.0, 10.0])
     stage("alpha_p", [2.0, 2.5, 3.0, 4.0, 6.0])
+    stage("dmg", ["full", "no_okd", "no_okd_cumoh"])
+    stage("aexp", [False, True])
+    stage("alpha_c", [2.0, 3.0, 4.0, 6.0, 10.0])
+    stage("alpha_p", [2.0, 2.5, 3.0, 4.0, 6.0])
     stage("hl_c", [None, 1825, 2920])
     stage("hl_p", [None, 1825, 2920])
-    return best, grid
+    # validation diagnostics for the chosen spec: calibration slopes of the fighter effects on 2019-2023
+    X = prepare(df, best)
+    r = fit_kd(X, final_cols(best, X), window(X, *TUNE_FIT), best)
+    diag = {"eb_slopes_2019_2023": ebslope(X, r, window(X, *TUNE_EVAL)), "dev_2019_2023": round(dev_of(r, window(X, *TUNE_EVAL)), 2)}
+    return best, grid, diag
 
 
 # ------------------------------------------------------------------ evaluation helpers
@@ -650,6 +665,10 @@ def ladder(X, spec):
         ("F+move final + weight move (classes)", final_cols(spec, X) + bl["move"], dict(eb=True)),
         ("F+lbs final + weight move (pounds)", final_cols(spec, X) + bl["move_lbs"], dict(eb=True)),
         ("F+body final + height, ape index, reach advantage", final_cols(spec, X) + bl["body"], dict(eb=True)),
+        ("Ffull final with the full damage block (prior KDs absorbed as covariates)",
+         [c for c in final_cols(spec, X) if c not in bl["dmg"]] + bl["dmg_full"], dict(eb=True)),
+        ("Fnokd final without prior-KD covariates (KD history only through u_d)",
+         [c for c in final_cols(spec, X) if c not in bl["dmg"]] + DMG_VARIANTS["no_okd"], dict(eb=True)),
     ]
     res, rows = {}, []
     for name, cols, kw in specs:
@@ -1139,10 +1158,10 @@ def main():
     snap_date = dt.date.fromordinal(snap_day)
 
     if args.quick:
-        spec, grid = dict(DEFAULT_SPEC), []
+        spec, grid, tune_diag = dict(DEFAULT_SPEC), [], {}
     else:
         print("tuning on 2019-2023 (fit 2008-2018) ...")
-        spec, grid = tune(df)
+        spec, grid, tune_diag = tune(df)
     print("spec:", spec)
     X = prepare(df, spec)
     groups = X["def"].to_numpy()
@@ -1155,12 +1174,13 @@ def main():
         print("  %-58s dev %.1f  vs M0L %+.1f (se %.1f)  KD obs %d exp %.1f" % (
             r["model"], r["dev_test"], r["vs_M0L"]["total"], r["vs_M0L"]["se_total"], r["kd_obs"], r["kd_exp"]))
     pw = pairwise(X, res, tm, [("F", "V3"), ("F", "E3"), ("F", "M3"), ("E3", "V3"), ("F+move", "F"), ("F+lbs", "F"),
-                              ("F+body", "F"), ("C30", "M1"), ("M2", "C30")])
-    coefs = {k: coef_table(res[k], X, groups) for k in ("F", "F+move", "F+lbs", "F+body", "M3", "C30")}
+                              ("F+body", "F"), ("C30", "M1"), ("M2", "C30"), ("Ffull", "F"), ("Fnokd", "F")])
+    coefs = {k: coef_table(res[k], X, groups) for k in ("F", "F+move", "F+lbs", "F+body", "M3", "C30", "Ffull", "Fnokd")}
     slopes = {"defender": age_slopes(res["F"], "d", spec["knots"]), "attacker": age_slopes(res["F"], "a", spec["knots"])}
     slopes_m2 = {"defender": age_slopes(res["M2"], "d", spec["knots"]), "attacker": age_slopes(res["M2"], "a", spec["knots"])}
     slopes_m3 = {"defender": age_slopes(res["M3"], "d", spec["knots"]), "attacker": age_slopes(res["M3"], "a", spec["knots"])}
-    eb_cal = {"train": ebslope(X, res["F"], fm), "test": ebslope(X, res["F"], tm)}
+    eb_cal = {"train": ebslope(X, res["F"], fm), "test": ebslope(X, res["F"], tm),
+              "test_Ffull": ebslope(X, res["Ffull"], tm), "test_Fnokd": ebslope(X, res["Fnokd"], tm)}
     od = overdispersion(X, res["F"], fm, spec)
     cal = calib_all(X, res, tm)
 
@@ -1168,9 +1188,17 @@ def main():
     if "d_age_h30" not in X.columns:
         X["d_age_h30"] = np.clip(X.d_age.fillna(30) - 30, 0, None)
     all08 = window(X, FIT_FROM)
-    zc = ["d_age_c", "d_age_h30", "d_lognp", "d_cumoh100", "d_okd_r", "d_okd_o", "d_kol_r", "d_kol_o",
-          "d_lay_short", "d_lay_12_24", "d_lay_24p"]
-    wf = {"pre2024": within_fighter(X, res["F"], fm, zc)}
+    # within-fighter terms: only exogenous time-varying features (counts of earlier KDs / KO losses are lagged
+    # outcomes and are mechanically biased under fighter fixed effects). Age and years in the UFC are collinear
+    # within a fighter, so "age" here is all within-career change. Careers that end with a KO put KDs at the end
+    # of careers, which biases the age slope up; the second variant drops each fighter's final UFC fight.
+    zc = ["d_age_c", "d_age_h30", "d_lay_short", "d_lay_12_24", "d_lay_24p"]
+    zc2 = zc + ["d_cumoh100"]
+    last_day = X.groupby("def").day.transform("max").to_numpy()
+    not_last = X.day.to_numpy() < last_day
+    wf = {"pre2024_age": within_fighter(X, res["F"], fm, zc),
+          "pre2024_age_wear": within_fighter(X, res["F"], fm, zc2),
+          "pre2024_age_drop_final_fight": within_fighter(X, res["F"], fm & not_last, zc)}
     claims = {"replication_2010_on_all_data": claim_age(X, window(X, "2010-01-01")),
               "replication_2008_2023": claim_age(X, fm)}
     wins = win_size_check(X, ((X.has_stats == 1) & (X.amb == 0) & (X.date >= FIT_FROM)).to_numpy())
@@ -1187,7 +1215,8 @@ def main():
     slopes_live = {"defender": age_slopes(r_live, "d", spec["knots"]), "attacker": age_slopes(r_live, "a", spec["knots"])}
     r_live_move = fit_kd(X, final_cols(spec, X) + blocks(spec, X)["move"], all08, spec)
     coef_live_move = coef_table(r_live_move, X, groups)
-    wf["all_2008_on"] = within_fighter(X, r_live, all08, zc)
+    wf["all_2008_on_age"] = within_fighter(X, r_live, all08, zc)
+    wf["all_2008_on_age_drop_final_fight"] = within_fighter(X, r_live, all08 & not_last, zc)
     ref = ref_profile(X, fm, spec["knots"])
     roster_slugs = list(json.load(open(os.path.join(ROOT, "data", "derived", "fighters.json")))["fighters"].keys())
     roster = roster_outputs(X, r_live, spec, state, people, snap_date, ref, roster_slugs)
@@ -1224,7 +1253,7 @@ def main():
             "exposure": "standing head landed = (max(HEAD - GROUND, 0) + min(HEAD, DISTANCE + CLINCH)) / 2 per fight",
             "reference_profile": ref,
         },
-        "tuning_grid": grid,
+        "tuning_grid": grid, "tuning_diagnostics": tune_diag,
         "ladder_test": ladder_rows, "pairwise_test": pw,
         "coef_pre2024": coefs, "coef_live": coef_live, "coef_live_with_move": coef_live_move,
         "age_slopes_pre2024": slopes, "age_slopes_live": slopes_live,

@@ -461,6 +461,8 @@
   };
 
   /* ------------------------------------------------------------ cameras */
+  // per shot: [position drift m, aim drift m, handheld sway m]
+  var HANDHELD = { wide: [0.12, 0.05, 0], mid: [0.1, 0.06, 0], cage: [0.02, 0.05, 0.012], top: [0.1, 0.05, 0], close: [0.03, 0.04, 0.01], high: [0.25, 0.08, 0], ring: [0.02, 0.03, 0.01], replay: [0, 0.02, 0.006] };
   function Cam(camera) {
     this.cam = camera; this.mode = "auto"; this.shot = "wide"; this.shotT = 0; this.nextCut = 7; this.cut = true;
     this.pos = new V3(0, 4.4, 9.5); this.look = new V3(0, 1, 0); this.fov = 34; this.az = Math.PI / 2;
@@ -494,31 +496,53 @@
     var tgtAz = Math.abs(angDiff(this.az, perp1)) < Math.abs(angDiff(this.az, perp2)) ? perp1 : perp2;
     var p = this._p, l = this._l, fov = 34, k = 2.4;
     function at(az, dist, h) { p.set(F.x + Math.cos(az) * dist, h, F.z + Math.sin(az) * dist); }
-    var s = this.shot;
-    if (s === "wide") { this.az += angDiff(tgtAz, this.az) * Math.min(1, dt * 0.5); at(this.az, 8.9, 5.0); l.set(F.x, 0.85, F.z); fov = ctx.narrow ? 36 : 30; }
-    else if (s === "mid") { this.az += angDiff(tgtAz + 0.35, this.az) * Math.min(1, dt * 0.6); at(this.az, 6.6, 3.1); l.set(F.x, 0.95, F.z); fov = ctx.narrow ? 34 : 29; k = 3; }
+    // broadcast lenses: 35 mm-equivalent focal lengths; narrow screens keep most of the horizontal framing
+    var asp = Math.max(this.cam.aspect || 1.78, 1.45);
+    function lens(mm) { return FA.lensFov ? FA.lensFov(mm, asp) : 2 * Math.atan(Math.tan(Math.atan(18 / mm)) / asp) * 180 / Math.PI; }
+    var s = this.shot, creep = 1 - 0.05 * smooth(clamp(this.shotT / 9, 0, 1));
+    if (s === "wide") { this.az += angDiff(tgtAz, this.az) * Math.min(1, dt * 0.5); at(this.az, 11.6 * creep, 5.7); l.set(F.x, 0.9, F.z); fov = lens(46); }
+    else if (s === "mid") { this.az += angDiff(tgtAz + 0.35, this.az) * Math.min(1, dt * 0.6); at(this.az, 8.4 * creep, 3.5); l.set(F.x, 1.0, F.z); fov = lens(55); k = 3; }
     else if (s === "cage") {
       this.az += angDiff(tgtAz - 0.25, this.az) * Math.min(1, dt * 0.6);
       var ca = Math.atan2(F.z + Math.sin(this.az) * 3, F.x + Math.cos(this.az) * 3);
       ca = Math.round(ca / (Math.PI / 4)) * (Math.PI / 4);   // centre of a fence panel, clear of the posts
-      p.set(Math.cos(ca) * 4.12, 1.22, Math.sin(ca) * 4.12); l.set(F.x, 1.0, F.z); fov = ctx.narrow ? 50 : 44; k = 3;
+      p.set(Math.cos(ca) * 4.12, 1.22, Math.sin(ca) * 4.12); l.set(F.x, 1.0, F.z); fov = lens(24); k = 3;
     }
-    else if (s === "top") { this.az += angDiff(tgtAz + 0.5, this.az) * Math.min(1, dt * 0.4); at(this.az, 3.6, 4.4); l.set(F.x, 0.25, F.z); fov = ctx.narrow ? 44 : 40; k = 2.5; }
-    else if (s === "close") { this.az += angDiff(tgtAz + 0.6, this.az) * Math.min(1, dt * 0.4); at(this.az, 3.7, 1.75); l.set(F.x, 0.7, F.z); fov = 40; k = 3; }
-    else if (s === "high") { p.set(0.01, 11.5, 9.5); l.set(0, 0.3, 0); fov = 40; k = 1.5; }
-    else if (s === "ring") { var ra = 1.35 + ctx.time * 0.06; p.set(F.x + Math.cos(ra) * 3.6, 1.8, F.z + Math.sin(ra) * 3.6); l.set(F.x, 1.15, F.z); fov = ctx.narrow ? 46 : 40; k = 2; }
-    else if (s === "replay") { var I = ctx.impact || F, az2 = ctx.replayAz - 0.6 + ctx.replayT * 0.08; p.set(I.x + Math.cos(az2) * 3.3, 1.5, I.z + Math.sin(az2) * 3.3); l.set(I.x, 0.95, I.z); fov = ctx.narrow ? 44 : 38; k = 6; }
+    else if (s === "top") { this.az += angDiff(tgtAz + 0.5, this.az) * Math.min(1, dt * 0.4); at(this.az, 3.6, 4.5); l.set(F.x, 0.25, F.z); fov = lens(32); k = 2.5; }
+    else if (s === "close") { this.az += angDiff(tgtAz + 0.6, this.az) * Math.min(1, dt * 0.4); at(this.az, 3.7, 1.65); l.set(F.x, 0.75, F.z); fov = lens(32); k = 3; }
+    else if (s === "high") { p.set(0.01, 11.5, 9.5); l.set(0, 0.3, 0); fov = lens(27); k = 1.5; }
+    else if (s === "ring") { var ra = 1.35 + ctx.time * 0.06; p.set(F.x + Math.cos(ra) * 3.6, 1.8, F.z + Math.sin(ra) * 3.6); l.set(F.x, 1.15, F.z); fov = lens(30); k = 2; }
+    else if (s === "replay") { var I = ctx.impact || F, az2 = ctx.replayAz - 0.6 + ctx.replayT * 0.08; p.set(I.x + Math.cos(az2) * 3.3, 1.5, I.z + Math.sin(az2) * 3.3); l.set(I.x, 0.95, I.z); fov = lens(35); k = 6; }
     else if (s === "free") {
       var u = this.user, cx = 0, cz = 0;
-      p.set(cx + Math.cos(u.az) * Math.cos(u.el) * u.dist, 0.4 + Math.sin(u.el) * u.dist, cz + Math.sin(u.az) * Math.cos(u.el) * u.dist); l.set(F.x * 0.5, 0.9, F.z * 0.5); fov = 36; k = 8;
+      p.set(cx + Math.cos(u.az) * Math.cos(u.el) * u.dist, 0.4 + Math.sin(u.el) * u.dist, cz + Math.sin(u.az) * Math.cos(u.el) * u.dist); l.set(F.x * 0.5, 0.9, F.z * 0.5); fov = lens(30); k = 8;
     }
-    if (s === "close" || s === "replay" || s === "ring") { var pr = Math.hypot(p.x, p.z); if (pr > 3.95) { p.x *= 3.95 / pr; p.z *= 3.95 / pr; } }
-    if (this.cut) { this.pos.copy(p); this.look.copy(l); this.fov = fov; this.cut = false; }
+    var inside = s === "close" || s === "replay" || s === "ring";
+    if (inside) { var pr = Math.hypot(p.x, p.z); if (pr > 3.95) { p.x *= 3.95 / pr; p.z *= 3.95 / pr; } }
+    if (this.cut) { this.pos.copy(p); this.look.copy(l); this.fov = fov; this.cut = false; this.seed = Math.random() * 100; }
     else { var a = 1 - Math.exp(-dt * k); this.pos.lerp(p, a); this.look.lerp(l, a); this.fov += (fov - this.fov) * a; }
     var c = this.cam;
     c.position.copy(this.pos);
+    var lk = this._lk || (this._lk = new V3());
+    lk.copy(this.look);
+    // operator motion: slow drift and aim for the hard cameras, breathing sway for the handhelds on the canvas
+    var hm = HANDHELD[s];
+    this.rt = (this.rt || 0) + dt;
+    if (hm) {
+      var t = this.rt, q = this.seed || 0;
+      c.position.x += (Math.sin(t * 0.21 + q) * 0.6 + Math.sin(t * 0.47 + q * 2.3) * 0.4) * hm[0];
+      c.position.y += (Math.sin(t * 0.17 + q * 1.7) * 0.6 + Math.sin(t * 0.39 + q * 0.7) * 0.4) * hm[0] * 0.5;
+      c.position.z += Math.sin(t * 0.25 + q * 3.1) * hm[0];
+      lk.x += Math.sin(t * 0.33 + q * 1.3) * hm[1]; lk.y += Math.sin(t * 0.29 + q * 2.9) * hm[1] * 0.6; lk.z += Math.sin(t * 0.37 + q * 0.4) * hm[1];
+      if (hm[2]) {
+        c.position.x += (Math.sin(t * 1.9 + q) + 0.5 * Math.sin(t * 4.3 + q * 2)) * hm[2];
+        c.position.y += (Math.sin(t * 1.4 + q * 3) + 0.4 * Math.sin(t * 5.1 + q)) * hm[2] * 0.8;
+        lk.x += Math.sin(t * 2.3 + q * 5) * hm[2] * 1.6; lk.y += Math.sin(t * 2.9 + q) * hm[2];
+      }
+      if (inside) { var pr2 = Math.hypot(c.position.x, c.position.z); if (pr2 > 3.97) { c.position.x *= 3.97 / pr2; c.position.z *= 3.97 / pr2; } }
+    }
     if (this.shake > 0.001) { c.position.x += (Math.random() - 0.5) * this.shake; c.position.y += (Math.random() - 0.5) * this.shake; this.shake *= Math.exp(-dt * 9); }
-    c.lookAt(this.look);
+    c.lookAt(lk);
     if (Math.abs(c.fov - this.fov) > 0.01) { c.fov = this.fov; c.updateProjectionMatrix(); }
     this.label = { wide: "Broadcast", mid: "Broadcast", cage: "Cage-side", top: "Overhead", close: "Close-up", high: "Overhead", ring: "Center", replay: "Replay", free: "Free" }[s];
   };
