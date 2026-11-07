@@ -61,6 +61,15 @@ reviewer's `v3p` ("v3 params + learned rates"). For every arm, delta = arm minus
 - **Confirmation:** if more than one flag changes, the final default set is run against `all` once more (leave-one-out effects are
   not additive), and reported.
 
+### Deviations from the pre-registration (all disclosed here)
+
+1. The verdict code treats |delta| below 1e-9 as 0. Without it, the deductions and emJudge arms' method delta (-3e-18, float
+   rounding of identical decision mass summed over three bins) counted as "better without", which would have turned
+   deductions off. With the tolerance it is 0, as it must be: neither flag can move KO / SUB / decision mass.
+2. emJudge is kept on against the rule's verdict, for the hidden-data protocol (Decisions).
+3. The `v3pj` arm (v3 params + learned rates with the v5 judging) was added after the main run, because v3p's cards are not v3's
+   (the v5 engine has no t108b / t108kd2 10-8 rule). It is information only; it changes nothing.
+
 ## Setup
 
 - Tool: `nice -n 5 node tools/v5_train_ablation.js --sims 300 --workers 3 --tag main`, then
@@ -225,8 +234,9 @@ subConvScale 1.847 (koTargets' koComp factors still multiply the KO block after 
   out-of-sample estimate. The Measure stage's single 2024-25 look is.
 - Leave-one-out effects are not additive. Only one flag changed, so the final set is an arm that was run (`-mlLevels`).
 - The soft-label CE measures distance from the closing line, not truth. It is 3-4.6x less noisy than outcome log loss
-  (research/model_market.md 4.11) but rewards agreeing with the market. Every keep decision above is also supported by at least
-  one outcome metric, except durability's and SOS's, which are supported by 7-bin (both) and who x how x when (durability).
+  (research/model_market.md 4.11) but rewards agreeing with the market. Every keep decision except dynamics (structure) is also
+  supported by at least one outcome metric with an interval excluding 0: 7-bin (durability, SOS, preufc, deductions, tdCap),
+  who x how x when (durability, embed, preufc) or method x round (preufc, koTargets).
 - The tdCap and deductions effects are real but small: tdCap changes 20 of 3,998 sides; deductions only move decision mass
   between A, draw and B. deductions still leave train draws at 0.59% (actual 1.01%) and MD at 0.9% of decisions (actual 2.0%).
 - Base-rate misfits that no flag fixes (for Calibrate B / the joint level pass): 3-round round-2 finishes 13.6% vs 16.7% actual

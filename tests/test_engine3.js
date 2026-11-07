@@ -478,9 +478,12 @@ console.log("\n=== Engine v5 step 1 (components.v401): point deductions, the cum
   check("mlLevels off: the learned-path levels are not applied", mLoff.ml.ratios[0].tdAtt === mL1.ml.ratios[0].tdAtt, `x${f2(mLoff.ml.ratios[0].tdAtt)}`);
   // koTargets: the composition factors multiply the KO block after the overrides
   const KC = (BASE.v401 && BASE.v401.koComp) || {}, pOn = E.resolveParams({ kdScale: 1.2 }), pOff = E.resolveParams({ kdScale: 1.2, components: { v401: { koTargets: false } } });
+  // (since v5 Calibrate A mlLevels is off by default, so gnpTko / stko resolve to v401.off.mlLevels' values before koComp: compare
+  // with the koTargets-off resolution, which holds whatever the other sub-flags put back)
   check("koTargets multiplies kdScale / kdPos[1] / gnpTko / stko after the overrides (stored fields stay the pre-(e) levels)",
     Math.abs(pOn.kdScale - 1.2 * (KC.kdScale || 1)) < 1e-12 && pOff.kdScale === 1.2 && Math.abs(pOn.kdPos[1] - BASE.kdPos[1] * (KC.kdClinch || 1)) < 1e-12 &&
-    Math.abs(pOn.gnpTko - BASE.gnpTko * (KC.gnpTko || 1)) < 1e-12 && Math.abs(pOn.stko - BASE.stko * (KC.stko || 1)) < 1e-12 && BASE.kdPos[1] === pOff.kdPos[1],
+    Math.abs(pOn.gnpTko - pOff.gnpTko * (KC.gnpTko || 1)) < 1e-12 && Math.abs(pOn.stko - pOff.stko * (KC.stko || 1)) < 1e-12 && BASE.kdPos[1] === pOff.kdPos[1] &&
+    pOff.gnpTko === (E.v401Flags(pOff).mlLevels ? BASE.gnpTko : BASE.v401.off.mlLevels.gnpTko),
     `koComp ${JSON.stringify(KC)}`);
 }
 

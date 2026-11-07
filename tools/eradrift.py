@@ -315,7 +315,7 @@ def ew_track(day, y, E, div, kind, h, n0, prior, h_div=None, k_div=None, breaks=
     added to the fast league level. Breaks: at an effective day, the fast sums are multiplied by (1 - phi)."""
     u, inv = date_groups(day)
     nd = DIV_ALL + 1
-    Ebar = float(np.mean(E)) if len(E) else 1.0
+    Ebar = float(np.mean(E[E > 0])) if (E > 0).any() else 1.0     # rows with E = 0 are snapshot queries
     Sy = SE = 0.0
     Dy, DE = np.zeros(nd), np.zeros(nd)
     Ly = LE = 0.0
@@ -373,7 +373,7 @@ def win5_track(day, year, y, E, div, kind, n0, prior, k_div=None):
     """Calendar window: fights in [Jan 1 of Y-5, Jan 1 of Y) (methodround's PRIOR_WINDOW construction), division
     shrunk to the league by k_div observations."""
     pred = np.empty(len(y))
-    Ebar = float(np.mean(E))
+    Ebar = float(np.mean(E[E > 0]))
     years = np.unique(year)
     for Y in years:
         m = year == Y
@@ -451,6 +451,8 @@ def kalman_track(day, event, y, E, div, kind, q, se, sd_div, q_div, m0, P0, k_nb
             else:
                 xa, Pa = x.copy(), P.copy()
             for i in ii:
+                if E[i] <= 0:                    # snapshot query row: predicted, never assimilated
+                    continue
                 a = np.zeros(len(xa))
                 a[0] = 1.0
                 if div[i] < DIV_ALL:
@@ -1286,12 +1288,15 @@ def st_info(kind, y, par, t, a):
     return (fp - fm) / (2 * e), -(fp - 2 * f0 + fm) / (e * e)
 
 
-def st_track(S, st, cfg):
-    """Walk-forward offset for one stat (rows on strictly earlier days only)."""
+def st_track(S, st, cfg, real=None):
+    """Walk-forward offset for one stat (rows on strictly earlier days only). real: mask of observed rows (others
+    are snapshot queries: they get the offset of their day and are never assimilated)."""
     D = S[st]
     kind, y, par = D["kind"], D["y"], D["par"]
     t, day, vint = S["t"], S["day"], S["vint"]
     n = len(y)
+    if real is None:
+        real = np.ones(n, bool)
     off = np.zeros(n)
     if cfg["fam"] == "none":
         return off
@@ -1299,14 +1304,14 @@ def st_track(S, st, cfg):
     rho = cfg.get("rho", 1.0)
     # prior precision in fight-side equivalents: n0 x the median per-row information at a = 0 (pre-2021 rows)
     _, inf0 = st_info(kind, y, par, t, 0.0)
-    unit = float(np.median(np.maximum(inf0[S["year"] < 2021], 1e-6)))
+    unit = float(np.median(np.maximum(inf0[(S["year"] < 2021) & real], 1e-6)))
     if cfg["fam"] == "ew":
         lam = math.log(2) / (cfg["h"] * YEAR_D)
         prec = cfg["n0"] * unit
         a_prev = 0.0
         for d in u:
             rows = np.where(day == d)[0]
-            hi = np.where(day < d)[0]
+            hi = np.where((day < d) & real)[0]
             if len(hi):
                 wt = np.exp(-lam * (d - day[hi]))
                 vnow = vint[rows].max()
@@ -1332,6 +1337,10 @@ def st_track(S, st, cfg):
                 P = rho * rho * P + (1 - rho * rho) * P0
             v_cur = vnow if v_cur is None else max(v_cur, vnow)
             off[rows] = a
+            rows = rows[real[rows]]
+            if not len(rows):
+                last = d
+                continue
             g, h = st_info(kind, y[rows], par[rows], t[rows], a)
             G, Hh = g.sum(), max(h.sum(), 1e-9)
             Rv = 1.0 / Hh + se * se

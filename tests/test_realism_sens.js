@@ -89,17 +89,21 @@ const NF = 150;
 // wild realism factors present in the params, but the flag off: they must be ignored
 const wild = { components: { realism_sens: false }, realism: { div: { "Lightweight": { ko: 3, sub: 0.2, kd: 2, att: 1.5, td: 2, ctrl: 0.5 }, "Women's Strawweight": { ko: 2.5, sub: 3 } }, fmt: { "5": { ko: 0.3, sub: 2 } } } };
 const dOff = digest(E, { params: wild }, NF);
+// the reference engine / stored digest predate v5 Calibrate A, which turned components.v401.mlLevels off by default
+// (research/v5_train_ablation.md): compare them with the flag pinned to their state (on)
+const wildPinned = Object.assign({}, wild, { components: Object.assign({}, wild.components, { v401: { mlLevels: true } }) });
+const dOffRef = digest(E, { params: wildPinned }, NF);
 if (refE) {
   const dRef = digest(refE, null, NF);
-  check("flag off (opts.params, wild factors present) = engine at " + (refDirArg ? refLabel : ref.slice(0, 10)) + ", bit for bit", JSON.stringify(dOff) === JSON.stringify(dRef),
-    dOff.map((x, i) => x === dRef[i] ? "ok" : "DIFF " + x.split(":")[0]).join("; "));
+  check("flag off (opts.params, wild factors present) = engine at " + (refDirArg ? refLabel : ref.slice(0, 10)) + ", bit for bit", JSON.stringify(dOffRef) === JSON.stringify(dRef),
+    dOffRef.map((x, i) => x === dRef[i] ? "ok" : "DIFF " + x.split(":")[0]).join("; "));
   if (args.includes("--write-fixture")) {
     fs.writeFileSync(FIX, JSON.stringify({ base_commit: ref || null, base_dir: refDirArg ? refLabel : undefined, note: "digest of the engine before the realism_sens change (tests/test_realism_sens.js digest(), " + NF + " fights per case)", digest: dRef }, null, 1) + "\n");
     console.log("      wrote " + FIX);
   }
 }
-if (fixture.digest) check("flag off = stored digest of the engine before the change (tests/fixtures/realism_sens_base.json)", JSON.stringify(dOff) === JSON.stringify(fixture.digest),
-  dOff.map((x, i) => x === fixture.digest[i] ? "ok" : "DIFF " + x.split(":")[0]).join("; "));
+if (fixture.digest) check("flag off = stored digest of the engine before the change (tests/fixtures/realism_sens_base.json; v401.mlLevels pinned on)", JSON.stringify(dOffRef) === JSON.stringify(fixture.digest),
+  dOffRef.map((x, i) => x === fixture.digest[i] ? "ok" : "DIFF " + x.split(":")[0]).join("; "));
 {
   // flag off through the global FightParams (no opts.params): same result, and no stale learned-rate league cache
   const save = JSON.stringify({ c: FP.components, r: FP.realism });

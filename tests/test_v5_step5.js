@@ -145,9 +145,11 @@ function withParams(opts, params) {
 const OFF = { components: { blend_anchor: false } }, ON = { components: { blend_anchor: true } };
 function runGroup(label, REF, refName, FLAG, cases, ctx) {
   let nM = 0, nF = 0, bad = 0, badSum = 0, nSum = 0, badPred = 0, nPred = 0, firstBad = null, applied = 0, recs = 0;
+  // ctx.pin: components the current engine must take from the reference (the strict groups' v401 sub-flags; see below)
+  const FE = ctx.pin ? { components: Object.assign({}, FLAG.components, ctx.pin) } : FLAG;
   const go = () => {
     cases.forEach((c, i) => {
-      const mr = REF.matchup(c.a, c.b, c.opts), mc = E.matchup(c.a, c.b, withParams(c.opts, FLAG));
+      const mr = REF.matchup(c.a, c.b, c.opts), mc = E.matchup(c.a, c.b, withParams(c.opts, FE));
       if (mr.mlApplied) applied++;
       if (c.hasRec) recs++;
       const fr = fights(REF, mr, c.seed), fc = fights(E, mc, c.seed);
@@ -161,7 +163,7 @@ function runGroup(label, REF, refName, FLAG, cases, ctx) {
       }
       if (FLAG === OFF && i % 10 === 5) {   // predict with the flag off = summarize(matchup) of the engine before the step
         nPred++;
-        const pr = E.predict(c.a, c.b, Object.assign(withParams(c.opts, OFF), { sims: 120, seed: c.seed }));
+        const pr = E.predict(c.a, c.b, Object.assign(withParams(c.opts, FE), { sims: 120, seed: c.seed }));
         const s0 = REF.summarize(REF.matchup(c.a, c.b, c.opts), 120, c.seed);
         if (pr.on !== false || JSON.stringify(pr.sim) !== JSON.stringify(s0) || pr.p !== s0.pA / (s0.pA + s0.pB)) { badPred++; if (!firstBad) firstBad = `predict ${i}`; }
       }
@@ -194,8 +196,11 @@ for (const FLAG of [OFF, ON]) {
 }
 if (R0s) {
   let total = 0;
-  total += runGroup("a (strict)", R0s, "step-4 engine on step 4's own params3.js + mlrates.js", OFF, casesA, { ml: true, roster: true });
-  total += runGroup("c (strict)", R0s, "step-4 engine on step 4's own params3.js + mlrates.js", OFF, casesC, { ml: false, roster: false });
+  // v5 Calibrate A (research/v5_train_ablation.md) turned components.v401.mlLevels off by default; the strict reference runs on
+  // its own params3.js, so the current engine is called with that reference's v401 sub-flags pinned
+  const pin = { v401: R0s.params().components.v401 };
+  total += runGroup("a (strict)", R0s, "step-4 engine on step 4's own params3.js + mlrates.js", OFF, casesA, { ml: true, roster: true, pin });
+  total += runGroup("c (strict)", R0s, "step-4 engine on step 4's own params3.js + mlrates.js", OFF, casesC, { ml: false, roster: false, pin });
   check("strict step-4 reference: >= 300 matchups", total >= 300, `${total} matchups`);
 } else console.log("SKIP  strict step-4 reference (git objects not reachable)");
 

@@ -191,8 +191,11 @@ for (const [REF, refName, OFF] of REFS3) {
 }
 if (R0s) {
   let total = 0;
-  total += runGroup("a (strict)", R0s, "all three off = step-2 engine on step 2's own params3.js + mlrates.js", OFF0, casesA, { ml: true, roster: true });
-  total += runGroup("c (strict)", R0s, "all three off = step-2 engine on step 2's own params3.js + mlrates.js", OFF0, casesC, { ml: false, roster: false });
+  // v5 Calibrate A (research/v5_train_ablation.md) turned components.v401.mlLevels off by default; the strict reference runs on
+  // its own params3.js, so the current engine is called with that reference's v401 sub-flags pinned
+  const OFF0s = { components: Object.assign({}, OFF0.components, { v401: R0s.params().components.v401 }) };
+  total += runGroup("a (strict)", R0s, "all three off = step-2 engine on step 2's own params3.js + mlrates.js", OFF0s, casesA, { ml: true, roster: true });
+  total += runGroup("c (strict)", R0s, "all three off = step-2 engine on step 2's own params3.js + mlrates.js", OFF0s, casesC, { ml: false, roster: false });
   check("strict step-2 reference: >= 300 matchups", total >= 300, `${total} matchups`);
 } else console.log("SKIP  strict step-2 reference (git objects not reachable)");
 
