@@ -964,12 +964,7 @@
   function fightCtx() { return { division: S.div, rounds: S.rounds, title: S.title, date: todayISO() }; }
   // the ML v2 fight object, as the forward ledger builds it (tools/forward_ledger.js fight2)
   function ml2Fight(ctx) { return { date: ctx.date, lbs: divLbs(ctx.division) || null, five: ctx.rounds === 5 ? 1 : 0 }; }
-  // American odds as a number; "EV" / "even" / "evens" is +100
-  function oddsNum(s) {
-    s = String(s == null ? "" : s).trim().toLowerCase().replace(/[−–]/g, "-");
-    if (s === "ev" || s === "even" || s === "evens") return 100;
-    return /^[+-]?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : NaN;
-  }
+
   var OVER_LO = -0.01, OVER_HI = 0.25;   // a two-way line whose margin falls outside this is a typo, not a price
   // the typed line, de-vigged both ways: multiplicative for a pre-fight line (what the open stack was fit on), power for
   // a closing line (what the close stack was fit on); p = the one the stack in use reads
@@ -1502,15 +1497,7 @@
 
   /* ================================================================ model stack */
   var stack = { engine: null, engineN: 0 };
-  function calibGet(paths) {
-    if (!CALIB) return null;
-    for (var i = 0; i < paths.length; i++) {
-      var o = CALIB, ok = true, ps = paths[i].split(".");
-      for (var j = 0; j < ps.length; j++) { if (o && typeof o === "object" && ps[j] in o) o = o[ps[j]]; else { ok = false; break; } }
-      if (ok && o != null) return o;
-    }
-    return null;
-  }
+
   function parseOdds(s) {
     s = String(s == null ? "" : s).trim().toLowerCase().replace(/[−–]/g, "-");
     if (!s) return null;
@@ -1520,7 +1507,6 @@
     if (Math.abs(v) < 100) return NaN;
     return v > 0 ? 100 / (v + 100) : -v / (-v + 100);
   }
-  function logit(p) { p = clamp(p, 0.001, 0.999); return Math.log(p / (1 - p)); }
   var EXPERTS = [["ml2lr", "ML v2 model"], ["mkt_rating", "Market rating"], ["line", "Betting line"], ["engine", "Simulator"]];
   function expertName(k) { for (var i = 0; i < EXPERTS.length; i++) if (EXPERTS[i][0] === k) return EXPERTS[i][1]; return k; }
   // the pick's inputs by row: probability for A, whether the stack in use reads it, and its weight
@@ -1707,7 +1693,6 @@
   }
 
   /* ================================================================ backtest */
-  function ci(o) { return o && o.lo != null ? "[" + sgn(o.lo) + ", " + sgn(o.hi) + "]" : ""; }
   function sgn(v) { return (v > 0 ? "+" : (v < 0 ? "−" : "")) + Math.abs(v).toFixed(4); }
   function table(head, rows, opts) {
     opts = opts || {};
@@ -1756,6 +1741,7 @@
     d.appendChild(el("p", "small", "The 2026 column is descriptive: the sealed fights never choose a version. Every version trails the learned models at picking winners, which is why the simulator explains how a fight goes and the pick comes from the stats model and the market."));
     return d;
   }
+  function mdy(iso, yr) { var p = String(iso || "").split("-"); return p.length < 3 ? String(iso || "") : MONTHS[+p[1] - 1] + " " + (+p[2]) + (yr ? ", " + p[0] : ""); }
   function scTable(head, rows, cap) { return table(head, rows, { caption: cap }); }
   function intv(c) { return c && c.length === 2 ? " [" + fx(c[0], 4) + ", " + fx(c[1], 4) + "]" : ""; }
   function dCell(o) { return o ? sgn(o.diff) + " " + ci2(o.ci) : "–"; }
@@ -1768,7 +1754,7 @@
     var ce = VA && VA.close_edge && VA.close_edge["ml2_stack_close_static-close"], oe = VA && VA.open_regime && VA.open_regime["ml2_stack_open_static-open"];
     var call = el("div", "callout sc-call");
     call.appendChild(el("b", null, "On the sealed 2026 fights: level with the market."));
-    call.appendChild(el("span", null, "Opened once, on Nov 7, 2026, by an independent audit" + (VA ? " (" + nf.format(VA.n_decisive || 0) + " decisive fights on " + (VA.n_cards || "–") + " cards, " + fmtDate(VA.dates[0], true) + " to " + fmtDate(VA.dates[1], true) + ")" : "") +
+    call.appendChild(el("span", null, "Opened once, on Nov 7, 2026, by an independent audit" + (VA ? " (" + nf.format(VA.n_decisive || 0) + " decisive fights on " + (VA.n_cards || "–") + " cards, " + mdy(VA.dates[0], false) + " to " + mdy(VA.dates[1], true) + ")" : "") +
       ". With a closing line the pick scored " + (ce ? sgn(ce.diff) + " " + ci2(ce.ci) : "–") + " against the line alone; with a pre-fight line, " + (oe ? sgn(oe.diff) + " " + ci2(oe.ci) : "–") +
       " against that line. Both intervals include zero. The edge over the closing line seen on 2024-25 did not carry into 2026, so this page claims no edge over the market."));
     box.appendChild(call);
@@ -1809,7 +1795,7 @@
       var ul2 = el("ul", "caveats"), pr = {};
       (N.vault_2026_paired || []).forEach(function (x) { pr[x.key] = x; });
       ul2.appendChild(el("li", null, "Confidence check: 1.00 means the stated chances matched how often favorites won; below 1 means too sure. The closing line scored " + (B.close ? fx(B.close.slope, 2) : "–") + "."));
-      if (B.moe_page_noline) ul2.appendChild(el("li", null, "The no-line blend this page used before was too sure (" + fx(B.moe_page_noline.slope, 2) + intv(B.moe_page_noline.slope_ci).replace(/(\d\.\d{2})\d{2}/g, "$1") + ") and scored worse than the ML v2 model alone" +
+      if (B.moe_page_noline) ul2.appendChild(el("li", null, "The no-line blend this page used before was too sure (" + fx(B.moe_page_noline.slope, 2) + (B.moe_page_noline.slope_ci ? " [" + fx(B.moe_page_noline.slope_ci[0], 2) + ", " + fx(B.moe_page_noline.slope_ci[1], 2) + "]" : "") + ") and scored worse than the ML v2 model alone" +
         (pr.prod_noline_minus_ml2_lr ? " (the production no-line stack it was built like: " + sgn(pr.prod_noline_minus_ml2_lr.diff) + " " + ci2(pr.prod_noline_minus_ml2_lr.ci) + ")" : "") +
         ". The ML v2 no-line stack that replaces it beat that stack by " + (pr.ml2_noline_minus_prod_noline ? sgn(pr.ml2_noline_minus_prod_noline.diff) + " " + ci2(pr.ml2_noline_minus_prod_noline.ci) : "–") + "."));
       if (pr.ml2_lr_minus_close) ul2.appendChild(el("li", null, "Without a line nothing matched the market in 2026: the ML v2 model alone trailed the closing line by " + sgn(pr.ml2_lr_minus_close.diff) + " " + ci2(pr.ml2_lr_minus_close.ci) +

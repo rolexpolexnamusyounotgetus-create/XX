@@ -90,8 +90,54 @@ const waitTally = (pg) => pg.waitForFunction(() => /simulated fights/.test(docum
   const odds = (a, c) => pg.evaluate(([a, c]) => { const A = document.getElementById("oddA"), B = document.getElementById("oddB"); A.value = a; A.dispatchEvent(new Event("input")); B.value = c; B.dispatchEvent(new Event("input")); const BL = window.FightLab.blend(); return { p: BL.mk.p, bad: !!BL.mk.bad, useLine: BL.useLine, inv: A.getAttribute("aria-invalid") }; }, [a, c]);
   let o = await odds("-1000", "-500"); check(o.bad && !o.useLine && o.inv === "true", "a -1000 / -500 line is flagged and kept out of the blend", o);
   o = await odds("+120", "+120"); check(o.bad && !o.useLine, "a +120 / +120 line (negative margin) is flagged", o);
-  o = await odds("EV", "-110"); check(o.p != null && Math.abs(o.p - 0.487963) < 2e-4, "EV / -110 goes through the power de-vig", o.p);
+  o = await odds("EV", "-110");
+  const ev = await pg.evaluate(() => { const m = window.FightLab.blend().mk; return { pPow: m.pPow, pMult: m.pMult, p: m.p, kind: m.kind }; });
+  check(Math.abs(ev.pPow - 0.487963) < 2e-4 && Math.abs(ev.pMult - 0.5 / (0.5 + 110 / 210)) < 1e-9 && ev.kind === "open" && ev.p === ev.pMult,
+    "EV / -110: power de-vig for a closing line, proportional for a pre-fight line (the default)", ev);
   await odds("+160", "-180");
+
+  console.log("winner stacks (page pass 3)");
+  const reg = await pg.evaluate(() => {
+    const FL = window.FightLab, PPm = window.PagePredict, h = FL.ml2(), f = FL.fightCtx(), st = FL.state, out = { models: FL.models() };
+    const d = PPm.devig("+160", "-180");
+    out.want = { none: PPm.winner(h, st.a, st.b, f, null).p, open: PPm.winner(h, st.a, st.b, f, { kind: "open", pMult: d.pMult, pPow: d.pPow }).p,
+      close: PPm.winner(h, st.a, st.b, f, { kind: "close", pMult: d.pMult, pPow: d.pPow }).p };
+    out.open = { p: FL.blend().p, kind: FL.blend().kind };
+    const lc = document.getElementById("lineClose"); lc.click();
+    out.close = { p: FL.blend().p, kind: FL.blend().kind }; lc.click();
+    const lt = document.getElementById("lineTog"); lt.click();
+    out.none = { p: FL.blend().p, kind: FL.blend().kind }; lt.click();
+    out.back = { p: FL.blend().p, kind: FL.blend().kind };
+    out.weights = h.doc.stack;
+    return out;
+  });
+  check(reg.models.ml2 && reg.models.s2 && reg.models.statdist && reg.models.debut && reg.models.pagepredict, "ML v2, S2, stat-line and debut models load", reg.models);
+  check(reg.open.kind === "open" && Math.abs(reg.open.p - reg.want.open) < 1e-12, "a typed line goes to the open-trained stack", [reg.open, reg.want.open]);
+  check(reg.close.kind === "close" && Math.abs(reg.close.p - reg.want.close) < 1e-12, "the closing-line box switches to the close-trained stack", [reg.close, reg.want.close]);
+  check(reg.none.kind === "none" && Math.abs(reg.none.p - reg.want.none) < 1e-12, "no line: the no-line stack", [reg.none, reg.want.none]);
+  check(reg.back.kind === "open" && Math.abs(reg.back.p - reg.want.open) < 1e-12, "toggles return to the pre-fight line");
+  const FMW = JSON.parse(fs.readFileSync(path.join(ROOT, "data/derived/forward_models.json"), "utf8")).ml2_static;
+  check(["line", "open", "noline"].every((k) => JSON.stringify(reg.weights[k].weights) === JSON.stringify(FMW[k].weights)), "the page's stack weights are the forward ledger's (fit 2019-2023)");
+  const hd = await pg.evaluate(() => { const H = window.FightLab.blend().head; return { variant: H && H.variant, src: H && H.src, s: H ? H.bins7.reduce((a, b) => a + b, 0) : null, pA: H && H.pA, pD: H && H.pD }; });
+  check(hd.src === "mr" && hd.variant === "S2" && Math.abs(hd.s - 1) < 1e-9, "how it ends: S2 cells scaled to the headline, summing to 1", hd);
+  const sl = await pg.evaluate(() => { const L = window.FightLab.statLines(); return { L, rows: document.querySelectorAll("#slBody table.slt tbody tr").length }; });
+  const ord = sl.L && ["A", "B"].every((s) => Object.values(sl.L[s]).every((q) => q.p10 <= q.p50 && q.p50 <= q.p90));
+  check(sl.L && sl.rows === 14 && ord, "stat lines: 7 rows per fighter, low <= typical <= high", sl.rows);
+
+  console.log("scorecard and forward test");
+  const sc = await pg.evaluate(() => ({ bt: document.getElementById("btBody").innerText, fw: document.getElementById("fwBody").innerText }));
+  check(/level with the market/i.test(sc.bt), "the scorecard says plainly: level with the market");
+  check(/0\.6003/.test(sc.bt) && /0\.5887/.test(sc.bt) && /0\.5854/.test(sc.bt) && /−0\.0087/.test(sc.bt) && /0\.6150/.test(sc.bt), "scorecard quotes the verified numbers (2026 close 0.6003, ML v2 0.5887 vs close 0.5854, -0.0087, open stack 0.6150)");
+  check(/v5\.0\.1/.test(sc.bt) && /v6/.test(sc.bt) && /rejected/.test(sc.bt) && /kept, on this page/.test(sc.bt), "engine versions table: v4 kept, v5 / v5.0.1 / v6 rejected");
+  const LED = fs.readdirSync(path.join(ROOT, "data/predictions")).filter((n) => /^\d{4}-\d{2}-\d{2}_.*\.json$/.test(n));
+  for (const n of LED) {
+    const sha = require("child_process").execFileSync("git", ["-C", ROOT, "log", "--diff-filter=A", "--format=%H", "--", "data/predictions/" + n]).toString().trim().split("\n").pop();
+    const raw = JSON.parse(require("child_process").execFileSync("git", ["-C", ROOT, "show", sha + ":data/predictions/" + n]).toString());
+    check(sc.fw.indexOf(sha.slice(0, 7)) >= 0 && /before the lock/.test(sc.fw), n + ": commit " + sha.slice(0, 7) + " shown, committed before the lock");
+    const picks = await pg.evaluate(() => [...document.querySelectorAll(".fw-led .fw-nums span:first-child")].map((x) => x.textContent));
+    const pv = raw.bouts.slice().sort((x, y) => (x.order || 99) - (y.order || 99)).map((b) => Math.round(100 * Math.max(b.p_a, 1 - b.p_a)) + "%");
+    check(picks.length === raw.bouts.length && picks.every((t, i) => t.indexOf(pv[i]) >= 0), n + ": every committed pick shown as committed (" + picks.length + " bouts)", picks.slice(0, 3));
+  }
 
   console.log("rounds and title");
   const t = await pg.evaluate(() => { document.querySelector('#segRounds [data-r="3"]').click(); return { chk: document.getElementById("chkTitle").checked, hash: location.hash }; });
